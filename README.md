@@ -36,15 +36,13 @@ Qompass Diver builds upon the solid foundation of NvChad, offering the following
 
 ## Getting Started
 
-1. **Install Neovim**: Qompass Diver requires Neovim 0.7+ for best performance.
-2. **Clone the Repository**: Clone the Qompass Diver repository to your local machine:
+### Install Dependencies with diver.sh
 
+To set up Qompass Diver, you will first need to install the necessary dependencies using the provided `diver.sh` script. This script automatically detects your operating system and installs the required tools. 
 
-bash
-   git clone https://github.com/your-repo/qompass-diver ~/.config/nvim
+To run `diver.sh`:
 
-Please include instructions for the readme.md for diver.sh in it with additions of what do install to use it by system
-
+```bash
 #!/usr/bin/env bash
 
 set -e
@@ -55,7 +53,7 @@ function detect_os {
         . /etc/os-release
         OS=$ID
     elif [ "$(uname)" == "Darwin" ]; then
-        OS=" (macOS)"
+        OS="macos"
     else
         echo "Unsupported OS"
         exit 1
@@ -70,15 +68,15 @@ function install_macos {
         /bin/bash -c "$(curl -fsSL https://raw.githubusercontent.com/Homebrew/install/HEAD/install.sh)"
     fi
 
-    echo -e " Installing dependencies for macOS..."
+    echo -e "Installing dependencies for macOS..."
     brew install openresty node python ruby rustup jq
     rustup install stable
     pip3 install --user jupyter
 }
 
 # Install dependencies for Arch Linux
-function install_ (Arch Linux) {
-    echo -e " Installing dependencies for Arch Linux..."
+function install_arch {
+    echo -e "Installing dependencies for Arch Linux..."
     sudo pacman -Syu --needed --noconfirm openresty nodejs python ruby rustup jq
     rustup install stable
     python -m ensurepip --user
@@ -86,8 +84,8 @@ function install_ (Arch Linux) {
 }
 
 # Install dependencies for Ubuntu
-function install_ (Ubuntu/Debian) {
-    echo -e " Installing dependencies for Ubuntu/Debian..."
+function install_ubuntu {
+    echo -e "Installing dependencies for Ubuntu/Debian..."
     sudo apt update
     sudo apt install -y software-properties-common
     sudo add-apt-repository -y ppa:openresty/ppa
@@ -125,3 +123,23 @@ function main {
 }
 
 main
+```
+
+### Clone the Repository
+After installing the dependencies, you can clone the Qompass Diver repository and set up Neovim:
+
+```bash
+# Clone the repository to your Neovim configuration folder
+git clone https://github.com/qompassai/Diver ~/.config/nvim
+```
+
+Once the repository is cloned, start Neovim and Qompass Diver will be ready for you to use.
+
+### Final Steps
+Launch Neovim:
+```bash
+nvim
+```
+Qompass Diver will automatically set up and load the required plugins for a streamlined and productive Neovim experience.
+
+Feel free to explore the available features and customize the configuration to suit your workflow.

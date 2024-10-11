@@ -411,9 +411,9 @@ return {
           ft = {""},
                 }),
       require('null-ls').builtins.diagnostics.write_good.with({
-    ft = {"markdown"},
-    cmd = {os.getenv("HOME") .. "/.nvm/versions/node/v22.9.0/bin/write-good"},
-}),
+     ft = {"markdown"},
+     cmd = {os.getenv("HOME") .. "/.nvm/versions/node/v22.9.0/bin/write-good"},
+ }),
 
 
         --Git--

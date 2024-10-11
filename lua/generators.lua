@@ -1,17 +1,11 @@
-local client = require("null-ls.client")
-local log = require("null-ls.logger")
-local methods = require("null-ls.methods")
+local client = require("none-ls.client")
+local log = require("none-ls.logger")
+local methods = require("none-ls.methods")
 
 local M = {}
 
 local progress_token = 0
 
--- returns a function that when first called calls the wrapped function
--- and returns its returned values.
--- On consecutive calls the function is not called and the function returns nil.
--- Don't confuse this with a memoized function, here we are explicitly ignoring
--- the returned results to avoid holding them in memory because we know we won't
--- need them.
 local once = function(func)
     local called = nil
     return function(...)
@@ -22,7 +16,6 @@ local once = function(func)
     end
 end
 
--- Think about this function as plenary's wrap, but for iterators.
 local wrap_iter = function(func, argc)
     local once_func = once(func)
     return function(...)
@@ -55,8 +48,6 @@ M.run = function(generators, params, opts, callback)
 
     local current_progress_token = nil
     if params.method ~= methods.internal.COMPLETION then
-        -- progress messages for completion lead to too
-        -- much noise in the tests.
         progress_token = progress_token + 1
         current_progress_token = progress_token
     end
@@ -73,7 +64,6 @@ M.run = function(generators, params, opts, callback)
     for i, generator in ipairs(generators) do
         table.insert(futures, function()
             local copied_params = copy_params(opts.make_params and opts.make_params() or params)
-            -- pass to enable params:get_source()
             copied_params.source_id = generator.source_id
 
             local runtime_condition = generator.opts and generator.opts.runtime_condition
@@ -89,7 +79,6 @@ M.run = function(generators, params, opts, callback)
                 })
             end
 
-            -- filter results with the filter option
             local filter = generator.opts and generator.opts.filter
             local postprocess, after_each = opts.postprocess, opts.after_each
 
@@ -122,28 +111,24 @@ M.run = function(generators, params, opts, callback)
                 local ok, results = protected_call(to_run, copied_params)
                 a.util.scheduler()
 
-                -- filter results with the filter option
                 if filter and results then
                     results = vim.tbl_filter(filter, results)
                 end
 
                 if results then
-                    -- allow generators to pass errors without throwing them (e.g. in luv callbacks)
                     if results._generator_err then
                         ok = false
                         results = results._generator_err
                     end
 
-                    -- allow generators to deregister their parent sources
                     if results._should_deregister and generator.source_id then
                         results = nil
                         vim.schedule(function()
-                            require("null-ls.sources").deregister({ id = generator.source_id })
+                            require("none-ls.sources").deregister({ id = generator.source_id })
                         end)
                     end
                 end
 
-                -- TODO: pass generator error trace
                 if not ok then
                     log:warn("failed to run generator: " .. results)
                     generator._failed = true
@@ -170,7 +155,7 @@ M.run = function(generators, params, opts, callback)
         if current_progress_token then
             client.send_progress_notification(current_progress_token, {
                 kind = "begin",
-                title = require("null-ls.methods").internal[params.method]:lower(),
+                title = require("none-ls.methods").internal[params.method]:lower(),
                 percentage = 0,
             })
         end
@@ -225,7 +210,7 @@ end
 
 M.get_available = function(filetype, method)
     local available = {}
-    for _, source in ipairs(require("null-ls.sources").get_available(filetype, method)) do
+    for _, source in ipairs(require("none-ls.sources").get_available(filetype, method)) do
         table.insert(available, source.generator)
     end
     return available
