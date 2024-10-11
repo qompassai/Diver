@@ -1,6 +1,6 @@
 # Qompass Diver for Neovim
 
-**Qompass Diver** is a fork of [NvChad](https://github.com/NvChad/NvChad) that builds on the original configuration framework to provide an even more powerful, customizable, and user-friendly experience in Neovim. Qompass Diver enhances the flexibility of the original project while focusing on AI, cloud integrations, education, and developer productivity.
+**Qompass Diver** was inspired by the great folks who made [NvChad](https://github.com/NvChad/NvChad). The intent of Diver is to build on the original configuration framework to provide an even more powerful, customizable, and user-friendly experience that bridges the skills gap left by education and industry. Qompass Diver enhances the flexibility of the original project while focusing on AI, cloud integrations, education, and developer productivity.
 
 ## Features
 
@@ -9,6 +9,8 @@ Qompass Diver builds upon the solid foundation of NvChad, offering the following
 ### AI Integration
 - **Hugging Face Transformers**: Provides support for machine learning workflows with integration into Hugging Face transformers.
 - **CUDA Support**: Tools and integrations for CUDA-based AI development, helping you leverage your GPU for machine learning tasks.
+- **Ollama integration**: A plugin that provides AI-assisted code generation capabilities, integrating seamlessly with Neovim for improved productivity.
+- **Open-Source Cursor via Avante**: Enhances AI-driven workflows, offering advanced completions and intelligent suggestions within Neovim.
 
 ### Cloud Development
 - **Remote Editing**: Allows seamless editing of files over SSH and remote machines using plugins like distant.lua, sshfs.lua, and more.
@@ -25,7 +27,7 @@ Qompass Diver builds upon the solid foundation of NvChad, offering the following
 - **Debugging Tools**: Integrated debugging support using the Debug Adapter Protocol (DAP) and additional utilities.
 
 ### Enhanced UI and UX
-- **Dynamic Themes**: Easily toggle between themes with theme_toggler.lua and enjoy transparent backgrounds with transparent.lua.
+- **Telescope Themes**: Easily toggle between themes via telescope integrated with transparent backgrounds
 - **Lualine Integration**: Enhanced status line management with lualine.lua for better customization and UI experience.
 - **Gitsigns**: Visual indicators for Git changes in the gutter for quick code reviews and version control management.
 
@@ -140,6 +142,8 @@ Launch Neovim:
 ```bash
 nvim
 ```
-Qompass Diver will automatically set up and load the required plugins for a streamlined and productive Neovim experience.
+Qompass Diver will automatically set up and load the required plugins for a streamlined coding experience whether you're new or a seasoned pro. 
 
-Feel free to explore the available features and customize the configuration to suit your workflow.
+And unlike other folks in the AI space, will never collect data on your use. 
+
+
