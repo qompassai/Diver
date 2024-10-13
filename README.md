@@ -63,3 +63,6 @@ Qompass Diver will automatically set up and load the required plugins for a stre
 And unlike other folks in the AI space, we will NEVER collect data on your use.
 
 
+
+## Licensing
+This project is dual-licensed under the terms of the [LICENSE](LICENSE) and [AGPL-3.0](LICENSE-AGPL) licenses.
