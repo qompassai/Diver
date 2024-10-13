@@ -105,7 +105,7 @@ return {
         return ''
       end
 
-      vim.api.nvim_set_keymap('n', '<leader>tl', ':lua preview_lualine_theme_with_telescope()<CR>', { noremap = true, silent = true })
+      vim.api.nvim_set_keymap('n', '<leader>cb', ':change bar color()<CR>', { noremap = true, silent = true })
 
       require('lualine').setup {
         options = {

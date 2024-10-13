@@ -13,7 +13,6 @@ return {
   -- If using conda, use this build command instead:
   -- build = "conda run --no-capture-output -n jupynium pip install .",
   dependencies = {
-    "rcarriga/nvim-notify",
     "stevearc/dressing.nvim", -- optional, UI for :JupyniumKernelSelect
   },
   config = function()

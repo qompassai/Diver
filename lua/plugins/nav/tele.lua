@@ -1,11 +1,8 @@
 return {
   "nvim-telescope/telescope.nvim",
+  lazy = false,
   dependencies = {
     'nvim-lua/plenary.nvim',
-    {
-      'nvim-telescope/telescope-fzf-native.nvim',
-      build = 'make',
-    },
     'jvgrootveld/telescope-zoxide',
     'nvim-telescope/telescope-ui-select.nvim',
     'folke/tokyonight.nvim',
@@ -14,7 +11,6 @@ return {
     'EdenEast/nightfox.nvim',
     'rose-pine/neovim',
   },
-  lazy = true,
   cmd = "Telescope",
   keys = function()
     return {
@@ -31,9 +27,7 @@ return {
           override_file_sorter = true,
           case_mode = "smart_case",
         },
-        ["ui-select"] = {
-          themes.get_dropdown({})
-        },
+        ["ui-select"] = themes.get_dropdown({}),
       },
       pickers = {
         find_files = {
@@ -48,7 +42,7 @@ return {
         colorscheme = {
           theme = "dropdown",
           enable_preview = true,
-          winblend = 0, -- Make the background fully opaque
+          winblend = 0,
         },
       },
     }

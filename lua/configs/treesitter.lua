@@ -7,6 +7,25 @@ M.setup = function()
     dofile(vim.g.base46_cache .. "treesitter")
   end)
 
+  -- Import the lsp_signature plugin
+  local lsp_signature = require("lsp_signature")
+
+  -- Set up signature help for Lua LSP
+  local function on_attach(client, bufnr)
+    if client.name == "lua_ls" then
+      lsp_signature.on_attach({
+        bind = true,
+        handler_opts = {
+          border = "rounded"
+        },
+      }, bufnr)
+    end
+
+    -- Define additional LSP-related key mappings
+    local opts = { noremap = true, silent = true }
+    vim.api.nvim_buf_set_keymap(bufnr, 'n', '<leader>sh', '<cmd>lua vim.lsp.buf.signature_help()<CR>', opts)
+  end
+
   local options = {
     ensure_installed = {
       "lua", "luadoc", "vim", "vimdoc",
@@ -47,9 +66,13 @@ M.setup = function()
         },
       },
     },
+
+    -- Attach the signature help when Lua LSP is set up
+    on_attach = on_attach,
   }
 
   return options
 end
 
 return M
+

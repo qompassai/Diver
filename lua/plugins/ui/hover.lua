@@ -21,7 +21,7 @@ return {
             preview_opts = {
                 border = 'single'
             },
-            preview_window = false,  -- Whether the contents should be moved to a preview window
+            preview_window = true,  -- Whether the contents should be moved to a preview window
             title = true,
             mouse_providers = {
                 'LSP'

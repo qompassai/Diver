@@ -3,7 +3,7 @@ return {
     "mrcjkb/rustaceanvim",
     version = "^5",
     ft = { "rust" },
-    lazy = true,  -- Load when Rust files are opened
+    lazy = true,
     dependencies = {
       "nvim-lua/plenary.nvim",
       "mfussenegger/nvim-dap",
@@ -14,7 +14,7 @@ return {
         "rust-lang/rust.vim",
         ft = "rust",
         init = function()
-          vim.g.rustfmt_autosave = 1  -- Enable autosave for rustfmt
+          vim.g.rustfmt_autosave = 1
         end,
         lazy = true,
       },

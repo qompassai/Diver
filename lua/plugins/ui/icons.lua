@@ -79,7 +79,7 @@ return {
   },
   {
     "yamatsum/nvim-nonicons",
-    lazy = true,
+    lazy = false,
     config = function()
       require("nvim-nonicons").setup {
         default = true,
@@ -98,8 +98,8 @@ return {
   },
   {
     "echasnovski/mini.nvim",
-    version = false,  -- Use the latest version
-    lazy = true,
+    version = false, 
+    lazy = false,
     config = function()
       require("mini.icons").setup({
         -- Corrected configuration
@@ -110,7 +110,6 @@ return {
           hint = "",
         },
         default = {
-          -- Specify the default icons in a table
           file = "",
           folder = "",
         },

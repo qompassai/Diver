@@ -1,104 +1,56 @@
 return {
   "folke/noice.nvim",
+  lazy = false,
   event = "VeryLazy",
   opts = {
-    -- add any options here
     lsp = {
-      -- override markdown rendering so that **cmp** and other plugins use **Treesitter**
+      -- Override markdown rendering so that **cmp** and other plugins use **Treesitter**
       override = {
         ["vim.lsp.util.convert_input_to_markdown_lines"] = true,
         ["vim.lsp.util.stylize_markdown"] = true,
         ["cmp.entry.get_documentation"] = true,
       },
       hover = {
-        enabled = true,
+        enabled = true,  -- Enable enhanced hover UI with Treesitter support
       },
       signature = {
-        enabled = false,
+        enabled = true,  -- Enable enhanced signature help using Treesitter
         auto_open = {
           enabled = true,
           trigger = true, -- Automatically show signature help when typing a trigger character from the LSP
-          luasnip = true, -- Will open signature help when jumping to Luasnip insert nodes
-          throttle = 50, -- Debounce lsp signature help request by 50ms
+          luasnip = true, -- Open signature help when jumping to Luasnip insert nodes
+          throttle = 50,  -- Debounce LSP signature help request by 50ms
         },
-        view = nil, -- when nil, use defaults from documentation
-        opts = {}, -- merged with defaults from documentation
+        view = nil,  -- When nil, use defaults from documentation
+        opts = {},   -- Merged with defaults from documentation
       },
     },
-    -- you can enable a preset for easier configuration
+    -- You can enable a preset for easier configuration
     presets = {
-      bottom_search = false, -- use a classic bottom dive for search
-      command_palette = false, -- position the dive and popupmenu together
-      long_message_to_split = true, -- long messages will be sent to a split
-      inc_rename = false, -- enables an input dialog for inc-rename.nvim
-      lsp_doc_border = false, -- add a border to hover docs and signature help
+      bottom_search = true, -- Use a classic bottom command line for search
+      command_palette = true, -- Position the command and popupmenu together
+      long_message_to_split = true, -- Long messages will be sent to a split
+      inc_rename = true, -- Enable an input dialog for incremental rename (from inc-rename.nvim)
+      lsp_doc_border = true, -- Add a border to hover docs and signature help
     },
     views = {
-      dive_popup = {
+      cmdline_popup = {
+        relative = "editor", -- Position relative to the editor
         position = {
-          row = "50%",
-          col = "50%",
+          row = "50%", -- Center row
+          col = "50%", -- Center column
         },
         size = {
-          width = 60,
-          height = "auto",
-        },
-      },
-      popupmenu = {
-        relative = "editor",
-        position = {
-          row = 8,
-          col = "50%",
-        },
-        size = {
-          width = 60,
-          height = 10,
+          width = 60, -- Adjust width as needed
+          height = "auto", -- Automatically determine height
         },
         border = {
-          style = "rounded",
+          style = "rounded", -- Style of the border
           padding = { 0, 1 },
         },
         win_options = {
           winhighlight = { Normal = "Normal", FloatBorder = "DiagnosticInfo" },
         },
-      },
-    },
-     dive = {
-      enabled = true,
-      view = "dive_popup",
-      opts = {},
-      format = {
-        dive = { pattern = "^:", icon = "", lang = "vim" },
-        search_down = { kind = "search", pattern = "^/", icon = " ", lang = "regex" },
-        search_up = { kind = "search", pattern = "^%?", icon = " ", lang = "regex" },
-        filter = { pattern = "^:%s*!", icon = "$", lang = "bash" },
-        lua = { pattern = { "^:%s*lua%s+", "^:%s*lua%s*=%s*", "^:%s*=%s*" }, icon = "", lang = "lua" },
-        help = { pattern = "^:%s*he?l?p?%s+", icon = "" },
-        input = {},
-        -- Add the new Mason and None-ls formats
-        mason = { pattern = "^:Mason", icon = "", lang = "vim" },
-        mason_install = { pattern = "^:MasonInstall", icon = "", lang = "vim" },
-        mason_update = { pattern = "^:MasonUpdate", icon = "", lang = "vim" },
-        none_ls = { pattern = "^:NullLs", icon = "", lang = "vim" },
-      },
-    },
-    -- Add the new routes configuration
-    routes = {
-      {
-        filter = {
-          event = "msg_show",
-          kind = "",
-          find = "Mason",
-        },
-        opts = { skip = true },
-      },
-      {
-        filter = {
-          event = "msg_show",
-          kind = "",
-          find = "NullLs",
-        },
-        opts = { skip = true },
       },
     },
   },

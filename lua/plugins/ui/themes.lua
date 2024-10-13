@@ -2,8 +2,8 @@ return {
   {
     "catppuccin/nvim",
     name = "catppuccin",
-    lazy = false,
-    priority = 1000,
+    lazy = true,
+    priority = 900,
     config = function()
       require("catppuccin").setup({
         flavour = "mocha",
@@ -25,7 +25,7 @@ return {
     "folke/tokyonight.nvim",
     name = "tokyonight",
     lazy = false,
-    priority = 1000,
+    priority = 900,
     config = function()
       require("tokyonight").setup({
         style = "night",
@@ -41,7 +41,7 @@ return {
     "navarasu/onedark.nvim",
     name = "onedark",
     lazy = false,
-    priority = 1000,
+    priority = 900,
     config = function()
       require("onedark").setup({
         style = 'deep',
@@ -56,8 +56,8 @@ return {
   {
     "sainnhe/gruvbox-material",
     name = "gruvbox-material",
-    lazy = false,
-    priority = 1000,
+    lazy = true,
+    priority = 900,
     config = function()
       vim.g.gruvbox_material_background = 'medium'
       vim.g.gruvbox_material_enable_bold = 1
@@ -72,8 +72,8 @@ return {
   {
     "EdenEast/nightfox.nvim",
     name = "nightfox",
-    lazy = false,
-    priority = 1000,
+    lazy = true,
+    priority = 900,
     config = function()
       require("nightfox").setup({
         options = {
@@ -98,9 +98,9 @@ return {
   },
   {
     "shaunsingh/nord.nvim",
-    name = "nord",
+    name = "true",
     lazy = false,
-    priority = 1000,
+    priority = 900,
     config = function()
       vim.g.nord_transparent = true
       vim.cmd("colorscheme nord")
@@ -109,8 +109,8 @@ return {
   {
     "marko-cerovac/material.nvim",
     name = "material",
-    lazy = false,
-    priority = 1000,
+    lazy = true,
+    priority = 900,
     config = function()
       require("material").setup({
         contrast = {
@@ -134,7 +134,7 @@ return {
   {
     "Mofiqul/dracula.nvim",
     name = "dracula",
-    lazy = false,
+    lazy = true,
     priority = 1000,
     config = function()
       require("dracula").setup({
@@ -149,7 +149,7 @@ return {
   {
     "projekt0n/github-nvim-theme",
     name = "github_dark",
-    lazy = false,
+    lazy = true,
     priority = 1000,
     config = function()
       require("github-theme").setup({
@@ -166,7 +166,7 @@ return {
   {
     "olimorris/onedarkpro.nvim",
     name = "onedarkpro",
-    lazy = false,
+    lazy = true,
     priority = 1000,
     config = function()
       require("onedarkpro").setup({
