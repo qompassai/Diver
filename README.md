@@ -60,7 +60,7 @@ nvim
 ```
 Qompass Diver will automatically set up and load the required plugins for a streamlined coding experience whether you're new or a seasoned pro. 
 
-And unlike other folks in the AI space, we will NEVER collect data on your use.
+And unlike other folks in the AI space, we will NEVER collect data on your use for training any of our models or solutions.
 
 
 ## Dual-License Notice
@@ -82,19 +82,18 @@ The commercial license option allows for tailored solutions in critical sectors 
 
 ### Supporting Cybersecurity Awareness
 
-The dual licensing model supports initiatives like CISA's efforts to improve cybersecurity awareness[^3] in "target rich" sectors, including K-12 education. By allowing both open-source and commercial use, we aim to facilitate the development of tools that support these critical awareness and protection efforts.
+The dual licensing model supports initiatives like theCybersecurity and Infrastructure Security Agency (CISA) efforts to improve cybersecurity awareness[^3] in "target rich" sectors, including K-12 education. By allowing both open-source and commercial use, we aim to facilitate the development of tools that support these critical awareness and protection efforts.
 
 ### Bridging the Digital Divide
 
-Research shows that socioeconomic and digital inequalities significantly impact cybersecurity awareness and practices[^4]. Our dual licensing approach aims to address this by allowing both free, open-source solutions and commercially supported options that can be tailored to specific needs and contexts.
+The unfortunate reality is that a number of individuals and organizations have gone into a frenzy in every facet of our daily lives[^4]. These unfortunate folks identify themselves with their talk of "10X" returns and building towards Artificial General Intelligence aka "AGI". Our dual licensing approach aims to acknkowledge this deeply concerning predatory paradigm witih clear eyes while still doing operating to bring the best parts of the open-source community with our services and solutions.
 
 ### Recent Cybersecurity Attacks
 
 Recent attacks underscore the importance of robust cybersecurity measures:
 
 - The Change Healthcare cyberattack in February 2024[^2] affected millions of Americans and caused significant disruption to healthcare providers.
-- In the education sector, Minneapolis Public Schools[^5] experienced an attack that leaked 300,000 files and led to a $1 million ransom demand.
-
+- The White House and Congress jointly designated October as Cybersecurity Awareness Month[^5]. This designation comes with over 100 actions that align the Federal government and public/private sector partners are taking to help every man, woman, and child to safely navigate the age of AI. 
 ### Conclusion
 
 By offering both open-source and commercial licensing options, we strive to create a balance that promotes innovation and accessibility while also providing the necessary resources and flexibility to address the complex cybersecurity challenges faced by vulnerable populations and critical infrastructure sectors.
@@ -102,5 +101,5 @@ By offering both open-source and commercial licensing options, we strive to crea
 [^1]: [International Counter Ransomware Initiative 2024 Joint Statement](https://www.whitehouse.gov/briefing-room/statements-releases/2024/10/02/international-counter-ransomware-initiative-2024-joint-statement/)
 [^2]: [The Top 10 Health Data Breaches of the First Half of 2024](https://www.chiefhealthcareexecutive.com/view/the-top-10-health-data-breaches-of-the-first-half-of-2024)
 [^3]: [CISA's K-12 Cybersecurity Initiatives](https://www.cisa.gov/K12Cybersecurity)
-[^4]: [Today's K-12 Cybersecurity Threats and How to Combat Them](https://thejournal.com/Articles/2024/07/24/Todays-K12-Cybersecurity-Threats-And-How-to-Combat-Them.aspx)
-[^5]: [Protecting Our Future: Cybersecurity for K-12](https://www.cisa.gov/protecting-our-future-cybersecurity-k-12)
+[^4]: [Federal Trade Commission Operation AI Comply: continuing the crackdown on overpromises and AI-related lies](https://www.ftc.gov/business-guidance/blog/2024/09/operation-ai-comply-continuing-crackdown-overpromises-ai-related-lies)
+[^5]: [A Proclamation on Cybersecurity Awareness Month, 2024 ](https://www.whitehouse.gov/briefing-room/presidential-actions/2024/09/30/a-proclamation-on-cybersecurity-awareness-month-2024/)
