@@ -44,7 +44,7 @@ To set up Qompass Diver, you will first need to install the necessary dependenci
 
 - MacOS users can get the necessary core packages via `macosdiver.sh` after cloning Diver locally 
 ```
-chmod +x macosdiver.sh
+chmod +x macosdive.sh
 ./macosdiver.sh
 ```
 - Arch users can get the necessary core packages via `archdiver.sh` after cloning Diver locally 
