@@ -29,7 +29,7 @@ map('n', '<leader>of', ':Oil<CR>', { desc = "Oil Open File Explorer" })
 -- In normal mode, press 'Space' + 'o' + 'f' to open Oil file explorer
 
 -- Move Up a Directory in Oil
-map('n', '<leader>u', ':Oil -<CR>', { desc = "Oil Move Up a Directory" })
+map('n', '<leader>ou', ':Oil -<CR>', { desc = "Oil Move Up a Directory" })
 -- In normal mode, press 'Space' + 'u' to move up a directory in Oil
 
 -- Open Oil in Home Directory

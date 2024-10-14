@@ -101,7 +101,6 @@ return {
         return ''
       end
 
-      vim.api.nvim_set_keymap('n', '<leader>cb', ':Change Bar color  ()<CR>', { noremap = true, silent = true })
 
       require('lualine').setup {
         options = {

@@ -9,12 +9,12 @@ Qompass Diver builds upon the solid foundation of NvChad, offering the following
 ### AI Integration
 - **Hugging Face Transformers**: Provides support for machine learning workflows with integration into Hugging Face transformers.
 - **CUDA Support**: Tools and integrations for CUDA-based AI development, helping you leverage your GPU for machine learning tasks.
-- **Ollama integration**: A plugin that provides AI-assisted code generation capabilities, integrating seamlessly with Neovim for locally hosted AI.
+- **Ollama integration**: A plugin that provides AI-assisted code generation capabilities, integrating seamlessly with Neovim for improved productivity.
 - **Open-Source Cursor via Avante**: Enhances AI-driven workflows, offering advanced completions and intelligent suggestions within Neovim.
 
 ### Cloud Development
-- **Remote Editing**: Allows seamless editing of files over Secure Shell(SSH) and remote machines using plugins like distant.lua, sshfs.lua, and remote.nvim.
-- **GPG & SSH Management**: Manage GNU Privacy Guard (GPG) and SSH keys effortlessly within Neovim for secure remote development environments.
+- **Remote Editing**: Allows seamless editing of files over SSH and remote machines using plugins like distant.lua, sshfs.lua, and more.
+- **GPG & SSH Management**: Manage GPG and SSH keys effortlessly within Neovim for secure remote development environments.
 
 ### Educational Tools
 - **nvim-be-good**: Helps users practice and improve their Neovim proficiency with gamified learning tools.
@@ -40,24 +40,24 @@ Qompass Diver builds upon the solid foundation of NvChad, offering the following
 
 ### Install Dependencies before you start your dive
 
-To set up Qompass Diver, you will first need to install the necessary dependencies using the provided `diver.sh` script. This script automatically detects your operating system and installs the required tools. 
+To set up Qompass Diver, you will first need to install the necessary dependencies using the provided `mac/arch/ubuntu/windowsdive.sh` script to simpllify getting your system ready to dive.
 
-- MacOS users can get the necessary core packages via `macosdive.sh` after cloning Diver locally 
+- MacOS users can get the necessary core packages via `macosdive.sh` after cloning Diver locally
 ```
 chmod +x macosdive.sh
-./macosdiver.sh
+./macosdive.sh
 ```
-- Arch Linux/WSL2 Arch users can get the necessary core packages via `archdive.sh` after cloning Diver locally 
+- Arch users can get the necessary core packages via `archdive.sh` after cloning Diver locally
 ```
 chmod +x archdive.sh
 ./archdive.sh
 ```
-- Ubuntu/WSL2 users can get the necessary core packages via `ubuntudive.sh` after cloning Diver locally 
+- Ubuntu users can get the necessary core packages via `ubuntudive.sh` after cloning Diver locally
 ```
 chmod +x ubuntudive.sh
 ./ubuntudive.sh
 ```
-- Windows users can get the necessary core packages via `windowsdive.sh` after cloning Diver locally 
+- Windows users can get the necessary core packages via `windowsdive.sh` after cloning Diver locally
 ```
 chmod +x windowsdive.sh
 ./windowsdive.sh
@@ -67,9 +67,10 @@ chmod +x windowsdive.sh
 After installing the dependencies, you can clone the Qompass Diver repository and set up Neovim:
 
 ```bash
+# Clone the repository to your Neovim configuration folder
 git clone https://github.com/qompassai/Diver ~/.config/nvim
 ```
-- `gh repo clone qompassai/Diver` if you're a `real one` as the zoomers say.
+- `gh repo clone qompassai/Diver` if you're a ` real one` as the Zoomers say.
 
 Once the repository is cloned, start Neovim and Qompass Diver will be ready for you to use.
 
@@ -78,9 +79,9 @@ Launch Diver by starting Neovim:
 ```bash
 nvim
 ```
-Qompass Diver will automatically set up and load the required plugins for a streamlined coding experience whether you're new or a seasoned pro. 
+Qompass Diver will automatically set up and load the required plugins for a streamlined coding experience whether you're new or a seasoned pro.
 
-And unlike other folks in the AI space, we will `NEVER` collect data on your use. 
+And unlike other folks in the AI space, we will `NEVER` collect data on your use.
 
 ## Dual-License Notice
 This repository and all applications within it are dual-licensed under the terms of the [Qompass Commercial Distribution Agreement (CDA)](LICENSE) and the [GNU Affero General Public License v3.0 (AGPL-3.0)](LICENSE-AGPL).
@@ -105,14 +106,14 @@ The dual licensing model supports initiatives like the Cybersecurity and Infrast
 
 ### Bridging the Digital Divide
 
-The unfortunate reality is that a number of individuals and organizations have gone into a frenzy in every facet of our daily lives[^4]. These unfortunate folks identify themselves with their talk of "10X returns" and building Artificial General Intelligence aka "AGI". Our dual licensing approach aims to acknkowledge this deeply concerning predatory paradigm witih clear eyes while still bringing the best parts of the open-source community with our services and solutions.
+The unfortunate reality is that a number of individuals and organizations have gone into a hype frenzy over adding "AI" into every facet of our daily lives[^4]. These folks identify themselves with their talk of "10X returns" and building Artificial General Intelligence aka "AGI" but only after they get your money. Our dual licensing approach aims to acknkowledge this deeply concerning predatory paradigm witih clear eyes while still bringing the best parts of the open-source community with our services and solutions.
 
 ### Recent Cybersecurity Attacks
 
 Recent attacks underscore the importance of robust cybersecurity measures:
 
 - The Change Healthcare cyberattack in February 2024 is just one of a number of growing attacks in Healtchare[^2] affecting millions of Americans.
-- The White House and Congress jointly designated October as Cybersecurity Awareness Month[^5]. This designation comes with over 100 actions that align the Federal government and public/private sector partners are taking to help every man, woman, and child to safely navigate the age of AI. 
+- The White House and Congress jointly designated October as Cybersecurity Awareness Month[^5]. This designation comes with over 100 actions that align the Federal government and public/private sector partners are taking to help every man, woman, and child to safely navigate the age of AI.
 ### Conclusion
 
 By offering both open-source and commercial licensing options, we strive to create a balance that promotes innovation and accessibility while also providing the necessary resources and flexibility to address the complex cybersecurity challenges faced by vulnerable populations and critical infrastructure sectors.
