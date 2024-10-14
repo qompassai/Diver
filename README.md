@@ -63,10 +63,46 @@ Qompass Diver will automatically set up and load the required plugins for a stre
 And unlike other folks in the AI space, we will NEVER collect data on your use.
 
 
-
-
-
-## Licensing
+## Dual-License Notice
 This repository and all applications within it are dual-licensed under the terms of the [Qompass Commercial Distribution Agreement (CDA)](LICENSE) and [GNU Affero General Public License v3.0 (AGPL-3.0)](LICENSE-AGPL) licenses.
 
-This software is released under dual licenses: the Qompass Commercial Distribution Agreement (CDA) and the GNU Affero General Public License v3.0 (AGPL-3.0). This dual licensing approach is intended to protect vulnerable populations and prevent malicious use cases, particularly given recent trends in cyber attacks and the growing exploitation of children and underserved communities.
+## What a Dual-License means
+
+### Protection for Vulnerable Populations
+
+The dual licensing aims to address the cybersecurity gap that disproportionately affects underserved populations. As highlighted by [recent attacks][1], low-income residents, seniors, and foreign language speakers face higher-than-average risks of being victims of cyber attacks. By offering both open-source and commercial licensing options, we encourage the development of cybersecurity solutions that can reach these vulnerable groups while also enabling sustainable development and support.
+
+### Preventing Malicious Use
+
+The AGPL-3.0 license ensures that any modifications to the software remain open source, preventing bad actors from creating closed-source variants that could be used for exploitation. This is especially crucial given the rising threats to vulnerable communities, including children in educational settings. The attack on Minneapolis Public Schools, which resulted in the leak of 300,000 files and a $1 million ransom demand, highlights the importance of transparency and security ([source][5]).
+
+### Addressing Cybersecurity in Critical Sectors
+
+The commercial license option allows for tailored solutions in critical sectors such as healthcare, which has seen significant impacts from cyberattacks. For example, the recent [Change Healthcare attack][2] affected millions of Americans and caused widespread disruption for hospitals and other providers.
+
+### Supporting Cybersecurity Awareness
+
+The dual licensing model supports initiatives like [CISA's efforts to improve cybersecurity awareness][3] in "target rich" sectors, including K-12 education. By allowing both open-source and commercial use, we aim to facilitate the development of tools that support these critical awareness and protection efforts.
+
+### Bridging the Digital Divide
+
+Research shows that socioeconomic and digital inequalities significantly impact cybersecurity awareness and practices ([source][4]). Our dual licensing approach aims to address this by allowing both free, open-source solutions and commercially supported options that can be tailored to specific needs and contexts.
+
+### Recent Cybersecurity Attacks
+
+Recent attacks underscore the importance of robust cybersecurity measures:
+
+- The [Change Healthcare cyberattack in February 2024][2] affected millions of Americans and caused significant disruption to healthcare providers.
+- In the education sector, [Minneapolis Public Schools][5] experienced an attack that leaked 300,000 files and led to a $1 million ransom demand.
+
+### Conclusion
+
+By offering both open-source and commercial licensing options, we strive to create a balance that promotes innovation and accessibility while also providing the necessary resources and flexibility to address the complex cybersecurity challenges faced by vulnerable populations and critical infrastructure sectors.
+
+[1]: https://www.whitehouse.gov/briefing-room/statements-releases/2024/10/02/international-counter-ransomware-initiative-2024-joint-statement/ "International Counter Ransomware Initiative 2024 Joint Statement"
+[2]: https://www.chiefhealthcareexecutive.com/view/the-top-10-health-data-breaches-of-the-first-half-of-2024 "The Top 10 Health Data Breaches of the First Half of 2024"
+[3]: https://www.cisa.gov/K12Cybersecurity "CISA's K-12 Cybersecurity Initiatives"
+[4]: https://thejournal.com/Articles/2024/07/24/Todays-K12-Cybersecurity-Threats-And-How-to-Combat-Them.aspx "Today's K-12 Cybersecurity Threats and How to Combat Them"
+[5]: https://www.cisa.gov/protecting-our-future-cybersecurity-k-12 "Protecting Our Future: Cybersecurity for K-12"
+"
+
