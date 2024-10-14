@@ -1,6 +1,9 @@
 -- Set leader key
 vim.g.mapleader = " "
-
+vim.keymap.set('n', 'gc', '<Nop>', { noremap = true })
+vim.keymap.set('n', 'gcc', '<Nop>', { noremap = true })
+vim.keymap.set('x', 'gc', '<Nop>', { noremap = true })
+vim.keymap.set('o', 'gc', '<Nop>', { noremap = true })
 -- Bootstrap lazy.nvim
 local lazypath = vim.fn.stdpath("data") .. "/lazy/lazy.nvim"
 if not vim.loop.fs_stat(lazypath) then
@@ -13,6 +16,9 @@ vim.opt.rtp:prepend(lazypath)
  vim.opt.rtp:append(vim.fn.stdpath("config") .. "/lua/providers")
 -- Color settings
 vim.o.termguicolors = true
+
+--disable whichkey
+vim.g.which_key_disable_health_check = 1
 
 -- Define safe_require function
 local function safe_require(module)
@@ -41,7 +47,7 @@ if has_openresty then
   vim.env.LUAJIT_LIB = "/opt/openresty/luajit/lib"
 end
 
--- Define the plugin import paths
+-- Modular plugin paths
 local plugin_imports = {
     "plugins.core",
     "plugins.ai",
@@ -54,14 +60,11 @@ local plugin_imports = {
     "plugins.ui",
 }
 
--- Prepare the plugins list
 local plugins = {}
 for _, import in ipairs(plugin_imports) do
     if import == "plugins.core" then
-        -- Load core plugins immediately
         table.insert(plugins, { import = import })
     else
-        -- Load other plugins normally (non-lazy)
         table.insert(plugins, { import = import, lazy = false })
     end
 end
@@ -215,7 +218,7 @@ vim.g.swift_host_prog = "/usr/bin/swift"
 ------------------------------ | Swift | ------------------------------
 
 ------------------------------- | Zig | -------------------------------
-vim.g.zig_host_prog = "/usr/bin/zig"
+vim.g.zig_host_prog = "/usr/local/bin/zig"
 ------------------------------- | Zig | -------------------------------
 
 ----------------- | Jupyter (for IPython Notebook) | -----------------

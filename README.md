@@ -1,4 +1,4 @@
-# Qompass Diver: Your Blazingly Fast Everything Editor
+# Qompass Diver for Neovim
 
 **Qompass Diver** was inspired by the great folks who made [NvChad](https://github.com/NvChad/NvChad). The intent of Diver is to build on the original configuration framework to provide an even more powerful, customizable, and user-friendly experience that bridges the skills gap left by education and industry. Qompass Diver enhances the flexibility of the original project while focusing on AI, cloud integrations, education, and developer productivity.
 
@@ -40,8 +40,92 @@ Qompass Diver builds upon the solid foundation of NvChad, offering the following
 
 ### Install Dependencies with diver.sh
 
-To set up Qompass Diver, you will first need to install the necessary dependencies using the provided `diver.sh` script based on your OS. This script automatically detects your operating system and installs the required tools. 
+To set up Qompass Diver, you will first need to install the necessary dependencies using the provided `diver.sh` script. This script automatically detects your operating system and installs the required tools. 
 
+To run `diver.sh`:
+
+```bash
+#!/usr/bin/env bash
+
+set -e
+
+# Function to detect the operating system
+function detect_os {
+    if [ -f /etc/os-release ]; then
+        . /etc/os-release
+        OS=$ID
+    elif [ "$(uname)" == "Darwin" ]; then
+        OS="macos"
+    else
+        echo "Unsupported OS"
+        exit 1
+    fi
+}
+
+# Install dependencies for macOS
+function install_macos {
+    # Homebrew is required
+    if ! command -v brew &>/dev/null; then
+        echo "Homebrew not found. Installing Homebrew..."
+        /bin/bash -c "$(curl -fsSL https://raw.githubusercontent.com/Homebrew/install/HEAD/install.sh)"
+    fi
+
+    echo -e "Installing dependencies for macOS..."
+    brew install openresty node python ruby rustup jq
+    rustup install stable
+    pip3 install --user jupyter
+}
+
+# Install dependencies for Arch Linux
+function install_arch {
+    echo -e "Installing dependencies for Arch Linux..."
+    sudo pacman -Syu --needed --noconfirm openresty nodejs python ruby rustup jq
+    rustup install stable
+    python -m ensurepip --user
+    pip install --user jupyter
+}
+
+# Install dependencies for Ubuntu
+function install_ubuntu {
+    echo -e "Installing dependencies for Ubuntu/Debian..."
+    sudo apt update
+    sudo apt install -y software-properties-common
+    sudo add-apt-repository -y ppa:openresty/ppa
+    sudo apt update
+    sudo apt install -y openresty nodejs npm python3 python3-pip ruby rustc jq curl
+    curl --proto '=https' --tlsv1.2 -sSf https://sh.rustup.rs | sh -s -- -y
+    pip3 install --user jupyter
+}
+
+# Function to install dependencies based on detected OS
+function install_dependencies {
+    case $OS in
+        "arch")
+            install_arch
+            ;;
+        "ubuntu"|"debian")
+            install_ubuntu
+            ;;
+        "macos")
+            install_macos
+            ;;
+        *)
+            echo "Unsupported operating system: $OS"
+            exit 1
+            ;;
+    esac
+}
+
+# Main script execution
+function main {
+    detect_os
+    install_dependencies
+
+    echo "All dependencies have been installed successfully!"
+}
+
+main
+```
 
 ### Clone the Repository
 After installing the dependencies, you can clone the Qompass Diver repository and set up Neovim:
@@ -60,47 +144,6 @@ nvim
 ```
 Qompass Diver will automatically set up and load the required plugins for a streamlined coding experience whether you're new or a seasoned pro. 
 
-And unlike other folks in the AI space, we will NEVER collect data on your use for training any of our models or solutions.
+And unlike other folks in the AI space, will never collect data on your use. 
 
 
-## Dual-License Notice
-This repository and all applications within it are dual-licensed under the terms of the [Qompass Commercial Distribution Agreement (CDA)](LICENSE) and [GNU Affero General Public License v3.0 (AGPL-3.0)](LICENSE-AGPL) licenses.
-
-## What a Dual-License means
-
-### Protection for Vulnerable Populations
-
-The dual licensing aims to address the cybersecurity gap that disproportionately affects underserved populations. As highlighted by recent attacks[^1], low-income residents, seniors, and foreign language speakers face higher-than-average risks of being victims of cyber attacks. By offering both open-source and commercial licensing options, we encourage the development of cybersecurity solutions that can reach these vulnerable groups while also enabling sustainable development and support.
-
-### Preventing Malicious Use
-
-The AGPL-3.0 license ensures that any modifications to the software remain open source, preventing bad actors from creating closed-source variants that could be used for exploitation. This is especially crucial given the rising threats to vulnerable communities, including children in educational settings. The attack on Minneapolis Public Schools, which resulted in the leak of 300,000 files and a $1 million ransom demand, highlights the importance of transparency and security[^6]).
-
-### Addressing Cybersecurity in Critical Sectors
-
-The commercial license option allows for tailored solutions in critical sectors such as healthcare, which has seen significant impacts from cyberattacks. For example, the recent Change Healthcare attack[^2] affected millions of Americans and caused widespread disruption for hospitals and other providers.
-
-### Supporting Cybersecurity Awareness
-
-The dual licensing model supports initiatives like theCybersecurity and Infrastructure Security Agency (CISA) efforts to improve cybersecurity awareness[^3] in "target rich" sectors, including K-12 education. By allowing both open-source and commercial use, we aim to facilitate the development of tools that support these critical awareness and protection efforts.
-
-### Bridging the Digital Divide
-
-The unfortunate reality is that a number of individuals and organizations have gone into a frenzy in every facet of our daily lives[^4]. These unfortunate folks identify themselves with their talk of "10X" returns and building towards Artificial General Intelligence aka "AGI". Our dual licensing approach aims to acknkowledge this deeply concerning predatory paradigm witih clear eyes while still doing operating to bring the best parts of the open-source community with our services and solutions.
-
-### Recent Cybersecurity Attacks
-
-Recent attacks underscore the importance of robust cybersecurity measures:
-
-- The Change Healthcare cyberattack in February 2024[^2] affected millions of Americans and caused significant disruption to healthcare providers.
-- The White House and Congress jointly designated October as Cybersecurity Awareness Month[^5]. This designation comes with over 100 actions that align the Federal government and public/private sector partners are taking to help every man, woman, and child to safely navigate the age of AI. 
-### Conclusion
-
-By offering both open-source and commercial licensing options, we strive to create a balance that promotes innovation and accessibility while also providing the necessary resources and flexibility to address the complex cybersecurity challenges faced by vulnerable populations and critical infrastructure sectors.
-
-[^1]: [International Counter Ransomware Initiative 2024 Joint Statement](https://www.whitehouse.gov/briefing-room/statements-releases/2024/10/02/international-counter-ransomware-initiative-2024-joint-statement/)
-[^2]: [The Top 10 Health Data Breaches of the First Half of 2024](https://www.chiefhealthcareexecutive.com/view/the-top-10-health-data-breaches-of-the-first-half-of-2024)
-[^3]: [CISA's K-12 Cybersecurity Initiatives](https://www.cisa.gov/K12Cybersecurity)
-[^4]: [Federal Trade Commission Operation AI Comply: continuing the crackdown on overpromises and AI-related lies](https://www.ftc.gov/business-guidance/blog/2024/09/operation-ai-comply-continuing-crackdown-overpromises-ai-related-lies)
-[^5]: [A Proclamation on Cybersecurity Awareness Month, 2024 ](https://www.whitehouse.gov/briefing-room/presidential-actions/2024/09/30/a-proclamation-on-cybersecurity-awareness-month-2024/)
-[^6]: [Minneapolis school district says data breach affected more than 100,000 people](https://therecord.media/minneapolis-schools-say-data-breach-affected-100000/)

@@ -1,6 +1,6 @@
 return {
     "mfussenegger/nvim-dap",
-    lazy = true,
+    lazy = false,
     config = function() end,
 }
 

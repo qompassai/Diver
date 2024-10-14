@@ -1,7 +1,7 @@
 return {
   {
     "hrsh7th/nvim-cmp",
-    lazy = true,
+    lazy = false,
     event = "InsertEnter",
     dependencies = {
       {
@@ -32,17 +32,14 @@ return {
       },
       {
         "saadparwaiz1/cmp_luasnip",
-        lazy = true,
         event = "InsertEnter",
       },
       {
         "hrsh7th/cmp-nvim-lua",
-        lazy = true,
         event = "InsertEnter",
       },
       {
         "hrsh7th/cmp-nvim-lsp",
-        lazy = true,
         event = "InsertEnter",
       },
       {
@@ -200,7 +197,6 @@ return {
         },
       })
 
-      -- Load snippets from friendly snippets and custom paths
       require("luasnip.loaders.from_vscode").lazy_load()
       require("luasnip.loaders.from_vscode").lazy_load({ paths = { vim.fn.stdpath("config") .. "/snips" } })
       luasnip.filetype_extend("quarto", { "markdown" })

@@ -4,13 +4,13 @@ return
     lazy = false,
     cmd = { "Gen" },
     keys = {
-      { "<leader>g", ":Gen<CR>", desc = "Generate with Gen.nvim" }, -- Lazy load on keybinding
+      { "<leader>qr", ":Qompass Rose<CR>", desc = "" },
     },
     opts = {
       model = "phi3.5",
       display_mode = "float",
       show_prompt = false,
-      show_model = false,
+      show_model = true,
       no_auto_close = false,
     },
     config = function(_, opts)

@@ -1,10 +1,9 @@
 return
 {
         "williamboman/mason.nvim",
-        lazy = true,
+        lazy = false,
         cmd = { "Mason", "MasonInstall", "MasonInstallAll", "MasonUpdate" },
         opts = function()
             return require "configs.mason"
         end,
-        lazy = true,
     }

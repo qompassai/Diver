@@ -19,7 +19,6 @@ function preview_lualine_theme_with_telescope()
       local actions = require('telescope.actions')
       local action_state = require('telescope.actions.state')
 
-      -- Apply the theme preview when moving through options
       map('i', '<CR>', function()
         actions.close(prompt_bufnr)
         local selection = action_state.get_selected_entry()
@@ -33,7 +32,6 @@ function preview_lualine_theme_with_telescope()
         end
       end)
 
-      -- Apply the theme immediately while navigating with Telescope
       map('i', '<Down>', function()
         actions.move_selection_next(prompt_bufnr)
         local selection = action_state.get_selected_entry()
@@ -63,14 +61,12 @@ function preview_lualine_theme_with_telescope()
   }):find()
 end
 
--- Plugin configuration for lualine
 return {
   {
     "nvim-lualine/lualine.nvim",
     lazy = false,
     requires = { "nvim-tree/nvim-web-devicons", opt = true },
     config = function()
-      -- Custom function to display OS information with appropriate icon
       local function os_data()
         local uname = vim.loop.os_uname().sysname
         if uname:match("Linux") then
@@ -105,7 +101,7 @@ return {
         return ''
       end
 
-      vim.api.nvim_set_keymap('n', '<leader>cb', ':change bar color()<CR>', { noremap = true, silent = true })
+      vim.api.nvim_set_keymap('n', '<leader>cb', ':Change Bar color  ()<CR>', { noremap = true, silent = true })
 
       require('lualine').setup {
         options = {
@@ -146,12 +142,20 @@ return {
                 hint = ' ',
               },
               colored = true,
-              update_in_insert = false,
+              update_in_insert = true,
               always_visible = true,
             }
           },
           lualine_c = { 'filename', { 'lsp_progress' } },
-          lualine_x = { 'encoding', 'fileformat', 'filetype', lsp_status },
+          lualine_x = {
+  'encoding',
+  'fileformat',
+  'filetype',
+  lsp_status,
+  { 'filesize', fmt = function(str) return str:gsub(' ', '') end },
+  { 'searchcount', maxcount = 999, timeout = 500 },
+  { 'selectioncount' },
+},
           lualine_y = { 'progress' },
           lualine_z = { 'location', os_data, datetime }
         },

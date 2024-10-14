@@ -1,67 +1,88 @@
-local map = vim.keymap.set
+local M = {}
 
--- Jupyter Notebook Mappings
-map("n", "<leader>jc", "<cmd>JupyterConnect<CR>", { desc = "Connect to Jupyter kernel" })
-map("n", "<leader>jr", "<cmd>JupyterRunCell<CR>", { desc = "Run current Jupyter cell" })
-map("n", "<leader>ja", "<cmd>JupyterRunAll<CR>", { desc = "Run all Jupyter cells" })
-map("n", "<leader>jn", "<cmd>JupyterNewCell<CR>", { desc = "Create new cell below" })
-map("n", "<leader>jb", "<cmd>JupyterNewCellAbove<CR>", { desc = "Create new cell above" })
-map("n", "<leader>jd", "<cmd>JupyterDeleteCell<CR>", { desc = "Delete current cell" })
-map("n", "<leader>js", "<cmd>JupyterSplitCell<CR>", { desc = "Split current cell" })
-map("n", "<leader>jm", "<cmd>JupyterMergeCellBelow<CR>", { desc = "Merge cell with cell below" })
-map("n", "<leader>jt", "<cmd>JupyterToggleCellType<CR>", { desc = "Toggle cell type (code/markdown)" })
-map("n", "<leader>jp", "<cmd>JupyterTogglePythonRepl<CR>", { desc = "Toggle Python REPL" })
-map("n", "<leader>jv", "<cmd>JupyterViewOutput<CR>", { desc = "View output of last executed cell" })
-map("n", "<leader>jh", "<cmd>JupyterCommandHistory<CR>", { desc = "Show Jupyter command history" })
-map("n", "<leader>ji", "<cmd>JupyterInsertImports<CR>", { desc = "Insert cell with common Python imports" })
-map("n", "<leader>jf", "<cmd>JupyterFormatNotebook<CR>", { desc = "Format entire notebook" })
+M.setup = function()
+  local map = vim.keymap.set
 
--- Jupyter Notebook Mappings
-map("n", "<leader>jx", ":Jupytext<CR>", { desc = "Convert between notebook and script" })
+  -- Function to check if Jupyter is installed
+  local function is_jupyter_available()
+    local ok, _ = pcall(require, "jupyter")
+    return ok
+  end
 
--- Jupyter connection and file operations
-map("n", "<leader>jc", ":JupyterConnect<CR>", { desc = "Connect to Jupyter kernel" })
-map("n", "<leader>jr", ":JupyterRunFile<CR>", { desc = "Run current file in Jupyter" })
-map("n", "<leader>ji", ":PythonImportThisFile<CR>", { desc = "Import current file in Jupyter" })
-map("n", "<leader>jd", ":JupyterCd %:p:h<CR>", { desc = "Change Jupyter working directory to current file" })
+  -- Setup Jupyter mappings if available
+  if is_jupyter_available() then
+-- Nerd Translate Legend:
+-- 'Jupyter': An interactive computing environment populare in data science.
+-- 'Kernel': The computational engine that executes code in a Jupyter notebook.
+-- 'Cell': A container for code, text, or other content in a Jupyter notebook.
+-- 'REPL': Read-Eval-Print Loop, an interactive programming environment that takes single user inputs.
 
--- Cell operations
-map("n", "<leader>jn", ":JupyterNewCell<CR>", { desc = "Create new cell below" })
-map("n", "<leader>jb", ":JupyterNewCellAbove<CR>", { desc = "Create new cell above" })
-map("n", "<leader>jD", ":JupyterDeleteCell<CR>", { desc = "Delete current cell" })
-map("n", "<leader>js", ":JupyterSplitCell<CR>", { desc = "Split current cell" })
-map("n", "<leader>jm", ":JupyterMergeCellBelow<CR>", { desc = "Merge cell with cell below" })
-map("n", "<leader>jt", ":JupyterToggleCellType<CR>", { desc = "Toggle cell type (code/markdown)" })
+    -- Jupyter Mappings: Control your Jupyter notebooks directly from Neovim
 
--- Cell execution
-map("n", "<leader>je", ":JupyterSendCell<CR>", { desc = "Execute current cell" })
-map("n", "<leader>jE", ":JupyterCellExecuteCellJump<CR>", { desc = "Execute current cell and jump to next" })
-map("n", "<leader>ja", ":JupyterRunAllCells<CR>", { desc = "Run all cells" })
-map("n", "<leader>jA", ":JupyterRunAllCellsAbove<CR>", { desc = "Run all cells above" })
-map("n", "<leader>jB", ":JupyterRunAllhellsBelow<CR>", { desc = "Run all cells below" })
+    -- Connect to Jupyter kernel
+    map("n", "<leader>jc", "<cmd>JupyterConnect<CR>", { desc = "Jupyter connect to kernel" })
+    -- In normal mode, press 'Space' + 'j' + 'c' to connect to a Jupyter kernel
 
--- Output and REPL
-map("n", "<leader>jp", ":JupyterTogglePythonRepl<CR>", { desc = "Toggle Python REPL" })
-map("n", "<leader>jv", ":JupyterViewOutput<CR>", { desc = "View output of last executed cell" })
-map("n", "<leader>jh", ":JupyterCommandHistory<CR>", { desc = "Show Jupyter command history" })
-map("n", "<leader>jC", ":JupyterCellClear<CR>", { desc = "Clear current cell output" })
+    -- Run current Jupyter cell
+    map("n", "<leader>jr", "<cmd>JupyterRunCell<CR>", { desc = "Jupyter run current cell" })
+    -- In normal mode, press 'Space' + 'j' + 'r' to execute the current Jupyter cell
 
--- Navigation
-map("n", "[c", ":JupyterCellPrev<CR>", { desc = "Go to previous cell" })
-map("n", "]c", ":JupyterCellNext<CR>", { desc = "Go to next cell" })
+    -- Run all Jupyter cells
+    map("n", "<leader>ja", "<cmd>JupyterRunAll<CR>", { desc = "Jupyter run all cells" })
+    -- In normal mode, press 'Space' + 'j' + 'a' to run all cells in the notebook
 
--- ToggleTerm for Jupyter Lab
-map(
-  "n",
-  "<leader>jl",
-  "<cmd>ToggleTerm direction=float<CR>jupyter lab<CR>",
-  { desc = "Open Jupyter Lab in floating terminal" }
-)
+    -- Create new Jupyter cell below
+    map("n", "<leader>jn", "<cmd>JupyterNewCell<CR>", { desc = "Create new cell below" })
+    -- In normal mode, press 'Space' + 'j' + 'n' to create a new cell below the current one
 
--- Additional operations
-map("n", "<leader>jf", ":JupyterFormatNotebook<CR>", { desc = "Format entire notebook" })
-map("n", "<leader>jU", ":JupyterUpdateShell<CR>", { desc = "Update Jupyter shell" })
+    -- Create new Jupyter cell above
+    map("n", "<leader>jb", "<cmd>JupyterNewCellAbove<CR>", { desc = "Create new cell above" })
+    -- In normal mode, press 'Space' + 'j' + 'b' to create a new cell above the current one
 
+    -- Delete current Jupyter cell
+    map("n", "<leader>jd", "<cmd>JupyterDeleteCell<CR>", { desc = "Delete current cell" })
+    -- In normal mode, press 'Space' + 'j' + 'd' to delete the current cell
 
-return {}
+    -- Split current Jupyter cell
+    map("n", "<leader>js", "<cmd>JupyterSplitCell<CR>", { desc = "Split current cell" })
+    -- In normal mode, press 'Space' + 'j' + 's' to split the current cell into two
+
+    -- Merge Jupyter cell with cell below
+    map("n", "<leader>jm", "<cmd>JupyterMergeCellBelow<CR>", { desc = "Merge cell with cell below" })
+    -- In normal mode, press 'Space' + 'j' + 'm' to merge the current cell with the one below it
+
+    -- Toggle Jupyter cell type
+    map("n", "<leader>jt", "<cmd>JupyterToggleCellType<CR>", { desc = "Toggle cell type (code/markdown)" })
+    -- In normal mode, press 'Space' + 'j' + 't' to switch the cell type between code and markdown
+
+    -- Toggle Python REPL
+    map("n", "<leader>jp", "<cmd>JupyterTogglePythonRepl<CR>", { desc = "Toggle Python REPL" })
+    -- In normal mode, press 'Space' + 'j' + 'p' to open or close the Python REPL
+
+    -- View output of last executed Jupyter cell
+    map("n", "<leader>jv", "<cmd>JupyterViewOutput<CR>", { desc = "View output of last executed cell" })
+    -- In normal mode, press 'Space' + 'j' + 'v' to see the output of the most recently run cell
+
+    -- Show Jupyter command history
+    map("n", "<leader>jh", "<cmd>JupyterCommandHistory<CR>", { desc = "Show Jupyter command history" })
+    -- In normal mode, press 'Space' + 'j' + 'h' to display a list of previously executed Jupyter commands
+
+    -- Insert cell with common Python imports
+    map("n", "<leader>ji", "<cmd>JupyterInsertImports<CR>", { desc = "Insert cell with common Python imports" })
+    -- In normal mode, press 'Space' + 'j' + 'i' to create a new cell with frequently used Python import statements
+
+    -- Format entire Jupyter notebook
+    map("n", "<leader>jf", "<cmd>JupyterFormatNotebook<CR>", { desc = "Format entire notebook" })
+    -- In normal mode, press 'Space' + 'j' + 'f' to apply formatting to the entire Jupyter notebook
+    -- Toggle Jupyter Lab terminal
+    map("n", "<leader>jl", function()
+      require("toggleterm.terminal").Terminal
+        :new({ cmd = "jupyter lab", direction = "float" })
+        :toggle()
+    end, { desc = "Toggle Jupyter Lab terminal" })
+    -- In normal mode, press 'Space' + 'j' + 'l' to open or close a floating Jupyter Lab terminal
+  end
+end
+
+return M
 

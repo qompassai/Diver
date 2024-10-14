@@ -4,11 +4,11 @@ return {
   {
     "GCBallesteros/jupytext.nvim",
     config = true,
-    lazy = true,
+    lazy = false,
   },
   {
   "kiyoon/jupynium.nvim",
-  lazy = true,
+  lazy = false,
   build = "pip3 install --user . --break-system-packages",
   -- If using conda, use this build command instead:
   -- build = "conda run --no-capture-output -n jupynium pip install .",

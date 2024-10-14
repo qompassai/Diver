@@ -11,41 +11,49 @@ return {
         ["cmp.entry.get_documentation"] = true,
       },
       hover = {
-        enabled = true,  -- Enable enhanced hover UI with Treesitter support
+        enabled = false,  -- Enable enhanced hover UI with Treesitter support
       },
       signature = {
-        enabled = true,  -- Enable enhanced signature help using Treesitter
+        enabled = false,  -- Enable enhanced signature help using Treesitter
         auto_open = {
-          enabled = true,
-          trigger = true, -- Automatically show signature help when typing a trigger character from the LSP
+          enabled = false,
+          trigger = false, -- Automatically show signature help when typing a trigger character from the LSP
           luasnip = true, -- Open signature help when jumping to Luasnip insert nodes
           throttle = 50,  -- Debounce LSP signature help request by 50ms
         },
         view = nil,  -- When nil, use defaults from documentation
-        opts = {},   -- Merged with defaults from documentation
+        routes = {
+      {
+        filter = {
+          event = "msg_show",
+          kind = "",
+          find = "which%-key",
+        },
+        opts = { skip = true },
       },
     },
-    -- You can enable a preset for easier configuration
+  },
+    },
     presets = {
-      bottom_search = true, -- Use a classic bottom command line for search
-      command_palette = true, -- Position the command and popupmenu together
-      long_message_to_split = true, -- Long messages will be sent to a split
-      inc_rename = true, -- Enable an input dialog for incremental rename (from inc-rename.nvim)
-      lsp_doc_border = true, -- Add a border to hover docs and signature help
+      bottom_search = true,
+      command_palette = true,
+      long_message_to_split = true,
+      inc_rename = true,
+      lsp_doc_border = true,
     },
     views = {
       cmdline_popup = {
         relative = "editor", -- Position relative to the editor
         position = {
-          row = "50%", -- Center row
-          col = "50%", -- Center column
+          row = "50%",
+          col = "50%",
         },
         size = {
-          width = 60, -- Adjust width as needed
-          height = "auto", -- Automatically determine height
+          width = 60,
+          height = "auto",
         },
         border = {
-          style = "rounded", -- Style of the border
+          style = "rounded",
           padding = { 0, 1 },
         },
         win_options = {
@@ -66,7 +74,6 @@ return {
   config = function(_, opts)
     require("noice").setup(opts)
     require("notify").setup({
-  -- other options...
   on_open = function(win)
     vim.api.nvim_win_set_option(win, "winhl", "Normal:MyNotifyBackground")
   end,

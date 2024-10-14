@@ -2,7 +2,6 @@ local registry = require('mason-registry')
 
 local M = {}
 
----Returns a map of language (lowercased) to one or more corresponding Mason package names.
 ---@return table<string, string[]>
 function M.get_language_map()
 	if not registry.get_all_package_specs then

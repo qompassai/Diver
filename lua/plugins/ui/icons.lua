@@ -18,7 +18,6 @@ return {
             cterm_color = "4",
             name = "Lua"
           },
-          -- Adding specific icons for plugins in different directories
           nvim_be_good = {
             icon = "",
             color = "#f9dc5c",
@@ -61,14 +60,12 @@ return {
             cterm_color = "74",
             name = "Toggle"
           },
-          -- Add more icons as per your plugin needs
         },
         -- Default icon to use when no other icon is specified
         default = true,
         -- Option to highlight specific file icons with their respective colors
         color_icons = true,
       }
-      -- Additional plugin-specific settings
       vim.cmd [[
         augroup DevIconsRefresh
           autocmd!
@@ -79,7 +76,7 @@ return {
   },
   {
     "yamatsum/nvim-nonicons",
-    lazy = false,
+    lazy = true,
     config = function()
       require("nvim-nonicons").setup {
         default = true,
@@ -98,7 +95,7 @@ return {
   },
   {
     "echasnovski/mini.nvim",
-    version = false, 
+    version = false,
     lazy = false,
     config = function()
       require("mini.icons").setup({

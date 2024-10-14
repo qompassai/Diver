@@ -5,7 +5,13 @@ M.setup = function()
   local mason_lspconfig = require "mason-lspconfig"
   local on_attach = require("plugins.configs.lspconfig").on_attach
   local capabilities = require("plugins.configs.lspconfig").capabilities
-  require("mason").setup()  -- Make sure mason is set up first
+  require("mason").setup {
+    PATH = "prepend",
+    ui = {
+      border = "rounded",
+    },
+  }
+
   mason_lspconfig.setup {
     ensure_installed = {
       "lua_ls",
@@ -75,4 +81,3 @@ M.setup = function()
 end
 
 return M
-

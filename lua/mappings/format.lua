@@ -11,7 +11,7 @@ else
 end
 
 -- Format mapping for Lua files
-map("n", "<leader>fm", function()
+map("n", "<leader>mf", function()
     local status, conform = pcall(require, "conform")
     if not status then
         vim.notify("Error loading conform: " .. conform, vim.log.levels.ERROR)
