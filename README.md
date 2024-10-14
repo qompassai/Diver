@@ -99,10 +99,8 @@ Recent attacks underscore the importance of robust cybersecurity measures:
 
 By offering both open-source and commercial licensing options, we strive to create a balance that promotes innovation and accessibility while also providing the necessary resources and flexibility to address the complex cybersecurity challenges faced by vulnerable populations and critical infrastructure sectors.
 
-[^1]: https://www.whitehouse.gov/briefing-room/statements-releases/2024/10/02/international-counter-ransomware-initiative-2024-joint-statement/ "International Counter Ransomware Initiative 2024 Joint Statement"
-[^2]: https://www.chiefhealthcareexecutive.com/view/the-top-10-health-data-breaches-of-the-first-half-of-2024 "The Top 10 Health Data Breaches of the First Half of 2024"
-[^3]: https://www.cisa.gov/K12Cybersecurity "CISA's K-12 Cybersecurity Initiatives"
-[^4]: https://thejournal.com/Articles/2024/07/24/Todays-K12-Cybersecurity-Threats-And-How-to-Combat-Them.aspx "Today's K-12 Cybersecurity Threats and How to Combat Them"
-[^5]: https://www.cisa.gov/protecting-our-future-cybersecurity-k-12 "Protecting Our Future: Cybersecurity for K-12"
-"
-
+[^1]: [International Counter Ransomware Initiative 2024 Joint Statement](https://www.whitehouse.gov/briefing-room/statements-releases/2024/10/02/international-counter-ransomware-initiative-2024-joint-statement/)
+[^2]: [The Top 10 Health Data Breaches of the First Half of 2024](https://www.chiefhealthcareexecutive.com/view/the-top-10-health-data-breaches-of-the-first-half-of-2024)
+[^3]: [CISA's K-12 Cybersecurity Initiatives](https://www.cisa.gov/K12Cybersecurity)
+[^4]: [Today's K-12 Cybersecurity Threats and How to Combat Them](https://thejournal.com/Articles/2024/07/24/Todays-K12-Cybersecurity-Threats-And-How-to-Combat-Them.aspx)
+[^5]: [Protecting Our Future: Cybersecurity for K-12](https://www.cisa.gov/protecting-our-future-cybersecurity-k-12)
