@@ -16,11 +16,9 @@ M.setup = function()
     ensure_installed = {
       "lua_ls",
       "pyright",
-      "tsserver",
+      "ts_ls",
       "neocmakelsp",
       "gitlab_ci_lint",
-      "rust_analyzer",
-      -- Add more LSP servers as needed
     },
     automatic_installation = true,
   }
@@ -30,6 +28,7 @@ M.setup = function()
       lspconfig[server_name].setup {
         on_attach = on_attach,
         capabilities = capabilities,
+        autostart = false,
       }
     end,
 
@@ -55,28 +54,6 @@ M.setup = function()
         },
       }
     end,
-
-    ["rust_analyzer"] = function()
-      lspconfig.rust_analyzer.setup {
-        on_attach = on_attach,
-        capabilities = capabilities,
-        settings = {
-          ["rust-analyzer"] = {
-            cargo = {
-              allFeatures = true,
-            },
-            checkOnSave = {
-              command = "clippy",
-            },
-            diagnostics = {
-              enable = true,
-            },
-          },
-        },
-      }
-    end,
-
-    -- Add more server-specific configurations as needed
   }
 end
 
