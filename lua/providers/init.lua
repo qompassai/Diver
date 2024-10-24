@@ -1,14 +1,14 @@
--- lua/avante/init.lua
-
 local api, fn = vim.api, vim.fn
 
-local Config = require("avante.config")
-local Utils = require("avante.utils")
+local Config = require "avante.config"
+local Utils = require "avante.utils"
 
 local DressingConfig = {
   conceal_char = "*",
   filetype = "DressingInput",
-  close_window = function() require("dressing.input").close() end,
+  close_window = function()
+    require("dressing.input").close()
+  end,
 }
 local DressingState = { winid = nil, input_winid = nil, input_bufnr = nil }
 
@@ -104,13 +104,17 @@ E.cache = {}
 ---@return string | nil
 E.parse_envvar = function(Opts)
   local api_key_name = Opts.api_key_name
-  if api_key_name == nil then error("Requires api_key_name") end
+  if api_key_name == nil then
+    error "Requires api_key_name"
+  end
 
   local cache_key = type(api_key_name) == "table" and table.concat(api_key_name, "__") or api_key_name
 
-  if E.cache[cache_key] ~= nil then return E.cache[cache_key] end
+  if E.cache[cache_key] ~= nil then
+    return E.cache[cache_key]
+  end
 
-  local cmd = type(api_key_name) == "table" and api_key_name or api_key_name:match("^cmd:(.*)")
+  local cmd = type(api_key_name) == "table" and api_key_name or api_key_name:match "^cmd:(.*)"
 
   local key = nil
 
@@ -125,7 +129,9 @@ E.parse_envvar = function(Opts)
       end
     end
 
-    if type(cmd) == "string" then cmd = vim.split(cmd, " ", { trimempty = true }) end
+    if type(cmd) == "string" then
+      cmd = vim.split(cmd, " ", { trimempty = true })
+    end
 
     local exit_codes = { 0 }
     local ok, job_or_err = pcall(vim.system, cmd, { text = true }, function(result)
@@ -157,8 +163,6 @@ E.parse_envvar = function(Opts)
   return key
 end
 
---- initialize the environment variable for current neovim session.
---- This will only run once and spawn a UI for users to input the envvar.
 ---@param opts {refresh: boolean, provider: AvanteProviderFunctor}
 ---@private
 E.setup = function(opts)
@@ -171,7 +175,9 @@ E.setup = function(opts)
 
   opts.provider.setup()
 
-  if var == M.AVANTE_INTERNAL_KEY or type(var) == "table" or var:match("^cmd:(.*)") then return end
+  if var == M.AVANTE_INTERNAL_KEY or type(var) == "table" or var:match "^cmd:(.*)" then
+    return
+  end
 
   local refresh = opts.refresh or false
 
@@ -218,24 +224,23 @@ E.setup = function(opts)
         end
 
         local prompt_length = api.nvim_strwidth(fn.prompt_getprompt(DressingState.input_bufnr))
-        api.nvim_buf_call(
-          DressingState.input_bufnr,
-          function()
-            vim.cmd(string.format(
-              [[
+        api.nvim_buf_call(DressingState.input_bufnr, function()
+          vim.cmd(string.format(
+            [[
       syn region SecretValue start=/^/ms=s+%s end=/$/ contains=SecretChar
       syn match SecretChar /./ contained conceal %s
       ]],
-              prompt_length,
-              "cchar=*"
-            ))
-          end
-        )
+            prompt_length,
+            "cchar=*"
+          ))
+        end)
       end
     end, 200)
   end
 
-  if refresh then return mount_dressing_buffer() end
+  if refresh then
+    return mount_dressing_buffer()
+  end
 
   api.nvim_create_autocmd("User", {
     pattern = E.REQUEST_LOGIN_PATTERN,
@@ -259,14 +264,13 @@ M = setmetatable(M, {
   __index = function(t, k)
     local Opts = M.get_config(k)
 
-     if Config.vendors and Config.vendors[k] ~= nil then
+    if Config.vendors and Config.vendors[k] ~= nil then
       Opts.parse_response = Opts.parse_response_data
       t[k] = Opts
     else
       local ok, module = pcall(require, "avante.providers." .. k)
       if not ok then
         if k == "ollama" then
-          -- Provide a fallback for ollama if it's not found or if it's a local provider
           module = {
             endpoint = "http://localhost:11434/api/chat",
             model = "phi3.5:latest",
@@ -285,24 +289,34 @@ M = setmetatable(M, {
     end
 
     t[k].parse_api_key = function()
-      if k == "ollama" then return nil end
+      if k == "ollama" then
+        return nil
+      end
       return E.parse_envvar(t[k])
     end
 
-    if t[k].tokenizer_id == nil then t[k].tokenizer_id = "gpt-4o" end
+    if t[k].tokenizer_id == nil then
+      t[k].tokenizer_id = "gpt-4o"
+    end
 
-    if t[k].use_xml_format == nil then t[k].use_xml_format = false end
+    if t[k].use_xml_format == nil then
+      t[k].use_xml_format = false
+    end
 
     if t[k].has == nil then
       t[k].has = function()
-        if k == "ollama" then return true end
+        if k == "ollama" then
+          return true
+        end
         return E.parse_envvar(t[k]) ~= nil
       end
     end
 
     if t[k].setup == nil then
       t[k].setup = function()
-        if not E.is_local(k) then t[k].parse_api_key() end
+        if not E.is_local(k) then
+          t[k].parse_api_key()
+        end
         require("avante.tokenizers").setup(t[k].tokenizer_id)
       end
     end
@@ -316,19 +330,19 @@ M.setup = function()
 
   local provider = M[Config.provider]
   local auto_suggestions_provider = M[Config.auto_suggestions_provider]
-  E.setup({ provider = provider })
+  E.setup { provider = provider }
 
   if auto_suggestions_provider and auto_suggestions_provider ~= provider then
-    E.setup({ provider = auto_suggestions_provider })
+    E.setup { provider = auto_suggestions_provider }
   end
 end
 
 ---@param provider Provider
 function M.refresh(provider)
-  require("avante.config").override({ provider = provider })
+  require("avante.config").override { provider = provider }
 
   local p = M[Config.provider]
-  E.setup({ provider = p, refresh = true })
+  E.setup { provider = p, refresh = true }
   Utils.info("Switch to provider: " .. provider, { once = true, title = "Avante" })
 end
 
@@ -347,10 +361,15 @@ M.parse_config = function(opts)
   end
 
   return s1,
-    vim.iter(s2):filter(function(_, v) return type(v) ~= "function" end):fold({}, function(acc, k, v)
-      acc[k] = v
-      return acc
-    end)
+    vim
+      .iter(s2)
+      :filter(function(_, v)
+        return type(v) ~= "function"
+      end)
+      :fold({}, function(acc, k, v)
+        acc[k] = v
+        return acc
+      end)
 end
 
 ---@private

@@ -1,6 +1,6 @@
 return {
   "frankroeder/parrot.nvim",
-  lazy = true,
+  lazy = false,
   dependencies = { "ibhagwan/fzf-lua", "nvim-lua/plenary.nvim", "rcarriga/nvim-notify" },
   config = function()
     local function get_pass_entry(entry_name)
@@ -31,7 +31,6 @@ return {
         pplx = {
           api_key = get_pass_entry "perplexity",
         },
-        -- provide an empty list to make provider available (no API key required)
         ollama = {},
         openai = {
           api_key = get_pass_entry "openai/primo",

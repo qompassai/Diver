@@ -36,6 +36,26 @@ return {
     end,
     config = function()
       require("dbee").setup()
+      databases = {
+        {
+          name = "local_psql",
+          type = "postgresql",
+          user = "your_username", -- Replace with your PostgreSQL username
+          password = "your_password", -- Replace with your PostgreSQL password
+          host = "localhost", -- Use "localhost" if it's local
+          port = 5432, -- Default PostgreSQL port
+          database = "your_db_name", -- Replace with your PostgreSQL database name
+        },
+        {
+          name = "other_db", -- Another database
+          type = "postgresql",
+          user = "your_other_username",
+          password = "your_other_password",
+          host = "other_host",
+          port = 5432,
+          database = "other_db_name",
+        },
+      }
     end,
   },
 }
