@@ -48,7 +48,7 @@ Qompass Diver builds upon the solid foundation of NvChad, offering the following
 
 To set up Qompass Diver, you will first need to install the necessary dependencies using the provided `mac/arch/ubuntu/windowsdive.sh` script to simplify getting your system ready to dive.
 
-- MacOS users can get the necessary core packages via `macosdive.sh` after cloning Diver locally
+- MacOS divers can get the necessary core packages via `macosdive.sh` after cloning Diver locally
 
 ```sh
 chmod +x macosdive.sh
