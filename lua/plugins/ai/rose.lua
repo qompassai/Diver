@@ -1,6 +1,6 @@
 return {
   "qompassai/rose.nvim",
-  lazy = true,
+  lazy = false,
   cmd = { "Rose" },
   keys = {
     { "<leader>qr", ":Rose<CR>", desc = "[q]ompass [r]ose" },
@@ -13,7 +13,7 @@ return {
     no_auto_close = false,
   },
   config = function(_, opts)
-    require("gen").setup(opts)
+    require("rose").setup(opts)
     pcall(io.popen, "ollama serve > /dev/null 2>&1 &")
   end,
 }
