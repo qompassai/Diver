@@ -6,7 +6,7 @@ return {
     { "<leader>qr", ":Rose<CR>", desc = "[q]ompass [r]ose" },
   },
   opts = {
-    model = "llama3.2:2b",
+    model = "llama3.2:3b",
     display_mode = "float",
     show_prompt = true,
     show_model = true,
