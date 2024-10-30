@@ -3,12 +3,12 @@ return {
   lazy = true,
   cmd = { "Rose" },
   keys = {
-    { "<leader>qr", ":Rose<CR>", desc = "" },
+    { "<leader>qr", ":Rose<CR>", desc = "[q]ompass [r]ose" },
   },
   opts = {
-    model = "phi3.5",
+    model = "llama3.2:2b",
     display_mode = "float",
-    show_prompt = false,
+    show_prompt = true,
     show_model = true,
     no_auto_close = false,
   },

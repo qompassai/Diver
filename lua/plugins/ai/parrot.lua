@@ -22,9 +22,9 @@ return {
         -- gemini = {
         --   api_key = get_pass_entry("apis/gemini_api_key"),
         -- },
-        -- groq = {
-        --  api_key = get_pass_entry "apis/groq_api_key",
-        -- },
+        groq = {
+          api_key = get_pass_entry "groq/primo",
+        },
         -- mistral = {
         --   api_key = get_pass_entry("apis/mistral_api_key"),
         -- },
@@ -35,12 +35,12 @@ return {
         openai = {
           api_key = get_pass_entry "openai/primo",
         },
-        -- github = {
-        --   api_key = get_pass_entry("apis/github_token"),
-        -- },
-        -- nvidia = {
-        --   api_key = get_pass_entry("apis/nvidia_api_key"),
-        -- },
+        github = {
+          api_key = get_pass_entry "gh/token",
+        },
+        nvidia = {
+          api_key = get_pass_entry "ngcapi",
+        },
         -- xai = {
         --   api_key = get_pass_entry("apis/xai_api_key"),
         -- },

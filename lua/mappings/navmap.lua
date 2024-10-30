@@ -1,6 +1,6 @@
 local navmap = {}
 
-local map = vim.api.nvim_set_keymap
+local map = vim.keymap.set
 local opts = { noremap = true, silent = true }
 
 -- Nerd Translate Legend:
@@ -43,6 +43,42 @@ map("n", "<leader>op", ":Oil preview<CR>", vim.tbl_extend("force", opts, { desc 
 map("n", "<leader>oc", ":Oil close<CR>", vim.tbl_extend("force", opts, { desc = "Oil Close Buffer" }))
 -- In normal mode, press 'Space' + 'o' + 'c' to close the Oil buffer.
 
+-- Indent Blankline (IBL) Mappings
+
+-- Toggle Indent Guides Visibility
+map("n", "<leader>lg", function()
+  require("ibl").toggle()
+end, vim.tbl_extend("force", opts, { desc = "IB[l] toggle indent [g]uides" }))
+
+-- Toggle Scope Highlighting
+map("n", "<leader>ls", function()
+  require("ibl").toggle_scope_highlighting()
+end, vim.tbl_extend("force", opts, { desc = "IB[l] toggle [s]cope highlighting" }))
+
+-- Refresh Indent Guides
+map("n", "<leader>lr", function()
+  require("ibl").refresh()
+end, vim.tbl_extend("force", opts, { desc = "IB[l] [r]efresh Indent Guides" }))
+
+-- Show Indent Context (Replace or Remove the Invalid Call)
+map("n", "<leader>lc", function()
+  require("ibl").refresh() -- Replace `setup_scope()` with something like `refresh()`
+end, vim.tbl_extend("force", opts, { desc = "IB[l] Refresh Indent Context" }))
+
+-- Toggle Indent Blankline Visibility
+map("n", "<leader>li", function()
+  local current_value = vim.g.indent_blankline_enabled or false
+  vim.g.indent_blankline_enabled = not current_value
+
+  if vim.g.indent_blankline_enabled then
+    require("ibl").setup() -- Set up the indent guides when enabling
+    require("ibl").refresh() -- Refresh to apply changes
+  else
+    -- Disable by setting an empty configuration or disabling the char
+    require("ibl").setup { indent = { char = "" } } -- Set char to empty to visually disable
+    require("ibl").refresh()
+  end
+end, vim.tbl_extend("force", opts, { desc = "IB[l] Toggle Indent Blankline visibility" }))
 -------------- | Treesitter (TS) Mappings | ---------------------
 
 -- Expand Selection Incrementally (Treesitter)
@@ -137,7 +173,7 @@ map(
 -- In normal mode, press 'Space' + 's' + 'p' to swap the current parameter with the previous one.
 
 -- Toggle Code Folding (Treesitter)
-map("n", "<leader>cf", ":TSToggleFold<CR>", vim.tbl_extend("force", opts, { desc = "TS Toggle [c]ode [f]olding" }))
+map("n", "<leader>cf", ":TSToggleFold<CR>", vim.tbl_extend("force", opts, { desc = "TS Toggle [c]ode Folding" }))
 -- In normal mode, press 'Space' + 'c' + 'f' to fold or unfold code blocks.
 
 return navmap
