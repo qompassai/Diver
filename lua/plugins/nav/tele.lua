@@ -3,6 +3,7 @@ return {
   lazy = false,
   dependencies = {
     "nvim-lua/plenary.nvim",
+    "nvim-telescope/telescope-media-files.nvim",
     "jvgrootveld/telescope-zoxide",
     "nvim-telescope/telescope-ui-select.nvim",
     "folke/tokyonight.nvim",

@@ -1,11 +1,13 @@
 return {
   "jalvesaq/zotcite",
-  lazy = false,
+  lazy = true,
   dependencies = {
     "nvim-treesitter/nvim-treesitter",
     "nvim-telescope/telescope.nvim",
   },
   config = function()
-    require("zotcite").setup {}
+    require("zotcite").setup {
+      python_path = "/usr/bin/python3",
+    }
   end,
 }

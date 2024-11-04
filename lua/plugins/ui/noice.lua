@@ -60,6 +60,20 @@ return {
         },
       },
     },
+    routes = {
+      {
+        filter = {
+          event = "BufWinEnter",
+        },
+        opts = { skip = true },
+      },
+      {
+        filter = {
+          event = "BufEnter",
+        },
+        opts = { skip = true },
+      },
+    },
   },
   dependencies = {
     "MunifTanjim/nui.nvim",
@@ -72,6 +86,7 @@ return {
   },
   config = function(_, opts)
     require("noice").setup(opts)
+
     require("notify").setup {
       on_open = function(win)
         vim.api.nvim_set_option_value("winhl", "Normal:MyNotifyBackground", { scope = "local", win = win })
@@ -97,6 +112,7 @@ return {
         NotifyTRACETitle = { guifg = "#D484FF" },
       },
     }
+
     vim.api.nvim_create_user_command("Mason", function()
       require("mason.ui").open()
     end, {})
@@ -131,3 +147,4 @@ return {
     end, { nargs = "?" })
   end,
 }
+

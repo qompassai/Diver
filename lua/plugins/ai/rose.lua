@@ -4,16 +4,18 @@ return {
   cmd = { "Rose" },
   keys = {
     { "<leader>qr", ":Rose<CR>", desc = "[q]ompass [r]ose" },
+    { "<leader>qrc", ":Rose Chat<CR>", desc = "[q]ompass [r]ose [c]hat" },
+
   },
   dependencies = {
     "nvim-telescope/telescope.nvim",
     "folke/noice.nvim",
   },
   opts = {
-    model = "llama3.2:3b",
+    model = "llama3.2:1b",
     display_mode = "float",
     show_prompt = true,
-    show_model = true,
+    show_model = false,
     no_auto_close = false,
     telescope_opts = {
       theme = "dropdown",

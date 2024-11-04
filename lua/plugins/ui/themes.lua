@@ -5,7 +5,7 @@ return {
     lazy = true,
     priority = 900,
     config = function()
-      require("catppuccin").setup({
+      require("catppuccin").setup {
         flavour = "mocha",
         transparent_background = true,
         term_colors = true,
@@ -14,11 +14,7 @@ return {
           gitsigns = true,
           indent_blankline = true,
         },
-      })
-      local ok, _ = pcall(vim.cmd, "colorscheme catppuccin")
-      if not ok then
-        vim.notify("Failed to load Catppuccin theme", vim.log.levels.ERROR)
-      end
+      }
     end,
   },
   {
@@ -27,14 +23,10 @@ return {
     lazy = false,
     priority = 900,
     config = function()
-      require("tokyonight").setup({
+      require("tokyonight").setup {
         style = "night",
         transparent = true,
-      })
-      local ok, _ = pcall(vim.cmd, "colorscheme tokyonight")
-      if not ok then
-        vim.notify("Failed to load Tokyo Night theme", vim.log.levels.ERROR)
-      end
+      }
     end,
   },
   {
@@ -43,14 +35,10 @@ return {
     lazy = false,
     priority = 900,
     config = function()
-      require("onedark").setup({
-        style = 'deep',
+      require("onedark").setup {
+        style = "deep",
         transparent = true,
-      })
-      local ok, _ = pcall(vim.cmd, "colorscheme onedark")
-      if not ok then
-        vim.notify("Failed to load OneDark theme", vim.log.levels.ERROR)
-      end
+      }
     end,
   },
   {
@@ -59,23 +47,19 @@ return {
     lazy = true,
     priority = 900,
     config = function()
-      vim.g.gruvbox_material_background = 'medium'
+      vim.g.gruvbox_material_background = "medium"
       vim.g.gruvbox_material_enable_bold = 1
       vim.g.gruvbox_material_enable_italic = 1
       vim.g.gruvbox_material_transparent_background = 1
-      local ok, _ = pcall(vim.cmd, "colorscheme gruvbox-material")
-      if not ok then
-        vim.notify("Failed to load Gruvbox Material theme", vim.log.levels.ERROR)
-      end
     end,
   },
   {
     "EdenEast/nightfox.nvim",
     name = "nightfox",
-    lazy = true,
-    priority = 900,
+    lazy = false,
+    priority = 1900,
     config = function()
-      require("nightfox").setup({
+      require("nightfox").setup {
         options = {
           transparent = true,
           styles = {
@@ -89,7 +73,7 @@ return {
             colored_indent_levels = false,
           },
         },
-      })
+      }
       local ok, _ = pcall(vim.cmd, "colorscheme nightfox")
       if not ok then
         vim.notify("Failed to load Nightfox theme", vim.log.levels.ERROR)
@@ -99,11 +83,11 @@ return {
   {
     "shaunsingh/nord.nvim",
     name = "true",
-    lazy = false,
+    lazy = true,
     priority = 900,
     config = function()
       vim.g.nord_transparent = true
-      vim.cmd("colorscheme nord")
+      vim.cmd "colorscheme nord"
     end,
   },
   {
@@ -112,7 +96,7 @@ return {
     lazy = true,
     priority = 900,
     config = function()
-      require("material").setup({
+      require("material").setup {
         contrast = {
           sidebars = true,
           floating_windows = true,
@@ -124,11 +108,7 @@ return {
         disable = {
           background = true,
         },
-      })
-      local ok, _ = pcall(vim.cmd, "colorscheme material")
-      if not ok then
-        vim.notify("Failed to load Material theme", vim.log.levels.ERROR)
-      end
+      }
     end,
   },
   {
@@ -137,13 +117,9 @@ return {
     lazy = true,
     priority = 1000,
     config = function()
-      require("dracula").setup({
+      require("dracula").setup {
         transparent_bg = true,
-      })
-      local ok, _ = pcall(vim.cmd, "colorscheme dracula")
-      if not ok then
-        vim.notify("Failed to load Dracula theme", vim.log.levels.ERROR)
-      end
+      }
     end,
   },
   {
@@ -152,15 +128,11 @@ return {
     lazy = true,
     priority = 1000,
     config = function()
-      require("github-theme").setup({
+      require("github-theme").setup {
         options = {
           transparent = true,
         },
-      })
-      local ok, _ = pcall(vim.cmd, "colorscheme github_dark")
-      if not ok then
-        vim.notify("Failed to load GitHub Dark theme", vim.log.levels.ERROR)
-      end
+      }
     end,
   },
   {
@@ -169,17 +141,12 @@ return {
     lazy = true,
     priority = 1000,
     config = function()
-      require("onedarkpro").setup({
+      require("onedarkpro").setup {
         dark_theme = "onedark_vivid",
         options = {
           transparency = true,
         },
-      })
-      local ok, _ = pcall(vim.cmd, "colorscheme onedark_vivid")
-      if not ok then
-        vim.notify("Failed to load OneDarkPro theme", vim.log.levels.ERROR)
-      end
+      }
     end,
   },
 }
-

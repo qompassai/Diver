@@ -1,6 +1,6 @@
 return {
     "lewis6991/gitsigns.nvim",
-    lazy = true,  -- Enable lazy loading
+    lazy = true,
     event = { "BufReadPre", "BufNewFile" },
     cond = function()
         -- Only load if the current directory or file is inside a Git repo

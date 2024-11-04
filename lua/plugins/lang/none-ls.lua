@@ -1,6 +1,7 @@
 return {
   "nvimtools/none-ls.nvim",
   lazy = false,
+  event = { "BufReadPre", "BufNewFile" },
   dependencies = {
     "davidmh/cspell.nvim",
     "gbprod/none-ls-shellcheck.nvim",
@@ -12,7 +13,7 @@ return {
     "mfussenegger/nvim-dap",
     {
       "leoluz/nvim-dap-go",
-      lazy = false,
+      lazy = true,
       ft = "go",
       dependencies = "mfussenegger/nvim-dap",
       config = function(_, opts)
@@ -43,7 +44,7 @@ return {
         config = function()
           require("telescope").load_extension "zoxide"
         end,
-        lazy = false,
+        lazy = true,
       },
       {
         "williamboman/mason.nvim",
@@ -79,8 +80,7 @@ return {
           end, {})
           mason_lspconfig.setup {
             ensure_installed = {
-              "pyright",
-              "solargraph",
+              "pylsp",
               "ts_ls",
               "gopls",
               "jdtls",
@@ -89,11 +89,8 @@ return {
               "docker_compose_language_service",
               "jsonls",
               "yamlls",
-              "matlab_ls",
-              "r_language_server",
-              "efm",
             },
-            automatic_installation = true,
+            automatic_installation = false,
           }
           lspconfig.solargraph.setup {}
           lspconfig.ts_ls.setup {}
@@ -104,24 +101,6 @@ return {
           lspconfig.docker_compose_language_service.setup {}
           lspconfig.jsonls.setup {}
           lspconfig.yamlls.setup {}
-
-          local home = vim.fn.expand "$HOME"
-          lspconfig.pyright.setup {
-            settings = {
-              python = {
-                analysis = {
-                  extraPaths = {
-                    "/usr/share/jupyter/kernels/python3",
-                    home .. "/.local/share/jupyter/kernels/mojo-jupyter-kernel",
-                  },
-                  typeCheckingMode = "basic",
-                  autoSearchPaths = true,
-                  useLibraryCodeForTypes = true,
-                },
-              },
-            },
-            filetypes = { "python", "jupyter", "ipynb" },
-          }
 
           -- Octave/MATLAB
           lspconfig.matlab_ls.setup {}
@@ -152,7 +131,6 @@ return {
       local lspconfig = require "lspconfig"
       local null_ls = require "null-ls"
       local dap = require "dap"
-
       null_ls.setup {
         debug = true,
         on_attach = function(client, bufnr)
@@ -161,7 +139,6 @@ return {
               vim.lsp.buf.format { bufnr = bufnr }
             end, { desc = "Format current buffer with LSP" })
           end
-          print("null-ls attached to buffer " .. bufnr)
         end,
         sources = {
 
@@ -575,12 +552,13 @@ return {
           },
 
           --Laravel--
+
+          --blade_formatter | An opinionated blade template formatter for Laravel that respects readability
           require("null_ls").builtins.formatting.blade_formatter.with {
             ft = { "blade" },
             cmd = { "blade-formatter" },
             extra_args = { "--write", "$FILENAME" },
           },
-          --blade_formatter | An opinionated blade template formatter for Laravel that respects readability
 
           --Lua--
 
@@ -602,7 +580,6 @@ return {
             command = { "stylua" },
             extra_args = { "--config-path", vim.fn.expand "$HOME" .. "/.config/nvim/.stylua.toml" },
           },
-
           --teal | The compiler for Teal, a typed dialect of Lua.
           null_ls.builtins.diagnostics.teal.with {
             ft = { "teal" },
@@ -621,7 +598,6 @@ return {
             cmd = { "checkstyle" },
             extra_args = { "-f", "sarif", "-c", "$ROOT", "/google_checks.xml" },
           },
-
           --google_java_format | Reformats Java source code according to Google Java Style.
           null_ls.builtins.formatting.google_java_format.with {
             ft = { "java" },
@@ -655,7 +631,6 @@ return {
             },
             cmd = { "prettierd" },
           },
-
           require "none-ls.diagnostics.eslint",
           require "none-ls-ecs.formatting",
           --biome | Formatter, linter, bundler, and more for JavaScript, TypeScript, JSON, HTML, Markdown, and CSS.
@@ -767,6 +742,7 @@ return {
           },
 
           --Perl--
+
           --perlimports | A command line utility for cleaning up imports in your Perl code
           require("null_ls").builtins.diagnostics.perlimports.with {
             ft = { "perl" },
@@ -932,7 +908,6 @@ return {
             cmd = { "dx" },
             extra_args = { "fmt", "--file", "$FILENAME" },
           },
-
           --LanguageTool-Rust (LTRS) is an executable/library providing correct and safe bindings for LanguageTool.
           require("null_ls").builtins.diagnostics.ltrs.with {
             ft = { "text", "markdown", "markdown" },
@@ -1127,7 +1102,6 @@ return {
       -- lsp setup
       local lsp_defaults = {
         flags = {
-          debounce_text_changes = 150,
         },
         capabilities = require("cmp_nvim_lsp").default_capabilities(vim.lsp.protocol.make_client_capabilities()),
         on_attach = function(client, bufnr)
@@ -1136,7 +1110,6 @@ return {
               vim.lsp.buf.format { bufnr = bufnr }
             end, { desc = "format current buffer with lsp" })
           end
-          print(client.name .. " attached to buffer " .. bufnr)
         end,
       }
 
@@ -1145,38 +1118,6 @@ return {
       mason_lspconfig.setup_handlers {
         function(server_name)
           local config = lsp_defaults
-
-          if server_name == "pyright" then
-            config = vim.tbl_deep_extend("force", config, {
-              settings = {
-                python = {
-                  analysis = {
-                    extrapaths = {
-                      "/usr/share/jupyter/kernels/python3",
-                      vim.fn.expand "$home" .. "/.local/share/jupyter/kernels/mojo-jupyter-kernel",
-                    },
-                    typecheckingmode = "basic",
-                    autosearchpaths = true,
-                    uselibrarycodefortypes = true,
-                  },
-                },
-              },
-              filetypes = { "python", "jupyter", "ipynb" },
-            })
-          elseif server_name == "efm" then
-            config = vim.tbl_deep_extend("force", config, {
-              init_options = { documentformatting = true },
-              filetypes = { "mojo" },
-              settings = {
-                rootmarkers = { ".git/" },
-                languages = {
-                  mojo = {
-                    { formatcommand = "mojo format -", formatstdin = true },
-                  },
-                },
-              },
-            })
-          end
 
           lspconfig[server_name].setup(config)
         end,
@@ -1203,7 +1144,7 @@ return {
           name = "launch file",
           program = "${file}",
           pythonpath = function()
-            return "/usr/bin/python"
+            return "/usr/bin/python3"
           end,
         },
       }

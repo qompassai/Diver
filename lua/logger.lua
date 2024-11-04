@@ -1,16 +1,14 @@
 local M = {
-  _logfile = vim.fn.tempname() .. "_perplexity.log", -- Store it in a temp file
+  _logfile = vim.fn.tempname() .. "_perplexity.log",
   _max_log_lines = 10000,
-  _debug_enabled = vim.env.DEBUG_PERPLEXITY ~= nil, -- Use environment variable to toggle debug
+  _debug_enabled = vim.env.DEBUG_PERPLEXITY ~= nil,
 }
 
--- Use pcall to safely require the notify plugin (if it's available)
 local notify_ok, notify = pcall(require, "notify")
 if notify_ok then
   vim.notify = notify
 end
 
--- Utility function to read file contents
 local function read_file(path)
   local file = io.open(path, "r")
   if not file then
@@ -21,7 +19,6 @@ local function read_file(path)
   return content
 end
 
--- Utility function to write file contents
 local function write_file(path, content)
   local file = io.open(path, "w")
   if not file then
@@ -32,7 +29,6 @@ local function write_file(path, content)
   return true
 end
 
--- Limit the number of lines in the log file
 local function limit_logfile_lines()
   local content = read_file(M._logfile)
   local lines = vim.split(content, "\n")
@@ -42,42 +38,41 @@ local function limit_logfile_lines()
   return table.concat(lines, "\n")
 end
 
--- Write a message to the log file
 local function write_to_logfile(msg, kind)
   local limited_log = limit_logfile_lines()
   local new_log_entry = string.format("[%s] %s: %s\n", os.date "%Y-%m-%d %H:%M:%S", kind, msg)
   write_file(M._logfile, limited_log .. new_log_entry)
 end
 
--- Log a message with a specified kind and level
-local function log(msg, kind, level)
-  if kind == "ErrorMsg" or kind == "Debug" then
-    write_to_logfile(msg, kind)
-  end
-  if kind ~= "Debug" then
+local function log(msg, kind, level, notify_user)
+  notify_user = notify_user or false  -- Default to false
+
+  write_to_logfile(msg, kind)
+
+  if notify_user and kind ~= "Debug" then
     vim.schedule(function()
       vim.notify(msg, level, { title = kind })
     end)
   end
 end
 
--- Logging functions
-function M.error(msg)
-  log(msg, "ErrorMsg", vim.log.levels.ERROR)
+function M.error(msg, notify_user)
+  log(msg, "ErrorMsg", vim.log.levels.ERROR, notify_user)
 end
 
-function M.warning(msg)
-  log(msg, "WarningMsg", vim.log.levels.WARN)
+function M.warning(msg, notify_user)
+  log(msg, "WarningMsg", vim.log.levels.WARN, notify_user)
 end
 
-function M.info(msg)
-  log(msg, "Normal", vim.log.levels.INFO)
+function M.info(msg, notify_user)
+  log(msg, "Normal", vim.log.levels.INFO, notify_user)
 end
 
-function M.debug(msg)
+function M.debug(msg, notify_user)
   if M._debug_enabled then
-    log(msg, "Debug", vim.log.levels.DEBUG)
+    log(msg, "Debug", vim.log.levels.DEBUG, notify_user)
   end
 end
 
 return M
+

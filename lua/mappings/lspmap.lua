@@ -1,7 +1,7 @@
 local lspmap = {}
-
 local map = vim.keymap.set
-local bufopts = { noremap = true, silent = true }
+local opts = { noremap = true, silent = true }
+
 
 -- Nerd Translate Legend:
 --
@@ -13,11 +13,12 @@ local bufopts = { noremap = true, silent = true }
 -- 'package': A software bundle that can be installed and managed by Mason
 
 -- nabla.nvim mappings
+-- Nabla toggle math equations
 map(
   "n",
-  "<leader>qm",
+  "<leader>jm",
   ':lua require("nabla").toggle_virt()<CR>',
-  vim.tbl_extend("force", bufopts, { desc = "toggle [m]ath equations" })
+  vim.tbl_extend("force", opts, { desc = "Nabla toggle [m]ath equations" })
 )
 -- In normal mode, press 'Space' + 'Toggle LaTeX math equations in Markdown .
 
@@ -29,16 +30,15 @@ map("n", "<leader>ml", function()
     for _, client in ipairs(clients) do
       client.stop()
     end
-    print "LSP diagnostics disabled"
+    print "Mason LSP diagnostics disabled"
   else
     vim.diagnostic.enable()
     vim.cmd "LspStart"
     print "LSP diagnostics enabled"
   end
-end, { desc = "Toggle LSP diagnostics" })
+end, { desc = "Mason Toggle LSP diagnostics" })
 -- In normal mode, press 'Space' + 'm' + 'l' to toggle LSP diagnostics on or off
 
--- The following code sets up mappings between null-ls sources and Mason packages
 local _ = require "mason-core.functional"
 local Optional = require "mason-core.optional"
 
@@ -49,7 +49,7 @@ local null_ls_to_package = {
   ["goimports_reviser"] = "goimports_reviser",
   ["phpcsfixer"] = "php-cs-fixer",
   ["verible_verilog_format"] = "verible",
-  ["lua_format"] = "luaformatter",
+  ["lua_format"] = "lua_ls",
   ["ansiblelint"] = "ansible-lint",
   ["deno_fmt"] = "deno",
   ["ruff_format"] = "ruff",
@@ -58,14 +58,48 @@ local null_ls_to_package = {
 
 local package_to_null_ls = _.invert(null_ls_to_package)
 
--- Function to get Mason package name from null-ls source name
 lspmap.getPackageFromNullLs = _.memoize(function(source)
   return Optional.of_nilable(null_ls_to_package[source]):or_else_get(_.always(source:gsub("%_", "-")))
 end)
 
--- Function to get null-ls source name from Mason package name
 lspmap.getNullLsFromPackage = _.memoize(function(package)
   return Optional.of_nilable(package_to_null_ls[package]):or_else_get(_.always(package:gsub("%-", "_")))
 end)
 
+local attach_enabled = false
+
+local function toggle_null_ls()
+    attach_enabled = not attach_enabled
+    if attach_enabled then
+        require("null-ls").enable({})
+        vim.notify("null-ls enabled", vim.log.levels.INFO)
+    else
+        require("null-ls").disable({})
+        vim.notify("null-ls disabled", vim.log.levels.INFO)
+    end
+end
+
+map("n", "<leader>ln", toggle_null_ls, {
+    desc = "Toggle null-ls",
+    silent = true,
+    noremap = true
+})
+
+map("n", "<leader>lf", function()
+    if attach_enabled then
+        require("null-ls").enable({ filter = function(source)
+            return source.method == require("null-ls").methods.FORMATTING
+        end})
+        vim.notify("null-ls formatters enabled", vim.log.levels.INFO)
+    end
+end, { desc = "Toggle null-ls formatters" })
+
+map("n", "<leader>ld", function()
+    if attach_enabled then
+        require("null-ls").enable({ filter = function(source)
+            return source.method == require("null-ls").methods.DIAGNOSTICS
+        end})
+        vim.notify("null-ls diagnostics enabled", vim.log.levels.INFO)
+    end
+end, { desc = "Toggle null-ls diagnostics" })
 return lspmap

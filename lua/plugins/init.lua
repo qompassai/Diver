@@ -6,13 +6,14 @@
 -- Go to the directory for customizing plugins
 -- plugin .lua files set to lazy = true means it is conditionally loaded as needed
 -- plugin .lua files set to lazy = false means it is conditionally loaded as needed
-
+vim.o.syntax = 'enable'
+vim.o.number = true
+vim.o.relativenumber = true
 return {
   -- AI tools
   -- Use cases: Develop assistance, auto-completion
   {
     import = "plugins.ai",
-    cmd = { "LLMComplete", "Gen" },
     ft = { "python", "lua", "markdown", "javascript" },
   },
 
@@ -34,7 +35,7 @@ return {
 
   -- Flow tools
   -- Use cases: Debugging, linting, code completion, version control
-  { import = "plugins.flow", event = { "InsertEnter", "BufReadPost" } },
+{ import = "plugins.flow" },
 
   -- Lang tools
   -- Use cases: LSP/Format/Debug/Lint/Snippets/Autocomplete
@@ -86,7 +87,7 @@ return {
 
   -- Navigation tools
   -- Use cases: File and folder navigation with "fuzzy" finding capabilities
-  { import = "plugins.nav", keys = { "<leader>f", "gf" }, event = "BufRead" },
+  { import = "plugins.nav" },
 
   -- UI tools
   -- Use cases: User interface enhancements, status line, themes

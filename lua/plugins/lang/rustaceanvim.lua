@@ -9,7 +9,10 @@ return {
       "mfussenegger/nvim-dap",
       "neovim/nvim-lspconfig",
       "hrsh7th/nvim-cmp",
-      "simrat39/rust-tools.nvim",
+      {
+        "simrat39/rust-tools.nvim",
+        lazy = true,
+      },
       {
         "rust-lang/rust.vim",
         ft = "rust",
@@ -60,7 +63,7 @@ return {
                 enable = true,
               },
               checkOnSave = {
-                command = "clippy", -- Use clippy for linting on save
+                command = "clippy",
               },
             },
           },
@@ -81,6 +84,14 @@ return {
           vim.lsp.buf.format { async = false }
         end,
       })
+
+      vim.api.nvim_create_user_command("CargoTest", function()
+        vim.cmd "!cargo test"
+      end, { desc = "Run cargo tests" })
+
+      vim.api.nvim_create_user_command("CargoDoc", function()
+        vim.cmd "!cargo doc --open"
+      end, { desc = "Generate and open documentation" })
 
       vim.api.nvim_create_user_command("CargoBuildAndroid", function()
         vim.cmd "!cargo build --target aarch64-linux-android"

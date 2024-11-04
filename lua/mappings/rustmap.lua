@@ -90,11 +90,11 @@ map("n", "<space>ca", vim.lsp.buf.code_action, { desc = "Show code actions", nor
 map("n", "gr", vim.lsp.buf.references, { desc = "Nvim-LSP Show references", noremap = true, silent = true })
 -- In normal mode, press 'g' + 'r' to display references to the symbol under the cursor
 
--- Format code
+-- Diver Format code
 map("n", "<space>f", function()
   vim.lsp.buf.format { async = true }
-end, { desc = "Format code", noremap = true, silent = true })
--- In normal mode, press 'Space' + 'f' to format the current buffer
+end, { desc = "Diver Format code", noremap = true, silent = true })
+-- In normal mode, press 'Space' + 'f' for Diver to format the current buffer
 
 -- Rustaceanvim mappings
 
