@@ -70,61 +70,44 @@ return {
         chat_mode = true,
         providers = {
             -- Providers must be explicitly added to make them available.
-            anthropic = {
-                api_key = get_pass_entry("anthropic/primo"),
-            },
+           -- anthropic = {
+           --     api_key = get_pass_entry("anthropic/primo"),
+           -- },
             -- gemini = {
             --   api_key = get_pass_entry("apis/gemini_api_key"),
             -- },
-            groq = {
-                api_key = get_pass_entry "groq/primo",
-            },
+           -- groq = {
+           --     api_key = get_pass_entry "groq/primo",
+           --     params = {
+           --         chat = {
+           --             max_tokens = 2048
+           --         },
+           --         command = {
+           --             max_tokens = 2048
+           --         },
+           --         temperature = 0.7,
+           --         top_p = 0.9,
+           --     }
+           -- },
             -- mistral = {
             --   api_key = get_pass_entry("apis/mistral_api_key"),
             -- },
-            pplx = {
-                api_key = get_pass_entry "perplexity",
-                params = {
-                    chat = {
-                        max_tokens = 2048 -- A good balance between response length and context
-                    },
-                    command = {
-                        max_tokens = 2048
-                    },
-                    temperature = 0.7,
-                    top_p = 0.9,
-                    return_citations = true,
-                },
-            },
+            -- pplx = {
+            --    api_key = get_pass_entry "pass/word",
+            --    params = {
+            --        chat = {
+            --            max_tokens = 2048
+            --        },
+            --        command = {
+            --            max_tokens = 2048
+            --        },
+            --        temperature = 0.7,
+            --        top_p = 0.9,
+            --        return_citations = true,
+            --    },
+           -- },
             ollama = {
                 model = "llama3.2:1b",
-                api_key = get_pass_entry "qompass/rose",
-                params = {
-                    chat = {
-                        max_tokens = 2048 -- A good balance between response length and context
-                    },
-                    command = {
-                        max_tokens = 2048
-                    },
-                    temperature = 0.7,
-                    top_p = 0.9,
-                }
-            },
-            openai = {
-                api_key = get_pass_entry "openai/primo",
-                params = {
-                    chat = {
-                        max_tokens = 2048 -- A good balance between response length and context
-                    },
-                    command = {
-                        max_tokens = 2048
-                    },
-                    temperature = 0.7,
-                    top_p = 0.9,
-                }
-            },
-            github = {
-                api_key = get_pass_entry "gh/token",
                 params = {
                     chat = {
                         max_tokens = 2048
@@ -136,21 +119,47 @@ return {
                     top_p = 0.9,
                 }
             },
-            nvidia = {
-                api_key = get_pass_entry "nvpk",
-                params = {
-                    chat = {
-                        max_tokens = 2048
-                    },
-                    command = {
-                        max_tokens = 2048
-                    },
-                    temperature = 0.7,
-                    top_p = 0.9,
-                }
-            },
+            -- openai = {
+            --    api_key = get_pass_entry "pass/word",
+            --    params = {
+            --        chat = {
+            --            max_tokens = 2048 -- A good balance between response length and context
+            --        },
+            --        command = {
+            --            max_tokens = 2048
+            --        },
+            --        temperature = 0.7,
+            --        top_p = 0.9,
+            --    }
+            --},
+            -- github = {
+            --    api_key = get_pass_entry "pass/word",
+            --    params = {
+            --        chat = {
+            --            max_tokens = 2048
+            --        },
+            --        command = {
+            --            max_tokens = 2048
+            --        },
+            --        temperature = 0.7,
+            --        top_p = 0.9,
+            --    }
+            --},
+            --nvidia = {
+            --    api_key = get_pass_entry "pass/word",
+            --    params = {
+            --        chat = {
+            --           max_tokens = 2048
+            --        },
+            --        command = {
+            --            max_tokens = 2048
+            --        },
+            --        temperature = 0.7,
+            --        top_p = 0.9,
+            --    }
+            --},
             -- xai = {
-            --   api_key = get_pass_entry("apis/xai_api_key"),
+            --   api_key = get_pass_entry("pass/word"),
             -- },
         },
         cmd_prefix = "Rose",
