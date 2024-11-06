@@ -1,4 +1,3 @@
--- Remove all deprecated logic and directly use the new source
 local T = require("trouble.sources.telescope")
 
 return {

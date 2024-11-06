@@ -54,7 +54,7 @@ return {
 
         vim.diagnostic.config {
             virtual_text = true,
-            signs = false,
+            signs = true,
             underline = true,
             update_in_insert = true,
             severity_sort = true,
@@ -76,33 +76,83 @@ return {
             cmd = { get_lsp_cmd("clangd", "clangd") },
         }
         -- Containers (Docker/Podman/OCI)
-        lspconfig.dockerls.setup {
+        local function get_docker_langserver_cmd()
+            local mason_path = vim.fn.stdpath("data") .. "/mason/bin/docker-langserver"
+            local system_path = "/usr/bin/docker-langserver"
+            local nvm_path = os.getenv("HOME") .. "/.nvm/versions/node/v23.0.0/bin/docker-langserver"
+
+            -- Check paths in order of preference
+            if vim.fn.executable(mason_path) == 1 then
+                return { mason_path }
+            elseif vim.fn.executable(system_path) == 1 then
+                return { system_path }
+            elseif vim.fn.executable(nvm_path) == 1 then
+                return { nvm_path }
+            end
+
+            -- Fallback to command name and let system resolve path
+            return { "docker-langserver" }
+        end
+
+        -- Docker LSP Configuration
+        lspconfig.dockerls.setup({
             capabilities = capabilities,
-            cmd = { get_lsp_cmd("docker-langserver", "docker-langserver") },
+            cmd = { get_lsp_cmd("dockerfile-language-server-nodejs", "docker-langserver") },
+            before_init = function(params)
+                params.processId = vim.NIL
+            end,
+            root_dir = lspconfig.util.root_pattern(
+                "Dockerfile",
+                "docker-compose.yml",
+                "docker-compose.yaml",
+                "Containerfile",
+                ".dockerignore"
+            ),
             on_attach = function(client, bufnr)
-                if client.supports_method "textDocument/formatting" then
+                if client.supports_method("textDocument/formatting") then
                     vim.api.nvim_create_autocmd("BufWritePre", {
                         group = vim.api.nvim_create_augroup("LspFormatting", { clear = true }),
                         buffer = bufnr,
                         callback = function()
-                            vim.lsp.buf.format { async = false }
+                            vim.lsp.buf.format({ async = false })
                         end,
                     })
                 end
             end,
-        }
-        lspconfig.docker_compose_language_service.setup {
-            capabilities = capabilities,
-            cmd = { vim.fn.stdpath "data" .. "/mason/packages/docker-compose-language-service/bin/docker-compose-language-service" },
-            filetypes = { "Dockerfile", "yaml", "yml", "Containerfile" },
             settings = {
                 docker = {
                     linting = {
-                        enabled = true,
-                    },
-                },
+                        enabled = true
+                    }
+                }
+            }
+        })
+
+        -- Docker Compose LSP Configuration
+        lspconfig.docker_compose_language_service.setup({
+            capabilities = capabilities,
+            cmd = { get_lsp_cmd("docker-compose-language-service", "docker-compose-language-service") },
+            filetypes = {
+                "Dockerfile",
+                "dockerfile",
+                "yaml",
+                "yml",
+                "Containerfile"
             },
-        }
+            root_dir = lspconfig.util.root_pattern(
+                "docker-compose.yml",
+                "docker-compose.yaml",
+                "compose.yml",
+                "compose.yaml"
+            ),
+            settings = {
+                docker = {
+                    linting = {
+                        enabled = true
+                    }
+                }
+            }
+        })
         -- Deno
         lspconfig.denols.setup {
             capabilities = capabilities,
@@ -442,7 +492,7 @@ return {
         -- Yamlls
         lspconfig.yamlls.setup {
             capabilities = capabilities,
-            cmd = { get_lsp_cmd("yaml-language-server", "yaml-language-server"), "--stdio" },
+            cmd = { "yaml-language-server", "--stdio" },
             settings = {
                 yaml = {
                     schemas = {

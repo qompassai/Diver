@@ -277,13 +277,12 @@ M.setup = function()
         },
 
         sync_install = true,
-        auto_install = true,
+        auto_install = false,
         parser_install_dir = vim.fn.stdpath("data") .. "/site/parser",
         compile_options = compile_options,
 
         highlight = {
             enable = true,
-            disable = { "slang" },
             use_languagetree = true,
             additional_vim_regex_highlighting = false,
         },

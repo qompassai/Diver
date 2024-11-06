@@ -22,6 +22,13 @@ map(
 )
 -- In normal mode, press 'Space' + 'Toggle LaTeX math equations in Markdown .
 
+vim.keymap.set("n", "<Leader>md", ":lua toggle_documentation()<CR>", {
+    noremap = true,
+    silent = true,
+    desc = "[m]ason [d]ocumentation pop-up toggle"
+})
+
+
 -- Mason LSP diagnostics toggling
 map("n", "<leader>ml", function()
   local clients = vim.lsp.get_clients()

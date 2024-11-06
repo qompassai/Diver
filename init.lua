@@ -16,7 +16,6 @@ vim.opt.rtp:prepend(lazypath)
 -- providers
 
 -- Node.js Provider
-vim.g.node_host_prog = vim.fn.expand("/usr/bin/node")
 vim.g.npm_host_prog = vim.fn.expand("~/.npm-global/bin/neovim-node-host")
 -- Perl Provider
 vim.g.perl_host_prog = vim.fn.expand("/usr/bin/perl")
@@ -143,7 +142,29 @@ vim.g.java_host_prog = "/usr/bin/java"
 ------------------------------- | Java | -------------------------------
 
 ---------------------- | JavaScript/Node.js | --------------------------
-vim.g.node_host_prog = "/usr/bin/node"
+
+if not vim.fn.executable('nvm') == 1 then
+    print("NVM is not installed. Attempting to install...")
+    os.execute('curl -o- https://raw.githubusercontent.com/nvm-sh/nvm/v0.39.7/install.sh | bash')
+end
+
+local nvm_dir = vim.fn.expand('$HOME/.nvm')
+local nvm_sh = nvm_dir .. '/nvm.sh'
+
+if vim.fn.filereadable(nvm_sh) == 1 then
+    -- Get the current Node.js version managed by NVM
+    local current_version = vim.fn.system('bash -c "source ' .. nvm_sh .. ' && nvm current"'):gsub('\n', '')
+
+    if current_version and current_version ~= "none" and current_version ~= "" then
+        local nvm_bin_path = nvm_dir .. "/versions/node/" .. current_version .. "/bin"
+        vim.env.PATH = nvm_bin_path .. ":" .. vim.env.PATH
+    else
+        print("NVM is installed, but no Node.js version is currently in use.")
+    end
+else
+    print("NVM is not installed properly. Please check your installation.")
+end
+
 ---------------------- | JavaScript/Node.js | --------------------------
 
 ------------------------------- | Lua Configuration | --------------------------------

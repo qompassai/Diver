@@ -11,6 +11,7 @@ return {
                 languages = {
                     lua = true,
                     python = true,
+                    rust = true,
                 },
                 ui = {
                     theme = "auto",

@@ -162,8 +162,8 @@ return {
                     return " "
                 end
             end
-            local function parrot_status()
-                local status_info = require("parrot.config").get_status_info()
+            local function rose_status()
+                local status_info = require("rose.config").get_status_info()
                 local status = ""
                 if status_info.is_chat then
                     status = status_info.prov.chat.name
@@ -186,7 +186,7 @@ return {
                     disabled_filetypes = {
                         statusline = {},
                         winbar = {
-                            lualine_a = { parrot_status },
+                            lualine_a = { rose_status },
                         },
                     },
                     always_divide_middle = true,
