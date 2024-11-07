@@ -3,12 +3,12 @@ local M = {}
 M.setup = function()
     local vim = vim
     local function get_os()
-        if jit then
-            return jit.os
-        end
-        local sysname = vim.loop.os_uname().sysname
-        return sysname
+    if jit then
+        return jit.os
     end
+    local sysname = vim.loop.os_uname().sysname
+    return sysname or "Unknown"
+end
     local function has_compiler(compiler)
         local handle = io.popen(compiler .. " --version 2>&1")
         if handle then
@@ -104,7 +104,7 @@ M.setup = function()
         }
     end
     require('nvim-treesitter.install').compilers = { "clang", "clang++", "gcc" }
-    require('nvim-treesitter.install').prefer_git = false
+    require('nvim-treesitter.install').prefer_git = true
     require('nvim-treesitter.install').compilation_dir = vim.fn.stdpath("data") .. "/treesitter"
 
     pcall(function() end)
@@ -112,7 +112,9 @@ M.setup = function()
     local function on_attach(client, bufnr)
         if client.name == "lua_ls" then
             lsp_signature.on_attach({
-                bind = true,
+                bind = false,
+                floating_window = false,
+                hint_enable = false,
                 handler_opts = {
                     border = "rounded"
                 },
@@ -132,9 +134,9 @@ M.setup = function()
                         },
                         workspace = {
                             library = {
-                                [vim.fn.expand('$VIMRUNTIME/lua')] = true,
-                                [vim.fn.expand('$VIMRUNTIME/lua/vim/lsp')] = true,
-                                checkThirdParty = true,
+                                [vim.fn.expand('$VIMRUNTIME/lua')] = false,
+                                [vim.fn.expand('$VIMRUNTIME/lua/vim/lsp')] = false,
+                                checkThirdParty = false,
                             },
                         },
                         telemetry = {
@@ -157,7 +159,6 @@ M.setup = function()
             "c",                 -- Systems programming language
             "capnp",             -- Cap'n Proto schema
             "cmake",             -- Build system configuration
-            "cpp",               -- C++ programming language
             "csharp",            -- C# programming language
             "css",               -- Cascading Style Sheets
             "csv",               -- Comma-separated values data format
@@ -209,7 +210,6 @@ M.setup = function()
             "kdl",               -- Kid's Data Language
             "kotlin",            -- Modern JVM language
             "kubernetes",        -- Container orchestration configs
-            "latex",             -- Document preparation system
             "less",              -- CSS preprocessor
             "llvm",              -- LLVM IR
             "lua",               -- Lightweight scripting language
@@ -276,7 +276,7 @@ M.setup = function()
             "zsh",               -- Z shell scripting
         },
 
-        sync_install = true,
+        sync_install = false,
         auto_install = false,
         parser_install_dir = vim.fn.stdpath("data") .. "/site/parser",
         compile_options = compile_options,
@@ -284,14 +284,14 @@ M.setup = function()
         highlight = {
             enable = true,
             use_languagetree = true,
-            additional_vim_regex_highlighting = false,
+            additional_vim_regex_highlighting = true,
         },
         indent = {
             enable = true,
             disable = {}
         },
         incremental_selection = {
-            enable = true,
+            enable = false,
             keymaps = {
                 init_selection = "<leader>si",
                 node_incremental = "<leader>sn",
@@ -300,7 +300,7 @@ M.setup = function()
             },
         },
         autotag = {
-            enable = true,
+            enable = false,
         },
 
         textobjects = {
@@ -360,7 +360,7 @@ M.setup = function()
         },
 
         playground = {
-            enable = true,
+            enable = false,
             disable = {},
             updatetime = 25,
             persist_queries = false,
