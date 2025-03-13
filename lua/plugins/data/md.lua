@@ -45,8 +45,8 @@ return {
                 },
                 opts = {
                     rocks = {
-                        hererocks = false,
-                        enabled = false,
+                        hererocks = true,
+                        enabled = true,
                     },
                     renderer_options = {
                         mermaid = {

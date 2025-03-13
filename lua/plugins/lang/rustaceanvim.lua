@@ -6,8 +6,6 @@ return {
     lazy = true,
     dependencies = {
       "nvim-lua/plenary.nvim",
-      "mfussenegger/nvim-dap",
-      "neovim/nvim-lspconfig",
       "hrsh7th/nvim-cmp",
       {
         "simrat39/rust-tools.nvim",
@@ -21,24 +19,16 @@ return {
         end,
         lazy = true,
       },
-      {
-        "saecki/crates.nvim",
-        event = { "BufRead Cargo.toml" },
-        tag = "stable",
-        config = function()
-          require("crates").setup()
-        end,
-      },
     },
     config = function()
       local on_attach = function(bufnr)
         vim.bo[bufnr].omnifunc = "v:lua.vim.lsp.omnifunc"
       end
 
-      local codelldb_path = vim.fn.expand "$HOME/.local/share/nvim/mason/bin/codelldb"
+      local codelldb_path = vim.fn.expand("$HOME/.local/share/nvim/mason/bin/codelldb")
       local debug_command = vim.fn.executable(codelldb_path) == 1 and codelldb_path or "/usr/bin/lldb"
 
-      require("rust-tools").setup {
+      require("rust-tools").setup({
         tools = {
           autoSetHints = true,
           inlay_hints = {
@@ -76,33 +66,33 @@ return {
             args = { "--interpreter=stdio" },
           },
         },
-      }
+      })
 
       vim.api.nvim_create_autocmd("BufWritePre", {
         pattern = "*.rs",
         callback = function()
-          vim.lsp.buf.format { async = false }
+          vim.lsp.buf.format({ async = false })
         end,
       })
 
       vim.api.nvim_create_user_command("CargoTest", function()
-        vim.cmd "!cargo test"
+        vim.cmd("!cargo test")
       end, { desc = "Run cargo tests" })
 
       vim.api.nvim_create_user_command("CargoDoc", function()
-        vim.cmd "!cargo doc --open"
+        vim.cmd("!cargo doc --open")
       end, { desc = "Generate and open documentation" })
 
       vim.api.nvim_create_user_command("CargoBuildAndroid", function()
-        vim.cmd "!cargo build --target aarch64-linux-android"
+        vim.cmd("!cargo build --target aarch64-linux-android")
       end, { desc = "Build for Android using cargo" })
 
       vim.api.nvim_create_user_command("CargoBuildIos", function()
-        vim.cmd "!cargo build --target aarch64-apple-ios"
+        vim.cmd("!cargo build --target aarch64-apple-ios")
       end, { desc = "Build for iOS using cargo" })
 
       vim.api.nvim_create_user_command("CargoBuildWasm", function()
-        vim.cmd "!cargo build --target wasm32-unknown-unknown"
+        vim.cmd("!cargo build --target wasm32-unknown-unknown")
       end, { desc = "Build for WebAssembly using cargo" })
     end,
   },

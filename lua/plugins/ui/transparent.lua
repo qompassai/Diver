@@ -1,9 +1,9 @@
 return {
-    {
-  'tribela/transparent.nvim',
-  lazy = true,
-  event = 'VimEnter',
-  config = true,
-}
-
+  {
+    "tribela/transparent.nvim",
+    lazy = false,
+    enable = true,
+    event = "VimEnter",
+    config = true,
+  },
 }

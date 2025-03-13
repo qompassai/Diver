@@ -26,16 +26,7 @@ return {
       },
       "nvimtools/none-ls-extras.nvim",
       "nvim-telescope/telescope.nvim",
-      {
-        "nvim-tree/nvim-tree.lua",
-        lazy = true,
-        cmd = { "NvimTreeToggle", "NvimTreeFocus" },
-        opts = function()
-          return require "configs.nvimtree"
-        end,
-      },
       "nvim-tree/nvim-web-devicons",
-      { "nvim-treesitter/nvim-treesitter" },
       {
         "jvgrootveld/telescope-zoxide",
         dependencies = {
@@ -50,7 +41,7 @@ return {
         "williamboman/mason.nvim",
         cmd = { "Mason", "MasonInstall", "MasonInstallAll", "MasonUpdate" },
         opts = function()
-          return require "configs.mason"
+          return require "config.mason"
         end,
         lazy = true,
       },
@@ -63,7 +54,7 @@ return {
       {
         "neovim/nvim-lspconfig",
         event = { "BufReadPre", "BufNewFile" },
-        cmd = { "LspInfo", "LspInstall", "LspUninstall" },
+        cmd = { "LspInfo", "LspInstall", "LspUninstall", "LspStart" },
         dependencies = {
           "williamboman/mason.nvim",
           "williamboman/mason-lspconfig.nvim",
@@ -1101,8 +1092,7 @@ return {
 
       -- lsp setup
       local lsp_defaults = {
-        flags = {
-        },
+        flags = {},
         capabilities = require("cmp_nvim_lsp").default_capabilities(vim.lsp.protocol.make_client_capabilities()),
         on_attach = function(client, bufnr)
           if client.supports_method "textdocument/formatting" then

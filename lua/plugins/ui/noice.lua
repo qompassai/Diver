@@ -1,6 +1,7 @@
 return {
   "folke/noice.nvim",
   lazy = false,
+  enabled = true,
   event = "VeryLazy",
   opts = {
     lsp = {
@@ -82,12 +83,11 @@ return {
       lazy = true,
     },
     "williamboman/mason.nvim",
-    "nvimtools/none-ls.nvim",
   },
   config = function(_, opts)
     require("noice").setup(opts)
 
-    require("notify").setup {
+    require("notify").setup({
       on_open = function(win)
         vim.api.nvim_set_option_value("winhl", "Normal:MyNotifyBackground", { scope = "local", win = win })
       end,
@@ -111,7 +111,7 @@ return {
         NotifyDEBUGTitle = { guifg = "#8B8B8B" },
         NotifyTRACETitle = { guifg = "#D484FF" },
       },
-    }
+    })
 
     vim.api.nvim_create_user_command("Mason", function()
       require("mason.ui").open()
@@ -128,10 +128,10 @@ return {
     vim.api.nvim_create_user_command("Shellharden", function(args)
       local filename = args.args
       if filename == "" then
-        filename = vim.fn.expand "%"
+        filename = vim.fn.expand("%")
       end
       vim.fn.system("shellharden --transform " .. filename)
-      vim.cmd "edit!"
+      vim.cmd("edit!")
     end, { nargs = "?" })
     vim.api.nvim_create_user_command("Z", function(args)
       local query = args.args
@@ -147,4 +147,3 @@ return {
     end, { nargs = "?" })
   end,
 }
-
