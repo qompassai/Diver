@@ -10,5 +10,5 @@ return {
             end
         })
     end,
-    lazy = false,
+    lazy = true,
 }

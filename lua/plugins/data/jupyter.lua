@@ -4,7 +4,7 @@ return {
   -- Jupytext: Convert Jupyter notebooks to scripts and vice versa
   {
     "GCBallesteros/jupytext.nvim",
-    lazy = false,
+    lazy = true,
     config = function()
       require("jupytext").setup({
         notebook_to_script_cmd = "jupytext --to py",
@@ -15,7 +15,7 @@ return {
   -- Jupynium: Integration with Jupyter notebooks
   {
     "kiyoon/jupynium.nvim", -- need 'pip install notebook nbclassic jupyter-console'
-    lazy = false,
+    lazy = true,
     build = "pip3 install --user notebook nbclassic jupyter-console jupynium jupytext --break-system-packages",
     dependencies = {
       "stevearc/dressing.nvim", -- Optional, UI for :JupyniumKernelSelect
@@ -27,7 +27,7 @@ return {
 
   {
     "bfredl/nvim-jupyter",
-    lazy = false,
+    lazy = true,
     config = function() end,
   },
 
