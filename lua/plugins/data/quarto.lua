@@ -6,7 +6,7 @@ return {
     dev = false,
     opts = {},
     dependencies = {
-      "hrsh7th/nvim-cmp",
+      "saghen/blink.cmp",
       "jalvesaq/Nvim-R",
     },
     config = function(_, opts)

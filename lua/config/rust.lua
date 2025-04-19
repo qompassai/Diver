@@ -1,5 +1,5 @@
 local M = {}
-
+local crates_module = nil
 function M.setup_dap()
   local dap = require("dap")
   dap.adapters.lldb = {
@@ -21,8 +21,6 @@ function M.setup_dap()
     },
   }
   local dapui = require("dapui")
-
-  --------------------------- | DAP UI | -----------------------------
   dapui.setup()
   dap.listeners.before.attach.dapui_config = function()
     dapui.open()
@@ -36,12 +34,10 @@ function M.setup_dap()
   dap.listeners.after.event_exited.dapui_config = function()
     dapui.close()
   end
-
   local jit = require("jit")
   local sysname = (jit and jit.os) or "Linux"
   local mason_path = vim.fn.stdpath("data") .. "/mason/packages/codelldb/extension/"
   local codelldb_path = mason_path .. "adapter/codelldb"
-
   if sysname == "OSX" then
   elseif sysname == "Windows" then
     dap.adapters.lldb = {
@@ -63,8 +59,31 @@ function M.setup_dap()
       },
     }
   end
+  --None-LS--
+function M.setup_none_ls_sources()
+  local null_ls = require("null-ls")
+  local rust_sources = {
+    null_ls.builtins.formatting.dxfmt.with({
+      ft = { "rust" },
+      cmd = "dx",
+      extra_args = { "fmt", "--file", "$FILENAME" }
+    }),
+    null_ls.builtins.diagnostics.ltrs.with({
+            method = null_ls.methods.DIAGNOSTICS,
+            ft = { "text", "markdown", "markdown" },
+            cmd = "ltrs",
+            extra_args = { "check", "-m", "-r", "--text", "$TEXT" }
+          }),
+    null_ls.builtins.formatting.leptosfmt.with({
+      method = null_ls.methods.FORMATTING,
+      ft = { "rust" },
+      cmd = "leptosfmt",
+      extra_args = { "--quiet", "--stdin" }
+    }),
+  }
+    return rust_sources
+  end
   -- LSP config --
-
   function M.setup_lsp(on_attach, capabilities)
     vim.g.rustaceanvim = {
       server = {
@@ -119,328 +138,136 @@ function M.setup_dap()
           },
         },
       },
-      completion = {
-        callable = {
-          snippets = "fill_arguments",
-        },
-      },
     }
   end
-end
 -- Crates.nvim setup
 function M.setup_crates()
-  local crates = require("crates")
-  crates.setup({
+  crates_module = require("crates")
+  crates_module.setup({
     smart_insert = true,
     insert_closing_quote = true,
     autoload = true,
     autoupdate = true,
     autoupdate_throttle = 250,
     loading_indicator = true,
-    search_indicator = true,
     date_format = "%Y-%m-%d",
     thousands_separator = ".",
     notification_title = "crates.nvim",
-    curl_args = {
-      "-sL",
-      "--retry",
-      { "1" },
-      max_parallel_requests = 80,
-      expand_crate_moves_cursor = true,
-      enable_update_available_warning = true,
-      on_attach = function(client)
-        vim.bo.omnifunc = "v:lua.vim.lsp.omnifunc"
-        print("Attached client:", client)
-      end,
-      text = {
-        searching = " 🔎 Searching",
-        loading = "  ⏳  Loading",
-        version = "   %s",
-        prerelease = "   %s",
-        yanked = "   %s",
-        nomatch = "   No match",
-        upgrade = "   %s",
-        error = "   Error fetching crate",
-      },
-      highlight = {
-        searching = "CratesNvimSearching",
-        loading = "CratesNvimLoading",
-        version = "CratesNvimVersion",
-        prerelease = "CratesNvimPreRelease",
-        yanked = "CratesNvimYanked",
-        nomatch = "CratesNvimNoMatch",
-        upgrade = "CratesNvimUpgrade",
-        error = "CratesNvimError",
-      },
-      popup = {
-        autofocus = false,
-        hide_on_select = false,
-        copy_register = '"',
-        style = "minimal",
-        border = "none",
-        show_version_date = true,
-        show_dependency_version = true,
-        max_height = 30,
-        min_width = 20,
-        padding = 1,
-        text = {
-          title = " %s",
-          pill_left = "",
-          pill_right = "",
-          description = "%s",
-          created_label = " created",
-          created = "%s",
-          updated_label = " updated",
-          updated = "%s",
-          downloads_label = " downloads      ",
-          downloads = "%s",
-          homepage_label = " homepage       ",
-          homepage = "%s",
-          repository_label = " repository     ",
-          repository = "%s",
-          documentation_label = " documentation  ",
-          documentation = "%s",
-          crates_io_label = " crates.io",
-          crates_io = "%s",
-          lib_rs_label = " lib.rs",
-          lib_rs = "%s",
-          categories_label = " categories",
-          keywords_label = " keywords",
-          version = "  %s",
-          prerelease = " %s",
-          yanked = " %s",
-          version_date = "  %s",
-          feature = "  %s",
-          enabled = " %s",
-          transitive = " %s",
-          normal_dependencies_title = " Dependencies",
-          build_dependencies_title = " Build dependencies",
-          dev_dependencies_title = " Dev dependencies",
-          dependency = "  %s",
-          optional = " %s",
-          dependency_version = "  %s",
-          loading = "  ",
-        },
-        highlight = {
-          title = "CratesNvimPopupTitle",
-          pill_text = "CratesNvimPopupPillText",
-          pill_border = "CratesNvimPopupPillBorder",
-          description = "CratesNvimPopupDescription",
-          created_label = "CratesNvimPopupLabel",
-          created = "CratesNvimPopupValue",
-          updated_label = "CratesNvimPopupLabel",
-          updated = "CratesNvimPopupValue",
-          downloads_label = "CratesNvimPopupLabel",
-          downloads = "CratesNvimPopupValue",
-          homepage_label = "CratesNvimPopupLabel",
-          homepage = "CratesNvimPopupUrl",
-          repository_label = "CratesNvimPopupLabel",
-          repository = "CratesNvimPopupUrl",
-          documentation_label = "CratesNvimPopupLabel",
-          documentation = "CratesNvimPopupUrl",
-          crates_io_label = "CratesNvimPopupLabel",
-          crates_io = "CratesNvimPopupUrl",
-          lib_rs_label = "CratesNvimPopupLabel",
-          lib_rs = "CratesNvimPopupUrl",
-          categories_label = "CratesNvimPopupLabel",
-          keywords_label = "CratesNvimPopupLabel",
-          version = "CratesNvimPopupVersion",
-          prerelease = "CratesNvimPopupPreRelease",
-          yanked = "CratesNvimPopupYanked",
-          version_date = "CratesNvimPopupVersionDate",
-          feature = "CratesNvimPopupFeature",
-          enabled = "CratesNvimPopupEnabled",
-          transitive = "CratesNvimPopupTransitive",
-          normal_dependencies_title = "CratesNvimPopupNormalDependenciesTitle",
-          build_dependencies_title = "CratesNvimPopupBuildDependenciesTitle",
-          dev_dependencies_title = "CratesNvimPopupDevDependenciesTitle",
-          dependency = "CratesNvimPopupDependency",
-          optional = "CratesNvimPopupOptional",
-          dependency_version = "CratesNvimPopupDependencyVersion",
-          loading = "CratesNvimPopupLoading",
-        },
-        keys = {
-          hide = { "q", "<esc>" },
-          open_url = { "<cr>" },
-          select = { "<cr>" },
-          select_alt = { "s" },
-          toggle_feature = { "<cr>" },
-          copy_value = { "yy" },
-          goto_item = { "gd", "K", "<C-LeftMouse>" },
-          jump_forward = { "<c-i>" },
-          jump_back = { "<c-o>", "<C-RightMouse>" },
-        },
-      },
-      completion = {
-        insert_closing_quote = true,
-        text = {
-          prerelease = "  pre-release ",
-          yanked = "  yanked ",
-        },
-        cmp = {
-          enabled = true,
-          use_custom_kind = true,
-          kind_text = {
-            version = "Version",
-            feature = "Feature",
-          },
-          kind_highlight = {
-            version = "CmpItemKindVersion",
-            feature = "CmpItemKindFeature",
-          },
-        },
-        coq = {
-          enabled = true,
-          name = "crates.nvim",
-        },
-        blink = {
-          use_custom_kind = true,
-          kind_text = {
-            version = "Version",
-            feature = "Feature",
-          },
-          kind_highlight = {
-            version = "BlinkCmpKindVersion",
-            feature = "BlinkCmpKindFeature",
-          },
-          kind_icon = {
-            version = "🅥 ",
-            feature = "🅕 ",
-          },
-        },
-        crates = {
-          enabled = true,
-          min_chars = 3,
-          max_results = 8,
-        },
-      },
-      null_ls = {
-        enabled = true,
-        name = "crates.nvim",
-      },
-      neoconf = {
-        enabled = true,
-        namespace = "crates",
-      },
-      lsp = {
-        enabled = true,
-        name = "crates.nvim",
-        on_attach = function(_client)
-          print("Attached client:", _client.name)
-        end,
-        actions = true,
-        completion = true,
-      },
-      {
-        imports = {
-          granularity = {
-            group = "module",
-          },
-          prefix = "self",
-        },
-        inlayHints = {
-          lifetimeElisionHints = {
-            enable = "always",
-            useParameterNames = true,
-          },
-          parameterHints = true,
-          typeHints = true,
-        },
-
-        lens = {
-          enable = true,
-          enumVariantReferences = true,
-          methodReferences = true,
-          references = true,
-        },
-        {
-          rustc = {
-            source = "discover",
-          },
-          {
-            rustfmt = {
-              extraArgs = { "--config", "edition=2024" },
-            },
-            semanticTokensProvider = {
-              full = true,
-              legend = {
-                tokenModifiers = {},
-                tokenTypes = {},
-              },
-              range = true,
-            },
-            tools = {
-              inlay_hints = {
-                auto = true,
-                only_current_line = false,
-                show_parameter_hints = true,
-                parameter_hints_prefix = "<- ",
-                other_hints_prefix = "=> ",
-              },
-              executor = "termopen",
-              rustfmt = {
-                overrideCommand = { "rustfmt", "+nightly", "--edition", "2024" },
-              },
-            },
-            {
-              workspace = {
-                symbol = {
-                  search = {
-                    kind = "all_symbols",
-                  },
-                },
-              },
-            },
-          },
-        },
-      },
+    popup = {
+      autofocus = false,
+      hide_on_select = false,
+      border = "none",
+      show_version_date = true,
+    },
+    lsp = {
+      enabled = true,
+      name = "crates.nvim",
+      actions = true,
+      completion = true,
     },
   })
+  vim.api.nvim_create_autocmd("BufRead", {
+    pattern = "Cargo.toml",
+    callback = function()
+      vim.defer_fn(function()
+        crates_module.show()
+      end, 300)
+    end,
+  })
+end
+
+function M.show()
+  if not crates_module then return end
+  crates_module.show()
+end
+function M.hide()
+  if not crates_module then return end
+  crates_module.hide()
+end
+function M.toggle()
+  if not crates_module then return end
+  crates_module.toggle()
+end
+function M.update(buf)
+  if not crates_module then return end
+  crates_module.update(buf)
+end
+function M.upgrade_crate(alt)
+  if not crates_module then return end
+  crates_module.upgrade_crate(alt)
+end
+function M.upgrade_all_crates(alt)
+  if not crates_module then return end
+  vim.notify("Upgrading all crates...", vim.log.levels.INFO)
+  crates_module.upgrade_all_crates(alt)
+end
+function M.open_homepage()
+  if not crates_module then return end
+  crates_module.open_homepage()
+end
+function M.open_documentation()
+  if not crates_module then return end
+  crates_module.open_documentation()
+end
+function M.open_crates_io()
+  if not crates_module then return end
+  crates_module.open_crates_io()
+end
+function M.show_popup()
+  if not crates_module then return end
+  crates_module.show_popup()
 end
 -- Leptos LSP
 function M.setup_leptos(on_attach, capabilities)
-  local lspconfig = require("lspconfig")
-  local configs = require("lspconfig.configs")
-  require("lspconfig").rust_analyzer.setup({
+   vim.lsp.config["rust_analyzer"] = {
+    cmd = { "rust-analyzer" },
+    capabilities = capabilities,
+    on_attach = on_attach,
+    filetypes = { "rust" },
+    root_dir = vim.fs.dirname(vim.fs.find({"Cargo.toml", ".git"}, { upward = true })[1]),
     settings = {
       ["rust-analyzer"] = {
         checkOnSave = {
-          command = "clippy",
+          allFeatures = true,
+          command = "clippy"
         },
         diagnostics = {
           enable = true,
         },
-        rustfmt = {
-          enableRangeFormatting = true,
+        procMacro = {
+          enable = true,
+          ignored = {
+            ["leptos-macro"] = { "server" }
+        }
         },
-      },
+        cargo = {
+          allFeatures = true,
+          features = { "ssr" }
+        },
+        rustfmt = {
+          overrideCommand = { "leptosfmt", "--stdin", "--rustfmt" }
+        }
+      }
     },
-    on_attach = function(client, _)
-      if client.name == "rust_analyzer" then
-        client.server_capabilities.documentFormattingProvider = true
-      end
-    end,
-  })
-  if not configs.leptos_ls then
-    configs.leptos_ls = {
-      default_config = {
-        cmd = { "leptosfmt", "lsp" },
-        filetypes = { "rust" },
-        root_dir = lspconfig.util.root_pattern("Cargo.toml", ".git"),
-      },
-    }
-  end
-  lspconfig.leptos_ls.setup({
-    on_attach = on_attach,
-    capabilities = capabilities,
-  })
+    on_init = function(client)
+      client.server_capabilities.documentFormattingProvider = true
+    end
+  }
+  vim.lsp.config["leptos_ls"] = {
+    cmd = { "leptosfmt", "lsp" },
+    filetypes = { "rust" },
+    root_dir = vim.fs.dirname(vim.fs.find({"Cargo.toml", ".git"}, { upward = true })[1]),
+  }
+  vim.lsp.enable("rust_analyzer")
+  vim.lsp.enable("leptos_ls")
 end
 
 function M.setup_all(on_attach, capabilities)
   M.setup_crates()
+  M.setup_none_ls_sources()
   M.setup_dap()
   M.setup_leptos(on_attach, capabilities)
   M.setup_lsp(on_attach, capabilities)
 end
-
+end
 return M

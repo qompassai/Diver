@@ -22,7 +22,7 @@ return {
     },
   },
   {
-    "folke/neodev.nvim",
+    "folke/lazydev.nvim",
     opts = {
       library = {
         plugins = {
@@ -50,6 +50,8 @@ return {
       "williamboman/mason.nvim",
       "neovim/nvim-lspconfig",
       "saghen/blink.cmp",
+       "mfussenegger/nvim-dap",
+    "jay-babu/mason-nvim-dap.nvim",
     },
     config = function()
       local lspconfig = require("lspconfig")
@@ -64,7 +66,6 @@ return {
           "denols", -- Deno
           "dockerls", -- Docker
           "elmls", -- Elm
-          "eslintd", -- JavaScript/TypeScript linting
           "gopls", -- Go
           "graphql", -- GraphQL
           "html", -- HTML
@@ -74,7 +75,6 @@ return {
           "lua_ls", -- Lua
           "marksman", -- Markdown
           "matlab_ls", -- MATLAB
-          "metals", --Scala
           "pyright", -- Python
           "r_language_server", -- R
           "rust_analyzer", -- Rust
@@ -82,7 +82,7 @@ return {
           "sqlls", -- SQL
           "tailwindcss", -- Tailwind CSS
           "taplo", -- TOML
-          "tsserver", -- TypeScript/JavaScript
+          "ts_ls", -- TypeScript/JavaScript
           "vimls", -- Vimscript
           "yamlls", -- YAML
           "zls", -- Zig
@@ -107,18 +107,24 @@ return {
     config = function()
       require("mason-tool-installer").setup({
         ensure_installed = {
-          -- Formatters
           "stylua",
           "prettierd",
           "black",
           "isort",
           "shfmt",
+          "leptosfmt",
           "rustfmt",
           "taplo",
+          "shellcheck",
+          "luacheck",
+          "vint",
+          "misspell",
+          "impl",
+          "gotests",
+          "staticcheck",
           "sql-formatter",
           "latexindent",
           "typstfmt",
-          -- Linters
           "eslint_d",
           "markdownlint",
           "codespell",
@@ -127,7 +133,12 @@ return {
         run_on_start = true,
         start_delay = 3000, -- ms
         debounce_hours = 12,
-      })
+         integrations = {
+    ['mason-lspconfig'] = true,
+    ['mason-null-ls'] = true,
+    ['mason-nvim-dap'] = true,
+  }
+  })
     end,
   },
 }

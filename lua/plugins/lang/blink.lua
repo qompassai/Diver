@@ -1,6 +1,8 @@
 return {
+  {
   "saghen/blink.cmp",
   lazy = true,
+  build   = "cargo build --release",
   event = "InsertEnter",
   dependencies = {
     {
@@ -21,7 +23,7 @@ return {
       nerd_font_variant = "mono",
     },
     completion = {
-      documentation = { auto_show = false },
+      documentation = { auto_show = true },
     },
     snippets = {
       expand = function(snippet, _)
@@ -40,4 +42,5 @@ return {
     fuzzy = { implementation = "prefer_rust_with_warning" },
   },
   opts_extend = { "sources.default" },
+}
 }

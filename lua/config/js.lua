@@ -44,7 +44,7 @@ function M.setup(on_attach, capabilities)
     },
   })
 
-  lspconfig.tsserver.setup({
+  lspconfig.ts_ls.setup({
     on_attach = on_attach,
     capabilities = capabilities,
     settings = {
@@ -68,7 +68,7 @@ function M.setup(on_attach, capabilities)
     single_file_support = false,
   })
 
-  lspconfig.eslint.setup({
+  lspconfig.eslintd.setup({
     on_attach = on_attach,
     capabilities = capabilities,
     settings = {

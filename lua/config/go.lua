@@ -1,44 +1,81 @@
 -- ~/.config/nvim/lua/config/go.lua
 local dap = require("dap")
-local dap_go = require("dap-go")
-local dapui = require("dapui")
 local lspconfig = require("lspconfig")
 local null_ls = require("null-ls")
 
 local M = {}
 
-function M.null_ls_sources()
+function M.none_ls_sources()
   local formatting = null_ls.builtins.formatting
   local diagnostics = null_ls.builtins.diagnostics
   local code_actions = null_ls.builtins.code_actions
-  return {
-    formatting.asmfmt.with({ filetypes = { "asm" } }),
-    formatting.goimports.with({ filetypes = { "go" }, extra_args = { "-srcdir", "$DIRNAME" } }),
-    formatting.goimports_reviser.with({ filetypes = { "go" }, extra_args = { "$FILENAME" } }),
-    formatting.gofmt.with({ filetypes = { "go" } }),
-    formatting.gofumpt.with({ filetypes = { "go" } }),
-    formatting.golines.with({ filetypes = { "go" } }),
-    code_actions.gomodifytags,
-    diagnostics.golangci_lint.with({
-      filetypes = { "go" },
+  local sources = {
+  code_actions.gomodifytags.with({
+    ft = { "go" },
+    method = null_ls.methods.CODE_ACTION
+  }),
+  code_actions.refactoring.with({
+    ft = { "go" },
+    method = null_ls.methods.CODE_ACTION
+  }),
+  diagnostics.golangci_lint.with({
+      ft = { "go" },
+      method = null_ls.builtin.DIAGNOSTICS_ON_SAVE,
+      cmd = { "golangcli-lint" },
       extra_args = { "run", "--fix=false", "--out-format=json" },
     }),
-    diagnostics.revive.with({ filetypes = { "go" }, extra_args = { "-formatter", "json", "./..." } }),
-    diagnostics.staticcheck.with({ filetypes = { "go" }, extra_args = { "-f", "json", "./..." } }),
+    diagnostics.revive.with({
+      ft = { "go" },
+      method = null_ls.methods.DIAGNOSTICS_ON_SAVE,
+      command = { "revive" },
+      extra_args = { "-formatter", "json", "./..." }
+    }),
+    diagnostics.staticcheck.with({
+      ft = { "go" },
+      method = null_ls.methods.DIAGNOSTICS_ON_SAVE,
+      extra_args = { "-f", "json", "./..." } }),
     diagnostics.vacuum.with({
-      filetypes = { "yaml", "json" },
+      ft = { "yaml", "json" },
+      method = null_ls.methods_DIAGNOSTICS,
       args = { "report", "--stdin", "--stdout", "--format", "json" },
       to_stdin = true,
       format = "json",
     }),
     diagnostics.verilator.with({
-      filetypes = { "verilog", "systemverilog" },
+      ft = { "verilog", "systemverilog" },
+      method = null_ls.builtin.DIAGNOSTICS_ON_SAVE,
       extra_args = { "-lint-only", "-Wno-fatal", "$FILENAME" },
     }),
-  }
+    formatting.asmfmt.with({
+      ft = { "asm" },
+      method = null_ls.methods.FORMATTING
+    }),
+    formatting.goimports.with({
+      ft = { "go" },
+      method = null_ls.methods.FORMATTING,
+      extra_args = { "-srcdir", "$DIRNAME" }
+    }),
+    formatting.goimports_reviser.with({
+      ft = { "go" },
+      extra_args = { "$FILENAME" }
+    }),
+    formatting.gofmt.with({
+      ft = { "go" }
+    }),
+    formatting.gofumpt.with({
+      ft = { "go" },
+      method = null_ls.methods.FORMATTING,
+      cmd = { "gofumpt" }
+    }),
+    formatting.golines.with({
+      ft = { "go" },
+      method = null_ls.methods.FORMATTING,
+      cmd = { "golines" }
+    }),
+      }
+      return sources
 end
 
--- GVM environment support
 local function run_in_gvm(cmd)
   local handle = io.popen("bash -c 'source ~/.gvm/scripts/gvm && " .. cmd .. "'")
   if not handle then
@@ -116,6 +153,32 @@ function M.setup(on_attach, capabilities)
     init_options = { buildFlags = { "-tags=cgo" } },
   })
 
+  local status_ok, dap_go = pcall(require, "dap-go")
+  if not status_ok then
+    vim.notify("dap-go not available, skipping DAP setup for Go", vim.log.levels.WARN)
+  else
+    dap_go.setup({
+      delve = {
+        path = M.get_dlv_bin(),
+        initialize_timeout_sec = 20,
+        port = "${port}",
+      },
+    })
+  end
+  local dapui_ok, dapui = pcall(require, "dapui")
+  if dapui_ok then
+    dapui.setup()
+    dap.listeners.after.event_initialized["dapui_config"] = function()
+      dapui.open()
+    end
+    dap.listeners.before.event_terminated["dapui_config"] = function()
+      dapui.close()
+    end
+    dap.listeners.before.event_exited["dapui_config"] = function()
+      dapui.close()
+    end
+  end
+
   dap_go.setup({
     delve = {
       path = M.get_dlv_bin(),
@@ -158,5 +221,8 @@ function M.setup(on_attach, capabilities)
     end,
   })
 end
-
+function M.setup_all()
+  M.setup()
+  M.none_ls_sources()
+end
 return M

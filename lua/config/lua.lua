@@ -1,93 +1,85 @@
+local M       = {}
 local null_ls = require("null-ls")
-local M = {}
+local b       = null_ls.builtins
 
-function M.null_ls_sources()
+local function mark_pure(src) return src.with({ command = "true" }) end
+
+function M.neoconf_opts()
   return {
-    --null_ls.builtins.code_actions.refactoring.with({
-    -- ft = { "go", "javascript", "lua", "python", "typescript" },
-    --}),
-    --null_ls.builtins.completion.luasnip.with({
-    --  ft = { "lua" },
-    --}),
-    --require("none-ls-luacheck.diagnostics.luacheck").with({
-    --  ft = { "lua" },
-    --}),
-    null_ls.builtins.diagnostics.selene.with({
-      ft = { "lua", "luau" },
-      extra_args = { "--display-style", "quiet", "-" },
-    }),
-    null_ls.builtins.diagnostics.todo_comments,
-    null_ls.builtins.diagnostics.trail_space,
-    null_ls.builtins.formatting.stylua.with({
-      filetypes = { "lua", "luau" },
-      extra_args = {
-        "--config-path",
-        vim.fn.expand("$HOME/.config/nvim/.stylua.toml"),
-      },
-    }),
-    null_ls.builtins.diagnostics.teal.with({
-      ft = { "teal" },
-      extra_args = function(params)
-        if type(params.bufname) ~= "string" then
-          return { "check", "/dev/null" } -- fallback to dummy input
-        end
-        return { "check", params.bufname }
-      end,
+    local_settings  = ".neoconf.json",
+    global_settings = "neoconf.json",
+    live_reload     = true,
+    filetype_jsonc  = true,
+    plugins = {
+      lspconfig = { enabled = true },
+      jsonls    = { enabled = true, configured_servers_only = true },
+      lua_ls    = { enabled_for_neovim_config = true, enabled = true },
+    },
+  }
+end
+
+function M.none_ls_sources()
+  return {
+    mark_pure(b.code_actions.refactoring),
+    mark_pure(b.completion.luasnip),
+    mark_pure(b.diagnostics.todo_comments),
+    mark_pure(b.diagnostics.trail_space),
+    b.diagnostics.selene.with({ extra_args = { "--display-style", "quiet", "-" } }),
+    b.diagnostics.teal.with({ extra_args = { "check", "$FILENAME" } }),
+    b.formatting.stylua.with({
+      extra_args = { "--config-path", vim.fn.expand("$HOME/.config/nvim/.stylua.toml") },
     }),
   }
 end
-function M.setup(on_attach, capabilities)
-  local lazydev = require("lazydev")
-  lazydev.setup({
-    library = {
-      { path = "${3rd}/luv/library", words = { "vim%.uv" } },
-      vim.env.VIMRUNTIME,
-    },
-    integrations = {
-      lspconfig = true,
-      cmp = true,
-    },
-    enabled = function(root_dir)
-      return not vim.uv.fs_stat(root_dir .. "/.luarc.json")
-    end,
-  })
 
-  local lspconfig = require("lspconfig")
-  require("lspconfig").lua_ls.setup({
-    on_attach = on_attach,
-    capabilities = capabilities,
-    handlers = {
-      ["workspace/didChangeWatchedFiles"] = vim.lsp.handlers["workspace/didChangeWatchedFiles"],
-    },
-    on_init = function(client)
-      if client.server_capabilities.didChangeWatchedFiles then
-        client.config.flags = client.config.flags or {}
-        client.config.flags.watchFiles = false
-      end
+function M.lazydev_opts()
+  return {
+    types   = true,
+   library = {
+  { path = "${3rd}/luv/library", words = { "vim%.uv" } },
+  { path = "LazyVim" },
+  { path = vim.fn.expand("$VIMRUNTIME") },
+  {
+    path = vim.loop.cwd(),
+    cond = function(root)
+      return not vim.uv.fs_stat(root .. "/.luarc.json")
     end,
+  },
+},
+    integrations = { lspconfig = true, cmp = true, coq = false },
+  }
+end
+
+function M.setup_lsp(on_attach, capabilities)
+  require("lspconfig").lua_ls.setup({
+    on_attach    = on_attach,
+    capabilities = capabilities,
     settings = {
       Lua = {
-        runtime = {
-          version = "LuaJIT",
-          path = vim.split(package.path, ";"),
+        runtime = { version = "LuaJIT" },
+        workspace = {
+          library = require("neoconf").get("lua.workspace.library")
+            or vim.api.nvim_get_runtime_file("", true),
+          checkThirdParty = true,
         },
         diagnostics = {
-          globals = { "vim" },
-          disable = { "missing-fields" },
+          globals  = { "vim" },
+          severity = require("neoconf").get("lua.diagnostics.severity"),
         },
-        workspace = {
-          library = vim.api.nvim_get_runtime_file("", true),
-          checkThirdParty = false,
-        },
-        telemetry = {
-          enable = false,
-        },
+        completion = { callSnippet = "Replace" },
+        telemetry  = { enable = false },
       },
-    },
-    flags = {
-      debounce_text_changes = 150,
     },
   })
 end
 
+function M.setup_all(opts)
+  opts = opts or {}
+  M.setup_lsp(opts.on_attach, opts.capabilities)
+  M.none_ls_sources()
+  M.neoconf_opts()
+  return M.lazydev_opts()
+end
+
 return M
+

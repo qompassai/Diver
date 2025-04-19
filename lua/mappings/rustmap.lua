@@ -1,17 +1,19 @@
 local M = {}
 function M.setup()
-	local map = vim.keymap.set
+  local map = vim.keymap.set
+	local crates_module = require("crates")
+  local wk = require("which-key")
 	local opts = { noremap = true, silent = true }
 
 	-- Nerd Translate Legend (Alphabetical Order):
 
-	-- 'Cargo': Rust's package manager and build system, used for managing dependencies, compiling projects, and running tests.
+	-- 'Cargo': Rust's package/build system, used for managing dependencies compiling projects, and running tests.
 	--   Example: Similar to npm for JavaScript, Cargo helps manage Rust libraries and tools.
 
 	-- 'Code Action': Suggestions provided by LSP to refactor, add missing imports, or fix code issues.
 	--   Example: Like spellcheck for code; it suggests fixes when you have mistakes.
 
-	-- 'Declaration': The place where a symbol is first introduced in the code, defining its type and sometimes initializing it.
+	-- 'Declaration': The place where a symbol is first introduced, defining its type and sometimes initializing it.
 	--   Example: Declaring a variable like `let x = 5;` introduces `x` in the code.
 
 	-- 'Debuggables': In Rust, these are parts of the code that can be debugged, typically requiring special configurations or commands.
@@ -29,7 +31,7 @@ function M.setup()
 	-- 'Macro': A way to write code that writes other code in Rust, enabling metaprogramming.
 	--   Example: Like using a template to generate boilerplate code automatically.
 
-	-- 'Module': A file or collection of files that logically group related functions, types, and values in Rust or other languages.
+	-- 'Module': A file or collection of files that group related functions, types, and values in Rust or other languages.
 	--   Example: Similar to organizing related chapters in a book, modules group related functions.
 
 	-- 'References': Shows all occurrences of a symbol across the codebase, helping understand where and how itâ€™s used.
@@ -55,13 +57,32 @@ function M.setup()
 
 	-- 'Type Definition': Displays the type information of a particular variable or function.
 	--   Example: Helps you know if a variable is a number, text, or something else.
+  --
+  --Crates.nvm
+
+  wk.register({
+    ["<leader>"] = {
+      c = {
+        name = "+crates",
+        t = { function() crates_module.toggle() end, "Toggle crates" },
+        r = { function() crates_module.reload() end, "Reload crates" },
+        v = { function() crates_module.show_versions_popup() end, "Show versions" },
+        f = { function() crates_module.show_features_popup() end, "Show features" },
+        u = { function() crates_module.upgrade_all_crates() end, "Upgrade all crates" },
+        U = { function() crates_module.upgrade_crate() end, "Upgrade crate under cursor" },
+        h = { function() crates_module.open_homepage() end, "Open homepage" },
+        d = { function() crates_module.open_documentation() end, "Open documentation" },
+        i = { function() crates_module.open_crates_io() end, "Open crates.io" },
+      },
+    },
+  },
 
 	-- Nvim-LSP go to declaration of symbol under cursor
-	map("n", "gD", vim.lsp.buf.declaration, { desc = "Go to declaration", noremap = true, silent = true })
+	map("n", "gD", vim.lsp.buf.declaration, { desc = "Go to declaration", noremap = true, silent = true }),
 	-- In normal mode, press 'g' + 'D' to jump to the declaration of the symbol under the cursor
 
 	-- Nvim-LSP go to definition of symbol under cursor
-	vim.keymap.set("n", "gd", vim.lsp.buf.definition, { desc = "Go to definition", noremap = true, silent = true })
+	map("n", "gd", vim.lsp.buf.definition, { desc = "Go to definition", noremap = true, silent = true }),
 	-- In normal mode, press 'g' + 'd' to jump to the definition of the symbol under the cursor
 
 	-- Nvim-LSP show information about symbol under cursor
@@ -70,7 +91,7 @@ function M.setup()
 		"sh",
 		vim.lsp.buf.hover,
 		{ desc = "Nvim-LSP [s]ymbol [h]over info", noremap = true, silent = true }
-	)
+	),
 	-- In normal mode, press 's' + 'h' to display information about the symbol under the cursor
 
 	-- Nvim-LSP Go to implementation of symbol under cursor
@@ -79,7 +100,7 @@ function M.setup()
 		"gi",
 		vim.lsp.buf.implementation,
 		{ desc = "Nvim-LSP Go to implementation", noremap = true, silent = true }
-	)
+	),
 	-- In normal mode, press 'g' + 'i' to jump to the implementation of the symbol under the cursor
 
 	-- Nvim-LSP show function signature help
@@ -88,7 +109,7 @@ function M.setup()
 		"<C-k>",
 		vim.lsp.buf.signature_help,
 		{ desc = "Nvim-LSP show signature help", noremap = true, silent = true }
-	)
+	),
 	-- In normal mode, press 'Ctrl' + 'k' to display signature help for the current function
 
 	-- Nvim-LSP go to type definition of symbol under cursor
@@ -97,11 +118,11 @@ function M.setup()
 		"<space>D",
 		vim.lsp.buf.type_definition,
 		{ desc = "Nvim-LSP go to type definition", noremap = true, silent = true }
-	)
+	),
 	-- In normal mode, press 'Space' + 'D' to jump to the type definition of the symbol under the cursor
 
 	-- Rename symbol under cursor
-	vim.keymap.set("n", "<space>rn", vim.lsp.buf.rename, { desc = "Rename symbol", noremap = true, silent = true })
+	vim.keymap.set("n", "<space>rn", vim.lsp.buf.rename, { desc = "Rename symbol", noremap = true, silent = true }),
 	-- In normal mode, press 'Space' + 'r' + 'n' to rename the symbol under the cursor
 
 	-- Show code actions
@@ -110,7 +131,7 @@ function M.setup()
 		"<space>ca",
 		vim.lsp.buf.code_action,
 		{ desc = "Show code actions", noremap = true, silent = true }
-	)
+	),
 	-- In normal mode, press 'Space' + 'c' + 'a' to display available code actions
 
 	-- Show references of symbol under cursor
@@ -119,7 +140,7 @@ function M.setup()
 		"gr",
 		vim.lsp.buf.references,
 		{ desc = "Nvim-LSP Show references", noremap = true, silent = true }
-	)
+	),
 	-- In normal mode, press 'g' + 'r' to display references to the symbol under the cursor
 
 	-- Rustaceanvim mappings
@@ -130,7 +151,7 @@ function M.setup()
 		"<leader>rr",
 		"<cmd>RustRunnables<CR>",
 		vim.tbl_extend("force", opts, { desc = "Rustaceanvim show [r]ust [r]unnables" })
-	)
+	),
 	-- In normal mode, press 'Space' + 'r' + 'r' to display Rust runnable items
 
 	-- Show Rust debuggables
@@ -139,7 +160,7 @@ function M.setup()
 		"<leader>rd",
 		"<cmd>RustDebuggables<CR>",
 		vim.tbl_extend("force", opts, { desc = "Rustaceanvim show [r]ust [d]ebuggables" })
-	)
+	),
 	-- In normal mode, press 'Space' + 'r' + 'd' to display Rust debuggable items
 
 	-- Expand Rust macro
@@ -148,7 +169,7 @@ function M.setup()
 		"<leader>rt",
 		"<cmd>RustExpandMacro<CR>",
 		{ desc = "Rustaceanvim expand [r]ust [m]acro", noremap = true, silent = true }
-	)
+	),
 	-- In normal mode, press 'Space' + 'r' + 't' to expand the Rust macro under the cursor
 
 	-- Open Cargo.toml
@@ -157,7 +178,7 @@ function M.setup()
 		"<leader>rc",
 		"<cmd>RustOpenCargo<CR>",
 		{ desc = "Rustaceanvim open [C]argo.toml", noremap = true, silent = true }
-	)
+	),
 	-- In normal mode, press 'Space' + 'r' + 'c' to open the Cargo.toml file
 
 	-- Rustaceanvim go to parent module
@@ -166,7 +187,7 @@ function M.setup()
 		"<leader>rp",
 		"<cmd>RustParentModule<CR>",
 		{ desc = "Rustaceanvim go to parent [m]odule", noremap = true, silent = true }
-	)
+	),
 	-- In normal mode, press 'Space' + 'r' + 'p' to go to the parent module
 
 	-- Rustaceanvim toggle comment continuation
@@ -184,6 +205,7 @@ function M.setup()
 			print("Comment continuation enabled")
 		end
 	end, { desc = "Rustaceanvim toggle [t]oggle [c]omment continuation", noremap = true, silent = true })
+)
 	-- In normal mode, press 'Space' + 't' + 'c' to toggle automatic comment continuation
 end
 return M

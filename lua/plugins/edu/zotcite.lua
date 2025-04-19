@@ -1,5 +1,6 @@
 return {
 	"jalvesaq/zotcite",
+  ft = { "markdown", "text", "latex", "tex" },
 	lazy = true,
 	dependencies = {
 		"nvim-treesitter/nvim-treesitter",

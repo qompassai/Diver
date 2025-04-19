@@ -4,9 +4,7 @@ return {
     lazy = true,
     ft = { "zig", "zon" },
     init = function()
-      -- Disable format-on-save from zig.vim as we'll use ZLS
       vim.g.zig_fmt_autosave = 0
-      -- Don't show parse errors in a separate window
       vim.g.zig_fmt_parse_errors = 0
     end,
   },
@@ -26,17 +24,12 @@ return {
       "akinsho/toggleterm.nvim",
     },
     opts = {
-      -- Enable autocmds for zig-tools.nvim
       autocmds = {
-        -- Format on save
-        format_on_save = false, -- Already handled by ZLS
-        -- Run `zig build` when saving packages
+        format_on_save = false,
         build_on_save = true,
       },
-      -- ZLS configuration
       zls = {
         enabled = true,
-        -- Check config location
         config_dir = vim.fn.stdpath("config") .. "/lua/config/zls.json",
       },
       build = {

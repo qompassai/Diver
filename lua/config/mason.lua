@@ -101,10 +101,10 @@ M.setup = function()
       "vim-language-server",
       "vint",
     },
-    auto_update = false,
+    auto_update = true,
     run_on_start = true,
-    start_delay = 3000, -- 3 second delay
-    debounce_hours = 5, -- at least 5 hours between attempts to install/update
+    start_delay = 3000,
+    debounce_hours = 5,
     integrations = {
       ["mason-lspconfig"] = true,
       ["mason-null-ls"] = true,
@@ -136,28 +136,6 @@ M.setup = function()
 
   local lspconfig = require("lspconfig")
   local mason_lspconfig = require("mason-lspconfig")
-  local cmp = require("cmp")
-  local luasnip = require("luasnip")
-
-  cmp.setup({
-    snippet = {
-      expand = function(args)
-        luasnip.lsp_expand(args.body)
-      end,
-    },
-    mapping = cmp.mapping.preset.insert({
-      ["<C-b>"] = cmp.mapping.scroll_docs(-4),
-      ["<C-f>"] = cmp.mapping.scroll_docs(4),
-      ["<C-Space>"] = cmp.mapping.complete(),
-      ["<C-e>"] = cmp.mapping.abort(),
-      ["<CR>"] = cmp.mapping.confirm({ select = true }),
-    }),
-    sources = {
-      { name = "nvim_lsp" },
-      { name = "luasnip" },
-      { name = "buffer" },
-    },
-  })
 
   local servers = {
     "lua_ls",
@@ -189,8 +167,7 @@ M.setup = function()
 end
 
 function M.capabilities()
-  local cmp_nvim_lsp = require("cmp_nvim_lsp")
-  return cmp_nvim_lsp.default_capabilities(vim.lsp.protocol.make_client_capabilities())
+  return require("blink.cmp").get_lsp_capabilities()
 end
 
 function M.on_attach(_, bufnr)
@@ -200,5 +177,7 @@ function M.on_attach(_, bufnr)
   bufmap("n", "K", vim.lsp.buf.hover)
   bufmap("n", "gd", vim.lsp.buf.definition)
 end
+
+
 
 return M

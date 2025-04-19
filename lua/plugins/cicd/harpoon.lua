@@ -2,7 +2,6 @@ return {
 	"ThePrimeagen/harpoon",
 	lazy = true,
 	keys = {
-		-- Add current file to Harpoon marks
 		{
 			"<leader>ha",
 			"<cmd>lua require('harpoon.mark').add_file()<CR>",
@@ -11,7 +10,6 @@ return {
 		},
 		-- In normal mode, press 'Space' + 'h' + 'a' to add the current file to Harpoon marks.
 
-		-- Open Harpoon quick menu
 		{
 			"<leader>hm",
 			"<cmd>lua require('harpoon.ui').toggle_quick_menu()<CR>",
@@ -109,8 +107,8 @@ return {
 				["$HOME/Forge/project-a"] = {
 					term = {
 						cmds = {
-							"./start-server.sh", -- Command to run a server
-							"npm run watch", -- Watching for file changes
+							"./start-server.sh",
+							"npm run watch",
 						},
 					},
 				},

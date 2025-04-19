@@ -1,4 +1,4 @@
--- ~/.config/nvim/lua/plugins/lang/python.lua
+-- ~/.config/nvim/lua/plugins/lang/python.lua ────────────────────────────────────────────────────
 return {
   {
     "neovim/nvim-lspconfig",
@@ -7,6 +7,10 @@ return {
     dependencies = {
       "williamboman/mason-lspconfig.nvim",
       "nvimtools/none-ls.nvim",
+      "jmbuhr/otter.nvim",
+      "jpalardy/vim-slime",
+      "jbyuki/nabla.nvim",
+      "benlubas/molten-nvim",
       "nvim-treesitter/nvim-treesitter",
       "mfussenegger/nvim-dap",
       "rcarriga/nvim-dap-ui",
@@ -38,7 +42,7 @@ return {
     },
     build = "pip3 install --user notebook nbclassic jupyter-console polars jupynium jupytext --break-system-packages",
     config = function()
-      require("config.python").setup_all()
+     require("config.python").setup_all()
     end,
   },
 }
