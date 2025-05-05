@@ -1,20 +1,22 @@
 -- ~/.config/nvim/lua/plugins/lang/lua.lua
 return {
-    {
+  {
+    "folke/neoconf.nvim",
+    lazy = false,
+    priority = 1000,
+  },
+  {
     "folke/lazydev.nvim",
+    lazy = true,
     ft = "lua",
     dependencies = {
-      "folke/neoconf.nvim",
       "camspiers/luarocks",
       "saghen/blink.cmp",
       "stevearc/conform.nvim",
+      "folke/trouble.nvim",
       "nvimtools/none-ls.nvim",
       "gbprod/none-ls-luacheck.nvim",
-      "folke/trouble.nvim",
-      "nvimtools/none-ls-extras.nvim"},
-      lazy = true,
-      config = function(opts)
-        require("config.lua").setup_all(opts)
-      end,
-    }
+      "nvimtools/none-ls-extras.nvim"
+    },
   }
+}

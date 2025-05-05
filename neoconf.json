@@ -1,30 +1,209 @@
 {
-  "neodev": {
+  "lazydev": {
     "library": {
       "enabled": true,
       "plugins": [
-        "nvim-lspconfig",
-        "lsp"
+        { "name": "nvim-lspconfig" },
+        { "name": "lsp" },
+        { "name": "plenary.nvim" },
+        { "name": "telescope.nvim" },
+        { "name": "nvim-cmp" },
+        { "name": "cmp-nvim-lsp" },
+        { "name": "nvim-treesitter" },
+        {
+          "name": "luasnip",
+          "setup": { "build_jsregexp": true }
+        },
+        { "name": "lazydev.nvim" },
+        { "name": "lazy.nvim" }
       ]
+    },
+    "types": true,
+    "integrations": {
+      "lspconfig": true,
+      "cmp": true,
+      "coq": true,
+      "treesitter": true,
+      "luasnip": true
     }
   },
-  "neoconf": {
-    "plugins": {
-      "lua_ls": {
-        "enabled": true
+  "rust_analyzer": {
+  "autostart": true,
+  "cargo": {
+    "allFeatures": true,
+    "buildScripts": {
+      "enable": true
+    },
+    "features": "all"
+  },
+  "procMacro": {
+    "enable": true
+  },
+  "checkOnSave": {
+    "command": "clippy"
+  },
+  "diagnostics": {
+    "enable": true,
+    "experimental": {
+      "enable": true
+    }
+  },
+  "inlayHints": {
+    "bindingModeHints": {
+      "enable": true
+    },
+    "chainingHints": {
+      "enable": true
+    },
+    "parameterHints": {
+      "enable": true
+    },
+    "typeHints": {
+      "enable": true
+    }
+  },
+  "lens": {
+    "enable": true,
+    "methodReferences": true,
+    "references": true,
+    "enumVariantReferences": true
+  }
+},
+  "mojo": {
+    "autostart": true,
+    "filetypes": ["mojo", "🔥"],
+    "settings": {
+      "mojo": {
+        "importStrategy": "fromEnvironment",
+        "pythonPath": "python3",
+        "sdkPath": "${env:MODULAR_HOME}/pkg/mojo",
+        "enableCompletion": true,
+        "enableHover": true,
+        "enableDefinition": true,
+        "formatting": { "provider": "black" }
       }
     }
   },
-  "lspconfig": {
-    "lua_ls": {
-      "Lua.completion.callSnippet": "Replace",
-      "Lua.diagnostics.globals": ["vim"], // Suppress warnings about 'vim'
-      "Lua.workspace.library": [
-        "${3rd}/luv/library",
-        "${VIMRUNTIME}"
-      ],
-      "Lua.workspace.checkThirdParty": false // Disable third-party checks for faster startup
+  "html": {
+    "autostart": true,
+    "filetypes": ["html", "htmldjango"],
+    "format": {
+      "indentHandlebars": true,
+      "indentInnerHtml": true,
+      "contentUnformatted": ["pre", "code", "textarea", "super"],
+      "enable": true
+    },
+    "validate": {
+      "scripts": true,
+      "styles": true
+    },
+    "autoClosingTags": true
+  },
+  "cssls": {
+    "autostart": true,
+    "validate": {
+      "enable": true,
+      "scss": true,
+      "less": true
+    },
+    "lint": {
+      "argumentsInColorFunction": "error",
+      "boxModel": "warning",
+      "compatibleVendorPrefixes": "warning",
+      "duplicateProperties": "warning",
+      "importStatement": "warning"
     }
+  },
+  "tailwindcss": {
+    "autostart": true,
+    "emmetCompletions": true,
+    "includeLanguages": { "markdown": "html", "mdx": "html" },
+    "experimental": {
+      "classRegex": [
+        ["cva\\(([^)]*)\\)", "[\"'`]([^\"'`]*).*?[\"'`]"]
+      ]
+    }
+  },
+  "emmet_ls": { 
+    "autostart": true, 
+    "filetypes": ["html", "css", "scss", "less", "markdown"] 
+  },
+  "null-ls": {
+    "sources": [
+      "require('none-ls.diagnostics.eslint')",
+      "require('none-ls-jsonlint.diagnostics.jsonlint')"
+    ]
+  },
+  "conform": {
+    "formatters_by_ft": {
+      "markdown": ["prettier", "markdownlint"],
+      "html": ["prettierd", "prettier"],
+      "toml": ["taplo"],
+      "css": ["prettierd", "prettier", "stylelint"],
+      "scss": ["prettierd", "prettier", "stylelint"],
+      "rust": ["rustfmt"]
+    }
+  },
+  "lua_ls": {
+    "autostart": true,
+    "Lua": {
+      "completion.callSnippet": "Replace",
+      "diagnostics.globals": ["vim", "jit"],
+      "runtime.version": "LuaJIT",
+      "workspace.library": [
+        "${3rd}/luv/library",
+        "${3rd}/luasnip/lua",
+        "${VIMRUNTIME}/lua",
+        "/home/phaedrus/.luarocks/share/lua/5.1"
+      ],
+      "workspace.checkThirdParty": true,
+      "telemetry.enable": false,
+      "diagnostics.disable": ["missing-fields"],
+      "hint.enable": true,
+      "format.enable": true,
+      "workspace.maxPreload": 2000,
+      "workspace.preloadFileSize": 1000
+    }
+  },
+  "jsonls": { 
+    "autostart": true, 
+    "cmd": ["vscode-json-language-server", "--stdio"] 
+  },
+  "tsserver": { 
+    "autostart": true 
+  },
+  "pyright": { 
+    "python.analysis.typeCheckingMode": "basic" 
+  },
+  },
+  "zls": { 
+    "autostart": true 
+  },
+  "stylua": { 
+    "autostart": true 
+  },
+  "luacheck": { 
+    "autostart": true 
+  },
+  "sqlls": { 
+    "autostart": true 
+  },
+  "sqls": { 
+    "autostart": true 
+  },
+  "marksman": { 
+    "autostart": true 
+  },
+  "supermarkdown": { 
+    "autostart": true 
+  },
+  "diagnostics": {
+    "underline": true,
+    "virtual_text": true,
+    "signs": true,
+    "severity_sort": true
+  },
+  "shell": { 
+    "detect_shebang": true 
   }
 }
-

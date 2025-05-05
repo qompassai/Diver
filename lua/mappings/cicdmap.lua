@@ -41,7 +41,6 @@ function M.setup()
           p = { "<cmd>ContainerPrune<cr>", "Prune" },
         },
 
-        -- Image subgroup
         i = {
           name = "Images",
           l = { "<cmd>ImageList<cr>", "List" },
@@ -117,7 +116,7 @@ function M.setup()
   -- NvimTree mappings
 
   -- NvimTree: Toggle NvimTree file explorer window (open or close the file manager window)
-  map("n", "<leader>nt", "<cmd>NvimTreeToggle<CR>", vim.tbl_extend("force", opts, { desc = "NvimTree toggle window" }))
+  --map("n", "<leader>nt", "<cmd>NvimTreeToggle<CR>", vim.tbl_extend("force", opts, { desc = "NvimTree toggle window" }))
   -- In normal mode, press 'Space' + 'n' + 't' to open or close the NvimTree window
 
   -- NeoTree: Focus the NvimTree file explorer window

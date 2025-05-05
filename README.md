@@ -1,5 +1,5 @@
 # Qompass Diver for Neovim
-[![DOI](https://zenodo.org/badge/DOI/10.5281/zenodo.15062573.svg)](https://doi.org/10.5281/zenodo.15062573)
+
 **Qompass Diver** was inspired by the great folks who made [NvChad](https://github.com/NvChad/NvChad). The intent of Diver is to build on the original configuration framework to provide an even more powerful, customizable, and user-friendly experience that bridges the skills gap left by education and industry. Qompass Diver enhances the flexibility of the original project while focusing on AI, cloud integrations, education, and developer productivity.
 
 ## Features

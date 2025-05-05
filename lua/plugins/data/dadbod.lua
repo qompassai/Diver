@@ -1,6 +1,7 @@
 return {
   {
     "kristijanhusak/vim-dadbod-ui",
+    ft = { "sql", "mysql", "plsql" },
     lazy = true,
     dependencies = {
       { "tpope/vim-dadbod", lazy = true },
@@ -10,7 +11,6 @@ return {
     init = function()
       vim.g.db_ui_use_nerd_fonts = 1
       vim.g.db_ui_auto_format_results = 1
-      -- Additional UI configuration
       vim.g.db_ui_win_position = "right" -- Change UI drawer position (left/right/top/bottom)
       vim.g.db_ui_winwidth = 40 -- Set the UI width
       vim.g.db_ui_show_help = 0 -- Hide the help in the UI drawer

@@ -1,4 +1,4 @@
--- ~/.config/nvim/lua/plugins/lang/ansible.lua
+-- ~/.config/nvim/lua/plugins/cicd/ansible.lua
 return {
   {
     "pearofducks/ansible-vim",
@@ -14,7 +14,7 @@ return {
     },
     lazy = true,
     config = function(opts)
-      require("config.ansible").setup_all(opts)
+      require("config.cicd.ansible").setup_ansible(opts)
     end,
   }
 }

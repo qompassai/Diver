@@ -8,4 +8,4 @@ rustup install stable
 python -m ensurepip --user
 pip install --user jupyter
 
-echo "All dependencies have been installed successfully for Arch Linux!"
+echo "All Diver dependencies have been installed successfully for Arch Linux!"

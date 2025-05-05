@@ -1,0 +1,166 @@
+-- ~/.config/nvim/lua/config/types.lua
+--------------------------------------
+---@meta
+
+---@class LazyVimGlobals
+vim.g = {}
+
+_G.lazyvim_docs = true
+_G.LazyVim = require("lazyvim.util")
+---@class vim.var_accessor
+---@field mapleader string
+---@field maplocalleader string
+---@field which_key_disable_health_check number
+---
+---@class vim.api.create_autocmd.callback.args
+---@field id number
+---@field event string
+---@field group number?
+---@field match string
+---@field buf number
+---@field file string
+---@field data any
+
+---@class vim.api.keyset.create_autocmd.opts: vim.api.keyset.create_autocmd
+---@field callback? fun(ev:vim.api.create_autocmd.callback.args):boolean?
+
+--- @param event any (string|array) Event(s) that will trigger the handler
+--- @param opts vim.api.keyset.create_autocmd.opts
+--- @return integer
+function vim.api.nvim_create_autocmd(event, opts) end
+---@class conform.Config
+---@field formatters_by_ft table<string, string[]|fun(bufnr:integer):string[]>|nil Map of filetype to formatters
+---@field format_on_save boolean|table|nil Whether to format on save
+---@field format_on_save_timeout_ms number|nil Timeout for format on save in ms
+---@field format_after_save boolean|table|nil Whether to format after save
+---@field log_level integer|nil Log level for debugging
+---@field notify_on_error boolean|nil Whether to notify on errors (default true)
+---@field notify_no_formatters boolean|nil Whether to notify when no formatters available
+---@field formatters table<string, table|fun(bufnr:integer):table>|nil Custom formatters
+---@class ConformFormatterOptions
+---@field command string The command to run
+---@field args string[]|fun(self, ctx):string[] Arguments for the formatter
+---@field stdin boolean|nil Send file contents to stdin (default true)
+---@field cwd string|fun():string|nil Working directory for the formatter
+---@field env table<string,string>|nil Environment variables for the formatter
+---@field inherit boolean|nil Whether to inherit from built-in config (default true)
+---@field prepend_args string[]|fun(self, ctx):string[]|nil Arguments to prepend
+---@field append_args string[]|fun(self, ctx):string[]|nil Arguments to append
+---@field range_args fun(self, ctx):string[]|nil Arguments for range formatting
+---@field exit_codes integer[]|nil Exit codes that indicate success (default {0})
+---@field require_cwd boolean|nil When cwd is not found, don't run the formatter
+---@field condition fun(self, ctx):boolean|nil When returns false, formatter won't be used
+---@class ConformOptions
+---@field formatters_by_ft table<string, string[]|fun(bufnr:integer):string[]>|nil Map of filetype to formatters
+---@field format_on_save boolean|table|nil Whether to format on save
+---@field format_on_save_timeout_ms number|nil Timeout for format on save in ms
+---@field format_after_save boolean|table|nil Whether to format after save
+---@field log_level integer|nil Log level for debugging
+---@field notify_on_error boolean|nil Whether to notify on errors (default true)
+---@field formatters table<string, ConformFormatterOptions|fun(bufnr:integer):ConformFormatterOptions>|nil Custom formatters
+---@class EfmOptions
+---@field cmd string[]|nil Command to start EFM server
+---@field filetypes string[]|nil Filetypes to enable EFM for
+---@field init_options table|nil LSP initialization options
+---@field settings table|nil EFM server settings
+---@field languages table<string, table[]>|nil Language-specific formatter/linter configurations
+---@field root_markers string[]|nil Files to identify project root
+---@class LazydevOptions
+---@field types boolean Whether to enable Lua type definitions
+---@field library table[] List of library paths to include
+---@field integrations table Integration settings for other plugins
+---@class LspAttachOptions
+---@field enable_autocompletion boolean? Whether to enable autocompletion on attach (default true)
+---@field keymaps table<string, function>? Custom keymaps to set on attach
+---@field format_on_save boolean? Enable format on save
+---@field format_timeout_ms number? Timeout for formatting in ms (default 1000)
+---@class LspFormatEnum
+---@field never string Never use LSP for formatting
+---@field fallback string Use LSP when no other formatters available
+---@field prefer string Use only LSP formatting when available
+---@field first string LSP formatting first, then other formatters
+---@field last string Other formatters first, then LSP
+---@class LuacheckConfig
+---@field globals string[]|nil # List of global variables Luacheck should recognize
+---@field unused boolean|nil # Whether to check for unused variables (default: true)
+---@field unused_args boolean|nil # Whether to check for unused arguments (default: true)
+---@field unused_locals boolean|nil # Whether to check for unused local variables (default: true)
+---@field redefined boolean|nil # Whether to check for redefined variables (default: true)
+---@field undefined boolean|nil # Whether to check for undefined variables (default: true)
+---@field max_line_length integer|nil # Maximum allowed line length
+---@field max_code_line_length integer|nil # Maximum allowed code line length
+---@field max_string_line_length integer|nil # Maximum allowed string line length
+---@field max_comment_line_length integer|nil # Maximum allowed comment line length
+---@field ignore string[]|nil # List of warnings to ignore by code (e.g., "211" for unused-local)
+---@field enable string[]|nil # List of warnings to enable
+---@field only string[]|nil # List of warnings to exclusively enable
+---@field disable string[]|nil # List of warnings to disable by code
+---@field self boolean|nil # Whether to check for unused self
+---@field std string|string[]|nil # Standard library to use (e.g., "luajit", "lua51")
+---@field max_cyclomatic_complexity integer|nil # Maximum allowed cyclomatic complexity
+---@field quiet boolean|nil # Whether to suppress report output for files without warnings
+---@field color boolean|nil # Whether to colorize output
+---@field codes boolean|nil # Whether to show warning codes in output
+---@class LuaSpecificOptions
+---@field stylua_config_path string|nil Path to stylua.toml config file
+---@field selene_args string[]|nil Arguments for selene linter
+---@field teal_args string[]|nil Arguments for teal linter
+---@field format_on_save boolean|nil Whether to format Lua files on save
+---@field coq boolean|nil Whether to enable coq integration
+---@field prepend_args string[]|fun(self, ctx):string[]|nil Arguments to prepend
+---@class LspGlobalOptions
+---@field capabilities table|nil LSP capabilities
+---@field root_markers string[]|nil Files to identify project root
+---@class NeoconfOptions
+---@field local_settings string Local settings file name
+---@field global_settings string Global settings file name
+---@field import table Import settings from other tools
+---@field live_reload boolean Whether to reload on changes
+---@field filetype_jsonc boolean Whether to set filetype to jsonc
+---@field plugins table Plugin-specific configurations
+---@class neotree.Config
+---@field close_if_last_window boolean Whether to close Neo-tree if it is the last window
+---@field popup_border_style string Style of border for popups
+---@field enable_git_status boolean Enable git status indicators
+---@field enable_diagnostics boolean Enable diagnostic indicators
+---@field sort_case_insensitive boolean Sort items case-insensitively
+---@field source_selector table Configuration for source selector (filesystem, buffers, git)
+---@field default_component_configs table Default component configurations
+---@field window table Window positioning and appearance options
+---@field filesystem table Configuration specific to filesystem source
+---@field buffers table Configuration specific to buffers source
+---@field git_status table Configuration specific to git status source
+---@field event_handlers table<string, function> Custom event handlers
+---@class NeoTreeOptions
+---@field close_if_last_window boolean|nil Whether to close Neo-tree if it is the last window
+---@field popup_border_style string|nil Style of border for popups
+---@field enable_git_status boolean|nil Enable git status indicators
+---@field enable_diagnostics boolean|nil Enable diagnostic indicators
+---@field sort_case_insensitive boolean|nil Sort items case-insensitively
+---@field sources string[]|nil Sources to enable
+---@field source_selector table|nil Configuration for source selector
+---@field default_component_configs table|nil Default component configurations
+---@field window table|nil Window positioning and appearance options
+---@field filesystem table|nil Configuration specific to filesystem source
+---@field buffers table|nil Configuration specific to buffers source
+---@field git_status table|nil Configuration specific to git status source
+---@class SetupOptions
+---@field lazydev LazydevOptions|nil Options for lazydev
+---@field neoconf NeoconfOptions|nil Options for neoconf
+---@field lsp LspGlobalOptions|nil Options for global LSP settings
+---@field attach LspAttachOptions|nil Options for LSP attach handlers
+---@field formatter ConformOptions|nil Options for conform.nvim formatter
+---@field efm EfmOptions|nil Configuration options for EFM language server
+---@class StyLuaConfig
+---@field syntax? "All"|"Lua51"|"Lua52"|"Lua53"|"Lua54"|"LuaJIT"|"Luau" # Lua syntax style
+---@field column_width? integer # Line length limit (default: 120)
+---@field line_endings? "Unix"|"Windows" # Line ending type (LF or CRLF)
+---@field indent_type? "Tabs"|"Spaces" # Indentation type
+---@field indent_width? integer # Size of indentation (default: 4)
+---@field quote_style? "AutoPreferDouble"|"AutoPreferSingle"|"ForceDouble"|"ForceSingle" # String literal quotes
+---@field call_parentheses? "Always"|"NoSingleString"|"NoSingleTable"|"None"|"Input" # Function call parentheses behavior
+---@field space_after_function_names? "Never"|"Definitions"|"Calls"|"Always" # Space after function names
+---@field collapse_simple_statement? "Never"|"FunctionOnly"|"ConditionalOnly"|"Always" # Simple statement collapsing
+---@field sort_requires? {enabled: boolean} # Controls require statement sorting
+
+return {}

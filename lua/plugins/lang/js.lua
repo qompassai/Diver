@@ -1,6 +1,7 @@
 return {
   {
     "pmizio/typescript-tools.nvim",
+    lazy = true,
     ft = {
        "typescript", "typescriptreact", "javascript", "javascriptreact",
       "vue", "svelte", "astro", "deno"
@@ -30,8 +31,8 @@ return {
         },
       },
     },
-    config = function()
-      require("config.js").setup_all()
+    config = function(opts)
+      require("config.lang.js").setup_js(opts)
     end,
   },
 }

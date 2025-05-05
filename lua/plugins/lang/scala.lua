@@ -11,7 +11,7 @@ return {
       "rcarriga/nvim-dap-ui",
     },
     config = function()
-      require("config.scala").setup_all()
+      require("config.lang.scala").setup_scala()
     end,
   },
 }

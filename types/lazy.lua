@@ -1,10 +1,10 @@
 ---@class LazyPluginSpec
 ---@field [1] string? Plugin name or path
 ---@field name string? Optional plugin name
----@field dir string? Local directory for plugin
----@field url string? Custom git url
----@field dev boolean? Use local dev version
----@field lazy boolean? Whether to lazy-load
+-----@field dir string? Local directory for plugin
+-----@field url string? Custom git url
+-----@field dev boolean? Use local dev version
+-----@field lazy boolean? Whether to lazy-load
 ---@field enabled boolean? | fun():boolean Whether the plugin is enabled
 ---@field cond boolean? | fun():boolean Load condition
 ---@field dependencies string[] | LazyPluginSpec[] Plugin dependencies

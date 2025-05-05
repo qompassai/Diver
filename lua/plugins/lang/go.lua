@@ -2,6 +2,7 @@ return {
   {
     "ray-x/go.nvim",
     ft = { "go", "gomod" },
+    lazy = true,
     dependencies = {
       "ray-x/guihua.lua",
       "neovim/nvim-lspconfig",
@@ -10,9 +11,10 @@ return {
       dependencies = {
         { "igorlfs/nvim-dap-view", opts = {} },
         "rcarriga/nvim-dap-ui",
+        "mfussenegger/nvim-dap-go",
       },
       config = function()
-        require("config.go").setup_all()
+        require("config.lang.go").setup_all()
       end,
     },
   },

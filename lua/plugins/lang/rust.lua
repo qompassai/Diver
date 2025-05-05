@@ -1,39 +1,78 @@
 return {
   {
     "mrcjkb/rustaceanvim",
+    lazy = true,
     version = "^5",
     ft = { "rust" },
-    lazy = true,
     dependencies = {
       "nvim-lua/plenary.nvim",
       "nvim-treesitter/nvim-treesitter",
       {
         "saghen/blink.cmp",
-      dependencies = {
-            "L3MON4D3/LuaSnip",
-            dependencies = { "rafamadriz/friendly-snippets" },
+        version = "0.*",
+        dependencies = {
+          "dmitmel/cmp-digraphs",
+        },
+        opts = {
+          sources = {
+            default = { "lsp", "path", "snippets", "buffer", "digraphs" },
+            providers = {
+              digraphs = {
+                name = "digraphs",
+                module = "blink.compat.source",
+                score_offset = -3,
+                opts = {
+                  cache_digraphs_on_start = true,
+                },
+              },
+            },
           },
         },
-          "nvimtools/none-ls.nvim",
-          "saecki/crates.nvim",
-          {
-          "mfussenegger/nvim-dap",
-          dependencies = {
-            { "igorlfs/nvim-dap-view", opts = {} },
-            "rcarriga/nvim-dap-ui",
-          },
-        },
-          {
-            "rust-lang/rust.vim",
-            ft = "rust",
-            init = function()
-              vim.g.rustfmt_autosave = 1
-            end,
-            lazy = true,
-          },
-        },
-        config = function()
-          require("config.rust").setup_all()
-        end,
       },
-    }
+      {
+        "L3MON4D3/LuaSnip",
+        dependencies = { "rafamadriz/friendly-snippets" },
+      },
+      "nvimtools/none-ls.nvim",
+      "nvimtools/none-ls-extras.nvim",
+      {
+        "saghen/blink.compat",
+        version = "0.*",
+        lazy = true,
+        opts = {},
+      },
+      {
+        "mfussenegger/nvim-dap",
+        dependencies = {
+          { "igorlfs/nvim-dap-view", opts = {} },
+          "rcarriga/nvim-dap-ui",
+        },
+      },
+    },
+    config = function()
+      require("config.lang.rust").rust()
+    end,
+  },
+  {
+    "saecki/crates.nvim",
+    event = { "BufRead Cargo.toml" },
+    config = function()
+      require("config.lang.rust").rust_crates()
+    end,
+  },
+{
+    "nvim-neotest/neotest",
+    dependencies = {
+      "nvim-neotest/nvim-nio",
+      "rouge8/neotest-rust"
+    },
+    ft = { "rust" },
+    config = function()
+      require("neotest").setup({
+        adapters = {
+          require("neotest-rust"),
+        },
+      })
+    end,
+  },
+}
