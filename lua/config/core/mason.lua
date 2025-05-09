@@ -1,30 +1,19 @@
+-- ~/.config/nvim/lua/config/core/mason.lua
 local M = {}
-local mason = require("mason")
-local path = require("mason-core.path")
+local function is_neovim_11_plus()
+  return vim.fn.has('nvim-0.11') == 1
+end
+
 M.setup_all_mason = function()
   M.setup_mason()
   M.setup_masontools()
 end
 M.setup_mason = function()
-  mason.setup({
-    install_root_dir = path.concat({ vim.fn.stdpath("data"), "mason" }),
+  local opts = {
+    install_root_dir = require("mason-core.path").concat({ vim.fn.stdpath("data"), "mason" }),
     PATH = "prepend",
     log_level = vim.log.levels.INFO,
     max_concurrent_installers = 10,
-    registries = {
-      "github:mason-org/mason-registry",
-    },
-    providers = {
-      "mason.providers.registry-api",
-      "mason.providers.client",
-    },
-    github = {
-      download_url_template = "https://github.com/%s/releases/download/%s/%s",
-    },
-    pip = {
-      upgrade_pip = true,
-      install_args = {},
-    },
     ui = {
       check_outdated_packages_on_open = true,
       border = "none",
@@ -50,9 +39,29 @@ M.setup_mason = function()
         toggle_help = "g?",
       },
     },
-  })
+    github = {
+      download_url_template = "https://github.com/%s/releases/download/%s/%s",
+    },
+    pip = {
+      upgrade_pip = true,
+      install_args = {"--break-system-packages", "--no-cache-dir" },
+    },
+  }
+  if is_neovim_11_plus() then
+    opts.sources = {
+      "mason.sources.registry",
+    }
+  else
+    opts.registries = {
+      "github:mason-org/mason-registry",
+    }
+    opts.providers = {
+      "mason.providers.registry-api",
+      "mason.providers.client",
+    }
+  end
+  require("mason").setup(opts)
 end
-
 M.setup_masontools = function()
   require("mason-tool-installer").setup({
     ensure_installed = {
@@ -62,37 +71,31 @@ M.setup_masontools = function()
       { "golangci-lint", version = "v1.47.0" },
       "golines",
       "gomodifytags",
-      {
-        "gopls",
-        "black",
-        "codespell",
-        "codelldb",
-        "eslint_d",
-        "gotests",
-        "impl",
-        "isort",
-        "json-to-struct",
-        "latexindent",
-        "leptosfmt",
-        "lua-language-server",
-        "luacheck",
-        "markdownlint",
-        "misspell",
-        "prettierd",
-        "revive",
-        "shellcheck",
-        "shfmt",
-        "sql-formatter",
-        "staticcheck",
-        "stylua",
-        "taplo",
-        "typstfmt",
-        "vim-language-server",
-        "vint",
-        condition = function()
-          return not os.execute("go version")
-        end,
-      },
+      "gopls",
+      "black",
+      "codespell",
+      "eslint_d",
+      "gotests",
+      "impl",
+      "isort",
+      "json-to-struct",
+      "latexindent",
+      "leptosfmt",
+      "lua-language-server",
+      "luacheck",
+      "markdownlint",
+      "misspell",
+      "prettierd",
+      "revive",
+      "shellcheck",
+      "shfmt",
+      "sql-formatter",
+      "staticcheck",
+      "stylua",
+      "taplo",
+      "typstfmt",
+      "vim-language-server",
+      "vint",
     },
     auto_update = true,
     run_on_start = true,
@@ -112,23 +115,60 @@ M.setup_masontools = function()
     "gopls",
     "pyright",
     "zls",
+    "jsonls",
   }
   mason_lspconfig.setup({
     ensure_installed = servers,
     automatic_installation = true,
   })
-  mason_lspconfig.setup_handlers({
-    function(server_name)
-      lspconfig[server_name].setup({
-        on_attach = config_lsp.on_attach,
-        capabilities = config_lsp.capabilities(),
-        autostart = true,
-      })
+  local function setup_json_capabilities(capabilities)
+    capabilities.textDocument.semanticTokens = {
+      dynamicRegistration = true,
+      tokenTypes = {
+        "namespace", "type", "class", "enum", "interface",
+        "struct", "typeParameter", "parameter", "variable", "property",
+        "enumMember", "event", "function", "method", "macro",
+        "keyword", "modifier", "comment", "string", "number",
+        "regexp", "operator", "decorator"
+      },
+      tokenModifiers = {
+        "declaration", "definition", "readonly", "static",
+        "deprecated", "abstract", "async", "modification",
+        "documentation", "defaultLibrary"
+      },
+      formats = { "relative" },
+      requests = {
+        range = true,
+        full = true
+      }
+    }
+    return capabilities
+  end
+  vim.api.nvim_create_autocmd({ "TextChanged", "InsertLeave" }, {
+    pattern = { "*.json", "*.jsonc", "*.json5", "*.jsonl" },
+    callback = function()
+      vim.lsp.buf.document_highlight()
+      vim.diagnostic.reset()
+      local semantic_token_refresh = function()
+        local refresh_func
+        if vim.lsp.buf.semantic_tokens_refresh then
+          refresh_func = vim.lsp.buf.semantic_tokens_refresh
+        elseif vim.lsp.semantic_tokens and vim.lsp.semantic_tokens.refresh then
+          refresh_func = vim.lsp.semantic_tokens.refresh
+        end
+        if refresh_func then
+          pcall(refresh_func)
+        end
+      end
+      semantic_token_refresh()
     end,
   })
   pcall(function()
-    require("telescope").load_extension("zoxide")
-  end)
+  local fzf_lua = require("fzf-lua")
+  if fzf_lua.zoxide then
+  else
+    require("fzf-lua-zoxide")
+  end
+end)
 end
 return M
-

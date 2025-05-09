@@ -44,6 +44,27 @@ function M.setup_json_conform(opts)
 end
 function M.setup_json_lsp(opts)
   if not opts.servers then opts.servers = {} end
+    local capabilities = vim.lsp.protocol.make_client_capabilities()
+  capabilities.textDocument.semanticTokens = {
+    dynamicRegistration = true,
+    tokenTypes = {
+      "namespace", "type", "class", "enum", "interface",
+      "struct", "typeParameter", "parameter", "variable", "property",
+      "enumMember", "event", "function", "method", "macro",
+      "keyword", "modifier", "comment", "string", "number",
+      "regexp", "operator", "decorator"
+    },
+    tokenModifiers = {
+      "declaration", "definition", "readonly", "static",
+      "deprecated", "abstract", "async", "modification",
+      "documentation", "defaultLibrary"
+    },
+    formats = { "relative" },
+    requests = {
+      range = true,
+      full = true
+    }
+  }
   opts.servers.jsonls = {
     filetypes = { "json", "jsonc", "json5", "jsonl" },
     settings = {
@@ -130,6 +151,27 @@ function M.setup_json_filetype_detection()
     },
   })
 end
+function M.setup_json_autocmds()
+  vim.api.nvim_create_autocmd({ "TextChanged", "InsertLeave" }, {
+    pattern = { "*.json", "*.jsonc", "*.json5", "*.jsonl" },
+    callback = function()
+      vim.lsp.buf.document_highlight()
+      vim.diagnostic.reset()
+      local ok, has_semantic = pcall(function()
+        return vim.lsp.buf.server_ready() and 
+               vim.lsp.get_active_clients({bufnr = 0})[1].server_capabilities.semanticTokensProvider ~= nil
+      end)
+      if ok and has_semantic then
+        if vim.lsp.buf.semantic_tokens_refresh then
+          vim.lsp.buf.semantic_tokens_refresh()
+        elseif vim.lsp.semantic_tokens and vim.lsp.semantic_tokens.refresh then
+          vim.lsp.semantic_tokens.refresh()
+        end
+      end
+    end,
+  })
+end
+
 function M.setup_json_keymaps(opts)
   opts.defaults = vim.tbl_deep_extend("force",
     opts.defaults or {},

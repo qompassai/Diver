@@ -10,11 +10,11 @@ M.setup = function()
     "disable",
     "genmap",
     "langmap",
-    "lazymap",
+   -- "lazymap",
     "navmap",
     "pymap",
     "rustmap",
-    "source",
+    --"source",
     "themes",
   }
 

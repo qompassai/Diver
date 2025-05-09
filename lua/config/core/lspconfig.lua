@@ -15,10 +15,8 @@ function M.capabilities()
   if ok then
     capabilities = blink_cmp.get_lsp_capabilities(capabilities)
   end
-
   return capabilities
 end
-
 function M.on_attach(_, bufnr)
   local bufmap = function(mode, lhs, rhs)
     vim.keymap.set(mode, lhs, rhs, { buffer = bufnr })
@@ -26,7 +24,6 @@ function M.on_attach(_, bufnr)
   bufmap("n", "K", vim.lsp.buf.hover)
   bufmap("n", "gd", vim.lsp.buf.definition)
 end
-
 function M.setup()
   local lspconfig = require("lspconfig")
   local servers = {
@@ -59,15 +56,12 @@ function M.setup()
     "yamlls", -- YAML
     "zls", -- Zig
   }
-
   if util.root_pattern("deno.json", "deno.jsonc")(vim.fn.getcwd()) then
     table.insert(servers, "denols")
   else
     table.insert(servers, "tsserver")
   end
-
   local capabilities = M.capabilities()
-
   for _, lsp in ipairs(servers) do
     if lspconfig[lsp] then
       lspconfig[lsp].setup({
@@ -78,7 +72,6 @@ function M.setup()
       vim.notify("LSP: Server configuration for " .. lsp .. " not found!", vim.log.levels.WARN)
     end
   end
-
   go.setup(M.on_attach, capabilities)
   js.setup(M.on_attach, capabilities)
   lua.setup(M.on_attach, capabilities)
@@ -87,5 +80,4 @@ function M.setup()
   scala.setup(M.on_attach, capabilities)
   zig.setup(M.on_attach, capabilities)
 end
-
 return M
