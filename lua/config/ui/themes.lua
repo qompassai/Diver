@@ -1,9 +1,7 @@
 -- ~/.config/nvim/lua/config/ui/themes.lua
-
 local M = {}
 
 M.current_theme = "nightfox"
-
 M.themes = {
   catppuccin = {
     setup = function()
@@ -142,48 +140,44 @@ M.themes = {
   },
 }
 
--- Apply a specific theme
 function M.set_theme(theme_name)
   local theme = M.themes[theme_name]
   if not theme then
     vim.notify("Theme not found: " .. theme_name, vim.log.levels.ERROR)
     return false
   end
-
   local ok_setup, err_setup = pcall(theme.setup)
   if not ok_setup then
     vim.notify("Failed to set up theme " .. theme_name .. ": " .. err_setup, vim.log.levels.ERROR)
     return false
   end
-
   local ok_apply, err_apply = pcall(theme.apply)
   if not ok_apply then
     vim.notify("Failed to apply theme: " .. err_apply, vim.log.levels.ERROR)
     return false
   end
-
   M.current_theme = theme_name
   if M.discord_initialized then
     M.update_cord_theme()
   end
   return true
 end
-
--- Reapply current theme
 function M.apply_current_theme()
   return M.set_theme(M.current_theme)
 end
-
 function M.update_cord_theme()
   local theme = M.themes[M.current_theme]
-  if not theme or not M.cord_initialized then
-    return
-  end
-  local cord_ok, cord = pcall(require, "cord")
-  if not cord_ok then return end
-  cord.update_presence({
+  if not theme or not M.cord_initialized or not M.cord then return end
+  M.cord:update_presence({
     custom_details = "Using " .. theme.discord_name .. " theme " .. theme.discord_icon,
   })
+end
+function M.setup_appearance()
+  return {
+    theme = M.current_theme,
+    icon = M.themes[M.current_theme].discord_icon or "🎨",
+    text = "Using " .. M.themes[M.current_theme].discord_name,
+  }
 end
 
 function M.setup_commands()
@@ -211,39 +205,21 @@ function M.setup_commands()
 end
 
 function M.setup_cord()
-  local cord = require("cord")
-  cord.setup({
-    editor = {
-      client = "neovim",
-      tooltip = "The Superior Text Editor",
-    },
-    use_nerdfont = true,
-    advanced = {
-      plugin = {
-        cursor_update = "on_hold",
-      },
-    },
-      server = {
-        update = "fetch",
-      },
-      hooks = {},
+  local cord_mod = require("cord")
+  local instance = cord_mod.setup({
+    editor = { client = "neovim", tooltip = "The Superior Text Editor" },
+    advanced = { plugin = { cursor_update = "on_hold" } },
+    server = { update = "fetch" },
+    appearance = M.setup_appearance(),
+    text = M.setup_text(),
+    assets = M.setup_assets(),
+    buttons = M.setup_buttons(),
+    idle = M.setup_idle().idle,
+    timestamp = M.setup_idle().timestamp,
+    hooks = M.setup_hooks().hooks,
   })
-  return cord
+  return instance
 end
-function M.setup_appearance()
-  return {
-    display = {
-      theme = "nightfox",
-      flavor = "dark",
-    },
-    idle = {
-      icon = require("cord.api.icon").get("keyboard"),
-    },
-  }
-end
--- Other setup logic remains unchanged...
--- You can append M.setup_cord(), M.setup_text(), etc. as in your original
--- Call M.apply_current_theme() in M.setup_all()
 function M.setup_idle()
   return {
     idle = {
@@ -261,39 +237,21 @@ function M.setup_assets()
     file_assets = function(opts)
       if opts.filename then
         if opts.filename:match("%.lua$") then
-          return {
-            type = "language",
-            icon = "lua",
-            text = "Scripting in Lua",
-          }
+          return { type = "language", icon = "lua", text = "Scripting in Lua" }
         elseif opts.filename:match("%.rs$") then
-          return {
-            type = "language",
-            icon = "rust",
-            text = "Writing Rust code",
-          }
+          return { type = "language", icon = "rust", text = "Writing Rust code" }
         end
       end
       if opts.filetype == "lua" then
-        return {
-          type = "language",
-          icon = "lua",
-          text = "Scripting in Lua",
-        }
+        return { type = "language", icon = "lua", text = "Scripting in Lua" }
       elseif opts.filetype == "rust" then
-        return {
-          type = "language",
-          icon = "rust",
-          text = "Writing Rust code",
-        }
+        return { type = "language", icon = "rust", text = "Writing Rust code" }
       end
-      return {
-        type = "language",
-        text = "Editing " .. (opts.filetype or "file"),
-      }
+      return { type = "language", text = "Editing " .. (opts.filetype or "file") }
     end,
   }
 end
+
 function M.setup_text()
   return {
     editing = function(opts)
@@ -321,37 +279,32 @@ function M.setup_buttons()
   return {
     buttons = function(opts)
       local buttons = {}
-
       if opts.repo_url then
-        table.insert(buttons, {
-          label = "View Repository",
-          url = opts.repo_url,
-        })
+        table.insert(buttons, { label = "View Repository", url = opts.repo_url })
       end
-      table.insert(buttons, {
-        label = "Neovim Website",
-        url = "https://neovim.io",
-      })
+      table.insert(buttons, { label = "Neovim Website", url = "https://neovim.io" })
       return buttons
     end,
   }
 end
 function M.setup_hooks()
   return {
-    on_idle = function(activity)
-      activity.details = "Away from keyboard"
-    end,
+    hooks = {
+      on_idle = function(activity)
+        activity.details = "Away from keyboard"
+      end,
+    },
   }
 end
 function M.setup_all()
   M.apply_current_theme()
-  M.setup_cord()
-  M.setup_appearance()
-  M.setup_text()
-  M.setup_assets()
-  M.setup_buttons()
-  M.setup_idle()
-  M.setup_hooks()
+  local ok, cord = pcall(M.setup_cord)
+  if not ok or not cord then
+    vim.notify("cord.nvim failed to setup: " .. tostring(cord), vim.log.levels.ERROR)
+    return
+  end
+  M.cord = cord
+  M.cord_initialized = true
+  M.update_cord_theme()
 end
-
 return M

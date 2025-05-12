@@ -3,19 +3,38 @@
     "library": {
       "enabled": true,
       "plugins": [
+        { "name": "ansible-vim" }, 
+        { "name": "blink.cmp" },
+        { "name": "catppuccin" },
+        { "name": "cmp-nvim-lsp" },
+        { "name": "conform.nvim" },
+        { "name": "lazy.nvim" },
+        { "name": "lazydev.nvim" },
+        { "name": "lualine.nvim" },
+        { "name": "luarocks" },
+        { "name": "mason-lspconfig.nvim" },
+        { "name": "mason-tool-installer.nvim" },
+        { "name": "mason.nvim" },
+        { "name": "mini.nvim" },
+        { "name": "neoconf.nvim" },
+        { "name": "neodev.nvim" },
+        { "name": "noice.nvim" },
+        { "name": "none-ls.nvim" },
+        { "name": "nvim-cmp" },
         { "name": "nvim-lspconfig" },
-        { "name": "lsp" },
+        { "name": "nvim-metals" },
+        { "name": "nvim-treesitter" },
+        { "name": "plenary.nvim" },
+        { "name": "rustaceanvim" },
+        { "name": "SchemaStore.nvim" },
+        { "name": "trouble.nvim" },
+        { "name": "which-key.nvim" },
         { "name": "plenary.nvim" },
         { "name": "telescope.nvim" },
-        { "name": "nvim-cmp" },
-        { "name": "cmp-nvim-lsp" },
-        { "name": "nvim-treesitter" },
         {
           "name": "luasnip",
           "setup": { "build_jsregexp": true }
-        },
-        { "name": "lazydev.nvim" },
-        { "name": "lazy.nvim" }
+        }
       ]
     },
     "types": true,
@@ -174,7 +193,6 @@
   },
   "pyright": { 
     "python.analysis.typeCheckingMode": "basic" 
-  },
   },
   "zls": { 
     "autostart": true 

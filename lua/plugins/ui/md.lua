@@ -1,6 +1,7 @@
 return {
   {
     "arminveres/md-pdf.nvim",
+    lazy = true,
     ft = "markdown",
     dependencies = { "3rd/diagram.nvim" },
     keys = {
@@ -25,12 +26,26 @@ return {
   },
   {
   "iamcco/markdown-preview.nvim",
+  lazy = true,
   cmd = { "MarkdownPreview", "MarkdownPreviewToggle", "MarkdownPreviewStop" },
   ft = { "markdown" },
   build = ":call mkdp#util#install()",
   init = function()
     vim.g.mkdp_filetypes = { "markdown" }
   end,
+},
+{
+    'brianhuster/live-preview.nvim',
+    dependencies = {
+        'ibhagwan/fzf-lua',
+        require('livepreview.config').set()
+    },
+},
+{
+  'chomosuke/typst-preview.nvim',
+  lazy = false, -- or ft = 'typst'
+  version = '1.*',
+  opts = {}, -- lazy.nvim will implicitly calls `setup {}`
 },
   {
   "3rd/diagram.nvim",
@@ -63,7 +78,7 @@ return {
     auto_render = true,
     open_app = false,
     rocks = {
-      hererocks = false,
+      hererocks = true,
       enabled = true,
     },
   },
@@ -120,6 +135,7 @@ return {
   },
   {
     "img-paste-devs/img-paste.vim",
+    lazy = true,
     ft = { "markdown" },
     cmd = "PasteImg",
     keys = {

@@ -45,7 +45,6 @@ function M.lua_lazydev(opts)
       coq = opts.integrations and opts.integrations.coq ~= nil
         and opts.integrations.coq or false,
     },
-
     enabled = opts.enabled or function(root_dir)
       return vim.g.lazydev_enabled == nil and true or vim.g.lazydev_enabled
     end,
@@ -146,7 +145,6 @@ function M.lua_conform(opts)
     },
     formatters = {},
   }
-
   if base_config.formatters and base_config.formatters.stylua then
     lua_config.formatters.stylua = vim.deepcopy(base_config.formatters.stylua)
     local original_prepend_args = lua_config.formatters.stylua.prepend_args

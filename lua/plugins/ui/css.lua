@@ -2,6 +2,7 @@
 return {
   {
     "norcalli/nvim-colorizer.lua",
+    lazy = true,
     ft = { "css", "scss", "less" },
     dependencies = {
       "folke/neoconf.nvim",
@@ -11,10 +12,8 @@ return {
       "nvim-treesitter/nvim-treesitter",
       "folke/trouble.nvim",
     },
-    lazy = true,
     config = function(opts)
       require("config.ui.css").setup_all(opts)
     end,
   }
 }
-

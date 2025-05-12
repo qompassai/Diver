@@ -1,11 +1,7 @@
 -- ~/.config/nvim/lua/config/options.lua
 
-vim.api.nvim_create_autocmd("CursorHold", {
-  callback = function()
-    vim.diagnostic.open_float(nil, { focusable = false })
-  end,
-})
-vim.g.git_command_ssh = 1
+vim.bo.modifiable = true
+vim.g.git_command_ssh = 0
 vim.g.editorconfig = true
 if vim.fn.executable("rg") == 1 then
   vim.opt.grepprg = "rg --vimgrep --no-heading --smart-case"
@@ -14,12 +10,13 @@ elseif vim.fn.executable("ag") == 1 then
   vim.opt.grepprg = "ag --vimgrep"
   vim.opt.grepformat = "%f:%l:%c:%m"
 end
-vim.g.loaded_netrw = 1
-vim.g.loaded_netrwPlugin = 1
-vim.g.loaded_node_provider = 1
-vim.g.loaded_perl_provider = 1
-vim.g.loaded_python_provider = 1
-vim.g.loaded_ruby_provider = 1
+vim.g.loaded_illuminate = true
+vim.g.loaded_netrw = 0
+vim.g.loaded_netrwPlugin = 0
+vim.g.loaded_node_provider = 0
+vim.g.loaded_perl_provider = 0
+vim.g.loaded_python_provider = 0
+vim.g.loaded_ruby_provider = 0
 vim.g.lsp_enable_on_demand = true
 vim.g.mkdp_theme = "dark"
 if vim.g.neovide then
@@ -28,8 +25,9 @@ if vim.g.neovide then
 end
 vim.g.semantic_tokens_enabled = true
 vim.g.syntax_on = true
-vim.g.which_key_disable_health_check = 1
+vim.g.which_key_disable_health_check = 0
 vim.o.history = 300
+vim.o.modifiable = true
 vim.o.number = true
 vim.o.relativenumber = true
 vim.o.syntax = "enable"
@@ -39,7 +37,7 @@ vim.opt.ambiwidth = "single"
 vim.opt.backup = false
 vim.opt.breakindent = true
 vim.opt.clipboard = "unnamedplus"
-vim.opt.cmdheight = 1
+vim.opt.cmdheight = 0
 vim.opt.conceallevel = 0
 vim.opt.cursorline = true
 vim.opt.diffopt:append{"algorithm:histogram", "indent-heuristic", "linematch:60"}
@@ -107,6 +105,7 @@ vim.opt.virtualedit = "block"
 vim.opt.wildmenu = true
 vim.opt.wildmode = "longest:full,full"
 vim.opt.writebackup = true
+vim.wo.spell = true
 local is_windows = vim.fn.has "win32" ~= 0
 local sep = is_windows and "\\" or "/"
 local delim = is_windows and ";" or ":"

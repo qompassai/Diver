@@ -1,6 +1,6 @@
 return {
   {
-    "williamboman/mason.nvim",
+    "mason-org/mason.nvim",
     lazy = false,
     event = "VeryLazy",
     dependencies = {
@@ -9,6 +9,7 @@ return {
       { "ms-jpq/coq.artifacts", branch = "artifacts" },
       { 'ms-jpq/coq.thirdparty', branch = "3p" },
       "WhoIsSethDaniel/mason-tool-installer.nvim",
+      "b0o/SchemaStore.nvim",
       "neovim/nvim-lspconfig",
       "saghen/blink.cmp",
     },

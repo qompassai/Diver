@@ -157,20 +157,26 @@ function M.setup_json_autocmds()
     callback = function()
       vim.lsp.buf.document_highlight()
       vim.diagnostic.reset()
-      local ok, has_semantic = pcall(function()
-        return vim.lsp.buf.server_ready() and 
-               vim.lsp.get_active_clients({bufnr = 0})[1].server_capabilities.semanticTokensProvider ~= nil
-      end)
-      if ok and has_semantic then
-        if vim.lsp.buf.semantic_tokens_refresh then
-          vim.lsp.buf.semantic_tokens_refresh()
-        elseif vim.lsp.semantic_tokens and vim.lsp.semantic_tokens.refresh then
-          vim.lsp.semantic_tokens.refresh()
+      local clients = vim.lsp.get_active_clients({ bufnr = 0 })
+      for _, client in ipairs(clients) do
+        if client.supports_method("textDocument/semanticTokens/full") then
+          local ok, result = pcall(function()
+            if vim.lsp.buf.semantic_tokens_refresh then
+              vim.lsp.buf.semantic_tokens_refresh()
+            elseif vim.lsp.semantic_tokens and vim.lsp.semantic_tokens.refresh then
+              vim.lsp.semantic_tokens.refresh()
+            end
+          end)
+          if not ok then
+            vim.notify("Semantic tokens refresh failed: " .. result, vim.log.levels.WARN)
+          end
+          break
         end
       end
     end,
   })
 end
+
 
 function M.setup_json_keymaps(opts)
   opts.defaults = vim.tbl_deep_extend("force",
