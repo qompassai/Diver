@@ -1,7 +1,3 @@
-# ~/.GH/Qompass/Diver/CITATION.cff
-# --------------------------------
-# Copyright (C) 2025 Qompass AI, All rights reserved
-
 cff-version: 1.2.0
 title: "Diver"
 message: "If you use this software, please cite it as below."
@@ -10,14 +6,17 @@ authors:
     given-names: "Matthew A."
     orcid: "https://orcid.org/0000-0002-0302-4812"
     affiliation: "Qompass AI"
-version: "2025-05-01"
-date-released: "2025-05-01"
+version: "v2025-05-11"
+date-released: "2025-05-11"
 repository-code: "https://github.com/qompassai/Diver"
-license: "AGPL-3.0 AND Qompass-Commercial-Data-Agreement"
+license: "Q-CDA-1.0"
 keywords:
   - AI
-  - Quantum
-  - Post-Quantum Cryptography
   - Education
   - Healthcare
+  - Post-Quantum Cryptography
+  - Quantum
+  - config
+  - lua
+  - neovim
 abstract: "Diver: Your blazingly Fast Everything Editor"
