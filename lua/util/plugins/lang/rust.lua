@@ -1,4 +1,3 @@
--- ~/.config/nvim/lua/plugins/lang/rust.lua
 return {
   {
     "mrcjkb/rustaceanvim",
@@ -51,9 +50,26 @@ return {
       },
     },
     config = function()
-      local rust = require("config.lang.rust")
       local capabilities = require("blink.cmp").get_lsp_capabilities()
-
+      capabilities.textDocument = capabilities.textDocument or {}
+      capabilities.textDocument.synchronization = {
+        dynamicRegistration = true,
+        willSave = true,
+        willSaveWaitUntil = true,
+        didSave = true
+      }
+      capabilities.textDocument.semanticTokens = {
+        dynamicRegistration = true,
+        formats = { "relative" },
+        requests = {
+          range = true,
+          full = { delta = true }
+        }
+      }
+      capabilities.workspace = capabilities.workspace or {}
+      capabilities.workspace.didChangeWatchedFiles = {
+        dynamicRegistration = true
+      }
       local on_attach = function(client, bufnr)
         local opts = { noremap = true, silent = true, buffer = bufnr }
         vim.keymap.set('n', 'K', vim.lsp.buf.hover, opts)
@@ -61,18 +77,18 @@ return {
         vim.keymap.set('n', 'gi', vim.lsp.buf.implementation, opts)
         vim.keymap.set('n', '<leader>ca', vim.lsp.buf.code_action, opts)
         vim.keymap.set('n', '<leader>rn', vim.lsp.buf.rename, opts)
-        vim.keymap.set('n', '<leader>re', function()
+        vim.keymap.set('n', '<leader>re', function() 
           vim.ui.select(
-            {"2021", "2024"},
-            {prompt = "Select Rust Edition"},
-            function(choice) rust.set_rust_edition(choice) end
+            {"2021", "2024"}, 
+            {prompt = "Select Rust Edition"}, 
+            function(choice) require("config.lang.rust").set_rust_edition(choice) end
           )
         end, {buffer = bufnr, desc = "Select Rust Edition"})
-        vim.keymap.set('n', '<leader>rt', function()
+        vim.keymap.set('n', '<leader>rt', function() 
           vim.ui.select(
-            {"stable", "nightly", "beta"},
-            {prompt = "Select Rust Toolchain"},
-            function(choice) rust.set_rust_toolchain(choice) end
+            {"stable", "nightly", "beta"}, 
+            {prompt = "Select Rust Toolchain"}, 
+            function(choice) require("config.lang.rust").set_rust_toolchain(choice) end
           )
         end, {buffer = bufnr, desc = "Select Rust Toolchain"})
         if client.server_capabilities.inlayHintProvider then
@@ -84,70 +100,23 @@ return {
           end
         end
       end
-
-      vim.g.rustaceanvim = {
-        tools = {
-          float_win_config = { border = "rounded" },
-        },
-        server = {
-          on_attach = on_attach,
-          capabilities = capabilities,
-          settings = {
-            ["rust-analyzer"] = {
-              cargo = {
-                allFeatures = true,
-                loadOutDirsFromCheck = true,
-                runBuildScripts = true,
-              },
-              checkOnSave = true,
-              check = {
-                command = "clippy",
-                extraArgs = { "--target-dir=target/analyzer" },
-              },
-              diagnostics = {
-                enable = true,
-                experimental = { enable = true },
-                disabled = { "unresolved-proc-macro", "macro-error" },
-              },
-              procMacro = {
-                enable = true,
-                attributes = { enable = true },
-              },
-              files = {
-                excludeDirs = { ".direnv", ".git", "target", "node_modules", "tests/generated", ".zig-cache" },
-                watcher = "client",
-              },
-              inlayHints = {
-                typeHints = true,
-                parameterHints = true,
-                chainingHints = true,
-                closingBraceHints = true,
-              },
-              rustc = {
-                source = rust.default_toolchain,
-                edition = rust.default_edition,
-              },
-            },
-          },
-        },
-      }
-
-      require("null-ls").setup({
-        sources = rust.rust_nls(),
+      local null_ls = require("null-ls")
+      local rust_tools = require("config.lang.rust").rust_nls()
+      null_ls.setup({
+        sources = rust_tools,
       })
-
       vim.lsp.set_log_level("INFO")
-      rust.rust_dap()
-      rust.rust() -- Register commands and mappings
+      require("config.lang.rust").rust(on_attach, capabilities)
     end,
   },
-
+  
   {
     "saecki/crates.nvim",
     event = { "BufRead Cargo.toml" },
-    config = function() end,
+    config = function()
+    end,
   },
-
+  
   {
     "nvim-neotest/neotest",
     dependencies = {

@@ -12,7 +12,7 @@ function M.setup_ts_completion(opts)
     option = {
       additional_trigger_characters = { ".", ":", "=", "(", "'", '"', "/", "@", "<" },
     },
-    entry_filter = function(entry, ctx) --[[@diagnostic disable-line: unused-local]]
+    entry_filter = function(entry, ctx)--[[@diagnostic disable-line: unused-local]]
       local ft = ctx.filetype
       return ft == "typescript" or ft == "typescriptreact" or ft == "javascript" or ft == "javascriptreact"
     end
