@@ -1,5 +1,6 @@
 # Qompass Diver for Neovim
-
+![Repository Views](https://komarev.com/ghpvc/?username=qompassai-Diver)
+![GitHub all releases](https://img.shields.io/github/downloads/qompassai/Diver/total?style=flat-square)
 **Qompass Diver** was inspired by the great folks who made [NvChad](https://github.com/NvChad/NvChad). The intent of Diver is to build on the original configuration framework to provide an even more powerful, customizable, and user-friendly experience that bridges the skills gap left by education and industry. Qompass Diver enhances the flexibility of the original project while focusing on AI, cloud integrations, education, and developer productivity.
 
 ## Features
