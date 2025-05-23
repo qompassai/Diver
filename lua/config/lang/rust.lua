@@ -1,4 +1,6 @@
 -- ~/.config/nvim/lua/config/lang/rust.lua
+-- ----------------------------------------
+-- Copyright (C) 2025 Qompass AI, All rights reserved
 local M = {}
 
 vim.diagnostic.config({
@@ -13,13 +15,11 @@ M.rust_editions = {
   ["2021"] = "2021",
   ["2024"] = "2024",
 }
-
 M.rust_toolchains = {
   stable = "stable",
   nightly = "nightly",
   beta = "beta",
 }
-
 M.default_edition = "2021"
 M.default_toolchain = "stable"
 
@@ -180,6 +180,4 @@ function M.rust()
     vim.ui.select(vim.tbl_keys(M.rust_toolchains), { prompt = "Select Rust Toolchain" }, M.set_rust_toolchain)
   end, { desc = "Select Rust Toolchain" })
 end
-
 return M
-

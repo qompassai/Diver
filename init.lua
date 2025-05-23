@@ -1,9 +1,12 @@
---| ~/.config/nvim/init.lua
+-- /qompassai/Diver/init.lua
+-- ----------------------------------
+-- Copyright (C) 2025 Qompass AI, All rights reserved
+vim.g.mapleader = " "
+vim.g.maplocalleader = "\\"
+local home = os.getenv("HOME")
 local home = os.getenv("HOME")
 package.path = package.path .. ";" .. home .. "/.luarocks/share/lua/5.1/?.lua;" .. home .. "/.luarocks/share/lua/5.1/?/init.lua"
 package.cpath = package.cpath .. ";" .. home .. "/.luarocks/lib/lua/5.1/?.so"
-
-
 _G.safe_require = function(module)
   if package.loaded[module] then
     return package.loaded[module]

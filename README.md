@@ -1,3 +1,6 @@
+
+
+
 # Qompass Diver for Neovim
 ![Repository Views](https://komarev.com/ghpvc/?username=qompassai-Diver)
 ![GitHub all releases](https://img.shields.io/github/downloads/qompassai/Diver/total?style=flat-square)

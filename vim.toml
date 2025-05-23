@@ -1,3 +1,6 @@
+# /qompassai/Diver/vim.toml
+# ---------------------------------
+# Copyright (C) 2025 Qompass AI, All rights reserved
 [describe]
 args = [{ type = "string" }, { type = "function" }]
 
@@ -23,4 +26,3 @@ any = true
 
 [vim.lsp]
 any = true
-

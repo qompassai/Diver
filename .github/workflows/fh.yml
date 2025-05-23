@@ -1,3 +1,7 @@
+# /qompassai/Diver/.github/workflows/fh.yml
+# ---------------------------------------
+# Copyright (C) 2025 Qompass AI, All rights reserved
+
 name: Publish to FlakeHub
 
 on:
@@ -6,18 +10,20 @@ on:
 
 jobs:
   flakehub-publish:
-    strategy:
-      matrix:
-        system: [x86_64-linux, aarch64-linux, aarch64-darwin]
-          runs-on: [self-hosted, linux, x64, ${{ matrix.system }}]
+    runs-on: [self-hosted, Linux, X64]
+
     permissions:
       id-token: write
       contents: read
+
     steps:
       - uses: actions/checkout@v4
+
       - uses: DeterminateSystems/nix-installer-action@main
+
       - uses: DeterminateSystems/flakehub-push@main
         with:
-          name: qompassai/Diver 
+          name: qompassai/Diver
           rolling: true
           visibility: public
+

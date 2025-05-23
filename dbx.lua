@@ -1,5 +1,6 @@
--- ~/.config/nvim/dbx.lua
--------------------------
+-- /qompassai/Diver/dbx.lua
+-- --------------------------------
+-- Copyright (C) 2025 Qompass AI, All rights reserved
 return {
   {
     name = "MySQL Local",

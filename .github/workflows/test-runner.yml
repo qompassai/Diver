@@ -1,0 +1,43 @@
+# /qompassai/Diver/.github/workflows/test-runner.yml
+# ---------------------------------------------------------
+# Copyright (C) 2025 Qompass AI, All rights reserved
+
+
+name: Test Self-Hosted Runner
+
+on:
+  workflow_dispatch:
+  push:
+    paths:
+      - '.github/workflows/test-runner.yml'
+
+jobs:
+  selfhosted-check:
+    runs-on: [self-hosted, Linux, X64]
+
+    steps:
+      - name: ✅ Runner Info
+        run: |
+          echo "Running on: $(hostname)"
+          echo "Architecture: $(uname -m)"
+          echo "Operating System: $(uname -o)"
+
+      - name: 🔍 Check Neovim
+        run: |
+          which nvim
+          nvim --version
+
+      - name: 🔍 Check Nix
+        run: |
+          which nix
+          nix --version
+
+      - name: 🔍 Check Disk & Uptime
+        run: |
+          df -h /
+          uptime
+
+      - name: 📁 List Repo Files
+        uses: actions/checkout@v4
+      - run: ls -al
+

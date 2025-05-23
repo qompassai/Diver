@@ -1,4 +1,4 @@
--- lua/config/python.lua  ──────────────────────────────────────────────
+-- ~/.config/nvim/lua/config/lang/python.lua  ──────────────────────────────────────────────
 local M        = {}
 local lsp      = require("lspconfig")
 local dap      = require("dap")
@@ -41,9 +41,6 @@ function M.setup_lsp(on_attach, capabilities)
     require("dap-python").test_runner = "pytest"
   end
 end
-----------------------------------------------------------------------
--- 2.  Jupyter / Quarto helpers
-----------------------------------------------------------------------
 function M.setup_jupyter()
   require("quarto").setup({
     lspFeatures = {
@@ -66,7 +63,6 @@ function M.setup_jupyter()
     output_extension       = "ipynb",
     force_ft               = "python",
   })
-
   require("jupynium").setup({
     jupyter_command      = "jupyter",
     notebook_dir         = "~/notebooks",
@@ -82,10 +78,6 @@ function M.setup_jupyter()
   vim.keymap.set("n", "<leader>jj", "<cmd>JupyniumStartAndAttachToServer<cr>", { desc = "Start Jupynium" })
   vim.keymap.set("n", "<leader>js", "<cmd>JupyterConnect<cr>",   { desc = "Connect Jupyter" })
 end
-
-----------------------------------------------------------------------
--- 3.  Project‑local venv, Poetry helpers
-----------------------------------------------------------------------
 function M.setup_project_tools()
   vim.g.python3_host_prog = vim.fn.exepath("python3")
 
@@ -111,9 +103,6 @@ function M.setup_project_tools()
     vim.notify("Poetry deps updated", vim.log.levels.INFO)
   end, {})
 end
-----------------------------------------------------------------------
--- 4.  Telescope extras
-----------------------------------------------------------------------
 function M.setup_telescope()
   local telescope = require("telescope")
   telescope.setup({
@@ -135,9 +124,6 @@ function M.setup_telescope()
     pcall(telescope.load_extension, ext)
   end
 end
-----------------------------------------------------------------------
--- 5.  Notebook / cell detection
-----------------------------------------------------------------------
 function M.setup_notebook_detection()
   vim.api.nvim_create_autocmd("BufRead", {
     pattern = { "*.py", "*.ipynb", "*.mojo", "*.🔥" },
@@ -194,9 +180,6 @@ function M.setup_code_quality()
     end,
   })
 end
-----------------------------------------------------------------------
--- 7.  Orchestrator
-----------------------------------------------------------------------
 function M.setup_python(on_attach, capabilities)
   on_attach   = on_attach   or function() end
   capabilities = capabilities or vim.lsp.protocol.make_client_capabilities()

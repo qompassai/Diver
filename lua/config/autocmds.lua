@@ -145,7 +145,7 @@ vim.api.nvim_create_autocmd("BufNewFile", {
       go = "//",
       typescript = "//",
       javascript = "//",
-      json = "//",      -- Not official
+      json = "//",
       cff = "#",
       nix = "#", 
     }
@@ -179,7 +179,7 @@ vim.api.nvim_create_autocmd("BufNewFile", {
         comment = "//"
       elseif ext == "cff" then
         comment = "#"
-      elseif ext == "nix" then  -- Added explicit extension check for Nix files
+      elseif ext == "nix" then
         comment = "#"
       end
       local filepath = vim.fn.expand("%:~")
