@@ -50,7 +50,7 @@ function M.js_tools(opts)
           },
         },
       },
-      code_lens = opts.code_lens ~= false,
+      code_lens = opts.code_lens or "all",
       document_formatting = opts.document_formatting ~= false,
       complete_function_calls = opts.complete_function_calls ~= false,
       jsx_close_tag = { enable = opts.jsx_close_tag ~= false },
@@ -88,14 +88,15 @@ function M.js_nls(opts)
 end
 function M.js_lsp(opts)
   opts = opts or {}
-  local capabilities = {}
-local ok, _ = pcall(require, "lazy")
+  local capabilities = vim.lsp.protocol.make_client_capabilities()
+local ok, lazy_loaded = pcall(require, "lazy")
 if ok then
-  require("lazy").load({ plugins = { "blink.cmp" } })
+  pcall(function() lazy_loaded.load({ plugins = { "blink.cmp" } }) end)
+  local blink_ok, blink_cmp = pcall(require, "blink_cmp")
+  if blink_ok and blink_cmp and blink_cmp.lsp_capabilities then
+    capabilities = blink_cmp.lsp_capabilities()
+  end
 end
-pcall(function()
-  capabilities = require("blink_cmp").lsp_capabilities()
-end)
   require("typescript-tools").setup({
   capabilities = capabilities,
   settings = {
