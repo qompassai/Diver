@@ -1,9 +1,16 @@
 -- ~/.config/nvim/lua/plugins/lang/nix.lua
--- ---------------------------------------
+-- ----------------------------------------
 -- Copyright (C) 2025 Qompass AI, All rights reserved
 
 return {
-     {
+  {
+    "nvim-treesitter/nvim-treesitter",
+    opts = {
+      ensure_installed = { "nix" },
+      highlight = { enable = true },
+    },
+  },
+  {
     "neovim/nvim-lspconfig",
     lazy = true,
     ft = "nix",
@@ -16,17 +23,18 @@ return {
       require("lspconfig").nil_ls.setup({
         settings = {
           ["nil"] = {
-            formatting = {
-              command = { "alejandra" }, -- or "alejandra" or "nixfmt"
-            },
+            formatting = { command = { "alejandra" } },
             diagnostics = {
-              ignored = {},
               enabled = true,
+              ignored = { "unused_binding" },
+              excludedFiles = {},
             },
             nix = {
               flake = {
                 autoArchive = true,
+                autoEvalInputs = true,
               },
+              autoLSPConfig = true,
             },
           },
         },
@@ -37,26 +45,28 @@ return {
     "stevearc/conform.nvim",
     ft = "nix",
     opts = {
-      formatters_by_ft = {
-        nix = { "alejandra" }, -- or "alejandra" or "nixfmt"
+      formatters_by_ft = { nix = { "alejandra" } },
+      format_on_save = {
+        timeout_ms = 500,
+        lsp_fallback = true,
       },
     },
-  },
-  {
-    "hrsh7th/nvim-cmp",
-    ft = "nix",
-    opts = function(_, opts)
-      opts.sources = opts.sources or {}
-      table.insert(opts.sources, { name = "nvim_lsp", group_index = 0 })
+    config = function(_, opts)
+      require("conform").setup(opts)
+      vim.keymap.set("n", "<leader>cf", function()
+        require("conform").format({ async = true })
+      end, { desc = "[C]ode [F]ormat" })
     end,
   },
   {
     "nvimtools/none-ls.nvim",
     ft = "nix",
     opts = function(_, opts)
-      local nls = require("null-ls")
-      opts.sources = opts.sources or {}
-      table.insert(opts.sources, nls.builtins.diagnostics.statix)
+      local null_ls = require("null-ls")
+      opts.sources = {
+        null_ls.builtins.diagnostics.statix,
+        null_ls.builtins.diagnostics.deadnix,
+      }
     end,
   },
 }

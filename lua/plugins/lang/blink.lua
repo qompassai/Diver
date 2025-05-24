@@ -9,7 +9,7 @@ return {
     build = "cargo build --release",
     event = "InsertEnter",
     dependencies = {
-       "nvimtools/none-ls.nvim",
+      "nvimtools/none-ls.nvim",
       "zeioth/none-ls-autoload.nvim",
       "gwinn/none-ls-jsonlint.nvim",
       {

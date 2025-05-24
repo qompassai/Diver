@@ -1,3 +1,7 @@
+-- /qompassai/Diver/lua/plugins/lang/go.lua
+-- ----------------------------------------
+-- Copyright (C) 2025 Qompass AI, All rights reserved
+
 return {
   {
     "ray-x/go.nvim",

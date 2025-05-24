@@ -1,5 +1,6 @@
--- ~/.config/nvim/lua/plugins/lang/scala.lua
-
+-- /qompassai/diver/lua/plugins/lang/scala.lua
+-- ----------------------------------------
+-- copyright (c) 2025 qompass ai, all rights reserved
 return {
   {
     "scalameta/nvim-metals",

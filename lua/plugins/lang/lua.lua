@@ -1,26 +1,23 @@
--- ~/.config/nvim/lua/plugins/lang/lua.lua
+-- /qompassai/Diver/lua/plugins/lang/lua.lua
+-- ----------------------------------------
+-- Copyright (C) 2025 Qompass AI, All rights reserved
+
+local lua_config = require("config.lang.lua")
+
 return {
   {
     "folke/neoconf.nvim",
     lazy = false,
     priority = 1000,
     config = function()
-      require("neoconf").setup({
-        live_reload = true,
-        filetype_jsonc = true,
-        plugins = {
-          lspconfig = { enabled = true },
-          jsonls = { enabled = true, configured_servers_only = true },
-          lua_ls = { enabled_for_neovim_config = true },
-        },
-      })
+      require("neoconf").setup(lua_config.neoconf())
     end,
   },
   {
     "folke/lazydev.nvim",
-    lazy = true,
     ft = "lua",
     dependencies = {
+      "Bilal2453/luvit-meta",
       "camspiers/luarocks",
       "saghen/blink.cmp",
       "stevearc/conform.nvim",
@@ -30,20 +27,25 @@ return {
       "nvimtools/none-ls-extras.nvim",
       "b0o/SchemaStore.nvim",
       "L3MON4D3/LuaSnip",
+      "hrsh7th/nvim-cmp",
     },
-    opts = {
-      enabled = function(root_dir)
-        return not vim.uv.fs_stat(root_dir .. "/.luarc.json")
-      end,
-    },
+    config = function()
+      lua_config.lua_lazydev()
+    end,
   },
   {
     "hrsh7th/nvim-cmp",
-    ft = "lua",
-    opts = function(_, opts)
-      opts.sources = opts.sources or {}
-      table.insert(opts.sources, { name = "lazydev", group_index = 0 })
+    event = "InsertEnter",
+    config = function(_, opts)
+      local cmp = require("cmp")
+      cmp.setup(opts)
+      cmp.setup.filetype("lua", {
+        sources = cmp.config.sources({
+          { name = "lazydev" },
+          { name = "luasnip" },
+          { name = "nvim_lsp" },
+        }),
+      })
     end,
-    dependencies = { "folke/lazydev.nvim" },
   },
 }

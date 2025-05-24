@@ -10,8 +10,8 @@ function M.neoconf(opts)
     local_settings = opts.local_settings or ".neoconf.json",
     global_settings = opts.global_settings or "neoconf.json",
     import = opts.import or { vscode = true, coc = true, nlsp = true },
-    live_reload = opts.live_reload ~= false,
-    filetype_jsonc = opts.filetype_jsonc ~= false,
+    live_reload = opts.live_reload ~= true,
+    filetype_jsonc = opts.filetype_jsonc ~= true,
     plugins = opts.plugins or {
       lspconfig = { enabled = true },
       jsonls = { enabled = true, configured_servers_only = true },
@@ -89,63 +89,50 @@ end
 function M.js_lsp(opts)
   opts = opts or {}
   local capabilities = vim.lsp.protocol.make_client_capabilities()
-local ok, lazy_loaded = pcall(require, "lazy")
-if ok then
-  pcall(function() lazy_loaded.load({ plugins = { "blink.cmp" } }) end)
-  local blink_ok, blink_cmp = pcall(require, "blink_cmp")
-  if blink_ok and blink_cmp and blink_cmp.lsp_capabilities then
-    capabilities = blink_cmp.lsp_capabilities()
+
+  local ok, lazy_loaded = pcall(require, "lazy")
+  if ok then
+    pcall(function() lazy_loaded.load({ plugins = { "blink.cmp" } }) end)
+    local blink_ok, blink_cmp = pcall(require, "blink_cmp")
+    if blink_ok and blink_cmp and blink_cmp.lsp_capabilities then
+      capabilities = blink_cmp.lsp_capabilities()
+    end
   end
-end
+
   require("typescript-tools").setup({
-  capabilities = capabilities,
-  settings = {
-    tsserver_file_preferences = {
-      importModuleSpecifierPreference = "relative",
-      includeCompletionsForImportStatements = true,
-      includeCompletionsWithSnippetText = true,
-      includeAutomaticOptionalChainCompletions = true,
-      includeCompletionsWithInsertText = true,
-    },
-    tsserver_format_options = {
-      allowIncompleteCompletions = true,
-      allowRenameOfImportPath = true,
-    },
-    expose_as_code_action = opts.expose_as_code_action or "all",
-    organize_imports_on_save = opts.organize_imports_on_save ~= false,
-  },
-})
-  vim.lsp.config["eslint"] = {
-    command = { "vscode-eslint-language-server", "--stdio" },
-    filetypes = { "javascript", "javascriptreact", "vue", "svelte", "astro" },
-    root_markers = { ".eslintrc", ".eslintrc.js", ".eslintrc.json", "package.json" },
+    capabilities = capabilities,
     settings = {
-      codeAction = {
-        disableRuleComment = {
-          enable = true,
-          location = "separateLine"
-        },
-        showDocumentation = { enable = true },
+      tsserver_file_preferences = {
+        importModuleSpecifierPreference = "relative",
+        includeCompletionsForImportStatements = true,
+        includeCompletionsWithSnippetText = true,
+        includeAutomaticOptionalChainCompletions = true,
+        includeCompletionsWithInsertText = true,
       },
-      format = true,
-      nodePath = "",
-      onIgnoredFiles = "off",
-      packageManager = "npm",
-      quiet = false,
-      rulesCustomizations = {},
-      run = "onType",
-      useESLintClass = false,
-      validate = "on",
-      workingDirectory = { mode = "location" }
+      tsserver_format_options = {
+        allowIncompleteCompletions = true,
+        allowRenameOfImportPath = true,
+      },
+      expose_as_code_action = opts.expose_as_code_action or "all",
+      organize_imports_on_save = opts.organize_imports_on_save ~= true,
     },
-  }
-  vim.lsp.enable("eslint")
+  })
+
+  local lspconfig = require("lspconfig")
+  lspconfig.eslint.setup({
+    on_attach = function(client, bufnr)
+      vim.api.nvim_create_autocmd("BufWritePre", {
+        buffer = bufnr,
+        command = "EslintFixAll",
+      })
+    end,
+  })
+
   return {
     typescript = require("typescript-tools").config,
-    eslint = vim.lsp.config["eslint"]
+    eslint = true,
   }
 end
-
 function M.js_conform(opts)
   opts = opts or {}
   local base_config = require("config.lang.conform").setup(opts)
@@ -305,18 +292,7 @@ function M.setup_js(opts)
   require("tailwindcss-colorizer-cmp").setup({
     color_square_width = 2,
   })
-  local neotest_ok, neotest = pcall(require, "neotest")
-  if neotest_ok then
-    local vitest_ok, vitest = pcall(require, "neotest-vitest")
-    if vitest_ok then
-      neotest.setup({
-        adapters = {
-          vitest,
-        },
-      })
-    end
-  end
-  return {
+    return {
     lsp = lsp_config,
     js_tools = js_tools_config,
     conform = conform_config,

@@ -1,4 +1,6 @@
--- ~/.config/nvim/lua/plugins/lang/python.lua ────────────────────────────────────────────────────
+-- /qompassai/Diver/lua/plugins/lang/python.lua
+-- ----------------------------------------
+-- Copyright (C) 2025 Qompass AI, All rights reserved
 return {
   {
     "neovim/nvim-lspconfig",
@@ -24,6 +26,7 @@ return {
         "linux-cultist/venv-selector.nvim",
         branch = "regexp",
         lazy = true,
+        ft = { "python", "ipynb", "jupyter" },
         keys = {
           { ",v", "<cmd>VenvSelect<cr>",       desc = "Select Python venv" },
           { ",V", "<cmd>VenvSelectCached<cr>", desc = "Use cached venv" },

@@ -1,4 +1,6 @@
--- ~/.config/nvim/lua/plugins/lang/rust.lua
+-- /qompassai/Diver/lua/plugins/lang/rust.lua
+-- ----------------------------------------
+-- Copyright (C) 2025 Qompass AI, All rights reserved
 return {
   {
     "mrcjkb/rustaceanvim",

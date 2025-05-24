@@ -1,4 +1,4 @@
--- ~/.config/nvim/lua/plugins/lang/php.lua
+-- /qompassai/Diver/lua/plugins/lang/php.lua
 -- ---------------------------------------
 -- Copyright (C) 2025 Qompass AI, All rights reserved
 

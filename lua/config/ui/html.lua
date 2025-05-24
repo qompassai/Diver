@@ -1,5 +1,7 @@
--- ~/.config/nvim/lua/config/ui/html.lua
+-- /qompassai/Diver/lua/config/ui/html.lua
 ----------------------------------------
+-- Copyright (C) 2025 Qompass AI, All rights reserved
+
 local M = {}
 local is_nightly = vim.fn.has('nvim-0.10') == 1
 function M.html_none_ls_sources(opts)
@@ -50,7 +52,7 @@ function M.html_lint(opts)
     underline = true,
     virtual_text = true,
     signs = true,
-    update_in_insert = false,
+    update_in_insert = true,
   }
   vim.diagnostic.config(config)
   vim.api.nvim_create_autocmd("FileType", {

@@ -1,4 +1,6 @@
--- ~/.config/nvim/lua/plugins/lang/ts.lua
+-- /qompassai/Diver/lua/plugins/lang/ts.lua
+-- ----------------------------------------
+-- Copyright (C) 2025 Qompass AI, All rights reserved
 return {
   {
     "neovim/nvim-lspconfig",
