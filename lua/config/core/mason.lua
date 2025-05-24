@@ -1,5 +1,7 @@
 -- ~/.config/nvim/lua/config/core/mason.lua
+
 local M = {}
+
 local function is_neovim_11_plus()
   return vim.fn.has('nvim-0.11') == 1
 end
@@ -8,7 +10,9 @@ M.setup_all_mason = function()
   M.setup_mason()
   M.setup_masontools()
 end
+
 M.setup_mason = function()
+  local mason = require("mason")
   local opts = {
     install_root_dir = require("mason-core.path").concat({ vim.fn.stdpath("data"), "mason" }),
     PATH = "prepend",
@@ -44,7 +48,7 @@ M.setup_mason = function()
     },
     pip = {
       upgrade_pip = true,
-      install_args = {"--break-system-packages", "--no-cache-dir" },
+      install_args = { "--break-system-packages", "--no-cache-dir" },
     },
   }
   if is_neovim_11_plus() then
@@ -60,10 +64,14 @@ M.setup_mason = function()
       "mason.providers.client",
     }
   end
-  require("mason").setup(opts)
+  mason.setup(opts)
 end
+
 M.setup_masontools = function()
-  require("mason-tool-installer").setup({
+  local mason_tool_installer = require("mason-tool-installer")
+  local mason_lspconfig = require("mason-lspconfig")
+
+  mason_tool_installer.setup({
     ensure_installed = {
       { "bash-language-server", auto_update = true },
       "editorconfig-checker",
@@ -107,43 +115,19 @@ M.setup_masontools = function()
       ["mason-nvim-dap"] = true,
     },
   })
-  local lspconfig = require("lspconfig")
-  local mason_lspconfig = require("mason-lspconfig")
-  local config_lsp = require("config.core.lspconfig")
-  local servers = {
-    "lua_ls",
-    "gopls",
-    "pyright",
-    "zls",
-    "jsonls",
-  }
+
   mason_lspconfig.setup({
-    ensure_installed = servers,
+    ensure_installed = {
+      "lua_ls",
+      "gopls",
+      "intelephense",
+      "pyright",
+      "zls",
+      "jsonls",
+    },
     automatic_installation = true,
   })
-  local function setup_json_capabilities(capabilities)
-    capabilities.textDocument.semanticTokens = {
-      dynamicRegistration = true,
-      tokenTypes = {
-        "namespace", "type", "class", "enum", "interface",
-        "struct", "typeParameter", "parameter", "variable", "property",
-        "enumMember", "event", "function", "method", "macro",
-        "keyword", "modifier", "comment", "string", "number",
-        "regexp", "operator", "decorator"
-      },
-      tokenModifiers = {
-        "declaration", "definition", "readonly", "static",
-        "deprecated", "abstract", "async", "modification",
-        "documentation", "defaultLibrary"
-      },
-      formats = { "relative" },
-      requests = {
-        range = true,
-        full = true
-      }
-    }
-    return capabilities
-  end
+
   vim.api.nvim_create_autocmd({ "TextChanged", "InsertLeave" }, {
     pattern = { "*.json", "*.jsonc", "*.json5", "*.jsonl" },
     callback = function()
@@ -163,12 +147,14 @@ M.setup_masontools = function()
       semantic_token_refresh()
     end,
   })
+
   pcall(function()
-  local fzf_lua = require("fzf-lua")
-  if fzf_lua.zoxide then
-  else
-    require("fzf-lua-zoxide")
-  end
-end)
+    local fzf_lua = require("fzf-lua")
+    if not fzf_lua.zoxide then
+      require("fzf-lua-zoxide")
+    end
+  end)
 end
+
 return M
+

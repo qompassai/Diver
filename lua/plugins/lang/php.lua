@@ -15,12 +15,6 @@ return {
     end,
   },
   {
-    "williamboman/mason-lspconfig.nvim",
-    opts = {
-      ensure_installed = { "intelephense" },
-    },
-  },
-  {
     "mfussenegger/nvim-dap",
     ft = { "php" },
     config = function()

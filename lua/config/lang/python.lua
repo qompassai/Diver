@@ -1,39 +1,41 @@
 -- ~/.config/nvim/lua/config/lang/python.lua  ──────────────────────────────────────────────
-local M        = {}
-local lsp      = require("lspconfig")
-local dap      = require("dap")
-local null_ls  = require("null-ls")
-local helpers  = require("null-ls.helpers")
-local b        = null_ls.builtins
-function M.setup_lsp(on_attach, capabilities)
-  lsp.pyright.setup({
-    on_attach    = on_attach,
-    capabilities = capabilities,
-    settings     = {
+local M = {}
+local dap = require("dap")
+local null_ls = require("null-ls")
+local b = null_ls.builtins
+
+function M.get_config()
+  return {
+    settings = {
       python = {
         analysis = {
           typeCheckingMode = "basic",
-          diagnosticMode   = "workspace",
-          inlayHints       = {
-            variableTypes       = true,
+          diagnosticMode = "workspace",
+          inlayHints = {
+            variableTypes = true,
             functionReturnTypes = true,
           },
         },
       },
     },
-  })
+  }
+end
+
+function M.setup_dap()
   dap.adapters.python = {
-    type    = "executable",
+    type = "executable",
     command = "python",
-    args    = { "-m", "debugpy.adapter" },
+    args = { "-m", "debugpy.adapter" },
   }
   dap.configurations.python = {
     {
-      type       = "python",
-      request    = "launch",
-      name       = "Launch file",
-      program    = "${file}",
-      pythonPath = function() return "/usr/bin/python3" end,
+      type = "python",
+      request = "launch",
+      name = "Launch file",
+      program = "${file}",
+      pythonPath = function()
+        return "/usr/bin/python3"
+      end,
     },
   }
   if pcall(require, "dap-python") then
@@ -41,48 +43,49 @@ function M.setup_lsp(on_attach, capabilities)
     require("dap-python").test_runner = "pytest"
   end
 end
+
 function M.setup_jupyter()
   require("quarto").setup({
     lspFeatures = {
-      enabled    = true,
-      chunks     = "curly",
-      languages  = { "r", "python", "julia", "bash", "html" },
+      enabled = true,
+      chunks = "curly",
+      languages = { "r", "python", "julia", "bash", "html" },
       diagnostics = { enabled = true, triggers = { "BufWritePost" } },
-      completion  = { enabled = true },
+      completion = { enabled = true },
     },
     codeRunner = {
-      enabled        = true,
+      enabled = true,
       default_method = "molten",
-      ft_runners     = { python = "molten" },
+      ft_runners = { python = "molten" },
     },
   })
   require("jupytext").setup({
     notebook_to_script_cmd = "jupytext --to py",
     script_to_notebook_cmd = "jupytext --to ipynb",
-    style                  = "hydrogen",
-    output_extension       = "ipynb",
-    force_ft               = "python",
+    style = "hydrogen",
+    output_extension = "ipynb",
+    force_ft = "python",
   })
   require("jupynium").setup({
-    jupyter_command      = "jupyter",
-    notebook_dir         = "~/notebooks",
+    jupyter_command = "jupyter",
+    notebook_dir = "~/notebooks",
     default_notebook_URL = "localhost:8888/nbclassic",
-    auto_start_server    = {
-      enable       = true,
+    auto_start_server = {
+      enable = true,
       file_pattern = { "*.ipynb" },
     },
   })
   vim.g.jupyter_mapkeys = 0
-  vim.keymap.set("n", "<leader>jr", "<cmd>JupyterRunFile<cr>",   { desc = "Run Jupyter file" })
-  vim.keymap.set("n", "<leader>jc", "<cmd>JupyterSendCell<cr>",  { desc = "Send cell" })
+  vim.keymap.set("n", "<leader>jr", "<cmd>JupyterRunFile<cr>", { desc = "Run Jupyter file" })
+  vim.keymap.set("n", "<leader>jc", "<cmd>JupyterSendCell<cr>", { desc = "Send cell" })
   vim.keymap.set("n", "<leader>jj", "<cmd>JupyniumStartAndAttachToServer<cr>", { desc = "Start Jupynium" })
-  vim.keymap.set("n", "<leader>js", "<cmd>JupyterConnect<cr>",   { desc = "Connect Jupyter" })
+  vim.keymap.set("n", "<leader>js", "<cmd>JupyterConnect<cr>", { desc = "Connect Jupyter" })
 end
+
 function M.setup_project_tools()
   vim.g.python3_host_prog = vim.fn.exepath("python3")
-
   vim.api.nvim_create_autocmd("BufEnter", {
-    pattern  = "*.py",
+    pattern = "*.py",
     callback = function()
       local root = vim.fn.findfile("pyproject.toml", vim.fn.getcwd() .. ";")
       if root ~= "" then
@@ -103,27 +106,29 @@ function M.setup_project_tools()
     vim.notify("Poetry deps updated", vim.log.levels.INFO)
   end, {})
 end
+
 function M.setup_telescope()
   local telescope = require("telescope")
   telescope.setup({
     extensions = {
-      dap      = {},
-      symbols  = { sources = { "python" } },
-      repo     = { list = { "fd", "-t", "d", "-H", "-I", ".git", vim.fn.getcwd(), "--exec", "dirname", "{}" } },
+      dap = {},
+      symbols = { sources = { "python" } },
+      repo = { list = { "fd", "-t", "d", "-H", "-I", ".git", vim.fn.getcwd(), "--exec", "dirname", "{}" } },
       frecency = {
-        show_scores   = true,
+        show_scores = true,
         show_unindexed = true,
         ignore_patterns = { "*.git/*", "*/tmp/*" },
-        workspaces      = { conf    = "~/.config", project = "~/projects" },
+        workspaces = { conf = "~/.config", project = "~/projects" },
       },
-      import   = { insert_at_top = true },
-      conda    = { anaconda_path = "/opt/miniconda3" },
+      import = { insert_at_top = true },
+      conda = { anaconda_path = "/opt/miniconda3" },
     },
   })
   for _, ext in ipairs({ "dap", "zoxide", "ui-select", "fzf", "repo", "frecency", "import", "conda" }) do
     pcall(telescope.load_extension, ext)
   end
 end
+
 function M.setup_notebook_detection()
   vim.api.nvim_create_autocmd("BufRead", {
     pattern = { "*.py", "*.ipynb", "*.mojo", "*.🔥" },
@@ -132,7 +137,7 @@ function M.setup_notebook_detection()
       if ext == "ipynb" then
         vim.b.is_jupyter_notebook = true
         vim.keymap.set("n", "<leader>x", "<cmd>JupyterSendCell<cr>", { buffer = true, desc = "Run cell" })
-        vim.keymap.set("n", "<leader>X", "<cmd>JupyterSendAll<cr>",  { buffer = true, desc = "Run all" })
+        vim.keymap.set("n", "<leader>X", "<cmd>JupyterSendAll<cr>", { buffer = true, desc = "Run all" })
         return
       end
       local markers = { "^# %%", "^#%%", "^# In%[", "^// %%", "^//%%", "^// CELL" }
@@ -141,13 +146,14 @@ function M.setup_notebook_detection()
           vim.b.has_jupyter_cells = true
           local cmd = (vim.bo.filetype == "mojo") and "Mojo" or "Jupyter"
           vim.keymap.set("n", "<leader>x", "<cmd>" .. cmd .. "SendCell<cr>", { buffer = true })
-          vim.keymap.set("n", "<leader>X", "<cmd>" .. cmd .. "SendAll<cr>",  { buffer = true })
+          vim.keymap.set("n", "<leader>X", "<cmd>" .. cmd .. "SendAll<cr>", { buffer = true })
           break
         end
       end
     end,
   })
 end
+
 function M.setup_code_quality()
   null_ls.setup({
     sources = {
@@ -174,20 +180,22 @@ function M.setup_code_quality()
       if client.supports_method("textDocument/formatting") then
         vim.api.nvim_create_autocmd("BufWritePre", {
           buffer = bufnr,
-          callback = function() vim.lsp.buf.format({ bufnr = bufnr }) end,
+          callback = function()
+            vim.lsp.buf.format({ bufnr = bufnr })
+          end,
         })
       end
     end,
   })
 end
-function M.setup_python(on_attach, capabilities)
-  on_attach   = on_attach   or function() end
-  capabilities = capabilities or vim.lsp.protocol.make_client_capabilities()
-  M.setup_lsp(on_attach, capabilities)
+
+function M.setup_python()
+  M.setup_dap()
   M.setup_jupyter()
   M.setup_notebook_detection()
   M.setup_project_tools()
   M.setup_telescope()
   M.setup_code_quality()
 end
+
 return M

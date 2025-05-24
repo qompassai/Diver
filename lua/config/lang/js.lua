@@ -88,25 +88,32 @@ function M.js_nls(opts)
 end
 function M.js_lsp(opts)
   opts = opts or {}
-  local capabilities = require("blink_cmp").lsp_capabilities()
+  local capabilities = {}
+local ok, _ = pcall(require, "lazy")
+if ok then
+  require("lazy").load({ plugins = { "blink.cmp" } })
+end
+pcall(function()
+  capabilities = require("blink_cmp").lsp_capabilities()
+end)
   require("typescript-tools").setup({
-    capabilities = capabilities,
-    settings = {
-      tsserver_file_preferences = {
-        importModuleSpecifierPreference = "relative",
-        includeCompletionsForImportStatements = true,
-        includeCompletionsWithSnippetText = true,
-        includeAutomaticOptionalChainCompletions = true,
-        includeCompletionsWithInsertText = true,
-      },
-      tsserver_format_options = {
-        allowIncompleteCompletions = true,
-        allowRenameOfImportPath = true,
-      },
-      code_lens = opts.code_lens ~= false,
-      organize_imports_on_save = opts.organize_imports_on_save ~= true,
-    }
-  })
+  capabilities = capabilities,
+  settings = {
+    tsserver_file_preferences = {
+      importModuleSpecifierPreference = "relative",
+      includeCompletionsForImportStatements = true,
+      includeCompletionsWithSnippetText = true,
+      includeAutomaticOptionalChainCompletions = true,
+      includeCompletionsWithInsertText = true,
+    },
+    tsserver_format_options = {
+      allowIncompleteCompletions = true,
+      allowRenameOfImportPath = true,
+    },
+    expose_as_code_action = opts.expose_as_code_action or "all",
+    organize_imports_on_save = opts.organize_imports_on_save ~= false,
+  },
+})
   vim.lsp.config["eslint"] = {
     command = { "vscode-eslint-language-server", "--stdio" },
     filetypes = { "javascript", "javascriptreact", "vue", "svelte", "astro" },

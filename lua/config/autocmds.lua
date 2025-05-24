@@ -60,8 +60,11 @@ vim.api.nvim_create_autocmd("FileType", {
   group = augroups.rust,
   pattern = "rust",
   callback = function()
-    pcall(require, "mappings.rustmap").setup()
-  end,
+    local ok, rustmap = pcall(require, "mappings.rustmap")
+    if ok and rustmap and type(rustmap.setup) == "function" then
+      rustmap.setup()
+    end
+  end, 
 })
 vim.api.nvim_create_autocmd("FileType", {
   pattern = "lua",
@@ -119,70 +122,30 @@ vim.api.nvim_create_autocmd("BufNewFile", {
   pattern = "*",
   callback = function()
     local filename = vim.fn.expand("%:t")
-    local filetype = vim.bo.filetype
+    local filepath = vim.fn.expand("%:~")
     local ext = vim.fn.expand("%:e")
-    local comment = "#"
+    local filetype = vim.bo.filetype
     local header = {}
-
     local comment_map = {
-      lua = "--",
-      c = "//",
-      cpp = "//",
-      rust = "//",
-      vim = "\"",
-      dosini = ";",
-      conf = "#",
-      tex = "%",
-      glsl = "//",
-      mojo = "#",
-      zig = "//",
-      markdown = "<!--",
-      html = "<!--",
-      css = "/*",
-      yaml = "#",
-      yml = "#",
-      python = "#",
-      go = "//",
-      typescript = "//",
-      javascript = "//",
-      json = "//",
-      cff = "#",
-      nix = "#", 
+      lua = "--", vim = "\"", dosini = ";", conf = "#", tex = "%",
+      c = "//", cpp = "//", h = "//", hpp = "//", glsl = "//", rust = "//", rs = "//", mojo = "#", zig = "//",
+      typescript = "//", javascript = "//", ts = "//", js = "//", json = "//",
+      python = "#", py = "#", go = "//", cff = "#", nix = "#",
+      yaml = "#", yml = "#", cf = "#", cfn = "#",
+      html = "<!--", xml = "<!--", markdown = "<!--", md = "<!--",
+      css = "/*", scss = "/*", less = "/*",
+      java = "//", kotlin = "//", scala = "//", cs = "//",
+      php = "//", ruby = "#", rb = "#", pl = "#", perl = "#",
+      bash = "#", zsh = "#", sh = "#", fish = "#",
+      sql = "--", r = "#", rmd = "#", swift = "//",
     }
+    local comment
     if filename:match("^LICENSE") then
       table.insert(header, "Copyright (C) 2025 Qompass AI, All rights reserved")
       table.insert(header, "")
     else
-      if (filetype == "markdown") or (ext == "md") or (filename:lower():match("^readme%.md$")) then
-        comment = "<!--"
-      elseif comment_map[filetype] then
-        comment = comment_map[filetype]
-      elseif ext == "mojo" or ext == "🔥" then
-        comment = "#"
-      elseif ext == "zig" then
-        comment = "//"
-      elseif ext == "html" then
-        comment = "<!--"
-      elseif ext == "css" then
-        comment = "/*"
-      elseif ext == "yaml" or ext == "yml" or ext == "cf" or ext == "cfn" then
-        comment = "#"
-      elseif ext == "py" then
-        comment = "#"
-      elseif ext == "go" then
-        comment = "//"
-      elseif ext == "ts" then
-        comment = "//"
-      elseif ext == "js" then
-        comment = "//"
-      elseif ext == "json" then
-        comment = "//"
-      elseif ext == "cff" then
-        comment = "#"
-      elseif ext == "nix" then
-        comment = "#"
-      end
-      local filepath = vim.fn.expand("%:~")
+      comment = comment_map[ext] or comment_map[filetype] or "#"
+
       if comment == "<!--" then
         table.insert(header, string.format("<!-- %s -->", filepath))
         table.insert(header, string.format("<!-- %s -->", string.rep("-", #filepath)))
@@ -200,6 +163,7 @@ vim.api.nvim_create_autocmd("BufNewFile", {
         table.insert(header, "")
       end
     end
+
     if vim.api.nvim_buf_get_lines(0, 0, 1, false)[1] == "" then
       vim.api.nvim_buf_set_lines(0, 0, 0, false, header)
       vim.cmd("normal! G")
@@ -253,7 +217,6 @@ vim.api.nvim_create_autocmd({"BufRead", "BufNewFile"}, {
     vim.bo.filetype = "dockerfile"
   end,
 })
--- Zig
 vim.api.nvim_create_autocmd("BufWritePre", {
   pattern = {"*.zig", "*.zon"},
   callback = function()

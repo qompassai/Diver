@@ -1,11 +1,9 @@
--- ~/.config/nvim/lua/config/ui/svelte.lua
 local M = {}
 
 function M.svelte_lsp(opts)
-  local lspconfig = require("lspconfig")
-  lspconfig.svelte.setup({
-    on_attach = opts.on_attach,
-    capabilities = opts.capabilities,
+  opts.servers = opts.servers or {}
+
+  opts.servers.svelte = {
     filetypes = { "svelte" },
     settings = {
       svelte = {
@@ -16,38 +14,39 @@ function M.svelte_lsp(opts)
             completions = true,
             definitions = true,
             findReferences = true,
-            codeActions = true
-          }
-        }
-      }
-    }
-  })
+            codeActions = true,
+          },
+        },
+      },
+    },
+  }
+
+  return opts
 end
 
 function M.astro_lsp(opts)
-  local lspconfig = require("lspconfig")
-  lspconfig.astro.setup({
-    on_attach = opts.on_attach,
-    capabilities = opts.capabilities,
-    filetypes = { "astro" }
-  })
+  opts.servers = opts.servers or {}
+
+  opts.servers.astro = {
+    filetypes = { "astro" },
+  }
+
+  return opts
 end
 
 function M.svelte_treesitter(opts)
   opts = opts or {}
   opts.ensure_installed = opts.ensure_installed or {}
-  if type(opts.ensure_installed) == "table" then
-    vim.list_extend(opts.ensure_installed, { "svelte", "typescript", "javascript", "astro" })
-  end
+  vim.list_extend(opts.ensure_installed, { "svelte", "astro" })
   return opts
 end
 
 function M.svelte_conform(opts)
-  opts = opts or {}
   opts.formatters_by_ft = opts.formatters_by_ft or {}
-  opts.formatters_by_ft.svelte = { "prettierd" }
-  opts.formatters_by_ft.astro = { "prettierd" }
+  opts.formatters_by_ft["svelte"] = { "prettier" }
+  opts.formatters_by_ft["astro"] = { "prettier" }
   return opts
 end
 
 return M
+

@@ -8,6 +8,11 @@ return {
     end,
   },
   {
+  "trixnz/sops.nvim",
+  lazy = false,
+  ft = { "yaml", "yml", "json", "toml", "env", "nix", "ini" },
+},
+  {
     "nvimtools/none-ls.nvim", 
     event = { "BufReadPre", "BufNewFile" },
     dependencies = {

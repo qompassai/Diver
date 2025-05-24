@@ -38,6 +38,7 @@ function M.setup(opts)
       ["yaml.kubernetes"] = { "kubectl_yaml", "yamlfmt" },
       yaml = { "prettierd", "yamlfmt" },
       yml = { "prettierd", "yamlfmt" },
+      zig = { "zigfmt" },
     },
 
     default_format_opts = opts.default_format_opts or {

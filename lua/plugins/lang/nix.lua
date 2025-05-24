@@ -17,7 +17,7 @@ return {
         settings = {
           ["nil"] = {
             formatting = {
-              command = { "nixpkgs-fmt" }, -- or "alejandra" or "nixfmt"
+              command = { "alejandra" }, -- or "alejandra" or "nixfmt"
             },
             diagnostics = {
               ignored = {},
@@ -38,7 +38,7 @@ return {
     ft = "nix",
     opts = {
       formatters_by_ft = {
-        nix = { "nixpkgs-fmt" }, -- or "alejandra" or "nixfmt"
+        nix = { "alejandra" }, -- or "alejandra" or "nixfmt"
       },
     },
   },
