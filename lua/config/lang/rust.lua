@@ -56,8 +56,8 @@ function M.auto_detect_toolchain()
   if toolchain_file ~= "" then
     local content = vim.fn.readfile(toolchain_file)
     for _, line in ipairs(content) do
-      local edition = line:match("edition%s*=%s*\"(%d+)\"")
-      local toolchain = line:match("channel%s*=%s*\"([%w%-]+)\"")
+      local edition = line:match('edition%s*=%s*"(%d+)"')
+      local toolchain = line:match('channel%s*=%s*"([%w%-]+)"')
       if edition and M.rust_editions[edition] then
         M.set_rust_edition(edition)
       end

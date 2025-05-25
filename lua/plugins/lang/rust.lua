@@ -1,6 +1,8 @@
 -- /qompassai/Diver/lua/plugins/lang/rust.lua
 -- ----------------------------------------
 -- Copyright (C) 2025 Qompass AI, All rights reserved
+local rust_config = require("config.lang.rust")
+
 return {
   {
     "mrcjkb/rustaceanvim",
@@ -55,35 +57,27 @@ return {
     config = function()
       local rust = require("config.lang.rust")
       local capabilities = require("blink.cmp").get_lsp_capabilities()
-
       local on_attach = function(client, bufnr)
         local opts = { noremap = true, silent = true, buffer = bufnr }
-        vim.keymap.set('n', 'K', vim.lsp.buf.hover, opts)
-        vim.keymap.set('n', 'gd', vim.lsp.buf.definition, opts)
-        vim.keymap.set('n', 'gi', vim.lsp.buf.implementation, opts)
-        vim.keymap.set('n', '<leader>ca', vim.lsp.buf.code_action, opts)
-        vim.keymap.set('n', '<leader>rn', vim.lsp.buf.rename, opts)
-        vim.keymap.set('n', '<leader>re', function()
-          vim.ui.select(
-            {"2021", "2024"},
-            {prompt = "Select Rust Edition"},
-            function(choice) rust.set_rust_edition(choice) end
-          )
-        end, {buffer = bufnr, desc = "Select Rust Edition"})
-        vim.keymap.set('n', '<leader>rt', function()
-          vim.ui.select(
-            {"stable", "nightly", "beta"},
-            {prompt = "Select Rust Toolchain"},
-            function(choice) rust.set_rust_toolchain(choice) end
-          )
-        end, {buffer = bufnr, desc = "Select Rust Toolchain"})
+        vim.keymap.set("n", "K", vim.lsp.buf.hover, opts)
+        vim.keymap.set("n", "gd", vim.lsp.buf.definition, opts)
+        vim.keymap.set("n", "gi", vim.lsp.buf.implementation, opts)
+        vim.keymap.set("n", "<leader>ca", vim.lsp.buf.code_action, opts)
+        vim.keymap.set("n", "<leader>rn", vim.lsp.buf.rename, opts)
+        vim.keymap.set("n", "<leader>re", function()
+          vim.ui.select({ "2021", "2024" }, { prompt = "Select Rust Edition" }, function(choice)
+            rust.set_rust_edition(choice)
+          end)
+        end, { buffer = bufnr, desc = "Select Rust Edition" })
+        vim.keymap.set("n", "<leader>rt", function()
+          vim.ui.select({ "stable", "nightly", "beta" }, { prompt = "Select Rust Toolchain" }, function(choice)
+            rust.set_rust_toolchain(choice)
+          end)
+        end, { buffer = bufnr, desc = "Select Rust Toolchain" })
+
+        -- Neovim 0.10+ inlay hint logic
         if client.server_capabilities.inlayHintProvider then
-          local nvim_version = vim.version()
-          if nvim_version and (nvim_version.major > 0 or nvim_version.minor >= 10) then
-            vim.lsp.inlay_hint.enable(true, bufnr)
-          else
-            vim.lsp.inlay_hint.enable(bufnr, true)
-          end
+          vim.lsp.inlay_hint.enable(true, { bufnr })
         end
       end
 
@@ -140,7 +134,7 @@ return {
 
       vim.lsp.set_log_level("INFO")
       rust.rust_dap()
-      rust.rust() -- Register commands and mappings
+      rust.rust()
     end,
   },
 
@@ -154,7 +148,7 @@ return {
     "nvim-neotest/neotest",
     dependencies = {
       "nvim-neotest/nvim-nio",
-      "rouge8/neotest-rust"
+      "rouge8/neotest-rust",
     },
     ft = { "rust" },
     config = function()
@@ -166,10 +160,15 @@ return {
           }),
         },
       })
-      vim.keymap.set("n", "<leader>tt", function() require("neotest").run.run() end, { desc = "Run nearest test" })
-      vim.keymap.set("n", "<leader>tf", function() require("neotest").run.run(vim.fn.expand("%")) end, { desc = "Run file tests" })
-      vim.keymap.set("n", "<leader>td", function() require("neotest").run.run({strategy = "dap"}) end, { desc = "Debug nearest test" })
+      vim.keymap.set("n", "<leader>tt", function()
+        require("neotest").run.run()
+      end, { desc = "Run nearest test" })
+      vim.keymap.set("n", "<leader>tf", function()
+        require("neotest").run.run(vim.fn.expand("%"))
+      end, { desc = "Run file tests" })
+      vim.keymap.set("n", "<leader>td", function()
+        require("neotest").run.run({ strategy = "dap" })
+      end, { desc = "Debug nearest test" })
     end,
   },
 }
-
