@@ -58,7 +58,6 @@ function M.setup_sh_linter(opts)
   })
 
   opts.root_dir = M.detect_sh_root_dir
-
   return opts
 end
 
@@ -78,7 +77,11 @@ function M.setup_sh_conform(opts)
       args = {},
       stdin = true,
       condition = function(ctx)
-        local stat = vim.loop.fs_stat(ctx.filename)
+        local filename = ctx and ctx.filename
+        if not filename then
+          return false
+        end
+        local stat = vim.loop.fs_stat(filename)
         return stat and stat.type == "file" and bit.band(stat.mode, 73) ~= 0
       end,
     } or nil,
