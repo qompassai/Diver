@@ -4,7 +4,11 @@
 
 return {
   "stevearc/conform.nvim",
-  dependencies = { "saghen/blink.cmp" },
+  dependencies = {
+    "saghen/blink.cmp",
+    "nvim-tools/none-ls.nvim",
+    "nvim-tools/none-ls-extras.nvim",
+  },
   lazy = false,
   event = { "BufWritePre", "BufNewFile" },
   cmd = { "ConformInfo" },
@@ -25,7 +29,7 @@ return {
       nginx = { "nginx_config_formatter" },
       python = { "isort", "black" },
       rust = { "rustfmt", "cargo_leptos_fmt" },
-      sh = { "shfmt" },
+      sh = { "shfmt", "beautysh" },
       sql = { "sql_formatter" },
       tex = { "latexindent" },
       toml = { "taplo" },
@@ -43,7 +47,7 @@ return {
     format_on_save = {
       lsp_fallback = true,
       lsp_format = "fallback",
-      timeout_ms = 500,
+      timeout_ms = 2000,
       exclude = { "spell", "codespell" },
     },
     format_after_save = {
@@ -53,6 +57,16 @@ return {
     notify_on_error = true,
     notify_no_formatters = true,
     formatters = {
+      shfmt = {
+        command = "shfmt",
+        args = { "-i", "2", "-ci", "-" },
+        stdin = true,
+      },
+      beautysh = {
+        command = "beautysh",
+        args = {},
+        stdin = true,
+      },
       black = {
         prepend_args = { "--line-length", "88" },
       },
