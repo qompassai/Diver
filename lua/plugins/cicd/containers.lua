@@ -1,3 +1,7 @@
+-- /qompassai/Diver/lua/plugins/cicd/containers.lua
+-- -------------------------------------------
+-- Copyright (C) 2025 Qompass AI, All rights reserved
+
 return {
   "dgrbrady/nvim-docker",
   ft = { "dockerfile", "containerfile", "docker-compose.yaml", "docker-compose.yml" },
@@ -56,17 +60,17 @@ return {
     })
 
     local null_ls_ok, null_ls = pcall(require, "null-ls")
-if null_ls_ok then
-  local builtins = null_ls.builtins
-  null_ls.register({
-    builtins.diagnostics.hadolint.with({
-      filetypes = { "dockerfile", "containerfile" },
-    }),
-    builtins.diagnostics.yamllint.with({
-      filetypes = { "yaml", "docker-compose.yml", "docker-compose.yaml" },
-    }),
-  })
-end
+    if null_ls_ok then
+      local builtins = null_ls.builtins
+      null_ls.register({
+        builtins.diagnostics.hadolint.with({
+          filetypes = { "dockerfile", "containerfile" },
+        }),
+        builtins.diagnostics.yamllint.with({
+          filetypes = { "yaml", "docker-compose.yml", "docker-compose.yaml" },
+        }),
+      })
+    end
 
     vim.api.nvim_create_autocmd({ "BufNewFile", "BufRead" }, {
       pattern = { "*docker-compose*.yml", "*docker-compose*.yaml" },
@@ -76,4 +80,3 @@ end
     })
   end,
 }
-

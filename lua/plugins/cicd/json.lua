@@ -1,5 +1,6 @@
--- ~/.config/nvim/lua/plugins/cicd/json.lua
---------------------------------------------
+-- /qompassai/Diver/lua/plugins/cicd/json.lua
+-- -------------------------------------------
+-- Copyright (C) 2025 Qompass AI, All rights reserved
 return {
   {
     "neovim/nvim-lspconfig",
@@ -11,7 +12,7 @@ return {
     end,
   },
   {
-    "nvimtools/none-ls.nvim", 
+    "nvimtools/none-ls.nvim",
     event = { "BufReadPre", "BufNewFile" },
     opts = function(_, opts)
       opts = require("config.cicd.json").setup_json_linter(opts)
@@ -21,6 +22,7 @@ return {
   },
   {
     "nvim-treesitter/nvim-treesitter",
+    lazy = true,
     opts = function(_, opts)
       if type(opts.ensure_installed) == "table" then
         vim.list_extend(opts.ensure_installed, { "json", "json5", "jsonc" })

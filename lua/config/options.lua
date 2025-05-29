@@ -27,7 +27,6 @@ vim.g.semantic_tokens_enabled = true
 vim.g.syntax_on = true
 vim.g.which_key_disable_health_check = 0
 vim.o.history = 300
-vim.o.modifiable = true
 vim.o.number = true
 vim.o.relativenumber = true
 vim.o.syntax = "enable"
@@ -40,7 +39,7 @@ vim.opt.clipboard = "unnamedplus"
 vim.opt.cmdheight = 0
 vim.opt.conceallevel = 0
 vim.opt.cursorline = true
-vim.opt.diffopt:append{"algorithm:histogram", "indent-heuristic", "linematch:60"}
+vim.opt.diffopt:append({ "algorithm:histogram", "indent-heuristic", "linematch:60" })
 vim.opt.encoding = "utf-8"
 vim.opt.exrc = true
 vim.opt.fileformats = { "unix", "dos", "mac" }
@@ -62,14 +61,14 @@ vim.opt.guicursor = {
 }
 vim.opt.laststatus = 3
 vim.opt.lazyredraw = false --conflicts with Noice if true
-vim.opt.linebreak = true        -- Break lines at word boundaries
+vim.opt.linebreak = true -- Break lines at word boundaries
 vim.opt.list = true
 vim.opt.listchars = {
   tab = "→ ",
   trail = "·",
   nbsp = "␣",
   extends = "»",
-  precedes = "«"
+  precedes = "«",
 }
 vim.opt.expandtab = true
 vim.opt.shiftwidth = 4
@@ -106,7 +105,7 @@ vim.opt.wildmenu = true
 vim.opt.wildmode = "longest:full,full"
 vim.opt.writebackup = true
 vim.wo.spell = true
-local is_windows = vim.fn.has "win32" ~= 0
+local is_windows = vim.fn.has("win32") ~= 0
 local sep = is_windows and "\\" or "/"
 local delim = is_windows and ";" or ":"
-vim.env.PATH = table.concat({ vim.fn.stdpath "data", "mason", "bin" }, sep) .. delim .. vim.env.PATH
+vim.env.PATH = table.concat({ vim.fn.stdpath("data"), "mason", "bin" }, sep) .. delim .. vim.env.PATH

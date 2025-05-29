@@ -1,5 +1,6 @@
--- ~/.config/nvim/lua/plugins/cicd/shell.lua
-
+-- /qompassai/Diver/lua/plugins/cicd/shell.lua
+-- -------------------------------------------
+-- Copyright (C) 2025 Qompass AI, All rights reserved
 return {
   {
     "neovim/nvim-lspconfig",
@@ -8,12 +9,21 @@ return {
     end,
   },
   {
-  "trixnz/sops.nvim",
-  lazy = false,
-  ft = { "yaml", "yml", "json", "toml", "env", "nix", "ini" },
-},
+    "trixnz/sops.nvim",
+    lazy = false,
+    ft = { "yaml", "yml", "json", "toml", "env", "nix", "ini", "conf", "key", "gpg", "asc" },
+    opts = {
+      file_patterns = {
+        "*.conf",
+        "*.config",
+        "*.cnf",
+        "*.key",
+        "*.enc",
+      },
+    },
+  },
   {
-    "nvimtools/none-ls.nvim", 
+    "nvimtools/none-ls.nvim",
     event = { "BufReadPre", "BufNewFile" },
     dependencies = {
       "nvim-lua/plenary.nvim",
@@ -71,5 +81,5 @@ return {
         require("config.cicd.shell").setup_sh_filetype_detection()
       end
     end,
-  }
+  },
 }

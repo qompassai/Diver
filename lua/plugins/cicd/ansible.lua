@@ -1,4 +1,6 @@
--- ~/.config/nvim/lua/plugins/cicd/ansible.lua
+-- /qompassai/Diver/lua/plugins/cicd/ansible.lua
+-- -------------------------------------------
+-- Copyright (C) 2025 Qompass AI, All rights reserved
 return {
   {
     "pearofducks/ansible-vim",
@@ -16,6 +18,5 @@ return {
     config = function(opts)
       require("config.cicd.ansible").setup_ansible(opts)
     end,
-  }
+  },
 }
-

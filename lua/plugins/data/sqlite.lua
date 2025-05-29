@@ -1,13 +1,13 @@
--- ~/.config/nvim/lua/plugins/data/psql.lua
+-- ~/.config/nvim/lua/plugins/data/sqlite.lua
 --------------------------------------------
 return {
   {
     "kristijanhusak/vim-dadbod-ui",
-    ft = { "pgsql" },
+    ft = { "sqlite" },
     lazy = true,
     dependencies = {
       { "tpope/vim-dadbod", lazy = true },
-      { "kristijanhusak/vim-dadbod-completion", ft = { "pgsql" }, lazy = true },
+      { "kristijanhusak/vim-dadbod-completion", ft = { "sqlite" }, lazy = true },
     },
     cmd = { "DBUI", "DBUIToggle", "DBUIAddConnection", "DBUIFindBuffer" },
     init = function()
@@ -19,9 +19,9 @@ return {
       vim.g.db_ui_auto_execute_table_helpers = 1
       
       require("config.data.common").setup_dadbod_connections("~/.config/nvim/dbx.lua")
-      require("config.data.psql").setup_filetype_detection()
+      require("config.data.sqlite").setup_filetype_detection()
       vim.api.nvim_create_autocmd("FileType", {
-        pattern = { "pgsql" },
+        pattern = { "sqlite" },
         callback = function()
           vim.opt_local.expandtab = true
           vim.opt_local.shiftwidth = 2
@@ -31,43 +31,43 @@ return {
       })
     end,
     keys = {
-      { "<leader>dpt", "<cmd>DBUIToggle<CR>", desc = "Toggle PostgreSQL UI" },
-      { "<leader>dpf", "<cmd>DBUIFindBuffer<CR>", desc = "Find PostgreSQL Buffer" },
-      { "<leader>dpe", function()
+      { "<leader>dst", "<cmd>DBUIToggle<CR>", desc = "Toggle SQLite UI" },
+      { "<leader>dsf", "<cmd>DBUIFindBuffer<CR>", desc = "Find SQLite Buffer" },
+      { "<leader>dse", function()
           if vim.fn.mode() == "v" or vim.fn.mode() == "V" then
             vim.cmd("'<,'>DB")
           else
             vim.cmd("DB")
           end
-        end, desc = "Execute PostgreSQL Query",
+        end, desc = "Execute SQLite Query",
       },
     },
   },
   {
     "neovim/nvim-lspconfig",
     opts = function(_, opts)
-      return require("config.data.psql").setup_lsp(opts)
+      return require("config.data.sqlite").setup_lsp(opts)
     end,
   },
   {
     "nvimtools/none-ls.nvim", 
     opts = function(_, opts)
-      opts = require("config.data.psql").setup_linter(opts)
-      opts = require("config.data.psql").setup_formatter(opts)
+      opts = require("config.data.sqlite").setup_linter(opts)
+      opts = require("config.data.sqlite").setup_formatter(opts)
       return opts
     end,
   },
   {
     "stevearc/conform.nvim",
     opts = function(_, opts)
-      return require("config.data.psql").setup_conform(opts)
+      return require("config.data.sqlite").setup_conform(opts)
     end,
   },
   {
     "folke/which-key.nvim",
     optional = true,
     opts = function(_, opts)
-      return require("config.data.psql").setup_keymaps(opts)
+      return require("config.data.sqlite").setup_keymaps(opts)
     end,
   },
 }

@@ -1,10 +1,14 @@
+-- /qompassai/Diver/lua/plugins/cicd/mail.lua
+-- -------------------------------------------
+-- Copyright (C) 2025 Qompass AI, All rights reserved
 return {
-  'martineausimon/nvim-mail-merge',
-  ft = { 'markdown' }, --optional
+  "martineausimon/nvim-mail-merge",
+  lazy = true,
+  ft = { "markdown" },
   config = function()
-    require('nvmm').setup({
+    require("nvmm").setup({
       mappings = {
-        attachment = "<leader>a",
+        attachment = "<leader>m",
         config = "<leader>c",
         preview = "<leader>p",
         send_text = "<leader>st",
@@ -13,7 +17,7 @@ return {
       options = {
         mail_client = {
           text = "neomutt", -- or "mailx"
-          html = "neomutt"
+          html = "neomutt",
         },
         auto_break_md = true, -- line breaks without two spaces for markdown
         neomutt_config = "$HOME/.neomuttrc",
@@ -27,9 +31,9 @@ return {
           [['margin-left=0']],
           [['margin-right=0']],
           [['margin-bottom=0']],
-          [['mainfont: sans-serif']]
-        }
-      }
+          [['mainfont: sans-serif']],
+        },
+      },
     })
-  end
+  end,
 }
