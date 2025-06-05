@@ -147,9 +147,9 @@ function M.line_file_size(opts)
   }
 end
 function M.line_git_branch(opts)
-opts = opts or {}
-return {
-  "branch",
+  opts = opts or {}
+  return {
+    "branch",
     icon = opts.icon or "",
   }
 end
@@ -162,15 +162,17 @@ function M.line_git_diff(opts)
   }
 end
 function M.line_inactive_filename()
-  local filename = vim.fn.expand('%:t')
-  return { filename, color = { fg = 'gray' } }
+  local filename = vim.fn.expand("%:t")
+  return { filename, color = { fg = "gray" } }
 end
 
 function M.line_inactive_location()
   return {
-    'location',
-    color = { fg = 'darkgray' },
-    fmt = function(str) return '󰍎 ' .. str end
+    "location",
+    color = { fg = "darkgray" },
+    fmt = function(str)
+      return "󰍎 " .. str
+    end,
   }
 end
 
@@ -178,18 +180,18 @@ function M.line_os_icon()
   local uname = vim.uv.os_uname().sysname
   if uname:match("Linux") then
     local os_release = vim.fn.system("cat /etc/os-release")
-          if os_release:match("Arch") then
-            return ""
-          elseif os_release:match("Ubuntu") then
-            return " "
-          else
-            return " "
-          end
-        elseif uname:match("Darwin") then
-          return "  "
-        else
-          return " "
-        end
+    if os_release:match("Arch") then
+      return ""
+    elseif os_release:match("Ubuntu") then
+      return " "
+    else
+      return " "
+    end
+  elseif uname:match("Darwin") then
+    return "  "
+  else
+    return " "
+  end
 end
 
 M.line_themes = {
@@ -247,7 +249,7 @@ function M.line_preview_fzf()
 
   local current_theme = M.line_current_theme
 
-  require('fzf-lua').fzf_exec(M.line_themes, {
+  require("fzf-lua").fzf_exec(M.line_themes, {
     prompt = "Lualine Theme> ",
     actions = {
       ["default"] = function(selected)
@@ -263,7 +265,6 @@ function M.line_preview_fzf()
     previewer = false,
   })
 end
-
 
 function M.line_wc()
   local wc = vim.fn.wordcount()
@@ -310,7 +311,7 @@ function M.line_search_count(opts)
   return {
     "searchcount",
     maxcount = opts.maxcount or 999,
-    timeout = opts.timeout or 500
+    timeout = opts.timeout or 500,
   }
 end
 
@@ -341,122 +342,122 @@ function M.line_setup(opts)
       refresh = {
         statusline = 1000,
         tabline = 1000,
-        winbar = 1000
+        winbar = 1000,
       },
     },
     sections = {
       lualine_a = { "mode" },
-       lualine_b = {
-            {
-              "branch",
-              icon = "",
-            },
-            {
-              "diff",
-              symbols = { added = "  ", modified = "   ", removed = "   " },
-              colored = true,
-            },
-            {
-              function()
-                local tag = vim.fn.system("git describe --tags --abbrev=0 2>/dev/null")
-                tag = vim.trim(tag)
-
-                if tag == "" then
-                  return ""
-                else
-                  return "笠 " .. tag
-                end
-              end,
-              cond = function()
-                return vim.fn.isdirectory(".git") == 1
-              end,
-              color = { fg = "#b5bd68", gui = "bold" },
-            },
-            {
-              "diagnostics",
-              sources = { "nvim_diagnostic" },
-              sections = { "error", "warn", "info", "hint" },
-              diagnostics_color = {
-                error = { fg = "#e06c75" },
-                warn = { fg = "#e5c07b" },
-                info = { fg = "#56b6c2" },
-                hint = { fg = "#98c379" },
-              },
-              symbols = {
-                error = " ",
-                warn = " ",
-                info = " ",
-                hint = " ",
-              },
-              colored = true,
-              update_in_insert = true,
-              always_visible = true,
-          },
-      },
-lualine_c = {
-            {
-              function()
-                local filetype = vim.bo.filetype
-                local icon = require("nvim-web-devicons").get_icon_by_filetype(filetype, { default = true })
-                return string.format("%s %s", icon, filetype)
-              end,
-              color = {},
-            },
-            {
-              function()
-                local clients = vim.lsp.get_clients()
-                if next(clients) == nil then
-                  return ""
-                end
-                local lsp_names = {}
-                for _, client in pairs(clients) do
-                  table.insert(lsp_names, " " .. client.name)
-                end
-                return table.concat(lsp_names, ", ")
-              end,
-              icon = " ",
-            },
-            {
-              function()
-                local wc = vim.fn.wordcount()
-                return string.format("%d words, %d chars", wc.words, wc.chars)
-              end,
-              icon = " ",
-            },
-          },
-          lualine_x = {
-            {
-              function()
-                local file = vim.fn.expand("%:p")
-                if file == "" then
-                  return ""
-                end
-                local size = vim.fn.getfsize(file)
-                if size < 0 then
-                  return ""
-                end
-                local units = { "B", "KB", "MB", "GB", "TB" }
-                local i = 1
-                while size > 1024 and i < #units do
-                  size = size / 1024
-                  i = i + 1
-                end
-                return string.format("%.1f %s", size, units[i])
-              end,
-              icon = " ",
-            },
-            { "searchcount", maxcount = 999, timeout = 500 },
-            { "selectioncount" },
-          },
-          lualine_y = { "progress" },
-          lualine_z = { "location", os_data, datetime },
+      lualine_b = {
+        {
+          "branch",
+          icon = "",
         },
+        {
+          "diff",
+          symbols = { added = "  ", modified = "   ", removed = "   " },
+          colored = true,
+        },
+        {
+          function()
+            local tag = vim.fn.system("git describe --tags --abbrev=0 2>/dev/null")
+            tag = vim.trim(tag)
+
+            if tag == "" then
+              return ""
+            else
+              return "笠 " .. tag
+            end
+          end,
+          cond = function()
+            return vim.fn.isdirectory(".git") == 1
+          end,
+          color = { fg = "#b5bd68", gui = "bold" },
+        },
+        {
+          "diagnostics",
+          sources = { "nvim_diagnostic" },
+          sections = { "error", "warn", "info", "hint" },
+          diagnostics_color = {
+            error = { fg = "#e06c75" },
+            warn = { fg = "#e5c07b" },
+            info = { fg = "#56b6c2" },
+            hint = { fg = "#98c379" },
+          },
+          symbols = {
+            error = " ",
+            warn = " ",
+            info = " ",
+            hint = " ",
+          },
+          colored = true,
+          update_in_insert = true,
+          always_visible = true,
+        },
+      },
+      lualine_c = {
+        {
+          function()
+            local filetype = vim.bo.filetype
+            local icon = require("nvim-web-devicons").get_icon_by_filetype(filetype, { default = true })
+            return string.format("%s %s", icon, filetype)
+          end,
+          color = {},
+        },
+        {
+          function()
+            local clients = vim.lsp.get_clients()
+            if next(clients) == nil then
+              return ""
+            end
+            local lsp_names = {}
+            for _, client in pairs(clients) do
+              table.insert(lsp_names, " " .. client.name)
+            end
+            return table.concat(lsp_names, ", ")
+          end,
+          icon = " ",
+        },
+        {
+          function()
+            local wc = vim.fn.wordcount()
+            return string.format("%d words, %d chars", wc.words, wc.chars)
+          end,
+          icon = " ",
+        },
+      },
+      lualine_x = {
+        {
+          function()
+            local file = vim.fn.expand("%:p")
+            if file == "" then
+              return ""
+            end
+            local size = vim.fn.getfsize(file)
+            if size < 0 then
+              return ""
+            end
+            local units = { "B", "KB", "MB", "GB", "TB" }
+            local i = 1
+            while size > 1024 and i < #units do
+              size = size / 1024
+              i = i + 1
+            end
+            return string.format("%.1f %s", size, units[i])
+          end,
+          icon = " ",
+        },
+        { "searchcount", maxcount = 999, timeout = 500 },
+        { "selectioncount" },
+      },
+      lualine_y = { "progress" },
+      lualine_z = { "location", os_data, datetime },
+    },
     inactive_sections = {
       lualine_a = {},
       lualine_b = {},
       lualine_c = {
-            "filename",
-          },
+        "filename",
+      },
       lualine_x = { M.line_inactive_location },
       lualine_y = {},
       lualine_z = {},

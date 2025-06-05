@@ -6,7 +6,6 @@
 vim.g = {}
 
 _G.lazyvim_docs = true
-_G.LazyVim = require("lazyvim.util")
 ---@class vim.var_accessor
 ---@field mapleader string
 ---@field maplocalleader string

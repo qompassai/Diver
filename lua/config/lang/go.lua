@@ -3,23 +3,21 @@
 local dap = require("dap")
 local lspconfig = require("lspconfig")
 local null_ls = require("null-ls")
-
 local M = {}
-
 function M.go_nls()
   local formatting = null_ls.builtins.formatting
   local diagnostics = null_ls.builtins.diagnostics
   local code_actions = null_ls.builtins.code_actions
   local go_sources = {
-  code_actions.gomodifytags.with({
-    ft = { "go" },
-    method = null_ls.methods.CODE_ACTION
-  }),
-  code_actions.refactoring.with({
-    ft = { "go" },
-    method = null_ls.methods.CODE_ACTION
-  }),
-  diagnostics.golangci_lint.with({
+    code_actions.gomodifytags.with({
+      ft = { "go" },
+      method = null_ls.methods.CODE_ACTION,
+    }),
+    code_actions.refactoring.with({
+      ft = { "go" },
+      method = null_ls.methods.CODE_ACTION,
+    }),
+    diagnostics.golangci_lint.with({
       ft = { "go" },
       method = null_ls.builtin.DIAGNOSTICS_ON_SAVE,
       cmd = { "golangcli-lint" },
@@ -29,12 +27,13 @@ function M.go_nls()
       ft = { "go" },
       method = null_ls.methods.DIAGNOSTICS_ON_SAVE,
       command = { "revive" },
-      extra_args = { "-formatter", "json", "./..." }
+      extra_args = { "-formatter", "json", "./..." },
     }),
     diagnostics.staticcheck.with({
       ft = { "go" },
       method = null_ls.methods.DIAGNOSTICS_ON_SAVE,
-      extra_args = { "-f", "json", "./..." } }),
+      extra_args = { "-f", "json", "./..." },
+    }),
     diagnostics.vacuum.with({
       ft = { "yaml", "json" },
       method = null_ls.methods_DIAGNOSTICS,
@@ -49,34 +48,33 @@ function M.go_nls()
     }),
     formatting.asmfmt.with({
       ft = { "asm" },
-      method = null_ls.methods.FORMATTING
+      method = null_ls.methods.FORMATTING,
     }),
     formatting.goimports.with({
       ft = { "go" },
       method = null_ls.methods.FORMATTING,
-      extra_args = { "-srcdir", "$DIRNAME" }
+      extra_args = { "-srcdir", "$DIRNAME" },
     }),
     formatting.goimports_reviser.with({
       ft = { "go" },
-      extra_args = { "$FILENAME" }
+      extra_args = { "$FILENAME" },
     }),
     formatting.gofmt.with({
-      ft = { "go" }
+      ft = { "go" },
     }),
     formatting.gofumpt.with({
       ft = { "go" },
       method = null_ls.methods.FORMATTING,
-      cmd = { "gofumpt" }
+      cmd = { "gofumpt" },
     }),
     formatting.golines.with({
       ft = { "go" },
       method = null_ls.methods.FORMATTING,
-      cmd = { "golines" }
+      cmd = { "golines" },
     }),
-      }
-      return go_sources
+  }
+  return go_sources
 end
-
 local function run_in_gvm(cmd)
   local handle = io.popen("bash -c 'source ~/.gvm/scripts/gvm && " .. cmd .. "'")
   if not handle then
@@ -97,7 +95,6 @@ local function run_cached_gvm(cmd)
   handle:close()
   return result and vim.trim(result) or nil
 end
-
 M.get_go_bin = function()
   return run_cached_gvm("which go") or "go"
 end
@@ -110,13 +107,11 @@ end
 M.get_go_version = function()
   return run_cached_gvm("go version") or ""
 end
-
 function M.go_lsp(on_attach, capabilities)
   if not lspconfig.gopls then
     vim.notify("gopls LSP is not available.", vim.log.levels.ERROR)
     return
   end
-
   lspconfig.gopls.setup({
     cmd = { M.get_go_bin() },
     capabilities = capabilities,
@@ -179,7 +174,6 @@ function M.go_lsp(on_attach, capabilities)
       dapui.close()
     end
   end
-
   dap_go.setup({
     delve = {
       path = M.get_dlv_bin(),
@@ -187,7 +181,6 @@ function M.go_lsp(on_attach, capabilities)
       port = "${port}",
     },
   })
-
   dapui.setup()
   dap.listeners.after.event_initialized["dapui_config"] = function()
     dapui.open()

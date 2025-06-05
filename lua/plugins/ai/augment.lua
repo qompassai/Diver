@@ -1,4 +1,4 @@
 return {
-  'augmentcode/augment.vim',
-  lazy = true
+  "augmentcode/augment.vim",
+  lazy = true,
 }

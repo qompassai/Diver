@@ -5,7 +5,6 @@ return {
     ft = { "html", "xml", "jsx", "tsx", "vue", "svelte", "php", "astro", "handlebars", "erb" },
     dependencies = {
       "folke/neoconf.nvim",
-      "saghen/blink.cmp",
       "stevearc/conform.nvim",
       "nvimtools/none-ls.nvim",
       "nvim-treesitter/nvim-treesitter",
@@ -16,13 +15,13 @@ return {
         "norcalli/nvim-colorizer.lua",
         ft = { "html", "css", "astro" },
         config = function()
-          require("colorizer").setup({"html", "css", "javascript"})
+          require("colorizer").setup({ "html", "css", "javascript" })
         end,
       },
     },
     lazy = true,
-    config = function(opts)
-      require("config.ui.html").setup_html(opts)
+    config = function()
+      require("config.ui.html").setup_html()
     end,
-  }
+  },
 }

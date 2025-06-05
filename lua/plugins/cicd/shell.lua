@@ -50,13 +50,6 @@ return {
     end,
   },
   {
-    "saghen/blink.cmp",
-    dependencies = { "hrsh7th/nvim-cmp" },
-    opts = function(_, opts)
-      return require("config.cicd.shell").setup_sh_completion(opts)
-    end,
-  },
-  {
     "folke/which-key.nvim",
     optional = true,
     opts = function(_, opts)

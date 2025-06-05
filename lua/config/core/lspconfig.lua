@@ -1,30 +1,19 @@
 -- ~/.config/nvim/lua/config/lspconfig.lua
-
 local M = {}
-
 function M.capabilities()
-  local ok, blink_cmp = pcall(require, "blink.cmp")
-  local capabilities = vim.lsp.protocol.make_client_capabilities()
-
-  if ok then
-    capabilities = require("cmp_nvim_lsp").default_capabilities(capabilities)
-  end
-
+  capabilities = require("cmp_nvim_lsp").default_capabilities(capabilities)
   capabilities.textDocument.foldingRange = {
     dynamicRegistration = true,
     lineFoldingOnly = true,
   }
-
   capabilities.workspace = {
     fileOperations = {
       didRename = true,
       willRename = true,
     },
   }
-
   return capabilities
 end
-
 function M.on_attach(client, bufnr)
   local bufmap = function(mode, lhs, rhs)
     vim.keymap.set(mode, lhs, rhs, { buffer = bufnr, desc = "LSP: " .. rhs })
@@ -39,7 +28,6 @@ function M.on_attach(client, bufnr)
   bufmap("n", "<leader>fd", vim.diagnostic.open_float)
   bufmap("n", "[d", vim.diagnostic.goto_prev)
   bufmap("]d", vim.diagnostic.goto_next)
-
   if client.supports_method("textDocument/inlayHint") then
     vim.lsp.inlay_hint.enable(bufnr, true)
   end
@@ -52,15 +40,21 @@ function M.on_attach(client, bufnr)
     end)
   end
 end
-
+vim.lsp.config("*", {
+  on_attach = M.on_attach,
+  capabilities = M.capabilities(),
+  root_markers = { ".git" },
+  file_operations = {
+    didRename = true,
+    willRename = true,
+  },
+})
 function M.setup(opts)
   opts = opts or {}
   opts.servers = opts.servers or {}
-
   local util = require("lspconfig.util")
   local has_deno = util.root_pattern("deno.json", "deno.jsonc")(vim.fn.getcwd())
   local has_python = util.root_pattern("pyproject.toml", "setup.py", "requirements.txt")(vim.fn.getcwd())
-
   opts.servers = vim.tbl_deep_extend("force", opts.servers, {
     ansiblels = {},
     bashls = {},
@@ -84,24 +78,21 @@ function M.setup(opts)
       },
     },
     lua_ls = require("config.lang.lua").get_config(),
-    marksman = {},
+    metals = require("config.lang.scala").get_config(),
     rust_analyzer = require("config.lang.rust").get_config(),
     sqlls = {},
     tailwindcss = {},
     taplo = {},
     vimls = {},
     yamlls = {},
-    zls = {},
+    zls = require("config.lang.zig").get_config(),
     ast_grep = false,
   })
-
   if has_deno then
     opts.servers.denols = require("config.lang.js").get_config()
   else
     opts.servers.tsserver = require("config.lang.js").get_config()
   end
-
-  -- Only define the pyright config; let mason-lspconfig handle starting it
   if has_python then
     opts.servers.pyright = {
       settings = {
@@ -118,11 +109,9 @@ function M.setup(opts)
       },
     }
   end
-
   require("config.lang.go").setup(M.on_attach, M.capabilities())
   require("config.lang.scala").setup(M.on_attach, M.capabilities())
   require("config.lang.zig").setup(M.on_attach, M.capabilities())
-
   vim.diagnostic.config({
     virtual_text = {
       prefix = "●",
@@ -137,7 +126,6 @@ function M.setup(opts)
     update_in_insert = false,
     severity_sort = true,
   })
-
   vim.api.nvim_create_autocmd("LspAttach", {
     callback = function(args)
       local client = vim.lsp.get_client_by_id(args.data.client_id)
@@ -146,17 +134,10 @@ function M.setup(opts)
       end
     end,
   })
-
-  vim.lsp.handlers["textDocument/publishDiagnostics"] = vim.lsp.with(
-    vim.lsp.diagnostic.on_publish_diagnostics,
-    {
-      update_in_insert = true,
-      severity_sort = true,
-    }
-  )
-
+  vim.lsp.handlers["textDocument/publishDiagnostics"] = vim.lsp.with(vim.lsp.diagnostic.on_publish_diagnostics, {
+    update_in_insert = true,
+    severity_sort = true,
+  })
   return opts
 end
-
 return M
-

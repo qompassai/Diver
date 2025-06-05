@@ -16,7 +16,9 @@ M.themes = {
         },
       })
     end,
-    apply = function() vim.cmd.colorscheme("catppuccin") end,
+    apply = function()
+      vim.cmd.colorscheme("catppuccin")
+    end,
     discord_name = "Catppuccin",
     discord_icon = "🍧",
   },
@@ -27,7 +29,9 @@ M.themes = {
         transparent = true,
       })
     end,
-    apply = function() vim.cmd.colorscheme("tokyonight") end,
+    apply = function()
+      vim.cmd.colorscheme("tokyonight")
+    end,
     discord_name = "Tokyo Night",
     discord_icon = "🗼",
   },
@@ -38,7 +42,9 @@ M.themes = {
         transparent = true,
       })
     end,
-    apply = function() vim.cmd.colorscheme("onedark") end,
+    apply = function()
+      vim.cmd.colorscheme("onedark")
+    end,
     discord_name = "One Dark",
     discord_icon = "🌑",
   },
@@ -49,7 +55,9 @@ M.themes = {
       vim.g.gruvbox_material_enable_italic = 1
       vim.g.gruvbox_material_transparent_background = 1
     end,
-    apply = function() vim.cmd.colorscheme("gruvbox-material") end,
+    apply = function()
+      vim.cmd.colorscheme("gruvbox-material")
+    end,
     discord_name = "Gruvbox Material",
     discord_icon = "🧸",
   },
@@ -71,7 +79,9 @@ M.themes = {
         },
       })
     end,
-    apply = function() vim.cmd.colorscheme("nightfox") end,
+    apply = function()
+      vim.cmd.colorscheme("nightfox")
+    end,
     discord_name = "Nightfox",
     discord_icon = "🦊",
   },
@@ -79,7 +89,9 @@ M.themes = {
     setup = function()
       vim.g.nord_transparent = true
     end,
-    apply = function() vim.cmd.colorscheme("nord") end,
+    apply = function()
+      vim.cmd.colorscheme("nord")
+    end,
     discord_name = "Nord",
     discord_icon = "❄️",
   },
@@ -99,7 +111,9 @@ M.themes = {
         },
       })
     end,
-    apply = function() vim.cmd.colorscheme("material") end,
+    apply = function()
+      vim.cmd.colorscheme("material")
+    end,
     discord_name = "Material",
     discord_icon = "🎨",
   },
@@ -109,7 +123,9 @@ M.themes = {
         transparent_bg = true,
       })
     end,
-    apply = function() vim.cmd.colorscheme("dracula") end,
+    apply = function()
+      vim.cmd.colorscheme("dracula")
+    end,
     discord_name = "Dracula",
     discord_icon = "🧛",
   },
@@ -121,7 +137,9 @@ M.themes = {
         },
       })
     end,
-    apply = function() vim.cmd.colorscheme("github_dark") end,
+    apply = function()
+      vim.cmd.colorscheme("github_dark")
+    end,
     discord_name = "GitHub Dark",
     discord_icon = "🐙",
   },
@@ -134,7 +152,9 @@ M.themes = {
         },
       })
     end,
-    apply = function() vim.cmd.colorscheme("onedark_vivid") end,
+    apply = function()
+      vim.cmd.colorscheme("onedark_vivid")
+    end,
     discord_name = "OneDark Pro",
     discord_icon = "⚫",
   },
@@ -167,7 +187,9 @@ function M.apply_current_theme()
 end
 function M.update_cord_theme()
   local theme = M.themes[M.current_theme]
-  if not theme or not M.cord_initialized or not M.cord then return end
+  if not theme or not M.cord_initialized or not M.cord then
+    return
+  end
   M.cord:update_presence({
     custom_details = "Using " .. theme.discord_name .. " theme " .. theme.discord_icon,
   })

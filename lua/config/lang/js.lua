@@ -45,8 +45,8 @@ function M.js_tools(opts)
             "tw`([^`]*)",
             "tw\\.[^`]+`([^`]*)",
             "tw\\(.*?\\).*?`([^`]*)",
-            "className=\"([^\"]*)",
-            "class=\"([^\"]*)",
+            'className="([^"]*)',
+            'class="([^"]*)',
           },
         },
       },
@@ -80,7 +80,21 @@ function M.js_nls(opts)
       extra_args = { "--config", eslint_config_path },
     }),
     b.formatting.prettier.with({
-      ft = { "javascript", "javascriptreact", "typescript", "typescriptreact", "vue", "svelte", "astro", "css", "scss", "html", "json", "yaml", "markdown" },
+      ft = {
+        "javascript",
+        "javascriptreact",
+        "typescript",
+        "typescriptreact",
+        "vue",
+        "svelte",
+        "astro",
+        "css",
+        "scss",
+        "html",
+        "json",
+        "yaml",
+        "markdown",
+      },
       command = "prettier",
       extra_args = { "--config", prettier_config_path },
     }),
@@ -89,16 +103,6 @@ end
 function M.js_lsp(opts)
   opts = opts or {}
   local capabilities = vim.lsp.protocol.make_client_capabilities()
-
-  local ok, lazy_loaded = pcall(require, "lazy")
-  if ok then
-    pcall(function() lazy_loaded.load({ plugins = { "blink.cmp" } }) end)
-    local blink_ok, blink_cmp = pcall(require, "blink_cmp")
-    if blink_ok and blink_cmp and blink_cmp.lsp_capabilities then
-      capabilities = blink_cmp.lsp_capabilities()
-    end
-  end
-
   require("typescript-tools").setup({
     capabilities = capabilities,
     settings = {
@@ -117,26 +121,23 @@ function M.js_lsp(opts)
       organize_imports_on_save = opts.organize_imports_on_save ~= true,
     },
   })
-
   local lspconfig = require("lspconfig")
   lspconfig.eslint.setup({
-    on_attach = function(client, bufnr)
+    on_attach = function(client, _bufnr)
       vim.api.nvim_create_autocmd("BufWritePre", {
         buffer = bufnr,
         command = "EslintFixAll",
       })
     end,
   })
-
   return {
-    typescript = require("typescript-tools").config,
+    typescript = ok and require("typescript-tools").config or {},
     eslint = true,
   }
 end
 function M.js_conform(opts)
   opts = opts or {}
   local base_config = require("config.lang.conform").setup(opts)
-
   local js_config = {
     formatters_by_ft = {
       javascript = { "prettier" },
@@ -148,7 +149,6 @@ function M.js_conform(opts)
     },
     formatters = {},
   }
-
   if base_config.formatters and base_config.formatters.prettier then
     js_config.formatters.prettier = vim.deepcopy(base_config.formatters.prettier)
     local original_prepend_args = js_config.formatters.prettier.prepend_args
@@ -163,18 +163,23 @@ function M.js_conform(opts)
       pcall(function()
         prettier_opts = require("neoconf").get("prettier") or {}
       end)
-      return {
-        "--print-width", tostring(prettier_opts.printWidth or 100),
-        "--tab-width", tostring(prettier_opts.tabWidth or 2),
-        "--use-tabs", prettier_opts.useTabs and "true" or "false",
-        "--semi", prettier_opts.semi ~= false and "true" or "false",
-        "--single-quote", prettier_opts.singleQuote and "true" or "false",
+      local extra_args = {
+        "--print-width",
+        tostring(prettier_opts.printWidth or 100),
+        "--tab-width",
+        tostring(prettier_opts.tabWidth or 2),
+        "--use-tabs",
+        prettier_opts.useTabs and "true" or "false",
+        "--semi",
+        prettier_opts.semi ~= false and "true" or "false",
+        "--single-quote",
+        prettier_opts.singleQuote and "true" or "false",
       }
+      return vim.list_extend(base_args, extra_args)
     end
   end
   js_config.format_on_save = base_config.format_on_save
   js_config.format_after_save = base_config.format_after_save
-
   local conform_ok, conform = pcall(require, "conform")
   if conform_ok then
     conform.setup({
@@ -199,12 +204,10 @@ function M.js_dap(opts)
   end
   dap_js.setup({
     debugger_path = opts.debugger_path or vim.fn.stdpath("data") .. "/lazy/vscode-js-debug",
-    adapters = { 'pwa-node', 'pwa-chrome', 'pwa-msedge', 'node-terminal', 'pwa-extensionHost' },
+    adapters = { "pwa-node", "pwa-chrome", "pwa-msedge", "node-terminal", "pwa-extensionHost" },
   })
-
   for _, language in ipairs({ "typescript", "javascript" }) do
     dap.configurations[language] = {
-      -- Node.js
       {
         type = "pwa-node",
         request = "launch",
@@ -216,7 +219,7 @@ function M.js_dap(opts)
         type = "pwa-node",
         request = "attach",
         name = "Attach",
-        processId = require('dap.utils').pick_process,
+        processId = require("dap.utils").pick_process,
         cwd = "${workspaceFolder}",
       },
       {
@@ -269,9 +272,12 @@ function M.js_neotest(opts)
   local adapters = {}
   local vitest_ok, vitest = pcall(require, "neotest-vitest")
   if vitest_ok then
-    table.insert(adapters, vitest({
-      vitestCommand = opts.vitest_command or "npx vitest",
-    }))
+    table.insert(
+      adapters,
+      vitest({
+        vitestCommand = opts.vitest_command or "npx vitest",
+      })
+    )
   end
   if #adapters > 0 then
     neotest.setup({
@@ -292,12 +298,13 @@ function M.setup_js(opts)
   require("tailwindcss-colorizer-cmp").setup({
     color_square_width = 2,
   })
-    return {
-    lsp = lsp_config,
-    js_tools = js_tools_config,
-    conform = conform_config,
-    dap = dap_config,
-    neotest = neotest_config,
+  return {
+    setup_js = M.setup_js,
+    neotest = M.js_neotest,
+    lsp = M.js_lsp,
+    dap = M.js_dap,
+    conform = M.js_conform,
+    null_ls = M.js_nls,
   }
 end
 return M

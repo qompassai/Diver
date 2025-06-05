@@ -1,129 +1,26 @@
--- /qompassai/Diver/lua/plugins/lang/rust.lua
+-- ~/.config/nvim/lua/plugins/lang/rust.lua
 -- ----------------------------------------
 -- Copyright (C) 2025 Qompass AI, All rights reserved
-local rust_config = require("config.lang.rust")
 
 return {
   {
     "mrcjkb/rustaceanvim",
-    lazy = true,
-    version = "^5",
     ft = { "rust" },
-    dependencies = {
-      "nvim-lua/plenary.nvim",
-      "nvim-treesitter/nvim-treesitter",
-      {
-        "saghen/blink.cmp",
-        version = "0.*",
-        dependencies = {
-          "dmitmel/cmp-digraphs",
-        },
-        opts = {
-          sources = {
-            default = { "lsp", "path", "snippets", "buffer", "digraphs" },
-            providers = {
-              digraphs = {
-                name = "digraphs",
-                module = "blink.compat.source",
-                score_offset = -3,
-                opts = {
-                  cache_digraphs_on_start = true,
-                },
-              },
-            },
-          },
-        },
-      },
-      {
-        "L3MON4D3/LuaSnip",
-        dependencies = { "rafamadriz/friendly-snippets" },
-      },
-      "nvimtools/none-ls.nvim",
-      "nvimtools/none-ls-extras.nvim",
-      {
-        "saghen/blink.compat",
-        version = "0.*",
-        lazy = true,
-        opts = {},
-      },
-      {
-        "mfussenegger/nvim-dap",
-        dependencies = {
-          { "igorlfs/nvim-dap-view", opts = {} },
-          "rcarriga/nvim-dap-ui",
-        },
-      },
-    },
+    version = "^5",
+    lazy = true,
     config = function()
       local rust = require("config.lang.rust")
-      local capabilities = require("blink.cmp").get_lsp_capabilities()
-      local on_attach = function(client, bufnr)
-        local opts = { noremap = true, silent = true, buffer = bufnr }
-        vim.keymap.set("n", "K", vim.lsp.buf.hover, opts)
-        vim.keymap.set("n", "gd", vim.lsp.buf.definition, opts)
-        vim.keymap.set("n", "gi", vim.lsp.buf.implementation, opts)
-        vim.keymap.set("n", "<leader>ca", vim.lsp.buf.code_action, opts)
-        vim.keymap.set("n", "<leader>rn", vim.lsp.buf.rename, opts)
-        vim.keymap.set("n", "<leader>re", function()
-          vim.ui.select({ "2021", "2024" }, { prompt = "Select Rust Edition" }, function(choice)
-            rust.set_rust_edition(choice)
-          end)
-        end, { buffer = bufnr, desc = "Select Rust Edition" })
-        vim.keymap.set("n", "<leader>rt", function()
-          vim.ui.select({ "stable", "nightly", "beta" }, { prompt = "Select Rust Toolchain" }, function(choice)
-            rust.set_rust_toolchain(choice)
-          end)
-        end, { buffer = bufnr, desc = "Select Rust Toolchain" })
-
-        -- Neovim 0.10+ inlay hint logic
-        if client.server_capabilities.inlayHintProvider then
-          vim.lsp.inlay_hint.enable(true, { bufnr })
-        end
-      end
+      local capabilities = require("cmp_nvim_lsp").default_capabilities()
 
       vim.g.rustaceanvim = {
         tools = {
           float_win_config = { border = "rounded" },
         },
         server = {
-          on_attach = on_attach,
+          on_attach = rust.on_attach,
           capabilities = capabilities,
           settings = {
-            ["rust-analyzer"] = {
-              cargo = {
-                allFeatures = true,
-                loadOutDirsFromCheck = true,
-                runBuildScripts = true,
-              },
-              checkOnSave = true,
-              check = {
-                command = "clippy",
-                extraArgs = { "--target-dir=target/analyzer" },
-              },
-              diagnostics = {
-                enable = true,
-                experimental = { enable = true },
-                disabled = { "unresolved-proc-macro", "macro-error" },
-              },
-              procMacro = {
-                enable = true,
-                attributes = { enable = true },
-              },
-              files = {
-                excludeDirs = { ".direnv", ".git", "target", "node_modules", "tests/generated", ".zig-cache" },
-                watcher = "client",
-              },
-              inlayHints = {
-                typeHints = true,
-                parameterHints = true,
-                chainingHints = true,
-                closingBraceHints = true,
-              },
-              rustc = {
-                source = rust.default_toolchain,
-                edition = rust.default_edition,
-              },
-            },
+            ["rust-analyzer"] = rust.get_analyzer_settings(),
           },
         },
       }
@@ -136,23 +33,44 @@ return {
       rust.rust_dap()
       rust.rust()
     end,
+    dependencies = {
+      "nvim-lua/plenary.nvim",
+      "nvim-treesitter/nvim-treesitter",
+      {
+        "L3MON4D3/LuaSnip",
+        dependencies = { "rafamadriz/friendly-snippets" },
+      },
+      "nvimtools/none-ls.nvim",
+      "nvimtools/none-ls-extras.nvim",
+      {
+        "mfussenegger/nvim-dap",
+        dependencies = {
+          "rcarriga/nvim-dap-ui",
+          { "igorlfs/nvim-dap-view", opts = {} },
+        },
+      },
+    },
   },
 
   {
     "saecki/crates.nvim",
     event = { "BufRead Cargo.toml" },
-    config = function() end,
+    config = function()
+      require("config.lang.rust").rust_crates()
+    end,
   },
 
   {
     "nvim-neotest/neotest",
+    ft = { "rust" },
     dependencies = {
       "nvim-neotest/nvim-nio",
       "rouge8/neotest-rust",
+      "mfussenegger/nvim-dap",
     },
-    ft = { "rust" },
     config = function()
-      require("neotest").setup({
+      local neotest = require("neotest")
+      neotest.setup({
         adapters = {
           require("neotest-rust")({
             args = { "--no-capture" },
@@ -160,14 +78,13 @@ return {
           }),
         },
       })
-      vim.keymap.set("n", "<leader>tt", function()
-        require("neotest").run.run()
-      end, { desc = "Run nearest test" })
-      vim.keymap.set("n", "<leader>tf", function()
-        require("neotest").run.run(vim.fn.expand("%"))
+      local map = vim.keymap.set
+      map("n", "<leader>tt", neotest.run.run, { desc = "Run nearest test" })
+      map("n", "<leader>tf", function()
+        neotest.run.run(vim.fn.expand("%"))
       end, { desc = "Run file tests" })
-      vim.keymap.set("n", "<leader>td", function()
-        require("neotest").run.run({ strategy = "dap" })
+      map("n", "<leader>td", function()
+        neotest.run.run({ strategy = "dap" })
       end, { desc = "Debug nearest test" })
     end,
   },

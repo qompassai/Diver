@@ -1,10 +1,9 @@
-return
-{ 
-  'martineausimon/nvim-mail-merge',
+return {
+  "martineausimon/nvim-mail-merge",
   lazy = true,
-  ft = { 'markdown' }, --optional
+  ft = { "markdown" }, --optional
   config = function()
-    require('nvmm').setup({
+    require("nvmm").setup({
       mappings = {
         attachment = "<leader>a",
         config = "<leader>c",
@@ -15,7 +14,7 @@ return
       options = {
         mail_client = {
           text = "neomutt", -- or "mailx"
-          html = "neomutt"
+          html = "neomutt",
         },
         auto_break_md = true, -- line breaks without two spaces for markdown
         neomutt_config = "$HOME/.neomuttrc",
@@ -29,9 +28,9 @@ return
           [['margin-left=0']],
           [['margin-right=0']],
           [['margin-bottom=0']],
-          [['mainfont: sans-serif']]
-        }
-      }
+          [['mainfont: sans-serif']],
+        },
+      },
     })
-  end
+  end,
 }

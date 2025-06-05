@@ -1,6 +1,8 @@
 -- /qompassai/Diver/lua/plugins/lang/ts.lua
 -- ----------------------------------------
 -- Copyright (C) 2025 Qompass AI, All rights reserved
+local ts = require("config.lang.ts")
+
 return {
   {
     "neovim/nvim-lspconfig",
@@ -9,33 +11,32 @@ return {
     },
     ft = { "typescript", "typescriptreact" },
     opts = function(_, opts)
-      return require("config.lang.ts").setup_ts_lsp(opts)
+      return ts.lsp(opts)
     end,
   },
   {
     "nvimtools/none-ls.nvim",
     ft = { "typescript", "typescriptreact" },
-    dependencies = { 
+    dependencies = {
       "nvim-lua/plenary.nvim",
       "nvimtools/none-ls-extras.nvim",
-  },
+    },
     opts = function(_, opts)
-      opts = require("config.lang.ts").setup_ts_formatter(opts)
-      return opts
+      return ts.formatter(opts)
     end,
   },
   {
     "mfussenegger/nvim-lint",
     ft = { "typescript", "typescriptreact" },
     config = function()
-      require("config.lang.ts").setup_ts_linter()
+      require("config.lang.ts").linter({})
       vim.api.nvim_create_autocmd({ "BufWritePost", "BufReadPost", "InsertLeave" }, {
         pattern = { "*.ts", "*.tsx" },
         callback = function()
           require("lint").try_lint()
         end,
       })
-    end
+    end,
   },
   {
     "nvim-treesitter/nvim-treesitter",
@@ -49,19 +50,7 @@ return {
     "stevearc/conform.nvim",
     ft = { "typescript", "typescriptreact" },
     opts = function(_, opts)
-      return require("config.lang.ts").setup_ts_conform(opts)
-    end,
-  },
-  {
-    "saghen/blink.cmp",
-    version = "*",
-    lazy = true,
-    ft = { "typescript", "typescriptreact" },
-    dependencies = {
-      { 'dmitmel/cmp-digraphs' },
-      'saghen/blink.compat' },
-    opts = function(_, opts)
-      return require("config.lang.ts").setup_ts_completion(opts)
+      return ts.conform(opts)
     end,
   },
   {
@@ -69,15 +58,14 @@ return {
     optional = true,
     ft = { "typescript", "typescriptreact" },
     opts = function(_, opts)
-      return require("config.lang.ts").setup_ts_keymaps(opts)
+      return ts.keymaps(opts)
     end,
   },
-
   {
     "jose-elias-alvarez/typescript.nvim",
     ft = { "typescript", "typescriptreact" },
     config = function()
-      require("config.lang.ts").setup_ts_project_commands()
+      ts.commands()
     end,
   },
 }

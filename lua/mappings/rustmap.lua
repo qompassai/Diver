@@ -4,7 +4,6 @@ function M.setup()
   local crates_module = require("crates")
   local wk = require("which-key")
   local opts = { noremap = true, silent = true }
-
   -- Nerd Translate Legend (Alphabetical Order):
 
   -- 'Cargo': Rust's package/build system, used for managing dependencies compiling projects, and running tests.
@@ -59,7 +58,6 @@ function M.setup()
   --   Example: Helps you know if a variable is a number, text, or something else.
   --
   --Crates.nvm
-
   wk.register(
     {
       ["<leader>"] = {

@@ -7,23 +7,31 @@ return {
     "pmizio/typescript-tools.nvim",
     lazy = true,
     ft = {
-       "typescript", "typescriptreact", "javascript", "javascriptreact",
-      "vue", "svelte", "astro", "deno"
+      "typescript",
+      "typescriptreact",
+      "javascript",
+      "javascriptreact",
+      "vue",
+      "svelte",
+      "astro",
+      "deno",
     },
     dependencies = {
       "nvim-lua/plenary.nvim",
       "neovim/nvim-lspconfig",
       "nvim-treesitter/nvim-treesitter",
       "nvim-neo-tree/neo-tree.nvim",
-        {
+      {
         "roobert/tailwindcss-colorizer-cmp.nvim",
-        config = true
+        config = true,
       },
       {
-  "hrsh7th/vscode-langservers-extracted",
-  build = "npm install -g vscode-langservers-extracted",
-  cond = function() return vim.fn.executable("vscode-eslint-language-server") == 0 end,
-},
+        "hrsh7th/vscode-langservers-extracted",
+        build = "npm install -g vscode-langservers-extracted",
+        cond = function()
+          return vim.fn.executable("vscode-eslint-language-server") == 0
+        end,
+      },
       {
         "mfussenegger/nvim-dap",
         dependencies = {

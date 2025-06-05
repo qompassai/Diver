@@ -9,6 +9,7 @@ return {
     lazy = true,
     dependencies = {
       "ray-x/guihua.lua",
+      "ray-x/navigator.lua",
       "neovim/nvim-lspconfig",
       "nvim-treesitter/nvim-treesitter",
       "mfussenegger/nvim-dap",

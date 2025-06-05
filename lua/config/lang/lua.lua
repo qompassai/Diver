@@ -1,26 +1,36 @@
 ---~/nvim/lua/config/lang/lua.lua
 ---------------------------------
 local M = {}
-
 local function mark_pure(src)
   return src.with({ command = "true" })
 end
 function M.neoconf(opts)
   opts = opts or {}
   return {
-    local_settings = opts.local_settings or ".neoconf.json",
-    global_settings = opts.global_settings or "neoconf.json",
-    import = opts.import or { vscode = true, coc = true, nlsp = true },
-    live_reload = opts.live_reload ~= false,
-    filetype_jsonc = opts.filetype_jsonc ~= false,
+    local_settings = ".neoconf.json",
+    global_settings = "neoconf.json",
+    import = {
+      vscode = true,
+      coc = true,
+      nlsp = true,
+    },
+    live_reload = true,
+    filetype_jsonc = true,
     plugins = opts.plugins or {
-      lspconfig = { enabled = true },
-      jsonls = { enabled = true, configured_servers_only = true },
-      lua_ls = { enabled_for_neovim_config = true, enabled = false },
+      lspconfig = {
+        enabled = true,
+      },
+      jsonls = {
+        enabled = true,
+        configured_servers_only = true,
+      },
+      lua_ls = {
+        enabled_for_neovim_config = true,
+        enabled = false,
+      },
     },
   }
 end
-
 function M.lua_lazydev(opts)
   opts = opts or {}
   local config = {
@@ -58,7 +68,6 @@ function M.lua_nls(opts)
   local stylua_config_path = opts.stylua_config_path or vim.fn.expand("$HOME/.config/nvim/.stylua.toml")
   local selene_args = opts.selene_args or { "--display-style", "quiet", "-" }
   local teal_args = opts.teal_args or { "check", "$FILENAME" }
-
   return {
     mark_pure(b.code_actions.refactoring),
     mark_pure(b.completion.luasnip),
@@ -81,7 +90,6 @@ function M.lua_nls(opts)
     }),
   }
 end
-
 function M.lua_lsp(opts)
   opts = opts or {}
   require("lspconfig").lua_ls.setup({

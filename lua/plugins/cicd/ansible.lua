@@ -7,7 +7,6 @@ return {
     ft = { "yaml.ansible", "ansible" },
     dependencies = {
       "nvim-treesitter/nvim-treesitter",
-      "saghen/blink.cmp",
       "stevearc/conform.nvim",
       "nvimtools/none-ls.nvim",
       "folke/trouble.nvim",

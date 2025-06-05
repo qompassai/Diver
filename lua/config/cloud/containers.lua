@@ -3,7 +3,9 @@ local M = {}
 local null_ls = require("null-ls")
 local b = null_ls.builtins
 
-local function mark_pure(src) return src.with({ command = "true" }) end
+local function mark_pure(src)
+  return src.with({ command = "true" })
+end
 
 function M.docker_opts()
   return {
@@ -80,7 +82,7 @@ function M.setup_lsp(on_attach, capabilities)
     capabilities = capabilities,
     settings = {
       yaml = {
-        schemas = require('schemastore').yaml.schemas(M.schema_opts()),
+        schemas = require("schemastore").yaml.schemas(M.schema_opts()),
         validate = true,
         completion = true,
         hover = true,
@@ -128,4 +130,3 @@ function M.setup_all(opts)
 end
 
 return M
-

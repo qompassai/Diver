@@ -17,7 +17,7 @@ return {
       vim.g.db_ui_winwidth = 40
       vim.g.db_ui_show_help = 0
       vim.g.db_ui_auto_execute_table_helpers = 1
-      
+
       require("config.data.common").setup_dadbod_connections("~/.config/nvim/dbx.lua")
       require("config.data.sqlite").setup_filetype_detection()
       vim.api.nvim_create_autocmd("FileType", {
@@ -33,13 +33,16 @@ return {
     keys = {
       { "<leader>dst", "<cmd>DBUIToggle<CR>", desc = "Toggle SQLite UI" },
       { "<leader>dsf", "<cmd>DBUIFindBuffer<CR>", desc = "Find SQLite Buffer" },
-      { "<leader>dse", function()
+      {
+        "<leader>dse",
+        function()
           if vim.fn.mode() == "v" or vim.fn.mode() == "V" then
             vim.cmd("'<,'>DB")
           else
             vim.cmd("DB")
           end
-        end, desc = "Execute SQLite Query",
+        end,
+        desc = "Execute SQLite Query",
       },
     },
   },
@@ -50,7 +53,7 @@ return {
     end,
   },
   {
-    "nvimtools/none-ls.nvim", 
+    "nvimtools/none-ls.nvim",
     opts = function(_, opts)
       opts = require("config.data.sqlite").setup_linter(opts)
       opts = require("config.data.sqlite").setup_formatter(opts)

@@ -1,19 +1,32 @@
 return {
-    {
-        "mason-org/mason.nvim",
-        lazy = false,
-        event = "VeryLazy",
-        dependencies = {
-            "williamboman/mason-lspconfig.nvim", "nvimdev/lspsaga.nvim",
-            {"ms-jpq/coq_nvim", branch = "coq"},
-            {"ms-jpq/coq.artifacts", branch = "artifacts"},
-            {"ms-jpq/coq.thirdparty", branch = "3p"},
-            "WhoIsSethDaniel/mason-tool-installer.nvim", "b0o/SchemaStore.nvim",
-            "neovim/nvim-lspconfig", "saghen/blink.cmp"
-        },
-        config = function()
-            require("config.core.mason").setup_mason()
-            require("config.core.lspconfig")
-        end
-    }
+  {
+    "folke/neoconf.nvim",
+    priority = 1000,
+    config = true,
+  },
+  {
+    "mason-org/mason-lspconfig.nvim",
+    dependencies = {
+      "mason-org/mason.nvim",
+      "neovim/nvim-lspconfig",
+      "hrsh7th/cmp-nvim-lsp",
+      "WhoIsSethDaniel/mason-tool-installer.nvim",
+      "b0o/SchemaStore.nvim",
+    },
+    config = function()
+      require("neoconf").setup()
+      require("mason").setup()
+      require("mason-lspconfig").setup()
+      require("config.core.lspconfig")
+      local capabilities = require("cmp_nvim_lsp").default_capabilities()
+      require("lspconfig").util.default_config.capabilities = vim.tbl_deep_extend("force", require("lspconfig").util.default_config.capabilities, capabilities)
+      require("config.core.mason").setup_mason()
+      require("config.lang.js").setup_js(opts)
+      require("config.lang.zig").setup_zig(opts)
+    end,
+  },
+  {
+    "nvimdev/lspsaga.nvim",
+    config = true,
+  },
 }

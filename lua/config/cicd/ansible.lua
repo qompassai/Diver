@@ -1,6 +1,5 @@
 -- ~/.config/nvim/lua/config/cicd/ansible.lua
 local M = {}
-
 function M.none_ls_sources()
   local null_ls = require("null-ls")
   local format = null_ls.builtins.formatting
@@ -20,7 +19,7 @@ function M.none_ls_sources()
     diag.yamllint.with({
       method = null_ls.methods.DIAGNOSTICS,
       ft = { "yaml", "yaml.ansible" },
-      cmd = "yamllint"
+      cmd = "yamllint",
     }),
     c_a.statix.with({
       method = null_ls.methods.CODE_ACTION,
@@ -53,7 +52,6 @@ function M.setup_lsp(on_attach, capabilities)
     capabilities = capabilities or vim.lsp.protocol.make_client_capabilities(),
   })
 end
-
 function M.setup_ts()
   local ts_ok, ts_configs = pcall(require, "nvim-treesitter.configs")
   if ts_ok then
@@ -66,7 +64,6 @@ function M.setup_ts()
     })
   end
 end
-
 function M.setup_conform()
   local conform_ok, conform = pcall(require, "conform")
   if conform_ok then
@@ -90,10 +87,15 @@ function M.setup_conform()
     })
   end
 end
-
 function M.setup_ansible(opts)
   vim.api.nvim_create_autocmd({ "BufNewFile", "BufRead" }, {
-    pattern = { "*/playbooks/*.yml", "*/roles/*.yml", "*/inventory/*.yml", "*/host_vars/*.yml", "*/group_vars/*.yml" },
+    pattern = {
+      "*/playbooks/*.yml",
+      "*/roles/*.yml",
+      "*/inventory/*.yml",
+      "*/host_vars/*.yml",
+      "*/group_vars/*.yml",
+    },
     callback = function()
       vim.bo.filetype = "yaml.ansible"
     end,
@@ -112,6 +114,4 @@ function M.setup_ansible(opts)
 
   M.setup_ts()
 end
-
 return M
-

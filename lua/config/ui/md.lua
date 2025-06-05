@@ -3,8 +3,8 @@
 local M = {}
 
 function M.md_none_ls_sources(opts)
-opts = opts or {}
-local markdown_filetypes = opts.markdown_filetypes or { "markdown", "md" }
+  opts = opts or {}
+  local markdown_filetypes = opts.markdown_filetypes or { "markdown", "md" }
   local text_filetypes = opts.text_filetypes or { "markdown", "md", "txt" }
   local prettier_config = opts.prettier or {}
   local markdownlint_config = opts.markdownlint or {}
@@ -15,34 +15,48 @@ local markdown_filetypes = opts.markdown_filetypes or { "markdown", "md" }
   local include_vale = opts.include_vale ~= false
   local include_proselint = opts.include_proselint ~= false
   local null_ls_ok, null_ls = pcall(require, "null-ls")
-  if not null_ls_ok then return {} end
+  if not null_ls_ok then
+    return {}
+  end
   local b = null_ls.builtins
   local sources = {}
   if include_prettier then
-    table.insert(sources, b.formatting.prettierd.with(vim.tbl_deep_extend("force", {
-      filetypes = markdown_filetypes,
-      prefer_local = "node_modules/.bin",
-    }, prettier_config)))
+    table.insert(
+      sources,
+      b.formatting.prettierd.with(vim.tbl_deep_extend("force", {
+        filetypes = markdown_filetypes,
+        prefer_local = "node_modules/.bin",
+      }, prettier_config))
+    )
   end
   if include_markdownlint then
-    table.insert(sources, b.diagnostics.markdownlint.with(vim.tbl_deep_extend("force", {
-      ft = markdown_filetypes,
-      extra_args = {
-        "--config",
-        vim.fn.expand("~/.config/markdownlint.json"),
-      },
-    }, markdownlint_config)))
+    table.insert(
+      sources,
+      b.diagnostics.markdownlint.with(vim.tbl_deep_extend("force", {
+        ft = markdown_filetypes,
+        extra_args = {
+          "--config",
+          vim.fn.expand("~/.config/markdownlint.json"),
+        },
+      }, markdownlint_config))
+    )
   end
   if include_vale then
-    table.insert(sources, b.diagnostics.vale.with(vim.tbl_deep_extend("force", {
-      ft = text_filetypes,
-      extra_args = {"--config", vim.fn.expand("~/.config/vale/.vale.ini")}
-    }, vale_config)))
+    table.insert(
+      sources,
+      b.diagnostics.vale.with(vim.tbl_deep_extend("force", {
+        ft = text_filetypes,
+        extra_args = { "--config", vim.fn.expand("~/.config/vale/.vale.ini") },
+      }, vale_config))
+    )
   end
   if include_proselint then
-    table.insert(sources, b.code_actions.proselint.with(vim.tbl_deep_extend("force", {
-      ft = text_filetypes,
-    }, proselint_config)))
+    table.insert(
+      sources,
+      b.code_actions.proselint.with(vim.tbl_deep_extend("force", {
+        ft = text_filetypes,
+      }, proselint_config))
+    )
   end
   return sources
 end
@@ -83,13 +97,13 @@ function M.md_pdf(opts)
           vim.cmd("MarkdownToPDF")
         end
       end, { buffer = true, desc = "Convert Markdown to PDF" })
-    end
+    end,
   })
   return pdf_opts
 end
 function M.md_treesitter(opts)
-    opts = opts or {}
-      opts.sync_install = opts.sync_install or false
+  opts = opts or {}
+  opts.sync_install = opts.sync_install or false
   opts.ignore_install = opts.ignore_install or {}
   opts.auto_install = opts.auto_install ~= false
   opts.modules = opts.modules or {}
@@ -105,7 +119,7 @@ function M.md_treesitter(opts)
 
   return opts
 end
-  function M.md_mdpreview()
+function M.md_mdpreview()
   vim.g.mkdp_auto_start = 0
   vim.g.mkdp_auto_close = 0
   vim.g.mkdp_refresh_slow = 0
@@ -134,12 +148,17 @@ function M.md_anchor(link, opts)
   if lowercase then
     result = string.lower(result)
   end
-  return "'" .. prefix .. "' . substitute(" .. (lowercase and "tolower(link)" or "link") ..
-         ", ' ', '" .. separator .. "', 'g')"
+  return "'"
+    .. prefix
+    .. "' . substitute("
+    .. (lowercase and "tolower(link)" or "link")
+    .. ", ' ', '"
+    .. separator
+    .. "', 'g')"
 end
 function M.md_table_mode()
-  vim.g.table_mode_corner = '|'
-  vim.g.table_mode_separator = '|'
+  vim.g.table_mode_corner = "|"
+  vim.g.table_mode_separator = "|"
   vim.g.table_mode_always_active = 0
   vim.g.table_mode_syntax = 1
   vim.g.table_mode_update_time = 300
@@ -164,7 +183,9 @@ function M.md_latex_preview()
 end
 function M.md_conform(opts)
   local conform_ok, conform = pcall(require, "conform")
-  if not conform_ok then return opts end
+  if not conform_ok then
+    return opts
+  end
   opts = opts or {}
   local default_opts = {
     formatters_by_ft = {
@@ -185,56 +206,58 @@ function M.md_conform(opts)
   conform.setup(config)
   return config
 end
-  vim.api.nvim_create_autocmd("FileType", {
-    pattern = { "markdown", "md" },
-    callback = function()
-      vim.opt_local.wrap = true
-      vim.opt_local.conceallevel = 2
-      vim.opt_local.concealcursor = "nc"
-      vim.opt_local.spell = true
-      vim.opt_local.spelllang = "en_us"
-      vim.opt_local.textwidth = 80
-      vim.keymap.set("n", "<leader>mp", ":MarkdownPreview<CR>", { buffer = true, desc = "Markdown Preview" })
-      vim.keymap.set("n", "<leader>ms", ":MarkdownPreviewStop<CR>", { buffer = true, desc = "Stop Markdown Preview" })
-      vim.keymap.set("n", "<leader>mt", ":TableModeToggle<CR>", { buffer = true, desc = "Toggle Table Mode" })
-      vim.keymap.set("n", "<leader>mi", ":KittyScrollbackGenerateImage<CR>",
-        { buffer = true, desc = "Generate image from code block" })
-      vim.keymap.set("v", "<leader>mr", ":SnipRun<CR>", { buffer = true, desc = "Run selected code" })
+vim.api.nvim_create_autocmd("FileType", {
+  pattern = { "markdown", "md" },
+  callback = function()
+    vim.opt_local.wrap = true
+    vim.opt_local.conceallevel = 2
+    vim.opt_local.concealcursor = "nc"
+    vim.opt_local.spell = true
+    vim.opt_local.spelllang = "en_us"
+    vim.opt_local.textwidth = 80
+    vim.keymap.set("n", "<leader>mp", ":MarkdownPreview<CR>", { buffer = true, desc = "Markdown Preview" })
+    vim.keymap.set("n", "<leader>ms", ":MarkdownPreviewStop<CR>", { buffer = true, desc = "Stop Markdown Preview" })
+    vim.keymap.set("n", "<leader>mt", ":TableModeToggle<CR>", { buffer = true, desc = "Toggle Table Mode" })
+    vim.keymap.set(
+      "n",
+      "<leader>mi",
+      ":KittyScrollbackGenerateImage<CR>",
+      { buffer = true, desc = "Generate image from code block" }
+    )
+    vim.keymap.set("v", "<leader>mr", ":SnipRun<CR>", { buffer = true, desc = "Run selected code" })
+  end,
+})
+vim.api.nvim_create_user_command("MarkdownToPDF", function()
+  local input_file = vim.fn.expand("%")
+  local output_file = vim.fn.expand("%:r") .. ".pdf"
+  vim.notify("Converting " .. input_file .. " to PDF...", vim.log.levels.INFO)
+
+  local cmd = "pandoc -f markdown -t pdf " .. "--pdf-engine=xelatex " .. "-o " .. output_file .. " " .. input_file
+  vim.fn.jobstart(cmd, {
+    on_exit = function(_, code)
+      if code == 0 then
+        vim.notify("Successfully converted to " .. output_file, vim.log.levels.INFO)
+      else
+        vim.notify("Failed to convert to PDF", vim.log.levels.ERROR)
+      end
     end,
   })
-  vim.api.nvim_create_user_command("MarkdownToPDF", function()
-    local input_file = vim.fn.expand("%")
-    local output_file = vim.fn.expand("%:r") .. ".pdf"
-    vim.notify("Converting " .. input_file .. " to PDF...", vim.log.levels.INFO)
-
-    local cmd = "pandoc -f markdown -t pdf " ..
-                "--pdf-engine=xelatex " ..
-                "-o " .. output_file .. " " .. input_file
-    vim.fn.jobstart(cmd, {
-      on_exit = function(_, code)
-        if code == 0 then
-          vim.notify("Successfully converted to " .. output_file, vim.log.levels.INFO)
-        else
-          vim.notify("Failed to convert to PDF", vim.log.levels.ERROR)
-        end
-      end
-    })
-  end, {})
-  local markdownlint_config = vim.fn.expand("~/.config/markdownlint.json")
-  if vim.fn.filereadable(markdownlint_config) == 0 then
-    vim.fn.mkdir(vim.fn.expand("~/.config/nvim/utils"), "p")
-    local config = [[{
+end, {})
+local markdownlint_config = vim.fn.expand("~/.config/markdownlint.json")
+if vim.fn.filereadable(markdownlint_config) == 0 then
+  vim.fn.mkdir(vim.fn.expand("~/.config/nvim/utils"), "p")
+  local config = [[{
       "default": true,
       "line-length": false,
       "no-trailing-punctuation": false,
       "no-inline-html": false
     }]]
-    vim.fn.writefile(vim.split(config, "\n"), markdownlint_config)
-  end
+  vim.fn.writefile(vim.split(config, "\n"), markdownlint_config)
+end
 function M.md(opts)
   opts = opts or {}
-    M.md_lsp(opts.on_attach, opts.capabilities)
-    local null_ls_ok, null_ls = pcall(require, "null-ls")
+  M.md_lsp(opts.on_attach, opts.capabilities)
+  local null_ls_ok, null_ls = pcall(require, "null-ls")
   if null_ls_ok then
     local sources = M.md_none_ls_sources(opts)
     if #sources > 0 then

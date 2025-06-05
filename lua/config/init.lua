@@ -13,7 +13,9 @@ m.setup_all = function(opts)
   cicd.setup_all_cicd(opts)
   pcall(function()
     local cloud = require("config.cloud")
-    if cloud.setup_all_cloud then cloud.setup_all_cloud(opts) end
+    if cloud.setup_all_cloud then
+      cloud.setup_all_cloud(opts)
+    end
   end)
 end
 return M

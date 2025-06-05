@@ -15,37 +15,83 @@ return {
   },
   {
     "folke/lazydev.nvim",
-    ft = "lua",
+    ft = { "lua", "luau" },
     dependencies = {
       "Bilal2453/luvit-meta",
-      "camspiers/luarocks",
-      "saghen/blink.cmp",
-      "stevearc/conform.nvim",
-      "folke/trouble.nvim",
-      "nvimtools/none-ls.nvim",
-      "gbprod/none-ls-luacheck.nvim",
-      "nvimtools/none-ls-extras.nvim",
-      "b0o/SchemaStore.nvim",
-      "L3MON4D3/LuaSnip",
-      "hrsh7th/nvim-cmp",
     },
     config = function()
       lua_config.lua_lazydev()
     end,
   },
   {
+    "nvimtools/none-ls.nvim",
+    event = { "BufReadPre", "BufNewFile" },
+    dependencies = {
+      "gbprod/none-ls-luacheck.nvim",
+      "nvimtools/none-ls-extras.nvim",
+    },
+    config = function()
+      require("null-ls").setup({
+        sources = lua_config.lua_nls(),
+      })
+    end,
+  },
+  {
+    "stevearc/conform.nvim",
+    event = { "BufWritePre", "BufNewFile" },
+    config = function()
+      lua_config.lua_conform()
+    end,
+  },
+  {
+    "neovim/nvim-lspconfig",
+    ft = { "lua", "luau" },
+    config = function()
+      lua_config.lua_lsp()
+    end,
+  },
+  {
+    "folke/trouble.nvim",
+    cmd = { "TroubleToggle", "Trouble" },
+  },
+  {
     "hrsh7th/nvim-cmp",
     event = "InsertEnter",
-    config = function(_, opts)
+    dependencies = {
+      "L3MON4D3/LuaSnip",
+      "hrsh7th/cmp-omni",
+      --     "camspiers/luarocks",
+      "camspiers/snap",
+    },
+    opts = function(_, opts)
       local cmp = require("cmp")
-      cmp.setup(opts)
+      cmp.setup(opts or {})
       cmp.setup.filetype("lua", {
         sources = cmp.config.sources({
           { name = "lazydev" },
           { name = "luasnip" },
           { name = "nvim_lsp" },
+          { name = "blink" },
+          { name = "nvim-cmp" },
         }),
       })
     end,
+  },
+  --{
+  --  "camspiers/luarocks",
+  --  lazy = true,
+  --  opts = {
+  --    rocks = { "fzy", "magick" },
+  --     enabled = false,
+  --    hererocks = true,
+  --  },
+  --  config = function(_, opts)
+  --    require("luarocks").setup(opts)
+  --  end,
+  -- },
+  {
+    "camspiers/snap",
+    --dependencies = { "camspiers/luarocks" },
+    lazy = true,
   },
 }

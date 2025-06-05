@@ -24,12 +24,12 @@ M.setup = function()
   end
   local theme_mappings = generate_theme_mappings()
   local mappings = {
-    t = {
+    T = {
       name = "Themes",
     },
   }
   for theme, command in pairs(theme_mappings) do
-    mappings.t[theme] = command
+    mappings.T[theme] = command
   end
   local which_key_opts = {
     prefix = "<leader>",

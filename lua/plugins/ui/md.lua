@@ -7,7 +7,9 @@ return {
     keys = {
       {
         "<leader>,",
-        function() require("md-pdf").convert_md_to_pdf() end,
+        function()
+          require("md-pdf").convert_md_to_pdf()
+        end,
         desc = "Convert Markdown to PDF",
       },
     },
@@ -25,109 +27,112 @@ return {
     },
   },
   {
-  "iamcco/markdown-preview.nvim",
-  lazy = true,
-  cmd = { "MarkdownPreview", "MarkdownPreviewToggle", "MarkdownPreviewStop" },
-  ft = { "markdown" },
-  build = ":call mkdp#util#install()",
-  init = function()
-    vim.g.mkdp_filetypes = { "markdown" }
-  end,
-},
-{
-    'brianhuster/live-preview.nvim',
-    dependencies = {
-        'ibhagwan/fzf-lua',
-        require('livepreview.config').set()
-    },
-},
-{
-  'chomosuke/typst-preview.nvim',
-  lazy = false, -- or ft = 'typst'
-  version = '1.*',
-  opts = {}, -- lazy.nvim will implicitly calls `setup {}`
-},
+    "iamcco/markdown-preview.nvim",
+    lazy = true,
+    cmd = { "MarkdownPreview", "MarkdownPreviewToggle", "MarkdownPreviewStop" },
+    ft = { "markdown" },
+    build = ":call mkdp#util#install()",
+    init = function()
+      vim.g.mkdp_filetypes = { "markdown" }
+    end,
+  },
   {
-  "3rd/diagram.nvim",
-  ft = { "markdown", "norg" },
-  dependencies = { "3rd/image.nvim" },
-  opts = {
-    events = {
-      render_buffer = { "BufWritePost" },
-      clear_buffer = { "BufLeave" },
-    },
-    integrations = {
-      "markdown",
-      "neorg",
-    },
-    renderer_options = {
-      mermaid = {
-        background = "transparent",
-        theme = "dark",
-        scale = 1,
-      },
-      plantuml = { charset = "utf-8" },
-      d2 = {
-        theme_id = "neutral",
-        dark_theme_id = "dark",
-        scale = 1.0,
-        layout = "dagre",
-        sketch = true,
-      },
-    },
-    auto_render = true,
-    open_app = false,
-    rocks = {
-      hererocks = true,
-      enabled = true,
+    "brianhuster/live-preview.nvim",
+    dependencies = {
+      "ibhagwan/fzf-lua",
     },
   },
-  config = function(_, opts)
-    local integrations = {}
-    for _, integration in ipairs(opts.integrations) do
-      table.insert(integrations, require("diagram.integrations." .. integration))
-    end
-    opts.integrations = integrations
-    require("diagram").setup(opts)
-    vim.api.nvim_create_user_command("DiagramRender", function()
-      require("diagram").render_buffer()
-    end, {})
-  end,
-},
+  {
+    "chomosuke/typst-preview.nvim",
+    lazy = false,
+    version = "1.*",
+    opts = {},
+  },
+  {
+    "3rd/diagram.nvim",
+    ft = { "markdown", "norg" },
+    dependencies = { "3rd/image.nvim" },
+    opts = {
+      events = {
+        render_buffer = { "BufWritePost" },
+        clear_buffer = { "BufLeave" },
+      },
+      integrations = {
+        "markdown",
+        "neorg",
+      },
+      renderer_options = {
+        mermaid = {
+          background = "transparent",
+          theme = "dark",
+          scale = 1,
+        },
+        plantuml = { charset = "utf-8" },
+        d2 = {
+          theme_id = "neutral",
+          dark_theme_id = "dark",
+          scale = 1.0,
+          layout = "dagre",
+          sketch = true,
+        },
+      },
+      auto_render = true,
+      open_app = false,
+      rocks = {
+        hererocks = true,
+        enabled = true,
+      },
+    },
+    config = function(_, opts)
+      local integrations = {}
+      for _, integration in ipairs(opts.integrations) do
+        table.insert(integrations, require("diagram.integrations." .. integration))
+      end
+      opts.integrations = integrations
+      require("diagram").setup(opts)
+      vim.api.nvim_create_user_command("DiagramRender", function()
+        require("diagram").render_buffer()
+      end, {})
+    end,
+  },
   {
     "3rd/image.nvim",
+    build = false,
     ft = { "markdown", "norg", "typst", "html", "css" },
     opts = {
       backend = "kitty",
-      processor = "magick_rock",
-      backend_options = {
-      kitty = {
-        term_program_detection = true,
-        use_terminal_cmd_image_protocol = true
-      }
-    },
+      processor = "magick_cli",
       integrations = {
         markdown = {
           enabled = true,
-          clear_in_insert_mode = true,
+          clear_in_insert_mode = false,
           download_remote_images = true,
           only_render_image_at_cursor = false,
+          only_render_image_at_cursor_mode = "popup",
+          floating_windows = false,
           filetypes = { "markdown", "vimwiki" },
         },
         neorg = {
           enabled = true,
           filetypes = { "norg" },
         },
-        typst = { enabled = true, filetypes = { "typst" } },
-        html = { enabled = true },
-        css = { enabled = true },
+        typst = {
+          enabled = true,
+          filetypes = { "typst" },
+        },
+        html = {
+          enabled = false,
+        },
+        css = {
+          enabled = false,
+        },
       },
-      max_width = 800,
-      max_height = 600,
-      max_width_window_percentage = 80,
+      max_width = nil,
+      max_height = nil,
+      max_width_window_percentage = nil,
       max_height_window_percentage = 50,
-      window_overlap_clear_enabled = true,
-      window_overlap_clear_ft_ignore = { "cmp_menu", "cmp_docs", "" },
+      window_overlap_clear_enabled = false,
+      window_overlap_clear_ft_ignore = { "cmp_menu", "cmp_docs", "snacks_notif", "scrollview", "scrollview_sign" },
       editor_only_render_when_focused = false,
       tmux_show_only_in_active_window = false,
       hijack_file_patterns = { "*.png", "*.jpg", "*.jpeg", "*.gif", "*.webp", "*.avif" },
@@ -142,8 +147,8 @@ return {
       { "<C-a>", "<cmd>PasteImg<CR>", desc = "Paste Image from Clipboard", ft = "markdown" },
     },
     init = function()
-      vim.g.mdip_imgdir = 'images'
-      vim.g.mdip_imgname = 'image'
+      vim.g.mdip_imgdir = "images"
+      vim.g.mdip_imgname = "image"
     end,
   },
 }

@@ -3,9 +3,8 @@ local M = {}
 
 function M.detect_sql_root_dir(fname)
   local util = require("lspconfig.util")
-  local root = util.root_pattern(
-    ".sqlfluff", ".sqlfluffrc", "setup.cfg", ".env", "package.json"
-  )(fname) or util.root_pattern(".git")(fname)
+  local root = util.root_pattern(".sqlfluff", ".sqlfluffrc", "setup.cfg", ".env", "package.json")(fname)
+    or util.root_pattern(".git")(fname)
   return root or vim.fn.getcwd()
 end
 

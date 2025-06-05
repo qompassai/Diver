@@ -1,8 +1,8 @@
 -- ~/.config/nvim/lua/config/lang/rust.lua
 -- ----------------------------------------
 -- Copyright (C) 2025 Qompass AI, All rights reserved
+vim.env.PATH = vim.env.PATH .. ":" .. vim.fn.expand("~/.cargo/bin")
 local M = {}
-
 vim.diagnostic.config({
   virtual_text = true,
   signs = true,
@@ -10,7 +10,6 @@ vim.diagnostic.config({
   update_in_insert = true,
   severity_sort = true,
 })
-
 M.rust_editions = {
   ["2021"] = "2021",
   ["2024"] = "2024",
@@ -21,8 +20,7 @@ M.rust_toolchains = {
   beta = "beta",
 }
 M.default_edition = "2021"
-M.default_toolchain = "stable"
-
+M.default_toolchain = "nightly"
 function M.set_rust_edition(edition)
   if M.rust_editions[edition] then
     M.current_edition = edition
@@ -32,7 +30,6 @@ function M.set_rust_edition(edition)
     vim.notify("Invalid Rust edition: " .. tostring(edition), vim.log.levels.ERROR)
   end
 end
-
 function M.set_rust_toolchain(toolchain)
   if M.rust_toolchains[toolchain] then
     M.current_toolchain = toolchain
@@ -42,7 +39,6 @@ function M.set_rust_toolchain(toolchain)
     vim.notify("Invalid Rust toolchain: " .. tostring(toolchain), vim.log.levels.ERROR)
   end
 end
-
 function M.refresh_diagnostics()
   vim.cmd("write")
   vim.diagnostic.disable()
@@ -50,7 +46,6 @@ function M.refresh_diagnostics()
     vim.diagnostic.enable()
   end, 200)
 end
-
 function M.auto_detect_toolchain()
   local toolchain_file = vim.fn.findfile("rust-toolchain.toml", ".;")
   if toolchain_file ~= "" then
@@ -67,7 +62,6 @@ function M.auto_detect_toolchain()
     end
   end
 end
-
 function M.rust_dap()
   local dap = require("dap")
   local dapui = require("dapui")
@@ -96,7 +90,6 @@ function M.rust_dap()
     dapui.close()
   end
 end
-
 function M.rust_nls()
   local null_ls = require("null-ls")
   return {
@@ -119,7 +112,6 @@ function M.rust_nls()
     }),
   }
 end
-
 function M.rust_crates()
   local crates = require("crates")
   crates.setup({
@@ -152,7 +144,6 @@ function M.rust_crates()
     end,
   })
 end
-
 function M.rust()
   M.auto_detect_toolchain()
   M.rust_crates()
@@ -179,5 +170,60 @@ function M.rust()
   vim.keymap.set("n", "<leader>rt", function()
     vim.ui.select(vim.tbl_keys(M.rust_toolchains), { prompt = "Select Rust Toolchain" }, M.set_rust_toolchain)
   end, { desc = "Select Rust Toolchain" })
+end
+function M.on_attach(client, bufnr)
+  local opts = { noremap = true, silent = true, buffer = bufnr }
+  vim.keymap.set("n", "K", vim.lsp.buf.hover, opts)
+  vim.keymap.set("n", "gd", vim.lsp.buf.definition, opts)
+  vim.keymap.set("n", "gi", vim.lsp.buf.implementation, opts)
+  vim.keymap.set("n", "<leader>ca", vim.lsp.buf.code_action, opts)
+  vim.keymap.set("n", "<leader>rn", vim.lsp.buf.rename, opts)
+  if client.server_capabilities.inlayHintProvider then
+    vim.lsp.inlay_hint.enable(true, { bufnr = bufnr })
+  end
+end
+function M.get_analyzer_settings()
+  return {
+    cargo = {
+      allFeatures = true,
+      loadOutDirsFromCheck = true,
+      runBuildScripts = true,
+    },
+    checkOnSave = true,
+    check = {
+      command = "clippy",
+      extraArgs = { "--target-dir=target/analyzer" },
+    },
+    diagnostics = {
+      enable = true,
+      experimental = { enable = true },
+      disabled = { "unresolved-proc-macro", "macro-error" },
+    },
+    procMacro = {
+      enable = true,
+      attributes = { enable = true },
+    },
+    files = {
+      excludeDirs = {
+        ".direnv",
+        ".git",
+        "target",
+        "node_modules",
+        "tests/generated",
+        ".zig-cache",
+      },
+      watcher = "client",
+    },
+    inlayHints = {
+      typeHints = true,
+      parameterHints = true,
+      chainingHints = true,
+      closingBraceHints = true,
+    },
+    rustc = {
+      source = M.default_toolchain,
+      edition = M.default_edition,
+    },
+  }
 end
 return M

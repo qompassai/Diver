@@ -4,7 +4,6 @@
 return {
   "stevearc/conform.nvim",
   dependencies = {
-    "saghen/blink.cmp",
     "nvim-tools/none-ls.nvim",
     "nvim-tools/none-ls-extras.nvim",
   },
@@ -15,9 +14,10 @@ return {
     formatters_by_ft = {
       ["_"] = { "trim_whitespace" },
       asm = { "asmfmt" },
+      ansible = { "ansible-lint" },
       astro = { "prettier", "biome" },
       bash = { "shfmt", "shellcheck" },
-      c = { "clang_format", "uncrustify" },
+      c = { "clang_format" },
       clojure = { "cljfmt" },
       cmake = { "cmake_format" },
       conf = { "trim_whitespace" },
@@ -36,7 +36,6 @@ return {
       go = { "goimports", "gofumpt" },
       groovy = { "npm_groovy_lint" },
       html = { "biome_html", "djlint", "prettier_html" },
-      ipynb = { "nbqa_black" },
       javascript = { "biome", "eslint_d", "prettierd" },
       javascriptreact = { "biome", "eslint_d", "prettierd" },
       json = { "biome", "jq", "prettierd" },
@@ -44,22 +43,23 @@ return {
       jsonnet = { "jsonnetfmt" },
       json5 = { "prettierd" },
       julia = { "julia_format" },
-      jupyter = { "nbqa_black" },
       just = { "just_fmt" },
       justfile = { "just_fmt" },
       handlebars = { "prettier" },
       haskell = { "ormolu", "fourmolu" },
       hcl = { "terraform_fmt" },
+      helm = { "helm_format" },
       htmlangular = { "prettier_html" },
       htmldjango = { "djlint" },
       java = { "google-java-format" },
       kotlin = { "ktlint" },
       latex = { "tex-fmt", "latexindent" },
       lua = { "stylua", "lua-format" },
+      luau = { "stylua" },
       markdown = { "prettier-markdown", "remark", "mdformat" },
       ["markdown.mdx"] = { "prettier-markdown", "remark" },
-      nix = { "alejandra", "nixfmt" },
-      nginx = { "nginx_config_formatter" },
+      nix = { "alejandra", "nixfmt", "nixpkgs-fmt" },
+      nginx = { "nginxfmt" },
       perl = { "perltidy" },
       php = { "php_cs_fixer", "phpcbf" },
       prisma = { "prisma_format" },
@@ -87,7 +87,6 @@ return {
       typescript = { "biome", "eslint_d", "prettierd" },
       typescriptreact = { "biome", "eslint_d", "prettierd" },
       vue = { "prettierd" },
-      xml = { "xmllint" },
       yaml = { "yamlfmt", "yq", "prettier_yaml", "prettierd" },
       yml = { "yamlfmt", "yq", "prettier_yaml", "prettierd" },
       zig = { "zigfmt", "zigfmt_ast" },
@@ -111,16 +110,6 @@ return {
     notify_on_error = true,
     notify_no_formatters = false,
     formatters = {
-      asmfmt = {
-        command = "asmfmt",
-        stdin = true,
-        args = {
-          "-w",
-          "160",
-          "-t",
-          "8",
-        },
-      },
       alejandra = {
         command = "alejandra",
         stdin = true,
@@ -227,6 +216,11 @@ return {
         args = { "--fix-to-stdout", "--stdin", "--stdin-filename", "$FILENAME" },
         stdin = true,
       },
+      fish_indent = {
+        command = "fish_indent",
+        stdin = true,
+        args = {},
+      },
       fourmolu = {
         command = "fourmolu",
         args = { "--stdin-input-file", "$FILENAME" },
@@ -245,12 +239,21 @@ return {
         command = "goimports",
         stdin = true,
       },
+      google_java_format = {
+        command = "google-java-format",
+        stdin = true,
+        args = { "-" },
+      },
       groovy_format = {
         command = "npm-groovy-lint",
         stdin = false,
         args = { "--format", "$FILENAME" },
       },
-      helm = { "helm_format" },
+      helm_format = {
+        command = "yamlfmt",
+        args = { "-" },
+        stdin = true,
+      },
       jsonnetfmt = {
         command = "jsonnetfmt",
         stdin = true,
@@ -286,6 +289,11 @@ return {
         args = { "--fmt", "--unstable" },
         stdin = false,
       },
+      ktfmt = {
+        command = "ktfmt",
+        stdin = true,
+        args = { "--stdin", "--kotlinlang-style" },
+      },
       ktlint = {
         command = "ktlint",
         stdin = true,
@@ -310,7 +318,7 @@ return {
           "lf",
           "--number",
           "--extensions",
-          "tables,gfm,admon,mkdocs",
+          "tables,gfm,admonition,mkdocs",
           "--align-semantic-breaks-in-lists",
           "-",
         },
@@ -320,18 +328,18 @@ return {
         args = { "format", "-" },
         stdin = true,
       },
-      nbqa_black = {
-        command = "nbqa",
-        stdin = false,
-        args = { "black", "--nbqa-md", "$FILENAME" },
-      },
-      nginx_config_formatter = {
+      nginxfmt = {
         command = "nginxfmt",
-        args = { "--pipe" },
         stdin = true,
+        args = { "--pipe" },
       },
       nixfmt = {
         command = "nixfmt",
+        stdin = true,
+        args = {},
+      },
+      nixpkgs_fmt = {
+        command = "nixpkgs-fmt",
         stdin = true,
         args = {},
       },
@@ -344,6 +352,15 @@ return {
         command = "npm-groovy-lint",
         stdin = true,
         args = { "--format", "--stdin" },
+      },
+      perltidy = {
+        command = "perltidy",
+        stdin = true,
+        args = {
+          "-st",
+          "-i=2",
+          "-l=160",
+        },
       },
       php_cs_fixer = {
         command = "php-cs-fixer",
@@ -372,14 +389,8 @@ return {
       },
       prettierd = {
         command = "prettierd",
+        args = { "--stdin-filepath", "$FILENAME" },
         stdin = true,
-        args = {
-          "$FILENAME",
-          "--print-width",
-          "160",
-          "--tab-width",
-          "2",
-        },
       },
       prettier_html = {
         command = "prettier",
@@ -441,10 +452,12 @@ return {
         stdin = true,
         args = { "check", "--select", "I", "--fix", "--stdin-filename", "$FILENAME", "-" },
       },
-      rustfmt = { prepend_args = { "--edition", "2024" } },
-      prettierd = {
-        prepend_args = { "--print-width", "160", "--tab-width", "2" },
-        stdin = true,
+      rustfmt = {
+        prepend_args = {
+          "--edition=2024",
+          "--emit=stdout",
+          "--color=never",
+        },
       },
       shfmt = {
         command = "shfmt",
@@ -482,7 +495,6 @@ return {
         prepend_args = function(_, ctx)
           local filename = ctx and ctx.filename or ""
           local is_openresty = filename:match("/nginx/") or filename:match("/openresty/")
-          local lua_version = is_openresty and "LuaJIT" or "Lua51"
           return {
             "--indent-type",
             "Spaces",

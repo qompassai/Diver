@@ -11,10 +11,10 @@ return {
     init = function()
       vim.g.db_ui_use_nerd_fonts = 1
       vim.g.db_ui_auto_format_results = 1
-      vim.g.db_ui_win_position = "right" -- Change UI drawer position (left/right/top/bottom)
-      vim.g.db_ui_winwidth = 40 -- Set the UI width
-      vim.g.db_ui_show_help = 0 -- Hide the help in the UI drawer
-      vim.g.db_ui_auto_execute_table_helpers = 1 -- Auto-generate statements
+      vim.g.db_ui_win_position = "right"
+      vim.g.db_ui_winwidth = 40
+      vim.g.db_ui_show_help = 0
+      vim.g.db_ui_auto_execute_table_helpers = 1
       vim.api.nvim_create_autocmd("FileType", {
         pattern = { "sql", "mysql", "plsql" },
         callback = function()
@@ -49,26 +49,6 @@ return {
           telescope.load_extension("vim_dadbod_completion")
         end)
       end
-    end,
-  },
-  {
-    "saghen/blink.cmp",
-    lazy = true,
-    version = "*",
-    dependencies = {
-      "rafamadriz/friendly-snippets",
-      "kristijanhusak/vim-dadbod-completion",
-    },
-    opts = function(_, opts)
-      opts.fuzzy = opts.fuzzy or {}
-      opts.fuzzy.implementation = "lua" -- "prefer_rust" or "lua"
-      opts.sources = {
-        default = { "lsp", "path", "snippets", "buffer" },
-        per_filetype = {
-          sql = { "snippets", "lsp", "path", "buffer" },
-        },
-      }
-      return opts
     end,
   },
 }
