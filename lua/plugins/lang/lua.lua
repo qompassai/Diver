@@ -1,26 +1,29 @@
 -- /qompassai/Diver/lua/plugins/lang/lua.lua
+
+-- -- Copyright (C) 2025 Qompass AI, All rights reserved
+
 -- ----------------------------------------
--- Copyright (C) 2025 Qompass AI, All rights reserved
 
 local lua_config = require("config.lang.lua")
 
 return {
   {
     "folke/neoconf.nvim",
-    lazy = false,
     priority = 1000,
-    config = function()
-      require("neoconf").setup(lua_config.neoconf())
+    opts = lua_config.neoconf(),
+    config = function(_, opts)
+      require("neoconf").setup(opts)
     end,
   },
   {
     "folke/lazydev.nvim",
+    lazy = true,
     ft = { "lua", "luau" },
     dependencies = {
       "Bilal2453/luvit-meta",
     },
-    config = function()
-      lua_config.lua_lazydev()
+    config = function(_, opts)
+      lua_config.lua_lazydev(opts)
     end,
   },
   {
@@ -30,9 +33,9 @@ return {
       "gbprod/none-ls-luacheck.nvim",
       "nvimtools/none-ls-extras.nvim",
     },
-    config = function()
+     config = function(_, opts)
       require("null-ls").setup({
-        sources = lua_config.lua_nls(),
+        sources = lua_config.lua_nls(opts),
       })
     end,
   },
@@ -60,7 +63,7 @@ return {
     dependencies = {
       "L3MON4D3/LuaSnip",
       "hrsh7th/cmp-omni",
-      --     "camspiers/luarocks",
+      "camspiers/luarocks",
       "camspiers/snap",
     },
     opts = function(_, opts)
@@ -77,21 +80,21 @@ return {
       })
     end,
   },
-  --{
-  --  "camspiers/luarocks",
-  --  lazy = true,
-  --  opts = {
-  --    rocks = { "fzy", "magick" },
-  --     enabled = false,
-  --    hererocks = true,
-  --  },
-  --  config = function(_, opts)
-  --    require("luarocks").setup(opts)
-  --  end,
-  -- },
+  {
+    "camspiers/luarocks",
+    lazy = true,
+    opts = {
+      rocks = { "fzy", "magick" },
+       enabled = false,
+      hererocks = true,
+    },
+    config = function(_, opts)
+      require("luarocks").setup(opts)
+    end,
+   },
   {
     "camspiers/snap",
-    --dependencies = { "camspiers/luarocks" },
+  dependencies = { "camspiers/luarocks" },
     lazy = true,
   },
 }

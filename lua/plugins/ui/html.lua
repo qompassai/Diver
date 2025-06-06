@@ -21,7 +21,7 @@ return {
     },
     lazy = true,
     config = function()
-      require("config.ui.html").setup_html()
+      require("config.ui.html").setup_html(opts)
     end,
   },
 }

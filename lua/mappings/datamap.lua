@@ -1,5 +1,5 @@
 local M = {}
-function M.setup()
+function M.setup_datamap()
   local map = vim.keymap.set
   local bufopts = { noremap = true, silent = true }
 

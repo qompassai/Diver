@@ -1,7 +1,7 @@
 local registry = require("mason-registry")
 
 local M = {}
-function M.setup()
+function M.setup_langmap()
   ---@return table<string, string[]>
   function M.get_language_map()
     if not registry.get_all_package_specs then

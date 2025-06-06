@@ -1,10 +1,5 @@
 return {
   {
-    "folke/neoconf.nvim",
-    priority = 1000,
-    config = true,
-  },
-  {
     "mason-org/mason-lspconfig.nvim",
     dependencies = {
       "mason-org/mason.nvim",
@@ -22,7 +17,7 @@ return {
       require("lspconfig").util.default_config.capabilities = vim.tbl_deep_extend("force", require("lspconfig").util.default_config.capabilities, capabilities)
       require("config.core.mason").setup_mason()
       require("config.lang.js").setup_js(opts)
-      require("config.lang.zig").setup_zig(opts)
+      require("config.lang.python").setup_python(opts)
     end,
   },
   {

@@ -1,5 +1,5 @@
 local M = {}
-function M.setup()
+function M.setup_cicdmap()
   local map = vim.keymap.set
   local opts = { noremap = true, silent = true }
 

@@ -11,7 +11,6 @@ return {
     config = function()
       local rust = require("config.lang.rust")
       local capabilities = require("cmp_nvim_lsp").default_capabilities()
-
       vim.g.rustaceanvim = {
         tools = {
           float_win_config = { border = "rounded" },
@@ -24,11 +23,9 @@ return {
           },
         },
       }
-
       require("null-ls").setup({
         sources = rust.rust_nls(),
       })
-
       vim.lsp.set_log_level("INFO")
       rust.rust_dap()
       rust.rust()
@@ -51,7 +48,6 @@ return {
       },
     },
   },
-
   {
     "saecki/crates.nvim",
     event = { "BufRead Cargo.toml" },
@@ -59,7 +55,6 @@ return {
       require("config.lang.rust").rust_crates()
     end,
   },
-
   {
     "nvim-neotest/neotest",
     ft = { "rust" },

@@ -1,6 +1,6 @@
 local M = {}
 
-function M.setup()
+function M.setup_navmap()
   local map = vim.keymap.set
   local opts = { noremap = true, silent = true }
 

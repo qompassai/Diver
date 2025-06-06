@@ -1,7 +1,7 @@
 -- pymap.lua
 local M = {}
 
-function M.setup()
+function M.setup_pymap()
   local map = vim.keymap.set
   local opts = { noremap = true, silent = true }
 

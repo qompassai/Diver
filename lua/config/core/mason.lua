@@ -15,13 +15,8 @@ local function setup_cargo_optimization()
   vim.fn.mkdir(vim.env.CARGO_HOME, "p")
   vim.env.CARGO_INCREMENTAL = "1"
   vim.env.CARGO_NET_RETRY = "2"
-  local install_root_dir = vim.fs.joinpath(vim.fn.stdpath("data"), "mason")
 end
-M.setup_all_mason = function()
-  M.setup_mason()
-  M.setup_masontools()
-end
-M.setup_mason = function()
+function M.setup_mason()
   setup_cargo_optimization()
   local mason = require("mason")
   local opts = {
@@ -67,83 +62,34 @@ M.setup_mason = function()
     },
   }
   if is_neovim_12_plus() then
-    opts.registries = {
-      "github:mason-org/mason-registry",
-    }
+    opts.registries = { "github:mason-org/mason-registry" }
   elseif is_neovim_11_plus() then
-    opts.sources = {
-      "mason.sources.registry",
-    }
+    opts.sources = { "mason.sources.registry" }
   else
-    opts.registries = {
-      "github:mason-org/mason-registry",
-    }
-    opts.providers = {
-      "mason.providers.registry-api",
-      "mason.providers.client",
-    }
+    opts.registries = { "github:mason-org/mason-registry" }
+    opts.providers = { "mason.providers.registry-api", "mason.providers.client" }
   end
   mason.setup(opts)
-end
-M.setup_masontools = function()
   local mason_tool_installer = require("mason-tool-installer")
   local mason_lspconfig = require("mason-lspconfig")
   local dev_tools = {
-    "black",
-    "eslint_d",
-    "isort",
-    "markdownlint",
-    "prettierd",
-    "shellcheck",
-    "stylua",
-    "taplo",
+    "black", "eslint_d", "isort", "markdownlint", "prettierd", 
+    "shellcheck", "stylua", "taplo"
   }
   local lsp_servers = {
-    "clangd",
-    "cssls",
-    "dockerls",
-    "gopls",
-    "html",
-    "jsonls",
-    "lua_ls",
-    "pyright",
-    "rust_analyzer",
-    "terraformls",
-    "tsserver",
-    "yamlls",
-    "zls",
+    "clangd", "cssls", "dockerls", "gopls", "html", "jsonls",
+    "lua_ls", "pyright", "rust_analyzer", "terraformls", 
+    "ts_ls", "yamlls", "zls"
   }
   local specialty_tools = {
-    "ansible-language-server",
-    "asm-lsp",
-    "bacon-ls",
-    { "bash-language-server", auto_update = true },
-    "beancount-language-server",
-    "cairo-language-server",
-    "codespell",
-    "editorconfig-checker",
-    "gofumpt",
-    { "golangci-lint", version = "v1.47.0" },
-    "golines",
-    "gomodifytags",
-    "gotests",
-    "hadolint",
-    "impl",
-    "json-to-struct",
-    "kotlin-language-server",
-    "latexindent",
-    "leptosfmt",
-    "luacheck",
-    "misspell",
-    "revive",
-    "rubocop",
-    "shfmt",
-    "sql-formatter",
-    "staticcheck",
-    "terraform-ls",
-    "typstfmt",
-    "vim-language-server",
-    "vint",
+    "ansible-language-server", "asm-lsp", "bacon-ls", 
+    { "bash-language-server", auto_update = true }, "beancount-language-server",
+    "cairo-language-server", "codespell", "editorconfig-checker", "gofumpt",
+    { "golangci-lint", version = "v1.47.0" }, "golines", "gomodifytags",
+    "gotests", "hadolint", "impl", "json-to-struct", "kotlin-language-server",
+    "latexindent", "leptosfmt", "luacheck", "misspell", "revive", "rubocop",
+    "shfmt", "sql-formatter", "staticcheck", "terraform-ls", "typstfmt",
+    "vim-language-server", "vint"
   }
   local all_tools = vim.iter({ dev_tools, lsp_servers, specialty_tools }):flatten():totable()
   mason_tool_installer.setup({
@@ -164,3 +110,4 @@ M.setup_masontools = function()
   })
 end
 return M
+

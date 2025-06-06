@@ -3,7 +3,7 @@
 -- Copyright (C) 2025 Qompass AI, All rights reserved
 local M = {}
 
-function M.setup()
+function M.setup_lintmap()
   local map = vim.keymap.set
   local opts = { noremap = true, silent = true }
 

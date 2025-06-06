@@ -1,6 +1,6 @@
 local M = {}
 
-local function setup_rose_mappings()
+local function setup_aimap()
   local map = vim.keymap.set
   local opts = { noremap = true, silent = true }
 
@@ -61,11 +61,11 @@ local function setup_rose_mappings()
   -- In normal mode, press 'Ctrl' + 'g' + 'r' to repeat the last rewrite/append/prepend.
 end
 
-local function setup_dbee_mappings()
+local function setup_dbmap()
   local map = vim.keymap.set
   local opts = { noremap = true, silent = true }
 
-  local function safe_dbee_store(data_type, store_type, args)
+  local function dbstore(data_type, store_type, args)
     local status = pcall(function()
       require("dbee").store(data_type, store_type, args)
     end)
@@ -78,35 +78,35 @@ local function setup_dbee_mappings()
 
   -- Dbee Store results as CSV in current buffer
   map("n", "<C-d>c", function()
-    safe_dbee_store("csv", "buffer", { extra_arg = 0 })
+    dbstore("csv", "buffer", { extra_arg = 0 })
   end, vim.tbl_extend("force", opts, { desc = "[D]bee Store CSV in [c]urrent buffer" }))
   -- In normal mode, press 'Ctrl' + 'd' + 'c' to store results as CSV in the current buffer.
 
   -- Dbee Store results as JSON to file
   map("n", "<C-d>j", function()
-    safe_dbee_store("json", "file", { from = 2, to = 7, extra_arg = "path/to/file.json" })
+    dbstore("json", "file", { from = 2, to = 7, extra_arg = "path/to/file.json" })
   end, vim.tbl_extend("force", opts, { desc = "[D]bee Store JSON to [j]son file" }))
   -- In normal mode, press 'Ctrl' + 'd' + 'j' to store results as JSON to a file.
 
   -- Dbee Yank results as table
   map("n", "<C-d>y", function()
-    safe_dbee_store("table", "yank", { from = 0, to = 1 })
+    dbstore("table", "yank", { from = 0, to = 1 })
   end, vim.tbl_extend("force", opts, { desc = "[D]bee [y]ank results as table" }))
   -- In normal mode, press 'Ctrl' + 'd' + 'y' to yank results as a table.
 
   -- Dbee Yank last 2 rows as CSV
   map("n", "<C-d>r", function()
-    safe_dbee_store("csv", "yank", { from = -3, to = -1 })
+    dbstore("csv", "yank", { from = -3, to = -1 })
   end, vim.tbl_extend("force", opts, { desc = "[D]bee yank [r]ows as CSV" }))
   -- In normal mode, press 'Ctrl' + 'd' + 'r' to yank the last 2 rows as CSV.
 end
 M.setup = function()
-  setup_rose_mappings()
-  setup_dbee_mappings()
+  setup_aimap()
+  setup_aimap()
 
   vim.api.nvim_set_keymap("n", "<C-d>q", ":[D]bee query<CR>", { noremap = true, silent = true })
 end
-M.setup_rose_mappings = setup_rose_mappings
+M.setup_aimap = setup_aimap
 M.setup_dbee_mappings = setup_dbee_mappings
 
 return M

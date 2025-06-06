@@ -1,7 +1,7 @@
 -- genmap.lua - Modular key mappings configuration for Neovim
 local M = {}
 
-function M.setup()
+function M.setup_genmap()
   local map = vim.keymap.set
   local opts = { noremap = true, silent = true }
 
