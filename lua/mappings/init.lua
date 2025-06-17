@@ -1,13 +1,14 @@
--- lua/mappings/init.lua
--- lua/mappings/init.lua
+-- /qompassai/Diver/lua/mappings/init.lua
+-- Diver Mappings init
+-- Copyright (C) 2025 Qompass AI, All rights reserved
+-----------------------------------------------------
 local M = {}
-
 M.setup = function()
   local mapping_files = {
-    "aimap",
+    "aimap", --Rose.nvim
     "cicdmap",
     "datamap",
-    "ddxmap",   -- None-ls diag, nvim-dap, trouble.nvim
+    "ddxmap", -- None-ls diag, nvim-dap, trouble.nvim
     "disable",
     "genmap",
     "langmap",
@@ -17,17 +18,14 @@ M.setup = function()
     "rustmap",
     "themes",
   }
-
   for _, name in ipairs(mapping_files) do
     local ok, mod = pcall(require, "mappings." .. name)
     if not ok then
       vim.notify("Failed to load: " .. name, vim.log.levels.WARN)
       goto continue
     end
-
     local custom_setup_fn = "setup_" .. name
     local default_setup_fn = "setup"
-
     if type(mod[custom_setup_fn]) == "function" then
       mod[custom_setup_fn]()
     elseif type(mod[default_setup_fn]) == "function" then
@@ -42,4 +40,3 @@ M.setup = function()
   end
 end
 return M
-

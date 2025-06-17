@@ -1,3 +1,7 @@
+-- ~/.config/nvim/lua/mappings/lintmap.lua
+-- ---------------------------------------
+-- Copyright (C) 2025 Qompass AI, All rights reserved
+
 local registry = require("mason-registry")
 
 local M = {}

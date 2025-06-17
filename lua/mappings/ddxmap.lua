@@ -1,5 +1,4 @@
 local M = {}
-
 function M.setup_ddxmap()
   local map = vim.keymap.set
   local opts = { noremap = true, silent = true }
@@ -8,9 +7,9 @@ function M.setup_ddxmap()
   -- WHICH-KEY REGISTRATION
   -- ======================
   require("which-key").register({
-    ["<leader>d"] = { name = "Diagnose/Debug" },
-    ["<leader>x"] = { name = "Trouble/Diag" },
-  })
+    { "<leader>d", group = "Diagnose/Debug" },
+    { "<leader>x", group = "Trouble/Diag" },
+  }, { prefix = "<leader>" })
   -- ======================
   -- Nerd Legend --
   -- ======================
@@ -33,17 +32,16 @@ function M.setup_ddxmap()
   -- Trouble: A plugin for managing diagnostics, errors, and quickfix lists visually.
   -- UI: User Interface, components that visually represent information.
 
-    -- ========================
+  -- ========================
   -- NONE-LS-DIAGNOSTIC MAPPINGS
   -- ========================
-
 
   -- Toggle null-ls diagnostics
   map("n", "<leader>dn", function()
     local null_ls = require("null-ls")
     local method = require("null-ls").methods.DIAGNOSTICS
     local active_sources = null_ls.get_sources()
-  -- In normal mode, press 'Space' + 'd' + 'n' to toggle diagnostics for the current buffer
+    -- In normal mode, press 'Space' + 'd' + 'n' to toggle diagnostics for the current buffer
 
     local diagnostics_enabled = false
     for _, source in ipairs(active_sources) do
@@ -64,22 +62,22 @@ function M.setup_ddxmap()
 
   -- Toggle diagnostics for the current buffer (location list)
   map(
-    "n", "<leader>dl", vim.diagnostic.setloclist, vim.tbl_extend(
-    "force", opts, {
-      desc = "Show buffer diagnostics"
-    }
-  ))
+    "n",
+    "<leader>dl",
+    vim.diagnostic.setloclist,
+    vim.tbl_extend("force", opts, {
+      desc = "Show buffer diagnostics",
+    })
+  )
   -- In normal mode, press 'Space' + 'd' + 'l' to show diagnostics for the current buffer
 
   -- Toggle diagnostics for the entire project (quickfix list)
-  map(
-    "n", "<leader>dq", vim.diagnostic.setqflist, {
-    desc = "Show project diagnostics"
-  }
-)
+  map("n", "<leader>dq", vim.diagnostic.setqflist, {
+    desc = "Show project diagnostics",
+  })
   -- In normal mode, press 'Space' + 'd' + 'q' to show diagnostics for the entire project
 
-    -- ========================
+  -- ========================
   -- TROUBLE.NVIM MAPPINGS
   -- ========================
 
@@ -96,12 +94,7 @@ function M.setup_ddxmap()
   -- In normal mode, press 'Space' + 'x' + 's' to toggle symbols window (keep focus)
 
   -- Toggle LSP references on right side
-  map(
-    "n",
-    "<leader>xw",
-    "<cmd>Trouble lsp toggle focus=false win.position=right<cr>",
-    { desc = "LSP References" }
-  )
+  map("n", "<leader>xw", "<cmd>Trouble lsp toggle focus=false win.position=right<cr>", { desc = "LSP References" })
   -- In normal mode, press 'Space' + 'x' + 'w' for right-aligned LSP references
 
   -- Toggle location list (e.g. search results)
@@ -116,60 +109,58 @@ function M.setup_ddxmap()
   map("n", "<leader>xt", "<cmd>Trouble toggle<cr>", { desc = "Toggle Trouble" })
   -- In normal mode, press 'Space' + 'x' + 't' to toggle any active Trouble window
 
--- ==================
--- NVIM-DAP MAPPINGS
--- ==================
+  -- ==================
+  -- NVIM-DAP MAPPINGS
+  -- ==================
 
--- Start or continue debugging session
-map("n", "<leader>ds", "<cmd>lua require'dap'.continue()<CR>", { desc = "Start/Continue Debug" })
--- Press <Space> d s to start or continue debugging
+  -- Start or continue debugging session
+  map("n", "<leader>ds", "<cmd>lua require'dap'.continue()<CR>", { desc = "Start/Continue Debug" })
+  -- Press <Space> d s to start or continue debugging
 
--- Toggle breakpoint at current line
-map("n", "<leader>db", "<cmd>lua require'dap'.toggle_breakpoint()<CR>", { desc = "Toggle Breakpoint" })
--- Press <Space> d b to toggle breakpoint
+  -- Toggle breakpoint at current line
+  map("n", "<leader>db", "<cmd>lua require'dap'.toggle_breakpoint()<CR>", { desc = "Toggle Breakpoint" })
+  -- Press <Space> d b to toggle breakpoint
 
--- Step over the current line
-map("n", "<leader>dS", "<cmd>lua require'dap'.step_over()<CR>", { desc = "Step Over" })
--- Press <Space> d S to step over
+  -- Step over the current line
+  map("n", "<leader>dS", "<cmd>lua require'dap'.step_over()<CR>", { desc = "Step Over" })
+  -- Press <Space> d S to step over
 
--- Step into the current function call
-map("n", "<leader>di", "<cmd>lua require'dap'.step_into()<CR>", { desc = "Step Into" })
--- Press <Space> d i to step into
+  -- Step into the current function call
+  map("n", "<leader>di", "<cmd>lua require'dap'.step_into()<CR>", { desc = "Step Into" })
+  -- Press <Space> d i to step into
 
--- Step out of the current function
-map("n", "<leader>do", "<cmd>lua require'dap'.step_out()<CR>", { desc = "Step Out" })
--- Press <Space> d o to step out
+  -- Step out of the current function
+  map("n", "<leader>do", "<cmd>lua require'dap'.step_out()<CR>", { desc = "Step Out" })
+  -- Press <Space> d o to step out
 
--- Toggle the DAP REPL
-map("n", "<leader>dr", "<cmd>lua require'dap'.repl.toggle()<CR>", { desc = "Toggle REPL" })
--- Press <Space> d r to toggle the debug REPL
+  -- Toggle the DAP REPL
+  map("n", "<leader>dr", "<cmd>lua require'dap'.repl.toggle()<CR>", { desc = "Toggle REPL" })
+  -- Press <Space> d r to toggle the debug REPL
 
--- Toggle the DAP UI (if using nvim-dap-ui)
-map("n", "<leader>du", "<cmd>lua require'dapui'.toggle()<CR>", { desc = "Toggle DAP UI" })
--- In normal mode, Press <Space> d u to toggle the DAP UI
+  -- Toggle the DAP UI (if using nvim-dap-ui)
+  map("n", "<leader>du", "<cmd>lua require'dapui'.toggle()<CR>", { desc = "Toggle DAP UI" })
+  -- In normal mode, Press <Space> d u to toggle the DAP UI
 
+  -- Select debug adapter interactively
+  map("n", "<leader>da", function()
+    vim.ui.select({ "python", "cpp", "rust", "rust" }, {
+      prompt = "Select debug adapter:",
+      format_item = function(item)
+        return " " .. item:upper()
+      end,
+    }, function(choice)
+      if choice then
+        require("dap").adapters[choice]()
+      end
+    end)
+  end, { desc = "Select Debug Adapter" })
+  -- Press <Space> d a to choose and activate a debug adapter
 
--- Select debug adapter interactively
-map("n", "<leader>da", function()
-  vim.ui.select({ "python", "cpp", "rust", "rust" }, {
-    prompt = "Select debug adapter:",
-    format_item = function(item)
-      return " " .. item:upper()
-    end,
-  }, function(choice)
-    if choice then
-      require('dap').adapters[choice]()
-    end
-  end)
-end, { desc = "Select Debug Adapter" })
--- Press <Space> d a to choose and activate a debug adapter
-
--- Toggle verbose debug logging mode
-map("n", "<leader>dv", function()
-  require('dap').set_log_level('DEBUG')
-  vim.notify("Debug verbosity increased", vim.log.levels.INFO)
-end, { desc = "Verbose Debug Mode" })
--- Press <Space> d v to enable verbose debug logging
-
+  -- Toggle verbose debug logging mode
+  map("n", "<leader>dv", function()
+    require("dap").set_log_level("DEBUG")
+    vim.notify("Debug verbosity increased", vim.log.levels.INFO)
+  end, { desc = "Verbose Debug Mode" })
+  -- Press <Space> d v to enable verbose debug logging
 end
 return M

@@ -1278,57 +1278,57 @@ function M.setup_linters(lint)
     end,
   }
   lint.linters.phpstan = {
-  cmd = "phpstan",
-  stdin = false,
-  args = { "analyse", "--error-format=json", "--no-progress" },
-  stream = "stdout",
-  ignore_exitcode = true,
-  parser = function(output)
-    local diagnostics = {}
-    local ok, decoded = pcall(vim.json.decode, output)
-    if not ok or not decoded or not decoded.files then
-      return diagnostics
-    end
-    for _, file_data in pairs(decoded.files) do
-      for _, message in ipairs(file_data.messages) do
-        table.insert(diagnostics, {
-          lnum = (message.line or 1) - 1,
-          col = 0,
-          message = message.message,
-          severity = vim.diagnostic.severity.ERROR,
-          source = "phpstan",
-        })
+    cmd = "phpstan",
+    stdin = false,
+    args = { "analyse", "--error-format=json", "--no-progress" },
+    stream = "stdout",
+    ignore_exitcode = true,
+    parser = function(output)
+      local diagnostics = {}
+      local ok, decoded = pcall(vim.json.decode, output)
+      if not ok or not decoded or not decoded.files then
+        return diagnostics
       end
-    end
-    return diagnostics
-  end,
-}
+      for _, file_data in pairs(decoded.files) do
+        for _, message in ipairs(file_data.messages) do
+          table.insert(diagnostics, {
+            lnum = (message.line or 1) - 1,
+            col = 0,
+            message = message.message,
+            severity = vim.diagnostic.severity.ERROR,
+            source = "phpstan",
+          })
+        end
+      end
+      return diagnostics
+    end,
+  }
   lint.linters.phpstan = {
-  cmd = "phpstan",
-  stdin = false,
-  args = { "analyse", "--error-format=json", "--no-progress" },
-  stream = "stdout",
-  ignore_exitcode = true,
-  parser = function(output)
-    local diagnostics = {}
-    local ok, decoded = pcall(vim.json.decode, output)
-    if not ok or not decoded or not decoded.files then
-      return diagnostics
-    end
-    for _, file_data in pairs(decoded.files) do
-      for _, message in ipairs(file_data.messages) do
-        table.insert(diagnostics, {
-          lnum = (message.line or 1) - 1,
-          col = 0,
-          message = message.message,
-          severity = vim.diagnostic.severity.ERROR,
-          source = "phpstan",
-        })
+    cmd = "phpstan",
+    stdin = false,
+    args = { "analyse", "--error-format=json", "--no-progress" },
+    stream = "stdout",
+    ignore_exitcode = true,
+    parser = function(output)
+      local diagnostics = {}
+      local ok, decoded = pcall(vim.json.decode, output)
+      if not ok or not decoded or not decoded.files then
+        return diagnostics
       end
-    end
-    return diagnostics
-  end,
-}
+      for _, file_data in pairs(decoded.files) do
+        for _, message in ipairs(file_data.messages) do
+          table.insert(diagnostics, {
+            lnum = (message.line or 1) - 1,
+            col = 0,
+            message = message.message,
+            severity = vim.diagnostic.severity.ERROR,
+            source = "phpstan",
+          })
+        end
+      end
+      return diagnostics
+    end,
+  }
   lint.linters.pmd = {
     cmd = "pmd",
     stdin = false,

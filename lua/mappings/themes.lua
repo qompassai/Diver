@@ -1,40 +1,40 @@
 -- lua/mappings/themes.lua
 local M = {}
 
--- Setup function that will be called by your mappings loader
 M.setup = function()
-  local map = vim.keymap.set
-  local keymap_opts = { noremap = true, silent = true }
   local which_key = require("which-key")
-  local function get_colorschemes()
-    local themes = {}
-    for _, theme in pairs(vim.fn.getcompletion("", "color")) do
-      table.insert(themes, theme)
-    end
-    return themes
-  end
-  local function generate_theme_mappings()
-    local themes = get_colorschemes()
-    local theme_mappings = {}
-    for _, theme in ipairs(themes) do
-      theme_mappings[theme] = { "<cmd>colorscheme " .. theme .. "<cr>", theme }
-    end
-    theme_mappings["n"] = { "<cmd>lua require('telescope.builtin').colorscheme{}<cr>", "Choose Theme" }
-    return theme_mappings
-  end
-  local theme_mappings = generate_theme_mappings()
-  local mappings = {
-    T = {
-      name = "Themes",
-    },
-  }
-  for theme, command in pairs(theme_mappings) do
-    mappings.T[theme] = command
-  end
-  local which_key_opts = {
-    prefix = "<leader>",
-  }
-  which_key.register(mappings, which_key_opts)
-end
 
+  local theme_mappings = setmetatable({}, {
+    __index = function(t)
+      rawset(t, "T", {
+        name = "Themes",
+        n = { "<cmd>lua require('fzf-lua').colorscheme({ previewer = true })<cr>", "Choose Theme" },
+      })
+
+      local themes = vim.fn.getcompletion("", "color")
+      for _, theme in ipairs(themes) do
+        t.T[theme] = {
+          ("<cmd>lua vim.cmd('colorscheme %s')<cr>"):format(theme),
+          theme:gsub("^%l", string.upper),
+        }
+      end
+      return t.T
+    end,
+  })
+  which_key.register(theme_mappings, {
+    mode = "n",
+    prefix = "<leader>",
+    buffer = nil,
+    silent = true,
+    noremap = true,
+  })
+end
+if pcall(require, "which-key") then
+  M.setup()
+else
+  vim.api.nvim_create_autocmd("User", {
+    pattern = "WhichKeySetupPost",
+    callback = M.setup,
+  })
+end
 return M

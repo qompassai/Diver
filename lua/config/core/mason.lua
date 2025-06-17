@@ -10,7 +10,7 @@ local function setup_cargo_optimization()
   vim.env.CARGO_TARGET_DIR = vim.fn.stdpath("cache") .. "/mason-cargo-target"
   vim.env.CARGO_HOME = vim.fn.stdpath("cache") .. "/cargo"
   local uv = vim.uv or vim.loop
-  vim.env.CARGO_BUILD_JOBS = tostring(uv.available_parallelism() or 4)
+  vim.env.CARGO_BUILD_JOBS = tostring(uv.available_parallelism() or 10)
   vim.fn.mkdir(vim.env.CARGO_TARGET_DIR, "p")
   vim.fn.mkdir(vim.env.CARGO_HOME, "p")
   vim.env.CARGO_INCREMENTAL = "1"
@@ -20,9 +20,20 @@ function M.setup_mason()
   setup_cargo_optimization()
   local mason = require("mason")
   local opts = {
-    PATH = "append",
+    install_root_dir = vim.fn.stdpath("data") .. "/mason",
+    PATH = "prepend",
     log_level = vim.log.levels.INFO,
     max_concurrent_installers = 10,
+    registries = {
+      "github:mason-org/mason-registry",
+    },
+    providers = {
+      "mason.providers.registry-api",
+      "mason.providers.client",
+    },
+    github = {
+      download_url_template = "https://github.com/%s/releases/download/%s/%s",
+    },
     ui = {
       check_outdated_packages_on_open = true,
       border = "none",
@@ -30,26 +41,23 @@ function M.setup_mason()
       width = 0.8,
       height = 0.9,
       icons = {
-        package_installed = "◍",
-        package_pending = "◍",
-        package_uninstalled = "◍",
+        package_installed = "✓",
+        package_pending = "➜",
+        package_uninstalled = "✗",
+        keymaps = {
+          apply_language_filter = "<C-f>",
+          cancel_installation = "<C-c>",
+          check_outdated_packages = "C",
+          check_package_version = "c",
+          install_package = "i",
+          toggle_help = "g?",
+          toggle_package_expand = "<CR>",
+          toggle_package_install_log = "<CR>",
+          update_package = "u",
+          update_all_packages = "U",
+          uninstall_package = "X",
+        },
       },
-      keymaps = {
-        toggle_package_expand = "<CR>",
-        install_package = "i",
-        update_package = "u",
-        check_package_version = "c",
-        update_all_packages = "U",
-        check_outdated_packages = "C",
-        uninstall_package = "X",
-        cancel_installation = "<C-c>",
-        apply_language_filter = "<C-f>",
-        toggle_package_install_log = "<CR>",
-        toggle_help = "g?",
-      },
-    },
-    github = {
-      download_url_template = "https://github.com/%s/releases/download/%s/%s",
     },
     pip = {
       upgrade_pip = true,
@@ -57,7 +65,6 @@ function M.setup_mason()
         "--break-system-packages",
         "--user",
         "--no-cache-dir",
-        "--upgrade",
       },
     },
   }
@@ -73,23 +80,60 @@ function M.setup_mason()
   local mason_tool_installer = require("mason-tool-installer")
   local mason_lspconfig = require("mason-lspconfig")
   local dev_tools = {
-    "black", "eslint_d", "isort", "markdownlint", "prettierd", 
-    "shellcheck", "stylua", "taplo"
+    "black",
+    "eslint_d",
+    "isort",
+    "markdownlint",
+    "prettierd",
+    "shellcheck",
+    "stylua",
+    "taplo",
   }
   local lsp_servers = {
-    "clangd", "cssls", "dockerls", "gopls", "html", "jsonls",
-    "lua_ls", "pyright", "rust_analyzer", "terraformls", 
-    "ts_ls", "yamlls", "zls"
+    "clangd",
+    "cssls",
+    "dockerls",
+    "gopls",
+    "html",
+    "jsonls",
+    "lua_ls",
+    "pyright",
+    "rust_analyzer",
+    "terraformls",
+    "ts_ls",
+    "yamlls",
+    "zls",
   }
   local specialty_tools = {
-    "ansible-language-server", "asm-lsp", "bacon-ls", 
-    { "bash-language-server", auto_update = true }, "beancount-language-server",
-    "cairo-language-server", "codespell", "editorconfig-checker", "gofumpt",
-    { "golangci-lint", version = "v1.47.0" }, "golines", "gomodifytags",
-    "gotests", "hadolint", "impl", "json-to-struct", "kotlin-language-server",
-    "latexindent", "leptosfmt", "luacheck", "misspell", "revive", "rubocop",
-    "shfmt", "sql-formatter", "staticcheck", "terraform-ls", "typstfmt",
-    "vim-language-server", "vint"
+    "ansible-language-server",
+    "asm-lsp",
+    "bacon-ls",
+    { "bash-language-server", auto_update = true },
+    "beancount-language-server",
+    "cairo-language-server",
+    "codespell",
+    "editorconfig-checker",
+    "gofumpt",
+    { "golangci-lint", version = "v1.47.0" },
+    "golines",
+    "gomodifytags",
+    "gotests",
+    "hadolint",
+    "impl",
+    "json-to-struct",
+    "kotlin-language-server",
+    "latexindent",
+    "leptosfmt",
+    "luacheck",
+    "misspell",
+    "revive",
+    "rubocop",
+    "shfmt",
+    "sql-formatter",
+    "staticcheck",
+    "typstfmt",
+    "vim-language-server",
+    "vint",
   }
   local all_tools = vim.iter({ dev_tools, lsp_servers, specialty_tools }):flatten():totable()
   mason_tool_installer.setup({
@@ -110,4 +154,3 @@ function M.setup_mason()
   })
 end
 return M
-

@@ -1,4 +1,4 @@
- --/Diver/lua/mappings/rustmap.lua
+--/Diver/lua/mappings/rustmap.lua
 local M = {}
 
 function M.setup_rustmap()
@@ -20,7 +20,12 @@ function M.setup_rustmap()
             ["<leader>c"] = { name = "+crates" },
           }, { buffer = bufnr })
 
-          map("n", "<leader>cd", crates.open_documentation, vim.tbl_extend("force", opts, { desc = "Open documentation" }))
+          map(
+            "n",
+            "<leader>cd",
+            crates.open_documentation,
+            vim.tbl_extend("force", opts, { desc = "Open documentation" })
+          )
           map("n", "<leader>cf", crates.show_features, vim.tbl_extend("force", opts, { desc = "Show features" }))
           map("n", "<leader>ci", crates.open_crates_io, vim.tbl_extend("force", opts, { desc = "Open crates.io" }))
           map("n", "<leader>ch", crates.open_homepage, vim.tbl_extend("force", opts, { desc = "Open homepage" }))
@@ -55,12 +60,10 @@ function M.setup_rustmap()
         map("n", "<leader>rd", "<cmd>RustDebuggables<CR>", { desc = "Debuggables", buffer = bufnr })
         map("n", "<leader>rr", "<cmd>RustRunnables<CR>", { desc = "Runnables", buffer = bufnr })
 
-        map("n", "<leader>tc", function()
-        end, { desc = "Toggle comment continuation", buffer = bufnr })
+        map("n", "<leader>tc", function() end, { desc = "Toggle comment continuation", buffer = bufnr })
       end
-    end
+    end,
   })
 end
 
 return M
-

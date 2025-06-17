@@ -4,7 +4,6 @@ return {
     "windwp/nvim-ts-autotag",
     ft = { "html", "xml", "jsx", "tsx", "vue", "svelte", "php", "astro", "handlebars", "erb" },
     dependencies = {
-      "folke/neoconf.nvim",
       "stevearc/conform.nvim",
       "nvimtools/none-ls.nvim",
       "nvim-treesitter/nvim-treesitter",
@@ -19,8 +18,7 @@ return {
         end,
       },
     },
-    lazy = true,
-    config = function()
+    config = function(_, opts)
       require("config.ui.html").setup_html(opts)
     end,
   },

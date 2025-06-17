@@ -13,14 +13,14 @@ return {
       setup = {
         zls = function(_, _)
           return require("config.lang.zig").setup_zig()
-        end
-      }
-    }
+        end,
+      },
+    },
   },
   {
     "nvim-treesitter/nvim-treesitter",
     opts = function(_, opts)
       opts.ensure_installed = vim.list_extend(opts.ensure_installed or {}, { "zig" })
-    end
+    end,
   },
 }

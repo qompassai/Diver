@@ -1,4 +1,5 @@
 -- ~/.config/nvim/lua/plugins/lang/nix.lua
+-- Qompass AI Diver consolidated Nix-lang plugin
 -- ----------------------------------------
 -- Copyright (C) 2025 Qompass AI, All rights reserved
 
@@ -41,24 +42,7 @@ return {
       })
     end,
   },
-  {
-    "stevearc/conform.nvim",
-    ft = "nix",
-    opts = {
-      formatters_by_ft = { nix = { "alejandra" } },
-      format_on_save = {
-        timeout_ms = 500,
-        lsp_fallback = true,
-      },
-    },
-    config = function(_, opts)
-      require("conform").setup(opts)
-      vim.keymap.set("n", "<leader>cf", function()
-        require("conform").format({ async = true })
-      end, { desc = "[C]ode [F]ormat" })
-    end,
-  },
-  {
+   {
     "nvimtools/none-ls.nvim",
     ft = "nix",
     opts = function(_, opts)

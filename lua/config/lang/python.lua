@@ -111,13 +111,13 @@ function M.setup_jupyter(opts)
       languages = opts.quarto_langs or { "r", "python", "julia", "bash", "html" },
       diagnostics = {
         enabled = opts.quarto_diagnostics ~= false,
-        triggers = opts.quarto_diag_triggers or { "BufWritePost" }
+        triggers = opts.quarto_diag_triggers or { "BufWritePost" },
       },
     },
     codeRunner = {
       enabled = opts.code_runner ~= false,
       default_method = opts.code_runner_method or "molten",
-      ft_runners = opts.code_runner_fts or { python = "molten" }
+      ft_runners = opts.code_runner_fts or { python = "molten" },
     },
   })
 
@@ -166,17 +166,23 @@ function M.setup_notebook_detection(opts)
         vim.b.is_jupyter_notebook = true
         vim.keymap.set("n", opts.keys.run_cell or "<leader>x", "<cmd>JupyterSendCell<cr>", {
           buffer = true,
-          desc = opts.desc_run_cell or "Run cell"
+          desc = opts.desc_run_cell or "Run cell",
         })
         vim.keymap.set("n", opts.keys.run_all or "<leader>X", "<cmd>JupyterSendAll<cr>", {
           buffer = true,
-          desc = opts.desc_run_all or "Run all"
+          desc = opts.desc_run_all or "Run all",
         })
         return
       end
-      local markers = opts.markers or {
-        "^# %%", "^#%%", "^# In%[", "^// %%", "^//%%", "^// CELL",
-      }
+      local markers = opts.markers
+        or {
+          "^# %%",
+          "^#%%",
+          "^# In%[",
+          "^// %%",
+          "^//%%",
+          "^// CELL",
+        }
       for _, m in ipairs(markers) do
         if vim.fn.search(m, "nw") > 0 then
           vim.b.has_jupyter_cells = true

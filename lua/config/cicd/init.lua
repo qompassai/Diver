@@ -6,6 +6,7 @@ function M.setup_all(opts)
     "ansible",
     "build",
     "json",
+    "shell",
   }
   for _, module_name in ipairs(modules) do
     local ok, module = pcall(require, "config.cicd." .. module_name)

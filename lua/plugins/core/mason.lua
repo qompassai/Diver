@@ -1,6 +1,7 @@
 return {
   {
     "mason-org/mason-lspconfig.nvim",
+    lazy = false,
     dependencies = {
       "mason-org/mason.nvim",
       "neovim/nvim-lspconfig",
@@ -10,14 +11,13 @@ return {
     },
     config = function()
       require("neoconf").setup()
-      require("mason").setup()
-      require("mason-lspconfig").setup()
+      --      require("mason").setup()
+      --      require("mason-lspconfig").setup()
       require("config.core.lspconfig")
       local capabilities = require("cmp_nvim_lsp").default_capabilities()
-      require("lspconfig").util.default_config.capabilities = vim.tbl_deep_extend("force", require("lspconfig").util.default_config.capabilities, capabilities)
+      require("lspconfig").util.default_config.capabilities =
+        vim.tbl_deep_extend("force", require("lspconfig").util.default_config.capabilities, capabilities)
       require("config.core.mason").setup_mason()
-      require("config.lang.js").setup_js(opts)
-      require("config.lang.python").setup_python(opts)
     end,
   },
   {

@@ -27,7 +27,7 @@ return {
         treesitter = {
           labels = "abcdefghijklmnopqrstuvwxyz",
           jump = { pos = "start" },
-          search = { incremental = false },
+          search = { incremental = true },
         },
       },
       prompt = { enabled = true, prefix = { { "⚡", "FlashPromptIcon" } } },
@@ -164,20 +164,7 @@ return {
       triggers_blacklist = { i = { "j", "k" }, v = { "j", "k" } },
     },
     config = function(_, opts)
-      local wk = require("which-key")
-      wk.setup(opts)
-
-      wk.register({
-        ["<leader>f"] = { name = "Find" },
-        ["<leader>l"] = { name = "Lint/LSP" },
-        ["<leader>g"] = { name = "Git" },
-        ["<leader>d"] = { name = "Debug" },
-        ["<leader>t"] = { name = "Test" },
-        ["<leader>w"] = { name = "Window" },
-        ["<leader>x"] = { name = "Trouble/Diagnostics" },
-        ["<leader>q"] = { name = "Session" },
-        ["<leader>h"] = { name = "Harpoon" },
-      })
+      require("which-key").setup(opts)
     end,
   },
   {
@@ -268,51 +255,6 @@ return {
     "ThePrimeagen/harpoon",
     branch = "harpoon2",
     dependencies = { "nvim-lua/plenary.nvim" },
-    keys = {
-      {
-        "<leader>ha",
-        function()
-          require("harpoon"):list():add()
-        end,
-        desc = "Harpoon add file",
-      },
-      {
-        "<leader>hh",
-        function()
-          local harpoon = require("harpoon")
-          harpoon.ui:toggle_quick_menu(harpoon:list())
-        end,
-        desc = "Harpoon quick menu",
-      },
-      {
-        "<leader>1",
-        function()
-          require("harpoon"):list():select(1)
-        end,
-        desc = "Harpoon to file 1",
-      },
-      {
-        "<leader>2",
-        function()
-          require("harpoon"):list():select(2)
-        end,
-        desc = "Harpoon to file 2",
-      },
-      {
-        "<leader>3",
-        function()
-          require("harpoon"):list():select(3)
-        end,
-        desc = "Harpoon to file 3",
-      },
-      {
-        "<leader>4",
-        function()
-          require("harpoon"):list():select(4)
-        end,
-        desc = "Harpoon to file 4",
-      },
-    },
     config = function()
       require("harpoon"):setup({})
     end,

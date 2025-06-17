@@ -1,24 +1,28 @@
 -- ~/.config/nvim/lua/cicd/json.lua
 local M = {}
-
 function M.setup_json_completion(opts)
   local sources = opts.sources or {}
-  table.insert(sources, {
-    name = "lsp",
-    group_index = 1,
-    priority = 100,
-    option = {
-      additional_trigger_characters = { ":", "," },
-    },
-    entry_filter = function(entry, ctx)
-      local ft = ctx.filetype
-      return ft == "json" or ft == "jsonc" or ft == "json5" or ft == "jsonl"
-    end,
-  })
+  local has_json_source = vim.tbl_contains(
+    vim.tbl_map(function(s)
+      return s.name == "json"
+    end, sources),
+    true
+  )
+  if not has_json_source then
+    table.insert(sources, {
+      name = "lsp",
+      group_index = 1,
+      priority = 100,
+      filetypes = { "json", "jsonc", "json5", "jsonl" },
+      entry_filter = function(entry, ctx)
+        local ft = vim.bo[ctx.bufnr].filetype
+        return vim.tbl_contains({ "json", "jsonc", "json5", "jsonl" }, ft)
+      end,
+    })
+  end
   opts.sources = sources
   return opts
 end
-
 function M.setup_json_conform(opts)
   opts.formatters_by_ft = vim.tbl_deep_extend("force", opts.formatters_by_ft or {}, {
     json = { "prettierd", "jq" },
@@ -36,13 +40,11 @@ function M.setup_json_conform(opts)
   })
   return opts
 end
-
 function M.setup_json_lsp(opts)
   if not opts.servers then
     opts.servers = {}
   end
   local capabilities = require("cmp_nvim_lsp").default_capabilities()
-
   opts.servers.jsonls = {
     capabilities = capabilities,
     filetypes = { "json", "jsonc", "json5", "jsonl" },
@@ -62,13 +64,12 @@ function M.setup_json_lsp(opts)
           },
         }),
         validate = { enable = true },
-        format = { enable = false }, -- Use conform instead
+        format = { enable = false },
       },
     },
   }
   return opts
 end
-
 function M.setup_json_filetype_detection()
   vim.filetype.add({
     extension = {
@@ -93,7 +94,6 @@ function M.setup_json_filetype_detection()
     },
   })
 end
-
 function M.setup_json_autocmds()
   vim.api.nvim_create_autocmd({ "TextChanged", "InsertLeave" }, {
     pattern = { "*.json", "*.jsonc", "*.json5", "*.jsonl" },
@@ -109,7 +109,6 @@ function M.setup_json_autocmds()
     end,
   })
 end
-
 function M.setup_json_keymaps(opts)
   opts.defaults = vim.tbl_deep_extend("force", opts.defaults or {}, {
     ["<leader>cj"] = { name = "+json" },
@@ -119,5 +118,4 @@ function M.setup_json_keymaps(opts)
   })
   return opts
 end
-
 return M

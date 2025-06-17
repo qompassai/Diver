@@ -7,7 +7,7 @@ return {
     "nvim-tools/none-ls.nvim",
     "nvim-tools/none-ls-extras.nvim",
   },
-  lazy = false,
+  lazy = true,
   event = { "BufWritePre", "BufNewFile" },
   cmd = { "ConformInfo" },
   opts = {
@@ -113,7 +113,7 @@ return {
       alejandra = {
         command = "alejandra",
         stdin = true,
-        args = {},
+        args = { "-" },
       },
       black = {
         command = "black",

@@ -3,6 +3,7 @@
 local M = {}
 
 ---@param opts NeoTreeOptions|nil
+
 function M.get_config(opts)
   opts = opts or {}
   return {
@@ -25,7 +26,6 @@ function M.get_config(opts)
         { source = "git_status", display_name = " Git " },
       },
     },
-
     default_component_configs = opts.default_component_configs or {
       indent = {
         indent_size = 2,
@@ -61,8 +61,7 @@ function M.get_config(opts)
         },
       },
     },
-
-    window = opts.window or {
+    window = {
       position = "left",
       width = 30,
       mapping_options = {
