@@ -1,29 +1,28 @@
 -- lua/mappings/themes.lua
 local M = {}
-
 M.setup = function()
   local which_key = require("which-key")
-
   local theme_mappings = setmetatable({}, {
     __index = function(t)
-      rawset(t, "T", {
+      rawset(t, "c", {
         name = "Themes",
-        n = { "<cmd>lua require('fzf-lua').colorscheme({ previewer = true })<cr>", "Choose Theme" },
+        n = {
+          cmd = "<cmd>lua require('fzf-lua').colorscheme({ previewer = true })<cr>",
+          desc = "Choose Theme",
+        },
       })
-
       local themes = vim.fn.getcompletion("", "color")
       for _, theme in ipairs(themes) do
-        t.T[theme] = {
-          ("<cmd>lua vim.cmd('colorscheme %s')<cr>"):format(theme),
-          theme:gsub("^%l", string.upper),
+        t.c[theme] = {
+          cmd = ("<cmd>lua vim.cmd('colorscheme %s')<cr>"):format(theme),
+          desc = theme:gsub("^%l", string.upper),
         }
       end
-      return t.T
+      return t.c
     end,
   })
   which_key.register(theme_mappings, {
     mode = "n",
-    prefix = "<leader>",
     buffer = nil,
     silent = true,
     noremap = true,

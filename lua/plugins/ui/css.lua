@@ -38,30 +38,28 @@ return {
         "vue",
         "svelte",
         "astro",
-        lua = { names = false }, -- Disable named colors in lua files
+        lua = { names = false },
       },
       user_default_options = {
-        RGB = true, -- #RGB hex codes
-        RRGGBB = true, -- #RRGGBB hex codes
-        names = true, -- "Name" codes like Blue or blue
+        RGB = true,
+        RRGGBB = true,
+        names = true,
         RRGGBBAA = true, -- #RRGGBBAA hex codes
         AARRGGBB = true, -- 0xAARRGGBB hex codes
         rgb_fn = true, -- CSS rgb() and rgba() functions
         hsl_fn = true, -- CSS hsl() and hsla() functions
         css = true, -- Enable all CSS features: rgb_fn, hsl_fn, names, RGB, RRGGBB
-        css_fn = true, -- Enable all CSS *functions*: rgb_fn, hsl_fn
+        css_fn = true,
         mode = "background", -- Set the display mode: foreground, background, virtualtext
         tailwind = true, -- Enable tailwind colors
-        sass = { enable = true, parsers = { "css" } }, -- Enable sass colors
+        sass = { enable = true, parsers = { "css" } },
         virtualtext = "■",
-        always_update = false,
+        always_update = true,
       },
       buftypes = {},
     },
     config = function(_, opts)
       require("colorizer").setup(opts)
-
-      -- Auto-enable colorizer for supported filetypes
       vim.api.nvim_create_autocmd("FileType", {
         pattern = opts.filetypes,
         callback = function()
@@ -90,7 +88,6 @@ return {
     },
     config = function()
       local ccc = require("ccc")
-
       ccc.setup({
         highlighter = {
           auto_enable = true,
@@ -161,19 +158,19 @@ return {
     dependencies = { "nvim-treesitter/nvim-treesitter" },
     opts = {
       document_color = {
-        enabled = true, -- can be toggled by commands
-        kind = "inline", -- "inline" | "foreground" | "background"
+        enabled = true,
+        kind = "inline",
         inline_symbol = "󰝤 ", -- only used in inline mode
         debounce = 200, -- in milliseconds, only applied in insert mode
       },
       conceal = {
         enabled = false, -- can be toggled by commands
         symbol = "󱏿", -- only a single character is allowed
-        highlight = { -- extmark highlight options, see :h 'highlight'
+        highlight = {
           fg = "#38BDF8",
         },
       },
-      custom_filetypes = {}, -- see the extension section to learn how it works
+      custom_filetypes = {},
     },
   },
   {
@@ -200,13 +197,12 @@ return {
     config = function()
       local npairs = require("nvim-autopairs")
       local Rule = require("nvim-autopairs.rule")
-
       npairs.setup({
         check_ts = true,
         ts_config = {
           lua = { "string", "source" },
           javascript = { "string", "template_string" },
-          java = false,
+          java = true,
         },
         disable_filetype = { "TelescopePrompt", "spectre_panel" },
         fast_wrap = {
@@ -221,7 +217,6 @@ return {
           highlight_grey = "LineNr",
         },
       })
-
       npairs.add_rules({
         Rule("/*", "*/", "css"),
         Rule("/**", "**/", "css"),

@@ -29,29 +29,24 @@ function M.on_attach(client, bufnr)
   bufmap("n", "<leader>fd", vim.diagnostic.open_float, "Show Diagnostic")
   bufmap("n", "[d", vim.diagnostic.goto_prev, "Previous Diagnostic")
   bufmap("n", "]d", vim.diagnostic.goto_next, "Next Diagnostic")
-
   if client.supports_method("textDocument/inlayHint") then
     vim.lsp.inlay_hint.enable(bufnr, true)
   end
-
   if client.supports_method("textDocument/formatting") then
     bufmap("n", "<leader>fm", function()
       vim.lsp.buf.format({ async = true })
     end, "Format Buffer")
   end
 end
-
 function M.setup(opts)
   opts = opts or {}
   local lspconfig = require("lspconfig")
   local util = require("lspconfig.util")
-
   local default_config = {
     on_attach = M.on_attach,
     capabilities = M.capabilities(),
     root_dir = util.root_pattern(".git", ".svn", ".hg"),
   }
-
   local servers = {
     ansiblels = {},
     bashls = {},
@@ -74,7 +69,6 @@ function M.setup(opts)
         },
       },
     },
-    lua_ls = require("config.lang.lua").get_config(),
     metals = require("config.lang.scala").get_config(),
     rust_analyzer = require("config.lang.rust").get_config(),
     sqlls = {},
@@ -84,38 +78,23 @@ function M.setup(opts)
     yamlls = {},
     zls = require("config.lang.zig").get_config(),
   }
-
   local has_deno = util.root_pattern("deno.json", "deno.jsonc")(vim.fn.getcwd())
+    local lua_opts = opts.lua or {}
+  require("config.lang.lua").lua_setup(lua_opts)
   local has_python = util.root_pattern("pyproject.toml", "setup.py", "requirements.txt")(vim.fn.getcwd())
-
   if has_deno then
     servers.denols = require("config.lang.js").get_config()
   else
     servers.tsserver = require("config.lang.js").get_config()
   end
-
-  if has_python then
-    servers.pyright = {
-      settings = {
-        python = {
-          analysis = {
-            typeCheckingMode = "basic",
-            diagnosticMode = "workspace",
-            inlayHints = {
-              variableTypes = true,
-              functionReturnTypes = true,
-            },
-          },
-        },
-      },
-    }
+    if has_python then
+    servers.pyright = require("config.lang.python").py_pyright({
+    })
   end
-
   for server, config in pairs(servers) do
     local merged_config = vim.tbl_deep_extend("force", default_config, config)
     lspconfig[server].setup(merged_config)
   end
-
   vim.diagnostic.config({
     virtual_text = {
       prefix = "●",
@@ -133,10 +112,8 @@ function M.setup(opts)
     update_in_insert = false,
     severity_sort = true,
   })
-
   require("config.lang.go").setup(M.on_attach, M.capabilities())
   require("config.lang.scala").setup(M.on_attach, M.capabilities())
   require("config.lang.zig").setup(M.on_attach, M.capabilities())
 end
-
 return M

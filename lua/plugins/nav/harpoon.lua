@@ -1,9 +1,8 @@
 return {
   "ThePrimeagen/harpoon",
-  lazy = true,
   keys = {
     {
-      "<leader>ha",
+      "<leader>Ha",
       "<cmd>lua require('harpoon.mark').add_file()<CR>",
       mode = "n",
       desc = "Add current file to Harpoon marks",
@@ -11,7 +10,7 @@ return {
     -- In normal mode, press 'Space' + 'h' + 'a' to add the current file to Harpoon marks.
 
     {
-      "<leader>hm",
+      "<leader>Hm",
       "<cmd>lua require('harpoon.ui').toggle_quick_menu()<CR>",
       mode = "n",
       desc = "Open Harpoon quick menu",
@@ -20,7 +19,7 @@ return {
 
     -- Navigate to specific Harpoon mark (e.g., mark 1, 2, 3, etc.)
     {
-      "<leader>h1",
+      "<leader>H1",
       "<cmd>lua require('harpoon.ui').nav_file(1)<CR>",
       mode = "n",
       desc = "Navigate to Harpoon mark 1",
@@ -28,7 +27,7 @@ return {
     -- In normal mode, press 'Space' + 'h' + '1' to navigate to Harpoon mark 1.
 
     {
-      "<leader>h2",
+      "<leader>H2",
       "<cmd>lua require('harpoon.ui').nav_file(2)<CR>",
       mode = "n",
       desc = "Navigate to Harpoon mark 2",
@@ -36,7 +35,7 @@ return {
     -- In normal mode, press 'Space' + 'h' + '2' to navigate to Harpoon mark 2.
 
     {
-      "<leader>h3",
+      "<leader>H3",
       "<cmd>lua require('harpoon.ui').nav_file(3)<CR>",
       mode = "n",
       desc = "Navigate to Harpoon mark 3",
@@ -44,7 +43,7 @@ return {
     -- In normal mode, press 'Space' + 'h' + '3' to navigate to Harpoon mark 3.
 
     {
-      "<leader>h4",
+      "<leader>H4",
       "<cmd>lua require('harpoon.ui').nav_file(4)<CR>",
       mode = "n",
       desc = "Navigate to Harpoon mark 4",
@@ -53,7 +52,7 @@ return {
 
     -- Cycle through Harpoon marks forward
     {
-      "<leader>hn",
+      "<leader>Hn",
       "<cmd>lua require('harpoon.ui').nav_next()<CR>",
       mode = "n",
       desc = "Navigate to next Harpoon mark",
@@ -62,7 +61,7 @@ return {
 
     -- Cycle through Harpoon marks backward
     {
-      "<leader>hp",
+      "<leader>Hp",
       "<cmd>lua require('harpoon.ui').nav_prev()<CR>",
       mode = "n",
       desc = "Navigate to previous Harpoon mark",
@@ -71,7 +70,7 @@ return {
 
     -- Open terminal window associated with Harpoon (e.g., terminal 1)
     {
-      "<leader>ht",
+      "<leader>Ht",
       "<cmd>lua require('harpoon.term').gotoTerminal(1)<CR>",
       mode = "n",
       desc = "Navigate to Harpoon terminal 1",
@@ -80,7 +79,7 @@ return {
 
     -- Send command to Harpoon terminal 1
     {
-      "<leader>hc",
+      "<leader>Hc",
       "<cmd>lua require('harpoon.term').sendCommand(1, 'ls -La')<CR>",
       mode = "n",
       desc = "Send command to Harpoon terminal 1",
@@ -101,7 +100,7 @@ return {
         tabline_suffix = " î‚³ ", -- Custom tabline suffix
       },
       menu = {
-        width = vim.api.nvim_win_get_width(0) - 10, -- Dynamic width of the Harpoon menu
+        width = vim.api.nvim_win_get_width(0) - 10,
       },
       projects = {
         ["$HOME/Forge/project-a"] = {

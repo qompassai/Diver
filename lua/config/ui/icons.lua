@@ -1,6 +1,5 @@
 -- ~/.config/nvim/lua/config/ui/icons.lua
 local M = {}
-
 M.devicons = {
   override = {
     bash = {
@@ -203,10 +202,8 @@ M.nonicons = {
     zig = "  ",
   },
 }
-
 function M.setup_devicons()
   require("nvim-web-devicons").setup(M.devicons)
-
   vim.cmd([[
     augroup DevIconsRefresh
       autocmd!
@@ -214,11 +211,9 @@ function M.setup_devicons()
     augroup END
   ]])
 end
-
 function M.setup_nonicons()
   require("nvim-nonicons").setup(M.nonicons)
 end
-
 M.icons_highlights = function()
   local highlights = {
     MathBlock = { bg = "#1e1e2e", fg = "#89b4fa" },
@@ -227,16 +222,13 @@ M.icons_highlights = function()
     MarkdownItalic = { italic = true, fg = "#89dceb" },
     MarkdownHeading = { bold = true, fg = "#f38ba8" },
   }
-
   for name, attrs in pairs(highlights) do
     vim.api.nvim_set_hl(0, name, attrs)
   end
 end
-
-function M.setup_all()
+function M.setup_icons()
   M.setup_devicons()
   M.setup_nonicons()
   M.icons_highlights()
 end
-
 return M

@@ -2,6 +2,7 @@
 -- ----------------------------------------
 -- Copyright (C) 2025 Qompass AI, All rights reserved
 -- ~/.config/nvim/lua/plugins/lang/python.lua
+vim.g.python3_host_prog = vim.fn.expand('~/.diver/.python/.venv313/bin/python')
 local py_ft = { "python", "ipynb", "jupyter", "quarto" }
 local jupyter_ft = { "ipynb", "jupyter", "quarto" }
 local mojo_ft = { "mojo", "🔥" }
@@ -34,7 +35,10 @@ return {
       },
       { "stevearc/dressing.nvim", event = "VeryLazy" },
       { "ibhagwan/fzf-lua", ft = py_ft, dependencies = "nvim-tree/nvim-web-devicons" },
-      { "benomahony/uv.nvim", ft = mojo_ft, opts = { picker_integration = true } },
+      { "benomahony/uv.nvim", ft = mojo_ft,
+      opts = {
+          keymaps = false,
+        picker_integration = true } },
       { "benlubas/molten-nvim", ft = mojo_ft },
       { "jbyuki/nabla.nvim", ft = py_ft },
       { "bfredl/nvim-jupyter", ft = jupyter_ft },

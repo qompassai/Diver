@@ -32,7 +32,7 @@ vim.opt.rtp:prepend(lazypath)
 --end
 --create_lazy_file_event()
 require("lazy").setup({
-  debug = true,
+  debug = false,
   spec = {
     { "LazyVim/LazyVim" },
     { import = "plugins.core" },

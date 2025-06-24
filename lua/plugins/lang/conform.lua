@@ -56,8 +56,8 @@ return {
       latex = { "tex-fmt", "latexindent" },
       lua = { "stylua", "lua-format" },
       luau = { "stylua" },
-      markdown = { "prettier-markdown", "remark", "mdformat" },
-      ["markdown.mdx"] = { "prettier-markdown", "remark" },
+      markdown = { "prettier-markdown", "mdformat" },
+      ["markdown.mdx"] = { "prettier-markdown", },
       nix = { "alejandra", "nixfmt", "nixpkgs-fmt" },
       nginx = { "nginxfmt" },
       perl = { "perltidy" },
@@ -98,7 +98,7 @@ return {
       lsp_format = "fallback",
       timeout_ms = 2000,
       undojoin = true,
-      stop_after_first = false,
+      stop_after_first = true,
       exclude = { "spell", "codespell" },
     },
     format_after_save = {
@@ -431,11 +431,6 @@ return {
         command = "prisma-fmt",
         stdin = true,
         args = { "--stdin" },
-      },
-      remark = {
-        command = "remark",
-        stdin = true,
-        args = { "--no-color", "--silent" },
       },
       ruff = {
         command = "ruff",

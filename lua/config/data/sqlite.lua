@@ -5,7 +5,6 @@ local M = {}
 function M.setup_conform(opts)
   opts.formatters_by_ft =
     vim.tbl_deep_extend("force", opts.formatters_by_ft or {}, { sqlite = { "sqlfluff", "sql-formatter" } })
-
   opts.formatters = vim.tbl_deep_extend("force", opts.formatters or {}, {
     sqlfluff = {
       args = { "fix", "--dialect", "sqlite", "-" },
@@ -15,7 +14,6 @@ function M.setup_conform(opts)
       args = { "--language", "sqlite" },
     },
   })
-
   return opts
 end
 function M.setup_lsp(opts)
@@ -34,10 +32,8 @@ function M.setup_lsp(opts)
   })
   return opts
 end
-
 function M.setup_linter(opts)
   local null_ls = require("null-ls")
-
   opts.sources = vim.list_extend(opts.sources or {}, {
     null_ls.builtins.diagnostics.sqlfluff.with({
       filetypes = { "sqlite" },
@@ -47,10 +43,8 @@ function M.setup_linter(opts)
 
   return opts
 end
-
 function M.setup_formatter(opts)
   local null_ls = require("null-ls")
-
   opts.sources = vim.list_extend(opts.sources or {}, {
     null_ls.builtins.formatting.sqlfluff.with({
       filetypes = { "sqlite" },
@@ -61,7 +55,6 @@ function M.setup_formatter(opts)
       extra_args = { "--language", "sqlite" },
     }),
   })
-
   return opts
 end
 function M.setup_filetype_detection()
@@ -79,12 +72,12 @@ function M.setup_filetype_detection()
 end
 function M.setup_keymaps(opts)
   opts.defaults = vim.tbl_deep_extend("force", opts.defaults or {}, {
-    ["<leader>ds"] = { name = "+sqlite" },
-    ["<leader>dsf"] = { "<cmd>lua require('conform').format()<cr>", "Format SQLite" },
-    ["<leader>dst"] = { "<cmd>DBUIToggle<cr>", "Toggle DBUI" },
-    ["<leader>dsa"] = { "<cmd>DBUIAddConnection<cr>", "Add Connection" },
-    ["<leader>dsh"] = { "<cmd>DBUIFindBuffer<cr>", "Find DB Buffer" },
-    ["<leader>dse"] = {
+    ["<leader>Ds"] = { name = "+sqlite" },
+    ["<leader>Dsf"] = { "<cmd>lua require('conform').format()<cr>", "Format SQLite" },
+    ["<leader>Dst"] = { "<cmd>DBUIToggle<cr>", "Toggle DBUI" },
+    ["<leader>Dsa"] = { "<cmd>DBUIAddConnection<cr>", "Add Connection" },
+    ["<leader>Dsh"] = { "<cmd>DBUIFindBuffer<cr>", "Find DB Buffer" },
+    ["<leader>Dse"] = {
       function()
         if vim.fn.mode() == "v" or vim.fn.mode() == "V" then
           vim.cmd("'<,'>DB")
@@ -95,9 +88,9 @@ function M.setup_keymaps(opts)
       "Execute Query",
     },
 
-    ["<leader>dsst"] = { "<cmd>DB SELECT name FROM sqlite_master WHERE type='table'<cr>", "List Tables" },
-    ["<leader>dssi"] = { "<cmd>DB SELECT * FROM sqlite_master WHERE type='index'<cr>", "List Indexes" },
-    ["<leader>dssv"] = { "<cmd>DB PRAGMA schema_version<cr>", "Schema Version" },
+    ["<leader>Dsst"] = { "<cmd>DB SELECT name FROM sqlite_master WHERE type='table'<cr>", "List Tables" },
+    ["<leader>Dssi"] = { "<cmd>DB SELECT * FROM sqlite_master WHERE type='index'<cr>", "List Indexes" },
+    ["<leader>Dssv"] = { "<cmd>DB PRAGMA schema_version<cr>", "Schema Version" },
   })
   return opts
 end

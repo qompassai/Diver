@@ -55,7 +55,7 @@ function M.setup_genmap()
   -- Copy the entire file to the system clipboard in normal mode
   map("n", "<C-c>", "<cmd>%y+<CR>", vim.tbl_extend("force", opts, { desc = "Copy the entire file to the clipboard" }))
 
-  vim.keymap.set("n", "<leader>f", function()
+  vim.keymap.set("n", "<leader>F", function()
     if #vim.lsp.get_clients({ bufnr = 0 }) > 0 then
       vim.lsp.buf.format({ async = true })
     else

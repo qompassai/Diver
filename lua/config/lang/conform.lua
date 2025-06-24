@@ -6,7 +6,7 @@ local M = {}
 
 ---@param opts conform.Config|nil
 
-function M.setup(opts)
+function M.conform_setup(opts)
   opts = opts or {}
   return {
     formatters_by_ft = opts.formatters_by_ft or {
@@ -54,8 +54,8 @@ function M.setup(opts)
       latex = { "tex-fmt", "latexindent" },
       lua = { "stylua", "lua-format" },
       luau = { "stylua" },
-      markdown = { "prettier-markdown", "remark", "mdformat" },
-      ["markdown.mdx"] = { "prettier-markdown", "remark" },
+      markdown = { "prettier-markdown", "mdformat" },
+      ["markdown.mdx"] = { "prettier-markdown" },
       nix = { "alejandra", "nixfmt", "nixpkgs-fmt" },
       nginx = { "nginx_config_formatter" },
       perl = { "perltidy" },
@@ -311,6 +311,23 @@ function M.setup(opts)
           "--local",
         },
       },
+        ["lua-format"] = {
+        command = "lua-format",
+        stdin = true,
+        prepend_args = {
+          "--indent-width=2",
+          "--tab-width=2",
+          "--use-tab=false",
+          "--column-limit=160",
+          "--continuation-indent-width=2",
+          "--spaces-before-call=1",
+          "--keep-simple-control-block-one-line=false",
+          "--keep-simple-function-one-line=false",
+          "--break-before-function-call-rp=false",
+          "--break-before-function-def-rp=false",
+          "--chop-down-table=false",
+        },
+      },
       mdformat = {
         command = "mdformat",
         stdin = true,
@@ -435,11 +452,6 @@ function M.setup(opts)
         stdin = true,
         args = { "--stdin" },
       },
-      remark = {
-        command = "remark",
-        stdin = true,
-        args = { "--no-color", "--silent" },
-      },
       ruff = {
         command = "ruff",
         args = { "format", "--stdin-filename", "$FILENAME" },
@@ -509,24 +521,7 @@ function M.setup(opts)
           }
         end,
       },
-      ["lua-format"] = {
-        command = "lua-format",
-        stdin = true,
-        prepend_args = {
-          "--indent-width=2",
-          "--tab-width=2",
-          "--use-tab=false",
-          "--column-limit=160",
-          "--continuation-indent-width=2",
-          "--spaces-before-call=1",
-          "--keep-simple-control-block-one-line=false",
-          "--keep-simple-function-one-line=false",
-          "--break-before-function-call-rp=false",
-          "--break-before-function-def-rp=false",
-          "--chop-down-table=false",
-        },
-      },
-      styler = {
+          styler = {
         command = "Rscript",
         stdin = true,
         args = { "-e", "styler::style_text(readLines('stdin'))" },

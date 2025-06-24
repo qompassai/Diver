@@ -1,8 +1,12 @@
 return {
+ {
   "folke/which-key.nvim",
-  lazy = true,
-  event = "VeryLazy",
-  opts = {
-    notify = false, -- Suppress notifications about mapping issues
-  },
+  config = function()
+    require("which-key").setup({
+    })
+    if require("which-key").health and require("which-key").health.check then
+      require("which-key").health.check = function() return {} end
+    end
+  end
+}
 }

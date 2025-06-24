@@ -1,4 +1,5 @@
 local M = {}
+
 function M.setup_cicdmap()
   local map = vim.keymap.set
   local opts = { noremap = true, silent = true }
@@ -23,11 +24,9 @@ function M.setup_cicdmap()
   --Container
   function M.setup_which_key()
     local wk = require("which-key")
-
     wk.register({
       ["<leader>c"] = {
         name = "Container",
-
         c = {
           name = "Containers",
           l = { "<cmd>ContainerList<cr>", "List" },
@@ -40,7 +39,6 @@ function M.setup_cicdmap()
           r = { "<cmd>ContainerRemove<space>", "Remove" },
           p = { "<cmd>ContainerPrune<cr>", "Prune" },
         },
-
         i = {
           name = "Images",
           l = { "<cmd>ImageList<cr>", "List" },
@@ -52,68 +50,7 @@ function M.setup_cicdmap()
     })
   end
 
-  -- Telescope mappings
-
-  -- Telescope: Finds files on your computer
-  map("n", "<leader>tff", "<cmd>Telescope find_files<CR>", vim.tbl_extend("force", opts, { desc = "Telefind files" }))
-  -- In normal mode, press 'Space' + 't' + 'f' + 'f' to open Telescope and search for files
-
-  -- Telescope: Live searches your computer by word
-  map("n", "<leader>tls", "<cmd>Telescope live_grep<CR>", vim.tbl_extend("force", opts, { desc = "Telelive search" }))
-  -- In normal mode, press 'Space' + 't' + 'l' + 's' to search for text across files
-
-  -- Telescope: Finds all the open files that you're working on
-  map("n", "<leader>tfb", "<cmd>Telescope buffers<CR>", vim.tbl_extend("force", opts, { desc = "Telefind buffers" }))
-  -- In normal mode, press 'Space' + 't' + 'f' + 'b' to open a list of open buffers
-
-  -- Telescope: Find help tags using Telescope
-  map("n", "<leader>tfh", "<cmd>Telescope help_tags<CR>", vim.tbl_extend("force", opts, { desc = "Telefind help" }))
-  -- In normal mode, press 'Space' + 't' + 'f' + 'h' to search through help documentation
-
-  -- Telescope: Find marks
-  map("n", "<leader>tma", "<cmd>Telescope marks<CR>", vim.tbl_extend("force", opts, { desc = "Telefind marks" }))
-  -- In normal mode, press 'Space' + 't' + 'm' + 'a' to list marks
-
-  -- Telescope: Find old files
-  map("n", "<leader>tfo", "<cmd>Telescope oldfiles<CR>", vim.tbl_extend("force", opts, { desc = "Telefind oldfiles" }))
-  -- In normal mode, press 'Space' + 't' + 'f' + 'o' to list recently opened files
-
-  -- Telescope: Fuzzy search current file
-  map(
-    "n",
-    "<leader>tfc",
-    "<cmd>Telescope current_buffer_fuzzy_find<CR>",
-    vim.tbl_extend("force", opts, { desc = "Telefind in current buffer" })
-  )
-  -- In normal mode, press 'Space' + 't' + 'f' + 'c' to search for text in the current buffer
-
-  -- Telescope: Find git commits
-  map(
-    "n",
-    "<leader>tgc",
-    "<cmd>Telescope git_commits<CR>",
-    vim.tbl_extend("force", opts, { desc = "Telefind git commits" })
-  )
-  -- In normal mode, press 'Space' + 't' + 'g' + 'c' to list git commits
-
-  -- Telescope: Check git status
-  map("n", "<leader>tgs", "<cmd>Telescope git_status<CR>", vim.tbl_extend("force", opts, { desc = "Telegit status" }))
-  -- In normal mode, press 'Space' + 't' + 'g' + 's' to check git status
-
-  -- Telescope: Pick hidden terminal
-  map("n", "<leader>tr", "<cmd>Telescope terms<CR>", vim.tbl_extend("force", opts, { desc = "Telepick hidden term" }))
-  -- In normal mode, press 'Space' + 't' + 'r' to list hidden terminals
-
-  -- Telescope: Finds all hidden & ignored files
-  map(
-    "n",
-    "<leader>tfa",
-    "<cmd>Telescope find_files follow=true no_ignore=true hidden=true<CR>",
-    vim.tbl_extend("force", opts, { desc = "Telefind all files" })
-  )
-  -- In normal mode, press 'Space' + 't' + 'f' + 'a' to search for all files, even hidden ones
-
-  -- NvimTree mappings
+   -- NvimTree mappings
 
   -- NvimTree: Toggle NvimTree file explorer window (open or close the file manager window)
   --map("n", "<leader>nt", "<cmd>NvimTreeToggle<CR>", vim.tbl_extend("force", opts, { desc = "NvimTree toggle window" }))
@@ -129,13 +66,13 @@ function M.setup_cicdmap()
 
   -- ToggleTerm: Creates a new horizontal terminal
   map("n", "<leader>h", function()
-    require("toggleterm.terminal").Terminal:new({ direction = "horizontal" }):toggle()
+    require("toggleterm.terminal").Terminal:new({ direction = "[h]orizontal toggleterm" }):toggle()
   end, vim.tbl_extend("force", opts, { desc = "TT: new horizontal terminal" }))
   -- In normal mode, press 'Space' + 'h' to open a new horizontal terminal
 
   -- ToggleTerm: Creates a new vertical terminal
   map("n", "<leader>v", function()
-    require("toggleterm.terminal").Terminal:new({ direction = "vertical" }):toggle()
+    require("toggleterm.terminal").Terminal:new({ direction = "vertical toggleterm" }):toggle()
   end, vim.tbl_extend("force", opts, { desc = "TT: new vertical terminal" }))
   -- In normal mode, press 'Space' + 'v' to open a new vertical terminal
 
@@ -159,15 +96,7 @@ function M.setup_cicdmap()
 
   -- Zoxide mappings
 
-  -- Zoxide: Telescope lists your most visited directories for you to zoom into
-  map(
-    "n",
-    "<leader>tz",
-    "<cmd>Telescope zoxide list<CR>",
-    vim.tbl_extend("force", opts, { desc = "Telescope Zoxide List" })
-  )
-  -- In normal mode, press 'Space' + 't' + 'z' to open a list of directories with Zoxide
-
+  
   -- Zoxide: Interactively suggests directories to zoom into based on what you type without the list
   map("n", "<leader>zi", "<cmd>:Zi<CR>", vim.tbl_extend("force", opts, { desc = "Zoxide interactive" }))
   -- In normal mode, press 'Space' + 'z' + 'i' to interactively navigate with Zoxide

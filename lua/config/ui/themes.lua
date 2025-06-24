@@ -1,6 +1,5 @@
 -- ~/.config/nvim/lua/config/ui/themes.lua
 local M = {}
-
 M.current_theme = "nightfox"
 M.themes = {
   catppuccin = {
@@ -159,7 +158,6 @@ M.themes = {
     discord_icon = "⚫",
   },
 }
-
 function M.set_theme(theme_name)
   local theme = M.themes[theme_name]
   if not theme then
@@ -201,7 +199,6 @@ function M.setup_appearance()
     text = "Using " .. M.themes[M.current_theme].discord_name,
   }
 end
-
 function M.setup_commands()
   vim.api.nvim_create_user_command("Theme", function(opts)
     local theme_name = opts.args
@@ -225,7 +222,6 @@ function M.setup_commands()
     end,
   })
 end
-
 function M.setup_cord()
   local cord_mod = require("cord")
   local instance = cord_mod.setup({

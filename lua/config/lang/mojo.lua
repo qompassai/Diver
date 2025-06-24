@@ -78,16 +78,6 @@ function M.mojo_attach_handlers(opts)
         return
       end
       local bufnr = args.buf
-      if opts.keymaps ~= false then
-        pcall(vim.keymap.set, "n", "gd", vim.lsp.buf.definition, {
-          buffer = bufnr,
-          desc = "Go to definition",
-        })
-        pcall(vim.keymap.set, "n", "K", vim.lsp.buf.hover, {
-          buffer = bufnr,
-          desc = "Hover documentation",
-        })
-      end
       if opts.format_on_save and client.supports_method("textDocument/formatting") then
         vim.api.nvim_create_autocmd("BufWritePre", {
           group = group,

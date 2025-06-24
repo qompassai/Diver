@@ -16,6 +16,10 @@ local function setup_cargo_optimization()
   vim.env.CARGO_INCREMENTAL = "1"
   vim.env.CARGO_NET_RETRY = "2"
 end
+require("mason.settings").set({
+  PATH = vim.env.PATH .. ":" .. vim.fn.expand("~/.diver/.python/.venv313/bin") .. ":" .. vim.fn.expand("~/.diver/.python/.venv312/bin") .. ":" .. vim.fn.expand("~/.diver/.python/.venv311/bin"),
+})
+vim.env.VIRTUAL_ENV = vim.fn.expand("~/.diver/.python/.venv313")
 function M.setup_mason()
   setup_cargo_optimization()
   local mason = require("mason")
@@ -59,14 +63,12 @@ function M.setup_mason()
         },
       },
     },
-    pip = {
-      upgrade_pip = true,
-      install_args = {
-        "--break-system-packages",
-        "--user",
-        "--no-cache-dir",
-      },
-    },
+   pip = {
+  install_args = {
+    "--break-system-packages",
+    "--user",
+  },
+},
   }
   if is_neovim_12_plus() then
     opts.registries = { "github:mason-org/mason-registry" }
@@ -80,9 +82,7 @@ function M.setup_mason()
   local mason_tool_installer = require("mason-tool-installer")
   local mason_lspconfig = require("mason-lspconfig")
   local dev_tools = {
-    "black",
     "eslint_d",
-    "isort",
     "markdownlint",
     "prettierd",
     "shellcheck",
@@ -110,8 +110,6 @@ function M.setup_mason()
     "bacon-ls",
     { "bash-language-server", auto_update = true },
     "beancount-language-server",
-    "cairo-language-server",
-    "codespell",
     "editorconfig-checker",
     "gofumpt",
     { "golangci-lint", version = "v1.47.0" },
@@ -149,6 +147,7 @@ function M.setup_mason()
     },
   })
   mason_lspconfig.setup({
+    automatic_enable = true,
     ensure_installed = lsp_servers,
     automatic_installation = true,
   })

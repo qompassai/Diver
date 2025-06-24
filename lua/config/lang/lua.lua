@@ -4,62 +4,143 @@ local M = {}
 local function mark_pure(src)
   return src.with({ command = "true" })
 end
-function M.neoconf(opts)
+function M.lua_conform(opts)
   opts = opts or {}
-  return {
-    local_settings = ".neoconf.json",
-    global_settings = "neoconf.json",
-    import = {
-      vscode = true,
-      coc = true,
-      nlsp = true,
+  local base_config = require("config.lang.conform").conform_setup(opts)
+  local lua_config = {
+    formatters_by_ft = {
+      lua = base_config.formatters_by_ft.lua,
+      luau = base_config.formatters_by_ft.luau,
     },
-    live_reload = true,
-    filetype_jsonc = true,
-    plugins = opts.plugins or {
-      lspconfig = {
-        enabled = true,
+    formatters = {},
+    format_on_save = base_config.format_on_save,
+    format_after_save = base_config.format_after_save,
+  }
+  local ok, conform = pcall(require, "conform")
+  if ok then
+    conform.setup({
+      formatters_by_ft = {
+        lua = { "stylua", "lua-format" },
+        luau = { "stylua", "lua-format" },
       },
-      jsonls = {
-        enabled = true,
-        configured_servers_only = true,
+      format_on_save = opts.format_on_save and {
+        lsp_fallback = "fallback",
+        timeout_ms = opts.format_timeout_ms or 500,
       },
-      lua_ls = {
-        enabled_for_neovim_config = true,
-        enabled = false,
-      },
+    })
+  end
+  return lua_config
+end
+function M.lua_cmp()
+  return {
+    snippet = {
+      expand = function(args)
+        local luasnip = require('luasnip')
+        luasnip.lsp_expand(args.body)
+      end,
+    },
+    mapping = require('mappings.luamap').setup_luamap(),
+    sources = {
+      { name = 'nvim_lsp' },
+      { name = 'luasnip' },
+      { name = 'omni' },
+      { name = 'buffer' },
+    },
+    experimental = {
+      ghost_text = true,
     },
   }
 end
 function M.lua_lazydev(opts)
   opts = opts or {}
-  local config = {
+  vim.g = vim.g or {}
+  local lua_version_path = nil
+  local versions = {"luajit", "lua51", "lua54", "lua52", "lua53"}
+  for _, version in ipairs(versions) do
+    local path = vim.fn.expand("~/.diver/.lua/." .. version)
+    if vim.fn.isdirectory(path) == 1 then
+      lua_version_path = path
+      break
+    end
+  end
+  local library = {
+    { path = "${3rd}/luv/library", words = { "vim%.uv" } },
+    { path = "LazyVim" },
+    { path = tostring(vim.fn.expand("$VIMRUNTIME")) },
+  }
+  if lua_version_path then
+    table.insert(library, { path = lua_version_path })
+    table.insert(library, {
+      path = lua_version_path .. "/share/lua/5.4",
+      words = { "require" }
+    })
+    table.insert(library, {
+      path = lua_version_path .. "/lib/lua/5.4",
+      words = { "require" }
+    })
+  end
+  if not vim.uv.fs_stat(vim.loop.cwd() .. "/.luarc.json") then
+    table.insert(library, { path = tostring(vim.loop.cwd()) })
+  end
+
+  for i, entry in ipairs(library) do
+    assert(type(entry.path) == "string",
+           "Library entry "..i.." has invalid path type: "..type(entry.path))
+  end
+  return {
     runtime = vim.env.VIMRUNTIME,
-    library = opts.library or {
-      { path = "${3rd}/luv/library", words = { "vim%.uv" } },
-      "LazyVim",
-      vim.fn.expand("$VIMRUNTIME"),
-      {
-        path = vim.loop.cwd(),
-        cond = function(root)
-          return not vim.uv.fs_stat(root .. "/.luarc.json")
-        end,
-      },
-    },
+    library = library,
     integrations = {
-      lspconfig = opts.integrations and opts.integrations.lspconfig ~= false,
-      cmp = opts.integrations and opts.integrations.cmp ~= false,
+      lspconfig = opts.integrations and opts.integrations.lspconfig ~= true,
+      cmp = opts.integrations and opts.integrations.cmp ~= true,
       coq = opts.integrations and opts.integrations.coq == true,
     },
     enabled = opts.enabled or function()
-      return vim.g.lazydev_enabled == nil and true or vim.g.lazydev_enabled
+      return vim.g.lazydev_enabled ~= false
     end,
   }
-  local ok, lazydev = pcall(require, "lazydev")
-  if ok then
-    lazydev.setup(config)
+end
+function M.lua_lsp(opts)
+  opts = opts or {}
+  local lspconfig = require("lspconfig")
+  local lua_version, lua_path = M.lua_version()
+  local config = {
+    settings = {
+      Lua = {
+        runtime = {
+          version = lua_version,
+          path = {
+            "?.lua",
+            "?/init.lua",
+            lua_path and (lua_path .. "/share/lua/5.4/?.lua") or nil,
+            lua_path and (lua_path .. "/share/lua/5.4/?/init.lua") or nil
+          }
+        },
+        workspace = {
+          library = vim.api.nvim_get_runtime_file("", true),
+          checkThirdParty = true,
+        },
+        diagnostics = {
+          globals = { "vim" },
+        },
+        telemetry = { enable = false },
+      }
+    },
+    on_attach = opts.on_attach,
+    capabilities = opts.capabilities,
+    filetypes = opts.filetypes or { "lua", "luau" },
+  }
+  if opts.settings then
+    config.settings = vim.tbl_deep_extend("force", config.settings, opts.settings)
   end
-  return config
+  lspconfig.lua_ls.setup(config)
+end
+function M.lua_luarocks(opts)
+  opts = opts or {}
+  local config = {
+    rocks_path = vim.fn.expand('~/.luarocks'),
+  }
+  return vim.tbl_deep_extend('force', config, opts)
 end
 function M.lua_nls(opts)
   opts = opts or {}
@@ -90,98 +171,71 @@ function M.lua_nls(opts)
     }),
   }
 end
-function M.lua_lsp(opts)
+function M.lua_snap(opts)
   opts = opts or {}
-  require("lspconfig").lua_ls.setup({
-    settings = {
-      Lua = {
-        runtime = { version = "LuaJIT" },
-        workspace = {
-          library = require("neoconf").get("lua.workspace.library") or vim.api.nvim_get_runtime_file("", true),
-          checkThirdParty = true,
-        },
-        diagnostics = {
-          globals = { "vim" },
-          severity = require("neoconf").get("lua.diagnostics.severity"),
-        },
-        completion = {
-          enable = true,
-          callSnippet = "Replace",
-          keywordSnippet = "Replace",
-          showWord = "Fallback",
-        },
-        telemetry = { enable = false },
-      },
+  local config = {
+    mappings = {
+      ['<CR>'] = 'submit',
+      ['<C-x>'] = 'cut',
     },
-  })
-  vim.api.nvim_create_autocmd("LspAttach", {
-    group = vim.api.nvim_create_augroup("lua_ls_setup", {}),
-    callback = function(args)
-      local ok, neoconf = pcall(require, "neoconf")
-      if not ok or not neoconf._initialized then
-        return
-      end
-      local client = vim.lsp.get_client_by_id(args.data.client_id)
-      if client and client.name == "lua_ls" and client:supports_method("textDocument/completion") then
-        vim.lsp.completion.enable(true, client.id, args.buf, { autotrigger = true })
-      end
-    end,
-  })
-  return require("lspconfig").lua_ls
-end
-function M.lua_conform(opts)
-  opts = opts or {}
-  local base_config = require("config.lang.conform").setup(opts)
-  local lua_config = {
-    formatters_by_ft = {
-      lua = base_config.formatters_by_ft.lua,
-      luau = base_config.formatters_by_ft.luau,
-    },
-    formatters = {},
-    format_on_save = base_config.format_on_save,
-    format_after_save = base_config.format_after_save,
   }
-  if base_config.formatters and base_config.formatters.stylua then
-    lua_config.formatters.stylua = vim.deepcopy(base_config.formatters.stylua)
-    local original_args = lua_config.formatters.stylua.prepend_args
-    lua_config.formatters.stylua.prepend_args = function(self, ctx)
-      local args = type(original_args) == "function" and (original_args(self, ctx) or {}) or original_args or {}
-      pcall(function()
-        stylua_opts = require("neoconf").get("stylua") or {}
-      end)
-      return vim.list_extend(args, {
-        "--indent-type",
-        stylua_opts.indent_type or "Spaces",
-        "--indent-width",
-        tostring(stylua_opts.indent_width or 2),
-        "--column-width",
-        tostring(stylua_opts.column_width or 100),
-      })
+  return vim.tbl_deep_extend('force', config, opts)
+end
+function M.lua_version()
+  local versions = {"luajit", "lua54", "lua53", "lua52", "lua51"}
+  for _, version in ipairs(versions) do
+    local path = vim.fn.expand("~/.diver/.lua/." .. version) .. "/bin/lua"
+    if vim.fn.filereadable(path) == 1 then
+      return version, path
     end
   end
-  local ok, conform = pcall(require, "conform")
-  if ok then
-    conform.setup({
-      formatters_by_ft = {
-        lua = { "stylua" },
-        luau = { "stylua" },
+  return "LuaJIT", vim.fn.exepath("lua")
+end
+function M.lua_neoconf(opts)
+  opts = opts or {}
+  return {
+    local_settings = ".neoconf.json",
+    global_settings = "neoconf.json",
+    import = {
+      vscode = true,
+      coc = true,
+      nlsp = true,
+    },
+    live_reload = true,
+    filetype_jsonc = true,
+    plugins = opts.plugins or {
+      lspconfig = {
+        enabled = true,
       },
-      format_on_save = opts.format_on_save and {
-        lsp_fallback = "fallback",
-        timeout_ms = opts.format_timeout_ms or 500,
+      jsonls = {
+        enabled = true,
+        configured_servers_only = true,
       },
-    })
-  end
-  return lua_config
+      lua_ls = {
+        enabled_for_neovim_config = true,
+        enabled = true,
+      },
+    },
+  }
 end
 function M.lua_setup(opts)
   opts = opts or {}
-  local neoconf_config = M.neoconf(opts)
+  local neoconf_config = M.lua_neoconf(opts)
   require("neoconf").setup(neoconf_config)
+  local lua_version, lua_path = M.lua_version()
+  vim.env.LUA_VERSION = lua_version
+  vim.env.LUA_PATH = lua_path
   return {
-    lsp = M.lua_lsp(opts),
+    cmp = M.lua_cmp,
     conform = M.lua_conform(opts),
     lazydev = M.lua_lazydev(opts),
+    lsp = M.lua_lsp,
+    luarocks = M.lua_luarocks,
+    nls = M.lua_nls(opts),
+    version = lua_version,
+    path = lua_path,
+    snap = M.lua_snap,
+    neoconf = neoconf_config
   }
 end
 return M

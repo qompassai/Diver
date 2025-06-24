@@ -214,17 +214,19 @@ return {
     event = "BufReadPost",
     config = function()
       require("nvim-treesitter.configs").setup({
+        auto_install = true,
+
         textobjects = {
           select = {
             enable = true,
             lookahead = true,
             keymaps = {
-              ["af"] = "@function.outer",
-              ["if"] = "@function.inner",
-              ["ac"] = "@class.outer",
-              ["ic"] = "@class.inner",
-              ["aa"] = "@parameter.outer",
-              ["ia"] = "@parameter.inner",
+              ["Taf"] = "@function.outer",
+              ["Tif"] = "@function.inner",
+              ["Tac"] = "@class.outer",
+              ["Tic"] = "@class.inner",
+              ["Taa"] = "@parameter.outer",
+              ["Tia"] = "@parameter.inner",
             },
           },
           move = {

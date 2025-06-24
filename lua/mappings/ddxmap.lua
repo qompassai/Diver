@@ -7,8 +7,7 @@ function M.setup_ddxmap()
   -- WHICH-KEY REGISTRATION
   -- ======================
   require("which-key").register({
-    { "<leader>d", group = "Diagnose/Debug" },
-    { "<leader>x", group = "Trouble/Diag" },
+    { "<leader>d", group = "Ddx" },
   }, { prefix = "<leader>" })
   -- ======================
   -- Nerd Legend --
@@ -78,7 +77,7 @@ function M.setup_ddxmap()
   -- In normal mode, press 'Space' + 'd' + 'q' to show diagnostics for the entire project
 
   -- ========================
-  -- TROUBLE.NVIM MAPPINGS
+  -- TROUBLE.NVIM
   -- ========================
 
   -- Toggle main diagnostics window

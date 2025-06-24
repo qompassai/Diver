@@ -1255,28 +1255,27 @@ function M.setup_linters(lint)
     end,
   }
   lint.linters["php-cs-fixer-lint"] = {
-    cmd = "php-cs-fixer",
-    stdin = false,
-    args = { "fix", "--dry-run", "--diff", "--using-cache=no", "$FILENAME" },
-    stream = "stdout",
-    ignore_exitcode = true,
-    parser = function(output)
-      local diagnostics = {}
-      for _, line in ipairs(vim.split(output, "\n")) do
-        if line:match("^   1) ") then
-          local fname = line:match("1) (.+)")
-          table.insert(diagnostics, {
-            lnum = 0,
-            col = 0,
-            message = "Code style issues detected (run formatter)",
-            severity = vim.diagnostic.severity.WARN,
-            source = "php-cs-fixer",
-          })
-        end
+  cmd = "php-cs-fixer",
+  stdin = false,
+  args = { "fix", "--dry-run", "--diff", "--using-cache=no", "$FILENAME" },
+  stream = "stdout",
+  ignore_exitcode = true,
+  parser = function(output)
+    local diagnostics = {}
+    for _, line in ipairs(vim.split(output, "\n")) do
+      if line:match("^   1) ") then
+        table.insert(diagnostics, {
+          lnum = 0,
+          col = 0,
+          message = "Code style issues detected (run formatter)",
+          severity = vim.diagnostic.severity.WARN,
+          source = "php-cs-fixer",
+        })
       end
-      return diagnostics
-    end,
-  }
+    end
+    return diagnostics
+  end,
+}
   lint.linters.phpstan = {
     cmd = "phpstan",
     stdin = false,
@@ -1845,7 +1844,7 @@ function M.setup_linters(lint)
       return diagnostics
     end,
   }
-  lint.linters.verilator = {
+    lint.linters.verilator = {
     cmd = "verilator",
     stdin = false,
     args = { "--lint-only", "--Wall" },
@@ -1854,7 +1853,6 @@ function M.setup_linters(lint)
     pattern = [[%s*([^:]+):(%d+): (%w+): (.+)]],
     groups = { "file", "lnum", "severity", "message" },
   }
-end
 lint.linters.vint = {
   cmd = "vint",
   stdin = true,
@@ -1998,4 +1996,5 @@ lint.linters.zigfmt_check = {
   pattern = [[([^:]+):(%d+):(%d+): (%w+): (.+)]],
   groups = { "file", "lnum", "col", "severity", "message" },
 }
+end
 return M
