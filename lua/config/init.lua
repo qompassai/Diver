@@ -1,7 +1,13 @@
 --~/.config/nvim/lua/config/init.lua
+---@module 'config.init'
+---@class ConfigInitModule
+---@field setup_all fun(opts?: table): nil
+
 local M = {}
 
-m.setup_all = function(opts)
+---@param opts? table
+---@return nil
+function M.setup_all(opts)
   opts = opts or {}
   local core = require("config.core")
   core.setup_all_core(opts)
@@ -18,4 +24,6 @@ m.setup_all = function(opts)
     end
   end)
 end
+
+---@return ConfigInitModule
 return M

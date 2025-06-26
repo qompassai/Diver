@@ -123,15 +123,14 @@ function M.js_lsp(opts)
   })
   local lspconfig = require("lspconfig")
   lspconfig.eslint.setup({
-    on_attach = function(client, _bufnr)
-      vim.api.nvim_create_autocmd("BufWritePre", {
-        buffer = bufnr,
-        command = "EslintFixAll",
-      })
-    end,
-  })
+  on_attach = function(_, bufnr)
+    vim.api.nvim_create_autocmd("BufWritePre", {
+      buffer = bufnr,
+      command = "EslintFixAll",
+    })
+  end,
+})
   return {
-    typescript = ok and require("typescript-tools").config or {},
     eslint = true,
   }
 end
@@ -290,11 +289,6 @@ function M.setup_js(opts)
   opts = opts or {}
   local neoconf_config = M.neoconf(opts)
   require("neoconf").setup(neoconf_config)
-  local lsp_config = M.js_lsp(opts)
-  local js_tools_config = M.js_tools(opts)
-  local conform_config = M.js_conform(opts)
-  local dap_config = M.js_dap(opts)
-  local neotest_config = M.js_neotest(opts)
   require("tailwindcss-colorizer-cmp").setup({
     color_square_width = 2,
   })

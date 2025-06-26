@@ -4,12 +4,6 @@ function M.setup_ddxmap()
   local opts = { noremap = true, silent = true }
 
   -- ======================
-  -- WHICH-KEY REGISTRATION
-  -- ======================
-  require("which-key").register({
-    { "<leader>d", group = "Ddx" },
-  }, { prefix = "<leader>" })
-  -- ======================
   -- Nerd Legend --
   -- ======================
 

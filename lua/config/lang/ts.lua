@@ -1,7 +1,19 @@
 -- ~/.config/nvim/lua/lang/ts.lua
 ------------------------------------
+---@module 'config.lang.ts'
+---@class TSConfig
+---@field ts_conform fun(opts?: table): table
+---@field ts_lsp fun(opts?: table): table
+---@field ts_linter fun(opts?: table): table
+---@field ts_formatter fun(opts?: table): table[]
+---@field ts_filetype_detection fun(): table
+---@field ts_keymaps fun(opts?: table): table
+---@field ts_project_commands fun()
+---@field ts_root_dir fun(fname: string): string
+---@field ts_setup fun(opts?: table): TSConfig
+
 local M = {}
-function M.setup_ts_conform(opts)
+function M.ts_conform(opts)
   local prettier_available = vim.fn.executable("prettier") == 1
   local prettierd_available = vim.fn.executable("prettierd") == 1
   local eslint_available = vim.fn.executable("eslint") == 1
@@ -19,30 +31,9 @@ function M.setup_ts_conform(opts)
   if eslint_available then
     table.insert(ts_formatters, "eslint")
   end
-  local jsx_formatters = vim.deepcopy(ts_formatters)
-  opts.formatters_by_ft = vim.tbl_deep_extend("force", opts.formatters_by_ft or {}, {
-    typescript = ts_formatters,
-    typescriptreact = jsx_formatters,
-  })
-  opts.formatters = vim.tbl_deep_extend("force", opts.formatters or {}, {
-    prettier = {
-      prepend_args = { "--config", prettier_config },
-    },
-    prettierd = {
-      env = {
-        PRETTIERD_DEFAULT_CONFIG = vim.fn.expand("~/.config/nvim/.prettierrc"),
-      },
-    },
-    eslint = {
-      prepend_args = { "--fix-to-stdout", "--stdin" },
-    },
-    eslint_d = {
-      prepend_args = { "--fix-to-stdout", "--stdin" },
-    },
-  })
-  return opts
+   return opts
 end
-function M.setup_ts_lsp(opts)
+function M.ts_lsp(opts)
   local function create_command_handler(command, get_arguments)
     return function()
       local arguments = get_arguments()
@@ -143,14 +134,14 @@ function M.setup_ts_lsp(opts)
   }
   return opts
 end
-function M.setup_ts_linter(opts)
+function M.ts_linter(opts)
   require("lint").linters_by_ft = {
     typescript = { "eslint" },
     typescriptreact = { "eslint" },
   }
   return opts
 end
-function M.detect_ts_root_dir(fname)
+function M.ts_root_dir(fname)
   local util = require("lspconfig.util")
   local root = util.root_pattern(
     "tsconfig.json",
@@ -162,7 +153,7 @@ function M.detect_ts_root_dir(fname)
   )(fname) or util.root_pattern(".git")(fname)
   return root or vim.fn.getcwd()
 end
-function M.setup_ts_formatter(opts)
+function M.ts_formatter(opts)
   local null_ls = require("null-ls")
   opts.sources = vim.list_extend(opts.sources or {}, {
     null_ls.builtins.formatting.prettierd.with({
@@ -171,7 +162,7 @@ function M.setup_ts_formatter(opts)
   })
   return opts
 end
-function M.setup_ts_filetype_detection()
+function M.ts_filetype_detection()
   vim.filetype.add({
     extension = {
       ts = "typescript",
@@ -192,7 +183,7 @@ function M.setup_ts_filetype_detection()
     },
   })
 end
-function M.setup_ts_keymaps(opts)
+function M.ts_keymaps(opts)
   opts.defaults = vim.tbl_deep_extend("force", opts.defaults or {}, {
     ["<leader>ct"] = { name = "+typescript" },
     ["<leader>ctf"] = { "<cmd>lua require('conform').format()<cr>", "Format TypeScript" },
@@ -213,7 +204,7 @@ function M.setup_ts_keymaps(opts)
   })
   return opts
 end
-function M.setup_ts_project_commands()
+function M.ts_project_commands()
   local function execute_command(command, arguments)
     if vim.lsp.commands and vim.lsp.commands.execute then
       vim.lsp.commands.execute({
@@ -248,12 +239,12 @@ function M.setup_ts_project_commands()
   end, { desc = "Go To Source Definition" })
 end
 return {
-  conform = M.setup_ts_conform,
-  lsp = M.setup_ts_lsp,
-  linter = M.setup_ts_linter,
-  formatter = M.setup_ts_formatter,
-  keymaps = M.setup_ts_keymaps,
-  filetypes = M.setup_ts_filetype_detection,
-  commands = M.setup_ts_project_commands,
-  root_dir = M.detect_ts_root_dir,
+  conform = M.ts_conform,
+  lsp = M.ts_lsp,
+  linter = M.ts_linter,
+  formatter = M.ts_formatter,
+  keymaps = M.ts_keymaps,
+  filetypes = M.ts_filetype_detection,
+  commands = M.ts_project_commands,
+  root_dir = M.ts_root_dir,
 }

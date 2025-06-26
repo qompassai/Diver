@@ -44,14 +44,14 @@ return {
         RGB = true,
         RRGGBB = true,
         names = true,
-        RRGGBBAA = true, -- #RRGGBBAA hex codes
-        AARRGGBB = true, -- 0xAARRGGBB hex codes
-        rgb_fn = true, -- CSS rgb() and rgba() functions
-        hsl_fn = true, -- CSS hsl() and hsla() functions
-        css = true, -- Enable all CSS features: rgb_fn, hsl_fn, names, RGB, RRGGBB
+        RRGGBBAA = true,
+        AARRGGBB = true,
+        rgb_fn = true,
+        hsl_fn = true,
+        css = true,
         css_fn = true,
-        mode = "background", -- Set the display mode: foreground, background, virtualtext
-        tailwind = true, -- Enable tailwind colors
+        mode = "background",
+        tailwind = true,
         sass = { enable = true, parsers = { "css" } },
         virtualtext = "■",
         always_update = true,
@@ -78,10 +78,10 @@ return {
       "CccHighlighterToggle",
     },
     keys = {
-      { "<leader>cp", "<cmd>CccPick<cr>", desc = "Color picker" },
-      { "<leader>cc", "<cmd>CccConvert<cr>", desc = "Convert color" },
+      { "<leader>Cp", "<cmd>CccPick<cr>", desc = "Color picker" },
+      { "<leader>Cc", "<cmd>CccConvert<cr>", desc = "Convert color" },
       {
-        "<leader>ch",
+        "<leader>Ch",
         "<cmd>CccHighlighterToggle<cr>",
         desc = "Toggle color highlighter",
       },
@@ -160,12 +160,12 @@ return {
       document_color = {
         enabled = true,
         kind = "inline",
-        inline_symbol = "󰝤 ", -- only used in inline mode
-        debounce = 200, -- in milliseconds, only applied in insert mode
+        inline_symbol = "󰝤 ",
+        debounce = 200,
       },
       conceal = {
-        enabled = false, -- can be toggled by commands
-        symbol = "󱏿", -- only a single character is allowed
+        enabled = false,
+        symbol = "󱏿",
         highlight = {
           fg = "#38BDF8",
         },

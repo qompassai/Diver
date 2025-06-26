@@ -1,6 +1,8 @@
 -- /qompassai/Diver/lua/config/ui/html.lua
 ----------------------------------------
 -- Copyright (C) 2025 Qompass AI, All rights reserved
+---@diagnostic disable: undefined-field, duplicate-set-field, unused-local
+
 local M = {}
 local is_nightly = vim.fn.has("nvim-0.10") == 1
 function M.html_none_ls_sources(opts)
@@ -60,7 +62,6 @@ function M.html_lint(opts)
     end,
   })
 end
-
 function M.html_lsp(on_attach, capabilities)
   local lspconfig_ok, lspconfig = pcall(require, "lspconfig")
   if not lspconfig_ok then
@@ -98,7 +99,6 @@ function M.html_lsp(on_attach, capabilities)
     },
   })
 end
-
 function M.html_completion(opts)
   opts = opts or {}
   local htmx_attributes = {
@@ -192,7 +192,6 @@ function M.html_emmet(opts)
   vim.g.user_emmet_leader_key = "<C-z>"
   vim.g.user_emmet_mode = "a"
 end
-opts = opts or {}
 local preview_opts = opts.preview or {}
 local livepreview_ok, livepreview = pcall(require, "livepreview.config")
 if livepreview_ok then
@@ -252,15 +251,6 @@ M.default_opts = {
     auto_start = true,
   },
 }
-function M.setup_html(user_opts)
-  local merged_opts = vim.tbl_deep_extend("force", M.default_opts, user_opts or {})
-
-  M.html_lsp(merged_opts.lsp.on_attach, merged_opts.lsp.capabilities)
-  require("conform").setup(merged_opts.conform)
-  vim.diagnostic.config(merged_opts.lint)
-  require("nvim-treesitter.configs").setup(merged_opts.treesitter)
-  M.html_preview(merged_opts.preview)
-end
 function M.setup_html(opts)
   opts = opts or {}
   M.html_none_ls_sources(opts)

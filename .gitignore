@@ -1,5 +1,5 @@
 .tests/
 doc/tags
-
+diverflake.nix
 # prettier cache
 node_modules/

@@ -12,13 +12,11 @@ M.setup = function()
     "disable",
     "genmap",
     "langmap",
-    "luamap",
     "lintmap",
     "mojomap",
     "navmap",
     "pymap",
     "rustmap",
-    "themes",
   }
   for _, name in ipairs(mapping_files) do
     local ok, mod = pcall(require, "mappings." .. name)

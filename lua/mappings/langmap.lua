@@ -1,4 +1,4 @@
--- ~/.config/nvim/lua/mappings/lintmap.lua
+-- ~/.config/nvim/lua/mappings/langmap.lua
 -- ---------------------------------------
 -- Copyright (C) 2025 Qompass AI, All rights reserved
 

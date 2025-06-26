@@ -7,22 +7,7 @@ return {
     event = "VimEnter",
     config = true,
   },
-  {
-    "norcalli/nvim-colorizer.lua",
-    event = "BufReadPre",
-    config = function()
-      require("colorizer").setup({
-        filetypes = {
-          "*",
-          css = { css = true },
-        },
-        user_default_options = {
-          names = true,
-        },
-      })
-    end,
-  },
-  {
+    {
     "vyfor/cord.nvim",
     priority = 1000,
     lazy = false,

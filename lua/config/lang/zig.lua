@@ -1,7 +1,18 @@
--- ~/.config/nvim/lua/config/zig.lua
--- ~/.config/nvim/lua/config/zig.lua
+-- /Diver/lua/config/lang/zig.lua
+-- Diver Zig Config
+-- Copyright (C) 2025 Qompass AI, All rights reserved
+------------------------------------
+
+---@module 'config.lang.zig'
+---@class ZigConfigModule
+---@field zig_lsp fun(): table
+---@field zig_tools fun(): table
+---@field zig_diagnostics fun(): function
+---@field setup_zig fun(opts?: table): ZigConfig
+
 local M = {}
-function M.setup_zig()
+---@return table
+function M.zig_lsp()
   local function find_executable(names)
     return vim
       .iter(names)
@@ -18,6 +29,7 @@ function M.setup_zig()
   end
   local zls_path = find_executable({ "zls" }) or "zls"
   local zig_path = find_executable({ "zig" }) or "zig"
+  local zlint_path = find_executable({ "zlint" }) or "zlint"
   return {
     cmd = { zls_path },
     settings = {
@@ -34,22 +46,25 @@ function M.setup_zig()
         },
       },
     },
+    zlint_path = zlint_path
   }
 end
+---@return table
 function M.zig_tools()
   return {
     build_dir = "zig-out",
-    on_attach = function(client, bufnr)
+    on_attach = function(_, bufnr)
       vim.keymap.set("n", "<leader>zih", function()
         vim.lsp.inlay_hint.enable(bufnr, not vim.lsp.inlay_hint.is_enabled(bufnr))
       end, { buffer = bufnr, desc = "Toggle inlay hints" })
     end,
   }
 end
-vim.api.nvim_create_autocmd("BufWritePost", {
-  pattern = { "*.zig", "*.zon" },
-  callback = function(ctx)
-    local output = vim.fn.systemlist(zlint_path .. " --format github " .. vim.fn.shellescape(ctx.file))
+---@return function
+function M.zig_diagnostics()
+  return function(ctx)
+    local config = M.zig_lsp()
+    local output = vim.fn.systemlist(config.zlint_path .. " --format github " .. vim.fn.shellescape(ctx.file))
     local diagnostics = {}
     for _, line in ipairs(output) do
       local line_num, col_num, code, msg = line:match(":(%d+):(%d+): (%S+): (.*)")
@@ -64,6 +79,25 @@ vim.api.nvim_create_autocmd("BufWritePost", {
       end
     end
     vim.diagnostic.set(0, diagnostics)
-  end,
-})
+  end
+end
+---@class ZigConfig
+---@field lsp table
+---@field tools table
+---@field diagnostics function
+---@param opts? table
+---@return ZigConfig
+function M.setup_zig(opts)
+  opts = opts or {}
+  local lsp_config = M.zig_lsp()
+  vim.api.nvim_create_autocmd("BufWritePost", {
+    pattern = { "*.zig", "*.zon" },
+    callback = M.zig_diagnostics(),
+  })
+  return {
+    lsp = lsp_config,
+    tools = M.zig_tools(),
+    diagnostics = M.zig_diagnostics
+  }
+end
 return M

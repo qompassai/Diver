@@ -1,4 +1,6 @@
 -- ~/.config/nvim/lua/config/ui/line.lua
+--:TO DO
+---@diagnostic disable: undefined-field, undefined-global
 local M = {}
 
 function M.line_ai()
@@ -15,11 +17,9 @@ function M.line_ai()
   end
   return string.format("%s(%s)", status, status_info.model)
 end
-
 function M.line_rose_status()
   return rose_status_ok and rose_lualine or nil
 end
-
 function M.line_lsp()
   local clients = vim.lsp.get_clients()
   if next(clients) == nil then
@@ -31,7 +31,6 @@ function M.line_lsp()
   end
   return " " .. table.concat(lsp_names, ", ")
 end
-
 function M.line_datetime()
   local current_time = os.date("*t")
   return string.format(
@@ -44,10 +43,8 @@ function M.line_datetime()
     current_time.sec
   )
 end
-
 function M.line_debounce(func, timeout)
   local debounce_timer = nil
-
   return function(...)
     local args = { ... }
     if debounce_timer then
@@ -58,7 +55,6 @@ function M.line_debounce(func, timeout)
     end)
   end
 end
-
 function M.line_diagnostics()
   return {
     "diagnostics",
@@ -81,7 +77,6 @@ function M.line_diagnostics()
     always_visible = true,
   }
 end
-
 function M.line_extensions(opts)
   opts = opts or {}
   return {
@@ -120,7 +115,6 @@ function M.line_file_info(opts)
     cond = opts.cond,
   }
 end
-
 function M.line_file_size(opts)
   opts = opts or {}
   return {
@@ -246,9 +240,7 @@ function M.line_preview_fzf()
     vim.notify("fzf-lua is required for theme preview", vim.log.levels.ERROR)
     return
   end
-
   local current_theme = M.line_current_theme
-
   require("fzf-lua").fzf_exec(M.line_themes, {
     prompt = "Lualine Theme> ",
     actions = {
@@ -265,12 +257,10 @@ function M.line_preview_fzf()
     previewer = false,
   })
 end
-
 function M.line_wc()
   local wc = vim.fn.wordcount()
   return " " .. string.format("%d words, %d chars", wc.words, wc.chars)
 end
-
 function M.line_icon(opts)
   opts = opts or {}
   local type = opts.type or "filename"
@@ -305,7 +295,6 @@ function M.line_icon(opts)
     return ""
   end
 end
-
 function M.line_search_count(opts)
   opts = opts or {}
   return {
@@ -467,7 +456,6 @@ function M.line_setup(opts)
     inactive_winbar = {},
     extensions = M.line_extensions and M.line_extensions() or {},
   }
-
   if opts then
     config = vim.tbl_deep_extend("force", config, opts)
   end
