@@ -4,284 +4,134 @@
 ---@diagnostic disable: undefined-field, duplicate-set-field, unused-local
 
 local M = {}
-local is_nightly = vim.fn.has("nvim-0.10") == 1
-function M.html_none_ls_sources(opts)
+---@param opts? table
+---@return cmp.ConfigSchema
+function M.html_cmp(opts)
   opts = opts or {}
-  local null_ls_ok, null_ls = pcall(require, "none-ls")
-  if not null_ls_ok then
-    vim.notify("none-ls not available", vim.log.levels.WARN)
-    return {}
-  end
-  local nlsb = null_ls.builtins
+  local cmp = require("cmp")
+  local Protocol = require("vim.lsp.protocol")
+  local htmx_items = {
+    { label = "hx-get", insertText = 'hx-get="${1:url}"', kind = Protocol.CompletionItemKind.Property },
+    { label = "hx-post", insertText = 'hx-post="${1:url}"', kind = Protocol.CompletionItemKind.Property },
+    { label = "hx-put", insertText = 'hx-put="${1:url}"', kind = Protocol.CompletionItemKind.Property },
+    { label = "hx-delete", insertText = 'hx-delete="${1:url}"', kind = Protocol.CompletionItemKind.Property },
+    { label = "hx-trigger", insertText = 'hx-trigger="${1:event}"', kind = Protocol.CompletionItemKind.Property },
+    { label = "hx-swap", insertText = 'hx-swap="${1:innerHTML}"', kind = Protocol.CompletionItemKind.Property },
+    { label = "hx-target", insertText = 'hx-target="${1:selector}"', kind = Protocol.CompletionItemKind.Property },
+    { label = "hx-select", insertText = 'hx-select="${1:selector}"', kind = Protocol.CompletionItemKind.Property },
+    { label = "hx-confirm", insertText = 'hx-confirm="${1:message}"', kind = Protocol.CompletionItemKind.Property },
+    { label = "hx-indicator", insertText = 'hx-indicator="${1:selector}"', kind = Protocol.CompletionItemKind.Property },
+  }
+
+  return {
+    sources = cmp.config.sources({
+      { name = "luasnip" },
+      { name = "nvim_lsp" },
+      { name = "path" },
+      { name = "buffer", keyword_length = 3 },
+      { name = "codeium" },
+      { name = "html_custom", option = { items = htmx_items } },
+    })
+  }
+end
+
+---@param opts? table
+---@return table[]
+function M.html_nls(opts)
+  opts = opts or {}
+  local nls = require("none-ls")
+  local nlsb = nls.builtins
   local utils = require("none-ls.utils")
   local prettierConfig = {
     prefer_local = "node_modules/.bin",
     cwd = utils.root_pattern(
-      ".prettierrc",
-      ".prettierrc.json",
-      ".prettierrc.yml",
-      ".prettierrc.yaml",
-      ".prettierrc.json5",
-      ".prettierrc.js",
-      ".prettierrc.cjs",
-      "prettier.config.js",
-      "prettier.config.cjs",
-      "package.json"
+      ".prettierrc", ".prettierrc.json", ".prettierrc.yml", ".prettierrc.yaml",
+      ".prettierrc.json5", ".prettierrc.js", ".prettierrc.cjs",
+      "prettier.config.js", "prettier.config.cjs", "package.json"
     ),
   }
-  local prettierd = nlsb.formatting.prettierd.with(vim.tbl_extend("force", prettierConfig, {
-    ft = "html",
-    runtime_condition = function(_)
-      return utils.executable("prettierd")
-    end,
-  }))
-  local prettier = nlsb.formatting.prettier.with(vim.tbl_extend("force", prettierConfig, {
-    ft = "html",
-    runtime_condition = function(_)
-      return not utils.executable("prettierd")
-    end,
-  }))
-  return { prettierd, prettier }
-end
-function M.html_lint(opts)
-  opts = opts or {}
-  local config = {
-    underline = true,
-    virtual_text = true,
-    signs = true,
-    update_in_insert = true,
+
+  return {
+    nlsb.formatting.prettierd.with(vim.tbl_extend("force", prettierConfig, {
+      filetypes = { "html" },
+      runtime_condition = function() return utils.executable("prettierd") end
+    })),
+    nlsb.formatting.prettier.with(vim.tbl_extend("force", prettierConfig, {
+      filetypes = { "html" },
+      runtime_condition = function() return not utils.executable("prettierd") end
+    }))
   }
-  vim.diagnostic.config(config)
-  vim.api.nvim_create_autocmd("FileType", {
-    pattern = { "html" },
-    callback = function()
-      vim.diagnostic.config({
-        severity_sort = true,
-        float = { border = "rounded" },
-      })
-    end,
-  })
 end
-function M.html_lsp(on_attach, capabilities)
-  local lspconfig_ok, lspconfig = pcall(require, "lspconfig")
-  if not lspconfig_ok then
-    vim.notify("lspconfig not available", vim.log.levels.WARN)
-    return
-  end
-  lspconfig.html.setup({
-    on_attach = on_attach,
-    capabilities = capabilities,
+
+---@param opts? table
+function M.html_lsp(opts)
+  opts = opts or {}
+  local lsp = require("lspconfig")
+  lsp.html.setup({
+    on_attach = opts.on_attach,
+    capabilities = opts.capabilities,
     filetypes = { "html", "handlebars", "htmldjango", "blade", "erb", "ejs" },
     init_options = {
       configurationSection = { "html", "css" },
-      embeddedLanguages = {
-        css = true,
-        javascript = true,
-      },
-      provideFormatter = true,
-    },
+      embeddedLanguages = { css = true, javascript = true },
+      provideFormatter = true
+    }
   })
-  lspconfig.emmet_ls.setup({
-    on_attach = on_attach,
-    capabilities = capabilities,
+
+  lsp.emmet_ls.setup({
+    on_attach = opts.on_attach,
+    capabilities = opts.capabilities,
     filetypes = {
-      "html",
-      "javascriptreact",
-      "typescriptreact",
-      "haml",
-      "xml",
-      "xsl",
-      "pug",
-      "slim",
-      "erb",
-      "vue",
-      "svelte",
-    },
+      "html", "javascriptreact", "typescriptreact", "haml", "xml", "xsl",
+      "pug", "slim", "erb", "vue", "svelte"
+    }
   })
-end
-function M.html_completion(opts)
-  opts = opts or {}
-  local htmx_attributes = {
-    { label = "hx-get", insertText = 'hx-get="${1:url}"', kind = vim.lsp.protocol.CompletionItemKind.Property },
-    { label = "hx-post", insertText = 'hx-post="${1:url}"', kind = vim.lsp.protocol.CompletionItemKind.Property },
-    { label = "hx-put", insertText = 'hx-put="${1:url}"', kind = vim.lsp.protocol.CompletionItemKind.Property },
-    {
-      label = "hx-delete",
-      insertText = 'hx-delete="${1:url}"',
-      kind = vim.lsp.protocol.CompletionItemKind.Property,
-    },
-    {
-      label = "hx-trigger",
-      insertText = 'hx-trigger="${1:event}"',
-      kind = vim.lsp.protocol.CompletionItemKind.Property,
-    },
-    {
-      label = "hx-swap",
-      insertText = 'hx-swap="${1:innerHTML}"',
-      kind = vim.lsp.protocol.CompletionItemKind.Property,
-    },
-    {
-      label = "hx-target",
-      insertText = 'hx-target="${1:selector}"',
-      kind = vim.lsp.protocol.CompletionItemKind.Property,
-    },
-    {
-      label = "hx-select",
-      insertText = 'hx-select="${1:selector}"',
-      kind = vim.lsp.protocol.CompletionItemKind.Property,
-    },
-    {
-      label = "hx-confirm",
-      insertText = 'hx-confirm="${1:message}"',
-      kind = vim.lsp.protocol.CompletionItemKind.Property,
-    },
-    {
-      label = "hx-indicator",
-      insertText = 'hx-indicator="${1:selector}"',
-      kind = vim.lsp.protocol.CompletionItemKind.Property,
-    },
-  }
-end
-function M.html_treesitter(opts)
-  opts = opts or {}
-  local ts_ok, ts_configs = pcall(require, "nvim-treesitter.configs")
-  if not ts_ok then
-    vim.notify("nvim-treesitter not available", vim.log.levels.WARN)
-    return
-  end
-  ts_configs.setup({
-    autotag = {
-      enable = true,
-      enable_rename = true,
-      enable_close = true,
-      enable_close_on_slash = true,
-    },
-    sync_install = true,
-    ignore_install = {},
-    auto_install = true,
-    modules = {},
-    ensure_installed = { "html", "css", "javascript", "typescript" },
-    highlight = {
-      enable = true,
-      additional_vim_regex_highlighting = false,
-    },
-    indent = {
-      enable = true,
-    },
-  })
-end
-function M.html_emmet(opts)
-  opts = opts or {}
-  vim.g.user_emmet_settings = {
-    variables = {
-      lang = "en",
-    },
-    html = {
-      default_attributes = {
-        option = { value = nil },
-        textarea = { id = nil, name = nil, cols = 10, rows = 10 },
-      },
-      snippets = {
-        ["!"] = '<!DOCTYPE html>\n<html lang="${lang}">\n<head>\n\t<meta charset="UTF-8">\n\t<meta name="viewport" content="width=device-width, initial-scale=1.0">\n\t<title>${1:Document}</title>\n\t<script src="https://unpkg.com/htmx.org@1.9.6"></script>\n</head>\n<body>\n\t${0}\n</body>\n</html>',
-        ["htmx"] = '<div hx-${1:get}="${2:url}" hx-trigger="${3:event}" hx-target="${4:#target}">\n\t${0}\n</div>',
-        ["hx-form"] = '<form hx-${1:post}="${2:url}" hx-target="${3:#result}">\n\t${0}\n</form>',
-        ["hx-button"] = '<button hx-${1:get}="${2:url}" hx-target="${3:#target}">${4:Click me}</button>',
-      },
-    },
-  }
-  vim.g.user_emmet_leader_key = "<C-z>"
-  vim.g.user_emmet_mode = "a"
-end
-local preview_opts = opts.preview or {}
-local livepreview_ok, livepreview = pcall(require, "livepreview.config")
-if livepreview_ok then
-  livepreview.set({
-    port = preview_opts.port or 8090,
-    browser_cmd = preview_opts.browser_cmd,
-    auto_start = preview_opts.auto_start or false,
-    refresh_delay = preview_opts.refresh_delay or 150,
-    allowed_file_types = preview_opts.allowed_file_types or { "html", "markdown", "asciidoc", "svg" },
-  })
-else
-  vim.notify("livepreview not available", vim.log.levels.WARN)
 end
 
+---@param opts? table
+function M.html_preview(opts)
+  opts = opts or {}
+  local livepreview = require("livepreview.config")
+  livepreview.set(vim.tbl_extend("force", {
+    port = 8090,
+    browser_cmd = "firefox-developer-edition",
+    auto_start = true,
+    refresh_delay = 150,
+    allowed_file_types = { "html", "markdown", "asciidoc", "svg" }
+  }, opts))
+end
+
+---@param opts? table
+---@return conform.Config
 function M.html_conform(opts)
   opts = opts or {}
-  local conform_ok, conform = pcall(require, "conform")
-  if not conform_ok then
-    vim.notify("conform not available", vim.log.levels.WARN)
-    return
-  end
-end
-M.default_opts = {
-  lsp = {
-    on_attach = function(client, bufnr)
-      local bufmap = function(mode, lhs, rhs)
-        vim.keymap.set(mode, lhs, rhs, { buffer = bufnr })
-      end
-      bufmap("n", "gd", vim.lsp.buf.definition)
-      bufmap("n", "K", vim.lsp.buf.hover)
-    end,
-    capabilities = require("cmp_nvim_lsp").default_capabilities(),
-  },
-  conform = {
+  return {
     formatters_by_ft = {
-      html = { "prettierd", "djlint" },
-      htmldjango = { "djlint" },
+      html = { "prettierd" },
+      htmldjango = { "prettierd" },
+      blade = { "prettierd" }
     },
-    formatters = {
-      djlint = {
-        command = "djlint",
-        args = { "--reformat", "-" },
-      },
-    },
-  },
-  lint = {
-    virtual_text = true,
-    underline = true,
-    update_in_insert = false,
-  },
-  treesitter = {
-    auto_install = true,
-    ensure_installed = { "html", "htmldjango" },
-  },
-  preview = {
-    port = 8080,
-    auto_start = true,
-  },
-}
-function M.setup_html(opts)
+    format_on_save = {
+      timeout_ms = 500,
+      lsp_fallback = true
+    }
+  }
+end
+---@param opts? table
+---@return table
+function M.html_setup(opts)
   opts = opts or {}
-  M.html_none_ls_sources(opts)
-  M.html_completion(opts)
-  M.html_lint(opts)
-  M.html_conform(opts)
-  M.html_emmet(opts)
-  M.html_lsp(opts.on_attach, opts.capabilities)
-  M.html_preview(opts)
-  M.html_treesitter(opts)
-  vim.api.nvim_create_autocmd("FileType", {
-    pattern = { "html" },
-    callback = function()
-      local buf = vim.api.nvim_get_current_buf()
-      vim.keymap.set("n", "<leader>cf", function()
-        require("conform").format({ bufnr = buf })
-      end, { buffer = buf, desc = "Format HTML" })
-      vim.keymap.set("i", "<C-z>,", "<C-y>,", { buffer = buf, desc = "Emmet expand" })
-      vim.keymap.set("n", "<leader>cp", function()
-        vim.cmd("LivePreviewToggle")
-      end, { buffer = buf, desc = "Toggle live preview" })
+  return {
+    cmp = M.html_cmp(opts),
+    nls = M.html_nls(opts),
+    lsp = function(lsp_opts)
+      M.html_lsp(vim.tbl_extend("force", opts, lsp_opts or {}))
     end,
-  })
-  if is_nightly then
-    vim.api.nvim_create_autocmd("FileType", {
-      pattern = { "html" },
-      callback = function()
-        vim.o.formatexpr = "v:lua.require'conform'.formatexpr()"
-      end,
-    })
-  end
-  vim.notify("HTML configuration loaded successfully", vim.log.levels.INFO)
+    treesitter = M.html_treesitter(opts),
+    lint = M.html_lint(opts),
+    emmet = M.html_emmet(opts),
+    preview = M.html_preview(opts),
+    conform = M.html_conform(opts)
+  }
 end
 return M

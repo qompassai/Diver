@@ -1,0 +1,3 @@
+-- ~/.config/nvim/lua/types/lang/html.lua
+-- --------------------------------------
+-- Copyright (C) 2025 Qompass AI, All rights reserved

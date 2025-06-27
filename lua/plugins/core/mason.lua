@@ -5,6 +5,7 @@ return {
     dependencies = {
       "mason-org/mason.nvim",
       "neovim/nvim-lspconfig",
+dependencies = { 'saghen/blink.cmp' },
       "hrsh7th/cmp-nvim-lsp",
       "WhoIsSethDaniel/mason-tool-installer.nvim",
       "b0o/SchemaStore.nvim",
