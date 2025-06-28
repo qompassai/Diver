@@ -1,29 +1,53 @@
---~/.config/nvim/lua/config/init.lua
+-- Qompass AI Diver Config Init
+-- Copyright (C) 2025 Qompass AI
 ---@module 'config.init'
 ---@class ConfigInitModule
----@field setup_all fun(opts?: table): nil
-
+---@field config fun(opts?: table): nil
 local M = {}
-
 ---@param opts? table
 ---@return nil
-function M.setup_all(opts)
-  opts = opts or {}
-  local core = require("config.core")
-  core.setup_all_core(opts)
-  local lang = require("config.lang")
-  lang.setup_all_lang(opts)
-  local ui = require("config.ui")
-  ui.setup_all_ui(opts)
-  local cicd = require("config.cicd")
-  cicd.setup_all_cicd(opts)
-  pcall(function()
-    local cloud = require("config.cloud")
-    if cloud.setup_all_cloud then
-      cloud.setup_all_cloud(opts)
+function M.config(opts)
+    opts = opts or {}
+    local verbose = opts.debug or false
+    local function safe_require(name)
+        local ok, mod = pcall(require, name)
+        if not ok then
+            if verbose then
+                vim.notify(string.format('[Diver] Failed to load %s: %s', name,
+                                         mod), vim.log.levels.ERROR)
+            end
+            return nil
+        end
+        if verbose then
+            vim.notify(string.format('[Diver] Loaded %s', name),
+                       vim.log.levels.INFO)
+        end
+        return mod
     end
-  end)
+    safe_require('config.options')
+    safe_require('config.autocmds')
+    local keys = safe_require('config.keymaps')
+    if keys and keys.setup then keys.setup() end
+    safe_require('config.lazy')
+    if opts.core ~= false then
+        local core = safe_require('config.core')
+        if core and core.core_config then core.core_config(opts) end
+    end
+    if opts.lang ~= false then
+        local lang = safe_require('config.lang')
+        if lang and lang.lang_config then lang.lang_config(opts) end
+    end
+    if opts.ui ~= false then
+        local ui = safe_require('config.ui')
+        if ui and ui.ui_config then ui.ui_config(opts) end
+    end
+    if opts.cicd ~= false then
+        local cicd = safe_require('config.cicd')
+        if cicd and cicd.cicd_config then cicd.cicd_config(opts) end
+    end
+    if opts.cloud ~= false then
+        local cloud = safe_require('config.cloud')
+        if cloud and cloud.cloud_config then cloud.cloud_config(opts) end
+    end
 end
-
----@return ConfigInitModule
 return M

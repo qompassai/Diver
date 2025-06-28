@@ -1,16 +1,16 @@
+-- /qompassai/Diver/lua/plugins/ai/miniai.lua
+-- Qompass AI Diver MiniAI Plugin Spec
+-- Copyright (C) 2025 Qompass AI, All rights reserved
+-- --------------------------------------------------
 return {
-  "echasnovski/mini.ai",
-  enabled = "false",
-  version = "*", -- Use the latest stable version
-  event = "VeryLazy", -- Load the plugin when needed
-  opts = {
-    n_lines = 500, -- Number of lines within which textobject is searched
-    custom_textobjects = {
-      -- Add any custom textobjects here
+    'echasnovski/mini.ai',
+    enabled = 'false',
+    version = '*',
+    event = 'VeryLazy',
+    opts = {
+        n_lines = 500,
+        custom_textobjects = {},
+        search_method = 'cover_or_next'
     },
-    search_method = "cover_or_next",
-  },
-  config = function(_, opts)
-    require("mini.ai").setup(opts)
-  end,
+    config = function(_, opts) require('mini.ai').setup(opts) end
 }

@@ -1,0 +1,13 @@
+-- ~/.config/nvim/lua/types/lang/conform.lua
+-- -----------------------------------------
+-- Copyright (C) 2025 Qompass AI, All rights reserved
+---@module 'config.lang.conform'
+---@class ConformConfig
+---@field default_format_opts? table
+---@field formatters? table<string, table>
+---@field formatters_by_ft? table<string, string[]>
+---@field format_on_save? boolean|table
+---@field format_after_save? boolean|table
+---@field notify_on_error? boolean
+---@field notify_no_formatters? boolean
+---@field log_level? integer

@@ -1,3 +1,7 @@
+-- /qompassai/Diver/lua/types/lang/lua.lua
+-- Qompass AI Diver Lua Types
+-- Copyright (C) 2025 Qompass AI, All rights reserved
+------------------------------------------------------
 ---@class LuaLangModule
 ---@field lua_cmp fun(): table
 ---@field lua_conform fun(opts?: table): table
@@ -17,3 +21,4 @@
 ---@field with fun(opts: table): table
 ---@class LuaUtils
 ---@field mark_pure fun(src: table): PureMarker
+---@type LuaLangModule

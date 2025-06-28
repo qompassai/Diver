@@ -1,1 +1,1 @@
-return { "glacambre/firenvim", lazy = true, build = ":call firenvim#install(0)" }
+return {'glacambre/firenvim', lazy = true, build = ':call firenvim#install(0)'}

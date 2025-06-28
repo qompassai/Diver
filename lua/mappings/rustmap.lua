@@ -5,11 +5,14 @@ function M.setup_rustmap()
     vim.api.nvim_create_autocmd("FileType", {
         pattern = {"rust", "toml"},
         group = group,
-        once = true,
         callback = function(args)
             if not vim.api.nvim_buf_is_loaded(args.buf) then return end
             local bufnr = args.buf
             local filetype = vim.bo[bufnr].filetype
+            local filename = vim.fn.expand('%:t')
+            if filetype == "toml" and filename ~= "Cargo.toml" then
+                return
+            end
             if not vim.b[bufnr].rustmap_registered then
                 if filetype == "toml" then
                     require("which-key").register({

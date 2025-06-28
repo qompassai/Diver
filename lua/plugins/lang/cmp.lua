@@ -4,13 +4,13 @@
 return {
     {
         "saghen/blink.cmp",
-        version = "v1.4.1",
+        version = "1.*",
         enabled = function() return vim.g.use_blink_cmp end,
-        event = "InsertEnter",
         dependencies = {
-            "L3MON4D3/LuaSnip", "rafamadriz/friendly-snippets",
-            "hrsh7th/cmp-nvim-lua", "hrsh7th/cmp-buffer",
-            "moyiz/blink-emoji.nvim", "Kaiser-Yang/blink-cmp-dictionary",
+            {"L3MON4D3/LuaSnip", version = "v2.*"},
+            "rafamadriz/friendly-snippets", "hrsh7th/cmp-nvim-lua",
+            "hrsh7th/cmp-buffer", "moyiz/blink-emoji.nvim",
+            "Kaiser-Yang/blink-cmp-dictionary",
             {"saghen/blink.compat", version = "*", opts = {}}
         },
         config = function()
@@ -19,7 +19,6 @@ return {
     }, {
         "hrsh7th/nvim-cmp",
         enabled = function() return not vim.g.use_blink_cmp end,
-        event = "InsertEnter",
         dependencies = {
             "hrsh7th/cmp-nvim-lsp", "L3MON4D3/LuaSnip", "hrsh7th/cmp-buffer",
             "hrsh7th/cmp-path", "onsails/lspkind.nvim"

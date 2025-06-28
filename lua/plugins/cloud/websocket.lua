@@ -1,7 +1,1 @@
-return {
-  "samsze0/websocket.nvim",
-  lazy = true,
-  dependencies = {
-    "samsze0/utils.nvim",
-  },
-}
+return {'samsze0/websocket.nvim', dependencies = {'samsze0/utils.nvim'}}

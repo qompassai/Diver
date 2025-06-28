@@ -1,14 +1,14 @@
+-- /qompassai/Diver/lua/plugins/edu/zotcite.lua
+-- Qompass AI Diver Zotcite Plugin Spec
+-- Copyright (C) 2025 Qompass AI, All rights reserved
+-- --------------------------------------------------
 return {
-  "jalvesaq/zotcite",
-  ft = { "markdown", "text", "latex", "tex" },
-  lazy = true,
-  dependencies = {
-    "nvim-treesitter/nvim-treesitter",
-    "nvim-telescope/telescope.nvim",
-  },
-  config = function()
-    require("zotcite").setup({
-      python_path = "/usr/bin/python3",
-    })
-  end,
+    'jalvesaq/zotcite',
+    ft = {'markdown', 'text', 'latex', 'tex'},
+    dependencies = {
+        'nvim-treesitter/nvim-treesitter', 'nvim-telescope/telescope.nvim'
+    },
+    config = function()
+        require('zotcite').setup({python_path = '/usr/bin/python3'})
+    end
 }
