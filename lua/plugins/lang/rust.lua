@@ -1,4 +1,4 @@
--- ~/.config/nvim/lua/plugins/lang/rust.lua
+-- /qompassai/Diver/lua/plugins/lang/rust.lua
 -- Qompass AI Diver Rust Plugin Spec
 -- Copyright (C) 2025 Qompass AI, All rights reserved
 -- --------------------------------------------------
@@ -13,17 +13,16 @@ return {
             vim.g.rustaceanvim = {
                 tools = {float_win_config = {border = 'rounded'}},
                 server = {
-                    on_attach = rust.on_attach,
+                    on_attach = rust.rust_on_attach,
                     capabilities = capabilities,
-                    settings = {
-                        ['rust-analyzer'] = rust.get_analyzer_settings()
-                    }
+                    settings = {['rust-analyzer'] = rust.rust_settings()}
                 }
             }
             require('null-ls').setup({sources = rust.rust_nls()})
             vim.lsp.set_log_level('INFO')
             rust.rust_dap()
-            rust.rust()
+            rust.rust_crates()
+            rust.rust_setup()
         end,
         dependencies = {
             'nvim-lua/plenary.nvim', 'nvim-treesitter/nvim-treesitter',

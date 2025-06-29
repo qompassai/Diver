@@ -1,8 +1,13 @@
--- ~/.config/nvim/lua/mappings/navmap.lua
+-- /qompassai/Diver/lua/mappings/navmap.lua
+-- Qompass AI Diver Nav Plugin Mappings
+-- Copyright (C) 2025 Qompass AI, All rights reserved
+-- --------------------------------------------------
 local M = {}
 function M.setup_navmap()
     local map = vim.keymap.set
-    local opts = {noremap = true, silent = true} -- Nerd Translate Legend:
+    local opts = {noremap = true, silent = true}
+
+    -- Nerd Translate Legend:
     --
     -- 'Oil': A file manager that lets you interactively edit your directory/file systems
     -- 'Treesitter': A parsing system that provides detailed information about the structure of source code
@@ -20,6 +25,87 @@ function M.setup_navmap()
     -- 'Parameter': A value that you pass into a function
     -- 'Code Folding': Hiding parts of your code to make it easier to read
     -- General Buffer navigation
+
+    -- -------------- | Harpoon Mappings | ---------------------
+    local ok, wk = pcall(require, 'which-key')
+    if ok then
+        wk.register({
+            H = {
+                name = '+Harpoon',
+
+                -- In normal mode, press 'Space' + 'h' + 'a' to add the current file to Harpoon marks.
+                a = {
+                    function()
+                        require('harpoon.mark').add_file()
+                    end, 'Add current file to Harpoon marks'
+                },
+
+                -- In normal mode, press 'Space' + 'h' + 'm' to open the Harpoon quick menu.
+                m = {
+                    function()
+                        require('harpoon.ui').toggle_quick_menu()
+                    end, 'Open Harpoon quick menu'
+                },
+
+                -- In normal mode, press 'Space' + 'h' + '1' to navigate to Harpoon mark 1.
+                ['1'] = {
+                    function()
+                        require('harpoon.ui').nav_file(1)
+                    end, 'Navigate to Harpoon mark 1'
+                },
+
+                -- In normal mode, press 'Space' + 'h' + '2' to navigate to Harpoon mark 2.
+                ['2'] = {
+                    function()
+                        require('harpoon.ui').nav_file(2)
+                    end, 'Navigate to Harpoon mark 2'
+                },
+
+                -- In normal mode, press 'Space' + 'h' + '3' to navigate to Harpoon mark 3.
+                ['3'] = {
+                    function()
+                        require('harpoon.ui').nav_file(3)
+                    end, 'Navigate to Harpoon mark 3'
+                },
+
+                -- In normal mode, press 'Space' + 'h' + '4' to navigate to Harpoon mark 4.
+                ['4'] = {
+                    function()
+                        require('harpoon.ui').nav_file(4)
+                    end, 'Navigate to Harpoon mark 4'
+                },
+
+                -- In normal mode, press 'Space' + 'h' + 'n' to navigate to the next Harpoon mark.
+                n = {
+                    function()
+                        require('harpoon.ui').nav_next()
+                    end, 'Navigate to next Harpoon mark'
+                },
+
+                -- In normal mode, press 'Space' + 'h' + 'p' to navigate to the previous Harpoon mark.
+                p = {
+                    function()
+                        require('harpoon.ui').nav_prev()
+                    end, 'Navigate to previous Harpoon mark'
+                },
+
+                -- In normal mode, press 'Space' + 'h' + 't' to navigate to Harpoon terminal 1.
+                t = {
+                    function()
+                        require('harpoon.term').gotoTerminal(1)
+                    end, 'Navigate to Harpoon terminal 1'
+                },
+
+                -- In normal mode, press 'Space' + 'h' + 'c' to send 'ls -La' command to Harpoon terminal 1.
+                c = {
+                    function()
+                        require('harpoon.term').sendCommand(1, 'ls -La')
+                    end, 'Send command to Harpoon terminal 1'
+                }
+            }
+        }, {prefix = '<leader>', mode = 'n'})
+    end
+
     map('n', '<tab>', '<cmd>BufferLineCycleNext<CR>',
         {noremap = true, silent = true, desc = 'buffer goto next'})
     map('n', '<S-tab>', '<cmd>BufferLineCyclePrev<CR>',

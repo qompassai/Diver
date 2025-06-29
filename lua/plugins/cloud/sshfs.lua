@@ -1,31 +1,25 @@
+-- /qompassai/Diver/lua/plugins/cloud/sshfs.lua
+-- Qompass AI Diver SSHFS Plugin Spec
+-- Copyright (C) 2025 Qompass AI, All rights reserved
+------------------------------------------------------
 return {
     'nosduco/remote-sshfs.nvim',
-    lazy = true,
-    dependencies = {'nvim-telescope/telescope.nvim'},
-    config = function() require('telescope').load_extension('remote-sshfs') end,
-    opts = {
-        connections = {
-            ssh_configs = {
-                vim.fn.expand('$HOME/.ssh/config'), '/etc/ssh/ssh_config'
-            },
-            sshfs_args = {'-o', 'reconnect', '-o', 'ConnectTimeout=5'}
-        },
-        mounts = {
-            base_dir = vim.fn.expand('$HOME/.sshfs/'),
-            unmount_on_exit = true
-        },
-        handlers = {
-            on_connect = {change_dir = true},
-            on_disconnect = {clean_mount_folders = false}
-        },
-        ui = {
-            select_prompts = true,
-            confirm = {connect = true, change_dir = false}
-        },
-        log = {
-            enable = true,
-            truncate = false,
-            types = {all = true, util = true, handler = true, sshfs = true}
-        }
-    }
+    dependencies = {'ibhagwan/fzf-lua'},
+    config = function()
+        require('remote-sshfs').setup(require('config.cloud.sshfs').opts)
+        local sshfs = require('remote-sshfs')
+        local fzf = require('fzf-lua')
+        vim.keymap.set('n', '<leader>ss', function()
+            fzf.fzf_exec(sshfs.list_connections(), {
+                prompt = 'SSHFS > ',
+                actions = {
+                    ['default'] = function(selected)
+                        if selected[1] then
+                            sshfs.connect(selected[1])
+                        end
+                    end
+                }
+            })
+        end, {desc = '[SSHFS] Connect to remote host'})
+    end
 }

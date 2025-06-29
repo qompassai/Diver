@@ -5,9 +5,7 @@
 return {
     'jalvesaq/zotcite',
     ft = {'markdown', 'text', 'latex', 'tex'},
-    dependencies = {
-        'nvim-treesitter/nvim-treesitter', 'nvim-telescope/telescope.nvim'
-    },
+    dependencies = {'nvim-treesitter/nvim-treesitter', 'ibhagwan/fzf-lua'},
     config = function()
         require('zotcite').setup({python_path = '/usr/bin/python3'})
     end

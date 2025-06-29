@@ -1,5 +1,7 @@
--- Qompass AI Diver Config Init
--- Copyright (C) 2025 Qompass AI
+-- /qompassai/Diver/lua/config/init.lua
+-- Qompass AI Diver Config Module
+-- Copyright (C) 2025 Qompass AI, All rights reserved
+------------------------------------------------------
 ---@module 'config.init'
 ---@class ConfigInitModule
 ---@field config fun(opts?: table): nil

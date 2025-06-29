@@ -3,6 +3,8 @@
 -- Copyright (C) 2025 Qompass AI, All rights reserved
 -- -----------------------------------------
 local M = {}
+local go_config = require('config.lang.go')
+local rust_config = require('config.lang.rust')
 function M.capabilities()
     local capabilities = vim.lsp.protocol.make_client_capabilities()
     capabilities = require('cmp_nvim_lsp').default_capabilities(capabilities)
@@ -38,10 +40,11 @@ function M.on_attach(client, bufnr)
                'Format Buffer')
     end
 end
-function M.setup(opts)
+function M.lsp_setup(opts)
     opts = opts or {}
     local lspconfig = require('lspconfig')
     local util = require('lspconfig.util')
+    local capabilities = M.capabilities()
     local default_config = {
         on_attach = M.on_attach,
         capabilities = M.capabilities(),
@@ -54,7 +57,6 @@ function M.setup(opts)
         cssls = {},
         dockerls = {},
         elmls = {},
-        gopls = {},
         graphql = {},
         html = {},
         jdtls = {},
@@ -68,7 +70,10 @@ function M.setup(opts)
             on_attach = M.on_attach,
             capabilities = M.capabilities()
         }),
-        rust_analyzer = require('config.lang.rust').get_config(),
+        rust_analyzer = rust_config.rust_lsp({
+            on_attach = M.on_attach,
+            capabilities = capabilities
+        }),
         sqlls = {},
         tailwindcss = {},
         taplo = {},
@@ -111,7 +116,7 @@ function M.setup(opts)
         update_in_insert = true,
         severity_sort = true
     })
-    require('config.lang.go').setup(M.on_attach, M.capabilities())
+    go_config.go_lsp(M.on_attach, M.capabilities())
     require('config.lang.scala').setup(M.on_attach, M.capabilities())
     require('config.lang.zig').setup(M.on_attach, M.capabilities())
 end

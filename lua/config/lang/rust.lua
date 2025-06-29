@@ -97,6 +97,13 @@ function M.rust_lsp(capabilities)
             settings = {['rust-analyzer'] = M.rust_settings()}
         }
     }
+    return {
+        rust_analyzer = {
+            on_attach = M.rust_on_attach,
+            capabilities = capabilities,
+            settings = {['rust-analyzer'] = M.rust_settings()}
+        }
+    }
 end
 function M.rust_nls()
     local null_ls = require('null-ls')

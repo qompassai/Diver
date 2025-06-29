@@ -1,9 +1,12 @@
--- pymap.lua
+-- /qompassai/Diver/lua/mappings/pymap.lua
+-- Qompass AI Diver Python Lang Mappings
+-- Copyright (C) 2025 Qompass AI, All rights reserved
+-- --------------------------------------------------
 local M = {}
 function M.setup_pymap()
     local map = vim.keymap.set
     local opts = {noremap = true, silent = true}
-    vim.api.nvim_create_autocmd("LspAttach", {
+    vim.api.nvim_create_autocmd('LspAttach', {
         callback = function(ev)
             local bufnr = ev.buf
             local bufopts = {noremap = true, silent = true, buffer = bufnr}
@@ -38,146 +41,151 @@ function M.setup_pymap()
             --   Example: Like finding every mention of a character's name in a book to track their appearances.
             ----------------------------------------------------------------------------------------------------------------
             -- Python Debugging Keymaps
-            map("n", "<leader>dpm",
-                function() require("dap-python").test_method() end,
-                vim.tbl_extend("force", bufopts,
-                               {desc = "[d]ebug [p]ython [m]ethod"}))
+            map('n', '<leader>dpm',
+                function() require('dap-python').test_method() end,
+                vim.tbl_extend('force', bufopts,
+                               {desc = '[d]ebug [p]ython [m]ethod'}))
 
-            map("n", "<leader>dpc",
-                function() require("dap-python").test_class() end,
-                vim.tbl_extend("force", opts,
-                               {desc = "[d]ebug [p]ython [c]lass"}))
+            map('n', '<leader>dpc',
+                function() require('dap-python').test_class() end,
+                vim.tbl_extend('force', opts,
+                               {desc = '[d]ebug [p]ython [c]lass'}))
 
-            map("n", "<leader>dps",
-                function() require("dap-python").debug_selection() end,
-                vim.tbl_extend("force", opts,
-                               {desc = "[d]ebug [p]ython [s]election"}))
+            map('n', '<leader>dps',
+                function() require('dap-python').debug_selection() end,
+                vim.tbl_extend('force', opts,
+                               {desc = '[d]ebug [p]ython [s]election'}))
 
-            map("n", "<leader>pd", vim.lsp.buf.definition, vim.tbl_extend(
-                    "force", opts, {desc = "🐍 [p]ython go to [d]efinition"}))
-            map("n", "<leader>pr", vim.lsp.buf.references, vim.tbl_extend(
-                    "force", opts, {desc = "🐍 [p]ython find [r]eferences"}))
-            map("n", "<leader>pgi", vim.lsp.buf.implementation, vim.tbl_extend(
-                    "force", opts, {desc = "🐍 [p]ython [g]o to [i]mplementation"}))
-            map("n", "<leader>pl", function() vim.cmd("PythonLint") end,
-                vim.tbl_extend("force", opts, {desc = "[p]ython [l]int"}))
+            map('n', '<leader>pd', vim.lsp.buf.definition, vim.tbl_extend(
+                    'force', opts, {desc = '🐍 [p]ython go to [d]efinition'}))
+            map('n', '<leader>pr', vim.lsp.buf.references, vim.tbl_extend(
+                    'force', opts, {desc = '🐍 [p]ython find [r]eferences'}))
+            map('n', '<leader>pgi', vim.lsp.buf.implementation, vim.tbl_extend(
+                    'force', opts,
+                    {desc = '🐍 [p]ython [g]o to [i]mplementation'}))
+            map('n', '<leader>pl', function() vim.cmd('PythonLint') end,
+                vim.tbl_extend('force', opts, {desc = '[p]ython [l]int'}))
 
             -- Python Testing Keymaps
-            map("n", "<leader>ptF", function() vim.cmd("PyTestFile") end,
-                vim.tbl_extend("force", opts, {desc = "🐍 [p]ython [t]est [F]ile"}))
-            map("n", "<leader>ptf", function() vim.cmd("PyTestFunc") end,
-                vim.tbl_extend("force", opts, {desc = "🐍 [p]ython [t]est [f]unction"}))
+            map('n', '<leader>ptF', function() vim.cmd('PyTestFile') end,
+                vim.tbl_extend('force', opts,
+                               {desc = '🐍 [p]ython [t]est [F]ile'}))
+            map('n', '<leader>ptf', function() vim.cmd('PyTestFunc') end,
+                vim.tbl_extend('force', opts,
+                               {desc = '🐍 [p]ython [t]est [f]unction'}))
 
             -- Python Project Management Keymaps
-            map("n", "<leader>ppi", function()
-                vim.cmd("PoetryInstall")
-            end, vim.tbl_extend("force", opts, {desc = "🐍 [p]ython [p]oetry [i]nstall"}))
-            map("n", "<leader>pu", function() vim.cmd("PoetryUpdate") end,
-                vim.tbl_extend("force", opts, {desc = "🐍 [p]ython [p]oetry Update"}))
+            map('n', '<leader>ppi', function()
+                vim.cmd('PoetryInstall')
+            end, vim.tbl_extend('force', opts,
+                                {desc = '🐍 [p]ython [p]oetry [i]nstall'}))
+            map('n', '<leader>pu', function() vim.cmd('PoetryUpdate') end,
+                vim.tbl_extend('force', opts,
+                               {desc = '🐍 [p]ython [p]oetry Update'}))
 
             -- Jupyter (Iron.nvim, Jupynium, Molten.nvim, Otter.nvim) Keymaps
 
             -- Attach to a running Jupyter kernel.
-            map("n", "<leader>ja", "<cmd>JupyniumAttachToRunningNotebook<CR>",
-                vim.tbl_extend("force", bufopts, {
-                desc = "[j]upyter [a]ttach to running jupyter notebook"
+            map('n', '<leader>ja', '<cmd>JupyniumAttachToRunningNotebook<CR>',
+                vim.tbl_extend('force', bufopts, {
+                desc = '[j]upyter [a]ttach to running jupyter notebook'
             }))
 
-            map("n", "<leader>jc", "<cmd>IronReplClear<CR>", vim.tbl_extend(
-                    "force", bufopts, {desc = "[j]upyter [c]lear REPL output"}))
+            map('n', '<leader>jc', '<cmd>IronReplClear<CR>', vim.tbl_extend(
+                    'force', bufopts, {desc = '[j]upyter [c]lear REPL output'}))
             -- In normal mode, press 'Space' + 'j' + 'c' to clear the current REPL output.
 
-            map("n", "<leader>jel",
-                function() vim.cmd("MoltenEvaluateLine") end, vim.tbl_extend(
-                    "force", opts, {desc = "[j]upter [e]valuate [l]ine"}))
+            map('n', '<leader>jel',
+                function() vim.cmd('MoltenEvaluateLine') end, vim.tbl_extend(
+                    'force', opts, {desc = '[j]upter [e]valuate [l]ine'}))
 
-            map("v", "<leader>jev",
-                function() vim.cmd("MoltenEvaluateVisual") end,
-                vim.tbl_extend("force", opts, {
-                desc = "[j]upyter [e]valuate [v]isual selection"
+            map('v', '<leader>jev',
+                function() vim.cmd('MoltenEvaluateVisual') end,
+                vim.tbl_extend('force', opts, {
+                desc = '[j]upyter [e]valuate [v]isual selection'
             }))
             -- Evaluate the selected visual code with Molten.
 
             -- Interrupt the current Jupyter kernel.
-            map("n", "<leader>ji", "<cmd>JupyniumKernelInterrupt<CR>",
-                vim.tbl_extend("force", bufopts,
-                               {desc = "[j]upyter [i]nterrupt kernel"}))
+            map('n', '<leader>ji', '<cmd>JupyniumKernelInterrupt<CR>',
+                vim.tbl_extend('force', bufopts,
+                               {desc = '[j]upyter [i]nterrupt kernel'}))
 
             -- Toggle Jupyter Lab terminal using toggleterm
-            map("n", "<leader>jl", function()
-                require("toggleterm.terminal").Terminal:new({
-                    cmd = "jupyter lab",
-                    direction = "float"
+            map('n', '<leader>jl', function()
+                require('toggleterm.terminal').Terminal:new({
+                    cmd = 'jupyter lab',
+                    direction = 'float'
                 }):toggle()
-            end, vim.tbl_extend("force", bufopts,
-                                {desc = "start [j]upyter [l]ab terminal"}))
+            end, vim.tbl_extend('force', bufopts,
+                                {desc = 'start [j]upyter [l]ab terminal'}))
             -- In normal mode, press 'Space' + 'j' + 'l' to start Jupyter lab via Toggleterm plugin.
 
-            map("n", "<leader>jrc",
-                function() vim.cmd("MoltenReevaluateCell") end, vim.tbl_extend(
-                    "force", opts, {desc = "[j]upyter [r]evaluate [c]ell"}))
+            map('n', '<leader>jrc',
+                function() vim.cmd('MoltenReevaluateCell') end, vim.tbl_extend(
+                    'force', opts, {desc = '[j]upyter [r]evaluate [c]ell'}))
             -- Reevaluate the current cell with Molten.
 
             -- Iron.nvim --
-            map("n", "<leader>jri", "<cmd>IronRepl<CR>", vim.tbl_extend("force",
+            map('n', '<leader>jri', '<cmd>IronRepl<CR>', vim.tbl_extend('force',
                                                                         bufopts,
                                                                         {
-                desc = "[j]upyter [r]epl [i]python"
+                desc = '[j]upyter [r]epl [i]python'
             }))
             -- In normal mode, press 'Space' + 'j' + 'r' 'i' + Open an IPython REPL.
 
-            map({"n", "v"}, "<leader>jrs", "<cmd>IronReplSend<CR>",
-                vim.tbl_extend("force", bufopts,
-                               {desc = "[j]upyter [r]epl code"}))
+            map({'n', 'v'}, '<leader>jrs', '<cmd>IronReplSend<CR>',
+                vim.tbl_extend('force', bufopts,
+                               {desc = '[j]upyter [r]epl code'}))
             -- In normal mode, press 'Space' + 'j' + 'r' + 's' to send code to REPL.
 
             -- Molten.nvim mappings
-            map("n", "<leader>jse", ":MoltenInit<CR>", vim.tbl_extend("force",
+            map('n', '<leader>jse', ':MoltenInit<CR>', vim.tbl_extend('force',
                                                                       bufopts, {
-                desc = "[j]upyter [s]tart [e]nvironment"
+                desc = '[j]upyter [s]tart [e]nvironment'
             }))
             -- Initialize Molten environment.
 
-            map("n", "<leader>jsk", "<cmd>JupyniumStartAndAttach<CR>",
-                vim.tbl_extend("force", bufopts,
-                               {desc = "[j]upyter [s]tart [k]ernel"}))
+            map('n', '<leader>jsk', '<cmd>JupyniumStartAndAttach<CR>',
+                vim.tbl_extend('force', bufopts,
+                               {desc = '[j]upyter [s]tart [k]ernel'}))
             -- Start a Jupyter kernel and attach to it.
 
             -- Otter.nvim output panel
-            map("n", "<leader>top", "<cmd>OtterToggleOutputPanel<CR>",
-                vim.tbl_extend("force", bufopts,
-                               {desc = "🦦 [j]upter [o]utput toggle panel"}))
+            map('n', '<leader>top', '<cmd>OtterToggleOutputPanel<CR>',
+                vim.tbl_extend('force', bufopts,
+                               {desc = '🦦 [j]upter [o]utput toggle panel'}))
             -- Toggle the Otter output panel.
 
             -- Vim-Slime mappings
             -- Mark the terminal for Slime.
-            map("n", "<leader>jtm", ":lua vim.fn['slime#mark_terminal']()<CR>",
-                vim.tbl_extend("force", bufopts,
-                               {desc = "[j]upyter [t]erminal [m]ark"}))
+            map('n', '<leader>jtm', ":lua vim.fn['slime#mark_terminal']()<CR>",
+                vim.tbl_extend('force', bufopts,
+                               {desc = '[j]upyter [t]erminal [m]ark'}))
 
             -- Set the terminal for Slime.
-            map("n", "<leader>jts", ":lua vim.fn['slime#set_terminal']()<CR>",
-                vim.tbl_extend("force", bufopts,
-                               {desc = "[j]upyter [t]erminal [s]et"}))
+            map('n', '<leader>jts', ":lua vim.fn['slime#set_terminal']()<CR>",
+                vim.tbl_extend('force', bufopts,
+                               {desc = '[j]upyter [t]erminal [s]et'}))
 
             -- UV.nvim Keymaps
 
-            map("n", "<leader>ur", "<cmd>UVRunFile<CR>",
-                vim.tbl_extend("force", opts, {desc = "UV Run File"}))
-            map("v", "<leader>us", "<cmd>UVRunSelection<CR>",
-                vim.tbl_extend("force", opts, {desc = "UV Run Selection"}))
-            map("n", "<leader>uf", "<cmd>UVRunFunction<CR>",
-                vim.tbl_extend("force", opts, {desc = "UV Run Function"}))
-            map("n", "<leader>ue", "<cmd>UVEnvironment<CR>",
-                vim.tbl_extend("force", opts, {desc = "UV Environment"}))
-            map("n", "<leader>ui", "<cmd>UVInit<CR>",
-                vim.tbl_extend("force", opts, {desc = "UV Initialize"}))
-            map("n", "<leader>ua", "<cmd>UVAdd<CR>",
-                vim.tbl_extend("force", opts, {desc = "UV Add Package"}))
-            map("n", "<leader>ud", "<cmd>UVRemove<CR>",
-                vim.tbl_extend("force", opts, {desc = "UV Remove Package"}))
-            map("n", "<leader>uc", "<cmd>UVSync<CR>",
-                vim.tbl_extend("force", opts, {desc = "UV Sync Packages"}))
+            map('n', '<leader>ur', '<cmd>UVRunFile<CR>',
+                vim.tbl_extend('force', opts, {desc = 'UV Run File'}))
+            map('v', '<leader>us', '<cmd>UVRunSelection<CR>',
+                vim.tbl_extend('force', opts, {desc = 'UV Run Selection'}))
+            map('n', '<leader>uf', '<cmd>UVRunFunction<CR>',
+                vim.tbl_extend('force', opts, {desc = 'UV Run Function'}))
+            map('n', '<leader>ue', '<cmd>UVEnvironment<CR>',
+                vim.tbl_extend('force', opts, {desc = 'UV Environment'}))
+            map('n', '<leader>ui', '<cmd>UVInit<CR>',
+                vim.tbl_extend('force', opts, {desc = 'UV Initialize'}))
+            map('n', '<leader>ua', '<cmd>UVAdd<CR>',
+                vim.tbl_extend('force', opts, {desc = 'UV Add Package'}))
+            map('n', '<leader>ud', '<cmd>UVRemove<CR>',
+                vim.tbl_extend('force', opts, {desc = 'UV Remove Package'}))
+            map('n', '<leader>uc', '<cmd>UVSync<CR>',
+                vim.tbl_extend('force', opts, {desc = 'UV Sync Packages'}))
         end
     })
 end

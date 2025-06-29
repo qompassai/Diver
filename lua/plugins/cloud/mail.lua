@@ -1,6 +1,9 @@
+-- /qompassai/Diver/lua/plugins/cloud/mail.lua
+-- Qompass AI Diver Mail Plugin Spec
+-- Copyright (C) 2025 Qompass AI, All rights reserved
+------------------------------------------------------
 return {
     'martineausimon/nvim-mail-merge',
-    lazy = true,
     ft = {'markdown'}, -- optional
     config = function()
         require('nvmm').setup({

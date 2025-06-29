@@ -98,15 +98,15 @@ function M.conform_setup(opts)
             stop_after_first = false,
             exclude = {'spell', 'codespell'}
         },
-        format_after_save = opts.format_after_save or
-            {
-                enabled = true,
-                lsp_format = 'fallback',
-                timeout_ms = 1000,
-                undojoin = true
-            },
+        format_after_save = opts.format_after_save or {
+            enabled = true,
+            lsp_format = 'fallback',
+            timeout_ms = 1000,
+            async = true,
+            undojoin = true
+        },
         log_level = opts.log_level or vim.log.levels.ERROR,
-        notify_on_error = opts.notify_on_error ~= false,
+        notify_on_error = opts.notify_on_error ~= true,
         notify_no_formatters = opts.notify_no_formatters ~= false,
         formatters = opts.formatters or {
             alejandra = {command = 'alejandra', stdin = true, args = {}},

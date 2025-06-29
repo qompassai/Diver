@@ -1,3 +1,7 @@
+-- /qompassai/Diver/lua/plugins/cloud/remote.lua
+-- Qompass AI Diver Fire Plugin Spec
+-- Copyright (C) 2025 Qompass AI, All rights reserved
+------------------------------------------------------
 return {
     'amitds1997/remote-nvim.nvim',
     version = '*',
