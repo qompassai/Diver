@@ -3,7 +3,23 @@
 -- Copyright (C) 2025 Qompass AI, All rights reserved
 -- --------------------------------------------------
 local M = {}
-function M.setup_json_completion(opts)
+function M.json_autocmds()
+    vim.api.nvim_create_autocmd({'TextChanged', 'InsertLeave'}, {
+        pattern = {'*.json', '*.jsonc', '*.json5', '*.jsonl'},
+        callback = function()
+            if vim.b.lsp_attached then
+                vim.lsp.buf.document_highlight()
+                vim.diagnostic.reset()
+                local client = vim.lsp.get_active_clients({bufnr = 0})[1]
+                if client and
+                    client.supports_method('textDocument/semanticTokens/full') then
+                    pcall(vim.lsp.buf.semantic_tokens_refresh)
+                end
+            end
+        end
+    })
+end
+function M.json_completion(opts)
     local sources = opts.sources or {}
     local has_json_source = vim.tbl_contains(
                                 vim.tbl_map(function(s)
@@ -24,7 +40,7 @@ function M.setup_json_completion(opts)
     opts.sources = sources
     return opts
 end
-function M.setup_json_conform(opts)
+function M.json_conform(opts)
     opts.formatters_by_ft = vim.tbl_deep_extend('force',
                                                 opts.formatters_by_ft or {}, {
         json = {'prettierd', 'jq'},
@@ -38,7 +54,7 @@ function M.setup_json_conform(opts)
     })
     return opts
 end
-function M.setup_json_lsp(opts)
+function M.json_lsp(opts)
     if not opts.servers then opts.servers = {} end
     local capabilities = require('cmp_nvim_lsp').default_capabilities()
     opts.servers.jsonls = {
@@ -54,13 +70,13 @@ function M.setup_json_lsp(opts)
                     }
                 }),
                 validate = {enable = true},
-                format = {enable = false}
+                format = {enable = true}
             }
         }
     }
     return opts
 end
-function M.setup_json_filetype_detection()
+function M.json_filetype_detection()
     vim.filetype.add({
         extension = {
             json = 'json',
@@ -84,23 +100,8 @@ function M.setup_json_filetype_detection()
         }
     })
 end
-function M.setup_json_autocmds()
-    vim.api.nvim_create_autocmd({'TextChanged', 'InsertLeave'}, {
-        pattern = {'*.json', '*.jsonc', '*.json5', '*.jsonl'},
-        callback = function()
-            if vim.b.lsp_attached then
-                vim.lsp.buf.document_highlight()
-                vim.diagnostic.reset()
-                local client = vim.lsp.get_active_clients({bufnr = 0})[1]
-                if client and
-                    client.supports_method('textDocument/semanticTokens/full') then
-                    pcall(vim.lsp.buf.semantic_tokens_refresh)
-                end
-            end
-        end
-    })
-end
-function M.setup_json_keymaps(opts)
+
+function M.json_keymaps(opts)
     opts.defaults = vim.tbl_deep_extend('force', opts.defaults or {}, {
         ['<leader>cj'] = {name = '+json'},
         ['<leader>cjf'] = {'<cmd>Format<cr>', 'Format JSON'},

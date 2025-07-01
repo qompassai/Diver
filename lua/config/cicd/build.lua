@@ -70,7 +70,7 @@ M.setup = function(opts)
                 check_exit_code = function(code) return code <= 1 end,
                 command = 'meson',
                 format = 'json',
-                on_output = function(output, _params)
+                on_output = function(output)
                     return type(output) ~= 'table' and
                                {
                             {
@@ -96,7 +96,7 @@ M.setup = function(opts)
                 end,
                 command = 'timeout',
                 format = 'line',
-                on_output = function(line, _params)
+                on_output = function(line)
                     local severity = line:match('error:') and
                                          vim.diagnostic.severity.ERROR or
                                          line:match('warn:') and
@@ -122,7 +122,7 @@ M.setup = function(opts)
                 check_exit_code = function(code) return code <= 1 end,
                 command = 'namcap',
                 format = 'line',
-                on_output = function(line, _params)
+                on_output = function(line)
                     local message = line:match('([^:]+): (.+)')
                     return message and
                                {

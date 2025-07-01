@@ -3,25 +3,39 @@
 -- Copyright (C) 2025 Qompass AI, All rights reserved
 -- ----------------------------------------------
 return {
-    {
-        'mason-org/mason-lspconfig.nvim',
-        dependencies = {
-            'mason-org/mason.nvim',
-            'neovim/nvim-lspconfig',
-            dependencies = {'saghen/blink.cmp'},
-            'WhoIsSethDaniel/mason-tool-installer.nvim',
-            'b0o/SchemaStore.nvim'
-        },
-        config = function()
-            require('mason').setup()
-            require('mason-lspconfig').setup()
-            require('config.core.lspconfig')
-            local capabilities = require('cmp_nvim_lsp').default_capabilities()
-            require('lspconfig').util.default_config.capabilities =
-                vim.tbl_deep_extend('force', require('lspconfig').util
-                                        .default_config.capabilities,
-                                    capabilities)
-            require('config.core.mason').setup_mason()
-        end
-    }, {'nvimdev/lspsaga.nvim', config = true}
+  {
+    'mason-org/mason-lspconfig.nvim',
+    event = 'VeryLazy',
+    dependencies = {
+      'mason-org/mason.nvim',
+      'williamboman/mason.nvim',
+      {
+        'neovim/nvim-lspconfig',
+        dependencies = { 'saghen/blink.cmp' },
+      },
+      'WhoIsSethDaniel/mason-tool-installer.nvim',
+      'b0o/SchemaStore.nvim',
+    },
+    opts = function(_, opts)
+      return opts
+    end,
+    config = function()
+      local lsp_core                                        = require('config.core.lspconfig')
+      local mason_core                                      = require('config.core.mason')
+      local caps                                            = lsp_core.lsp_capabilities()
+      require('lspconfig').util.default_config.capabilities =
+          vim.tbl_deep_extend(
+            'force',
+            require('lspconfig').util.default_config.capabilities,
+            caps
+          )
+      mason_core.mason_setup()
+      lsp_core.lsp_setup()
+    end,
+  },
+  {
+    'nvimdev/lspsaga.nvim',
+    event  = 'VeryLazy',
+    config = true,
+  },
 }

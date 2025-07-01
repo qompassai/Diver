@@ -1,4 +1,4 @@
--- ~/.config/nvim/lua/config/lang/php.lua
+-- /qompassai/Diver/lua/config/lang/php.lua
 -- Qompass AI Diver PHP Lang Config
 -- Copyright (C) 2025 Qompass AI, All rights reserved
 -- -----------------------------------------
@@ -10,6 +10,35 @@ vim.diagnostic.config({
     update_in_insert = true,
     severity_sort = true
 })
+function M.php_autocmds()
+    vim.api.nvim_create_user_command('PhpStan', function()
+        if vim.fn.executable('phpstan') == 1 then
+            vim.cmd('!phpstan analyse')
+        else
+            vim.notify('phpstan not found in PATH', vim.log.levels.ERROR)
+        end
+    end, {desc = 'Run PHPStan analysis'})
+    vim.api.nvim_create_user_command('Pint', function()
+        if vim.fn.executable('pint') == 1 then
+            vim.cmd('!pint')
+        else
+            vim.notify('pint not found in PATH', vim.log.levels.ERROR)
+        end
+    end, {desc = 'Run Laravel Pint formatter'})
+    vim.api.nvim_create_user_command('PhpInfo', function()
+        local handle = io.popen(
+                           "php -v && php -i | grep xdebug || echo '❌ Xdebug not found'")
+        if handle then
+            local result = handle:read('*a')
+            handle:close()
+            vim.notify(result, vim.log.levels.INFO,
+                       {title = 'PHP + Xdebug Info'})
+        else
+            vim.notify('❌ Failed to run PHP info command',
+                       vim.log.levels.ERROR)
+        end
+    end, {desc = 'Show PHP version and Xdebug status'})
+end
 function M.php_dap()
     local dap = require('dap')
     dap.adapters.php = {
@@ -39,34 +68,5 @@ function M.php_nls()
             extra_args = {'analyse', '--error-format=json'}
         })
     }
-end
-function M.php()
-    vim.api.nvim_create_user_command('PhpStan', function()
-        if vim.fn.executable('phpstan') == 1 then
-            vim.cmd('!phpstan analyse')
-        else
-            vim.notify('phpstan not found in PATH', vim.log.levels.ERROR)
-        end
-    end, {desc = 'Run PHPStan analysis'})
-    vim.api.nvim_create_user_command('Pint', function()
-        if vim.fn.executable('pint') == 1 then
-            vim.cmd('!pint')
-        else
-            vim.notify('pint not found in PATH', vim.log.levels.ERROR)
-        end
-    end, {desc = 'Run Laravel Pint formatter'})
-    vim.api.nvim_create_user_command('PhpInfo', function()
-        local handle = io.popen(
-                           "php -v && php -i | grep xdebug || echo '❌ Xdebug not found'")
-        if handle then
-            local result = handle:read('*a')
-            handle:close()
-            vim.notify(result, vim.log.levels.INFO,
-                       {title = 'PHP + Xdebug Info'})
-        else
-            vim.notify('❌ Failed to run PHP info command',
-                       vim.log.levels.ERROR)
-        end
-    end, {desc = 'Show PHP version and Xdebug status'})
 end
 return M

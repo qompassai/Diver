@@ -56,25 +56,25 @@ return {
     }, {
         'neovim/nvim-lspconfig',
         opts = function(_, opts)
-            return require('config.data.psql').setup_lsp(opts)
+            return require('config.data.psql').psql_lsp(opts)
         end
     }, {
         'nvimtools/none-ls.nvim',
         opts = function(_, opts)
-            opts = require('config.data.psql').setup_linter(opts)
-            opts = require('config.data.psql').setup_formatter(opts)
+            opts = require('config.data.psql').psql_linter(opts)
+            opts = require('config.data.psql').psql_formatter(opts)
             return opts
         end
     }, {
         'stevearc/conform.nvim',
         opts = function(_, opts)
-            return require('config.data.psql').setup_conform(opts)
+            return require('config.data.psql').psql_conform(opts)
         end
     }, {
         'folke/which-key.nvim',
         optional = true,
         opts = function(_, opts)
-            return require('config.data.psql').setup_keymaps(opts)
+            return require('config.data.psql').psql_keymaps(opts)
         end
     }
 }

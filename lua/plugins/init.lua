@@ -12,20 +12,10 @@ if vim.fn.has('nvim-0.9.0') == 0 then
     return {}
 end
 return {
-    {import = 'plugins.core'}, {import = 'plugins.ai'},
-    {import = 'plugins.cloud', event = 'BufReadCmd'},
-    {import = 'plugins.data', ft = {'jupyter', 'quarto', 'python', 'r'}},
-    {import = 'plugins.edu', cmd = {'VimBeGood', 'Twilight'}},
-    {import = 'plugins.cicd'}, {
-        import = 'plugins.lang',
-        ft = {
-            'bash', 'c', 'c_sharp', 'cpp', 'css', 'cuda', 'containerfile',
-            'dart', 'dockerfile', 'elixir', 'elm', 'f_sharp', 'go', 'graphql',
-            'haskell', 'html', 'java', 'javascript', 'json', 'kotlin', 'latex',
-            'lua', 'markdown', 'matlab', 'mojo', 'nim', 'nix', 'perl', 'php',
-            'powershell', 'python', 'r', 'ruby', 'rust', 'scala', 'scss', 'sh',
-            'solidity', 'sql', 'svelte', 'swift', 'teal', 'toml', 'typescript',
-            'typst', 'vhdl', 'visual_basic', 'vue', 'yml', 'yaml', 'zig', 'zsh'
-        }
-    }, {import = 'plugins.nav'}, {import = 'plugins.ui'}
+    {import = 'plugins.core'}, {import = 'plugins.ai'}, {
+        {import = 'plugins.cloud'}, {import = 'plugins.data'},
+        {import = 'plugins.edu'}, {import = 'plugins.cicd'},
+        {import = 'plugins.lang'}, {import = 'plugins.nav'},
+        {import = 'plugins.ui'}
+    }
 }

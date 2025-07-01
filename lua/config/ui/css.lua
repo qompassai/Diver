@@ -1,16 +1,21 @@
--- ~/.config/nvim/lua/config/ui/css.lua
+-- /qompassai/Diver/lua/config/ui/css.lua
+-- Qompass AI Diver CSS Config
+-- Copyright (C) 2025 Qompass AI, All rights reserved
+-----------------------------------------------------
 local M = {}
-vim.api.nvim_create_autocmd('FileType', {
-    pattern = {'css', 'scss', 'less'},
-    callback = function()
-        vim.opt_local.tabstop = 2
-        vim.opt_local.shiftwidth = 2
-        vim.opt_local.expandtab = true
-    end
-})
+function M.css_autocmds()
+    vim.api.nvim_create_autocmd('FileType', {
+        pattern = {'css', 'scss', 'less'},
+        callback = function()
+            vim.opt_local.tabstop = 2
+            vim.opt_local.shiftwidth = 2
+            vim.opt_local.expandtab = true
+        end
+    })
+end
 local null_ls = require('null-ls')
 local b = null_ls.builtins
-function M.none_ls_sources()
+function M.css_nls()
     return {
         b.formatting.prettierd.with({
             ft = {'css', 'scss', 'less'},
@@ -20,7 +25,7 @@ function M.none_ls_sources()
         b.diagnostics.trail_space.with({ft = {'css', 'scss', 'less'}})
     }
 end
-function M.setup_lsp(on_attach, capabilities)
+function M.css_lsp(on_attach, capabilities)
     local lspconfig = require('lspconfig')
     local util = require('lspconfig.util')
     lspconfig.cssls.setup({
@@ -100,7 +105,7 @@ function M.setup_lsp(on_attach, capabilities)
         end
     })
 end
-function M.setup_treesitter()
+function M.css_treesitter()
     local ts_ok, ts_configs = pcall(require, 'nvim-treesitter.configs')
     if ts_ok then
         ts_configs.setup({
@@ -113,7 +118,7 @@ function M.setup_treesitter()
         })
     end
 end
-function M.setup_colorizer()
+function M.css_colorizer()
     local colorizer_ok, colorizer = pcall(require, 'colorizer')
     if colorizer_ok then
         colorizer.setup({'css', 'scss', 'less'}, {
@@ -129,7 +134,7 @@ function M.setup_colorizer()
         })
     end
 end
-function M.setup_conform()
+function M.css_conform()
     local conform_ok, _ = pcall(require, 'conform')
     if conform_ok then
         ---@type table
@@ -144,11 +149,12 @@ function M.setup_conform()
         })
     end
 end
-function M.setup(opts)
+function M.css_config(opts)
     opts = opts or {}
-    M.setup_lsp(opts.on_attach, opts.capabilities)
-    M.setup_treesitter()
-    M.setup_colorizer()
-    M.setup_conform()
+    M.css_autocmds()
+    M.css_colorizer()
+    M.css_lsp(opts.on_attach, opts.capabilities)
+    M.css_treesitter()
+    M.css_conform()
 end
 return M

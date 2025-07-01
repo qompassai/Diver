@@ -3,9 +3,7 @@
 -- Copyright (C) 2025 Qompass AI, All rights reserved
 -- --------------------------------------------------
 local M = {}
-local safe_require = _G.safe_require
-M.setup = function()
-    local mappings = safe_require('mappings')
-    if mappings then mappings.setup() end
+function M.setup()
+  require('mappings').setup()
 end
 return M

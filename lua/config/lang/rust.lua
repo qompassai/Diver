@@ -11,6 +11,24 @@ vim.diagnostic.config({
     update_in_insert = true,
     severity_sort = true
 })
+function M.rust_autocmds()
+    local augroup = vim.api.nvim_create_augroup('RustAutocmds', {clear = true})
+    vim.api.nvim_create_autocmd('BufWritePre', {
+        group = augroup,
+        pattern = '*.rs',
+        callback = function() vim.lsp.buf.format({async = true}) end
+    })
+    vim.api.nvim_create_autocmd('FileType', {
+        group = augroup,
+        pattern = 'rust',
+        callback = function()
+            local ok, rustmap = pcall(require, 'mappings.rustmap')
+            if ok and rustmap and type(rustmap.setup) == 'function' then
+                rustmap.setup()
+            end
+        end
+    })
+end
 M.rust_editions = {['2021'] = '2021', ['2024'] = '2024'}
 M.rust_toolchains = {stable = 'stable', nightly = 'nightly', beta = 'beta'}
 M.rust_default_edition = '2024'

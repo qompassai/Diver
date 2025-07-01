@@ -76,7 +76,7 @@ function M.ansible_ts()
         ts_configs.setup({
             ensure_installed = {'yaml'},
             auto_install = true,
-            sync_install = false,
+            sync_install = true,
             highlight = {
                 enable = true,
                 additional_vim_regex_highlighting = true

@@ -1,4 +1,7 @@
--- ~/.config/nvim/lua/config/ui/icons.lua
+-- /qompassai/Diver/lua/config/ui/icons.lua
+-- Qompass AI Diver Icons Config
+-- Copyright (C) 2025 Qompass AI, All rights reserved
+------------------------------------------------------
 local M = {}
 M.devicons = {
     override = {

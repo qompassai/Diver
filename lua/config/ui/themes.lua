@@ -1,4 +1,7 @@
--- ~/.config/nvim/lua/config/ui/themes.lua
+-- /qompassai/Diver/lua/config/ui/themes.lua
+-- Qompass AI Diver Themes Config
+-- Copyright (C) 2025 Qompass AI, All rights reserved
+-----------------------------------------------------
 local M = {}
 M.current_theme = 'nightfox'
 M.themes = {

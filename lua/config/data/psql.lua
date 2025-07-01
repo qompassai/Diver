@@ -4,7 +4,7 @@
 -- --------------------------------------------------
 local common = require('config.data.common')
 local M = {}
-function M.setup_completion(opts)
+function M.psql_cmp(opts)
     opts = opts or {}
     opts.fuzzy = opts.fuzzy or {}
     opts.fuzzy.implementation = 'lua'
@@ -19,7 +19,7 @@ function M.setup_completion(opts)
     }
     return opts
 end
-function M.setup_conform(opts)
+function M.psql_conform(opts)
     opts = opts or {}
     local default_formatters = opts.formatters_by_ft or {}
     local pgsql_formatters = {pgsql = {'pg_format', 'sqlfluff'}}
@@ -34,7 +34,7 @@ function M.setup_conform(opts)
     })
     return opts
 end
-function M.setup_lsp(opts)
+function M.psql_lsp(opts)
     opts = opts or {}
     opts.servers = opts.servers or {}
     opts.servers.sqlls = vim.tbl_deep_extend('force', opts.servers.sqlls or {},
@@ -46,7 +46,7 @@ function M.setup_lsp(opts)
     })
     return opts
 end
-function M.setup_linter(opts)
+function M.psql_linter(opts)
     opts = opts or {}
     local ok, null_ls = pcall(require, 'null-ls')
     if not ok then
@@ -61,7 +61,7 @@ function M.setup_linter(opts)
     })
     return opts
 end
-function M.setup_formatter(opts)
+function M.psql_formatter(opts)
     opts = opts or {}
     local ok, null_ls = pcall(require, 'null-ls')
     if not ok then
@@ -76,14 +76,14 @@ function M.setup_formatter(opts)
     })
     return opts
 end
-function M.setup_filetype_detection()
+function M.psql_filetype_detection()
     vim.filetype.add({
         extension = {psql = 'pgsql', pgsql = 'pgsql'},
         pattern = {['%.pg%.sql$'] = 'pgsql', ['%.postgres%.sql$'] = 'pgsql'},
         filename = {['pg_dump.sql'] = 'pgsql'}
     })
 end
-function M.setup_keymaps(opts)
+function M.psql_keymaps(opts)
     opts = opts or {}
     opts.defaults = vim.tbl_deep_extend('force', opts.defaults or {}, {
         ['<leader>dp'] = {name = '+postgres'},

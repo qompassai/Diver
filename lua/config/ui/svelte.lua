@@ -1,5 +1,8 @@
+-- /qompassai/Diver/lua/config/ui/svelte.lua
+-- Qompass AI Diver Svelte Config
+-- Copyright (C) 2025 Qompass AI, All rights reserved
+-----------------------------------------------------
 local M = {}
-
 function M.svelte_lsp(opts)
     opts.servers = opts.servers or {}
     opts.servers.svelte = {

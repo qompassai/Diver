@@ -38,21 +38,14 @@ vim.opt.rtp:prepend(lazypath)
 -- create_lazy_file_event()
 require('lazy').setup({
     debug = false,
-    spec = {
-        {'LazyVim/LazyVim'}, {import = 'plugins.core'}, {import = 'plugins.ai'},
-        {import = 'plugins.cloud'}, {import = 'plugins.lang'},
-        {import = 'plugins.cicd'}, {import = 'plugins.nav'},
-        {import = 'plugins.ui'}, {import = 'plugins.edu'},
-        {import = 'plugins.data'}
-    },
+    spec = {{'LazyVim/LazyVim'}, {import = 'plugins'}},
     defaults = {lazy = true, version = false},
     install = {colorscheme = {'tokyonight', 'habamax'}},
     checker = {enabled = false, notify = false},
     performance = {
         rtp = {
             disabled_plugins = {
-                'gzip',
-                -- 'matchit',
+                'gzip', -- 'matchit',
                 -- 'matchparen',
                 -- "netrwPlugin',
                 'tarPlugin', 'tohtml', 'tutor', 'zipPlugin'

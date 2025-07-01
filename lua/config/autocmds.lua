@@ -3,15 +3,12 @@
 -- Copyright (C) 2025 Qompass AI, All rights reserved
 -- --------------------------------------------------
 local M = {}
-local has_011 = vim.fn.has('nvim-0.11') == 1
 local augroups = {
     ansible = vim.api.nvim_create_augroup('AnsibleFT', {clear = true}),
-    diagnostics = vim.api.nvim_create_augroup('Diagnostics', {clear = true}),
     json = vim.api.nvim_create_augroup('JSON', {clear = true}),
     lint = vim.api.nvim_create_augroup('nvim_lint', {clear = true}),
     lsp = vim.api.nvim_create_augroup('LSP', {clear = true}),
     markdown = vim.api.nvim_create_augroup('MarkdownSettings', {clear = true}),
-    mason = vim.api.nvim_create_augroup('Mason', {clear = true}),
     python = vim.api.nvim_create_augroup('Python', {clear = true}),
     rust = vim.api.nvim_create_augroup('Rust', {clear = true}),
     yaml = vim.api.nvim_create_augroup('YAML', {clear = true}),
@@ -60,30 +57,7 @@ vim.api.nvim_create_autocmd({'TextChanged', 'InsertLeave'}, {
         end
     end
 })
-vim.api.nvim_create_autocmd('BufWritePre', {
-    group = augroups.rust,
-    pattern = '*.rs',
-    callback = function() vim.lsp.buf.format({async = false}) end
-})
-vim.api.nvim_create_autocmd('FileType', {
-    group = augroups.rust,
-    pattern = 'rust',
-    callback = function()
-        local ok, rustmap = pcall(require, 'mappings.rustmap')
-        if ok and rustmap and type(rustmap.setup) == 'function' then
-            rustmap.setup()
-        end
-    end
-})
-vim.api.nvim_create_autocmd('FileType', {
-    pattern = 'lua',
-    callback = function()
-        vim.opt_local.shiftwidth = 2
-        vim.opt_local.tabstop = 2
-        vim.opt_local.softtabstop = 2
-        vim.opt_local.expandtab = true
-    end
-})
+
 vim.api.nvim_create_autocmd('FileType', {
     group = augroups.python,
     pattern = 'python',
@@ -284,49 +258,6 @@ vim.api.nvim_create_autocmd('BufNewFile', {
         end
     end
 })
-vim.api.nvim_create_autocmd('FileType', {
-    group = augroups.markdown,
-    pattern = {'markdown', 'md'},
-    callback = function()
-        vim.g.mkdp_auto_start = 0
-        vim.g.mkdp_auto_close = 1
-        vim.g.mkdp_refresh_slow = 0
-        vim.g.mkdp_command_for_global = 0
-        vim.g.mkdp_open_to_the_world = 0
-        vim.g.mkdp_open_ip = '127.0.0.1'
-        vim.g.mkdp_browser = ''
-        vim.g.mkdp_echo_preview_url = 1
-        vim.g.mkdp_page_title = '${name}'
-        vim.g.mkdp_filetypes = {'markdown'}
-        vim.g.mkdp_markdown_css = ''
-        vim.g.vim_markdown_folding_disabled = 1
-        vim.g.vim_markdown_math = 1
-        vim.g.vim_markdown_frontmatter = 1
-        vim.g.vim_markdown_toml_frontmatter = 1
-        vim.g.vim_markdown_json_frontmatter = 1
-        vim.g.vim_markdown_follow_anchor = 1
-        vim.opt_local.wrap = true
-        vim.opt_local.conceallevel = 2
-        vim.opt_local.concealcursor = 'nc'
-        vim.opt_local.spell = true
-        vim.opt_local.spelllang = 'en_us'
-        vim.opt_local.textwidth = 80
-    end
-})
-if has_011 then
-    vim.api.nvim_create_autocmd('CursorHold', {
-        group = augroups.diagnostics,
-        callback = function()
-            vim.diagnostic.open_float(nil, {
-                focusable = false,
-                close_events = {
-                    'BufLeave', 'CursorMoved', 'InsertEnter', 'FocusLost'
-                },
-                scope = 'cursor'
-            })
-        end
-    })
-end
 vim.api.nvim_create_autocmd({'BufRead', 'BufNewFile'}, {
     pattern = {
         'Dockerfile.*', '*.Dockerfile', 'Containerfile', '*.containerfile'
@@ -399,75 +330,4 @@ vim.api.nvim_create_autocmd('LspAttach', {
         if lint_status then lint.try_lint() end
     end
 })
-M.setup_mason_autocmds = function()
-    vim.api.nvim_create_autocmd({'TextChanged', 'InsertLeave'}, {
-        group = augroups.json,
-        pattern = {'*.json', '*.jsonc', '*.json5', '*.jsonl'},
-        callback = function()
-            if vim.lsp.buf.document_highlight then
-                vim.lsp.buf.document_highlight()
-            end
-            vim.diagnostic.reset()
-            local semantic_token_refresh = function()
-                local refresh_func
-                if vim.lsp.buf.semantic_tokens_refresh then
-                    refresh_func = vim.lsp.buf.semantic_tokens_refresh
-                elseif vim.lsp.semantic_tokens and
-                    vim.lsp.semantic_tokens.refresh then
-                    refresh_func = vim.lsp.semantic_tokens.refresh
-                end
-                if refresh_func then pcall(refresh_func) end
-            end
-            semantic_token_refresh()
-        end
-    })
-    vim.api.nvim_create_autocmd('User', {
-        group = augroups.mason,
-        pattern = 'MasonInstallComplete',
-        callback = function(args)
-            local package_name = args.data.package.name
-            vim.notify(string.format('✅ Mason installed: %s', package_name),
-                       vim.log.levels.INFO)
-        end
-    })
-    vim.api.nvim_create_autocmd('User', {
-        group = augroups.mason,
-        pattern = 'MasonUpdateComplete',
-        callback = function(args)
-            local package_name = args.data.package.name
-            vim.notify(string.format('🔄 Mason updated: %s', package_name),
-                       vim.log.levels.INFO)
-        end
-    })
-    vim.api.nvim_create_autocmd('LspAttach', {
-        group = augroups.lsp,
-        callback = function(args)
-            local client = vim.lsp.get_client_by_id(args.data.client_id)
-            if client then
-                vim.notify(string.format('LSP attached: %s', client.name),
-                           vim.log.levels.DEBUG)
-            end
-        end
-    })
-    vim.api.nvim_create_autocmd('LspDetach', {
-        group = augroups.lsp,
-        callback = function(args)
-            local client = vim.lsp.get_client_by_id(args.data.client_id)
-            if client then
-                vim.notify(string.format('LSP detached: %s', client.name),
-                           vim.log.levels.DEBUG)
-            end
-        end
-    })
-    vim.api.nvim_create_autocmd('BufEnter', {
-        group = augroups.mason,
-        once = true,
-        callback = function()
-            if vim.env.CARGO_TARGET_DIR then
-                vim.notify('🦀 Cargo optimization enabled for Mason',
-                           vim.log.levels.DEBUG)
-            end
-        end
-    })
-end
 return M
