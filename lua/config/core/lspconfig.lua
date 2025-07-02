@@ -77,7 +77,7 @@ end
 
 function M.lsp_setup(opts)
   opts = opts or {}
-  local lspconfig = require('lspconfig')
+  local lspconfig = require("lspconfig")
   local util = require('lspconfig.util')
   local capabilities = M.lsp_capabilities()
   local default_config = {
@@ -113,21 +113,9 @@ function M.lsp_setup(opts)
     yamlls = {},
     zls = zig.zig_lsp()
   }
-  local has_deno = util.root_pattern('deno.json', 'deno.jsonc')(vim.fn
-    .getcwd())
-  local has_python = util.root_pattern('pyproject.toml', 'setup.py',
-    'requirements.txt')(vim.fn.getcwd())
-  if has_deno then
-    servers.denols = require('config.lang.js').js_lsp()
-  else
-    servers.ts_ls = ts.ts_lsp(opts)
-  end
-  if has_python then
-    servers.pyright = require('config.lang.python').py_lsp({})
-  end
-  for server, config in pairs(servers) do
-    local merged_config = vim.tbl_deep_extend('force', {}, default_config, config)
-    lspconfig[server].setup(merged_config)
+  for name, config in pairs(servers) do
+    local merged_config = vim.tbl_deep_extend("force", {}, default_config, config)
+    lspconfig[name].setup(merged_config)
   end
   vim.diagnostic.config({
     virtual_text = { prefix = '●', spacing = 4 },

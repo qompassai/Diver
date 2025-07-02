@@ -87,7 +87,7 @@ function M.lua_lazydev(opts)
   local lua_version_path = nil
   local versions = { 'luajit', 'lua51', 'lua54', 'lua52', 'lua53' }
   for _, version in ipairs(versions) do
-    local path = vim.fn.expand('~/.diver/.lua/.' .. version)
+    local path = vim.fn.expand('"$HOME"/.diver/lua/.' .. version)
     if vim.fn.isdirectory(path) == 1 then
       lua_version_path = path
       break
@@ -111,7 +111,7 @@ function M.lua_lazydev(opts)
       words = { 'require' }
     })
   end
-  if not vim.uv.fs_stat(vim.loop.cwd() .. '/.luarc.json') then
+  if not vim.uv.fs_stat(vim.loop.cwd() .. '/.luarc.json5') then
     table.insert(library, { path = tostring(vim.loop.cwd()) })
   end
 
@@ -184,7 +184,6 @@ function M.lua_lsp(opts)
     capabilities = opts.capabilities,
     filetypes = opts.filetypes or { 'lua', 'luau' }
   }
-
   if opts.settings then
     config.settings = vim.tbl_deep_extend('force', config.settings,
       opts.settings)
@@ -196,7 +195,14 @@ end
 ---@return table
 function M.lua_luarocks(opts)
   opts = opts or {}
-  local config = { rocks_path = vim.fn.expand('~/.luarocks') }
+  local config = {
+    rocks_path = vim.fn.expand('~/.luarocks'),
+    rocks = {
+      "magick",
+      "busted",
+      "luacheck",
+    },
+  }
   return vim.tbl_deep_extend('force', config, opts)
 end
 
@@ -300,7 +306,7 @@ function M.lua_setup(opts)
     conform = M.lua_conform(opts),
     lazydev = M.lua_lazydev(opts),
     lsp = M.lua_lsp(opts),
-    luarocks = M.lua_luarocks,
+    luarocks = M.lua_luarocks(opts),
     nls = M.lua_nls(opts),
     version = lua_version,
     path = lua_path,

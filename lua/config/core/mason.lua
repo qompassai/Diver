@@ -6,32 +6,22 @@
 ---@class MasonModule
 local M = {}
 
-
 local function configure_env()
-  local cache_dir           = vim.fn.stdpath('cache')
-  vim.env.CARGO_TARGET_DIR  = cache_dir .. '/mason-cargo-target'
-  vim.env.CARGO_HOME        = cache_dir .. '/cargo'
-
   local uv                  = vim.uv or vim.loop
   vim.env.CARGO_BUILD_JOBS  = tostring(uv.available_parallelism() or 10)
   vim.env.CARGO_INCREMENTAL = '1'
   vim.env.CARGO_NET_RETRY   = '2'
-
   vim.fn.mkdir(vim.env.CARGO_TARGET_DIR, 'p')
   vim.fn.mkdir(vim.env.CARGO_HOME, 'p')
-
   local py_venvs = {
     vim.fn.expand('~/.diver/python/.venv313/bin'),
     vim.fn.expand('~/.diver/python/.venv312/bin'),
     vim.fn.expand('~/.diver/python/.venv311/bin'),
   }
   vim.env.PATH = table.concat(py_venvs, ':') .. ':' .. vim.env.PATH
-  vim.env.VIRTUAL_ENV = vim.fn.expand('~/.diver/python/.venv313')
 end
-
 local function setup_autocmds()
   local mason_au = vim.api.nvim_create_augroup('Mason', { clear = true })
-
   vim.api.nvim_create_autocmd({ 'TextChanged', 'InsertLeave' }, {
     group = mason_au,
     pattern = { '*.json', '*.jsonc', '*.json5', '*.jsonl' },
@@ -59,12 +49,9 @@ local function setup_autocmds()
     })
   end
 end
-
 function M.mason_setup()
   configure_env()
   setup_autocmds()
-
-  ---@type MasonSettings
   local settings = {
     install_root_dir          = vim.fn.stdpath('data') .. '/mason',
     PATH                      = 'append',
@@ -108,7 +95,6 @@ function M.mason_setup()
       },
     },
   }
-
   require('mason').setup(settings)
   require('mason-tool-installer').setup({
     ensure_installed = {
@@ -126,7 +112,6 @@ function M.mason_setup()
     },
     auto_update      = true,
     run_on_start     = true,
-    start_delay      = 3000,
     debounce_hours   = 5,
     integrations     = {
       ['mason-lspconfig'] = true,
@@ -137,18 +122,26 @@ function M.mason_setup()
 
   require('mason-lspconfig').setup({
     ensure_installed       = {
-      'cssls', 'dockerls', 'gopls', 'html', 'jsonls', 'lua_ls', 'pyright',
+      'bashls', 'cssls', 'dockerls', 'gopls', 'html', 'jsonls', 'lua_ls', 'pyright',
       'rust_analyzer', 'terraformls', 'ts_ls', 'yamlls', 'zls',
     },
-    automatic_enable       = { "lua_ls", "vimls" },
+    automatic_enable       = { "lua_ls", "vimls", 'bashls', 'pyright', 'zls', 'yamlls' },
     exclude                = {
       "rust_analyzer",
       "ts_ls",
-      "harper-ls"
+      "harper-ls",
+      'tailwindcss'
     },
     automatic_installation = true,
   })
 end
+
+require('mason-nvim-dap').setup({
+  ensure_installed = {
+    "bash-debug-adapter",
+  },
+  automatic_installation = true,
+})
 
 M.setup_mason    = M.mason_setup
 M.mason_env      = configure_env

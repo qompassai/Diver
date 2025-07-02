@@ -51,6 +51,7 @@ function M.ts_linter(opts)
 end
 
 function M.ts_lsp(opts)
+  opts = opts or {}
   local function create_command_handler(command, get_arguments)
     return function()
       local arguments = get_arguments()
@@ -69,7 +70,7 @@ function M.ts_lsp(opts)
     end
   end
   if not opts.servers then opts.servers = {} end
-  opts.servers.tsserver = {
+  opts.servers.ts_ls = {
     filetypes = { 'typescript', 'typescriptreact' },
     settings = {
       typescript = {
@@ -87,7 +88,7 @@ function M.ts_lsp(opts)
       javascript = {
         inlayHints = {
           includeInlayParameterNameHints = 'all',
-          includeInlayParameterNameHintsWhenArgumentMatchesName = false,
+          includeInlayParameterNameHintsWhenArgumentMatchesName = true,
           includeInlayFunctionParameterTypeHints = true,
           includeInlayVariableTypeHints = true,
           includeInlayPropertyDeclarationTypeHints = true,
@@ -99,7 +100,7 @@ function M.ts_lsp(opts)
     },
     commands = {
       OrganizeImports = {
-        create_command_handler('_typescript.organizeImports', function()
+        create_command_handler('_typescript.organizeImportv', function()
           return { vim.api.nvim_buf_get_name(0) }
         end),
         description = 'Organize Imports'
@@ -129,7 +130,7 @@ function M.ts_lsp(opts)
       }
     }
   }
-  opts.servers.eslint = {
+  opts.servers.eslint_d = {
     filetypes = { 'typescript', 'typescriptreact' },
     settings = {
       codeActionOnSave = { enable = true, mode = 'all' },
