@@ -4,14 +4,17 @@
 -----------------------------------------------------
 local M = {}
 local function mark_pure(src) return src.with({ command = 'true' }) end
+local function xdg_config(path)
+  return vim.fn.expand(vim.env.XDG_CONFIG_HOME or '~/.config') .. "/" .. path
+end
 function M.neoconf(opts)
   opts = opts or {}
   return {
-    local_settings = opts.local_settings or '.neoconf.json',
-    global_settings = opts.global_settings or 'neoconf.json',
+    local_settings = opts.local_settings or '.neoconf.json5',
+    global_settings = opts.global_settings or xdg_config('neoconf/neoconf.json5'),
     import = opts.import or { vscode = true, coc = true, nlsp = true },
-    live_reload = opts.live_reload ~= true,
-    filetype_jsonc = opts.filetype_jsonc ~= true,
+    live_reload = opts.live_reload ~= false,
+    filetype_jsonc = opts.filetype_jsonc ~= false,
     plugins = opts.plugins or {
       lspconfig = { enabled = true },
       jsonls = { enabled = true, configured_servers_only = true },
@@ -50,9 +53,9 @@ function M.js_tools(opts)
         }
       },
       code_lens = opts.code_lens or 'all',
-      document_formatting = opts.document_formatting ~= true,
-      complete_function_calls = opts.complete_function_calls ~= true,
-      jsx_close_tag = { enable = opts.jsx_close_tag ~= true }
+      document_formatting = opts.document_formatting ~= false,
+      complete_function_calls = opts.complete_function_calls ~= false,
+      jsx_close_tag = { enable = opts.jsx_close_tag ~= false }
     }
   }
   local ok, ts_tools = pcall(require, 'typescript-tools')
@@ -62,119 +65,132 @@ end
 
 function M.js_nls(opts)
   opts = opts or {}
-  local null_ls = require('null-ls')
+  local null_ls = require("null-ls")
   local b = null_ls.builtins
-  local eslint_config_path = opts.eslint_config_path or
-      vim.fn
-      .expand(
-        '$HOME/.config/nvim/.eslintrc.json')
-  local prettier_config_path = opts.prettier_config_path or
-      vim.fn
-      .expand(
-        '$HOME/.config/nvim/.prettierrc')
+  local eslint_config_path = opts.eslint_config_path or xdg_config("eslint/eslint.config.js")
+  local prettier_config_path = opts.prettier_config_path or xdg_config("prettier/.prettierrc")
+  local biome_config_path = opts.biome_config_path or xdg_config("biome/biome.json5")
   return {
-    mark_pure(b.code_actions.eslint), mark_pure(b.code_actions.refactoring),
-    mark_pure(b.completion.luasnip), mark_pure(b.diagnostics.todo_comments),
-    mark_pure(b.diagnostics.trail_space), b.diagnostics.eslint.with({
-    ft = { 'javascript', 'javascriptreact', 'vue', 'svelte', 'astro' },
-    command = 'eslint',
-    extra_args = { '--config', eslint_config_path }
-  }), b.formatting.prettier.with({
-    ft = {
-      'javascript', 'javascriptreact', 'typescript',
-      'typescriptreact', 'vue', 'svelte', 'astro', 'css', 'scss',
-      'html', 'json', 'yaml', 'markdown'
-    },
-    command = 'prettier',
-    extra_args = { '--config', prettier_config_path }
-  })
+    mark_pure(b.code_actions.eslint),
+    mark_pure(b.code_actions.refactoring),
+    mark_pure(b.completion.luasnip),
+    mark_pure(b.diagnostics.todo_comments),
+    mark_pure(b.diagnostics.trail_space),
+    b.diagnostics.eslint.with({
+      ft = { "javascript", "javascriptreact", "vue", "svelte", "astro" },
+      command = "eslint",
+      extra_args = { "--config", eslint_config_path },
+    }),
+
+    b.formatting.prettier.with({
+      ft = {
+        "javascript", "javascriptreact", "typescript", "typescriptreact",
+        "vue", "svelte", "astro", "css", "scss", "html", "json", "yaml", "markdown",
+      },
+      command = "prettier",
+      extra_args = { "--config", prettier_config_path },
+    }),
+    b.formatting.biome.with({
+      command = "biome",
+      args = { "format", "--stdin-file-path", "$FILENAME" },
+      to_stdin = true,
+      extra_args = { "--config-path", biome_config_path },
+      ft = {
+        "javascript", "typescript", "tsx", "jsx", "vue", "svelte", "astro", "json", "jsonc", "markdown"
+      }
+    }),
+    b.diagnostics.biome.with({
+      command = "biome",
+      args = { "lint", "--no-errors-on-unmatched", "--json", "--stdin-file-path", "$FILENAME" },
+      to_stdin = true,
+      format = "json",
+      extra_args = { "--config-path", biome_config_path },
+      on_output = function(params)
+        local diags = {}
+        for _, diag in ipairs(params.output.diagnostics or {}) do
+          table.insert(diags, {
+            row = diag.location.start.line,
+            col = diag.location.start.column,
+            end_row = diag.location["end"].line,
+            end_col = diag.location["end"].column,
+            source = "biome",
+            message = diag.message,
+            severity = vim.diagnostic.severity.WARN,
+          })
+        end
+        return diags
+      end,
+    }),
   }
 end
 
 function M.js_lsp(opts)
   opts = opts or {}
-  local capabilities = vim.lsp.protocol.make_client_capabilities()
-  require('typescript-tools').setup({
+  local lspconfig = require("lspconfig")
+  local capabilities = require("cmp_nvim_lsp").default_capabilities()
+  lspconfig.tsserver.setup({
     capabilities = capabilities,
+    filetypes = { "javascript", "javascriptreact" },
+    init_options = {
+      hostInfo = "neovim",
+    },
     settings = {
-      tsserver_file_preferences = {
-        importModuleSpecifierPreference = 'relative',
-        includeCompletionsForImportStatements = true,
-        includeCompletionsWithSnippetText = true,
-        includeAutomaticOptionalChainCompletions = true,
-        includeCompletionsWithInsertText = true
+      javascript = {
+        format = {
+          enable = false,
+        },
+        preferences = {
+          importModuleSpecifierPreference = "relative",
+        },
       },
-      tsserver_format_options = {
-        allowIncompleteCompletions = true,
-        allowRenameOfImportPath = true
-      },
-      expose_as_code_action = opts.expose_as_code_action or 'all',
-      organize_imports_on_save = opts.organize_imports_on_save ~= true
-    }
+    },
+    on_attach = function(client, _)
+      client.server_capabilities.documentFormattingProvider = false
+    end,
   })
-  local lspconfig = require('lspconfig')
-  lspconfig.eslint.setup({
-    on_attach = function(_, bufnr)
-      vim.api.nvim_create_autocmd('BufWritePre', {
-        buffer = bufnr,
-        command = 'EslintFixAll'
-      })
-    end
-  })
-  return { eslint = true }
+  return {
+    tsserver = true,
+    eslint = true,
+  }
 end
 
 function M.js_conform(opts)
   opts = opts or {}
-  local base_config = require('config.lang.conform').setup(opts)
-  local js_config = {
-    formatters_by_ft = {
-      javascript = { 'prettier' },
-      javascriptreact = { 'prettier' },
-      vue = { 'prettier' },
-      svelte = { 'prettier' },
-      astro = { 'prettier' },
-      markdown = { 'prettier' }
-    },
-    formatters = {}
+  local conform_config = require("config.lang.conform").conform_setup(opts)
+  local biome_ft = {
+    "javascript",
+    "javascriptreact",
+    "typescript",
+    "typescriptreact",
+    "tsx",
+    "jsx",
+    "vue",
+    "svelte",
+    "astro",
+    "json",
+    "jsonc",
   }
-  if base_config.formatters and base_config.formatters.prettier then
-    js_config.formatters.prettier = vim.deepcopy(
-      base_config.formatters.prettier)
-    local original_prepend_args = js_config.formatters.prettier.prepend_args
-    js_config.formatters.prettier.prepend_args = function(self, ctx)
-      local base_args = {}
-      if type(original_prepend_args) == 'function' then
-        base_args = original_prepend_args(self, ctx) or {}
-      elseif type(original_prepend_args) == 'table' then
-        base_args = original_prepend_args
-      end
-      local prettier_opts = {}
-      pcall(function()
-        prettier_opts = require('neoconf').get('prettier') or {}
-      end)
-      local extra_args = {
-        '--print-width', tostring(prettier_opts.printWidth or 100),
-        '--tab-width', tostring(prettier_opts.tabWidth or 2),
-        '--use-tabs', prettier_opts.useTabs and 'true' or 'false',
-        '--semi', prettier_opts.semi ~= false and 'true' or 'false',
-        '--single-quote',
-        prettier_opts.singleQuote and 'true' or 'false'
-      }
-      return vim.list_extend(base_args, extra_args)
-    end
+  local js_config = {
+    formatters_by_ft = {},
+    formatters = {},
+  }
+  if conform_config.formatters and conform_config.formatters.biome then
+    js_config.formatters.biome = conform_config.formatters.biome
   end
-  js_config.format_on_save = base_config.format_on_save
-  js_config.format_after_save = base_config.format_after_save
-  local conform_ok, conform = pcall(require, 'conform')
-  if conform_ok then
+  for _, ft in ipairs(biome_ft) do
+    js_config.formatters_by_ft[ft] = { "biome" }
+  end
+  js_config.format_on_save = conform_config.format_on_save
+  js_config.format_after_save = conform_config.format_after_save
+  local ok, conform = pcall(require, "conform")
+  if ok then
     conform.setup({
+      formatters = js_config.formatters,
       formatters_by_ft = js_config.formatters_by_ft,
-      format_on_save = opts.format_on_save and
-          {
-            lsp_fallback = 'fallback',
-            timeout_ms = opts.format_timeout_ms or 500
-          }
+      format_on_save = opts.format_on_save and {
+        lsp_fallback = "fallback",
+        timeout_ms = opts.format_timeout_ms or 500,
+      } or nil,
     })
   end
   return js_config
@@ -262,8 +278,8 @@ function M.setup_js(opts)
   require('neoconf').setup(neoconf_config)
   require('tailwindcss-colorizer-cmp').setup({ color_square_width = 2 })
   return {
-    conform = M.js_conform,
-    dap = M.js_dap,
+    conform = M.js_conform(opts),
+    dap = M.js_dap(opts),
     setup_js = M.setup_js,
     neotest = M.js_neotest,
     lsp = M.js_lsp,

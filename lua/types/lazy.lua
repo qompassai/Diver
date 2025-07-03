@@ -2,6 +2,8 @@
 -- Qompass AI Diver Lazy Types
 -- Copyright (C) 2025 Qompass AI, All rights reserved
 ------------------------------------------------------
+---@meta
+
 ---@class LazyPluginSpec
 ---@field [1] string?
 ---@field name string?

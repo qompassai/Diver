@@ -2,8 +2,15 @@
 -- Qompass AI Diver Markdown Config
 -- Copyright (C) 2025 Qompass AI, All rights reserved
 -----------------------------------------------------
-local M     = {}
-M.md_img_ft = { 'markdown', 'norg', 'typst', 'html', 'css' }
+local M = {}
+local function ensure_config_file(config_path, default_content)
+  local expanded_path = vim.fn.expand(config_path)
+  if vim.fn.filereadable(expanded_path) == 0 then
+    vim.fn.mkdir(vim.fn.fnamemodify(expanded_path, ":h"), "p")
+    vim.fn.writefile(vim.split(default_content, "\n"), expanded_path)
+  end
+  return expanded_path
+end
 function M.md_anchor(link, opts)
   opts = opts or {}
   local prefix = opts.prefix or '#'
@@ -88,7 +95,8 @@ function M.md_autocmds()
       end
     })
   end, {})
-  local markdownlint_config = vim.fn.expand('"$HOME"/.config/markdown/markdownlint.json')
+  local config_home = os.getenv("XDG_CONFIG_HOME") or vim.fn.expand("~/.config")
+  local markdownlint_config = config_home .. "/markdown/markdownlint.json"
   if vim.fn.filereadable(markdownlint_config) == 0 then
     vim.fn.mkdir(vim.fn.expand('~/.config/nvim/utils'), 'p')
     local config = [[{
@@ -199,47 +207,82 @@ end
 
 function M.md_nls(opts)
   opts = opts or {}
+  local vale_config_path = ensure_config_file(
+    "$XDG_CONFIG_HOME/vale/.vale.ini",
+    [[
+StylesPath = styles
+MinAlertLevel = suggestion
+
+[*]
+BasedOnStyles = write-good
+]]
+  )
+  local textlintrc_path = ensure_config_file(
+    "$XDG_CONFIG_HOME/textlint/.textlintrc",
+    [[
+{
+  "filters": {},
+  "rules": {
+    "no-todo": true,
+    "common-misspellings": true,
+    "write-good": true
+  }
+}
+]]
+  )
+
+  local markdownlint_path = vim.fn.expand("$XDG_CONFIG_HOME/markdown/markdownlint.json5")
+  if vim.fn.filereadable(markdownlint_path) == 0 then
+    vim.fn.mkdir(vim.fn.fnamemodify(markdownlint_path, ":h"), "p")
+    vim.fn.writefile(vim.split([[
+{
+  "default": true,
+  "line-length": false,
+  "no-trailing-punctuation": false,
+  "no-inline-html": false
+}
+]], "\n"), markdownlint_path)
+  end
   local markdown_filetypes = opts.markdown_filetypes or { 'markdown', 'md' }
   local text_filetypes = opts.text_filetypes or { 'markdown', 'md', 'txt' }
   local prettier_config = opts.prettier or {}
   local markdownlint_config = opts.markdownlint or {}
   local vale_config = opts.vale or {}
-  local proselint_config = opts.proselint or {}
+  local textlint_config = opts.textlint or {}
   local include_prettier = opts.include_prettier ~= false
   local include_markdownlint = opts.include_markdownlint ~= false
   local include_vale = opts.include_vale ~= false
-  local null_ls_ok, null_ls = pcall(require, 'null-ls')
-  if not null_ls_ok then return {} end
+  local include_textlint = opts.include_textlint ~= false
+  local ok, null_ls = pcall(require, "null-ls")
+  if not ok then return {} end
   local b = null_ls.builtins
   local sources = {}
   if include_prettier then
-    table.insert(sources,
-      b.formatting.prettierd.with(
-        vim.tbl_deep_extend('force', {
-          filetypes = markdown_filetypes,
-          prefer_local = 'node_modules/.bin'
-        }, prettier_config)))
+    table.insert(sources, b.formatting.prettierd.with(vim.tbl_deep_extend("force", {
+      filetypes = markdown_filetypes,
+      prefer_local = "node_modules/.bin"
+    }, prettier_config)))
   end
   if include_markdownlint then
-    table.insert(sources,
-      b.diagnostics.markdownlint
-      .with(vim.tbl_deep_extend('force', {
-        ft = markdown_filetypes,
-        extra_args = {
-          '--config', vim.fn.expand('"$HOME"/.config/markdown/markdownlint.json5')
-        }
-      }, markdownlint_config)))
+    table.insert(sources, b.diagnostics.markdownlint.with(vim.tbl_deep_extend("force", {
+      ft = markdown_filetypes,
+      extra_args = { "--config", markdownlint_path }
+    }, markdownlint_config)))
+    table.insert(sources, b.code_actions.markdownlint.with({ ft = markdown_filetypes }))
   end
   if include_vale then
-    table.insert(sources,
-      b.diagnostics.vale.with(
-        vim.tbl_deep_extend('force', {
-          ft = text_filetypes,
-          extra_args = {
-            '--config', vim.fn.expand('"$HOME"/.config/vale/.vale.ini')
-          }
-        }, vale_config)))
+    table.insert(sources, b.diagnostics.vale.with(vim.tbl_deep_extend("force", {
+      ft = text_filetypes,
+      extra_args = { "--config", vale_config_path }
+    }, vale_config)))
   end
+  if include_textlint then
+    table.insert(sources, b.diagnostics.textlint.with(vim.tbl_deep_extend("force", {
+      ft = text_filetypes,
+      extra_args = { "--config", textlintrc_path }
+    }, textlint_config)))
+  end
+
   return sources
 end
 
@@ -639,13 +682,12 @@ function M.md_rendermd(opts)
       --   enabled, max_file_size, debounce, render_modes, anti_conceal, padding, heading, paragraph,
       --   code, dash, bullet, checkbox, quote, pipe_table, callout, link, sign, indent, latex, html,
       --   win_options
-
       buflisted = {},
       buftype = {
         nofile = {
           render_modes = true,
           padding = { highlight = 'NormalFloat' },
-          sign = { enabled = false },
+          sign = { enabled = true },
         },
       },
       filetype = {},

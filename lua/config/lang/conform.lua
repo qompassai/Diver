@@ -2,6 +2,13 @@
 -- Qompass AI Diver Conform Lang Config
 -- Copyright (C) 2025 Qompass AI, All rights reserved
 -----------------------------------------------------
+local function biome_cmd(cmd)
+  return {
+    command = "biome",
+    args = { cmd, "check", "--apply", "--stdin-file-path", "$FILENAME" },
+    cwd = vim.fn.expand(vim.env.XDG_CONFIG_HOME or "~/.config") .. "/biome",
+  }
+end
 local M = {}
 function M.conform_setup(opts)
   opts = opts or {}
@@ -10,7 +17,7 @@ function M.conform_setup(opts)
       ['_'] = { 'trim_whitespace' },
       asm = { 'asmfmt' },
       ansible = { 'prettier', 'yamlfmt' },
-      astro = { 'prettier', 'biome' },
+      astro = { 'biome' },
       bash = { 'shfmt', 'shellcheck' },
       c = { 'clang_format', 'uncrustify' },
       clojure = { 'cljfmt' },
@@ -18,11 +25,12 @@ function M.conform_setup(opts)
       conf = { 'trim_whitespace' },
       cpp = { 'clang_format' },
       csharp = { 'csharpier' },
-      css = { 'biome_css', 'stylelint' },
+      css = { 'biome' },
       cue = { 'cue_fmt' },
       dart = { 'dart_format' },
       dhall = { 'dhall_format' },
       dockerfile = { 'dockerfmt' },
+      ejs = { 'biome' },
       elixir = { 'mix_format' },
       elm = { 'elm_format' },
       erlang = { 'erlfmt' },
@@ -32,28 +40,30 @@ function M.conform_setup(opts)
       graphql = { 'graphql-format' },
       groovy = { 'npm_groovy_lint' },
       html = { 'biome_html', 'djlint', 'prettier_html' },
-      javascript = { 'biome', 'eslint_d', 'prettierd' },
-      javascriptreact = { 'biome', 'eslint_d', 'prettierd' },
+      javascript = { 'biome' },
+      javascriptreact = { 'biome' },
       json = { 'biome', 'jq', 'prettierd' },
-      jsonc = { 'biome', 'prettierd' },
+      jsonc = { 'biome' },
       jsonnet = { 'jsonnetfmt' },
-      json5 = { 'prettierd' },
+      json5 = { 'biome' },
+      jsx = { 'biome' },
       julia = { 'julia_format' },
       just = { 'just_fmt' },
       justfile = { 'just_fmt' },
-      handlebars = { 'prettier' },
+      handlebars = { 'biome' },
       haskell = { 'ormolu', 'fourmolu' },
       hcl = { 'terraform_fmt' },
       helm = { 'helm_format' },
-      htmlangular = { 'prettier_html' },
+      htmlangular = { 'biome' },
       htmldjango = { 'djlint' },
       java = { 'google-java-format' },
       kotlin = { 'ktlint' },
       latex = { 'tex-fmt', 'latexindent' },
       lua = { 'lua-format', 'stylua' },
       luau = { 'lua-format', 'stylua' },
-      markdown = { 'prettier-markdown', 'mdformat' },
-      ['markdown.mdx'] = { 'prettier-markdown' },
+      markdown = { 'biome' },
+      ['markdown.mdx'] = { 'biome', 'prettier-markdown' },
+      mustache = { 'biome' },
       nix = { 'alejandra', 'nixfmt', 'nixpkgs-fmt' },
       nginx = { 'nginx_config_formatter' },
       perl = { 'perltidy' },
@@ -68,8 +78,8 @@ function M.conform_setup(opts)
       ruby = { 'rubocop', 'standardrb' },
       rust = { 'rustfmt' },
       scala = { 'scalafmt' },
-      scss = { 'stylelint', 'prettier_css' },
-      sass = { 'stylelint', 'prettier_css' },
+      scss = { 'biome' },
+      sass = { 'biome' },
       sh = { 'shfmt' },
       solidity = { 'prettier_solidity' },
       sql = { 'sqlfluff', 'sql-formatter' },
@@ -80,9 +90,9 @@ function M.conform_setup(opts)
       terraform = { 'terraform_fmt' },
       toml = { 'toml-sort', 'taplo' },
       tsx = { 'biome', 'eslint_d', 'prettierd' },
-      typescript = { 'biome', 'eslint_d', 'prettierd' },
-      typescriptreact = { 'biome', 'eslint_d', 'prettierd' },
-      vue = { 'prettierd' },
+      typescript = { 'biome' },
+      typescriptreact = { 'biome' },
+      vue = { 'biome' },
       xml = { 'xmllint' },
       yaml = { 'yamlfmt', 'yq', 'prettier_yaml', 'prettierd' },
       yml = { 'yamlfmt', 'yq', 'prettier_yaml', 'prettierd' },
@@ -107,7 +117,7 @@ function M.conform_setup(opts)
       undojoin = true
     },
     log_level = opts.log_level or vim.log.levels.ERROR,
-    notify_on_error = opts.notify_on_error ~= true,
+    notify_on_error = opts.notify_on_error ~= false,
     notify_no_formatters = opts.notify_no_formatters ~= false,
     formatters = opts.formatters or {
       alejandra = { command = 'alejandra', stdin = true, args = {} },
@@ -124,23 +134,7 @@ function M.conform_setup(opts)
         stdin = true,
         prepend_args = { '--line-length', '88' }
       },
-      biome = {
-        command = 'biome',
-        args = { 'format', '--stdin-file-path', '$FILENAME' },
-        stdin = true,
-        prepend_args = { '--line-width', '160' }
-      },
-      biome_css = {
-        command = 'biome',
-        args = { 'format', '--stdin-file-path', '$FILENAME' },
-        stdin = true,
-        prepend_args = { '--line-width', '160' }
-      },
-      biome_html = {
-        command = 'biome',
-        args = { 'format', '--stdin-file-path', '$FILENAME' },
-        stdin = true
-      },
+      biome = biome_cmd,
       buf = { command = 'buf', args = { 'format', '--write' }, stdin = false },
       cargo_leptosfmt = {
         command = 'cargo',

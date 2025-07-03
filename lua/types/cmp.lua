@@ -1,7 +1,8 @@
 -- /qompassai/Diver/lua/types/cmp.lua
 -- Qompass AI Diver CMP Types
-----------------------------------------
 -- Copyright (C) 2025 Qompass AI, All rights reserved
+-----------------------------------------------------
+---@meta
 
 ---@class cmp.SourceConfig
 ---@field name string

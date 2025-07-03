@@ -2,13 +2,15 @@
 -- Qompass AI Diver Vim Types
 -- Copyright (C) 2025 Qompass AI, All rights reserved
 ------------------------------------------------------
+---@meta
+
 ---@class vim
 ---@field api VimNativeAPI
 ---@field bo table<string, any>
 ---@field diagnostic vim.diagnostic
 ---@field env table<string, string>
 ---@field filetype vim.filetype
----@field fn VimFunctionAPI
+---@field fn FunctionAPI
 ---@field lsp vim.lsp
 ---@field log vim.log
 ---@field loop vim.loop

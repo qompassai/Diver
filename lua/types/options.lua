@@ -2,6 +2,8 @@
 -- Qompass AI Diver Option Types
 -- Copyright (C) 2025 Qompass AI, All rights reserved
 ------------------------------------------------------
+---@meta
+
 ---@class API
 ---@field bo table<string, any>
 ---@field opt Options

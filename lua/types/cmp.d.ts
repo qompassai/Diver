@@ -1,4 +1,4 @@
-// ~/.config/nvim/types/cmp.d.ts
+// /qompassai/Diver/lua/types/cmd.d.ts
 // -----------------------------
 // Copyright (C) 2025 Qompass AI, All rights reserved
 declare module 'cmp' {
@@ -7,18 +7,17 @@ declare module 'cmp' {
     complete(): void;
     confirm(opts: { behavior: any; select: boolean }): void;
   };
-  
+
   export const config: {
     sources: (sources: any) => any;
   };
-  
+
   export const ConfirmBehavior: {
     Replace: string;
     Insert: string;
   };
-  
+
   export function visible(): boolean;
   export function select_next_item(): void;
   export function select_prev_item(): void;
 }
-
