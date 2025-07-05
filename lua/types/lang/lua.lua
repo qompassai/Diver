@@ -1,7 +1,9 @@
 -- /qompassai/Diver/lua/types/lang/lua.lua
--- Qompass AI Diver Lua Types
+-- Qompass AI Diver Lua Lang Types
 -- Copyright (C) 2025 Qompass AI, All rights reserved
 ------------------------------------------------------
+---@meta
+
 ---@class LuaLangModule
 ---@field lua_cmp fun(): table
 ---@field lua_conform fun(opts?: table): table

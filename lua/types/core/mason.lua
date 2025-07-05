@@ -1,4 +1,9 @@
--- ~/.config/nvim/lua/types/core/mason.lua
+-- /qompassai/Diver/lua/types/core/mason.lua
+-- Qompass AI Diver Mason Types
+-- Copyright (C) 2025 Qompass AI, All rights reserved
+
+---@meta
+
 ---@class MasonOpts
 ---@field install_root_dir? string
 ---@field PATH? string

@@ -2,6 +2,7 @@
 -- Qompass AI HTML Plugin Spec
 -- Copyright (C) 2025 Qompass AI, All rights reserved
 -----------------------------------------------------
+local html_cfg = require('config.ui.html')
 return {
     {
         'windwp/nvim-ts-autotag',
@@ -21,7 +22,7 @@ return {
             }
         },
         config = function(_, opts)
-            require('config.ui.html').html_setup(opts)
+           html_cfg.html_cfg(opts)
         end
     }
 }

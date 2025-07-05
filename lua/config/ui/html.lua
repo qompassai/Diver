@@ -2,9 +2,11 @@
 -- Qompass AI Diver HTML Config
 -- Copyright (C) 2025 Qompass AI, All rights reserved
 ------------------------------------------------------
+---@module 'config.ui.html'
+---@class htmlconfigmodule
 local M = {}
+
 ---@param opts? table
----@return cmp.ConfigSchema
 function M.html_cmp(opts)
     opts = opts or {}
     local cmp = require('cmp')
@@ -61,35 +63,81 @@ function M.html_cmp(opts)
     }
 end
 ---@param opts? table
----@return table[]
 function M.html_nls(opts)
-    opts = opts or {}
-    local nls = require('none-ls')
-    local nlsb = nls.builtins
-    local utils = require('none-ls.utils')
-    local prettierConfig = {
-        prefer_local = 'node_modules/.bin',
-        cwd = utils.root_pattern('.prettierrc', '.prettierrc.json',
-                                 '.prettierrc.yml', '.prettierrc.yaml',
-                                 '.prettierrc.json5', '.prettierrc.js',
-                                 '.prettierrc.cjs', 'prettier.config.js',
-                                 'prettier.config.cjs', 'package.json')
-    }
-    return {
-        nlsb.formatting.prettierd.with(vim.tbl_extend('force', prettierConfig, {
-            filetypes = {'html'},
-            runtime_condition = function()
-                return utils.executable('prettierd')
-            end
-        })),
-        nlsb.formatting.prettier.with(vim.tbl_extend('force', prettierConfig, {
-            filetypes = {'html'},
-            runtime_condition = function()
-                return not utils.executable('prettierd')
-            end
-        }))
-    }
+  opts = opts or {}
+  local nls     = require("null-ls")
+  local nlsb    = nls.builtins
+  local utils   = require("null-ls.utils")
+  local prettierConfig = {
+    prefer_local = "node_modules/.bin",
+    cwd = utils.root_pattern(
+      ".prettierrc", ".prettierrc.json", ".prettierrc.yml",
+      ".prettierrc.yaml", ".prettierrc.json5", ".prettierrc.js",
+      ".prettierrc.cjs", "prettier.config.js", "prettier.config.cjs",
+      "package.json", "package.json5"
+    ),
+  }
+  return {
+    nlsb.formatting.biome.with({
+      filetypes = { "html" },
+      extra_args = { "format", "--stdin-file-path", "$FILENAME" },
+      runtime_condition = function() return utils.executable("biome") end,
+    }),
+    nlsb.formatting.prettierd.with(vim.tbl_extend("force", prettierConfig, {
+      filetypes = { "html" },
+      runtime_condition = function() return utils.executable("prettierd") end,
+    })),
+    nlsb.formatting.prettier.with(vim.tbl_extend("force", prettierConfig, {
+      filetypes = { "html" },
+      runtime_condition = function()
+        return not utils.executable("prettierd")
+      end,
+    })),
+  }
 end
+
+---@param opts? table
+function M.html_emmet(opts)
+  opts = opts or {}
+  vim.api.nvim_create_autocmd("FileType", {
+    pattern = { "html" },
+    callback = function()
+      vim.bo.omnifunc = "v:lua.vim.lsp.omnifunc"
+      vim.keymap.set("i", "<C-e>", "<C-y>,", { buffer = true, desc = "Emmet expand abbreviation" })
+    end,
+  })
+end
+
+
+---@param opts? table
+function M.html_lint(opts)
+  opts = opts or {}
+  local nls = require("null-ls")
+  local nlsb = nls.builtins
+  local utils = require("null-ls.utils")
+  local sources = {
+    nlsb.diagnostics.djlint.with({
+      filetypes = { "html", "htmldjango", "blade" },
+      condition = function()
+        return utils.executable("djlint")
+      end,
+    }),
+    nlsb.diagnostics.tidy.with({
+      filetypes = { "html" },
+      extra_args = { "-errors", "-q" },
+      condition = function()
+        return utils.executable("tidy")
+      end,
+    }),
+  }
+  if opts.attach then
+    for _, src in ipairs(sources) do
+      opts.attach(src)
+    end
+  end
+  return sources
+end
+
 ---@param opts? table
 function M.html_lsp(opts)
     opts = opts or {}
@@ -119,7 +167,7 @@ function M.html_preview(opts)
     local livepreview = require('livepreview.config')
     livepreview.set(vim.tbl_extend('force', {
         port = 8090,
-        browser_cmd = 'firefox-developer-edition',
+        browser_cmd = 'firefox',
         auto_start = true,
         refresh_delay = 150,
         allowed_file_types = {'html', 'markdown', 'asciidoc', 'svg'}
@@ -127,19 +175,32 @@ function M.html_preview(opts)
 end
 ---@param opts? table
 function M.html_conform(opts)
-    opts = opts or {}
-    return {
-        formatters_by_ft = {
-            html = {'prettierd'},
-            htmldjango = {'prettierd'},
-            blade = {'prettierd'}
-        },
-        format_on_save = {timeout_ms = 500, lsp_fallback = true}
-    }
+  opts = opts or {}
+  local conform_cfg = require("config.lang.conform")
+  return {
+    formatters_by_ft = {
+      html = { "biome" },
+      htmldjango = { "biome" },
+      blade = { "blade-formatter" },
+    },
+    format_on_save = conform_cfg.format_on_save,
+    format_after_save = conform_cfg.format_after_save,
+    default_format_opts = conform_cfg.default_format_opts,
+  }
 end
+
+---@param opts? table
+function M.html_treesitter(opts)
+  opts = opts or {}
+  return {
+    highlight = { enable = true },
+    indent = { enable = true },
+  }
+end
+
 ---@param opts? table
 ---@return table
-function M.html_setup(opts)
+function M.html_cfg(opts)
     opts = opts or {}
     return {
         cmp = M.html_cmp(opts),

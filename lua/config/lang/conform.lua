@@ -4,19 +4,17 @@
 -----------------------------------------------------
 local function biome_cmd(cmd)
   return {
-    command = "biome",
+    cmmmand = "biome",
     args = { cmd, "check", "--apply", "--stdin-file-path", "$FILENAME" },
     cwd = vim.fn.expand(vim.env.XDG_CONFIG_HOME or "~/.config") .. "/biome",
   }
 end
+local nix_cfg = require("config.lang.nix")
 local M = {}
-function M.conform_setup(opts)
-  opts = opts or {}
-  return {
-    formatters_by_ft = opts.formatters_by_ft or {
+    M.formatters_by_ft = {
       ['_'] = { 'trim_whitespace' },
       asm = { 'asmfmt' },
-      ansible = { 'prettier', 'yamlfmt' },
+      ansible = { 'ansible_lint' },
       astro = { 'biome' },
       bash = { 'shfmt', 'shellcheck' },
       c = { 'clang_format', 'uncrustify' },
@@ -39,10 +37,16 @@ function M.conform_setup(opts)
       go = { 'goimports', 'gofumpt' },
       graphql = { 'graphql-format' },
       groovy = { 'npm_groovy_lint' },
-      html = { 'biome_html', 'djlint', 'prettier_html' },
+      handlebars = { 'biome' },
+      haskell = { 'ormolu', 'fourmolu' },
+      hcl = { 'terraform_fmt' },
+      helm = { 'helm_format' },
+      htmlangular = { 'biome' },
+      htmldjango = { 'biome' },
+      html = { 'biome' },
       javascript = { 'biome' },
       javascriptreact = { 'biome' },
-      json = { 'biome', 'jq', 'prettierd' },
+      json = { 'biome' },
       jsonc = { 'biome' },
       jsonnet = { 'jsonnetfmt' },
       json5 = { 'biome' },
@@ -50,21 +54,15 @@ function M.conform_setup(opts)
       julia = { 'julia_format' },
       just = { 'just_fmt' },
       justfile = { 'just_fmt' },
-      handlebars = { 'biome' },
-      haskell = { 'ormolu', 'fourmolu' },
-      hcl = { 'terraform_fmt' },
-      helm = { 'helm_format' },
-      htmlangular = { 'biome' },
-      htmldjango = { 'djlint' },
       java = { 'google-java-format' },
       kotlin = { 'ktlint' },
       latex = { 'tex-fmt', 'latexindent' },
       lua = { 'lua-format', 'stylua' },
       luau = { 'lua-format', 'stylua' },
       markdown = { 'biome' },
-      ['markdown.mdx'] = { 'biome', 'prettier-markdown' },
+      ['markdown.mdx'] = { 'biome' },
       mustache = { 'biome' },
-      nix = { 'alejandra', 'nixfmt', 'nixpkgs-fmt' },
+      nix = { 'alejandra' },
       nginx = { 'nginx_config_formatter' },
       perl = { 'perltidy' },
       php = { 'php_cs_fixer', 'phpcbf' },
@@ -84,43 +82,61 @@ function M.conform_setup(opts)
       solidity = { 'prettier_solidity' },
       sql = { 'sqlfluff', 'sql-formatter' },
       sqlite = { 'sqlfluff' },
-      svelte = { 'prettier', 'svelte_format' },
+      svelte = { 'svelte_format' },
       swift = { 'swift_format' },
       tex = { 'latexindent' },
       terraform = { 'terraform_fmt' },
-      toml = { 'toml-sort', 'taplo' },
-      tsx = { 'biome', 'eslint_d', 'prettierd' },
+      toml = { 'taplo' },
+      tsx = { 'biome' },
       typescript = { 'biome' },
       typescriptreact = { 'biome' },
       vue = { 'biome' },
-      xml = { 'xmllint' },
-      yaml = { 'yamlfmt', 'yq', 'prettier_yaml', 'prettierd' },
-      yml = { 'yamlfmt', 'yq', 'prettier_yaml', 'prettierd' },
+      xml = { 'xmlformat' },
+      yaml = { 'biome' },
+      yml = { 'biome' },
       zig = { 'zigfmt', 'zigfmt_ast' },
+      zine = { 'zigfmt', 'zigfmt_ast' },
+      zon = { 'zigfmt', 'zigfmt_ast' },
       zsh = { 'shfmt', 'shellcheck' }
+    }
+    M.default_format_opts = {
+  lsp_format = "fallback",
+}
+    M.format_on_save = {
+  lsp_fallback = true,
+  lsp_format = "fallback",
+  timeout_ms = 2000,
+  undojoin = true,
+  stop_after_first = false,
+  exclude = { "spell", "codespell" },
+}
+
+M.format_after_save = {
+  enabled = true,
+  lsp_format = "fallback",
+  timeout_ms = 1000,
+  async = true,
+  undojoin = true,
+}
+M.log_level = vim.log.levels.ERROR
+M.notify_on_error = true
+M.notify_no_formatters = true
+    M.formatters = {
+      alejandra = function()
+    return nix_cfg.nix_conform({
+      check = false,
+      exclude = { "result", "node_modules" },
+      experimental_config = "alejandra.toml",
+      quiet = 1,
+      threads = 4,
+    })
+  end,
+   ansible_lint = {
+      command     = "ansible-lint",
+      args        = { "-q", "--fix", "$FILENAME" },
+      stdin       = false,
+      exit_codes  = { 0, 2 },
     },
-    default_format_opts = opts.default_format_opts or
-        { lsp_format = 'fallback' },
-    format_on_save = {
-      lsp_fallback = true,
-      lsp_format = 'fallback',
-      timeout_ms = 2000,
-      undojoin = true,
-      stop_after_first = false,
-      exclude = { 'spell', 'codespell' }
-    },
-    format_after_save = opts.format_after_save or {
-      enabled = true,
-      lsp_format = 'fallback',
-      timeout_ms = 1000,
-      async = true,
-      undojoin = true
-    },
-    log_level = opts.log_level or vim.log.levels.ERROR,
-    notify_on_error = opts.notify_on_error ~= false,
-    notify_no_formatters = opts.notify_no_formatters ~= false,
-    formatters = opts.formatters or {
-      alejandra = { command = 'alejandra', stdin = true, args = {} },
       asmfmt = { command = 'asmfmt', stdin = true, args = {} },
       autopep8 = {
         command         = 'autopep8',
@@ -480,16 +496,19 @@ function M.conform_setup(opts)
         stdin = true,
         args = { '--fix', '--stdin', '$FILENAME' }
       },
-      stylua = {
-        command = 'stylua',
-        stdin = true,
-        prepend_args = function()
-          return {
-            '--indent-type', 'Spaces', '--indent-width', '2',
-            '--column-width', '160'
-          }
-        end
-      }
+     {
+  command = 'stylua',
+  stdin = true,
+  prepend_args = function()
+    return {
+      '--indent-type', 'Spaces',
+      '--indent-width', '2',
+      '--column-width', '160',
+      '--quote-style', 'AutoPreferSingle',
+      '--call-parentheses', 'None',
+      '--collapse-simple-statement', 'Always',
+    }
+  end
     },
     styler = {
       command = 'Rscript',
@@ -527,8 +546,14 @@ function M.conform_setup(opts)
     taplo = { command = 'taplo', stdin = true, args = { 'format', '-' } },
     ['tex-fmt'] = { command = 'tex-fmt', stdin = true, args = { '--stdin' } },
     ['toml-sort'] = { command = 'toml-sort', stdin = true, args = {} },
-    xmllint = { command = 'xmllint', args = { '--format', '-' }, stdin = true },
-    yamlfmt = { command = 'yamlfmt', stdin = true, args = { '-' } },
+  xmlformat = {
+  {
+    command = "xmlformat",
+    args = { "--indent", "2", "--selfclose", "yes", "--collapse-emptyelement", "yes" },
+    stdin = true,
+  },
+},
+  yamlfmt = { command = 'yamlfmt', stdin = true, args = { '-' } },
     yq = { command = 'yq', stdin = true, args = { '.' } },
     zigfmt = {
       command = 'zig',
@@ -548,6 +573,18 @@ function M.conform_setup(opts)
       stdin = true,
       exit_codes = { 0, 1 }
     }
+  }
+function M.conform_cfg(opts)
+  opts = opts or {}
+  return {
+    formatters_by_ft = opts.formatters_by_ft or M.formatters_by_ft,
+    default_format_opts = opts.default_format_opts or M.default_format_opts,
+    format_on_save = opts.format_on_save or M.format_on_save,
+    format_after_save = opts.format_after_save or M.format_after_save,
+    log_level = opts.log_level or M.log_level,
+    notify_on_error = opts.notify_on_error ~= false,
+    notify_no_formatters = opts.notify_no_formatters ~= false,
+    formatters = opts.formatters or M.formatters,
   }
 end
 

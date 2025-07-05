@@ -18,7 +18,6 @@ M.options = {
         hl = {border = 'FloatBorder'}
     },
     fzf_opts = {['--layout'] = 'reverse-list', ['--info'] = 'inline'},
-    previewers = {builtin = {treesitter = {enable = true}}},
     keymap = {
         fzf = {
             ['ctrl-c'] = 'abort',

@@ -2,6 +2,7 @@
 -- Qompass AI Diver CMP Plugin Spec
 -- Copyright (C) 2025 Qompass AI, All rights reserved
 ------------------------------------------------------
+local cmp_cfg = require('config.lang.cmp')
 return {
   {
     'saghen/blink.cmp',
@@ -15,7 +16,7 @@ return {
       { 'saghen/blink.compat', version = '*',   opts = {} }
     },
     config = function()
-      require('blink.cmp').setup(require('config.lang.cmp').blink_config())
+      require('blink.cmp').setup(cmp_cfg.blink_cmp())
     end
   }, {
   'hrsh7th/nvim-cmp',
@@ -24,6 +25,6 @@ return {
     'hrsh7th/cmp-nvim-lsp', 'L3MON4D3/LuaSnip', 'hrsh7th/cmp-buffer',
     'hrsh7th/cmp-path', 'onsails/lspkind.nvim'
   },
-  config = function() require('config.lang.cmp').nvim_cmp_setup() end
+  config = function() cmp_cfg.nvim_cmp() end
 }
 }

@@ -2,20 +2,25 @@
 -- Qompass AI Diver Lang Completion Config
 -- Copyright (C) 2025 Qompass AI, All rights reserved
 -----------------------------------------------------
+---@module 'config.lang.cmp'
+---@class CmpConfigModule
+
 local M = {}
-function M.blink_config()
+
+function M.blink_cmp()
   return {
     keymap = { preset = 'default' },
     appearance = {
       nerd_font_variant = 'mono',
       kind_icons = require('lazyvim.config').icons.kinds
     },
-    completion = { documentation = { auto_show = true } },
+    completion = {
+      documentation = { auto_show = true }
+    },
     snippets = { preset = 'luasnip' },
     sources = {
       default = {
-        'lsp', 'path', 'snippets', 'buffer', 'dadbod', 'emoji',
-        'dictionary'
+        'lsp', 'path', 'snippets', 'buffer', 'dadbod', 'emoji', 'dictionary'
       },
       providers = {
         lsp = {
@@ -32,11 +37,10 @@ function M.blink_config()
           score_offset = 250,
           fallbacks = { 'snippets', 'buffer' },
           opts = {
-            trailing_slash = false,
+            trailing_slash = true,
             label_trailing_slash = true,
             get_cwd = function(context)
-              return vim.fn.expand(('#%d:p:h'):format(
-                context.bufnr))
+              return vim.fn.expand(('#%d:p:h'):format(context.bufnr))
             end,
             show_hidden_files_by_default = true
           }
@@ -84,23 +88,22 @@ function M.blink_config()
               vim.fn.expand('~/.config/nvim/lua/utils/dictionary')
             },
             dictionary_files = {
-              vim.fn.expand(
-                '~/.config/nvim/lua/utils/dictionary/en.utf-8.add')
+              vim.fn.expand('~/.config/nvim/lua/utils/dictionary/en.utf-8.add')
             }
           }
         }
       }
     },
-    cmdline = { enabled = true }
+    cmdline = { enabled = true },
     -- fuzzy = {
-    --     use_typo_resistance = false,
-    --     use_frecency = true,
-    --     use_proximity = false,
-    -- }
+    --   use_typo_resistance = false,
+    --   use_frecency = true,
+    --   use_proximity = false,
+    -- },
   }
 end
 
-function M.nvim_cmp_setup()
+function M.nvim_cmp()
   local cmp = require('cmp')
   local luasnip = require('luasnip')
   local mappings = {
@@ -138,7 +141,8 @@ function M.nvim_cmp_setup()
     sources = cmp.config.sources({
       { name = 'nvim_lsp', priority = 1000 },
       { name = 'luasnip',  priority = 750 },
-      { name = 'buffer',   priority = 500 }, { name = 'path', priority = 250 }
+      { name = 'buffer',   priority = 500 },
+      { name = 'path',     priority = 250 }
     }),
     formatting = {
       format = require('lspkind').cmp_format({
@@ -177,12 +181,19 @@ function M.nvim_cmp_setup()
       { name = 'buffer',   priority = 800 }
     })
   })
-
   cmp.setup.filetype({ 'typescript', 'typescriptreact' }, {
     sources = cmp.config.sources({
       { name = 'nvim_lsp', priority = 1000 },
       { name = 'luasnip',  priority = 900 },
       { name = 'buffer',   priority = 800 }
+    })
+  })
+  cmp.setup.filetype('zig', {
+    sources = cmp.config.sources({
+      { name = 'nvim_lsp', priority = 1000 },
+      { name = 'luasnip',  priority = 750 },
+      { name = 'buffer',   priority = 500 },
+      { name = 'path',     priority = 250 }
     })
   })
   cmp.setup.cmdline(':', {

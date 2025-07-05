@@ -216,7 +216,7 @@ function M.rust_settings()
         }
     }
 end
-function M.rust_setup()
+function M.rust_cfg()
     M.rust_auto_detect_toolchain()
     local capabilities = require('cmp_nvim_lsp').default_capabilities()
     M.rust_lsp(capabilities)
@@ -235,7 +235,6 @@ function M.rust_setup()
         nargs = 1,
         complete = function() return vim.tbl_keys(M.rust_toolchains) end
     })
-
     vim.keymap.set('n', '<leader>rd', M.rust_refresh_diagnostics,
                    {desc = 'Refresh Diagnostics'})
     vim.keymap.set('n', '<leader>re', function()
@@ -243,9 +242,9 @@ function M.rust_setup()
                       {prompt = 'Select Rust Edition'}, M.rust_set_edition)
     end, {desc = 'Select Rust Edition'})
 
-    vim.keymap.set('n', '<leader>rt', function()
+    vim.keymap.set('n', '<leader>rst', function()
         vim.ui.select(vim.tbl_keys(M.rust_toolchains),
-                      {prompt = 'Select Rust Toolchain'}, M.rust_set_toolchain)
+                      {prompt = 'Rust Select Toolchain'}, M.rust_set_toolchain)
     end, {desc = 'Select Rust Toolchain'})
 end
 return M

@@ -56,13 +56,11 @@ function M.lsp_config(opts)
   local lspconfig = require("lspconfig")
   local util = require("lspconfig.util")
   local capabilities = opts.capabilities or M.lsp_capabilities()
-
   local default_config = {
     on_attach = M.lsp_on_attach,
     capabilities = capabilities,
     root_dir = util.root_pattern('.git', '.svn', '.hg'),
   }
-
   local servers = {
     ansiblels = {},
     bashls = {},
@@ -107,12 +105,10 @@ function M.lsp_config(opts)
     },
     zls = zig.zig_lsp(),
   }
-
   for name, config in pairs(servers) do
     local merged_config = vim.tbl_deep_extend("force", {}, default_config, config)
     lspconfig[name].setup(merged_config)
   end
-
   vim.diagnostic.config({
     virtual_text = { prefix = '●', spacing = 4 },
     float = {
@@ -156,7 +152,7 @@ function M.lsp_on_attach(client, bufnr)
 end
 
 ---@param opts? table
-function M.lsp_setup(opts)
+function M.lsp_cfg(opts)
   opts = opts or {}
   local lspconfig = require("lspconfig")
   local capabilities = M.lsp_capabilities()

@@ -19,7 +19,7 @@ function M.json_autocmds()
         end
     })
 end
-function M.json_completion(opts)
+function M.json_cmp(opts)
     local sources = opts.sources or {}
     local has_json_source = vim.tbl_contains(
                                 vim.tbl_map(function(s)
@@ -31,7 +31,7 @@ function M.json_completion(opts)
             group_index = 1,
             priority = 100,
             filetypes = {'json', 'jsonc', 'json5', 'jsonl'},
-            entry_filter = function(entry, ctx)
+            entry_filter = function(ctx)
                 local ft = vim.bo[ctx.bufnr].filetype
                 return vim.tbl_contains({'json', 'jsonc', 'json5', 'jsonl'}, ft)
             end
@@ -41,19 +41,21 @@ function M.json_completion(opts)
     return opts
 end
 function M.json_conform(opts)
-    opts.formatters_by_ft = vim.tbl_deep_extend('force',
-                                                opts.formatters_by_ft or {}, {
-        json = {'prettierd', 'jq'},
-        jsonc = {'prettierd'},
-        json5 = {'prettierd'},
-        jsonl = {'jq'}
-    })
-    opts.formatters = vim.tbl_deep_extend('force', opts.formatters or {}, {
-        prettierd = {prepend_args = {'--parser', 'json'}},
-        jq = {args = {'--indent', '2'}}
-    })
-    return opts
+     opts = opts or {}
+  local conform_cfg = require("config.lang.conform")
+  return {
+    formatters_by_ft = {
+       json = { 'biome' },
+      jsonc = { 'biome' },
+      jsonnet = { 'jsonnetfmt' },
+      json5 = { 'biome' },
+    },
+    format_on_save = conform_cfg.format_on_save,
+    format_after_save = conform_cfg.format_after_save,
+    default_format_opts = conform_cfg.default_format_opts,
+  }
 end
+
 function M.json_lsp(opts)
     if not opts.servers then opts.servers = {} end
     local capabilities = require('cmp_nvim_lsp').default_capabilities()
@@ -65,7 +67,7 @@ function M.json_lsp(opts)
                 schemas = require('schemastore').json.schemas({
                     select = {
                         'package.json', 'tsconfig.json', 'jsconfig.json',
-                        '.eslintrc', 'composer.json', 'babelrc.json',
+                        '.eslintrc', 'composer.json', 'babelrc.json', 'package.json5',
                         'lerna.json', 'GitHub Action', 'AWS CloudFormation'
                     }
                 }),
@@ -102,6 +104,7 @@ function M.json_filetype_detection()
 end
 
 function M.json_keymaps(opts)
+  opts = opts or {}
     opts.defaults = vim.tbl_deep_extend('force', opts.defaults or {}, {
         ['<leader>cj'] = {name = '+json'},
         ['<leader>cjf'] = {'<cmd>Format<cr>', 'Format JSON'},

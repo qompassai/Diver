@@ -8,28 +8,23 @@ return {
     'williamboman/mason.nvim',
     build = ":MasonUpdate",
     cmd = { "Mason", "MasonInstall", "MasonUninstall" },
-    opts = { ui = { border = "rounded" } },
+        config = mason_cfg.mason_setup,
   },
   {
     'mason-org/mason-lspconfig.nvim',
     event = 'VeryLazy',
     dependencies = { 'williamboman/mason.nvim' },
-    opts = {
-      ensure_installed = {},
+      opts = mason_cfg.mason_lspconfig(),
     },
-  },
   {
     'WhoIsSethDaniel/mason-tool-installer.nvim',
     event = 'VeryLazy',
-    opts = {
-      ensure_installed = {},
-      auto_update = false,
+    opts         = mason_cfg.mason_tools(),
     },
-  },
   {
     "jay-babu/mason-nvim-dap.nvim",
     event = "VeryLazy",
     dependencies = { "mfussenegger/nvim-dap", "williamboman/mason.nvim" },
-    opts = { ensure_installed = { "codelldb" }, handlers = {} },
-  },
+        opts         = mason_cfg.mason_dap(),
+  }
 }

@@ -2,7 +2,7 @@
 -- Qompass AI Diver Lua Lang Config
 -- Copyright (C) 2025 Qompass AI, All rights reserved
 -- --------------------------------------------------
-local conform = require('config.lang.conform')
+local conform_cfg = require('config.lang.conform')
 ---@module 'types.lang.lua'
 local M = {}
 local function mark_pure(src) return src.with({ command = 'true' }) end
@@ -66,7 +66,7 @@ end
 ---@return table
 function M.lua_conform(opts)
   opts = opts or {}
-  local cfg = conform.conform_setup().formatters_by_ft
+  local cfg = conform_cfg.conform_cfg().formatters_by_ft
   local seen, result = {}, {}
   for _, ft in ipairs({ cfg.lua or {}, cfg.luau or {} }) do
     for _, f in ipairs(ft) do
@@ -79,12 +79,11 @@ function M.lua_conform(opts)
   return result
 end
 
----@param opts? table
----@return table[]
 function M.lua_lazydev(opts)
   opts = opts or {}
   vim.g = vim.g or {}
   local lua_version_path = nil
+    local function default(v, d) return v == nil and d or v end
   local versions = { 'luajit', 'lua51', 'lua54', 'lua52', 'lua53' }
   for _, version in ipairs(versions) do
     local path = vim.fn.expand('"$HOME"/.diver/lua/.' .. version)
@@ -120,25 +119,19 @@ function M.lua_lazydev(opts)
       ' has invalid path type: ' .. type(entry.path))
   end
   return {
-    runtime = vim.env.VIMRUNTIME,
+   runtime = vim.env.VIMRUNTIME,
     library = library,
+
     integrations = {
-      lspconfig = opts.integrations and opts.integrations.lspconfig ~=
-          true,
-      cmp = opts.integrations and opts.integrations.cmp ~= true,
-      coq = opts.integrations and opts.integrations.coq == true
+      lspconfig = default(opts.integrations and opts.integrations.lspconfig, true),
+      cmp       = default(opts.integrations and opts.integrations.cmp,       true),
+      coq       = default(opts.integrations and opts.integrations.coq,      false),
     },
-    enabled = opts.enabled or
-        function() return vim.g.lazydev_enabled ~= false end
+    enabled = default(opts.enabled, function()
+      return vim.g.lazydev_enabled ~= false
+    end),
   }
 end
-
----@class LSPOpts
----@field on_attach? fun(client: table, bufnr: integer)
----@field capabilities? table
----@field filetypes? string[]
----@field settings? table
----@param opts? LSPOpts
 function M.lua_lsp(opts)
   opts = opts or {}
   local lspconfig = require('lspconfig')
@@ -163,13 +156,17 @@ function M.lua_lsp(opts)
           end, runtime_paths)
         },
         workspace = {
-          library = vim.api.nvim_get_runtime_file('', true),
-          checkThirdParty = false
-        },
+  library = vim.tbl_extend(
+    'force',
+    vim.api.nvim_get_runtime_file('', true),
+    { vim.fn.stdpath('config') .. '/lua/types' }
+  ),
+  checkThirdParty = true,
+},
         diagnostics = {
           globals = {
             'vim', 'use_blink_cmp', 'lazydev_enabled', 'require',
-            'blink_cmp', 'cmp', 'luassert'
+            'blink_cmp', 'cmp', 'luassert', 'jit'
           },
           disable = { 'missing-fields' }
         },

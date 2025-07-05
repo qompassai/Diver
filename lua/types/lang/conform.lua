@@ -1,7 +1,9 @@
--- ~/.config/nvim/lua/types/lang/conform.lua
--- -----------------------------------------
+-- /qompassai/Diver/lua/types/lang/conform.lua
+-- Qompass AI Diver Conform Types
 -- Copyright (C) 2025 Qompass AI, All rights reserved
----@module 'config.lang.conform'
+-------------------------------------------------------------------
+---@meta
+
 ---@class ConformConfig
 ---@field default_format_opts? table
 ---@field formatters? table<string, table>

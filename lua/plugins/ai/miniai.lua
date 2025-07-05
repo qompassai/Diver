@@ -6,7 +6,6 @@ return {
     'echasnovski/mini.ai',
     enabled = 'false',
     version = '*',
-    event = 'VeryLazy',
     opts = {
         n_lines = 500,
         custom_textobjects = {},

@@ -156,7 +156,7 @@ end
 
 function M.js_conform(opts)
   opts = opts or {}
-  local conform_config = require("config.lang.conform").conform_setup(opts)
+  local conform_config = require("config.lang.conform").conform_cfg(opts)
   local biome_ft = {
     "javascript",
     "javascriptreact",

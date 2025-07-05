@@ -17,7 +17,7 @@ return {
     ft = py_ft,
     config = function(_, opts)
       require('config.lang.python').py_dap()
-      require('config.lang.python').setup_python(opts)
+      require('config.lang.python').python_cfg(opts)
     end,
     opts = {
       experimental = {

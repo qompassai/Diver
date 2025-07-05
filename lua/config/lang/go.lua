@@ -113,6 +113,18 @@ function M.go_lsp(on_attach, capabilities)
     end,
     settings = {
       gopls = {
+        settings = {
+        gopls = {
+          hints = {
+            rangeVariableTypes = true,
+            parameterNames = true,
+            constantValues = true,
+            assignVariableTypes = true,
+            compositeLiteralFields = true,
+            compositeLiteralTypes = true,
+            functionTypeParameters = true,
+          }
+        },
         buildFlags = { '-tags=integration,e2e,cgo' },
         staticcheck = true,
         gofumpt = true,
@@ -130,6 +142,7 @@ function M.go_lsp(on_attach, capabilities)
     },
     flags = { debounce_text_changes = 150 },
     init_options = { buildFlags = { '-tags=cgo' } },
+  }
   }
 end
 
@@ -151,13 +164,9 @@ function M.go_nls()
     formatting.golines.with({ ft = { 'go' } })
   }
 end
-
 function M.go_path() return vim.fn.expand('$GOPATH') or '' end
-
 function M.go_test() return { adapter = 'delve', args = { 'test', './...' } } end
-
 function M.go_version() return vim.fn.trim(vim.fn.system('go version')) end
-
 function M.go_setup()
   local capabilities = vim.lsp.protocol.make_client_capabilities()
   local on_attach = function(_, _) end

@@ -12,12 +12,8 @@ return {
       'b0o/SchemaStore.nvim',
       'saghen/blink.cmp',
     },
-    opts = {
-      extra_servers = {},
-      on_attach = nil,
-    },
     config = function(_, opts)
-      local cfg = lsp_cfg.lsp_setup(opts)
+      local cfg = lsp_cfg.lsp_cfg(opts)
       cfg.lspconfig.util.default_config.capabilities =
           vim.tbl_deep_extend(
             'force',

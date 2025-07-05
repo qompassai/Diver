@@ -200,7 +200,7 @@ M.nonicons = {
         zig = '  '
     }
 }
-function M.setup_devicons()
+function M.icons_devicons()
     require('nvim-web-devicons').setup(M.devicons)
     vim.cmd([[
     augroup DevIconsRefresh
@@ -209,7 +209,7 @@ function M.setup_devicons()
     augroup END
   ]])
 end
-function M.setup_nonicons() require('nvim-nonicons').setup(M.nonicons) end
+function M.icons_nonicons() require('nvim-nonicons').setup(M.nonicons) end
 M.icons_highlights = function()
     local highlights = {
         MathBlock = {bg = '#1e1e2e', fg = '#89b4fa'},
@@ -222,9 +222,18 @@ M.icons_highlights = function()
         vim.api.nvim_set_hl(0, name, attrs)
     end
 end
-function M.setup_icons()
-    M.setup_devicons()
-    M.setup_nonicons()
+function M.icons_smoji()
+  require("smoji").setup({
+    symbols     = "emoji+kaomoji",
+    border      = "rounded",
+    max_height  = 0.6,
+  })
+  vim.keymap.set("n", "<leader><leader>e", "<cmd>Smoji<CR>",
+    { desc = "Pick emoji/kaomoji", silent = true })
+end
+function M.icons_cfg()
+    M.icons_devicons()
+    M.icons_nonicons()
     M.icons_highlights()
 end
 return M

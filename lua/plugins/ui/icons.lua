@@ -2,16 +2,20 @@
 -- Qompass AI Icons Plugin Spec
 -- Copyright (C) 2025 Qompass AI, All rights reserved
 -----------------------------------------------------
-return {
-    {
-        'nvim-tree/nvim-web-devicons',
-        config = function() require('config.ui.icons').setup_devicons() end
-    }, {
-        'yamatsum/nvim-nonicons',
-        config = function() require('config.ui.icons').setup_nonicons() end
-    }, {
-        'zakissimo/smoji.nvim',
-        dependencies = {'stevearc/dressing.nvim'},
-        config = function() require('smoji').setup() end
-    }
+local icons_cfg = require('config.ui.icons')
+return  {
+  {
+    "nvim-tree/nvim-web-devicons",
+    config = icons_cfg.icons_dev,
+  },
+  {
+    "yamatsum/nvim-nonicons",
+    config = icons_cfg.icons_nonicons,
+  },
+  {
+    "zakissimo/smoji.nvim",
+    branch       = "main",
+    dependencies = { "stevearc/dressing.nvim" },
+    config       = icons_cfg.icons_smoji,
+  },
 }

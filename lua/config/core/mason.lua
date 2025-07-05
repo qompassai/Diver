@@ -2,17 +2,21 @@
 -- Qompass AI Diver Mason Config
 -- Copyright (C) 2025 Qompass AI, All rights reserved
 -- --------------------------------------------------
-
----@class MasonModule
 local M = {}
 
 local function configure_env()
-  local uv                  = vim.uv or vim.loop
+  local uv = vim.uv or vim.loop
   vim.env.CARGO_BUILD_JOBS  = tostring(uv.available_parallelism() or 10)
   vim.env.CARGO_INCREMENTAL = '1'
   vim.env.CARGO_NET_RETRY   = '2'
+  if not vim.env.CARGO_TARGET_DIR or vim.env.CARGO_TARGET_DIR == '' then
+    vim.env.CARGO_TARGET_DIR = vim.fn.expand('~/.cache/cargo/target')
+  end
+  if not vim.env.CARGO_HOME or vim.env.CARGO_HOME == '' then
+    vim.env.CARGO_HOME = vim.fn.expand('~/.cargo')
+  end
   vim.fn.mkdir(vim.env.CARGO_TARGET_DIR, 'p')
-  vim.fn.mkdir(vim.env.CARGO_HOME, 'p')
+  vim.fn.mkdir(vim.env.CARGO_HOME,       'p')
   local py_venvs = {
     vim.fn.expand('~/.diver/python/.venv313/bin'),
     vim.fn.expand('~/.diver/python/.venv312/bin'),
@@ -34,7 +38,6 @@ local function setup_autocmds()
       if refresh then pcall(refresh) end
     end,
   })
-
   for _, evt in ipairs({ 'MasonInstallComplete', 'MasonUpdateComplete' }) do
     vim.api.nvim_create_autocmd('User', {
       group = mason_au,
@@ -52,7 +55,7 @@ end
 function M.mason_setup()
   configure_env()
   setup_autocmds()
-  local settings = {
+    require("mason").setup({
     install_root_dir          = vim.fn.stdpath('data') .. '/mason',
     PATH                      = 'append',
     log_level                 = vim.log.levels.INFO,
@@ -91,41 +94,27 @@ function M.mason_setup()
       install_args = {
         '--no-warn-script-location',
         '--isolated',
-        '--disable-pip-version-check',
-      },
-    },
-  }
-  require('mason').setup(settings)
-  require('mason-tool-installer').setup({
-    ensure_installed = {
-      'eslint_d', 'markdownlint', 'prettierd', 'shellcheck', 'stylua', 'taplo',
-      'cssls', 'dockerls', 'gopls', 'html', 'jsonls', 'lua_ls', 'pyright',
-      'rust_analyzer', 'terraformls', 'ts_ls', 'yamlls', 'zls',
-      'ansible-language-server', 'asm-lsp', 'bacon-ls',
-      { 'bash-language-server', auto_update = true },
-      'beancount-language-server', 'editorconfig-checker', 'gofumpt',
-      { 'golangci-lint',        version = 'v1.47.0' },
-      'golines', 'gomodifytags', 'gotests', 'hadolint', 'impl', 'json-to-struct',
-      'kotlin-language-server', 'latexindent', 'luacheck', 'misspell', 'revive',
-      'rubocop', 'shfmt', 'sql-formatter', 'staticcheck', 'typstfmt',
-      'vim-language-server', 'vint',
-    },
+        '--disable-pip-version-check'},
+    }
+    })
+end
+
+  function M.mason_tools()
+    return {
+    ensure_installed = {},
     auto_update      = true,
-    run_on_start     = true,
+    run_on_start     = false,
     debounce_hours   = 5,
     integrations     = {
       ['mason-lspconfig'] = true,
       ['mason-null-ls']   = true,
       ['mason-nvim-dap']  = true,
     },
-  })
-
-  require('mason-lspconfig').setup({
-    ensure_installed       = {
-      'bashls', 'cssls', 'dockerls', 'gopls', 'html', 'jsonls', 'lua_ls', 'pyright',
-      'rust_analyzer', 'terraformls', 'ts_ls', 'yamlls', 'zls',
-    },
-    automatic_enable       = { "lua_ls", "vimls", 'bashls', 'pyright', 'zls', 'yamlls' },
+  }
+  end
+  function M.mason_lspconfig()
+    return { ensure_installed = {},
+    automatic_enable       = { "lua_ls", 'nil_ls', "vimls", 'bashls', 'pyright', 'zls', 'yamlls' },
     exclude                = {
       "rust_analyzer",
       "ts_ls",
@@ -133,17 +122,14 @@ function M.mason_setup()
       'tailwindcss'
     },
     automatic_installation = true,
-  })
+  }
 end
-
-require('mason-nvim-dap').setup({
-  ensure_installed = {
-    "bash-debug-adapter",
-  },
-  automatic_installation = true,
-})
-
-M.setup_mason    = M.mason_setup
+function M.mason_dap()
+  return {
+    ensure_installed       = {},
+    automatic_installation = true,
+  }
+end
 M.mason_env      = configure_env
 M.mason_autocmds = setup_autocmds
 return M

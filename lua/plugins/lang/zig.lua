@@ -1,24 +1,26 @@
--- /qompassai/Diver/lua/plugins/lang/zig.lua
 -- Qompass AI Diver Zig Plugin Spec
 -- Copyright (C) 2025 Qompass AI, All rights reserved
 -- ----------------------------------------
+local zig_cfg = require("config.lang.zig")
 return {
   {
-    'neovim/nvim-lspconfig',
-    ft = { 'zig', 'zon' },
-    dependencies = { 'NTBBloodbath/zig-tools.nvim', 'mfussenegger/nvim-dap' },
-    opts = {
-      setup = {
-        zls = function(_, opts)
-          return require('config.lang.zig').zig_lsp(opts)
-        end
-      }
-    }
-  }, {
-  'nvim-treesitter/nvim-treesitter',
-  opts = function(_, opts)
-    opts.ensure_installed = vim.list_extend(opts.ensure_installed or {},
-      { 'zig' })
-  end
-}
+    "ziglang/zig.vim",
+    ft = { "zig", "zon", 'zine' },
+    init = function()
+      zig_cfg.zig_vim()
+    end,
+  },
+  {
+    "jinzhongjia/zig-lamp",
+    ft = {'zig', 'zon', 'zine'},
+    event = "VeryLazy",
+    build = ":ZigLamp build sync",
+    dependencies = {
+      "neovim/nvim-lspconfig",
+      "nvim-lua/plenary.nvim",
+    },
+    config = function()
+      zig_cfg.zig_lamp()
+    end,
+  },
 }

@@ -2,6 +2,8 @@
 -- Qompass AI Diver Autocmd Types
 -- Copyright (C) 2025 Qompass AI, All rights reserved
 ------------------------------------------------------
+---@meta
+
 ---@class AutocmdCallbackArgs
 ---@field id integer
 ---@field event string

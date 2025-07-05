@@ -316,7 +316,7 @@ function M.py_lsp(opts)
 end
 
 ---@param opts table
-function M.setup_python(opts)
+function M.python_cfg(opts)
   opts = opts or {}
   M.py_code_quality(opts.linting)
   M.py_dap()
@@ -324,7 +324,7 @@ function M.setup_python(opts)
   M.py_jupyter(opts.jupyter)
   M.py_notebook_detection(opts.notebook)
   M.py_project_tools(opts.tools)
-  M.py_pyright(opts)
+  M.py_lsp(opts)
 end
 
 return M
