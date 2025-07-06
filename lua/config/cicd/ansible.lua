@@ -19,29 +19,27 @@ function M.ansible_conform(opts)
   }
 end
 function M.ansible_lsp(on_attach, capabilities)
-    return {
-        ansiblels = {
-            cmd = {'ansible-language-server', '--stdio'},
-            filetypes = {'yaml.ansible', 'ansible'},
-            settings = {
-                ansible = {
-                    ansible = {path = 'ansible'},
-                    executionEnvironment = {enabled = true},
-                    python = {interpreterPath = 'python'},
-                    validation = {
-                        enabled = true,
-                        lint = {enabled = true, path = 'ansible-lint'}
-                    }
-                }
-            },
-            on_attach = function(client, bufnr)
-                vim.bo[bufnr].omnifunc = 'v:lua.vim.lsp.omnifunc'
-                if on_attach then on_attach(client, bufnr) end
-            end,
-            capabilities = capabilities or
-                vim.lsp.protocol.make_client_capabilities()
-        }
-    }
+  return {
+    cmd       = { "ansible-language-server", "--stdio" },
+    filetypes = { "yaml.ansible", "ansible" },
+    settings  = {
+      ansible = {
+        ansible   = { path = "ansible" },
+        python    = { interpreterPath = "python" },
+        executionEnvironment = { enabled = true },
+        validation = {
+          enabled = true,
+          lint    = { enabled = true, path = "ansible-lint" },
+        },
+      },
+    },
+    on_attach    = function(client, bufnr)
+      vim.bo[bufnr].omnifunc = "v:lua.vim.lsp.omnifunc"
+      if on_attach then on_attach(client, bufnr) end
+    end,
+    capabilities = capabilities or
+                   vim.lsp.protocol.make_client_capabilities(),
+  }
 end
 function M.ansible_nls()
     local null_ls = require('null-ls')
@@ -98,7 +96,9 @@ function M.ansible_cfg(opts)
   M.ansible_filetype_autocmd()
   return {
     conform  = M.ansible_conform(opts),
-    lsp      = M.ansible_lsp(opts.on_attach, opts.capabilities),
+      lsp     = {
+      ansiblels = M.ansible_lsp(opts.on_attach, opts.capabilities),
+    },
     nls      = M.ansible_nls(),
   }
 end

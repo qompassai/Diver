@@ -127,6 +127,10 @@ end
 
 function M.md_diagram(opts)
   opts = opts or {}
+  local DEFAULT_INTEGRATIONS = { "mermaid", "plantuml", "d2" }
+  if opts.integrations == nil then
+    opts.integrations = DEFAULT_INTEGRATIONS
+  end
   local diagram_opts = {
     events = {
       render_buffer = { "InsertLeave", "BufWinEnter", "TextChanged" },
@@ -155,15 +159,16 @@ function M.md_diagram(opts)
       },
     },
   }
-  local merged_opts = vim.tbl_deep_extend('force', diagram_opts, opts)
+  local merged_opts = vim.tbl_deep_extend("force", diagram_opts, opts)
+
   local integrations = {}
-  for _, integration in ipairs(merged_opts.integrations) do
-    table.insert(integrations, require('diagram.integrations.' .. integration))
+  for _, name in ipairs(merged_opts.integrations) do
+    table.insert(integrations, require("diagram.integrations." .. name))
   end
   merged_opts.integrations = integrations
-  require('diagram').setup(merged_opts)
-  vim.api.nvim_create_user_command('DiagramRender', function()
-    require('diagram').render_buffer()
+  require("diagram").setup(merged_opts)
+  vim.api.nvim_create_user_command("DiagramRender", function()
+    require("diagram").render_buffer()
   end, {})
   return merged_opts
 end
@@ -176,11 +181,11 @@ function M.md_image(opts)
     integrations = {
       markdown = {
         enabled = true,
-        clear_in_insert_mode = false,
+        clear_in_insert_mode = true,
         download_remote_images = true,
         only_render_image_at_cursor = true,
         only_render_image_at_cursor_mode = 'popup',
-        floating_windows = false,
+        floating_windows = true,
         filetypes = { 'markdown', 'vimwiki', 'quarto' }
       },
       neorg = { enabled = true, filetypes = { 'norg' } },
@@ -196,7 +201,7 @@ function M.md_image(opts)
     window_overlap_clear_ft_ignore = {
       'cmp_menu', 'cmp_docs', 'scrollview', 'scrollview_sign'
     },
-    editor_only_render_when_focused = false,
+    editor_only_render_when_focused = true,
     tmux_show_only_in_active_window = false,
     hijack_file_patterns = {
       '*.png', '*.jpg', '*.jpeg', '*.gif', '*.webp', '*.avif'
@@ -230,7 +235,6 @@ BasedOnStyles = write-good
 }
 ]]
   )
-
   local markdownlint_path = vim.fn.expand("$XDG_CONFIG_HOME/markdown/markdownlint.json5")
   if vim.fn.filereadable(markdownlint_path) == 0 then
     vim.fn.mkdir(vim.fn.fnamemodify(markdownlint_path, ":h"), "p")
@@ -249,7 +253,6 @@ BasedOnStyles = write-good
   local markdownlint_config = opts.markdownlint or {}
   local vale_config = opts.vale or {}
   local textlint_config = opts.textlint or {}
-  local include_prettier = opts.include_prettier ~= false
   local include_markdownlint = opts.include_markdownlint ~= false
   local include_vale = opts.include_vale ~= false
   local include_textlint = opts.include_textlint ~= false
@@ -257,12 +260,6 @@ BasedOnStyles = write-good
   if not ok then return {} end
   local b = null_ls.builtins
   local sources = {}
-  if include_prettier then
-    table.insert(sources, b.formatting.prettierd.with(vim.tbl_deep_extend("force", {
-      filetypes = markdown_filetypes,
-      prefer_local = "node_modules/.bin"
-    }, prettier_config)))
-  end
   if include_markdownlint then
     table.insert(sources, b.diagnostics.markdownlint.with(vim.tbl_deep_extend("force", {
       ft = markdown_filetypes,
@@ -430,7 +427,7 @@ function M.md_rendermd(opts)
       left_pad = 0,
       right_pad = 0,
       min_width = 0,
-      border = false,
+      border = true,
       border_virtual = false,
       border_prefix = false,
       above = '▄',

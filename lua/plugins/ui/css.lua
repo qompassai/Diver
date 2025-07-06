@@ -1,6 +1,6 @@
 -- /qompassai/diver/lua/plugins/ui/css.lua
--- qompass ai css plugin spec
--- copyright (c) 2025 qompass ai, all rights reserved
+-- Qompass AI CSS Plugin spec
+-- Copyright (c) 2025 Qompass AI, All Rights Reserved
 -----------------------------------------------------
 local css_cfg = require('config.ui.css')
 return {
@@ -20,8 +20,8 @@ return {
       "ibhagwan/fzf-lua",
       "neovim/nvim-lspconfig",
     },
-    opts = function(_, opts)
-      return css_cfg.css_tools(opts)
+    config = function(_, opts)
+      css_cfg.css_tools(opts)
     end,
   },
   {
@@ -33,19 +33,19 @@ return {
   },
   {
     'nvim-treesitter/nvim-treesitter',
-    opts = function(_, opts)
+    config = function(_, opts)
       css_cfg.css_treesitter(opts)
     end,
   },
   {
     'nvimtools/none-ls.nvim',
-    opts = function(_, opts)
+    config = function(_, opts)
       opts.sources = vim.list_extend(opts.sources or {}, css_cfg.css_nls(opts))
     end,
   },
   {
     'stevearc/conform.nvim',
-    opts = function(_, opts)
+    config = function(_, opts)
       opts.formatters = vim.tbl_extend("force", opts.formatters or {}, css_cfg.css_conform(opts))
     end,
   },

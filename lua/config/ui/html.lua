@@ -65,7 +65,7 @@ end
 ---@param opts? table
 function M.html_nls(opts)
   opts = opts or {}
-  local nls     = require("null-ls")
+  local nls     = require('null-ls')
   local nlsb    = nls.builtins
   local utils   = require("null-ls.utils")
   local prettierConfig = {

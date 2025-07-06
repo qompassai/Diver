@@ -5,7 +5,31 @@
 local M = {}
 
 local function configure_env()
-  local uv = vim.uv or vim.loop
+  local uv  = vim.uv or vim.loop
+  local sep = package.config:sub(1, 1)
+  local function join(...) return table.concat({ ... }, sep) end
+  local function exists(p) return uv.fs_stat(p) ~= nil end
+  local function pyenv_bins()
+    local bins  = {}
+    local root  = os.getenv("PYENV_ROOT")
+              or (os.getenv("XDG_DATA_HOME") and join(os.getenv("XDG_DATA_HOME"), "pyenv"))
+              or vim.fn.expand("~/.pyenv")
+
+    local versions_dir = join(root, "versions")
+    local wanted = { "3.13", "3.12", "3.11" }
+    for _, v in ipairs(wanted) do
+      local bin = join(versions_dir, v, "bin")
+      if exists(bin) then table.insert(bins, bin) end
+    end
+    return bins
+  end
+
+  do
+    local py_bins = pyenv_bins()
+    if #py_bins > 0 then
+      vim.env.PATH = table.concat(py_bins, sep) .. sep .. vim.env.PATH
+    end
+  end
   vim.env.CARGO_BUILD_JOBS  = tostring(uv.available_parallelism() or 10)
   vim.env.CARGO_INCREMENTAL = '1'
   vim.env.CARGO_NET_RETRY   = '2'
@@ -17,14 +41,11 @@ local function configure_env()
   end
   vim.fn.mkdir(vim.env.CARGO_TARGET_DIR, 'p')
   vim.fn.mkdir(vim.env.CARGO_HOME,       'p')
-  local py_venvs = {
-    vim.fn.expand('~/.diver/python/.venv313/bin'),
-    vim.fn.expand('~/.diver/python/.venv312/bin'),
-    vim.fn.expand('~/.diver/python/.venv311/bin'),
-  }
-  vim.env.PATH = table.concat(py_venvs, ':') .. ':' .. vim.env.PATH
 end
-local function setup_autocmds()
+function M.setup()
+  configure_env()
+end
+ local function setup_autocmds()
   local mason_au = vim.api.nvim_create_augroup('Mason', { clear = true })
   vim.api.nvim_create_autocmd({ 'TextChanged', 'InsertLeave' }, {
     group = mason_au,
@@ -103,7 +124,7 @@ end
     return {
     ensure_installed = {},
     auto_update      = true,
-    run_on_start     = false,
+    run_on_start     = true,
     debounce_hours   = 5,
     integrations     = {
       ['mason-lspconfig'] = true,
@@ -126,7 +147,28 @@ end
 end
 function M.mason_dap()
   return {
-    ensure_installed       = {},
+    ensure_installed = {
+       "bash",
+      "chrome",
+      "codelldb",
+      "coreclr",
+      "cppdbg",
+      "dart",
+      "delve",
+      "elixir",
+      "erlang",
+      "firefox",
+      "haskell",
+      "javadbg",
+      "javatest",
+      "js",
+      "kotlin",
+      "mock",
+      "node2",
+      "php",
+      "puppet",
+      "python",
+    },
     automatic_installation = true,
   }
 end

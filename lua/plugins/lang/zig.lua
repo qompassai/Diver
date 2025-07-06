@@ -13,8 +13,6 @@ return {
   {
     "jinzhongjia/zig-lamp",
     ft = {'zig', 'zon', 'zine'},
-    event = "VeryLazy",
-    build = ":ZigLamp build sync",
     dependencies = {
       "neovim/nvim-lspconfig",
       "nvim-lua/plenary.nvim",

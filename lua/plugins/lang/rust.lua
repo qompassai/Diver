@@ -8,23 +8,16 @@ return {
         'mrcjkb/rustaceanvim',
         ft = {'rust'},
         version = '^6',
-        config = function()
-
-            local capabilities = require('cmp_nvim_lsp').default_capabilities()
-            vim.g.rustaceanvim = {
-                tools = {float_win_config = {border = 'rounded'}},
-                server = {
-                    on_attach = rust_cfg.rust_on_attach,
-                    capabilities = capabilities,
-                    settings = {['rust-analyzer'] = rust_cfg.rust_settings()}
-                }
-            }
+        init = function()
+      vim.g.rustaceanvim = rust_cfg.rust_rustacean()
+    end,
+       config = function()
             require('null-ls').setup({sources = rust_cfg.rust_nls()})
             vim.lsp.set_log_level('INFO')
-            rust_cfg.rust_dap()
-            rust_cfg.rust_crates()
-            rust_cfg.rust_cfg()
-        end,
+          rust_cfg.rust_dap()
+      rust_cfg.rust_crates()
+      rust_cfg.rust_cfg()
+    end,
         dependencies = {
             'nvim-lua/plenary.nvim', 'nvim-treesitter/nvim-treesitter',
             {

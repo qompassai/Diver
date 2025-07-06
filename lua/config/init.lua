@@ -39,6 +39,10 @@ function M.config(opts)
     local lang = safe_require('config.lang')
     if lang and lang.lang_config then lang.lang_config(opts) end
   end
+  if opts.edu ~=false then
+    local edu = safe_require('config.edu')
+    if edu and edu.edu_config then edu.edu_config(opts) end
+  end
   if opts.ui ~= false then
     local ui = safe_require('config.ui')
     if ui and ui.ui_config then ui.ui_config(opts) end

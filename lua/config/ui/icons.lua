@@ -222,15 +222,6 @@ M.icons_highlights = function()
         vim.api.nvim_set_hl(0, name, attrs)
     end
 end
-function M.icons_smoji()
-  require("smoji").setup({
-    symbols     = "emoji+kaomoji",
-    border      = "rounded",
-    max_height  = 0.6,
-  })
-  vim.keymap.set("n", "<leader><leader>e", "<cmd>Smoji<CR>",
-    { desc = "Pick emoji/kaomoji", silent = true })
-end
 function M.icons_cfg()
     M.icons_devicons()
     M.icons_nonicons()

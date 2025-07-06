@@ -5,15 +5,11 @@
 local tree_cfg = require('config.core.tree')
 return {
   {
-    'nvim-treesitter/nvim-treesitter',
-    build = ':TSUpdate',
-    lazy = false,
-    priority = 1000,
-    config = function()
-      tree_cfg.treesitter()
-    end,
-  },
-  {
+    "nvim-treesitter/nvim-treesitter",
+    branch = "master",
+    lazy   = false,
+    config = tree_cfg.treesitter,
+  }, {
     'nvim-neo-tree/neo-tree.nvim',
     event = 'BufEnter',
     branch = 'v3.x',

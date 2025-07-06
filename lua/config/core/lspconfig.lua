@@ -3,14 +3,16 @@
 -- Copyright (C) 2025 Qompass AI, All rights reserved
 -- -----------------------------------------
 local M = {}
-local css = require('config.ui.css')
-local go = require('config.lang.go')
-local lua = require('config.lang.lua')
-local nix = require('config.lang.nix')
-local rust = require('config.lang.rust')
-local scala = require('config.lang.scala')
-local ts = require('config.lang.ts')
-local zig = require('config.lang.zig')
+local ansible_cfg = require('config.cicd.ansible')
+local css_cfg = require('config.ui.css')
+local go_cfg = require('config.lang.go')
+local lua_cfg = require('config.lang.lua')
+local nix_cfg = require('config.lang.nix')
+local rust_cfg = require('config.lang.rust')
+local scala_cfg = require('config.lang.scala')
+local ts_cfg = require('config.lang.ts')
+local zig_cfg = require('config.lang.zig')
+
 function M.lsp_autocmds()
   local lsp_group = vim.api.nvim_create_augroup('LspAutocmds', { clear = true })
   vim.api.nvim_create_autocmd('LspAttach', {
@@ -53,8 +55,8 @@ end
 
 function M.lsp_config(opts)
   opts = opts or {}
-  local lspconfig = require("lspconfig")
-  local util = require("lspconfig.util")
+  local lspconfig = require('lspconfig')
+  local util = require('lspconfig.util')
   local capabilities = opts.capabilities or M.lsp_capabilities()
   local default_config = {
     on_attach = M.lsp_on_attach,
@@ -62,14 +64,21 @@ function M.lsp_config(opts)
     root_dir = util.root_pattern('.git', '.svn', '.hg'),
   }
   local servers = {
-    ansiblels = {},
+    ansiblels = ansible_cfg.ansible_lsp(M.lsp_on_attach, capabilities),
     bashls = {},
-    clangd = { capabilities = { offsetEncoding = 'utf-8' } },
-    cssls = css.css_lsp(),
+    clangd = {
+  capabilities = vim.tbl_deep_extend(
+    "force",
+    capabilities,
+    { offsetEncoding = 'utf-8' }
+  ),
+},
+
+    cssls = css_cfg.css_lsp(),
     dockerls = {},
     elmls = {},
     graphql = {},
-    gopls = go.go_lsp(),
+    gopls = go_cfg.go_lsp(),
     html = {},
     jdtls = {},
     jsonls = {
@@ -79,16 +88,16 @@ function M.lsp_config(opts)
           validate = { enable = true }
         }
       },
-      filetypes = { "json", "jsonc", "json5" }
+      filetypes = { 'json', 'jsonc', 'json5' }
     },
-    lua_ls = lua.lua_lsp(opts),
-    metals = scala.scala_lsp(opts),
-    nil_ls = nix.nix_lsp(opts),
-    rust_analyzer = rust.rust_lsp(),
+      lua_ls = lua_cfg.lua_lsp(),
+    metals = scala_cfg.scala_lsp(M.lsp_on_attach, capabilities),
+    nil_ls = nix_cfg.nix_lsp(),
+    rust_analyzer = rust_cfg.rust_lsp(),
     sqlls = {},
     tailwindcss = {},
     taplo = {},
-    ts_ls = ts.ts_lsp(opts),
+    tsserver = ts_cfg.ts_lsp(opts),
     vimls = {
       settings = {
         isNeovim = true
@@ -103,7 +112,7 @@ function M.lsp_config(opts)
         }
       }
     },
-    zls = zig.zig_lsp(),
+    zls = zig_cfg.zig_lsp(),
   }
   for name, config in pairs(servers) do
     local merged_config = vim.tbl_deep_extend("force", {}, default_config, config)
@@ -151,7 +160,6 @@ function M.lsp_on_attach(client, bufnr)
   end
 end
 
----@param opts? table
 function M.lsp_cfg(opts)
   opts = opts or {}
   local lspconfig = require("lspconfig")

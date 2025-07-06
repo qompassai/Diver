@@ -10,12 +10,7 @@ return  {
   },
   {
     "yamatsum/nvim-nonicons",
+    dependencies = {'kyazdani42/nvim-web-devicons'},
     config = icons_cfg.icons_nonicons,
   },
-  {
-    "zakissimo/smoji.nvim",
-    branch       = "main",
-    dependencies = { "stevearc/dressing.nvim" },
-    config       = icons_cfg.icons_smoji,
-  },
-}
+ }

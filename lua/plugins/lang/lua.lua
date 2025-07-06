@@ -15,12 +15,9 @@ local plugins = {
   },
   {
     "camspiers/luarocks",
+    lazy = false,
     opts   = function() return lua_conf.lua_luarocks() end,
     config = function(_, opts) require("luarocks").setup(opts) end,
-  },
-  {
-    "camspiers/snap",
-    dependencies = "camspiers/luarocks",
   },
   {
     "nvim-neotest/neotest",

@@ -6,20 +6,6 @@ local M = {}
 local function xdg_config(path)
   return vim.fn.expand(vim.env.XDG_CONFIG_HOME or '~/.config') .. "/" .. path
 end
-local function find_tailwind_config()
-  local config_dir = xdg_config("tailwind")
-  local filenames = {
-    "tailwind.config.ts", "tailwind.config.mjs", "tailwind.config.cjs", "tailwind.config.js"
-  }
-  for _, name in ipairs(filenames) do
-    local full_path = config_dir .. "/" .. name
-    if vim.fn.filereadable(full_path) == 1 then
-      return full_path
-    end
-  end
-  return nil
-end
-
 function M.css_autocmds()
   vim.api.nvim_create_autocmd('FileType', {
     pattern = { 'css', 'scss', 'less' },
@@ -206,62 +192,59 @@ end
 
 function M.css_tools(opts)
   opts = opts or {}
-  local default_opts = {
+  local defaults = {
     server = {
       override = true,
       settings = {
         tailwindCSS = {
-          validate = true,
-          classAttributes = { "class", "className", "class:list", "classList", "ngClass" },
+          validate        = true,
+          classAttributes = { "class","className","class:list","classList","ngClass" },
           includeLanguages = {
-            eelixir = "html-eex",
-            eruby = "erb",
-            templ = "html",
+            eelixir     = "html-eex",
+            eruby       = "erb",
+            templ       = "html",
             htmlangular = "html",
           },
         },
       },
       on_attach = opts.on_attach,
-      root_dir = require("lspconfig.util").root_pattern(
-        "tailwind.config.js", "tailwind.config.ts", "tailwind.config.cjs", "tailwind.config.mjs",
-        "postcss.config.js", "postcss.config.ts", "postcss.config.cjs", "postcss.config.mjs"
-      ),
+      root_dir  = require("lspconfig.util").root_pattern(
+                    "tailwind.config.js","tailwind.config.ts",
+                    "tailwind.config.cjs","tailwind.config.mjs",
+                    "postcss.config.js", "postcss.config.ts",
+                    "postcss.config.cjs","postcss.config.mjs"
+                  ),
     },
     document_color = {
-      enabled = true,
-      kind = "inline",
+      enabled       = true,
+      kind          = "inline",
       inline_symbol = "󰝤 ",
-      debounce = 200,
+      debounce      = 200,
     },
     conceal = {
-      enabled = true,
-      symbol = "󱏿",
+      enabled   = true,
+      symbol    = "󱏿",
       highlight = { fg = "#38BDF8" },
     },
     keymaps = {
       smart_increment = {
         enabled = true,
-        units = {
-          { prefix = "border", values = { "2", "4", "6", "8" } },
-        },
+        units = { { prefix = "border", values = { "2","4","6","8" } } },
       },
     },
-    cmp = {
-      highlight = "foreground",
-    },
+
+    cmp       = { highlight = "foreground" },
     telescope = {
       utilities = {
-        callback = function(name, class)
-          print("Selected: " .. name .. " = " .. class)
+        callback = function(name,class)
+          print(("Selected: %s = %s"):format(name,class))
         end,
       },
     },
-    extension = {
-      queries = {},
-      patterns = {},
-    },
+    extension = { queries = {}, patterns = {} },
   }
-  return vim.tbl_deep_extend("force", default_opts, opts)
+  opts = vim.tbl_deep_extend("force", defaults, opts)
+  return opts
 end
 
 function M.css_config(opts)
@@ -285,11 +268,4 @@ function M.css_config(opts)
   }
 end
 
-local css_interface = M.css_config()
-css_interface.css_conform = M.css_conform
-css_interface.css_nls = M.css_nls
-css_interface.css_lsp = M.css_lsp
-css_interface.css_treesitter = M.css_treesitter
-css_interface.css_colorizer = M.css_colorizer
-css_interface.css_autocmds = M.css_autocmds
-return css_interface
+return M
