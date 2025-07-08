@@ -5,7 +5,6 @@
 return {
   {
     'tribela/transparent.nvim',
-    enable = true,
     event = { 'BufReadPre', 'BufNewFile' },
     config = true
   }, {

@@ -4,7 +4,6 @@
 -----------------------------------------------------
 return {
     'folke/noice.nvim',
-    enabled = true,
     event = 'VeryLazy',
     opts = {
         lsp = {
@@ -15,10 +14,10 @@ return {
             },
             hover = {enabled = true},
             signature = {
-                enabled = false,
+                enabled = true,
                 auto_open = {
                     enabled = true,
-                    trigger = false,
+                    trigger = true,
                     luasnip = true,
                     throttle = 50
                 },
@@ -62,7 +61,8 @@ return {
         }
     },
     dependencies = {
-        'MunifTanjim/nui.nvim', {'rcarriga/nvim-notify', lazy = true},
+        'MunifTanjim/nui.nvim',
+        'rcarriga/nvim-notify',
         'williamboman/mason.nvim'
     },
     config = function(_, opts)
@@ -74,7 +74,7 @@ return {
                                               'Normal:MyNotifyBackground',
                                               {scope = 'local', win = win})
             end,
-            background_colour = function() return '#000000' end,
+            background_colour = '#000000',
             highlights = {
                 NotifyERRORBorder = {guifg = '#8A1F1F'},
                 NotifyWARNBorder = {guifg = '#79491D'},

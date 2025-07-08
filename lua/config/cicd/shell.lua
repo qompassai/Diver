@@ -16,17 +16,31 @@ end
 function M.sh_lsp(opts)
     opts.servers = opts.servers or {}
     opts.servers.bashls = {
-        filetypes = {'sh', 'bash'},
+        filetypes = {'sh', 'bash', 'ksh', 'csh', 'tcsh'},
         settings = {
             bashIde = {
-                globPattern = '*@(.sh|.bash|.inc|.command)',
+                globPattern = '*@(.sh|.bash|.inc|.command|.ksh|.csh|.tcsh)',
                 backgroundAnalysisMaxFiles = 500,
-                enableSourceErrorDiagnostics = true
+                enableSourceErrorDiagnostics = true,
+                shellcheckPath = 'shellcheck',
+                explainshellEndpoint = '',
+                includeAllWorkspaceSymbols = true
             }
         }
     }
+
     opts.servers.fish_ls = {filetypes = {'fish'}}
     opts.servers.nushell = {filetypes = {'nu'}}
+    opts.servers.zls = {filetypes = {'zsh'}}
+    opts.servers.powershell_es = {
+        filetypes = {'ps1', 'psm1'},
+        settings = {
+            powershell = {
+                codeFormatting = { Preset = "OTBS" }
+            }
+        }
+    }
+    opts.capabilities = opts.capabilities or {}
     return opts
 end
 function M.sh_linter(opts)
@@ -34,15 +48,9 @@ function M.sh_linter(opts)
     local shellcheck = require('none-ls-shellcheck')
     opts.sources = vim.list_extend(opts.sources or {}, {
         shellcheck.diagnostics, null_ls.builtins.diagnostics.fish,
-        null_ls.builtins.diagnostics.zsh, shellcheck.code_actions
+        null_ls.builtins.diagnostics.zsh, shellcheck.code_actions, null_ls.builtins.formatting.fish_indent
     })
     opts.root_dir = M.detect_sh_root_dir
-    return opts
-end
-function M.sh_formatter(opts)
-    local null_ls = require('null-ls')
-    opts.sources = vim.list_extend(opts.sources or {},
-                                   {null_ls.builtins.formatting.fish_indent})
     return opts
 end
 function M.detect_sh_root_dir(fname)

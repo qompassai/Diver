@@ -139,7 +139,6 @@ function M.rust_on_attach(client, bufnr)
   vim.keymap.set("n", "gi", vim.lsp.buf.implementation,  map_opts)
   vim.keymap.set("n", "<leader>ca", vim.lsp.buf.code_action, map_opts)
   vim.keymap.set("n", "<leader>rn", vim.lsp.buf.rename,       map_opts)
-
   local ih_ok, ih = pcall(require, "vim.lsp.inlay_hint")
   if ih_ok and client.server_capabilities.inlayHintProvider then
     ih.enable(true, { bufnr = bufnr })
@@ -150,8 +149,9 @@ end
 
 function M.rust_refresh_diagnostics()
   vim.cmd("write")
-  vim.diagnostic.disable()
-  vim.defer_fn(function() vim.diagnostic.enable() end, 200)
+  vim.defer_fn(function()
+    vim.diagnostic.enable(false, nil)
+  end, 200)
 end
 
 function M.rust_rustacean(capabilities)

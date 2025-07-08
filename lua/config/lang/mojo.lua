@@ -61,35 +61,7 @@ function M.mojo_editor()
         end
     })
 end
-function M.mojo_attach_handlers(opts)
-    opts = opts or {}
-    local group = vim.api.nvim_create_augroup('MojoLspConfig', {})
-    vim.api.nvim_create_autocmd('LspAttach', {
-        group = group,
-        callback = function(args)
-            local client = vim.lsp.get_client_by_id(args.data.client_id)
-            if not client or client.name ~= 'mojo' then return end
-            local bufnr = args.buf
-            if opts.format_on_save and
-                client.supports_method('textDocument/formatting') then
-                vim.api.nvim_create_autocmd('BufWritePre', {
-                    group = group,
-                    buffer = bufnr,
-                    callback = function()
-                        vim.lsp.buf.format({
-                            bufnr = bufnr,
-                            timeout_ms = 1000,
-                            filter = function(c)
-                                return c.name == 'mojo'
-                            end
-                        })
-                    end
-                })
-            end
-        end
-    })
-end
-function M.setup_mojo(opts)
+function M.mojo_setup(opts)
     opts = vim.tbl_deep_extend('force', {
         format_on_save = true,
         enable_linting = true,

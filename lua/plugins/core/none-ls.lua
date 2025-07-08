@@ -2,22 +2,30 @@
 -- Qompass AI None-LS Plugin Spec
 -- Copyright (C) 2025 Qompass AI, All rights reserved
 -- -------------------------------------------
+local cfg = require("config.core.none-ls")
+
 return {
-  'nvimtools/none-ls.nvim',
+  "nvimtools/none-ls.nvim",
+  lazy = false,
   dependencies = {
-    'nvimtools/none-ls-extras.nvim',
-    'gbprod/none-ls-shellcheck.nvim',
-    'gbprod/none-ls-luacheck.nvim',
-    'gbprod/none-ls-php.nvim',
-    'gbprod/none-ls-ecs.nvim',
+    "mason.nvim",
+    "nvimtools/none-ls-extras.nvim",
+    "gbprod/none-ls-shellcheck.nvim",
+    "gbprod/none-ls-luacheck.nvim",
+    "gbprod/none-ls-php.nvim",
+    "gbprod/none-ls-ecs.nvim",
   },
-  event = { "BufReadPre", "BufNewFile" },
+  ---@param _ any
+  ---@param opts table|nil
+  opts = function(_, opts)
+    opts = opts or {}
+    opts.sources = vim.list_extend(
+      vim.iter(cfg.nls_cfg()):totable(),
+      vim.iter(cfg.nls_extras()):totable()
+    )
+    return opts
+  end,
   config = function(_, opts)
-    local plenary_utils = require("config.core.plenary")
-    local nls_cfg = require("config.core.none-ls")
-    local sources = plenary_utils.collect_nls_sources()
-    vim.list_extend(sources, nls_cfg.nls_extras())
-    opts.sources = vim.list_extend(opts.sources or {}, sources)
     require("null-ls").setup(opts)
   end,
 }

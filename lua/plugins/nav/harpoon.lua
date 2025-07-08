@@ -4,6 +4,5 @@
 -- --------------------------------------------------
 return {
     'ThePrimeagen/harpoon',
-    event = 'VeryLazy',
     config = function() require('config.nav.harpoon').setup() end
 }

@@ -66,7 +66,9 @@ function M.lua_conform()
   local seen, res = {}, {}
   for _, ft in ipairs({ by_ft.lua or {}, by_ft.luau or {} }) do
     for _, f in ipairs(ft) do
-      if not seen[f] then seen[f] = true; res[#res+1] = f end
+      if not seen[f] then
+        seen[f] = true; res[#res + 1] = f
+      end
     end
   end
   return res
@@ -79,39 +81,39 @@ function M.lua_lazydev(opts)
     library      = U.lua_library({ { path = U.lua_home() } }),
     integrations = {
       lspconfig = opts.integrations and opts.integrations.lspconfig ~= false,
-      cmp       = opts.integrations and opts.integrations.cmp       ~= false,
-      coq       = opts.integrations and opts.integrations.coq       ~= false,
+      cmp       = opts.integrations and opts.integrations.cmp ~= false,
+      coq       = opts.integrations and opts.integrations.coq ~= false,
     },
-    enabled = opts.enabled or function() return vim.g.lazydev_enabled ~= false end,
+    enabled      = opts.enabled or function() return vim.g.lazydev_enabled ~= false end,
   }
 end
 
 function M.lua_lsp(opts)
-  opts = opts or {}
-  local ver, bin   = U.lua_version()
-  local runtime    = U.lua_runtime(bin:gsub("/bin/lua$", ""))
-  local is_jit     = ver:lower():find("jit") ~= nil
-  local lua_ls = {
+  opts           = opts or {}
+  local ver, bin = U.lua_version()
+  local runtime  = U.lua_runtime(bin:gsub("/bin/lua$", ""))
+  local is_jit   = ver:lower():find("jit") ~= nil
+  local lua_ls   = {
     on_attach    = opts.on_attach,
     capabilities = opts.capabilities,
     filetypes    = opts.filetypes or { "lua", "luau" },
-    settings = {
+    settings     = {
       Lua = {
-        runtime = { version = is_jit and "LuaJIT" or ver, path = runtime },
-        workspace = {
-          library        = vim.tbl_extend("force",
-                             vim.api.nvim_get_runtime_file("", true),
-                             { vim.fn.stdpath("config") .. "/lua/types",
-                               U.lua_home() }),
+        runtime     = { version = is_jit and "LuaJIT" or ver, path = runtime },
+        workspace   = {
+          library         = vim.tbl_extend("force",
+            vim.api.nvim_get_runtime_file("", true),
+            { vim.fn.stdpath("config") .. "/lua/types",
+              U.lua_home() }),
           checkThirdParty = true,
         },
         diagnostics = {
-          globals = { "vim","require","jit","cmp","luassert",
-                      "use_blink_cmp","lazydev_enabled","blink_cmp" },
+          globals = { 'vim', 'require', "jit", "cmp", "luassert",
+            "use_blink_cmp", "lazydev_enabled", "blink_cmp" },
           disable = { "missing-fields" },
         },
-        completion = { callSnippet = "Replace", keywordSnippet = "Disable" },
-        telemetry  = { enable = false },
+        completion  = { callSnippet = "Replace", keywordSnippet = "Disable" },
+        telemetry   = { enable = false },
       },
     },
   }
@@ -134,23 +136,31 @@ end
 
 function M.lua_nls(opts)
   opts = opts or {}
-  local nls   = require('null-ls')
-  local b     = nls.builtins
-  local style = U.find_config(".stylua.toml")
-  return {
-    mark_pure(b.code_actions.refactoring),
-    mark_pure(b.completion.luasnip),
-    mark_pure(b.diagnostics.todo_comments),
-    mark_pure(b.diagnostics.trail_space),
-    b.diagnostics.selene.with({ ft = { "lua","luau" } }),
-    b.diagnostics.teal  .with({ ft = { "teal" } }),
-    b.formatting.stylua .with({
-      ft = { "lua","luau" },
+  local nls = require('null-ls')
+  local b = nls.builtins
+  local style = U.find_config and U.find_config(".stylua.toml") or nil
+  local maybe_pure = opts.mark_pure and mark_pure or function(x) return x end
+  local sources = {
+    maybe_pure(b.code_actions.refactoring),
+    maybe_pure(b.completion.luasnip),
+    maybe_pure(b.diagnostics.todo_comments),
+    maybe_pure(b.diagnostics.trail_space),
+    b.diagnostics.selene.with({ ft = { "lua", "luau" } }),
+    b.diagnostics.teal.with({ ft = { "teal" } }),
+    b.formatting.stylua.with({
+      ft = { "lua", "luau" },
       command = "stylua",
-      extra_args = { "--config-path", style },
+      extra_args = style and { "--config-path", style } or nil,
     }),
   }
+  if opts.extra_sources then
+    for _, src in ipairs(opts.extra_sources) do
+      table.insert(sources, src)
+    end
+  end
+  return sources
 end
+
 function M.lua_snap(opts)
   opts = opts or {}
   local config = { mappings = { ['<CR>'] = 'submit', ['<C-x>'] = 'cut' } }
@@ -182,21 +192,21 @@ function M.lua_test(opts)
 end
 
 function M.lua_cfg(opts)
-  local ver, bin = U.lua_version()
+  local ver, bin      = U.lua_version()
   vim.env.LUA_VERSION = ver
   vim.env.LUA_PATH    = bin
   return {
-    autocmds  = M.lua_autocmds,
-    cmp       = M.lua_cmp,
-    conform   = M.lua_conform(),
-    lazydev   = M.lua_lazydev(opts or {}),
-    lsp       = M.lua_lsp(opts or {}),
-    luarocks  = M.lua_luarocks(opts or {}),
-    nls       = M.lua_nls(opts or {}),
-    snap      = M.lua_snap(opts or {}),
-    test      = M.lua_test(opts or {}),
-    version   = ver,
-    path      = bin,
+    autocmds = M.lua_autocmds,
+    cmp      = M.lua_cmp,
+    conform  = M.lua_conform(),
+    lazydev  = M.lua_lazydev(opts or {}),
+    lsp      = M.lua_lsp(opts or {}),
+    luarocks = M.lua_luarocks(opts or {}),
+    nls      = M.lua_nls(opts or {}),
+    snap     = M.lua_snap(opts or {}),
+    test     = M.lua_test(opts or {}),
+    version  = ver,
+    path     = bin,
   }
 end
 

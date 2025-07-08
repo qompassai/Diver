@@ -9,18 +9,5 @@ return {
     branch = "master",
     lazy   = false,
     config = tree_cfg.treesitter,
-  }, {
-    'nvim-neo-tree/neo-tree.nvim',
-    event = 'BufEnter',
-    branch = 'v3.x',
-    dependencies = {
-      'nvim-lua/plenary.nvim',
-      'nvim-tree/nvim-web-devicons',
-      'MunifTanjim/nui.nvim',
-      '3rd/image.nvim'
-    },
-    opts = function()
-      return tree_cfg.neotree
-    end,
   },
 }

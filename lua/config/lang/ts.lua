@@ -2,34 +2,49 @@
 -- Qompass AI Diver Typescript Lang Config
 -- Copyright (C) 2025 Qompass AI, All rights reserved
 -----------------------------------------------------
----@module 'config.lang.ts'
----@class TSConfig
----@field ts_conform fun(opts?: table): table
----@field ts_lsp fun(opts?: table): table
----@field ts_linter fun(opts?: table): table
----@field ts_formatter fun(opts?: table): table[]
----@field ts_filetype_detection fun(): table
----@field ts_keymaps fun(opts?: table): table
----@field ts_project_commands fun()
----@field ts_root_dir fun(fname: string): string
----@field ts_setup fun(opts?: table): TSConfig
+
 local M = {}
 local util = require('lspconfig.util')
 local null_ls = require('null-ls')
 local ts_lint = require('config.lang.lint')
+
 function M.ts_autocmds()
+  local function execute_command(command, arguments)
+    if vim.lsp.commands and vim.lsp.commands.execute then
+      vim.lsp.commands.execute({ command = command, arguments = arguments })
+    else
+      ---@diagnostic disable-next-line: deprecated
+      vim.lsp.buf.execute_command({
+        command = command,
+        arguments = arguments
+      })
+    end
+  end
+  vim.api.nvim_create_user_command('TypescriptOrganizeImports', function()
+    execute_command('_typescript.organizeImports',
+      { vim.api.nvim_buf_get_name(0) })
+  end, { desc = 'Organize Imports' })
+  vim.api.nvim_create_user_command('TypescriptAddMissingImports', function()
+    execute_command('_typescript.addMissingImports',
+      { vim.api.nvim_buf_get_name(0) })
+  end, { desc = 'Add Missing Imports' })
+  vim.api.nvim_create_user_command('TypescriptFixAll', function()
+    execute_command('_typescript.fixAll', { vim.api.nvim_buf_get_name(0) })
+  end, { desc = 'Fix All Fixable Issues' })
+  vim.api.nvim_create_user_command('TypescriptGoToSourceDefinition',
+    function()
+      local row = vim.api.nvim_win_get_cursor(0)[1] - 1
+      local col = vim.api.nvim_win_get_cursor(0)[2]
+      execute_command('_typescript.goToSourceDefinition',
+        { vim.api.nvim_buf_get_name(0), row, col })
+    end, { desc = 'Go To Source Definition' })
 end
 
 function M.ts_conform(opts)
-  local prettier_available = vim.fn.executable('prettier') == 1
-  local prettierd_available = vim.fn.executable('prettierd') == 1
-  local eslint_available = vim.fn.executable('eslint') == 1
-  local eslint_d_available = vim.fn.executable('eslint_d') == 1
-  local ts_formatters = {}
-  if prettierd_available then table.insert(ts_formatters, 'prettierd') end
-  if prettier_available then table.insert(ts_formatters, 'prettier') end
-  if eslint_d_available then table.insert(ts_formatters, 'eslint_d') end
-  if eslint_available then table.insert(ts_formatters, 'eslint') end
+  opts = opts or {}
+  opts.formatters = opts.formatters or {}
+  opts.formatters.typescript = { 'biome' }
+  opts.formatters.typescriptreact = { 'biome' }
   return opts
 end
 
@@ -52,98 +67,35 @@ end
 
 function M.ts_lsp(opts)
   opts = opts or {}
-  local function create_command_handler(command, get_arguments)
-    return function()
-      local arguments = get_arguments()
-      if vim.lsp.commands and vim.lsp.commands.execute then
-        vim.lsp.commands.execute({
-          command = command,
-          arguments = arguments
-        })
-      else
-        ---@diagnostic disable-next-line: deprecated
-        vim.lsp.buf.execute_command({
-          command = command,
-          arguments = arguments
-        })
-      end
+  local on_attach = opts.on_attach or function(client, bufnr)
+    if M.lsp_on_attach then
+      M.lsp_on_attach(client, bufnr)
     end
   end
-  if not opts.servers then opts.servers = {} end
-  opts.servers.ts_ls = {
-    filetypes = { 'typescript', 'typescriptreact' },
+  local config = vim.tbl_deep_extend("force", {
+    on_attach = on_attach,
+    handlers = opts.handlers or {},
     settings = {
-      typescript = {
-        inlayHints = {
-          includeInlayParameterNameHints = 'all',
-          includeInlayParameterNameHintsWhenArgumentMatchesName = true,
-          includeInlayFunctionParameterTypeHints = true,
-          includeInlayVariableTypeHints = true,
-          includeInlayPropertyDeclarationTypeHints = true,
-          includeInlayFunctionLikeReturnTypeHints = true,
-          includeInlayEnumMemberValueHints = true
-        },
-        suggest = { completeFunctionCalls = true }
+      separate_diagnostic_server = true,
+      publish_diagnostic_on = "insert_leave",
+      expose_as_code_action = {},
+      tsserver_path = nil,
+      tsserver_plugins = {},
+      tsserver_max_memory = "auto",
+      tsserver_format_options = {},
+      tsserver_file_preferences = {},
+      tsserver_locale = "en",
+      complete_function_calls = true,
+      include_completions_with_insert_text = true,
+      code_lens = "off",
+      disable_member_code_lens = true,
+      jsx_close_tag = {
+        enable = true,
+        filetypes = { "javascriptreact", "typescriptreact" },
       },
-      javascript = {
-        inlayHints = {
-          includeInlayParameterNameHints = 'all',
-          includeInlayParameterNameHintsWhenArgumentMatchesName = true,
-          includeInlayFunctionParameterTypeHints = true,
-          includeInlayVariableTypeHints = true,
-          includeInlayPropertyDeclarationTypeHints = true,
-          includeInlayFunctionLikeReturnTypeHints = true,
-          includeInlayEnumMemberValueHints = true
-        },
-        suggest = { completeFunctionCalls = true }
-      }
     },
-    commands = {
-      OrganizeImports = {
-        create_command_handler('_typescript.organizeImportv', function()
-          return { vim.api.nvim_buf_get_name(0) }
-        end),
-        description = 'Organize Imports'
-      },
-      AddMissingImports = {
-        create_command_handler('_typescript.addMissingImports',
-          function()
-            return { vim.api.nvim_buf_get_name(0) }
-          end),
-        description = 'Add Missing Imports'
-      },
-      FixAll = {
-        create_command_handler('_typescript.fixAll', function()
-          return { vim.api.nvim_buf_get_name(0) }
-        end),
-        description = 'Fix All Issues'
-      },
-      GoToSourceDefinition = {
-        create_command_handler('_typescript.goToSourceDefinition',
-          function()
-            local bufname = vim.api.nvim_buf_get_name(0)
-            local row = vim.api.nvim_win_get_cursor(0)[1] - 1
-            local col = vim.api.nvim_win_get_cursor(0)[2]
-            return { bufname, row, col }
-          end),
-        description = 'Go To Source Definition'
-      }
-    }
-  }
-  opts.servers.eslint_d = {
-    filetypes = { 'typescript', 'typescriptreact' },
-    settings = {
-      codeActionOnSave = { enable = true, mode = 'all' },
-      format = true,
-      quiet = false,
-      onIgnoredFiles = 'off',
-      rulesCustomizations = {},
-      run = 'onType',
-      validate = 'on',
-      packageManager = 'npm'
-    }
-  }
-  return opts
+  }, opts)
+  require("typescript-tools").setup(config)
 end
 
 function M.ts_root_dir(fname)
@@ -157,13 +109,31 @@ end
 
 function M.ts_nls(opts)
   opts = opts or {}
-  null_ls = null_ls
-  opts.sources = vim.list_extend(opts.sources or {}, {
-    null_ls.builtins.formatting.prettierd.with({
+  local b = null_ls.builtins
+  local sources = {
+    b.formatting.prettierd.with({
       filetypes = { 'typescript', 'typescriptreact' }
-    })
-  })
-  return opts
+    }),
+    b.formatting.prettier.with({
+      filetypes = { 'typescript', 'typescriptreact' }
+    }),
+    b.formatting.eslint_d.with({
+      filetypes = { 'typescript', 'typescriptreact' }
+    }),
+    b.formatting.biome.with({
+      filetypes = { 'typescript', 'typescriptreact' }
+    }),
+    b.diagnostics.biome.with({
+      filetypes = { 'typescript', 'typescriptreact' }
+    }),
+    b.diagnostics.eslint_d.with({
+      filetypes = { 'typescript', 'typescriptreact' }
+    }),
+    b.code_actions.eslint_d.with({
+      filetypes = { 'typescript', 'typescriptreact' }
+    }),
+  }
+  return sources
 end
 
 ---@return boolean
@@ -223,39 +193,7 @@ function M.ts_keymaps(opts)
   return opts
 end
 
-function M.ts_project_commands()
-  local function execute_command(command, arguments)
-    if vim.lsp.commands and vim.lsp.commands.execute then
-      vim.lsp.commands.execute({ command = command, arguments = arguments })
-    else
-      ---@diagnostic disable-next-line: deprecated
-      vim.lsp.buf.execute_command({
-        command = command,
-        arguments = arguments
-      })
-    end
-  end
-  vim.api.nvim_create_user_command('TypescriptOrganizeImports', function()
-    execute_command('_typescript.organizeImports',
-      { vim.api.nvim_buf_get_name(0) })
-  end, { desc = 'Organize Imports' })
-  vim.api.nvim_create_user_command('TypescriptAddMissingImports', function()
-    execute_command('_typescript.addMissingImports',
-      { vim.api.nvim_buf_get_name(0) })
-  end, { desc = 'Add Missing Imports' })
-  vim.api.nvim_create_user_command('TypescriptFixAll', function()
-    execute_command('_typescript.fixAll', { vim.api.nvim_buf_get_name(0) })
-  end, { desc = 'Fix All Fixable Issues' })
-  vim.api.nvim_create_user_command('TypescriptGoToSourceDefinition',
-    function()
-      local row = vim.api.nvim_win_get_cursor(0)[1] - 1
-      local col = vim.api.nvim_win_get_cursor(0)[2]
-      execute_command('_typescript.goToSourceDefinition',
-        { vim.api.nvim_buf_get_name(0), row, col })
-    end, { desc = 'Go To Source Definition' })
-end
-
-function M.ts_config(opts)
+function M.ts_cfg(opts)
   opts = opts or {}
   return {
     conform = M.ts_conform(opts),
@@ -265,7 +203,7 @@ function M.ts_config(opts)
     keymaps = M.ts_keymaps(opts),
     filetypes = M.ts_filetype_detection,
     commands = M.ts_project_commands,
-    root_dir = M.ts_root_dir
+    root_dir = M.ts_root_dir,
   }
 end
 

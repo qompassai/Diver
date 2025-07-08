@@ -4,44 +4,78 @@
 -------------------------------------------------------------------
 ---@meta
 
----@class CmpConfigModule
----@field blink_cmp fun(): BlinkCmpConfig
----@field nvim_cmp fun(): nil
+---@class BlinkCmp
+---@field capabilities fun(): LspCapabilities
 
----@class BlinkCmpConfig
----@field keymap table
----@field appearance BlinkCmpAppearance
----@field completion BlinkCmpCompletion
----@field snippets table
----@field sources BlinkCmpSources
----@field cmdline? table
----@field fuzzy? BlinkCmpFuzzy
+--- @alias blink.cmp.Mode 'cmdline' | 'cmdwin' | 'term' | 'default'
 
----@class BlinkCmpAppearance
----@field nerd_font_variant string
----@field kind_icons table<string, string>
+--- @class blink.cmp.CompletionItem : lsp.CompletionItem
+--- @field documentation? string | { kind: lsp.MarkupKind, value: string, draw?: fun(opts?: blink.cmp.CompletionDocumentationDrawOpts) }
+--- @field score_offset? number
+--- @field source_id string
+--- @field source_name string
+--- @field cursor_column number
+--- @field client_id? number
+--- @field client_name? string
+--- @field kind_name? string
+--- @field kind_icon? string
+--- @field kind_hl? string
+--- @field exact? boolean
+--- @field score? number
 
----@class BlinkCmpCompletion
----@field documentation BlinkCmpDocumentation
 
----@class BlinkCmpDocumentation
----@field auto_show boolean
+return {
+  CompletionItemKind = {
+    'Text',
+    'Method',
+    'Function',
+    'Constructor',
+    'Field',
+    'Variable',
+    'Class',
+    'Interface',
+    'Module',
+    'Property',
+    'Unit',
+    'Value',
+    'Enum',
+    'Keyword',
+    'Snippet',
+    'Color',
+    'File',
+    'Reference',
+    'Folder',
+    'EnumMember',
+    'Constant',
+    'Struct',
+    'Event',
+    'Operator',
+    'TypeParameter',
 
----@class BlinkCmpSources
----@field default string[]
----@field providers table<string, BlinkCmpSourceProvider>
-
----@class BlinkCmpSourceProvider
----@field name string
----@field enabled boolean
----@field module string
----@field min_keyword_length? integer
----@field max_items? integer
----@field score_offset? integer
----@field fallbacks? string[]
----@field opts? table
-
----@class BlinkCmpFuzzy
----@field use_typo_resistance? boolean
----@field use_frecency? boolean
----@field use_proximity? boolean
+    Text = 1,
+    Method = 2,
+    Function = 3,
+    Constructor = 4,
+    Field = 5,
+    Variable = 6,
+    Class = 7,
+    Interface = 8,
+    Module = 9,
+    Property = 10,
+    Unit = 11,
+    Value = 12,
+    Enum = 13,
+    Keyword = 14,
+    Snippet = 15,
+    Color = 16,
+    File = 17,
+    Reference = 18,
+    Folder = 19,
+    EnumMember = 20,
+    Constant = 21,
+    Struct = 22,
+    Event = 23,
+    Operator = 24,
+    TypeParameter = 25,
+  },
+}

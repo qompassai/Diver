@@ -46,7 +46,7 @@ function M.psql_lsp(opts)
     })
     return opts
 end
-function M.psql_linter(opts)
+function M.psql_nls(opts)
     opts = opts or {}
     local ok, null_ls = pcall(require, 'null-ls')
     if not ok then
@@ -59,24 +59,13 @@ function M.psql_linter(opts)
             extra_args = {'--dialect', 'postgres'}
         })
     })
-    return opts
-end
-function M.psql_formatter(opts)
-    opts = opts or {}
-    local ok, null_ls = pcall(require, 'null-ls')
-    if not ok then
-        vim.notify('null-ls not available', vim.log.levels.WARN)
-        return opts
-    end
-    opts.sources = vim.list_extend(opts.sources or {}, {
         null_ls.builtins.formatting.sqlfluff.with({
             filetypes = {'pgsql'},
             extra_args = {'--dialect', 'postgres'}
-        }), null_ls.builtins.formatting.pg_format.with({filetypes = {'pgsql'}})
-    })
+        }) null_ls.builtins.formatting.pg_format.with({filetypes = {'pgsql'}})
     return opts
 end
-function M.psql_filetype_detection()
+function M.psql_ftd()
     vim.filetype.add({
         extension = {psql = 'pgsql', pgsql = 'pgsql'},
         pattern = {['%.pg%.sql$'] = 'pgsql', ['%.postgres%.sql$'] = 'pgsql'},

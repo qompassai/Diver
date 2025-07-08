@@ -23,17 +23,8 @@ return {
   },
   {
     "arminveres/md-pdf.nvim",
-    dependencies = { "3rd/diagram.nvim" },
+    dependencies = { '3rd/diagram.nvim' },
     config = function(_, opts) md_cfg.md_pdf(opts) end,
-  },
-  {
-    "iamcco/markdown-preview.nvim",
-    ft  = { "markdown" },
-    cmd = { "MarkdownPreview", "MarkdownPreviewToggle", "MarkdownPreviewStop" },
-    config = function(_, opts)
- vim.g.mkdp_filetypes = { "markdown" }
-    vim.fn["mkdp#util#install"]()
-      md_cfg.md_preview(opts) end,
   },
   {
     "MeanderingProgrammer/render-markdown.nvim",

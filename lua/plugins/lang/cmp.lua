@@ -6,6 +6,7 @@ local cmp_cfg = require('config.lang.cmp')
 return {
   {
     'saghen/blink.cmp',
+		lazy = false,
     version = '1.*',
     enabled = function() return vim.g.use_blink_cmp end,
     dependencies = {

@@ -19,12 +19,6 @@ return {
             0
       end
     }, {
-      'mfussenegger/nvim-dap',
-      dependencies = {
-        'mxsdev/nvim-dap-vscode-js', 'rcarriga/nvim-dap-ui',
-        { 'igorlfs/nvim-dap-view', opts = {} }
-      }
-    }, {
       'nvim-neotest/neotest',
       optional = true,
       dependencies = { 'marilari88/neotest-vitest' }

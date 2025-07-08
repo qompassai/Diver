@@ -1,27 +1,10 @@
--- qompassai/Diver/lua/config/lang/lua.lua
+-- qompassai/Diver/lua/config/lang/js.lua
 -- Qompass AI Diver Javascript Lang Config
 -- Copyright (C) 2025 Qompass AI, All rights reserved
 -----------------------------------------------------
 local M = {}
-local function mark_pure(src) return src.with({ command = 'true' }) end
 local function xdg_config(path)
   return vim.fn.expand(vim.env.XDG_CONFIG_HOME or '~/.config') .. "/" .. path
-end
-function M.neoconf(opts)
-  opts = opts or {}
-  return {
-    local_settings = opts.local_settings or '.neoconf.json5',
-    global_settings = opts.global_settings or xdg_config('neoconf/neoconf.json5'),
-    import = opts.import or { vscode = true, coc = true, nlsp = true },
-    live_reload = opts.live_reload ~= false,
-    filetype_jsonc = opts.filetype_jsonc ~= false,
-    plugins = opts.plugins or {
-      lspconfig = { enabled = true },
-      jsonls = { enabled = true, configured_servers_only = true },
-      tsserver = { enabled = true },
-      eslint = { enabled = true }
-    }
-  }
 end
 
 ---@param opts table|nil
@@ -67,43 +50,15 @@ function M.js_nls(opts)
   opts = opts or {}
   local null_ls = require("null-ls")
   local b = null_ls.builtins
-  local eslint_config_path = opts.eslint_config_path or xdg_config("eslint/eslint.config.js")
-  local prettier_config_path = opts.prettier_config_path or xdg_config("prettier/.prettierrc")
   local biome_config_path = opts.biome_config_path or xdg_config("biome/biome.json5")
-  return {
-    mark_pure(b.code_actions.eslint),
-    mark_pure(b.code_actions.refactoring),
-    mark_pure(b.completion.luasnip),
-    mark_pure(b.diagnostics.todo_comments),
-    mark_pure(b.diagnostics.trail_space),
-    b.diagnostics.eslint.with({
-      ft = { "javascript", "javascriptreact", "vue", "svelte", "astro" },
-      command = "eslint",
-      extra_args = { "--config", eslint_config_path },
-    }),
-
-    b.formatting.prettier.with({
-      ft = {
-        "javascript", "javascriptreact", "typescript", "typescriptreact",
-        "vue", "svelte", "astro", "css", "scss", "html", "json", "yaml", "markdown",
-      },
-      command = "prettier",
-      extra_args = { "--config", prettier_config_path },
-    }),
+  local sources = {
     b.formatting.biome.with({
-      command = "biome",
-      args = { "format", "--stdin-file-path", "$FILENAME" },
-      to_stdin = true,
       extra_args = { "--config-path", biome_config_path },
-      ft = {
+      filetypes = {
         "javascript", "typescript", "tsx", "jsx", "vue", "svelte", "astro", "json", "jsonc", "markdown"
-      }
+      },
     }),
     b.diagnostics.biome.with({
-      command = "biome",
-      args = { "lint", "--no-errors-on-unmatched", "--json", "--stdin-file-path", "$FILENAME" },
-      to_stdin = true,
-      format = "json",
       extra_args = { "--config-path", biome_config_path },
       on_output = function(params)
         local diags = {}
@@ -120,38 +75,38 @@ function M.js_nls(opts)
         end
         return diags
       end,
+      filetypes = {
+        "javascript", "typescript", "tsx", "jsx", "vue", "svelte", "astro", "json", "jsonc", "markdown"
+      },
+      format = "json",
     }),
   }
+  return sources
 end
 
 function M.js_lsp(opts)
   opts = opts or {}
   local lspconfig = require("lspconfig")
-  local capabilities = require("cmp_nvim_lsp").default_capabilities()
-  lspconfig.tsserver.setup({
-    capabilities = capabilities,
-    filetypes = { "javascript", "javascriptreact" },
-    init_options = {
-      hostInfo = "neovim",
+  local capabilities = opts.capabilities or require("cmp_nvim_lsp").default_capabilities()
+  local filetypes = opts.filetypes or { "javascript", "javascriptreact" }
+  local init_options = opts.init_options or { hostInfo = "neovim" }
+  local settings = opts.settings or {
+    javascript = {
+      format = { enable = true },
+      preferences = { importModuleSpecifierPreference = "relative" },
     },
-    settings = {
-      javascript = {
-        format = {
-          enable = false,
-        },
-        preferences = {
-          importModuleSpecifierPreference = "relative",
-        },
-      },
-    },
-    on_attach = function(client, _)
-      client.server_capabilities.documentFormattingProvider = false
-    end,
-  })
-  return {
-    tsserver = true,
-    eslint = true,
   }
+  local on_attach = opts.on_attach or function(client, _)
+    client.server_capabilities.documentFormattingProvider = true
+  end
+  lspconfig.ts_ls.setup({
+    capabilities = capabilities,
+    filetypes = filetypes,
+    init_options = init_options,
+    settings = settings,
+    on_attach = on_attach,
+  })
+  return { ts_ls = true }
 end
 
 function M.js_conform(opts)
@@ -274,8 +229,6 @@ end
 
 function M.setup_js(opts)
   opts = opts or {}
-  local neoconf_config = M.neoconf(opts)
-  require('neoconf').setup(neoconf_config)
   require('tailwindcss-colorizer-cmp').setup({ color_square_width = 2 })
   return {
     conform = M.js_conform(opts),

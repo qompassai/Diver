@@ -15,21 +15,21 @@ end
 
 function U.scala_metals()
   return {
-      showImplicitArguments      = true,
-      showInferredType           = true,
-      superMethodLensesEnabled   = true,
-      excludedPackages           = { "akka.*" },
-    serverVersion = "1.4.10",
+    showImplicitArguments    = true,
+    showInferredType         = true,
+    superMethodLensesEnabled = true,
+    excludedPackages         = { "akka.*" },
+    serverVersion            = "2.1.24",
   }
 end
 
 function U.scala_lsp(on_attach, capabilities)
-  local metals = require("metals")
-  local cfg    = metals.bare_config()
-  cfg.on_attach    = on_attach
-  cfg.capabilities = capabilities
-  cfg.init_options = { statusBarProvider = "on" }
-  cfg.settings     = U.scala_metals()
+  local metals      = require("metals")
+  local cfg         = metals.bare_config()
+  cfg.on_attach     = on_attach
+  cfg.capabilities  = capabilities
+  cfg.init_options  = { statusBarProvider = "on" }
+  cfg.settings      = U.scala_metals()
   cfg.serverVersion = "1.4.10"
 
   return cfg
@@ -53,4 +53,5 @@ function U.scala_dap()
     },
   }
 end
+
 return U

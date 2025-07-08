@@ -2,6 +2,30 @@
 -- Qompass AI Diver Lint Lang Config
 -- Copyright (C) 2025 Qompass AI, All rights reserved
 -- --------------------------------------------------
+local function find_biome_config()
+  local uv = vim.loop
+  local config_files = { "biome.json", "biome.jsonc", "biome.json5" }
+  -- Search upwards from the buffer's directory
+  local dir = vim.fn.expand('%:p:h')
+  while dir and dir ~= "/" do
+    for _, fname in ipairs(config_files) do
+      local path = dir .. "/" .. fname
+      if uv.fs_stat(path) then
+        return path
+      end
+    end
+    dir = dir:match("(.+)/[^/]+$")
+  end
+  local xdg = os.getenv("XDG_CONFIG_HOME") or (os.getenv("HOME") .. "/.config")
+  for _, fname in ipairs(config_files) do
+    local path = xdg .. "/biome/" .. fname
+    if uv.fs_stat(path) then
+      return path
+    end
+  end
+  return nil
+end
+
 local M = {}
 function M.setup_linters(lint)
   lint.linters_by_ft = {
@@ -11,7 +35,7 @@ function M.setup_linters(lint)
     asciidoc = { 'asciidoctor' },
     arduino = { 'arduino-cli' },
     asm = { 'nasm' },
-    astro = { 'eslint_d' },
+    astro = { 'biome' },
     bash = { 'shellcheck', 'bashate' },
     bicep = { 'bicep' },
     c = { 'cppcheck', 'clang-tidy' },
@@ -20,7 +44,7 @@ function M.setup_linters(lint)
     compute = { 'glslang' },
     conf = { 'editorconfig-checker' },
     cpp = { 'cppcheck', 'clang-tidy' },
-    css = { 'csslint', 'stylint' },
+    css = { 'biome' },
     cuda = { 'nvcc', 'nvc', 'clang-tidy' },
     cue = { 'cue' },
     dhall = { 'dhall' },
@@ -32,17 +56,17 @@ function M.setup_linters(lint)
     github_actions = { 'actionlint' },
     glsl = { 'glslang' },
     go = { 'golangci-lint', 'gosec' },
-    graphql = { 'graphql-eslint' },
+    graphql = { 'biome' },
     haskell = { 'hlint' },
     hlsl = { 'hlsl' },
     html = { 'htmlhint', 'tidy' },
     hocon = { 'hocon-check' },
     ini = { 'editorconfig-checker' },
     java = { 'checkstyle', 'pmd' },
-    javascript = { 'eslint_d', 'biomejs' },
-    javascriptreact = { 'eslint_d', 'biomejs' },
-    json = { 'jsonlint', 'jq' },
-    jsonc = { 'jsonlint' },
+    javascript = { 'biome' },
+    javascriptreact = { 'biome' },
+    json = { 'biome' },
+    jsonc = { 'biome' },
     julia = { 'julia' },
     kotlin = { 'ktlint' },
     latex = { 'chktex', 'lacheck' },
@@ -50,8 +74,8 @@ function M.setup_linters(lint)
     lua = { 'luacheck', 'selene' },
     mlir = { 'mlir-opt' },
     mojo = { 'mojo-check' },
-    markdown = { 'markdownlint', 'vale', 'textlint' },
-    mdx = { 'markdownlint', 'eslint_d' },
+    markdown = { 'biome'},
+    mdx = {'biome'},
     meson = { 'meson' },
     mql4 = { 'mql-check' },
     mql5 = { 'mql-check' },
@@ -85,8 +109,8 @@ function M.setup_linters(lint)
     terraform = { 'tflint', 'tfsec' },
     tex = { 'chktex', 'lacheck' },
     toml = { 'taplo' },
-    typescript = { 'eslint_d', 'biomejs' },
-    typescriptreact = { 'eslint_d', 'biomejs' },
+    typescript = { 'biome' },
+    typescriptreact = { 'biome' },
     unity = { 'unity-analyzer' },
     verilog = { 'verilator' },
     vhdl = { 'ghdl' },
@@ -240,22 +264,27 @@ function M.setup_linters(lint)
     pattern = [[([^:]+)\((%d+),(%d+)\): (%w+): (.+)]],
     groups = { 'file', 'lnum', 'col', 'severity', 'message' }
   }
-  lint.linters.biomejs = {
-    cmd = 'biome',
-    stdin = true,
-    args = {
-      'check', '--stdin-file-path',
-      function() return vim.api.nvim_buf_get_name(0) end
-    },
-    stream = 'stdout',
-    ignore_exitcode = true,
-    pattern = [[([^:]+):(%d+):(%d+): (%w+): (.+)]],
-    groups = { 'file', 'lnum', 'col', 'severity', 'message' }
-  }
+  lint.linters.biome = {
+  cmd = 'biome',
+  stdin = true,
+  args = function()
+    local args = { 'check', '--stdin-file-path', vim.api.nvim_buf_get_name(0) }
+    local config = find_biome_config()
+    if config then
+      table.insert(args, '--config-path')
+      table.insert(args, config)
+    end
+    return args
+  end,
+  stream = 'stdout',
+  ignore_exitcode = true,
+  pattern = [[([^:]+):(%d+):(%d+): (%w+): (.+)]],
+  groups = { 'file', 'lnum', 'col', 'severity', 'message' }
+}
   lint.linters.checkstyle = {
     cmd = 'checkstyle',
     stdin = false,
-    args = { '-c', '/path/to/checkstyle.xml', '$FILENAME' },
+    args = { '-c', '~/.config/xml/checkstyle.xml', '$FILENAME' },
     stream = 'stdout',
     ignore_exitcode = true,
     parser = function(output)
@@ -983,10 +1012,33 @@ function M.setup_linters(lint)
       return diagnostics
     end
   }
-  lint.linters.luacheck = lint.linters.luacheck or {}
-  lint.linters.luacheck.args = {
-    '--formatter', 'plain', '--codes', '--ranges', '-'
-  }
+  lint.linters.luacheck = {
+  cmd = 'luacheck',
+  stdin = true,
+  args = { '--formatter', 'plain', '--codes', '--ranges', '-' },
+  stream = 'stdout',
+  ignore_exitcode = true,
+  pattern = [[([^\t]+)\t(%d+)\t(%d+)\t([WE])\t([^\t]+)\t(.+)]],
+  groups = { 'file', 'lnum', 'col', 'severity', 'code', 'message' },
+  parser = function(output)
+    local diagnostics = {}
+    for _, line in ipairs(vim.split(output, '\n')) do
+      local file, lnum, col, severity, code, message = line:match(
+        '([^\t]+)\t(%d+)\t(%d+)\t([WE])\t([^\t]+)\t(.+)')
+      if file and lnum and col then
+        table.insert(diagnostics, {
+          lnum = tonumber(lnum) - 1,
+          col = tonumber(col) - 1,
+          message = message,
+          severity = severity == 'E' and vim.diagnostic.severity.ERROR or vim.diagnostic.severity.WARN,
+          code = code,
+          source = 'luacheck'
+        })
+      end
+    end
+    return diagnostics
+  end,
+}
   lint.linters['markdownlint-fix'] = {
     cmd = 'markdownlint',
     stdin = true,

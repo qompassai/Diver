@@ -4,20 +4,26 @@
 -- --------------------------------------------------
 local M = {}
 function M.json_autocmds()
-    vim.api.nvim_create_autocmd({'TextChanged', 'InsertLeave'}, {
-        pattern = {'*.json', '*.jsonc', '*.json5', '*.jsonl'},
-        callback = function()
-            if vim.b.lsp_attached then
-                vim.lsp.buf.document_highlight()
-                vim.diagnostic.reset()
-                local client = vim.lsp.get_active_clients({bufnr = 0})[1]
-                if client and
-                    client.supports_method('textDocument/semanticTokens/full') then
-                    pcall(vim.lsp.buf.semantic_tokens_refresh)
-                end
-            end
-        end
-    })
+local augroups = {
+	json = vim.api.nvim_create_augroup('JSON', { clear = true })
+}
+vim.api.nvim_create_autocmd({ 'TextChanged', 'InsertLeave' }, {
+  group = augroups.json,
+  pattern = { '*.json', '*.jsonc', '*.json5' },
+  callback = function()
+    vim.diagnostic.reset()
+    if vim.lsp.buf.document_highlight then
+      vim.lsp.buf.document_highlight()
+    end
+    for _, client in ipairs(vim.lsp.get_clients({ bufnr = 0 })) do
+      if client:supports_method('textDocument/semanticTokens') then
+        pcall(vim.lsp.buf.semantic_tokens_refresh)
+        break
+      end
+    end
+  end
+})
+
 end
 function M.json_cmp(opts)
     local sources = opts.sources or {}
@@ -71,11 +77,18 @@ function M.json_lsp(opts)
                         'lerna.json', 'GitHub Action', 'AWS CloudFormation'
                     }
                 }),
-                validate = {enable = true},
-                format = {enable = true}
+                validate = {
+									enable = true,
+									allowComments = true
+								},
+                format = {
+									enable = true,
+									keepLines = false,
+									tabSize = 2
+        },
+								}
             }
         }
-    }
     return opts
 end
 function M.json_filetype_detection()

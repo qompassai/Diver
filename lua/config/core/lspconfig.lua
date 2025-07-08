@@ -2,17 +2,20 @@
 -- Qompass AI Diver Lsp Core Config
 -- Copyright (C) 2025 Qompass AI, All rights reserved
 -- -----------------------------------------
+
+---@class LspModule
 local M = {}
-local ansible_cfg = require('config.cicd.ansible')
 local css_cfg = require('config.ui.css')
 local go_cfg = require('config.lang.go')
 local lua_cfg = require('config.lang.lua')
+local md_cfg = require('config.ui.md')
 local nix_cfg = require('config.lang.nix')
 local rust_cfg = require('config.lang.rust')
-local scala_cfg = require('config.lang.scala')
 local ts_cfg = require('config.lang.ts')
 local zig_cfg = require('config.lang.zig')
 
+
+---@return nil
 function M.lsp_autocmds()
   local lsp_group = vim.api.nvim_create_augroup('LspAutocmds', { clear = true })
   vim.api.nvim_create_autocmd('LspAttach', {
@@ -20,8 +23,7 @@ function M.lsp_autocmds()
     callback = function(args)
       local client = vim.lsp.get_client_by_id(args.data.client_id)
       if client then
-        vim.notify(string.format('LSP attached: %s', client.name),
-          vim.log.levels.DEBUG)
+        vim.notify(string.format('LSP attached: %s', client.name), vim.log.levels.DEBUG)
       end
     end
   })
@@ -30,30 +32,33 @@ function M.lsp_autocmds()
     callback = function(args)
       local client = vim.lsp.get_client_by_id(args.data.client_id)
       if client then
-        vim.notify(string.format('LSP detached: %s', client.name),
-          vim.log.levels.DEBUG)
+        vim.notify(string.format('LSP detached: %s', client.name), vim.log.levels.DEBUG)
       end
     end
   })
 end
 
+---@return LspCapabilities
 function M.lsp_capabilities()
   local capabilities = vim.lsp.protocol.make_client_capabilities()
   capabilities.textDocument.foldingRange = {
     dynamicRegistration = true,
-    lineFoldingOnly = true
+    lineFoldingOnly = true,
+    snippetSupport = true
   }
   capabilities.workspace = {
     fileOperations = { didRename = true, willRename = true }
   }
-  local blink_ok, blink = pcall(require, 'blink.cmp')
-  if blink_ok and blink.capabilities then
-    return vim.tbl_deep_extend('force', capabilities, blink.capabilities())
-  end
   return capabilities
 end
 
-function M.lsp_config(opts)
+---@return table
+
+---@class LspServersOpts
+---@field capabilities? LspCapabilities
+---@param opts LspServersOpts|nil
+---@return nil
+function M.lsp_servers(opts)
   opts = opts or {}
   local lspconfig = require('lspconfig')
   local util = require('lspconfig.util')
@@ -64,39 +69,43 @@ function M.lsp_config(opts)
     root_dir = util.root_pattern('.git', '.svn', '.hg'),
   }
   local servers = {
-    ansiblels = ansible_cfg.ansible_lsp(M.lsp_on_attach, capabilities),
+    ansiblels = {},
     bashls = {},
     clangd = {
-  capabilities = vim.tbl_deep_extend(
-    "force",
-    capabilities,
-    { offsetEncoding = 'utf-8' }
-  ),
-},
-
-    cssls = css_cfg.css_lsp(),
+      capabilities = vim.tbl_deep_extend(
+        "force",
+        capabilities,
+        { offsetEncoding = { "utf-8" } }
+      ),
+    },
     dockerls = {},
     elmls = {},
     graphql = {},
     gopls = go_cfg.go_lsp(),
-    html = {},
+    html = { filetypes = { 'html', 'markdown', 'md' } },
     jdtls = {},
     jsonls = {
       settings = {
         json = {
-          schemas = require("schemastore").json.schemas(),
+          schemas = require('schemastore').json.schemas(),
           validate = { enable = true }
         }
       },
       filetypes = { 'json', 'jsonc', 'json5' }
     },
-      lua_ls = lua_cfg.lua_lsp(),
-    metals = scala_cfg.scala_lsp(M.lsp_on_attach, capabilities),
+    lua_ls = lua_cfg.lua_lsp(),
+    marksman = {
+			{ md_cfg.md_lsp(),
+			filetypes = { 'markdown', 'md' }
+		}
+	},
+    metals =  { filetypes = {'sbt', 'java', 'scala' }},
     nil_ls = nix_cfg.nix_lsp(),
     rust_analyzer = rust_cfg.rust_lsp(),
-    sqlls = {},
-    tailwindcss = {},
-    taplo = {},
+    sqlls = { filetypes = {'sql'} },
+    tailwindcss = css_cfg.css_lsp(),
+    taplo = { filetypes = {'toml'} },
+    texlab = { filetypes = { 'tex', 'latex', 'markdown', 'md' } },
     tsserver = ts_cfg.ts_lsp(opts),
     vimls = {
       settings = {
@@ -107,7 +116,7 @@ function M.lsp_config(opts)
       settings = {
         yaml = {
           schemas = require("schemastore").yaml.schemas(),
-          keyOrdering = false,
+          keyOrdering = true,
           validate = true
         }
       }
@@ -115,18 +124,18 @@ function M.lsp_config(opts)
     zls = zig_cfg.zig_lsp(),
   }
   for name, config in pairs(servers) do
-    local merged_config = vim.tbl_deep_extend("force", {}, default_config, config)
+    local merged_config = vim.tbl_deep_extend("force", {}, default_config, config or {})
     lspconfig[name].setup(merged_config)
   end
   vim.diagnostic.config({
     virtual_text = { prefix = '●', spacing = 4 },
     float = {
       border = 'rounded',
-      source = 'always',
+      source = 'if_many',
       format = function(diagnostic)
         return string.format('%s (%s) [%s]', diagnostic.message,
           diagnostic.source, diagnostic.code or
-          diagnostic.user_data.lsp.code)
+          (diagnostic.user_data and diagnostic.user_data.lsp and diagnostic.user_data.lsp.code or ""))
       end
     },
     signs = true,
@@ -136,7 +145,13 @@ function M.lsp_config(opts)
   })
 end
 
+---@param client vim.lsp.Client
+---@param bufnr number
 function M.lsp_on_attach(client, bufnr)
+  if type(bufnr) ~= "number" then
+    vim.notify("Invalid buffer number in lsp_on_attach: " .. tostring(bufnr), vim.log.levels.ERROR)
+    return
+  end
   local bufmap = function(mode, lhs, rhs, desc)
     vim.keymap.set(mode, lhs, rhs, { buffer = bufnr, desc = desc })
   end
@@ -148,31 +163,26 @@ function M.lsp_on_attach(client, bufnr)
   bufmap('n', '<leader>rn', vim.lsp.buf.rename, 'Rename Symbol')
   bufmap('n', '<leader>ca', vim.lsp.buf.code_action, 'Code Actions')
   bufmap('n', '<leader>fd', vim.diagnostic.open_float, 'Show Diagnostic')
-  bufmap('n', '[d', vim.diagnostic.goto_prev, 'Previous Diagnostic')
-  bufmap('n', ']d', vim.diagnostic.goto_next, 'Next Diagnostic')
-  if client.supports_method('textDocument/inlayHint') then
-    vim.lsp.inlay_hint.enable(bufnr, true)
-  end
-  if client.supports_method('textDocument/formatting') then
-    bufmap('n', '<leader>fm',
-      function() vim.lsp.buf.format({ async = true }) end,
-      'Format Buffer')
-  end
-end
+  bufmap('n', '[d', function() vim.diagnostic.jump_prev() end, 'Previous Diagnostic')
+  bufmap('n', ']d', function() vim.diagnostic.jump_next() end, 'Next Diagnostic')
+	vim.notify("LSP attached: " .. client.name, vim.log.levels.INFO)
+ end
 
-function M.lsp_cfg(opts)
+---@param opts table|nil
+---@return table
+function M.lsp_setup(opts)
   opts = opts or {}
   local lspconfig = require("lspconfig")
   local capabilities = M.lsp_capabilities()
   return {
-    autocmds = M.lsp_autocmds,
     lspconfig = lspconfig,
     capabilities = capabilities,
+    autocmds = M.lsp_autocmds,
     config = function()
-      M.lsp_config(vim.tbl_deep_extend("force", {
-        capabilities = capabilities,
-      }, opts or {}))
+      M.lsp_servers(vim.tbl_deep_extend("force", { capabilities = capabilities }, opts))
     end,
     on_attach = M.lsp_on_attach,
   }
 end
+
+return M

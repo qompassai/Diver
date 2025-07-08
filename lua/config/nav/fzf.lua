@@ -15,7 +15,7 @@ M.options = {
             vertical = 'down:45%'
         },
         border = 'rounded',
-        hl = {border = 'FloatBorder'}
+        hls = { Normal = "Normal", Border = "FloatBorder" },
     },
     fzf_opts = {['--layout'] = 'reverse-list', ['--info'] = 'inline'},
     keymap = {

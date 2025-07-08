@@ -47,11 +47,11 @@ end
 ---@param filenames string|string[] names to look for
 ---@return string|nil               absolute path or nil
 function U.find_config(filenames)
-  local util      = require("lspconfig.util")
-  local cwd_file  = vim.fn.expand("%:p")
-  local root      = util.root_pattern(".git", ".hg", ".svn",
-                                      "package.json", ".luarc.json")(cwd_file)
-  filenames = type(filenames) == "table" and filenames or { filenames }
+  local util     = require("lspconfig.util")
+  local cwd_file = vim.fn.expand("%:p")
+  local root     = util.root_pattern(".git", ".hg", ".svn",
+    "package.json", ".luarc.json")(cwd_file)
+  filenames      = type(filenames) == "table" and filenames or { filenames }
 
   if root then
     local path = vim.fs.find(filenames, { upward = true, path = root })[1]
@@ -74,9 +74,9 @@ function U.lua_version()
     if vim.fn.filereadable(p) == 1 then return v, p end
   end
   for _, name in ipairs({
-    "lua5.4","lua5.3","lua5.2","lua5.1",
-    "lua54","lua53","lua52","lua51",
-    "luajit","lua",
+    "lua5.4", "lua5.3", "lua5.2", "lua5.1",
+    "lua54", "lua53", "lua52", "lua51",
+    "luajit", "lua",
   }) do
     local p = vim.fn.exepath(name)
     if p ~= "" then return name, p end
@@ -87,7 +87,7 @@ end
 ---@param extra table[]|nil additional library entries
 function U.lua_library(extra)
   local list = {
-    { path = "${3rd}/luv/library", words = { "vim%.uv" } },
+    { path = "${3rd}/luv/library",                  words = { "vim%.uv" } },
     { path = tostring(vim.fn.expand("$VIMRUNTIME")) },
     { path = vim.fn.stdpath("config") .. "/lua" },
     { path = vim.fn.stdpath("data") .. "/lazy" },

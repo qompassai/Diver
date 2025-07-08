@@ -21,8 +21,8 @@ return {
     local null_ls = require("null-ls")
     for _, src in ipairs(cfg.nls) do null_ls.register(src) end
     local lsp = require("lspconfig")
-    for name, opts in pairs(cfg.lsp) do
-      lsp[name].setup(opts)
+    for name, lsp_opts in pairs(cfg.lsp) do
+      lsp[name].setup(lsp_opts)
     end
   end,
 }

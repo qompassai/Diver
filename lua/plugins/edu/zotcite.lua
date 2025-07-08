@@ -7,7 +7,6 @@ return {
   "jalvesaq/zotcite",
   dependencies = {"ibhagwan/fzf-lua"},
   ft    = { "markdown", "rmd", "quarto", "vimwiki" },
-  event = "VeryLazy",
   config = function(_, opts)
     zotcite_cfg.zotcite_cfg(opts)
   end,
