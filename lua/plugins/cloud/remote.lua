@@ -17,5 +17,4 @@ return {
       ssh_config = vim.fn.expand('~/.ssh/config')
     })
   end,
-  event = 'VeryLazy'
 }

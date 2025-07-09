@@ -4,7 +4,6 @@
 -- --------------------------------------------------
 return {
   'dgrbrady/nvim-docker',
-  event = 'VeryLazy',
   ft = {
     'dockerfile', 'containerfile', 'docker-compose.yaml',
     'docker-compose.yml'

@@ -4,6 +4,7 @@
 return
 {
   "nvim-neo-tree/neo-tree.nvim",
+	event = 'VimEnter',
   branch = "v3.x",
   dependencies = {
     "nvim-lua/plenary.nvim",
@@ -11,9 +12,7 @@ return
     "MunifTanjim/nui.nvim",
     {"3rd/image.nvim", opts = {}},
   },
-  lazy = false,
-  ---@module "neo-tree"
-  ---@type neotree.Config?
-  opts = {
-  },
+	config = function(_, opts)
+		require('config.nav.neotree').neotree_cfg(opts)
+	end,
 }

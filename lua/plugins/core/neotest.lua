@@ -7,20 +7,22 @@ return {
   "nvim-neotest/neotest",
   dependencies = {
     "nvim-neotest/nvim-nio",
-    'nvim-lua/plenary.nvim',
-		'nvim-neotest/neotest-plenary',
-    'antoinemadec/FixCursorHold.nvim',
+    "nvim-lua/plenary.nvim",
+    "nvim-neotest/neotest-plenary",
+    "antoinemadec/FixCursorHold.nvim",
     "nvim-treesitter/nvim-treesitter",
     "lawrence-laz/neotest-zig",
-    'rcasia/neotest-bash',
-    'stevanmilic/neotest-scala',
-    'thenbe/neotest-playwright',
-		  'marilari88/neotest-vitest',
-    'ibhagwan/fzf-lua',
+    "rcasia/neotest-bash",
+    "stevanmilic/neotest-scala",
+    "thenbe/neotest-playwright",
+    "marilari88/neotest-vitest",
+    "ibhagwan/fzf-lua",
   },
-	 opts = {
+  cmd = { "Neotest", "NeotestRun", "NeotestSummary", "NeotestOutput" },
+  ft = { "lua", "python", "zig", "bash", "scala", "typescript", "javascript" },
+  opts = {
     adapters = {
       ["neotest-vitest"] = {},
     },
-}
+  },
 }

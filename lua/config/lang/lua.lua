@@ -108,7 +108,7 @@ function M.lua_lsp(opts)
           checkThirdParty = true,
         },
         diagnostics = {
-          globals = { 'vim', 'require', "jit", "cmp", "luassert",
+          globals = { 'LazyVim', 'vim', 'require', "jit", "cmp", "luassert",
             "use_blink_cmp", "lazydev_enabled", "blink_cmp" },
           disable = { "missing-fields" },
         },

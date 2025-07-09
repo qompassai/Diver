@@ -1,11 +1,11 @@
 -- qompassai/Diver/lua/config/lang/lua.lua
--- Qompass AI Diver Lint Lang Config
+-- Qompass AI Diver lint Lang Config
 -- Copyright (C) 2025 Qompass AI, All rights reserved
 -- --------------------------------------------------
+
 local function find_biome_config()
   local uv = vim.loop
   local config_files = { "biome.json", "biome.jsonc", "biome.json5" }
-  -- Search upwards from the buffer's directory
   local dir = vim.fn.expand('%:p:h')
   while dir and dir ~= "/" do
     for _, fname in ipairs(config_files) do
@@ -25,9 +25,19 @@ local function find_biome_config()
   end
   return nil
 end
-
 local M = {}
-function M.setup_linters(lint)
+function M.lint_autocmds()
+  local lint = require('lint')
+  local lint_augroup = vim.api.nvim_create_augroup('lint', { clear = true })
+  vim.api.nvim_create_autocmd({ 'BufEnter', 'BufWritePost', 'InsertLeave' }, {
+    group = lint_augroup,
+    callback = function() lint.try_lint() end,
+  })
+  vim.keymap.set('n', '<leader>l', function() lint.try_lint() end, { desc = 'Trigger linting for current file' })
+end
+
+function M.lint_cfg(lint)
+	local lint = require('lint')
   lint.linters_by_ft = {
     ['*'] = { 'codespell' },
     ansible = { 'ansible-lint', 'yamllint' },

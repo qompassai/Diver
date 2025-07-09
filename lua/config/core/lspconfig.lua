@@ -5,15 +5,13 @@
 
 ---@class LspModule
 local M = {}
-local css_cfg = require('config.ui.css')
-local go_cfg = require('config.lang.go')
-local lua_cfg = require('config.lang.lua')
-local md_cfg = require('config.ui.md')
-local nix_cfg = require('config.lang.nix')
-local rust_cfg = require('config.lang.rust')
-local ts_cfg = require('config.lang.ts')
-local zig_cfg = require('config.lang.zig')
-
+local css_lang = require('config.ui.css')
+local go_lang = require('config.lang.go')
+local lua_lang = require('config.lang.lua')
+local md_lang = require('config.ui.md')
+local nix_lang = require('config.lang.nix')
+local rust_lang = require('config.lang.rust')
+local zig_lang = require('config.lang.zig')
 
 ---@return nil
 function M.lsp_autocmds()
@@ -81,7 +79,7 @@ function M.lsp_servers(opts)
     dockerls = {},
     elmls = {},
     graphql = {},
-    gopls = go_cfg.go_lsp(),
+    gopls = go_lang.go_lsp(),
     html = { filetypes = { 'html', 'markdown', 'md' } },
     jdtls = {},
     jsonls = {
@@ -93,9 +91,9 @@ function M.lsp_servers(opts)
       },
       filetypes = { 'json', 'jsonc', 'json5' }
     },
-    lua_ls = lua_cfg.lua_lsp(),
+    lua_ls = lua_lang.lua_lsp(),
     marksman = {
-			{ md_cfg.md_lsp(),
+			{ md_lang.md_lsp(),
 			filetypes = { 'markdown', 'md' }
 		}
 	},
@@ -106,7 +104,7 @@ function M.lsp_servers(opts)
     tailwindcss = css_cfg.css_lsp(),
     taplo = { filetypes = {'toml'} },
     texlab = { filetypes = { 'tex', 'latex', 'markdown', 'md' } },
-    tsserver = ts_cfg.ts_lsp(opts),
+    ts_ls = ts_lang.ts_lsp(opts),
     vimls = {
       settings = {
         isNeovim = true
@@ -121,7 +119,7 @@ function M.lsp_servers(opts)
         }
       }
     },
-    zls = zig_cfg.zig_lsp(),
+    zls = zig_lang.zig_lsp(),
   }
   for name, config in pairs(servers) do
     local merged_config = vim.tbl_deep_extend("force", {}, default_config, config or {})

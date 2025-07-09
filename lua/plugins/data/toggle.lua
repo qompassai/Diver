@@ -1,4 +1,4 @@
--- ~/.config/nvim/lua/plugins/data/toggle.lua
+-- /qompassai/Diver/lua/plugins/data/toggle.lua
 -- Qompass AI Diver Toggle Plugin Spec
 -- Copyright (C) 2025 Qompass AI, All rights reserved
 -----------------------------------------------------

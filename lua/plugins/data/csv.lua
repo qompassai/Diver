@@ -1,17 +1,16 @@
--- ~/.config/nvim/lua/plugins/data/csv.lua
+-- /qompassai/Diver/lua/plugins/data/csv.lua
 -- Qompass AI Diver CSV Spec
 -- Copyright (C) 2025 Qompass AI, All rights reserved
 -----------------------------------------------------
 return {
     'cameron-wags/rainbow_csv.nvim',
-    enabled = true,
-    config = true,
-    opts = {delim = ','},
-    ft = {
+		ft = {
         'csv', 'tsv', 'csv_semicolon', 'csv_whitespace', 'csv_pipe', 'rfc_csv',
         'rfc_semicolon'
     },
-    cmd = {
+    config = true,
+    opts = {delim = ','},
+       cmd = {
         'RainbowDelim', 'RainbowDelimSimple', 'RainbowDelimQuoted',
         'RainbowMultiDelim'
     }

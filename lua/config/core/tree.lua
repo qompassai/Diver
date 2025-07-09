@@ -8,7 +8,7 @@ function M.treesitter(opts)
   local ts_ok, configs = pcall(require, 'nvim-treesitter.configs')
   if not ts_ok then return end
   require("nvim-treesitter.install").prefer_git = true
-local langs = { 'ui.html', 'lang.go', 'lang.rust', 'lang.zig' }
+local langs = { 'ui.html', 'ui.md', 'lang.go', 'lang.rust', 'lang.zig' }
 local merged_lang_opts = {}
 
 for _, lang_mod in ipairs(langs) do
@@ -23,12 +23,8 @@ end
   local parser_path = vim.fn.stdpath("data") .. "/parsers"
   vim.opt.runtimepath:prepend(parser_path)
   local exclude = { "ipkg" }
-  local ensure = require("nvim-treesitter.parsers").available_parsers()
-  for _, lang in ipairs(exclude) do
-    ensure = vim.tbl_filter(function(p) return p ~= lang end, ensure)
-  end
   local default_opts = {
-    ensure_installed = ensure,
+    ensure_installed = 'all',
     sync_install = true,
     auto_install = true,
     highlight = {
@@ -63,6 +59,9 @@ end
 end
 
 function M.tree_cfg(opts)
+	require("lazy").setup({
+  {"nvim-treesitter/nvim-treesitter", branch = 'master', lazy = false, build = ":TSUpdate"}
+})
   opts = opts or {}
   M.treesitter(opts)
   return {

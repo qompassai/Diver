@@ -20,21 +20,19 @@ if not (vim.uv or vim.loop).fs_stat(lazypath) then
 end
 vim.opt.rtp:prepend(lazypath)
 -- LazyFile
--- local events = {}
-
--- local function create_lazy_file_event()
---  local LazyEvent = require("lazy.core.handler.event")
-
---  LazyEvent.mappings["LazyFile"] = { id = "LazyFile", event = { "BufReadPost", "BufNewFile", "BufWritePre" } }
---  events.LazyFile = vim.api.nvim_create_autocmd({ "BufReadPost", "BufNewFile", "BufWritePre" }, {
---   callback = function()
---      vim.api.nvim_del_autocmd(events.LazyFile)
---      events.LazyFile = nil
---      vim.api.nvim_exec_autocmds("User", { pattern = "LazyFile" })
---    end,
---  })
--- end
--- create_lazy_file_event()
+ local events = {}
+ local function create_lazy_file_event()
+  local LazyEvent = require("lazy.core.handler.event")
+  LazyEvent.mappings["LazyFile"] = { id = "LazyFile", event = { "BufReadPost", "BufNewFile", "BufWritePre" } }
+  events.LazyFile = vim.api.nvim_create_autocmd({ "BufReadPost", "BufNewFile", "BufWritePre" }, {
+   callback = function()
+      vim.api.nvim_del_autocmd(events.LazyFile)
+      events.LazyFile = nil
+      vim.api.nvim_exec_autocmds("User", { pattern = "LazyFile" })
+    end,
+  })
+ end
+ create_lazy_file_event()
 require('lazy').setup({
   debug = false,
   spec = { { 'LazyVim/LazyVim' }, { import = 'plugins' } },

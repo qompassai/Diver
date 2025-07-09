@@ -14,7 +14,6 @@ function M.flash_opts(extra)
       },
       char = {
         enabled = true,
-        -- autohide during operator-pending yank: e.g.  **y**f(
         config = function(opts)
           opts.autohide =
             vim.fn.mode(true):find("no") and vim.v.operator == "y"

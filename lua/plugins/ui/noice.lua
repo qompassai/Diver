@@ -4,7 +4,7 @@
 -----------------------------------------------------
 return {
     'folke/noice.nvim',
-    event = 'VeryLazy',
+    event = 'BufEnter',
     opts = {
         lsp = {
             override = {
@@ -67,7 +67,6 @@ return {
     },
     config = function(_, opts)
         require('noice').setup(opts)
-
         require('notify').setup({
             on_open = function(win)
                 vim.api.nvim_set_option_value('winhl',
