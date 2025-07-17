@@ -1,16 +1,20 @@
--- gopls.lua
--- Qompass AI - [Add description here]
+-- /qompassai/Diver/lsp/gopls.lua
+-- Qompass AI Gopls LSP Config
 -- Copyright (C) 2025 Qompass AI, All rights reserved
--- ----------------------------------------
+-- --------------------------------------------------
 return {
 	cmd = { "gopls" },
-	filetypes = { "go", "gomod", "gowork", "gotmpl", "gosum" },
-	root_markers = { "go.mod", "go.work", ".git" },
+	filetypes = { 'go', 'gomod', 'gowork', 'gotmpl', 'gosum' },
+	handlers = {
+		["textDocument/hover"] = vim.lsp.with(vim.lsp.handlers.hover, { border = "rounded" }),
+		["textDocument/signatureHelp"] = vim.lsp.with(vim.lsp.handlers.signature_help, { border = "rounded" }),
+	},
+	root_markers = { 'go.mod', 'go.work', '.git' },
 	settings = {
 		gopls = {
 			gofumpt = true,
 			codelenses = {
-				gc_details = false,
+				gc_details = true,
 				generate = true,
 				regenerate_cgo = true,
 				run_govulncheck = true,
@@ -20,10 +24,10 @@ return {
 				vendor = true,
 			},
 			hints = {
-				assignVariableTypes = false,
-				compositeLiteralFields = false,
-				compositeLiteralTypes = false,
-				constantValues = false,
+				assignVariableTypes = true,
+				compositeLiteralFields = true,
+				compositeLiteralTypes = true,
+				constantValues = true,
 				functionTypeParameters = false,
 				parameterNames = false,
 				rangeVariableTypes = false,

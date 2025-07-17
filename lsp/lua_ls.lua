@@ -17,13 +17,13 @@ if luajit_dir then
 end
 
 vim.lsp.config['lua_ls'] = {
-	cmd = { "lua-language-server" },
-	filetypes = { "lua", "luau" },
+	cmd = { 'lua-language-server' },
+	filetypes = { 'lua', "luau" },
 	handlers = {
 		["textDocument/hover"] = vim.lsp.with(vim.lsp.handlers.hover, { border = "rounded" }),
 		["textDocument/signatureHelp"] = vim.lsp.with(vim.lsp.handlers.signature_help, { border = "rounded" }),
 	},
-	root_markers = { ".luarc.json", ".luarc.jsonc", ".luarc.json5", ".git" },
+	root_markers = { '.luarc.json', '.luarc.jsonc', ".luarc.json5", '.stylua.toml', 'luacheckrc', ".git" },
 	settings = {
 		Lua = {
 			format = {
@@ -31,7 +31,7 @@ vim.lsp.config['lua_ls'] = {
 				defaultConfig = {
 					indent_style = "space",
 					indent_size = "2",
-					quote_style = "single",
+					quote_style = 'AutoPreferSingle',
 					trailing_table_separator = "always",
 					align_continuous_assign_statement = true,
 				},
@@ -81,7 +81,7 @@ vim.lsp.config['lua_ls'] = {
 			},
 		},
 	},
-	capabilities = require("blink.cmp").get_lsp_capabilities(),
+	capabilities = vim.lsp.protocol.make_client_capabilities(),
 	on_attach = function(client, bufnr)
 		local opts = { buffer = bufnr, silent = true }
 		vim.keymap.set("n", "gd", vim.lsp.buf.definition, opts)

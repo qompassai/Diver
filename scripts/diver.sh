@@ -1,4 +1,4 @@
-#!/bin/bash
+#!usr/bin/env sh
 # /qompassai/Diver/scripts/diver.sh
 # ----------------------------------------
 # Copyright (C) 2025 Qompass AI, All rights reserved

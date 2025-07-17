@@ -1,37 +1,20 @@
--- /qompassai/Diver/lsp/bashls.lua
--- Qompass AI Bashls LSP Config
+-- cssls.lua
+-- Qompass AI - [Add description here]
 -- Copyright (C) 2025 Qompass AI, All rights reserved
--- --------------------------------------------------
-vim.lsp.config['bashls'] = {
-	cmd = { "bash-language-server", "start" },
-	filetypes = { "sh", "bash" },
+-- ----------------------------------------
+local util = require('lspconfig.util')
+vim.lsp.config['cssls'] = {
+	cmd = { "vscode-css-language-server", "--stdio" },
+	filetypes = { "css", "scss", "less" },
+	flags = {
+		debounce_text_changes = 150,
+	},
 	handlers = {
 		["textDocument/hover"] = vim.lsp.with(vim.lsp.handlers.hover, { border = "rounded" }),
 		["textDocument/signatureHelp"] = vim.lsp.with(vim.lsp.handlers.signature_help, { border = "rounded" }),
 	},
-	root_markers = { ".git", ".bashrc", ".bash_profile", ".profile" },
-	settings = {
-		bashIde = {
-			globPattern = "**/*@(.sh|.inc|.bash|.command)",
-			maxNumberOfProblems = 100,
-			shellcheck = {
-				enable = true,
-				executablePath = "shellcheck",
-				severity = {
-					error = "error",
-					warning = "warning",
-					info = "info",
-					style = "info",
-				},
-			},
-			completion = {
-				enabled = true,
-				includeDirs = {},
-			},
-			diagnostics = {
-				enabled = true,
-			},
-		},
+	init_options = {
+		provideFormatter = true,
 	},
 	capabilities = vim.lsp.protocol.make_client_capabilities(),
 	on_attach = function(client, bufnr)
@@ -52,8 +35,16 @@ vim.lsp.config['bashls'] = {
 			callback = function() vim.lsp.buf.format({ async = false }) end,
 		})
 	end,
-	flags = {
-		debounce_text_changes = 150,
+	root_dir = util.root_pattern("package.json", ".git"),
+	settings = {
+		cssVariables = {
+			lookupFiles = {
+				"**/*.css",
+				"**/*.scss",
+				"**/*.sass",
+				"**/*.less",
+			},
+		},
 	},
 	single_file_support = true,
 }

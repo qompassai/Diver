@@ -1,0 +1,4 @@
+-- /qompassai/Diver/lsp/adals.lua
+-- Qompass AI AzurePipelinels LSP Config
+-- Copyright (C) 2025 Qompass AI, All rights reserved
+-- --------------------------------------------------

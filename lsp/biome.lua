@@ -1,38 +1,22 @@
--- /qompassai/Diver/lsp/bashls.lua
--- Qompass AI Bashls LSP Config
+-- /qompassai/Diver/lsp/biome.lua
+-- Qompass AI Biome LSP Config
 -- Copyright (C) 2025 Qompass AI, All rights reserved
 -- --------------------------------------------------
-vim.lsp.config['bashls'] = {
-	cmd = { "bash-language-server", "start" },
-	filetypes = { "sh", "bash" },
+
+local util = require('lspconfig.util')
+
+vim.lsp.config['biome'] = {
+	cmd = { 'biome', 'lsp-proxy' },
+	filetypes = {
+		'astro', 'css', 'graphql', 'html', 'javascript', 'javascriptreact',
+		'json', 'jsonc', 'markdown', 'mdx', 'svelte', 'typescript',
+		'typescriptreact', 'typescript.tsx', 'vue'
+	},
 	handlers = {
 		["textDocument/hover"] = vim.lsp.with(vim.lsp.handlers.hover, { border = "rounded" }),
 		["textDocument/signatureHelp"] = vim.lsp.with(vim.lsp.handlers.signature_help, { border = "rounded" }),
 	},
-	root_markers = { ".git", ".bashrc", ".bash_profile", ".profile" },
-	settings = {
-		bashIde = {
-			globPattern = "**/*@(.sh|.inc|.bash|.command)",
-			maxNumberOfProblems = 100,
-			shellcheck = {
-				enable = true,
-				executablePath = "shellcheck",
-				severity = {
-					error = "error",
-					warning = "warning",
-					info = "info",
-					style = "info",
-				},
-			},
-			completion = {
-				enabled = true,
-				includeDirs = {},
-			},
-			diagnostics = {
-				enabled = true,
-			},
-		},
-	},
+	root_dir = util.root_pattern('biome.json', 'biome.jsonc', 'biome.json5', '.git'),
 	capabilities = vim.lsp.protocol.make_client_capabilities(),
 	on_attach = function(client, bufnr)
 		local opts = { buffer = bufnr, silent = true }
@@ -52,6 +36,7 @@ vim.lsp.config['bashls'] = {
 			callback = function() vim.lsp.buf.format({ async = false }) end,
 		})
 	end,
+	workspace_required = true,
 	flags = {
 		debounce_text_changes = 150,
 	},
