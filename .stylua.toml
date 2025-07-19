@@ -1,6 +1,11 @@
-column_width = 130
-line_endings = "Unix"
+# /qompassai/dotfiles/qai/diver/lua/.stylua.toml
+
+call_parentheses = "Always"
+collapse_simple_statement = "Never"
+column_width = 120
 indent_type = "Spaces"
-indent_width = 2
-quote_style = "AutoPreferDouble"
-call_parentheses = "None"
+indent_width = 4
+line_endings = "Unix"
+quote_style = "AutoPreferSingle"
+space_after_function_names = "Never"
+syntax = "All"
