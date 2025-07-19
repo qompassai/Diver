@@ -4,7 +4,6 @@
 -- --------------------------------------------------
 local M = {}
 local function go_dap() return require('dap') end
-local function go_null_ls() return require('null-ls') end
 local function run_cached_gvm(cmd)
   local handle = io.popen("bash -c 'source ~/.gvm/scripts/gvm && " .. cmd .. "'")
   if not handle then return nil end
@@ -88,9 +87,7 @@ function M.go_lsp(on_attach, capabilities)
     handle:close()
     return result and vim.trim(result) or nil
   end
-
   function get_go_bin() return run_cached_gvm('which go') or 'go' end
-
   function get_gopath()
     return run_cached_gvm('go env GOPATH') or os.getenv('GOPATH') or ''
   end
@@ -146,33 +143,30 @@ function M.go_lsp(on_attach, capabilities)
   }
 end
 
-function M.go_nls()
-  local null_ls = go_null_ls()
-  local formatting = null_ls.builtins.formatting
-  local diagnostics = null_ls.builtins.diagnostics
-  local code_actions = null_ls.builtins.code_actions
-  return {
-    code_actions.gomodifytags.with({ ft = { 'go' } }),
-    code_actions.refactoring.with({ ft = { 'go' } }),
-    diagnostics.golangci_lint.with({ ft = { 'go' } }),
-    diagnostics.revive.with({ ft = { 'go' } }),
-    diagnostics.staticcheck.with({ ft = { 'go' } }),
-    formatting.goimports.with({ ft = { 'go' } }),
-    formatting.goimports_reviser.with({ ft = { 'go' } }),
-    formatting.gofmt.with({ ft = { 'go' } }),
-    formatting.gofumpt.with({ ft = { 'go' } }),
-    formatting.golines.with({ ft = { 'go' } })
+function M.nls(opts)
+  opts = opts or {}
+	local nlsb = require('null-ls').builtins
+  local sources = {
+    nlsb.code_actions.gomodifytags.with({ ft = { 'go' } }),
+    nlsb.code_actions.refactoring.with({ ft = { 'go' } }),
+    nlsb.diagnostics.golangci_lint.with({ ft = { 'go' } }),
+    nlsb.diagnostics.revive.with({ ft = { 'go' } }),
+    nlsb.diagnostics.staticcheck.with({ ft = { 'go' } }),
+    nlsb.formatting.goimports.with({ ft = { 'go' } }),
+    nlsb.formatting.goimports_reviser.with({ ft = { 'go' } }),
+    nlsb.formatting.gofmt.with({ ft = { 'go' } }),
+    nlsb.formatting.gofumpt.with({ ft = { 'go' } }),
+    nlsb.formatting.golines.with({ ft = { 'go' } })
   }
+	return sources
 end
-function M.go_path() return vim.fn.expand('$GOPATH') or '' end
-function M.go_test() return { adapter = 'delve', args = { 'test', './...' } } end
-function M.go_version() return vim.fn.trim(vim.fn.system('go version')) end
-function M.go_setup()
+function M.go_cfg(opts)
+  opts = opts or {}
   local capabilities = vim.lsp.protocol.make_client_capabilities()
   local on_attach = function(_, _) end
   M.go_lsp(on_attach, capabilities)
   local null_ls_ok, null_ls = pcall(require, 'null-ls')
-  if null_ls_ok then null_ls.register({ sources = M.go_nls() }) end
+  if null_ls_ok then null_ls.register({ sources = M.nls(opts) }) end
   local conform_ok, conform = pcall(require, 'conform')
   if conform_ok then conform.setup(M.go_conform()) end
 end

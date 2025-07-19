@@ -3,11 +3,21 @@
 -- Copyright (C) 2025 Qompass AI, All rights reserved
 -- --------------------------------------------------
 return {
-  'kdheepak/lazygit.nvim',
-  cmd = {
-    'LazyGit', 'LazyGitConfig', 'LazyGitCurrentFile', 'LazyGitFilter',
-    'LazyGitFilterCurrentFile'
+  {
+    'kdheepak/lazygit.nvim',
+    cmd = {
+      'LazyGit', 'LazyGitConfig', 'LazyGitCurrentFile', 'LazyGitFilter',
+      'LazyGitFilterCurrentFile'
+    },
+    dependencies = { 'nvim-lua/plenary.nvim' },
+    keys = { { '<leader>lg', '<cmd>LazyGit<cr>', desc = 'LazyGit' } }
   },
-  dependencies = { 'nvim-lua/plenary.nvim' },
-  keys = { { '<leader>lg', '<cmd>LazyGit<cr>', desc = 'LazyGit' } }
+  {
+    'NeogitOrg/neogit',
+    dependencies = {
+      'nvim-lua/plenary.nvim',
+      'sindrets/diffview.nvim',
+      'ibhagwan/fzf-lua'
+    }
+  }
 }

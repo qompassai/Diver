@@ -3,15 +3,13 @@
 -- Copyright (C) 2025 Qompass AI, All rights reserved
 -- --------------------------------------------------
 return {
-  "pearofducks/ansible-vim",
-  ft = { "yaml.ansible", "ansible" },
-  dependencies = {
-    "nvim-treesitter/nvim-treesitter",
-    "folke/trouble.nvim",
-    "redhat-developer/yaml-language-server",
-    "b0o/schemastore.nvim",
-  },
-  config = function(_, opts)
-    require('config.cicd.ansible').ansible_cfg(opts)
-  end,
+	"pearofducks/ansible-vim",
+	ft = { 'yaml.ansible', 'ansible' },
+	dependencies = {
+		"redhat-developer/yaml-language-server",
+		'b0o/schemastore.nvim',
+	},
+	config = function(_, opts)
+		require('config.cicd.ansible').ansible_cfg(opts)
+	end,
 }

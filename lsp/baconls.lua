@@ -2,8 +2,7 @@
 -- Qompass AI Baconls LSP Config
 -- Copyright (C) 2025 Qompass AI, All rights reserved
 -- --------------------------------------------------
-
-vim.lsp.config['bacon_ls'] = {
+vim.lsp.config['baconls'] = {
 	cmd = { 'bacon-ls' },
 	filetypes = { 'rust' },
 	handlers = {

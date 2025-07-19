@@ -2,7 +2,6 @@
 -- Qompass AI - [Add description here]
 -- Copyright (C) 2025 Qompass AI, All rights reserved
 -- ----------------------------------------
-local util = require 'lspconfig.util'
 
 vim.lsp.config['ts_ls'] = {
 	default_config = {
@@ -16,7 +15,7 @@ vim.lsp.config['ts_ls'] = {
 			'typescriptreact',
 			'typescript.tsx',
 		},
-		root_dir = util.root_pattern('tsconfig.json', 'jsconfig.json', 'package.json', '.git'),
+		root_markers = { 'tsconfig.json', 'jsconfig.json', 'package.json', '.git' },
 		single_file_support = true,
 	},
 }

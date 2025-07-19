@@ -1,8 +1,7 @@
--- cssls.lua
--- Qompass AI - [Add description here]
+-- /qompassai/Diver/lsp/cssls.lua
+-- Qompass AI Css_ls LSP Config
 -- Copyright (C) 2025 Qompass AI, All rights reserved
--- ----------------------------------------
-local util = require('lspconfig.util')
+-----------------------------------------------------
 vim.lsp.config['cssls'] = {
 	cmd = { "vscode-css-language-server", "--stdio" },
 	filetypes = { "css", "scss", "less" },
@@ -35,7 +34,6 @@ vim.lsp.config['cssls'] = {
 			callback = function() vim.lsp.buf.format({ async = false }) end,
 		})
 	end,
-	root_dir = util.root_pattern("package.json", ".git"),
 	settings = {
 		cssVariables = {
 			lookupFiles = {

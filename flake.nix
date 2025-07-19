@@ -82,8 +82,7 @@
     plugin-nui-nvim.flake = false;
     plugin-nvim-autopairs.url = "github:windwp/nvim-autopairs";
     plugin-nvim-autopairs.flake = false;
-    plugin-nvim-bufferline-lua.url =
-      "github:akinsho/nvim-bufferline.lua?ref=v4.3.0";
+    plugin-nvim-bufferline-lua.url = "github:akinsho/nvim-bufferline.lua?ref=v4.3.0";
     plugin-nvim-bufferline-lua.flake = false;
     plugin-nvim-code-action-menu.url = "github:weilbith/nvim-code-action-menu";
     plugin-nvim-code-action-menu.flake = false;
@@ -103,8 +102,7 @@
     plugin-lazygit_nvim.flake = false;
     plugin-lazy_nvim.url = "github:folke/lazy.nvim";
     plugin-lazy_nvim.flake = false;
-    plugin-mason_lspconfig_nvim.url =
-      "github:williamboman/mason-lspconfig.nvim";
+    plugin-mason_lspconfig_nvim.url = "github:williamboman/mason-lspconfig.nvim";
     plugin-mason_lspconfig_nvim.flake = false;
     plugin-nvim-lightbulb.url = "github:kosayoda/nvim-lightbulb";
     plugin-nvim-lightbulb.flake = false;
@@ -118,8 +116,7 @@
     plugin-nvim-tree-lua.flake = false;
     plugin-nvim-ts-autotag.url = "github:windwp/nvim-ts-autotag";
     plugin-nvim-ts-autotag.flake = false;
-    plugin-nvim-treesitter-context.url =
-      "github:nvim-treesitter/nvim-treesitter-context";
+    plugin-nvim-treesitter-context.url = "github:nvim-treesitter/nvim-treesitter-context";
     plugin-nvim-treesitter-context.flake = false;
     plugin-nvim-web-devicons.url = "github:kyazdani42/nvim-web-devicons";
     plugin-nvim-web-devicons.flake = false;
@@ -154,27 +151,44 @@
     plugin-which-key.url = "github:folke/which-key.nvim";
     plugin-which-key.flake = false;
   };
-  outputs = { nixpkgs, flake-utils, ... }@inputs:
+  outputs =
+    { nixpkgs, flake-utils, ... }@inputs:
     let
-      supportedSystems =
-        [ "x86_64-linux" "aarch64-linux" "aarch64-darwin" "x86_64-darwin" ];
-      forEachSystem = f:
-        nixpkgs.lib.genAttrs supportedSystems (system: f system);
-    in forEachSystem (system:
+      supportedSystems = [
+        "x86_64-linux"
+        "aarch64-linux"
+        "aarch64-darwin"
+        "x86_64-darwin"
+      ];
+      forEachSystem = f: nixpkgs.lib.genAttrs supportedSystems (system: f system);
+    in
+    forEachSystem (
+      system:
       let
         pkgs = import nixpkgs { inherit system; };
         rawPlugins = nvimLib.plugins.fromInputs inputs "plugin-";
-        neovimConfiguration = { modules ? [ ], ... }@args:
-          import ./modules (args // {
-            modules = [{ config.build.rawPlugins = rawPlugins; }] ++ modules;
-          });
+        neovimConfiguration =
+          { modules ? [ ]
+          , ...
+          }@args:
+          import ./modules (
+            args
+            // {
+              modules = [{ config.build.rawPlugins = rawPlugins; }] ++ modules;
+            }
+          );
         nvimBin = pkg: "${pkg}/bin/nvim";
         buildPkg = modules: neovimConfiguration { inherit pkgs modules; };
         nvimLib = (import ./modules/lib/stdlib-extended.nix nixpkgs.lib).nvim;
-        tidalConfig = { config.vim.languages.tidal.enable = true; };
-        mainConfig = isMaximal:
-          let overrideable = nixpkgs.lib.mkOverride 1200;
-          in {
+        tidalConfig = {
+          config.vim.languages.tidal.enable = true;
+        };
+        mainConfig =
+          isMaximal:
+          let
+            overrideable = nixpkgs.lib.mkOverride 1200;
+          in
+          {
             config = {
               build.viAlias = overrideable false;
               build.vimAlias = overrideable true;
@@ -253,7 +267,8 @@
           };
         nixConfig = mainConfig false;
         maximalConfig = mainConfig true;
-      in {
+      in
+      {
         lib = {
           nvim = nvimLib;
           inherit neovimConfiguration;
@@ -264,7 +279,9 @@
           neovim-maximal = buildPkg prev [ maximalConfig ];
           neovim-tidal = buildPkg prev [ tidalConfig ];
         };
-      } // (flake-utils.lib.eachDefaultSystem (system:
+      }
+      // (flake-utils.lib.eachDefaultSystem (
+        system:
         let
           pkgs = import nixpkgs {
             inherit system;
@@ -284,47 +301,58 @@
           nixPkg = buildPkg pkgs [ nixConfig ];
           maximalPkg = buildPkg pkgs [ maximalConfig ];
           devPkg = nixPkg.extendConfiguration {
-            modules = [{
-              vim.syntaxHighlighting = false;
-              vim.languages.nix.format.type = "nixpkgs-fmt";
-              vim.languages.bash.enable = true;
-              vim.languages.html.enable = true;
-              vim.filetree.nvimTreeLua.enable = false;
-            }];
+            modules = [
+              {
+                vim.syntaxHighlighting = false;
+                vim.languages.nix.format.type = "nixpkgs-fmt";
+                vim.languages.bash.enable = true;
+                vim.languages.html.enable = true;
+                vim.filetree.nvimTreeLua.enable = false;
+              }
+            ];
           };
-        in {
-          apps = rec {
-            nix = {
-              type = "app";
-              program = nvimBin nixPkg;
-            };
-            maximal = {
-              type = "app";
-              program = nvimBin maximalPkg;
-            };
-            default = nix;
-          } // pkgs.lib.optionalAttrs
-            (!(builtins.elem system [ "aarch64-darwin" "x86_64-darwin" ])) {
-              tidal = {
+        in
+        {
+          apps =
+            rec {
+              nix = {
                 type = "app";
-                program = nvimBin tidalPkg;
+                program = nvimBin nixPkg;
               };
-            };
+              maximal = {
+                type = "app";
+                program = nvimBin maximalPkg;
+              };
+              default = nix;
+            }
+            // pkgs.lib.optionalAttrs
+              (
+                !(builtins.elem system [
+                  "aarch64-darwin"
+                  "x86_64-darwin"
+                ])
+              )
+              {
+                tidal = {
+                  type = "app";
+                  program = nvimBin tidalPkg;
+                };
+              };
           devShells.default = pkgs.mkShell { nativeBuildInputs = [ devPkg ]; };
-          packages = {
-            docs-html = docs.manual.html;
-            docs-manpages = docs.manPages;
-            docs-json = docs.options.json;
-            default = nixPkg;
-            nix = nixPkg;
-            maximal = maximalPkg;
-            develop = devPkg;
-          } // pkgs.lib.optionalAttrs
-            (system != "aarch64-darwin" && system != "x86_64-darwin") {
+          packages =
+            {
+              docs-html = docs.manual.html;
+              docs-manpages = docs.manPages;
+              docs-json = docs.options.json;
+              default = nixPkg;
+              nix = nixPkg;
+              maximal = maximalPkg;
+              develop = devPkg;
+            }
+            // pkgs.lib.optionalAttrs (system != "aarch64-darwin" && system != "x86_64-darwin") {
               tidal = tidalPkg;
             };
-          }
-        )
-        )
-      );
+        }
+      ))
+    );
 }

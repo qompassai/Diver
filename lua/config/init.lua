@@ -35,26 +35,31 @@ function M.config(opts)
     local core = safe_require('config.core')
     if core and core.core_config then core.core_config(opts) end
   end
+	if opts.cicd ~= false then
+    local cicd = safe_require('config.cicd')
+    if cicd and cicd.cicd_config then cicd.cicd_config(opts) end
+  end
+	 if opts.cloud ~= false then
+    local cloud = safe_require('config.cloud')
+    if cloud and cloud.cloud_config then cloud.cloud_config(opts) end
+  end
+	 if opts.edu ~=false then
+    local edu = safe_require('config.edu')
+    if edu and edu.edu_config then edu.edu_config(opts) end
+  end
   if opts.lang ~= false then
     local lang = safe_require('config.lang')
     if lang and lang.lang_config then lang.lang_config(opts) end
   end
-  if opts.edu ~=false then
-    local edu = safe_require('config.edu')
-    if edu and edu.edu_config then edu.edu_config(opts) end
+	  if opts.nav ~= false then
+    local nav = safe_require('config.nav')
+    if nav and nav.nav_config then nav.nav_config(opts) end
   end
   if opts.ui ~= false then
     local ui = safe_require('config.ui')
     if ui and ui.ui_config then ui.ui_config(opts) end
   end
-  if opts.cicd ~= false then
-    local cicd = safe_require('config.cicd')
-    if cicd and cicd.cicd_config then cicd.cicd_config(opts) end
-  end
-  if opts.cloud ~= false then
-    local cloud = safe_require('config.cloud')
-    if cloud and cloud.cloud_config then cloud.cloud_config(opts) end
-  end
+
 end
 
 return M

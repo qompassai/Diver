@@ -16,7 +16,7 @@ return {
                 },
                 options = {
                     mail_client = {text = 'neomutt', html = 'neomutt'},
-                    auto_break_md = true,
+                    auto_break_md = false,
                     neomutt_config = '$HOME/.neomuttrc',
                     mailx_account = nil,
                     save_log = true,
@@ -40,6 +40,5 @@ return {
                 keymaps = {normal = '<Leader>se', visual = '<Leader>se'}
             })
         end,
-        ft = 'markdown'
     }
 }

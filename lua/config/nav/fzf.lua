@@ -3,8 +3,8 @@
 -- Copyright (C) 2025 Qompass AI, All rights reserved
 ------------------------------------------------------
 local M = {}
+
 M.options = {
-    profile = 'telescope',
     winopts = {
         height = 0.85,
         width = 0.85,
@@ -27,6 +27,7 @@ M.options = {
         }
     }
 }
+
 M.keymaps = {
     {'<leader>ff', '<cmd>FzfLua files<cr>', desc = 'Fzf Files'},
     {'<leader>fb', '<cmd>FzfLua buffers<cr>', desc = 'Fzf Buffers'},
@@ -35,17 +36,13 @@ M.keymaps = {
     {'<leader>fw', '<cmd>FzfLua grep_cword<cr>', desc = 'Fzf Current Word'},
     {'<leader>fh', '<cmd>FzfLua help_tags<cr>', desc = 'Fzf Help Tags'},
     {'<leader>fm', '<cmd>FzfLua marks<cr>', desc = 'Fzf Marks'},
-    {'<leader>fc', '<cmd>FzfLua commands<cr>', desc = 'Fzf Commands'}, {
-        '<leader>fd',
-        '<cmd>FzfLua lsp_document_symbols<cr>',
-        desc = 'Fzf Document Symbols'
-    }, {
-        '<leader>fWs',
-        '<cmd>FzfLua lsp_live_workspace_symbols<cr>',
-        desc = 'Fzf Workspace Symbols'
-    }, {'<leader>fgs', '<cmd>FzfLua git_status<cr>', desc = 'Fzf Git Status'},
+    {'<leader>fc', '<cmd>FzfLua commands<cr>', desc = 'Fzf Commands'},
+    {'<leader>fd', '<cmd>FzfLua lsp_document_symbols<cr>', desc = 'Fzf Document Symbols'},
+    {'<leader>fWs', '<cmd>FzfLua lsp_live_workspace_symbols<cr>', desc = 'Fzf Workspace Symbols'},
+    {'<leader>fgs', '<cmd>FzfLua git_status<cr>', desc = 'Fzf Git Status'},
     {'<leader>fgb', '<cmd>FzfLua git_branches<cr>', desc = 'Fzf Git Branches'}
 }
+
 function M.fzf_setup()
     local fzf = require('fzf-lua')
     fzf.setup(M.options)
@@ -62,4 +59,6 @@ function M.fzf_setup()
         })
     end, {})
 end
+
 return M
+

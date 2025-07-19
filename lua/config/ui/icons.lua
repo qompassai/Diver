@@ -200,7 +200,8 @@ M.nonicons = {
 		zig = "  ",
 	},
 }
-function M.icons_devicons()
+function M.icons_devicons(opts)
+	opts = opts or {}
 	require("nvim-web-devicons").setup(M.devicons)
 	vim.cmd([[
     augroup DevIconsRefresh
@@ -209,24 +210,29 @@ function M.icons_devicons()
     augroup END
   ]])
 end
-function M.icons_nonicons()
+
+function M.icons_nonicons(opts)
+	opts = opts or {}
 	require("nvim-nonicons").setup(M.nonicons)
 end
+
 M.icons_highlights = function()
 	local highlights = {
 		MathBlock = { bg = "#1e1e2e", fg = "#89b4fa" },
 		CodeBlock = { bg = "#1e1e2e", fg = "#a6e3a1" },
 		MarkdownBold = { bold = true, fg = "#f5c2e7" },
-		MarkdownItalic = { italic = true, fg = "#89dceb" },
+		MarkdownItalic = { italic = false, fg = "#89dceb" },
 		MarkdownHeading = { bold = true, fg = "#f38ba8" },
 	}
 	for name, attrs in pairs(highlights) do
 		vim.api.nvim_set_hl(0, name, attrs)
 	end
 end
-function M.icons_cfg()
-	M.icons_devicons()
-	M.icons_nonicons()
+function M.icons_cfg(opts)
+	opts = opts or {}
+	M.icons_devicons(opts)
+	M.icons_nonicons(opts)
 	M.icons_highlights()
 end
+
 return M

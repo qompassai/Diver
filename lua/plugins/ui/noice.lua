@@ -4,7 +4,7 @@
 -----------------------------------------------------
 return {
     'folke/noice.nvim',
-    event = 'BufEnter',
+    event = 'VeryLazy',
     opts = {
         lsp = {
             override = {
@@ -63,7 +63,6 @@ return {
     dependencies = {
         'MunifTanjim/nui.nvim',
         'rcarriga/nvim-notify',
-        'williamboman/mason.nvim'
     },
     config = function(_, opts)
         require('noice').setup(opts)

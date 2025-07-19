@@ -34,4 +34,3 @@
 ---@field emmet any
 ---@field preview fun(opts?: HtmlPreviewConfig): nil
 ---@field conform HtmlConformConfig
-

@@ -4,61 +4,34 @@
 -- --------------------------------------------------
 local rust_cfg = require('config.lang.rust')
 return {
-    {
-        'mrcjkb/rustaceanvim',
-        ft = {'rust'},
-        version = '^6',
-        init = function()
-      vim.g.rustaceanvim = rust_cfg.rust_rustacean()
-    end,
-       config = function()
-            require('null-ls').setup({sources = rust_cfg.rust_nls()})
-            vim.lsp.set_log_level('INFO')
-          rust_cfg.rust_dap()
-      rust_cfg.rust_crates()
-      rust_cfg.rust_cfg()
-    end,
-        dependencies = {
-            'nvim-lua/plenary.nvim', 'nvim-treesitter/nvim-treesitter',
-            {
-                'L3MON4D3/LuaSnip',
-                dependencies = {'rafamadriz/friendly-snippets'}
-            }, 'nvimtools/none-ls.nvim', 'nvimtools/none-ls-extras.nvim', {
-                'mfussenegger/nvim-dap',
-                dependencies = {
-                    'rcarriga/nvim-dap-ui', {'igorlfs/nvim-dap-view', opts = {}}
-                }
-            }
-        }
-    }, {
-        'saecki/crates.nvim',
-        event = {'BufRead Cargo.toml'},
-        config = function() rust_cfg.rust_crates() end
-    }, {
-        'nvim-neotest/neotest',
-        ft = {'rust'},
-        dependencies = {
-            'nvim-neotest/nvim-nio', 'rouge8/neotest-rust',
-            'mfussenegger/nvim-dap'
-        },
-        config = function()
-            local neotest = require('neotest')
-            neotest.setup({
-                adapters = {
-                    require('neotest-rust')({
-                        args = {'--no-capture'},
-                        dap_adapter = 'codelldb'
-                    })
-                }
-            })
-            local map = vim.keymap.set
-            map('n', '<leader>rtt', neotest.run.run, {desc = 'Run nearest test'})
-            map('n', '<leader>rtf',
-                function() neotest.run.run(vim.fn.expand('%')) end,
-                {desc = 'Run file tests'})
-            map('n', '<leader>rtd',
-                function() neotest.run.run({strategy = 'dap'}) end,
-                {desc = 'Debug nearest test'})
-        end
-    }
+	{
+		'mrcjkb/rustaceanvim',
+		ft = { 'rust' },
+		version = '^6',
+		init = function()
+			vim.g.rustaceanvim = rust_cfg.rust_rustacean()
+		end,
+		config = function(_, opts)
+			rust_cfg = require('config.lang.rust')
+			rust_cfg.nls(opts)
+			vim.lsp.set_log_level('INFO')
+			rust_cfg.rust_dap()
+			rust_cfg.rust_crates()
+			rust_cfg.rust_cfg()
+		end,
+		dependencies = {
+			'nvim-lua/plenary.nvim', 'nvim-treesitter/nvim-treesitter',
+			{
+				'L3MON4D3/LuaSnip',
+				dependencies = { 'rafamadriz/friendly-snippets' }
+			},
+		}
+	},
+	{
+		'saecki/crates.nvim',
+		event = { 'BufRead Cargo.toml' },
+		config = function()
+			rust_cfg.rust_crates()
+		end,
+	}
 }

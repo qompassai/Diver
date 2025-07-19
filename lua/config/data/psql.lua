@@ -19,21 +19,6 @@ function M.psql_cmp(opts)
     }
     return opts
 end
-function M.psql_conform(opts)
-    opts = opts or {}
-    local default_formatters = opts.formatters_by_ft or {}
-    local pgsql_formatters = {pgsql = {'pg_format', 'sqlfluff'}}
-    opts.formatters_by_ft = vim.tbl_deep_extend('force', default_formatters,
-                                                pgsql_formatters)
-    opts.formatters = vim.tbl_deep_extend('force', opts.formatters or {}, {
-        sqlfluff = {args = {'fix', '--dialect', 'postgres', '-'}, stdin = true},
-        pg_format = {
-            args = {'--type-case', 'lower', '--spaces', '2'},
-            stdin = true
-        }
-    })
-    return opts
-end
 function M.psql_lsp(opts)
     opts = opts or {}
     opts.servers = opts.servers or {}
@@ -46,24 +31,27 @@ function M.psql_lsp(opts)
     })
     return opts
 end
-function M.psql_nls(opts)
-    opts = opts or {}
-    local ok, null_ls = pcall(require, 'null-ls')
-    if not ok then
-        vim.notify('null-ls not available', vim.log.levels.WARN)
-        return opts
-    end
-    opts.sources = vim.list_extend(opts.sources or {}, {
-        null_ls.builtins.diagnostics.sqlfluff.with({
-            filetypes = {'pgsql'},
-            extra_args = {'--dialect', 'postgres'}
-        })
-    })
-        null_ls.builtins.formatting.sqlfluff.with({
-            filetypes = {'pgsql'},
-            extra_args = {'--dialect', 'postgres'}
-        }) null_ls.builtins.formatting.pg_format.with({filetypes = {'pgsql'}})
-    return opts
+function M.nls(opts)
+  opts = opts or {}
+  local nlsb = require('null-ls').builtins
+  local sources = {
+    nlsb.diagnostics.sqlfluff.with({
+      filetypes = {'pgsql'},
+      command = 'sqlfluff',
+      extra_args = {'--dialect', 'postgres'}
+    }),
+    nlsb.formatting.sqlfluff.with({
+      filetypes = {'pgsql'},
+      command = 'sqlfluff',
+      extra_args = {'--dialect', 'postgres'}
+    }),
+    nlsb.formatting.pg_format.with({
+      filetypes = {'sql', 'pgsql'},
+      method = 'formatting',
+      command = 'pg_format'
+    }),
+  }
+  return sources
 end
 function M.psql_ftd()
     vim.filetype.add({

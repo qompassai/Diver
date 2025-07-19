@@ -4,49 +4,29 @@
 -----------------------------------------------------
 local css_cfg = require('config.ui.css')
 return {
-  {
-    'windwp/nvim-autopairs',
-    event = 'InsertEnter',
-    config = function()
-      require('nvim-autopairs').setup()
-    end,
-  },
-  {
-    "luckasRanarison/tailwind-tools.nvim",
-    name = "tailwind-tools",
-    build = ":UpdateRemotePlugins",
-    dependencies = {
-      "nvim-treesitter/nvim-treesitter",
-      "ibhagwan/fzf-lua",
-      "neovim/nvim-lspconfig",
-    },
-    config = function(_, opts)
-      css_cfg.css_tools(opts)
-    end,
-  },
-  {
-    "nvchad/nvim-colorizer.lua",
-    event = "BufReadPre",
-    config = function(_, opts)
-      css_cfg.css_colorizer(opts)
-    end,
-  },
-  {
-    'nvim-treesitter/nvim-treesitter',
-    config = function(_, opts)
-      css_cfg.css_treesitter(opts)
-    end,
-  },
-  {
-    'nvimtools/none-ls.nvim',
-    config = function(_, opts)
-      opts.sources = vim.list_extend(opts.sources or {}, css_cfg.css_nls(opts))
-    end,
-  },
-  {
-    'stevearc/conform.nvim',
-    config = function(_, opts)
-      opts.formatters = vim.tbl_extend("force", opts.formatters or {}, css_cfg.css_conform(opts))
-    end,
-  },
+	{
+		'windwp/nvim-autopairs',
+		event = 'InsertEnter',
+		config = true,
+	},
+	{
+		"luckasRanarison/tailwind-tools.nvim",
+		name = "tailwind-tools",
+		build = ":UpdateRemotePlugins",
+		dependencies = {
+			"nvim-treesitter/nvim-treesitter",
+			"ibhagwan/fzf-lua",
+		},
+		config = function(_, opts)
+			css_cfg = require('config.ui.css')
+			css_cfg.css_tools(opts)
+		end,
+	},
+	{
+		'nvchad/nvim-colorizer.lua',
+		event = 'BufReadPre',
+		config = function(_, opts)
+			css_cfg.css_colorizer(opts)
+		end,
+	},
 }

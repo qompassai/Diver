@@ -2,9 +2,7 @@
 -- Qompass AI Biome LSP Config
 -- Copyright (C) 2025 Qompass AI, All rights reserved
 -- --------------------------------------------------
-
-local util = require('lspconfig.util')
-
+-- npm install -g @biomejs/cli-linux-x64
 vim.lsp.config['biome'] = {
 	cmd = { 'biome', 'lsp-proxy' },
 	filetypes = {
@@ -12,11 +10,7 @@ vim.lsp.config['biome'] = {
 		'json', 'jsonc', 'markdown', 'mdx', 'svelte', 'typescript',
 		'typescriptreact', 'typescript.tsx', 'vue'
 	},
-	handlers = {
-		["textDocument/hover"] = vim.lsp.with(vim.lsp.handlers.hover, { border = "rounded" }),
-		["textDocument/signatureHelp"] = vim.lsp.with(vim.lsp.handlers.signature_help, { border = "rounded" }),
-	},
-	root_dir = util.root_pattern('biome.json', 'biome.jsonc', 'biome.json5', '.git'),
+	root_markers = { 'biome.json', 'biome.jsonc', 'biome.json5', '.git' },
 	capabilities = vim.lsp.protocol.make_client_capabilities(),
 	on_attach = function(client, bufnr)
 		local opts = { buffer = bufnr, silent = true }
@@ -36,7 +30,7 @@ vim.lsp.config['biome'] = {
 			callback = function() vim.lsp.buf.format({ async = false }) end,
 		})
 	end,
-	workspace_required = true,
+	workspace_required = false,
 	flags = {
 		debounce_text_changes = 150,
 	},

@@ -1,5 +1,5 @@
--- ltex.lua
--- Qompass AI - [Add description here]
+-- /qompassai/Diver/lsp/ltex.lua
+-- Qompass AI Ltex LSP Config
 -- Copyright (C) 2025 Qompass AI, All rights reserved
 -- ----------------------------------------
 local language_id_mapping = {
@@ -8,7 +8,7 @@ local language_id_mapping = {
 	rnoweb = 'rsweave',
 	rst = 'restructuredtext',
 	tex = 'latex',
-	pandoc = 'markdown',
+	lualatex = 'markdown',
 	text = 'plaintext',
 }
 
@@ -21,7 +21,7 @@ local filetypes = {
 	'rst',
 	'rnoweb',
 	'tex',
-	'pandoc',
+	'lualatex',
 	'quarto',
 	'rmd',
 	'context',
@@ -59,6 +59,7 @@ return {
 	settings = {
 		ltex = {
 			enabled = enabled_ids,
+			language = "en-US",
 		},
 	},
 }

@@ -26,22 +26,25 @@ function M.sqlite_lsp(opts)
     })
     return opts
 end
-function M.sqlite_nls(opts)
+function M.nls()
     local null_ls = require('null-ls')
-    opts.sources = vim.list_extend(opts.sources or {}, {
-        null_ls.builtins.diagnostics.sqlfluff.with({
+    local sources = {
+		null_ls.builtins.diagnostics.sqlfluff.with({
             filetypes = {'sqlite'},
+						command = 'sqlfluff',
             extra_args = {'--dialect', 'sqlite'}
-        })
-    })
+        }),
         null_ls.builtins.formatting.sqlfluff.with({
             filetypes = {'sqlite'},
+						command = 'sqlfluff',
             extra_args = {'--dialect', 'sqlite'}
-        }) null_ls.builtins.formatting.sql_formatter.with({
+        }),
+				null_ls.builtins.formatting.sql_formatter.with({
             filetypes = {'sqlite'},
             extra_args = {'--language', 'sqlite'}
-        })
-    return opts
+        }),
+			}
+    return sources
 end
 function M.sqlite_ftd()
     vim.filetype.add({

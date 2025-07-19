@@ -3,8 +3,8 @@
 -- Copyright (C) 2025 Qompass AI, All rights reserved
 ------------------------------------------------------
 return {
- "folke/flash.nvim",
+  'folke/flash.nvim',
   config = function()
-    require('config.core.flash')
+    require('config.core.flash').flash_cfg()
   end,
 }

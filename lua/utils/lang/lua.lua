@@ -31,9 +31,7 @@ function U.lua_home()
   local cfg_root = vim.fn.stdpath("config"):gsub("/nvim$", "")
   local dir      = cfg_root .. "/lua"
   if vim.fn.isdirectory(dir) == 0 then vim.fn.mkdir(dir, "p") end
-
   ensure_files(dir)
-
   if not vim.o.runtimepath:find(dir, 1, true) then
     vim.opt.runtimepath:prepend(dir)
   end

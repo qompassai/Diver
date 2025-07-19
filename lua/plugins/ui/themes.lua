@@ -3,43 +3,31 @@
 -- Copyright (C) 2025 Qompass AI, All rights reserved
 -----------------------------------------------------
 return {
-  {
-    'tribela/transparent.nvim',
-    event = 'VimEnter',
-    config = true
-  },
-  {
-    'vyfor/cord.nvim',
-    event = { 'BufEnter' },
-    dependencies = {
-      'tribela/transparent.nvim',
-      'catppuccin/nvim',
-      'folke/tokyonight.nvim',
-      'navarasu/onedark.nvim',
-      'sainnhe/gruvbox-material',
-      'EdenEast/nightfox.nvim',
-      'shaunsingh/nord.nvim',
-      'marko-cerovac/material.nvim',
-      'Mofiqul/dracula.nvim',
-      'projekt0n/github-nvim-theme',
-      'olimorris/onedarkpro.nvim'
-    },
-    config = function()
-      local ok, themes = pcall(require, 'config.ui.themes')
-      if not ok then
-        vim.notify('Failed to load theme config: ' .. tostring(themes), vim.log.levels.ERROR)
-        return
-      end
-      if not themes.apply_current_theme() then return end
-      local setup_ok, cord = pcall(themes.setup_cord)
-      if not setup_ok then
-        vim.notify('Cord setup failed: ' .. tostring(cord), vim.log.levels.ERROR)
-        return
-      end
-      themes.cord = cord
-      themes.cord_initialized = true
-      themes.update_cord_theme()
-    end
-  }
+	{
+		'tribela/transparent.nvim',
+		event = 'VimEnter',
+		config = true
+	},
+	{
+		'olimorris/onedarkpro.nvim',
+		priority = 1000,
+	},
+	{ 'catppuccin/nvim' },
+	{
+		'EdenEast/nightfox.nvim',
+	},
+	{ 'folke/tokyonight.nvim' },
+	{ 'marko-cerovac/material.nvim' },
+	{ 'Mofiqul/dracula.nvim' },
+	{ 'navarasu/onedark.nvim' },
+	{ 'projekt0n/github-nvim-theme' },
+	{ 'sainnhe/gruvbox-material' },
+	{ 'shaunsingh/nord.nvim' },
+	{
+		'vyfor/cord.nvim',
+		event = 'BufEnter',
+		config = function(_, opts)
+			require('config.ui.themes').cord_setup(opts)
+		end,
+	}
 }
-

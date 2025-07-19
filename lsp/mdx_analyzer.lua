@@ -4,7 +4,7 @@
 ------------------------------------------------------
 local util = require 'lspconfig.util'
 
-return {
+vim.lsp.config['mdx_analzyer'] = {
 	cmd = { 'mdx-language-server', '--stdio' },
 	filetypes = { 'mdx' },
 	root_markers = { 'package.json' },

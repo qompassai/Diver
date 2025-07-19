@@ -35,7 +35,7 @@ end
 
 ---@param opts? table
 ---@return table
-function M.nix_nls(opts)
+function M.nls(opts)
   opts = opts or {}
   local null_ls = require('null-ls')
   local b = null_ls.builtins

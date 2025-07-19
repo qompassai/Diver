@@ -46,39 +46,20 @@ function M.js_tools(opts)
   return config
 end
 
-function M.js_nls(opts)
+function M.nls(opts)
   opts = opts or {}
-  local null_ls = require("null-ls")
-  local b = null_ls.builtins
-  local biome_config_path = opts.biome_config_path or xdg_config("biome/biome.json5")
+  local nlsb = require('null-ls').builtins
+   local biome_config_path = opts.biome_config_path or xdg_config("biome/biome.json5")
   local sources = {
-    b.formatting.biome.with({
-      extra_args = { "--config-path", biome_config_path },
+    nlsb.formatting.biome.with({
       filetypes = {
-        "javascript", "typescript", "tsx", "jsx", "vue", "svelte", "astro", "json", "jsonc", "markdown"
+        'javascript', 'typescript', 'tsx', 'jsx', 'vue', 'svelte', 'astro', 'json', 'jsonc', 'markdown'
       },
-    }),
-    b.diagnostics.biome.with({
-      extra_args = { "--config-path", biome_config_path },
-      on_output = function(params)
-        local diags = {}
-        for _, diag in ipairs(params.output.diagnostics or {}) do
-          table.insert(diags, {
-            row = diag.location.start.line,
-            col = diag.location.start.column,
-            end_row = diag.location["end"].line,
-            end_col = diag.location["end"].column,
-            source = "biome",
-            message = diag.message,
-            severity = vim.diagnostic.severity.WARN,
-          })
-        end
-        return diags
-      end,
-      filetypes = {
-        "javascript", "typescript", "tsx", "jsx", "vue", "svelte", "astro", "json", "jsonc", "markdown"
+      command = 'biome',
+			method = 'formatting',
+      extra_args = {
+        "--config-path", biome_config_path, "format", "--stdin-file-path", "$FILENAME"
       },
-      format = "json",
     }),
   }
   return sources
@@ -86,18 +67,24 @@ end
 
 function M.js_lsp(opts)
   opts = opts or {}
-  local lspconfig = require("lspconfig")
-  local capabilities = opts.capabilities or require("cmp_nvim_lsp").default_capabilities()
+  local lspconfig = require('lspconfig')
+  local capabilities = vim.lsp.protocol.make_client_capabilities()
+  capabilities = require("blink.cmp").get_lsp_capabilities(capabilities)
   local filetypes = opts.filetypes or { "javascript", "javascriptreact" }
-  local init_options = opts.init_options or { hostInfo = "neovim" }
+  local init_options = opts.init_options or { hostInfo = 'neovim' }
   local settings = opts.settings or {
     javascript = {
       format = { enable = true },
       preferences = { importModuleSpecifierPreference = "relative" },
     },
   }
-  local on_attach = opts.on_attach or function(client, _)
-    client.server_capabilities.documentFormattingProvider = true
+  local function on_attach(client, bufnr)
+    if client.server_capabilities then
+      client.server_capabilities.documentFormattingProvider = true
+    end
+    if opts.on_attach then
+      opts.on_attach(client, bufnr)
+    end
   end
   lspconfig.ts_ls.setup({
     capabilities = capabilities,
@@ -113,7 +100,7 @@ function M.js_conform(opts)
   opts = opts or {}
   local conform_config = require("config.lang.conform").conform_cfg(opts)
   local biome_ft = {
-    "javascript",
+    'javascript',
     "javascriptreact",
     "typescript",
     "typescriptreact",
@@ -133,7 +120,7 @@ function M.js_conform(opts)
     js_config.formatters.biome = conform_config.formatters.biome
   end
   for _, ft in ipairs(biome_ft) do
-    js_config.formatters_by_ft[ft] = { "biome" }
+    js_config.formatters_by_ft[ft] = { 'biome' }
   end
   js_config.format_on_save = conform_config.format_on_save
   js_config.format_after_save = conform_config.format_after_save
@@ -229,14 +216,12 @@ end
 
 function M.setup_js(opts)
   opts = opts or {}
-  require('tailwindcss-colorizer-cmp').setup({ color_square_width = 2 })
   return {
     conform = M.js_conform(opts),
     dap = M.js_dap(opts),
-    setup_js = M.setup_js,
-    neotest = M.js_neotest,
-    lsp = M.js_lsp,
-    null_ls = M.js_nls
+    neotest = M.js_neotest(opts),
+    lsp = M.js_lsp(opts),
+    null_ls = M.nls(opts)
   }
 end
 

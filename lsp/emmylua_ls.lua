@@ -2,34 +2,18 @@
 -- Qompass AI Emmyluals Config
 -- Copyright (C) 2025 Qompass AI, All rights reserved
 -- --------------------------------------------------
-local function get_luajit_dir()
-	local luajit_path = vim.fn.exepath('luajit')
-	if luajit_path ~= "" then
-		return vim.fn.fnamemodify(luajit_path, ":h")
-	end
-	return nil
-end
 
-
-local luajit_dir = get_luajit_dir()
-local runtime_paths = vim.split(package.path, ";")
-if luajit_dir then
-	table.insert(runtime_paths, 1, luajit_dir)
-end
-local util = require('lspconfig.util')
 vim.lsp.config['emmylua_ls'] = {
 	capabilities = vim.lsp.protocol.make_client_capabilities(),
-	cmd = { 'emmylua_ls' },
-	filetypes = { "lua" },
-	root_dir = util.root_pattern('.emmylua.json', '.luarc.json', '.luacheckrc', '.git'),
+	cmd = { 'emmylua_ls', '-c', 'stdio', '--log-level', 'info' },
+	filetypes = { 'lua' },
+	root_markers = { '.emmylua.json', '.luarc.json', '.luarc.json', '.luacheckrc' },
 	flags = {
 		debounce_text_changes = 150,
 	},
-	handlers = {
-		["textDocument/hover"] = vim.lsp.with(vim.lsp.handlers.hover, { border = 'rounded' }),
-		["textDocument/signatureHelp"] = vim.lsp.with(vim.lsp.handlers.signature_help, { border = "rounded" }),
-	},
+	workspace_required = false,
 	on_attach = function(client, bufnr)
+		client.server_capabilities.documentFormattingProvider = false
 		local opts = { buffer = bufnr, silent = true }
 		vim.keymap.set("n", "gd", vim.lsp.buf.definition, opts)
 		vim.keymap.set("n", "K", vim.lsp.buf.hover, opts)
@@ -42,17 +26,12 @@ vim.lsp.config['emmylua_ls'] = {
 			vim.keymap.set("i", "<C-k>", vim.lsp.buf.signature_help, opts)
 			vim.lsp.inlay_hint(bufnr, true)
 		end
-		vim.api.nvim_create_autocmd("BufWritePre", {
-			buffer = bufnr,
-			callback = function() vim.lsp.buf.format({ async = true }) end,
-		})
 	end,
-	root_markers = { '.emmylua.json', '.luarc.json', '.luacheckrc', '.git' },
 	settings = {
 		Emmylua = {
 			completion = {
 				callSnippet = "Replace",
-				displayContext = 3,
+				displayContext = 4,
 				keywordSnippet = "Disable",
 			},
 			diagnostics = {
@@ -70,7 +49,7 @@ vim.lsp.config['emmylua_ls'] = {
 					quote_style = "AutoPreferSingle",
 					trailing_table_separator = "always",
 				},
-				enable = true,
+				enable = false,
 			},
 			hint = {
 				arrayIndex = "Enable",
@@ -81,7 +60,6 @@ vim.lsp.config['emmylua_ls'] = {
 				setType = true,
 			},
 			runtime = {
-				path = runtime_paths,
 				version = "LuaJIT",
 			},
 			telemetry = {

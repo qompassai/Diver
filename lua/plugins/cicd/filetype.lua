@@ -4,10 +4,4 @@
 ------------------------------------------------------
 return {
     'nathom/filetype.nvim',
-    optional = true,
-    init = function()
-      if not pcall(require, 'LazyVim') then
-        require('config.cicd.shell').setup_sh_filetype_detection()
-      end
-    end
   }

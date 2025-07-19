@@ -2,8 +2,6 @@
 -- Qompass AI Diver Lang Completion Config
 -- Copyright (C) 2025 Qompass AI, All rights reserved
 -----------------------------------------------------
----@module 'config.lang.cmp'
----@class CmpConfigModule
 
 local M = {}
 
@@ -20,14 +18,19 @@ function M.blink_cmp()
     snippets = { preset = 'luasnip' },
     sources = {
       default = {
-        'lsp', 'path', 'snippets', 'buffer', 'dadbod', 'emoji', 'dictionary'
+				'lazydev', 'lsp', 'path', 'snippets', 'buffer', 'dadbod', 'emoji', 'dictionary'
       },
       providers = {
+				lazydev = {
+					name = "LazyDev",
+					module = "lazydev.integrations.blink",
+					score_offset = 1001,
+                    },
         lsp = {
           name = 'lsp',
           enabled = true,
           module = 'blink.cmp.sources.lsp',
-          min_keyword_length = 2,
+          min_keyword_length = 3,
           score_offset = 1000
         },
         path = {
@@ -50,14 +53,14 @@ function M.blink_cmp()
           enabled = true,
           max_items = 3,
           module = 'blink.cmp.sources.buffer',
-          min_keyword_length = 2,
+          min_keyword_length = 3,
           score_offset = 500
         },
         snippets = {
           name = 'snippets',
           enabled = true,
           max_items = 15,
-          min_keyword_length = 2,
+          min_keyword_length = 3,
           module = 'blink.cmp.sources.snippets',
           score_offset = 750
         },
@@ -65,7 +68,7 @@ function M.blink_cmp()
           name = 'Dadbod',
           enabled = true,
           module = 'vim_dadbod_completion.blink',
-          min_keyword_length = 2,
+          min_keyword_length = 3,
           score_offset = 85
         },
         emoji = {
@@ -73,7 +76,7 @@ function M.blink_cmp()
           name = 'Emoji',
           enabled = true,
           score_offset = 93,
-          min_keyword_length = 2,
+          min_keyword_length = 3,
           opts = { insert = true }
         },
         dictionary = {
@@ -85,10 +88,10 @@ function M.blink_cmp()
           min_keyword_length = 3,
           opts = {
             dictionary_directories = {
-              vim.fn.expand('~/.config/nvim/lua/utils/dictionary')
+              vim.fn.expand('$HOME/.config/nvim/lua/utils/dictionary')
             },
             dictionary_files = {
-              vim.fn.expand('~/.config/nvim/lua/utils/dictionary/en.utf-8.add')
+              vim.fn.expand('$HOME/.config/nvim/lua/utils/dictionary/en.utf-8.add')
             }
           }
         }

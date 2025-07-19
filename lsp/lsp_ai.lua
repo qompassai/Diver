@@ -1,3 +1,8 @@
+-- /qompassai/Diver/lsp/lsp-ai.lua
+-- Qompass AI Qompass LSP-AI Config
+-- Copyright (C) 2025 Qompass AI, All rights reserved
+------------------------------------------------------
+
 return {
 	cmd = { 'lsp-ai' },
 	filetypes = {},

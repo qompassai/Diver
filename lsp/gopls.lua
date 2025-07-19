@@ -28,9 +28,9 @@ return {
 				compositeLiteralFields = true,
 				compositeLiteralTypes = true,
 				constantValues = true,
-				functionTypeParameters = false,
-				parameterNames = false,
-				rangeVariableTypes = false,
+				functionTypeParameters = true,
+				parameterNames = true,
+				rangeVariableTypes = true,
 			},
 			analyses = {
 				nilness = true,

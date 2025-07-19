@@ -5,7 +5,6 @@
 
 local M = {}
 local util = require('lspconfig.util')
-local null_ls = require('null-ls')
 local ts_lint = require('config.lang.lint')
 
 function M.ts_autocmds()
@@ -107,32 +106,26 @@ function M.ts_root_dir(fname)
   return root or vim.fn.getcwd()
 end
 
-function M.ts_nls(opts)
+function M.nls(opts)
   opts = opts or {}
-  local b = null_ls.builtins
+  local nlsb = require('null-ls').builtins
   local sources = {
-    b.formatting.prettierd.with({
-      filetypes = { 'typescript', 'typescriptreact' }
+    nlsb.formatting.prettierd.with({
+      filetypes = { 'typescript', 'typescriptreact' },
+      command = 'prettierd',
+      extra_args = { '--stdin-filepath', '$FILENAME' },
     }),
-    b.formatting.prettier.with({
-      filetypes = { 'typescript', 'typescriptreact' }
+    nlsb.formatting.prettier.with({
+      filetypes = { 'typescript', 'typescriptreact' },
+      command = 'prettier',
+      extra_args = { '--stdin-filepath', '$FILENAME' },
     }),
-    b.formatting.eslint_d.with({
-      filetypes = { 'typescript', 'typescriptreact' }
+    nlsb.formatting.biome.with({
+      filetypes = { 'typescript', 'typescriptreact' },
+      command = 'biome',
+      extra_args = { '--config-path', '~/.config/biome/biome.json5', 'format', '--stdin-file-path', '$FILENAME' },
     }),
-    b.formatting.biome.with({
-      filetypes = { 'typescript', 'typescriptreact' }
-    }),
-    b.diagnostics.biome.with({
-      filetypes = { 'typescript', 'typescriptreact' }
-    }),
-    b.diagnostics.eslint_d.with({
-      filetypes = { 'typescript', 'typescriptreact' }
-    }),
-    b.code_actions.eslint_d.with({
-      filetypes = { 'typescript', 'typescriptreact' }
-    }),
-  }
+      }
   return sources
 end
 
@@ -180,17 +173,24 @@ function M.ts_keymaps(opts)
     ['<leader>cts'] = {
       "<cmd>lua require('telescope.builtin').lsp_document_symbols()<cr>",
       'Document Symbols'
-    },
-    ['<leader>cte'] = {
-      "<cmd>lua require('conform').format({formatters = {'eslint_d'}})<cr>",
-      'Format with ESLint'
-    },
-    ['<leader>ctp'] = {
-      "<cmd>lua require('conform').format({formatters = {'prettierd'}})<cr>",
-      'Format with Prettier'
     }
   })
   return opts
+end
+
+---@return table
+function M.ts_treesitter(opts)
+	opts = opts or {}
+  return {
+    ensure_installed = {},
+    highlight = {
+      enable = true,
+      disable = {},
+    },
+    indent = {
+      enable = true,
+    },
+  }
 end
 
 function M.ts_cfg(opts)
@@ -199,7 +199,7 @@ function M.ts_cfg(opts)
     conform = M.ts_conform(opts),
     lsp = M.ts_lsp(opts),
     linter = M.ts_linter(opts),
-    nls = M.ts_nls(opts),
+    nls = M.nls(opts),
     keymaps = M.ts_keymaps(opts),
     filetypes = M.ts_filetype_detection,
     commands = M.ts_project_commands,

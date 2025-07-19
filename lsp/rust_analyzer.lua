@@ -1,5 +1,5 @@
--- rust_analyzer.lua
--- Qompass AI - [Add description here]
+-- /qompassai/Diver/lsp/rust_analyzer.lua
+-- Qompass AI Rust_analyzer LSP Config
 -- Copyright (C) 2025 Qompass AI, All rights reserved
 -- ----------------------------------------
 local function reload_workspace(bufnr)
@@ -20,10 +20,8 @@ local function is_library(fname)
 	local cargo_home = os.getenv 'CARGO_HOME' or user_home .. '/.cargo'
 	local registry = cargo_home .. '/registry/src'
 	local git_registry = cargo_home .. '/git/checkouts'
-
 	local rustup_home = os.getenv 'RUSTUP_HOME' or user_home .. '/.rustup'
 	local toolchains = rustup_home .. '/toolchains'
-
 	for _, item in ipairs { toolchains, registry, git_registry } do
 		if vim.fs.relpath(item, fname) then
 			local clients = vim.lsp.get_clients { name = 'rust_analyzer' }
@@ -31,8 +29,7 @@ local function is_library(fname)
 		end
 	end
 end
-
-return {
+vim.lsp.config['rust_analyzer'] = {
 	cmd = { 'rust-analyzer' },
 	filetypes = { 'rust' },
 	root_dir = function(bufnr, on_dir)
@@ -60,7 +57,6 @@ return {
 			'--manifest-path',
 			cargo_crate_dir .. '/Cargo.toml',
 		}
-
 		vim.system(cmd, { text = true }, function(output)
 			if output.code == 0 then
 				if output.stdout then
@@ -69,7 +65,6 @@ return {
 						cargo_workspace_root = vim.fs.normalize(result['workspace_root'])
 					end
 				end
-
 				on_dir(cargo_workspace_root or cargo_crate_dir)
 			else
 				vim.schedule(function()

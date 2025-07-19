@@ -1,13 +1,11 @@
--- marksman.lua
--- Qompass AI - [Add description here]
+-- /qompassai/Diver/lsp/marksman.lua
+-- Qompass AI Marksman LSP Config
 -- Copyright (C) 2025 Qompass AI, All rights reserved
--- ----------------------------------------
+-----------------------------------------------------
 
-local bin_name = 'marksman'
-local cmd = { bin_name, 'server' }
-
-return {
-	cmd = cmd,
+vim.lsp.config['marksman'] = {
+	cmd = { 'marksman', 'server' },
 	filetypes = { 'markdown', 'markdown.mdx' },
+	single_file_support = true,
 	root_markers = { '.marksman.toml', '.git' },
 }

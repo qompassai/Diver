@@ -28,7 +28,6 @@ function M.sh_lsp(opts)
             }
         }
     }
-
     opts.servers.fish_ls = {filetypes = {'fish'}}
     opts.servers.nushell = {filetypes = {'nu'}}
     opts.servers.zls = {filetypes = {'zsh'}}

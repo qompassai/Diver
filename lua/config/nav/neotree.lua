@@ -15,14 +15,14 @@ function M.neotree_cfg(opts)
   },
   add_blank_line_at_top = true,
   auto_clean_after_session_restore = true,
-  close_if_last_window = false, -- Close Neo-tree if it is the last window left in the tab
+  close_if_last_window = false,
   default_source = "filesystem", -- you can choose a specific source `last` here which indicates the last used source
   enable_diagnostics = true,
   enable_git_status = true,
   enable_modified_markers = true, -- Show markers for files with unsaved changes.
   enable_opened_markers = true,   -- Enable tracking of opened files. Required for `components.name.highlight_opened_files`
   enable_refresh_on_write = true, -- Refresh the tree when a file is written. Only used if `use_libuv_file_watcher` is false.
-  enable_cursor_hijack = false, -- If enabled neotree will keep the cursor on the first letter of the filename when moving in the tree.
+  enable_cursor_hijack = true,
   git_status_async = true,
   git_status_async_options = {
     batch_size = 1000,
@@ -38,10 +38,7 @@ function M.neotree_cfg(opts)
   open_files_in_last_window = true, -- false = open files in top left window
   open_files_do_not_replace_types = { "terminal", "Trouble", "qf", "edgy" }, -- when opening files, do not use windows containing these filetypes or buftypes
   open_files_using_relative_paths = false,
-  -- popup_border_style is for input and confirmation dialogs.
-  -- Configurtaion of floating window is done in the individual source sections.
-  -- "NC" is a special style that works well with NormalNC set
-  popup_border_style = "NC", -- "double", "rounded", "single", "solid", (or "" to use 'winborder' on Neovim v0.11+)
+  popup_border_style = "", -- "double", "rounded", "single", "solid", (or "" to use 'winborder' on Neovim v0.11+)
   resize_timer_interval = 500, -- in ms, needed for containers to redraw right aligned and faded content
                                -- set to -1 to disable the resize timer entirely
   --                           -- NOTE: this will speed up to 50 ms for 1 second following a resize
@@ -49,10 +46,9 @@ function M.neotree_cfg(opts)
   sort_function = nil , -- uses a custom function for sorting files and directories in the tree
   use_popups_for_input = true, -- If false, inputs will use vim.ui.input() instead of custom floats.
   use_default_mappings = true,
-  -- source_selector provides clickable tabs to switch between sources.
   source_selector = {
-    winbar = false, -- toggle to show selector on winbar
-    statusline = false, -- toggle to show selector on statusline
+    winbar = true, -- toggle to show selector on winbar
+    statusline = true, -- toggle to show selector on statusline
     show_scrolled_off_parent_node = false, -- this will replace the tabs with the parent path
                                            -- of the top visible node when scrolled down.
     sources = {
@@ -70,7 +66,7 @@ function M.neotree_cfg(opts)
     --             center : |      /  a  \/  b  \/  c  \      |
     --             equal  : |/    a    \/    b    \/    c    \|
     --             active : |/  focused tab    \/  b  \/  c  \|
-    truncation_character = "…", -- character to use when truncating the tab label
+    truncation_character = "…",
     tabs_min_width = nil, -- nil | int: if int padding is added based on `content_layout`
     tabs_max_width = nil, -- this will truncate text even if `text_trunc_to_fit = false`
     padding = 0, -- can be int or table

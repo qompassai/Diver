@@ -1,0 +1,7 @@
+-- /qompassai/Diver/lua/types/lightbulb.lua
+-- Qompass AI Lightbulb Types
+-- Copyright (C) 2025 Qompass AI, All rights reserved
+-----------------------------------------------------
+---@meta
+---@alias lsp.CodeAction { title: string, command?: lsp.Command, edit?: any, kind?: string, isPreferred?: boolean, disabled?: { reason: string }, data?: any }
+---@alias lsp.Command { title: string, command: string, arguments?: any[] }

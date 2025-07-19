@@ -5,12 +5,17 @@
 local icons_cfg = require('config.ui.icons')
 return  {
   {
-    "nvim-tree/nvim-web-devicons",
-    config = icons_cfg.icons_dev,
-  },
+  "nvim-tree/nvim-web-devicons",
+  opts = { color_icons = true, default = false },
+  config = function(_, opts)
+    icons_cfg.icons_devicons(opts)
+  end,
+},
   {
-    "yamatsum/nvim-nonicons",
+    'yamatsum/nvim-nonicons',
     dependencies = {'kyazdani42/nvim-web-devicons'},
-    config = icons_cfg.icons_nonicons,
+    config = function(_, opts)
+			icons_cfg.icons_nonicons(opts)
+		end,
   },
  }

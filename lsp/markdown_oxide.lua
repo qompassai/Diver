@@ -1,11 +1,12 @@
--- markdown_oxide.lua
--- Qompass AI - [Add description here]
+-- /qompassai/Diver/lsp/markdown_oxide.lua
+-- Qompass AI Markdown_oxide LSP Config
 -- Copyright (C) 2025 Qompass AI, All rights reserved
 -- ----------------------------------------
-return {
+vim.lsp.config['markdown_oxide'] = {
+	cmd = { 'markdown-oxide' },
 	root_markers = { '.git', '.obsidian', '.moxide.toml' },
 	filetypes = { 'markdown' },
-	cmd = { 'markdown-oxide' },
+
 	on_attach = function(_, bufnr)
 		vim.api.nvim_buf_create_user_command(bufnr, 'LspToday', function()
 			vim.lsp.buf.execute_command { command = 'jump', arguments = { 'today' } }

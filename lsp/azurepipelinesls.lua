@@ -4,7 +4,7 @@
 -- --------------------------------------------------
 vim.lsp.config['azure_pipelines_ls'] = {
 	cmd = { "azure-pipelines-language-server", "--stdio" },
-	filetypes = { "yaml" },
+	filetypes = { 'yaml', 'yml' },
 	root_markers = { "azure-pipelines.yml" },
 	settings = {
 		yaml = {

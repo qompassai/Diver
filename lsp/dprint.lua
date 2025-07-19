@@ -1,5 +1,5 @@
--- dprint.lua
--- Qompass AI - [Add description here]
+-- /qompassai/Diver/lsp/dprint.lua
+-- Qompass AI DPrint LSP Config
 -- Copyright (C) 2025 Qompass AI, All rights reserved
 -- ----------------------------------------
 local util = require 'lspconfig.util'

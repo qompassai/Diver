@@ -1,7 +1,7 @@
--- htmx.lua
--- Qompass AI - [Add description here]
+-- /qompassai/Diver/lsp/htmx.lua
+-- Qompass AI Htmx LSP Config
 -- Copyright (C) 2025 Qompass AI, All rights reserved
--- ----------------------------------------
+-----------------------------------------------------
 return {
 	vim.lsp.config('htmx', {
 		cmd = { 'htmx-lsp' },
@@ -32,7 +32,7 @@ return {
 			'jade',
 			'leaf',
 			'liquid',
-			'markdown',
+			--	'markdown',
 			'mdx',
 			'mustache',
 			'njk',

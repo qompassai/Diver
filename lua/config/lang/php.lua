@@ -59,7 +59,7 @@ function M.php_dap()
         }
     }
 end
-function M.php_nls()
+function M.nls()
     local null_ls = require('null-ls')
     return {
         null_ls.builtins.formatting.pint.with({command = 'pint'}),

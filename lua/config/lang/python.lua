@@ -4,45 +4,30 @@
 -- --------------------------------------------------
 if vim.fn.has('nvim-0.11') == 1 then vim.opt.shortmess:append({ I = true }) end
 local M = {}
-local null_ls = require('null-ls')
-local b = null_ls.builtins
-function M.py_code_quality(opts)
+
+function M.nls(opts)
   opts = opts or {}
-  null_ls.setup({
-    sources = {
-      b.formatting.isortd, b.formatting.blackd,
-      b.code_actions.refactoring.with({ filetypes = { 'python' } }),
-      b.hover.dictionary.with({
-        filetypes = opts.dict_filetypes or { 'org', 'text', 'markdown' }
-      }), b.completion.spell, b.diagnostics.pylint.with({
-      extra_args = opts.pylint_args or
-          { '--from-stdin', '$FILENAME', '-f', 'json' }
-    }), b.diagnostics.mypy.with({
+	local nlsb = require('null-ls').builtins
+  local sources = {
+    nlsb.formatting.isortd,
+    nlsb.formatting.blackd,
+    nlsb.code_actions.refactoring.with({ filetypes = { 'python' } }),
+    nlsb.hover.dictionary,
+    nlsb.completion.spell,
+    nlsb.diagnostics.pylint,
+    nlsb.diagnostics.mypy.with({
       extra_args = opts.mypy_args or {
         '--ignore-missing-imports', '--disallow-untyped-defs',
         '--check-untyped-defs', '--warn-redundant-casts',
         '--no-implicit-optional'
       },
       cwd = function(params)
-        return require('null-ls.utils').root_pattern('mypy.ini',
-          '.mypy.ini')(
-          params.bufname)
+        return require('null-ls.utils').root_pattern('mypy.ini', '.mypy.ini')(params.bufname)
       end
-    })
-    },
-    on_attach = function(client, bufnr)
-      if client.supports_method('textDocument/formatting') then
-        vim.api.nvim_create_autocmd('BufWritePre', {
-          buffer = bufnr,
-          callback = function()
-            vim.lsp.buf.format({ bufnr = bufnr })
-          end
-        })
-      end
-    end
-  })
+    }),
+  }
+	return sources
 end
-
 function M.py_dap()
   local dap = require('dap')
   local dap_python = require('dap-python')
@@ -61,7 +46,7 @@ function M.py_dap()
         local versions = { '313', '312', '314', '311' }
         for _, version in ipairs(versions) do
           local venv_path = vim.fn.expand(
-                '~/.diver/.python/.venv' .. version) ..
+                '~/.venv' .. version) ..
               '/bin/python'
           if vim.fn.filereadable(venv_path) == 1 then
             return venv_path
@@ -81,46 +66,6 @@ function M.py_dap()
   dap_python.test_runner = 'pytest'
 end
 
-function M.py_fzf(opts)
-  opts = opts or {}
-  local fzf = require('fzf-lua')
-  fzf.setup({
-    winopts = { width = 0.95, height = 0.85, preview = { hidden = 'hidden' } },
-    files = {
-      cmd = opts.files_cmd or
-          [[fd --type f --hidden --follow --exclude .git]],
-      file_icons = true,
-      color_icons = true
-    },
-    dap = opts.dap or
-        { breakpoints = { mappings = { n = { ['<cr>'] = 'toggle_breakpoint' } } } },
-    conda = opts.conda or
-        {
-          anaconda_path = opts.conda_path or '/opt/miniconda3',
-          prompt = 'Conda❯ '
-        },
-    fzf_opts = { ['--tiebreak'] = 'index' },
-    custom_providers = {
-      symbols = function(query)
-        return require('fzf-lua.providers.symbols')(query, {
-          symbols = { 'python' },
-          file_icons = true
-        })
-      end,
-      imports = {
-        cmd = [[rg --vimgrep --type py '^import|^from']],
-        actions = { ['default'] = require('fzf-lua.actions').file_edit }
-      }
-    },
-    keymap = {
-      builtin = {
-        ['<C-d>'] = 'preview-page-down',
-        ['<C-u>'] = 'preview-page-up'
-      }
-    }
-  })
-end
-
 function M.py_jupyter(opts)
   opts = opts or {}
   require('quarto').setup({
@@ -130,7 +75,7 @@ function M.py_jupyter(opts)
       languages = opts.quarto_langs or
           { 'r', 'python', 'julia', 'bash', 'html' },
       diagnostics = {
-        enabled = opts.quarto_diagnostics ~= true,
+        enabled = opts.quarto_diagnostics ~= false,
         triggers = opts.quarto_diag_triggers or { 'BufWritePost' }
       }
     },
@@ -315,12 +260,25 @@ function M.py_lsp(opts)
   }
 end
 
+---@return table
+function M.python_treesitter()
+  return {
+    ensure_installed = {},
+    highlight = {
+      enable = true,
+      disable = {},
+    },
+    indent = {
+      enable = true,
+    },
+  }
+end
+
 ---@param opts table
-function M.python_cfg(opts)
+function M.python_cfg(_, opts)
   opts = opts or {}
-  M.py_code_quality(opts.linting)
+  M.nls(opts)
   M.py_dap()
-  M.py_fzf(opts.fzf)
   M.py_jupyter(opts.jupyter)
   M.py_notebook_detection(opts.notebook)
   M.py_project_tools(opts.tools)

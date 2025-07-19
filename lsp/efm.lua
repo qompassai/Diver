@@ -1,8 +1,8 @@
--- efm.lua
--- Qompass AI - [Add description here]
+-- /qompassai/Diver/lsp/efm.lua
+-- Qompass AI EFM LSP Config
 -- Copyright (C) 2025 Qompass AI, All rights reserved
 -- ----------------------------------------
-return {
+vim.lsp.config['efm-langserver'] = {
 	default_config = {
 		cmd = { 'efm-langserver' },
 		filetypes = {

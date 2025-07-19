@@ -4,9 +4,7 @@
 -- --------------------------------------------------
 return {
   'stevearc/conform.nvim',
-  dependencies = { 'nvim-tools/none-ls.nvim', 'nvim-tools/none-ls-extras.nvim' },
-  event = { 'VimEnter', },
-  cmd = { 'ConformInfo' },
+  cmd = 'ConformInfo',
   config = function()
     require('config.lang.conform')
   end,

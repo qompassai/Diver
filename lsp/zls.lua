@@ -1,5 +1,5 @@
--- zls.lua
--- Qompass AI - [Add description here]
+-- /qompassai/Diver/lsp/zls.lua
+-- Qompass AI ZLS LSP Config
 -- Copyright (C) 2025 Qompass AI, All rights reserved
 -- ----------------------------------------
 local function find_executable(names)
@@ -19,9 +19,9 @@ end
 local zls_path = find_executable({ 'zls' }) or 'zls'
 local zig_path = find_executable({ 'zig' }) or 'zig'
 
-return {
+vim.lsp.config['zls'] = {
 	cmd = { zls_path },
-	filetypes = { "zig", 'zon', 'ziggy', 'zine' },
+	filetypes = { 'zig', 'zon', 'ziggy', 'zine' },
 	handlers = {
 		["textDocument/hover"] = vim.lsp.with(vim.lsp.handlers.hover, { border = "rounded" }),
 		["textDocument/signatureHelp"] = vim.lsp.with(vim.lsp.handlers.signature_help, { border = "rounded" }),

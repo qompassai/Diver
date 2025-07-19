@@ -1,6 +1,8 @@
+-- /qompassai/Diver/lua/config/core/flash.lua
+-- Qompass AI Flash Config
+-- Copyright (C) 2025 Qompass AI, All rights reserved
+-- ----------------------------------------
 -- Qompass AI Diver – Flash.nvim core configuration ---------------------------
--- Everything that can possibly live outside the spec file stays in here
--------------------------------------------------------------------------------
 local M = {}
 
 ---@param extra table|nil allow the spec to patch/override at call-site

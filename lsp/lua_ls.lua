@@ -2,33 +2,42 @@
 -- Qompass AI Lua LSP Spec
 -- Copyright (C) 2025 Qompass AI, All rights reserved
 ------------------------------------------------------
-local function get_luajit_dir()
-	local luajit_path = vim.fn.exepath('luajit')
-	if luajit_path ~= "" then
-		return vim.fn.fnamemodify(luajit_path, ":h")
-	end
-	return nil
-end
-
-local luajit_dir = get_luajit_dir()
-local runtime_paths = vim.split(package.path, ";")
-if luajit_dir then
-	table.insert(runtime_paths, 1, luajit_dir)
-end
 
 vim.lsp.config['lua_ls'] = {
+	on_init = function(client)
+		if client.workspace_folders then
+			local path = client.workspace_folders[1].name
+			if
+					path ~= vim.fn.stdpath('config')
+					and (vim.uv.fs_stat(path .. '/.luarc.json') or vim.uv.fs_stat(path .. '/.luarc.json5'))
+			then
+				return
+			end
+		end
+	end,
 	cmd = { 'lua-language-server' },
-	filetypes = { 'lua', "luau" },
-	handlers = {
-		["textDocument/hover"] = vim.lsp.with(vim.lsp.handlers.hover, { border = "rounded" }),
-		["textDocument/signatureHelp"] = vim.lsp.with(vim.lsp.handlers.signature_help, { border = "rounded" }),
+	codeActionProvider = {
+		codeActionKinds = { "", "quickfix", "refactor.rewrite", "refactor.extract" },
+		resolveProvider = true
 	},
-	root_markers = { '.luarc.json', '.luarc.jsonc', ".luarc.json5", '.stylua.toml', 'luacheckrc', ".git" },
+	colorProvider = true,
+	filetypes = { 'lua', 'luau' },
+	semanticTokensProvider = {
+		full = true,
+		legend = {
+			tokenModifiers = { "declaration", "definition", "readonly", "static", "deprecated", "abstract", "async", "modification", "documentation", "defaultLibrary", "global" },
+			tokenTypes = { "namespace", "type", "class", "enum", "interface", "struct", "typeParameter", "parameter", "variable", "property", "enumMember", "event", "function", "method", "macro", "keyword", "modifier", "comment", "string", "number", "regexp", "operator", "decorator" }
+		},
+		range = true
+	},
+	--	root_markers = { '.luarc.json', '.luarc.jsonc', ".luarc.json5", '.stylua.toml', 'luacheckrc', '.luacheckrc' },
 	settings = {
 		Lua = {
 			format = {
 				enable = true,
 				defaultConfig = {
+					align_continuous_rect_table_field = true,
+					align_array_table = true,
 					indent_style = "space",
 					indent_size = "2",
 					quote_style = 'AutoPreferSingle',
@@ -38,7 +47,10 @@ vim.lsp.config['lua_ls'] = {
 			},
 			runtime = {
 				version = "LuaJIT",
-				path = runtime_paths,
+				path = {
+					'lua/?.lua',
+					'lua/?/init.lua',
+				},
 			},
 			diagnostics = {
 				enable = true,
@@ -50,6 +62,7 @@ vim.lsp.config['lua_ls'] = {
 			workspace = {
 				checkThirdParty = true,
 				library = {
+					vim.api.nvim_get_runtime_file('', true),
 					vim.env.VIMRUNTIME,
 					"${3rd}/luv/library",
 					"${3rd}/busted/library",
@@ -57,9 +70,9 @@ vim.lsp.config['lua_ls'] = {
 					"${3rd}/luassert/library",
 					"${3rd}/lazy.nvim/library",
 					"${3rd}/blink.cmp/library",
-					"$HOME/.config/nvim/lua/types"
+					"$HOME/.config/nvim/lua/types",
 				},
-				ignoreDir = { "node_modules", ".git", "build" },
+				ignoreDir = { "node_modules", "build" },
 				maxPreload = 2000,
 				preloadFileSize = 50000,
 			},
@@ -69,7 +82,7 @@ vim.lsp.config['lua_ls'] = {
 			completion = {
 				callSnippet = "Replace",
 				keywordSnippet = "Disable",
-				displayContext = 3,
+				displayContext = 4,
 			},
 			hint = {
 				enable = true,

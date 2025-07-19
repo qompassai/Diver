@@ -6,11 +6,11 @@ local sqlite_cfg = require('config.data.sqlite')
 local psql_cfg = require('config.data.psql')
 return {
   {
-    "kristijanhusak/vim-dadbod-ui",
-    ft  = { "sqlite", "pgsql" },
+    'kristijanhusak/vim-dadbod-ui',
+    ft  = { 'sqlite', 'pgsql' },
     cmd = { "DBUI", "DBUIToggle", "DBUIAddConnection", "DBUIFindBuffer" },
     dependencies = {
-      "tpope/vim-dadbod",
+      'tpope/vim-dadbod',
       { "kristijanhusak/vim-dadbod-completion", ft = { "sqlite", "pgsql" } },
     },
     init = function()
