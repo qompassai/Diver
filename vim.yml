@@ -1,23 +1,20 @@
 # /qompassai/Diver/vim.yml
-# ---------------------------------
+# Qompass AI Vim YML
 # Copyright (C) 2025 Qompass AI, All rights reserved
----
+####################################################
+
 globals:
   vim:
     any: true
-
   jit.os:
     type: string
     property: read-only
-
   package.config:
     type: string
     property: read-only
-
   async_test:
     args:
       - type: function
-
   assert:
     equals:
       args:
@@ -50,40 +47,32 @@ globals:
       has_error:
         args:
           - type: function
-
   describe:
     args:
       - type: string
       - type: function
-
   it:
     args:
       - type: string
       - type: function
-
   before_each:
     args:
       - type: function
-
   after_each:
     args:
       - type: function
-
   create_dummy_context:
     args:
       - type: table
         required: false
-
   InstallHandleGenerator:
     args:
       - type: string
-
   InstallContextGenerator:
     args:
       - type: any
       - type: table
         required: false
-
   mockx:
     throws:
       args:

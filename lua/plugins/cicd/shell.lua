@@ -5,8 +5,9 @@
 return {
   {
     'trixnz/sops.nvim',
+    lazy = false,
     ft = {
-      'yaml', 'yml', 'json', 'toml', 'env', 'nix', 'ini', 'conf', 'key',
+      'yaml', 'cf', 'config', 'yml', 'json', 'toml', 'env', 'nix', 'ini', 'conf', 'key',
       'gpg', 'asc'
     },
     opts = {

@@ -3,17 +3,17 @@
 -- Copyright (C) 2025 Qompass AI, All rights reserved
 -- ----------------------------------------
 vim.lsp.config['remark_ls'] = {
-	cmd = { 'remark-language-server', '--stdio' },
-	filetypes = { 'markdown' },
-	root_markers = {
-		'.remarkrc',
-		'.remarkrc.json',
-		'.remarkrc.js',
-		'.remarkrc.cjs',
-		'.remarkrc.mjs',
-		'.remarkrc.yml',
-		'.remarkrc.yaml',
-		'.remarkignore',
-	},
-	single_file_support = true,
+  cmd = { 'remark-language-server', '--stdio' },
+  filetypes = { 'markdown', 'mdx' },
+  root_markers = {
+    '.remarkrc',
+    '.remarkrc.json',
+    '.remarkrc.js',
+    '.remarkrc.cjs',
+    '.remarkrc.mjs',
+    '.remarkrc.yml',
+    '.remarkrc.yaml',
+    '.remarkignore',
+  },
+  single_file_support = true,
 }

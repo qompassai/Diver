@@ -2,19 +2,49 @@
 -- Qompass AI MDX Analyzer LSP Config
 -- Copyright (C) 2025 Qompass AI, All rights reserved
 ------------------------------------------------------
-local util = require 'lspconfig.util'
 
-vim.lsp.config['mdx_analzyer'] = {
-	cmd = { 'mdx-language-server', '--stdio' },
-	filetypes = { 'mdx' },
-	root_markers = { 'package.json' },
-	settings = {},
-	init_options = {
-		typescript = {},
-	},
-	before_init = function(_, config)
-		if config.init_options and config.init_options.typescript and not config.init_options.typescript.tsdk then
-			config.init_options.typescript.tsdk = util.get_typescript_server_path(config.root_dir)
-		end
-	end,
+vim.lsp.config['mdx_analyzer'] = {
+  autostart = true,
+  cmd = { 'mdx-language-server', '--stdio' },
+  filetypes = { 'mdx' },
+  root_dir = vim.fn.getcwd,
+  root_markers = { 'package.json', 'package.json5' },
+  single_file_support = true,
+  init_options = {
+    typescript = {
+      tsdk = vim.fn.stdpath("data") .. '/mason/packages/typescript-language-server/node_modules/typescript/lib',
+    },
+  },
+  settings = {
+    mdx = {
+      lint = {
+        enabled = true,
+        rules = {
+          ["no-dead-urls"] = "error",
+          ["no-duplicate-headings"] = "warn",
+          ["first-heading-level"] = { 2, "error" },
+        },
+      },
+      format = {
+        enabled = true,
+        prettier = {
+          configPath = ".prettierrc",
+        },
+      },
+      diagnostics = {
+        enable = true,
+        severity = {
+          error = "Error",
+          warning = "Warning",
+          info = "Information",
+          hint = "Hint",
+        },
+      },
+    },
+  },
+  on_attach = function(client, bufnr)
+    if client.server_capabilities and client.server_capabilities.documentFormattingProvider then
+      vim.api.nvim_buf_set_option(bufnr, 'formatexpr', 'v:lua.vim.lsp.formatexpr()')
+    end
+  end,
 }

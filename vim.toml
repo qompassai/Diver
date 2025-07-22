@@ -1,19 +1,18 @@
-# /qompassai/Diver/vim.toml
-# ---------------------------------
-# Copyright (C) 2025 Qompass AI, All rights reserved
+# /qompassai/dotfiles/.config/vim/vim.toml
+# Qompass AI Vim Config
+
+#############################################
 [describe]
-args = [{ type = "string" }, { type = "function" }]
+args = [{ type = 'string' }, { type = 'function' }]
 
 [it.args]
-type = "string"
-[it.args]
-type = "function"
+type = ['string', 'function']
 
 [before_each.args]
-type = "function"
+type = 'function'
 
 [after_each.args]
-type = "function"
+type = 'function'
 
 [vim.api]
 any = true
@@ -26,3 +25,4 @@ any = true
 
 [vim.lsp]
 any = true
+
