@@ -2,9 +2,7 @@
 -- Qompass AI Diver Init
 -- Copyright (C) 2025 Qompass AI, All rights reserved
 -- --------------------------------------------------
-vim.g.mapleader = ' '
-vim.g.maplocalleader = '\\'
-vim.env.FONTCONFIG_DEBUG = "none"
+vim.loader.enable()
 require('config.init').config({
   core = true,
   cicd = true,
@@ -14,5 +12,3 @@ require('config.init').config({
   nav = true,
   ui = true
 })
-require('utils')
-require('types')

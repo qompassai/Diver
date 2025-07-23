@@ -7,6 +7,7 @@ return {
   name = 'MySQL Production',
   url = 'mysql://user:password@production-server:3306/database'
 }, { name = 'SQLite Main', url = 'sqlite:~/databases/main.sqlite' },
+  { name = 'QMail',       url = 'sqlite:./db/development.sqlite3' },
   { name = 'Project DB',  url = 'sqlite:./db/development.sqlite3' },
   { name = 'Zotero DB',   url = 'sqlite:~/.local/share/zotero/zotero.sqlite' }, {
   name = 'PostgreSQL Local',
