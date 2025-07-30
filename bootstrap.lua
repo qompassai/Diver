@@ -12,13 +12,11 @@ function M.setup()
             vim.env[("XDG_%s_HOME"):format(name:upper())] = root .. "/" .. name
         end
     end
-
-    if vim.env.LAZY_PATH and not vim.uv.fs_stat(vim.env.LAZY_PATH) then
+    if vim.env.LAZY_PATH and not vim.fs_stat(vim.env.LAZY_PATH) then
         vim.env.LAZY_PATH = nil
     end
-
     local lazypath = vim.env.LAZY_PATH or vim.fn.stdpath("data") .. "/lazy/lazy.nvim"
-    if not vim.env.LAZY_PATH and not (vim.uv or vim.loop).fs_stat(lazypath) then
+    if not vim.env.LAZY_PATH and not (vim.uv).fs_stat(lazypath) then
         vim.api.nvim_echo({
             {
                 "Cloning lazy.nvim\n\n",
@@ -36,8 +34,8 @@ function M.setup()
         if not ok or vim.v.shell_error ~= 0 then
             vim.api.nvim_echo({
                 { "Failed to clone lazy.nvim\n", "ErrorMsg" },
-                { vim.trim(out or ""), "WarningMsg" },
-                { "\nPress any key to exit...", "MoreMsg" },
+                { vim.trim(out or ""),           "WarningMsg" },
+                { "\nPress any key to exit...",  "MoreMsg" },
             }, true, {})
             vim.fn.getchar()
             os.exit(1)
@@ -45,6 +43,7 @@ function M.setup()
     end
     vim.opt.rtp:prepend(lazypath)
 end
+
 M.setup()
 
 return M
