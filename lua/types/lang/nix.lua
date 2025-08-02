@@ -4,6 +4,9 @@
 ------------------------------------------------------
 ---@meta
 
+---@class NixConformOpts
+---@field formatter? string
+
 ---@class NixConformConfig
 ---@field formatters_by_ft table
 ---@field format_on_save table
@@ -11,6 +14,6 @@
 
 ---@class NixLangConfig
 ---@field nix_conform fun(): NixConformConfig
----@field nix_nls fun(opts?: table): table
+---@field nls fun(opts?: table): table
 ---@field nix_lsp fun(opts?: table): table
 ---@field nix_cfg fun(opts?: table): { conform: NixConformConfig, nls: table, lsp: table }

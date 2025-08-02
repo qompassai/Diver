@@ -156,7 +156,7 @@ vim.lsp.enable({
   'nixd',
   'nomad_lsp',
   'nushell',
-  'nxls',
+  --'nxls',
   'ocamlls',
   'ocamllsp',
   'ols',
@@ -183,16 +183,16 @@ vim.lsp.enable({
   'psalm',
   'pug',
   'puppet',
-  'pylsp',
-  'pylyzer',
+  --  'pylsp',
+  --  'pylyzer',
   'pyrefly',
-  'pyright',
+  --  'pyright',
   'qmlls',
   'quick_lint_js',
   'r_language_server',
   'regal',
   'regols',
-  'remark_ls',
+  --'remark_ls',
   'rls',
   'rnix',
   'robotcode',
@@ -202,7 +202,6 @@ vim.lsp.enable({
   'rubocop',
   'rubylsp',
   'ruff',
-  'ruff_lsp',
   'rune_languageserver',
   'rust_analyzer',
   'salt_ls',
@@ -260,7 +259,7 @@ vim.lsp.enable({
   'ttags',
   'turbo_ls',
   'turtle_ls',
-  'tvm_ffi_navigator',
+  --'tvm_ffi_navigator',
   'twiggy_language_server',
   'ty',
   'typeprof',
@@ -290,15 +289,37 @@ vim.lsp.enable({
   --	'zk',
   'zls'
 })
+vim.lsp.set_log_level 'trace'
+require('vim.lsp.log').set_format_func(vim.inspect)
+vim.diagnostic.show(nil, nil, { virtual_text = true })
+vim.lsp.document_color.enable(not vim.lsp.document_color.is_enabled())
+vim.lsp.semantic_tokens.enable(not vim.lsp.semantic_tokens.is_enabled())
+local function on_list(options)
+  vim.fn.setqflist({}, ' ', options)
+  vim.cmd.cfirst()
+end
+vim.lsp.buf.definition({ on_list = on_list })
+vim.lsp.buf.references(nil, { on_list = on_list })
+vim.lsp.buf.definition({ loclist = true })
+vim.lsp.buf.references(nil, { loclist = true })
 vim.lsp.config('*', {
   autostart = true,
   single_file_support = true,
-  flags = { debounce_text_changes = 150 },
+  flags = {
+    debounce_text_changes = 150
+  },
   workspace_required = false,
   capabilities = vim.tbl_deep_extend("force",
     vim.lsp.protocol.make_client_capabilities(),
     {
       textDocument = {
+        synchronization = {
+          dynamicRegistration = true,
+          willSave = false,
+          willSaveWaitUntil = false,
+          didSave = true,
+          syncKind = vim.lsp.protocol.TextDocumentSyncKind.Incremental,
+        },
         inlayHint = {
           dynamicRegistration = true,
         },
@@ -306,7 +327,9 @@ vim.lsp.config('*', {
           multilineTokenSupport = true,
           requests = {
             range = true,
-            full = { delta = true },
+            full = {
+              delta = true
+            },
           },
           tokenTypes = {},
           tokenModifiers = {},
@@ -317,16 +340,9 @@ vim.lsp.config('*', {
       }
     }
   ),
-  handlers = {
-    ["textDocument/hover"] = vim.lsp.with(vim.lsp.handlers.hover, {
-      border = "rounded",
-      title = "Hover",
-    }),
-    ["textDocument/signatureHelp"] = vim.lsp.with(vim.lsp.handlers.signature_help, {
-      border = "rounded",
-    }),
-  },
   on_attach = function(client, bufnr)
+    vim.lsp.linked_editing_range.enable(true, { client_id = client.id })
+    vim.lsp.inlay_hint.enable(not vim.lsp.inlay_hint.is_enabled())
     local opts = { buffer = bufnr, silent = true }
     vim.keymap.set("n", "gd", vim.lsp.buf.definition, opts)
     vim.keymap.set("n", "K", vim.lsp.buf.hover, opts)
@@ -334,13 +350,12 @@ vim.lsp.config('*', {
     vim.keymap.set("n", "<leader>rn", vim.lsp.buf.rename, opts)
     vim.keymap.set("n", "<leader>ca", vim.lsp.buf.code_action, opts)
     vim.keymap.set("n", "<leader>f", function()
-      vim.lsp.buf.format({ async = true })
+      vim.lsp.buf.format({ async = false })
     end, opts)
-    vim.keymap.set("n", "[d", vim.diagnostic.goto_prev, opts)
-    vim.keymap.set("n", "]d", vim.diagnostic.goto_next, opts)
+    vim.keymap.set("n", "[d", vim.diagnostic.get_prev, opts)
+    vim.keymap.set("n", "]d", vim.diagnostic.get__next, opts)
     if client.server_capabilities.inlayHintProvider and vim.lsp.inlay_hint then
       vim.keymap.set("i", "<C-k>", vim.lsp.buf.signature_help, opts)
-      vim.lsp.inlay_hint.enable(bufnr, true)
     end
     if client.server_capabilities.documentFormattingProvider then
       vim.api.nvim_create_autocmd("BufWritePre", {
@@ -354,6 +369,7 @@ vim.lsp.config('*', {
 })
 vim.diagnostic.config({
   virtual_text = {
+    enabled = true,
     prefix = "●",
     spacing = 4,
   },
@@ -366,9 +382,9 @@ vim.diagnostic.config({
   },
   float = {
     border = "rounded",
-    source = "always",
-    focusable = false,
-    scope = "cursor",
+    source = "if_many",
+    focusable = true,
+    scope = "line",
   },
   update_in_insert = false,
   severity_sort = true,
@@ -392,29 +408,33 @@ vim.api.nvim_create_autocmd({ "BufEnter", "CursorHold", "InsertLeave" }, {
     vim.lsp.codelens.refresh()
   end,
 })
-vim.api.nvim_create_autocmd("CursorHold", {
-  callback = function()
-    vim.diagnostic.open_float(nil, { focusable = false })
-  end,
-})
-local my_lsp_augroup = vim.api.nvim_create_augroup("my.lsp", { clear = true })
 vim.api.nvim_create_autocmd("LspAttach", {
-  group = my_lsp_augroup,
   callback = function(args)
-    local client = assert(vim.lsp.get_client_by_id(args.data.client_id))
-    local bufnr = args.buf
-    if client.supports_method("textDocument/implementation") then
-      vim.keymap.set("n", "gi", vim.lsp.buf.implementation, { buffer = bufnr })
-    end
-    if client.supports_method("textDocument/formatting") then
-      vim.api.nvim_create_autocmd("BufWritePre", {
-        group = my_lsp_augroup,
+    local client = vim.lsp.get_client_by_id(args.data.client_id)
+    if client and client.server_capabilities.documentHighlightProvider then
+      local bufnr = args.buf
+      vim.api.nvim_create_autocmd({ "CursorHold", "CursorHoldI" }, {
         buffer = bufnr,
-        callback = function()
-          vim.lsp.buf.format({ bufnr = bufnr, timeout_ms = 1000 })
-        end
+        callback = vim.lsp.buf.document_highlight,
+      })
+      vim.api.nvim_create_autocmd({ "CursorMoved", "CursorMovedI" }, {
+        buffer = bufnr,
+        callback = vim.lsp.buf.clear_references,
       })
     end
   end,
+})
+vim.api.nvim_create_autocmd('LspAttach', {
+  callback = function(args)
+    vim.lsp.document_color.enable(true, args.buf)
+  end
+})
+vim.keymap.set('i', '<c-space>', function()
+  vim.lsp.completion.get()
+end)
+vim.api.nvim_create_autocmd('LspAttach', {
+  callback = function(args)
+    vim.lsp.document_color.enable(true, args.buf)
+  end
 })
 return M

@@ -9,12 +9,15 @@ return
     "nvim-lua/plenary.nvim",
     "nvim-tree/nvim-web-devicons",
     'MunifTanjim/nui.nvim',
-			'vhyrro/luarocks.nvim',
-    {"3rd/image.nvim", opts = {
-				build = true,
-			}},
+    'vhyrro/luarocks.nvim',
+    {
+      "3rd/image.nvim",
+      opts = {
+        build = true,
+      }
+    },
   },
-	config = function(_, opts)
-		require('config.nav.neotree').neotree_cfg(opts)
-	end,
+  config = function(_, opts)
+    require('config.nav.neotree').neotree_cfg(opts)
+  end,
 }

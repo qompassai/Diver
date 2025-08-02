@@ -2,7 +2,47 @@
 -- Qompass AI LuaLine Config
 -- Copyright (C) 2025 Qompass AI, All rights reserved
 -- ----------------------------------------
-local M = {}
+
+local M = {} ---@module 'ui.line'
+require("types.ui.line")
+---@param method string
+---@return string[]
+local function get_null_ls_providers(method)
+  local ok, null_ls = pcall(require, 'null-ls')
+  if not ok then return {} end
+  local buf_ft = vim.bo.filetype
+  local sources = null_ls.get_sources()
+  local registered = {}
+  for _, s in ipairs(sources) do
+    ---@class NullLsSource
+    local source = s
+    if source.filetypes and source.filetypes[buf_ft] then
+      if source.methods and source.methods[method] then
+        table.insert(registered, source.name)
+      end
+    end
+  end
+  return registered
+end
+local function null_ls_summary() ---@return string
+  local formatting = get_null_ls_providers(require("null-ls").methods.FORMATTING)
+  local diagnostics = get_null_ls_providers(require("null-ls").methods.DIAGNOSTICS)
+  local codeactions = get_null_ls_providers(require("null-ls").methods.CODE_ACTION)
+  local parts = {}
+  if #formatting > 0 then
+    table.insert(parts, "󱉶 " .. table.concat(formatting, ", "))
+  end
+  if #codeactions > 0 then
+    table.insert(parts, "⚡ " .. table.concat(codeactions, ", "))
+  end
+  if #diagnostics > 0 then
+    table.insert(parts, " " .. table.concat(diagnostics, ", "))
+  end
+  if #formatting + #codeactions + #diagnostics == 0 then
+    table.insert(parts, "🧠 LSP")
+  end
+  return table.concat(parts, "  |  ")
+end
 
 require('lualine').setup({
   options           = {
@@ -206,7 +246,7 @@ require('lualine').setup({
     lualine_x = {
       { 'encoding' },
     },
-    lualine_y = {},
+    lualine_y = { null_ls_summary },
     lualine_z = {},
   },
   inactive_winbar   = {},

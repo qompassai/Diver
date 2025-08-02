@@ -3,70 +3,45 @@
 -- Copyright (C) 2025 Qompass AI, All rights reserved
 -- --------------------------------------------------
 ---@module 'config.lang.nix'
----@type NixLangConfig
+local M = {} ---@class NixLangConfig
 
-local M = {}
-local function mark_pure(src) return src.with({ command = 'true' }) end
-
-function M.nix_autocmds(opts)
+---@param opts? table
+function M.nix_autocmds(opts) ---@return nil
   opts = opts or {}
-vim.api.nvim_create_user_command("SetNixFormatter", function(args)
-  vim.g.nix_formatter = args.args
-end, { nargs = 1, complete = function()
-  return { "alejandra", "nixfmt", "nixpkgs-fmt" }
-end })
-
+  vim.api.nvim_create_user_command("SetNixFormatter", function(args)
+    vim.g.nix_formatter = args.args
+  end, {
+    nargs = 1,
+    complete = function()
+      return { "alejandra", "nixfmt", "nixpkgs-fmt" }
+    end
+  })
 end
 
----@param opts? { formatter?: string }
----@return NixConformConfig
-function M.nix_conform(opts)
-  opts = opts or {}
-  local formatter = opts.formatter or "alejandra"
-  return {
-    formatters_by_ft = {
-      nix = { formatter },
-    },
-    format_on_save = { lsp_fallback = true },
-    format_after_save = { enabled = true },
-  }
+function M.nix_conform()
+  local by_ft = require('config.lang.conform').conform_cfg().formatters_by_ft('nix')
+  local seen, res = {}, {}
+  for _, ft in ipairs({ by_ft.nix or {} }) do
+    for _, f in ipairs(ft) do
+      if not seen[f] then
+        seen[f] = true; res[#res + 1] = f
+      end
+    end
+  end
+  return res
 end
-
 
 ---@param opts? table
 ---@return table
 function M.nls(opts)
   opts = opts or {}
-  local null_ls = require('null-ls')
-  local b = null_ls.builtins
-  return {
-    b.formatting.alejandra, mark_pure(b.diagnostics.deadnix),
-    mark_pure(b.diagnostics.statix)
+  local nlsb = require('null-ls').builtins
+  local sources = {
+    nlsb.formatting.alejandra,
+    nlsb.diagnostics.deadnix,
+    nlsb.diagnostics.statix
   }
-end
-
----@param opts? table
----@return table
-function M.nix_lsp(opts)
-  opts = opts or {}
-  return {
-    on_attach = opts.on_attach,
-    capabilities = opts.capabilities,
-    settings = {
-      ['nil_ls'] = {
-        formatting = { command = 'nixpkgs-fmt' },
-        diagnostics = {
-          enabled = true,
-          ignored = { 'unused_binding' },
-          excludedFiles = {}
-        },
-        nix = {
-          flake = { autoArchive = true, autoEvalInputs = true },
-          autoLSPConfig = true
-        }
-      }
-    }
-  }
+  return sources
 end
 
 function M.vim_nix_config()
@@ -93,14 +68,12 @@ function M.vim_nix_config()
 end
 
 ---@param opts? table
----@return { conform: NixConformConfig, nls: table, lsp: table }
 function M.nix_cfg(opts)
   opts = opts or {}
   return {
-    autocmds =  M.nix_autocmds(opts),
-    conform = M.nix_conform(opts),
-    nls = M.nix_nls(opts),
-    lsp = M.nix_lsp(opts)
+    autocmds = M.nix_autocmds(opts),
+    conform = M.nix_conform(),
+    nls = M.nls(opts),
   }
 end
 

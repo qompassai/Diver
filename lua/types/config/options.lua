@@ -25,7 +25,7 @@
 ---@field nvim_create_autocmd fun(event:any, opts:table)
 ---@field nvim_get_runtime_file fun(pattern:string, all:boolean):string[]
 ---@field nvim_set_option_value fun(name:string, value:any, opts:table)
----@class Options
+---@class NvimOptions
 ---@field history integer
 ---@field number boolean
 ---@field relativenumber boolean
@@ -90,7 +90,7 @@
 ---@class LuaGlobals
 ---@field use_blink_cmp boolean
 ---@field lazydev_enabled boolean
----@class Globals
+---@class NvimGlobals
 ---@field git_command_ssh integer
 ---@field editorconfig boolean
 ---@field loaded_illuminate boolean

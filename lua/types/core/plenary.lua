@@ -17,4 +17,4 @@
 ---@field new fun(self: PlenaryPathClass, path: string): PlenaryPath
 
 ---@type PlenaryPathClass
-Path = {}
+---@new Path = {}

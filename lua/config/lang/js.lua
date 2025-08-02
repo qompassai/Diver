@@ -49,14 +49,14 @@ end
 function M.nls(opts)
   opts = opts or {}
   local nlsb = require('null-ls').builtins
-   local biome_config_path = opts.biome_config_path or xdg_config("biome/biome.json5")
+  local biome_config_path = opts.biome_config_path or xdg_config("biome/biome.json5")
   local sources = {
     nlsb.formatting.biome.with({
       filetypes = {
         'javascript', 'typescript', 'tsx', 'jsx', 'vue', 'svelte', 'astro', 'json', 'jsonc', 'markdown'
       },
       command = 'biome',
-			method = 'formatting',
+      method = 'formatting',
       extra_args = {
         "--config-path", biome_config_path, "format", "--stdin-file-path", "$FILENAME"
       },
@@ -198,20 +198,6 @@ function M.js_dap(opts)
   dap.configurations.typescriptreact = dap.configurations.typescript
   dap.configurations.javascriptreact = dap.configurations.javascript
   return { dap = dap.configurations }
-end
-
-function M.js_neotest(opts)
-  opts = opts or {}
-  local neotest_ok, neotest = pcall(require, 'neotest')
-  if not neotest_ok then return {} end
-  local adapters = {}
-  local vitest_ok, vitest = pcall(require, 'neotest-vitest')
-  if vitest_ok then
-    table.insert(adapters, vitest(
-      { vitestCommand = opts.vitest_command or 'npx vitest' }))
-  end
-  if #adapters > 0 then neotest.setup({ adapters = adapters }) end
-  return { neotest = adapters }
 end
 
 function M.setup_js(opts)

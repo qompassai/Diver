@@ -2,9 +2,11 @@
 -- qompass ai diver zig config
 -- copyright (c) 2025 qompass ai, all rights reserved
 ------------------------------------
-local M = {}
+---@module 'config.lang.zig'
+local M = {} ---@class ZigConfigModule
 
-function M.zig_autocmds()
+
+function M.zig_autocmds() ---@return nil
   vim.api.nvim_create_autocmd('BufWritePre', {
     pattern = { "*.zig", "*.zon", "*.zine" },
     callback = function()
@@ -22,7 +24,9 @@ function M.zig_autocmds()
   })
 end
 
-function M.zig_conform()
+---@param opts? table
+function M.zig_conform(opts) ---@return table
+  opts = opts or {}
   local formatters = require('conform').conform_setup().formatters_by_ft.zig or {}
   return vim.tbl_deep_extend("force", {}, formatters)
 end
@@ -50,21 +54,24 @@ function M.zig_cmp()
   }
 end
 
-function M.zig_diagnostics()
+function M.zig_diagnostics() ---@param ctx { file: string, bufnr: integer }
   return function(ctx)
-    local output = vim.fn.systemlist(
-      vim.fn.shellescape(ctx.file))
+    local output = vim.fn.systemlist(vim.fn.shellescape(ctx.file))
     local diagnostics = {}
     for _, line in ipairs(output) do
       local line_num, col_num, code, msg = line:match(':(%d+):(%d+): (%S+): (.*)')
-      if line_num then
-        table.insert(diagnostics, {
-          lnum = tonumber(line_num) - 1,
-          col = tonumber(col_num) - 1,
-          message = string.format('[%s] %s', code, msg),
-          severity = vim.diagnostic.severity.WARN,
-          source = 'zlint'
-        })
+      if line_num and col_num and code and msg then
+        local lnum = tonumber(line_num)
+        local col = tonumber(col_num)
+        if lnum and col then
+          table.insert(diagnostics, {
+            lnum = lnum - 1,
+            col = col - 1,
+            message = string.format('[%s] %s', code, msg),
+            severity = vim.diagnostic.severity.WARN,
+            source = 'zlint',
+          })
+        end
       end
     end
     local ns = vim.api.nvim_create_namespace("zlint")
@@ -72,57 +79,23 @@ function M.zig_diagnostics()
   end
 end
 
-function M.zig_lamp()
-  local lsp_settings = M.zig_lsp().settings or {}
+function M.zig_lamp() ---@return table
   return {
     g = {
-      zig_lamp_zls_auto_install = true,
+      zig_lamp_zls_auto_install = false,
       zig_lamp_fall_back_sys_zls = true,
-      zig_lamp_zls_lsp_opt = vim.tbl_deep_extend("force", {}, lsp_settings),
+      zig_lamp_zls_lsp_opt = vim.tbl_deep_extend("force", {}, M.zig_lsp()),
       zig_lamp_pkg_help_fg = "#cf5c00",
       zig_lamp_zig_fetch_timeout = 5000,
     },
   }
 end
 
----@return table
-function M.zig_lsp()
-  local function find_executable(names)
-    return vim.iter(names):map(function(name)
-      return vim.fs.find(name, {
-        path = table.concat({
-          vim.fn.expand("~") .. '/.local/bin',
-          vim.fn.stdpath('data') .. '/mason/bin',
-          vim.env.PATH or ''
-        }, ':')
-      })[1]
-    end):next()
-  end
-  local zls_path = find_executable({ 'zls' }) or 'zls'
-  local zig_path = find_executable({ 'zig' }) or 'zig'
-  local zlint_path = find_executable({ 'zlint' }) or 'zlint'
-  return {
-    cmd = { zls_path },
-    settings = {
-      zls = {
-        enable_ast_check_diagnostics = true,
-        enable_build_on_save = true,
-        zig_exe_path = zig_path,
-        enable_inlay_hints = true,
-        inlay_hints = {
-          parameter_names = true,
-          variable_names = true,
-          builtin = true,
-          type_names = true
-        }
-      }
-    },
-    zlint_path = zlint_path
-  }
+function M.zig_lsp() ---@return nil
+  return {}
 end
 
----@return nil
-function M.zig_vim()
+function M.zig_vim() ---@return nil
   vim.g.zig_fmt_autosave = 1
   vim.g.zig_fmt_parse_errors = 1
   vim.g.zig_fmt_skip_files = ''
@@ -131,10 +104,9 @@ function M.zig_vim()
   vim.g.zig_highlight_builtin_functions = 1
 end
 
----@return table
-function M.zig_treesitter()
+function M.zig_treesitter() ---@return table
   return {
-    ensure_installed = {},
+    ensure_installed = { 'zig' },
     highlight = {
       enable = true,
       disable = {},
@@ -145,8 +117,9 @@ function M.zig_treesitter()
   }
 end
 
----@return ZigConfig
-function M.zig_cfg()
+---@param opts? table
+function M.zig_cfg(opts) ---@return ZigConfig
+  opts = opts or {}
   local lamp_cfg = M.zig_lamp().g
   for key, value in pairs(lamp_cfg) do
     vim.g[key] = value

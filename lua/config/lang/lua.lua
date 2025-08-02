@@ -61,7 +61,6 @@ function M.lua_cmp()
 end
 
 function M.lua_conform()
-  conform_cfg = require('config.lang.conform')
   local by_ft = conform_cfg.conform_cfg().formatters_by_ft
   local seen, res = {}, {}
   for _, ft in ipairs({ by_ft.lua or {}, by_ft.luau or {} }) do
@@ -99,12 +98,14 @@ function M.lua_luarocks(opts)
     build = true,
     rocks_path = vim.fn.expand('$HOME/.local/share/nvim/lazy/luarocks.nvim/.rocks'),
     rocks = {
-      'bit32', 'busted', 'lua-cjson', 'dkjson', 'fzy', 'httpclient', 'htmlparser', 'lpeg', 'lpugl', 'lua-lru', 'luautf8',
+      'bit32', 'busted', 'lua-cjson', 'dkjson', 'fzy', 'httpclient', 'htmlparser', 'lpeg', 'lpugl', 'lua-lru',
+      'luautf8',
       'luacheck',
       'lua-csnappy', 'luadbi', 'luafilesystem', 'luafilesystem-ffi', 'lua-genai', 'httprequestparser', 'luamark',
       'luaproc',
       'luar', 'luarocks-build-rust-mlua', 'lua-rtoml', 'luasocket', 'luaossl', 'luasql-postgres', 'luastruct',
-      'lua-resty-http', 'luasql-postgres', 'lua-sdl2', 'luasql-sqlite3', 'lua-term', 'lua-toml', 'luv', 'lzlib', 'magick',
+      'lua-resty-http', 'luasql-postgres', 'lua-sdl2', 'luasql-sqlite3', 'lua-term', 'lua-toml', 'luv', 'lzlib',
+      'magick',
       'opengl',
       'penlight', 'penlight-ffi', 'phplua', 'rapidjson', 'quantum', 'typecheck'
     },

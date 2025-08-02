@@ -3,7 +3,7 @@
 -- Copyright (C) 2025 Qompass AI, All rights reserved
 ------------------------------------------------------
 
----@type Options
+---@class NvimOptions
 local options = {
   ambiwidth = 'single',
   backend = 'kitty',
@@ -110,7 +110,7 @@ local options = {
 for k, v in pairs(options) do
   vim.opt[k] = v
 end
----@type Globals
+---@class NvimGlobals
 local globals = {
   editorconfig = true,
   git_command_ssh = 1,
@@ -130,6 +130,7 @@ local globals = {
 }
 for k, v in pairs(globals) do vim.g[k] = tostring(v) end
 vim.bo.modifiable = true
+vim.g.use_blink_cmp = true
 vim.opt.foldenable = false
 vim.g.mkdp_markdown_css = vim.fn.expand("~/.config/nvim/markdown.css")
 vim.opt.clipboard = 'unnamedplus'
