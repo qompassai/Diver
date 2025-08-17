@@ -64,10 +64,10 @@ function M.py_dap() ---@return nil
       return pyenv_local
     end
     local base = vim.fn.expand("~/.pyenv/versions/")
-    local fs = vim.uv.fs_scandir(base)
+    local fs = vim.fs_scandir(base)
     if fs then
       while true do
-        local name = vim.uv.fs_scandir_next(fs)
+        local name = vim.fs_scandir_next(fs)
         if not name then break end
         local python_candidate = base .. name .. "/bin/python"
         if vim.fs_stat(python_candidate) then
@@ -177,19 +177,16 @@ function M.get_pyenv_python(version)
   local base = vim.fn.expand("~/.pyenv/versions/")
   if version then
     local path = base .. version .. "/bin/python"
-    if vim.fs_stat(path) then
+    if vim.fn.filereadable(path) == 1 then
       return path
     else
       return nil
     end
   end
-  local fs = vim.fs_scandir(base)
-  if not fs then return nil end
-  while true do
-    local name = vim.uv.fs_scandir_next(fs)
-    if not name then break end
-    local candidate = base .. name .. "/bin/python"
-    if vim.fs_stat(candidate) then
+  local pyenv_dirs = vim.fn.glob(base .. "*/", true, true)
+  for _, dir in ipairs(pyenv_dirs) do
+    local candidate = dir .. "bin/python"
+    if vim.fn.filereadable(candidate) == 1 then
       return candidate
     end
   end
@@ -214,15 +211,11 @@ function M.py_project_tools(opts) ---@return nil
   end
   local function get_pyenv_python_fallback()
     local base = vim.fn.expand("~/.pyenv/versions/")
-    local fs = vim.uv.fs_scandir(base)
-    if fs then
-      while true do
-        local name = vim.uv.fs_scandir_next(fs)
-        if not name then break end
-        local python_path = base .. name .. "/bin/python"
-        if vim.fs.exists(python_path) then
-          return python_path
-        end
+    local pyenv_dirs = vim.fn.glob(base .. "*/", true, true)
+    for _, dir in ipairs(pyenv_dirs) do
+      local python_path = dir .. "bin/python"
+      if vim.fn.filereadable(python_path) == 1 then
+        return python_path
       end
     end
     return nil

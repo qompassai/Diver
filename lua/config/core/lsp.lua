@@ -71,12 +71,12 @@ vim.lsp.enable({
   'erg_language_server',
   'erlangls',
   'esbonio',
-  'eslint',
+  -- 'eslint',
   'facility_language_server',
   'fennel_language_server',
   'fennel_ls',
   'fish_lsp',
-  'flow',
+  --  'flow',
   'flux_lsp',
   'foam_ls',
   'fortls',
@@ -93,7 +93,7 @@ vim.lsp.enable({
   'gitlab_ci_ls',
   'glasgow',
   'gleam',
-  'glint',
+  --'glint',
   'glsl_analyzer',
   'glslls',
   'gnls',
@@ -188,7 +188,7 @@ vim.lsp.enable({
   'pyrefly',
   --  'pyright',
   'qmlls',
-  'quick_lint_js',
+  -- 'quick_lint_js',
   'r_language_server',
   'regal',
   'regols',
@@ -314,7 +314,7 @@ vim.lsp.config('*', {
     {
       textDocument = {
         synchronization = {
-          dynamicRegistration = true,
+          dynamicRegistration = false,
           willSave = false,
           willSaveWaitUntil = false,
           didSave = true,
@@ -408,33 +408,7 @@ vim.api.nvim_create_autocmd({ "BufEnter", "CursorHold", "InsertLeave" }, {
     vim.lsp.codelens.refresh()
   end,
 })
-vim.api.nvim_create_autocmd("LspAttach", {
-  callback = function(args)
-    local client = vim.lsp.get_client_by_id(args.data.client_id)
-    if client and client.server_capabilities.documentHighlightProvider then
-      local bufnr = args.buf
-      vim.api.nvim_create_autocmd({ "CursorHold", "CursorHoldI" }, {
-        buffer = bufnr,
-        callback = vim.lsp.buf.document_highlight,
-      })
-      vim.api.nvim_create_autocmd({ "CursorMoved", "CursorMovedI" }, {
-        buffer = bufnr,
-        callback = vim.lsp.buf.clear_references,
-      })
-    end
-  end,
-})
-vim.api.nvim_create_autocmd('LspAttach', {
-  callback = function(args)
-    vim.lsp.document_color.enable(true, args.buf)
-  end
-})
 vim.keymap.set('i', '<c-space>', function()
   vim.lsp.completion.get()
 end)
-vim.api.nvim_create_autocmd('LspAttach', {
-  callback = function(args)
-    vim.lsp.document_color.enable(true, args.buf)
-  end
-})
 return M
