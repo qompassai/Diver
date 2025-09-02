@@ -31,7 +31,7 @@ vim.lsp.enable({
   'bright_script',
   'bsl_ls',
   'buck2',
-  'buddy_ls',
+  -- 'buddy_ls',
   'buf',
   'buf_ls',
   'bufls',
@@ -67,7 +67,7 @@ vim.lsp.enable({
   'ember',
   'emmet_language_server',
   'emmet_ls',
-  'emmylua_ls',
+  -- 'emmylua_ls',
   'erg_language_server',
   'erlangls',
   'esbonio',
@@ -150,7 +150,7 @@ vim.lsp.enable({
   'neocmake',
   'nextflow_ls',
   'nextls',
-  'nginx_language_server',
+  --'nginx_language_server',
   'nickel_ls',
   'nil_ls',
   'nixd',
@@ -264,7 +264,7 @@ vim.lsp.enable({
   'ty',
   'typeprof',
   'typst_lsp',
-  'viva',
+  -- 'viva',
   'ungrammar',
   'unison',
   'unocss',
@@ -281,7 +281,7 @@ vim.lsp.enable({
   'vtsls',
   'vue_ls',
   'wasm_language_tools',
-  'wgsl_analyzer',
+  -- 'wgsl_analyzer',
   'yamlls',
   'yls',
   'ziggy',
@@ -289,8 +289,6 @@ vim.lsp.enable({
   --	'zk',
   'zls'
 })
-vim.lsp.set_log_level 'trace'
-require('vim.lsp.log').set_format_func(vim.inspect)
 vim.diagnostic.show(nil, nil, { virtual_text = true })
 vim.lsp.document_color.enable(not vim.lsp.document_color.is_enabled())
 vim.lsp.semantic_tokens.enable(not vim.lsp.semantic_tokens.is_enabled())

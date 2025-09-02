@@ -4,17 +4,17 @@
 -- ----------------------------------------
 
 vim.lsp.config['html'] = {
-	cmd = { 'vscode-html-language-server', '--stdio' },
-	filetypes = { 'html', 'templ', 'markdown' },
-	root_markers = { 'package.json', '.git' },
-	single_file_support = true,
-	settings = {},
-	init_options = {
-		provideFormatter = true,
-		embeddedLanguages = {
-			css = true,
-			javascript = true
-		},
-		configurationSection = { 'html', 'css', 'javascript' },
-	},
+  cmd = { 'vscode-html-language-server', '--stdio' },
+  filetypes = { 'html', 'templ' },
+  root_markers = { 'package.json', 'package.json5', '.git' },
+  single_file_support = true,
+  settings = {},
+  init_options = {
+    provideFormatter = true,
+    embeddedLanguages = {
+      css = true,
+      javascript = true
+    },
+    configurationSection = { 'html', 'css', 'javascript' },
+  },
 }

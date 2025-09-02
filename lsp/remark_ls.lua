@@ -15,5 +15,4 @@ vim.lsp.config['remark_ls'] = {
     '.remarkrc.yaml',
     '.remarkignore',
   },
-  single_file_support = true,
 }
