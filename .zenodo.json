@@ -5,8 +5,16 @@
   "language": "eng",
   "upload_type": "software",
   "access_right": "open",
+<<<<<<< HEAD
   "version": "v2025-09-03-14-ged6fe26",
   "publication_date": "2025-09-20",
+||||||| parent of fe1cb31 (Update 2025-10-21)
+  "version": "2025-08-20-16-gfef1794",
+  "publication_date": "2025-08-29",
+=======
+  "version": "2025-08-20-17-g8dc14b4",
+  "publication_date": "2025-10-21",
+>>>>>>> fe1cb31 (Update 2025-10-21)
   "creators": [
     {
       "name": "Porter, Matthew A.",
@@ -18,7 +26,13 @@
   "keywords": ["AI","Education","Healthcare","Post-Quantum Cryptography","Quantum","config","lua","neovim"],
   "related_identifiers": [
     { "identifier": "https://github.com/qompassai/Diver", "relation": "isSupplementTo", "resource_type": "software" },
+<<<<<<< HEAD
     { "identifier": "https://github.com/qompassai/Diver/releases/tag/v2025-09-20", "relation": "isIdenticalTo", "resource_type": "software" },
+||||||| parent of fe1cb31 (Update 2025-10-21)
+    { "identifier": "https://github.com/qompassai/Diver/releases/tag/v2025-08-29", "relation": "isIdenticalTo", "resource_type": "software" },
+=======
+    { "identifier": "https://github.com/qompassai/Diver/releases/tag/v2025-10-21", "relation": "isIdenticalTo", "resource_type": "software" },
+>>>>>>> fe1cb31 (Update 2025-10-21)
     { "identifier": "https://orcid.org/0000-0002-0302-4812", "relation": "isAuthorOf", "resource_type": "person" },
     { "identifier": "https://github.com/qompassai/Diver/actions", "relation": "isCompiledBy", "resource_type": "workflow" },
     { "identifier": "https://loop.frontiersin.org/people/2230223", "relation": "isAuthorOf", "resource_type": "person" },

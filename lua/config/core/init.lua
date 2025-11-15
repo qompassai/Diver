@@ -4,7 +4,6 @@
 -- ----------------------------------------
 require('config.core.autoload')
 require('config.core.flash')
-require('config.core.lsp')
 require('config.core.mason')
 require('config.core.none-ls')
 require('config.core.tree')

@@ -2,6 +2,7 @@
 -- Qompass AI Diver Plugins Module
 -- Copyright (C) 2025 Qompass AI, All rights reserved
 ------------------------------------------------------
+
 return {
   { import = 'plugins.core' }, { import = 'plugins.ai' }, {
   { import = 'plugins.cloud' }, { import = 'plugins.data' },

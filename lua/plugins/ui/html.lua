@@ -8,7 +8,7 @@ return {
         'windwp/nvim-ts-autotag',
 		event = 'VeryLazy',
 		dependencies = {
-			'mattn/emmet-vim', 'ibhagwan/fzf-lua'},
+			'ibhagwan/fzf-lua'},
 			config = function(_, opts)
 				html_cfg.html_cfg(opts)
 			end,

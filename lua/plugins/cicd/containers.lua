@@ -11,7 +11,7 @@ return {
   dependencies = {
     'nvim-lua/plenary.nvim', 'MunifTanjim/nui.nvim',
     'nvimtools/none-ls.nvim', 'mgierada/lazydocker.nvim',
-    'neovim/nvim-lspconfig', 'b0o/schemastore.nvim'
+     'b0o/schemastore.nvim'
   },
   cmd = {
     'ContainerList', 'ContainerLogs', 'ContainerExec', 'ContainerStart',

@@ -17,7 +17,7 @@ return {
                 options = {
                     mail_client = {text = 'neomutt', html = 'neomutt'},
                     auto_break_md = false,
-                    neomutt_config = '$HOME/.neomuttrc',
+                    neomutt_config = '$XDG_CONFIG_HOME/neomutt/.neomuttrc',
                     mailx_account = nil,
                     save_log = true,
                     log_file = './nvmm.log',

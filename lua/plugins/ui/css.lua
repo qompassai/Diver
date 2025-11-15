@@ -14,7 +14,7 @@ return {
 		name = "tailwind-tools",
 		build = ":UpdateRemotePlugins",
 		dependencies = {
-			"nvim-treesitter/nvim-treesitter",
+		--	"nvim-treesitter/nvim-treesitter",
 			"ibhagwan/fzf-lua",
 		},
 		config = function(_, opts)
