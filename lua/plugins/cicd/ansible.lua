@@ -6,7 +6,6 @@ return {
 	"pearofducks/ansible-vim",
 	ft = { 'yaml.ansible', 'ansible' },
 	dependencies = {
-		"redhat-developer/yaml-language-server",
 		'b0o/schemastore.nvim',
 	},
 	config = function(_, opts)

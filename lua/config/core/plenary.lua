@@ -23,7 +23,7 @@ function M.collect_nls_sources()
           :gsub("%.lua$", ""):gsub("/", ".")
     else
       vim.notify("Invalid Path object for " .. tostring(file_path), vim.log.levels.WARN)
-      goto continue       -- skip this file_path
+      goto continue
     end
     local ok, mod = pcall(require, mod_name)
     if not ok or type(mod) ~= "table" then

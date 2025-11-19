@@ -3,27 +3,43 @@
 -- Copyright (C) 2025 Qompass AI, All rights reserved
 -- ----------------------------------------
 vim.lsp.config['ansiblels'] = {
-	cmd = { 'ansible-language-server', '--stdio' },
-	settings = {
-		ansible = {
-			python = {
-				interpreterPath = 'python',
-			},
-			ansible = {
-				path = 'ansible',
-			},
-			executionEnvironment = {
-				enabled = true,
-			},
-			validation = {
-				enabled = true,
-				lint = {
-					enabled = true,
-					path = 'ansible-lint',
-				},
-			},
-		},
-	},
-	filetypes = { 'yaml.ansible' },
-	root_markers = { 'ansible.cfg', '.ansible-lint' },
+  cmd = { 'ansible-language-server', '--stdio' },
+  filetypes = { 'yaml.ansible', 'ansible' },
+  settings = {
+    ansible = {
+      ansible = {
+        path = "ansible",
+        useFullyQualifiedCollectionNames = true,
+      },
+      ansibleLint = {
+        enabled = true,
+        path = "ansible-lint",
+        args = {},
+      },
+      executionEnvironment = {
+        enabled = false,
+        containerEngine = "auto",
+        image = "",
+        pullPolicy = "missing",
+        volumeMounts = {},
+      },
+      python = {
+        activationScript = "",
+      },
+      completion = {
+        provideRedirectModules = true,
+        provideModuleOptions = true,
+        provideModuleParameters = true,
+      },
+      validation = {
+        enabled = true,
+        lint = true,
+        schemas = {},
+      },
+      telemetry = {
+        enabled = false,
+      },
+    },
+  },
+  root_markers = { 'ansible.cfg', '.ansible-lint' },
 }

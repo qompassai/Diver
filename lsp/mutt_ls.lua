@@ -6,4 +6,8 @@
 vim.lsp.config['mutt_ls'] = {
   cmd = { "mutt-language-server" },
   filetypes = { 'muttrc', 'neomuttrc' },
+  flags = {
+    debounce_text_changes = 150,
+  },
+  single_file_support = true,
 }

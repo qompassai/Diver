@@ -2,7 +2,6 @@
 -- Qompass AI MDX Analyzer LSP Config
 -- Copyright (C) 2025 Qompass AI, All rights reserved
 ------------------------------------------------------
-
 vim.lsp.config['mdx_analyzer'] = {
   autostart = true,
   cmd = { 'mdx-language-server', '--stdio' },
@@ -42,9 +41,4 @@ vim.lsp.config['mdx_analyzer'] = {
       },
     },
   },
-  on_attach = function(client, bufnr)
-    if client.server_capabilities and client.server_capabilities.documentFormattingProvider then
-      vim.api.nvim_buf_set_option(bufnr, 'formatexpr', 'v:lua.vim.lsp.formatexpr()')
-    end
-  end,
 }

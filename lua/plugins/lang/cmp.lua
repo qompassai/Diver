@@ -10,7 +10,7 @@ return {
     version = '1.*',
     enabled = function() return vim.g.use_blink_cmp end,
     dependencies = {
-      { 'L3MON4D3/LuaSnip',    version = 'v2.*' },
+    --  { 'L3MON4D3/LuaSnip',    version = 'v2.*' },
       'rafamadriz/friendly-snippets', 'hrsh7th/cmp-nvim-lua',
       'hrsh7th/cmp-buffer', 'moyiz/blink-emoji.nvim',
       'Kaiser-Yang/blink-cmp-dictionary',

@@ -3,14 +3,10 @@
 -- Copyright (C) 2025 Qompass AI, All rights reserved
 -- --------------------------------------------------
 return {
-    cmd = {
-        'nixd'
-    },
-    filetypes = {
-        'nix'
-    },
-    root_markers = {
-        'flake.nix',
-        'git'
-    },
+  cmd = {
+    'nixd'
+  },
+  filetypes = {
+    'nix'
+  },
 }
