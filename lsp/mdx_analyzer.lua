@@ -8,37 +8,71 @@ vim.lsp.config['mdx_analyzer'] = {
   filetypes = { 'mdx' },
   root_dir = vim.fn.getcwd,
   root_markers = { 'package.json', 'package.json5' },
-  single_file_support = true,
+  codeActionProvider = {
+    codeActionKinds = { '', 'quickfix', 'refactor', 'source.organizeImports' },
+    resolveProvider = true,
+  },
+  colorProvider = false,
+  semanticTokensProvider = {
+    full = true,
+    legend = {
+      tokenModifiers = {
+        'declaration',
+        'definition',
+        'readonly',
+        'static',
+        'deprecated',
+        'documentation',
+        'defaultLibrary',
+      },
+      tokenTypes = {
+        'namespace',
+        'type',
+        'class',
+        'enum',
+        'interface',
+        'typeParameter',
+        'parameter',
+        'variable',
+        'property',
+        'enumMember',
+        'event',
+        'function',
+        'method',
+        'macro',
+        'keyword',
+        'modifier',
+        'comment',
+        'string',
+        'number',
+        'regexp',
+        'operator',
+        'decorator',
+      },
+    },
+    range = true,
+  },
   init_options = {
     typescript = {
-      tsdk = vim.fn.stdpath("data") .. '/mason/packages/typescript-language-server/node_modules/typescript/lib',
+      enabled = true,
     },
+    locale = 'en',
   },
   settings = {
     mdx = {
-      lint = {
-        enabled = true,
-        rules = {
-          ["no-dead-urls"] = "error",
-          ["no-duplicate-headings"] = "warn",
-          ["first-heading-level"] = { 2, "error" },
+      trace = {
+        server = {
+          verbosity = 'verbose',
+          format    = 'text',
         },
       },
-      format = {
-        enabled = true,
-        prettier = {
-          configPath = ".prettierrc",
-        },
-      },
-      diagnostics = {
-        enable = true,
-        severity = {
-          error = "Error",
-          warning = "Warning",
-          info = "Information",
-          hint = "Hint",
-        },
+      validate = {
+        validateReferences = 'info',
       },
     },
   },
+  flags = {
+    debounce_text_changes = 150,
+  },
+  single_file_support = true,
 }

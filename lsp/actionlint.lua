@@ -2,6 +2,7 @@
 -- Qompass AI GitHub Actions Lint Spec (actionlint)
 -- Copyright (C) 2025 Qompass AI, All rights reserved
 ------------------------------------------------------
+-- Reference: https://github.com/rhysd/actionlint
 vim.lsp.config['actionlint'] = {
   cmd = { 'actionlint' },
   filetypes = { 'yaml', 'yaml.ghactions', 'github-actions' },

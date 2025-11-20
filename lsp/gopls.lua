@@ -1,5 +1,5 @@
 -- /qompassai/Diver/lsp/gopls.lua
--- Qompass AI Gopls LSP Config
+-- Qompass AI Gopls LSP Spec
 -- Copyright (C) 2025 Qompass AI, All rights reserved
 -- --------------------------------------------------
 return {

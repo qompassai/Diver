@@ -2,6 +2,7 @@
 -- Qompass AI Angular LSP Spec (ngserver / angular-language-server)
 -- Copyright (C) 2025 Qompass AI, All rights reserved
 ------------------------------------------------------
+-- Reference: https://angular.dev/tools/language-service
 local project_library_path = vim.fn.getcwd() .. '/node_modules'
 vim.lsp.config['angularls'] = {
   cmd = {

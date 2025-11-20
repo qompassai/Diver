@@ -3,7 +3,7 @@
 -- Copyright (C) 2025 Qompass AI, All rights reserved
 ------------------------------------------------------
 vim.lsp.config['ols'] = {
-  cmd = 'ols_bin',
+  cmd = { 'ols' }, ---@type vim.lsp.Config
   filetypes = { 'odin' },
   codeActionProvider = {
     codeActionKinds = { '', 'quickfix', 'refactor', 'source.organizeImports' },
@@ -25,10 +25,6 @@ vim.lsp.config['ols'] = {
   settings = {
     ols = {
     },
-  },
-
-  flags = {
-    debounce_text_changes = 150,
   },
   single_file_support = true,
 }
