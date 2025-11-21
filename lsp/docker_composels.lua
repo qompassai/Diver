@@ -2,6 +2,8 @@
 -- Qompass AI Docker-Compose LSP Config
 -- Copyright (C) 2025 Qompass AI, All rights reserved
 -- ---------------------------------------------------
+-- Reference: https://github.com/microsoft/compose-language-service
+-- pnpm add -g @microsoft/compose-language-service
 vim.lsp.config['docker_compose_language_service'] = {
   autostart = true,
   cmd = { 'docker-compose-langserver', '--stdio' },

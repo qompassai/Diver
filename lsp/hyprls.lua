@@ -11,7 +11,7 @@ vim.lsp.config['hyprls'] = {
     hyprls = {
       completion = {
         enable = true,
-        keywordSnippet = "Disable",
+        keywordSnippet = "Enable",
       },
       telemetry = {
         enable = false,

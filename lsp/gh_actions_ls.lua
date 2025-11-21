@@ -1,8 +1,9 @@
 -- /qompassai/Diver/lsp/gh_actions_ls.lua
--- Qompass AI gh_actions_ls LSP Config
+-- Qompass AI Github Actions LSP Config
 -- Copyright (C) 2025 Qompass AI, All rights reserved
 ------------------------------------------------------
-
+-- Reference: https://github.com/lttb/gh-actions-language-server
+-- pnpm add -g gh-actions-language-server
 vim.lsp.config['gh_actions_ls'] = {
   autostart = true,
   cmd = { 'gh-actions-language-server', '--stdio' },

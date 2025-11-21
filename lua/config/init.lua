@@ -31,7 +31,6 @@ function M.config(opts)
   vim.loader.enable()
   safe_require('types')
   safe_require('utils')
-  safe_require('config.options')
   safe_require('config.autocmds')
   local keys = safe_require('config.keymaps')
   if keys and keys.setup then keys.setup() end

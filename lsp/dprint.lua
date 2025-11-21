@@ -2,7 +2,6 @@
 -- Qompass AI DPrint LSP Config
 -- Copyright (C) 2025 Qompass AI, All rights reserved
 -- ----------------------------------------
-local util = require 'lspconfig.util'
 vim.lsp.config['dprint'] = {
   cmd = { 'dprint', 'lsp' },
   filetypes = {
@@ -19,7 +18,5 @@ vim.lsp.config['dprint'] = {
     'roslyn',
     'graphql',
   },
-  root_dir = util.root_pattern('dprint.json', '.dprint.json', 'dprint.jsonc', '.dprint.jsonc'),
-  single_file_support = true,
   settings = {},
 }
