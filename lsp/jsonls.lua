@@ -4,14 +4,13 @@
 ------------------------------------------------------
 vim.lsp.config['jsonls'] = {
   cmd = { 'vscode-json-language-server', '--stdio' },
-  filetypes = { 'json', 'jsonc' },
+  filetypes = { 'json', 'jsonc', 'json5' },
   init_options = {
     provideFormatter = true,
   },
   root_markers = { '.git' },
   settings = {
     json = {
-      document_highlight = { enabled = true },
       validate = { enable = true },
       schemas = {
         {
@@ -41,17 +40,9 @@ vim.lsp.config['jsonls'] = {
       },
     }
   },
-  on_attach = function(client, bufnr)
-    vim.keymap.set('n', 'K', vim.lsp.buf.hover, { buffer = bufnr })
-    client.server_capabilities.documentHighlightProvider = false
-  end,
-  flags = {
-    debounce_text_changes = 150,
-  },
-  single_file_support = true,
 }
 vim.api.nvim_create_autocmd({ "BufRead", "BufNewFile" }, {
-  pattern = { "*.json5" },
+  pattern = { "*.jsonc" },
   callback = function()
     vim.bo.filetype = "jsonc"
   end,
