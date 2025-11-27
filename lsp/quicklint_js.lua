@@ -1,0 +1,5 @@
+-- /qompassai/Diver/lsp/quicklint_js.lua
+-- Qompass AI QuickLint-JS LSP Spec
+-- Copyright (C) 2025 Qompass AI, All rights reserved
+-- --------------------------------------------------
+-- pnpm add -g quick-lint-js

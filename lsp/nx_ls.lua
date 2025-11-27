@@ -1,4 +1,5 @@
--- autoload.lua
--- Qompass AI Autoload Config
+-- nx_ls.lua
+-- Qompass AI - [Add description here]
 -- Copyright (C) 2025 Qompass AI, All rights reserved
 -- ----------------------------------------
+-- pnpm add -g nxls

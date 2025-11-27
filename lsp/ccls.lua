@@ -23,9 +23,9 @@ vim.lsp.config('ccls', {
   cmd = { 'ccls' },
   filetypes = { 'c', 'cpp', 'objc', 'objcpp', 'cuda' },
   offset_encoding = 'utf-32',
-  root_dir = function(fname)
-    return vim.fs.dirname(vim.fs.find({ 'compile_commands.json', '.ccls', '.git' }, { upward = true, path = fname })[1])
-  end,
+ -- root_dir = function(fname)
+ --   return vim.fs.dirname(vim.fs.find({ 'compile_commands.json', '.ccls', '.git' }, { upward = true, path = fname })[1])
+--  end,
   init_options = {
     compilationDatabaseDirectory = 'build',
     index = { threads = 0 },

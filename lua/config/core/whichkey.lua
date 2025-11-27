@@ -5,19 +5,19 @@
 
 local WK = {}
 WK.opts = {
-  debug     = false,
-  defer     = function(ctx)
+  debug = false,
+  defer = function(ctx)
     return ctx.mode == "V" or ctx.mode == "<C-V>"
   end,
-  expand    = 0,
-  icons     = {
+  expand = 0,
+  icons = {
     breadcrumb = "»",
-    ellipsis   = "…",
-    group      = "+",
-    mappings   = true,
-    separator  = "➜",
-    colors     = true,
-    keys       = {
+    ellipsis = "…",
+    group = "+",
+    mappings = true,
+    separator = "➜",
+    colors = true,
+    keys = {
       BS = "󰁮",
       CR = "󰌑 ",
       Down = " ",
@@ -44,57 +44,59 @@ WK.opts = {
       M = "󰘵 ",
       S = "󰘶 ",
     },
-    rules      = {},
+    rules = {},
   },
-  layout    = {
+  layout = {
     spacing = 3,
-    width   = { min = 20 },
+    width = { min = 20 },
   },
-  notify    = true,
-  plugins   = {
-    marks     = true,
-    presets   = {
-      g            = true,
-      motions      = true,
-      nav          = true,
-      operators    = true,
+  notify = true,
+  plugins = {
+    marks = true,
+    presets = {
+      g = true,
+      motions = true,
+      nav = true,
+      operators = true,
       text_objects = true,
-      windows      = true,
-      z            = true,
+      windows = true,
+      z = true,
     },
     registers = true,
-    spelling  = { enabled = true, suggestions = 20 },
+    spelling = { enabled = true, suggestions = 20 },
   },
-  preset    = "modern",
-  replace   = {
+  preset = "modern",
+  replace = {
     desc = {
-      { "^:%s*",            "" },
-      { "^%+",              "" },
+      { "^:%s*", "" },
+      { "^%+", "" },
       { "<Plug>%(?(.*)%)?", "%1" },
-      { "<[cC]md>",         "" },
-      { "<[cC][rR]>",       "" },
-      { "<[sS]ilent>",      "" },
-      { "^call%s+",         "" },
-      { "^lua%s+",          "" },
+      { "<[cC]md>", "" },
+      { "<[cC][rR]>", "" },
+      { "<[sS]ilent>", "" },
+      { "^call%s+", "" },
+      { "^lua%s+", "" },
     },
     key = {
-      function(key) return require("which-key.view").format(key) end,
+      function(key)
+        return require("which-key.view").format(key)
+      end,
     },
   },
   show_help = true,
   show_keys = true,
-  sort      = { "local", "order", "group", "alphanum", "mod" },
-  spec      = {},
-  triggers  = {
+  sort = { "local", "order", "group", "alphanum", "mod" },
+  spec = {},
+  triggers = {
     { "<auto>", mode = "nixsotc" },
-    { "a",      mode = { "n", "v" } },
+    { "a", mode = { "n", "v" } },
   },
-  win       = {
+  win = {
     no_overlap = true,
-    padding    = { 1, 2 },
-    title      = true,
-    title_pos  = "center",
-    zindex     = 1000,
+    padding = { 1, 2 },
+    title = true,
+    title_pos = "center",
+    zindex = 1000,
   },
 }
 function WK.setup(extra)

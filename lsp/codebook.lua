@@ -10,7 +10,7 @@ vim.lsp.config['codebook'] = {
     'tsx', 'jsx', 'go', 'rust', 'c', 'cpp',
     'markdown', 'mdx', 'yaml', 'toml', 'json',
   },
-  root_dir = vim.fn.getcwd,
+ -- root_dir = vim.fn.getcwd,
   single_file_support = true,
   settings = {},
   flags = {

@@ -27,7 +27,7 @@ vim.lsp.config['texlab'] = {
         args = {},
       },
       chktex = {
-        onOpenAndSave = false,
+        onOpenAndSave = true,
         onEdit = false,
       },
       diagnosticsDelay = 300,
@@ -57,7 +57,6 @@ vim.lsp.config['texlab'] = {
         vim.notify('Build ' .. status[result.status], vim.log.levels.INFO)
       end, bufnr)
     end
-
     local function buf_search()
       local win = vim.api.nvim_get_current_win()
       local params = vim.lsp.util.make_position_params(win, client.offset_encoding)
@@ -118,7 +117,6 @@ vim.lsp.config['texlab'] = {
         )
       end
     end
-
     local function buf_find_envs()
       local win = vim.api.nvim_get_current_win()
       client:exec_cmd(
@@ -150,7 +148,6 @@ vim.lsp.config['texlab'] = {
         end
       )
     end
-
     local function buf_change_env()
       vim.ui.input({ prompt = 'New environment name: ' }, function(input)
         if not input or input == '' then
@@ -191,3 +188,14 @@ vim.lsp.config['texlab'] = {
   },
   single_file_support = true,
 }
+vim.api.nvim_create_autocmd('BufWritePre', {
+  pattern = { '*.tex', '*.bib' },
+  callback = function(args)
+    vim.lsp.buf.format({
+      bufnr = args.buf,
+      filter = function(client)
+        return client.name == 'texlab'
+      end,
+    })
+  end,
+})

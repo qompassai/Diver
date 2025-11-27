@@ -30,8 +30,8 @@ vim.lsp.config['lemminx'] = {
         },
       },
       logs = {
-        enabled = false,
-        trace = false,
+        enabled = true,
+        trace = true,
       },
       hover = {
         enabled = true,

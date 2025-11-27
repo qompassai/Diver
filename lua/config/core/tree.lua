@@ -9,7 +9,7 @@ function M.treesitter(opts)
   opts = opts or {}
   require("nvim-treesitter.install").prefer_git = true
   local configs = require("nvim-treesitter.configs")
-  local langs = { 'lang.go', 'lang.rust', 'ui.html', 'ui.md' }
+  local langs = { "lang.go", "lang.rust", "ui.html", "ui.md" }
   local merged_lang_opts = {}
   for _, lang_mod in ipairs(langs) do
     local ok, mod = pcall(require, "config." .. lang_mod)
@@ -23,15 +23,15 @@ function M.treesitter(opts)
   local base_config = {
     auto_install = true,
     ensure_installed = {
-      'css',
-      'go',
-      'html',
-      'json',
-      'json5',
-      'lua',
-      'markdown',
-      'python',
-      'rust',
+      "css",
+      "go",
+      "html",
+      "json",
+      "json5",
+      "lua",
+      "markdown",
+      "python",
+      "rust",
     },
     highlight = {
       additional_vim_regex_highlighting = true,
@@ -49,13 +49,13 @@ function M.treesitter(opts)
     },
     indent = { enable = true },
     modules = {
-      'folke/twilight.nvim',
-      'nvim-treesitter/nvim-treesitter-context',
-      'nvim-treesitter/playground',
-      'SmiteshP/nvim-navic',
-      'nvim-treesitter-refactor',
-      'nvim-treesitter-textobjects',
-      'milisims/tree-sitter-org',
+      "folke/twilight.nvim",
+      "nvim-treesitter/nvim-treesitter-context",
+      "nvim-treesitter/playground",
+      "SmiteshP/nvim-navic",
+      "nvim-treesitter-refactor",
+      "nvim-treesitter-textobjects",
+      "milisims/tree-sitter-org",
     },
     textobjects = {
       select = {

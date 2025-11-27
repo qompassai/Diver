@@ -10,28 +10,27 @@ function M.flash_opts(extra)
   local o = {
     modes = {
       search = {
-        enabled   = true,
+        enabled = true,
         highlight = { backdrop = true },
-        jump      = { history = true, register = true, nohlsearch = true },
+        jump = { history = true, register = true, nohlsearch = true },
       },
       char = {
         enabled = true,
         config = function(opts)
-          opts.autohide =
-            vim.fn.mode(true):find("no") and vim.v.operator == "y"
+          opts.autohide = vim.fn.mode(true):find("no") and vim.v.operator == "y"
         end,
         chars = { "f", "F", "t", "T", ";", "," },
-        keys  = { "f", "F", "t", "T", ";", "," },
+        keys = { "f", "F", "t", "T", ";", "," },
       },
       treesitter = {
         labels = "abcdefghijklmnopqrstuvwxyz",
-        jump   = { pos = "start" },
+        jump = { pos = "start" },
         search = { incremental = true },
       },
     },
     prompt = {
       enabled = true,
-      prefix  = { { "⚡", "FlashPromptIcon" } },
+      prefix = { { "⚡", "FlashPromptIcon" } },
     },
   }
   if extra then

@@ -2,35 +2,56 @@
 -- Qompass AI HyprLS LSP Spec
 -- Copyright (C) 2025 Qompass AI, All rights reserved
 ------------------------------------------------------
-
+-- go install github.com/hyprland-community/hyprls/cmd/hyprls@latest
 vim.lsp.config['hyprls'] = {
   cmd = { 'hyprls' },
   filetypes = { 'hyprlang', 'hypr' },
   single_file_support = true,
   settings = {
     hyprls = {
+      colorProvider = {
+        enable = true
+      },
       completion = {
         enable = true,
         keywordSnippet = "Enable",
       },
+      diagnostics = {
+        enable = true
+      },
+      documentSymbol = {
+        enable = true
+      },
+      formatting = {
+        enable = true
+      },
+      hover = {
+        enable = true
+      },
+      preferIgnoreFile = true,
+      semanticTokens = {
+        enable = true
+      },
       telemetry = {
-        enable = false,
+        enable = false
       },
     },
   },
-  flags = {
-    debounce_text_changes = 150,
-  },
-}
-
-vim.api.nvim_create_autocmd({ 'BufEnter', 'BufWinEnter' }, {
+  vim.api.nvim_create_autocmd({ 'BufEnter', 'BufWinEnter' }, {
     pattern = { "*.hl", "hypr*.conf" },
     callback = function(event)
-        vim.notify("starting hyprls for " .. vim.inspect(event))
-        vim.lsp.start {
-            name = "hyprlang",
-            cmd = { "hyprls" },
-            root_dir = vim.fn.getcwd(),
+      print(string.format("starting hyprls for %s", vim.inspect(event)))
+      vim.lsp.start {
+        name = "hyprlang",
+        cmd = { "hyprls" },
+        root_dir = vim.fn.getcwd(),
+        settings = {
+          hyprls = {
+            preferIgnoreFile = true,
+            ignore = { "hyprlock.conf", "hypridle.conf" }
+          }
         }
+      }
     end
-})
+  })
+}

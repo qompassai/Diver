@@ -4,9 +4,7 @@
 -- ----------------------------------------
 local uv = vim.uv
 local fs = vim.fs
-
 local group = vim.api.nvim_create_augroup('lspconfig.roslyn_ls', { clear = true })
-
 ---@param client vim.lsp.Client
 ---@param target string
 local function on_init_sln(client, target)
@@ -16,7 +14,6 @@ local function on_init_sln(client, target)
     solution = vim.uri_from_fname(target),
   })
 end
-
 ---@param client vim.lsp.Client
 ---@param project_files string[]
 local function on_init_project(client, project_files)
@@ -28,7 +25,6 @@ local function on_init_project(client, project_files)
     end, project_files),
   })
 end
-
 ---@param client vim.lsp.Client
 local function refresh_diagnostics(client)
   for buf, _ in pairs(vim.lsp.get_client_by_id(client.id).attached_buffers) do
@@ -53,7 +49,6 @@ local function roslyn_handlers()
     end,
     ['workspace/_roslyn_projectNeedsRestore'] = function(_, result, ctx)
       local client = assert(vim.lsp.get_client_by_id(ctx.client_id))
-
       ---@diagnostic disable-next-line: param-type-mismatch
       client:request('workspace/_roslyn_restore', result, function(err, response)
         if err then
@@ -78,7 +73,6 @@ local function roslyn_handlers()
     end,
   }
 end
-
 ---@type vim.lsp.Config
 return {
   name = 'roslyn_ls',
@@ -93,13 +87,11 @@ return {
   },
   filetypes = { 'cs' },
   handlers = roslyn_handlers(),
-
   commands = {
     ['roslyn.client.completionComplexEdit'] = function(command, ctx)
       local client = assert(vim.lsp.get_client_by_id(ctx.client_id))
       local args = command.arguments or {}
       local uri, edit = args[1], args[2]
-
       ---@diagnostic disable: undefined-field
       if uri and edit and edit.newText and edit.range then
         local workspace_edit = {
@@ -122,21 +114,15 @@ return {
 
   root_dir = function(bufnr, cb)
     local bufname = vim.api.nvim_buf_get_name(bufnr)
-    -- don't try to find sln or csproj for files from libraries
-    -- outside of the project
     if not bufname:match('^' .. fs.joinpath('/tmp/MetadataAsSource/')) then
-      -- try find solutions root first
       local root_dir = fs.root(bufnr, function(fname, _)
         return fname:match('%.sln[x]?$') ~= nil
       end)
-
       if not root_dir then
-        -- try find projects root
         root_dir = fs.root(bufnr, function(fname, _)
           return fname:match('%.csproj$') ~= nil
         end)
       end
-
       if root_dir then
         cb(root_dir)
       end
@@ -145,16 +131,12 @@ return {
   on_init = {
     function(client)
       local root_dir = client.config.root_dir
-
-      -- try load first solution we find
       for entry, type in fs.dir(root_dir) do
         if type == 'file' and (vim.endswith(entry, '.sln') or vim.endswith(entry, '.slnx')) then
           on_init_sln(client, fs.joinpath(root_dir, entry))
           return
         end
       end
-
-      -- if no solution is found load project
       for entry, type in fs.dir(root_dir) do
         if type == 'file' and vim.endswith(entry, '.csproj') then
           on_init_project(client, { fs.joinpath(root_dir, entry) })
@@ -162,13 +144,10 @@ return {
       end
     end,
   },
-
   on_attach = function(client, bufnr)
-    -- avoid duplicate autocmds for same buffer
     if vim.api.nvim_get_autocmds({ buffer = bufnr, group = group })[1] then
       return
     end
-
     vim.api.nvim_create_autocmd({ 'BufWritePost', 'InsertLeave' }, {
       group = group,
       buffer = bufnr,
@@ -178,9 +157,7 @@ return {
       desc = 'roslyn_ls: refresh diagnostics',
     })
   end,
-
   capabilities = {
-    -- HACK: Doesn't show any diagnostics if we do not set this to true
     textDocument = {
       diagnostic = {
         dynamicRegistration = true,
