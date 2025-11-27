@@ -1,0 +1,11 @@
+// .config/nvim/snippets/lua.json5
+// Qompass AI Diver Lua Snippets
+// Copyright (C) 2025 Qompass AI, All rights reserved
+
+{
+  "notify": {
+    "prefix": "noti",
+    "body": "vim.notify(vim.inspect(${1:data}))",
+    "description": "Snippet for vim.notify(vim.inspect(...))"
+  }
+}
