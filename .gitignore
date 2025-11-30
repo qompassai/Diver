@@ -4,3 +4,4 @@ diverflake.nix
 # prettier cache
 node_modules/
 /.forge/
+/undo/
