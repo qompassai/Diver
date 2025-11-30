@@ -2,35 +2,35 @@
 -- Qompass AI Ruby LSP Spec
 -- Copyright (C) 2025 Qompass AI, All rights reserved
 ------------------------------------------------------
-vim.lsp.config['ruby-lsp'] = {
-  cmd = { 'ruby-lsp' },
-  filetypes = { 'ruby', 'eruby' },
-  root_markers = { 'Gemfile', '.git' },
+vim.lsp.config["ruby-lsp"] = {
+  cmd = { "ruby-lsp" },
+  filetypes = { "ruby", "eruby" },
+  root_markers = { "Gemfile", ".git" },
   init_options = {
     enabledFeatures = {
-      codeActions          = true,
-      codeLens             = true,
-      completion           = true,
-      definition           = true,
-      diagnostics          = true,
-      documentHighlights   = true,
-      documentLink         = true,
-      documentSymbols      = true,
-      foldingRanges        = true,
-      formatting           = true,
-      hover                = true,
-      inlayHint            = true,
-      onTypeFormatting     = true,
-      selectionRanges      = true,
+      codeActions = true,
+      codeLens = true,
+      completion = true,
+      definition = true,
+      diagnostics = true,
+      documentHighlights = true,
+      documentLink = true,
+      documentSymbols = true,
+      foldingRanges = true,
+      formatting = true,
+      hover = true,
+      inlayHint = true,
+      onTypeFormatting = true,
+      selectionRanges = true,
       semanticHighlighting = true,
-      signatureHelp        = true,
-      typeHierarchy        = true,
-      workspaceSymbol      = true,
+      signatureHelp = true,
+      typeHierarchy = true,
+      workspaceSymbol = true,
     },
     featuresConfiguration = {
       inlayHint = {
         implicitHashValue = true,
-        implicitRescue    = true,
+        implicitRescue = true,
       },
       indexing = {
         excludedPatterns = {

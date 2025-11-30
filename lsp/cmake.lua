@@ -2,15 +2,14 @@
 -- Qompass AI CMake LSP Config
 -- Copyright (C) 2025 Qompass AI, All rights reserved
 -----------------------------------------------------
-
-local util = require 'lspconfig.util'
-return {
-  default_config = {
-    cmd = { 'cmake-language-server' },
-    filetypes = { 'cmake' },
-    single_file_support = true,
-    init_options = {
-      buildDirectory = 'build',
-    },
+vim.lsp.config['cmake-language-server'] = {
+  cmd = {
+    'cmake-language-server'
+  },
+  filetypes = {
+    "cmake"
+  },
+  init_options = {
+    buildDirectory = 'build',
   },
 }

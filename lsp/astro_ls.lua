@@ -3,11 +3,11 @@
 -- Copyright (C) 2025 Qompass AI, All rights reserved
 -----------------------------------------------------
 
-local util              = require 'lspconfig.util'
-vim.lsp.config['astro'] = {
-  cmd = { 'astro-ls', '--stdio' },
-  filetypes = { 'astro' },
-  root_markers = { 'package.json', 'tsconfig.json', 'jsconfig.json', '.git' },
+local util = require("lspconfig.util")
+vim.lsp.config["astro"] = {
+  cmd = { "astro-ls", "--stdio" },
+  filetypes = { "astro" },
+  root_markers = { "package.json", "tsconfig.json", "jsconfig.json", ".git" },
   init_options = {
     typescript = {},
   },

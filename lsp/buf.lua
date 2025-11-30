@@ -4,7 +4,7 @@
 -- --------------------------------------------------
 return {
   default_config = {
-    cmd = { 'buf', 'beta', 'lsp', '--timeout=0', '--log-format=text' },
-    filetypes = { 'proto' },
+    cmd = { "buf", "beta", "lsp", "--timeout=0", "--log-format=text" },
+    filetypes = { "proto" },
   },
 }

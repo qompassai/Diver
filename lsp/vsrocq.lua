@@ -4,7 +4,7 @@
 -- ----------------------------------------
 ---@type vim.lsp.Config
 return {
-  cmd = { 'vsrocqtop' },
-  filetypes = { 'coq' },
-  root_markers = { '_RocqProject', '_CoqProject', '.git' },
+  cmd = { "vsrocqtop" },
+  filetypes = { "coq" },
+  root_markers = { "_RocqProject", "_CoqProject", ".git" },
 }

@@ -3,7 +3,7 @@
 -- Copyright (C) 2025 Qompass AI, All rights reserved
 -- --------------------------------------------------
 return {
-  cmd = { 'opencl-language-server' },
-  filetypes = { 'opencl' },
-  root_markers = { '.git' },
+  cmd = { "opencl-language-server" },
+  filetypes = { "opencl" },
+  root_markers = { ".git" },
 }

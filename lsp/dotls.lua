@@ -3,6 +3,6 @@
 -- Copyright (C) 2025 Qompass AI, All rights reserved
 -- --------------------------------------------------
 return {
-  cmd = { 'dot-language-server', '--stdio' },
-  filetypes = { 'dot' },
+  cmd = { "dot-language-server", "--stdio" },
+  filetypes = { "dot" },
 }

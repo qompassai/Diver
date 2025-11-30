@@ -4,19 +4,24 @@
 ------------------------------------------------------
 -- Reference: https://angular.dev/tools/language-service
 -- pnpm add -g @angular/language-server
-local ngserver_path = 'pnpm_global_node_modules' .. '/@angular/language-server/bin/ngserver'
-vim.lsp.config['angularls'] = {
+local ngserver_path = "pnpm_global_node_modules" .. "/@angular/language-server/bin/ngserver"
+vim.lsp.config["angularls"] = {
   cmd = {
-    "node", ngserver_path,
+    "node",
+    ngserver_path,
     "--stdio",
-    "--tsProbeLocations", 'pnpm_global_node_modules',
-    "--ngProbeLocations", 'pnpm_global_node_modules',
-    "--logFile", vim.fn.stdpath('cache') .. "/nglangsvc.log",
-    "--logVerbosity", "verbose",
+    "--tsProbeLocations",
+    "pnpm_global_node_modules",
+    "--ngProbeLocations",
+    "pnpm_global_node_modules",
+    "--logFile",
+    vim.fn.stdpath("cache") .. "/nglangsvc.log",
+    "--logVerbosity",
+    "verbose",
   },
-  filetypes = { 'typescript', 'typescriptreact', 'html', 'angular' },
+  filetypes = { "typescript", "typescriptreact", "html", "angular" },
   codeActionProvider = {
-    codeActionKinds = { '', 'quickfix', 'refactor.extract', 'refactor.rewrite' },
+    codeActionKinds = { "", "quickfix", "refactor.extract", "refactor.rewrite" },
     resolveProvider = true,
   },
   colorProvider = false,
@@ -28,8 +33,4 @@ vim.lsp.config['angularls'] = {
       },
     },
   },
-  flags = {
-    debounce_text_changes = 150,
-  },
-  single_file_support = false,
 }

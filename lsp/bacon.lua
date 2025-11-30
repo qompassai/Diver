@@ -2,9 +2,9 @@
 -- Qompass AI Bacon LSP Config
 -- Copyright (C) 2025 Qompass AI, All rights reserved
 -- --------------------------------------------------
-vim.lsp.config['bacon'] = {
-  cmd = { 'bacon' },
-  filetypes = { 'rust' },
+vim.lsp.config["bacon"] = {
+  cmd = { "bacon" },
+  filetypes = { "rust" },
   init_options = {
     init_options = {
       locationsFile = ".bacon-locations",
@@ -16,10 +16,10 @@ vim.lsp.config['bacon'] = {
       runBaconInBackground = true,
       runBaconInBackgroundCommandArguments = "--headless -j bacon-ls",
       synchronizeAllOpenFilesWaitMillis = 2000,
-    }
+    },
   },
   root_markers = {
-    '.bacon-locations',
-    'Cargo.toml'
-  }
+    ".bacon-locations",
+    "Cargo.toml",
+  },
 }

@@ -7,7 +7,7 @@ local xdg = os.getenv("XDG_CONFIG_HOME") or (os.getenv("HOME") .. "/.config")
 return {
   cmd = { "deno", "lsp" },
   filetypes = { "typescript", "javascript", "typescriptreact", "javascriptreact" },
-  root_dir = require('lspconfig.util').root_pattern("deno.json", "deno.jsonc", "tsconfig.json", ".git"),
+  root_dir = require("lspconfig.util").root_pattern("deno.json", "deno.jsonc", "tsconfig.json", ".git"),
   init_options = {
     enable = true,
     lint = true,
@@ -18,8 +18,8 @@ return {
       completeFunctionCalls = true,
       imports = {
         autoDiscover = true,
-        hosts = { "https://deno.land", "https://cdn.nest.land", "https://crux.land" }
-      }
+        hosts = { "https://deno.land", "https://cdn.nest.land", "https://crux.land" },
+      },
     },
     codeLens = {
       implementations = true,
@@ -29,11 +29,11 @@ return {
     },
     importMap = xdg .. "/deno/import_map.jsonc",
     config = xdg .. "/deno/deno.jsonc",
-    cache = os.getenv("XDG_CACHE_HOME") and (os.getenv("XDG_CACHE_HOME") .. "/deno_cache") or
-        (os.getenv("HOME") .. "/.cache/deno_cache"),
+    cache = os.getenv("XDG_CACHE_HOME") and (os.getenv("XDG_CACHE_HOME") .. "/deno_cache")
+      or (os.getenv("HOME") .. "/.cache/deno_cache"),
     internalDebug = true,
     certificateStores = {},
     tlsCertificate = "",
     unsafelyIgnoreCertificateErrors = false,
-  }
+  },
 }

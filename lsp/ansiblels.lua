@@ -2,9 +2,9 @@
 -- Qompass AI Ansiblels LSP Config
 -- Copyright (C) 2025 Qompass AI, All rights reserved
 -- ----------------------------------------
-vim.lsp.config['ansiblels'] = {
-  cmd = { 'ansible-language-server', '--stdio' },
-  filetypes = { 'yaml.ansible', 'ansible' },
+vim.lsp.config["ansiblels"] = {
+  cmd = { "ansible-language-server", "--stdio" },
+  filetypes = { "yaml.ansible", "ansible" },
   settings = {
     ansible = {
       ansible = {
@@ -41,5 +41,5 @@ vim.lsp.config['ansiblels'] = {
       },
     },
   },
-  root_markers = { 'ansible.cfg', '.ansible-lint' },
+  root_markers = { "ansible.cfg", ".ansible-lint" },
 }

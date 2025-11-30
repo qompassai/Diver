@@ -3,7 +3,7 @@
 -- Copyright (C) 2025 Qompass AI, All rights reserved
 -----------------------------------------------------
 
-vim.lsp.config['awk_ls'] = {
-	cmd = { 'awk-language-server' },
-	filetypes = { 'awk' },
+vim.lsp.config["awk_ls"] = {
+  cmd = { "awk-language-server" },
+  filetypes = { "awk" },
 }

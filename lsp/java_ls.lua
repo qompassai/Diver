@@ -2,12 +2,15 @@
 -- Qompass AI Java Language Server Spec
 -- Copyright (C) 2025 Qompass AI, All rights reserved
 ------------------------------------------------------
-
-vim.lsp.config['java_language_server'] = {
-  cmd = { 'java-language-server' },
-  filetypes = { 'java' },
+vim.lsp.config["java_language_server"] = {
+  cmd = {
+    "java-language-server",
+  },
+  filetypes = {
+    "java",
+  },
   codeActionProvider = {
-    codeActionKinds = { '', 'quickfix', 'refactor.extract', 'refactor.rewrite' },
+    codeActionKinds = { "", "quickfix", "refactor.extract", "refactor.rewrite" },
     resolveProvider = true,
   },
   colorProvider = false,
@@ -25,8 +28,4 @@ vim.lsp.config['java_language_server'] = {
       },
     },
   },
-  flags = {
-    debounce_text_changes = 150,
-  },
-  single_file_support = true,
 }

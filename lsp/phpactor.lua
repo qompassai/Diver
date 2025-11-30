@@ -6,16 +6,19 @@ Copyright (C) 2025 Qompass AI, All rights reserved
 References: https://phpactor.readthedocs.io/en/master/reference/configuration.html
 ]]
 local filetypes = {
-  'php', 'phps', 'blade',
+  "php",
+  "phps",
+  "blade",
 }
 local root_markers = {
-  'composer.json', '.git',
+  "composer.json",
+  ".git",
 }
 local function get_language_id(_, filetype)
-  if filetype == 'php' or filetype == 'phps' then
-    return 'php'
-  elseif filetype == 'blade' then
-    return 'blade'
+  if filetype == "php" or filetype == "phps" then
+    return "php"
+  elseif filetype == "blade" then
+    return "blade"
   else
     return filetype
   end
@@ -33,7 +36,7 @@ do
 end
 
 return {
-  cmd = { 'phpactor', 'language-server' },
+  cmd = { "phpactor", "language-server" },
   filetypes = filetypes,
   root_markers = root_markers,
   get_language_id = get_language_id,
@@ -156,7 +159,7 @@ return {
         supported_extensions = { "php", "phar" },
       },
       language_server_code_transform = {
-        import_name = { report_non_existing_names = true }
+        import_name = { report_non_existing_names = true },
       },
       language_server_completion = {
         trim_leading_dollar = false,
@@ -241,8 +244,8 @@ return {
       logger = { name = "logger" },
       object_renderer = {
         template_paths = {
-          markdown = { "%project_config%/templates/markdown", "%config%/templates/markdown" }
-        }
+          markdown = { "%project_config%/templates/markdown", "%config%/templates/markdown" },
+        },
       },
       php = {
         version = "8.4",
@@ -281,6 +284,6 @@ return {
         enable_context_location = true,
         stub_dir = "%application_root%/vendor/jetbrains/phpstorm-stubs",
       },
-    }
-  }
+    },
+  },
 }

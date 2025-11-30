@@ -3,17 +3,17 @@
 -- Copyright (C) 2025 Qompass AI, All rights reserved
 -- --------------------------------------------------
 
-vim.lsp.config('ada_ls', {
-  cmd = { 'ada_language_server' },
-  filetypes = { 'ada' },
-  root_markers = { 'Makefile', '.git', 'alire.toml', '*.gpr', '*.adc' },
+vim.lsp.config("ada_ls", {
+  cmd = { "ada_language_server" },
+  filetypes = { "ada" },
+  root_markers = { "Makefile", ".git", "alire.toml", "*.gpr", "*.adc" },
   settings = {
     ada = {
       projectFile = "project.gpr",
       scenarioVariables = {
         Mode = "debug",
-        Target = "native"
-      }
-    }
-  }
+        Target = "native",
+      },
+    },
+  },
 })

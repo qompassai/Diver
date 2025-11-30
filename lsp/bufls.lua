@@ -4,7 +4,7 @@
 -- --------------------------------------------------
 return {
   default_config = {
-    cmd = { 'bufls', 'serve' },
-    filetypes = { 'proto' },
+    cmd = { "bufls", "serve" },
+    filetypes = { "proto" },
   },
 }

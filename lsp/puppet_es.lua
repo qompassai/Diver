@@ -2,17 +2,26 @@
 -- Qompass AI Puppet Editor Services LSP Spec
 -- Copyright (C) 2025 Qompass AI, All rights reserved
 ------------------------------------------------------
-vim.lsp.config['puppet'] = {
+vim.lsp.config["puppet"] = {
   cmd = {
-    'ruby',
-    'puppet-languageserver',
-    '--stdio',
-    '--puppet-settings=--moduledir,/etc/puppetlabs/code/modules',
+    "ruby",
+    "puppet-languageserver",
+    "--stdio",
+    "--puppet-settings=--moduledir,/etc/puppetlabs/code/modules",
   },
-  filetypes = { 'puppet' },
-  root_markers = { 'metadata.json', '.git' },
+  filetypes = {
+    "puppet",
+  },
+  root_markers = {
+    "metadata.json",
+    ".git",
+  },
   codeActionProvider = {
-    codeActionKinds = { '', 'quickfix', 'refactor' },
+    codeActionKinds = {
+      "",
+      "quickfix",
+      "refactor",
+    },
     resolveProvider = true,
   },
   colorProvider = false,
@@ -27,11 +36,6 @@ vim.lsp.config['puppet'] = {
     },
   },
   settings = {
-    puppet = {
-    },
+    puppet = {},
   },
-  flags = {
-    debounce_text_changes = 150,
-  },
-  single_file_support = true,
 }

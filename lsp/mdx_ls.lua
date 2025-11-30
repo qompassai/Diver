@@ -4,11 +4,11 @@
 -- ----------------------------------------
 -- References: https://mdxjs.com/
 -- pnpm add -g @mdx-js/language-server
-vim.lsp.config['mdx-language-server'] = {
+vim.lsp.config["mdx-language-server"] = {
   autostart = true,
   cmd = { "mdx-language-server", "--stdio" },
   filetypes = { "mdx" },
- -- root_dir = vim.fn.getcwd,
+  -- root_dir = vim.fn.getcwd,
   root_markers = { "package.json", "package.json5" },
   codeActionProvider = {
     codeActionKinds = { "", "quickfix", "refactor", "source.organizeImports" },
@@ -28,9 +28,28 @@ vim.lsp.config['mdx-language-server'] = {
         "defaultLibrary",
       },
       tokenTypes = {
-        "namespace", "type", "class", "enum", "interface", "typeParameter", "parameter",
-        "variable", "property", "enumMember", "event", "function", "method", "macro",
-        "keyword", "modifier", "comment", "string", "number", "regexp", "operator", "decorator",
+        "namespace",
+        "type",
+        "class",
+        "enum",
+        "interface",
+        "typeParameter",
+        "parameter",
+        "variable",
+        "property",
+        "enumMember",
+        "event",
+        "function",
+        "method",
+        "macro",
+        "keyword",
+        "modifier",
+        "comment",
+        "string",
+        "number",
+        "regexp",
+        "operator",
+        "decorator",
       },
     },
     range = true,
@@ -54,8 +73,4 @@ vim.lsp.config['mdx-language-server'] = {
       },
     },
   },
-  flags = {
-    debounce_text_changes = 150,
-  },
-  single_file_support = true,
 }

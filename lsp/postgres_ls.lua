@@ -3,16 +3,21 @@
 -- Copyright (C) 2025 Qompass AI, All rights reserved
 ------------------------------------------------------
 -- References:  https://pgtools.dev
-vim.lsp.config['postgres-language-server'] = {
-  cmd = { 'postgres-language-server', 'lsp-proxy' },
-  filetypes = { 'sql', 'psql' },
+vim.lsp.config["postgres-language-server"] = {
+  cmd = { "postgres-language-server", "lsp-proxy" },
+  filetypes = { "sql", "psql" },
   root_dir = vim.fn.getcwd,
   codeActionProvider = {
-    codeActionKinds = { "", "quickfix", "refactor", "refactor.extract" },
+    codeActionKinds = {
+      "",
+      "quickfix",
+      "refactor",
+      "refactor.extract",
+    },
     resolveProvider = true,
   },
   completionProvider = {
-    triggerCharacters = { '.', '"', '\'', ' ', '(', ',' },
+    triggerCharacters = { ".", '"', "'", " ", "(", "," },
   },
   hoverProvider = true,
   definitionProvider = true,
@@ -22,11 +27,5 @@ vim.lsp.config['postgres-language-server'] = {
   renameProvider = true,
   documentFormattingProvider = true,
   documentRangeFormattingProvider = true,
-  settings = {
-  },
-  flags = {
-    debounce_text_changes = 150,
-  },
-
-  single_file_support = true,
+  settings = {},
 }

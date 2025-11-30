@@ -3,11 +3,11 @@
 -- Copyright (C) 2025 Qompass AI, All rights reserved
 -- --------------------------------------------------
 -- References: https://livesys.se/posts/nextflow-lsp-with-neovim/
-vim.lsp.config['nextflowls'] = {
+vim.lsp.config["nextflowls"] = {
   autostart = true,
-  cmd = { 'java', '-jar', 'nextflow' },
-  filetypes = { 'nextflow', 'nf', 'groovy', 'config' },
-  root_markers = { '.git', 'main.nf', 'nextflow.config' },
+  cmd = { "java", "-jar", "nextflow" },
+  filetypes = { "nextflow", "nf", "groovy", "config" },
+  root_markers = { ".git", "main.nf", "nextflow.config" },
   settings = {
     nextflow = {
       format = {
@@ -41,7 +41,7 @@ vim.lsp.config['nextflowls'] = {
       nextflow = {
         trace = { server = "verbose" },
         additionalModulePaths = {},
-      }
-    }
+      },
+    },
   },
 }

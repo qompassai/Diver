@@ -14,7 +14,8 @@ M.setup = function()
   }
   for _, name in ipairs(mapping_files) do
     local ok, mod = pcall(require, 'mappings.' .. name)
-    if not ok then
+    if not ok
+    then
       vim.notify('Failed to load: ' .. name, vim.log.levels.WARN)
       goto continue
     end

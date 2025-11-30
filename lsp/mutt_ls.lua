@@ -2,12 +2,12 @@
 -- Qompass AI - Mutt Language Server LSP Config
 -- Copyright (C) 2025 Qompass AI, All rights reserved
 -----------------------------------------------------
-
-vim.lsp.config['mutt_ls'] = {
-  cmd = { "mutt-language-server" },
-  filetypes = { 'muttrc', 'neomuttrc' },
-  flags = {
-    debounce_text_changes = 150,
+vim.lsp.config["mutt_ls"] = {
+  cmd = {
+    "mutt-language-server",
   },
-  single_file_support = true,
+  filetypes = {
+    "muttrc",
+    "neomuttrc",
+  },
 }

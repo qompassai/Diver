@@ -2,11 +2,11 @@
 -- Qompass AI Lemminx XML LSP Config
 -- Copyright (C) 2025 Qompass AI, All rights reserved
 -- --------------------------------------------------
-vim.lsp.config['lemminx'] = {
+vim.lsp.config["lemminx"] = {
   autostart = true,
-  cmd = { 'lemminx' },
-  filetypes = { 'xml', 'xsd', 'xsl', 'xslt', 'svg', 'rss', 'atom' },
-  root_markers = { '.git', 'pom.xml', 'build.gradle', 'settings.gradle', 'build.xml', 'ivy.xml' },
+  cmd = { "lemminx" },
+  filetypes = { "xml", "xsd", "xsl", "xslt", "svg", "rss", "atom" },
+  root_markers = { ".git", "pom.xml", "build.gradle", "settings.gradle", "build.xml", "ivy.xml" },
   settings = {
     xml = {
       format = {
@@ -46,7 +46,7 @@ vim.lsp.config['lemminx'] = {
       xml = {
         catalogs = {},
         trace = { server = "verbose" },
-      }
-    }
+      },
+    },
   },
 }

@@ -1,19 +1,24 @@
 -- /qompassai/Diver/lsp/stylua.lua
--- Qompass AI Lua Formatter Spec (StyLua)
+-- Qompass AI Stylua LSP Spec
 -- Copyright (C) 2025 Qompass AI, All rights reserved
 ------------------------------------------------------
 vim.lsp.config['stylua'] = {
-  cmd = { 'stylua' },
-  filetypes = { 'lua', 'luau' },
+  cmd = {
+    "stylua",
+    "--lsp",
+  },
+  filetypes = {
+    "lua",
+  },
   codeActionProvider = false,
   colorProvider = false,
+  root_markers = {
+    ".stylua.toml",
+    "stylua.toml",
+    ".editorconfig",
+  },
   semanticTokensProvider = nil,
   settings = {
-    stylua = {
-    },
+    stylua = {},
   },
-  flags = {
-    debounce_text_changes = 150,
-  },
-  single_file_support = true,
 }

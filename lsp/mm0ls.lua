@@ -5,7 +5,7 @@
 -- References: https://github.com/digama0/mm0/tree/master/mm0-rs)
 ---@type vim.lsp.Config
 return {
-  cmd = { 'mm0-rs', 'server' },
-  root_markers = { '.git' },
-  filetypes = { 'metamath-zero' },
+  cmd = { "mm0-rs", "server" },
+  root_markers = { ".git" },
+  filetypes = { "metamath-zero" },
 }

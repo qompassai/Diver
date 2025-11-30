@@ -2,7 +2,7 @@
 -- Qompass AI Bash LSP Config
 -- Copyright (C) 2025 Qompass AI, All rights reserved
 -- --------------------------------------------------
-vim.lsp.config['bashls'] = {
+vim.lsp.config["bashls"] = {
   cmd = { "bash-language-server", "start" },
   filetypes = { "sh", "bash" },
   settings = {

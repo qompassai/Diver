@@ -3,7 +3,7 @@
 -- Copyright (C) 2025 Qompass AI, All rights reserved
 -- ----------------------------------------
 
-vim.lsp.config['esbonio'] = {
+vim.lsp.config["esbonio"] = {
   cmd = { "esbonio" },
   settings = {
     esbonio = {
@@ -33,7 +33,7 @@ vim.lsp.config['esbonio'] = {
       preview = {
         enabled = true,
       },
-    }
+    },
   },
   filetypes = { "rst", "rest", "restructuredtext" },
 }

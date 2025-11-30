@@ -4,22 +4,22 @@
 -- ----------------------------------------
 local uv = vim.uv
 local fs = vim.fs
-local group = vim.api.nvim_create_augroup('lspconfig.roslyn_ls', { clear = true })
+local group = vim.api.nvim_create_augroup("lspconfig.roslyn_ls", { clear = true })
 ---@param client vim.lsp.Client
 ---@param target string
 local function on_init_sln(client, target)
-  vim.notify('Initializing: ' .. target, vim.log.levels.TRACE, { title = 'roslyn_ls' })
+  vim.notify("Initializing: " .. target, vim.log.levels.TRACE, { title = "roslyn_ls" })
   ---@diagnostic disable-next-line: param-type-mismatch
-  client:notify('solution/open', {
+  client:notify("solution/open", {
     solution = vim.uri_from_fname(target),
   })
 end
 ---@param client vim.lsp.Client
 ---@param project_files string[]
 local function on_init_project(client, project_files)
-  vim.notify('Initializing: projects', vim.log.levels.TRACE, { title = 'roslyn_ls' })
+  vim.notify("Initializing: projects", vim.log.levels.TRACE, { title = "roslyn_ls" })
   ---@diagnostic disable-next-line: param-type-mismatch
-  client:notify('project/open', {
+  client:notify("project/open", {
     projects = vim.tbl_map(function(file)
       return vim.uri_from_fname(file)
     end, project_files),
@@ -41,33 +41,33 @@ end
 
 local function roslyn_handlers()
   return {
-    ['workspace/projectInitializationComplete'] = function(_, _, ctx)
-      vim.notify('Roslyn project initialization complete', vim.log.levels.INFO, { title = 'roslyn_ls' })
+    ["workspace/projectInitializationComplete"] = function(_, _, ctx)
+      vim.notify("Roslyn project initialization complete", vim.log.levels.INFO, { title = "roslyn_ls" })
       local client = assert(vim.lsp.get_client_by_id(ctx.client_id))
       refresh_diagnostics(client)
       return vim.NIL
     end,
-    ['workspace/_roslyn_projectNeedsRestore'] = function(_, result, ctx)
+    ["workspace/_roslyn_projectNeedsRestore"] = function(_, result, ctx)
       local client = assert(vim.lsp.get_client_by_id(ctx.client_id))
       ---@diagnostic disable-next-line: param-type-mismatch
-      client:request('workspace/_roslyn_restore', result, function(err, response)
+      client:request("workspace/_roslyn_restore", result, function(err, response)
         if err then
-          vim.notify(err.message, vim.log.levels.ERROR, { title = 'roslyn_ls' })
+          vim.notify(err.message, vim.log.levels.ERROR, { title = "roslyn_ls" })
         end
         if response then
           for _, v in ipairs(response) do
-            vim.notify(v.message, vim.log.levels.INFO, { title = 'roslyn_ls' })
+            vim.notify(v.message, vim.log.levels.INFO, { title = "roslyn_ls" })
           end
         end
       end)
 
       return vim.NIL
     end,
-    ['razor/provideDynamicFileInfo'] = function(_, _, _)
+    ["razor/provideDynamicFileInfo"] = function(_, _, _)
       vim.notify(
-        'Razor is not supported.\nPlease use https://github.com/tris203/rzls.nvim',
+        "Razor is not supported.\nPlease use https://github.com/tris203/rzls.nvim",
         vim.log.levels.WARN,
-        { title = 'roslyn_ls' }
+        { title = "roslyn_ls" }
       )
       return vim.NIL
     end,
@@ -75,20 +75,20 @@ local function roslyn_handlers()
 end
 ---@type vim.lsp.Config
 return {
-  name = 'roslyn_ls',
-  offset_encoding = 'utf-8',
+  name = "roslyn_ls",
+  offset_encoding = "utf-8",
   cmd = {
-    'Microsoft.CodeAnalysis.LanguageServer',
-    '--logLevel',
-    'Information',
-    '--extensionLogDirectory',
-    fs.joinpath(uv.os_tmpdir(), 'roslyn_ls/logs'),
-    '--stdio',
+    "Microsoft.CodeAnalysis.LanguageServer",
+    "--logLevel",
+    "Information",
+    "--extensionLogDirectory",
+    fs.joinpath(uv.os_tmpdir(), "roslyn_ls/logs"),
+    "--stdio",
   },
-  filetypes = { 'cs' },
+  filetypes = { "cs" },
   handlers = roslyn_handlers(),
   commands = {
-    ['roslyn.client.completionComplexEdit'] = function(command, ctx)
+    ["roslyn.client.completionComplexEdit"] = function(command, ctx)
       local client = assert(vim.lsp.get_client_by_id(ctx.client_id))
       local args = command.arguments or {}
       local uri, edit = args[1], args[2]
@@ -107,20 +107,20 @@ return {
         vim.lsp.util.apply_workspace_edit(workspace_edit, client.offset_encoding)
       ---@diagnostic enable: undefined-field
       else
-        vim.notify('roslyn_ls: completionComplexEdit args not understood: ' .. vim.inspect(args), vim.log.levels.WARN)
+        vim.notify("roslyn_ls: completionComplexEdit args not understood: " .. vim.inspect(args), vim.log.levels.WARN)
       end
     end,
   },
 
   root_dir = function(bufnr, cb)
     local bufname = vim.api.nvim_buf_get_name(bufnr)
-    if not bufname:match('^' .. fs.joinpath('/tmp/MetadataAsSource/')) then
+    if not bufname:match("^" .. fs.joinpath("/tmp/MetadataAsSource/")) then
       local root_dir = fs.root(bufnr, function(fname, _)
-        return fname:match('%.sln[x]?$') ~= nil
+        return fname:match("%.sln[x]?$") ~= nil
       end)
       if not root_dir then
         root_dir = fs.root(bufnr, function(fname, _)
-          return fname:match('%.csproj$') ~= nil
+          return fname:match("%.csproj$") ~= nil
         end)
       end
       if root_dir then
@@ -132,13 +132,13 @@ return {
     function(client)
       local root_dir = client.config.root_dir
       for entry, type in fs.dir(root_dir) do
-        if type == 'file' and (vim.endswith(entry, '.sln') or vim.endswith(entry, '.slnx')) then
+        if type == "file" and (vim.endswith(entry, ".sln") or vim.endswith(entry, ".slnx")) then
           on_init_sln(client, fs.joinpath(root_dir, entry))
           return
         end
       end
       for entry, type in fs.dir(root_dir) do
-        if type == 'file' and vim.endswith(entry, '.csproj') then
+        if type == "file" and vim.endswith(entry, ".csproj") then
           on_init_project(client, { fs.joinpath(root_dir, entry) })
         end
       end
@@ -148,13 +148,13 @@ return {
     if vim.api.nvim_get_autocmds({ buffer = bufnr, group = group })[1] then
       return
     end
-    vim.api.nvim_create_autocmd({ 'BufWritePost', 'InsertLeave' }, {
+    vim.api.nvim_create_autocmd({ "BufWritePost", "InsertLeave" }, {
       group = group,
       buffer = bufnr,
       callback = function()
         refresh_diagnostics(client)
       end,
-      desc = 'roslyn_ls: refresh diagnostics',
+      desc = "roslyn_ls: refresh diagnostics",
     })
   end,
   capabilities = {
@@ -165,11 +165,11 @@ return {
     },
   },
   settings = {
-    ['csharp|background_analysis'] = {
-      dotnet_analyzer_diagnostics_scope = 'fullSolution',
-      dotnet_compiler_diagnostics_scope = 'fullSolution',
+    ["csharp|background_analysis"] = {
+      dotnet_analyzer_diagnostics_scope = "fullSolution",
+      dotnet_compiler_diagnostics_scope = "fullSolution",
     },
-    ['csharp|inlay_hints'] = {
+    ["csharp|inlay_hints"] = {
       csharp_enable_inlay_hints_for_implicit_object_creation = true,
       csharp_enable_inlay_hints_for_implicit_variable_types = true,
       csharp_enable_inlay_hints_for_lambda_parameter_types = true,
@@ -183,15 +183,15 @@ return {
       dotnet_suppress_inlay_hints_for_parameters_that_match_argument_name = true,
       dotnet_suppress_inlay_hints_for_parameters_that_match_method_intent = true,
     },
-    ['csharp|symbol_search'] = {
+    ["csharp|symbol_search"] = {
       dotnet_search_reference_assemblies = true,
     },
-    ['csharp|completion'] = {
+    ["csharp|completion"] = {
       dotnet_show_name_completion_suggestions = true,
       dotnet_show_completion_items_from_unimported_namespaces = true,
       dotnet_provide_regex_completions = true,
     },
-    ['csharp|code_lens'] = {
+    ["csharp|code_lens"] = {
       dotnet_enable_references_code_lens = true,
     },
   },

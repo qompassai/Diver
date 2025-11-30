@@ -3,15 +3,15 @@
 -- Copyright (C) 2025 Qompass AI, All rights reserved
 -- ----------------------------------------
 --https://docs.astral.sh/ruff/editors
-vim.lsp.config['ruff'] = {
-  cmd = { 'ruff', 'server', '--preview' },
-  filetypes = { 'python' },
-  root_markers = { 'pyproject.toml', 'ruff.toml', '.git' },
+vim.lsp.config["ruff"] = {
+  cmd = { "ruff", "server", "--preview" },
+  filetypes = { "python" },
+  root_markers = { "pyproject.toml", "ruff.toml", ".git" },
   settings = {
     codeAction = {
       disableRuleComment = {
-        enable = false
-      }
+        enable = false,
+      },
     },
     configurationPreference = "filesystemFirst",
     exclude = { "**/tests/**" },
@@ -26,14 +26,14 @@ vim.lsp.config['ruff'] = {
         ["flake8-tidy-imports"] = {
           ["banned-api"] = {
             ["typing.TypedDict"] = {
-              msg = "Use `typing_extensions.TypedDict` instead"
-            }
-          }
-        }
+              msg = "Use `typing_extensions.TypedDict` instead",
+            },
+          },
+        },
       },
       format = {
-        ["quote-style"] = 'single'
-      }
-    }
-  }
+        ["quote-style"] = "single",
+      },
+    },
+  },
 }

@@ -3,21 +3,35 @@
 -- Copyright (C) 2025 Qompass AI, All rights reserved
 -----------------------------------------------------
 -- npm install -g @biomejs/cli-linux-x64
-vim.lsp.config['biome'] = {
-  cmd = { 'biome', 'lsp-proxy' },
+vim.lsp.config["biome"] = {
+  cmd = { "biome", "lsp-proxy" },
   filetypes = {
-    'astro', 'css', 'graphql', 'html', 'javascript', 'javascriptreact',
-    'json', 'jsonc', 'markdown', 'mdx', 'svelte', 'typescript',
-    'typescriptreact', 'typescript.tsx', 'vue'
+    "astro",
+    "css",
+    "graphql",
+    "html",
+    "javascript",
+    "javascriptreact",
+    "json",
+    "jsonc",
+    "markdown",
+    "mdx",
+    "svelte",
+    "typescript",
+    "typescriptreact",
+    "typescript.tsx",
+    "vue",
   },
-  root_markers = { 'biome.json', 'biome.jsonc', 'biome.json5', '.git' },
+  root_markers = { "biome.json", "biome.jsonc", "biome.json5", ".git" },
   capabilities = vim.lsp.protocol.make_client_capabilities(),
   on_attach = function(client, bufnr)
     local opts = { buffer = bufnr, silent = true }
     vim.keymap.set("n", "gd", vim.lsp.buf.definition, opts)
     vim.keymap.set("n", "K", vim.lsp.buf.hover, opts)
     vim.keymap.set("n", "<leader>rn", vim.lsp.buf.rename, opts)
-    vim.keymap.set("n", "<leader>f", function() vim.lsp.buf.format({ async = false }) end, opts)
+    vim.keymap.set("n", "<leader>f", function()
+      vim.lsp.buf.format({ async = false })
+    end, opts)
     vim.keymap.set("n", "<leader>ca", vim.lsp.buf.code_action, opts)
     if client.server_capabilities.inlayHintProvider and type(vim.lsp.inlay_hint) == "function" then
       vim.keymap.set("i", "<C-k>", vim.lsp.buf.signature_help, opts)
@@ -25,7 +39,9 @@ vim.lsp.config['biome'] = {
     end
     vim.api.nvim_create_autocmd("BufWritePre", {
       buffer = bufnr,
-      callback = function() vim.lsp.buf.format({ async = false }) end,
+      callback = function()
+        vim.lsp.buf.format({ async = false })
+      end,
     })
   end,
   workspace_required = false,

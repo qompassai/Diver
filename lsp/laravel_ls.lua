@@ -2,22 +2,31 @@
 -- Qompass AI Laravel LSP Spec
 -- Copyright (C) 2025 Qompass AI, All rights reserved
 ------------------------------------------------------
-vim.lsp.config['laravel_ls'] = {
-  cmd = 'laravel-ls',
-  filetypes = { 'php', 'blade' },
-  root_markers = { 'artisan', 'composer.json', '.git' },
+vim.lsp.config["laravel_ls"] = {
+  cmd = {
+    "laravel-ls",
+  },
+  filetypes = {
+    "php",
+    "blade",
+  },
+  root_markers = {
+    "artisan",
+    "composer.json",
+    ".git",
+  },
   codeActionProvider = {
-    codeActionKinds = { '', 'quickfix', 'refactor', 'source.organizeImports' },
+    codeActionKinds = {
+      "",
+      "quickfix",
+      "refactor",
+      "source.organizeImports",
+    },
     resolveProvider = true,
   },
   colorProvider = false,
   semanticTokensProvider = nil,
   settings = {
-    ['laravel-ls'] = {
-    },
+    ["laravel-ls"] = {},
   },
-  flags = {
-    debounce_text_changes = 150,
-  },
-  single_file_support = false,
 }

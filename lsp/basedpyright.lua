@@ -2,20 +2,20 @@
 -- Qompass AI Basedpyright LSP Config
 -- Copyright (C) 2025 Qompass AI, All rights reserved
 -----------------------------------------------------
-vim.lsp.config['basedpyright'] = {
-  cmd = { 'basedpyright', '--stdio' },
-  filetypes = { 'python' },
+vim.lsp.config["basedpyright"] = {
+  cmd = { "basedpyright", "--stdio" },
+  filetypes = { "python" },
   root_markers = {
-    'pyproject.toml',
-    'setup.py',
-    'setup.cfg',
-    'requirements.txt',
-    'Pipfile',
-    'pyrightconfig.json',
-    '.pyrightconfig.json',
-    'pyrightconfig.json5',
-    '.pyrightconfig.json5',
-    '.git',
+    "pyproject.toml",
+    "setup.py",
+    "setup.cfg",
+    "requirements.txt",
+    "Pipfile",
+    "pyrightconfig.json",
+    ".pyrightconfig.json",
+    "pyrightconfig.json5",
+    ".pyrightconfig.json5",
+    ".git",
   },
   initializationOptions = {
     telemetry = { enabled = false },
@@ -34,12 +34,12 @@ vim.lsp.config['basedpyright'] = {
   },
   commands = {
     PyrightOrganizeImports = {
-      description = 'Organize Imports',
+      description = "Organize Imports",
     },
     PyrightSetPythonPath = {
-      description = 'Reconfigure basedpyright with the provided python path',
+      description = "Reconfigure basedpyright with the provided python path",
       nargs = 1,
-      complete = 'file',
+      complete = "file",
     },
   },
 }
