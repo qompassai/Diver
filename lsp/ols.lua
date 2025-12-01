@@ -2,7 +2,7 @@
 -- Qompass AI Odin LSP Spec
 -- Copyright (C) 2025 Qompass AI, All rights reserved
 ------------------------------------------------------
-vim.lsp.config['ols'] = {
+vim.lsp.config["ols"] = {
   cmd = {
     "ols",
   },

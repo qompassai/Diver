@@ -5,17 +5,17 @@
 -- go install github.com/hyprland-community/hyprls/cmd/hyprls@latest
 vim.filetype.add({
   pattern = {
-    [".*/hypr/.+%.conf"] = "hyprlang",
-    [".*/hyprland%.conf"] = "hyprlang",
+    [".*/hypr/.+%.conf"] = 'hyprlang',
+    [".*/hyprland%.conf"] = 'hyprlang',
   },
 })
-vim.lsp.config["hyprls"] = {
+vim.lsp.config['hyprls'] = {
   cmd = {
-    "hyprls"
+    'hyprls',
   },
   filetypes = {
     'hyprlang',
-    "hypr"
+    'hypr',
   },
   settings = {
     hyprls = {
@@ -24,7 +24,7 @@ vim.lsp.config["hyprls"] = {
       },
       completion = {
         enable = true,
-        keywordSnippet = "Enable",
+        keywordSnippet = 'Enable',
       },
       documentSymbol = {
         enable = true,
@@ -39,23 +39,33 @@ vim.lsp.config["hyprls"] = {
     },
   },
 }
-vim.api.nvim_create_autocmd({ "BufEnter", "BufWinEnter" }, {
-  pattern = {
-    "*.hl",
-    "hypr*.conf"
+vim.api.nvim_create_autocmd(
+  {
+    'BufEnter',
+    'BufWinEnter'
   },
-  callback = function(event)
-    print(string.format("starting hyprls for %s", vim.inspect(event)))
-    vim.lsp.start({
-      name = "hyprlang",
-      cmd = { "hyprls" },
-      root_dir = vim.fn.getcwd(),
-      settings = {
-        hyprls = {
-          preferIgnoreFile = true,
-          ignore = { "hyprlock.conf", "hypridle.conf" },
+  {
+    pattern = {
+      "*.hl",
+      "hypr*.conf",
+    },
+    callback = function(event)
+      print(string.format("starting hyprls for %s", vim.inspect(event)))
+      vim.lsp.start({
+        name = 'hyprlang',
+        cmd = {
+          'hyprls'
         },
-      },
-    })
-  end,
-})
+        root_dir = vim.fn.getcwd(),
+        settings = {
+          hyprls = {
+            preferIgnoreFile = true,
+            ignore = {
+              'hyprlock.conf',
+              'hypridle.conf'
+            },
+          },
+        },
+      })
+    end,
+  })

@@ -4,11 +4,18 @@
 -- -------------------------------------------------
 -- Reference: https://www.npmjs.com/package/@salesforce/lwc-language-server
 -- pnpm add -g @salesforce/lwc-language-server
----@type vim.lsp.Config
-return {
-  cmd = { "lwc-language-server", "--stdio" },
-  filetypes = { "javascript", "html" },
-  root_markers = { "sfdx-project.json" },
+vim.lsp.config['lwc_ls'] = {
+  cmd = {
+    'lwc-language-server',
+    '--stdio'
+  },
+  filetypes = {
+    'javascript',
+    'html'
+  },
+  root_markers = {
+    "sfdx-project.json"
+  },
   init_options = {
     embeddedLanguages = {
       javascript = true,

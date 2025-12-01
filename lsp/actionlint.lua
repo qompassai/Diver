@@ -1,5 +1,5 @@
 -- /qompassai/Diver/lsp/actionlint.lua
--- Qompass AI GitHub Actions Lint Spec (actionlint)
+-- Qompass AI GitHub Actions Lint Spec
 -- Copyright (C) 2025 Qompass AI, All rights reserved
 ------------------------------------------------------
 -- Reference: https://github.com/rhysd/actionlint

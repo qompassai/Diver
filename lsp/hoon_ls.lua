@@ -4,17 +4,20 @@
 -- --------------------------------------------------
 vim.lsp.config['hoon_ls'] = {
   cmd = {
-    'hoon-language-server',
-    '-p', '8080',
-    '-u', 'http://localhost',
-    '-s', 'zod',
+    "hoon-language-server",
+    "-p",
+    "8080",
+    "-u",
+    "http://localhost",
+    "-s",
+    "zod",
     -- '-c',
     -- 'tbd'
   },
   filetypes = {
-    'hoon'
+    "hoon",
   },
   root_markers = {
-    '.git'
+    ".git",
   },
 }

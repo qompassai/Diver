@@ -34,8 +34,7 @@ do
     end
   end
 end
-
-return {
+vim.lsp.config['phpactor'] = {
   cmd = { "phpactor", "language-server" },
   filetypes = filetypes,
   root_markers = root_markers,
@@ -93,8 +92,12 @@ return {
         name_completion_priority = "proximity",
         snippets = true,
         completor = {
-          attribute = { enabled = true },
-          class_like = { enabled = true },
+          attribute = {
+            enabled = true
+          },
+          class_like = {
+            enabled = true
+          },
           class_member = { enabled = true },
           class = { limit = 100, enabled = true },
           constructor = { enabled = true },

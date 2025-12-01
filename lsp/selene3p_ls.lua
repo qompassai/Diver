@@ -2,26 +2,26 @@
 -- Qompass AI Selene 3P LSP Config
 -- Copyright (C) 2025 Qompass AI, All rights reserved
 -- ----------------------------------------
-vim.lsp.config['selene3p_ls'] = {
+vim.lsp.config["selene3p_ls"] = {
   cmd = {
-    'selene-3p-language-server',
+    "selene-3p-language-server",
   },
 
   filetypes = {
-    'lua',
-    'luau',
+    "lua",
+    "luau",
   },
 
   root_markers = {
-    '.selene.toml',
-    'selene.toml',
-    '.git',
+    ".selene.toml",
+    "selene.toml",
+    ".git",
   },
 
   codeActionProvider = {
     codeActionKinds = {
-      '',
-      'quickfix',
+      "",
+      "quickfix",
     },
     resolveProvider = false,
   },

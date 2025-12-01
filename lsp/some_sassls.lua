@@ -3,12 +3,18 @@
 -- Copyright (C) 2025 Qompass AI, All rights reserved
 -- --------------------------------------------------
 -- pnpm add -g some-sass-language-server
----@type vim.lsp.Config
-return {
-  name = "somesass_ls",
-  cmd = { "some-sass-language-server", "--stdio" },
-  filetypes = { "scss", "sass" },
-  root_markers = { ".git", ".package.json" },
+vim.lsp.config['some-sass-language-server'] = {
+  cmd = {
+    'some-sass-language-server', '--stdio' },
+  filetypes = {
+    'scss',
+    'sass'
+  },
+  root_markers = {
+    '.git',
+    '.package.json',
+    '.package.jsonc'
+  },
   settings = {
     somesass = {
       suggestAllFromOpenDocument = true,

@@ -4,18 +4,18 @@
 ------------------------------------------------------
 vim.lsp.config["hydra"] = {
   cmd = {
-    'hydra-lsp'
+    "hydra-lsp",
   },
   filetypes = {
     "yaml",
     "yml",
-    "hydra"
+    "hydra",
   },
   codeActionProvider = {
     codeActionKinds = {
       "",
       "quickfix",
-      "refactor"
+      "refactor",
     },
     resolveProvider = true,
   },
@@ -48,14 +48,14 @@ vim.lsp.config["hydra"] = {
     ".git",
     ".hydra",
     "conf",
-    "config"
+    "config",
   },
   init_options = {
     pythonPath = nil,
     hydra = {
       searchPaths = {
         "conf",
-        "configs"
+        "configs",
       },
       mainModule = nil,
     },

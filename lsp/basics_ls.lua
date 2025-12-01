@@ -1,17 +1,29 @@
 -- /qompassai/Diver/lsp/basics_ls.lua
 -- Qompass AI basics_ls LSP Config
- -- Copyright (C) 2025 Qompass AI, All rights reserved
+-- Copyright (C) 2025 Qompass AI, All rights reserved
 -- ----------------------------------------------------
+-- References:  https://github.com/antonk52/basics-language-server/
+-- pnpm add -g basics-language-server
 vim.lsp.config['basics_ls'] = {
   cmd = {
     'basics-language-server',
   },
-  filetypes = {
-    'lua',
-    'markdown',
-    'text',
-  },
   root_markers = {
-    '.git',
+    ".git",
+  },
+  settings = {
+    buffer = {
+      enable = true,
+      minCompletionLength = 4,
+      matchStrategy = 'fuzzy',
+    },
+    path = {
+      enable = true,
+    },
+    snippet = {
+      enable = false,
+      sources = {},
+      matchStrategy = 'fuzzy',
+    },
   },
 }

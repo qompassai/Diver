@@ -2,9 +2,9 @@
 -- Qompass AI EditorConfig Compliance Spec
 -- Copyright (C) 2025 Qompass AI, All rights reserved
 ------------------------------------------------------
-vim.lsp.config["editorconfig_checker"] = {
+vim.lsp.config['editorconfig_checker'] = {
   cmd = {
-    "editorconfig-checker",
+    'editorconfig-checker',
   },
   filetypes = {
     "*",
@@ -18,9 +18,6 @@ vim.lsp.config["editorconfig_checker"] = {
     "json",
     "sh",
   },
-  codeActionProvider = false,
-  colorProvider = false,
-  semanticTokensProvider = nil,
   settings = {
     editorconfig_checker = {},
   },

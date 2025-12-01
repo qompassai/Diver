@@ -2,16 +2,16 @@
 -- Qompass AI Beancount LSP Config
 -- Copyright (C) 2025 Qompass AI, All rights reserved
 -- --------------------------------------------------
-vim.lsp.config['beancount'] = {
+vim.lsp.config["beancount"] = {
   cmd = {
-    'beancount-language-server',
+    "beancount-language-server",
   },
   filetypes = {
-    'beancount',
+    "beancount",
   },
   root_markers = {
-    'main.bean',
-    'beancount.conf',
-    '.git',
+    "main.bean",
+    "beancount.conf",
+    ".git",
   },
 }

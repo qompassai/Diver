@@ -10,16 +10,16 @@ https://github.com/MaskRay/ccls/wiki |
  https://github.com/rizsotto/Bear |
  https://github.com/MaskRay/ccls/wiki/Customization#initialization-options
 --]]
-vim.lsp.config['ccls'] = {
+vim.lsp.config["ccls"] = {
   cmd = {
-    'ccls',
+    "ccls",
   },
   filetypes = {
-    'c',
-    'cpp',
-    'objc',
-    'objcpp',
-    'cuda',
+    "c",
+    "cpp",
+    "objc",
+    "objcpp",
+    "cuda",
   },
-  offset_encoding = 'utf-8',
+  offset_encoding = "utf-8",
 }

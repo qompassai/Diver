@@ -2,21 +2,21 @@
 -- Qompass AI EFM LSP Config
 -- Copyright (C) 2025 Qompass AI, All rights reserved
 -- ----------------------------------------
-vim.lsp.config['efm-langserver'] = {
+vim.lsp.config["efm-langserver"] = {
   default_config = {
     cmd = {
-      'efm-langserver'
+      "efm-langserver",
     },
     filetypes = {
-      'c',
-      'cpp',
-      'go',
-      'json',
-      'lua',
-      'markdown',
-      'python',
-      'sh',
-      'yaml',
+      "c",
+      "cpp",
+      "go",
+      "json",
+      "lua",
+      "markdown",
+      "python",
+      "sh",
+      "yaml",
     },
     init_options = {
       documentFormatting = true,
@@ -27,21 +27,21 @@ vim.lsp.config['efm-langserver'] = {
       completion = true,
     },
     root_markers = {
-      '.git',
-      '.hg',
-      '.svn',
+      ".git",
+      ".hg",
+      ".svn",
     },
   },
   codeActionProvider = {
     codeActionKinds = {
-      '',
-      'quickfix',
-      'refactor',
-      'refactor.extract',
-      'refactor.rewrite',
-      'source',
-      'source.fixAll',
-      'source.organizeImports',
+      "",
+      "quickfix",
+      "refactor",
+      "refactor.extract",
+      "refactor.rewrite",
+      "source",
+      "source.fixAll",
+      "source.organizeImports",
     },
     resolveProvider = false,
   },
@@ -49,14 +49,14 @@ vim.lsp.config['efm-langserver'] = {
   completionProvider = {
     resolveProvider = false,
     triggerCharacters = {
-      '.',
-      ':',
-      '>',
+      ".",
+      ":",
+      ">",
       '"',
       "'",
-      '/',
-      '-',
-      '#',
+      "/",
+      "-",
+      "#",
     },
   },
   definitionProvider = false,
@@ -79,8 +79,8 @@ vim.lsp.config['efm-langserver'] = {
   },
   signatureHelpProvider = {
     triggerCharacters = {
-      '(',
-      ',',
+      "(",
+      ",",
     },
   },
   workspaceSymbolProvider = false,

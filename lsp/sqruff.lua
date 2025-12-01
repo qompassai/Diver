@@ -29,7 +29,11 @@ vim.lsp.config["sqruff"] = {
         vim.notify("sqruff: buffer has no name", vim.log.levels.WARN)
         return
       end
-      vim.fn.jobstart({ "sqruff", "format", filename }, {
+      vim.fn.jobstart({
+        "sqruff",
+        "format",
+        filename,
+      }, {
         stdout_buffered = true,
         stderr_buffered = true,
         on_exit = function(_, code)
@@ -57,7 +61,13 @@ vim.lsp.config["sqruff"] = {
         vim.notify("sqruff: buffer has no name", vim.log.levels.WARN)
         return
       end
-      vim.fn.jobstart({ "sqruff", "lint", "--format", "json", filename }, {
+      vim.fn.jobstart({
+        "sqruff",
+        "lint",
+        "--format",
+        "json",
+        filename,
+      }, {
         stdout_buffered = true,
         stderr_buffered = true,
         on_stdout = function(_, data)
@@ -101,16 +111,5 @@ vim.lsp.config["sqruff"] = {
         end,
       })
     end
-
-    vim.api.nvim_buf_set_keymap(bufnr, "n", "<leader>sf", "", {
-      noremap = true,
-      callback = format_sqruff,
-      desc = "Format SQL with sqruff",
-    })
-    vim.api.nvim_buf_set_keymap(bufnr, "n", "<leader>sl", "", {
-      noremap = true,
-      callback = lint_sqruff,
-      desc = "Lint SQL with sqruff",
-    })
   end,
 }

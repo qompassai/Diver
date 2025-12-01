@@ -2,10 +2,15 @@
 -- Qompass AI PostGresTools LSP Spec
 -- Copyright (C) 2025 Qompass AI, All rights reserved
 -- ----------------------------------------
-return {
-  cmd = { "postgrestools", "lsp-proxy" },
-  filetypes = {
-    "sql",
+vim.lsp.config['postgrestools'] = {
+  cmd = {
+    'postgrestools',
+    'lsp-proxy'
   },
-  root_markers = { "postgrestools.jsonc" },
+  filetypes = {
+    'sql',
+  },
+  root_markers = {
+    'postgrestools.jsonc'
+  },
 }

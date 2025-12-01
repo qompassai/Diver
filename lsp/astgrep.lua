@@ -2,17 +2,20 @@
 -- Qompass AI Astgrep LSP Config
 -- Copyright (C) 2025 Qompass AI, All rights reserved
 -- ----------------------------------------
-vim.lsp.config["ast-grep"] = {
-  cmd = { "ast-grep", "lsp" },
-  workspace_required = true,
+-- Reference:  -- https://ast-grep.github.io/reference/languages.html
+vim.lsp.config['ast-grep'] = {
+  cmd = {
+    'ast-grep',
+    'lsp'
+  },
   reuse_client = function(client, config)
     config.cmd_cwd = config.root_dir
     return client.config.cmd_cwd == config.cmd_cwd
   end,
-  filetypes = { -- https://ast-grep.github.io/reference/languages.html
-    "c",
-    "cpp",
-    "rust",
+  filetypes = {
+    'c',
+    'cpp',
+    'rust',
     "go",
     "java",
     "python",
@@ -28,5 +31,8 @@ vim.lsp.config["ast-grep"] = {
     "dart",
     "lua",
   },
-  root_markers = { "sgconfig.yaml", "sgconfig.yml" },
+  root_markers = {
+    "sgconfig.yaml",
+    "sgconfig.yml"
+  },
 }

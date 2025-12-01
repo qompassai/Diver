@@ -2,9 +2,9 @@
 -- Qompass AI Lua LSP Spec
 -- Copyright (C) 2025 Qompass AI, All rights reserved
 ------------------------------------------------------
-vim.lsp.config['lua_ls'] = {
+vim.lsp.config["lua_ls"] = {
   cmd = {
-    'lua-language-server',
+    "lua-language-server",
   },
   codeActionProvider = {
     codeActionKinds = {
@@ -79,8 +79,8 @@ vim.lsp.config['lua_ls'] = {
         defaultConfig = {
           align_continuous_rect_table_field = true,
           align_array_table = true,
-          indent_style = 'space',
-          indent_size = "2",
+          indent_style = "tabs",
+          indent_size = "4",
           quote_style = "ForceSingle",
           trailing_table_separator = "always",
           align_continuous_assign_statement = true,

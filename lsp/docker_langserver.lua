@@ -1,12 +1,18 @@
--- docker_langserver.lua
--- Qompass AI - [Add description here]
+-- /qompassai/Diver/lsp/docker_ls.lua
+-- Qompass AI Docker LSP Spec
 -- Copyright (C) 2025 Qompass AI, All rights reserved
--- ----------------------------------------
+-- ---------------------------------------------------
 -- go install github.com/docker/docker-language-server/cmd/docker-language-server@latest
----@type vim.lsp.Config
-return {
-  cmd = { "docker-language-server", "start", "--stdio" },
-  filetypes = { "dockerfile", "yaml.docker-compose" },
+vim.lsp.config["docker-language-server"] = {
+  cmd = {
+    "docker-language-server",
+    "start",
+    "--stdio",
+  },
+  filetypes = {
+    "dockerfile",
+    "yaml.docker-compose",
+  },
   get_language_id = function(_, ftype)
     if ftype == "yaml.docker-compose" or ftype:lower():find("ya?ml") then
       return "dockercompose"

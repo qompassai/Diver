@@ -3,21 +3,21 @@
 -- Copyright (C) 2025 Qompass AI, All rights reserved
 -- ----------------------------------------
 -- pnpm add -g nxls
-vim.lsp.config['nx_ls'] = {
+vim.lsp.config["nx_ls"] = {
   autostart = true,
   cmd = {
-    'nxls',
-    '--stdio'
+    "nxls",
+    "--stdio",
   },
   filetypes = {
-    'json',
-    'jsonc'
+    "json",
+    "jsonc",
   },
   root_markers = {
-    'nx.json',
+    "nx.json",
     "workspace.json",
     "project.json",
-    ".git"
+    ".git",
   },
   settings = {
     nx = {
@@ -32,5 +32,5 @@ vim.lsp.config['nx_ls'] = {
     nxJson = "nx.json",
     projectJson = "project.json",
   },
-  ""
+  "",
 }

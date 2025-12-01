@@ -25,7 +25,10 @@ vim.lsp.config["makelint"] = {
         vim.notify("makelint: buffer has no name", vim.log.levels.WARN)
         return
       end
-      vim.fn.jobstart({ "makelint", filename }, {
+      vim.fn.jobstart({
+        "makelint",
+        filename,
+      }, {
         stdout_buffered = true,
         stderr_buffered = true,
         on_stdout = function(_, data)

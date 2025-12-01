@@ -12,9 +12,14 @@ require('config.init').config({
   nav = true,
   ui = true
 })
---vim.pack.add({
---  { 'https://github.com/trixnz/sops.nvim' }
---})
+if vim.pack and vim.pack.add then
+  vim.pack.add({
+    {
+      src = 'https://github.com/trixnz/sops.nvim',
+      version = 'main',
+    },
+  })
+end
 vim.g.mapleader = ' '
 vim.g.editorconfig = true
 vim.g.git_command_ssh = 1
@@ -37,7 +42,7 @@ vim.o.backup = false
 vim.o.breakindent = true
 vim.o.clipboard = 'unnamedplus'
 vim.o.cmdheight = 0
-vim.o.completeopt = 'menuone,noselect'
+vim.o.completeopt = 'menu,menuone,noselect'
 vim.o.conceallevel = 0
 vim.o.confirm = true
 vim.o.cursorline = true
@@ -67,6 +72,7 @@ vim.o.modelines = 5
 vim.o.mouse = 'a'
 vim.o.mousescroll = 'ver:3,hor:6'
 vim.o.number = true
+vim.o.redrawtime = 10000
 vim.o.relativenumber = true
 vim.o.scrolloff = 8
 vim.o.secure = true
@@ -89,7 +95,7 @@ vim.o.timeout = true
 vim.o.timeoutlen = 300
 vim.o.ttimeoutlen = 10
 vim.o.ttyfast = true
-vim.o.undodir = vim.fn.expand('~/.config/nvim/undo')
+vim.o.undodir = vim.fn.stdpath('config') .. '/undo'
 vim.o.undofile = true
 vim.o.updatetime = 100
 vim.o.virtualedit = 'block'
@@ -97,6 +103,7 @@ vim.o.wildignore = '*.o,*.obj,*.class,*.pyc'
 vim.o.wildmenu = true
 vim.o.wildmode = 'longest:full,full'
 vim.o.wildignorecase = true
+vim.o.winminwidth = 5
 vim.o.writebackup = true
 vim.o.foldenable = false
 vim.o.foldmethod = 'manual'

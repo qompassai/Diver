@@ -9,7 +9,7 @@ vim.lsp.config["jq_ls"] = {
     codeActionKinds = {
       "",
       "quickfix",
-      "refactor"
+      "refactor",
     },
     resolveProvider = true,
   },

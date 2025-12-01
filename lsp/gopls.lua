@@ -2,10 +2,22 @@
 -- Qompass AI Gopls LSP Spec
 -- Copyright (C) 2025 Qompass AI, All rights reserved
 -- --------------------------------------------------
-return {
-  cmd = { "gopls" },
-  filetypes = { "go", "gomod", "gowork", "gotmpl", "gosum" },
-  root_markers = { "go.mod", "go.work", ".git" },
+vim.lsp.config['gopls'] = {
+  cmd = {
+    'gopls'
+  },
+  filetypes = {
+    'go',
+    'gomod',
+    "gosum",
+    "gotmpl",
+    "gowork"
+  },
+  root_markers = {
+    'go.mod',
+    'go.work',
+    '.git'
+  },
   settings = {
     gopls = {
       gofumpt = true,
@@ -94,7 +106,13 @@ return {
       usePlaceholders = true,
       completeUnimported = true,
       staticcheck = true,
-      directoryFilters = { "-.git", "-.vscode", "-.idea", "-.vscode-test", "-node_modules" },
+      directoryFilters = {
+        '-.git',
+        '-.vscode',
+        '-.idea',
+        '-.vscode-test',
+        '-node_modules'
+      },
       semanticTokens = true,
     },
   },

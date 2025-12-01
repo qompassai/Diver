@@ -22,7 +22,10 @@ vim.lsp.config["checkmake"] = {
         vim.notify("checkmake: buffer has no name", vim.log.levels.WARN)
         return
       end
-      vim.fn.jobstart({ "checkmake", filename }, {
+      vim.fn.jobstart({
+        "checkmake",
+        filename,
+      }, {
         stdout_buffered = true,
         stderr_buffered = true,
         on_stdout = function(_, data)
@@ -58,6 +61,9 @@ vim.lsp.config["checkmake"] = {
         end,
       })
     end
-    vim.keymap.set("n", "<leader>ml", run_checkmake, { buffer = bufnr, desc = "Lint Makefile with checkmake" })
+    vim.keymap.set("n", "<leader>ml", run_checkmake, {
+      buffer = bufnr,
+      desc = "Lint Makefile with checkmake",
+    })
   end,
 }

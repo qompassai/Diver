@@ -1,11 +1,16 @@
--- protols.lua
--- Qompass AI - [Add description here]
+-- /qompassai/Diver/lsp/protols.lua
+-- Qompass AI Protobuf LSP Spec
 -- Copyright (C) 2025 Qompass AI, All rights reserved
--- ----------------------------------------
+-- --------------------------------------------------
 -- cargo install protols
----@type vim.lsp.Config
-return {
-  cmd = { "protols" },
-  filetypes = { "proto" },
-  root_markers = { ".git" },
+vim.lsp.config["protols"] = {
+  cmd = {
+    "protols",
+  },
+  filetypes = {
+    "proto",
+  },
+  root_markers = {
+    ".git",
+  },
 }

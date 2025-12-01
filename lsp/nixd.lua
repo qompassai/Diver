@@ -2,11 +2,20 @@
 -- Qompass AI Nixd LSP Config
 -- Copyright (C) 2025 Qompass AI, All rights reserved
 -- --------------------------------------------------
-return {
+vim.lsp.config['nixd'] = {
   cmd = {
-    "nixd",
+    'nixd',
+    '--log=info',
+    '--inlay-hints=true',
+    '--semantic-tokens=true',
+    '--pretty'
   },
   filetypes = {
-    "nix",
+    'nix',
+  },
+  root_markers = {
+    'flake.nix',
+    'default.nix',
+    '.git',
   },
 }

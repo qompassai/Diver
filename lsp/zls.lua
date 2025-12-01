@@ -2,9 +2,25 @@
 -- Qompass AI ZLS LSP Config
 -- Copyright (C) 2025 Qompass AI, All rights reserved
 -- ----------------------------------------
-vim.lsp.config["zls"] = {
-  cmd = { "zls" },
-  filetypes = { "zig", "zon", "ziggy", "zine" },
+vim.lsp.config['zls'] = {
+  cmd = {
+    'zls',
+    '--log-level', 'info',
+    '--log-file', vim.fn.stdpath('cache') .. '/zls.log',
+    '--config-path', os.getenv('HOME') .. '/.config/zls/zls.jsonc',
+    '--enable-stderr-logs',
+  },
+  filetypes = {
+    'zig',
+    'zon',
+    'ziggy',
+    'zine',
+  },
+  root_markers = {
+    'build.zig',
+    'build.zig.zon',
+    '.git',
+  },
   settings = {
     zls = {
       enable_ast_check_diagnostics = true,

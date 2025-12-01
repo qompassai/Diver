@@ -4,11 +4,12 @@
 -- --------------------------------------------------
 vim.lsp.config["remark_ls"] = {
   cmd = {
-    "remark-language-server", "--stdio"
+    "remark-language-server",
+    "--stdio",
   },
   filetypes = {
     "markdown",
-    "mdx"
+    "mdx",
   },
   root_markers = {
     ".remarkrc",
@@ -31,7 +32,7 @@ vim.lsp.config["remark_ls"] = {
           "remark-lint-no-dead-urls",
           {
             skipOffline = true,
-          }
+          },
         },
       },
       validate = true,

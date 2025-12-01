@@ -44,12 +44,7 @@ vim.lsp.config(
   '*',
   {
     autostart = true,
-    single_file_support = true,
-    flags = {
-      debounce_text_changes = 150,
-      exit_timeout = 500,
-    },
-    workspace_required = false,
+
     capabilities = vim.tbl_deep_extend(
       'force',
       vim.lsp.protocol.make_client_capabilities(),
@@ -125,6 +120,10 @@ vim.lsp.config(
         }
       }
     ),
+    flags = {
+      debounce_text_changes = 150,
+      exit_timeout = 500,
+    },
     on_attach = function(client, bufnr)
       vim.lsp.linked_editing_range.enable(true,
         {
@@ -211,6 +210,8 @@ vim.lsp.config(
           })
       end
     end,
+    single_file_support = true,
+    workspace_required = false,
   })
 vim.diagnostic.config(
   {

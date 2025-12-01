@@ -3,8 +3,14 @@
 -- Copyright (C) 2025 Qompass AI, All rights reserved
 ------------------------------------------------------
 vim.lsp.config["texlab"] = {
-  cmd = { "texlab" },
-  filetypes = { "tex", "plaintex", "bib" },
+  cmd = {
+    "texlab",
+  },
+  filetypes = {
+    "tex",
+    "plaintex",
+    "bib",
+  },
   root_markers = {
     ".git",
     ".latexmkrc",
@@ -18,7 +24,12 @@ vim.lsp.config["texlab"] = {
       rootDirectory = nil,
       build = {
         executable = "latexmk",
-        args = { "-pdf", "-interaction=nonstopmode", "-synctex=1", "%f" },
+        args = {
+          "-pdf",
+          "-interaction=nonstopmode",
+          "-synctex=1",
+          "%f",
+        },
         onSave = false,
         forwardSearchAfter = false,
       },
@@ -77,10 +88,16 @@ vim.lsp.config["texlab"] = {
       return client:exec_cmd({
         title = "cancel",
         command = "texlab.cancelBuild",
-      }, { bufnr = bufnr })
+      }, {
+        bufnr = bufnr,
+      })
     end
     local function dependency_graph()
-      client:exec_cmd({ command = "texlab.showDependencyGraph" }, { bufnr = 0 }, function(err, result)
+      client:exec_cmd({
+        command = "texlab.showDependencyGraph",
+      }, {
+        bufnr = 0,
+      }, function(err, result)
         if err then
           return vim.notify(err.code .. ": " .. err.message, vim.log.levels.ERROR)
         end
@@ -97,7 +114,9 @@ vim.lsp.config["texlab"] = {
           title = ("clean_%s"):format(kind),
           command = cmd_tbl[kind],
           arguments = { { uri = vim.uri_from_bufnr(bufnr) } },
-        }, { bufnr = bufnr }, function(err, _)
+        }, {
+          bufnr = bufnr,
+        }, function(err, _)
           if err then
             vim.notify(("Failed to clean %s files: %s"):format(kind, err.message), vim.log.levels.ERROR)
           else
@@ -111,7 +130,9 @@ vim.lsp.config["texlab"] = {
       client:exec_cmd({
         command = "texlab.findEnvironments",
         arguments = { vim.lsp.util.make_position_params(win, client.offset_encoding) },
-      }, { bufnr = bufnr }, function(err, result)
+      }, {
+        bufnr = bufnr,
+      }, function(err, result)
         if err then
           return vim.notify(err.code .. ": " .. err.message, vim.log.levels.ERROR)
         end
@@ -134,7 +155,9 @@ vim.lsp.config["texlab"] = {
       end)
     end
     local function buf_change_env()
-      vim.ui.input({ prompt = "New environment name: " }, function(input)
+      vim.ui.input({
+        prompt = "New environment name: ",
+      }, function(input)
         if not input or input == "" then
           return vim.notify("No environment name provided", vim.log.levels.WARN)
         end
@@ -144,12 +167,19 @@ vim.lsp.config["texlab"] = {
           command = "texlab.changeEnvironment",
           arguments = {
             {
-              textDocument = { uri = vim.uri_from_bufnr(bufnr) },
-              position = { line = pos[1] - 1, character = pos[2] },
+              textDocument = {
+                uri = vim.uri_from_bufnr(bufnr),
+              },
+              position = {
+                line = pos[1] - 1,
+                character = pos[2],
+              },
               newName = tostring(input),
             },
           },
-        }, { bufnr = bufnr })
+        }, {
+          bufnr = bufnr,
+        })
       end)
     end
     local cmds = {
@@ -168,9 +198,21 @@ vim.lsp.config["texlab"] = {
         fn = buf_cancel_build,
         desc = "Cancel the current build",
       },
-      { name = "TexlabDependencyGraph", fn = dependency_graph, desc = "Show the dependency graph" },
-      { name = "TexlabCleanArtifacts", fn = command_factory("Artifacts"), desc = "Clean the artifacts" },
-      { name = "TexlabCleanAuxiliary", fn = command_factory("Auxiliary"), desc = "Clean the auxiliary files" },
+      {
+        name = "TexlabDependencyGraph",
+        fn = dependency_graph,
+        desc = "Show the dependency graph",
+      },
+      {
+        name = "TexlabCleanArtifacts",
+        fn = command_factory("Artifacts"),
+        desc = "Clean the artifacts",
+      },
+      {
+        name = "TexlabCleanAuxiliary",
+        fn = command_factory("Auxiliary"),
+        desc = "Clean the auxiliary files",
+      },
       {
         name = "TexlabFindEnvironments",
         fn = buf_find_envs,
@@ -185,7 +227,9 @@ vim.lsp.config["texlab"] = {
     for _, cmd in ipairs(cmds) do
       vim.api.nvim_buf_create_user_command(bufnr, "Lsp" .. cmd.name, function()
         cmd.fn()
-      end, { desc = cmd.desc })
+      end, {
+        desc = cmd.desc,
+      })
     end
   end,
 }
