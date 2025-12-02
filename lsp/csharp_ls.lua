@@ -2,8 +2,20 @@
 -- Qompass AI Diver Csharp LSP Config
 -- Copyright (C) 2025 Qompass AI, All rights reserved
 -----------------------------------------------------
-require("lspconfig").csharp_ls.setup({
-  cmd = { "csharp-ls" },
-  filetypes = { "cs" },
-  root_dir = require("lspconfig").util.root_pattern("*.sln", "*.csproj"),
-})
+-- Reference: https://github.com/razzmatazz/csharp-language-server
+-- dotnet tool install --global csharp-ls
+vim.lsp.config['csharp-ls'] = {
+  cmd = {
+    'csharp-ls'
+  },
+  filetypes = {
+    'cs'
+  },
+  init_options = {
+    AutomaticWorkspaceInit = true,
+  },
+  root_markers = {
+    '.sln',
+    '.csproj',
+  },
+}

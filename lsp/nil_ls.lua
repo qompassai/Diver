@@ -2,7 +2,7 @@
 -- Qompass AI Nix LSP Config
 -- Copyright (C) 2025 Qompass AI, All rights reserved
 -- --------------------------------------------------
-vim.lsp.config["nil_ls"] = {
+vim.lsp.config['nil_ls'] = {
   autostart = true,
   cmd = {
     'nil',
@@ -14,12 +14,15 @@ vim.lsp.config["nil_ls"] = {
   root_markers = {
     'default.nix',
     'flake.nix',
-    ".git"
+    '.git'
   },
   settings = {
     ['nil'] = {
       formatting = {
-        command = 'alejandra',
+        command = {
+          'alejandra',
+          '--'
+        },
       },
       diagnostics = {
         enabled = true,
@@ -32,6 +35,7 @@ vim.lsp.config["nil_ls"] = {
           autoEvalInputs = true,
         },
         autoLSPConfig = true,
+        testSetting = 42,
       },
     },
   },

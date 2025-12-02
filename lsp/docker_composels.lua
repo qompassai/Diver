@@ -4,11 +4,19 @@
 -- ---------------------------------------------------
 -- Reference: https://github.com/microsoft/compose-language-service
 -- pnpm add -g @microsoft/compose-language-service
-vim.lsp.config["docker_compose_language_service"] = {
-  autostart = true,
-  cmd = { "docker-compose-langserver", "--stdio" },
-  filetypes = { "yaml", "dockercompose" },
-  root_markers = { "docker-compose.yml", "docker-compose.yaml", ".git" },
+vim.lsp.config['docker_compose_language_service'] = {
+  cmd = {
+    'docker-compose-langserver',
+    '--stdio' },
+  filetypes = {
+    'yaml',
+    'dockercompose'
+  },
+  root_markers = {
+    'docker-compose.yml',
+    'docker-compose.yaml',
+    '.git'
+  },
   settings = {
     dockerCompose = {
       enableCompletion = true,
@@ -16,17 +24,22 @@ vim.lsp.config["docker_compose_language_service"] = {
       validate = true,
       diagnostics = {
         enable = true,
-        severity = "info",
+        severity = 'info',
       },
     },
   },
   init_options = {
     dockerCompose = {
-      fileExtensions = { ".yml", ".yaml" },
+      fileExtensions = {
+        '.yml',
+        '.yaml'
+      },
       serviceCompletion = true,
       imageCompletion = true,
       schemaStoreEnable = true,
-      trace = { server = "verbose" },
+      trace = {
+        server = 'verbose'
+      },
     },
   },
 }
