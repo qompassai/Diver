@@ -1,7 +1,7 @@
--- c3_ls.lua
+-- /qompassai/Diver/lsp/c3_ls.lua
 -- Qompass AI C3 LSP Spec
 -- Copyright (C) 2025 Qompass AI, All rights reserved
--- ----------------------------------------
+-- --------------------------------------------------
 -- References: https://github.com/pherrymason/c3-lsp?tab=readme-ov-file#Installation |
 -- https://github.com/pherrymason/c3-lsp/wiki/Integration-with-editors
 -- yay/apt/dnf c3-lsp

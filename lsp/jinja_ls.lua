@@ -16,4 +16,11 @@ vim.lsp.config['jinja-lsp'] = {
   cmd = { 'jinja-lsp' },
   filetypes = { 'jinja' },
   root_markers = { '.git' },
+  settings = {
+    ['jinja-lsp'] = {
+      templates = './templates',
+      backend = { './src' },
+      lang = 'rust',
+    },
+  },
 }

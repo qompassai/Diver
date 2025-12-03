@@ -76,7 +76,7 @@ vim.lsp.enable({
   --'foam_ls',
   'fortls',
   'fsautocomplete',
-  --'fsharp_language_server',
+  --'fsharp_language_server', --no longer maintained
   --'fstar',
   --'gdscript',
   --'gdshader_lsp',
