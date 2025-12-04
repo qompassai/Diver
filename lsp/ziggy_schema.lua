@@ -2,8 +2,15 @@
 -- Qompass AI Ziggy Schema Config
 -- Copyright (C) 2025 Qompass AI, All rights reserved
 ------------------------------------------------------
-vim.lsp.config["ziggy_schema"] = {
-  cmd = { "ziggy", "lsp", "--schema" },
-  filetypes = { "ziggy_schema" },
+--Reference:  https://ziggy-lang.io/documentation/ziggy-lsp/
+vim.lsp.config['ziggy_schema'] = {
+  cmd = {
+    'ziggy',
+    'lsp',
+    '--schema'
+  },
+  filetypes = {
+    'ziggy_schema'
+  },
   root_markers = { ".git" },
 }
