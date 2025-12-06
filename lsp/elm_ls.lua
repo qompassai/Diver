@@ -5,7 +5,7 @@
 -- Reference: https://github.com/elm-tooling/elm-language-server#installation
 -- pnpm add -g elm elm-test elm-format elm-review @elm-tooling/elm-language-server
 
-vim.lsp.config['elm'] = {
+vim.lsp.config['elm_ls'] = {
   cmd = {
     'elm-language-server'
   },

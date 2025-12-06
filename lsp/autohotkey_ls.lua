@@ -2,7 +2,7 @@
 -- Qompass AI Autohotkey LSP Spec
 -- Copyright (C) 2025 Qompass AI, All rights reserved
 -- ----------------------------------------
-vim.lsp.config["autohotkey_lsp"] = {
+vim.lsp.config['autohotkey_ls'] = {
   cmd = {
     "autohotkey_lsp",
     "--stdio",

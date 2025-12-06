@@ -1,34 +1,31 @@
 -- /qompassai/Diver/lsp/arduino_ls.lua
--- Qompass AI Arduino LSP Spec (arduino-language-server)
+-- Qompass AI Arduino LSP Spec
 -- Copyright (C) 2025 Qompass AI, All rights reserved
 ------------------------------------------------------
-local cli_config = vim.fn.expand("~/.arduino15/arduino-cli.yaml")
-local cli_bin = "arduino-cli"
-local clangd_bin = "clangd"
-local fqbn = "arduino:avr:uno"
-vim.lsp.config["arduino_language_server"] = {
+local cli_config = vim.fn.expand('~/.arduino15/arduino-cli.yaml')
+local cli_bin = 'arduino-cli'
+vim.lsp.config['arduino_ls'] = {
   cmd = {
-    "arduino-language-server",
-    "-cli-config",
+    'arduino-language-server',
+    '-cli-config',
     cli_config,
-    "-cli",
+    '-cli',
     cli_bin,
-    "-clangd",
-    clangd_bin,
-    "-fqbn",
-    fqbn,
+    '-clangd',
+    '-fqbn',
+    'arduino:avr:uno',
   },
   filetypes = {
-    "arduino",
-    "ino",
-    "cpp",
+    'arduino',
+    'ino',
+    'cpp',
   },
   codeActionProvider = {
     codeActionKinds = {
-      "",
-      "quickfix",
-      "refactor.extract",
-      "refactor.rewrite",
+      '',
+      'quickfix',
+      'refactor.extract',
+      'refactor.rewrite',
     },
     resolveProvider = true,
   },

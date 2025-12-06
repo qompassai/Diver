@@ -4,8 +4,7 @@
 -- --------------------------------------------------
 --Reference: https://github.com/igor-prusov/dts-lsp
 -- cargo install dts-lsp
-vim.lsp.config['dts-lsp'] {
-  name = 'dts_lsp',
+vim.lsp.config['dts_ls'] = {
   cmd = {
     'dts-lsp'
   },
@@ -17,5 +16,7 @@ vim.lsp.config['dts-lsp'] {
   root_markers = {
     '.git'
   },
-  settings = {},
+  settings = {
+    ...
+  },
 }

@@ -4,7 +4,7 @@
 -- -----------------------------------------------------------
 -- Reference: https://github.com/nolanderc/glasgow
 -- cargo install glasgow
-vim.lsp.config['glasgow'] = {
+vim.lsp.config['glasgow_ls'] = {
   cmd = {
     'glasgow'
   },

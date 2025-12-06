@@ -3,9 +3,13 @@
 -- Copyright (C) 2025 Qompass AI, All rights reserved
 -- --------------------------------------------------
 return {
-    'eyalk11/speech-to-text.nvim',
-    config = function()
-        vim.keymap.set('n', '<C-L>', ':Voice<CR>')
-        vim.keymap.set('i', '<C-L>', '<C-R>=GetVoice()<CR>')
-    end
+  'eyalk11/speech-to-text.nvim',
+  config = function()
+    vim.keymap.set(
+      'n', '<C-L>', ':Voice<CR>'
+    )
+    vim.keymap.set(
+      'i', '<C-L>', '<C-R>=GetVoice()<CR>'
+    )
+  end
 }

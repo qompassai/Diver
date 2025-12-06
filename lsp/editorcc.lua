@@ -2,7 +2,7 @@
 -- Qompass AI EditorConfig Compliance Spec
 -- Copyright (C) 2025 Qompass AI, All rights reserved
 ------------------------------------------------------
-vim.lsp.config['editorconfig_checker'] = {
+vim.lsp.config['editorcc_ls'] = {
   cmd = {
     'editorconfig-checker',
   },
@@ -30,7 +30,11 @@ vim.lsp.config['editorconfig_checker'] = {
         vim.notify("editorconfig-checker: buffer has no name", vim.log.levels.WARN)
         return
       end
-      local cmd = { "editorconfig-checker", "-file", filename }
+      local cmd = {
+        "editorconfig-checker",
+        "-file",
+        filename
+      }
       vim.fn.jobstart(cmd, {
         stdout_buffered = true,
         stderr_buffered = true,

@@ -3,7 +3,7 @@
 -- Copyright (C) 2025 Qompass AI, All rights reserved
 ------------------------------------------------------
 -- Reference: https://github.com/facebook/flow
-vim.lsp.config['flow'] = {
+vim.lsp.config['flow_ls'] = {
   cmd = {
     'npx',
     '--no-install',

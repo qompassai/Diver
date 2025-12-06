@@ -3,7 +3,7 @@
 -- Copyright (C) 2025 Qompass AI, All rights reserved
 -- --------------------------------------------------
 vim.cmd [[ autocmd BufNewFile,BufRead *.bicep set filetype=bicep ]]
-vim.lsp.config['bicep-langserver'] = {
+vim.lsp.config['bicep_ls'] = {
   cmd = {
     'bicep-langserver'
   },
@@ -12,5 +12,7 @@ vim.lsp.config['bicep-langserver'] = {
     'bicep-params'
   },
   init_options = {},
-  root_markers = { '.git' },
+  root_markers = {
+    '.git'
+  },
 }

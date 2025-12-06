@@ -4,7 +4,7 @@
 -- ---------------------------------------------------
 -- Reference: https://github.com/bergercookie/asm-lsp
 -- cargo install --git https://github.com/bergercookie/asm-lsp asm-lsp
-vim.lsp.config['asm-lsp'] = {
+vim.lsp.config['asm_ls'] = {
   cmd = {
     'asm-lsp'
   },

@@ -3,9 +3,9 @@
 -- Copyright (C) 2025 Qompass AI, All rights reserved
 -- ---------------------------------------------------
 -- Reference:  https://github.com/omnisharp/omnisharp-roslyn
-vim.lsp.config['OmniSharp'] = {
+vim.lsp.config['omnisharp'] = {
   cmd = {
-    vim.fn.executable('OmniSharp') == 1 and 'OmniSharp' or 'omnisharp',
+    'omnisharp',
     '-z',
     '--hostPID',
     tostring(vim.fn.getpid()),

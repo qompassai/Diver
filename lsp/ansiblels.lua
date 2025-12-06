@@ -1,8 +1,8 @@
--- /qompassai/Diver/lsp/ansiblels.lua
+-- /qompassai/Diver/lsp/ansible_ls.lua
 -- Qompass AI Ansiblels LSP Config
 -- Copyright (C) 2025 Qompass AI, All rights reserved
 -- ---------------------------------------------------
-vim.lsp.config['ansiblels'] = {
+vim.lsp.config['ansible_ls'] = {
   cmd = {
     'ansible-language-server',
     '--stdio'
@@ -25,7 +25,7 @@ vim.lsp.config['ansiblels'] = {
       executionEnvironment = {
         enabled = true,
         containerEngine = 'auto',
-        image = "",
+        image = '',
         pullPolicy = "missing",
         volumeMounts = {},
       },

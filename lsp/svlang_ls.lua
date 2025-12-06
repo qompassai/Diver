@@ -5,7 +5,9 @@
 -- Reference: https://github.com/imc-trading/svlangserver
 --pnpm add -g @imc-trading/svlangserver
 vim.lsp.config['svlangserver'] = {
-  cmd = { 'svlangserver' },
+  cmd = {
+    'svlangserver'
+  },
   filetypes = {
     'verilog',
     'systemverilog'
@@ -25,18 +27,20 @@ vim.lsp.config['svlangserver'] = {
   on_attach = function(client, bufnr)
     vim.api.nvim_buf_create_user_command(bufnr, 'LspSvlangserverBuildIndex', function()
       client:exec_cmd({
-        title = 'Build Index',
-        command = 'systemverilog.build_index',
-      }, { bufnr = bufnr })
+          title = 'Build Index',
+          command = 'systemverilog.build_index',
+        },
+        { bufnr = bufnr })
     end, {
       desc = 'Instructs language server to rerun indexing',
     })
     vim.api.nvim_buf_create_user_command(bufnr, 'LspSvlangserverReportHierarchy', function()
       client:exec_cmd({
-        title = 'Build Index',
-        command = 'systemverilog.build_index',
-        arguments = { vim.fn.expand '<cword>' },
-      }, { bufnr = bufnr })
+          title = 'Build Index',
+          command = 'systemverilog.build_index',
+          arguments = { vim.fn.expand '<cword>' },
+        },
+        { bufnr = bufnr })
     end, {
       desc = 'Generates hierarchy for the given module',
     })

@@ -2,7 +2,7 @@
 -- Qompass AI Makefile Lint Spec
 -- Copyright (C) 2025 Qompass AI, All rights reserved
 ------------------------------------------------------
-vim.lsp.config["makelint"] = {
+vim.lsp.config['makelint'] = {
   cmd = {
     "makelint",
   },

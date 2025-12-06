@@ -3,9 +3,9 @@
 -- Copyright (C) 2025 Qompass AI, All rights reserved
 -- --------------------------------------------------
 -- Reference:  https://github.com/typed-ember/glint | https://typed-ember.gitbook.io/glint/
-vim.lsp.config['glint'] = {
+vim.lsp.config['glint_ls'] = {
   cmd = {
-    'glint'
+    'glint-language-server'
   },
   init_options = {
     glint = {

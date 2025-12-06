@@ -2,7 +2,7 @@
 -- Qompass AI OpenCL LSP Spec
 -- Copyright (C) 2025 Qompass AI, All rights reserved
 -- --------------------------------------------------
-vim.lsp.config['opencl-language-server'] = {
+vim.lsp.config['opencl_ls'] = {
   cmd = {
     'opencl-language-server',
     '--stdio',

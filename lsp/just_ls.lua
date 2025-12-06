@@ -4,12 +4,14 @@
 -- ---------------------------------------------------
 -- Reference: https://github.com/terror/just-lsp
 -- cargo install just-lsp
-vim.lsp.config['just-lsp'] = {
+vim.lsp.config['just_ls'] = {
   cmd = {
     'just-lsp'
   },
   filetypes = {
     'just'
   },
-  root_markers = { '.git' },
+  root_markers = {
+    '.git'
+  },
 }

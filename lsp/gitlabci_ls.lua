@@ -4,7 +4,7 @@
 -- ----------------------------------------
 --Reference: https://github.com/alesbrelih/gitlab-ci-ls
 -- cargo install gitlab-ci-ls
-vim.lsp.config['gitlab-ci-ls'] = {
+vim.lsp.config['gitlabci_ls'] = {
   cmd = {
     'gitlab-ci-ls'
   },
@@ -33,8 +33,8 @@ vim.lsp.config['gitlab-ci-ls'] = {
         .. '/log/gitlab-ci-ls.log',
   },
   root_markers = {
-    '.gitlab-ci.yml',
-    '.gitlab-ci.yaml',
     '.git',
+    '.gitlab-ci.yml',
+    '.gitlab-ci.yaml'
   },
 }

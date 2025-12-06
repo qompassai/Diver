@@ -9,7 +9,7 @@ vim.filetype.add {
     ['openapi.*%.json'] = 'json.openapi',
   },
 }
-vim.lsp.config['vacuum'] = {
+vim.lsp.config['vacuum_ls'] = {
   cmd = {
     'vacuum',
     'language-server'

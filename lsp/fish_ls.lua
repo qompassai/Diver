@@ -3,7 +3,7 @@
 -- Copyright (C) 2025 Qompass AI, All rights reserved
 -- --------------------------------------------------
 -- Reference: https://github.com/ndonfris/fish-lsp
-vim.lsp.config['fish-lsp'] = {
+vim.lsp.config['fish_ls'] = {
   cmd = {
     'fish-lsp',
     'start'

@@ -3,7 +3,7 @@
 -- Copyright (C) 2025 Qompass AI, All rights reserved
 -- ----------------------------------------
 --Reference:  https://www.npmjs.com/package/@github/copilot-language-server
-vim.lsp.config['copilot'] = {
+vim.lsp.config['copilot_ls'] = {
   cmd = {
     'copilot-language-server',
     '--stdio',

@@ -5,7 +5,10 @@
 -- Reference: https://biomejs.dev/blog/annoucing-biome
 -- npm install -g @biomejs/biome
 vim.lsp.config['biome'] = {
-  cmd = { 'biome', 'lsp-proxy' },
+  cmd = {
+    'biome',
+    'lsp-proxy'
+  },
   filetypes = {
     'astro',
     'css',

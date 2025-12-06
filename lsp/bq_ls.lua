@@ -4,7 +4,7 @@
 -- --------------------------------------------------
 -- Reference: https://github.com/kitagry/bqls/
 -- go install github.com/kitagry/bqls@latest
-vim.lsp.config['bqls'] = {
+vim.lsp.config['bq_ls'] = {
   cmd = {
     'bqls'
   },

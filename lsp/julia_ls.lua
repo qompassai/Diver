@@ -3,7 +3,7 @@
 -- Copyright (C) 2025 Qompass AI, All rights reserved
 -- --------------------------------------------------
 -- Reference: https://github.com/julia-vscode/julia-vscode
-vim.lsp.config['julia'] = {
+vim.lsp.config['julia_ls'] = {
   cmd = {
     'julia',
     '--startup-file=no',
@@ -11,13 +11,13 @@ vim.lsp.config['julia'] = {
     '-e',
     [[
       ls_install_path = joinpath(
-          get(DEPOT_PATH, 1, joinpath(homedir(), ".julia")),
-          "environments", "nvim-lspconfig"
+          get(DEPOT_PATH, 1, joinpath(homedir(), '.julia')),
+          'environments', 'nvim-lspconfig'
       )
       pushfirst!(LOAD_PATH, ls_install_path)
       using LanguageServer, SymbolServer, StaticLint
       popfirst!(LOAD_PATH)
-      depot_path = get(ENV, "JULIA_DEPOT_PATH", "")
+      depot_path = get(ENV, 'JULIA_DEPOT_PATH', '')
       project_path = let
           dirname(something(
               Base.load_path_expand((
@@ -29,7 +29,7 @@ vim.lsp.config['julia'] = {
               Base.load_path_expand("@v#.#"),
           ))
       end
-      @info "Running language server" VERSION pwd() project_path depot_path
+      @info 'Running language server' VERSION pwd() project_path depot_path
       server = LanguageServer.LanguageServerInstance(stdin, stdout, project_path, depot_path)
       server.runlinter = true
       run(server)
@@ -45,7 +45,10 @@ vim.lsp.config['julia'] = {
 }
 on_attach = function(_, bufnr)
   vim.api.nvim_buf_create_user_command(bufnr, 'JuliaEnvHere', function()
-    local cwd = vim.fn.getcwd()
-    require('julia_env').activate(cwd)
-  end, { desc = 'Activate Julia env from current directory' })
+      local cwd = vim.fn.getcwd()
+      require('julia_env').activate(cwd)
+    end,
+    {
+      desc = 'Activate Julia env from current directory'
+    })
 end

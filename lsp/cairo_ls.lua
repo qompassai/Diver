@@ -5,8 +5,8 @@
 -- cargo install --git https://github.com/software-mansion/scarb scarb
 vim.lsp.config['cairo_ls'] = {
   cmd = {
-    "scarb",
-    "cairo-language-server",
+    'scarb',
+    'cairo-language-server',
     "/C",
     "--node-ipc"
   },

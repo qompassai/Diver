@@ -4,24 +4,34 @@
 ------------------------------------------------------
 -- Reference: https://angular.dev/tools/language-service
 -- pnpm add -g @angular/language-server
-local ngserver_path = "pnpm_global_node_modules" .. "/@angular/language-server/bin/ngserver"
-vim.lsp.config["angularls"] = {
+local ngserver_path = "pnpm_global_node_modules" .. '/@angular/language-server/bin/ngserver'
+vim.lsp.config['angular_ls'] = {
   cmd = {
-    "node",
+    'node',
     ngserver_path,
-    "--stdio",
-    "--tsProbeLocations",
-    "pnpm_global_node_modules",
-    "--ngProbeLocations",
-    "pnpm_global_node_modules",
-    "--logFile",
-    vim.fn.stdpath("cache") .. "/nglangsvc.log",
-    "--logVerbosity",
-    "verbose",
+    '--stdio',
+    '--tsProbeLocations',
+    'pnpm_global_node_modules',
+    '--ngProbeLocations',
+    'pnpm_global_node_modules',
+    '--logFile',
+    vim.fn.stdpath('cache') .. '/nglangsvc.log',
+    '--logVerbosity',
+    'verbose',
   },
-  filetypes = { "typescript", "typescriptreact", "html", "angular" },
+  filetypes = {
+    'angular',
+    'html',
+    'typescript',
+    'typescriptreact'
+  },
   codeActionProvider = {
-    codeActionKinds = { "", "quickfix", "refactor.extract", "refactor.rewrite" },
+    codeActionKinds = {
+      "",
+      'refactor.extract',
+      'refactor.rewrite',
+      "quickfix",
+    },
     resolveProvider = true,
   },
   colorProvider = false,

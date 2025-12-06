@@ -6,7 +6,7 @@
 -- https://github.com/pherrymason/c3-lsp/wiki/Integration-with-editors
 -- yay/apt/dnf c3-lsp
 vim.cmd [[autocmd BufNewFile,BufRead *.c3 set filetype=c3]]
-vim.lsp.config['c3-lsp'] = {
+vim.lsp.config['c3_ls'] = {
   cmd = {
     'c3lsp',
     '--send-reports=false',

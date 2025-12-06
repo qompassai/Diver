@@ -2,8 +2,10 @@
 -- Qompass AI Codebook LSP Spec
 -- Code-aware spell checker for code
 ------------------------------------------------------
-vim.lsp.config["codebook"] = {
-  cmd = { "codebook-lsp" },
+vim.lsp.config['codebook_ls'] = {
+  cmd = {
+    'codebook-lsp'
+  },
   filetypes = {
     "lua",
     "vim",
@@ -26,6 +28,5 @@ vim.lsp.config["codebook"] = {
     "toml",
     "json",
   },
-  -- root_dir = vim.fn.getcwd,
   settings = {},
 }

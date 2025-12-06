@@ -2,7 +2,7 @@
 -- Qompass AI Clarinet LSP Spec
 -- Copyright (C) 2025 Qompass AI, All rights reserved
 -- --------------------------------------------------
-vim.lsp.config['clarinet'] = {
+vim.lsp.config['clarinet_ls'] = {
   cmd = {
     'clarinet',
     'lsp'

@@ -4,7 +4,7 @@
 -- ---------------------------------------------------
 -- Reference:  https://github.com/FoamScience/foam-language-server
 -- pnpm add -g foam-language-server
-vim.lsp.config['foam-ls'] = {
+vim.lsp.config['foam_ls'] = {
   cmd = {
     'foam-ls',
     '--stdio'

@@ -99,7 +99,7 @@
 
     hdlchecker
 
-    herbls
+  *  herbls
 
    -- hlasm
 
@@ -159,9 +159,9 @@
 
     pli
 
-    prismals
+  *  prismals
 
-    prosemdlsp
+   * prosemdlsp
 
    * pug
 
@@ -177,7 +177,7 @@
 
    * regols
 
-    rls
+   -- rls --deprecated, rust-analyzer now
 
    * robotcode
 
@@ -195,23 +195,23 @@
 
   *  slintlsp
 
-    snakeskinls
+   * snakeskinls
 
-    solang
+   * solang
 
-    solargraph
+   * solargraph
 
-    solc
+  *  solc
 
-    solidity
+  --  solidity
 
     soliditylsnomicfoundation
 
-    sorbet
+  *  sorbet
 
     sourcekit
 
-    spectral
+   * spectral
 
    * sqls
 
@@ -219,11 +219,11 @@
 
    * standardrb
 
-    starlarkrust
+  *  starlarkrust
 
     starpls
 
-    steep
+  *  steep
 
     stimulusls
 
@@ -239,29 +239,29 @@
 
     tealls
 
-    templ
+   * templ
 
   *  textlsp
 
-    tflint
+   * tflint
 
   *  tofuls
 
-    tombi
+   * tombi
 
    * tspserver
 
-    ttags
+   * ttags
 
-    turtlels
+   * turtlels
 
-    tvmffinavigator
+  *  tvmffinavigator
 
-    twiggylanguageserver
+  *  twiggylanguageserver
 
-    typeprof
+  *  typeprof
 
-    typstlsp
+   -- typstlsp deprecated ifo tinymist
 
     ungrammar
 

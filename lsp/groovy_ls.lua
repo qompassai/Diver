@@ -2,7 +2,8 @@
 -- Qompass AI Groovy LSP Spec
 -- Copyright (C) 2025 Qompass AI, All rights reserved
 -- ----------------------------------------
-vim.lsp.config['groovyls'] = {
+--Reference: https://github.com/prominic/groovy-language-server.git
+vim.lsp.config['groovy_ls'] = {
   cmd = {
     'java',
     '-jar',

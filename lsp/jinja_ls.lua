@@ -11,15 +11,23 @@ vim.filetype.add {
     j2 = 'jinja',
   },
 }
-vim.lsp.config['jinja-lsp'] = {
+vim.lsp.config['jinja_ls'] = {
   name = 'jinja_lsp',
-  cmd = { 'jinja-lsp' },
-  filetypes = { 'jinja' },
-  root_markers = { '.git' },
+  cmd = {
+    'jinja-lsp'
+  },
+  filetypes = {
+    'jinja'
+  },
+  root_markers = {
+    '.git'
+  },
   settings = {
     ['jinja-lsp'] = {
       templates = './templates',
-      backend = { './src' },
+      backend = {
+        './src'
+      },
       lang = 'rust',
     },
   },

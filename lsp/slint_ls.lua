@@ -5,7 +5,7 @@
 -- Reference: https://github.com/sixtyfpsui/sixtyfps
 -- cargo install slint-lsp
 vim.cmd [[ autocmd BufRead,BufNewFile *.slint set filetype=slint ]]
-return {
+vim.lsp.config['slint_ls'] = {
   cmd = {
     'slint-lsp'
   },

@@ -1,13 +1,24 @@
 -- /qompassai/Diver/lsp/antlers_ls.lua
 -- Qompass AI Antlers LSP Spec
 -- Copyright (C) 2025 Qompass AI, All rights reserved
--- ----------------------------------------
+-- --------------------------------------------------
 -- pnpm add -g antlers-language-server
-vim.lsp.config["antlersls"] = {
-  autostart = true,
-  cmd = { "antlers-language-server", "--stdio" },
-  filetypes = { "antlers", "html.antlers", "antlers.html" },
-  root_markers = { ".git", "composer.json", "package.json", "antlers.config.js" },
+vim.lsp.config['antlers_ls'] = {
+  cmd = {
+    'antlersls',
+    '--stdio'
+  },
+  filetypes = {
+    'antlers',
+    'html.antlers',
+    'antlers.html'
+  },
+  root_markers = {
+    ".git",
+    'composer.json',
+    'package.json',
+    'antlers.config.js'
+  },
   settings = {
     antlers = {
       formatting = {
@@ -20,7 +31,11 @@ vim.lsp.config["antlersls"] = {
       },
       completion = {
         enabled = true,
-        triggerCharacters = { "{", " ", "." },
+        triggerCharacters = {
+          "{",
+          " ",
+          "."
+        },
       },
       snippets = {
         enabled = true,
@@ -40,7 +55,9 @@ vim.lsp.config["antlersls"] = {
   init_options = {
     settings = {
       antlers = {
-        trace = { server = "off" },
+        trace = {
+          server = 'on'
+        },
       },
     },
   },

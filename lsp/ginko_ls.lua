@@ -18,7 +18,7 @@ vim.api.nvim_create_autocmd
       vim.bo[args.buf].filetype = 'devicetree'
     end,
   })
-vim.lsp.config['ginko_ls'] {
+vim.lsp.config['ginko_ls'] = {
   cmd = {
     'ginko_ls'
   },

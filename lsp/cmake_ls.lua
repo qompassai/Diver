@@ -3,7 +3,7 @@
 -- Copyright (C) 2025 Qompass AI, All rights reserved
 -- --------------------------------------------------
 -- References: https://github.com/regen100/cmake-language-server
-vim.lsp.config['cmake'] = {
+vim.lsp.config['cmake_ls'] = {
   cmd = {
     'cmake-language-server'
   },

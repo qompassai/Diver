@@ -4,7 +4,7 @@
 -- --------------------------------------------------
 -- Reference: --- https://github.com/olrtg/emmet-language-server
 -- pnpm add -g g @olrtg/emmet-language-server
-vim.lsp.config['emmet-language-server'] = {
+vim.lsp.config['emmet_ls'] = {
   cmd = {
     'emmet-language-server',
     '--stdio'

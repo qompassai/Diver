@@ -4,7 +4,7 @@
 -- ----------------------------------------
 -- Reference: https://github.com/iamcco/diagnostic-languageserver
 -- pnpm add -g diagnostic-languageserver
-vim.lsp.config['diagnostic-languageserver'] = {
+vim.lsp.config['diagnostic_ls'] = {
   cmd = {
     'diagnostic-languageserver',
     '--stdio'

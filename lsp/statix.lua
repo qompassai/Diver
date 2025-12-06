@@ -1,10 +1,20 @@
 -- /qompassai/Diver/lsp/statix.lua
 -- Qompass AI Statix LSP Spec
 -- Copyright (C) 2025 Qompass AI, All rights reserved
--- ----------------------------------------
----@type vim.lsp.Config
-return {
-  cmd = { "statix", "check", "--stdin" },
-  filetypes = { "nix" },
-  root_markers = { "flake.nix", ".git" },
+-- -------------------------------------------------
+--nix run nixpkgs#statix
+--Reference: https://github.com/nerdypepper/statix
+vim.lsp.config['statix'] = {
+  cmd = {
+    'statix',
+    'check',
+    '--stdin'
+  },
+  filetypes = {
+    'nix'
+  },
+  root_markers = {
+    'flake.nix',
+    '.git'
+  },
 }

@@ -2,7 +2,7 @@
 -- Qompass AI Nginx Config Formatter Spec
 -- Copyright (C) 2025 Qompass AI, All rights reserved
 ------------------------------------------------------
-vim.lsp.config["nginx_formatter"] = {
+vim.lsp.config['nginxfmt_ls'] = {
   cmd = {
     "nginxfmt.py",
   },

@@ -4,27 +4,27 @@
 ------------------------------------------------------
 vim.lsp.config["lua_ls"] = {
   cmd = {
-    "lua-language-server",
+    'lua-language-server',
   },
   codeActionProvider = {
     codeActionKinds = {
-      "",
-      "quickfix",
-      "refactor.rewrite",
-      "refactor.extract",
+      '',
+      'quickfix',
+      'refactor.rewrite',
+      'refactor.extract',
     },
     resolveProvider = true,
   },
   colorProvider = true,
   filetypes = {
-    "lua",
+    'lua',
     "luau",
   },
   semanticTokensProvider = {
     full = true,
     legend = {
       tokenModifiers = {
-        "declaration",
+        'declaration',
         "definition",
         "readonly",
         "static",
@@ -79,17 +79,17 @@ vim.lsp.config["lua_ls"] = {
         defaultConfig = {
           align_continuous_rect_table_field = true,
           align_array_table = true,
-          indent_style = "tabs",
+          indent_style = 'tabs',
           indent_size = "4",
-          quote_style = "ForceSingle",
-          trailing_table_separator = "always",
+          quote_style = 'ForceSingle',
+          trailing_table_separator = 'always',
           align_continuous_assign_statement = true,
         },
       },
       runtime = {
-        version = "LuaJIT",
+        version = 'LuaJIT',
         path = {
-          "lua/?.lua",
+          'lua/?.lua',
           "lua/?/init.lua",
         },
       },
@@ -105,7 +105,7 @@ vim.lsp.config["lua_ls"] = {
           "lowercase-global",
         },
         severity = {
-          ["unused-local"] = "Hint",
+          ["unused-local"] = 'Hint',
         },
         unusedLocalExclude = {
           "_*",
@@ -114,7 +114,7 @@ vim.lsp.config["lua_ls"] = {
       workspace = {
         checkThirdParty = true,
         library = {
-          vim.api.nvim_get_runtime_file("", true),
+          vim.api.nvim_get_runtime_file('', true),
           vim.env.VIMRUNTIME,
           "${3rd}/luv/library",
           "${3rd}/busted/library",
@@ -124,7 +124,10 @@ vim.lsp.config["lua_ls"] = {
           "${3rd}/blink.cmp/library",
           vim.fn.expand("$HOME") .. "/.config/nvim/lua/",
         },
-        ignoreDir = { "node_modules", "build" },
+        ignoreDir = {
+          'node_modules',
+          'build'
+        },
         maxPreload = 2000,
         preloadFileSize = 50000,
       },
@@ -140,8 +143,8 @@ vim.lsp.config["lua_ls"] = {
         enable = true,
         setType = true,
         paramType = true,
-        paramName = "All",
-        arrayIndex = "Enable",
+        paramName = 'All',
+        arrayIndex = 'Enable',
         await = true,
       },
     },

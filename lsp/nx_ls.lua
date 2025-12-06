@@ -1,12 +1,11 @@
--- nx_ls.lua
--- Qompass AI NX Server
+-- /qompassai/Diver/lsp/nx_ls.lua
+-- Qompass AI NX LSP Spec
 -- Copyright (C) 2025 Qompass AI, All rights reserved
--- ----------------------------------------
+-- --------------------------------------------------
 -- pnpm add -g nxls
-vim.lsp.config["nx_ls"] = {
-  autostart = true,
+vim.lsp.config['nx_ls'] = {
   cmd = {
-    "nxls",
+    'nxls',
     "--stdio",
   },
   filetypes = {

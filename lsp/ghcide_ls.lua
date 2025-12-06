@@ -4,7 +4,7 @@
 -- ----------------------------------------
 -- Deprecated
 -- Reference: https://github.com/digital-asset/ghcide
-vim.lsp.config['ghcide'] {
+vim.lsp.config['ghcide_ls'] = {
   cmd = {
     'ghcide',
     '--lsp'

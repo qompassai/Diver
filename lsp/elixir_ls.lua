@@ -1,11 +1,18 @@
--- /qompassai/Diver/lsp/elixirls.lua
+-- /qompassai/Diver/lsp/elixir_ls.lua
 -- Qompass AI Elixir LSP Spec (ElixirLS)
 -- Copyright (C) 2025 Qompass AI, All rights reserved
 ------------------------------------------------------
 
-vim.lsp.config["elixirls"] = {
-  cmd = "elixir-ls",
-  filetypes = { "elixir", "heex", "eelixir", "surface" },
+vim.lsp.config['elixir_ls'] = {
+  cmd = {
+    'elixir-ls'
+  },
+  filetypes = {
+    'elixir',
+    'heex',
+    'elixir',
+    'surface'
+  },
   codeActionProvider = {
     codeActionKinds = {
       "",
@@ -62,7 +69,7 @@ vim.lsp.config["elixirls"] = {
   settings = {
     elixirLS = {
       dialyzerEnabled = true,
-      dialyzerFormat = "dialyxir",
+      dialyzerFormat = 'dialyxir',
       fetchDeps = true,
       enableTestLenses = true,
       mixEnv = "test",

@@ -4,7 +4,7 @@
 -- ----------------------------------------------------
 -- https://github.com/ember-tooling/ember-language-server
 -- pnpm add -g @ember-tooling/ember-language-server
-vim.lsp.config['ember-language-server'] = {
+vim.lsp.config['ember_ls'] = {
   cmd = {
     'ember-language-server',
     '--stdio',

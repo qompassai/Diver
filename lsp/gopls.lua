@@ -1,8 +1,8 @@
--- /qompassai/Diver/lsp/gopls.lua
+-- /qompassai/Diver/lsp/gop_ls.lua
 -- Qompass AI Gopls LSP Spec
 -- Copyright (C) 2025 Qompass AI, All rights reserved
 -- --------------------------------------------------
-vim.lsp.config['gopls'] = {
+vim.lsp.config['gop_ls'] = {
   cmd = {
     'gopls'
   },

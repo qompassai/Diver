@@ -3,14 +3,21 @@
 -- Copyright (C) 2025 Qompass AI, All rights reserved
 -- ---------------------------------------------------
 -- Reference: https://github.com/faldor20/fsharp-language-server
-vim.api.nvim_create_autocmd({ 'BufNewFile', 'BufRead' }, {
-  pattern = { '*.fs', '*.fsx', '*.fsi' },
+vim.api.nvim_create_autocmd({
+  'BufNewFile',
+  'BufRead'
+}, {
+  pattern = {
+    '*.fs',
+    '*.fsx',
+    '*.fsi'
+  },
   callback = function(args)
     vim.bo[args.buf].filetype = 'fsharp'
   end,
 })
 
-vim.lsp.config['FSharpLanguageServer'] = {
+vim.lsp.config['fsharp_ls'] = {
   cmd = {
     'dotnet',
     'FSharpLanguageServer.dll',

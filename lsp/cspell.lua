@@ -1,8 +1,8 @@
--- /qompassai/Diver/lsp/cspell_lsp.lua
--- Qompass AI Code Spell LSP Spec (cspell-lsp)
+-- /qompassai/Diver/lsp/cspell_ls.lua
+-- Qompass AI Code Spell LSP Spec
 -- Copyright (C) 2025 Qompass AI, All rights reserved
 ------------------------------------------------------
-vim.lsp.config["cspell-lsp"] = {
+vim.lsp.config['cspell_ls'] = {
   cmd = {
     "cspell-lsp",
     "--stdio",

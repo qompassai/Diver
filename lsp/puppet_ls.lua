@@ -2,7 +2,7 @@
 -- Qompass AI Puppet LSP Spec
 -- Copyright (C) 2025 Qompass AI, All rights reserved
 -- --------------------------------------------------
-vim.lsp.config['puppet-languageserver'] = {
+vim.lsp.config['puppet_ls'] = {
   cmd = {
     'puppet-languageserver',
     '--stdio'

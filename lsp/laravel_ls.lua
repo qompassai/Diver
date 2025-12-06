@@ -7,13 +7,13 @@ vim.lsp.config['laravel_ls'] = {
     'laravel-ls',
   },
   filetypes = {
-    "php",
-    "blade",
+    'php',
+    'blade',
   },
   root_markers = {
-    "artisan",
-    "composer.json",
-    ".git",
+    'artisan',
+    'composer.json',
+    '.git',
   },
   settings = {
     ['laravel-ls'] = {},

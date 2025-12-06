@@ -4,7 +4,7 @@
 -- ---------------------------------------------------
 ---    coursier launch software.amazon.smithy:smithy-language-server:0.7.0
 
-vim.lsp.config['smithy'] = {
+vim.lsp.config['smithy_ls'] = {
   cmd = {
     'coursier',
     'launch',
@@ -28,7 +28,7 @@ vim.lsp.config['smithy'] = {
     statusBarProvider = 'show-message',
     isHttpEnabled = true,
     compilerOptions = {
-      snippetAutoIndent = false,
+      snippetAutoIndent = true,
     },
   },
 }

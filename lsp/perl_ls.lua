@@ -3,7 +3,7 @@
 -- Copyright (C) 2025 Qompass AI, All rights reserved
 -- ----------------------------------------
 -- Reference: https://github.com/richterger/Perl-LanguageServer/tree/master/clients/vscode/perl
-vim.lsp.config['perlls'] = {
+vim.lsp.config['perl_ls'] = {
   cmd = {
     'perl',
     '-MPerl::LanguageServer',

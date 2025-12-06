@@ -3,12 +3,14 @@
 -- Copyright (C) 2025 Qompass AI, All rights reserved
 -- ---------------------------------------------------
 -- Reference: https://github.com/FacilityApi/FacilityLanguageServer
-vim.lsp.config['facility_language_server'] = {
+vim.lsp.config['facility_ls'] = {
   cmd = {
     'dotnet',
     vim.fn.expand('$XDG_DATA_HOME/facility-language-server/libexec/Facility.LanguageServer.dll'),
   },
-  filetypes = { 'fsd' },
+  filetypes = {
+    'fsd'
+  },
   root_markers = {
     '.git',
   },

@@ -4,9 +4,10 @@
 -- ---------------------------------------------
 -- Reference:  https://github.com/Freed-Wu/bitbake-language-server
 -- pip install bitbake-language-server
-vim.lsp.config['bitbake-language-server'] = {
+vim.lsp.config['bitbake_ls'] = {
   cmd = {
-    'bitbake-language-server' },
+    'bitbake-language-server'
+  },
   filetypes = {
     'bitbake'
   },

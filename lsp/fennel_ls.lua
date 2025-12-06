@@ -3,7 +3,7 @@
 -- Copyright (C) 2025 Qompass AI, All rights reserved
 -- --------------------------------------------------
 --Reference:  https://github.com/rydesun/fennel-language-server
-vim.lsp.config['fennel_language_server'] = {
+vim.lsp.config['fennel_ls'] = {
   cmd = {
     'fennel-language-server'
   },

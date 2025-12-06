@@ -4,7 +4,7 @@
 -- ----------------------------------------
 -- References: https://github.com/clojure-lsp/clojure-lsp
 -- nix run github:clojure-lsp/clojure-lsp
-vim.lsp.config['clojure-lsp'] = {
+vim.lsp.config['clojure_ls'] = {
   cmd = {
     'clojure-lsp'
   },

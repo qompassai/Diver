@@ -4,7 +4,7 @@
 -----------------------------------------------------
 -- Reference: https://github.com/razzmatazz/csharp-language-server
 -- dotnet tool install --global csharp-ls
-vim.lsp.config['csharp-ls'] = {
+vim.lsp.config['csharp_ls'] = {
   cmd = {
     'csharp-ls'
   },

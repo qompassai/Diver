@@ -4,7 +4,7 @@
 -- ----------------------------------------
 -- Reference: https://github.com/influxdata/flux-lsp
 -- cargo install --git https://github.com/influxdata/flux-lsp
-vim.lsp.config['flux-lsp'] = {
+vim.lsp.config['flux_ls'] = {
   cmd = {
     'flux-lsp'
   },

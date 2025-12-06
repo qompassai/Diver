@@ -1,29 +1,29 @@
 -- /qompassai/Diver/lsp/tsgo.lua
--- Qompass AI TS GO LSP Spec
+-- Qompass AI Typescript-Go (tsgo) LSP Spec
 -- Copyright (C) 2025 Qompass AI, All rights reserved
 -- ----------------------------------------
 -- pnpm add -g  @typescript/native-preview
 vim.lsp.config['tsgo'] = {
   cmd = {
-    "tsgo",
-    "--lsp",
-    "--stdio",
+    'tsgo',
+    '--lsp',
+    '--stdio',
   },
   filetypes = {
-    "javascript",
-    "javascriptreact",
-    "javascript.jsx",
+    'javascript',
+    'javascript.jsx',
+    'javascriptreact',
     "typescript",
-    "typescriptreact",
-    "typescript.tsx",
+    'typescriptreact',
+    'typescript.tsx',
   },
   root_markers = {
-    "package.json",
-    "package-lock.json",
-    "yarn.lock",
-    "pnpm-lock.yaml",
-    "bun.lockb",
-    "bun.lock",
-    ".git",
+    'bun.lockb',
+    'bun.lock',
+    '.git',
+    'package.json',
+    'package-lock.json',
+    'pnpm-lock.yaml',
+    'yarn.lock'
   },
 }

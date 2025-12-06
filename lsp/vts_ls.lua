@@ -12,7 +12,7 @@ local vue_plugin = {
     'vue'
   },
 }
-vim.lsp.config['vtsls'] {
+vim.lsp.config['vts_ls'] = {
   cmd = {
     'vtsls',
     '--stdio'

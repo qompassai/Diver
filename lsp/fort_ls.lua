@@ -5,7 +5,7 @@
 -- Reference:  https://fortls.fortran-lang.org/index.html
 -- pip install fortls
 
-vim.lsp.config['fortls'] = {
+vim.lsp.config['fort_ls'] = {
   cmd = {
     'fortls',
     '--notify_init',

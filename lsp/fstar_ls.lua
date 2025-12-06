@@ -4,7 +4,7 @@
 -- --------------------------------------------------
 -- Reference: https://fstar-lang.org/ | https://github.com/FStarLang/FStar
 -- opam install fstar
-vim.lsp.config['fstar'] = {
+vim.lsp.config['fstar_ls'] = {
   cmd = {
     'fstar',
     '--lsp'
@@ -12,5 +12,7 @@ vim.lsp.config['fstar'] = {
   filetypes = {
     'fstar'
   },
-  root_markers = { '.git' },
+  root_markers = {
+    '.git'
+  },
 }

@@ -4,7 +4,7 @@
 -- ---------------------------------------------------
 -- References:  https://github.com/ionide/FsAutoComplete?tab=readme-ov-file#settings
 -- dotnet tool install --global fsautocomplete
-vim.lsp.config['fsautocomplete'] = {
+vim.lsp.config['fsautocomplete_ls'] = {
   cmd = {
     'fsautocomplete',
     '--adaptive-lsp-server-enabled'

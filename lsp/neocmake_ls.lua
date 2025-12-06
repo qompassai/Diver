@@ -4,7 +4,7 @@
 -- --------------------------------------------------
 -- Reference:  https://github.com/neocmakelsp/neocmakelsp
 -- cargo install neocmake
-vim.lsp.config['neocmake'] = {
+vim.lsp.config['neocmake_ls'] = {
   cmd = {
     'neocmakelsp',
     '--stdio',
@@ -28,7 +28,7 @@ vim.lsp.config['neocmake'] = {
       enable = true,
     },
     scan_cmake_in_package = true,
-    semantic_token = false,
+    semantic_token = true,
   },
   capabilities = vim.tbl_deep_extend(
     'force',
