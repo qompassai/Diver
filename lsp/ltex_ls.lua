@@ -1,5 +1,5 @@
--- /qompassai/Diver/lsp/ltex.lua
--- Qompass AI Ltex LSP Config
+-- /qompassai/Diver/lsp/ltex_ls.lua
+-- Qompass AI Ltex LSP Spec
 -- Copyright (C) 2025 Qompass AI, All rights reserved
 -- ---------------------------------------------------
 vim.lsp.config['ltex_ls'] = {
@@ -8,19 +8,19 @@ vim.lsp.config['ltex_ls'] = {
   },
   filetypes = {
     'bib',
+    'context',
     'gitcommit',
+    'html',
+    'lualatex',
+    'mail',
+    'rmd',
     'org',
     'plaintex',
-    --'rst',
+    'quarto',
     'rnoweb',
-    "lualatex",
-    "quarto",
-    "rmd",
-    "context",
-    "html",
-    "xhtml",
-    "mail",
-    "text",
+    --'rst',
+    'text',
+    'xhtml'
   },
   root_markers = {
     '.git',
@@ -29,12 +29,12 @@ vim.lsp.config['ltex_ls'] = {
     ltex = {
       enabled = {
         'bibtex',
-        'markdown',
-        'tex',
-        'rsweave',
-        'restructuredtext',
         'latex',
-        'plaintext'
+        'markdown',
+        'restructuredtext',
+        'rsweave',
+        'plaintext',
+        'tex'
       },
       language = 'en-US',
     },

@@ -3,7 +3,7 @@
 -- Copyright (C) 2025 Qompass AI, All rights reserved
 -- ---------------------------------------------------
 -- Reference: https://github.com/JCWasmx86/mesonlsp
-vim.lsp.config['mesonlsp'] = {
+vim.lsp.config['meson_ls'] = {
   cmd = {
     'mesonlsp',
     '--lsp'

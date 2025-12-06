@@ -1,53 +1,19 @@
--- /qompassai/Diver/lsp/ols.lua
+-- /qompassai/Diver/lsp/o_ls.lua
 -- Qompass AI Odin LSP Spec
 -- Copyright (C) 2025 Qompass AI, All rights reserved
 ------------------------------------------------------
+--Reference: https://github.com/DanielGavin/ols
 vim.lsp.config['o_ls'] = {
   cmd = {
-    "ols",
+    'ols',
   },
   filetypes = {
     "odin",
   },
-  codeActionProvider = {
-    codeActionKinds = {
-      "",
-      "quickfix",
-      "refactor",
-      "source.organizeImports",
-    },
-    resolveProvider = true,
-  },
-  colorProvider = false,
-  semanticTokensProvider = {
-    full = true,
-    legend = {
-      tokenModifiers = {
-        "declaration",
-        "definition",
-        "readonly",
-        "documentation",
-      },
-      tokenTypes = {
-        "namespace",
-        "type",
-        "class",
-        "struct",
-        "parameter",
-        "variable",
-        "property",
-        "function",
-        "method",
-        "keyword",
-        "comment",
-        "string",
-        "number",
-        "operator",
-      },
-    },
-    range = true,
-  },
-  settings = {
-    ols = {},
+  root_markers = {
+    '.git',
+    'ols.json',
+    'ols.jsonc',
+    '*.odin'
   },
 }

@@ -38,6 +38,7 @@ vim.g.syntax_on = true
 vim.g.which_key_disable_health_check = 1
 --vim.g.mkdp_markdown_css = vim.fn.expand("~/.config/nvim/markdown.css")
 vim.o.ambiwidth = 'single'
+vim.g.asmsyntax = 'asm68k'
 vim.o.backup = false
 vim.o.breakindent = true
 vim.o.clipboard = 'unnamedplus'

@@ -3,7 +3,7 @@
 -- Copyright (C) 2025 Qompass AI, All rights reserved
 -- ----------------------------------------
 -- Reference: https://github.com/genericptr/pascal-language-server
-vim.lsp.config['pascal'] = {
+vim.lsp.config['pas_ls'] = {
   cmd = {
     'pasls'
   },

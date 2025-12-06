@@ -3,7 +3,7 @@
 -- Copyright (C) 2025 Qompass AI, All rights reserved
 -- --------------------------------------------------
 --Reference: https://github.com/FractalBoy/perl-language-server |  https://metacpan.org/pod/PLS
-vim.lsp.config['pls'] = {
+vim.lsp.config['p_ls'] = {
   cmd = {
     'pls'
   },

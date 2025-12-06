@@ -3,7 +3,7 @@
 -- Copyright (C) 2025 Qompass AI, All rights reserved
 -- ---------------------------------------------------
 -- Reference:  https://github.com/omnisharp/omnisharp-roslyn
-vim.lsp.config['omnisharp'] = {
+vim.lsp.config['omnisharp_ls'] = {
   cmd = {
     'omnisharp',
     '-z',
@@ -28,7 +28,9 @@ vim.lsp.config['omnisharp'] = {
     '*.sln',
     '*.csproj',
     'omnisharp.json',
+    'omnisharp.jsonc',
     'function.json',
+    'function.jsonc'
   },
   settings = {
     FormattingOptions = {

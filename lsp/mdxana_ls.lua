@@ -13,7 +13,7 @@ vim.lsp.config['mdxana_ls'] = {
   root_dir = vim.fn.getcwd,
   root_markers = {
     'package.json',
-    'package.json5'
+    'package.jsonc'
   },
   codeActionProvider = {
     codeActionKinds = { "", "quickfix", "refactor", "source.organizeImports" },
