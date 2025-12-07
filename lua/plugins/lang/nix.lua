@@ -6,10 +6,12 @@ local nix_cfg = require("config.lang.nix")
 
 return {
   {
-    "LnL7/vim-nix",
-    ft = { "nix" },
+    'LnL7/vim-nix',
+    ft = {
+      'nix'
+    },
     config = function()
       nix_cfg.vim_nix_config()
     end,
-  }
+  },
 }

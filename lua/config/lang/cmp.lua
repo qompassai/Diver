@@ -3,7 +3,6 @@
 -- Copyright (C) 2025 Qompass AI, All rights reserved
 -----------------------------------------------------
 local M = {}
-
 function M.blink_cmp()
   return {
     keymap = { preset = 'default' },
@@ -17,12 +16,19 @@ function M.blink_cmp()
     snippets = { preset = 'luasnip' },
     sources = {
       default = {
-        'lazydev', 'lsp', 'path', 'snippets', 'buffer', 'dadbod', 'emoji', 'dictionary'
+        'lazydev',
+        'lsp',
+        'path',
+        'snippets',
+        'buffer',
+        'dadbod',
+        'emoji',
+        'dictionary'
       },
       providers = {
         lazydev = {
-          name = "LazyDev",
-          module = "lazydev.integrations.blink",
+          name = 'LazyDev',
+          module = 'lazydev.integrations.blink',
           score_offset = 1001,
         },
         lsp = {
@@ -96,7 +102,9 @@ function M.blink_cmp()
         }
       }
     },
-    cmdline = { enabled = true },
+    cmdline = {
+      enabled = true
+    },
     -- fuzzy = {
     --   use_typo_resistance = false,
     --   use_frecency = true,
@@ -141,10 +149,22 @@ function M.nvim_cmp()
     snippet = { expand = function(args) luasnip.lsp_expand(args.body) end },
     mapping = mappings,
     sources = cmp.config.sources({
-      { name = 'nvim_lsp', priority = 1000 },
-      { name = 'luasnip',  priority = 750 },
-      { name = 'buffer',   priority = 500 },
-      { name = 'path',     priority = 250 }
+      {
+        name = 'nvim_lsp',
+        priority = 1000
+      },
+      {
+        name = 'luasnip',
+        priority = 750
+      },
+      {
+        name = 'buffer',
+        priority = 500
+      },
+      {
+        name = 'path',
+        priority = 250
+      }
     }),
     formatting = {
       format = require('lspkind').cmp_format({
@@ -163,7 +183,11 @@ function M.nvim_cmp()
         end
       })
     },
-    experimental = { ghost_text = { hl_group = 'Comment' } },
+    experimental = {
+      ghost_text = {
+        hl_group = 'Comment'
+      }
+    },
     window = {
       completion = cmp.config.window.bordered({
         border = 'single',
@@ -183,13 +207,20 @@ function M.nvim_cmp()
       { name = 'buffer',   priority = 800 }
     })
   })
-  cmp.setup.filetype({ 'typescript', 'typescriptreact' }, {
-    sources = cmp.config.sources({
-      { name = 'nvim_lsp', priority = 1000 },
-      { name = 'luasnip',  priority = 900 },
-      { name = 'buffer',   priority = 800 }
+  cmp.setup.filetype({
+      'typescript',
+      'typescriptreact'
+    },
+    {
+      sources = cmp.config.sources({
+        {
+          name = 'nvim_lsp',
+          priority = 1000
+        },
+        { name = 'luasnip', priority = 900 },
+        { name = 'buffer',  priority = 800 }
+      })
     })
-  })
   cmp.setup.filetype('zig', {
     sources = cmp.config.sources({
       { name = 'nvim_lsp', priority = 1000 },
