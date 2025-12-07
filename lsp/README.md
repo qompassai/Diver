@@ -4,94 +4,103 @@
 <!-- ---------------------------------------- -->
 
 <details>
-<summary style="font-size: 1.4em; font-weight: bold; padding: 15px; background: #667eea; color: white; border-radius: 10px; cursor: pointer; margin: 10px 0;"><strong>🧭 Ada</strong></summary>
-<blockquote style="font-size: 1.2em; line-height: 1.8; padding: 25px; background: #f8f9fa; border-left: 6px solid #667eea; border-radius: 8px; margin: 15px 0; box-shadow: 0 2px 8px rgba(0,0,0,0.1);">
-<details>
-      <summary><strong>Ada</strong></summary>
-      <ul>
-        <li><code>ada_ls</code> –
-          <a href="https://github.com/qompassai/diver/blob/main/nvim/lsp/ada_ls.lua">config</a>
-        </li>
-      </ul>
-    </details>
-    <details>
+  <summary style="font-size: 1.4em; font-weight: bold; padding: 15px; background: #667eea; color: white; border-radius: 10px; cursor: pointer; margin: 10px 0;">
+    <strong>🧭 Ada</strong>
+  </summary>
+  <blockquote style="font-size: 1.2em; line-height: 1.8; padding: 25px; background: #f8f9fa; border-left: 6px solid #667eea; border-radius: 8px; margin: 15px 0; box-shadow: 0 2px 8px rgba(0,0,0,0.1);">
+    <ul>
+      <li><code>ada_ls</code> –
+        <a href="https://github.com/qompassai/diver/blob/main/nvim/lsp/ada_ls.lua">config</a>
+      </li>
+    </ul>
   </blockquote>
 </details>
 <details>
-<summary style="font-size: 1.4em; font-weight: bold; padding: 15px; background: #667eea; color: white; border-radius: 10px; cursor: pointer; margin: 10px 0;"><strong>🧭 Ansible</strong></summary>
-<blockquote style="font-size: 1.2em; line-height: 1.8; padding: 25px; background: #f8f9fa; border-left: 6px solid #667eea; border-radius: 8px; margin: 15px 0; box-shadow: 0 2px 8px rgba(0,0,0,0.1);">
-      <summary><strong>Ansible</strong></summary>
-      <ul>
-        <li><code>ansible_ls</code> –
-          <a href="https://github.com/qompassai/diver/blob/main/nvim/lsp/ansible_ls.lua">config</a>
-        </li>
-      </ul>
+  <summary style="font-size: 1.4em; font-weight: bold; padding: 15px; background: #667eea; color: white; border-radius: 10px; cursor: pointer; margin: 10px 0;">
+    <strong>🧭 Ansible</strong>
+  </summary>
+  <blockquote style="font-size: 1.2em; line-height: 1.8; padding: 25px; background: #f8f9fa; border-left: 6px solid #667eea; border-radius: 8px; margin: 15px 0; box-shadow: 0 2px 8px rgba(0,0,0,0.1);">
+    <ul>
+      <li><code>ansible_ls</code> –
+        <a href="https://github.com/qompassai/diver/blob/main/nvim/lsp/ansible_ls.lua">config</a>
+      </li>
+    </ul>
   </blockquote>
 </details>
-<summary style="font-size: 1.4em; font-weight: bold; padding: 15px; background: #667eea; color: white; border-radius: 10px; cursor: pointer; margin: 10px 0;"><strong>🧭 Arduino</strong></summary>
-<blockquote style="font-size: 1.2em; line-height: 1.8; padding: 25px; background: #f8f9fa; border-left: 6px solid #667eea; border-radius: 8px; margin: 15px 0; box-shadow: 0 2px 8px rgba(0,0,0,0.1);">
-     <details>
-      <summary><strong>Arduino</strong></summary>
-      <ul>
-        <li><code>arduino_ls</code> –
-          <a href="https://github.com/qompassai/diver/blob/main/nvim/lsp/arduino_ls.lua">config</a>
-        </li>
-      </ul>
-    </details>
-<summary style="font-size: 1.4em; font-weight: bold; padding: 15px; background: #667eea; color: white; border-radius: 10px; cursor: pointer; margin: 10px 0;"><strong>🧭 Assembly</strong></summary>
-<blockquote style="font-size: 1.2em; line-height: 1.8; padding: 25px; background: #f8f9fa; border-left: 6px solid #667eea; border-radius: 8px; margin: 15px 0; box-shadow: 0 2px 8px rgba(0,0,0,0.1);">
-     <details>
-      <summary><strong>Assembly</strong></summary>
-      <ul>
-        <li><code>asm_ls</code> –
-          <a href="https://github.com/qompassai/diver/blob/main/nvim/lsp/asm_ls.lua">config</a>
-        </li>
-        <li><code>m68k_ls</code> –
-          <a href="https://github.com/qompassai/diver/blob/main/nvim/lsp/m68k_ls.lua">config</a>
-        </li>
-      </ul>
-    </details>
-<summary style="font-size: 1.4em; font-weight: bold; padding: 15px; background: #667eea; color: white; border-radius: 10px; cursor: pointer; margin: 10px 0;"><strong>🧭 Astro</strong></summary>
-<blockquote style="font-size: 1.2em; line-height: 1.8; padding: 25px; background: #f8f9fa; border-left: 6px solid #667eea; border-radius: 8px; margin: 15px 0; box-shadow: 0 2px 8px rgba(0,0,0,0.1);">
-    <details>
-      <summary><strong>Astro</strong></summary>
-      <ul>
-        <li><code>astro_ls</code> –
-          <a href="https://github.com/qompassai/diver/blob/main/nvim/lsp/astro_ls.lua">config</a>
-        </li>
-      </ul>
-    </details>
-<summary style="font-size: 1.4em; font-weight: bold; padding: 15px; background: #667eea; color: white; border-radius: 10px; cursor: pointer; margin: 10px 0;"><strong>🧭 Awk</strong></summary>
-<blockquote style="font-size: 1.2em; line-height: 1.8; padding: 25px; background: #f8f9fa; border-left: 6px solid #667eea; border-radius: 8px; margin: 15px 0; box-shadow: 0 2px 8px rgba(0,0,0,0.1);">
-      <details>
-      <summary><strong>Awk</strong></summary>
-      <ul>
-        <li><code>awk_ls</code> –
-          <a href="https://github.com/qompassai/diver/blob/main/nvim/lsp/awk_ls.lua">config</a>
-        </li>
-      </ul>
-    </details>
-<summary style="font-size: 1.4em; font-weight: bold; padding: 15px; background: #667eea; color: white; border-radius: 10px; cursor: pointer; margin: 10px 0;"><strong>🧭 Azure</strong></summary>
-<blockquote style="font-size: 1.2em; line-height: 1.8; padding: 25px; background: #f8f9fa; border-left: 6px solid #667eea; border-radius: 8px; margin: 15px 0; box-shadow: 0 2px 8px rgba(0,0,0,0.1);">
-     <details>
-      <summary><strong>Azure Pipelines</strong></summary>
-      <ul>
-        <li><code>azurepipelines_ls</code> –
-          <a href="https://github.com/qompassai/diver/blob/main/nvim/lsp/azurepipelines_ls.lua">config</a>
-        </li>
-      </ul>
-    </details>
-    <details>
-  <summary style="font-size: 1.4em; font-weight: bold; padding: 15px; background: #667eea; color: white; border-radius: 10px; cursor: pointer; margin: 10px 0;"><strong>🧭 GLSL</strong></summary>
-<blockquote style="font-size: 1.2em; line-height: 1.8; padding: 25px; background: #f8f9fa; border-left: 6px solid #667eea; border-radius: 8px; margin: 15px 0; box-shadow: 0 2px 8px rgba(0,0,0,0.1);">
-  <summary><strong>GLSL</strong></summary>
-  <ul>
-    <li><code>glslana_ls</code> –
-      <a href="https://github.com/qompassai/diver/blob/main/nvim/lsp/glslana_ls.lua">
-        config
-      </a>
-    </li>
-  </ul>
+<details>
+  <summary style="font-size: 1.4em; font-weight: bold; padding: 15px; background: #667eea; color: white; border-radius: 10px; cursor: pointer; margin: 10px 0;">
+    <strong>🧭 Arduino</strong>
+  </summary>
+  <blockquote style="font-size: 1.2em; line-height: 1.8; padding: 25px; background: #f8f9fa; border-left: 6px solid #667eea; border-radius: 8px; margin: 15px 0; box-shadow: 0 2px 8px rgba(0,0,0,0.1);">
+    <ul>
+      <li><code>arduino_ls</code> –
+        <a href="https://github.com/qompassai/diver/blob/main/nvim/lsp/arduino_ls.lua">config</a>
+      </li>
+    </ul>
+  </blockquote>
+</details>
+<details>
+  <summary style="font-size: 1.4em; font-weight: bold; padding: 15px; background: #667eea; color: white; border-radius: 10px; cursor: pointer; margin: 10px 0;">
+    <strong>🧭 Assembly</strong>
+  </summary>
+  <blockquote style="font-size: 1.2em; line-height: 1.8; padding: 25px; background: #f8f9fa; border-left: 6px solid #667eea; border-radius: 8px; margin: 15px 0; box-shadow: 0 2px 8px rgba(0,0,0,0.1);">
+    <ul>
+      <li><code>asm_ls</code> –
+        <a href="https://github.com/qompassai/diver/blob/main/nvim/lsp/asm_ls.lua">config</a>
+      </li>
+      <li><code>m68k_ls</code> –
+        <a href="https://github.com/qompassai/diver/blob/main/nvim/lsp/m68k_ls.lua">config</a>
+      </li>
+    </ul>
+  </blockquote>
+</details>
+<details>
+  <summary style="font-size: 1.4em; font-weight: bold; padding: 15px; background: #667eea; color: white; border-radius: 10px; cursor: pointer; margin: 10px 0;">
+    <strong>🧭 Astro</strong>
+  </summary>
+  <blockquote style="font-size: 1.2em; line-height: 1.8; padding: 25px; background: #f8f9fa; border-left: 6px solid #667eea; border-radius: 8px; margin: 15px 0; box-shadow: 0 2px 8px rgba(0,0,0,0.1);">
+    <ul>
+      <li><code>astro_ls</code> –
+        <a href="https://github.com/qompassai/diver/blob/main/nvim/lsp/astro_ls.lua">config</a>
+      </li>
+    </ul>
+  </blockquote>
+</details>
+<details>
+  <summary style="font-size: 1.4em; font-weight: bold; padding: 15px; background: #667eea; color: white; border-radius: 10px; cursor: pointer; margin: 10px 0;">
+    <strong>🧭 Awk</strong>
+  </summary>
+  <blockquote style="font-size: 1.2em; line-height: 1.8; padding: 25px; background: #f8f9fa; border-left: 6px solid #667eea; border-radius: 8px; margin: 15px 0; box-shadow: 0 2px 8px rgba(0,0,0,0.1);">
+    <ul>
+      <li><code>awk_ls</code> –
+        <a href="https://github.com/qompassai/diver/blob/main/nvim/lsp/awk_ls.lua">config</a>
+      </li>
+    </ul>
+  </blockquote>
+</details>
+<details>
+  <summary style="font-size: 1.4em; font-weight: bold; padding: 15px; background: #667eea; color: white; border-radius: 10px; cursor: pointer; margin: 10px 0;">
+    <strong>🧭 Azure Pipelines</strong>
+  </summary>
+  <blockquote style="font-size: 1.2em; line-height: 1.8; padding: 25px; background: #f8f9fa; border-left: 6px solid #667eea; border-radius: 8px; margin: 15px 0; box-shadow: 0 2px 8px rgba(0,0,0,0.1);">
+    <ul>
+      <li><code>azurepipelines_ls</code> –
+        <a href="https://github.com/qompassai/diver/blob/main/nvim/lsp/azurepipelines_ls.lua">config</a>
+      </li>
+    </ul>
+  </blockquote>
+</details>
+   <details>
+  <summary style="font-size: 1.4em; font-weight: bold; padding: 15px; background: #667eea; color: white; border-radius: 10px; cursor: pointer; margin: 10px 0;">
+    <strong>🧭 GLSL</strong>
+  </summary>
+  <blockquote style="font-size: 1.2em; line-height: 1.8; padding: 25px; background: #f8f9fa; border-left: 6px solid #667eea; border-radius: 8px; margin: 15px 0; box-shadow: 0 2px 8px rgba(0,0,0,0.1);">
+    <ul>
+      <li><code>glslana_ls</code> –
+        <a href="https://github.com/qompassai/diver/blob/main/nvim/lsp/glslana_ls.lua">config</a>
+      </li>
+    </ul>
+  </blockquote>
 </details>
 <details>
 <summary style="font-size: 1.4em; font-weight: bold; padding: 15px; background: #667eea; color: white; border-radius: 10px; cursor: pointer; margin: 10px 0;"><strong>🧭 Full List</strong></summary>
