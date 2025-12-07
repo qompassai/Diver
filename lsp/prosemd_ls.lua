@@ -4,7 +4,7 @@
 -- ----------------------------------------
 --Reference: https://github.com/kitten/prosemd-lsp
 --cargo install prosemd-lsp
-vim.lsp.config['prosemd-lsp'] = {
+vim.lsp.config['prosemd_ls'] = {
   cmd = {
     'prosemd-lsp',
     '--stdio'

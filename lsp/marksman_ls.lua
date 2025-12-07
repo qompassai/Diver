@@ -19,4 +19,7 @@ vim.lsp.config['marksman_ls'] = {
     '.hg',
     '.svn',
   },
+  on_attach = function(client, bufnr)
+    client.server_capabilities.documentFormattingProvider = false
+  end,
 }

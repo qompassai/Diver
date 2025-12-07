@@ -3,15 +3,15 @@
 -- Copyright (C) 2025 Qompass AI, All rights reserved
 -- --------------------------------------------------
 --References: composer global require vimeo/psalm
-vim.lsp.config['psalm'] = {
+vim.lsp.config['psalm_ls'] = {
   cmd = {
     'psalm',
     '--language-server'
   },
   filetypes = {
     'php',
-    "phps",
-    "blade",
+    'phps',
+    'blade',
   },
   root_markers = {
     'psalm.xml',
@@ -24,7 +24,7 @@ vim.lsp.config['psalm'] = {
       errorLevel = 2,
       phpVersion = '8.4',
       reportUnusedCode = true,
-      severity = "all",
+      severity = 'all',
       showHints = true,
       showInfo = true,
       showSuggestions = true,

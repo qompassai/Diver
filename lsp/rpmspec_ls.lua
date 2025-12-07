@@ -4,7 +4,7 @@
 -- ---------------------------------------------------
 --Reference: https://github.com/dcermak/rpm-spec-language-server
 -- pip install rpm-spec-language-server
-vim.lsp.config['rpmspec'] = {
+vim.lsp.config['rpmspec_ls'] = {
   cmd = {
     'rpm_lsp_server',
     '--stdio'

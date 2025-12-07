@@ -2,14 +2,14 @@
 -- Qompass AI Tex_Fmt LSP Spec
 -- Copyright (C) 2025 Qompass AI, All rights reserved
 ------------------------------------------------------
-vim.lsp.config["tex_fmt"] = {
+vim.lsp.config['texfmt_ls'] = {
   cmd = {
-    "tex-fmt",
+    'tex-fmt',
   },
   filetypes = {
-    "tex",
-    "plaintex",
-    "latex",
+    'tex',
+    'plaintex',
+    'latex',
   },
   codeActionProvider = false,
   colorProvider = false,

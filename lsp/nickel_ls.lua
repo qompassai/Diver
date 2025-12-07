@@ -4,7 +4,7 @@
 -- ----------------------------------------
 -- Reference: https://github.com/tweag/nickel
 -- cargo install nickel-lang-lsp
-vim.lsp.config['nls'] = {
+vim.lsp.config['nickel_ls'] = {
   cmd = {
     'nls'
   },

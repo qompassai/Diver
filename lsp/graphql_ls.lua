@@ -2,35 +2,23 @@
 -- Qompass AI GraphQL LSP Spec
 -- Copyright (C) 2025 Qompass AI, All rights reserved
 ------------------------------------------------------
---Reference: https://github.com/graphql/graphiql/tree/main/packages/graphql-language-service-cli
---pnpm add -g graphql-language-service-cli
+--Reference:https://github.com/graphql/graphiql/tree/main/packages/graphql-language-service-server
+--pnpm add -g graphql-language-service-server
 vim.lsp.config['graphql_ls'] = {
   cmd = {
     'graphql-lsp',
     'server',
-    '--method',
+    '-m',
     'stream'
   },
   filetypes = {
     'graphql',
-    'gql',
     'javascriptreact',
     'typescriptreact'
   },
-  codeActionProvider = {
-    codeActionKinds = {
-      '',
-      'quickfix',
-      'refactor.extract',
-      'refactor.rewrite'
-    },
-    resolveProvider = true,
-  },
-  colorProvider = false,
-  semanticTokensProvider = nil,
-  settings = {
-    graphql = {},
-    load = {},
-  },
-  single_file_support = true,
+  root_markers = {
+    '.graphqlrc*',
+    '.graphql.config.*',
+    'graphql.config.*'
+  }
 }

@@ -2,18 +2,18 @@
 -- Qompass AI Puppet Editor Services LSP Spec
 -- Copyright (C) 2025 Qompass AI, All rights reserved
 ------------------------------------------------------
-vim.lsp.config["puppet"] = {
+vim.lsp.config['puppetes_ls'] = {
   cmd = {
-    "ruby",
-    "puppet-languageserver",
-    "--stdio",
-    "--puppet-settings=--moduledir,/etc/puppetlabs/code/modules",
+    'ruby',
+    'puppet-languageserver',
+    '--stdio',
+    '--puppet-settings=--moduledir,/etc/puppetlabs/code/modules',
   },
   filetypes = {
-    "puppet",
+    'puppet',
   },
   root_markers = {
-    "metadata.json",
+    'metadata.json',
     ".git",
   },
   codeActionProvider = {

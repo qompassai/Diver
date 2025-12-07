@@ -6,60 +6,16 @@ vim.lsp.config['selene_ls'] = {
   cmd = {
     'selene',
   },
-
   filetypes = {
-    "lua",
-    "luau",
+    'lua',
+    "luau"
   },
-
   root_markers = {
-    ".selene.toml",
-    "selene.toml",
-    ".git",
+    '.selene.toml',
+    'selene.toml',
+    '.git'
   },
-
-  codeActionProvider = {
-    codeActionKinds = {
-      "",
-      "quickfix",
-    },
-    resolveProvider = false,
-  },
-
-  colorProvider = false,
-
-  completionProvider = {
-    resolveProvider = false,
-    triggerCharacters = {},
-  },
-
-  definitionProvider = false,
-  declarationProvider = false,
-
-  documentFormattingProvider = false,
-  documentHighlightProvider = false,
-  documentRangeFormattingProvider = false,
-  documentSymbolProvider = false,
-
-  hoverProvider = false,
-
-  implementationProvider = false,
-
-  referencesProvider = false,
-  renameProvider = false,
-
-  semanticTokensProvider = {
-    full = false,
-    legend = {
-      tokenModifiers = {},
-      tokenTypes = {},
-    },
-    range = false,
-  },
-
-  signatureHelpProvider = {
-    triggerCharacters = {},
-  },
-
-  workspaceSymbolProvider = false,
+  on_attach = function(client, bufnr)
+    client.server_capabilities.documentFormattingProvider = false
+  end,
 }

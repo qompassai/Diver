@@ -19,7 +19,6 @@ local function zk_list(client, bufnr, opts, action)
     if result == nil then
       return
     end
-
     vim.ui.select(result, {
       format_item = function(item)
         return item.title
@@ -32,10 +31,17 @@ local function zk_list(client, bufnr, opts, action)
   end)
 end
 
-vim.lsp.config['zk'] = {
-  cmd = { 'zk', 'lsp' },
-  filetypes = { 'markdown' },
-  root_markers = { '.zk' },
+vim.lsp.config['zk_ls'] = {
+  cmd = {
+    'zk',
+    'lsp'
+  },
+  filetypes = {
+    'markdown'
+  },
+  root_markers = {
+    '.zk'
+  },
   workspace_required = true,
   on_attach = function(client, bufnr)
     vim.api.nvim_buf_create_user_command(bufnr, 'LspZkIndex', function()

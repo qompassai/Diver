@@ -4,7 +4,7 @@
 -- --------------------------------------------------
 -- Reference: https://github.com/sveltejs/language-tools/tree/master/packages/language-server
 -- pnpm add -g svelte-language-server
-vim.lsp.config['svelte'] = {
+vim.lsp.config['svelte_ls'] = {
   cmd = {
     'svelteserver',
     '--stdio'

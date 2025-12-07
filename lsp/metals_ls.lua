@@ -3,7 +3,7 @@
 -- Copyright (C) 2025 Qompass AI, All rights reserved
 -- --------------------------------------------------
 -- Reference: https://scalameta.org/metals/docs/editors/user-configuration
-vim.lsp.config['metals'] = {
+vim.lsp.config['metals_ls'] = {
   cmd = {
     'metals',
   },

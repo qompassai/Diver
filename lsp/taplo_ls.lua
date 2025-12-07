@@ -2,7 +2,7 @@
 -- Qompass AI Taplo LSP Config
 -- Copyright (C) 2025 Qompass AI, All rights reserved
 -- --------------------------------------------------
-vim.lsp.config['taplo'] = {
+vim.lsp.config['taplo_ls'] = {
   cmd = {
     'taplo',
     'lsp',

@@ -3,7 +3,7 @@
 -- Copyright (C) 2025 Qompass AI, All rights reserved
 -- ----------------------------------------
 --Reference:  https://github.com/iamcco/vim-language-server
-vim.lsp.config['vim'] = {
+vim.lsp.config['vim_ls'] = {
   cmd = {
     'vim-language-server',
     '--stdio'

@@ -1,9 +1,9 @@
--- /qompassai/Diver/lsp/postgres_language_server.lua
+-- /qompassai/Diver/lsp/postgres_ls.lua
 -- Qompass AI Postgres LSP Spec
 -- Copyright (C) 2025 Qompass AI, All rights reserved
 ------------------------------------------------------
 -- References:  https://pgtools.dev
-vim.lsp.config['postgres-language-server'] = {
+vim.lsp.config['postgres_ls'] = {
   cmd = {
     'postgres-language-server',
     'lsp-proxy'

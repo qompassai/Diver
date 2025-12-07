@@ -2,7 +2,7 @@
 -- Qompass AI Solc LSP Spec
 -- Copyright (C) 2025 Qompass AI, All rights reserved
 -- --------------------------------------------------
-vim.lsp.config['solc'] = {
+vim.lsp.config['solc_ls'] = {
   cmd = {
     'solc',
     '--lsp'

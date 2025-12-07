@@ -4,7 +4,7 @@
 -- --------------------------------------------------
 -- Reference: https://www.npmjs.com/package/turbo-language-server | https://turbo.hotwired.dev/
 -- pnpm add -g turbo-language-server
-vim.lsp.config['turbo-language-server'] = {
+vim.lsp.config['turbo_ls'] = {
   cmd = {
     'turbo-language-server',
     '--stdio'

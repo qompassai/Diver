@@ -4,8 +4,15 @@
 -- ----------------------------------------
 -- References:  https://github.com/phil294/coffeesense
 -- pnpm add -g coffeesense-language-server
-vim.lsp.config['coffeesense-language-server'] = {
-  cmd = { 'coffeesense-language-server', '--stdio' },
-  filetypes = { 'coffee' },
-  root_markers = { 'package.json' },
+vim.lsp.config['coffeesense_ls'] = {
+  cmd = {
+    'coffeesense-language-server',
+    '--stdio'
+  },
+  filetypes = {
+    'coffee'
+  },
+  root_markers = {
+    'package.json'
+  },
 }

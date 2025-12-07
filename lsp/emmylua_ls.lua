@@ -30,11 +30,12 @@ vim.lsp.config['emmylua_ls'] = {
         callSnippet = 'Replace',
         displayContext = 4,
         enable = true,
-        keywordSnippet = 'Disable'
+        keywordSnippet = 'Enable'
       },
       diagnostics = {
         disable = {
           'lowercase-global',
+          'unused-local'
         },
         enable = true,
         globals = {
@@ -98,4 +99,7 @@ vim.lsp.config['emmylua_ls'] = {
       },
     },
   },
+  on_attach = function(client, bufnr)
+    client.server_capabilities.documentFormattingProvider = false
+  end,
 }

@@ -1,10 +1,10 @@
--- /qompassai/Diver/lsp/perlnavigator.lua
+-- /qompassai/Diver/lsp/perlnav_ls.lua
 -- Qompass AI PerlNavigator LSP Spec
 -- Copyright (C) 2025 Qompass AI, All rights reserved
 -- --------------------------------------------------
 --Reference: https://github.com/bscan/PerlNavigator
 --pnpm add -g perlnavigator-server
-vim.lsp.config['perlnavigator'] = {
+vim.lsp.config['perlnav_ls'] = {
   cmd = {
     'perlnavigator'
   },

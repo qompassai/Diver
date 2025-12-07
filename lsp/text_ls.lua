@@ -4,7 +4,7 @@
 -- --------------------------------------------------
 --Reference: https://github.com/hangyav/textLSP
 --pip install textLSP | pip install git+https://github.com/PrithivirajDamodaran/Gramformer.git
-vim.lsp.config['textlsp'] = {
+vim.lsp.config['text_ls'] = {
   cmd = {
     'textlsp'
   },

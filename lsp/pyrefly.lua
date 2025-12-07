@@ -1,11 +1,11 @@
--- /qompassai/dotfiles/.configpyrefly.lua
+-- /qompassai/Diver/lsp/pyrefly_ls.lua
 -- Qompass AI Pyrefly LSP Spec
 -- Copyright (C) 2025 Qompass AI, All rights reserved
 -- --------------------------------------
-vim.lsp.config["pyrefly"] = {
+vim.lsp.config['pyrefly_ls'] = {
   cmd = {
-    "pyrefly",
-    "lsp",
+    'pyrefly',
+    'lsp',
   },
   codeActionProvider = {
     codeActionKinds = {

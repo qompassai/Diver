@@ -4,7 +4,7 @@
 ------------------------------------------------
 -- cargo install --git https://codeberg.org/caradhras/uvls --locked
 vim.cmd([[au BufRead,BufNewFile *.uvl setfiletype uvl]])
-vim.lsp.config['uvls'] = {
+vim.lsp.config['uv_ls'] = {
   cmd = {
     'uvls'
   },

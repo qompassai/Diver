@@ -2,9 +2,13 @@
 -- Qompass AI SVLS SystemVerilog LSP Spec (svls)
 -- Copyright (C) 2025 Qompass AI, All rights reserved
 ------------------------------------------------------
-vim.lsp.config["svls"] = {
-  cmd = { "svls" },
-  filetypes = { "systemverilog" },
+vim.lsp.config['sv_ls'] = {
+  cmd = {
+    'svls'
+  },
+  filetypes = {
+    'systemverilog'
+  },
   codeActionProvider = {
     codeActionKinds = { "", "quickfix", "refactor" },
     resolveProvider = true,

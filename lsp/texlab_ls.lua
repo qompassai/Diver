@@ -2,18 +2,18 @@
 -- Qompass AI Texlab LSP Spec
 -- Copyright (C) 2025 Qompass AI, All rights reserved
 ------------------------------------------------------
-vim.lsp.config["texlab"] = {
+vim.lsp.config['texlab_ls'] = {
   cmd = {
-    "texlab",
+    'texlab',
   },
   filetypes = {
-    "tex",
-    "plaintex",
+    'tex',
+    'plaintex',
     "bib",
   },
   root_markers = {
-    ".git",
-    ".latexmkrc",
+    '.git',
+    '.latexmkrc',
     "latexmkrc",
     ".texlabroot",
     "texlabroot",
@@ -23,7 +23,7 @@ vim.lsp.config["texlab"] = {
     texlab = {
       rootDirectory = nil,
       build = {
-        executable = "latexmk",
+        executable = 'latexmk',
         args = {
           "-pdf",
           "-interaction=nonstopmode",

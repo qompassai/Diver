@@ -5,7 +5,7 @@
 --https://github.com/xna00/unocss-language-server
 --pnpm add -g unocss-language-server
 
-vim.lsp.config['unocss-language-server'] = {
+vim.lsp.config['unocss_ls'] = {
   cmd = {
     'unocss-language-server',
     '--stdio'

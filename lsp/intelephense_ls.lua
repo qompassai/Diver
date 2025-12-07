@@ -13,7 +13,7 @@ vim.lsp.config['intelephense_ls'] = {
     'php'
   },
   root_markers = {
-    '.git',
+   '.git',
     'composer.json',
   },
   settings = {

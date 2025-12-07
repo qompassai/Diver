@@ -3,7 +3,7 @@
 -- Copyright (C) 2025 Qompass AI, All rights reserved
 -- ---------------------------------------------------
 --Reference: https://github.com/shader-slang/slang
-vim.lsp.config['slangd'] = {
+vim.lsp.config['slangd_ls'] = {
   cmd = {
     'slangd'
   },

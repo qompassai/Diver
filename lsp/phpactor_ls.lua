@@ -5,46 +5,28 @@ Copyright (C) 2025 Qompass AI, All rights reserved
 ---------------------------------------------------------------
 References: https://phpactor.readthedocs.io/en/master/reference/configuration.html
 ]]
-local filetypes = {
-  "php",
-  "phps",
-  "blade",
-}
-local root_markers = {
-  "composer.json",
-  ".git",
-}
-local function get_language_id(_, filetype)
-  if filetype == "php" or filetype == "phps" then
-    return "php"
-  elseif filetype == "blade" then
-    return "blade"
-  else
-    return filetype
-  end
-end
-local enabled_ids = {}
-do
-  local enabled_keys = {}
-  for _, ft in ipairs(filetypes) do
-    local id = get_language_id({}, ft)
-    if not enabled_keys[id] then
-      enabled_keys[id] = true
-      table.insert(enabled_ids, id)
-    end
-  end
-end
-vim.lsp.config['phpactor'] = {
-  cmd = { "phpactor", "language-server" },
-  filetypes = filetypes,
-  root_markers = root_markers,
-  get_language_id = get_language_id,
+vim.lsp.config['phpactor_ls'] = {
+  cmd = {
+    'phpactor',
+    'language-server'
+  },
+  filetypes = {
+    'php',
+    'phps',
+    'blade'
+  },
+  root_markers = {
+    "composer.json",
+    ".git"
+  },
   settings = {
     phpactor = {
       behat = {
-        enabled = false,
+        enabled = true,
         config_path = "%project_root%/behat.yml",
-        symfony = { di_xml_path = nil },
+        symfony = {
+          di_xml_path = nil
+        },
       },
       blackfire = {
         enabled = false,
@@ -56,7 +38,7 @@ vim.lsp.config['phpactor'] = {
       code_transform = {
         class_new = { variants = {} },
         indentation = " ",
-        import_globals = false,
+        import_globals = true,
         refactor = {
           generate_accessor = {
             prefix = "",
@@ -72,7 +54,10 @@ vim.lsp.config['phpactor'] = {
             named_parameters = true,
           },
         },
-        template_paths = { "%project_config%/templates", "%config%/templates" },
+        template_paths = {
+          "%project_config%/templates",
+          "%config%/templates"
+        },
       },
       composer = {
         autoload_deregister = true,
@@ -83,13 +68,13 @@ vim.lsp.config['phpactor'] = {
       completion = {
         dedupe = true,
         dedupe_match_fqn = true,
-        label_formatter = "helpful",
+        label_formatter = 'helpful',
         limit = nil,
       },
       completion_worse = {
         debug = false,
         experimantal = false,
-        name_completion_priority = "proximity",
+        name_completion_priority = 'proximity',
         snippets = true,
         completor = {
           attribute = {
@@ -98,20 +83,49 @@ vim.lsp.config['phpactor'] = {
           class_like = {
             enabled = true
           },
-          class_member = { enabled = true },
-          class = { limit = 100, enabled = true },
-          constructor = { enabled = true },
-          declared_class = { enabled = true },
-          declared_constant = { enabled = true },
-          declared_function = { enabled = true },
-          docblock = { enabled = true },
-          doctrine_annotation = { enabled = true },
-          expression_name_search = { enabled = true },
-          imported_names = { enabled = true },
-          keyword = { enabled = true },
-          local_variable = { enabled = true },
-          named_parameter = { enabled = true },
-          scf_class = { enabled = true },
+          class_member = {
+            enabled = true
+          },
+          class = {
+            limit = 100,
+            enabled = true
+          },
+          constructor = {
+            enabled = true
+          },
+          declared_class = {
+            enabled = true
+          },
+          declared_constant = {
+            enabled = true
+          },
+          declared_function = {
+            enabled = true
+          },
+          docblock = {
+            enabled = true
+          },
+          doctrine_annotation = {
+            enabled = true
+          },
+          expression_name_search = {
+            enabled = true
+          },
+          imported_names = {
+            enabled = true
+          },
+          keyword = {
+            enabled = true
+          },
+          local_variable = {
+            enabled = true
+          },
+          named_parameter = {
+            enabled = true
+          },
+          scf_class = {
+            enabled = true
+          },
           subscript = { enabled = true },
           type = { enabled = true },
           use = { enabled = true },
@@ -127,7 +141,7 @@ vim.lsp.config['phpactor'] = {
       core = {
         min_memory_limit = 1610612736,
       },
-      console_dumper_default = "indented",
+      console_dumper_default = 'indented',
       xdebug_disable = true,
       diagnostics = {
         diagnosticsOnOpen = true,
@@ -135,7 +149,7 @@ vim.lsp.config['phpactor'] = {
         diagnosticsOnSave = true,
       },
       file_path_resolver = {
-        app_name = "phpactor",
+        app_name = 'phpactor',
         application_root = nil,
         enable_cache = true,
         enable_logging = true,

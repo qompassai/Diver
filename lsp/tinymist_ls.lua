@@ -31,7 +31,7 @@ local function create_tinymist_command(command_name, client, bufnr)
   local cmd_desc = ('Tinymist: %s'):format(cmd_display)
   return cmd_func, cmd_name, cmd_desc
 end
-vim.lsp.config['tinymist'] = {
+vim.lsp.config['tinymist_ls'] = {
   cmd = {
     'tinymist'
   },

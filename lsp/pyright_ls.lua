@@ -2,8 +2,11 @@
 -- Qompass AI Python LSP Spec
 -- Copyright (C) 2025 Qompass AI, All rights reserved
 -- ---------------------------------------------------
-vim.lsp.config["pyright"] = {
-  cmd = { "pyright-langserver", "--stdio" },
+vim.lsp.config['pyright_ls'] = {
+  cmd = {
+    'pyright-langserver',
+    '--stdio'
+  },
   filetypes = { "python" },
   root_markers = {
     "pyproject.toml",

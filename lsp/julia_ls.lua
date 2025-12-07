@@ -21,7 +21,7 @@ vim.lsp.config['julia_ls'] = {
       project_path = let
           dirname(something(
               Base.load_path_expand((
-                  p = get(ENV, "JULIA_PROJECT", nothing);
+                  p = get(ENV, 'JULIA_PROJECT', nothing);
                   p === nothing ? nothing : isempty(p) ? nothing : p
               )),
               Base.current_project(),

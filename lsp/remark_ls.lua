@@ -40,4 +40,7 @@ vim.lsp.config['remark_ls'] = {
       organizeImports = false,
     },
   },
+  on_attach = function(client, bufnr)
+    client.server_capabilities.documentFormattingProvider = true
+  end
 }

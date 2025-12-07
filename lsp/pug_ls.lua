@@ -4,10 +4,14 @@
 -- ----------------------------------------
 -- Reference: https://github.com/opa-oz/pug-lsp
 -- go install github.com/opa-oz/pug-lsp@latest
-vim.lsp.config['pug-lsp'] = {
+vim.lsp.config['pug_ls'] = {
   cmd = {
     'pug-lsp'
   },
-  filetypes = { 'pug' },
-  root_markers = { 'package.json' },
+  filetypes = {
+    'pug'
+  },
+  root_markers = {
+    'package.json'
+  },
 }

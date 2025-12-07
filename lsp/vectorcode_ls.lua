@@ -4,7 +4,7 @@
 -- ----------------------------------------
 --Reference: https://github.com/Davidyz/VectorCode
 --pip install "VectorCode[lsp,mcp]"
-vim.lsp.config['vectorcode'] = {
+vim.lsp.config['vectorcode_ls'] = {
   cmd = {
     'vectorcode-server'
   },

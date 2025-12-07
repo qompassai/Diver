@@ -4,7 +4,7 @@
 -- ---------------------------------------------------
 -- go install github.com/a-h/templ/cmd/templ@latest
 -- Reference: https://templ.guide
-vim.lsp.config['templ'] = {
+vim.lsp.config['templ_ls'] = {
   cmd = {
     'templ',
     'lsp'

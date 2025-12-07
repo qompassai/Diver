@@ -4,7 +4,7 @@
 -- ---------------------------------------------------
 -- #Reference: https://github.com/qiuxiang/solidity-ls
 -- pnpm add -g solidity-ls
-vim.lsp.config['solidity'] = {
+vim.lsp.config['solidity_ls'] = {
   cmd = {
     'solidity-ls',
     '--stdio'

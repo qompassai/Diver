@@ -12,8 +12,14 @@ cmake -G Ninja ../llvm \
   -DCMAKE_BUILD_TYPE=Release
 ninja mlir-lsp-server mlir-pdll-lsp-server
   --]]
-vim.lsp.config['mlir-lsp-server'] = {
-  cmd = { 'mlir-lsp-server' },
-  filetypes = { 'mlir' },
-  root_markers = { '.git' },
+vim.lsp.config['mlir_ls'] = {
+  cmd = {
+    'mlir-lsp-server'
+  },
+  filetypes = {
+    'mlir'
+  },
+  root_markers = {
+    '.git'
+  },
 }

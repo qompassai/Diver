@@ -4,7 +4,7 @@
 -- ---------------------------------------------------
 --Reference: https://github.com/ruby/typeprof
 --gem install typeprof
-vim.lsp.config['typeprof'] = {
+vim.lsp.config['typeprof_ls'] = {
   cmd = {
     'typeprof',
     '--lsp',

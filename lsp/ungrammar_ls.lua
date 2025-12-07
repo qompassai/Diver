@@ -4,7 +4,7 @@
 -- --------------------------------------------------
 --Reference: https://github.com/binhtran432k/ungrammar-language-features
 -- pnpm add -g ungrammar-languageserver
-vim.lsp.config['ungrammar'] = {
+vim.lsp.config['ungrammar_ls'] = {
   cmd = {
     'ungrammar-languageserver',
     '--stdio'
