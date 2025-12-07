@@ -4,195 +4,153 @@
 <!-- ---------------------------------------- -->
 
 <details>
-<summary style="font-size: 1.4em; font-weight: bold; padding: 15px; background: #667eea; color: white; border-radius: 10px; cursor: pointer; margin: 10px 0;"><strong>🧭 About Qompass AI</strong></summary>
+<summary style="font-size: 1.4em; font-weight: bold; padding: 15px; background: #667eea; color: white; border-radius: 10px; cursor: pointer; margin: 10px 0;"><strong>🧭 Ada</strong></summary>
 <blockquote style="font-size: 1.2em; line-height: 1.8; padding: 25px; background: #f8f9fa; border-left: 6px solid #667eea; border-radius: 8px; margin: 15px 0; box-shadow: 0 2px 8px rgba(0,0,0,0.1);">
-  <details>
+<details>
       <summary><strong>Ada</strong></summary>
       <ul>
         <li><code>ada_ls</code> –
-          <a href="https://github.com/<you>/<repo>/blob/main/nvim/lsp/ada_ls.lua">config</a>
+          <a href="https://github.com/qompassai/diver/blob/main/nvim/lsp/ada_ls.lua">config</a>
         </li>
       </ul>
+    </details>
     <details>
+  </blockquote>
+</details>
+<details>
+<summary style="font-size: 1.4em; font-weight: bold; padding: 15px; background: #667eea; color: white; border-radius: 10px; cursor: pointer; margin: 10px 0;"><strong>🧭 Ansible</strong></summary>
+<blockquote style="font-size: 1.2em; line-height: 1.8; padding: 25px; background: #f8f9fa; border-left: 6px solid #667eea; border-radius: 8px; margin: 15px 0; box-shadow: 0 2px 8px rgba(0,0,0,0.1);">
       <summary><strong>Ansible</strong></summary>
       <ul>
         <li><code>ansible_ls</code> –
-          <a href="https://github.com/<you>/<repo>/blob/main/nvim/lsp/ansible_ls.lua">config</a>
+          <a href="https://github.com/qompassai/diver/blob/main/nvim/lsp/ansible_ls.lua">config</a>
         </li>
       </ul>
-    </details>
-    </details>
+  </blockquote>
+</details>
+<summary style="font-size: 1.4em; font-weight: bold; padding: 15px; background: #667eea; color: white; border-radius: 10px; cursor: pointer; margin: 10px 0;"><strong>🧭 Arduino</strong></summary>
+<blockquote style="font-size: 1.2em; line-height: 1.8; padding: 25px; background: #f8f9fa; border-left: 6px solid #667eea; border-radius: 8px; margin: 15px 0; box-shadow: 0 2px 8px rgba(0,0,0,0.1);">
      <details>
       <summary><strong>Arduino</strong></summary>
       <ul>
         <li><code>arduino_ls</code> –
-          <a href="https://github.com/<you>/<repo>/blob/main/nvim/lsp/arduino_ls.lua">config</a>
+          <a href="https://github.com/qompassai/diver/blob/main/nvim/lsp/arduino_ls.lua">config</a>
         </li>
       </ul>
     </details>
+<summary style="font-size: 1.4em; font-weight: bold; padding: 15px; background: #667eea; color: white; border-radius: 10px; cursor: pointer; margin: 10px 0;"><strong>🧭 Assembly</strong></summary>
+<blockquote style="font-size: 1.2em; line-height: 1.8; padding: 25px; background: #f8f9fa; border-left: 6px solid #667eea; border-radius: 8px; margin: 15px 0; box-shadow: 0 2px 8px rgba(0,0,0,0.1);">
      <details>
       <summary><strong>Assembly</strong></summary>
       <ul>
         <li><code>asm_ls</code> –
-          <a href="https://github.com/<you>/<repo>/blob/main/nvim/lsp/asm_ls.lua">config</a>
+          <a href="https://github.com/qompassai/diver/blob/main/nvim/lsp/asm_ls.lua">config</a>
         </li>
         <li><code>m68k_ls</code> –
-          <a href="https://github.com/<you>/<repo>/blob/main/nvim/lsp/m68k_ls.lua">config</a>
+          <a href="https://github.com/qompassai/diver/blob/main/nvim/lsp/m68k_ls.lua">config</a>
         </li>
       </ul>
     </details>
+<summary style="font-size: 1.4em; font-weight: bold; padding: 15px; background: #667eea; color: white; border-radius: 10px; cursor: pointer; margin: 10px 0;"><strong>🧭 Astro</strong></summary>
+<blockquote style="font-size: 1.2em; line-height: 1.8; padding: 25px; background: #f8f9fa; border-left: 6px solid #667eea; border-radius: 8px; margin: 15px 0; box-shadow: 0 2px 8px rgba(0,0,0,0.1);">
     <details>
       <summary><strong>Astro</strong></summary>
       <ul>
         <li><code>astro_ls</code> –
-          <a href="https://github.com/<you>/<repo>/blob/main/nvim/lsp/astro_ls.lua">config</a>
+          <a href="https://github.com/qompassai/diver/blob/main/nvim/lsp/astro_ls.lua">config</a>
         </li>
       </ul>
     </details>
+<summary style="font-size: 1.4em; font-weight: bold; padding: 15px; background: #667eea; color: white; border-radius: 10px; cursor: pointer; margin: 10px 0;"><strong>🧭 Awk</strong></summary>
+<blockquote style="font-size: 1.2em; line-height: 1.8; padding: 25px; background: #f8f9fa; border-left: 6px solid #667eea; border-radius: 8px; margin: 15px 0; box-shadow: 0 2px 8px rgba(0,0,0,0.1);">
       <details>
       <summary><strong>Awk</strong></summary>
       <ul>
         <li><code>awk_ls</code> –
-          <a href="https://github.com/<you>/<repo>/blob/main/nvim/lsp/awk_ls.lua">config</a>
+          <a href="https://github.com/qompassai/diver/blob/main/nvim/lsp/awk_ls.lua">config</a>
         </li>
       </ul>
     </details>
+<summary style="font-size: 1.4em; font-weight: bold; padding: 15px; background: #667eea; color: white; border-radius: 10px; cursor: pointer; margin: 10px 0;"><strong>🧭 Azure</strong></summary>
+<blockquote style="font-size: 1.2em; line-height: 1.8; padding: 25px; background: #f8f9fa; border-left: 6px solid #667eea; border-radius: 8px; margin: 15px 0; box-shadow: 0 2px 8px rgba(0,0,0,0.1);">
      <details>
       <summary><strong>Azure Pipelines</strong></summary>
       <ul>
         <li><code>azurepipelines_ls</code> –
-          <a href="https://github.com/<you>/<repo>/blob/main/nvim/lsp/azurepipelines_ls.lua">config</a>
+          <a href="https://github.com/qompassai/diver/blob/main/nvim/lsp/azurepipelines_ls.lua">config</a>
         </li>
       </ul>
     </details>
+    <details>
+  <summary style="font-size: 1.4em; font-weight: bold; padding: 15px; background: #667eea; color: white; border-radius: 10px; cursor: pointer; margin: 10px 0;"><strong>🧭 GLSL</strong></summary>
+<blockquote style="font-size: 1.2em; line-height: 1.8; padding: 25px; background: #f8f9fa; border-left: 6px solid #667eea; border-radius: 8px; margin: 15px 0; box-shadow: 0 2px 8px rgba(0,0,0,0.1);">
   <summary><strong>GLSL</strong></summary>
   <ul>
     <li><code>glslana_ls</code> –
-      <a href="https://github.com/<you>/<repo>/blob/main/nvim/lsp/glslana_ls.lua">
+      <a href="https://github.com/qompassai/diver/blob/main/nvim/lsp/glslana_ls.lua">
         config
       </a>
     </li>
   </ul>
 </details>
+<details>
+<summary style="font-size: 1.4em; font-weight: bold; padding: 15px; background: #667eea; color: white; border-radius: 10px; cursor: pointer; margin: 10px 0;"><strong>🧭 Full List</strong></summary>
+<blockquote style="font-size: 1.2em; line-height: 1.8; padding: 25px; background: #f8f9fa; border-left: 6px solid #667eea; border-radius: 8px; margin: 15px 0; box-shadow: 0 2px 8px rgba(0,0,0,0.1);">
+Ada (ada\_ls) AI / ML tooling (ai\_ls, expert\_ls, hydra\_ls, kubescape\_ls,
+oxlint\_ls, spectral\_ls, spyglass\_ls, tvmffinav\_ls) Ansible (ansible\_ls) Arduino
+(arduino\_ls) Assembly (asm\_ls, m68k\_ls) Astro (astro\_ls) Awk (awk\_ls) Azure
+Pipelines (azurepipelines\_ls) Bacon (bacon\_ls) Bash / Shell (bash\_ls, fish\_ls,
+nu\_ls, pwrshelles\_ls) Bazel / Build systems (bazelrc\_ls, buck2\_ls, gop\_ls,
+msbuildptoo\_ls, neocmake\_ls, please\_ls, starlark\_ls) Beancount (beancount\_ls)
+Bicep (bicep\_ls) Biome / JS tooling (biome\_ls) BitBake / Yocto (bitbake\_ls)
+Blueprint (blueprint\_ls) BQN / array languages (bq\_ls) C / C++ (c3\_ls, cc\_ls,
+clangd\_ls, clangfmt\_ls, fort\_ls, hdlcheck\_ls, opencl\_ls, verible\_ls) Cairo
+(cairo\_ls) Circom (circom\_ls) CMake (cmake\_ls, neocmake\_ls) Crystal
+(crystalline\_ls) C# / .NET (csharp\_ls, fsautocomplete\_ls, omnisharp\_ls,
+roslyn\_ls) Deno / TypeScript runtimes (deno\_ls) Docker / Containers (docker\_ls,
+dockercompose\_ls, nomad\_ls) Dot / Graphviz (dot\_ls) dotenv / env files
+(dotenvlint\_ls) DTS / Device Trees (dts\_ls) Elixir (elixir\_ls) Elm (elm\_ls)
+Emacs Lisp / Lisp family (fennel\_ls) Ember / Handlebars (ember\_ls) Emmet / HTML
+snippets (emmet\_ls) EmmyLua / Lua docs (emmylua\_ls) Esbonio / Sphinx
+(esbonio\_ls) ESLint / JS linting (eslint\_ls, quicklintjs\_ls, standardrb\_ls,
+sqruff\_ls) F# (fsautocomplete\_ls) Fennel (fennel\_ls) Fortran (fort\_ls) GDScript
+/ Godot (gdscript\_ls, gdshader\_ls) GitHub / GitLab CI (ghactions\_ls,
+gitlabci\_ls) Gleam (gleam\_ls) GLSL / Shaders (glslana\_ls, wgslana\_ls) Go
+(golangcilint\_ls, gop\_ls) GraphQL (graphql\_ls) Groovy (groovy\_ls) Helm (helm\_ls)
+Herb / C++ Herbarium DSL (herb\_ls) Hoon (hoon\_ls) HTML / Web (html\_ls,
+htmlhint\_ls, htmx\_ls, superhtml\_ls) Hyprland / Hypr config (hypr\_ls, systemd\_ls,
+termux\_ls) Hyprlang / Configs (hypr\_ls, systemd\_ls) Intelephense / PHP
+(intelephense\_ls, phpactor\_ls, laravel\_ls) Java (java\_ls, jdt\_ls) JavaScript /
+TypeScript (ts\_ls, tsquery\_ls, tsp\_ls, tailwindcss\_ls, svelte\_ls, vue\_ls) Jinja
+/ Templating (jinja\_ls, twiggy\_ls, pug\_ls, markojs\_ls, templ\_ls) JQ (jq\_ls) JSON
+/ JSON5 (json\_ls, jsonnet\_ls, taplo\_ls) Julia (julia\_ls) Justfile (just\_ls)
+Kotlin (kotlin\_ls) Latex / TeX (texlab\_ls) Lean (lean\_ls, rocq\_ls) Lemminx / XML
+(lemminx) Lua (lua\_ls, emmylua\_ls, stylua\_ls) LWC / Salesforce (lwc\_ls) Make /
+Build (makelint\_ls, checkmake\_ls) Markdown / Prose (marksman\_ls, mdxana\_ls,
+prosemd\_ls, remark\_ls, ltex\_plus\_ls) MATLAB (matlab\_ls) Metals / Scala
+(metals\_ls) MLIR / LLVM (mlir\_ls, mlirpdll\_ls, tblgen\_ls) Move (moveana\_ls) Muon
+/ Meson-like (muon\_ls) Mutt (mutt\_ls) Nextflow (nextflow\_ls) Nginx (nginx\_ls,
+nginxcf\_ls) Nickel (nickel\_ls) Nix (nil\_ls, nixd\_ls, statix\_ls, rnix\_ls) OCaml /
+Reason (ocaml\_ls) Odin / O (o\_ls) OpenSCAD (openscad\_ls) Perl (perl\_ls,
+perlnav\_ls, perlp\_ls) PHP (intelephense\_ls, phpactor\_ls, laravel\_ls, psalm\_ls,
+phan\_ls) PostgreSQL / SQL (postgres\_ls, sq\_ls, sqlls) Prisma (prisma\_ls) Proto /
+gRPC (proto\_ls, buf\_ls, buf) Puppet (puppet\_ls, puppetes\_ls) Python (basedpy\_ls,
+pyrefly\_ls, py\_ls, pylyzer\_ls, pyright\_ls, ruff\_ls, regal\_ls) QML / Qt (qml\_ls)
+Rego / Policy (rego\_ls, regal\_ls, kubescape\_ls, vacuum\_ls) Rescript
+(rescript\_ls) Robot Framework (robotcode\_ls, robotframework\_ls) RPM spec
+(rpmspec\_ls) Ruby (rubocop\_ls, ruby\_ls, sorbet\_ls, steep\_ls, standardrb\_ls,
+typeprof\_ls) Rust (rustana\_ls, taplo\_ls) Scala (metals\_ls, mill-related like
+millet\_ls) SCSS / CSS / Style (somesass\_ls, stylelint\_ls, tailwindcss\_ls) Slang
+/ HLSL-like (slangd\_ls) Slint / UI (slint\_ls) Smithy (smithy\_ls) Solidity / EVM
+(solc\_ls, solidity\_ls, solang\_ls, solidnomic\_ls) SQL / DB (sq\_ls, postgres\_ls)
+Starlark / Bazel (starlark\_ls, bazelrc\_ls) Stimulus / Rails front-end
+(stimulus\_ls) Svelte (svelte\_ls) SVG / Graphics (svgs: sv\_ls, svlant\_ls,
+syntaxtree\_ls) Systemd (systemd\_ls) Tailwind CSS (tailwindcss\_ls) Terraform /
+IaC (terraform\_ls, tflint\_ls, tofu\_ls, nomad\_ls, vacuum\_ls) Testing / QA
+(ginko\_ls, quicklintjs\_ls, golangcilint\_ls, eslint\_ls, ruff\_ls) Twig /
+Templating (twiggy\_ls) Typst (typst\_ls) Vala (vala\_ls) Verilog / HDL
+(verible\_ls, veridian\_ls, veryl\_ls, hdlcheck\_ls, sv\_ls, svlant\_ls) Vimscript
+(vim\_ls) Vue (vue\_ls) WASM / WebAssembly (wasmlangtoo\_ls, wgslana\_ls) YAML
+(yaml\_ls) Zig (ziggy\_ls, ziggy\_schema\_ls, z\_ls)
+    <details>
   </blockquote>
-</details>
-
-Ada (ada_ls)
-AI / ML tooling (ai_ls, expert_ls, hydra_ls, kubescape_ls, oxlint_ls, spectral_ls, spyglass_ls, tvmffinav_ls)
-Ansible (ansible_ls)
-Arduino (arduino_ls)
-Assembly (asm_ls, m68k_ls)
-Astro (astro_ls)
-Awk (awk_ls)
-Azure Pipelines (azurepipelines_ls)
-Bacon (bacon_ls)
-Bash / Shell (bash_ls, fish_ls, nu_ls, pwrshelles_ls)
-Bazel / Build systems (bazelrc_ls, buck2_ls, gop_ls, msbuildptoo_ls, neocmake_ls, please_ls, starlark_ls)
-Beancount (beancount_ls)
-Bicep (bicep_ls)
-Biome / JS tooling (biome_ls)
-BitBake / Yocto (bitbake_ls)
-Blueprint (blueprint_ls)
-BQN / array languages (bq_ls)
-C / C++ (c3_ls, cc_ls, clangd_ls, clangfmt_ls, fort_ls, hdlcheck_ls, opencl_ls, verible_ls)
-Cairo (cairo_ls)
-Circom (circom_ls)
-CMake (cmake_ls, neocmake_ls)
-Crystal (crystalline_ls)
-C# / .NET (csharp_ls, fsautocomplete_ls, omnisharp_ls, roslyn_ls)
-Deno / TypeScript runtimes (deno_ls)
-Docker / Containers (docker_ls, dockercompose_ls, nomad_ls)
-Dot / Graphviz (dot_ls)
-dotenv / env files (dotenvlint_ls)
-DTS / Device Trees (dts_ls)
-Elixir (elixir_ls)
-Elm (elm_ls)
-Emacs Lisp / Lisp family (fennel_ls)
-Ember / Handlebars (ember_ls)
-Emmet / HTML snippets (emmet_ls)
-EmmyLua / Lua docs (emmylua_ls)
-Esbonio / Sphinx (esbonio_ls)
-ESLint / JS linting (eslint_ls, quicklintjs_ls, standardrb_ls, sqruff_ls)
-F# (fsautocomplete_ls)
-Fennel (fennel_ls)
-Fortran (fort_ls)
-GDScript / Godot (gdscript_ls, gdshader_ls)
-GitHub / GitLab CI (ghactions_ls, gitlabci_ls)
-Gleam (gleam_ls)
-GLSL / Shaders (glslana_ls, wgslana_ls)
-Go (golangcilint_ls, gop_ls)
-GraphQL (graphql_ls)
-Groovy (groovy_ls)
-Helm (helm_ls)
-Herb / C++ Herbarium DSL (herb_ls)
-Hoon (hoon_ls)
-HTML / Web (html_ls, htmlhint_ls, htmx_ls, superhtml_ls)
-Hyprland / Hypr config (hypr_ls, systemd_ls, termux_ls)
-Hyprlang / Configs (hypr_ls, systemd_ls)
-Intelephense / PHP (intelephense_ls, phpactor_ls, laravel_ls)
-Java (java_ls, jdt_ls)
-JavaScript / TypeScript (ts_ls, tsquery_ls, tsp_ls, tailwindcss_ls, svelte_ls, vue_ls)
-Jinja / Templating (jinja_ls, twiggy_ls, pug_ls, markojs_ls, templ_ls)
-JQ (jq_ls)
-JSON / JSON5 (json_ls, jsonnet_ls, taplo_ls)
-Julia (julia_ls)
-Justfile (just_ls)
-Kotlin (kotlin_ls)
-Latex / TeX (texlab_ls)
-Lean (lean_ls, rocq_ls)
-Lemminx / XML (lemminx)
-Lua (lua_ls, emmylua_ls, stylua_ls)
-LWC / Salesforce (lwc_ls)
-Make / Build (makelint_ls, checkmake_ls)
-Markdown / Prose (marksman_ls, mdxana_ls, prosemd_ls, remark_ls, ltex_plus_ls)
-MATLAB (matlab_ls)
-Metals / Scala (metals_ls)
-MLIR / LLVM (mlir_ls, mlirpdll_ls, tblgen_ls)
-Move (moveana_ls)
-Muon / Meson-like (muon_ls)
-Mutt (mutt_ls)
-Nextflow (nextflow_ls)
-Nginx (nginx_ls, nginxcf_ls)
-Nickel (nickel_ls)
-Nix (nil_ls, nixd_ls, statix_ls, rnix_ls)
-OCaml / Reason (ocaml_ls)
-Odin / O (o_ls)
-OpenSCAD (openscad_ls)
-Perl (perl_ls, perlnav_ls, perlp_ls)
-PHP (intelephense_ls, phpactor_ls, laravel_ls, psalm_ls, phan_ls)
-PostgreSQL / SQL (postgres_ls, sq_ls, sqlls)
-Prisma (prisma_ls)
-Proto / gRPC (proto_ls, buf_ls, buf)
-Puppet (puppet_ls, puppetes_ls)
-Python (basedpy_ls, pyrefly_ls, py_ls, pylyzer_ls, pyright_ls, ruff_ls, regal_ls)
-QML / Qt (qml_ls)
-Rego / Policy (rego_ls, regal_ls, kubescape_ls, vacuum_ls)
-Rescript (rescript_ls)
-Robot Framework (robotcode_ls, robotframework_ls)
-RPM spec (rpmspec_ls)
-Ruby (rubocop_ls, ruby_ls, sorbet_ls, steep_ls, standardrb_ls, typeprof_ls)
-Rust (rustana_ls, taplo_ls)
-Scala (metals_ls, mill-related like millet_ls)
-SCSS / CSS / Style (somesass_ls, stylelint_ls, tailwindcss_ls)
-Slang / HLSL-like (slangd_ls)
-Slint / UI (slint_ls)
-Smithy (smithy_ls)
-Solidity / EVM (solc_ls, solidity_ls, solang_ls, solidnomic_ls)
-SQL / DB (sq_ls, postgres_ls)
-Starlark / Bazel (starlark_ls, bazelrc_ls)
-Stimulus / Rails front-end (stimulus_ls)
-Svelte (svelte_ls)
-SVG / Graphics (svgs: sv_ls, svlant_ls, syntaxtree_ls)
-Systemd (systemd_ls)
-Tailwind CSS (tailwindcss_ls)
-Terraform / IaC (terraform_ls, tflint_ls, tofu_ls, nomad_ls, vacuum_ls)
-Testing / QA (ginko_ls, quicklintjs_ls, golangcilint_ls, eslint_ls, ruff_ls)
-Twig / Templating (twiggy_ls)
-Typst (typst_ls)
-Vala (vala_ls)
-Verilog / HDL (verible_ls, veridian_ls, veryl_ls, hdlcheck_ls, sv_ls, svlant_ls)
-Vimscript (vim_ls)
-Vue (vue_ls)
-WASM / WebAssembly (wasmlangtoo_ls, wgslana_ls)
-YAML (yaml_ls)
-Zig (ziggy_ls, ziggy_schema_ls, z_ls)
