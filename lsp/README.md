@@ -1,6 +1,9 @@
 <!-- /qompassai/Diver/lsp/README.md -->
+
 <!-- Qompass AI Diver LSP Docs -->
+
 <!-- Copyright (C) 2025 Qompass AI, All rights reserved -->
+
 <!-- ---------------------------------------- -->
 
 <details>
@@ -544,8 +547,11 @@
   </blockquote>
 </details>
 <details>
-  <summary style="font-size: 1.4em; font-weight: bold; padding: 15px; background: #667eea; color: white; border-radius: 10px; cursor: pointer; margin: 10px 0;">
-    <strong>🧭 Java</strong>
+  <summary style="font-size: 1.4em; font-weight: bold; padding: 15px; background: #667eea; color: white; border-radius: 10px; cursor: pointer; margin: 10px 0; display: flex; align-items: center; gap: 8px;">
+    <div class="icon-row" style="display: flex; align-items: center; gap: 6px;">
+      <img src="https://skillicons.dev/icons?i=java" alt="java" width="20" height="20" title="Java" />
+    </div>
+    <strong>Java</strong>
   </summary>
   <blockquote style="font-size: 1.2em; line-height: 1.8; padding: 25px; background: #f8f9fa; border-left: 6px solid #667eea; border-radius: 8px; margin: 15px 0; box-shadow: 0 2px 8px rgba(0,0,0,0.1);">
     <ul>
@@ -559,8 +565,11 @@
   </blockquote>
 </details>
 <details>
-  <summary style="font-size: 1.4em; font-weight: bold; padding: 15px; background: #667eea; color: white; border-radius: 10px; cursor: pointer; margin: 10px 0;">
-    <strong>🧭 JavaScript</strong>
+  <summary style="font-size: 1.4em; font-weight: bold; padding: 15px; background: #667eea; color: white; border-radius: 10px; cursor: pointer; margin: 10px 0; display: flex; align-items: center; gap: 8px;">
+    <div class="icon-row" style="display: flex; align-items: center; gap: 6px;">
+      <img src="https://skillicons.dev/icons?i=js" alt="JavaScript" width="20" height="20" title="JavaScript" />
+    </div>
+    <strong>JavaScript</strong>
   </summary>
   <blockquote style="font-size: 1.2em; line-height: 1.8; padding: 25px; background: #f8f9fa; border-left: 6px solid #667eea; border-radius: 8px; margin: 15px 0; box-shadow: 0 2px 8px rgba(0,0,0,0.1);">
     <ul>
@@ -652,8 +661,11 @@
   </blockquote>
 </details>
 <details>
-  <summary style="font-size: 1.4em; font-weight: bold; padding: 15px; background: #667eea; color: white; border-radius: 10px; cursor: pointer; margin: 10px 0;">
-    <strong>🧭 LaTeX</strong>
+  <summary style="font-size: 1.4em; font-weight: bold; padding: 15px; background: #667eea; color: white; border-radius: 10px; cursor: pointer; margin: 10px 0; display: flex; align-items: center; gap: 8px;">
+    <div class="icon-row" style="display: flex; align-items: center; gap: 6px;">
+      <img src="https://skillicons.dev/icons?i=latex" alt="LaTeX" width="20" height="20" title="LaTeX" />
+    </div>
+    <strong>LaTeX</strong>
   </summary>
   <blockquote style="font-size: 1.2em; line-height: 1.8; padding: 25px; background: #f8f9fa; border-left: 6px solid #667eea; border-radius: 8px; margin: 15px 0; box-shadow: 0 2px 8px rgba(0,0,0,0.1);">
     <ul>
@@ -864,7 +876,6 @@
     </ul>
   </blockquote>
 </details>
-<details>
   <details>
   <summary style="font-size: 1.4em; font-weight: bold; padding: 15px; background: #667eea; color: white; border-radius: 10px; cursor: pointer; margin: 10px 0;">
     <strong>🧭 Odin</strong>
@@ -947,8 +958,11 @@
         <a href="https://github.com/qompassai/diver/blob/main/nvim/lsp/postgrestoo_ls.lua">config</a>
       </li>
 
-    </ul>
-  </blockquote>
+```
+</ul>
+```
+
+</blockquote>
 </details>
 <details>
   <summary style="font-size: 1.4em; font-weight: bold; padding: 15px; background: #667eea; color: white; border-radius: 10px; cursor: pointer; margin: 10px 0;">
@@ -1437,3 +1451,4 @@
     </ul>
   </blockquote>
 </details>
+
