@@ -1002,7 +1002,7 @@
   <summary style="font-size: 1.4em; font-weight: bold; padding: 15px; background: #667eea; color: white; border-radius: 10px; cursor: pointer; margin: 10px 0; display: flex; align-items: center; gap: 8px;">
     <div class="icon-row" style="display: flex; align-items: center; gap: 6px;">
       <img src="https://raw.githubusercontent.com/qompassai/svg/refs/heads/main/assets/icons/nginx/nginx.svg"
-           alt="nginx" width="20" height="20" title="Nginx" />
+           alt="nginx" width="40" height="40" title="Nginx" />
     </div>
     <strong>Nginx</strong>
   </summary>
@@ -1021,7 +1021,7 @@
   <summary style="font-size: 1.4em; font-weight: bold; padding: 15px; background: #667eea; color: white; border-radius: 10px; cursor: pointer; margin: 10px 0; display: flex; align-items: center; gap: 8px;">
     <div class="icon-row" style="display: flex; align-items: center; gap: 6px;">
       <img src="https://raw.githubusercontent.com/qompassai/svg/refs/heads/main/assets/icons/nickel/nickel.svg"
-           alt="nickel" width="20" height="20" title="Nickel" />
+           alt="nickel" width="40" height="40" title="Nickel" />
     </div>
     <strong>Nickel</strong>
   </summary>
@@ -1037,7 +1037,7 @@
   <summary style="font-size: 1.4em; font-weight: bold; padding: 15px; background: #667eea; color: white; border-radius: 10px; cursor: pointer; margin: 10px 0; display: flex; align-items: center; gap: 8px;">
     <div class="icon-row" style="display: flex; align-items: center; gap: 6px;">
       <img src="https://raw.githubusercontent.com/qompassai/svg/refs/heads/main/assets/icons/nix/nix.svg"
-           alt="nix" width="20" height="20" title="Nix" />
+           alt="nix" width="40" height="40" title="Nix" />
     </div>
     <strong>Nix</strong>
   </summary>
@@ -1059,7 +1059,7 @@
   <summary style="font-size: 1.4em; font-weight: bold; padding: 15px; background: #667eea; color: white; border-radius: 10px; cursor: pointer; margin: 10px 0; display: flex; align-items: center; gap: 8px;">
     <div class="icon-row" style="display: flex; align-items: center; gap: 6px;">
       <img src="https://raw.githubusercontent.com/qompassai/svg/refs/heads/main/assets/icons/ocaml/ocaml.svg"
-           alt="ocaml" width="20" height="20" title="Ocaml" />
+           alt="ocaml" width="40" height="40" title="Ocaml" />
     </div>
     <strong>Ocaml</strong>
   </summary>
@@ -1075,7 +1075,7 @@
   <summary style="font-size: 1.4em; font-weight: bold; padding: 15px; background: #667eea; color: white; border-radius: 10px; cursor: pointer; margin: 10px 0; display: flex; align-items: center; gap: 8px;">
     <div class="icon-row" style="display: flex; align-items: center; gap: 6px;">
       <img src="https://raw.githubusercontent.com/qompassai/svg/refs/heads/main/assets/icons/odin/odin.svg"
-           alt="odin" width="20" height="20" title="Odin" />
+           alt="odin" width="40" height="40" title="Odin" />
     </div>
     <strong>Odin</strong>
   </summary>
@@ -1091,7 +1091,7 @@
   <summary style="font-size: 1.4em; font-weight: bold; padding: 15px; background: #667eea; color: white; border-radius: 10px; cursor: pointer; margin: 10px 0; display: flex; align-items: center; gap: 8px;">
     <div class="icon-row" style="display: flex; align-items: center; gap: 6px;">
       <img src="https://raw.githubusercontent.com/qompassai/svg/refs/heads/main/assets/icons/openscad/openscad.svg"
-           alt="odin" width="20" height="20" title="Odin" />
+           alt="odin" width="40" height="40" title="Odin" />
     </div>
     <strong>OpenSCAD</strong>
   </summary>
@@ -1107,7 +1107,7 @@
   <summary style="font-size: 1.4em; font-weight: bold; padding: 15px; background: #667eea; color: white; border-radius: 10px; cursor: pointer; margin: 10px 0; display: flex; align-items: center; gap: 8px;">
     <div class="icon-row" style="display: flex; align-items: center; gap: 6px;">
       <img src="https://raw.githubusercontent.com/qompassai/svg/refs/heads/main/assets/icons/perl/perl.svg"
-           alt="perl" width="20" height="20" title="Perl" />
+           alt="perl" width="40" height="40" title="Perl" />
     </div>
     <strong>Perl</strong>
   </summary>
@@ -1132,7 +1132,7 @@
   <summary style="font-size: 1.4em; font-weight: bold; padding: 15px; background: #667eea; color: white; border-radius: 10px; cursor: pointer; margin: 10px 0; display: flex; align-items: center; gap: 8px;">
     <div class="icon-row" style="display: flex; align-items: center; gap: 6px;">
       <img src="https://raw.githubusercontent.com/qompassai/svg/refs/heads/main/assets/icons/php/php.svg"
-           alt="php" width="20" height="20" title="PHP" />
+           alt="php" width="40" height="40" title="PHP" />
     </div>
     <strong>PHP</strong>
   </summary>
@@ -1160,7 +1160,7 @@
   <summary style="font-size: 1.4em; font-weight: bold; padding: 15px; background: #667eea; color: white; border-radius: 10px; cursor: pointer; margin: 10px 0; display: flex; align-items: center; gap: 8px;">
     <div class="icon-row" style="display: flex; align-items: center; gap: 6px;">
       <img src="https://raw.githubusercontent.com/qompassai/svg/refs/heads/main/assets/icons/postgresql/postgresql.svg"
-           alt="postgresql" width="20" height="20" title="Postgresql" />
+           alt="postgresql" width="40" height="40" title="Postgresql" />
     </div>
     <strong>Postgresql</strong>
   </summary>
@@ -1179,7 +1179,7 @@
   <summary style="font-size: 1.4em; font-weight: bold; padding: 15px; background: #667eea; color: white; border-radius: 10px; cursor: pointer; margin: 10px 0; display: flex; align-items: center; gap: 8px;">
     <div class="icon-row" style="display: flex; align-items: center; gap: 6px;">
       <img src="https://raw.githubusercontent.com/qompassai/svg/refs/heads/main/assets/icons/powershell/powershell.svg"
-           alt="powershell" width="20" height="20" title="Powershell" />
+           alt="powershell" width="40" height="40" title="Powershell" />
     </div>
     <strong>Powershell</strong>
   </summary>
@@ -1195,7 +1195,7 @@
   <summary style="font-size: 1.4em; font-weight: bold; padding: 15px; background: #667eea; color: white; border-radius: 10px; cursor: pointer; margin: 10px 0; display: flex; align-items: center; gap: 8px;">
     <div class="icon-row" style="display: flex; align-items: center; gap: 6px;">
       <img src="https://raw.githubusercontent.com/qompassai/svg/refs/heads/main/assets/icons/prisma/prisma.svg"
-           alt="prisma" width="20" height="20" title="Prisma" />
+           alt="prisma" width="40" height="40" title="Prisma" />
     </div>
     <strong>Prisma</strong>
   </summary>
@@ -1229,7 +1229,7 @@
   <summary style="font-size: 1.4em; font-weight: bold; padding: 15px; background: #667eea; color: white; border-radius: 10px; cursor: pointer; margin: 10px 0; display: flex; align-items: center; gap: 8px;">
     <div class="icon-row" style="display: flex; align-items: center; gap: 6px;">
       <img src="https://raw.githubusercontent.com/qompassai/svg/refs/heads/main/assets/icons/puppet/puppet.svg"
-           alt="puppet" width="20" height="20" title="Puppet" />
+           alt="puppet" width="40" height="40" title="Puppet" />
     </div>
     <strong>Puppet</strong>
   </summary>
@@ -1270,7 +1270,7 @@
  <summary style="font-size: 1.4em; font-weight: bold; padding: 15px; background: #667eea; color: white; border-radius: 10px; cursor: pointer; margin: 10px 0; display: flex; align-items: center; gap: 8px;">
     <div class="icon-row" style="display: flex; align-items: center; gap: 6px;">
       <img src="https://raw.githubusercontent.com/qompassai/svg/refs/heads/main/assets/icons/qt/qt.svg"
-           alt="qt" width="20" height="20" title="QT" />
+           alt="qt" width="40" height="40" title="QT" />
     </div>
     <strong>QT</strong>
   </summary>
@@ -1318,7 +1318,7 @@
  <summary style="font-size: 1.4em; font-weight: bold; padding: 15px; background: #667eea; color: white; border-radius: 10px; cursor: pointer; margin: 10px 0; display: flex; align-items: center; gap: 8px;">
     <div class="icon-row" style="display: flex; align-items: center; gap: 6px;">
       <img src="https://raw.githubusercontent.com/qompassai/svg/refs/heads/main/assets/icons/robot/robot.svg"
-           alt="robot" width="20" height="20" title="robot" />
+           alt="robot" width="40" height="40" title="robot" />
     </div>
     <strong>Robot</strong>
   </summary>
@@ -1337,7 +1337,7 @@
  <summary style="font-size: 1.4em; font-weight: bold; padding: 15px; background: #667eea; color: white; border-radius: 10px; cursor: pointer; margin: 10px 0; display: flex; align-items: center; gap: 8px;">
     <div class="icon-row" style="display: flex; align-items: center; gap: 6px;">
       <img src="https://raw.githubusercontent.com/qompassai/svg/refs/heads/main/assets/icons/redhat/redhat.svg"
-           alt="redhat" width="20" height="20" title="redhat" />
+           alt="redhat" width="40" height="40" title="redhat" />
     </div>
     <strong>Redhat Package Manager (RPM)</strong>
   </summary>
@@ -1353,7 +1353,7 @@
  <summary style="font-size: 1.4em; font-weight: bold; padding: 15px; background: #667eea; color: white; border-radius: 10px; cursor: pointer; margin: 10px 0; display: flex; align-items: center; gap: 8px;">
     <div class="icon-row" style="display: flex; align-items: center; gap: 6px;">
       <img src="https://raw.githubusercontent.com/qompassai/svg/refs/heads/main/assets/icons/ruby/ruby.svg"
-           alt="ruby" width="20" height="20" title="ruby" />
+           alt="ruby" width="40" height="40" title="ruby" />
     </div>
     <strong>Ruby</strong>
   </summary>
@@ -1387,7 +1387,7 @@
  <summary style="font-size: 1.4em; font-weight: bold; padding: 15px; background: #667eea; color: white; border-radius: 10px; cursor: pointer; margin: 10px 0; display: flex; align-items: center; gap: 8px;">
     <div class="icon-row" style="display: flex; align-items: center; gap: 6px;">
       <img src="https://raw.githubusercontent.com/qompassai/svg/refs/heads/main/assets/icons/rust/rust.svg"
-           alt="rust" width="20" height="20" title="rust" />
+           alt="rust" width="40" height="40" title="rust" />
     </div>
     <strong>Rust</strong>
   </summary>
@@ -1406,7 +1406,7 @@
  <summary style="font-size: 1.4em; font-weight: bold; padding: 15px; background: #667eea; color: white; border-radius: 10px; cursor: pointer; margin: 10px 0; display: flex; align-items: center; gap: 8px;">
     <div class="icon-row" style="display: flex; align-items: center; gap: 6px;">
       <img src="https://raw.githubusercontent.com/qompassai/svg/refs/heads/main/assets/icons/scala/scala.svg"
-           alt="scala" width="20" height="20" title="scala" />
+           alt="scala" width="40" height="40" title="scala" />
     </div>
     <strong>Scala</strong>
   </summary>
@@ -1422,7 +1422,7 @@
  <summary style="font-size: 1.4em; font-weight: bold; padding: 15px; background: #667eea; color: white; border-radius: 10px; cursor: pointer; margin: 10px 0; display: flex; align-items: center; gap: 8px;">
     <div class="icon-row" style="display: flex; align-items: center; gap: 6px;">
       <img src="https://raw.githubusercontent.com/qompassai/svg/refs/heads/main/assets/icons/bash/bash.svg"
-           alt="shell" width="20" height="20" title="shell" />
+           alt="shell" width="40" height="40" title="shell" />
     </div>
     <strong>Shell</strong>
   </summary>
@@ -1444,8 +1444,12 @@
   </blockquote>
 </details>
 <details>
-  <summary style="font-size: 1.4em; font-weight: bold; padding: 15px; background: #667eea; color: white; border-radius: 10px; cursor: pointer; margin: 10px 0;">
-    <strong>🧭 Slang</strong>
+  <summary style="font-size: 1.4em; font-weight: bold; padding: 15px; background: #667eea; color: white; border-radius: 10px; cursor: pointer; margin: 10px 0; display: flex; align-items: center; gap: 8px;">
+    <div class="icon-row" style="display: flex; align-items: center; gap: 6px;">
+      <img src="https://raw.githubusercontent.com/qompassai/svg/refs/heads/main/assets/icons/slang/slang.svg"
+           alt="slang" width="20" height="20" title="slang" />
+    </div>
+    <strong>Slang</strong>
   </summary>
   <blockquote style="font-size: 1.2em; line-height: 1.8; padding: 25px; background: #f8f9fa; border-left: 6px solid #667eea; border-radius: 8px; margin: 15px 0; box-shadow: 0 2px 8px rgba(0,0,0,0.1);">
     <ul>
@@ -1456,8 +1460,12 @@
   </blockquote>
 </details>
 <details>
-  <summary style="font-size: 1.4em; font-weight: bold; padding: 15px; background: #667eea; color: white; border-radius: 10px; cursor: pointer; margin: 10px 0;">
-    <strong>🧭 Slint </strong>
+  <summary style="font-size: 1.4em; font-weight: bold; padding: 15px; background: #667eea; color: white; border-radius: 10px; cursor: pointer; margin: 10px 0; display: flex; align-items: center; gap: 8px;">
+    <div class="icon-row" style="display: flex; align-items: center; gap: 6px;">
+      <img src="https://raw.githubusercontent.com/qompassai/svg/refs/heads/main/assets/icons/slint/slint.svg"
+           alt="slint" width="20" height="20" title="slint" />
+    </div>
+    <strong>Slint</strong>
   </summary>
   <blockquote style="font-size: 1.2em; line-height: 1.8; padding: 25px; background: #f8f9fa; border-left: 6px solid #667eea; border-radius: 8px; margin: 15px 0; box-shadow: 0 2px 8px rgba(0,0,0,0.1);">
     <ul>
@@ -1468,8 +1476,12 @@
   </blockquote>
 </details>
 <details>
-  <summary style="font-size: 1.4em; font-weight: bold; padding: 15px; background: #667eea; color: white; border-radius: 10px; cursor: pointer; margin: 10px 0;">
-    <strong>🧭 Smithy</strong>
+  <summary style="font-size: 1.4em; font-weight: bold; padding: 15px; background: #667eea; color: white; border-radius: 10px; cursor: pointer; margin: 10px 0; display: flex; align-items: center; gap: 8px;">
+    <div class="icon-row" style="display: flex; align-items: center; gap: 6px;">
+      <img src="https://raw.githubusercontent.com/qompassai/svg/refs/heads/main/assets/icons/slint/slint.svg"
+           alt="smithy" width="40" height="40" title="smithy" />
+    </div>
+    <strong>Smithy</strong>
   </summary>
   <blockquote style="font-size: 1.2em; line-height: 1.8; padding: 25px; background: #f8f9fa; border-left: 6px solid #667eea; border-radius: 8px; margin: 15px 0; box-shadow: 0 2px 8px rgba(0,0,0,0.1);">
     <ul>
@@ -1483,7 +1495,7 @@
   <summary style="font-size: 1.4em; font-weight: bold; padding: 15px; background: #667eea; color: white; border-radius: 10px; cursor: pointer; margin: 10px 0; display: flex; align-items: center; gap: 8px;">
     <div class="icon-row" style="display: flex; align-items: center; gap: 6px;">
       <img src="https://raw.githubusercontent.com/qompassai/svg/refs/heads/main/assets/icons/solidity/solidity.svg"
-           alt="solidity" width="20" height="20" title="solidity" />
+           alt="solidity" width="40" height="40" title="solidity" />
     </div>
     <strong>Solidity</strong>
   </summary>
@@ -1508,7 +1520,7 @@
   <summary style="font-size: 1.4em; font-weight: bold; padding: 15px; background: #667eea; color: white; border-radius: 10px; cursor: pointer; margin: 10px 0; display: flex; align-items: center; gap: 8px;">
     <div class="icon-row" style="display: flex; align-items: center; gap: 6px;">
       <img src="https://raw.githubusercontent.com/qompassai/svg/refs/heads/main/assets/icons/mariadb/mariadb.svg"
-           alt="SQL" width="20" height="20" title="SQL" />
+           alt="SQL" width="40" height="40" title="SQL" />
     </div>
     <strong>SQL</strong>
   </summary>
@@ -1536,7 +1548,7 @@
   <summary style="font-size: 1.4em; font-weight: bold; padding: 15px; background: #667eea; color: white; border-radius: 10px; cursor: pointer; margin: 10px 0; display: flex; align-items: center; gap: 8px;">
     <div class="icon-row" style="display: flex; align-items: center; gap: 6px;">
       <img src="https://raw.githubusercontent.com/qompassai/svg/refs/heads/main/assets/icons/svelte/svelte.svg"
-           alt="svelte" width="20" height="20" title="svelte" />
+           alt="svelte" width="40" height="40" title="svelte" />
     </div>
     <strong>Svelte</strong>
   </summary>
@@ -1549,8 +1561,12 @@
   </blockquote>
 </details>
 <details>
-  <summary style="font-size: 1.4em; font-weight: bold; padding: 15px; background: #667eea; color: white; border-radius: 10px; cursor: pointer; margin: 10px 0;">
-    <strong>🧭 Systemd</strong>
+  <summary style="font-size: 1.4em; font-weight: bold; padding: 15px; background: #667eea; color: white; border-radius: 10px; cursor: pointer; margin: 10px 0; display: flex; align-items: center; gap: 8px;">
+    <div class="icon-row" style="display: flex; align-items: center; gap: 6px;">
+      <img src="https://raw.githubusercontent.com/qompassai/svg/refs/heads/main/assets/icons/systemd/systemd.svg"
+           alt="systemd" width="40" height="40" title="systemd" />
+    </div>
+    <strong>Systemd</strong>
   </summary>
   <blockquote style="font-size: 1.2em; line-height: 1.8; padding: 25px; background: #f8f9fa; border-left: 6px solid #667eea; border-radius: 8px; margin: 15px 0; box-shadow: 0 2px 8px rgba(0,0,0,0.1);">
     <ul>
@@ -1564,7 +1580,7 @@
   <summary style="font-size: 1.4em; font-weight: bold; padding: 15px; background: #667eea; color: white; border-radius: 10px; cursor: pointer; margin: 10px 0; display: flex; align-items: center; gap: 8px;">
     <div class="icon-row" style="display: flex; align-items: center; gap: 6px;">
       <img src="https://raw.githubusercontent.com/qompassai/svg/refs/heads/main/assets/icons/terraform/terraform.svg"
-           alt="terraform" width="20" height="20" title="terraform" />
+           alt="terraform" width="40" height="40" title="terraform" />
     </div>
     <strong>Terraform</strong>
   </summary>
@@ -1583,7 +1599,7 @@
   <summary style="font-size: 1.4em; font-weight: bold; padding: 15px; background: #667eea; color: white; border-radius: 10px; cursor: pointer; margin: 10px 0; display: flex; align-items: center; gap: 8px;">
     <div class="icon-row" style="display: flex; align-items: center; gap: 6px;">
       <img src="https://raw.githubusercontent.com/qompassai/svg/refs/heads/main/assets/icons/toml/toml.svg"
-           alt="toml" width="20" height="20" title="Toml" />
+           alt="toml" width="40" height="40" title="Toml" />
     </div>
     <strong>TOML</strong>
   </summary>
@@ -1614,7 +1630,7 @@
   <summary style="font-size: 1.4em; font-weight: bold; padding: 15px; background: #667eea; color: white; border-radius: 10px; cursor: pointer; margin: 10px 0; display: flex; align-items: center; gap: 8px;">
     <div class="icon-row" style="display: flex; align-items: center; gap: 6px;">
       <img src="https://raw.githubusercontent.com/qompassai/svg/refs/heads/main/assets/icons/typescript/typescript.svg"
-           alt="typescript" width="20" height="20" title="typescript" />
+           alt="typescript" width="40" height="40" title="typescript" />
     </div>
     <strong>Typescript</strong>
   </summary>
@@ -1636,7 +1652,7 @@
   <summary style="font-size: 1.4em; font-weight: bold; padding: 15px; background: #667eea; color: white; border-radius: 10px; cursor: pointer; margin: 10px 0; display: flex; align-items: center; gap: 8px;">
     <div class="icon-row" style="display: flex; align-items: center; gap: 6px;">
       <img src="https://raw.githubusercontent.com/qompassai/svg/refs/heads/main/assets/icons/typst/typst.svg"
-           alt="typst" width="20" height="20" title="Typst" />
+           alt="typst" width="40" height="40" title="Typst" />
     </div>
     <strong>Typst</strong>
   </summary>
@@ -1652,7 +1668,7 @@
   <summary style="font-size: 1.4em; font-weight: bold; padding: 15px; background: #667eea; color: white; border-radius: 10px; cursor: pointer; margin: 10px 0; display: flex; align-items: center; gap: 8px;">
     <div class="icon-row" style="display: flex; align-items: center; gap: 6px;">
       <img src="https://raw.githubusercontent.com/qompassai/svg/refs/heads/main/assets/icons/typescript/typescript.svg"
-           alt="vala" width="20" height="20" title="vala" />
+           alt="vala" width="40" height="40" title="vala" />
     </div>
     <strong>Vala</strong>
   </summary>
@@ -1668,7 +1684,7 @@
   <summary style="font-size: 1.4em; font-weight: bold; padding: 15px; background: #667eea; color: white; border-radius: 10px; cursor: pointer; margin: 10px 0; display: flex; align-items: center; gap: 8px;">
     <div class="icon-row" style="display: flex; align-items: center; gap: 6px;">
       <img src="https://raw.githubusercontent.com/qompassai/svg/refs/heads/main/assets/icons/verilog/verilog.svg"
-           alt="Verilog" width="20" height="20" title="Verilog" />
+           alt="Verilog" width="40" height="40" title="Verilog" />
     </div>
     <strong>Verilog</strong>
   </summary>
@@ -1693,7 +1709,7 @@
    <summary style="font-size: 1.4em; font-weight: bold; padding: 15px; background: #667eea; color: white; border-radius: 10px; cursor: pointer; margin: 10px 0; display: flex; align-items: center; gap: 8px;">
     <div class="icon-row" style="display: flex; align-items: center; gap: 6px;">
       <img src="https://raw.githubusercontent.com/qompassai/svg/refs/heads/main/assets/icons/vim/vim.svg"
-           alt="vim" width="20" height="20" title="vim" />
+           alt="vim" width="40" height="40" title="vim" />
     </div>
     <strong>Vim</strong>
   </summary>
@@ -1725,7 +1741,7 @@
  <summary style="font-size: 1.4em; font-weight: bold; padding: 15px; background: #667eea; color: white; border-radius: 10px; cursor: pointer; margin: 10px 0; display: flex; align-items: center; gap: 8px;">
     <div class="icon-row" style="display: flex; align-items: center; gap: 6px;">
       <img src="https://raw.githubusercontent.com/qompassai/svg/refs/heads/main/assets/icons/wasm/wasm.svg"
-           alt="wasm" width="20" height="20" title="wasm" />
+           alt="wasm" width="40" height="40" title="wasm" />
     </div>
     <strong>WebAssembly (WASM)</strong>
   </summary>
@@ -1741,7 +1757,7 @@
  <summary style="font-size: 1.4em; font-weight: bold; padding: 15px; background: #667eea; color: white; border-radius: 10px; cursor: pointer; margin: 10px 0; display: flex; align-items: center; gap: 8px;">
     <div class="icon-row" style="display: flex; align-items: center; gap: 6px;">
       <img src="https://raw.githubusercontent.com/qompassai/svg/refs/heads/main/assets/icons/webgpu/webgpu.svg"
-           alt="webgpu" width="20" height="20" title="webgpu" />
+           alt="webgpu" width="40" height="40" title="webgpu" />
     </div>
     <strong>WebGPU</strong>
   </summary>
@@ -1757,7 +1773,7 @@
  <summary style="font-size: 1.4em; font-weight: bold; padding: 15px; background: #667eea; color: white; border-radius: 10px; cursor: pointer; margin: 10px 0; display: flex; align-items: center; gap: 8px;">
     <div class="icon-row" style="display: flex; align-items: center; gap: 6px;">
       <img src="https://raw.githubusercontent.com/qompassai/svg/refs/heads/main/assets/icons/xml/xml.svg"
-           alt="xml" width="20" height="20" title="xml" />
+           alt="xml" width="40" height="40" title="xml" />
     </div>
     <strong>XML</strong>
   </summary>
@@ -1773,7 +1789,7 @@
   <summary style="font-size: 1.4em; font-weight: bold; padding: 15px; background: #667eea; color: white; border-radius: 10px; cursor: pointer; margin: 10px 0; display: flex; align-items: center; gap: 8px;">
     <div class="icon-row" style="display: flex; align-items: center; gap: 6px;">
       <img src="https://raw.githubusercontent.com/qompassai/svg/refs/heads/main/assets/icons/yaml/yaml.svg"
-           alt="yaml" width="20" height="20" title="yaml" />
+           alt="yaml" width="40" height="40" title="yaml" />
     </div>
     <strong>YAML</strong>
   </summary>
@@ -1792,7 +1808,7 @@
   <summary style="font-size: 1.4em; font-weight: bold; padding: 15px; background: #667eea; color: white; border-radius: 10px; cursor: pointer; margin: 10px 0; display: flex; align-items: center; gap: 8px;">
     <div class="icon-row" style="display: flex; align-items: center; gap: 6px;">
       <img src="https://raw.githubusercontent.com/qompassai/svg/refs/heads/main/assets/icons/zig/zig.svg"
-           alt="zig" width="20" height="20" title="zig" />
+           alt="zig" width="40" height="40" title="zig" />
     </div>
     <strong>Zig</strong>
   </summary>
