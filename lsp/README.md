@@ -64,7 +64,7 @@
 <summary style="font-size: 1.4em; font-weight: bold; padding: 15px; background: #667eea; color: white; border-radius: 10px; cursor: pointer; margin: 10px 0; display: flex; align-items: center; gap: 8px;">
     <div class="icon-row" style="display: flex; align-items: center; gap: 6px;">
       <img src="https://raw.githubusercontent.com/qompassai/svg/refs/heads/main/assets/icons/arduino/arduino.svg"
-           alt="arduino" width="20" height="20" title="Arduino" />
+           alt="arduino" width="30" height="30" title="Arduino" />
     </div>
     <strong>Arduino</strong>
   </summary>
@@ -99,7 +99,7 @@
 <summary style="font-size: 1.4em; font-weight: bold; padding: 15px; background: #667eea; color: white; border-radius: 10px; cursor: pointer; margin: 10px 0; display: flex; align-items: center; gap: 8px;">
     <div class="icon-row" style="display: flex; align-items: center; gap: 6px;">
       <img src="https://raw.githubusercontent.com/qompassai/svg/refs/heads/main/assets/icons/astro/astro.svg"
-           alt="astro" width="20" height="20" title="Astro" />
+           alt="astro" width="30" height="30" title="Astro" />
     </div>
     <strong>Astro</strong>
   </summary>
@@ -171,8 +171,12 @@
   </blockquote>
 </details>
 <details>
-  <summary style="font-size: 1.4em; font-weight: bold; padding: 15px; background: #667eea; color: white; border-radius: 10px; cursor: pointer; margin: 10px 0;">
-    <strong>🧭 Bicep</strong>
+  <summary style="font-size: 1.4em; font-weight: bold; padding: 15px; background: #667eea; color: white; border-radius: 10px; cursor: pointer; margin: 10px 0; display: flex; align-items: center; gap: 8px;">
+    <div class="icon-row" style="display: flex; align-items: center; gap: 6px;">
+      <img src="https://raw.githubusercontent.com/qompassai/svg/refs/heads/main/assets/icons/bicep/bicep.svg"
+           alt="bicep" width="30" height="30" title="Bicep" />
+    </div>
+    <strong>Bicep</strong>
   </summary>
   <blockquote style="font-size: 1.2em; line-height: 1.8; padding: 25px; background: #f8f9fa; border-left: 6px solid #667eea; border-radius: 8px; margin: 15px 0; box-shadow: 0 2px 8px rgba(0,0,0,0.1);">
     <ul>
