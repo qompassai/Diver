@@ -277,7 +277,7 @@ vim.lsp.enable({
   'ttags_ls',
   --'turbo_ls',
   --'turtle_ls',
-  'tvmffinav_ls',
+  --'tvmffinav_ls',
   'twiggy_ls',
   'ty_ls',
   'typeprof_ls',

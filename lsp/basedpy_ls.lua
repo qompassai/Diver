@@ -13,7 +13,9 @@ local function set_python_path(command)
   for _, client in ipairs(clients) do
     if client.settings then
       ---@diagnostic disable-next-line: param-type-mismatch
-      client.settings.python = vim.tbl_deep_extend('force', client.settings.python or {}, { pythonPath = path })
+      client.settings.python = vim.tbl_deep_extend('force', client.settings.python or {}, {
+        pythonPath = path
+      })
     else
       client.config.settings = vim.tbl_deep_extend('force', client.config.settings, {
         python = {
@@ -30,7 +32,6 @@ end
 vim.lsp.config['basedpy_ls'] = {
   cmd = {
     'basedpyright',
-    '--stdio'
   },
   filetypes = {
     "python"
@@ -42,23 +43,24 @@ vim.lsp.config['basedpy_ls'] = {
     "requirements.txt",
     "Pipfile",
     'pyrightconfig.json',
-    ".pyrightconfig.json",
-    "pyrightconfig.json5",
-    ".pyrightconfig.json5",
-    ".git",
+    '.pyrightconfig.json',
+    'pyrightconfig.jsonc',
+    '.pyrightconfig.jsonc',
+    '.git',
   },
   initializationOptions = {
     telemetry = {
       enabled = false
     },
   },
-  single_file_support = true,
   settings = {
     basedpyright = {
       analysis = {
         autoSearchPaths = true,
         useLibraryCodeForTypes = true,
         diagnosticMode = 'openFilesOnly',
+        typeCheckingMode = 'strict',
+        reportMissingTypeStubs = 'warning',
       },
     },
   },
