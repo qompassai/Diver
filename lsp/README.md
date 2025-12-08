@@ -156,8 +156,12 @@
   </blockquote>
 </details>
 <details>
-  <summary style="font-size: 1.4em; font-weight: bold; padding: 15px; background: #667eea; color: white; border-radius: 10px; cursor: pointer; margin: 10px 0;">
-    <strong>🧭 Beancount</strong>
+ <summary style="font-size: 1.4em; font-weight: bold; padding: 15px; background: #667eea; color: white; border-radius: 10px; cursor: pointer; margin: 10px 0; display: flex; align-items: center; gap: 8px;">
+    <div class="icon-row" style="display: flex; align-items: center; gap: 6px;">
+      <img src="https://raw.githubusercontent.com/qompassai/svg/refs/heads/main/assets/icons/beancount/beancount.svg"
+           alt="beancount" width="40" height="40" title="Beancount" />
+    </div>
+    <strong>Bazel</strong>
   </summary>
   <blockquote style="font-size: 1.2em; line-height: 1.8; padding: 25px; background: #f8f9fa; border-left: 6px solid #667eea; border-radius: 8px; margin: 15px 0; box-shadow: 0 2px 8px rgba(0,0,0,0.1);">
     <ul>
@@ -343,7 +347,7 @@
   <summary style="font-size: 1.4em; font-weight: bold; padding: 15px; background: #667eea; color: white; border-radius: 10px; cursor: pointer; margin: 10px 0; display: flex; align-items: center; gap: 8px;">
     <div class="icon-row" style="display: flex; align-items: center; gap: 6px;">
       <img src="https://raw.githubusercontent.com/qompassai/svg/refs/heads/main/assets/icons/csharp/csharp.svg"
-           alt="csharp" width="20" height="20" title="C#" />
+           alt="csharp" width="40" height="40" title="C#" />
     </div>
     <strong>C#</strong>
   </summary>
@@ -432,7 +436,7 @@
    <summary style="font-size: 1.4em; font-weight: bold; padding: 15px; background: #667eea; color: white; border-radius: 10px; cursor: pointer; margin: 10px 0; display: flex; align-items: center; gap: 8px;">
     <div class="icon-row" style="display: flex; align-items: center; gap: 6px;">
       <img src="https://raw.githubusercontent.com/qompassai/svg/refs/heads/main/assets/icons/dotnet/dotnet.svg"
-           alt="dotnet" width="20" height="20" title="DotNET" />
+           alt="dotnet" width="40" height="40" title="DotNET" />
     </div>
     <strong>DotNET</strong>
   </summary>
@@ -953,7 +957,7 @@
   <summary style="font-size: 1.4em; font-weight: bold; padding: 15px; background: #667eea; color: white; border-radius: 10px; cursor: pointer; margin: 10px 0; display: flex; align-items: center; gap: 8px;">
     <div class="icon-row" style="display: flex; align-items: center; gap: 6px;">
       <img src="https://raw.githubusercontent.com/qompassai/svg/refs/heads/main/assets/icons/markdown/markdown.svg"
-           alt="lua" width="20" height="20" title="lua" />
+           alt="lua" width="40" height="40" title="lua" />
     </div>
     <strong>Markdown</strong>
   </summary>
