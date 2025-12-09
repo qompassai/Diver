@@ -1,6 +1,9 @@
 <!-- /qompassai/Diver/lsp/README.md -->
+
 <!-- Qompass AI Diver LSP Docs -->
+
 <!-- Copyright (C) 2025 Qompass AI, All rights reserved -->
+
 <!-- ---------------------------------------- -->
 
 <div align="center">
@@ -60,7 +63,9 @@
       Reference:
       <a href="https://github.com/ansible/vscode-ansible">https://github.com/ansible/vscode-ansible</a>
     </p>
+       <div align="center">
     <pre><code>pnpm add -g @ansible/ansible-language-server</code></pre>
+          </div>
   </blockquote>
 </details>
   <details>
@@ -1893,3 +1898,4 @@
   </blockquote>
 </details>
 </div>
+
