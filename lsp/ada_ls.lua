@@ -2,13 +2,13 @@
 -- Qompass AI Ada_ls LSP Config
 -- Copyright (C) 2025 Qompass AI, All rights reserved
 -- --------------------------------------------------
-
+--Reference:  https://github.com/AdaCore/ada_language_server
 vim.lsp.config['ada_ls'] = {
   cmd = {
-    "ada_language_server"
+    'ada_language_server'
   },
   filetypes = {
-    "ada"
+    'ada'
   },
   root_markers = {
     "Makefile",
