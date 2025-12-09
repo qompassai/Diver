@@ -64,10 +64,12 @@
       <a href="https://github.com/ansible/vscode-ansible">https://github.com/ansible/vscode-ansible</a>
     </p>
  <div style="background: #f8f9fa; padding: 15px; border-radius: 5px; margin-top: 10px; font-family: monospace;">
-        ```sh
-        pnpm add -g @ansible/ansible-language-server
-        ```
-    </div>
+
+```sh
+pnpm add -g @ansible/ansible-language-server
+```
+
+</div>
   </blockquote>
 </details>
   <details>
