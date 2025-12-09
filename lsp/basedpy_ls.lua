@@ -13,25 +13,17 @@ local function set_python_path(command)
   for _, client in ipairs(clients) do
     if client.settings then
       ---@diagnostic disable-next-line: param-type-mismatch
-      client.settings.python = vim.tbl_deep_extend('force', client.settings.python or {}, {
-        pythonPath = path
-      })
+      client.settings.python = vim.tbl_deep_extend('force', client.settings.python or {}, { pythonPath = path })
     else
-      client.config.settings = vim.tbl_deep_extend('force', client.config.settings, {
-        python = {
-          pythonPath = path
-        }
-      })
+      client.config.settings = vim.tbl_deep_extend('force', client.config.settings, { python = { pythonPath = path } })
     end
-    client:notify('workspace/didChangeConfiguration',
-      {
-        settings = nil
-      })
+    client:notify('workspace/didChangeConfiguration', { settings = nil })
   end
 end
 vim.lsp.config['basedpy_ls'] = {
   cmd = {
-    'basedpyright',
+    'basedpyright-langserver',
+    '--stdio'
   },
   filetypes = {
     "python"
@@ -39,19 +31,14 @@ vim.lsp.config['basedpy_ls'] = {
   root_markers = {
     'pyproject.toml',
     "setup.py",
-    "setup.cfg",
-    "requirements.txt",
-    "Pipfile",
+    'setup.cfg',
+    'requirements.txt',
+    'Pipfile',
     'pyrightconfig.json',
     '.pyrightconfig.json',
     'pyrightconfig.jsonc',
     '.pyrightconfig.jsonc',
     '.git',
-  },
-  initializationOptions = {
-    telemetry = {
-      enabled = false
-    },
   },
   settings = {
     basedpyright = {
@@ -68,21 +55,18 @@ vim.lsp.config['basedpy_ls'] = {
     vim.api.nvim_buf_create_user_command(bufnr, 'LspPyrightOrganizeImports', function()
       local params = {
         command = 'basedpyright.organizeimports',
-        arguments = {
-          vim.uri_from_bufnr(bufnr)
-        },
+        arguments = { vim.uri_from_bufnr(bufnr) },
       }
       ---@diagnostic disable-next-line: param-type-mismatch
       client.request('workspace/executeCommand', params, nil, bufnr)
     end, {
       desc = 'Organize Imports',
     })
-    vim.api.nvim_buf_create_user_command(bufnr, 'LspPyrightSetPythonPath',
-      set_python_path,
-      {
-        desc = 'Reconfigure basedpyright with the provided python path',
-        nargs = 1,
-        complete = 'file',
-      })
-  end
+
+    vim.api.nvim_buf_create_user_command(bufnr, 'LspPyrightSetPythonPath', set_python_path, {
+      desc = 'Reconfigure basedpyright with the provided python path',
+      nargs = 1,
+      complete = 'file',
+    })
+  end,
 }

@@ -1,4 +1,4 @@
--- /qompassai/Diver/lsp/ruff.lua
+-- /qompassai/Diver/lsp/ruff_ls.lua
 -- Qompass AI Ruff LSP Config
 -- Copyright (C) 2025 Qompass AI, All rights reserved
 -- ----------------------------------------
@@ -6,39 +6,74 @@
 vim.lsp.config['ruff_ls'] = {
   cmd = {
     'ruff',
-    "server",
-    "--preview"
+    'server',
+    '--preview'
   },
   filetypes = {
-    "python"
+    'python'
   },
-  root_markers = { "pyproject.toml", "ruff.toml", ".git" },
-  settings = {
-    codeAction = {
-      disableRuleComment = {
-        enable = false,
-      },
-    },
-    configurationPreference = "filesystemFirst",
-    exclude = { "**/tests/**" },
-    lineLength = 100,
-    fixAll = false,
-    showSyntaxErrors = true,
-    configuration = {
-      lint = {
-        preview = true,
-        unfixable = { "F401" },
-        ["extend-select"] = { "TID251" },
-        ["flake8-tidy-imports"] = {
-          ["banned-api"] = {
-            ["typing.TypedDict"] = {
-              msg = "Use `typing_extensions.TypedDict` instead",
+  root_markers = {
+    'pyproject.toml',
+    'ruff.toml',
+    '.git',
+  },
+  init_options = {
+    settings = {
+      configuration = {
+        lint = {
+          preview = true,
+          unfixable = {
+            'F401'
+          },
+          ['extend-select'] = {
+            'TID251'
+          },
+          ['flake8-tidy-imports'] = {
+            ['banned-api'] = {
+              ['typing.TypedDict'] = {
+                msg = 'Use `typing_extensions.TypedDict` instead',
+              },
             },
           },
         },
+        format = {
+          ['quote-style'] = 'single',
+        },
+      },
+      configurationPreference = 'filesystemFirst',
+      exclude = { '**/tests/**' },
+      lineLength = 100,
+      fixAll = true,
+      organizeImports = true,
+      showSyntaxErrors = true,
+      logLevel = 'info',
+      -- logFile = '~/path/to/ruff.log', -- optional
+      codeAction = {
+        disableRuleComment = {
+          enable = false,
+        },
+        fixViolation = {
+          enable = true,
+        },
+      },
+      lint = {
+        enable = true,
+        preview = true,
+        select = {
+          'E',
+          'F'
+        },
+        extendSelect = {
+          'W'
+        },
+        ignore = {
+          'E4',
+          'E7'
+        },
       },
       format = {
-        ["quote-style"] = "single",
+        preview = true,
+        backend = 'internal',
       },
     },
   },

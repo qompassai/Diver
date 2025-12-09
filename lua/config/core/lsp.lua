@@ -18,13 +18,15 @@ vim.lsp.semantic_tokens.enable(
   not vim.lsp.semantic_tokens.is_enabled()
 )
 local function on_list(options)
-  vim.fn.setqflist(
-    {},
-    ' ',
-    options
-  )
+  vim.fn.setqflist({}, ' ', options)
   vim.cmd.cfirst()
 end
+vim.keymap.set('n', 'gd', function()
+  vim.lsp.buf.definition({ on_list = on_list })
+end, { silent = true })
+vim.keymap.set('n', 'gr', function()
+  vim.lsp.buf.references(nil, { on_list = on_list })
+end, { silent = true })
 vim.lsp.buf.definition({
   on_list = on_list
 })
@@ -40,179 +42,216 @@ vim.lsp.buf.references(nil,
   {
     loclist = true
   })
-vim.lsp.config(
-  '*',
-  {
-    autostart = true,
-
-    capabilities = vim.tbl_deep_extend(
-      'force',
-      vim.lsp.protocol.make_client_capabilities(),
+vim.lsp.config('*', {
+  autostart = true,
+  capabilities = vim.tbl_deep_extend(
+    'force',
+    vim.lsp.protocol.make_client_capabilities(),
+    {
+      textDocument = {
+        synchronization = {
+          dynamicRegistration = false,
+          willSave = false,
+          willSaveWaitUntil = false,
+          didSave = true,
+          syncKind = vim.lsp.protocol.TextDocumentSyncKind.Incremental,
+        },
+        completion = {
+          dynamicRegistration = false,
+          completionItem = {
+            snippetSupport = true,
+            commitCharactersSupport = true,
+            deprecatedSupport = true,
+            preselectSupport = true,
+            insertReplaceSupport = true,
+            labelDetailsSupport = true,
+            documentationFormat = { 'markdown', 'plaintext' },
+            resolveSupport = {
+              properties = {
+                'additionalTextEdits',
+                'documentation',
+                'detail',
+              },
+            },
+          },
+        },
+        hover = {
+          dynamicRegistration = false,
+          contentFormat = { 'markdown', 'plaintext' },
+        },
+        formatting = {
+          dynamicRegistration = false,
+        },
+        rangeFormatting = {
+          dynamicRegistration = false,
+        },
+        rename = {
+          dynamicRegistration = false,
+        },
+        publishDiagnostics = {
+          relatedInformation = true,
+        },
+        codeAction = {
+          dynamicRegistration = true,
+          codeActionLiteralSupport = {
+            codeActionKind = {
+              valueSet = {
+                'quickfix',
+                'refactor',
+                'refactor.extract',
+                'refactor.inline',
+                'refactor.rewrite',
+                'source',
+                'source.organizeImports',
+              },
+            },
+          },
+        },
+        foldingRange = {
+          dynamicRegistration = true,
+          lineFoldingOnly = true,
+        },
+        documentSymbol = {
+          dynamicRegistration = true,
+          hierarchicalDocumentSymbolSupport = true,
+        },
+        inlayHint = {
+          dynamicRegistration = true,
+        },
+        semanticTokens = {
+          multilineTokenSupport = true,
+          requests = {
+            range = true,
+            full = { delta = true },
+          },
+          tokenTypes = {
+            'class',
+            'comment',
+            'enum',
+            'enumMember',
+            'event',
+            'function',
+            'interface',
+            'keyword',
+            'macro',
+            'method',
+            'modifier',
+            'namespace',
+            'number',
+            'operator',
+            'parameter',
+            'property',
+            'regexp',
+            'string',
+            'struct',
+            'type',
+            'typeParameter',
+            'variable',
+          },
+          tokenModifiers = {
+            'abstract',
+            'async',
+            'declaration',
+            'defaultLibrary',
+            'definition',
+            'deprecated',
+            'documentation',
+            'modification',
+            'readonly',
+            'static',
+          },
+        },
+      },
+    }
+  ),
+  flags = {
+    debounce_text_changes = 150,
+    exit_timeout = 500,
+  },
+  on_attach = function(client, bufnr)
+    vim.lsp.linked_editing_range.enable(true,
       {
-        textDocument = {
-          synchronization = {
-            dynamicRegistration = false,
-            willSave = false,
-            willSaveWaitUntil = false,
-            didSave = true,
-            syncKind = vim.lsp.protocol.TextDocumentSyncKind.Incremental,
-          },
-          completion = {
-            dynamicRegistration = false,
-            completionItem = {
-              snippetSupport = true,
-              commitCharactersSupport = true,
-              deprecatedSupport = true,
-              preselectSupport = true,
-              insertReplaceSupport = true,
-              labelDetailsSupport = true,
-              resolveSupport = {
-                properties = {
-                  'additionalTextEdits',
-                  'documentation',
-                  'detail'
-                },
-              },
-            },
-          },
-          codeAction = {
-            dynamicRegistration = true,
-            codeActionLiteralSupport = {
-              codeActionKind = {
-                valueSet = {
-                  'quickfix',
-                  'refactor',
-                  'refactor.extract',
-                  'refactor.inline',
-                  'refactor.rewrite',
-                  'source',
-                  'source.organizeImports',
-                },
-              },
-            },
-          },
-          foldingRange = {
-            dynamicRegistration = false,
-            lineFoldingOnly = true,
-          },
-          documentSymbol = {
-            dynamicRegistration = false,
-            hierarchicalDocumentSymbolSupport = true,
-          },
-          inlayHint = {
-            dynamicRegistration = true,
-          },
-          semanticTokens = {
-            multilineTokenSupport = true,
-            requests = {
-              range = true,
-              full = {
-                delta = true
-              },
-            },
-            tokenTypes = {
-
-            },
-            tokenModifiers = {
-
-            },
-          },
-        }
-      }
-    ),
-    flags = {
-      debounce_text_changes = 150,
-      exit_timeout = 500,
-    },
-    on_attach = function(client, bufnr)
-      vim.lsp.linked_editing_range.enable(true,
-        {
-          client_id = client.id
+        client_id = client.id
+      })
+    vim.lsp.inlay_hint.enable(not vim.lsp.inlay_hint.is_enabled())
+    local opts = {
+      buffer = bufnr,
+      silent = true
+    }
+    vim.keymap.set(
+      'n', 'gd',
+      vim.lsp.buf.definition, opts)
+    vim.keymap.set('n', 'K', vim.lsp.buf.hover, { silent = true })
+    vim.keymap.set('n', 'gI', vim.lsp.buf.implementation, { silent = true })
+    vim.keymap.set('n', 'g0', vim.lsp.buf.document_symbol, { silent = true })
+    vim.keymap.set('n', 'gW', vim.lsp.buf.workspace_symbol, { silent = true })
+    vim.keymap.set(
+      'n', '<leader>rn',
+      vim.lsp.buf.rename,
+      opts
+    )
+    vim.keymap.set(
+      'n', 'ga',
+      vim.lsp.buf.code_action,
+      opts
+    )
+    vim.keymap.set(
+      'n', '<leader>f',
+      function()
+        vim.lsp.buf.format({
+          async = false
         })
-      vim.lsp.inlay_hint.enable(not vim.lsp.inlay_hint.is_enabled())
-      local opts = {
-        buffer = bufnr,
+      end, opts)
+    vim.keymap.set(
+      'n', '[d',
+      vim.diagnostic.get_prev,
+      opts
+    )
+    vim.keymap.set(
+      'n', ']d',
+      vim.diagnostic.get__next,
+      opts
+    )
+    vim.keymap.set(
+      'n', '<leader>fD',
+      vim.diagnostic.open_float,
+      {
         silent = true
-      }
+      })
+    vim.keymap.set(
+      'n', '<leader>li',
+      vim.cmd.LspInfo,
+      {
+        silent = true
+      })
+    if client.server_capabilities.signatureHelpProvider then
       vim.keymap.set(
-        'n', 'gd',
-        vim.lsp.buf.definition, opts)
-      vim.keymap.set(
-        'n', 'K',
-        vim.lsp.buf.hover, opts
-      )
-      vim.keymap.set(
-        'n', 'gm',
-        vim.lsp.buf.implementation,
+        'i', '<C-k>',
+        vim.lsp.buf.signature_help,
         opts
       )
-      vim.keymap.set(
-        'n', '<leader>rn',
-        vim.lsp.buf.rename,
-        opts
-      )
-      vim.keymap.set(
-        'n', '<leader>ca',
-        vim.lsp.buf.code_action,
-        opts
-      )
-      vim.keymap.set(
-        'n', '<leader>f',
-        function()
-          vim.lsp.buf.format({
-            async = false
-          })
-        end, opts)
-      vim.keymap.set(
-        'n', '[d',
-        vim.diagnostic.get_prev,
-        opts
-      )
-      vim.keymap.set(
-        'n', ']d',
-        vim.diagnostic.get__next,
-        opts
-      )
-      vim.keymap.set(
-        'n', '<leader>fD',
-        vim.diagnostic.open_float,
+    end
+    if client.server_capabilities.inlayHintProvider and vim.lsp.inlay_hint then
+      vim.lsp.inlay_hint.enable(true, { bufnr = bufnr })
+    end
+    if client.server_capabilities.documentFormattingProvider
+    then
+      vim.api.nvim_create_autocmd(
+        'BufWritePre',
         {
-          silent = true
+          buffer = bufnr,
+          callback = function()
+            vim.lsp.buf.format({
+              bufnr = bufnr,
+              async = false
+            })
+          end,
         })
-      vim.keymap.set(
-        'n', '<leader>li',
-        vim.cmd.LspInfo,
-        {
-          silent = true
-        })
-      if client.server_capabilities.inlayHintProvider
-          and
-          vim.lsp.inlay_hint
-      then
-        vim.keymap.set(
-          'i', '<C-k>',
-          vim.lsp.buf.signature_help,
-          opts
-        )
-      end
-      if client.server_capabilities.documentFormattingProvider
-      then
-        vim.api.nvim_create_autocmd(
-          'BufWritePre',
-          {
-            buffer = bufnr,
-            callback = function()
-              vim.lsp.buf.format({
-                bufnr = bufnr,
-                async = false
-              })
-            end,
-          })
-      end
-    end,
-    single_file_support = true,
-    workspace_required = false,
-  })
+    end
+  end,
+  single_file_support = true,
+  workspace_required = false,
+})
 vim.diagnostic.config(
   {
     virtual_text = {
@@ -285,5 +324,10 @@ vim.api.nvim_create_autocmd('LspAttach', {
         autotrigger = true,
       })
     end
+  end,
+})
+vim.api.nvim_create_autocmd('LspAttach', {
+  callback = function(ev)
+    vim.bo[ev.buf].omnifunc = 'v:lua.vim.lsp.omnifunc'
   end,
 })

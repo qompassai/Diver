@@ -3,32 +3,46 @@
 -- Copyright (C) 2025 Qompass AI, All rights reserved
 -- ----------------------------------------
 -- Reference:  -- https://ast-grep.github.io/reference/languages.html
+-- pnpm add -g @ast-grep/cli
 vim.lsp.config['astgrep_ls'] = {
   cmd = {
     'ast-grep',
     'lsp'
   },
+  workspace_required = true,
   reuse_client = function(client, config)
     config.cmd_cwd = config.root_dir
     return client.config.cmd_cwd == config.cmd_cwd
   end,
   filetypes = {
+    'bash',
     'c',
     'cpp',
-    'rust',
+    'csharp',
+    'css',
+    'elixir',
     'go',
+    'haskell',
+    'html',
     'java',
-    'python',
     'javascript',
-    "javascriptreact",
-    "javascript.jsx",
-    "typescript",
-    "typescriptreact",
-    "typescript.tsx",
-    "html",
-    "css",
-    "kotlin",
-    "dart",
+    'javascriptreact',
+    'javascript.jsx',
+    'json',
+    'kotlin',
+    'lua',
+    'nix',
+    'php',
+    'python',
+    'ruby',
+    'rust',
+    'scala',
+    'solidity',
+    'swift',
+    'typescript',
+    'typescriptreact',
+    'typescript.tsx',
+    'yaml',
   },
   root_markers = {
     'sgconfig.yaml',
