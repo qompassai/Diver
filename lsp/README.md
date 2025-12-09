@@ -53,7 +53,6 @@
     </div>
     <strong>Ansible</strong>
   </summary>
-
   <blockquote style="font-size: 1.2em; line-height: 1.8; padding: 25px; background: #f8f9fa; border-left: 6px solid #667eea; border-radius: 8px; margin: 15px 0; box-shadow: 0 2px 8px rgba(0,0,0,0.1);">
     <ul>
       <li><code>ansible_ls</code> –
@@ -64,8 +63,10 @@
       Reference:
       <a href="https://github.com/ansible/vscode-ansible">https://github.com/ansible/vscode-ansible</a>
     </p>
-    <div align="center">
-      <code>pnpm add -g @ansible/ansible-language-server</code>
+ <div style="background: #f8f9fa; padding: 15px; border-radius: 5px; margin-top: 10px; font-family: monospace;">
+        ```sh
+        pnpm add -g @ansible/ansible-language-server
+        ```
     </div>
   </blockquote>
 </details>
