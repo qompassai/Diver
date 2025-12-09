@@ -56,10 +56,12 @@
         <a href="https://github.com/qompassai/Diver/blob/main/lsp/ansible_ls.lua">config</a>
       </li>
     </ul>
+
     <p>
       Reference:
       <a href="https://github.com/ansible/vscode-ansible">https://github.com/ansible/vscode-ansible</a>
     </p>
+
     <pre>de>pnpm add -g @ansible/ansible-language-server</code></pre>
   </blockquote>
 </details>
