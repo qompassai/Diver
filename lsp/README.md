@@ -3,6 +3,24 @@
 <!-- Copyright (C) 2025 Qompass AI, All rights reserved -->
 <!-- ---------------------------------------- -->
 
+<!DOCTYPE html>
+
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <title>Diver LSP Docs</title>
+
+<style>
+    details > summary {
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      gap: 8px;
+    }
+  </style>
+
+</head>
+<body>
 <div style="text-align: center;">
   <details style="display: inline-block; text-align: left; max-width: 600px; width: 100%;">
 <summary style="font-size: 1.4em; font-weight: bold; padding: 15px; background: #667eea; color: white; border-radius: 10px; cursor: pointer; margin: 10px 0; display: flex; align-items: center; gap: 8px;">
@@ -1531,7 +1549,7 @@
 <details>
   <summary style="font-size: 1.4em; font-weight: bold; padding: 15px; background: #667eea; color: white; border-radius: 10px; cursor: pointer; margin: 10px 0; display: flex; align-items: center; gap: 8px;">
     <div class="icon-row" style="display: flex; align-items: center; gap: 6px;">
-      <img src="https://raw.githubusercontent.com/qompassai/svg/refs/heads/main/assets/icons/slint/slint.svg"
+      <img src="https://raw.githubusercontent.com/qompassai/svg/refs/heads/main/assets/icons/smithy/smithy.svg"
            alt="smithy" width="40" height="40" title="smithy" />
     </div>
     <strong>Smithy</strong>
@@ -1728,7 +1746,7 @@
 <details>
   <summary style="font-size: 1.4em; font-weight: bold; padding: 15px; background: #667eea; color: white; border-radius: 10px; cursor: pointer; margin: 10px 0; display: flex; align-items: center; gap: 8px;">
     <div class="icon-row" style="display: flex; align-items: center; gap: 6px;">
-      <img src="https://raw.githubusercontent.com/qompassai/svg/refs/heads/main/assets/icons/typescript/typescript.svg"
+      <img src="https://raw.githubusercontent.com/qompassai/svg/refs/heads/main/assets/icons/vala/vala.svg"
            alt="vala" width="40" height="40" title="Vala" />
     </div>
     <strong>Vala</strong>
@@ -1888,3 +1906,5 @@
   </blockquote>
 </details>
 </div>
+    </body>
+</html>
