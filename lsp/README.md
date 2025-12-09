@@ -3,25 +3,7 @@
 <!-- Copyright (C) 2025 Qompass AI, All rights reserved -->
 <!-- ---------------------------------------- -->
 
-<!DOCTYPE html>
-
-<html lang="en">
-<head>
-  <meta charset="utf-8" />
-  <title>Diver LSP Docs</title>
-
-<style>
-    details > summary {
-      display: flex;
-      justify-content: center;
-      align-items: center;
-      gap: 8px;
-    }
-  </style>
-
-</head>
-<body>
-<div style="text-align: center;">
+<div align="center">
   <details style="display: inline-block; text-align: left; max-width: 600px; width: 100%;">
 <summary style="font-size: 1.4em; font-weight: bold; padding: 15px; background: #667eea; color: white; border-radius: 10px; cursor: pointer; margin: 10px 0; display: flex; align-items: center; gap: 8px;">
     <div class="icon-row" style="display: flex; align-items: center; gap: 6px;">
@@ -1906,5 +1888,3 @@
   </blockquote>
 </details>
 </div>
-    </body>
-</html>
