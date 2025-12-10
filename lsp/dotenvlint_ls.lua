@@ -1,16 +1,16 @@
 -- /qompassai/Diver/lsp/dotenv_linter.lua
--- Qompass AI Dotenv Linter Spec
+-- Qompass AI Dotenv-Linter LSP Spec
 -- Copyright (C) 2025 Qompass AI, All rights reserved
 ------------------------------------------------------
 vim.lsp.config['dotenvlint_ls'] = {
   cmd = {
     'dotenv-linter',
     '--recursive',
-    '--fix'
+    'fix'
   },
   filetypes = {
     'dotenv',
-    "sh",
+    'sh',
   },
   settings = {
     dotenv = {},
@@ -29,7 +29,7 @@ vim.lsp.config['dotenvlint_ls'] = {
       vim.fn.jobstart(
         {
           'dotenv-linter',
-          '--fix',
+          'fix',
           'recursive',
           filename
         },

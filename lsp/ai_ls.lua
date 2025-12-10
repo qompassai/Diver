@@ -3,6 +3,7 @@
 -- Copyright (C) 2025 Qompass AI, All rights reserved
 ------------------------------------------------------
 -- References: https://github.com/SilasMarvin/lsp-ai/wiki/Configuration
+-- cargo install lsp-ai -F llama_cpp -F cuda
 vim.lsp.config['ai_ls'] = {
   cmd = {
     'lsp-ai',
@@ -14,7 +15,7 @@ vim.lsp.config['ai_ls'] = {
     },
     models = {
       model1 = {
-        type = "anthropic",
+        type = 'anthropic',
         chat_endpoint = "https://api.anthropic.com/v1/messages",
         model = 'claude-3-haiku-20240307',
         auth_token_env_var_name = 'ANTHROPIC_API_KEY',

@@ -1,9 +1,6 @@
 <!-- /qompassai/Diver/lsp/README.md -->
-
 <!-- Qompass AI Diver LSP Docs -->
-
 <!-- Copyright (C) 2025 Qompass AI, All rights reserved -->
-
 <!-- ---------------------------------------- -->
 
 <div align="center">
@@ -23,6 +20,32 @@
     </ul>
   </blockquote>
 </details>
+  <details>
+  <summary style="font-size: 1.4em; font-weight: bold; padding: 15px; background: #667eea; color: white; border-radius: 10px; cursor: pointer; margin: 10px 0; display: flex; align-items: center; gap: 8px;">
+    <div class="icon-row" style="display: flex; align-items: center; gap: 6px;">
+      <img src="https://raw.githubusercontent.com/qompassai/svg/refs/heads/main/assets/icons/agda/agda.svg"
+           alt="agda" width="60" height="60" title="Agda" />
+    </div>
+    <strong>Agda</strong>
+  </summary>
+  <blockquote style="font-size: 1.2em; line-height: 1.8; padding: 25px; background: #f8f9fa; border-left: 6px solid #667eea; border-radius: 8px; margin: 15px 0; box-shadow: 0 2px 8px rgba(0,0,0,0.1);">
+    <ul>
+      <li><code>agda_ls</code> –
+        <a href="https://github.com/qompassai/Diver/blob/main/lsp/ansible_ls.lua">config</a>
+      </li>
+    </ul>
+    <p>
+      <a href="https://hackage.haskell.org/package/agda-language-server">Agda LSP Reference</a>
+    </p>
+ <div style="background: #f8f9fa; padding: 15px; border-radius: 5px; margin-top: 10px; font-family: monospace;">
+
+```sh
+git clone https://github.com/banacorn/agda-language-server &&cd agda-langauge-server && git submodule update --init --recursive && stack install
+```
+
+</div>
+  </blockquote>
+</details>
 <details>
 <summary style="font-size: 1.4em; font-weight: bold; padding: 15px; background: #667eea; color: white; border-radius: 10px; cursor: pointer; margin: 10px 0; display: flex; align-items: center; gap: 8px;">
     <div class="icon-row" style="display: flex; align-items: center; gap: 6px;">
@@ -36,13 +59,41 @@
       <li><code>ai_ls</code> –
         <a href="https://github.com/qompassai/Diver/blob/main/lsp/ai_ls.lua">config</a>
       </li>
+            <p>
+      <a href="https://github.com/SilasMarvin/lsp-ai">AI LSP Reference</a>
+    </p>
+ <div style="background: #f8f9fa; padding: 15px; border-radius: 5px; margin-top: 10px; font-family: monospace;">
+
+```sh
+cargo install lsp-ai -F llama_cpp -F cuda
+```
+
+</div>
       <li><code>copilot_ls</code> –
         <a href="https://github.com/qompassai/diver/blob/main/lsp/copilot_ls.lua">config</a>
       </li>
+         <p>
+      <a href="https://www.npmjs.com/package/@github/copilot-language-server">CoPilot LSP Reference</a>
+    </p>
+ <div style="background: #f8f9fa; padding: 15px; border-radius: 5px; margin-top: 10px; font-family: monospace;">
+
+```sh
+pnpm add -g @github/copilot-language-server
+```
+</div>
       <li><code>text_ls</code> –
         <a href="https://github.com/qompassai/diver/blob/main/lsp/text_ls.lua">config</a>
       </li>
     </ul>
+           <p>
+      <a href="https://github.com/hangyav/textLSP">Text LSP Reference</a>
+    </p>
+ <div style="background: #f8f9fa; padding: 15px; border-radius: 5px; margin-top: 10px; font-family: monospace;">
+
+```sh
+ pip install git+https://github.com/PrithivirajDamodaran/Gramformer.git
+```
+</div>
   </blockquote>
 </details>
 <details>
