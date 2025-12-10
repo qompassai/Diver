@@ -77,7 +77,7 @@ vim.lsp.config['emmylua_ls'] = {
         enable = false,
       },
       workspace = {
-        checkThirdParty = false,
+        checkThirdParty = true,
         ignoreDir = {
           'build',
           'node_modules',

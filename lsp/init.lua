@@ -59,7 +59,7 @@ vim.lsp.enable({
   'crystalline_ls',
   'csharp_ls',
   --'cspell_ls',
-  'deno_ls',
+  --'deno_ls',
   --'devsense_ls',
   --'diagnostic_ls', -2years since last commit
   'dj_ls',
@@ -76,7 +76,7 @@ vim.lsp.enable({
   'elm_ls',
   'elp_ls',
   'ember_ls',
-  'emmet_ls',
+  --'emmet_ls',
   'emmylua_ls',
   'esbonio_ls',
   'eslint_ls',

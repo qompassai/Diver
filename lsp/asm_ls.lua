@@ -14,9 +14,7 @@ vim.lsp.config['asm_ls'] = {
   },
   filetypes = {
     'asm',
-    'nasm',
-    's',
-    'S'
+    'vmasm'
   },
   settings = {
   },

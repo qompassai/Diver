@@ -3,78 +3,76 @@
 -- Copyright (C) 2025 Qompass AI, All rights reserved
 -----------------------------------------------------
 
-vim.lsp.config["ts_ls"] = {
-  default_config = {
-    cmd = {
-      "typescript-language-server",
-      "--stdio",
+vim.lsp.config['ts_ls'] = {
+  cmd = {
+    'typescript-language-server',
+    "--stdio",
+  },
+  filetypes = {
+    "javascript",
+    "javascript.jsx",
+    "javascriptreact",
+    "typescript",
+    "typescript.tsx",
+    "typescriptreact",
+  },
+  init_options = {
+    hostInfo = 'neovim'
+  },
+  preferences = {
+    includeCompletionsForModuleExports = true,
+    includeCompletionsWithClassMemberSnippets = true,
+    includeCompletionsWithInsertText = true,
+    includeCompletionsWithSnippetText = true,
+    includeInlayParameterNameHints = "all",
+    includeInlayParameterNameHintsWhenArgumentMatchesName = false,
+    includeInlayFunctionParameterTypeHints = true,
+    includeInlayVariableTypeHints = true,
+    includeInlayVariableTypeHintsWhenTypeMatchesName = false,
+    includeInlayEnumMemberValueHints = true,
+    includeInlayFunctionLikeReturnTypeHints = true,
+    includeInlayPropertyDeclarationTypeHints = true,
+  },
+  tsserver = {
+    log = 'verbose',
+  },
+  root_markers = {
+    ".git",
+    "jsconfig.json",
+    "package.json",
+    "tsconfig.json",
+  },
+  settings = {
+    completions = {
+      completeFunctionCalls = true,
     },
-    filetypes = {
-      "javascript",
-      "javascript.jsx",
-      "javascriptreact",
-      "typescript",
-      "typescript.tsx",
-      "typescriptreact",
+    diagnostics = {
+      enable = true,
     },
-    init_options = {
-      hostInfo = "neovim",
-      preferences = {
-        includeCompletionsForModuleExports = true,
-        includeCompletionsWithClassMemberSnippets = true,
-        includeCompletionsWithInsertText = true,
-        includeCompletionsWithSnippetText = true,
-        includeInlayParameterNameHints = "all",
-        includeInlayParameterNameHintsWhenArgumentMatchesName = false,
-        includeInlayFunctionParameterTypeHints = true,
-        includeInlayVariableTypeHints = true,
-        includeInlayVariableTypeHintsWhenTypeMatchesName = false,
-        includeInlayEnumMemberValueHints = true,
-        includeInlayFunctionLikeReturnTypeHints = true,
-        includeInlayPropertyDeclarationTypeHints = true,
-      },
-      tsserver = {
-        log = "verbose",
-      },
+    format = {
+      enable = true,
+      insertSpaceAfterCommaDelimiter = true,
+      insertSpaceAfterFunctionKeywordForAnonymousFunctions = true,
+      insertSpaceAfterKeywordsInControlFlowStatements = true,
+      insertSpaceAfterOpeningAndBeforeClosingEmptyBraces = false,
+      insertSpaceAfterOpeningAndBeforeClosingJsxExpressionBraces = false,
+      insertSpaceAfterOpeningAndBeforeClosingNonemptyBraces = true,
+      insertSpaceAfterOpeningAndBeforeClosingNonemptyBrackets = true,
+      insertSpaceAfterOpeningAndBeforeClosingNonemptyParenthesis = true,
+      insertSpaceAfterSemicolonInForStatements = true,
+      insertSpaceBeforeAndAfterBinaryOperators = true,
+      placeOpenBraceOnNewLineForControlBlocks = false,
+      placeOpenBraceOnNewLineForFunctions = false,
     },
-    root_markers = {
-      ".git",
-      "jsconfig.json",
-      "package.json",
-      "tsconfig.json",
-    },
-    settings = {
-      completions = {
-        completeFunctionCalls = true,
-      },
-      diagnostics = {
-        enable = true,
-      },
-      format = {
-        enable = true,
-        insertSpaceAfterCommaDelimiter = true,
-        insertSpaceAfterFunctionKeywordForAnonymousFunctions = true,
-        insertSpaceAfterKeywordsInControlFlowStatements = true,
-        insertSpaceAfterOpeningAndBeforeClosingEmptyBraces = false,
-        insertSpaceAfterOpeningAndBeforeClosingJsxExpressionBraces = false,
-        insertSpaceAfterOpeningAndBeforeClosingNonemptyBraces = true,
-        insertSpaceAfterOpeningAndBeforeClosingNonemptyBrackets = true,
-        insertSpaceAfterOpeningAndBeforeClosingNonemptyParenthesis = true,
-        insertSpaceAfterSemicolonInForStatements = true,
-        insertSpaceBeforeAndAfterBinaryOperators = true,
-        placeOpenBraceOnNewLineForControlBlocks = false,
-        placeOpenBraceOnNewLineForFunctions = false,
-      },
-      inlayHints = {
-        includeInlayEnumMemberValueHints = true,
-        includeInlayFunctionLikeReturnTypeHints = true,
-        includeInlayFunctionParameterTypeHints = true,
-        includeInlayParameterNameHints = "all",
-        includeInlayParameterNameHintsWhenArgumentMatchesName = false,
-        includeInlayPropertyDeclarationTypeHints = true,
-        includeInlayVariableTypeHints = true,
-        includeInlayVariableTypeHintsWhenTypeMatchesName = false,
-      },
+    inlayHints = {
+      includeInlayEnumMemberValueHints = true,
+      includeInlayFunctionLikeReturnTypeHints = true,
+      includeInlayFunctionParameterTypeHints = true,
+      includeInlayParameterNameHints = "all",
+      includeInlayParameterNameHintsWhenArgumentMatchesName = false,
+      includeInlayPropertyDeclarationTypeHints = true,
+      includeInlayVariableTypeHints = true,
+      includeInlayVariableTypeHintsWhenTypeMatchesName = false,
     },
   },
   codeActionProvider = {

@@ -86,6 +86,17 @@ pnpm add -g @ansible/ansible-language-server
         <a href="https://github.com/qompassai/diver/blob/main/lsp/arduino_ls.lua">config</a>
       </li>
     </ul>
+         <p>
+      Reference:
+      <a href=" https://github.com/arduino/arduino-language-server">https://github.com/arduino/arduino-language-server</a>
+    </p>
+ <div style="background: #f8f9fa; padding: 15px; border-radius: 5px; margin-top: 10px; font-family: monospace;">
+
+```sh
+go install github.com/arduino/arduino-language-server@latest
+```
+
+</div>
   </blockquote>
 </details>
 <details>
@@ -101,10 +112,33 @@ pnpm add -g @ansible/ansible-language-server
       <li><code>asm_ls</code> –
         <a href="https://github.com/qompassai/diver/blob/main/lsp/asm_ls.lua">config</a>
       </li>
+        </ul>
+        <p>
+      Reference:
+      <a href="https://github.com/bergercookie/asm-lsp">https://github.com/bergercookie/asm-lsp</a>
+    </p>
+ <div style="background: #f8f9fa; padding: 15px; border-radius: 5px; margin-top: 10px; font-family: monospace;">
+
+```sh
+cargo install --git https://github.com/bergercookie/asm-lsp asm-lsp
+```
+
+</div>
       <li><code>m68k_ls</code> –
         <a href="https://github.com/qompassai/diver/blob/main/lsp/m68k_ls.lua">config</a>
       </li>
     </ul>
+        <p>
+      Reference:
+      <a href=" https://github.com/grahambates/m68k-lsp"> https://github.com/grahambates/m68k-lsp</a>
+    </p>
+ <div style="background: #f8f9fa; padding: 15px; border-radius: 5px; margin-top: 10px; font-family: monospace;">
+
+```sh
+pnpm add -g m68k-lsp-server
+```
+
+</div>
   </blockquote>
 </details>
 <details>
