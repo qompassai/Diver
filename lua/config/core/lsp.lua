@@ -50,14 +50,14 @@ vim.lsp.config('*', {
     {
       textDocument = {
         synchronization = {
-          dynamicRegistration = false,
+          dynamicRegistration = true,
           willSave = false,
-          willSaveWaitUntil = false,
+          willSaveWaitUntil = true,
           didSave = true,
           syncKind = vim.lsp.protocol.TextDocumentSyncKind.Incremental,
         },
         completion = {
-          dynamicRegistration = false,
+          dynamicRegistration = true,
           completionItem = {
             snippetSupport = true,
             commitCharactersSupport = true,
@@ -65,7 +65,10 @@ vim.lsp.config('*', {
             preselectSupport = true,
             insertReplaceSupport = true,
             labelDetailsSupport = true,
-            documentationFormat = { 'markdown', 'plaintext' },
+            documentationFormat = {
+              'markdown',
+              'plaintext'
+            },
             resolveSupport = {
               properties = {
                 'additionalTextEdits',
@@ -76,17 +79,20 @@ vim.lsp.config('*', {
           },
         },
         hover = {
-          dynamicRegistration = false,
-          contentFormat = { 'markdown', 'plaintext' },
+          dynamicRegistration = true,
+          contentFormat = {
+            'markdown',
+            'plaintext'
+          },
         },
         formatting = {
-          dynamicRegistration = false,
+          dynamicRegistration = true,
         },
         rangeFormatting = {
-          dynamicRegistration = false,
+          dynamicRegistration = true,
         },
         rename = {
-          dynamicRegistration = false,
+          dynamicRegistration = true,
         },
         publishDiagnostics = {
           relatedInformation = true,
@@ -122,7 +128,9 @@ vim.lsp.config('*', {
           multilineTokenSupport = true,
           requests = {
             range = true,
-            full = { delta = true },
+            full = {
+              delta = true
+            },
           },
           tokenTypes = {
             'class',
@@ -209,7 +217,7 @@ vim.lsp.config('*', {
     )
     vim.keymap.set(
       'n', ']d',
-      vim.diagnostic.get__next,
+      vim.diagnostic.get_next,
       opts
     )
     vim.keymap.set(
@@ -232,7 +240,9 @@ vim.lsp.config('*', {
       )
     end
     if client.server_capabilities.inlayHintProvider and vim.lsp.inlay_hint then
-      vim.lsp.inlay_hint.enable(true, { bufnr = bufnr })
+      vim.lsp.inlay_hint.enable(true, {
+        bufnr = bufnr
+      })
     end
     if client.server_capabilities.documentFormattingProvider
     then
@@ -321,7 +331,7 @@ vim.api.nvim_create_autocmd('LspAttach', {
     end
     if client:supports_method('textDocument/completion') and vim.lsp.completion then
       vim.lsp.completion.enable(true, client.id, ev.buf, {
-        autotrigger = true,
+        autotrigger = false,
       })
     end
   end,

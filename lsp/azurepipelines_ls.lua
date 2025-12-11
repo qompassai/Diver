@@ -28,7 +28,7 @@ vim.lsp.config['azurepipelines_ls'] = {
         proseWrap = 'preserve',
       },
       hover = true,
-      keyOrdering = false,
+      keyOrdering = true,
       schemaStore = {
         enable = true,
         url = 'https://www.schemastore.org/api/json/catalog.json',

@@ -9,6 +9,7 @@ vim.lsp.enable({
   'ada_ls',
   'agda_ls',
   'ai_ls',
+  'aiken_ls',
   'air_ls',
   'angular_ls',
   'ansible_ls',

@@ -1,6 +1,9 @@
 <!-- /qompassai/Diver/lsp/README.md -->
+
 <!-- Qompass AI Diver LSP Docs -->
+
 <!-- Copyright (C) 2025 Qompass AI, All rights reserved -->
+
 <!-- ---------------------------------------- -->
 
 <div align="center">
@@ -80,6 +83,7 @@ cargo install lsp-ai -F llama_cpp -F cuda
 ```sh
 pnpm add -g @github/copilot-language-server
 ```
+
 </div>
       <li><code>text_ls</code> –
         <a href="https://github.com/qompassai/diver/blob/main/lsp/text_ls.lua">config</a>
@@ -93,6 +97,7 @@ pnpm add -g @github/copilot-language-server
 ```sh
  pip install git+https://github.com/PrithivirajDamodaran/Gramformer.git
 ```
+
 </div>
   </blockquote>
 </details>
@@ -106,13 +111,12 @@ pnpm add -g @github/copilot-language-server
   </summary>
   <blockquote style="font-size: 1.2em; line-height: 1.8; padding: 25px; background: #f8f9fa; border-left: 6px solid #667eea; border-radius: 8px; margin: 15px 0; box-shadow: 0 2px 8px rgba(0,0,0,0.1);">
     <ul>
-      <li><code>ansible_ls</code> –
-        <a href="https://github.com/qompassai/Diver/blob/main/lsp/ansible_ls.lua">config</a>
+      <li>
+        <a href="https://github.com/qompassai/Diver/blob/main/lsp/ansible_ls.lua">ansible_ls</a>
       </li>
     </ul>
     <p>
-      Reference:
-      <a href="https://github.com/ansible/vscode-ansible">https://github.com/ansible/vscode-ansible</a>
+      <a href="https://github.com/ansible/vscode-ansible">Ansible LSP Reference</a>
     </p>
  <div style="background: #f8f9fa; padding: 15px; border-radius: 5px; margin-top: 10px; font-family: monospace;">
 
@@ -133,13 +137,12 @@ pnpm add -g @ansible/ansible-language-server
   </summary>
   <blockquote style="font-size: 1.2em; line-height: 1.8; padding: 25px; background: #f8f9fa; border-left: 6px solid #667eea; border-radius: 8px; margin: 15px 0; box-shadow: 0 2px 8px rgba(0,0,0,0.1);">
     <ul>
-      <li><code>arduino_ls</code> –
-        <a href="https://github.com/qompassai/diver/blob/main/lsp/arduino_ls.lua">config</a>
+      <li>
+        <a href="https://github.com/qompassai/diver/blob/main/lsp/arduino_ls.lua">arduino_ls</a>
       </li>
     </ul>
          <p>
-      Reference:
-      <a href=" https://github.com/arduino/arduino-language-server">https://github.com/arduino/arduino-language-server</a>
+      <a href=" https://github.com/arduino/arduino-language-server">Arduino LSP Reference</a>
     </p>
  <div style="background: #f8f9fa; padding: 15px; border-radius: 5px; margin-top: 10px; font-family: monospace;">
 
@@ -160,13 +163,12 @@ go install github.com/arduino/arduino-language-server@latest
   </summary>
   <blockquote style="font-size: 1.2em; line-height: 1.8; padding: 25px; background: #f8f9fa; border-left: 6px solid #667eea; border-radius: 8px; margin: 15px 0; box-shadow: 0 2px 8px rgba(0,0,0,0.1);">
     <ul>
-      <li><code>asm_ls</code> –
-        <a href="https://github.com/qompassai/diver/blob/main/lsp/asm_ls.lua">config</a>
+      <li>
+        <a href="https://github.com/qompassai/diver/blob/main/lsp/asm_ls.lua">asm_ls</a>
       </li>
         </ul>
         <p>
-      Reference:
-      <a href="https://github.com/bergercookie/asm-lsp">https://github.com/bergercookie/asm-lsp</a>
+      <a href="https://github.com/bergercookie/asm-lsp">Assembly LSP Reference</a>
     </p>
  <div style="background: #f8f9fa; padding: 15px; border-radius: 5px; margin-top: 10px; font-family: monospace;">
 
@@ -175,13 +177,11 @@ cargo install --git https://github.com/bergercookie/asm-lsp asm-lsp
 ```
 
 </div>
-      <li><code>m68k_ls</code> –
-        <a href="https://github.com/qompassai/diver/blob/main/lsp/m68k_ls.lua">config</a>
+      <li>
+        <a href="https://github.com/qompassai/diver/blob/main/lsp/m68k_ls.lua">m68k_ls</a>
       </li>
-    </ul>
         <p>
-      Reference:
-      <a href=" https://github.com/grahambates/m68k-lsp"> https://github.com/grahambates/m68k-lsp</a>
+      <a href=" https://github.com/grahambates/m68k-lsp">M68K Assembly LSP Reference</a>
     </p>
  <div style="background: #f8f9fa; padding: 15px; border-radius: 5px; margin-top: 10px; font-family: monospace;">
 
@@ -202,10 +202,20 @@ pnpm add -g m68k-lsp-server
   </summary>
   <blockquote style="font-size: 1.2em; line-height: 1.8; padding: 25px; background: #f8f9fa; border-left: 6px solid #667eea; border-radius: 8px; margin: 15px 0; box-shadow: 0 2px 8px rgba(0,0,0,0.1);">
     <ul>
-      <li><code>astro_ls</code> –
-        <a href="https://github.com/qompassai/diver/blob/main/lsp/astro_ls.lua">config</a>
+      <li><code>
+        <a href="https://github.com/qompassai/diver/blob/main/lsp/astro_ls.lua">astro_ls</a>
       </li>
     </ul>
+       <p>
+      <a href="https://www.npmjs.com/package/@astrojs/language-server">AstroJS LSP Reference</a>
+    </p>
+ <div style="background: #f8f9fa; padding: 15px; border-radius: 5px; margin-top: 10px; font-family: monospace;">
+
+```sh
+pnpm add -g typescript @astrojs/language-server prettier prettier-plugin-astro
+```
+
+</div>
   </blockquote>
 </details>
 <details>
@@ -218,10 +228,20 @@ pnpm add -g m68k-lsp-server
   </summary>
   <blockquote style="font-size: 1.2em; line-height: 1.8; padding: 25px; background: #f8f9fa; border-left: 6px solid #667eea; border-radius: 8px; margin: 15px 0; box-shadow: 0 2px 8px rgba(0,0,0,0.1);">
     <ul>
-      <li>de>awk_ls</code> –
-        <a href="https://github.com/qompassai/diver/blob/main/lsp/awk_ls.lua">config</a>
+      <li>
+        <a href="https://github.com/qompassai/diver/blob/main/lsp/awk_ls.lua">awk_ls</a>
       </li>
     </ul>
+         <p>
+      <a href="https://github.com/Beaglefoot/awk-language-server/">Awk LSP Reference</a>
+    </p>
+ <div style="background: #f8f9fa; padding: 15px; border-radius: 5px; margin-top: 10px; font-family: monospace;">
+
+```sh
+pnpm add -g awk-language-server
+```
+
+</div>
   </blockquote>
 </details><details>
   <summary style="font-size: 1.4em; font-weight: bold; padding: 15px; background: #667eea; color: white; border-radius: 10px; cursor: pointer; margin: 10px 0; display: flex; align-items: center; gap: 8px;">
@@ -233,10 +253,20 @@ pnpm add -g m68k-lsp-server
   </summary>
   <blockquote style="font-size: 1.2em; line-height: 1.8; padding: 25px; background: #f8f9fa; border-left: 6px solid #667eea; border-radius: 8px; margin: 15px 0; box-shadow: 0 2px 8px rgba(0,0,0,0.1);">
     <ul>
-      <li><code>azurepipelines_ls</code> –
-        <a href="https://github.com/qompassai/diver/blob/main/lsp/azurepipelines_ls.lua">config</a>
+      <li>
+        <a href="https://github.com/qompassai/diver/blob/main/lsp/azurepipelines_ls.lua">azurepipelines_ls</a>
       </li>
     </ul>
+       <p>
+      <a href="https://www.npmjs.com/package/azure-pipelines-language-service/">Azure Pipelines LSP Reference</a>
+    </p>
+ <div style="background: #f8f9fa; padding: 15px; border-radius: 5px; margin-top: 10px; font-family: monospace;">
+
+```sh
+pnpm add -g  azure-pipelines-language-server
+```
+
+</div>
   </blockquote>
 </details>
 <details>
@@ -245,14 +275,24 @@ pnpm add -g m68k-lsp-server
       <img src="https://raw.githubusercontent.com/qompassai/svg/refs/heads/main/assets/icons/bazel/bazel.svg"
            alt="bazel" width="60" height="60" title="Bazel" />
     </div>
-    <strong>Bazel</strong>
+    <strong>Bazelrc</strong>
   </summary>
   <blockquote style="font-size: 1.2em; line-height: 1.8; padding: 25px; background: #f8f9fa; border-left: 6px solid #667eea; border-radius: 8px; margin: 15px 0; box-shadow: 0 2px 8px rgba(0,0,0,0.1);">
     <ul>
-      <li><code>bazelrc_ls</code> –
-        <a href="https://github.com/qompassai/diver/blob/main/lsp/bazelrc_ls.lua">config</a>
+      <li>
+        <a href="https://github.com/qompassai/diver/blob/main/lsp/bazelrc_ls.lua">bazelrc_ls</a>
       </li>
  </ul>
+          <p>
+      <a href="https://www.npmjs.com/package/azure-pipelines-language-service/">Bazelrc LSP Reference</a>
+    </p>
+ <div style="background: #f8f9fa; padding: 15px; border-radius: 5px; margin-top: 10px; font-family: monospace;">
+
+```sh
+pnpm add -g git+https://github.com/salesforce-misc/bazelrc-lsp.git
+```
+
+</div>
   </blockquote>
 </details>
 <details>
@@ -265,10 +305,20 @@ pnpm add -g m68k-lsp-server
   </summary>
   <blockquote style="font-size: 1.2em; line-height: 1.8; padding: 25px; background: #f8f9fa; border-left: 6px solid #667eea; border-radius: 8px; margin: 15px 0; box-shadow: 0 2px 8px rgba(0,0,0,0.1);">
     <ul>
-      <li><code>beancount_ls</code> –
-        <a href="https://github.com/qompassai/diver/blob/main/lsp/beancount_ls.lua">config</a>
+      <li>
+        <a href="https://github.com/qompassai/diver/blob/main/lsp/beancount_ls.lua">beancount_ls</a>
       </li>
     </ul>
+            <p>
+      <a href="https://github.com/polarmutex/beancount-language-server#installation">Beancount LSP Reference</a>
+    </p>
+ <div style="background: #f8f9fa; padding: 15px; border-radius: 5px; margin-top: 10px; font-family: monospace;">
+
+```sh
+cargo install beancount-language-server && pip install beancount
+```
+
+</div>
   </blockquote>
 </details>
 <details>
@@ -281,10 +331,24 @@ pnpm add -g m68k-lsp-server
   </summary>
   <blockquote style="font-size: 1.2em; line-height: 1.8; padding: 25px; background: #f8f9fa; border-left: 6px solid #667eea; border-radius: 8px; margin: 15px 0; box-shadow: 0 2px 8px rgba(0,0,0,0.1);">
     <ul>
-      <li><code>bicep_ls</code> –
-        <a href="https://github.com/qompassai/diver/blob/main/lsp/bicep_ls.lua">config</a>
+      <li>
+        <a href="https://github.com/qompassai/diver/blob/main/lsp/bicep_ls.lua">bicep_ls</a>
       </li>
     </ul>
+       <p>
+      <a href="https://github.com/azure/bicep">Bicep LSP Reference</a>
+    </p>
+ <div style="background: #f8f9fa; padding: 15px; border-radius: 5px; margin-top: 10px; font-family: monospace;">
+
+```sh
+(cd $(mktemp -d) \
+&& curl -fLO https://github.com/Azure/bicep/releases/latest/download/bicep-langserver.zip \
+&& rm -rf /usr/local/bin/bicep-langserver \
+&& unzip -d /usr/local/bin/bicep-langserver bicep-langserver.zip)
+```
+
+</div>
+
   </blockquote>
 </details>
 <details>
@@ -297,10 +361,20 @@ pnpm add -g m68k-lsp-server
   </summary>
   <blockquote style="font-size: 1.2em; line-height: 1.8; padding: 25px; background: #f8f9fa; border-left: 6px solid #667eea; border-radius: 8px; margin: 15px 0; box-shadow: 0 2px 8px rgba(0,0,0,0.1);">
     <ul>
-      <li><code>bitbake_ls</code> –
-        <a href="https://github.com/qompassai/diver/blob/main/lsp/bitbake_ls.lua">config</a>
+      <li><code>bitbake_ls
+        <a href="https://github.com/qompassai/diver/blob/main/lsp/bitbake_ls.lua">bitbake_ls</a>
       </li>
     </ul>
+       <p>
+      <a href="https://github.com/polarmutex/beancount-language-server#installation">BitBake LSP Reference</a>
+    </p>
+ <div style="background: #f8f9fa; padding: 15px; border-radius: 5px; margin-top: 10px; font-family: monospace;">
+
+```sh
+pip install bitbake-language-server
+```
+
+</div>
   </blockquote>
 </details>
 <details>
@@ -313,8 +387,8 @@ pnpm add -g m68k-lsp-server
   </summary>
   <blockquote style="font-size: 1.2em; line-height: 1.8; padding: 25px; background: #f8f9fa; border-left: 6px solid #667eea; border-radius: 8px; margin: 15px 0; box-shadow: 0 2px 8px rgba(0,0,0,0.1);">
     <ul>
-      <li><code>blueprint_ls</code> –
-        <a href="https://github.com/qompassai/diver/blob/main/lsp/blueprint_ls.lua">config</a>
+      <li>
+        <a href="https://github.com/qompassai/diver/blob/main/lsp/blueprint_ls.lua">blueprint_ls</a>
       </li>
     </ul>
   </blockquote>
@@ -329,8 +403,8 @@ pnpm add -g m68k-lsp-server
   </summary>
   <blockquote style="font-size: 1.2em; line-height: 1.8; padding: 25px; background: #f8f9fa; border-left: 6px solid #667eea; border-radius: 8px; margin: 15px 0; box-shadow: 0 2px 8px rgba(0,0,0,0.1);">
     <ul>
-      <li><code>bq_ls</code> –
-        <a href="https://github.com/qompassai/diver/blob/main/lsp/bq_ls.lua">config</a>
+      <li>
+        <a href="https://github.com/qompassai/diver/blob/main/lsp/bq_ls.lua">bq_ls</a>
       </li>
     </ul>
   </blockquote>
@@ -345,14 +419,14 @@ pnpm add -g m68k-lsp-server
   </summary>
   <blockquote style="font-size: 1.2em; line-height: 1.8; padding: 25px; background: #f8f9fa; border-left: 6px solid #667eea; border-radius: 8px; margin: 15px 0; box-shadow: 0 2px 8px rgba(0,0,0,0.1);">
     <ul>
-        <li><code>cc_ls</code> –
-        <a href="https://github.com/qompassai/diver/blob/main/lsp/cc_ls.lua">config</a>
+        <li>
+          <a href="https://github.com/qompassai/diver/blob/main/lsp/cc_ls.lua">cc_ls</a>
       </li>
-      <li><code>clangd_ls</code> –
-        <a href="https://github.com/qompassai/diver/blob/main/lsp/clangd_ls.lua">config</a>
+      <li>
+          <a href="https://github.com/qompassai/diver/blob/main/lsp/clangd_ls.lua">clangd_ls</a>
       </li>
-      <li><code>clangfmt_ls</code> –
-        <a href="https://github.com/qompassai/diver/blob/main/lsp/clangfmt_ls.lua">config</a>
+      <li>
+          <a href="https://github.com/qompassai/diver/blob/main/lsp/clangfmt_ls.lua">clangfmt_ls</a>
       </li>
          </ul>
   </blockquote>
@@ -367,8 +441,8 @@ pnpm add -g m68k-lsp-server
   </summary>
   <blockquote style="font-size: 1.2em; line-height: 1.8; padding: 25px; background: #f8f9fa; border-left: 6px solid #667eea; border-radius: 8px; margin: 15px 0; box-shadow: 0 2px 8px rgba(0,0,0,0.1);">
     <ul>
-      <li><code>cairo_ls</code> –
-        <a href="https://github.com/qompassai/diver/blob/main/lsp/cairo_ls.lua">config</a>
+      <li>
+          <a href="https://github.com/qompassai/diver/blob/main/lsp/cairo_ls.lua">cairo_ls</a>
       </li>
     </ul>
   </blockquote>
@@ -383,8 +457,8 @@ pnpm add -g m68k-lsp-server
   </summary>
   <blockquote style="font-size: 1.2em; line-height: 1.8; padding: 25px; background: #f8f9fa; border-left: 6px solid #667eea; border-radius: 8px; margin: 15px 0; box-shadow: 0 2px 8px rgba(0,0,0,0.1);">
     <ul>
-      <li><code>circom_ls</code> –
-        <a href="https://github.com/qompassai/diver/blob/main/lsp/circom_ls.lua">config</a>
+      <li>
+          <a href="https://github.com/qompassai/diver/blob/main/lsp/circom_ls.lua">circom_ls</a>
       </li>
     </ul>
   </blockquote>
@@ -399,11 +473,11 @@ pnpm add -g m68k-lsp-server
   </summary>
   <blockquote style="font-size: 1.2em; line-height: 1.8; padding: 25px; background: #f8f9fa; border-left: 6px solid #667eea; border-radius: 8px; margin: 15px 0; box-shadow: 0 2px 8px rgba(0,0,0,0.1);">
     <ul>
-      <li><code>cmake_ls</code> –
-        <a href="https://github.com/qompassai/diver/blob/main/lsp/cmake_ls.lua">config</a>
+      <li>
+          <a href="https://github.com/qompassai/diver/blob/main/lsp/cmake_ls.lua">cmake_ls</a>
       </li>
-      <li><code>neocmake_ls</code> –
-        <a href="https://github.com/qompassai/diver/blob/main/lsp/neocmake_ls.lua">config</a>
+      <li>
+        <a href="https://github.com/qompassai/diver/blob/main/lsp/neocmake_ls.lua">neocmake_ls</a>
       </li>
     </ul>
   </blockquote>
@@ -418,8 +492,8 @@ pnpm add -g m68k-lsp-server
   </summary>
   <blockquote style="font-size: 1.2em; line-height: 1.8; padding: 25px; background: #f8f9fa; border-left: 6px solid #667eea; border-radius: 8px; margin: 15px 0; box-shadow: 0 2px 8px rgba(0,0,0,0.1);">
     <ul>
-      <li><code>crystalline_ls</code> –
-        <a href="https://github.com/qompassai/diver/blob/main/lsp/crystalline_ls.lua">config</a>
+      <li>
+          <a href="https://github.com/qompassai/diver/blob/main/lsp/crystalline_ls.lua">crystalline_ls</a>
       </li>
     </ul>
   </blockquote>
