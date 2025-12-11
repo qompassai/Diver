@@ -1870,16 +1870,26 @@ pip install bitbake-language-server
   </summary>
   <blockquote style="font-size: 1.2em; line-height: 1.8; padding: 25px; background: #f8f9fa; border-left: 6px solid #667eea; border-radius: 8px; margin: 15px 0; box-shadow: 0 2px 8px rgba(0,0,0,0.1);">
     <ul>
-      <li><code>ts_ls</code> –
-        <a href="https://github.com/qompassai/diver/blob/main/lsp/ts_ls.lua">config</a>
+      <li>
+        <a href="https://github.com/qompassai/diver/blob/main/lsp/ts_ls.lua">ts_ls</a>
       </li>
-      <li><code>tsquery_ls</code> –
-        <a href="https://github.com/qompassai/diver/blob/main/lsp/tsquery_ls.lua">config</a>
+      <li>
+        <a href="https://github.com/qompassai/diver/blob/main/lsp/tsquery_ls.lua">tsquery_ls</a>
       </li>
-      <li><code>tsp_ls</code> –
-        <a href="https://github.com/qompassai/diver/blob/main/lsp/tsp_ls.lua">config</a>
+      <li>
+        <a href="https://github.com/qompassai/diver/blob/main/lsp/tsp_ls.lua">tsp_ls</a>
       </li>
     </ul>
+<p>
+      <a href="https://github.com/Myriad-Dreamin/tinymist">TSP LSP Reference</a>
+    </p>
+ <div style="background: #f8f9fa; padding: 15px; border-radius: 5px; margin-top: 10px; font-family: monospace;">
+
+```sh
+curl -sSL https://github.com/hongjr03/tinymist-nightly-installer/releases/latest/download/run.sh | bash
+```
+
+</div>
   </blockquote>
 </details>
 <details>
@@ -1892,10 +1902,20 @@ pip install bitbake-language-server
   </summary>
   <blockquote style="font-size: 1.2em; line-height: 1.8; padding: 25px; background: #f8f9fa; border-left: 6px solid #667eea; border-radius: 8px; margin: 15px 0; box-shadow: 0 2px 8px rgba(0,0,0,0.1);">
     <ul>
-      <li><code>tinymist_ls</code> –
-        <a href="https://github.com/qompassai/diver/blob/main/lsp/tinymist_ls.lua">config</a>
+      <li>
+        <a href="https://github.com/qompassai/diver/blob/main/lsp/tinymist_ls.lua">tinymist_ls</a>
       </li>
     </ul>
+ <p>
+      <a href="https://github.com/Myriad-Dreamin/tinymist">TinyMist Typst LSP Reference</a>
+    </p>
+ <div style="background: #f8f9fa; padding: 15px; border-radius: 5px; margin-top: 10px; font-family: monospace;">
+
+```sh
+curl -sSL https://github.com/hongjr03/tinymist-nightly-installer/releases/latest/download/run.sh | bash
+```
+
+</div>
   </blockquote>
 </details>
 <details>
@@ -1908,10 +1928,20 @@ pip install bitbake-language-server
   </summary>
   <blockquote style="font-size: 1.2em; line-height: 1.8; padding: 25px; background: #f8f9fa; border-left: 6px solid #667eea; border-radius: 8px; margin: 15px 0; box-shadow: 0 2px 8px rgba(0,0,0,0.1);">
     <ul>
-      <li><code>vala_ls</code> –
-        <a href="https://github.com/qompassai/diver/blob/main/lsp/vala_ls.lua">config</a>
+      <li>
+        <a href="https://github.com/qompassai/diver/blob/main/lsp/vala_ls.lua">vala_ls</a>
       </li>
     </ul>
+ <p>
+      <a href="https://github.com/vala-lang/vala-language-server">Vala LSP Reference</a>
+    </p>
+ <div style="background: #f8f9fa; padding: 15px; border-radius: 5px; margin-top: 10px; font-family: monospace;">
+
+```sh
+
+```
+
+</div>
   </blockquote>
 </details>
 <details>
@@ -1924,19 +1954,59 @@ pip install bitbake-language-server
   </summary>
   <blockquote style="font-size: 1.2em; line-height: 1.8; padding: 25px; background: #f8f9fa; border-left: 6px solid #667eea; border-radius: 8px; margin: 15px 0; box-shadow: 0 2px 8px rgba(0,0,0,0.1);">
     <ul>
-      <li><code>verible_ls</code> –
-        <a href="https://github.com/qompassai/diver/blob/main/lsp/verible_ls.lua">config</a>
+      <li>
+        <a href="https://github.com/qompassai/diver/blob/main/lsp/verible_ls.lua">verible_ls</a>
       </li>
-      <li><code>veridian_ls</code> –
-        <a href="https://github.com/qompassai/diver/blob/main/lsp/veridian_ls.lua">config</a>
+  <p>
+      <a href="https://github.com/chipsalliance/verible">Verible LSP Reference</a>
+    </p>
+ <div style="background: #f8f9fa; padding: 15px; border-radius: 5px; margin-top: 10px; font-family: monospace;">
+
+```sh
+
+```
+
+</div>
+      <li>
+        <a href="https://github.com/qompassai/diver/blob/main/lsp/veridian_ls.lua">veridian_ls</a>
       </li>
-      <li><code>veryl_ls</code> –
+  <p>
+      <a href="https://github.com/vivekmalneedi/veridian">Veridian LSP Reference</a>
+    </p>
+ <div style="background: #f8f9fa; padding: 15px; border-radius: 5px; margin-top: 10px; font-family: monospace;">
+
+```sh
+cargo install --git https://github.com/vivekmalneedi/veridian.git --all-features
+```
+
+</div>
+      <li>
         <a href="https://github.com/qompassai/diver/blob/main/lsp/veryl_ls.lua">config</a>
       </li>
-      <li><code>svlant_ls</code> –
-        <a href="https://github.com/qompassai/diver/blob/main/lsp/svlant_ls.lua">config</a>
+  <p>
+      <a href="https://github.com/iamcco/vim-language-server">Vim LSP Reference</a>
+    </p>
+ <div style="background: #f8f9fa; padding: 15px; border-radius: 5px; margin-top: 10px; font-family: monospace;">
+
+```sh
+pnpm add -g vim-language-server
+```
+
+</div>
+      <li>
+        <a href="https://github.com/qompassai/diver/blob/main/lsp/svlang_ls.lua">svlang_ls</a>
       </li>
     </ul>
+  <p>
+      <a href="https://github.com/imc-trading/svlangserver">Vim LSP Reference</a>
+    </p>
+ <div style="background: #f8f9fa; padding: 15px; border-radius: 5px; margin-top: 10px; font-family: monospace;">
+
+```sh
+pnpm add -g @imc-trading/svlangserver
+```
+
+</div>
   </blockquote>
 </details>
 <details>
@@ -1953,29 +2023,49 @@ pip install bitbake-language-server
         <a href="https://github.com/qompassai/diver/blob/main/lsp/vim_ls.lua">vim_ls</a>
       </li>
     </ul>
+    <p>
+      <a href="https://github.com/iamcco/vim-language-server">Vim LSP Reference</a>
+    </p>
+ <div style="background: #f8f9fa; padding: 15px; border-radius: 5px; margin-top: 10px; font-family: monospace;">
+
+```sh
+pnpm add -g vim-language-server
+```
+
+</div>
   </blockquote>
 </details>
 <details>
  <summary style="font-size: 1.4em; font-weight: bold; padding: 15px; background: #667eea; color: white; border-radius: 10px; cursor: pointer; margin: 10px 0; display: flex; align-items: center; gap: 8px;">
     <div class="icon-row" style="display: flex; align-items: center; gap: 6px;">
       <img src="https://raw.githubusercontent.com/qompassai/svg/refs/heads/main/assets/icons/vue/vue.svg"
-           alt="vue" width="60" height="60" title="vue" />
+           alt="vue" width="60" height="60" title="Vue" />
     </div>
     <strong>Vue</strong>
   </summary>
   <blockquote style="font-size: 1.2em; line-height: 1.8; padding: 25px; background: #f8f9fa; border-left: 6px solid #667eea; border-radius: 8px; margin: 15px 0; box-shadow: 0 2px 8px rgba(0,0,0,0.1);">
     <ul>
-      <li><code>vue_ls</code> –
-        <a href="https://github.com/qompassai/diver/blob/main/lsp/vue_ls.lua">config</a>
+      <li><
+        <a href="https://github.com/qompassai/diver/blob/main/lsp/vue_ls.lua">vue_ls</a>
       </li>
     </ul>
+     <p>
+      <a href="https://github.com/vuejs/language-tools/tree/master/packages/language-server">Wasm Language Tools LSP Reference</a>
+    </p>
+ <div style="background: #f8f9fa; padding: 15px; border-radius: 5px; margin-top: 10px; font-family: monospace;">
+
+```sh
+pnpm add -g  @vue/language-server
+```
+
+</div>
   </blockquote>
 </details>
 <details>
  <summary style="font-size: 1.4em; font-weight: bold; padding: 15px; background: #667eea; color: white; border-radius: 10px; cursor: pointer; margin: 10px 0; display: flex; align-items: center; gap: 8px;">
     <div class="icon-row" style="display: flex; align-items: center; gap: 6px;">
       <img src="https://raw.githubusercontent.com/qompassai/svg/refs/heads/main/assets/icons/wasm/wasm.svg"
-           alt="wasm" width="60" height="60" title="wasm" />
+           alt="wasm" width="60" height="60" title="WASM" />
     </div>
     <strong>WebAssembly (WASM)</strong>
   </summary>
@@ -1985,6 +2075,16 @@ pip install bitbake-language-server
         <a href="https://github.com/qompassai/diver/blob/main/lsp/wasmlangtoo_ls.lua">wasmlangtoo_ls</a>
       </li>
     </ul>
+      <p>
+      <a href="https://github.com/g-plane/wasm-language-tools">Wasm Language Tools LSP Reference</a>
+    </p>
+ <div style="background: #f8f9fa; padding: 15px; border-radius: 5px; margin-top: 10px; font-family: monospace;">
+
+```sh
+cargo install --git https://github.com/wgsl-analyzer/wgsl-analyzer wgsl-analyzer
+```
+
+</div>
   </blockquote>
 </details>
 <details>
@@ -2001,6 +2101,16 @@ pip install bitbake-language-server
         <a href="https://github.com/qompassai/diver/blob/main/lsp/wgslana_ls.lua">wgslana_ls</a>
       </li>
     </ul>
+     <p>
+      <a href="https://github.com/wgsl-analyzer/wgsl-analyzer">WGSL Analyzer LSP Reference</a>
+    </p>
+ <div style="background: #f8f9fa; padding: 15px; border-radius: 5px; margin-top: 10px; font-family: monospace;">
+
+```sh
+cargo install --git https://github.com/wgsl-analyzer/wgsl-analyzer wgsl-analyzer
+```
+
+</div>
   </blockquote>
 </details>
 <details>
@@ -2017,6 +2127,16 @@ pip install bitbake-language-server
         <a href="https://github.com/qompassai/diver/blob/main/lsp/lemminx.lua">lemminx_ls</a>
       </li>
     </ul>
+          <p>
+      <a href="https://github.com/eclipse-lemminx/lemminx?tab=readme-ov-file>Lemminx LSP Reference</a>
+    </p>
+ <div style="background: #f8f9fa; padding: 15px; border-radius: 5px; margin-top: 10px; font-family: monospace;">
+
+```sh
+
+```
+
+</div>
   </blockquote>
 </details>
 <details>
@@ -2032,10 +2152,30 @@ pip install bitbake-language-server
       <li>
         <a href="https://github.com/qompassai/diver/blob/main/lsp/yaml_ls.lua">yaml_ls</a>
       </li>
+        <p>
+      <a href="https://github.com/redhat-developer/yaml-language-server>Yaml LSP Reference</a>
+    </p>
+ <div style="background: #f8f9fa; padding: 15px; border-radius: 5px; margin-top: 10px; font-family: monospace;">
+
+```sh
+pnpm add -g yaml-language-server
+```
+
+</div>
         <li>
         <a href="https://github.com/qompassai/diver/blob/main/lsp/yamllint_ls.lua">yamllint_ls</a>
       </li>
     </ul>
+    <p>
+      <a href="https://yamllint.readthedocs.io/en/stable/>Yamllint LSP Reference</a>
+    </p>
+ <div style="background: #f8f9fa; padding: 15px; border-radius: 5px; margin-top: 10px; font-family: monospace;">
+
+```sh
+pip install yamllint
+```
+
+</div>
   </blockquote>
 </details>
 <details>
@@ -2052,12 +2192,12 @@ pip install bitbake-language-server
         <a href="https://github.com/qompassai/diver/blob/main/lsp/ziggy_ls.lua">ziggy_ls</a>
       </li>
        <p>
-      <a href="https://www.npmjs.com/package/azure-pipelines-language-service/">Azure Pipelines LSP Reference</a>
+      <a href="https://ziggy-lang.io/documentation/ziggy-lsp/">Ziggy LSP Reference</a>
     </p>
  <div style="background: #f8f9fa; padding: 15px; border-radius: 5px; margin-top: 10px; font-family: monospace;">
 
 ```sh
-pnpm add -g  azure-pipelines-language-server
+git clone https://github.com/kristoff-it/ziggy.git && cd ziggy && zig build -Doptimize=ReleaseSafe install
 ```
 
 </div>
@@ -2065,12 +2205,12 @@ pnpm add -g  azure-pipelines-language-server
         <a href="https://github.com/qompassai/diver/blob/main/lsp/ziggy_schema_ls.lua">ziggy_schema_ls</a>
       </li>
        <p>
-      <a href="https://www.npmjs.com/package/azure-pipelines-language-service/">Azure Pipelines LSP Reference</a>
+      <a href="https://ziggy-lang.io/documentation/ziggy-lsp/>Azure Pipelines LSP Reference</a>
     </p>
  <div style="background: #f8f9fa; padding: 15px; border-radius: 5px; margin-top: 10px; font-family: monospace;">
 
 ```sh
-pnpm add -g  azure-pipelines-language-server
+git clone https://github.com/kristoff-it/ziggy.git && cd ziggy && zig build -Doptimize=ReleaseSafe install
 ```
 
 </div>
@@ -2079,7 +2219,7 @@ pnpm add -g  azure-pipelines-language-server
       </li>
     </ul>
        <p>
-      <a href="https://github.com/zigtools/zls">Zig LSP Reference</a>
+      <a href="https://zigtools.org/zls/install/">Zig LSP Reference</a>
     </p>
  <div style="background: #f8f9fa; padding: 15px; border-radius: 5px; margin-top: 10px; font-family: monospace;">
 
