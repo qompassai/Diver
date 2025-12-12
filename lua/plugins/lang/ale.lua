@@ -3,191 +3,341 @@
 -- Copyright (C) 2025 Qompass AI, All rights reserved
 -- -----------------------------------------------------
 return {
-  'dense-analysis/ale',
+  "dense-analysis/ale",
   ft = {
     'ansible',
-    'awk',
-    'bash',
-    'bibtex',
-    'c',
-    'cairo',
-    'javascript',
-    'json',
-    'jsonc',
-    'latex',
-    'lua',
-    'make',
-    'nix',
-    'python',
-    'systemd',
-    'toml',
-    'typscript',
-    'xml',
-    'zig'
+    "awk",
+    "bash",
+    "bibtex",
+    "c",
+    "cairo",
+    "d",
+    "dafny",
+    "dart",
+    "desktop",
+    "dhall",
+    "dockerfile",
+    "elixir",
+    "elm",
+    "erb",
+    "erlang",
+    "go",
+    "haskell",
+    "html",
+    "http",
+    "java",
+    "javascript",
+    "jinja",
+    "json",
+    "jsonc",
+    "jsonnet",
+    "kotlin",
+    "latex",
+    "llvm",
+    "lua",
+    "mail",
+    "make",
+    "matlab",
+    "mercery",
+    "nasm",
+    "nickel",
+    "nim",
+    "nix",
+    "objective-c",
+    "ocaml",
+    "odin",
+    "openapi",
+    "openscad",
+    "perl",
+    "php",
+    "powershell",
+    "proto",
+    "pug",
+    "puppet",
+    "python",
+    "qml",
+    "r",
+    "reasonml",
+    "rego",
+    "rest",
+    "robot",
+    "ruby",
+    "rust",
+    "salt",
+    "sass",
+    "scala",
+    "scss",
+    "sml",
+    "solidity",
+    "sql",
+    "svelte",
+    "swift",
+    "systemd",
+    "tcl",
+    "terraform",
+    "texinfo",
+    "text",
+    "toml",
+    "typescript",
+    "typst",
+    "v",
+    "vala",
+    "verilog",
+    "vhdl",
+    "vim",
+    "vue",
+    "wgsl",
+    "xhtml",
+    "xml",
+    "yaml",
+    "zig",
   },
   config = function()
     local g = vim.g
     g.ale_completion_enabled = 0
     g.ale_ruby_rubocop_auto_correct_all = 1
     g.ale_fix_on_save = 1
-    g.ale_lint_on_text_changed = 'normal'
+    g.ale_lint_on_text_changed = "normal"
     g.ale_lint_on_insert_leave = 1
     g.ale_lint_on_save = 1
-    g.ale_echo_msg_error_str = ''
-    g.ale_echo_msg_warning_str = ''
+    g.ale_echo_msg_error_str = ""
+    g.ale_echo_msg_warning_str = ""
     g.ale_maximum_file_size = 1024 * 1024
-    g.ale_sign_error = '✗'
-    g.ale_sign_warning = '!'
+    g.ale_sign_error = "✗"
+    g.ale_sign_warning = "!"
     g.ale_echo_cursor = 0
-    g.ale_echo_msg_format = ''
+    g.ale_echo_msg_format = ""
     g.ale_set_highlights = 1
-    g.ale_virtualtext_cursor = 0
+    g.ale_virtualtext_cursor = 1
     g.ale_pattern_options = {
       [".min%.js$"] = { ale_linters = {}, ale_fixers = {} },
       ["/vendor/"] = { ale_linters = {}, ale_fixers = {} },
     }
     g.ale_pattern_options_enabled = 1
     g.ale_fixers = {
+      ansible = {
+        "ansible-lint",
+      },
+      awk = {},
       bash = {
+        'beautysh',
         'shfmt',
       },
+      bibtex = {},
+      c = {
+        "clang-format",
+      },
+      d = {
+        "dfmt",
+        "uncrustify",
+      },
+      dafny = {},
+      dart = {
+        "dart-format",
+        "dartfmt",
+      },
+      desktop = {},
+      dhall = {
+        "dhall-format",
+      },
+      elm = {
+        "elm-format",
+      },
+      erb = {
+        "erb-formatter",
+        "htmlbeautifier",
+      },
+      erlang = {
+        "erlfmt",
+      },
+      go = {
+        "gofmt",
+        "goimports",
+      },
+      haskell = {
+        "brittany",
+        "hfmt",
+      },
+      html = {
+        "prettierd",
+      },
+      jinja = {
+        "djhtml",
+      },
+      kotlin = {
+        "ktlint",
+      },
       lua = {
-        'emmylua_ls',
       },
       nix = {
-        'alejandra'
+        "alejandra",
+      },
+      ocaml = {
+        "ocamlformat",
+      },
+      perl = {
+        "perltidy",
       },
       php = {
-        'php_cs_fixer',
-        'phpcbf',
+        "php_cs_fixer",
+        "phpcbf",
+      },
+      puppet = {
+        'puppet-lint',
       },
       python = {
-        'ruff_format',
+        "ruff_format",
+      },
+      robot = {
+        "robotidy",
       },
       ruby = {
-        'rubocop',
+        "rubocop",
       },
       rust = {
-        'rustfmt',
+        "rustfmt",
+      },
+      toml = {
+        "dprint",
       },
       zig = {
-        'zigfmt',
-        'zls'
-      }
+        "zigfmt",
+        "zls",
+      },
     }
     g.ale_linters = {
-      awk = { 'gawk'
-      },
+      awk = { "gawk" },
       bash = {
-        'bashate',
+        "bashate",
         'bashlint',
-        'cspell',
-        'bash-language-server',
-        'shellharden',
-        'shell -n',
-        'shellcheck',
-        'shfmt',
+        "cspell",
+        "bash-language-server",
+        "shellharden",
+        "shell -n",
+        "shellcheck",
+        "shfmt",
       },
       bibtex = {
-        'bibclean'
+        "bibclean",
       },
       c = {
-        'astyle',
-        'clangd',
-        'flawfinder'
+        "astyle",
+        "clangd",
+        "flawfinder",
       },
       cairo = {
-        'scarb'
+        "scarb",
       },
       cmake = {
-        'cmake-format',
-        'cmake-lint'
+        "cmake-format",
+        "cmake-lint",
       },
       crystal = {
-        'ameba',
-        'crystal'
+        "ameba",
+        "crystal",
       },
       css = {
-        'csslint',
-        'fecs'
+        "csslint",
+        "fecs",
+      },
+      d = {
+        "dmd",
+        "dls",
+      },
+      desktop = {
+        "desktop-file-validate",
+      },
+      dockerfile = {
+        "dockerfile_lint",
+        "dockerlinter",
+        "hadolint",
+      },
+      elm = {
+        "elm-make",
+        "elm-ls",
+      },
+      go = {
+        "gosimple",
+        "golangci-lint",
+        "staticcheck",
+      },
+      http = {
+        "curl",
       },
       javascript = {
-        'biome'
+        "biome",
       },
       json = {
-        'biome'
+        "biome",
       },
       jsonc = {
-        'biome'
+        "biome",
       },
       latex = {
-        'texlab'
+        "texlab",
       },
       lua = {
-        'luacheck',
-        'stylua',
-        'emmylua_ls'
       },
       make = {
-        'checkmake'
+        "checkmake",
       },
       nix = {
-        'deadnix',
-        'nix',
-        'statix'
+        "deadnix",
+        "nix",
+        "statix",
       },
       php = {
-        'intelephense',
-        'phan',
-        'php',
-        'php-cs-fixer',
-        'phpcbf',
+        "intelephense",
+        "phan",
+        "php",
+        "php-cs-fixer",
+        "phpcbf",
         "phpcs",
-        'phpmd',
-        'phpstan',
-        'pint',
+        "phpmd",
+        "phpstan",
+        "pint",
         "psalm",
         "tlint",
       },
       python = {
         "bandit",
-        'pyrefly',
+        "pyrefly",
         "ruff",
-        'vulture',
-        'yapf',
-        'yara',
+        "vulture",
+        "yapf",
+        "yara",
       },
       ruby = {
-        'rubocop',
+        "rubocop",
         "ruby",
       },
       rust = {
-        'bacon',
+        "bacon",
         "cargo",
         "rust-analyzer",
         "rustc",
         "rustfmt",
       },
       systemd = {
-        'systemd-analyze'
+        "systemd-analyze",
       },
       toml = {
-        'dprint',
-        'tombi'
+        "dprint",
+        "tombi",
       },
       typescript = {
-        'biome',
-        'deno'
+        "biome",
+        "deno",
       },
       xml = {
-        'xmllint'
+        "xmllint",
       },
       wgsl = {
-        'naga'
+        "naga",
       },
       zig = {
-        'zlint'
-      }
+        "zlint",
+      },
     }
   end,
 }

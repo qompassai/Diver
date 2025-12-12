@@ -5,6 +5,8 @@
 vim.lsp.config['lua_ls'] = {
   cmd = {
     'lua-language-server',
+    '--checklevel=Information',
+    '--force_accept_workspace'
   },
   codeActionProvider = {
     codeActionKinds = {
@@ -18,7 +20,7 @@ vim.lsp.config['lua_ls'] = {
   colorProvider = true,
   filetypes = {
     'lua',
-    "luau",
+    'luau',
   },
   semanticTokensProvider = {
     full = true,
@@ -66,25 +68,28 @@ vim.lsp.config['lua_ls'] = {
   },
   root_markers = {
     '.luarc.json',
-    ".luarc.jsonc",
-    ".luarc.json5",
-    ".stylua.toml",
-    "luacheckrc",
-    ".luacheckrc",
+    '.luarc.jsonc',
+    '.luarc.json5',
+    'luacheckrc',
+    '.luacheckrc',
+    '.stylua.toml'
   },
   settings = {
     Lua = {
       format = {
         enable = true,
         defaultConfig = {
-          align_continuous_rect_table_field = true,
           align_array_table = true,
-          indent_style = 'tabs',
-          indent_size = '4',
-          quote_style = 'ForceSingle',
-          trailing_table_separator = 'always',
           align_continuous_assign_statement = true,
+          align_continuous_rect_table_field = true,
+          indent_size = '4',
+          indent_style = 'tabs',
+          quote_style = 'ForceSingle',
+          trailing_table_separator = 'always'
         },
+      },
+      hover = {
+        previewfields = 50,
       },
       runtime = {
         version = 'LuaJIT',
@@ -92,6 +97,10 @@ vim.lsp.config['lua_ls'] = {
           'lua/?.lua',
           'lua/?/init.lua',
         },
+      },
+      semantic = {
+        enable = true,
+        keyword = true
       },
       diagnostics = {
         enable = true,
@@ -106,7 +115,7 @@ vim.lsp.config['lua_ls'] = {
           'unused-local'
         },
         severity = {
-          -- ['unused-local'] = 'Hint',
+          ['unused-local'] = 'Hint',
         },
         unusedLocalExclude = {
           '_*',
@@ -123,22 +132,25 @@ vim.lsp.config['lua_ls'] = {
           '${3rd}/luassert/library',
           '${3rd}/lazy.nvim/library',
           '${3rd}/blink.cmp/library',
-          vim.fn.expand("$HOME") .. '/.config/nvim/lua/',
+          vim.fn.expand('$HOME') .. '/.config/nvim/lua/'
         },
         ignoreDir = {
+          'build',
           'node_modules',
-          'build'
+          '.vscode',
         },
-        maxPreload = 2000,
-        preloadFileSize = 50000,
+        maxPreload = 5000,
+        preloadFileSize = 500,
+        useGitIgnore = true
       },
       telemetry = {
         enable = false,
       },
       completion = {
-        callSnippet = 'Replace',
-        keywordSnippet = 'Enable',
+        callSnippet = 'Both',
         displayContext = 4,
+        enable = true,
+        keywordSnippet = 'Both'
       },
       hint = {
         enable = true,

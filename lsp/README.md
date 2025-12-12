@@ -17,8 +17,8 @@
   </summary>
   <blockquote style="font-size: 1.2em; line-height: 1.8; padding: 25px; background: #f8f9fa; border-left: 6px solid #667eea; border-radius: 8px; margin: 15px 0; box-shadow: 0 2px 8px rgba(0,0,0,0.1);">
     <ul>
-      <li><code>ada_ls</code> –
-        <a href="https://github.com/qompassai/diver/blob/main/lsp/ada_ls.lua">config</a>
+      <li>
+        <a href="https://github.com/qompassai/diver/blob/main/lsp/ada_ls.lua">ada_ls</a>
       </li>
     </ul>
   </blockquote>
@@ -33,8 +33,8 @@
   </summary>
   <blockquote style="font-size: 1.2em; line-height: 1.8; padding: 25px; background: #f8f9fa; border-left: 6px solid #667eea; border-radius: 8px; margin: 15px 0; box-shadow: 0 2px 8px rgba(0,0,0,0.1);">
     <ul>
-      <li><code>agda_ls</code> –
-        <a href="https://github.com/qompassai/Diver/blob/main/lsp/ansible_ls.lua">config</a>
+      <li>
+        <a href="https://github.com/qompassai/Diver/blob/main/lsp/agda_ls.lua">agda_ls</a>
       </li>
     </ul>
     <p>
@@ -43,7 +43,7 @@
  <div style="background: #f8f9fa; padding: 15px; border-radius: 5px; margin-top: 10px; font-family: monospace;">
 
 ```sh
-git clone https://github.com/banacorn/agda-language-server &&cd agda-langauge-server && git submodule update --init --recursive && stack install
+git clone https://github.com/banacorn/agda-language-server && cd agda-langauge-server && git submodule update --init --recursive && stack install
 ```
 
 </div>
@@ -59,8 +59,8 @@ git clone https://github.com/banacorn/agda-language-server &&cd agda-langauge-se
   </summary>
   <blockquote style="font-size: 1.2em; line-height: 1.8; padding: 25px; background: #f8f9fa; border-left: 6px solid #667eea; border-radius: 8px; margin: 15px 0; box-shadow: 0 2px 8px rgba(0,0,0,0.1);">
     <ul>
-      <li><code>ai_ls</code> –
-        <a href="https://github.com/qompassai/Diver/blob/main/lsp/ai_ls.lua">config</a>
+      <li>
+        <a href="https://github.com/qompassai/Diver/blob/main/lsp/ai_ls.lua">ai_ls</a>
       </li>
             <p>
       <a href="https://github.com/SilasMarvin/lsp-ai">AI LSP Reference</a>
@@ -72,8 +72,8 @@ cargo install lsp-ai -F llama_cpp -F cuda
 ```
 
 </div>
-      <li><code>copilot_ls</code> –
-        <a href="https://github.com/qompassai/diver/blob/main/lsp/copilot_ls.lua">config</a>
+      <li>
+        <a href="https://github.com/qompassai/diver/blob/main/lsp/copilot_ls.lua">copilot_ls</a>
       </li>
          <p>
       <a href="https://www.npmjs.com/package/@github/copilot-language-server">CoPilot LSP Reference</a>
@@ -85,8 +85,8 @@ pnpm add -g @github/copilot-language-server
 ```
 
 </div>
-      <li><code>text_ls</code> –
-        <a href="https://github.com/qompassai/diver/blob/main/lsp/text_ls.lua">config</a>
+      <li>
+        <a href="https://github.com/qompassai/diver/blob/main/lsp/text_ls.lua">text_ls</a>
       </li>
     </ul>
            <p>
@@ -263,7 +263,7 @@ pnpm add -g awk-language-server
  <div style="background: #f8f9fa; padding: 15px; border-radius: 5px; margin-top: 10px; font-family: monospace;">
 
 ```sh
-pnpm add -g  azure-pipelines-language-server
+pnpm add -g azure-pipelines-language-server
 ```
 
 </div>
@@ -508,11 +508,11 @@ pip install bitbake-language-server
   </summary>
   <blockquote style="font-size: 1.2em; line-height: 1.8; padding: 25px; background: #f8f9fa; border-left: 6px solid #667eea; border-radius: 8px; margin: 15px 0; box-shadow: 0 2px 8px rgba(0,0,0,0.1);">
     <ul>
-         <li><code>css_ls</code> –
-        <a href="https://github.com/qompassai/diver/blob/main/lsp/css_ls.lua">config</a>
+         <li>
+        <a href="https://github.com/qompassai/diver/blob/main/lsp/css_ls.lua">cc_ls</a>
       </li>
-      <li><code>tailwindcss_ls</code> –
-        <a href="https://github.com/qompassai/diver/blob/main/lsp/tailwindcss_ls.lua">config</a>
+      <li>
+          <a href="https://github.com/qompassai/diver/blob/main/lsp/tailwindcss_ls.lua">tailwindcss_ls</a>
       </li>
     </ul>
   </blockquote>
@@ -527,8 +527,8 @@ pip install bitbake-language-server
   </summary>
   <blockquote style="font-size: 1.2em; line-height: 1.8; padding: 25px; background: #f8f9fa; border-left: 6px solid #667eea; border-radius: 8px; margin: 15px 0; box-shadow: 0 2px 8px rgba(0,0,0,0.1);">
     <ul>
-      <li><code>csharp_ls</code> –
-        <a href="https://github.com/qompassai/diver/blob/main/lsp/csharp_ls.lua">config</a>
+      <li>
+          <a href="https://github.com/qompassai/diver/blob/main/lsp/csharp_ls.lua">csharp_ls</a>
       </li>
         </ul>
   </blockquote>
@@ -543,11 +543,11 @@ pip install bitbake-language-server
   </summary>
   <blockquote style="font-size: 1.2em; line-height: 1.8; padding: 25px; background: #f8f9fa; border-left: 6px solid #667eea; border-radius: 8px; margin: 15px 0; box-shadow: 0 2px 8px rgba(0,0,0,0.1);">
     <ul>
-      <li><code>harper_ls</code> –
-        <a href="https://github.com/qompassai/diver/blob/main/lsp/harper_ls.lua">config</a>
+      <li>
+          <a href="https://github.com/qompassai/diver/blob/main/lsp/harper_ls.lua">harper_ls</a>
       </li>
-         <li><code>prosemd_ls</code> –
-        <a href="https://github.com/qompassai/diver/blob/main/lsp/prosemd_ls.lua">config</a>
+         <li>
+          <a href="https://github.com/qompassai/diver/blob/main/lsp/prosemd_ls.lua">prosemd_ls</a>
       </li>
     </ul>
   </blockquote>
@@ -562,8 +562,8 @@ pip install bitbake-language-server
   </summary>
   <blockquote style="font-size: 1.2em; line-height: 1.8; padding: 25px; background: #f8f9fa; border-left: 6px solid #667eea; border-radius: 8px; margin: 15px 0; box-shadow: 0 2px 8px rgba(0,0,0,0.1);">
     <ul>
-      <li><code>deno_ls</code> –
-        <a href="https://github.com/qompassai/diver/blob/main/lsp/deno_ls.lua">config</a>
+      <li>
+        <a href="https://github.com/qompassai/diver/blob/main/lsp/deno_ls.lua">deno_ls</a>
       </li>
     </ul>
   </blockquote>
@@ -578,14 +578,14 @@ pip install bitbake-language-server
   </summary>
   <blockquote style="font-size: 1.2em; line-height: 1.8; padding: 25px; background: #f8f9fa; border-left: 6px solid #667eea; border-radius: 8px; margin: 15px 0; box-shadow: 0 2px 8px rgba(0,0,0,0.1);">
     <ul>
-      <li><code>docker_ls</code> –
-        <a href="https://github.com/qompassai/diver/blob/main/lsp/docker_ls.lua">config</a>
+      <li>
+          <a href="https://github.com/qompassai/diver/blob/main/lsp/docker_ls.lua">docker_ls</a>
       </li>
-      <li><code>dockercompose_ls</code> –
-        <a href="https://github.com/qompassai/diver/blob/main/lsp/dockercompose_ls.lua">config</a>
+      <li>
+        <a href="https://github.com/qompassai/diver/blob/main/lsp/dockercompose_ls.lua">dockercmpose_ls</a>
       </li>
-      <li><code>nomad_ls</code> –
-        <a href="https://github.com/qompassai/diver/blob/main/lsp/nomad_ls.lua">config</a>
+      <li>
+        <a href="https://github.com/qompassai/diver/blob/main/lsp/nomad_ls.lua">nomad_ls</a>
       </li>
     </ul>
   </blockquote>
@@ -600,8 +600,8 @@ pip install bitbake-language-server
   </summary>
   <blockquote style="font-size: 1.2em; line-height: 1.8; padding: 25px; background: #f8f9fa; border-left: 6px solid #667eea; border-radius: 8px; margin: 15px 0; box-shadow: 0 2px 8px rgba(0,0,0,0.1);">
     <ul>
-      <li><code>dot_ls</code> –
-        <a href="https://github.com/qompassai/diver/blob/main/lsp/dot_ls.lua">config</a>
+      <li>
+        <a href="https://github.com/qompassai/diver/blob/main/lsp/dot_ls.lua">dot_ls</a>
       </li>
     </ul>
   </blockquote>
@@ -616,11 +616,11 @@ pip install bitbake-language-server
   </summary>
   <blockquote style="font-size: 1.2em; line-height: 1.8; padding: 25px; background: #f8f9fa; border-left: 6px solid #667eea; border-radius: 8px; margin: 15px 0; box-shadow: 0 2px 8px rgba(0,0,0,0.1);">
     <ul>
-      <li><code>omnisharp_ls</code> –
-        <a href="https://github.com/qompassai/diver/blob/main/lsp/omnisharp_ls.lua">config</a>
+      <li>
+        <a href="https://github.com/qompassai/diver/blob/main/lsp/omnisharp_ls.lua">omnisharp_ls</a>
       </li>
-      <li><code>roslyn_ls</code> –
-        <a href="https://github.com/qompassai/diver/blob/main/lsp/roslyn_ls.lua">config</a>
+      <li>
+        <a href="https://github.com/qompassai/diver/blob/main/lsp/roslyn_ls.lua">rosly_ls</a>
       </li>
     </ul>
   </blockquote>
@@ -635,8 +635,8 @@ pip install bitbake-language-server
   </summary>
   <blockquote style="font-size: 1.2em; line-height: 1.8; padding: 25px; background: #f8f9fa; border-left: 6px solid #667eea; border-radius: 8px; margin: 15px 0; box-shadow: 0 2px 8px rgba(0,0,0,0.1);">
     <ul>
-      <li><code>dts_ls</code> –
-        <a href="https://github.com/qompassai/diver/blob/main/lsp/dts_ls.lua">config</a>
+      <li>
+        <a href="https://github.com/qompassai/diver/blob/main/lsp/dts_ls.lua">dts_ls</a>
       </li>
     </ul>
   </blockquote>
@@ -651,11 +651,11 @@ pip install bitbake-language-server
   </summary>
   <blockquote style="font-size: 1.2em; line-height: 1.8; padding: 25px; background: #f8f9fa; border-left: 6px solid #667eea; border-radius: 8px; margin: 15px 0; box-shadow: 0 2px 8px rgba(0,0,0,0.1);">
     <ul>
-      <li><code>elixir_ls</code> –
-        <a href="https://github.com/qompassai/diver/blob/main/lsp/elixir_ls.lua">config</a>
+      <li>
+        <a href="https://github.com/qompassai/diver/blob/main/lsp/elixir_ls.lua">elixir_ls</a>
       </li>
-      <li><code>expert_ls</code> –
-        <a href="https://github.com/qompassai/diver/blob/main/lsp/expert_ls.lua">config</a>
+      <li>
+        <a href="https://github.com/qompassai/diver/blob/main/lsp/expert_ls.lua">expert_ls</a>
       </li>
     </ul>
   </blockquote>
@@ -670,8 +670,8 @@ pip install bitbake-language-server
   </summary>
   <blockquote style="font-size: 1.2em; line-height: 1.8; padding: 25px; background: #f8f9fa; border-left: 6px solid #667eea; border-radius: 8px; margin: 15px 0; box-shadow: 0 2px 8px rgba(0,0,0,0.1);">
     <ul>
-      <li><code>elm_ls</code> –
-        <a href='https://github.com/qompassai/diver/blob/main/lsp/elm_ls.lua'>config</a>
+      <li>
+        <a href='https://github.com/qompassai/diver/blob/main/lsp/elm_ls.lua'>elm_ls</a>
       </li>
     </ul>
   </blockquote>
@@ -686,8 +686,8 @@ pip install bitbake-language-server
   </summary>
   <blockquote style="font-size: 1.2em; line-height: 1.8; padding: 25px; background: #f8f9fa; border-left: 6px solid #667eea; border-radius: 8px; margin: 15px 0; box-shadow: 0 2px 8px rgba(0,0,0,0.1);">
     <ul>
-      <li><code>fennel_ls</code> –
-        <a href="https://github.com/qompassai/diver/blob/main/lsp/fennel_ls.lua">config</a>
+      <li>
+        <a href="https://github.com/qompassai/diver/blob/main/lsp/fennel_ls.lua">fennel_ls</a>
       </li>
     </ul>
   </blockquote>
@@ -702,8 +702,8 @@ pip install bitbake-language-server
   </summary>
   <blockquote style="font-size: 1.2em; line-height: 1.8; padding: 25px; background: #f8f9fa; border-left: 6px solid #667eea; border-radius: 8px; margin: 15px 0; box-shadow: 0 2px 8px rgba(0,0,0,0.1);">
     <ul>
-      <li><code>fsautocomplete_ls</code> –
-        <a href="https://github.com/qompassai/diver/blob/main/lsp/fsautocomplete_ls.lua">config</a>
+      <li>
+        <a href="https://github.com/qompassai/diver/blob/main/lsp/fsautocomplete_ls.lua">fsautocomplete_ls</a>
       </li>
     </ul>
   </blockquote>
@@ -718,14 +718,14 @@ pip install bitbake-language-server
   </summary>
   <blockquote style="font-size: 1.2em; line-height: 1.8; padding: 25px; background: #f8f9fa; border-left: 6px solid #667eea; border-radius: 8px; margin: 15px 0; box-shadow: 0 2px 8px rgba(0,0,0,0.1);">
     <ul>
-      <li><code>actionlint_ls</code> –
-        <a href="https://github.com/qompassai/diver/blob/main/lsp/actionlint_ls.lua">config</a>
+      <li>
+        <a href="https://github.com/qompassai/diver/blob/main/lsp/actionlint_ls.lua">actionlint_ls</a>
       </li>
-      <li><code>ghactions_ls</code> –
-        <a href="https://github.com/qompassai/diver/blob/main/lsp/ghactions_ls.lua">config</a>
+      <li>
+        <a href="https://github.com/qompassai/diver/blob/main/lsp/ghactions_ls.lua">ghactions_ls</a>
       </li>
-      <li><code>gitlabci_ls</code> –
-        <a href="https://github.com/qompassai/diver/blob/main/lsp/gitlabci_ls.lua">config</a>
+      <li>
+        <a href="https://github.com/qompassai/diver/blob/main/lsp/gitlabci_ls.lua">gitlabci_ls</a>
       </li>
     </ul>
   </blockquote>
@@ -740,8 +740,8 @@ pip install bitbake-language-server
   </summary>
   <blockquote style="font-size: 1.2em; line-height: 1.8; padding: 25px; background: #f8f9fa; border-left: 6px solid #667eea; border-radius: 8px; margin: 15px 0; box-shadow: 0 2px 8px rgba(0,0,0,0.1);">
     <ul>
-      <li><code>gleam_ls</code> –
-        <a href="https://github.com/qompassai/diver/blob/main/lsp/gleam_ls.lua">config</a>
+      <li>
+        <a href="https://github.com/qompassai/diver/blob/main/lsp/gleam_ls.lua">gleam_ls</a>
       </li>
     </ul>
   </blockquote>
@@ -756,8 +756,8 @@ pip install bitbake-language-server
   </summary>
   <blockquote style="font-size: 1.2em; line-height: 1.8; padding: 25px; background: #f8f9fa; border-left: 6px solid #667eea; border-radius: 8px; margin: 15px 0; box-shadow: 0 2px 8px rgba(0,0,0,0.1);">
     <ul>
-      <li><code>glslana_ls</code> –
-        <a href="https://github.com/qompassai/diver/blob/main/lsp/glslana_ls.lua">config</a>
+      <li>
+        <a href="https://github.com/qompassai/diver/blob/main/lsp/glslana_ls.lua">glslana_ls</a>
       </li>
     </ul>
   </blockquote>
@@ -772,11 +772,11 @@ pip install bitbake-language-server
   </summary>
   <blockquote style="font-size: 1.2em; line-height: 1.8; padding: 25px; background: #f8f9fa; border-left: 6px solid #667eea; border-radius: 8px; margin: 15px 0; box-shadow: 0 2px 8px rgba(0,0,0,0.1);">
     <ul>
-      <li><code>golangcilint_ls</code> –
-        <a href="https://github.com/qompassai/diver/blob/main/lsp/golangcilint_ls.lua">config</a>
+      <li>
+        <a href="https://github.com/qompassai/diver/blob/main/lsp/golangcilint_ls.lua">golantcilint_ls</a>
       </li>
-      <li><code>gop_ls</code> –
-        <a href="https://github.com/qompassai/diver/blob/main/lsp/gop_ls.lua">config</a>
+      <li>
+        <a href="https://github.com/qompassai/diver/blob/main/lsp/gop_ls.lua">gop_ls</a>
       </li>
     </ul>
   </blockquote>
@@ -791,11 +791,11 @@ pip install bitbake-language-server
   </summary>
   <blockquote style="font-size: 1.2em; line-height: 1.8; padding: 25px; background: #f8f9fa; border-left: 6px solid #667eea; border-radius: 8px; margin: 15px 0; box-shadow: 0 2px 8px rgba(0,0,0,0.1);">
     <ul>
-      <li><code>gdscript_ls</code> –
-        <a href="https://github.com/qompassai/diver/blob/main/lsp/gdscript_ls.lua">config</a>
+      <li>
+        <a href="https://github.com/qompassai/diver/blob/main/lsp/gdscript_ls.lua">gdscript_ls</a>
       </li>
-      <li><code>gdshader_ls</code> –
-        <a href="https://github.com/qompassai/diver/blob/main/lsp/gdshader_ls.lua">config</a>
+      <li>
+        <a href="https://github.com/qompassai/diver/blob/main/lsp/gdshader_ls.lua">gdshader_ls</a>
       </li>
     </ul>
   </blockquote>
@@ -810,8 +810,8 @@ pip install bitbake-language-server
   </summary>
   <blockquote style="font-size: 1.2em; line-height: 1.8; padding: 25px; background: #f8f9fa; border-left: 6px solid #667eea; border-radius: 8px; margin: 15px 0; box-shadow: 0 2px 8px rgba(0,0,0,0.1);">
     <ul>
-      <li><code>graphql_ls</code> –
-        <a href="https://github.com/qompassai/diver/blob/main/lsp/graphql_ls.lua">config</a>
+      <li>
+        <a href="https://github.com/qompassai/diver/blob/main/lsp/graphql_ls.lua">graphql_ls</a>
       </li>
     </ul>
   </blockquote>
@@ -826,8 +826,8 @@ pip install bitbake-language-server
   </summary>
   <blockquote style="font-size: 1.2em; line-height: 1.8; padding: 25px; background: #f8f9fa; border-left: 6px solid #667eea; border-radius: 8px; margin: 15px 0; box-shadow: 0 2px 8px rgba(0,0,0,0.1);">
     <ul>
-      <li><code>groovy_ls</code> –
-        <a href="https://github.com/qompassai/diver/blob/main/lsp/groovy_ls.lua">config</a>
+      <li>
+        <a href="https://github.com/qompassai/diver/blob/main/lsp/groovy_ls.lua">groovy_ls</a>
       </li>
     </ul>
   </blockquote>
@@ -842,8 +842,8 @@ pip install bitbake-language-server
   </summary>
   <blockquote style="font-size: 1.2em; line-height: 1.8; padding: 25px; background: #f8f9fa; border-left: 6px solid #667eea; border-radius: 8px; margin: 15px 0; box-shadow: 0 2px 8px rgba(0,0,0,0.1);">
     <ul>
-      <li><code>helm_ls</code> –
-        <a href="https://github.com/qompassai/diver/blob/main/lsp/helm_ls.lua">config</a>
+      <li>
+        <a href="https://github.com/qompassai/diver/blob/main/lsp/helm_ls.lua">helm_ls</a>
       </li>
     </ul>
   </blockquote>
@@ -858,8 +858,8 @@ pip install bitbake-language-server
   </summary>
   <blockquote style="font-size: 1.2em; line-height: 1.8; padding: 25px; background: #f8f9fa; border-left: 6px solid #667eea; border-radius: 8px; margin: 15px 0; box-shadow: 0 2px 8px rgba(0,0,0,0.1);">
     <ul>
-      <li><code>herb_ls</code> –
-        <a href="https://github.com/qompassai/diver/blob/main/lsp/herb_ls.lua">config</a>
+      <li>
+        <a href="https://github.com/qompassai/diver/blob/main/lsp/herb_ls.lua">herb_ls</a>
       </li>
     </ul>
   </blockquote>
@@ -874,8 +874,8 @@ pip install bitbake-language-server
   </summary>
   <blockquote style="font-size: 1.2em; line-height: 1.8; padding: 25px; background: #f8f9fa; border-left: 6px solid #667eea; border-radius: 8px; margin: 15px 0; box-shadow: 0 2px 8px rgba(0,0,0,0.1);">
     <ul>
-      <li><code>hoon_ls</code> –
-        <a href="https://github.com/qompassai/diver/blob/main/lsp/hoon_ls.lua">config</a>
+      <li>
+        <a href="https://github.com/qompassai/diver/blob/main/lsp/hoon_ls.lua">hoon_ls</a>
       </li>
     </ul>
   </blockquote>
@@ -890,8 +890,8 @@ pip install bitbake-language-server
   </summary>
   <blockquote style="font-size: 1.2em; line-height: 1.8; padding: 25px; background: #f8f9fa; border-left: 6px solid #667eea; border-radius: 8px; margin: 15px 0; box-shadow: 0 2px 8px rgba(0,0,0,0.1);">
     <ul>
-      <li><code>hypr_ls</code> –
-        <a href="https://github.com/qompassai/diver/blob/main/lsp/hypr_ls.lua">config</a>
+      <li>
+        <a href="https://github.com/qompassai/diver/blob/main/lsp/hypr_ls.lua">hypr_ls</a>
       </li>
          </ul>
   </blockquote>
@@ -905,11 +905,11 @@ pip install bitbake-language-server
   </summary>
   <blockquote style="font-size: 1.2em; line-height: 1.8; padding: 25px; background: #f8f9fa; border-left: 6px solid #667eea; border-radius: 8px; margin: 15px 0; box-shadow: 0 2px 8px rgba(0,0,0,0.1);">
     <ul>
-      <li><code>java_ls</code> –
-        <a href="https://github.com/qompassai/diver/blob/main/lsp/java_ls.lua">config</a>
+      <li>
+        <a href="https://github.com/qompassai/diver/blob/main/lsp/java_ls.lua">java_ls</a>
       </li>
-      <li><code>jdt_ls</code> –
-        <a href="https://github.com/qompassai/diver/blob/main/lsp/jdt_ls.lua">config</a>
+      <li>
+        <a href="https://github.com/qompassai/diver/blob/main/lsp/jdt_ls.lua">jdt_ls</a>
       </li>
     </ul>
   </blockquote>
@@ -923,13 +923,13 @@ pip install bitbake-language-server
   </summary>
   <blockquote style="font-size: 1.2em; line-height: 1.8; padding: 25px; background: #f8f9fa; border-left: 6px solid #667eea; border-radius: 8px; margin: 15px 0; box-shadow: 0 2px 8px rgba(0,0,0,0.1);">
     <ul>
-      <li><code>eslint_ls</code> –
-        <a href="https://github.com/qompassai/diver/blob/main/lsp/eslint_ls.lua">config</a>
+      <li>
+        <a href="https://github.com/qompassai/diver/blob/main/lsp/eslint_ls.lua">eslint_ls</a>
       </li>
-      <li><code>quicklint_js</code> –
-        <a href="https://github.com/qompassai/diver/blob/main/lsp/quicklint_js.lua">config</a>
+      <li>
+        <a href="https://github.com/qompassai/diver/blob/main/lsp/quicklint_js.lua">quicklint_js</a>
       </li>
-      <li><code>markojs_ls</code> –
+      <li>
         <a href="https://github.com/qompassai/diver/blob/main/lsp/markojs_ls.lua">config</a>
       </li>
     </ul>
@@ -945,8 +945,8 @@ pip install bitbake-language-server
   </summary>
   <blockquote style="font-size: 1.2em; line-height: 1.8; padding: 25px; background: #f8f9fa; border-left: 6px solid #667eea; border-radius: 8px; margin: 15px 0; box-shadow: 0 2px 8px rgba(0,0,0,0.1);">
     <ul>
-      <li><code>jinja_ls</code> –
-        <a href="https://github.com/qompassai/diver/blob/main/lsp/jinja_ls.lua">config</a>
+      <li>
+        <a href="https://github.com/qompassai/diver/blob/main/lsp/jinja_ls.lua">jinja_ls</a>
       </li>
     </ul>
   </blockquote>
@@ -961,8 +961,8 @@ pip install bitbake-language-server
   </summary>
   <blockquote style="font-size: 1.2em; line-height: 1.8; padding: 25px; background: #f8f9fa; border-left: 6px solid #667eea; border-radius: 8px; margin: 15px 0; box-shadow: 0 2px 8px rgba(0,0,0,0.1);">
     <ul>
-      <li><code>jq_ls</code> –
-        <a href="https://github.com/qompassai/diver/blob/main/lsp/jq_ls.lua">config</a>
+      <li>
+        <a href="https://github.com/qompassai/diver/blob/main/lsp/jq_ls.lua">jq_ls</a>
       </li>
     </ul>
   </blockquote>
@@ -977,11 +977,11 @@ pip install bitbake-language-server
   </summary>
   <blockquote style="font-size: 1.2em; line-height: 1.8; padding: 25px; background: #f8f9fa; border-left: 6px solid #667eea; border-radius: 8px; margin: 15px 0; box-shadow: 0 2px 8px rgba(0,0,0,0.1);">
     <ul>
-      <li><code>json_ls</code> –
-        <a href="https://github.com/qompassai/diver/blob/main/lsp/json_ls.lua">config</a>
+      <li>
+        <a href="https://github.com/qompassai/diver/blob/main/lsp/json_ls.lua">json_ls</a>
       </li>
-      <li><code>jsonnet_ls</code> –
-        <a href="https://github.com/qompassai/diver/blob/main/lsp/jsonnet_ls.lua">config</a>
+      <li>
+        <a href="https://github.com/qompassai/diver/blob/main/lsp/jsonnet_ls.lua">jsonnet_ls</a>
       </li>
     </ul>
   </blockquote>
@@ -996,8 +996,8 @@ pip install bitbake-language-server
   </summary>
   <blockquote style="font-size: 1.2em; line-height: 1.8; padding: 25px; background: #f8f9fa; border-left: 6px solid #667eea; border-radius: 8px; margin: 15px 0; box-shadow: 0 2px 8px rgba(0,0,0,0.1);">
     <ul>
-      <li><code>julia_ls</code> –
-        <a href="https://github.com/qompassai/diver/blob/main/lsp/julia_ls.lua">config</a>
+      <li>
+        <a href="https://github.com/qompassai/diver/blob/main/lsp/julia_ls.lua">julia_ls</a>
       </li>
     </ul>
   </blockquote>
@@ -1012,8 +1012,8 @@ pip install bitbake-language-server
   </summary>
   <blockquote style="font-size: 1.2em; line-height: 1.8; padding: 25px; background: #f8f9fa; border-left: 6px solid #667eea; border-radius: 8px; margin: 15px 0; box-shadow: 0 2px 8px rgba(0,0,0,0.1);">
     <ul>
-      <li><code>just_ls</code> –
-        <a href="https://github.com/qompassai/diver/blob/main/lsp/just_ls.lua">config</a>
+      <li>
+        <a href="https://github.com/qompassai/diver/blob/main/lsp/just_ls.lua">just_ls</a>
       </li>
     </ul>
   </blockquote>
@@ -1028,8 +1028,8 @@ pip install bitbake-language-server
   </summary>
   <blockquote style="font-size: 1.2em; line-height: 1.8; padding: 25px; background: #f8f9fa; border-left: 6px solid #667eea; border-radius: 8px; margin: 15px 0; box-shadow: 0 2px 8px rgba(0,0,0,0.1);">
     <ul>
-      <li><code>kotlin_ls</code> –
-        <a href="https://github.com/qompassai/diver/blob/main/lsp/kotlin_ls.lua">config</a>
+      <li>
+        <a href="https://github.com/qompassai/diver/blob/main/lsp/kotlin_ls.lua">kotlin_ls</a>
       </li>
     </ul>
   </blockquote>
@@ -1043,11 +1043,11 @@ pip install bitbake-language-server
   </summary>
   <blockquote style="font-size: 1.2em; line-height: 1.8; padding: 25px; background: #f8f9fa; border-left: 6px solid #667eea; border-radius: 8px; margin: 15px 0; box-shadow: 0 2px 8px rgba(0,0,0,0.1);">
     <ul>
-       <li><code>ltex_plus_ls</code> –
-        <a href="https://github.com/qompassai/diver/blob/main/lsp/ltex_plus_ls.lua">config</a>
+       <li>
+        <a href="https://github.com/qompassai/diver/blob/main/lsp/ltex_plus_ls.lua">ltex_plus_ls</a>
       </li>
-      <li><code>texlab_ls</code> –
-        <a href="https://github.com/qompassai/diver/blob/main/lsp/texlab_ls.lua">config</a>
+      <li>
+        <a href="https://github.com/qompassai/diver/blob/main/lsp/texlab_ls.lua">texlab_ls</a>
       </li>
     </ul>
   </blockquote>
@@ -1062,14 +1062,14 @@ pip install bitbake-language-server
   </summary>
   <blockquote style="font-size: 1.2em; line-height: 1.8; padding: 25px; background: #f8f9fa; border-left: 6px solid #667eea; border-radius: 8px; margin: 15px 0; box-shadow: 0 2px 8px rgba(0,0,0,0.1);">
     <ul>
-      <li><code>mlir_ls</code> –
-        <a href="https://github.com/qompassai/diver/blob/main/lsp/mlir_ls.lua">config</a>
+      <li>
+        <a href="https://github.com/qompassai/diver/blob/main/lsp/mlir_ls.lua">mlir_ls</a>
       </li>
-      <li><code>mlirpdll_ls</code> –
-        <a href="https://github.com/qompassai/diver/blob/main/lsp/mlirpdll_ls.lua">config</a>
+      <li>
+        <a href="https://github.com/qompassai/diver/blob/main/lsp/mlirpdll_ls.lua">mlirpdll_ls</a>
       </li>
-      <li><code>tblgen_ls</code> –
-        <a href="https://github.com/qompassai/diver/blob/main/lsp/tblgen_ls.lua">config</a>
+      <li>
+        <a href="https://github.com/qompassai/diver/blob/main/lsp/tblgen_ls.lua">tblgen_ls</a>
       </li>
     </ul>
   </blockquote>
@@ -1084,14 +1084,14 @@ pip install bitbake-language-server
   </summary>
   <blockquote style="font-size: 1.2em; line-height: 1.8; padding: 25px; background: #f8f9fa; border-left: 6px solid #667eea; border-radius: 8px; margin: 15px 0; box-shadow: 0 2px 8px rgba(0,0,0,0.1);">
     <ul>
-      <li><code>lua_ls</code> –
-        <a href="https://github.com/qompassai/diver/blob/main/lsp/lua_ls.lua">config</a>
+      <li>
+        <a href="https://github.com/qompassai/diver/blob/main/lsp/lua_ls.lua">Lua_ls</a>
       </li>
-      <li><code>emmylua_ls</code> –
-        <a href="https://github.com/qompassai/diver/blob/main/lsp/emmylua_ls.lua">config</a>
+      <li>
+        <a href="https://github.com/qompassai/diver/blob/main/lsp/emmylua_ls.lua">emmylua_ls</a>
       </li>
-      <li><code>stylua_ls</code> –
-        <a href="https://github.com/qompassai/diver/blob/main/lsp/stylua_ls.lua">config</a>
+      <li>
+        <a href="https://github.com/qompassai/diver/blob/main/lsp/stylua_ls.lua">stylua_ls</a>
       </li>
     </ul>
   </blockquote>
@@ -1106,8 +1106,8 @@ pip install bitbake-language-server
   </summary>
   <blockquote style="font-size: 1.2em; line-height: 1.8; padding: 25px; background: #f8f9fa; border-left: 6px solid #667eea; border-radius: 8px; margin: 15px 0; box-shadow: 0 2px 8px rgba(0,0,0,0.1);">
     <ul>
-      <li><code>lwc_ls</code> –
-        <a href="https://github.com/qompassai/diver/blob/main/lsp/lwc_ls.lua">config</a>
+      <li>
+        <a href="https://github.com/qompassai/diver/blob/main/lsp/lwc_ls.lua">lwc_ls</a>
       </li>
     </ul>
   </blockquote>
@@ -1122,11 +1122,11 @@ pip install bitbake-language-server
   </summary>
   <blockquote style="font-size: 1.2em; line-height: 1.8; padding: 25px; background: #f8f9fa; border-left: 6px solid #667eea; border-radius: 8px; margin: 15px 0; box-shadow: 0 2px 8px rgba(0,0,0,0.1);">
     <ul>
-      <li><code>makelint_ls</code> –
-        <a href="https://github.com/qompassai/diver/blob/main/lsp/makelint_ls.lua">config</a>
+      <li>
+        <a href="https://github.com/qompassai/diver/blob/main/lsp/makelint_ls.lua">makelint_ls</a>
       </li>
-      <li><code>checkmake_ls</code> –
-        <a href="https://github.com/qompassai/diver/blob/main/lsp/checkmake_ls.lua">config</a>
+      <li>
+        <a href="https://github.com/qompassai/diver/blob/main/lsp/checkmake_ls.lua">checkmake_ls</a>
       </li>
     </ul>
   </blockquote>
@@ -1141,14 +1141,14 @@ pip install bitbake-language-server
   </summary>
   <blockquote style="font-size: 1.2em; line-height: 1.8; padding: 25px; background: #f8f9fa; border-left: 6px solid #667eea; border-radius: 8px; margin: 15px 0; box-shadow: 0 2px 8px rgba(0,0,0,0.1);">
     <ul>
-      <li><code>marksman_ls</code> –
-        <a href="https://github.com/qompassai/diver/blob/main/lsp/marksman_ls.lua">config</a>
+      <li>
+        <a href="https://github.com/qompassai/diver/blob/main/lsp/marksman_ls.lua">marksman_ls</a>
       </li>
-      <li><code>mdxana_ls</code> –
-        <a href="https://github.com/qompassai/diver/blob/main/lsp/mdxana_ls.lua">config</a>
+      <li>
+        <a href="https://github.com/qompassai/diver/blob/main/lsp/mdxana_ls.lua">mdxana_ls</a>
       </li>
-      <li><code>remark_ls</code> –
-        <a href="https://github.com/qompassai/diver/blob/main/lsp/remark_ls.lua">config</a>
+      <li>
+        <a href="https://github.com/qompassai/diver/blob/main/lsp/remark_ls.lua">remark_ls</a>
       </li>
          </ul>
   </blockquote>
@@ -1179,8 +1179,8 @@ pip install bitbake-language-server
   </summary>
   <blockquote style="font-size: 1.2em; line-height: 1.8; padding: 25px; background: #f8f9fa; border-left: 6px solid #667eea; border-radius: 8px; margin: 15px 0; box-shadow: 0 2px 8px rgba(0,0,0,0.1);">
     <ul>
-      <li><code>muon_ls</code> –
-        <a href="https://github.com/qompassai/diver/blob/main/lsp/muon_ls.lua">config</a>
+      <li>
+        <a href="https://github.com/qompassai/diver/blob/main/lsp/muon_ls.lua">muon_ls</a>
       </li>
     </ul>
   </blockquote>
@@ -1195,8 +1195,8 @@ pip install bitbake-language-server
   </summary>
   <blockquote style="font-size: 1.2em; line-height: 1.8; padding: 25px; background: #f8f9fa; border-left: 6px solid #667eea; border-radius: 8px; margin: 15px 0; box-shadow: 0 2px 8px rgba(0,0,0,0.1);">
     <ul>
-      <li><code>mutt_ls</code> –
-        <a href="https://github.com/qompassai/diver/blob/main/lsp/mutt_ls.lua">config</a>
+      <li>
+        <a href="https://github.com/qompassai/diver/blob/main/lsp/mutt_ls.lua">mutt_ls</a>
       </li>
     </ul>
   </blockquote>
@@ -1211,8 +1211,8 @@ pip install bitbake-language-server
   </summary>
   <blockquote style="font-size: 1.2em; line-height: 1.8; padding: 25px; background: #f8f9fa; border-left: 6px solid #667eea; border-radius: 8px; margin: 15px 0; box-shadow: 0 2px 8px rgba(0,0,0,0.1);">
     <ul>
-      <li><code>nextflow_ls</code> –
-        <a href="https://github.com/qompassai/diver/blob/main/lsp/nextflow_ls.lua">config</a>
+      <li>
+        <a href="https://github.com/qompassai/diver/blob/main/lsp/nextflow_ls.lua">nextflow_ls</a>
       </li>
     </ul>
   </blockquote>
@@ -1227,11 +1227,11 @@ pip install bitbake-language-server
   </summary>
   <blockquote style="font-size: 1.2em; line-height: 1.8; padding: 25px; background: #f8f9fa; border-left: 6px solid #667eea; border-radius: 8px; margin: 15px 0; box-shadow: 0 2px 8px rgba(0,0,0,0.1);">
     <ul>
-      <li><code>nginx_ls</code> –
-        <a href="https://github.com/qompassai/diver/blob/main/lsp/nginx_ls.lua">config</a>
+      <li>
+        <a href="https://github.com/qompassai/diver/blob/main/lsp/nginx_ls.lua">nginx_ls</a>
       </li>
-      <li><code>nginxcf_ls</code> –
-        <a href="https://github.com/qompassai/diver/blob/main/lsp/nginxcf_ls.lua">config</a>
+      <li>
+        <a href="https://github.com/qompassai/diver/blob/main/lsp/nginxcf_ls.lua">nginxcf_ls</a>
       </li>
     </ul>
   </blockquote>
@@ -1246,8 +1246,8 @@ pip install bitbake-language-server
   </summary>
   <blockquote style="font-size: 1.2em; line-height: 1.8; padding: 25px; background: #f8f9fa; border-left: 6px solid #667eea; border-radius: 8px; margin: 15px 0; box-shadow: 0 2px 8px rgba(0,0,0,0.1);">
     <ul>
-      <li><code>nickel_ls</code> –
-        <a href="https://github.com/qompassai/diver/blob/main/lsp/nickel_ls.lua">config</a>
+      <li>
+        <a href="https://github.com/qompassai/diver/blob/main/lsp/nickel_ls.lua">nickel_ls</a>
       </li>
     </ul>
   </blockquote>
@@ -1262,14 +1262,14 @@ pip install bitbake-language-server
   </summary>
   <blockquote style="font-size: 1.2em; line-height: 1.8; padding: 25px; background: #f8f9fa; border-left: 6px solid #667eea; border-radius: 8px; margin: 15px 0; box-shadow: 0 2px 8px rgba(0,0,0,0.1);">
     <ul>
-      <li><code>nil_ls</code> –
-        <a href="https://github.com/qompassai/diver/blob/main/lsp/nil_ls.lua">config</a>
+      <li>
+        <a href="https://github.com/qompassai/diver/blob/main/lsp/nil_ls.lua">nil_ls</a>
       </li>
-      <li><code>nixd_ls</code> –
-        <a href="https://github.com/qompassai/diver/blob/main/lsp/nixd_ls.lua">config</a>
+      <li>
+        <a href="https://github.com/qompassai/diver/blob/main/lsp/nixd_ls.lua">nixd_ls</a>
       </li>
-      <li><code>statix_ls</code> –
-        <a href="https://github.com/qompassai/diver/blob/main/lsp/statix_ls.lua">config</a>
+      <li>
+        <a href="https://github.com/qompassai/diver/blob/main/lsp/statix_ls.lua">statix_ls</a>
       </li>
     </ul>
   </blockquote>
@@ -1284,8 +1284,8 @@ pip install bitbake-language-server
   </summary>
   <blockquote style="font-size: 1.2em; line-height: 1.8; padding: 25px; background: #f8f9fa; border-left: 6px solid #667eea; border-radius: 8px; margin: 15px 0; box-shadow: 0 2px 8px rgba(0,0,0,0.1);">
     <ul>
-      <li><code>ocaml_ls</code> –
-        <a href="https://github.com/qompassai/diver/blob/main/lsp/ocaml_ls.lua">config</a>
+      <li>
+        <a href="https://github.com/qompassai/diver/blob/main/lsp/ocaml_ls.lua">ocaml_ls</a>
       </li>
     </ul>
   </blockquote>
@@ -1300,8 +1300,8 @@ pip install bitbake-language-server
   </summary>
   <blockquote style="font-size: 1.2em; line-height: 1.8; padding: 25px; background: #f8f9fa; border-left: 6px solid #667eea; border-radius: 8px; margin: 15px 0; box-shadow: 0 2px 8px rgba(0,0,0,0.1);">
     <ul>
-      <li><code>o_ls</code> –
-        <a href="https://github.com/qompassai/diver/blob/main/lsp/o_ls.lua">config</a>
+      <li>
+        <a href="https://github.com/qompassai/diver/blob/main/lsp/o_ls.lua">o_ls</a>
       </li>
     </ul>
   </blockquote>
@@ -1316,8 +1316,8 @@ pip install bitbake-language-server
   </summary>
   <blockquote style="font-size: 1.2em; line-height: 1.8; padding: 25px; background: #f8f9fa; border-left: 6px solid #667eea; border-radius: 8px; margin: 15px 0; box-shadow: 0 2px 8px rgba(0,0,0,0.1);">
     <ul>
-      <li><code>openscad_ls</code> –
-        <a href="https://github.com/qompassai/diver/blob/main/lsp/openscad_ls.lua">config</a>
+      <li>
+        <a href="https://github.com/qompassai/diver/blob/main/lsp/openscad_ls.lua">openscad_ls</a>
       </li>
     </ul>
   </blockquote>
@@ -1588,20 +1588,20 @@ pip install bitbake-language-server
       <li><code>rubocop_ls</code> –
         <a href="https://github.com/qompassai/diver/blob/main/lsp/rubocop_ls.lua">config</a>
       </li>
-      <li><code>ruby_ls</code> –
-        <a href="https://github.com/qompassai/diver/blob/main/lsp/ruby_ls.lua">config</a>
+      <li>
+        <a href="https://github.com/qompassai/diver/blob/main/lsp/ruby_ls.lua">ruby_ls</a>
       </li>
-      <li><code>sorbet_ls</code> –
-        <a href="https://github.com/qompassai/diver/blob/main/lsp/sorbet_ls.lua">config</a>
+      <li>
+        <a href="https://github.com/qompassai/diver/blob/main/lsp/sorbet_ls.lua">sorbet_ls</a>
       </li>
-      <li><code>steep_ls</code> –
-        <a href="https://github.com/qompassai/diver/blob/main/lsp/steep_ls.lua">config</a>
+      <li>
+        <a href="https://github.com/qompassai/diver/blob/main/lsp/steep_ls.lua">steep_ls</a>
       </li>
-      <li><code>standardrb_ls</code> –
+      <li><code>
         <a href="https://github.com/qompassai/diver/blob/main/lsp/standardrb_ls.lua">config</a>
       </li>
-       <li><code>stimulus_ls</code> –
-        <a href="https://github.com/qompassai/diver/blob/main/lsp/stimulus_ls.lua">config</a>
+       <li>
+        <a href="https://github.com/qompassai/diver/blob/main/lsp/stimulus_ls.lua">stimulus_ls</a>
       </li>
       <li><code>typeprof_ls</code> –
         <a href="https://github.com/qompassai/diver/blob/main/lsp/typeprof_ls.lua">config</a>
@@ -1752,8 +1752,8 @@ pip install bitbake-language-server
   </summary>
   <blockquote style="font-size: 1.2em; line-height: 1.8; padding: 25px; background: #f8f9fa; border-left: 6px solid #667eea; border-radius: 8px; margin: 15px 0; box-shadow: 0 2px 8px rgba(0,0,0,0.1);">
     <ul>
-      <li><code>sq_ls</code> –
-        <a href="https://github.com/qompassai/diver/blob/main/lsp/sq_ls.lua">config</a>
+      <li>
+        <a href="https://github.com/qompassai/diver/blob/main/lsp/sq_ls.lua">sq_ls</a>
       </li>
     </ul>
   </blockquote>
@@ -1768,8 +1768,8 @@ pip install bitbake-language-server
   </summary>
   <blockquote style="font-size: 1.2em; line-height: 1.8; padding: 25px; background: #f8f9fa; border-left: 6px solid #667eea; border-radius: 8px; margin: 15px 0; box-shadow: 0 2px 8px rgba(0,0,0,0.1);">
     <ul>
-      <li><code>starlark_ls</code> –
-        <a href="https://github.com/qompassai/diver/blob/main/lsp/starlark_ls.lua">config</a>
+      <li>
+        <a href="https://github.com/qompassai/diver/blob/main/lsp/starlark_ls.lua">starlark_ls</a>
       </li>
     </ul>
   </blockquote>
@@ -1784,8 +1784,8 @@ pip install bitbake-language-server
   </summary>
   <blockquote style="font-size: 1.2em; line-height: 1.8; padding: 25px; background: #f8f9fa; border-left: 6px solid #667eea; border-radius: 8px; margin: 15px 0; box-shadow: 0 2px 8px rgba(0,0,0,0.1);">
     <ul>
-      <li><code>svelte_ls</code> –
-        <a href="https://github.com/qompassai/diver/blob/main/lsp/svelte_ls.lua">config</a>
+      <li>
+        <a href="https://github.com/qompassai/diver/blob/main/lsp/svelte_ls.lua">svelte_ls</a>
       </li>
     </ul>
   </blockquote>
@@ -1800,8 +1800,8 @@ pip install bitbake-language-server
   </summary>
   <blockquote style="font-size: 1.2em; line-height: 1.8; padding: 25px; background: #f8f9fa; border-left: 6px solid #667eea; border-radius: 8px; margin: 15px 0; box-shadow: 0 2px 8px rgba(0,0,0,0.1);">
     <ul>
-      <li><code>systemd_ls</code> –
-        <a href="https://github.com/qompassai/diver/blob/main/lsp/systemd_ls.lua">config</a>
+      <li>
+        <a href="https://github.com/qompassai/diver/blob/main/lsp/systemd_ls.lua">systemd_ls</a>
       </li>
     </ul>
   </blockquote>
@@ -1816,11 +1816,11 @@ pip install bitbake-language-server
   </summary>
   <blockquote style="font-size: 1.2em; line-height: 1.8; padding: 25px; background: #f8f9fa; border-left: 6px solid #667eea; border-radius: 8px; margin: 15px 0; box-shadow: 0 2px 8px rgba(0,0,0,0.1);">
     <ul>
-      <li><code>terraform_ls</code> –
+      <li>
         <a href="https://github.com/qompassai/diver/blob/main/lsp/terraform_ls.lua">config</a>
       </li>
-      <li><code>tflint_ls</code> –
-        <a href="https://github.com/qompassai/diver/blob/main/lsp/tflint_ls.lua">config</a>
+      <li>
+        <a href="https://github.com/qompassai/diver/blob/main/lsp/tflint_ls.lua">tflint_ls</a>
       </li>
     </ul>
   </blockquote>
@@ -1835,13 +1835,39 @@ pip install bitbake-language-server
   </summary>
   <blockquote style="font-size: 1.2em; line-height: 1.8; padding: 25px; background: #f8f9fa; border-left: 6px solid #667eea; border-radius: 8px; margin: 15px 0; box-shadow: 0 2px 8px rgba(0,0,0,0.1);">
     <ul>
-      <li><code>taplo_ls</code> –
-        <a href="https://github.com/qompassai/diver/blob/main/lsp/taplo_ls.lua">config</a>
+      <li><code>
+        <a href="https://github.com/qompassai/diver/blob/main/lsp/taplo_ls.lua">taplo_ls</a>
       </li>
-      <li><code>tombi_ls</code> –
-        <a href="https://github.com/qompassai/diver/blob/main/lsp/tombi_ls.lua">config</a>
+      <li>
+        <a href="https://github.com/qompassai/diver/blob/main/lsp/tombi_ls.lua">tombi_ls</a>
       </li>
     </ul>
+  </blockquote>
+</details>
+  <details>
+  <summary style="font-size: 1.4em; font-weight: bold; padding: 15px; background: #667eea; color: white; border-radius: 10px; cursor: pointer; margin: 10px 0; display: flex; align-items: center; gap: 8px;">
+    <div class="icon-row" style="display: flex; align-items: center; gap: 6px;">
+      <img src="https://raw.githubusercontent.com/qompassai/svg/refs/heads/main/assets/icons/typescript/typescript.svg"
+           alt="typescript" width="60" height="60" title="Typescript" />
+    </div>
+    <strong>TreeSitter-Query</strong>
+  </summary>
+  <blockquote style="font-size: 1.2em; line-height: 1.8; padding: 25px; background: #f8f9fa; border-left: 6px solid #667eea; border-radius: 8px; margin: 15px 0; box-shadow: 0 2px 8px rgba(0,0,0,0.1);">
+    <ul>
+      <li>
+        <a href="https://github.com/qompassai/diver/blob/main/lsp/tsquery_ls.lua">tsquery_ls</a>
+      </li>
+    </ul>
+<p>
+      <a href="https://github.com/ribru17/ts_query_ls">TreeSitter-Query LSP Reference</a>
+    </p>
+ <div style="background: #f8f9fa; padding: 15px; border-radius: 5px; margin-top: 10px; font-family: monospace;">
+
+```sh
+cargo install --git https://github.com/ribru17/ts_query_ls ts_query_ls
+```
+
+</div>
   </blockquote>
 </details>
 <details>
@@ -1870,18 +1896,52 @@ pip install bitbake-language-server
   </summary>
   <blockquote style="font-size: 1.2em; line-height: 1.8; padding: 25px; background: #f8f9fa; border-left: 6px solid #667eea; border-radius: 8px; margin: 15px 0; box-shadow: 0 2px 8px rgba(0,0,0,0.1);">
     <ul>
-      <li><code>ts_ls</code> –
-        <a href="https://github.com/qompassai/diver/blob/main/lsp/ts_ls.lua">config</a>
+      <li>
+        <a href="https://github.com/qompassai/diver/blob/main/lsp/ts_ls.lua">ts_ls</a>
       </li>
-      <li><code>tsquery_ls</code> –
-        <a href="https://github.com/qompassai/diver/blob/main/lsp/tsquery_ls.lua">config</a>
-      </li>
-      <li><code>tsp_ls</code> –
-        <a href="https://github.com/qompassai/diver/blob/main/lsp/tsp_ls.lua">config</a>
+      <li>
+        <a href="https://github.com/qompassai/diver/blob/main/lsp/tsquery_ls.lua">tsquery_ls</a>
       </li>
     </ul>
+<p>
+      <a href="https://github.com/Myriad-Dreamin/tinymist">TSP LSP Reference</a>
+    </p>
+ <div style="background: #f8f9fa; padding: 15px; border-radius: 5px; margin-top: 10px; font-family: monospace;">
+
+```sh
+curl -sSL https://github.com/hongjr03/tinymist-nightly-installer/releases/latest/download/run.sh | bash
+```
+
+</div>
   </blockquote>
 </details>
+  <details>
+  <summary style="font-size: 1.4em; font-weight: bold; padding: 15px; background: #667eea; color: white; border-radius: 10px; cursor: pointer; margin: 10px 0; display: flex; align-items: center; gap: 8px;">
+    <div class="icon-row" style="display: flex; align-items: center; gap: 6px;">
+      <img src="https://raw.githubusercontent.com/qompassai/svg/refs/heads/main/assets/icons/typespec/typespec.svg"
+           alt="typespec" width="60" height="60" title="TypeSpec" />
+    </div>
+    <strong>Typespec</strong>
+  </summary>
+  <blockquote style="font-size: 1.2em; line-height: 1.8; padding: 25px; background: #f8f9fa; border-left: 6px solid #667eea; border-radius: 8px; margin: 15px 0; box-shadow: 0 2px 8px rgba(0,0,0,0.1);">
+    <ul>
+      <li>
+        <a href="https://github.com/qompassai/diver/blob/main/lsp/tsp_ls.lua">tsp_ls</a>
+      </li>
+    </ul>
+<p>
+      <a href="https://github.com/Myriad-Dreamin/tinymist">Typespec LSP Reference</a>
+    </p>
+ <div style="background: #f8f9fa; padding: 15px; border-radius: 5px; margin-top: 10px; font-family: monospace;">
+
+```sh
+pnpm add -g @typespec/compiler
+```
+
+</div>
+  </blockquote>
+</details>
+
 <details>
   <summary style="font-size: 1.4em; font-weight: bold; padding: 15px; background: #667eea; color: white; border-radius: 10px; cursor: pointer; margin: 10px 0; display: flex; align-items: center; gap: 8px;">
     <div class="icon-row" style="display: flex; align-items: center; gap: 6px;">
@@ -1892,10 +1952,20 @@ pip install bitbake-language-server
   </summary>
   <blockquote style="font-size: 1.2em; line-height: 1.8; padding: 25px; background: #f8f9fa; border-left: 6px solid #667eea; border-radius: 8px; margin: 15px 0; box-shadow: 0 2px 8px rgba(0,0,0,0.1);">
     <ul>
-      <li><code>tinymist_ls</code> –
-        <a href="https://github.com/qompassai/diver/blob/main/lsp/tinymist_ls.lua">config</a>
+      <li>
+        <a href="https://github.com/qompassai/diver/blob/main/lsp/tinymist_ls.lua">tinymist_ls</a>
       </li>
     </ul>
+ <p>
+      <a href="https://github.com/Myriad-Dreamin/tinymist">TinyMist Typst LSP Reference</a>
+    </p>
+ <div style="background: #f8f9fa; padding: 15px; border-radius: 5px; margin-top: 10px; font-family: monospace;">
+
+```sh
+curl -sSL https://github.com/hongjr03/tinymist-nightly-installer/releases/latest/download/run.sh | bash
+```
+
+</div>
   </blockquote>
 </details>
 <details>
@@ -1908,10 +1978,19 @@ pip install bitbake-language-server
   </summary>
   <blockquote style="font-size: 1.2em; line-height: 1.8; padding: 25px; background: #f8f9fa; border-left: 6px solid #667eea; border-radius: 8px; margin: 15px 0; box-shadow: 0 2px 8px rgba(0,0,0,0.1);">
     <ul>
-      <li><code>vala_ls</code> –
-        <a href="https://github.com/qompassai/diver/blob/main/lsp/vala_ls.lua">config</a>
+      <li>
+        <a href="https://github.com/qompassai/diver/blob/main/lsp/vala_ls.lua">vala_ls</a>
       </li>
     </ul>
+ <p>
+      <a href="https://github.com/vala-lang/vala-language-server">Vala LSP Reference</a>
+    </p>
+ <div style="background: #f8f9fa; padding: 15px; border-radius: 5px; margin-top: 10px; font-family: monospace;">
+
+```sh
+```
+
+</div>
   </blockquote>
 </details>
 <details>
@@ -1924,19 +2003,58 @@ pip install bitbake-language-server
   </summary>
   <blockquote style="font-size: 1.2em; line-height: 1.8; padding: 25px; background: #f8f9fa; border-left: 6px solid #667eea; border-radius: 8px; margin: 15px 0; box-shadow: 0 2px 8px rgba(0,0,0,0.1);">
     <ul>
-      <li><code>verible_ls</code> –
-        <a href="https://github.com/qompassai/diver/blob/main/lsp/verible_ls.lua">config</a>
+      <li>
+        <a href="https://github.com/qompassai/diver/blob/main/lsp/verible_ls.lua">verible_ls</a>
       </li>
-      <li><code>veridian_ls</code> –
-        <a href="https://github.com/qompassai/diver/blob/main/lsp/veridian_ls.lua">config</a>
+  <p>
+      <a href="https://github.com/chipsalliance/verible">Verible LSP Reference</a>
+    </p>
+ <div style="background: #f8f9fa; padding: 15px; border-radius: 5px; margin-top: 10px; font-family: monospace;">
+
+```sh
+```
+
+</div>
+      <li>
+        <a href="https://github.com/qompassai/diver/blob/main/lsp/veridian_ls.lua">veridian_ls</a>
       </li>
-      <li><code>veryl_ls</code> –
+  <p>
+      <a href="https://github.com/vivekmalneedi/veridian">Veridian LSP Reference</a>
+    </p>
+ <div style="background: #f8f9fa; padding: 15px; border-radius: 5px; margin-top: 10px; font-family: monospace;">
+
+```sh
+cargo install --git https://github.com/vivekmalneedi/veridian.git --all-features
+```
+
+</div>
+      <li>
         <a href="https://github.com/qompassai/diver/blob/main/lsp/veryl_ls.lua">config</a>
       </li>
-      <li><code>svlant_ls</code> –
-        <a href="https://github.com/qompassai/diver/blob/main/lsp/svlant_ls.lua">config</a>
+  <p>
+      <a href="https://github.com/iamcco/vim-language-server">Vim LSP Reference</a>
+    </p>
+ <div style="background: #f8f9fa; padding: 15px; border-radius: 5px; margin-top: 10px; font-family: monospace;">
+
+```sh
+pnpm add -g vim-language-server
+```
+
+</div>
+      <li>
+        <a href="https://github.com/qompassai/diver/blob/main/lsp/svlang_ls.lua">svlang_ls</a>
       </li>
     </ul>
+  <p>
+      <a href="https://github.com/imc-trading/svlangserver">Vim LSP Reference</a>
+    </p>
+ <div style="background: #f8f9fa; padding: 15px; border-radius: 5px; margin-top: 10px; font-family: monospace;">
+
+```sh
+pnpm add -g @imc-trading/svlangserver
+```
+
+</div>
   </blockquote>
 </details>
 <details>
@@ -1949,42 +2067,72 @@ pip install bitbake-language-server
   </summary>
   <blockquote style="font-size: 1.2em; line-height: 1.8; padding: 25px; background: #f8f9fa; border-left: 6px solid #667eea; border-radius: 8px; margin: 15px 0; box-shadow: 0 2px 8px rgba(0,0,0,0.1);">
     <ul>
-      <li><code>vim_ls</code> –
-        <a href="https://github.com/qompassai/diver/blob/main/lsp/vim_ls.lua">config</a>
+      <li>
+        <a href="https://github.com/qompassai/diver/blob/main/lsp/vim_ls.lua">vim_ls</a>
       </li>
     </ul>
+    <p>
+      <a href="https://github.com/iamcco/vim-language-server">Vim LSP Reference</a>
+    </p>
+ <div style="background: #f8f9fa; padding: 15px; border-radius: 5px; margin-top: 10px; font-family: monospace;">
+
+```sh
+pnpm add -g vim-language-server
+```
+
+</div>
   </blockquote>
 </details>
 <details>
  <summary style="font-size: 1.4em; font-weight: bold; padding: 15px; background: #667eea; color: white; border-radius: 10px; cursor: pointer; margin: 10px 0; display: flex; align-items: center; gap: 8px;">
     <div class="icon-row" style="display: flex; align-items: center; gap: 6px;">
       <img src="https://raw.githubusercontent.com/qompassai/svg/refs/heads/main/assets/icons/vue/vue.svg"
-           alt="vue" width="60" height="60" title="vue" />
+           alt="vue" width="60" height="60" title="Vue" />
     </div>
     <strong>Vue</strong>
   </summary>
   <blockquote style="font-size: 1.2em; line-height: 1.8; padding: 25px; background: #f8f9fa; border-left: 6px solid #667eea; border-radius: 8px; margin: 15px 0; box-shadow: 0 2px 8px rgba(0,0,0,0.1);">
     <ul>
-      <li><code>vue_ls</code> –
-        <a href="https://github.com/qompassai/diver/blob/main/lsp/vue_ls.lua">config</a>
+      <li><
+        <a href="https://github.com/qompassai/diver/blob/main/lsp/vue_ls.lua">vue_ls</a>
       </li>
     </ul>
+     <p>
+      <a href="https://github.com/vuejs/language-tools/tree/master/packages/language-server">Wasm Language Tools LSP Reference</a>
+    </p>
+ <div style="background: #f8f9fa; padding: 15px; border-radius: 5px; margin-top: 10px; font-family: monospace;">
+
+```sh
+pnpm add -g  @vue/language-server
+```
+
+</div>
   </blockquote>
 </details>
 <details>
  <summary style="font-size: 1.4em; font-weight: bold; padding: 15px; background: #667eea; color: white; border-radius: 10px; cursor: pointer; margin: 10px 0; display: flex; align-items: center; gap: 8px;">
     <div class="icon-row" style="display: flex; align-items: center; gap: 6px;">
       <img src="https://raw.githubusercontent.com/qompassai/svg/refs/heads/main/assets/icons/wasm/wasm.svg"
-           alt="wasm" width="60" height="60" title="wasm" />
+           alt="wasm" width="60" height="60" title="WASM" />
     </div>
     <strong>WebAssembly (WASM)</strong>
   </summary>
   <blockquote style="font-size: 1.2em; line-height: 1.8; padding: 25px; background: #f8f9fa; border-left: 6px solid #667eea; border-radius: 8px; margin: 15px 0; box-shadow: 0 2px 8px rgba(0,0,0,0.1);">
     <ul>
-      <li><code>wasmlangtoo_ls</code> –
-        <a href="https://github.com/qompassai/diver/blob/main/lsp/wasmlangtoo_ls.lua">config</a>
+      <li>
+        <a href="https://github.com/qompassai/diver/blob/main/lsp/wasmlangtoo_ls.lua">wasmlangtoo_ls</a>
       </li>
     </ul>
+      <p>
+      <a href="https://github.com/g-plane/wasm-language-tools">Wasm Language Tools LSP Reference</a>
+    </p>
+ <div style="background: #f8f9fa; padding: 15px; border-radius: 5px; margin-top: 10px; font-family: monospace;">
+
+```sh
+cargo install --git https://github.com/wgsl-analyzer/wgsl-analyzer wgsl-analyzer
+```
+
+</div>
   </blockquote>
 </details>
 <details>
@@ -1997,10 +2145,20 @@ pip install bitbake-language-server
   </summary>
   <blockquote style="font-size: 1.2em; line-height: 1.8; padding: 25px; background: #f8f9fa; border-left: 6px solid #667eea; border-radius: 8px; margin: 15px 0; box-shadow: 0 2px 8px rgba(0,0,0,0.1);">
     <ul>
-      <li><code>wgslana_ls</code> –
-        <a href="https://github.com/qompassai/diver/blob/main/lsp/wgslana_ls.lua">config</a>
+      <li>
+        <a href="https://github.com/qompassai/diver/blob/main/lsp/wgslana_ls.lua">wgslana_ls</a>
       </li>
     </ul>
+     <p>
+      <a href="https://github.com/wgsl-analyzer/wgsl-analyzer">WGSL Analyzer LSP Reference</a>
+    </p>
+ <div style="background: #f8f9fa; padding: 15px; border-radius: 5px; margin-top: 10px; font-family: monospace;">
+
+```sh
+cargo install --git https://github.com/wgsl-analyzer/wgsl-analyzer wgsl-analyzer
+```
+
+</div>
   </blockquote>
 </details>
 <details>
@@ -2013,10 +2171,19 @@ pip install bitbake-language-server
   </summary>
   <blockquote style="font-size: 1.2em; line-height: 1.8; padding: 25px; background: #f8f9fa; border-left: 6px solid #667eea; border-radius: 8px; margin: 15px 0; box-shadow: 0 2px 8px rgba(0,0,0,0.1);">
     <ul>
-      <li><code>lemminx</code> –
-        <a href="https://github.com/qompassai/diver/blob/main/lsp/lemminx.lua">config</a>
+      <li>
+        <a href="https://github.com/qompassai/diver/blob/main/lsp/lemminx.lua">lemminx_ls</a>
       </li>
     </ul>
+          <p>
+      <a href="https://github.com/eclipse-lemminx/lemminx?tab=readme-ov-file>Lemminx LSP Reference</a>
+    </p>
+ <div style="background: #f8f9fa; padding: 15px; border-radius: 5px; margin-top: 10px; font-family: monospace;">
+
+```sh
+```
+
+</div>
   </blockquote>
 </details>
 <details>
@@ -2029,13 +2196,33 @@ pip install bitbake-language-server
   </summary>
   <blockquote style="font-size: 1.2em; line-height: 1.8; padding: 25px; background: #f8f9fa; border-left: 6px solid #667eea; border-radius: 8px; margin: 15px 0; box-shadow: 0 2px 8px rgba(0,0,0,0.1);">
     <ul>
-      <li><code>yaml_ls</code> –
-        <a href="https://github.com/qompassai/diver/blob/main/lsp/yaml_ls.lua">config</a>
+      <li>
+        <a href="https://github.com/qompassai/diver/blob/main/lsp/yaml_ls.lua">yaml_ls</a>
       </li>
-        <li><code>yamllint_ls</code> –
-        <a href="https://github.com/qompassai/diver/blob/main/lsp/yamllint_ls.lua">config</a>
+        <p>
+      <a href="https://github.com/redhat-developer/yaml-language-server>Yaml LSP Reference</a>
+    </p>
+ <div style="background: #f8f9fa; padding: 15px; border-radius: 5px; margin-top: 10px; font-family: monospace;">
+
+```sh
+pnpm add -g yaml-language-server
+```
+
+</div>
+        <li>
+        <a href="https://github.com/qompassai/diver/blob/main/lsp/yamllint_ls.lua">yamllint_ls</a>
       </li>
     </ul>
+    <p>
+      <a href="https://yamllint.readthedocs.io/en/stable/>Yamllint LSP Reference</a>
+    </p>
+ <div style="background: #f8f9fa; padding: 15px; border-radius: 5px; margin-top: 10px; font-family: monospace;">
+
+```sh
+pip install yamllint
+```
+
+</div>
   </blockquote>
 </details>
 <details>
@@ -2048,16 +2235,46 @@ pip install bitbake-language-server
   </summary>
   <blockquote style="font-size: 1.2em; line-height: 1.8; padding: 25px; background: #f8f9fa; border-left: 6px solid #667eea; border-radius: 8px; margin: 15px 0; box-shadow: 0 2px 8px rgba(0,0,0,0.1);">
     <ul>
-      <li><code>ziggy_ls</code> –
-        <a href="https://github.com/qompassai/diver/blob/main/lsp/ziggy_ls.lua">config</a>
+      <li>
+        <a href="https://github.com/qompassai/diver/blob/main/lsp/ziggy_ls.lua">ziggy_ls</a>
       </li>
-      <li><code>ziggy_schema_ls</code> –
-        <a href="https://github.com/qompassai/diver/blob/main/lsp/ziggy_schema_ls.lua">config</a>
+       <p>
+      <a href="https://ziggy-lang.io/documentation/ziggy-lsp/">Ziggy LSP Reference</a>
+    </p>
+ <div style="background: #f8f9fa; padding: 15px; border-radius: 5px; margin-top: 10px; font-family: monospace;">
+
+```sh
+git clone https://github.com/kristoff-it/ziggy.git && cd ziggy && zig build -Doptimize=ReleaseSafe install
+```
+
+</div>
+      <li>
+        <a href="https://github.com/qompassai/diver/blob/main/lsp/ziggy_schema_ls.lua">ziggy_schema_ls</a>
       </li>
-      <li><code>z_ls</code> –
-        <a href="https://github.com/qompassai/diver/blob/main/lsp/z_ls.lua">config</a>
+       <p>
+      <a href="https://ziggy-lang.io/documentation/ziggy-lsp/>Azure Pipelines LSP Reference"</a>
+    </p>
+ <div style="background: #f8f9fa; padding: 15px; border-radius: 5px; margin-top: 10px; font-family: monospace;">
+
+```sh
+git clone https://github.com/kristoff-it/ziggy.git && cd ziggy && zig build -Doptimize=ReleaseSafe installation
+
+```
+
+</div>
+      <li>
+        <a href="https://github.com/qompassai/diver/blob/main/lsp/z_ls.lua">z_ls</a>
       </li>
     </ul>
+       <p>
+      <a href="https://zigtools.org/zls/install/">Zig LSP Reference</a>
+    </p>
+ <div style="background: #f8f9fa; padding: 15px; border-radius: 5px; margin-top: 10px; font-family: monospace;">
+
+```sh
+git clone https://github.com/zigtools/zls && cd zls && zig build -Doptimize=ReleaseSafe
+```
+
+</div>
   </blockquote>
 </details>
-</div>

@@ -3,7 +3,7 @@
 -- Copyright (C) 2025 Qompass AI, All rights reserved
 -- --------------------------------------------------
 --Reference: ttps://github.com/EmmyLuaLs/emmylua-analyzer-rust
---cargo install emmylua
+--cargo install emmylua_ls
 vim.lsp.config['emmylua_ls'] = {
   cmd = {
     'emmylua_ls',
@@ -27,10 +27,10 @@ vim.lsp.config['emmylua_ls'] = {
   settings = {
     Emmylua = {
       completion = {
-        callSnippet = 'Replace',
+        callSnippet = 'Both',
         displayContext = 4,
         enable = true,
-        keywordSnippet = 'Enable'
+        keywordSnippet = 'Both'
       },
       diagnostics = {
         disable = {
@@ -45,8 +45,7 @@ vim.lsp.config['emmylua_ls'] = {
           'vim',
         },
         severity = {
-          ['deprecated'] = 'Warning',
-          ['unused-local'] = 'Info',
+          ['deprecated'] = 'Error',
         },
         unusedLocalExclude = {
           '_*',
@@ -72,16 +71,22 @@ vim.lsp.config['emmylua_ls'] = {
       },
       runtime = {
         version = 'LuaJIT',
+          requireLikeFunction = {
+          'import',
+          'load',
+          'dofile'
+        },
       },
       telemetry = {
         enable = false,
       },
       workspace = {
         checkThirdParty = true,
+        encoding = 'utf-8',
         ignoreDir = {
           'build',
           'node_modules',
-          '.git'
+          'dist'
         },
         library = {
           vim.api.nvim_get_runtime_file('', true),
@@ -92,7 +97,7 @@ vim.lsp.config['emmylua_ls'] = {
           '${3rd}/lazy.nvim/library',
           '${3rd}/neodev.nvim/types/nightly',
           '${3rd}/blink.cmp/library',
-          vim.fn.expand("$HOME") .. '/.config/nvim/lua/',
+          vim.fn.expand('$HOME') .. '/.config/nvim/lua/',
         },
         maxPreload = 1000,
         preloadFileSize = 10000,
