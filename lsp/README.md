@@ -2176,12 +2176,13 @@ cargo install --git https://github.com/wgsl-analyzer/wgsl-analyzer wgsl-analyzer
       </li>
     </ul>
           <p>
-      <a href="https://github.com/eclipse-lemminx/lemminx?tab=readme-ov-file>Lemminx LSP Reference</a>
+      <a href="https://github.com/eclipse-lemminx/lemminx?tab=readme-ov-file">Lemminx LSP Reference</a>
     </p>
  <div style="background: #f8f9fa; padding: 15px; border-radius: 5px; margin-top: 10px; font-family: monospace;">
 
 ```sh
-```
+
+  ```
 
 </div>
   </blockquote>
@@ -2200,7 +2201,7 @@ cargo install --git https://github.com/wgsl-analyzer/wgsl-analyzer wgsl-analyzer
         <a href="https://github.com/qompassai/diver/blob/main/lsp/yaml_ls.lua">yaml_ls</a>
       </li>
         <p>
-      <a href="https://github.com/redhat-developer/yaml-language-server>Yaml LSP Reference</a>
+      <a href="https://github.com/redhat-developer/yaml-language-server">Yaml LSP Reference</a>
     </p>
  <div style="background: #f8f9fa; padding: 15px; border-radius: 5px; margin-top: 10px; font-family: monospace;">
 
@@ -2214,7 +2215,7 @@ pnpm add -g yaml-language-server
       </li>
     </ul>
     <p>
-      <a href="https://yamllint.readthedocs.io/en/stable/>Yamllint LSP Reference</a>
+      <a href="https://yamllint.readthedocs.io/en/stable/">Yamllint LSP Reference</a>
     </p>
  <div style="background: #f8f9fa; padding: 15px; border-radius: 5px; margin-top: 10px; font-family: monospace;">
 
@@ -2278,3 +2279,4 @@ git clone https://github.com/zigtools/zls && cd zls && zig build -Doptimize=Rele
 </div>
   </blockquote>
 </details>
+</div>
