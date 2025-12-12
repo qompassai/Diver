@@ -1,6 +1,9 @@
 <!-- /qompassai/Diver/lsp/README.md -->
+
 <!-- Qompass AI Diver LSP Docs -->
+
 <!-- Copyright (C) 2025 Qompass AI, All rights reserved -->
+
 <!-- ---------------------------------------- -->
 
 <div align="center">
@@ -1765,6 +1768,16 @@ pnpm add -g @tailwindcss/language-server
       </li>
       <li><code>
         <a href="https://github.com/qompassai/diver/blob/main/lsp/solang_ls.lua">solang_ls</a></code>
+        <p>
+      <a href=" https://github.com/sqls-server/sqls">Solang LSP Reference</a>
+    </p>
+ <div style="background: #f8f9fa; padding: 15px; border-radius: 5px; margin-top: 10px; font-family: monospace;">
+
+```sh
+cargo install solang
+```
+
+</div>
       </li>
       <li><code>
         <a href="https://github.com/qompassai/diver/blob/main/lsp/solidnomic_ls.lua">solidnomic_ls</a></code>
@@ -1786,6 +1799,16 @@ pnpm add -g @tailwindcss/language-server
         <a href="https://github.com/qompassai/diver/blob/main/lsp/sq_ls.lua">sq_ls</a>
       </li>
     </ul>
+               <p>
+      <a href=" https://github.com/sqls-server/sqls">SQL LSP Reference</a>
+    </p>
+ <div style="background: #f8f9fa; padding: 15px; border-radius: 5px; margin-top: 10px; font-family: monospace;">
+
+```sh
+go install github.com/sqls-server/sqls@latest
+```
+
+</div>
   </blockquote>
 </details>
 <details>
@@ -1802,6 +1825,16 @@ pnpm add -g @tailwindcss/language-server
         <a href="https://github.com/qompassai/diver/blob/main/lsp/starlark_ls.lua">starlark_ls</a>
       </li>
     </ul>
+               <p>
+      <a href="https://github.com/facebookexperimental/starlark-rust/">Starlark LSP Reference</a>
+    </p>
+ <div style="background: #f8f9fa; padding: 15px; border-radius: 5px; margin-top: 10px; font-family: monospace;">
+
+```sh
+cargo install --git https://github.com/facebook/starlark-rust.git starlark_bin
+```
+
+</div>
   </blockquote>
 </details>
 <details>
@@ -1818,6 +1851,16 @@ pnpm add -g @tailwindcss/language-server
         <a href="https://github.com/qompassai/diver/blob/main/lsp/svelte_ls.lua">svelte_ls</a>
       </li>
     </ul>
+               <p>
+      <a href="https://github.com/sveltejs/language-tools/tree/master/packages/language-server">Svelte LSP Reference</a>
+    </p>
+ <div style="background: #f8f9fa; padding: 15px; border-radius: 5px; margin-top: 10px; font-family: monospace;">
+
+```sh
+pnpm add -g svelte-language-server
+```
+
+</div>
   </blockquote>
 </details>
 <details>
@@ -1834,6 +1877,16 @@ pnpm add -g @tailwindcss/language-server
         <a href="https://github.com/qompassai/diver/blob/main/lsp/systemd_ls.lua">systemd_ls</a>
       </li>
     </ul>
+               <p>
+      <a href="https://github.com/terraform-linters/tflint">TFLint LSP Reference</a>
+    </p>
+ <div style="background: #f8f9fa; padding: 15px; border-radius: 5px; margin-top: 10px; font-family: monospace;">
+
+```sh
+curl -s https://raw.githubusercontent.com/terraform-linters/tflint/master/install_linux.sh | bash
+```
+
+</div>
   </blockquote>
 </details>
 <details>
@@ -1849,10 +1902,36 @@ pnpm add -g @tailwindcss/language-server
       <li>
         <a href="https://github.com/qompassai/diver/blob/main/lsp/terraform_ls.lua">terraform_ls</a>
       </li>
+        </ul>
+             <p>
+      <a href="https://github.com/juliosueiras/terraform-lsp">Terraform LSP Reference</a>
+    </p>
+ <div style="background: #f8f9fa; padding: 15px; border-radius: 5px; margin-top: 10px; font-family: monospace;">
+
+```sh
+git clone https://github.com/juliosueiras/terraform-lsp.git && cd terraform-lsp && GO111MODULE=on go mod download && go build
+```
+
+```sh
+git clone https://github.com/juliosueiras/terraform-lsp.git && cd terraform-lsp && nix-build
+```
+
+</div>
+      <ul>
       <li>
         <a href="https://github.com/qompassai/diver/blob/main/lsp/tflint_ls.lua">tflint_ls</a>
       </li>
     </ul>
+        <p>
+      <a href="https://github.com/terraform-linters/tflint">TFLint LSP Reference</a>
+    </p>
+ <div style="background: #f8f9fa; padding: 15px; border-radius: 5px; margin-top: 10px; font-family: monospace;">
+
+```sh
+curl -s https://raw.githubusercontent.com/terraform-linters/tflint/master/install_linux.sh | bash
+```
+
+</div>
   </blockquote>
 </details>
 <details>

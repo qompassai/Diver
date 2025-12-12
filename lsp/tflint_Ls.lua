@@ -2,7 +2,7 @@
 -- Qompass AI Terraform Lint (TFLint) LSP Spec
 -- Copyright (C) 2025 Qompass AI, All rights reserved
 -- ---------------------------------------------------
-vim.lsp.config['tflint'] = {
+vim.lsp.config['tflint_ls'] = {
   cmd = {
     'tflint',
     '--langserver'
