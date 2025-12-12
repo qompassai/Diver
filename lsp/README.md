@@ -138,7 +138,9 @@ pnpm add -g @ansible/ansible-language-server
   <blockquote style="font-size: 1.2em; line-height: 1.8; padding: 25px; background: #f8f9fa; border-left: 6px solid #667eea; border-radius: 8px; margin: 15px 0; box-shadow: 0 2px 8px rgba(0,0,0,0.1);">
     <ul>
       <li>
+          <p>
         <a href="https://github.com/qompassai/diver/blob/main/lsp/arduino_ls.lua">arduino_ls</a>
+            </p>
       </li>
     </ul>
          <p>
@@ -164,7 +166,9 @@ go install github.com/arduino/arduino-language-server@latest
   <blockquote style="font-size: 1.2em; line-height: 1.8; padding: 25px; background: #f8f9fa; border-left: 6px solid #667eea; border-radius: 8px; margin: 15px 0; box-shadow: 0 2px 8px rgba(0,0,0,0.1);">
     <ul>
       <li>
-        <a href="https://github.com/qompassai/diver/blob/main/lsp/asm_ls.lua">asm_ls</a>
+          <p>
+        <a href="https://github.com/qompassai/diver/blob/main/lsp/asm_ls.lua"> asm_ls</a>
+            </p>
       </li>
         </ul>
         <p>
@@ -202,7 +206,7 @@ pnpm add -g m68k-lsp-server
   </summary>
   <blockquote style="font-size: 1.2em; line-height: 1.8; padding: 25px; background: #f8f9fa; border-left: 6px solid #667eea; border-radius: 8px; margin: 15px 0; box-shadow: 0 2px 8px rgba(0,0,0,0.1);">
     <ul>
-      <li><code>
+      <li>
         <a href="https://github.com/qompassai/diver/blob/main/lsp/astro_ls.lua">astro_ls</a>
       </li>
     </ul>
@@ -1163,8 +1167,10 @@ pip install bitbake-language-server
   </summary>
   <blockquote style="font-size: 1.2em; line-height: 1.8; padding: 25px; background: #f8f9fa; border-left: 6px solid #667eea; border-radius: 8px; margin: 15px 0; box-shadow: 0 2px 8px rgba(0,0,0,0.1);">
     <ul>
-      <li><code>matlab_ls</code> –
-        <a href="https://github.com/qompassai/diver/blob/main/lsp/matlab_ls.lua">config</a>
+      <li>
+          <code>
+        <a href="https://github.com/qompassai/diver/blob/main/lsp/matlab_ls.lua">matlab_ls</a>
+            </code>
       </li>
     </ul>
   </blockquote>
@@ -1332,11 +1338,11 @@ pip install bitbake-language-server
   </summary>
   <blockquote style="font-size: 1.2em; line-height: 1.8; padding: 25px; background: #f8f9fa; border-left: 6px solid #667eea; border-radius: 8px; margin: 15px 0; box-shadow: 0 2px 8px rgba(0,0,0,0.1);">
     <ul>
-      <li><code>p_ls</code> –
-        <a href="https://github.com/qompassai/diver/blob/main/lsp/p_ls.lua">config</a>
+      <li>
+        <a href="https://github.com/qompassai/diver/blob/main/lsp/p_ls.lua">p_ls</a>
       </li>
-      <li><code>perl_ls</code> –
-        <a href="https://github.com/qompassai/diver/blob/main/lsp/perl_ls.lua">config</a>
+      <li><code>
+        <a href="https://github.com/qompassai/diver/blob/main/lsp/perl_ls.lua">perlav_ls</a>
       </li>
       <li><code>perlnav_ls</code> –
         <a href="https://github.com/qompassai/diver/blob/main/lsp/perlnav_ls.lua">config</a>
@@ -1357,20 +1363,24 @@ pip install bitbake-language-server
   </summary>
   <blockquote style="font-size: 1.2em; line-height: 1.8; padding: 25px; background: #f8f9fa; border-left: 6px solid #667eea; border-radius: 8px; margin: 15px 0; box-shadow: 0 2px 8px rgba(0,0,0,0.1);">
     <ul>
-      <li><code>intelephense_ls</code> –
-        <a href="https://github.com/qompassai/diver/blob/main/lsp/intelephense_ls.lua">config</a>
+      <li><code>
+        <a href="https://github.com/qompassai/diver/blob/main/lsp/intelephense_ls.lua">intelephense</a>
+          </code>
       </li>
-      <li><code>phpactor_ls</code> –
-        <a href="https://github.com/qompassai/diver/blob/main/lsp/phpactor_ls.lua">config</a>
+      <li><code>
+        <a href="https://github.com/qompassai/diver/blob/main/lsp/phpactor_ls.lua">phpactor_ls</a>
+          </code>
       </li>
-      <li><code>laravel_ls</code> –
-        <a href="https://github.com/qompassai/diver/blob/main/lsp/laravel_ls.lua">config</a>
+      <li><code>
+        <a href="https://github.com/qompassai/diver/blob/main/lsp/laravel_ls.lua">laraavel_ls</a>
+          </code>
       </li>
-      <li><code>psalm_ls</code> –
-        <a href="https://github.com/qompassai/diver/blob/main/lsp/psalm_ls.lua">config</a>
+      <li><code>
+        <a href="https://github.com/qompassai/diver/blob/main/lsp/psalm_ls.lua">psalm_ls</a>
+          </code>
       </li>
-      <li><code>phan_ls</code> –
-        <a href="https://github.com/qompassai/diver/blob/main/lsp/phan_ls.lua">config</a>
+      <li><code>
+        <a href="https://github.com/qompassai/diver/blob/main/lsp/phan_ls.lua">phan_ls</a></code>
       </li>
     </ul>
   </blockquote>
@@ -1436,14 +1446,11 @@ pip install bitbake-language-server
   </summary>
   <blockquote style="font-size: 1.2em; line-height: 1.8; padding: 25px; background: #f8f9fa; border-left: 6px solid #667eea; border-radius: 8px; margin: 15px 0; box-shadow: 0 2px 8px rgba(0,0,0,0.1);">
     <ul>
-      <li><code>proto_ls</code> –
-        <a href="https://github.com/qompassai/diver/blob/main/lsp/proto_ls.lua">config</a>
+      <li>
+        <a href="https://github.com/qompassai/diver/blob/main/lsp/proto_ls.lua">proto_ls</a>
       </li>
-      <li><code>buf_ls</code> –
-        <a href="https://github.com/qompassai/diver/blob/main/lsp/buf_ls.lua">config</a>
-      </li>
-      <li><code>buf</code> –
-        <a href="https://github.com/qompassai/diver/blob/main/lsp/buf.lua">config</a>
+      <li>
+        <a href="https://github.com/qompassai/diver/blob/main/lsp/buf_ls.lua">buf_ls</a>
       </li>
     </ul>
   </blockquote>
@@ -2181,8 +2188,7 @@ cargo install --git https://github.com/wgsl-analyzer/wgsl-analyzer wgsl-analyzer
  <div style="background: #f8f9fa; padding: 15px; border-radius: 5px; margin-top: 10px; font-family: monospace;">
 
 ```sh
-
-  ```
+```
 
 </div>
   </blockquote>
