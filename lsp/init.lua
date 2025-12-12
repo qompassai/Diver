@@ -36,7 +36,7 @@ vim.lsp.enable({
   'bq_ls',
   'bsc_ls',
   'buck2_ls',
-  --'buddy_ls',
+  --'buddy_ls', --not-using
   --'buf',
   'buf_ls',
   'bzl_ls',

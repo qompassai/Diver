@@ -25,7 +25,7 @@ vim.lsp.config['texlab_ls'] = {
       build = {
         executable = 'latexmk',
         args = {
-          "-pdf",
+          '-pdf',
           "-interaction=nonstopmode",
           "-synctex=1",
           "%f",
@@ -86,7 +86,7 @@ vim.lsp.config['texlab_ls'] = {
     end
     local function buf_cancel_build()
       return client:exec_cmd({
-        title = "cancel",
+        title = 'cancel',
         command = "texlab.cancelBuild",
       }, {
         bufnr = bufnr,
@@ -94,6 +94,7 @@ vim.lsp.config['texlab_ls'] = {
     end
     local function dependency_graph()
       client:exec_cmd({
+        title = 'showDependency',
         command = "texlab.showDependencyGraph",
       }, {
         bufnr = 0,

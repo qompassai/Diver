@@ -3,79 +3,32 @@
 -- Copyright (C) 2025 Qompass AI, All rights reserved
 ------------------------------------------------------
 vim.lsp.config['lua_ls'] = {
+
   cmd = {
     'lua-language-server',
-    '--checklevel=Information',
-    '--force_accept_workspace'
+    '--checklevel=Information'
   },
-  codeActionProvider = {
-    codeActionKinds = {
-      '',
-      'quickfix',
-      'refactor.rewrite',
-      'refactor.extract',
-    },
-    resolveProvider = true,
-  },
-  colorProvider = true,
   filetypes = {
     'lua',
     'luau',
   },
-  semanticTokensProvider = {
-    full = true,
-    legend = {
-      tokenModifiers = {
-        'async',
-        'bstract',
-        'declaration',
-        'defaultLibrary',
-        'definition',
-        'deprecated',
-        'documentation',
-        'global',
-        'modification',
-        'readonly',
-        'static'
-      },
-      tokenTypes = {
-        'class',
-        'comment',
-        'decorator',
-        'enum',
-        'enumMember',
-        'event',
-        'function',
-        'interface',
-        'keyword',
-        'macro',
-        'method',
-        'modifier',
-        'namespace',
-        'number',
-        'operator',
-        'parameter',
-        'property',
-        'regexp',
-        'struct',
-        'typeParameter',
-        'string',
-        'type',
-        'variable'
-      },
-    },
-    range = true,
-  },
   root_markers = {
+    '.emmyrc.json',
     '.luarc.json',
     '.luarc.jsonc',
     '.luarc.json5',
     'luacheckrc',
     '.luacheckrc',
-    '.stylua.toml'
+    '.stylua.toml',
+    'selene.toml',
+    'selene.yml',
+    '.git',
   },
   settings = {
     Lua = {
+      codeLens = {
+        enable = true
+      },
       format = {
         enable = true,
         defaultConfig = {
@@ -122,7 +75,7 @@ vim.lsp.config['lua_ls'] = {
         },
       },
       workspace = {
-        checkThirdParty = true,
+        checkThirdParty = false,
         library = {
           vim.api.nvim_get_runtime_file('', true),
           vim.env.VIMRUNTIME,
@@ -147,10 +100,12 @@ vim.lsp.config['lua_ls'] = {
         enable = false,
       },
       completion = {
+        autoRequire = true,
         callSnippet = 'Both',
-        displayContext = 4,
+        displayContext = 1,
         enable = true,
-        keywordSnippet = 'Both'
+        keywordSnippet = 'Both',
+        postfix = '@',
       },
       hint = {
         enable = true,
@@ -177,4 +132,20 @@ vim.lsp.config['lua_ls'] = {
       end,
     })
   end,
+  on_init = function(client)
+    if client.workspace_folders then
+      local path = client.workspace_folders[1].name
+      if path ~= vim.fn.stdpath('config')
+          and (vim.uv.fs_stat(path .. '/.luarc.json')
+            or vim.uv.fs_stat(path .. '/.luarc.jsonc'))
+      then
+        return
+      end
+    end
+    client.config.settings = vim.tbl_deep_extend('force', client.config.settings, {
+      Lua = {
+        runtime = { version = 'LuaJIT' },
+      },
+    })
+  end
 }

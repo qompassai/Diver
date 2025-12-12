@@ -2,8 +2,6 @@
 -- Qompass AI Emmyluals Config
 -- Copyright (C) 2025 Qompass AI, All rights reserved
 -- --------------------------------------------------
---Reference: ttps://github.com/EmmyLuaLs/emmylua-analyzer-rust
---cargo install emmylua_ls
 vim.lsp.config['emmylua_ls'] = {
   cmd = {
     'emmylua_ls',
@@ -19,6 +17,7 @@ vim.lsp.config['emmylua_ls'] = {
   },
   root_markers = {
     '.emmylua.json',
+    '.emmyrc.json',
     '.luarc.json',
     '.luarc.json',
     '.luacheckrc',
@@ -26,11 +25,23 @@ vim.lsp.config['emmylua_ls'] = {
   workspace_required = false,
   settings = {
     Emmylua = {
-      completion = {
-        callSnippet = 'Both',
-        displayContext = 4,
+      codeAction = {
+        insertSpace = false,
+      },
+      codeLens = {
         enable = true,
-        keywordSnippet = 'Both'
+      },
+      completion = {
+        enable = true,
+        autoRequire = true,
+        autoRequireFunction = 'require',
+        autoRequireNamingConvention = 'keep',
+        autoRequireSeparator = '.',
+        callSnippet = 'Both',
+        postfix = '@',
+        baseFunctionIncludesName = true,
+        displayContext = 4,
+        keywordSnippet = 'Both',
       },
       diagnostics = {
         disable = {
@@ -51,6 +62,12 @@ vim.lsp.config['emmylua_ls'] = {
           '_*',
         },
       },
+      doc = {
+        syntax = 'md',
+      },
+      documentColor = {
+        enable = true,
+      },
       format = {
         defaultConfig = {
           align_continuous_assign_statement = true,
@@ -62,32 +79,78 @@ vim.lsp.config['emmylua_ls'] = {
         enable = true,
       },
       hint = {
-        arrayIndex = 'Enable',
-        await = true,
         enable = true,
-        paramName = 'All',
-        paramType = true,
-        setType = true,
+        paramHint = true,
+        indexHint = true,
+        localHint = true,
+        overrideHint = true,
+        metaCallHint = true,
+      },
+      hover = {
+        enable = true,
+      },
+      inlineValues = {
+        enable = true,
+      },
+      references = {
+        enable = true,
+        fuzzySearch = true,
+        shortStringSearch = false,
+      },
+      reformat = {
+        externalTool = nil,
+        externalToolRangeFormat = nil,
+        useDiff = false,
       },
       runtime = {
         version = 'LuaJIT',
-          requireLikeFunction = {
+        requireLikeFunction = {
           'import',
           'load',
-          'dofile'
+          'dofile',
         },
+        frameworkVersions = {},
+        extensions = {
+          '.lua',
+          '.luau'
+        },
+        requirePattern = {
+          '?.lua',
+          '?/init.lua'
+        },
+        classDefaultCall = {
+          functionName = 'new',
+          forceNonColon = false,
+          forceReturnSelf = true,
+        },
+        nonstandardSymbol = { 'continue' },
+        special = {
+          errorf = 'error',
+        },
+      },
+      semanticTokens = {
+        enable = true,
+      },
+      signature = {
+        detailSignatureHelper = true,
+      },
+      strict = {
+        requirePath = false,
+        typeCall = false,
+        arrayIndex = true,
+        metaOverrideFileDefine = true,
+        docBaseConstMatchBaseType = true,
       },
       telemetry = {
         enable = false,
       },
       workspace = {
-        checkThirdParty = true,
-        encoding = 'utf-8',
         ignoreDir = {
           'build',
           'node_modules',
-          'dist'
+          'dist',
         },
+        ignoreGlobs = {},
         library = {
           vim.api.nvim_get_runtime_file('', true),
           vim.env.VIMRUNTIME,
@@ -99,8 +162,12 @@ vim.lsp.config['emmylua_ls'] = {
           '${3rd}/blink.cmp/library',
           vim.fn.expand('$HOME') .. '/.config/nvim/lua/',
         },
-        maxPreload = 1000,
+        workspaceRoots = {},
+        encoding = 'utf-8',
+        moduleMap = {},
         preloadFileSize = 10000,
+        reindexDuration = 5000,
+        enableReindex = false,
       },
     },
   },
