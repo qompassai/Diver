@@ -1,0 +1,36 @@
+-- /qompassai/Diver/lua/types/core/mason.lua
+-- Qompass AI Diver Mason Types
+-- Copyright (C) 2025 Qompass AI, All rights reserved
+
+---@meta
+
+---@class MasonOpts
+---@field install_root_dir? string
+---@field PATH? string
+---@field log_level? integer
+---@field max_concurrent_installers? integer
+---@field registries? string[]
+---@field providers? string[]
+---@field sources? string[]
+---@field github? { download_url_template: string }
+---@field ui? {
+---   check_outdated_packages_on_open: boolean,
+---   border: string,
+---   backdrop: integer,
+---   width: number,
+---   height: number,
+---   icons: table }
+---@field pip? { install_args: string[] }
+---@class MasonToolInstallerOpts
+---@field ensure_installed string[]|table[]
+---@field auto_update boolean
+---@field run_on_start boolean
+---@field start_delay integer
+---@field debounce_hours integer
+---@field integrations table
+---@class MasonLSPConfigOpts
+---@field automatic_enable boolean
+---@field ensure_installed string[]
+---@field automatic_installation boolean
+---@class MasonModule
+---@field setup_mason fun()

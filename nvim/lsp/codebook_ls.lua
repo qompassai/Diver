@@ -1,0 +1,32 @@
+-- /qompassai/Diver/lsp/codebook.lua
+-- Qompass AI Codebook LSP Spec
+-- Code-aware spell checker for code
+------------------------------------------------------
+vim.lsp.config['codebook_ls'] = {
+    cmd = {
+        'codebook-lsp',
+    },
+    filetypes = {
+        'lua',
+        'vim',
+        'bash',
+        'sh',
+        'zsh',
+        'python',
+        'ruby',
+        'javascript',
+        'typescript',
+        'tsx',
+        'jsx',
+        'go',
+        'rust',
+        'c',
+        'cpp',
+        'markdown',
+        'mdx',
+        'yaml',
+        'toml',
+        'json',
+    },
+    settings = {},
+}

@@ -1,0 +1,106 @@
+-- /qompassai/Diver/lsp/served_ls.lua
+-- Qompass AI Serve-D LSP Spec
+-- Copyright (C) 2025 Qompass AI, All rights reserved
+-- ----------------------------------------
+vim.lsp.config['served_ls'] = {
+    default_config = {
+        cmd = {
+            'serve-d',
+            '--provide',
+            'http',
+            '--require',
+            'served:workspace-d',
+        },
+        filetypes = {
+            'd',
+            'di',
+            'dpp',
+        },
+        root_markers = {
+            '.git',
+            'dub.json',
+            'dub.sdl',
+            'meson.build',
+            'package.json',
+        },
+        init_options = {},
+    },
+    codeActionProvider = {
+        codeActionKinds = {
+            '',
+            'quickfix',
+            'refactor',
+            'refactor.extract',
+            'refactor.rewrite',
+            'source',
+            'source.organizeImports',
+        },
+        resolveProvider = false,
+    },
+    colorProvider = false,
+    completionProvider = {
+        resolveProvider = true,
+        triggerCharacters = {
+            '.',
+            ':',
+            '(',
+            ',',
+            '"',
+            '\'',
+            '/',
+            '>',
+        },
+    },
+    definitionProvider = true,
+    declarationProvider = true,
+    documentFormattingProvider = true,
+    documentHighlightProvider = true,
+    documentRangeFormattingProvider = true,
+    documentSymbolProvider = true,
+    hoverProvider = true,
+    implementationProvider = false,
+    referencesProvider = true,
+    renameProvider = true,
+    semanticTokensProvider = {
+        full = true,
+        legend = {
+            tokenModifiers = {
+                'declaration',
+                'definition',
+                'readonly',
+                'static',
+                'deprecated',
+                'documentation',
+            },
+            tokenTypes = {
+                'class',
+                'comment',
+                'enum',
+                'enumMember',
+                'event',
+                'function',
+                'interface',
+                'keyword',
+                'method',
+                'namespace',
+                'number',
+                'operator',
+                'parameter',
+                'property',
+                'string',
+                'struct',
+                'type',
+                'typeParameter',
+                'variable',
+            },
+        },
+        range = true,
+    },
+    signatureHelpProvider = {
+        triggerCharacters = {
+            '(',
+            ',',
+        },
+    },
+    workspaceSymbolProvider = true,
+}

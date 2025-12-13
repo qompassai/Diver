@@ -1,0 +1,51 @@
+-- /qompassai/Diver/lua/types/autocmds.lua
+-- Qompass AI Diver Autocmd Types
+-- Copyright (C) 2025 Qompass AI, All rights reserved
+------------------------------------------------------
+---@meta
+
+---@class AutocmdCallbackArgs
+---@field id integer
+---@field event string
+---@field group? integer
+---@field match string
+---@field buf? integer
+---@field file? string
+---@field data? any
+---@class AutocmdOpts
+---@field event string|string[]
+---@field pattern? string|string[]
+---@field group? string|integer
+---@field buffer? integer
+---@field desc? string
+---@field once? boolean
+---@field nested? boolean
+---@field callback? fun(args: AutocmdCallbackArgs)
+---@field command? string
+---@class AugroupsTable
+---@field [string] integer
+---@class FiletypeConfig
+---@field pattern table<string, string>
+---@class VimFiletypeAPI
+---@field add fun(config: FiletypeConfig)
+---@class VimAPI
+---@field filetype VimFiletypeAPI
+---@field diagnostic VimDiagnosticAPI
+---@field lsp VimLspAPI
+---@field opt_local VimOptLocalAPI
+---@class VimDiagnosticAPI
+---@field reset fun()
+---@class VimLspAPI
+---@field buf_document_highlight fun()
+---@field get_clients fun(opts: table): table[]
+---@field buf_semantic_tokens_refresh fun()
+---@field buf_format fun(opts: table)
+---@class VimOptLocalAPI
+---@field shiftwidth integer
+---@field tabstop integer
+---@field softtabstop integer
+---@field expandtab boolean
+---@field autoindent boolean
+---@field smartindent boolean
+---@class VimKeysetAPI
+---@field nvim_buf_create_user_command fun(buffer: integer, name: string, command: string, opts: table)

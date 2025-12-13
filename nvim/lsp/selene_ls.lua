@@ -1,0 +1,4 @@
+-- /qompassai/Diver/lsp/selene_ls.lua
+-- Qompass AI Selene 3P LSP Config
+-- Copyright (C) 2025 Qompass AI, All rights reserved
+-- ----------------------------------------

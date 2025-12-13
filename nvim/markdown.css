@@ -1,0 +1,27 @@
+/* markdown.css */
+/* Qompass AI Markdown CSS Config */
+/* Copyright (C) 2025 Qompass AI, All rights reserved */
+/* ---------------------------------------- */
+
+code,
+pre,
+pre code,
+blockquote code,
+details code,
+summary code,
+blockquote pre code,
+details pre code,
+summary pre code,
+div code,
+div pre code {
+  font-style: normal !important;
+  font-family: monospace !important;
+}
+
+pre, code {
+  background-color: #f8f9fa;
+  border-radius: 5px;
+  padding: 8px;
+  font-size: 0.95em;
+}
+

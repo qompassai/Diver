@@ -1,0 +1,12 @@
+# /qompassai/dotfiles/.config/selene/.selene.toml
+# Qompass AI Selene Config
+# Copyright (C) 2025 Qompass AI, All rights reserved
+# ----------------------------------------
+[selene]
+base = "lua51"
+name = "neovim"
+
+[globals.vim]
+type = "any"
+writable = "full"
+

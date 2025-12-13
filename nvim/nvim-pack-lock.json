@@ -1,0 +1,48 @@
+{
+  "plugins": {
+    "LuaSnip": {
+      "rev": "3732756842a2f7e0e76a7b0487e9692072857277",
+      "src": "https://github.com/L3MON4D3/LuaSnip"
+    },
+    "ale": {
+      "rev": "ca1da76d5e91e42f676654905c0c7b6d074b8068",
+      "src": "https://github.com/dense-analysis/ale"
+    },
+    "blink-cmp-dictionary": {
+      "rev": "944b3b215b01303672d4213758db7c5c5a1e3c92",
+      "src": "https://github.com/Kaiser-Yang/blink-cmp-dictionary"
+    },
+    "blink-emoji.nvim": {
+      "rev": "066013e4c98a9318408ee3f1ca2dbcb6fa3e4c06",
+      "src": "https://github.com/moyiz/blink-emoji.nvim"
+    },
+    "blink.cmp": {
+      "rev": "3033d278848129899f94843e12ebb83a31342faa",
+      "src": "https://github.com/Saghen/blink.cmp"
+    },
+    "blink.compat": {
+      "rev": "1454f14a8d855a578ceeba77c62538fa1459a67c",
+      "src": "https://github.com/Saghen/blink.compat"
+    },
+    "cmp-buffer": {
+      "rev": "b74fab3656eea9de20a9b8116afa3cfc4ec09657",
+      "src": "https://github.com/hrsh7th/cmp-buffer"
+    },
+    "cmp-nvim-lua": {
+      "rev": "e3a22cb071eb9d6508a156306b102c45cd2d573d",
+      "src": "https://github.com/hrsh7th/cmp-nvim-lua"
+    },
+    "friendly-snippets": {
+      "rev": "572f5660cf05f8cd8834e096d7b4c921ba18e175",
+      "src": "https://github.com/rafamadriz/friendly-snippets"
+    },
+    "nvim-treesitter": {
+      "rev": "42fc28ba918343ebfd5565147a42a26580579482",
+      "src": "https://github.com/nvim-treesitter/nvim-treesitter"
+    },
+    "sops.nvim": {
+      "rev": "5946285744ffef26b792839d9130135365bfa8ea",
+      "src": "https://github.com/trixnz/sops.nvim"
+    }
+  }
+}

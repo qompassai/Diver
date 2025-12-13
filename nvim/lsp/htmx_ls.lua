@@ -1,0 +1,59 @@
+-- /qompassai/Diver/lsp/htmx.lua
+-- Qompass AI Htmx LSP Config
+-- Copyright (C) 2025 Qompass AI, All rights reserved
+-----------------------------------------------------
+-- References:  https://github.com/ThePrimeagen/htmx-lsp |
+-- cargo install htmx-lsp
+vim.lsp.config['htmx_ls'] = {
+    cmd = {
+        'htmx-lsp',
+    },
+    filetypes = {
+        'aspnetcorerazor',
+        'astro',
+        'astro-markdown',
+        'blade',
+        'clojure',
+        'django-html',
+        'htmldjango',
+        'edge',
+        'eelixir',
+        'elixir',
+        'ejs',
+        'erb',
+        'eruby',
+        'gohtml',
+        'gohtmltmpl',
+        'haml',
+        'handlebars',
+        'hbs',
+        'html',
+        'htmlangular',
+        'html-eex',
+        'heex',
+        'jade',
+        'leaf',
+        'liquid',
+        'markdown',
+        'mdx',
+        'mustache',
+        'njk',
+        'nunjucks',
+        'php',
+        'razor',
+        'slim',
+        'twig',
+        'javascript',
+        'javascriptreact',
+        'reason',
+        'rescript',
+        'typescript',
+        'typescriptreact',
+        'vue',
+        'svelte',
+        'templ',
+    },
+    root_markers = {
+        '.git',
+    },
+}
