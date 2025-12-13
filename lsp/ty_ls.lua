@@ -5,29 +5,29 @@
 --pip install ty
 --https://github.com/astral-sh/ty?tab=readme-ov-file
 vim.lsp.config['ty_ls'] = {
-  cmd = { 'ty', 'server' },
-  filetypes = { 'python' },
-  root_markers = {
-    'ty.toml',
-    'pyproject.toml',
-    '.git',
-  },
-  settings = {
-    ty = {
-      disableLanguageServices = false,
-      diagnosticMode = 'workspace',
-      inlayHints = {
-        variableTypes = true,
-        callArgumentNames = true,
-      },
-      experimental = {
-        rename = true,
-        autoImport = true,
-      },
+    cmd = { 'ty', 'server' },
+    filetypes = { 'python' },
+    root_markers = {
+        'ty.toml',
+        'pyproject.toml',
+        '.git',
     },
-  },
-  init_options = {
-    logFile = '/tmp/ty-lsp.log',
-    logLevel = 'info',
-  },
+    settings = {
+        ty = {
+            disableLanguageServices = false,
+            diagnosticMode = 'workspace',
+            inlayHints = {
+                variableTypes = true,
+                callArgumentNames = true,
+            },
+            experimental = {
+                rename = true,
+                autoImport = true,
+            },
+        },
+    },
+    init_options = {
+        logFile = '/tmp/ty-lsp.log',
+        logLevel = 'info',
+    },
 }

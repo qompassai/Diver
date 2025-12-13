@@ -4,9 +4,10 @@
 -----------------------------------------------------
 --Reference:  https://github.com/Beaglefoot/awk-language-server/
 vim.lsp.config['awk_ls'] = {
-  cmd = {
-    'awk-language-server' },
-  filetypes = {
-    'awk'
-  },
+    cmd = {
+        'awk-language-server',
+    },
+    filetypes = {
+        'awk',
+    },
 }

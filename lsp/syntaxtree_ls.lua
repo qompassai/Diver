@@ -5,16 +5,16 @@
 -- Reference:  https://ruby-syntax-tree.github.io/syntax_tree/
 -- gem install syntax_tree
 vim.lsp.config['syntaxtree_ls'] = {
-  cmd = {
-    'stree',
-    'lsp'
-  },
-  filetypes = {
-    'ruby'
-  },
-  root_markers = {
-    'Gemfile',
-    '.git',
-    '.streerc'
-  },
+    cmd = {
+        'stree',
+        'lsp',
+    },
+    filetypes = {
+        'ruby',
+    },
+    root_markers = {
+        'Gemfile',
+        '.git',
+        '.streerc',
+    },
 }

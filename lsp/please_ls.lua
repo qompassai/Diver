@@ -5,15 +5,15 @@
 --Reference: https://github.com/thought-machine/please
 --curl -s https://get.please.build | bash
 vim.lsp.config['please_ls'] = {
-  cmd = {
-    'plz',
-    'tool',
-    'lps'
-  },
-  filetypes = {
-    'bzl'
-  },
-  root_markers = {
-    '.plzconfig'
-  },
+    cmd = {
+        'plz',
+        'tool',
+        'lps',
+    },
+    filetypes = {
+        'bzl',
+    },
+    root_markers = {
+        '.plzconfig',
+    },
 }

@@ -5,22 +5,22 @@
 -- Reference: https://intelephense.com |  https://github.com/bmewburn/intelephense-docs/blob/master/installation.md#initialisation-options
 -- pnpm add -g intelephense
 vim.lsp.config['intelephense_ls'] = {
-  cmd = {
-    'intelephense',
-    '--stdio',
-  },
-  filetypes = {
-    'php'
-  },
-  root_markers = {
-   '.git',
-    'composer.json',
-  },
-  settings = {
-    intelephense = {
-      files = {
-        maxSize = 1000000,
-      },
+    cmd = {
+        'intelephense',
+        '--stdio',
     },
-  },
+    filetypes = {
+        'php',
+    },
+    root_markers = {
+        '.git',
+        'composer.json',
+    },
+    settings = {
+        intelephense = {
+            files = {
+                maxSize = 1000000,
+            },
+        },
+    },
 }

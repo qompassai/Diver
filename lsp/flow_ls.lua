@@ -4,18 +4,18 @@
 ------------------------------------------------------
 -- Reference: https://github.com/facebook/flow
 vim.lsp.config['flow_ls'] = {
-  cmd = {
-    'npx',
-    '--no-install',
-    'flow',
-    'lsp'
-  },
-  filetypes = {
-    'javascript',
-    'javascriptreact',
-    'javascript.jsx'
-  },
-  root_markers = {
-    '.flowconfig'
-  },
+    cmd = {
+        'npx',
+        '--no-install',
+        'flow',
+        'lsp',
+    },
+    filetypes = {
+        'javascript',
+        'javascriptreact',
+        'javascript.jsx',
+    },
+    root_markers = {
+        '.flowconfig',
+    },
 }

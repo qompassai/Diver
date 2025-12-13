@@ -3,29 +3,29 @@
 -- Copyright (C) 2025 Qompass AI, All rights reserved
 -- --------------------------------------------------
 vim.filetype.add({
-  extension = {
-    beancount = 'beancount',
-    bean = 'beancount',
-  },
+    extension = {
+        beancount = 'beancount',
+        bean = 'beancount',
+    },
 })
 vim.lsp.config['beancount_ls'] = {
-  cmd = {
-    'beancount-language-server',
-  },
-  filetypes = {
-    'beancount',
-  },
-  init_options = {
-    journal_file = '',
-    formatting = {
-      prefix_width = 30,
-      currency_column = 60,
-      number_currency_spacing = 1,
+    cmd = {
+        'beancount-language-server',
     },
-  },
-  root_markers = {
-    'main.bean',
-    'beancount.conf',
-    '.git',
-  },
+    filetypes = {
+        'beancount',
+    },
+    init_options = {
+        journal_file = '',
+        formatting = {
+            prefix_width = 30,
+            currency_column = 60,
+            number_currency_spacing = 1,
+        },
+    },
+    root_markers = {
+        'main.bean',
+        'beancount.conf',
+        '.git',
+    },
 }

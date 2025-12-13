@@ -5,15 +5,15 @@
 --Reference: https://github.com/dcermak/rpm-spec-language-server
 -- pip install rpm-spec-language-server
 vim.lsp.config['rpmspec_ls'] = {
-  cmd = {
-    'rpm_lsp_server',
-    '--stdio'
-  },
-  filetypes = {
-    'spec'
-  },
-  root_markers = {
-    '.git'
-  },
-  settings = { ... },
+    cmd = {
+        'rpm_lsp_server',
+        '--stdio',
+    },
+    filetypes = {
+        'spec',
+    },
+    root_markers = {
+        '.git',
+    },
+    settings = { ... },
 }

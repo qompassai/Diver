@@ -4,16 +4,16 @@
 -- ---------------------------------------------------
 --Reference: https://github.com/marcoroth/herb
 vim.lsp.config['herb_ls'] = {
-  cmd = {
-    'herb-language-server',
-    '--stdio'
-  },
-  filetypes = {
-    'html',
-    'eruby'
-  },
-  root_markers = {
-    'Gemfile',
-    '.git'
-  },
+    cmd = {
+        'herb-language-server',
+        '--stdio',
+    },
+    filetypes = {
+        'html',
+        'eruby',
+    },
+    root_markers = {
+        'Gemfile',
+        '.git',
+    },
 }

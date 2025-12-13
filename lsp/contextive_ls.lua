@@ -5,11 +5,11 @@
 -- Reference: https://github.com/dev-cycles/contextive
 -- curl -L -o Contextive.LanguageServer.zip "https://github.com/dev-cycles/contextive/releases/download/v1.17.8/Contextive.LanguageServer-linux-x64-1.17.8.zip"
 vim.lsp.config['contextive_ls'] = {
-  cmd = {
-    'Contextive.LanguageServer'
-  },
-  root_markers = {
-    '.contextive',
-    '.git',
-  },
+    cmd = {
+        'Contextive.LanguageServer',
+    },
+    root_markers = {
+        '.contextive',
+        '.git',
+    },
 }

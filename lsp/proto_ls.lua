@@ -4,13 +4,13 @@
 -- --------------------------------------------------
 -- cargo install protols
 vim.lsp.config['proto_ls'] = {
-  cmd = {
-    "protols",
-  },
-  filetypes = {
-    "proto",
-  },
-  root_markers = {
-    ".git",
-  },
+    cmd = {
+        'protols',
+    },
+    filetypes = {
+        'proto',
+    },
+    root_markers = {
+        '.git',
+    },
 }

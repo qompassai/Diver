@@ -4,19 +4,19 @@
 -- ----------------------------------------
 -- Reference: https://github.com/opentofu/tofu-ls
 vim.lsp.config['tofu_ls'] = {
-  cmd = {
-    'tofu-ls'
-  },
-  filetypes = {
-    'terraform',
-    'opentofu',
-    'hcl'
-  },
-  root_markers = {
-    '.git',
-    '.terraform',
-    '.tofu',
-    'main.tf',
-    'main.tftpl'
-  },
+    cmd = {
+        'tofu-ls',
+    },
+    filetypes = {
+        'terraform',
+        'opentofu',
+        'hcl',
+    },
+    root_markers = {
+        '.git',
+        '.terraform',
+        '.tofu',
+        'main.tf',
+        'main.tftpl',
+    },
 }

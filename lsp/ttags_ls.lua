@@ -5,21 +5,21 @@
 --Reference: https://github.com/npezza93/ttags
 --cargo install ttags
 vim.lsp.config['ttags_ls'] = {
-  cmd = {
-    'ttags',
-    'lsp'
-  },
-  filetypes = {
-    'c',
-    'cpp',
-    'haskell',
-    'javascript',
-    'nix',
-    'ruby',
-    'rust',
-    'swift',
-  },
-  root_markers = {
-    '.git'
-  },
+    cmd = {
+        'ttags',
+        'lsp',
+    },
+    filetypes = {
+        'c',
+        'cpp',
+        'haskell',
+        'javascript',
+        'nix',
+        'ruby',
+        'rust',
+        'swift',
+    },
+    root_markers = {
+        '.git',
+    },
 }

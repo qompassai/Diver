@@ -5,15 +5,15 @@
 --Reference:  https://github.com/testdouble/standard
 --gem install standard
 vim.lsp.config['standardrb_ls'] = {
-  cmd = {
-    'standardrb',
-    '--lsp'
-  },
-  filetypes = {
-    'ruby'
-  },
-  root_markers = {
-    'Gemfile',
-    '.git'
-  },
+    cmd = {
+        'standardrb',
+        '--lsp',
+    },
+    filetypes = {
+        'ruby',
+    },
+    root_markers = {
+        'Gemfile',
+        '.git',
+    },
 }

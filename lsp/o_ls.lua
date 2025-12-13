@@ -4,16 +4,16 @@
 ------------------------------------------------------
 --Reference: https://github.com/DanielGavin/ols
 vim.lsp.config['o_ls'] = {
-  cmd = {
-    'ols',
-  },
-  filetypes = {
-    "odin",
-  },
-  root_markers = {
-    '.git',
-    'ols.json',
-    'ols.jsonc',
-    '*.odin'
-  },
+    cmd = {
+        'ols',
+    },
+    filetypes = {
+        'odin',
+    },
+    root_markers = {
+        '.git',
+        'ols.json',
+        'ols.jsonc',
+        '*.odin',
+    },
 }

@@ -4,13 +4,14 @@
 -- ----------------------------------------
 -- Reference: https://github.com/JohnnyMorganz/luau-lsp
 vim.lsp.config['luau-lsp'] = {
-  cmd = {
-    'luau-lsp',
-    'lsp' },
-  filetypes = {
-    'luau'
-  },
-  root_markers = {
-    '.git'
-  },
+    cmd = {
+        'luau-lsp',
+        'lsp',
+    },
+    filetypes = {
+        'luau',
+    },
+    root_markers = {
+        '.git',
+    },
 }

@@ -4,34 +4,34 @@
 ------------------------------------------------------
 -- References:  https://pgtools.dev
 vim.lsp.config['postgres_ls'] = {
-  cmd = {
-    'postgres-language-server',
-    'lsp-proxy'
-  },
-  filetypes = {
-    'sql',
-    'psql'
-  },
-  root_dir = vim.fn.getcwd,
-  codeActionProvider = {
-    codeActionKinds = {
-      "",
-      "quickfix",
-      "refactor",
-      "refactor.extract",
+    cmd = {
+        'postgres-language-server',
+        'lsp-proxy',
     },
-    resolveProvider = true,
-  },
-  completionProvider = {
-    triggerCharacters = { ".", '"', "'", " ", "(", "," },
-  },
-  hoverProvider = true,
-  definitionProvider = true,
-  referencesProvider = true,
-  documentSymbolProvider = true,
-  documentHighlightProvider = true,
-  renameProvider = true,
-  documentFormattingProvider = true,
-  documentRangeFormattingProvider = true,
-  settings = {},
+    filetypes = {
+        'sql',
+        'psql',
+    },
+    root_dir = vim.fn.getcwd,
+    codeActionProvider = {
+        codeActionKinds = {
+            '',
+            'quickfix',
+            'refactor',
+            'refactor.extract',
+        },
+        resolveProvider = true,
+    },
+    completionProvider = {
+        triggerCharacters = { '.', '"', '\'', ' ', '(', ',' },
+    },
+    hoverProvider = true,
+    definitionProvider = true,
+    referencesProvider = true,
+    documentSymbolProvider = true,
+    documentHighlightProvider = true,
+    renameProvider = true,
+    documentFormattingProvider = true,
+    documentRangeFormattingProvider = true,
+    settings = {},
 }

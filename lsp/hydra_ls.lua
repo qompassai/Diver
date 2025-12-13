@@ -11,5 +11,8 @@ vim.lsp.config['hydra_ls'] = {
   filetypes = {
     'yaml',
   },
-  root_markers = { '.git' },
+  root_markers = {
+    '.git',
+  },
 }
+on_attach = on_attach

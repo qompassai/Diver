@@ -1,5 +1,5 @@
 -- /qompassai/Diver/ftplugin/gleam.lua
--- Qompass AI Gleam Ftplugin config
+-- Qompass AI Diver Gleam FTplugin config
 -- Copyright (C) 2025 Qompass AI, All rights reserved
 ------------------------------------------------------
 local root_markers = { 'gleam.toml' }

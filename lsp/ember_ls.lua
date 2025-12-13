@@ -5,19 +5,19 @@
 -- https://github.com/ember-tooling/ember-language-server
 -- pnpm add -g @ember-tooling/ember-language-server
 vim.lsp.config['ember_ls'] = {
-  cmd = {
-    'ember-language-server',
-    '--stdio',
-  },
-  filetypes = {
-    'handlebars',
-    'javascript',
-    'typescript',
-    'typescript.glimmer',
-    'javascript.glimmer',
-  },
-  root_markers = {
-    'ember-cli-build.js',
-    '.git',
-  },
+    cmd = {
+        'ember-language-server',
+        '--stdio',
+    },
+    filetypes = {
+        'handlebars',
+        'javascript',
+        'typescript',
+        'typescript.glimmer',
+        'javascript.glimmer',
+    },
+    root_markers = {
+        'ember-cli-build.js',
+        '.git',
+    },
 }

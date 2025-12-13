@@ -4,57 +4,58 @@
 -- --------------------------------------------------
 -- References: https://livesys.se/posts/nextflow-lsp-with-neovim/
 vim.lsp.config['nextflowls'] = {
-  cmd = {
-    "java",
-    "-jar",
-    "nextflow"
-  },
-  filetypes = {
-    "nextflow",
-    "nf",
-    "groovy",
-    "config"
-  },
-  root_markers = {
-    '.git',
-    "main.nf",
-    "nextflow.config" },
-  settings = {
-    nextflow = {
-      format = {
-        enabled = true,
-        indentSize = 2,
-        preserveEmptyContent = false,
-      },
-      completion = {
-        enabled = true,
-        includeModules = true,
-      },
-      validation = {
-        enabled = true,
-        warnOnUnusedVariables = true,
-        processSchema = 'nf-core',
-      },
-      logs = {
-        enabled = true,
-        trace = true,
-      },
-      hover = {
-        enabled = true,
-      },
-      folding = {
-        enabled = true,
-      },
+    cmd = {
+        'java',
+        '-jar',
+        'nextflow',
     },
-  },
-  init_options = {
+    filetypes = {
+        'nextflow',
+        'nf',
+        'groovy',
+        'config',
+    },
+    root_markers = {
+        '.git',
+        'main.nf',
+        'nextflow.config',
+    },
     settings = {
-      nextflow = {
-        trace = {
-          server = "verbose"
+        nextflow = {
+            format = {
+                enabled = true,
+                indentSize = 2,
+                preserveEmptyContent = false,
+            },
+            completion = {
+                enabled = true,
+                includeModules = true,
+            },
+            validation = {
+                enabled = true,
+                warnOnUnusedVariables = true,
+                processSchema = 'nf-core',
+            },
+            logs = {
+                enabled = true,
+                trace = true,
+            },
+            hover = {
+                enabled = true,
+            },
+            folding = {
+                enabled = true,
+            },
         },
-        additionalModulePaths = {},
-      },
     },
-  },
+    init_options = {
+        settings = {
+            nextflow = {
+                trace = {
+                    server = 'verbose',
+                },
+                additionalModulePaths = {},
+            },
+        },
+    },
 }

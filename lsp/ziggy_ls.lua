@@ -3,14 +3,14 @@
 -- Copyright (C) 2025 Qompass AI, All rights reserved
 -----------------------------------------------------
 vim.lsp.config['ziggy_ls'] = {
-  cmd = {
-    'ziggy',
-    'lsp'
-  },
-  filetypes = {
-    'ziggy'
-  },
-  root_markers = {
-    '.git'
-  },
+    cmd = {
+        'ziggy',
+        'lsp',
+    },
+    filetypes = {
+        'ziggy',
+    },
+    root_markers = {
+        '.git',
+    },
 }

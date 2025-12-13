@@ -3,10 +3,10 @@
 -- Copyright (C) 2025 Qompass AI, All rights reserved
 ------------------------------------------------------
 vim.lsp.config['systemd_ls'] = {
-  cmd = {
-    'systemd-language-server'
-  },
-  filetypes = {
-    'systemd'
-  },
+    cmd = {
+        'systemd-language-server',
+    },
+    filetypes = {
+        'systemd',
+    },
 }

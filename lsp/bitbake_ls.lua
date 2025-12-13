@@ -5,11 +5,11 @@
 -- Reference:  https://github.com/Freed-Wu/bitbake-language-server
 -- pip install bitbake-language-server
 vim.lsp.config['bitbake_ls'] = {
-  cmd = {
-    'bitbake-language-server'
-  },
-  filetypes = {
-    'bitbake'
-  },
-  root_markers = { '.git' },
+    cmd = {
+        'bitbake-language-server',
+    },
+    filetypes = {
+        'bitbake',
+    },
+    root_markers = { '.git' },
 }

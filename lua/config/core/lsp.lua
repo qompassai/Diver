@@ -62,9 +62,9 @@ vim.lsp.config('*', {
             snippetSupport = true,
             commitCharactersSupport = true,
             deprecatedSupport = true,
+            labelDetailsSupport = true,
             preselectSupport = true,
             insertReplaceSupport = true,
-            labelDetailsSupport = true,
             documentationFormat = {
               'markdown',
               'plaintext'
@@ -186,9 +186,6 @@ vim.lsp.config('*', {
       buffer = bufnr,
       silent = true
     }
-    vim.keymap.set(
-      'n', 'gd',
-      vim.lsp.buf.definition, opts)
     vim.keymap.set('n', 'K', vim.lsp.buf.hover, { silent = true })
     vim.keymap.set('n', 'gI', vim.lsp.buf.implementation, { silent = true })
     vim.keymap.set('n', 'g0', vim.lsp.buf.document_symbol, { silent = true })
@@ -325,19 +322,38 @@ vim.keymap.set(
   end)
 vim.api.nvim_create_autocmd('LspAttach', {
   callback = function(ev)
-    local client = vim.lsp.get_client_by_id(ev.data.client_id)
-    if not client then
+    vim.bo[ev.buf].omnifunc = 'v:lua.vim.lsp.omnifunc'
+  end,
+})
+vim.api.nvim_create_autocmd({ 'LspAttach' }, {
+  group = vim.api.nvim_create_augroup('my.lsp.references', {}),
+  callback = function(args)
+    local bufnr = args.buf
+    local client = vim.lsp.get_client_by_id(args.data.client_id)
+    if not client or not client:supports_method('textDocument/documentHighlight') then
       return
     end
-    if client:supports_method('textDocument/completion') and vim.lsp.completion then
-      vim.lsp.completion.enable(true, client.id, ev.buf, {
-        autotrigger = false,
-      })
-    end
+    vim.api.nvim_create_autocmd({ 'CursorHold', 'CursorHoldI' }, {
+      buffer = bufnr,
+      callback = function()
+        vim.lsp.buf.document_highlight()
+      end,
+    })
+    vim.api.nvim_create_autocmd('CursorMoved', {
+      buffer = bufnr,
+      callback = function()
+        vim.lsp.util.buf_clear_references(bufnr)
+      end,
+    })
   end,
 })
 vim.api.nvim_create_autocmd('LspAttach', {
   callback = function(ev)
-    vim.bo[ev.buf].omnifunc = 'v:lua.vim.lsp.omnifunc'
+    local client = vim.lsp.get_client_by_id(ev.data.client_id)
+    if client and client:supports_method('textDocument/completion') and vim.lsp.completion then
+      vim.lsp.completion.enable(true, client.id, ev.buf, {
+        autotrigger = true,
+      })
+    end
   end,
 })

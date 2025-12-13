@@ -3,19 +3,19 @@
 -- Copyright (C) 2025 Qompass AI, All rights reserved
 ------------------------------------------------------
 vim.lsp.config['laravel_ls'] = {
-  cmd = {
-    'laravel-ls',
-  },
-  filetypes = {
-    'php',
-    'blade',
-  },
-  root_markers = {
-    'artisan',
-    'composer.json',
-    '.git',
-  },
-  settings = {
-    ['laravel-ls'] = {},
-  },
+    cmd = {
+        'laravel-ls',
+    },
+    filetypes = {
+        'php',
+        'blade',
+    },
+    root_markers = {
+        'artisan',
+        'composer.json',
+        '.git',
+    },
+    settings = {
+        ['laravel-ls'] = {},
+    },
 }

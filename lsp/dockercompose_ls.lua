@@ -7,15 +7,16 @@
 vim.lsp.config['dockercompose_ls'] = {
   cmd = {
     'docker-compose-langserver',
-    '--stdio' },
+    '--stdio',
+  },
   filetypes = {
-    'yaml',
-    'dockercompose'
+    'yaml.docker-compose'
   },
   root_markers = {
-    'docker-compose.yml',
     'docker-compose.yaml',
-    '.git'
+    'docker-compose.yml',
+    'compose.yaml',
+    'compose.yml'
   },
   settings = {
     dockerCompose = {
@@ -32,13 +33,13 @@ vim.lsp.config['dockercompose_ls'] = {
     dockerCompose = {
       fileExtensions = {
         '.yml',
-        '.yaml'
+        '.yaml',
       },
       serviceCompletion = true,
       imageCompletion = true,
       schemaStoreEnable = true,
       trace = {
-        server = 'verbose'
+        server = 'verbose',
       },
     },
   },

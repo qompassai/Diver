@@ -3,12 +3,12 @@
 -- Copyright (C) 2025 Qompass AI, All rights reserved
 -- ----------------------------------------
 vim.filetype.add({
-  pattern = {
-    ['.*/*.als'] = 'alloy',
-  },
+    pattern = {
+        ['.*/*.als'] = 'alloy',
+    },
 })
 vim.lsp.config['alloy_ls'] = {
-  cmd = { 'alloy', 'lsp' },
-  filetypes = { 'alloy' },
-  root_markers = { '.git' },
+    cmd = { 'alloy', 'lsp' },
+    filetypes = { 'alloy' },
+    root_markers = { '.git' },
 }

@@ -4,32 +4,30 @@
 -- --------------------------------------------------
 -- Reference: https://github.com/Schottkyc137/ginko
 -- cargo install ginko
-vim.api.nvim_create_autocmd
-({
+vim.api.nvim_create_autocmd({
     'BufNewFile',
-    'BufRead'
-  },
-  {
+    'BufRead',
+}, {
     pattern = {
-      '*.dts',
-      '*.dtsi'
+        '*.dts',
+        '*.dtsi',
     },
     callback = function(args)
-      vim.bo[args.buf].filetype = 'devicetree'
+        vim.bo[args.buf].filetype = 'devicetree'
     end,
-  })
+})
 vim.lsp.config['ginko_ls'] = {
-  cmd = {
-    'ginko_ls'
-  },
-  filetypes = {
-    'devicetree',
-    'dts'
-  },
-  root_markers = {
-    '.git'
-  },
-  settings = {
-    provideFormatter = false
-  },
+    cmd = {
+        'ginko_ls',
+    },
+    filetypes = {
+        'devicetree',
+        'dts',
+    },
+    root_markers = {
+        '.git',
+    },
+    settings = {
+        provideFormatter = false,
+    },
 }

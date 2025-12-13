@@ -4,54 +4,54 @@
 ------------------------------------------------------
 
 vim.lsp.config['coq_ls'] = {
-  cmd = {
-    'coq-lsp'
-  },
-  filetypes = {
-    "coq"
-  },
-  root_markers = {
-    "_CoqProject",
-    ".coq-lsp",
-    ".git"
-  },
-  codeActionProvider = {
-    codeActionKinds = {
-      "",
-      "quickfix",
-      "refactor",
+    cmd = {
+        'coq-lsp',
     },
-    resolveProvider = true,
-  },
-  colorProvider = false,
-  semanticTokensProvider = {
-    full = true,
-    legend = {
-      tokenModifiers = {
-        "declaration",
-        "definition",
-        "readonly",
-        "documentation",
-      },
-      tokenTypes = {
-        "namespace",
-        "type",
-        "class",
-        "parameter",
-        "variable",
-        "property",
-        "function",
-        "method",
-        "keyword",
-        "comment",
-        "string",
-        "number",
-        "operator",
-      },
+    filetypes = {
+        'coq',
     },
-    range = true,
-  },
-  settings = {
-    ['coq-lsp'] = {},
-  },
+    root_markers = {
+        '_CoqProject',
+        '.coq-lsp',
+        '.git',
+    },
+    codeActionProvider = {
+        codeActionKinds = {
+            '',
+            'quickfix',
+            'refactor',
+        },
+        resolveProvider = true,
+    },
+    colorProvider = false,
+    semanticTokensProvider = {
+        full = true,
+        legend = {
+            tokenModifiers = {
+                'declaration',
+                'definition',
+                'readonly',
+                'documentation',
+            },
+            tokenTypes = {
+                'namespace',
+                'type',
+                'class',
+                'parameter',
+                'variable',
+                'property',
+                'function',
+                'method',
+                'keyword',
+                'comment',
+                'string',
+                'number',
+                'operator',
+            },
+        },
+        range = true,
+    },
+    settings = {
+        ['coq-lsp'] = {},
+    },
 }

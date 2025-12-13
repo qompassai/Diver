@@ -4,7 +4,7 @@
 -- --------------------------------------------------
 
 vim.lsp.config['agda_ls'] = {
-  cmd = { 'als' },
-  filetypes = { 'agda' },
-  root_markers = { '*.agda_lib', '.git' },
+    cmd = { 'als' },
+    filetypes = { 'agda' },
+    root_markers = { '*.agda_lib', '.git' },
 }

@@ -3,9 +3,9 @@
 -- Copyright (C) 2025 Qompass AI, All rights reserved
 -- --------------------------------------------------
 return {
-  "stevearc/conform.nvim",
-  cmd = "ConformInfo",
-  config = function()
-    require("config.lang.conform")
-  end,
+    'stevearc/conform.nvim',
+    cmd = 'ConformInfo',
+    config = function()
+        require('config.lang.conform')
+    end,
 }

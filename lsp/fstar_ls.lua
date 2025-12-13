@@ -5,14 +5,14 @@
 -- Reference: https://fstar-lang.org/ | https://github.com/FStarLang/FStar
 -- opam install fstar
 vim.lsp.config['fstar_ls'] = {
-  cmd = {
-    'fstar',
-    '--lsp'
-  },
-  filetypes = {
-    'fstar'
-  },
-  root_markers = {
-    '.git'
-  },
+    cmd = {
+        'fstar',
+        '--lsp',
+    },
+    filetypes = {
+        'fstar',
+    },
+    root_markers = {
+        '.git',
+    },
 }

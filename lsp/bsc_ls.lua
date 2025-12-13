@@ -5,17 +5,17 @@
 --Reference:  https://github.com/RokuCommunity/brighterscript
 --pnpm add -g brighterscript
 vim.lsp.config['bsc_ls'] = {
-  cmd = {
-    'bsc',
-    '--lsp',
-    '--stdio'
-  },
-  filetypes = {
-    'brs'
-  },
-  root_markers = {
-    'makefile',
-    'Makefile',
-    '.git'
-  },
+    cmd = {
+        'bsc',
+        '--lsp',
+        '--stdio',
+    },
+    filetypes = {
+        'brs',
+    },
+    root_markers = {
+        'makefile',
+        'Makefile',
+        '.git',
+    },
 }

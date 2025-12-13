@@ -2,7 +2,6 @@
 -- Qompass AI Diver Init
 -- Copyright (C) 2025 Qompass AI, All rights reserved
 -- --------------------------------------------------
-vim.loader.enable()
 require('config.init').config({
   core = true,
   cicd = true,
@@ -12,19 +11,27 @@ require('config.init').config({
   nav = true,
   ui = true
 })
-if vim.pack and vim.pack.add then
-  vim.pack.add({
-    {
-      src = 'https://github.com/trixnz/sops.nvim',
-      version = 'main',
-    },
-  })
-end
+vim.opt.packpath = vim.opt.runtimepath:get()
+vim.pack.add {
+  { src = 'https://github.com/dense-analysis/ale' },
+  { src = 'https://github.com/trixnz/sops.nvim' },
+  { src = 'https://github.com/Saghen/blink.cmp' },
+  { src = 'https://github.com/nvim-treesitter/nvim-treesitter' },
+  { src = 'https://github.com/L3MON4D3/LuaSnip' },
+  { src = 'https://github.com/rafamadriz/friendly-snippets' },
+  { src = 'https://github.com/hrsh7th/cmp-nvim-lua' },
+  { src = 'https://github.com/hrsh7th/cmp-buffer' },
+  { src = 'https://github.com/moyiz/blink-emoji.nvim' },
+  { src = 'https://github.com/Kaiser-Yang/blink-cmp-dictionary' },
+  { src = 'https://github.com/Saghen/blink.compat', },
+}
+vim.bo.modifiable = true
+vim.cmd('set completeopt+=noselect')
 vim.g.mapleader = ' '
 vim.g.editorconfig = true
 vim.g.git_command_ssh = 1
 vim.g.loaded_illuminate = true
-vim.g.loaded_netrw = 0
+vim.g.loaded_netrw = 1
 vim.g.loaded_netrwPlugin = 0
 vim.g.loaded_node_provider = 1
 vim.g.loaded_perl_provider = 1
@@ -33,12 +40,12 @@ vim.g.loaded_ruby_provider = 1
 vim.g.lsp_enable_on_demand = true
 vim.g.mkdp_theme = 'dark'
 vim.g.semantic_tokens_enabled = true
-vim.g.syntax_on = true
---vim.g.use_blink_cmp = true
+vim.g.use_blink_cmp = true
 vim.g.which_key_disable_health_check = 1
---vim.g.mkdp_markdown_css = vim.fn.expand("~/.config/nvim/markdown.css")
+vim.g.mkdp_markdown_css = vim.fn.expand('~/.config/nvim/markdown.css')
 vim.o.ambiwidth = 'single'
-vim.g.asmsyntax = 'asm68k'
+vim.o.autowrite = true
+vim.o.autowriteall = true
 vim.o.backup = false
 vim.o.breakindent = true
 vim.o.clipboard = 'unnamedplus'
@@ -47,6 +54,7 @@ vim.o.completeopt = 'menu,menuone,noselect'
 vim.o.conceallevel = 0
 vim.o.confirm = true
 vim.o.cursorline = true
+--vim.o.diffopt = "internal,filler,closeoff,algorithm:histogram,indent-heuristic,linematch:60"
 vim.o.encoding = 'utf-8'
 vim.o.exrc = true
 vim.o.expandtab = true
@@ -73,6 +81,7 @@ vim.o.modelines = 5
 vim.o.mouse = 'a'
 vim.o.mousescroll = 'ver:3,hor:6'
 vim.o.number = true
+vim.o.pumheight = 15
 vim.o.redrawtime = 10000
 vim.o.relativenumber = true
 vim.o.scrolloff = 8
@@ -83,14 +92,14 @@ vim.o.showtabline = 2
 vim.o.sidescrolloff = 8
 vim.o.smartcase = true
 vim.o.smoothscroll = true
-vim.o.softtabstop = 4
+vim.o.softtabstop = 2
 vim.o.spell = true
 vim.o.spelllang = 'en_us'
 vim.o.splitbelow = true
 vim.o.splitright = true
 vim.o.swapfile = false
 vim.o.syntax = 'enable'
-vim.o.tabstop = 4
+vim.o.tabstop = 2
 vim.o.termguicolors = true
 vim.o.timeout = true
 vim.o.timeoutlen = 300
@@ -109,21 +118,3 @@ vim.o.writebackup = true
 vim.o.foldenable = false
 vim.o.foldmethod = 'manual'
 vim.o.listchars = 'tab:→ ,trail:·,nbsp:␣,extends:»,precedes:«'
---vim.o.diffopt = "internal,filler,closeoff,algorithm:histogram,indent-heuristic,linematch:60"
-vim.bo.modifiable = true
-if vim.fn.executable('rg') == 1 then
-  vim.o.grepprg = 'rg --vimgrep --no-heading --smart-case'
-  vim.o.grepformat = '%f:%l:%c:%m,%f:%l:%m'
-elseif vim.fn.executable('ag') == 1 then
-  vim.o.grepprg = "ag --vimgrep"
-  vim.o.grepformat = '%f:%l:%c:%m'
-end
-local is_windows = vim.fn.has('win32') ~= 0
-local sep = is_windows and '\\' or '/'
-local delim = is_windows and ';' or ':'
-local new_path = table.concat({
-    vim.fn.stdpath('data'),
-    'mason', 'bin'
-  },
-  sep) .. delim .. vim.env.PATH
-vim.fn.setenv('PATH', new_path)

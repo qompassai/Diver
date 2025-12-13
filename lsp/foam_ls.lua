@@ -5,17 +5,17 @@
 -- Reference:  https://github.com/FoamScience/foam-language-server
 -- pnpm add -g foam-language-server
 vim.lsp.config['foam_ls'] = {
-  cmd = {
-    'foam-ls',
-    '--stdio'
-  },
-  filetypes = {
-    'foam',
-    'OpenFOAM'
-  },
-  root_markers = {
-    '.foamcase',
-    '.git',
-    'system'
-  },
+    cmd = {
+        'foam-ls',
+        '--stdio',
+    },
+    filetypes = {
+        'foam',
+        'OpenFOAM',
+    },
+    root_markers = {
+        '.foamcase',
+        '.git',
+        'system',
+    },
 }

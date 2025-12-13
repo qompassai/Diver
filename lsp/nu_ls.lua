@@ -4,14 +4,14 @@
 -- --------------------------------------------------
 --Reference: https://github.com/nushell/nushell
 vim.lsp.config['nu_ls'] = {
-  cmd = {
-    'nu',
-    '--lsp'
-  },
-  filetypes = {
-    'nu'
-  },
-  root_markers = {
-    '.git'
-  }
+    cmd = {
+        'nu',
+        '--lsp',
+    },
+    filetypes = {
+        'nu',
+    },
+    root_markers = {
+        '.git',
+    },
 }

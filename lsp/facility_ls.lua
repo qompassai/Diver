@@ -4,14 +4,14 @@
 -- ---------------------------------------------------
 -- Reference: https://github.com/FacilityApi/FacilityLanguageServer
 vim.lsp.config['facility_ls'] = {
-  cmd = {
-    'dotnet',
-    vim.fn.expand('$XDG_DATA_HOME/facility-language-server/libexec/Facility.LanguageServer.dll'),
-  },
-  filetypes = {
-    'fsd'
-  },
-  root_markers = {
-    '.git',
-  },
+    cmd = {
+        'dotnet',
+        vim.fn.expand('$XDG_DATA_HOME/facility-language-server/libexec/Facility.LanguageServer.dll'),
+    },
+    filetypes = {
+        'fsd',
+    },
+    root_markers = {
+        '.git',
+    },
 }

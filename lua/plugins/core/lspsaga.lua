@@ -6,6 +6,6 @@
 return {
     'nvimdev/lspsaga.nvim',
     opts = {
-      ui = { border = "rounded" },
+        ui = { border = 'rounded' },
     },
-  }
+}

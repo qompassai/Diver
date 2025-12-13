@@ -5,14 +5,14 @@
 -- Reference: https://github.com/Leathong/openscad-LSP
 -- cargo install openscad-lsp
 vim.lsp.config['openscad_ls'] = {
-  cmd = {
-    'openscad-lsp',
-    '--stdio'
-  },
-  filetypes = {
-    'openscad'
-  },
-  root_markers = {
-    '.git'
-  },
+    cmd = {
+        'openscad-lsp',
+        '--stdio',
+    },
+    filetypes = {
+        'openscad',
+    },
+    root_markers = {
+        '.git',
+    },
 }

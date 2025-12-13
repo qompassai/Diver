@@ -5,17 +5,17 @@
 --Reference: https://github.com/ruby/typeprof
 --gem install typeprof
 vim.lsp.config['typeprof_ls'] = {
-  cmd = {
-    'typeprof',
-    '--lsp',
-    '--stdio'
-  },
-  filetypes = {
-    'ruby',
-    'eruby'
-  },
-  root_markers = {
-    'Gemfile',
-    '.git'
-  },
+    cmd = {
+        'typeprof',
+        '--lsp',
+        '--stdio',
+    },
+    filetypes = {
+        'ruby',
+        'eruby',
+    },
+    root_markers = {
+        'Gemfile',
+        '.git',
+    },
 }

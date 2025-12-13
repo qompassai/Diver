@@ -4,14 +4,14 @@
 -- ---------------------------------------------------
 -- Reference: https://github.com/JCWasmx86/mesonlsp
 vim.lsp.config['meson_ls'] = {
-  cmd = {
-    'mesonlsp',
-    '--lsp'
-  },
-  filetypes = {
-    'meson'
-  },
-  root_markers = {
-    'meson.build'
-  },
+    cmd = {
+        'mesonlsp',
+        '--lsp',
+    },
+    filetypes = {
+        'meson',
+    },
+    root_markers = {
+        'meson.build',
+    },
 }

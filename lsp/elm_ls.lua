@@ -6,25 +6,25 @@
 -- pnpm add -g elm elm-test elm-format elm-review @elm-tooling/elm-language-server
 
 vim.lsp.config['elm_ls'] = {
-  cmd = {
-    'elm-language-server'
-  },
-  filetypes = {
-    'elm'
-  },
-  init_options = {
-    elmReviewDiagnostics = 'warning',
-    skipInstallPackageConfirmation = false,
-    disableElmLSDiagnostics = false,
-    onlyUpdateDiagnosticsOnSave = false,
-  },
-  capabilities = {
-    offsetEncoding = {
-      'utf-8',
-      'utf-16'
+    cmd = {
+        'elm-language-server',
     },
-  },
-  root_markers = {
-    'elm.json',
-  }
+    filetypes = {
+        'elm',
+    },
+    init_options = {
+        elmReviewDiagnostics = 'warning',
+        skipInstallPackageConfirmation = false,
+        disableElmLSDiagnostics = false,
+        onlyUpdateDiagnosticsOnSave = false,
+    },
+    capabilities = {
+        offsetEncoding = {
+            'utf-8',
+            'utf-16',
+        },
+    },
+    root_markers = {
+        'elm.json',
+    },
 }

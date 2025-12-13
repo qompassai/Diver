@@ -4,10 +4,10 @@
 ------------------------------------------------------
 
 return {
-  "folke/which-key.nvim",
-  event = "VeryLazy",
-  opts = function()
-    local WK = require("config.core.whichkey")
-    WK.setup()
-  end,
+    'folke/which-key.nvim',
+    event = 'VeryLazy',
+    opts = function()
+        local WK = require('config.core.whichkey')
+        WK.setup()
+    end,
 }

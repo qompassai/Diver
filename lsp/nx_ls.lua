@@ -5,32 +5,32 @@
 --Reference: https://github.com/nrwl/nx-console/tree/master/apps/nxls
 -- pnpm add -g nxls
 vim.lsp.config['nx_ls'] = {
-  cmd = {
-    'nxls',
-    '--stdio',
-  },
-  filetypes = {
-    'json',
-    'jsonc',
-  },
-  root_markers = {
-    'nx.jsonc',
-    'workspace.jsonc',
-    'project.jsonc',
-    '.git',
-  },
-  settings = {
-    nx = {
-      enableWorkspaceSymbols = true,
-      enableCodeActions = true,
-      enableCodeLens = true,
-      logLevel = 'info',
+    cmd = {
+        'nxls',
+        '--stdio',
     },
-  },
-  init_options = {
-    workspaceJson = 'workspace.jsonc',
-    nxJson = 'nx.jsonc',
-    projectJson = 'project.jsonc',
-  },
-  '',
+    filetypes = {
+        'json',
+        'jsonc',
+    },
+    root_markers = {
+        'nx.jsonc',
+        'workspace.jsonc',
+        'project.jsonc',
+        '.git',
+    },
+    settings = {
+        nx = {
+            enableWorkspaceSymbols = true,
+            enableCodeActions = true,
+            enableCodeLens = true,
+            logLevel = 'info',
+        },
+    },
+    init_options = {
+        workspaceJson = 'workspace.jsonc',
+        nxJson = 'nx.jsonc',
+        projectJson = 'project.jsonc',
+    },
+    '',
 }

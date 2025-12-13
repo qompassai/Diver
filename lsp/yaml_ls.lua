@@ -5,7 +5,7 @@
 vim.lsp.config['yaml_ls'] = {
   cmd = {
     'yaml-language-server',
-    '--stdio',
+    '--stdio'
   },
   filetypes = {
     'yaml',
@@ -15,12 +15,12 @@ vim.lsp.config['yaml_ls'] = {
     'yaml.helm-values',
   },
   root_markers = {
-    '.git',
+    '.git'
   },
   settings = {
     redhat = {
       telemetry = {
-        enabled = false,
+        enabled = false
       },
     },
     yaml = {
@@ -28,11 +28,13 @@ vim.lsp.config['yaml_ls'] = {
         enable = true,
       },
       schemas = {
-        ["https://json.schemastore.org/github-workflow.json"] = "/.github/workflows/*",
+        ['https://json.schemastore.org/github-workflow.json'] = '/.github/workflows/*',
+        ['https://raw.githubusercontent.com/yannh/kubernetes-json-schema/refs/heads/master/v1.32.1-standalone-strict/all.json'] =
+        '/*.k8s.yaml',
       },
     },
   },
-  on_init = function(client, _)
+  on_init = function(client)
     client.server_capabilities.documentFormattingProvider = true
   end,
 }

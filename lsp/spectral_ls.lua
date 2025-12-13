@@ -5,18 +5,18 @@
 vim.lsp.config['spectral_ls'] = {
   cmd = {
     'spectral-language-server',
-    '--stdio'
+    '--stdio',
   },
   filetypes = {
     'yaml',
     'json',
-    'yml'
+    'yml',
   },
   root_markers = {
     '.spectral.yaml',
     '.spectral.yml',
     '.spectral.json',
-    '.spectral.js'
+    '.spectral.js',
   },
   settings = {
     enable = true,
@@ -24,7 +24,7 @@ vim.lsp.config['spectral_ls'] = {
     validateLanguages = {
       'yaml',
       'json',
-      'yml'
+      'yml',
     },
   },
 }

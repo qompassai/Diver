@@ -3,14 +3,15 @@
 -- Copyright (C) 2025 Qompass AI, All rights reserved
 -----------------------------------------------------
 vim.lsp.config['superhtml_ls'] = {
-  cmd = {
-    'superhtml',
-    'lsp'
-  },
-  filetypes = {
-    'superhtml',
-    'html' },
-  root_markers = {
-    '.git'
-  },
+    cmd = {
+        'superhtml',
+        'lsp',
+    },
+    filetypes = {
+        'superhtml',
+        'html',
+    },
+    root_markers = {
+        '.git',
+    },
 }

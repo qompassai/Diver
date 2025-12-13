@@ -4,24 +4,24 @@
 -- ----------------------------------------
 --pnpm add -g  vscode-smarty-langserver-extracted
 vim.lsp.config['smarty_ls'] = {
-  cmd = {
-    'smarty-language-server',
-    '--stdio'
-  },
-  filetypes = { 'smarty' },
-  room_markers = {
-    'composer.json',
-    '.git'
-  },
-  settings = {
-    smarty = {
-      pluginDirs = {},
+    cmd = {
+        'smarty-language-server',
+        '--stdio',
     },
-    css = {
-      validate = true,
+    filetypes = { 'smarty' },
+    room_markers = {
+        'composer.json',
+        '.git',
     },
-  },
-  init_options = {
-    storageDir = vim.NIL,
-  },
+    settings = {
+        smarty = {
+            pluginDirs = {},
+        },
+        css = {
+            validate = true,
+        },
+    },
+    init_options = {
+        storageDir = vim.NIL,
+    },
 }

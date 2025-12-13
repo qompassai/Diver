@@ -5,19 +5,19 @@
 --Reference: https://www.npmjs.com/package/stimulus-language-server
 --pnpm add -g stimulus-language-server
 vim.lsp.config['stimulus_ls'] = {
-  cmd = {
-    'stimulus-language-server',
-    '--stdio'
-  },
-  filetypes = {
-    'blade',
-    'eruby',
-    'html',
-    'php',
-    'ruby'
-  },
-  root_markers = {
-    'Gemfile',
-    '.git'
-  },
+    cmd = {
+        'stimulus-language-server',
+        '--stdio',
+    },
+    filetypes = {
+        'blade',
+        'eruby',
+        'html',
+        'php',
+        'ruby',
+    },
+    root_markers = {
+        'Gemfile',
+        '.git',
+    },
 }

@@ -6,7 +6,6 @@ vim.lsp.config['lua_ls'] = {
 
   cmd = {
     'lua-language-server',
-    '--checklevel=Information'
   },
   filetypes = {
     'lua',
@@ -27,7 +26,7 @@ vim.lsp.config['lua_ls'] = {
   settings = {
     Lua = {
       codeLens = {
-        enable = true
+        enable = true,
       },
       format = {
         enable = true,
@@ -38,7 +37,7 @@ vim.lsp.config['lua_ls'] = {
           indent_size = '4',
           indent_style = 'tabs',
           quote_style = 'ForceSingle',
-          trailing_table_separator = 'always'
+          trailing_table_separator = 'never',
         },
       },
       hover = {
@@ -53,7 +52,7 @@ vim.lsp.config['lua_ls'] = {
       },
       semantic = {
         enable = true,
-        keyword = true
+        keyword = true,
       },
       diagnostics = {
         enable = true,
@@ -65,7 +64,7 @@ vim.lsp.config['lua_ls'] = {
         },
         disable = {
           'lowercase-global',
-          'unused-local'
+          'unused-local',
         },
         severity = {
           ['unused-local'] = 'Hint',
@@ -85,7 +84,7 @@ vim.lsp.config['lua_ls'] = {
           '${3rd}/luassert/library',
           '${3rd}/lazy.nvim/library',
           '${3rd}/blink.cmp/library',
-          vim.fn.expand('$HOME') .. '/.config/nvim/lua/'
+          vim.fn.expand('$HOME') .. '/.config/nvim/lua/',
         },
         ignoreDir = {
           'build',
@@ -94,7 +93,7 @@ vim.lsp.config['lua_ls'] = {
         },
         maxPreload = 5000,
         preloadFileSize = 500,
-        useGitIgnore = true
+        useGitIgnore = true,
       },
       telemetry = {
         enable = false,
@@ -135,9 +134,9 @@ vim.lsp.config['lua_ls'] = {
   on_init = function(client)
     if client.workspace_folders then
       local path = client.workspace_folders[1].name
-      if path ~= vim.fn.stdpath('config')
-          and (vim.uv.fs_stat(path .. '/.luarc.json')
-            or vim.uv.fs_stat(path .. '/.luarc.jsonc'))
+      if
+          path ~= vim.fn.stdpath('config')
+          and (vim.uv.fs_stat(path .. '/.luarc.json') or vim.uv.fs_stat(path .. '/.luarc.jsonc'))
       then
         return
       end
@@ -147,5 +146,5 @@ vim.lsp.config['lua_ls'] = {
         runtime = { version = 'LuaJIT' },
       },
     })
-  end
+  end,
 }

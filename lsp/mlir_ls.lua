@@ -13,13 +13,13 @@ cmake -G Ninja ../llvm \
 ninja mlir-lsp-server mlir-pdll-lsp-server
   --]]
 vim.lsp.config['mlir_ls'] = {
-  cmd = {
-    'mlir-lsp-server'
-  },
-  filetypes = {
-    'mlir'
-  },
-  root_markers = {
-    '.git'
-  },
+    cmd = {
+        'mlir-lsp-server',
+    },
+    filetypes = {
+        'mlir',
+    },
+    root_markers = {
+        '.git',
+    },
 }

@@ -11,15 +11,15 @@ https://github.com/MaskRay/ccls/wiki |
  https://github.com/MaskRay/ccls/wiki/Customization#initialization-options
 --]]
 vim.lsp.config['cc_ls'] = {
-  cmd = {
-    'ccls',
-  },
-  filetypes = {
-    'c',
-    'cpp',
-    'objc',
-    'objcpp',
-    'cuda',
-  },
-  offset_encoding = 'utf-8',
+    cmd = {
+        'ccls',
+    },
+    filetypes = {
+        'c',
+        'cpp',
+        'objc',
+        'objcpp',
+        'cuda',
+    },
+    offset_encoding = 'utf-8',
 }

@@ -4,7 +4,6 @@
 -- --------------------------------------------------
 return {
 	require('plugins.ui.css'),
-	require('plugins.ui.html'),
 	require('plugins.ui.icons'),
 	require('plugins.ui.md'),
 	require('plugins.ui.line'),

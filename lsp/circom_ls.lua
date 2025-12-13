@@ -5,13 +5,13 @@
 -- References: https://github.com/rubydusa/circom-lsp
 -- cargo install circom-lsp
 vim.lsp.config['circom_ls'] = {
-  cmd = {
-    'circom-lsp'
-  },
-  filetypes = {
-    'circom'
-  },
-  root_markers = {
-    '.git'
-  },
+    cmd = {
+        'circom-lsp',
+    },
+    filetypes = {
+        'circom',
+    },
+    root_markers = {
+        '.git',
+    },
 }

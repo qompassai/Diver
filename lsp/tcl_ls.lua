@@ -5,19 +5,19 @@
 --Reference: https://github.com/nmoroze/tclint
 --pip install tclint
 vim.lsp.config['tcl_Ls'] = {
-  cmd = {
-    'tclsp'
-  },
-  filetypes = {
-    'tcl',
-    'sdc',
-    'xdc',
-    'upf'
-  },
-  root_markers = {
-    'tclint.toml',
-    '.tclint',
-    'pyproject.toml',
-    '.git',
-  },
+    cmd = {
+        'tclsp',
+    },
+    filetypes = {
+        'tcl',
+        'sdc',
+        'xdc',
+        'upf',
+    },
+    root_markers = {
+        'tclint.toml',
+        '.tclint',
+        'pyproject.toml',
+        '.git',
+    },
 }

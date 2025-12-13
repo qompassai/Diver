@@ -4,18 +4,18 @@
 -- --------------------------------------------------
 --Reference: https://www.npmjs.com/package/devsense-php-ls
 vim.lsp.config['devsense_ls'] = {
-  cmd = {
-    'devsense-php-ls',
-    '--stdio'
-  },
-  filetypes = {
-    'php'
-  },
-  root_markers = {
-    'composer.json',
-    '.git'
-  },
-  init_options = {
-    ['0'] = '{}',
-  },
+    cmd = {
+        'devsense-php-ls',
+        '--stdio',
+    },
+    filetypes = {
+        'php',
+    },
+    root_markers = {
+        'composer.json',
+        '.git',
+    },
+    init_options = {
+        ['0'] = '{}',
+    },
 }

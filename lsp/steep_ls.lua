@@ -4,16 +4,16 @@
 -- --------------------------------------------------
 -- gem install steep
 vim.lsp.config['steep_ls'] = {
-  cmd = {
-    'steep',
-    'langserver'
-  },
-  filetypes = {
-    'eruby',
-    'ruby'
-  },
-  root_markers = {
-    'Steepfile',
-    '.git'
-  },
+    cmd = {
+        'steep',
+        'langserver',
+    },
+    filetypes = {
+        'eruby',
+        'ruby',
+    },
+    root_markers = {
+        'Steepfile',
+        '.git',
+    },
 }

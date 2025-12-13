@@ -5,14 +5,15 @@
 --Reference: https://github.com/microsoft/typespec
 -- pnpm add -g @typespec/compiler
 vim.lsp.config['tsp_ls'] = {
-  cmd = {
-    'tsp-server',
-    '--stdio' },
-  filetypes = {
-    'typespec'
-  },
-  root_markers = {
-    'tspconfig.yaml',
-    '.git'
-  },
+    cmd = {
+        'tsp-server',
+        '--stdio',
+    },
+    filetypes = {
+        'typespec',
+    },
+    root_markers = {
+        'tspconfig.yaml',
+        '.git',
+    },
 }

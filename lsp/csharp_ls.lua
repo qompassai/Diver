@@ -5,17 +5,17 @@
 -- Reference: https://github.com/razzmatazz/csharp-language-server
 -- dotnet tool install --global csharp-ls
 vim.lsp.config['csharp_ls'] = {
-  cmd = {
-    'csharp-ls'
-  },
-  filetypes = {
-    'cs'
-  },
-  init_options = {
-    AutomaticWorkspaceInit = true,
-  },
-  root_markers = {
-    '.sln',
-    '.csproj',
-  },
+    cmd = {
+        'csharp-ls',
+    },
+    filetypes = {
+        'cs',
+    },
+    init_options = {
+        AutomaticWorkspaceInit = true,
+    },
+    root_markers = {
+        '.sln',
+        '.csproj',
+    },
 }

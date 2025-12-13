@@ -4,12 +4,12 @@
 -- --------------------------------------------------
 -- Reference: https://github.com/StyraInc/regal
 vim.lsp.config['regal_ls'] = {
-  cmd = {
-    'regal',
-    'language-server'
-  },
-  filetypes = { 'rego' },
-  root_markers = {
-    '.git',
-  },
+    cmd = {
+        'regal',
+        'language-server',
+    },
+    filetypes = { 'rego' },
+    root_markers = {
+        '.git',
+    },
 }

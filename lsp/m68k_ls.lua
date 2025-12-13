@@ -3,15 +3,15 @@
 -- Copyright (C) 2025 Qompass AI, All rights reserved
 -- --------------------------------------------------
 vim.lsp.config['m68k_ls'] = {
-  cmd = {
-    'm68k-lsp-server',
-    '--stdio'
-  },
-  filetypes = {
-    'asm68k'
-  },
-  root_markers = {
-    'Makefile',
-    '.git'
-  },
+    cmd = {
+        'm68k-lsp-server',
+        '--stdio',
+    },
+    filetypes = {
+        'asm68k',
+    },
+    root_markers = {
+        'Makefile',
+        '.git',
+    },
 }

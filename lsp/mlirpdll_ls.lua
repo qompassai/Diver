@@ -4,14 +4,14 @@
 -- ----------------------------------------
 --Reference:  https://mlir.llvm.org/docs/Tools/MLIRLSP/#pdll-lsp-language-server--mlir-pdll-lsp-server
 vim.lsp.config['mlirpdll_ls'] = {
-  cmd = {
-    'mlir-pdll-lsp-server'
-  },
-  filetypes = {
-    'pdll'
-  },
-  root_markers = {
-    'pdll_compile_commands.yml',
-    '.git'
-  },
+    cmd = {
+        'mlir-pdll-lsp-server',
+    },
+    filetypes = {
+        'pdll',
+    },
+    root_markers = {
+        'pdll_compile_commands.yml',
+        '.git',
+    },
 }

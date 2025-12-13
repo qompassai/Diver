@@ -4,21 +4,21 @@
 -- --------------------------------------------------
 -- References: https://github.com/regen100/cmake-language-server
 vim.lsp.config['cmake_ls'] = {
-  cmd = {
-    'cmake-language-server'
-  },
-  filetypes = {
-    'cmake'
-  },
-  root_markers = {
-    'CMakePresets.json',
-    'CTestConfig.cmake',
-    '.git',
-    'build',
-    'cmake'
-  },
-  init_options = {
-    buildDirectory = 'build',
-  },
-  settings = {},
+    cmd = {
+        'cmake-language-server',
+    },
+    filetypes = {
+        'cmake',
+    },
+    root_markers = {
+        'CMakePresets.json',
+        'CTestConfig.cmake',
+        '.git',
+        'build',
+        'cmake',
+    },
+    init_options = {
+        buildDirectory = 'build',
+    },
+    settings = {},
 }

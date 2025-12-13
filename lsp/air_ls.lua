@@ -3,12 +3,12 @@
 -- Copyright (C) 2025 Qompass AI, All rights reserved
 -- ----------------------------------------
 vim.lsp.config['air_ls'] = {
-  default_config = {
-    cmd = {
-      'air'
+    default_config = {
+        cmd = {
+            'air',
+        },
+        filetypes = {
+            'r',
+        },
     },
-    filetypes = {
-      'r',
-    },
-  },
 }

@@ -4,15 +4,15 @@
 -- --------------------------------------------------
 -- Reference: https://github.com/ndonfris/fish-lsp
 vim.lsp.config['fish_ls'] = {
-  cmd = {
-    'fish-lsp',
-    'start'
-  },
-  filetypes = {
-    'fish'
-  },
-  root_markers = {
-    'config.fish',
-    '.git'
-  },
+    cmd = {
+        'fish-lsp',
+        'start',
+    },
+    filetypes = {
+        'fish',
+    },
+    root_markers = {
+        'config.fish',
+        '.git',
+    },
 }

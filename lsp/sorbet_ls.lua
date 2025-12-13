@@ -3,16 +3,16 @@
 -- Copyright (C) 2025 Qompass AI, All rights reserved
 -- --------------------------------------------------
 vim.lsp.config['sorbet_ls'] = {
-  cmd = {
-    'srb',
-    'tc',
-    '--lsp'
-  },
-  filetypes = {
-    'ruby'
-  },
-  root_markers = {
-    'Gemfile',
-    '.git'
-  },
+    cmd = {
+        'srb',
+        'tc',
+        '--lsp',
+    },
+    filetypes = {
+        'ruby',
+    },
+    root_markers = {
+        'Gemfile',
+        '.git',
+    },
 }

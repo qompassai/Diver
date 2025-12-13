@@ -3,39 +3,39 @@
 -- Copyright (C) 2025 Qompass AI, All rights reserved
 ------------------------------------------------------
 vim.lsp.config['puppetes_ls'] = {
-  cmd = {
-    'ruby',
-    'puppet-languageserver',
-    '--stdio',
-    '--puppet-settings=--moduledir,/etc/puppetlabs/code/modules',
-  },
-  filetypes = {
-    'puppet',
-  },
-  root_markers = {
-    'metadata.json',
-    ".git",
-  },
-  codeActionProvider = {
-    codeActionKinds = {
-      "",
-      "quickfix",
-      "refactor",
+    cmd = {
+        'ruby',
+        'puppet-languageserver',
+        '--stdio',
+        '--puppet-settings=--moduledir,/etc/puppetlabs/code/modules',
     },
-    resolveProvider = true,
-  },
-  colorProvider = false,
-  semanticTokensProvider = nil,
-  init_options = {
-    puppet = {
-      editorServices = {
-        formatOnType = {
-          enable = true,
+    filetypes = {
+        'puppet',
+    },
+    root_markers = {
+        'metadata.json',
+        '.git',
+    },
+    codeActionProvider = {
+        codeActionKinds = {
+            '',
+            'quickfix',
+            'refactor',
         },
-      },
+        resolveProvider = true,
     },
-  },
-  settings = {
-    puppet = {},
-  },
+    colorProvider = false,
+    semanticTokensProvider = nil,
+    init_options = {
+        puppet = {
+            editorServices = {
+                formatOnType = {
+                    enable = true,
+                },
+            },
+        },
+    },
+    settings = {
+        puppet = {},
+    },
 }

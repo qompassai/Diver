@@ -1,9 +1,6 @@
 <!-- /qompassai/Diver/lsp/README.md -->
-
 <!-- Qompass AI Diver LSP Docs -->
-
 <!-- Copyright (C) 2025 Qompass AI, All rights reserved -->
-
 <!-- ---------------------------------------- -->
 
 <div align="center">
@@ -366,9 +363,9 @@ cargo install beancount-language-server && pip install beancount
   <blockquote style="font-size: 1.2em; line-height: 1.8; padding: 25px; background: #f8f9fa; border-left: 6px solid #667eea; border-radius: 8px; margin: 15px 0; box-shadow: 0 2px 8px rgba(0,0,0,0.1);">
     <ul>
       <li><code>bitbake_ls
-        <a href="https://github.com/qompassai/diver/blob/main/lsp/bitbake_ls.lua">bitbake_ls</a>
+        <a href="https://github.com/qompassai/diver/blob/main/lsp/bitbake_ls.lua">bitbake_ls</a></code>
       </li>
-    </ul>
+        </ul>
        <p>
       <a href="https://github.com/polarmutex/beancount-language-server#installation">BitBake LSP Reference</a>
     </p>
@@ -378,7 +375,7 @@ cargo install beancount-language-server && pip install beancount
 pip install bitbake-language-server
 ```
 
-</div>
+   </div>
   </blockquote>
 </details>
 <details>
@@ -1116,13 +1113,43 @@ pnpm add -g @tailwindcss/language-server
       <li>
         <a href="https://github.com/qompassai/diver/blob/main/lsp/lua_ls.lua">Lua_ls</a>
       </li>
+            <p>
+      <a href="https://luals.github.io/">lua_ls LSP Reference</a>
+    </p>
+ <div style="background: #f8f9fa; padding: 15px; border-radius: 5px; margin-top: 10px; font-family: monospace;">
+
+```sh
+ cargo install --git https://github.com/EmmyLuaLs/emmylua-analyzer-rust schema_json_gen emmylua_ls emmylua_check emmylua_code_style emmylua_doc_cli
+```
+
+</div>
       <li>
         <a href="https://github.com/qompassai/diver/blob/main/lsp/emmylua_ls.lua">emmylua_ls</a>
       </li>
+             <p>
+      <a href="https://github.com/EmmyLuaLs/emmylua-analyzer-rust">Emmylua_ls LSP Reference</a>
+    </p>
+ <div style="background: #f8f9fa; padding: 15px; border-radius: 5px; margin-top: 10px; font-family: monospace;">
+
+```sh
+ cargo install --git https://github.com/EmmyLuaLs/emmylua-analyzer-rust schema_json_gen emmylua_ls emmylua_check emmylua_code_style emmylua_doc_cli
+```
+
+</div>
       <li>
         <a href="https://github.com/qompassai/diver/blob/main/lsp/stylua_ls.lua">stylua_ls</a>
       </li>
     </ul>
+              <p>
+      <a href="https://github.com/JohnnyMorganz/StyLua">Stylua LSP Reference</a>
+    </p>
+ <div style="background: #f8f9fa; padding: 15px; border-radius: 5px; margin-top: 10px; font-family: monospace;">
+
+```sh
+cargo install stylua --features luajit
+```
+
+</div>
   </blockquote>
 </details>
 <details>
@@ -1636,8 +1663,8 @@ pnpm add -g @tailwindcss/language-server
        <li>
         <a href="https://github.com/qompassai/diver/blob/main/lsp/stimulus_ls.lua">stimulus_ls</a>
       </li>
-      <li><code>typeprof_ls</code> –
-        <a href="https://github.com/qompassai/diver/blob/main/lsp/typeprof_ls.lua">config</a>
+      <li><code>
+        <a href="https://github.com/qompassai/diver/blob/main/lsp/typeprof_ls.lua">typeprof_ls</a>
       </li>
     </ul>
   </blockquote>
@@ -1671,10 +1698,20 @@ pnpm add -g @tailwindcss/language-server
   </summary>
   <blockquote style="font-size: 1.2em; line-height: 1.8; padding: 25px; background: #f8f9fa; border-left: 6px solid #667eea; border-radius: 8px; margin: 15px 0; box-shadow: 0 2px 8px rgba(0,0,0,0.1);">
     <ul>
-      <li><code>metals_ls</code> –
-        <a href="https://github.com/qompassai/diver/blob/main/lsp/metals_ls.lua">config</a>
+      <li><code>
+        <a href="https://github.com/qompassai/diver/blob/main/lsp/metals_ls.lua">metals_ls</a>
       </li>
     </ul>
+         <p>
+      <a href="https://scalameta.org/metals/docs/editors/user-configuration">Metals LSP Reference</a>
+    </p>
+ <div style="background: #f8f9fa; padding: 15px; border-radius: 5px; margin-top: 10px; font-family: monospace;">
+
+```sh
+cargo install slint-lsp
+```
+
+</div>
   </blockquote>
 </details>
 <details>
@@ -1690,16 +1727,46 @@ pnpm add -g @tailwindcss/language-server
       <li><code>
         <a href="https://github.com/qompassai/diver/blob/main/lsp/bash_ls.lua">bash_ls</a></code>
       </li>
-      <li><code>fish_ls</code> –
-        <a href="https://github.com/qompassai/diver/blob/main/lsp/fish_ls.lua">config</a>
+                  <p>
+      <a href="https://github.com/slint-ui/slint">Slint LSP Reference</a>
+    </p>
+ <div style="background: #f8f9fa; padding: 15px; border-radius: 5px; margin-top: 10px; font-family: monospace;">
+
+```sh
+cargo install slint-lsp
+```
+
+</div>
+      <li><code>
+        <a href="https://github.com/qompassai/diver/blob/main/lsp/fish_ls.lua">fish_ls</a></code>
       </li>
-      <li><code>nu_ls</code> –
-        <a href="https://github.com/qompassai/diver/blob/main/lsp/nu_ls.lua">config</a>
+      <li><code>
+        <a href="https://github.com/qompassai/diver/blob/main/lsp/nu_ls.lua">nu_ls</a></code>
       </li>
-       <li><code>termux_ls</code> –
-        <a href="https://github.com/qompassai/diver/blob/main/lsp/termux_ls.lua">config</a>
+                  <p>
+      <a href="https://github.com/slint-ui/slint">Slint LSP Reference</a>
+    </p>
+ <div style="background: #f8f9fa; padding: 15px; border-radius: 5px; margin-top: 10px; font-family: monospace;">
+
+```sh
+cargo install slint-lsp
+```
+
+</div>
+       <li><code>
+        <a href="https://github.com/qompassai/diver/blob/main/lsp/termux_ls.lua">termux_ls</a></code>
       </li>
     </ul>
+      <p>
+      <a href="https://github.com/slint-ui/slint">Slint LSP Reference</a>
+    </p>
+ <div style="background: #f8f9fa; padding: 15px; border-radius: 5px; margin-top: 10px; font-family: monospace;">
+
+```sh
+cargo install slint-lsp
+```
+
+</div>
   </blockquote>
 </details>
 <details>
@@ -1712,10 +1779,37 @@ pnpm add -g @tailwindcss/language-server
   </summary>
   <blockquote style="font-size: 1.2em; line-height: 1.8; padding: 25px; background: #f8f9fa; border-left: 6px solid #667eea; border-radius: 8px; margin: 15px 0; box-shadow: 0 2px 8px rgba(0,0,0,0.1);">
     <ul>
-      <li><code>slangd_ls</code> –
-        <a href="https://github.com/qompassai/diver/blob/main/lsp/slangd_ls.lua">config</a>
+      <li><code>
+        <a href="https://github.com/qompassai/diver/blob/main/lsp/slangd_ls.lua">slangd_ls</a></code>
       </li>
     </ul>
+           <p>
+      <a href="https://github.com/slint-ui/slint">Slint LSP Reference</a>
+    </p>
+ <div style="background: #f8f9fa; padding: 15px; border-radius: 5px; margin-top: 10px; font-family: monospace;">
+
+```sh
+git clone https://github.com/shader-slang/slang.git --recursive && cd slang \
+cmake -B build -S . \
+  -DCMAKE_BUILD_TYPE=Release \
+  -DSLANG_ENABLE_SLANGD=ON \
+  -DSLANG_ENABLE_SLANGC=ON \
+  -DSLANG_ENABLE_SLANGI=ON \
+  -DSLANG_ENABLE_SLANGRT=ON \
+  -DSLANG_ENABLE_GFX=ON \
+  -DSLANG_ENABLE_EXAMPLES=ON \
+  -DSLANG_ENABLE_TESTS=ON \
+  -DSLANG_ENABLE_SLANG_GLSLANG=ON \
+  -DSLANG_ENABLE_DXIL=ON \
+  -DSLANG_ENABLE_CUDA=ON \
+  -DSLANG_ENABLE_OPTIX=OFF \
+  -DSLANG_ENABLE_NVAPI=OFF \
+  -DSLANG_ENABLE_AFTERMATH=OFF \
+  -DSLANG_SLANG_LLVM_FLAVOR=FETCH_BINARY_IF_POSSIBLE && \
+cmake --build build -j$(nproc) && sudo cmake --install build
+```
+
+</div>
   </blockquote>
 </details>
 <details>
@@ -1728,10 +1822,20 @@ pnpm add -g @tailwindcss/language-server
   </summary>
   <blockquote style="font-size: 1.2em; line-height: 1.8; padding: 25px; background: #f8f9fa; border-left: 6px solid #667eea; border-radius: 8px; margin: 15px 0; box-shadow: 0 2px 8px rgba(0,0,0,0.1);">
     <ul>
-      <li><code>slint_ls</code> –
-        <a href="https://github.com/qompassai/diver/blob/main/lsp/slint_ls.lua">config</a>
+      <li><code>
+        <a href="https://github.com/qompassai/diver/blob/main/lsp/slint_ls.lua">slint_ls</a></code>
       </li>
     </ul>
+           <p>
+      <a href="https://github.com/slint-ui/slint">Slint LSP Reference</a>
+    </p>
+ <div style="background: #f8f9fa; padding: 15px; border-radius: 5px; margin-top: 10px; font-family: monospace;">
+
+```sh
+cargo install slint-lsp
+```
+
+</div>
   </blockquote>
 </details>
 <details>
@@ -1748,6 +1852,21 @@ pnpm add -g @tailwindcss/language-server
         <a href="https://github.com/qompassai/diver/blob/main/lsp/smithy_ls.lua">smithy_ls</a></code>
       </li>
     </ul>
+      <p>
+      <a href="https://smithy.io/2.0/index.html">Smithy LSP Reference</a>
+    </p>
+ <div style="background: #f8f9fa; padding: 15px; border-radius: 5px; margin-top: 10px; font-family: monospace;">
+
+```sh
+mkdir -p smithy-install/smithy && \
+    curl -L https://github.com/smithy-lang/smithy/releases/download/1.65.0/smithy-cli-linux-x86_64.zip -o smithy-install/smithy-cli-linux-x86_64.zip && \
+    unzip -qo smithy-install/smithy-cli-linux-x86_64.zip -d smithy-install && \
+    mv smithy-install/smithy-cli-linux-x86_64/* smithy-install/smithy && \
+curl -L 'https://github.com/smithy-lang/smithy/releases/download/1.65.0/smithy-cli-linux-x86_64.zip.{asc,sha256}' -o 'smithy-install/smithy-cli-linux-x86_64.zip.#1' && \
+sudo smithy-install/smithy/install && rm -rf smithy-install/
+```
+
+</div>
   </blockquote>
 </details>
 <details>
@@ -1763,9 +1882,29 @@ pnpm add -g @tailwindcss/language-server
       <li><code>
         <a href="https://github.com/qompassai/diver/blob/main/lsp/solc_ls.lua">solc_ls</a></code>
       </li>
+              <p>
+      <a href="https://docs.soliditylang.org/en/latest/installing-solidity.html">Solc LSP Reference</a>
+    </p>
+ <div style="background: #f8f9fa; padding: 15px; border-radius: 5px; margin-top: 10px; font-family: monospace;">
+
+```sh
+pnpm add -g solc
+```
+
+</div>
       <li><code>
         <a href="https://github.com/qompassai/diver/blob/main/lsp/solidity_ls.lua">solidity_ls</a></code>
       </li>
+           <p>
+      <a href="https://github.com/qiuxiang/solidity-ls">Solidity LSP Reference</a>
+    </p>
+ <div style="background: #f8f9fa; padding: 15px; border-radius: 5px; margin-top: 10px; font-family: monospace;">
+
+```sh
+pnpm add -g solidity-ls
+```
+
+</div>
       <li><code>
         <a href="https://github.com/qompassai/diver/blob/main/lsp/solang_ls.lua">solang_ls</a></code>
         <p>
@@ -1825,7 +1964,7 @@ go install github.com/sqls-server/sqls@latest
         <a href="https://github.com/qompassai/diver/blob/main/lsp/starlark_ls.lua">starlark_ls</a>
       </li>
     </ul>
-               <p>
+        <p>
       <a href="https://github.com/facebookexperimental/starlark-rust/">Starlark LSP Reference</a>
     </p>
  <div style="background: #f8f9fa; padding: 15px; border-radius: 5px; margin-top: 10px; font-family: monospace;">
@@ -1851,7 +1990,7 @@ cargo install --git https://github.com/facebook/starlark-rust.git starlark_bin
         <a href="https://github.com/qompassai/diver/blob/main/lsp/svelte_ls.lua">svelte_ls</a>
       </li>
     </ul>
-               <p>
+      <p>
       <a href="https://github.com/sveltejs/language-tools/tree/master/packages/language-server">Svelte LSP Reference</a>
     </p>
  <div style="background: #f8f9fa; padding: 15px; border-radius: 5px; margin-top: 10px; font-family: monospace;">

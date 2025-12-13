@@ -7,13 +7,13 @@
 -- cargo install --git https://github.com/azdavis/millet millet-cli --bin millet-cli
 -- cargo install --git https://github.com/azdavis/millet xtask --bin xtask
 vim.lsp.config['millet'] = {
-  cmd = {
-    'millet'
-  },
-  filetypes = {
-    'sml'
-  },
-  root_markers = {
-    'millet.toml'
-  },
+    cmd = {
+        'millet',
+    },
+    filetypes = {
+        'sml',
+    },
+    root_markers = {
+        'millet.toml',
+    },
 }

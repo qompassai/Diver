@@ -5,19 +5,19 @@
 --Reference: https://github.com/kitten/prosemd-lsp
 --cargo install prosemd-lsp
 vim.lsp.config['prosemd_ls'] = {
-  cmd = {
-    'prosemd-lsp',
-    '--stdio'
-  },
-  filetypes = {
-    'markdown'
-  },
-  root_markers = {
-    '.git'
-  },
-  settings = {
-    prosemd = {
-      validate = true,
+    cmd = {
+        'prosemd-lsp',
+        '--stdio',
     },
-  },
+    filetypes = {
+        'markdown',
+    },
+    root_markers = {
+        '.git',
+    },
+    settings = {
+        prosemd = {
+            validate = true,
+        },
+    },
 }

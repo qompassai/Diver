@@ -2,18 +2,23 @@
 -- Qompass AI Emmyluals Config
 -- Copyright (C) 2025 Qompass AI, All rights reserved
 -- --------------------------------------------------
+--for _, client in ipairs(vim.lsp.get_clients()) do
+--  if client.name == 'emmylua_ls' then
+--    return
+--  end
+--end
+for _, client in ipairs(vim.lsp.get_clients({ bufnr = vim.api.nvim_get_current_buf() })) do
+  if client.name == 'emmylua_ls' then
+    return
+  end
+end
 vim.lsp.config['emmylua_ls'] = {
   cmd = {
     'emmylua_ls',
-    '-c',
-    'stdio',
-    '--editor',
-    'neovim',
-    '--log-level',
-    'info',
   },
   filetypes = {
     'lua',
+    'luau'
   },
   root_markers = {
     '.emmylua.json',
@@ -22,7 +27,7 @@ vim.lsp.config['emmylua_ls'] = {
     '.luarc.json',
     '.luacheckrc',
   },
-  workspace_required = false,
+  workspace_required = true,
   settings = {
     Emmylua = {
       codeAction = {
@@ -46,7 +51,7 @@ vim.lsp.config['emmylua_ls'] = {
       diagnostics = {
         disable = {
           'lowercase-global',
-          'unused-local'
+          'unused-local',
         },
         enable = true,
         globals = {
@@ -72,7 +77,7 @@ vim.lsp.config['emmylua_ls'] = {
         defaultConfig = {
           align_continuous_assign_statement = true,
           indent_size = '4',
-          indent_style = 'tab',
+          indent_style = 'space',
           quote_style = 'ForceSingle',
           trailing_table_separator = 'never',
         },
@@ -112,18 +117,20 @@ vim.lsp.config['emmylua_ls'] = {
         frameworkVersions = {},
         extensions = {
           '.lua',
-          '.luau'
+          '.luau',
         },
         requirePattern = {
           '?.lua',
-          '?/init.lua'
+          '?/init.lua',
         },
         classDefaultCall = {
           functionName = 'new',
           forceNonColon = false,
           forceReturnSelf = true,
         },
-        nonstandardSymbol = { 'continue' },
+        nonstandardSymbol = {
+          'continue'
+        },
         special = {
           errorf = 'error',
         },
@@ -167,7 +174,7 @@ vim.lsp.config['emmylua_ls'] = {
         moduleMap = {},
         preloadFileSize = 10000,
         reindexDuration = 5000,
-        enableReindex = false,
+        enableReindex = true,
       },
     },
   },

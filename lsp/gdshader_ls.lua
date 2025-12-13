@@ -3,15 +3,15 @@
 -- Copyright (C) 2025 Qompass AI, All rights reserved
 -- ---------------------------------------------------
 vim.lsp.config['gdshader_ls'] = {
-  cmd = {
-    "gdshader-lsp",
-    "--stdio"
-  },
-  filetypes = {
-    'gdshader',
-    'gdshaderinc'
-  },
-  root_markers = {
-    'project.godot'
-  },
+    cmd = {
+        'gdshader-lsp',
+        '--stdio',
+    },
+    filetypes = {
+        'gdshader',
+        'gdshaderinc',
+    },
+    root_markers = {
+        'project.godot',
+    },
 }

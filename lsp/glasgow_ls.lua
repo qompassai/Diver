@@ -5,19 +5,19 @@
 -- Reference: https://github.com/nolanderc/glasgow
 -- cargo install glasgow
 vim.lsp.config['glasgow_ls'] = {
-  cmd = {
-    'glasgow'
-  },
-  filetypes = {
-    'wgsl'
-  },
-  root_markers = {
-    'Cargo.toml',
-    '.git',
-    'package.json',
-    'package.jsonc',
-    'pnpm-lock.yaml',
-    'yarn.lock',
-  },
-  settings = {},
+    cmd = {
+        'glasgow',
+    },
+    filetypes = {
+        'wgsl',
+    },
+    root_markers = {
+        'Cargo.toml',
+        '.git',
+        'package.json',
+        'package.jsonc',
+        'pnpm-lock.yaml',
+        'yarn.lock',
+    },
+    settings = {},
 }

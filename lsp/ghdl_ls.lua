@@ -7,15 +7,15 @@
 -- git clone https://github.com/ghdl/ghdl.git
 -- cd ghdl && pip install .
 vim.lsp.config['ghdl_ls'] = {
-  cmd = {
-    'ghdl-ls',
-  },
-  filetypes = {
-    'vhdl',
-    'vhd',
-  },
-  root_markers = {
-    'hdl-prj.json',
-    '.git',
-  },
+    cmd = {
+        'ghdl-ls',
+    },
+    filetypes = {
+        'vhdl',
+        'vhd',
+    },
+    root_markers = {
+        'hdl-prj.json',
+        '.git',
+    },
 }

@@ -4,14 +4,14 @@
 -- --------------------------------------------------
 --- pip install -U nginx-language-server
 vim.lsp.config['nginx_ls'] = {
-  cmd = {
-    'nginx-language-server'
-  },
-  filetypes = {
-    'nginx'
-  },
-  root_markers = {
-    'nginx.conf',
-    '.git'
-  },
+    cmd = {
+        'nginx-language-server',
+    },
+    filetypes = {
+        'nginx',
+    },
+    root_markers = {
+        'nginx.conf',
+        '.git',
+    },
 }

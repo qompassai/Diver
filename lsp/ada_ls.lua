@@ -4,26 +4,26 @@
 -- --------------------------------------------------
 --Reference:  https://github.com/AdaCore/ada_language_server
 vim.lsp.config['ada_ls'] = {
-  cmd = {
-    'ada_language_server'
-  },
-  filetypes = {
-    'ada'
-  },
-  root_markers = {
-    "Makefile",
-    ".git",
-    "alire.toml",
-    "*.gpr",
-    "*.adc"
-  },
-  settings = {
-    ada = {
-      projectFile = "project.gpr",
-      scenarioVariables = {
-        Mode = "debug",
-        Target = "native",
-      },
+    cmd = {
+        'ada_language_server',
     },
-  },
+    filetypes = {
+        'ada',
+    },
+    root_markers = {
+        'Makefile',
+        '.git',
+        'alire.toml',
+        '*.gpr',
+        '*.adc',
+    },
+    settings = {
+        ada = {
+            projectFile = 'project.gpr',
+            scenarioVariables = {
+                Mode = 'debug',
+                Target = 'native',
+            },
+        },
+    },
 }

@@ -4,32 +4,32 @@
 -- --------------------------------------------------
 --References: composer global require vimeo/psalm
 vim.lsp.config['psalm_ls'] = {
-  cmd = {
-    'psalm',
-    '--language-server'
-  },
-  filetypes = {
-    'php',
-    'phps',
-    'blade',
-  },
-  root_markers = {
-    'psalm.xml',
-    'psalm.xml.dist',
-    'composer.jsonc',
-    '.git',
-  },
-  settings = {
-    psalm = {
-      errorLevel = 2,
-      phpVersion = '8.4',
-      reportUnusedCode = true,
-      severity = 'all',
-      showHints = true,
-      showInfo = true,
-      showSuggestions = true,
-      strictTyping = true,
-      useCache = true,
+    cmd = {
+        'psalm',
+        '--language-server',
     },
-  },
+    filetypes = {
+        'php',
+        'phps',
+        'blade',
+    },
+    root_markers = {
+        'psalm.xml',
+        'psalm.xml.dist',
+        'composer.jsonc',
+        '.git',
+    },
+    settings = {
+        psalm = {
+            errorLevel = 2,
+            phpVersion = '8.4',
+            reportUnusedCode = true,
+            severity = 'all',
+            showHints = true,
+            showInfo = true,
+            showSuggestions = true,
+            strictTyping = true,
+            useCache = true,
+        },
+    },
 }

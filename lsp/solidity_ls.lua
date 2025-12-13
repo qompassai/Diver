@@ -5,21 +5,21 @@
 -- #Reference: https://github.com/qiuxiang/solidity-ls
 -- pnpm add -g solidity-ls
 vim.lsp.config['solidity_ls'] = {
-  cmd = {
-    'solidity-ls',
-    '--stdio'
-  },
-  filetypes = {
-    'solidity'
-  },
-  root_markers = {
-    '.git',
-    'package.json'
-  },
-  settings = {
-    solidity = {
-      includePath = '',
-      remapping = {}
-    }
-  },
+    cmd = {
+        'solidity-ls',
+        '--stdio',
+    },
+    filetypes = {
+        'solidity',
+    },
+    root_markers = {
+        '.git',
+        'package.json',
+    },
+    settings = {
+        solidity = {
+            includePath = '',
+            remapping = {},
+        },
+    },
 }

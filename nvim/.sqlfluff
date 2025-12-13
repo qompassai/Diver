@@ -1,5 +1,0 @@
-[sqlfluff]
-dialect = postgres
-
-[sqlfluff:templater:dbt]
-profiles_dir = ~/.dbt

@@ -5,13 +5,14 @@
 -- go install github.com/juliosueiras/nomad-lsp@latest
 -- Reference: https://github.com/juliosueiras/nomad-lsp
 vim.lsp.config['nomad_ls'] = {
-  cmd = {
-    'nomad-lsp'
-  },
-  filetypes = {
-    'hcl.nomad',
-    'nomad' },
-  root_markers = {
-    '*.nomad',
-  },
+    cmd = {
+        'nomad-lsp',
+    },
+    filetypes = {
+        'hcl.nomad',
+        'nomad',
+    },
+    root_markers = {
+        '*.nomad',
+    },
 }

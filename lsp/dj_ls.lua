@@ -4,18 +4,18 @@
 -- ----------------------------------------
 -- uv tool install django-language-server
 vim.lsp.config['dj_ls'] = {
-  cmd = {
-    'djls',
-    'serve'
-  },
-  filetypes = {
-    'html',
-    'htmldjango',
-    'python'
-  },
-  root_markers = {
-    'manage.py',
-    'pyproject.toml',
-    '.git'
-  },
+    cmd = {
+        'djls',
+        'serve',
+    },
+    filetypes = {
+        'html',
+        'htmldjango',
+        'python',
+    },
+    root_markers = {
+        'manage.py',
+        'pyproject.toml',
+        '.git',
+    },
 }

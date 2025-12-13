@@ -5,18 +5,18 @@
 --Reference: https://github.com/igor-prusov/dts-lsp
 -- cargo install dts-lsp
 vim.lsp.config['dts_ls'] = {
-  cmd = {
-    'dts-lsp'
-  },
-  filetypes = {
-    'dts',
-    'dtsi',
-    'overlay'
-  },
-  root_markers = {
-    '.git'
-  },
-  settings = {
-    ...
-  },
+    cmd = {
+        'dts-lsp',
+    },
+    filetypes = {
+        'dts',
+        'dtsi',
+        'overlay',
+    },
+    root_markers = {
+        '.git',
+    },
+    settings = {
+        ...,
+    },
 }

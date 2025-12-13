@@ -4,16 +4,16 @@
 -- ----------------------------------------
 --Reference: https://github.com/prominic/groovy-language-server.git
 vim.lsp.config['groovy_ls'] = {
-  cmd = {
-    'java',
-    '-jar',
-    'groovy-language-server-all.jar'
-  },
-  filetypes = {
-    'groovy'
-  },
-  root_markers = {
-    '.git',
-    'Jenkinsfile'
-  },
+    cmd = {
+        'java',
+        '-jar',
+        'groovy-language-server-all.jar',
+    },
+    filetypes = {
+        'groovy',
+    },
+    root_markers = {
+        '.git',
+        'Jenkinsfile',
+    },
 }

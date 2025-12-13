@@ -3,6 +3,6 @@
 -- Copyright (C) 2025 Qompass AI, All rights reserved
 -- --------------------------------------------------
 --cargo install \
-  --git https://github.com/move-language/move \
-  --rev ea70797099baea64f05194a918cebd69ed02b285 \
-  --move-analyzer
+--git https://github.com/move-language/move \
+--rev ea70797099baea64f05194a918cebd69ed02b285 \
+--move-analyzer

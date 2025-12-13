@@ -5,14 +5,14 @@
 -- References: https://github.com/digama0/mm0/tree/master/mm0-rs)
 -- cargo install --git https://github.com/digama0/mm0 --locked mm0-rs
 vim.lsp.config['mm0_ls'] = {
-  cmd = {
-    'mm0-rs',
-    'server'
-  },
-  root_markers = {
-    '.git'
-  },
-  filetypes = {
-    'metamath-zero'
-  },
+    cmd = {
+        'mm0-rs',
+        'server',
+    },
+    root_markers = {
+        '.git',
+    },
+    filetypes = {
+        'metamath-zero',
+    },
 }

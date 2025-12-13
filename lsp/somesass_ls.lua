@@ -4,20 +4,22 @@
 -- --------------------------------------------------
 -- pnpm add -g some-sass-language-server
 vim.lsp.config['somesass_ls'] = {
-  cmd = {
-    'some-sass-language-server', '--stdio' },
-  filetypes = {
-    'scss',
-    'sass'
-  },
-  root_markers = {
-    '.git',
-    '.package.json',
-    '.package.jsonc'
-  },
-  settings = {
-    somesass = {
-      suggestAllFromOpenDocument = true,
+    cmd = {
+        'some-sass-language-server',
+        '--stdio',
     },
-  },
+    filetypes = {
+        'scss',
+        'sass',
+    },
+    root_markers = {
+        '.git',
+        '.package.json',
+        '.package.jsonc',
+    },
+    settings = {
+        somesass = {
+            suggestAllFromOpenDocument = true,
+        },
+    },
 }

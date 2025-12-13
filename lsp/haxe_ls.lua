@@ -3,27 +3,27 @@
 -- Copyright (C) 2025 Qompass AI, All rights reserved
 -- ----------------------------------------
 vim.lsp.config['haxe_ls'] = {
-  cmd = {
-    'node',
-    'server.js'
-  },
-  filetypes = {
-    'haxe'
-  },
-  root_markers = {
-    'build.hxml',
-    'haxe_libraries',
-    '.git',
-  },
-  init_options = {
-    displayArguments = {
-      'build.hxml'
+    cmd = {
+        'node',
+        'server.js',
     },
-  },
-  settings = {
-    haxe = {
-      executable = 'haxe',
-      buildCompletionCache = true,
+    filetypes = {
+        'haxe',
     },
-  },
+    root_markers = {
+        'build.hxml',
+        'haxe_libraries',
+        '.git',
+    },
+    init_options = {
+        displayArguments = {
+            'build.hxml',
+        },
+    },
+    settings = {
+        haxe = {
+            executable = 'haxe',
+            buildCompletionCache = true,
+        },
+    },
 }

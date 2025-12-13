@@ -5,16 +5,16 @@
 -- go install github.com/a-h/templ/cmd/templ@latest
 -- Reference: https://templ.guide
 vim.lsp.config['templ_ls'] = {
-  cmd = {
-    'templ',
-    'lsp'
-  },
-  filetypes = {
-    'templ'
-  },
-  root_markers = {
-    'go.work',
-    'go.mod',
-    '.git'
-  },
+    cmd = {
+        'templ',
+        'lsp',
+    },
+    filetypes = {
+        'templ',
+    },
+    root_markers = {
+        'go.work',
+        'go.mod',
+        '.git',
+    },
 }

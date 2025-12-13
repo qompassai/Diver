@@ -5,16 +5,16 @@
 --pnpm add -g turtle-language-server
 --Reference: ttps://github.com/stardog-union/stardog-language-servers/tree/master/packages/turtle-language-server
 vim.lsp.config['turtle_ls'] = {
-  cmd = {
-    'node',
-    'turtle-language-server',
-    '--stdio'
-  },
-  filetypes = {
-    'turtle',
-    'ttl'
-  },
-  root_markers = {
-    '.git'
-  },
+    cmd = {
+        'node',
+        'turtle-language-server',
+        '--stdio',
+    },
+    filetypes = {
+        'turtle',
+        'ttl',
+    },
+    root_markers = {
+        '.git',
+    },
 }

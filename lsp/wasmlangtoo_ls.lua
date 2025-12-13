@@ -4,24 +4,24 @@
 -----------------------------------------------------
 --Reference: https://github.com/g-plane/wasm-language-tools
 vim.lsp.config['wasmlangtoo_ls'] = {
-  cmd = {
-    'wat_server'
-  },
-  filetypes = {
-    'wat'
-  },
-  settings = {
-    format = {
-      formatComments = true,
-      ignoreCommentDirective = 'fmt-ignore',
-      indentWidth = 4,
-      lineBreak = 'crlf',
-      printWidth = 80,
-      splitClosingParens = true,
-      useTabs = true
+    cmd = {
+        'wat_server',
     },
-    lint = {
-      unused = 'warn',
+    filetypes = {
+        'wat',
     },
-  },
+    settings = {
+        format = {
+            formatComments = true,
+            ignoreCommentDirective = 'fmt-ignore',
+            indentWidth = 4,
+            lineBreak = 'crlf',
+            printWidth = 80,
+            splitClosingParens = true,
+            useTabs = true,
+        },
+        lint = {
+            unused = 'warn',
+        },
+    },
 }

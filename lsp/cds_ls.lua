@@ -5,24 +5,24 @@
 --Reference: https://cap.cloud.sap/docs/
 --pnpm add -g @sap/cds-lsp
 vim.lsp.config['cds_ls'] = {
-  cmd = {
-    'cds-lsp',
-    '--stdio'
-  },
-  filetypes = {
-    'cds'
-  },
-  init_options = {
-    provideFormatter = true
-  },
-  root_markers = {
-    'db',
-    'package.json',
-    'srv'
-  },
-  settings = {
-    cds = {
-      validate = true
+    cmd = {
+        'cds-lsp',
+        '--stdio',
     },
-  },
+    filetypes = {
+        'cds',
+    },
+    init_options = {
+        provideFormatter = true,
+    },
+    root_markers = {
+        'db',
+        'package.json',
+        'srv',
+    },
+    settings = {
+        cds = {
+            validate = true,
+        },
+    },
 }

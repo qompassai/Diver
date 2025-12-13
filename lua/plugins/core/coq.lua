@@ -3,19 +3,18 @@
 -- Copyright (C) 2025 Qompass AI, All rights reserved
 -- ----------------------------------------
 return {
-  {
-    "ms-jpq/coq_nvim",
-		version = '*',
-    dependencies = {
-      { "ms-jpq/coq.artifacts", branch = "artifacts" },
-      { "ms-jpq/coq.thirdparty", branch = "3p" }
+    {
+        'ms-jpq/coq_nvim',
+        version = '*',
+        dependencies = {
+            { 'ms-jpq/coq.artifacts', branch = 'artifacts' },
+            { 'ms-jpq/coq.thirdparty', branch = '3p' },
+        },
+        init = function()
+            vim.g.coq_settings = {
+                auto_start = false,
+            }
+        end,
+        config = function() end,
     },
-    init = function()
-      vim.g.coq_settings = {
-        auto_start = false,
-      }
-    end,
-    config = function()
-    end,
-  },
 }

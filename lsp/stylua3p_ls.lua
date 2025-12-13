@@ -4,14 +4,14 @@
 -- --------------------------------------------------
 --Reference: https://github.com/antonk52/lua-3p-language-servers
 vim.lsp.config['stylua3p_ls'] = {
-  cmd = {
-    'stylua-3p-language-server'
-  },
-  filetypes = {
-    'lua'
-  },
-  root_markers = {
-    '.stylua.toml',
-    'stylua.toml'
-  },
+    cmd = {
+        'stylua-3p-language-server',
+    },
+    filetypes = {
+        'lua',
+    },
+    root_markers = {
+        '.stylua.toml',
+        'stylua.toml',
+    },
 }

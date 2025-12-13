@@ -5,20 +5,19 @@
 -- References: https://github.com/pherrymason/c3-lsp?tab=readme-ov-file#Installation |
 -- https://github.com/pherrymason/c3-lsp/wiki/Integration-with-editors
 -- yay/apt/dnf c3-lsp
-vim.cmd [[autocmd BufNewFile,BufRead *.c3 set filetype=c3]]
+vim.cmd([[autocmd BufNewFile,BufRead *.c3 set filetype=c3]])
 vim.lsp.config['c3_ls'] = {
-  cmd = {
-    'c3lsp',
-    '--send-reports=false',
-    '--lang-version=latest'
-  },
-  filetypes = {
-    'c3'
-  },
-  root_markers = {
-    '.git',
-    'c3.toml',
-  },
-  init_options = {
-  },
+    cmd = {
+        'c3lsp',
+        '--send-reports=false',
+        '--lang-version=latest',
+    },
+    filetypes = {
+        'c3',
+    },
+    root_markers = {
+        '.git',
+        'c3.toml',
+    },
+    init_options = {},
 }

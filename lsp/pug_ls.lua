@@ -5,13 +5,13 @@
 -- Reference: https://github.com/opa-oz/pug-lsp
 -- go install github.com/opa-oz/pug-lsp@latest
 vim.lsp.config['pug_ls'] = {
-  cmd = {
-    'pug-lsp'
-  },
-  filetypes = {
-    'pug'
-  },
-  root_markers = {
-    'package.json'
-  },
+    cmd = {
+        'pug-lsp',
+    },
+    filetypes = {
+        'pug',
+    },
+    root_markers = {
+        'package.json',
+    },
 }

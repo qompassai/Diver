@@ -5,23 +5,23 @@
 -- References:  https://solargaraph.org/
 -- gem install --user-install solargraph
 vim.lsp.config['solargraph_ls'] = {
-  cmd = {
-    'solargraph',
-    'stdio'
-  },
-  settings = {
-    solargraph = {
-      diagnostics = true,
+    cmd = {
+        'solargraph',
+        'stdio',
     },
-  },
-  init_options = {
-    formatting = true
-  },
-  filetypes = {
-    'ruby'
-  },
-  root_markers = {
-    'Gemfile',
-    '.git'
-  },
+    settings = {
+        solargraph = {
+            diagnostics = true,
+        },
+    },
+    init_options = {
+        formatting = true,
+    },
+    filetypes = {
+        'ruby',
+    },
+    root_markers = {
+        'Gemfile',
+        '.git',
+    },
 }
