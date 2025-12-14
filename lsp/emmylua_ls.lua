@@ -2,11 +2,6 @@
 -- Qompass AI Emmyluals Config
 -- Copyright (C) 2025 Qompass AI, All rights reserved
 -- --------------------------------------------------
---for _, client in ipairs(vim.lsp.get_clients()) do
---  if client.name == 'emmylua_ls' then
---    return
---  end
---end
 for _, client in ipairs(vim.lsp.get_clients({ bufnr = vim.api.nvim_get_current_buf() })) do
   if client.name == 'emmylua_ls' then
     return
@@ -27,7 +22,6 @@ vim.lsp.config['emmylua_ls'] = {
     '.luarc.json',
     '.luacheckrc',
   },
-  workspace_required = true,
   settings = {
     Emmylua = {
       codeAction = {
@@ -174,7 +168,7 @@ vim.lsp.config['emmylua_ls'] = {
         moduleMap = {},
         preloadFileSize = 10000,
         reindexDuration = 5000,
-        enableReindex = true,
+        enableReindex = false,
       },
     },
   },

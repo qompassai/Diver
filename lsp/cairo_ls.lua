@@ -4,21 +4,21 @@
 -- ---------------------------------------------------
 -- cargo install --git https://github.com/software-mansion/scarb scarb
 vim.lsp.config['cairo_ls'] = {
-    cmd = {
-        'scarb',
-        'cairo-language-server',
-        '/C',
-        '--node-ipc',
-    },
-    init_options = {
-        hostInfo = 'neovim',
-    },
-    filetypes = {
-        'cairo',
-    },
-    root_markers = {
-        'Scarb.toml',
-        'cairo_project.toml',
-        '.git',
-    },
+  cmd = {
+    'scarb',
+    'cairo-language-server',
+    '/C',
+    '--node-ipc',
+  },
+  init_options = {
+    hostInfo = 'neovim',
+  },
+  filetypes = {
+    'cairo',
+  },
+  root_markers = {
+    'Scarb.toml',
+    'cairo_project.toml',
+    '.git',
+  },
 }

@@ -9,7 +9,7 @@ vim.lsp.enable({
   'agda_ls',
   'ai_ls',
   'aiken_ls',
-  --'air_ls',
+  'air_ls',
   'angular_ls',
   'ansible_ls',
   'antlers_ls',
@@ -30,7 +30,7 @@ vim.lsp.enable({
   'bazelrc_ls',
   'beancount_ls',
   'bicep_ls',
-  'biome_ls',
+  --'biome',
   'bitbake_ls',
   'blueprint_ls',
   'bq_ls',
@@ -46,9 +46,8 @@ vim.lsp.enable({
   'cc_ls',
   'cds_ls',
   'checkmake_ls',
-  'circom_ls',
+  --'circom_ls', --last git in 2023
   'clangd_ls',
-  'clangfmt_ls',
   'clarinet_ls',
   'clojure_ls',
   'cmake_ls',
@@ -61,6 +60,7 @@ vim.lsp.enable({
   'crystalline_ls',
   'csharp_ls',
   --'cspell_ls',
+  --'css_ls', --last update 1 year ago
   --'deno_ls',
   --'devsense_ls',
   --'diagnostic_ls', -2years since last commit
@@ -81,7 +81,7 @@ vim.lsp.enable({
   --'emmet_ls',
   --'emmylua_ls',
   'esbonio_ls',
-  'eslint_ls',
+  --'eslint_ls', --using biome instead, last updated 1 year ago.
   'expert_ls',
   'facility_ls',
   'fennel_ls',
@@ -97,7 +97,7 @@ vim.lsp.enable({
   'gdshader_ls',
   'ghactions_ls',
   --'ghcide_ls',
-  --'ghdl_ls',
+  --'ghdl_ls', --last activity one year ago.
   --'ginko_ls',
   'gitlabci_ls',
   'glasgow_ls',
@@ -129,7 +129,7 @@ vim.lsp.enable({
   'jdt_ls',
   'jinja_ls',
   'jq_ls',
-  'json_ls',
+  --'json_ls',
   'jsonnet_ls',
   'julia_ls',
   'just_ls',

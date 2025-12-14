@@ -40,7 +40,8 @@
  <div style="background: #f8f9fa; padding: 15px; border-radius: 5px; margin-top: 10px; font-family: monospace;">
 
 ```sh
-git clone https://github.com/banacorn/agda-language-server && cd agda-langauge-server && git submodule update --init --recursive && stack install
+git clone https://github.com/banacorn/agda-language-server && cd agda-langauge-server \
+git submodule update --init --recursive && stack install
 ```
 
 </div>
@@ -92,7 +93,7 @@ pnpm add -g @github/copilot-language-server
  <div style="background: #f8f9fa; padding: 15px; border-radius: 5px; margin-top: 10px; font-family: monospace;">
 
 ```sh
- pip install git+https://github.com/PrithivirajDamodaran/Gramformer.git
+pip install git+https://github.com/PrithivirajDamodaran/Gramformer.git
 ```
 
 </div>
@@ -139,7 +140,6 @@ pnpm add -g @ansible/ansible-language-server
         <a href="https://github.com/qompassai/diver/blob/main/lsp/arduino_ls.lua">arduino_ls</a>
             </p>
       </li>
-    </ul>
          <p>
       <a href=" https://github.com/arduino/arduino-language-server">Arduino LSP Reference</a>
     </p>
@@ -150,6 +150,7 @@ go install github.com/arduino/arduino-language-server@latest
 ```
 
 </div>
+  </ul>
   </blockquote>
 </details>
 <details>
@@ -187,7 +188,7 @@ cargo install --git https://github.com/bergercookie/asm-lsp asm-lsp
  <div style="background: #f8f9fa; padding: 15px; border-radius: 5px; margin-top: 10px; font-family: monospace;">
 
 ```sh
-pnpm add -g m68k-lsp-server
+pnpm add -g m68k-lsp-server@latest
 ```
 
 </div>
@@ -213,12 +214,37 @@ pnpm add -g m68k-lsp-server
  <div style="background: #f8f9fa; padding: 15px; border-radius: 5px; margin-top: 10px; font-family: monospace;">
 
 ```sh
-pnpm add -g typescript @astrojs/language-server prettier prettier-plugin-astro
+pnpm add -g typescript@latest @astrojs/language-server@latest prettier@latest prettier-plugin-astro@latest
 ```
 
 </div>
   </blockquote>
 </details>
+  <details>
+<summary style="font-size: 1.4em; font-weight: bold; padding: 15px; background: #667eea; color: white; border-radius: 10px; cursor: pointer; margin: 10px 0; display: flex; align-items: center; gap: 8px;">
+    <div class="icon-row" style="display: flex; align-items: center; gap: 6px;">
+      <img src="https://raw.githubusercontent.com/qompassai/svg/refs/heads/main/assets/icons/astro/astro.svg"
+           alt="atlas" width="60" height="60" title="Atlas" />
+    </div>
+    <strong>Atlas</strong>
+  </summary>
+  <blockquote style="font-size: 1.2em; line-height: 1.8; padding: 25px; background: #f8f9fa; border-left: 6px solid #667eea; border-radius: 8px; margin: 15px 0; box-shadow: 0 2px 8px rgba(0,0,0,0.1);">
+    <ul>
+      <li>
+        <a href="https://github.com/qompassai/diver/blob/main/lsp/atlas_ls.lua">atlas_ls</a>
+      </li>
+    </ul>
+       <p>
+      <a href="https://atlasgo.io/">Atlas LSP Reference</a>
+    </p>
+ <div style="background: #f8f9fa; padding: 15px; border-radius: 5px; margin-top: 10px; font-family: monospace;">
+
+```sh
+curl -sSf https://atlasgo.sh | sh
+```
+
+</div>
+  </blockquote>
 <details>
   <summary style="font-size: 1.4em; font-weight: bold; padding: 15px; background: #667eea; color: white; border-radius: 10px; cursor: pointer; margin: 10px 0; display: flex; align-items: center; gap: 8px;">
     <div class="icon-row" style="display: flex; align-items: center; gap: 6px;">
@@ -239,7 +265,7 @@ pnpm add -g typescript @astrojs/language-server prettier prettier-plugin-astro
  <div style="background: #f8f9fa; padding: 15px; border-radius: 5px; margin-top: 10px; font-family: monospace;">
 
 ```sh
-pnpm add -g awk-language-server
+pnpm add -g awk-language-server@latest
 ```
 
 </div>
@@ -264,7 +290,7 @@ pnpm add -g awk-language-server
  <div style="background: #f8f9fa; padding: 15px; border-radius: 5px; margin-top: 10px; font-family: monospace;">
 
 ```sh
-pnpm add -g azure-pipelines-language-server
+pnpm add -g azure-pipelines-language-server@latest
 ```
 
 </div>
@@ -309,17 +335,27 @@ pnpm add -g git+https://github.com/salesforce-misc/bazelrc-lsp.git
       <li>
         <a href="https://github.com/qompassai/diver/blob/main/lsp/beancount_ls.lua">beancount_ls</a>
       </li>
-    </ul>
             <p>
       <a href="https://github.com/polarmutex/beancount-language-server#installation">Beancount LSP Reference</a>
     </p>
  <div style="background: #f8f9fa; padding: 15px; border-radius: 5px; margin-top: 10px; font-family: monospace;">
 
 ```sh
-cargo install beancount-language-server && pip install beancount
+cargo install beancount-language-server
+
 ```
 
-</div>
+OR
+
+```sh
+pip install beancount
+```
+
+```
+```
+
+   </div>
+  </ul>
   </blockquote>
 </details>
 <details>
@@ -362,12 +398,12 @@ cargo install beancount-language-server && pip install beancount
   </summary>
   <blockquote style="font-size: 1.2em; line-height: 1.8; padding: 25px; background: #f8f9fa; border-left: 6px solid #667eea; border-radius: 8px; margin: 15px 0; box-shadow: 0 2px 8px rgba(0,0,0,0.1);">
     <ul>
-      <li><code>bitbake_ls
+      <li><code>
         <a href="https://github.com/qompassai/diver/blob/main/lsp/bitbake_ls.lua">bitbake_ls</a></code>
       </li>
         </ul>
        <p>
-      <a href="https://github.com/polarmutex/beancount-language-server#installation">BitBake LSP Reference</a>
+      <a href=" https://github.com/Freed-Wu/bitbake-language-server">BitBake LSP Reference</a>
     </p>
  <div style="background: #f8f9fa; padding: 15px; border-radius: 5px; margin-top: 10px; font-family: monospace;">
 
@@ -375,7 +411,7 @@ cargo install beancount-language-server && pip install beancount
 pip install bitbake-language-server
 ```
 
-   </div>
+</div>
   </blockquote>
 </details>
 <details>
@@ -388,10 +424,22 @@ pip install bitbake-language-server
   </summary>
   <blockquote style="font-size: 1.2em; line-height: 1.8; padding: 25px; background: #f8f9fa; border-left: 6px solid #667eea; border-radius: 8px; margin: 15px 0; box-shadow: 0 2px 8px rgba(0,0,0,0.1);">
     <ul>
-      <li>
-        <a href="https://github.com/qompassai/diver/blob/main/lsp/blueprint_ls.lua">blueprint_ls</a>
+      <li><code>
+        <a href="https://github.com/qompassai/diver/blob/main/lsp/blueprint_ls.lua">blueprint_ls</a></code>
       </li>
     </ul>
+        <p>
+      <a href="https://gnome.pages.gitlab.gnome.org/blueprint-compiler/index.html">BluePrint Reference</a>
+    </p>
+ <div style="background: #f8f9fa; padding: 15px; border-radius: 5px; margin-top: 10px; font-family: monospace;">
+
+```sh
+git clone https://gitlab.gnome.org/GNOME/blueprint-compiler --recursive \
+&& cd blueprint-compiler && git fetch --all && git submodule update --init --recursive \
+meson _build && ninja -C _build install
+```
+
+</div>
   </blockquote>
 </details>
 <details>
@@ -404,10 +452,20 @@ pip install bitbake-language-server
   </summary>
   <blockquote style="font-size: 1.2em; line-height: 1.8; padding: 25px; background: #f8f9fa; border-left: 6px solid #667eea; border-radius: 8px; margin: 15px 0; box-shadow: 0 2px 8px rgba(0,0,0,0.1);">
     <ul>
-      <li>
-        <a href="https://github.com/qompassai/diver/blob/main/lsp/bq_ls.lua">bq_ls</a>
+      <li><code>
+        <a href="https://github.com/qompassai/diver/blob/main/lsp/bq_ls.lua">bq_ls</a></code>
       </li>
-    </ul>
+      <p>
+      <a href="https://github.com/kitagry/bqls/">BigQuery LSP Reference</a>
+    </p>
+ <div style="background: #f8f9fa; padding: 15px; border-radius: 5px; margin-top: 10px; font-family: monospace;">
+
+```sh
+go install github.com/kitagry/bqls@latest
+```
+
+</div>
+  </ul>
   </blockquote>
 </details>
 <details>
@@ -423,13 +481,37 @@ pip install bitbake-language-server
         <li>
           <a href="https://github.com/qompassai/diver/blob/main/lsp/cc_ls.lua">cc_ls</a>
       </li>
-      <li>
-          <a href="https://github.com/qompassai/diver/blob/main/lsp/clangd_ls.lua">clangd_ls</a>
+                <p>
+      <a href="https://github.com/MaskRay/ccls/wiki">CC LSP Reference</a>
+    </p>
+ <div style="background: #f8f9fa; padding: 15px; border-radius: 5px; margin-top: 10px; font-family: monospace;">
+
+```sh
+git clone --depth=1 --recursive https://github.com/MaskRay/ccls && cd ccls \
+git submodule update --init --recursive && cmake -S. -BRelease -DCMAKE_BUILD_TYPE=Release \
+cmake --build Release
+```
+
+</div>
+      <li><code>
+          <a href="https://github.com/qompassai/diver/blob/main/lsp/clangd_ls.lua">clangd_ls</a></code>
       </li>
-      <li>
-          <a href="https://github.com/qompassai/diver/blob/main/lsp/clangfmt_ls.lua">clangfmt_ls</a>
-      </li>
-         </ul>
+                <p>
+      <a href="https://clangd.llvm.org/installation.html">Clangd LSP Reference</a>
+    </p>
+ <div style="background: #f8f9fa; padding: 15px; border-radius: 5px; margin-top: 10px; font-family: monospace;">
+
+```sh
+git clone https://github.com/llvm/llvm-project.git "$HOME/src/llvm-project" \\
+cd "$HOME/src/llvm-project" git fetch --all && git submodule update --init --recursive \
+cmake -S llvm -B build \
+  -DCMAKE_BUILD_TYPE=Release \
+  -DLLVM_ENABLE_PROJECTS="clang;clang-tools-extra" && cmake --build build --target clangd -j$(nproc) \
+cmake --install build --component clangd --prefix "$HOME/.local"
+```
+
+  </div>
+</ul>
   </blockquote>
 </details>
 <details>
@@ -445,23 +527,23 @@ pip install bitbake-language-server
       <li>
           <a href="https://github.com/qompassai/diver/blob/main/lsp/cairo_ls.lua">cairo_ls</a>
       </li>
-    </ul>
-  </blockquote>
-</details>
-<details>
-  <summary style="font-size: 1.4em; font-weight: bold; padding: 15px; background: #667eea; color: white; border-radius: 10px; cursor: pointer; margin: 10px 0; display: flex; align-items: center; gap: 8px;">
-    <div class="icon-row" style="display: flex; align-items: center; gap: 6px;">
-      <img src="https://raw.githubusercontent.com/qompassai/svg/refs/heads/main/assets/icons/circom/circom.svg"
-           alt="circom" width="60" height="60" title="Circom" />
-    </div>
-    <strong>Circom</strong>
-  </summary>
-  <blockquote style="font-size: 1.2em; line-height: 1.8; padding: 25px; background: #f8f9fa; border-left: 6px solid #667eea; border-radius: 8px; margin: 15px 0; box-shadow: 0 2px 8px rgba(0,0,0,0.1);">
-    <ul>
-      <li>
-          <a href="https://github.com/qompassai/diver/blob/main/lsp/circom_ls.lua">circom_ls</a>
-      </li>
-    </ul>
+     <p>
+      <a href="https://github.com/starkware-libs/cairo/tree/main/crates/cairo-lang-language-server">Cairo LSP Reference</a>
+    </p>
+ <div style="background: #f8f9fa; padding: 15px; border-radius: 5px; margin-top: 10px; font-family: monospace;">
+
+```sh
+curl --proto '=https' --tlsv1.2 -sSf https://sh.starkup.dev | sh
+```
+
+OR
+
+```sh
+ cargo install --git https://github.com/software-mansion/scarb scarb
+```
+
+</div>
+  </ul>
   </blockquote>
 </details>
 <details>
@@ -477,9 +559,30 @@ pip install bitbake-language-server
       <li>
           <a href="https://github.com/qompassai/diver/blob/main/lsp/cmake_ls.lua">cmake_ls</a>
       </li>
+           <p>
+      <a href="https://github.com/regen100/cmake-language-server">CMake LSP Reference</a>
+    </p>
+ <div style="background: #f8f9fa; padding: 15px; border-radius: 5px; margin-top: 10px; font-family: monospace;">
+
+```sh
+pip install cmake-language-server
+
+```
+
+</div>
       <li>
         <a href="https://github.com/qompassai/diver/blob/main/lsp/neocmake_ls.lua">neocmake_ls</a>
       </li>
+              <p>
+      <a href="https://github.com/neocmakelsp/neocmakelsp">NeoCMake LSP Reference</a>
+    </p>
+ <div style="background: #f8f9fa; padding: 15px; border-radius: 5px; margin-top: 10px; font-family: monospace;">
+
+```sh
+ cargo install neocmakelsp --git https://github.com/neocmakelsp/neocmakelsp
+```
+
+</div>
     </ul>
   </blockquote>
 </details>
@@ -496,6 +599,19 @@ pip install bitbake-language-server
       <li>
           <a href="https://github.com/qompassai/diver/blob/main/lsp/crystalline_ls.lua">crystalline_ls</a>
       </li>
+      <p>
+      <a href="https://github.com/elbywan/crystalline">Crystalline LSP Reference</a>
+    </p>
+ <div style="background: #f8f9fa; padding: 15px; border-radius: 5px; margin-top: 10px; font-family: monospace;">
+
+```sh
+git clone https://github.com/elbywan/crystalline && cd crystalline \
+shards install && mkdir bin \
+crystal build ./src/crystalline.cr  -o ./bin/crystalline --release --no-debug --progress -Dpreview_mt
+
+```
+
+</div>
     </ul>
   </blockquote>
 </details>
@@ -512,7 +628,17 @@ pip install bitbake-language-server
          <li>
         <a href="https://github.com/qompassai/diver/blob/main/lsp/css_ls.lua">css_ls</a>
       </li>
-        </ul>
+           <p>
+      <a href="https://github.com/hrsh7th/vscode-langservers-extracted">CSS LSP Reference</a>
+    </p>
+ <div style="background: #f8f9fa; padding: 15px; border-radius: 5px; margin-top: 10px; font-family: monospace;">
+
+```sh
+pnpm add -g  -g vscode-langservers-extracted@latest
+```
+
+</div>
+    </ul>
       <ul>
       <li><a href="https://github.com/qompassai/diver/blob/main/lsp/cssmodule_ls_.lua">cssmodule_ls</a>
         </li></ul>
@@ -522,7 +648,7 @@ pip install bitbake-language-server
  <div style="background: #f8f9fa; padding: 15px; border-radius: 5px; margin-top: 10px; font-family: monospace;">
 
 ```sh
-pnpm add -g cssmodules-language-server
+pnpm add -g cssmodules-language-server@latest
 ```
 
 </div>
@@ -536,7 +662,7 @@ pnpm add -g cssmodules-language-server
  <div style="background: #f8f9fa; padding: 15px; border-radius: 5px; margin-top: 10px; font-family: monospace;">
 
 ```sh
-pnpm add -g @tailwindcss/language-server
+pnpm add -g @tailwindcss/language-server@latest
 ```
 
 </div>
@@ -556,7 +682,17 @@ pnpm add -g @tailwindcss/language-server
       <li>
           <a href="https://github.com/qompassai/diver/blob/main/lsp/csharp_ls.lua">csharp_ls</a>
       </li>
-        </ul>
+           <p>
+      <a href="https://github.com/tailwindlabs/tailwindcss-intellisense">C# LSP Reference</a>
+    </p>
+ <div style="background: #f8f9fa; padding: 15px; border-radius: 5px; margin-top: 10px; font-family: monospace;">
+
+```sh
+pnpm add -g @tailwindcss/language-server@latest
+```
+
+</div>
+          </ul>
   </blockquote>
 </details>
 <details>
@@ -646,9 +782,19 @@ pnpm add -g @tailwindcss/language-server
         <a href="https://github.com/qompassai/diver/blob/main/lsp/omnisharp_ls.lua">omnisharp_ls</a>
       </li>
       <li>
-        <a href="https://github.com/qompassai/diver/blob/main/lsp/roslyn_ls.lua">rosly_ls</a>
+        <a href="https://github.com/qompassai/diver/blob/main/lsp/roslyn_ls.lua">roslyn_ls</a>
       </li>
-    </ul>
+           <p>
+      <a href="https://github.com/igor-prusov/dts-lsp">DTS LSP Reference</a>
+    </p>
+ <div style="background: #f8f9fa; padding: 15px; border-radius: 5px; margin-top: 10px; font-family: monospace;">
+
+```sh
+cargo install --git https://github.com/igor-prusov/dts-lsp
+```
+
+</div>
+</ul>
   </blockquote>
 </details>
 <details>
@@ -662,9 +808,19 @@ pnpm add -g @tailwindcss/language-server
   <blockquote style="font-size: 1.2em; line-height: 1.8; padding: 25px; background: #f8f9fa; border-left: 6px solid #667eea; border-radius: 8px; margin: 15px 0; box-shadow: 0 2px 8px rgba(0,0,0,0.1);">
     <ul>
       <li>
-        <a href="https://github.com/qompassai/diver/blob/main/lsp/dts_ls.lua">dts_ls</a>
+       <code> <a href="https://github.com/qompassai/diver/blob/main/lsp/dts_ls.lua">dts_ls</a></code>
       </li>
-    </ul>
+             <p>
+      <a href="https://github.com/igor-prusov/dts-lsp">DTS LSP Reference</a>
+    </p>
+ <div style="background: #f8f9fa; padding: 15px; border-radius: 5px; margin-top: 10px; font-family: monospace;">
+
+```sh
+cargo install --git https://github.com/igor-prusov/dts-lsp
+```
+
+</div>
+</ul>
   </blockquote>
 </details>
 <details>
@@ -880,7 +1036,7 @@ pnpm add -g @tailwindcss/language-server
       <img src="https://raw.githubusercontent.com/qompassai/svg/refs/heads/main/assets/icons/herb/herb.svg"
            alt="herb" width="60" height="60" title="Herb" />
     </div>
-    <strong>Herb</strong>
+    <strong>Html&EmbeddedRuby(Herb)</strong>
   </summary>
   <blockquote style="font-size: 1.2em; line-height: 1.8; padding: 25px; background: #f8f9fa; border-left: 6px solid #667eea; border-radius: 8px; margin: 15px 0; box-shadow: 0 2px 8px rgba(0,0,0,0.1);">
     <ul>
@@ -888,6 +1044,16 @@ pnpm add -g @tailwindcss/language-server
         <a href="https://github.com/qompassai/diver/blob/main/lsp/herb_ls.lua">herb_ls</a>
       </li>
     </ul>
+        <p>
+      <a href="https://github.com/urbit/hoon-language-server">Herb LSP Reference</a>
+    </p>
+ <div style="background: #f8f9fa; padding: 15px; border-radius: 5px; margin-top: 10px; font-family: monospace;">
+
+```sh
+pnpm add -g @herb-tools/language-server@latest
+```
+
+</div>
   </blockquote>
 </details>
 <details>
@@ -904,6 +1070,42 @@ pnpm add -g @tailwindcss/language-server
         <a href="https://github.com/qompassai/diver/blob/main/lsp/hoon_ls.lua">hoon_ls</a>
       </li>
     </ul>
+      <p>
+      <a href="https://github.com/urbit/hoon-language-server">Hoon LSP Reference</a>
+    </p>
+ <div style="background: #f8f9fa; padding: 15px; border-radius: 5px; margin-top: 10px; font-family: monospace;">
+
+```sh
+pnpm add -g @urbit/hoon-language-server@latest
+```
+
+</div>
+  </blockquote>
+</details>
+    <details>
+ <summary style="font-size: 1.4em; font-weight: bold; padding: 15px; background: #667eea; color: white; border-radius: 10px; cursor: pointer; margin: 10px 0; display: flex; align-items: center; gap: 8px;">
+    <div class="icon-row" style="display: flex; align-items: center; gap: 6px;">
+      <img src="https://raw.githubusercontent.com/qompassai/svg/refs/heads/main/assets/icons/hydra/hydra.svg"
+           alt="hydra" width="60" height="60" title="Hydra" />
+    </div>
+    <strong>Hydra</strong>
+  </summary>
+  <blockquote style="font-size: 1.2em; line-height: 1.8; padding: 25px; background: #f8f9fa; border-left: 6px solid #667eea; border-radius: 8px; margin: 15px 0; box-shadow: 0 2px 8px rgba(0,0,0,0.1);">
+    <ul>
+      <li>
+        <a href="https://github.com/qompassai/diver/blob/main/lsp/hydra_ls.lua">hydra_ls</a>
+      </li>
+    </ul>
+               <p>
+      <a href="https://github.com/Retsediv/hydra-lsp">Hydra LSP Reference</a>
+    </p>
+ <div style="background: #f8f9fa; padding: 15px; border-radius: 5px; margin-top: 10px; font-family: monospace;">
+
+```sh
+pip install hydra-lsp
+```
+
+</div>
   </blockquote>
 </details>
 <details>
@@ -920,6 +1122,16 @@ pnpm add -g @tailwindcss/language-server
         <a href="https://github.com/qompassai/diver/blob/main/lsp/hypr_ls.lua">hypr_ls</a>
       </li>
          </ul>
+        <p>
+      <a href="https://en.gwen.works/hyprls/">Hypr LSP Reference</a>
+    </p>
+ <div style="background: #f8f9fa; padding: 15px; border-radius: 5px; margin-top: 10px; font-family: monospace;">
+
+```sh
+go install github.com/hyprland-community/hyprls/cmd/hyprls@latest
+```
+
+</div>
   </blockquote>
 </details>
 <details>
@@ -950,15 +1162,54 @@ pnpm add -g @tailwindcss/language-server
   <blockquote style="font-size: 1.2em; line-height: 1.8; padding: 25px; background: #f8f9fa; border-left: 6px solid #667eea; border-radius: 8px; margin: 15px 0; box-shadow: 0 2px 8px rgba(0,0,0,0.1);">
     <ul>
       <li>
+        <a href="https://github.com/qompassai/diver/blob/main/lsp/eslint_ls.lua">biome_ls</a>
+      </li>
+      <p>
+      <a href="https://luals.github.io/">Biome LSP Reference</a>
+    </p>
+ <div style="background: #f8f9fa; padding: 15px; border-radius: 5px; margin-top: 10px; font-family: monospace;">
+
+```sh
+pnpm add -D -E @biomejs/biome@latest
+```
+</div>
+      <li>
         <a href="https://github.com/qompassai/diver/blob/main/lsp/eslint_ls.lua">eslint_ls</a>
       </li>
+           <p>
+      <a href="https://github.com/danielpza/eslint-lsp">Eslint LSP Reference</a>
+    </p>
+ <div style="background: #f8f9fa; padding: 15px; border-radius: 5px; margin-top: 10px; font-family: monospace;">
+
+```sh
+pnpm add -D -E eslint@latest
+```
+</div>
       <li>
         <a href="https://github.com/qompassai/diver/blob/main/lsp/quicklint_js.lua">quicklint_js</a>
       </li>
+        <p>
+      <a href="https://quick-lint-js.com/">QuickLintJS LSP Reference</a>
+    </p>
+ <div style="background: #f8f9fa; padding: 15px; border-radius: 5px; margin-top: 10px; font-family: monospace;">
+
+```sh
+pnpm add -D -E quick-lint-js@latest
+```
+</div>
       <li>
-        <a href="https://github.com/qompassai/diver/blob/main/lsp/markojs_ls.lua">config</a>
+        <a href="https://github.com/qompassai/diver/blob/main/lsp/markojs_ls.lua">markojs_ls</a>
       </li>
     </ul>
+          <p>
+      <a href="https://github.com/marko-js/language-server">MarkoJS LSP Reference</a>
+    </p>
+ <div style="background: #f8f9fa; padding: 15px; border-radius: 5px; margin-top: 10px; font-family: monospace;">
+
+```sh
+pnpm add -D -E @marko/language-server@latest
+```
+</div>
   </blockquote>
 </details>
 <details>
@@ -975,6 +1226,15 @@ pnpm add -g @tailwindcss/language-server
         <a href="https://github.com/qompassai/diver/blob/main/lsp/jinja_ls.lua">jinja_ls</a>
       </li>
     </ul>
+          <p>
+      <a href=" https://github.com/uros-5/jinja-lsp">Jinja LSP Reference</a>
+    </p>
+ <div style="background: #f8f9fa; padding: 15px; border-radius: 5px; margin-top: 10px; font-family: monospace;">
+
+```sh
+cargo install jinja --git https://github.com/uros-5/jinja-lsp jinja-lsp
+```
+</div>
   </blockquote>
 </details>
 <details>
@@ -1119,7 +1379,7 @@ pnpm add -g @tailwindcss/language-server
  <div style="background: #f8f9fa; padding: 15px; border-radius: 5px; margin-top: 10px; font-family: monospace;">
 
 ```sh
- cargo install --git https://github.com/EmmyLuaLs/emmylua-analyzer-rust schema_json_gen emmylua_ls emmylua_check emmylua_code_style emmylua_doc_cli
+luarocks --lua-version=5.1 install lua-language-server
 ```
 
 </div>
@@ -1517,13 +1777,25 @@ cargo install stylua --features luajit
   </summary>
   <blockquote style="font-size: 1.2em; line-height: 1.8; padding: 25px; background: #f8f9fa; border-left: 6px solid #667eea; border-radius: 8px; margin: 15px 0; box-shadow: 0 2px 8px rgba(0,0,0,0.1);">
     <ul>
-      <li><code>puppet_ls</code> –
-        <a href="https://github.com/qompassai/diver/blob/main/lsp/puppet_ls.lua">config</a>
-      </li>
-      <li><code>puppetes_ls</code> –
-        <a href="https://github.com/qompassai/diver/blob/main/lsp/puppetes_ls.lua">config</a>
+      <li><code>
+        <a href="https://github.com/qompassai/diver/blob/main/lsp/puppet_ls.lua">puppet_ls</a>
       </li>
     </ul>
+        <p>
+      <a href="https://github.com/puppetlabs/puppet-editor-services">Puppet LSP Reference</a>
+    </p>
+ <div style="background: #f8f9fa; padding: 15px; border-radius: 5px; margin-top: 10px; font-family: monospace;">
+
+```sh
+export GEM_HOME="$HOME/.gem"
+export GEM_PATH="$GEM_HOME"
+export PATH="$HOME/.local/bin:$GEM_HOME/bin:$PATH"
+git clone https://github.com/puppetlabs/puppet-editor-services.git && cd puppet-editor-services && bundle install  \
+bundle exec rake gem_revendor
+
+```
+
+   </div>
   </blockquote>
 </details>
 <details>
@@ -1539,16 +1811,61 @@ cargo install stylua --features luajit
       <li><code>basedpy_ls
         <a href="https://github.com/qompassai/diver/blob/main/lsp/basedpy_ls.lua">config</a></code>
       </li>
+      <p>
+      <a href="https://posit-dev.github.io/air/integration-github-actions.html">BasedPyright LSP Reference</a>
+    </p>
+ <div style="background: #f8f9fa; padding: 15px; border-radius: 5px; margin-top: 10px; font-family: monospace;">
+
+```sh
+pip install basedpyright
+
+```
+
+   </div>
       <li><code>
         <a href="https://github.com/qompassai/diver/blob/main/lsp/pyrefly_ls.lua">pyrefly_ls</a></code>
       </li>
+             <p>
+      <a href="https://pyrefly.org/">Pyrefly LSP Reference</a>
+    </p>
+ <div style="background: #f8f9fa; padding: 15px; border-radius: 5px; margin-top: 10px; font-family: monospace;">
+
+```sh
+pip install pyrefly
+
+```
+
+   </div>
       <li><code>
-        <a href="https://github.com/qompassai/diver/blob/main/lsp/ruff_ls.lua">ruff_ls</a>
+        <a href="https://github.com/qompassai/diver/blob/main/lsp/ruff_ls.lua">ruff_ls</a></code>
       </li>
+             <p>
+      <a href="https://docs.astral.sh/ruff/">Ruff LSP Reference</a>
+    </p>
+ <div style="background: #f8f9fa; padding: 15px; border-radius: 5px; margin-top: 10px; font-family: monospace;">
+
+```sh
+curl -LsSf https://astral.sh/ruff/install.sh | sh
+
+```
+
+   </div>
          <li><code>
         <a href="https://github.com/qompassai/diver/blob/main/lsp/ty_ls.lua">ty_ls</a></code>
       </li>
     </ul>
+       <p>
+      <a href="https://posit-dev.github.io/air/integration-github-actions.html">Ty LSP Reference</a>
+    </p>
+ <div style="background: #f8f9fa; padding: 15px; border-radius: 5px; margin-top: 10px; font-family: monospace;">
+
+```sh
+uv tool install ty
+pip install ty
+
+```
+
+   </div>
   </blockquote>
 </details>
 <details>
@@ -1565,6 +1882,24 @@ cargo install stylua --features luajit
         <a href="https://github.com/qompassai/diver/blob/main/lsp/qml_ls.lua">qml_ls</a></code>
       </li>
     </ul>
+           <p>
+      <a href="https://doc-snapshots.qt.io/qt6-dev/qtqml-tooling-qmlls.html">QML LSP Reference</a>
+    </p>
+ <div style="background: #f8f9fa; padding: 15px; border-radius: 5px; margin-top: 10px; font-family: monospace;">
+
+```sh
+curl -L \
+  -o qmlls-workflow-0.5-linux-x86_64.tar.xz \
+  https://github.com/TheQtCompanyRnD/qmlls-workflow/releases/download/0.5/qmlls-workflow-0.5-linux-x86_64.tar.xz \
+mkdir -p "$XDG_DATA_HOME/qmlls-workflow/0.5"
+tar -xf qmlls-workflow-0.5-linux-x86_64.tar.xz \
+  -C "$XDG_DATA_HOME/qmlls-workflow/0.5" \
+ln -sf "$XDG_DATA_HOME/qmlls-workflow/0.5/bin/qmlls" \
+       "$HOME/.local/bin/qmlls"
+
+```
+
+   </div>
   </blockquote>
 </details>
 <details>
@@ -1578,10 +1913,21 @@ cargo install stylua --features luajit
   <blockquote style="font-size: 1.2em; line-height: 1.8; padding: 25px; background: #f8f9fa; border-left: 6px solid #667eea; border-radius: 8px; margin: 15px 0; box-shadow: 0 2px 8px rgba(0,0,0,0.1);">
     <ul>
       <li><code>air_ls
-        <a href="https://github.com/qompassai/diver/blob/main/lsp/air_ls.lua">config</a>
+        <a href="https://github.com/qompassai/diver/blob/main/lsp/air_ls.lua">air_ls</a></code>
         </code>
       </li>
     </ul>
+         <p>
+      <a href="https://posit-dev.github.io/air/integration-github-actions.html">Air LSP Reference</a>
+    </p>
+ <div style="background: #f8f9fa; padding: 15px; border-radius: 5px; margin-top: 10px; font-family: monospace;">
+
+```sh
+cargo install --git https://github.com/posit-dev/air air
+
+```
+
+   </div>
   </blockquote>
 </details>
 <details>
@@ -1594,10 +1940,21 @@ cargo install stylua --features luajit
   </summary>
   <blockquote style="font-size: 1.2em; line-height: 1.8; padding: 25px; background: #f8f9fa; border-left: 6px solid #667eea; border-radius: 8px; margin: 15px 0; box-shadow: 0 2px 8px rgba(0,0,0,0.1);">
     <ul>
-      <li><code>rescript_ls</code> –
-        <a href="https://github.com/qompassai/diver/blob/main/lsp/rescript_ls.lua">config</a>
+      <li><code>
+        <a href="https://github.com/qompassai/diver/blob/main/lsp/rescript_ls.lua">rescript_ls</a></code>
       </li>
     </ul>
+        <p>
+      <a href="https://github.com/rescript-lang/rescript-vscode/tree/master/server">Rescript LSP Reference</a>
+    </p>
+ <div style="background: #f8f9fa; padding: 15px; border-radius: 5px; margin-top: 10px; font-family: monospace;">
+
+```sh
+pnpm add -g @rescript/language-server@latest
+
+```
+
+   </div>
   </blockquote>
 </details>
 <details>
@@ -1610,13 +1967,35 @@ cargo install stylua --features luajit
   </summary>
   <blockquote style="font-size: 1.2em; line-height: 1.8; padding: 25px; background: #f8f9fa; border-left: 6px solid #667eea; border-radius: 8px; margin: 15px 0; box-shadow: 0 2px 8px rgba(0,0,0,0.1);">
     <ul>
-      <li><code>robotcode_ls</code> –
-        <a href="https://github.com/qompassai/diver/blob/main/lsp/robotcode_ls.lua">config</a>
+      <li><code>
+        <a href="https://github.com/qompassai/diver/blob/main/lsp/robotcode_ls.lua">robotcode_ls</a>
       </li>
-      <li><code>robotframework_ls</code> –
-        <a href="https://github.com/qompassai/diver/blob/main/lsp/robotframework_ls.lua">config</a>
+            <p>
+      <a href="https://github.com/dcermak/rpm-spec-language-server">Robotcode LSP Reference</a>
+    </p>
+ <div style="background: #f8f9fa; padding: 15px; border-radius: 5px; margin-top: 10px; font-family: monospace;">
+
+```sh
+pip install robotcode[all]
+
+```
+
+   </div>
+      <li><code>
+        <a href="https://github.com/qompassai/diver/blob/main/lsp/robotframework_ls.lua">robotframework_ls</a>
       </li>
     </ul>
+          <p>
+      <a href="https://github.com/robocorp/robotframework-lsp" Robotframework LSP Reference</a>
+    </p>
+ <div style="background: #f8f9fa; padding: 15px; border-radius: 5px; margin-top: 10px; font-family: monospace;">
+
+```sh
+pip install robotframework-lsp
+
+```
+
+   </div>
   </blockquote>
 </details>
 <details>
@@ -1629,10 +2008,21 @@ cargo install stylua --features luajit
   </summary>
   <blockquote style="font-size: 1.2em; line-height: 1.8; padding: 25px; background: #f8f9fa; border-left: 6px solid #667eea; border-radius: 8px; margin: 15px 0; box-shadow: 0 2px 8px rgba(0,0,0,0.1);">
     <ul>
-      <li><code>rpmspec_ls</code> –
-        <a href="https://github.com/qompassai/diver/blob/main/lsp/rpmspec_ls.lua">config</a>
+      <li><code>
+        <a href="https://github.com/qompassai/diver/blob/main/lsp/rpmspec_ls.lua">rpmspec_ls</a></code>
       </li>
     </ul>
+        <p>
+      <a href="https://github.com/dcermak/rpm-spec-language-server">RPMSPec LSP Reference</a>
+    </p>
+ <div style="background: #f8f9fa; padding: 15px; border-radius: 5px; margin-top: 10px; font-family: monospace;">
+
+```sh
+pip install rpm-spec-language-server
+
+```
+
+   </div>
   </blockquote>
 </details>
 <details>
@@ -1645,28 +2035,105 @@ cargo install stylua --features luajit
   </summary>
   <blockquote style="font-size: 1.2em; line-height: 1.8; padding: 25px; background: #f8f9fa; border-left: 6px solid #667eea; border-radius: 8px; margin: 15px 0; box-shadow: 0 2px 8px rgba(0,0,0,0.1);">
     <ul>
-      <li><code>rubocop_ls</code> –
-        <a href="https://github.com/qompassai/diver/blob/main/lsp/rubocop_ls.lua">config</a>
+      <li><code
+        <a href="https://github.com/qompassai/diver/blob/main/lsp/rubocop_ls.lua">rubocop_ls</a>
       </li>
+                    <p>
+      <a href="https://docs.rubocop.org/rubocop/1.81/index.html">Rubocop LSP Reference</a>
+    </p>
+ <div style="background: #f8f9fa; padding: 15px; border-radius: 5px; margin-top: 10px; font-family: monospace;">
+
+```sh
+gem install rubocop
+
+```
+
+   </div>
       <li>
         <a href="https://github.com/qompassai/diver/blob/main/lsp/ruby_ls.lua">ruby_ls</a>
       </li>
+                    <p>
+      <a href="https://shopify.github.io/ruby-lsp/">Ruby LSP Reference</a>
+    </p>
+ <div style="background: #f8f9fa; padding: 15px; border-radius: 5px; margin-top: 10px; font-family: monospace;">
+
+```sh
+gem install ruby-lsp
+
+```
+
+   </div>
       <li>
         <a href="https://github.com/qompassai/diver/blob/main/lsp/sorbet_ls.lua">sorbet_ls</a>
       </li>
+                    <p>
+      <a href="https://sorbet.org/docs/lsp">Sorbet LSP Reference</a>
+    </p>
+ <div style="background: #f8f9fa; padding: 15px; border-radius: 5px; margin-top: 10px; font-family: monospace;">
+
+```sh
+gem install sorbet sorbet-runtime
+
+```
+
+   </div>
       <li>
         <a href="https://github.com/qompassai/diver/blob/main/lsp/steep_ls.lua">steep_ls</a>
       </li>
+                    <p>
+      <a href="https://github.com/soutaro/steep?tab=readme-ov-file">Steep LSP Reference</a>
+    </p>
+ <div style="background: #f8f9fa; padding: 15px; border-radius: 5px; margin-top: 10px; font-family: monospace;">
+
+```sh
+gem install steep
+
+```
+
+   </div>
       <li><code>
-        <a href="https://github.com/qompassai/diver/blob/main/lsp/standardrb_ls.lua">config</a>
+        <a href="https://github.com/qompassai/diver/blob/main/lsp/standardrb_ls.lua">standardrb_ls</a>
       </li>
+                    <p>
+      <a href="https://github.com/standardrb/standard">StandardRB LSP Reference</a>
+    </p>
+ <div style="background: #f8f9fa; padding: 15px; border-radius: 5px; margin-top: 10px; font-family: monospace;">
+
+```sh
+gem install standard
+
+```
+
+   </div>
        <li>
         <a href="https://github.com/qompassai/diver/blob/main/lsp/stimulus_ls.lua">stimulus_ls</a>
       </li>
+                    <p>
+      <a href="https://dystroy.org/bacon/">Bacon LSP Reference</a>
+    </p>
+ <div style="background: #f8f9fa; padding: 15px; border-radius: 5px; margin-top: 10px; font-family: monospace;">
+
+```sh
+pnpm add -g stimulus-language-server@latest
+
+```
+
+   </div>
       <li><code>
         <a href="https://github.com/qompassai/diver/blob/main/lsp/typeprof_ls.lua">typeprof_ls</a>
       </li>
     </ul>
+                  <p>
+      <a href="https://dystroy.org/bacon/">Bacon LSP Reference</a>
+    </p>
+ <div style="background: #f8f9fa; padding: 15px; border-radius: 5px; margin-top: 10px; font-family: monospace;">
+
+```sh
+cargo install --git https://github.com/Canop/bacon --features "clipboard sound"
+
+```
+
+   </div>
   </blockquote>
 </details>
 <details>
@@ -1679,13 +2146,36 @@ cargo install stylua --features luajit
   </summary>
   <blockquote style="font-size: 1.2em; line-height: 1.8; padding: 25px; background: #f8f9fa; border-left: 6px solid #667eea; border-radius: 8px; margin: 15px 0; box-shadow: 0 2px 8px rgba(0,0,0,0.1);">
     <ul>
-      <li><code>bacon_ls</code> –
-        <a href="https://github.com/qompassai/diver/blob/main/lsp/bacon_ls.lua">config</a>
+      <li><code>
+        <a href="https://github.com/qompassai/diver/blob/main/lsp/bacon_ls.lua">bacon_ls</a></code>
       </li>
-        <li><code>rustana_ls</code> –
-        <a href="https://github.com/qompassai/diver/blob/main/lsp/rustana_ls.lua">config</a>
+                 <p>
+      <a href="https://dystroy.org/bacon/">Bacon LSP Reference</a>
+    </p>
+ <div style="background: #f8f9fa; padding: 15px; border-radius: 5px; margin-top: 10px; font-family: monospace;">
+
+```sh
+cargo install --git https://github.com/Canop/bacon --features "clipboard sound"
+
+```
+
+   </div>
+
+  <li><code>
+        <a href="https://github.com/qompassai/diver/blob/main/lsp/rustana_ls.lua">rustana_ls</a></code>
       </li>
     </ul>
+         <p>
+      <a href="https://scalameta.org/metals/docs/editors/user-configuration">Rust_Analyzer LSP Reference</a>
+    </p>
+ <div style="background: #f8f9fa; padding: 15px; border-radius: 5px; margin-top: 10px; font-family: monospace;">
+
+```sh
+cargo install --git https://github.com/rust-lang/rust-analyzer rust-analyzer \
+xtask proc-macro-srv-cli ungrammar2json
+```
+
+   </div>
   </blockquote>
 </details>
 <details>
@@ -1708,7 +2198,19 @@ cargo install stylua --features luajit
  <div style="background: #f8f9fa; padding: 15px; border-radius: 5px; margin-top: 10px; font-family: monospace;">
 
 ```sh
-cargo install slint-lsp
+curl -fLo cs https://git.io/coursier-cli-"$(uname | tr LD ld)" && \
+chmod +x cs && \
+./cs install cs && \
+rm cs && \
+cs bootstrap \
+  --java-opt -Xss4m \
+  --java-opt -Xms100m \
+  --java-opt -XX:+UseG1GC \
+  --java-opt -XX:+UseStringDeduplication \
+  org.scalameta:metals_2.13:1.6.3 \
+  -o ~/bin/metals \
+  -f
+
 ```
 
 </div>
@@ -1728,23 +2230,33 @@ cargo install slint-lsp
         <a href="https://github.com/qompassai/diver/blob/main/lsp/bash_ls.lua">bash_ls</a></code>
       </li>
                   <p>
-      <a href="https://github.com/slint-ui/slint">Slint LSP Reference</a>
+      <a href="https://github.com/bash-lsp/bash-language-server">Bash LSP Reference</a>
     </p>
  <div style="background: #f8f9fa; padding: 15px; border-radius: 5px; margin-top: 10px; font-family: monospace;">
 
 ```sh
-cargo install slint-lsp
+pnpm add -g bash-language-server@latest
 ```
 
 </div>
       <li><code>
         <a href="https://github.com/qompassai/diver/blob/main/lsp/fish_ls.lua">fish_ls</a></code>
       </li>
+       <p>
+      <a href="https://www.fish-lsp.dev/">Fish LSP Reference</a>
+    </p>
+ <div style="background: #f8f9fa; padding: 15px; border-radius: 5px; margin-top: 10px; font-family: monospace;">
+
+```sh
+pnpm add -g fish-lsp
+```
+
+</div>
       <li><code>
         <a href="https://github.com/qompassai/diver/blob/main/lsp/nu_ls.lua">nu_ls</a></code>
       </li>
                   <p>
-      <a href="https://github.com/slint-ui/slint">Slint LSP Reference</a>
+      <a href="https://www.nushell.sh/">NuShell Reference</a>
     </p>
  <div style="background: #f8f9fa; padding: 15px; border-radius: 5px; margin-top: 10px; font-family: monospace;">
 
@@ -1888,7 +2400,7 @@ sudo smithy-install/smithy/install && rm -rf smithy-install/
  <div style="background: #f8f9fa; padding: 15px; border-radius: 5px; margin-top: 10px; font-family: monospace;">
 
 ```sh
-pnpm add -g solc
+pnpm add -g solc@latest
 ```
 
 </div>
@@ -1901,7 +2413,7 @@ pnpm add -g solc
  <div style="background: #f8f9fa; padding: 15px; border-radius: 5px; margin-top: 10px; font-family: monospace;">
 
 ```sh
-pnpm add -g solidity-ls
+pnpm add -g solidity-ls@latest
 ```
 
 </div>
@@ -1996,7 +2508,7 @@ cargo install --git https://github.com/facebook/starlark-rust.git starlark_bin
  <div style="background: #f8f9fa; padding: 15px; border-radius: 5px; margin-top: 10px; font-family: monospace;">
 
 ```sh
-pnpm add -g svelte-language-server
+pnpm add -g svelte-language-server@latest
 ```
 
 </div>
@@ -2084,7 +2596,7 @@ curl -s https://raw.githubusercontent.com/terraform-linters/tflint/master/instal
   <blockquote style="font-size: 1.2em; line-height: 1.8; padding: 25px; background: #f8f9fa; border-left: 6px solid #667eea; border-radius: 8px; margin: 15px 0; box-shadow: 0 2px 8px rgba(0,0,0,0.1);">
     <ul>
       <li><code>
-        <a href="https://github.com/qompassai/diver/blob/main/lsp/taplo_ls.lua">taplo_ls</a>
+        <a href="https://github.com/qompassai/diver/blob/main/lsp/taplo_ls.lua">taplo_ls</a></code>
       </li>
       <li>
         <a href="https://github.com/qompassai/diver/blob/main/lsp/tombi_ls.lua">tombi_ls</a>
@@ -2128,8 +2640,8 @@ cargo install --git https://github.com/ribru17/ts_query_ls ts_query_ls
   </summary>
   <blockquote style="font-size: 1.2em; line-height: 1.8; padding: 25px; background: #f8f9fa; border-left: 6px solid #667eea; border-radius: 8px; margin: 15px 0; box-shadow: 0 2px 8px rgba(0,0,0,0.1);">
     <ul>
-      <li><code>twiggy_ls</code> –
-        <a href="https://github.com/qompassai/diver/blob/main/lsp/twiggy_ls.lua">config</a>
+      <li><code>
+        <a href="https://github.com/qompassai/diver/blob/main/lsp/twiggy_ls.lua">twiggy_ls</a></code>
       </li>
     </ul>
   </blockquote>
@@ -2147,17 +2659,14 @@ cargo install --git https://github.com/ribru17/ts_query_ls ts_query_ls
       <li>
         <a href="https://github.com/qompassai/diver/blob/main/lsp/ts_ls.lua">ts_ls</a>
       </li>
-      <li>
-        <a href="https://github.com/qompassai/diver/blob/main/lsp/tsquery_ls.lua">tsquery_ls</a>
-      </li>
     </ul>
 <p>
-      <a href="https://github.com/Myriad-Dreamin/tinymist">TSP LSP Reference</a>
+      <a href="https://www.npmjs.com/package/typescript-language-server">Typescript LSP Reference</a>
     </p>
  <div style="background: #f8f9fa; padding: 15px; border-radius: 5px; margin-top: 10px; font-family: monospace;">
 
 ```sh
-curl -sSL https://github.com/hongjr03/tinymist-nightly-installer/releases/latest/download/run.sh | bash
+pnpm add -g typescript typescript-language-server@latest
 ```
 
 </div>
@@ -2183,7 +2692,7 @@ curl -sSL https://github.com/hongjr03/tinymist-nightly-installer/releases/latest
  <div style="background: #f8f9fa; padding: 15px; border-radius: 5px; margin-top: 10px; font-family: monospace;">
 
 ```sh
-pnpm add -g @typespec/compiler
+pnpm add -g @typespec/compiler@latest
 ```
 
 </div>
@@ -2285,7 +2794,7 @@ cargo install --git https://github.com/vivekmalneedi/veridian.git --all-features
  <div style="background: #f8f9fa; padding: 15px; border-radius: 5px; margin-top: 10px; font-family: monospace;">
 
 ```sh
-pnpm add -g vim-language-server
+pnpm add -g vim-language-server@latest
 ```
 
 </div>
@@ -2299,7 +2808,7 @@ pnpm add -g vim-language-server
  <div style="background: #f8f9fa; padding: 15px; border-radius: 5px; margin-top: 10px; font-family: monospace;">
 
 ```sh
-pnpm add -g @imc-trading/svlangserver
+pnpm add -g @imc-trading/svlangserver@latest
 ```
 
 </div>
@@ -2325,7 +2834,7 @@ pnpm add -g @imc-trading/svlangserver
  <div style="background: #f8f9fa; padding: 15px; border-radius: 5px; margin-top: 10px; font-family: monospace;">
 
 ```sh
-pnpm add -g vim-language-server
+pnpm add -g vim-language-server@latest
 ```
 
 </div>
@@ -2351,7 +2860,7 @@ pnpm add -g vim-language-server
  <div style="background: #f8f9fa; padding: 15px; border-radius: 5px; margin-top: 10px; font-family: monospace;">
 
 ```sh
-pnpm add -g  @vue/language-server
+pnpm add -g  @vue/language-server@latest
 ```
 
 </div>
@@ -2453,7 +2962,7 @@ cargo install --git https://github.com/wgsl-analyzer/wgsl-analyzer wgsl-analyzer
  <div style="background: #f8f9fa; padding: 15px; border-radius: 5px; margin-top: 10px; font-family: monospace;">
 
 ```sh
-pnpm add -g yaml-language-server
+pnpm add -g yaml-language-server@latest
 ```
 
 </div>

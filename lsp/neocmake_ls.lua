@@ -5,44 +5,30 @@
 -- Reference:  https://github.com/neocmakelsp/neocmakelsp
 -- cargo install neocmake
 vim.lsp.config['neocmake_ls'] = {
-    cmd = {
-        'neocmakelsp',
-        '--stdio',
+  cmd = {
+    'neocmakelsp',
+    '--stdio',
+  },
+  filetypes = {
+    'cmake',
+  },
+  init_options = {
+    format = {
+      enable = true
     },
-
-    filetypes = {
-        'cmake',
+    lint = {
+      enable = true
     },
-    root_markers = {
-        '.neocmake.toml',
-        'CMakeLists.txt',
-        'CMakeCache.txt',
-        'build',
-        '.git',
-    },
-    init_options = {
-        format = {
-            enable = true,
-        },
-        lint = {
-            enable = true,
-        },
-        scan_cmake_in_package = true,
-        semantic_token = true,
-    },
-    capabilities = vim.tbl_deep_extend('force', vim.lsp.protocol.make_client_capabilities(), {
-        workspace = {
-            didChangeWatchedFiles = {
-                dynamicRegistration = true,
-                relative_pattern_support = true,
-            },
-        },
-        textDocument = {
-            completion = {
-                completionItem = {
-                    snippetSupport = true,
-                },
-            },
-        },
-    }),
+    scan_cmake_in_package = true
+  },
+  root_markers = {
+    '.neocmake.toml',
+    'CMakeLists.txt',
+    'CMakeCache.txt',
+    'build',
+    '.git',
+  },
 }
+local capabilities = vim.lsp.protocol.make_client_capabilities()
+capabilities.textDocument.completion.completionItem.snippetSupport = true
+capabilities = capabilities

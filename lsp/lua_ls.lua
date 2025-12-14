@@ -3,7 +3,6 @@
 -- Copyright (C) 2025 Qompass AI, All rights reserved
 ------------------------------------------------------
 vim.lsp.config['lua_ls'] = {
-
   cmd = {
     'lua-language-server',
   },
@@ -21,12 +20,12 @@ vim.lsp.config['lua_ls'] = {
     '.stylua.toml',
     'selene.toml',
     'selene.yml',
-    '.git',
+    '.git'
   },
   settings = {
     Lua = {
       codeLens = {
-        enable = true,
+        enable = true
       },
       format = {
         enable = true,
@@ -37,7 +36,7 @@ vim.lsp.config['lua_ls'] = {
           indent_size = '4',
           indent_style = 'tabs',
           quote_style = 'ForceSingle',
-          trailing_table_separator = 'never',
+          trailing_table_separator = 'never'
         },
       },
       hover = {
@@ -47,12 +46,12 @@ vim.lsp.config['lua_ls'] = {
         version = 'LuaJIT',
         path = {
           'lua/?.lua',
-          'lua/?/init.lua',
+          'lua/?/init.lua'
         },
       },
       semantic = {
         enable = true,
-        keyword = true,
+        keyword = true
       },
       diagnostics = {
         enable = true,
@@ -64,13 +63,13 @@ vim.lsp.config['lua_ls'] = {
         },
         disable = {
           'lowercase-global',
-          'unused-local',
+          'unused-local'
         },
         severity = {
-          ['unused-local'] = 'Hint',
+          ['unused-local'] = 'Hint'
         },
         unusedLocalExclude = {
-          '_*',
+          '_*'
         },
       },
       workspace = {
@@ -107,11 +106,11 @@ vim.lsp.config['lua_ls'] = {
         postfix = '@',
       },
       hint = {
+        arrayIndex = 'Enable',
         enable = true,
         setType = true,
         paramType = true,
         paramName = 'All',
-        arrayIndex = 'Enable',
         await = true,
       },
     },
