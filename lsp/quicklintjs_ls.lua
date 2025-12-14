@@ -4,17 +4,17 @@
 -- --------------------------------------------------
 -- pnpm add -g quick-lint-js
 vim.lsp.config['quicklintjs_ls'] = {
-  cmd = {
-    'quick-lint-js',
-    '--lsp-server'
-  },
-  filetypes = {
-    'javascript',
-    'typescript'
-  },
-  root_markers = {
-    'package.json',
-    'jsconfig.json',
-    '.git'
-  },
+    cmd = {
+        'quick-lint-js',
+        '--lsp-server',
+    },
+    filetypes = {
+        'javascript',
+        'typescript',
+    },
+    root_markers = {
+        'package.json',
+        'jsconfig.json',
+        '.git',
+    },
 }

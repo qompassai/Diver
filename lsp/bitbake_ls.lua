@@ -3,11 +3,11 @@
 -- Copyright (C) 2025 Qompass AI, All rights reserved
 -- ---------------------------------------------
 vim.lsp.config['bitbake_ls'] = {
-  cmd = {
-    'bitbake-language-server',
-  },
-  filetypes = {
-    'bitbake',
-  },
-  root_markers = { '.git' },
+    cmd = {
+        'bitbake-language-server',
+    },
+    filetypes = {
+        'bitbake',
+    },
+    root_markers = { '.git' },
 }

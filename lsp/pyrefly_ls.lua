@@ -3,23 +3,23 @@
 -- Copyright (C) 2025 Qompass AI, All rights reserved
 -- --------------------------------------
 vim.lsp.config['pyrefly_ls'] = {
-  cmd = {
-    'pyrefly',
-    'lsp',
-  },
-  filetypes = {
-    'python',
-  },
-  root_markers = {
-    '.git',
-    'MANIFEST.in',
-    'pyproject.toml',
-    'pyrefly.toml',
-    'requirements.txt',
-    'setup.cfg',
-    'setup.py',
-  },
-  on_exit = function(code, _, _)
-    vim.notify('Closing Pyrefly LSP exited with code: ' .. code, vim.log.levels.INFO)
-  end,
+    cmd = {
+        'pyrefly',
+        'lsp',
+    },
+    filetypes = {
+        'python',
+    },
+    root_markers = {
+        '.git',
+        'MANIFEST.in',
+        'pyproject.toml',
+        'pyrefly.toml',
+        'requirements.txt',
+        'setup.cfg',
+        'setup.py',
+    },
+    on_exit = function(code, _, _)
+        vim.notify('Closing Pyrefly LSP exited with code: ' .. code, vim.log.levels.INFO)
+    end,
 }

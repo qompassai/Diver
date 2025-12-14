@@ -3,27 +3,27 @@
 -- Copyright (C) 2025 Qompass AI, All rights reserved
 ------------------------------------------------------
 vim.lsp.config['verible_ls'] = {
-  cmd = {
-    'verible-verilog-ls',
-  },
-  filetypes = {
-    'verilog',
-    'systemverilog',
-  },
-  codeActionProvider = {
-    codeActionKinds = {
-      '',
-      'quickfix',
-      'source.fixAll',
-      'source.organizeImports',
+    cmd = {
+        'verible-verilog-ls',
     },
-    resolveProvider = true,
-  },
-  colorProvider = false,
-  semanticTokensProvider = nil,
-  settings = {
-    verible = {
-      extraArgs = { '--rules=all', '--indentation_spaces=2' },
+    filetypes = {
+        'verilog',
+        'systemverilog',
     },
-  },
+    codeActionProvider = {
+        codeActionKinds = {
+            '',
+            'quickfix',
+            'source.fixAll',
+            'source.organizeImports',
+        },
+        resolveProvider = true,
+    },
+    colorProvider = false,
+    semanticTokensProvider = nil,
+    settings = {
+        verible = {
+            extraArgs = { '--rules=all', '--indentation_spaces=2' },
+        },
+    },
 }

@@ -4,11 +4,11 @@
 ------------------------------------------------------
 vim.lsp.config['lua_ls'] = {
   cmd = {
-    'lua-language-server',
+    'lua-language-server'
   },
   filetypes = {
     'lua',
-    'luau',
+    'luau'
   },
   root_markers = {
     '.emmyrc.json',
@@ -36,11 +36,11 @@ vim.lsp.config['lua_ls'] = {
           indent_size = '4',
           indent_style = 'tabs',
           quote_style = 'ForceSingle',
-          trailing_table_separator = 'never'
+          trailing_table_separator = 'never',
         },
       },
       hover = {
-        previewfields = 50,
+        previewfields = 50
       },
       runtime = {
         version = 'LuaJIT',
@@ -59,7 +59,7 @@ vim.lsp.config['lua_ls'] = {
           'vim',
           'jit',
           'use',
-          'require',
+          'require'
         },
         disable = {
           'lowercase-global',
@@ -77,25 +77,25 @@ vim.lsp.config['lua_ls'] = {
         library = {
           vim.api.nvim_get_runtime_file('', true),
           vim.env.VIMRUNTIME,
-          '${3rd}/luv/library',
-          '${3rd}/busted/library',
-          '${3rd}/neodev.nvim/types/nightly',
-          '${3rd}/luassert/library',
+          -- '${3rd}/luv/library',
+          -- '${3rd}/busted/library',
+          -- '${3rd}/neodev.nvim/types/nightly',
+          -- '${3rd}/luassert/library',
           '${3rd}/lazy.nvim/library',
-          '${3rd}/blink.cmp/library',
+          -- '${3rd}/blink.cmp/library',
           vim.fn.expand('$HOME') .. '/.config/nvim/lua/',
         },
         ignoreDir = {
           'build',
           'node_modules',
-          '.vscode',
+          '.vscode'
         },
         maxPreload = 5000,
         preloadFileSize = 500,
         useGitIgnore = true,
       },
       telemetry = {
-        enable = false,
+        enable = false
       },
       completion = {
         autoRequire = true,

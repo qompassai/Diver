@@ -223,7 +223,7 @@ pnpm add -g typescript@latest @astrojs/language-server@latest prettier@latest pr
   <details>
 <summary style="font-size: 1.4em; font-weight: bold; padding: 15px; background: #667eea; color: white; border-radius: 10px; cursor: pointer; margin: 10px 0; display: flex; align-items: center; gap: 8px;">
     <div class="icon-row" style="display: flex; align-items: center; gap: 6px;">
-      <img src="https://raw.githubusercontent.com/qompassai/svg/refs/heads/main/assets/icons/astro/astro.svg"
+      <img src="https://raw.githubusercontent.com/qompassai/svg/refs/heads/main/assets/icons/atlas/atlas.svg"
            alt="atlas" width="60" height="60" title="Atlas" />
     </div>
     <strong>Atlas</strong>
@@ -233,7 +233,6 @@ pnpm add -g typescript@latest @astrojs/language-server@latest prettier@latest pr
       <li>
         <a href="https://github.com/qompassai/diver/blob/main/lsp/atlas_ls.lua">atlas_ls</a>
       </li>
-    </ul>
        <p>
       <a href="https://atlasgo.io/">Atlas LSP Reference</a>
     </p>
@@ -244,6 +243,7 @@ curl -sSf https://atlasgo.sh | sh
 ```
 
 </div>
+        </ul>
   </blockquote>
 <details>
   <summary style="font-size: 1.4em; font-weight: bold; padding: 15px; background: #667eea; color: white; border-radius: 10px; cursor: pointer; margin: 10px 0; display: flex; align-items: center; gap: 8px;">
@@ -1172,6 +1172,7 @@ go install github.com/hyprland-community/hyprls/cmd/hyprls@latest
 ```sh
 pnpm add -D -E @biomejs/biome@latest
 ```
+
 </div>
       <li>
         <a href="https://github.com/qompassai/diver/blob/main/lsp/eslint_ls.lua">eslint_ls</a>
@@ -1184,6 +1185,7 @@ pnpm add -D -E @biomejs/biome@latest
 ```sh
 pnpm add -D -E eslint@latest
 ```
+
 </div>
       <li>
         <a href="https://github.com/qompassai/diver/blob/main/lsp/quicklint_js.lua">quicklint_js</a>
@@ -1196,6 +1198,7 @@ pnpm add -D -E eslint@latest
 ```sh
 pnpm add -D -E quick-lint-js@latest
 ```
+
 </div>
       <li>
         <a href="https://github.com/qompassai/diver/blob/main/lsp/markojs_ls.lua">markojs_ls</a>
@@ -1209,6 +1212,7 @@ pnpm add -D -E quick-lint-js@latest
 ```sh
 pnpm add -D -E @marko/language-server@latest
 ```
+
 </div>
   </blockquote>
 </details>
@@ -1234,6 +1238,7 @@ pnpm add -D -E @marko/language-server@latest
 ```sh
 cargo install jinja --git https://github.com/uros-5/jinja-lsp jinja-lsp
 ```
+
 </div>
   </blockquote>
 </details>
@@ -1765,6 +1770,16 @@ cargo install stylua --features luajit
         <a href="https://github.com/qompassai/diver/blob/main/lsp/buf_ls.lua">buf_ls</a>
       </li>
     </ul>
+           <p>
+      <a href="https://buf.build/docs/">Buf LSP Reference</a>
+    </p>
+ <div style="background: #f8f9fa; padding: 15px; border-radius: 5px; margin-top: 10px; font-family: monospace;">
+
+```sh
+go install github.com/bufbuild/buf/cmd/buf@latest
+```
+
+   </div>
   </blockquote>
 </details>
 <details>

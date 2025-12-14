@@ -4,7 +4,7 @@
 ------------------------------------------------------
 vim.lsp.config['java_ls'] = {
     cmd = {
-        'java-language-server'
+        'java-language-server',
     },
     filetypes = {
         'java',

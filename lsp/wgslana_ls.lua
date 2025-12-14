@@ -5,14 +5,14 @@
 -- Reference:  https://github.com/wgsl-analyzer/wgsl-analyzer
 -- cargo install --git https://github.com/wgsl-analyzer/wgsl-analyzer wgsl-analyzer
 vim.lsp.config['wgslana_ls'] = {
-  cmd = {
-    'wgsl-analyzer',
-  },
-  filetypes = {
-    'wgsl',
-  },
-  root_markers = {
-    '.git',
-  },
-  settings = {},
+    cmd = {
+        'wgsl-analyzer',
+    },
+    filetypes = {
+        'wgsl',
+    },
+    root_markers = {
+        '.git',
+    },
+    settings = {},
 }

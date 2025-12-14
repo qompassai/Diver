@@ -3,14 +3,14 @@
 -- Copyright (C) 2025 Qompass AI, All rights reserved
 -- --------------------------------------------------
 vim.lsp.config['bq_ls'] = {
-  cmd = {
-    'bqls',
-  },
-  filetypes = {
-    'sql',
-  },
-  root_markers = {
-    '.git',
-  },
-  settings = {},
+    cmd = {
+        'bqls',
+    },
+    filetypes = {
+        'sql',
+    },
+    root_markers = {
+        '.git',
+    },
+    settings = {},
 }

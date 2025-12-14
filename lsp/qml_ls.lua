@@ -3,12 +3,12 @@
 -- Copyright (C) 2025 Qompass AI, All rights reserved
 -- ---------------------------------------------------
 vim.lsp.config['qml_ls'] = {
-  cmd = {
-    'qml-lsp',
-  },
-  filetypes = {
-    'qml',
-    'qmljs',
-  },
-  settings = {},
+    cmd = {
+        'qml-lsp',
+    },
+    filetypes = {
+        'qml',
+        'qmljs',
+    },
+    settings = {},
 }

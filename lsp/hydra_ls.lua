@@ -5,14 +5,14 @@
 --Reference: https://github.com/Retsediv/hydra-lsp
 --pip install hyrda-lsp
 vim.lsp.config['hydra_ls'] = {
-  cmd = {
-    'hydra-lsp',
-  },
-  filetypes = {
-    'yaml',
-  },
-  root_markers = {
-    '.git',
-  },
+    cmd = {
+        'hydra-lsp',
+    },
+    filetypes = {
+        'yaml',
+    },
+    root_markers = {
+        '.git',
+    },
 }
 on_attach = on_attach

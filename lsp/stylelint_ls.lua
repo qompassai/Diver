@@ -4,42 +4,42 @@
 -- ----------------------------------------
 -- Reference: https://github.com/bmatcuk/stylelint-lsp
 -- pnpm add -g stylelint-lsp
-vim.lsp.config['stylelint_lsp'] = {
-    cmd = {
-        'stylelint-lsp',
-        '--stdio',
+vim.lsp.config['stylelint_ls'] = {
+  cmd = {
+    'stylelint-lsp',
+    '--stdio',
+  },
+  filetypes = {
+    'astro',
+    'css',
+    'html',
+    'less',
+    'scss',
+    'sugarss',
+    'vue',
+    'wxss',
+  },
+  root_markers = {
+    '.stylelintrc',
+    '.stylelintrc.mjs',
+    '.stylelintrc.cjs',
+    '.stylelintrc.js',
+    '.stylelintrc.json',
+    '.stylelintrc.yaml',
+    '.stylelintrc.yml',
+    'stylelint.config.mjs',
+    'stylelint.config.cjs',
+    'stylelint.config.js',
+  },
+  settings = {
+    stylelintplus = {
+      enable = true,
+      autoFixOnFormat = true,
+      autoFixOnSave = false,
+      validateOnSave = true,
+      validateOnType = true,
+      config = nil,
+      configFile = nil,
     },
-    filetypes = {
-        'astro',
-        'css',
-        'html',
-        'less',
-        'scss',
-        'sugarss',
-        'vue',
-        'wxss',
-    },
-    root_markers = {
-        '.stylelintrc',
-        '.stylelintrc.mjs',
-        '.stylelintrc.cjs',
-        '.stylelintrc.js',
-        '.stylelintrc.json',
-        '.stylelintrc.yaml',
-        '.stylelintrc.yml',
-        'stylelint.config.mjs',
-        'stylelint.config.cjs',
-        'stylelint.config.js',
-    },
-    settings = {
-        stylelintplus = {
-            enable = true,
-            autoFixOnFormat = true,
-            autoFixOnSave = false,
-            validateOnSave = true,
-            validateOnType = true,
-            config = nil,
-            configFile = nil,
-        },
-    },
+  },
 }

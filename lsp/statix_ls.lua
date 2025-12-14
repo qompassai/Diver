@@ -5,16 +5,16 @@
 --nix run nixpkgs#statix
 --Reference: https://github.com/nerdypepper/statix
 vim.lsp.config['statix_ls'] = {
-  cmd = {
-    'statix',
-    'check',
-    '--stdin',
-  },
-  filetypes = {
-    'nix',
-  },
-  root_markers = {
-    'flake.nix',
-    '.git',
-  },
+    cmd = {
+        'statix',
+        'check',
+        '--stdin',
+    },
+    filetypes = {
+        'nix',
+    },
+    root_markers = {
+        'flake.nix',
+        '.git',
+    },
 }
