@@ -119,7 +119,7 @@ pip install git+https://github.com/PrithivirajDamodaran/Gramformer.git
  <div style="background: #f8f9fa; padding: 15px; border-radius: 5px; margin-top: 10px; font-family: monospace;">
 
 ```sh
-pnpm add -g @ansible/ansible-language-server
+pnpm add -g @ansible/ansible-language-server@latest
 ```
 
 </div>
