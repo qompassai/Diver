@@ -2,37 +2,25 @@
 -- Qompass AI Arduino LSP Spec
 -- Copyright (C) 2025 Qompass AI, All rights reserved
 ------------------------------------------------------
-local cli_config = vim.fn.expand('~/.arduino15/arduino-cli.yaml')
-local cli_bin = 'arduino-cli'
-vim.lsp.config['arduino_ls'] = {
+---@type vim.lsp.Config
+return {
+  capabilities = {
+    textDocument = {
+      ---@diagnostic disable-next-line: assign-type-mismatch
+      semanticTokens = vim.NIL,
+    },
     cmd = {
-        'arduino-language-server',
-        '-cli-config',
-        cli_config,
-        '-cli',
-        cli_bin,
-        '-clangd',
-        '-fqbn',
-        'arduino:avr:uno',
+      'arduino-language-server',
     },
     filetypes = {
-        'arduino',
-        'ino',
-        'cpp',
+      'arduino',
     },
-    codeActionProvider = {
-        codeActionKinds = {
-            '',
-            'quickfix',
-            'refactor.extract',
-            'refactor.rewrite',
-        },
-        resolveProvider = true,
+    root_markers = {
+      '*.ino'
     },
-    colorProvider = false,
-    semanticTokensProvider = nil,
-    init_options = {},
-    settings = {
-        arduino = {},
+    workspace = {
+      ---@diagnostic disable-next-line: assign-type-mismatch
+      semanticTokens = vim.NIL,
     },
+  }
 }

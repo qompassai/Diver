@@ -7,9 +7,10 @@ vim.lsp.enable({
   'a_ls',
   'ada_ls',
   'agda_ls',
-  'ai_ls',
+  --'ai_ls',
   'aiken_ls',
   'air_ls',
+  'alloy_ls',
   'angular_ls',
   'ansible_ls',
   'antlers_ls',
@@ -27,20 +28,21 @@ vim.lsp.enable({
   'bacon_ls',
   'basedpy_ls',
   'bash_ls',
-  --'basics_ls',
+  --'basics_ls', --updated last year
   'bazelrc_ls',
   'beancount_ls',
   'bicep_ls',
-  --'biome',
+  'biome_ls',
   'bitbake_ls',
   'blueprint_ls',
   'bq_ls',
+  'brioche_ls',
   'bsc_ls',
   'buck2_ls',
   --'buddy_ls', --not-using
   --'buf',
   'buf_ls',
-  'bzl_ls',
+  --'bzl_ls', deprecated
   'c3_ls',
   'cairo_ls',
   'cc_ls',
@@ -61,16 +63,20 @@ vim.lsp.enable({
   'csharp_ls',
   --'cspell_ls',
   --'css_ls', --last update 1 year ago
+  --'cucumber_ls' --testing
+  --'dagger_ls' -- deprecated
   --'deno_ls',
   --'devsense_ls',
   --'diagnostic_ls', -2years since last commit
   'dj_ls',
+  'djt_ls',
   'docker_ls',
   'dockercompose_ls',
   'dolmen_ls',
   'dot_ls',
   'dotenvlint_ls',
   --'dprint_ls',
+  --'dspinyin_ls' --deprecated
   'dts_ls',
   --'editorcc_ls',
   --'efm_ls',
@@ -80,6 +86,7 @@ vim.lsp.enable({
   'ember_ls',
   --'emmet_ls',
   --'emmylua_ls',
+  --'erg_ls', --not using
   'esbonio_ls',
   --'eslint_ls', --using biome instead, last updated 1 year ago.
   'expert_ls',
@@ -93,12 +100,12 @@ vim.lsp.enable({
   'fsautocomplete_ls',
   --'fsharp_ls', --no longer maintained
   'fstar_ls',
-  'gdscript_ls',
-  'gdshader_ls',
+  --'gdscript_ls',
+  --'gdshader_ls',
   'ghactions_ls',
   --'ghcide_ls',
   --'ghdl_ls', --last activity one year ago.
-  --'ginko_ls',
+  --'ginko_ls', last touched 1 year ago
   'gitlabci_ls',
   'glasgow_ls',
   'gleam_ls',
@@ -117,6 +124,7 @@ vim.lsp.enable({
   --'hdlcheck_ls',
   'helm_ls',
   'herb_ls',
+  --'hie_ls', --deprecated
   --'hlasm',
   'hoon_ls',
   'html_ls',
@@ -158,7 +166,7 @@ vim.lsp.enable({
   'mlirpdll_ls',
   'mm0_ls',
   --'moveana_ls', --deprecated
-  'msbuildptoo_ls',
+  --'msbuildptoo_ls',
   'muon_ls',
   'mutt_ls',
   --'nelua_ls',
@@ -206,6 +214,7 @@ vim.lsp.enable({
   'qml_ls',
   'quicklintjs_ls',
   --'r_ls',
+  --'reason_ls', --deprecated for rescript_ls/ocaml_ls
   'regal_ls',
   'rego_ls',
   'remark_ls',

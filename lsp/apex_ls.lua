@@ -8,7 +8,7 @@ vim.filetype.add({
   },
 })
 ---@type vim.lsp.Config
-vim.lsp.config['apex_ls'] = {
+return {
   apex_jar_path = vim.fn.stdpath('data') .. '/apex-ls/apex-jorje-lsp.jar',
   apex_enable_semantic_errors = false,
   apex_enable_completion_statistics = false,
@@ -32,7 +32,10 @@ vim.lsp.config['apex_ls'] = {
     table.insert(local_cmd, 'apex.jorje.lsp.ApexLanguageServerLauncher')
     return vim.lsp.rpc.start(local_cmd, dispatchers)
   end,
-  filetypes = { 'apex', 'apexcode' },
+  filetypes = {
+    'apex',
+    'apexcode'
+  },
   root_markers = {
     'sfdx-project.json',
   },

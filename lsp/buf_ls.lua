@@ -2,20 +2,21 @@
 -- Qompass AI Buf LSP Config
 -- Copyright (C) 2025 Qompass AI, All rights reserved
 -- --------------------------------------------------
-vim.lsp.config['bufls'] = {
+---@type vim.lsp.Config
+return {
   cmd = {
     'buf',
     'lsp',
     'serve',
     '--timeout=0',
-    '--log-format=text'
+    '--log-format=text',
   },
   filetypes = {
-    'proto'
+    'proto',
   },
   root_markers = {
     'buf.yaml',
-    '.git'
+    '.git',
   },
   reuse_client = function(client, config)
     return client.name == config.name

@@ -1,9 +1,9 @@
 -- /qompassai/Diver/lsp/adals.lua
--- Qompass AI Ada_ls LSP Config
+-- Qompass AI Ada LSP Config
 -- Copyright (C) 2025 Qompass AI, All rights reserved
 -- --------------------------------------------------
 --Reference:  https://github.com/AdaCore/ada_language_server
-vim.lsp.config['ada_ls'] = {
+return {
     cmd = {
         'ada_language_server',
     },

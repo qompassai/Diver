@@ -1,9 +1,6 @@
 <!----------/qompassai/diver/README.md ---------------->
-
 <!-- ----------Qompass AI Diver ----------------------->
-
 <!-- Copyright (C) 2025 Qompass AI, All rights reserved -->
-
 <!-------------------------------------------------------->
 
 <h2> Qompass AI Diver </h3>

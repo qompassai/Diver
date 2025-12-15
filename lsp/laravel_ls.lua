@@ -2,20 +2,19 @@
 -- Qompass AI Laravel LSP Spec
 -- Copyright (C) 2025 Qompass AI, All rights reserved
 ------------------------------------------------------
-vim.lsp.config['laravel_ls'] = {
-    cmd = {
-        'laravel-ls',
-    },
-    filetypes = {
-        'php',
-        'blade',
-    },
-    root_markers = {
-        'artisan',
-        'composer.json',
-        '.git',
-    },
-    settings = {
-        ['laravel-ls'] = {},
-    },
+---@type vim.lsp.Config
+return {
+  cmd = {
+    'laravel-ls',
+  },
+  filetypes = {
+    'php',
+    'blade',
+  },
+  root_markers = {
+    'artisan',
+  },
+  settings = {
+    ['laravel-ls'] = {},
+  },
 }

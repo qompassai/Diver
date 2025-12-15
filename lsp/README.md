@@ -119,7 +119,7 @@ pip install git+https://github.com/PrithivirajDamodaran/Gramformer.git
  <div style="background: #f8f9fa; padding: 15px; border-radius: 5px; margin-top: 10px; font-family: monospace;">
 
 ```sh
-pnpm add -g @ansible/ansible-language-server@latest
+pnpm add -g @ansible/ansible-language-server
 ```
 
 </div>
@@ -353,7 +353,6 @@ pip install beancount
 
 ```
 ```
-
    </div>
   </ul>
   </blockquote>
@@ -371,23 +370,23 @@ pip install beancount
       <li>
         <a href="https://github.com/qompassai/diver/blob/main/lsp/bicep_ls.lua">bicep_ls</a>
       </li>
-    </ul>
-       <p>
+           <p>
       <a href="https://github.com/azure/bicep">Bicep LSP Reference</a>
     </p>
  <div style="background: #f8f9fa; padding: 15px; border-radius: 5px; margin-top: 10px; font-family: monospace;">
 
 ```sh
-(cd $(mktemp -d) \
-&& curl -fLO https://github.com/Azure/bicep/releases/latest/download/bicep-langserver.zip \
-&& rm -rf /usr/local/bin/bicep-langserver \
-&& unzip -d /usr/local/bin/bicep-langserver bicep-langserver.zip)
+: "${XDG_DATA_HOME:=$HOME/.local/share}"
+
+(
+  cd "$(mktemp -d)" \
+  && curl -fLO https://github.com/Azure/bicep/releases/latest/download/bicep-langserver.zip \
+  && rm -rf "$XDG_DATA_HOME/bicep-langserver" \
+  && unzip -d "$XDG_DATA_HOME/bicep-langserver" bicep-langserver.zip
+)
 ```
 
 </div>
-
-  </blockquote>
-</details>
 <details>
   <summary style="font-size: 1.4em; font-weight: bold; padding: 15px; background: #667eea; color: white; border-radius: 10px; cursor: pointer; margin: 10px 0; display: flex; align-items: center; gap: 8px;">
     <div class="icon-row" style="display: flex; align-items: center; gap: 6px;">
@@ -410,6 +409,12 @@ pip install beancount
 ```sh
 pip install bitbake-language-server
 ```
+
+OR
+
+```sh
+uv tool install bitbake-language-server
+                ```
 
 </div>
   </blockquote>

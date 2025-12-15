@@ -325,28 +325,6 @@ vim.api.nvim_create_autocmd('LspAttach', {
     vim.bo[ev.buf].omnifunc = 'v:lua.vim.lsp.omnifunc'
   end,
 })
-vim.api.nvim_create_autocmd({ 'LspAttach' }, {
-  group = vim.api.nvim_create_augroup('my.lsp.references', {}),
-  callback = function(args)
-    local bufnr = args.buf
-    local client = vim.lsp.get_client_by_id(args.data.client_id)
-    if not client or not client:supports_method('textDocument/documentHighlight') then
-      return
-    end
-    vim.api.nvim_create_autocmd({ 'CursorHold', 'CursorHoldI' }, {
-      buffer = bufnr,
-      callback = function()
-        vim.lsp.buf.document_highlight()
-      end,
-    })
-    vim.api.nvim_create_autocmd('CursorMoved', {
-      buffer = bufnr,
-      callback = function()
-        vim.lsp.util.buf_clear_references(bufnr)
-      end,
-    })
-  end,
-})
 vim.api.nvim_create_autocmd('LspAttach', {
   callback = function(ev)
     local client = vim.lsp.get_client_by_id(ev.data.client_id)

@@ -4,17 +4,17 @@
 -- ----------------------------------------
 ---@type vim.lsp.Config
 return {
-    cmd = {
-        'ato',
-        'lsp',
-        'start',
-    },
-    filetypes = {
-        'ato',
-    },
-    root_markers = {
-        'ato.yaml',
-        '.ato',
-        '.git',
-    },
+  cmd = {
+    'ato',
+    'lsp',
+    'start',
+  },
+  filetypes = {
+    'ato',
+  },
+  root_markers = {
+    'ato.yaml',
+    '.ato',
+    '.git',
+  },
 }

@@ -3,44 +3,30 @@
 -- Copyright (C) 2025 Qompass AI, All rights reserved
 ------------------------------------------------------
 -- Reference: https://angular.dev/tools/language-service
--- pnpm add -g @angular/language-server
+-- pnpm add -g @angular/language-server@latest
+local npm_root = vim.fn.systemlist('npm root -g')[1]
 local ngserver_path = 'pnpm_global_node_modules' .. '/@angular/language-server/bin/ngserver'
-vim.lsp.config['angular_ls'] = {
-    cmd = {
-        'node',
-        ngserver_path,
-        '--stdio',
-        '--tsProbeLocations',
-        'pnpm_global_node_modules',
-        '--ngProbeLocations',
-        'pnpm_global_node_modules',
-        '--logFile',
-        vim.fn.stdpath('cache') .. '/nglangsvc.log',
-        '--logVerbosity',
-        'verbose',
-    },
-    filetypes = {
-        'angular',
-        'html',
-        'typescript',
-        'typescriptreact',
-    },
-    codeActionProvider = {
-        codeActionKinds = {
-            '',
-            'refactor.extract',
-            'refactor.rewrite',
-            'quickfix',
-        },
-        resolveProvider = true,
-    },
-    colorProvider = false,
-    semanticTokensProvider = nil,
-    settings = {
-        angular = {
-            suggest = {
-                completeFunctionCalls = true,
-            },
-        },
-    },
+return {
+  cmd = {
+    'ngserver',
+    '--stdio',
+    '--tsProbeLocations',
+    npm_root,
+    '--ngProbeLocations',
+    npm_root,
+  },
+  filetypes = {
+    'typescript',
+    'typescriptreact',
+    'typescript.tsx',
+    'html',
+  },
+  root_markers = {
+    'angular.json',
+    'workspace.json',
+    'project.json',
+    'nx.json',
+    'package.json',
+    '.git',
+  },
 }

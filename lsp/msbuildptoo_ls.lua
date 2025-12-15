@@ -12,11 +12,23 @@ vim.filetype.add({
         [ [[.*\..*proj]] ] = 'msbuild',
     },
 })
-vim.lsp.config['msbuildptoo_ls'] = {
-    cmd = {
-        'msbuild-ls',
-    },
-}
 vim.treesitter.language.register('xml', {
     'msbuild',
 })
+local host_dll = vim.fn.stdpath('data') .. '/msbuild-project-tools/MSBuildProjectTools.LanguageServer.Host.dll'
+vim.lsp.config['msbuildptoo_ls'] = {
+    cmd = {
+        'dotnet',
+        host_dll,
+    },
+    filetypes = {
+        'msbuild',
+    },
+    root_markers = {
+        '*.sln',
+        '*.slnx',
+        '*.*proj',
+        '*.',
+        '.git',
+    },
+}

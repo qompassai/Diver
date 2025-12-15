@@ -165,6 +165,8 @@ return {
       jinja = {
         'djhtml',
       },
+      json = {
+      },
       kotlin = {
         'ktlint',
       },
@@ -206,12 +208,13 @@ return {
       },
     }
     g.ale_linters = {
-      awk = { 'gawk' },
+      awk = {
+        'gawk'
+      },
       bash = {
         'bashate',
         'bashlint',
-        'cspell',
-        'bash-language-server',
+        'language_server',
         'shellharden',
         'shell -n',
         'shellcheck',
@@ -268,10 +271,8 @@ return {
         'biome',
       },
       json = {
-        'biome',
       },
       jsonc = {
-        'biome',
       },
       latex = {
         'texlab',
@@ -327,7 +328,6 @@ return {
         'tombi',
       },
       typescript = {
-        'biome',
         'deno',
       },
       xml = {

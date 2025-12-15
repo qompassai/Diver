@@ -14,17 +14,18 @@ function M.nix_autocmds(opts) ---@return nil
     nargs = 1,
     complete = function()
       return { "alejandra", "nixfmt", "nixpkgs-fmt" }
-    end
+    end,
   })
 end
 
 function M.nix_conform()
-  local by_ft = require('config.lang.conform').conform_cfg().formatters_by_ft('nix')
+  local by_ft = require("config.lang.conform").conform_cfg().formatters_by_ft("nix")
   local seen, res = {}, {}
   for _, ft in ipairs({ by_ft.nix or {} }) do
     for _, f in ipairs(ft) do
       if not seen[f] then
-        seen[f] = true; res[#res + 1] = f
+        seen[f] = true
+        res[#res + 1] = f
       end
     end
   end
@@ -35,11 +36,11 @@ end
 ---@return table
 function M.nls(opts)
   opts = opts or {}
-  local nlsb = require('null-ls').builtins
+  local nlsb = require("null-ls").builtins
   local sources = {
     nlsb.formatting.alejandra,
     nlsb.diagnostics.deadnix,
-    nlsb.diagnostics.statix
+    nlsb.diagnostics.statix,
   }
   return sources
 end

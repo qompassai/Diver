@@ -9,7 +9,7 @@ vim.lsp.config['stylua_ls'] = {
         '--search-parent-directories',
         '--sort-requires',
         '--respect-ignores',
-        '--syntax=LuaJit',
+        '--syntax=LuaJIT',
     },
     filetypes = {
         'lua',
@@ -20,7 +20,7 @@ vim.lsp.config['stylua_ls'] = {
         '.stylua.toml',
         'stylua.toml',
     },
-    on_attach = function(client, bufnr)
+    on_attach = function(client, bufnr) ---@diagnostic disable-line: unused-local
         client.server_capabilities.documentFormattingProvider = true
         client.server_capabilities.documentRangeFormattingProvider = true
         client.server_capabilities.completionProvider = nil
