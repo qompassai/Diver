@@ -2,15 +2,15 @@
 -- Qompass AI Protobuf LSP Spec
 -- Copyright (C) 2025 Qompass AI, All rights reserved
 -- --------------------------------------------------
--- cargo install protols
-vim.lsp.config['proto_ls'] = {
-    cmd = {
-        'protols',
-    },
-    filetypes = {
-        'proto',
-    },
-    root_markers = {
-        '.git',
-    },
+---@type vim.lsp.Config
+return {
+  cmd = { ---@type string[]
+    'protols',
+  },
+  filetypes = { ---@type string[]
+    'proto',
+  },
+  root_markers = { ---@type string[]
+    '.git',
+  },
 }

@@ -2,33 +2,34 @@
 -- Qompass AI MSBuild LSP Config
 -- Copyright (C) 2025 Qompass AI, All rights reserved
 -----------------------------------------------------
-vim.filetype.add({
-    extension = {
-        props = 'msbuild',
-        tasks = 'msbuild',
-        targets = 'msbuild',
-    },
-    pattern = {
-        [ [[.*\..*proj]] ] = 'msbuild',
-    },
+vim.filetype.add({ ---@type string[]
+  extension = {
+    props = 'msbuild',
+    tasks = 'msbuild',
+    targets = 'msbuild',
+  },
+  pattern = {
+    [ [[.*\..*proj]] ] = 'msbuild',
+  },
 })
 vim.treesitter.language.register('xml', {
-    'msbuild',
+  'msbuild',
 })
 local host_dll = vim.fn.stdpath('data') .. '/msbuild-project-tools/MSBuildProjectTools.LanguageServer.Host.dll'
-vim.lsp.config['msbuildptoo_ls'] = {
-    cmd = {
-        'dotnet',
-        host_dll,
-    },
-    filetypes = {
-        'msbuild',
-    },
-    root_markers = {
-        '*.sln',
-        '*.slnx',
-        '*.*proj',
-        '*.',
-        '.git',
-    },
+---@type vim.lsp.Config
+return {
+  cmd = {
+    'dotnet',
+    host_dll,
+  },
+  filetypes = { ---@type string[]
+    'msbuild',
+  },
+  root_markers = { ---@type string[]
+    '*.sln',
+    '*.slnx',
+    '*.*proj',
+    '*.',
+    '.git',
+  },
 }

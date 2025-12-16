@@ -4,22 +4,23 @@
 -----------------------------------------------------
 --Reference:  https://github.com/artempyanykh/marksman
 --https://github.com/artempyanykh/marksman/blob/main/docs/install.md
-vim.lsp.config['marksman_ls'] = {
-    cmd = {
-        'marksman',
-        'server',
-    },
-    filetypes = {
-        'markdown',
-        'markdown.mdx',
-    },
-    root_markers = {
-        '.marksman.toml',
-        '.git',
-        '.hg',
-        '.svn',
-    },
-    on_attach = function(client, bufnr)
-        client.server_capabilities.documentFormattingProvider = false
-    end,
+---@type vim.lsp.Config
+return {
+  cmd = { ---@type string[]
+    'marksman',
+    'server',
+  },
+  filetypes = { ---@type string[]
+    'markdown',
+    'markdown.mdx',
+  },
+  root_markers = { ---@type string[]
+    '.marksman.toml',
+    '.git',
+    '.hg',
+    '.svn',
+  },
+  on_attach = function(client, bufnr)
+    client.server_capabilities.documentFormattingProvider = false
+  end,
 }

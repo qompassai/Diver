@@ -10,13 +10,13 @@ return {
     '/C',
     '--node-ipc',
   },
-  init_options = {
+  init_options = { ---@type string[]
     hostInfo = 'neovim',
   },
-  filetypes = {
+  filetypes = { ---@type string[]
     'cairo',
   },
-  root_markers = {
+  root_markers = { ---@type string[]
     'Scarb.toml',
     'cairo_project.toml',
     '.git',

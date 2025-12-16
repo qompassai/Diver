@@ -2,14 +2,14 @@
 -- Qompass AI Julia LSP Spec
 -- Copyright (C) 2025 Qompass AI, All rights reserved
 -- --------------------------------------------------
--- Reference: https://github.com/julia-vscode/julia-vscode
-vim.lsp.config['julia_ls'] = {
-    cmd = {
-        'julia',
-        '--startup-file=no',
-        '--history-file=no',
-        '-e',
-        [[
+---@type vim.lsp.Config
+return {
+  cmd = { ---@type string[]
+    'julia',
+    '--startup-file=no',
+    '--history-file=no',
+    '-e',
+    [[
       ls_install_path = joinpath(
           get(DEPOT_PATH, 1, joinpath(homedir(), '.julia')),
           'environments', 'nvim-lspconfig'
@@ -34,20 +34,20 @@ vim.lsp.config['julia_ls'] = {
       server.runlinter = true
       run(server)
     ]],
-    },
-    filetypes = {
-        'julia',
-    },
-    root_markers = {
-        'Project.toml',
-        'JuliaProject.toml',
-    },
-}
-on_attach = function(_, bufnr)
+  },
+  filetypes = { ---@type string[]
+    'julia',
+  },
+  root_markers = { ---@type string[]
+    'Project.toml',
+    'JuliaProject.toml',
+  },
+  on_attach = function(_, bufnr) ---@type fun(client:vim.lsp.Client, bufnr:integer)
     vim.api.nvim_buf_create_user_command(bufnr, 'JuliaEnvHere', function()
-        local cwd = vim.fn.getcwd()
-        require('julia_env').activate(cwd)
+      local cwd = vim.fn.getcwd()
+      require('julia_env').activate(cwd)
     end, {
-        desc = 'Activate Julia env from current directory',
+      desc = 'Activate Julia env from current directory',
     })
-end
+  end
+}

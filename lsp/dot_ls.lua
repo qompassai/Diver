@@ -2,12 +2,13 @@
 -- Qompass AI Dot Language Server LSP Config
 -- Copyright (C) 2025 Qompass AI, All rights reserved
 -- --------------------------------------------------
-vim.lsp.config['dot_ls'] = {
-    cmd = {
-        'dot-language-server',
-        '--stdio',
-    },
-    filetypes = {
-        'dot',
-    },
+---@type vim.lsp.Config
+return {
+  cmd = { ---@type string[]
+    'dot-language-server',
+    '--stdio',
+  },
+  filetypes = { ---@type string[]
+    'dot',
+  },
 }

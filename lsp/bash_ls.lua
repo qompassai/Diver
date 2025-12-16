@@ -2,8 +2,6 @@
 -- Qompass AI Bash LSP Config
 -- Copyright (C) 2025 Qompass AI, All rights reserved
 -- --------------------------------------------------
---Reference: https://github.com/bash-lsp/bash-language-server
---pnpm add -g bash-language-server
 ---@type vim.lsp.Config
 return {
   cmd = {

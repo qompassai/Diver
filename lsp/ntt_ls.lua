@@ -4,15 +4,16 @@
 -- ----------------------------------------
 --Reference: https://github.com/nokia/ntt
 -- go install github.com/nokia/ntt@latest
-vim.lsp.config['ntt_ls'] = {
-    cmd = {
-        'ntt',
-        'langserver',
-    },
-    filetypes = {
-        'ttcn',
-    },
-    root_markers = {
-        '.git',
-    },
+---@type vim.lsp.Config
+return {
+  cmd = {
+    'ntt',
+    'langserver',
+  },
+  filetypes = {
+    'ttcn',
+  },
+  root_markers = {
+    '.git',
+  },
 }

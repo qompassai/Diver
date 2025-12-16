@@ -4,13 +4,14 @@
 -- ----------------------------------------
 --Reference: https://github.com/Davidyz/VectorCode
 --pip install "VectorCode[lsp,mcp]"
-vim.lsp.config['vectorcode_ls'] = {
-    cmd = {
-        'vectorcode-server',
-    },
-    root_markers = {
-        '.vectorcode',
-        '.git',
-    },
-    settings = {},
+---@type vim.lsp.Config
+return {
+  cmd = { ---@type string[]
+    'vectorcode-server'
+  },
+  root_markers = { ---@type string[]
+    '.vectorcode',
+    '.git'
+  },
+  settings = {}, ---@type string[]
 }

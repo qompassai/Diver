@@ -2,14 +2,12 @@
 -- Qompass AI Elm LSP Spec
 -- Copyright (C) 2025 Qompass AI, All rights reserved
 -- ---------------------------------------------------
--- Reference: https://github.com/elm-tooling/elm-language-server#installation
--- pnpm add -g elm elm-test elm-format elm-review @elm-tooling/elm-language-server
-
-vim.lsp.config['elm_ls'] = {
-    cmd = {
+---@type vim.lsp.Config
+return {
+    cmd = { ---@type string[]
         'elm-language-server',
     },
-    filetypes = {
+    filetypes = { ---@type string[]
         'elm',
     },
     init_options = {
@@ -24,7 +22,7 @@ vim.lsp.config['elm_ls'] = {
             'utf-16',
         },
     },
-    root_markers = {
+    root_markers = { ---@type string[]
         'elm.json',
     },
 }

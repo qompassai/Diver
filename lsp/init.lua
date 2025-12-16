@@ -55,7 +55,7 @@ vim.lsp.enable({
   'cmake_ls',
   'cobol_ls',
   --'codebook_ls',
-  'coffeesense_ls',
+  --'coffeesense_ls', -- two years since last git
   --'contextive_ls',
   --'copilot_ls.lua',
   --'coq_ls',
@@ -79,7 +79,7 @@ vim.lsp.enable({
   --'dspinyin_ls' --deprecated
   'dts_ls',
   --'editorcc_ls',
-  --'efm_ls',
+  --'efm_ls', --last release Nov 2024
   'elixir_ls',
   'elm_ls',
   'elp_ls',
@@ -260,7 +260,7 @@ vim.lsp.enable({
   'statix_ls',
   'steep_ls',
   'stimulus_ls',
-  'stylelint_ls',
+  --'stylelint_ls', last release 1 year ago
   --'stylua_ls',
   --'stylua3p_ls',
   'superhtml_ls',
@@ -275,7 +275,7 @@ vim.lsp.enable({
   --'teal_ls',
   'templ_ls',
   'termux_ls',
-  'terraform_ls',
+  --'terraform_ls', --last release in 2021
   'texlab_ls',
   --'text_ls',
   'tflint_ls',

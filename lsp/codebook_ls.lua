@@ -2,31 +2,37 @@
 -- Qompass AI Codebook LSP Spec
 -- Code-aware spell checker for code
 ------------------------------------------------------
-vim.lsp.config['codebook_ls'] = {
-    cmd = {
-        'codebook-lsp',
-    },
-    filetypes = {
-        'lua',
-        'vim',
-        'bash',
-        'sh',
-        'zsh',
-        'python',
-        'ruby',
-        'javascript',
-        'typescript',
-        'tsx',
-        'jsx',
-        'go',
-        'rust',
-        'c',
-        'cpp',
-        'markdown',
-        'mdx',
-        'yaml',
-        'toml',
-        'json',
-    },
-    settings = {},
+---@type vim.lsp.Config
+return {
+  cmd = { ---@type string[]
+    'codebook-lsp',
+    'serve'
+  },
+  filetypes = { ---@type string[]
+    'c',
+    'css',
+    'gitcommit',
+    'go',
+    'haskell',
+    'html',
+    'java',
+    'javascript',
+    'javascriptreact',
+    'lua',
+    'markdown',
+    'php',
+    'python',
+    'ruby',
+    'rust',
+    'toml',
+    'text',
+    'typescript',
+    'typescriptreact',
+    'zig'
+  },
+  root_markers = { ---@type string[]
+    '.git',
+    'codebook.toml',
+    '.codebook.toml'
+  },
 }
