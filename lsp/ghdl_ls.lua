@@ -6,16 +6,17 @@
 -- pip install --user pyTooling pyVHDLModel pyVHDLParser
 -- git clone https://github.com/ghdl/ghdl.git
 -- cd ghdl && pip install .
-vim.lsp.config['ghdl_ls'] = {
-    cmd = {
-        'ghdl-ls',
-    },
-    filetypes = {
-        'vhdl',
-        'vhd',
-    },
-    root_markers = {
-        'hdl-prj.json',
-        '.git',
-    },
+---@type vim.lsp.Config
+return {
+  cmd = { ---@type string[]
+    'ghdl-ls'
+  },
+  filetypes = { ---@type string[]
+    'vhdl',
+    'vhd'
+  },
+  root_markers = { ---@type string[]
+    'hdl-prj.json',
+    '.git'
+  },
 }

@@ -2,16 +2,17 @@
 -- Qompass AI Solc LSP Spec
 -- Copyright (C) 2025 Qompass AI, All rights reserved
 -- --------------------------------------------------
-vim.lsp.config['solc_ls'] = {
-    cmd = {
-        'solc',
-        '--lsp',
-    },
-    filetypes = {
-        'solidity',
-    },
-    root_markers = {
-        'hardhat.config.*',
-        '.git',
-    },
+---@type vim.lsp.Config
+return {
+  cmd = { ---@type string[]
+    'solc',
+    '--lsp',
+  },
+  filetypes = { ---@type string[]
+    'solidity',
+  },
+  root_markers = { ---@type string[]
+    'hardhat.config.*',
+    '.git',
+  },
 }

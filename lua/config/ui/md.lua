@@ -87,21 +87,6 @@ function M.md_autocmds()
   end, {})
 end
 
-function M.md_conform(opts)
-  require('config.lang.conform')
-  opts = opts or {}
-  local md_conform = {
-    formatters_by_ft = { markdown = { 'biome' } },
-    default_format_opts = { lsp_format = 'fallback', timeout_ms = 500 },
-    format_on_save = { lsp_format = 'fallback', timeout_ms = 500 },
-    log_level = vim.log.levels.ERROR,
-    notify_on_error = true,
-  }
-  local config = vim.tbl_deep_extend('force', md_conform, opts)
-  conform.setup(config)
-  return config
-end
-
 function M.md_diagram(opts)
   opts = opts or {}
   require('diagram').setup({

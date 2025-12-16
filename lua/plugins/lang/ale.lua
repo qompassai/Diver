@@ -303,7 +303,6 @@ return {
       },
       python = {
         'bandit',
-        'pyrefly',
         'ruff',
         'vulture',
         'yapf',
