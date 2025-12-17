@@ -3,27 +3,30 @@
 -- Copyright (C) 2025 Qompass AI, All rights reserved
 -- ---------------------------------------------------
 -- pnpm add -g  @typescript/native-preview@latest
-vim.lsp.config['tsgo_ls'] = {
-    cmd = {
-        'tsgo',
-        '--lsp',
-        '--stdio',
-    },
-    filetypes = {
-        'javascript',
-        'javascript.jsx',
-        'javascriptreact',
-        'typescript',
-        'typescriptreact',
-        'typescript.tsx',
-    },
-    root_markers = {
-        'bun.lockb',
-        'bun.lock',
-        '.git',
-        'package.json',
-        'package-lock.json',
-        'pnpm-lock.yaml',
-        'yarn.lock',
-    },
+---@type vim.lsp.Config
+return {
+  cmd = { ---@type string[]
+    'tsgo',
+    '--lsp',
+    '--stdio',
+  },
+  filetypes = { ---@type string[]
+    'javascript',
+    'javascript.jsx',
+    'javascriptreact',
+    'typescript',
+    'typescriptreact',
+    'typescript.tsx',
+  },
+  root_markers = { ---@type string[]
+    'bun.lockb',
+    'bun.lock',
+    '.git',
+    'package.json',
+    'package.jsonc',
+    'package-lock.json',
+    'package-lock.jsonc',
+    'pnpm-lock.yaml',
+    'yarn.lock',
+  },
 }

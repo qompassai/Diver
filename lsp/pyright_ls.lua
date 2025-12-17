@@ -2,35 +2,85 @@
 -- Qompass AI Python LSP Spec
 -- Copyright (C) 2025 Qompass AI, All rights reserved
 -- ---------------------------------------------------
-vim.lsp.config['pyright_ls'] = {
-    cmd = {
-        'pyright',
-        '--stdio',
-    },
-    filetypes = {
-        'python',
-    },
-    root_markers = {
-        'pyproject.toml',
-        'setup.py',
-        'setup.cfg',
-        'requirements.txt',
-        'Pipfile',
-        'pyrightconfig.json',
-    },
-    settings = {
-        python = {
-            analysis = {
-                autoSearchPaths = true,
-                useLibraryCodeForTypes = true,
-                autoImportCompletions = true,
-                extraPaths = {
-                    './src',
-                    './lib',
-                },
-                stubPath = 'typings',
-                typeCheckingMode = 'strict',
-            },
+---@param command { args: string }
+local function set_python_path(command) ---@return nil
+  local path = command.args
+  local clients = vim.lsp.get_clients {
+    bufnr = vim.api.nvim_get_current_buf(),
+    name = 'pyright',
+  }
+  for _, client in ipairs(clients) do
+    if client.settings then
+      client.settings.python =
+          vim.tbl_deep_extend('force', client.settings.python --[[@as table]], { pythonPath = path })
+    else
+      client.config.settings = vim.tbl_deep_extend('force', client.config.settings, { python = { pythonPath = path } })
+    end
+    client:notify('workspace/didChangeConfiguration', { settings = nil })
+  end
+end
+---@type vim.lsp.Config
+return {
+  cmd = { ---@type string[]
+    'pyright',
+    '--stdio',
+    '--pythonplatform',
+    'linux'
+  },
+  filetypes = { ---@type string[]
+    'python',
+  },
+  root_markers = { ---@type string[]
+    '.git',
+    'Pipfile',
+    'pyproject.toml',
+    'pyrightconfig.json',
+    'requirements.txt',
+    'setup.cfg',
+    'setup.py',
+  },
+  settings = { ---@type table
+    python = {
+      analysis = {
+        autoImportCompletions = true,
+        autoSearchPaths = true,
+        diagnosticMode = 'openFilesOnly',
+        extraPaths = {
+          './src',
+          './lib',
         },
+        stubPath = 'typings',
+        typeCheckingMode = 'strict',
+        useLibraryCodeForTypes = true,
+      },
     },
+  },
+  ---Pyright Buffer AutoCmds
+  ---@param client vim.lsp.Client
+  ---@param bufnr integer
+  ---@return nil
+  on_attach = function(client, bufnr)
+    vim.api.nvim_buf_create_user_command(
+      bufnr,
+      'LspPyrightOrganizeImports',
+      ---@param opts table
+      function(opts)
+        local params = {
+          command = 'pyright.organizeimports',
+          arguments = { vim.uri_from_bufnr(bufnr) },
+        }
+        vim.lsp.buf_request(bufnr, 'workspace/executeCommand', params, function(err)
+          if err then
+            vim.notify('Organize imports failed: ' .. err.message, vim.log.levels.ERROR)
+          end
+        end)
+      end,
+      { desc = 'Organize Imports' }
+    )
+    vim.api.nvim_buf_create_user_command(bufnr, 'LspPyrightSetPythonPath', set_python_path, {
+      desc = 'Reconfigure pyright with the provided python path',
+      nargs = 1,
+      complete = 'file',
+    })
+  end,
 }

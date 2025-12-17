@@ -4,17 +4,17 @@
 -- --------------------------------------------------
 --https://www.mint-lang.com
 -- git clone https://github.com/mint-lang/mint.gitt && cd mint && shards install && make && mv /bin/mint ~/.local/bin
-vim.lsp.config['mint_ls'] = {
-    cmd = {
-        'mint',
-        'ls',
-    },
-    filetypes = {
-        'mint',
-    },
-    root_markers = {
-        'mint.json',
-        'mint.jsonc',
-        '.git',
-    },
+return {
+  cmd = {
+    'mint',
+    'ls',
+  },
+  filetypes = {
+    'mint',
+  },
+  root_markers = {
+    'mint.json',
+    'mint.jsonc',
+    '.git',
+  },
 }

@@ -4,16 +4,17 @@
 -- --------------------------------------------------
 --Reference: https://github.com/moetelo/twiggy
 --pnpm add -g twiggy-language-server
-vim.lsp.config['twiggy_ls'] = {
-    cmd = {
-        'twiggy-language-server',
-        '--stdio',
-    },
-    filetypes = {
-        'twig',
-    },
-    root_markers = {
-        'composer.json',
-        '.git',
-    },
+---@type vim.lsp.Config
+return {
+  cmd = { ---@type string[]
+    'twiggy-language-server',
+    '--stdio',
+  },
+  filetypes = { ---@type string[]
+    'twig',
+  },
+  root_markers = { ---@type string[]
+    'composer.json',
+    '.git',
+  },
 }

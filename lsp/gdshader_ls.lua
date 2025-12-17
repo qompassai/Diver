@@ -2,16 +2,17 @@
 -- Qompass AI GDShader LSP Spec
 -- Copyright (C) 2025 Qompass AI, All rights reserved
 -- ---------------------------------------------------
-vim.lsp.config['gdshader_ls'] = {
-    cmd = {
-        'gdshader-lsp',
-        '--stdio',
-    },
-    filetypes = {
-        'gdshader',
-        'gdshaderinc',
-    },
-    root_markers = {
-        'project.godot',
-    },
+---@type vim.lsp.Config
+return {
+  cmd = { ---@type string[]
+    'gdshader-lsp',
+    '--stdio',
+  },
+  filetypes = { ---@type string[]
+    'gdshader',
+    'gdshaderinc',
+  },
+  root_markers = { ---@type string[]
+    'project.godot',
+  },
 }

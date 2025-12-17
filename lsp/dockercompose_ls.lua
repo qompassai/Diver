@@ -3,44 +3,19 @@
 -- Copyright (C) 2025 Qompass AI, All rights reserved
 -- ---------------------------------------------------
 -- Reference: https://github.com/microsoft/compose-language-service
--- pnpm add -g @microsoft/compose-language-service
-vim.lsp.config['dockercompose_ls'] = {
-    cmd = {
-        'docker-compose-langserver',
-        '--stdio',
-    },
-    filetypes = {
-        'yaml.docker-compose',
-    },
-    root_markers = {
-        'docker-compose.yaml',
-        'docker-compose.yml',
-        'compose.yaml',
-        'compose.yml',
-    },
-    settings = {
-        dockerCompose = {
-            enableCompletion = true,
-            enableHover = true,
-            validate = true,
-            diagnostics = {
-                enable = true,
-                severity = 'info',
-            },
-        },
-    },
-    init_options = {
-        dockerCompose = {
-            fileExtensions = {
-                '.yml',
-                '.yaml',
-            },
-            serviceCompletion = true,
-            imageCompletion = true,
-            schemaStoreEnable = true,
-            trace = {
-                server = 'verbose',
-            },
-        },
-    },
+---@type vim.lsp.Config
+return {
+  cmd = {
+    'docker-compose-langserver',
+    '--stdio'
+  },
+  filetypes = {
+    'yaml.docker-compose'
+  },
+  root_markers = {
+    'compose.yaml',
+    'compose.yml',
+    'docker-compose.yaml',
+    'docker-compose.yml',
+  },
 }

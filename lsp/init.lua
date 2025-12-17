@@ -66,7 +66,6 @@ vim.lsp.enable({
   --'cucumber_ls' --testing
   --'dagger_ls' -- deprecated
   --'deno_ls',
-  --'devsense_ls',
   --'diagnostic_ls', -2years since last commit
   'dj_ls',
   'djt_ls',
@@ -142,7 +141,6 @@ vim.lsp.enable({
   'julia_ls',
   'just_ls',
   'kotlin_ls',
-  'kubescape_ls',
   'laravel_ls',
   'lean_ls',
   'lemminx',
@@ -171,7 +169,7 @@ vim.lsp.enable({
   'mutt_ls',
   --'nelua_ls',
   'neocmake_ls',
-  'nextflow_ls',
+  --'nextflow_ls',
   'next_ls',
   'nginx_ls',
   'nginxcf_ls',
@@ -209,6 +207,7 @@ vim.lsp.enable({
   'puppet_ls',
   --'py_ls',
   --'pylyzer_ls',
+  --'pyre', -- deprecated for pyrefly
   'pyrefly_ls',
   --'pyright_ls',
   'qml_ls',
@@ -249,8 +248,8 @@ vim.lsp.enable({
   'somesass_ls',
   'sorbet_ls',
   --'sourcekit_ls',
-  --'spectral_ls',
-  'spyglass_ls',
+  --'spectral_ls', --last update was 1-3 years ago
+  --'spyglass_ls', deprecated
   --'sqlls' --2 years old
   'sq_ls',
   'sqruff_ls',

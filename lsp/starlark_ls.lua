@@ -2,17 +2,18 @@
 -- Qompass AI Starlark LSP Spec
 -- Copyright (C) 2025 Qompass AI, All rights reserved
 -- --------------------------------------------------
-vim.lsp.config['starlark_ls'] = {
-    cmd = {
-        'starlark',
-        '--lsp',
-    },
-    filetypes = {
-        'star',
-        'bzl',
-        'BUILD.bazel',
-    },
-    root_markers = {
-        '.git',
-    },
+---@type vim.lsp.Config
+return {
+  cmd = { ---@type string[]
+    'starlark',
+    '--lsp',
+  },
+  filetypes = { ---@type string[]
+    'star',
+    'bzl',
+    'BUILD.bazel',
+  },
+  root_markers = { ---@type string[]
+    '.git',
+  },
 }
