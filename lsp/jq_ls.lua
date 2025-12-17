@@ -5,14 +5,15 @@
 -- Reference:  https://github.com/wader/jq-lsp
 -- go install github.com/wader/jq-lsp@master
 vim.cmd([[au BufRead,BufNewFile *.jq setfiletype jq]])
-vim.lsp.config['jq_ls'] = {
-    cmd = {
-        'jq-lsp',
-    },
-    filetypes = {
-        'jq',
-    },
-    root_markers = {
-        '.git',
-    },
+---@type vim.lsp.Config
+return {
+  cmd = { ---@type string[]
+    'jq-lsp',
+  },
+  filetypes = { ---@type string[]
+    'jq',
+  },
+  root_markers = { ---@type string[]
+    '.git',
+  },
 }

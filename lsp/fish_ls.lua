@@ -3,16 +3,17 @@
 -- Copyright (C) 2025 Qompass AI, All rights reserved
 -- --------------------------------------------------
 -- Reference: https://github.com/ndonfris/fish-lsp
-vim.lsp.config['fish_ls'] = {
-    cmd = {
-        'fish-lsp',
-        'start',
-    },
-    filetypes = {
-        'fish',
-    },
-    root_markers = {
-        'config.fish',
-        '.git',
-    },
+---@type vim.lsp.Config
+return {
+  cmd = { ---@type string[]
+    'fish-lsp',
+    'start',
+  },
+  filetypes = { ---@type string[]
+    'fish',
+  },
+  root_markers = { ---@type string[]
+    'config.fish',
+    '.git',
+  },
 }

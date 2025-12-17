@@ -4,18 +4,19 @@
 -- --------------------------------------------------
 --Reference: https://github.com/tqchen/ffi-navigator
 --pip install ffi-navigator
-vim.lsp.config['tvmffinav_ls'] = {
-    cmd = {
-        'python',
-        '-m',
-        'ffi_navigator.langserver',
-    },
-    filetypes = {
-        'python',
-        'cpp',
-    },
-    root_markers = {
-        'pyproject.toml',
-        '.git',
-    },
+---@type vim.lsp.Config
+return {
+  cmd = { ---@type string[]
+    'python',
+    '-m',
+    'ffi_navigator.langserver',
+  },
+  filetypes = { ---@type string[]
+    'python',
+    'cpp',
+  },
+  root_markers = { ---@type string[]
+    'pyproject.toml',
+    '.git',
+  },
 }

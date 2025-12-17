@@ -3,25 +3,26 @@
 -- Copyright (C) 2025 Qompass AI, All rights reserved
 -----------------------------------------------------
 --Reference: https://github.com/g-plane/wasm-language-tools
-vim.lsp.config['wasmlangtoo_ls'] = {
-    cmd = {
-        'wat_server',
+---@type vim.lsp.Config
+return {
+  cmd = { ---@type string[]
+    'wat_server',
+  },
+  filetypes = { ---@type string[]
+    'wat',
+  },
+  settings = {
+    format = {
+      formatComments = true,
+      ignoreCommentDirective = 'fmt-ignore',
+      indentWidth = 4,
+      lineBreak = 'crlf',
+      printWidth = 80,
+      splitClosingParens = true,
+      useTabs = true,
     },
-    filetypes = {
-        'wat',
+    lint = {
+      unused = 'warn',
     },
-    settings = {
-        format = {
-            formatComments = true,
-            ignoreCommentDirective = 'fmt-ignore',
-            indentWidth = 4,
-            lineBreak = 'crlf',
-            printWidth = 80,
-            splitClosingParens = true,
-            useTabs = true,
-        },
-        lint = {
-            unused = 'warn',
-        },
-    },
+  },
 }

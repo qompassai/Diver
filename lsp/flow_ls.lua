@@ -3,19 +3,20 @@
 -- Copyright (C) 2025 Qompass AI, All rights reserved
 ------------------------------------------------------
 -- Reference: https://github.com/facebook/flow
-vim.lsp.config['flow_ls'] = {
-    cmd = {
-        'npx',
-        '--no-install',
-        'flow',
-        'lsp',
-    },
-    filetypes = {
-        'javascript',
-        'javascriptreact',
-        'javascript.jsx',
-    },
-    root_markers = {
-        '.flowconfig',
-    },
+---@type vim.lsp.Config
+return {
+  cmd = { ---@type string[]
+    'npx',
+    '--no-install',
+    'flow',
+    'lsp',
+  },
+  filetypes = { ---@type string[]
+    'javascript',
+    'javascriptreact',
+    'javascript.jsx',
+  },
+  root_markers = { ---@type string[]
+    '.flowconfig',
+  },
 }

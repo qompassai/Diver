@@ -4,20 +4,21 @@
 -- ----------------------------------------
 -- Deprecated
 -- Reference: https://github.com/digital-asset/ghcide
-vim.lsp.config['ghcide_ls'] = {
-    cmd = {
-        'ghcide',
-        '--lsp',
-    },
-    filetypes = {
-        'haskell',
-        'lhaskell',
-    },
-    root_markers = {
-        'BUILD.bazel',
-        'stack.yaml',
-        'hie-bios',
-        'cabal.config',
-        'package.yaml',
-    },
+---@type vim.lsp.Config
+return {
+  cmd = {
+    'ghcide',
+    '--lsp',
+  },
+  filetypes = {
+    'haskell',
+    'lhaskell',
+  },
+  root_markers = {
+    'BUILD.bazel',
+    'cabal.config',
+    'hie-bios',
+    'package.yaml',
+    'stack.yaml',
+  },
 }

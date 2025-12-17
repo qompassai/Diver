@@ -2,16 +2,17 @@
 -- Qompass AI Gleam LSP Config
 -- Copyright (C) 2025 Qompass AI, All rights reserved
 -- --------------------------------------------------
-vim.lsp.config['gleam_ls'] = {
-    cmd = {
-        'gleam',
-        'lsp',
-    },
-    filetypes = {
-        'gleam',
-    },
-    root_markers = {
-        'gleam.toml',
-        '.git',
-    },
+---@type vim.lsp.Config
+return {
+  cmd = { ---@type string[]
+    'gleam',
+    'lsp',
+  },
+  filetypes = { ---@type string[]
+    'gleam',
+  },
+  root_markers = { ---@type string[]
+    'gleam.toml',
+    '.git',
+  },
 }

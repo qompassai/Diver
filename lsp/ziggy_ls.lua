@@ -38,9 +38,6 @@ return {
             'lsp'
           },
           root_dir = vim.loop.cwd(),
-          flags = {
-            exit_timeout = 1000
-          },
         })
       end,
     })

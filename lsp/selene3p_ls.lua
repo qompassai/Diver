@@ -3,28 +3,33 @@
 -- Copyright (C) 2025 Qompass AI, All rights reserved
 -- --------------------------------------------------
 --Reference: https://github.com/antonk52/lua-3p-language-servers
---pnpm add -g lua-3p-language-servers
-
-vim.lsp.config['selene3p_ls'] = {
-    cmd = { 'selene-3p-language-server' },
-    filetypes = { 'lua' },
-    root_markers = { 'selene.toml' },
-}
-
-vim.api.nvim_create_user_command('SeleneCheck', function()
-    vim.cmd('write')
-    vim.fn.jobstart({ 'selene', vim.api.nvim_buf_get_name(0) }, {
-        stdout_buffered = true,
-        stderr_buffered = true,
-        on_stdout = function(_, data)
-            if data then
-                print(table.concat(data, '\n'))
-            end
+--pnpm add -g lua-3p-language-servers@latest
+---@type vim.lsp.Config
+return {
+      cmd = { ---@type string[]
+        'selene-3p-language-server'
+      },
+      filetypes = { ---@type string[]
+        'lua'
+      },
+      root_markers = { ---@type string[]
+        'selene.toml'
+      },
+    },
+    vim.api.nvim_create_user_command('SeleneCheck', function()
+      vim.cmd('write') ---@type string[]
+      vim.fn.jobstart({ 'selene', vim.api.nvim_buf_get_name(0) }, {
+        stdout_buffered = true, ---@type boolean
+        stderr_buffered = true, ---@type boolean
+        on_stdout = function(_, data) ---@param _ integer
+          if data then
+            print(table.concat(data, '\n'))
+          end
         end,
-        on_stderr = function(_, data)
-            if data then
-                print(table.concat(data, '\n'))
-            end
+        on_stderr = function(_, data) ---@param _ integer
+          if data then
+            print(table.concat(data, '\n'))
+          end
         end,
-    })
-end, {})
+      })
+    end, {})

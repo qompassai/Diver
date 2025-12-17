@@ -3,22 +3,23 @@
 -- Copyright (C) 2025 Qompass AI, All rights reserved
 -- -------------------------------------------------
 -- Reference: https://www.npmjs.com/package/@salesforce/lwc-language-server
--- pnpm add -g @salesforce/lwc-language-server
-vim.lsp.config['lwc_ls'] = {
-    cmd = {
-        'lwc-language-server',
-        '--stdio',
+-- pnpm add -g @salesforce/lwc-language-server@latest
+---@type vim.lsp.Config
+return {
+  cmd = { ---@type string[]
+    'lwc-language-server',
+    '--stdio',
+  },
+  filetypes = { ---@type string[]
+    'javascript',
+    'html',
+  },
+  root_markers = {
+    'sfdx-project.json',
+  },
+  init_options = {
+    embeddedLanguages = {
+      javascript = true,
     },
-    filetypes = {
-        'javascript',
-        'html',
-    },
-    root_markers = {
-        'sfdx-project.json',
-    },
-    init_options = {
-        embeddedLanguages = {
-            javascript = true,
-        },
-    },
+  },
 }

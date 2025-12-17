@@ -4,14 +4,15 @@
 ------------------------------------------------
 -- cargo install --git https://codeberg.org/caradhras/uvls --locked
 vim.cmd([[au BufRead,BufNewFile *.uvl setfiletype uvl]])
-vim.lsp.config['uv_ls'] = {
-    cmd = {
-        'uvls',
-    },
-    filetypes = {
-        'uvl',
-    },
-    root_markers = {
-        '.git',
-    },
+---@type vim.lsp.Config
+return {
+  cmd = { ---@type string[]
+    'uvls',
+  },
+  filetypes = { ---@type string[]
+    'uvl',
+  },
+  root_markers = { ---@type string[]
+    '.git',
+  },
 }

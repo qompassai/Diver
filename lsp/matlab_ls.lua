@@ -3,23 +3,24 @@
 -- Copyright (C) 2025 Qompass AI, All rights reserved
 -- ---------------------------------------------------
 --Reference: https://github.com/mathworks/MATLAB-language-server
-vim.lsp.config['matlab_ls'] = {
-    cmd = {
-        'matlab-language-server',
-        '--stdio',
+---@type vim.lsp.Config
+return {
+  cmd = { ---@type string[]
+    'matlab-language-server',
+    '--stdio',
+  },
+  filetypes = { ---@type string[]
+    'matlab',
+  },
+  root_markers = { ---@type string[]
+    'git',
+  },
+  settings = {
+    MATLAB = {
+      indexWorkspace = true,
+      installPath = '/usr/bin/matlab-language-server',
+      matlabConnectionTiming = 'onStart',
+      telemetry = false,
     },
-    filetypes = {
-        'matlab',
-    },
-    root_markers = {
-        'git',
-    },
-    settings = {
-        MATLAB = {
-            indexWorkspace = true,
-            installPath = '/usr/bin/matlab-language-server',
-            matlabConnectionTiming = 'onStart',
-            telemetry = false,
-        },
-    },
+  },
 }

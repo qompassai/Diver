@@ -90,7 +90,7 @@ vim.lsp.enable({
   --'eslint_ls', --using biome instead, last updated 1 year ago.
   'expert_ls',
   'facility_ls',
-  'fennel_ls',
+  --'fennel_ls',
   'fish_ls',
   'flow_ls',
   'flux_ls',
@@ -126,8 +126,7 @@ vim.lsp.enable({
   --'hie_ls', --deprecated
   --'hlasm',
   'hoon_ls',
-  'html_ls',
-  'htmlhint_ls',
+  --'html_ls',
   'htmx_ls',
   --'hydra_ls',
   'hypr_ls',

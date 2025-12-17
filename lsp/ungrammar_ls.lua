@@ -3,26 +3,27 @@
 -- Copyright (C) 2025 Qompass AI, All rights reserved
 -- --------------------------------------------------
 --Reference: https://github.com/binhtran432k/ungrammar-language-features
--- pnpm add -g ungrammar-languageserver
-vim.lsp.config['ungrammar_ls'] = {
-    cmd = {
-        'ungrammar-languageserver',
-        '--stdio',
+-- pnpm add -g ungrammar-languageserver@lastest
+---@type vim.lsp.Config
+return {
+  cmd = {
+    'ungrammar-languageserver',
+    '--stdio',
+  },
+  filetypes = { ---@type string[]
+    'ungrammar',
+  },
+  root_markers = { ---@type string[]
+    '.git',
+  },
+  settings = {
+    ungrammar = {
+      validate = {
+        enable = true,
+      },
+      format = {
+        enable = true,
+      },
     },
-    filetypes = {
-        'ungrammar',
-    },
-    root_markers = {
-        '.git',
-    },
-    settings = {
-        ungrammar = {
-            validate = {
-                enable = true,
-            },
-            format = {
-                enable = true,
-            },
-        },
-    },
+  },
 }

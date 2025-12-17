@@ -3,14 +3,15 @@
 -- Copyright (C) 2025 Qompass AI, All rights reserved
 -- --------------------------------------------------
 vim.cmd([[ autocmd BufRead,BufNewFile *.slint set filetype=slint ]])
-vim.lsp.config['slint_ls'] = {
-    cmd = {
-        'slint-lsp',
-    },
-    filetypes = {
-        'slint',
-    },
-    root_markers = {
-        '.git',
-    },
+---@type vim.lsp.Config
+return {
+  cmd = { ---@type string[]
+    'slint-lsp',
+  },
+  filetypes = { ---@type string[]
+    'slint',
+  },
+  root_markers = { ---@type string[]
+    '.git',
+  },
 }

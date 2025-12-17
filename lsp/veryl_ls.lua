@@ -2,14 +2,15 @@
 -- Qompass AI Veryl LSP Spec
 -- Copyright (C) 2025 Qompass AI, All rights reserved
 -- ---------------------------------------------------
-vim.lsp.config['veryl_ls'] = {
-    cmd = {
-        'veryl-ls',
-    },
-    filetypes = {
-        'veryl',
-    },
-    root_markers = {
-        '.git',
-    },
+---@type vim.lsp.Config
+return {
+  cmd = { ---@type string[]
+    'veryl-ls',
+  },
+  filetypes = { ---@type string[]
+    'veryl',
+  },
+  root_markers = { ---@type string[]
+    '.git',
+  },
 }

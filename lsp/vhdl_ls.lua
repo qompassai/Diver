@@ -4,16 +4,17 @@
 -- --------------------------------------------------------------
 --Reference: https://github.com/VHDL-LS/rust_hdl
 --cargo install vhdl_ls
-vim.lsp.config['vhdl_ls'] = {
-    cmd = {
-        'vhdl_ls',
-    },
-    filetypes = {
-        'vhd',
-        'vhdl',
-    },
-    root_markers = {
-        'vhdl_ls.toml',
-        '.vhdl_ls.toml',
-    },
+---@type vim.lsp.Config
+return {
+  cmd = { ---@type string[]
+    'vhdl_ls',
+  },
+  filetypes = { ---@type string[]
+    'vhd',
+    'vhdl',
+  },
+  root_markers = { ---@type string[]
+    'vhdl_ls.toml',
+    '.vhdl_ls.toml',
+  },
 }

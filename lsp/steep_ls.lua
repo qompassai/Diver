@@ -3,17 +3,18 @@
 -- Copyright (C) 2025 Qompass AI, All rights reserved
 -- --------------------------------------------------
 -- gem install steep
-vim.lsp.config['steep_ls'] = {
-    cmd = {
-        'steep',
-        'langserver',
-    },
-    filetypes = {
-        'eruby',
-        'ruby',
-    },
-    root_markers = {
-        'Steepfile',
-        '.git',
-    },
+---@type vim.lsp.Config
+return {
+  cmd = { ---@type string[]
+    'steep',
+    'langserver',
+  },
+  filetypes = { ---@type string[]
+    'eruby',
+    'ruby',
+  },
+  root_markers = { ---@type string[]
+    'Steepfile',
+    '.git',
+  },
 }
