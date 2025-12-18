@@ -3,14 +3,15 @@
 -- Copyright (C) 2025 Qompass AI, All rights reserved
 -- ----------------------------------------
 --Reference:  https://mlir.llvm.org/docs/Tools/MLIRLSP/#pdll-lsp-language-server--mlir-pdll-lsp-server
-vim.lsp.config['mlirpdll_ls'] = {
-    cmd = {
+return ---@type vim.lsp.Config
+{
+    cmd = { ---@type string[]
         'mlir-pdll-lsp-server',
     },
-    filetypes = {
+    filetypes = { ---@type string[]
         'pdll',
     },
-    root_markers = {
+    root_markers = { ---@type string[]
         'pdll_compile_commands.yml',
         '.git',
     },

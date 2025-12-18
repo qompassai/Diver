@@ -4,8 +4,9 @@
 -- -----------------------------------------------------------
 -- Reference: https://github.com/nolanderc/glasgow
 -- cargo install glasgow
-vim.lsp.config['glasgow_ls'] = {
-    cmd = {
+---@type vim.lsp.Config
+return {
+    cmd = { ---@type string[]
         'glasgow',
     },
     filetypes = {

@@ -2,15 +2,16 @@
 -- Qompass AI Haxe LSP Spec
 -- Copyright (C) 2025 Qompass AI, All rights reserved
 -- ----------------------------------------
-vim.lsp.config['haxe_ls'] = {
-    cmd = {
+---@type vim.lsp.Config
+return {
+    cmd = { ---@type string[]
         'node',
         'server.js',
     },
-    filetypes = {
+    filetypes = { ---@type string[]
         'haxe',
     },
-    root_markers = {
+    root_markers = { ---@type string[]
         'build.hxml',
         'haxe_libraries',
         '.git',

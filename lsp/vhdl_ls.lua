@@ -6,15 +6,15 @@
 --cargo install vhdl_ls
 ---@type vim.lsp.Config
 return {
-  cmd = { ---@type string[]
-    'vhdl_ls',
-  },
-  filetypes = { ---@type string[]
-    'vhd',
-    'vhdl',
-  },
-  root_markers = { ---@type string[]
-    'vhdl_ls.toml',
-    '.vhdl_ls.toml',
-  },
+    cmd = { ---@type string[]
+        'vhdl_ls',
+    },
+    filetypes = { ---@type string[]
+        'vhd',
+        'vhdl',
+    },
+    root_markers = { ---@type string[]
+        'vhdl_ls.toml',
+        '.vhdl_ls.toml',
+    },
 }

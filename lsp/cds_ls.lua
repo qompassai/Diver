@@ -4,24 +4,24 @@
 -- --------------------------------------------------
 ---@type vim.lsp.Config
 return {
-  cmd = { ---@type string[]
-    'cds-lsp',
-    '--stdio',
-  },
-  filetypes = { ---@type string[]
-    'cds',
-  },
-  init_options = {
-    provideFormatter = true,
-  },
-  root_markers = {
-    'db',
-    'package.json',
-    'srv',
-  },
-  settings = {
-    cds = {
-      validate = true,
+    cmd = { ---@type string[]
+        'cds-lsp',
+        '--stdio',
     },
-  },
+    filetypes = { ---@type string[]
+        'cds',
+    },
+    init_options = {
+        provideFormatter = true,
+    },
+    root_markers = {
+        'db',
+        'package.json',
+        'srv',
+    },
+    settings = {
+        cds = {
+            validate = true,
+        },
+    },
 }

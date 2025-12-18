@@ -3,8 +3,9 @@
 -- Copyright (C) 2025 Qompass AI, All rights reserved
 -- ----------------------------------------
 -- Reference: https://github.com/richterger/Perl-LanguageServer/tree/master/clients/vscode/perl
-vim.lsp.config['perl_ls'] = {
-    cmd = {
+---@type vim.lsp.Config
+return {
+    cmd = { ---@type string[]
         'perl',
         '-MPerl::LanguageServer',
         '-e',
@@ -15,12 +16,12 @@ vim.lsp.config['perl_ls'] = {
         '--nostdio',
         '0',
     },
-    filetypes = {
+    filetypes = { ---@type string[]
         'perl',
         'pl',
         'pm',
     },
-    root_markers = {
+    root_markers = { ---@type string[]
         '.git',
     },
     settings = {

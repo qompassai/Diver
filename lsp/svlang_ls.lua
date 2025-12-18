@@ -4,11 +4,12 @@
 -- ---------------------------------------------------
 -- Reference: https://github.com/imc-trading/svlangserver
 --pnpm add -g @imc-trading/svlangserver
-vim.lsp.config['svlang_ls'] = {
-    cmd = {
+---@type vim.lsp.Config
+return {
+    cmd = { ---@type string[]
         'svlangserver',
     },
-    filetypes = {
+    filetypes = { ---@type string[]
         'verilog',
         'systemverilog',
     },

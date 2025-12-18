@@ -4,15 +4,15 @@
 -- --------------------------------------------------
 ---@type vim.lsp.Config
 return {
-  cmd = { ---@type string[]
-    'markdown-oxide',
-  },
-  root_markers = { ---@type string[]
-    '.git',
-    '.obsidian',
-    '.moxide.toml',
-  },
-  filetypes = { ---@type string[]
-    'markdown'
-  },
+    cmd = { ---@type string[]
+        'markdown-oxide',
+    },
+    root_markers = { ---@type string[]
+        '.git',
+        '.obsidian',
+        '.moxide.toml',
+    },
+    filetypes = { ---@type string[]
+        'markdown',
+    },
 }

@@ -4,15 +4,15 @@
 -- --------------------------------------------------
 ---@type vim.lsp.Config
 return {
-  cmd = { ---@type string[]
+  cmd = {
     'remark-language-server',
     '--stdio',
   },
-  filetypes = { ---@type string[]
+  filetypes = {
     'markdown',
     'mdx',
   },
-  root_markers = { ---@type string[]
+  root_markers = {
     '.remarkrc',
     '.remarkrc.json',
     '.remarkrc.js',
@@ -27,21 +27,31 @@ return {
       plugins = {
         {
           'remark-preset-lint-recommended',
-          {},
+          {}
         },
         {
           'remark-lint-no-dead-urls',
           {
-            skipOffline = true, ---@type boolean
+            skipOffline = true
           },
         },
       },
-      validate = true, ---@type boolean
+      validate = true,
       run = 'onType',
-      organizeImports = false, ---@type boolean
+      organizeImports = false,
     },
   },
   on_attach = function(client, bufnr)
     client.server_capabilities.documentFormattingProvider = true
+    vim.api.nvim_buf_create_user_command(bufnr, 'RemarkFormat', function()
+      vim.lsp.buf.format({
+        bufnr = bufnr,
+        filter = function(c)
+          return c.id == client.id
+        end,
+      })
+    end, {
+      desc = 'Format Markdown via remark-language-server',
+    })
   end,
 }

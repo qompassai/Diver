@@ -4,16 +4,16 @@
 -- ---------------------------------------------------
 ---@type vim.lsp.Config
 return {
-  cmd = { ---@type string[]
-    'tflint',
-    '--langserver',
-  },
-  filetypes = { ---@type string[]
-    'terraform',
-  },
-  root_markers = { ---@type string[]
-    '.terraform',
-    '.git',
-    '.tflint.hcl',
-  },
+    cmd = { ---@type string[]
+        'tflint',
+        '--langserver',
+    },
+    filetypes = { ---@type string[]
+        'terraform',
+    },
+    root_markers = { ---@type string[]
+        '.terraform',
+        '.git',
+        '.tflint.hcl',
+    },
 }

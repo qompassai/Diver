@@ -4,7 +4,8 @@
 ------------------------------------------------------
 -- Reference: https://github.com/lttb/gh-actions-language-server
 -- pnpm add -g gh-actions-language-server
-vim.lsp.config['ghactions_ls'] = {
+---@type vim.lsp.Config
+return {
     cmd = {
         'gh-actions-language-server',
         '--stdio',

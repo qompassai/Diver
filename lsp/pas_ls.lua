@@ -5,15 +5,15 @@
 -- Reference: https://github.com/genericptr/pascal-language-server
 ---@type vim.lsp.Config
 return {
-  cmd = { ---@type string[]
-    'pasls',
-  },
-  filetypes = { ---@type string[]
-    'pascal',
-  },
-  root_markers = { ---@type string[]
-    '*.lpi',
-    '*.lpk',
-    '.git',
-  },
+    cmd = { ---@type string[]
+        'pasls',
+    },
+    filetypes = { ---@type string[]
+        'pascal',
+    },
+    root_markers = { ---@type string[]
+        '*.lpi',
+        '*.lpk',
+        '.git',
+    },
 }

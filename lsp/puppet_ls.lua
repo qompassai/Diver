@@ -4,19 +4,19 @@
 ------------------------------------------------------
 ---@type vim.lsp.Config
 return {
-  cmd = { ---@type string[]
-    'ruby',
-    'puppet-languageserver',
-    '--stdio',
-    '--timeout=0',
-    '--puppet-settings=--moduledir,/etc/puppetlabs/code/modules',
-  },
-  filetypes = { ---@type string[]
-    'puppet',
-  },
-  root_markers = { ---@type string[]
-    'metadata.json',
-    'metadata.jsonc',
-    '.git',
-  },
+    cmd = { ---@type string[]
+        'ruby',
+        'puppet-languageserver',
+        '--stdio',
+        '--timeout=0',
+        '--puppet-settings=--moduledir,/etc/puppetlabs/code/modules',
+    },
+    filetypes = { ---@type string[]
+        'puppet',
+    },
+    root_markers = { ---@type string[]
+        'metadata.json',
+        'metadata.jsonc',
+        '.git',
+    },
 }

@@ -2,11 +2,12 @@
 -- Qompass AI Ltex LSP Spec
 -- Copyright (C) 2025 Qompass AI, All rights reserved
 -- ---------------------------------------------------
-vim.lsp.config['ltex_ls'] = {
-    cmd = {
+---@type vim.lsp.Config
+return {
+    cmd = { ---@type string[]
         'ltex-ls',
     },
-    filetypes = {
+    filetypes = { ---@type string[]
         'bib',
         'context',
         'gitcommit',
@@ -22,7 +23,7 @@ vim.lsp.config['ltex_ls'] = {
         'text',
         'xhtml',
     },
-    root_markers = {
+    root_markers = { ---@type string[]
         '.git',
     },
     settings = {

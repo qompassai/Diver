@@ -5,16 +5,16 @@
 -- Reference:  https://tombi-toml.github.io/tombi/
 ---@type vim.lsp.Config
 return {
-  cmd = { ---@type string[]
-    'tombi',
-    'lsp',
-  },
-  filetypes = { ---@type string[]
-    'toml',
-  },
-  root_markers = { ---@type string[]
-    'tombi.toml',
-    'pyproject.toml',
-    '.git',
-  },
+    cmd = { ---@type string[]
+        'tombi',
+        'lsp',
+    },
+    filetypes = { ---@type string[]
+        'toml',
+    },
+    root_markers = { ---@type string[]
+        'tombi.toml',
+        'pyproject.toml',
+        '.git',
+    },
 }

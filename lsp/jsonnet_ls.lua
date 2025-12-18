@@ -6,15 +6,15 @@
 --  go install github.com/grafana/jsonnet-language-server@latest
 ---@type vim.lsp.Config
 return {
-  cmd = { ---@type string[]
-    'jsonnet-language-server',
-  },
-  filetypes = { ---@type string[]
-    'jsonnet',
-    'libsonnet',
-  },
-  root_markers = { ---@type string[]
-    'jsonnetfile.json',
-    '.git',
-  },
+    cmd = { ---@type string[]
+        'jsonnet-language-server',
+    },
+    filetypes = { ---@type string[]
+        'jsonnet',
+        'libsonnet',
+    },
+    root_markers = { ---@type string[]
+        'jsonnetfile.json',
+        '.git',
+    },
 }

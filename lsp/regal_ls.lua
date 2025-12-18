@@ -5,14 +5,14 @@
 -- Reference: https://github.com/StyraInc/regal
 ---@type vim.lsp.Config
 return {
-  cmd = { ---@type string[]
-    'regal',
-    'language-server',
-  },
-  filetypes = { ---@type string[]
-    'rego'
-  },
-  root_markers = { ---@type string[]
-    '.git',
-  },
+    cmd = { ---@type string[]
+        'regal',
+        'language-server',
+    },
+    filetypes = { ---@type string[]
+        'rego',
+    },
+    root_markers = { ---@type string[]
+        '.git',
+    },
 }

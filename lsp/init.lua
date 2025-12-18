@@ -4,7 +4,7 @@
 -- --------------------------------------------------
 --https://microsoft.github.io/language-server-protocol/implementors/servers/
 vim.lsp.enable({
-  'a_ls',
+  --'a_ls',
   'ada_ls',
   'agda_ls',
   --'ai_ls',
@@ -147,7 +147,7 @@ vim.lsp.enable({
   --'ltex_ls',
   'ltex_plus_ls',
   'lua_ls',
-  --'luau_ls',
+  'luau_ls',
   'lwc_ls',
   'm68k_ls',
   'makelint_ls',

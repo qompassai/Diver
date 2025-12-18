@@ -6,20 +6,20 @@
 -- pnpm add -g @salesforce/lwc-language-server@latest
 ---@type vim.lsp.Config
 return {
-  cmd = { ---@type string[]
-    'lwc-language-server',
-    '--stdio',
-  },
-  filetypes = { ---@type string[]
-    'javascript',
-    'html',
-  },
-  root_markers = {
-    'sfdx-project.json',
-  },
-  init_options = {
-    embeddedLanguages = {
-      javascript = true,
+    cmd = { ---@type string[]
+        'lwc-language-server',
+        '--stdio',
     },
-  },
+    filetypes = { ---@type string[]
+        'javascript',
+        'html',
+    },
+    root_markers = {
+        'sfdx-project.json',
+    },
+    init_options = {
+        embeddedLanguages = {
+            javascript = true,
+        },
+    },
 }

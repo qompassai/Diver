@@ -170,7 +170,8 @@ return {
       kotlin = {
         'ktlint',
       },
-      lua = {},
+      lua = {
+      },
       nix = {
         'alejandra',
       },

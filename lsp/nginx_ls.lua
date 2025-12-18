@@ -3,14 +3,15 @@
 -- Copyright (C) 2025 Qompass AI, All rights reserved
 -- --------------------------------------------------
 --- pip install -U nginx-language-server
-vim.lsp.config['nginx_ls'] = {
-    cmd = {
+---@type vim.lsp.Config
+return {
+    cmd = { ---@type string[]
         'nginx-language-server',
     },
-    filetypes = {
+    filetypes = { ---@type string[]
         'nginx',
     },
-    root_markers = {
+    root_markers = { ---@type string[]
         'nginx.conf',
         '.git',
     },

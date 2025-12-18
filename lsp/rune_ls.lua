@@ -4,14 +4,15 @@
 -- ---------------------------------------------------
 -- Reference: https://rune-rs.github.io/api/rune/
 -- cargo install rune-languageserver
-vim.lsp.config['rune_ls'] = {
-    cmd = {
+---@type vim.lsp.Config
+return {
+    cmd = { ---@type string[]
         'rune-languageserver',
     },
-    filetypes = {
+    filetypes = { ---@type string[]
         'rune',
     },
-    root_markers = {
+    root_markers = { ---@type string[]
         'Cargo.toml',
         'rune.toml',
         '.git',

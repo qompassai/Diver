@@ -4,14 +4,15 @@
 -- --------------------------------------------------
 --Reference: https://git.sr.ht/~rrc/pbls
 --cargo install --git https://git.sr.ht/~rrc/pbls
-vim.lsp.config['pb_ls'] = {
-    cmd = {
+---@type vim.lsp.Config
+return {
+    cmd = { ---@type string[]
         'pbls',
     },
-    filetypes = {
+    filetypes = { ---@type string[]
         'proto',
     },
-    root_markers = {
+    root_markers = { ---@type string[]
         '.pbls.toml',
         '.git',
     },

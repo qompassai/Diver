@@ -4,7 +4,8 @@
 -- ---------------------------------------------------
 -- Reference: https://github.com/terror/just-lsp
 -- cargo install just-lsp
-vim.lsp.config['just_ls'] = {
+---@type vim.lsp.Config
+return {
     cmd = {
         'just-lsp',
     },

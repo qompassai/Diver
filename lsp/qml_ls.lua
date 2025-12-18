@@ -4,14 +4,14 @@
 -- ---------------------------------------------------
 ---@type vim.lsp.Config
 return {
-  cmd = { ---@type string[]
-    'qml-lsp',
-  },
-  filetypes = { ---@type string[]
-    'qml',
-    'qmljs',
-  },
-  settings = { ---@type string[]
-    ...
-  },
+    cmd = { ---@type string[]
+        'qml-lsp',
+    },
+    filetypes = { ---@type string[]
+        'qml',
+        'qmljs',
+    },
+    settings = { ---@type string[]
+        ...,
+    },
 }

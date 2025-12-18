@@ -4,12 +4,12 @@
 -- --------------------------------------------------
 ---@type vim.lsp.Config
 return {
-  cmd = { ---@type string[]
-    'julia',
-    '--startup-file=no',
-    '--history-file=no',
-    '-e',
-    [[
+    cmd = { ---@type string[]
+        'julia',
+        '--startup-file=no',
+        '--history-file=no',
+        '-e',
+        [[
       ls_install_path = joinpath(
           get(DEPOT_PATH, 1, joinpath(homedir(), '.julia')),
           'environments', 'nvim-lspconfig'
@@ -34,20 +34,20 @@ return {
       server.runlinter = true
       run(server)
     ]],
-  },
-  filetypes = { ---@type string[]
-    'julia',
-  },
-  root_markers = { ---@type string[]
-    'Project.toml',
-    'JuliaProject.toml',
-  },
-  on_attach = function(_, bufnr) ---@type fun(client:vim.lsp.Client, bufnr:integer)
-    vim.api.nvim_buf_create_user_command(bufnr, 'JuliaEnvHere', function()
-      local cwd = vim.fn.getcwd()
-      require('julia_env').activate(cwd)
-    end, {
-      desc = 'Activate Julia env from current directory',
-    })
-  end
+    },
+    filetypes = { ---@type string[]
+        'julia',
+    },
+    root_markers = { ---@type string[]
+        'Project.toml',
+        'JuliaProject.toml',
+    },
+    on_attach = function(_, bufnr) ---@type fun(client:vim.lsp.Client, bufnr:integer)
+        vim.api.nvim_buf_create_user_command(bufnr, 'JuliaEnvHere', function()
+            local cwd = vim.fn.getcwd()
+            require('julia_env').activate(cwd)
+        end, {
+            desc = 'Activate Julia env from current directory',
+        })
+    end,
 }

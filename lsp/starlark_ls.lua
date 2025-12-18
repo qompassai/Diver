@@ -4,16 +4,16 @@
 -- --------------------------------------------------
 ---@type vim.lsp.Config
 return {
-  cmd = { ---@type string[]
-    'starlark',
-    '--lsp',
-  },
-  filetypes = { ---@type string[]
-    'star',
-    'bzl',
-    'BUILD.bazel',
-  },
-  root_markers = { ---@type string[]
-    '.git',
-  },
+    cmd = { ---@type string[]
+        'starlark',
+        '--lsp',
+    },
+    filetypes = { ---@type string[]
+        'star',
+        'bzl',
+        'BUILD.bazel',
+    },
+    root_markers = { ---@type string[]
+        '.git',
+    },
 }

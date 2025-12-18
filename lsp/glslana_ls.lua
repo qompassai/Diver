@@ -2,7 +2,8 @@
 -- Qompass AI GLSL Analyzer LSP Spec
 -- Copyright (C) 2025 Qompass AI, All rights reserved
 ------------------------------------------------------
-vim.lsp.config['glslana_ls'] = {
+---@type vim.lsp.Config
+return {
     cmd = {
         'glsl_analyzer',
     },

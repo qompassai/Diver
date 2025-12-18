@@ -4,28 +4,28 @@
 -- ---------------------------------------------------
 ---@type vim.lsp.Config
 return {
-  cmd = { ---@type string[]
-    'spectral-language-server',
-    '--stdio',
-  },
-  filetypes = { ---@type string[]
-    'yaml',
-    'json',
-    'yml',
-  },
-  root_markers = { ---@type string[]
-    '.spectral.yaml',
-    '.spectral.yml',
-    '.spectral.json',
-    '.spectral.js',
-  },
-  settings = {
-    enable = true,
-    run = 'onType',
-    validateLanguages = {
-      'yaml',
-      'json',
-      'yml',
+    cmd = { ---@type string[]
+        'spectral-language-server',
+        '--stdio',
     },
-  },
+    filetypes = { ---@type string[]
+        'yaml',
+        'json',
+        'yml',
+    },
+    root_markers = { ---@type string[]
+        '.spectral.yaml',
+        '.spectral.yml',
+        '.spectral.json',
+        '.spectral.js',
+    },
+    settings = {
+        enable = true,
+        run = 'onType',
+        validateLanguages = {
+            'yaml',
+            'json',
+            'yml',
+        },
+    },
 }

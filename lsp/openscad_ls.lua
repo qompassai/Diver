@@ -6,14 +6,14 @@
 -- cargo install openscad-lsp
 ---@type vim.lsp.Config
 return {
-  cmd = { ---@type string[]
-    'openscad-lsp',
-    '--stdio',
-  },
-  filetypes = { ---@type string[]
-    'openscad',
-  },
-  root_markers = { ---@type string[]
-    '.git',
-  },
+    cmd = { ---@type string[]
+        'openscad-lsp',
+        '--stdio',
+    },
+    filetypes = { ---@type string[]
+        'openscad',
+    },
+    root_markers = { ---@type string[]
+        '.git',
+    },
 }

@@ -4,17 +4,17 @@
 -- --------------------------------------------------
 ---@type vim.lsp.Config
 return {
-  cmd = { ---@type string[]
-    'robotframework_ls'
-  },
-  filetypes = { ---@type string[]
-    'robot'
-  },
-  root_markers = { ---@type string[]
-    'robotidy.toml',
-    'pyproject.toml',
-    'conda.yaml',
-    'robot.yaml',
-    '.git',
-  },
+    cmd = { ---@type string[]
+        'robotframework_ls',
+    },
+    filetypes = { ---@type string[]
+        'robot',
+    },
+    root_markers = { ---@type string[]
+        'robotidy.toml',
+        'pyproject.toml',
+        'conda.yaml',
+        'robot.yaml',
+        '.git',
+    },
 }

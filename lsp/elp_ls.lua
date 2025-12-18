@@ -4,16 +4,16 @@
 -- --------------------------------------------------
 ---@type vim.lsp.Config
 return {
-  cmd = { ---@type string[]
-    'elp',
-    'server',
-  },
-  filetypes = { ---@type string[]
-    'erlang',
-  },
-  root_markers = { ---@type string[]
-    'erlang.mk',
-    '.git',
-    'rebar.config',
-  },
+    cmd = { ---@type string[]
+        'elp',
+        'server',
+    },
+    filetypes = { ---@type string[]
+        'erlang',
+    },
+    root_markers = { ---@type string[]
+        'erlang.mk',
+        '.git',
+        'rebar.config',
+    },
 }

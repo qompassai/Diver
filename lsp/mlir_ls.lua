@@ -4,13 +4,13 @@
 -- ------------------------------------------------------------------
 ---@type vim.lsp.Config
 return {
-  cmd = { ---@type string[]
-    'mlir-lsp-server'
-  },
-  filetypes = { ---@type string[]
-    'mlir'
-  },
-  root_markers = { ---@type string[]
-    '.git'
-  },
+    cmd = { ---@type string[]
+        'mlir-lsp-server',
+    },
+    filetypes = { ---@type string[]
+        'mlir',
+    },
+    root_markers = { ---@type string[]
+        '.git',
+    },
 }

@@ -4,7 +4,8 @@
 -----------------------------------------------------
 -- References:  https://github.com/ThePrimeagen/htmx-lsp |
 -- cargo install htmx-lsp
-vim.lsp.config['htmx_ls'] = {
+---@type vim.lsp.Config
+return {
     cmd = {
         'htmx-lsp',
     },

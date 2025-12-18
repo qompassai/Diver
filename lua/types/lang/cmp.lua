@@ -30,7 +30,7 @@
 
 ---@class BlinkCmp
 ---@alias blink.cmp.CompletionDocumentationDrawOpts any
---- @alias blink.cmp.Mode 'cmdline' | 'cmdwin' | 'term' | 'default'
+-- --- @alias blink.cmp.Mode 'cmdline' | 'cmdwin' | 'term' | 'default'
 
 ---@class blink.cmp.CompletionItem : vim.lsp.protocol.CompletionItem
 --- @field score_offset? number

@@ -6,17 +6,17 @@
 --pip install ffi-navigator
 ---@type vim.lsp.Config
 return {
-  cmd = { ---@type string[]
-    'python',
-    '-m',
-    'ffi_navigator.langserver',
-  },
-  filetypes = { ---@type string[]
-    'python',
-    'cpp',
-  },
-  root_markers = { ---@type string[]
-    'pyproject.toml',
-    '.git',
-  },
+    cmd = { ---@type string[]
+        'python',
+        '-m',
+        'ffi_navigator.langserver',
+    },
+    filetypes = { ---@type string[]
+        'python',
+        'cpp',
+    },
+    root_markers = { ---@type string[]
+        'pyproject.toml',
+        '.git',
+    },
 }

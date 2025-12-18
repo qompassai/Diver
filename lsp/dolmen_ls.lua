@@ -4,11 +4,12 @@
 -- --------------------------------------------------
 -- Reference: https://github.com/Gbury/dolmen/blob/master/doc/lsp.md
 -- opam install dolmen_lsp
-vim.lsp.config['dolmen_ls'] = {
-    cmd = {
+---@type vim.lsp.Config
+return {
+    cmd = { ---@type string[]
         'dolmenls',
     },
-    filetypes = {
+    filetypes = { ---@type string[]
         'cnf',
         'icnf',
         'smt2',
@@ -16,7 +17,7 @@ vim.lsp.config['dolmen_ls'] = {
         'p',
         'zf',
     },
-    root_markers = {
+    root_markers = { ---@type string[]
         '.git',
     },
 }

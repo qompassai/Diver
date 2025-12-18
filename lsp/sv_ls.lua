@@ -4,11 +4,11 @@
 ------------------------------------------------------
 ---@type vim.lsp.Config
 return {
-  cmd = { ---@type string[]
-    'svls',
-  },
-  filetypes = { ---@type string[]
-    'verilog',
-    'systemverilog',
-  },
+    cmd = { ---@type string[]
+        'svls',
+    },
+    filetypes = { ---@type string[]
+        'verilog',
+        'systemverilog',
+    },
 }

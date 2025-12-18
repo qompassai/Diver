@@ -6,19 +6,19 @@
 --pip install tclint
 ---@type vim.lsp.Config
 return {
-  cmd = { ---@type string[]
-    'tclsp',
-  },
-  filetypes = { ---@type string[]
-    'tcl',
-    'sdc',
-    'xdc',
-    'upf',
-  },
-  root_markers = { ---@type string[]
-    'tclint.toml',
-    '.tclint',
-    'pyproject.toml',
-    '.git',
-  },
+    cmd = { ---@type string[]
+        'tclsp',
+    },
+    filetypes = { ---@type string[]
+        'tcl',
+        'sdc',
+        'xdc',
+        'upf',
+    },
+    root_markers = { ---@type string[]
+        'tclint.toml',
+        '.tclint',
+        'pyproject.toml',
+        '.git',
+    },
 }

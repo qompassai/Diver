@@ -2,10 +2,10 @@
 -- Qompass AI Core Config Init
 -- Copyright (C) 2025 Qompass AI, All rights reserved
 -- ----------------------------------------
-require("config.core.autoload")
-require("config.core.flash")
-require("config.core.lsp")
---require("config.core.mason")
-require("config.core.none-ls")
-require("config.core.tree")
-require("config.core.whickey")
+require('config.core.flash')
+require('config.core.lsp')
+require('config.core.none-ls')
+require('config.core.plenary')
+require('config.core.tree')
+require('config.core.trouble')
+require('config.core.whickey')

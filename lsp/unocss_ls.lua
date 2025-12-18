@@ -4,13 +4,13 @@
 -- ---------------------------------------------------
 --https://github.com/xna00/unocss-language-server
 --pnpm add -g unocss-language-server
-
-vim.lsp.config['unocss_ls'] = {
-    cmd = {
+---@type vim.lsp.Config
+return {
+    cmd = { ---@type string[]
         'unocss-language-server',
         '--stdio',
     },
-    filetypes = {
+    filetypes = { ---@type string[]
         'astro',
         'css',
         'ejs',
@@ -35,11 +35,11 @@ vim.lsp.config['unocss_ls'] = {
         'vue',
         'vue-html',
     },
-    root_markers = {
+    root_markers = { ---@type string[]
         'uno.config.js',
         'uno.config.ts',
         'unocss.config.js',
         'unocss.config.ts',
     },
-    workspace_required = true,
+    workspace_required = true, ---@type boolean
 }

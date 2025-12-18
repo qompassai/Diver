@@ -6,17 +6,17 @@
 -- cargo install --git https://github.com/bergercookie/asm-lsp asm-lsp
 ---@type vim.lsp.Config
 return {
-  cmd = {
-    'asm-lsp',
-  },
-  root_markers = {
-    '.asm-lsp.toml',
-    '.git',
-  },
-  filetypes = {
-    'asm',
-    'vmasm',
-  },
-  settings = {},
-  init_options = {},
+    cmd = {
+        'asm-lsp',
+    },
+    root_markers = {
+        '.asm-lsp.toml',
+        '.git',
+    },
+    filetypes = {
+        'asm',
+        'vmasm',
+    },
+    settings = {},
+    init_options = {},
 }

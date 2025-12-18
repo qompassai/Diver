@@ -4,13 +4,13 @@
 ------------------------------------------------------
 ---@type vim.lsp.Config
 return {
-  cmd = { ---@type string[]
-    'systemd-language-server',
-  },
-  filetypes = { ---@type string[]
-    'systemd',
-  },
-  root_markers = { ---@type string[]
-    '.git'
-  },
+    cmd = { ---@type string[]
+        'systemd-language-server',
+    },
+    filetypes = { ---@type string[]
+        'systemd',
+    },
+    root_markers = { ---@type string[]
+        '.git',
+    },
 }

@@ -5,15 +5,15 @@
 -- Reference: https://github.com/ndonfris/fish-lsp
 ---@type vim.lsp.Config
 return {
-  cmd = { ---@type string[]
-    'fish-lsp',
-    'start',
-  },
-  filetypes = { ---@type string[]
-    'fish',
-  },
-  root_markers = { ---@type string[]
-    'config.fish',
-    '.git',
-  },
+    cmd = { ---@type string[]
+        'fish-lsp',
+        'start',
+    },
+    filetypes = { ---@type string[]
+        'fish',
+    },
+    root_markers = { ---@type string[]
+        'config.fish',
+        '.git',
+    },
 }

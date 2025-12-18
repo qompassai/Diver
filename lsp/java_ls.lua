@@ -4,19 +4,19 @@
 ------------------------------------------------------
 ---@type vim.lsp.Config
 return {
-  cmd = { ---@type string[]
-    'java-language-server',
-  },
-  filetypes = { ---@type string[]
-    'java'
-  },
-  root_markers = { ---@type string[]
-    'build.gradle',
-    'build.gradle.kts',
-    '.git',
-    'pom.xml'
-  },
-  settings = { ---@type string[]
-    ...
-  },
+    cmd = { ---@type string[]
+        'java-language-server',
+    },
+    filetypes = { ---@type string[]
+        'java',
+    },
+    root_markers = { ---@type string[]
+        'build.gradle',
+        'build.gradle.kts',
+        '.git',
+        'pom.xml',
+    },
+    settings = { ---@type string[]
+        ...,
+    },
 }

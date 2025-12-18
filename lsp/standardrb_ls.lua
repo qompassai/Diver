@@ -3,16 +3,16 @@
 -- Copyright (C) 2025 Qompass AI, All rights reserved
 -- --------------------------------------------------
 --Reference:  https://github.com/testdouble/standard
---gem install standard
-vim.lsp.config['standardrb_ls'] = {
-    cmd = {
+---@type vim.lsp.Config
+return {
+    cmd = { ---@type string[]
         'standardrb',
         '--lsp',
     },
-    filetypes = {
+    filetypes = { ---@type string[]
         'ruby',
     },
-    root_markers = {
+    root_markers = { ---@string []
         'Gemfile',
         '.git',
     },

@@ -6,12 +6,12 @@
 --pip install "VectorCode[lsp,mcp]"
 ---@type vim.lsp.Config
 return {
-  cmd = { ---@type string[]
-    'vectorcode-server'
-  },
-  root_markers = { ---@type string[]
-    '.vectorcode',
-    '.git'
-  },
-  settings = {}, ---@type string[]
+    cmd = { ---@type string[]
+        'vectorcode-server',
+    },
+    root_markers = { ---@type string[]
+        '.vectorcode',
+        '.git',
+    },
+    settings = {}, ---@type string[]
 }

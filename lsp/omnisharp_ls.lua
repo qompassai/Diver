@@ -3,7 +3,8 @@
 -- Copyright (C) 2025 Qompass AI, All rights reserved
 -- ---------------------------------------------------
 -- Reference:  https://github.com/omnisharp/omnisharp-roslyn
-vim.lsp.config['omnisharp_ls'] = {
+---@type vim.lsp.Config
+return {
     cmd = {
         'omnisharp',
         '-z',
@@ -14,17 +15,17 @@ vim.lsp.config['omnisharp_ls'] = {
         'utf-8',
         '--languageserver',
     },
-    filetypes = {
+    filetypes = { ---@type string[]
         'cs',
         'vb',
     },
     init_options = {},
     capabilities = {
         workspace = {
-            workspaceFolders = false,
+            workspaceFolders = false, ---@type boolean
         },
     },
-    root_markers = {
+    root_markers = { ---@type string[]
         '*.sln',
         '*.csproj',
         'omnisharp.json',

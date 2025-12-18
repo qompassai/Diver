@@ -4,17 +4,17 @@
 ------------------------------------------------------
 ---@type vim.lsp.Config
 return {
-  cmd = { ---@type string[]
-    'bundle',
-    'exec',
-    'rubocop',
-    '--lsp',
-  },
-  filetypes = { ---@type string[]
-    'ruby'
-  },
-  root_markers = { ---@type string[]
-    'Gemfile',
-    '.git'
-  },
+    cmd = { ---@type string[]
+        'bundle',
+        'exec',
+        'rubocop',
+        '--lsp',
+    },
+    filetypes = { ---@type string[]
+        'ruby',
+    },
+    root_markers = { ---@type string[]
+        'Gemfile',
+        '.git',
+    },
 }

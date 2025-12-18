@@ -6,15 +6,15 @@
 -- Install: cargo install sqruff
 ---@type vim.lsp.Config
 return {
-  cmd = { ---@type string[]
-    'sqruff',
-    'lsp'
-  },
-  filetypes = { ---@type string[]
-    'sql',
-  },
-  root_markers = { ---@type string[]
-    '.sqruff',
-    '.git'
-  },
+    cmd = { ---@type string[]
+        'sqruff',
+        'lsp',
+    },
+    filetypes = { ---@type string[]
+        'sql',
+    },
+    root_markers = { ---@type string[]
+        '.sqruff',
+        '.git',
+    },
 }

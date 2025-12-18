@@ -5,28 +5,27 @@
 -- Reference: https://angular.dev/tools/language-service
 -- pnpm add -g @angular/language-server@latest
 local npm_root = vim.fn.systemlist('npm root -g')[1]
-local ngserver_path = 'pnpm_global_node_modules' .. '/@angular/language-server/bin/ngserver'
 return {
-  cmd = {
-    'ngserver',
-    '--stdio',
-    '--tsProbeLocations',
-    npm_root,
-    '--ngProbeLocations',
-    npm_root,
-  },
-  filetypes = {
-    'typescript',
-    'typescriptreact',
-    'typescript.tsx',
-    'html',
-  },
-  root_markers = {
-    'angular.json',
-    'workspace.json',
-    'project.json',
-    'nx.json',
-    'package.json',
-    '.git',
-  },
+    cmd = {
+        'ngserver',
+        '--stdio',
+        '--tsProbeLocations',
+        npm_root,
+        '--ngProbeLocations',
+        npm_root,
+    },
+    filetypes = {
+        'typescript',
+        'typescriptreact',
+        'typescript.tsx',
+        'html',
+    },
+    root_markers = {
+        'angular.json',
+        '.git',
+        'workspace.json',
+        'project.json',
+        'nx.json',
+        'package.json',
+    },
 }

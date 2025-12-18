@@ -4,11 +4,11 @@
 -- --------------------------------------------------
 ---@type vim.lsp.Config
 return {
-  cmd = { ---@type string[]
-    'dot-language-server',
-    '--stdio',
-  },
-  filetypes = { ---@type string[]
-    'dot',
-  },
+    cmd = { ---@type string[]
+        'dot-language-server',
+        '--stdio',
+    },
+    filetypes = { ---@type string[]
+        'dot',
+    },
 }

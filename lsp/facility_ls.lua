@@ -3,7 +3,8 @@
 -- Copyright (C) 2025 Qompass AI, All rights reserved
 -- ---------------------------------------------------
 -- Reference: https://github.com/FacilityApi/FacilityLanguageServer
-vim.lsp.config['facility_ls'] = {
+---@type vim.lsp.Config
+return {
     cmd = {
         'dotnet',
         vim.fn.expand('$XDG_DATA_HOME/facility-language-server/libexec/Facility.LanguageServer.dll'),

@@ -13,9 +13,15 @@ require('config.init').config({
 })
 vim.opt.packpath = vim.opt.runtimepath:get()
 vim.pack.add {
-  { src = 'https://github.com/dense-analysis/ale' },
-  { src = 'https://github.com/trixnz/sops.nvim' },
-  { src = 'https://github.com/Saghen/blink.cmp' },
+  {
+    src = 'https://github.com/dense-analysis/ale'
+  },
+  {
+    src = 'https://github.com/trixnz/sops.nvim'
+  },
+  {
+    src = 'https://github.com/Saghen/blink.cmp'
+  },
   { src = 'https://github.com/nvim-treesitter/nvim-treesitter' },
   { src = 'https://github.com/L3MON4D3/LuaSnip' },
   { src = 'https://github.com/rafamadriz/friendly-snippets' },
@@ -25,7 +31,7 @@ vim.pack.add {
   { src = 'https://github.com/Kaiser-Yang/blink-cmp-dictionary' },
   { src = 'https://github.com/Saghen/blink.compat', },
 }
-vim.bo.modifiable = true
+vim.bo.modifiable = true ---@type boolean
 vim.cmd('set completeopt+=noselect')
 vim.g.mapleader = ' '
 vim.g.editorconfig = true
@@ -42,7 +48,7 @@ vim.g.mkdp_theme = 'dark'
 vim.g.semantic_tokens_enabled = true
 vim.g.use_blink_cmp = true
 vim.g.which_key_disable_health_check = 1
-vim.g.mkdp_markdown_css = vim.fn.expand('~/.config/nvim/markdown.css')
+vim.g.mkdp_markdown_css = vim.fn.expand('~/.config/nvim/markdown.css') ---@type string
 vim.o.ambiwidth = 'single'
 vim.o.autowrite = true
 vim.o.autowriteall = true
@@ -54,7 +60,7 @@ vim.o.completeopt = 'menu,menuone,noselect'
 vim.o.conceallevel = 0
 vim.o.confirm = true
 vim.o.cursorline = true
---vim.o.diffopt = "internal,filler,closeoff,algorithm:histogram,indent-heuristic,linematch:60"
+vim.o.diffopt = "internal,filler,closeoff,algorithm:histogram,indent-heuristic,linematch:60"
 vim.o.encoding = 'utf-8'
 vim.o.exrc = true
 vim.o.expandtab = true
@@ -84,7 +90,7 @@ vim.o.number = true
 vim.o.pumheight = 15
 vim.o.redrawtime = 10000
 vim.o.relativenumber = true
-vim.o.report = 9999
+--vim.o.report = 9999
 vim.o.scrolloff = 8
 vim.o.secure = true
 vim.o.shiftwidth = 4

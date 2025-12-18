@@ -3,35 +3,31 @@
 -- Copyright (C) 2025 Qompass AI, All rights reserved
 ------------------------------------------------------
 ---@meta
-
+---@class Options : NvimOptions
+---@class Globals : NvimGlobals
 ---@class API
+---@field api NativeAPI
 ---@field bo table<string, any>
----@field opt Options
----@field o table<string, any>
----@field wo table<string, any>
 ---@field env table<string, string>
 ---@field fn FunctionAPI
----@field api NativeAPI
----@class VimExtendedAPI
----@field bo table<string, any>
+---@field g Globals
+---@field o Options
 ---@field opt Options
----@field o table<string, any>
 ---@field wo table<string, any>
+---@class VimExtendedAPI : API
+---@field api NativeAPI
+---@field bo table<string, any>
 ---@field env table<string, string>
 ---@field fn FunctionAPI
----@field api NativeAPI
+---@field o table<string, any>
+---@field opt Options
+---@field wo table<string, any>
 ---@class NativeAPI
 ---@field nvim_create_augroup fun(name:string, opts:table):integer
 ---@field nvim_create_autocmd fun(event:any, opts:table)
 ---@field nvim_get_runtime_file fun(pattern:string, all:boolean):string[]
 ---@field nvim_set_option_value fun(name:string, value:any, opts:table)
 ---@class NvimOptions
----@field history integer
----@field number boolean
----@field relativenumber boolean
----@field syntax string
----@field undodir string
----@field undofile boolean
 ---@field backup boolean
 ---@field cursorline boolean
 ---@field encoding string
@@ -43,6 +39,12 @@
 ---@field foldenable boolean
 ---@field foldlevel integer
 ---@field foldmethod string
+---@field history integer
+---@field number boolean
+---@field relativenumber boolean
+---@field syntax string
+---@field undodir string
+---@field undofile boolean
 ---@field hidden boolean
 ---@field hlsearch boolean
 ---@field ignorecase boolean
@@ -88,8 +90,8 @@
 ---@field has fun(feature:string):boolean
 ---@field stdpath fun(type:string):string
 ---@class LuaGlobals
----@field use_blink_cmp boolean
 ---@field lazydev_enabled boolean
+---@field use_blink_cmp boolean
 ---@class NvimGlobals
 ---@field git_command_ssh integer
 ---@field editorconfig boolean

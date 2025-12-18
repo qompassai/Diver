@@ -6,15 +6,15 @@
 --curl -s https://get.please.build | bash
 ---@type vim.lsp.Config
 return {
-  cmd = { ---@type string[]
-    'plz',
-    'tool',
-    'lps',
-  },
-  filetypes = { ---@type string[]
-    'bzl',
-  },
-  root_markers = { ---@type string[]
-    '.plzconfig',
-  },
+    cmd = { ---@type string[]
+        'plz',
+        'tool',
+        'lps',
+    },
+    filetypes = { ---@type string[]
+        'bzl',
+    },
+    root_markers = { ---@type string[]
+        '.plzconfig',
+    },
 }

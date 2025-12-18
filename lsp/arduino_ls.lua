@@ -4,23 +4,23 @@
 ------------------------------------------------------
 ---@type vim.lsp.Config
 return {
-  capabilities = {
-    textDocument = {
-      ---@diagnostic disable-next-line: assign-type-mismatch
-      semanticTokens = vim.NIL,
+    capabilities = {
+        textDocument = {
+            ---@diagnostic disable-next-line: assign-type-mismatch
+            semanticTokens = vim.NIL,
+        },
+        cmd = {
+            'arduino-language-server',
+        },
+        filetypes = {
+            'arduino',
+        },
+        root_markers = {
+            '*.ino',
+        },
+        workspace = {
+            ---@diagnostic disable-next-line: assign-type-mismatch
+            semanticTokens = vim.NIL,
+        },
     },
-    cmd = {
-      'arduino-language-server',
-    },
-    filetypes = {
-      'arduino',
-    },
-    root_markers = {
-      '*.ino'
-    },
-    workspace = {
-      ---@diagnostic disable-next-line: assign-type-mismatch
-      semanticTokens = vim.NIL,
-    },
-  }
 }

@@ -4,17 +4,17 @@
 -----------------------------------------------------
 ---@type vim.lsp.Config
 return {
-  cmd = {
-    'csharp-ls'
-  },
-  filetypes = {
-    'cs'
-  },
-  init_options = {
-    AutomaticWorkspaceInit = true,
-  },
-  root_markers = {
-    '.sln',
-    '.csproj'
-  },
+    cmd = {
+        'csharp-ls',
+    },
+    filetypes = {
+        'cs',
+    },
+    init_options = {
+        AutomaticWorkspaceInit = true,
+    },
+    root_markers = {
+        '.sln',
+        '.csproj',
+    },
 }

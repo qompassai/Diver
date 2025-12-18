@@ -5,24 +5,24 @@
 --Reference: https://github.com/g-plane/wasm-language-tools
 ---@type vim.lsp.Config
 return {
-  cmd = { ---@type string[]
-    'wat_server',
-  },
-  filetypes = { ---@type string[]
-    'wat',
-  },
-  settings = {
-    format = {
-      formatComments = true,
-      ignoreCommentDirective = 'fmt-ignore',
-      indentWidth = 4,
-      lineBreak = 'crlf',
-      printWidth = 80,
-      splitClosingParens = true,
-      useTabs = true,
+    cmd = { ---@type string[]
+        'wat_server',
     },
-    lint = {
-      unused = 'warn',
+    filetypes = { ---@type string[]
+        'wat',
     },
-  },
+    settings = {
+        format = {
+            formatComments = true,
+            ignoreCommentDirective = 'fmt-ignore',
+            indentWidth = 4,
+            lineBreak = 'crlf',
+            printWidth = 80,
+            splitClosingParens = true,
+            useTabs = true,
+        },
+        lint = {
+            unused = 'warn',
+        },
+    },
 }

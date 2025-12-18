@@ -5,16 +5,16 @@
 -- References:  https://pgtools.net
 ---@type vim.lsp.Config
 return {
-  cmd = { ---@type string[]
-    'postgres-language-server',
-    'lsp-proxy',
-  },
-  filetypes = { ---@type string[]
-    'sql',
-    'psql',
-  },
-  root_markers = { ---@type string[]
-    'postgres-language-server.jsonc'
-  },
-  workspace_required = true,
+    cmd = { ---@type string[]
+        'postgres-language-server',
+        'lsp-proxy',
+    },
+    filetypes = { ---@type string[]
+        'sql',
+        'psql',
+    },
+    root_markers = { ---@type string[]
+        'postgres-language-server.jsonc',
+    },
+    workspace_required = true,
 }

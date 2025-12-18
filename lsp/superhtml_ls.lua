@@ -4,15 +4,15 @@
 -----------------------------------------------------
 ---@type vim.lsp.Config
 return {
-  cmd = { ---@type string[]
-    'superhtml',
-    'lsp',
-  },
-  filetypes = { ---@type string[]
-    'superhtml',
-    'html',
-  },
-  root_markers = {
-    '.git',
-  },
+    cmd = { ---@type string[]
+        'superhtml',
+        'lsp',
+    },
+    filetypes = { ---@type string[]
+        'superhtml',
+        'html',
+    },
+    root_markers = {
+        '.git',
+    },
 }

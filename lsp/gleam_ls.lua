@@ -4,15 +4,15 @@
 -- --------------------------------------------------
 ---@type vim.lsp.Config
 return {
-  cmd = { ---@type string[]
-    'gleam',
-    'lsp',
-  },
-  filetypes = { ---@type string[]
-    'gleam',
-  },
-  root_markers = { ---@type string[]
-    'gleam.toml',
-    '.git',
-  },
+    cmd = { ---@type string[]
+        'gleam',
+        'lsp',
+    },
+    filetypes = { ---@type string[]
+        'gleam',
+    },
+    root_markers = { ---@type string[]
+        'gleam.toml',
+        '.git',
+    },
 }

@@ -4,28 +4,28 @@
 -- --------------------------------------
 ---@type vim.lsp.Config
 return {
-  cmd = { ---@type string[]
-    'pyrefly',
-    'lsp',
-  },
-  filetypes = { ---@type string[]
-    'python',
-  },
-  init_options = {
-    pyrefly = {
-      displayTypeErrors = 'force-on'
+    cmd = { ---@type string[]
+        'pyrefly',
+        'lsp',
     },
-  },
-  root_markers = { ---@type string[]
-    '.git',
-    'MANIFEST.in',
-    'pyproject.toml',
-    'pyrefly.toml',
-    'requirements.txt',
-    'setup.cfg',
-    'setup.py',
-  },
-  on_exit = function(code, _, _)
-    vim.notify('Closing Pyrefly LSP exited with code: ' .. code, vim.log.levels.INFO)
-  end,
+    filetypes = { ---@type string[]
+        'python',
+    },
+    init_options = {
+        pyrefly = {
+            displayTypeErrors = 'force-on',
+        },
+    },
+    root_markers = { ---@type string[]
+        '.git',
+        'MANIFEST.in',
+        'pyproject.toml',
+        'pyrefly.toml',
+        'requirements.txt',
+        'setup.cfg',
+        'setup.py',
+    },
+    on_exit = function(code, _, _)
+        vim.notify('Closing Pyrefly LSP exited with code: ' .. code, vim.log.levels.INFO)
+    end,
 }

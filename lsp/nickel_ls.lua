@@ -4,15 +4,16 @@
 -- ----------------------------------------
 -- Reference: https://github.com/tweag/nickel
 -- cargo install nickel-lang-lsp
-vim.lsp.config['nickel_ls'] = {
-    cmd = {
+---@type vim.lsp.Config
+return {
+    cmd = { ---@type string[]
         'nls',
     },
-    filetypes = {
+    filetypes = { ---@type string[]
         'ncl',
         'nickel',
     },
-    root_markers = {
+    root_markers = { ---@type string[]
         '.git',
     },
 }

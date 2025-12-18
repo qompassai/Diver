@@ -4,21 +4,21 @@
 -- --------------------------------------------------
 ---@type vim.lsp.Config
 return {
-  cmd = { ---@type string[]
-    'hoon-language-server',
-    '-p',
-    '8080',
-    '-u',
-    'http://localhost',
-    '-s',
-    'zod',
-    '-d',
-    '0',
-  },
-  filetypes = { ---@type string[]
-    'hoon',
-  },
-  root_markers = { ---@type string[]
-    '.git',
-  },
+    cmd = { ---@type string[]
+        'hoon-language-server',
+        '-p',
+        '8080',
+        '-u',
+        'http://localhost',
+        '-s',
+        'zod',
+        '-d',
+        '0',
+    },
+    filetypes = { ---@type string[]
+        'hoon',
+    },
+    root_markers = { ---@type string[]
+        '.git',
+    },
 }

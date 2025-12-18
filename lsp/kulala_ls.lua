@@ -4,14 +4,14 @@
 -- ----------------------------------------
 ---@type vim.lsp.Config
 return {
-  cmd = { ---@type string[]
-    'kulala-ls',
-    '--stdio'
-  },
-  filetypes = { ---@type string[]
-    'http'
-  },
-  root_markers = { ---@type string[]
-    '.git'
-  },
+    cmd = { ---@type string[]
+        'kulala-ls',
+        '--stdio',
+    },
+    filetypes = { ---@type string[]
+        'http',
+    },
+    root_markers = { ---@type string[]
+        '.git',
+    },
 }

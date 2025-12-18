@@ -6,14 +6,14 @@
 -- go install github.com/kitagry/regols@latest
 ---@type vim.lsp.Config
 return {
-  cmd = {
-    'regols',
-  },
-  filetypes = {
-    'rego',
-  },
-  root_markers = {
-    '.git',
-    '*.rego',
-  },
+    cmd = {
+        'regols',
+    },
+    filetypes = {
+        'rego',
+    },
+    root_markers = {
+        '.git',
+        '*.rego',
+    },
 }

@@ -6,13 +6,13 @@
 -- cargo install --git https://github.com/influxdata/flux-lsp
 ---@type vim.lsp.Config
 return {
-  cmd = {
-    'flux-lsp', ---@type string[]
-  },
-  filetypes = { ---@type string[]
-    'flux',
-  },
-  root_markers = { ---@type string[]
-    '.git',
-  },
+    cmd = {
+        'flux-lsp', ---@type string[]
+    },
+    filetypes = { ---@type string[]
+        'flux',
+    },
+    root_markers = { ---@type string[]
+        '.git',
+    },
 }

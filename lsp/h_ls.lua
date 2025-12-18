@@ -3,14 +3,18 @@
 -- Copyright (C) 2025 Qompass AI, All rights reserved
 -- ----------------------------------------
 -- https://github.com/haskell/haskell-language-server
-vim.lsp.config['h_ls'] = {
-    cmd = { 'haskell-language-server-wrapper', '--lsp' },
-    filetypes = {
+---@type vim.lsp.Config
+return {
+    cmd = { ---@type string[]
+        'haskell-language-server-wrapper',
+        '--lsp',
+    },
+    filetypes = { ---@type string[]
         'haskell',
         'lhaskell',
         'cabal',
     },
-    root_markers = {
+    root_markers = { ---@type string[]
         'hie.yaml',
         'stack.yaml',
         'cabal.project',

@@ -4,15 +4,15 @@
 -- --------------------------------------------------
 ---@type vim.lsp.Config
 return {
-  cmd = { ---@type string[]
-    'm68k-lsp-server',
-    '--stdio',
-  },
-  filetypes = { ---@type string[]
-    'asm68k',
-  },
-  root_markers = { ---@type string[]
-    'Makefile',
-    '.git',
-  },
+    cmd = { ---@type string[]
+        'm68k-lsp-server',
+        '--stdio',
+    },
+    filetypes = { ---@type string[]
+        'asm68k',
+    },
+    root_markers = { ---@type string[]
+        'Makefile',
+        '.git',
+    },
 }

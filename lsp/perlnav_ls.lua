@@ -4,16 +4,17 @@
 -- --------------------------------------------------
 --Reference: https://github.com/bscan/PerlNavigator
 --pnpm add -g perlnavigator-server
-vim.lsp.config['perlnav_ls'] = {
-    cmd = {
+---@type vim.lsp.Config
+return {
+    cmd = { ---@type string[]
         'perlnavigator',
     },
-    filetypes = {
+    filetypes = { ---@type string[]
         'perl',
         'pl',
         'pm',
     },
-    root_markers = {
+    root_markers = { ---@type string[]
         '.git',
     },
     settings = {

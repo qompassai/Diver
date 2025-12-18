@@ -3,26 +3,25 @@
 -- Copyright (C) 2025 Qompass AI, All rights reserved
 -- ---------------------------------------------------
 -- References:  https://solargaraph.org/
--- gem install --user-install solargraph
 ---@type vim.lsp.Config
 return {
-  cmd = {
-    'solargraph', ---@type string[]
-    'stdio',
-  },
-  settings = {
-    solargraph = {
-      diagnostics = true,
+    cmd = {
+        'solargraph', ---@type string[]
+        'stdio',
     },
-  },
-  init_options = {
-    formatting = true,
-  },
-  filetypes = { ---@type string[]
-    'ruby',
-  },
-  root_markers = { ---@type string[]
-    'Gemfile',
-    '.git',
-  },
+    settings = {
+        solargraph = {
+            diagnostics = true, ---@type boolean
+        },
+    },
+    init_options = {
+        formatting = true,
+    },
+    filetypes = { ---@type string[]
+        'ruby',
+    },
+    root_markers = { ---@type string[]
+        'Gemfile',
+        '.git',
+    },
 }

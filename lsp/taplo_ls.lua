@@ -4,16 +4,16 @@
 -- --------------------------------------------------
 ---@type vim.lsp.Config
 return {
-  cmd = { ---@type string[]
-    'taplo',
-    'lsp',
-  },
-  filetypes = { ---@type string[]
-    'toml',
-  },
-  root_markers = { ---@type string[]
-    '.taplo.toml',
-    'taplo.toml',
-    '.git',
-  },
+    cmd = { ---@type string[]
+        'taplo',
+        'lsp',
+    },
+    filetypes = { ---@type string[]
+        'toml',
+    },
+    root_markers = { ---@type string[]
+        '.taplo.toml',
+        'taplo.toml',
+        '.git',
+    },
 }

@@ -4,13 +4,13 @@
 ------------------------------------------------------
 ---@type vim.lsp.Config
 return {
-  cmd = { ---@type string[]
-    'hydra-lsp',
-  },
-  filetypes = { ---@type string[]
-    'yaml',
-  },
-  root_markers = { ---@type string[]
-    '.git',
-  },
+    cmd = { ---@type string[]
+        'hydra-lsp',
+    },
+    filetypes = { ---@type string[]
+        'yaml',
+    },
+    root_markers = { ---@type string[]
+        '.git',
+    },
 }

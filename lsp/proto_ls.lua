@@ -4,13 +4,13 @@
 -- --------------------------------------------------
 ---@type vim.lsp.Config
 return {
-  cmd = { ---@type string[]
-    'protols',
-  },
-  filetypes = { ---@type string[]
-    'proto',
-  },
-  root_markers = { ---@type string[]
-    '.git',
-  },
+    cmd = { ---@type string[]
+        'protols',
+    },
+    filetypes = { ---@type string[]
+        'proto',
+    },
+    root_markers = { ---@type string[]
+        '.git',
+    },
 }

@@ -4,17 +4,17 @@
 ------------------------------------------------------
 ---@type vim.lsp.Config
 return {
-  cmd = {
-    'laravel-ls',
-  },
-  filetypes = {
-    'php',
-    'blade',
-  },
-  root_markers = {
-    'artisan',
-  },
-  settings = {
-    ['laravel-ls'] = {},
-  },
+    cmd = {
+        'laravel-ls',
+    },
+    filetypes = {
+        'php',
+        'blade',
+    },
+    root_markers = {
+        'artisan',
+    },
+    settings = {
+        ['laravel-ls'] = {},
+    },
 }

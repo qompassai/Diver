@@ -1,5 +1,5 @@
 -- /qompassai/Diver/lsp/zk_ls.lua
--- Qompass AI ZK LSP Spec
+-- Qompass AI Diver ZK LSP Spec
 -- Copyright (C) 2025 Qompass AI, All rights reserved
 -- ----------------------------------------
 ---@param bufnr integer
@@ -13,7 +13,10 @@ local function zk_list(client, bufnr, opts, action)
         arguments = { vim.api.nvim_buf_get_name(bufnr), opts },
     }, { bufnr = bufnr }, function(err, result)
         if err ~= nil then
-            vim.api.nvim_echo({ { 'zk.list error\n' }, { vim.inspect(err) } }, true, {})
+            vim.api.nvim_echo({
+                { 'zk.list error\n' },
+                { vim.inspect(err) },
+            }, true, {})
             return
         end
         if result == nil then
@@ -30,19 +33,19 @@ local function zk_list(client, bufnr, opts, action)
         end)
     end)
 end
-
-vim.lsp.config['zk_ls'] = {
-    cmd = {
+return ---@type vim.lsp.Config
+{
+    cmd = { ---@type string[]
         'zk',
         'lsp',
     },
-    filetypes = {
+    filetypes = { ---@type string[]
         'markdown',
     },
-    root_markers = {
+    root_markers = { ---@type string[]
         '.zk',
     },
-    workspace_required = true,
+    workspace_required = true, ---@type boolean
     on_attach = function(client, bufnr)
         vim.api.nvim_buf_create_user_command(bufnr, 'LspZkIndex', function()
             client:exec_cmd({
@@ -59,13 +62,11 @@ vim.lsp.config['zk_ls'] = {
                 end
             end)
         end, { desc = 'ZkIndex' })
-
         vim.api.nvim_buf_create_user_command(bufnr, 'LspZkList', function()
             zk_list(client, bufnr, {}, function(path)
                 vim.cmd('edit ' .. path)
             end)
         end, { desc = 'ZkList' })
-
         vim.api.nvim_buf_create_user_command(bufnr, 'LspZkTagList', function()
             client:exec_cmd({
                 title = 'ZkTagList',
@@ -106,11 +107,17 @@ vim.lsp.config['zk_ls'] = {
                 },
             }, { bufnr = bufnr }, function(err, result)
                 if err ~= nil then
-                    vim.api.nvim_echo({ { 'zk.new error\n' }, { vim.inspect(err) } }, true, {})
+                    vim.api.nvim_echo({
+                        { 'zk.new error\n' },
+                        { vim.inspect(err) },
+                    }, true, {})
                     return
                 end
                 vim.cmd('edit ' .. result.path)
             end)
-        end, { desc = 'ZkNew [title] [dir]', nargs = '*' })
+        end, {
+            desc = 'ZkNew [title] [dir]',
+            nargs = '*',
+        })
     end,
 }

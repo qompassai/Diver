@@ -4,21 +4,21 @@
 -- ---------------------------------------------------
 ---@type vim.lsp.Config
 return {
-  cmd = { ---@type string[]
-    'herb-language-server',
-    '--stdio',
-  },
-  filetypes = { ---@type string[]
-    'html',
-    'eruby',
-  },
-  init_options = { ---@type table
-    linter = {
-      enabled = true,
+    cmd = { ---@type string[]
+        'herb-language-server',
+        '--stdio',
     },
-  },
-  root_markers = { ---@type string[]
-    'Gemfile',
-    '.git',
-  },
+    filetypes = { ---@type string[]
+        'html',
+        'eruby',
+    },
+    init_options = { ---@type table
+        linter = {
+            enabled = true,
+        },
+    },
+    root_markers = { ---@type string[]
+        'Gemfile',
+        '.git',
+    },
 }

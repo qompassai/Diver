@@ -3,4 +3,5 @@
 # Qompass AI Ruby LSP Script
 # Copyright (C) 2025 Qompass AI, All rights reserved
 # ----------------------------------------
-gem install steep standard ruby-lsp sorbet sorbet-runtime rubocop
+gem install steep standard ruby-lsp sorbet sorbet-runtime rubocop syntax_tree
+gem install --user-install solargraph

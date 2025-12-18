@@ -6,23 +6,23 @@
 -- pip install rpm-spec-language-server
 ---@type vim.lsp.Config
 return {
-  cmd = { ---@type string[]
-    'rpm_lsp_server',
-    '--stdio',
-  },
-  docs = { ---@type table
-    description = [[
+    cmd = { ---@type string[]
+        'rpm_lsp_server',
+        '--stdio',
+    },
+    docs = { ---@type table
+        description = [[
   https://github.com/dcermak/rpm-spec-language-server
 
   Language server protocol (LSP) support for RPM Spec files.
   ]],
-  },
-  filetypes = { ---@type string[]
-    'spec',
-  },
-  root_markers = { ---@type string[]
-    '.git',
-  },
-  settings = { ---@type string[]
-  },
+    },
+    filetypes = { ---@type string[]
+        'spec',
+    },
+    root_markers = { ---@type string[]
+        '.git',
+    },
+    settings = { ---@type string[]
+    },
 }

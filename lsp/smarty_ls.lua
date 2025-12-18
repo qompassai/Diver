@@ -3,13 +3,16 @@
 -- Copyright (C) 2025 Qompass AI, All rights reserved
 -- ----------------------------------------
 --pnpm add -g  vscode-smarty-langserver-extracted
-vim.lsp.config['smarty_ls'] = {
-    cmd = {
+---@type vim.lsp.Config
+return {
+    cmd = { ---@type string[]
         'smarty-language-server',
         '--stdio',
     },
-    filetypes = { 'smarty' },
-    room_markers = {
+    filetypes = { ---@type string[]
+        'smarty',
+    },
+    room_markers = { ---@type string[]
         'composer.json',
         '.git',
     },
@@ -18,7 +21,7 @@ vim.lsp.config['smarty_ls'] = {
             pluginDirs = {},
         },
         css = {
-            validate = true,
+            validate = true, ---@type boolean
         },
     },
     init_options = {

@@ -2,11 +2,12 @@
 -- Qompass AI RNix LSP Spec
 -- Copyright (C) 2025 Qompass AI, All rights reserved
 -- ---------------------------------------------------
-vim.lsp.config['rnix'] = {
-    cmd = {
+---@type vim.lsp.Config
+return {
+    cmd = { ---@type string[]
         'rnix-lsp',
     },
-    filetypes = {
+    filetypes = { ---@type string[]
         'nix',
     },
     root_dir = function(bufnr, on_dir)

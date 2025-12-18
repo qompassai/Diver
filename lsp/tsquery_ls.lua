@@ -3,18 +3,19 @@
 -- Copyright (C) 2025 Qompass AI, All rights reserved
 -- --------------------------------------------------
 --Reference:  https://github.com/ribru17/ts_query_ls
-vim.lsp.config['tsquery_ls'] = {
-    cmd = {
+---@type vim.lsp.Config
+return {
+    cmd = { ---@type string[]
         'ts_query_ls',
     },
-    filetypes = {
+    filetypes = { ---@type string[]
         'query',
     },
-    root_markers = {
+    root_markers = { ---@type string[]
         'queries',
         '.git',
     },
-    settings = {
+    settings = { ---@type string[]
         parser_aliases = {
             ecma = 'javascript',
             jsx = 'javascript',

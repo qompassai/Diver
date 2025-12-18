@@ -4,12 +4,13 @@
 -- --------------------------------------------------
 -- pnpm add -g @prisma/language-server
 --Reference: https://www.npmjs.com/package/@prisma/language-server
-vim.lsp.config['prisma_ls'] = {
-    cmd = {
+---@type vim.lsp.Config
+return {
+    cmd = { ---@type string[]
         'prisma-language-server',
         '--stdio',
     },
-    filetypes = {
+    filetypes = { ---@type string[]
         'prisma',
     },
     settings = {
@@ -17,7 +18,7 @@ vim.lsp.config['prisma_ls'] = {
             prismaFmtBinPath = '',
         },
     },
-    root_markers = {
+    root_markers = { ---@type string[]
         '.git',
         'package.json',
     },

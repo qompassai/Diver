@@ -5,13 +5,13 @@
 vim.cmd([[ autocmd BufRead,BufNewFile *.slint set filetype=slint ]])
 ---@type vim.lsp.Config
 return {
-  cmd = { ---@type string[]
-    'slint-lsp',
-  },
-  filetypes = { ---@type string[]
-    'slint',
-  },
-  root_markers = { ---@type string[]
-    '.git',
-  },
+    cmd = { ---@type string[]
+        'slint-lsp',
+    },
+    filetypes = { ---@type string[]
+        'slint',
+    },
+    root_markers = { ---@type string[]
+        '.git',
+    },
 }

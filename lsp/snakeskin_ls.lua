@@ -6,16 +6,16 @@
 -- pnpm add -g @snakeskin/cli@latest
 ---@type vim.lsp.Config
 return {
-  cmd = { ---@type string[]
-    'snakeskin-cli',
-    'lsp',
-    '--stdio',
-  },
-  filetypes = { ---@type string[]
-    'ss',
-  },
-  root_markers = { ---@type string[]
-    'package.json',
-    'package.jsonc'
-  },
+    cmd = { ---@type string[]
+        'snakeskin-cli',
+        'lsp',
+        '--stdio',
+    },
+    filetypes = { ---@type string[]
+        'ss',
+    },
+    root_markers = { ---@type string[]
+        'package.json',
+        'package.jsonc',
+    },
 }

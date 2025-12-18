@@ -6,25 +6,25 @@
 -- pnpm add -g basics-language-server@latest
 ---@type vim.lsp.Config
 return {
-  cmd = {
-    'basics-language-server',
-  },
-  root_markers = {
-    '.git',
-  },
-  settings = {
-    buffer = {
-      enable = true,
-      minCompletionLength = 4,
-      matchStrategy = 'fuzzy',
+    cmd = {
+        'basics-language-server',
     },
-    path = {
-      enable = true,
+    root_markers = {
+        '.git',
     },
-    snippet = {
-      enable = false,
-      sources = {},
-      matchStrategy = 'fuzzy',
+    settings = {
+        buffer = {
+            enable = true,
+            minCompletionLength = 4,
+            matchStrategy = 'fuzzy',
+        },
+        path = {
+            enable = true,
+        },
+        snippet = {
+            enable = false,
+            sources = {},
+            matchStrategy = 'fuzzy',
+        },
     },
-  },
 }

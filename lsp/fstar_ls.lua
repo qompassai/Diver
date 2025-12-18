@@ -4,14 +4,14 @@
 -- --------------------------------------------------
 ---@type vim.lsp.Config
 return {
-  cmd = {
-    'fstar',
-    '--lsp',
-  },
-  filetypes = {
-    'fstar',
-  },
-  root_markers = {
-    '.git',
-  },
+    cmd = {
+        'fstar',
+        '--lsp',
+    },
+    filetypes = {
+        'fstar',
+    },
+    root_markers = {
+        '.git',
+    },
 }

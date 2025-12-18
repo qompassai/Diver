@@ -2,7 +2,8 @@
 -- Qompass AI Diver Trouble Config
 -- Copyright (C) 2025 Qompass AI, All rights reserved
 ------------------------------------------------------
-
+---@meta
+---@module 'config.core.trouble'
 ---@class TroubleOptions
 ---@field position? "top" | "bottom" | "left" | "right"
 ---@field height? integer
@@ -16,8 +17,8 @@
 ---@return TroubleOptions
 return function(opts)
   opts = opts or {}
-  return vim.tbl_deep_extend("force", {
-    position = "bottom",
+  return vim.tbl_deep_extend('force', {
+    position = 'bottom',
     height = 10,
     auto_open = true,
     auto_close = true,

@@ -5,29 +5,29 @@
 -- Reference:  https://github.com/typed-ember/glint | https://typed-ember.gitbook.io/glint/
 ---@type vim.lsp.Config
 return {
-  cmd = { ---@type string[]
-    'glint-language-server',
-  },
-  init_options = {
-    glint = {
-      useGlobal = true,
+    cmd = { ---@type string[]
+        'glint-language-server',
     },
-  },
-  filetypes = {
-    'html.handlebars',
-    'handlebars',
-    'typescript',
-    'typescript.glimmer',
-    'javascript',
-    'javascript.glimmer',
-  },
-  root_markers = { ---@type string[]
-    '.glintrc.yml',
-    '.glintrc',
-    '.glintrc.json',
-    '.glintrc.js',
-    'glint.config.js',
-    'package.json',
-  },
-  workspace_required = true, ---@type boolean
+    init_options = {
+        glint = {
+            useGlobal = true,
+        },
+    },
+    filetypes = {
+        'html.handlebars',
+        'handlebars',
+        'typescript',
+        'typescript.glimmer',
+        'javascript',
+        'javascript.glimmer',
+    },
+    root_markers = { ---@type string[]
+        '.glintrc.yml',
+        '.glintrc',
+        '.glintrc.json',
+        '.glintrc.js',
+        'glint.config.js',
+        'package.json',
+    },
+    workspace_required = true, ---@type boolean
 }

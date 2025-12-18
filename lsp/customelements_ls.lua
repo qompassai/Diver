@@ -4,17 +4,17 @@
 -- --------------------------------------------------
 ---@type vim.lsp.Config
 return {
-  init_options = {
-    hostInfo = 'neovim',
-  },
-  cmd = { ---@type string[]
-    'custom-elements-languageserver',
-    '--stdio',
-  },
-  root_markers = { ---@type string[]
-    'tsconfig.json',
-    'package.json',
-    'jsconfig.json',
-    '.git',
-  },
+    init_options = {
+        hostInfo = 'neovim',
+    },
+    cmd = { ---@type string[]
+        'custom-elements-languageserver',
+        '--stdio',
+    },
+    root_markers = { ---@type string[]
+        'tsconfig.json',
+        'package.json',
+        'jsconfig.json',
+        '.git',
+    },
 }

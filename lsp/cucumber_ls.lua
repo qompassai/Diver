@@ -4,14 +4,14 @@
 -- ----------------------------------------
 ---@type vim.lsp.Config
 return {
-  cmd = { ---@type string[]
-    'cucumber-language-server',
-    '--stdio',
-  },
-  filetypes = { ---@type string[]
-    'cucumber',
-  },
-  root_markers = { ---@type string[]
-    '.git',
-  },
+    cmd = { ---@type string[]
+        'cucumber-language-server',
+        '--stdio',
+    },
+    filetypes = { ---@type string[]
+        'cucumber',
+    },
+    root_markers = { ---@type string[]
+        '.git',
+    },
 }

@@ -6,21 +6,21 @@
 --cargo install ttags
 ---@type vim.lsp.Config
 return {
-  cmd = { ---@type string[]
-    'ttags',
-    'lsp',
-  },
-  filetypes = { ---@type string[]
-    'c',
-    'cpp',
-    'haskell',
-    'javascript',
-    'nix',
-    'ruby',
-    'rust',
-    'swift',
-  },
-  root_markers = { ---@type string[]
-    '.git',
-  },
+    cmd = { ---@type string[]
+        'ttags',
+        'lsp',
+    },
+    filetypes = { ---@type string[]
+        'c',
+        'cpp',
+        'haskell',
+        'javascript',
+        'nix',
+        'ruby',
+        'rust',
+        'swift',
+    },
+    root_markers = { ---@type string[]
+        '.git',
+    },
 }

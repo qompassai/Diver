@@ -6,24 +6,24 @@
 -- pnpm add -g ungrammar-languageserver@lastest
 ---@type vim.lsp.Config
 return {
-  cmd = {
-    'ungrammar-languageserver',
-    '--stdio',
-  },
-  filetypes = { ---@type string[]
-    'ungrammar',
-  },
-  root_markers = { ---@type string[]
-    '.git',
-  },
-  settings = {
-    ungrammar = {
-      validate = {
-        enable = true,
-      },
-      format = {
-        enable = true,
-      },
+    cmd = {
+        'ungrammar-languageserver',
+        '--stdio',
     },
-  },
+    filetypes = { ---@type string[]
+        'ungrammar',
+    },
+    root_markers = { ---@type string[]
+        '.git',
+    },
+    settings = {
+        ungrammar = {
+            validate = {
+                enable = true,
+            },
+            format = {
+                enable = true,
+            },
+        },
+    },
 }

@@ -6,15 +6,15 @@
 --pnpm add -g twiggy-language-server
 ---@type vim.lsp.Config
 return {
-  cmd = { ---@type string[]
-    'twiggy-language-server',
-    '--stdio',
-  },
-  filetypes = { ---@type string[]
-    'twig',
-  },
-  root_markers = { ---@type string[]
-    'composer.json',
-    '.git',
-  },
+    cmd = { ---@type string[]
+        'twiggy-language-server',
+        '--stdio',
+    },
+    filetypes = { ---@type string[]
+        'twig',
+    },
+    root_markers = { ---@type string[]
+        'composer.json',
+        '.git',
+    },
 }

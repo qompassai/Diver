@@ -6,40 +6,40 @@ local capabilities = vim.lsp.protocol.make_client_capabilities()
 capabilities.textDocument.completion.completionItem.snippetSupport = true
 ---@type vim.lsp.Config
 return {
-  capabilities = capabilities,
-  cmd = { ---@type string[]
-    'vscode-css-language-server',
-    '--stdio',
-  },
-  filetypes = { ---@type string[]
-    'css',
-    'scss',
-    'less',
-  },
-  init_options = { ---@type table
-    provideFormatter = true,
-  },
-  root_markers = { ---@type string[]
-    '.git',
-    'package.json',
-  },
-  settings = { ---@type table
-    css = {
-      validate = true,
+    capabilities = capabilities,
+    cmd = { ---@type string[]
+        'vscode-css-language-server',
+        '--stdio',
     },
-    scss = {
-      validate = true,
+    filetypes = { ---@type string[]
+        'css',
+        'scss',
+        'less',
     },
-    less = {
-      validate = true,
+    init_options = { ---@type table
+        provideFormatter = true,
     },
-    cssVariables = { ---@type string[]
-      lookupFiles = {
-        '**/*.css',
-        '**/*.scss',
-        '**/*.sass',
-        '**/*.less',
-      },
+    root_markers = { ---@type string[]
+        '.git',
+        'package.json',
     },
-  },
+    settings = { ---@type table
+        css = {
+            validate = true,
+        },
+        scss = {
+            validate = true,
+        },
+        less = {
+            validate = true,
+        },
+        cssVariables = { ---@type string[]
+            lookupFiles = {
+                '**/*.css',
+                '**/*.scss',
+                '**/*.sass',
+                '**/*.less',
+            },
+        },
+    },
 }

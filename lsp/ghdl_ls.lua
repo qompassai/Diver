@@ -8,15 +8,15 @@
 -- cd ghdl && pip install .
 ---@type vim.lsp.Config
 return {
-  cmd = { ---@type string[]
-    'ghdl-ls'
-  },
-  filetypes = { ---@type string[]
-    'vhdl',
-    'vhd'
-  },
-  root_markers = { ---@type string[]
-    'hdl-prj.json',
-    '.git'
-  },
+    cmd = { ---@type string[]
+        'ghdl-ls',
+    },
+    filetypes = { ---@type string[]
+        'vhdl',
+        'vhd',
+    },
+    root_markers = { ---@type string[]
+        'hdl-prj.json',
+        '.git',
+    },
 }

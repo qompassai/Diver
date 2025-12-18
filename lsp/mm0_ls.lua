@@ -3,16 +3,17 @@
 -- Copyright (C) 2025 Qompass AI, All rights reserved
 -- ----------------------------------------
 -- References: https://github.com/digama0/mm0/tree/master/mm0-rs)
--- cargo install --git https://github.com/digama0/mm0 --locked mm0-rs
-vim.lsp.config['mm0_ls'] = {
-    cmd = {
+
+return ---@type vim.lsp.Config
+{
+    cmd = { ---@type string[]
         'mm0-rs',
         'server',
     },
-    root_markers = {
+    root_markers = { ---@type string[]
         '.git',
     },
-    filetypes = {
+    filetypes = { ---@type string[]
         'metamath-zero',
     },
 }

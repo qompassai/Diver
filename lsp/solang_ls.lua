@@ -4,16 +4,16 @@
 -- ---------------------------------------------------
 ---@type vim.lsp.Config
 return {
-  cmd = { ---@type string[]
-    'solang',
-    'language-server',
-    '--target',
-    'evm'
-  },
-  filetypes = { ---@type string[]
-    'solidity',
-  },
-  root_markers = { ---@type string[]
-    '.git',
-  },
+    cmd = { ---@type string[]
+        'solang',
+        'language-server',
+        '--target',
+        'evm',
+    },
+    filetypes = { ---@type string[]
+        'solidity',
+    },
+    root_markers = { ---@type string[]
+        '.git',
+    },
 }

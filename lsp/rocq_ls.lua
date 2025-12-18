@@ -4,14 +4,15 @@
 -- --------------------------------------------------
 -- Reference: https://github.com/rocq-prover/vsrocq
 --  opam install vsrocq-language-server
-vim.lsp.config['rocq_ls'] = {
-    cmd = {
+---@type vim.lsp.Config
+return {
+    cmd = { ---@type string[]
         'vsrocqtop',
     },
-    filetypes = {
+    filetypes = { ---@type string[]
         'coq',
     },
-    root_markers = {
+    root_markers = { ---@type string[]
         '_CoqProject',
         '.git',
         '_RocqProject',

@@ -4,22 +4,22 @@
 -- --------------------------------------------------
 --Reference: https://github.com/daveshanley/vacuum
 vim.filetype.add({
-  pattern = {
-    ['openapi.*%.ya?ml'] = 'yaml.openapi',
-    ['openapi.*%.json'] = 'json.openapi',
-  },
+    pattern = {
+        ['openapi.*%.ya?ml'] = 'yaml.openapi',
+        ['openapi.*%.json'] = 'json.openapi',
+    },
 })
 ---@type vim.lsp.Config
 return {
-  cmd = { ---@type string[]
-    'vacuum',
-    'language-server',
-  },
-  filetypes = { ---@type string[]
-    'yaml.openapi',
-    'json.openapi',
-  },
-  root_markers = { ---@type string[]
-    '.git'
-  },
+    cmd = { ---@type string[]
+        'vacuum',
+        'language-server',
+    },
+    filetypes = { ---@type string[]
+        'yaml.openapi',
+        'json.openapi',
+    },
+    root_markers = { ---@type string[]
+        '.git',
+    },
 }

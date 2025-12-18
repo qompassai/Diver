@@ -5,52 +5,52 @@
 --Reference:  https://github.com/ansible/vscode-ansible
 -- pnpm add -g @ansible/ansible-language-server@latest
 return {
-  cmd = {
-    'ansible-language-server',
-    '--stdio',
-  },
-  filetypes = {
-    'yaml.ansible',
-    'ansible',
-  },
-  settings = {
-    ansible = {
-      ansible = {
-        path = 'ansible',
-        useFullyQualifiedCollectionNames = true,
-      },
-      ansibleLint = {
-        enabled = true,
-        path = 'ansible-lint',
-        args = {},
-      },
-      executionEnvironment = {
-        enabled = true,
-        containerEngine = 'auto',
-        image = '',
-        pullPolicy = 'missing',
-        volumeMounts = {},
-      },
-      python = {
-        activationScript = '',
-      },
-      completion = {
-        provideRedirectModules = true,
-        provideModuleOptions = true,
-        provideModuleParameters = true,
-      },
-      validation = {
-        enabled = true,
-        lint = true,
-        schemas = {},
-      },
-      telemetry = {
-        enabled = false,
-      },
+    cmd = {
+        'ansible-language-server',
+        '--stdio',
     },
-  },
-  root_markers = {
-    'ansible.cfg',
-    '.ansible-lint',
-  },
+    filetypes = {
+        'yaml.ansible',
+        'ansible',
+    },
+    settings = {
+        ansible = {
+            ansible = {
+                path = 'ansible',
+                useFullyQualifiedCollectionNames = true,
+            },
+            ansibleLint = {
+                enabled = true,
+                path = 'ansible-lint',
+                args = {},
+            },
+            executionEnvironment = {
+                enabled = true,
+                containerEngine = 'auto',
+                image = '',
+                pullPolicy = 'missing',
+                volumeMounts = {},
+            },
+            python = {
+                activationScript = '',
+            },
+            completion = {
+                provideRedirectModules = true,
+                provideModuleOptions = true,
+                provideModuleParameters = true,
+            },
+            validation = {
+                enabled = true,
+                lint = true,
+                schemas = {},
+            },
+            telemetry = {
+                enabled = false,
+            },
+        },
+    },
+    root_markers = {
+        'ansible.cfg',
+        '.ansible-lint',
+    },
 }

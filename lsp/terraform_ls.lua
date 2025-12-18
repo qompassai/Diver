@@ -4,16 +4,16 @@
 -- ----------------------------------------
 ---@type vim.lsp.Config
 return {
-  cmd = { ---@type string[]
-    'terraform-ls',
-    'serve'
-  },
-  filetypes = { ---@type string[]
-    'terraform',
-    'terraform-vars'
-  },
-  root_markers = { ---@type string[]
-    '.terraform',
-    '.git'
-  },
+    cmd = { ---@type string[]
+        'terraform-ls',
+        'serve',
+    },
+    filetypes = { ---@type string[]
+        'terraform',
+        'terraform-vars',
+    },
+    root_markers = { ---@type string[]
+        '.terraform',
+        '.git',
+    },
 }

@@ -6,13 +6,13 @@
 vim.cmd([[au BufRead,BufNewFile *.uvl setfiletype uvl]])
 ---@type vim.lsp.Config
 return {
-  cmd = { ---@type string[]
-    'uvls',
-  },
-  filetypes = { ---@type string[]
-    'uvl',
-  },
-  root_markers = { ---@type string[]
-    '.git',
-  },
+    cmd = { ---@type string[]
+        'uvls',
+    },
+    filetypes = { ---@type string[]
+        'uvl',
+    },
+    root_markers = { ---@type string[]
+        '.git',
+    },
 }

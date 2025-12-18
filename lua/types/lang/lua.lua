@@ -3,7 +3,6 @@
 -- Copyright (C) 2025 Qompass AI, All rights reserved
 ------------------------------------------------------
 ---@meta
-
 ---@class LuaLangModule
 ---@field lua_cmp fun(): table
 ---@field lua_conform fun(opts?: table): table

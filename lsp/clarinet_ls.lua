@@ -4,15 +4,15 @@
 -- --------------------------------------------------
 ---@type vim.lsp.Config
 return {
-  cmd = {
-    'clarinet',
-    'lsp',
-  },
-  filetypes = {
-    'clar',
-    'clarity',
-  },
-  root_markers = {
-    'Clarinet.toml',
-  },
+    cmd = {
+        'clarinet',
+        'lsp',
+    },
+    filetypes = {
+        'clar',
+        'clarity',
+    },
+    root_markers = {
+        'Clarinet.toml',
+    },
 }

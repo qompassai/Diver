@@ -2,10 +2,16 @@
 -- Qompass AI Solidity Nomic LSP Spec
 -- Copyright (C) 2025 Qompass AI, All rights reserved
 -- ----------------------------------------
-vim.lsp.config['solidnomic_ls'] = {
-    cmd = { 'nomicfoundation-solidity-language-server', '--stdio' },
-    filetypes = { 'solidity' },
-    root_markers = {
+---@type vim.lsp.Config
+return {
+    cmd = {
+        'nomicfoundation-solidity-language-server',
+        '--stdio',
+    },
+    filetypes = { ---@type string[]
+        'solidity',
+    },
+    root_markers = { ---@type string[]
         'hardhat.config.js',
         'hardhat.config.ts',
         'foundry.toml',

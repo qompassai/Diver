@@ -4,8 +4,9 @@
 ------------------------------------------------------
 --Reference:https://github.com/graphql/graphiql/tree/main/packages/graphql-language-service-server
 --pnpm add -g graphql-language-service-server
-vim.lsp.config['graphql_ls'] = {
-    cmd = {
+---@type vim.lsp.Config
+return {
+    cmd = { ---@type string[]
         'graphql-lsp',
         'server',
         '-m',

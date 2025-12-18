@@ -19,6 +19,8 @@ pnpm add -g \
   custom-elements-languageserver@latest \
   lean-language-server@latest \
   git+https://github.com/salesforce-misc/bazelrc-lsp.git \
+  @microsoft/compose-language-service@latest \
+  oxlint@latest \
   solc@latest \
   solidity-ls@latest \
   stimulus-language-server@latest \

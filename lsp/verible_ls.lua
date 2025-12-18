@@ -4,14 +4,14 @@
 ------------------------------------------------------
 ---@type vim.lsp.Config
 return {
-  cmd = { ---@type string[]
-    'verible-verilog-ls',
-  },
-  filetypes = { ---@type string[]
-    'verilog',
-    'systemverilog',
-  },
-  root_markers = { ---@type string[]
-    '.git'
-  },
+    cmd = { ---@type string[]
+        'verible-verilog-ls',
+    },
+    filetypes = { ---@type string[]
+        'verilog',
+        'systemverilog',
+    },
+    root_markers = { ---@type string[]
+        '.git',
+    },
 }

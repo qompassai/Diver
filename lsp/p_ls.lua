@@ -3,14 +3,15 @@
 -- Copyright (C) 2025 Qompass AI, All rights reserved
 -- --------------------------------------------------
 --Reference: https://github.com/FractalBoy/perl-language-server |  https://metacpan.org/pod/PLS
-vim.lsp.config['p_ls'] = {
-    cmd = {
+---@type vim.lsp.Config
+return {
+    cmd = { ---@type string[]
         'pls',
     },
-    filetypes = {
+    filetypes = { ---@type string[]
         'perl',
     },
-    root_markers = {
+    root_markers = { ---@type string[]
         '.git',
         'Makefile',
         'Build.PL',

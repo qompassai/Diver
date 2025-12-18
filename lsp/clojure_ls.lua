@@ -6,19 +6,19 @@
 -- nix run github:clojure-lsp/clojure-lsp
 ---@type vim.lsp.Config
 return {
-  cmd = {
-    'clojure-lsp',
-  },
-  filetypes = {
-    'clojure',
-    'edn',
-  },
-  root_markers = {
-    'build.boot',
-    'project.clj',
-    'deps.edn',
-    'shadow-cljs.edn',
-    '.git',
-    'bb.edn',
-  },
+    cmd = {
+        'clojure-lsp',
+    },
+    filetypes = {
+        'clojure',
+        'edn',
+    },
+    root_markers = {
+        'build.boot',
+        'project.clj',
+        'deps.edn',
+        'shadow-cljs.edn',
+        '.git',
+        'bb.edn',
+    },
 }

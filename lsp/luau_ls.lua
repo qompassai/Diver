@@ -4,14 +4,14 @@
 -- --------------------------------------------------
 ---@type vim.lsp.Config
 return {
-  cmd = { ---@type string[]
-    'luau-lsp',
-    'lsp',
-  },
-  filetypes = { ---@type string[]
-    'luau',
-  },
-  root_markers = { ---@type string[]
-    '.git',
-  },
+    cmd = { ---@type string[]
+        'luau-lsp',
+        'lsp',
+    },
+    filetypes = { ---@type string[]
+        'luau',
+    },
+    root_markers = { ---@type string[]
+        '.git',
+    },
 }

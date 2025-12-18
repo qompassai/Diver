@@ -4,37 +4,37 @@
 -- --------------------------------------------------
 ---@type vim.lsp.Config
 return {
-  cmd = { ---@type string[]
-    'nil',
-    '--stdio',
-  },
-  filetypes = { ---@type string[]
-    'nix',
-  },
-  root_markers = { ---@type string[]
-    'default.nix',
-    'flake.nix',
-    '.git',
-  },
-  settings = {
-    ['nil'] = {
-      formatting = {
-        command = { ---@type string[]
-          'alejandra',
-        },
-      },
-      diagnostics = {
-        enabled = true, ---@type boolean
-        ignored = {},
-        excludedFiles = {},
-      },
-      nix = {
-        flake = { ---@type boolean[]
-          autoArchive = true,
-          autoEvalInputs = true,
-        },
-        testSetting = 42, ---@type integer
-      },
+    cmd = { ---@type string[]
+        'nil',
+        '--stdio',
     },
-  }
+    filetypes = { ---@type string[]
+        'nix',
+    },
+    root_markers = { ---@type string[]
+        'default.nix',
+        'flake.nix',
+        '.git',
+    },
+    settings = {
+        ['nil'] = {
+            formatting = {
+                command = { ---@type string[]
+                    'alejandra',
+                },
+            },
+            diagnostics = {
+                enabled = true, ---@type boolean
+                ignored = {},
+                excludedFiles = {},
+            },
+            nix = {
+                flake = { ---@type boolean[]
+                    autoArchive = true,
+                    autoEvalInputs = true,
+                },
+                testSetting = 42, ---@type integer
+            },
+        },
+    },
 }
