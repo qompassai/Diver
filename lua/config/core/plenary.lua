@@ -13,7 +13,7 @@ function M.collect_nls_sources()
   local global_need_check = nil
   local files = scandir.scan_dir(lang_path, {
     depth = 1,
-    add_dirs = false
+    add_dirs = false,
   })
   local nls_sources = {}
   for _, file_path in ipairs(files) do

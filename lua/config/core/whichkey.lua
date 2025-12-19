@@ -50,7 +50,7 @@ WK.opts = {
   layout = {
     spacing = 3,
     width = {
-      min = 20
+      min = 20,
     },
   },
   notify = true,
@@ -93,7 +93,7 @@ WK.opts = {
     'order',
     'group',
     'alphanum',
-    'mod'
+    'mod',
   },
   spec = {},
   triggers = {
@@ -104,7 +104,7 @@ WK.opts = {
     no_overlap = true,
     padding = {
       1,
-      2
+      2,
     },
     title = true,
     title_pos = 'center',

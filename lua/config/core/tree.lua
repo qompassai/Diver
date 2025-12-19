@@ -2,21 +2,31 @@
 -- Qompass AI Diver TreeSitter Config Module
 -- Copyright (C) 2025 Qompass AI, All rights reserved
 ------------------------------------------------------
+---@meta
+---@module 'config.core.tree'
 
 local M = {}
-
 function M.treesitter(opts)
     opts = opts or {}
     require('nvim-treesitter.install').prefer_git = true
+    -- nvim-treesitter configs module
     local configs = require('nvim-treesitter.configs')
-    local langs = { 'lang.go', 'lang.rust', 'ui.html', 'ui.md' }
+    local langs = {
+        'lang.go',
+        'lang.rust',
+        'ui.html',
+        'ui.md',
+    }
     local merged_lang_opts = {}
     for _, lang_mod in ipairs(langs) do
         local ok, mod = pcall(require, 'config.' .. lang_mod)
-        if ok and type(mod[lang_mod:match('[^.]+$') .. '_treesitter']) == 'function' then
-            local ts_cfg = mod[lang_mod:match('[^.]+$') .. '_treesitter']()
-            if ts_cfg then
-                merged_lang_opts = vim.tbl_deep_extend('force', merged_lang_opts, ts_cfg)
+        if ok then
+            local key = lang_mod:match('[^.]+$') .. '_treesitter'
+            if type(mod[key]) == 'function' then
+                local ts_cfg = mod[key]()
+                if ts_cfg then
+                    merged_lang_opts = vim.tbl_deep_extend('force', merged_lang_opts, ts_cfg)
+                end
             end
         end
     end
@@ -29,13 +39,15 @@ function M.treesitter(opts)
             'json',
             'json5',
             'lua',
+            'luadoc',
             'markdown',
+            'markdown_inline',
             'python',
             'rust',
         },
         highlight = {
-            additional_vim_regex_highlighting = true,
             enable = true,
+            additional_vim_regex_highlighting = true,
         },
         ignore_install = { 'ipkg', 'norg' },
         incremental_selection = {
@@ -47,15 +59,8 @@ function M.treesitter(opts)
                 scope_incremental = 'grc',
             },
         },
-        indent = { enable = true },
-        modules = {
-            'folke/twilight.nvim',
-            'nvim-treesitter/nvim-treesitter-context',
-            'nvim-treesitter/playground',
-            'SmiteshP/nvim-navic',
-            'nvim-treesitter-refactor',
-            'nvim-treesitter-textobjects',
-            'milisims/tree-sitter-org',
+        indent = {
+            enable = true,
         },
         textobjects = {
             select = {
@@ -67,15 +72,9 @@ function M.treesitter(opts)
             },
         },
     }
-    local final_config = vim.tbl_deep_extend('force', base_config, merged_lang_opts, opts or {})
+    local final_config = vim.tbl_deep_extend('force', base_config, merged_lang_opts, opts)
+    ---@cast final_config TSConfig
     configs.setup(final_config)
-    vim.api.nvim_create_autocmd('FileType', {
-        desc = 'Use Tree-sitter for code folding',
-        callback = function()
-            vim.wo.foldmethod = 'expr'
-            vim.wo.foldexpr = 'v:lua.vim.treesitter.foldexpr()'
-        end,
-    })
 end
 
 function M.tree_cfg(opts)

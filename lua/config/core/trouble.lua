@@ -18,10 +18,10 @@
 return function(opts)
   opts = opts or {}
   return vim.tbl_deep_extend('force', {
-    position = 'bottom',
-    height = 10,
     auto_open = true,
     auto_close = true,
+    position = 'bottom',
+    height = 10,
     use_diagnostic_signs = true,
   }, opts)
 end

@@ -4,7 +4,6 @@
 -- ----------------------------------------
 require('config.core.flash')
 require('config.core.lsp')
-require('config.core.none-ls')
 require('config.core.plenary')
 require('config.core.tree')
 require('config.core.trouble')

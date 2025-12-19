@@ -4,7 +4,6 @@
 -- --------------------------------------------------
 --https://microsoft.github.io/language-server-protocol/implementors/servers/
 vim.lsp.enable({
-  --'a_ls',
   'ada_ls',
   'agda_ls',
   --'ai_ls',

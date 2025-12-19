@@ -5,7 +5,7 @@
 local M = {}
 function M.setup_cicdmap()
     local map = vim.keymap.set
-    local opts = {noremap = true, silent = true}
+    local opts = { noremap = true, silent = true }
 
     -- Nerd Translate Legend:
     --
@@ -32,24 +32,24 @@ function M.setup_cicdmap()
                 name = 'Container',
                 c = {
                     name = 'Containers',
-                    l = {'<cmd>ContainerList<cr>', 'List'},
-                    g = {'<cmd>ContainerLogs<space>', 'Logs'},
-                    e = {'<cmd>ContainerExec<space>', 'Execute'},
-                    s = {'<cmd>ContainerStart<space>', 'Start'},
-                    t = {'<cmd>ContainerStop<space>', 'Stop'},
-                    k = {'<cmd>ContainerKill<space>', 'Kill'},
-                    i = {'<cmd>ContainerInspect<space>', 'Inspect'},
-                    r = {'<cmd>ContainerRemove<space>', 'Remove'},
-                    p = {'<cmd>ContainerPrune<cr>', 'Prune'}
+                    l = { '<cmd>ContainerList<cr>', 'List' },
+                    g = { '<cmd>ContainerLogs<space>', 'Logs' },
+                    e = { '<cmd>ContainerExec<space>', 'Execute' },
+                    s = { '<cmd>ContainerStart<space>', 'Start' },
+                    t = { '<cmd>ContainerStop<space>', 'Stop' },
+                    k = { '<cmd>ContainerKill<space>', 'Kill' },
+                    i = { '<cmd>ContainerInspect<space>', 'Inspect' },
+                    r = { '<cmd>ContainerRemove<space>', 'Remove' },
+                    p = { '<cmd>ContainerPrune<cr>', 'Prune' },
                 },
                 i = {
                     name = 'Images',
-                    l = {'<cmd>ImageList<cr>', 'List'},
-                    p = {'<cmd>ImagePull<space>', 'Pull'},
-                    r = {'<cmd>ImageRemove<space>', 'Remove'},
-                    P = {'<cmd>ImagePrune<cr>', 'Prune'}
-                }
-            }
+                    l = { '<cmd>ImageList<cr>', 'List' },
+                    p = { '<cmd>ImagePull<space>', 'Pull' },
+                    r = { '<cmd>ImageRemove<space>', 'Remove' },
+                    P = { '<cmd>ImagePrune<cr>', 'Prune' },
+                },
+            },
         })
     end
 
@@ -60,105 +60,131 @@ function M.setup_cicdmap()
     -- In normal mode, press 'Space' + 'n' + 't' to open or close the NvimTree window
 
     -- NeoTree: Focus the NvimTree file explorer window
-    map('n', '<leader>e', ':Neotree toggle<CR>', {desc = 'Toggle Explorer'})
+    map('n', '<leader>e', ':Neotree toggle<CR>', { desc = 'Toggle Explorer' })
     -- In normal mode, press 'Space' + 'e' to focus on the NvimTree window
 
-    map('n', '<C-n>', ':Neotree toggle<CR>', {desc = 'Toggle Explorer'})
+    map('n', '<C-n>', ':Neotree toggle<CR>', { desc = 'Toggle Explorer' })
 
     -- ToggleTerm (TT) mappings
 
     -- ToggleTerm: Creates a new horizontal terminal
     map('n', '<leader>h', function()
-        require('toggleterm.terminal').Terminal:new({
-            direction = '[h]orizontal toggleterm'
-        }):toggle()
-    end, vim.tbl_extend('force', opts, {desc = 'TT: new horizontal terminal'}))
+        require('toggleterm.terminal').Terminal
+            :new({
+                direction = '[h]orizontal toggleterm',
+            })
+            :toggle()
+    end, vim.tbl_extend('force', opts, { desc = 'TT: new horizontal terminal' }))
     -- In normal mode, press 'Space' + 'h' to open a new horizontal terminal
 
     -- ToggleTerm: Creates a new vertical terminal
     map('n', '<leader>v', function()
-        require('toggleterm.terminal').Terminal:new({
-            direction = 'vertical toggleterm'
-        }):toggle()
-    end, vim.tbl_extend('force', opts, {desc = 'TT: new vertical terminal'}))
+        require('toggleterm.terminal').Terminal
+            :new({
+                direction = 'vertical toggleterm',
+            })
+            :toggle()
+    end, vim.tbl_extend('force', opts, { desc = 'TT: new vertical terminal' }))
     -- In normal mode, press 'Space' + 'v' to open a new vertical terminal
 
     -- ToggleTerm: Toggles the vertical terminal
-    map({'n', 't'}, '<A-v>', function()
-        require('toggleterm.terminal').Terminal:new({
-            direction = 'vertical',
-            id = 'vtoggleTerm'
-        }):toggle()
-    end, vim.tbl_extend('force', opts, {desc = 'TT: toggle vertical terminal'}))
+    map({ 'n', 't' }, '<A-v>', function()
+        require('toggleterm.terminal').Terminal
+            :new({
+                direction = 'vertical',
+                id = 'vtoggleTerm',
+            })
+            :toggle()
+    end, vim.tbl_extend('force', opts, { desc = 'TT: toggle vertical terminal' }))
     -- In normal or terminal mode, press 'Alt' + 'v' to toggle a vertical terminal on and off
 
     -- ToggleTerm: Toggles a horizontal terminal
-    map({'n', 't'}, '<A-h>', function()
-        require('toggleterm.terminal').Terminal:new({
-            direction = 'horizontal',
-            id = 'htoggleTerm'
-        }):toggle()
-    end,
-        vim.tbl_extend('force', opts, {desc = 'TT: toggle horizontal terminal'}))
+    map({ 'n', 't' }, '<A-h>', function()
+        require('toggleterm.terminal').Terminal
+            :new({
+                direction = 'horizontal',
+                id = 'htoggleTerm',
+            })
+            :toggle()
+    end, vim.tbl_extend('force', opts, { desc = 'TT: toggle horizontal terminal' }))
     -- In normal or terminal mode, press 'Alt' + 'h' to toggle a horizontal terminal
 
     -- ToggleTerm: Toggles a floating terminal
-    map({'n', 't'}, '<A-i>', function()
-        require('toggleterm.terminal').Terminal:new({
-            direction = 'float',
-            id = 'floatTerm'
-        }):toggle()
-    end, vim.tbl_extend('force', opts, {desc = 'TT: toggle floating terminal'}))
+    map({ 'n', 't' }, '<A-i>', function()
+        require('toggleterm.terminal').Terminal
+            :new({
+                direction = 'float',
+                id = 'floatTerm',
+            })
+            :toggle()
+    end, vim.tbl_extend('force', opts, { desc = 'TT: toggle floating terminal' }))
     -- In normal or terminal mode, press 'Alt' + 'i' to toggle a floating terminal
 
     -- Zoxide mappings
 
     -- Zoxide: Interactively suggests directories to zoom into based on what you type without the list
-    map('n', '<leader>zi', '<cmd>:Zi<CR>',
-        vim.tbl_extend('force', opts, {desc = 'Zoxide interactive'}))
+    map('n', '<leader>zi', '<cmd>:Zi<CR>', vim.tbl_extend('force', opts, { desc = 'Zoxide interactive' }))
     -- In normal mode, press 'Space' + 'z' + 'i' to interactively navigate with Zoxide
 
     -- Zoxide: Query lets you zoom directly into where you want to go when you know the name
-    map('n', '<leader>zq', ':Z ',
-        vim.tbl_extend('force', opts, {desc = 'Zoxide query'}))
+    map('n', '<leader>zq', ':Z ', vim.tbl_extend('force', opts, { desc = 'Zoxide query' }))
     -- In normal mode, press 'Space' + 'z' + 'q' followed by a directory name to query Zoxide
 
     -- Zoxide: Open in split window
-    map('n', '<leader>zs', '<cmd>:Telescope zoxide list<CR><C-s>',
-        vim.tbl_extend('force', opts, {desc = 'Zoxide split window'}))
+    map(
+        'n',
+        '<leader>zs',
+        '<cmd>:Telescope zoxide list<CR><C-s>',
+        vim.tbl_extend('force', opts, { desc = 'Zoxide split window' })
+    )
     -- In normal mode, press 'Space' + 'z' + 's' to open selected directory in split
 
     -- Zoxide: Open in vertical split
-    map('n', '<leader>zv', '<cmd>:Telescope zoxide list<CR><C-v>',
-        vim.tbl_extend('force', opts, {desc = 'Zoxide vertical split'}))
+    map(
+        'n',
+        '<leader>zv',
+        '<cmd>:Telescope zoxide list<CR><C-v>',
+        vim.tbl_extend('force', opts, { desc = 'Zoxide vertical split' })
+    )
     -- In normal mode, press 'Space' + 'z' + 'v' to open in vertical split
 
     -- Zoxide: Local to window
-    map('n', '<leader>zl', '<cmd>:Lz ',
-        vim.tbl_extend('force', opts, {desc = 'Zoxide local to window'}))
+    map('n', '<leader>zl', '<cmd>:Lz ', vim.tbl_extend('force', opts, { desc = 'Zoxide local to window' }))
     -- In normal mode, press 'Space' + 'z' + 'l' to change directory local to window
 
     -- Zoxide: Local to tab
-    map('n', '<leader>zt', '<cmd>:Tz ',
-        vim.tbl_extend('force', opts, {desc = 'Zoxide local to tab'}))
+    map('n', '<leader>zt', '<cmd>:Tz ', vim.tbl_extend('force', opts, { desc = 'Zoxide local to tab' }))
     -- In normal mode, press 'Space' + 'z' + 't' to change directory local to tab
 
     -- Zoxide: Interactive local to window
-    map('n', '<leader>zli', '<cmd>:Lzi<CR>', vim.tbl_extend('force', opts, {
-        desc = 'Zoxide interactive local to window'
-    }))
+    map(
+        'n',
+        '<leader>zli',
+        '<cmd>:Lzi<CR>',
+        vim.tbl_extend('force', opts, {
+            desc = 'Zoxide interactive local to window',
+        })
+    )
     -- In normal mode, press 'Space' + 'z' + 'l' + 'i' for interactive window-local navigation
 
     -- Zoxide: Interactive local to tab
-    map('n', '<leader>zti', '<cmd>:Tzi<CR>', vim.tbl_extend('force', opts, {
-        desc = 'Zoxide interactive local to tab'
-    }))
+    map(
+        'n',
+        '<leader>zti',
+        '<cmd>:Tzi<CR>',
+        vim.tbl_extend('force', opts, {
+            desc = 'Zoxide interactive local to tab',
+        })
+    )
     -- In normal mode, press 'Space' + 'z' + 't' + 'i' for interactive tab-local navigation
 
     -- Zoxide: Add current directory to database
-    map('n', '<leader>za',
-        "<cmd>:lua require('telescope').extensions.zoxide.add()<CR>",
-        vim.tbl_extend('force', opts, {desc = 'Zoxide add current directory'}))
+    map(
+        'n',
+        '<leader>za',
+        '<cmd>:lua require(\'telescope\').extensions.zoxide.add()<CR>',
+        vim.tbl_extend('force', opts, { desc = 'Zoxide add current directory' })
+    )
     -- In normal mode, press 'Space' + 'z' + 'a' to add current directory to zoxide database
 end
 return M

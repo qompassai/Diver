@@ -11,7 +11,7 @@ require('config.init').config({
   nav = true,
   ui = true
 })
-vim.opt.packpath = vim.opt.runtimepath:get()
+vim.opt.packpath = vim.opt.runtimepath:get() ---@type string[]
 vim.pack.add {
   {
     src = 'https://github.com/dense-analysis/ale'

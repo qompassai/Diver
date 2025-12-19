@@ -2,20 +2,26 @@
 -- Qompass AI Mappings Module
 -- Copyright (C) 2025 Qompass AI, All rights reserved
 -----------------------------------------------------
+---@module 'mappings.init'
 local M = {}
 M.setup = function()
   local mapping_files = {
-    'aimap',                        -- Rose.nvim
-    'cicdmap', 'datamap', 'ddxmap', -- None-ls diag, nvim-dap, trouble.nvim
-    'disable', 'genmap',
-    --'masonmap',
-    'lintmap', 'mojomap', 'navmap',
-    'pymap', 'rustmap'
+    'aimap',
+    'cicdmap',
+    'datamap',
+    'ddxmap',
+    'disable',
+    'genmap',
+    'lspmap',
+    'lintmap',
+    'mojomap',
+    'navmap',
+    'pymap',
+    'rustmap',
   }
   for _, name in ipairs(mapping_files) do
     local ok, mod = pcall(require, 'mappings.' .. name)
-    if not ok
-    then
+    if not ok then
       vim.notify('Failed to load: ' .. name, vim.log.levels.WARN)
       goto continue
     end
@@ -26,9 +32,10 @@ M.setup = function()
     elseif type(mod[default_setup_fn]) == 'function' then
       mod[default_setup_fn]()
     else
-      vim.notify(string.format("Mapping '%s' has neither %s() nor %s()",
-          name, custom_setup_fn, default_setup_fn),
-        vim.log.levels.WARN)
+      vim.notify(
+        string.format('Mapping \'%s\' has neither %s() nor %s()', name, custom_setup_fn, default_setup_fn),
+        vim.log.levels.WARN
+      )
     end
     ::continue::
   end

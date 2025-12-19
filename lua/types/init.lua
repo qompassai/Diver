@@ -19,11 +19,9 @@ vim.schedule(function()
   end
   local types_path = vim.fn.stdpath("config") .. "/lua/types"
   M.config         = load_dir(types_path .. "/config", "types.config")
-  M.edu            = load_dir(types_path .. "/edu", "types.edu")
   M.lang           = load_dir(types_path .. "/lang", "types.lang")
   M.mappings       = load_dir(types_path .. "/mappings", "types.mappings")
   M.ui             = load_dir(types_path .. "/ui", "types.ui")
   M.core           = load_dir(types_path .. "/core", "types.core")
-  M.cicd           = load_dir(types_path .. "/cicd", "types.cicd")
 end)
 return M

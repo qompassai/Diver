@@ -37,7 +37,7 @@
 ---@field lsp VimExtendedLsp
 ---@class NvimApi
 ---@field nvim_set_hl fun(ns_id: integer, name: string, val: HlOpts)
-vim.api.nvim_set_hl( ---@type HlOpts
+vim.api.nvim_set_hl(
   0,
   '@lsp.type.class.lua',
   {
@@ -46,7 +46,7 @@ vim.api.nvim_set_hl( ---@type HlOpts
     underline = true,
   }
 )
-vim.api.nvim_set_hl( ---@type HlOpts
+vim.api.nvim_set_hl(
   0,
   '@lsp.type.parameter.lua',
   {
@@ -54,7 +54,7 @@ vim.api.nvim_set_hl( ---@type HlOpts
     bold = true,
   }
 )
-vim.api.nvim_set_hl( ---@type HlOpts
+vim.api.nvim_set_hl(
   0,
   '@lsp.type.property.lua',
   {
@@ -62,7 +62,7 @@ vim.api.nvim_set_hl( ---@type HlOpts
     bold = true,
   }
 )
-vim.api.nvim_set_hl( ---@type HlOpts
+vim.api.nvim_set_hl(
   0,
   '@lsp.type.function.lua',
   {
@@ -70,7 +70,7 @@ vim.api.nvim_set_hl( ---@type HlOpts
     bold = true,
   }
 )
-vim.api.nvim_set_hl( ---@type HlOpts
+vim.api.nvim_set_hl(
   0,
   '@lsp.type.variable.lua',
   {
@@ -78,28 +78,28 @@ vim.api.nvim_set_hl( ---@type HlOpts
     bold = true,
   }
 )
-vim.api.nvim_set_hl( ---@type HlOpts
+vim.api.nvim_set_hl(
   0,
   'Comment',
   {
     italic = false,
   }
 )
-vim.api.nvim_set_hl( ---@type HlOpts
+vim.api.nvim_set_hl(
   0,
   'markdownCode',
   {
     italic = false,
   }
 )
-vim.api.nvim_set_hl( ---@type HlOpts
+vim.api.nvim_set_hl(
   0,
   'markdownCodeBlock',
   {
     italic = false,
   }
 )
-vim.api.nvim_set_hl( ---@type HlOpts
+vim.api.nvim_set_hl(
   0,
   'markdownCodeDelimiter',
   {
@@ -108,7 +108,8 @@ vim.api.nvim_set_hl( ---@type HlOpts
 )
 vim.api.nvim_set_hl(
   0,
-  'DiagnosticError', {
+  'DiagnosticError',
+  {
     fg = '#ff5f5f'
   })
 vim.api.nvim_set_hl(
@@ -130,7 +131,10 @@ vim.api.nvim_set_hl(
     fg = '#5fd7af'
   })
 vim.api.nvim_set_hl(0,
-  'DiagnosticOk', { fg = '#5fd75f' })
+  'DiagnosticOk',
+  {
+    fg = '#5fd75f'
+  })
 vim.api.nvim_set_hl(0, 'DiagnosticVirtualTextError',
   { fg = '#ff5f5f', bg = '#3b1f1f' })
 vim.api.nvim_set_hl(0, 'DiagnosticVirtualTextWarn',
@@ -141,7 +145,8 @@ vim.api.nvim_set_hl(0, 'DiagnosticVirtualTextInfo',
   {
     fg = '#5fafff', bg = '#1f2f3b'
   })
-vim.api.nvim_set_hl(0, 'DiagnosticVirtualTextHint', { fg = '#5fd7af', bg = '#1f3b2f' })
+vim.api.nvim_set_hl(0, 'DiagnosticVirtualTextHint',
+  { fg = '#5fd7af', bg = '#1f3b2f' })
 vim.api.nvim_set_hl(0, 'DiagnosticVirtualTextOk', { fg = '#5fd75f', bg = '#1f3b1f' })
 vim.api.nvim_set_hl(0, 'DiagnosticUnderlineError', { undercurl = true, sp = '#ff5f5f' })
 vim.api.nvim_set_hl(0, 'DiagnosticUnderlineWarn', { undercurl = true, sp = '#ffaf00' })
