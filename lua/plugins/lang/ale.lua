@@ -2,6 +2,8 @@
 -- Qompass AI Asynchronous Lint Engine (ALE) Plugin Spec
 -- Copyright (C) 2025 Qompass AI, All rights reserved
 -- -----------------------------------------------------
+---@meta
+---@module 'plugins.lang/ale'
 return {
   'dense-analysis/ale',
   ft = {
@@ -24,7 +26,7 @@ return {
     'erlang',
     'go',
     'haskell',
-    --"html",
+    --'html',
     'http',
     'java',
     'javascript',
@@ -160,18 +162,16 @@ return {
         'hfmt',
       },
       -- html = {
-      --   "prettierd",
+      --   'prettierd',
       -- },
       jinja = {
         'djhtml',
       },
-      json = {
-      },
+      json = {},
       kotlin = {
         'ktlint',
       },
-      lua = {
-      },
+      lua = {},
       nix = {
         'alejandra',
       },
@@ -210,7 +210,7 @@ return {
     }
     g.ale_linters = {
       awk = {
-        'gawk'
+        'gawk',
       },
       bash = {
         'bashate',
@@ -271,15 +271,13 @@ return {
       javascript = {
         'biome',
       },
-      json = {
-      },
-      jsonc = {
-      },
+      json = {},
+      jsonc = {},
       latex = {
         'texlab',
       },
       lua = {
-        'stylua -s',
+        'lua-language-server',
       },
       make = {
         'checkmake',
@@ -337,7 +335,7 @@ return {
         'naga',
       },
       yaml = {
-        'yamllint'
+        'yamllint',
       },
       zig = {
         'zlint',

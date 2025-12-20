@@ -2,7 +2,7 @@
 -- Qompass AI Diver Plugins Init
 -- Copyright (C) 2025 Qompass AI, All rights reserved
 ------------------------------------------------------
-
+---@meta
 return {
   {
     import = 'plugins.core'

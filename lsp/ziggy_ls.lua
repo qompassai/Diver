@@ -37,7 +37,7 @@ return {
                     'ziggy',
                     'lsp',
                 },
-                root_dir = vim.loop.cwd(),
+                root_dir = vim.uv.cwd(),
             })
         end,
     })

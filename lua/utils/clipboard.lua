@@ -4,12 +4,12 @@
 -- --------------------------------------------------
 local M = {}
 
---- @param debug boolean? Optional. Print debug info if true
+--- @param debug boolean?
 function M.setup(debug)
   local function log(msg, level)
     if debug then
       vim.schedule(function()
-        vim.notify("[clipboard] " .. msg, level or vim.log.levels.INFO)
+        vim.echo("[clipboard] " .. msg, level or vim.log.levels.INFO)
       end)
     end
   end

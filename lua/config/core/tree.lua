@@ -85,4 +85,10 @@ function M.tree_cfg(opts)
     }
 end
 
+vim.treesitter.query.set(
+    'c',
+    'highlights',
+    [[;inherits c
+  (identifier) @spell]]
+)
 return M

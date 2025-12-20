@@ -6,7 +6,7 @@ local M = {}
 vim.schedule(function()
   local ok, scandir = pcall(require, "plenary.scandir")
   if not ok then
-    vim.notify("Failed to load plenary.scandir", vim.log.levels.WARN)
+    vim.echo("Failed to load plenary.scandir", vim.log.levels.WARN)
     return
   end
   local function load_dir(mod_path, prefix)

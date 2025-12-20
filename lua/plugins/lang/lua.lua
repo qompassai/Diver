@@ -2,7 +2,8 @@
 -- Qompass AI Diver Lua Plugin Spec
 -- Copyright (C) 2025 Qompass AI, All rights reserved
 ------------------------------------------------------
-
+---@meta
+---@module 'plugins.lang.lua'
 local lua_conf = require('config.lang.lua')
 local lua_ft = {
     'lua',

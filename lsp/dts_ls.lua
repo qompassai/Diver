@@ -29,7 +29,7 @@ return {
                     'dts-lsp',
                 },
                 bufnr = bufnr,
-                root_dir = vim.fs.dirname(vim.fs.find({
+                root_dir = vim.fs.dirname(vim.fs.find({ ---@type string
                     '.git',
                 }, { upward = true })[1]),
             })

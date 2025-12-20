@@ -2,12 +2,14 @@
 -- Qompass AI Ziggy Schema Config
 -- Copyright (C) 2025 Qompass AI, All rights reserved
 ------------------------------------------------------
---Reference:  https://ziggy-lang.io/documentation/ziggy-lsp/
+---@source:  https://ziggy-lang.io/documentation/ziggy-lsp/
 local parser_config = require('nvim-treesitter.parsers').get_parser_configs() ---@class parser_config
 parser_config.ziggy_schema = {
     install_info = {
         url = 'https://github.com/kristoff-it/ziggy',
-        files = { 'tree-sitter-ziggy-schema/src/parser.c' },
+        files = {
+            'tree-sitter-ziggy-schema/src/parser.c',
+        },
         branch = 'main',
         generate_requires_npm = true,
         requires_generate_from_grammar = true,
@@ -45,7 +47,7 @@ return {
                     'lsp',
                     '--schema',
                 },
-                root_dir = vim.loop.cwd(),
+                root_dir = vim.uv.cwd(),
             })
         end,
     })

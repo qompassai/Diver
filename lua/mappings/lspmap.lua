@@ -23,9 +23,8 @@ function M.setup_lspmap() ---@return nil
       {
         bufnr = bufnr
       })
-    local map = vim.keymap.set
+    local map = vim.keymap.set ---@type string
     local opts = { buffer = bufnr, silent = true } ---@type {buffer: integer, silent: boolean}
-    ---Go to definition with loclist population *if* supported
     -- Go to definition with loclist population *if* supported
     map('n', 'gd', function()
       for _, c in ipairs(clients) do
@@ -34,7 +33,7 @@ function M.setup_lspmap() ---@return nil
           return
         end
       end
-      vim.notify('No LSP supports textDocument/definition for this buffer', vim.log.levels.WARN)
+      vim.echo('No LSP supports textDocument/definition for this buffer', vim.log.levels.WARN)
     end, {
       silent = true,
       buffer = bufnr
@@ -56,15 +55,22 @@ function M.setup_lspmap() ---@return nil
       vim.lsp.buf.code_action, opts)
     map('n', '<leader>f',
       function()
-        vim.lsp.buf.format({ async = false, bufnr = bufnr })
+        vim.lsp.buf.format(
+          {
+            async = true,
+            bufnr = bufnr
+          })
       end, opts)
     map('n', '[d',
-      function() vim.diagnostic.goto_prev() end, opts)
+      function() vim.diagnostic.jump() end, opts)
     map('n', ']d',
-      function() vim.diagnostic.goto_next() end, opts)
+      function() vim.diagnostic.jump() end, opts)
     map('n', '<leader>fD',
       function()
-        vim.diagnostic.open_float(nil, { scope = 'line' })
+        vim.diagnostic.open_float(nil,
+          {
+            scope = 'line'
+          })
       end, opts)
     map('n', '<leader>li',
       vim.cmd.LspInfo, { buffer = bufnr, silent = true })

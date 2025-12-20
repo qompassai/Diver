@@ -15,7 +15,7 @@ return {
         'yml',
     },
     root_dir = function(bufnr, on_dir)
-        local parent = vim.fs.dirname(vim.api.nvim_buf_get_name(bufnr))
+        local parent = vim.fs.dirname(vim.api.nvim_buf_get_name(bufnr)) ---@type string
         if
             vim.endswith(parent, '/.github/workflows')
             or vim.endswith(parent, '/.forgejo/workflows')

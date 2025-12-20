@@ -12,35 +12,35 @@ M.options = {
             layout = 'flex',
             default = 'bat',
             hidden = 'hidden',
-            vertical = 'down:45%'
+            vertical = 'down:45%',
         },
         border = 'rounded',
-        hls = { Normal = "Normal", Border = "FloatBorder" },
+        hls = { Normal = 'Normal', Border = 'FloatBorder' },
     },
-    fzf_opts = {['--layout'] = 'reverse-list', ['--info'] = 'inline'},
+    fzf_opts = { ['--layout'] = 'reverse-list', ['--info'] = 'inline' },
     keymap = {
         fzf = {
             ['ctrl-c'] = 'abort',
             ['ctrl-q'] = 'select-all+accept',
             ['ctrl-d'] = 'half-page-down',
-            ['ctrl-u'] = 'half-page-up'
-        }
-    }
+            ['ctrl-u'] = 'half-page-up',
+        },
+    },
 }
 
 M.keymaps = {
-    {'<leader>ff', '<cmd>FzfLua files<cr>', desc = 'Fzf Files'},
-    {'<leader>fb', '<cmd>FzfLua buffers<cr>', desc = 'Fzf Buffers'},
-    {'<leader>fs', '<cmd>FzfLua live_grep<cr>', desc = 'Fzf Search'},
-    {'<leader>th', '<cmd>FzfLua colorschemes<cr>', desc = 'Fzf Colorscheme'},
-    {'<leader>fw', '<cmd>FzfLua grep_cword<cr>', desc = 'Fzf Current Word'},
-    {'<leader>fh', '<cmd>FzfLua help_tags<cr>', desc = 'Fzf Help Tags'},
-    {'<leader>fm', '<cmd>FzfLua marks<cr>', desc = 'Fzf Marks'},
-    {'<leader>fc', '<cmd>FzfLua commands<cr>', desc = 'Fzf Commands'},
-    {'<leader>fd', '<cmd>FzfLua lsp_document_symbols<cr>', desc = 'Fzf Document Symbols'},
-    {'<leader>fWs', '<cmd>FzfLua lsp_live_workspace_symbols<cr>', desc = 'Fzf Workspace Symbols'},
-    {'<leader>fgs', '<cmd>FzfLua git_status<cr>', desc = 'Fzf Git Status'},
-    {'<leader>fgb', '<cmd>FzfLua git_branches<cr>', desc = 'Fzf Git Branches'}
+    { '<leader>ff', '<cmd>FzfLua files<cr>', desc = 'Fzf Files' },
+    { '<leader>fb', '<cmd>FzfLua buffers<cr>', desc = 'Fzf Buffers' },
+    { '<leader>fs', '<cmd>FzfLua live_grep<cr>', desc = 'Fzf Search' },
+    { '<leader>th', '<cmd>FzfLua colorschemes<cr>', desc = 'Fzf Colorscheme' },
+    { '<leader>fw', '<cmd>FzfLua grep_cword<cr>', desc = 'Fzf Current Word' },
+    { '<leader>fh', '<cmd>FzfLua help_tags<cr>', desc = 'Fzf Help Tags' },
+    { '<leader>fm', '<cmd>FzfLua marks<cr>', desc = 'Fzf Marks' },
+    { '<leader>fc', '<cmd>FzfLua commands<cr>', desc = 'Fzf Commands' },
+    { '<leader>fd', '<cmd>FzfLua lsp_document_symbols<cr>', desc = 'Fzf Document Symbols' },
+    { '<leader>fWs', '<cmd>FzfLua lsp_live_workspace_symbols<cr>', desc = 'Fzf Workspace Symbols' },
+    { '<leader>fgs', '<cmd>FzfLua git_status<cr>', desc = 'Fzf Git Status' },
+    { '<leader>fgb', '<cmd>FzfLua git_branches<cr>', desc = 'Fzf Git Branches' },
 }
 
 function M.fzf_setup()
@@ -53,12 +53,11 @@ function M.fzf_setup()
                 ['default'] = function(selected)
                     vim.cmd('cd ' .. selected[1])
                     require('fzf-lua').files()
-                end
+                end,
             },
-            prompt = 'Projects> '
+            prompt = 'Projects> ',
         })
     end, {})
 end
 
 return M
-

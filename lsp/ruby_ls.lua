@@ -9,19 +9,19 @@ local function add_ruby_deps_command(client, bufnr) ---@param bufnr integer
         return
     end
     vim.api.nvim_buf_create_user_command(bufnr, 'ShowRubyDeps', function(opts) ---@param opts { args: string }
-        local params = vim.lsp.util.make_text_document_params()
+        local params = vim.lsp.util.make_text_document_params() ---@type string
         local showAll = opts.args == 'all'
         vim.lsp.buf_request(bufnr, 'rubyLsp/workspace/dependencies', params, function(err, result)
             if err then
-                vim.notify('Error showing deps: ' .. err.message, vim.log.levels.ERROR)
+                vim.echo('Error showing deps: ' .. err.message, vim.log.levels.ERROR)
                 return
             end
-            local qf_list = {} ---@type { text: string, filename: string }[]
+            local qf_list = {} ---@type { text: string, filename: string, item: integer }[]
             for _, item in ipairs(result or {}) do
                 if showAll or item.dependency then
                     table.insert(qf_list, {
                         text = string.format('%s (%s) - %s', item.name, item.version, item.dependency),
-                        filename = item.path,
+                        filename = item.path, ---@type string
                     })
                 end
             end

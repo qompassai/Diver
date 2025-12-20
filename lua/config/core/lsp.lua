@@ -8,6 +8,8 @@ local function on_list(options) ---@param options table
   vim.fn.setqflist({}, ' ', options)
   vim.cmd.cfirst()
 end
+--vim.lsp.buf.definition({ on_list = on_list })
+vim.lsp.buf.references(nil, { on_list = on_list })
 local lspmap = require('mappings.lspmap') ---@type mappings.lspmap
 vim.api.nvim_create_autocmd('LspAttach', {
   callback = lspmap.on_attach,
@@ -39,7 +41,7 @@ vim.api.nvim_create_autocmd('LspAttach', {
         severity = {
           min = vim.diagnostic.severity.WARN,
         },
-        prefix = function(diag, i, total) ---@param diag vim.Diagnostic
+        prefix = function(diag, i, total) ---@function diag vim.Diagnostic
           local icons = {
             [vim.diagnostic.severity.ERROR] = ' ',
             [vim.diagnostic.severity.WARN] = ' ',
@@ -52,9 +54,39 @@ vim.api.nvim_create_autocmd('LspAttach', {
       signs = true,
       severity_sort = true,
       virtual_lines = true,
-
       underline = true,
     })
+  end,
+})
+vim.api.nvim_create_autocmd('LspDetach', {
+  callback = function(args)
+    local client = vim.lsp.get_client_by_id(args.data.client_id)
+    if client:supports_method('textDocument/formatting') then
+      vim.api.nvim_clear_autocmds({
+        event = 'BufWritePre',
+        buffer = args.buf,
+      })
+    end
+  end,
+})
+vim.api.nvim_create_autocmd('LspProgress', {
+  callback = function(ev)
+    local value = ev.data.params.value
+    if value.kind == 'begin' then
+      vim.api.nvim_ui_send('\027]9;4;1;0\027\\')
+    elseif value.kind == 'end' then
+      vim.api.nvim_ui_send('\027]9;4;0\027\\')
+    elseif value.kind == 'report' then
+      vim.api.nvim_ui_send(string.format('\027]9;4;1;%d\027\\', value.percentage or 0))
+    end
+  end,
+})
+vim.api.nvim_create_autocmd('LspTokenUpdate', {
+  callback = function(args)
+    local token = args.data.token
+    if token.type == 'variable' and not token.modifiers.readonly then
+      vim.lsp.semantic_tokens.highlight_token(token, args.buf, args.data.client_id, 'MyMutableVariableHighlight')
+    end
   end,
 })
 vim.cmd('runtime! lsp/init.lua')
@@ -122,20 +154,13 @@ vim.diagnostic.config({
   status = {
     text = {
       [vim.diagnostic.severity.ERROR] = 'E',
-      [vim.diagnostic.severity.WARN]  = 'W',
-      [vim.diagnostic.severity.INFO]  = 'I',
-      [vim.diagnostic.severity.HINT]  = 'H',
+      [vim.diagnostic.severity.WARN] = 'W',
+      [vim.diagnostic.severity.INFO] = 'I',
+      [vim.diagnostic.severity.HINT] = 'H',
     },
   },
 })
 vim.diagnostic.enable()
-vim.lsp.buf.references(nil, {
-  on_list = on_list,
-  loclist = true,
-})
-vim.lsp.buf.definition({
-  loclist = true
-})
 vim.lsp.config( ---@type vim.lsp.Config
   '*',
   {
@@ -199,7 +224,7 @@ vim.lsp.config( ---@type vim.lsp.Config
             labelDetailsSupport = true,
             documentationFormat = {
               'markdown',
-              'plaintext'
+              'plaintext',
             },
             resolveSupport = {
               properties = {
@@ -297,10 +322,10 @@ vim.lsp.config( ---@type vim.lsp.Config
             signatureInformation = {
               documentationFormat = {
                 'markdown',
-                'plaintext'
+                'plaintext',
               },
               parameterInformation = {
-                labelOffsetSupport = true
+                labelOffsetSupport = true,
               },
             },
           },
@@ -317,7 +342,14 @@ vim.lsp.config( ---@type vim.lsp.Config
     workspace_required = false,
   }
 )
-vim.lsp.document_color.enable()
-vim.lsp.inline_completion.enable()
-vim.lsp.on_type_formatting.enable()
-vim.lsp.semantic_tokens.enable()
+vim.lsp.buf.clear_references.enable(true)
+vim.lsp.buf.document_highlight.enable(true)
+vim.lsp.document_color.enable(true)
+vim.lsp.inlay_hint.enable(true)
+vim.lsp.inline_completion.enable(true)
+vim.lsp.linked_editing_range.enable(true)
+vim.lsp.on_type_formatting.enable(true)
+vim.lsp.semantic_tokens.enable(true)
+vim.lsp.on_type_formatting.enable(true)
+vim.lsp.util.apply_text_edits.enable(true)
+vim.lsp.util.convert_signature_help_to_markdown_lines.enable(true)

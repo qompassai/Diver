@@ -50,20 +50,20 @@ U.rust_default_toolchain = "nightly"
 function U.rust_edition(edition)
   if U.rust_editions[edition] then
     U.current_edition = edition
-    vim.notify("Rust edition set to " .. edition, vim.log.levels.INFO)
+    vim.echo("Rust edition set to " .. edition, vim.log.levels.INFO)
     vim.cmd("LspRestart")
   else
-    vim.notify("Invalid Rust edition: " .. tostring(edition), vim.log.levels.ERROR)
+    vim.echo("Invalid Rust edition: " .. tostring(edition), vim.log.levels.ERROR)
   end
 end
 
 function U.rust_set_toolchain(tc)
   if U.rust_toolchains[tc] then
     U.current_toolchain = tc
-    vim.notify("Rust toolchain set to " .. tc, vim.log.levels.INFO)
+    vim.echo("Rust toolchain set to " .. tc, vim.log.levels.INFO)
     vim.cmd("LspRestart")
   else
-    vim.notify("Invalid Rust toolchain: " .. tostring(tc), vim.log.levels.ERROR)
+    vim.echo("Invalid Rust toolchain: " .. tostring(tc), vim.log.levels.ERROR)
   end
 end
 

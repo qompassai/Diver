@@ -13,11 +13,10 @@
 ---@field fn FunctionAPI
 ---@field lsp vim.lsp
 ---@field log vim.log
----@field loop vim.loop
+---@field uv vim.uv
 ---@field o table<string, any>
 ---@field opt table
 ---@field opt_local vim.opt_local
----@field uv table
 ---@field wo table<string, any>
 ---@class vim.api
 ---@field nvim_buf_create_user_command fun(buffer: integer, name: string, command: string, opts: table)
@@ -30,7 +29,7 @@
 ---@field expand fun(path:string):string
 ---@field has fun(feature:string):boolean
 ---@field stdpath fun(type:string):string
----@class vim.loop
+---@class vim.uv
 ---@field available_parallelism fun(): integer
 ---@class vim.lsp
 ---@field buf_document_highlight fun()

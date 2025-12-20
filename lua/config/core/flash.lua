@@ -7,7 +7,7 @@
 local M = {}
 
 ---@param extra table|nil
-function M.flash_opts(extra)
+function M.flash_opts(extra) ---@return table[]
     local o = {
         modes = {
             search = {
@@ -26,18 +26,38 @@ function M.flash_opts(extra)
                 config = function(opts)
                     opts.autohide = vim.fn.mode(true):find('no') and vim.v.operator == 'y'
                 end,
-                chars = { 'f', 'F', 't', 'T', ';', ',' },
-                keys = { 'f', 'F', 't', 'T', ';', ',' },
+                chars = {
+                    'f',
+                    'F',
+                    't',
+                    'T',
+                    ';',
+                    ',',
+                },
+                keys = {
+                    'f',
+                    'F',
+                    't',
+                    'T',
+                    ';',
+                    ',',
+                },
             },
             treesitter = {
                 labels = 'abcdefghijklmnopqrstuvwxyz',
-                jump = { pos = 'start' },
-                search = { incremental = true },
+                jump = {
+                    pos = 'start',
+                },
+                search = {
+                    incremental = true,
+                },
             },
         },
         prompt = {
             enabled = true,
-            prefix = { { '⚡', 'FlashPromptIcon' } },
+            prefix = {
+                { '⚡', 'FlashPromptIcon' },
+            },
         },
     }
     if extra then

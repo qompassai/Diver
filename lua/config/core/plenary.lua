@@ -4,7 +4,7 @@
 -----------------------------------------------------
 ---@meta
 ---@module 'config.core.plenary'
-local M = {}
+local M = {} ---@return table[]
 require('types.core.plenary')
 function M.collect_nls_sources()
   local scandir = require('plenary.scandir')
@@ -12,8 +12,8 @@ function M.collect_nls_sources()
   local lang_path = vim.fn.stdpath('config') .. '/lua/config/lang'
   local global_need_check = nil
   local files = scandir.scan_dir(lang_path, {
-    depth = 1,
-    add_dirs = false,
+    depth = 1, ---@type integer
+    add_dirs = true, ---@type boolean
   })
   local nls_sources = {}
   for _, file_path in ipairs(files) do
@@ -23,12 +23,12 @@ function M.collect_nls_sources()
       lang = file:stem()
       mod_name = file:make_relative(vim.fn.stdpath('config') .. '/lua/'):gsub('%.lua$', ''):gsub('/', '.')
     else
-      vim.notify('Invalid Path object for ' .. tostring(file_path), vim.log.levels.WARN)
+      vim.echo('Invalid Path object for ' .. tostring(file_path), vim.log.levels.WARN)
       goto continue
     end
     local ok, mod = pcall(require, mod_name)
     if not ok or type(mod) ~= 'table' then
-      vim.notify('Could not require module: ' .. tostring(mod_name), vim.log.levels.WARN)
+      vim.echo('Could not require module: ' .. tostring(mod_name), vim.log.levels.WARN)
     else
       local fn_name = lang .. '_nls'
       local nls_fn = mod[fn_name]
@@ -41,7 +41,7 @@ function M.collect_nls_sources()
         if success and type(sources) == 'table' then
           vim.list_extend(nls_sources, sources)
         else
-          vim.notify('Failed to call ' .. fn_name .. ' in ' .. mod_name, vim.log.levels.WARN)
+          vim.echo('Failed to call ' .. fn_name .. ' in ' .. mod_name, vim.log.levels.WARN)
         end
       end
     end

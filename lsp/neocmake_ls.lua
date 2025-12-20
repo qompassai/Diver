@@ -2,8 +2,6 @@
 -- Qompass AI Neocmake LSP Spec
 -- Copyright (C) 2025 Qompass AI, All rights reserved
 -- --------------------------------------------------
-local capabilities = vim.lsp.protocol.make_client_capabilities()
-capabilities.textDocument.completion.completionItem.snippetSupport = true
 ---@type vim.lsp.Config
 return {
     cmd = { ---@type string[]
@@ -29,5 +27,4 @@ return {
         'build',
         '.git',
     },
-    capabilities = capabilities,
 }

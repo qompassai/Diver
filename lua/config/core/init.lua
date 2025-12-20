@@ -2,6 +2,7 @@
 -- Qompass AI Core Config Init
 -- Copyright (C) 2025 Qompass AI, All rights reserved
 -- ----------------------------------------
+---@meta
 require('config.core.flash')
 require('config.core.lsp')
 require('config.core.plenary')

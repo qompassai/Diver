@@ -165,7 +165,7 @@ return {
             css = {},
         },
     },
-    on_attach = function(client, bufnr)
+    on_attach = function(Client, bufnr)
         local group = vim.api.nvim_create_augroup('lspconfig.svelte', {
             clear = false,
         })
@@ -177,13 +177,13 @@ return {
             group = group,
             callback = function(ctx)
                 ---@diagnostic disable-next-line: param-type-mismatch
-                client:notify('$/onDidChangeTsOrJsFile', {
+                Client:notify('$/onDidChangeTsOrJsFile', {
                     uri = ctx.match,
                 })
             end,
         })
         vim.api.nvim_buf_create_user_command(bufnr, 'LspMigrateToSvelte5', function()
-            client:exec_cmd({
+            Client:exec_cmd({
                 title = 'Migrate Component to Svelte 5 Syntax',
                 command = 'migrate_to_svelte_5',
                 arguments = { vim.uri_from_bufnr(bufnr) },

@@ -8,13 +8,16 @@ local function switch_impl_intf(bufnr, client)
     local method_name = 'ocamllsp/switchImplIntf'
     ---@diagnostic disable-next-line:param-type-mismatch
     if not client or not client:supports_method(method_name) then
-        return vim.notify(
-            ('method %s is not supported by any servers active on the current buffer'):format(method_name)
-        )
+        return vim.echo(('method %s is not supported by any servers active on the current buffer'):format(method_name))
     end
-    local uri = vim.lsp.util.make_given_range_params(nil, nil, bufnr, client.offset_encoding).textDocument.uri
+    local uri = vim.lsp.util.make_given_range_params(
+        nil, ---@type string
+        nil,
+        bufnr,
+        client.offset_encoding
+    ).textDocument.uri
     if not uri then
-        return vim.notify('could not get URI for current buffer')
+        return vim.echo('could not get URI for current buffer')
     end
     local params = { uri }
     ---@diagnostic disable-next-line:param-type-mismatch
@@ -23,13 +26,13 @@ local function switch_impl_intf(bufnr, client)
             error(tostring(err))
         end
         if not result or #result == 0 then
-            vim.notify('corresponding file cannot be determined')
+            vim.echo('corresponding file cannot be determined')
         elseif #result == 1 then
             vim.cmd.edit(vim.uri_to_fname(result[1]))
         else
             vim.ui.select(result, {
                 prompt = 'Select an implementation/interface:',
-                format_item = vim.uri_to_fname,
+                format_item = vim.uri_to_fname, ---@type string
             }, function(choice)
                 if choice then
                     vim.cmd.edit(vim.uri_to_fname(choice))
@@ -85,6 +88,8 @@ return {
     on_attach = function(client, bufnr)
         vim.api.nvim_buf_create_user_command(bufnr, 'LspOcamllspSwitchImplIntf', function()
             switch_impl_intf(bufnr, client)
-        end, { desc = 'Switch between implementation/interface' })
+        end, {
+            desc = 'Switch between implementation/interface',
+        })
     end,
 }

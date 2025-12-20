@@ -35,7 +35,7 @@ return {
                 },
                 scriptAnalysis = {
                     enable = true,
-                    settingsPath = (vim.env.XDG_CONFIG_HOME or (vim.env.HOME .. '/.config'))
+                    settingsPath = (vim.env.XDG_CONFIG_HOME or (vim.env.HOME .. '/.config')) ---@type string[]
                         .. '/powershell/ScriptAnalyzerSettings.psd1',
                 },
                 editor = {

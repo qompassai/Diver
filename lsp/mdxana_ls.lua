@@ -21,7 +21,7 @@ return {
     },
     before_init = function(_, config) ---@class lsp.LSPObject.typescript
         if config.init_options and config.init_options.typescript and not config.init_options.typescript.tsdk then
-            config.init_options.typescript.tsdk = vim.lsp.util.get_typescript_server_path(config.root_dir)
+            config.init_options.typescript.tsdk = vim.lsp.util.get_typescript_server_path(config.root_dir) ---@type string
         end
     end,
 }
