@@ -24,16 +24,6 @@ return {
         zotero = 'sqlite:///' .. vim.fn.expand("$HOME/.local/share/zotero/zotero.sqlite")
       }
       require("config.data.common").setup_dadbod_connections('~/.config/nvim/dbx.lua')
-      local autocmd = vim.api.nvim_create_autocmd
-      autocmd("FileType", {
-        pattern = { "sqlite", "pgsql" },
-        callback = function()
-          vim.opt_local.expandtab   = true
-          vim.opt_local.shiftwidth  = 2
-          vim.opt_local.softtabstop = 2
-          vim.opt_local.omnifunc    = "vim_dadbod_completion#omni"
-        end,
-      })
       sqlite_cfg.sqlite_ftd()
       psql_cfg.psql_ftd()
     end,

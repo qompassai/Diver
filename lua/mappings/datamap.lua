@@ -99,6 +99,19 @@ function M.setup_datamap()
       -- In normal mode, press 'n' + 's' + 'r' for Nvim-lsp to show references to the symbol under the cursor.
     end,
   })
+
+  local nabla_ok, nabla = pcall(require, 'nabla')
+  if nabla_ok then
+    map('n', '<leader>mp', function()
+      nabla.popup()
+    end, {
+      desc = 'Preview LaTeX equations'
+    })
+
+    map('n', '<leader>mt', function()
+      nabla.toggle_virt()
+    end, { desc = 'Toggle LaTeX equations' })
+  end
 end
 
 return M

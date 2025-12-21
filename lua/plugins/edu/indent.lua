@@ -2,6 +2,8 @@
 -- Qompass AI Diver Indent Plugin Spec
 -- Copyright (C) 2025 Qompass AI, All rights reserved
 -- --------------------------------------------------
+---@meta
+---
 return {
   {
     'lukas-reineke/indent-blankline.nvim',

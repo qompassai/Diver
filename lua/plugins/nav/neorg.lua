@@ -3,8 +3,8 @@
 -- Copyright (C) 2025 Qompass AI, All rights reserved
 -----------------------------------------------------
 return {
-  "nvim-neorg/neorg",
-  event = 'VeryLazy',
-  version = "*",
-  config = true,
+    'nvim-neorg/neorg',
+    event = 'VeryLazy',
+    version = '*',
+    config = true,
 }

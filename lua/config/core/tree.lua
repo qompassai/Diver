@@ -4,91 +4,130 @@
 ------------------------------------------------------
 ---@meta
 ---@module 'config.core.tree'
-
 local M = {}
-function M.treesitter(opts)
-    opts = opts or {}
-    require('nvim-treesitter.install').prefer_git = true
-    -- nvim-treesitter configs module
-    local configs = require('nvim-treesitter.configs')
-    local langs = {
-        'lang.go',
-        'lang.rust',
-        'ui.html',
-        'ui.md',
-    }
-    local merged_lang_opts = {}
-    for _, lang_mod in ipairs(langs) do
-        local ok, mod = pcall(require, 'config.' .. lang_mod)
-        if ok then
-            local key = lang_mod:match('[^.]+$') .. '_treesitter'
-            if type(mod[key]) == 'function' then
-                local ts_cfg = mod[key]()
-                if ts_cfg then
-                    merged_lang_opts = vim.tbl_deep_extend('force', merged_lang_opts, ts_cfg)
-                end
-            end
-        end
-    end
-    local base_config = {
-        auto_install = true,
-        ensure_installed = {
-            'css',
-            'go',
-            'html',
-            'json',
-            'json5',
-            'lua',
-            'luadoc',
-            'markdown',
-            'markdown_inline',
-            'python',
-            'rust',
+function M.treesitter(opts) ---@param opts table<string, any>|nil
+  opts = opts or {}
+  require('nvim-treesitter.install').prefer_git = true
+  local configs = require('nvim-treesitter.configs')
+  local base_config = {
+    auto_install = true,
+    ensure_installed = { ---@type string[]
+      'ada',
+      'agda',
+      'bash',
+      'bibtex',
+      'c',
+      'cmake',
+      'cpp',
+      'css',
+      'cuda',
+      'dart',
+      'dockerfile',
+      'elixir',
+      'erlang',
+      'fsharp',
+      'gleam',
+      'go',
+      'gomod',
+      'graphql',
+      'haskell',
+      'hcl',
+      'html',
+      'ini',
+      'java',
+      'jsdoc',
+      'json',
+      'json5',
+      'jsonc',
+      'julia',
+      'kotlin',
+      'llvm',
+      'lua',
+      'luadoc',
+      'latex',
+      'make',
+      'markdown',
+      'markdown_inline',
+      'meson',
+      'nix',
+      'objc',
+      'objdump',
+      'ocaml',
+      'php',
+      'proto',
+      'python',
+      'query',
+      'regex',
+      'ruby',
+      'rust',
+      'scala',
+      'scss',
+      'sql',
+      'svelte',
+      'swift',
+      'terraform',
+      'tmux',
+      'toml',
+      'tsx',
+      'typescript',
+      'vim',
+      'vimdoc',
+      'vue',
+      'xml',
+      'yaml',
+      'zig'
+    },
+    highlight = { ---@type boolean[]
+      enable = true,
+      additional_vim_regex_highlighting = true,
+    },
+    ignore_install = {
+      'ipkg',
+      'norg'
+    },
+    incremental_selection = {
+      enable = true,
+      keymaps = {
+        init_selection = 'gnn',
+        node_decremental = 'grm',
+        node_incremental = 'grn',
+        scope_incremental = 'grc',
+      },
+    },
+    indent = {
+      enable = true,
+    },
+    sync_install = false,
+    textobjects = {
+      select = {
+        enable = true,
+        keymaps = {
+          ['af'] = '@function.outer',
+          ['if'] = '@function.inner',
         },
-        highlight = {
-            enable = true,
-            additional_vim_regex_highlighting = true,
-        },
-        ignore_install = { 'ipkg', 'norg' },
-        incremental_selection = {
-            enable = true,
-            keymaps = {
-                init_selection = 'gnn',
-                node_decremental = 'grm',
-                node_incremental = 'grn',
-                scope_incremental = 'grc',
-            },
-        },
-        indent = {
-            enable = true,
-        },
-        textobjects = {
-            select = {
-                enable = true,
-                keymaps = {
-                    ['af'] = '@function.outer',
-                    ['if'] = '@function.inner',
-                },
-            },
-        },
-    }
-    local final_config = vim.tbl_deep_extend('force', base_config, merged_lang_opts, opts)
-    ---@cast final_config TSConfig
-    configs.setup(final_config)
+      },
+    },
+  }
+  local final_config = vim.tbl_deep_extend('force',
+    base_config, opts) ---@cast final_config TSConfig
+  configs.setup(final_config)
 end
 
 function M.tree_cfg(opts)
-    opts = opts or {}
-    M.treesitter(opts)
-    return {
-        treesitter = vim.tbl_deep_extend('force', M.options and M.options.treesitter or {}, opts),
-    }
+  opts = opts or {}
+  M.treesitter(opts)
+  return {
+    treesitter = vim.tbl_deep_extend(
+      'force',
+      M.options and M.options.treesitter or {},
+      opts),
+  }
 end
 
 vim.treesitter.query.set(
-    'c',
-    'highlights',
-    [[;inherits c
+  'c',
+  'highlights',
+  [[;inherits c
   (identifier) @spell]]
 )
 return M

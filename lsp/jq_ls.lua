@@ -7,13 +7,13 @@
 vim.cmd([[au BufRead,BufNewFile *.jq setfiletype jq]])
 ---@type vim.lsp.Config
 return {
-    cmd = { ---@type string[]
-        'jq-lsp',
-    },
-    filetypes = { ---@type string[]
-        'jq',
-    },
-    root_markers = { ---@type string[]
-        '.git',
-    },
+  cmd = { ---@type string[]
+    'jq-lsp',
+  },
+  filetypes = { ---@type string[]
+    'jq',
+  },
+  root_markers = { ---@type string[]
+    '.git',
+  },
 }

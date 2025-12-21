@@ -3,7 +3,86 @@
 -- Copyright (C) 2025 Qompass AI, All rights reserved
 -- --------------------------------------------------
 ---@meta
-
+---@module 'types.core.lsp'
+---@class                             Autocmds
+---@field                             nix_autocmds? fun(opts?: table)
+---@field                             vim_nix_config? fun()
+---@field                             md_autocmds? fun()
+---@field                             go_autocmds? fun()
+---@class                             vim.lsp.Config
+---@field name?                       string
+---@field settings?                   table
+---@field init_options?               table
+---@field capabilities?               lsp.ClientCapabilities|table
+---@field single_file_support?        boolean
+---@field autostart?                  boolean
+----@field on_init?                   fun(client: vim.lsp.Client, init_result: lsp.InitializeResult|nil)
+---@field on_attach?                  fun(client: vim.lsp.Client, bufnr: integer)
+---@field on_exit?                    fun(code: integer, signal: integer, client_id: integer)
+---@class                             BashShellcheckSeverityConfig
+---@field error?                      string
+---@field warning?                    string
+---@field info?                       string
+---@field style?                      string
+---@class                             BashShellcheckConfig
+---@field enable                      boolean
+---@field executablePath              string
+---@field severity                    BashShellcheckSeverityConfig
+---@class                             BashCompletionConfig
+---@field enabled                     boolean
+---@field includeDirs                 string[]
+---@class                             BashDiagnosticsConfig
+---@field enabled                     boolean
+---@class                             BashShfmtConfig
+---@field binaryNextLine              boolean
+---@field caseIndent                  boolean
+---@field funcNextLine                boolean
+---@field ignoreEditorconfig          boolean
+---@field indent                      integer
+---@field keepPadding                 boolean
+---@field languageDialect             string
+---@field path                        string
+---@field simplifyCode                boolean
+---@field spaceRedirects              boolean
+---@class                             BashIdeConfig
+---@field backgroundAnalysisMaxFiles  integer
+---@field globPattern                 string
+---@field logLevel                    string
+---@field maxNumberOfProblems         integer
+---@field shellcheck                  BashShellcheckConfig
+---@field completion                  BashCompletionConfig
+---@field diagnostics                 BashDiagnosticsConfig
+---@field shfmt                       BashShfmtConfig
+---@field explainshellEndpoint        string|nil
+---@class (exact)                     BashLspSettings
+---@field bashIde                     BashIdeConfig
+---@class BashLsConfig  :             vim.lsp.Config
+---@field cmd                         string[]
+---@field filetypes                   string[]
+---@field root_markers                string[]
+---@field settings                    BashLspSettings
+---@class                             ClangdInlayHintsParams
+---@field textDocument                lsp.TextDocumentIdentifier
+---@class                             ClangdInitOptions
+---@field fallbackFlags               string[]
+---@class ClangdSwitchSourceHeaderParams : lsp.TextDocumentIdentifier
+---@class ClangdSymbolInfo
+---@field name          string
+---@field containerName string|nil
+---@class ClangdTextDocumentCapabilities
+---@field completion  { editsNearCursor: boolean }
+---@field references  { container: boolean }
+---@class ClangdClientCapabilities : lsp.ClientCapabilities
+---@field textDocument ClangdTextDocumentCapabilities
+---@field offsetEncoding string[]
+---@class ClangdLsConfig : vim.lsp.Config
+---@field cmd          string[]
+---@field filetypes    string[]
+---@field root_markers string[]
+---@field init_options ClangdInitOptions
+---@field capabilities ClangdClientCapabilities
+---@class ClangdInitializeResult : lsp.InitializeResult
+---@field offsetEncoding? string
 ---@class HlOpts
 ---@field bg? string
 ---@field bold? boolean
@@ -91,7 +170,7 @@ vim.api.nvim_set_hl(
   0,
   'markdownCode',
   {
-    italic = false,
+    italic = true
   }
 )
 vim.api.nvim_set_hl(
@@ -105,7 +184,7 @@ vim.api.nvim_set_hl(
   0,
   'markdownCodeDelimiter',
   {
-    italic = false,
+    italic = true,
   }
 )
 vim.api.nvim_set_hl(
@@ -346,9 +425,33 @@ vim.api.nvim_set_hl(
     bg = '#8BCD5B',
     fg = '#202020'
   })
+
 vim.api.nvim_set_hl(
-  0, 'CurSearch', { bg = '#EFBD5D', fg = '#000000' })
-vim.api.nvim_set_hl(0, 'IncSearch', { bg = '#F15664', fg = '#000000' })
-vim.api.nvim_set_hl(0, 'CursorLine', { bg = '#1A1A1F' })
-vim.api.nvim_set_hl(0, 'CursorColumn', { bg = '#1A1A1F' })
-vim.api.nvim_set_hl(0, 'Visual', { bg = '#103070' })
+  0, 'CurSearch',
+  {
+    bg = '#EFBD5D',
+    fg = '#000000'
+  })
+vim.api.nvim_set_hl(
+  0,
+  'IncSearch',
+  {
+    bg = '#F15664',
+    fg = '#000000'
+  })
+vim.api.nvim_set_hl(
+  0,
+  'CursorLine',
+  {
+    --  bg = '#1A1A1F'
+  })
+vim.api.nvim_set_hl(
+  0,
+  'CursorColumn',
+  {
+    --  bg = '#1A1A1F'
+  })
+vim.api.nvim_set_hl(
+  0, 'Visual', {
+    bg = '#103070'
+  })

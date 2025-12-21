@@ -5,15 +5,15 @@
 ---@meta
 ---@module 'plugins.lang.ts'
 return {
-    { ---@type table[]
-        'pmizio/typescript-tools.nvim',
-        ft = {
-            'typescript',
-            'typescriptreact',
-        },
-        dependencies = {
-            'nvim-lua/plenary.nvim',
-        },
-        opts = {},
+  { ---@type table[]
+    'pmizio/typescript-tools.nvim',
+    ft = {
+      'typescript',
+      'typescriptreact',
     },
+    dependencies = {
+      'nvim-lua/plenary.nvim',
+    },
+    opts = {},
+  },
 }

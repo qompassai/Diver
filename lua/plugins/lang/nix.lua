@@ -2,16 +2,18 @@
 -- Qompass AI Diver Nix Plugin Spec
 -- Copyright (C) 2025 Qompass AI, All rights reserved
 -- --------------------------------------------------
+---@meta
+---@module 'plugins.lang.nix'
 local nix_cfg = require('config.lang.nix')
 
 return {
-    {
-        'LnL7/vim-nix',
-        ft = {
-            'nix',
-        },
-        config = function()
-            nix_cfg.vim_nix_config()
-        end,
+  {
+    'LnL7/vim-nix',
+    ft = {
+      'nix',
     },
+    config = function()
+      nix_cfg.vim_nix_config()
+    end,
+  },
 }

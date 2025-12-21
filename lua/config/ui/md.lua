@@ -18,75 +18,6 @@ function M.md_anchor(link, opts)
   return prefix .. result:gsub(' ', separator)
 end
 
-function M.md_autocmds()
-  vim.api.nvim_create_autocmd('FileType', {
-    pattern = { 'markdown', 'md' },
-    callback = function()
-      vim.g.mkdp_auto_start = 0
-      vim.g.mkdp_auto_close = 0
-      vim.g.mkdp_refresh_slow = 1
-      vim.g.mkdp_port = ''
-      vim.g.mkdp_command_for_global = 0
-      vim.g.mkdp_open_to_the_world = 0
-      vim.g.mkdp_open_ip = ''
-      vim.g.mkdp_combine_preview = 1
-      vim.g.mkdp_browser = ''
-      vim.g.mkdp_echo_preview_url = 1
-      vim.g.mkdp_page_title = '${name}'
-      vim.g.mkdp_filetypes = { 'markdown' }
-    end,
-  })
-  vim.api.nvim_create_autocmd('FileType', {
-    pattern = {
-      'markdown',
-      'md'
-    },
-    callback = function()
-      vim.keymap.set('n', '<leader>mp', ':MarkdownPreview<CR>', {
-        buffer = true,
-        desc = 'Markdown Preview'
-      })
-      vim.keymap.set(
-        'n',
-        '<leader>ms',
-        ':MarkdownPreviewStop<CR>',
-        { buffer = true, desc = 'Stop Markdown Preview' }
-      )
-      vim.keymap.set('n', '<leader>mt', ':TableModeToggle<CR>', { buffer = true, desc = 'Toggle Table Mode' })
-      vim.keymap.set('n', '<leader>mi', ':KittyScrollbackGenerateImage<CR>', {
-        buffer = true,
-        desc = 'Generate image from code block',
-      })
-      vim.keymap.set('v', '<leader>mr', ':SnipRun<CR>', { buffer = true, desc = 'Run selected code' })
-    end,
-  })
-  vim.api.nvim_create_user_command('MarkdownToPDF', function()
-    local input_file = vim.fn.expand('%:p')
-    local tex_file = vim.fn.expand('%:r') .. '.tex'
-    local pdf_file = vim.fn.expand('%:r') .. '.pdf'
-    vim.echo('Converting markdown to LaTeX...', vim.log.levels.INFO)
-    local convert_cmd = 'pandoc ' .. input_file .. ' -o ' .. tex_file
-    vim.fn.jobstart(convert_cmd, {
-      on_exit = function(_, code)
-        if code == 0 then
-          vim.echo('Running lualatex...', vim.log.levels.INFO)
-          vim.fn.jobstart('lualatex -interaction=nonstopmode ' .. tex_file, {
-            on_exit = function(_, compile_code)
-              if compile_code == 0 then
-                vim.echo('PDF created: ' .. pdf_file, vim.log.levels.INFO)
-              else
-                vim.echo('lualatex failed to compile', vim.log.levels.ERROR)
-              end
-            end,
-          })
-        else
-          vim.echo('Failed to convert Markdown to LaTeX', vim.log.levels.ERROR)
-        end
-      end,
-    })
-  end, {})
-end
-
 function M.md_diagram(opts) ---@return table[]
   opts = opts or {}
   require('diagram').setup(
@@ -96,8 +27,13 @@ function M.md_diagram(opts) ---@return table[]
         require('diagram.integrations.neorg'),
       },
       events = {
-        render_buffer = { 'InsertLeave', 'BufWinEnter', 'TextChanged' },
-        clear_buffer = { 'BufLeave' },
+        render_buffer = {
+          'InsertLeave',
+          'BufWinEnter',
+          'TextChanged' },
+        clear_buffer = {
+          'BufLeave'
+        },
       },
       renderer_options = {
         mermaid = {
@@ -210,10 +146,10 @@ end
 
 function M.md_livepreview(opts)
   opts = vim.tbl_deep_extend('force', {
-    port = 5500,
+    port = 5500, ---@type integer
     browser = 'firefox', ---@type string
-    dynamic_root = true,
-    sync_scroll = true,
+    dynamic_root = true, ---@type boolean
+    sync_scroll = true, ---@type boolean
     picker = 'fzf-lua',
   }, opts or {})
   local ok, _ = pcall(require, 'live-preview')
@@ -265,13 +201,18 @@ function M.md_rendermd(opts)
   opts = opts or {}
   require('render-markdown').setup({
     enabled = true,
-    render_modes = { 'n', 'c', 't' },
+    render_modes = { ---@type string[]
+      'n',
+      'c',
+      't' },
     max_file_size = 100.0,
     debounce = 100,
     preset = 'none',
     log_level = nil,
     log_runtime = false,
-    file_types = { 'markdown' },
+    file_types = {
+      'markdown'
+    },
     ignore = function()
       return false
     end,
@@ -330,7 +271,7 @@ function M.md_rendermd(opts)
       render = function() end,
       clear = function() end,
     },
-    completions = {
+    completions = { ---@type table[]
       blink = {
         enabled = true,
       },
@@ -405,7 +346,9 @@ function M.md_rendermd(opts)
       language_icon = true,
       language_name = true,
       language_info = true,
-      disable_background = { 'diff' },
+      disable_background = {
+        'diff'
+      },
       width = 'full',
       left_margin = 0,
       left_pad = 0,
@@ -661,7 +604,12 @@ function M.md_rendermd(opts)
         highlight = 'RenderMarkdownError',
         category = 'obsidian',
       },
-      bug = { raw = '[!BUG]', rendered = '󰨰 Bug', highlight = 'RenderMarkdownError', category = 'obsidian' },
+      bug = {
+        raw = '[!BUG]',
+        rendered = '󰨰 Bug',
+        highlight = 'RenderMarkdownError',
+        category = 'obsidian'
+      },
       example = {
         raw = '[!EXAMPLE]',
         rendered = '󰉹 Example',
@@ -674,7 +622,12 @@ function M.md_rendermd(opts)
         highlight = 'RenderMarkdownQuote',
         category = 'obsidian',
       },
-      cite = { raw = '[!CITE]', rendered = '󱆨 Cite', highlight = 'RenderMarkdownQuote', category = 'obsidian' },
+      cite = {
+        raw = '[!CITE]',
+        rendered = '󱆨 Cite',
+        highlight = 'RenderMarkdownQuote',
+        category = 'obsidian'
+      },
     },
     link = {
       enabled = true,
@@ -701,7 +654,10 @@ function M.md_rendermd(opts)
           pattern = '^http',
           icon = '󰖟 '
         },
-        discord = { pattern = 'discord%.com', icon = '󰙯 ' },
+        discord = {
+          pattern = 'discord%.com',
+          icon = '󰙯 '
+        },
         github = { pattern = 'github%.com', icon = '󰊤 ' },
         gitlab = { pattern = 'gitlab%.com', icon = '󰮠 ' },
         google = { pattern = 'google%.com', icon = '󰊭 ' },
@@ -792,31 +748,20 @@ end
 
 function M.md_table_mode()
   vim.api.nvim_create_autocmd('FileType', {
-    pattern = { 'markdown', 'md' },
+    pattern = {
+      'markdown',
+      'md'
+    },
     callback = function()
       vim.cmd('TableModeEnable')
     end,
   })
 end
 
-function M.md_latex_preview()
-  local nabla_ok, nabla = pcall(require, 'nabla')
-  if nabla_ok then
-    vim.keymap.set('n', '<leader>mp', function()
-      nabla.popup()
-    end, { desc = 'Preview LaTeX equations' })
-
-    vim.keymap.set('n', '<leader>mt', function()
-      nabla.toggle_virt()
-    end, { desc = 'Toggle LaTeX equations' })
-  end
-end
-
 function M.md_config(opts)
   opts = opts or {}
   M.md_anchor(opts)
   M.md_autocmds()
-  M.md_conform(opts)
   M.md_lsp(opts.on_attach, opts.capabilities)
   M.md_image(opts)
   M.md_livepreview(opts)

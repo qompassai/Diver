@@ -4,34 +4,34 @@
 -----------------------------------------------------
 ---@type vim.lsp.Config
 return {
-    cmd = { ---@type string[]
-        'ty',
-        'server',
+  cmd = { ---@type string[]
+    'ty',
+    'server',
+  },
+  filetypes = { ---@type string[]
+    'python',
+  },
+  root_markers = { ---@type string[]
+    'ty.toml',
+    'pyproject.toml',
+    '.git',
+  },
+  settings = {
+    ty = {
+      disableLanguageServices = false,
+      diagnosticMode = 'workspace',
+      inlayHints = {
+        variableTypes = true,
+        callArgumentNames = true,
+      },
+      experimental = {
+        rename = true,
+        autoImport = true,
+      },
     },
-    filetypes = { ---@type string[]
-        'python',
-    },
-    root_markers = { ---@type string[]
-        'ty.toml',
-        'pyproject.toml',
-        '.git',
-    },
-    settings = {
-        ty = {
-            disableLanguageServices = false,
-            diagnosticMode = 'workspace',
-            inlayHints = {
-                variableTypes = true,
-                callArgumentNames = true,
-            },
-            experimental = {
-                rename = true,
-                autoImport = true,
-            },
-        },
-    },
-    init_options = {
-        logFile = '/tmp/ty-lsp.log',
-        logLevel = 'info',
-    },
+  },
+  init_options = {
+    logFile = '/tmp/ty-lsp.log',
+    logLevel = 'info',
+  },
 }
