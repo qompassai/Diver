@@ -31,7 +31,9 @@ local function refresh_diagnostics(client)
     if vim.api.nvim_buf_is_loaded(buf) then
       client:request(
         vim.lsp.protocol.Methods.textDocument_diagnostic,
-        { textDocument = vim.lsp.util.make_text_document_params(buf) }, ---@type string
+        {
+          textDocument = vim.lsp.util.make_text_document_params(buf)
+        },
         nil,
         buf
       )
@@ -95,7 +97,7 @@ return ---@type vim.lsp.Config
   },
   commands = { ---@param command lsp.Command
     ['roslyn.client.completionComplexEdit'] = function(command, ctx) ---@param ctx lsp.HandlerContext
-      local client = assert(vim.lsp.get_client_by_id(ctx.client_id)) ---@type string
+      local client = assert(vim.lsp.get_client_by_id(ctx.client_id))
       local args = command.arguments or {}
       local uri, edit = args[1], args[2]
       ---@diagnostic disable: undefined-field
@@ -155,11 +157,11 @@ return ---@type vim.lsp.Config
   root_dir = function(bufnr, cb) ---@param cb fun(root: string)
     local bufname = vim.api.nvim_buf_get_name(bufnr)
     if not bufname:match('^' .. vim.fs.joinpath('/tmp/MetadataAsSource/')) then
-      local root_dir = vim.fs.root(bufnr, function(fname, _) ---@type string
+      local root_dir = vim.fs.root(bufnr, function(fname, _)
         return fname:match('%.sln[x]?$') ~= nil
       end)
       if not root_dir then
-        root_dir = vim.fs.root(bufnr, function(fname, _) ---@type string
+        root_dir = vim.fs.root(bufnr, function(fname, _)
           return fname:match('%.csproj$') ~= nil
         end)
       end
@@ -169,7 +171,7 @@ return ---@type vim.lsp.Config
     end
   end,
   on_init = {
-    function(client) ---@param client vim.lsp.Client
+    function(client)
       local root_dir = client.config.root_dir
       for entry, type in vim.fs.dir(root_dir) do
         if type == 'file' and (vim.endswith(entry, '.sln') or vim.endswith(entry, '.slnx')) then
