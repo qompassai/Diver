@@ -103,10 +103,35 @@ local function make_qompass_header(filepath, comment)
     }
   end
 end
+local linters = {
+  lua = {
+    cmd = {
+      'luacheck',
+      '--formatter',
+      'plain',
+      '--codes',
+      '--ranges',
+      '-'
+    },
+    parse = function(output, bufnr)
+      local diags = {}
+      for line, col, code, msg in output:gmatch(':(%d+):(%d+): %((.-)%) (.+)') do
+        table.insert(diags, {
+          lnum = tonumber(line) - 1,
+          col = tonumber(col) - 1,
+          message = msg .. ' [' .. code .. ']', ---@type string
+          severity = vim.diagnostic.severity.WARN,
+          source = 'luacheck',
+        })
+      end
+      vim.diagnostic.set(vim.api.nvim_create_namespace('NativeLint'), bufnr, diags, {})
+    end,
+  },
+}
 M = M or {}
 vim.cmd([[autocmd BufRead,BufNewFile *.hcl set filetype=hcl]])
 vim.cmd([[autocmd BufRead,BufNewFile *.tf,*.tfvars set filetype=terraform]])
-vim.api.nvim_create_autocmd( ---@type table[]
+vim.api.nvim_create_autocmd( ---@type table[] ---Ansible
   {
     'BufRead',
     'BufNewFile',
@@ -283,12 +308,41 @@ vim.api.nvim_create_autocmd({
     vim.bo.filetype = 'dockerfile'
   end,
 })
-vim.api.nvim_create_autocmd({ 'BufNewFile', 'BufRead' }, {
-  pattern = { '*docker-compose*.yml', '*docker-compose*.yaml' },
-  callback = function() vim.bo.filetype = 'yaml' end
-})
+vim.api.nvim_create_autocmd(
+  {
+    'BufNewFile',
+    'BufRead'
+  },
+  {
+    pattern = { '*docker-compose*.yml', '*docker-compose*.yaml' },
+    callback = function() vim.bo.filetype = 'yaml' end
+  })
+local linters = {
+  lua = {
+    cmd = {
+      'luacheck',
+      '--formatter', 'plain',
+      '--codes',
+      '--ranges',
+      '-',
+    },
+    parse = function(output, bufnr)
+      local diags = {}
+      for line, col, code, msg in output:gmatch(':(%d+):(%d+): %((.-)%) (.+)') do
+        table.insert(diags, {
+          lnum = tonumber(line) - 1,
+          col = tonumber(col) - 1,
+          message = msg .. ' [' .. code .. ']',
+          severity = vim.diagnostic.severity.WARN,
+          source = 'luacheck',
+        })
+      end
+      vim.diagnostic.set(vim.api.nvim_create_namespace('NativeLint'), bufnr, diags, {})
+    end,
+  },
+}
 ---@param opts? table
-function M.nix_autocmds(opts) ---@return nil|string[]
+function M.nix_autocmds(opts) ---@return nil|string[] ---Nix
   opts = opts or {}
   vim.api.nvim_create_user_command('SetNixFormatter', function(args)
     vim.g.nix_formatter = args.args
@@ -344,7 +398,7 @@ vim.api.nvim_create_autocmd('FileType',
       vim.opt_local.omnifunc = 'vim_dadbod_completion#omni'
     end,
   })
-vim.api.nvim_create_user_command('PhpStan', function()
+vim.api.nvim_create_user_command('PhpStan', function() ---PHP
   if vim.fn.executable('phpstan') == 1 then
     vim.cmd('!phpstan analyse')
   else
@@ -364,7 +418,7 @@ vim.api.nvim_create_user_command('Pint', function()
 end, {
   desc = 'Run Laravel Pint formatter',
 })
-
+---Go
 function M.go_autocmds()
   vim.api.nvim_create_user_command('GoEnvInfo', function()
     for label, value in pairs({
@@ -381,7 +435,7 @@ function M.go_autocmds()
   end, {})
 end
 
-vim.api.nvim_create_autocmd('BufWritePost',
+vim.api.nvim_create_autocmd('BufWritePost', ---LSP
   {
     callback = function(args)
       for _, client in ipairs(vim.lsp.get_clients({ bufnr = args.buf })) do
@@ -495,8 +549,8 @@ vim.api.nvim_create_autocmd('LspTokenUpdate',
       end
     end,
   })
----Markdown Autocmds
-function M.md_autocmds()
+
+function M.md_autocmds() ---Markdown
   vim.api.nvim_create_autocmd('FileType',
     {
       pattern = { ---@type string[]
@@ -592,8 +646,7 @@ function M.md_autocmds()
   end, {})
 end
 
----Python Autocmds
-vim.api.nvim_create_autocmd('FileType', ---@type table[]
+vim.api.nvim_create_autocmd('FileType', ---Python
   {
     group = augroups.python,
     pattern = 'python',
@@ -635,7 +688,7 @@ vim.api.nvim_create_autocmd('BufWritePre',
       })
     end,
   })
-vim.api.nvim_create_autocmd('BufWritePre',
+vim.api.nvim_create_autocmd('BufWritePre', ---Ruby
   {
     pattern = {
       '*.rb',
@@ -653,18 +706,65 @@ vim.api.nvim_create_autocmd('BufWritePre',
       })
     end,
   })
----Vite Autocmds
-vim.api.nvim_create_user_command('VitestFile', function()
+
+vim.api.nvim_create_user_command('VitestFile', function() ---Vite
   local file = vim.fn.expand('%:p')
   vim.fn.jobstart({ 'vitest', 'run', file }, { detach = true })
 end, {})
----Zig Autocmds
-vim.api.nvim_create_user_command('ZigTest', function()
+
+vim.api.nvim_create_user_command('ZigTest', function() ---Zig
   vim.fn.jobstart(
     { 'zig', 'test', vim.fn.expand('%:p') },
     {
       detach = true
     })
 end, {})
-
+vim.api.nvim_create_autocmd('BufWritePre', {
+  pattern = '*.zig',
+  callback = function(args)
+    vim.lsp.buf.format({ bufnr = args.buf, async = false })
+  end,
+})
+vim.api.nvim_create_autocmd('BufWritePost', {
+  pattern = '*.zig',
+  callback = function(args)
+    vim.fn.jobstart(
+      { 'zlint', vim.api.nvim_buf_get_name(args.buf)
+      },
+      {
+        stdout_buffered = true,
+        on_stdout = function(_, data, _)
+          if not data then
+            return
+          end
+          local out = table.concat(data, ''
+          )
+          if out ~= '' then
+            vim.schedule(function()
+              vim.notify('zlint: ' .. out,
+                vim.log.levels.INFO)
+            end)
+          end
+        end,
+      }
+    )
+  end,
+})
+vim.api.nvim_create_user_command('ZiggyCheck', function()
+  local file = vim.fn.expand('%:p')
+  vim.fn.jobstart({ 'ziggy', file }, {
+    stdout_buffered = true,
+    on_stdout = function(_, data, _)
+      if not data then return end
+      local out = table.concat(data, ''
+      )
+      if out ~= '' then
+        vim.schedule(function()
+          vim.echo('ziggy:'
+            .. out, vim.log.levels.INFO)
+        end)
+      end
+    end,
+  })
+end, {})
 return M

@@ -4,11 +4,6 @@
 -- --------------------------------------------------
 ---@meta
 ---@module 'types.core.lsp'
----@class                             Autocmds
----@field                             nix_autocmds? fun(opts?: table)
----@field                             vim_nix_config? fun()
----@field                             md_autocmds? fun()
----@field                             go_autocmds? fun()
 ---@class                             vim.lsp.Config
 ---@field name?                       string
 ---@field settings?                   table
@@ -36,37 +31,37 @@
 ---@class                             BashShfmtConfig
 ---@field binaryNextLine              boolean
 ---@field caseIndent                  boolean
----@field funcNextLine                boolean
----@field ignoreEditorconfig          boolean
----@field indent                      integer
----@field keepPadding                 boolean
----@field languageDialect             string
----@field path                        string
----@field simplifyCode                boolean
----@field spaceRedirects              boolean
----@class                             BashIdeConfig
----@field backgroundAnalysisMaxFiles  integer
----@field globPattern                 string
----@field logLevel                    string
----@field maxNumberOfProblems         integer
----@field shellcheck                  BashShellcheckConfig
----@field completion                  BashCompletionConfig
----@field diagnostics                 BashDiagnosticsConfig
----@field shfmt                       BashShfmtConfig
----@field explainshellEndpoint        string|nil
----@class (exact)                     BashLspSettings
----@field bashIde                     BashIdeConfig
----@class BashLsConfig  :             vim.lsp.Config
----@field cmd                         string[]
----@field filetypes                   string[]
----@field root_markers                string[]
----@field settings                    BashLspSettings
----@class                             ClangdInlayHintsParams
----@field textDocument                lsp.TextDocumentIdentifier
----@class                             ClangdInitOptions
----@field fallbackFlags               string[]
+---@field funcNextLine                     boolean
+---@field ignoreEditorconfig               boolean
+---@field indent                           integer
+---@field keepPadding                      boolean
+---@field languageDialect                  string
+---@field path                             string
+---@field simplifyCode                     boolean
+---@field spaceRedirects                   boolean
+---@class                                  BashIdeConfig
+---@field backgroundAnalysisMaxFiles       integer
+---@field globPattern                      string
+---@field logLevel                         string
+---@field maxNumberOfProblems              integer
+---@field shellcheck                       BashShellcheckConfig
+---@field completion                       BashCompletionConfig
+---@field diagnostics                      BashDiagnosticsConfig
+---@field shfmt                            BashShfmtConfig
+---@field explainshellEndpoint             string|nil
+---@class (exact)                          BashLspSettings
+---@field bashIde                          BashIdeConfig
+---@class BashLsConfig  :                  vim.lsp.Config
+---@field cmd                              string[]
+---@field filetypes                        string[]
+---@field root_markers                     string[]
+---@field settings                         BashLspSettings
+---@class                                  ClangdInlayHintsParams
+---@field textDocument                     lsp.TextDocumentIdentifier
+---@class                                  ClangdInitOptions
+---@field fallbackFlags                    string[]
 ---@class ClangdSwitchSourceHeaderParams : lsp.TextDocumentIdentifier
----@class ClangdSymbolInfo
+---@class                                  ClangdSymbolInfo
 ---@field name          string
 ---@field containerName string|nil
 ---@class ClangdTextDocumentCapabilities
@@ -83,7 +78,7 @@
 ---@field capabilities ClangdClientCapabilities
 ---@class ClangdInitializeResult : lsp.InitializeResult
 ---@field offsetEncoding? string
----@class HlOpts
+---@class               HlOpts
 ---@field bg? string
 ---@field bold? boolean
 ---@field fg? string
