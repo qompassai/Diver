@@ -10,7 +10,7 @@
 ![Repository Views](https://komarev.com/ghpvc/?username=qompassai-diver)
 ![GitHub all releases](https://img.shields.io/github/downloads/qompassai/diver/total?style=flat-square)
 
-<p align="center">
+<p align='center'>
   <a href="https://neovim.io/">
     <img src="https://img.shields.io/badge/Neovim-0.11+-57A143?style=for-the-badge&logo=neovim&logoColor=white"
       alt="Neovim">
