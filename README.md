@@ -12,12 +12,12 @@
 
 <p align="center">
   <a href="https://neovim.io/">
-    <img src="https://img.shields.io/badge/Neovim-0.12a+-57A143?style=for-the-badge&logo=neovim&logoColor=white"
+    <img src="https://img.shields.io/badge/Neovim-0.12+-57A143?style=for-the-badge&logo=neovim&logoColor=white"
       alt="Neovim">
   </a>
   <br>
   <a href="https://www.lua.org/">
-    <img src="https://img.shields.io/badge/Lua-5.1--5.4-blue?style=flat-square" alt="Lua">
+    <img src="https://img.shields.io/badge/Lua-5.1+LuaJIT-blue?style=flat-square" alt="Lua">
   </a>
   <a href="https://github.com/neovim/neovim/wiki/FAQ">
     <img src="https://img.shields.io/badge/Neovim_Lua_Config-Docs-blue?style=flat-square" alt="Neovim Lua Config Docs">
