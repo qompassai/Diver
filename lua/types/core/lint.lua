@@ -1,0 +1,47 @@
+-- /qompassai/Diver/lua/types/core/lint.lua
+-- Qompass AI Diver Linter Types Config
+-- Copyright (C) 2025 Qompass AI, All rights reserved
+-- ----------------------------------------
+---@toc lint.toc
+
+---@mod vim.lint.main
+---@class vim.lint.Config
+---@field name? string
+---@field cmd string
+---@field args? (string|fun():string)[]
+---@field stdin? boolean
+---@field append_fname? boolean
+---@field stream? 'stdout'|'stderr'|'both'
+---@field ignore_exitcode? boolean
+---@field env? table<string, string>
+---@field parser fun(output: string, bufnr: integer): vim.lint.Diagnostic[]
+---@class vim.lint.LintProc
+---@field bufnr integer
+---@field proc vim.SystemObj
+---@field cwd string
+---@field ns integer
+---@field stream? 'stdout'|'stderr'|'both'
+---@field cancelled boolean
+---@class lint.TSQueryConfig : vim.lint.Config
+---@field name? string
+---@type lint.TSQueryConfig
+---@class vim.lint.Diagnostic
+---@field lnum integer
+---@field col? integer
+---@field end_lnum? integer
+---@field end_col? integer
+---@field severity? vim.diagnostic.SeverityValue
+---@field message string
+---@field source? string
+---@field code? string|integer
+---@field user_data? any
+---@class vim.diagnostic.Severity
+---@field ERROR 1
+---@field WARN 2
+---@field INFO 3
+---@field HINT 4
+---@alias vim.diagnostic.SeverityValue
+---| 1  # ERROR
+---| 2  # WARN
+---| 3  # INFO
+---| 4  # HINT

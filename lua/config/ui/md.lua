@@ -18,7 +18,7 @@ function M.md_anchor(link, opts)
   return prefix .. result:gsub(' ', separator)
 end
 
-function M.md_diagram(opts) ---@return table[]
+function M.md_diagram(opts)
   opts = opts or {}
   require('diagram').setup(
     {

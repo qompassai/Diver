@@ -6,9 +6,8 @@
 ---@module 'types.core.autocmds'
 local M = {}
 ---@class                             Autocmds
----@field                             md_autocmds? fun()
 ---@field                             go_autocmds? fun()
+---@field                             md_autocmds? fun()
 ---@field                             nix_autocmds? fun(opts?: table)
 ---@field                             vim_nix_config? fun()
-
 return M

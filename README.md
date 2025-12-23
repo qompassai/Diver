@@ -1,5 +1,5 @@
-<!----------/qompassai/diver/README.md ---------------->
-<!-- ----------Qompass AI Diver ----------------------->
+<!----------/qompassai/diver/README.md ------------------->
+<!-- ----------Qompass AI Diver -------------------------->
 <!-- Copyright (C) 2025 Qompass AI, All rights reserved -->
 <!-------------------------------------------------------->
 
@@ -42,206 +42,394 @@
 ```lua
 ~/.config/nvim
 ################
+.
 ├── after
-│   ├── highlights.lua
-│   └── spell
-│       ├── en.utf-8.add
-│       └── en.utf-8.add.spl
 ├── ansi
 │   ├── apple.sh
 │   └── gopher.sh
-├── bootstrap.lua
 ├── citation.bib
 ├── CITATION.cff
 ├── dbx.lua
 ├── diverflake.nix
 ├── docs
-│   └── README.md
+│   ├── _build
+│   ├── conf.py
+│   ├── index.rst
+│   ├── make.bat
+│   ├── Makefile
+│   ├── README.md
+│   ├── _static
+│   └── _templates
+├── dsdt.dat
 ├── flake.lock
 ├── flake.nix
 ├── ftdetect
+│   ├── cypher.vim
 │   ├── ghostty.lua
 │   ├── ghostty.vim
 │   ├── git.lua
 │   └── git.vim
 ├── ftplugin
-│   └── gleam.lua
+│   ├── gleam.lua
+│   └── markdown.lua
 ├── ignore.rg
 ├── init.lua
 ├── lazy-lock.json
 ├── LICENSE-AGPL
 ├── LICENSE-QCDA
-├── lsp
+├── linters
 │   ├── actionlint.lua
-│   ├── ada\_ls.lua
-│   ├── air.lua
-│   ├── angularls.lua
-│   ├── ansiblels.lua
-│   ├── antlers\_ls.lua
-│   ├── arduino\_ls.lua
-│   ├── astgrep.lua
-│   ├── astro\_ls.lua
-│   ├── autotools\_ls.lua
-│   ├── awk\_ls.lua
-│   ├── azurepipelinesls.lua
-│   ├── bacon.lua
-│   ├── basedpyright.lua
-│   ├── bashls.lua
-│   ├── basics\_ls.lua
-│   ├── bazelrc\_ls.lua
-│   ├── beancount\_ls.lua
-│   ├── biome.lua
-│   ├── bufls.lua
-│   ├── buf.lua
-│   ├── cairo\_ls.lua
-│   ├── cbfmt.lua
-│   ├── ccls.lua
-│   ├── checkmake.lua
-│   ├── clangd.lua
-│   ├── clang-format.lua
-│   ├── cmake\_ls.lua
-│   ├── cmake.lua
-│   ├── codebook.lua
-│   ├── coq-lsp.lua
-│   ├── csharp\_ls.lua
-│   ├── cspell.lua
-│   ├── cssls.lua
-│   ├── deno.lua
-│   ├── docker\_composels.lua
-│   ├── docker\_langserver.lua
-│   ├── dockerls.lua
-│   ├── dotenvlinter.lua
-│   ├── dotls.lua
-│   ├── dprint.lua
-│   ├── editorcc.lua
-│   ├── efm.lua
-│   ├── elixir\_ls.lua
-│   ├── emmylua\_ls.lua
-│   ├── esbonio.lua
-│   ├── gdscript.lua
-│   ├── gdshader\_ls.lua
-│   ├── gdshader.lua
-│   ├── gh\_actions\_ls.lua
-│   ├── ghdl\_ls.lua
-│   ├── gleam.lua
-│   ├── glsl\_analyzer.lua
-│   ├── gofumpt.lua
-│   ├── gopls.lua
-│   ├── graphql\_ls.lua
-│   ├── helm\_ls.lua
-│   ├── hoon\_ls.lua
+│   ├── alex.lua
+│   ├── ansible_lint.lua
+│   ├── bash.lua
+│   ├── clangtidy.lua
+│   ├── deadnix.lua
+│   ├── desktopval.lua
+│   ├── eslint_d.lua
+│   ├── fish.lua
 │   ├── htmlhint.lua
-│   ├── html\_ls.lua
-│   ├── htmx.lua
-│   ├── hydra.lua
-│   ├── hyprls.lua
 │   ├── init.lua
-│   ├── java\_ls.lua
-│   ├── jq\_ls.lua
-│   ├── jsonls.lua
-│   ├── kotlin\_language\_server.lua
-│   ├── kubescape.lua
-│   ├── laravel\_ls.lua
-│   ├── lemminx.lua
-│   ├── lsp\_ai.lua
-│   ├── ltex.lua
-│   ├── ltex\_plus.lua
-│   ├── lua\_ls.lua
-│   ├── lwc\_ls.lua
-│   ├── makelint.lua
-│   ├── markdown\_oxide.lua
-│   ├── marksman.lua
-│   ├── matlabls.lua
-│   ├── mdx\_analyzer.lua
-│   ├── mdx\_ls.lua
-│   ├── meson\_ls.lua
-│   ├── metals.lua
-│   ├── mlir\_ls.lua
-│   ├── mm0ls.lua
-│   ├── mojo.lua
-│   ├── msbuild\_project\_tools\_server.lua
-│   ├── mutt\_ls.lua
-│   ├── nextflow.lua
-│   ├── nginx\_cf.lua
-│   ├── nginx\_ls.lua
-│   ├── nil\_ls.lua
-│   ├── nixd.lua
-│   ├── nx\_ls.lua
-│   ├── ocaml\_ls.lua
-│   ├── ols.lua
-│   ├── opencl\_ls.lua
-│   ├── oxlint.lua
-│   ├── pbls.lua
-│   ├── phan.lua
-│   ├── phpactor.lua
-│   ├── pls.lua
-│   ├── postgres\_ls.lua
-│   ├── postgrestools.lua
-│   ├── powershell\_es.lua
-│   ├── protols.lua
-│   ├── psalm.lua
-│   ├── puppet\_es.lua
-│   ├── pyrefly.lua
-│   ├── pyright.lua
-│   ├── qmlls.lua
-│   ├── quicklint\_js.lua
-│   ├── remark\_ls.lua
-│   ├── rnix.lua
-│   ├── roslyn.lua
-│   ├── rubocop.lua
-│   ├── ruby\_lsp.lua
-│   ├── ruff\_lsp.lua
-│   ├── ruff.lua
-│   ├── rune\_ls.lua
-│   ├── rust\_analyzer.lua
-│   ├── selene3p\_ls.lua
-│   ├── serve\_d.lua
-│   ├── smithy\_ls.lua
-│   ├── some\_sassls.lua
-│   ├── sqruff.lua
-│   ├── statix.lua
-│   ├── stylua3p\_ls.lua
-│   ├── stylua.lua
-│   ├── superhtml.lua
-│   ├── svls.lua
-│   ├── syntax\_tree.lua
-│   ├── systemdlint.lua
-│   ├── systemd\_ls.lua
-│   ├── taplo.lua
-│   ├── termux\_language\_server.lua
-│   ├── terraform\_ls.lua
-│   ├── tex\_fmt.lua
-│   ├── texlab.lua
-│   ├── trufflehog.lua
-│   ├── tsgo.lua
-│   ├── ts\_ls.lua
-│   ├── tsp\_ls.lua
-│   ├── ts\_query\_ls.lua
-│   ├── turbo\_ls.lua
-│   ├── ty.lua
-│   ├── uv.lua
-│   ├── verible.lua
-│   ├── vsrocq.lua
-│   ├── wasm\_language\_tools.lua
-│   ├── yamllint.lua
-│   ├── yamlls.lua
-│   ├── ziggy.lua
-│   ├── ziggy\_schema.lua
-│   └── zls.lua
+│   ├── joker.lua
+│   ├── lint-openapi.lua
+│   ├── luacheck.lua
+│   ├── luac.lua
+│   ├── nvcc.lua
+│   ├── sphinx-lint.lua
+│   ├── writegood.lua
+│   └── zlint.lua
+├── lsp
+│   ├── ada_ls.lua
+│   ├── agda_ls.lua
+│   ├── aiken_ls.lua
+│   ├── ai_ls.lua
+│   ├── air_ls.lua
+│   ├── alloy_ls.lua
+│   ├── angular_ls.lua
+│   ├── ansible_ls.lua
+│   ├── antlers_ls.lua
+│   ├── apex_ls.lua
+│   ├── arduino_ls.lua
+│   ├── asm_ls.lua
+│   ├── astgrep_ls.lua
+│   ├── astro_ls.lua
+│   ├── atlas_ls.lua
+│   ├── atopile_ls.lua
+│   ├── autohotkey_ls.lua
+│   ├── autotoo_ls.lua
+│   ├── awk_ls.lua
+│   ├── azurepipelines_ls.lua
+│   ├── bacon_ls.lua
+│   ├── basedpy_ls.lua
+│   ├── bash_ls.lua
+│   ├── basics_ls.lua
+│   ├── bazelrc_ls.lua
+│   ├── beancount_ls.lua
+│   ├── bicep_ls.lua
+│   ├── biome_ls.lua
+│   ├── bitbake_ls.lua
+│   ├── blueprint_ls.lua
+│   ├── bq_ls.lua
+│   ├── brioche_ls.lua
+│   ├── bsc_ls.lua
+│   ├── buck2_ls.lua
+│   ├── buf_ls.lua
+│   ├── bzl_ls.lua
+│   ├── c3_ls.lua
+│   ├── cairo_ls.lua
+│   ├── cds_ls.lua
+│   ├── clangd_ls.lua
+│   ├── clarinet_ls.lua
+│   ├── clojure_ls.lua
+│   ├── cmake_ls.lua
+│   ├── codebook_ls.lua
+│   ├── contextive_ls.lua
+│   ├── copilot_ls.lua
+│   ├── coq_ls.lua
+│   ├── crystalline_ls.lua
+│   ├── csharp_ls.lua
+│   ├── cspell_ls.lua
+│   ├── css_ls.lua
+│   ├── cssmodule_ls.lua
+│   ├── cssvariable_ls.lua
+│   ├── cucumber_ls.lua
+│   ├── customelements_ls.lua
+│   ├── cypher_ls.lua
+│   ├── dart_ls.lua
+│   ├── deno_ls.lua
+│   ├── diagnostic_ls.lua
+│   ├── dj_ls.lua
+│   ├── djt_ls.lua
+│   ├── dockercompose_ls.lua
+│   ├── docker_ls.lua
+│   ├── dolmen_ls.lua
+│   ├── dot_ls.lua
+│   ├── dprint_ls.lua
+│   ├── dts_ls.lua
+│   ├── elixir_ls.lua
+│   ├── elm_ls.lua
+│   ├── elp_ls.lua
+│   ├── ember_ls.lua
+│   ├── emmet_ls.lua
+│   ├── emmylua_ls.lua
+│   ├── esbonio_ls.lua
+│   ├── eslint_ls.lua
+│   ├── facility_ls.lua
+│   ├── fennel_ls.lua
+│   ├── fish_ls.lua
+│   ├── flow_ls.lua
+│   ├── flux_ls.lua
+│   ├── foam_ls.lua
+│   ├── fort_ls.lua
+│   ├── fsautocomplete_ls.lua
+│   ├── fsharp_ls.lua
+│   ├── fstar_ls.lua
+│   ├── gdscript_ls.lua
+│   ├── gdshader_ls.lua
+│   ├── ghactions_ls.lua
+│   ├── ghcide_ls.lua
+│   ├── ghdl_ls.lua
+│   ├── gitlabci_ls.lua
+│   ├── glasgow_ls.lua
+│   ├── gleam_ls.lua
+│   ├── glint_ls.lua
+│   ├── glslana_ls.lua
+│   ├── golangcilint_ls.lua
+│   ├── gop_ls.lua
+│   ├── graphql_ls.lua
+│   ├── groovy_ls.lua
+│   ├── harper_ls.lua
+│   ├── haxe_ls.lua
+│   ├── helm_ls.lua
+│   ├── herb_ls.lua
+│   ├── h_ls.lua
+│   ├── hoon_ls.lua
+│   ├── html_ls.lua
+│   ├── htmx_ls.lua
+│   ├── hydra_ls.lua
+│   ├── hypr_ls.lua
+│   ├── init.lua
+│   ├── intelephense_ls.lua
+│   ├── java_ls.lua
+│   ├── jdt_ls.lua
+│   ├── jinja_ls.lua
+│   ├── jq_ls.lua
+│   ├── json_ls.lua
+│   ├── jsonnet_ls.lua
+│   ├── julia_ls.lua
+│   ├── just_ls.lua
+│   ├── kotlin_ls.lua
+│   ├── kulala_ls.lua
+│   ├── laravel_ls.lua
+│   ├── lean_ls.lua
+│   ├── lemminx_ls.lua
+│   ├── ltex_ls.lua
+│   ├── ltex_plus.lua
+│   ├── lua_ls.lua
+│   ├── luau_ls.lua
+│   ├── lwc_ls.lua
+│   ├── m68k_ls.lua
+│   ├── makelint_ls.lua
+│   ├── markdown_oxide.lua
+│   ├── markojs_ls.lua
+│   ├── marksman_ls.lua
+│   ├── matlab_ls.lua
+│   ├── mdxana_ls.lua
+│   ├── metals_ls.lua
+│   ├── millet_ls.lua
+│   ├── mint_ls.lua
+│   ├── mlir_ls.lua
+│   ├── mlirpdll_ls.lua
+│   ├── mm0_ls.lua
+│   ├── moveana_ls.lua
+│   ├── msbuildptoo_ls.lua
+│   ├── muon_ls.lua
+│   ├── mutt_ls.lua
+│   ├── neocmake_ls.lua
+│   ├── nextflow_ls.lua
+│   ├── nginx_ls.lua
+│   ├── nickel_ls.lua
+│   ├── nil_ls.lua
+│   ├── nixd_ls.lua
+│   ├── nomad_ls.lua
+│   ├── ntt_ls.lua
+│   ├── nu_ls.lua
+│   ├── nx_ls.lua
+│   ├── ocaml_ls.lua
+│   ├── o_ls.lua
+│   ├── omnisharp_ls.lua
+│   ├── opencl_ls.lua
+│   ├── openscad_ls.lua
+│   ├── oxlint_ls.lua
+│   ├── pas_ls.lua
+│   ├── pb_ls.lua
+│   ├── perl_ls.lua
+│   ├── perlnav_ls.lua
+│   ├── phan_ls.lua
+│   ├── phpactor_ls.lua
+│   ├── please_ls.lua
+│   ├── p_ls.lua
+│   ├── postgres_ls.lua
+│   ├── postgrestoo_ls.lua
+│   ├── prisma_ls.lua
+│   ├── prosemd_ls.lua
+│   ├── proto_ls.lua
+│   ├── psalm_ls.lua
+│   ├── pug_ls.lua
+│   ├── puppet_ls.lua
+│   ├── purescript_ls.lua
+│   ├── pwrshelles_ls.lua
+│   ├── pyrefly_ls.lua
+│   ├── pyright_ls.lua
+│   ├── qml_ls.lua
+│   ├── quicklintjs_ls.lua
+│   ├── README.md
+│   ├── regal_ls.lua
+│   ├── rego_ls.lua
+│   ├── remark_ls.lua
+│   ├── rescript_ls.lua
+│   ├── rnix_ls.lua
+│   ├── robotcode_ls.lua
+│   ├── robotframework_ls.lua
+│   ├── rocq_ls.lua
+│   ├── roslyn_ls.lua
+│   ├── rpmspec_ls.lua
+│   ├── rubocop_ls.lua
+│   ├── ruby_ls.lua
+│   ├── ruff_ls.lua
+│   ├── rune_ls.lua
+│   ├── rustana_ls.lua
+│   ├── selene3p_ls.lua
+│   ├── selene_ls.lua
+│   ├── served_ls.lua
+│   ├── slangd_ls.lua
+│   ├── slint_ls.lua
+│   ├── smarty_ls.lua
+│   ├── smithy_ls.lua
+│   ├── snakeskin_ls.lua
+│   ├── solang_ls.lua
+│   ├── solargraph_ls.lua
+│   ├── solc_ls.lua
+│   ├── solidity_ls.lua
+│   ├── solidnomic_ls.lua
+│   ├── somesass_ls.lua
+│   ├── sorbet_ls.lua
+│   ├── spectral_ls.lua
+│   ├── spyglass_ls.lua
+│   ├── sq_ls.lua
+│   ├── sqruff_ls.lua
+│   ├── standardrb_ls.lua
+│   ├── starlark_ls.lua
+│   ├── statix_ls.lua
+│   ├── steep_ls.lua
+│   ├── stimulus_ls.lua
+│   ├── stylua3p_ls.lua
+│   ├── stylua_ls.lua
+│   ├── superhtml_ls.lua
+│   ├── svelte_ls.lua
+│   ├── svlang_ls.lua
+│   ├── sv_ls.lua
+│   ├── syntaxtree_ls.lua
+│   ├── systemd_ls.lua
+│   ├── tailwindcss_ls.lua
+│   ├── taplo_ls.lua
+│   ├── tcl_ls.lua
+│   ├── templ_ls.lua
+│   ├── termux_ls.lua
+│   ├── terraform_ls.lua
+│   ├── texlab_ls.lua
+│   ├── text_ls.lua
+│   ├── tflint_Ls.lua
+│   ├── tinymist_ls.lua
+│   ├── tofu_ls.lua
+│   ├── tombi_ls.lua
+│   ├── tsgo_ls.lua
+│   ├── ts_ls.lua
+│   ├── tsp_ls.lua
+│   ├── tsquery_ls.lua
+│   ├── ttags_ls.lua
+│   ├── turbo_ls.lua
+│   ├── turtle_ls.lua
+│   ├── tvmffinav_ls.lua
+│   ├── twiggy_ls.lua
+│   ├── ty_ls.lua
+│   ├── typeprof_ls.lua
+│   ├── ungrammar_ls.lua
+│   ├── unocss_ls.lua
+│   ├── uv_ls.lua
+│   ├── vacuum_ls.lua
+│   ├── vectorcode_ls.lua
+│   ├── verible_ls.lua
+│   ├── veryl_ls.lua
+│   ├── vespa_ls.lua
+│   ├── vhdl_ls.lua
+│   ├── vim_ls.lua
+│   ├── vts_ls.lua
+│   ├── vue_ls.lua
+│   ├── wasmlangtoo_ls.lua
+│   ├── wc_ls.lua
+│   ├── wgslana_ls.lua
+│   ├── yaml_ls.lua
+│   ├── ziggy_ls.lua
+│   ├── ziggyschema_ls.lua
+│   ├── zk_ls.lua
+│   └── z_ls.lua
 ├── lua
 │   ├── config
-│   │   ├── autocmds.lua
 │   │   ├── cicd
+│   │   │   ├── ansible.lua
+│   │   │   ├── build.lua
+│   │   │   ├── json.lua
+│   │   │   ├── shell.lua
+│   │   │   └── sops.lua
 │   │   ├── cloud
+│   │   │   ├── containers.lua
+│   │   │   └── sshfs.lua
 │   │   ├── core
+│   │   │   ├── autocmds.lua
+│   │   │   ├── flash.lua
+│   │   │   ├── init.lua
+│   │   │   ├── lint.lua
+│   │   │   ├── lsp.lua
+│   │   │   ├── neotest.lua
+│   │   │   ├── plenary.lua
+│   │   │   ├── tree.lua
+│   │   │   ├── trouble.lua
+│   │   │   └── whichkey.lua
 │   │   ├── data
+│   │   │   ├── common.lua
+│   │   │   ├── mysql.lua
+│   │   │   ├── psql.lua
+│   │   │   ├── sqlite.lua
+│   │   │   └── sql.lua
 │   │   ├── edu
+│   │   │   └── zotcite.lua
 │   │   ├── init.lua
 │   │   ├── keymaps.lua
 │   │   ├── lang
+│   │   │   ├── cmp.lua
+│   │   │   ├── go.lua
+│   │   │   ├── js.lua
+│   │   │   ├── julia.lua
+│   │   │   ├── lua.lua
+│   │   │   ├── mojo.lua
+│   │   │   ├── nix.lua
+│   │   │   ├── php.lua
+│   │   │   ├── rust.lua
+│   │   │   ├── scala.lua
+│   │   │   └── ts.lua
 │   │   ├── lazy.lua
 │   │   ├── nav
+│   │   │   ├── fzf.lua
+│   │   │   ├── harpoon.lua
+│   │   │   └── neotree.lua
 │   │   └── ui
+│   │       ├── css.lua
+│   │       ├── icons.lua
+│   │       ├── illuminate.lua
+│   │       ├── line.lua
+│   │       ├── md.lua
+│   │       ├── render.lua
+│   │       └── themes.lua
 │   ├── mappings
 │   │   ├── aimap.lua
 │   │   ├── cicdmap.lua
@@ -251,65 +439,146 @@
 │   │   ├── genmap.lua
 │   │   ├── init.lua
 │   │   ├── lintmap.lua
-│   │   ├── masonmap.lua
+│   │   ├── lspmap.lua
 │   │   ├── mojomap.lua
 │   │   ├── navmap.lua
-│   │   ├── pymap.lua
-│   │   ├── rustmap.lua
-│   │   └── source.lua
+│   │   └── pymap.lua
 │   ├── plugins
 │   │   ├── ai
+│   │   │   ├── augment.lua
+│   │   │   └── miniai.lua
 │   │   ├── cicd
+│   │   │   ├── ansible.lua
+│   │   │   ├── containers.lua
+│   │   │   ├── filetype.lua
+│   │   │   ├── git.lua
+│   │   │   ├── mail.lua
+│   │   │   └── sops.lua
 │   │   ├── cloud
+│   │   │   ├── distant.lua
+│   │   │   ├── fire.lua
+│   │   │   ├── mail.lua
+│   │   │   ├── qpg.lua
+│   │   │   ├── remote.lua
+│   │   │   ├── sshfs.lua
+│   │   │   └── websocket.lua
 │   │   ├── core
+│   │   │   ├── cheatsheet.lua
+│   │   │   ├── coq.lua
+│   │   │   ├── flash.lua
+│   │   │   ├── init.lua
+│   │   │   ├── neotest.lua
+│   │   │   ├── plenary.lua
+│   │   │   ├── tree.lua
+│   │   │   ├── trouble.lua
+│   │   │   └── whichkey.lua
 │   │   ├── data
+│   │   │   ├── csv.lua
+│   │   │   ├── dadbod.lua
+│   │   │   ├── init.lua
+│   │   │   ├── large.lua
+│   │   │   ├── sqlite.lua
+│   │   │   └── toggle.lua
 │   │   ├── edu
+│   │   │   ├── indent.lua
+│   │   │   ├── scnvim.lua
+│   │   │   ├── stt.lua
+│   │   │   └── twilight.lua
 │   │   ├── init.lua
 │   │   ├── lang
+│   │   │   ├── go.lua
+│   │   │   ├── lua.lua
+│   │   │   ├── nix.lua
+│   │   │   └── ts.lua
 │   │   ├── nav
+│   │   │   ├── fzf.lua
+│   │   │   ├── harpoon.lua
+│   │   │   ├── neorg.lua
+│   │   │   ├── neotree.lua
+│   │   │   ├── w3m.lua
+│   │   │   └── windowpick.lua
 │   │   └── ui
+│   │       ├── bufferline.lua
+│   │       ├── css.lua
+│   │       ├── icons.lua
+│   │       ├── illum.lua
+│   │       ├── init.lua
+│   │       ├── line.lua
+│   │       ├── md.lua
+│   │       ├── noice.lua
+│   │       ├── themes.lua
+│   │       └── unreal.lua
 │   ├── types
 │   │   ├── cicd
 │   │   ├── config
+│   │   │   ├── lazy.lua
+│   │   │   └── options.lua
 │   │   ├── core
+│   │   │   ├── autocmds.lua
+│   │   │   ├── lint.lua
+│   │   │   ├── lsp.lua
+│   │   │   ├── plenary.lua
+│   │   │   └── vim.lua
 │   │   ├── edu
 │   │   ├── init.lua
 │   │   ├── lang
+│   │   │   ├── cmp.lua
+│   │   │   ├── conform.lua
+│   │   │   ├── go.lua
+│   │   │   ├── lua.lua
+│   │   │   ├── nix.lua
+│   │   │   ├── ts.lua
+│   │   │   └── zig.lua
 │   │   ├── mappings
 │   │   ├── nav
+│   │   │   └── neotree.lua
 │   │   └── ui
+│   │       ├── html.lua
+│   │       ├── line.lua
+│   │       └── md.lua
 │   └── utils
 │       ├── clipboard.lua
 │       ├── core
 │       ├── dictionary
+│       │   ├── en.utf-8.add
+│       │   └── words.txt
 │       ├── environ.lua
 │       ├── init.lua
 │       ├── lang
-│       ├── safe\_require.lua
+│       │   ├── go.lua
+│       │   ├── lua.lua
+│       │   ├── python.lua
+│       │   ├── rust.lua
+│       │   └── scala.lua
+│       ├── safe_require.lua
 │       └── ui.lua
 ├── manifest
 ├── markdown.css
+├── nvim-pack-lock.json
 ├── qonfig.yaml
 ├── README.md
 ├── renovate.jsonc
+├── resources
+│   └── head.tex
 ├── scripts
-│   ├── archdive.sh
-│   ├── find\_and\_edit.sh
+│   ├── cargo.sh
+│   ├── find_and_edit.sh
 │   ├── installers
 │   │   ├── go-tools.sh
 │   │   └── tmux.sh
-│   ├── macosdive.sh
+│   ├── js.sh
 │   ├── quickstart.sh
-│   ├── ubuntudive.sh
-│   └── windowsdive.sh
+│   └── ruby.sh
 ├── snippets
 │   └── lua.json5
+├── spell
+│   └── en.utf-8.add
 ├── texput.log
 ├── undo
 ├── vim.toml
 └── vim.yml
 
-46 directories, 221 files
+51 directories, 484 files
 ```
 
 <details>

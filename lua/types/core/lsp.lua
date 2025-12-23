@@ -13,7 +13,7 @@
 ---@field autostart?                  boolean
 ----@field on_init?                   fun(client: vim.lsp.Client, init_result: lsp.InitializeResult|nil)
 ---@field on_attach?                  fun(client: vim.lsp.Client, bufnr: integer)
----@field on_exit?                    fun(code: integer, signal: integer, client_id: integer)
+----@field on_exit?                    fun(code: integer, signal: integer, client_id: integer)
 ---@class                             BashShellcheckSeverityConfig
 ---@field error?                      string
 ---@field warning?                    string
@@ -29,8 +29,8 @@
 ---@class                             BashDiagnosticsConfig
 ---@field enabled                     boolean
 ---@class                             BashShfmtConfig
----@field binaryNextLine              boolean
----@field caseIndent                  boolean
+---@field binaryNextLine                   boolean
+---@field caseIndent                       boolean
 ---@field funcNextLine                     boolean
 ---@field ignoreEditorconfig               boolean
 ---@field indent                           integer
