@@ -12,7 +12,7 @@
 
 <p align="center">
   <a href="https://neovim.io/">
-    <img src="https://img.shields.io/badge/Neovim-0.11+-57A143?style=for-the-badge&logo=neovim&logoColor=white"
+    <img src="https://img.shields.io/badge/Neovim-0.12a+-57A143?style=for-the-badge&logo=neovim&logoColor=white"
       alt="Neovim">
   </a>
   <br>
