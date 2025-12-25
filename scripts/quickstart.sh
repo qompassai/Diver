@@ -12,8 +12,8 @@ NVIM_DATA_DIR="$XDG_DATA_HOME/nvim"
 BUILD_DIR="${BUILD_DIR:-$HOME/src/neovim-nightly}"
 TMP_DIR="${TMPDIR:-/tmp}/nvim-bootstrap-$$"
 mkdir -p "$BIN_DIR" "$NVIM_DATA_DIR" "$BUILD_DIR" "$TMP_DIR"
-OS="linux"
-ARCH="x86_64"
+OS='linux'
+ARCH='x86_64'
 download_and_extract() {
   local url=$1
   local dest_dir=$2
@@ -76,7 +76,7 @@ install_ninja() {
   install -m 755 "$dest/ninja" "$BIN_DIR/ninja"
 }
 install_clang() {
-  local ver="21.1.6" # pick a release
+  local ver="21.1.6"
   local url="https://github.com/llvm/llvm-project/releases/download/llvmorg-${ver}/clang+llvm-${ver}-x86_64-linux-gnu-ubuntu-22.04.tar.xz"
   local dest="$PREFIX/clang-${ver}"
   download_and_extract "$url" "$dest" 1

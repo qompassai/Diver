@@ -4,7 +4,7 @@
 ------------------------------------------------------
 return {
     'nosduco/remote-sshfs.nvim',
-    dependencies = {'ibhagwan/fzf-lua'},
+    dependencies = { 'ibhagwan/fzf-lua' },
     config = function()
         require('remote-sshfs').setup(require('config.cloud.sshfs').opts)
         local sshfs = require('remote-sshfs')
@@ -17,9 +17,9 @@ return {
                         if selected[1] then
                             sshfs.connect(selected[1])
                         end
-                    end
-                }
+                    end,
+                },
             })
-        end, {desc = '[SSHFS] Connect to remote host'})
-    end
+        end, { desc = '[SSHFS] Connect to remote host' })
+    end,
 }

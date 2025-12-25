@@ -6,30 +6,20 @@
 -- pnpm add -g gh-actions-language-server
 ---@type vim.lsp.Config
 return {
-    cmd = {
-        'gh-actions-language-server',
-        '--stdio',
+  cmd = {
+    'gh-actions-language-server',
+    '--stdio',
+  },
+  filetypes = {
+    'yaml',
+    'yml',
+  },
+  init_options = {},
+  capabilities = {
+    workspace = {
+      didChangeWorkspaceFolders = {
+        dynamicRegistration = true,
+      },
     },
-    filetypes = {
-        'yaml',
-        'yml',
-    },
-    root_dir = function(bufnr, on_dir)
-        local parent = vim.fs.dirname(vim.api.nvim_buf_get_name(bufnr)) ---@type string
-        if
-            vim.endswith(parent, '/.github/workflows')
-            or vim.endswith(parent, '/.forgejo/workflows')
-            or vim.endswith(parent, '/.gitea/workflows')
-        then
-            on_dir(parent)
-        end
-    end,
-    init_options = {},
-    capabilities = {
-        workspace = {
-            didChangeWorkspaceFolders = {
-                dynamicRegistration = true,
-            },
-        },
-    },
+  },
 }

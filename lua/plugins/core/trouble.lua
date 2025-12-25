@@ -5,15 +5,15 @@
 ---@meta
 ---@module 'plugins.core.trouble'
 return {
-  {
-    'folke/trouble.nvim',
-    cmd = {
-      'TroubleToggle',
-      'Trouble'
+    {
+        'folke/trouble.nvim',
+        cmd = {
+            'TroubleToggle',
+            'Trouble',
+        },
+        opts = require('config.core.trouble')(),
+        config = function(_, opts)
+            require('trouble').setup(opts)
+        end,
     },
-    opts = require('config.core.trouble')(),
-    config = function(_, opts)
-      require('trouble').setup(opts)
-    end,
-  },
 }

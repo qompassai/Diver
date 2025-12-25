@@ -5,7 +5,7 @@
 ---@meta
 ---@module 'plugins.lang.ts'
 return {
-  { ---@type table[]
+  {
     'pmizio/typescript-tools.nvim',
     ft = {
       'typescript',

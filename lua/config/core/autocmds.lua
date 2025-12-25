@@ -30,10 +30,6 @@ local augroups = {
     {
       clear = true,
     }),
-  rust = vim.api.nvim_create_augroup('Rust',
-    {
-      clear = true,
-    }),
   yaml = vim.api.nvim_create_augroup('YAML',
     {
       clear = true,
@@ -103,31 +99,6 @@ local function make_qompass_header(filepath, comment)
     }
   end
 end
-local linters = {
-  lua = {
-    cmd = {
-      'luacheck',
-      '--formatter',
-      'plain',
-      '--codes',
-      '--ranges',
-      '-'
-    },
-    parse = function(output, bufnr)
-      local diags = {}
-      for line, col, code, msg in output:gmatch(':(%d+):(%d+): %((.-)%) (.+)') do
-        table.insert(diags, {
-          lnum = tonumber(line) - 1,
-          col = tonumber(col) - 1,
-          message = msg .. ' [' .. code .. ']', ---@type string
-          severity = vim.diagnostic.severity.WARN,
-          source = 'luacheck',
-        })
-      end
-      vim.diagnostic.set(vim.api.nvim_create_namespace('NativeLint'), bufnr, diags, {})
-    end,
-  },
-}
 M = M or {}
 vim.cmd([[autocmd BufRead,BufNewFile *.hcl set filetype=hcl]])
 vim.cmd([[autocmd BufRead,BufNewFile *.tf,*.tfvars set filetype=terraform]])
@@ -148,7 +119,8 @@ vim.api.nvim_create_autocmd( ---@type table[] ---Ansible
     callback = function()
       vim.bo.filetype = 'ansible'
     end,
-  })
+  }
+)
 vim.api.nvim_create_autocmd({
   'BufRead',
   'BufNewFile',
@@ -308,39 +280,18 @@ vim.api.nvim_create_autocmd({
     vim.bo.filetype = 'dockerfile'
   end,
 })
-vim.api.nvim_create_autocmd(
-  {
-    'BufNewFile',
-    'BufRead'
+vim.api.nvim_create_autocmd({
+  'BufNewFile',
+  'BufRead',
+}, {
+  pattern = {
+    '*docker-compose*.yml',
+    '*docker-compose*.yaml'
   },
-  {
-    pattern = { '*docker-compose*.yml', '*docker-compose*.yaml' },
-    callback = function() vim.bo.filetype = 'yaml' end
-  })
-local linters = {
-  lua = {
-    cmd = {
-      'luacheck',
-      '--formatter', 'plain',
-      '--codes',
-      '--ranges',
-      '-',
-    },
-    parse = function(output, bufnr)
-      local diags = {}
-      for line, col, code, msg in output:gmatch(':(%d+):(%d+): %((.-)%) (.+)') do
-        table.insert(diags, {
-          lnum = tonumber(line) - 1,
-          col = tonumber(col) - 1,
-          message = msg .. ' [' .. code .. ']',
-          severity = vim.diagnostic.severity.WARN,
-          source = 'luacheck',
-        })
-      end
-      vim.diagnostic.set(vim.api.nvim_create_namespace('NativeLint'), bufnr, diags, {})
-    end,
-  },
-}
+  callback = function()
+    vim.bo.filetype = 'yaml'
+  end,
+})
 ---@param opts? table
 function M.nix_autocmds(opts) ---@return nil|string[] ---Nix
   opts = opts or {}
@@ -358,52 +309,55 @@ function M.nix_autocmds(opts) ---@return nil|string[] ---Nix
   })
 end
 
-vim.api.nvim_create_autocmd('FileType',
-  {
-    pattern = 'nix',
-    callback = function()
-      vim.opt_local.tabstop = 2
-      vim.opt_local.shiftwidth = 2
-      vim.opt_local.expandtab = true
-    end,
-  })
+vim.api.nvim_create_autocmd('FileType', {
+  pattern = { 'tex', 'plaintex' },
+  callback = function()
+    vim.wo.wrap = true
+    vim.wo.linebreak = true
+    vim.wo.breakindent = true
+  end,
+})
+
 vim.api.nvim_create_autocmd('FileType', {
   pattern = 'nix',
   callback = function()
-    vim.keymap.set('n',
-      '<leader>ne', ':NixEdit<Space>',
-      {
-        buffer = true,
-        desc = 'NixEdit attribute',
-      })
+    vim.opt_local.tabstop = 2
+    vim.opt_local.shiftwidth = 2
+    vim.opt_local.expandtab = true
   end,
 })
-vim.api.nvim_create_autocmd('FileType',
-  {
-    pattern = 'nix',
-    callback = function()
-      vim.opt_local.conceallevel = 2
-    end,
-  })
-vim.api.nvim_create_autocmd('FileType',
-  {
-    pattern = {
-      'sqlite',
-      'pgsql'
-    },
-    callback = function()
-      vim.opt_local.expandtab = true
-      vim.opt_local.shiftwidth = 2
-      vim.opt_local.softtabstop = 2
-      vim.opt_local.omnifunc = 'vim_dadbod_completion#omni'
-    end,
-  })
+vim.api.nvim_create_autocmd('FileType', {
+  pattern = 'nix',
+  callback = function()
+    vim.keymap.set('n', '<leader>ne', ':NixEdit<Space>', {
+      buffer = true,
+      desc = 'NixEdit attribute',
+    })
+  end,
+})
+vim.api.nvim_create_autocmd('FileType', {
+  pattern = 'nix',
+  callback = function()
+    vim.opt_local.conceallevel = 2
+  end,
+})
+vim.api.nvim_create_autocmd('FileType', {
+  pattern = {
+    'sqlite',
+    'pgsql',
+  },
+  callback = function()
+    vim.opt_local.expandtab = true
+    vim.opt_local.shiftwidth = 2
+    vim.opt_local.softtabstop = 2
+    vim.opt_local.omnifunc = 'vim_dadbod_completion#omni'
+  end,
+})
 vim.api.nvim_create_user_command('PhpStan', function() ---PHP
   if vim.fn.executable('phpstan') == 1 then
     vim.cmd('!phpstan analyse')
   else
-    vim.echo('phpstan not found in PATH',
-      vim.log.levels.ERROR)
+    vim.echo('phpstan not found in PATH', vim.log.levels.ERROR)
   end
 end, {
   desc = 'Run PHPStan analysis',
@@ -412,8 +366,7 @@ vim.api.nvim_create_user_command('Pint', function()
   if vim.fn.executable('pint') == 1 then
     vim.cmd('!pint')
   else
-    vim.echo('pint not found in PATH',
-      vim.log.levels.ERROR)
+    vim.echo('pint not found in PATH', vim.log.levels.ERROR)
   end
 end, {
   desc = 'Run Laravel Pint formatter',
@@ -426,16 +379,13 @@ function M.go_autocmds()
       ['Go Version'] = get_go_version(),
       ['GOPATH'] = get_gopath(),
     }) do
-      vim.echo(string.format(
-          '%s: %s',
-          label, value
-        ),
-        vim.log.levels.INFO)
+      vim.echo(string.format('%s: %s', label, value), vim.log.levels.INFO)
     end
   end, {})
 end
 
-vim.api.nvim_create_autocmd('BufWritePost', ---LSP
+vim.api.nvim_create_autocmd(
+  'BufWritePost', ---LSP
   {
     callback = function(args)
       for _, client in ipairs(vim.lsp.get_clients({ bufnr = args.buf })) do
@@ -456,12 +406,11 @@ vim.api.nvim_create_autocmd('BufWritePost', ---LSP
         end
       end
     end,
-  })
-vim.api.nvim_create_autocmd(
-  'LspAttach',
-  {
-    callback = lspmap.on_attach,
-  })
+  }
+)
+vim.api.nvim_create_autocmd('LspAttach', {
+  callback = lspmap.on_attach,
+})
 vim.api.nvim_create_autocmd({
   'BufEnter',
   'CursorHold',
@@ -471,197 +420,215 @@ vim.api.nvim_create_autocmd({
     vim.lsp.codelens.refresh(true)
   end,
 })
-vim.api.nvim_create_autocmd('LspAttach',
-  {
-    callback = function(args)
-      local client = vim.lsp.get_client_by_id(args.data.client_id)
-      if client:supports_method('textDocument/foldingRange') then
-        local win = vim.api.nvim_get_current_win()
-        vim.wo[win][0].foldexpr = 'v:lua.vim.lsp.foldexpr()'
-      end
-    end,
-  })
-vim.api.nvim_create_autocmd('LspAttach',
-  {
-    callback = function(ev)
-      vim.diagnostic.show(vim.api.nvim_create_namespace('my_diagnostics'),
-        ev.buf, nil, {
-          virtual_text = {
-            spacing = 2,
-            source = 'if_many', ---@type string
-            severity = {
-              min = vim.diagnostic.severity.WARN,
-            },
-            prefix = function(diag, i, total) ---@function diag vim.Diagnostic
-              ---@cast diag vim.Diagnostic
-              ---@cast i integer
-              ---@cast total integer
-              local icons = {
-                [vim.diagnostic.severity.ERROR] = ' ',
-                [vim.diagnostic.severity.WARN] = ' ',
-                [vim.diagnostic.severity.INFO] = ' ',
-                [vim.diagnostic.severity.HINT] = ' ',
-              }
-              return string.format('%s%d/%d ',
-                icons[diag.severity], i, total)
-            end,
-          },
-          signs = true,
-          severity_sort = true,
-          virtual_lines = true,
-          underline = true,
-        })
-    end,
-  })
-vim.api.nvim_create_autocmd('LspDetach',
-  {
-    callback = function(args)
-      local client = vim.lsp.get_client_by_id(args.data.client_id)
-      if client:supports_method('textDocument/formatting') then
-        vim.api.nvim_clear_autocmds({
-          event = 'BufWritePre',
-          buffer = args.buf,
-        })
-      end
-    end,
-  })
-vim.api.nvim_create_autocmd('LspProgress',
-  {
-    callback = function(ev)
-      local value = ev.data.params.value
-      if value.kind == 'begin' then
-        vim.api.nvim_ui_send('\027]9;4;1;0\027\\')
-      elseif value.kind == 'end' then
-        vim.api.nvim_ui_send('\027]9;4;0\027\\')
-      elseif value.kind == 'report' then
-        vim.api.nvim_ui_send(string.format('\027]9;4;1;%d\027\\',
-          value.percentage or 0))
-      end
-    end,
-  })
-vim.api.nvim_create_autocmd('LspTokenUpdate',
-  {
-    callback = function(args)
-      local token = args.data.token
-      if token.type == 'variable' and not token.modifiers.readonly then
-        vim.lsp.semantic_tokens.highlight_token(token, args.buf, args.data.client_id,
-          'MyMutableVariableHighlight')
-      end
-    end,
-  })
+vim.api.nvim_create_autocmd('LspAttach', {
+  callback = function(args)
+    local client = vim.lsp.get_client_by_id(args.data.client_id)
+    if client:supports_method('textDocument/foldingRange') then
+      local win = vim.api.nvim_get_current_win()
+      vim.wo[win][0].foldexpr = 'v:lua.vim.lsp.foldexpr()'
+    end
+  end,
+})
+vim.api.nvim_create_autocmd('LspAttach', {
+  callback = function(ev)
+    vim.diagnostic.show(vim.api.nvim_create_namespace('my_diagnostics'), ev.buf, nil, {
+      virtual_text = {
+        spacing = 2,
+        source = 'if_many', ---@type string
+        severity = {
+          min = vim.diagnostic.severity.WARN,
+        },
+        prefix = function(diag, i, total) ---@function diag vim.Diagnostic
+          ---@cast diag vim.Diagnostic
+          ---@cast i integer
+          ---@cast total integer
+          local icons = {
+            [vim.diagnostic.severity.ERROR] = ' ',
+            [vim.diagnostic.severity.WARN] = ' ',
+            [vim.diagnostic.severity.INFO] = ' ',
+            [vim.diagnostic.severity.HINT] = ' ',
+          }
+          return string.format('%s%d/%d ', icons[diag.severity], i, total)
+        end,
+      },
+      signs = true,
+      severity_sort = true,
+      virtual_lines = true,
+      underline = true,
+    })
+  end,
+})
+vim.api.nvim_create_autocmd('LspDetach', {
+  callback = function(args)
+    local client = vim.lsp.get_client_by_id(args.data.client_id)
+    if client:supports_method('textDocument/formatting') then
+      vim.api.nvim_clear_autocmds({
+        event = 'BufWritePre',
+        buffer = args.buf,
+      })
+    end
+  end,
+})
+vim.api.nvim_create_autocmd('LspProgress', {
+  callback = function(ev)
+    local value = ev.data.params.value
+    if value.kind == 'begin' then
+      vim.api.nvim_ui_send('\027]9;4;1;0\027\\')
+    elseif value.kind == 'end' then
+      vim.api.nvim_ui_send('\027]9;4;0\027\\')
+    elseif value.kind == 'report' then
+      vim.api.nvim_ui_send(string.format('\027]9;4;1;%d\027\\', value.percentage or 0))
+    end
+  end,
+})
+vim.api.nvim_create_autocmd('LspTokenUpdate', {
+  callback = function(args)
+    local token = args.data.token
+    if token.type == 'variable' and not token.modifiers.readonly then
+      vim.lsp.semantic_tokens.highlight_token(token, args.buf, args.data.client_id, 'MyMutableVariableHighlight')
+    end
+  end,
+})
 
 function M.md_autocmds() ---Markdown
-  vim.api.nvim_create_autocmd('FileType',
-    {
-      pattern = { ---@type string[]
+  vim.api.nvim_create_autocmd('FileType', {
+    pattern = { ---@type string[]
+      'markdown',
+      'md',
+    },
+    callback = function()
+      vim.g.mkdp_auto_start = 0
+      vim.g.mkdp_auto_close = 0
+      vim.g.mkdp_refresh_slow = 1
+      vim.g.mkdp_port = ''
+      vim.g.mkdp_command_for_global = 0
+      vim.g.mkdp_open_to_the_world = 0
+      vim.g.mkdp_open_ip = ''
+      vim.g.mkdp_combine_preview = 1
+      vim.g.mkdp_browser = ''
+      vim.g.mkdp_echo_preview_url = 1
+      vim.g.mkdp_page_title = '${name}'
+      vim.g.mkdp_filetypes = {
         'markdown',
-        'md',
-      },
-      callback = function()
-        vim.g.mkdp_auto_start = 0
-        vim.g.mkdp_auto_close = 0
-        vim.g.mkdp_refresh_slow = 1
-        vim.g.mkdp_port = ''
-        vim.g.mkdp_command_for_global = 0
-        vim.g.mkdp_open_to_the_world = 0
-        vim.g.mkdp_open_ip = ''
-        vim.g.mkdp_combine_preview = 1
-        vim.g.mkdp_browser = ''
-        vim.g.mkdp_echo_preview_url = 1
-        vim.g.mkdp_page_title = '${name}'
-        vim.g.mkdp_filetypes = {
-          'markdown'
+      }
+    end,
+  })
+  local ok, md_pdf = pcall(require, 'md-pdf')
+  vim.api.nvim_create_autocmd('FileType', {
+    pattern = {
+      'markdown',
+      'md'
+    },
+    callback = function()
+      vim.keymap.set('n', '<leader>,', function()
+        if ok and md_pdf and md_pdf.convert_md_to_pdf then
+          md_pdf.convert_md_to_pdf()
+        else
+          vim.cmd('MarkdownToPDF')
+        end
+      end, {
+        buffer = true,
+        desc = 'Convert Markdown to PDF'
+      })
+    end,
+  })
+  vim.api.nvim_create_autocmd('FileType', {
+    pattern = { ---@type string[]
+      'markdown',
+      'md',
+    },
+    callback = function()
+      vim.keymap.set( ---@type table
+        'n',
+        '<leader>mp',
+        ':MarkdownPreview<CR>',
+        {
+          buffer = true,
+          desc = 'Markdown Preview',
         }
-      end,
-    })
-  vim.api.nvim_create_autocmd('FileType',
-    {
-      pattern = { ---@type string[]
-        'markdown',
-        'md',
-      },
-      callback = function()
-        vim.keymap.set( ---@type table
-          'n', '<leader>mp',
-          ':MarkdownPreview<CR>', {
-            buffer = true,
-            desc = 'Markdown Preview',
-          })
-        vim.keymap.set( ---@type table
-          'n',
-          '<leader>ms',
-          ':MarkdownPreviewStop<CR>',
-          {
-            buffer = true,
-            desc = 'Stop Markdown Preview'
-          }
-        )
-        vim.keymap.set( ---@type table
-          'n', '<leader>mt', ':TableModeToggle<CR>', {
-            buffer = true,
-            desc = 'Toggle Table Mode',
-          })
-        vim.keymap.set( ---@type table
-          'n', '<leader>mi',
-          ':KittyScrollbackGenerateImage<CR>',
-          {
-            buffer = true,
-            desc = 'Generate image from code block',
-          })
-        vim.keymap.set('v', '<leader>mr', ':SnipRun<CR>',
-          {
-            buffer = true, desc = 'Run selected code'
-          })
-      end,
-    })
+      )
+      vim.keymap.set( ---@type table
+        'n',
+        '<leader>ms',
+        ':MarkdownPreviewStop<CR>',
+        {
+          buffer = true,
+          desc = 'Stop Markdown Preview',
+        }
+      )
+      vim.keymap.set( ---@type table
+        'n',
+        '<leader>mt',
+        ':TableModeToggle<CR>',
+        {
+          buffer = true,
+          desc = 'Toggle Table Mode',
+        }
+      )
+      vim.keymap.set( ---@type table
+        'n',
+        '<leader>mi',
+        ':KittyScrollbackGenerateImage<CR>',
+        {
+          buffer = true,
+          desc = 'Generate image from code block',
+        }
+      )
+      vim.keymap.set('v', '<leader>mr', ':SnipRun<CR>', {
+        buffer = true,
+        desc = 'Run selected code',
+      })
+    end,
+  })
   vim.api.nvim_create_user_command('MarkdownToPDF', function()
     local input_file = vim.fn.expand('%:p')
     local tex_file = vim.fn.expand('%:r') .. '.tex'
     local pdf_file = vim.fn.expand('%:r') .. '.pdf'
-    vim.echo('Converting markdown to LaTeX...', ---@type string
-      vim.log.levels.INFO)
+    vim.echo(
+      'Converting markdown to LaTeX...', ---@type string
+      vim.log.levels.INFO
+    )
     local convert_cmd = 'pandoc ' .. input_file .. ' -o ' .. tex_file
     vim.fn.jobstart(convert_cmd, {
       on_exit = function(_, code)
         if code == 0 then
-          vim.echo('Running lualatex...',
-            vim.log.levels.INFO)
-          vim.fn.jobstart('lualatex -interaction=nonstopmode ' .. tex_file,
-            {
-              on_exit = function(_, compile_code)
-                if compile_code == 0 then
-                  vim.echo('PDF created: ' .. pdf_file, vim.log.levels.INFO)
-                else
-                  vim.echo('lualatex failed to compile', ---@type string
-                    vim.log.levels.ERROR)
-                end
-              end,
-            })
+          vim.echo('Running lualatex...', vim.log.levels.INFO)
+          vim.fn.jobstart('lualatex -interaction=nonstopmode ' .. tex_file, {
+            on_exit = function(_, compile_code)
+              if compile_code == 0 then
+                vim.echo('PDF created: ' .. pdf_file, vim.log.levels.INFO)
+              else
+                vim.echo(
+                  'lualatex failed to compile', ---@type string
+                  vim.log.levels.ERROR
+                )
+              end
+            end,
+          })
         else
-          vim.echo('Failed to convert Markdown to LaTeX', ---@type string
-            vim.log.levels.ERROR)
+          vim.echo(
+            'Failed to convert Markdown to LaTeX', ---@type string
+            vim.log.levels.ERROR
+          )
         end
       end,
     })
   end, {})
 end
 
-vim.api.nvim_create_autocmd('FileType', ---Python
+vim.api.nvim_create_autocmd(
+  'FileType', ---Python
   {
     group = augroups.python,
     pattern = 'python',
     callback = function()
       vim.opt_local.autoindent = true
       vim.opt_local.smartindent = true
-      vim.api.nvim_buf_create_user_command(
-        0,
-        'PythonLint',
-        function()
-          vim.lsp.buf.format()
-          vim.cmd('write')
-          vim.echo('Python code linted and formatted',
-            vim.log.levels.INFO)
-        end, {})
+      vim.api.nvim_buf_create_user_command(0, 'PythonLint', function()
+        vim.lsp.buf.format()
+        vim.cmd('write')
+        vim.echo('Python code linted and formatted', vim.log.levels.INFO)
+      end, {})
       vim.api.nvim_buf_create_user_command(0, 'PyTestFile', function()
         local file = vim.fn.expand('%:p')
         vim.cmd('split | terminal pytest ' .. file)
@@ -672,29 +639,30 @@ vim.api.nvim_create_autocmd('FileType', ---Python
         vim.cmd('split | terminal ' .. cmd)
       end, {})
     end,
-  })
-vim.api.nvim_create_autocmd('BufWritePre',
-  {
-    pattern = {
-      '*.py'
-    },
-    callback = function(args)
-      vim.lsp.buf.format({
-        async = false,
-        bufnr = args.buf,
-        filter = function(client)
-          return client.name == 'ruff_lsp' or client.name == 'ruff'
-        end,
-      })
-    end,
-  })
-vim.api.nvim_create_autocmd('BufWritePre', ---Ruby
+  }
+)
+vim.api.nvim_create_autocmd('BufWritePre', {
+  pattern = {
+    '*.py',
+  },
+  callback = function(args)
+    vim.lsp.buf.format({
+      async = false,
+      bufnr = args.buf,
+      filter = function(client)
+        return client.name == 'ruff_lsp' or client.name == 'ruff'
+      end,
+    })
+  end,
+})
+vim.api.nvim_create_autocmd(
+  'BufWritePre', ---Ruby
   {
     pattern = {
       '*.rb',
       '*.rake',
       'Gemfile',
-      'Rakefile'
+      'Rakefile',
     },
     callback = function(args) ---@param args { buf: integer }
       vim.lsp.buf.format({
@@ -705,7 +673,8 @@ vim.api.nvim_create_autocmd('BufWritePre', ---Ruby
         end,
       })
     end,
-  })
+  }
+)
 
 vim.api.nvim_create_user_command('VitestFile', function() ---Vite
   local file = vim.fn.expand('%:p')
@@ -713,11 +682,9 @@ vim.api.nvim_create_user_command('VitestFile', function() ---Vite
 end, {})
 
 vim.api.nvim_create_user_command('ZigTest', function() ---Zig
-  vim.fn.jobstart(
-    { 'zig', 'test', vim.fn.expand('%:p') },
-    {
-      detach = true
-    })
+  vim.fn.jobstart({ 'zig', 'test', vim.fn.expand('%:p') }, {
+    detach = true,
+  })
 end, {})
 vim.api.nvim_create_autocmd('BufWritePre', {
   pattern = '*.zig',
@@ -728,26 +695,20 @@ vim.api.nvim_create_autocmd('BufWritePre', {
 vim.api.nvim_create_autocmd('BufWritePost', {
   pattern = '*.zig',
   callback = function(args)
-    vim.fn.jobstart(
-      { 'zlint', vim.api.nvim_buf_get_name(args.buf)
-      },
-      {
-        stdout_buffered = true,
-        on_stdout = function(_, data, _)
-          if not data then
-            return
-          end
-          local out = table.concat(data, ''
-          )
-          if out ~= '' then
-            vim.schedule(function()
-              vim.notify('zlint: ' .. out,
-                vim.log.levels.INFO)
-            end)
-          end
-        end,
-      }
-    )
+    vim.fn.jobstart({ 'zlint', vim.api.nvim_buf_get_name(args.buf) }, {
+      stdout_buffered = true,
+      on_stdout = function(_, data, _)
+        if not data then
+          return
+        end
+        local out = table.concat(data, '')
+        if out ~= '' then
+          vim.schedule(function()
+            vim.notify('zlint: ' .. out, vim.log.levels.INFO)
+          end)
+        end
+      end,
+    })
   end,
 })
 vim.api.nvim_create_user_command('ZiggyCheck', function()
@@ -755,13 +716,13 @@ vim.api.nvim_create_user_command('ZiggyCheck', function()
   vim.fn.jobstart({ 'ziggy', file }, {
     stdout_buffered = true,
     on_stdout = function(_, data, _)
-      if not data then return end
-      local out = table.concat(data, ''
-      )
+      if not data then
+        return
+      end
+      local out = table.concat(data, '')
       if out ~= '' then
         vim.schedule(function()
-          vim.echo('ziggy:'
-            .. out, vim.log.levels.INFO)
+          vim.echo('ziggy:' .. out, vim.log.levels.INFO)
         end)
       end
     end,

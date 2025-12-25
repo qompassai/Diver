@@ -1,5 +1,5 @@
 -- /qompassai/Diver/lsp/clangd.lua
--- Qompass AI Clangd LSP Config
+-- Qompass AI Diver Clangd LSP Config
 -- Copyright (C) 2025 Qompass AI, All rights reserved
 -----------------------------------------------------
 local function switch_source_header(bufnr, client)
@@ -29,7 +29,7 @@ local function switch_source_header(bufnr, client)
 end
 local function symbol_info(bufnr, client)
   local method = 'textDocument/symbolInfo' ---@type string
-  if not client or not client.supports_method or not client:supports_method(method) then
+  if not Client or not client.supports_method or not client:supports_method(method) then
     return vim.echo('Clangd client not found or symbolInfo not supported', vim.log.levels.ERROR)
   end
   local win = vim.api.nvim_get_current_win()
@@ -41,7 +41,7 @@ local function symbol_info(bufnr, client)
       if err or not res or #res == 0 then
         return
       end
-      local details = res[1]
+      local details = res[1] ---@type table
       local container = string.format('container: %s', details.containerName or '')
       local name = string.format('name: %s', details.name or '')
       vim.lsp.util.open_floating_preview({ name, container }, '', {
@@ -59,20 +59,20 @@ local function symbol_info(bufnr, client)
 end
 local function request_inlay_hints(bufnr, client)
   local method = 'clangd/inlayHints' ---@type string
-  if not client or not client.supports_method or not client:supports_method(method) then
+  if not Client or not Client:supports_method() or not client:supports_method(method) then
     return vim.echo('clangd does not support inlay hints', vim.log.levels.WARN)
   end
   local params = {
     textDocument = vim.lsp.util.make_text_document_params(bufnr),
   }
-  client:request(method, params, function(err, hints)
+  Client:request(method, params, function(err, hints)
     if err or not hints then
       return
     end
   end, bufnr)
 end
-
-return { ---@type ClangdLsConfig
+return ---@type vim.lsp.Config
+{
   cmd = {
     'clangd',
     '--clang-tidy',
@@ -114,32 +114,30 @@ return { ---@type ClangdLsConfig
       'utf-8',
       'utf-16',
     },
-  },
-  ---@param client vim.lsp.Client
-  on_init = function(client, init_result) ---@param init_result ClangdInitializeResult
-    if init_result and init_result.offsetEncoding then
-      client.offset_encoding = init_result.offsetEncoding
-    end
-  end,
-  ---@param client vim.lsp.Client
-  on_attach = function(client, bufnr) ---@param bufnr integer
-    vim.api.nvim_buf_create_user_command(bufnr,
-      'LspClangdSwitchSourceHeader', function()
+    on_init = function(client, init_result)
+      if init_result and init_result.offsetEncoding then
+        client.offset_encoding = init_result.offsetEncoding
+      end
+    end,
+    ---@param client vim.lsp.Client
+    on_attach = function(client, bufnr) ---@param bufnr integer
+      vim.api.nvim_buf_create_user_command(bufnr, 'LspClangdSwitchSourceHeader', function()
         switch_source_header(bufnr, client)
       end, {
-        desc = 'Switch between source/header'
+        desc = 'Switch between source/header',
       })
-    vim.api.nvim_buf_create_user_command(bufnr,
-      'LspClangdShowSymbolInfo', function()
-        symbol_info(bufnr, client)
-      end, { desc = 'Show symbol info' })
-    if client.name == 'clangd' then
-      vim.api.nvim_buf_create_user_command(bufnr,
-        'LspClangdInlayHints', function()
-          request_inlay_hints(bufnr, client)
-        end, {
-          desc = 'Request clangd inlay hints',
-        })
-    end
-  end,
+      vim.api.nvim_buf_create_user_command(bufnr, 'LspClangdShowSymbolInfo', function()
+          symbol_info(bufnr, client)
+        end,
+        { desc = 'Show symbol info' })
+      if client.name == 'clangd' then
+        vim.api.nvim_buf_create_user_command(bufnr,
+          'LspClangdInlayHints', function()
+            request_inlay_hints(bufnr, client)
+          end, {
+            desc = 'Request clangd inlay hints',
+          })
+      end
+    end,
+  }
 }

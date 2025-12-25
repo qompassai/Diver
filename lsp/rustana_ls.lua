@@ -32,17 +32,15 @@ return ---@type vim.lsp.Config
       on_dir(reused_dir)
       return
     end
-    local cargo_crate_dir = vim.fs.root(fname, { ---@type string|nil
+    local cargo_crate_dir = vim.fs(fname, { ---@type string|nil
       'Cargo.toml',
     })
-    local cargo_workspace_root
+    local cargo_workspace_root ---@type string
     if cargo_crate_dir == nil then
-      on_dir(vim.fs.root(fname, {
+      on_dir(vim.fs(fname, {
         'rust-project.json',
-      }) or vim.fs.dirname(vim.fs.find('.git', {
-        path = fname,
-        upward = true,
-      })[1]))
+      }) or vim.fs.dirname(vim.fs.find('.git')
+        [1]))
       return
     end
     local cmd = { ---@type string[]
@@ -54,29 +52,25 @@ return ---@type vim.lsp.Config
       '--manifest-path',
       cargo_crate_dir .. '/Cargo.toml',
     }
-    vim.system(
-      cmd,
-      {
-        text = true
-      },
-      function(output) ---@param output { code: integer, stdout: string|nil, stderr: string|nil }
-        if output.code == 0 then
-          if output.stdout then
-            local result = vim.json.decode(output.stdout) ---@type { workspace_root?: string }
-            if result['workspace_root'] then
-              cargo_workspace_root = vim.fs.normalize(result['workspace_root']) ---@type string|nil
-            end
+    vim.system(cmd, {
+      text = true,
+    }, function(output) ---@param output { code: integer, stdout: string|nil, stderr: string|nil }
+      if output.code == 0 then
+        if output.stdout then
+          local result = vim.json.decode(output.stdout) ---@type { workspace_root?: string }
+          if result['workspace_root'] then
+            cargo_workspace_root = vim.fs.normalize(result['workspace_root']) ---@type string
           end
-          on_dir(cargo_workspace_root or cargo_crate_dir)
-        else
-          vim.schedule(function()
-            vim.echo(
-              ('[rust_analyzer] cmd failed with code %d: %s\n%s'):format(output.code, cmd, output.stderr)
-            )
-          end)
         end
+        on_dir(cargo_workspace_root or cargo_crate_dir)
+      else
+        vim.schedule(function()
+          vim.echo(
+            ('[rust_analyzer] cmd failed with code %d: %s\n%s'):format(output.code, cmd, output.stderr)
+          )
+        end)
       end
-    )
+    end)
   end,
   capabilities = {
     experimental = {

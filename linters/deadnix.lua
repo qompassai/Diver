@@ -4,31 +4,27 @@
 -- ----------------------------------------
 return ---@type vim.lint.Config
 {
-  cmd = 'deadnix',
-  stdin = false,
-  append_fname = true,
-  args = {
-    '--output-format=json',
-  },
-  stream = nil,
-  ignore_exitcode = false,
-  env = nil,
-  parser = function(output, _)
-    local diagnostics = {}
-    if output == '' then
-      return diagnostics
-    end
-    local decoded = vim.json.decode(output) or {}
-    for _, diag in ipairs(decoded.results) do
-      table.insert(diagnostics, {
-        lnum = diag.line - 1, ---@type integer
-        end_lnum = diag.line - 1, ---@type integer
-        col = diag.column - 1, ---@type integer
-        end_col = diag.endColumn, ---@type integer
-        message = diag.message, ---@type integer
-        severity = vim.diagnostic.severity.WARN, ---@type integer
-      })
-    end
-    return diagnostics
-  end,
+    cmd = 'deadnix',
+    stdin = false,
+    append_fname = true,
+    args = { '--output-format=json' },
+    ignore_exitcode = false,
+    parser = function(output, _)
+        local diagnostics = {}
+        if output == '' then
+            return diagnostics
+        end
+        local decoded = vim.json.decode(output) or {}
+        for _, diag in ipairs(decoded.results or {}) do
+            diagnostics[#diagnostics + 1] = {
+                lnum = diag.line - 1,
+                end_lnum = diag.line - 1,
+                col = diag.column - 1,
+                end_col = diag.endColumn,
+                message = diag.message,
+                severity = vim.diagnostic.severity.WARN,
+            }
+        end
+        return diagnostics
+    end,
 }

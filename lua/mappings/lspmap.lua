@@ -7,16 +7,12 @@
 ---LSP keymap module.
 local M = {} ---@class mappings.lspmap
 ---@alias LspAttachArgs { buf: integer, data: { client_id: integer } }
----Set up LSP mappings.
 function M.setup_lspmap() ---@return nil
-  ---Populate quickfix list from location results.
   local function on_list(options) ---@param options table
     vim.fn.setqflist({}, ' ', options)
     vim.cmd.cfirst()
   end
-  ---LspAttach callback
   function M.on_attach(args) ---@param args LspAttachArgs
-    --- grouped locals
     local bufnr = args.buf ---@type integer
     local client = vim.lsp.get_client_by_id(args.data.client_id) ---@type vim.lsp.Client
     local clients = vim.lsp.get_clients( ---@type vim.lsp.Client[]
@@ -33,7 +29,8 @@ function M.setup_lspmap() ---@return nil
           return
         end
       end
-      vim.echo('No LSP supports textDocument/definition for this buffer', vim.log.levels.WARN)
+      vim.echo('No LSP supports textDocument/definition for this buffer',
+        vim.log.levels.WARN)
     end, {
       silent = true,
       buffer = bufnr

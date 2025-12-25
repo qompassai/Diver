@@ -15,4 +15,9 @@ return {
     root_markers = { ---@type string[]
         '.git',
     },
+    settings = {
+        regal = {
+            formatter = 'regal fix',
+        },
+    },
 }

@@ -80,7 +80,7 @@ function M.md_image(opts)
         clear_in_insert_mode = true,
         download_remote_images = true,
         only_render_image_at_cursor = false,
-        only_render_image_at_cursor_mode = 'inline',
+        only_render_image_at_cursor_mode = 'popup',
         floating_windows = true,
         filetypes = {
           'markdown',
@@ -89,7 +89,7 @@ function M.md_image(opts)
         },
       },
       neorg = {
-        enabled = true,
+        enabled = false,
         clear_in_insert_mode = true,
         download_remote_images = true,
         only_render_image_at_cursor = false,
@@ -108,15 +108,19 @@ function M.md_image(opts)
         clear_in_insert_mode = true,
         download_remote_images = true,
         only_render_image_at_cursor = false,
-        only_render_image_at_cursor_mode = 'inline',
+        only_render_image_at_cursor_mode = 'popup',
         floating_windows = true,
+        filetypes = {
+          'markdown',
+          'html'
+        },
       },
       css = {
         enabled = true,
         clear_in_insert_mode = true,
         download_remote_images = false,
         only_render_image_at_cursor = false,
-        only_render_image_at_cursor_mode = 'inline',
+        only_render_image_at_cursor_mode = 'popup',
         floating_windows = true,
       },
     },
@@ -124,7 +128,7 @@ function M.md_image(opts)
     max_height = nil,
     max_width_window_percentage = nil,
     max_height_window_percentage = 50,
-    window_overlap_clear_enabled = true,
+    window_overlap_clear_enabled = false,
     window_overlap_clear_ft_ignore = {
       'cmp_menu',
       'cmp_docs',
@@ -146,8 +150,8 @@ end
 
 function M.md_livepreview(opts)
   opts = vim.tbl_deep_extend('force', {
-    port = 5500, ---@type integer
-    browser = 'firefox', ---@type string
+    port = 5500,
+    browser = 'google-chrome-canary', ---@type string
     dynamic_root = true, ---@type boolean
     sync_scroll = true, ---@type boolean
     picker = 'fzf-lua',
@@ -169,30 +173,14 @@ function M.md_pdf(opts)
     preview_cmd = opts.preview_cmd,
     ignore_viewer_state = opts.ignore_viewer_state or false,
     fonts = opts.fonts or {
-      main_font = nil,
+      main_font = 'Libertinus Serif',
       sans_font = 'DejaVuSans',
-      mono_font = 'IosevkaTerm Nerd Font Mono',
-      math_font = nil,
+      mono_font = 'DaddyTimeMono Nerd Font',
+      math_font = 'Libertinus Math',
     },
     pandoc_user_args = opts.pandoc_user_args,
     output_path = opts.output_path or './',
     pdf_engine = opts.pdf_engine or 'lualatex',
-  })
-  local ok, md_pdf = pcall(require, 'md-pdf')
-  vim.api.nvim_create_autocmd('FileType', {
-    pattern = { 'markdown', 'md' },
-    callback = function()
-      vim.keymap.set('n', '<leader>,', function()
-        if ok and md_pdf and md_pdf.convert_md_to_pdf then
-          md_pdf.convert_md_to_pdf()
-        else
-          vim.cmd('MarkdownToPDF')
-        end
-      end, {
-        buffer = true,
-        desc = 'Convert Markdown to PDF'
-      })
-    end,
   })
   return opts
 end
@@ -204,7 +192,8 @@ function M.md_rendermd(opts)
     render_modes = { ---@type string[]
       'n',
       'c',
-      't' },
+      't'
+    },
     max_file_size = 100.0,
     debounce = 100,
     preset = 'none',
@@ -271,7 +260,7 @@ function M.md_rendermd(opts)
       render = function() end,
       clear = function() end,
     },
-    completions = { ---@type table[]
+    completions = {
       blink = {
         enabled = true,
       },
@@ -297,7 +286,12 @@ function M.md_rendermd(opts)
       setext = true,
       sign = true,
       icons = {
-        '󰲡 ', '󰲣 ', '󰲥 ', '󰲧 ', '󰲩 ', '󰲫 '
+        '󰲡 ',
+        '󰲣 ',
+        '󰲥 ',
+        '󰲧 ',
+        '󰲩 ',
+        '󰲫 '
       },
       position = 'overlay',
       signs = { '󰫎 ' },

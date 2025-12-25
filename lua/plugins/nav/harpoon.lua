@@ -3,8 +3,8 @@
 -- Copyright (C) 2025 Qompass AI, All rights reserved
 -- --------------------------------------------------
 return {
-  'ThePrimeagen/harpoon',
-  config = function()
-    require('config.nav.harpoon').setup()
-  end,
+    'ThePrimeagen/harpoon',
+    config = function()
+        require('config.nav.harpoon').setup()
+    end,
 }

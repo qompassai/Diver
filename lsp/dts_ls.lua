@@ -6,32 +6,16 @@
 -- cargo install dts-lsp
 ---@type vim.lsp.Config
 return {
-    cmd = { ---@type string[]
-        'dts-lsp',
-    },
-    filetypes = { ---@type string[]
-        'dts',
-        'dtsi',
-        'overlay',
-    },
-    root_markers = { ---@type string[]
-        '.git',
-    },
-    settings = {},
-},
-    vim.api.nvim_create_autocmd('FileType', {
-        pattern = 'dts',
-        callback = function(ev)
-            local bufnr = ev.buf
-            vim.lsp.start({
-                name = 'dts-lsp',
-                cmd = {
-                    'dts-lsp',
-                },
-                bufnr = bufnr,
-                root_dir = vim.fs.dirname(vim.fs.find({ ---@type string
-                    '.git',
-                }, { upward = true })[1]),
-            })
-        end,
-    })
+  cmd = { ---@type string[]
+    'dts-lsp',
+  },
+  filetypes = { ---@type string[]
+    'dts',
+    'dtsi',
+    'overlay',
+  },
+  root_markers = { ---@type string[]
+    '.git',
+  },
+  settings = {},
+}

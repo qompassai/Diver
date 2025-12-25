@@ -2,9 +2,10 @@
 -- Qompass AI Roslyn LSP Spec
 -- Copyright (C) 2025 Qompass AI, All rights reserved
 -- ---------------------------------------------------
-local group = vim.api.nvim_create_augroup('lspconfig.roslyn_ls', {
-  clear = true,
-})
+local group = vim.api.nvim_create_augroup('lspconfig.roslyn_ls',
+  {
+    clear = true,
+  })
 ---@param client vim.lsp.Client
 ---@return nil|string
 local function on_init_sln(client, target) ---@param target string
@@ -20,23 +21,17 @@ end
 local function on_init_project(client, project_files) ---@param project_files string[]
   vim.echo('Initializing: projects', vim.log.levels.TRACE, { title = 'roslyn_ls' }) ---@diagnostic disable-next-line: param-type-mismatch
   client:notify('project/open', {
-    projects = vim.tbl_map(function(file) ---@type table[]
+    projects = vim.tbl_map(function(file) ---@type table
       return vim.uri_from_fname(file)
     end, project_files),
   })
 end
----@param client vim.lsp.Client
-local function refresh_diagnostics(client)
+local function refresh_diagnostics(client) ---@param client vim.lsp.Client
   for buf, _ in pairs(vim.lsp.get_client_by_id(client.id).attached_buffers) do
     if vim.api.nvim_buf_is_loaded(buf) then
-      client:request(
-        vim.lsp.protocol.Methods.textDocument_diagnostic,
-        {
-          textDocument = vim.lsp.util.make_text_document_params(buf)
-        },
-        nil,
-        buf
-      )
+      client:request(vim.lsp.protocol.Methods.textDocument_diagnostic, {
+        textDocument = vim.lsp.util.make_text_document_params(buf),
+      }, nil, buf)
     end
   end
 end
@@ -44,7 +39,7 @@ local function roslyn_handlers() ---@return table<string, fun(err?: lsp.Response
   return {
     ['workspace/projectInitializationComplete'] = function(_, _, ctx)
       vim.echo('Roslyn project initialization complete', vim.log.levels.INFO, { title = 'roslyn_ls' })
-      local client = assert(vim.lsp.get_client_by_id(ctx.client_id))
+      local client = assert(vim.lsp.get_client_by_id(ctx.client_id)) ---@type vim.lsp.Client
       refresh_diagnostics(client)
       return vim.NIL
     end,
@@ -157,11 +152,11 @@ return ---@type vim.lsp.Config
   root_dir = function(bufnr, cb) ---@param cb fun(root: string)
     local bufname = vim.api.nvim_buf_get_name(bufnr)
     if not bufname:match('^' .. vim.fs.joinpath('/tmp/MetadataAsSource/')) then
-      local root_dir = vim.fs.root(bufnr, function(fname, _)
+      local root_dir = vim.fs(bufnr, function(fname, _) ---@type string
         return fname:match('%.sln[x]?$') ~= nil
       end)
       if not root_dir then
-        root_dir = vim.fs.root(bufnr, function(fname, _)
+        root_dir = vim.fs(bufnr, function(fname, _) ---@type string
           return fname:match('%.csproj$') ~= nil
         end)
       end
@@ -172,16 +167,15 @@ return ---@type vim.lsp.Config
   end,
   on_init = {
     function(client)
-      local root_dir = client.config.root_dir
-      for entry, type in vim.fs.dir(root_dir) do
+      for entry, type in vim.fs(client.config.root_dir, '.git') do
         if type == 'file' and (vim.endswith(entry, '.sln') or vim.endswith(entry, '.slnx')) then
-          on_init_sln(client, vim.fs.joinpath(root_dir, entry))
+          on_init_sln(client, vim.fs.joinpath(client.config.root_dir, entry))
           return
         end
       end
-      for entry, type in vim.fs.dir(root_dir) do ---@type string[]
+      for entry, type in vim.fs(client.config.root_dir, 'git') do
         if type == 'file' and vim.endswith(entry, '.csproj') then
-          on_init_project(client, { vim.fs.joinpath(root_dir, entry) })
+          on_init_project(client, { vim.fs.joinpath(client.config.root_dir, entry) })
         end
       end
     end,

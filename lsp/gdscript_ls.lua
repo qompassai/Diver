@@ -11,8 +11,8 @@ local port = (function()
   return 6005
 end)()
 local cmd = vim.lsp.rpc.connect('127.0.0.1', port)
----@type vim.lsp.Config
-return {
+return ---@type vim.lsp.Config
+{
   cmd = cmd,
   filetypes = {
     'gd',

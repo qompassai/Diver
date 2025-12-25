@@ -21,7 +21,9 @@ function M.php_dap()
       request = 'launch',
       name = 'Listen for Xdebug',
       port = 9003,
-      pathMappings = { ['/var/www/html'] = '${workspaceFolder}' },
+      pathMappings = {
+        ['/var/www/html'] = '${workspaceFolder}'
+      },
     },
   }
 end

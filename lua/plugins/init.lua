@@ -4,33 +4,33 @@
 ------------------------------------------------------
 ---@meta
 return {
-  {
-    import = 'plugins.core'
-  },
-  {
-    import = 'plugins.ai'
-  },
-  {
     {
-      import = 'plugins.cloud'
+        import = 'plugins.core',
     },
     {
-      import = 'plugins.data'
+        import = 'plugins.ai',
     },
     {
-      import = 'plugins.edu'
+        {
+            import = 'plugins.cloud',
+        },
+        {
+            import = 'plugins.data',
+        },
+        {
+            import = 'plugins.edu',
+        },
+        {
+            import = 'plugins.cicd',
+        },
+        {
+            import = 'plugins.lang',
+        },
+        {
+            import = 'plugins.nav',
+        },
+        {
+            import = 'plugins.ui',
+        },
     },
-    {
-      import = 'plugins.cicd'
-    },
-    {
-      import = 'plugins.lang'
-    },
-    {
-      import = 'plugins.nav'
-    },
-    {
-      import = 'plugins.ui'
-    }
-  }
 }

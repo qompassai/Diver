@@ -4,6 +4,7 @@
 -- --------------------------------------------------
 ---@meta
 ---@module 'mappings.genmap'
+
 local M = {}
 
 function M.setup_genmap()
@@ -17,14 +18,6 @@ function M.setup_genmap()
         buffer = bufnr
       }
 
-      -- Neovim operates in four "modes": \27[1mNormal\27[0m, \27[1mCommand*\27[0m, \27[1mInsert\27[0m, and \27[1mVisual\27[0m.
-
-      -- \27[1mNormal Mode\27[0m: The default mode, used to navigate around your data without changing it directly.
-      -- \27[1mInsert Mode\27[0m: Allows you to interact with the data in a detailed way, such as typing and editing text.
-      -- \27[1mVisual Mode\27[0m: Allows you to select parts of the text interactively, like highlighting with a mouse, so you can then manipulate the selection (e.g., copy, delete).
-      -- \27[1mCommand Mode*\27[0m: Used to execute specific commands from normal mode, such as saving a file, editing with AI tools, or running database queries. or running database queries.
-
-      ----------------- Insert Mode Mappings -----------------------
 
       -- Move to the beginning of the line while in insert mode
       map(

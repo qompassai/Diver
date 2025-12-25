@@ -9,17 +9,17 @@ vim.lsp.enable({ ---@type table[]
   --'ai_ls',
   --'aiken_ls',
   'air_ls',
-  'alloy_ls',
+  --'alloy_ls',
   'angular_ls',
-  'ansible_ls',
-  'antlers_ls',
-  'apex_ls',
+  --'ansible_ls',
+  --'antlers_ls',
+  --'apex_ls',
   'arduino_ls',
   'asm_ls',
-  'astgrep_ls',
-  'astro_ls',
-  'atlas_ls',
-  'atopile_ls',
+  --'astgrep_ls',
+  --'astro_ls',
+  --'atlas_ls',
+  --'atopile_ls',
   --'autohotkey_ls',
   'autotoo_ls',
   'awk_ls',
@@ -28,10 +28,10 @@ vim.lsp.enable({ ---@type table[]
   'basedpy_ls',
   'bash_ls',
   --'basics_ls', --updated last year
-  'bazelrc_ls',
-  'beancount_ls',
-  'bicep_ls',
-  'biome_ls',
+  --'bazelrc_ls',
+  --'beancount_ls',
+  --'bicep_ls',
+  --'biome_ls',
   'bitbake_ls',
   'blueprint_ls',
   'bq_ls',
@@ -46,7 +46,7 @@ vim.lsp.enable({ ---@type table[]
   'cairo_ls',
   'cc_ls',
   'cds_ls',
-  'checkmake_ls',
+  --'checkmake_ls',
   --'circom_ls', --last git in 2023
   'clangd_ls',
   'clarinet_ls',
@@ -60,11 +60,11 @@ vim.lsp.enable({ ---@type table[]
   --'coq_ls',
   'crystalline_ls',
   'csharp_ls',
-  --'cspell_ls',
+  --'cspell_ls', ---lsp/linter
   --'css_ls', --last update 1 year ago
   --'cucumber_ls' --testing
   --'dagger_ls' -- deprecated
-  --'deno_ls',
+  --'deno_ls', ---lsp/linter
   --'diagnostic_ls', -2years since last commit
   'dj_ls',
   'djt_ls',
@@ -76,14 +76,14 @@ vim.lsp.enable({ ---@type table[]
   --'dprint_ls',
   --'dspinyin_ls' --deprecated
   'dts_ls',
-  --'editorcc_ls',
+  --'editorcc_ls', ---lsp/linter
   --'efm_ls', --last release Nov 2024
   'elixir_ls',
   'elm_ls',
   'elp_ls',
   'ember_ls',
   --'emmet_ls',
-  --'emmylua_ls',
+  -- 'emmylua_ls',
   --'erg_ls', --not using
   'esbonio_ls',
   --'eslint_ls', --using biome instead, last updated 1 year ago.
@@ -151,7 +151,7 @@ vim.lsp.enable({ ---@type table[]
   'm68k_ls',
   'makelint_ls',
   'markojs_ls',
-  'marksman_ls',
+  --'marksman_ls',
   'matlab_ls',
   'mdxana_ls',
   --'meson_ls', deprecated
@@ -183,7 +183,7 @@ vim.lsp.enable({ ---@type table[]
   'omnisharp_ls',
   'opencl_ls',
   'openscad_ls',
-  'oxlint_ls',
+  'oxlint_ls', ---lsp/linter
   --'pas_ls',
   'pb_ls',
   'perl_ls',
@@ -199,20 +199,20 @@ vim.lsp.enable({ ---@type table[]
   'prisma_ls',
   --'prosemd_ls',
   'proto_ls',
-  --'psalm_ls',
+  --'psalm_ls', ---lsp/linter
   'pug_ls',
   'puppetes_ls',
   'puppet_ls',
   --'py_ls',
   --'pylyzer_ls',
   --'pyre', -- deprecated for pyrefly
-  'pyrefly_ls',
+  'pyrefly_ls', ---lsp/linter
   --'pyright_ls',
   'qml_ls',
   'quicklintjs_ls',
   --'r_ls',
   --'reason_ls', --deprecated for rescript_ls/ocaml_ls
-  'regal_ls',
+  'regal_ls', --linter/lsp
   'rego_ls',
   'remark_ls',
   'rescript_ls',
@@ -221,7 +221,7 @@ vim.lsp.enable({ ---@type table[]
   'robotframework_ls',
   'roslyn_ls',
   'rpmspec_ls',
-  'rubocop_ls',
+  'rubocop_ls', ---lsp/linter
   'ruby_ls',
   'ruff_ls',
   'rune_ls',
@@ -233,7 +233,7 @@ vim.lsp.enable({ ---@type table[]
   --'selene3p_ls',
   'served_ls',
   --'sixtyfps_ls', --replaced with slint
-  'slangd_ls',
+  'slangd_ls', ---lsp/linter
   'slint_ls',
   --smarty_ls, --3 years old
   'smithy_ls',
@@ -277,7 +277,7 @@ vim.lsp.enable({ ---@type table[]
   --'text_ls',
   'tflint_ls',
   'tofu_ls',
-  'tombi_ls',
+  'tombi_ls', ---lsp/linter
   --'tsgo_ls',
   'ts_ls',
   'tsquery_ls',

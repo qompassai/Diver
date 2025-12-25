@@ -5,13 +5,17 @@
 local M = {}
 function M.blink_cmp()
   return {
-    keymap = { preset = 'default' },
+    keymap = {
+      preset = 'default'
+    },
     appearance = {
       nerd_font_variant = 'mono',
       kind_icons = require('lazyvim.config').icons.kinds,
     },
     completion = {
-      documentation = { auto_show = true },
+      documentation = {
+        auto_show = true
+      },
     },
     snippets = { preset = 'luasnip' },
     sources = {
@@ -36,14 +40,17 @@ function M.blink_cmp()
           enabled = true,
           module = 'blink.cmp.sources.lsp',
           min_keyword_length = 3,
-          score_offset = 1000,
+          score_offset = 2000,
         },
         path = {
           name = 'Path',
           enabled = true,
           module = 'blink.cmp.sources.path',
           score_offset = 250,
-          fallbacks = { 'snippets', 'buffer' },
+          fallbacks = {
+            'snippets',
+            'buffer'
+          },
           opts = {
             trailing_slash = true,
             label_trailing_slash = true,
@@ -96,7 +103,7 @@ function M.blink_cmp()
               vim.fn.expand('\'$HOME/.config/nvim/lua/utils/dictionary\''),
             },
             dictionary_files = {
-              vim.fn.expand('\'$HOME/.config/nvim/lua/utils/dictionary/en.utf-8.add\''),
+              vim.fn.expand('\'$HOME/.config/nvim/spell/en.utf-8.add\''),
             },
           },
         },
@@ -152,6 +159,7 @@ function M.nvim_cmp()
       end,
     },
     mapping = mappings,
+    --[[
     sources = cmp.config.sources({
       {
         name = 'nvim_lsp',
@@ -170,6 +178,7 @@ function M.nvim_cmp()
         priority = 250,
       },
     }),
+    ]] --
     formatting = {
       format = require('lspkind').cmp_format({
         mode = 'symbol_text',
@@ -203,6 +212,7 @@ function M.nvim_cmp()
       }),
     },
   })
+  --[[
   cmp.setup.filetype('lua', {
     sources = cmp.config.sources({
       { name = 'nvim_lua', priority = 1100 },
@@ -240,6 +250,8 @@ function M.nvim_cmp()
     mapping = cmp.mapping.preset.cmdline(),
     sources = { { name = 'buffer' } },
   })
+
+--]]
 end
 
 return M

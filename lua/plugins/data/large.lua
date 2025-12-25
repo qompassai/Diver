@@ -6,5 +6,5 @@ return {
     'vim-scripts/LargeFile',
     config = function()
         vim.g.LargeFile = 100
-    end
+    end,
 }

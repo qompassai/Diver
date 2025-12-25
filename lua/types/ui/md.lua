@@ -1,33 +1,31 @@
--- /qompassai/Diver/types/md.lua
--- Qompass AI Markdown Types
+-- /qompassai/Diver/lua/types/ui/md.lua
+-- Qompass AI UI Markdown Types Config
 -- Copyright (C) 2025 Qompass AI, All rights reserved
 -- ----------------------------------------
 ---@meta
-
----@class API
----@field setup fun(options?: Options)
----@field from_file fun(path: string, options?: ImageOptions): Image|nil
----@field from_url fun(url: string, options?: ImageOptions, callback: fun(image: Image|nil))
----@field clear fun(id?: string)
----@field get_images fun(opts?: { window?: number, buffer?: number, namespace?: string }): Image[]
----@field hijack_buffer fun(path: string, window?: number, buffer?: number, options?: ImageOptions): Image|nil
----@field is_enabled fun(): boolean
----@field enable fun()
----@field disable fun()
-
----@class State
----@field enabled boolean
----@field backend Backend
----@field options Options
----@field images { [string]: Image }
+---@module 'types.ui.md'
+---@class                        image.API
+---@field                         setup fun(options?: Options)
+---@field                         from_file fun(path: string, options?: image.ImageOptions): image.Image|nil
+---@field                         from_url fun(url: string, options?: image.ImageOptions, callback: fun(image: image.Image|nil))
+---@field                         clear fun(id?: string)
+---@field                         get_images fun(opts?: { window?: number, buffer?: number, namespace?: string }): image.Image[]
+---@field                         hijack_buffer fun(path: string, window?: number, buffer?: number, options?: image.ImageOptions): image.Image|nil
+---@field                         is_enabled fun(): boolean
+---@field                         enable fun()
+---@field                         disable fun()
+---@class                         image.State
+---@field                         enabled boolean
+---@field                         backend image.Backend
+---@field                         options Options
+---@field                         images { [string]: image.Image }
 ---@field extmarks_namespace any
 ---@field remote_cache { [string]: string }
 ---@field tmp_dir string
 ---@field disable_decorator_handling boolean
----@field hijacked_win_buf_images { [string]: Image }
----@field processor ImageProcessor
-
----@class DocumentIntegrationOptions
+---@field hijacked_win_buf_images { [string]: image.Image }
+---@field processor image.ImageProcessor
+---@class                           image.DocumentIntegrationOptions
 ---@field enabled? boolean
 ---@field download_remote_images? boolean
 ---@field clear_in_insert_mode? boolean
@@ -36,12 +34,10 @@
 ---@field filetypes? string[]
 ---@field resolve_image_path? function
 ---@field floating_windows? boolean
-
----@alias IntegrationOptions DocumentIntegrationOptions
-
----@class Options
+---@alias image.IntegrationOptions image.DocumentIntegrationOptions
+---@class                           image.Options
 ---@field backend 'kitty'|'ueberzug'
----@field integrations table<string, IntegrationOptions>
+---@field integrations table<string, image.IntegrationOptions>
 ---@field max_width? number
 ---@field max_height? number
 ---@field max_width_window_percentage? number
@@ -54,26 +50,22 @@
 ---@field tmux_show_only_in_active_window? boolean
 ---@field hijack_file_patterns? string[]
 ---@field processor? string
-
----@class BackendFeatures
+---@class                           image.BackendFeatures
 ---@field crop boolean
-
----@class Backend
----@field state State
----@field features BackendFeatures
----@field setup fun(state: State)
----@field render fun(image: Image, x: number, y: number, width?: number, height?: number)
+---@class image.Backend
+---@field state image.State
+---@field features image.BackendFeatures
+---@field setup fun(state: image.State)
+---@field render fun(image: image.Image, x: number, y: number, width?: number, height?: number)
 ---@field clear fun(id?: string, shallow?: boolean)
-
----@class ImageGeometry
+---@class image.ImageGeometry
 ---@field x? number
 ---@field y? number
 ---@field row? number
 ---@field col? number
 ---@field width? number
 ---@field height? number
-
----@class ImageOptions: ImageGeometry
+---@class image.ImageOptions: image.ImageGeometry
 ---@field id? string
 ---@field window? number
 ---@field buffer? number
@@ -82,30 +74,27 @@
 ---@field namespace? string
 ---@field max_width_window_percentage? number
 ---@field max_height_window_percentage? number
-
----@class ImageBounds
+---@class image.ImageBounds
 ---@field top number
 ---@field right number
 ---@field bottom number
 ---@field left number
-
----@class MagickRockImage
----@field adaptive_resize fun(self: MagickRockImage, width: number, height: number)
----@field clone fun(self: MagickRockImage): MagickRockImage
----@field composite fun(self: MagickRockImage, source: MagickRockImage, x: number, y: number, operator?: string)
----@field crop fun(self: MagickRockImage, width: number, height: number, x?: number, y?: number)
----@field destroy fun(self: MagickRockImage)
----@field get_format fun(self: MagickRockImage): string
----@field get_height fun(self: MagickRockImage): number
----@field get_width fun(self: MagickRockImage): number
----@field modulate fun(self: MagickRockImage, brightness?: number, saturation?: number, hue?: number)
----@field resize fun(self: MagickRockImage, width: number, height: number)
----@field resize_and_crop fun(self: MagickRockImage, width: number, height: number)
----@field scale fun(self: MagickRockImage, width: number, height: number)
----@field set_format fun(self: MagickRockImage, format: string)
----@field write fun(self: MagickRockImage, path: string)
-
----@class Image
+---@class                                 image.MagickRockImage
+---@field                                 adaptive_resize fun(self: image.MagickRockImage, width: number, height: number)
+---@field                                 clone fun(self: image.MagickRockImage): image.MagickRockImage
+---@field                                 composite fun(self: image.MagickRockImage, source: image.MagickRockImage, x: number, y: number, operator?: string)
+---@field crop fun(self: image.MagickRockImage, width: number, height: number, x?: number, y?: number)
+---@field destroy fun(self: image.MagickRockImage)
+---@field get_format fun(self: image.MagickRockImage): string
+---@field get_height fun(self: image.MagickRockImage): number
+---@field get_width fun(self: image.MagickRockImage): number
+---@field modulate fun(self: image.MagickRockImage, brightness?: number, saturation?: number, hue?: number)
+---@field resize fun(self: image.MagickRockImage, width: number, height: number)
+---@field resize_and_crop fun(self: image.MagickRockImage, width: number, height: number)
+---@field scale fun(self: image.MagickRockImage, width: number, height: number)
+---@field set_format fun(self: image.MagickRockImage, format: string)
+---@field write fun(self: image.MagickRockImage, path: string)
+---@class image.Image
 ---@field id string
 ---@field internal_id number
 ---@field path string
@@ -120,33 +109,25 @@
 ---@field buffer? number
 ---@field with_virtual_padding? boolean
 ---@field inline? boolean
----@field geometry ImageGeometry
----@field rendered_geometry ImageGeometry
----@field bounds ImageBounds
+---@field geometry image.ImageGeometry
+---@field rendered_geometry image.ImageGeometry
+---@field bounds image.ImageBounds
 ---@field is_rendered boolean
 ---@field resize_hash? string
 ---@field crop_hash? string
----@field global_state State
----@field render fun(self: Image, geometry?: ImageGeometry)
----@field clear fun(self: Image, shallow?: boolean)
----@field move fun(self: Image, x: number, y: number)
----@field brightness fun(self: Image, brightness: number)
----@field saturation fun(self: Image, saturation: number)
----@field hue fun(self: Image, hue: number)
+---@field global_state image.State
+---@field render fun(self: image.Image, geometry?: image.ImageGeometry)
+---@field clear fun(self: image.Image, shallow?: boolean)
+---@field move fun(self: image.Image, x: number, y: number)
+---@field brightness fun(self: image.Image, brightness: number)
+---@field saturation fun(self: image.Image, saturation: number)
+---@field hue fun(self: image.Image, hue: number)
 ---@field namespace? string
 ---@field extmark? { id: number, row: number, col: number }
 ---@field last_modified? number
----@field has_extmark_moved fun (self:Image): (boolean, number?, number?)
+---@field has_extmark_moved fun (self:image.Image): (boolean, number?, number?)
 ---@field ignore_global_max_size? boolean
-
----@class ImageProcessor
---- We need to:
---- - get image format
---- - convert non-png images to png
---- - get dimensions
---- - resize
---- - crop
---- - adjust brightness, saturation, hue
+---@class image.ImageProcessor
 ---@field get_format fun(path: string): string
 ---@field convert_to_png fun(path: string, output_path?: string): string
 ---@field get_dimensions fun(path: string): { width: number, height: number }
@@ -155,17 +136,13 @@
 ---@field brightness fun(path: string, brightness: number, output_path?: string): string
 ---@field saturation fun(path: string, saturation: number, output_path?: string): string
 ---@field hue fun(path: string, hue: number, output_path?: string): string
-
--- wish proper generics were a thing here
----@class IntegrationContext
+---@class image.IntegrationContext
 ---@field api API
----@field options IntegrationOptions
----@field state State
-
----@class Integration
----@field setup? fun(api: API, options: IntegrationOptions, state: State)
-
----@class Window
+---@field options image.IntegrationOptions
+---@field state image.State
+---@class image.Integration
+---@field setup? fun(api: API, options: image.IntegrationOptions, state: image.State)
+---@class image.Window
 ---@field id number
 ---@field buffer number
 ---@field buffer_filetype string
@@ -182,8 +159,7 @@
 ---@field zindex number
 ---@field rect { top: number, right: number, bottom: number, left: number }
 ---@field masks { x: number, y: number, width: number, height: number }[]
-
----@class KittyControlConfig
+---@class                           image.KittyControlConfig
 ---@field action "t"|"T"|"p"|"d"|"f"|"c"|"a"|"q"
 ---@field image_id? string|number
 ---@field image_number? number

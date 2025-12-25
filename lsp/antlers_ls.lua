@@ -4,71 +4,71 @@
 -- --------------------------------------------------
 -- pnpm add -g antlers-language-server@latest
 vim.filetype.add({
-  extension = {
-    antlers = 'antlers',
-  },
-  pattern = {
-    ['.*%.antlers%.html'] = 'html.antlers',
-    ['.*%.html%.antlers'] = 'html.antlers',
-  },
+    extension = {
+        antlers = 'antlers',
+    },
+    pattern = {
+        ['.*%.antlers%.html'] = 'html.antlers',
+        ['.*%.html%.antlers'] = 'html.antlers',
+    },
 })
 return ---@type vim.lsp.Config
 {
-  cmd = {
-    'antlersls',
-    '--stdio',
-  },
-  filetypes = {
-    'antlers',
-    'html.antlers',
-    'antlers.html',
-  },
-  root_markers = {
-    '.git',
-    'composer.json',
-    'package.json',
-    'antlers.config.js',
-  },
-  settings = {
-    antlers = {
-      formatting = {
-        enabled = true,
-        indentSize = 2,
-      },
-      validation = {
-        enabled = true,
-        strict = false,
-      },
-      completion = {
-        enabled = true,
-        triggerCharacters = {
-          '{',
-          ' ',
-          '.',
-        },
-      },
-      snippets = {
-        enabled = true,
-      },
-      logs = {
-        enabled = true,
-        trace = true,
-      },
-      hover = {
-        enabled = true,
-      },
-      folding = {
-        enabled = true,
-      },
+    cmd = {
+        'antlersls',
+        '--stdio',
     },
-  },
-  init_options = {
+    filetypes = {
+        'antlers',
+        'html.antlers',
+        'antlers.html',
+    },
+    root_markers = {
+        '.git',
+        'composer.json',
+        'package.json',
+        'antlers.config.js',
+    },
     settings = {
-      antlers = {
-        trace = {
-          server = 'on',
+        antlers = {
+            formatting = {
+                enabled = true,
+                indentSize = 2,
+            },
+            validation = {
+                enabled = true,
+                strict = false,
+            },
+            completion = {
+                enabled = true,
+                triggerCharacters = {
+                    '{',
+                    ' ',
+                    '.',
+                },
+            },
+            snippets = {
+                enabled = true,
+            },
+            logs = {
+                enabled = true,
+                trace = true,
+            },
+            hover = {
+                enabled = true,
+            },
+            folding = {
+                enabled = true,
+            },
         },
-      },
     },
-  },
+    init_options = {
+        settings = {
+            antlers = {
+                trace = {
+                    server = 'on',
+                },
+            },
+        },
+    },
 }

@@ -4,12 +4,16 @@
 -- --------------------------------------------------
 ---@meta
 ---@module 'config.lang.go'
+
 local M = {}
+
 local function go_dap()
   return require('dap')
 end
 
 function M.go_dap()
+  ---@param cmd string
+  ---@return string|nil
   function run_cached_gvm(cmd)
     local handle = io.popen('bash -c \'source ~/.gvm/scripts/gvm && ' .. cmd .. '\'')
     if not handle then
@@ -20,9 +24,12 @@ function M.go_dap()
     return result and vim.trim(result) or nil
   end
 
+  ---Get dlv binary path, falling back to "dlv".
+  ---@return string
   local function get_dlv_bin()
     return run_cached_gvm('which dlv') or 'dlv'
   end
+
   local dap_go_ok, dap_go = pcall(require, 'dap-go')
   if dap_go_ok then
     dap_go.setup({
@@ -33,6 +40,7 @@ function M.go_dap()
       },
     })
   end
+
   local dapui_ok, dapui = pcall(require, 'dapui')
   if dapui_ok then
     dapui.setup()
@@ -49,6 +57,8 @@ function M.go_dap()
   end
 end
 
+---Configure Go language tooling.
+---@param opts table|nil
 function M.go_cfg(opts)
   opts = opts or {}
 end

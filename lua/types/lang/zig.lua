@@ -13,7 +13,6 @@
 ---@field snippet table
 ---@field experimental table
 
-
 ---@class ZigConfig
 ---@field diagnostics fun(): nil
 

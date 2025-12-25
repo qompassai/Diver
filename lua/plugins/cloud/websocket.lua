@@ -3,8 +3,8 @@
 -- Copyright (C) 2025 Qompass AI, All rights reserved
 ------------------------------------------------------
 return {
-  'samsze0/websocket.nvim',
-  dependencies = {
-    'samsze0/utils.nvim'
-  }
+    'samsze0/websocket.nvim',
+    dependencies = {
+        'samsze0/utils.nvim',
+    },
 }

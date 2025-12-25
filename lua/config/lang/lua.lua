@@ -22,22 +22,46 @@ function M.lua_cmp()
   if vim.g.use_blink_cmp then
     return {
       sources = {
-        { name = 'lsp' },
-        { name = 'luasnip' },
-        { name = 'buffer' },
-        { name = 'nvim_lua', via = 'compat' },
-        { name = 'lazydev' },
+        {
+          name = 'lsp'
+        },
+        {
+          name = 'luasnip'
+        },
+        {
+          name = 'buffer'
+        },
+        {
+          name = 'nvim_lua',
+          via = 'compat'
+        },
+        {
+          name = 'lazydev'
+        },
       },
-      performance = { async = true, throttle = 50 },
+      performance = {
+        async = true,
+        throttle = 50
+      },
       appearance = {
         kind_icons = require('lazyvim.config').icons.kinds,
         nerd_font_variant = 'mono',
         use_nvim_cmp_as_default = false,
       },
       completion = {
-        accept = { auto_brackets = true },
-        menu = { draw = { treesitter = { 'lsp' } } },
-        documentation = { auto_show = true },
+        accept = {
+          auto_brackets = true
+        },
+        menu = {
+          draw = {
+            treesitter = {
+              'lsp'
+            }
+          }
+        },
+        documentation = {
+          auto_show = true
+        },
       },
     }
   else
@@ -56,28 +80,24 @@ function M.lua_cmp()
         ['<CR>'] = require('cmp').mapping.confirm({ select = true }),
       }),
       sources = {
-        { name = 'nvim_lua' },
-        { name = 'nvim_lsp' },
-        { name = 'luasnip' },
-        { name = 'buffer' },
+        {
+          name = 'nvim_lua'
+        },
+        {
+          name = 'nvim_lsp'
+        },
+        {
+          name = 'luasnip'
+        },
+        {
+          name = 'buffer'
+        },
       },
-      experimental = { ghost_text = true },
+      experimental = {
+        ghost_text = true
+      },
     }
   end
-end
-
-function M.lua_conform()
-  local by_ft = conform_cfg.conform_cfg().formatters_by_ft
-  local seen, res = {}, {}
-  for _, ft in ipairs({ by_ft.lua or {}, by_ft.luau or {} }) do
-    for _, f in ipairs(ft) do
-      if not seen[f] then
-        seen[f] = true
-        res[#res + 1] = f
-      end
-    end
-  end
-  return res
 end
 
 function M.lua_lazydev(opts)
@@ -94,11 +114,6 @@ function M.lua_lazydev(opts)
       return vim.g.lazydev_enabled ~= false
     end,
   }
-end
-
-function M.lua_lsp(opts)
-  opts = opts or {}
-  return vim.tbl_deep_extend('force', require('lsp.luals'), opts)
 end
 
 function M.lua_luarocks(opts)
@@ -161,7 +176,12 @@ end
 
 function M.lua_snap(opts)
   opts = opts or {}
-  local config = { mappings = { ['<CR>'] = 'submit', ['<C-x>'] = 'cut' } }
+  local config = {
+    mappings = {
+      ['<CR>'] = 'submit',
+      ['<C-x>'] = 'cut'
+    }
+  }
   return vim.tbl_deep_extend('force', config, opts)
 end
 
@@ -170,16 +190,22 @@ function M.lua_test(opts)
   return {
     adapters = {
       require('neotest-plenary')({
-        test_file_patterns = { '.*_test%.lua$', '.*_spec%.lua$' },
+        test_file_patterns = {
+          '.*_test%.lua$',
+          '.*_spec%.lua$'
+        },
         min_init = 'tests/init.lua',
       }),
     },
     strategies = {
       integrated = {
-        args = { '--lua', vim.fn.expand('~/.local/bin/lua5.1') },
+        args = {
+          '--lua', vim.fn.expand('~/.local/bin/lua5.1') },
       },
     },
-    output_panel = { open = 'botright split | resize 15' },
+    output_panel = {
+      open = 'botright split | resize 15'
+    },
     discovery = {
       enabled = true,
       filter_dir = function(name)
@@ -190,20 +216,13 @@ function M.lua_test(opts)
 end
 
 function M.lua_cfg(opts)
-  local ver, bin = U.lua_version()
-  vim.env.LUA_VERSION = ver
-  vim.env.LUA_PATH = bin
   return {
     autocmds = M.lua_autocmds,
     cmp = M.lua_cmp,
-    conform = M.lua_conform(),
     lazydev = M.lua_lazydev(opts or {}),
-    lsp = M.lua_lsp(opts or {}),
     luarocks = M.lua_luarocks(opts.luarocks or {}),
     snap = M.lua_snap(opts or {}),
     test = M.lua_test(opts or {}),
-    version = ver,
-    path = bin,
   }
 end
 

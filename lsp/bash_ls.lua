@@ -2,7 +2,7 @@
 -- Qompass AI Bash LSP Config
 -- Copyright (C) 2025 Qompass AI, All rights reserved
 -- --------------------------------------------------
-return ---@type BashLsConfig
+return ---@type vim.lsp.Config
 {
   cmd = {
     'bash-language-server',
@@ -53,7 +53,7 @@ return ---@type BashLsConfig
         simplifyCode = true,
         spaceRedirects = true,
       },
-      explainshellEndpoint = vim.env.EXPLAINSHELL_ENDPOINT or nil
+      explainshellEndpoint = vim.env.EXPLAINSHELL_ENDPOINT or nil,
     },
   },
 }

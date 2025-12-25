@@ -4,6 +4,8 @@
 -- --------------------------------------------------
 ---@meta
 vim.loader.enable()
+vim.g.mapleader = ' '
+vim.g.maplocalleader = '\\'
 require('config.init').config({
   core = true,
   cicd = true,
@@ -15,9 +17,6 @@ require('config.init').config({
 })
 vim.opt.packpath = vim.opt.runtimepath:get() ---@type string[]
 vim.pack.add {
-  {
-    src = 'https://github.com/dense-analysis/ale'
-  },
   {
     src = 'https://github.com/trixnz/sops.nvim'
   },
@@ -52,13 +51,11 @@ vim.pack.add {
 vim.bo.expandtab = true
 vim.bo.modifiable = true ---@type boolean
 vim.cmd('set completeopt+=noselect')
-vim.g.mapleader = ' '
-vim.g.maplocalleader = '\\'
 vim.g.editorconfig = true
 vim.g.git_command_ssh = 1
 vim.g.loaded_illuminate = true
 vim.g.loaded_netrw = 1
-vim.g.loaded_netrwPlugin = 0
+vim.g.loaded_netrwPlugin = 1
 vim.g.loaded_node_provider = 1
 vim.g.loaded_perl_provider = 1
 vim.g.loaded_python_provider = 1
@@ -84,6 +81,7 @@ vim.o.ambiwidth = 'single'
 vim.o.autowrite = true
 vim.o.autowriteall = true
 vim.o.backup = false
+vim.o.background = "dark"
 vim.o.breakindent = true
 vim.o.clipboard = 'unnamedplus'
 vim.o.cmdheight = 0
@@ -112,14 +110,14 @@ vim.o.ignorecase = true
 vim.o.inccommand = 'split'
 vim.o.incsearch = true
 vim.o.laststatus = 3
-vim.o.lazyredraw = false
+vim.o.lazyredraw = true
 vim.o.linebreak = true
 vim.o.list = true
 vim.opt.listchars = {
   space = '_',
   tab = '>~'
 }
-vim.opt_local.wrap = false
+vim.o.wrap = true
 vim.o.modeline = true
 vim.o.modelines = 5
 vim.o.mouse = 'a'
@@ -133,6 +131,7 @@ vim.o.scrolloff = 8
 vim.o.secure = true
 vim.o.shiftwidth = 4
 vim.o.shortmess = 'IF'
+vim.o.showmode = false
 vim.o.showtabline = 2
 vim.o.sidescrolloff = 8
 vim.o.smartcase = true
@@ -154,7 +153,7 @@ vim.o.ttimeoutlen = 10
 vim.o.ttyfast = true
 vim.o.undodir = vim.fn.stdpath('config') .. '/undo'
 vim.o.undofile = true
-vim.o.updatetime = 100
+vim.o.updatetime = 50
 vim.o.virtualedit = 'block'
 vim.opt.wildignore = {
   '*.a',
@@ -167,7 +166,7 @@ vim.opt.wildignore = {
 vim.o.wildignorecase = true
 vim.o.wildmenu = true
 vim.o.wildmode = 'longest:full,full'
-vim.o.winminwidth = 5
+vim.o.winborder = "rounded"
 vim.o.writebackup = true
 --------------------
 vim.g.guipty = true

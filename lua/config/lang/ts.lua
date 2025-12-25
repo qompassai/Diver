@@ -2,10 +2,9 @@
 -- Qompass AI Diver Typescript Lang Config
 -- Copyright (C) 2025 Qompass AI, All rights reserved
 -----------------------------------------------------
-
+---@meta
+---@module 'config.lang.ts'
 local M = {}
-local ts_lint = require('config.lang.lint')
-local util = require('lspconfig.util')
 function M.ts_autocmds()
   local function execute_command(command, arguments)
     if vim.lsp.commands and vim.lsp.commands.execute then
@@ -18,7 +17,8 @@ function M.ts_autocmds()
     end
   end
   vim.api.nvim_create_user_command('TypescriptOrganizeImports', function()
-    execute_command('_typescript.organizeImports', { vim.api.nvim_buf_get_name(0) })
+    execute_command('_typescript.organizeImports',
+      { vim.api.nvim_buf_get_name(0) })
   end, { desc = 'Organize Imports' })
   vim.api.nvim_create_user_command('TypescriptAddMissingImports', function()
     execute_command('_typescript.addMissingImports', { vim.api.nvim_buf_get_name(0) })
@@ -31,27 +31,6 @@ function M.ts_autocmds()
     local col = vim.api.nvim_win_get_cursor(0)[2]
     execute_command('_typescript.goToSourceDefinition', { vim.api.nvim_buf_get_name(0), row, col })
   end, { desc = 'Go To Source Definition' })
-end
-
-function M.ts_conform(opts)
-  opts = opts or {}
-  opts.formatters = opts.formatters or {}
-  opts.formatters.typescript = { 'biome' }
-  opts.formatters.typescriptreact = { 'biome' }
-  return opts
-end
-
-function M.ts_linter(opts)
-  opts = opts or {}
-  local lint = require('lint')
-  ts_lint.setup_linters(lint)
-  local defaults = {
-    typescript = lint.linters_by_ft.typescript,
-    typescriptreact = lint.linters_by_ft.typescriptreact,
-  }
-  opts.linters_by_ft = vim.tbl_deep_extend('force', defaults, opts.linters_by_ft or {})
-  lint.linters_by_ft = opts.linters_by_ft
-  return opts
 end
 
 function M.ts_lsp(opts)
@@ -81,7 +60,10 @@ function M.ts_lsp(opts)
       disable_member_code_lens = true,
       jsx_close_tag = {
         enable = true,
-        filetypes = { 'javascriptreact', 'typescriptreact' },
+        filetypes = {
+          'javascriptreact',
+          'typescriptreact'
+        },
       },
     },
   }, opts)
@@ -101,29 +83,6 @@ function M.ts_root_dir(fname)
   return root or vim.fn.getcwd()
 end
 
-function M.nls(opts)
-  opts = opts or {}
-  local nlsb = require('null-ls').builtins
-  local sources = {
-    nlsb.formatting.prettierd.with({
-      filetypes = { 'typescript', 'typescriptreact' },
-      command = 'prettierd',
-      extra_args = { '--stdin-filepath', '$FILENAME' },
-    }),
-    nlsb.formatting.prettier.with({
-      filetypes = { 'typescript', 'typescriptreact' },
-      command = 'prettier',
-      extra_args = { '--stdin-filepath', '$FILENAME' },
-    }),
-    nlsb.formatting.biome.with({
-      filetypes = { 'typescript', 'typescriptreact' },
-      command = 'biome',
-      extra_args = { '--config-path', '~/.config/biome/biome.json5', 'format', '--stdin-file-path', '$FILENAME' },
-    }),
-  }
-  return sources
-end
-
 ---@return boolean
 function M.ts_filetype_detection()
   vim.filetype.add({
@@ -135,7 +94,10 @@ function M.ts_filetype_detection()
       mjs = 'javascript',
       cjs = 'javascript',
     },
-    pattern = { ['.*%.d.ts'] = 'typescript', ['tsconfig.*%.json'] = 'jsonc' },
+    pattern = {
+      ['.*%.d.ts'] = 'typescript',
+      ['tsconfig.*%.json'] = 'jsonc'
+    },
     filename = {
       ['tsconfig.json'] = 'jsonc',
       ['.eslintrc.js'] = 'javascript',
@@ -150,8 +112,6 @@ function M.ts_keymaps(opts)
   opts.defaults = vim.tbl_deep_extend('force', opts.defaults or {}, {
     ['<leader>ct'] = { name = '+typescript' },
     ['<leader>ctf'] = {
-      '<cmd>lua require(\'conform\').format()<cr>',
-      'Format TypeScript',
     },
     ['<leader>cta'] = {
       '<cmd>lua vim.lsp.buf.code_action()<cr>',
@@ -178,7 +138,6 @@ function M.ts_keymaps(opts)
   return opts
 end
 
----@return table
 function M.ts_treesitter(opts)
   opts = opts or {}
   return {
@@ -196,10 +155,7 @@ end
 function M.ts_cfg(opts)
   opts = opts or {}
   return {
-    conform = M.ts_conform(opts),
-    lsp = M.ts_lsp(opts),
     linter = M.ts_linter(opts),
-    nls = M.nls(opts),
     keymaps = M.ts_keymaps(opts),
     filetypes = M.ts_filetype_detection,
     commands = M.ts_project_commands,

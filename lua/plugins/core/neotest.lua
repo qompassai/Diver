@@ -5,18 +5,18 @@
 ---@meta
 ---@module 'plugins.cmp.neotest'
 return {
-  'nvim-neotest/neotest',
-  dependencies = { ---@type table
-    'nvim-neotest/nvim-nio',
-    'nvim-lua/plenary.nvim',
-    'nvim-neotest/neotest-plenary',
-    'antoinemadec/FixCursorHold.nvim',
-    'nvim-treesitter/nvim-treesitter',
-    'ibhagwan/fzf-lua',
-  },
-  opts = {
-    adapters = { ---@type string[]
-      'neotest-plenary',
+    'nvim-neotest/neotest',
+    dependencies = { ---@type table
+        'nvim-neotest/nvim-nio',
+        'nvim-lua/plenary.nvim',
+        'nvim-neotest/neotest-plenary',
+        'antoinemadec/FixCursorHold.nvim',
+        'nvim-treesitter/nvim-treesitter',
+        'ibhagwan/fzf-lua',
     },
-  },
+    opts = {
+        adapters = { ---@type string[]
+            'neotest-plenary',
+        },
+    },
 }

@@ -4,17 +4,18 @@
 -- ----------------------------------------
 local M = {}
 M.formatters_by_ft = {
-  ['_'] = { 'trim_whitespace' },
-  --gh_cations = 'zizmore',
-  --asm = { 'llvm-mc' },
-  -- ansible = 'ansible_lint',
-  --[[ apkbuild = {
+    ['_'] = { 'trim_whitespace' },
+    --gh_cations = 'zizmore',
+    --asm = { 'llvm-mc' },
+    -- ansible = 'ansible_lint',
+    --[[ apkbuild = {
         'apkbuild-lint',
         'secfixes-check',
-    },]] --
-  --astro = { 'biome' },
-  --awk = 'gawk',
-  --[[bash = {
+    },]]
+    --
+    --astro = { 'biome' },
+    --awk = 'gawk',
+    --[[bash = {
         'bashate',
         'bashlint',
         'cspell',
@@ -24,58 +25,58 @@ M.formatters_by_ft = {
         'shellcheck',
         'shfmt',
     }, --]]
-  --bazel = 'buildifier',
-  --bibtex = 'bibclean',
-  -- c = {
-  --   'ccls',
-  -- },
-  --cairo = 'scarb',
-  --chef = 'cookstyle', ---foodcritic deprecated
-  --clojure = {
-  --   'cljfmt',
-  --  'cjl-kondo',
-  -- },
-  -- cmake = {
-  --  'cmake-lint',
-  -- },
-  --  crystal = {
-  --    'ameba',
-  --   'crystal',
-  --  },
-  --cpp = {},
-  -- csharp = { },
-  --  css = {
-  --    'biome',
-  --    'csslint',
-  --    'css-beautify',
-  --  },
-  cuda = {
-    'nvcc',
-  },
-  -- cypher = 'cypher-lint',
-  -- cython = 'cython',
-  -- dart = 'dart-analyze',
-  -- dhall = 'dhall-lint',
-  desktop = 'desktop-validate-file',
-  -- dockerfile = {
-  --   'dockerlinter',
-  --   'dprint',
-  --   'hadolint',
-  -- },
-  --  ejs = 'biome',
-  -- elixir = {},
-  -- elm = {},
-  -- erlang = {
-  --  'dialyzer',
-  --  'elvis',
-  -- },
-  --[[fish = {
+    --bazel = 'buildifier',
+    --bibtex = 'bibclean',
+    -- c = {
+    --   'ccls',
+    -- },
+    --cairo = 'scarb',
+    --chef = 'cookstyle', ---foodcritic deprecated
+    --clojure = {
+    --   'cljfmt',
+    --  'cjl-kondo',
+    -- },
+    -- cmake = {
+    --  'cmake-lint',
+    -- },
+    --  crystal = {
+    --    'ameba',
+    --   'crystal',
+    --  },
+    --cpp = {},
+    -- csharp = { },
+    --  css = {
+    --    'biome',
+    --    'csslint',
+    --    'css-beautify',
+    --  },
+    cuda = {
+        'nvcc',
+    },
+    -- cypher = 'cypher-lint',
+    -- cython = 'cython',
+    -- dart = 'dart-analyze',
+    -- dhall = 'dhall-lint',
+    --desktop = 'desktop-validate-file',
+    -- dockerfile = {
+    --   'dockerlinter',
+    --   'dprint',
+    --   'hadolint',
+    -- },
+    --  ejs = 'biome',
+    -- elixir = {},
+    -- elm = {},
+    -- erlang = {
+    --  'dialyzer',
+    --  'elvis',
+    -- },
+    --[[fish = {
     'fish -n',
     'fish_indent',
     'shellcheck',
   }, --]]
-  -- gleam = 'gleam_format',
-  --[[
+    -- gleam = 'gleam_format',
+    --[[
  --glsl = {
     'glslang',
     'glslls',

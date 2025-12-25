@@ -14,4 +14,3 @@
 ---@field ts_project_commands fun()
 ---@field ts_root_dir fun(fname: string): string
 ---@field ts_cfg fun(opts?: table): TSConfig
-

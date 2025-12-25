@@ -4,15 +4,16 @@
 -----------------------------------------------------
 return {
   'folke/noice.nvim',
-  event = 'VeryLazy',
+  --event = 'VeryLazy',
+  lazy = false,
   opts = {
     lsp = {
       override = {
         ['vim.lsp.util.convert_input_to_markdown_lines'] = true,
-        ['cmp.entry.get_documentation'] = true
+        ['cmp.entry.get_documentation'] = true,
       },
       hover = {
-        enabled = true
+        enabled = true,
       },
       signature = {
         enabled = true,
@@ -20,7 +21,7 @@ return {
           enabled = true,
           trigger = true,
           luasnip = true,
-          throttle = 50
+          throttle = 50,
         },
         view = nil,
         routes = {
@@ -28,21 +29,21 @@ return {
             filter = {
               event = 'msg_show',
               kind = '',
-              find = 'which%-key'
+              find = 'which%-key',
             },
             opts = {
-              skip = false
-            }
-          }
-        }
-      }
+              skip = false,
+            },
+          },
+        },
+      },
     },
     presets = {
       bottom_search = true,
       command_palette = true,
       long_message_to_split = true,
       inc_rename = true,
-      lsp_doc_border = true
+      lsp_doc_border = true,
     },
     views = {
       cmdline_popup = {
@@ -53,15 +54,19 @@ return {
         win_options = {
           winhighlight = {
             Normal = 'Normal',
-            FloatBorder = 'DiagnosticInfo'
-          }
-        }
-      }
+            FloatBorder = 'DiagnosticInfo',
+          },
+        },
+      },
     },
     routes = {
-      { filter = { event = 'BufWinEnter' }, opts = { skip = false } },
-      { filter = { event = 'BufEnter' },    opts = { skip = false } }
-    }
+      {
+        filter = {
+          event = 'BufWinEnter' },
+        opts = { skip = false }
+      },
+      { filter = { event = 'BufEnter' }, opts = { skip = false } },
+    },
   },
   dependencies = {
     'MunifTanjim/nui.nvim',
@@ -70,17 +75,18 @@ return {
   config = function(_, opts)
     require('noice').setup(opts)
     require('notify').setup({
-      on_open = function(win)
-        vim.api.nvim_set_option_value('winhl',
-          'Normal:MyNotifyBackground',
-          { scope = 'local', win = win })
-      end,
       background_colour = '#000000',
       merge_duplicates = true,
       highlights = {
-        NotifyERRORBorder = { guifg = '#8A1F1F' },
-        NotifyWARNBorder = { guifg = '#79491D' },
-        NotifyINFOBorder = { guifg = '#4F6752' },
+        NotifyERRORBorder = {
+          guifg = '#8A1F1F'
+        },
+        NotifyWARNBorder = {
+          guifg = '#79491D'
+        },
+        NotifyINFOBorder = {
+          guifg = '#4F6752'
+        },
         NotifyDEBUGBorder = { guifg = '#8B8B8B' },
         NotifyTRACEBorder = { guifg = '#4F3552' },
         NotifyERRORIcon = { guifg = '#F70067' },
@@ -92,24 +98,14 @@ return {
         NotifyWARNTitle = { guifg = '#F79000' },
         NotifyINFOTitle = { guifg = '#A9FF68' },
         NotifyDEBUGTitle = { guifg = '#8B8B8B' },
-        NotifyTRACETitle = { guifg = '#D484FF' }
-      }
+        NotifyTRACETitle = { guifg = '#D484FF' },
+      },
     })
-    --vim.api.nvim_create_user_command('Mason', function()
-    --   require('mason.ui').open()
-    --end, {})
-    --vim.api.nvim_create_user_command('MasonInstall', function(args)
-    --   require('mason.api.command').MasonInstall(args.fargs)
-    --end, {nargs = '+'})
-    --vim.api.nvim_create_user_command('MasonUpdate', function()
-    --   require('mason.api.command').MasonUpdate()
-    --end, {})
-    --vim.api.nvim_create_user_command('NullLsInfo', function()
-    --  require('null-ls').info()
-    --end, {})
     vim.api.nvim_create_user_command('Shellharden', function(args)
       local filename = args.args
-      if filename == '' then filename = vim.fn.expand('%') end
+      if filename == '' then
+        filename = vim.fn.expand('%')
+      end
       vim.fn.system('shellharden --transform ' .. filename)
       vim.cmd('edit!')
     end, { nargs = '?' })
@@ -124,5 +120,5 @@ return {
         print('Directory not found: ' .. query)
       end
     end, { nargs = '?' })
-  end
+  end,
 }
