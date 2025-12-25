@@ -59,12 +59,12 @@ function M.config(opts)
       edu.edu_config(opts)
     end
   end
-  if opts.lang ~= false then
-    local lang = safe_require('config.lang')
-    if lang and lang.lang_config then
-      lang.lang_config(opts)
-    end
-  end
+  -- if opts.lang ~= false then
+  --   local lang = safe_require('config.lang')
+  --   if lang and lang.lang_config then
+  --     lang.lang_config(opts)
+  --   end
+  --end
   if opts.nav ~= false then
     local nav = safe_require('config.nav')
     if nav and nav.nav_config then

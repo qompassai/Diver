@@ -23,6 +23,7 @@ basedpyright
 bashrc
 backtick
 backticks
+Biomet
 blog
 bruteforce
 Builtin
@@ -126,6 +127,8 @@ Hexo
 homebrew
 HomeBrew
 hostname
+huggingface
+HuggingFace
 hugo
 ICCF
 ICDAR
@@ -230,6 +233,7 @@ OCR
 opencl
 OpenCV
 opentype
+Orthopaedics
 overfitting
 Pandoc
 pandoc
@@ -331,6 +335,7 @@ statusline
 statuslines
 stderr
 stdin
+Steilacoom
 stdout
 strftime
 subarray
@@ -347,6 +352,7 @@ tabstops
 tagbar
 Tanh
 teardown
+Telis
 TensorFlow
 terminfo
 textdocument

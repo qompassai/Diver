@@ -5,21 +5,21 @@
 ---@source https://github.com/leanprover/lean-client-js/tree/master/lean-language-server
 ---@type vim.lsp.Config
 return {
-  cmd = { ---@type string[]
-    'lean-language-server',
-    '--stdio',
-    '--',
-    '-M',
-    '4096',
-    '-T',
-    '100000',
-  },
-  filetypes = { ---@type string[]
-    'lean3',
-  },
-  offset_encoding = 'utf-32', ---@type string
-  root_markers = {
-    'leanpkg.toml',
-    'leanpkg.path',
-  }
+    cmd = { ---@type string[]
+        'lean-language-server',
+        '--stdio',
+        '--',
+        '-M',
+        '4096',
+        '-T',
+        '100000',
+    },
+    filetypes = { ---@type string[]
+        'lean3',
+    },
+    offset_encoding = 'utf-32', ---@type string
+    root_markers = {
+        'leanpkg.toml',
+        'leanpkg.path',
+    },
 }

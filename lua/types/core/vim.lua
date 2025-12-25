@@ -3,6 +3,7 @@
 -- Copyright (C) 2025 Qompass AI, All rights reserved
 -- ----------------------------------------
 ---@meta
+---@module 'types.core.vim'
 ---@class vim.fs
 ---@field basename fun(file: string|nil): string|nil
 ---@field dirname fun(file: string|nil): string|nil

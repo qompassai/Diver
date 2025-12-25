@@ -2,10 +2,9 @@
 -- Qompass AI Rust Lang Utils
 -- Copyright (C) 2025 Qompass AI, All rights reserved
 ------------------------------------------------------
-
 local U = {}
-
-function U.rust_cmp()
+local M = {}
+function M.rust_cmp()
   local caps = vim.lsp.protocol.make_client_capabilities()
   local ok, cmp_lsp = pcall(require, "cmp_nvim_lsp")
   if ok and type(cmp_lsp.default_capabilities) == "function" then
@@ -20,7 +19,7 @@ function U.rust_cmp()
   return caps
 end
 
-function U.rust_env()
+function M.rust_env()
   local sys        = vim.uv.os_uname().sysname
   local sep        = (sys == "Windows_NT") and ";" or ":"
   local paths      = {}
@@ -41,11 +40,18 @@ function U.rust_env()
   end
 end
 
-U.rust_env()
-U.rust_editions          = { ["2021"] = "2021", ["2024"] = "2024" }
-U.rust_toolchains        = { stable = "stable", nightly = "nightly", beta = "beta" }
-U.rust_default_edition   = "2024"
-U.rust_default_toolchain = "nightly"
+M.rust_env()
+M.rust_editions          = {
+  ["2021"] = "2021",
+  ["2024"] = "2024"
+}
+M.rust_toolchains        = {
+  stable = "stable",
+  nightly = "nightly",
+  beta = "beta"
+}
+M.rust_default_edition   = "2024"
+M.rust_default_toolchain = "nightly"
 
 function U.rust_edition(edition)
   if U.rust_editions[edition] then
@@ -57,7 +63,7 @@ function U.rust_edition(edition)
   end
 end
 
-function U.rust_set_toolchain(tc)
+function M.rust_set_toolchain(tc)
   if U.rust_toolchains[tc] then
     U.current_toolchain = tc
     vim.echo("Rust toolchain set to " .. tc, vim.log.levels.INFO)
@@ -67,7 +73,7 @@ function U.rust_set_toolchain(tc)
   end
 end
 
-function U.rust_auto_toolchain()
+function M.rust_auto_toolchain()
   local f = vim.fn.findfile("rust-toolchain.toml", ".;")
   if f ~= "" then
     for _, line in ipairs(vim.fn.readfile(f)) do
@@ -79,7 +85,7 @@ function U.rust_auto_toolchain()
   end
 end
 
-function U.rust_analyzer()
+function M.rust_analyzer()
   return {
     cargo       = {
       allFeatures          = true,
@@ -117,12 +123,4 @@ function U.rust_analyzer()
   }
 end
 
-function U.rust_lsp(on_attach, capabilities)
-  return {
-    on_attach    = on_attach,
-    capabilities = capabilities,
-    settings     = { ["rust-analyzer"] = U.rust_analyzer() },
-  }
-end
-
-return U
+return M

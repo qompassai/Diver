@@ -17,7 +17,9 @@ function M.blink_cmp()
         auto_show = true
       },
     },
-    snippets = { preset = 'luasnip' },
+    snippets = {
+      preset = 'luasnip'
+    },
     sources = {
       default = {
         'lazydev',
@@ -38,7 +40,7 @@ function M.blink_cmp()
         lsp = {
           name = 'lsp',
           enabled = true,
-          module = 'blink.cmp.sources.lsp',
+          --module = 'blink.cmp.sources.lsp',
           min_keyword_length = 3,
           score_offset = 2000,
         },
@@ -89,7 +91,9 @@ function M.blink_cmp()
           enabled = true,
           score_offset = 93,
           min_keyword_length = 3,
-          opts = { insert = true },
+          opts = {
+            insert = true
+          },
         },
         dictionary = {
           module = 'blink-cmp-dictionary',
@@ -133,25 +137,31 @@ function M.nvim_cmp()
       behavior = cmp.ConfirmBehavior.Replace,
     }),
     ['<Tab>'] = cmp.mapping(function(fallback)
-      if cmp.visible() then
-        cmp.select_next_item()
-      elseif luasnip.expand_or_jumpable() then
-        luasnip.expand_or_jump()
-      else
-        fallback()
-      end
-    end, { 'i', 's' }),
+        if cmp.visible() then
+          cmp.select_next_item()
+        elseif luasnip.expand_or_jumpable() then
+          luasnip.expand_or_jump()
+        else
+          fallback()
+        end
+      end,
+      {
+        'i',
+        's'
+      }),
     ['<S-Tab>'] = cmp.mapping(function(fallback)
-      if cmp.visible() then
-        cmp.select_prev_item()
-      elseif luasnip.jumpable(-1) then
-        luasnip.jump(-1)
-      else
-        fallback()
-      end
-    end, { 'i', 's' }),
+        if cmp.visible() then
+          cmp.select_prev_item()
+        elseif luasnip.jumpable(-1) then
+          luasnip.jump(-1)
+        else
+          fallback()
+        end
+      end,
+      {
+        'i', 's'
+      }),
   }
-  vim.lsp.completion.enable = true
   cmp.setup({
     snippet = {
       expand = function(args)
@@ -159,26 +169,7 @@ function M.nvim_cmp()
       end,
     },
     mapping = mappings,
-    --[[
-    sources = cmp.config.sources({
-      {
-        name = 'nvim_lsp',
-        priority = 1000,
-      },
-      {
-        name = 'luasnip',
-        priority = 750,
-      },
-      {
-        name = 'buffer',
-        priority = 500,
-      },
-      {
-        name = 'path',
-        priority = 250,
-      },
-    }),
-    ]] --
+    sources = cmp.config.sources(),
     formatting = {
       format = require('lspkind').cmp_format({
         mode = 'symbol_text',
@@ -212,46 +203,6 @@ function M.nvim_cmp()
       }),
     },
   })
-  --[[
-  cmp.setup.filetype('lua', {
-    sources = cmp.config.sources({
-      { name = 'nvim_lua', priority = 1100 },
-      { name = 'nvim_lsp', priority = 1000 },
-      { name = 'luasnip',  priority = 900 },
-      { name = 'buffer',   priority = 800 },
-    }),
-  })
-  cmp.setup.filetype({
-    'typescript',
-    'typescriptreact',
-  }, {
-    sources = cmp.config.sources({
-      {
-        name = 'nvim_lsp',
-        priority = 1000,
-      },
-      { name = 'luasnip', priority = 900 },
-      { name = 'buffer',  priority = 800 },
-    }),
-  })
-  cmp.setup.filetype('zig', {
-    sources = cmp.config.sources({
-      { name = 'nvim_lsp', priority = 1000 },
-      { name = 'luasnip',  priority = 750 },
-      { name = 'buffer',   priority = 500 },
-      { name = 'path',     priority = 250 },
-    }),
-  })
-  cmp.setup.cmdline(':', {
-    mapping = cmp.mapping.preset.cmdline(),
-    sources = cmp.config.sources({ { name = 'path' }, { name = 'cmdline' } }),
-  })
-  cmp.setup.cmdline('/', {
-    mapping = cmp.mapping.preset.cmdline(),
-    sources = { { name = 'buffer' } },
-  })
-
---]]
 end
 
 return M

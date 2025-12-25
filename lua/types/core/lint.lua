@@ -3,20 +3,19 @@
 -- Copyright (C) 2025 Qompass AI, All rights reserved
 -- ----------------------------------------
 ---@toc lint.toc
-
----@mod vim.lint.main
+---@module 'types.type.lint'
 ---@class vim.lint.Config
+---@field append_fname? boolean
 ---@field name? string
 ---@field cmd string
 ---@field args? (string|fun():string)[]
 ---@field stdin? boolean
----@field append_fname? boolean
 ---@field stream? 'stdout'|'stderr'|'both'
 ---@field ignore_exitcode? boolean
 ---@field env? table<string, string>
 ---@field parser fun(output: string, bufnr: integer): vim.lint.Diagnostic[]
 ---@class vim.lint.LintProc
----@field bufnr integer
+---@field bufnr? integer
 ---@field proc vim.SystemObj
 ---@field cwd string
 ---@field ns integer
@@ -26,7 +25,7 @@
 ---@field name? string
 ---@type lint.TSQueryConfig
 ---@class vim.lint.Diagnostic
----@field lnum integer
+---@field lnum? integer
 ---@field col? integer
 ---@field end_lnum? integer
 ---@field end_col? integer

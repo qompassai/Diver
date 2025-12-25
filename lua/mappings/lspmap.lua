@@ -14,18 +14,23 @@ function M.setup_lspmap() ---@return nil
   end
   function M.on_attach(args) ---@param args LspAttachArgs
     local bufnr = args.buf ---@type integer
-    local client = vim.lsp.get_client_by_id(args.data.client_id) ---@type vim.lsp.Client
+    local client = vim.lsp.get_client_by_id(args.data.client_id)
     local clients = vim.lsp.get_clients( ---@type vim.lsp.Client[]
       {
         bufnr = bufnr
       })
-    local map = vim.keymap.set ---@type string
-    local opts = { buffer = bufnr, silent = true } ---@type {buffer: integer, silent: boolean}
+    local map = vim.keymap.set
+    local opts = {
+      buffer = bufnr,
+      silent = true
+    }
     -- Go to definition with loclist population *if* supported
     map('n', 'gd', function()
       for _, c in ipairs(clients) do
         if c:supports_method('textDocument/definition') then
-          vim.lsp.buf.definition({ loclist = true })
+          vim.lsp.buf.definition({
+            loclist = true
+          })
           return
         end
       end
@@ -36,7 +41,10 @@ function M.setup_lspmap() ---@return nil
       buffer = bufnr
     })
     map('n', 'gr', function()
-      vim.lsp.buf.references(nil, { on_list = on_list })
+      vim.lsp.buf.references(nil,
+        {
+          on_list = on_list
+        })
     end, opts)
     map('n', 'K',
       vim.lsp.buf.hover, opts)
@@ -58,10 +66,12 @@ function M.setup_lspmap() ---@return nil
             bufnr = bufnr
           })
       end, opts)
-    map('n', '[d',
-      function() vim.diagnostic.jump() end, opts)
-    map('n', ']d',
-      function() vim.diagnostic.jump() end, opts)
+    map('n', '[d', function()
+      vim.diagnostic.jump({ count = -1 })
+    end, opts)
+    map('n', ']d', function()
+      vim.diagnostic.jump({ count = 1 })
+    end, opts)
     map('n', '<leader>fD',
       function()
         vim.diagnostic.open_float(nil,
@@ -70,7 +80,11 @@ function M.setup_lspmap() ---@return nil
           })
       end, opts)
     map('n', '<leader>li',
-      vim.cmd.LspInfo, { buffer = bufnr, silent = true })
+      vim.cmd.LspInfo,
+      {
+        buffer = bufnr,
+        silent = true
+      })
     if client and client:supports_method('textDocument/signatureHelp') then
       map('i', '<C-k>',
         vim.lsp.buf.signature_help, opts)
@@ -78,17 +92,23 @@ function M.setup_lspmap() ---@return nil
     if client and client:supports_method('textDocument/inlayHint')
         and vim.lsp.inlay_hint
     then
-      vim.lsp.inlay_hint.enable(true, { bufnr = bufnr })
+      vim.lsp.inlay_hint.enable(true,
+        {
+          bufnr = bufnr
+        })
     end
     if client and client:supports_method('textDocument/formatting') then
-      vim.api.nvim_create_autocmd('BufWritePre', {
-        buffer = bufnr,
-        callback = function()
-          vim.lsp.buf.format({ bufnr = bufnr, async = false })
-        end,
-      })
+      vim.api.nvim_create_autocmd('BufWritePre',
+        {
+          buffer = bufnr,
+          callback = function()
+            vim.lsp.buf.format({
+              bufnr = bufnr,
+              async = true
+            })
+          end,
+        })
     end
-
     map('i', '<c-space>', function()
       vim.lsp.completion.get()
     end)
@@ -101,12 +121,13 @@ function M.setup_lspmap() ---@return nil
       expr = true,
       desc = 'Accept the current inline completion',
     })
-    vim.api.nvim_create_autocmd('LspAttach', {
-      ---@param ev LspAttachArgs
-      callback = function(ev)
-        vim.bo[ev.buf].omnifunc = 'v:lua.vim.lsp.omnifunc'
-      end,
-    })
+    vim.api.nvim_create_autocmd('LspAttach',
+      {
+        ---@param ev LspAttachArgs
+        callback = function(ev)
+          vim.bo[ev.buf].omnifunc = 'v:lua.vim.lsp.omnifunc'
+        end,
+      })
   end
 end
 

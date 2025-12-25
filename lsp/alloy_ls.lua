@@ -4,14 +4,14 @@
 -- ----------------------------------------
 return ---@type vim.lsp.Config
 {
-  cmd = {
-    'alloy',
-    'lsp',
-  },
-  filetypes = {
-    'alloy'
-  },
-  root_markers = {
-    '.git',
-  },
+    cmd = {
+        'alloy',
+        'lsp',
+    },
+    filetypes = {
+        'alloy',
+    },
+    root_markers = {
+        '.git',
+    },
 }

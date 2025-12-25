@@ -28,40 +28,20 @@ function M.lua_cmp()
         {
           name = 'luasnip'
         },
-        {
-          name = 'buffer'
-        },
-        {
-          name = 'nvim_lua',
-          via = 'compat'
-        },
-        {
-          name = 'lazydev'
-        },
+        { name = 'buffer' },
+        { name = 'nvim_lua', via = 'compat' },
+        { name = 'lazydev' },
       },
-      performance = {
-        async = true,
-        throttle = 50
-      },
+      performance = { async = true, throttle = 50 },
       appearance = {
         kind_icons = require('lazyvim.config').icons.kinds,
         nerd_font_variant = 'mono',
         use_nvim_cmp_as_default = false,
       },
       completion = {
-        accept = {
-          auto_brackets = true
-        },
-        menu = {
-          draw = {
-            treesitter = {
-              'lsp'
-            }
-          }
-        },
-        documentation = {
-          auto_show = true
-        },
+        accept = { auto_brackets = true },
+        menu = { draw = { treesitter = { 'lsp' } } },
+        documentation = { auto_show = true },
       },
     }
   else
@@ -80,22 +60,12 @@ function M.lua_cmp()
         ['<CR>'] = require('cmp').mapping.confirm({ select = true }),
       }),
       sources = {
-        {
-          name = 'nvim_lua'
-        },
-        {
-          name = 'nvim_lsp'
-        },
-        {
-          name = 'luasnip'
-        },
-        {
-          name = 'buffer'
-        },
+        { name = 'nvim_lua' },
+        { name = 'nvim_lsp' },
+        { name = 'luasnip' },
+        { name = 'buffer' },
       },
-      experimental = {
-        ghost_text = true
-      },
+      experimental = { ghost_text = true },
     }
   end
 end
@@ -190,22 +160,16 @@ function M.lua_test(opts)
   return {
     adapters = {
       require('neotest-plenary')({
-        test_file_patterns = {
-          '.*_test%.lua$',
-          '.*_spec%.lua$'
-        },
+        test_file_patterns = { '.*_test%.lua$', '.*_spec%.lua$' },
         min_init = 'tests/init.lua',
       }),
     },
     strategies = {
       integrated = {
-        args = {
-          '--lua', vim.fn.expand('~/.local/bin/lua5.1') },
+        args = { '--lua', vim.fn.expand('~/.local/bin/lua5.1') },
       },
     },
-    output_panel = {
-      open = 'botright split | resize 15'
-    },
+    output_panel = { open = 'botright split | resize 15' },
     discovery = {
       enabled = true,
       filter_dir = function(name)
@@ -216,13 +180,19 @@ function M.lua_test(opts)
 end
 
 function M.lua_cfg(opts)
+  local ver, bin = U.lua_version()
+  vim.env.LUA_VERSION = ver
+  vim.env.LUA_PATH = bin
   return {
     autocmds = M.lua_autocmds,
     cmp = M.lua_cmp,
     lazydev = M.lua_lazydev(opts or {}),
+    lsp = M.lua_lsp(opts or {}),
     luarocks = M.lua_luarocks(opts.luarocks or {}),
     snap = M.lua_snap(opts or {}),
     test = M.lua_test(opts or {}),
+    version = ver,
+    path = bin,
   }
 end
 
