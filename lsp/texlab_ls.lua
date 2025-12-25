@@ -62,7 +62,6 @@ return ---@type vim.lsp.Config
         allowedPatterns = {
           'Undefined control sequence',
           'LaTeX Error',
-          ignoredPatterns = {},
         },
         diagnosticsDelay = 300,
         experimental = {
@@ -114,8 +113,8 @@ return ---@type vim.lsp.Config
       formatterLineLength = 80,
     },
     symbols = {
-      allowedPatterns = {},
-      ignoredPatterns = {},
+      -- allowedPatterns = {},
+      -- ignoredPatterns = {},
       customEnvironments = {
         {
           name = 'problem',
@@ -135,7 +134,7 @@ return ---@type vim.lsp.Config
     local function buf_build()
       local win = vim.api.nvim_get_current_win()
       local params = vim.lsp.util.make_position_params(
-        win, ---@type string
+        win,
         client.offset_encoding
       ) ---@diagnostic disable: param-type-mismatch
       client:request('textDocument/build', params, function(err, result)
