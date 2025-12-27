@@ -6,56 +6,56 @@
 ---@module 'config.cicd.ansible'
 local M = {}
 local augroups = {
-  ansible = vim.api.nvim_create_augroup('Ansible', {
-    clear = true,
-  }),
-  yaml = vim.api.nvim_create_augroup('YAML', {
-    clear = true,
-  }),
+    ansible = vim.api.nvim_create_augroup('Ansible', {
+        clear = true,
+    }),
+    yaml = vim.api.nvim_create_augroup('YAML', {
+        clear = true,
+    }),
 }
 vim.api.nvim_create_autocmd( ---@type table[]
-  {
-    'BufRead',
-    'BufNewFile',
-  },
-  {
-    group = augroups.ansible,
-    pattern = { ---@type table
-      '*/ansible/*.yml',
-      '*/playbooks/*.yml',
-      '*/tasks/*.yml',
-      '*/roles/*.yml',
-      '*/handlers/*.yml',
+    {
+        'BufRead',
+        'BufNewFile',
     },
-    callback = function()
-      vim.bo.filetype = 'ansible'
-    end,
-  }
+    {
+        group = augroups.ansible,
+        pattern = { ---@type table
+            '*/ansible/*.yml',
+            '*/playbooks/*.yml',
+            '*/tasks/*.yml',
+            '*/roles/*.yml',
+            '*/handlers/*.yml',
+        },
+        callback = function()
+            vim.bo.filetype = 'ansible'
+        end,
+    }
 )
 vim.api.nvim_create_autocmd({
-  'BufRead',
-  'BufNewFile',
+    'BufRead',
+    'BufNewFile',
 }, {
-  group = augroups.yaml,
-  pattern = {
-    '*.yml',
-    '*.yaml',
-  },
-  callback = function()
-    local content = table.concat(vim.api.nvim_buf_get_lines(0, 0, 30, false), '\n')
-    if content:match('ansible_') or (content:match('hosts:') and content:match('tasks:')) then
-      vim.bo.filetype = 'yaml.ansible'
-    elseif content:match('apiVersion:') and content:match('kind:') then
-      vim.bo.filetype = 'yaml.kubernetes'
-    elseif content:match('version:') and content:match('services:') then
-      vim.bo.filetype = 'yaml.docker'
-    end
-  end,
+    group = augroups.yaml,
+    pattern = {
+        '*.yml',
+        '*.yaml',
+    },
+    callback = function()
+        local content = table.concat(vim.api.nvim_buf_get_lines(0, 0, 30, false), '\n')
+        if content:match('ansible_') or (content:match('hosts:') and content:match('tasks:')) then
+            vim.bo.filetype = 'yaml.ansible'
+        elseif content:match('apiVersion:') and content:match('kind:') then
+            vim.bo.filetype = 'yaml.kubernetes'
+        elseif content:match('version:') and content:match('services:') then
+            vim.bo.filetype = 'yaml.docker'
+        end
+    end,
 })
 ---@param opts? { on_attach?: fun(client,bufnr), capabilities?: table }
 function M.ansible_cfg(opts)
-  opts = opts or {}
-  M.ansible_filetype_autocmd()
+    opts = opts or {}
+    M.ansible_filetype_autocmd()
 end
 
 return M

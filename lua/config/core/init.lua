@@ -3,9 +3,13 @@
 -- Copyright (C) 2025 Qompass AI, All rights reserved
 -- ----------------------------------------
 ---@meta
+require('config.core.autocmds')
+require('config.core.fixer')
 require('config.core.flash')
 require('config.core.lsp')
+require('config.core.parser')
 require('config.core.plenary')
+require('config.core.schema')
 require('config.core.tree')
 require('config.core.trouble')
 require('config.core.whickey')

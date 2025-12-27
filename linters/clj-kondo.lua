@@ -5,7 +5,7 @@
 local function get_file_name()
   return vim.api.nvim_buf_get_name(0)
 end
-return {
+return { ---@type vim.lint.Config
   cmd = 'clj-kondo',
   stdin = true,
   stream = 'stdout',
@@ -27,7 +27,7 @@ return {
       warning = vim.diagnostic.severity.WARN,
     }
     for _, finding in ipairs(findings) do
-      diagnostics[#diagnostics + 1] = {
+      diagnostics[#diagnostics + 1] = { ---@type vim.lint.Diagnostic
         lnum = finding.row - 1,
         col = finding.col - 1,
         end_lnum = (finding['end-row'] or finding.row) - 1,

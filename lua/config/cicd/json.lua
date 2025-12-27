@@ -5,9 +5,14 @@
 local M = {}
 function M.json_autocmds()
     local augroups = {
-        json = vim.api.nvim_create_augroup('JSON', { clear = true }),
+        json = vim.api.nvim_create_augroup('JSON', {
+            clear = true,
+        }),
     }
-    vim.api.nvim_create_autocmd({ 'TextChanged', 'InsertLeave' }, {
+    vim.api.nvim_create_autocmd({
+        'TextChanged',
+        'InsertLeave',
+    }, {
         group = augroups.json,
         pattern = { '*.json', '*.jsonc', '*.json5' },
         callback = function()
@@ -24,6 +29,7 @@ function M.json_autocmds()
         end,
     })
 end
+
 function M.json_cmp(opts)
     local sources = opts.sources or {}
     local has_json_source = vim.tbl_contains(
@@ -47,60 +53,7 @@ function M.json_cmp(opts)
     opts.sources = sources
     return opts
 end
-function M.json_conform(opts)
-    opts = opts or {}
-    local conform_cfg = require('config.lang.conform')
-    return {
-        formatters_by_ft = {
-            json = { 'biome' },
-            jsonc = { 'biome' },
-            jsonnet = { 'jsonnetfmt' },
-            json5 = { 'biome' },
-        },
-        format_on_save = conform_cfg.format_on_save,
-        format_after_save = conform_cfg.format_after_save,
-        default_format_opts = conform_cfg.default_format_opts,
-    }
-end
 
-function M.json_lsp(opts)
-    if not opts.servers then
-        opts.servers = {}
-    end
-    local capabilities = require('cmp_nvim_lsp').default_capabilities()
-    opts.servers.jsonls = {
-        capabilities = capabilities,
-        filetypes = { 'json', 'jsonc', 'json5', 'jsonl' },
-        settings = {
-            json = {
-                schemas = require('schemastore').json.schemas({
-                    select = {
-                        'package.json',
-                        'tsconfig.json',
-                        'jsconfig.json',
-                        '.eslintrc',
-                        'composer.json',
-                        'babelrc.json',
-                        'package.json5',
-                        'lerna.json',
-                        'GitHub Action',
-                        'AWS CloudFormation',
-                    },
-                }),
-                validate = {
-                    enable = true,
-                    allowComments = true,
-                },
-                format = {
-                    enable = true,
-                    keepLines = false,
-                    tabSize = 2,
-                },
-            },
-        },
-    }
-    return opts
-end
 function M.json_filetype_detection()
     vim.filetype.add({
         extension = {
@@ -126,17 +79,4 @@ function M.json_filetype_detection()
     })
 end
 
-function M.json_keymaps(opts)
-    opts = opts or {}
-    opts.defaults = vim.tbl_deep_extend('force', opts.defaults or {}, {
-        ['<leader>cj'] = { name = '+json' },
-        ['<leader>cjf'] = { '<cmd>Format<cr>', 'Format JSON' },
-        ['<leader>cjv'] = {
-            '<cmd>lua vim.lsp.buf.code_action()<cr>',
-            'Validate JSON',
-        },
-        ['<leader>cjs'] = { '<cmd>Telescope schemastore<cr>', 'Schema Store' },
-    })
-    return opts
-end
 return M

@@ -4,23 +4,23 @@
 -- ----------------------------------------
 ---@type LazyPluginSpec
 return {
-  'davidgranstrom/scnvim',
-  lazy = false,
-  dependencies = {},
-  ft = 'supercollider',
-  config = function()
-    local scnvim = require('scnvim')
-    scnvim.setup({
-      editor = {
-        highlight = {
-          color = 'IncSearch',
-        },
-      },
-      postwin = {
-        float = {
-          enabled = true,
-        },
-      },
-    })
-  end
+    'davidgranstrom/scnvim',
+    lazy = false,
+    dependencies = {},
+    ft = 'supercollider',
+    config = function()
+        local scnvim = require('scnvim')
+        scnvim.setup({
+            editor = {
+                highlight = {
+                    color = 'IncSearch',
+                },
+            },
+            postwin = {
+                float = {
+                    enabled = true,
+                },
+            },
+        })
+    end,
 }

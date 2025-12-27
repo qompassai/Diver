@@ -29,17 +29,17 @@
 ---@field col? integer
 ---@field end_lnum? integer
 ---@field end_col? integer
----@field severity? vim.diagnostic.SeverityValue
----@field message string
+---@field severity? vim.Diagnostic.SeverityValue
+---@field message? string
 ---@field source? string
 ---@field code? string|integer
 ---@field user_data? any
----@class vim.diagnostic.Severity
+---@class vim.Diagnostic.Severity
 ---@field ERROR 1
 ---@field WARN 2
 ---@field INFO 3
 ---@field HINT 4
----@alias vim.diagnostic.SeverityValue
+---@alias vim.Diagnostic.SeverityValue
 ---| 1  # ERROR
 ---| 2  # WARN
 ---| 3  # INFO

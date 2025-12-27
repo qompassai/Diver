@@ -10,7 +10,12 @@ function M.psql_cmp(opts)
     opts.fuzzy.implementation = 'lua'
     opts.sources = opts.sources
         or {
-            default = { 'lsp', 'path', 'snippets', 'buffer' },
+            default = {
+                'lsp',
+                'path',
+                'snippets',
+                'buffer',
+            },
             per_filetype = {},
         }
     opts.sources.per_filetype = opts.sources.per_filetype or {}
@@ -23,6 +28,7 @@ function M.psql_cmp(opts)
     }
     return opts
 end
+
 function M.psql_lsp(opts)
     opts = opts or {}
     opts.servers = opts.servers or {}
@@ -34,28 +40,7 @@ function M.psql_lsp(opts)
     })
     return opts
 end
-function M.nls(opts)
-    opts = opts or {}
-    local nlsb = require('null-ls').builtins
-    local sources = {
-        nlsb.diagnostics.sqlfluff.with({
-            filetypes = { 'pgsql' },
-            command = 'sqlfluff',
-            extra_args = { '--dialect', 'postgres' },
-        }),
-        nlsb.formatting.sqlfluff.with({
-            filetypes = { 'pgsql' },
-            command = 'sqlfluff',
-            extra_args = { '--dialect', 'postgres' },
-        }),
-        nlsb.formatting.pg_format.with({
-            filetypes = { 'sql', 'pgsql' },
-            method = 'formatting',
-            command = 'pg_format',
-        }),
-    }
-    return sources
-end
+
 function M.psql_ftd()
     vim.filetype.add({
         extension = { psql = 'pgsql', pgsql = 'pgsql' },
@@ -63,6 +48,7 @@ function M.psql_ftd()
         filename = { ['pg_dump.sql'] = 'pgsql' },
     })
 end
+
 function M.psql_keymaps(opts)
     opts = opts or {}
     opts.defaults = vim.tbl_deep_extend('force', opts.defaults or {}, {
@@ -101,4 +87,5 @@ function M.psql_keymaps(opts)
     })
     return opts
 end
+
 return M

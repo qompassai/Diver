@@ -73,182 +73,179 @@
 ---@lsp.mod.deprecated gui=strikethrough
 ---@lsp.typemod.function.async guifg=Pink
 
-vim.api.nvim_set_hl(0, '@lsp.type.class.lua',
-  {
+vim.api.nvim_set_hl(0, '@lsp.type.class.lua', {
     fg = '#f7768e',
     bold = true,
     underline = true,
-  })
-vim.api.nvim_set_hl(0, '@lsp.type.parameter.lua',
-  {
+})
+vim.api.nvim_set_hl(0, '@lsp.type.parameter.lua', {
     fg = '#e0af68',
     bold = true,
-  })
-vim.api.nvim_set_hl(0, '@lsp.type.property.lua',
-  {
+})
+vim.api.nvim_set_hl(0, '@lsp.type.property.lua', {
     fg = '#7aa2f7',
     bold = true,
-  })
+})
 vim.api.nvim_set_hl(0, '@lsp.type.function.lua', {
-  fg = '#9ece6a',
-  bold = true,
+    fg = '#9ece6a',
+    bold = true,
 })
 vim.api.nvim_set_hl(0, '@lsp.type.variable.lua', {
-  fg = '#7df9ff',
-  bold = true,
+    fg = '#7df9ff',
+    bold = true,
 })
 vim.api.nvim_set_hl(0, 'Comment', {
-  italic = true,
+    italic = true,
 })
 vim.api.nvim_set_hl(0, 'markdownCode', {
-  italic = true,
+    italic = true,
 })
 vim.api.nvim_set_hl(0, 'markdownCodeBlock', {
-  italic = false,
+    italic = false,
 })
 vim.api.nvim_set_hl(0, 'markdownCodeDelimiter', {
-  italic = true,
+    italic = true,
 })
 vim.api.nvim_set_hl(0, 'DiagnosticError', {
-  fg = '#ff5f5f',
+    fg = '#ff5f5f',
 })
 vim.api.nvim_set_hl(0, 'DiagnosticWarn', {
-  fg = '#ffaf00',
+    fg = '#ffaf00',
 })
 vim.api.nvim_set_hl(0, 'DiagnosticInfo', {
-  fg = '#5fafff',
+    fg = '#5fafff',
 })
 vim.api.nvim_set_hl(0, 'DiagnosticHint', {
-  fg = '#5fd7af',
+    fg = '#5fd7af',
 })
 vim.api.nvim_set_hl(0, 'DiagnosticOk', {
-  fg = '#5fd75f',
+    fg = '#5fd75f',
 })
 vim.api.nvim_set_hl(0, 'DiagnosticVirtualTextError', {
-  fg = '#ff5f5f',
-  bg = '#3b1f1f',
+    fg = '#ff5f5f',
+    bg = '#3b1f1f',
 })
 vim.api.nvim_set_hl(0, 'DiagnosticVirtualTextWarn', {
-  fg = '#ffaf00',
-  bg = '#3b2f1f',
+    fg = '#ffaf00',
+    bg = '#3b2f1f',
 })
 vim.api.nvim_set_hl(0, 'DiagnosticVirtualTextInfo', {
-  fg = '#5fafff',
-  bg = '#1f2f3b',
+    fg = '#5fafff',
+    bg = '#1f2f3b',
 })
 vim.api.nvim_set_hl(0, 'DiagnosticVirtualTextHint', {
-  fg = '#5fd7af',
-  bg = '#1f3b2f',
+    fg = '#5fd7af',
+    bg = '#1f3b2f',
 })
 vim.api.nvim_set_hl(0, 'DiagnosticVirtualTextOk', {
-  fg = '#5fd75f',
-  bg = '#1f3b1f',
+    fg = '#5fd75f',
+    bg = '#1f3b1f',
 })
 vim.api.nvim_set_hl(0, 'DiagnosticUnderlineError', {
-  undercurl = true,
-  sp = '#ff5f5f',
+    undercurl = true,
+    sp = '#ff5f5f',
 })
 vim.api.nvim_set_hl(0, 'DiagnosticUnderlineWarn', {
-  undercurl = true,
-  sp = '#ffaf00',
+    undercurl = true,
+    sp = '#ffaf00',
 })
 vim.api.nvim_set_hl(0, 'DiagnosticUnderlineInfo', {
-  undercurl = true,
-  sp = '#5fafff',
+    undercurl = true,
+    sp = '#5fafff',
 })
 vim.api.nvim_set_hl(0, 'DiagnosticUnderlineHint', {
-  undercurl = true,
-  sp = '#5fd7af',
+    undercurl = true,
+    sp = '#5fd7af',
 })
 vim.api.nvim_set_hl(0, 'DiagnosticUnderlineOk', {
-  undercurl = true,
-  sp = '#5fd75f',
+    undercurl = true,
+    sp = '#5fd75f',
 })
 vim.api.nvim_set_hl(0, 'DiagnosticSignError', {
-  fg = '#ff5f5f',
+    fg = '#ff5f5f',
 })
 vim.api.nvim_set_hl(0, 'DiagnosticSignWarn', {
-  fg = '#ffaf00',
+    fg = '#ffaf00',
 })
 vim.api.nvim_set_hl(0, 'DiagnosticSignInfo', {
-  fg = '#5fafff',
+    fg = '#5fafff',
 })
 vim.api.nvim_set_hl(0, 'DiagnosticSignHint', {
-  fg = '#5fd7af',
+    fg = '#5fd7af',
 })
 vim.api.nvim_set_hl(0, 'DiagnosticSignOk', {
-  fg = '#5fd75f',
+    fg = '#5fd75f',
 })
 vim.api.nvim_set_hl(0, 'DiagnosticFloatingError', {
-  fg = '#ff5f5f',
+    fg = '#ff5f5f',
 })
 vim.api.nvim_set_hl(0, 'DiagnosticFloatingWarn', {
-  fg = '#ffaf00',
+    fg = '#ffaf00',
 })
 vim.api.nvim_set_hl(0, 'DiagnosticFloatingInfo', {
-  fg = '#5fafff',
+    fg = '#5fafff',
 })
 vim.api.nvim_set_hl(0, 'DiagnosticFloatingHint', {
-  fg = '#5fd7af',
+    fg = '#5fd7af',
 })
 vim.api.nvim_set_hl(0, 'DiagnosticFloatingOk', {
-  fg = '#5fd75f',
+    fg = '#5fd75f',
 })
 vim.api.nvim_set_hl(0, 'Normal', {
-  bg = 'none',
+    bg = 'none',
 })
 vim.api.nvim_set_hl(0, 'NormalFloat', {
-  bg = 'none',
+    bg = 'none',
 })
 vim.api.nvim_set_hl(0, 'FloatBorder', {
-  bg = 'none',
+    bg = 'none',
 })
 vim.api.nvim_set_hl(0, 'Pmenu', {
-  bg = 'none',
+    bg = 'none',
 })
 vim.api.nvim_set_hl(0, 'Terminal', {
-  bg = 'none',
+    bg = 'none',
 })
 vim.api.nvim_set_hl(0, 'EndOfBuffer', {
-  bg = 'none',
+    bg = 'none',
 })
 vim.api.nvim_set_hl(0, 'FoldColumn', {
-  bg = 'none',
+    bg = 'none',
 })
 vim.api.nvim_set_hl(0, 'Folded', {
-  bg = 'none',
+    bg = 'none',
 })
 vim.api.nvim_set_hl(0, 'SignColumn', {
-  bg = 'none',
+    bg = 'none',
 })
 vim.api.nvim_set_hl(0, 'NvimTreeNormal', {
-  bg = 'none',
+    bg = 'none',
 })
 vim.api.nvim_set_hl(0, 'NvimTreeVertSplit', {
-  bg = 'none',
+    bg = 'none',
 })
 vim.api.nvim_set_hl(0, 'NvimTreeEndOfBuffer', {
-  bg = 'none',
+    bg = 'none',
 })
 vim.api.nvim_set_hl(0, 'Search', {
-  bg = '#8BCD5B',
-  fg = '#202020',
+    bg = '#8BCD5B',
+    fg = '#202020',
 })
 
 vim.api.nvim_set_hl(0, 'CurSearch', {
-  bg = '#EFBD5D',
-  fg = '#000000',
+    bg = '#EFBD5D',
+    fg = '#000000',
 })
 vim.api.nvim_set_hl(0, 'IncSearch', {
-  bg = '#F15664',
-  fg = '#000000',
+    bg = '#F15664',
+    fg = '#000000',
 })
 vim.api.nvim_set_hl(0, 'CursorLine', {
-  --  bg = '#1A1A1F'
+    --  bg = '#1A1A1F'
 })
 vim.api.nvim_set_hl(0, 'CursorColumn', {
-  --  bg = '#1A1A1F'
+    --  bg = '#1A1A1F'
 })
 vim.api.nvim_set_hl(0, 'Visual', {
-  bg = '#103070',
+    bg = '#103070',
 })

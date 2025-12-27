@@ -1,13 +1,8 @@
--- /qompassai/Diver/lua/fixer.lua
+-- /qompassai/Diver/lua/config/core/fixer.lua
 -- Qompass AI Diver Fixer Config
 -- Copyright (C) 2025 Qompass AI, All rights reserved
 -- ----------------------------------------
----@class vim.fixer.Config
----@field cmd string
----@field args? string[]
----@field stdin? boolean
----@field allow_non_zero? boolean
-local M = {}
+local M = {} ---@class M
 ---@type table<string, string[]>
 M.fixers_by_ft = {
     ['_'] = {
@@ -103,6 +98,7 @@ M.fixers_by_ft = {
         'prisma_format',
     },
     python = {
+        'blackd',
         'yapf',
     },
     scala = {

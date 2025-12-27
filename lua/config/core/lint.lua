@@ -3,7 +3,7 @@
 -- Copyright (C) 2025 Qompass AI, All rights reserved
 -- ----------------------------------------
 ---@meta
----@mod 'config.core.lint'
+---@module 'config.core.lint'
 local M = {}
 local running_procs_by_buf = {} ---@type table<integer, table<string, integer>>
 local namespaces = setmetatable({}, {
@@ -14,15 +14,13 @@ local namespaces = setmetatable({}, {
         return ns
     end,
 })
----@param name string
 ---@return integer
-function M.get_namespace(name)
+function M.get_namespace(name) ---@param name string
     return namespaces[name]
 end
 
----@param bufnr? integer
 ---@return string[]
-function M.get_running(bufnr)
+function M.get_running(bufnr) ---@param bufnr? integer
     local linters = {}
     if bufnr then
         bufnr = bufnr == 0 and vim.api.nvim_get_current_buf() or bufnr
@@ -40,7 +38,7 @@ function M.get_running(bufnr)
     return linters
 end
 
-local linters_root = require('linters')
+local linters_root = require('linters') ---@type table
 local linters_by_ft = linters_root.linters_by_ft or {}
 local linter_specs = {} ---@type table<string, vim.lint.Config|false>
 local function get_linter_spec(name)
@@ -120,15 +118,23 @@ local function run_linter(name, bufnr)
         vim.fn.chanclose(job_id, 'stdin')
     end
 end
-function M.lint(bufnr) ---@param bufnr? integer
-    bufnr = bufnr or vim.api.nvim_get_current_buf()
+function M.lint(opts)
+    if opts == nil or type(opts) ~= 'table' then
+        opts = { bufnr = opts }
+    end
+    local bufnr = opts.bufnr or vim.api.nvim_get_current_buf()
+    local name = opts.name
+    if name then
+        run_linter(name, bufnr)
+        return
+    end
     local ft = vim.bo[bufnr].filetype
     local names = linters_by_ft[ft]
     if not names then
         return
     end
-    for _, name in ipairs(names) do
-        run_linter(name, bufnr)
+    for _, n in ipairs(names) do
+        run_linter(n, bufnr)
     end
 end
 
@@ -143,4 +149,7 @@ vim.api.nvim_create_autocmd({
         M.lint(args.buf)
     end,
 })
+vim.lint.linters.bandit = require('linters.bandit')
+vim.lint.linters.vulture = require('linters.vulture')
+vim.lint.linters.yara = require('linters.yara')
 return M

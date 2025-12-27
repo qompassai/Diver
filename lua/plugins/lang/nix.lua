@@ -4,7 +4,7 @@
 -- --------------------------------------------------
 ---@meta
 ---@module 'plugins.lang.nix'
-local nix_cfg = require('config.lang.nix')
+local nix_cfg = require('config.lang.nix') ---@type table
 
 return {
     {

@@ -1,5 +1,5 @@
 -- schema.lua
--- Qompass AI - [ ]
+-- Qompass AI Diver Schema Config
 -- Copyright (C) 2025 Qompass AI, All rights reserved
 -- ----------------------------------------
 local M = { json = {}, yaml = {} }
@@ -19,16 +19,15 @@ function M.json.load()
 end
 
 function M.json.get(name)
-    local catalog = M.json.load()
+    local catalog = M.json.load() ---@type table
     return get_index(catalog.index, catalog.schemas, name), nil
 end
 
 function M.json.schemas(opts)
-    local catalog = M.json.load()
+    local catalog = M.json.load() ---@type table
     if not opts then
         return catalog.schemas
     end
-
     ---@type SchemaOpts
     opts = vim.tbl_extend('force', {
         select = {},
@@ -65,7 +64,7 @@ function M.json.schemas(opts)
                         orig_schema.name
                     )
                 )
-                schemas[index] = schema
+                schemas[index] = schema ---@type table[]
             end
         end
     end
