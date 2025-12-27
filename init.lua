@@ -139,6 +139,7 @@ vim.o.smarttab = true
 vim.o.smoothscroll = true
 vim.o.softtabstop = 2
 vim.o.spell = true
+vim.o.spellfile = vim.fn.stdpath('config') .. '/nvim/spell/en.utf-8.add'
 vim.o.spelllang = 'en_us'
 vim.o.splitbelow = true
 vim.o.splitright = true

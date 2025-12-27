@@ -3,127 +3,118 @@
 -- Copyright (C) 2025 Qompass AI, All rights reserved
 -- ----------------------------------------
 local M = {}
-M.formatters_by_ft = {
-    ['_'] = { 'trim_whitespace' },
-    --gh_cations = 'zizmore',
-    --asm = { 'llvm-mc' },
-    -- ansible = 'ansible_lint',
-    --[[ apkbuild = {
-        'apkbuild-lint',
-        'secfixes-check',
-    },]]
-    --
-    --astro = { 'biome' },
-    --awk = 'gawk',
-    --[[bash = {
-        'bashate',
-        'bashlint',
-        'cspell',
-        'bash-language-server',
-        'shellharden',
-        'shell -n',
-        'shellcheck',
-        'shfmt',
-    }, --]]
-    --bazel = 'buildifier',
-    --bibtex = 'bibclean',
-    -- c = {
-    --   'ccls',
-    -- },
-    --cairo = 'scarb',
-    --chef = 'cookstyle', ---foodcritic deprecated
-    --clojure = {
-    --   'cljfmt',
-    --  'cjl-kondo',
-    -- },
-    -- cmake = {
-    --  'cmake-lint',
-    -- },
-    --  crystal = {
-    --    'ameba',
-    --   'crystal',
-    --  },
-    --cpp = {},
-    -- csharp = { },
-    --  css = {
-    --    'biome',
-    --    'csslint',
-    --    'css-beautify',
-    --  },
-    cuda = {
-        'nvcc',
-    },
-    -- cypher = 'cypher-lint',
-    -- cython = 'cython',
-    -- dart = 'dart-analyze',
-    -- dhall = 'dhall-lint',
-    --desktop = 'desktop-validate-file',
-    -- dockerfile = {
-    --   'dockerlinter',
-    --   'dprint',
-    --   'hadolint',
-    -- },
-    --  ejs = 'biome',
-    -- elixir = {},
-    -- elm = {},
-    -- erlang = {
-    --  'dialyzer',
-    --  'elvis',
-    -- },
-    --[[fish = {
-    'fish -n',
-    'fish_indent',
+M.linters_by_ft = {
+  asm = {
+    'llvm-mc',
+  },
+  ansible = {
+    'ansible_lint',
+  },
+  apkbuild = {
+    'apkbuild-lint',
+    'secfixes-check',
+  },
+  --astro = {},
+  --awk = {},
+  bash = {
+    'bashlint',
     'shellcheck',
-  }, --]]
-    -- gleam = 'gleam_format',
-    --[[
- --glsl = {
-    'glslang',
-    'glslls',
   },
-  go = {
-    'goimports',
-    'gofumpt',
+  bazel = 'buildifier',
+  bibtex = 'bibclean',
+  -- c = {
+  -- },
+  cairo = 'scarb',
+  chef = 'cookstyle', ---foodcritic deprecated
+  clojure = {
+    'cjl-kondo',
   },
-  graphql = 'gqlint',
-  groovy = 'npm_groovy_lint',
+  cmake = {
+    'cmake-lint',
+  },
+  crystal = {
+    'ameba',
+  },
+  --cpp = {},
+  --csharp = {},
+  css = {
+    'csslint',
+    'stylelint',
+  },
+  cuda = {
+    'nvcc',
+  },
+  -- cypher = 'cypher-lint',
+  cython = 'cython-lint',
+  -- dart = 'dart-analyze',
+  -- dhall = 'dhall-lint',
+  desktop = 'desktop-validate-file',
+  -- dockerfile = {
+  --   'dockerlinter',
+  --   'dprint',
+  --   'hadolint',
+  -- },
+  --  ejs = {},
+  -- elixir = {},
+  -- elm = {},
+  -- erlang = {
+  --  'dialyzer',
+  --  'elvis',
+  -- },
+  --fish = {
+  --'fish -n',
+  --'fish_indent',
+  --'shellcheck',
+  --},
+  --gh_cations = 'zizmore',
+  -- gleam = 'gleam_format',
+  --glsl = {
+  --'glslang',
+  --'glslls',
+  --},
+  --go = {},
+  --graphql = 'gqlint',
+  --groovy = 'npm_groovy_lint',
+  --[[
   handlebars = {
-    'biome',
     'djlint',
     'ember-template-lint',
   },
-  haskell = {
-    'brittany',
-    'ormolu',
-    'fourmolu',
+  --]]
+  --haskell = {
+  --[[
+},
+  helm = {
   },
-  helm = { 'helm_format' },
-  htmlangular = { 'biome', 'djlint' },
-  htmldjango = {
-    'biome',
-    'djlint',
-  },
-  html = { 'biome', 'htmlbeautify', 'superhtml' },
-  http = 'kulala_fmt',
-  inko = 'inko',
-  java = { 'checkstyle', 'google-java-format' },
-  javascript = { 'biome' },
-  javascriptreact = { 'biome' },
+--]]
+  htmlangular = {},
+  htmldjango = {},
+  --html = {
+  -- },
+  http = {},
+  -- inko = 'inko',
+  --java = {
+  --  'checkstyle',
+  --},
+  javascript = {},
+  javascriptreact = {},
   jinja = {
     'djlint',
     'j2lint',
   },
-  json = 'biome',
-  jsonc = { 'biome' },
+  --json = '',
+  --[[
+  jsonc = {
+    ''
+  },
+  --]]
   jsonnet = {
-    'jsonnetfmt',
     'jsonnetlint',
   },
-  jsx = { 'biome' },
-  julia = { 'julia_format' },
-  just = { 'just_fmt' },
-  justfile = { 'just_fmt' },
-
+  jsx = {},
+  julia = {},
+  just = {},
+  justfile = {},
   kotlin = {
     'kotlinc',
     'ktlint',
@@ -135,21 +126,20 @@ M.formatters_by_ft = {
   -- llvm = 'llc',
   lua = {
     'luac',
-    'stylua'
   },
-  luau = { 'stylua' },
+  luau = {
+    'luac',
+  },
   markdown = {
     'mado',
-    'biome',
   },
   mail = {
     'alex',
     'proselint',
   },
   matlab = 'mlint',
-  mustache = 'biome',
+  mustache = {},
   nix = {
-    'alejandra',
     'deadnix',
     'statix',
   },
@@ -157,97 +147,86 @@ M.formatters_by_ft = {
     'intelephense',
     'phan',
     'php',
-    'php-cs-fixer',
-    'phpcbf',
     'phpcs',
     'phpmd',
     'phpstan',
-    'pint',
     'psalm',
-    'tlint',
   },
-  prisma = { 'prisma_format' },
-  proto = { 'buf' },
-  protobuf = { 'buf' },
+  prisma = {},
+  proto = {},
+  protobuf = {},
   python = {
     'bandit',
-    'pyrefly',
-    'ruff',
+    --'pyrefly',
     'vulture',
-    'yapf',
     'yara',
   },
   powershell = {
-    'powershell',
     'psscriptanalyzer',
   },
   pug = 'pug-lint',
   qml = {
-    'qmlfmt',
     'qmllint',
   },
-  r = 'styler',
+  r = {},
   ruby = {
     'solargraph',
     'sorbet',
   },
   scala = {
     'scalac',
-    'scalafmt',
     'scalastyle',
   },
   sass = {
     'sass-lint',
-    'stylelint',
   },
-  scss = 'biome',
-  sh = 'shfmt',
+  scss = {},
+  --[[
   solidity = {
     'forge',
     'solc',
     'solhint',
     'solium',
   },
+  ]]
+  --
   sphinx = 'sphinx-lint',
   sql = {
     'dprint',
     'sqlfluff',
-    'sql-formatter',
   },
   sqlite = {},
   svelte = {},
   swift = 'swiftlint',
   terraform = 'tflint',
+  --[[
   toml = {
     'dprint',
-    'tombi',
   },
-  tsx = 'biome',
-  typescript = {
-    'biome',
-    'deno',
-  },
-  typescriptreact = {
-    'biome',
-    'deno',
-  },
-  vue = 'biome',
+  --]]
+  -- tsx = {},
+  typescript = {},
+  typescriptreact = {},
+  vue = {},
   wgsl = 'naga',
   xml = 'xmllint',
   yaml = {
-    'biome',
     'yamllint',
   },
-  yml = {
-    'biome',
-  },
+  yml = {},
   zig = {
     'zlint',
   },
-  zine = { 'zigfmt', 'zigfmt_ast' },
-  zon = { 'zigfmt', 'zigfmt_ast' },
-  zsh = { 'shfmt', 'shellcheck' },
-  --]]
+  zine = {
+    'zlint',
+    'zlint',
+  },
+  zon = {
+    'zlint',
+  },
+  zsh = {
+    'shellcheck',
+  },
 }
 
 return M

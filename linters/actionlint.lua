@@ -2,14 +2,16 @@
 -- Qompass AI Actionlint Linter Spec
 -- Copyright (C) 2025 Qompass AI, All rights reserved
 -- ----------------------------------------
-local function get_file_name()
-    return vim.api.nvim_buf_get_name(0)
+--local core_parser = require('config.core.parser')
+local function get_file_name(bufnr)
+    return vim.api.nvim_buf_get_name(bufnr or 0)
 end
 return ---@type vim.lint.Config
 {
     name = 'actionlint',
     cmd = 'actionlint',
     stdin = true,
+    append_fname = false,
     args = {
         '-format',
         '{{json .}}',
@@ -17,27 +19,26 @@ return ---@type vim.lint.Config
         get_file_name,
         '-',
     },
+    stream = 'stdout',
     ignore_exitcode = true,
-
     parser = function(output, _)
         if output == '' then
             return {}
         end
-        ---@type table[]
-        local decoded = vim.json.decode(output)
-        if not decoded then
+        local ok, decoded = pcall(vim.json.decode, output)
+        if not ok or not decoded then
             return {}
         end
         local diagnostics = {}
         vim.iter(decoded):each(function(item)
-            diagnostics[#diagnostics + 1] = { ---@type table[]
-                lnum = item.line - 1, ---@type integer
-                end_lnum = item.line - 1, ---@type integer
-                col = item.column - 1, ---@type integer
-                end_col = item.end_column, ---@type integer
-                severity = vim.diagnostic.severity.WARN, ---@type integer
-                source = 'actionlint: ' .. item.kind, ---@type string
-                message = item.message, ---@type string
+            diagnostics[#diagnostics + 1] = {
+                lnum = item.line - 1,
+                end_lnum = item.line - 1,
+                col = item.column - 1,
+                end_col = item.end_column,
+                severity = vim.diagnostic.severity.WARN,
+                source = 'actionlint: ' .. item.kind,
+                message = item.message,
             }
         end)
         return diagnostics

@@ -87,7 +87,7 @@ return ---@type vim.lsp.Config
         'typescript',
         'html',
         'typescriptreact',
-        'typescript.tsx',
+        --'typescript.tsx',
         'htmlangular',
     },
     root_markers = {

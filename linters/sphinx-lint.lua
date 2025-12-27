@@ -18,7 +18,12 @@ return ---@type vim.lint.Config
         end
         local bufname = vim.api.nvim_buf_get_name(bufnr)
         local filename = vim.fs.basename(bufname)
-        for line in vim.gsplit(output, '\n', { plain = true, trimempty = true }) do
+        for line in
+            vim.gsplit(output, '\n', {
+                plain = true,
+                trimempty = true,
+            })
+        do
             local path, lnum, col, msg = line:match('^(.-):(%d+):(%d+):%s*(.+)$')
             if not path then
                 path, lnum, msg = line:match('^(.-):(%d+):%s*(.+)$')

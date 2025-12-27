@@ -1,0 +1,14 @@
+-- /qompassai/Diver/lua/types/core/schema.lua
+-- Qompass AI Diver Schema Types
+-- Copyright (C) 2025 Qompass AI, All rights reserved
+-- ----------------------------------------
+---@class SchemaEntry
+---@field name string
+---@field description string
+---@field fileMatch string | string[]
+---@field url string
+---@class SchemaOpts
+---@field select? string[]
+---@field ignore? string[]
+---@field replace? table<string, SchemaEntry|string>?
+---@field extra? SchemaEntry[]
