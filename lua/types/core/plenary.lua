@@ -2,7 +2,6 @@
 -- Qompass AI Plenary Types
 -- Copyright (C) 2025 Qompass AI, All rights reserved
 -- ----------------------------------------
-
 ---@class PlenaryPath
 ---@field filename string
 ---@field _absolute boolean
