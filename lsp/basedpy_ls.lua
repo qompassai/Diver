@@ -63,7 +63,6 @@ return ---@type vim.lsp.Config
     },
   },
   on_attach = function(client, bufnr)
-    client.server_capabilities.semanticTokensProvider = nil
     vim.api.nvim_buf_create_user_command(bufnr, 'LspPyrightOrganizeImports', function()
       local params = {
         command = 'basedpyright.organizeimports',
