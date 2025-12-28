@@ -50,18 +50,22 @@ vim.api.nvim_create_autocmd('BufWritePre',
       vim.lsp.buf.format()
     end,
   })
-vim.api.nvim_create_autocmd('BufWritePre', {
-  pattern = { '*.php', '*.phtml' },
-  callback = function()
-    vim.lsp.buf.code_action({
-      context = {
-        diagnostics = {},
-        only = { 'source.fixAll' },
-      },
-      apply = true,
-    })
-  end,
-})
+vim.api.nvim_create_autocmd('BufWritePre',
+  {
+    pattern = {
+      '*.php',
+      '*.phtml'
+    },
+    callback = function()
+      vim.lsp.buf.code_action({
+        context = {
+          diagnostics = {},
+          only = { 'source.fixAll' },
+        },
+        apply = true,
+      })
+    end,
+  })
 vim.api.nvim_create_user_command('PhpTest', function()
   vim.fn.jobstart({
     'phpunit',
@@ -70,15 +74,16 @@ vim.api.nvim_create_user_command('PhpTest', function()
     detach = true,
   })
 end, {})
-vim.api.nvim_create_autocmd('BufWritePre', {
-  pattern = '*.php',
-  callback = function(args)
-    vim.lsp.buf.format({
-      bufnr = args.buf,
-      async = false,
-    })
-  end,
-})
+vim.api.nvim_create_autocmd('BufWritePre',
+  {
+    pattern = '*.php',
+    callback = function(args)
+      vim.lsp.buf.format({
+        bufnr = args.buf,
+        async = false,
+      })
+    end,
+  })
 vim.api.nvim_create_user_command('PhpQuickfix', function()
   local diagnostics = vim.diagnostic.get(0)
   vim.lsp.buf.code_action({
@@ -91,62 +96,67 @@ vim.api.nvim_create_user_command('PhpQuickfix', function()
   })
 end, {})
 
-vim.api.nvim_create_autocmd('BufWritePre', {
-  pattern = { '*.php', '*.phtml' },
-  callback = function(args)
-    local diagnostics = vim.diagnostic.get(args.buf)
-    vim.lsp.buf.code_action({
-      context = {
-        diagnostics = diagnostics,
-        only = {
-          'source.organizeImports',
-          'source.fixAll',
+vim.api.nvim_create_autocmd('BufWritePre',
+  {
+    pattern = {
+      '*.php',
+      '*.phtml'
+    },
+    callback = function(args)
+      local diagnostics = vim.diagnostic.get(args.buf)
+      vim.lsp.buf.code_action({
+        context = {
+          diagnostics = diagnostics,
+          only = {
+            'source.organizeImports',
+            'source.fixAll',
+          },
+          triggerKind = vim.lsp.protocol.CodeActionTriggerKind.Source,
         },
-        triggerKind = vim.lsp.protocol.CodeActionTriggerKind.Source,
-      },
-      apply = true,
-      filter = function(_, client_id)
-        local client = vim.lsp.get_client_by_id(client_id)
-        return client ~= nil and (client.name == 'intelephense' or client.name == 'phpactor')
-      end,
-    })
-  end,
-})
-vim.api.nvim_create_autocmd('BufWritePost', {
-  pattern = '*.php',
-  callback = function(args)
-    vim.fn.jobstart({
-      'php',
-      '-l',
-      vim.api.nvim_buf_get_name(args.buf),
-    }, {
-      stdout_buffered = true,
-      stderr_buffered = true,
-      on_stdout = function(_, data, _)
-        if not data then
-          return
-        end
-        local out = table.concat(data, '')
-        if out ~= '' then
-          vim.schedule(function()
-            vim.notify('php -l: ' .. out, vim.log.levels.INFO)
-          end)
-        end
-      end,
-      on_stderr = function(_, data, _)
-        if not data then
-          return
-        end
-        local out = table.concat(data, '')
-        if out ~= '' then
-          vim.schedule(function()
-            vim.notify('php -l (err): ' .. out, vim.log.levels.WARN)
-          end)
-        end
-      end,
-    })
-  end,
-})
+        apply = true,
+        filter = function(_, client_id)
+          local client = vim.lsp.get_client_by_id(client_id)
+          return client ~= nil and (client.name == 'intelephense' or client.name == 'phpactor')
+        end,
+      })
+    end,
+  })
+vim.api.nvim_create_autocmd('BufWritePost',
+  {
+    pattern = '*.php',
+    callback = function(args)
+      vim.fn.jobstart({
+        'php',
+        '-l',
+        vim.api.nvim_buf_get_name(args.buf),
+      }, {
+        stdout_buffered = true,
+        stderr_buffered = true,
+        on_stdout = function(_, data, _)
+          if not data then
+            return
+          end
+          local out = table.concat(data, '')
+          if out ~= '' then
+            vim.schedule(function()
+              vim.notify('php -l: ' .. out, vim.log.levels.INFO)
+            end)
+          end
+        end,
+        on_stderr = function(_, data, _)
+          if not data then
+            return
+          end
+          local out = table.concat(data, '')
+          if out ~= '' then
+            vim.schedule(function()
+              vim.notify('php -l (err): ' .. out, vim.log.levels.WARN)
+            end)
+          end
+        end,
+      })
+    end,
+  })
 vim.api.nvim_create_user_command('PhpCodeAction', function()
   local diagnostics = vim.diagnostic.get(0)
   vim.lsp.buf.code_action({

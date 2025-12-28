@@ -84,7 +84,7 @@ vim.api.nvim_create_autocmd('BufWritePre',
         apply = true,
         filter = function(_, client_id)
           local client = vim.lsp.get_client_by_id(client_id)
-          return client ~= nil and client.name == 'zls'
+          return client ~= nil and client.name == 'z_ls'
         end,
       })
     end,
@@ -126,7 +126,7 @@ vim.api.nvim_create_user_command('ZigCodeAction', function()
     },
     filter = function(_, client_id)
       local client = vim.lsp.get_client_by_id(client_id)
-      return client ~= nil and client.name == 'zls'
+      return client ~= nil and client.name == 'z_ls'
     end,
     apply = true,
   })
@@ -156,7 +156,7 @@ vim.api.nvim_create_user_command('ZigRangeAction', function()
     },
     filter = function(_, client_id)
       local client = vim.lsp.get_client_by_id(client_id)
-      return client ~= nil and client.name == 'zls'
+      return client ~= nil and client.name == 'z_ls'
     end,
     apply = false,
   })
@@ -167,7 +167,7 @@ vim.api.nvim_create_autocmd('LspAttach',
   {
     callback = function(args)
       local client = vim.lsp.get_client_by_id(args.data.client_id)
-      if client and client.name == 'zls' then
+      if client and client.name == 'z_ls' then
         vim.bo[args.buf].omnifunc = 'v:lua.vim.lsp.omnifunc'
       end
     end,
