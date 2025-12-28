@@ -31,7 +31,7 @@
   "lazydev.nvim": { "branch": "main", "commit": "5231c62aa83c2f8dc8e7ba957aa77098cda1257d" },
   "lazydocker.nvim": { "branch": "main", "commit": "9dc967891e3c3801c5f5444f7a18ea88a160367f" },
   "lazygit.nvim": { "branch": "main", "commit": "a04ad0dbc725134edbee3a5eea29290976695357" },
-  "live-preview.nvim": { "branch": "main", "commit": "3e0eb9ea48a6cf8b091c0031830721eeff0efe19" },
+  "live-preview.nvim": { "branch": "main", "commit": "04c2cc92476d7b3882a0c7155bb13c4d7ee4bfbf" },
   "lua-utils.nvim": { "branch": "main", "commit": "e565749421f4bbb5d2e85e37c3cef9d56553d8bd" },
   "lualine.nvim": { "branch": "master", "commit": "47f91c416daef12db467145e16bed5bbfe00add8" },
   "luarocks.nvim": { "branch": "main", "commit": "1db9093915eb16ba2473cfb8d343ace5ee04130a" },
@@ -90,7 +90,6 @@
   "vim-dispatch": { "branch": "master", "commit": "a2ff28abdb2d89725192db5b8562977d392a4d3f" },
   "vim-gnupg": { "branch": "main", "commit": "f9b608f29003dfde6450931dc0f495a912973a88" },
   "vim-illuminate": { "branch": "master", "commit": "0d1e93684da00ab7c057410fecfc24f434698898" },
-  "vim-nix": { "branch": "master", "commit": "7235c7ce2cea530cb6b59bc3e46d4bfe917d15c8" },
   "w3m.vim": { "branch": "master", "commit": "228a852b188f1a62ecea55fa48b0ec892fa6bad7" },
   "websocket.nvim": { "branch": "main", "commit": "06e6d62c72276f789420ad93c00ecd85ab9af218" },
   "which-key.nvim": { "branch": "main", "commit": "3aab2147e74890957785941f0c1ad87d0a44c15a" }

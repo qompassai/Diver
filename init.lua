@@ -15,39 +15,7 @@ require('config.init').config({
   nav = true,
   ui = true
 })
-vim.opt.packpath = vim.opt.runtimepath:get() ---@type string[]
-vim.pack.add {
-  {
-    src = 'https://github.com/trixnz/sops.nvim'
-  },
-  {
-    src = 'https://github.com/Saghen/blink.cmp'
-  },
-  {
-    src = 'https://github.com/nvim-treesitter/nvim-treesitter'
-  },
-  {
-    src = 'https://github.com/L3MON4D3/LuaSnip'
-  },
-  {
-    src = 'https://github.com/rafamadriz/friendly-snippets'
-  },
-  {
-    src = 'https://github.com/hrsh7th/cmp-nvim-lua'
-  },
-  {
-    src = 'https://github.com/hrsh7th/cmp-buffer'
-  },
-  {
-    src = 'https://github.com/moyiz/blink-emoji.nvim'
-  },
-  {
-    src = 'https://github.com/Kaiser-Yang/blink-cmp-dictionary'
-  },
-  {
-    src = 'https://github.com/Saghen/blink.compat',
-  },
-}
+--vim.opt.packpath = vim.opt.runtimepath:get() ---@type string[]
 vim.bo.expandtab = true
 vim.bo.modifiable = true ---@type boolean
 vim.cmd('set completeopt+=noselect')
@@ -56,9 +24,13 @@ vim.g.git_command_ssh = 1
 vim.g.loaded_illuminate = true
 vim.g.loaded_netrw = 1
 vim.g.loaded_netrwPlugin = 1
+vim.g.node_host_prog = '/usr/bin/node'
 vim.g.loaded_node_provider = 1
+vim.g.perl_host_prog = '/usr/bin/perl'
 vim.g.loaded_perl_provider = 1
+vim.g.python3_host_prog = '/usr/bin/python3.13'
 vim.g.loaded_python_provider = 1
+vim.g.ruby_host_prog = '/usr/bin/neovim-ruby-host'
 vim.g.loaded_ruby_provider = 1
 vim.g.lsp_enable_on_demand = true
 vim.g.vim_markdown_folding_disabled = 1
@@ -68,6 +40,7 @@ vim.g.vim_markdown_toml_frontmatter = 1
 vim.g.vim_markdown_json_frontmatter = 1
 vim.g.vim_markdown_follow_anchor = 1
 vim.g.mkdp_theme = 'dark'
+--vim.g.ruff_makeprg_params = "--max-line-length --preview "
 vim.g.semantic_tokens_enabled = true
 vim.g.table_mode_corner = '|'
 vim.g.table_mode_separator = '|'
@@ -166,7 +139,7 @@ vim.opt.wildignore = {
 }
 vim.o.wildignorecase = true
 vim.o.wildmenu = true
-vim.o.wildmode = 'longest:full,full'
+vim.o.wildmode = 'noselect'
 vim.o.winborder = "rounded"
 vim.o.writebackup = true
 --------------------
