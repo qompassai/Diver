@@ -3,16 +3,17 @@
 -- Copyright (C) 2025 Qompass AI, All rights reserved
 -- ---------------------------------------------------
 -- pnpm add -g dockerfile-language-server-nodejs@latest
----@type vim.lsp.Config
-return {
-    cmd = { ---@type string[]
+
+return ---@type vim.lsp.Config
+{
+    cmd = {
         'docker-langserver',
         '--stdio',
     },
-    filetypes = { ---@type string[]
+    filetypes = {
         'dockerfile',
     },
-    root_markers = { ---@type string[]
+    root_markers = {
         'Dockerfile',
         'docker-compose.yaml',
         'docker-compose.yml',

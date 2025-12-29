@@ -2,24 +2,28 @@
 -- Qompass AI Helm LSP Spec
 -- Copyright (C) 2025 Qompass AI, All rights reserved
 -- --------------------------------------------------
----@type vim.lsp.Config
-return {
-    cmd = { ---@type string[]
+return ---@type vim.lsp.Config
+{
+    cmd = {
         'helm_ls',
         'serve',
     },
-    filetypes = { ---@type string[]
+    filetypes = {
         'helm',
         'yaml.helm-values',
     },
-    root_markers = { ---@type string[]
+    root_markers = {
         'Chart.yaml',
+        '.git',
     },
-    capabilities = {
-        workspace = {
-            didChangeWatchedFiles = {
-                dynamicRegistration = true,
-            },
-        },
-    },
+    vim.api.nvim_create_autocmd('FileType', {
+        pattern = { 'helm', 'yaml.helm-values' },
+        callback = function()
+            vim.lsp.start({
+                name = 'helm_ls',
+                cmd = { 'helm_ls', 'serve' },
+                root_dir = vim.fs.dirname(vim.fs.find({ 'Chart.yaml', '.git' })[1]),
+            })
+        end,
+    }),
 }

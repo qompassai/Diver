@@ -4,26 +4,27 @@
 -- --------------------------------------------------
 return {
     cmd = {
-        'bacon',
+        'bacon-ls',
     },
     filetypes = {
         'rust',
     },
     init_options = {
-        init_options = {
-            locationsFile = '.bacon-locations',
-            updateOnSave = true,
-            updateOnSaveWaitMillis = 1000,
-            updateOnChange = true,
-            validateBaconPreferences = true,
-            createBaconPreferencesFile = true,
-            runBaconInBackground = true,
-            runBaconInBackgroundCommandArguments = '--headless -j bacon-ls',
-            synchronizeAllOpenFilesWaitMillis = 2000,
-        },
+        createBaconPreferencesFile = true,
+        locationsFile = '.bacon-locations',
+        runBaconInBackground = true,
+        runBaconInBackgroundCommandArguments = '--headless -j bacon-ls',
+        synchronizeAllOpenFilesWaitMillis = 2000,
+        updateOnChange = true,
+        updateOnSave = true,
+        updateOnSaveWaitMillis = 1000,
+        useBaconBackend = true,
+        validateBaconPreferences = true,
     },
     root_markers = {
         '.bacon-locations',
+        'Cargo.lock',
         'Cargo.toml',
+        '.git/',
     },
 }

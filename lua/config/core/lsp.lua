@@ -8,12 +8,32 @@
 --end
 --vim.lsp.buf.definition({ on_list = on_list })
 --vim.lsp.buf.references(nil, { on_list = on_list })
+local function qf_from_diagnostics(bufnr)
+  bufnr = bufnr or 0
+  local diags = vim.diagnostic.get(bufnr)
+
+  local items = {}
+  for _, d in ipairs(diags) do
+    table.insert(items, {
+      bufnr = bufnr,
+      lnum = d.lnum + 1,
+      col = d.col + 1,
+      text = string.format('[%s] %s', d.source or 'LSP', d.message),
+      type = ({ E = 'E', W = 'W', I = 'I', N = 'N' })[vim.diagnostic.severity[d.severity]] or 'E',
+    })
+  end
+  vim.fn.setqflist(items, 'r')
+  vim.cmd('copen')
+end
+vim.api.nvim_create_user_command('DiagQf', function(opts)
+  qf_from_diagnostics(opts.bang and nil or 0)
+end, { bang = true, desc = 'Diagnostics -> quickfix with source' })
 vim.cmd('runtime! lsp/init.lua')
 capabilities = vim.lsp.protocol.make_client_capabilities()
-vim.diagnostic.config({ ---@type table[]
+vim.diagnostic.config({
   float = {
     border = 'rounded',
-    source = 'if_many',
+    source = true,
     focusable = true,
     scope = 'line',
     severity = {
@@ -54,9 +74,10 @@ vim.diagnostic.config({ ---@type table[]
       min = vim.diagnostic.severity.WARN,
     },
   },
-  virtual_text = { ---@type table[]
+  virtual_text = {
     enabled = true,
     prefix = '●',
+    source = true,
     spacing = 4,
     severity = {
       min = vim.diagnostic.severity.WARN,
@@ -68,7 +89,7 @@ vim.lsp.config( ---@type vim.lsp.Config
   '*',
   {
     autostart = true,
-    capabilities = vim.tbl_deep_extend('force', vim.lsp.protocol.make_client_capabilities(), { ---@type table[]
+    capabilities = vim.tbl_deep_extend('force', vim.lsp.protocol.make_client_capabilities(), {
       completion = {
         dynamicRegistration = true,
         completionItem = {
@@ -141,10 +162,10 @@ vim.lsp.config( ---@type vim.lsp.Config
         },
         diagnostic = {},
         documentHighlight = {
-          dynamicRegistration = false,
+          dynamicRegistration = true,
         },
         documentSymbol = {
-          dynamicRegistration = false,
+          dynamicRegistration = true,
           hierarchicalDocumentSymbolSupport = true,
           symbolKind = {
             valueSet = vim.tbl_range(1, 26),
@@ -221,7 +242,7 @@ vim.lsp.config( ---@type vim.lsp.Config
             'static',
           },
           signatureHelp = {
-            dynamicRegistration = false,
+            dynamicRegistration = true,
             signatureInformation = {
               documentationFormat = {
                 'markdown',
@@ -234,7 +255,7 @@ vim.lsp.config( ---@type vim.lsp.Config
           },
           synchronization = {
             dynamicRegistration = true,
-            willSave = false,
+            willSave = true,
             willSaveWaitUntil = true,
             didSave = true,
             syncKind = vim.lsp.protocol.TextDocumentSyncKind.Incremental,
@@ -277,87 +298,89 @@ vim.api.nvim_create_autocmd('LspAttach', {
     end
   end,
 })
-vim.api.nvim_create_autocmd('LspAttach',
-  {
-    callback = function(args)
-      local client = assert(vim.lsp.get_client_by_id(args.data.client_id))
-      local bufnr = args.buf
-      if client.server_capabilities.completionProvider then
-        vim.lsp.completion.enable(true, client.id, bufnr, {
-          autotrigger = true,
-          convert = function(item)
-            return { abbr = item.label:gsub('%b()', '') }
-          end,
-        })
-      end
-      if client.server_capabilities.completionProvider then
-        vim.lsp.completion.enable(true, client.id, bufnr, {
-          autotrigger = true,
-          convert = function(item)
-            return { abbr = item.label:gsub('%b()', '') }
-          end,
-        })
-      end
-      if client.server_capabilities.inlineCompletionProvider then
-        vim.lsp.inline_completion.enable(true, {
-          bufnr = bufnr,
-          client_id = client.id,
-          autotrigger = true,
-        })
-      end
-      if client.server_capabilities.documentHighlightProvider then
-        vim.api.nvim_create_autocmd({
-            'CursorHold',
-            'CursorHoldI',
-          },
-          {
-            buffer = bufnr,
-            callback = vim.lsp.buf.document_highlight,
-          })
-        vim.api.nvim_create_autocmd({
-          'CursorMoved',
-          'CursorMovedI',
-          'BufLeave',
-        }, {
-          buffer = bufnr,
-          callback = vim.lsp.buf.clear_references,
-        })
-      end
-      if client.server_capabilities.semanticTokensProvider then
-        vim.lsp.semantic_tokens.enable(true, {
-          bufnr = bufnr,
-        })
-      end
-      vim.keymap.set('n', '<Leader>lc', vim.lsp.buf.document_color, {
-        buffer = bufnr,
-        desc = 'LSP document color',
+vim.api.nvim_create_autocmd('LspAttach', {
+  callback = function(args)
+    local client = assert(vim.lsp.get_client_by_id(args.data.client_id))
+    local bufnr = args.buf
+    if client.server_capabilities.completionProvider then
+      vim.lsp.completion.enable(true, client.id, bufnr, {
+        autotrigger = true,
+        convert = function(item)
+          return {
+            abbr = item.label:gsub('%b()', ''),
+          }
+        end,
       })
-      vim.keymap.set('n', '<Leader>lf', function()
-        vim.lsp.buf.format({
-          async = true,
-        })
-      end, {
-        buffer = bufnr,
-        desc = 'LSP format',
+    end
+    if client.server_capabilities.completionProvider then
+      vim.lsp.completion.enable(true, client.id, bufnr, {
+        autotrigger = true,
+        convert = function(item)
+          return {
+            abbr = item.label:gsub('%b()', ''),
+          }
+        end,
       })
-    end,
-  })
-vim.api.nvim_create_autocmd('LspAttach',
-  {
-    group = vim.api.nvim_create_augroup('lsp_inlay_hints',
-      { clear = true }),
-    callback = function(event)
-      local id = event.data and event.data.client_id
-      if not id then
-        return
-      end
-      local client = vim.lsp.get_client_by_id(id)
-      if not client or not client:supports_method('textDocument/inlayHint') then
-        return
-      end
-      vim.lsp.inlay_hint.enable(true, { bufnr = event.buf })
-    end,
-  })
+    end
+    if client.server_capabilities.inlineCompletionProvider then
+      vim.lsp.inline_completion.enable(true, {
+        bufnr = bufnr,
+        client_id = client.id,
+        autotrigger = true,
+      })
+    end
+    if client.server_capabilities.documentHighlightProvider then
+      vim.api.nvim_create_autocmd({
+        'CursorHold',
+        'CursorHoldI',
+      }, {
+        buffer = bufnr,
+        callback = vim.lsp.buf.document_highlight,
+      })
+      vim.api.nvim_create_autocmd({
+        'CursorMoved',
+        'CursorMovedI',
+        'BufLeave',
+      }, {
+        buffer = bufnr,
+        callback = vim.lsp.buf.clear_references,
+      })
+    end
+    if client.server_capabilities.semanticTokensProvider then
+      vim.lsp.semantic_tokens.enable(true, {
+        bufnr = bufnr,
+      })
+    end
+    vim.keymap.set('n', '<Leader>lc', vim.lsp.buf.document_color, {
+      buffer = bufnr,
+      desc = 'LSP document color',
+    })
+    vim.keymap.set('n', '<Leader>lf', function()
+      vim.lsp.buf.format({
+        async = true,
+      })
+    end, {
+      buffer = bufnr,
+      desc = 'LSP format',
+    })
+  end,
+})
+vim.api.nvim_create_autocmd('LspAttach', {
+  group = vim.api.nvim_create_augroup('lsp_inlay_hints', { clear = true }),
+  callback = function(event)
+    local id = event.data and event.data.client_id
+    if not id then
+      return
+    end
+    local client = vim.lsp.get_client_by_id(id)
+    if not client or not client:supports_method('textDocument/inlayHint') then
+      return
+    end
+    vim.lsp.inlay_hint.enable(true, {
+      bufnr = event.buf,
+    })
+  end,
+})
 vim.lsp.handlers['textDocument/publishDiagnostics'] = function(err, result, ctx, _)
   local client = vim.lsp.get_client_by_id(ctx.client_id)
   if not client then

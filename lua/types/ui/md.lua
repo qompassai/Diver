@@ -18,8 +18,8 @@
 ---@field                         enabled boolean
 ---@field                         backend image.Backend
 ---@field                         options Options
----@field                         images { [string]: image.Image }
----@field extmarks_namespace any
+---@field images? { [string]: image.Image }
+---@field extmarks_namespace?     any
 ---@field remote_cache { [string]: string }
 ---@field tmp_dir string
 ---@field disable_decorator_handling boolean
@@ -31,7 +31,6 @@
 ---@field clear_in_insert_mode? boolean
 ---@field only_render_image_at_cursor? boolean
 ---@field only_render_image_at_cursor_mode? "inline"|"popup"
----@field filetypes? string[]
 ---@field resolve_image_path? function
 ---@field floating_windows? boolean
 ---@alias image.IntegrationOptions image.DocumentIntegrationOptions
@@ -139,13 +138,13 @@
 ---@class image.IntegrationContext
 ---@field api API
 ---@field options image.IntegrationOptions
----@field state image.State
+---@field state                               image.State
 ---@class image.Integration
----@field setup? fun(api: API, options: image.IntegrationOptions, state: image.State)
+---@field setup?                              fun(api: API, options: image.IntegrationOptions, state: image.State)
 ---@class image.Window
 ---@field id number
 ---@field buffer number
----@field buffer_filetype string
+---@field buffer_filetype? string
 ---@field buffer_is_listed boolean
 ---@field x number
 ---@field y number
@@ -160,7 +159,7 @@
 ---@field rect { top: number, right: number, bottom: number, left: number }
 ---@field masks { x: number, y: number, width: number, height: number }[]
 ---@class                           image.KittyControlConfig
----@field action "t"|"T"|"p"|"d"|"f"|"c"|"a"|"q"
+---@field action? "t"|"T"|"p"|"d"|"f"|"c"|"a"|"q"
 ---@field image_id? string|number
 ---@field image_number? number
 ---@field placement_id? string|number

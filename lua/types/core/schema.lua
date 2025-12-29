@@ -8,7 +8,7 @@
 ---@field fileMatch string | string[]
 ---@field url string
 ---@class SchemaOpts
----@field select? string[]
+---@field extra? SchemaEntry[]
 ---@field ignore? string[]
 ---@field replace? table<string, SchemaEntry|string>?
----@field extra? SchemaEntry[]
+---@field select? string[]

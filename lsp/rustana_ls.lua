@@ -19,10 +19,10 @@ local function is_library(fname) ---@return string|nil
 end
 return ---@type vim.lsp.Config
 {
-    cmd = { ---@type string[]
+    cmd = {
         'rust-analyzer',
     },
-    filetypes = { ---@type string[]
+    filetypes = {
         'rust',
     },
     root_dir = function(bufnr, on_dir)
@@ -83,7 +83,7 @@ return ---@type vim.lsp.Config
             },
         },
     },
-    settings = { ---@type table
+    settings = {
         ['rust-analyzer'] = {
             assist = {
                 emitMustUse = true,
@@ -124,10 +124,10 @@ return ---@type vim.lsp.Config
                     '-C target-cpu=native -C debuginfo=2',
                 },
             },
-            checkOnSave = true,
+            checkOnSave = false, ---handled by bacon-ls
             completion = {},
             diagnostics = {
-                enable = true,
+                enable = false, ---handled by bacon-ls
                 expertimental = {
                     enable = true,
                 },
@@ -249,14 +249,7 @@ return ---@type vim.lsp.Config
         if config.settings and config.settings['rust-analyzer'] then
             init_params.initializationOptions = config.settings['rust-analyzer']
         end
-        ---@class RaRunnableArgs
-        ---@field cargoArgs string[]
-        ---@field executableArgs? string[]
-        ---@field cwd string
-        ---@class RaRunnable
-        ---@field kind string
-        ---@field label string
-        ---@field args RaRunnableArgs
+        ---@type RaRunnableArgs
         ---@param command table{ title: string, command: string, arguments: any[] }
         vim.lsp.commands['rust-analyzer.runSingle'] = function(command)
             local r = command.arguments[1] ---@type RaRunnable

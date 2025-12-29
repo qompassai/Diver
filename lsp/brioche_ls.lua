@@ -2,8 +2,8 @@
 -- Qompass AI Brioche LSP Spec
 -- Copyright (C) 2025 Qompass AI, All rights reserved
 -- --------------------------------------------------
----@type vim.lsp.Config
-return {
+return ---@type vim.lsp.Config
+{
     cmd = {
         'brioche',
         'lsp',
@@ -14,4 +14,20 @@ return {
     root_markers = {
         'project.bri',
     },
+    vim.api.nvim_create_autocmd('FileType', {
+        pattern = 'brioche',
+        callback = function()
+            vim.lsp.start({
+                name = 'brioche_ls',
+                cmd = {
+                    'brioche',
+                    'lsp',
+                },
+                root_dir = vim.fs.dirname(vim.fs.find({
+                    'project.bri',
+                    '.git',
+                })[1]),
+            })
+        end,
+    }),
 }

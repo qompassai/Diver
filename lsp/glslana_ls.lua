@@ -9,12 +9,12 @@ return {
     },
     filetypes = {
         'glsl',
-        'vert',
-        'frag',
-        'geom',
-        'tesc',
-        'tese',
-        'comp',
+        -- 'vert',
+        -- 'frag',
+        -- 'geom',
+        -- 'tesc',
+        -- 'tese',
+        -- 'comp',
     },
     codeActionProvider = {
         codeActionKinds = {
