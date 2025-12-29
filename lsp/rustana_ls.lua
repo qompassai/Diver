@@ -112,8 +112,19 @@ return ---@type vim.lsp.Config
                     'debug_assertions',
                     'miri',
                 },
+                extraArgs = {},
+                extraEnv = {},
+                features = 'all',
+                noDefaultFeatures = false,
+                noDeps = false,
+                sysroot = 'discover',
+                sysrootSrc = {},
+                target = {},
+                targetDir = {},
             },
-            cfg = {},
+            cfg = {
+                setTest = true,
+            },
             check = {
                 allTargets = nil,
                 command = 'clippy',
@@ -123,36 +134,268 @@ return ---@type vim.lsp.Config
                 extraEnv = {
                     '-C target-cpu=native -C debuginfo=2',
                 },
+                features = 'all',
+                ignore = {},
+                invocationStrategy = 'per_workspace',
+                noDefaultFeatures = {},
+                overrideCommand = {},
+                targets = {},
+                workspace = {},
             },
             checkOnSave = false, ---handled by bacon-ls
-            completion = {},
+            completion = {
+                addSemicolonToUnit = true,
+                autoAwait = {
+                    enable = true,
+                },
+                autoIter = {
+                    enable = true,
+                },
+                autoImport = {
+                    enable = true,
+                    exclude = {
+                        {
+                            path = 'core::borrow::Borrow',
+                            type = 'methods',
+                        },
+                        {
+                            path = 'core::borrow::BorrowMut',
+                            type = 'methods',
+                        },
+                    },
+                },
+                autoself = {
+                    enable = true,
+                },
+                callable = {
+                    snippts = 'fill_arguments',
+                },
+                excludeTraits = {},
+                fullFunctionSignatures = {
+                    enable = true,
+                },
+                hideDeprecated = false,
+                limit = 'None',
+                postfix = {
+                    enable = true,
+                },
+                privateEditable = {
+                    enable = true,
+                },
+                snippets = {
+                    custom = {
+                        custom = {
+                            ['Ok'] = {
+                                postfix = 'ok',
+                                body = 'Ok(${receiver})',
+                                description = 'Wrap the expression in a `Result::Ok`',
+                                scope = 'expr',
+                            },
+                            ['Box::pin'] = {
+                                postfix = 'pinbox',
+                                body = 'Box::pin(${receiver})',
+                                requires = 'std::boxed::Box',
+                                description = 'Put the expression into a `Result::Ok`',
+                                scope = 'expr',
+                            },
+                            ['Arc::new'] = {
+                                postfix = 'arc',
+                                body = 'Arc::new(${receiver})',
+                                requires = 'std::sync::Arc',
+                                description = 'Put the expression into an `Arc`',
+                                scope = 'expr',
+                            },
+                            ['Some'] = {
+                                postfix = 'some',
+                                body = 'Some(${receiver})',
+                                description = 'Wrap the expression in an `Option::Some`',
+                                scope = 'expr',
+                            },
+                            ['Err'] = {
+                                postfix = 'err',
+                                body = 'Err(${receiver})',
+                                description = 'Wrap the expression in a `Result::Err`',
+                                scope = 'expr',
+                            },
+                            ['Rc::new'] = {
+                                postfix = 'rc',
+                                body = 'Rc::new(${receiver})',
+                                requires = 'std::rc::Rc',
+                                description = 'Put the expression into an `Rc`',
+                                scope = 'expr',
+                            },
+                        },
+                    },
+                },
+                termSearch = {
+                    enable = true,
+                    fuel = 1000,
+                },
+            },
             diagnostics = {
+                disabled = {},
                 enable = false, ---handled by bacon-ls
                 expertimental = {
                     enable = true,
                 },
+                remapPrefix = {},
+                styleLints = {
+                    enable = true,
+                },
+                warningsAsHint = {},
+                warningsAsInfo = {},
             },
-            document = {},
-            files = {},
-            gotoImplementations = {},
-            highlightRelated = {},
-            hover = {},
-            imports = {
-                granularity = {
-                    group = 'module',
+            document = {
+                symbol = {
+                    search = {
+                        excludeLocals = true,
+                    },
                 },
             },
-            inlayHints = {},
-            interpret = {},
-            joinLines = {},
+            files = {
+                exclude = {},
+                watcher = 'client',
+            },
+            gotoImplementations = {
+                filterAdjacentDerives = true,
+            },
+            highlightRelated = {
+                brachExitPoints = {
+                    enable = true,
+                },
+                breakPoints = {
+                    enable = true,
+                },
+                closureCaptures = {
+                    enable = true,
+                },
+                exitPoints = {
+                    enable = true,
+                },
+                references = {
+                    enable = true,
+                },
+                yieldpoints = {
+                    enable = true,
+                },
+            },
+            hover = {
+                actions = {
+                    debug = {
+                        enable = true,
+                        implementations = {
+                            enable = true,
+                        },
+                    },
+                    enable = true,
+                    gotoTypeDef = {
+                        enable = true,
+                    },
+                    implementations = {
+                        enable = true,
+                    },
+                    references = {
+                        enable = true,
+                    },
+                    run = {
+                        enable = true,
+                    },
+                },
+                documentation = {
+                    enable = true,
+                    keywords = {
+                        enable = true,
+                    },
+                },
+                links = {
+                    enable = true,
+                },
+                memoryLayout = {
+                    alignment = 'hexadecimal',
+                    enable = true,
+                    niches = true,
+                    offset = 'hexadecimal',
+                    size = 'both',
+                },
+            },
+            imports = {
+                granularity = {
+                    enforce = true,
+                    group = 'crate',
+                },
+                groups = {
+                    enable = true,
+                },
+                merge = {
+                    glob = true,
+                },
+                preferNoStd = false,
+                preferPrelude = false,
+                prefix = 'plain',
+            },
+            inlayHints = {
+                bindingModeHints = {
+                    enable = true,
+                },
+                chainingHints = {
+                    enable = true,
+                },
+                closingBraceHints = {
+                    minLines = 0,
+                    enable = true,
+                },
+                closureCaptureHints = {
+                    enable = true,
+                },
+                closureReturnTypeHints = {
+                    enable = true,
+                },
+                closureStyle = 'impl_fn',
+                discriminantHints = {
+                    enable = 'always',
+                },
+                expressionAdjustmentHints = {
+                    enable = 'always',
+                    hideOutsideUnsafe = false,
+                    mode = 'prefix',
+                },
+                lifetimeElisionHints = {
+                    enable = 'always',
+                    useParameterNames = true,
+                },
+                maxLength = nil,
+                parameterHints = {
+                    enable = true,
+                },
+                reborrowHints = {
+                    enable = 'always',
+                },
+                renderColons = true,
+                typeHints = {
+                    enable = true,
+                    hideClosureInitialization = false,
+                    hideNamedConstructor = false,
+                },
+            },
+            interpret = {
+                tests = true,
+            },
+            joinLines = {
+                joinAssignments = true,
+                joinElseIf = true,
+                removeTrailingComma = true,
+                unwrapTrivialBlock = true,
+            },
             lens = {
                 debug = {
                     enable = true,
                 },
                 enable = true,
+                forceCustomCommands = true,
                 implementations = {
                     enable = true,
                 },
+                location = 'above_name',
                 references = {
                     adt = {
                         enable = true,
@@ -163,25 +406,53 @@ return ---@type vim.lsp.Config
                     method = {
                         enable = true,
                     },
-                    trait = {
+                    references = {
+                        method = {
+                            enable = true,
+                        },
+                        trait = {
+                            enable = true,
+                        },
+                    },
+                    run = {
                         enable = true,
                     },
                 },
-                run = {
-                    enable = true,
-                },
-                updateTest = {
-                    enable = true,
-                },
             },
             linkedProjects = {},
-            lru = {},
-            notifications = {},
-            numThreads = {},
-            procMacro = {},
-            profiling = {},
-            runnables = {},
-            rustc = {},
+            lru = {
+                capacity = nil,
+                query = {
+                    capacities = {},
+                },
+            },
+            notifications = {
+                cargoTomlNotFound = true,
+            },
+            numThreads = nil,
+            procMacro = {
+                procMacro = {
+                    attributes = {
+                        enable = true,
+                    },
+                },
+                enable = true,
+                ignored = {},
+                server = {},
+            },
+            references = {
+                excludeImports = false,
+            },
+            runnables = {
+                command = {},
+                extraArgs = {},
+            },
+            rust = {
+                analyzerTargetDir = {},
+            },
+            rustc = {
+                source = 'discover',
+            },
             rustfmt = {
                 extraArgs = {
                     '--edition',
@@ -191,6 +462,7 @@ return ---@type vim.lsp.Config
                     '--unstable-features',
                     '--verbose',
                 },
+                overrideCommand = {},
                 rangeFormatting = {
                     enable = true,
                 },
@@ -206,7 +478,9 @@ return ---@type vim.lsp.Config
                         },
                     },
                 },
+                nonStandardTokens = true,
                 operator = {
+                    enable = true,
                     specialization = {
                         enable = true,
                     },
@@ -215,7 +489,7 @@ return ---@type vim.lsp.Config
                     enable = true,
                     separate = {
                         macro = {
-                            bang = false,
+                            bang = true,
                         },
                     },
                     specialization = {
@@ -230,8 +504,11 @@ return ---@type vim.lsp.Config
                 detail = 'full',
                 enable = true,
             },
-            typing = {},
-            vfs = {},
+            typing = {
+                autoClosingAngleBrackets = {
+                    enable = true,
+                },
+            },
             workspace = {
                 symbol = {
                     search = {

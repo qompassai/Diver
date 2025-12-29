@@ -2,72 +2,8 @@
 -- Qompass AI Ltex_plus LSP Config
 -- Copyright (C) 2025 Qompass AI, All rights reserved
 -----------------------------------------------------
-local function read_spellfile_words()
-    local words = {}
-    local path = vim.fn.stdpath('config') .. '/nvim/spell/en.utf-8.add'
-    local f = io.open(path, 'r')
-    if not f then
-        return words
-    end
-    for line in f:lines() do
-        if line ~= '' then
-            table.insert(words, line)
-        end
-    end
-    f:close()
-    return words
-end
-local spell_words = read_spellfile_words()
-local dict_en = vim.list_extend(vim.deepcopy(spell_words), {
-    'HuggingFace',
-    'Steilacoom',
-    'Orthopaedics',
-    'Shikany',
-    'Zimmer',
-    'Biomet',
-    'CUDA',
-    'Podman',
-    'baselineskip',
-    'Vulkan',
-    'Mil',
-    'Edu',
-    'Noto',
-    'NetOps',
-    'PathFinder',
-    'Pixorize',
-    'MedAll',
-    'Multicare',
-    'Pseudarthrosis',
-    'Allenmore',
-    'USMAPS',
-    'CORR',
-    'ACDF',
-    'Redis',
-    'Qompass',
-    'MSOS',
-    'Eppich',
-    'Telis',
-    'Rusev',
-    'Pseudoarthrosis',
-    'MultiCare',
-    'Valkey',
-    'PMCID',
-    'Cureus',
-    'Frolov',
-    'Orthopaedic',
-    'Laporte',
-    'Rowshan',
-    'PRECICE',
-    'Mechtly',
-    'PharmD',
-    'Schaetzel',
-    'Kyber',
-    'Aiyer',
-    'NEJM',
-    'Zig',
-})
+---@source https://ltex-plus.github.io/ltex-plus/index.html
 local language_id_mapping = {
-    bib = 'bibtex',
     lualatex = 'markdown',
     plaintex = 'tex',
     rnoweb = 'rsweave',
@@ -78,13 +14,14 @@ local language_id_mapping = {
 local function get_language_id(_, filetype)
     return language_id_mapping[filetype] or filetype
 end
----@type vim.lsp.Config
-return {
+
+return ---@type vim.lsp.Config
+{
     cmd = {
         'ltex-ls-plus',
     },
     filetypes = {
-        'bib',
+        'bibtex',
         'context',
         'gitcommit',
         'html',
@@ -110,52 +47,71 @@ return {
     settings = {
         ltex = {
             additionalRules = {
-                languageModel = vim.fn.expand('~/.local/share/ltex/language-model'),
                 enablePickyRules = false,
+                languageModel = vim.fn.expand('$XDG_DATA_HOME/ltex/language-model'),
+                motherTongue = {},
             },
             bibtex = {
                 fields = {
-                    maintitle = false,
+                    maintitle = true,
                     seealso = true,
                 },
             },
             checkFrequency = 'edit',
             clearDiagnosticsWhenClosingFile = true,
             completionEnabled = true,
+            configurationTarget = {},
             diagnosticSeverity = {
                 PASSIVE_VOICE = 'hint',
                 default = 'information',
             },
             dictionary = {
-                ['en-US'] = dict_en,
+                ['en-US'] = {
+                    '$XDG_CONFIG_HOME/nvim/spell/dictionary.txt',
+                },
             },
             disabledRules = {
-                'MORFOLOGIK_RULE_EN_US',
                 'EN_QUOTES',
+                'MORFOLOGIK_RULE_EN_US',
                 'UPPERCASE_SENTENCE_START',
             },
             enabled = {
-                'bib',
+                'asciidoc',
+                'bibtex',
                 'context',
-                'gitcommit',
+                'context.tex',
+                --'gitcommit',
                 'html',
+                'latex',
+                --'lualatex',
+                --'mail',
                 'markdown',
-                'org',
-                'lualatex',
-                'plaintex',
-                'quarto',
-                'mail',
                 'mdx',
+                'neorg',
+                'org',
+                --'plaintex',
+                'quarto',
                 'rmd',
                 'rnoweb',
                 'rst',
+                'rsweave',
                 'tex',
-                'latex',
                 'text',
                 'typst',
                 'xhtml',
             },
+            enabledRules = {
+                ['en-US'] = {
+                    'PASSIVE_VOICE',
+                },
+            },
             language = 'en-US',
+        },
+        hiddenFailPositives = {},
+        languageToolHttpServerUri = {},
+        languageToolOrg = {
+            apiKey = {},
+            username = {},
         },
         latex = {
             commands = {
@@ -169,17 +125,27 @@ return {
                 verbatim = 'ignore',
             },
             markdown = {
-                nodes = {
-                    CodeBlock = 'ignore',
-                    FencedCodeBlock = 'ignore',
+                nodes = { ---@source https://javadoc.io/static/com.vladsch.flexmark/flexmark/0.62.2/com/vladsch/flexmark/ast/package-summary.html
                     AutoLink = 'dummy',
                     Code = 'dummy',
+                    CodeBlock = 'ignore',
+                    FencedCodeBlock = 'ignore',
                 },
             },
+            sentenceCacheSize = 2000,
             statusBarItem = true,
-            trace = {
-                server = 'messages',
-            },
+        },
+        ['ltex-ls'] = {
+            logllevel = 'finer',
+            path = vim.fn.expand('$XDG_DATA_HOME/ltex/ltex-ls-plus'),
+        },
+        java = {
+            initializeHeapSize = 64,
+            maximumHeapSize = 2048,
+            path = {},
+        },
+        trace = {
+            server = 'verbose',
         },
     },
 }
