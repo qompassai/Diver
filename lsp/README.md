@@ -248,6 +248,7 @@ curl -sSf https://atlasgo.sh | sh
 </div>
         </ul>
   </blockquote>
+    </details>
 <details>
   <summary style="font-size: 1.4em; font-weight: bold; padding: 15px; background: #667eea; color: white; border-radius: 10px; cursor: pointer; margin: 10px 0; display: flex; align-items: center; gap: 8px;">
     <div class="icon-row" style="display: flex; align-items: center; gap: 6px;">
@@ -758,21 +759,20 @@ pnpm add -g typescript@latest @astrojs/language-server@latest prettier@latest pr
     <strong>Atlas</strong>
   </summary>
   <blockquote style="font-size: 1.2em; line-height: 1.8; padding: 25px; background: #f8f9fa; border-left: 6px solid #667eea; border-radius: 8px; margin: 15px 0; box-shadow: 0 2px 8px rgba(0,0,0,0.1);">
-    <ul>
+      <ul>
       <li>
         <a href="https://github.com/qompassai/diver/blob/main/lsp/atlas_ls.lua">atlas_ls</a>
-      </li>
-       <p>
+        <br />
       <a href="https://atlasgo.io/">Atlas LSP Reference</a>
     </p>
  <div style="background: #f8f9fa; padding: 15px; border-radius: 5px; margin-top: 10px; font-family: monospace;">
 
 ```sh
-curl -sSf https://atlasgo.sh | sh
+ <pre><code>curl -sSf https://atlasgo.sh | sh </code></pre>
 ```
 
-</div>
-        </ul>
+  </li>
+    </ul>
   </blockquote>
 <details>
   <summary style="font-size: 1.4em; font-weight: bold; padding: 15px; background: #667eea; color: white; border-radius: 10px; cursor: pointer; margin: 10px 0; display: flex; align-items: center; gap: 8px;">
