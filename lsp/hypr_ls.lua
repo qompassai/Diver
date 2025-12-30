@@ -66,4 +66,28 @@ return {
                 },
             })
         end,
+    }),
+    vim.api.nvim_create_autocmd('FileType', {
+        pattern = { 'hyprlang', 'hypr' },
+        callback = function()
+            vim.lsp.start({
+                name = 'hyprls',
+                cmd = { 'hyprls' },
+                root_dir = vim.fs.dirname(vim.fs.find({
+                    'hyprland.conf',
+                    'hypr',
+                    '.git',
+                })[1] or vim.loop.cwd()),
+                settings = {
+                    hyprls = {
+                        colorProvider = { enable = true },
+                        completion = { enable = true, keywordSnippet = 'Both' },
+                        documentSymbol = { enable = true },
+                        hover = { enable = true },
+                        preferIgnoreFile = true,
+                        telemetry = { enable = false },
+                    },
+                },
+            })
+        end,
     })

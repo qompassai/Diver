@@ -4,12 +4,13 @@
 -- ----------------------------------------
 ---@type vim.fixer.Config
 return {
-  cmd = 'css-beautify',
-  args = {
-    '--stdin',
-    '--indent-size', '2',
-    '--end-with-newline',
-  },
-  stdin = true,
-  allow_non_zero = false,
+    cmd = 'css-beautify',
+    args = {
+        '--stdin',
+        '--indent-size',
+        '2',
+        '--end-with-newline',
+    },
+    stdin = true,
+    allow_non_zero = false,
 }

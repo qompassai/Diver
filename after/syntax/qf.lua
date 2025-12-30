@@ -3,7 +3,7 @@
 -- Copyright (C) 2025 Qompass AI, All rights reserved
 -- ----------------------------------------
 if vim.b.current_syntax ~= nil then
-  return
+    return
 end
 vim.cmd([[
   syntax match QuickFixText /^.*/

@@ -3,56 +3,56 @@
 -- Copyright (C) 2025 Qompass AI, All rights reserved
 -- ------------------------------------------------------
 return {
-  {
-    name = {
-      'MySQL Local'
+    {
+        name = {
+            'MySQL Local',
+        },
+        kind = 'sqlite',
+        lsp = true,
+        url = {
+            'mysql://root:password@localhost:3306/',
+        },
     },
-     kind = 'sqlite',
-    lsp = true,
-    url = {
-      'mysql://root:password@localhost:3306/'
+    {
+        name = {
+            'MySQL Production',
+        },
+        url = 'mysql://user:password@production-server:3306/database',
     },
-  },
-  {
-    name = {
-      'MySQL Production',
+    {
+        name = {
+            'SQLite Main',
+        },
+        url = 'sqlite:~/databases/main.sqlite',
     },
-    url = 'mysql://user:password@production-server:3306/database'
-  },
-  {
-    name = {
-      'SQLite Main',
+    {
+        name = {
+            'QMail',
+        },
+        url = {
+            'sqlite:./db/development.sqlite3',
+        },
     },
-    url = 'sqlite:~/databases/main.sqlite'
-  },
-  {
-    name = {
-      'QMail'
+    {
+        name = {
+            'Project DB',
+        },
+        url = 'sqlite:./db/development.sqlite3',
     },
-    url = {
-      'sqlite:./db/development.sqlite3'
-    }
-  },
-  {
-    name = {
-      'Project DB',
+    {
+        name = {
+            'Zotero',
+        },
+        url = {
+            'sqlite:~/.local/share/zotero/zotero.sqlite',
+        },
     },
-    url = 'sqlite:./db/development.sqlite3'
-  },
-  {
-    name = {
-      'Zotero'
+    {
+        name = 'PostgreSQL Local',
+        url = 'postgresql://postgres:password@localhost:5432/postgres',
     },
-    url = {
-      'sqlite:~/.local/share/zotero/zotero.sqlite'
-    }
-  },
-  {
-    name = 'PostgreSQL Local',
-    url = 'postgresql://postgres:password@localhost:5432/postgres'
-  },
-  {
-    name = 'PostgreSQL Production',
-    url = 'postgresql://user:password@production-server:5432/database'
-  }
+    {
+        name = 'PostgreSQL Production',
+        url = 'postgresql://user:password@production-server:5432/database',
+    },
 }

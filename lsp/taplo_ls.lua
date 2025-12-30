@@ -4,18 +4,18 @@
 -- --------------------------------------------------
 return ---@type vim.lsp.Config
 {
-  cmd = {
-    'taplo',
-    'lsp',
-    'stdio'
-  },
-  filetypes = {
-    'toml',
-  },
-  root_markers = {
-    '.taplo.toml',
-    'taplo.toml',
-    '.git',
-  },
-  settings = {},
+    cmd = {
+        'taplo',
+        'lsp',
+        'stdio',
+    },
+    filetypes = {
+        'toml',
+    },
+    root_markers = {
+        '.taplo.toml',
+        'taplo.toml',
+        '.git',
+    },
+    settings = {},
 }

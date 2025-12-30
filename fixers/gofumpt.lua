@@ -4,9 +4,8 @@
 -- ----------------------------------------
 ---@type vim.fixer.Config
 return {
-  cmd = 'gofumpt',
-  args = {
-  },
-  stdin = true,
-  allow_non_zero = false,
+    cmd = 'gofumpt',
+    args = {},
+    stdin = true,
+    allow_non_zero = false,
 }

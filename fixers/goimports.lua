@@ -4,9 +4,8 @@
 -- ----------------------------------------
 ---@type vim.fixer.Config
 return {
-  cmd = 'goimports',
-  args = {
-  },
-  stdin = true,
-  allow_non_zero = false,
+    cmd = 'goimports',
+    args = {},
+    stdin = true,
+    allow_non_zero = false,
 }
