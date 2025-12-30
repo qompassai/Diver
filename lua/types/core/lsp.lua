@@ -11,7 +11,6 @@
 ---@field backgroundAnalysisMaxFiles?                 integer
 ---@field capabilities?                               lsp.ClientCapabilities|table
 ---@field caseIndent?                                 boolean
----@field createBaconPreferencesFile?                 boolean
 ---@field enable?                                     boolean
 ---@field enabled?                                    boolean|string[]
 ---@field executablePath?                             string
@@ -21,7 +20,6 @@
 ---@field globPattern?                                string
 ---@field indent?                                     integer
 ---@field ignoreEditorconfig?                         boolean
----@field init_options?                               table[]
 ---@field keepPadding?                                boolean
 ---@field languageDialect?                            string
 ---@field logLevel?                                   string
@@ -31,21 +29,74 @@
 ---@field on_attach?                                  fun(client: vim.lsp.Client, bufnr: integer)
 ---@field onOpenAndSave?                              boolean
 ---@field path?                                       string|nil
----@field runBaconInBackground?                       boolean
----@field settings?                                   table[]
+---@field simplifyCode?                                         boolean
 ---@field single_file_support?                        boolean
----@field simplifyCode?                               boolean
 ---@field spaceRedirects?                             boolean
----@field synchronizeAllOpenFilesWaitMillis?          integer
 ---@field textDocument?                               lsp.TextDocumentIdentifier
----@field updateOnSave?                               boolean
----@field updateOnSaveWaitMillis?                     integer
----@field validateBaconPreferences?                   boolean
+---@class vim.lsp.Config.CodeLensModule
+---@field clear                                       fun(client_id?: integer, bufnr?: integer)
+---@field display                                     fun(lenses?: lsp.CodeLens[], bufnr: integer, client_id: integer)
+---@field get                                         fun(bufnr: integer): lsp.CodeLens[]
+---@field on_codelens                                 fun(err: lsp.ResponseError?, result: lsp.CodeLens[], ctx: lsp.HandlerContext)
+---@field refresh                                     fun(opts?: { bufnr?: integer })
+---@field run                                         fun()
+---@field save                                        fun(lenses?: lsp.CodeLens[], bufnr: integer, client_id: integer)
+---@class vim.lsp.Config.CompletionEnableOpts
+---@field autotrigger?                                boolean
+---@field cmp?                                        fun(a: table, b: table): boolean
+---@field convert?                                    fun(item: lsp.CompletionItem): table
+---@class                                             vim.lsp.Config.CompletionGetOpts
+---@field ctx?                                        lsp.CompletionContext
+---@class vim.lsp.Config.CompletionModule
+---@field enable                                      fun(enable: boolean, client_id: integer, bufnr: integer, opts?: vim.lsp.Config.CompletionEnableOpts)
+---@class vim.lsp.Config.init_options
+---@field completionDisableFilterText?               boolean
+---@field createBaconPreferencesFile?                 boolean
+---@field locationsFile?                              string
+---@field plugins?                                    { name: string, location: string, languages?: string[] }
+---@field runBaconInBackground?                       boolean
+---@field runBaconInBackgroundCommandArguments        string
+---@field synchronizeAllOpenFilesWaitMillis?          integer
+---@field updateOnSave?                                         boolean
+---@field useBaconBackend                             boolean
+---@field updateOnSaveWaitMillis?                               integer
+---@field validateBaconPreferences?                             boolean
+---@class vim.lsp.Config.init_options.preferences
+---@field allowIncompleteCompletions?                            boolean
+---@field autoImportFileExcludePatterns?                         string|nil
+---@field autoImportSpecifierExcludeRegexes?                    string|nil
+---@field disableSuggestions?                                   boolean
+---@field importModuleSpecifierEnding?                            'auto' | 'minimal' | 'index' | 'js'
+---@field includeInlayParameterNameHints                       'all' | 'literals' | 'none'
+---@field includePackageJsonAutoImports?                         'auto' | 'off' | 'on'
+---@field importModuleSpecifierPreference?                      'shortest' | 'project-relative' |'relative' | 'non-relative'
+---@field jsxAttributeCompletionStyle?                           'auto' | 'braces' | 'none'
+---@field organizeImportsIgnoreCase?                             'auto' | boolean
+---@field organizeImportsCollation?                           'ordinal' | 'unicode'
+---@field organizeImportsCaseFirst?                             'upper' | 'lower' | 'false'
+---@field organizeImportsLocale?                                'auto' | 'en'
+---@field organizeImportsTypeOrder?                             'last' | 'inline' | 'first'
+---@field quotePreference?                                      'auto' | 'double' | 'single'
+---@class vim.lsp.Config.init_options.tsserver
+---@field fallbackPath                                          string|nil
+---@field logDirectory                                          string|nil
+---@field logVerbosity                                        'off' | 'normal' | 'requestTime' | 'terse' | 'verbose'
+---@field path                                                string|nil
+---@field trace                                              'messages' | 'off' | 'verbose'
+---@field useSyntaxServer                                     'auto' | 'never'
 ---@class vim.lsp.Config.Settings
+---@field ansible.ansible.path?                                 string
+---@field ansible.ansible.reuseTerminal?                                 boolean
+---@field ansible.ansible.useFullyQualifiedCollectionNames?              boolean
+---@field ansible.ansibleServer.trace.server?                            'message' | 'off' | 'verbose'
+---@field ansible.completion.provideModuleOptions?                          boolean
+---@field ansible.completion.provideModuleParameters?                       boolean
+---@field ansible.completion.provideRedirectModules?                        boolean
 ---@field ltex.additionalRules.enablePickyRules?      boolean
 ---@field ltex.additionalRules.languageModel?         string
 ---@field ltex.additionalRules.motherTongue?          string
 ---@field basedpyright.analysis?                      vim.lsp.Config.BasedPyright.Analysis
+---@field implicitProjectConfiguration?               'amd'|'commonjs'|'es6/es2015'|'es2020'|'esnext'| 'node16'|'node18'|'node20'|'nodenext'|'none'| 'preserver'| 'system'|'umd'
 ---@field ltex.bibtex.fields?                         { [string]: boolean } ---object
 ---@field ltex.checkFrequency?                        'edit' | 'manual' | 'save'
 ---@field ltex.clearDiagnosticsWhenClosingFile?       boolean
@@ -62,6 +113,10 @@
 ---@field basedpyright.python?                        { pythonPath: string }
 ---@field ltex.statusBarItem?                         boolean
 ---@field ltex.trace.server?                          'off' | 'messages' | 'verbose'
+---@field typescript.format.baseIndentSize?           integer
+---@field typescript.format.convertTabsToSpaces?      boolean
+---@field typescript.format.indentStyle?             'Block' | 'None' | 'Smart'
+---@field typescript.format.semicolons?             'ignore' | 'insert' | 'remove'
 ---@class                                             HlOpts
 ---@field bg?                                         string
 ---@field bold?                                       boolean
@@ -70,22 +125,6 @@
 ---@field sp?                                         string
 ---@field undercurl?                                  boolean
 ---@field underline?                                  boolean
----@class                                             vim.lsp.Config.CodeLensModule
----@field clear                                       fun(client_id?: integer, bufnr?: integer)
----@field display                                     fun(lenses?: lsp.CodeLens[], bufnr: integer, client_id: integer)
----@field get                                         fun(bufnr: integer): lsp.CodeLens[]
----@field on_codelens                                 fun(err: lsp.ResponseError?, result: lsp.CodeLens[], ctx: lsp.HandlerContext)
----@field refresh                                     fun(opts?: { bufnr?: integer })
----@field run                                         fun()
----@field save                                        fun(lenses?: lsp.CodeLens[], bufnr: integer, client_id: integer)
----@class vim.lsp.Config.CompletionEnableOpts
----@field autotrigger?                                boolean
----@field cmp?                                        fun(a: table, b: table): boolean
----@field convert?                                    fun(item: lsp.CompletionItem): table
----@class                                             vim.lsp.Config.CompletionGetOpts
----@field ctx?                                        lsp.CompletionContext
----@class vim.lsp.Config.CompletionModule
----@field enable                                      fun(enable: boolean, client_id: integer, bufnr: integer, opts?: vim.lsp.Config.CompletionEnableOpts)
 ---@field get?                                        fun(opts?: vim.lsp.Config.CompletionGetOpts)
 ---@class vim.lsp.Config.LspModule
 ---@field codelens?                                   vim.lsp.Config.CodeLensModule

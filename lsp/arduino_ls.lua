@@ -2,25 +2,19 @@
 -- Qompass AI Arduino LSP Spec
 -- Copyright (C) 2025 Qompass AI, All rights reserved
 ------------------------------------------------------
----@type vim.lsp.Config
-return {
-    capabilities = {
-        textDocument = {
-            ---@diagnostic disable-next-line: assign-type-mismatch
-            semanticTokens = vim.NIL,
-        },
-        cmd = {
-            'arduino-language-server',
-        },
-        filetypes = {
-            'arduino',
-        },
-        root_markers = {
-            '*.ino',
-        },
-        workspace = {
-            ---@diagnostic disable-next-line: assign-type-mismatch
-            semanticTokens = vim.NIL,
-        },
-    },
+return ---@type vim.lsp.Config
+{
+  cmd = {
+    'arduino-language-server',
+  },
+  filetypes = {
+    'arduino',
+  },
+  root_markers = {
+    '*.ino',
+  },
+  on_attach = function(client, bufnr)
+    client.server_capabilities.semanticTokensProvider = nil
+    vim.bo[bufnr].omnifunc = 'v:lua.vim.lsp.omnifunc'
+  end,
 }
