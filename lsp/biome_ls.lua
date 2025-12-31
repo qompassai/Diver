@@ -2,58 +2,61 @@
 -- Qompass AI Biome LSP Config
 -- Copyright (C) 2025 Qompass AI, All rights reserved
 -----------------------------------------------------
----@type vim.lsp.Config
-return {
-    cmd = {
-        'biome',
-        'lsp-proxy',
-    },
-    filetypes = {
-        'astro',
-        'css',
-        'graphql',
-        'html',
-        'javascript',
-        'javascriptreact',
-        'json',
-        'jsonc',
-        'markdown',
-        'mdx',
-        'svelte',
-        'typescript',
-        'typescriptreact',
-        'typescript.tsx',
-        'vue',
-    },
-    root_markers = {
-        'package-lock.json',
-        'yarn.lock',
-        'pnpm-lock.yaml',
-        'bun.lockb',
-        'bun.lock',
-        '.git',
-    },
-    workspace_required = true,
-    before_init = function(_, config)
-        local bufnr = vim.api.nvim_get_current_buf()
-        if vim.fs(bufnr, {
-            'deno.json',
-            'deno.jsonc',
-            'deno.lock',
+return ---@type vim.lsp.Config
+{
+  cmd = {
+    'biome',
+    'lsp-proxy',
+  },
+  filetypes = {
+    'astro',
+    'css',
+    'graphql',
+    'html',
+    'javascript',
+    'javascriptreact',
+    --'json',
+    -- 'jsonc',
+    'markdown',
+    'mdx',
+    'svelte',
+    'typescript',
+    'typescriptreact',
+    'typescript.tsx',
+    'vue',
+  },
+  root_markers = {
+    'package-lock.json',
+    'yarn.lock',
+    'pnpm-lock.yaml',
+    'bun.lockb',
+    'bun.lock',
+    '.git',
+  },
+  workspace_required = true,
+  before_init = function(_, config)
+    local bufnr = vim.api.nvim_get_current_buf()
+    if vim.fs(bufnr, {
+          'deno.json',
+          'deno.jsonc',
+          'deno.lock',
         }) then
-            return
-        end
-        local project_root = vim.fs(bufnr, {
-            'package-lock.json',
-            'yarn.lock',
-            'pnpm-lock.yaml',
-            'bun.lockb',
-            'bun.lock',
-            '.git',
-        }) or vim.fn.getcwd()
-        local local_cmd = project_root .. '/node_modules/.bin/biome'
-        if vim.fn.executable(local_cmd) == 1 then
-            config.cmd = { local_cmd, 'lsp-proxy' }
-        end
-    end,
+      return
+    end
+    local project_root = vim.fs(bufnr, {
+      'package-lock.json',
+      'yarn.lock',
+      'pnpm-lock.yaml',
+      'bun.lockb',
+      'bun.lock',
+      '.git',
+    }) or vim.fn.getcwd()
+    local local_cmd = project_root .. '/node_modules/.bin/biome'
+    if vim.fn.executable(local_cmd) == 1 then
+      config.cmd = {
+        local_cmd,
+        'lsp-proxy'
+      }
+    end
+  end,
 }

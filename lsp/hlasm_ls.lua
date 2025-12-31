@@ -1,0 +1,4 @@
+-- /qompassai/Diver/lsp/hlasm_ls.lua
+-- Qompass AI Diver High Level Assembler (HLASM) LSP Spec
+-- Copyright (C) 2025 Qompass AI, All rights reserved
+-- -----------------------------------------------------
