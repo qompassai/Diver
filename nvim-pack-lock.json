@@ -18,7 +18,8 @@
     },
     "blink.cmp": {
       "rev": "3033d278848129899f94843e12ebb83a31342faa",
-      "src": "https://github.com/Saghen/blink.cmp"
+      "src": "https://github.com/Saghen/blink.cmp",
+      "version": "'1.*'"
     },
     "blink.compat": {
       "rev": "1454f14a8d855a578ceeba77c62538fa1459a67c",

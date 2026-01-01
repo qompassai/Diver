@@ -4,7 +4,7 @@
 -- ----------------------------------------
 ---@type vim.lsp.Config
 return {
-  cmd = { 'pest-language-server' },
-  filetypes = { 'pest' },
-  root_markers = { '.git' },
+    cmd = { 'pest-language-server' },
+    filetypes = { 'pest' },
+    root_markers = { '.git' },
 }

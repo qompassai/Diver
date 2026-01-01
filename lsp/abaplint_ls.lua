@@ -1,18 +1,17 @@
--- /qompassai/Diver/lsp/cir_ls.lua
--- Qompass AI LLVM ClangIR LSP Spec
+-- /qompassai/Diver/lsp/abaplint_ls.lua
+-- Qompass AI Diver Abaplint LSP Spec
 -- Copyright (C) 2025 Qompass AI, All rights reserved
 -- ----------------------------------------
----@source https://llvm.github.io/clangir
-
 return ---@type vim.lsp.Config
 {
     cmd = {
-        'cir-lsp-server',
+        'abaplint',
+        '--lsp',
     },
-    filetypes = {
-        'cir',
-    },
+    filetypes = { 'abap' },
     root_markers = {
+        'abaplint.json',
         '.git',
     },
+    settings = {},
 }

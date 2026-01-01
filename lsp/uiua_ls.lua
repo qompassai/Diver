@@ -6,16 +6,16 @@
 ---@see cargo install --git https://github.com/uiua-lang/uiua uiua -F full
 return ---@type vim.lsp.Config
 {
-  cmd = {
-    'uiua',
-    'lsp'
-  },
-  filetypes = {
-    'uiua'
-  },
-  root_markers = {
-    '.git',
-    'main.ua',
-    '.fmt.ua'
-  },
+    cmd = {
+        'uiua',
+        'lsp',
+    },
+    filetypes = {
+        'uiua',
+    },
+    root_markers = {
+        '.git',
+        'main.ua',
+        '.fmt.ua',
+    },
 }

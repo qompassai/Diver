@@ -4,7 +4,7 @@
 -- ----------------------------------------
 ---@type vim.lsp.Config
 return {
-  cmd = { 'kcl-language-server' },
-  filetypes = { 'kcl' },
-  root_markers = { '.git' },
+    cmd = { 'kcl-language-server' },
+    filetypes = { 'kcl' },
+    root_markers = { '.git' },
 }

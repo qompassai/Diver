@@ -4,8 +4,8 @@
 -- ----------------------------------------
 ---@type vim.lsp.Config
 return {
-  cmd = { 'ginko_ls' },
-  filetypes = { 'dts' },
-  root_markers = { '.git' },
-  settings = {},
+    cmd = { 'ginko_ls' },
+    filetypes = { 'dts' },
+    root_markers = { '.git' },
+    settings = {},
 }

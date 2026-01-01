@@ -4,10 +4,10 @@
 -- ----------------------------------------
 ---@type vim.lsp.Config
 return {
-  cmd = { 'scheme-langserver', '~/.scheme-langserver.log', 'enable', 'disable' },
-  filetypes = { 'scheme' },
-  root_markers = {
-    'Akku.manifest',
-    '.git',
-  },
+    cmd = { 'scheme-langserver', '~/.scheme-langserver.log', 'enable', 'disable' },
+    filetypes = { 'scheme' },
+    root_markers = {
+        'Akku.manifest',
+        '.git',
+    },
 }

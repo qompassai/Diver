@@ -221,9 +221,9 @@ return ---@type vim.lsp.Config
                     'lua/?/init.lua',
                 },
                 unicodeName = false,
-                version = 'LuaJIT', ---@type string
+                version = 'LuaJIT',
             },
-            semantic = { ---@type boolean[]
+            semantic = {
                 annotation = true,
                 enable = true,
                 keyword = true,
@@ -240,7 +240,7 @@ return ---@type vim.lsp.Config
                 castNumberToInteger = false,
                 checkTableShape = true,
                 inferParamType = true,
-                inferTableSize = 20, ---@type integer
+                inferTableSize = 20,
                 weakNilCheck = false,
                 weakUnionCheck = false,
             },

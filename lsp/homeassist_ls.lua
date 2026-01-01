@@ -4,10 +4,10 @@
 -- ----------------------------------------
 ---@type vim.lsp.Config
 return {
-  cmd = { 'vscode-home-assistant', '--stdio' },
-  filetypes = { 'yaml' },
-  root_markers = {
-    'configuration.yaml',
-    'configuration.yml',
-  },
+    cmd = { 'vscode-home-assistant', '--stdio' },
+    filetypes = { 'yaml' },
+    root_markers = {
+        'configuration.yaml',
+        'configuration.yml',
+    },
 }

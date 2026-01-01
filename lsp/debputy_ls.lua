@@ -4,7 +4,7 @@
 -- ----------------------------------------
 ---@type vim.lsp.Config
 return {
-  cmd = { 'debputy', 'lsp', 'server' },
-  filetypes = { 'debcontrol', 'debcopyright', 'debchangelog', 'autopkgtest', 'make', 'yaml' },
-  root_markers = { 'debian' },
+    cmd = { 'debputy', 'lsp', 'server' },
+    filetypes = { 'debcontrol', 'debcopyright', 'debchangelog', 'autopkgtest', 'make', 'yaml' },
+    root_markers = { 'debian' },
 }

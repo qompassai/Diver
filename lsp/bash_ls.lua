@@ -44,7 +44,7 @@ return ---@type vim.lsp.Config
             shfmt = {
                 binaryNextLine = true,
                 caseIndent = true,
-                funcNextLine = false,
+                funcNextLine = true,
                 ignoreEditorconfig = false,
                 indent = 2,
                 keepPadding = false,
