@@ -166,6 +166,26 @@ return ---@type vim.lsp.Config
         tabSize = 2,
         trimTrailingWhitespace = true,
       },
+      implementationsCodeLens = {
+        enabled = true,
+      },
+      inlayHints = {
+        includeInlayEnumMemberValueHints = true,
+        includeInlayFunctionLikeReturnTypeHints = true,
+        includeInlayFunctionParameterTypeHints = true,
+        includeInlayParameterNameHints = 'all',
+        includeInlayParameterNameHintsWhenArgumentMatchesName = false,
+        includeInlayPropertyDeclarationTypeHints = true,
+        includeInlayVariableTypeHints = true,
+        includeInlayVariableTypeHintsWhenTypeMatchesName = false,
+      },
+      jsxCloseTag = {
+        enable = true,
+        filetypes = {
+          'javascriptreact',
+          'typescriptreact',
+        },
+      },
       preferences = {
         allowIncompleteCompletions = true,
         allowRenameOfImportPath = true,

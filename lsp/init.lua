@@ -125,7 +125,6 @@ vim.lsp.enable({
   --'dprint_ls',          ---:TODO
   --'dts_ls',             ---:TODO
   --'earthly_ls',     *    ---:TODO
-  --'ecsact_ls',          ---:TODO
   'editorcc_ls', ---lsp/linter
   'elixir_ls',
   'elm_ls',
@@ -414,6 +413,7 @@ vim.lsp.enable({
 --'dagger_ls' ---deprecated
 --'diagnostic_ls', ---outdated
 --'dspinyin_ls' --deprecated
+--'ecsact_ls, ---outdated ---@source https://github.com/ecsact-dev/ecsact_lsp_server
 --'efm_ls', --last release Nov 2024
 --'erg_ls', ---not using
 ---'eslint_ls', --using biome instead, last updated 1 year ago.
