@@ -2,19 +2,16 @@
 -- Qompass AI Diver Lua_ls LSP Spec
 -- Copyright (C) 2025 Qompass AI, All rights reserved
 ------------------------------------------------------
----@meta
----@module 'lsp.lua_ls'
 return ---@type vim.lsp.Config
----@type fun(client: vim.lsp.Client, bufnr: integer): nil
 {
-    cmd = { ---@type string[]
+    cmd = {
         'lua-language-server',
     },
-    filetypes = { ---@type string[]
+    filetypes = {
         'lua',
         'luau',
     },
-    root_markers = { ---@type string[]
+    root_markers = {
         '.emmyrc.json',
         '.git',
         'luacheckrc',
@@ -36,15 +33,15 @@ return ---@type vim.lsp.Config
             codeLens = { ---@type boolean []
                 enable = true,
             },
-            completion = { ---@type table<string, boolean|string|integer>
-                autoRequire = true, ---@type boolean
-                callSnippet = 'Both', ---@type string
-                displayContext = 1, ---@type integer
-                enable = true, ---@type boolean
-                keywordSnippet = 'Both', ---@type string
-                postfix = '@', ---@type string
+            completion = {
+                autoRequire = true,
+                callSnippet = 'Both',
+                displayContext = 1,
+                enable = true,
+                keywordSnippet = 'Both',
+                postfix = '@',
             },
-            diagnostics = { ---@type string[]
+            diagnostics = {
                 disable = {
                     'lowercase-global',
                 },
@@ -52,7 +49,7 @@ return ---@type vim.lsp.Config
                     'git',
                 },
                 enable = true, ---@type boolean
-                globals = { ---@type string[]
+                globals = {
                     'assert',
                     'client',
                     'Client',
@@ -117,7 +114,7 @@ return ---@type vim.lsp.Config
                 workspaceRate = 100,
             },
             doc = {
-                regengine = 'lua', ---@type string
+                regengine = 'lua',
             },
             format = {
                 enable = true,
@@ -229,7 +226,7 @@ return ---@type vim.lsp.Config
                 keyword = true,
                 variable = true,
             },
-            signatureHelp = { ---@type boolean[]
+            signatureHelp = {
                 enable = true,
             },
             spell = {},

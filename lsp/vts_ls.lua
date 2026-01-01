@@ -3,7 +3,7 @@
 -- Copyright (C) 2025 Qompass AI, All rights reserved
 -- --------------------------------------------------
 --Reference: https://github.com/yioneko/vtsls
-local vue_plugin = { ---@type string[]
+local vue_plugin = {
     name = '@vue/typescript-plugin',
     location = 'node_modules/@vue/typescript-plugin',
     languages = {
@@ -12,53 +12,53 @@ local vue_plugin = { ---@type string[]
         'vue',
     },
 }
----@type vim.lsp.Config
-return {
-    cmd = {
-        'vtsls',
-        '--stdio',
-    },
-    init_options = { ---@type string[]
-        hostInfo = 'neovim',
-    },
-    filetypes = { ---@type string[]
-        'javascript',
-        'javascriptreact',
-        'javascript.jsx',
-        'typescript',
-        'typescriptreact',
-        'typescript.tsx',
-    },
-    root_dir = function(bufnr, on_dir)
-        if vim.fs(bufnr, {
-            'deno.json',
-            'deno.jsonc',
-            'deno.lock',
-        }) then
-            return
-        end
-        local root_markers = { ---@type string[]|string[][]
-            'package-lock.json',
-            'yarn.lock',
-            'pnpm-lock.yaml',
-            'bun.lockb',
-            'bun.lock',
-        }
-        if vim.fn.has('nvim-0.11.3') == 1 then
-            root_markers = { root_markers, { '.git' } }
-        else
-            root_markers = vim.list_extend(root_markers, { '.git' })
-        end
-        local project_root = vim.fs(bufnr, root_markers) or vim.fn.getcwd()
-        on_dir(project_root)
-    end,
-    settings = {
-        vtsls = {
-            tsserver = {
-                globalPlugins = {
-                    vue_plugin,
+---@param bufnr integer
+---@param markers string[]
+---@return string|nil
+local function ts_root(bufnr, markers)
+    return vim.fs.root(bufnr, markers)
+end
+---@param bufnr integer
+---@return vim.lsp.ClientConfig|nil
+local function make_config(bufnr)
+    local root = ts_root(bufnr, {
+        'package-lock.json',
+        'yarn.lock',
+        'pnpm-lock.yaml',
+        'bun.lockb',
+        'bun.lock',
+        '.git',
+    })
+    ---@type vim.lsp.Config
+    return {
+        cmd = {
+            'vtsls',
+            '--stdio',
+        },
+        init_options = {
+            hostInfo = 'neovim',
+        },
+
+        filetypes = {
+            'javascript',
+            'javascriptreact',
+            'javascript.jsx',
+            'typescript',
+            'typescriptreact',
+            'typescript.tsx',
+        },
+        root_dir = root or vim.uv.cwd(),
+        settings = {
+            vtsls = {
+                tsserver = {
+                    globalPlugins = {
+                        vue_plugin,
+                    },
                 },
             },
         },
-    },
+    }
+end
+return {
+    make_config = make_config,
 }

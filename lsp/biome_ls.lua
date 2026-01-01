@@ -15,8 +15,8 @@ return ---@type vim.lsp.Config
         'html',
         'javascript',
         'javascriptreact',
-        --'json',
-        -- 'jsonc',
+        'json',
+        'jsonc',
         'markdown',
         'mdx',
         'svelte',
@@ -36,14 +36,21 @@ return ---@type vim.lsp.Config
     workspace_required = true,
     before_init = function(_, config)
         local bufnr = vim.api.nvim_get_current_buf()
-        if vim.fs(bufnr, {
+        local fname = vim.api.nvim_buf_get_name(bufnr)
+        if fname == '' then
+            return
+        end
+        local deno_root = vim.fs.root(fname, {
             'deno.json',
             'deno.jsonc',
             'deno.lock',
-        }) then
+        })
+        if deno_root then
             return
         end
-        local project_root = vim.fs(bufnr, {
+        local project_root = vim.fs.root(fname, {
+            'biome.json',
+            'biome.jsonc',
             'package-lock.json',
             'yarn.lock',
             'pnpm-lock.yaml',

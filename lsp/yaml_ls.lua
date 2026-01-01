@@ -1,21 +1,21 @@
 -- /qompassai/Diver/lsp/yaml_ls.lua
--- Qompass AI Yamlls LSP Config
+-- Qompass AI Yaml LSP Spec
 -- Copyright (C) 2025 Qompass AI, All rights reserved
 ------------------------------------------------------
----@type vim.lsp.Config
-return {
-    cmd = { ---@type string[]
+return ---@type vim.lsp.Config
+{
+    cmd = {
         'yaml-language-server',
         '--stdio',
     },
-    filetypes = { ---@type string[]
+    filetypes = {
         'yaml',
         'yaml.docker-compose',
         'yaml.gitlab',
         'yaml.helm-values',
         'yml',
     },
-    root_markers = { ---@type string[]
+    root_markers = {
         '.git',
     },
     settings = {
@@ -25,13 +25,46 @@ return {
             },
         },
         yaml = {
-            format = { enable = true },
+            completion = true,
+            hover = true,
+            validate = true,
+            yamlVersion = '1.2',
+            format = {
+                bracketSpacing = true,
+                enable = true,
+                proseWrap = 'preserve',
+                printWidth = 80,
+                singleQuote = true,
+            },
+            schemaStore = {
+                enable = true,
+                url = 'https://www.schemastore.org/api/json/catalog.json',
+            },
         },
-        --  schemas = {
-        --    ['https://json.schemastore.org/github-workflow.json'] = '/.github/workflows/*',
-        --    ['https://raw.githubusercontent.com/yannh/kubernetes-json-schema/refs/heads/master/v1.32.1-standalone-strict/all.json'] =
-        --    '/*.k8s.yaml'
-        --   },
+        schemas = {
+            ['https://json.schemastore.org/github-workflow.json'] = '/.github/workflows/*',
+            kubernetes = {
+                '/*.k8s.yaml',
+                '/*.k8s.yml',
+                'k8s/**/*.yaml',
+                'k8s/**/*.yml',
+            },
+            ['https://raw.githubusercontent.com/yannh/kubernetes-json-schema/refs/heads/master/v1.32.1-standalone-strict/all.json'] = 'helm/values*.yaml',
+        },
+        maxItemsComputed = 5000,
+        disableDefaultProperties = false,
+        suggest = {
+            parentSkeletonSelectedFirst = false,
+        },
+        style = {
+            flowMapping = 'forbid',
+            flowSequence = 'forbid',
+        },
+        keyOrdering = false,
+    },
+    http = {
+        proxy = {},
+        proxyStrictSSL = false,
     },
     on_init = function(client)
         client.server_capabilities.documentFormattingProvider = true
