@@ -51,7 +51,7 @@ vim.filetype.add({
   },
 })
 vim.lsp.enable({
-  --'abaplint_ls'    *     ---:TODO: ---@source https://github.com/abaplint/abaplint
+  'abaplint_ls', ---:TODO: ---validate ---@source https://github.com/abaplint/abaplint
   --'abl_ls'         *     ---:TODO ---@source https://github.com/vscode-abl/vscode-abl
   'ada_ls',
   'agda_ls',
@@ -66,13 +66,13 @@ vim.lsp.enable({
   'arduino_ls',
   'asm_ls',
   'astgrep_ls',
-  --'astro_ls',           ---:TODO ---@source https://github.com/withastro/astro/tree/main/packages/language-tools
+  'astro_ls', ---:TODO  validate ---@source https://github.com/withastro/astro/tree/main/packages/language-tools
   'atlas_ls',
   'atopile_ls',
   'autotoo_ls',
   'awk_ls',
   'azurepipelines_ls',
-  --'b_ls',           *    ---:TODO ---@source https://github.com/hhu-stups/b-language-server
+  'b_ls', ---:TODO validate ---@source https://github.com/hhu-stups/b-language-server
   'bacon_ls',
   'basedpy_ls',
   'bash_ls',
@@ -89,10 +89,10 @@ vim.lsp.enable({
   'buf_ls',
   'c3_ls',
   'cairo_ls',
-  --'camel_ls',       *    ---:TODO ---@source https://github.com/camel-tooling/camel-language-server
+  'camel_ls', ---:TODO validate ---@source https://github.com/camel-tooling/camel-language-server
   'cc_ls',
   'cds_ls',
-  --'chpl_ls'         *    ---:TODO ---@source https://github.com/chapel-lang/chapel/tree/main/tools/chpl-language-server
+  'chpl_ls', ---:TODO validate ---@source https://github.com/chapel-lang/chapel/tree/main/tools/chpl-language-server
   'checkmake_ls',
   --'cir_ls',             ---:TODO
   'clangd_ls',
@@ -107,14 +107,14 @@ vim.lsp.enable({
   --'coq_ls',
   'crystalline_ls',
   'csharp_ls',
-  --'cspell_ls',          ---lsp/linter
+
   --'cucumber_ls',
   --'dafny_ls',           ---:TODO
   --'dcm_ls',
   --'delphi_ls'           ---:TODO ---@source https://docwiki.embarcadero.com/RADStudio/Florence/en/Code_Insight_Reference
-  --'debputy_ls',     *    ---:TODO ---@source https://salsa.debian.org/debian/debputy
+  'debputy_ls', ---:TODO validate ---@source https://salsa.debian.org/debian/debputy
   --'denizen_ls'          ---:TODO ---@source https://github.com/DenizenScript/DenizenVSCode
-  'deno_ls', ---lsp/linter
+  'deno_ls',    ---lsp/linter
   --'dj_ls',              ---:TODO
   --'djt_ls',             ---:TODO
   'docker_ls',        ---:TODO
@@ -124,7 +124,7 @@ vim.lsp.enable({
   --'dotenvlint_ls',
   --'dprint_ls',          ---:TODO
   --'dts_ls',             ---:TODO
-  --'earthly_ls',     *    ---:TODO
+  'earthly_ls',  ---:TODO validate
   'editorcc_ls', ---lsp/linter
   'elixir_ls',
   'elm_ls',
@@ -159,7 +159,7 @@ vim.lsp.enable({
   --'gn_ls',              ---:TODO os(https://github.com/google/gn-language-server) vs msft(https://github.com/microsoft/gnls)
   'gop_ls',
   --'gradle_ls',
-  --'grain_ls'            ---:TODO ---@source https://github.com/grain-lang/grain
+  'grain_ls', --:TODO validate ---@source https://github.com/grain-lang/grain
   --'graphql_ls',
   --'groovy_ls',          ---:TODO
   --'groovymoon_ls'       ---:TODO ---@source https://github.com/GroovyLanguageServer/groovy-language-server
@@ -409,6 +409,7 @@ vim.lsp.enable({
 --'cl_ls' ---outdated ---@source https://github.com/cxxxr/cl-lsp
 --'cquery_ls' ---deprecated for clangd/ccls ---@source https://github.com/jacobdufault/cquery
 --'coffeesense_ls', -- two years since last git
+--'cspell_ls',          ---deprecated for codebook
 --'css_ls', ---outdated last update 1 year ago
 --'dagger_ls' ---deprecated
 --'diagnostic_ls', ---outdated
