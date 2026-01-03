@@ -147,7 +147,7 @@ vim.lsp.enable({
   --'gauge_ls',           ---:TODO ---@source https://github.com/getgauge/gauge/
   'gdscript_ls',
   'gdshader_ls',
-  --'ghactions_ls',
+  'ghactions_ls',
   'ghcide_ls',
   'gitlabci_ls',
   --'gitlabduo_ls',       ---:TODO
@@ -172,7 +172,6 @@ vim.lsp.enable({
   'herb_ls',
   --'hhvm_ls',            ---:TODO
   --'hlasm_ls',           ---:TODO
-  --'hlsl_ls',            ---:TODO ---@source https://github.com/tgjones/HlslTools/tree/master/src/ShaderTools.LanguageServer
   --'homeassist_ls',      ---:TODO
   'hoon_ls',
   'html_ls',
@@ -199,7 +198,6 @@ vim.lsp.enable({
   --'kcl_ls',
   --'kedro_ls'            ---:TODO ---@source https://github.com/kedro-org/vscode-kedro
   --'koka_ls',
-
   'kotlin_ls',
   'laravel_ls',
   --'larkparse_ls'        ---:TODO ---@source https://github.com/dynovaio/lark-parser-language-server
@@ -212,8 +210,7 @@ vim.lsp.enable({
   'luau_ls',
   'lwc_ls',
   'm68k_ls',
-  --'makelint_ls',
-  --markdownoxide_ls.lua
+  'markdownoxide_ls',
   'markojs_ls',
   'marksman_ls',
   'matlab_ls',
@@ -224,7 +221,7 @@ vim.lsp.enable({
   'mlir_ls',
   'mlirpdll_ls',
   'mm0_ls',
-  'mojo_ls', ---:TODO
+  'mojo_ls', ---:TODO validate
   --'motoko_ls',          ---:TODO
   'msbuildptoo_ls',
   'muon_ls',
@@ -238,7 +235,7 @@ vim.lsp.enable({
   'nickel_ls',
   'nil_ls',
   'nixd_ls',
-  'nobl9_ls', ---:TODO  https://github.com/nobl9/nobl9-vscode/
+  'nobl9_ls', ---:TODO validate  https://github.com/nobl9/nobl9-language-server
   'nomad_ls',
   'ntt_ls',
   'nu_ls',
@@ -250,13 +247,12 @@ vim.lsp.enable({
   'openscad_ls',
   'oxlint_ls', ---lsp/linter
   --'pact_ls',
-  --'papyrus_ls',         ---:TODO https://github.com/joelday/papyrus-lang
   --'pas_ls',
   --'pb_ls',              ---:TODO
   'perl_ls',
   'perlnav_ls',
   'perlp_ls',
-  --'pest_ls',            ---:TODO https://github.com/pest-parser/pest-ide-tools
+  'pest_ls', ---:TODO validate https://github.com/pest-parser/pest-ide-tools
   'phan_ls',
   --'pharo_ls'            ---:TODO https://github.com/badetitou/Pharo-LanguageServer
   'phpactor_ls',
@@ -273,19 +269,18 @@ vim.lsp.enable({
   'pug_ls',
   'puppetes_ls',
   'puppet_ls',
-  --'py_ls',
   --'pylyzer_ls',
   'pyrefly_ls', ---lsp/linter
   'qml_ls',
   --'qlue_ls'             ---:TODO https://github.com/IoannisNezis/Qlue-ls
   --'quicklintjs_ls',     ---:TODO
-  --'r_ls',
+  --'r_ls',               ---:TODO install, config, validate
   --'racket_ls',          ---:TODO
   --'raku_ls'             ---:TODO ---@source https://github.com/bscan/RakuNavigator
   --'rascal_ls'           ---:TODO https://github.com/usethesource/rascal-language-servers
   --'rech_ls'             ---:TODO https://github.com/RechInformatica/rech-editor-cobol/tree/master/src/lsp
-  --'regal_ls',   ---linter/lsp
-  --'rego_ls',
+  'regal_ls', ---:TODO validate ---linter/lsp
+  'rego_ls',  ---:TODO validate
   'remark_ls',
   'rescript_ls',
   'robotcode_ls',
@@ -302,7 +297,6 @@ vim.lsp.enable({
   --'selene_ls',          ---:TODO
   --'selene3p_ls',        ---:TODO
   --'served_ls',          ---:TODO
-
   'slangd_ls', ---lsp/linter
   --'shopifytheme_ls',    ---:TODO
   'slint_ls',
@@ -365,7 +359,7 @@ vim.lsp.enable({
   --'uiua_ls',
   'viva_ls',
   'ungrammar_ls',
-  --'unison_ls', ---:TODO
+  'unison_ls', ---:TODO validate
   'unocss_ls',
   ---'uv_ls', --doesn't compile
   'vala_ls',
@@ -391,7 +385,7 @@ vim.lsp.enable({
   'ziggy_schema_ls',
   --'zk_ls',
   'z_ls',
-  --'zuban_ls', ---:TODO
+  --'zuban_ls', ---:TODO ---@source https://docs.zubanls.com/en/latest/usage.html#configuration
 })
 ---Deprecated/Outdated/NotUsing
 --'apl_ls', ---deprecated ---@source https://github.com/OptimaSystems/apl-language-server
@@ -426,6 +420,7 @@ vim.lsp.enable({
 --'gluon_ls' ---outdated ---@source https://github.com/gluon-lang/gluon_language-server
 --'gql_ls' ---outdated ---@source https://github.com/Mayank1791989/gql-language-server
 ---'hie_ls', --deprecated
+--'hlsl_ls', ---outdated ---@source https://github.com/tgjones/HlslTools/tree/master/src/ShaderTools.
 --'kdl_ls' ---outdated ---@source https://github.com/kdl-org/vscode-kdl
 --'kos_ls'---outdated ---@source https://github.com/jonnyboyC/kos-language-server
 --'languagetool_ls' ---oudated ---@source https://github.com/languagetool-language-server/languagetool-languageserver
@@ -434,7 +429,9 @@ vim.lsp.enable({
 --'moveana_ls', ---deprecated
 --'oraide_ls' ---deprecated ---@source https://github.com/penev92/Oraide.LanguageServer
 --'orbacle_ls' ---outdated ---@source https://github.com/swistak35/orbacle
+--'papyrus_ls', ---outdated https://github.com/joelday/papyrus-lang
 --'polymer_ls' ---deprecated ---@source https://github.com/Polymer/tools/tree/master/packages/editor-service
+--'py_ls', ---notusing| basedpyright instead
 ---'pyre', ---deprecated for pyrefly
 --'raml_ls' ---deprecated ---@source https://github.com/mulesoft-labs/raml-language-server
 --'red_ls' ---outdated ---@source https://github.com/bitbegin/redlangserver

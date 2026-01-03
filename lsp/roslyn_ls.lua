@@ -20,7 +20,7 @@ end
 local function on_init_project(client, project_files) ---@param project_files string[]
     vim.echo('Initializing: projects', vim.log.levels.TRACE, { title = 'roslyn_ls' }) ---@diagnostic disable-next-line: param-type-mismatch
     client:notify('project/open', {
-        projects = vim.tbl_map(function(file) ---@type table
+        projects = vim.tbl_map(function(file)
             return vim.uri_from_fname(file)
         end, project_files),
     })
@@ -47,7 +47,9 @@ local function roslyn_handlers() ---@return table<string, fun(err?: lsp.Response
             ---@diagnostic disable-next-line: param-type-mismatch
             client:request('workspace/_roslyn_restore', result, function(err, response)
                 if err then
-                    vim.echo(err.message, vim.log.levels.ERROR, { title = 'roslyn_ls' })
+                    vim.echo(err.message, vim.log.levels.ERROR, {
+                        title = 'roslyn_ls',
+                    })
                 end
                 if response then
                     for _, v in ipairs(response) do

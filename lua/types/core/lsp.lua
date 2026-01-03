@@ -28,7 +28,6 @@
 ---@field offsetEncoding?                                                   string[]
 ---@field on_attach?                                                        fun(client: vim.lsp.Client, bufnr: integer)
 ---@field onOpenAndSave?                                                    boolean
----@field path?                                                             string|nil
 ---@field simplifyCode?                                                     boolean
 ---@field single_file_support?                                              boolean
 ---@field spaceRedirects?                                                   boolean
@@ -181,6 +180,6 @@
 ---@field executableArgs?                                                   string[]
 ---@field cwd                                                               string
 ---@class RaRunnable
----@field kind                                                              string
+---@field kind?                                                             string
 ---@field label                                                             string
 ---@field args                                                              RaRunnableArgs

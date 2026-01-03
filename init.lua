@@ -9,13 +9,13 @@ vim.g.maplocalleader = '\\'
 vim.cmd('filetype plugin on')
 vim.cmd('filetype plugin indent on')
 require('config.init').config({
-    core = true,
-    cicd = true,
-    cloud = true,
-    debug = false,
-    edu = true,
-    nav = true,
-    ui = true,
+  core = true,
+  cicd = true,
+  cloud = true,
+  debug = false,
+  edu = true,
+  nav = true,
+  ui = true,
 })
 --vim.opt.packpath = vim.opt.runtimepath:get() ---@type string[]
 vim.bo.expandtab = true
@@ -27,14 +27,15 @@ vim.g.git_command_ssh = 1
 vim.g.loaded_illuminate = true
 vim.g.loaded_netrw = 1
 vim.g.loaded_netrwPlugin = 1
-vim.g.node_host_prog = '/usr/bin/node'
 vim.g.loaded_node_provider = 1
-vim.g.perl_host_prog = '/usr/bin/perl'
 vim.g.loaded_perl_provider = 1
-vim.g.python3_host_prog = '/usr/bin/python3.13'
 vim.g.loaded_python_provider = 1
-vim.g.ruby_host_prog = '/usr/bin/neovim-ruby-host'
 vim.g.loaded_ruby_provider = 1
+vim.g.node_host_prog = '/usr/bin/node'
+vim.g.perl_host_prog = '/usr/bin/perl'
+vim.g.sqlite_clib_path = '/usr/lib/libsqlite3.so'
+vim.g.python3_host_prog = '/usr/bin/python3.13'
+vim.g.ruby_host_prog = '/usr/bin/neovim-ruby-host'
 vim.g.lsp_enable_on_demand = true
 vim.g.vim_markdown_folding_disabled = 1
 vim.g.vim_markdown_math = 1
@@ -43,7 +44,7 @@ vim.g.vim_markdown_toml_frontmatter = 1
 vim.g.vim_markdown_json_frontmatter = 1
 vim.g.vim_markdown_follow_anchor = 1
 vim.g.mkdp_theme = 'dark'
---vim.g.ruff_makeprg_params = "--max-line-length --preview "
+vim.g.ruff_makeprg_params = "--max-line-length --preview "
 vim.g.semantic_tokens_enabled = true
 vim.g.table_mode_corner = '|'
 vim.g.table_mode_separator = '|'
@@ -92,8 +93,8 @@ vim.o.lazyredraw = true
 vim.o.linebreak = true
 vim.o.list = true
 vim.opt.listchars = {
-    space = '_',
-    tab = '>~',
+  space = '_',
+  tab = '>~',
 }
 vim.o.magic = true
 vim.o.mat = 2
@@ -141,12 +142,12 @@ vim.o.undofile = true
 vim.o.updatetime = 50
 vim.o.virtualedit = 'block'
 vim.opt.wildignore = {
-    '*.a',
-    '*.o',
-    '*.obj',
-    '*.class',
-    '*.pyc',
-    '__pycache__',
+  '*.a',
+  '*.o',
+  '*.obj',
+  '*.class',
+  '*.pyc',
+  '__pycache__',
 }
 vim.o.wildignorecase = true
 vim.o.wildmenu = true
@@ -159,31 +160,31 @@ vim.g.guipty = true
 vim.g.highlight = true
 vim.wo.number = true
 vim.api.nvim_create_autocmd({
-    'BufNewFile',
-    'BufRead',
+  'BufNewFile',
+  'BufRead',
 }, {
-    pattern = {
-        '*',
-    },
-    callback = function(args)
-        local filename = vim.fn.expand('%:t')
-        if filename:match('%.js$') or filename:match('%.jsx$') then
-            vim.bo.filetype = 'javascriptreact'
-        elseif filename:match('%.ts$') or filename:match('%.tsx$') then
-            vim.bo.filetype = 'typescriptreact'
-        elseif filename:match('%.snippets$') then
-            vim.bo.filetype = 'snippets'
-        elseif filename:match('%.html$') then
-            vim.bo.filetype = 'jsx'
-        end
-        local is_file = vim.bo[args.buf].buftype == '' and vim.bo[args.buf].filetype ~= 'gitcommit'
-        if is_file then
-            vim.opt_local.numberwidth = 4
-        else
-            vim.opt_local.numberwidth = 1
-            vim.opt_local.statuscolumn = ''
-        end
-    end,
+  pattern = {
+    '*',
+  },
+  callback = function(args)
+    local filename = vim.fn.expand('%:t')
+    if filename:match('%.js$') or filename:match('%.jsx$') then
+      vim.bo.filetype = 'javascriptreact'
+    elseif filename:match('%.ts$') or filename:match('%.tsx$') then
+      vim.bo.filetype = 'typescriptreact'
+    elseif filename:match('%.snippets$') then
+      vim.bo.filetype = 'snippets'
+    elseif filename:match('%.html$') then
+      vim.bo.filetype = 'jsx'
+    end
+    local is_file = vim.bo[args.buf].buftype == '' and vim.bo[args.buf].filetype ~= 'gitcommit'
+    if is_file then
+      vim.opt_local.numberwidth = 4
+    else
+      vim.opt_local.numberwidth = 1
+      vim.opt_local.statuscolumn = ''
+    end
+  end,
 })
 vim.cmd([[
     iabbr cosnt const
@@ -285,67 +286,54 @@ vim.cmd([[
     iabbr reprtID reportID
     iabbr reoprtID reportID
 ]])
-vim.api.nvim_create_autocmd({ 'BufWinEnter' }, {
+vim.api.nvim_create_autocmd({
+    'BufWinEnter'
+  },
+  {
     desc = 'return cursor to where it was last time closing the file',
     pattern = '*',
     command = 'silent! normal! g`"zv',
-})
+  })
 local function getPathAndLineNumber(str)
-    local file, line = str:match('^(.-)\' function.- line \'(%d+)\'')
-    if file and line and tonumber(line) then
-        return file, line
-    end
-    file, line = str:match('^(.-)\' exceptionLine: \'(%d+)\'')
-    if file and line and tonumber(line) then
-        return file, line
-    end
-    if not string.find(str, ':') and not string.find(str, '#L') then
-        return nil
-    end
+  local file, line = str:match('^(.-)\' function.- line \'(%d+)\'')
+  if file and line and tonumber(line) then
     return file, line
+  end
+  file, line = str:match('^(.-)\' exceptionLine: \'(%d+)\'')
+  if file and line and tonumber(line) then
+    return file, line
+  end
+  if not string.find(str, ':') and not string.find(str, '#L') then
+    return nil
+  end
+  return file, line
 end
 vim.api.nvim_create_user_command('GotoFile', function(opts)
-    local filepath, line = getPathAndLineNumber(opts.args)
-    local fidget = require('fidget')
-    if not filepath or not line then
-        fidget.notify('Not a valid line number `' .. opts.args .. '`')
-        return
-    end
-    if filepath and not io.open(filepath, 'r') then
-        fidget.notify('File doesn\'t exist: `' .. filepath .. '`')
-        return
-    end
-    vim.cmd('edit ' .. filepath)
+  local filepath, line = getPathAndLineNumber(opts.args)
+  local fidget = require('fidget') ---@type table
+  if not filepath or not line then
+    fidget.notify('Not a valid line number `' .. opts.args .. '`')
+    return
+  end
+  if filepath and not io.open(filepath, 'r') then
+    fidget.notify('File doesn\'t exist: `' .. filepath .. '`')
+    return
+  end
+  vim.cmd('edit ' .. filepath)
 end, { nargs = 1 })
 vim.keymap.set('n', '<leader>gt', ':GotoFile <C-r>*<CR>', {
-    noremap = true,
-    silent = true,
+  noremap = true,
+  silent = true,
 })
 vim.api.nvim_create_autocmd({
-    'FocusGained',
-    'BufEnter',
-    'CursorHold',
-    'CursorHoldI',
+  'FocusGained',
+  'BufEnter',
+  'CursorHold',
+  'CursorHoldI',
 }, {
-    callback = function()
-        if vim.bo.filetype ~= '' and vim.bo.filetype ~= 'vim' and vim.fn.mode() ~= 'c' then
-            vim.cmd('checktime')
-        end
-    end,
-})
-vim.api.nvim_create_autocmd({
-    'BufEnter',
-}, {
-    callback = function(args)
-        local highlighter = require('vim.treesitter.highlighter')
-        local ts_was_active = highlighter.active[args.buf]
-        local file_size = vim.fn.getfsize(args.file)
-        if file_size > 1024 * 1024 then
-            vim.cmd('TSBufDisable highlight')
-            vim.cmd('NoMatchParen')
-            if ts_was_active then
-                vim.notify('File larger than 1MB, turned off syntax highlighting')
-            end
-        end
-    end,
+  callback = function()
+    if vim.bo.filetype ~= '' and vim.bo.filetype ~= 'vim' and vim.fn.mode() ~= 'c' then
+      vim.cmd('checktime')
+    end
+  end,
 })

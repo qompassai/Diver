@@ -48,7 +48,7 @@ return ---@type vim.lsp.Config
                 disableScheme = {
                     'git',
                 },
-                enable = true, ---@type boolean
+                enable = true,
                 globals = {
                     'assert',
                     'client',
@@ -69,7 +69,7 @@ return ---@type vim.lsp.Config
                     luadoc = 'Any',
                     redefined = 'Any',
                     strict = 'Any',
-                    --strong = 'Any',
+                    -- strong = 'Opened',
                     ['type-check'] = 'Any',
                     unused = 'Any',
                 },
@@ -192,10 +192,10 @@ return ---@type vim.lsp.Config
                 paramType = true,
             },
             hover = {
-                enable = true, ---@type boolean
+                enable = true,
                 enumsLimit = 5,
                 expandAlias = true,
-                previewFields = 50, ---@type integer
+                previewFields = 50,
                 viewNumber = true,
                 viewString = true,
                 viewStringMax = 1000,
@@ -281,17 +281,20 @@ return ---@type vim.lsp.Config
     },
     on_attach = function(client, bufnr) ---@type fun(client: vim.lsp.Client, bufnr: integer): nil
         client.server_capabilities.documentFormattingProvider = true
-        vim.api.nvim_create_autocmd('BufWritePre', {
-            buffer = bufnr,
-            callback = function(args) ---@param args { buf: integer, match?: string, file?: string }
-                vim.lsp.buf.format({
-                    async = false,
-                    bufnr = args.buf,
-                    filter = function(c)
-                        return c.name == 'lua_ls'
-                    end,
-                })
-            end,
-        })
+        vim.api.nvim_create_autocmd(
+            'BufWritePre', ---@type NativeAPI
+            {
+                buffer = bufnr,
+                callback = function(args) ---@param args { buf: integer, match?: string, file?: string }
+                    vim.lsp.buf.format({
+                        async = false,
+                        bufnr = args.buf,
+                        filter = function(c)
+                            return c.name == 'lua_ls'
+                        end,
+                    })
+                end,
+            }
+        )
     end,
 }

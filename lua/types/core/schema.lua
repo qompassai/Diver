@@ -2,13 +2,15 @@
 -- Qompass AI Diver Schema Types
 -- Copyright (C) 2025 Qompass AI, All rights reserved
 -- ----------------------------------------
----@class SchemaEntry
----@field name string
----@field description string
----@field fileMatch string | string[]
----@field url string
----@class SchemaOpts
----@field extra? SchemaEntry[]
----@field ignore? string[]
----@field replace? table<string, SchemaEntry|string>?
----@field select? string[]
+---@class vim.Schema
+---@field catalog?                   table
+---@field description?               string
+---@field extra?                     vim.Schema[]
+---@field fileMatch?                 (string|string[])
+---@field ignore?                    string[]
+---@field index?                     table<string, integer>
+---@field name?                      string
+---@field replace?                   table<string, vim.Schema|string>?
+---@field schemas?                   vim.Schema[]
+---@field select?                    string[]
+---@field url?                       string

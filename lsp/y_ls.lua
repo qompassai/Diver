@@ -10,6 +10,8 @@ return {
     filetypes = {
         'yara',
     },
-    root_dir = util.find_git_ancestor,
+    root_markers = {
+        '.git',
+    },
     settings = {},
 }

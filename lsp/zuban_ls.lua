@@ -1,20 +1,22 @@
--- zuban_ls.lua
--- Qompass AI - [ ]
+-- /qompassai/Diver/lsp/zuban_ls.lua
+-- Qompass AI Diver Zuban LSP Spec
 -- Copyright (C) 2025 Qompass AI, All rights reserved
 -- ----------------------------------------
----@type vim.lsp.Config
-return {
+return ---@type vim.lsp.Config
+{
     cmd = {
         'zuban',
         'server',
     },
-    filetypes = { 'python' },
+    filetypes = {
+        'python',
+    },
     root_markers = {
+        '.git',
         'pyproject.toml',
+        'Pipfile',
+        'requirements.txt',
         'setup.py',
         'setup.cfg',
-        'requirements.txt',
-        'Pipfile',
-        '.git',
     },
 }

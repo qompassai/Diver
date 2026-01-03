@@ -4,16 +4,19 @@
 -- ----------------------------------------
 --Reference: https://github.com/Davidyz/VectorCode
 --pip install "VectorCode[lsp,mcp]"
-local vc = require('vectorcode')
+local vc = require('vectorcode') ---@type table
 vim.keymap.set('n', '<leader>vq', function()
-    local results = vc.query('summarise this file', {
-        n_query = 5,
-    })
+    local results = vc.query(
+        'summarise this file', ---@type table
+        {
+            n_query = 5,
+        }
+    )
     vim.notify(('VectorCode: %d results'):format(#results), vim.log.levels.INFO)
 end, {
     desc = 'VectorCode query',
 })
-local cacher_backend = require('vectorcode.config').get_cacher_backend()
+local cacher_backend = require('vectorcode.config').get_cacher_backend() ---@type table
 vim.api.nvim_create_autocmd('BufReadPost', {
     callback = function(ev)
         cacher_backend.register_buffer(ev.buf, {
@@ -23,7 +26,7 @@ vim.api.nvim_create_autocmd('BufReadPost', {
     end,
 })
 vim.keymap.set('n', '<leader>vc', function()
-    local prompt = cacher_backend.make_prompt_component(0).content
+    local prompt = cacher_backend.make_prompt_component(0).content ---@type string
     vim.fn.setreg('+', prompt)
     vim.notify('VectorCode prompt copied to clipboard', vim.log.levels.INFO)
 end, {

@@ -9,17 +9,17 @@
 --chmod +x "$HOME/.local/bin/grain"
 ---@type vim.lsp.Config
 return {
-  cmd = {
-    'grain',
-    'lsp',
-    '--source-map',
-    '--strict-sequence',
-  },
-  filetypes = {
-    'grain'
-  },
-  root_markers = {
-    'grain.toml',
-    '.git'
-  },
+    cmd = {
+        'grain',
+        'lsp',
+        '--source-map',
+        '--strict-sequence',
+    },
+    filetypes = {
+        'grain',
+    },
+    root_markers = {
+        'grain.toml',
+        '.git',
+    },
 }

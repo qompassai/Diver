@@ -5,17 +5,17 @@
 -- nix profile install github:nix-community/nixd
 ---@type vim.lsp.Config
 return {
-    cmd = { ---@type string[]
+    cmd = {
         'nixd',
         '--log=info',
         '--inlay-hints=true',
         '--semantic-tokens=true',
         '--pretty',
     },
-    filetypes = { ---@type string[]
+    filetypes = {
         'nix',
     },
-    root_markers = { ---@type string[]
+    root_markers = {
         'flake.nix',
         'default.nix',
         '.git',

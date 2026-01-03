@@ -4,17 +4,18 @@
 -- ----------------------------------------
 ---@type vim.lsp.Config
 return {
-  cmd = {
-    'motoko-lsp',
-    '--stdio'
-  },
-  filetypes = {
-    'motoko'
-  },
-  root_markers = {
-    'dfx.json', '.git'
-  },
-  init_options = {
-    formatter = 'auto',
-  },
+    cmd = {
+        'motoko-lsp',
+        '--stdio',
+    },
+    filetypes = {
+        'motoko',
+    },
+    root_markers = {
+        'dfx.json',
+        '.git',
+    },
+    init_options = {
+        formatter = 'auto',
+    },
 }

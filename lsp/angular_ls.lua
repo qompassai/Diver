@@ -15,7 +15,7 @@ local function resolve_cmd_shim(cmd_path)
     if not ok or not content then
         return cmd_path
     end
-    local target = content:match('%s%"%%dp0%%\\([^\r\n]-ngserver[^\r\n]-)%"')
+    local target = content:match('%s%"%%dp0%%\\([^\r\n]-ngserver[^\r\n]-)%"') ---@type string[]
     if not target then
         return cmd_path
     end

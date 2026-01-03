@@ -7,3 +7,4 @@ cargo install --features lsp --locked taplo-cli
 cargo install --git https://github.com/wgsl-analyzer/wgsl-analyzer wgsl-analyzer
 cargo install --git https://github.com/kitten/prosemd-lsp prosemd-lsp
 cargo install --git https://github.com/digama0/mm0 --locked mm0-rs
+cargo install --git https://github.com/pest-parser/pest-ide-tools

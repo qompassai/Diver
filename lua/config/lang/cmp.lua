@@ -140,18 +140,18 @@ function M.blink_cmp()
 end
 
 function M.nvim_cmp()
-  local cmp = require('cmp')
-  local luasnip = require('luasnip')
+  local cmp = require('cmp') ---@type table
+  local luasnip = require('luasnip') ---@type table
   local mappings = {
-    ['<C-b>'] = cmp.mapping.scroll_docs(-4),
-    ['<C-f>'] = cmp.mapping.scroll_docs(4),
-    ['<C-Space>'] = cmp.mapping.complete(),
-    ['<C-e>'] = cmp.mapping.abort(),
-    ['<CR>'] = cmp.mapping.confirm({
+    ['<C-b>'] = cmp.mapping.scroll_docs(-4), ---@type string[]
+    ['<C-f>'] = cmp.mapping.scroll_docs(4), ---@type string[]
+    ['<C-Space>'] = cmp.mapping.complete(), ---@type string[]
+    ['<C-e>'] = cmp.mapping.abort(), ---@type string[]
+    ['<CR>'] = cmp.mapping.confirm({ ---@type string[]
       select = true,
-      behavior = cmp.ConfirmBehavior.Replace,
+      behavior = cmp.ConfirmBehavior.Replace, ---@type string[]
     }),
-    ['<Tab>'] = cmp.mapping(function(fallback)
+    ['<Tab>'] = cmp.mapping(function(fallback) ---@type string
       if cmp.visible() then
         cmp.select_next_item()
       elseif luasnip.expand_or_jumpable() then
@@ -163,7 +163,7 @@ function M.nvim_cmp()
       'i',
       's',
     }),
-    ['<S-Tab>'] = cmp.mapping(function(fallback)
+    ['<S-Tab>'] = cmp.mapping(function(fallback) ---@type string
       if cmp.visible() then
         cmp.select_prev_item()
       elseif luasnip.jumpable(-1) then
@@ -190,7 +190,7 @@ function M.nvim_cmp()
         maxwidth = 50,
         ellipsis_char = '...',
         before = function(entry, vim_item)
-          vim_item.menu = ({
+          vim_item.menu = ({ ---@type table[]
             nvim_lsp = '[LSP]',
             nvim_lua = '[Lua]',
             luasnip = '[Snippet]',
@@ -207,11 +207,11 @@ function M.nvim_cmp()
       },
     },
     window = {
-      completion = cmp.config.window.bordered({
+      completion = cmp.config.window.bordered({ ---@type table
         border = 'single',
         winhighlight = 'Normal:Normal,FloatBorder:FloatBorder,CursorLine:Visual,Search:None',
       }),
-      documentation = cmp.config.window.bordered({
+      documentation = cmp.config.window.bordered({ ---@type table
         border = 'single',
         winhighlight = 'Normal:Normal,FloatBorder:FloatBorder,CursorLine:Visual,Search:None',
       }),

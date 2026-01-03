@@ -10,5 +10,4 @@ return {
     require('plugins.ui.bufferline'),
     require('plugins.ui.noice'),
     require('plugins.ui.themes'),
-    require('plugins.ui.unreal'),
 }
