@@ -5,22 +5,26 @@
 ####################################################
 set -euo pipefail
 pnpm add -g \
+  @abaplint/cli@latest \
+  @abaplint/transpiler-cli@latest \
+  @abaplint/transpiler@latest \
+  @abaplint/runtime@latest
   @angular/language-server@latest \
   @awk-language-server@latest \
-  @cucumber/language-server@latest \
-  @herb-tools/language-server@latest \
-  @imc-trading/svlangserver@latest \
-  @neo4j-cypher/language-server@latest \
-  @rescript/language-server@latest \
-  @sap/cds-lsp@latest \
   @azure-pipelines-language-server@latest \
   @css-variables-language-server@latest \
   @cssmodules-language-server@latest \
+  @cucumber/language-server@latest \
   @custom-elements-languageserver@latest \
-  @lean-language-server@latest \
   git+https://github.com/salesforce-misc/bazelrc-lsp.git \
+  @herb-tools/language-server@latest \
+  @imc-trading/svlangserver@latest \
+  @lean-language-server@latest \
   @microsoft/compose-language-service@latest \
+  @neo4j-cypher/language-server@latest \
   @oxlint@latest \
+  @rescript/language-server@latest \
+  @sap/cds-lsp@latest \
   @solc@latest \
   @solidity-ls@latest \
   @stimulus-language-server@latest \

@@ -3,19 +3,19 @@
 -- Copyright (C) 2025 Qompass AI, All rights reserved
 -- ----------------------------------------
 -- uv tool install django-language-server
-return {
-    cmd = {
-        'djls',
-        'serve',
-    },
-    filetypes = {
-        'html',
-        'htmldjango',
-        -- 'python',
-    },
-    root_markers = {
-        'manage.py',
-        'pyproject.toml',
-        '.git',
-    },
+return ---@type vim.lsp.Config
+{
+  cmd = {
+    'djls',
+    'serve',
+  },
+  filetypes = {
+    'htmldjango',
+    -- 'python',
+  },
+  root_markers = {
+    'manage.py',
+    'pyproject.toml',
+    '.git',
+  },
 }

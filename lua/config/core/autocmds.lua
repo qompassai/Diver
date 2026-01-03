@@ -18,7 +18,7 @@ end
 local function make_header(filepath, comment)
   local relpath = get_relative_path(filepath)
   local description = 'Qompass AI - [ ]' ---@type string
-  local copyright = 'Copyright (C) 2025 Qompass AI, All rights reserved' ---@type string
+  local copyright = 'Copyright (C) 2026 Qompass AI, All rights reserved' ---@type string
   local solid
   if comment == '<!--' then
     solid = '<!-- ' .. string.rep('-', 40) .. ' -->'
@@ -149,6 +149,7 @@ vim.api.nvim_create_autocmd(
         rust = '//',
         sass = '//',
         scala = '//',
+        scm = ';',
         scss = '/*',
         sh = '#',
         sql = '--',
@@ -210,59 +211,61 @@ vim.api.nvim_create_autocmd({
     vim.bo.filetype = 'yaml'
   end,
 })
-
-vim.api.nvim_create_autocmd('FileType', {
-  pattern = {
-    'tex',
-    'plaintex',
-  },
-  callback = function()
-    vim.wo.wrap = true
-    vim.wo.linebreak = true
-    vim.wo.breakindent = true
-  end,
-})
-vim.api.nvim_create_autocmd('FileType', {
-  pattern = {
-    'sqlite',
-    'pgsql',
-  },
-  callback = function()
-    vim.opt_local.expandtab = true
-    vim.opt_local.shiftwidth = 2
-    vim.opt_local.softtabstop = 2
-    vim.opt_local.omnifunc = 'vim_dadbod_completion#omni'
-  end,
-})
-vim.api.nvim_create_autocmd('LspAttach', {
-  callback = function(ev)
-    vim.diagnostic.show(vim.api.nvim_create_namespace('diagnostics'), ev.buf, nil, {
-      virtual_text = {
-        spacing = 2,
-        source = 'if_many', ---@type string
-        severity = {
-          min = vim.diagnostic.severity.WARN,
+vim.api.nvim_create_autocmd('FileType',
+  {
+    pattern = {
+      'tex',
+      'plaintex',
+    },
+    callback = function()
+      vim.wo.wrap = true
+      vim.wo.linebreak = true
+      vim.wo.breakindent = true
+    end,
+  })
+vim.api.nvim_create_autocmd('FileType',
+  {
+    pattern = {
+      'sqlite',
+      'pgsql',
+    },
+    callback = function()
+      vim.opt_local.expandtab = true
+      vim.opt_local.shiftwidth = 2
+      vim.opt_local.softtabstop = 2
+      vim.opt_local.omnifunc = 'vim_dadbod_completion#omni'
+    end,
+  })
+vim.api.nvim_create_autocmd('LspAttach',
+  {
+    callback = function(ev)
+      vim.diagnostic.show(vim.api.nvim_create_namespace('diagnostics'), ev.buf, nil, {
+        virtual_text = {
+          spacing = 2,
+          source = 'if_many', ---@type string
+          severity = {
+            min = vim.diagnostic.severity.WARN,
+          },
+          prefix = function(diag, i, total) ---@function
+            ---@cast diag vim.Diagnostic
+            ---@cast i integer
+            ---@cast total integer
+            local icons = {
+              [vim.diagnostic.severity.ERROR] = ' ',
+              [vim.diagnostic.severity.WARN] = ' ',
+              [vim.diagnostic.severity.INFO] = ' ',
+              [vim.diagnostic.severity.HINT] = ' ',
+            }
+            return string.format('%s%d/%d ', icons[diag.severity], i, total)
+          end,
         },
-        prefix = function(diag, i, total) ---@function
-          ---@cast diag vim.Diagnostic
-          ---@cast i integer
-          ---@cast total integer
-          local icons = {
-            [vim.diagnostic.severity.ERROR] = ' ',
-            [vim.diagnostic.severity.WARN] = ' ',
-            [vim.diagnostic.severity.INFO] = ' ',
-            [vim.diagnostic.severity.HINT] = ' ',
-          }
-          return string.format('%s%d/%d ', icons[diag.severity], i, total)
-        end,
-      },
-      signs = true,
-      severity_sort = true,
-      virtual_lines = true,
-      underline = true,
-    })
-  end,
-})
+        signs = true,
+        severity_sort = true,
+        virtual_lines = true,
+        underline = true,
+      })
+    end,
+  })
 vim.api.nvim_create_autocmd('LspDetach',
   {
     callback = function(args)
@@ -282,18 +285,19 @@ vim.api.nvim_create_autocmd('LspDetach',
       end
     end,
   })
-vim.api.nvim_create_autocmd('LspProgress', {
-  callback = function(ev)
-    local value = ev.data.params.value ---@type table
-    if value.kind == 'begin' then
-      vim.api.nvim_ui_send('\027]9;4;1;0\027\\')
-    elseif value.kind == 'end' then
-      vim.api.nvim_ui_send('\027]9;4;0\027\\')
-    elseif value.kind == 'report' then
-      vim.api.nvim_ui_send(string.format('\027]9;4;1;%d\027\\', value.percentage or 0))
-    end
-  end,
-})
+vim.api.nvim_create_autocmd('LspProgress',
+  {
+    callback = function(ev)
+      local value = ev.data.params.value ---@type table
+      if value.kind == 'begin' then
+        vim.api.nvim_ui_send('\027]9;4;1;0\027\\')
+      elseif value.kind == 'end' then
+        vim.api.nvim_ui_send('\027]9;4;0\027\\')
+      elseif value.kind == 'report' then
+        vim.api.nvim_ui_send(string.format('\027]9;4;1;%d\027\\', value.percentage or 0))
+      end
+    end,
+  })
 vim.api.nvim_create_autocmd('LspTokenUpdate',
   {
     callback = function(args)
@@ -303,7 +307,6 @@ vim.api.nvim_create_autocmd('LspTokenUpdate',
       end
     end,
   })
-
 function M.md_autocmds() ---Markdown
   vim.api.nvim_create_autocmd('FileType',
     {
@@ -329,24 +332,25 @@ function M.md_autocmds() ---Markdown
       end,
     })
   local ok, md_pdf = pcall(require, 'md-pdf')
-  vim.api.nvim_create_autocmd('FileType', {
-    pattern = {
-      'markdown',
-      'md',
-    },
-    callback = function()
-      vim.keymap.set('n', '<leader>,', function()
-        if ok and md_pdf and md_pdf.convert_md_to_pdf then
-          md_pdf.convert_md_to_pdf()
-        else
-          vim.cmd('MarkdownToPDF')
-        end
-      end, {
-        buffer = true,
-        desc = 'Convert Markdown to PDF',
-      })
-    end,
-  })
+  vim.api.nvim_create_autocmd('FileType',
+    {
+      pattern = {
+        'markdown',
+        'md',
+      },
+      callback = function()
+        vim.keymap.set('n', '<leader>,', function()
+          if ok and md_pdf and md_pdf.convert_md_to_pdf then
+            md_pdf.convert_md_to_pdf()
+          else
+            vim.cmd('MarkdownToPDF')
+          end
+        end, {
+          buffer = true,
+          desc = 'Convert Markdown to PDF',
+        })
+      end,
+    })
   vim.api.nvim_create_autocmd('FileType', {
     pattern = { ---@type string[]
       'markdown',
@@ -453,16 +457,18 @@ vim.api.nvim_create_autocmd({
       vim.opt_local.foldmethod = "manual"
       vim.opt_local.syntax = "off"
       pcall(vim.treesitter.stop, args.buf)
-      for _, client in ipairs(vim.lsp.get_clients({ bufnr = args.buf })) do
+      for _, client in ipairs(vim.lsp.get_clients({
+        bufnr = args.buf
+      })) do
         vim.lsp.buf_detach_client(args.buf, client.id)
       end
     end,
   })
 vim.api.nvim_create_user_command('VitestFile', function() ---Vite
   local file = vim.fn.expand('%:p')
-  vim.fn.jobstart({ 'vitest', 'run', file }, {
-    detach = true,
-  })
+  vim.fn.jobstart({ 'vitest', 'run', file },
+    {
+      detach = true,
+    })
 end, {})
-
 return M

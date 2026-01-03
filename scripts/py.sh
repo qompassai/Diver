@@ -1,8 +1,8 @@
-# py.sh
-# Qompass AI - [ ]
+#!/usr/bin/env bash
+# /qompassai/diver/scripts/py.sh
+# Qompass AI Diver Python Install Script
 # Copyright (C) 2025 Qompass AI, All rights reserved
 # ----------------------------------------
-pip install zuban
-
+pip install zuban lark-parser-language-server
 #
-uv pip install zuban
+uv pip install zuban lark-parser-language-server

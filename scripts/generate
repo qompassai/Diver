@@ -3,9 +3,7 @@
 # Qompass AI - [ ]
 # Copyright (C) 2025 Qompass AI, All rights reserved
 # ----------------------------------------
-
 set -euo pipefail
-
 declare -g base prog basedir
 base="$(realpath -e "${BASH_SOURCE[0]}")"
 prog="$(basename "$base")"
@@ -14,15 +12,12 @@ rootdir="$(dirname "$basedir")"
 function usage() {
   cat << EOF
 Usage: $prog [opt...]
-
 Generate the SchemaStore catalog.
-
 Options:
   -h         Display usage information
   -c CONFIG  Lua table to configure schemastore.generate
 EOF
 }
-
 function main() {
   local opt OPTARG
   local -i OPTIND
@@ -42,7 +37,6 @@ function main() {
     esac
   done
   shift $((OPTIND - 1))
-
   local baseconfig=""
   local outfile="${1:-}"
   if [[ -n "$outfile" ]]; then

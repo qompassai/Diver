@@ -8,7 +8,11 @@ vim.pack.add({ ---@type vim.pack.Spec[]
     name = 'cheatsheet.nvim',
     src = 'https://github.com/sudormrfbin/cheatsheet.nvim',
     keys = {
-      { '<leader>?', '<cmd>Cheatsheet<CR>', desc = 'Open Cheatsheet' },
+      {
+        '<leader>?',
+        '<cmd>Cheatsheet<CR>',
+        desc = 'Open Cheatsheet'
+      },
     },
     hook = function()
       require('cheatsheet').setup({

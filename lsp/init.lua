@@ -52,11 +52,11 @@ vim.filetype.add({
   },
 })
 vim.lsp.enable({
-  'abaplint_ls', ---:TODO: ---validate ---@source https://github.com/abaplint/abaplint
-  --'abl_ls'         *     ---:TODO ---@source https://github.com/vscode-abl/vscode-abl
+  'abaplint_ls', ---:TODO: ---validate ---@source https://github.com/abaplint/abaplint | https://www.npmjs.com/org/abaplint
+  'abl_ls',      ---:TODO validate ---@source https://github.com/vscode-abl/vscode-abl
   'ada_ls',
   'agda_ls',
-  --'ai_ls',
+  'ai_ls', ---:TODO validate
   'aiken_ls',
   'air_ls',
   'alloy_ls',
@@ -98,35 +98,32 @@ vim.lsp.enable({
   --'cir_ls',             ---:TODO
   'clangd_ls',
   'clarinet_ls',
-  --'clojure_ls',
+  'clojure_ls',
   'cmake_ls',
   'cobol_ls',
-  --'codebook_ls',        ---:TODO
-  --'codeql_ls',          ---:TODO ---@source https://github.com/github/codeql
-  --'contextive_ls',      ---:TODO
-  --'copilot_ls.lua',     ---:TODO
+  'codebook_ls',    ---:TODO validate
+  'codeql_ls',      ---:TODO ---@source https://github.com/github/codeql
+  --'contextive_ls',  ---:TODO add glossary then validate
+  'copilot_ls.lua', ---:TODO validate
   --'coq_ls',
   'crystalline_ls',
   'csharp_ls',
-
-  --'cucumber_ls',
-  --'dafny_ls',           ---:TODO
-  --'dcm_ls',
+  'cucumber_ls',      ---:TODO Validate
+  'dafny_ls',         ---:TODO validate
   --'delphi_ls'           ---:TODO ---@source https://docwiki.embarcadero.com/RADStudio/Florence/en/Code_Insight_Reference
-  'debputy_ls', ---:TODO validate ---@source https://salsa.debian.org/debian/debputy
+  'debputy_ls',       ---:TODO validate ---@source https://salsa.debian.org/debian/debputy
   --'denizen_ls'          ---:TODO ---@source https://github.com/DenizenScript/DenizenVSCode
-  'deno_ls',    ---lsp/linter
-  --'dj_ls',              ---:TODO
-  --'djt_ls',             ---:TODO
+  'deno_ls',          ---lsp/linter
+  'dj_ls',            ---:TODO
+  'djt_ls',           ---:TODO
   'docker_ls',        ---:TODO
   'dockercompose_ls', ---:TODO
-  --'dolmen_ls',          ---:TODO
-  --'dot_ls',             ---:TODO
-  --'dotenvlint_ls',
-  --'dprint_ls',          ---:TODO
-  --'dts_ls',             ---:TODO
-  'earthly_ls',  ---:TODO validate
-  'editorcc_ls', ---lsp/linter
+  'dolmen_ls',        ---:TODO validate
+  'dot_ls',           ---:TODO
+  'dprint_ls',        ---:TODO validate and finish config
+  'dts_ls',           ---:TODO validate
+  'earthly_ls',       ---:TODO validate
+  'editorcc_ls',      ---lsp/linter
   'elixir_ls',
   'elm_ls',
   'elp_ls',
@@ -145,18 +142,18 @@ vim.lsp.enable({
   'fsautocomplete_ls',
   'fstar_ls',
   --'futhark_ls',         ---:TODO
-  --'gauge_ls',           ---:TODO ---@source https://github.com/getgauge/gauge/
+  'gauge_ls', ---:TODO validate ---@source https://github.com/getgauge/gauge/
   'gdscript_ls',
   'gdshader_ls',
   'ghactions_ls',
   'ghcide_ls',
-  'gitlabci_ls',
+  --'gitlabci_ls',
   --'gitlabduo_ls',       ---:TODO
   'glasgow_ls',
   'gleam_ls',
-  'glint_ls', ---:TODO
+  'glint_ls',        ---:TODO validate
   'glslana_ls',
-  --'golangcilint_ls',    ---:TODO
+  'golangcilint_ls', ---:TODO validate
   --'gn_ls',              ---:TODO os(https://github.com/google/gn-language-server) vs msft(https://github.com/microsoft/gnls)
   'gop_ls',
   --'gradle_ls',
@@ -167,11 +164,10 @@ vim.lsp.enable({
   --'guile_ls',           ---:TODO
   --'h_ls',
   'harper_ls',
-  --'haxe_ls',
-  --'hdlchecker_ls',      ---:TODO
+  --'haxe_ls', ---:TODO validate
   'helm_ls',
   'herb_ls',
-  --'hhvm_ls',            ---:TODO
+  --'hhvm_ls',            ---:TODO compile/install and validate ---@source https://github.com/facebook/hhvm
   --'hlasm_ls',           ---:TODO
   --'homeassist_ls',      ---:TODO
   'hoon_ls',
@@ -179,8 +175,8 @@ vim.lsp.enable({
   'htmx_ls',
   'hydra_ls',
   'hypr_ls',
-  'idris2_ls', ---@source https://github.com/idris-community/idris2-lsp
-  --'ink_ls',             ---:TODO ---@source https://github.com/ink-analyzer/ink-analyzer/tree/master/crates/lsp-server
+  'idris2_ls', ---:TODO validate ---@source https://github.com/idris-community/idris2-lsp
+  'ink_ls',    ---:TODO validate ---@source https://github.com/ink-analyzer/ink-analyzer/tree/master/crates/lsp-server
   'intelephense_ls',
   --'intellisense_ls'     ---:TODO ---@source https://github.com/tailwindlabs/tailwindcss-intellisense
   --'isabelle_ls',        ---:TODO ---@source https://www.cl.cam.ac.uk/research/hvg/Isabelle/
@@ -195,16 +191,16 @@ vim.lsp.enable({
   --'jsonnet_ls',         ---:TODO
   'julia_ls',
   'just_ls',
-  --'kconfig_ls'      *    ---:TODO ---@source https://github.com/anakin4747/kconfig-language-server
+  'kconfig_ls', ---:TODO ---@source https://github.com/anakin4747/kconfig-language-server
   --'kcl_ls',
   --'kedro_ls'            ---:TODO ---@source https://github.com/kedro-org/vscode-kedro
   --'koka_ls',
   'kotlin_ls',
   'laravel_ls',
-  --'larkparse_ls'        ---:TODO ---@source https://github.com/dynovaio/lark-parser-language-server
+  'larkparse_ls', ---:TODO validate ---@source https://github.com/dynovaio/lark-parser-language-server
   'lean_ls',
-  --'lelwel_ls',          ---:TODO
-  'lemminx_ls', ---:TODO
+  'lelwel_ls',    ---:TODO validate ---@source https://github.com/0x2a-42/lelwel
+  'lemminx_ls',   ---:TODO validate
   --'ltex_ls',
   'ltexplus_ls',
   'lua_ls',
@@ -257,7 +253,7 @@ vim.lsp.enable({
   'phan_ls',
   --'pharo_ls'            ---:TODO https://github.com/badetitou/Pharo-LanguageServer
   'phpactor_ls',
-  --'pico8_ls',
+  'pico8_ls',   ---:TODO validate
   'platuml_ls', ---:TODO validate https://github.com/ptdewey/plantuml-lsp
   'please_ls',
   --'pli_ls',
@@ -408,8 +404,9 @@ vim.lsp.enable({
 --'cspell_ls',          ---deprecated for codebook
 --'css_ls', ---outdated last update 1 year ago
 --'dagger_ls' ---deprecated
+---'dcm_ls', ---notusing has paid plans https://dcm.dev/docs/getting-started/for-developers/installation/
 --'diagnostic_ls', ---outdated
---'dspinyin_ls' --deprecated
+--'dspinyin_ls' --deprecated https://github.com/iamcco/ds-pinyin-lsp
 --'ecsact_ls, ---outdated ---@source https://github.com/ecsact-dev/ecsact_lsp_server
 --'efm_ls', --last release Nov 2024
 --'erg_ls', ---not using
@@ -421,6 +418,7 @@ vim.lsp.enable({
 --'ginko_ls', last touched 1 year ago
 --'gluon_ls' ---outdated ---@source https://github.com/gluon-lang/gluon_language-server
 --'gql_ls' ---outdated ---@source https://github.com/Mayank1791989/gql-language-server
+--'hdlchecker_ls', ---outdated ---@source https://pypi.org/project/hdl-checker/
 ---'hie_ls', --deprecated
 --'hlsl_ls', ---outdated ---@source https://github.com/tgjones/HlslTools/tree/master/src/ShaderTools.
 --'kdl_ls' ---outdated ---@source https://github.com/kdl-org/vscode-kdl
@@ -442,7 +440,7 @@ vim.lsp.enable({
 --'robotstxt_ls' ---outdated ---@source https://github.com/BeardedFish/vscode-robots-dot-txt-support
 ---'rnix_ls',| no longer maintained
 ---  --'scry_ls', --deprecated for crystalline
---scheme_ls --not using
+--scheme_ls --not using https://gitlab.com/Serenata/Serenata
 --'shader_ls' ---outdated https://github.com/shader-ls/shader-language-server
 ---'sixtyfps_ls', ---deprecated replaced with slint
 ---smarty_ls ---outdated

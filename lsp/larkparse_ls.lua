@@ -1,22 +1,18 @@
--- /qompassai/Diver/lsp/dolmen_ls.lua
--- Qompass AI Dolmen LSP Spec
+-- /qompassai/Diver/lsp/larkparse_ls
+-- Qompass AI Diver LarkParse LSP Spec
 -- Copyright (C) 2025 Qompass AI, All rights reserved
 -- --------------------------------------------------
--- opam install dolmen_lsp
 return ---@type vim.lsp.Config
 {
   cmd = {
-    'dolmenls',
+    'python',
+    '-m',
+    'lark_parser_language_server'
   },
   filetypes = {
-    'cnf',
-    'icnf',
-    'smt2',
-    'tptp',
-    'p',
-    'zf',
+    'lark'
   },
   root_markers = {
-    '.git',
+    '.git'
   },
 }

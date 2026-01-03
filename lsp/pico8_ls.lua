@@ -10,10 +10,29 @@ return ---@type vim.lsp.Config
   },
   filetypes = {
     'pico8',
-    'lua'
+    --'lua'
   },
   root_markers = {
     '.git',
     '.p8'
   },
+  vim.api.nvim_create_autocmd('FileType',
+    {
+      pattern = {
+        'pico8'
+      },
+      callback = function()
+        vim.lsp.start({
+          name = 'pico8_ls',
+          cmd = {
+            'pico8_ls',
+            '--stdio'
+          },
+          root_dir = vim.fs.dirname(vim.fs.find({
+            '.git',
+            '.p8'
+          })[1]),
+        })
+      end,
+    }),
 }

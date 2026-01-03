@@ -4,27 +4,27 @@
 -- ----------------------------------------
 ---@type vim.lsp.Config
 return {
-    cmd = { ---@type string[]
-        'node',
-        'server.js',
+  cmd = {
+    'node',
+    'server.js',
+  },
+  filetypes = {
+    'haxe',
+  },
+  root_markers = { ---@type string[]
+    'build.hxml',
+    'haxe_libraries',
+    '.git',
+  },
+  init_options = {
+    displayArguments = {
+      'build.hxml',
     },
-    filetypes = { ---@type string[]
-        'haxe',
+  },
+  settings = {
+    haxe = {
+      executable = 'haxe',
+      buildCompletionCache = true,
     },
-    root_markers = { ---@type string[]
-        'build.hxml',
-        'haxe_libraries',
-        '.git',
-    },
-    init_options = {
-        displayArguments = {
-            'build.hxml',
-        },
-    },
-    settings = {
-        haxe = {
-            executable = 'haxe',
-            buildCompletionCache = true,
-        },
-    },
+  },
 }

@@ -1,16 +1,14 @@
--- /qompassai/diver/lsp/dafny_ls.lua
--- Qompass AI Dafny LSP Spec
+-- /qompassai/diver/lsp/clir_ls.lua
+-- Qompass AI Clang IR (Clir) LSP Spec
 -- Copyright (C) 2025 Qompass AI, All rights reserved
 -- ----------------------------------------
----@type vim.lsp.Config
-return {
+return ---@type vim.lsp.Config
+{
   cmd = {
-    'dafny',
-    'server'
+    'cir-lsp-server'
   },
   filetypes = {
-    'dfy',
-    'dafny'
+    'cir'
   },
   root_markers = {
     '.git'

@@ -3,8 +3,8 @@
 # Qompass AI Diver Quickstart Script
 # Copyright (C) 2025 Qompass AI, All rights reserved
 #####################################################
+# Reference: https://neovim.io/doc2/build/
 set -euo pipefail
-#https://neovim.io/doc2/build/
 PREFIX="$HOME/.local"
 BIN_DIR="$PREFIX/bin"
 XDG_DATA_HOME="${XDG_DATA_HOME:-$HOME/.local/share}"
@@ -19,8 +19,8 @@ download_and_extract() {
   local dest_dir=$2
   local strip_top=${3:-0}
   mkdir -p "$dest_dir"
-  local fname="$TMP_DIR/$(basename "$url")"
-  echo "→ Downloading $url"
+  local fname
+  fname="$TMP_DIR/$(basename "$url")"
   curl -L --fail -o "$fname" "$url"
   case "$fname" in
   *.tar.gz | *.tgz)
@@ -67,7 +67,7 @@ install_cmake() {
   ln -sf "$dest/bin/cmake" "$BIN_DIR/cmake"
   ln -sf "$dest/bin/ctest" "$BIN_DIR/ctest"
   ln -sf "$dest/bin/cpack" "$BIN_DIR/cpack"
-  ln -sf "$dest/bin/cmakexbuild" 2>/dev/null || true
+  ln -sf "$dest/bin/cmakexbuild" "$BIN_DIR/cmakexbuild" 2>/dev/null || true
 }
 install_ninja() {
   local url="https://github.com/ninja-build/ninja/releases/latest/download/ninja-${OS}.zip"
@@ -118,6 +118,41 @@ install_make() {
     make -j"$(nproc)"
     make install
   )
+  install_luajit_and_lua_ls() {
+  local lj_ver="2.1.0-beta3"
+  local lj_url="https://luajit.org/download/LuaJIT-${lj_ver}.tar.gz"
+  local lj_dest="$TMP_DIR/LuaJIT-${lj_ver}"
+  download_and_extract "$lj_url" "$TMP_DIR"
+  (
+    cd "$lj_dest"
+    make -j"$(nproc)" PREFIX="$PREFIX"
+    make install PREFIX="$PREFIX"
+  )
+  local lr_ver="3.11.1"
+  local lr_url="https://luarocks.github.io/luarocks/releases/luarocks-${lr_ver}.tar.gz"
+  local lr_dest="$TMP_DIR/luarocks-${lr_ver}"
+  download_and_extract "$lr_url" "$TMP_DIR"
+  (
+    cd "$lr_dest"
+    ./configure \
+      --prefix="$PREFIX" \
+      --with-lua="$PREFIX" \
+      --with-lua-include="$PREFIX/include/luajit-2.1" \
+      --lua-suffix=jit
+    make -j"$(nproc)"
+    make install
+  )
+  export PATH="$BIN_DIR:$PATH"
+  luarocks install --lua-dir="$PREFIX" lua-language-server || {
+    echo "Warning: luarocks lua-language-server install failed; check rock name/availability."
+  }
+  cat >"$BIN_DIR/lua_ls" <<'EOF'
+#!/usr/bin/env bash
+# Wrapper for lua-language-server (installed via LuaRocks/LuaJIT)
+exec lua-language-server "$@"
+EOF
+  chmod +x "$BIN_DIR/lua_ls"
+}
 }
 NEEDED_TOOLS=(git curl tar make clang cmake ninja bash pkg-config)
 MISSING=()
@@ -148,7 +183,7 @@ if [[ ${#MISSING[@]} -gt 0 ]]; then
     tar) install_tar ;;
     make) install_make ;;
     curl | bash)
-      echo "  Please install $t via your package manager and re-run."
+      echo "  Please install $t and try again."
       exit 1
       ;;
     *)
@@ -168,7 +203,10 @@ else
 fi
 git switch nightly
 rm -rf build .deps
-cmake -S cmake.deps -B .deps -G Ninja -D CMAKE_BUILD_TYPE=RelWithDebInfo
+cmake -S cmake.deps -B .deps -G Ninja \
+  -D CMAKE_BUILD_TYPE=RelWithDebInfo \
+  -D USE_BUNDLED=ON \
+  -D USE_BUNDLED_LUAJIT=ON
 cmake --build .deps
 cmake -B build -G Ninja \
   -D CMAKE_BUILD_TYPE=RelWithDebInfo \
@@ -183,6 +221,14 @@ for rc in "$HOME/.bashrc" "$HOME/.zshrc" "$HOME/.config/fish/config.fish"; do
     echo "→ PATH updated in $rc"
   fi
 done
-pnpm add -g neovim && pip install pynvim && gem install neovim
+pnpm add -g neovim && pip install --user pynvim && gem install neovim
+NVIM_BIN="$BIN_DIR/nvim"
+if [[ -x "$NVIM_BIN" ]]; then
+  echo "Neovim → $NVIM_BIN"
+  "$NVIM_BIN" --version | sed -n '1,8p'
+else
+  echo "Error: Neovim not at $NVIM_BIN :(" >&2
+  exit 1
+fi
 echo "Great Success!"
 rm -rf "$TMP_DIR"
