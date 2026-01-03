@@ -3,6 +3,7 @@
 -- Copyright (C) 2025 Qompass AI, All rights reserved
 -- --------------------------------------------------
 ---@source https://microsoft.github.io/language-server-protocol/implementors/servers/
+---@source https://langserver.org/
 vim.filetype.add({
   extension = {
     bri = 'brioche',
@@ -160,7 +161,7 @@ vim.lsp.enable({
   'gop_ls',
   --'gradle_ls',
   'grain_ls', --:TODO validate ---@source https://github.com/grain-lang/grain
-  --'graphql_ls',
+  'graphql_ls',
   --'groovy_ls',          ---:TODO
   --'groovymoon_ls'       ---:TODO ---@source https://github.com/GroovyLanguageServer/groovy-language-server
   --'guile_ls',           ---:TODO
@@ -257,6 +258,7 @@ vim.lsp.enable({
   --'pharo_ls'            ---:TODO https://github.com/badetitou/Pharo-LanguageServer
   'phpactor_ls',
   --'pico8_ls',
+  'platuml_ls', ---:TODO validate https://github.com/ptdewey/plantuml-lsp
   'please_ls',
   --'pli_ls',
   'postgres_ls',
