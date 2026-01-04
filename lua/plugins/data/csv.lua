@@ -1,10 +1,10 @@
 -- /qompassai/Diver/lua/plugins/data/csv.lua
--- Qompass AI Diver CSV Spec
+-- Qompass AI Diver CSV Plugin Spec
 -- Copyright (C) 2025 Qompass AI, All rights reserved
 -----------------------------------------------------
 return {
   'cameron-wags/rainbow_csv.nvim',
-  ft = {
+  filetypes = {
     'csv',
     'tsv',
     'csv_semicolon',

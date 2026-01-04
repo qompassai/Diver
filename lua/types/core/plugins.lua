@@ -9,7 +9,7 @@
 ---@field cmd?                            string[]
 ---@field config?                         fun()
 ---@field dependencies?                   vim.pack.Spec[]
----@field ft?                             string[]
+---@field filetypes?                      string[]
 ---@field hook?                           fun(spec: vim.pack.Spec)
 ---@field event?                          string[]
 ---@field init?                           fun()

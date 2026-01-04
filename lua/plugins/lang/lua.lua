@@ -5,7 +5,7 @@
 return {
   {
     'folke/lazydev.nvim',
-    ft = {
+    filetypes = {
       'lua',
       'luau',
     },

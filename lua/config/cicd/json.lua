@@ -5,16 +5,21 @@
 local M = {}
 function M.json_autocmds()
   local augroups = {
-    json = vim.api.nvim_create_augroup('JSON', {
-      clear = true,
-    }),
+    json = vim.api.nvim_create_augroup('JSON',
+      {
+        clear = true,
+      }),
   }
   vim.api.nvim_create_autocmd({
     'TextChanged',
     'InsertLeave',
   }, {
     group = augroups.json,
-    pattern = { '*.json', '*.jsonc', '*.json5' },
+    pattern = {
+      '*.json',
+      '*.jsonc',
+      '*.json5'
+    },
     callback = function()
       vim.diagnostic.reset()
       if vim.lsp.buf.document_highlight then
@@ -43,10 +48,20 @@ function M.json_cmp(opts)
       name = 'lsp',
       group_index = 1,
       priority = 100,
-      filetypes = { 'json', 'jsonc', 'json5', 'jsonl' },
+      filetypes = {
+        'json',
+        'jsonc',
+        'json5',
+        'jsonl'
+      },
       entry_filter = function(ctx)
-        local ft = vim.bo[ctx.bufnr].filetype ---@type table
-        return vim.tbl_contains({ 'json', 'jsonc', 'json5', 'jsonl' }, ft)
+        return vim.tbl_contains({
+            'json',
+            'jsonc',
+            'json5',
+            'jsonl'
+          },
+          vim.bo[ctx.bufnr].filetype)
       end,
     })
   end

@@ -1,5 +1,5 @@
--- qf.lua
--- Qompass AI - [ ]
+-- /qompassai/Diver/lua/config/core/qf.lua
+-- Qompass AI Core QuickFix Config
 -- Copyright (C) 2025 Qompass AI, All rights reserved
 -- ----------------------------------------
 local M = {}
@@ -67,7 +67,6 @@ function M.buf_get_ts_highlights(bufnr, lnum)
   end)
   return highlights
 end
-
 local STHighlighter = vim.lsp.semantic_tokens.__STHighlighter
 ---@private
 local function lower_bound(tokens, line, lo, hi)
@@ -89,7 +88,6 @@ function M.buf_get_lsp_highlights(bufnr, lnum)
   if not highlighter then
     return {}
   end
-  local ft = vim.bo[bufnr].filetype
   local lsp_highlights = {}
   for _, client in pairs(highlighter.client_state) do
     local highlights = client.current_result.highlights
@@ -106,7 +104,7 @@ function M.buf_get_lsp_highlights(bufnr, lnum)
             token.start_col,
             token.end_col,
             string.format('@lsp.type.%s.%s',
-              token.type, ft),
+              token.type, vim.bo[bufnr].filetype),
             0 }
         )
         for modifier, _ in pairs(token.modifiers) do
@@ -117,7 +115,7 @@ function M.buf_get_lsp_highlights(bufnr, lnum)
               token.end_col,
               string.format('@lsp.mod.%s.%s',
                 modifier,
-                ft),
+                vim.bo[bufnr].filetype),
               1
             }
           )
@@ -126,7 +124,9 @@ function M.buf_get_lsp_highlights(bufnr, lnum)
               token.start_col,
               token.end_col,
               string.format('@lsp.typemod.%s.%s.%s',
-                token.type, modifier, ft),
+                token.type,
+                modifier,
+                vim.bo[bufnr].filetype),
               2,
             })
         end
@@ -136,11 +136,13 @@ function M.buf_get_lsp_highlights(bufnr, lnum)
   return lsp_highlights
 end
 
-----@param item QuickFixItem
-----@param line string
-----@return vim.qf.TSHighlight[]
+---@param item vim.qf.QuickFixItem
+---@param line string
+---@return vim.qf.TSHighlight[]
 M.get_heuristic_ts_highlights = function(item, line)
-  local filetype = vim.filetype.match({ buf = item.bufnr })
+  local filetype = vim.filetype.match({
+    buf = item.bufnr
+  })
   if not filetype then
     return {}
   end
@@ -216,14 +218,37 @@ function M.set_highlight_groups()
         default = true
       })
   end
-  if vim.tbl_isempty(vim.api.nvim_get_hl(0, { name = 'QuickFixFilenameInvalid' })) then
-    vim.api.nvim_set_hl(0, 'QuickFixFilenameInvalid', { link = 'Comment', default = true })
+  if vim.tbl_isempty(vim.api.nvim_get_hl(0,
+        {
+          name = 'QuickFixFilenameInvalid'
+        })) then
+    vim.api.nvim_set_hl(0,
+      'QuickFixFilenameInvalid',
+      {
+        link = 'Comment',
+        default = true
+      })
   end
-  if vim.tbl_isempty(vim.api.nvim_get_hl(0, { name = 'QuickFixLineNr' })) then
-    vim.api.nvim_set_hl(0, 'QuickFixLineNr', { link = 'LineNr', default = true })
+  if vim.tbl_isempty(vim.api.nvim_get_hl(0,
+        {
+          name = 'QuickFixLineNr'
+        })) then
+    vim.api.nvim_set_hl(0, 'QuickFixLineNr',
+      {
+        link = 'LineNr',
+        default = true
+      })
   end
-  if vim.tbl_isempty(vim.api.nvim_get_hl(0, { name = 'QuickFixTextInvalid' })) then
-    vim.api.nvim_set_hl(0, 'QuickFixTextInvalid', { link = 'QuickFixText', default = true })
+  if vim.tbl_isempty(vim.api.nvim_get_hl(0,
+        {
+          name = 'QuickFixTextInvalid'
+        })) then
+    vim.api.nvim_set_hl(0,
+      'QuickFixTextInvalid',
+      {
+        link = 'QuickFixText',
+        default = true
+      })
   end
 end
 

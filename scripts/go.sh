@@ -29,3 +29,4 @@ go install github.com/nokia/ntt@latest
 go install github.com/kitagry/regols@latest
 go install github.com/nobl9/nobl9-language-server/cmd/nobl9-language-server@latest
 go install github.com/ptdewey/plantuml-lsp@latest
+go install github.com/anz-bank/sysl/cmd/sysl@latest

@@ -52,6 +52,7 @@ vim.pack.add({
       require('config.core.flash').flash_cfg()
     end,
   },
+  --[[
   {
     cond = function()
       return vim.env.GITLAB_TOKEN ~= nil and vim.env.GITLAB_TOKEN ~= ''
@@ -60,7 +61,7 @@ vim.pack.add({
       'BufReadPre',
       'BufNewFile'
     },
-    ft = {
+    filetypes = {
       'go',
       'javascript',
       'python',
@@ -73,6 +74,7 @@ vim.pack.add({
       },
     },
   },
+  --]]
   {
     branch = 'main',
     hook = function()

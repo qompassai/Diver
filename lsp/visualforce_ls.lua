@@ -2,13 +2,14 @@
 -- Qompass AI Visualforce LSP Spec
 -- Copyright (C) 2025 Qompass AI, All rights reserved
 -- ----------------------------------------
-
 return ---@type vim.lsp.Config
 {
-  ft = {
+  filetypes = {
     'visualforce'
   },
-  root_markers = { 'sfdx-project.json' },
+  root_markers = {
+    'sfdx-project.json'
+  },
   init_options = {
     embeddedLanguages = {
       css = true,

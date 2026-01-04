@@ -7,7 +7,7 @@ return ---@type vim.lsp.Config
   cmd = {
     'lua-language-server',
   },
-  ft = {
+  filetypes = {
     'lua',
     'luau',
   },
@@ -200,7 +200,7 @@ return ---@type vim.lsp.Config
         viewString = true,
         viewStringMax = 1000,
       },
-      language = { ---@type boolean[]
+      language = {
         completeAnnotation = true,
         fixIndent = true,
       },
@@ -249,13 +249,13 @@ return ---@type vim.lsp.Config
           format_line = 'true',
         },
       },
-      window = { ---@type boolean[]
+      window = {
         progressBar = true,
         statusBar = true,
       },
       workspace = {
-        checkThirdParty = 'Apply', ---@type string
-        ignoreDir = { ---@type string[]
+        checkThirdParty = 'Apply',
+        ignoreDir = {
           'build',
           'node_modules',
           '.vscode',

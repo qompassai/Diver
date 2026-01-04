@@ -4,59 +4,47 @@
 -- ----------------------------------------
 ---@meta
 ---@module 'types.core.quickfix'
----@class vim.qf.TSHighlight
----@field [1]                               integer
----@field [2]                               integer
----@field [3]                               string
+---@class vim.qf.Config
+---@field borders                           vim.qf.Borders
+---@field constrain_cursor                  boolean
+---@field edit                              vim.qf.EditConfig
+---@field follow                            vim.qf.FollowConfig
+---@field header_length                     fun(type: 'hard'|'soft', start_col: integer): integer
+---@field highlight                         vim.qf.HighlightConfig
+---@field keys                              vim.qf.Keymap[]
+---@field max_filename_width                fun(): integer
+---@field on_qf                             fun(bufnr: number)
+---@field opts                              table<string, any>
+---@field type_icons                        table<string, string>
+---@field trim_leading_whitespace           vim.qf.TrimEnum
+---@field use_default_opts                  boolean
+---@class (exact) vim.qf.ExpandOpts
+---@field after?                            integer
+---@field before?                           integer
+---@field add_to_existing?                  boolean
+---@field loclist_win?                      integer
+---@alias vim.qf.TrimEnum                   'all'|'common'|'false'
 ---@class vim.qf.FileCache
 ---@field private count_per_buf             table<number, number>
 ---@field private max_line_per_buf          table<number, number>
 ---@field private cache                     table<number, string[]>
+---@class (exact) vim.qf.FollowConfig
+---@field enabled                           boolean
 ---@class (exact) vim.qf.ParsedLine
 ---@field filename?                         string
 ---@field lnum?                             integer
 ---@field text?                             string
----@class (exact) vim.qf.QuickFixUserData
----@field header?                           'hard'|'soft'
----@field lnum?                             integer
----@field error_text?                       string
----@class (exact) vim.qf.QuickFixItem
----@field text                              string
----@field type                              string
----@field lnum                              integer
----@field end_lnum                          integer
----@field col                               integer
----@field end_col                           integer
----@field vcol                              0|1
----@field nr                                integer
----@field pattern                           string
----@field bufnr                             integer
----@field module                            string
----@field valid                             0|1
----@field user_data?                        any
+
 ---@class (exact) vim.qf.QFContext
----@field num_before                        integer
 ---@field num_after                         integer
----@class (exact) vim.qf.ExpandOpts
----@field before?                           integer
----@field after?                            integer
----@field add_to_existing?                  boolean
----@field loclist_win?                      integer
----@alias vim.qf.TrimEnum                   'all'|'common'|'false'
----@class vim.qf.Config
----@field on_qf                             fun(bufnr: number)
----@field opts                              table<string, any>
----@field keys                              vim.qf.Keymap[]
----@field use_default_opts                  boolean
----@field constrain_cursor                  boolean
----@field highlight                         vim.qf.HighlightConfig
----@field follow                            vim.qf.FollowConfig
----@field edit                              vim.qf.EditConfig
----@field type_icons                        table<string, string>
----@field borders                           vim.qf.Borders
----@field trim_leading_whitespace           vim.qf.TrimEnum
----@field max_filename_width                fun(): integer
----@field header_length                     fun(type: "hard"|"soft", start_col: integer): integer
+---@field num_before                        integer
+---@class (exact) vim.qf.EditConfig
+---@field enabled                           boolean
+---@field autosave                          boolean|'unmodified'
+---@class (exact) vim.qf.SetListOpts
+---@field title?                            string
+---@field items?                            vim.qf.QuickFixItem[]
+---@field efm?                              string
 ---@class (exact) vim.qf.SetupOptions
 ---@field on_qf?                            fun(bufnr: number)
 ---@field opts?                             table<string, any>
@@ -70,13 +58,13 @@
 ---@field borders?                          vim.qf.SetupBorders
 ---@field trim_leading_whitespace?          vim.qf.TrimEnum
 ---@field max_filename_width?               fun(): integer
----@field header_length?                    fun(type: "hard"|"soft", start_col: integer): integer
+---@field header_length?                    fun(type: 'hard'|'soft', start_col: integer): integer
 ---@class (exact) vim.qf.Keymap
 ---@field [1]                               string
 ---@field [2]                               any
 ---@field desc?                             string
----@field mode?                             string
 ---@field expr?                             boolean
+---@field mode?                             string
 ---@field nowait?                           boolean
 ---@field remap?                            boolean
 ---@field replace_keycodes?                 boolean
@@ -95,28 +83,55 @@
 ---@field soft_cross                        string
 ---@field soft_end                          string
 ---@class (exact) vim.qf.SetupBorders
----@field vert?                             string
 ---@field strong_header?                    string
 ---@field strong_cross?                     string
 ---@field strong_end?                       string
 ---@field soft_header?                      string
 ---@field soft_cross?                       string
 ---@field soft_end?                         string
+---@field vert?                             string
 ---@class (exact) vim.qf.HighlightConfig
+---@field load_buffers                      boolean
 ---@field treesitter                        boolean
 ---@field lsp                               boolean
----@field load_buffers                      boolean
 ---@class (exact) vim.qf.SetupHighlightConfig
 ---@field treesitter?                       boolean
 ---@field lsp?                              boolean
 ---@field load_buffers?                     boolean
----@class (exact) vim.qf.FollowConfig
----@field enabled                           boolean
----@class (exact) vim.qf.SetupFollowConfig
----@field enabled?                          boolean
----@class (exact) vim.qf.EditConfig
----@field enabled                           boolean
----@field autosave                          boolean|"unmodified"
+
+---@class (exact) vim.qf.QuickFixItem
+---@field bufname?                          string
+---@field bufnr                             integer
+---@field col                               integer
+---@field end_col                           integer
+---@field end_lnum                          integer
+---@field filename?                         string
+---@field lnum                              integer
+---@field module                            string
+---@field pattern                           string
+---@field quickfix_id?                      integer
+---@field nr                                integer
+---@field text                              string
+---@field type                              string
+---@field valid                             0|1
+---@field vcol                              0|1
+---@field user_data?                        any
+---@class (exact) vim.qf.QuickFixUserData
+---@field error_text?                       string
+---@field header?                           'hard'|'soft'
+---@field lnum?                             integer
 ---@class (exact) vim.qf.SetupEditConfig
 ---@field enabled?                          boolean
----@field autosave?                         boolean|"unmodified"
+---@field autosave?                         boolean|'unmodified'
+---@class (exact) vim.qf.SetupFollowConfig
+---@field enabled?                          boolean
+---@class (exact) vim.qf.TextFuncInfo
+---@field quickfix                          0|1
+---@field id                                integer
+---@field start_idx                         integer
+---@field end_idx                           integer
+---@field winid                             integer
+---@class vim.qf.TSHighlight
+---@field [1]                               integer
+---@field [2]                               integer
+---@field [3]                               string

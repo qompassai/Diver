@@ -7,7 +7,7 @@ local sqlite_cfg = require('config.data.sqlite')
 return {
   {
     'kristijanhusak/vim-dadbod-ui',
-    ft = {
+    filetypes = {
       'sqlite',
       'pgsql'
     },
@@ -21,7 +21,7 @@ return {
       'tpope/vim-dadbod',
       {
         'kristijanhusak/vim-dadbod-completion',
-        ft = {
+        filetypes = {
           'sqlite',
           'pgsql'
         }

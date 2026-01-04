@@ -188,7 +188,7 @@ vim.lsp.enable({
   'jinja_ls', ---:TODO
   'jq_ls',
   'json_ls',
-  --'jsonnet_ls',         ---:TODO
+  'jsonnet_ls', ---:TODO validate
   'julia_ls',
   'just_ls',
   'kconfig_ls', ---:TODO ---@source https://github.com/anakin4747/kconfig-language-server
@@ -243,9 +243,8 @@ vim.lsp.enable({
   'opencl_ls',
   'openscad_ls',
   'oxlint_ls', ---lsp/linter
-  --'pact_ls',
-  --'pas_ls',
-  --'pb_ls',              ---:TODO
+  --'pas_ls', ---:TODO ---@source https://github.com/genericptr/pascal-language-server
+  --'pb_ls',              ---:TODO ---@source https://git.sr.ht/~rrc/pbls
   'perl_ls',
   'perlnav_ls',
   'perlp_ls',
@@ -260,7 +259,7 @@ vim.lsp.enable({
   'postgres_ls',
   'pwrshelles_ls',
   'prisma_ls',
-  --'prolog_ls',          ---:TODO
+  'prolog_ls', ---:TODO validate
   'prosemd_ls',
   'proto_ls',
   'psalm_ls', ---lsp/linter
@@ -325,7 +324,7 @@ vim.lsp.enable({
   'sv_ls',
   --'sway_ls'             ---:TODO https://github.com/FuelLabs/sway/tree/master/sway-lsp
   'syntaxtree_ls',
-  --'sysl_ls'             ---:TODO https://github.com/anz-bank/sysl
+  'sysl_ls', ---:TODO validate https://github.com/anz-bank/sysl
   'systemd_ls',
   'tailwindcss_ls',
   'taplo_ls',
@@ -429,6 +428,7 @@ vim.lsp.enable({
 --'moveana_ls', ---deprecated
 --'oraide_ls' ---deprecated ---@source https://github.com/penev92/Oraide.LanguageServer
 --'orbacle_ls' ---outdated ---@source https://github.com/swistak35/orbacle
+---'pact_ls', ---outdated ---@source https://github.com/kadena-io/pact-lsp
 --'papyrus_ls', ---outdated https://github.com/joelday/papyrus-lang
 --'polymer_ls' ---deprecated ---@source https://github.com/Polymer/tools/tree/master/packages/editor-service
 --'py_ls', ---notusing| basedpyright instead
