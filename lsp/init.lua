@@ -168,7 +168,7 @@ vim.lsp.enable({
   'helm_ls',
   'herb_ls',
   --'hhvm_ls',            ---:TODO compile/install and validate ---@source https://github.com/facebook/hhvm
-  --'hlasm_ls',           ---:TODO
+  'hlasm_ls', ---:TODO validate
   --'homeassist_ls',      ---:TODO
   'hoon_ls',
   'html_ls',
@@ -183,7 +183,7 @@ vim.lsp.enable({
   --'janet_ls',           ---:TODO
   'java_ls',
   'jdt_ls',
-  --'jedi_ls',            ---:TODO ---@source https://github.com/pappasam/jedi-language-server
+  'jedi_ls',  ---:TODO validate ---@source https://github.com/pappasam/jedi-language-server
   --'jimmerdto_ls',       ---:TODO ---@source https://github.com/Enaium/jimmer-dto-lsp
   'jinja_ls', ---:TODO
   'jq_ls',
@@ -334,7 +334,7 @@ vim.lsp.enable({
   --'tibbobasic_ls'       ---:TODO https://github.com/tibbotech/tibbo-basic
   'templ_ls',
   'termux_ls',
-  --'test_ls',            ---:TODO https://github.com/kbwo/testing-language-server
+  'test_ls', ---:TODO validate https://github.com/kbwo/testing-language-server
   'texlab_ls',
   'text_ls',
   'tflint_ls',
@@ -383,7 +383,7 @@ vim.lsp.enable({
   'ziggy_schema_ls',
   --'zk_ls',
   'z_ls',
-  --'zuban_ls', ---:TODO ---@source https://docs.zubanls.com/en/latest/usage.html#configuration
+  'zuban_ls', ---:TODO validate ---@source https://docs.zubanls.com/en/latest/usage.html#configuration
 })
 ---Deprecated/Outdated/NotUsing
 --'apl_ls', ---deprecated ---@source https://github.com/OptimaSystems/apl-language-server
