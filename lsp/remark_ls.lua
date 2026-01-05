@@ -2,8 +2,8 @@
 -- Qompass AI Remark LSP Spec
 -- Copyright (C) 2025 Qompass AI, All rights reserved
 -- --------------------------------------------------
----@type vim.lsp.Config
-return {
+return ---@type vim.lsp.Config
+{
     cmd = {
         'remark-language-server',
         '--stdio',
@@ -38,7 +38,7 @@ return {
             },
             validate = true,
             run = 'onType',
-            organizeImports = false,
+            organizeImports = true,
         },
     },
     on_attach = function(client, bufnr)

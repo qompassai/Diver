@@ -16,7 +16,11 @@ cargo install --git https://github.com/digama0/mm0 --locked mm0-rs
 cargo install --git https://github.com/pest-parser/pest-ide-tools
 cargo install --git https://github.com/kitten/prosemd-lsp prosemd-lsp
 cargo install --git https://git.sr.ht/~rrc/pbls
+cargo install --git https://github.com/IoannisNezis/Qlue-ls
+cargo install --git https://github.com/rvben/rumdl
+cargo install --git https://github.com/JFryy/systemd-lsp
 cargo install --features lsp --locked taplo-cli
 cargo install --git https://github.com/kbwo/testing-language-server testing-ls-adapter
 cargo install --git https://github.com/kbwo/testing-language-server testing-language-server
+cargo install --git https://github.com/uiua-lang/uiua uiua -F full
 cargo install --git https://github.com/wgsl-analyzer/wgsl-analyzer wgsl-analyzer

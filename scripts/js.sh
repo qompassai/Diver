@@ -23,11 +23,15 @@ pnpm add -g \
   @microsoft/compose-language-service@latest \
   @neo4j-cypher/language-server@latest \
   @oxlint@latest \
+  @perlnavigator-server@latest \
+  @quick-lint-js@latest
   @rescript/language-server@latest \
   @sap/cds-lsp@latest \
+  @shopify/cli@latest \
   @solc@latest \
   @solidity-ls@latest \
   @stimulus-language-server@latest \
+  @stylable/language-service@latest \
   @stylelint-lsp@latest \
   @svelte-language-server@latest \
   @tailwindcss/language-server@latest \

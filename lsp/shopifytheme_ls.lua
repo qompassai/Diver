@@ -1,15 +1,17 @@
--- shopifytheme_ls.lua
--- Qompass AI - [ ]
+-- /qompassai/Diver/lsp/shopifytheme_ls.lua
+-- Qompass AI Shopify Theme LSP Spec
 -- Copyright (C) 2025 Qompass AI, All rights reserved
 -- ----------------------------------------
----@type vim.lsp.Config
-return {
+return ---@type vim.lsp.Config
+{
     cmd = {
         'shopify',
         'theme',
         'language-server',
     },
-    filetypes = { 'liquid' },
+    filetypes = {
+        'liquid',
+    },
     root_markers = {
         '.shopifyignore',
         '.theme-check.yml',

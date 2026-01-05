@@ -5,17 +5,17 @@
 -- Reference: https://github.com/microsoft/compose-language-service
 ---@type vim.lsp.Config
 return {
-  cmd = {
-    'docker-compose-langserver',
-    '--stdio',
-  },
-  filetypes = {
-    'yaml.docker-compose',
-  },
-  root_markers = {
-    'compose.yaml',
-    'compose.yml',
-    'docker-compose.yaml',
-    'docker-compose.yml',
-  },
+    cmd = {
+        'docker-compose-langserver',
+        '--stdio',
+    },
+    filetypes = {
+        'yaml.docker-compose',
+    },
+    root_markers = {
+        'compose.yaml',
+        'compose.yml',
+        'docker-compose.yaml',
+        'docker-compose.yml',
+    },
 }

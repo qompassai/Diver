@@ -1,14 +1,14 @@
--- /qompassai/diver/lsp/lelwel_ls.lua
--- Qompass AI LelWel LSP Spec
+-- /qompassai/Diver/lsp/lua_ls.lua
+-- Qompass AI Diver Lua_ls LSP Spec
 -- Copyright (C) 2025 Qompass AI, All rights reserved
--- ----------------------------------------
+------------------------------------------------------
 return ---@type vim.lsp.Config
 {
     cmd = {
-        'lelwel-ls',
+        'poryscript-pls',
     },
     filetypes = {
-        'llw',
+        'pory',
     },
     root_markers = {
         '.git',

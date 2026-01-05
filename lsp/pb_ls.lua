@@ -2,18 +2,17 @@
 -- Qompass AI Protobuf (Pb) LSP Spec
 -- Copyright (C) 2025 Qompass AI, All rights reserved
 -- --------------------------------------------------
---Reference: https://git.sr.ht/~rrc/pbls
---cargo install --git https://git.sr.ht/~rrc/pbls
----@type vim.lsp.Config
-return {
-    cmd = { ---@type string[]
+return ---@type vim.lsp.Config
+{
+    cmd = {
         'pbls',
     },
-    filetypes = { ---@type string[]
+    filetypes = {
         'proto',
     },
-    root_markers = { ---@type string[]
+    root_markers = {
         '.pbls.toml',
         '.git',
     },
+    settings = {},
 }

@@ -4,15 +4,15 @@
 -- --------------------------------------------------
 return ---@type vim.lsp.Config
 {
-  cmd = {
-    'gn-language-server',
-    '--stdio'
-  },
-  filetypes = {
-    'gn',
-  },
-  root_markers = {
-    '.gn',
-    '.git',
-  },
+    cmd = {
+        'gn-language-server',
+        '--stdio',
+    },
+    filetypes = {
+        'gn',
+    },
+    root_markers = {
+        '.gn',
+        '.git',
+    },
 }

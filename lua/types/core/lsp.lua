@@ -26,24 +26,24 @@
 ---@field maxNumberOfProblems?                                                       integer
 ---@field name?                                                                      string
 ---@field offsetEncoding?                                                            string[]
----@field on_attach?                                                                 fun(client: vim.lsp.Client, bufnr: integer)
----@field onOpenAndSave?                                                             boolean
----@field simplifyCode?                                                              boolean
----@field single_file_support?                                                       boolean
----@field spaceRedirects?                                                            boolean
----@field textDocument?                                                              lsp.TextDocumentIdentifier
+---@field on_attach?                                                                  fun(client: vim.lsp.Client, bufnr: integer)
+---@field onOpenAndSave?                                                              boolean
+---@field simplifyCode?                                                               boolean
+---@field single_file_support?                                                        boolean
+---@field spaceRedirects?                                                             boolean
+---@field textDocument?                                                               lsp.TextDocumentIdentifier
 ---@class vim.lsp.Config.CodeLensModule
----@field clear?                                                                     fun(client_id?: integer, bufnr?: integer)
----@field display?                                                                   fun(lenses?: lsp.CodeLens[], bufnr: integer, client_id: integer)
----@field get?                                                                       fun(bufnr: integer): lsp.CodeLens[]
----@field on_codelens?                                                               fun(err: lsp.ResponseError?, result: lsp.CodeLens[], ctx: lsp.HandlerContext)
----@field refresh?                                                                   fun(opts?: { bufnr?: integer })
----@field run?                                                                       fun()
----@field save?                                                                      fun(lenses?: lsp.CodeLens[], bufnr: integer, client_id: integer)
+---@field clear?                                                                      fun(client_id?: integer, bufnr?: integer)
+---@field display?                                                                    fun(lenses?: lsp.CodeLens[], bufnr: integer, client_id: integer)
+---@field get?                                                                        fun(bufnr: integer): lsp.CodeLens[]
+---@field on_codelens?                                                                fun(err: lsp.ResponseError?, result: lsp.CodeLens[], ctx: lsp.HandlerContext)
+---@field refresh?                                                                    fun(opts?: { bufnr?: integer })
+---@field run?                                                                        fun()
+---@field save?                                                                       fun(lenses?: lsp.CodeLens[], bufnr: integer, client_id: integer)
 ---@class vim.lsp.Config.CompletionEnableOpts
----@field autotrigger?                                                               boolean
----@field cmp?                                                                       fun(a: table, b: table): boolean
----@field convert?                                                                   fun(item: lsp.CompletionItem): table
+---@field autotrigger?                                                                boolean
+---@field cmp?                                                                        fun(a: table, b: table): boolean
+---@field convert?                                                                    fun(item: lsp.CompletionItem): table
 ---@class vim.lsp.Config.CompletionGetOpts
 ---@field ctx?                                                                        lsp.CompletionContext
 ---@class vim.lsp.Config.CompletionModule
@@ -65,32 +65,100 @@
 ---@field autoImportFileExcludePatterns?                                              string|nil
 ---@field autoImportSpecifierExcludeRegexes?                                          string|nil
 ---@field disableSuggestions?                                                         boolean
----@field importModuleSpecifierEnding?                                               'auto' | 'minimal' | 'index' | 'js'
----@field includeInlayParameterNameHints?                                            'all' | 'literals' | 'none'
----@field includePackageJsonAutoImports?                                             'auto' | 'off' | 'on'
----@field importModuleSpecifierPreference?                                           'shortest' | 'project-relative' |'relative' | 'non-relative'
----@field jsxAttributeCompletionStyle?                                               'auto' | 'braces' | 'none'
----@field organizeImportsIgnoreCase?                                                 'auto' | boolean
----@field organizeImportsCollation?                                                  'ordinal' | 'unicode'
----@field organizeImportsCaseFirst?                                                  'upper' | 'lower' | 'false'
----@field organizeImportsLocale?                                                     'auto' | 'en'
----@field organizeImportsTypeOrder?                                                  'last' | 'inline' | 'first'
----@field quotePreference?                                                           'auto' | 'double' | 'single'
+---@field importModuleSpecifierEnding?                                                'auto' | 'minimal' | 'index' | 'js'
+---@field includeInlayParameterNameHints?                                             'all' | 'literals' | 'none'
+---@field includePackageJsonAutoImports?                                              'auto' | 'off' | 'on'
+---@field importModuleSpecifierPreference?                                            'shortest' | 'project-relative' |'relative' | 'non-relative'
+---@field jsxAttributeCompletionStyle?                                                'auto' | 'braces' | 'none'
+---@field organizeImportsIgnoreCase?                                                  'auto' | boolean
+---@field organizeImportsCollation?                                                   'ordinal' | 'unicode'
+---@field organizeImportsCaseFirst?                                                   'upper' | 'lower' | 'false'
+---@field organizeImportsLocale?                                                      'auto' | 'en'
+---@field organizeImportsTypeOrder?                                                   'last' | 'inline' | 'first'
+---@field quotePreference?                                                            'auto' | 'double' | 'single'
 ---@class vim.lsp.Config.init_options.tsserver
----@field fallbackPath?                                                               string|nil
----@field logDirectory?                                                               string|nil
----@field logVerbosity?                                                              'off' | 'normal' | 'requestTime' | 'terse' | 'verbose'
+---@field fallbackPath?                                                                string|nil
+---@field logDirectory?                                                                string|nil
+---@field logVerbosity?                                                               'off' | 'normal' | 'requestTime' | 'terse' | 'verbose'
 ---@field path?                                                                       string|nil
----@field trace?                                                                     'messages' | 'off' | 'verbose'
----@field useSyntaxServer?                                                           'auto' | 'never'
+---@field trace?                                                                      'messages' | 'off' | 'verbose'
+---@field useSyntaxServer?                                                            'auto'|'never'
 ---@class vim.lsp.Config.Settings
 ---@field ansible.ansible.path?                                                       string
 ---@field ansible.ansible.reuseTerminal?                                              boolean
 ---@field ansible.ansible.useFullyQualifiedCollectionNames?                           boolean
----@field ansible.ansibleServer.trace.server?                                         'message' | 'off' | 'verbose'
+---@field ansible.ansibleServer.trace.server?                                         'message'|'off'|'verbose'
 ---@field ansible.completion.provideModuleOptions?                                    boolean
 ---@field ansible.completion.provideModuleParameters?                                 boolean
 ---@field ansible.completion.provideRedirectModules?                                  boolean
+---@class vim.lsp.Config.Settings
+---@field haskell?                                                                    table
+---@field haskell.cabalFormattingProvider?                                            'cabal-fmt'|'cabal-gild'
+---@field haskell.checkParents?                                                       'NeverCheck'|'CheckOnSave'|'AlwaysCheck'
+---@field haskell.checkProject?                                                       boolean
+---@field haskell.formattingProvider?                                                 'floskell'|'fourmolu'|'ormolu'|'stylish-haskell'
+----@field haskell.plugin?                                                            table
+---@field haskell.plugin.class?                                                       table
+---@field haskell.plugin.class.globalOn?                                              boolean
+---@field haskell.plugin.eval?                                                        table
+---@field haskell.plugin.eval.config?                                                 table
+---@field haskell.plugin.eval.config.diff?                                            boolean
+---@field haskell.plugin.eval.config.exception?                                       boolean
+---@field haskell.plugin.eval.globalOn?                                               boolean
+----@field haskell.plugin["ghcide-code-actions-bindings"]?      table
+----@field haskell.plugin["ghcide-code-actions-bindings"].globalOn? boolean
+----@field haskell.plugin["ghcide-code-actions-fill-holes"]?    table
+----@field haskell.plugin["ghcide-code-actions-fill-holes"].globalOn? boolean
+----@field haskell.plugin["ghcide-code-actions-imports-exports"]? table
+----@field haskell.plugin["ghcide-code-actions-imports-exports"].globalOn? boolean
+----@field haskell.plugin["ghcide-code-actions-type-signatures"]? table
+----@field haskell.plugin["ghcide-code-actions-type-signatures"].globalOn? boolean
+----@field haskell.plugin["ghcide-completions"]?                table
+----@field haskell.plugin['ghcide-completions'].completionOn?                           boolean
+----@field haskell.plugin["ghcide-completions"].config?         table
+----@field haskell.plugin["ghcide-completions"].config.autoExtendOn? boolean
+----@field haskell.plugin["ghcide-completions"].config.snippetsOn?   boolean
+----@field haskell.plugin["ghcide-completions"].globalOn?       boolean
+----@field haskell.plugin["ghcide-hover-and-symbols"]?          table
+----@field haskell.plugin["ghcide-hover-and-symbols"].globalOn? boolean
+----@field haskell.plugin["ghcide-hover-and-symbols"].hoverOn?  boolean
+----@field haskell.plugin["ghcide-hover-and-symbols"].symbolsOn? boolean
+----@field haskell.plugin["ghcide-type-lenses"]?                table
+----@field haskell.plugin["ghcide-type-lenses"].codeLensOn?     boolean
+----@field haskell.plugin["ghcide-type-lenses"].config?         table
+---@field haskell.plugin.['ghcide-type-lenses'].config.mode?    'always'|'exported'|'diagnostics'
+----@field haskell.plugin.["ghcide-type-lenses"].globalOn?       boolean
+---@field haskell.plugin.hlint?                                                       table
+---@field haskell.plugin.hlint.codeActionsOn?                                         boolean
+---@field haskell.plugin.hlint.config?                                                table
+---@field haskell.plugin.hlint.config.flags?                                          string[]
+---@field haskell.plugin.hlint.diagnosticsOn?                                         boolean
+---@field haskell.plugin.hlint.globalOn?                                              boolean
+---@field haskell.plugin.importLens?                                                  table
+---@field haskell.plugin.importLens.codeLensOn?                                       boolean
+---@field haskell.plugin.importLens.globalOn?                                         boolean
+---@field haskell.plugin.moduleName?                                                  table
+---@field haskell.plugin.moduleName.codeActionsOn?                                    boolean
+---@field haskell.plugin.moduleName.globalOn?                                         boolean
+---@field haskell.plugin.pragmas?                                                     table
+---@field haskell.plugin.pragmas.codeActionsOn?                                       boolean
+---@field haskell.plugin.pragmas.globalOn?                                            boolean
+---@field haskell.plugin.rename?                                                      table
+---@field haskell.plugin.rename.config?                                               table
+---@field haskell.plugin.rename.config.crossModule?                                   boolean
+---@field haskell.plugin.rename.globalOn?                                             boolean
+---@field haskell.plugin.rename.renameOn?                                             boolean
+---@field haskell.plugin.retrie?                                                      table
+---@field haskell.plugin.retrie.codeActionsOn?                                        boolean
+---@field haskell.plugin.retrie.globalOn?                                             boolean
+---@field haskell.plugin.signatureHelp?                                               table
+---@field haskell.plugin.signatureHelp.globalOn?                                      boolean
+---@field haskell.plugin.signatureHelp.signatureHelpOn?                               boolean
+---@field haskell.plugin.splice?                                                      table
+---@field haskell.plugin.splice.codeActionsOn?                                        boolean
+---@field haskell.plugin.splice.globalOn?                                             boolean
+---@field haskell.plugin.stan?                                                        table
+---@field haskell.plugin.stan.globalOn?                                               boolean
 ---@field idris2Lsp.logFile?                                                          string|nil
 ---@field idris2Lsp.logSeverity?                                                      'Debug'|'Info'|'Warning'|'Error'
 ---@field ltex.additionalRules.enablePickyRules?                                      boolean
@@ -100,7 +168,7 @@
 ---@field basedpyright.python?                                                        { pythonPath: string }
 ---@field implicitProjectConfiguration?                                               'amd'|'commonjs'|'es6/es2015'|'es2020'|'esnext'| 'node16'|'node18'|'node20'|'nodenext'|'none'| 'preserver'| 'system'|'umd'
 ---@field ltex.bibtex.fields?                                                         { [string]: boolean } ---object
----@field ltex.checkFrequency?                                                        'edit' | 'manual' | 'save'
+---@field ltex.checkFrequency?                                                        'edit'|'manual'|'save'
 ---@field ltex.clearDiagnosticsWhenClosingFile?                                       boolean
 ---@field ltex.completionEnabled?                                                     boolean
 ---@field ltex.configurationTarget?                                                   { [string]: boolean } ---object
@@ -244,10 +312,10 @@
 ---@field Lua.telemetry?                                                               table
 ---@field Lua.telemetry.enable?                                                        boolean
 ---@field Lua.type?                                                                    table
----@field Lua.type.castNumberToInteger?                                                boolean
----@field Lua.type.checkTableShape?                                                    boolean
----@field Lua.type.inferParamType?                                                     boolean
----@field Lua.type.inferTableSize?                                                     integer
+---@field Lua.type.castNumberToInteger?                                               boolean
+---@field Lua.type.checkTableShape?                                                   boolean
+---@field Lua.type.inferParamType?                                                    boolean
+---@field Lua.type.inferTableSize?                                                    integer
 ---@field Lua.type.weakNilCheck?                                                       boolean
 ---@field Lua.type.weakUnionCheck?                                                     boolean
 ---@field Lua.typeFormat?                                                              table
@@ -268,72 +336,81 @@
 ---@field Lua.workspace.preloadFileSize?                                               integer
 ---@field Lua.workspace.useGitIgnore?                                                  boolean
 ---@field Lua.workspace.userThirdParty?                                                any[]
----@field redhat.telemetry.enable?                                                     boolean
----@field typescript.format.baseIndentSize?                                            integer
----@field typescript.format.convertTabsToSpaces?                                       boolean
----@field typescript.format.indentStyle?                                               'Block' | 'None' | 'Smart'
----@field typescript.format.semicolons?                                                'ignore' | 'insert' | 'remove'
----@field yaml.format.enable?                                                           boolean
----@field yaml.format.proseWrap?                                                        'always'|'preserve'|'never'|
----@field yaml.http.proxy?                                                              string
----@field yaml.http.proxyStrictSSL?                                                     boolean
----@field yaml.style.flowMapping?                                                       'allow'|'forbid'
----@field yaml.style.flowSequence?                                                      'allow'|'forbid'
----@field yaml.yamlVersion?                                                             '1.2'|'1.1'
+---@field perlnavigator.enableWarnings?                                                boolean
+---@field perlnavigator.includePaths?                                                  string][]
+---@field perlnavigator.perlcriticEnabled?                                             boolean
+---@field perlnavigator.perlcriticMessageFormat?                                       boolean
+---@field perlnavigator.perlcriticProfile?                                             string
+---@field perlnavigator.perlEnv?                                                       string[]
+---@field perlnavigator.perlEnvAdd?                                                    boolean
+---@field perlnavigator.perlPath?                                                      string
+---@field perlnavigator.perltidyProfile                                               string
+---@field redhat.telemetry.enable?                                                    boolean
+---@field typescript.format.baseIndentSize?                                           integer
+---@field typescript.format.convertTabsToSpaces?                                      boolean
+---@field typescript.format.indentStyle?                                              'Block' | 'None' | 'Smart'
+---@field typescript.format.semicolons?                                               'ignore' | 'insert' | 'remove'
+---@field yaml.format.enable?                                                         boolean
+---@field yaml.format.proseWrap?                                                      'calways'|'preserve'|'never'|
+---@field yaml.http.proxy?                                                            string
+---@field yaml.http.proxyStrictSSL?                                                   boolean
+---@field yaml.style.flowMapping?                                                     'allow'|'forbid'
+---@field yaml.style.flowSequence?                                                    'allow'|'forbid'
+---@field yaml.yamlVersion?                                                           '1.2'|'1.1'
 ---@class HlOpts
----@field bg?                                                                           string
----@field bold?                                                                         boolean
----@field fg?                                                                           string
----@field italic?                                                                       boolean
----@field sp?                                                                           string
----@field undercurl?                                                                    boolean
----@field underline?                                                                    boolean
----@field get?                                                                          fun(opts?: vim.lsp.Config.CompletionGetOpts)
+---@field bg?                                                                         string
+---@field bold?                                                                       boolean
+---@field fg?                                                                         string
+---@field get?                                                                        fun(opts?: vim.lsp.Config.CompletionGetOpts)
+---@field italic?                                                                     boolean
+---@field sp?                                                                         string
+---@field undercurl?                                                                  boolean
+---@field underline?                                                                  boolean
 ---@class vim.lsp.Config.LspModule
----@field codelens?                                                                     vim.lsp.Config.CodeLensModule
----@field completion?                                                                   vim.lsp.Config.CompletionModule
+---@field codelens?                                                                   vim.lsp.Config.CodeLensModule
+---@field completion?                                                                 vim.lsp.Config.CompletionModule
 ---@class VimExtendedLsp : vim.lsp.Config.LspModule
 ---@class VimExtendedAPI
----@field lsp                                                                            VimExtendedLsp
+---@field lsp                                                                         VimExtendedLsp
 ---@class NvimApi
----@field nvim_set_hl                                                                    fun(ns_id: integer, name: string, val: HlOpts)
----@lsp.mod.deprecated                                                                   gui=strikethrough
----@lsp.typemod.function.async                                                           guifg=Pink
+---@field nvim_set_hl                                                                 fun(ns_id: integer, name: string, val: HlOpts)
+---@lsp.mod.deprecated                                                                gui=strikethrough
+---@lsp.typemod.function.async                                                        guifg=Pink
 ---@class vim.lsp.Config.BasedPyright.Analysis
----@field basedpyright.autoFormatStrings?                                               boolean
----@field basedpyright.autoSearchPaths?                                                 boolean
----@field basedpyright.diagnosticMode?                                                  'openFilesOnly'|'workspace'
----@field basedpyright.analysis.typeCheckingMode?                                       BasedPyright.TypeCheckingMode
----@field useLibraryCodeForTypes?                                                       boolean
----@field inlayHints                                                                    { variableTypes: boolean, callArgumentNames: boolean, callArgumentNamesMatching: boolean, functionReturnTypes: boolean, genericTypes: boolean }
----@field useTypingExtensions?                                                          boolean
----@field fileEnumerationTimeout?                                                       integer
----@field basedpyright.analysis.stubPath?                                               string
----@field basedpyright.analysis.typeshedPaths?                                          string[]
----@field diagnosticSeverityOverrides?                                                  table<string, string>
----@field failOnWarnings?                                                               boolean
----@field reportUnreachable?                                                            boolean|string
----@field reportAny?                                                                    boolean|string
----@field reportIgnoreCommentWithoutRule?                                               boolean|string
----@field reportPrivateLocalImportUsage?                                                boolean|string
----@field reportImplicitRelativeImport?                                                 boolean|string
----@field reportInvalidCast?                                                            boolean|string
----@field reportUnsafeMultipleInheritance?                                              boolean|string
----@field reportUnusedParameter?                                                        boolean|string
----@field reportImplicitAbstractClass?                                                  boolean|string
----@field reportUnannotatedClassAttribute?                                              boolean|string
+---@field basedpyright.autoFormatStrings?                                             boolean
+---@field basedpyright.autoSearchPaths?                                               boolean
+---@field basedpyright.diagnosticMode?                                                'openFilesOnly'|'workspace'
+---@field basedpyright.analysis.typeCheckingMode?                                     BasedPyright.TypeCheckingMode
+---@field useLibraryCodeForTypes?                                                     boolean
+---@field inlayHints                                                                  { variableTypes: boolean, callArgumentNames: boolean, callArgumentNamesMatching: boolean, functionReturnTypes: boolean, genericTypes: boolean }
+---@field useTypingExtensions?                                                        boolean
+---@field fileEnumerationTimeout?                                                     integer
+---@field basedpyright.analysis.stubPath?                                             string
+---@field basedpyright.analysis.typeshedPaths?                                        string[]
+---@field diagnosticSeverityOverrides?                                                table<string, string>
+---@field failOnWarnings?                                                             boolean
+---@field reportUnreachable?                                                          boolean|string
+---@field reportAny?                                                                  boolean|string
+---@field reportIgnoreCommentWithoutRule?                                             boolean|string
+---@field reportPrivateLocalImportUsage?                                              boolean|string
+---@field reportImplicitRelativeImport?                                               boolean|string
+---@field reportInvalidCast?                                                          boolean|string
+---@field reportUnsafeMultipleInheritance?                                            boolean|string
+---@field reportUnusedParameter?                                                      boolean|string
+---@field reportImplicitAbstractClass?                                                boolean|string
+---@field reportUnannotatedClassAttribute?                                            boolean|string
 ---@alias BasedPyright.TypeCheckingMode
----| 'off'
+---| 'all'
 ---| 'basic'
+---| 'off'
+---| 'recommended'
 ---| 'standard'
 ---| 'strict'
----| 'recommended'
----| 'all'
 ---@class RaRunnableArgs
----@field cargoArgs                                                                     string[]
----@field executableArgs?                                                               string[]
----@field cwd                                                                           string
+---@field cargoArgs                                                                   string[]
+---@field cwd                                                                         string
+---@field executableArgs?                                                             string[]
 ---@class RaRunnable
----@field kind?                                                                         string
----@field label                                                                         string
----@field args                                                                          RaRunnableArgs
+---@field kind?                                                                       string
+---@field label                                                                       string
+---@field args                                                                        RaRunnableArgs

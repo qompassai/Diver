@@ -4,15 +4,15 @@
 -- ----------------------------------------
 ---@type vim.lsp.Config
 return {
-  cmd = {
-    'dafny',
-    'server'
-  },
-  filetypes = {
-    'dfy',
-    'dafny'
-  },
-  root_markers = {
-    '.git'
-  },
+    cmd = {
+        'dafny',
+        'server',
+    },
+    filetypes = {
+        'dfy',
+        'dafny',
+    },
+    root_markers = {
+        '.git',
+    },
 }

@@ -2,8 +2,8 @@
 -- Qompass AI Serve-D LSP Spec
 -- Copyright (C) 2025 Qompass AI, All rights reserved
 -- ----------------------------------------
----@type vim.lsp.Config
-return {
+return ---@type vim.lsp.Config
+{
     cmd = {
         'serve-d',
         '--provide',
@@ -23,4 +23,5 @@ return {
         'meson.build',
         'package.json',
     },
+    settings = {},
 }

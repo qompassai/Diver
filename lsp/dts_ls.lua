@@ -6,16 +6,16 @@
 -- cargo install dts-lsp
 ---@type vim.lsp.Config
 return {
-  cmd = {
-    'dts-lsp',
-  },
-  filetypes = {
-    'dts',
-    'dtsi',
-    'overlay',
-  },
-  root_markers = {
-    '.git',
-  },
-  settings = {},
+    cmd = {
+        'dts-lsp',
+    },
+    filetypes = {
+        'dts',
+        'dtsi',
+        'overlay',
+    },
+    root_markers = {
+        '.git',
+    },
+    settings = {},
 }

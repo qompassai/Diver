@@ -1,20 +1,16 @@
--- /qompassai/Diver/lsp/sysl_ls.lua
--- Qompass AI Sysl LSP Spec
+-- /qompassai/Diver/lsp/qlue_ls.lua
+-- Qompass AI Qlue LSP Spec
 -- Copyright (C) 2026 Qompass AI, All rights reserved
 -- ----------------------------------------
 return ---@type vim.lsp.Config
 {
     cmd = {
-        'sysl',
-        'lsp',
+        'qlue-ls',
+        'server',
     },
     filetypes = {
-        'sysl',
+        'sparql',
     },
-    root_markers = {
-        '.git',
-        'sysl.yaml',
-        'sysl.yml',
-    },
+    root_markers = {},
     settings = {},
 }

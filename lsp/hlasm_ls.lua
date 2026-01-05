@@ -4,13 +4,13 @@
 -- -----------------------------------------------------
 return ---@type vim.lsp.Config
 {
-  cmd = {
-    'hlasm_language_server'
-  },
-  filetypes = {
-    'hlasm'
-  },
-  root_markers = {
-    '.hlasmplugin'
-  },
+    cmd = {
+        'hlasm_language_server',
+    },
+    filetypes = {
+        'hlasm',
+    },
+    root_markers = {
+        '.hlasmplugin',
+    },
 }

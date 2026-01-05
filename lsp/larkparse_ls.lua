@@ -4,15 +4,15 @@
 -- --------------------------------------------------
 return ---@type vim.lsp.Config
 {
-  cmd = {
-    'python',
-    '-m',
-    'lark_parser_language_server'
-  },
-  filetypes = {
-    'lark'
-  },
-  root_markers = {
-    '.git'
-  },
+    cmd = {
+        'python',
+        '-m',
+        'lark_parser_language_server',
+    },
+    filetypes = {
+        'lark',
+    },
+    root_markers = {
+        '.git',
+    },
 }

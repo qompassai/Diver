@@ -4,15 +4,15 @@
 -- ----------------------------------------
 ---@type vim.lsp.Config
 return {
-  cmd = {
-    'pasls',
-  },
-  filetypes = {
-    'pascal',
-  },
-  root_markers = {
-    '*.lpi',
-    '*.lpk',
-    '.git',
-  },
+    cmd = {
+        'pasls',
+    },
+    filetypes = {
+        'pascal',
+    },
+    root_markers = {
+        '*.lpi',
+        '*.lpk',
+        '.git',
+    },
 }

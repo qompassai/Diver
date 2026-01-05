@@ -4,14 +4,14 @@
 -- ----------------------------------------
 return ---@type vim.lsp.Config
 {
-  cmd = {
-    'platuml-lsp'
-  },
-  filetypes = {
-    'platuml'
-  },
-  root_markers = {
-    '.git'
-  },
-  settings = {},
+    cmd = {
+        'platuml-lsp',
+    },
+    filetypes = {
+        'platuml',
+    },
+    root_markers = {
+        '.git',
+    },
+    settings = {},
 }

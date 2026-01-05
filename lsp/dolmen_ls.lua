@@ -5,18 +5,18 @@
 -- opam install dolmen_lsp
 return ---@type vim.lsp.Config
 {
-  cmd = {
-    'dolmenls',
-  },
-  filetypes = {
-    'cnf',
-    'icnf',
-    'smt2',
-    'tptp',
-    'p',
-    'zf',
-  },
-  root_markers = {
-    '.git',
-  },
+    cmd = {
+        'dolmenls',
+    },
+    filetypes = {
+        'cnf',
+        'icnf',
+        'smt2',
+        'tptp',
+        'p',
+        'zf',
+    },
+    root_markers = {
+        '.git',
+    },
 }

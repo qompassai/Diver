@@ -7,12 +7,12 @@
 
 return ---@type vim.lsp.Config
 {
-  cmd = {
-    'Contextive.LanguageServer',
-  },
-  root_markers = {
-    '.contextive',
-    'glossary.yml',
-    '.glossary.yml'
-  },
+    cmd = {
+        'Contextive.LanguageServer',
+    },
+    root_markers = {
+        '.contextive',
+        'glossary.yml',
+        '.glossary.yml',
+    },
 }

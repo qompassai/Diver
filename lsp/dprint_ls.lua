@@ -4,23 +4,23 @@
 -- ----------------------------------------
 return ---@type vim.lsp.Config
 {
-  cmd = {
-    'dprint',
-    'lsp',
-  },
-  filetypes = {
-    'javascript',
-    'javascriptreact',
-    'typescript',
-    'typescriptreact',
-    'json',
-    'jsonc',
-    'markdown',
-    'python',
-    'toml',
-    'rust',
-    'roslyn',
-    'graphql',
-  },
-  settings = {},
+    cmd = {
+        'dprint',
+        'lsp',
+    },
+    filetypes = {
+        'javascript',
+        'javascriptreact',
+        'typescript',
+        'typescriptreact',
+        'json',
+        'jsonc',
+        'markdown',
+        'python',
+        'toml',
+        'rust',
+        'roslyn',
+        'graphql',
+    },
+    settings = {},
 }

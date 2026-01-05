@@ -5,39 +5,39 @@
 --Reference:  https://github.com/iamcco/vim-language-server
 ---@type vim.lsp.Config
 return {
-  cmd = {
-    'vim-language-server',
-    '--stdio',
-  },
-  filetypes = {
-    'vim',
-  },
-  root_markers = {
-    '.git',
-  },
-  init_options = {
-    isNeovim = true,
-    iskeyword = '@,48-57,_,192-255,-#',
-    vimruntime = '',
-    runtimepath = '',
-    diagnostic = {
-      enable = true,
+    cmd = {
+        'vim-language-server',
+        '--stdio',
     },
-    indexes = {
-      runtimepath = true,
-      gap = 100,
-      count = 3,
-      projectRootPatterns = {
-        'autoload',
+    filetypes = {
+        'vim',
+    },
+    root_markers = {
         '.git',
-        'runtime',
-        'nvim',
-        'plugin',
-      },
     },
-    suggest = {
-      fromVimruntime = true,
-      fromRuntimepath = true,
+    init_options = {
+        isNeovim = true,
+        iskeyword = '@,48-57,_,192-255,-#',
+        vimruntime = '',
+        runtimepath = '',
+        diagnostic = {
+            enable = true,
+        },
+        indexes = {
+            runtimepath = true,
+            gap = 100,
+            count = 3,
+            projectRootPatterns = {
+                'autoload',
+                '.git',
+                'runtime',
+                'nvim',
+                'plugin',
+            },
+        },
+        suggest = {
+            fromVimruntime = true,
+            fromRuntimepath = true,
+        },
     },
-  },
 }
