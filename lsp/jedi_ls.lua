@@ -2,10 +2,11 @@
 -- Qompass AI Diver Jedi LSP Spec
 -- Copyright (C) 2025 Qompass AI, All rights reserved
 -- ----------------------------------------
----@type vim.lsp.Config
-return {
+
+return ---@type vim.lsp.Config
+{
     cmd = {
-        'jedi-language-server',
+        'jedi-language-server'
     },
     filetypes = {
         'python',

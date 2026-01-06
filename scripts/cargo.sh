@@ -23,4 +23,5 @@ cargo install --features lsp --locked taplo-cli
 cargo install --git https://github.com/kbwo/testing-language-server testing-ls-adapter
 cargo install --git https://github.com/kbwo/testing-language-server testing-language-server
 cargo install --git https://github.com/uiua-lang/uiua uiua -F full
+cargo install --git https://github.com/errata-ai/vale-ls
 cargo install --git https://github.com/wgsl-analyzer/wgsl-analyzer wgsl-analyzer

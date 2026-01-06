@@ -14,8 +14,7 @@ return ---@type vim.lsp.Config
     root_markers = {
         '.git',
     },
-    vim.api.nvim_create_autocmd('BufEnter',
-    {
+    vim.api.nvim_create_autocmd('BufEnter', {
         pattern = {
             '*.automount',
             '*.build',

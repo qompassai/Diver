@@ -392,7 +392,10 @@ pip install beancount
 )
 ```
 
-</div>
+   </div>
+  </ul>
+  </blockquote>
+</details>
 <details>
   <summary style="font-size: 1.4em; font-weight: bold; padding: 15px; background: #667eea; color: white; border-radius: 10px; cursor: pointer; margin: 10px 0; display: flex; align-items: center; gap: 8px;">
     <div class="icon-row" style="display: flex; align-items: center; gap: 6px;">

@@ -2,42 +2,42 @@
 -- Qompass AI Vim LSP Spec
 -- Copyright (C) 2025 Qompass AI, All rights reserved
 -- ----------------------------------------
---Reference:  https://github.com/iamcco/vim-language-server
+---@source https://github.com/iamcco/vim-language-server
 ---@type vim.lsp.Config
 return {
-    cmd = {
-        'vim-language-server',
-        '--stdio',
+  cmd = {
+    'vim-language-server',
+    '--stdio',
+  },
+  filetypes = {
+    'vim',
+  },
+  root_markers = {
+    '.git',
+  },
+  init_options = {
+    diagnostic = {
+      enable = true,
     },
-    filetypes = {
-        'vim',
-    },
-    root_markers = {
+    indexes = {
+      count = 3,
+      gap = 100,
+      runtimepath = true,
+      projectRootPatterns = {
+        'autoload',
         '.git',
+        'runtime',
+        'nvim',
+        'plugin',
+      },
     },
-    init_options = {
-        isNeovim = true,
-        iskeyword = '@,48-57,_,192-255,-#',
-        vimruntime = '',
-        runtimepath = '',
-        diagnostic = {
-            enable = true,
-        },
-        indexes = {
-            runtimepath = true,
-            gap = 100,
-            count = 3,
-            projectRootPatterns = {
-                'autoload',
-                '.git',
-                'runtime',
-                'nvim',
-                'plugin',
-            },
-        },
-        suggest = {
-            fromVimruntime = true,
-            fromRuntimepath = true,
-        },
+    iskeyword = '@,48-57,_,192-255,-#',
+    isNeovim = true,
+    runtimepath = '',
+    suggest = {
+      fromRuntimepath = true,
+      fromVimruntime = true,
     },
+    vimruntime = '',
+  },
 }

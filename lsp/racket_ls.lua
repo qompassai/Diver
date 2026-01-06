@@ -5,15 +5,15 @@
 ---@type vim.lsp.Config
 return {
     cmd = {
-      'racket',
-      '--lib',
-      'racket-langserver'
+        'racket',
+        '--lib',
+        'racket-langserver',
     },
     filetypes = {
-      'racket',
-      'scheme'
+        'racket',
+        'scheme',
     },
     root_markers = {
-      '.git'
+        '.git',
     },
 }

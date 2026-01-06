@@ -4,14 +4,14 @@
 -- ----------------------------------------
 ---@type vim.lsp.Config
 return {
-  cmd = {
-    'salt_lsp_server'
-  },
-  filetypes = {
-    'sls'
-  },
-  root_markers = {
-    '.git'
-  },
-  settings = {},
+    cmd = {
+        'salt_lsp_server',
+    },
+    filetypes = {
+        'sls',
+    },
+    root_markers = {
+        '.git',
+    },
+    settings = {},
 }

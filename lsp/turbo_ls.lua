@@ -10,15 +10,16 @@ return {
         'turbo-language-server',
         '--stdio',
     },
-    filetypes = { ---@type string[]
+    filetypes = {
         'blade',
         'eruby',
         'html',
         'php',
         'ruby',
     },
-    root_markers = { ---@type string[]
+    root_markers = {
         'Gemfile',
         '.git',
     },
+    settings = {},
 }

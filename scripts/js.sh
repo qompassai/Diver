@@ -27,6 +27,15 @@ pnpm add -g \
   @quick-lint-js@latest
   @rescript/language-server@latest \
   @sap/cds-lsp@latest \
+  @shopify/theme-check-common@latest \
+  @shopify/liquid-html-parser@latest \
+  @shopify/theme-check-browser@latest \
+  @shopify/theme-check-node@latest \
+  @shopify/theme-graph@latest \
+  @shopify/prettier-plugin-liquid@latest \
+  @shopify/codemirror-language-client@latest \
+  @shopify/theme-language-server-node@latest \
+  @shopify/theme-language-server-browser@latest \
   @shopify/cli@latest \
   @solc@latest \
   @solidity-ls@latest \
@@ -35,6 +44,7 @@ pnpm add -g \
   @stylelint-lsp@latest \
   @svelte-language-server@latest \
   @tailwindcss/language-server@latest \
+  @turbo-language-server@latest \
   @typescript-language-server@latest \
   typescript@latest \
   @typespec/compiler@latest \
