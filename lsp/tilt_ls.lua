@@ -5,16 +5,16 @@
 ---@source https://docs.tilt.dev/
 return ---@type vim.lsp.Config
 {
-  cmd = {
-    'tilt',
-    'lsp',
-    'start'
-  },
-  filetypes = {
-    'tiltfile'
-  },
-  root_markers = {
-    '.git'
-  },
-  settings = {},
+    cmd = {
+        'tilt',
+        'lsp',
+        'start',
+    },
+    filetypes = {
+        'tiltfile',
+    },
+    root_markers = {
+        '.git',
+    },
+    settings = {},
 }

@@ -2,18 +2,45 @@
 -- Qompass AI Selene 3rd Party LSP Spec
 -- Copyright (C) 2025 Qompass AI, All rights reserved
 -- --------------------------------------------------
---Reference: https://github.com/antonk52/lua-3p-language-servers
---pnpm add -g lua-3p-language-servers@latest
----@type vim.lsp.Config
-return {
-    cmd = { ---@type string[]
+---@source https://github.com/antonk52/lua-3p-language-servers
+
+return ---@type vim.lsp.Config
+    {
+    cmd = {
         'selene-3p-language-server',
     },
-    filetypes = { ---@type string[]
+    filetypes = {
         'lua',
     },
-    root_markers = { ---@type string[]
+    root_markers = {
         'selene.toml',
+    },
+    settings = {
+        selene = {
+            config = {
+                empty_if = {
+                    comment_count = true,
+                },
+            },
+            rules = {
+                almost_swapped = 'warn',
+                divide_by_zero = 'deny',
+                duplicate_keys = 'deny',
+                empty_if = 'warn',
+                empty_loop = 'warn',
+                high_cyclomatic_complexity = 'warn',
+                ifs_same_cond = 'warn',
+                if_same_then_else = 'warn',
+                mixed_table = 'allow',
+                multiple_statements = 'warn',
+                parenthese_conditions = 'warn',
+                shadowing = 'warn',
+                unbalanced_assignments = 'deny',
+                undefined_variable = 'deny',
+                unused_variable = 'warn',
+            },
+            std = 'luajit',
+        },
     },
 },
     vim.api.nvim_create_user_command('SeleneCheck', function()

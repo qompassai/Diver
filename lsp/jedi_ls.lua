@@ -6,7 +6,7 @@
 return ---@type vim.lsp.Config
 {
     cmd = {
-        'jedi-language-server'
+        'jedi-language-server',
     },
     filetypes = {
         'python',

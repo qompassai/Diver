@@ -2,19 +2,20 @@
 -- Qompass AI VS Rocq Interactive Theorem Prover LSP Spec
 -- Copyright (C) 2025 Qompass AI, All rights reserved
 -- --------------------------------------------------
--- Reference: https://github.com/rocq-prover/vsrocq
---  opam install vsrocq-language-server
----@type vim.lsp.Config
-return {
-    cmd = { ---@type string[]
+---@source https://github.com/rocq-prover/vsrocq
+--  opam pin add vsrocq-language-server.2.3.4  https://github.com/rocq-prover/vsrocq/releases/download/v2.3.4/vsrocq-language-server-2.3.4.tar.gz
+return ---@type vim.lsp.Config
+{
+    cmd = {
         'vsrocqtop',
     },
-    filetypes = { ---@type string[]
+    filetypes = {
         'coq',
     },
-    root_markers = { ---@type string[]
+    root_markers = {
         '_CoqProject',
         '.git',
         '_RocqProject',
     },
+    settings = {},
 }

@@ -5,14 +5,14 @@
 return ---@type vim.lsp.Config
 {
     cmd = {
-      'theme-check-language-server',
-      '--stdio'
+        'theme-check-language-server',
+        '--stdio',
     },
     filetypes = {
-      'liquid'
+        'liquid',
     },
     root_markers = {
-      '.theme-check.yml'
+        '.theme-check.yml',
     },
     settings = {},
 }
