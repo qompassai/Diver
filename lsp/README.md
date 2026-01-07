@@ -1837,14 +1837,14 @@ pnpm add -g foam-language-server@latest
       <li>
         <a href="https://github.com/qompassai/diver/blob/main/lsp/p_ls.lua">p_ls</a>
       </li>
-      <li><code>
+      <li>
         <a href="https://github.com/qompassai/diver/blob/main/lsp/perl_ls.lua">perlav_ls</a>
       </li>
-      <li><code>perlnav_ls</code> –
-        <a href="https://github.com/qompassai/diver/blob/main/lsp/perlnav_ls.lua">config</a>
+      <li>
+        <a href="https://github.com/qompassai/diver/blob/main/lsp/perlnav_ls.lua">perlnav_ls</a>
       </li>
-      <li><code>perlp_ls</code> –
-        <a href="https://github.com/qompassai/diver/blob/main/lsp/perlp_ls.lua">config</a>
+      <li>
+        <a href="https://github.com/qompassai/diver/blob/main/lsp/perlp_ls.lua">perlp_ls</a>
       </li>
     </ul>
   </blockquote>
