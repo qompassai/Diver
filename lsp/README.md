@@ -528,6 +528,35 @@ cmake --install build --component clangd --prefix "$HOME/.local"
 <details>
   <summary style="font-size: 1.4em; font-weight: bold; padding: 15px; background: #667eea; color: white; border-radius: 10px; cursor: pointer; margin: 10px 0; display: flex; align-items: center; gap: 8px;">
     <div class="icon-row" style="display: flex; align-items: center; gap: 6px;">
+      <img src="https://raw.githubusercontent.com/qompassai/svg/refs/heads/main/assets/icons/c3/c3.svg"
+           alt="c3" width="60" height="60" title="C3" />
+    </div>
+    <strong>C3</strong>
+  </summary>
+  <blockquote style="font-size: 1.2em; line-height: 1.8; padding: 25px; background: #f8f9fa; border-left: 6px solid #667eea; border-radius: 8px; margin: 15px 0; box-shadow: 0 2px 8px rgba(0,0,0,0.1);">
+    <ul>
+      <li>
+        <a href="https://github.com/qompassai/diver/blob/main/lsp/ziggy_ls.lua">c3_ls</a>
+      </li>
+       <p>
+      <a href="https://github.com/pherrymason/c3-lsp/wiki/Integration-with-editors">C3 LSP Reference</a>
+    </p>
+ <div style="background: #f8f9fa; padding: 15px; border-radius: 5px; margin-top: 10px; font-family: monospace;">
+
+```sh
+git clone https://github.com/c3lang/c3-lsp.git --recursive \
+cd c3-lsp && git fetch --all && git submodule update --init --recursive \
+./scripts/build_linux.sh  \
+mv server/bin/c3lsp ~/.local/bin
+```
+
+</div>
+</ul>
+  </blockquote>
+</details>
+<details>
+  <summary style="font-size: 1.4em; font-weight: bold; padding: 15px; background: #667eea; color: white; border-radius: 10px; cursor: pointer; margin: 10px 0; display: flex; align-items: center; gap: 8px;">
+    <div class="icon-row" style="display: flex; align-items: center; gap: 6px;">
       <img src="https://raw.githubusercontent.com/qompassai/svg/refs/heads/main/assets/icons/cairo/cairo.svg"
            alt="cairo" width="60" height="60" title="Cairo" />
     </div>
@@ -3200,75 +3229,7 @@ uv tool intsall yamllint
 </div>
   </blockquote>
 </details>
-<details>
-  <summary style="font-size: 1.4em; font-weight: bold; padding: 15px; background: #667eea; color: white; border-radius: 10px; cursor: pointer; margin: 10px 0; display: flex; align-items: center; gap: 8px;">
-    <div class="icon-row" style="display: flex; align-items: center; gap: 6px;">
-      <img src="https://raw.githubusercontent.com/qompassai/svg/refs/heads/main/assets/icons/c3/c3.svg"
-           alt="c3" width="60" height="60" title="C3" />
-    </div>
-    <strong>C3</strong>
-  </summary>
-  <blockquote style="font-size: 1.2em; line-height: 1.8; padding: 25px; background: #f8f9fa; border-left: 6px solid #667eea; border-radius: 8px; margin: 15px 0; box-shadow: 0 2px 8px rgba(0,0,0,0.1);">
-    <ul>
-      <li>
-        <a href="https://github.com/qompassai/diver/blob/main/lsp/ziggy_ls.lua">c3_ls</a>
-      </li>
-       <p>
-      <a href="https://github.com/pherrymason/c3-lsp/wiki/Integration-with-editors">C3 LSP Reference</a>
-    </p>
- <div style="background: #f8f9fa; padding: 15px; border-radius: 5px; margin-top: 10px; font-family: monospace;">
-
-```sh
-git clone https://github.com/c3lang/c3-lsp.git --recursive \
-cd c3-lsp && git fetch --all && git submodule update --init --recursive \
-./scripts/build_linux.sh  \
-mv server/bin/c3lsp ~/.local/bin
-```
-
 </div>
-</ul>
-  </blockquote>
-</details>
-</div>
-<details>
-  <summary style="font-size: 1.4em; font-weight: bold; padding: 15px; background: #667eea; color: white; border-radius: 10px; cursor: pointer; margin: 10px 0; display: flex; align-items: center; gap: 8px;">
-    <div class="icon-row" style="display: flex; align-items: center; gap: 6px;">
-      <img src="https://raw.githubusercontent.com/qompassai/svg/refs/heads/main/assets/icons/yaml/yaml.svg"
-           alt="yaml" width="60" height="60" title="YAML" />
-    </div>
-    <strong>YAML</strong>
-  </summary>
-  <blockquote style="font-size: 1.2em; line-height: 1.8; padding: 25px; background: #f8f9fa; border-left: 6px solid #667eea; border-radius: 8px; margin: 15px 0; box-shadow: 0 2px 8px rgba(0,0,0,0.1);">
-    <ul>
-      <li>
-        <a href="https://github.com/qompassai/diver/blob/main/lsp/yaml_ls.lua">yaml_ls</a>
-      </li>
-        <p>
-      <a href="https://github.com/redhat-developer/yaml-language-server">Yaml LSP Reference</a>
-    </p>
- <div style="background: #f8f9fa; padding: 15px; border-radius: 5px; margin-top: 10px; font-family: monospace;">
-
-```sh
-pnpm add -g yaml-language-server@latest
-```
-
-</div>
-        <li>
-        <a href="https://github.com/qompassai/diver/blob/main/lsp/yamllint_ls.lua">yamllint_ls</a>
-      </li>
-    </ul>
-    <p>
-      <a href="https://yamllint.readthedocs.io/en/stable/">Yamllint LSP Reference</a>
-    </p>
- <div style="background: #f8f9fa; padding: 15px; border-radius: 5px; margin-top: 10px; font-family: monospace;">
-
-```sh
-pip install yamllint
-```
-
-</div>
-  </blockquote>
-</details>
 <details>
   <summary style="font-size: 1.4em; font-weight: bold; padding: 15px; background: #667eea; color: white; border-radius: 10px; cursor: pointer; margin: 10px 0; display: flex; align-items: center; gap: 8px;">
     <div class="icon-row" style="display: flex; align-items: center; gap: 6px;">
