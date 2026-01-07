@@ -2180,7 +2180,7 @@ pnpm add -g @rescript/language-server@latest
   </summary>
   <blockquote style="font-size: 1.2em; line-height: 1.8; padding: 25px; background: #f8f9fa; border-left: 6px solid #667eea; border-radius: 8px; margin: 15px 0; box-shadow: 0 2px 8px rgba(0,0,0,0.1);">
     <ul>
-      <li><code>
+      <li>
         <a href="https://github.com/qompassai/diver/blob/main/lsp/robotcode_ls.lua">robotcode_ls</a>
       </li>
             <p>
@@ -2194,7 +2194,7 @@ pip install robotcode[all]
 ```
 
    </div>
-      <li><code>
+      <li>
         <a href="https://github.com/qompassai/diver/blob/main/lsp/robotframework_ls.lua">robotframework_ls</a>
       </li>
     </ul>
