@@ -2,10 +2,9 @@
 -- Qompass AI Htmx LSP Config
 -- Copyright (C) 2025 Qompass AI, All rights reserved
 -----------------------------------------------------
--- References:  https://github.com/ThePrimeagen/htmx-lsp |
--- cargo install htmx-lsp
----@type vim.lsp.Config
-return {
+---@source https://htmx.org/reference/#config | https://github.com/ThePrimeagen/htmx-lsp
+return ---@type vim.lsp.Config
+{
     cmd = {
         'htmx-lsp',
     },
@@ -56,5 +55,24 @@ return {
     },
     root_markers = {
         '.git',
+    },
+    settings = {
+        htmx = {
+            config = {
+                allowNestedOobSwaps = true,
+                defaultSettleDelay = 20,
+                defaultSwapDelay = 0,
+                defaultSwapStyle = 'innerHTML',
+                disableInheritance = false,
+                historyCacheSize = 10,
+                historyEnabled = true,
+                ignoreTitle = false,
+                refreshOnHistoryMiss = false,
+                scrollBehavior = 'instant',
+                timeout = 0,
+                withCredentials = false,
+                wsBinaryType = 'blob',
+            },
+        },
     },
 }

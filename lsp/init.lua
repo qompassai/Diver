@@ -86,7 +86,7 @@ vim.lsp.enable({
     'bq_ls',
     'brioche_ls',
     'bsc_ls',
-    'buck2_ls',
+    'buck2_ls', ---:TODO validate, add to README
     'buf_ls',
     'c3_ls',
     'cairo_ls',
@@ -278,7 +278,7 @@ vim.lsp.enable({
     'rescript_ls',
     'robotcode_ls',
     'robotframework_ls',
-    --'rocq_ls', ---:TODO
+    'rocq_ls', ---:TODO validate ---@source https://github.com/rocq-prover/vsrocq
     'roslyn_ls',
     'rpmspec_ls',
     'rubocop_ls',
@@ -396,6 +396,7 @@ vim.lsp.enable({
 --'coffeesense_ls', -- two years since last git
 --'cspell_ls',          ---deprecated for codebook
 --'css_ls', ---outdated last update 1 year ago
+--'custom_ls' ---outdated ---@source https://github.com/Matsuuu/custom-elements-language-server
 --'dagger_ls' ---deprecated
 ---'dcm_ls', ---notusing has paid plans https://dcm.dev/docs/getting-started/for-developers/installation/
 --'diagnostic_ls', ---outdated

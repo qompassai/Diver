@@ -1,6 +1,9 @@
 <!-- /qompassai/Diver/lsp/README.md -->
+
 <!-- Qompass AI Diver LSP Docs -->
+
 <!-- Copyright (C) 2025 Qompass AI, All rights reserved -->
+
 <!-- ---------------------------------------- -->
 
 <div align="center">
@@ -482,47 +485,105 @@ go install github.com/kitagry/bqls@latest
 <details>
   <summary style="font-size: 1.4em; font-weight: bold; padding: 15px; background: #667eea; color: white; border-radius: 10px; cursor: pointer; margin: 10px 0; display: flex; align-items: center; gap: 8px;">
     <div class="icon-row" style="display: flex; align-items: center; gap: 6px;">
-      <img src="https://raw.githubusercontent.com/qompassai/svg/refs/heads/main/assets/icons/c/c.svg"
-           alt="c/c++" width="60" height="60" title="C/C++" />
+      <img src="https://raw.githubusercontent.com/qompassai/svg/refs/heads/main/assets/icons/bqn/bqn.svg"
+           alt="bqn" width="60" height="60" title="BQN" />
     </div>
-    <strong>C/C++</strong>
+    <strong>BQN</strong>
+  </summary>
+  <blockquote style="font-size: 1.2em; line-height: 1.8; padding: 25px; background: #f8f9fa; border-left: 6px solid #667eea; border-radius: 8px; margin: 15px 0; box-shadow: 0 2px 8px rgba(0,0,0,0.1);">
+    <ul>
+      <li><code>
+        <a href="https://github.com/qompassai/diver/blob/main/lsp/bq_ls.lua">bq_ls</a></code>
+      </li>
+      <p>
+      <a href="https://github.com/kitagry/bqls/">BigQuery LSP Reference</a>
+    </p>
+ <div style="background: #f8f9fa; padding: 15px; border-radius: 5px; margin-top: 10px; font-family: monospace;">
+
+```sh
+go install github.com/kitagry/bqls@latest
+```
+
+</div>
+  </ul>
+  </blockquote>
+</details>
+<details>
+  <summary style="font-size: 1.4em; font-weight: bold; padding: 15px; background: #667eea; color: white; border-radius: 10px; cursor: pointer; margin: 10px 0; display: flex; align-items: center; gap: 8px;">
+    <div class="icon-row" style="display: flex; align-items: center; gap: 6px;">
+      <img src="https://raw.githubusercontent.com/qompassai/svg/refs/heads/main/assets/icons/bsc/bsc.svg"
+           alt="brighterscript" width="60" height="60" title="BrighterScript" />
+    </div>
+    <strong>BrighterScript</strong>
+  </summary>
+  <blockquote style="font-size: 1.2em; line-height: 1.8; padding: 25px; background: #f8f9fa; border-left: 6px solid #667eea; border-radius: 8px; margin: 15px 0; box-shadow: 0 2px 8px rgba(0,0,0,0.1);">
+    <ul>
+      <li>
+        <a href="https://github.com/qompassai/diver/blob/main/lsp/bsc_ls.lua">bsc_ls</a>
+      </li>
+    </ul>
+         <p>
+      <a href="https://github.com/RokuCommunity/brighterscript">BrighterScript Reference</a>
+    </p>
+ <div style="background: #f8f9fa; padding: 15px; border-radius: 5px; margin-top: 10px; font-family: monospace;">
+
+```sh
+pnpm add -g brighterscript@latest
+```
+
+</div>
+  </blockquote>
+</details>
+<details>
+  <summary style="font-size: 1.4em; font-weight: bold; padding: 15px; background: #667eea; color: white; border-radius: 10px; cursor: pointer; margin: 10px 0; display: flex; align-items: center; gap: 8px;">
+    <div class="icon-row" style="display: flex; align-items: center; gap: 6px;">
+      <img src="https://raw.githubusercontent.com/qompassai/svg/refs/heads/main/assets/icons/c/brioche.svg"
+           alt="c/c++" width="60" height="60" title="Brioche" />
+    </div>
+    <strong>Brioche</strong>
   </summary>
   <blockquote style="font-size: 1.2em; line-height: 1.8; padding: 25px; background: #f8f9fa; border-left: 6px solid #667eea; border-radius: 8px; margin: 15px 0; box-shadow: 0 2px 8px rgba(0,0,0,0.1);">
     <ul>
         <li>
-          <a href="https://github.com/qompassai/diver/blob/main/lsp/cc_ls.lua">cc_ls</a>
+          <a href="https://github.com/qompassai/diver/blob/main/lsp/brioche_ls.lua">brioche_ls</a>
       </li>
                 <p>
-      <a href="https://github.com/MaskRay/ccls/wiki">CC LSP Reference</a>
+      <a href="https://brioche.dev/">Brioche Reference</a>
     </p>
  <div style="background: #f8f9fa; padding: 15px; border-radius: 5px; margin-top: 10px; font-family: monospace;">
 
 ```sh
-git clone --depth=1 --recursive https://github.com/MaskRay/ccls && cd ccls \
-git submodule update --init --recursive && cmake -S. -BRelease -DCMAKE_BUILD_TYPE=Release \
-cmake --build Release
+curl --proto '=https' --tlsv1.2 -sSfL 'https://brioche.dev/install.sh' | sh
 ```
 
 </div>
-      <li><code>
-          <a href="https://github.com/qompassai/diver/blob/main/lsp/clangd_ls.lua">clangd_ls</a></code>
+</ul>
+  </blockquote>
+</details>
+<details>
+  <summary style="font-size: 1.4em; font-weight: bold; padding: 15px; background: #667eea; color: white; border-radius: 10px; cursor: pointer; margin: 10px 0; display: flex; align-items: center; gap: 8px;">
+    <div class="icon-row" style="display: flex; align-items: center; gap: 6px;">
+      <img src="https://raw.githubusercontent.com/qompassai/svg/refs/heads/main/assets/icons/buck2/buck2.svg"
+           alt="Buck2" width="60" height="60" title="Buck2" />
+    </div>
+    <strong>Buck2</strong>
+  </summary>
+  <blockquote style="font-size: 1.2em; line-height: 1.8; padding: 25px; background: #f8f9fa; border-left: 6px solid #667eea; border-radius: 8px; margin: 15px 0; box-shadow: 0 2px 8px rgba(0,0,0,0.1);">
+    <ul>
+      <li>
+        <a href="https://github.com/qompassai/diver/blob/main/lsp/buck2_ls.lua">buck2_ls</a>
       </li>
-                <p>
-      <a href="https://clangd.llvm.org/installation.html">Clangd LSP Reference</a>
+    </ul>
+         <p>
+      <a href="https://buck2.build/docs/users/commands/lsp/#buck2-lsp">Buck2 LSP Reference</a>
     </p>
  <div style="background: #f8f9fa; padding: 15px; border-radius: 5px; margin-top: 10px; font-family: monospace;">
 
 ```sh
-git clone https://github.com/llvm/llvm-project.git "$HOME/src/llvm-project" \\
-cd "$HOME/src/llvm-project" git fetch --all && git submodule update --init --recursive \
-cmake -S llvm -B build \
-  -DCMAKE_BUILD_TYPE=Release \
-  -DLLVM_ENABLE_PROJECTS="clang;clang-tools-extra" && cmake --build build --target clangd -j$(nproc) \
-cmake --install build --component clangd --prefix "$HOME/.local"
+rustup install nightly-2025-08-01 && cargo +nightly-2025-08-01 install --git https://github.com/facebook/buck2.git buck2
 ```
 
-  </div>
-</ul>
+</div>
   </blockquote>
 </details>
 <details>
@@ -536,7 +597,7 @@ cmake --install build --component clangd --prefix "$HOME/.local"
   <blockquote style="font-size: 1.2em; line-height: 1.8; padding: 25px; background: #f8f9fa; border-left: 6px solid #667eea; border-radius: 8px; margin: 15px 0; box-shadow: 0 2px 8px rgba(0,0,0,0.1);">
     <ul>
       <li>
-        <a href="https://github.com/qompassai/diver/blob/main/lsp/ziggy_ls.lua">c3_ls</a>
+        <a href="https://github.com/qompassai/diver/blob/main/lsp/c3_ls">c3_ls</a>
       </li>
        <p>
       <a href="https://github.com/pherrymason/c3-lsp/wiki/Integration-with-editors">C3 LSP Reference</a>
@@ -620,7 +681,7 @@ uv tool install cmake-language-server
         <a href="https://github.com/qompassai/diver/blob/main/lsp/neocmake_ls.lua">neocmake_ls</a>
       </li>
               <p>
-      <a href="https://github.com/neocmakelsp/neocmakelsp">NeoCMake LSP Reference</a>
+      <a href="https://github.com/neocmakelsp/neocmakelsp">NeoCmake LSP Reference</a>
     </p>
  <div style="background: #f8f9fa; padding: 15px; border-radius: 5px; margin-top: 10px; font-family: monospace;">
 
@@ -2798,13 +2859,13 @@ curl -s https://raw.githubusercontent.com/terraform-linters/tflint/master/instal
     </p>
  <div style="background: #f8f9fa; padding: 15px; border-radius: 5px; margin-top: 10px; font-family: monospace;">
 
-```sh
+````sh
 go install github.com/hashicorp/terraform-ls@latest
                           ```
 
 ```sh
 git clone https://github.com/juliosueiras/terraform-lsp.git && cd terraform-lsp && nix-build
-```
+````
 
 </div>
       <ul>
@@ -3227,7 +3288,6 @@ uv tool intsall yamllint
 </div>
   </blockquote>
 </details>
-</div>
 <details>
   <summary style="font-size: 1.4em; font-weight: bold; padding: 15px; background: #667eea; color: white; border-radius: 10px; cursor: pointer; margin: 10px 0; display: flex; align-items: center; gap: 8px;">
     <div class="icon-row" style="display: flex; align-items: center; gap: 6px;">
@@ -3278,7 +3338,6 @@ git clone https://github.com/kristoff-it/ziggy.git && cd ziggy && zig build -Dop
 git clone https://github.com/zigtools/zls && cd zls && zig build -Doptimize=ReleaseSafe
 ```
 
-</div>
   </blockquote>
 </details>
 </div>
