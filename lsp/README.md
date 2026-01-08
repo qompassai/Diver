@@ -1514,7 +1514,7 @@ cargo install --git https://github.com/ink-analyzer/ink-analyzer.git
       <img src="https://raw.githubusercontent.com/qompassai/svg/refs/heads/main/assets/icons/janet/janet.svg"
            alt="janet" width="60" height="60" title="Janet" />
     </div>
-    <strong>Ink!</strong>
+    <strong>Janet</strong>
   </summary>
   <blockquote style="font-size: 1.2em; line-height: 1.8; padding: 25px; background: #f8f9fa; border-left: 6px solid #667eea; border-radius: 8px; margin: 15px 0; box-shadow: 0 2px 8px rgba(0,0,0,0.1);">
     <ul>
