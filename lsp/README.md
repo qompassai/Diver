@@ -60,8 +60,8 @@ git submodule update --init --recursive && stack install
   </summary>
   <blockquote style="font-size: 1.2em; line-height: 1.8; padding: 25px; background: #f8f9fa; border-left: 6px solid #667eea; border-radius: 8px; margin: 15px 0; box-shadow: 0 2px 8px rgba(0,0,0,0.1);">
     <ul>
-      <li><code>
-        <a href="https://github.com/qompassai/Diver/blob/main/lsp/ai_ls.lua">ai_ls</a></code>
+      <li>
+        <a href="https://github.com/qompassai/Diver/blob/main/lsp/ai_ls.lua">ai_ls</a>
       </li>
             <p>
       <a href="https://github.com/SilasMarvin/lsp-ai">AI LSP Reference</a>
@@ -1417,6 +1417,129 @@ go install github.com/hyprland-community/hyprls/cmd/hyprls@latest
   </blockquote>
 </details>
 <details>
+ <summary style="font-size: 1.4em; font-weight: bold; padding: 15px; background: #667eea; color: white; border-radius: 10px; cursor: pointer; margin: 10px 0; display: flex; align-items: center; gap: 8px;">
+    <div class="icon-row" style="display: flex; align-items: center; gap: 6px;">
+      <img src="https://raw.githubusercontent.com/qompassai/svg/refs/heads/main/assets/icons/idris2/idris2.svg"
+           alt="idris2" width="60" height="60" title="Idris2" />
+    </div>
+    <strong>Idris2</strong>
+  </summary>
+  <blockquote style="font-size: 1.2em; line-height: 1.8; padding: 25px; background: #f8f9fa; border-left: 6px solid #667eea; border-radius: 8px; margin: 15px 0; box-shadow: 0 2px 8px rgba(0,0,0,0.1);">
+    <ul>
+      <li>
+        <a href="https://github.com/qompassai/diver/blob/main/lsp/idris2_ls.lua">idris2_ls</a>
+      </li>
+         </ul>
+        <p>
+      <a href=" https://github.com/idris-community/idris2-lsp
+">Idris2 LSP Reference</a>
+    </p>
+ <div style="background: #f8f9fa; padding: 15px; border-radius: 5px; margin-top: 10px; font-family: monospace;">
+
+```sh
+set -euo pipefail
+export XDG_DATA_HOME="${XDG_DATA_HOME:-$HOME/.local/share}"
+export IDRIS2_PREFIX="${IDRIS2_PREFIX:-$XDG_DATA_HOME/idris2}"
+REPO_DIR="${REPO_DIR:-$HOME/.GH/idris2-lsp-src}"
+mkdir -p "$IDRIS2_PREFIX" "$REPO_DIR"
+if [ ! -d "$REPO_DIR/.git" ]; then
+  git clone https://github.com/idris-community/idris2-lsp.git "$REPO_DIR"
+else
+  git -C "$REPO_DIR" pull --ff-only
+fi
+cd "$REPO_DIR"
+git config protocol.https.allow always
+git submodule update --init Idris2
+cd Idris2
+export SCHEME=chez
+export IDRIS2_VERSION=0.8.0
+make all \
+  PREFIX="$IDRIS2_PREFIX" IDRIS2_PREFIX="$IDRIS2_PREFIX"
+make install \
+  PREFIX="$IDRIS2_PREFIX" IDRIS2_PREFIX="$IDRIS2_PREFIX"
+make install-with-src-libs \
+  PREFIX="$IDRIS2_PREFIX" IDRIS2_PREFIX="$IDRIS2_PREFIX"
+make install-with-src-api  \
+  PREFIX="$IDRIS2_PREFIX" IDRIS2_PREFIX="$IDRIS2_PREFIX"
+cd "$REPO_DIR"
+case ":$PATH:" in
+  *":$IDRIS2_PREFIX/bin:"*) ;;
+  *) export PATH="$IDRIS2_PREFIX/bin:$PATH" ;;
+esac
+git submodule update --init LSP-lib
+cd LSP-lib
+idris2 --install-with-src
+cd "$REPO_DIR"
+make install PREFIX="$IDRIS2_PREFIX" IDRIS2_PREFIX="$IDRIS2_PREFIX"
+echo "idris2 & idris2-lsp installed to $IDRIS2_PREFIX/bin"
+echo "Add this to your shell config (e.g. ~/.bashrc, ~/.zshrc):"
+echo "    export XDG_DATA_HOME=\"\${XDG_DATA_HOME:-\$HOME/.local/share}\""
+echo "    export IDRIS2_PREFIX=\"\${IDRIS2_PREFIX:-\$XDG_DATA_HOME/idris2}\""
+echo "    export PATH=\"\$IDRIS2_PREFIX/bin:\$PATH\""
+```
+
+</div>
+  </blockquote>
+</details>
+<details>
+ <summary style="font-size: 1.4em; font-weight: bold; padding: 15px; background: #667eea; color: white; border-radius: 10px; cursor: pointer; margin: 10px 0; display: flex; align-items: center; gap: 8px;">
+    <div class="icon-row" style="display: flex; align-items: center; gap: 6px;">
+      <img src="https://raw.githubusercontent.com/qompassai/svg/refs/heads/main/assets/icons/ink/ink.svg"
+           alt="ink!" width="60" height="60" title="Ink!" />
+    </div>
+    <strong>Ink!</strong>
+  </summary>
+  <blockquote style="font-size: 1.2em; line-height: 1.8; padding: 25px; background: #f8f9fa; border-left: 6px solid #667eea; border-radius: 8px; margin: 15px 0; box-shadow: 0 2px 8px rgba(0,0,0,0.1);">
+    <ul>
+      <li>
+        <a href="https://github.com/qompassai/diver/blob/main/lsp/ink_ls.lua">ink_ls</a>
+      </li>
+         </ul>
+        <p>
+      <a href=" https://github.com/idris-community/idris2-lsp
+">Ink LSP Reference</a>
+    </p>
+ <div style="background: #f8f9fa; padding: 15px; border-radius: 5px; margin-top: 10px; font-family: monospace;">
+
+```sh
+cargo install --git https://github.com/ink-analyzer/ink-analyzer.git
+```
+
+</div>
+  </blockquote>
+</details>
+<details>
+ <summary style="font-size: 1.4em; font-weight: bold; padding: 15px; background: #667eea; color: white; border-radius: 10px; cursor: pointer; margin: 10px 0; display: flex; align-items: center; gap: 8px;">
+    <div class="icon-row" style="display: flex; align-items: center; gap: 6px;">
+      <img src="https://raw.githubusercontent.com/qompassai/svg/refs/heads/main/assets/icons/janet/janet.svg"
+           alt="janet" width="60" height="60" title="Janet" />
+    </div>
+    <strong>Ink!</strong>
+  </summary>
+  <blockquote style="font-size: 1.2em; line-height: 1.8; padding: 25px; background: #f8f9fa; border-left: 6px solid #667eea; border-radius: 8px; margin: 15px 0; box-shadow: 0 2px 8px rgba(0,0,0,0.1);">
+    <ul>
+      <li>
+        <a href="https://github.com/qompassai/diver/blob/main/lsp/janet_ls.lua">ink_ls</a>
+      </li>
+         </ul>
+        <p>
+      <a href="https://github.com/CFiggers/janet-lsp">Janet LSP Reference</a>
+    </p>
+ <div style="background: #f8f9fa; padding: 15px; border-radius: 5px; margin-top: 10px; font-family: monospace;">
+
+```sh
+# Having janet and jpm already installed
+git clone https://github.com/CFiggers/janet-lsp --recursive \
+cd janet-lsp \
+sudo jpm deps \
+sudo jpm build \
+sudo jpm install
+```
+
+</div>
+  </blockquote>
+</details>
+<details>
   <summary style="font-size: 1.4em; font-weight: bold; padding: 15px; background: #667eea; color: white; border-radius: 10px; cursor: pointer; margin: 10px 0; display: flex; align-items: center; gap: 8px;">
     <div class="icon-row" style="display: flex; align-items: center; gap: 6px;">
       <img src="https://skillicons.dev/icons?i=java" alt="java" width="60" height="60" title="Java" />
@@ -1638,7 +1761,7 @@ cargo install jinja --git https://github.com/uros-5/jinja-lsp jinja-lsp
       <li>
         <a href="https://github.com/qompassai/diver/blob/main/lsp/mlir_ls.lua">mlir_ls</a>
       </li>
-                                <p>
+      <p>
       <a href="https://mlir.llvm.org/docs/Tools/MLIRLSP/#mlir-lsp-language-server--mlir-lsp-server=
 ">MLIR LSP Reference</a>
     </p>
@@ -1664,6 +1787,32 @@ ninja install
         <a href="https://github.com/qompassai/diver/blob/main/lsp/tblgen_ls.lua">tblgen_ls</a>
       </li>
     </ul>
+  </blockquote>
+</details>
+<details>
+  <summary style="font-size: 1.4em; font-weight: bold; padding: 15px; background: #667eea; color: white; border-radius: 10px; cursor: pointer; margin: 10px 0; display: flex; align-items: center; gap: 8px;">
+    <div class="icon-row" style="display: flex; align-items: center; gap: 6px;">
+      <img src="https://raw.githubusercontent.com/qompassai/svg/refs/heads/main/assets/icons/logic/logic.svg"
+           alt="logic" width="60" height="60" title="Logic" />
+    </div>
+    <strong>Logic</strong>
+  </summary>
+  <blockquote style="font-size: 1.2em; line-height: 1.8; padding: 25px; background: #f8f9fa; border-left: 6px solid #667eea; border-radius: 8px; margin: 15px 0; box-shadow: 0 2px 8px rgba(0,0,0,0.1);">
+    <ul>
+      <li><code>
+        <a href="https://github.com/qompassai/diver/blob/main/lsp/dolmen_ls.lua">dolmen_ls</a></code>
+      </li>
+      <p>
+      <a href="https://github.com/Gbury/dolmen/blob/master/doc/lsp.md">Dolmen LSP Reference</a>
+    </p>
+ <div style="background: #f8f9fa; padding: 15px; border-radius: 5px; margin-top: 10px; font-family: monospace;">
+
+```sh
+opam pin add https://github.com/Gbury/dolmen.git
+```
+
+</div>
+  </ul>
   </blockquote>
 </details>
 <details>

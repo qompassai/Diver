@@ -8,8 +8,8 @@ vim.filetype.add({
         ['.*/hyprland%.conf'] = 'hyprlang',
     },
 })
----@type vim.lsp.Config
-return {
+return ---@type vim.lsp.Config
+    {
     cmd = {
         'hyprls',
     },
@@ -80,7 +80,9 @@ return {
                 })[1] or vim.loop.cwd()),
                 settings = {
                     hyprls = {
-                        colorProvider = { enable = true },
+                        colorProvider = {
+                            enable = true,
+                        },
                         completion = { enable = true, keywordSnippet = 'Both' },
                         documentSymbol = { enable = true },
                         hover = { enable = true },

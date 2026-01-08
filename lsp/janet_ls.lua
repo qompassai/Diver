@@ -1,9 +1,9 @@
--- janet_ls.lua
--- Qompass AI - [ ]
+-- /qompassai/Diver/lsp/janet_ls.lua
+-- Qompass AI Diver Janet LSP Spec
 -- Copyright (C) 2025 Qompass AI, All rights reserved
 -- ----------------------------------------
----@type vim.lsp.Config
-return {
+return ---@type vim.lsp.Config
+{
     cmd = {
         'janet-lsp',
         '--stdio',
@@ -15,4 +15,5 @@ return {
         'project.janet',
         '.git',
     },
+    settings = {},
 }
