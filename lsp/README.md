@@ -485,32 +485,6 @@ go install github.com/kitagry/bqls@latest
 <details>
   <summary style="font-size: 1.4em; font-weight: bold; padding: 15px; background: #667eea; color: white; border-radius: 10px; cursor: pointer; margin: 10px 0; display: flex; align-items: center; gap: 8px;">
     <div class="icon-row" style="display: flex; align-items: center; gap: 6px;">
-      <img src="https://raw.githubusercontent.com/qompassai/svg/refs/heads/main/assets/icons/bqn/bqn.svg"
-           alt="bqn" width="60" height="60" title="BQN" />
-    </div>
-    <strong>BQN</strong>
-  </summary>
-  <blockquote style="font-size: 1.2em; line-height: 1.8; padding: 25px; background: #f8f9fa; border-left: 6px solid #667eea; border-radius: 8px; margin: 15px 0; box-shadow: 0 2px 8px rgba(0,0,0,0.1);">
-    <ul>
-      <li><code>
-        <a href="https://github.com/qompassai/diver/blob/main/lsp/bq_ls.lua">bq_ls</a></code>
-      </li>
-      <p>
-      <a href="https://github.com/kitagry/bqls/">BigQuery LSP Reference</a>
-    </p>
- <div style="background: #f8f9fa; padding: 15px; border-radius: 5px; margin-top: 10px; font-family: monospace;">
-
-```sh
-go install github.com/kitagry/bqls@latest
-```
-
-</div>
-  </ul>
-  </blockquote>
-</details>
-<details>
-  <summary style="font-size: 1.4em; font-weight: bold; padding: 15px; background: #667eea; color: white; border-radius: 10px; cursor: pointer; margin: 10px 0; display: flex; align-items: center; gap: 8px;">
-    <div class="icon-row" style="display: flex; align-items: center; gap: 6px;">
       <img src="https://raw.githubusercontent.com/qompassai/svg/refs/heads/main/assets/icons/bsc/bsc.svg"
            alt="brighterscript" width="60" height="60" title="BrighterScript" />
     </div>
@@ -537,8 +511,8 @@ pnpm add -g brighterscript@latest
 <details>
   <summary style="font-size: 1.4em; font-weight: bold; padding: 15px; background: #667eea; color: white; border-radius: 10px; cursor: pointer; margin: 10px 0; display: flex; align-items: center; gap: 8px;">
     <div class="icon-row" style="display: flex; align-items: center; gap: 6px;">
-      <img src="https://raw.githubusercontent.com/qompassai/svg/refs/heads/main/assets/icons/c/brioche.svg"
-           alt="c/c++" width="60" height="60" title="Brioche" />
+      <img src="https://raw.githubusercontent.com/qompassai/svg/refs/heads/main/assets/icons/brioche/brioche.svg"
+           alt="brioche" width="60" height="60" title="Brioche" />
     </div>
     <strong>Brioche</strong>
   </summary>
@@ -597,7 +571,7 @@ rustup install nightly-2025-08-01 && cargo +nightly-2025-08-01 install --git htt
   <blockquote style="font-size: 1.2em; line-height: 1.8; padding: 25px; background: #f8f9fa; border-left: 6px solid #667eea; border-radius: 8px; margin: 15px 0; box-shadow: 0 2px 8px rgba(0,0,0,0.1);">
     <ul>
       <li>
-        <a href="https://github.com/qompassai/diver/blob/main/lsp/c3_ls">c3_ls</a>
+        <a href="https://github.com/qompassai/diver/blob/main/lsp/c3_ls.lua">c3_ls</a>
       </li>
        <p>
       <a href="https://github.com/pherrymason/c3-lsp/wiki/Integration-with-editors">C3 LSP Reference</a>
@@ -645,6 +619,104 @@ OR
 
 </div>
   </ul>
+  </blockquote>
+</details>
+<details>
+  <summary style="font-size: 1.4em; font-weight: bold; padding: 15px; background: #667eea; color: white; border-radius: 10px; cursor: pointer; margin: 10px 0; display: flex; align-items: center; gap: 8px;">
+    <div class="icon-row" style="display: flex; align-items: center; gap: 6px;">
+      <img src="https://raw.githubusercontent.com/qompassai/svg/refs/heads/main/assets/icons/chapel/chapel.svg"
+           alt="chapel" width="60" height="60" title="Chapel" />
+    </div>
+    <strong>Chapel</strong>
+  </summary>
+  <blockquote style="font-size: 1.2em; line-height: 1.8; padding: 25px; background: #f8f9fa; border-left: 6px solid #667eea; border-radius: 8px; margin: 15px 0; box-shadow: 0 2px 8px rgba(0,0,0,0.1);">
+    <ul>
+      <li><code>
+        <a href="https://github.com/qompassai/diver/blob/main/lsp/chpl_ls.lua">chpl_ls</a></code>
+      </li>
+      <p>
+      <a href="https://chapel-lang.org/docs/usingchapel/editor-support.html">Chapel LSP Reference</a>
+    </p>
+ <div style="background: #f8f9fa; padding: 15px; border-radius: 5px; margin-top: 10px; font-family: monospace;">
+
+```sh
+export XDG_DATA_HOME="${XDG_DATA_HOME:-$HOME/.local/share}"
+export CHPL_PREFIX="$XDG_DATA_HOME/chapel"
+git clone https://github.com/chapel-lang/chapel.git "$CHPL_PREFIX-src"
+cd "$CHPL_PREFIX-src"
+./configure --prefix="$CHPL_PREFIX"
+share/chapel/x.yz
+make -j$(nproc)
+make install
+share/chapel/x.yz
+export CHPL_HOME="$CHPL_PREFIX/share/chapel/$(ls "$CHPL_PREFIX/share/chapel")"
+export PATH="$CHPL_HOME/bin:$PATH"
+cd "$CHPL_HOME"
+make chpl-language-server
+```
+
+</div>
+  </ul>
+  </blockquote>
+</details>
+<details>
+  <summary style="font-size: 1.4em; font-weight: bold; padding: 15px; background: #667eea; color: white; border-radius: 10px; cursor: pointer; margin: 10px 0; display: flex; align-items: center; gap: 8px;">
+    <div class="icon-row" style="display: flex; align-items: center; gap: 6px;">
+      <img src="https://raw.githubusercontent.com/qompassai/svg/refs/heads/main/assets/icons/clarinet/clarinet.svg"
+           alt="clarinet" width="60" height="60" title="Clarinet" />
+    </div>
+    <strong>Clarinet</strong>
+  </summary>
+  <blockquote style="font-size: 1.2em; line-height: 1.8; padding: 25px; background: #f8f9fa; border-left: 6px solid #667eea; border-radius: 8px; margin: 15px 0; box-shadow: 0 2px 8px rgba(0,0,0,0.1);">
+    <ul>
+      <li>
+        <a href="https://github.com/qompassai/diver/blob/main/lsp/clarinet_ls.lua">clarinet_ls</a>
+      </li>
+    </ul>
+         <p>
+      <a href="https://github.com/RokuCommunity/brighterscript">Clarinet Reference</a>
+    </p>
+ <div style="background: #f8f9fa; padding: 15px; border-radius: 5px; margin-top: 10px; font-family: monospace;">
+
+```sh
+cargo install --git https://github.com/stx-labs/clarinet clarinet-cli
+```
+
+</div>
+  </blockquote>
+</details>
+<details>
+  <summary style="font-size: 1.4em; font-weight: bold; padding: 15px; background: #667eea; color: white; border-radius: 10px; cursor: pointer; margin: 10px 0; display: flex; align-items: center; gap: 8px;">
+    <div class="icon-row" style="display: flex; align-items: center; gap: 6px;">
+      <img src="https://raw.githubusercontent.com/qompassai/svg/refs/heads/main/assets/icons/clojure/clojure.svg"
+           alt="clojure" width="60" height="60" title="Clojure" />
+    </div>
+    <strong>Clojure</strong>
+  </summary>
+  <blockquote style="font-size: 1.2em; line-height: 1.8; padding: 25px; background: #f8f9fa; border-left: 6px solid #667eea; border-radius: 8px; margin: 15px 0; box-shadow: 0 2px 8px rgba(0,0,0,0.1);">
+    <ul>
+      <li>
+        <a href="https://github.com/qompassai/diver/blob/main/lsp/clojure_ls.lua">clarinet_ls</a>
+      </li>
+    </ul>
+         <p>
+      <a href="https://clojure-lsp.io/">Clojure LSP Reference</a>
+    </p>
+ <div style="background: #f8f9fa; padding: 15px; border-radius: 5px; margin-top: 10px; font-family: monospace;">
+
+```sh
+export XDG_DATA_HOME="${XDG_DATA_HOME:-$HOME/.local/share}"
+export CLOJURE_LSP_DIR="$XDG_DATA_HOME/clojure-lsp"
+mkdir -p "$CLOJURE_LSP_DIR"
+curl -O https://raw.githubusercontent.com/clojure-lsp/clojure-lsp/master/install
+chmod a+x install
+./install --version nightly --dir "$CLOJURE_LSP_DIR"
+mkdir -p "$HOME/.local/bin"
+ln -s "$CLOJURE_LSP_DIR/bin/clojure-lsp" "$HOME/.local/bin/clojure-lsp"
+
+```
+
+</div>
   </blockquote>
 </details>
 <details>
@@ -751,6 +823,44 @@ crystal build ./src/crystalline.cr  -o ./bin/crystalline --release --no-debug --
 <details>
   <summary style="font-size: 1.4em; font-weight: bold; padding: 15px; background: #667eea; color: white; border-radius: 10px; cursor: pointer; margin: 10px 0; display: flex; align-items: center; gap: 8px;">
     <div class="icon-row" style="display: flex; align-items: center; gap: 6px;">
+      <img src="https://raw.githubusercontent.com/qompassai/svg/refs/heads/main/assets/icons/cobol/cobol.svg"
+           alt="cobol" width="60" height="60" title="Cobol" />
+    </div>
+    <strong>Cobol</strong>
+  </summary>
+  <blockquote style="font-size: 1.2em; line-height: 1.8; padding: 25px; background: #f8f9fa; border-left: 6px solid #667eea; border-radius: 8px; margin: 15px 0; box-shadow: 0 2px 8px rgba(0,0,0,0.1);">
+    <ul>
+      <li>
+        <a href="https://github.com/qompassai/diver/blob/main/lsp/cobol_ls.lua">cobol_ls</a>
+      </li>
+    </ul>
+         <p>
+      <a href="https://github.com/eclipse-che4z/che-che4z-lsp-for-cobol">Cobol LSP Reference</a>
+    </p>
+ <div style="background: #f8f9fa; padding: 15px; border-radius: 5px; margin-top: 10px; font-family: monospace;">
+
+```sh
+export XDG_DATA_HOME="${XDG_DATA_HOME:-$HOME/.local/share}" && \
+mkdir -p "$XDG_DATA_HOME/cobol-lsp" && \
+git clone https://github.com/eclipse-che4z/che-che4z-lsp-for-cobol.git --recursive && \
+cd che-che4z-lsp-for-cobol && \
+./BUILD.sh && \
+cp clients/cobol-lsp-vscode-extension/jar/server.jar "$XDG_DATA_HOME/cobol-lsp/server.jar" && \
+mkdir -p "$HOME/.local/bin" && \
+cat > "$HOME/.local/bin/cobol-language-support" <<'EOF'
+#!/usr/bin/env bash
+XDG_DATA_HOME="${XDG_DATA_HOME:-$HOME/.local/share}"
+exec java -jar "$XDG_DATA_HOME/cobol-lsp/server.jar" "$@"
+EOF
+chmod +x "$HOME/.local/bin/cobol-language-support"
+```
+
+</div>
+  </blockquote>
+</details>
+<details>
+  <summary style="font-size: 1.4em; font-weight: bold; padding: 15px; background: #667eea; color: white; border-radius: 10px; cursor: pointer; margin: 10px 0; display: flex; align-items: center; gap: 8px;">
+    <div class="icon-row" style="display: flex; align-items: center; gap: 6px;">
       <img src="https://raw.githubusercontent.com/qompassai/svg/refs/heads/main/assets/icons/css/tailwind.svg"
            alt="css" width="60" height="60" title="CSS" />
     </div>
@@ -831,13 +941,16 @@ pnpm add -g @tailwindcss/language-server@latest
 <details>
   <summary style="font-size: 1.4em; font-weight: bold; padding: 15px; background: #667eea; color: white; border-radius: 10px; cursor: pointer; margin: 10px 0; display: flex; align-items: center; gap: 8px;">
     <div class="icon-row" style="display: flex; align-items: center; gap: 6px;">
-      <img src="https://raw.githubusercontent.com/qompassai/svg/refs/heads/main/assets/icons/composition/composition.svg"
+      <img src="https://raw.githubusercontent.com/qompassai/svg/refs/heads/main/assets/icons/codebook/codebook.svg"
            alt="composition" width="60" height="60" title="Composition" />
     </div>
     <strong>Composition</strong>
   </summary>
   <blockquote style="font-size: 1.2em; line-height: 1.8; padding: 25px; background: #f8f9fa; border-left: 6px solid #667eea; border-radius: 8px; margin: 15px 0; box-shadow: 0 2px 8px rgba(0,0,0,0.1);">
     <ul>
+      <li>
+          <a href="https://github.com/qompassai/diver/blob/main/lsp/codebook_ls.lua">codebook_ls</a>
+      </li>
       <li>
           <a href="https://github.com/qompassai/diver/blob/main/lsp/harper_ls.lua">harper_ls</a>
       </li>

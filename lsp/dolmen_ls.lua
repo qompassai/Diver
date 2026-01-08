@@ -2,10 +2,13 @@
 -- Qompass AI Dolmen LSP Spec
 -- Copyright (C) 2025 Qompass AI, All rights reserved
 -- --------------------------------------------------
--- opam install dolmen_lsp
+-- opam pin add https://github.com/Gbury/dolmen.git
 return ---@type vim.lsp.Config
 {
     cmd = {
+        'opam',
+        'exec',
+        '--',
         'dolmenls',
     },
     filetypes = {
@@ -19,4 +22,5 @@ return ---@type vim.lsp.Config
     root_markers = {
         '.git',
     },
+    settings = {},
 }

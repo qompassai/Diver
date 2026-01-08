@@ -4,9 +4,8 @@
 -- ----------------------------------------
 return ---@type vim.lsp.Config
 {
-    name = 'cobol-ls',
     cmd = {
-        'cobol-lsp',
+        'cobol-language-support',
     },
     filetypes = {
         'cobol',

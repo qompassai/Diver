@@ -15,13 +15,20 @@ return ---@type vim.lsp.Config
     root_markers = {
         'Clarinet.toml',
     },
+    settings = {},
     vim.api.nvim_create_autocmd('FileType', {
-        pattern = { 'clar', 'clarity' },
+        pattern = {
+            'clar',
+            'clarity',
+        },
         callback = function()
             vim.lsp.start({
                 name = 'clarity_ls',
                 cmd = { 'clarinet', 'lsp' },
-                root_dir = vim.fs.dirname(vim.fs.find({ 'Clar.toml', '.git' })[1]),
+                root_dir = vim.fs.dirname(vim.fs.find({
+                    'Clar.toml',
+                    '.git',
+                })[1]),
             })
         end,
     }),

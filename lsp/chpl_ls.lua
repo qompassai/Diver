@@ -4,17 +4,20 @@
 -- ----------------------------------------
 return ---@type vim.lsp.Config
 {
-    cmd = { 'chpl-language-server', 'chplcheck' },
+    cmd = {
+        'chpl-language-server',
+        'chplcheck',
+    },
     filetypes = {
         'chpl',
     },
     root_markers = {
-        '.cls-commands.json',
-        '.cls-commands.jsonc',
-        'Mason.toml',
         'chpl-language-server.cfg',
         '.chpl-language-server.cfg',
+        '.cls-commands.json',
+        '.cls-commands.jsonc',
         '.git',
+        'Mason.toml',
     },
     settings = {},
 }

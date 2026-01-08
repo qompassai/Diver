@@ -90,7 +90,6 @@ vim.lsp.enable({
     'buf_ls',
     'c3_ls',
     'cairo_ls',
-    'camel_ls', ---:TODO validate ---@source https://github.com/camel-tooling/camel-language-server
     'cc_ls',
     'cds_ls',
     'chpl_ls', ---:TODO validate ---@source https://github.com/chapel-lang/chapel/tree/main/tools/chpl-language-server
@@ -100,7 +99,7 @@ vim.lsp.enable({
     'clarinet_ls',
     'clojure_ls',
     'cmake_ls',
-    'cobol_ls',
+   -- 'cobol_ls',
     'codebook_ls', ---:TODO validate
     'codeql_ls', ---:TODO ---@source https://github.com/github/codeql
     --'contextive_ls',  ---:TODO add glossary then validate
@@ -389,6 +388,7 @@ vim.lsp.enable({
 --'bsl_ls', ---notusing, sec ---@source https://github.com/1c-syntax/bsl-language-server
 --'buddy_ls', --not-using, sec ---@source  https://github.com/buddy-compiler/buddy-mlir#buddy-lsp-server
 --'bzl_ls', deprecated
+ -- 'camel_ls',---outdated ---@source https://github.com/camel-tooling/camel-language-server
 --'ceylon_ls' ---deprecated ---@source https://github.com/jvasileff/vscode-ceylon
 --'circom_ls', ---outdated
 --'cl_ls' ---outdated ---@source https://github.com/cxxxr/cl-lsp
