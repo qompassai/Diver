@@ -1519,7 +1519,7 @@ cargo install --git https://github.com/ink-analyzer/ink-analyzer.git
   <blockquote style="font-size: 1.2em; line-height: 1.8; padding: 25px; background: #f8f9fa; border-left: 6px solid #667eea; border-radius: 8px; margin: 15px 0; box-shadow: 0 2px 8px rgba(0,0,0,0.1);">
     <ul>
       <li>
-        <a href="https://github.com/qompassai/diver/blob/main/lsp/janet_ls.lua">ink_ls</a>
+        <a href="https://github.com/qompassai/diver/blob/main/lsp/janet_ls.lua">janet_ls</a>
       </li>
          </ul>
         <p>
@@ -1616,6 +1616,32 @@ pnpm add -D -E quick-lint-js@latest
 
 ```sh
 pnpm add -D -E @marko/language-server@latest
+```
+
+</div>
+  </blockquote>
+</details>
+<details>
+ <summary style="font-size: 1.4em; font-weight: bold; padding: 15px; background: #667eea; color: white; border-radius: 10px; cursor: pointer; margin: 10px 0; display: flex; align-items: center; gap: 8px;">
+    <div class="icon-row" style="display: flex; align-items: center; gap: 6px;">
+      <img src="https://raw.githubusercontent.com/qompassai/svg/refs/heads/main/assets/icons/jimmer/jimmer.svg"
+           alt="jimmer" width="60" height="60" title="Jimmer" />
+    </div>
+    <strong>Jimmer DTO</strong>
+  </summary>
+  <blockquote style="font-size: 1.2em; line-height: 1.8; padding: 25px; background: #f8f9fa; border-left: 6px solid #667eea; border-radius: 8px; margin: 15px 0; box-shadow: 0 2px 8px rgba(0,0,0,0.1);">
+    <ul>
+      <li>
+        <a href="https://github.com/qompassai/diver/blob/main/lsp/jimmerdto_ls.lua">jimmerdto_ls</a>
+      </li>
+         </ul>
+        <p>
+      <a href="https://github.com/Enaium/jimmer-dto-lsp">Jimmer DTO Reference</a>
+    </p>
+ <div style="background: #f8f9fa; padding: 15px; border-radius: 5px; margin-top: 10px; font-family: monospace;">
+
+```sh
+:TODO
 ```
 
 </div>
@@ -1978,6 +2004,98 @@ make install
             </code>
       </li>
     </ul>
+  </blockquote>
+</details>
+<details>
+ <summary style="font-size: 1.4em; font-weight: bold; padding: 15px; background: #667eea; color: white; border-radius: 10px; cursor: pointer; margin: 10px 0; display: flex; align-items: center; gap: 8px;">
+    <div class="icon-row" style="display: flex; align-items: center; gap: 6px;">
+      <img src="https://raw.githubusercontent.com/qompassai/svg/refs/heads/main/assets/icons/mojo/mojo.svg"
+           alt="mojo" width="60" height="60" title="Mojo" />
+    </div>
+    <strong>Mojo</strong>
+  </summary>
+  <blockquote style="font-size: 1.2em; line-height: 1.8; padding: 25px; background: #f8f9fa; border-left: 6px solid #667eea; border-radius: 8px; margin: 15px 0; box-shadow: 0 2px 8px rgba(0,0,0,0.1);">
+    <ul>
+      <li>
+        <a href="https://github.com/qompassai/diver/blob/main/lsp/mojo_ls.lua">mojo_ls</a>
+      </li>
+         </ul>
+        <p>
+      <a href="https://github.com/modular/modular">Mojo Reference</a>
+    </p>
+ <div style="background: #f8f9fa; padding: 15px; border-radius: 5px; margin-top: 10px; font-family: monospace;">
+
+```sh
+set -euo pipefail
+: "${XDG_CONFIG_HOME:=$HOME/.config}"
+: "${XDG_DATA_HOME:=$HOME/.local/share}"
+: "${XDG_CACHE_HOME:=$HOME/.cache}"
+: "${XDG_STATE_HOME:=$HOME/.local/state}"
+export XDG_CONFIG_HOME XDG_DATA_HOME XDG_CACHE_HOME XDG_STATE_HOME
+install_pixi() {
+  if command -v pixi >/dev/null 2>&1; then
+    echo "pixi already installed at: $(command -v pixi)"
+    return
+  fi
+  if ! command -v cargo >/dev/null 2>&1; then
+    echo "Error: cargo not found in PATH. Please install Rust/cargo first." >&2
+    exit 1
+  fi
+  cargo install pixi
+}
+configure_pixi() {
+  local pixi_config_dir="$XDG_CONFIG_HOME/pixi"
+  local pixi_config_file="$pixi_config_dir/config.toml"
+
+  mkdir -p "$pixi_config_dir"
+
+  if [ ! -f "$pixi_config_file" ]; then
+    cat > "$pixi_config_file" <<'EOF'
+# Reference: https://prefix-dev.github.io/pixi/
+default-channels = ["conda-forge"]
+change-ps1 = true
+tls-no-verify = false
+
+[pypi-config]
+index-url = "https://pypi.org/simple"
+extra-index-urls = []
+keyring-provider = "subprocess"
+EOF
+    echo "Created pixi config: $pixi_config_file"
+  else
+    echo "pixi config already exists: $pixi_config_file"
+  fi
+  local pixi_manifest_dir="$XDG_CONFIG_HOME/pixi/manifests"
+  mkdir -p "$pixi_manifest_dir"
+}
+link_mojo_tools() {
+  local mojo_env_dir="$XDG_DATA_HOME/mojo/.pixi/envs/default"
+  local mojo_bin_dir="$mojo_env_dir/bin"
+  local user_bin_dir="$HOME/.local/bin"
+  mkdir -p "$user_bin_dir"
+  if [ ! -x "$mojo_bin_dir/mojo-lsp-server" ]; then
+    echo "Warning: $mojo_bin_dir/mojo-lsp-server not found or not executable." >&2
+  else
+    ln -sf "$mojo_bin_dir/mojo-lsp-server" "$user_bin_dir/mojo-lsp-server"
+    echo "Linked mojo-lsp-server -> $user_bin_dir/mojo-lsp-server"
+  fi
+  if [ ! -x "$mojo_bin_dir/mojo-lldb-dap" ]; then
+    echo "Warning: $mojo_bin_dir/mojo-lldb-dap not found or not executable." >&2
+  else
+    ln -sf "$mojo_bin_dir/mojo-lldb-dap" "$user_bin_dir/mojo-lldb-dap"
+    echo "Linked mojo-lldb-dap -> $user_bin_dir/mojo-lldb-dap"
+  fi
+}
+main() {
+  install_pixi
+  configure_pixi
+  link_mojo_tools
+}
+
+main "$@"
+```
+
+</div>
   </blockquote>
 </details>
 <details>

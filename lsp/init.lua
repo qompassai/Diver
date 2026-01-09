@@ -179,7 +179,7 @@ vim.lsp.enable({
     'intelephense_ls',
     --'intellisense_ls'     ---:TODO ---@source https://github.com/tailwindlabs/tailwindcss-intellisense
     --'isabelle_ls',        ---:TODO ---@source https://www.cl.cam.ac.uk/research/hvg/Isabelle/
-    --'janet_ls',           ---:TODO install janet-lsp, jpm, validate ---@source https://github.com/janet-lang/jpm https://github.com/CFiggers/janet-lsp
+    'janet_ls', ---:TODO install janet-lsp, jpm, validate ---@source https://github.com/janet-lang/jpm https://github.com/CFiggers/janet-lsp
     'java_ls',
     'jdt_ls',
     'jedi_ls', ---:TODO validate ---@source https://github.com/pappasam/jedi-language-server
