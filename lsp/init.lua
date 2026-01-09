@@ -266,7 +266,7 @@ vim.lsp.enable({
     'pwrshelles_ls',
     'pyrefly_ls',
     'qml_ls',
-    'qlue_ls', ---:TODO validate https://github.com/IoannisNezis/Qlue-ls
+    'qlue_ls', ---:TODO validate
     'racket_ls', ---:TODO
     --'raku_ls'             ---:TODO ---@source https://github.com/bscan/RakuNavigator
     --'rascal_ls'           ---:TODO https://github.com/usethesource/rascal-language-servers
@@ -282,14 +282,14 @@ vim.lsp.enable({
     'rpmspec_ls',
     'rubocop_ls',
     'ruby_ls', ---:TODO validate
-    --'rumdl_ls',           ---:TODO validate ---@source  https://github.com/rvben/rumdl
+    --'rumdl_ls', ---:TODO validate
     'ruff_ls',
     'rune_ls',
     'rustana_ls',
     'salt_ls', ---:TODO validate ---@source https://github.com/dcermak/salt-lsp
     --'selene_ls',          ---:TODO
     --'selene3p_ls',        ---:TODO
-    'served_ls', ---:TODO ---@source https://github.com/Pure-D/serve-d
+
     'slangd_ls', ---lsp/linter
     'shopifytheme_ls', ---:TODO validate
     'slint_ls',
@@ -310,7 +310,7 @@ vim.lsp.enable({
     'starp_ls',
     'statix_ls',
     'steep_ls',
-    'stimulus_ls',
+    'stimulus_ls', ---:TODO validate/come back to
     'stylable_ls', ---:TODO https://github.com/wix/stylable/tree/master/packages/language-service
     'stylua_ls',
     --'stylua3p_ls',
@@ -346,7 +346,7 @@ vim.lsp.enable({
     'twiggy_ls',
     'ty_ls',
     'typeprof_ls',
-    --'typos_ls',
+    --'typos_ls', ---:TODO validate
     'typst_ls', ---TODO: validate ---@source https://github.com/nvarner/typst-lsp
     'uiua_ls', ---:TODO validate  ---@source https://github.com/uiua-lang/uiua/
     'unison_ls', ---:TODO validate ---@source https://github.com/unisonweb/unison/blob/trunk/docs/language-server.markdown
@@ -440,6 +440,8 @@ vim.lsp.enable({
 ---'rnix_ls',| no longer maintained
 ---  --'scry_ls', --deprecated for crystalline
 --scheme_ls --not using https://gitlab.com/Serenata/Serenata
+-- 'served_ls', ---outdated ---@source https://github.com/Pure-D/serve-d
+
 --'shader_ls' ---outdated https://github.com/shader-ls/shader-language-server
 ---'sixtyfps_ls', ---deprecated replaced with slint
 ---smarty_ls ---outdated

@@ -21,7 +21,7 @@ return {
     { 'Mofiqul/dracula.nvim' },
     { 'navarasu/onedark.nvim' },
     { 'projekt0n/github-nvim-theme' },
-    { 'sainnhe/gruvbox-material' },
+    -- { 'sainnhe/gruvbox-material' },
     { 'shaunsingh/nord.nvim' },
     {
         'vyfor/cord.nvim',

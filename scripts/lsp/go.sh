@@ -30,3 +30,4 @@ go install github.com/nobl9/nobl9-language-server/cmd/nobl9-language-server@late
 go install github.com/ptdewey/plantuml-lsp@latest
 go install github.com/anz-bank/sysl/cmd/sysl@latest
 go install github.com/huderlem/poryscript-pls@latest
+go install github.com/opentofu/tofu-ls@latest

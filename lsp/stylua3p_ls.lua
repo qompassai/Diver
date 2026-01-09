@@ -5,14 +5,15 @@
 --Reference: https://github.com/antonk52/lua-3p-language-servers
 ---@type vim.lsp.Config
 return {
-    cmd = { ---@type string[]
+    cmd = {
         'stylua-3p-language-server',
     },
-    filetypes = { ---@type string[]
+    filetypes = {
         'lua',
     },
-    root_markers = { ---@type string[]
+    root_markers = {
         '.stylua.toml',
         'stylua.toml',
     },
+    settings = {},
 }

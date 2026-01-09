@@ -926,12 +926,12 @@ pnpm add -g @tailwindcss/language-server@latest
           <a href="https://github.com/qompassai/diver/blob/main/lsp/csharp_ls.lua">csharp_ls</a>
       </li>
            <p>
-      <a href="https://github.com/tailwindlabs/tailwindcss-intellisense">C# LSP Reference</a>
+      <a href="https://github.com/razzmatazz/csharp-language-server">C# LSP Reference</a>
     </p>
  <div style="background: #f8f9fa; padding: 15px; border-radius: 5px; margin-top: 10px; font-family: monospace;">
 
 ```sh
-pnpm add -g @tailwindcss/language-server@latest
+dotnet tool install --global csharp-ls
 ```
 
 </div>
@@ -951,13 +951,82 @@ pnpm add -g @tailwindcss/language-server@latest
       <li>
           <a href="https://github.com/qompassai/diver/blob/main/lsp/codebook_ls.lua">codebook_ls</a>
       </li>
+       <p>
+      <a href="https://github.com/blopker/codebook">CodeBook LSP Reference</a>
+    </p>
+ <div style="background: #f8f9fa; padding: 15px; border-radius: 5px; margin-top: 10px; font-family: monospace;">
+
+```sh
+cargo install --git https://github.com/blopker/codebook codebook-lsp
+```
+
+</div>
       <li>
           <a href="https://github.com/qompassai/diver/blob/main/lsp/harper_ls.lua">harper_ls</a>
       </li>
+          <p>
+      <a href="https://writewithharper.com/docs/about">Harper LSP Reference</a>
+    </p>
+ <div style="background: #f8f9fa; padding: 15px; border-radius: 5px; margin-top: 10px; font-family: monospace;">
+
+```sh
+cargo install --git https://github.com/automattic/harper harper-ls
+```
+
+</div>
          <li>
           <a href="https://github.com/qompassai/diver/blob/main/lsp/prosemd_ls.lua">prosemd_ls</a>
       </li>
+             <p>
+      <a href="https://github.com/kitten/prosemd-lsp">ProseMD LSP Reference</a>
+    </p>
+ <div style="background: #f8f9fa; padding: 15px; border-radius: 5px; margin-top: 10px; font-family: monospace;">
+
+```sh
+cargo install --git https://github.com/kitten/prosemd-lsp
+```
+
+</div>
+     <li>
+          <a href="https://github.com/qompassai/diver/blob/main/lsp/typos_ls.lua">typos_ls</a>
+      </li>
+             <p>
+      <a href="https://github.com/kitten/prosemd-lsp">Typos LSP Reference</a>
+    </p>
+ <div style="background: #f8f9fa; padding: 15px; border-radius: 5px; margin-top: 10px; font-family: monospace;">
+
+```sh
+cargo install --git https://github.com/kitten/prosemd-lsp
+```
+
+</div>
     </ul>
+  </blockquote>
+</details>
+<details>
+ <summary style="font-size: 1.4em; font-weight: bold; padding: 15px; background: #667eea; color: white; border-radius: 10px; cursor: pointer; margin: 10px 0; display: flex; align-items: center; gap: 8px;">
+    <div class="icon-row" style="display: flex; align-items: center; gap: 6px;">
+      <img src="https://raw.githubusercontent.com/qompassai/svg/refs/heads/main/assets/icons/dlang/dlang.svg"
+           alt="d" width="60" height="60" title="D" />
+    </div>
+    <strong>OpenTofu</strong>
+  </summary>
+  <blockquote style="font-size: 1.2em; line-height: 1.8; padding: 25px; background: #f8f9fa; border-left: 6px solid #667eea; border-radius: 8px; margin: 15px 0; box-shadow: 0 2px 8px rgba(0,0,0,0.1);">
+    <ul>
+      <li>
+        <a href="https://github.com/qompassai/diver/blob/main/lsp/tofu_ls.lua">tofu_ls</a>
+      </li>
+         </ul>
+        <p>
+      <a href="https://github.com/opentofu/tofu-ls">OpenTofu LSP Reference</a>
+    </p>
+ <div style="background: #f8f9fa; padding: 15px; border-radius: 5px; margin-top: 10px; font-family: monospace;">
+
+```sh
+go install github.com/opentofu/tofu-ls@latest
+```
+
+</div>
   </blockquote>
 </details>
 <details>
@@ -2295,7 +2364,7 @@ mv odinfmt ~/.local/bin
         <a href="https://github.com/qompassai/diver/blob/main/lsp/foam_ls.lua">foam_ls</a>
       </li>
                          <p>
-      <a href="https://github.com/FoamScience/foam-language-server">Buf LSP Reference</a>
+      <a href="https://github.com/FoamScience/foam-language-server">Foam LSP Reference</a>
     </p>
  <div style="background: #f8f9fa; padding: 15px; border-radius: 5px; margin-top: 10px; font-family: monospace;">
 
@@ -2673,6 +2742,60 @@ pnpm add -g @rescript/language-server@latest
 <details>
  <summary style="font-size: 1.4em; font-weight: bold; padding: 15px; background: #667eea; color: white; border-radius: 10px; cursor: pointer; margin: 10px 0; display: flex; align-items: center; gap: 8px;">
     <div class="icon-row" style="display: flex; align-items: center; gap: 6px;">
+      <img src="https://raw.githubusercontent.com/qompassai/svg/refs/heads/main/assets/icons/racket/racket.svg"
+           alt="racket" width="60" height="60" title="Racket" />
+    </div>
+    <strong>Racket</strong>
+  </summary>
+  <blockquote style="font-size: 1.2em; line-height: 1.8; padding: 25px; background: #f8f9fa; border-left: 6px solid #667eea; border-radius: 8px; margin: 15px 0; box-shadow: 0 2px 8px rgba(0,0,0,0.1);">
+    <ul>
+      <li><code>
+        <a href="https://github.com/qompassai/diver/blob/main/lsp/racket_ls.lua">racket_ls</a></code>
+      </li>
+    </ul>
+        <p>
+      <a href="https://github.com/jeapostrophe/racket-langserver">Racket LSP Reference</a>
+    </p>
+ <div style="background: #f8f9fa; padding: 15px; border-radius: 5px; margin-top: 10px; font-family: monospace;">
+
+```sh
+raco pkg install racket-langserver
+
+```
+
+   </div>
+  </blockquote>
+</details>
+<details>
+ <summary style="font-size: 1.4em; font-weight: bold; padding: 15px; background: #667eea; color: white; border-radius: 10px; cursor: pointer; margin: 10px 0; display: flex; align-items: center; gap: 8px;">
+    <div class="icon-row" style="display: flex; align-items: center; gap: 6px;">
+      <img src="https://raw.githubusercontent.com/qompassai/svg/refs/heads/main/assets/icons/rascal/rascal.svg"
+           alt="rascal" width="60" height="60" title="Rascal" />
+    </div>
+    <strong>Rascal</strong>
+  </summary>
+  <blockquote style="font-size: 1.2em; line-height: 1.8; padding: 25px; background: #f8f9fa; border-left: 6px solid #667eea; border-radius: 8px; margin: 15px 0; box-shadow: 0 2px 8px rgba(0,0,0,0.1);">
+    <ul>
+      <li><code>
+        <a href="https://github.com/qompassai/diver/blob/main/lsp/rascal_ls.lua">rascal_ls</a></code>
+      </li>
+    </ul>
+        <p>
+      <a href="https://github.com/usethesource/rascal-language-servers">Rascal LSP Reference</a>
+    </p>
+ <div style="background: #f8f9fa; padding: 15px; border-radius: 5px; margin-top: 10px; font-family: monospace;">
+
+```sh
+pnpm add -g @usethesource/rascal-vscode-dsl-lsp-server
+
+```
+
+   </div>
+  </blockquote>
+</details>
+<details>
+ <summary style="font-size: 1.4em; font-weight: bold; padding: 15px; background: #667eea; color: white; border-radius: 10px; cursor: pointer; margin: 10px 0; display: flex; align-items: center; gap: 8px;">
+    <div class="icon-row" style="display: flex; align-items: center; gap: 6px;">
       <img src="https://raw.githubusercontent.com/qompassai/svg/refs/heads/main/assets/icons/robot/robot.svg"
            alt="robot" width="60" height="60" title="Robot" />
     </div>
@@ -2786,7 +2909,6 @@ gem install ruby-lsp
 
 ```sh
 gem install sorbet sorbet-runtime
-
 ```
 
    </div>
@@ -2800,7 +2922,6 @@ gem install sorbet sorbet-runtime
 
 ```sh
 gem install steep
-
 ```
 
    </div>
@@ -2814,7 +2935,6 @@ gem install steep
 
 ```sh
 gem install standard
-
 ```
 
    </div>
@@ -2822,13 +2942,12 @@ gem install standard
         <a href="https://github.com/qompassai/diver/blob/main/lsp/stimulus_ls.lua">stimulus_ls</a>
       </li>
                     <p>
-      <a href="https://dystroy.org/bacon/">Bacon LSP Reference</a>
+      <a href="https://github.com/marcoroth/stimulus-lsp">Stimulus LSP Reference</a>
     </p>
  <div style="background: #f8f9fa; padding: 15px; border-radius: 5px; margin-top: 10px; font-family: monospace;">
 
 ```sh
 pnpm add -g stimulus-language-server@latest
-
 ```
 
    </div>
@@ -2837,13 +2956,12 @@ pnpm add -g stimulus-language-server@latest
       </li>
     </ul>
                   <p>
-      <a href="https://dystroy.org/bacon/">Bacon LSP Reference</a>
+      <a href="https://github.com/ruby/typeprof">TypeProf LSP Reference</a>
     </p>
  <div style="background: #f8f9fa; padding: 15px; border-radius: 5px; margin-top: 10px; font-family: monospace;">
 
 ```sh
-cargo install --git https://github.com/Canop/bacon --features "clipboard sound"
-
+gem install typeprof
 ```
 
    </div>
@@ -2869,7 +2987,6 @@ cargo install --git https://github.com/Canop/bacon --features "clipboard sound"
 
 ```sh
 cargo install --git https://github.com/Canop/bacon --features "clipboard sound"
-
 ```
 
    </div>

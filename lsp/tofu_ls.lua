@@ -13,8 +13,9 @@ return {
         'opentofu',
         'opentofu-vars',
     },
-    root_markers = { ---@type string[]
+    root_markers = {
         '.git',
         '.terraform',
     },
+    settings = {},
 }
