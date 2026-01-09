@@ -1982,9 +1982,41 @@ make install
       <li>
         <a href="https://github.com/qompassai/diver/blob/main/lsp/mdxana_ls.lua">mdxana_ls</a>
       </li>
+        <p>
+      <a href="https://github.com/mdx-js/mdx-analyzer">Mdx Analyzer LSP Reference</a>
+    </p>
+ <div style="background: #f8f9fa; padding: 15px; border-radius: 5px; margin-top: 10px; font-family: monospace;">
+
+```sh
+pnpm add -g @mdx-js/typescript-plugin@latest
+
+```
+
+   </div>
       <li>
         <a href="https://github.com/qompassai/diver/blob/main/lsp/remark_ls.lua">remark_ls</a>
       </li>
+          <p>
+      <a href="https://github.com/remarkjs/remark-language-server">Remark LSP Reference</a>
+    </p>
+ <div style="background: #f8f9fa; padding: 15px; border-radius: 5px; margin-top: 10px; font-family: monospace;">
+
+```sh
+pnpm add -g remark-language-server@latest
+
+```
+
+   </div>
+      <p>
+      <a href="https://github.com/rvben/rumdl">Rumdl LSP Reference</a>
+    </p>
+ <div style="background: #f8f9fa; padding: 15px; border-radius: 5px; margin-top: 10px; font-family: monospace;">
+
+```sh
+cargo install --git https://github.com/rvben/rumdl
+```
+
+   </div>
          </ul>
   </blockquote>
 </details>
@@ -3100,7 +3132,7 @@ pnpm add -g solidity-ls@latest
       <li><code>
         <a href="https://github.com/qompassai/diver/blob/main/lsp/solang_ls.lua">solang_ls</a></code>
         <p>
-      <a href=" https://github.com/sqls-server/sqls">Solang LSP Reference</a>
+      <a href="https://solang.readthedocs.io/en/latest/installing.html">Solang LSP Reference</a>
     </p>
  <div style="background: #f8f9fa; padding: 15px; border-radius: 5px; margin-top: 10px; font-family: monospace;">
 
@@ -3114,6 +3146,32 @@ cargo install solang
         <a href="https://github.com/qompassai/diver/blob/main/lsp/solidnomic_ls.lua">solidnomic_ls</a></code>
       </li>
     </ul>
+  </blockquote>
+</details>
+<details>
+ <summary style="font-size: 1.4em; font-weight: bold; padding: 15px; background: #667eea; color: white; border-radius: 10px; cursor: pointer; margin: 10px 0; display: flex; align-items: center; gap: 8px;">
+    <div class="icon-row" style="display: flex; align-items: center; gap: 6px;">
+      <img src="https://raw.githubusercontent.com/qompassai/svg/refs/heads/main/assets/icons/sparql/sparql.svg"
+           alt="sparql" width="60" height="60" title="SparQL" />
+    </div>
+    <strong>SparQL</strong>
+  </summary>
+  <blockquote style="font-size: 1.2em; line-height: 1.8; padding: 25px; background: #f8f9fa; border-left: 6px solid #667eea; border-radius: 8px; margin: 15px 0; box-shadow: 0 2px 8px rgba(0,0,0,0.1);">
+    <ul>
+      <li>
+        <a href="https://github.com/qompassai/diver/blob/main/lsp/qlue_ls.lua">qlue_ls</a>
+      </li>
+         </ul>
+        <p>
+      <a href="https://github.com/IoannisNezis/Qlue-ls">Qlue LSP Reference</a>
+    </p>
+ <div style="background: #f8f9fa; padding: 15px; border-radius: 5px; margin-top: 10px; font-family: monospace;">
+
+```sh
+cargo install --git https://github.com/IoannisNezis/Qlue-ls
+```
+
+</div>
   </blockquote>
 </details>
 <details>

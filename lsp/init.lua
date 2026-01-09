@@ -183,7 +183,7 @@ vim.lsp.enable({
     'java_ls',
     'jdt_ls',
     'jedi_ls', ---:TODO validate ---@source https://github.com/pappasam/jedi-language-server
-    --'jimmerdto_ls',       ---:TODO ---@source https://github.com/Enaium/jimmer-dto-lsp
+    'jimmerdto_ls',       ---:TODO validate ---@source https://github.com/Enaium/jimmer-dto-lsp
     'jinja_ls', ---:TODO
     'jq_ls',
     'json_ls',
