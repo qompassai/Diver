@@ -244,7 +244,7 @@ vim.lsp.enable({
     'pas_ls', ---:TODO validate ---@source https://github.com/genericptr/pascal-language-server
     'pb_ls', ---:TODO validate ---@source https://git.sr.ht/~rrc/pbls
     'perl_ls',
-    'perlnav_ls', ---:TODO validate ---@source https://github.com/bscan/PerlNavigator
+    'perlnav_ls', ---:TODO validate
     'perlp_ls',
     'pest_ls', ---:TODO validate https://github.com/pest-parser/pest-ide-tools
     'phan_ls',

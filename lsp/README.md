@@ -1006,8 +1006,8 @@ cargo install --git https://github.com/kitten/prosemd-lsp
 <details>
  <summary style="font-size: 1.4em; font-weight: bold; padding: 15px; background: #667eea; color: white; border-radius: 10px; cursor: pointer; margin: 10px 0; display: flex; align-items: center; gap: 8px;">
     <div class="icon-row" style="display: flex; align-items: center; gap: 6px;">
-      <img src="https://raw.githubusercontent.com/qompassai/svg/refs/heads/main/assets/icons/dlang/dlang.svg"
-           alt="d" width="60" height="60" title="D" />
+      <img src="https://raw.githubusercontent.com/qompassai/svg/refs/heads/main/assets/icons/opentofu/opentofu.svg"
+           alt="opentofu" width="60" height="60" title="OpenTofu" />
     </div>
     <strong>OpenTofu</strong>
   </summary>
@@ -2304,6 +2304,22 @@ main "$@"
       <li>
         <a href="https://github.com/qompassai/diver/blob/main/lsp/nickel_ls.lua">nickel_ls</a>
       </li>
+        <p>
+      <a href="https://github.com/oxalica/nil">Nickel LSP Reference</a>
+    </p>
+ <div style="background: #f8f9fa; padding: 15px; border-radius: 5px; margin-top: 10px; font-family: monospace;">
+
+```sh
+cargo install --git https://github.com/tweag/nickel nickel-language-server
+```
+
+#OR
+
+```sh
+nix profile install nixpkgs#nls
+```
+
+   </div>
     </ul>
   </blockquote>
 </details>
@@ -2320,9 +2336,35 @@ main "$@"
       <li>
         <a href="https://github.com/qompassai/diver/blob/main/lsp/nil_ls.lua">nil_ls</a>
       </li>
+             <p>
+      <a href="https://github.com/oxalica/nil">Nil LSP Reference</a>
+    </p>
+ <div style="background: #f8f9fa; padding: 15px; border-radius: 5px; margin-top: 10px; font-family: monospace;">
+
+```sh
+cargo install --git https://github.com/oxalica/nil nil
+```
+
+#OR
+
+```sh
+nix profile install nixpkgs#nil
+```
+
+   </div>
       <li>
         <a href="https://github.com/qompassai/diver/blob/main/lsp/nixd_ls.lua">nixd_ls</a>
       </li>
+        <p>
+      <a href="https://github.com/nix-community/nixd">Nixd LSP Reference</a>
+    </p>
+ <div style="background: #f8f9fa; padding: 15px; border-radius: 5px; margin-top: 10px; font-family: monospace;">
+
+```sh
+nix profile install github:nix-community/nixd
+```
+
+   </div>
       <li>
         <a href="https://github.com/qompassai/diver/blob/main/lsp/statix_ls.lua">statix_ls</a>
       </li>
@@ -2428,7 +2470,49 @@ pnpm add -g foam-language-server@latest
 </ul>
   </blockquote>
 </details>
+<details>
+ <summary style="font-size: 1.4em; font-weight: bold; padding: 15px; background: #667eea; color: white; border-radius: 10px; cursor: pointer; margin: 10px 0; display: flex; align-items: center; gap: 8px;">
+    <div class="icon-row" style="display: flex; align-items: center; gap: 6px;">
+      <img src="https://raw.githubusercontent.com/qompassai/svg/refs/heads/main/assets/icons/opa/opa.svg"
+           alt="openpolicyagent" width="60" height="60" title="OpenPolicyAgent" />
+    </div>
+    <strong>OpenPolicyAgent</strong>
+  </summary>
+  <blockquote style="font-size: 1.2em; line-height: 1.8; padding: 25px; background: #f8f9fa; border-left: 6px solid #667eea; border-radius: 8px; margin: 15px 0; box-shadow: 0 2px 8px rgba(0,0,0,0.1);">
+    <ul>
+      <li>
+        <a href="https://github.com/qompassai/diver/blob/main/lsp/regal_ls.lua">regal_ls</a>
+      </li>
+         </ul>
+        <p>
+      <a href="https://github.com/StyraInc/regal"> OPA Regal LSP Reference</a>
+    </p>
+ <div style="background: #f8f9fa; padding: 15px; border-radius: 5px; margin-top: 10px; font-family: monospace;">
 
+```sh
+curl -L -o ~/.local/bin/regal \
+  "https://github.com/open-policy-agent/regal/releases/latest/download/regal_Linux_x86_64"
+
+chmod +x ~/.local/bin/regal
+```
+
+</div>
+ <li>
+        <a href="https://github.com/qompassai/diver/blob/main/lsp/rego_ls.lua">rego_ls</a>
+      </li>
+         </ul>
+        <p>
+      <a href=" https://github.com/kitagry/regols "> OPA Rego LSP Reference</a>
+    </p>
+ <div style="background: #f8f9fa; padding: 15px; border-radius: 5px; margin-top: 10px; font-family: monospace;">
+
+```sh
+go install github.com/kitagry/regols@latest
+```
+
+</div>
+  </blockquote>
+</details>
 <details>
   <summary style="font-size: 1.4em; font-weight: bold; padding: 15px; background: #667eea; color: white; border-radius: 10px; cursor: pointer; margin: 10px 0; display: flex; align-items: center; gap: 8px;">
     <div class="icon-row" style="display: flex; align-items: center; gap: 6px;">
@@ -2443,6 +2527,16 @@ pnpm add -g foam-language-server@latest
         <a href="https://github.com/qompassai/diver/blob/main/lsp/openscad_ls.lua">openscad_ls</a>
       </li>
     </ul>
+     <p>
+      <a href="https://github.com/Leathong/openscad-LSP"> OpenSCAD LSP Reference</a>
+    </p>
+ <div style="background: #f8f9fa; padding: 15px; border-radius: 5px; margin-top: 10px; font-family: monospace;">
+
+```sh
+cargo install --git https://github.com/Leathong/openscad-LSP
+```
+
+</div>
   </blockquote>
 </details>
 <details>
@@ -2456,18 +2550,66 @@ pnpm add -g foam-language-server@latest
   <blockquote style="font-size: 1.2em; line-height: 1.8; padding: 25px; background: #f8f9fa; border-left: 6px solid #667eea; border-radius: 8px; margin: 15px 0; box-shadow: 0 2px 8px rgba(0,0,0,0.1);">
     <ul>
       <li>
-        <a href="https://github.com/qompassai/diver/blob/main/lsp/p_ls.lua">p_ls</a>
+        <a href="https://github.com/qompassai/diver/blob/main/lsp/perl_ls.lua">perl_ls</a>
       </li>
-      <li>
-        <a href="https://github.com/qompassai/diver/blob/main/lsp/perl_ls.lua">perlav_ls</a>
-      </li>
-      <li>
-        <a href="https://github.com/qompassai/diver/blob/main/lsp/perlnav_ls.lua">perlnav_ls</a>
-      </li>
+       <p>
+      <a href="https://github.com/richterger/Perl-LanguageServer/tree/master/clients/vscode/perl"> Perl LSP Reference</a>
+    </p>
+ <div style="background: #f8f9fa; padding: 15px; border-radius: 5px; margin-top: 10px; font-family: monospace;">
+
+```sh
+cpanm Perl::LanguageServer
+```
+
+# OR
+
+```sh
+cpan Perl::LanguageServer
+```
+
+</div>
       <li>
         <a href="https://github.com/qompassai/diver/blob/main/lsp/perlp_ls.lua">perlp_ls</a>
       </li>
-    </ul>
+       <p>
+      <a href="https://github.com/FractalBoy/perl-language-server "> PerlP LSP Reference</a>
+    </p>
+ <div style="background: #f8f9fa; padding: 15px; border-radius: 5px; margin-top: 10px; font-family: monospace;">
+
+```sh
+cpan PLS
+
+```
+
+# OR
+
+```sh
+cpanm PLS
+```
+
+</div>
+      <li>
+        <a href="https://github.com/qompassai/diver/blob/main/lsp/perlnav_ls.lua">perlnav_ls</a>
+      </li>
+            <p>
+      <a href="https://github.com/bscan/PerlNavigator/tree/main"> Perl Navigator Reference</a>
+    </p>
+ <div style="background: #f8f9fa; padding: 15px; border-radius: 5px; margin-top: 10px; font-family: monospace;">
+
+```sh
+mkdir -p "$HOME/.local/bin"
+cd "$(mktemp -d)"
+curl -L -o perlnavigator.zip \
+  "https://github.com/bscan/PerlNavigator/releases/latest/download/perlnavigator-linux-x86_64.zip"
+unzip perlnavigator.zip
+cd perlnavigator-linux-x86_64
+chmod +x perlnavigator
+mv perlnavigator "$HOME/.local/bin/"
+
+```
+
+</div>
+         </ul>
   </blockquote>
 </details>
  <details>
@@ -3042,9 +3184,18 @@ cargo install --git https://github.com/Canop/bacon --features "clipboard sound"
 ```
 
    </div>
+              <p>
+      <a href="https://github.com/pest-parser/pest-ide-tools">Pest Reference</a>
+    </p>
+ <div style="background: #f8f9fa; padding: 15px; border-radius: 5px; margin-top: 10px; font-family: monospace;">
 
-  <li><code>
-        <a href="https://github.com/qompassai/diver/blob/main/lsp/rustana_ls.lua">rustana_ls</a></code>
+```sh
+cargo install --git https://github.com/pest-parser/pest-ide-tools
+```
+
+   </div>
+  <li>
+        <a href="https://github.com/qompassai/diver/blob/main/lsp/rustana_ls.lua">rustana_ls</a>
       </li>
     </ul>
          <p>
@@ -3846,8 +3997,10 @@ cargo install --git https://github.com/wgsl-analyzer/wgsl-analyzer wgsl-analyzer
 
 ```sh
 ```
+
 git clone https://github.com/eclipse-lemminx/lemminx.git --recursive \
 cd lemminx && ./mvnw clean verify
+
 </div>
   </blockquote>
 </details>

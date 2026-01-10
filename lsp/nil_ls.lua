@@ -2,13 +2,13 @@
 -- Qompass AI Nix LSP Config
 -- Copyright (C) 2025 Qompass AI, All rights reserved
 -- --------------------------------------------------
----@type vim.lsp.Config
-return {
+return ---@type vim.lsp.Config
+{
     cmd = { ---@type string[]
         'nil',
         '--stdio',
     },
-    filetypes = { ---@type string[]
+    filetypes = {
         'nix',
     },
     root_markers = {

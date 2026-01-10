@@ -149,7 +149,4 @@ vim.api.nvim_create_autocmd({
         M.lint(args.buf)
     end,
 })
-vim.lint.linters.bandit = require('linters.bandit')
-vim.lint.linters.vulture = require('linters.vulture')
-vim.lint.linters.yara = require('linters.yara')
 return M

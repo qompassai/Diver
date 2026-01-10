@@ -2,17 +2,16 @@
 -- Qompass AI Regal LSP Spec
 -- Copyright (C) 2025 Qompass AI, All rights reserved
 -- --------------------------------------------------
--- Reference: https://github.com/StyraInc/regal
----@type vim.lsp.Config
-return {
-    cmd = { ---@type string[]
+return ---@type vim.lsp.Config
+{
+    cmd = {
         'regal',
         'language-server',
     },
-    filetypes = { ---@type string[]
+    filetypes = {
         'rego',
     },
-    root_markers = { ---@type string[]
+    root_markers = {
         '.git',
     },
     settings = {

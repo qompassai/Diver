@@ -120,7 +120,7 @@ function M.blink_cmp()
       },
     },
     cmdline = {
-      enabled = true,
+      enabled = false,
     },
     fuzzy = {
       frecency = {

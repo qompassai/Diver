@@ -15,9 +15,13 @@ vim.filetype.add({
         handlebars = 'html.handlebars',
         rst = 'rst',
         schelp = 'scdoc',
+        svh = 'systemverilog',
         tesc = 'glsl',
         tese = 'glsl',
         tsx = 'typescript.tsx',
+        v = 'verilog',
+        verilog = 'verilog',
+        vh = 'verilog',
     },
     filename = {
         ['project.bri'] = 'brioche',

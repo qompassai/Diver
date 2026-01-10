@@ -1,17 +1,17 @@
--- /qompassai/Diver/lsp/p_ls.lua
--- Qompass AI Perl LSP Spec
+-- /qompassai/Diver/lsp/perlp_ls.lua
+-- Qompass AI PerlP LSP Spec
 -- Copyright (C) 2025 Qompass AI, All rights reserved
 -- --------------------------------------------------
---Reference: https://github.com/FractalBoy/perl-language-server |  https://metacpan.org/pod/PLS
----@type vim.lsp.Config
-return {
-    cmd = { ---@type string[]
+return ---@type vim.lsp.Config
+{
+    cmd = {
         'pls',
     },
-    filetypes = { ---@type string[]
+    filetypes = {
         'perl',
     },
-    root_markers = { ---@type string[]
+    init_options = {},
+    root_markers = {
         '.git',
         'Makefile',
         'Build.PL',
@@ -29,6 +29,11 @@ return {
             },
             syntax = {
                 enabled = true,
+                perl = '/usr/bin/perl',
+                args = {
+                    'arg1',
+                    'arg2',
+                },
             },
             inc = {
                 '${workspaceFolder}/lib',
@@ -36,5 +41,4 @@ return {
             cwd = '${workspaceFolder}',
         },
     },
-    init_options = {},
 }

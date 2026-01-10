@@ -2,9 +2,8 @@
 -- Qompass AI Nixd LSP Config
 -- Copyright (C) 2025 Qompass AI, All rights reserved
 -- --------------------------------------------------
--- nix profile install github:nix-community/nixd
----@type vim.lsp.Config
-return {
+return ---@type vim.lsp.Config
+{
     cmd = {
         'nixd',
         '--log=info',
@@ -19,5 +18,31 @@ return {
         'flake.nix',
         'default.nix',
         '.git',
+    },
+    settings = {
+        nixd = {
+            diagnostic = {
+                suppress = {
+                    'sema-extra-with',
+                },
+            },
+            nixpkgs = {
+                expr = 'import <nixpkgs> { }',
+            },
+            formatting = {
+                command = {
+                    'nixfmt',
+                },
+            },
+            options = {
+                home_manager = {
+                    expr = '(builtins.getFlake ("git+file://" + toString ./.)).homeConfigurations."ruixi@k-on".options',
+                },
+                ['flake-parts'] = {},
+                nixos = {
+                    expr = '(builtins.getFlake ("git+file://" + toString ./.)).nixosConfigurations.k-on.options',
+                },
+            },
+        },
     },
 }

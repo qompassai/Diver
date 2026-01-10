@@ -2,10 +2,9 @@
 -- Qompass AI Perl LSP Spec
 -- Copyright (C) 2025 Qompass AI, All rights reserved
 -- ----------------------------------------
--- Reference: https://github.com/richterger/Perl-LanguageServer/tree/master/clients/vscode/perl
----@type vim.lsp.Config
-return {
-    cmd = { ---@type string[]
+return ---@type vim.lsp.Config
+{
+    cmd = {
         'perl',
         '-MPerl::LanguageServer',
         '-e',
@@ -16,12 +15,12 @@ return {
         '--nostdio',
         '0',
     },
-    filetypes = { ---@type string[]
+    filetypes = {
         'perl',
         'pl',
         'pm',
     },
-    root_markers = { ---@type string[]
+    root_markers = {
         '.git',
     },
     settings = {
@@ -41,28 +40,28 @@ return {
                 '.vscode',
             },
             checkSyntax = true,
-            publishDiagnostics = true,
-            workspaceSymbols = true,
-            documentSymbols = true,
-            minimalisticCompletions = false,
-            showSyntaxErrors = true,
-            showLocalVars = true,
-            sshAddr = nil,
-            sshPort = nil,
-            sshUser = nil,
-            sshCmd = 'ssh/plink',
-            sshWorkspaceRoot = nil,
-            sshArgs = nil,
-            pathMap = {},
-            containerCmd = 'docker',
             containerArgs = nil,
+            containerCmd = 'docker',
             containerMode = 'run',
             containerName = nil,
             debugAdapterPort = 13603,
             debugAdapterPortRange = 100,
-            logLevel = 0,
-            logFile = nil,
             disableCache = false,
+            documentSymbols = true,
+            logFile = nil,
+            logLevel = 0,
+            minimalisticCompletions = false,
+            pathMap = {},
+            publishDiagnostics = true,
+            showSyntaxErrors = true,
+            showLocalVars = true,
+            sshAddr = nil,
+            sshArgs = nil,
+            sshCmd = 'ssh/plink',
+            sshPort = nil,
+            sshUser = nil,
+            sshWorkspaceRoot = nil,
+            workspaceSymbols = true,
         },
     },
 }

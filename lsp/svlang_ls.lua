@@ -3,14 +3,15 @@
 -- Copyright (C) 2025 Qompass AI, All rights reserved
 -- ---------------------------------------------------
 -- Reference: https://github.com/imc-trading/svlangserver
---pnpm add -g @imc-trading/svlangserver
----@type vim.lsp.Config
-return {
-    cmd = { ---@type string[]
+--pnpm add -g @imc-trading/svlangserver@latest
+return ---@type vim.lsp.Config
+{
+    cmd = {
         'svlangserver',
     },
-    filetypes = { ---@type string[]
+    filetypes = {
         'verilog',
+        'svh',
         'systemverilog',
     },
     root_markers = {

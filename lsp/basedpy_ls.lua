@@ -188,6 +188,7 @@ return ---@type vim.lsp.Config
                 typeCheckingMode = 'standard',
                 typeshedPaths = {
                     '/usr/lib/python3.13/site-packages',
+                     '~/.local/lib/python3.13/site-packages',
                 },
                 useLibraryCodeForTypes = true,
                 useTypingExtensions = true,
@@ -198,7 +199,7 @@ return ---@type vim.lsp.Config
             disableTaggedHints = false,
             failOnWarnings = false,
             python = {
-                pythonPath = '/usr/bin/python3.13',
+                pythonPath = '/usr/bin/python3',
             },
         },
     },

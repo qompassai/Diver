@@ -2,10 +2,8 @@
 -- Qompass AI Open Policy Agent (OPA) Rego LSP Spec
 -- Copyright (C) 2025 Qompass AI, All rights reserved
 -- ---------------------------------------------------
--- Reference:  https://github.com/kitagry/regols | https://www.openpolicyagent.org/docs
--- go install github.com/kitagry/regols@latest
----@type vim.lsp.Config
-return {
+return ---@type vim.lsp.Config
+{
     cmd = {
         'regols',
     },
@@ -16,4 +14,5 @@ return {
         '.git',
         '*.rego',
     },
+    settings = {},
 }
