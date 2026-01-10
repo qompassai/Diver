@@ -161,6 +161,11 @@
 ---@field haskell.plugin.stan.globalOn?                                               boolean
 ---@field idris2Lsp.logFile?                                                          string|nil
 ---@field idris2Lsp.logSeverity?                                                      'Debug'|'Info'|'Warning'|'Error'
+---@field isabelle.isabelle_path?                                                     string
+---@field isabelle.vsplit?                                                            boolean
+---@field isabelle.sh_path?                                                           string
+---@field isabelle.unicode_symbols_output?                                            boolean
+---@field isabelle.unicode_symbols_edits?                                             boolean
 ---@field ltex.additionalRules.enablePickyRules?                                      boolean
 ---@field ltex.additionalRules.languageModel?                                         string
 ---@field ltex.additionalRules.motherTongue?                                          string

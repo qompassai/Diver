@@ -2,18 +2,29 @@
 -- Qompass AI TailwindCSS LSP Spec
 -- Copyright (C) 2025 Qompass AI, All rights reserved
 -- --------------------------------------------------
----@type vim.lsp.Config
-return {
+return ---@type vim.lsp.Config
+{
+    before_init = function(_, config) ---@class lsp.LSPObject.editor
+        if not config.settings then
+            config.settings = {}
+        end
+        if not config.settings.editor then
+            config.settings.editor = {}
+        end
+        if not config.settings.editor.tabSize then
+            config.settings.editor.tabSize = vim.lsp.util.get_effective_tabstop()
+        end
+    end,
     cmd = {
         'tailwindcss-language-server',
     },
-    filetypes = { ---@type string[]
+    filetypes = {
         'aspnetcorerazor',
         'astro',
         'astro-markdown',
         'blade',
         'clojure',
-        --'css',
+        'css',
         'django-html',
         'edge',
         'ejs',
@@ -68,47 +79,6 @@ return {
             },
         },
     },
-    settings = {
-        tailwindCSS = {
-            validate = true,
-            lint = {
-                cssConflict = 'warning',
-                invalidApply = 'error',
-                invalidScreen = 'error',
-                invalidVariant = 'error',
-                invalidConfigPath = 'error',
-                invalidTailwindDirective = 'error',
-                recommendedVariantOrder = 'warning',
-            },
-            classAttributes = {
-                'class',
-                'className',
-                'class:list',
-                'classList',
-                'ngClass',
-            },
-            includeLanguages = {
-                eelixir = 'html-eex',
-                elixir = 'phoenix-heex',
-                eruby = 'erb',
-                heex = 'phoenix-heex',
-                htmlangular = 'html',
-                templ = 'html',
-            },
-        },
-    },
-    before_init = function(_, config) ---@class lsp.LSPObject.editor
-        if not config.settings then
-            config.settings = {}
-        end
-        if not config.settings.editor then
-            config.settings.editor = {}
-        end
-        if not config.settings.editor.tabSize then
-            config.settings.editor.tabSize = vim.lsp.util.get_effective_tabstop()
-        end
-    end,
-    workspace_required = true,
     root_markers = {
         'tailwind.config.js',
         'tailwind.config.cjs',
@@ -124,5 +94,34 @@ return {
         'theme/static_src/tailwind.config.ts',
         'theme/static_src/postcss.config.js',
         '.git',
+    },
+    settings = {
+        tailwindCSS = {
+            classAttributes = {
+                'class',
+                'className',
+                'class:list',
+                'classList',
+                'ngClass',
+            },
+            includeLanguages = {
+                eelixir = 'html-eex',
+                elixir = 'phoenix-heex',
+                eruby = 'erb',
+                heex = 'phoenix-heex',
+                htmlangular = 'html',
+                templ = 'html',
+            },
+            lint = {
+                cssConflict = 'warning',
+                invalidApply = 'error',
+                invalidScreen = 'error',
+                invalidVariant = 'error',
+                invalidConfigPath = 'error',
+                invalidTailwindDirective = 'error',
+                recommendedVariantOrder = 'warning',
+            },
+            validate = true,
+        },
     },
 }

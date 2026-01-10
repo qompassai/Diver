@@ -1,5 +1,5 @@
--- motoko_ls.lua
--- Qompass AI - [ ]
+-- /qompassai/Diver/lsp/motoko_ls.lua
+-- Qompass AI Motoko LSP Spec
 -- Copyright (C) 2025 Qompass AI, All rights reserved
 -- ----------------------------------------
 ---@type vim.lsp.Config
@@ -8,6 +8,9 @@ return {
         'motoko-lsp',
         '--stdio',
     },
+    init_options = {
+        formatter = 'auto',
+    },
     filetypes = {
         'motoko',
     },
@@ -15,7 +18,5 @@ return {
         'dfx.json',
         '.git',
     },
-    init_options = {
-        formatter = 'auto',
-    },
+    settings = {},
 }

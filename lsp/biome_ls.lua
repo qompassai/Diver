@@ -19,6 +19,7 @@ return ---@type vim.lsp.Config
         'jsonc',
         'markdown',
         'mdx',
+        'spajson',
         'svelte',
         'typescript',
         'typescriptreact',

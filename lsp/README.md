@@ -1500,8 +1500,7 @@ go install github.com/hyprland-community/hyprls/cmd/hyprls@latest
       </li>
          </ul>
         <p>
-      <a href=" https://github.com/idris-community/idris2-lsp
-">Idris2 LSP Reference</a>
+      <a href="https://github.com/idris-community/idris2-lsp">Idris2 LSP Reference</a>
     </p>
  <div style="background: #f8f9fa; padding: 15px; border-radius: 5px; margin-top: 10px; font-family: monospace;">
 
@@ -1565,13 +1564,39 @@ echo "    export PATH=\"\$IDRIS2_PREFIX/bin:\$PATH\""
       </li>
          </ul>
         <p>
-      <a href=" https://github.com/idris-community/idris2-lsp
-">Ink LSP Reference</a>
+      <a href="https://github.com/ink-analyzer/ink-analyzer/tree/master/crates/lsp-server
+">Ink! LSP Reference</a>
     </p>
  <div style="background: #f8f9fa; padding: 15px; border-radius: 5px; margin-top: 10px; font-family: monospace;">
 
 ```sh
 cargo install --git https://github.com/ink-analyzer/ink-analyzer.git
+```
+
+</div>
+  </blockquote>
+</details>
+<details>
+ <summary style="font-size: 1.4em; font-weight: bold; padding: 15px; background: #667eea; color: white; border-radius: 10px; cursor: pointer; margin: 10px 0; display: flex; align-items: center; gap: 8px;">
+    <div class="icon-row" style="display: flex; align-items: center; gap: 6px;">
+      <img src="https://raw.githubusercontent.com/qompassai/svg/refs/heads/main/assets/icons/isabelle/isabelle.svg"
+           alt="isabelle" width="60" height="60" title="Isabelle" />
+    </div>
+    <strong>Isabelle</strong>
+  </summary>
+  <blockquote style="font-size: 1.2em; line-height: 1.8; padding: 25px; background: #f8f9fa; border-left: 6px solid #667eea; border-radius: 8px; margin: 15px 0; box-shadow: 0 2px 8px rgba(0,0,0,0.1);">
+    <ul>
+      <li>
+        <a href="https://github.com/qompassai/diver/blob/main/lsp/isabelle_ls.lua">isabelle_ls</a>
+      </li>
+         </ul>
+        <p>
+      <a href="https://github.com/ThreeFx/isabelle-lsp">Isabelle LSP Reference</a>
+    </p>
+ <div style="background: #f8f9fa; padding: 15px; border-radius: 5px; margin-top: 10px; font-family: monospace;">
+
+```sh
+go install github.com/ThreeFx/isabelle-lsp@latest
 ```
 
 </div>
@@ -2302,6 +2327,33 @@ main "$@"
         <a href="https://github.com/qompassai/diver/blob/main/lsp/statix_ls.lua">statix_ls</a>
       </li>
     </ul>
+  </blockquote>
+</details>
+<details>
+ <summary style="font-size: 1.4em; font-weight: bold; padding: 15px; background: #667eea; color: white; border-radius: 10px; cursor: pointer; margin: 10px 0; display: flex; align-items: center; gap: 8px;">
+    <div class="icon-row" style="display: flex; align-items: center; gap: 6px;">
+      <img src="https://raw.githubusercontent.com/qompassai/svg/refs/heads/main/assets/icons/nobl9/nobl9.svg"
+           alt="racket" width="60" height="60" title="Racket" />
+    </div>
+    <strong>Nobl9</strong>
+  </summary>
+  <blockquote style="font-size: 1.2em; line-height: 1.8; padding: 25px; background: #f8f9fa; border-left: 6px solid #667eea; border-radius: 8px; margin: 15px 0; box-shadow: 0 2px 8px rgba(0,0,0,0.1);">
+    <ul>
+      <li><code>
+        <a href="https://github.com/qompassai/diver/blob/main/lsp/nobl9_ls.lua">nobl9_ls</a></code>
+      </li>
+    </ul>
+        <p>
+      <a href="https://github.com/nobl9/nobl9-language-server">Nobl9 LSP Reference</a>
+    </p>
+ <div style="background: #f8f9fa; padding: 15px; border-radius: 5px; margin-top: 10px; font-family: monospace;">
+
+```sh
+go install github.com/nobl9/nobl9-language-server/cmd/nobl9-language-server@latest
+
+```
+
+   </div>
   </blockquote>
 </details>
 <details>
@@ -3794,7 +3846,8 @@ cargo install --git https://github.com/wgsl-analyzer/wgsl-analyzer wgsl-analyzer
 
 ```sh
 ```
-
+git clone https://github.com/eclipse-lemminx/lemminx.git --recursive \
+cd lemminx && ./mvnw clean verify
 </div>
   </blockquote>
 </details>

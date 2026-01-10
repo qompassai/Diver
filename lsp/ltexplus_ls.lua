@@ -25,7 +25,7 @@ return ---@type vim.lsp.Config
         'context',
         'gitcommit',
         'html',
-        'markdown',
+       -- 'markdown',
         'org',
         'lualatex',
         'plaintex',

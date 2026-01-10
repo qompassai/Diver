@@ -2,7 +2,6 @@
 -- Qompass AI Qompass AI Javascript Object Notation (JSON) LSP Config
 -- Copyright (C) 2025 Qompass AI, All rights reserved
 ---------------------------------------------------------------------
----@source https://github.com/SchemaStore/schemastore/blob/master/src/api/json/catalog.json
 return ---@type vim.lsp.Config
 {
     cmd = {
@@ -52,7 +51,7 @@ return ---@type vim.lsp.Config
                         'angular.json',
                         'angular.jsonc',
                     },
-                    url = 'https://raw.githubusercontent.com/angular/angular-cli/master/packages/angular/cli/lib/config/workspace-schema.json',
+                  url =   'https://raw.githubusercontent.com/angular/angular-cli/master/packages/angular/cli/lib/config/workspace-schema.json',
                 },
                 {
                     description = 'Angular CLI configuration file',
@@ -60,7 +59,7 @@ return ---@type vim.lsp.Config
                         '.angular-cli.json',
                         'angular-cli.json',
                     },
-                    url = 'https://raw.githubusercontent.com/angular/angular-cli/v10.1.6/packages/angular/cli/lib/config/schema.json',
+               url =      'https://raw.githubusercontent.com/angular/angular-cli/v10.1.6/packages/angular/cli/lib/config/schema.json',
                 },
                 {
                     description = 'asm-lsp configuration',
@@ -308,7 +307,7 @@ return ---@type vim.lsp.Config
                         'cspell.yaml',
                         'cspell.yml',
                     },
-                    url = 'https://raw.githubusercontent.com/streetsidesoftware/cspell/main/packages/cspell-types/cspell.schema.json',
+                 url =    'https://raw.githubusercontent.com/streetsidesoftware/cspell/main/packages/cspell-types/cspell.schema.json',
                 },
                 {
                     description = 'CSS Comb configuration file',
@@ -323,7 +322,7 @@ return ---@type vim.lsp.Config
                 {
                     description = 'CVE record format',
                     fileMatch = { 'CVE-*.json' },
-                    url = 'https://raw.githubusercontent.com/CVEProject/cve-schema/master/schema/docs/CVE_Record_Format_bundled.json',
+                   url =  'https://raw.githubusercontent.com/CVEProject/cve-schema/master/schema/docs/CVE_Record_Format_bundled.json',
                 },
                 {
                     description = 'Cypress.io test runner configuration file',
@@ -582,7 +581,7 @@ return ---@type vim.lsp.Config
                         '**/GeminiCli/settings.json',
                         '**/GeminiCli/settings.jsonc',
                     },
-                    url = '"https://raw.githubusercontent.com/google-gemini/gemini-cli/refs/heads/main/schemas/settings.schema.json',
+                   url =  '"https://raw.githubusercontent.com/google-gemini/gemini-cli/refs/heads/main/schemas/settings.schema.json',
                 },
                 {
                     description = 'Google Cloud Workflows configuration file',
@@ -615,7 +614,7 @@ return ---@type vim.lsp.Config
                     fileMatch = {
                         '**/charts/*/tests/*.yaml',
                     },
-                    url = 'https://raw.githubusercontent.com/helm-unittest/helm-unittest/refs/heads/main/schema/helm-testsuite.json',
+                url =     'https://raw.githubusercontent.com/helm-unittest/helm-unittest/refs/heads/main/schema/helm-testsuite.json',
                 },
                 {
                     description = 'latexindent configuration',

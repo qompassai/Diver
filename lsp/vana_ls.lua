@@ -1,10 +1,21 @@
--- vana_ls.lua
--- Qompass AI - [ ]
+-- /qompassai/Diver/lsp/vana_ls.lua
+-- Qompass AI Diver V-Lang LSP Spec
 -- Copyright (C) 2025 Qompass AI, All rights reserved
 -- ----------------------------------------
----@type vim.lsp.Config
-return {
-    cmd = { 'v-analyzer' },
-    filetypes = { 'v', 'vsh', 'vv' },
-    root_markers = { 'v.mod', '.git' },
+return ---@type vim.lsp.Config
+{
+    cmd = {
+        'v-analyzer',
+    },
+    filetypes = {
+        'v',
+        'vsh',
+        'vv',
+    },
+    init_options = {},
+    root_markers = {
+        'v.mod',
+        '.git',
+    },
+    settings = {},
 }
