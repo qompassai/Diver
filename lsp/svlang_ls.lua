@@ -11,7 +11,6 @@ return ---@type vim.lsp.Config
     },
     filetypes = {
         'verilog',
-        'svh',
         'systemverilog',
     },
     root_markers = {

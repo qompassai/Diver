@@ -4,53 +4,6 @@
 -- --------------------------------------------------
 ---@source https://microsoft.github.io/language-server-protocol/implementors/servers/
 ---@source https://langserver.org/
-vim.filetype.add({
-    extension = {
-        bri = 'brioche',
-        brioche = 'brioche',
-        cairo = 'cairo',
-        clar = 'clar',
-        clarity = 'clarity',
-        comp = 'glsl',
-        cr = 'crystal',
-        cypher = 'cypher',
-        frag = 'glsl',
-        geom = 'glsl',
-        hbs = 'html.handlebars',
-        handlebars = 'html.handlebars',
-        rst = 'rst',
-        schelp = 'scdoc',
-        tesc = 'glsl',
-        tese = 'glsl',
-        tsx = 'typescript.tsx',
-        ['yaml.ansible'] = 'yaml.ansible',
-        ['yml.ansible'] = 'yaml.ansible',
-    },
-    filename = {
-        ['ansible.cfg'] = 'ansible',
-        ['project.bri'] = 'brioche',
-        brioche = 'brioche',
-        Cairo = 'cairo',
-        Crystal = 'crystal',
-    },
-    pattern = {
-        ['.*%.als'] = 'alloy',
-        ['.*%.ansible%.ya?ml'] = 'yaml.ansible',
-        ['.*%.cairo'] = 'cairo',
-        ['.*%.clar'] = 'clar',
-        ['.*%.clarity'] = 'clarity',
-        ['.*%.crystal'] = 'crystal',
-        ['.*/gitconfig.*'] = 'gitconfig',
-        ['.*/gitignore.*'] = 'gitignore',
-        ['.*/gitcommit.*'] = 'gitcommit',
-        ['.*/templates/.*%.yaml'] = 'helm',
-        ['.*/templates/.*%.yml'] = 'helm',
-        ['.*/templates/.*%.tpl'] = 'helm',
-        ['.*/values.*%.ya?ml'] = 'yaml.helm-values',
-        ['.*%.gts'] = 'typescript.glimmer',
-        ['.*%.gjs'] = 'javascript.glimmer',
-    },
-})
 vim.lsp.enable({
     'abaplint_ls', ---:TODO: ---validate ---@source https://github.com/abaplint/abaplint | https://www.npmjs.com/org/abaplint
     'abl_ls', ---:TODO validate ---@source https://github.com/vscode-abl/vscode-abl
@@ -230,7 +183,7 @@ vim.lsp.enable({
     'nickel_ls',
     'nil_ls',
     'nixd_ls',
-    'nobl9_ls', ---:TODO validate  https://github.com/nobl9/nobl9-language-server
+    'nobl9_ls', ---:TODO validate
     'nomad_ls',
     'ntt_ls',
     'nu_ls',
