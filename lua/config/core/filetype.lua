@@ -25,8 +25,12 @@ vim.filetype.add({
         v = 'verilog',
         verilog = 'verilog',
         vh = 'verilog',
+        yaml = 'yaml',
+        yml = 'yaml',
         ['yaml.ansible'] = 'yaml.ansible',
         ['yml.ansible'] = 'yaml.ansible',
+        ziggy = 'ziggy',
+        ['ziggy-schema'] = 'ziggy_schema',
     },
     filename = {
         ['ansible.cfg'] = 'ansible',

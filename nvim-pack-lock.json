@@ -10,7 +10,8 @@
     },
     "blink-cmp-dictionary": {
       "rev": "944b3b215b01303672d4213758db7c5c5a1e3c92",
-      "src": "https://github.com/Kaiser-Yang/blink-cmp-dictionary"
+      "src": "https://github.com/Kaiser-Yang/blink-cmp-dictionary",
+      "version": "2.0.0 - 3.0.0"
     },
     "blink-emoji.nvim": {
       "rev": "066013e4c98a9318408ee3f1ca2dbcb6fa3e4c06",
@@ -19,11 +20,16 @@
     "blink.cmp": {
       "rev": "3033d278848129899f94843e12ebb83a31342faa",
       "src": "https://github.com/Saghen/blink.cmp",
-      "version": "'1.*'"
+      "version": "1.0.0 - 2.0.0"
     },
     "blink.compat": {
       "rev": "1454f14a8d855a578ceeba77c62538fa1459a67c",
-      "src": "https://github.com/Saghen/blink.compat"
+      "src": "https://github.com/Saghen/blink.compat",
+      "version": "2.0.0 - 3.0.0"
+    },
+    "bufferline.nvim": {
+      "rev": "655133c3b4c3e5e05ec549b9f8cc2894ac6f51b3",
+      "src": "https://github.com/akinsho/bufferline.nvim"
     },
     "cheatsheet.nvim": {
       "rev": "9716f9aaa94dd1fd6ce59b5aae0e5f25e2a463ef",
@@ -63,6 +69,14 @@
       "rev": "6039e4d034bdfac4a459874ca9e8a6276f131148",
       "src": "https://gitlab.com/gitlab-org/editor-extensions/gitlab.vim.git"
     },
+    "lazydev.nvim": {
+      "rev": "5231c62aa83c2f8dc8e7ba957aa77098cda1257d",
+      "src": "https://github.com/folke/lazydev.nvim"
+    },
+    "lualine.nvim": {
+      "rev": "47f91c416daef12db467145e16bed5bbfe00add8",
+      "src": "https://github.com/nvim-lualine/lualine.nvim"
+    },
     "luarocks.nvim": {
       "rev": "1db9093915eb16ba2473cfb8d343ace5ee04130a",
       "src": "https://github.com/vhyrro/luarocks.nvim"
@@ -94,9 +108,17 @@
       "rev": "5946285744ffef26b792839d9130135365bfa8ea",
       "src": "https://github.com/trixnz/sops.nvim"
     },
+    "transparent.nvim": {
+      "rev": "a4145c52f5421f1626a4d7dc0f41e785c4439944",
+      "src": "https://github.com/tribela/transparent.nvim"
+    },
     "trouble.nvim": {
       "rev": "bd67efe408d4816e25e8491cc5ad4088e708a69a",
       "src": "https://github.com/folke/trouble.nvim"
+    },
+    "twilight.nvim": {
+      "rev": "664e752f4a219801265cc3fc18782b457b58c1e1",
+      "src": "https://github.com/folke/twilight.nvim"
     },
     "which-key.nvim": {
       "rev": "3aab2147e74890957785941f0c1ad87d0a44c15a",

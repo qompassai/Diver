@@ -1,4 +1,4 @@
--- schema.lua
+-- /qompassai/Diver/lua/config/core/schema.lua
 -- Qompass AI Diver Schema Config
 -- Copyright (C) 2025 Qompass AI, All rights reserved
 -- ----------------------------------------

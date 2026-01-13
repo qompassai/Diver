@@ -131,7 +131,7 @@ local function load_fixer(name) ---@param name string
 end
 ---@param bufnr? integer
 ---@param opts? table
-function M.format(bufnr, opts)
+function M.fixer(bufnr, opts)
     bufnr = bufnr or vim.api.nvim_get_current_buf()
     opts = opts or {}
     local ft = vim.bo[bufnr].filetype

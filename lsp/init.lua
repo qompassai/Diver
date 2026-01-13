@@ -5,7 +5,7 @@
 ---@source https://microsoft.github.io/language-server-protocol/implementors/servers/
 ---@source https://langserver.org/
 vim.lsp.enable({
-    'abaplint_ls', ---:TODO: ---validate ---@source https://github.com/abaplint/abaplint | https://www.npmjs.com/org/abaplint
+    --'abaplint_ls', ---:TODO: ---validate ---@source https://github.com/abaplint/abaplint | https://www.npmjs.com/org/abaplint
     'abl_ls', ---:TODO validate ---@source https://github.com/vscode-abl/vscode-abl
     'ada_ls',
     'agda_ls',
@@ -63,7 +63,7 @@ vim.lsp.enable({
     'cucumber_ls', ---:TODO Validate
     'dafny_ls', ---:TODO validate
     --'delphi_ls'           ---:TODO ---@source https://docwiki.embarcadero.com/RADStudio/Florence/en/Code_Insight_Reference
-    'debputy_ls', ---:TODO validate ---@source https://salsa.debian.org/debian/debputy
+   -- 'debputy_ls', ---:TODO validate ---@source https://salsa.debian.org/debian/debputy
     --'denizen_ls',          ---:TODO ---@source https://github.com/DenizenScript/DenizenVSCode
     'deno_ls', ---lsp/linter
     'dj_ls', ---:TODO
@@ -97,7 +97,7 @@ vim.lsp.enable({
     'gauge_ls', ---:TODO validate ---@source https://github.com/getgauge/gauge/
     'gdscript_ls',
     'gdshader_ls',
-    'ghactions_ls',
+    --'ghactions_ls',
     'ghcide_ls',
     'gitlabci_ls', ---:TODO validate
     --'gitlabduo_ls', ---:TODO
@@ -125,7 +125,7 @@ vim.lsp.enable({
     'hoon_ls',
     'html_ls',
     'htmx_ls',
-    'hydra_ls',
+    --'hydra_ls',
     'hypr_ls',
     'idris2_ls', ---:TODO validate ---@source https://github.com/idris-community/idris2-lsp
     'ink_ls', ---:TODO validate ---@source https://github.com/ink-analyzer/ink-analyzer/tree/master/crates/lsp-server
@@ -183,7 +183,7 @@ vim.lsp.enable({
     'nickel_ls',
     'nil_ls',
     'nixd_ls',
-    'nobl9_ls', ---:TODO validate
+    --'nobl9_ls', ---:TODO validate
     'nomad_ls',
     'ntt_ls',
     'nu_ls',

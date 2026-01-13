@@ -3075,7 +3075,6 @@ pip install rpm-spec-language-server
 
 ```sh
 gem install rubocop
-
 ```
 
    </div>
@@ -3656,16 +3655,36 @@ curl -s https://raw.githubusercontent.com/terraform-linters/tflint/master/instal
       <li><code>
         <a href="https://github.com/qompassai/diver/blob/main/lsp/taplo_ls.lua">taplo_ls</a></code>
       </li>
+      <p>
+      <a href="https://taplo.tamasfe.dev/cli/usage/language-server.html">Taplo LSP Reference</a>
+    </p>
+ <div style="background: #f8f9fa; padding: 15px; border-radius: 5px; margin-top: 10px; font-family: monospace;">
+
+```sh
+cargo install --git https://github.com/tamasfe/taplo taplo-cli --features lsp
+```
+
+</div>
       <li>
         <a href="https://github.com/qompassai/diver/blob/main/lsp/tombi_ls.lua">tombi_ls</a>
       </li>
+       <p>
+      <a href="https://tombi-toml.github.io/tombi">Tombi LSP Reference</a>
+    </p>
+ <div style="background: #f8f9fa; padding: 15px; border-radius: 5px; margin-top: 10px; font-family: monospace;">
+
+```sh
+pip install tombi
+```
+
+</div>
     </ul>
   </blockquote>
 </details>
   <details>
   <summary style="font-size: 1.4em; font-weight: bold; padding: 15px; background: #667eea; color: white; border-radius: 10px; cursor: pointer; margin: 10px 0; display: flex; align-items: center; gap: 8px;">
     <div class="icon-row" style="display: flex; align-items: center; gap: 6px;">
-      <img src="https://raw.githubusercontent.com/qompassai/svg/refs/heads/main/assets/icons/typescript/typescript.svg"
+      <img src="https://raw.githubusercontent.com/qompassai/svg/refs/heads/main/assets/icons/tree/tree.svg"
            alt="typescript" width="60" height="60" title="Typescript" />
     </div>
     <strong>TreeSitter-Query</strong>
@@ -3701,6 +3720,16 @@ cargo install --git https://github.com/ribru17/ts_query_ls ts_query_ls
       <li><code>
         <a href="https://github.com/qompassai/diver/blob/main/lsp/twiggy_ls.lua">twiggy_ls</a></code>
       </li>
+      <p>
+      <a href="https://github.com/moetelo/twiggy">Twiggy LSP Reference</a>
+    </p>
+ <div style="background: #f8f9fa; padding: 15px; border-radius: 5px; margin-top: 10px; font-family: monospace;">
+
+```sh
+pnpm add -g twiggy-language-server@latest
+```
+
+</div>
     </ul>
   </blockquote>
 </details>
@@ -3803,6 +3832,13 @@ curl -sSL https://github.com/hongjr03/tinymist-nightly-installer/releases/latest
  <div style="background: #f8f9fa; padding: 15px; border-radius: 5px; margin-top: 10px; font-family: monospace;">
 
 ```sh
+export XDG_DATA_HOME="${XDG_DATA_HOME:-$HOME/.local/share}"
+export XDG_BIN_HOME="${XDG_BIN_HOME:-$HOME/.local/bin}"
+mkdir -p "$XDG_DATA_HOME/verible" "$XDG_BIN_HOME"
+cd "$XDG_DATA_HOME/verible"
+git clone https://github.com/chipsalliance/verible.git --recursive .
+bazel build -c opt //...
+.github/bin/simple-install.sh "$XDG_BIN_HOME"
 ```
 
 </div>
@@ -3827,6 +3863,19 @@ curl -sSL https://github.com/hongjr03/tinymist-nightly-installer/releases/latest
  <div style="background: #f8f9fa; padding: 15px; border-radius: 5px; margin-top: 10px; font-family: monospace;">
 
 ```sh
+export XDG_DATA_HOME="${XDG_DATA_HOME:-$HOME/.local/share}"
+export XDG_BIN_HOME="${XDG_BIN_HOME:-$HOME/.local/bin}"
+mkdir -p "$XDG_DATA_HOME/verible" "$XDG_BIN_HOME"
+cd "$XDG_DATA_HOME/verible"
+if [ ! -d .git ]; then
+  git clone https://github.com/chipsalliance/verible.git --recursive .
+else
+  git pull --rebase
+  git submodule update --init --recursive
+fi
+bazel build -c opt //...
+bazel build -c opt :install-binaries
+.github/bin/simple-install.sh "$XDG_BIN_HOME"
 ```
 
 </div>
@@ -3861,7 +3910,7 @@ pnpm add -g vim-language-server@latest
       </li>
     </ul>
   <p>
-      <a href="https://github.com/imc-trading/svlangserver">Vim LSP Reference</a>
+      <a href="https://github.com/imc-trading/svlangserver">SVLang LSP Reference</a>
     </p>
  <div style="background: #f8f9fa; padding: 15px; border-radius: 5px; margin-top: 10px; font-family: monospace;">
 
@@ -3996,10 +4045,9 @@ cargo install --git https://github.com/wgsl-analyzer/wgsl-analyzer wgsl-analyzer
  <div style="background: #f8f9fa; padding: 15px; border-radius: 5px; margin-top: 10px; font-family: monospace;">
 
 ```sh
-```
-
 git clone https://github.com/eclipse-lemminx/lemminx.git --recursive \
 cd lemminx && ./mvnw clean verify
+```
 
 </div>
   </blockquote>
@@ -4082,7 +4130,6 @@ git clone https://github.com/kristoff-it/ziggy.git && cd ziggy && zig build -Dop
 
 ```sh
 git clone https://github.com/kristoff-it/ziggy.git && cd ziggy && zig build -Doptimize=ReleaseSafe installation
-
 ```
 
 </div>

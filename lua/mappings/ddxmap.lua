@@ -159,6 +159,9 @@ function M.setup_ddxmap()
             })
             -- Press <Space> d v to enable verbose debug logging
         end,
+        vim.keymap.set('n', '<leader>S', function()
+            require('tests.selfcheck').run()
+        end, { desc = 'Run Neovim config selfcheck' }),
     })
 end
 

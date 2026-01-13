@@ -1,0 +1,5 @@
+-- init.lua
+-- Qompass AI - [ ]
+-- Copyright (C) 2026 Qompass AI, All rights reserved
+-- ----------------------------------------
+-- 'bash-debug-adapter' --outdated ---@source https://github.com/rogalmic/vscode-bash-debug

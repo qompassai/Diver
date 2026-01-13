@@ -18,7 +18,7 @@ return ---@type vim.lsp.Config
         'java',
         'javascript',
         'javascriptreact',
-        --'lua',
+        'lua',
         --'markdown',
         'php',
         --'python',
@@ -33,12 +33,44 @@ return ---@type vim.lsp.Config
     init_options = {
         checkWhileTyping = true,
         diagnosticSeverity = 'information',
-        globalConfigPath = '$XDG_CONFIG_HOME/codebook/codebook.toml',
+        --globalConfigPath = '$XDG_CONFIG_HOME/codebook/codebook.toml',
         logLevel = 'info',
     },
     root_markers = {
         '.git',
         'codebook.toml',
         '.codebook.toml',
+    },
+    settings = {
+        codebook = {
+            dictionaries = {
+                'en_us',
+            },
+            flag_words = {
+                'fixme',
+                'todo',
+            },
+            ignore_patterns = {
+                '\\b[ATCG]+\\b',
+                '\\d{3}-\\d{2}-\\d{4}',
+                '^[A-Z]{2,}$',
+                'https?://[^\\s]+',
+            },
+            min_word_length = 3,
+            use_global = true,
+            words = {
+                'astro',
+                'codebook',
+                'Codebook',
+                'fixme',
+                'gitcommit',
+                'fixme',
+                'Qompass',
+                'qompassai',
+                'rustc',
+                'todo',
+                'TODO',
+            },
+        },
     },
 }

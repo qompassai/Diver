@@ -165,3 +165,18 @@ vim.api.nvim_create_autocmd('LspAttach', {
         end
     end,
 })
+vim.api.nvim_create_autocmd('FileType', {
+    group = vim.api.nvim_create_augroup('ziggy_schema', {}),
+    pattern = 'ziggy_schema',
+    callback = function()
+        vim.lsp.start({
+            name = 'Ziggy LSP',
+            cmd = {
+                'ziggy',
+                'lsp',
+                '--schema',
+            },
+            root_dir = vim.uv.cwd(),
+        })
+    end,
+})

@@ -4,25 +4,9 @@
 -- --------------------------------------------------
 ---@meta
 ---@module 'config.cicd.ansible'
-vim.filetype.add({
-  extension = {
-    ['yaml.ansible'] = 'yaml.ansible',
-    ['yml.ansible'] = 'yaml.ansible',
-  },
-  filename = {
-    ['ansible.cfg'] = 'ansible',
-  },
-  pattern = {
-    ['.*%.ansible%.ya?ml'] = 'yaml.ansible',
-  },
-})
 local M = {}
 local augroups = {
   ansible = vim.api.nvim_create_augroup('Ansible',
-    {
-      clear = true,
-    }),
-  yaml = vim.api.nvim_create_augroup('YAML',
     {
       clear = true,
     }),

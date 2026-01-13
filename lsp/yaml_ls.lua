@@ -4,6 +4,7 @@
 ------------------------------------------------------
 return ---@type vim.lsp.Config
 {
+    capabilities = capabilities,
     cmd = {
         'yaml-language-server',
         '--stdio',
@@ -19,54 +20,52 @@ return ---@type vim.lsp.Config
         '.git',
     },
     settings = {
-        redhat = {
-            telemetry = {
-                enabled = false,
-            },
-        },
         yaml = {
+            redhat = {
+                telemetry = {
+                    enabled = false,
+                },
+            },
             completion = true,
             hover = true,
             validate = true,
             yamlVersion = '1.2',
             format = {
-                bracketSpacing = true,
                 enable = true,
+                bracketSpacing = true,
                 proseWrap = 'preserve',
                 printWidth = 80,
                 singleQuote = true,
             },
+
             schemaStore = {
                 enable = true,
                 url = 'https://www.schemastore.org/api/json/catalog.json',
             },
-        },
-        schemas = {
-            ['https://json.schemastore.org/github-workflow.json'] = '/.github/workflows/*',
-            kubernetes = {
-                '/*.k8s.yaml',
-                '/*.k8s.yml',
-                'k8s/**/*.yaml',
-                'k8s/**/*.yml',
+            schemas = {
+                ['https://json.schemastore.org/github-workflow.json'] = '/.github/workflows/*',
+                kubernetes = {
+                    '/*.k8s.yaml',
+                    '/*.k8s.yml',
+                    'k8s/**/*.yaml',
+                    'k8s/**/*.yml',
+                },
+                ['https://raw.githubusercontent.com/yannh/kubernetes-json-schema/refs/heads/master/v1.32.1-standalone-strict/all.json'] = 'helm/values*.yaml',
             },
-            ['https://raw.githubusercontent.com/yannh/kubernetes-json-schema/refs/heads/master/v1.32.1-standalone-strict/all.json'] = 'helm/values*.yaml',
+            maxItemsComputed = 5000,
+            disableDefaultProperties = false,
+            suggest = {
+                parentSkeletonSelectedFirst = false,
+            },
+            style = {
+                flowMapping = 'forbid',
+                flowSequence = 'forbid',
+            },
+            keyOrdering = true,
         },
-        maxItemsComputed = 5000,
-        disableDefaultProperties = false,
-        suggest = {
-            parentSkeletonSelectedFirst = false,
+        http = {
+            proxy = nil,
+            proxyStrictSSL = false,
         },
-        style = {
-            flowMapping = 'forbid',
-            flowSequence = 'forbid',
-        },
-        keyOrdering = false,
     },
-    http = {
-        proxy = {},
-        proxyStrictSSL = false,
-    },
-    on_init = function(client)
-        client.server_capabilities.documentFormattingProvider = true
-    end,
 }

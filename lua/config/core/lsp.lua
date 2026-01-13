@@ -276,7 +276,7 @@ vim.lsp.config( ---@type vim.lsp.Config
                 inlineCompletion = {
                     dynamicRegistration = true,
                 },
-                publishDiagnotics = {
+                publishDiagnostics = {
                     dynamicRegistration = true,
                 },
                 rename = {

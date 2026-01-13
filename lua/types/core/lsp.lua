@@ -65,23 +65,23 @@
 ---@field autoImportFileExcludePatterns?                                              string|nil
 ---@field autoImportSpecifierExcludeRegexes?                                          string|nil
 ---@field disableSuggestions?                                                         boolean
----@field importModuleSpecifierEnding?                                                'auto' | 'minimal' | 'index' | 'js'
----@field includeInlayParameterNameHints?                                             'all' | 'literals' | 'none'
----@field includePackageJsonAutoImports?                                              'auto' | 'off' | 'on'
----@field importModuleSpecifierPreference?                                            'shortest' | 'project-relative' |'relative' | 'non-relative'
----@field jsxAttributeCompletionStyle?                                                'auto' | 'braces' | 'none'
----@field organizeImportsIgnoreCase?                                                  'auto' | boolean
----@field organizeImportsCollation?                                                   'ordinal' | 'unicode'
----@field organizeImportsCaseFirst?                                                   'upper' | 'lower' | 'false'
----@field organizeImportsLocale?                                                      'auto' | 'en'
----@field organizeImportsTypeOrder?                                                   'last' | 'inline' | 'first'
----@field quotePreference?                                                            'auto' | 'double' | 'single'
+---@field importModuleSpecifierEnding?                                                'auto'|'minimal'| 'index' | 'js'
+---@field includeInlayParameterNameHints?                                             'all'|'literals'| 'none'
+---@field includePackageJsonAutoImports?                                              'auto'|'off'|'on'
+---@field importModuleSpecifierPreference?                                            'shortest'|'project-relative'|'relative'|'non-relative'
+---@field jsxAttributeCompletionStyle?                                                'auto'|'braces'| 'none'
+---@field organizeImportsIgnoreCase?                                                  'auto'|boolean
+---@field organizeImportsCollation?                                                   'ordinal'|'unicode'
+---@field organizeImportsCaseFirst?                                                   'upper'|'lower'| 'false'
+---@field organizeImportsLocale?                                                      'auto'|'en'
+---@field organizeImportsTypeOrder?                                                   'last'|'inline'|'first'
+---@field quotePreference?                                                            'auto'|'double'|'single'
 ---@class vim.lsp.Config.init_options.tsserver
 ---@field fallbackPath?                                                                string|nil
 ---@field logDirectory?                                                                string|nil
----@field logVerbosity?                                                               'off' | 'normal' | 'requestTime' | 'terse' | 'verbose'
+---@field logVerbosity?                                                               'off'|'normal'|'requestTime'|'terse'|'verbose'
 ---@field path?                                                                       string|nil
----@field trace?                                                                      'messages' | 'off' | 'verbose'
+---@field trace?                                                                      'messages'|'off'|'verbose'
 ---@field useSyntaxServer?                                                            'auto'|'never'
 ---@class vim.lsp.Config.Settings
 ---@field ansible.ansible.path?                                                       string
@@ -204,11 +204,11 @@
 ---@field ltex.java.path?                                                             string
 ---@field ltex.languageToolOrg.username?                                              string
 ---@field ltex.latex.environments?                                                     { [string]: boolean } ---object
----@field ltex.ltex_ls.logLevel?                                                      'severe' | 'warning' | 'info' | 'config' | 'fine'| 'finer' | 'finest'
+---@field ltex.ltex_ls.logLevel?                                                      'severe'|'warning'| 'info'|'config'|'fine'|'finer'|'finest'
 ---@field ltex.ltex_ls.path?                                                          string
 ---@field ltex.markdown.nodes?                                                        { [string]: boolean } ---object
 ---@field ltex.statusBarItem?                                                         boolean
----@field ltex.trace.server?                                                          'off' | 'messages' | 'verbose'
+---@field ltex.trace.server?                                                          'off'|'messages'| 'verbose'
 ---@field Lua?                                                                        table
 ---@field Lua.addonManager.enable?                                                    boolean
 ---@field Lua.addonManager.repositoryBranch?                                          string
@@ -322,12 +322,18 @@
 ---@field Lua.language.fixIndent?                                                     boolean
 ---@field Lua.misc?                                                                   table
 ---@field Lua.runtime?                                                                table
----@field Lua.runtime.fileEncoding?                                                   string
+---@field Lua.runtime.fileEncoding?                                                   'utf8'|'ansi'| 'utf16le'|'utf16be'
 ---@field Lua.runtime.meta?                                                           string
----@field Lua.runtime.nonstandardSymbol?                                              string[]
+---@field Lua.runtime.nonstandardSymbol? (
+---| '//'   | '/**/' | '`'
+---| '+='  | '-='   | '*='  | '/='  | '%='  | '^='  | '//='
+---| "|="  | '&='   | '<<=' | '>>='
+---| '||'  | '&&'
+---| '!'   | '!='
+---| 'continue')[]
 ---@field Lua.runtime.path?                                                           string[]
 ---@field Lua.runtime.unicodeName?                                                    boolean
----@field Lua.runtime.version?                                                        string
+---@field Lua.runtime.version?                                                        'Lua 5.1'|'Lua 5.2'|'Lua 5.3'|'Lua 5.4'|'LuaJIT'
 ---@field Lua.semantic?                                                               table
 ---@field Lua.semantic.annotation?                                                    boolean
 ---@field Lua.semantic.enable?                                                        boolean
@@ -375,8 +381,8 @@
 ---@field redhat.telemetry.enable?                                                    boolean
 ---@field typescript.format.baseIndentSize?                                           integer
 ---@field typescript.format.convertTabsToSpaces?                                      boolean
----@field typescript.format.indentStyle?                                              'Block' | 'None' | 'Smart'
----@field typescript.format.semicolons?                                               'ignore' | 'insert' | 'remove'
+---@field typescript.format.indentStyle?                                              'Block'|'None'|'Smart'
+---@field typescript.format.semicolons?                                               'ignore'|'insert'|'remove'
 ---@field yaml.format.enable?                                                         boolean
 ---@field yaml.format.proseWrap?                                                      'calways'|'preserve'|'never'|
 ---@field yaml.http.proxy?                                                            string

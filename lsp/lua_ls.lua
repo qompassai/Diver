@@ -44,6 +44,10 @@ return ---@type vim.lsp.Config
             diagnostics = {
                 disable = {
                     'lowercase-global',
+                    'duplicate-index',
+                    'duplicate-set-field',
+                    'duplicate-doc-alias',
+                    'duplicate-doc-field',
                 },
                 disableScheme = {
                     'git',
@@ -272,9 +276,9 @@ return ---@type vim.lsp.Config
                     '${3rd}/lazy.nvim/library',
                     '${3rd}/blink.cmp/library',
                 },
-                maxPreload = 5000, ---@type integer
-                preloadFileSize = 500, ---@type integer
-                useGitIgnore = true, ---@type boolean
+                maxPreload = 5000,
+                preloadFileSize = 500,
+                useGitIgnore = true,
                 userThirdParty = {},
             },
         },

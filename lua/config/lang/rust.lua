@@ -2,11 +2,44 @@
 -- Qompass AI Diver Rust Lang Config
 -- Copyright (C) 2025 Qompass AI, All rights reserved
 ------------------------------------------------------------
-local U = require('utils.lang.rust')
+local M = {}
+M.rust_editions = {
+    ['2021'] = '2021',
+    ['2024'] = '2024',
+}
+M.rust_toolchains = {
+    stable = 'stable',
+    nightly = 'nightly',
+    beta = 'beta',
+}
+M.rust_default_edition = '2024'
+M.rust_default_toolchain = 'nightly'
+M.current_edition = M.rust_default_edition
+M.current_toolchain = M.rust_default_toolchain
+function M.rust_edition(edition)
+    if M.rust_editions[edition] then
+        M.current_edition = edition
+        vim.echo('Rust edition set to ' .. edition, vim.log.levels.INFO)
+        vim.cmd('LspRestart')
+    else
+        vim.echo('Invalid Rust edition: ' .. tostring(edition), vim.log.levels.ERROR)
+    end
+end
+
+function M.rust_set_toolchain(tc)
+    if M.rust_toolchains[tc] then
+        M.current_toolchain = tc
+        vim.echo('Rust toolchain set to ' .. tc, vim.log.levels.INFO)
+        vim.cmd('LspRestart')
+    else
+        vim.echo('Invalid Rust toolchain: ' .. tostring(tc), vim.log.levels.ERROR)
+    end
+end
+
+function M.rust_env() end
+
 vim.api.nvim_create_autocmd('BufWritePre', {
-    pattern = {
-        '*.rs',
-    },
+    pattern = '*.rs',
     callback = function(args)
         vim.lsp.buf.format({
             bufnr = args.buf,
@@ -14,19 +47,15 @@ vim.api.nvim_create_autocmd('BufWritePre', {
         })
     end,
 })
+
 vim.api.nvim_create_autocmd('BufWritePre', {
-    pattern = {
-        '*.rs',
-    },
+    pattern = '*.rs',
     callback = function(args)
         local diagnostics = vim.diagnostic.get(args.buf)
         vim.lsp.buf.code_action({
             context = {
                 diagnostics = diagnostics,
-                only = {
-                    'source.fixAll',
-                    'source.organizeImports',
-                },
+                only = { 'source.fixAll', 'source.organizeImports' },
                 triggerKind = vim.lsp.protocol.CodeActionTriggerKind.Source,
             },
             apply = true,
@@ -37,14 +66,13 @@ vim.api.nvim_create_autocmd('BufWritePre', {
         })
     end,
 })
+
 vim.api.nvim_create_user_command('RustQuickfix', function()
     local diagnostics = vim.diagnostic.get(0)
     vim.lsp.buf.code_action({
         context = {
             diagnostics = diagnostics,
-            only = {
-                'quickfix',
-            },
+            only = { 'quickfix' },
             triggerKind = vim.lsp.protocol.CodeActionTriggerKind.Invoked,
         },
         apply = true,
@@ -54,6 +82,7 @@ vim.api.nvim_create_user_command('RustQuickfix', function()
         end,
     })
 end, {})
+
 vim.api.nvim_create_user_command('RustCodeAction', function()
     local diagnostics = vim.diagnostic.get(0)
     vim.lsp.buf.code_action({
@@ -73,6 +102,7 @@ vim.api.nvim_create_user_command('RustCodeAction', function()
         apply = true,
     })
 end, {})
+
 vim.api.nvim_create_user_command('RustRangeAction', function()
     local bufnr = 0
     local diagnostics = vim.diagnostic.get(bufnr)
@@ -81,10 +111,7 @@ vim.api.nvim_create_user_command('RustRangeAction', function()
     vim.lsp.buf.code_action({
         context = {
             diagnostics = diagnostics,
-            only = {
-                'quickfix',
-                'refactor.extract',
-            },
+            only = { 'quickfix', 'refactor.extract' },
         },
         range = {
             start = { start_pos[1], start_pos[2] },
@@ -97,6 +124,7 @@ vim.api.nvim_create_user_command('RustRangeAction', function()
         apply = false,
     })
 end, { range = true })
+
 vim.api.nvim_create_user_command('RustCheck', function()
     vim.fn.jobstart({ 'cargo', 'check' }, {
         stdout_buffered = true,
@@ -108,17 +136,15 @@ vim.api.nvim_create_user_command('RustCheck', function()
             local out = table.concat(data, '')
             if out ~= '' then
                 vim.schedule(function()
-                    vim.notify('cargo check: ' .. out, vim.log.levels.WARN)
+                    vim.echo('cargo check: ' .. out, vim.log.levels.WARN)
                 end)
             end
         end,
     })
 end, {})
+
 vim.api.nvim_create_user_command('RustClippy', function()
-    vim.fn.jobstart({
-        'cargo',
-        'clippy',
-    }, {
+    vim.fn.jobstart({ 'cargo', 'clippy' }, {
         stdout_buffered = true,
         stderr_buffered = true,
         on_stderr = function(_, data, _)
@@ -128,22 +154,18 @@ vim.api.nvim_create_user_command('RustClippy', function()
             local out = table.concat(data, '')
             if out ~= '' then
                 vim.schedule(function()
-                    vim.notify('cargo clippy: ' .. out, vim.log.levels.WARN)
+                    vim.echo('cargo clippy: ' .. out, vim.log.levels.WARN)
                 end)
             end
         end,
     })
 end, {})
-
-U.rust_env()
-local M = {}
+M.rust_env()
 function M.rust_autocmds()
     vim.api.nvim_create_autocmd('BufWritePre', {
         pattern = '*.rs',
         callback = function()
-            vim.lsp.buf.format({
-                async = true,
-            })
+            vim.lsp.buf.format({ async = true })
         end,
     })
     vim.api.nvim_create_autocmd('FileType', {
@@ -154,43 +176,6 @@ function M.rust_autocmds()
                 rustmap.setup()
             end
         end,
-    })
-end
-
-function M.rust_cfg(opts)
-    opts = opts or {}
-    U.rust_auto_toolchain()
-    M.rust_dap()
-    M.rust_crates()
-    vim.api.nvim_create_user_command('RustEdition', function(o)
-        U.rust_edition(o.args)
-    end, {
-        nargs = 1,
-        complete = function()
-            return vim.tbl_keys(U.rust_editions)
-        end,
-    })
-    vim.api.nvim_create_user_command('RustToolchain', function(o)
-        U.rust_set_toolchain(o.args)
-    end, {
-        nargs = 1,
-        complete = function()
-            return vim.tbl_keys(U.rust_toolchains)
-        end,
-    })
-    vim.keymap.set('n', '<leader>re', function()
-        vim.ui.select(vim.tbl_keys(U.rust_editions), {
-            prompt = 'Select Rust edition',
-        }, U.rust_edition)
-    end, {
-        desc = 'Rust: select edition',
-    })
-    vim.keymap.set('n', '<leader>rt', function()
-        vim.ui.select(vim.tbl_keys(U.rust_toolchains), {
-            prompt = 'Select Rust toolchain',
-        }, U.rust_set_toolchain)
-    end, {
-        desc = 'Rust: select toolchain',
     })
 end
 
@@ -235,10 +220,7 @@ function M.rust_dap()
         port = '${port}',
         executable = {
             command = vim.fn.exepath('codelldb') or '/usr/bin/codelldb',
-            args = {
-                '--port',
-                '${port}',
-            },
+            args = { '--port', '${port}' },
         },
     }
     dap.configurations.rust = {
@@ -259,6 +241,40 @@ function M.rust_dap()
     end
 end
 
+function M.rust_cfg(opts)
+    opts = opts or {}
+    M.rust_auto_toolchain()
+    M.rust_dap()
+    M.rust_crates()
+    vim.api.nvim_create_user_command('RustEdition', function(o)
+        M.rust_edition(o.args)
+    end, {
+        nargs = 1,
+        complete = function()
+            return vim.tbl_keys(M.rust_editions)
+        end,
+    })
+    vim.api.nvim_create_user_command('RustToolchain', function(o)
+        M.rust_set_toolchain(o.args)
+    end, {
+        nargs = 1,
+        complete = function()
+            return vim.tbl_keys(M.rust_toolchains)
+        end,
+    })
+    vim.keymap.set('n', '<leader>re', function()
+        vim.ui.select(vim.tbl_keys(M.rust_editions), {
+            prompt = 'Select Rust edition',
+        }, M.rust_edition)
+    end, { desc = 'Rust: select edition' })
+
+    vim.keymap.set('n', '<leader>rt', function()
+        vim.ui.select(vim.tbl_keys(M.rust_toolchains), {
+            prompt = 'Select Rust toolchain',
+        }, M.rust_set_toolchain)
+    end, { desc = 'Rust: select toolchain' })
+end
+
 function M.rust_rustacean(capabilities)
     return {
         tools = {
@@ -266,7 +282,7 @@ function M.rust_rustacean(capabilities)
                 border = 'rounded',
             },
         },
-        server = U.rust_lsp(M.rust_on_attach, capabilities or U.rust_cmp()),
+        server = M.rust_lsp(M.rust_on_attach, capabilities or M.rust_cmp()),
     }
 end
 
