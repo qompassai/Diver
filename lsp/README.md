@@ -1080,6 +1080,16 @@ go install github.com/opentofu/tofu-ls@latest
       <li>
         <a href="https://github.com/qompassai/diver/blob/main/lsp/dot_ls.lua">dot_ls</a>
       </li>
+             <p>
+      <a href="https://github.com/nikeee/dot-language-server">DTS LSP Reference</a>
+    </p>
+ <div style="background: #f8f9fa; padding: 15px; border-radius: 5px; margin-top: 10px; font-family: monospace;">
+
+```sh
+pnpm add -g dot-language-server@latest
+```
+
+</div>
     </ul>
   </blockquote>
 </details>
@@ -1151,9 +1161,38 @@ cargo install --git https://github.com/igor-prusov/dts-lsp
       <li>
         <a href="https://github.com/qompassai/diver/blob/main/lsp/elixir_ls.lua">elixir_ls</a>
       </li>
+            <p>
+      <a href=" https://github.com/elixir-lsp/elixir-ls.git">Elixir LSP Reference</a>
+    </p>
+ <div style="background: #f8f9fa; padding: 15px; border-radius: 5px; margin-top: 10px; font-family: monospace;">
+
+```bash
+curl https://elixir-lang.org/install.sh -o /tmp/elixir-install.sh
+sh /tmp/elixir-install.sh \
+  -y \
+  --install-dir "${XDG_DATA_HOME:-$HOME/.local/share}/elixir-install"
+```
+
+</div>
       <li>
         <a href="https://github.com/qompassai/diver/blob/main/lsp/expert_ls.lua">expert_ls</a>
       </li>
+      <p>
+      <a href="https://github.com/elm-tooling/https://github.com/elixir-expert/expert.git">Expert LSP Reference</a>
+    </p>
+ <div style="background: #f8f9fa; padding: 15px; border-radius: 5px; margin-top: 10px; font-family: monospace;">
+
+```bash
+git clone https://github.com/elixir-expert/expert.git \
+  "${XDG_DATA_HOME:-$HOME/.local/share}/expert/src"
+cd "${XDG_DATA_HOME:-$HOME/.local/share}/expert/src"
+mix deps.get
+mix compile
+MIX_ENV=prod mix release \
+  --path "${XDG_DATA_HOME:-$HOME/.local/share}/expert/release"
+```
+
+</div>
     </ul>
   </blockquote>
 </details>
@@ -1222,6 +1261,16 @@ opam install fstar
       <li>
         <a href="https://github.com/qompassai/diver/blob/main/lsp/fennel_ls.lua">fennel_ls</a>
       </li>
+        <p>
+      <a href="https://sr.ht/~xerool/fennel-ls/">Fennel LSP Reference</a>
+    </p>
+ <div style="background: #f8f9fa; padding: 15px; border-radius: 5px; margin-top: 10px; font-family: monospace;">
+
+```bash
+luarocks --lua-version=5.1 install fennel-ls
+```
+
+</div>
     </ul>
   </blockquote>
 </details>
@@ -1238,6 +1287,16 @@ opam install fstar
       <li>
         <a href="https://github.com/qompassai/diver/blob/main/lsp/fsautocomplete_ls.lua">fsautocomplete_ls</a>
       </li>
+                         <p>
+      <a href="https://github.com/fsharp/FsAutoComplete">F# AutoComplete LSP Reference</a>
+    </p>
+ <div style="background: #f8f9fa; padding: 15px; border-radius: 5px; margin-top: 10px; font-family: monospace;">
+
+```bash
+dotnet tool install --global fsautocomplete
+```
+
+</div>
     </ul>
   </blockquote>
 </details>

@@ -2,21 +2,19 @@
 -- Qompass AI F# AutoComplete LSP Spec
 -- Copyright (C) 2025 Qompass AI, All rights reserved
 -- ---------------------------------------------------
--- References:  https://github.com/ionide/FsAutoComplete?tab=readme-ov-file#settings
--- dotnet tool install --global fsautocomplete
----@type vim.lsp.Config
-return {
-    cmd = { ---@type string[]
+return ---@type vim.lsp.Config
+{
+    cmd = {
         'fsautocomplete',
         '--adaptive-lsp-server-enabled',
     },
     filetypes = {
         'fsharp',
     },
-    init_options = { ---@type boolean[]
+    init_options = {
         AutomaticWorkspaceInit = true,
     },
-    root_markers = { ---@type string[]
+    root_markers = {
         '*.fsproj',
         '.git',
         '*.sln',
