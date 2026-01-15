@@ -1,18 +1,21 @@
 -- /qompassai/Diver/lsp/gleam_ls.lua
--- Qompass AI Gleam LSP Config
+-- Qompass AI Diver Gleam LSP Config
 -- Copyright (C) 2025 Qompass AI, All rights reserved
 -- --------------------------------------------------
----@type vim.lsp.Config
-return {
-    cmd = { ---@type string[]
+return ---@type vim.lsp.Config
+{
+    cmd = {
         'gleam',
         'lsp',
     },
-    filetypes = { ---@type string[]
+    filetypes = {
         'gleam',
     },
-    root_markers = { ---@type string[]
+    root_markers = {
         'gleam.toml',
         '.git',
+    },
+    settings = {
+        gleam = {},
     },
 }

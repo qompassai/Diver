@@ -1252,14 +1252,39 @@ opam install fstar
   <blockquote style="font-size: 1.2em; line-height: 1.8; padding: 25px; background: #f8f9fa; border-left: 6px solid #667eea; border-radius: 8px; margin: 15px 0; box-shadow: 0 2px 8px rgba(0,0,0,0.1);">
     <ul>
       <li>
-        <a href="https://github.com/qompassai/diver/blob/main/lsp/actionlint_ls.lua">actionlint_ls</a>
-      </li>
-      <li>
         <a href="https://github.com/qompassai/diver/blob/main/lsp/ghactions_ls.lua">ghactions_ls</a>
       </li>
+                   <p>
+      <a href="https://github.com/gleam-lang/gleam">Gleam LSP Reference</a>
+    </p>
+ <div style="background: #f8f9fa; padding: 15px; border-radius: 5px; margin-top: 10px; font-family: monospace;">
+
+```bash
+XDG_DATA_HOME="${XDG_DATA_HOME:-"$HOME/.local/share"}"
+XDG_BIN_HOME="${XDG_BIN_HOME:-"$HOME/.local/bin"}"
+mkdir -p "$XDG_DATA_HOME" "$XDG_BIN_HOME"
+cd "$XDG_DATA_HOME"
+git clone https://github.com/gleam-lang/gleam.git --branch "$THE_LATEST_VERSION"
+cd gleam
+export CARGO_HOME="${XDG_DATA_HOME}/cargo"
+mkdir -p "$CARGO_HOME"
+make install PREFIX="$HOME/.local"
+```
+
+</div>
       <li>
         <a href="https://github.com/qompassai/diver/blob/main/lsp/gitlabci_ls.lua">gitlabci_ls</a>
       </li>
+             <p>
+      <a href="https://github.com/alesbrelih/gitlab-ci-ls">Gitlab CI LSP Reference</a>
+    </p>
+ <div style="background: #f8f9fa; padding: 15px; border-radius: 5px; margin-top: 10px; font-family: monospace;">
+
+```bash
+cargo install --git https://github.com/alesbrelih/gitlab-ci-ls.git
+```
+
+</div>
     </ul>
   </blockquote>
 </details>
@@ -1276,6 +1301,24 @@ opam install fstar
       <li>
         <a href="https://github.com/qompassai/diver/blob/main/lsp/gleam_ls.lua">gleam_ls</a>
       </li>
+       <p>
+      <a href="https://github.com/gleam-lang/gleam">Gleam LSP Reference</a>
+    </p>
+ <div style="background: #f8f9fa; padding: 15px; border-radius: 5px; margin-top: 10px; font-family: monospace;">
+
+```bash
+XDG_DATA_HOME="${XDG_DATA_HOME:-"$HOME/.local/share"}"
+XDG_BIN_HOME="${XDG_BIN_HOME:-"$HOME/.local/bin"}"
+mkdir -p "$XDG_DATA_HOME" "$XDG_BIN_HOME"
+cd "$XDG_DATA_HOME"
+git clone https://github.com/gleam-lang/gleam.git --branch "$THE_LATEST_VERSION"
+cd gleam
+export CARGO_HOME="${XDG_DATA_HOME}/cargo"
+mkdir -p "$CARGO_HOME"
+make install PREFIX="$HOME/.local"
+```
+
+</div>
     </ul>
   </blockquote>
 </details>
@@ -1292,6 +1335,26 @@ opam install fstar
       <li>
         <a href="https://github.com/qompassai/diver/blob/main/lsp/glslana_ls.lua">glslana_ls</a>
       </li>
+            <p>
+      <a href="https://github.com/nolanderc/glsl_analyzer">GLSL Analyzer LSP Reference</a>
+    </p>
+ <div style="background: #f8f9fa; padding: 15px; border-radius: 5px; margin-top: 10px; font-family: monospace;">
+
+```bash
+XDG_DATA_HOME="${XDG_DATA_HOME:-"$HOME/.local/share"}"
+XDG_BIN_HOME="${XDG_BIN_HOME:-"$HOME/.local/bin"}"
+mkdir -p "$XDG_DATA_HOME" "$XDG_BIN_HOME"
+export ZVM_INSTALL="$XDG_DATA_HOME/zvm"
+export PATH="$ZVM_INSTALL/bin:$PATH"
+zvm upgrade
+zvm install 0.14.0
+cd "$XDG_DATA_HOME"
+git clone https://github.com/nolanderc/glsl_analyzer.git --recursive
+cd glsl_analyzer
+zvm run 0.14.0 build install -Doptimize=ReleaseSafe --prefix "$HOME/.local"
+```
+
+</div>
     </ul>
   </blockquote>
 </details>
@@ -1306,11 +1369,31 @@ opam install fstar
   <blockquote style="font-size: 1.2em; line-height: 1.8; padding: 25px; background: #f8f9fa; border-left: 6px solid #667eea; border-radius: 8px; margin: 15px 0; box-shadow: 0 2px 8px rgba(0,0,0,0.1);">
     <ul>
       <li>
-        <a href="https://github.com/qompassai/diver/blob/main/lsp/golangcilint_ls.lua">golantcilint_ls</a>
+        <a href="https://github.com/qompassai/diver/blob/main/lsp/golangcilint_ls.lua">golangcilint_ls</a>
       </li>
+            <p>
+      <a href="https://github.com/nametake/golangci-lint-langserver">Golang CI Lint LSP Reference</a>
+    </p>
+ <div style="background: #f8f9fa; padding: 15px; border-radius: 5px; margin-top: 10px; font-family: monospace;">
+
+```bash
+go install github.com/golangci/golangci-lint/cmd/golangci-lint@latest && go install github.com/nametake/golangci-lint-langserver@latest
+```
+
+</div>
       <li>
         <a href="https://github.com/qompassai/diver/blob/main/lsp/gop_ls.lua">gop_ls</a>
       </li>
+       <p>
+      <a href="https://github.com/golang/tools/tree/master/gopls">GoPls LSP Reference</a>
+    </p>
+ <div style="background: #f8f9fa; padding: 15px; border-radius: 5px; margin-top: 10px; font-family: monospace;">
+
+```bash
+go install golang.org/x/tools/gopls@latest
+```
+
+</div>
     </ul>
   </blockquote>
 </details>
@@ -1327,9 +1410,55 @@ opam install fstar
       <li>
         <a href="https://github.com/qompassai/diver/blob/main/lsp/gdscript_ls.lua">gdscript_ls</a>
       </li>
+            <p>
+      <a href=" https://github.com/godotengine/godot">Gdscript LSP Reference</a>
+    </p>
+ <div style="background: #f8f9fa; padding: 15px; border-radius: 5px; margin-top: 10px; font-family: monospace;">
+
+```bash
+XDG_DATA_HOME="${XDG_DATA_HOME:-"$HOME/.local/share"}"
+XDG_BIN_HOME="${XDG_BIN_HOME:-"$HOME/.local/bin"}"
+mkdir -p "$XDG_DATA_HOME/godot" "$XDG_BIN_HOME"
+cd "$XDG_DATA_HOME/godot"
+curl -L "https://downloads.godotengine.org/?version=4.5.1&flavor=stable&slug=linux.x86_64.zip&platform=linux.64" \
+  -o godot-4.5.1-linux.x86_64.zip
+unzip godot-4.5.1-linux.x86_64.zip
+rm godot-4.5.1-linux.x86_64.zip
+chmod +x Godot_v4.5.1-stable_linux.x86_64
+mv Godot_v4.5.1-stable_linux.x86_64 godot
+cat > "$XDG_BIN_HOME/godot" <<'EOF'
+#!/usr/bin/env bash
+XDG_DATA_HOME="${XDG_DATA_HOME:-"$HOME/.local/share"}"
+exec "$XDG_DATA_HOME/godot/godot" --single-window "$@"
+EOF
+chmod +x "$XDG_BIN_HOME/godot"
+mkdir -p "$HOME/.local/share/applications"
+cat > "$HOME/.local/share/applications/godot.desktop" <<EOF
+[Desktop Entry]
+Name=Godot
+Exec=$XDG_BIN_HOME/godot
+Terminal=false
+Type=Application
+Icon=$XDG_DATA_HOME/godot/icon.png
+Categories=Development;Game;
+EOF
+update-desktop-database "$HOME/.local/share/applications" 2>/dev/null || true
+```
+
+</div>
       <li>
         <a href="https://github.com/qompassai/diver/blob/main/lsp/gdshader_ls.lua">gdshader_ls</a>
       </li>
+        <p>
+      <a href="https://github.com/GodOfAvacyn/gdshader-lsp">Gdscript LSP Reference</a>
+    </p>
+ <div style="background: #f8f9fa; padding: 15px; border-radius: 5px; margin-top: 10px; font-family: monospace;">
+
+```bash
+cargo install --git https://github.com/GodOfAvacyn/gdshader-lsp && luarocks --lua-version=5.1 install tree-sitter-gdshader
+```
+
+</div>
     </ul>
   </blockquote>
 </details>
@@ -1346,6 +1475,16 @@ opam install fstar
       <li>
         <a href="https://github.com/qompassai/diver/blob/main/lsp/graphql_ls.lua">graphql_ls</a>
       </li>
+        <p>
+      <a href="https://github.com/graphql/graphiql/tree/main/packages/graphql-language-service-cli">Graphql LSP Reference</a>
+    </p>
+ <div style="background: #f8f9fa; padding: 15px; border-radius: 5px; margin-top: 10px; font-family: monospace;">
+
+```bash
+pnpm add -g graphql-language-service-cli@latest graphql@latest
+```
+
+</div>
     </ul>
   </blockquote>
 </details>
@@ -1362,6 +1501,23 @@ opam install fstar
       <li>
         <a href="https://github.com/qompassai/diver/blob/main/lsp/groovy_ls.lua">groovy_ls</a>
       </li>
+          <p>
+      <a href="https://github.com/prominic/groovy-language-server.git">Groovy LSP Reference</a>
+    </p>
+ <div style="background: #f8f9fa; padding: 15px; border-radius: 5px; margin-top: 10px; font-family: monospace;">
+
+```bash
+git clone https://github.com/GroovyLanguageServer/groovy-language-server.git --recursive
+cd groovy-language-server
+./gradlew build
+XDG_DATA_HOME="${XDG_DATA_HOME:-"$HOME/.local/share"}"
+XDG_BIN_HOME="${XDG_BIN_HOME:-"$HOME/.local/bin"}"
+mkdir -p "$XDG_DATA_HOME/groovy-language-server" "$XDG_BIN_HOME"
+cp build/libs/groovy-language-server-all.jar \
+   "$XDG_DATA_HOME/groovy-language-server/groovy-language-server-all.jar"
+```
+
+</div>
     </ul>
   </blockquote>
 </details>
@@ -1378,6 +1534,22 @@ opam install fstar
       <li>
         <a href="https://github.com/qompassai/diver/blob/main/lsp/helm_ls.lua">helm_ls</a>
       </li>
+           <p>
+      <a href="https://pkg.go.dev/github.com/mrjosh/helm-ls">Helm LSP Reference</a>
+    </p>
+ <div style="background: #f8f9fa; padding: 15px; border-radius: 5px; margin-top: 10px; font-family: monospace;">
+
+```bash
+OS=linux
+ARCH=amd64
+XDG_BIN_HOME="${XDG_BIN_HOME:-"$HOME/.local/bin"}"
+mkdir -p "$XDG_BIN_HOME"
+curl -L "https://github.com/mrjosh/helm-ls/releases/download/master/helm_ls_${OS}_${ARCH}" \
+  --output "${XDG_BIN_HOME}/helm_ls"
+chmod +x "${XDG_BIN_HOME}/helm_ls"
+```
+
+</div>
     </ul>
   </blockquote>
 </details>
@@ -1394,7 +1566,6 @@ opam install fstar
       <li>
         <a href="https://github.com/qompassai/diver/blob/main/lsp/herb_ls.lua">herb_ls</a>
       </li>
-    </ul>
         <p>
       <a href="https://github.com/urbit/hoon-language-server">Herb LSP Reference</a>
     </p>
@@ -1405,6 +1576,7 @@ pnpm add -g @herb-tools/language-server@latest
 ```
 
 </div>
+</ul>
   </blockquote>
 </details>
 <details>
@@ -1420,17 +1592,17 @@ pnpm add -g @herb-tools/language-server@latest
       <li>
         <a href="https://github.com/qompassai/diver/blob/main/lsp/hoon_ls.lua">hoon_ls</a>
       </li>
-    </ul>
       <p>
       <a href="https://github.com/urbit/hoon-language-server">Hoon LSP Reference</a>
     </p>
  <div style="background: #f8f9fa; padding: 15px; border-radius: 5px; margin-top: 10px; font-family: monospace;">
 
-```sh
+```bash
 pnpm add -g @urbit/hoon-language-server@latest
 ```
 
 </div>
+</ul>
   </blockquote>
 </details>
     <details>
@@ -1621,7 +1793,7 @@ go install github.com/ThreeFx/isabelle-lsp@latest
     </p>
  <div style="background: #f8f9fa; padding: 15px; border-radius: 5px; margin-top: 10px; font-family: monospace;">
 
-```sh
+```bash
 # Having janet and jpm already installed
 git clone https://github.com/CFiggers/janet-lsp --recursive \
 cd janet-lsp \
@@ -1645,9 +1817,148 @@ sudo jpm install
       <li>
         <a href="https://github.com/qompassai/diver/blob/main/lsp/java_ls.lua">java_ls</a>
       </li>
+        <p>
+      <a href="https://github.com/georgewfraser/java-language-server">Java LSP Reference</a>
+    </p>
+ <div style="background: #f8f9fa; padding: 15px; border-radius: 5px; margin-top: 10px; font-family: monospace;">
+
+```bash
+XDG_DATA_HOME="${XDG_DATA_HOME:-"$HOME/.local/share"}"
+XDG_BIN_HOME="${XDG_BIN_HOME:-"$HOME/.local/bin"}"
+JLS_DIR="${XDG_DATA_HOME}/java-language-server"
+BIN_DIR="${XDG_BIN_HOME}"
+REPO_URL="https://github.com/georgewfraser/java-language-server.git"
+mkdir -p "${JLS_DIR}" "${BIN_DIR}"
+if [ ! -d "${JLS_DIR}/.git" ]; then
+  git clone "${REPO_URL}" --recursive "${JLS_DIR}"
+else
+  cd "${JLS_DIR}"
+  git pull --ff-only
+fi
+cd "${JLS_DIR}"
+./scripts/download_linux.sh
+./scripts/link_linux.sh
+mvn package -DskipTests
+WRAPPER="${BIN_DIR}/java-language-server"
+cat > "${WRAPPER}" <<EOF
+#!/usr/bin/env sh
+exec "${JLS_DIR}/dist/lang_server_linux.sh" "\$@"
+EOF
+chmod +x "${WRAPPER}"
+if [ -f "${HOME}/.bashrc" ]; then
+  if ! grep -q 'XDG_BIN_HOME' "${HOME}/.bashrc"; then
+    {
+      printf '\n# Add XDG_BIN_HOME to PATH (java-language-server installer)\n'
+      printf 'export XDG_BIN_HOME="${XDG_BIN_HOME:-$HOME/.local/bin}"\n'
+      printf 'export PATH="$XDG_BIN_HOME:$PATH"\n'
+    } >> "${HOME}/.bashrc"
+    echo "Updated ~/.bashrc to include XDG_BIN_HOME on PATH."
+  fi
+fi
+FISH_CONFIG_DIR="${HOME}/.config/fish"
+mkdir -p "${FISH_CONFIG_DIR}"
+FISH_CONFIG="${FISH_CONFIG_DIR}/config.fish"
+if [ -f "${FISH_CONFIG}" ]; then
+  if ! grep -q 'XDG_BIN_HOME' "${FISH_CONFIG}"; then
+    {
+      printf '\n# Add XDG_BIN_HOME to PATH (java-language-server installer)\n'
+      printf 'set -q XDG_BIN_HOME; or set -Ux XDG_BIN_HOME $HOME/.local/bin\n'
+      printf 'set -U fish_user_paths $XDG_BIN_HOME $fish_user_paths\n'
+    } >> "${FISH_CONFIG}"
+    echo "Updated ${FISH_CONFIG} to include XDG_BIN_HOME on PATH."
+  fi
+else
+  {
+    printf '# Add XDG_BIN_HOME to PATH (java-language-server installer)\n'
+    printf 'set -q XDG_BIN_HOME; or set -Ux XDG_BIN_HOME $HOME/.local/bin\n'
+    printf 'set -U fish_user_paths $XDG_BIN_HOME $fish_user_paths\n'
+  } > "${FISH_CONFIG}"
+fi
+```
+
+
+</div>
       <li>
         <a href="https://github.com/qompassai/diver/blob/main/lsp/jdt_ls.lua">jdt_ls</a>
       </li>
+             <p>
+      <a href=" https://github.com/uros-5/jinja-lsp">JDT LSP Reference</a>
+    </p>
+ <div style="background: #f8f9fa; padding: 15px; border-radius: 5px; margin-top: 10px; font-family: monospace;">
+
+```bash
+XDG_DATA_HOME="${XDG_DATA_HOME:-"$HOME/.local/share"}"
+XDG_BIN_HOME="${XDG_BIN_HOME:-"$HOME/.local/bin"}"
+JDTLS_DIR="${XDG_DATA_HOME}/jdtls"
+BIN_DIR="${XDG_BIN_HOME}"
+JDTLS_URL="http://download.eclipse.org/jdtls/snapshots/jdt-language-server-latest.tar.gz"  # [1][web:48][web:51]
+mkdir -p "${JDTLS_DIR}" "${BIN_DIR}"
+TMP_TAR="$(mktemp /tmp/jdtls.XXXXXX.tar.gz)"
+curl -sSfL "${JDTLS_URL}" -o "${TMP_TAR}"
+rm -rf "${JDTLS_DIR:?}"/*
+tar -xzf "${TMP_TAR}" -C "${JDTLS_DIR}"
+rm -f "${TMP_TAR}"
+LAUNCHER_JAR="$(printf '%s\n' "${JDTLS_DIR}"/plugins/org.eclipse.equinox.launcher_*.jar | head -n1)"
+if [ ! -f "${LAUNCHER_JAR}" ]; then
+  echo "Could not find Equinox launcher jar in ${JDTLS_DIR}/plugins" >&2
+  exit 1
+fi
+JDTLS_DATA_DIR="${XDG_DATA_HOME}/jdtls-workspaces"
+mkdir -p "${JDTLS_DATA_DIR}"
+WRAPPER="${BIN_DIR}/jdtls"
+cat > "${WRAPPER}" <<EOF
+#!/usr/bin/env sh
+XDG_DATA_HOME="\${XDG_DATA_HOME:-"\$HOME/.local/share"}"
+JDTLS_DIR="${JDTLS_DIR}"
+LAUNCHER_JAR="${LAUNCHER_JAR}"
+JDTLS_DATA_DIR="\${JDTLS_DATA_DIR:-"${JDTLS_DATA_DIR}"}"
+JAVA_BIN="\${JAVA_BIN:-java}"
+exec "\$JAVA_BIN" \\
+  -Declipse.application=org.eclipse.jdt.ls.core.id1 \\
+  -Dosgi.bundles.defaultStartLevel=4 \\
+  -Declipse.product=org.eclipse.jdt.ls.core.product \\
+  -Dlog.protocol=true \\
+  -Dlog.level=ALL \\
+  -Xms1G \\
+  -Xmx2G \\
+  --add-modules=ALL-SYSTEM \\
+  --add-opens java.base/java.util=ALL-UNNAMED \\
+  --add-opens java.base/java.lang=ALL-UNNAMED \\
+  -jar "\$LAUNCHER_JAR" \\
+  -configuration "\$JDTLS_DIR/config_linux" \\
+  -data "\$JDTLS_DATA_DIR/\${PWD##*/}"
+EOF
+chmod +x "${WRAPPER}"
+if [ -f "${HOME}/.bashrc" ]; then
+  if ! grep -q 'XDG_BIN_HOME' "${HOME}/.bashrc"; then
+    {
+      printf '\n# Add XDG_BIN_HOME to PATH (Eclipse JDT LS installer)\n'
+      printf 'export XDG_BIN_HOME="${XDG_BIN_HOME:-$HOME/.local/bin}"\n'
+      printf 'export PATH="$XDG_BIN_HOME:$PATH"\n'
+    } >> "${HOME}/.bashrc"
+  fi
+fi
+FISH_CONFIG_DIR="${HOME}/.config/fish"
+mkdir -p "${FISH_CONFIG_DIR}"
+FISH_CONFIG="${FISH_CONFIG_DIR}/config.fish"
+if [ -f "${FISH_CONFIG}" ]; then
+  if ! grep -q 'XDG_BIN_HOME' "${FISH_CONFIG}"; then
+    {
+      printf '\n# Add XDG_BIN_HOME to PATH (Eclipse JDT LS installer)\n'
+      printf 'set -q XDG_BIN_HOME; or set -Ux XDG_BIN_HOME $HOME/.local/bin\n'
+      printf 'set -U fish_user_paths $XDG_BIN_HOME $fish_user_paths\n'
+    } >> "${FISH_CONFIG}"
+  fi
+else
+  {
+    printf '# Add XDG_BIN_HOME to PATH (Eclipse JDT LS installer)\n'
+    printf 'set -q XDG_BIN_HOME; or set -Ux XDG_BIN_HOME $HOME/.local/bin\n'
+    printf 'set -U fish_user_paths $XDG_BIN_HOME $fish_user_paths\n'
+  } > "${FISH_CONFIG}"
+fi
+```
+
+</div>
     </ul>
   </blockquote>
 </details>
@@ -1668,7 +1979,7 @@ sudo jpm install
     </p>
  <div style="background: #f8f9fa; padding: 15px; border-radius: 5px; margin-top: 10px; font-family: monospace;">
 
-```sh
+```bash
 pnpm add -D -E @biomejs/biome@latest
 ```
 
@@ -1681,7 +1992,7 @@ pnpm add -D -E @biomejs/biome@latest
     </p>
  <div style="background: #f8f9fa; padding: 15px; border-radius: 5px; margin-top: 10px; font-family: monospace;">
 
-```sh
+```bash
 pnpm add -D -E eslint@latest
 ```
 
@@ -1754,8 +2065,7 @@ pnpm add -D -E @marko/language-server@latest
       <li>
         <a href="https://github.com/qompassai/diver/blob/main/lsp/jinja_ls.lua">jinja_ls</a>
       </li>
-    </ul>
-          <p>
+       <p>
       <a href=" https://github.com/uros-5/jinja-lsp">Jinja LSP Reference</a>
     </p>
  <div style="background: #f8f9fa; padding: 15px; border-radius: 5px; margin-top: 10px; font-family: monospace;">
@@ -1765,6 +2075,7 @@ cargo install jinja --git https://github.com/uros-5/jinja-lsp jinja-lsp
 ```
 
 </div>
+    </ul>
   </blockquote>
 </details>
 <details>
@@ -1780,6 +2091,16 @@ cargo install jinja --git https://github.com/uros-5/jinja-lsp jinja-lsp
       <li>
         <a href="https://github.com/qompassai/diver/blob/main/lsp/jq_ls.lua">jq_ls</a>
       </li>
+        <p>
+      <a href="https://github.com/wader/jq-lsp">JQ LSP Reference</a>
+    </p>
+ <div style="background: #f8f9fa; padding: 15px; border-radius: 5px; margin-top: 10px; font-family: monospace;">
+
+```sh
+go install github.com/wader/jq-lsp@latest
+```
+
+</div>
     </ul>
   </blockquote>
 </details>
@@ -1862,9 +2183,165 @@ cargo install jinja --git https://github.com/uros-5/jinja-lsp jinja-lsp
        <li>
         <a href="https://github.com/qompassai/diver/blob/main/lsp/ltex_plus_ls.lua">ltex_plus_ls</a>
       </li>
+      <p>
+      <a href="https://github.com/ltex-plus/ltex-ls-plus">Stylua LSP Reference</a>
+    </p>
+ <div style="background: #f8f9fa; padding: 15px; border-radius: 5px; margin-top: 10px; font-family: monospace;">
+
+```sh
+# XDG locations (user-local)
+XDG_DATA_HOME="${XDG_DATA_HOME:-"$HOME/.local/share"}"
+XDG_BIN_HOME="${XDG_BIN_HOME:-"$HOME/.local/bin"}"
+
+LSP_DATA_DIR="${XDG_DATA_HOME}/lsp-ltex-plus"
+BIN_DIR="${XDG_BIN_HOME}"
+
+REPO="ltex-plus/ltex-ls-plus"
+
+# Latest release tag
+LATEST_TAG="$(curl -sSfL "https://api.github.com/repos/${REPO}/releases/latest" \
+  | grep -Eo '"tag_name":\s*"[^"]+"' \
+  | sed -E 's/.*"([^"]+)".*/\1/')"
+
+OS="linux"      # change if needed
+ARCH="x64"      # change if needed
+
+ARCHIVE_NAME="ltex-ls-plus-${LATEST_TAG}-${OS}-${ARCH}.tar.gz"
+INSTALL_DIR="${LSP_DATA_DIR}/${LATEST_TAG}"
+
+echo "Installing ltex-ls-plus ${LATEST_TAG} to ${INSTALL_DIR}"
+
+mkdir -p "${LSP_DATA_DIR}" "${BIN_DIR}"
+
+curl -sSfL "https://github.com/${REPO}/releases/download/${LATEST_TAG}/${ARCHIVE_NAME}" \
+  -o "/tmp/${ARCHIVE_NAME}"
+
+rm -rf "${INSTALL_DIR}"
+mkdir -p "${INSTALL_DIR}"
+tar -xzf "/tmp/${ARCHIVE_NAME}" -C "${INSTALL_DIR}"
+
+# Locate the binary
+if [ -x "${INSTALL_DIR}/bin/ltex-ls-plus" ]; then
+  TARGET="${INSTALL_DIR}/bin/ltex-ls-plus"
+elif [ -x "${INSTALL_DIR}/ltex-ls-plus" ]; then
+  TARGET="${INSTALL_DIR}/ltex-ls-plus"
+else
+  echo "Could not find ltex-ls-plus binary in ${INSTALL_DIR}" >&2
+  exit 1
+fi
+
+# Create a small wrapper script instead of a symlink
+WRAPPER="${BIN_DIR}/ltex-ls-plus"
+cat > "${WRAPPER}" <<EOF
+#!/usr/bin/env sh
+exec "${TARGET}" "\$@"
+EOF
+chmod +x "${WRAPPER}"
+
+# Ensure XDG_BIN_HOME is on PATH for bash and fish
+
+# Bash
+if [ -f "${HOME}/.bashrc" ]; then
+  if ! grep -q 'XDG_BIN_HOME' "${HOME}/.bashrc"; then
+    {
+      printf '\n# Add XDG_BIN_HOME to PATH (Qompass lsp-ltex-plus installer)\n'
+      printf 'export XDG_BIN_HOME="${XDG_BIN_HOME:-$HOME/.local/bin}"\n'
+      printf 'export PATH="$XDG_BIN_HOME:$PATH"\n'
+    } >> "${HOME}/.bashrc"
+  fi
+fi
+FISH_CONFIG_DIR="${HOME}/.config/fish"
+mkdir -p "${FISH_CONFIG_DIR}"
+FISH_CONFIG="${FISH_CONFIG_DIR}/config.fish"
+
+if [ -f "${FISH_CONFIG}" ]; then
+  if ! grep -q 'XDG_BIN_HOME' "${FISH_CONFIG}"; then
+    {
+      printf '\n# Add XDG_BIN_HOME to PATH (Qompass lsp-ltex-plus installer)\n'
+      printf 'set -q XDG_BIN_HOME; or set -Ux XDG_BIN_HOME $HOME/.local/bin\n'
+      printf 'set -U fish_user_paths $XDG_BIN_HOME $fish_user_paths\n'
+    } >> "${FISH_CONFIG}"
+  fi
+else
+  {
+    printf '# Add XDG_BIN_HOME to PATH (Qompass lsp-ltex-plus installer)\n'
+    printf 'set -q XDG_BIN_HOME; or set -Ux XDG_BIN_HOME $HOME/.local/bin\n'
+    printf 'set -U fish_user_paths $XDG_BIN_HOME $fish_user_paths\n'
+  } > "${FISH_CONFIG}"
+fi
+
+echo "ltex-ls-plus installed. Restart your shell to pick up PATH changes."
+```
+
+</div>
       <li>
         <a href="https://github.com/qompassai/diver/blob/main/lsp/texlab_ls.lua">texlab_ls</a>
       </li>
+            <p>
+      <a href="https://github.com/latex-lsp/texlab">Texlab LSP Reference</a>
+    </p>
+ <div style="background: #f8f9fa; padding: 15px; border-radius: 5px; margin-top: 10px; font-family: monospace;">
+
+```sh
+XDG_DATA_HOME="${XDG_DATA_HOME:-"$HOME/.local/share"}"
+XDG_BIN_HOME="${XDG_BIN_HOME:-"$HOME/.local/bin"}"
+TEXLAB_DATA_DIR="${XDG_DATA_HOME}/lsp-texlab"
+BIN_DIR="${XDG_BIN_HOME}"
+REPO="latex-lsp/texlab"
+LATEST_TAG="$(curl -sSfL "https://api.github.com/repos/${REPO}/releases/latest" \
+  | grep -Eo '"tag_name":\s*"[^"]+"' \
+  | sed -E 's/.*"([^"]+)".*/\1/')"
+OS="linux"
+ARCH="x86_64"
+ARCHIVE_NAME="texlab-${OS}-${ARCH}.tar.gz"
+INSTALL_DIR="${TEXLAB_DATA_DIR}/${LATEST_TAG}"
+echo "Installing texlab ${LATEST_TAG} to ${INSTALL_DIR}"
+mkdir -p "${TEXLAB_DATA_DIR}" "${BIN_DIR}"
+curl -sSfL "https://github.com/${REPO}/releases/download/${LATEST_TAG}/${ARCHIVE_NAME}" \
+  -o "/tmp/${ARCHIVE_NAME}"
+rm -rf "${INSTALL_DIR}"
+mkdir -p "${INSTALL_DIR}"
+tar -xzf "/tmp/${ARCHIVE_NAME}" -C "${INSTALL_DIR}"
+if [ ! -x "${INSTALL_DIR}/texlab" ]; then
+  echo "Could not find texlab binary in ${INSTALL_DIR}" >&2
+  exit 1
+fi
+WRAPPER="${BIN_DIR}/texlab"
+cat > "${WRAPPER}" <<EOF
+#!/usr/bin/env sh
+exec "${INSTALL_DIR}/texlab" "\$@"
+EOF
+chmod +x "${WRAPPER}"
+if [ -f "${HOME}/.bashrc" ]; then
+  if ! grep -q 'XDG_BIN_HOME' "${HOME}/.bashrc"; then
+    {
+      printf '\n# Add XDG_BIN_HOME to PATH (Texlab installer)\n'
+      printf 'export XDG_BIN_HOME="${XDG_BIN_HOME:-$HOME/.local/bin}"\n'
+      printf 'export PATH="$XDG_BIN_HOME:$PATH"\n'
+    } >> "${HOME}/.bashrc"
+  fi
+fi
+FISH_CONFIG_DIR="${HOME}/.config/fish}"
+mkdir -p "${FISH_CONFIG_DIR}"
+FISH_CONFIG="${FISH_CONFIG_DIR}/config.fish"
+if [ -f "${FISH_CONFIG}" ]; then
+  if ! grep -q 'XDG_BIN_HOME' "${FISH_CONFIG}"; then
+    {
+      printf '\n# Add XDG_BIN_HOME to PATH (Texlab installer)\n'
+      printf 'set -q XDG_BIN_HOME; or set -Ux XDG_BIN_HOME $HOME/.local/bin\n'
+      printf 'set -U fish_user_paths $XDG_BIN_HOME $fish_user_paths\n'
+    } >> "${FISH_CONFIG}"
+  fi
+else
+  {
+    printf '# Add XDG_BIN_HOME to PATH (Texlab installer)\n'
+    printf 'set -q XDG_BIN_HOME; or set -Ux XDG_BIN_HOME $HOME/.local/bin\n'
+    printf 'set -U fish_user_paths $XDG_BIN_HOME $fish_user_paths\n'
+  } > "${FISH_CONFIG}"
+fi
+echo "texlab installed. Restart your shell to pick up PATH changes."```
+
+</div>
     </ul>
   </blockquote>
 </details>
@@ -2313,7 +2790,7 @@ main "$@"
 cargo install --git https://github.com/tweag/nickel nickel-language-server
 ```
 
-#OR
+\#OR
 
 ```sh
 nix profile install nixpkgs#nls
@@ -2345,7 +2822,7 @@ nix profile install nixpkgs#nls
 cargo install --git https://github.com/oxalica/nil nil
 ```
 
-#OR
+\#OR
 
 ```sh
 nix profile install nixpkgs#nil
@@ -2622,25 +3099,82 @@ mv perlnavigator "$HOME/.local/bin/"
   </summary>
   <blockquote style="font-size: 1.2em; line-height: 1.8; padding: 25px; background: #f8f9fa; border-left: 6px solid #667eea; border-radius: 8px; margin: 15px 0; box-shadow: 0 2px 8px rgba(0,0,0,0.1);">
     <ul>
-      <li><code>
-        <a href="https://github.com/qompassai/diver/blob/main/lsp/intelephense_ls.lua">intelephense</a>
-          </code>
+      <li>
+        <a href="https://github.com/qompassai/diver/blob/main/lsp/intelephense_ls.lua">intelephense_ls</a>
       </li>
+       <p>
+      <a href="https://github.com/vimeo/psalm">Intelephense LSP Reference</a>
+    </p>
+ <div style="background: #f8f9fa; padding: 15px; border-radius: 5px; margin-top: 10px; font-family: monospace;">
+
+```sh
+composer require phan/phan
+```
+```
+```
+
+   </div>
       <li><code>
         <a href="https://github.com/qompassai/diver/blob/main/lsp/phpactor_ls.lua">phpactor_ls</a>
           </code>
       </li>
-      <li><code>
-        <a href="https://github.com/qompassai/diver/blob/main/lsp/laravel_ls.lua">laraavel_ls</a>
-          </code>
+         <p>
+      <a href="https://github.com/vimeo/psalm">Psalm LSP Reference</a>
+    </p>
+ <div style="background: #f8f9fa; padding: 15px; border-radius: 5px; margin-top: 10px; font-family: monospace;">
+
+```sh
+composer require phan/phan
+```
+```
+```
+
+   </div>
+      <li>
+        <a href="https://github.com/qompassai/diver/blob/main/lsp/laravel_ls.lua">laravel_ls</a>
       </li>
-      <li><code>
+       <p>
+      <a href="https://github.com/vimeo/psalm">Psalm LSP Reference</a>
+    </p>
+ <div style="background: #f8f9fa; padding: 15px; border-radius: 5px; margin-top: 10px; font-family: monospace;">
+
+```sh
+composer require phan/phan
+```
+```
+```
+
+   </div>
+      <li>
         <a href="https://github.com/qompassai/diver/blob/main/lsp/psalm_ls.lua">psalm_ls</a>
-          </code>
       </li>
-      <li><code>
-        <a href="https://github.com/qompassai/diver/blob/main/lsp/phan_ls.lua">phan_ls</a></code>
+       <p>
+      <a href="https://github.com/vimeo/psalm">Psalm LSP Reference</a>
+    </p>
+ <div style="background: #f8f9fa; padding: 15px; border-radius: 5px; margin-top: 10px; font-family: monospace;">
+
+```sh
+composer require phan/phan
+```
+```
+```
+
+   </div>
+      <li>
+        <a href="https://github.com/qompassai/diver/blob/main/lsp/phan_ls.lua">phan_ls</a>
       </li>
+         <p>
+      <a href="https://github.com/phan/phan">Phan LSP Reference</a>
+    </p>
+ <div style="background: #f8f9fa; padding: 15px; border-radius: 5px; margin-top: 10px; font-family: monospace;">
+
+```sh
+composer require phan/phan
+```
+```
+```
+
+   </div>
     </ul>
   </blockquote>
 </details>
@@ -2654,8 +3188,8 @@ mv perlnavigator "$HOME/.local/bin/"
   </summary>
   <blockquote style="font-size: 1.2em; line-height: 1.8; padding: 25px; background: #f8f9fa; border-left: 6px solid #667eea; border-radius: 8px; margin: 15px 0; box-shadow: 0 2px 8px rgba(0,0,0,0.1);">
     <ul>
-      <li><code>postgres_ls</code> –
-        <a href="https://github.com/qompassai/diver/blob/main/lsp/postgres_ls.lua">config</a>
+      <li>
+        <a href="https://github.com/qompassai/diver/blob/main/lsp/postgres_ls.lua">postgres_ls</a>
       </li>
 
 ```sh
@@ -2666,8 +3200,8 @@ curl -L \
 chmod +x postgres-language-server
 ```
 
-<li><code>postgrestoo_ls</code> –
-<a href="https://github.com/qompassai/diver/blob/main/lsp/postgrestoo_ls.lua">config</a>
+<li>postgrestoo_ls
+<a href="https://github.com/qompassai/diver/blob/main/lsp/postgrestoo_ls.lua">postgrestoo_ls</a>
 </li>
 </ul>
 </blockquote>
@@ -2682,8 +3216,8 @@ chmod +x postgres-language-server
   </summary>
   <blockquote style="font-size: 1.2em; line-height: 1.8; padding: 25px; background: #f8f9fa; border-left: 6px solid #667eea; border-radius: 8px; margin: 15px 0; box-shadow: 0 2px 8px rgba(0,0,0,0.1);">
     <ul>
-      <li><code>pwrshelles_ls</code> –
-        <a href="https://github.com/qompassai/diver/blob/main/lsp/pwrshelles_ls.lua">config</a>
+      <li>
+        <a href="https://github.com/qompassai/diver/blob/main/lsp/pwrshelles_ls.lua">powershelles_ls</a>
       </li>
     </ul>
   </blockquote>
@@ -2698,9 +3232,21 @@ chmod +x postgres-language-server
   </summary>
   <blockquote style="font-size: 1.2em; line-height: 1.8; padding: 25px; background: #f8f9fa; border-left: 6px solid #667eea; border-radius: 8px; margin: 15px 0; box-shadow: 0 2px 8px rgba(0,0,0,0.1);">
     <ul>
-      <li><code>prisma_ls</code> –
-        <a href="https://github.com/qompassai/diver/blob/main/lsp/prisma_ls.lua">config</a>
+      <li>
+        <a href="https://github.com/qompassai/diver/blob/main/lsp/prisma_ls.lua">prisma_ls</a>
       </li>
+           <p>
+      <a href="https://www.npmjs.com/package/@prisma/language-server">Prisma LSP Reference</a>
+    </p>
+ <div style="background: #f8f9fa; padding: 15px; border-radius: 5px; margin-top: 10px; font-family: monospace;">
+
+```sh
+pnpm add -g @prisma/language-server@latest
+```
+```
+```
+
+   </div>
     </ul>
   </blockquote>
 </details>
@@ -2718,7 +3264,7 @@ chmod +x postgres-language-server
         <a href="https://github.com/qompassai/diver/blob/main/lsp/proto_ls.lua">proto_ls</a>
       </li>
         <p>
-      <a href="https://buf.build/docs/">Buf LSP Reference</a>
+      <a href="https://buf.build/docs/">Protobuf LSP Reference</a>
     </p>
  <div style="background: #f8f9fa; padding: 15px; border-radius: 5px; margin-top: 10px; font-family: monospace;">
 
@@ -2784,8 +3330,8 @@ bundle exec rake gem_revendor
   </summary>
   <blockquote style="font-size: 1.2em; line-height: 1.8; padding: 25px; background: #f8f9fa; border-left: 6px solid #667eea; border-radius: 8px; margin: 15px 0; box-shadow: 0 2px 8px rgba(0,0,0,0.1);">
     <ul>
-      <li><code>basedpy_ls
-        <a href="https://github.com/qompassai/diver/blob/main/lsp/basedpy_ls.lua">config</a></code>
+      <li>basedpy_ls
+        <a href="https://github.com/qompassai/diver/blob/main/lsp/basedpy_ls.lua">basepy_ls</a>
       </li>
       <p>
       <a href="https://posit-dev.github.io/air/integration-github-actions.html">BasedPyright LSP Reference</a>
@@ -2837,8 +3383,12 @@ curl -LsSf https://astral.sh/ruff/install.sh | sh
 
 ```sh
 uv tool install ty
-pip install ty
+```
 
+# OR
+
+```sh
+pip install ty
 ```
 
    </div>
@@ -2872,7 +3422,6 @@ tar -xf qmlls-workflow-0.5-linux-x86_64.tar.xz \
   -C "$XDG_DATA_HOME/qmlls-workflow/0.5" \
 ln -sf "$XDG_DATA_HOME/qmlls-workflow/0.5/bin/qmlls" \
        "$HOME/.local/bin/qmlls"
-
 ```
 
    </div>
@@ -2954,7 +3503,6 @@ pnpm add -g @rescript/language-server@latest
 
 ```sh
 raco pkg install racket-langserver
-
 ```
 
    </div>
@@ -2980,7 +3528,7 @@ raco pkg install racket-langserver
  <div style="background: #f8f9fa; padding: 15px; border-radius: 5px; margin-top: 10px; font-family: monospace;">
 
 ```sh
-pnpm add -g @usethesource/rascal-vscode-dsl-lsp-server
+pnpm add -g @usethesource/rascal-vscode-dsl-lsp-server@latest
 
 ```
 
@@ -3141,6 +3689,20 @@ gem install standard
 
 ```sh
 pnpm add -g stimulus-language-server@latest
+```
+
+   </div>
+     <li>
+        <a href="https://github.com/qompassai/diver/blob/main/lsp/stree_ls.lua">stree_ls</a>
+      </li>
+                    <p>
+      <a href="https://ruby-syntax-tree.github.io/syntax_tree/">SyntaxTree LSP Reference</a>
+    </p>
+ <div style="background: #f8f9fa; padding: 15px; border-radius: 5px; margin-top: 10px; font-family: monospace;">
+
+```sh
+gem install syntax_tree
+
 ```
 
    </div>

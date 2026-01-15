@@ -2,9 +2,9 @@
 -- Qompass AI Phan LSP Spec
 -- Copyright (C) 2025 Qompass AI, All rights reserved
 -- ---------------------------------------------------
----@type vim.lsp.Config
-return {
-    cmd = { ---@type string[]
+return ---@type vim.lsp.Config
+{
+    cmd = {
         'phan',
         '-m',
         'json',
@@ -16,11 +16,25 @@ return {
         '--language-server-on-stdin',
         '--allow-polyfill-parser',
     },
-    filetypes = { ---@type string[]
+    filetypes = {
         'php',
     },
-    root_markers = { ---@type string[]
+    root_markers = {
         'composer.json',
         '.git',
+    },
+    settings = { ---@source https://github.com/phan/phan/wiki/Phan-Config-Settings
+        phan = {
+            analyzed_file_extensions = {
+                'htm',
+                'html',
+                'php',
+            },
+            consistent_hashing_file_order = true,
+            directory_list = {},
+            exclude_analysis_directory_list = {},
+            exclude_file_list = {},
+            skip_slow_php_options_warning = {},
+        },
     },
 }

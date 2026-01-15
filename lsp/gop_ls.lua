@@ -2,8 +2,8 @@
 -- Qompass AI Gopls LSP Spec
 -- Copyright (C) 2025 Qompass AI, All rights reserved
 -- --------------------------------------------------
----@type vim.lsp.Config
-return {
+return ---@type vim.lsp.Config
+{
     cmd = {
         'gopls',
     },
@@ -21,26 +21,6 @@ return {
     },
     settings = {
         gopls = {
-            gofumpt = true,
-            codelenses = {
-                gc_details = true,
-                generate = true,
-                regenerate_cgo = true,
-                run_govulncheck = true,
-                test = true,
-                tidy = true,
-                upgrade_dependency = true,
-                vendor = true,
-            },
-            hints = {
-                assignVariableTypes = true,
-                compositeLiteralFields = true,
-                compositeLiteralTypes = true,
-                constantValues = true,
-                functionTypeParameters = true,
-                parameterNames = true,
-                rangeVariableTypes = true,
-            },
             analyses = {
                 nilness = true,
                 unusedparams = true,
@@ -104,8 +84,28 @@ return {
                 yield = true,
                 unusedvariable = true,
             },
-            usePlaceholders = true,
+            codelenses = {
+                gc_details = true,
+                generate = true,
+                regenerate_cgo = true,
+                run_govulncheck = true,
+                test = true,
+                tidy = true,
+                upgrade_dependency = true,
+                vendor = true,
+            },
             completeUnimported = true,
+            gofumpt = true,
+            hints = {
+                assignVariableTypes = true,
+                compositeLiteralFields = true,
+                compositeLiteralTypes = true,
+                constantValues = true,
+                functionTypeParameters = true,
+                parameterNames = true,
+                rangeVariableTypes = true,
+            },
+            usePlaceholders = true,
             staticcheck = true,
             directoryFilters = {
                 '-.git',

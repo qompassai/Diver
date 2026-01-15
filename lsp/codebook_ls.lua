@@ -1,6 +1,6 @@
 -- /qompassai/Diver/lsp/codebook.lua
 -- Qompass AI Codebook LSP Spec
--- Copyright (C) 2025 Qompass AI, All rights reserved
+-- Copyright (C) 2026 Qompass AI, All rights reserved
 ------------------------------------------------------
 return ---@type vim.lsp.Config
 {
@@ -65,8 +65,11 @@ return ---@type vim.lsp.Config
                 'fixme',
                 'gitcommit',
                 'fixme',
+                'packpath',
                 'Qompass',
                 'qompassai',
+                'Rakefile',
+                'stree',
                 'rustc',
                 'todo',
                 'TODO',

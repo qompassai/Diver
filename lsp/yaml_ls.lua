@@ -4,7 +4,6 @@
 ------------------------------------------------------
 return ---@type vim.lsp.Config
 {
-    capabilities = capabilities,
     cmd = {
         'yaml-language-server',
         '--stdio',
@@ -20,7 +19,7 @@ return ---@type vim.lsp.Config
         '.git',
     },
     settings = {
-        yaml = {
+        yamlls = {
             redhat = {
                 telemetry = {
                     enabled = false,
@@ -53,7 +52,7 @@ return ---@type vim.lsp.Config
                 ['https://raw.githubusercontent.com/yannh/kubernetes-json-schema/refs/heads/master/v1.32.1-standalone-strict/all.json'] = 'helm/values*.yaml',
             },
             maxItemsComputed = 5000,
-            disableDefaultProperties = false,
+            disableDefaultProperties = true,
             suggest = {
                 parentSkeletonSelectedFirst = false,
             },

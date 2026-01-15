@@ -2,14 +2,15 @@
 -- Qompass AI Text LSP Spec
 -- Copyright (C) 2025 Qompass AI, All rights reserved
 -- --------------------------------------------------
----@type vim.lsp.Config
-return {
+
+return ---@type vim.lsp.Config
+{
     cmd = {
         'textlsp',
     },
     filetypes = {
-        'text',
-        'tex',
+        --     'text',
+        --       'tex',
         'org',
     },
     root_markers = {
@@ -27,7 +28,7 @@ return {
                     },
                 },
                 ollama = {
-                    enabled = false,
+                    enabled = true,
                     check_text = {
                         on_open = false,
                         on_save = false,

@@ -23,4 +23,5 @@ return ---@type vim.lsp.Config
         'project.godot',
         '.git',
     },
+    settings = {},
 }
