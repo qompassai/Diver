@@ -5,8 +5,8 @@
 ---@meta
 
 ---@class cmp.mapping
----@field scroll_docs fun(delta: number)
----@field complete fun(delta: number)
+---@field scroll_docs                             fun(delta: number)
+---@field complete                                fun(delta: number)
 ---@field confirm fun(opts: { behavior: any, select: boolean })
 ---@class cmp.config
 ---@field sources fun(sources: any): any
@@ -30,7 +30,7 @@
 
 ---@class BlinkCmp
 ---@alias blink.cmp.CompletionDocumentationDrawOpts any
---- @alias blink.cmp.Mode 'cmdline' | 'cmdwin' | 'term' | 'default'
+-- --- @alias blink.cmp.Mode 'cmdline' | 'cmdwin' | 'term' | 'default'
 
 ---@class blink.cmp.CompletionItem : vim.lsp.protocol.CompletionItem
 --- @field score_offset? number
@@ -44,7 +44,6 @@
 --- @field kind_hl? string
 --- @field exact? boolean
 --- @field score? number
-
 
 return {
   CompletionItemKind = {

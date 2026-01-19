@@ -1,0 +1,66 @@
+-- /qompassai/Diver/lua/types/core/lint.lua
+-- Qompass AI Diver Linter Types Config
+-- Copyright (C) 2025 Qompass AI, All rights reserved
+-- ----------------------------------------
+---@meta
+---@module 'types.type.lint'
+----@alias vim.lint.Config.Report vim.lint.Config.ReportItem[]
+---@class vim.lint.Config
+---@field append_fname?                               boolean
+---@field args?                                       (string|fun():string)[]
+---@field cmd?                                        string
+---@field code?                                       string
+---@field column?                                     integer|string
+---@field cwd?                                        string
+---@field env?                                        table<string, string>
+---@field file_name?                                  string
+---@field ignore_exitcode?                            boolean
+---@field kind?                                       string
+---@field level?                                      string
+---@field line?                                       integer|string
+---@field message?                                    string
+---@field msg?                                        string
+---@field name?                                       string
+---@field parser?                                     fun(output: string, bufnr: integer): vim.lint.Diagnostic[]
+---@field path?                                       string
+---@field severity?                                   string
+---@field start_col?                                  integer
+---@field stdin?                                      boolean
+---@field stream?                                     'stdout'|'stderr'|'both'
+---@class vim.lint.LintProc
+---@field bufnr?                                      integer
+---@field cancelled?                                  boolean
+---@field ns?                                         integer
+---@field proc?                                       vim.SystemObj
+---@field stream?                                     'stdout'|'stderr'|'both'
+---@class vim.lint.Config.ReportItem
+---@field column                                      integer
+---@field file_name?                                  string
+---@field kind                                        string
+---@field line                                        integer
+---@field message                                     string
+---@field path                                        string
+---@field start_col?                                  integer
+---@class lint.TSQueryConfig : vim.lint.Config
+---@field name?                                       string
+---@type lint.TSQueryConfig
+---@class vim.lint.Diagnostic
+---@field code?                                       string|integer
+---@field col?                                        integer
+---@field message?                                    string
+---@field lnum?                                       integer
+---@field end_col?                                    integer
+---@field end_lnum?                                   integer
+---@field severity?                                   vim.Diagnostic.SeverityValue
+---@field source?                                     string
+---@field user_data?                                  any
+---@class vim.Diagnostic.Severity?
+---@field ERROR                                       1
+---@field WARN                                        2
+---@field INFO                                        3
+---@field HINT                                        4
+---@alias vim.Diagnostic.SeverityValue
+---| 1                                                # ERROR
+---| 2                                                # WARN
+---| 3                                                # INFO
+---| 4                                                # HINT

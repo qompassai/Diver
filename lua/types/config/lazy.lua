@@ -5,14 +5,14 @@
 ---@meta
 
 ---@class LazyPluginSpec
----@field [1] string?
----@field name string?
----@field dir string?
----@field url string?
----@field dev boolean?
----@field lazy boolean?
----@field enabled boolean? | fun():boolean
----@field cond boolean? | fun():boolean
+---@field [1]                                   string?
+---@field name                                  string?
+---@field dir                                   string?
+---@field url                                   string?
+---@field dev                                   boolean?
+---@field lazy                                  boolean?
+---@field enabled                               boolean? | fun():boolean
+---@field                                       cond boolean? | fun():boolean
 ---@field dependencies string[] | LazyPluginSpec[]
 ---@field init fun(LazyPlugin)?
 ---@field opts table? | fun(LazyPlugin):table?

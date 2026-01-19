@@ -1,8 +1,9 @@
 # /qompassai/Diver/flake.nix
-# ---------------------------------------
+# Qompass AI Diver Flake
 # Copyright (C) 2025 Qompass AI, All rights reserved
+#####################################################
 {
-  description = "Qompass AI Diver - Reproducible Neovim config";
+  description = "Qompass AI Diver Flake";
   inputs = {
     flake-utils.url = "github:numtide/flake-utils";
     neovim-nightly-overlay.url = "github:nix-community/neovim-nightly-overlay";
@@ -15,7 +16,6 @@
     nil.inputs.flake-utils.follows = "flake-utils";
     tidalcycles.url = "github:mitchmindtree/tidalcycles.nix";
     tidalcycles.inputs.vim-tidal-src.url = "github:tidalcycles/vim-tidal";
-
     plugin-ansible-vim.url = "github:pearofducks/ansible-vim";
     plugin-ansible-vim.flake = false;
     plugin-blaze-nvim.url = "github:qompassai/blaze.nvim";
@@ -156,7 +156,6 @@
     self,
     nixpkgs,
     flake-utils,
-    ...
   }:
     import ./nixos/flake-outputs.nix inputs;
 }

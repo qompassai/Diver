@@ -1,0 +1,78 @@
+-- /qompassai/Diver/lsp/htmx.lua
+-- Qompass AI Htmx LSP Config
+-- Copyright (C) 2025 Qompass AI, All rights reserved
+-----------------------------------------------------
+---@source https://htmx.org/reference/#config | https://github.com/ThePrimeagen/htmx-lsp
+return ---@type vim.lsp.Config
+{
+    cmd = {
+        'htmx-lsp',
+    },
+    filetypes = {
+        'aspnetcorerazor',
+        'astro',
+        'astro-markdown',
+        'blade',
+        'clojure',
+        'django-html',
+        'htmldjango',
+        'edge',
+        'eelixir',
+        'elixir',
+        'ejs',
+        'erb',
+        'eruby',
+        'gohtml',
+        'gohtmltmpl',
+        'haml',
+        'handlebars',
+        'hbs',
+        'html',
+        'htmlangular',
+        'html-eex',
+        'heex',
+        'jade',
+        'leaf',
+        'liquid',
+        'markdown',
+        'mdx',
+        'mustache',
+        'njk',
+        'nunjucks',
+        'php',
+        'razor',
+        'slim',
+        'twig',
+        'javascript',
+        'javascriptreact',
+        'reason',
+        'rescript',
+        'typescript',
+        'typescriptreact',
+        'vue',
+        'svelte',
+        'templ',
+    },
+    root_markers = {
+        '.git',
+    },
+    settings = {
+        htmx = {
+            config = {
+                allowNestedOobSwaps = true,
+                defaultSettleDelay = 20,
+                defaultSwapDelay = 0,
+                defaultSwapStyle = 'innerHTML',
+                disableInheritance = false,
+                historyCacheSize = 10,
+                historyEnabled = true,
+                ignoreTitle = false,
+                refreshOnHistoryMiss = false,
+                scrollBehavior = 'instant',
+                timeout = 0,
+                withCredentials = false,
+                wsBinaryType = 'blob',
+            },
+        },
+    },
+}

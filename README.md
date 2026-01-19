@@ -1,226 +1,627 @@
-<!---------------- /qompassai/lua/README.md -------------->
-<!---------------------Qompass AI Lua -------------------->
+<!----------/qompassai/diver/README.md ------------------->
+<!-- ----------Qompass AI Diver -------------------------->
 <!-- Copyright (C) 2025 Qompass AI, All rights reserved -->
-<!-- ----------------------------------------------------->
+<!-------------------------------------------------------->
 
-<h1 align="center">Qompass AI Diver</h1>
+<h2> Qompass AI Diver </h3>
 
-<h2 align="center">Your blazingly fast everything editor</h2>
+  <h3> Your Blazingly Fast Everything Editor </h3>
 
-![Repository Views](https://komarev.com/ghpvc/?username=qompassai-Diver)
-![GitHub all releases](https://img.shields.io/github/downloads/qompassai/Diver/total?style=flat-square)
+![Repository Views](https://komarev.com/ghpvc/?username=qompassai-diver)
+![GitHub all releases](https://img.shields.io/github/downloads/qompassai/diver/total?style=flat-square)
 
 <p align="center">
-<a href="https://www.lua.org/"><img src="https://img.shields.io/badge/Lua-2C2D72?style=for-the-badge&logo=lua&logoColor=white" alt="Lua"></a> <br> <a href="https://www.lua.org/docs.html"><img src="https://img.shields.io/badge/Lua-Documentation-blue?style=flat-square" alt="Lua Documentation"></a> <a href="https://github.com/topics/lua-tutorial"><img src="https://img.shields.io/badge/Lua-Tutorials-green?style=flat-square" alt="Lua Tutorials"></a> <br> <a href="https://www.gnu.org/licenses/agpl-3.0"><img src="https://img.shields.io/badge/License-AGPL%20v3-blue.svg" alt="License: AGPL v3"></a> <a href="./LICENSE-QCDA"><img src="https://img.shields.io/badge/license-Q--CDA-lightgrey.svg" alt="License: Q-CDA"></a>
+  <a href="https://neovim.io/">
+    <img src="https://img.shields.io/badge/Neovim-0.12+-57A143?style=for-the-badge&logo=neovim&logoColor=white"
+      alt="Neovim">
+  </a>
+  <br>
+  <a href="https://www.lua.org/">
+    <img src="https://img.shields.io/badge/Lua-5.1+LuaJIT-blue?style=flat-square" alt="Lua">
+  </a>
+  <a href="https://github.com/neovim/neovim/wiki/FAQ">
+    <img src="https://img.shields.io/badge/Neovim_Lua_Config-Docs-blue?style=flat-square" alt="Neovim Lua Config Docs">
+  </a>
+  <a href="https://github.com/topics/neovim-config">
+    <img src="https://img.shields.io/badge/Neovim_Configs-Green?style=flat-square" alt="Neovim Config Tutorials">
+  </a>
+  <br>
+  <a href="https://doi.org/10.5281/zenodo.16171391">
+    <img src="https://zenodo.org/badge/DOI/10.5281/zenodo.16171391.svg" alt="DOI">
+  </a>
+  <a href="https://www.gnu.org/licenses/agpl-3.0">
+    <img src="https://img.shields.io/badge/License-AGPL%20v3-blue.svg" alt="License: AGPL v3">
+  </a>
+  <a href="./LICENSE-QCDA">
+    <img src="https://img.shields.io/badge/license-Q--CDA-lightgrey.svg" alt="License: Q-CDA">
+  </a>
 </p>
 
-<details>
-  <summary
-  style="font-size: 1.4em; font-weight: bold; padding: 15px; background: #667eea; color: white; border-radius: 10px; cursor: pointer; margin: 10px 0;">
-  <strong>▶️ Qompass AI Quick Start</strong>
-</summary>
-<div style="background: #f8f9fa; padding: 15px; border-radius: 5px; margin-top: 10px; font-family: monospace;">
-  <pre><code># Download and run the compiled binary installer
-curl -fsSL https://raw.githubusercontent.com/qompassai/dotfiles/main/scripts/qai_lua_installer -o qai_lua_installer && \
-  chmod +x qai_lua_installer && \
-  ./qai_lua_installer
+### Qompass AI Diver setup
 
-# Alternatively, you can fetch and run the original shell script:
+```lua
+~/.config/nvim
+################
+├── after
+├── ansi
+│   ├── apple.sh
+│   └── gopher.sh
+├── citation.bib
+├── CITATION.cff
+├── dbx.lua
+├── diverflake.nix
+├── docs
+│   ├── _build
+│   ├── conf.py
+│   ├── howto.tex
+│   ├── index.rst
+│   ├── make.bat
+│   ├── Makefile
+│   ├── README.md
+│   ├── _static
+│   └── _templates
+├── dsdt.dat
+├── fixers
+│   ├── alejandra.lua
+│   ├── blackd.lua
+│   ├── cookstyle.lua
+│   ├── css-beautify.lua
+│   ├── cssbeautify.lua
+│   ├── gofumpt.lua
+│   ├── goimports.lua
+│   ├── htmlbeautify.lua
+│   ├── phpcsfixer.lua
+│   ├── shellharden.lua
+│   └── sql-formatter.lua
+├── flake.lock
+├── flake.nix
+├── ftdetect
+│   ├── alloy.lua
+│   ├── cypher.lua
+│   ├── filetype.lua
+│   ├── git.lua
+│   ├── handlebar.lua
+│   ├── schelp.lua
+│   ├── supercollider.lua
+│   └── tsx.lua
+├── ftplugin
+│   ├── gleam.lua
+│   └── markdown.lua
+├── ignore.rg
+├── init.lua
+├── lazy-lock.json
+├── LICENSE-AGPL
+├── LICENSE-QCDA
+├── linters
+│   ├── actionlint.lua
+│   ├── alex.lua
+│   ├── ameba.lua
+│   ├── ansible_lint.lua
+│   ├── apkbuild-lint.lua
+│   ├── bandit.lua
+│   ├── bashate.lua
+│   ├── bashlint.lua
+│   ├── bash.lua
+│   ├── bibclean.lua
+│   ├── buildifier.lua
+│   ├── clangtidy.lua
+│   ├── clj-kondo.lua
+│   ├── cmake-lint.lua
+│   ├── cookstyle.lua
+│   ├── cypher-lint.lua
+│   ├── cython-lint.lua
+│   ├── deadnix.lua
+│   ├── desktopval.lua
+│   ├── eslint_d.lua
+│   ├── fish.lua
+│   ├── golangcilint.lua
+│   ├── htmlhint.lua
+│   ├── init.lua
+│   ├── joker.lua
+│   ├── lint-openapi.lua
+│   ├── llvm-mc.lua
+│   ├── luacheck.lua
+│   ├── luac.lua
+│   ├── naga.lua
+│   ├── nvcc.lua
+│   ├── revive.lua
+│   ├── scarb.lua
+│   ├── secfixes-check.lua
+│   ├── shellcheck.lua
+│   ├── sphinx-lint.lua
+│   ├── statix.lua
+│   ├── tflint.lua
+│   ├── vulture.lua
+│   ├── writegood.lua
+│   ├── yara.lua
+│   └── zlint.lua
+├── lsp
+│   ├── ada_ls.lua
+│   ├── agda_ls.lua
+│   ├── aiken_ls.lua
+│   ├── ai_ls.lua
+│   ├── air_ls.lua
+│   ├── alloy_ls.lua
+│   ├── angular_ls.lua
+│   ├── ansible_ls.lua
+│   ├── antlers_ls.lua
+│   ├── apex_ls.lua
+│   ├── arduino_ls.lua
+│   ├── asm_ls.lua
+│   ├── astgrep_ls.lua
+│   ├── astro_ls.lua
+│   ├── atlas_ls.lua
+│   ├── atopile_ls.lua
+│   ├── autohotkey_ls.lua
+│   ├── autotoo_ls.lua
+│   ├── awk_ls.lua
+│   ├── azurepipelines_ls.lua
+│   ├── bacon_ls.lua
+│   ├── basedpy_ls.lua
+│   ├── bash_ls.lua
+│   ├── basics_ls.lua
+│   ├── bazelrc_ls.lua
+│   ├── beancount_ls.lua
+│   ├── bicep_ls.lua
+│   ├── biome_ls.lua
+│   ├── bitbake_ls.lua
+│   ├── blueprint_ls.lua
+│   ├── bq_ls.lua
+│   ├── brioche_ls.lua
+│   ├── bsc_ls.lua
+│   ├── buck2_ls.lua
+│   ├── buf_ls.lua
+│   ├── bzl_ls.lua
+│   ├── c3_ls.lua
+│   ├── cairo_ls.lua
+│   ├── cds_ls.lua
+│   ├── clangd_ls.lua
+│   ├── clarinet_ls.lua
+│   ├── clojure_ls.lua
+│   ├── cmake_ls.lua
+│   ├── codebook_ls.lua
+│   ├── contextive_ls.lua
+│   ├── copilot_ls.lua
+│   ├── coq_ls.lua
+│   ├── crystalline_ls.lua
+│   ├── csharp_ls.lua
+│   ├── cspell_ls.lua
+│   ├── css_ls.lua
+│   ├── cssmodule_ls.lua
+│   ├── cssvariable_ls.lua
+│   ├── cucumber_ls.lua
+│   ├── customelements_ls.lua
+│   ├── cypher_ls.lua
+│   ├── dart_ls.lua
+│   ├── deno_ls.lua
+│   ├── diagnostic_ls.lua
+│   ├── dj_ls.lua
+│   ├── djt_ls.lua
+│   ├── dockercompose_ls.lua
+│   ├── docker_ls.lua
+│   ├── dolmen_ls.lua
+│   ├── dot_ls.lua
+│   ├── dprint_ls.lua
+│   ├── dts_ls.lua
+│   ├── elixir_ls.lua
+│   ├── elm_ls.lua
+│   ├── elp_ls.lua
+│   ├── ember_ls.lua
+│   ├── emmet_ls.lua
+│   ├── emmylua_ls.lua
+│   ├── esbonio_ls.lua
+│   ├── eslint_ls.lua
+│   ├── facility_ls.lua
+│   ├── fennel_ls.lua
+│   ├── fish_ls.lua
+│   ├── flow_ls.lua
+│   ├── flux_ls.lua
+│   ├── foam_ls.lua
+│   ├── fort_ls.lua
+│   ├── fsautocomplete_ls.lua
+│   ├── fsharp_ls.lua
+│   ├── fstar_ls.lua
+│   ├── gdscript_ls.lua
+│   ├── gdshader_ls.lua
+│   ├── ghactions_ls.lua
+│   ├── ghcide_ls.lua
+│   ├── ghdl_ls.lua
+│   ├── gitlabci_ls.lua
+│   ├── glasgow_ls.lua
+│   ├── gleam_ls.lua
+│   ├── glint_ls.lua
+│   ├── glslana_ls.lua
+│   ├── golangcilint_ls.lua
+│   ├── gop_ls.lua
+│   ├── graphql_ls.lua
+│   ├── groovy_ls.lua
+│   ├── harper_ls.lua
+│   ├── haxe_ls.lua
+│   ├── helm_ls.lua
+│   ├── herb_ls.lua
+│   ├── h_ls.lua
+│   ├── hoon_ls.lua
+│   ├── html_ls.lua
+│   ├── htmx_ls.lua
+│   ├── hydra_ls.lua
+│   ├── hypr_ls.lua
+│   ├── init.lua
+│   ├── intelephense_ls.lua
+│   ├── java_ls.lua
+│   ├── jdt_ls.lua
+│   ├── jinja_ls.lua
+│   ├── jq_ls.lua
+│   ├── json_ls.lua
+│   ├── jsonnet_ls.lua
+│   ├── julia_ls.lua
+│   ├── just_ls.lua
+│   ├── kotlin_ls.lua
+│   ├── kulala_ls.lua
+│   ├── laravel_ls.lua
+│   ├── lean_ls.lua
+│   ├── lemminx_ls.lua
+│   ├── ltex_ls.lua
+│   ├── ltexplus_ls.lua
+│   ├── lua_ls.lua
+│   ├── luau_ls.lua
+│   ├── lwc_ls.lua
+│   ├── m68k_ls.lua
+│   ├── makelint_ls.lua
+│   ├── markdown_oxide.lua
+│   ├── markojs_ls.lua
+│   ├── marksman_ls.lua
+│   ├── matlab_ls.lua
+│   ├── mdxana_ls.lua
+│   ├── metals_ls.lua
+│   ├── millet_ls.lua
+│   ├── mint_ls.lua
+│   ├── mlir_ls.lua
+│   ├── mlirpdll_ls.lua
+│   ├── mm0_ls.lua
+│   ├── moveana_ls.lua
+│   ├── msbuildptoo_ls.lua
+│   ├── muon_ls.lua
+│   ├── mutt_ls.lua
+│   ├── neocmake_ls.lua
+│   ├── nextflow_ls.lua
+│   ├── nginx_ls.lua
+│   ├── nickel_ls.lua
+│   ├── nil_ls.lua
+│   ├── nixd_ls.lua
+│   ├── nomad_ls.lua
+│   ├── ntt_ls.lua
+│   ├── nu_ls.lua
+│   ├── nx_ls.lua
+│   ├── ocaml_ls.lua
+│   ├── o_ls.lua
+│   ├── omnisharp_ls.lua
+│   ├── opencl_ls.lua
+│   ├── openscad_ls.lua
+│   ├── oxlint_ls.lua
+│   ├── pas_ls.lua
+│   ├── pb_ls.lua
+│   ├── perl_ls.lua
+│   ├── perlnav_ls.lua
+│   ├── phan_ls.lua
+│   ├── phpactor_ls.lua
+│   ├── please_ls.lua
+│   ├── p_ls.lua
+│   ├── postgres_ls.lua
+│   ├── postgrestoo_ls.lua
+│   ├── prisma_ls.lua
+│   ├── prosemd_ls.lua
+│   ├── proto_ls.lua
+│   ├── psalm_ls.lua
+│   ├── pug_ls.lua
+│   ├── puppet_ls.lua
+│   ├── purescript_ls.lua
+│   ├── pwrshelles_ls.lua
+│   ├── pyrefly_ls.lua
+│   ├── qml_ls.lua
+│   ├── quicklintjs_ls.lua
+│   ├── README.md
+│   ├── regal_ls.lua
+│   ├── rego_ls.lua
+│   ├── remark_ls.lua
+│   ├── rescript_ls.lua
+│   ├── rnix_ls.lua
+│   ├── robotcode_ls.lua
+│   ├── robotframework_ls.lua
+│   ├── rocq_ls.lua
+│   ├── roslyn_ls.lua
+│   ├── rpmspec_ls.lua
+│   ├── rubocop_ls.lua
+│   ├── ruby_ls.lua
+│   ├── ruff_ls.lua
+│   ├── rune_ls.lua
+│   ├── rustana_ls.lua
+│   ├── selene3p_ls.lua
+│   ├── selene_ls.lua
+│   ├── served_ls.lua
+│   ├── slangd_ls.lua
+│   ├── slint_ls.lua
+│   ├── smarty_ls.lua
+│   ├── smithy_ls.lua
+│   ├── snakeskin_ls.lua
+│   ├── solang_ls.lua
+│   ├── solargraph_ls.lua
+│   ├── solc_ls.lua
+│   ├── solidity_ls.lua
+│   ├── solidnomic_ls.lua
+│   ├── somesass_ls.lua
+│   ├── sorbet_ls.lua
+│   ├── spectral_ls.lua
+│   ├── spyglass_ls.lua
+│   ├── sq_ls.lua
+│   ├── sqruff_ls.lua
+│   ├── standardrb_ls.lua
+│   ├── starlark_ls.lua
+│   ├── statix_ls.lua
+│   ├── steep_ls.lua
+│   ├── stimulus_ls.lua
+│   ├── stylua3p_ls.lua
+│   ├── stylua_ls.lua
+│   ├── superhtml_ls.lua
+│   ├── svelte_ls.lua
+│   ├── svlang_ls.lua
+│   ├── sv_ls.lua
+│   ├── syntaxtree_ls.lua
+│   ├── systemd_ls.lua
+│   ├── tailwindcss_ls.lua
+│   ├── taplo_ls.lua
+│   ├── tcl_ls.lua
+│   ├── templ_ls.lua
+│   ├── termux_ls.lua
+│   ├── terraform_ls.lua
+│   ├── texlab_ls.lua
+│   ├── text_ls.lua
+│   ├── tflint_Ls.lua
+│   ├── tinymist_ls.lua
+│   ├── tofu_ls.lua
+│   ├── tombi_ls.lua
+│   ├── tsgo_ls.lua
+│   ├── ts_ls.lua
+│   ├── tsp_ls.lua
+│   ├── tsquery_ls.lua
+│   ├── ttags_ls.lua
+│   ├── turbo_ls.lua
+│   ├── turtle_ls.lua
+│   ├── tvmffinav_ls.lua
+│   ├── twiggy_ls.lua
+│   ├── ty_ls.lua
+│   ├── typeprof_ls.lua
+│   ├── ungrammar_ls.lua
+│   ├── unocss_ls.lua
+│   ├── uv_ls.lua
+│   ├── vacuum_ls.lua
+│   ├── vectorcode_ls.lua
+│   ├── verible_ls.lua
+│   ├── veryl_ls.lua
+│   ├── vespa_ls.lua
+│   ├── vhdl_ls.lua
+│   ├── vim_ls.lua
+│   ├── vts_ls.lua
+│   ├── vue_ls.lua
+│   ├── wasmlangtoo_ls.lua
+│   ├── wc_ls.lua
+│   ├── wgslana_ls.lua
+│   ├── yaml_ls.lua
+│   ├── ziggy_ls.lua
+│   ├── ziggyschema_ls.lua
+│   ├── zk_ls.lua
+│   └── z_ls.lua
+├── lua
+│   ├── config
+│   │   ├── cicd
+│   │   │   ├── ansible.lua
+│   │   │   ├── json.lua
+│   │   │   ├── shell.lua
+│   │   │   └── sops.lua
+│   │   ├── cloud
+│   │   │   ├── containers.lua
+│   │   │   └── sshfs.lua
+│   │   ├── core
+│   │   │   ├── autocmds.lua
+│   │   │   ├── fixer.lua
+│   │   │   ├── flash.lua
+│   │   │   ├── init.lua
+│   │   │   ├── lint.lua
+│   │   │   ├── lsp.lua
+│   │   │   ├── neotest.lua
+│   │   │   ├── parser.lua
+│   │   │   ├── plenary.lua
+│   │   │   ├── schema.lua
+│   │   │   ├── tree.lua
+│   │   │   ├── trouble.lua
+│   │   │   └── whichkey.lua
+│   │   ├── data
+│   │   │   ├── common.lua
+│   │   │   ├── mysql.lua
+│   │   │   ├── psql.lua
+│   │   │   ├── sqlite.lua
+│   │   │   └── sql.lua
+│   │   ├── edu
+│   │   │   └── zotcite.lua
+│   │   ├── init.lua
+│   │   ├── keymaps.lua
+│   │   ├── lang
+│   │   │   ├── cmp.lua
+│   │   │   ├── go.lua
+│   │   │   ├── js.lua
+│   │   │   ├── julia.lua
+│   │   │   ├── latex.lua
+│   │   │   ├── lua.lua
+│   │   │   ├── mojo.lua
+│   │   │   ├── nix.lua
+│   │   │   ├── php.lua
+│   │   │   ├── python.lua
+│   │   │   ├── ruby.lua
+│   │   │   ├── rust.lua
+│   │   │   ├── scala.lua
+│   │   │   ├── ts.lua
+│   │   │   └── zig.lua
+│   │   ├── lazy.lua
+│   │   ├── nav
+│   │   │   ├── fzf.lua
+│   │   │   ├── harpoon.lua
+│   │   │   └── neotree.lua
+│   │   └── ui
+│   │       ├── css.lua
+│   │       ├── icons.lua
+│   │       ├── illuminate.lua
+│   │       ├── line.lua
+│   │       ├── md.lua
+│   │       ├── render.lua
+│   │       └── themes.lua
+│   ├── mappings
+│   │   ├── aimap.lua
+│   │   ├── cicdmap.lua
+│   │   ├── datamap.lua
+│   │   ├── ddxmap.lua
+│   │   ├── disable.lua
+│   │   ├── genmap.lua
+│   │   ├── init.lua
+│   │   ├── lintmap.lua
+│   │   ├── lspmap.lua
+│   │   ├── mojomap.lua
+│   │   ├── navmap.lua
+│   │   └── pymap.lua
+│   ├── plugins
+│   │   ├── ai
+│   │   │   ├── augment.lua
+│   │   │   └── miniai.lua
+│   │   ├── cicd
+│   │   │   ├── ansible.lua
+│   │   │   ├── containers.lua
+│   │   │   ├── filetype.lua
+│   │   │   ├── git.lua
+│   │   │   ├── mail.lua
+│   │   │   └── sops.lua
+│   │   ├── cloud
+│   │   │   ├── distant.lua
+│   │   │   ├── fire.lua
+│   │   │   ├── mail.lua
+│   │   │   ├── qpg.lua
+│   │   │   ├── remote.lua
+│   │   │   ├── sshfs.lua
+│   │   │   └── websocket.lua
+│   │   ├── core
+│   │   │   ├── cheatsheet.lua
+│   │   │   ├── coq.lua
+│   │   │   ├── flash.lua
+│   │   │   ├── init.lua
+│   │   │   ├── neotest.lua
+│   │   │   ├── plenary.lua
+│   │   │   ├── tree.lua
+│   │   │   ├── trouble.lua
+│   │   │   └── whichkey.lua
+│   │   ├── data
+│   │   │   ├── csv.lua
+│   │   │   ├── dadbod.lua
+│   │   │   ├── init.lua
+│   │   │   ├── large.lua
+│   │   │   ├── sqlite.lua
+│   │   │   └── toggle.lua
+│   │   ├── edu
+│   │   │   ├── indent.lua
+│   │   │   ├── scnvim.lua
+│   │   │   ├── stt.lua
+│   │   │   └── twilight.lua
+│   │   ├── init.lua
+│   │   ├── lang
+│   │   │   ├── go.lua
+│   │   │   ├── lua.lua
+│   │   │   └── ts.lua
+│   │   ├── nav
+│   │   │   ├── fzf.lua
+│   │   │   ├── harpoon.lua
+│   │   │   ├── neorg.lua
+│   │   │   ├── neotree.lua
+│   │   │   ├── w3m.lua
+│   │   │   └── windowpick.lua
+│   │   └── ui
+│   │       ├── bufferline.lua
+│   │       ├── css.lua
+│   │       ├── icons.lua
+│   │       ├── illum.lua
+│   │       ├── init.lua
+│   │       ├── line.lua
+│   │       ├── md.lua
+│   │       ├── noice.lua
+│   │       ├── themes.lua
+│   │       └── unreal.lua
+│   ├── types
+│   │   ├── cicd
+│   │   ├── config
+│   │   │   ├── lazy.lua
+│   │   │   └── options.lua
+│   │   ├── core
+│   │   │   ├── autocmds.lua
+│   │   │   ├── fixer.lua
+│   │   │   ├── lint.lua
+│   │   │   ├── lsp.lua
+│   │   │   ├── plenary.lua
+│   │   │   ├── quickfix.lua
+│   │   │   ├── schema.lua
+│   │   │   └── vim.lua
+│   │   ├── edu
+│   │   ├── init.lua
+│   │   ├── lang
+│   │   │   ├── cmp.lua
+│   │   │   ├── conform.lua
+│   │   │   ├── go.lua
+│   │   │   ├── lua.lua
+│   │   │   ├── nix.lua
+│   │   │   ├── ts.lua
+│   │   │   └── zig.lua
+│   │   └── ui
+│   │       ├── html.lua
+│   │       ├── line.lua
+│   │       └── md.lua
+│   └── utils
+│       ├── clipboard.lua
+│       ├── core
+│       ├── dictionary
+│       │   ├── en.utf-8.add
+│       │   └── words.txt
+│       ├── environ.lua
+│       ├── init.lua
+│       ├── lang
+│       │   ├── go.lua
+│       │   ├── lua.lua
+│       │   ├── python.lua
+│       │   ├── rust.lua
+│       │   └── scala.lua
+│       ├── safe_require.lua
+│       └── ui.lua
+├── manifest
+├── markdown.css
+├── nvim-pack-lock.json
+├── qonfig.yaml
+├── README.md
+├── renovate.jsonc
+├── resources
+│   └── head.tex
+├── scripts
+│   ├── cargo.sh
+│   ├── find_and_edit.sh
+│   ├── generate
+│   ├── installers
+│   │   ├── go-tools.sh
+│   │   └── tmux.sh
+│   ├── js.sh
+│   ├── quickstart.sh
+│   └── ruby.sh
+├── snippets
+│   └── lua.json5
+├── spell
+│   └── en.utf-8.add
+├── undo
+├── vim.toml
+└── vim.yml
 
-# bash <(curl -fsSL https://raw.githubusercontent.com/qompassai/dotfiles/main/scripts/quickstart.sh)
-
-</code></pre>
-
-</div>
-      <summary style="font-size: 1em; font-weight: bold; padding: 10px; background: #e9ecef; color: #333; border-radius: 5px; cursor: pointer; margin: 10px 0;">
-        <strong>📄 We advise you read the script BEFORE running it 😉</strong>
-      </summary>
-      <pre style="background: #fff; padding: 15px; border-radius: 5px; border: 1px solid #ddd; overflow-x: auto;">
-#!/usr/bin/env bash
-# qompassai/Lua/scripts/quickstart.sh
-# Qompass AI Diver Lua Quick‑Start
-# Copyright (C) 2025 Qompass AI, All rights reserved
-#################################################### 
-set -euo pipefail
-PREFIX="$HOME/.local"
-mkdir -p "$PREFIX/bin"
-NEEDED_TOOLS=(git curl tar make clang)
-MISSING=()
-need_tool() {
-  local t=$1
-  if command -v "$t" >/dev/null 2>&1; then
-    return 0
-  elif [[ -x "/usr/bin/$t" ]]; then
-    ln -sf "/usr/bin/$t" "$PREFIX/bin/$t"
-    echo " → Added symlink for $t in $PREFIX/bin (not originally in PATH)"
-    return 0
-  else
-    return 1
-  fi
-}
-for tool in "${NEEDED_TOOLS[@]}"; do
-  if ! need_tool "$tool"; then
-    MISSING+=("$tool")
-  fi
-done
-if [[ ${#MISSING[@]} -gt 0 ]]; then
-  printf '\n⚠  The following required tools are missing: %s\n' "${MISSING[*]}"
-  if command -v pacman >/dev/null 2>&1 && command -v sudo >/dev/null 2>&1; then
-    echo "→ Attempting to install them system‑wide with sudo pacman -S --needed ${MISSING[*]}"
-    if sudo -n true 2>/dev/null; then
-      sudo pacman -Sy --needed --noconfirm "${MISSING[@]}"
-    else
-      echo "   (sudo privileges required – please enter your password)"
-      sudo pacman -Sy --needed "${MISSING[@]}"
-    fi
-    for t in "${MISSING[@]}"; do need_tool "$t"; done
-  else
-    echo "   Please install them with your package manager, then re‑run this script."
-    exit 1
-  fi
-fi
-export PATH="$PREFIX/bin:$PATH"
-declare -A MENU=(
-\[1]="lua 5.1.5"
-\[2]="lua 5.2.4"
-\[3]="lua 5.3.6"
-\[4]="lua 5.4.6"
-\[5]="LuaJIT"
-)
-printf '%s\n' "╭─────────────────────────────────────────────╮"
-printf '%s\n' "│       Qompass AI · Lua Quick‑Start          │"
-printf '%s\n' "╰─────────────────────────────────────────────╯"
-printf '%s\n\n' "    © 2025 Qompass AI. All rights reserved     "
-for k in "${!MENU\[@]}"; do printf ' %s) %s\n' "$k" "${MENU\[$k]}"; done
-printf '%s\n' " a) all   (default)"
-printf '%s\n\n' " q) quit"
-read -rp "Choose versions to build \[a]: " choice
-choice=${choice:-a}
-\[\[ $choice == q ]] && exit 0
-VERSIONS=()
-if \[\[ $choice == a ]]; then
-VERSIONS=(5.1.5 5.2.4 5.3.6 5.4.6 luajit)
-else
-for n in $choice; do
-case $n in
-1\) VERSIONS+=("5.1.5") ;;
-2\) VERSIONS+=("5.2.4") ;;
-3\) VERSIONS+=("5.3.6") ;;
-4\) VERSIONS+=("5.4.6") ;;
-5\) VERSIONS+=("luajit") ;;
-*)
-echo "Unknown option $n"
-exit 1
-;;
-esac
-done
-fi
-LUAROCKS\_VERSION="3.12.1"
-DEFAULT\_IMPL="luajit"
-JOBS=$(nproc 2>/dev/null || sysctl -n hw.ncpu || echo 4)
-: "${CC:=clang}"
-CFLAGS="-O3 -march=native -flto -fPIC -pipe -fstack-protector-strong"
-LDFLAGS="-flto -Wl,-O1,--as-needed,-z,relro,-z,now"
-\[\[ -x $(command -v ld.lld) ]] && LDFLAGS+=" -fuse-ld=lld"
-case "$(uname -s)" in
-Darwin*)
-PLATFORM=macosx
-SHARED="-DLUA\_USE\_MACOSX"
-;;
-MINGW\* | MSYS\* | CYG\*)
-PLATFORM=mingw
-SHARED=""
-;;
-\*)
-PLATFORM=linux
-SHARED="-DLUA\_USE\_LINUX"
-;;
-esac
-add\_to\_rc() {
-local rc\_file=$1
-local line="export PATH='$PREFIX/bin:$PATH'"
-if \[\[ -f "$rc\_file" ]] && ! grep -Fq "$line" "$rc\_file"; then
-printf '\n# added by lua quickstart\n%s\n' "$line" >>"$rc\_file"
-echo " → PATH updated in $rc\_file"
-fi
-}
-install\_luarocks() {
-local lua\_prefix="$1"
-local rocks\_prefix="$lua\_prefix"
-pushd /tmp >/dev/null
-curl -fsSLO "https://luarocks.org/releases/luarocks-$LUAROCKS\_VERSION.tar.gz"
-tar xf "luarocks-$LUAROCKS\_VERSION.tar.gz"
-cd "luarocks-$LUAROCKS\_VERSION"
-./configure \
-\--prefix="$rocks\_prefix" \
-\--with-lua="$lua\_prefix" \
-\--with-lua-include="$lua\_prefix/include" \
-\--with-lua-lib="$lua\_prefix/lib"
-make -j"$JOBS"
-make install
-local tag
-tag=$(basename "$lua\_prefix" | sed 's/^lua//;s/^luajit$/jit/')
-ln -sf "$rocks\_prefix/bin/luarocks" "$PREFIX/bin/luarocks$tag"
-popd >/dev/null
-rm -rf "/tmp/luarocks-$LUAROCKS\_VERSION"
-}
-cd /tmp
-for v in "${VERSIONS\[@]}"; do
-if \[\[ $v == luajit ]]; then
-echo -e "\n=== LuaJIT ==="
-git clone --depth 1 https://github.com/LuaJIT/LuaJIT.git
-pushd LuaJIT >/dev/null
-make -j"$JOBS" CC="$CC" CFLAGS="$CFLAGS" LDFLAGS="$LDFLAGS"
-make install PREFIX="$PREFIX/luajit"
-ln -sf "$PREFIX/luajit/bin/luajit" "$PREFIX/bin/luajit"
-popd >/dev/null && rm -rf LuaJIT
-install\_luarocks "$PREFIX/luajit"
-continue
-fi
-echo -e "\n=== Lua $v ==="
-curl -fsSLO "https://www.lua.org/ftp/lua-$v.tar.gz"
-tar xf "lua-$v.tar.gz" && rm "lua-$v.tar.gz"
-pushd "lua-$v" >/dev/null
-make "$PLATFORM" CC="$CC" MYCFLAGS="$CFLAGS $SHARED" MYLDFLAGS="$LDFLAGS" -j"$JOBS"
-$CC "$CFLAGS" -shared -o src/liblua.so -Wl,--whole-archive src/liblua.a -Wl,--no-whole-archive -lm
-short=${v%.\*}
-dest="$PREFIX/lua$short"
-make install INSTALL\_TOP="$dest"
-install -m 755 src/liblua.so "$dest/lib"
-ln -sf "$dest/bin/lua" "$PREFIX/bin/lua$short"
-ln -sf "$dest/bin/luac" "$PREFIX/bin/luac$short"
-popd >/dev/null && rm -rf "lua-$v"
-install\_luarocks "$dest"
-cat >"$dest/lib/pkgconfig/lua$short.pc" <\<EOF
-prefix=$dest
-exec\_prefix=${prefix}
-libdir=${prefix}/lib
-includedir=${prefix}/include
-Name: Lua $short
-Version: $v
-Libs: -shared -L${libdir} -llua
-Cflags: -I${includedir}
-EOF
-done
-if \[\[ $DEFAULT\_IMPL == luajit ]]; then
-ln -sf "$PREFIX/bin/luajit" "$PREFIX/bin/lua"
-ln -sf "$PREFIX/bin/luajit" "$PREFIX/bin/luac"
-else
-def\_short=${DEFAULT\_IMPL//./}
-ln -sf "$PREFIX/bin/lua$def\_short" "$PREFIX/bin/lua"
-ln -sf "$PREFIX/bin/luac$def\_short" "$PREFIX/bin/luac"
-fi
-add\_to\_rc "$HOME/.bashrc"
-add\_to\_rc "$HOME/.zshrc"
-echo -e "\n✔  Build complete.  Open a new shell or run 'source ~/.bashrc' | 'source ~/.zshrc' for it to take effect ."</pre>
-
-</details> <p>Or, <a href="https://github.com/qompassai/Diver/blob/main/scripts/quickstart.sh" target="_blank">View the quickstart script</a>.</p>
-
-  </blockquote>
-</details>
-
-</blockquote>
-</details>
+50 directories, 528 files
+```
 
 <details>
 <summary style="font-size: 1.4em; font-weight: bold; padding: 15px; background: #667eea; color: white; border-radius: 10px; cursor: pointer; margin: 10px 0;"><strong>🧭 About Qompass AI</strong></summary>
@@ -320,12 +721,12 @@ echo -e "\n✔  Build complete.  Open a new shell or run 'source ~/.bashrc' | 's
 **Monero (XMR):**
 
 <div align="center">
-  <h3>Support via Monero</h3>
-    <img src="https://www.github.com/qompassai/svg/assets/monero-qr.svg" alt="Monero QR Code" width="180">
+  <img src="https://raw.githubusercontent.com/qompassai/svg/main/assets/monero-qr.svg" alt="Monero QR Code" width="180">
 </div>
-<div style="margin: 10px 0; text-align: center;">
-  <code>42HGspSFJQ4MjM5ZusAiKZj9JZWhfNgVraKb1eGCsHoC6QJqpo2ERCBZDhhKfByVjECernQ6KeZwFcnq8hVwTTnD8v4PzyH</code>
-</div>
+
+<div style="margin: 10px 0;">
+    <code>42HGspSFJQ4MjM5ZusAiKZj9JZWhfNgVraKb1eGCsHoC6QJqpo2ERCBZDhhKfByVjECernQ6KeZwFcnq8hVwTTnD8v4PzyH</code>
+  </div>
 
 <button onclick="navigator.clipboard.writeText('42HGspSFJQ4MjM5ZusAiKZj9JZWhfNgVraKb1eGCsHoC6QJqpo2ERCBZDhhKfByVjECernQ6KeZwFcnq8hVwTTnD8v4PzyH')" style="padding: 6px 12px; background: #FF6600; color: white; border: none; border-radius: 4px; cursor: pointer;">
     📋 Copy Address
@@ -352,22 +753,22 @@ echo -e "\n✔  Build complete.  Open a new shell or run 'source ~/.bashrc' | 's
 ## Forward Propagation Algorithm
 
 $$
-y = w_1x_1 + w_2x_2 + ... + w_nx_n + b
+y = w\_1x\_1 + w\_2x\_2 + ... + w\_nx\_n + b
 $$
 
 Where:
 
-- $y$ represents the model output
-- $(x_1, x_2, ..., x_n)$ are input features
-- $(w_1, w_2, ..., w_n)$ are feature weights
-- $b$ is the bias term
+* $y$ represents the model output
+* $(x\_1, x\_2, ..., x\_n)$ are input features
+* $(w\_1, w\_2, ..., w\_n)$ are feature weights
+* $b$ is the bias term
 
 ### Neural Network Activation
 
 For neural networks, the bias term is incorporated before activation:
 
 $$
-z = \sum_{i=1}^{n} w_ix_i + b
+z = \sum\_{i=1}^{n} w\_ix\_i + b
 $$
 $$
 a = \sigma(z)
@@ -375,43 +776,43 @@ $$
 
 Where:
 
-- $z$ is the weighted sum plus bias
-- $a$ is the activation output
-- $\sigma$ is the activation function
+* $z$ is the weighted sum plus bias
+* $a$ is the activation output
+* $\sigma$ is the activation function
 
 ### Attention Mechanism- aka what makes the Transformer (The "T" in ChatGPT) powerful
 
-- [Attention High level overview video](https://www.youtube.com/watch?v=fjJOgb-E41w)
+* [Attention High level overview video](https://www.youtube.com/watch?v=fjJOgb-E41w)
 
-- [Attention Is All You Need Arxiv Paper](https://arxiv.org/abs/1706.03762)
+* [Attention Is All You Need Arxiv Paper](https://arxiv.org/abs/1706.03762)
 
 The Attention mechanism equation is:
 
 $$
-Attention(Q, K, V) = softmax(\frac{QK^T}{\sqrt{d_k}})V
+Attention(Q, K, V) = softmax(\frac{QK^T}{\sqrt{d\_k}})V
 $$
 
 Where:
 
-- $Q$ represents the Query matrix
-- $K$ represents the Key matrix
-- $V$ represents the Value matrix
-- $d_k$ is the dimension of the key vectors
-- $\text{softmax}(\cdot)$ normalizes scores to sum to 1
+* $Q$ represents the Query matrix
+* $K$ represents the Key matrix
+* $V$ represents the Value matrix
+* $d\_k$ is the dimension of the key vectors
+* $\text{softmax}(\cdot)$ normalizes scores to sum to 1
 
 ### Q: Do I have to buy a Linux computer to use this? I don't have time for that!
 
 ### A: No. You can run Linux and/or the tools we share alongside your existing operating system:
 
-- Windows users can use Windows Subsystem for Linux [WSL](https://learn.microsoft.com/en-us/windows/wsl/install)
-- Mac users can use [Homebrew](https://brew.sh/)
-- The code-base instructions were developed with both beginners and advanced users in mind.
+* Windows users can use Windows Subsystem for Linux [WSL](https://learn.microsoft.com/en-us/windows/wsl/install)
+* Mac users can use [Homebrew](https://brew.sh/)
+* The code-base instructions were developed with both beginners and advanced users in mind.
 
 ### Q: Do you have to get a masters in AI?
 
 ### A: Not if you don't want to. To get competent enough to get past ChatGPT dependence at least, you just need a computer and a beginning's mindset. Huggingface is a good place to start.
 
-- [Huggingface](https://docs.google.com/presentation/d/1IkzESdOwdmwvPxIELYJi8--K3EZ98_cL6c5ZcLKSyVg/edit#slide=id.p)
+* [Huggingface](https://docs.google.com/presentation/d/1IkzESdOwdmwvPxIELYJi8--K3EZ98_cL6c5ZcLKSyVg/edit#slide=id.p)
 
 ### Q: What makes a "small" AI model?
 
@@ -424,30 +825,30 @@ Where:
 
 ### Protection for Vulnerable Populations
 
-The dual licensing aims to address the cybersecurity gap that disproportionately affects underserved populations. As highlighted by recent attacks<sup><a href="#ref1">[1]</a></sup>, low-income residents, seniors, and foreign language speakers face higher-than-average risks of being victims of cyberattacks. By offering both open-source and commercial licensing options, we encourage the development of cybersecurity solutions that can reach these vulnerable groups while also enabling sustainable development and support.
+The dual licensing aims to address the cybersecurity gap that disproportionately affects underserved populations. As highlighted by recent attacks<sup><a href="#ref1">\[1]</a></sup>, low-income residents, seniors, and foreign language speakers face higher-than-average risks of being victims of cyberattacks. By offering both open-source and commercial licensing options, we encourage the development of cybersecurity solutions that can reach these vulnerable groups while also enabling sustainable development and support.
 
 ### Preventing Malicious Use
 
-The AGPL-3.0 license ensures that any modifications to the software remain open source, preventing bad actors from creating closed-source variants that could be used for exploitation. This is especially crucial given the rising threats to vulnerable communities, including children in educational settings. The attack on Minneapolis Public Schools, which resulted in the leak of 300,000 files and a $1 million ransom demand, highlights the importance of transparency and security<sup><a href="#ref8">[8]</a></sup>.
+The AGPL-3.0 license ensures that any modifications to the software remain open source, preventing bad actors from creating closed-source variants that could be used for exploitation. This is especially crucial given the rising threats to vulnerable communities, including children in educational settings. The attack on Minneapolis Public Schools, which resulted in the leak of 300,000 files and a $1 million ransom demand, highlights the importance of transparency and security<sup><a href="#ref8">\[8]</a></sup>.
 
 ### Addressing Cybersecurity in Critical Sectors
 
-The commercial license option allows for tailored solutions in critical sectors such as healthcare, which has seen significant impacts from cyberattacks. For example, the recent Change Healthcare attack<sup><a href="#ref4">[4]</a></sup> affected millions of Americans and caused widespread disruption for hospitals and other providers. In January 2025, CISA<sup><a href="#ref2">[2]</a></sup> and FDA<sup><a href="#ref3">[3]</a></sup> jointly warned of critical backdoor vulnerabilities in Contec CMS8000 patient monitors, revealing how medical devices could be compromised for unauthorized remote access and patient data manipulation.
+The commercial license option allows for tailored solutions in critical sectors such as healthcare, which has seen significant impacts from cyberattacks. For example, the recent Change Healthcare attack<sup><a href="#ref4">\[4]</a></sup> affected millions of Americans and caused widespread disruption for hospitals and other providers. In January 2025, CISA<sup><a href="#ref2">\[2]</a></sup> and FDA<sup><a href="#ref3">\[3]</a></sup> jointly warned of critical backdoor vulnerabilities in Contec CMS8000 patient monitors, revealing how medical devices could be compromised for unauthorized remote access and patient data manipulation.
 
 ### Supporting Cybersecurity Awareness
 
-The dual licensing model supports initiatives like the Cybersecurity and Infrastructure Security Agency (CISA) efforts to improve cybersecurity awareness<sup><a href="#ref7">[7]</a></sup> in "target rich" sectors, including K-12 education<sup><a href="#ref5">[5]</a></sup>. By allowing both open-source and commercial use, we aim to facilitate the development of tools that support these critical awareness and protection efforts.
+The dual licensing model supports initiatives like the Cybersecurity and Infrastructure Security Agency (CISA) efforts to improve cybersecurity awareness<sup><a href="#ref7">\[7]</a></sup> in "target rich" sectors, including K-12 education<sup><a href="#ref5">\[5]</a></sup>. By allowing both open-source and commercial use, we aim to facilitate the development of tools that support these critical awareness and protection efforts.
 
 ### Bridging the Digital Divide
 
-The unfortunate reality is that too many individuals and organizations have gone into a frenzy in every facet of our daily lives<sup><a href="#ref6">[6]</a></sup>. These unfortunate folks identify themselves with their talk of "10X" returns and building towards Artificial General Intelligence aka "AGI" while offering GPT wrappers. Our dual licensing approach aims to acknowledge this deeply concerning predatory paradigm with clear eyes while still operating to bring the best parts of the open-source community with our services and solutions.
+The unfortunate reality is that too many individuals and organizations have gone into a frenzy in every facet of our daily lives<sup><a href="#ref6">\[6]</a></sup>. These unfortunate folks identify themselves with their talk of "10X" returns and building towards Artificial General Intelligence aka "AGI" while offering GPT wrappers. Our dual licensing approach aims to acknowledge this deeply concerning predatory paradigm with clear eyes while still operating to bring the best parts of the open-source community with our services and solutions.
 
 ### Recent Cybersecurity Attacks
 
 Recent attacks underscore the importance of robust cybersecurity measures:
 
-- The Change Healthcare cyberattack in February 2024 affected millions of Americans and caused significant disruption to healthcare providers.
-- The White House and Congress jointly designated October 2024 as Cybersecurity Awareness Month. This designation comes with over 100 actions that align the Federal government and public/private sector partners are taking to help every man, woman, and child to safely navigate the age of AI.
+* The Change Healthcare cyberattack in February 2024 affected millions of Americans and caused significant disruption to healthcare providers.
+* The White House and Congress jointly designated October 2024 as Cybersecurity Awareness Month. This designation comes with over 100 actions that align the Federal government and public/private sector partners are taking to help every man, woman, and child to safely navigate the age of AI.
 
 By offering both open source and commercial licensing options, we strive to create a balance that promotes innovation and accessibility. We address the complex cybersecurity challenges faced by vulnerable populations and critical infrastructure sectors as the foundation of our solutions, not an afterthought.
 

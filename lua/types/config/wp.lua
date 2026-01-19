@@ -1,0 +1,131 @@
+-- /qompassai/Diver/lua/types/config/wp.lua
+-- Qompass AI Diver WirePlumber Types Config
+-- Copyright (C) 2026 Qompass AI, All rights reserved
+-- ----------------------------------------
+---@meta
+---@alias WPAccess
+---| '"unrestricted"'
+---| '"default"'
+---| '"flatpak"'
+---| '"restricted"'
+---| '"flatpak-manager"'
+---| nil
+---@alias WPPermissions
+---| '"all"'
+---| '"rx"'
+---@alias WPPropValue string|number|boolean|nil
+---@alias WPProperties table<string, WPPropValue>
+---@class WPAudioGroupUtils
+---@field contains_audio_group                        fun(group: string): boolean
+---@field get_audio_group                             fun(node: any): string|nil
+---@field set_audio_group                             fun(node: any, group: string|nil)
+---@type WPAudioGroupUtils
+agutils = agutils
+---@class WPCameraData
+---@field factory                                     string
+---@field id                                          integer
+---@field obj_path                                    string
+---@field parent                                      WPObject
+---@field properties                                  WPProperties
+---@class WPConstraint
+---@field key                                         string
+---@field operator                                    string
+---@field value                                       any
+---@param c                                           { [1]: string, [2]: string, [3]: any, type?: string }
+---@return WPConstraint
+local function Constraint_ctor(c) end
+---@type fun(c: { [1]: string, [2]: string, [3]: any, type?: string }): WPConstraint
+Constraint = Constraint or Constraint_ctor
+---@class WPCore
+---@field sync                                        fun(callback: fun()): nil
+---@field test_feature                                fun(feature: string): boolean
+---@field timeout_add                                 fun(timeout_ms: number, callback: fun(): boolean): WPGSource
+---@type WPCore
+Core = Core
+---@class WPDevice : WPObject
+---@field iterate_params                              fun(self: WPDevice, id: string): fun(): any
+---@class WPEvent
+---@field get_data                                    fun(self: WPEvent, key: string): any
+---@field get_properties                              fun(self: WPEvent): table<string, any>
+---@field get_source                                  fun(self: WPEvent): WPObject
+---@field get_subject                                 fun(self: WPEvent): any
+---@field set_data                                    fun(self: WPEvent, key: string, value: any)
+---@class WPEventDispatcher
+---@field push_event                                  fun(event: WPEvent)
+---@type WPEventDispatcher
+EventDispatcher = EventDispatcher
+---@class WPEventInterest
+---@param spec                                        WPConstraint[]
+---@return WPEventInterest
+local function EventInterest_ctor(spec) end
+---@type fun(spec: WPConstraint[]): WPEventInterest
+EventInterest = EventInterest or EventInterest_ctor
+---@class WPGSource
+---@field destroy                                     fun(self: WPGSource)
+---@class WPJson
+---@field Array                                       fun(t: table): WPJsonObject
+---@field Object                                      fun(tbl: table): WPJsonObject
+---@field Raw                                         fun(obj: any): WPJsonObject
+---@type WPJson
+Json = Json
+---@class WPJsonObject
+---@field get_data                                    fun(self: WPJsonObject): table
+---@field is_array                                    fun(self: WPJsonObject): boolean
+---@field is_boolean                                  fun(self: WPJsonObject): boolean
+---@field is_string                                   fun(self: WPJsonObject): boolean
+---@field is_object                                   fun(self: WPJsonObject): boolean
+---@field parse                                       fun(self: WPJsonObject): table
+---@field to_string                                   fun(self: WPJsonObject): table
+---@class WPLocalModule
+---@field destroy                                     fun(self: WPLocalModule)
+---@param name                                        string # e.g. "libpipewire-module-loopback"
+---@param args                                        table
+---@param opts                                        table
+---@return WPLocalModule
+local function LocalModule_ctor(name, args, opts) end
+---@type fun(name: string, args: table, opts: table): WPLocalModule
+LocalModule = LocalModule or LocalModule_ctor
+---@class WPLog
+---@field debug                                       fun(...: any)
+---@field error                                       fun(...: any)
+---@field info                                        fun(...: any)
+---@field open_topic                                  fun(topic: string): WPLog
+---@field trace                                       fun(...: any)
+---@field warning                                     fun(...: any)
+---@type WPLog
+Log = Log
+---@class WPObject
+---@field call                                        fun(self: WPObject, method: string, ...: any): any
+---@field get_associated_proxy                        fun(self: WPObject, role: string): WPObject
+---@field get_properties                              fun(self: WPObject): table<string, any>
+---@field id                                          integer
+---@field lookup_port                                 fun(self: WPObject, constraints: table): WPObject|nil
+---@field properties                                  table<string, any>
+---@class WPObjectManager
+---@field iterate                                     fun(self: WPObjectManager, filter?: table): fun(): WPObject
+---@field lookup                                      fun(self: WPObjectManager, id: any): WPObject|nil
+---@class WPProcInfo
+---@field get_arg                                     fun(self: WPProcInfo, index: integer): string|nil
+---@field get_n_args                                  fun(self: WPProcInfo): integer
+---@field get_parent_pid                              fun(self: WPProcInfo): integer
+---@class WPProcUtils
+---@field get_proc_info                               fun(pid: integer): WPProcInfo
+---@type WPProcUtils
+ProcUtils = ProcUtils
+---@class WPSimpleEventHook
+---@field register                                    fun(self: WPSimpleEventHook)
+---@field remove                                      fun(self: WPSimpleEventHook)
+---@param opts                                        { name: string, interests: WPEventInterest[], execute: fun(event: WPEvent) }
+---@return WPSimpleEventHook
+local function SimpleEventHook_ctor(opts) end
+---@type fun(opts: { name: string, interests: WPEventInterest[], execute: fun(event: WPEvent) }): WPSimpleEventHook
+SimpleEventHook = SimpleEventHook or SimpleEventHook_ctor
+---@class WPState
+---@field save_after_timeout                          fun(self: WPState, tbl: table)
+
+---@class WPUtils
+---@field cam_data                                    WPCameraData[]
+---@field cam_source                                  WPGSource|nil
+---@field find_duplicate                              fun(parent: WPObject, id: integer, property: string, value: WPPropValue): boolean
+---@field create_cam_nodes                            fun(self: WPUtils)
+---@field register_cam_node                           fun(self: WPUtils, parent: WPObject, id: integer, factory: string, properties: WPProperties)

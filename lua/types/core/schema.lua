@@ -1,0 +1,16 @@
+-- /qompassai/Diver/lua/types/core/schema.lua
+-- Qompass AI Diver Schema Types
+-- Copyright (C) 2025 Qompass AI, All rights reserved
+-- ----------------------------------------
+---@class vim.Schema
+---@field catalog?                   table
+---@field description?               string
+---@field extra?                     vim.Schema[]
+---@field fileMatch?                 (string|string[])
+---@field ignore?                    string[]
+---@field index?                     table<string, integer>
+---@field name?                      string
+---@field replace?                   table<string, vim.Schema|string>?
+---@field schemas?                   vim.Schema[]
+---@field select?                    string[]
+---@field url?                       string

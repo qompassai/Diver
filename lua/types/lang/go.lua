@@ -2,6 +2,3 @@
 -- Qompass AI Diver Go Lang Types
 -- Copyright (C) 2025 Qompass AI, All rights reserved
 -------------------------------------------------------------------
-
-
-

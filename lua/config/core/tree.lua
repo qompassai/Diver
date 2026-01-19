@@ -2,88 +2,272 @@
 -- Qompass AI Diver TreeSitter Config Module
 -- Copyright (C) 2025 Qompass AI, All rights reserved
 ------------------------------------------------------
-
+---@source https://github.com/tree-sitter/tree-sitter/wiki/List-of-parsers
+---@meta
+---@module 'config.core.tree'
 local M = {}
-
 function M.treesitter(opts)
-  opts = opts or {}
-  require("nvim-treesitter.install").prefer_git = true
-  local configs = require("nvim-treesitter.configs")
-  local langs = { 'lang.go', 'lang.rust', 'ui.html', 'ui.md' }
-  local merged_lang_opts = {}
-  for _, lang_mod in ipairs(langs) do
-    local ok, mod = pcall(require, "config." .. lang_mod)
-    if ok and type(mod[lang_mod:match("[^.]+$") .. "_treesitter"]) == "function" then
-      local ts_cfg = mod[lang_mod:match("[^.]+$") .. "_treesitter"]()
-      if ts_cfg then
-        merged_lang_opts = vim.tbl_deep_extend("force", merged_lang_opts, ts_cfg)
-      end
-    end
-  end
-  local base_config = {
-    auto_install = true,
-    ensure_installed = {
-      'css',
-      'go',
-      'html',
-      'json',
-      'json5',
-      'lua',
-      'markdown',
-      'python',
-      'rust',
-    },
-    highlight = {
-      additional_vim_regex_highlighting = true,
-      enable = true,
-    },
-    ignore_install = { "ipkg", "norg" },
-    incremental_selection = {
-      enable = true,
-      keymaps = {
-        init_selection = "gnn",
-        node_decremental = "grm",
-        node_incremental = "grn",
-        scope_incremental = "grc",
-      },
-    },
-    indent = { enable = true },
-    modules = {
-      'folke/twilight.nvim',
-      'nvim-treesitter/nvim-treesitter-context',
-      'nvim-treesitter/playground',
-      'SmiteshP/nvim-navic',
-      'nvim-treesitter-refactor',
-      'nvim-treesitter-textobjects',
-      'milisims/tree-sitter-org',
-    },
-    textobjects = {
-      select = {
-        enable = true,
-        keymaps = {
-          ["af"] = "@function.outer",
-          ["if"] = "@function.inner",
+    require('nvim-treesitter.install').prefer_git = true
+    require('nvim-treesitter.configs').setup(opts)
+    local configs = require('nvim-treesitter.configs')
+    local base_config = { ---@source :lua =require('nvim-treesitter.parsers').get_parser_configs()
+        auto_install = true,
+        ensure_installed = {
+            'ada',
+            'agda',
+            'angular',
+            'apex',
+            'arduino',
+            'asm',
+            'astro',
+            --'authzed',
+            'awk',
+            'bash',
+            'bass',
+            'beancount',
+            'blade',
+            'bibtex',
+            'bicep',
+            'bitbake',
+            'blueprint',
+            'c',
+            'caddy',
+            'cairo',
+            'clojure',
+            'cmake',
+            'comment',
+            'commonlisp',
+            'cpp',
+            'c_sharp',
+            'css',
+            'csv',
+            'cuda',
+            'cue',
+            'd',
+            'dart',
+            'desktop',
+            'devicetree',
+            'diff',
+            'dockerfile',
+            'dot',
+            'doxygen',
+            'editorconfig',
+            'eex',
+            'elixir',
+            'elm',
+            'embedded_template',
+            'erlang',
+            'facility',
+            'faust',
+            'fennel',
+            'fish',
+            'foam',
+            'fortran',
+            'fsh',
+            'fsharp',
+            'func',
+            'gap',
+            'gdscript',
+            'gdshader',
+            'gitattributes',
+            'git_config',
+            'git_rebase',
+            'gitignore',
+            'gleam',
+            'glsl',
+            'go',
+            'goctl',
+            'godot_resource',
+            'gomod',
+            'gosum',
+            'gotmpl',
+            'gowork',
+            'gpg',
+            'graphql',
+            'gstlaunch',
+            'hack',
+            'haskell',
+            'hcl',
+            'helm',
+            'hlsl',
+            'hoon',
+            'html',
+            'htmldjango',
+            'hyprlang',
+            'idl',
+            'idris',
+            'inko',
+            'ini',
+            --'ipkg',
+            'java',
+            'javadoc',
+            'jinja',
+            'jq',
+            'jsdoc',
+            'json',
+            'json5',
+            'jsonc',
+            -- 'json_schema',
+            'julia',
+            'just',
+            'kcl',
+            'kconfig',
+            'kotlin',
+            'llvm',
+            -- 'llvm_mir',
+            'lua',
+            'luadoc',
+            'luap',
+            'luau',
+            'latex',
+            'm68k',
+            'make',
+            'markdown',
+            'markdown_inline',
+            'matlab',
+            'mermaid',
+            'meson',
+            'mlir',
+            'nginx',
+            'ninja',
+            'nix',
+            'norg',
+            'muttrc',
+            'objc',
+            'objdump',
+            'ocaml',
+            'ocaml_interface',
+            'ocamllex',
+            'odin',
+            'passwd',
+            'pem',
+            'perl',
+            'php',
+            'php_only',
+            'phpdoc',
+            'po',
+            'powershell',
+            'printf',
+            'properties',
+            'proto',
+            'puppet',
+            'python',
+            'pymanifest',
+            'query',
+            'r',
+            'regex',
+            'rego',
+            'requirements',
+            'rescript',
+            'robot',
+            'robots',
+            'roc',
+            'rst',
+            'ruby',
+            'rust',
+            'scala',
+            'scfg',
+            'scheme',
+            'scss',
+            'smithy',
+            'solidity',
+            'scss',
+            'sql',
+            'ssh_config',
+            'starlark',
+            'supercollider',
+            'superhtml',
+            'svelte',
+            'sway',
+            'swift',
+            'tablegen',
+            'tcl',
+            'teal',
+            'templ',
+            'terraform',
+            'textproto',
+            'tiger',
+            'tmux',
+            'toml',
+            'tsv',
+            'tsx',
+            'turtle',
+            'typescript',
+            'typst',
+            'udev',
+            'usd',
+            'v',
+            'vala',
+            'verilog',
+            'vhdl',
+            'vim',
+            'vimdoc',
+            'vue',
+            'wgsl',
+            'wgsl_bevy',
+            'xcompose',
+            'xml',
+            'yaml',
+            'yang',
+            'zathurarc',
+            'zig',
+            'ziggy',
+            'ziggy_schema',
         },
-      },
-    },
-  }
-  local final_config = vim.tbl_deep_extend("force", base_config, merged_lang_opts, opts or {})
-  configs.setup(final_config)
-  vim.api.nvim_create_autocmd("FileType", {
-    desc = "Use Tree-sitter for code folding",
-    callback = function()
-      vim.wo.foldmethod = "expr"
-      vim.wo.foldexpr = "v:lua.vim.treesitter.foldexpr()"
-    end,
-  })
+        highlight = {
+            additional_vim_regex_highlighting = false, ---legacy
+            enable = true,
+        },
+        ignore_install = {},
+        incremental_selection = {
+            enable = true,
+            keymaps = {
+                init_selection = 'gnn',
+                node_decremental = 'grm',
+                node_incremental = 'grn',
+                scope_incremental = 'grc',
+            },
+        },
+        indent = {
+            enable = true,
+        },
+        sync_install = false,
+        textobjects = {
+            select = {
+                enable = true,
+                lookahead = true,
+                keymaps = {
+                    ['af'] = '@function.outer',
+                    ['if'] = '@function.inner',
+                },
+            },
+        },
+    }
+    local final_config = vim.tbl_deep_extend('force', base_config, opts) ---@cast final_config TSConfig
+    configs.setup(final_config)
 end
 
 function M.tree_cfg(opts)
-  opts = opts or {}
-  M.treesitter(opts)
-  return {
-    treesitter = vim.tbl_deep_extend("force", M.options and M.options.treesitter or {}, opts),
-  }
+    opts = opts or {}
+    M.treesitter(opts)
+    return {
+        treesitter = vim.tbl_deep_extend('force', M.options and M.options.treesitter or {}, opts),
+    }
 end
 
+vim.treesitter.language.register('latex', 'tex')
+vim.treesitter.language.register('linkerscript', 'ld')
+vim.api.nvim_create_autocmd('FileType', {
+    pattern = 'tex',
+    callback = function(args)
+        vim.treesitter.start(args.buf, 'latex')
+        vim.bo[args.buf].syntax = 'ON'
+    end,
+})
+vim.treesitter.query.set(
+    'c',
+    'highlights',
+    [[;inherits c
+  (identifier) @spell]]
+)
 return M

@@ -1,115 +1,234 @@
-#!/bin/sh
-# qompassai/Diver/scripts/quickstart.sh
-# Qompass AI Diver uick‑Start
+#!/usr/bin/env bash
+# /qompassai/Diver/scripts/quickstart.sh
+# Qompass AI Diver Quickstart Script
 # Copyright (C) 2025 Qompass AI, All rights reserved
-# --------------------------------------------------
-set -eu
+#####################################################
+# Reference: https://neovim.io/doc2/build/
+set -euo pipefail
+PREFIX="$HOME/.local"
+BIN_DIR="$PREFIX/bin"
 XDG_DATA_HOME="${XDG_DATA_HOME:-$HOME/.local/share}"
-XDG_CONFIG_HOME="${XDG_CONFIG_HOME:-$HOME/.config}"
-DIVER_DIR="$XDG_DATA_HOME/diver"
-REPO_DIR="$(cd "$(dirname "$0")" && pwd)"
-PYTHON_VERSION="${PYTHON_VERSION:-3.13}"
-VENV_PATH="$DIVER_DIR/.python/.venv${PYTHON_VERSION%.*}${PYTHON_VERSION#*.}"
-PYTHON_BIN="python$PYTHON_VERSION"
-VENV_PY="$VENV_PATH/bin/python$PYTHON_VERSION"
-CONFIG_FILES="
-.editorconfig
-.envrc
-.cbfmt.toml
-init.lua
-.luacheckrc
-.lua-format
-.luarc.json
-.markdownlint.yaml
-.marksman.toml
-selene.toml
-stylua.toml
-vim.toml
-vim.yml
-"
-detect_os() {
-  case "$(uname -s)" in
-  Darwin*) OS="macos" ;;
-  Linux*) OS="linux" ;;
-  FreeBSD*) OS="bsd" ;;
-  CYGWIN* | MINGW* | MSYS*) OS="windows" ;;
-  *) OS="unknown" ;;
+NVIM_DATA_DIR="$XDG_DATA_HOME/nvim"
+BUILD_DIR="${BUILD_DIR:-$HOME/src/neovim-nightly}"
+TMP_DIR="${TMPDIR:-/tmp}/nvim-bootstrap-$$"
+mkdir -p "$BIN_DIR" "$NVIM_DATA_DIR" "$BUILD_DIR" "$TMP_DIR"
+OS='linux'
+ARCH='x86_64'
+download_and_extract() {
+  local url=$1
+  local dest_dir=$2
+  local strip_top=${3:-0}
+  mkdir -p "$dest_dir"
+  local fname
+  fname="$TMP_DIR/$(basename "$url")"
+  curl -L --fail -o "$fname" "$url"
+  case "$fname" in
+  *.tar.gz | *.tgz)
+    if [[ "$strip_top" -eq 1 ]]; then
+      tar -xzf "$fname" -C "$dest_dir" --strip-components=1
+    else
+      tar -xzf "$fname" -C "$dest_dir"
+    fi
+    ;;
+  *.tar.xz)
+    if [[ "$strip_top" -eq 1 ]]; then
+      tar -xJf "$fname" -C "$dest_dir" --strip-components=1
+    else
+      tar -xJf "$fname" -C "$dest_dir"
+    fi
+    ;;
+  *.zip)
+    unzip -q "$fname" -d "$dest_dir"
+    ;;
+  *)
+    echo "!! Unknown archive format: $fname"
+    exit 1
+    ;;
   esac
 }
-find_python() {
-  if [ -n "${PYTHON_PATH:-}" ] && command -v "$PYTHON_PATH" >/dev/null 2>&1; then
-    PYTHON_EXE="$PYTHON_PATH"
-    return 0
-  fi
-  if command -v pyenv >/dev/null 2>&1; then
-    py_path="$(pyenv root)/versions/$PYTHON_VERSION/bin/python$PYTHON_VERSION"
-    if [ -x "$py_path" ]; then
-      PYTHON_EXE="$py_path"
-      return 0
-    fi
-  fi
-  if command -v "$PYTHON_BIN" >/dev/null 2>&1; then
-    PYTHON_EXE="$(command -v "$PYTHON_BIN")"
-    return 0
-  fi
-  # Fallback: python3
-  if command -v python3 >/dev/null 2>&1; then
-    PYTHON_EXE="$(command -v python3)"
-    return 0
-  fi
-  echo "❌ Cannot find a suitable Python ($PYTHON_BIN)" >&2
-  exit 1
+install_git() {
+  local ver="2.47.0"
+  local url="https://mirrors.edge.kernel.org/pub/software/scm/git/git-${ver}.tar.xz"
+  local dest="$TMP_DIR/git-src"
+  download_and_extract "$url" "$dest"
+  (
+    cd "$dest"
+    make configure
+    ./configure --prefix="$PREFIX"
+    make -j"$(nproc)"
+    make install
+  )
 }
-echo "Setting up Python virtual environment..."
-mkdir -p "$DIVER_DIR/.python"
-find_python
-if [ ! -d "$VENV_PATH" ]; then
-  "$PYTHON_EXE" -m venv "$VENV_PATH"
-  "$VENV_PATH/bin/pip" install --upgrade pip pynvim
-  echo "Created Python venv at $VENV_PATH"
-else
-  echo "Python venv already exists at $VENV_PATH"
-fi
-echo "\nCopying Diver configuration files..."
-mkdir -p "$DIVER_DIR/nvim"
-for file in $CONFIG_FILES; do
-  if [ -f "$REPO_DIR/$file" ]; then
-    cp -v "$REPO_DIR/$file" "$DIVER_DIR/$file"
+install_cmake() {
+  local ver="4.2.1"
+  local url="https://github.com/Kitware/CMake/releases/download/v${ver}/cmake-${ver}-${OS}-${ARCH}.tar.gz"
+  local dest="$PREFIX/cmake-${ver}"
+  download_and_extract "$url" "$dest" 1
+  ln -sf "$dest/bin/cmake" "$BIN_DIR/cmake"
+  ln -sf "$dest/bin/ctest" "$BIN_DIR/ctest"
+  ln -sf "$dest/bin/cpack" "$BIN_DIR/cpack"
+  ln -sf "$dest/bin/cmakexbuild" "$BIN_DIR/cmakexbuild" 2>/dev/null || true
+}
+install_ninja() {
+  local url="https://github.com/ninja-build/ninja/releases/latest/download/ninja-${OS}.zip"
+  local dest="$TMP_DIR/ninja"
+  download_and_extract "$url" "$dest"
+  install -m 755 "$dest/ninja" "$BIN_DIR/ninja"
+}
+install_clang() {
+  local ver="21.1.6"
+  local url="https://github.com/llvm/llvm-project/releases/download/llvmorg-${ver}/clang+llvm-${ver}-x86_64-linux-gnu-ubuntu-22.04.tar.xz"
+  local dest="$PREFIX/clang-${ver}"
+  download_and_extract "$url" "$dest" 1
+  ln -sf "$dest/bin/clang" "$BIN_DIR/clang"
+  ln -sf "$dest/bin/clang++" "$BIN_DIR/clang++"
+}
+install_pkg_config() {
+  local ver="0.29.2"
+  local url="https://pkgconfig.freedesktop.org/releases/pkg-config-${ver}.tar.gz"
+  local dest="$TMP_DIR/pkg-config-src"
+  download_and_extract "$url" "$dest"
+  (
+    cd "$dest"
+    ./configure --prefix="$PREFIX" --with-internal-glib
+    make -j"$(nproc)"
+    make install
+  )
+}
+install_tar() {
+  local ver="1.35"
+  local url="https://ftp.gnu.org/gnu/tar/tar-${ver}.tar.gz"
+  local dest="$TMP_DIR/tar-src"
+  download_and_extract "$url" "$dest"
+  (
+    cd "$dest"
+    ./configure --prefix="$PREFIX"
+    make -j"$(nproc)"
+    make install
+  )
+}
+install_make() {
+  local ver="4.4.1"
+  local url="https://ftp.gnu.org/gnu/make/make-${ver}.tar.gz"
+  local dest="$TMP_DIR/make-src"
+  download_and_extract "$url" "$dest"
+  (
+    cd "$dest"
+    ./configure --prefix="$PREFIX"
+    make -j"$(nproc)"
+    make install
+  )
+  install_luajit_and_lua_ls() {
+  local lj_ver="2.1.0-beta3"
+  local lj_url="https://luajit.org/download/LuaJIT-${lj_ver}.tar.gz"
+  local lj_dest="$TMP_DIR/LuaJIT-${lj_ver}"
+  download_and_extract "$lj_url" "$TMP_DIR"
+  (
+    cd "$lj_dest"
+    make -j"$(nproc)" PREFIX="$PREFIX"
+    make install PREFIX="$PREFIX"
+  )
+  local lr_ver="3.11.1"
+  local lr_url="https://luarocks.github.io/luarocks/releases/luarocks-${lr_ver}.tar.gz"
+  local lr_dest="$TMP_DIR/luarocks-${lr_ver}"
+  download_and_extract "$lr_url" "$TMP_DIR"
+  (
+    cd "$lr_dest"
+    ./configure \
+      --prefix="$PREFIX" \
+      --with-lua="$PREFIX" \
+      --with-lua-include="$PREFIX/include/luajit-2.1" \
+      --lua-suffix=jit
+    make -j"$(nproc)"
+    make install
+  )
+  export PATH="$BIN_DIR:$PATH"
+  luarocks install --lua-dir="$PREFIX" lua-language-server || {
+    echo "Warning: luarocks lua-language-server install failed; check rock name/availability."
+  }
+  cat >"$BIN_DIR/lua_ls" <<'EOF'
+#!/usr/bin/env bash
+# Wrapper for lua-language-server (installed via LuaRocks/LuaJIT)
+exec lua-language-server "$@"
+EOF
+  chmod +x "$BIN_DIR/lua_ls"
+}
+}
+NEEDED_TOOLS=(git curl tar make clang cmake ninja bash pkg-config)
+MISSING=()
+need_tool() {
+  local t=$1
+  if command -v "$t" >/dev/null 2>&1; then
+    return 0
+  elif [[ -x "$BIN_DIR/$t" ]]; then
+    return 0
   else
-    echo "  ! Warning: $file not found in repo"
+    return 1
+  fi
+}
+for tool in "${NEEDED_TOOLS[@]}"; do
+  if ! need_tool "$tool"; then
+    MISSING+=("$tool")
   fi
 done
-
-echo "\nLinking Diver config..."
-mkdir -p "$XDG_CONFIG_HOME/nvim"
-ln -sf "$DIVER_DIR/init.lua" "$XDG_CONFIG_HOME/nvim/init.lua"
-echo "\nConfiguring Diver Python integration..."
-PYTHON_CONFIG_LINE="vim.g.python3_host_prog = '$VENV_PATH/bin/python'"
-if grep -q 'python3_host_prog' "$DIVER_DIR/init.lua" 2>/dev/null; then
-  # In-place edit (POSIX version)
-  TMPF="$DIVER_DIR/init.lua.tmp"
-  sed "s|vim.g.python3_host_prog.*|$PYTHON_CONFIG_LINE|" "$DIVER_DIR/init.lua" >"$TMPF"
-  mv "$TMPF" "$DIVER_DIR/init.lua"
-  echo "Updated Python path in init.lua"
-else
-  echo "$PYTHON_CONFIG_LINE" >>"$DIVER_DIR/init.lua"
-  echo "Added Python path to init.lua"
+if [[ ${#MISSING[@]} -gt 0 ]]; then
+  echo "→ Bootstrapping missing tools into $PREFIX:"
+  for t in "${MISSING[@]}"; do
+    case "$t" in
+    git) install_git ;;
+    cmake) install_cmake ;;
+    ninja) install_ninja ;;
+    clang) install_clang ;;
+    pkg-config) install_pkg_config ;;
+    tar) install_tar ;;
+    make) install_make ;;
+    curl | bash)
+      echo "  Please install $t and try again."
+      exit 1
+      ;;
+    *)
+      echo "!! No bootstrap recipe defined for $t"
+      exit 1
+      ;;
+    esac
+  done
 fi
-echo "\nUpdating shell rc files..."
-add_to_rc() {
-  rc_file="$1"
-  line="$2"
-  if [ -f "$rc_file" ] && ! grep -Fq "$line" "$rc_file"; then
-    printf '\n# Added by Python quickstart\n%s\n' "$line" >>"$rc_file"
-    echo " → $rc_file updated"
+export PATH="$BIN_DIR:$PATH"
+if [[ -d "$BUILD_DIR/.git" ]]; then
+  cd "$BUILD_DIR"
+  git fetch --all --tags
+else
+  git clone https://github.com/neovim/neovim "$BUILD_DIR" --recursive
+  cd "$BUILD_DIR"
+fi
+git switch nightly
+rm -rf build .deps
+cmake -S cmake.deps -B .deps -G Ninja \
+  -D CMAKE_BUILD_TYPE=RelWithDebInfo \
+  -D USE_BUNDLED=ON \
+  -D USE_BUNDLED_LUAJIT=ON
+cmake --build .deps
+cmake -B build -G Ninja \
+  -D CMAKE_BUILD_TYPE=RelWithDebInfo \
+  -D CMAKE_INSTALL_PREFIX="$PREFIX"
+cmake --build build
+cmake --install build
+add_path_line="export PATH=\"$BIN_DIR:\$PATH\""
+for rc in "$HOME/.bashrc" "$HOME/.zshrc" "$HOME/.config/fish/config.fish"; do
+  [[ -f "$rc" ]] || continue
+  if ! grep -Fq "$BIN_DIR" "$rc"; then
+    printf '\n# Added by Neovim nightly installer\n%s\n' "$add_path_line" >>"$rc"
+    echo "→ PATH updated in $rc"
   fi
-}
-add_to_rc "$HOME/.bashrc" "export PATH=\"$VENV_PATH/bin:\$PATH\""
-add_to_rc "$HOME/.bashrc" "export EDITOR=nvim"
-add_to_rc "$HOME/.bashrc" "alias vim=nvim"
-add_to_rc "$HOME/.zshrc" "export PATH=\"$VENV_PATH/bin:\$PATH\""
-add_to_rc "$HOME/.zshrc" "export EDITOR=nvim"
-add_to_rc "$HOME/.zshrc" "alias vim=nvim"
-echo "\nSetup complete! 🚀"
-echo "Python venv: $VENV_PATH"
-echo "Diver config: $DIVER_DIR"
+done
+pnpm add -g neovim && pip install --user pynvim && gem install neovim
+NVIM_BIN="$BIN_DIR/nvim"
+if [[ -x "$NVIM_BIN" ]]; then
+  echo "Neovim → $NVIM_BIN"
+  "$NVIM_BIN" --version | sed -n '1,8p'
+else
+  echo "Error: Neovim not at $NVIM_BIN :(" >&2
+  exit 1
+fi
+echo "Great Success!"
+rm -rf "$TMP_DIR"

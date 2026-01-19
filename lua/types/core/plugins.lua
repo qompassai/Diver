@@ -1,0 +1,17 @@
+-- /qompassai/Diver/lua/types/core/plugins.lua
+-- Qompass AI Diver Core Plugin Types
+-- Copyright (C) 2025 Qompass AI, All rights reserved
+-- ----------------------------------------
+---@alias vim.pack.SpecList vim.pack.Spec[]
+---@class vim.pack.Spec
+---@field branch?                         string
+---@field build?                          string|fun()
+---@field cmd?                            string[]
+---@field config?                         fun()
+---@field dependencies?                   vim.pack.Spec[]
+---@field filetypes?                      string[]
+---@field hook?                           fun(spec: vim.pack.Spec)
+---@field event?                          string[]
+---@field init?                           fun()
+---@field opt?                            boolean
+---@field opts?                           table

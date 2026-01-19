@@ -3,26 +3,44 @@
 -- Copyright (C) 2025 Qompass AI, All rights reserved
 -----------------------------------------------------
 local M = {}
-
 function M.blink_cmp()
   return {
-    keymap = { preset = 'default' },
+    keymap = {
+      preset = 'default',
+    },
     appearance = {
       nerd_font_variant = 'mono',
-      kind_icons = require('lazyvim.config').icons.kinds
+      kind_icons = require('lazyvim.config').icons.kinds,
     },
     completion = {
-      documentation = { auto_show = true }
+      documentation = {
+        auto_show = true,
+      },
+      list = {
+        selection = {
+          preselect = true,
+          auto_insert = false
+        },
+      },
     },
-    snippets = { preset = 'luasnip' },
+    snippets = {
+      preset = 'luasnip',
+    },
     sources = {
       default = {
-        'lazydev', 'lsp', 'path', 'snippets', 'buffer', 'dadbod', 'emoji', 'dictionary'
+        'lazydev',
+        'lsp',
+        'path',
+        'snippets',
+        'buffer',
+        'dadbod',
+        'emoji',
+        'dictionary',
       },
       providers = {
         lazydev = {
-          name = "LazyDev",
-          module = "lazydev.integrations.blink",
+          name = 'LazyDev',
+          module = 'lazydev.integrations.blink',
           score_offset = 1001,
         },
         lsp = {
@@ -30,30 +48,33 @@ function M.blink_cmp()
           enabled = true,
           module = 'blink.cmp.sources.lsp',
           min_keyword_length = 3,
-          score_offset = 1000
+          score_offset = 2000,
         },
         path = {
           name = 'Path',
           enabled = true,
           module = 'blink.cmp.sources.path',
           score_offset = 250,
-          fallbacks = { 'snippets', 'buffer' },
+          fallbacks = {
+            'snippets',
+            'buffer',
+          },
           opts = {
             trailing_slash = true,
             label_trailing_slash = true,
             get_cwd = function(context)
               return vim.fn.expand(('#%d:p:h'):format(context.bufnr))
             end,
-            show_hidden_files_by_default = true
-          }
+            show_hidden_files_by_default = true,
+          },
         },
         buffer = {
-          name = 'Buffer',
           enabled = true,
+          name = 'Buffer',
           max_items = 3,
           module = 'blink.cmp.sources.buffer',
           min_keyword_length = 3,
-          score_offset = 500
+          score_offset = 500,
         },
         snippets = {
           name = 'snippets',
@@ -61,14 +82,14 @@ function M.blink_cmp()
           max_items = 15,
           min_keyword_length = 3,
           module = 'blink.cmp.sources.snippets',
-          score_offset = 750
+          score_offset = 750,
         },
         dadbod = {
           name = 'Dadbod',
           enabled = true,
           module = 'vim_dadbod_completion.blink',
           min_keyword_length = 3,
-          score_offset = 85
+          score_offset = 85,
         },
         emoji = {
           module = 'blink-emoji',
@@ -76,7 +97,9 @@ function M.blink_cmp()
           enabled = true,
           score_offset = 93,
           min_keyword_length = 3,
-          opts = { insert = true }
+          opts = {
+            insert = true,
+          },
         },
         dictionary = {
           module = 'blink-cmp-dictionary',
@@ -87,37 +110,48 @@ function M.blink_cmp()
           min_keyword_length = 3,
           opts = {
             dictionary_directories = {
-              vim.fn.expand("'$HOME/.config/nvim/lua/utils/dictionary'")
+              vim.fn.expand('\'$XDG_CONFIG_HOME/nvim/lua/utils/dictionary\''),
             },
             dictionary_files = {
-              vim.fn.expand("'$HOME/.config/nvim/lua/utils/dictionary/en.utf-8.add'")
-            }
-          }
-        }
-      }
+              vim.fn.expand('\'$XDG_CONFIG_HOME/nvim/spell/en.utf-8.add\''),
+            },
+          },
+        },
+      },
     },
-    cmdline = { enabled = true },
-    -- fuzzy = {
-    --   use_typo_resistance = false,
-    --   use_frecency = true,
-    --   use_proximity = false,
-    -- },
+    cmdline = {
+      enabled = false,
+    },
+    fuzzy = {
+      frecency = {
+        enabled = true,
+        path = vim.fn.stdpath('state') .. '/blink/cmp/frecency.dat',
+        unsafe_no_lock = false,
+      },
+      implementation = "prefer_rust_with_warning",
+      sorts = {
+        'exact',
+        'score',
+        'sort_text',
+      },
+      use_proximity = false,
+    },
   }
 end
 
 function M.nvim_cmp()
-  local cmp = require('cmp')
-  local luasnip = require('luasnip')
+  local cmp = require('cmp') ---@type table
+  local luasnip = require('luasnip') ---@type table
   local mappings = {
-    ['<C-b>'] = cmp.mapping.scroll_docs(-4),
-    ['<C-f>'] = cmp.mapping.scroll_docs(4),
-    ['<C-Space>'] = cmp.mapping.complete(),
-    ['<C-e>'] = cmp.mapping.abort(),
-    ['<CR>'] = cmp.mapping.confirm({
+    ['<C-b>'] = cmp.mapping.scroll_docs(-4), ---@type string[]
+    ['<C-f>'] = cmp.mapping.scroll_docs(4), ---@type string[]
+    ['<C-Space>'] = cmp.mapping.complete(), ---@type string[]
+    ['<C-e>'] = cmp.mapping.abort(), ---@type string[]
+    ['<CR>'] = cmp.mapping.confirm({ ---@type string[]
       select = true,
-      behavior = cmp.ConfirmBehavior.Replace
+      behavior = cmp.ConfirmBehavior.Replace, ---@type string[]
     }),
-    ['<Tab>'] = cmp.mapping(function(fallback)
+    ['<Tab>'] = cmp.mapping(function(fallback) ---@type string
       if cmp.visible() then
         cmp.select_next_item()
       elseif luasnip.expand_or_jumpable() then
@@ -125,8 +159,11 @@ function M.nvim_cmp()
       else
         fallback()
       end
-    end, { 'i', 's' }),
-    ['<S-Tab>'] = cmp.mapping(function(fallback)
+    end, {
+      'i',
+      's',
+    }),
+    ['<S-Tab>'] = cmp.mapping(function(fallback) ---@type string
       if cmp.visible() then
         cmp.select_prev_item()
       elseif luasnip.jumpable(-1) then
@@ -134,77 +171,51 @@ function M.nvim_cmp()
       else
         fallback()
       end
-    end, { 'i', 's' })
-  }
-  vim.lsp.completion.enable = false
-  cmp.setup({
-    snippet = { expand = function(args) luasnip.lsp_expand(args.body) end },
-    mapping = mappings,
-    sources = cmp.config.sources({
-      { name = 'nvim_lsp', priority = 1000 },
-      { name = 'luasnip',  priority = 750 },
-      { name = 'buffer',   priority = 500 },
-      { name = 'path',     priority = 250 }
+    end, {
+      'i',
+      's',
     }),
+  }
+  cmp.setup({
+    snippet = {
+      expand = function(args)
+        luasnip.lsp_expand(args.body)
+      end,
+    },
+    mapping = mappings,
+    sources = cmp.config.sources(), ---@type table[]
     formatting = {
-      format = require('lspkind').cmp_format({
+      format = require('lspkind').cmp_format({ ---@type table[]
         mode = 'symbol_text',
         maxwidth = 50,
         ellipsis_char = '...',
         before = function(entry, vim_item)
-          vim_item.menu = ({
+          vim_item.menu = ({ ---@type table[]
             nvim_lsp = '[LSP]',
             nvim_lua = '[Lua]',
             luasnip = '[Snippet]',
             buffer = '[Buffer]',
-            path = '[Path]'
+            path = '[Path]',
           })[entry.source.name]
           return vim_item
-        end
-      })
-    },
-    experimental = { ghost_text = { hl_group = 'Comment' } },
-    window = {
-      completion = cmp.config.window.bordered({
-        border = 'single',
-        winhighlight = 'Normal:Normal,FloatBorder:FloatBorder,CursorLine:Visual,Search:None'
+        end,
       }),
-      documentation = cmp.config.window.bordered({
+    },
+    experimental = {
+      ghost_text = {
+        hl_group = 'Comment',
+      },
+    },
+    window = {
+      completion = cmp.config.window.bordered({ ---@type table
         border = 'single',
-        winhighlight = 'Normal:Normal,FloatBorder:FloatBorder,CursorLine:Visual,Search:None'
-      })
-    }
-  })
-  cmp.setup.filetype('lua', {
-    sources = cmp.config.sources({
-      { name = 'nvim_lua', priority = 1100 },
-      { name = 'nvim_lsp', priority = 1000 },
-      { name = 'luasnip',  priority = 900 },
-      { name = 'buffer',   priority = 800 }
-    })
-  })
-  cmp.setup.filetype({ 'typescript', 'typescriptreact' }, {
-    sources = cmp.config.sources({
-      { name = 'nvim_lsp', priority = 1000 },
-      { name = 'luasnip',  priority = 900 },
-      { name = 'buffer',   priority = 800 }
-    })
-  })
-  cmp.setup.filetype('zig', {
-    sources = cmp.config.sources({
-      { name = 'nvim_lsp', priority = 1000 },
-      { name = 'luasnip',  priority = 750 },
-      { name = 'buffer',   priority = 500 },
-      { name = 'path',     priority = 250 }
-    })
-  })
-  cmp.setup.cmdline(':', {
-    mapping = cmp.mapping.preset.cmdline(),
-    sources = cmp.config.sources({ { name = 'path' }, { name = 'cmdline' } })
-  })
-  cmp.setup.cmdline('/', {
-    mapping = cmp.mapping.preset.cmdline(),
-    sources = { { name = 'buffer' } }
+        winhighlight = 'Normal:Normal,FloatBorder:FloatBorder,CursorLine:Visual,Search:None',
+      }),
+      documentation = cmp.config.window.bordered({ ---@type table
+        border = 'single',
+        winhighlight = 'Normal:Normal,FloatBorder:FloatBorder,CursorLine:Visual,Search:None',
+      }),
+    },
   })
 end
 

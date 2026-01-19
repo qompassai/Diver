@@ -1,412 +1,396 @@
--- /qompassai/Diver/lua/config/core/lsp.lua
+-- /qompassai/Diver/lsp/lsp.lua
 -- Qompass AI Diver Native LSP Config
 -- Copyright (C) 2025 Qompass AI, All rights reserved
 -----------------------------------------------------
 local M = {}
-capabilities = vim.lsp.protocol.make_client_capabilities()
-vim.lsp.enable({
-  'ada_ls',
-  'ast_grep',
-  'air',
-  'angularls',
-  'ansiblels',
-  'antlersls',
-  'arduino_language_server',
-  'asm_lsp',
-  'astro',
-  'autohotkey_lsp',
-  'autotools_ls',
-  'awk_ls',
-  'azure_pipelines_ls',
-  'bacon_ls',
-  'basepyright',
-  'bashls',
-  --	'basics_ls',
-  'bazelrc_lsp',
-  'beancount',
-  'bicep',
-  'biome',
-  'blueprint_ls',
-  'bqls',
-  'bright_script',
-  'bsl_ls',
-  'buck2',
-  -- 'buddy_ls',
-  'buf',
-  'buf_ls',
-  'bufls',
-  'bzl',
-  'c3_lsp',
-  'cairo_ls',
-  'ccls',
-  'cds_lsp',
-  'circom-lsp',
-  'clangd',
-  'clarinet',
-  'clojure_lsp',
-  'cmake',
-  'cobol_ls',
-  'codebook',
-  'coffeesense',
-  --	'contextive',
-  'coq_lsp',
-  'csharp-language-server',
-  --'cspell_ls',
-  'deno',
-  'docker_compose_language_service',
-  'dockerls',
-  'dolmenls',
-  'dotls',
-  'dot-language-server',
-  'dprint',
-  'dts_lsp',
-  --	'efm',
-  'elixirls',
-  'elmls',
-  'elp',
-  'ember',
-  'emmet_language_server',
-  'emmet_ls',
-  -- 'emmylua_ls',
-  'erg_language_server',
-  'erlangls',
-  'esbonio',
-  -- 'eslint',
-  'facility_language_server',
-  'fennel_language_server',
-  'fennel_ls',
-  'fish_lsp',
-  --  'flow',
-  'flux_lsp',
-  'foam_ls',
-  'fortls',
-  'fsautocomplete',
-  'fsharp_language_server',
-  'fstar',
-  'gdscript',
-  'gdshader_lsp',
-  'ghcide',
-  'gh_actions_ls',
-  'ghdl_ls',
-  'gitlab_ci_ls',
-  'ginko_ls',
-  'gitlab_ci_ls',
-  'glasgow',
-  'gleam',
-  --'glint',
-  'glsl_analyzer',
-  'glslls',
-  'gnls',
-  'golangci_lint_ls',
-  'gopls',
-  'gradle_ls',
-  'graphql',
-  'groovyls',
-  'guile_ls',
-  'helmls',
-  'hdl_checker',
-  'herb_ls',
-  'hlasm',
-  'hls',
-  'hoon_ls',
-  'html',
-  'htmx',
-  'hydra',
-  'hyprls',
-  'intelephense',
-  'java_language_server',
-  'jdtls',
-  'jinja_lsp',
-  'jsonls',
-  'jqls',
-  'jsonnet_ls',
-  'julials',
-  'just',
-  'kotlin_language_server',
-  'kotlin_lsp',
-  'laravel_ls',
-  'lexical',
-  'lsp_ai',
-  'ltex',
-  'ltex-ls-plus',
-  'lua_ls',
-  'luau_lsp',
-  'lwc_ls',
-  'marksman',
-  'matlab_ls',
-  'mdx_analyzer',
-  'mesonlsp',
-  'metals',
-  'millet',
-  'mlir_lsp_server',
-  'mlir_pdll_lsp_server',
-  'mm0_ls',
-  'mojo',
-  'move_analyzer',
-  'msbuild_project_tools_server',
-  'muon',
-  'mutt_ls',
-  'nelua_lsp',
-  'neocmake',
-  'nextflow_ls',
-  'nextls',
-  --'nginx_language_server',
-  'nickel_ls',
-  'nil_ls',
-  'nixd',
-  'nomad_lsp',
-  'nushell',
-  --'nxls',
-  'ocamlls',
-  'ocamllsp',
-  'ols',
-  'omnisharp',
-  'opencl_ls',
-  'openscal_ls',
-  'openscad_lsp',
-  'oxlint',
-  'pasls',
-  'pbls',
-  'perlls',
-  'perlnavigator',
-  'perlpls',
-  'phan',
-  'phpactor',
-  'pico8_ls',
-  'please',
-  'pli',
-  'postgres_lsp',
-  'powershell_es',
-  'prismals',
-  'prosemd_lsp',
-  'protols',
-  'psalm',
-  'pug',
-  'puppet',
-  --  'pylsp',
-  --  'pylyzer',
-  'pyrefly',
-  --  'pyright',
-  'qmlls',
-  -- 'quick_lint_js',
-  'r_language_server',
-  'regal',
-  'regols',
-  --'remark_ls',
-  'rls',
-  'rnix',
-  'robotcode',
-  'robotframework_ls',
-  'roslyn_ls',
-  'rpmspec',
-  'rubocop',
-  'rubylsp',
-  'ruff',
-  'rune_languageserver',
-  'rust_analyzer',
-  'salt_ls',
-  'scry',
-  'selene3p_ls',
-  'serve_d',
-  'sixtyfps',
-  'slangd',
-  'slint_lsp',
-  'smithy_ls',
-  'snakeskin_ls',
-  'solang',
-  'solargraph',
-  'solc',
-  'solidity',
-  'solidity_ls_nomicfoundation',
-  'somesass_ls',
-  'sorbet',
-  'sourcekit',
-  'spectral',
-  'sqlls',
-  'sqls',
-  'sqlruff',
-  'standardrb',
-  'starlark_rust',
-  'starpls',
-  'statix',
-  'steep',
-  'stimulus_ls',
-  'stylelint_lsp',
-  'stylua3p_ls',
-  'superhtml',
-  'svelte',
-  'svlantserver',
-  'svls',
-  'swift_mesonls',
-  'syntax_tree',
-  'systemd_ls',
-  'tailwindcss',
-  'taplo',
-  'tblgen_lsp_server',
-  'teal_ls',
-  'templ',
-  'termux_language_server',
-  'terraform_lsp',
-  'terraformls',
-  'texlab',
-  'textlsp',
-  'tflint',
-  'tofu_ls',
-  'tombi',
-  'ts_ls',
-  'ts_query_ls',
-  'tsp_server',
-  'ttags',
-  'turbo_ls',
-  'turtle_ls',
-  --'tvm_ffi_navigator',
-  'twiggy_language_server',
-  'ty',
-  'typeprof',
-  'typst_lsp',
-  -- 'viva',
-  'ungrammar',
-  'unison',
-  'unocss',
-  'uvls',
-  'v_analyzer',
-  'vacuum',
-  --	'vectorcode_server',
-  'verible',
-  'veridian',
-  'veryl_ls',
-  'vls',
-  'vscoqtop',
-  'vimls',
-  'vtsls',
-  'vue_ls',
-  'wasm_language_tools',
-  -- 'wgsl_analyzer',
-  'yamlls',
-  'yls',
-  'ziggy',
-  'ziggy_schema',
-  --	'zk',
-  'zls'
-})
-vim.diagnostic.show(nil, nil, { virtual_text = true })
-vim.lsp.document_color.enable(not vim.lsp.document_color.is_enabled())
-vim.lsp.semantic_tokens.enable(not vim.lsp.semantic_tokens.is_enabled())
-local function on_list(options)
-  vim.fn.setqflist({}, ' ', options)
-  vim.cmd.cfirst()
+--local function on_list(options) ---@param options table
+--  vim.fn.setqflist({}, ' ', options)
+--  vim.cmd.cfirst()
+--end
+--vim.lsp.buf.definition({ on_list = on_list })
+--vim.lsp.buf.references(nil, { on_list = on_list })
+--[[
+local format_on_save = {
+  air            = true,
+  astro          = true,
+  bashls         = true,
+  elixir_ls      = true,
+  gdscript_ls    = true,
+  graphql_ls     = true,
+  lua_ls         = true,
+  clangd         = true,
+  lemminx_ls     = true,
+  nil_ls         = true,
+  prettier_d     = true,
+  prisma_ls      = true,
+  svelte_ls      = true,
+  tailwindcss_ls = true,
+}
+--]]
+function M.on_attach(client, bufnr)
+    if client.server_capabilities.completionProvider then
+        vim.lsp.completion.enable(true, client.id, bufnr, {
+            autotrigger = true,
+            convert = function(item)
+                return {
+                    abbr = item.label:gsub('%b()', ''),
+                }
+            end,
+        })
+    end
+    if client.server_capabilities.inlineCompletionProvider then
+        vim.lsp.inline_completion.enable(true, {
+            bufnr = bufnr,
+            client_id = client.id,
+            autotrigger = true,
+        })
+    end
+    if client.server_capabilities.documentHighlightProvider then
+        vim.api.nvim_create_autocmd({
+            'CursorHold',
+            'CursorHoldI',
+        }, {
+            buffer = bufnr,
+            callback = vim.lsp.buf.document_highlight,
+        })
+        vim.api.nvim_create_autocmd({
+            'CursorMoved',
+            'CursorMovedI',
+            'BufLeave',
+        }, {
+            buffer = bufnr,
+            callback = vim.lsp.buf.clear_references,
+        })
+    end
+    if client.server_capabilities.semanticTokensProvider then
+        vim.lsp.semantic_tokens.enable(true, {
+            bufnr = bufnr,
+        })
+    end
+    if client:supports_method('textDocument/inlayHint') then
+        vim.lsp.inlay_hint.enable(true, {
+            bufnr = bufnr,
+        })
+    end
+    if vim.lsp.buf.document_color then
+        vim.keymap.set('n', '<Leader>lc', vim.lsp.buf.document_color, {
+            buffer = bufnr,
+            desc = 'LSP document color',
+        })
+    end
+    if
+        client.server_capabilities.documentFormattingProvider
+        or client.server_capabilities.documentRangeFormattingProvider
+    then
+        vim.api.nvim_create_autocmd('BufWritePre', {
+            buffer = bufnr,
+            callback = function(args)
+                vim.lsp.buf.format({
+                    async = true,
+                    bufnr = args.buf,
+                })
+            end,
+        })
+    end
 end
-vim.lsp.buf.definition({ on_list = on_list })
-vim.lsp.buf.references(nil, { on_list = on_list })
-vim.lsp.buf.definition({ loclist = true })
-vim.lsp.buf.references(nil, { loclist = true })
-vim.lsp.config('*', {
-  autostart = true,
-  single_file_support = true,
-  flags = {
-    debounce_text_changes = 150
-  },
-  workspace_required = false,
-  capabilities = vim.tbl_deep_extend("force",
-    vim.lsp.protocol.make_client_capabilities(),
-    {
-      textDocument = {
-        synchronization = {
-          dynamicRegistration = false,
-          willSave = false,
-          willSaveWaitUntil = false,
-          didSave = true,
-          syncKind = vim.lsp.protocol.TextDocumentSyncKind.Incremental,
+
+local function qf_from_diagnostics(bufnr)
+    bufnr = bufnr or 0
+    local diags = vim.diagnostic.get(bufnr)
+    local items = {}
+    for _, d in ipairs(diags) do
+        table.insert(items, {
+            bufnr = bufnr,
+            lnum = d.lnum + 1,
+            col = d.col + 1,
+            text = string.format('[%s] %s', d.source or 'LSP', d.message),
+            type = ({
+                E = 'E',
+                I = 'I',
+                N = 'N',
+                W = 'W',
+            })[vim.diagnostic.severity[d.severity]] or 'E',
+        })
+    end
+    vim.fn.setqflist(items, 'r')
+    vim.cmd('copen')
+end
+vim.api.nvim_create_user_command('DiagQf', function(opts)
+    qf_from_diagnostics(opts.bang and nil or 0)
+end, {
+    bang = true,
+    desc = 'Diagnostics -> quickfix with source',
+})
+vim.cmd('runtime! lsp/init.lua')
+vim.diagnostic.config({
+    float = {
+        border = 'rounded',
+        source = true,
+        focusable = true,
+        scope = 'line',
+        severity = {
+            min = vim.diagnostic.severity.WARN,
+        },
+    },
+    severity_sort = true,
+    signs = {
+        linehl = { ---@type table[]
+            [vim.diagnostic.severity.ERROR] = 'ErrorMsg',
+            [vim.diagnostic.severity.WARN] = 'WarningMsg',
+            [vim.diagnostic.severity.INFO] = 'DiagnosticInfo',
+            [vim.diagnostic.severity.HINT] = 'DiagnosticHint',
+        },
+        numhl = { ---@type table[]
+            [vim.diagnostic.severity.ERROR] = 'DiagnosticError',
+            [vim.diagnostic.severity.WARN] = 'DiagnosticWarn',
+            [vim.diagnostic.severity.INFO] = 'DiagnosticInfo',
+            [vim.diagnostic.severity.HINT] = 'DiagnosticHint',
+        },
+        text = { ---@type table[]
+            [vim.diagnostic.severity.ERROR] = '󰅚 ',
+            [vim.diagnostic.severity.WARN] = '󰀪 ',
+            [vim.diagnostic.severity.INFO] = '󰋽 ',
+            [vim.diagnostic.severity.HINT] = '󰌶 ',
+        },
+    },
+    underline = {
+        severity = {
+            min = vim.diagnostic.severity.HINT,
+            max = vim.diagnostic.severity.ERROR,
+        },
+    },
+    update_in_insert = true,
+    virtual_lines = {
+        only_current_line = false,
+        severity = {
+            min = vim.diagnostic.severity.WARN,
+        },
+    },
+    virtual_text = {
+        enabled = true,
+        prefix = '●',
+        source = true,
+        spacing = 4,
+        severity = {
+            min = vim.diagnostic.severity.WARN,
+        },
+    },
+})
+vim.diagnostic.enable(true)
+M.capabilities = vim.tbl_deep_extend('force', vim.lsp.protocol.make_client_capabilities(), {
+    completion = {
+        dynamicRegistration = true,
+        completionItem = {
+            snippetSupport = true,
+            commitCharactersSupport = true,
+            deprecatedSupport = true,
+            labelDetailsSupport = true,
+            preselectSupport = true,
+            insertReplaceSupport = true,
+            documentationFormat = {
+                'markdown',
+                'plaintext',
+            },
+            resolveSupport = {
+                properties = {
+                    'additionalTextEdits',
+                    'documentation',
+                    'detail',
+                },
+            },
+        },
+    },
+    flags = {
+        debounce_text_changes = 150,
+        exit_timeout = 500,
+    },
+    single_file_support = true,
+    textDocument = {
+        codeAction = {
+            dynamicRegistration = true,
+            codeActionLiteralSupport = {
+                codeActionKind = {
+                    valueSet = {
+                        'quickfix',
+                        'refactor',
+                        'refactor.extract',
+                        'refactor.inline',
+                        'refactor.rewrite',
+                        'source',
+                        'source.organizeImports',
+                    },
+                },
+            },
+        },
+        codelens = {
+            dynamicRegistration = true,
+        },
+        completion = {
+            dynamicRegistration = true,
+            completionItem = {
+                snippetSupport = true,
+                commitCharactersSupport = true,
+                deprecatedSupport = true,
+                preselectSupport = true,
+                insertReplaceSupport = true,
+                labelDetailsSupport = true,
+                documentationFormat = {
+                    'markdown',
+                    'plaintext',
+                },
+                resolveSupport = {
+                    properties = {
+                        'documentation',
+                        'detail',
+                        'additionalTextEdits',
+                    },
+                },
+            },
+            contextSupport = true,
+        },
+        diagnostic = {},
+        documentHighlight = {
+            dynamicRegistration = true,
+        },
+        documentSymbol = {
+            dynamicRegistration = true,
+            hierarchicalDocumentSymbolSupport = true,
+            symbolKind = {},
+        },
+        formatting = {
+            dynamicRegistration = true,
+        },
+        hover = {
+            dynamicRegistration = true,
+            contentFormat = {
+                'markdown',
+                'plaintext',
+            },
         },
         inlayHint = {
-          dynamicRegistration = true,
+            dynamicRegistration = true,
+        },
+        inlineCompletion = {
+            dynamicRegistration = true,
+        },
+        publishDiagnostics = {
+            dynamicRegistration = true,
+            relatedInformation = true,
+        },
+        rename = {
+            dynamicRegistration = true,
+            prepareSupport = true,
         },
         semanticTokens = {
-          multilineTokenSupport = true,
-          requests = {
-            range = true,
-            full = {
-              delta = true
+            multilineTokenSupport = true,
+            requests = {
+                range = true,
+                full = {
+                    delta = true,
+                },
             },
-          },
-          tokenTypes = {},
-          tokenModifiers = {},
-          inlayHint = {
-            dynamicRegistration = true,
-          },
+            tokenTypes = {
+                'class',
+                'comment',
+                'enum',
+                'enumMember',
+                'event',
+                'function',
+                'interface',
+                'keyword',
+                'macro',
+                'method',
+                'modifier',
+                'namespace',
+                'number',
+                'operator',
+                'parameter',
+                'property',
+                'regexp',
+                'string',
+                'struct',
+                'type',
+                'typeParameter',
+                'variable',
+            },
+            tokenModifiers = {
+                'abstract',
+                'async',
+                'declaration',
+                'defaultLibrary',
+                'definition',
+                'deprecated',
+                'documentation',
+                'modification',
+                'readonly',
+                'static',
+            },
         },
-      }
+        signatureHelp = {
+            dynamicRegistration = true,
+            signatureInformation = {
+                documentationFormat = {
+                    'markdown',
+                    'plaintext',
+                },
+                parameterInformation = {
+                    labelOffsetSupport = true,
+                },
+            },
+        },
+        synchronization = {
+            dynamicRegistration = true,
+            willSave = true,
+            willSaveWaitUntil = true,
+            didSave = true,
+            syncKind = vim.lsp.protocol.TextDocumentSyncKind.Incremental,
+        },
+    },
+})
+vim.lsp.config( ---@type vim.lsp.Config
+    '*',
+    {
+        autostart = true,
+        on_attach = M.on_attach,
+        capabilities = M.capabilities,
+        workspace_required = false,
     }
-  ),
-  on_attach = function(client, bufnr)
-    vim.lsp.linked_editing_range.enable(true, { client_id = client.id })
-    vim.lsp.inlay_hint.enable(not vim.lsp.inlay_hint.is_enabled())
-    local opts = { buffer = bufnr, silent = true }
-    vim.keymap.set("n", "gd", vim.lsp.buf.definition, opts)
-    vim.keymap.set("n", "K", vim.lsp.buf.hover, opts)
-    vim.keymap.set("n", "gi", vim.lsp.buf.implementation, opts)
-    vim.keymap.set("n", "<leader>rn", vim.lsp.buf.rename, opts)
-    vim.keymap.set("n", "<leader>ca", vim.lsp.buf.code_action, opts)
-    vim.keymap.set("n", "<leader>f", function()
-      vim.lsp.buf.format({ async = false })
-    end, opts)
-    vim.keymap.set("n", "[d", vim.diagnostic.get_prev, opts)
-    vim.keymap.set("n", "]d", vim.diagnostic.get__next, opts)
-    if client.server_capabilities.inlayHintProvider and vim.lsp.inlay_hint then
-      vim.keymap.set("i", "<C-k>", vim.lsp.buf.signature_help, opts)
+)
+vim.api.nvim_create_autocmd('User', {
+    pattern = 'LspSemanticTokens',
+    callback = function(args)
+        if not args.data or not args.data.client_id or not args.data.token then
+            return
+        end
+        local token = args.data.token
+        vim.lsp.semantic_tokens.highlight_token(token, args.buf, args.data.client_id, 'MyMutableVariableHighlight')
+    end,
+})
+vim.api.nvim_create_autocmd('LspDetach', {
+    callback = function(args)
+        if not args.data or not args.data.client_id then
+            return
+        end
+        local client = vim.lsp.get_client_by_id(args.data.client_id)
+        if not client then
+            return
+        end
+    end,
+})
+vim.lsp.handlers['textDocument/publishDiagnostics'] = function(err, result, ctx, _)
+    local client = vim.lsp.get_client_by_id(ctx.client_id)
+    if not client then
+        return
     end
-    if client.server_capabilities.documentFormattingProvider then
-      vim.api.nvim_create_autocmd("BufWritePre", {
-        buffer = bufnr,
-        callback = function()
-          vim.lsp.buf.format({ bufnr = bufnr, async = false })
-        end,
-      })
+    vim.lsp.diagnostic.on_publish_diagnostics(err, result, ctx)
+end
+local cwd = vim.uv.cwd()
+local qf = vim.fn.getqflist()
+local filtered = {}
+for _, item in ipairs(qf) do
+    if type(item.filename) == 'string' and item.filename:find(cwd, 1, true) == 1 then
+        table.insert(filtered, item)
     end
-  end,
-})
-vim.diagnostic.config({
-  virtual_text = {
-    enabled = true,
-    prefix = "●",
-    spacing = 4,
-  },
-  virtual_lines = true,
-  underline = {
-    severity = {
-      min = vim.diagnostic.severity.HINT,
-      max = vim.diagnostic.severity.ERROR,
-    },
-  },
-  float = {
-    border = "rounded",
-    source = "if_many",
-    focusable = true,
-    scope = "line",
-  },
-  update_in_insert = false,
-  severity_sort = true,
-  signs = {
-    text = {
-      [vim.diagnostic.severity.ERROR] = "󰅚 ",
-      [vim.diagnostic.severity.WARN]  = "󰀪 ",
-      [vim.diagnostic.severity.INFO]  = "󰋽 ",
-      [vim.diagnostic.severity.HINT]  = "󰌶 ",
-    },
-  },
-  numhl = {
-    [vim.diagnostic.severity.ERROR] = 'DiagnosticError',
-    [vim.diagnostic.severity.WARN] = 'DiagnosticWarn',
-    [vim.diagnostic.severity.INFO] = 'DiagnosticInfo',
-    [vim.diagnostic.severity.HINT] = 'DiagnosticHint',
-  },
-})
-vim.api.nvim_create_autocmd({ "BufEnter", "CursorHold", "InsertLeave" }, {
-  callback = function()
-    vim.lsp.codelens.refresh()
-  end,
-})
-vim.keymap.set('i', '<c-space>', function()
-  vim.lsp.completion.get()
-end)
+end
+vim.fn.setqflist(filtered, 'r')
 return M

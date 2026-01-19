@@ -2,71 +2,188 @@
 -- Qompass AI Emmyluals Config
 -- Copyright (C) 2025 Qompass AI, All rights reserved
 -- --------------------------------------------------
-
-vim.lsp.config['emmylua_ls'] = {
-  cmd = { 'emmylua_ls', '-c', 'stdio', '--log-level', 'info' },
-  filetypes = { 'lua' },
-  root_markers = { '.emmylua.json', '.luarc.json', '.luarc.json', '.luacheckrc' },
-  flags = {
-    debounce_text_changes = 150,
-  },
-  workspace_required = false,
-  settings = {
-    Emmylua = {
-      completion = {
-        callSnippet = "Replace",
-        displayContext = 4,
-        keywordSnippet = "Disable",
-      },
-      diagnostics = {
-        disable = { "lowercase-global" },
-        enable = true,
-        globals = { "vim", "use", "require", "jit" },
-        severity = { ["unused-local"] = "Hint" },
-        unusedLocalExclude = { "_*" },
-      },
-      format = {
-        defaultConfig = {
-          align_continuous_assign_statement = true,
-          indent_size = "2",
-          indent_style = 'space',
-          quote_style = "ForceSingle",
-          trailing_table_separator = "always",
-        },
-        enable = false,
-      },
-      hint = {
-        arrayIndex = "Enable",
-        await = true,
-        enable = true,
-        paramName = "All",
-        paramType = true,
-        setType = true,
-      },
-      runtime = {
-        version = "LuaJIT",
-      },
-      telemetry = {
-        enable = false,
-      },
-      workspace = {
-        checkThirdParty = false,
-        ignoreDir = { "node_modules", ".git", "build" },
-        library = {
-          vim.api.nvim_get_runtime_file('', true),
-          vim.env.VIMRUNTIME,
-          "${3rd}/busted/library",
-          "${3rd}/luv/library",
-          "${3rd}/luassert/library",
-          "${3rd}/lazy.nvim/library",
-          "${3rd}/neodev.nvim/types/nightly",
-          "${3rd}/blink.cmp/library",
-          vim.fn.expand("$HOME") .. "/.config/nvim/lua/",
-        },
-        maxPreload = 1000,
-        preloadFileSize = 10000,
-      },
+---@type vim.lsp.Config
+return {
+    cmd = {
+        'emmylua_ls',
+        '--communication',
+        'stdio',
+        '--log-level',
+        'debug',
+        '--log-path',
+        '/home/phaedrus/.local/share/emmylua_ls/logs',
+        '--editor',
+        'neovim',
     },
-  },
-  single_file_support = true,
+    filetypes = {
+        'lua',
+        'luau',
+    },
+    root_markers = {
+        '.luarc.json',
+        '.emmyrc.json',
+        '.luacheckrc',
+        '.git',
+    },
+    settings = {
+        Emmylua = {
+            codeAction = {
+                insertSpace = false,
+            },
+            codeLens = {
+                enable = true,
+            },
+            completion = {
+                enable = true,
+                autoRequire = true,
+                autoRequireFunction = 'require',
+                autoRequireNamingConvention = 'keep',
+                autoRequireSeparator = '.',
+                callSnippet = 'Both',
+                postfix = '@',
+                baseFunctionIncludesName = true,
+                displayContext = 4,
+                keywordSnippet = 'Both',
+            },
+            diagnostics = {
+                disable = {
+                    'lowercase-global',
+                    'unused-local',
+                },
+                enable = false,
+                enables = {
+                    'deprecated',
+                    --'unused',
+                    -- 'unused-local',
+                },
+                globals = {
+                    'jit',
+                    'require',
+                    'use',
+                    'vim',
+                },
+                severity = {
+                    ['deprecated'] = 'error',
+                    --['missing-return']   = 'warning',
+                    -- ['undefined-field']  = 'error',
+                    -- ['undefined-global'] = 'warning',
+                    ['unused'] = 'hint',
+                },
+                unusedLocalExclude = {
+                    '_*',
+                },
+            },
+            doc = {
+                syntax = 'md',
+            },
+            documentColor = {
+                enable = true,
+            },
+            format = {
+                defaultConfig = {
+                    align_continuous_assign_statement = true,
+                    indent_size = '4',
+                    indent_style = 'space',
+                    quote_style = 'ForceSingle',
+                    trailing_table_separator = 'never',
+                },
+                enable = true,
+            },
+            hint = {
+                enable = true,
+                paramHint = true,
+                indexHint = true,
+                localHint = true,
+                overrideHint = true,
+                metaCallHint = true,
+            },
+            hover = {
+                enable = true,
+            },
+            inlineValues = {
+                enable = true,
+            },
+            references = {
+                enable = true,
+                fuzzySearch = true,
+                shortStringSearch = true,
+            },
+            reformat = {
+                externalTool = {
+                    program = 'stylua',
+                    args = { '-s', '-' },
+                    stdin = true,
+                },
+                externalToolRangeFormat = nil,
+                useDiff = false,
+            },
+            runtime = {
+                frameworkVersions = {},
+                requireLikeFunction = {
+                    'import',
+                    'load',
+                    'dofile',
+                },
+                extensions = {
+                    '.lua',
+                    '.luau',
+                },
+                requirePattern = {
+                    '?.lua',
+                    '?/init.lua',
+                },
+                classDefaultCall = {
+                    functionName = 'new',
+                    forceNonColon = false,
+                    forceReturnSelf = true,
+                },
+                nonstandardSymbol = {
+                    'continue',
+                },
+                special = {
+                    errorf = 'error',
+                },
+                version = 'LuaJIT',
+            },
+            semanticTokens = {
+                enable = true,
+            },
+            signature = {
+                detailSignatureHelper = true,
+            },
+            strict = {
+                arrayIndex = true,
+                docBaseConstMatchBaseType = true,
+                metaOverrideFileDefine = true,
+                requirePath = true,
+                typeCall = true,
+            },
+            telemetry = {
+                enable = false,
+            },
+            workspace = {
+                checkThirdParty = false,
+                ignoreDir = {
+                    'build',
+                    'node_modules',
+                    'dist',
+                    '.git',
+                },
+                ignoreGlobs = {},
+                library = {
+                    vim.env.VIMRUNTIME,
+                    vim.fn.stdpath('config') .. '/lua',
+                },
+                workspaceRoots = {
+                    vim.fn.stdpath('config') .. '/lua',
+                },
+                encoding = 'utf-8',
+                moduleMap = {},
+                preloadFileSize = 50000,
+                reindexDuration = 50000,
+                enableReindex = true,
+            },
+        },
+    },
+    workspace_required = false,
 }

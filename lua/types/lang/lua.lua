@@ -3,24 +3,15 @@
 -- Copyright (C) 2025 Qompass AI, All rights reserved
 ------------------------------------------------------
 ---@meta
-
 ---@class LuaLangModule
----@field lua_cmp fun(): table
----@field lua_conform fun(opts?: table): table
----@field lua_lazydev fun(opts?: table): table
----@field lua_lsp fun(opts?: table)
----@field lua_luarocks fun(opts?: table): table
----@field lua_nls fun(opts?: table): table[]
----@field lua_snap fun(opts?: table): table
----@field lua_neoconf fun(opts?: table): table
----@field lua_test fun(opts?: table): table
----@field lua_version fun(): string, string
----@field lua_setup fun(opts?: table): table
+---@field                                     lua_cmp fun(): table
+---@field                                     lua_lazydev fun(opts?: table): table
+---@field                                     lua_luarocks fun(opts?: table): table
+---@field                                     lua_snap fun(opts?: table): table
+---@field lua_test                            fun(opts?: table): table
+---@field lua_version                         fun(): string, string
+---@field lua_setup                           fun(opts?: table): table
 ---@class LuaLangGlobals
----@field use_blink_cmp boolean
+---@field                                     use_blink_cmp boolean
 ---@field lazydev_enabled boolean
----@class PureMarker
----@field with fun(opts: table): table
----@class LuaUtils
----@field mark_pure fun(src: table): PureMarker
 ---@type LuaLangModule

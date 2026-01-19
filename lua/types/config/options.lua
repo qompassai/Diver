@@ -3,106 +3,108 @@
 -- Copyright (C) 2025 Qompass AI, All rights reserved
 ------------------------------------------------------
 ---@meta
-
+---@class Options : NvimOptions
+---@class Globals : NvimGlobals
 ---@class API
----@field bo table<string, any>
----@field opt Options
----@field o table<string, any>
----@field wo table<string, any>
----@field env table<string, string>
----@field fn FunctionAPI
----@field api NativeAPI
----@class VimExtendedAPI
----@field bo table<string, any>
----@field opt Options
----@field o table<string, any>
----@field wo table<string, any>
----@field env table<string, string>
----@field fn FunctionAPI
----@field api NativeAPI
+---@field api                                 NativeAPI
+---@field bo                                  table<string, any>
+---@field env                                 table<string, string>
+---@field fn                                  FunctionAPI
+---@field g                                   Globals
+---@field o                                   Options
+---@field opt                                 Options
+---@field wo                                  table<string, any>
+---@class VimExtendedAPI : API
+---@field api                                 NativeAPI
+---@field bo                                  table<string, any>
+---@field env                                 table<string, string>
+---@field fn                                  FunctionAPI
+---@field o                                   table<string, any>
+---@field opt                                 Options
+---@field wo                                  table<string, any>
 ---@class NativeAPI
----@field nvim_create_augroup fun(name:string, opts:table):integer
----@field nvim_create_autocmd fun(event:any, opts:table)
----@field nvim_get_runtime_file fun(pattern:string, all:boolean):string[]
----@field nvim_set_option_value fun(name:string, value:any, opts:table)
+---@field nvim_create_augroup                 fun(name:string, opts:table):integer
+---@field nvim_create_autocmd                 fun(event:any, opts:table)
+---@field nvim_get_runtime_file               fun(pattern:string, all:boolean):string[]
+---@field nvim_set_option_value               fun(name:string, value:any, opts:table)
 ---@class NvimOptions
----@field history integer
----@field number boolean
----@field relativenumber boolean
----@field syntax string
----@field undodir string
----@field undofile boolean
----@field backup boolean
----@field cursorline boolean
----@field encoding string
----@field exrc boolean
----@field fileformats string[]
----@field fileencodings string[]
----@field fileencoding string
----@field foldexpr string
----@field foldenable boolean
----@field foldlevel integer
----@field foldmethod string
----@field hidden boolean
----@field hlsearch boolean
----@field ignorecase boolean
----@field incsearch boolean
----@field inccommand string
----@field guicursor string[]
----@field laststatus integer
----@field lazyredraw boolean
----@field linebreak boolean
----@field list boolean
----@field listchars table<string, string>
----@field expandtab boolean
----@field shiftwidth integer
----@field softtabstop integer
----@field tabstop integer
----@field modeline boolean
----@field modelines integer
----@field mouse string
----@field mousescroll string
----@field scrolloff integer
----@field secure boolean
----@field showtabline integer
----@field sidescrolloff integer
----@field smartcase boolean
----@field smoothscroll boolean
----@field spelllang string[]
----@field splitright boolean
----@field splitbelow boolean
----@field swapfile boolean
----@field termguicolors boolean
----@field timeout boolean
----@field timeoutlen integer
----@field ttimeoutlen integer
----@field ttyfast boolean
----@field updatetime integer
----@field virtualedit string
----@field wildmenu boolean
----@field wildmode string
----@field writebackup boolean
+---@field backup                              boolean
+---@field cursorline                          boolean
+---@field encoding                            string
+---@field exrc                                boolean
+---@field fileformats                         string[]
+---@field fileencodings                       string[]
+---@field fileencoding                        string
+---@field foldexpr                            string
+---@field foldenable                          boolean
+---@field foldlevel                           integer
+---@field foldmethod                          string
+---@field history                             integer
+---@field number                              boolean
+---@field relativenumber                      boolean
+---@field syntax                              string
+---@field undodir                             string
+---@field undofile                            boolean
+---@field hidden                              boolean
+---@field hlsearch                            boolean
+---@field ignorecase                          boolean
+---@field incsearch                           boolean
+---@field inccommand                          string
+---@field guicursor                           string[]
+---@field laststatus                          integer
+---@field lazyredraw                          boolean
+---@field linebreak                           boolean
+---@field list                                boolean
+---@field listchars                           table<string, string>
+---@field expandtab                           boolean
+---@field shiftwidth                          integer
+---@field softtabstop                         integer
+---@field tabstop                             integer
+---@field modeline                            boolean
+---@field modelines                           integer
+---@field mouse                               string
+---@field mousescroll                         string
+---@field scrolloff                           integer
+---@field secure                              boolean
+---@field showtabline                         integer
+---@field sidescrolloff                       integer
+---@field smartcase                           boolean
+---@field smoothscroll                        boolean
+---@field spelllang                           string[]
+---@field splitright                          boolean
+---@field splitbelow                          boolean
+---@field swapfile                            boolean
+---@field termguicolors                       boolean
+---@field timeout                             boolean
+---@field timeoutlen                          integer
+---@field ttimeoutlen                         integer
+---@field ttyfast                             boolean
+---@field updatetime                          integer
+---@field virtualedit                         string
+---@field wildmenu                            boolean
+---@field wildmode                            string
+---@field writebackup                         boolean
 ---@class FunctionAPI
----@field executable fun(name:string):boolean
----@field expand fun(path:string):string
----@field has fun(feature:string):boolean
----@field stdpath fun(type:string):string
+---@field executable                          fun(name:string):boolean
+---@field expand                              fun(path:string):string
+---@field has                                 fun(feature:string):boolean
+---@field stdpath                             fun(type:string):string
 ---@class LuaGlobals
----@field use_blink_cmp boolean
----@field lazydev_enabled boolean
+---@field lazydev_enabled                     boolean
+---@field use_blink_cmp                       boolean
 ---@class NvimGlobals
----@field git_command_ssh integer
----@field editorconfig boolean
----@field loaded_illuminate boolean
----@field loaded_netrw integer
----@field loaded_netrwPlugin integer
----@field loaded_node_provider integer
----@field loaded_perl_provider integer
----@field loaded_python_provider integer
----@field loaded_ruby_provider integer
----@field lsp_enable_on_demand boolean
----@field mkdp_theme string
----@field semantic_tokens_enabled boolean
----@field syntax_on boolean
----@field use_blink_cmp boolean
----@field which_key_disable_health_check integer
+---@field git_command_ssh                     integer
+---@field editorconfig                        boolean
+---@field loaded_illuminate                   boolean
+---@field loaded_netrw                        integer
+---@field loaded_netrwPlugin                  integer
+---@field loaded_node_provider                integer
+---@field loaded_perl_provider                integer
+---@field loaded_python_provider              integer
+---@field loaded_ruby_provider                integer
+---@field lsp_enable_on_demand                boolean
+---@field mkdp_theme                          string
+---@field semantic_tokens_enabled             boolean
+---@field syntax_on                           boolean
+---@field use_blink_cmp                       boolean
+---@field which_key_disable_health_check      integer

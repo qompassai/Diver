@@ -2,67 +2,32 @@
 -- Qompass AI LuaLine Config
 -- Copyright (C) 2025 Qompass AI, All rights reserved
 -- ----------------------------------------
-
-local M = {} ---@module 'ui.line'
-require("types.ui.line")
----@param method string
----@return string[]
-local function get_null_ls_providers(method)
-  local ok, null_ls = pcall(require, 'null-ls')
-  if not ok then return {} end
-  local buf_ft = vim.bo.filetype
-  local sources = null_ls.get_sources()
-  local registered = {}
-  for _, s in ipairs(sources) do
-    ---@class NullLsSource
-    local source = s
-    if source.filetypes and source.filetypes[buf_ft] then
-      if source.methods and source.methods[method] then
-        table.insert(registered, source.name)
-      end
-    end
-  end
-  return registered
-end
-local function null_ls_summary() ---@return string
-  local formatting = get_null_ls_providers(require("null-ls").methods.FORMATTING)
-  local diagnostics = get_null_ls_providers(require("null-ls").methods.DIAGNOSTICS)
-  local codeactions = get_null_ls_providers(require("null-ls").methods.CODE_ACTION)
-  local parts = {}
-  if #formatting > 0 then
-    table.insert(parts, "󱉶 " .. table.concat(formatting, ", "))
-  end
-  if #codeactions > 0 then
-    table.insert(parts, "⚡ " .. table.concat(codeactions, ", "))
-  end
-  if #diagnostics > 0 then
-    table.insert(parts, " " .. table.concat(diagnostics, ", "))
-  end
-  if #formatting + #codeactions + #diagnostics == 0 then
-    table.insert(parts, "🧠 LSP")
-  end
-  return table.concat(parts, "  |  ")
-end
-
+---@meta
+---@module 'config.ui.line'
+local M = {}
+require('types.ui.line')
 require('lualine').setup({
-  options           = {
-    icons_enabled        = true,
-    theme                = 'auto',
-    component_separators = { left = '', right = '' },
-    section_separators   = { left = '', right = '' },
-    disabled_filetypes   = {
-      statusline = {},
-      winbar     = {},
+  options = {
+    icons_enabled = true,
+    theme = 'auto',
+    component_separators = {
+      left = '',
+      right = '',
     },
-    ignore_focus         = {},
+    section_separators = { left = '', right = '' },
+    disabled_filetypes = {
+      statusline = {},
+      winbar = {},
+    },
+    ignore_focus = {},
     always_divide_middle = false,
-    globalstatus         = true,
-    refresh              = {
-      statusline   = 1000,
-      tabline      = 1000,
-      winbar       = 1000,
+    globalstatus = true,
+    refresh = {
+      statusline = 1000,
+      tabline = 1000,
+      winbar = 1000,
       refresh_time = 16,
-      events       = {
+      events = {
         'WinEnter',
         'BufEnter',
         'BufWritePost',
@@ -76,7 +41,7 @@ require('lualine').setup({
       },
     },
   },
-  sections          = {
+  sections = {
     lualine_a = {
       {
         'mode',
@@ -93,9 +58,9 @@ require('lualine').setup({
         'diff',
         colored = true,
         diff_color = {
-          added    = 'LuaLineDiffAdd',
+          added = 'LuaLineDiffAdd',
           modified = 'LuaLineDiffChange',
-          removed  = 'LuaLineDiffDelete',
+          removed = 'LuaLineDiffDelete',
         },
         symbols = {
           added = '+',
@@ -106,23 +71,27 @@ require('lualine').setup({
       },
       {
         'diagnostics',
-        sources           = { 'nvim_lsp', 'nvim_diagnostic', 'nvim_workspace_diagnostic' },
-        sections          = { 'error', 'warn', 'info', 'hint' },
+        sources = {
+          'nvim_lsp',
+          'nvim_diagnostic',
+          'nvim_workspace_diagnostic'
+        },
+        sections = { 'error', 'warn', 'info', 'hint' },
         diagnostics_color = {
           error = { fg = '#e06c75' },
-          warn  = { fg = '#e5c07b' },
-          info  = { fg = '#56b6c2' },
-          hint  = { fg = '#98c379' },
+          warn = { fg = '#e5c07b' },
+          info = { fg = '#56b6c2' },
+          hint = { fg = '#98c379' },
         },
-        symbols           = {
+        symbols = {
           error = ' ',
-          warn  = ' ',
-          info  = ' ',
-          hint  = ' ',
+          warn = ' ',
+          info = ' ',
+          hint = ' ',
         },
-        colored           = true,
-        update_in_insert  = true,
-        always_visible    = false,
+        colored = true,
+        update_in_insert = true,
+        always_visible = false,
       },
     },
     lualine_c = {
@@ -142,39 +111,41 @@ require('lualine').setup({
     },
     lualine_x = {
       {
-        'location'
+        'location',
       },
     },
     lualine_y = {
       {
-        'progress'
+        'progress',
       },
     },
     lualine_z = {
       {
-        function() return os.date('%H:%M:%S') end,
+        function()
+          return os.date('%H:%M:%S')
+        end,
         refresh = 1000,
       },
       {
-        function() return os.date('%Y-%m-%d') end,
+        function()
+          return os.date('%Y-%m-%d')
+        end,
       },
-    }
+    },
   },
   inactive_sections = {
     lualine_a = {},
     lualine_b = {},
     lualine_c = {
-      { 'filename'
-      },
+      { 'filename' },
     },
     lualine_x = {
-      { 'location'
-      },
+      { 'location' },
     },
     lualine_y = {},
     lualine_z = {},
   },
-  tabline           = {
+  tabline = {
     lualine_a = {
       {
         'tabs',
@@ -185,7 +156,7 @@ require('lualine').setup({
       },
     },
     lualine_b = {
-      'branch'
+      'branch',
     },
     lualine_c = {
       {
@@ -220,7 +191,7 @@ require('lualine').setup({
     lualine_y = {},
     lualine_z = {},
   },
-  winbar            = {
+  winbar = {
     lualine_a = {},
     lualine_b = {},
     lualine_c = {
@@ -240,17 +211,16 @@ require('lualine').setup({
         },
         ignore_lsp = {},
       },
-      { 'branch'
-      },
+      { 'branch' },
     },
     lualine_x = {
       { 'encoding' },
     },
-    lualine_y = { null_ls_summary },
+    --  lualine_y = { null_ls_summary },
     lualine_z = {},
   },
-  inactive_winbar   = {},
-  extensions        = {
+  inactive_winbar = {},
+  extensions = {
     'fzf',
     'lazy',
     'mason',
