@@ -1,9 +1,7 @@
 -- /qompassai/Diver/lsp/antlers_ls.lua
--- Qompass AI Antlers LSP Spec
+-- Qompass AI Diver Antlers LSP Spec
 -- Copyright (C) 2025 Qompass AI, All rights reserved
 -- --------------------------------------------------
--- pnpm add -g antlers-language-server@latest
-
 return ---@type vim.lsp.Config
 {
     cmd = {

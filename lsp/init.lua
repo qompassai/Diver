@@ -15,7 +15,7 @@ vim.lsp.enable({
     'alloy_ls',
     'angular_ls',
     'ansible_ls',
-    'antlers_ls',
+    --'antlers_ls',
     'apex_ls',
     'arduino_ls',
     'asm_ls',
@@ -184,7 +184,6 @@ vim.lsp.enable({
     'nil_ls',
     'nixd_ls',
     --'nobl9_ls', ---:TODO validate
-
     'ntt_ls',
     'nu_ls',
     --'nx_ls',

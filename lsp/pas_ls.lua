@@ -1,9 +1,9 @@
 -- /qompassai/Diver/lsp/pas_ls.lua
--- Qompass AI Pascal LSP Spec
+-- Qompass AI Diver Pascal LSP Spec
 -- Copyright (C) 2025 Qompass AI, All rights reserved
 -- ----------------------------------------
----@type vim.lsp.Config
-return {
+return ---@type vim.lsp.Config
+{
     cmd = {
         'pasls',
     },
@@ -15,4 +15,5 @@ return {
         '*.lpk',
         '.git',
     },
+    settings = {},
 }

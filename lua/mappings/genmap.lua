@@ -77,8 +77,6 @@ function M.setup_genmap()
                     desc = 'Move up by one line',
                 })
             )
-
-            -- Clear search highlights by pressing Escape in normal mode
             map(
                 'n',
                 '<Esc>',
@@ -87,7 +85,6 @@ function M.setup_genmap()
                     desc = 'Clear search highlights',
                 })
             )
-            -- Switch to the window on the left in normal mode
             map(
                 'n',
                 '<C-h>',
@@ -96,8 +93,6 @@ function M.setup_genmap()
                     desc = 'Switch to the window on the left',
                 })
             )
-
-            -- Switch to the window on the right in normal mode
             map(
                 'n',
                 '<C-l>',
@@ -106,8 +101,6 @@ function M.setup_genmap()
                     desc = 'Switch to the window on the right',
                 })
             )
-
-            -- Switch to the window below in normal mode
             map(
                 'n',
                 '<C-j>',
@@ -117,7 +110,6 @@ function M.setup_genmap()
                 })
             )
 
-            -- Switch to the window above in normal mode
             map(
                 'n',
                 '<C-k>',
@@ -127,7 +119,6 @@ function M.setup_genmap()
                 })
             )
 
-            -- Save the current file by pressing Control + s in normal mode
             map(
                 'n',
                 '<C-s>',
@@ -145,21 +136,6 @@ function M.setup_genmap()
                     desc = 'Copy the entire file to the clipboard',
                 })
             )
-            map('n', '<leader>F', function()
-                if #vim.lsp.get_clients({
-                    bufnr = 0,
-                }) > 0 then
-                    vim.lsp.buf.format({
-                        async = true,
-                    })
-                else
-                    vim.echo('No active LSP client with formatting support.', vim.log.levels.WARN)
-                end
-            end, {
-                desc = 'Global Format (LSP if available)',
-                noremap = true,
-                silent = true,
-            })
         end,
     })
 end

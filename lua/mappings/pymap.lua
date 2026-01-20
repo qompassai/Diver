@@ -80,13 +80,17 @@ function M.setup_pymap()
                 'n',
                 '<leader>pd',
                 vim.lsp.buf.definition,
-                vim.tbl_extend('force', opts, { desc = '🐍 [p]ython go to [d]efinition' })
+                vim.tbl_extend('force', opts, {
+                    desc = '🐍 [p]ython go to [d]efinition',
+                })
             )
             map(
                 'n',
                 '<leader>sr',
                 vim.lsp.buf.references,
-                vim.tbl_extend('force', opts, { desc = ' [s]earch [r]eferences' })
+                vim.tbl_extend('force', opts, {
+                    desc = ' [s]earch [r]eferences',
+                })
             )
             map(
                 'n',
@@ -147,9 +151,6 @@ function M.setup_pymap()
                     desc = '🐍 [p]ython [p]oetry Update',
                 })
             )
-            -- Jupyter (Iron.nvim, Jupynium, Molten.nvim, Otter.nvim) Keymaps
-
-            -- Attach to a running Jupyter kernel.
             map(
                 'n',
                 '<leader>ja',
@@ -167,7 +168,6 @@ function M.setup_pymap()
                 })
             )
             -- In normal mode, press 'Space' + 'j' + 'c' to clear the current REPL output.
-
             map(
                 'n',
                 '<leader>jel',
@@ -189,9 +189,6 @@ function M.setup_pymap()
                     desc = '[j]upyter [e]valuate [v]isual selection',
                 })
             )
-            -- Evaluate the selected visual code with Molten.
-
-            -- Interrupt the current Jupyter kernel.
             map(
                 'n',
                 '<leader>ji',
@@ -200,7 +197,6 @@ function M.setup_pymap()
                     desc = '[j]upyter [i]nterrupt kernel',
                 })
             )
-            -- Toggle Jupyter Lab terminal using toggleterm
             map(
                 'n',
                 '<leader>jl',
@@ -229,18 +225,6 @@ function M.setup_pymap()
                 })
             )
             -- Reevaluate the current cell with Molten.
-
-            -- Iron.nvim --
-            map(
-                'n',
-                '<leader>jri',
-                '<cmd>IronRepl<CR>',
-                vim.tbl_extend('force', opts, {
-                    desc = '[j]upyter [r]epl [i]python',
-                })
-            )
-            -- In normal mode, press 'Space' + 'j' + 'r' 'i' + Open an IPython REPL.
-
             map(
                 {
                     'n',

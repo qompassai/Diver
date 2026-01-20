@@ -14,19 +14,24 @@
 ---| '"all"'
 ---| '"rx"'
 ---@alias WPPropValue string|number|boolean|nil
----@alias WPProperties table<string, WPPropValue>
+---@class Client : WPClient
 ---@class WPAudioGroupUtils
 ---@field contains_audio_group                        fun(group: string): boolean
 ---@field get_audio_group                             fun(node: any): string|nil
 ---@field set_audio_group                             fun(node: any, group: string|nil)
 ---@type WPAudioGroupUtils
 agutils = agutils
+---@class WPAudioStreamProps : WPProperties
+---@field ['media.class'] string
 ---@class WPCameraData
 ---@field factory                                     string
 ---@field id                                          integer
 ---@field obj_path                                    string
 ---@field parent                                      WPObject
 ---@field properties                                  WPProperties
+---@class WPClient : WPObject
+---@field properties          WPProperties
+---@field update_permissions  fun(self: WPClient, perms: table<any, string>)
 ---@class WPConstraint
 ---@field key                                         string
 ---@field operator                                    string
@@ -48,7 +53,7 @@ Core = Core
 ---@field get_data                                    fun(self: WPEvent, key: string): any
 ---@field get_properties                              fun(self: WPEvent): table<string, any>
 ---@field get_source                                  fun(self: WPEvent): WPObject
----@field get_subject                                 fun(self: WPEvent): any
+---@field get_subject                                 fun(self: WPEvent): WPObject
 ---@field set_data                                    fun(self: WPEvent, key: string, value: any)
 ---@class WPEventDispatcher
 ---@field push_event                                  fun(event: WPEvent)
@@ -93,14 +98,25 @@ LocalModule = LocalModule or LocalModule_ctor
 ---@field trace                                       fun(...: any)
 ---@field warning                                     fun(...: any)
 ---@type WPLog
-Log = Log
+Log         = Log
+---@class WPMetadata : WPObject
+---@class WPNode : WPObject
+---@field get_active_features fun(self: WPNode): integer
+---@field iterate_params                              fun(self: WPNode, id: string): fun(): any
+---@field properties                                  WPProperties
+---@field send_command                                fun(self: WPNode, command: string)
+---@field set_param                                   fun(self: WPNode, id: string, pod: any)
+---@class WPNodeEvent : WPEvent
+---@field get_subject                                 fun(self: WPNodeEvent): WPNode
 ---@class WPObject
 ---@field call                                        fun(self: WPObject, method: string, ...: any): any
+---@field connect                                     fun(self: WPObject, signal: string, callback: fun(...: any))
 ---@field get_associated_proxy                        fun(self: WPObject, role: string): WPObject
----@field get_properties                              fun(self: WPObject): table<string, any>
+---@field get_properties                              fun(self: WPObject): WPProperties
 ---@field id                                          integer
 ---@field lookup_port                                 fun(self: WPObject, constraints: table): WPObject|nil
----@field properties                                  table<string, any>
+---@field properties                                  WPProperties
+---@field update_permissions                          fun(self: WPClient, perms: table<any, string>)
 ---@class WPObjectManager
 ---@field iterate                                     fun(self: WPObjectManager, filter?: table): fun(): WPObject
 ---@field lookup                                      fun(self: WPObjectManager, id: any): WPObject|nil
@@ -109,20 +125,28 @@ Log = Log
 ---@field get_n_args                                  fun(self: WPProcInfo): integer
 ---@field get_parent_pid                              fun(self: WPProcInfo): integer
 ---@class WPProcUtils
----@field get_proc_info                               fun(pid: integer): WPProcInfo
+---@field get_proc_info                               fun(pid: number): WPProcInfo
 ---@type WPProcUtils
-ProcUtils = ProcUtils
----@class WPSimpleEventHook
+ProcUtils   = ProcUtils
+---@class WPProperties :                              table<string, WPPropValue>
+---@class WPSessionItem :                             WPObject
+---@field connect                                     fun(self: WPSessionItem, signal: string, callback: fun(si: WPSessionItem, old_state: string, new_state: string))
+---@field get_associated_proxy                        fun(self: WPSessionItem, role: string): WPObject
+---@field get_ports_format                            fun(self: WPSessionItem): any, any
+---@field id                                          integer
+---@field properties                                  WPProperties
+---@field register                                    fun(self: WPSessionItem)
+---@field remove                                      fun(self: WPSessionItem)
+---@field set_ports_format                            fun(self: WPSessionItem, f: any, m: any, cb: fun(item: WPSessionItem, e: any))
+---@class WPSimpleEventHook : WPObject
 ---@field register                                    fun(self: WPSimpleEventHook)
 ---@field remove                                      fun(self: WPSimpleEventHook)
 ---@param opts                                        { name: string, interests: WPEventInterest[], execute: fun(event: WPEvent) }
 ---@return WPSimpleEventHook
-local function SimpleEventHook_ctor(opts) end
----@type fun(opts: { name: string, interests: WPEventInterest[], execute: fun(event: WPEvent) }): WPSimpleEventHook
-SimpleEventHook = SimpleEventHook or SimpleEventHook_ctor
+function SimpleEventHook(opts) end
+
 ---@class WPState
 ---@field save_after_timeout                          fun(self: WPState, tbl: table)
-
 ---@class WPUtils
 ---@field cam_data                                    WPCameraData[]
 ---@field cam_source                                  WPGSource|nil
