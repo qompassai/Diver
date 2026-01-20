@@ -185,32 +185,7 @@ vim.api.nvim_create_autocmd(
     end,
   }
 )
-vim.api.nvim_create_autocmd({
-  'BufRead',
-  'BufNewFile',
-}, {
-  pattern = { ---@type string[]
-    'Dockerfile.*',
-    '*.Dockerfile',
-    'Containerfile',
-    '*.containerfile',
-  },
-  callback = function()
-    vim.bo.filetype = 'dockerfile'
-  end,
-})
-vim.api.nvim_create_autocmd({
-  'BufNewFile',
-  'BufRead',
-}, {
-  pattern = {
-    '*docker-compose*.yml',
-    '*docker-compose*.yaml',
-  },
-  callback = function()
-    vim.bo.filetype = 'yaml'
-  end,
-})
+
 vim.api.nvim_create_autocmd('FileType', {
   pattern = {
     'tex',
@@ -232,73 +207,6 @@ vim.api.nvim_create_autocmd('FileType', {
     vim.opt_local.shiftwidth = 2
     vim.opt_local.softtabstop = 2
     vim.opt_local.omnifunc = 'vim_dadbod_completion#omni'
-  end,
-})
-vim.api.nvim_create_autocmd('LspAttach', {
-  callback = function(ev)
-    vim.diagnostic.show(vim.api.nvim_create_namespace('diagnostics'), ev.buf, nil, {
-      virtual_text = {
-        spacing = 2,
-        source = 'if_many', ---@type string
-        severity = {
-          min = vim.diagnostic.severity.WARN,
-        },
-        prefix = function(diag, i, total) ---@function
-          ---@cast diag vim.Diagnostic
-          ---@cast i integer
-          ---@cast total integer
-          local icons = {
-            [vim.diagnostic.severity.ERROR] = ' ',
-            [vim.diagnostic.severity.WARN] = ' ',
-            [vim.diagnostic.severity.INFO] = ' ',
-            [vim.diagnostic.severity.HINT] = ' ',
-          }
-          return string.format('%s%d/%d ', icons[diag.severity], i, total)
-        end,
-      },
-      signs = true,
-      severity_sort = true,
-      virtual_lines = true,
-      underline = true,
-    })
-  end,
-})
-vim.api.nvim_create_autocmd('LspDetach', {
-  callback = function(args)
-    local client_id = args.data and args.data.client_id
-    if not client_id then
-      return
-    end
-    local client = vim.lsp.get_client_by_id(client_id)
-    if not client then
-      return
-    end
-    if client:supports_method('textDocument/formatting') then
-      vim.api.nvim_clear_autocmds({
-        event = 'BufWritePre',
-        buffer = args.buf,
-      })
-    end
-  end,
-})
-vim.api.nvim_create_autocmd('LspProgress', {
-  callback = function(ev)
-    local value = ev.data.params.value ---@type table
-    if value.kind == 'begin' then
-      vim.api.nvim_ui_send('\027]9;4;1;0\027\\')
-    elseif value.kind == 'end' then
-      vim.api.nvim_ui_send('\027]9;4;0\027\\')
-    elseif value.kind == 'report' then
-      vim.api.nvim_ui_send(string.format('\027]9;4;1;%d\027\\', value.percentage or 0))
-    end
-  end,
-})
-vim.api.nvim_create_autocmd('LspTokenUpdate', {
-  callback = function(args)
-    local token = args.data.token ---@type table
-    if token.type == 'variable' and not token.modifiers.readonly then
-      vim.lsp.semantic_tokens.highlight_token(token, args.buf, args.data.client_id, 'MyMutableVariableHighlight')
-    end
   end,
 })
 function M.md_autocmds() ---Markdown
