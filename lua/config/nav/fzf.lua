@@ -1,9 +1,8 @@
 -- /qompassai/Diver/lua/config/nav/fzf.lua
--- Qompass AI Diver Fzf Config
+-- Qompass AI Diver Nav Fzf Config
 -- Copyright (C) 2025 Qompass AI, All rights reserved
 ------------------------------------------------------
 local M = {}
-
 M.options = {
     winopts = {
         height = 0.85,
@@ -15,9 +14,15 @@ M.options = {
             vertical = 'down:45%',
         },
         border = 'rounded',
-        hls = { Normal = 'Normal', Border = 'FloatBorder' },
+        hls = {
+            Normal = 'Normal',
+            Border = 'FloatBorder',
+        },
     },
-    fzf_opts = { ['--layout'] = 'reverse-list', ['--info'] = 'inline' },
+    fzf_opts = {
+        ['--layout'] = 'reverse-list',
+        ['--info'] = 'inline',
+    },
     keymap = {
         fzf = {
             ['ctrl-c'] = 'abort',
@@ -27,22 +32,68 @@ M.options = {
         },
     },
 }
-
 M.keymaps = {
-    { '<leader>ff', '<cmd>FzfLua files<cr>', desc = 'Fzf Files' },
-    { '<leader>fb', '<cmd>FzfLua buffers<cr>', desc = 'Fzf Buffers' },
-    { '<leader>fs', '<cmd>FzfLua live_grep<cr>', desc = 'Fzf Search' },
-    { '<leader>th', '<cmd>FzfLua colorschemes<cr>', desc = 'Fzf Colorscheme' },
-    { '<leader>fw', '<cmd>FzfLua grep_cword<cr>', desc = 'Fzf Current Word' },
-    { '<leader>fh', '<cmd>FzfLua help_tags<cr>', desc = 'Fzf Help Tags' },
-    { '<leader>fm', '<cmd>FzfLua marks<cr>', desc = 'Fzf Marks' },
-    { '<leader>fc', '<cmd>FzfLua commands<cr>', desc = 'Fzf Commands' },
-    { '<leader>fd', '<cmd>FzfLua lsp_document_symbols<cr>', desc = 'Fzf Document Symbols' },
-    { '<leader>fWs', '<cmd>FzfLua lsp_live_workspace_symbols<cr>', desc = 'Fzf Workspace Symbols' },
-    { '<leader>fgs', '<cmd>FzfLua git_status<cr>', desc = 'Fzf Git Status' },
-    { '<leader>fgb', '<cmd>FzfLua git_branches<cr>', desc = 'Fzf Git Branches' },
+    {
+        '<leader>zf',
+        '<cmd>FzfLua files<cr>',
+        desc = 'Fzf Files',
+    },
+    {
+        '<leader>zb',
+        '<cmd>FzfLua buffers<cr>',
+        desc = 'Fzf Buffers',
+    },
+    {
+        '<leader>zs',
+        '<cmd>FzfLua live_grep<cr>',
+        desc = 'Fzf Search',
+    },
+    {
+        '<leader>zh',
+        '<cmd>FzfLua colorschemes<cr>',
+        desc = 'Fzf Colorscheme',
+    },
+    {
+        '<leader>zw',
+        '<cmd>FzfLua grep_cword<cr>',
+        desc = 'Fzf Current Word',
+    },
+    {
+        '<leader>zh',
+        '<cmd>FzfLua help_tags<cr>',
+        desc = 'Fzf Help Tags',
+    },
+    {
+        '<leader>zm',
+        '<cmd>FzfLua marks<cr>',
+        desc = 'Fzf Marks',
+    },
+    {
+        '<leader>zc',
+        '<cmd>FzfLua commands<cr>',
+        desc = 'Fzf Commands',
+    },
+    {
+        '<leader>zd',
+        '<cmd>FzfLua lsp_document_symbols<cr>',
+        desc = 'Fzf Document Symbols',
+    },
+    {
+        '<leader>zWs',
+        '<cmd>FzfLua lsp_live_workspace_symbols<cr>',
+        desc = 'Fzf Workspace Symbols',
+    },
+    {
+        '<leader>zgs',
+        '<cmd>FzfLua git_status<cr>',
+        desc = 'Fzf Git Status',
+    },
+    {
+        '<leader>zgb',
+        '<cmd>FzfLua git_branches<cr>',
+        desc = 'Fzf Git Branches',
+    },
 }
-
 function M.fzf_setup()
     local fzf = require('fzf-lua')
     fzf.setup(M.options)

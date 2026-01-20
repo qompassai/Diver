@@ -31,6 +31,7 @@ function M.setup_genmap()
                     desc = 'Move to the beginning of the line',
                 })
             )
+
             -- Move to the end of the line while in insert mode
             map(
                 'i',
@@ -77,6 +78,8 @@ function M.setup_genmap()
                     desc = 'Move up by one line',
                 })
             )
+
+            -- Clear search highlights by pressing Escape in normal mode
             map(
                 'n',
                 '<Esc>',
@@ -85,6 +88,7 @@ function M.setup_genmap()
                     desc = 'Clear search highlights',
                 })
             )
+            -- Switch to the window on the left in normal mode
             map(
                 'n',
                 '<C-h>',
@@ -93,6 +97,8 @@ function M.setup_genmap()
                     desc = 'Switch to the window on the left',
                 })
             )
+
+            -- Switch to the window on the right in normal mode
             map(
                 'n',
                 '<C-l>',
@@ -101,6 +107,8 @@ function M.setup_genmap()
                     desc = 'Switch to the window on the right',
                 })
             )
+
+            -- Switch to the window below in normal mode
             map(
                 'n',
                 '<C-j>',
@@ -110,6 +118,7 @@ function M.setup_genmap()
                 })
             )
 
+            -- Switch to the window above in normal mode
             map(
                 'n',
                 '<C-k>',
@@ -119,6 +128,7 @@ function M.setup_genmap()
                 })
             )
 
+            -- Save the current file by pressing Control + s in normal mode
             map(
                 'n',
                 '<C-s>',
@@ -138,6 +148,7 @@ function M.setup_genmap()
             )
         end,
     })
+
 end
 
 return M

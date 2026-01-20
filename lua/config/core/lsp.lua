@@ -39,7 +39,8 @@ function M.on_attach(client, bufnr)
     })
   end
   if client:supports_method('textDocument/inlayHint') and vim.lsp.inlay_hint then
-    vim.lsp.inlay_hint.enable(true, { bufnr = bufnr })
+    vim.lsp.inlay_hint.enable(true, {
+      bufnr = bufnr })
   end
   if client.server_capabilities.semanticTokensProvider then
     vim.lsp.semantic_tokens.enable(true, {
@@ -61,34 +62,6 @@ function M.on_attach(client, bufnr)
     })
   end
 end
-
-local function qf_from_diagnostics(bufnr)
-  bufnr = bufnr or 0
-  local diags = vim.diagnostic.get(bufnr)
-  local items = {}
-  for _, d in ipairs(diags) do
-    table.insert(items, {
-      bufnr = bufnr,
-      lnum = d.lnum + 1,
-      col = d.col + 1,
-      text = string.format('[%s] %s', d.source or 'LSP', d.message),
-      type = ({
-        E = 'E',
-        I = 'I',
-        N = 'N',
-        W = 'W',
-      })[vim.diagnostic.severity[d.severity]] or 'E',
-    })
-  end
-  vim.fn.setqflist(items, 'r')
-  vim.cmd('copen')
-end
-vim.api.nvim_create_user_command('DiagQf', function(opts)
-  qf_from_diagnostics(opts.bang and nil or 0)
-end, {
-  bang = true,
-  desc = 'Diagnostics -> quickfix with source',
-})
 vim.cmd('runtime! lsp/init.lua')
 vim.diagnostic.config({
   float = {
@@ -347,13 +320,4 @@ vim.lsp.handlers['textDocument/publishDiagnostics'] = function(err, result, ctx,
   end
   vim.lsp.diagnostic.on_publish_diagnostics(err, result, ctx)
 end
-local cwd = vim.uv.cwd()
-local qf = vim.fn.getqflist()
-local filtered = {}
-for _, item in ipairs(qf) do
-  if type(item.filename) == 'string' and item.filename:find(cwd, 1, true) == 1 then
-    table.insert(filtered, item)
-  end
-end
-vim.fn.setqflist(filtered, 'r')
 return M

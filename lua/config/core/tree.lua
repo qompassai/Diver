@@ -246,7 +246,6 @@ function M.treesitter(opts)
     local final_config = vim.tbl_deep_extend('force', base_config, opts) ---@cast final_config TSConfig
     configs.setup(final_config)
 end
-
 function M.tree_cfg(opts)
     opts = opts or {}
     M.treesitter(opts)
