@@ -99,7 +99,7 @@ vim.lsp.enable({
     'gdshader_ls',
     --'ghactions_ls',
     'ghcide_ls',
-    'gitlabci_ls', ---:TODO validate
+    --'gitlabci_ls', ---:TODO validate
     --'gitlabduo_ls', ---:TODO
     'glasgow_ls',
     'gleam_ls',
@@ -159,7 +159,7 @@ vim.lsp.enable({
     'luau_ls',
     'lwc_ls',
     'm68k_ls',
-    --'markdownoxide_ls',
+    'markdownoxide_ls',
     'markojs_ls',
     'marksman_ls',
     'matlab_ls',
@@ -225,7 +225,7 @@ vim.lsp.enable({
     --'rech_ls'             ---:TODO https://github.com/RechInformatica/rech-editor-cobol/tree/master/src/lsp
     'regal_ls', ---:TODO validate ---linter/lsp
     'rego_ls', ---:TODO validate
-    --'remark_ls',
+    'remark_ls',
     'rescript_ls',
     'robotcode_ls',
     'robotframework_ls',

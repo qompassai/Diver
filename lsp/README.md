@@ -1,7 +1,11 @@
 <!-- /qompassai/Diver/lsp/README.md -->
+
 <!-- Qompass AI Diver LSP Docs -->
+
 <!-- Copyright (C) 2026 Qompass AI, All rights reserved -->
+
 <!-- ---------------------------------------- -->
+
 <div align="center">
   <details style="display: inline-block; text-align: left; max-width: 600px; width: 100%;">
 <summary style="font-size: 1.4em; font-weight: bold; padding: 15px; background: #667eea; color: white; border-radius: 10px; cursor: pointer; margin: 10px 0; display: flex; align-items: center; gap: 8px;">
@@ -2728,14 +2732,12 @@ uv tool install autotools-language-server
         <a href="https://github.com/qompassai/diver/blob/main/lsp/moxide_ls.lua">moxide_ls</a>
       </li>
           <p>
-      <a href="https://github.com/artempyanykh/marksman">Moxide LSP Reference</a>
+      <a href="https://github.com/Feel-ix-343/markdown-oxide">Moxide LSP Reference</a>
     </p>
  <div style="background: #f8f9fa; padding: 15px; border-radius: 5px; margin-top: 10px; font-family: monospace;">
 
 ```bash
-git clone https://github.com/artempyanykh/marksman.git --recursive && cd marksman
-git fetch --all && git submodule update --init --recursive \
-make install
+cargo install --git https://github.com/Feel-ix-343/markdown-oxide
 ```
 
    </div>
@@ -2750,7 +2752,7 @@ make install
 ```sh
 git clone https://github.com/artempyanykh/marksman.git --recursive && cd marksman
 git fetch --all && git submodule update --init --recursive \
-make install
+make install PREFIX="$HOME/.local"
 ```
 
    </div>

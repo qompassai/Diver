@@ -242,26 +242,31 @@ return ---@type vim.lsp.Config
             hint = {
                 arrayIndex = 'Enable',
                 await = true,
+                awaitPropagate = true,
                 enable = true,
                 semicolon = 'All',
                 setType = true,
                 paramName = 'All',
                 paramType = true,
+                setType = true,
             },
             hover = {
                 enable = true,
-                enumsLimit = 5,
+                enumsLimit = 10,
                 expandAlias = true,
-                previewFields = 50,
+                previewFields = 100,
                 viewNumber = true,
                 viewString = true,
                 viewStringMax = 1000,
             },
-            language = {
+            language = { ---@source https://luals.github.io/wiki/settings/#language
                 completeAnnotation = true,
                 fixIndent = true,
             },
-            misc = {},
+            misc = { ---@source https://luals.github.io/wiki/settings/#misc
+                executables = {},
+                parameters = {},
+            },
             runtime = {
                 fileEncoding = 'utf8',
                 meta = '${version} ${language} ${encoding}',
@@ -274,6 +279,7 @@ return ---@type vim.lsp.Config
                     'lua/?.lua',
                     'lua/?/init.lua',
                 },
+                pathStrict = false,
                 unicodeName = false,
                 version = 'LuaJIT',
             },
@@ -286,31 +292,33 @@ return ---@type vim.lsp.Config
             signatureHelp = {
                 enable = true,
             },
-            spell = {},
+            spell = { ---@source https://luals.github.io/wiki/settings/#spell
+                dict = {},
+            },
             telemetry = {
                 enable = false,
             },
-            type = {
+            type = { ---@source https://luals.github.io/wiki/settings/#type
                 castNumberToInteger = false,
                 checkTableShape = true,
                 inferParamType = true,
-                inferTableSize = 20,
+                inferTableSize = 200,
                 weakNilCheck = false,
                 weakUnionCheck = false,
             },
-            typeFormat = {
+            typeFormat = { ---@source https://luals.github.io/wiki/settings/#typeformat
                 enable = true,
                 config = {
                     auto_complete_end = 'true',
-                    auto_complete_table_sep = 'true',
+                    auto_complete_table_sep = 'false',
                     format_line = 'true',
                 },
             },
-            window = {
+            window = { ---@source https://luals.github.io/wiki/settings/#window
                 progressBar = true,
                 statusBar = true,
             },
-            workspace = {
+            workspace = { ---@source https://luals.github.io/wiki/settings/#workspace
                 checkThirdParty = 'Apply',
                 ignoreDir = {
                     'build',
@@ -322,6 +330,7 @@ return ---@type vim.lsp.Config
                 library = {
                     vim.api.nvim_get_runtime_file('', true),
                     vim.fn.stdpath('config') .. '/lua',
+                    vim.fs.normalize('~/.GH/Qompass/Lua'),
                     vim.env.VIMRUNTIME,
                     '${3rd}/busted/library',
                     '${3rd}/luv/library',
