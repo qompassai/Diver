@@ -7,11 +7,11 @@
 ---@class cmp.mapping
 ---@field scroll_docs                             fun(delta: number)
 ---@field complete                                fun(delta: number)
----@field confirm fun(opts: { behavior: any, select: boolean })
+---@field confirm                                 fun(opts: { behavior: any, select: boolean })
 ---@class cmp.config
----@field sources fun(sources: any): any
+---@field sources                                 fun(sources: any): any
 ---@class cmp.ConfirmBehavior
----@field Replace string
+---@field                                         Replace string
 ---@field Insert string
 ---@class cmp
 ---@field mapping cmp.mapping
@@ -20,18 +20,14 @@
 ---@field visible fun(): boolean
 ---@field select_next_item fun(delta: number)
 ---@field select_prev_item fun(delta:number)
-
 ---@alias vim.lsp.protocol.MarkupKind 'plaintext' | 'markdown'
-
 ---@class vim.lsp.protocol.CompletionItem
 ---@field label string
 ---@field kind? integer
 ---@field documentation? string | { kind: vim.lsp.protocol.MarkupKind, value: string }
-
 ---@class BlinkCmp
 ---@alias blink.cmp.CompletionDocumentationDrawOpts any
 -- --- @alias blink.cmp.Mode 'cmdline' | 'cmdwin' | 'term' | 'default'
-
 ---@class blink.cmp.CompletionItem : vim.lsp.protocol.CompletionItem
 --- @field score_offset? number
 --- @field source_id string
