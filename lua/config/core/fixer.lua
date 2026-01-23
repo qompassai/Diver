@@ -4,6 +4,13 @@
 -- ----------------------------------------
 local M = {} ---@class M
 ---@type table<string, string[]>
+vim.api.nvim_create_autocmd({
+    'BufWinEnter',
+}, {
+    desc = 'return cursor to where it was last time closing the file',
+    pattern = '*',
+    command = 'silent! normal! g`"zv',
+})
 M.fixers_by_ft = {
     ['_'] = {
         'trim_whitespace',
@@ -125,6 +132,7 @@ M.fixers_by_ft = {
         'biome',
     },
 }
+
 ---@return vim.fixer.Config
 local function load_fixer(name) ---@param name string
     return require('fixers.' .. name)

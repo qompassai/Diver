@@ -3,7 +3,7 @@
 -- Copyright (C) 2025 Qompass AI, All rights reserved
 -- --------------------------------------------------
 return {
-    require('plugins.ui.css'),
+    --require('plugins.ui.css'),
     require('plugins.ui.icons'),
     require('plugins.ui.md'),
     require('plugins.ui.line'),

@@ -5,24 +5,24 @@
 ---@meta
 ---@module 'types.ui.md'
 ---@class image.API
----@field clear                                 fun(id?: string)
+---@field clear?                                fun(id?: string)
 ---@field setup                                 fun(options?: Options)
 ---@field from_file                             fun(path: string, options?: image.ImageOptions): image.Image|nil
 ---@field from_url                              fun(url: string, options?: image.ImageOptions, callback: fun(image: image.Image|nil))
 ---@field get_images                            fun(opts?: { window?: number, buffer?: number, namespace?: string }): image.Image[]
 ---@field hijack_buffer                         fun(path: string, window?: number, buffer?: number, options?: image.ImageOptions): image.Image|nil
----@field is_enabled                            fun(): boolean
+---@field disable?                               fun()
+---@field is_enabled?                            fun(): boolean
 ---@field enable                                fun()
----@field disable                               fun()
 ---@class image.State
 ---@field backend                               image.Backend
+---@field disable_decorator_handling            boolean
 ---@field enabled                               boolean
 ---@field options                               Options
 ---@field images?                               { [string]: image.Image }
 ---@field extmarks_namespace?                   any
 ---@field remote_cache                          { [string]: string }
 ---@field tmp_dir                               string
----@field disable_decorator_handling            boolean
 ---@field hijacked_win_buf_images               { [string]: image.Image }
 ---@field processor                             image.ImageProcessor
 ---@class image.DocumentIntegrationOptions
@@ -52,8 +52,8 @@
 ---@class image.BackendFeatures
 ---@field crop                                  boolean
 ---@class image.Backend
----@field state                                 image.State
 ---@field features                              image.BackendFeatures
+---@field state                                 image.State
 ---@field setup                                 fun(state: image.State)
 ---@field render                                fun(image: image.Image, x: number, y: number, width?: number, height?: number)
 ---@field clear                                 fun(id?: string, shallow?: boolean)
@@ -74,13 +74,13 @@
 ---@field max_width_window_percentage?          number
 ---@field max_height_window_percentage?         number
 ---@class image.ImageBounds
----@field top                                   number
----@field right                                 number
----@field bottom                                number
----@field left                                  number
+---@field top?                                   number
+---@field right?                                 number
+---@field bottom?                                number
+---@field left?                                  number
 ---@class image.MagickRockImage
----@field                                       adaptive_resize fun(self: image.MagickRockImage, width: number, height: number)
----@field clone                                 fun(self: image.MagickRockImage): image.MagickRockImage
+---@field adaptive_resize?                       fun(self: image.MagickRockImage, width: number, height: number)
+---@field clone?                                 fun(self: image.MagickRockImage): image.MagickRockImage
 ---@field composite                             fun(self: image.MagickRockImage, source: image.MagickRockImage, x: number, y: number, operator?: string)
 ---@field crop                                  fun(self: image.MagickRockImage, width: number, height: number, x?: number, y?: number)
 ---@field destroy                               fun(self: image.MagickRockImage)
@@ -94,9 +94,10 @@
 ---@field set_format                            fun(self: image.MagickRockImage, format: string)
 ---@field write                                 fun(self: image.MagickRockImage, path: string)
 ---@class image.Image
----@field id                                    string
----@field internal_id                           number
----@field path                                  string
+---@field bounds?                                image.ImageBounds
+---@field id?                                    string
+---@field internal_id?                           number
+---@field path?                                  string
 ---@field resized_path                          string
 ---@field cropped_path                          string
 ---@field original_path                         string
@@ -110,12 +111,11 @@
 ---@field inline?                               boolean
 ---@field geometry                              image.ImageGeometry
 ---@field rendered_geometry                     image.ImageGeometry
----@field bounds                                image.ImageBounds
 ---@field is_rendered                           boolean
 ---@field resize_hash?                          string
 ---@field crop_hash?                            string
----@field global_state                          image.State
----@field render                                fun(self: image.Image, geometry?: image.ImageGeometry)
+---@field global_state?                          image.State
+---@field render?                                fun(self: image.Image, geometry?: image.ImageGeometry)
 ---@field clear                                 fun(self: image.Image, shallow?: boolean)
 ---@field move                                  fun(self: image.Image, x: number, y: number)
 ---@field brightness                            fun(self: image.Image, brightness: number)
@@ -127,36 +127,35 @@
 ---@field has_extmark_moved                     fun (self:image.Image): (boolean, number?, number?)
 ---@field ignore_global_max_size?               boolean
 ---@class image.ImageProcessor
----@field                                       get_format fun(path: string): string
----@field convert_to_png                        fun(path: string, output_path?: string): string
----@field get_dimensions                        fun(path: string): { width: number, height: number }
+---@field get_format?                            fun(path: string): string
+---@field convert_to_png?                        fun(path: string, output_path?: string): string
+---@field get_dimensions?                        fun(path: string): { width: number, height: number }
 ---@field resize                                fun(path: string, width: number, height: number, output_path?: string): string
 ---@field crop                                  fun(path: string, x: number, y: number, width: number, height: number, output_path?: string): string
 ---@field brightness                            fun(path: string, brightness: number, output_path?: string): string
 ---@field saturation                            fun(path: string, saturation: number, output_path?: string): string
 ---@field hue                                   fun(path: string, hue: number, output_path?: string): string
 ---@class image.IntegrationContext
----@field api                                   API
----@field options                               image.IntegrationOptions
----@field state                                 image.State
+---@field options?                               image.IntegrationOptions
+---@field state?                                 image.State
 ---@class image.Integration
 ---@field setup?                                fun(api: API, options: image.IntegrationOptions, state: image.State)
 ---@class image.Window
----@field buffer                                number
----@field buffer_filetype?                      string
----@field buffer_is_listed                      boolean
----@field height                                number
----@field id                                    number
----@field x                                     number
----@field y                                     number
----@field width                                 number
----@field scroll_x                              number
----@field scroll_y                              number
----@field is_visible                            boolean
----@field is_normal                             boolean
----@field is_floating                           boolean
----@field rect                                  { top: number, right: number, bottom: number, left: number }
----@field masks                                 { x: number, y: number, width: number, height: number }[]
+---@field buffer?                                number
+---@field buffer_filetype?                       string
+---@field buffer_is_listed?                      boolean
+---@field height?                                number
+---@field id?                                    number
+---@field x?                                     number
+---@field y?                                     number
+---@field width?                                 number
+---@field scroll_x?                              number
+---@field scroll_y?                              number
+---@field is_visible?                            boolean
+---@field is_normal?                             boolean
+---@field is_floating?                           boolean
+---@field rect?                                  { top: number, right: number, bottom: number, left: number }
+---@field masks?                                 { x: number, y: number, width: number, height: number }[]
 ---@field zindex                                number
 ---@class image.KittyControlConfig
 ---@field action?                               't'|"T"|"p"|"d"|"f"|"c"|"a"|"q"

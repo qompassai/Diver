@@ -4,14 +4,14 @@
 ------------------------------------------------------
 ---@meta
 ---@class LuaLangModule
----@field                                     lua_cmp fun(): table
----@field                                     lua_lazydev fun(opts?: table): table
----@field                                     lua_luarocks fun(opts?: table): table
----@field                                     lua_snap fun(opts?: table): table
+---@field lua_cmp                             fun(): table
+---@field lua_lazydev                         fun(opts?: table): table
+---@field lua_luarocks                        fun(opts?: table): table
+---@field lua_snap                            fun(opts?: table): table
 ---@field lua_test                            fun(opts?: table): table
 ---@field lua_version                         fun(): string, string
 ---@field lua_setup                           fun(opts?: table): table
 ---@class LuaLangGlobals
----@field                                     use_blink_cmp boolean
+---@field use_blink_cmp                       boolean
 ---@field lazydev_enabled boolean
 ---@type LuaLangModule

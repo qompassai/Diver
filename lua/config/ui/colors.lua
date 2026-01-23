@@ -5,15 +5,19 @@
 vim.cmd('colorscheme vague')
 ---@type HlOpts
 vim.api.nvim_set_hl(0, 'Comment', {
-  italic = true,
-  fg = '#7f9bb3',
+    fg = '#7f9bb3',
+    italic = true,
+})
+vim.api.nvim_set_hl(0, '@comment', {
+    fg = '#7f9bb3',
+    italic = true,
 })
 vim.api.nvim_set_hl(0, '@comment.documentation', {
-  italic = true,
-  fg = '#a0c4ff',
+    italic = true,
+    fg = '#a0c4ff',
 })
 vim.api.nvim_set_hl(0, 'CursorColumn', {
-  bg = '#262a32',
+    bg = '#262a32',
 })
 vim.api.nvim_set_hl(0, 'CursorLine', {
     bg = 'none',
@@ -54,7 +58,7 @@ vim.api.nvim_set_hl(0, 'DiagnosticVirtualTextHint', {
     fg = '#5fd7af',
     bg = '#1f3b2f',
 })
-vim.api.nvim_set_hl(0, 'DiagnosticVirtualTextOk', {
+vim.api.nvim_set_hl(0, 'DiagnosticVirtualTextOk', { ---fdfd
     fg = '#5fd75f',
     bg = '#1f3b1f',
 })
@@ -107,6 +111,28 @@ vim.api.nvim_set_hl(0, 'DiagnosticFloatingHint', {
 })
 vim.api.nvim_set_hl(0, 'DiagnosticFloatingOk', {
     fg = '#5fd75f',
+})
+vim.api.nvim_set_hl(0, 'DiffAdd', {
+    fg = '#00ff87',
+    bg = 'none',
+    bold = true,
+})
+
+vim.api.nvim_set_hl(0, 'DiffChange', {
+    fg = '#ffaf00',
+    bg = 'none',
+})
+
+vim.api.nvim_set_hl(0, 'DiffDelete', {
+    fg = '#ff5f5f',
+    bg = 'none',
+    bold = true,
+})
+
+vim.api.nvim_set_hl(0, 'DiffText', {
+    fg = '#00bfff',
+    bg = 'none',
+    bold = true,
 })
 vim.api.nvim_set_hl(0, 'EndOfBuffer', {
     bg = 'none',

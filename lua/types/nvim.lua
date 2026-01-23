@@ -1,0 +1,306 @@
+-- /qompassai/Diver/lua/types/nvim.lua
+-- Qompass AI Diver Nvim Types
+-- Copyright (C) 2025 Qompass AI, All rights reserved
+------------------------------------------------------
+---@meta
+---@module'types.nvim'
+---@class VimFn
+---@field abs?                                fun(expr:number):number
+---@field acos?                               fun(expr:number):number
+---@field add?                                fun(object:any, expr:any):any
+---@field and?                                fun(expr:number, expr1:number):integer
+---@field api_info?                           fun():table
+---@field append?                             fun(lnum:integer|string, text:string|string[]):0|1
+---@type VimFn
+vim.fn = vim.fn
+---@class vim.fs
+---@field basename? fun(file: string|nil): string|nil
+---@field dirname? fun(file: string|nil): string|nil
+---@field abspath? fun(path: string): string
+---@field normalize? fun(path: string, opts?: { expand_env?: boolean, win?: boolean }): string
+---@field joinpath? fun(...: string): string
+---@field find? fun(
+---  names: string|string[]|fun(name: string, path: string): boolean,
+---  opts: { path?: string, upward?: boolean, stop?: string, type?: string, limit?: number, follow?: boolean }|nil)): string[]
+---@field parents?                            fun(start: string): (fun(_, dir: string): string|nil), nil, string|nil
+---@field relpath?                            fun(base: string, target: string, opts?: table): string|nil
+---@field rm fun(path: string, opts?: { recursive?: boolean, force?: boolean }): nil
+vim.fs = vim.fs or {}
+
+---@class VimNativeAPI
+---@field nvim_create_augroup fun(name: string, opts: table): integer
+---@field nvim_create_autocmd fun(event: any, opts: table)
+---@field nvim_get_runtime_file fun(pattern: string, all: boolean): string[]
+---@field nvim_set_option_value fun(name: string, value: any, opts: table)
+---@type VimNativeAPI
+vim.api = vim.api
+---@class vim.fn
+---@field executable fun(name: string): boolean
+---@field expand fun(path: string): string
+---@field has fun(feature: string): boolean
+---@field stdpath fun(what: string): string
+---@class vim.uv
+---@field available_parallelism fun(): integer
+---@class FunctionAPI
+---@field executable?                         fun(name:string):boolean
+---@field expand?                             fun(path:string):string
+---@field has?                                fun(feature:string):boolean
+---@field stdpath?                           fun(type:string):string
+---@class Globals :                           NvimGlobals
+---@class NativeAPI
+---@field nvim_create_augroup?                fun(name:string, opts:table):integer
+---@field nvim_create_autocmd?                fun(event:any, opts:table)
+---@field nvim_get_runtime_file?              fun(pattern:string, all:boolean):string[]
+---@field nvim_set_option_value?              fun(name:string, value:any, opts:table)
+---@class NvimGlobals
+---@field clipboard? 'clip'|'doitclient'|'lemonade'|'osc52'|'pbcopy'|'putclip'|'termux'|'tmux'|'wayclip'|'wl-copy'|'win32yank'|'xclip'|'xsel'
+---@field cursorline?                         boolean
+---@field cursorline?                         boolean
+---@field deprecation_warnings?               boolean
+---@field editorconfig?                       boolean
+---@field encoding?                           string
+---@field exrc?                               boolean
+---@field expandtab?                          boolean
+---@field fileencoding?                       string
+---@field fileencodings?                      string[]
+---@field fileformats?                        string[]
+---@field foldenable?                         boolean
+---@field foldexpr?                           string
+---@field foldlevel?                          integer
+---@field foldmethod?                         string
+---@field git_command_ssh?                    integer
+---@field guicursor?                          string[]
+---@field guipty?                             boolean
+---@field hidden?                             boolean
+---@field highlight?                          boolean
+---@field history?                            integer
+---@field hlsearch?                           boolean
+---@field ignorecase?                         boolean
+---@field inccommand?                         string
+---@field incsearch?                          boolean
+---@field isprint?                            string
+---@field jumpoptions?                        'clean'|'stack'|'view'|''
+---@field laststatus?                         0|1|2|3
+---@field lazyredraw?                         boolean
+---@field lisp?                               boolean
+---@field list?                               boolean
+---@field listchars?                          table<string, string>
+---@field loaded_illuminate?                  boolean
+---@field loaded_netrw?                       integer
+---@field loaded_netrwPlugin?                 integer
+---@field loaded_node_provider?               0|1
+---@field loaded_perl_provider?               0|1
+---@field loaded_python_provider?             0|1
+---@field loaded_ruby_provider?               0|1
+---@field lsp_enable_on_demand?               boolean
+---@field mapleader?                          string
+---@field maplocalleader?                     string
+---@field mkdp_markdown_css?                  string
+---@field mkdp_theme?                         string
+---@field modeline?                           boolean
+---@field modelines?                          integer
+---@field mouse?                              string
+---@field mousescroll?                        string
+---@field node_host_prog?                     string
+---@field number?                             boolean
+---@field perl_host_prog?                     string
+---@field python3_host_prog?                  string
+---@field relativenumber?                     boolean
+---@field ruby_host_prog?                     string
+---@field rust_cargo_check_all_targets?       boolean
+---@field rust_cargo_check_benches?           boolean
+---@field rust_conceal?                       boolean
+---@field rust_conceal_pub?                   boolean
+---@field rust_playpen_url?                   string
+---@field rust_recommended_style?             boolean
+---@field rust_shortener_url?                 string
+---@field rustfmt_detect_version?             boolean
+---@field rustfmt_emit_files?                 boolean
+---@field ruff_makeprg_params?                string
+---@field scrolloff?                          integer
+---@field secure?                             boolean
+---@field semantic_tokens_enabled?            boolean
+---@field shiftwidth?                         integer
+---@field showtabline?                        integer
+---@field sidescrolloff?                      integer
+---@field smartcase?                          boolean
+---@field smoothscroll?                       boolean
+---@field softtabstop?                        integer
+---@field spelllang?                          string[]
+---@field splitbelow?                         boolean
+---@field splitright?                         boolean
+---@field sqlite_clib_path?                   string
+---@field swapfile?                           boolean
+---@field syntax?                             string
+---@field syntax_on?                          boolean
+---@field tabstop?                            integer
+---@field table_mode_always_active?           integer
+---@field table_mode_corner?                  string
+---@field table_mode_separator?               string
+---@field table_mode_syntax?                  integer
+---@field table_mode_update_time?             integer
+---@field termguicolors?                      boolean
+---@field timeout?                            boolean
+---@field timeoutlen?                         integer
+---@field ttimeoutlen?                        integer
+---@field ttyfast?                            boolean
+---@field undodir?                            string
+---@field undofile?                           boolean
+---@field updatetime?                         integer
+---@field use_blink_cmp?                      boolean
+---@field vim_markdown_folding_disabled?      integer
+---@field vim_markdown_math?                  integer
+---@field vim_markdown_frontmatter?           integer
+---@field vim_markdown_toml_frontmatter?      integer
+---@field vim_markdown_json_frontmatter?      integer
+---@field vim_markdown_follow_anchor?         integer
+---@field virtualedit?                        string
+---@field which_key_disable_health_check?     integer
+---@field wildmenu?                           boolean
+---@field wildmode?                           string
+---@field writebackup?                        boolean
+---@field use_blink_cmp                       boolean
+---@class NvimOptions
+---@field allowrevins?                        boolean
+---@field ambiwidth?                          string
+---@field autochdir?                          boolean
+---@field autocomplete?                       boolean
+---@field autocompletedelay?                  integer
+---@field autocompletetimeout?                integer
+---@field autoread?                           boolean
+---@field autowrite?                          boolean
+---@field autowriteall?                       boolean
+---@field backup?                             boolean
+---@field backupcopy?                         'yes'|'no'|'auto'|'breaksymlink'|'breakhardlink'|string
+---@field background?                         'dark'|'light'
+---@field backspace?                          string|string[] { "indent","eol","start" }
+---@field breakindent?                        boolean
+---@field clipboard?                          string|string[]  "unnamedplus" or { "unnamedplus" }
+---@field cmdheight?                          integer
+---@field comments?                           string|string[]
+---@field complete?                           string|string[]
+---@field completeitemalign?                  "abbr,kind,menu"
+---@field completeopt?                        string|string[] "menu","menuone","noselect","noinsert","popup","preview","fuzzy","longest","preinsert","nearest","nosort"
+---@field concealcursor?                      string "nc", "nivc"
+---@field conceallevel?                       0|1|2|3
+---@field confirm?                            boolean
+---@field cursorline?                         boolean
+---@field debug?                              ''|'msg'|'throw'|'beep'|string
+---@field diffopt?                            string|string[]  'internal,filler,closeoff,algorithm:histogram,indent-heuristic,linematch'
+---@field encoding?                           "utf-8"|string
+---@field errorbells?                         boolean
+---@field exrc?                               boolean
+---@field expandtab?                          boolean
+---@field fileencoding?                       string
+---@field fileencodings?                      string|string[]
+---@field fileformats?                        string|string[]
+---@field foldenable?                         boolean
+---@field foldexpr?                           string
+---@field foldlevel?                          integer
+---@field foldmethod?                         'manual'|'marker'|'expr'|'syntax'|'indent'|'diff'|string
+---@field formatoptions?                      string
+---@field grepprg?                            string
+---@field guicursor?                          string|string[]
+---@field hidden?                             boolean
+---@field history?                            integer
+---@field hlsearch?                           boolean
+---@field icon?                               boolean
+---@field ignorecase?                         boolean
+---@field inccommand?                         ''|'nosplit'|'split'
+---@field incsearch?                          boolean
+---@field isprint?                            string "@,161-255"
+---@field joinspaces?                         boolean
+---@field jumpoptions?                        ''|'clean'|'stack'|'view'|string
+---@field langnoremap?                        boolean
+---@field langremap?                          boolean
+---@field laststatus?                         0|1|2|3
+---@field lazyredraw?                         boolean
+---@field linebreak?                          boolean
+---@field linespace?                          integer
+---@field list?                               boolean
+---@field listchars?                          table<string,string> { space="_", tab=">~", ... }
+---@field lispwords?                          string|string[]
+---@field magic?                              boolean
+---@field mat?                                integer
+---@field maxsearchcount?                     integer
+---@field modeline?                           boolean
+---@field modelines?                          integer
+---@field mouse?                              ''|'a'|'nvi'|'nv'|'ni'|'v'|'n'|'i'|'r'|string
+---@field mousescroll?                        string "ver:3,hor:6"
+---@field nrformats?                          string|string[] { 'bin','hex' }
+---@field number?                             boolean
+---@field packpath?                           string|string[]
+---@field pumheight?                          integer
+---@field redrawtime?                         integer
+---@field relativenumber?                     boolean
+---@field report?                             integer
+---@field ruler?                              boolean
+---@field scrolloff?                          integer
+---@field secure?                             boolean
+---@field sessionoptions?                     string|string[] 'curdir,folds,help,tabpages,terminal,winsize'
+---@field shiftwidth?                         integer
+---@field shortmess?                          string  'IF'
+---@field showmode?                           boolean
+---@field showtabline?                        0|1|2
+---@field sidescroll?                         integer
+---@field sidescrolloff?                      integer
+---@field smartcase?                          boolean
+---@field smarttab?                           boolean
+---@field smoothscroll?                       boolean
+---@field softtabstop?                        integer
+---@field spell?                              boolean
+---@field spellfile?                          string
+---@field spelllang?                          string|string[] 'en_us' or { 'en_us' }
+---@field spelloptions?                       string           'camel'
+---@field splitbelow?                         boolean
+---@field splitright?                         boolean
+---@field startofline?                        boolean
+---@field swapfile?                           boolean
+---@field switchbuf?                          string 'uselast'
+---@field syntax?                             'enable'|'on'|'off'|string
+---@field tabpagemax?                         integer
+---@field tags?                               string|string[]
+---@field tabstop?                            integer
+---@field termguicolors?                      boolean
+---@field textwidth?                          integer
+---@field tm?                                 integer   'timeoutlen'
+---@field timeout?                            boolean
+---@field timeoutlen?                         integer
+---@field title?                              boolean
+---@field ttimeoutlen?                        integer
+---@field ttyfast?                            boolean
+---@field undodir?                            string
+---@field undofile?                           boolean
+---@field updatetime?                         integer
+---@field viewoptions?                        string|string[]  "unix,slash"
+---@field viminfo?                            string|string[]
+---@field virtualedit?                        ''|'block'|'onemore'|'all'|string
+---@field wildignore?                         string|string[]   { "*.a","*.o",... }
+---@field wildignorecase?                     boolean
+---@field wildmenu?                           boolean
+---@field wildmode?                           string|string[] 'noselect'
+---@field winborder?                          'none'|'single'|'double'|'rounded'|'solid'|'shadow'|string
+---@field wrap?                               boolean
+---@field writebackup?                        boolean
+---@class OptionMethods<T>
+---@field append                              fun(self:OptionMethods<T>, value:any)
+---@field comments                            OptionMethods<string|string[]>
+---@field complete                            OptionMethods<string|string[]>
+---@field get                                 fun(self:OptionMethods<T>):T
+---@field remove                              fun(self:OptionMethods<T>, value:any)
+---@field listchars                           OptionMethods<table<string,string>>
+---@field lispwords                           OptionMethods<string|string[]>
+---@field nrformats                           OptionMethods<string|string[]>
+---@field tags                                OptionMethods<string|string[]>
+---@field viminfo                             OptionMethods<string|string[]>
+---@class Options :                           NvimOptions
+---@class WindowOptions
+---@field conceallevel?                       0|1|2|3
+---@field cursorbind?                         boolean
+---@field cursorline?                         boolean
+---@field cursorlineopt?                      "both"|"line"|"number"
+---@field lhistory?                           integer
+---@field list?                               boolean
+---@field number?                             boolean
+local M = {}
+return M

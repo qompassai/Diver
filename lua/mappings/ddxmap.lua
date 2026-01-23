@@ -65,24 +65,13 @@ function M.setup_ddxmap()
                     desc = 'Toggle diagnostic virtual_lines',
                 })
             )
+            map('n', '<leader>dq', vim.diagnostic.setqflist, {
+                desc = 'Show project diagnostics',
+            })
 
-            map(
-                'n',
-                '<leader>dq', --- In normal mode, press 'Space' + 'd' + 'q' to show diagnostics for the entire project
-                vim.diagnostic.setqflist,
-                {
-                    desc = 'Show project diagnostics',
-                }
-            )
-
-            map(
-                'n',
-                '<leader>xd', --- In normal mode, press 'Space' + 'x' + 'd' to toggle the Trouble diagnostics window
-                '<cmd>Trouble diagnostics toggle<cr>',
-                {
-                    desc = 'Toggle Diagnostics',
-                }
-            )
+            map('n', '<leader>xd', '<cmd>Trouble diagnostics toggle<cr>', {
+                desc = 'Toggle Diagnostics',
+            })
             map(
                 'n',
                 '<leader>xb', --- In normal mode, press 'Space' + 'x' + 'b' to toggle Trouble diagnostics for current buffer
@@ -99,126 +88,155 @@ function M.setup_ddxmap()
                     desc = 'Document Symbols',
                 }
             )
-            map(
-                'n',
-                '<leader>xw', --- In normal mode, press 'Space' + 'x' + 'w' for right-aligned LSP references
-                '<cmd>Trouble lsp toggle focus=false win.position=right<cr>',
-                {
-                    desc = 'LSP References',
-                }
-            )
-            map(
-                'n',
-                '<leader>xl', --- In normal mode, press 'Space' + 'x' + 'l' to toggle location list
-                '<cmd>Trouble loclist toggle<cr>',
-                {
-                    desc = 'Location List',
-                }
-            )
-            map(
-                'n',
-                '<leader>xq', --- In normal mode, press 'Space' + 'x' + 'q' to toggle quickfix list
-                '<cmd>Trouble qflist toggle<cr>',
-                {
-                    desc = 'Quickfix List',
-                }
-            )
-            map(
-                'n',
-                '<leader>xt', --- In normal mode, press 'Space' + 'x' + 't' to toggle any active Trouble window
-                '<cmd>Trouble toggle<cr>',
-                {
-                    desc = 'Toggle Trouble',
-                }
-            )
-            map(
-                'n',
-                '<leader>ds', -- Press <Space> d s to start or continue debugging
-                '<cmd>lua require\'dap\'.continue()<CR>',
-                {
-                    desc = 'Start/Continue Debug',
-                }
-            )
-            map(
-                'n',
-                '<leader>db', -- Press <Space> d b to toggle breakpoint
-                '<cmd>lua require\'dap\'.toggle_breakpoint()<CR>',
-                {
-                    desc = 'Toggle Breakpoint',
-                }
-            )
-            map(
-                'n',
-                '<leader>dS', -- Press <Space> d S to step over
-                '<cmd>lua require\'dap\'.step_over()<CR>',
-                {
-                    desc = 'Step Over',
-                }
-            )
-            map(
-                'n',
-                '<leader>di', -- Press <Space> d i to step into
-                '<cmd>lua require\'dap\'.step_into()<CR>',
-                {
-                    desc = 'Step Into',
-                }
-            )
-            map(
-                'n',
-                '<leader>do', --- Press <Space> d o to step out
-                '<cmd>lua require\'dap\'.step_out()<CR>',
-                {
-                    desc = 'Step Out',
-                }
-            )
-            map(
-                'n',
-                '<leader>dr', --- Press <Space> d r to toggle the debug REPL
-                '<cmd>lua require\'dap\'.repl.toggle()<CR>',
-                {
-                    desc = 'Toggle REPL',
-                }
-            )
-            map(
-                'n',
-                '<leader>du', --- In normal mode, Press <Space> d u to toggle the DAP UI
 
-                '<cmd>lua require\'dapui\'.toggle()<CR>',
-                {
-                    desc = 'Toggle DAP UI',
-                }
-            )
-            map('n', '<leader>da', function() --- Press <Space> d a to choose and activate a debug adapter
-                vim.ui.select({
-                    'python',
-                    'cpp',
-                    'rust',
-                    'rust',
-                }, {
-                    prompt = 'Select debug adapter:',
-                    format_item = function(item)
-                        return ' ' .. item:upper()
-                    end,
-                }, function(choice)
-                    if choice then
-                        require('dap').adapters[choice]()
-                    end
-                end)
-            end, {
-                desc = 'Select Debug Adapter',
+            -- Markdown preview mappings
+            vim.keymap.set('n', '<leader>mp', ':MarkdownPreview<CR>', {
+                buffer = bufnr,
+                desc = 'Markdown Preview',
             })
-            map('n', '<leader>dv', function() --- Press <Space> d v to enable verbose debug logging
-                require('dap').set_log_level('DEBUG')
-                vim.api.nvim_echo({
-                    {
-                        'Debug verbosity increased',
-                        'None',
-                    },
-                }, false, {})
-            end, {
-                desc = 'Verbose Debug Mode',
+
+            vim.keymap.set('n', '<leader>ms', ':MarkdownPreviewStop<CR>', {
+                buffer = bufnr,
+                desc = 'Stop Markdown Preview',
+            })
+
+            -- Table mode toggle
+            vim.keymap.set('n', '<leader>mt', ':TableModeToggle<CR>', {
+                buffer = bufnr,
+                desc = 'Toggle Table Mode',
+            })
+
+            -- Kitty image from code block
+            vim.keymap.set('n', '<leader>mi', ':KittyScrollbackGenerateImage<CR>', {
+                buffer = bufnr,
+                desc = 'Generate image from code block',
+            })
+
+            -- Run selected code
+            vim.keymap.set('v', '<leader>mr', ':SnipRun<CR>', {
+                buffer = bufnr,
+                desc = 'Run selected code',
             })
         end,
+    })
+    map(
+        'n',
+        '<leader>xw', --- In normal mode, press 'Space' + 'x' + 'w' for right-aligned LSP references
+        '<cmd>Trouble lsp toggle focus=false win.position=right<cr>',
+        {
+            desc = 'LSP References',
+        }
+    )
+    map(
+        'n',
+        '<leader>xl', --- In normal mode, press 'Space' + 'x' + 'l' to toggle location list
+        '<cmd>Trouble loclist toggle<cr>',
+        {
+            desc = 'Location List',
+        }
+    )
+    map(
+        'n',
+        '<leader>xq', --- In normal mode, press 'Space' + 'x' + 'q' to toggle quickfix list
+        '<cmd>Trouble qflist toggle<cr>',
+        {
+            desc = 'Quickfix List',
+        }
+    )
+    map(
+        'n',
+        '<leader>xt', --- In normal mode, press 'Space' + 'x' + 't' to toggle any active Trouble window
+        '<cmd>Trouble toggle<cr>',
+        {
+            desc = 'Toggle Trouble',
+        }
+    )
+    map(
+        'n',
+        '<leader>ds', -- Press <Space> d s to start or continue debugging
+        '<cmd>lua require\'dap\'.continue()<CR>',
+        {
+            desc = 'Start/Continue Debug',
+        }
+    )
+    map(
+        'n',
+        '<leader>db', -- Press <Space> d b to toggle breakpoint
+        '<cmd>lua require\'dap\'.toggle_breakpoint()<CR>',
+        {
+            desc = 'Toggle Breakpoint',
+        }
+    )
+    map(
+        'n',
+        '<leader>dS', -- Press <Space> d S to step over
+        '<cmd>lua require\'dap\'.step_over()<CR>',
+        {
+            desc = 'Step Over',
+        }
+    )
+    map(
+        'n',
+        '<leader>di', -- Press <Space> d i to step into
+        '<cmd>lua require\'dap\'.step_into()<CR>',
+        {
+            desc = 'Step Into',
+        }
+    )
+    map(
+        'n',
+        '<leader>do', --- Press <Space> d o to step out
+        '<cmd>lua require\'dap\'.step_out()<CR>',
+        {
+            desc = 'Step Out',
+        }
+    )
+    map(
+        'n',
+        '<leader>dr', --- Press <Space> d r to toggle the debug REPL
+        '<cmd>lua require\'dap\'.repl.toggle()<CR>',
+        {
+            desc = 'Toggle REPL',
+        }
+    )
+    map(
+        'n',
+        '<leader>du', --- In normal mode, Press <Space> d u to toggle the DAP UI
+
+        '<cmd>lua require\'dapui\'.toggle()<CR>',
+        {
+            desc = 'Toggle DAP UI',
+        }
+    )
+    map('n', '<leader>da', function() --- Press <Space> d a to choose and activate a debug adapter
+        vim.ui.select({
+            'python',
+            'cpp',
+            'rust',
+            'rust',
+        }, {
+            prompt = 'Select debug adapter:',
+            format_item = function(item)
+                return ' ' .. item:upper()
+            end,
+        }, function(choice)
+            if choice then
+                require('dap').adapters[choice]()
+            end
+        end)
+    end, {
+        desc = 'Select Debug Adapter',
+    })
+    map('n', '<leader>dv', function() --- Press <Space> d v to enable verbose debug logging
+        require('dap').set_log_level('DEBUG')
+        vim.api.nvim_echo({
+            {
+                'Debug verbosity increased',
+                'None',
+            },
+        }, false, {})
+    end, {
+        desc = 'Verbose Debug Mode',
     })
 end
 

@@ -2,9 +2,108 @@
 -- Qompass AI Diver Core Linter Config
 -- Copyright (C) 2025 Qompass AI, All rights reserved
 -- ----------------------------------------
----@meta
----@module 'config.core.lint'
 local M = {}
+vim.api.nvim_create_autocmd({
+    'BufWritePost',
+    'InsertLeave',
+}, {
+    group = vim.api.nvim_create_augroup('Lint', {
+        clear = true,
+    }),
+    callback = function(args)
+        M.lint(args.buf)
+    end,
+})
+vim.cmd([[
+    iabbr cosnt const
+    iabbr imprt import
+    iabbr imoprt import
+    iabbr udpate update
+    iabbr imrpvoe improve
+    iabbr imrpvoe improve
+    iabbr ipmrove  improve
+    iabbr imrpve improve
+    iabbr imprve improve
+    iabbr Imrpvoe Improve
+    iabbr Imrpvoe Improve
+    iabbr Ipmrove Improve
+    iabbr Imrpve Improve
+    iabbr Imprve Improve
+    iabbr funcition function
+    iabbr funciton function
+    iabbr fucntion function
+    iabbr functoin function
+    iabbr funtion function
+    iabbr fucntoin function
+    iabbr aciton action
+    iabbr acton action
+    iabbr actoin action
+    iabbr actin action
+    iabbr ation action
+    iabbr actoins actions
+    iabbr acitns actions
+    iabbr resposne response
+    iabbr respnse response
+    iabbr reponse response
+    iabbr respone response
+    iabbr resonse response
+    iabbr resopnse response
+    iabbr resposnes responses
+    iabbr respnses responses
+    iabbr reponses responses
+    iabbr transation transaction
+    iabbr transaciton transaction
+    iabbr transacton transaction
+    iabbr transction transaction
+    iabbr trasaction transaction
+    iabbr trasnsaction transaction
+    iabbr transactoin transaction
+    iabbr transactoins transactions
+    iabbr transations transactions
+    iabbr transacitons transactions
+    iabbr transactons transactions
+    iabbr transctions transactions
+    iabbr repot report
+    iabbr reort report
+    iabbr rport report
+    iabbr reprt report
+    iabbr reoprt report
+    iabbr repots reports
+    iabbr reorts reports
+    iabbr rports reports
+    iabbr repotAction reportAction
+    iabbr reportAciton reportAction
+    iabbr reportActoin reportAction
+    iabbr reprotAction reportAction
+    iabbr reoprtAction reportAction
+    iabbr reprtAction reportAction
+    iabbr Onxy Onyx
+    iabbr Onix Onyx
+    iabbr Onyix Onyx
+    iabbr Onxyx Onyx
+    iabbr onxy onyx
+    iabbr onix onyx
+    iabbr onyix onyx
+    iabbr onxyx onyx
+    iabbr transationID transactionID
+    iabbr transacitonID transactionID
+    iabbr transactonID transactionID
+    iabbr transctionID transactionID
+    iabbr trasactionID transactionID
+    iabbr trasnsactionID transactionID
+    iabbr transactoinID transactionID
+    iabbr repotActionID reportActionID
+    iabbr reportAcitonID reportActionID
+    iabbr reportActoinID reportActionID
+    iabbr reprotActionID reportActionID
+    iabbr reoprtActionID reportActionID
+    iabbr reprtActionID reportActionID
+    iabbr repotID reportID
+    iabbr reortID reportID
+    iabbr rportID reportID
+    iabbr reprtID reportID
+    iabbr reoprtID reportID
+]])
 local running_procs_by_buf = {} ---@type table<integer, table<string, integer>>
 local namespaces = setmetatable({}, {
     __index = function(tbl, key)
@@ -137,16 +236,4 @@ function M.lint(opts)
         run_linter(n, bufnr)
     end
 end
-
-vim.api.nvim_create_autocmd({
-    'BufWritePost',
-    'InsertLeave',
-}, {
-    group = vim.api.nvim_create_augroup('Lint', {
-        clear = true,
-    }),
-    callback = function(args)
-        M.lint(args.buf)
-    end,
-})
 return M

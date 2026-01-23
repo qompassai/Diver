@@ -2,16 +2,17 @@
 -- Qompass AI Diver After Filetype Bash Config
 -- Copyright (C) 2026 Qompass AI, All rights reserved
 -- ----------------------------------------
-vim.api.nvim_create_autocmd('BufWritePre',
-  {
+local a = vim.api
+a.nvim_create_autocmd('BufWritePre', {
     pattern = {
-      '*.bash',
-      '*.sh'
+        '*.bash',
+        '*.sh',
     },
     callback = function(args)
-      vim.lsp.buf.format({
-        bufnr = args.buf,
-        async = true,
-      })
+        vim.lsp.buf.format({
+            bufnr = args.buf,
+            async = true,
+        })
     end,
-  })
+})
+
