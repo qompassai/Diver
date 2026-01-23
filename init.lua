@@ -90,7 +90,6 @@ o.clipboard = 'unnamedplus'
 o.cmdheight = 0
 o.completeitemalign = 'abbr,kind,menu'
 o.completeopt = 'menu,menuone,noselect'
-
 o.concealcursor = 'nc'
 o.conceallevel = 0
 o.confirm = true
