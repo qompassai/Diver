@@ -2,10 +2,8 @@
 -- Qompass AI Ansible LSP Spec
 -- Copyright (C) 2025 Qompass AI, All rights reserved
 -- ---------------------------------------------------
---Reference:  https://github.com/ansible/vscode-ansible
----@source https://docs.ansible.com/projects/vscode-ansible/configuration/
--- pnpm add -g @ansible/ansible-language-server@latest
-return {
+return ---@type vim.lsp.Config
+{
     cmd = {
         'ansible-language-server',
         '--stdio',

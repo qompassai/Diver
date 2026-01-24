@@ -14,39 +14,38 @@
 ---@type VimFn
 vim.fn = vim.fn
 ---@class vim.fs
----@field basename? fun(file: string|nil): string|nil
----@field dirname? fun(file: string|nil): string|nil
----@field abspath? fun(path: string): string
----@field normalize? fun(path: string, opts?: { expand_env?: boolean, win?: boolean }): string
----@field joinpath? fun(...: string): string
----@field find? fun(
+---@field basename?                           fun(file: string|nil): string|nil
+---@field dirname?                            fun(file: string|nil): string|nil
+---@field abspath?                            fun(path: string): string
+---@field normalize?                          fun(path: string, opts?: { expand_env?: boolean, win?: boolean }): string
+---@field joinpath?                           fun(...: string): string
+---@field find?                               fun(
 ---  names: string|string[]|fun(name: string, path: string): boolean,
 ---  opts: { path?: string, upward?: boolean, stop?: string, type?: string, limit?: number, follow?: boolean }|nil)): string[]
 ---@field parents?                            fun(start: string): (fun(_, dir: string): string|nil), nil, string|nil
 ---@field relpath?                            fun(base: string, target: string, opts?: table): string|nil
 ---@field rm fun(path: string, opts?: { recursive?: boolean, force?: boolean }): nil
 vim.fs = vim.fs or {}
-
 ---@class VimNativeAPI
----@field nvim_create_augroup fun(name: string, opts: table): integer
----@field nvim_create_autocmd fun(event: any, opts: table)
----@field nvim_get_runtime_file fun(pattern: string, all: boolean): string[]
----@field nvim_set_option_value fun(name: string, value: any, opts: table)
+---@field nvim_create_augroup?                fun(name: string, opts: table): integer
+---@field nvim_create_autocmd?                fun(event: any, opts: table)
+---@field nvim_get_runtime_file?              fun(pattern: string, all: boolean): string[]
+---@field nvim_set_option_value?              fun(name: string, value: any, opts: table)
 ---@type VimNativeAPI
 vim.api = vim.api
 ---@class vim.fn
----@field executable fun(name: string): boolean
----@field expand fun(path: string): string
----@field has fun(feature: string): boolean
----@field stdpath fun(what: string): string
+---@field executable?                          fun(name: string): boolean
+---@field expand?                              fun(path: string): string
+---@field has?                                 fun(feature: string): boolean
+---@field stdpath?                             fun(what: string): string
 ---@class vim.uv
----@field available_parallelism fun(): integer
+---@field available_parallelism?               fun(): integer
 ---@class FunctionAPI
----@field executable?                         fun(name:string):boolean
----@field expand?                             fun(path:string):string
----@field has?                                fun(feature:string):boolean
----@field stdpath?                           fun(type:string):string
----@class Globals :                           NvimGlobals
+---@field executable?                          fun(name:string):boolean
+---@field expand?                              fun(path:string):string
+---@field has?                                 fun(feature:string):boolean
+---@field stdpath?                             fun(type:string):string
+---@class Globals :                            NvimGlobals
 ---@class NativeAPI
 ---@field nvim_create_augroup?                fun(name:string, opts:table):integer
 ---@field nvim_create_autocmd?                fun(event:any, opts:table)
@@ -159,7 +158,7 @@ vim.api = vim.api
 ---@field wildmenu?                           boolean
 ---@field wildmode?                           string
 ---@field writebackup?                        boolean
----@field use_blink_cmp                       boolean
+---@field use_blink_cmp?                      boolean
 ---@class NvimOptions
 ---@field allowrevins?                        boolean
 ---@field ambiwidth?                          string
@@ -283,16 +282,16 @@ vim.api = vim.api
 ---@field wrap?                               boolean
 ---@field writebackup?                        boolean
 ---@class OptionMethods<T>
----@field append                              fun(self:OptionMethods<T>, value:any)
----@field comments                            OptionMethods<string|string[]>
----@field complete                            OptionMethods<string|string[]>
----@field get                                 fun(self:OptionMethods<T>):T
----@field remove                              fun(self:OptionMethods<T>, value:any)
----@field listchars                           OptionMethods<table<string,string>>
----@field lispwords                           OptionMethods<string|string[]>
----@field nrformats                           OptionMethods<string|string[]>
----@field tags                                OptionMethods<string|string[]>
----@field viminfo                             OptionMethods<string|string[]>
+---@field append?                              fun(self:OptionMethods<T>, value:any)
+---@field comments?                            OptionMethods<string|string[]>
+---@field complete?                            OptionMethods<string|string[]>
+---@field get?                                 fun(self:OptionMethods<T>):T
+---@field remove?                              fun(self:OptionMethods<T>, value:any)
+---@field listchars?                           OptionMethods<table<string,string>>
+---@field lispwords?                           OptionMethods<string|string[]>
+---@field nrformats?                           OptionMethods<string|string[]>
+---@field tags?                                OptionMethods<string|string[]>
+---@field viminfo?                             OptionMethods<string|string[]>
 ---@class Options :                           NvimOptions
 ---@class WindowOptions
 ---@field conceallevel?                       0|1|2|3

@@ -2,8 +2,8 @@
 -- Qompass AI PowerShell LSP Spec
 -- Copyright (C) 2025 Qompass AI, All rights reserved
 ------------------------------------------------------
----@type vim.lsp.Config
-return {
+return ---@type vim.lsp.Config
+{
     cmd = {
         'pwsh',
         '-NoLogo',
@@ -35,27 +35,6 @@ return {
                 UseCorrectCasing = true,
                 WhitespaceAfterSeparator = true,
             },
-            scriptAnalysis = {
-                enable = true,
-                settingsPath = (vim.env.XDG_CONFIG_HOME or (vim.env.HOME .. '/.config'))
-                    .. '/powershell/ScriptAnalyzerSettings.psd1',
-            },
-            editor = {
-                highlightString = true,
-                showTokenClassification = true,
-                enableOnTypeFormatting = true,
-                enableInlayHints = true,
-            },
-            diagnostics = {
-                enable = true,
-                severity = {
-                    MissingImport = 'Warning',
-                    UnusedVariable = 'Hint',
-                },
-            },
-            telemetry = {
-                enable = false,
-            },
             completion = {
                 enable = true,
                 useLanguageServer = true,
@@ -64,6 +43,27 @@ return {
                     '$',
                     '[',
                 },
+            },
+            diagnostics = {
+                enable = true,
+                severity = {
+                    MissingImport = 'Warning',
+                    UnusedVariable = 'Hint',
+                },
+            },
+            editor = {
+                highlightString = true,
+                showTokenClassification = true,
+                enableOnTypeFormatting = true,
+                enableInlayHints = true,
+            },
+            scriptAnalysis = {
+                enable = true,
+                settingsPath = (vim.env.XDG_CONFIG_HOME or (vim.env.HOME .. '/.config'))
+                    .. '/powershell/ScriptAnalyzerSettings.psd1',
+            },
+            telemetry = {
+                enable = false,
             },
         },
     },

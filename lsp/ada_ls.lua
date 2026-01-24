@@ -1,8 +1,7 @@
 -- /qompassai/Diver/lsp/adals.lua
--- Qompass AI Ada LSP Config
+-- Qompass AI Diver Ada LSP Config
 -- Copyright (C) 2025 Qompass AI, All rights reserved
 -- --------------------------------------------------
---Reference:  https://github.com/AdaCore/ada_language_server
 return {
     cmd = {
         'ada_language_server',
@@ -11,11 +10,11 @@ return {
         'ada',
     },
     root_markers = {
-        'Makefile',
-        '.git',
-        'alire.toml',
-        '*.gpr',
         '*.adc',
+        'alire.toml',
+        '.git',
+        '*.gpr',
+        'Makefile',
     },
     settings = {
         ada = {

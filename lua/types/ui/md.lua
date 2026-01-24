@@ -139,7 +139,7 @@
 ---@field options?                               image.IntegrationOptions
 ---@field state?                                 image.State
 ---@class image.Integration
----@field setup?                                fun(api: API, options: image.IntegrationOptions, state: image.State)
+---@field setup?                                 fun(api: image.API, options: image.IntegrationOptions, state: image.State)
 ---@class image.Window
 ---@field buffer?                                number
 ---@field buffer_filetype?                       string

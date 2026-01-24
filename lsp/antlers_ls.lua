@@ -36,7 +36,7 @@ return ---@type vim.lsp.Config
             },
             validation = {
                 enabled = true,
-                strict = false,
+                strict = true,
             },
             completion = {
                 enabled = true,

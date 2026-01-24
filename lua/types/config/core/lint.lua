@@ -4,7 +4,7 @@
 -- ----------------------------------------
 ---@meta
 ---@module 'types.type.lint'
-----@alias vim.lint.Config.Report vim.lint.Config.ReportItem[]
+---@alias vim.lint.Config.Report vim.lint.Config.ReportItem[]
 ---@class vim.lint.Config
 ---@field append_fname?                               boolean
 ---@field args?                                       (string|fun():string)[]
@@ -34,16 +34,16 @@
 ---@field proc?                                       vim.SystemObj
 ---@field stream?                                     'stdout'|'stderr'|'both'
 ---@class vim.lint.Config.ReportItem
----@field column                                      integer
+---@field column?                                     integer
 ---@field file_name?                                  string
----@field kind                                        string
----@field line                                        integer
----@field message                                     string
----@field path                                        string
+---@field kind?                                       string
+---@field line?                                       integer
+---@field message?                                    string
+---@field path?                                       string
 ---@field start_col?                                  integer
----@class lint.TSQueryConfig : vim.lint.Config
+---@class lint.TSQueryConfig :                        vim.lint.Config
 ---@field name?                                       string
----@type lint.TSQueryConfig
+---@type                                              lint.TSQueryConfig
 ---@class vim.lint.Diagnostic
 ---@field code?                                       string|integer
 ---@field col?                                        integer

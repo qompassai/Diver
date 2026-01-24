@@ -5,7 +5,7 @@
 ---@meta
 ---@module 'types.core.quickfix'
 ---@class vim.qf.Config
----@field borders                           vim.qf.Borders
+---@field borders?                           vim.qf.Borders
 ---@field constrain_cursor                  boolean
 ---@field edit                              vim.qf.EditConfig
 ---@field follow                            vim.qf.FollowConfig
@@ -19,9 +19,9 @@
 ---@field trim_leading_whitespace           vim.qf.TrimEnum
 ---@field use_default_opts                  boolean
 ---@class (exact) vim.qf.ExpandOpts
+---@field add_to_existing?                  boolean
 ---@field after?                            integer
 ---@field before?                           integer
----@field add_to_existing?                  boolean
 ---@field loclist_win?                      integer
 ---@alias vim.qf.TrimEnum                   'all'|'common'|'false'
 ---@class vim.qf.FileCache

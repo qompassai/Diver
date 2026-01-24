@@ -20,6 +20,16 @@
       <li>
         <a href="https://github.com/qompassai/diver/blob/main/lsp/ada_ls.lua">ada_ls</a>
       </li>
+        <p>
+      <a href="https://github.com/AdaCore/ada_language_server">Ada LSP Reference</a>
+    </p>
+ <div style="background: #f8f9fa; padding: 15px; border-radius: 5px; margin-top: 10px; font-family: monospace;">
+
+```bash
+:TODO
+```
+
+</div>
     </ul>
   </blockquote>
 </details>
@@ -42,7 +52,7 @@
     </p>
  <div style="background: #f8f9fa; padding: 15px; border-radius: 5px; margin-top: 10px; font-family: monospace;">
 
-```sh
+```bash
 git clone https://github.com/banacorn/agda-language-server && cd agda-langauge-server \
 git submodule update --init --recursive && stack install
 ```
@@ -68,7 +78,7 @@ git submodule update --init --recursive && stack install
     </p>
  <div style="background: #f8f9fa; padding: 15px; border-radius: 5px; margin-top: 10px; font-family: monospace;">
 
-```sh
+```bash
 cargo install lsp-ai -F llama_cpp -F cuda
 ```
 
@@ -81,7 +91,7 @@ cargo install lsp-ai -F llama_cpp -F cuda
     </p>
  <div style="background: #f8f9fa; padding: 15px; border-radius: 5px; margin-top: 10px; font-family: monospace;">
 
-```sh
+```bash
 pnpm add -g @github/copilot-language-server@latest
 ```
 
@@ -95,7 +105,7 @@ pnpm add -g @github/copilot-language-server@latest
     </p>
  <div style="background: #f8f9fa; padding: 15px; border-radius: 5px; margin-top: 10px; font-family: monospace;">
 
-```sh
+```bash
 pip install git+https://github.com/PrithivirajDamodaran/Gramformer.git
 ```
 
@@ -121,7 +131,7 @@ pip install git+https://github.com/PrithivirajDamodaran/Gramformer.git
     </p>
  <div style="background: #f8f9fa; padding: 15px; border-radius: 5px; margin-top: 10px; font-family: monospace;">
 
-```sh
+```bash
 pnpm add -g @ansible/ansible-language-server
 ```
 
@@ -131,15 +141,15 @@ pnpm add -g @ansible/ansible-language-server
 <details>
   <summary style="font-size: 1.4em; font-weight: bold; padding: 15px; background: #667eea; color: white; border-radius: 10px; cursor: pointer; margin: 10px 0; display: flex; align-items: center; gap: 8px;">
     <div class="icon-row" style="display: flex; align-items: center; gap: 6px;">
-      <img src="https://raw.githubusercontent.com/qompassai/svg/refs/heads/main/assets/icons/ansible/ansible.svg"
+      <img src="https://raw.githubusercontent.com/qompassai/svg/refs/heads/main/assets/icons/antlers/antlers.svg"
            alt="antlers" width="60" height="60" title="Antlers" />
     </div>
-    <strong>Ansible</strong>
+    <strong>Antlers</strong>
   </summary>
   <blockquote style="font-size: 1.2em; line-height: 1.8; padding: 25px; background: #f8f9fa; border-left: 6px solid #667eea; border-radius: 8px; margin: 15px 0; box-shadow: 0 2px 8px rgba(0,0,0,0.1);">
     <ul>
       <li>
-        <a href="https://github.com/qompassai/Diver/blob/main/lsp/ansible_ls.lua">ansible_ls</a>
+        <a href="https://github.com/qompassai/Diver/blob/main/lsp/antlers_ls.lua">antlers_ls</a>
       </li>
     </ul>
     <p>
@@ -174,7 +184,7 @@ pnpm add -g antlers-language-server@latest
     </p>
  <div style="background: #f8f9fa; padding: 15px; border-radius: 5px; margin-top: 10px; font-family: monospace;">
 
-```sh
+```bash
 go install github.com/arduino/arduino-language-server@latest
 ```
 
@@ -203,7 +213,7 @@ go install github.com/arduino/arduino-language-server@latest
     </p>
  <div style="background: #f8f9fa; padding: 15px; border-radius: 5px; margin-top: 10px; font-family: monospace;">
 
-```sh
+```bash
 cargo install --git https://github.com/bergercookie/asm-lsp asm-lsp
 ```
 
@@ -242,7 +252,7 @@ pnpm add -g m68k-lsp-server@latest
     </p>
  <div style="background: #f8f9fa; padding: 15px; border-radius: 5px; margin-top: 10px; font-family: monospace;">
 
-```sh
+```bash
 pnpm add -g typescript@latest @astrojs/language-server@latest prettier@latest prettier-plugin-astro@latest
 ```
 
@@ -294,7 +304,7 @@ curl -sSf https://atlasgo.sh | sh
     </p>
  <div style="background: #f8f9fa; padding: 15px; border-radius: 5px; margin-top: 10px; font-family: monospace;">
 
-```sh
+```bash
 pnpm add -g awk-language-server@latest
 ```
 
@@ -320,7 +330,7 @@ pnpm add -g awk-language-server@latest
     </p>
  <div style="background: #f8f9fa; padding: 15px; border-radius: 5px; margin-top: 10px; font-family: monospace;">
 
-```sh
+```bash
 pnpm add -g azure-pipelines-language-server@latest
 ```
 
@@ -346,7 +356,7 @@ pnpm add -g azure-pipelines-language-server@latest
     </p>
  <div style="background: #f8f9fa; padding: 15px; border-radius: 5px; margin-top: 10px; font-family: monospace;">
 
-```sh
+```bash
 pnpm add -g git+https://github.com/salesforce-misc/bazelrc-lsp.git
 ```
 
@@ -371,13 +381,13 @@ pnpm add -g git+https://github.com/salesforce-misc/bazelrc-lsp.git
     </p>
  <div style="background: #f8f9fa; padding: 15px; border-radius: 5px; margin-top: 10px; font-family: monospace;">
 
-```sh
+```bash
 cargo install beancount-language-server
 ```
 
 OR
 
-```sh
+```bash
 pip install beancount
 ```
 
@@ -440,13 +450,13 @@ pip install beancount
     </p>
  <div style="background: #f8f9fa; padding: 15px; border-radius: 5px; margin-top: 10px; font-family: monospace;">
 
-```sh
+```bash
 pip install bitbake-language-server
 ```
 
 OR
 
-```sh
+```bash
 uv tool install bitbake-language-server
 ```
 
@@ -472,7 +482,7 @@ uv tool install bitbake-language-server
     </p>
  <div style="background: #f8f9fa; padding: 15px; border-radius: 5px; margin-top: 10px; font-family: monospace;">
 
-```sh
+```bash
 git clone https://gitlab.gnome.org/GNOME/blueprint-compiler --recursive \
 && cd blueprint-compiler && git fetch --all && git submodule update --init --recursive \
 meson _build && ninja -C _build install
@@ -526,7 +536,7 @@ go install github.com/kitagry/bqls@latest
     </p>
  <div style="background: #f8f9fa; padding: 15px; border-radius: 5px; margin-top: 10px; font-family: monospace;">
 
-```sh
+```bash
 pnpm add -g brighterscript@latest
 ```
 
@@ -3188,7 +3198,7 @@ chmod +x ~/.local/bin/regal
     </p>
  <div style="background: #f8f9fa; padding: 15px; border-radius: 5px; margin-top: 10px; font-family: monospace;">
 
-```sh
+```bash
 go install github.com/kitagry/regols@latest
 ```
 
@@ -3214,7 +3224,7 @@ go install github.com/kitagry/regols@latest
     </p>
  <div style="background: #f8f9fa; padding: 15px; border-radius: 5px; margin-top: 10px; font-family: monospace;">
 
-```sh
+```bash
 cargo install --git https://github.com/Leathong/openscad-LSP
 ```
 
@@ -3239,13 +3249,13 @@ cargo install --git https://github.com/Leathong/openscad-LSP
     </p>
  <div style="background: #f8f9fa; padding: 15px; border-radius: 5px; margin-top: 10px; font-family: monospace;">
 
-```sh
+```bash
 cpanm Perl::LanguageServer
 ```
 
 # OR
 
-```sh
+```bash
 cpan Perl::LanguageServer
 ```
 
@@ -3258,14 +3268,14 @@ cpan Perl::LanguageServer
     </p>
  <div style="background: #f8f9fa; padding: 15px; border-radius: 5px; margin-top: 10px; font-family: monospace;">
 
-```sh
+```bash
 cpan PLS
 
 ```
 
 # OR
 
-```sh
+```bash
 cpanm PLS
 ```
 
@@ -3278,7 +3288,7 @@ cpanm PLS
     </p>
  <div style="background: #f8f9fa; padding: 15px; border-radius: 5px; margin-top: 10px; font-family: monospace;">
 
-```sh
+```bash
 mkdir -p "$HOME/.local/bin"
 cd "$(mktemp -d)"
 curl -L -o perlnavigator.zip \
@@ -3308,15 +3318,12 @@ mv perlnavigator "$HOME/.local/bin/"
         <a href="https://github.com/qompassai/diver/blob/main/lsp/intelephense_ls.lua">intelephense_ls</a>
       </li>
        <p>
-      <a href="https://github.com/vimeo/psalm">Intelephense LSP Reference</a>
+      <a href=":TODO">Intelephense LSP Reference</a>
     </p>
  <div style="background: #f8f9fa; padding: 15px; border-radius: 5px; margin-top: 10px; font-family: monospace;">
 
-```sh
-composer require phan/phan
-```
-
-```
+```bash
+:TODO
 ```
 
    </div>
@@ -3325,15 +3332,12 @@ composer require phan/phan
           </code>
       </li>
          <p>
-      <a href="https://github.com/vimeo/psalm">Psalm LSP Reference</a>
+      <a href=":TODO">PHPActor LSP Reference</a>
     </p>
  <div style="background: #f8f9fa; padding: 15px; border-radius: 5px; margin-top: 10px; font-family: monospace;">
 
-```sh
-composer require phan/phan
-```
-
-```
+```bash
+:TODO
 ```
 
    </div>
@@ -3341,12 +3345,12 @@ composer require phan/phan
         <a href="https://github.com/qompassai/diver/blob/main/lsp/laravel_ls.lua">laravel_ls</a>
       </li>
        <p>
-      <a href="https://github.com/vimeo/psalm">Psalm LSP Reference</a>
+      <a href=":TODO">Laravel LSP Reference</a>
     </p>
  <div style="background: #f8f9fa; padding: 15px; border-radius: 5px; margin-top: 10px; font-family: monospace;">
 
-```sh
-composer require phan/phan
+```bash
+:TODO
 ```
 
 ```
@@ -3362,7 +3366,7 @@ composer require phan/phan
  <div style="background: #f8f9fa; padding: 15px; border-radius: 5px; margin-top: 10px; font-family: monospace;">
 
 ```sh
-composer require phan/phan
+:TODO
 ```
 
 ```
@@ -3400,19 +3404,37 @@ composer require phan/phan
     <ul>
       <li>
         <a href="https://github.com/qompassai/diver/blob/main/lsp/postgres_ls.lua">postgres_ls</a>
-      </li>
+           </li>
+             <p>
+              <a href="https://github.com/phan/phan">Phan LSP Reference</a>
+    </p>
+ <div style="background: #f8f9fa; padding: 15px; border-radius: 5px; margin-top: 10px; font-family: monospace;">
 
-```sh
-cd ~/.local/bin
+```bash
+mkdir -p ~/.local/bin && cd ~/.local/bin
 curl -L \
-  https://github.com/supabase-community/postgres-language-server/releases/latest/download/postgres-language-server_x86_64-unknown-linux-gnu \
+  https://github.com/supabase-community/postgres-language-server/releases/latest/download/postgres-language-server_x86_64-unknown-linux-gnu --recursive \
   -o postgres-language-server
 chmod +x postgres-language-server
 ```
 
-<li>postgrestoo_ls
+ </div>
+<li>
 <a href="https://github.com/qompassai/diver/blob/main/lsp/postgrestoo_ls.lua">postgrestoo_ls</a>
 </li>
+ <p>
+      <a href=":TODO">PostgresTools LSP Reference</a>
+    </p>
+ <div style="background: #f8f9fa; padding: 15px; border-radius: 5px; margin-top: 10px; font-family: monospace;">
+
+```bash
+:TODO
+```
+
+```
+```
+
+   </div>
 </ul>
 </blockquote>
 </details>
@@ -3427,8 +3449,18 @@ chmod +x postgres-language-server
   <blockquote style="font-size: 1.2em; line-height: 1.8; padding: 25px; background: #f8f9fa; border-left: 6px solid #667eea; border-radius: 8px; margin: 15px 0; box-shadow: 0 2px 8px rgba(0,0,0,0.1);">
     <ul>
       <li>
-        <a href="https://github.com/qompassai/diver/blob/main/lsp/pwrshelles_ls.lua">powershelles_ls</a>
+        <a href="https://github.com/qompassai/diver/blob/main/lsp/pwrshelles_ls.lua">pwershelles_ls</a>
       </li>
+        <p>
+      <a href="https://github.com/PowerShell/PowerShellEditorServices">Powershell LSP Reference</a>
+    </p>
+ <div style="background: #f8f9fa; padding: 15px; border-radius: 5px; margin-top: 10px; font-family: monospace;">
+
+```bash
+:TODO
+```
+
+   </div>
     </ul>
   </blockquote>
 </details>
@@ -3479,7 +3511,7 @@ pnpm add -g @prisma/language-server@latest
     </p>
  <div style="background: #f8f9fa; padding: 15px; border-radius: 5px; margin-top: 10px; font-family: monospace;">
 
-```sh
+```bash
 cargo install --git https://github.com/coder3101/protols
 ```
 
@@ -3493,7 +3525,7 @@ cargo install --git https://github.com/coder3101/protols
     </p>
  <div style="background: #f8f9fa; padding: 15px; border-radius: 5px; margin-top: 10px; font-family: monospace;">
 
-```sh
+```bash
 go install github.com/bufbuild/buf/cmd/buf@latest
 ```
 
@@ -3519,13 +3551,12 @@ go install github.com/bufbuild/buf/cmd/buf@latest
     </p>
  <div style="background: #f8f9fa; padding: 15px; border-radius: 5px; margin-top: 10px; font-family: monospace;">
 
-```sh
+```bash
 export GEM_HOME="$HOME/.gem"
 export GEM_PATH="$GEM_HOME"
 export PATH="$HOME/.local/bin:$GEM_HOME/bin:$PATH"
 git clone https://github.com/puppetlabs/puppet-editor-services.git && cd puppet-editor-services && bundle install  \
 bundle exec rake gem_revendor
-
 ```
 
    </div>
@@ -3541,7 +3572,7 @@ bundle exec rake gem_revendor
   </summary>
   <blockquote style="font-size: 1.2em; line-height: 1.8; padding: 25px; background: #f8f9fa; border-left: 6px solid #667eea; border-radius: 8px; margin: 15px 0; box-shadow: 0 2px 8px rgba(0,0,0,0.1);">
     <ul>
-      <li>basedpy_ls
+      <li>
         <a href="https://github.com/qompassai/diver/blob/main/lsp/basedpy_ls.lua">basepy_ls</a>
       </li>
       <p>
@@ -3549,37 +3580,34 @@ bundle exec rake gem_revendor
     </p>
  <div style="background: #f8f9fa; padding: 15px; border-radius: 5px; margin-top: 10px; font-family: monospace;">
 
-```sh
+```bash
 pip install basedpyright
-
 ```
 
    </div>
-      <li><code>
-        <a href="https://github.com/qompassai/diver/blob/main/lsp/pyrefly_ls.lua">pyrefly_ls</a></code>
+      <li>
+        <a href="https://github.com/qompassai/diver/blob/main/lsp/pyrefly_ls.lua">pyrefly_ls</a>
       </li>
              <p>
       <a href="https://pyrefly.org/">Pyrefly LSP Reference</a>
     </p>
  <div style="background: #f8f9fa; padding: 15px; border-radius: 5px; margin-top: 10px; font-family: monospace;">
 
-```sh
+```bash
 pip install pyrefly
-
 ```
 
    </div>
-      <li><code>
-        <a href="https://github.com/qompassai/diver/blob/main/lsp/ruff_ls.lua">ruff_ls</a></code>
+      <li>
+        <a href="https://github.com/qompassai/diver/blob/main/lsp/ruff_ls.lua">ruff_ls</a>
       </li>
              <p>
       <a href="https://docs.astral.sh/ruff/">Ruff LSP Reference</a>
     </p>
  <div style="background: #f8f9fa; padding: 15px; border-radius: 5px; margin-top: 10px; font-family: monospace;">
 
-```sh
+```bash
 curl -LsSf https://astral.sh/ruff/install.sh | sh
-
 ```
 
    </div>
@@ -3592,13 +3620,13 @@ curl -LsSf https://astral.sh/ruff/install.sh | sh
     </p>
  <div style="background: #f8f9fa; padding: 15px; border-radius: 5px; margin-top: 10px; font-family: monospace;">
 
-```sh
+```bash
 uv tool install ty
 ```
 
 # OR
 
-```sh
+```bash
 pip install ty
 ```
 
@@ -3624,7 +3652,7 @@ pip install ty
     </p>
  <div style="background: #f8f9fa; padding: 15px; border-radius: 5px; margin-top: 10px; font-family: monospace;">
 
-```sh
+```bash
 curl -L \
   -o qmlls-workflow-0.5-linux-x86_64.tar.xz \
   https://github.com/TheQtCompanyRnD/qmlls-workflow/releases/download/0.5/qmlls-workflow-0.5-linux-x86_64.tar.xz \
@@ -3658,9 +3686,8 @@ ln -sf "$XDG_DATA_HOME/qmlls-workflow/0.5/bin/qmlls" \
     </p>
  <div style="background: #f8f9fa; padding: 15px; border-radius: 5px; margin-top: 10px; font-family: monospace;">
 
-```sh
+```bash
 cargo install --git https://github.com/posit-dev/air air
-
 ```
 
    </div>
@@ -3685,9 +3712,8 @@ cargo install --git https://github.com/posit-dev/air air
     </p>
  <div style="background: #f8f9fa; padding: 15px; border-radius: 5px; margin-top: 10px; font-family: monospace;">
 
-```sh
+```bash
 pnpm add -g @rescript/language-server@latest
-
 ```
 
    </div>
@@ -3712,7 +3738,7 @@ pnpm add -g @rescript/language-server@latest
     </p>
  <div style="background: #f8f9fa; padding: 15px; border-radius: 5px; margin-top: 10px; font-family: monospace;">
 
-```sh
+```bash
 raco pkg install racket-langserver
 ```
 
@@ -3738,9 +3764,8 @@ raco pkg install racket-langserver
     </p>
  <div style="background: #f8f9fa; padding: 15px; border-radius: 5px; margin-top: 10px; font-family: monospace;">
 
-```sh
+```bash
 pnpm add -g @usethesource/rascal-vscode-dsl-lsp-server@latest
-
 ```
 
    </div>
@@ -3764,7 +3789,7 @@ pnpm add -g @usethesource/rascal-vscode-dsl-lsp-server@latest
     </p>
  <div style="background: #f8f9fa; padding: 15px; border-radius: 5px; margin-top: 10px; font-family: monospace;">
 
-```sh
+```bash
 pip install robotcode[all]
 
 ```
@@ -3779,9 +3804,8 @@ pip install robotcode[all]
     </p>
  <div style="background: #f8f9fa; padding: 15px; border-radius: 5px; margin-top: 10px; font-family: monospace;">
 
-```sh
+```bash
 pip install robotframework-lsp
-
 ```
 
    </div>
@@ -3806,9 +3830,8 @@ pip install robotframework-lsp
     </p>
  <div style="background: #f8f9fa; padding: 15px; border-radius: 5px; margin-top: 10px; font-family: monospace;">
 
-```sh
+```bash
 pip install rpm-spec-language-server
-
 ```
 
    </div>
@@ -3832,7 +3855,7 @@ pip install rpm-spec-language-server
     </p>
  <div style="background: #f8f9fa; padding: 15px; border-radius: 5px; margin-top: 10px; font-family: monospace;">
 
-```sh
+```bash
 gem install rubocop
 ```
 
@@ -3845,9 +3868,8 @@ gem install rubocop
     </p>
  <div style="background: #f8f9fa; padding: 15px; border-radius: 5px; margin-top: 10px; font-family: monospace;">
 
-```sh
+```bash
 gem install ruby-lsp
-
 ```
 
    </div>
@@ -3859,7 +3881,7 @@ gem install ruby-lsp
     </p>
  <div style="background: #f8f9fa; padding: 15px; border-radius: 5px; margin-top: 10px; font-family: monospace;">
 
-```sh
+```bash
 gem install sorbet sorbet-runtime
 ```
 
@@ -3885,7 +3907,7 @@ gem install steep
     </p>
  <div style="background: #f8f9fa; padding: 15px; border-radius: 5px; margin-top: 10px; font-family: monospace;">
 
-```sh
+```bash
 gem install standard
 ```
 
@@ -3898,7 +3920,7 @@ gem install standard
     </p>
  <div style="background: #f8f9fa; padding: 15px; border-radius: 5px; margin-top: 10px; font-family: monospace;">
 
-```sh
+```bash
 pnpm add -g stimulus-language-server@latest
 ```
 
@@ -3911,9 +3933,8 @@ pnpm add -g stimulus-language-server@latest
     </p>
  <div style="background: #f8f9fa; padding: 15px; border-radius: 5px; margin-top: 10px; font-family: monospace;">
 
-```sh
+```bash
 gem install syntax_tree
-
 ```
 
    </div>
@@ -3951,7 +3972,7 @@ gem install typeprof
     </p>
  <div style="background: #f8f9fa; padding: 15px; border-radius: 5px; margin-top: 10px; font-family: monospace;">
 
-```sh
+```bash
 cargo install --git https://github.com/Canop/bacon --features "clipboard sound"
 ```
 
@@ -3961,7 +3982,7 @@ cargo install --git https://github.com/Canop/bacon --features "clipboard sound"
     </p>
  <div style="background: #f8f9fa; padding: 15px; border-radius: 5px; margin-top: 10px; font-family: monospace;">
 
-```sh
+```bash
 cargo install --git https://github.com/pest-parser/pest-ide-tools
 ```
 
@@ -3975,7 +3996,7 @@ cargo install --git https://github.com/pest-parser/pest-ide-tools
     </p>
  <div style="background: #f8f9fa; padding: 15px; border-radius: 5px; margin-top: 10px; font-family: monospace;">
 
-```sh
+```bash
 cargo install --git https://github.com/rust-lang/rust-analyzer rust-analyzer \
 xtask proc-macro-srv-cli ungrammar2json
 ```
@@ -4002,7 +4023,7 @@ xtask proc-macro-srv-cli ungrammar2json
     </p>
  <div style="background: #f8f9fa; padding: 15px; border-radius: 5px; margin-top: 10px; font-family: monospace;">
 
-```sh
+```bash
 curl -fLo cs https://git.io/coursier-cli-"$(uname | tr LD ld)" && \
 chmod +x cs && \
 ./cs install cs && \
@@ -4015,7 +4036,6 @@ cs bootstrap \
   org.scalameta:metals_2.13:1.6.3 \
   -o ~/bin/metals \
   -f
-
 ```
 
 </div>
@@ -4039,7 +4059,7 @@ cs bootstrap \
     </p>
  <div style="background: #f8f9fa; padding: 15px; border-radius: 5px; margin-top: 10px; font-family: monospace;">
 
-```sh
+```bash
 pnpm add -g bash-language-server@latest
 ```
 
@@ -4052,33 +4072,34 @@ pnpm add -g bash-language-server@latest
     </p>
  <div style="background: #f8f9fa; padding: 15px; border-radius: 5px; margin-top: 10px; font-family: monospace;">
 
-```sh
-pnpm add -g fish-lsp
+```bash
+pnpm add -g fish-lsp@latest
 ```
 
 </div>
-      <li><code>
-        <a href="https://github.com/qompassai/diver/blob/main/lsp/nu_ls.lua">nu_ls</a></code>
+      <li>
+        <a href="https://github.com/qompassai/diver/blob/main/lsp/nu_ls.lua">nu_ls</a>
       </li>
                   <p>
       <a href="https://www.nushell.sh/">NuShell Reference</a>
     </p>
  <div style="background: #f8f9fa; padding: 15px; border-radius: 5px; margin-top: 10px; font-family: monospace;">
 
-```sh
+```bash
+:TODO
 ```
 
 </div>
-       <li><code>
-        <a href="https://github.com/qompassai/diver/blob/main/lsp/termux_ls.lua">termux_ls</a></code>
+       <li>
+        <a href="https://github.com/qompassai/diver/blob/main/lsp/termux_ls.lua">termux_ls</a>
       </li>
     </ul>
       <p>
-      <a href="https://github.com/slint-ui/slint">Slint LSP Reference</a>
+      <a href="https://github.com/termux/termux-language-server">Termux LSP Reference</a>
     </p>
  <div style="background: #f8f9fa; padding: 15px; border-radius: 5px; margin-top: 10px; font-family: monospace;">
 
-```sh
+```bash
 cargo install slint-lsp
 ```
 
@@ -4104,7 +4125,7 @@ cargo install slint-lsp
     </p>
  <div style="background: #f8f9fa; padding: 15px; border-radius: 5px; margin-top: 10px; font-family: monospace;">
 
-```sh
+```bash
 git clone https://github.com/shader-slang/slang.git --recursive && cd slang \
 cmake -B build -S . \
   -DCMAKE_BUILD_TYPE=Release \
@@ -4147,7 +4168,7 @@ cmake --build build -j$(nproc) && sudo cmake --install build
     </p>
  <div style="background: #f8f9fa; padding: 15px; border-radius: 5px; margin-top: 10px; font-family: monospace;">
 
-```sh
+```bash
 cargo install slint-lsp
 ```
 
@@ -4173,7 +4194,7 @@ cargo install slint-lsp
     </p>
  <div style="background: #f8f9fa; padding: 15px; border-radius: 5px; margin-top: 10px; font-family: monospace;">
 
-```sh
+```bash
 mkdir -p smithy-install/smithy && \
     curl -L https://github.com/smithy-lang/smithy/releases/download/1.65.0/smithy-cli-linux-x86_64.zip -o smithy-install/smithy-cli-linux-x86_64.zip && \
     unzip -qo smithy-install/smithy-cli-linux-x86_64.zip -d smithy-install && \
@@ -4203,7 +4224,7 @@ sudo smithy-install/smithy/install && rm -rf smithy-install/
     </p>
  <div style="background: #f8f9fa; padding: 15px; border-radius: 5px; margin-top: 10px; font-family: monospace;">
 
-```sh
+```bash
 pnpm add -g solc@latest
 ```
 
@@ -4216,7 +4237,7 @@ pnpm add -g solc@latest
     </p>
  <div style="background: #f8f9fa; padding: 15px; border-radius: 5px; margin-top: 10px; font-family: monospace;">
 
-```sh
+```bash
 pnpm add -g solidity-ls@latest
 ```
 
@@ -4228,7 +4249,7 @@ pnpm add -g solidity-ls@latest
     </p>
  <div style="background: #f8f9fa; padding: 15px; border-radius: 5px; margin-top: 10px; font-family: monospace;">
 
-```sh
+```bash
 cargo install solang
 ```
 
@@ -4259,7 +4280,7 @@ cargo install solang
     </p>
  <div style="background: #f8f9fa; padding: 15px; border-radius: 5px; margin-top: 10px; font-family: monospace;">
 
-```sh
+```bash
 cargo install --git https://github.com/IoannisNezis/Qlue-ls
 ```
 
@@ -4285,7 +4306,7 @@ cargo install --git https://github.com/IoannisNezis/Qlue-ls
     </p>
  <div style="background: #f8f9fa; padding: 15px; border-radius: 5px; margin-top: 10px; font-family: monospace;">
 
-```sh
+```bash
 go install github.com/sqls-server/sqls@latest
 ```
 
@@ -4311,7 +4332,7 @@ go install github.com/sqls-server/sqls@latest
     </p>
  <div style="background: #f8f9fa; padding: 15px; border-radius: 5px; margin-top: 10px; font-family: monospace;">
 
-```sh
+```bash
 cargo install --git https://github.com/facebook/starlark-rust.git starlark_bin
 ```
 
@@ -4337,7 +4358,7 @@ cargo install --git https://github.com/facebook/starlark-rust.git starlark_bin
     </p>
  <div style="background: #f8f9fa; padding: 15px; border-radius: 5px; margin-top: 10px; font-family: monospace;">
 
-```sh
+```bash
 pnpm add -g svelte-language-server@latest
 ```
 
