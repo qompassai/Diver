@@ -4380,12 +4380,12 @@ pnpm add -g svelte-language-server@latest
       </li>
     </ul>
                <p>
-      <a href="https://github.com/terraform-linters/tflint">TFLint LSP Reference</a>
+      <a href="https://github.com/JFryy/systemd-lsp">Systemd LSP Reference</a>
     </p>
  <div style="background: #f8f9fa; padding: 15px; border-radius: 5px; margin-top: 10px; font-family: monospace;">
 
-```sh
-curl -s https://raw.githubusercontent.com/terraform-linters/tflint/master/install_linux.sh | bash
+```bash
+cargo install --git  https://github.com/jfryy/systemd-lsp.git
 ```
 
 </div>
@@ -4410,13 +4410,15 @@ curl -s https://raw.githubusercontent.com/terraform-linters/tflint/master/instal
     </p>
  <div style="background: #f8f9fa; padding: 15px; border-radius: 5px; margin-top: 10px; font-family: monospace;">
 
-````sh
+```bash
 go install github.com/hashicorp/terraform-ls@latest
-                          ```
+```
 
-```sh
+\#OR
+
+```bash
 git clone https://github.com/juliosueiras/terraform-lsp.git && cd terraform-lsp && nix-build
-````
+```
 
 </div>
       <ul>
@@ -4429,7 +4431,7 @@ git clone https://github.com/juliosueiras/terraform-lsp.git && cd terraform-lsp 
     </p>
  <div style="background: #f8f9fa; padding: 15px; border-radius: 5px; margin-top: 10px; font-family: monospace;">
 
-```sh
+```bash
 curl -s https://raw.githubusercontent.com/terraform-linters/tflint/master/install_linux.sh | bash
 ```
 
@@ -4454,7 +4456,7 @@ curl -s https://raw.githubusercontent.com/terraform-linters/tflint/master/instal
     </p>
  <div style="background: #f8f9fa; padding: 15px; border-radius: 5px; margin-top: 10px; font-family: monospace;">
 
-```sh
+```bash
 cargo install --git https://github.com/tamasfe/taplo taplo-cli --features lsp
 ```
 
@@ -4467,7 +4469,7 @@ cargo install --git https://github.com/tamasfe/taplo taplo-cli --features lsp
     </p>
  <div style="background: #f8f9fa; padding: 15px; border-radius: 5px; margin-top: 10px; font-family: monospace;">
 
-```sh
+```bash
 pip install tombi
 ```
 
@@ -4494,7 +4496,7 @@ pip install tombi
     </p>
  <div style="background: #f8f9fa; padding: 15px; border-radius: 5px; margin-top: 10px; font-family: monospace;">
 
-```sh
+```bash
 cargo install --git https://github.com/ribru17/ts_query_ls ts_query_ls
 ```
 
@@ -4519,7 +4521,7 @@ cargo install --git https://github.com/ribru17/ts_query_ls ts_query_ls
     </p>
  <div style="background: #f8f9fa; padding: 15px; border-radius: 5px; margin-top: 10px; font-family: monospace;">
 
-```sh
+```bash
 pnpm add -g twiggy-language-server@latest
 ```
 
@@ -4546,7 +4548,7 @@ pnpm add -g twiggy-language-server@latest
     </p>
  <div style="background: #f8f9fa; padding: 15px; border-radius: 5px; margin-top: 10px; font-family: monospace;">
 
-```sh
+```bash
 pnpm add -g typescript typescript-language-server@latest
 ```
 
@@ -4571,7 +4573,7 @@ pnpm add -g typescript typescript-language-server@latest
     </p>
  <div style="background: #f8f9fa; padding: 15px; border-radius: 5px; margin-top: 10px; font-family: monospace;">
 
-```sh
+```bash
 pnpm add -g @typespec/compiler@latest
 ```
 
@@ -4656,7 +4658,7 @@ bazel build -c opt //...
     </p>
  <div style="background: #f8f9fa; padding: 15px; border-radius: 5px; margin-top: 10px; font-family: monospace;">
 
-```sh
+```bash
 export XDG_DATA_HOME="${XDG_DATA_HOME:-$HOME/.local/share}"
 export XDG_BIN_HOME="${XDG_BIN_HOME:-$HOME/.local/bin}"
 mkdir -p "$XDG_DATA_HOME/verible" "$XDG_BIN_HOME"
@@ -4681,7 +4683,7 @@ bazel build -c opt :install-binaries
     </p>
  <div style="background: #f8f9fa; padding: 15px; border-radius: 5px; margin-top: 10px; font-family: monospace;">
 
-```sh
+```bash
 cargo install --git https://github.com/vivekmalneedi/veridian.git --all-features
 ```
 
@@ -4694,7 +4696,7 @@ cargo install --git https://github.com/vivekmalneedi/veridian.git --all-features
     </p>
  <div style="background: #f8f9fa; padding: 15px; border-radius: 5px; margin-top: 10px; font-family: monospace;">
 
-```sh
+```bash
 cargo install --git  https://github.com/veryl-lang/veryl veryl-ls
 ```
 
@@ -4708,7 +4710,7 @@ cargo install --git  https://github.com/veryl-lang/veryl veryl-ls
     </p>
  <div style="background: #f8f9fa; padding: 15px; border-radius: 5px; margin-top: 10px; font-family: monospace;">
 
-```sh
+```bash
 pnpm add -g @imc-trading/svlangserver@latest
 ```
 
@@ -4734,7 +4736,7 @@ pnpm add -g @imc-trading/svlangserver@latest
     </p>
  <div style="background: #f8f9fa; padding: 15px; border-radius: 5px; margin-top: 10px; font-family: monospace;">
 
-```sh
+```bash
 pnpm add -g vim-language-server@latest
 ```
 
@@ -4751,7 +4753,7 @@ pnpm add -g vim-language-server@latest
   </summary>
   <blockquote style="font-size: 1.2em; line-height: 1.8; padding: 25px; background: #f8f9fa; border-left: 6px solid #667eea; border-radius: 8px; margin: 15px 0; box-shadow: 0 2px 8px rgba(0,0,0,0.1);">
     <ul>
-      <li><
+      <li>
         <a href="https://github.com/qompassai/diver/blob/main/lsp/vue_ls.lua">vue_ls</a>
       </li>
     </ul>
@@ -4760,8 +4762,8 @@ pnpm add -g vim-language-server@latest
     </p>
  <div style="background: #f8f9fa; padding: 15px; border-radius: 5px; margin-top: 10px; font-family: monospace;">
 
-```sh
-pnpm add -g  @vue/language-server@latest
+```bash
+pnpm add -g @vue/language-server@latest
 ```
 
 </div>
@@ -4786,7 +4788,7 @@ pnpm add -g  @vue/language-server@latest
     </p>
  <div style="background: #f8f9fa; padding: 15px; border-radius: 5px; margin-top: 10px; font-family: monospace;">
 
-```sh
+```bash
 cargo install --git https://github.com/g-plane/wasm-language-tools
 ```
 
@@ -4806,16 +4808,16 @@ cargo install --git https://github.com/g-plane/wasm-language-tools
       <li>
         <a href="https://github.com/qompassai/diver/blob/main/lsp/wgslana_ls.lua">wgslana_ls</a>
       </li>
-    </ul>
      <p>
       <a href="https://github.com/wgsl-analyzer/wgsl-analyzer">WGSL Analyzer LSP Reference</a>
     </p>
  <div style="background: #f8f9fa; padding: 15px; border-radius: 5px; margin-top: 10px; font-family: monospace;">
 
-```sh
+```bash
 cargo install --git https://github.com/wgsl-analyzer/wgsl-analyzer wgsl-analyzer
 ```
 
+  </ul>
 </div>
   </blockquote>
 </details>
@@ -4838,7 +4840,7 @@ cargo install --git https://github.com/wgsl-analyzer/wgsl-analyzer wgsl-analyzer
     </p>
  <div style="background: #f8f9fa; padding: 15px; border-radius: 5px; margin-top: 10px; font-family: monospace;">
 
-```sh
+```bash
 git clone https://github.com/eclipse-lemminx/lemminx.git --recursive \
 cd lemminx && ./mvnw clean verify
 ```
@@ -4864,7 +4866,7 @@ cd lemminx && ./mvnw clean verify
     </p>
  <div style="background: #f8f9fa; padding: 15px; border-radius: 5px; margin-top: 10px; font-family: monospace;">
 
-```sh
+```bash
 pnpm add -g yaml-language-server@latest
 ```
 
@@ -4878,13 +4880,13 @@ pnpm add -g yaml-language-server@latest
     </p>
  <div style="background: #f8f9fa; padding: 15px; border-radius: 5px; margin-top: 10px; font-family: monospace;">
 
-```sh
+```bash
 pip install yamllint
 ```
 
 OR
 
-```sh
+```bash
 uv tool intsall yamllint
 ```
 
@@ -4909,7 +4911,7 @@ uv tool intsall yamllint
     </p>
  <div style="background: #f8f9fa; padding: 15px; border-radius: 5px; margin-top: 10px; font-family: monospace;">
 
-```sh
+```bash
 git clone https://github.com/kristoff-it/ziggy.git && cd ziggy && zig build -Doptimize=ReleaseSafe install
 ```
 
@@ -4918,11 +4920,11 @@ git clone https://github.com/kristoff-it/ziggy.git && cd ziggy && zig build -Dop
         <a href="https://github.com/qompassai/diver/blob/main/lsp/ziggy_schema_ls.lua">ziggy_schema_ls</a>
       </li>
        <p>
-      <a href="https://ziggy-lang.io/documentation/ziggy-lsp/>Azure Pipelines LSP Reference"</a>
+      <a href="https://ziggy-lang.io/documentation/ziggy-lsp/">Ziggy LSP Reference</a>
     </p>
  <div style="background: #f8f9fa; padding: 15px; border-radius: 5px; margin-top: 10px; font-family: monospace;">
 
-```sh
+```bash
 git clone https://github.com/kristoff-it/ziggy.git && cd ziggy && zig build -Doptimize=ReleaseSafe installation
 ```
 
@@ -4936,10 +4938,11 @@ git clone https://github.com/kristoff-it/ziggy.git && cd ziggy && zig build -Dop
     </p>
  <div style="background: #f8f9fa; padding: 15px; border-radius: 5px; margin-top: 10px; font-family: monospace;">
 
-```sh
+```bash
 git clone https://github.com/zigtools/zls && cd zls && zig build -Doptimize=ReleaseSafe
 ```
 
   </blockquote>
 </details>
 </div>
+````
