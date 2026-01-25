@@ -4,6 +4,9 @@
 -- ---------------------------------------------------
 vim.filetype.add({
     extension = {
+        agda = 'agda',
+        ['lagda.md'] = 'agda',
+        ['lagda.typ'] = 'agda',
         antlers = 'antlers',
         blade = 'blade',
         bri = 'brioche',
@@ -82,6 +85,7 @@ vim.filetype.add({
         ['tsconfig.json'] = 'jsonc',
     },
     pattern = {
+        ['.*%.agda'] = 'agda',
         ['.*/.*%.als'] = 'alloy',
         ['.*%.ansible%.ya?ml'] = 'yaml.ansible',
         ['.*%.antlers%.html'] = 'html.antlers',
@@ -106,6 +110,8 @@ vim.filetype.add({
         ['.*%.html%.antlers'] = 'html.antlers',
         ['.*/hypr/.+%.conf'] = 'hyprlang',
         ['.*/hyprland%.conf'] = 'hyprlang',
+        ['.*%.lagda%.md'] = 'agda',
+        ['.*%.lagda%.typ'] = 'agda',
         ['%.pg%.sql$'] = 'pgsql',
         ['.*%.postcss'] = 'postcss',
         ['%.postgres%.sql$'] = 'pgsql',

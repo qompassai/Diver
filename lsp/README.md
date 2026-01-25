@@ -2173,6 +2173,19 @@ pnpm add -D -E @marko/language-server@latest
 ```
 
 </div>
+     <li>
+        <a href="https://github.com/qompassai/diver/blob/main/lsp/olint_js.lua">oxlint_ls</a>
+      </li>
+        <p>
+      <a href="https://www.npmjs.com/package/oxlint">Oxlint LSP Reference</a>
+    </p>
+ <div style="background: #f8f9fa; padding: 15px; border-radius: 5px; margin-top: 10px; font-family: monospace;">
+
+```bash
+:TODO
+```
+
+</div>
   </blockquote>
 </details>
 <details>

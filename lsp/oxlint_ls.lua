@@ -2,10 +2,9 @@
 -- Qompass AI Javascript Oxidation Lint (Oxlint) LSP Spec
 -- Copyright (C) 2025 Qompass AI, All rights reserved
 -- --------------------------------------------------
--- References: https://www.npmjs.com/package/oxlint | https://oxc.rs/docs/guide/usage/linter/cli.html
----@type vim.lsp.Config
-return {
-    cmd = { ---@type string[]
+return ---@type vim.lsp.Config
+{
+    cmd = {
         'oxlint',
         '-D',
         'correctness',
@@ -23,7 +22,7 @@ return {
         '', --nextjs-plugin'
         --'--tsconfig=tsconfig.json',
     },
-    filetypes = { ---@type string[]
+    filetypes = {
         'javascript',
         'javascriptreact',
         'javascript.jsx',
@@ -31,10 +30,11 @@ return {
         'typescriptreact',
         'typescript.tsx',
     },
-    workspace_required = true, ---@type boolean
-    root_markers = { ---@type string[]
+  on_attach = require('config.core.lsp').on_attach,
+    root_markers = {
         'oxlint',
         '.oxlintrc.json',
         '.oxlintrc.jsonc',
     },
+    workspace_required = true, ---@type boolean
 }

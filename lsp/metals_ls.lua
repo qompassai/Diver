@@ -8,7 +8,7 @@ return {
     cmd = { ---@type string[]
         'metals',
     },
-    filetypes = { ---@type string[]
+    filetypes = {
         'scala',
     },
     root_markers = { ---@type string[]
@@ -24,8 +24,9 @@ return {
             snippetAutoIndent = false, ---@type boolean
         },
     },
+      on_attach = require('config.core.lsp').on_attach,
     settings = {
-        metals = { ---@type string[]
+        metals = {
             javaHome = '/usr/lib/jvm/default',
             sbtScript = '/usr/bin/sbt',
             gradleScript = '/usr/bin/gradle',
@@ -69,7 +70,7 @@ return {
             --mcpClient = 'claude',
         },
     },
-    capabilities = { ---@type boolean[]
+    capabilities = {
         workspace = {
             configuration = true,
         },
