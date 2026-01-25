@@ -204,10 +204,13 @@ opt.wildignore = {
   '*.pyc',
   '__pycache__',
 }
+wo.breakindent = true
 wo.conceallevel = 0
 wo.cursorbind = false
 wo.cursorline = true
 wo.cursorlineopt = 'both'
 wo.lhistory = 10
+wo.linebreak = true
 wo.list = true
 wo.number = true
+wo.wrap = true

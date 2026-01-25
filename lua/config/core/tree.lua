@@ -3,9 +3,42 @@
 -- Copyright (C) 2025 Qompass AI, All rights reserved
 ------------------------------------------------------
 ---@source https://github.com/tree-sitter/tree-sitter/wiki/List-of-parsers
----@meta
 ---@module 'config.core.tree'
 local M = {}
+---@param bufnr integer|nil
+---@param lang  string|nil
+---@return string|nil error_message
+---@return vim.treesitter.LanguageTree|nil parser
+local function safe_get_parser(bufnr, lang)
+    local ok, parser_or_err, err = pcall(vim.treesitter.get_parser, bufnr, lang, {
+        error = false,
+    })
+    if not ok or not parser_or_err then
+        local msg = err
+        if msg == nil and type(parser_or_err) == 'string' then
+            msg = parser_or_err
+        end
+        return msg, nil
+    end
+    return nil, parser_or_err
+end
+M.safe_get_parser = safe_get_parser
+vim.api.nvim_create_autocmd('FileType', {
+    pattern = {
+        '*',
+    },
+    callback = function(args)
+        local err, parser = safe_get_parser(args.buf, nil)
+        if err ~= nil then
+            vim.notify('treesitter parser error: ' .. err, vim.log.levels.WARN)
+            return
+        end
+        if parser ~= nil then
+            vim.treesitter.start(args.buf)
+            vim.bo[args.buf].syntax = 'ON'
+        end
+    end,
+})
 function M.treesitter(opts)
     require('nvim-treesitter.install').prefer_git = true
     require('nvim-treesitter.configs').setup(opts)
@@ -171,7 +204,6 @@ function M.treesitter(opts)
             'scss',
             'smithy',
             'solidity',
-            'scss',
             'sql',
             'ssh_config',
             'starlark',
@@ -215,7 +247,7 @@ function M.treesitter(opts)
             'ziggy_schema',
         },
         highlight = {
-            additional_vim_regex_highlighting = false, ---legacy
+            additional_vim_regex_highlighting = true, ---legacy
             enable = true,
         },
         ignore_install = {},
@@ -237,8 +269,35 @@ function M.treesitter(opts)
                 enable = true,
                 lookahead = true,
                 keymaps = {
+                    ['aa'] = '@parameter.outer',
+                    ['ac'] = '@class.outer',
                     ['af'] = '@function.outer',
+                    ['al'] = '@loop.outer',
+                    ['ia'] = '@parameter.inner',
+                    ['ic'] = '@class.inner',
                     ['if'] = '@function.inner',
+                    ['il'] = '@loop.inner',
+                },
+            },
+            move = {
+                enable = true,
+                set_jumps = true,
+                goto_next_start = {
+                    [']m'] = '@function.outer',
+                    [']c'] = '@class.outer',
+                },
+                goto_previous_start = {
+                    ['[m'] = '@function.outer',
+                    ['[c'] = '@class.outer',
+                },
+            },
+            swap = {
+                enable = true,
+                swap_next = {
+                    ['<leader>a'] = '@parameter.inner',
+                },
+                swap_previous = {
+                    ['<leader>A'] = '@parameter.inner',
                 },
             },
         },
@@ -246,6 +305,7 @@ function M.treesitter(opts)
     local final_config = vim.tbl_deep_extend('force', base_config, opts) ---@cast final_config TSConfig
     configs.setup(final_config)
 end
+
 function M.tree_cfg(opts)
     opts = opts or {}
     M.treesitter(opts)
@@ -253,20 +313,19 @@ function M.tree_cfg(opts)
         treesitter = vim.tbl_deep_extend('force', M.options and M.options.treesitter or {}, opts),
     }
 end
-
+vim.treesitter.language.register('bash', 'zsh')
+vim.treesitter.language.register('bash', 'sh')
+vim.treesitter.language.register('json', 'jsonc')
 vim.treesitter.language.register('latex', 'tex')
 vim.treesitter.language.register('linkerscript', 'ld')
-vim.api.nvim_create_autocmd('FileType', {
-    pattern = 'tex',
-    callback = function(args)
-        vim.treesitter.start(args.buf, 'latex')
-        vim.bo[args.buf].syntax = 'ON'
-    end,
-})
+vim.treesitter.language.register('markdown', 'rmd')
 vim.treesitter.query.set(
     'c',
     'highlights',
     [[;inherits c
-  (identifier) @spell]]
+  (identifier) @spell
+ (comment) @comment @spell
+    (string)  @string  @spell
+  ]]
 )
 return M

@@ -3,6 +3,8 @@
 -- Copyright (C) 2025 Qompass AI, All rights reserved
 -----------------------------------------------------
 local M = {}
+local lspmap = require('mappings.lspmap')
+
 function M.on_attach(client, bufnr)
   if client.server_capabilities.completionProvider then
     vim.lsp.completion.enable(true, client.id, bufnr, {
@@ -79,6 +81,10 @@ function M.on_attach(client, bufnr)
         })
       end
     end,
+  })
+  lspmap.on_attach({
+    buf = bufnr,
+    data = { client_id = client.id },
   })
 end
 

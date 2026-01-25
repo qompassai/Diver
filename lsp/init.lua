@@ -203,7 +203,7 @@ vim.lsp.enable({
     --'pharo_ls'            ---:TODO https://github.com/badetitou/Pharo-LanguageServer
     'phpactor_ls',
     'pico8_ls', ---:TODO validate
-    'platuml_ls', ---:TODO validate https://github.com/ptdewey/plantuml-lsp
+    'plantuml_ls', ---:TODO validate https://github.com/ptdewey/plantuml-lsp
     'please_ls',
     'pli_ls', ---:TODO validate ---@source https://github.com/zowe/zowe-pli-language-support
     'poryscript_ls', ---:TODO validate  ---@source https://github.com/huderlem/poryscript-pls

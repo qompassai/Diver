@@ -3,7 +3,16 @@
 -- Copyright (C) 2025 Qompass AI, All rights reserved
 -----------------------------------------------------
 local M = {}
-
+vim.api.nvim_create_user_command('VitestFile', function()
+    local file = vim.fn.expand('%:p')
+    vim.fn.jobstart({
+        'vitest',
+        'run',
+        file,
+    }, {
+        detach = true,
+    })
+end, {})
 ---@param opts table|nil
 ---@return table
 function M.js_tools(opts)
@@ -116,7 +125,9 @@ function M.js_dap(opts)
     end
     dap.configurations.typescriptreact = dap.configurations.typescript
     dap.configurations.javascriptreact = dap.configurations.javascript
-    return { dap = dap.configurations }
+    return {
+        dap = dap.configurations,
+    }
 end
 
 function M.setup_js(opts)

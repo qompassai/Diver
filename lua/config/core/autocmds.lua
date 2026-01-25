@@ -195,31 +195,6 @@ vim.api.nvim_create_autocmd(
         end,
     }
 )
-
-vim.api.nvim_create_autocmd('FileType', {
-    pattern = {
-        'tex',
-        'plaintex',
-    },
-    callback = function()
-        vim.wo.wrap = true
-        vim.wo.linebreak = true
-        vim.wo.breakindent = true
-    end,
-})
-vim.api.nvim_create_autocmd('FileType', {
-    pattern = {
-        'sqlite',
-        'pgsql',
-    },
-    callback = function()
-        vim.opt_local.expandtab = true
-        vim.opt_local.shiftwidth = 2
-        vim.opt_local.softtabstop = 2
-        vim.opt_local.omnifunc = 'vim_dadbod_completion#omni'
-    end,
-})
-
 local largefile_group = vim.api.nvim_create_augroup('LargeFile', {})
 vim.api.nvim_create_autocmd({
     'BufReadPre',
@@ -250,12 +225,6 @@ vim.api.nvim_create_autocmd({
         end
     end,
 })
-vim.api.nvim_create_user_command('VitestFile', function()
-    local file = vim.fn.expand('%:p')
-    vim.fn.jobstart({ 'vitest', 'run', file }, {
-        detach = true,
-    })
-end, {})
 vim.api.nvim_create_user_command('ConfigSelfCheck', function()
     require('tests.selfcheck').run()
 end, {})

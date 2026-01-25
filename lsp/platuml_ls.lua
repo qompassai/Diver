@@ -1,11 +1,11 @@
--- /qompassai/diver/lsp/platuml_ls.lua
--- Qompass AI PlatUML LSP Spec
+-- /qompassai/diver/lsp/plantuml_ls.lua
+-- Qompass AI Diver PlantUML LSP Spec
 -- Copyright (C) 2025 Qompass AI, All rights reserved
 -- ----------------------------------------
 return ---@type vim.lsp.Config
 {
     cmd = {
-        'platuml-lsp',
+        'plantuml-lsp',
     },
     filetypes = {
         'platuml',

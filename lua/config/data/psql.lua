@@ -3,6 +3,18 @@
 -- Copyright (C) 2025 Qompass AI, All rights reserved
 -- --------------------------------------------------
 local M = {}
+vim.api.nvim_create_autocmd('FileType', {
+    pattern = {
+        'sqlite',
+        'pgsql',
+    },
+    callback = function()
+        vim.opt_local.expandtab = true
+        vim.opt_local.shiftwidth = 2
+        vim.opt_local.softtabstop = 2
+        vim.opt_local.omnifunc = 'vim_dadbod_completion#omni'
+    end,
+})
 function M.psql_cmp(opts)
     opts = opts or {}
     opts.fuzzy = opts.fuzzy or {}
@@ -28,22 +40,6 @@ function M.psql_cmp(opts)
     return opts
 end
 
-function M.psql_ftd()
-    vim.filetype.add({
-        extension = {
-            psql = 'pgsql',
-            pgsql = 'pgsql',
-        },
-        pattern = {
-            ['%.pg%.sql$'] = 'pgsql',
-            ['%.postgres%.sql$'] = 'pgsql',
-        },
-        filename = {
-            ['pg_dump.sql'] = 'pgsql',
-        },
-    })
-end
-
 function M.psql_keymaps(opts)
     opts = opts or {}
     opts.defaults = vim.tbl_deep_extend('force', opts.defaults or {}, {
@@ -54,9 +50,18 @@ function M.psql_keymaps(opts)
             function() end,
             'Format PostgreSQL',
         },
-        ['<leader>dpt'] = { '<cmd>DBUIToggle<cr>', 'Toggle DBUI' },
-        ['<leader>dpa'] = { '<cmd>DBUIAddConnection<cr>', 'Add Connection' },
-        ['<leader>dph'] = { '<cmd>DBUIFindBuffer<cr>', 'Find DB Buffer' },
+        ['<leader>dpt'] = {
+            '<cmd>DBUIToggle<cr>',
+            'Toggle DBUI',
+        },
+        ['<leader>dpa'] = {
+            '<cmd>DBUIAddConnection<cr>',
+            'Add Connection',
+        },
+        ['<leader>dph'] = {
+            '<cmd>DBUIFindBuffer<cr>',
+            'Find DB Buffer',
+        },
         ['<leader>dpe'] = {
             function()
                 if vim.fn.mode() == 'v' or vim.fn.mode() == 'V' then

@@ -1,10 +1,9 @@
 -- /qompassai/Diver/lsp/matlab_ls.lua
--- Qompass AI MatLab LSP Spec
+-- Qompass AI Diver MatLab LSP Spec
 -- Copyright (C) 2025 Qompass AI, All rights reserved
 -- ---------------------------------------------------
---Reference: https://github.com/mathworks/MATLAB-language-server
----@type vim.lsp.Config
-return {
+return ---@type vim.lsp.Config
+{
     cmd = { ---@type string[]
         'matlab-language-server',
         '--stdio',
