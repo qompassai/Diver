@@ -2,13 +2,14 @@
 -- Qompass AI Diver General Mappings
 -- Copyright (C) 2025 Qompass AI, All rights reserved
 -- --------------------------------------------------
----@meta
 ---@module 'mappings.genmap'
 local M = {}
 function M.setup_genmap()
     local map = vim.keymap.set
     map('n', '<leader>U', function()
-        vim.pack.update(nil, { force = true })
+        vim.pack.update(nil, {
+            force = true,
+        })
     end, {
         desc = 'Force update vim.pack plugins',
         noremap = true,
@@ -22,7 +23,6 @@ function M.setup_genmap()
                 silent = true,
                 buffer = bufnr,
             }
-            -- Move to the beginning of the line while in insert mode
             map(
                 'i',
                 '<C-b>',
@@ -31,8 +31,6 @@ function M.setup_genmap()
                     desc = 'Move to the beginning of the line',
                 })
             )
-
-            -- Move to the end of the line while in insert mode
             map(
                 'i',
                 '<C-e>',
@@ -41,8 +39,6 @@ function M.setup_genmap()
                     desc = 'Move to the end of the line',
                 })
             )
-
-            -- Move left by one character while in insert mode
             map(
                 'i',
                 '<C-h>',
@@ -51,7 +47,6 @@ function M.setup_genmap()
                     desc = 'Move left by one character',
                 })
             )
-            -- Move right by one character while in insert mode
             map(
                 'i',
                 '<C-l>',
@@ -60,7 +55,6 @@ function M.setup_genmap()
                     desc = 'Move right by one character',
                 })
             )
-            -- Move down by one line while in insert mode
             map(
                 'i',
                 '<C-j>',
@@ -69,7 +63,6 @@ function M.setup_genmap()
                     desc = 'Move down by one line',
                 })
             )
-            -- Move up by one line while in insert mode
             map(
                 'i',
                 '<C-k>',
@@ -78,8 +71,6 @@ function M.setup_genmap()
                     desc = 'Move up by one line',
                 })
             )
-
-            -- Clear search highlights by pressing Escape in normal mode
             map(
                 'n',
                 '<Esc>',
@@ -88,7 +79,6 @@ function M.setup_genmap()
                     desc = 'Clear search highlights',
                 })
             )
-            -- Switch to the window on the left in normal mode
             map(
                 'n',
                 '<C-h>',
@@ -97,8 +87,6 @@ function M.setup_genmap()
                     desc = 'Switch to the window on the left',
                 })
             )
-
-            -- Switch to the window on the right in normal mode
             map(
                 'n',
                 '<C-l>',
@@ -107,8 +95,6 @@ function M.setup_genmap()
                     desc = 'Switch to the window on the right',
                 })
             )
-
-            -- Switch to the window below in normal mode
             map(
                 'n',
                 '<C-j>',
@@ -117,8 +103,6 @@ function M.setup_genmap()
                     desc = 'Switch to the window below',
                 })
             )
-
-            -- Switch to the window above in normal mode
             map(
                 'n',
                 '<C-k>',
@@ -127,8 +111,6 @@ function M.setup_genmap()
                     desc = 'Switch to the window above',
                 })
             )
-
-            -- Save the current file by pressing Control + s in normal mode
             map(
                 'n',
                 '<C-s>',
@@ -137,7 +119,6 @@ function M.setup_genmap()
                     desc = 'Save the current file',
                 })
             )
-            -- Copy the entire file to the system clipboard in normal mode
             map(
                 'n',
                 '<C-c>',
@@ -148,7 +129,6 @@ function M.setup_genmap()
             )
         end,
     })
-
 end
 
 return M

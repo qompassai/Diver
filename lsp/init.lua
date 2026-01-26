@@ -140,13 +140,14 @@ vim.lsp.enable({
     'jinja_ls', ---:TODO
     'jq_ls',
     'json_ls',
+    'jsonld_ls', ----:TODO validate
     'jsonnet_ls', ---:TODO validate
     'julia_ls',
     'just_ls',
     'kconfig_ls', ---:TODO ---@source https://github.com/anakin4747/kconfig-language-server
     --'kcl_ls',
     --'kedro_ls'            ---:TODO ---@source https://github.com/kedro-org/vscode-kedro
-    --'koka_ls',
+    --'koka_ls', ---:TODO validate
     'kotlin_ls',
     'laravel_ls',
     'larkparse_ls', ---:TODO validate ---@source https://github.com/dynovaio/lark-parser-language-server

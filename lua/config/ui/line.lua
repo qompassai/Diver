@@ -2,9 +2,38 @@
 -- Qompass AI LuaLine Config
 -- Copyright (C) 2025 Qompass AI, All rights reserved
 -- ----------------------------------------
----@meta
 ---@module 'config.ui.line'
 local M = {}
+local function encoding_with_bom()
+    local enc = vim.bo.fenc ~= '' and vim.bo.fenc or vim.o.enc
+    if enc == 'utf-8' and not vim.bo.bomb then
+        return ''
+    end
+    local label = enc
+    if vim.bo.bomb then
+        label = label .. ' [BOM]'
+    end
+    return label
+end
+local code_action_available = false
+vim.api.nvim_create_autocmd('LspNotify', {
+    callback = function(args)
+        if args.data and args.data.method == 'textDocument/publishDiagnostics' then
+            local bufnr = args.buf
+            local diags = vim.diagnostic.get(bufnr)
+            code_action_available = #diags > 0
+        end
+    end,
+})
+local function code_action_status()
+    if not vim.lsp.buf.server_ready() then
+        return ''
+    end
+    if code_action_available then
+        return '💡 CA'
+    end
+    return ''
+end
 require('types.ui.line')
 require('lualine').setup({
     options = {
@@ -14,7 +43,10 @@ require('lualine').setup({
             left = '',
             right = '',
         },
-        section_separators = { left = '', right = '' },
+        section_separators = {
+            left = '',
+            right = '',
+        },
         disabled_filetypes = {
             statusline = {},
             winbar = {},
@@ -28,16 +60,16 @@ require('lualine').setup({
             winbar = 1000,
             refresh_time = 16,
             events = {
-                'WinEnter',
                 'BufEnter',
                 'BufWritePost',
-                'SessionLoadPost',
-                'FileChangedShellPost',
-                'VimResized',
-                'FileType',
                 'CursorMoved',
                 'CursorMovedI',
+                'FileChangedShellPost',
+                'FileType',
                 'ModeChanged',
+                'SessionLoadPost',
+                'VimResized',
+                'WinEnter',
             },
         },
     },
@@ -76,12 +108,25 @@ require('lualine').setup({
                     'nvim_diagnostic',
                     'nvim_workspace_diagnostic',
                 },
-                sections = { 'error', 'warn', 'info', 'hint' },
+                sections = {
+                    'error',
+                    'warn',
+                    'info',
+                    'hint',
+                },
                 diagnostics_color = {
-                    error = { fg = '#e06c75' },
-                    warn = { fg = '#e5c07b' },
-                    info = { fg = '#56b6c2' },
-                    hint = { fg = '#98c379' },
+                    error = {
+                        fg = '#e06c75',
+                    },
+                    warn = {
+                        fg = '#e5c07b',
+                    },
+                    info = {
+                        fg = '#56b6c2',
+                    },
+                    hint = {
+                        fg = '#98c379',
+                    },
                 },
                 symbols = {
                     error = ' ',
@@ -89,9 +134,9 @@ require('lualine').setup({
                     info = ' ',
                     hint = ' ',
                 },
+                always_visible = false,
                 colored = true,
                 update_in_insert = true,
-                always_visible = false,
             },
         },
         lualine_c = {
@@ -113,6 +158,8 @@ require('lualine').setup({
             {
                 'location',
             },
+            encoding_with_bom,
+            code_action_status,
         },
         lualine_y = {
             {
@@ -137,10 +184,14 @@ require('lualine').setup({
         lualine_a = {},
         lualine_b = {},
         lualine_c = {
-            { 'filename' },
+            {
+                'filename',
+            },
         },
         lualine_x = {
-            { 'location' },
+            {
+                'location',
+            },
         },
         lualine_y = {},
         lualine_z = {},
@@ -175,7 +226,9 @@ require('lualine').setup({
                     'filetype',
                     colored = true,
                     icon_only = false,
-                    icon = { align = 'right' },
+                    icon = {
+                        align = 'right',
+                    },
                 },
                 {
                     'fileformat',
@@ -193,7 +246,9 @@ require('lualine').setup({
     },
     winbar = {
         lualine_a = {},
-        lualine_b = {},
+        lualine_b = {
+            code_action_status,
+        },
         lualine_c = {
             {
                 'windows',
@@ -205,25 +260,78 @@ require('lualine').setup({
                 'lsp_status',
                 icon = '',
                 symbols = {
-                    spinner = { '⠋', '⠙', '⠹', '⠸', '⠼', '⠴', '⠦', '⠧', '⠇', '⠏' },
+                    spinner = {
+                        '⠋',
+                        '⠙',
+                        '⠹',
+                        '⠸',
+                        '⠼',
+                        '⠴',
+                        '⠦',
+                        '⠧',
+                        '⠇',
+                        '⠏',
+                    },
                     done = '✓',
                     separator = ' ',
                 },
                 ignore_lsp = {},
             },
-            { 'branch' },
+            {
+                'branch',
+            },
         },
         lualine_x = {
-            { 'encoding' },
+            {
+                encoding_with_bom,
+            },
         },
-        --  lualine_y = { null_ls_summary },
+        lualine_y = {
+            {
+                function()
+                    local buf = vim.api.nvim_get_current_buf()
+                    local ft = vim.bo[buf].filetype
+                    local ts_active = vim.treesitter.highlighter.active[buf]
+                    if ts_active then
+                        local has_parser, lang = pcall(vim.treesitter.language.get_lang, ft)
+                        if has_parser and lang then
+                            local parser_ok, parser = pcall(vim.treesitter.get_parser, buf, lang)
+                            if parser_ok and parser then
+                                local tree_ok, trees = pcall(parser.trees, parser)
+                                local tree_count = (tree_ok and trees) and #trees or 0
+                                if tree_count > 1 then
+                                    return '󰐅 ' .. lang .. string.format('[%d]', tree_count)
+                                else
+                                    return '󰐅 ' .. lang
+                                end
+                            else
+                                return '󰐅 ' .. lang
+                            end
+                        else
+                            return '󰐅 TS'
+                        end
+                    elseif ft ~= '' then
+                        local has_parser = pcall(vim.treesitter.language.get_lang, ft)
+                        if has_parser then
+                            return '󰐅 TS⚠'
+                        else
+                            return '󰐅 ' .. ft .. '✗'
+                        end
+                    else
+                        return ''
+                    end
+                end,
+                color = {
+                    fg = '#7df9ff',
+                },
+            },
+        },
         lualine_z = {},
     },
     inactive_winbar = {},
     extensions = {
         'fzf',
         'lazy',
-        'mason',
         'neo-tree',
         'nvim-dap-ui',
         'nvim-tree',

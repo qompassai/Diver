@@ -2,10 +2,8 @@
 -- Qompass AI Diver Disabled Mappings
 -- Copyright (C) 2025 Qompass AI, All rights reserved
 -- --------------------------------------------------
----@meta
 ---@module 'mappings.disable'
 local M = {}
-
 M.setup_disable = function()
     local map = vim.keymap.set
     vim.api.nvim_create_autocmd('LspAttach', {

@@ -746,12 +746,6 @@ function M.md_rendermd(opts)
             },
         },
         overrides = {
-            -- More granular configuration mechanism, allows different aspects of buffers to have their own
-            -- behavior. Values default to the top level configuration if no override is provided. Supports
-            -- the following fields:
-            --   enabled, max_file_size, debounce, render_modes, anti_conceal, padding, heading, paragraph,
-            --   code, dash, bullet, checkbox, quote, pipe_table, callout, link, sign, indent, latex, html,
-            --   win_options
             buflisted = {},
             buftype = {
                 nofile = {
@@ -798,7 +792,6 @@ function M.md_table_mode()
         end,
     })
 end
-
 function M.md_config(opts)
     opts = opts or {}
     M.md_anchor(opts)

@@ -2,7 +2,6 @@
 -- Qompass AI Diver Diag/debug (ddx) Mappings
 -- Copyright (C) 2025 Qompass AI, All rights reserved
 -- --------------------------------------------------
----@meta
 ---@module 'mappings.ddxmap'
 local M = {}
 function M.setup_ddxmap()
@@ -12,6 +11,49 @@ function M.setup_ddxmap()
     end, {
         desc = 'Run Neovim config selfcheck',
     })
+    vim.api.nvim_create_autocmd('FileType', {
+        pattern = 'python',
+        callback = function(args)
+            local bufnr = args.buf
+            local opts = {
+                noremap = true,
+                silent = true,
+                buffer = bufnr,
+            }
+            map(
+                'n',
+                '<leader>dpm',
+                function()
+                    require('dap-python').test_method()
+                end,
+                vim.tbl_extend('force', opts, {
+                    desc = '[d]ebug [p]ython [m]ethod',
+                })
+            )
+
+            map(
+                'n',
+                '<leader>dpc',
+                function()
+                    require('dap-python').test_class()
+                end,
+                vim.tbl_extend('force', opts, {
+                    desc = '[d]ebug [p]ython [c]lass',
+                })
+            )
+
+            map(
+                'n',
+                '<leader>dps',
+                function()
+                    require('dap-python').debug_selection()
+                end,
+                vim.tbl_extend('force', opts, {
+                    desc = '[d]ebug [p]ython [s]election',
+                })
+            )
+        end,
+    })
     vim.api.nvim_create_autocmd('LspAttach', {
         callback = function(ev)
             local bufnr = ev.buf
@@ -20,25 +62,6 @@ function M.setup_ddxmap()
                 silent = true,
                 buffer = bufnr,
             }
-            -- ======================
-            -- Nerd Legend --
-            -- ======================
-            -- Breakpoint: Pause the execution of the code at a specified line.
-            -- Continue: Resume the execution of a paused debugging session.
-            -- DAP REPL: A console to interact with the debugger, similar to an interactive shell.
-            -- Diagnostics: Messages that provide information about issues in the code.
-            -- In-file: Refers to actions that apply only to the current file or buffer.
-            -- LSP: Language Server Protocol, provides editor features like code completion, diagnostics, etc.
-            -- Location List: A window showing errors or search results specific to the current file.
-            -- Quickfix List: A list containing errors or search results across multiple files.
-            -- REPL: A tool to interactively run code line by line (Read-Eval-Print Loop).
-            -- Step Into: Step into a function or block to see its internal execution.
-            -- Step Out: Step out of the current function or block to return to the caller.
-            -- Step Over: Step over a line, executing it without going into functions.
-            -- Symbol: Elements in your code like functions, variables, or classes.
-            -- Toggle: Turn a feature on or off.
-            -- Trouble: A plugin for managing diagnostics, errors, and quickfix lists visually.
-            -- UI: User Interface, components that visually represent information.
             map(
                 'n',
                 '<leader>dl', --- In normal mode, press 'Space' + 'd' + 'l' to toggle virtual lines
@@ -72,61 +95,37 @@ function M.setup_ddxmap()
             map('n', '<leader>xd', '<cmd>Trouble diagnostics toggle<cr>', {
                 desc = 'Toggle Diagnostics',
             })
-            map(
-                'n',
-                '<leader>xb', --- In normal mode, press 'Space' + 'x' + 'b' to toggle Trouble diagnostics for current buffer
-                '<cmd>Trouble diagnostics toggle filter.buf=0<cr>',
-                {
-                    desc = 'Buffer Diagnostics',
-                }
-            )
-            map(
-                'n',
-                '<leader>xs', --- In normal mode, press 'Space' + 'x' + 's' to toggle symbols window
-                '<cmd>Trouble symbols toggle focus=false<cr>',
-                {
-                    desc = 'Document Symbols',
-                }
-            )
-
-            -- Markdown preview mappings
+            map('n', '<leader>xb', '<cmd>Trouble diagnostics toggle filter.buf=0<cr>', {
+                desc = 'Buffer Diagnostics',
+            }) --- In normal mode, press 'Space' + 'x' + 'b' to toggle Trouble diagnostics for current buffer
+            map('n', '<leader>xs', '<cmd>Trouble symbols toggle focus=false<cr>', {
+                desc = 'Document Symbols',
+            }) --- In normal mode, press 'Space' + 'x' + 's' to toggle symbols window
             vim.keymap.set('n', '<leader>mp', ':MarkdownPreview<CR>', {
                 buffer = bufnr,
                 desc = 'Markdown Preview',
             })
-
             vim.keymap.set('n', '<leader>ms', ':MarkdownPreviewStop<CR>', {
                 buffer = bufnr,
                 desc = 'Stop Markdown Preview',
             })
-
-            -- Table mode toggle
             vim.keymap.set('n', '<leader>mt', ':TableModeToggle<CR>', {
                 buffer = bufnr,
                 desc = 'Toggle Table Mode',
             })
-
-            -- Kitty image from code block
             vim.keymap.set('n', '<leader>mi', ':KittyScrollbackGenerateImage<CR>', {
                 buffer = bufnr,
                 desc = 'Generate image from code block',
             })
-
-            -- Run selected code
             vim.keymap.set('v', '<leader>mr', ':SnipRun<CR>', {
                 buffer = bufnr,
                 desc = 'Run selected code',
             })
         end,
     })
-    map(
-        'n',
-        '<leader>xw', --- In normal mode, press 'Space' + 'x' + 'w' for right-aligned LSP references
-        '<cmd>Trouble lsp toggle focus=false win.position=right<cr>',
-        {
-            desc = 'LSP References',
-        }
-    )
+    map('n', '<leader>xw', '<cmd>Trouble lsp toggle focus=false win.position=right<cr>', {
+        desc = 'LSP References',
+    }) --- In normal mode, press 'Space' + 'x' + 'w' for right-aligned LSP references
     map(
         'n',
         '<leader>xl', --- In normal mode, press 'Space' + 'x' + 'l' to toggle location list
@@ -191,24 +190,13 @@ function M.setup_ddxmap()
             desc = 'Step Out',
         }
     )
-    map(
-        'n',
-        '<leader>dr', --- Press <Space> d r to toggle the debug REPL
-        '<cmd>lua require\'dap\'.repl.toggle()<CR>',
-        {
-            desc = 'Toggle REPL',
-        }
-    )
-    map(
-        'n',
-        '<leader>du', --- In normal mode, Press <Space> d u to toggle the DAP UI
-
-        '<cmd>lua require\'dapui\'.toggle()<CR>',
-        {
-            desc = 'Toggle DAP UI',
-        }
-    )
-    map('n', '<leader>da', function() --- Press <Space> d a to choose and activate a debug adapter
+    map('n', '<leader>dr', '<cmd>lua require\'dap\'.repl.toggle()<CR>', {
+        desc = 'Toggle REPL',
+    }) --- Press <Space> d r to toggle the debug REPL
+    map('n', '<leader>du', '<cmd>lua require\'dapui\'.toggle()<CR>', {
+        desc = 'Toggle DAP UI',
+    }) --- In normal mode, Press <Space> d u to toggle the DAP UI
+    map('n', '<leader>da', function()
         vim.ui.select({
             'python',
             'cpp',
@@ -226,8 +214,8 @@ function M.setup_ddxmap()
         end)
     end, {
         desc = 'Select Debug Adapter',
-    })
-    map('n', '<leader>dv', function() --- Press <Space> d v to enable verbose debug logging
+    }) --- Press <Space> d a to choose and activate a debug adapter
+    map('n', '<leader>dv', function()
         require('dap').set_log_level('DEBUG')
         vim.api.nvim_echo({
             {
@@ -237,7 +225,7 @@ function M.setup_ddxmap()
         }, false, {})
     end, {
         desc = 'Verbose Debug Mode',
-    })
+    }) --- Press <Space> d v to enable verbose debug logging
 end
 
 return M

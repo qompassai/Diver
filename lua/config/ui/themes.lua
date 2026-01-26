@@ -2,7 +2,6 @@
 -- Qompass AI Diver Themes Config
 -- Copyright (C) 2025 Qompass AI, All rights reserved
 -----------------------------------------------------
----@meta
 ---@module 'config.ui.themes'
 local M = {}
 M.current_theme = 'nightfox' ---@type string

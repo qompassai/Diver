@@ -1,9 +1,15 @@
--- /qompassai/Diver/linters/clangtidy.lua
--- Qompass AI ClangTidy Linter Spec
+-- /qompassai/Diver/lua/linters/clangtidy.lua
+-- Qompass AI Diver ClangTidy Linter Spec
 -- Copyright (C) 2025 Qompass AI, All rights reserved
 -- ----------------------------------------
 local pattern = [[([^:]*):(%d+):(%d+): (%w+): ([^[]+)]]
-local groups = { 'file', 'lnum', 'col', 'severity', 'message' }
+local groups = {
+    'file',
+    'lnum',
+    'col',
+    'severity',
+    'message',
+}
 local severity_map = {
     ['error'] = vim.diagnostic.severity.ERROR, ---@type integer
     ['warning'] = vim.diagnostic.severity.WARN, ---@type integer
@@ -14,7 +20,11 @@ local severity_map = {
 return {
     cmd = 'clang-tidy',
     stdin = false,
-    args = { '--quiet' },
+    args = {
+        '--quiet',
+    },
     ignore_exitcode = true,
-    parser = require('lint.parser').from_pattern(pattern, groups, severity_map, { ['source'] = 'clang-tidy' }), ---@type string
+    parser = require('config.core.parser').from_pattern(pattern, groups, severity_map, {
+        ['source'] = 'clang-tidy', ---@type string
+    }),
 }

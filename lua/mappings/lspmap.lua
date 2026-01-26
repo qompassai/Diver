@@ -19,6 +19,14 @@ function M.setup_lspmap() ---@return nil
             buffer = bufnr,
             silent = true,
         }
+        map(
+            'n',
+            'ca',
+            vim.lsp.buf.code_action,
+            vim.tbl_extend('force', opts, {
+                desc = 'Code actions',
+            })
+        )
         map('n', 'gd', function()
             for _, c in ipairs(clients) do
                 if c:supports_method('textDocument/definition') then
@@ -43,6 +51,31 @@ function M.setup_lspmap() ---@return nil
         end
         map(
             'n',
+            'gs',
+            vim.lsp.buf.document_symbol,
+            vim.tbl_extend('force', opts, {
+                desc = 'Show document symbols',
+            })
+        )
+        map(
+            'n',
+            'f',
+            function()
+                if #clients > 0 then
+                    vim.lsp.buf.format({
+                        async = true,
+                        bufnr = bufnr,
+                    })
+                else
+                    vim.echo('No active LSP client with formatting support.', vim.log.levels.WARN)
+                end
+            end,
+            vim.tbl_extend('force', opts, {
+                desc = 'Format buffer (LSP if available)',
+            })
+        )
+        map(
+            'n',
             'K',
             vim.lsp.buf.hover,
             vim.tbl_extend('force', opts, {
@@ -59,10 +92,18 @@ function M.setup_lspmap() ---@return nil
         )
         map(
             'n',
-            'gs',
-            vim.lsp.buf.document_symbol,
+            '<leader>rn',
+            vim.lsp.buf.rename,
             vim.tbl_extend('force', opts, {
-                desc = 'Show document symbols',
+                desc = 'Rename symbol',
+            })
+        )
+        map(
+            'n',
+            '<leader>sr',
+            vim.lsp.buf.references,
+            vim.tbl_extend('force', opts, {
+                desc = ' [s]earch [r]eferences',
             })
         )
         map(
@@ -75,39 +116,11 @@ function M.setup_lspmap() ---@return nil
         )
         map(
             'n',
-            '<leader>rn',
-            vim.lsp.buf.rename,
-            vim.tbl_extend('force', opts, {
-                desc = 'Rename symbol',
-            })
-        )
-        map(
-            'n',
-            'ca',
-            vim.lsp.buf.code_action,
-            vim.tbl_extend('force', opts, {
-                desc = 'Code actions',
-            })
-        )
-        map(
-            'n',
-            'f',
-            function()
-                if #clients > 0 then
-                    vim.lsp.buf.format({ async = true, bufnr = bufnr })
-                else
-                    vim.echo('No active LSP client with formatting support.', vim.log.levels.WARN)
-                end
-            end,
-            vim.tbl_extend('force', opts, {
-                desc = 'Format buffer (LSP if available)',
-            })
-        )
-        map(
-            'n',
             '[d',
             function()
-                vim.diagnostic.jump({ count = -1 })
+                vim.diagnostic.jump({
+                    count = -1,
+                })
             end,
             vim.tbl_extend('force', opts, {
                 desc = 'Previous diagnostic',
@@ -117,7 +130,9 @@ function M.setup_lspmap() ---@return nil
             'n',
             ']d',
             function()
-                vim.diagnostic.jump({ count = 1 })
+                vim.diagnostic.jump({
+                    count = 1,
+                })
             end,
             vim.tbl_extend('force', opts, {
                 desc = 'Next diagnostic',
@@ -179,6 +194,33 @@ function M.setup_lspmap() ---@return nil
                 silent = true,
                 desc = '+TypeScript',
             })
+            map(
+                'n',
+                '<leader>naw',
+                vim.lsp.buf.add_workspace_folder,
+                vim.tbl_extend('force', opts, {
+                    desc = '[n]vim-LSP [a]dd [w]orkspace folder',
+                }) --- In normal mode, press 'Space' + 'n'+ 'w' + 'a' to add the current folder as a workspace.
+            )
+
+            map(
+                'n',
+                '<leader>nrw',
+                vim.lsp.buf.remove_workspace_folder,
+                vim.tbl_extend('force', opts, {
+                    desc = '[n]vim-LSP [r]emove [w]orkspace folder',
+                }) --- In normal mode, press 'Space' + 'w' + 'r' to remove the current folder workspace.
+            )
+            map(
+                'n',
+                '<leader>nlw',
+                function()
+                    print(vim.inspect(vim.lsp.buf.list_workspace_folders()))
+                end,
+                vim.tbl_extend('force', opts, {
+                    desc = '[n]vim-LSP [l]ist [w]orkspace folders',
+                }) --- In normal mode, press 'Space' + 'w' + 'l' to list all folders currently in the workspace.
+            )
             map(
                 'n',
                 '<leader>cta',

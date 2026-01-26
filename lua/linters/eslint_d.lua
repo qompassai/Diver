@@ -1,12 +1,11 @@
--- eslint_d.lua
--- Qompass AI Eslint_d Linter Spec
+-- /qompassai/Diver/lua/linters/eslint_d.lua
+-- Qompass AI Diver Eslint_d Linter Spec
 -- Copyright (C) 2025 Qompass AI, All rights reserved
 -- ----------------------------------------
-local binary_name = 'eslint_d'
 return {
     cmd = function()
-        local local_binary = vim.fn.fnamemodify('./node_modules/.bin/' .. binary_name, ':p')
-        return vim.loop.fs_stat(local_binary) and local_binary or binary_name
+        local local_binary = vim.fn.fnamemodify('./node_modules/.bin/' .. 'eslint_d', ':p')
+        return vim.uv.fs_stat(local_binary) and local_binary or 'eslint_d'
     end,
     args = {
         '--format',

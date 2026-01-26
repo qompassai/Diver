@@ -2,7 +2,6 @@
 -- Qompass AI Diver Linter Mappings
 -- Copyright (C) 2025 Qompass AI, All rights reserved
 -- --------------------------------------------------
----@meta
 ---@module 'mappings.lintmap'
 local M = {}
 

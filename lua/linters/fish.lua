@@ -12,7 +12,7 @@ return ---@type vim.lint.Config
     stdin = false,
     ignore_exitcode = true,
     stream = 'stderr',
-    parser = require('lint.parser').from_errorformat(efm, {
+    parser = require('config.core.parser').from_errorformat(efm, {
         source = 'fish',
         severity = vim.diagnostic.severity.ERROR, ---@type integer
     }),

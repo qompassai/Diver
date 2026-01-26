@@ -2,7 +2,6 @@
 -- Qompass AI Actionlint Linter Spec
 -- Copyright (C) 2025 Qompass AI, All rights reserved
 -- ----------------------------------------
---local core_parser = require('config.core.parser')
 local function get_file_name(bufnr)
     return vim.api.nvim_buf_get_name(bufnr or 0)
 end

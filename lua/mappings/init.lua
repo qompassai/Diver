@@ -1,8 +1,7 @@
 -- /qompassai/Diver/lua/mappings/init.lua
--- Qompass AI Mappings Module
+-- Qompass AI Diver Mappings Module
 -- Copyright (C) 2025 Qompass AI, All rights reserved
 -----------------------------------------------------
----@meta
 ---@module 'mappings.init'
 local M = {}
 M.setup = function()

@@ -23,7 +23,7 @@ return ---@type vim.lint.Config
     stream = 'stderr',
     ignore_exitcode = true,
     args = {},
-    parser = require('lint.parser').from_pattern(pattern, groups, severity_map, {
+    parser = require('config.core.parser').from_pattern(pattern, groups, severity_map, {
         severity = vim.diagnostic.severity.WARN, ---@type integer
         source = 'alex',
     }),

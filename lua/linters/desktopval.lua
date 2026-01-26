@@ -2,8 +2,8 @@
 -- Qompass AI Diver desktop-file-validate Linter Spec
 -- Copyright (C) 2025 Qompass AI, All rights reserved
 -- ----------------------------------------
----@type vim.lint.Config
-return {
+return ---@type vim.lint.Config
+{
     name = 'desktop-file-validate',
     cmd = 'desktop-file-validate',
     stdin = false,

@@ -1,5 +1,5 @@
--- init.lua
--- Qompass AI - [ ]
+-- /qompassai/Diver/lua/dap/init.lua
+-- Qompass AI Diver Dap Config
 -- Copyright (C) 2026 Qompass AI, All rights reserved
 -- ----------------------------------------
 -- 'bash-debug-adapter' --outdated ---@source https://github.com/rogalmic/vscode-bash-debug

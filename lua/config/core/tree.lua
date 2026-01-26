@@ -263,6 +263,62 @@ function M.treesitter(opts)
         indent = {
             enable = true,
         },
+        move = {
+            enable = true,
+            set_jumps = true,
+            goto_next_end = {
+                [']C'] = '@class.outer',
+                [']F'] = '@call.outer',
+                [']I'] = '@conditional.outer',
+                [']L'] = '@loop.outer',
+                [']M'] = '@function.outer',
+            },
+            goto_next_start = {
+                [']c'] = '@class.outer',
+                [']i'] = '@conditional.outer',
+                [']l'] = '@loop.outer',
+                [']m'] = '@function.outer',
+                [']s'] = {
+                    query = '@scope',
+                    query_group = 'locals',
+                    desc = 'Next scope',
+                },
+                [']z'] = {
+                    query = '@fold',
+                    query_group = 'folds',
+                    desc = 'Next fold',
+                },
+            },
+            goto_previous_end = {
+                ['[C'] = '@class.outer',
+                ['[F'] = '@call.outer',
+                ['[I'] = '@conditional.outer',
+                ['[L'] = '@loop.outer',
+                ['[M'] = '@function.outer',
+            },
+            goto_previous_start = {
+                ['[c'] = '@class.outer',
+                ['[f'] = '@call.outer',
+                ['[i'] = '@conditional.outer',
+                ['[l'] = '@loop.outer',
+                ['[m'] = '@function.outer',
+            },
+        },
+        swap = {
+            enable = true,
+            swap_next = {
+                ['<leader>a'] = '@parameter.inner',
+                ['<leader>c'] = '@class.outer',
+                ['<leader>f'] = '@function.outer',
+                ['<leader>l'] = '@loop.outer',
+            },
+            swap_previous = {
+                ['<leader>A'] = '@parameter.inner',
+                ['<leader>C'] = '@class.outer',
+                ['<leader>F'] = '@function.outer',
+                ['<leader>L'] = '@loop.outer',
+            },
+        },
         sync_install = false,
         textobjects = {
             select = {
@@ -279,30 +335,9 @@ function M.treesitter(opts)
                     ['il'] = '@loop.inner',
                 },
             },
-            move = {
-                enable = true,
-                set_jumps = true,
-                goto_next_start = {
-                    [']m'] = '@function.outer',
-                    [']c'] = '@class.outer',
-                },
-                goto_previous_start = {
-                    ['[m'] = '@function.outer',
-                    ['[c'] = '@class.outer',
-                },
-            },
-            swap = {
-                enable = true,
-                swap_next = {
-                    ['<leader>a'] = '@parameter.inner',
-                },
-                swap_previous = {
-                    ['<leader>A'] = '@parameter.inner',
-                },
-            },
         },
     }
-    local final_config = vim.tbl_deep_extend('force', base_config, opts) ---@cast final_config TSConfig
+    local final_config = vim.tbl_deep_extend('force', base_config, opts or {}) ---@cast final_config TSConfig
     configs.setup(final_config)
 end
 
@@ -313,6 +348,7 @@ function M.tree_cfg(opts)
         treesitter = vim.tbl_deep_extend('force', M.options and M.options.treesitter or {}, opts),
     }
 end
+
 vim.treesitter.language.register('bash', 'zsh')
 vim.treesitter.language.register('bash', 'sh')
 vim.treesitter.language.register('json', 'jsonc')

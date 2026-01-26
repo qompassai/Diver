@@ -58,7 +58,7 @@ local function selfcheck()
         if not ok then
             err_count = err_count + 1
             local msg = ('[selfcheck] require("%s") failed: %s'):format(mod, err)
-            vim.notify(msg, vim.log.levels.ERROR)
+            vim.echo(msg, vim.log.levels.ERROR)
             if fh then
                 fh:write(msg .. '\n')
             end
@@ -73,7 +73,7 @@ local function selfcheck()
         fh:write(('\n[selfcheck] %d modules OK, %d failed\n'):format(ok_count, err_count))
         fh:close()
     end
-    vim.notify(
+    vim.echo(
         ('[selfcheck] %d modules OK, %d failed (log: %s)'):format(ok_count, err_count, log_path),
         err_count == 0 and vim.log.levels.INFO or vim.log.levels.WARN
     )

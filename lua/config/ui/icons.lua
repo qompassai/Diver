@@ -23,7 +23,12 @@ M.devicons = {
             cterm_color = '33',
             name = 'Docker',
         },
-        go = { icon = ' ', color = '#00ADD8', cterm_color = '38', name = 'Go' },
+        go = {
+            icon = ' ',
+            color = '#00ADD8',
+            cterm_color = '38',
+            name = 'Go',
+        },
         haskell = {
             icon = ' ',
             color = '#5e5086',
@@ -206,7 +211,7 @@ function M.icons_devicons(opts)
     vim.cmd([[
     augroup DevIconsRefresh
       autocmd!
-      autocmd BufEnter * lua require("nvim-web-devicons").refresh()
+      autocmd BufEnter * lua require('nvim-web-devicons').refresh()
     augroup END
   ]])
 end
@@ -218,11 +223,26 @@ end
 
 M.icons_highlights = function()
     local highlights = {
-        MathBlock = { bg = '#1e1e2e', fg = '#89b4fa' },
-        CodeBlock = { bg = '#1e1e2e', fg = '#a6e3a1' },
-        MarkdownBold = { bold = true, fg = '#f5c2e7' },
-        MarkdownItalic = { italic = false, fg = '#89dceb' },
-        MarkdownHeading = { bold = true, fg = '#f38ba8' },
+        MathBlock = {
+            bg = '#1e1e2e',
+            fg = '#89b4fa',
+        },
+        CodeBlock = {
+            bg = '#1e1e2e',
+            fg = '#a6e3a1',
+        },
+        MarkdownBold = {
+            bold = true,
+            fg = '#f5c2e7',
+        },
+        MarkdownItalic = {
+            italic = false,
+            fg = '#89dceb',
+        },
+        MarkdownHeading = {
+            bold = true,
+            fg = '#f38ba8',
+        },
     }
     for name, attrs in pairs(highlights) do
         vim.api.nvim_set_hl(0, name, attrs)

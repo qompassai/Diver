@@ -2,7 +2,6 @@
 -- Qompass AI Diver UI Render Config
 -- Copyright (C) 2025 Qompass AI, All rights reserved
 -- ----------------------------------------
----@meta
 ---@module 'config.ui.render'
 local M = {}
 local ns = vim.api.nvim_create_namespace('render')
@@ -109,9 +108,13 @@ local function render_buffer(bufnr) ---@param bufnr integer
                 end_col = ec,
             })
         elseif name == 'image' then
-            -- Show an inline icon.
             vim.api.nvim_buf_set_extmark(bufnr, ns, sr, sc, {
-                virt_text = { { '🖼 ', 'Special' } },
+                virt_text = {
+                    {
+                        '🖼 ',
+                        'Special',
+                    },
+                },
                 virt_text_pos = 'overlay',
             })
         elseif name == 'image_dest' then
@@ -161,7 +164,6 @@ function M.enable()
     end
     attach(bufnr)
 end
-
 ---@return nil
 function M.disable()
     local bufnr = vim.api.nvim_get_current_buf()

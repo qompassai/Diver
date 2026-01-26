@@ -2,7 +2,6 @@
 -- Qompass AI Diver Nav Plugin Mappings
 -- Copyright (C) 2025 Qompass AI, All rights reserved
 -- --------------------------------------------------
----@meta
 ---@module 'mappings.navmap'
 local M = {}
 function M.setup_navmap()
@@ -15,26 +14,6 @@ function M.setup_navmap()
                 silent = true,
                 buffer = bufnr,
             }
-            -- Nerd Translate Legend:
-            --
-            -- 'Oil': A file manager that lets you interactively edit your directory/file systems
-            -- 'Treesitter': A parsing system that provides detailed information about the structure of source code
-            -- 'Directory': A folder on your computer that contains files and other folders
-            -- 'Buffer': A temporary space in memory where a file is loaded for editing. TLDR buffer = any file, terminal, or UI feature.
-            -- 'File Explorer': A tool that shows you the files and folders on your computer
-            -- 'Home Directory': The main folder for your user account on the computer
-            -- 'Preview': A quick look at a file without fully opening it
-            -- 'Selection': The part of text you've highlighted or chosen
-            -- 'Function': A block of code that performs a specific task, eg adding up prices of items in a shopping cart.
-            -- 'Class': A programming blueprint for creating objects , eg a 'Car' classes are 'color' and 'model', and actions like 'start' and 'stop'.
-            -- 'Syntax Highlighting': Coloring different parts of code to make it easier to read
-            -- 'Playground': A place to experiment and see how Treesitter understands your code
-            -- 'Captures': How Treesitter identifies different parts of your code
-            -- 'Parameter': A value that you pass into a function
-            -- 'Code Folding': Hiding parts of your code to make it easier to read
-            -- General Buffer navigation
-            -------------- | Oil Mappings |---------------------
-            -- Open Oil File Explorer
             map(
                 'n',
                 '<leader>oof',
@@ -43,35 +22,38 @@ function M.setup_navmap()
                     desc = '[o]il [o]pen [f]ile explorer',
                 })
             )
-            -- In normal mode, press 'Space' + 'o' + 'f' to open the Oil file explorer.
-            -- Oil Move Up into Parent Directory (like "cd ..")
             map(
                 'n',
                 '<leader>omu',
                 ':Oil -<CR>',
                 vim.tbl_extend('force', opts, {
                     desc = 'Oil Move Up to Parent Directory',
-                })
+                }) --- In normal mode, press 'Space' + 'o' + 'f' to open the Oil file explorer
             )
-            -- In normal mode, press 'Space' + 'o' + 'm' +'u' to move up a directory in Oil.
-            -- Open Oil in Home Directory
+
             map(
                 'n',
                 '<leader>ooh',
                 ':Oil ~/ <CR>',
                 vim.tbl_extend('force', opts, {
                     desc = '[o]il [o]pen in [h]ome Directory',
-                })
+                }) -- In normal mode, press 'Space' + 'o' + 'm' +'u' to move up a directory in Oil.
             )
-            -- In normal mode, press 'Space' + 'o' + 'h' to open Oil in the home directory.
-            -- Oil File Preview
-            map('n', '<leader>op', ':Oil preview<CR>', vim.tbl_extend('force', opts, { desc = 'Oil Preview File' }))
+            map(
+                'n',
+                '<leader>op',
+                ':Oil preview<CR>',
+                vim.tbl_extend('force', opts, { desc = 'Oil Preview File' }) --- In normal mode, press 'Space' + 'o' + 'h' to open Oil in the home directory.
+            )
             -- In normal mode, press 'Space' + 'o' + 'p' to preview a file with Oil.
-            -- Close Oil Buffer
-            map('n', '<leader>oc', ':Oil close<CR>', vim.tbl_extend('force', opts, { desc = 'Oil Close Buffer' }))
-            -- In normal mode, press 'Space' + 'o' + 'c' to close the Oil buffer.
-            -- Indent Blankline (IBL) Mappings --
-            -- Show Indent Context (Replace or Remove the Invalid Call)
+            map(
+                'n',
+                '<leader>oc',
+                ':Oil close<CR>',
+                vim.tbl_extend('force', opts, {
+                    desc = 'Oil Close Buffer',
+                }) --- In normal mode, press 'Space' + 'o' + 'c' to close the Oil buffer.
+            )
             map(
                 'n',
                 '<leader>lc',
@@ -82,7 +64,6 @@ function M.setup_navmap()
                     desc = 'IB[l] Refresh Indent Context',
                 })
             )
-            -- Toggle Indent Guides Visibility
             map(
                 'n',
                 '<leader>lg',
@@ -93,7 +74,6 @@ function M.setup_navmap()
                     desc = 'IB[l] toggle indent [g]uides',
                 })
             )
-            -- Toggle Scope Highlighting
             map(
                 'n',
                 '<leader>ls',
@@ -104,7 +84,6 @@ function M.setup_navmap()
                     desc = 'IB[l] toggle [s]cope highlighting',
                 })
             )
-            -- Refresh Indent Guides
             map(
                 'n',
                 '<leader>lr',
@@ -115,7 +94,6 @@ function M.setup_navmap()
                     desc = 'IB[l] [r]efresh Indent Guides',
                 })
             )
-            -- Toggle Indent Blankline Visibility
             map(
                 'n',
                 '<leader>lt',
@@ -186,9 +164,12 @@ function M.setup_navmap()
                     desc = 'Don\'t Save Current Session',
                 })
             )
-            -- Flash.nvim
             map(
-                { 'n', 'x', 'o' },
+                {
+                    'n',
+                    'x',
+                    'o',
+                },
                 's',
                 function()
                     require('flash').jump()
@@ -248,7 +229,6 @@ function M.setup_navmap()
                     desc = 'Toggle Flash Search',
                 })
             )
-            -- Expand Selection Incrementally (Treesitter)
             map(
                 'n',
                 '<leader>TEI',
@@ -257,7 +237,6 @@ function M.setup_navmap()
                     desc = 'TS [E]xpand Selection [I]ncrementally',
                 })
             )
-            -- In normal mode, press 'Space' + 'E' + 'T' to expand selection step by step.
             map(
                 'n',
                 '<leader>TIS',
@@ -266,32 +245,31 @@ function M.setup_navmap()
                     desc = 'TS [I]ncrementally [S]hrink Selection',
                 })
             )
-            -- In normal mode, press 'Space' + 'I' + 'S' to shrink selection step by step.
+
             map(
                 'n',
                 '<leader>Tss',
                 ':TSScopeIncremental<CR>',
                 vim.tbl_extend('force', opts, {
                     desc = 'TS Expand Selection to Next Larger Code Block',
-                })
+                }) -- In normal mode, press 'Space' + 'I' + 'S' to shrink selection step by step.
             )
-            -- In normal mode, press 'Space' + 's' + 's' to expand selection to the next larger code block.
+
             map(
                 'n',
                 'TsF',
                 '<cmd>lua require"nvim-treesitter.textobjects.select".select_textobject("@function.outer")<CR>',
                 vim.tbl_extend('force', opts, {
                     desc = 'TS Select Entire Function',
-                })
+                }) --- In normal mode, press 'Space' + 's' + 's' to expand selection to the next larger code block.
             )
-            -- In operator-pending mode, press 'a' + 'f' to select the entire function (including definition and body).
             map(
                 'o',
                 'Tsf',
                 '<cmd>lua require"nvim-treesitter.textobjects.select".select_textobject("@function.inner")<CR>',
                 vim.tbl_extend('force', opts, {
                     desc = 'TS Select Function Body Only',
-                })
+                }) --- In operator-pending mode, press 'a' + 'f' to select the entire function (including definition and body).
             )
             -- In operator-pending mode, press 'i' + 'f' to select only the body of the function.
             map(
@@ -320,25 +298,21 @@ function M.setup_navmap()
                     desc = 'TS Navigate to Next Function Start',
                 })
             )
-            -- In normal mode, press 'Space' + 'T' + 'n' + 'f' to go to the start of the next function.
-
-            -- Navigate to Previous Function Start (Treesitter)
             map(
                 'n',
                 '<leader>TpF',
                 ':TSGotoPreviousFunction<CR>',
                 vim.tbl_extend('force', opts, {
                     desc = 'TS Navigate to Previous Function Start',
-                })
+                }) -- In normal mode, press 'Space' + 'T' + 'n' + 'f' to go to the start of the next function.
             )
-            -- In normal mode, press 'Space' + 't' + 'p' to go to the start of the previous function.
             map(
                 'n',
                 '<leader>Tsh',
                 ':TSToggleHighlight<CR>',
                 vim.tbl_extend('force', opts, {
                     desc = 'TS Toggle Syntax Highlighting',
-                })
+                }) -- In normal mode, press 'Space' + 't' + 'p' to go to the start of the previous function.
             )
             -- In normal mode, press 'Space' + 't' + 's' to turn syntax highlighting on or off.
             map(
@@ -358,14 +332,13 @@ function M.setup_navmap()
                     desc = 'TS Show Syntax Info Under Cursor',
                 })
             )
-            -- In normal mode, press 'Space' + 'T' + 'u' to show syntax information under the cursor.
-            -- Swap with Next Parameter (Treesitter)
+
             map(
                 'n',
                 '<leader>Tsn',
                 ':TSSwapNextParameter<CR>',
                 vim.tbl_extend('force', opts, {
-                    desc = 'TS Swap with Next Parameter',
+                    desc = 'TS Swap with Next Parameter', -- In normal mode, press 'Space' + 'T' + 'u' to show syntax information under the cursor.
                 })
             )
             -- In normal mode, press 'Space' + 'T' 's' + 'n' to swap the current parameter with the next one.
@@ -379,18 +352,26 @@ function M.setup_navmap()
                 })
             )
             -- In normal mode, press 'Space' + 'T' + 's' + 'p' to swap the current parameter with the previous one.
-            -- Toggle Code Folding (Treesitter)
             map(
                 'n',
                 '<leader>Tcf',
                 ':TSToggleFold<CR>',
                 vim.tbl_extend('force', opts, {
                     desc = 'TS Toggle [c]ode Folding',
-                })
+                }) -- In normal mode, press 'Space' + 'T' + 'c' + 'f' to fold or unfold code blocks.
             )
-            -- In normal mode, press 'Space' + 'T' + 'c' + 'f' to fold or unfold code blocks.
         end,
     })
 end
 
 return M
+--[[
+local ts_repeat_move = require('nvim-treesitter.textobjects.repeatable_move')
+vim.keymap.set({ 'n', 'x', 'o' }, ';', ts_repeat_move.repeat_last_move)
+vim.keymap.set({ 'n', 'x', 'o' }, ',', ts_repeat_move.repeat_last_move_opposite)
+vim.keymap.set({ 'n', 'x', 'o' }, 'f', ts_repeat_move.builtin_f)
+vim.keymap.set({ 'n', 'x', 'o' }, 'F', ts_repeat_move.builtin_F)
+vim.keymap.set({ 'n', 'x', 'o' }, 't', ts_repeat_move.builtin_t)
+vim.keymap.set({ 'n', 'x', 'o' }, 'T', ts_repeat_move.builtin_T)
+
+--]]
