@@ -110,6 +110,20 @@ pip install git+https://github.com/PrithivirajDamodaran/Gramformer.git
 ```
 
 </div>
+  <li>
+        <a href="https://github.com/qompassai/Diver/blob/main/lsp/vectorcode_ls.lua">ai_ls</a>
+      </li>
+            <p>
+      <a href=" https://github.com/Davidyz/VectorCode">VectorCode LSP Reference</a>
+    </p>
+ <div style="background: #f8f9fa; padding: 15px; border-radius: 5px; margin-top: 10px; font-family: monospace;">
+
+```bash
+pip install "VectorCode[all]"
+```
+
+</div>
+
   </blockquote>
 </details>
 <details>
@@ -204,7 +218,7 @@ go install github.com/arduino/arduino-language-server@latest
     <ul>
       <li>
           <p>
-        <a href="https://github.com/qompassai/diver/blob/main/lsp/asm_ls.lua"> asm_ls</a>
+        <a href="https://github.com/qompassai/diver/blob/main/lsp/asm_ls.lua">asm_ls</a>
             </p>
       </li>
         </ul>
@@ -3390,12 +3404,12 @@ mv perlnavigator "$HOME/.local/bin/"
         <a href="https://github.com/qompassai/diver/blob/main/lsp/intelephense_ls.lua">intelephense_ls</a>
       </li>
        <p>
-      <a href=":TODO">Intelephense LSP Reference</a>
+      <a href="https://intelephense.com/docs">Intelephense LSP Reference</a>
     </p>
  <div style="background: #f8f9fa; padding: 15px; border-radius: 5px; margin-top: 10px; font-family: monospace;">
 
 ```bash
-:TODO
+pnpm add -g intelephense@latest
 ```
 
    </div>
@@ -3403,12 +3417,26 @@ mv perlnavigator "$HOME/.local/bin/"
         <a href="https://github.com/qompassai/diver/blob/main/lsp/phpactor_ls.lua">phpactor_ls</a>
       </li>
          <p>
-      <a href=":TODO">PHPActor LSP Reference</a>
+      <a href="https://phpactor.readthedocs.io/en/master/reference/configuration.html">PHPActor LSP Reference</a>
     </p>
  <div style="background: #f8f9fa; padding: 15px; border-radius: 5px; margin-top: 10px; font-family: monospace;">
 
 ```bash
-:TODO
+PHP_BIN="${PHP_BIN:-php}"
+INSTALL_DIR="${HOME}/.local/bin"
+PHAR_URL="https://github.com/phpactor/phpactor/releases/latest/download/phpactor.phar"
+TMP_PHAR="$(mktemp)"
+if ! command -v "$PHP_BIN" >/dev/null 2>&1; then
+  echo "php not found in PATH" >&2
+  exit 1
+fi
+mkdir -p "${INSTALL_DIR}"
+curl -fL "${PHAR_URL}" -o "${TMP_PHAR}"
+chmod +x "${TMP_PHAR}"
+mv "${TMP_PHAR}" "${INSTALL_DIR}/phpactor"
+phpactor status || {
+  echo "phpactor status failed; ensure ${INSTALL_DIR} is in PATH and PHP deps are OK." >&2
+}
 ```
 
    </div>

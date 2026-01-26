@@ -1,5 +1,5 @@
 -- /qompassai/Diver/lsp/phan_ls.lua
--- Qompass AI Phan LSP Spec
+-- Qompass AI Diver Phan LSP Spec
 -- Copyright (C) 2025 Qompass AI, All rights reserved
 -- ---------------------------------------------------
 return ---@type vim.lsp.Config

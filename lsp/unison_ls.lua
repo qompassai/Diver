@@ -13,11 +13,6 @@ return ---@type vim.lsp.Config
     filetypes = {
         'unison',
     },
-    root_markers = {
-        '.git',
-        '.unisonConfig',
-    },
-    settings = {},
     on_attach = function(client, bufnr)
         client.server_capabilities.documentFormattingProvider = false
         vim.api.nvim_create_autocmd('CursorHold', {
@@ -40,4 +35,9 @@ return ---@type vim.lsp.Config
             end,
         })
     end,
+    root_markers = {
+        '.git',
+        '.unisonConfig',
+    },
+    settings = {},
 }

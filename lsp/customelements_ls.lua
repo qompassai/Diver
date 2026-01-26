@@ -2,19 +2,22 @@
 -- Qompass AI Custom Elements LSP Spec
 -- Copyright (C) 2025 Qompass AI, All rights reserved
 -- --------------------------------------------------
----@type vim.lsp.Config
-return {
-    init_options = {
-        hostInfo = 'neovim',
-    },
-    cmd = { ---@type string[]
+return ---@type vim.lsp.Config
+{
+    cmd = {
         'custom-elements-languageserver',
         '--stdio',
     },
-    root_markers = { ---@type string[]
+    filetypes = {},
+    init_options = {
+        hostInfo = 'neovim',
+    },
+    on_attach = require('config.core.lsp').on_attach,
+    root_markers = {
         'tsconfig.json',
         'package.json',
         'jsconfig.json',
         '.git',
     },
+    settings = {},
 }

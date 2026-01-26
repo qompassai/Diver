@@ -1,4 +1,4 @@
--- rech_ls.lua
+-- /qompassai/Diver/lsp/rech_ls.lua
 -- Qompass AI Diver Rech LSP Spec
 -- Copyright (C) 2026 Qompass AI, All rights reserved
 -- ----------------------------------------

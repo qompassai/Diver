@@ -1,0 +1,72 @@
+-- /qompassai/Diver/lua/types/utils/unreal.lua
+-- Qompass AI Diver Unreal Utils Type Config
+-- Copyright (C) 2026 Qompass AI, All rights reserved
+-- ----------------------------------------
+---@alias uv_timer_t                            userdata
+---@alias uv_fs_t                               userdata
+---@alias TaskStateName                         'scheduled'|'inprogress'|'completed'
+---@class UnrealTarget
+---@field TargetName                            string
+---@field Configuration                         string
+---@field withEditor                            boolean
+---@field UbtExtraFlags                         string
+---@field PlatformName                          string
+---@class UnrealNvimConfig
+---@field version                               string
+---@field EngineDir                             string
+---@field Targets                               UnrealTarget[]
+---@class CurrentGenData
+---@field config                                UnrealNvimConfig
+---@field target                                UnrealTarget|nil
+---@field prjName                               string|nil
+---@field targetNameSuffix                      string|nil
+---@field prjDir                                string|nil
+---@field tasks                                 table<string, string>
+---@field currentTask                           string
+---@field ubtPath                               string
+---@field ueBuildBat                            string
+---@field projectPath                           string
+---@field logFile                               file*|nil
+---@field WithEngine                            boolean|nil
+---@field GetTaskAndStatus                      fun(self:CurrentGenData, taskName:string):(TaskStateName|nil, string)
+---@field GetTaskStatus                         fun(self:CurrentGenData, taskName:string):TaskStateName|nil
+---@field SetTaskStatus                         fun(self:CurrentGenData, taskName:string, status:TaskStateName, msg:string|nil)
+---@field ClearTasks                            fun(self:CurrentGenData)
+---@class UnrealCommands
+---@field LogLevel_Error                        integer
+---@field LogLevel_Warning                      integer
+---@field LogLevel_Log                          integer
+---@field LogLevel_Verbose                      integer
+---@field LogLevel_VeryVerbose                  integer
+---@field logFile                               file*|nil
+---@field onStatusUpdate                        fun()
+---@field _inspect                              any
+---@field Inspect                               fun(self:UnrealCommands, objToInspect:any):any
+---@field GetStatusBar                          fun():string
+---@field QuickfixWinId                         integer
+---@field taskCoroutine                         thread|nil
+---@field gencmdAutocmdid                       integer|nil
+---@field headersAutocmdid                      integer|nil
+---@field buildAutocmdid                        integer|nil
+---@field cbTimer                               uv_timer_t|nil
+---@field lastUpdateTime                        integer
+---@field updateTimer                           integer
+---@field animData                              {frames:string[], interval:integer}|nil
+---@field renderedAnim                          string
+---@field BeginTask                             fun(self:UnrealCommands, taskName:string)
+---@field EndTask                               fun(self:UnrealCommands, taskName:string)
+---@field ScheduleTask                          fun(self:UnrealCommands, taskName:string)
+---@field ClearTasks                            fun(self:UnrealCommands)
+---@field EnsureUpdateStarted                   fun(self:UnrealCommands)
+---@field safeUpdateLoop                        fun()
+---@field safeLogicUpdate                       fun()
+---@field updateLoop                            fun(self:UnrealCommands)
+---@field LogicUpdate                           fun(self:UnrealCommands)
+---@field uiUpdate                              fun(self:UnrealCommands, delta:number)
+---@field SetCurrentAnimation                   fun(self:UnrealCommands, animationName:string)
+---@field BuildCoroutine                        fun(self:UnrealCommands)
+---@field build                                 fun(self:UnrealCommands, opts:table|nil)
+---@field run                                   fun(self:UnrealCommands, opts:table|nil)
+---@field generateCommands                      fun(self:UnrealCommands, opts:{WithEngine?:boolean}|nil)
+---@field generateCommandsCoroutine             fun(self:UnrealCommands)
+---@type UnrealCommands

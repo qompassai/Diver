@@ -4,7 +4,7 @@
 -- --------------------------------------------------
 return ---@type vim.lsp.Config
 {
-    cmd = { ---@type string[]
+    cmd = {
         'nil',
         '--stdio',
     },

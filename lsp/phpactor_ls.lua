@@ -5,7 +5,8 @@ Copyright (C) 2025 Qompass AI, All rights reserved
 ---------------------------------------------------------------
 References: https://phpactor.readthedocs.io/en/master/reference/configuration.html
 ]]
-return {
+return ---@type vim.lsp.Config
+{
     cmd = {
         'phpactor',
         'language-server',
@@ -29,7 +30,7 @@ return {
                 },
             },
             blackfire = {
-                enabled = false,
+                enabled = true,
             },
             class_to_file = {
                 brute_force_conversion = true,
@@ -157,28 +158,42 @@ return {
                 enable_logging = true,
                 project_root = '%project_root%',
             },
-
             indexer = {
                 buffer_time = 500,
-                enabled_watchers = { 'inotify', 'watchman', 'find', 'php' },
+                enabled_watchers = {
+                    'inotify',
+                    'watchman',
+                    'find',
+                    'php',
+                },
                 exclude_patterns = {
                     '/vendor/**/Tests/**/*',
                     '/vendor/**/tests/**/*',
                     '/vendor/composer/**/*',
                 },
                 follow_symlinks = false,
-                implementation_finder = { deep = true },
-                include_patterns = { '/**/*.php', '/**/*.phar' },
+                implementation_finder = {
+                    deep = true,
+                },
+                include_patterns = {
+                    '/**/*.php',
+                    '/**/*.phar',
+                },
                 index_path = '%cache%/index/%project_id%',
                 poll_time = 5000,
                 project_root = '%project_root%',
                 reference_finder = { deep = true },
                 search_include_patterns = {},
                 stub_paths = {},
-                supported_extensions = { 'php', 'phar' },
+                supported_extensions = {
+                    'php',
+                    'phar',
+                },
             },
             language_server_code_transform = {
-                import_name = { report_non_existing_names = true },
+                import_name = {
+                    report_non_existing_names = true,
+                },
             },
             language_server_completion = {
                 trim_leading_dollar = false,
@@ -218,8 +233,11 @@ return {
             language_server_php_cs_fixer = {
                 bin = '%project_root%/vendor/bin/php-cs-fixer',
                 config = nil,
-                enabled = false,
-                env = { XDEBUG_MODE = 'off', PHP_CS_FIXER_IGNORE_ENV = true },
+                enabled = true,
+                env = {
+                    XDEBUG_MODE = 'off',
+                    PHP_CS_FIXER_IGNORE_ENV = true,
+                },
                 show_diagnostics = true,
             },
             language_server_phpstan = {
@@ -245,13 +263,17 @@ return {
                 soft_timeout = 10,
             },
             language_server_worse_reflection = {
-                diagnostics = { enable = true },
+                diagnostics = {
+                    enable = true,
+                },
                 inlay_hints = {
                     enable = false,
                     params = true,
                     types = false,
                 },
-                workspace_index = { update_interval = 100 },
+                workspace_index = {
+                    update_interval = 100,
+                },
             },
             logging = {
                 enabled = false,
@@ -263,7 +285,10 @@ return {
             logger = { name = 'logger' },
             object_renderer = {
                 template_paths = {
-                    markdown = { '%project_config%/templates/markdown', '%config%/templates/markdown' },
+                    markdown = {
+                        '%project_config%/templates/markdown',
+                        '%config%/templates/markdown',
+                    },
                 },
             },
             php = {
@@ -273,32 +298,38 @@ return {
                 args = {},
                 bin = '%project_root%/vendor/bin/phpcs',
                 cwd = nil,
-                enabled = false,
-                env = { XDEBUG_MODE = 'off' },
+                enabled = true,
+                env = {
+                    XDEBUG_MODE = 'off',
+                },
                 show_diagnostics = true,
             },
             phpunit = {
-                enabled = false,
+                enabled = true,
             },
             prophecy = {
-                enabled = false,
+                enabled = true,
             },
             rpc = {
                 replay_path = '%cache%/replay.json',
-                store_replay = false,
+                store_replay = true,
             },
             source_code_filesystem = {
                 project_root = '%project_root%',
             },
             symfony = {
-                enabled = false,
+                enabled = true,
                 xml_path = '%project_root%/var/cache/dev/App_KernelDevDebugContainer.xml',
                 public_services_only = false,
             },
             worse_reflection = {
                 cache_dir = '%cache%/worse-reflection',
                 cache_lifetime = 1,
-                diagnostics = { undefined_variable = { suggestion_levenshtein_disatance = 4 } },
+                diagnostics = {
+                    undefined_variable = {
+                        suggestion_levenshtein_disatance = 4,
+                    },
+                },
                 enable_cache = true,
                 enable_context_location = true,
                 stub_dir = '%application_root%/vendor/jetbrains/phpstorm-stubs',
