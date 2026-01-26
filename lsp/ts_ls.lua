@@ -307,11 +307,11 @@ return ---@type vim.lsp.Config
                 bufnr = bufnr,
             }, function(err, result)
                 if err then
-                    vim.echo('Go to source definition failed: ' .. err.message, vim.log.levels.ERROR)
+                    vim.notify('Go to source definition failed: ' .. err.message, vim.log.levels.ERROR)
                     return
                 end
                 if not result or vim.tbl_isempty(result) then
-                    vim.echo('No source definition found', vim.log.levels.INFO)
+                    vim.notify('No source definition found', vim.log.levels.INFO)
                     return
                 end
                 vim.lsp.util.show_document(result[1], Client.offset_encoding, {

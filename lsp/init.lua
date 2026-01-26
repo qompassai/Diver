@@ -5,7 +5,7 @@
 ---@source https://microsoft.github.io/language-server-protocol/implementors/servers/
 ---@source https://langserver.org/
 vim.lsp.enable({
-    --'abaplint_ls', ---:TODO: ---validate ---@source https://github.com/abaplint/abaplint | https://www.npmjs.com/org/abaplint
+
     'abl_ls', ---:TODO validate ---@source https://github.com/vscode-abl/vscode-abl
     'ada_ls',
     'agda_ls',

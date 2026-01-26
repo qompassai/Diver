@@ -65,13 +65,13 @@ g.vim_markdown_follow_anchor = 1
 g.which_key_disable_health_check = 1
 l.enable()
 require('config.init').config({
-  core = true,
-  cicd = true,
-  cloud = true,
-  debug = false,
-  edu = true,
-  nav = true,
-  ui = true,
+    core = true,
+    cicd = true,
+    cloud = true,
+    debug = false,
+    edu = true,
+    nav = true,
+    ui = true,
 })
 o.allowrevins = true
 o.ambiwidth = 'single'
@@ -87,7 +87,7 @@ o.backupcopy = 'auto'
 o.background = 'dark'
 o.breakindent = true
 o.clipboard = 'unnamedplus'
-o.cmdheight = 0
+o.cmdheight = 1
 o.completeitemalign = 'abbr,kind,menu'
 o.completeopt = 'menu,menuone,noselect'
 o.concealcursor = 'nc'
@@ -188,8 +188,8 @@ opt.backspace = { 'indent', 'eol', 'start' }
 opt.comments:append('fb:•') ---@type OptionMethods
 opt.complete:remove('i')
 opt.listchars = {
-  space = '_',
-  tab = '>~',
+    space = '_',
+    tab = '>~',
 }
 opt.lispwords = opt.lispwords:get() ---@type OptionMethods
 --opt.packpath = vim.opt.runtimepath:get() ---@type string[]
@@ -197,12 +197,12 @@ opt.nrformats = { 'bin', 'hex' }
 opt.tags = { './tags;,tags' }
 opt.viminfo:append('!')
 opt.wildignore = {
-  '*.a',
-  '*.o',
-  '*.obj',
-  '*.class',
-  '*.pyc',
-  '__pycache__',
+    '*.a',
+    '*.o',
+    '*.obj',
+    '*.class',
+    '*.pyc',
+    '__pycache__',
 }
 wo.breakindent = true
 wo.conceallevel = 0

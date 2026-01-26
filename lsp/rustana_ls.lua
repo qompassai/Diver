@@ -64,7 +64,7 @@ return ---@type vim.lsp.Config
                 on_dir(cargo_workspace_root or cargo_crate_dir)
             else
                 vim.schedule(function()
-                    vim.echo(
+                    vim.notify(
                         ('[rust_analyzer] cmd failed with code %d: %s\n%s'):format(output.code, cmd, output.stderr)
                     )
                 end)
@@ -537,9 +537,9 @@ return ---@type vim.lsp.Config
             local proc = vim.system(cmd, { cwd = r.args.cwd })
             local result = proc:wait()
             if result.code == 0 then
-                vim.echo(result.stdout, vim.log.levels.INFO)
+                vim.notify(result.stdout, vim.log.levels.INFO)
             else
-                vim.echo(result.stderr, vim.log.levels.ERROR)
+                vim.notify(result.stderr, vim.log.levels.ERROR)
             end
         end
     end,

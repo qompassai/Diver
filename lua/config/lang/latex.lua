@@ -2,13 +2,85 @@
 -- Qompass AI Diver LaTeX Config
 -- Copyright (C) 2025 Qompass AI, All rights reserved
 -- ---------------------------------------------------
+---@module 'config.lang.latex'
+local latex = {}
+---@param filepath string
+---@return string
+local function get_relative_path(filepath)
+    local qompass_idx = filepath:find('/qompassai/')
+    if qompass_idx then
+        return filepath:sub(qompass_idx + 1)
+    else
+        return vim.fn.fnamemodify(filepath, ':~:.')
+    end
+end
+
+---@param filepath string
+---@param comment string
+---@return string[] header
+local function make_header(filepath, comment)
+    local relpath = get_relative_path(filepath)
+    local description = 'Qompass AI - [ ]'
+    local copyright = 'Copyright (C) 2026 Qompass AI, All rights reserved'
+    local solid
+    if comment == '<!--' then
+        solid = '<!-- ' .. string.rep('-', 40) .. ' -->'
+        return {
+            '<!-- ' .. relpath .. ' -->',
+            '<!-- ' .. description .. ' -->',
+            '<!-- ' .. copyright .. ' -->',
+            solid,
+        }
+    elseif comment == '/*' then
+        solid = '/* ' .. string.rep('-', 40) .. ' */'
+        return {
+            '/* ' .. relpath .. ' */',
+            '/* ' .. description .. ' */',
+            '/* ' .. copyright .. ' */',
+            solid,
+        }
+    else
+        solid = comment .. ' ' .. string.rep('-', 40)
+        return {
+            comment .. ' ' .. relpath,
+            comment .. ' ' .. description,
+            comment .. ' ' .. copyright,
+            solid,
+        }
+    end
+end
+
+vim.api.nvim_create_autocmd('BufNewFile', {
+    pattern = { '*.tex' },
+    group = vim.api.nvim_create_augroup('qompass_latex_header', {
+        clear = true,
+    }),
+    callback = function()
+        local filepath = vim.fn.expand('%:p')
+        local comment = '%'
+        local first_line = vim.api.nvim_buf_get_lines(0, 0, 1, false)[1]
+        if first_line == nil or first_line == '' then
+            local header = make_header(filepath, comment)
+            vim.api.nvim_buf_set_lines(0, 0, 0, false, header)
+            vim.cmd('normal! G')
+        end
+    end,
+})
+
 vim.api.nvim_create_autocmd('BufWritePre', {
-    pattern = { '*.tex', '*.ltx' },
+    pattern = {
+        '*.tex',
+        '*.ltx',
+    },
     callback = function(args)
         vim.lsp.buf.format({ bufnr = args.buf, async = false })
         if vim.fn.executable('latexindent') == 1 or vim.fn.executable('latexindent.pl') == 1 then
             local bin = vim.fn.executable('latexindent') == 1 and 'latexindent' or 'latexindent.pl'
-            vim.fn.jobstart({ bin, '-w', vim.api.nvim_buf_get_name(args.buf) }, {
+            vim.fn.jobstart({
+                bin,
+                '-w',
+                vim.api.nvim_buf_get_name(args.buf),
+            }, {
                 stdout_buffered = true,
                 stderr_buffered = true,
                 on_stderr = function(_, data, _)
@@ -27,18 +99,23 @@ vim.api.nvim_create_autocmd('BufWritePre', {
     end,
 })
 vim.api.nvim_create_autocmd('BufWritePre', {
-    pattern = { '*.tex', '*.ltx' },
+    pattern = {
+        '*.tex',
+        '*.ltx',
+    },
     callback = function()
         vim.lsp.buf.code_action({
             context = {
                 diagnostics = {},
-                only = { 'source.fixAll' },
+                only = {
+                    'source.fixAll',
+                },
             },
             apply = true,
         })
     end,
 })
-vim.api.nvim_create_user_command('TexBuild', function()
+vim.api.nvim_create_user_command('TexBuild', function() ---@command TexBuild
     vim.fn.jobstart({
         'latexmk',
         '-pdf',
@@ -52,23 +129,29 @@ vim.api.nvim_create_autocmd('BufWritePre', {
     callback = function(args)
         vim.lsp.buf.format({
             bufnr = args.buf,
-            async = false,
+            async = true,
         })
     end,
 })
-vim.api.nvim_create_user_command('TexQuickfix', function()
+vim.api.nvim_create_user_command('TexQuickfix', function() ---@command TexQuickfix
     local diagnostics = vim.diagnostic.get(0)
     vim.lsp.buf.code_action({
         context = {
             diagnostics = diagnostics,
-            only = { 'quickfix' },
+            only = {
+                'quickfix',
+            },
             triggerKind = vim.lsp.protocol.CodeActionTriggerKind.Invoked,
         },
         apply = true,
     })
 end, {})
+--- Organize imports and fixAll via texlab/ltexplus_ls on save.
 vim.api.nvim_create_autocmd('BufWritePre', {
-    pattern = { '*.tex', '*.ltx' },
+    pattern = {
+        '*.tex',
+        '*.ltx',
+    },
     callback = function(args)
         local diagnostics = vim.diagnostic.get(args.buf)
         vim.lsp.buf.code_action({
@@ -83,19 +166,23 @@ vim.api.nvim_create_autocmd('BufWritePre', {
             apply = true,
             filter = function(_, client_id)
                 local client = vim.lsp.get_client_by_id(client_id)
-                -- adapt to whatever you use: "texlab", "ltex", etc.
-                return client ~= nil and (client.name == 'texlab' or client.name == 'ltex')
+                return client ~= nil and (client.name == 'texlab' or client.name == 'ltexplus_ls')
             end,
         })
     end,
 })
+--- Run chktex after writing TeX files and report issues
 vim.api.nvim_create_autocmd('BufWritePost', {
     pattern = '*.tex',
     callback = function(args)
         if vim.fn.executable('chktex') == 0 then
             return
         end
-        vim.fn.jobstart({ 'chktex', '-q', vim.api.nvim_buf_get_name(args.buf) }, {
+        vim.fn.jobstart({
+            'chktex',
+            '-q',
+            vim.api.nvim_buf_get_name(args.buf),
+        }, {
             stdout_buffered = true,
             stderr_buffered = true,
             on_stdout = function(_, data, _)
@@ -112,7 +199,8 @@ vim.api.nvim_create_autocmd('BufWritePost', {
         })
     end,
 })
-vim.api.nvim_create_user_command('TexCodeAction', function()
+--- Run texlab/ltex code actions for the current buffer.
+vim.api.nvim_create_user_command('TexCodeAction', function() ---@command TexCodeAction
     local diagnostics = vim.diagnostic.get(0)
     vim.lsp.buf.code_action({
         context = {
@@ -131,7 +219,8 @@ vim.api.nvim_create_user_command('TexCodeAction', function()
         apply = true,
     })
 end, {})
-vim.api.nvim_create_user_command('TexRangeAction', function()
+--- Run range code actions for visual selection in TeX.
+vim.api.nvim_create_user_command('TexRangeAction', function() ---@command TexRangeAction
     local bufnr = 0
     local diagnostics = vim.diagnostic.get(bufnr)
     local start_pos = vim.api.nvim_buf_get_mark(bufnr, '<')
@@ -139,7 +228,10 @@ vim.api.nvim_create_user_command('TexRangeAction', function()
     vim.lsp.buf.code_action({
         context = {
             diagnostics = diagnostics,
-            only = { 'quickfix', 'refactor.extract' },
+            only = {
+                'quickfix',
+                'refactor.extract',
+            },
         },
         range = {
             start = { start_pos[1], start_pos[2] },
@@ -160,3 +252,4 @@ vim.api.nvim_create_autocmd('LspAttach', {
         end
     end,
 })
+return latex

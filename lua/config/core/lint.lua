@@ -236,4 +236,5 @@ function M.lint(opts)
         run_linter(n, bufnr)
     end
 end
+
 return M

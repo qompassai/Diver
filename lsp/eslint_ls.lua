@@ -75,11 +75,11 @@ return {
             return 4
         end,
         ['eslint/probeFailed'] = function()
-            vim.echo('[lspconfig] ESLint probe failed.', vim.log.levels.WARN)
+            vim.notify('[lspconfig] ESLint probe failed.', vim.log.levels.WARN)
             return {}
         end,
         ['eslint/noLibrary'] = function()
-            vim.echo('[lspconfig] Unable to find ESLint library.', vim.log.levels.WARN)
+            vim.notify('[lspconfig] Unable to find ESLint library.', vim.log.levels.WARN)
             return {}
         end,
     },

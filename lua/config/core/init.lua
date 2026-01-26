@@ -2,7 +2,6 @@
 -- Qompass AI Diver Core Config Init
 -- Copyright (C) 2025 Qompass AI, All rights reserved
 -- ----------------------------------------
-require('config.core.autocmds')
 require('config.core.filetype')
 require('config.core.fixer')
 require('config.core.flash')

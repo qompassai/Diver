@@ -7,13 +7,13 @@
 local function switch_impl_intf(bufnr, client)
     ---@diagnostic disable-next-line:param-type-mismatch
     if not client or not client:supports_method('ocamllsp/switchImplIntf') then
-        return vim.echo(
+        return vim.notify(
             ('method %s is not supported by any servers active on the current buffer'):format('ocamllsp/switchImplIntf')
         )
     end
     local uri = vim.lsp.util.make_given_range_params(nil, nil, bufnr, client.offset_encoding).textDocument.uri
     if not uri then
-        return vim.echo('could not get URI for current buffer')
+        return vim.notify('could not get URI for current buffer')
     end
     local params = { uri }
     ---@diagnostic disable-next-line:param-type-mismatch
@@ -22,7 +22,7 @@ local function switch_impl_intf(bufnr, client)
             error(tostring(err))
         end
         if not result or #result == 0 then
-            vim.echo('corresponding file cannot be determined')
+            vim.notify('corresponding file cannot be determined')
         elseif #result == 1 then
             vim.cmd.edit(vim.uri_to_fname(result[1]))
         else
@@ -62,6 +62,7 @@ end
 
 return ---@type vim.lsp.Config
 {
+    capabilities = require('config.core.lsp').capabilities,
     cmd = {
         'ocamllsp',
     },

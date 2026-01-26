@@ -58,6 +58,6 @@ return ---@type vim.lsp.Config
     },
 
     on_exit = function(code, _, _)
-        vim.echo('Closing Pyrefly LSP exited with code: ' .. code, vim.log.levels.INFO)
+        vim.notify('Closing Pyrefly LSP exited with code: ' .. code, vim.log.levels.INFO)
     end,
 }

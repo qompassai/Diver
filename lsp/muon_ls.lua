@@ -1,19 +1,14 @@
 -- /qompassai/Diver/lsp/muon.lua
--- Qompass AI Muon LSP Spec
+-- Qompass AI Diver Muon LSP Spec
 -- Copyright (C) 2025 Qompass AI, All rights reserved
 -- ---------------------------------------------------
---- https://muon.build
--- git clone https://github.com/muon-build/muon.git && cd muon && ./bootstrap.sh build \
---&& build/muon-bootstrap setup build && build/muon-bootstrap -C build samu \
--- && build/muon-bootstrap -C build test && sudo build/muon-bootstrap -C build install
----@type vim.lsp.Config
 return {
-    cmd = { ---@type string[]
+    cmd = {
         'muon',
         'analyze',
         'lsp',
     },
-    filetypes = { ---@type string[]
+    filetypes = {
         'meson',
     },
     root_dir = function(bufnr, on_dir)
@@ -32,7 +27,17 @@ return {
                 end
                 on_dir(nil)
             else
-                vim.echo(('[muon] cmd failed with code %d: %s\n%s'):format(output.code, cmd, output.stderr))
+                vim.schedule(function()
+                    vim.notify(
+                        string.format(
+                            '[muon] cmd failed with code %d: %s\n%s',
+                            output.code,
+                            table.concat(cmd, ' '),
+                            output.stderr or ''
+                        ),
+                        vim.log.levels.ERROR
+                    )
+                end)
             end
         end)
     end,

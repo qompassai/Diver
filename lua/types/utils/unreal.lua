@@ -26,12 +26,15 @@
 ---@field ubtPath                               string
 ---@field ueBuildBat                            string
 ---@field projectPath                           string
+---@field PlatformName                          string
 ---@field logFile                               file*|nil
 ---@field WithEngine                            boolean|nil
 ---@field GetTaskAndStatus                      fun(self:CurrentGenData, taskName:string):(TaskStateName|nil, string)
 ---@field GetTaskStatus                         fun(self:CurrentGenData, taskName:string):TaskStateName|nil
 ---@field SetTaskStatus                         fun(self:CurrentGenData, taskName:string, status:TaskStateName, msg:string|nil)
 ---@field ClearTasks                            fun(self:CurrentGenData)
+---@type CurrentGenData
+CurrentGenData = CurrentGenData
 ---@class UnrealCommands
 ---@field LogLevel_Error                        integer
 ---@field LogLevel_Warning                      integer
@@ -65,6 +68,7 @@
 ---@field uiUpdate                              fun(self:UnrealCommands, delta:number)
 ---@field SetCurrentAnimation                   fun(self:UnrealCommands, animationName:string)
 ---@field BuildCoroutine                        fun(self:UnrealCommands)
+---@field PlatformName                          string
 ---@field build                                 fun(self:UnrealCommands, opts:table|nil)
 ---@field run                                   fun(self:UnrealCommands, opts:table|nil)
 ---@field generateCommands                      fun(self:UnrealCommands, opts:{WithEngine?:boolean}|nil)

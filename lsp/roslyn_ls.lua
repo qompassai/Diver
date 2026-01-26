@@ -8,7 +8,7 @@ local group = vim.api.nvim_create_augroup('lspconfig.roslyn_ls', {
 ---@param client vim.lsp.Client
 ---@return nil|string
 local function on_init_sln(client, target) ---@param target string
-    vim.echo('Initializing: ' .. target, vim.log.levels.TRACE, {
+    vim.notify('Initializing: ' .. target, vim.log.levels.TRACE, {
         title = 'roslyn_ls',
     }) ---@diagnostic disable-next-line: param-type-mismatch
     client:notify('solution/open', {
@@ -18,7 +18,7 @@ end
 ---@param client vim.lsp.Client
 ---@return nil|string
 local function on_init_project(client, project_files) ---@param project_files string[]
-    vim.echo('Initializing: projects', vim.log.levels.TRACE, { title = 'roslyn_ls' }) ---@diagnostic disable-next-line: param-type-mismatch
+    vim.notify('Initializing: projects', vim.log.levels.TRACE, { title = 'roslyn_ls' }) ---@diagnostic disable-next-line: param-type-mismatch
     client:notify('project/open', {
         projects = vim.tbl_map(function(file)
             return vim.uri_from_fname(file)
@@ -37,7 +37,7 @@ end
 local function roslyn_handlers() ---@return table<string, fun(err?: lsp.ResponseError, result: any, ctx: lsp.HandlerContext, config?: table):any>
     return {
         ['workspace/projectInitializationComplete'] = function(_, _, ctx)
-            vim.echo('Roslyn project initialization complete', vim.log.levels.INFO, { title = 'roslyn_ls' })
+            vim.notify('Roslyn project initialization complete', vim.log.levels.INFO, { title = 'roslyn_ls' })
             local client = assert(vim.lsp.get_client_by_id(ctx.client_id)) ---@type vim.lsp.Client
             refresh_diagnostics(client)
             return vim.NIL
@@ -47,13 +47,13 @@ local function roslyn_handlers() ---@return table<string, fun(err?: lsp.Response
             ---@diagnostic disable-next-line: param-type-mismatch
             client:request('workspace/_roslyn_restore', result, function(err, response)
                 if err then
-                    vim.echo(err.message, vim.log.levels.ERROR, {
+                    vim.notify(err.message, vim.log.levels.ERROR, {
                         title = 'roslyn_ls',
                     })
                 end
                 if response then
                     for _, v in ipairs(response) do
-                        vim.echo(v.message, vim.log.levels.INFO, {
+                        vim.notify(v.message, vim.log.levels.INFO, {
                             title = 'roslyn_ls',
                         })
                     end
@@ -62,9 +62,13 @@ local function roslyn_handlers() ---@return table<string, fun(err?: lsp.Response
             return vim.NIL
         end,
         ['razor/provideDynamicFileInfo'] = function(_, _, _)
-            vim.echo('Razor is not supported.\nPlease use https://github.com/tris203/rzls.nvim', vim.log.levels.WARN, {
-                title = 'roslyn_ls',
-            })
+            vim.notify(
+                'Razor is not supported.\nPlease use https://github.com/tris203/rzls.nvim',
+                vim.log.levels.WARN,
+                {
+                    title = 'roslyn_ls',
+                }
+            )
             return vim.NIL
         end,
     }
@@ -109,7 +113,7 @@ return ---@type vim.lsp.Config
                 }
                 vim.lsp.util.apply_workspace_edit(workspace_edit, client.offset_encoding)
             else
-                vim.echo(
+                vim.notify(
                     'roslyn_ls: completionComplexEdit args not understood: ' .. vim.inspect(args),
                     vim.log.levels.WARN
                 )

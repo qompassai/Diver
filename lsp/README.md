@@ -2992,45 +2992,15 @@ main "$@"
       <li>
         <a href="https://github.com/qompassai/diver/blob/main/lsp/muon_ls.lua">muon_ls</a>
       </li>
-    </ul>
-  </blockquote>
-</details>
-<details>
-  <summary style="font-size: 1.4em; font-weight: bold; padding: 15px; background: #667eea; color: white; border-radius: 10px; cursor: pointer; margin: 10px 0; display: flex; align-items: center; gap: 8px;">
-    <div class="icon-row" style="display: flex; align-items: center; gap: 6px;">
-      <img src="https://raw.githubusercontent.com/qompassai/svg/refs/heads/main/assets/icons/mutt/mutt.svg"
-           alt="mutt" width="60" height="60" title="Mutt" />
-    </div>
-    <strong>Mutt</strong>
-  </summary>
-  <blockquote style="font-size: 1.2em; line-height: 1.8; padding: 25px; background: #f8f9fa; border-left: 6px solid #667eea; border-radius: 8px; margin: 15px 0; box-shadow: 0 2px 8px rgba(0,0,0,0.1);">
-    <ul>
-      <li>
-        <a href="https://github.com/qompassai/diver/blob/main/lsp/mutt_ls.lua">mutt_ls</a>
-      </li>
-    </ul>
-  </blockquote>
-</details>
-<details>
-  <summary style="font-size: 1.4em; font-weight: bold; padding: 15px; background: #667eea; color: white; border-radius: 10px; cursor: pointer; margin: 10px 0; display: flex; align-items: center; gap: 8px;">
-    <div class="icon-row" style="display: flex; align-items: center; gap: 6px;">
-      <img src="https://raw.githubusercontent.com/qompassai/svg/refs/heads/main/assets/icons/nextflow/nextflow.svg"
-           alt="nextflow" width="60" height="60" title="NextFlow" />
-    </div>
-    <strong>NextFlow</strong>
-  </summary>
-  <blockquote style="font-size: 1.2em; line-height: 1.8; padding: 25px; background: #f8f9fa; border-left: 6px solid #667eea; border-radius: 8px; margin: 15px 0; box-shadow: 0 2px 8px rgba(0,0,0,0.1);">
-    <ul>
-      <li>
-        <a href="https://github.com/qompassai/diver/blob/main/lsp/nextflow_ls.lua">nextflow_ls</a>
-      </li>
-               <p>
-      <a href=":TODO">NextFlow LSP</a>
+             <p>
+      <a href="https://muon.build">Muon Reference</a>
     </p>
  <div style="background: #f8f9fa; padding: 15px; border-radius: 5px; margin-top: 10px; font-family: monospace;">
 
 ```bash
-:TODO
+git clone https://github.com/muon-build/muon.git && cd muon && ./bootstrap.sh build \
+&& build/muon-bootstrap setup build && build/muon-bootstrap -C build samu \
+&& build/muon-bootstrap -C build test && sudo build/muon-bootstrap -C build install
 ```
 
    </div>
@@ -3051,12 +3021,12 @@ main "$@"
         <a href="https://github.com/qompassai/diver/blob/main/lsp/nginx_ls.lua">nginx_ls</a>
       </li>
              <p>
-      <a href=":TODO">Nginx LSP Reference</a>
+      <a href="https://github.com/pappasam/nginx-language-server">Nginx LSP Reference</a>
     </p>
  <div style="background: #f8f9fa; padding: 15px; border-radius: 5px; margin-top: 10px; font-family: monospace;">
 
 ```bash
-:TODO
+ pip install -U nginx-language-server
 ```
 
    </div>
@@ -5056,4 +5026,4 @@ git clone https://github.com/zigtools/zls && cd zls && zig build -Doptimize=Rele
   </blockquote>
 </details>
 </div>
-````
+```

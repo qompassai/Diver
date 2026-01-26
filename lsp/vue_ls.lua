@@ -2,13 +2,14 @@
 -- Qompass AI Vue LSP Spec
 -- Copyright (C) 2025 Qompass AI, All rights reserved
 -- --------------------------------------------------
----@type vim.lsp.Config
-return {
-    cmd = { ---@type string[]
+return ---@type vim.lsp.Config
+{
+    capabilities = require('config.core.lsp').capabilities,
+    cmd = {
         'vue-language-server',
         '--stdio',
     },
-    filetypes = { ---@type string[]
+    filetypes = {
         'vue',
     },
     root_markers = { ---@type string[]
@@ -40,7 +41,7 @@ return {
                         typescriptHandler(_, result, context)
                     end, 100)
                 else
-                    vim.echo(
+                    vim.notify(
                         'Could not find `ts_ls`, `vtsls`, or `typescript-tools` lsp client required by `vue_ls`.',
                         vim.log.levels.ERROR
                     )

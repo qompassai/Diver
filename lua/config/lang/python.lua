@@ -45,7 +45,7 @@ vim.api.nvim_create_autocmd('BufWritePre', {
     pattern = '*.py',
     callback = function(args)
         vim.lsp.buf.format({
-            async = false,
+            async = true,
             bufnr = args.buf,
             filter = function(client)
                 return client.name == 'pyrefly_ls' or client.name == 'ruff_ls' or client.name == 'ty_ls'
@@ -108,10 +108,24 @@ vim.api.nvim_create_autocmd('FileType', {
 vim.api.nvim_create_user_command('PyLintAll', function()
     local file = vim.fn.expand('%:p')
     local cmds = {
-        { 'ruff', 'check', file },
-        { 'bandit', '-q', file },
-        { 'vulture', file },
-        { 'pyrefly', file },
+        {
+            'ruff',
+            'check',
+            file,
+        },
+        {
+            'bandit',
+            '-q',
+            file,
+        },
+        {
+            'vulture',
+            file,
+        },
+        {
+            'pyrefly',
+            file,
+        },
     }
     for _, cmd in ipairs(cmds) do
         if vim.fn.executable(cmd[1]) == 1 then
@@ -139,7 +153,10 @@ vim.api.nvim_create_autocmd('BufWritePost', {
         if vim.fn.executable('blackd-client') == 0 then
             return
         end
-        vim.fn.jobstart({ 'blackd-client', vim.api.nvim_buf_get_name(args.buf) }, {
+        vim.fn.jobstart({
+            'blackd-client',
+            vim.api.nvim_buf_get_name(args.buf),
+        }, {
             stdout_buffered = true,
             stderr_buffered = true,
         })

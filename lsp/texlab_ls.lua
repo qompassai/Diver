@@ -143,7 +143,7 @@ return ---@type vim.lsp.Config
                     [2] = 'Failure',
                     [3] = 'Cancelled',
                 }
-                vim.echo('Build ' .. status[result.status], vim.log.levels.INFO)
+                vim.notify('Build ' .. status[result.status], vim.log.levels.INFO)
             end, bufnr)
         end
         local function buf_search()
@@ -159,7 +159,7 @@ return ---@type vim.lsp.Config
                     [2] = 'Failure',
                     [3] = 'Unconfigured',
                 }
-                vim.echo('Search ' .. status[result.status], vim.log.levels.INFO)
+                vim.notify('Search ' .. status[result.status], vim.log.levels.INFO)
             end, bufnr)
         end
         local function buf_cancel_build()
@@ -178,9 +178,9 @@ return ---@type vim.lsp.Config
                 bufnr = 0,
             }, function(err, result)
                 if err then
-                    return vim.echo(err.code .. ': ' .. err.message, vim.log.levels.ERROR)
+                    return vim.notify(err.code .. ': ' .. err.message, vim.log.levels.ERROR)
                 end
-                vim.echo('The dependency graph has been generated:\n' .. result, vim.log.levels.INFO)
+                vim.notify('The dependency graph has been generated:\n' .. result, vim.log.levels.INFO)
             end)
         end
         local function command_factory(kind)
@@ -201,9 +201,9 @@ return ---@type vim.lsp.Config
                     bufnr = bufnr,
                 }, function(err, _)
                     if err then
-                        vim.echo(('Failed to clean %s files: %s'):format(kind, err.message), vim.log.levels.ERROR)
+                        vim.notify(('Failed to clean %s files: %s'):format(kind, err.message), vim.log.levels.ERROR)
                     else
-                        vim.echo(('Command %s executed successfully'):format(kind), vim.log.levels.INFO)
+                        vim.notify(('Command %s executed successfully'):format(kind), vim.log.levels.INFO)
                     end
                 end)
             end
@@ -220,7 +220,7 @@ return ---@type vim.lsp.Config
                 bufnr = bufnr,
             }, function(err, result)
                 if err then
-                    return vim.echo(err.code .. ': ' .. err.message, vim.log.levels.ERROR)
+                    return vim.notify(err.code .. ': ' .. err.message, vim.log.levels.ERROR)
                 end
                 local env_names = {}
                 local max_length = 1
@@ -245,7 +245,7 @@ return ---@type vim.lsp.Config
                 prompt = 'New environment name: ',
             }, function(input)
                 if not input or input == '' then
-                    return vim.echo('No environment name provided', vim.log.levels.WARN)
+                    return vim.notify('No environment name provided', vim.log.levels.WARN)
                 end
                 local pos = vim.api.nvim_win_get_cursor(0)
                 return client:exec_cmd({
