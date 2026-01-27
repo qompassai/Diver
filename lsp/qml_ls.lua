@@ -1,17 +1,18 @@
 -- /qompassai/Diver/lsp/qml_ls.lua
--- Qompass AI QML LSP Spec
+-- Qompass AI Diver QML LSP Spec
 -- Copyright (C) 2025 Qompass AI, All rights reserved
 -- ---------------------------------------------------
----@type vim.lsp.Config
-return {
-    cmd = { ---@type string[]
+return ---@type vim.lsp.Config
+{
+      capabilities = require('config.core.lsp').capabilities,
+    cmd = {
         'qml-lsp',
+        '-E',
     },
-    filetypes = { ---@type string[]
+    filetypes = {
         'qml',
         'qmljs',
     },
-    settings = { ---@type string[]
-        ...,
-    },
+       on_attach = require('config.core.lsp').on_attach,
+    settings = {},
 }

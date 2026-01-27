@@ -2,7 +2,8 @@
 -- Qompass AI Haskell/WhitePaperLang LSP Spec
 -- Copyright (C) 2025 Qompass AI, All rights reserved
 -- ----------------------------------------
-return { ---@type vim.lsp.Config
+return ---@type vim.lsp.Config
+{
     cmd = {
         'haskell-language-server-wrapper',
         '--lsp',
@@ -20,7 +21,7 @@ return { ---@type vim.lsp.Config
         'package.yaml',
     },
     settings = {
-        haskell = {
+        haskell = { ---@type vim.lsp.Config.Settings
             cabalFormattingProvider = 'cabal-fmt',
             checkParents = 'CheckOnSave',
             checkProject = true,

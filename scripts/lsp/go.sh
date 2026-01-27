@@ -10,6 +10,7 @@ go install github.com/nametake/golangci-lint-langserver@latest
 go install github.com/hashicorp/terraform-ls@latest
 go install github.com/huderlem/poryscript-pls@latest
 go install github.com/hyprland-community/hyprls/cmd/hyprls@latest
+go install github.com/laravel-ls/laravel-ls/cmd/laravel-ls@latest
 go install github.com/juliosueiras/nomad-lsp@latest
 go install github.com/kitagry/bqls@latest
 go install github.com/kitagry/regols@latest

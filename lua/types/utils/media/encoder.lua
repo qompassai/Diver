@@ -1,0 +1,141 @@
+-- /qompassai/Diver/lua/types/utils/encoder.lua
+-- Qompass AI - [ ]
+-- Copyright (C) 2026 Qompass AI, All rights reserved
+-- ----------------------------------------
+---@meta
+---@alias media.GetFgFn                       fun(fg: integer|nil): integer
+---@alias media.GetBgFn                       fun(bg: integer|nil): integer
+---@alias media.RgbFn                         fun(color: integer): integer, integer, integer
+---@alias media.HlToRgbFn                     fun(hl: media.Highlight): integer, integer, integer
+---@alias media.StartRecordingFn              fun(opts: media.Options|{}): string?
+---@alias media.StopRecordingFn               fun(opts: media.Options): string?
+---@class media.Encoder
+---@field width                               integer
+---@field height                              integer
+---@field fps                                 integer
+---@field output                              string
+---@field frame_count                         integer
+---@field write_frame                         fun(self: media.Encoder, rgb_data: any): boolean
+---@field close                               fun(self: media.Encoder)
+---@class media.EncoderModule
+---@field create                              fun(width: integer, height: integer, fps: integer, output: string): media.Encoder|nil
+---@class media.encoder.FFmpeg :              media.Encoder
+---@field handle?                             uv.uv_process_t
+---@field stdin?                              uv.uv_pipe_t
+---@class media.encoder.Raw :                 media.Encoder
+---@field file                                integer?
+---@class media.encoder.X264:                 media.Encoder
+---@field lib                                 any
+---@field pts                                 integer
+---@field handle                              integer
+---@field pic_in                              any
+---@field pic_in_buf                          any
+---@field param                               any
+---@field param_buf                           any
+---@field file                                integer
+---@class media.FontModule
+---@field render_char                         fun(char: string): media.Glyph|nil
+---@type media.FontModule
+---@class media.Highlight
+---@field foreground?                         integer
+---@field background?                         integer
+---@class media.FrameCell
+---@field [1]                                 string
+---@field [2]                                 media.Highlight
+---@class media.FrameCellRow
+---@field [integer]                           media.FrameCell|nil
+---@class media.FrameData
+---@field width                               integer
+---@field height                              integer
+---@field cells                               media.FrameCellRow[]
+---@class media.GlyphRow
+---@field [integer]                           integer
+---@class media.Glyph
+---@field data                                media.GlyphRow[]
+---@field width                               integer
+---@field height                              integer
+---@field top                                 integer
+---@field left                                integer
+---@class media.Options
+---@field address                             string
+---@field char_width                          integer
+---@field char_height                         integer
+---@field fps                                 integer
+---@field output                              string
+---@field use_font                            boolean
+---@field font_path                           string
+---@field kind                                string
+---@class media.RenderModule
+---@field font                                fun(frame: media.FrameData, char_w: integer, char_h: integer): any
+---@field pixel                               fun(frame: media.FrameData, char_w: integer, char_h: integer): any
+---@type                                      any
+---@type                                      integer
+---@return integer                            size
+---@alias media.BlendGlyphFn fun(
+---  buffer_ptr:                              any,
+---  glyph:                                   media.Glyph,
+---  cell_x:                                  integer,
+---  cell_y:                                  integer,
+---  cell_w:                                  integer,
+---  cell_h:                                  integer,
+---  r:                                       integer,
+---  g:                                       integer,
+---  b:                                       integer,
+---  bg_r:                                    integer,
+---  bg_g:                                    integer,
+---  bg_b:                                    integer,
+---  width:                                   integer,
+---  height:                                  integer): nil
+---@type                                      integer|nil
+---@type                                      integer|nil
+---Render frame with font rendering
+---@return any                                buffer_ptr
+---@class media.serializer
+---@field encode                              fun(data: any): string
+---@field decode                              fun(data: any): string
+---@type media.serializer
+---@class media.Thread :                      uv.luv_thread_t
+---@field thread                              userdata
+---@field writer                              userdata
+---@class media.State
+---@field dispose?                            fun()
+---@field output?                             string
+---@class (exact) media.Options
+---@field fps                                 integer
+---@field output                              string
+---@field char_width                          integer
+---@field char_height                         integer
+---@field use_font                            boolean
+---@field font_path                           string
+---@field address                             string
+---@field encoderkind                         'ffmpeg'|'x264'|'raw'
+---@type media.Options
+---@return string?                            output
+---@class media.encoder.FFmpeg :              media.Encoder
+---@class uv
+---@field spawn                               fun(path: string, options: uv.spawn.options, on_exit: fun(code: integer, signal: integer)): uv.uv_process_t|nil, string?
+---@field new_pipe                            fun(ipc: boolean): uv.uv_pipe_t
+---@type uv
+uv = uv
+---@class uv.uv_pipe_t
+local _uv_pipe_t = {}
+---@class uv.uv_stdio_t
+---@field data                                any
+---@field flags                               integer
+---@class uv.uv_process_t
+---@field data                                any
+---@field flags                               integer
+---@class uv.uv_process_t
+local _uv_process_t2 = {}
+---@class uv.spawn.options
+---@field args?                               string[]
+---@field stdio?                              uv.uv_stdio_t[]
+---@field env?                                string[]
+---@field cwd?                                string
+---@field uid?                                integer
+---@field gid?                                integer
+---@field verbatim?                           boolean
+---@field detached?                           boolean
+---@field hide?                               boolean
+---@class uv.uv_process_t
+local _uv_process_t = {}

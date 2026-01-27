@@ -3030,20 +3030,7 @@ git clone https://github.com/muon-build/muon.git && cd muon && ./bootstrap.sh bu
 ```
 
    </div>
-      <li>
-        <a href="https://github.com/qompassai/diver/blob/main/lsp/nginxcf_ls.lua">nginxcf_ls</a>
-      </li>
-        <p>
-      <a href="https://github.com/oxalica/nil">Nickel LSP Reference</a>
-    </p>
- <div style="background: #f8f9fa; padding: 15px; border-radius: 5px; margin-top: 10px; font-family: monospace;">
-
-```bash
-:TODO
-```
-
-   </div>
-    </ul>
+        </ul>
   </blockquote>
 </details>
 <details>
@@ -3060,7 +3047,7 @@ git clone https://github.com/muon-build/muon.git && cd muon && ./bootstrap.sh bu
         <a href="https://github.com/qompassai/diver/blob/main/lsp/nickel_ls.lua">nickel_ls</a>
       </li>
         <p>
-      <a href=":TODO">Nickel LSP Reference</a>
+      <a href="https://github.com/tweag/nickel">Nickel LSP Reference</a>
     </p>
  <div style="background: #f8f9fa; padding: 15px; border-radius: 5px; margin-top: 10px; font-family: monospace;">
 
@@ -3414,12 +3401,12 @@ phpactor status || {
         <a href="https://github.com/qompassai/diver/blob/main/lsp/laravel_ls.lua">laravel_ls</a>
       </li>
        <p>
-      <a href=":TODO">Laravel LSP Reference</a>
+      <a href=" https://github.com/laravel-ls/laravel-ls">Laravel LSP Reference</a>
     </p>
  <div style="background: #f8f9fa; padding: 15px; border-radius: 5px; margin-top: 10px; font-family: monospace;">
 
 ```bash
-:TODO
+go install github.com/laravel-ls/laravel-ls/cmd/laravel-ls@latest
 ```
 
 ```
@@ -3435,7 +3422,7 @@ phpactor status || {
  <div style="background: #f8f9fa; padding: 15px; border-radius: 5px; margin-top: 10px; font-family: monospace;">
 
 ```bash
-:TODO
+composer global require vimeo/psalm
 ```
 
    </div>
@@ -3495,7 +3482,7 @@ go install github.com/ptdewey/plantuml-lsp@latest
         <a href="https://github.com/qompassai/diver/blob/main/lsp/postgres_ls.lua">postgres_ls</a>
            </li>
              <p>
-              <a href="https://github.com/phan/phan">Phan LSP Reference</a>
+              <a href="https://github.com/phan/phan">PostGres LSP Reference</a>
     </p>
  <div style="background: #f8f9fa; padding: 15px; border-radius: 5px; margin-top: 10px; font-family: monospace;">
 
@@ -3517,7 +3504,36 @@ chmod +x postgres-language-server
  <div style="background: #f8f9fa; padding: 15px; border-radius: 5px; margin-top: 10px; font-family: monospace;">
 
 ```bash
-:TODO
+export REPO="supabase-community/postgres-language-server"
+export INSTALL_DIR="$HOME/.local/bin"
+export NAME="postgres-language-server"
+arch=$(uname -m)
+case "$arch" in
+  x86_64|amd64)   arch="x86_64" ;;
+  aarch64|arm64)  arch="aarch64" ;;
+  *) echo "Unsupported arch: $arch" >&2; exit 1 ;;
+esac
+os=$(uname -s)
+case "$os" in
+  Linux)  os="unknown-linux-gnu" ;;
+  *) echo "This script is for Linux only."; exit 1 ;;
+esac
+bin="${NAME}_${arch}-${os}"
+url="https://github.com/$REPO/releases/latest/download/$bin"
+mkdir -p "$INSTALL_DIR"
+tmp=$(mktemp)
+trap 'rm -f "$tmp"' EXIT
+if command -v curl >/dev/null 2>&1; then
+  curl -L "$url" -o "$tmp"
+else
+  wget -O "$tmp" "$url"
+fi
+mv "$tmp" "$INSTALL_DIR/$NAME"
+chmod +x "$INSTALL_DIR/$NAME"
+echo "Installed to $INSTALL_DIR/$NAME"
+echo "Ensure $INSTALL_DIR is in your PATH, then run:"
+echo "  $NAME --help"
+
 ```
 
   </div>

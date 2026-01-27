@@ -3,7 +3,10 @@
 -- Copyright (C) 2025 Qompass AI, All rights reserved
 -- --------------------------------------------------
 ---@meta
----@module 'types.core.lsp'
+---@alias HlsMode
+---| '"always"'
+---| '"exported"'
+---| '"diagnostics"'
 ---@class                                                                            vim.lsp.Config
 ---@field additionalArgs?                                                            string[]
 ---@field args?                                                                      string[]
@@ -121,7 +124,7 @@
 ---@field haskell.plugin.eval.config.diff?                                            boolean
 ---@field haskell.plugin.eval.config.exception?                                       boolean
 ---@field haskell.plugin.eval.globalOn?                                               boolean
-----@field haskell.plugin["ghcide-code-actions-bindings"]?                            table
+----@field haskell.plugin["ghcide-code-actions-bindings"]?                             table
 ----@field haskell.plugin["ghcide-code-actions-bindings"].globalOn?                   boolean
 ----@field haskell.plugin["ghcide-code-actions-fill-holes"]?                          table
 ----@field haskell.plugin["ghcide-code-actions-fill-holes"].globalOn?                 boolean
@@ -142,8 +145,8 @@
 ----@field haskell.plugin["ghcide-type-lenses"]?                                      table
 ----@field haskell.plugin["ghcide-type-lenses"].codeLensOn?                           boolean
 ----@field haskell.plugin["ghcide-type-lenses"].config?                               table
----@field haskell.plugin.['ghcide-type-lenses'].config.mode?                          'always'|'exported'|'diagnostics'
-----@field haskell.plugin.["ghcide-type-lenses"].globalOn?                            boolean
+----@field haskell.plugin["ghcide-type-lenses"].config.mode?                          'always'|'exported'|'diagnostics'
+----@field haskell.plugin["ghcide-type-lenses"].globalOn?                            boolean
 ---@field haskell.plugin.hlint?                                                       table
 ---@field haskell.plugin.hlint.codeActionsOn?                                         boolean
 ---@field haskell.plugin.hlint.config?                                                table
@@ -188,7 +191,7 @@
 ---@field basedpyright.analysis?                                                      table[]
 ---@field basedpyright.analysis.python?                                               { pythonPath: string }
 ---@field basedpyright.analysis.useLibraryCodeForTypes?                               boolean
----@field basedpyright.analysisinlayHints                                             { variableTypes: boolean, callArgumentNames: boolean, callArgumentNamesMatching: boolean, functionReturnTypes: boolean, genericTypes: boolean }
+---@field basedpyright.analysisinlayHints?                                             { variableTypes: boolean, callArgumentNames: boolean, callArgumentNamesMatching: boolean, functionReturnTypes: boolean, genericTypes: boolean }
 ---@field baesedpyright.analysis.useTypingExtensions?                                 boolean
 ---@field basedpyright.analysis.failOnWarnings?                                       boolean
 ---@field basedpyright.analysis.reportUnreachable?                                    boolean|string
@@ -199,7 +202,7 @@
 ---@field ltex.clearDiagnosticsWhenClosingFile?                                       boolean
 ---@field ltex.completionEnabled?                                                     boolean
 ---@field ltex.configurationTarget?                                                   { [string]: boolean } ---object
----@field ltex.diagnosticSeverity                                                     string | { [string]: boolean }
+---@field ltex.diagnosticSeverity?                                                     string | { [string]: boolean }
 ---@field ltex.java.maximumHeapSize?                                                  integer
 ---@field ltex.java.path?                                                             string
 ---@field ltex.languageToolOrg.username?                                              string
@@ -377,7 +380,7 @@
 ---@field perlnavigator.perlEnv?                                                      string[]
 ---@field perlnavigator.perlEnvAdd?                                                   boolean
 ---@field perlnavigator.perlPath?                                                     string
----@field perlnavigator.perltidyProfile                                               string
+---@field perlnavigator.perltidyProfile?                                               string
 ---@field redhat.telemetry.enable?                                                    boolean
 ---@field typescript.format.baseIndentSize?                                           integer
 ---@field typescript.format.convertTabsToSpaces?                                      boolean
@@ -410,13 +413,13 @@
 ---@lsp.mod.deprecated                                                                gui=strikethrough
 ---@lsp.typemod.function.async                                                        guifg=Pink
 ---@class RaRunnableArgs
----@field cargoArgs                                                                   string[]
----@field cwd                                                                         string
+---@field cargoArgs?                                                                   string[]
+---@field cwd?                                                                         string
 ---@field executableArgs?                                                             string[]
 ---@class RaRunnable
 ---@field kind?                                                                       string
----@field label                                                                       string
----@field args                                                                        RaRunnableArgs\
+---@field label?                                                                       string
+---@field args?                                                                        RaRunnableArgs\
 ---@alias BasedPyright.TypeCheckingMode
 ---| 'all'
 ---| 'basic'
