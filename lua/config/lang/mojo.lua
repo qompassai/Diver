@@ -2,72 +2,58 @@
 -- Qompass AI Diver Mojo Lang Config
 -- Copyright (C) 2025 Qompass AI, All rights reserved
 -- --------------------------------------------------
----@meta
----@module 'config.lang.mojo'
 local M = {}
-function M.mojo_filetype()
-    local ok, ft = pcall(require, 'filetype')
-    if ok then
-        ft.add({
-            extension = {
-                mojo = 'mojo',
-            },
-            pattern = {
-                ['.*%.🔥'] = 'mojo',
-            },
-        })
-    else
-        vim.cmd([[
-      augroup MojoFiletype
-        autocmd BufNewFile,BufRead *.mojo set filetype=mojo
-        autocmd BufNewFile,BufRead *.🔥 set filetype=mojo
-      augroup END
-    ]])
-    end
+function M.setup()
+  M.mojo_autocmds()
+  local ok_dap, dap = pcall(require, 'dap')
+  if ok_dap and dap then
+    dap.adapters.mojo_lldb = {
+      type = 'executable',
+      command = vim.fn.expand('~/.local/share/mojo/.pixi/envs/default/bin/mojo-lldb-dap'),
+      env = { CONDA_PREFIX = vim.fn.expand('~/.local/share/mojo/.pixi/envs/default') },
+      name = 'mojo_lldb',
+    }
+    dap.configurations.mojo = {
+      {
+        name = 'Mojo: Launch file',
+        type = 'mojo_lldb',
+        request = 'launch',
+        program = function()
+          return vim.api.nvim_buf_get_name(0)
+        end,
+        cwd = '${workspaceFolder}',
+        stopOnEntry = false,
+        args = {},
+      },
+    }
+  end
 end
 
 function M.mojo_autocmds()
-    pcall(vim.api.nvim_create_autocmd, 'FileType', {
-        pattern = {
-            'mojo',
-        },
-        callback = function(args)
-            if vim.bo[args.buf].filetype ~= 'mojo' then
-                return
-            end
-            vim.opt_local.tabstop = 4
-            vim.opt_local.shiftwidth = 4
-            vim.opt_local.expandtab = true
-            pcall(vim.keymap.set, 'n', '<leader>mr', ':MojoRun<CR>', {
-                buffer = args.buf,
-                desc = 'Run Mojo file',
-            })
-            pcall(vim.keymap.set, 'n', '<leader>md', ':MojoDebug<CR>', {
-                buffer = args.buf,
-                desc = 'Debug Mojo file',
-            })
-        end,
-    })
+  vim.api.nvim_create_autocmd('FileType', {
+    pattern = 'mojo',
+    callback = function(args)
+      local bufnr = args.buf
+      if vim.bo[bufnr].filetype ~= 'mojo' then
+        return
+      end
+      vim.bo[bufnr].tabstop = 4
+      vim.bo[bufnr].shiftwidth = 4
+      vim.bo[bufnr].expandtab = true
+      vim.bo[bufnr].commentstring = '# %s'
+      vim.opt_local.formatoptions:append('jcroql')
+      vim.keymap.set('n', '<leader>mr', ':MojoRun<CR>', {
+        buffer = bufnr,
+        desc = 'Mojo: Run',
+      })
+      vim.keymap.set('n', '<leader>md', function()
+        require('dap').continue()
+      end, {
+        buffer = bufnr,
+        desc = 'Mojo: Debug',
+      })
+    end,
+  })
 end
 
-local ok_dap, dap = pcall(require, 'dap')
-if ok_dap and dap then
-    dap.adapters.mojo_lldb = {
-        type = 'executable',
-        command = vim.fn.expand('mojo-lldb-dap'),
-        name = 'mojo-lldb',
-    }
-    dap.configurations.mojo = {
-        {
-            name = 'Debug Mojo file',
-            type = 'mojo_lldb',
-            request = 'launch',
-            program = function()
-                return vim.api.nvim_buf_get_name(0)
-            end,
-            cwd = vim.fn.getcwd(),
-            stopOnEntry = false,
-        },
-    }
-end
 return M

@@ -2,8 +2,6 @@
 -- Qompass AI Diver PHP Lang Config
 -- Copyright (C) 2025 Qompass AI, All rights reserved
 -- -----------------------------------------
----@meta
----@module 'config.lang.php'
 local M = {}
 vim.api.nvim_create_user_command('PhpStan', function()
     if vim.fn.executable('phpstan') == 1 then
@@ -179,7 +177,10 @@ vim.api.nvim_create_user_command('PhpRangeAction', function()
     vim.lsp.buf.code_action({
         context = {
             diagnostics = diagnostics,
-            only = { 'quickfix', 'refactor.extract' },
+            only = {
+                'quickfix',
+                'refactor.extract',
+            },
         },
         range = {
             start = { start_pos[1], start_pos[2] },

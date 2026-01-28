@@ -2,8 +2,6 @@
 -- Qompass AI Diver Core WhichKey Config
 -- Copyright (C) 2025 Qompass AI, All rights reserved
 ------------------------------------------------------
----@meta
----@module 'config.core.whichkey'
 local WK = {}
 WK.opts = {
     debug = false,

@@ -3,7 +3,7 @@
 -- Copyright (C) 2025 Qompass AI, All rights reserved
 -- ----------------------------------------
 ---@type HlOpts
-vim.cmd('colorscheme vague')
+--vim.cmd('colorscheme vague')
 vim.schedule(function()
     vim.api.nvim_set_hl(0, 'Comment', {
         fg = '#7f9bb3',
@@ -196,6 +196,16 @@ vim.schedule(function()
         fg = '#f7768e',
         bold = true,
         underline = true,
+    })
+    vim.api.nvim_set_hl(0, 'LspSemantic_parameter', {
+        fg = '#89b4fa',
+        italic = true,
+    })
+    vim.api.nvim_set_hl(0, 'LspSemantic_property', {
+        fg = '#fab387',
+    })
+    vim.api.nvim_set_hl(0, 'LspSemantic_variable_mutable', {
+        fg = '#f38ba8',
     })
     vim.api.nvim_set_hl(0, '@lsp.type.function.lua', {
         fg = '#9ece6a',

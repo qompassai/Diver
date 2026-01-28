@@ -2,11 +2,7 @@
 -- Qompass AI Diver Go Lang Config
 -- Copyright (C) 2025 Qompass AI, All rights reserved
 -- --------------------------------------------------
----@meta
----@module 'config.lang.go'
-
 local M = {}
-
 local function run_cached_gvm(cmd)
     local handle = io.popen('bash -c \'source ~/.gvm/scripts/gvm && ' .. cmd .. '\'')
     if not handle then

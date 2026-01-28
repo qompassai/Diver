@@ -1,0 +1,30 @@
+-- cmp.lua
+-- Qompass AI - [ ]
+-- Copyright (C) 2026 Qompass AI, All rights reserved
+-- ----------------------------------------
+---@meta
+---@class blink.cmp.Context
+---@field bufnr                               integer
+---@field cursor { line: integer, col: integer }
+---@class blink.cmp.CompletionItem
+---@field kind integer|nil
+---@field kind_name string|nil
+---@field kind_icon string|nil
+---@class blink.cmp.SourceProviderConfig
+---@field name string
+---@field module string
+---@field transform_items                     fun(ctx: blink.cmp.Context, items: blink.cmp.CompletionItem[]): blink.cmp.CompletionItem[]|nil
+---@field kind                                string|nil
+---@class blink.cmp.SourcesConfig
+---@field default                             string[]|nil
+---@field compat                              string[]|nil
+---@field providers                           table<string, blink.cmp.SourceProviderConfig>|nil
+---@class blink.cmp.SnippetsConfig
+---@field preset                              string|nil
+---@field expand                              fun(opts: any): any
+---@class blink.cmp.KeymapConfig
+---@field preset                              string|nil
+---@class blink.cmp.Config
+---@field snippets                             blink.cmp.SnippetsConfig|nil
+---@field sources                              blink.cmp.SourcesConfig|nil
+---@field keymap                               blink.cmp.KeymapConfig|nil

@@ -2,7 +2,6 @@
 -- Qompass AI Diver Plugins Init
 -- Copyright (C) 2025 Qompass AI, All rights reserved
 ------------------------------------------------------
----@meta
 vim.opt.packpath = vim.opt.runtimepath:get() ---@type string[]
 vim.api.nvim_create_user_command('PackUpdate', function()
     vim.api.nvim_echo({

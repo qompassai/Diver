@@ -3,42 +3,8 @@
 -- Copyright (C) 2025 Qompass AI, All rights reserved
 ------------------------------------------------------
 ---@source https://github.com/tree-sitter/tree-sitter/wiki/List-of-parsers
----@module 'config.core.tree'
 local M = {}
----@param bufnr integer|nil
----@param lang  string|nil
----@return string|nil error_message
----@return vim.treesitter.LanguageTree|nil parser
-local function safe_get_parser(bufnr, lang)
-    local ok, parser_or_err, err = pcall(vim.treesitter.get_parser, bufnr, lang, {
-        error = false,
-    })
-    if not ok or not parser_or_err then
-        local msg = err
-        if msg == nil and type(parser_or_err) == 'string' then
-            msg = parser_or_err
-        end
-        return msg, nil
-    end
-    return nil, parser_or_err
-end
-M.safe_get_parser = safe_get_parser
-vim.api.nvim_create_autocmd('FileType', {
-    pattern = {
-        '*',
-    },
-    callback = function(args)
-        local err, parser = safe_get_parser(args.buf, nil)
-        if err ~= nil then
-            vim.notify('treesitter parser error: ' .. err, vim.log.levels.WARN)
-            return
-        end
-        if parser ~= nil then
-            vim.treesitter.start(args.buf)
-            vim.bo[args.buf].syntax = 'ON'
-        end
-    end,
-})
+
 function M.treesitter(opts)
     require('nvim-treesitter.install').prefer_git = true
     require('nvim-treesitter.configs').setup(opts)

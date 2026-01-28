@@ -29,12 +29,12 @@
 ---@field maxNumberOfProblems?                                                       integer
 ---@field name?                                                                      string
 ---@field offsetEncoding?                                                            string[]
----@field on_attach?                                                                  fun(client: vim.lsp.Client, bufnr: integer)
----@field onOpenAndSave?                                                              boolean
----@field simplifyCode?                                                               boolean
----@field single_file_support?                                                        boolean
----@field spaceRedirects?                                                             boolean
----@field textDocument?                                                               lsp.TextDocumentIdentifier
+---@field on_attach?                                                                 fun(client: vim.lsp.Client, bufnr: integer)
+---@field onOpenAndSave?                                                             boolean
+---@field simplifyCode?                                                              boolean
+---@field single_file_support?                                                       boolean
+---@field spaceRedirects?                                                            boolean
+---@field textDocument?                                                              lsp.TextDocumentIdentifier
 ---@class vim.lsp.Config.CodeLensModule
 ---@field clear?                                                                      fun(client_id?: integer, bufnr?: integer)
 ---@field display?                                                                    fun(lenses?: lsp.CodeLens[], bufnr: integer, client_id: integer)
@@ -80,12 +80,12 @@
 ---@field organizeImportsTypeOrder?                                                   'last'|'inline'|'first'
 ---@field quotePreference?                                                            'auto'|'double'|'single'
 ---@class vim.lsp.Config.init_options.tsserver
----@field fallbackPath?                                                                string|nil
----@field logDirectory?                                                                string|nil
+---@field fallbackPath?                                                               string|nil
+---@field logDirectory?                                                               string|nil
 ---@field logVerbosity?                                                               'off'|'normal'|'requestTime'|'terse'|'verbose'
----@field path?                                                                       string|nil
----@field trace?                                                                      'messages'|'off'|'verbose'
----@field useSyntaxServer?                                                            'auto'|'never'
+---@field path?                                                                        string|nil
+---@field trace?                                                                       'messages'|'off'|'verbose'
+---@field useSyntaxServer?                                                             'auto'|'never'
 ---@class vim.lsp.Config.Settings
 ---@field ansible.ansible.path?                                                       string
 ---@field ansible.ansible.reuseTerminal?                                              boolean
@@ -116,6 +116,7 @@
 ---@field haskell.checkParents?                                                       'NeverCheck'|'CheckOnSave'|'AlwaysCheck'
 ---@field haskell.checkProject?                                                       boolean
 ---@field haskell.formattingProvider?                                                 'floskell'|'fourmolu'|'ormolu'|'stylish-haskell'
+---@field globalOn?                                                                   boolean
 ---@field haskell.plugin?                                                             table
 ---@field haskell.plugin.class?                                                       table
 ---@field haskell.plugin.class.globalOn?                                              boolean
@@ -124,7 +125,8 @@
 ---@field haskell.plugin.eval.config.diff?                                            boolean
 ---@field haskell.plugin.eval.config.exception?                                       boolean
 ---@field haskell.plugin.eval.globalOn?                                               boolean
-----@field haskell.plugin["ghcide-code-actions-bindings"]?                             table
+----@field haskell.plugin["ghcide-code-actions-bindings"]?                            table
+---@field ["ghcide-code-actions-bindings"]?                                           table
 ----@field haskell.plugin["ghcide-code-actions-bindings"].globalOn?                   boolean
 ----@field haskell.plugin["ghcide-code-actions-fill-holes"]?                          table
 ----@field haskell.plugin["ghcide-code-actions-fill-holes"].globalOn?                 boolean
@@ -415,11 +417,11 @@
 ---@class RaRunnableArgs
 ---@field cargoArgs?                                                                   string[]
 ---@field cwd?                                                                         string
----@field executableArgs?                                                             string[]
+---@field executableArgs?                                                              string[]
 ---@class RaRunnable
 ---@field kind?                                                                       string
----@field label?                                                                       string
----@field args?                                                                        RaRunnableArgs\
+---@field label?                                                                      string
+---@field args?                                                                       RaRunnableArgs\
 ---@alias BasedPyright.TypeCheckingMode
 ---| 'all'
 ---| 'basic'

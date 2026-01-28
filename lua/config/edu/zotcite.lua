@@ -2,8 +2,6 @@
 -- Qompass AI Diver Zotcite Plugin Spec
 -- Copyright (C) 2025 Qompass AI, All rights reserved
 ------------------------------------------------------
----@meta
----@module 'plugins.edu.zotcite'
 local M = {}
 local sep = package.config:sub(1, 1)
 local function join(...)

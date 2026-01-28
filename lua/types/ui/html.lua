@@ -3,7 +3,6 @@
 -- Copyright (C) 2025 Qompass AI, All rights reserved
 ------------------------------------------------------
 ---@meta
----@module 'types.ui.html'
 ---@class HtmlPreviewConfig
 ---@field allowed_file_types?                    string[]
 ---@field auto_start?                            boolean

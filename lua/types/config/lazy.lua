@@ -3,25 +3,42 @@
 -- Copyright (C) 2025 Qompass AI, All rights reserved
 ------------------------------------------------------
 ---@meta
-
----@class LazyPluginSpec
----@field [1]                                   string?
----@field name                                  string?
----@field dir                                   string?
----@field url                                   string?
----@field dev                                   boolean?
----@field lazy                                  boolean?
----@field enabled                               boolean? | fun():boolean
----@field                                       cond boolean? | fun():boolean
----@field dependencies string[] | LazyPluginSpec[]
----@field init fun(LazyPlugin)?
----@field opts table? | fun(LazyPlugin):table?
----@field config fun(LazyPlugin, opts:table)? | boolean
----@field main string?
----@field build string? | fun(LazyPlugin)
----@field branch string?
----@field event string? | string[]
----@field cmd string? | string[]
----@field ft string? | string[]
----@field keys string? | string[]
----@field priority number?
+---@class             LazyPluginSpec
+---@field [1]                                       string?
+---@field name                                      string?
+---@field dir                                       string?
+---@field url                                       string?
+---@field dev                                       boolean?
+---@field lazy                                      boolean?
+---@field enabled                                   boolean? | fun():boolean
+---@field cond                                      boolean? | fun():boolean
+---@field dependencies                              string[] | LazyPluginSpec[]
+---@field init                                      fun(LazyPlugin)?
+---@field opts                                      table? | fun(LazyPlugin):table?
+---@field config                                    fun(LazyPlugin, opts:table)? | boolean
+---@field main                                      string?
+---@field build                                     string? | fun(LazyPlugin)
+---@field branch                                    string?
+---@field event                                     string? | string[]
+---@field cmd                                       string? | string[]
+---@field ft                                        string? | string[]
+---@field keys                                      string? | string[]
+---@field priority                                  number?
+---@class                 LazyVimCmp
+---@field expand                                    fun(opts: any): any
+---@field map                                       fun(mappings: string[]): any
+---@class                 LazyVimConfigIconsKinds
+---@field                                           [string] string
+---@class                 LazyVimConfigIcons
+---@field kinds                                     LazyVimConfigIconsKinds
+---@class                 LazyVimConfig
+---@field icons                                     LazyVimConfigIcons
+---@class                 LazyVimGlobal
+---@field cmp                                       LazyVimCmp
+---@field config                                    LazyVimConfig
+---@class                 LazyVimDocs
+---@field blink_main                                boolean?
+---@type                  LazyVimDocs
+lazyvim_docs = lazyvim_docs
+---@type LazyVimGlobal
+LazyVim = LazyVim

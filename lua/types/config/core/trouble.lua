@@ -3,12 +3,11 @@
 -- Copyright (C) 2026 Qompass AI, All rights reserved
 -- ----------------------------------------
 ---@meta
----@module 'config.core.trouble'
 ---@class TroubleOptions
----@field position? "top" | "bottom" | "left" | "right"
----@field height? integer
----@field use_diagnostic_signs? boolean
----@field auto_open? boolean
----@field auto_close? boolean
----@field auto_preview? boolean
----@field mode? "workspace_diagnostics" | "document_diagnostics"
+---@field position?                           'top' | 'bottom' | 'left' | 'right'
+---@field height?                             integer
+---@field use_diagnostic_signs?               boolean
+---@field auto_open?                          boolean
+---@field auto_close?                         boolean
+---@field auto_preview?                       boolean
+---@field mode?                               "workspace_diagnostics" | "document_diagnostics"

@@ -64,7 +64,7 @@ function M.setup_ddxmap()
             }
             map(
                 'n',
-                '<leader>dl', --- In normal mode, press 'Space' + 'd' + 'l' to toggle virtual lines
+                '<leader>dl',
                 function()
                     local cfg = vim.diagnostic.config() or {}
                     local lines = cfg.virtual_lines
@@ -86,7 +86,7 @@ function M.setup_ddxmap()
                 end,
                 vim.tbl_extend('force', opts, {
                     desc = 'Toggle diagnostic virtual_lines',
-                })
+                }) --- In normal mode, press 'Space' + 'd' + 'l' to toggle virtual lines
             )
             map('n', '<leader>dq', vim.diagnostic.setqflist, {
                 desc = 'Show project diagnostics',

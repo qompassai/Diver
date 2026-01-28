@@ -3,38 +3,36 @@
 -- Copyright (C) 2025 Qompass AI, All rights reserved
 -- ----------------------------------------
 ---@meta
----@module 'types.core.quickfix'
 ---@class vim.qf.Config
----@field borders?                           vim.qf.Borders
----@field constrain_cursor                  boolean
----@field edit                              vim.qf.EditConfig
----@field follow                            vim.qf.FollowConfig
----@field header_length                     fun(type: 'hard'|'soft', start_col: integer): integer
----@field highlight                         vim.qf.HighlightConfig
----@field keys                              vim.qf.Keymap[]
----@field max_filename_width                fun(): integer
----@field on_qf                             fun(bufnr: number)
----@field opts                              table<string, any>
----@field type_icons                        table<string, string>
----@field trim_leading_whitespace           vim.qf.TrimEnum
----@field use_default_opts                  boolean
+---@field borders?                                    vim.qf.Borders
+---@field constrain_cursor                            boolean
+---@field edit                                        vim.qf.EditConfig
+---@field follow                                      vim.qf.FollowConfig
+---@field header_length                               fun(type: 'hard'|'soft', start_col: integer): integer
+---@field highlight                                   vim.qf.HighlightConfig
+---@field keys                                        vim.qf.Keymap[]
+---@field max_filename_width                          fun(): integer
+---@field on_qf                                       fun(bufnr: number)
+---@field opts                                        table<string, any>
+---@field type_icons                                  table<string, string>
+---@field trim_leading_whitespace                     vim.qf.TrimEnum
+---@field use_default_opts                            boolean
 ---@class (exact) vim.qf.ExpandOpts
----@field add_to_existing?                  boolean
----@field after?                            integer
----@field before?                           integer
----@field loclist_win?                      integer
----@alias vim.qf.TrimEnum                   'all'|'common'|'false'
+---@field add_to_existing?                            boolean
+---@field after?                                      integer
+---@field before?                                     integer
+---@field loclist_win?                                integer
+---@alias vim.qf.TrimEnum                             'all'|'common'|'false'
 ---@class vim.qf.FileCache
----@field private count_per_buf             table<number, number>
----@field private max_line_per_buf          table<number, number>
----@field private cache                     table<number, string[]>
+---@field private count_per_buf                       table<number, number>
+---@field private max_line_per_buf                    table<number, number>
+---@field private cache                               table<number, string[]>
 ---@class (exact) vim.qf.FollowConfig
 ---@field enabled                           boolean
 ---@class (exact) vim.qf.ParsedLine
 ---@field filename?                         string
 ---@field lnum?                             integer
 ---@field text?                             string
-
 ---@class (exact) vim.qf.QFContext
 ---@field num_after                         integer
 ---@field num_before                        integer
@@ -98,7 +96,6 @@
 ---@field treesitter?                       boolean
 ---@field lsp?                              boolean
 ---@field load_buffers?                     boolean
-
 ---@class (exact) vim.qf.QuickFixItem
 ---@field bufname?                          string
 ---@field bufnr                             integer
@@ -126,8 +123,8 @@
 ---@class (exact) vim.qf.SetupFollowConfig
 ---@field enabled?                          boolean
 ---@class (exact) vim.qf.TextFuncInfo
----@field quickfix                          0|1
 ---@field id                                integer
+---@field quickfix                          0|1
 ---@field start_idx                         integer
 ---@field end_idx                           integer
 ---@field winid                             integer

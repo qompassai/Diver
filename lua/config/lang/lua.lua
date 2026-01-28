@@ -2,8 +2,6 @@
 -- Qompass AI Diver Lua Lang Config
 -- Copyright (C) 2025 Qompass AI, All rights reserved
 -- --------------------------------------------------
----@meta
----@module 'config.lang.lua'
 local M = {}
 local function lua_home()
     return vim.fn.stdpath('config') .. '/lua'

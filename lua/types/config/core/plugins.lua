@@ -2,8 +2,9 @@
 -- Qompass AI Diver Core Plugin Types
 -- Copyright (C) 2025 Qompass AI, All rights reserved
 -- ----------------------------------------
+---@meta
 ---@alias vim.pack.SpecList vim.pack.Spec[]
----@class vim.pack.Spec
+---@class             vim.pack.Spec
 ---@field branch?                         string
 ---@field build?                          string|fun()
 ---@field cmd?                            string[]

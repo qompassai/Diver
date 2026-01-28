@@ -4,17 +4,16 @@
 -----------------------------------------------------
 return {
     'folke/noice.nvim',
-    --event = 'VeryLazy',
     lazy = false,
+    priority = 1000,
     opts = {
         lsp = {
             override = {
                 ['vim.lsp.util.convert_input_to_markdown_lines'] = true,
+                ['vim.lsp.util.stylize_markdown'] = true,
                 ['cmp.entry.get_documentation'] = true,
             },
-            hover = {
-                enabled = true,
-            },
+            hover = { enabled = true },
             signature = {
                 enabled = true,
                 auto_open = {
@@ -23,18 +22,8 @@ return {
                     luasnip = true,
                     throttle = 50,
                 },
-                view = nil,
                 routes = {
-                    {
-                        filter = {
-                            event = 'msg_show',
-                            kind = '',
-                            find = 'which%-key',
-                        },
-                        opts = {
-                            skip = false,
-                        },
-                    },
+                    { filter = { event = 'msg_show', find = 'which%-key' }, opts = { skip = true } },
                 },
             },
         },
@@ -48,78 +37,39 @@ return {
         views = {
             cmdline_popup = {
                 relative = 'editor',
-                position = { row = '50%', col = '50%' },
+                position = { row = 50, col = 50 },
                 size = { width = 60, height = 'auto' },
                 border = { style = 'rounded', padding = { 0, 1 } },
                 win_options = {
-                    winhighlight = {
-                        Normal = 'Normal',
-                        FloatBorder = 'DiagnosticInfo',
-                    },
+                    winhighlight = 'Normal:Normal,FloatBorder:DiagnosticInfo',
                 },
             },
         },
         routes = {
-            {
-                filter = {
-                    event = 'BufWinEnter',
-                },
-                opts = { skip = false },
-            },
-            { filter = { event = 'BufEnter' }, opts = { skip = false } },
+            { filter = { event = 'msg_show', find = 'written' }, opts = { skip = true, replace = true } },
+            { filter = { event = 'msg_show', kind = 'search_count' }, opts = { skip = true } },
         },
     },
     dependencies = {
         'MunifTanjim/nui.nvim',
-        'rcarriga/nvim-notify',
-    },
-    config = function(_, opts)
-        require('noice').setup(opts)
-        require('notify').setup({
-            background_colour = '#000000',
-            merge_duplicates = true,
-            highlights = {
-                NotifyERRORBorder = {
-                    guifg = '#8A1F1F',
+        {
+            'rcarriga/nvim-notify',
+            opts = {
+                background_colour = '#000000',
+                fps = 30,
+                stages = 'fade_in_slide_out',
+                merge_duplicates = true,
+                timeout = 3000,
+                top_down = false,
+                render = 'compact',
+                icons = {
+                    ERROR = '',
+                    WARN = '',
+                    INFO = '',
+                    DEBUG = '',
+                    TRACE = '✎',
                 },
-                NotifyWARNBorder = {
-                    guifg = '#79491D',
-                },
-                NotifyINFOBorder = {
-                    guifg = '#4F6752',
-                },
-                NotifyDEBUGBorder = { guifg = '#8B8B8B' },
-                NotifyTRACEBorder = { guifg = '#4F3552' },
-                NotifyERRORIcon = { guifg = '#F70067' },
-                NotifyWARNIcon = { guifg = '#F79000' },
-                NotifyINFOIcon = { guifg = '#A9FF68' },
-                NotifyDEBUGIcon = { guifg = '#8B8B8B' },
-                NotifyTRACEIcon = { guifg = '#D484FF' },
-                NotifyERRORTitle = { guifg = '#F70067' },
-                NotifyWARNTitle = { guifg = '#F79000' },
-                NotifyINFOTitle = { guifg = '#A9FF68' },
-                NotifyDEBUGTitle = { guifg = '#8B8B8B' },
-                NotifyTRACETitle = { guifg = '#D484FF' },
             },
-        })
-        vim.api.nvim_create_user_command('Shellharden', function(args)
-            local filename = args.args
-            if filename == '' then
-                filename = vim.fn.expand('%')
-            end
-            vim.fn.system('shellharden --transform ' .. filename)
-            vim.cmd('edit!')
-        end, { nargs = '?' })
-        vim.api.nvim_create_user_command('Z', function(args)
-            local query = args.args
-            local output = vim.fn.system('zoxide query ' .. query)
-            output = vim.fn.trim(output)
-            if vim.fn.isdirectory(output) == 1 then
-                vim.cmd('cd ' .. output)
-                print('Changed directory to: ' .. output)
-            else
-                print('Directory not found: ' .. query)
-            end
-        end, { nargs = '?' })
-    end,
+        },
+    },
 }

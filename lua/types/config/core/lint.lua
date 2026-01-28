@@ -3,7 +3,6 @@
 -- Copyright (C) 2025 Qompass AI, All rights reserved
 -- ----------------------------------------
 ---@meta
----@module 'types.type.lint'
 ---@alias vim.lint.Config.Report vim.lint.Config.ReportItem[]
 ---@class vim.lint.Config
 ---@field append_fname?                               boolean

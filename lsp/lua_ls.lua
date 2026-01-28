@@ -90,6 +90,7 @@ return ---@type vim.lsp.Config
                     'Json', ---wp
                     'JsonUtils', ---wp
                     'LocalModule', ---wp
+                    'LazyVim', ---lazyvim
                     'Log', ---wp
                     'lutils', ---wp
                     'node_directions',

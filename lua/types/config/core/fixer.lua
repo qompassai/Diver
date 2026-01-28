@@ -3,9 +3,8 @@
 -- Copyright (C) 2025 Qompass AI, All rights reserved
 -- ----------------------------------------
 ---@meta
----@module 'types.core.fixer'
 ---@class vim.fixer.Config
----@field cmd? string
----@field args? string[]
----@field stdin? boolean
----@field allow_non_zero? boolean
+---@field allow_non_zero?                             boolean
+---@field args?                                       string[]
+---@field cmd?                                        string
+---@field stdin?                                      boolean

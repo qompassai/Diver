@@ -21,7 +21,7 @@ return ---@type vim.lsp.Config
         'package.yaml',
     },
     settings = {
-        haskell = { ---@type vim.lsp.Config.Settings
+        haskell = {
             cabalFormattingProvider = 'cabal-fmt',
             checkParents = 'CheckOnSave',
             checkProject = true,

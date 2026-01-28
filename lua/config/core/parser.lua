@@ -2,8 +2,6 @@
 -- Qompass AI Diver Core Parser Config
 -- Copyright (C) 2025 Qompass AI, All rights reserved
 -- ----------------------------------------
----@meta
----@module 'config.core.parser'
 local M = {}
 function M.simple_colon_parser(output, bufnr, opts)
     opts = opts or {}
@@ -14,7 +12,12 @@ function M.simple_colon_parser(output, bufnr, opts)
     end
     local bufname = vim.api.nvim_buf_get_name(bufnr)
     local filename = vim.fs.basename(bufname)
-    for line in vim.gsplit(output, '\n', { plain = true, trimempty = true }) do
+    for line in
+        vim.gsplit(output, '\n', {
+            plain = true,
+            trimempty = true,
+        })
+    do
         local path, lnum, col, msg = line:match(pattern)
         if not path then
             path, lnum, msg = line:match('^(.-):(%d+):%s*(.+)$')

@@ -2,8 +2,6 @@
 -- Qompass AI Diver Core Flash Config
 -- Copyright (C) 2025 Qompass AI, All rights reserved
 -- ----------------------------------------
----@meta
----@module 'config.core.flash'
 local M = {}
 
 ---@param extra table|nil
