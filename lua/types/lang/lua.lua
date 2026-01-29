@@ -3,15 +3,76 @@
 -- Copyright (C) 2025 Qompass AI, All rights reserved
 ------------------------------------------------------
 ---@meta
----@class LuaLangModule
----@field lua_cmp                             fun(): table
----@field lua_lazydev                         fun(opts?: table): table
----@field lua_luarocks                        fun(opts?: table): table
----@field lua_snap                            fun(opts?: table): table
----@field lua_test                            fun(opts?: table): table
----@field lua_version                         fun(): string, string
----@field lua_setup                           fun(opts?: table): table
----@class LuaLangGlobals
----@field use_blink_cmp                       boolean
----@field lazydev_enabled boolean
----@type LuaLangModule
+---@class                     Lua.Module
+---@field lua_cmp                                          fun(): table
+---@field lua_lazydev                                      fun(opts?: table): table
+---@field lua_luarocks                                     fun(opts?: table): table
+---@field lua_snap                                         fun(opts?: table): table
+---@field lua_test                                         fun(opts?: table): table
+---@field lua_version?                                     fun(): string, string
+---@field lua_setup                                        fun(opts?: table): table
+---@class                     Lua.Globals
+---@field use_blink_cmp?                                   boolean
+---@field lazydev_enabled?                                 boolean
+---@type                      Lua.Module
+---@class                     lua.Luarocks.Config
+---@field cache_dir?                                       string
+---@field check_certificate?                               boolean
+---@field config_dir?                                      string
+---@field connection_timeout?                              number
+---@field deploy_bin_dir?                                  string
+---@field deploy_lib_dir?                                  string
+---@field download_method?                                 'curl'|'wget'|'luasocket'
+---@field encrypted_peer?                                  boolean
+---@field external_deps_subdirs?                           lua.Luarocks.ExternalDepsSubdirs
+---@field home?                                            string
+---@field lib_modules_dir?                                 string
+---@field local_by_default?                                boolean
+---@field lock_manifests?                                  boolean
+---@field lua_interpreter?                                 'lua'|'lua5.1'|'lua5.2'|'lua5.3'|'lua5.4'|'luajit'|string|nil
+---@field lua_modules_dir?                                 string
+---@field lua_version?                                     '5.1'|'5.2'|'5.3'|'5.4'|'jit'
+---@field nodeps?                                           boolean
+---@field platform?                                        'bsd'|'linux'|'macosx'|'unix'|'windows'
+---@field platforms?                                       lua.Luarocks.Platforms
+---@field prefer_binary?                                   boolean
+---@field program_version?                                 string
+---@field rocks_provided?                                  { [string]: string }
+---@field rocks_servers?                                   string[]
+---@field rocks_subdir?                                    string
+---@field rocks_trees?                                     lua.LuarocksRockTree[]
+---@field ssldefault?                                      'http'|'https'
+---@field sysconfig_dir?                                   string
+---@field upload?                                          { server: string, api_key?: string }
+---@field variables?                                       lua.Luarocks.Variables
+---@field verbose?                                         boolean
+---@class                 lua.LuarocksRockTree
+---@field name                                             string "user|system|3rdparty (display)"
+---@field root                                             string
+---@class                 lua.Luarocks.Platforms
+---@field bsd?                                             boolean
+---@field linux?                                           boolean
+---@field macosx?                                          boolean
+---@field unix                                             boolean
+---@field windows?                                         boolean
+---@class               lua.Luarocks.ExternalDepsSubdirs
+---@field bin?                                             string
+---@field include?                                         string
+---@field lib?                                             string
+---@field server?                                          string
+---@field api_key?                                         string
+---@class               lua.Luarocks.Variables:            {[string]: string}
+---@field AR?                                              string
+---@field CC?                                              string
+---@field CFLAGS?                                          string
+---@field CXX?                                             string
+---@field CXXFLAGS?                                        string
+---@field LD?                                              string
+---@field LDFLAGS?                                         string
+---@field LUA?                                             string
+---@field LUA_DIR?                                         string
+---@field LUA_BINDIR?                                      string
+---@field LUA_INCDIR?                                      string
+---@field LUA_LIBDIR?                                      string
+---@field RANLIB?                                          string
+---@type                lua.Luarocks.Config

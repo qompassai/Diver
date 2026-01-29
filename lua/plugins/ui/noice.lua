@@ -9,11 +9,13 @@ return {
     opts = {
         lsp = {
             override = {
+                ['cmp.entry.get_documentation'] = true,
                 ['vim.lsp.util.convert_input_to_markdown_lines'] = true,
                 ['vim.lsp.util.stylize_markdown'] = true,
-                ['cmp.entry.get_documentation'] = true,
             },
-            hover = { enabled = true },
+            hover = {
+                enabled = true,
+            },
             signature = {
                 enabled = true,
                 auto_open = {
@@ -23,7 +25,15 @@ return {
                     throttle = 50,
                 },
                 routes = {
-                    { filter = { event = 'msg_show', find = 'which%-key' }, opts = { skip = true } },
+                    {
+                        filter = {
+                            event = 'msg_show',
+                            find = 'which%-key',
+                        },
+                        opts = {
+                            skip = true,
+                        },
+                    },
                 },
             },
         },
@@ -36,18 +46,47 @@ return {
         },
         views = {
             cmdline_popup = {
+                border = {
+                    style = 'rounded',
+                    padding = {
+                        0,
+                        1,
+                    },
+                },
                 relative = 'editor',
-                position = { row = 50, col = 50 },
-                size = { width = 60, height = 'auto' },
-                border = { style = 'rounded', padding = { 0, 1 } },
+                position = {
+                    row = '50%',
+                    col = '50%',
+                },
+                size = {
+                    width = 60,
+                    height = 'auto',
+                },
                 win_options = {
                     winhighlight = 'Normal:Normal,FloatBorder:DiagnosticInfo',
                 },
             },
         },
         routes = {
-            { filter = { event = 'msg_show', find = 'written' }, opts = { skip = true, replace = true } },
-            { filter = { event = 'msg_show', kind = 'search_count' }, opts = { skip = true } },
+            {
+                filter = {
+                    event = 'msg_show',
+                    find = 'written',
+                },
+                opts = {
+                    skip = true,
+                    replace = true,
+                },
+            },
+            {
+                filter = {
+                    event = 'msg_show',
+                    kind = 'search_count',
+                },
+                opts = {
+                    skip = true,
+                },
+            },
         },
     },
     dependencies = {

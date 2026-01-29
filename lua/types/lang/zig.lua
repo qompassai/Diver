@@ -3,21 +3,20 @@
 -- Copyright (C) 2025 Qompass AI, All rights reserved
 ------------------------------------------------------
 ---@meta
----@class ZigCmpSource
----@field name string
----@class ZigCmpConfig
----@field sources ZigCmpSource[]
----@field mapping table
----@field snippet table
----@field experimental table
----@class ZigConfig
----@field diagnostics fun(): nil
----@class ZigConfigModule
----@field autocmds nil
----@field zig_tools fun(): table
----@field zig_diagnostics fun(): function
----@field zig_conform fun(opts?: table): table
----@field zig_cmp fun(): table
----@field zig_lamp fun(): table
----@field zig_cfg fun(opts?: table): ZigConfig
----@field zig_vim fun(): nil
+---@class                       zig.Cmp.Source
+---@field name                                             string
+---@class                       zig.Cmp.Config
+---@field sources?                                         zig.Cmp.Source[]
+---@field mapping?                                         table
+---@field snippet?                                         table
+---@field experimental?                                    table
+---@class                       zig.Config
+---@field diagnostics?                                     fun(): nil
+---@class                       zig.Config.Module
+---@field autocmds?                                        nil
+---@field zig_tools?                                       fun(): table
+---@field zig_diagnostics?                                 fun(): function
+---@field zig_cmp                                          fun(): table
+---@field zig_lamp                                         fun(): table
+---@field zig_cfg                                          fun(opts?: table): zig.Config
+---@field zig_vim                                          fun(): nil

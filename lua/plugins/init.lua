@@ -47,6 +47,13 @@ vim.pack.add({
     },
     {
         branch = 'main',
+        event = {
+            'InsertEnter',
+        },
+        hook = function()
+            local cmp_cfg = require('config.lang.cmp').blink_cmp()
+            require('blink.cmp').setup(cmp_cfg)
+        end,
         src = 'https://github.com/Saghen/blink.cmp',
         update = true,
         version = vim.version.range('1.*'),
@@ -163,3 +170,32 @@ return {
         },
     },
 }
+--[[
+local specs = {}
+local function add(mod)
+    local ok, t = pcall(require, mod)
+    if not ok then
+        error(('require(%s) failed: %s'):format(mod, t))
+    end
+    if type(t) ~= 'table' then
+        error(('module %s must return a table of vim.pack specs, got %s'):format(mod, type(t)))
+    end
+    for _, s in ipairs(t) do
+        specs[#specs + 1] = s
+    end
+end
+
+add('plugins.core')
+add('plugins.data')
+add('plugins.edu')
+add('plugins.cloud')
+add('plugins.cicd')
+add('plugins.lang')
+add('plugins.nav')
+add('plugins.ui')
+vim.pack.add(specs, {
+    confirm = true,
+    load = true,
+})
+return specs
+--]]

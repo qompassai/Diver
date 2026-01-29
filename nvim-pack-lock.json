@@ -26,7 +26,8 @@
     },
     "bufferline.nvim": {
       "rev": "655133c3b4c3e5e05ec549b9f8cc2894ac6f51b3",
-      "src": "https://github.com/akinsho/bufferline.nvim"
+      "src": "https://github.com/akinsho/bufferline.nvim",
+      "version": "4.0.0 - 5.0.0"
     },
     "cheatsheet.nvim": {
       "rev": "9716f9aaa94dd1fd6ce59b5aae0e5f25e2a463ef",
@@ -94,6 +95,10 @@
       "rev": "42fc28ba918343ebfd5565147a42a26580579482",
       "src": "https://github.com/nvim-treesitter/nvim-treesitter",
       "version": "'master'"
+    },
+    "nvim-web-devicons": {
+      "rev": "803353450c374192393f5387b6a0176d0972b848",
+      "src": "https://github.com/nvim-tree/nvim-web-devicons"
     },
     "plenary.nvim": {
       "rev": "b9fd5226c2f76c951fc8ed5923d85e4de065e509",

@@ -3,8 +3,8 @@
 -- Copyright (C) 2026 Qompass AI, All rights reserved
 -- ----------------------------------------
 ---@meta
----@alias media.GetFgFn                       fun(fg: integer|nil): integer
----@alias media.GetBgFn                       fun(bg: integer|nil): integer
+---@alias media.GetFgFn                                    fun(fg: integer|nil): integer
+---@alias media.GetBgFn                                    fun(bg: integer|nil): integer
 ---@alias media.RgbFn                         fun(color: integer): integer, integer, integer
 ---@alias media.HlToRgbFn                     fun(hl: media.Highlight): integer, integer, integer
 ---@alias media.StartRecordingFn              fun(opts: media.Options|{}): string?
@@ -36,6 +36,12 @@
 ---@class media.FontModule
 ---@field render_char                         fun(char: string): media.Glyph|nil
 ---@type media.FontModule
+---@class media.FontState
+---@field lib                                 ffi.cdata*?
+---@field face                                ffi.cdata*? FreeType face handle
+---@field char__pixel_width                                integer
+---@field char_pixel_height                                integer
+---@type media.FontState
 ---@class media.Highlight
 ---@field foreground?                         integer
 ---@field background?                         integer
@@ -85,13 +91,13 @@
 ---  bg_g:                                    integer,
 ---  bg_b:                                    integer,
 ---  width:                                   integer,
----  height:                                  integer): nil
----@type                                      integer|nil
----@type                                      integer|nil
+---  height:                                               integer): nil
+---@type                                                   integer|nil
+---@type                                                   integer|nil
 ---Render frame with font rendering
----@return any                                buffer_ptr
----@class media.serializer
----@field encode                              fun(data: any): string
+---@return any                                             buffer_ptr
+---@class                 media.serializer
+---@field encode                                           fun(data: any): string
 ---@field decode                              fun(data: any): string
 ---@type media.serializer
 ---@class media.Thread :                      uv.luv_thread_t
@@ -103,9 +109,9 @@
 ---@class (exact) media.Options
 ---@field fps                                 integer
 ---@field output                              string
----@field char_width                          integer
----@field char_height                         integer
----@field use_font                            boolean
+---@field char_pixel_width                          integer
+---@field char_pixel_height                         integer
+---@field use_fontrender                            boolean
 ---@field font_path                           string
 ---@field address                             string
 ---@field encoderkind                         'ffmpeg'|'x264'|'raw'

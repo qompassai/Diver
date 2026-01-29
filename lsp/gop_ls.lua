@@ -14,6 +14,7 @@ return ---@type vim.lsp.Config
         'gotmpl',
         'gowork',
     },
+    on_attach = require('config.core.lsp').on_attach,
     root_markers = {
         'go.mod',
         'go.work',
@@ -95,6 +96,13 @@ return ---@type vim.lsp.Config
                 vendor = true,
             },
             completeUnimported = true,
+            directoryFilters = {
+                '-.git',
+                '-.vscode',
+                '-.idea',
+                '-.vscode-test',
+                '-node_modules',
+            },
             gofumpt = true,
             hints = {
                 assignVariableTypes = true,
@@ -105,16 +113,9 @@ return ---@type vim.lsp.Config
                 parameterNames = true,
                 rangeVariableTypes = true,
             },
-            usePlaceholders = true,
-            staticcheck = true,
-            directoryFilters = {
-                '-.git',
-                '-.vscode',
-                '-.idea',
-                '-.vscode-test',
-                '-node_modules',
-            },
             semanticTokens = true,
+            staticcheck = true,
+            usePlaceholders = true,
         },
     },
 }

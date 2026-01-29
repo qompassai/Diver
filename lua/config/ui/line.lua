@@ -2,7 +2,6 @@
 -- Qompass AI LuaLine Config
 -- Copyright (C) 2025 Qompass AI, All rights reserved
 -- ----------------------------------------
----@module 'config.ui.line'
 local M = {}
 local function encoding_with_bom()
     local enc = vim.bo.fenc ~= '' and vim.bo.fenc or vim.o.enc

@@ -3,43 +3,42 @@
 -- Copyright (C) 2025 Qompass AI, All rights reserved
 -------------------------------------------------------------------
 ---@meta
-
----@class cmp.mapping
----@field scroll_docs                             fun(delta: number)
----@field complete                                fun(delta: number)
----@field confirm                                 fun(opts: { behavior: any, select: boolean })
----@class cmp.config
----@field sources                                 fun(sources: any): any
----@class cmp.ConfirmBehavior
----@field Replace                                 string
----@field Insert                                  string
----@class cmp
----@field mapping                                 cmp.mapping
----@field config                                  cmp.config
----@field ConfirmBehavior cmp.ConfirmBehavior
----@field visible fun(): boolean
----@field select_next_item fun(delta: number)
----@field select_prev_item fun(delta:number)
----@alias vim.lsp.protocol.MarkupKind 'plaintext' | 'markdown'
----@class vim.lsp.protocol.CompletionItem
----@field label string
----@field kind? integer
----@field documentation? string | { kind: vim.lsp.protocol.MarkupKind, value: string }
----@class BlinkCmp
----@alias blink.cmp.CompletionDocumentationDrawOpts any
--- --- @alias blink.cmp.Mode 'cmdline' | 'cmdwin' | 'term' | 'default'
----@class blink.cmp.CompletionItem : vim.lsp.protocol.CompletionItem
---- @field score_offset? number
---- @field source_id string
---- @field source_name string
---- @field cursor_column number
---- @field client_id? number
---- @field client_name? string
---- @field kind_name? string
---- @field kind_icon? string
---- @field kind_hl? string
---- @field exact? boolean
---- @field score? number
+---@class                       cmp
+---@field mapping?                                         cmp.mapping
+---@field config?                                          cmp.config
+---@field ConfirmBehavior?                                 cmp.ConfirmBehavior
+---@field visible?                                         fun(): boolean
+---@field select_next_item?                                fun(delta: number)
+---@field select_prev_item?                                fun(delta:number)
+---@class                   cmp.mapping
+---@field scroll_docs                                      fun(delta: number)
+---@field complete                                         fun(delta: number)
+---@field confirm                                          fun(opts: { behavior: any, select: boolean })
+---@class                   cmp.config
+---@field sources?                                         fun(sources: any): any
+---@class                   cmp.ConfirmBehavior
+---@field Insert?                                          string
+---@field Replace?                                         string
+---@alias vim.lsp.protocol.MarkupKind                      'plaintext'|'markdown'
+---@class             vim.lsp.protocol.CompletionItem
+---@field label?                                           string
+---@field kind?                                            integer
+---@field documentation?                                   string | { kind: vim.lsp.protocol.MarkupKind, value: string }
+---@class                     BlinkCmp
+---@alias blink.cmp.CompletionDocumentationDrawOpts        any
+---@alias blink.cmp.Mode                                   'cmdline' | 'cmdwin' | 'term' | 'default'
+---@class               blink.cmp.CompletionItem :         vim.lsp.protocol.CompletionItem
+--- @field score_offset?                                   number
+--- @field source_id?                                      string
+--- @field source_name?                                    string
+--- @field cursor_column?                                  number
+--- @field client_id?                                      number
+--- @field client_name?                                    string
+--- @field kind_name?                                      string
+--- @field kind_icon?                                      string
+--- @field kind_hl?                                        string
+--- @field exact?                                          boolean
+--- @field score?                                          number
 
 return {
     CompletionItemKind = {
@@ -68,7 +67,6 @@ return {
         'Event',
         'Operator',
         'TypeParameter',
-
         Text = 1,
         Method = 2,
         Function = 3,

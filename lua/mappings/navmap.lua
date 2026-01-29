@@ -6,6 +6,16 @@
 local M = {}
 function M.setup_navmap()
     local map = vim.keymap.set
+    local fzf_maps = require('config.nav.fzf').keymaps
+    for _, m in ipairs(fzf_maps) do
+        local lhs, rhs = m[1], m[2]
+        local desc = m.desc
+        map('n', lhs, rhs, {
+            noremap = true,
+            silent = true,
+            desc = desc,
+        })
+    end
     vim.api.nvim_create_autocmd('LspAttach', {
         callback = function(ev)
             local bufnr = ev.buf
@@ -14,108 +24,6 @@ function M.setup_navmap()
                 silent = true,
                 buffer = bufnr,
             }
-            map(
-                'n',
-                '<leader>oof',
-                ':Oil<CR>',
-                vim.tbl_extend('force', opts, {
-                    desc = '[o]il [o]pen [f]ile explorer',
-                })
-            )
-            map(
-                'n',
-                '<leader>omu',
-                ':Oil -<CR>',
-                vim.tbl_extend('force', opts, {
-                    desc = 'Oil Move Up to Parent Directory',
-                }) --- In normal mode, press 'Space' + 'o' + 'f' to open the Oil file explorer
-            )
-
-            map(
-                'n',
-                '<leader>ooh',
-                ':Oil ~/ <CR>',
-                vim.tbl_extend('force', opts, {
-                    desc = '[o]il [o]pen in [h]ome Directory',
-                }) -- In normal mode, press 'Space' + 'o' + 'm' +'u' to move up a directory in Oil.
-            )
-            map(
-                'n',
-                '<leader>op',
-                ':Oil preview<CR>',
-                vim.tbl_extend('force', opts, { desc = 'Oil Preview File' }) --- In normal mode, press 'Space' + 'o' + 'h' to open Oil in the home directory.
-            )
-            -- In normal mode, press 'Space' + 'o' + 'p' to preview a file with Oil.
-            map(
-                'n',
-                '<leader>oc',
-                ':Oil close<CR>',
-                vim.tbl_extend('force', opts, {
-                    desc = 'Oil Close Buffer',
-                }) --- In normal mode, press 'Space' + 'o' + 'c' to close the Oil buffer.
-            )
-            map(
-                'n',
-                '<leader>lc',
-                function()
-                    require('ibl').refresh(0)
-                end,
-                vim.tbl_extend('force', opts, {
-                    desc = 'IB[l] Refresh Indent Context',
-                })
-            )
-            map(
-                'n',
-                '<leader>lg',
-                function()
-                    require('ibl').toggle()
-                end,
-                vim.tbl_extend('force', opts, {
-                    desc = 'IB[l] toggle indent [g]uides',
-                })
-            )
-            map(
-                'n',
-                '<leader>ls',
-                function()
-                    require('ibl').toggle_scope_highlighting()
-                end,
-                vim.tbl_extend('force', opts, {
-                    desc = 'IB[l] toggle [s]cope highlighting',
-                })
-            )
-            map(
-                'n',
-                '<leader>lr',
-                function()
-                    require('ibl').refresh(0)
-                end,
-                vim.tbl_extend('force', opts, {
-                    desc = 'IB[l] [r]efresh Indent Guides',
-                })
-            )
-            map(
-                'n',
-                '<leader>lt',
-                function()
-                    local current_value = vim.g.indent_blankline_enabled or false
-                    vim.g.indent_blankline_enabled = not current_value
-                    if vim.g.indent_blankline_enabled then
-                        require('ibl').setup()
-                        require('ibl').refresh(0)
-                    else
-                        require('ibl').setup({
-                            indent = {
-                                char = '',
-                            },
-                        })
-                        require('ibl').refresh(0)
-                    end
-                end,
-                vim.tbl_extend('force', opts, {
-                    desc = 'IB[l] Toggle Indent Blankline visibility',
-                })
-            )
             map(
                 'n',
                 '<leader>e',
@@ -130,38 +38,6 @@ function M.setup_navmap()
                 '<cmd>Neotree focus<cr>',
                 vim.tbl_extend('force', opts, {
                     desc = 'Focus Neo-tree',
-                })
-            )
-            map(
-                'n',
-                '<leader>qs',
-                function()
-                    require('persistence').load()
-                end,
-                vim.tbl_extend('force', opts, {
-                    desc = 'Restore Session',
-                })
-            )
-            map(
-                'n',
-                '<leader>ql',
-                function()
-                    require('persistence').load({
-                        last = true,
-                    })
-                end,
-                vim.tbl_extend('force', opts, {
-                    desc = 'Restore Last Session',
-                })
-            )
-            map(
-                'n',
-                '<leader>qd',
-                function()
-                    require('persistence').stop()
-                end,
-                vim.tbl_extend('force', opts, {
-                    desc = 'Don\'t Save Current Session',
                 })
             )
             map(
@@ -314,44 +190,40 @@ function M.setup_navmap()
                     desc = 'TS Toggle Syntax Highlighting',
                 }) -- In normal mode, press 'Space' + 't' + 'p' to go to the start of the previous function.
             )
-            -- In normal mode, press 'Space' + 't' + 's' to turn syntax highlighting on or off.
             map(
                 'n',
                 '<leader>Tp',
                 ':TSTogglePlayground<CR>',
                 vim.tbl_extend('force', opts, {
                     desc = 'TS Toggle Playground',
-                })
+                }) -- In normal mode, press 'Space' + 't' + 's' to turn syntax highlighting on or off.
             )
-            -- Show Syntax Info Under Cursor (Treesitter Captures)
             map(
                 'n',
                 '<leader>Tu',
                 ':TSShowCaptures<CR>',
                 vim.tbl_extend('force', opts, {
                     desc = 'TS Show Syntax Info Under Cursor',
-                })
+                }) -- In normal mode, press 'Space' + 'T' + 'u' to show syntax information under the cursor.
             )
-
             map(
                 'n',
                 '<leader>Tsn',
                 ':TSSwapNextParameter<CR>',
                 vim.tbl_extend('force', opts, {
-                    desc = 'TS Swap with Next Parameter', -- In normal mode, press 'Space' + 'T' + 'u' to show syntax information under the cursor.
+                    desc = 'TS Swap with Next Parameter',
                 })
             )
             -- In normal mode, press 'Space' + 'T' 's' + 'n' to swap the current parameter with the next one.
-            -- Swap with Previous Parameter (Treesitter)
             map(
                 'n',
                 '<leader>Tsp',
                 ':TSSwapPreviousParameter<CR>',
                 vim.tbl_extend('force', opts, {
                     desc = 'TS Swap with Previous Parameter',
-                })
+                }) -- In normal mode, press 'Space' + 'T' + 's' + 'p' to swap the current parameter with the previous one.
             )
-            -- In normal mode, press 'Space' + 'T' + 's' + 'p' to swap the current parameter with the previous one.
+
             map(
                 'n',
                 '<leader>Tcf',

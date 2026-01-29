@@ -3,70 +3,28 @@
 -- Copyright (C) 2025 Qompass AI, All rights reserved
 ------------------------------------------------------
 local M = {}
-M.options = {
-    winopts = {
-        height = 0.85,
-        width = 0.85,
-        preview = {
-            layout = 'flex',
-            default = 'bat',
-            hidden = 'hidden',
-            vertical = 'down:45%',
-        },
-        border = 'rounded',
-        hls = {
-            Normal = 'Normal',
-            Border = 'FloatBorder',
-        },
-    },
-    fzf_opts = {
-        ['--layout'] = 'reverse-list',
-        ['--info'] = 'inline',
-    },
-    keymap = {
-        fzf = {
-            ['ctrl-c'] = 'abort',
-            ['ctrl-q'] = 'select-all+accept',
-            ['ctrl-d'] = 'half-page-down',
-            ['ctrl-u'] = 'half-page-up',
-        },
-    },
-}
 M.keymaps = {
-    {
-        '<leader>zf',
-        '<cmd>FzfLua files<cr>',
-        desc = 'Fzf Files',
+    builtin = {
+        ['<M-Esc>'] = 'hide',
+        ['<F1>'] = 'toggle-help',
+        ['<F2>'] = 'toggle-fullscreen',
+        ['<F3>'] = 'toggle-preview-wrap',
+        ['<F4>'] = 'toggle-preview',
+        ['<F5>'] = 'toggle-preview-cw',
+        ['<F6>'] = 'toggle-preview-behavior',
+        ['<F7>'] = 'toggle-preview-ts-ctx',
+        ['<F8>'] = 'preview-ts-ctx-dec',
+        ['<F9>'] = 'preview-ts-ctx-inc',
+        ['<S-Left>'] = 'preview-reset',
+        ['<S-down>'] = 'preview-page-down',
+        ['<S-up>'] = 'preview-page-up',
+        ['<M-S-down>'] = 'preview-down',
+        ['<M-S-up>'] = 'preview-up',
     },
     {
         '<leader>zb',
         '<cmd>FzfLua buffers<cr>',
         desc = 'Fzf Buffers',
-    },
-    {
-        '<leader>zs',
-        '<cmd>FzfLua live_grep<cr>',
-        desc = 'Fzf Search',
-    },
-    {
-        '<leader>zh',
-        '<cmd>FzfLua colorschemes<cr>',
-        desc = 'Fzf Colorscheme',
-    },
-    {
-        '<leader>zw',
-        '<cmd>FzfLua grep_cword<cr>',
-        desc = 'Fzf Current Word',
-    },
-    {
-        '<leader>zh',
-        '<cmd>FzfLua help_tags<cr>',
-        desc = 'Fzf Help Tags',
-    },
-    {
-        '<leader>zm',
-        '<cmd>FzfLua marks<cr>',
-        desc = 'Fzf Marks',
     },
     {
         '<leader>zc',
@@ -79,9 +37,14 @@ M.keymaps = {
         desc = 'Fzf Document Symbols',
     },
     {
-        '<leader>zWs',
-        '<cmd>FzfLua lsp_live_workspace_symbols<cr>',
-        desc = 'Fzf Workspace Symbols',
+        '<leader>zf',
+        '<cmd>FzfLua files<cr>',
+        desc = 'Fzf Files',
+    },
+    {
+        '<leader>zgb',
+        '<cmd>FzfLua git_branches<cr>',
+        desc = 'Fzf Git Branches',
     },
     {
         '<leader>zgs',
@@ -89,9 +52,125 @@ M.keymaps = {
         desc = 'Fzf Git Status',
     },
     {
-        '<leader>zgb',
-        '<cmd>FzfLua git_branches<cr>',
-        desc = 'Fzf Git Branches',
+        '<leader>zh',
+        '<cmd>FzfLua help_tags<cr>',
+        desc = 'Fzf Help Tags',
+    },
+    { '<leader>zH', '<cmd>FzfLua colorschemes<cr>', desc = 'Fzf Colorscheme' },
+    { '<leader>zm', '<cmd>FzfLua marks<cr>', desc = 'Fzf Marks' },
+    { '<leader>zs', '<cmd>FzfLua live_grep<cr>', desc = 'Fzf Search' },
+    { '<leader>zWs', '<cmd>FzfLua lsp_live_workspace_symbols<cr>', desc = 'Fzf Workspace Symbols' },
+    { '<leader>zw', '<cmd>FzfLua grep_cword<cr>', desc = 'Fzf Current Word' },
+}
+M.options = {
+    actions = {},
+    files = {
+        previewer = 'bat',
+        prompt = 'Files❯ ',
+        cmd = 'rg --files',
+        find_opts = [[-type f \! -path '*/.git/*']],
+        rg_opts = [[--color=never --hidden --files -g "!.git"]],
+        fd_opts = [[--color=never --hidden --type f --type l --exclude .git]],
+        dir_opts = [[/s/b/a:-d]],
+        cwd_prompt = true,
+        cwd_prompt_shorten_len = 32,
+        cwd_prompt_shorten_val = 1,
+        toggle_ignore_flag = '--no-ignore',
+        toggle_hidden_flag = '--hidden',
+        toggle_follow_flag = '-L',
+        hidden = true,
+        follow = false,
+        no_ignore = false,
+        absolute_path = false,
+        zoxide = {
+            cmd = 'zoxide query --list --score',
+            scope = 'global',
+            git_root = true,
+            formatter = 'path.dirname_first',
+            fzf_opts = {
+                ['--no-multi'] = true,
+                ['--delimiter'] = '[\t]',
+                ['--tabstop'] = '4',
+                ['--tiebreak'] = 'end,index',
+                ['--nth'] = '2..',
+            },
+        },
+    },
+    fzf_bin = 'sk',
+    fzf_colors = {
+        true,
+        ['bg'] = {
+            'bg',
+            'Normal',
+        },
+        ['bg+'] = {
+            'bg',
+            {
+                'CursorLine',
+                'Normal',
+            },
+        },
+        ['fg'] = {
+            'fg',
+            'CursorLine',
+        },
+        ['fg+'] = {
+            'fg',
+            'Normal',
+            'underline',
+        },
+        ['gutter'] = '-1',
+        ['header'] = {
+            'fg',
+            'Comment',
+        },
+        ['hl'] = { 'fg', 'Comment' },
+        ['hl+'] = { 'fg', 'Statement' },
+        ['info'] = { 'fg', 'PreProc' },
+        ['marker'] = { 'fg', 'Keyword' },
+        ['pointer'] = { 'fg', 'Exception' },
+        ['prompt'] = { 'fg', 'Conditional' },
+        ['spinner'] = { 'fg', 'Label' },
+    },
+    fzf_opts = {
+        ['--algo'] = 'frizbee',
+        ['--ansi'] = true,
+        ['--border'] = 'none',
+        ['--height'] = '100%',
+        ['--highlight-line'] = true,
+        ['--info'] = 'inline-right',
+        ['--layout'] = 'reverse',
+    },
+    fzf_tmux_opts = {
+        ['--margin'] = '0,0',
+        ['-p'] = '80%,80%',
+    },
+    hls = {
+        normal = 'Normal',
+        preview_normal = 'Normal',
+    },
+    keymap = {
+        fzf = {
+            ['ctrl-c'] = 'abort',
+            ['ctrl-d'] = 'half-page-down',
+            ['ctrl-q'] = 'select-all+accept',
+            ['ctrl-u'] = 'half-page-up',
+        },
+    },
+    winopts = {
+        border = 'rounded',
+        height = 0.85,
+        hls = {
+            Border = 'FloatBorder',
+            Normal = 'Normal',
+        },
+        preview = {
+            default = 'bat',
+            hidden = 'hidden',
+            layout = 'flex',
+            vertical = 'down:45%',
+        },
+        width = 0.85,
     },
 }
 function M.fzf_setup()
