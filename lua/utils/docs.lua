@@ -1,5 +1,5 @@
 -- /qompassai/Diver/lua/config/autocmds.lua
--- Qompass AI Diver Autocmds Config
+-- Qompass AI Diver Doc Utils Config
 -- Copyright (C) 2025 Qompass AI, All rights reserved
 -- --------------------------------------------------
 local M = {}
