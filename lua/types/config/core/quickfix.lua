@@ -4,8 +4,8 @@
 -- ----------------------------------------
 ---@meta
 ---@class vim.qf.Config
----@field borders?                                    vim.qf.Borders
----@field constrain_cursor                            boolean
+---@field borders?                                         vim.qf.Borders
+---@field constrain_cursor                                 boolean
 ---@field edit                                        vim.qf.EditConfig
 ---@field follow                                      vim.qf.FollowConfig
 ---@field header_length                               fun(type: 'hard'|'soft', start_col: integer): integer
