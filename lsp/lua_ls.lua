@@ -96,6 +96,7 @@ return ---@type vim.lsp.Config
                     'node_directions',
                     'ObjectManager', ---wp
                     'onLinkGroupPortsStateChanged', ---wp
+                    'os_getenv', ---luarocks
                     'Plugin', ---wp
                     'Pod', ---wp
                     'ProcUtils', ---wp
@@ -129,7 +130,7 @@ return ---@type vim.lsp.Config
                     luadoc = 'Any',
                     redefined = 'Any',
                     strict = 'Any',
-                    strong = 'Opened',
+                    --strong = 'Opened',
                     ['type-check'] = 'Any',
                     unused = 'Any',
                 },
@@ -142,7 +143,7 @@ return ---@type vim.lsp.Config
                     luadoc = 'Warning',
                     redefined = 'Warning',
                     strict = 'Warning',
-                    strong = 'Warning',
+                    --strong = 'Warning',
                     ['type-check'] = 'Error',
                     unbalanced = 'Warning',
                     unused = 'Hint',
@@ -298,9 +299,9 @@ return ---@type vim.lsp.Config
             spell = { ---@source https://luals.github.io/wiki/settings/#spell
                 dict = {},
             },
-            telemetry = {
-                enable = false,
-            },
+            --   telemetry = {
+            --       enable = false,
+            --   },
             type = { ---@source https://luals.github.io/wiki/settings/#type
                 castNumberToInteger = false,
                 checkTableShape = true,
@@ -313,7 +314,7 @@ return ---@type vim.lsp.Config
                 enable = true,
                 config = {
                     auto_complete_end = 'true',
-                    auto_complete_table_sep = 'false',
+                    auto_complete_table_sep = 'true',
                     format_line = 'true',
                 },
             },

@@ -12,7 +12,8 @@
     },
     "blink-emoji.nvim": {
       "rev": "066013e4c98a9318408ee3f1ca2dbcb6fa3e4c06",
-      "src": "https://github.com/moyiz/blink-emoji.nvim"
+      "src": "https://github.com/moyiz/blink-emoji.nvim",
+      "version": "'master'"
     },
     "blink.cmp": {
       "rev": "3033d278848129899f94843e12ebb83a31342faa",
@@ -34,11 +35,13 @@
     },
     "cmp-buffer": {
       "rev": "b74fab3656eea9de20a9b8116afa3cfc4ec09657",
-      "src": "https://github.com/hrsh7th/cmp-buffer"
+      "src": "https://github.com/hrsh7th/cmp-buffer",
+      "version": "'main'"
     },
     "cmp-nvim-lua": {
       "rev": "e3a22cb071eb9d6508a156306b102c45cd2d573d",
-      "src": "https://github.com/hrsh7th/cmp-nvim-lua"
+      "src": "https://github.com/hrsh7th/cmp-nvim-lua",
+      "version": "'main'"
     },
     "coq.nvim": {
       "rev": "481c0534cd8ed757d941e8239e6e9987fb00e82a",
@@ -57,7 +60,8 @@
     },
     "friendly-snippets": {
       "rev": "572f5660cf05f8cd8834e096d7b4c921ba18e175",
-      "src": "https://github.com/rafamadriz/friendly-snippets"
+      "src": "https://github.com/rafamadriz/friendly-snippets",
+      "version": "'main'"
     },
     "lazydev.nvim": {
       "rev": "5231c62aa83c2f8dc8e7ba957aa77098cda1257d",
@@ -95,6 +99,11 @@
       "src": "https://github.com/nvim-treesitter/nvim-treesitter",
       "version": "'master'"
     },
+    "nvim-treesitter-textobjects": {
+      "rev": "a0e182ae21fda68c59d1f36c9ed45600aef50311",
+      "src": "https://github.com/nvim-treesitter/nvim-treesitter-textobjects",
+      "version": "'main'"
+    },
     "nvim-web-devicons": {
       "rev": "803353450c374192393f5387b6a0176d0972b848",
       "src": "https://github.com/nvim-tree/nvim-web-devicons"
@@ -105,7 +114,8 @@
     },
     "sops.nvim": {
       "rev": "5946285744ffef26b792839d9130135365bfa8ea",
-      "src": "https://github.com/trixnz/sops.nvim"
+      "src": "https://github.com/trixnz/sops.nvim",
+      "version": "'main'"
     },
     "transparent.nvim": {
       "rev": "a4145c52f5421f1626a4d7dc0f41e785c4439944",

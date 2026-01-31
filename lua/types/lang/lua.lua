@@ -3,76 +3,246 @@
 -- Copyright (C) 2025 Qompass AI, All rights reserved
 ------------------------------------------------------
 ---@meta
----@class                     Lua.Module
+---@class Lua.Module
 ---@field lua_cmp                                          fun(): table
 ---@field lua_lazydev                                      fun(opts?: table): table
 ---@field lua_luarocks                                     fun(opts?: table): table
+---@field lua_setup                                        fun(opts?: table): table
 ---@field lua_snap                                         fun(opts?: table): table
 ---@field lua_test                                         fun(opts?: table): table
 ---@field lua_version?                                     fun(): string, string
----@field lua_setup                                        fun(opts?: table): table
----@class                     Lua.Globals
----@field use_blink_cmp?                                   boolean
+---@class Lua.Globals
 ---@field lazydev_enabled?                                 boolean
----@type                      Lua.Module
----@class                     lua.Luarocks.Config
+---@field use_blink_cmp?                                   boolean
+---@type Lua.Module
+---@alias luarocks.arch
+---| 'aarch64'
+---| 'arm'
+---| 'armv7'
+---| 'mips'
+---| 'powerpc'
+---| 's390x'
+---| 'x86'
+---| 'x86_64'
+---@alias luarocks.cmake_generator
+---| 'MinGW Makefiles'
+---| 'MSYS Makefiles'
+---| 'Ninja'
+---| 'NMake Makefiles'
+---| 'Unix Makefiles'
+---@alias luarocks.deps_mode
+---| 'all'
+---| 'none'
+---| 'one'
+---| 'order'
+---@alias luarocks.download_method
+---| 'curl'
+---| 'cvs'
+---| 'git'
+---| 'hg'
+---| 'scp'
+---| 'svn'
+---| 'wget'
+---@alias luarocks.lua_version
+---| '5.1'
+---| '5.2'
+---| '5.3'
+---| '5.4'
+---| 'jit'
+---@alias luarocks.platform
+---| 'bsd'
+---| 'cygwin'
+---| 'linux'
+---| 'macosx'
+---| 'mingw'
+---| 'msys'
+---| 'unix'
+---| 'windows'
+---@alias luarocks.server_protocol
+---| 'http'
+---| 'https'
+---@class luarocks.cache_table
+---@field lua_version?                                     string
+---@field luajit_version?                                  string
+---@field luajit_version_checked?                          boolean
+---@class luarocks.config
+---@field accept_unknown_fields?                           boolean
+---@field arch?                                            luarocks.arch
+---@field build_from_rockspec?                             boolean
+---@field cache?                                           luarocks.cache_table
 ---@field cache_dir?                                       string
----@field check_certificate?                               boolean
----@field config_dir?                                      string
----@field connection_timeout?                              number
+---@field cache_fail_timeout?                              number seconds
+---@field cache_timeout?                                   number seconds
+---@field check_certificate?                               boolean legacy
+---@field check_certificates?                              boolean
+---@field cmake_generator?                                 luarocks.cmake_generator
+---@field config_files?                                    luarocks.config_files
+---@field connection_timeout?                              number seconds
 ---@field deploy_bin_dir?                                  string
 ---@field deploy_lib_dir?                                  string
----@field download_method?                                 'curl'|'wget'|'luasocket'
+---@field deploy_lua_dir?                                  string
+---@field deps_mode?                                       luarocks.deps_mode
+---@field disabled_servers?                                string[]
+---@field download_method?                                 luarocks.download_method
 ---@field encrypted_peer?                                  boolean
----@field external_deps_subdirs?                           lua.Luarocks.ExternalDepsSubdirs
+---@field export_path_separator?                           string
+---@field external_deps_dirs?                              string[]
+---@field external_deps_patterns?                          luarocks.external_deps_patterns
+---@field external_deps_subdirs?                           luarocks.external_deps_subdirs
+---@field external_lib_extension?                          string
+---@field fs_use_modules?                                  boolean
+---@field gcc_rpath?                                       boolean
+---@field git_server?                                      string
+---@field git_use_https?                                   boolean
 ---@field home?                                            string
+---@field home_tree?                                       string
+---@field hooks_enabled?                                   boolean
+---@field lib_extension?                                   string
 ---@field lib_modules_dir?                                 string
+---@field lib_modules_path?                                string
+---@field link_lua_explicitly?                             boolean
 ---@field local_by_default?                                boolean
+---@field local_cache?                                     string
 ---@field lock_manifests?                                  boolean
----@field lua_interpreter?                                 'lua'|'lua5.1'|'lua5.2'|'lua5.3'|'lua5.4'|'luajit'|string|nil
+---@field lua_extension?                                   string
+---@field lua_found?                                       boolean
+---@field lua_interpreter?                                 string
 ---@field lua_modules_dir?                                 string
----@field lua_version?                                     '5.1'|'5.2'|'5.3'|'5.4'|'jit'
----@field nodeps?                                           boolean
----@field platform?                                        'bsd'|'linux'|'macosx'|'unix'|'windows'
----@field platforms?                                       lua.Luarocks.Platforms
+---@field lua_modules_path?                                string
+---@field lua_version?                                     luarocks.lua_version
+---@field namespace?                                       string
+---@field no_manifest?                                     boolean
+---@field nodeps?                                          boolean
+---@field obj_extension?                                   string
+---@field only_sources?                                    boolean
+---@field platform?                                        luarocks.platform
+---@field platforms?                                       luarocks.platforms_table
 ---@field prefer_binary?                                   boolean
+---@field processor?                                       luarocks.arch
 ---@field program_version?                                 string
----@field rocks_provided?                                  { [string]: string }
+---@field rocks_dir?                                       string
 ---@field rocks_servers?                                   string[]
 ---@field rocks_subdir?                                    string
----@field rocks_trees?                                     lua.LuarocksRockTree[]
----@field ssldefault?                                      'http'|'https'
----@field sysconfig_dir?                                   string
----@field upload?                                          { server: string, api_key?: string }
----@field variables?                                       lua.Luarocks.Variables
+---@field rocks_trees?                                     luarocks.rocks_tree[]
+---@field runtime_external_deps_patterns?                  luarocks.external_deps_patterns
+---@field runtime_external_deps_subdirs?                   luarocks.external_deps_subdirs
+---@field server_protocol?                                 luarocks.server_protocol
+---@field ssldefault?                                      luarocks.server_protocol
+---@field static_lib_extension?                            string
+---@field sysconfdir?                                      string
+---@field target_cpu?                                      luarocks.arch
+---@field upload?                                          luarocks.upload_config
+---@field user_agent?                                      string
+---@field variables?                                       luarocks.variables_table
 ---@field verbose?                                         boolean
----@class                 lua.LuarocksRockTree
----@field name                                             string "user|system|3rdparty (display)"
----@field root                                             string
----@class                 lua.Luarocks.Platforms
+---@field web_browser?                                     string
+---@field wrap_bin_scripts?                                boolean
+---@field wrapper_suffix?                                  string
+---@class luarocks.config_file
+---@field file                                             string
+---@field found                                            boolean
+---@class luarocks.config_files
+---@field nearest?                                         string
+---@field project?                                         luarocks.config_file
+---@field system?                                          luarocks.config_file
+---@field user?                                            luarocks.config_file
+---@class luarocks.external_deps_patterns
+---@field bin                                              string[]
+---@field include                                          string[]
+---@field lib                                              string[]
+---@class luarocks.external_deps_subdirs
+---@field bin                                              string
+---@field include                                          string
+---@field lib                                              string|string[]
+---@class luarocks.platforms_table
 ---@field bsd?                                             boolean
+---@field cygwin?                                          boolean
+---@field darwin?                                          boolean
+---@field freebsd?                                         boolean
 ---@field linux?                                           boolean
 ---@field macosx?                                          boolean
----@field unix                                             boolean
+---@field mingw?                                           boolean
+---@field msys?                                            boolean
+---@field netbsd?                                          boolean
+---@field openbsd?                                         boolean
+---@field unix?                                            boolean
+---@field win32?                                           boolean
 ---@field windows?                                         boolean
----@class               lua.Luarocks.ExternalDepsSubdirs
----@field bin?                                             string
----@field include?                                         string
----@field lib?                                             string
----@field server?                                          string
+---@class luarocks.rocks_tree
+---@field name                                             string
+---@field root                                             string
+---@class luarocks.upload_config
 ---@field api_key?                                         string
----@class               lua.Luarocks.Variables:            {[string]: string}
+---@field api_version?                                     string
+---@field server                                           string
+---@field tool_version?                                    string
+---@class luarocks.variables_table
 ---@field AR?                                              string
+---@field AS?                                              string
+---@field BUNZIP2?                                         string
 ---@field CC?                                              string
 ---@field CFLAGS?                                          string
+---@field CHMOD?                                           string
+---@field CMAKE?                                           string
+---@field CP?                                              string
+---@field CURL?                                            string
+---@field CURLNOCERTFLAG?                                  string
+---@field CVS?                                             string
 ---@field CXX?                                             string
 ---@field CXXFLAGS?                                        string
+---@field FIND?                                            string
+---@field GIT?                                             string
+---@field GPG?                                             string
+---@field GUNZIP?                                          string
+---@field HG?                                              string
+---@field ICACLS?                                          string
 ---@field LD?                                              string
 ---@field LDFLAGS?                                         string
+---@field LIBFLAG?                                         string
+---@field LIBFLAG_EXTRA?                                   string
+---@field LIB_EXTENSION?                                   string
+---@field LN?                                              string
+---@field LS?                                              string
 ---@field LUA?                                             string
----@field LUA_DIR?                                         string
+---@field LUALIB?                                          string
 ---@field LUA_BINDIR?                                      string
+---@field LUA_DIR?                                         string
 ---@field LUA_INCDIR?                                      string
 ---@field LUA_LIBDIR?                                      string
+---@field LUA_LIBDIR_FILE?                                 string
+---@field LUA_VERSION?                                     string
+---@field MAKE?                                            string
+---@field MD5?                                             string
+---@field MD5SUM?                                          string
+---@field MKDIR?                                           string
+---@field MKTEMP?                                          string
+---@field NINJA?                                           string
+---@field NM?                                              string
+---@field OBJCOPY?                                         string
+---@field OBJDIR?                                          string
+---@field OBJDUMP?                                         string
+---@field OBJ_EXTENSION?                                   string
+---@field OPENSSL?                                         string
+---@field PWD?                                             string
 ---@field RANLIB?                                          string
----@type                lua.Luarocks.Config
+---@field RC?                                              string
+---@field RM?                                              string
+---@field RMDIR?                                           string
+---@field ROCKS_TREE?                                      string
+---@field RSYNC?                                           string
+---@field RSYNCFLAGS?                                      string
+---@field SCP?                                             string
+---@field SCRIPTS_DIR?                                     string
+---@field SEVENZ?                                          string
+---@field SSCM?                                            string
+---@field STATIC_LIBFLAG?                                  string
+---@field STRIP?                                           string
+---@field SVN?                                             string
+---@field TAR?                                             string
+---@field TEST?                                            string
+---@field TOUCH?                                           string
+---@field UNZIP?                                           string
+---@field WGET?                                            string
+---@field WGETNOCERTFLAG?                                  string
+---@field ZIP?                                             string
+return {}

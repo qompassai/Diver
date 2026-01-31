@@ -2,16 +2,20 @@
 -- Qompass AI Diver Plugins Init
 -- Copyright (C) 2025 Qompass AI, All rights reserved
 ------------------------------------------------------
+local a = vim.api
+local p = vim.pack
+local r = require
+local v = vim.version
 vim.opt.packpath = vim.opt.runtimepath:get() ---@type string[]
-vim.api.nvim_create_user_command('PackUpdate', function()
-    vim.api.nvim_echo({
+a.nvim_create_user_command('PackUpdate', function()
+    a.nvim_echo({
         {
             'Updating plugins…',
             'None',
         },
     }, false, {})
-    vim.pack.update()
-    vim.api.nvim_echo({
+    p.update()
+    a.nvim_echo({
         {
             'Plugins updated!',
             'None',
@@ -20,26 +24,25 @@ vim.api.nvim_create_user_command('PackUpdate', function()
 end, {
     desc = 'Update all vim.pack plugins',
 })
-vim.pack.add({
+p.add({
     {
         event = {
             'BufEnter',
         },
-        branch = 'main',
         hook = function()
-            require('config.cicd.sops').sops()
+            r('config.cicd.sops').sops()
         end,
         src = 'https://github.com/trixnz/sops.nvim',
         update = true,
-        version = nil,
+        version = 'main',
     },
     {
         branch = 'main',
         hook = function()
-            local lua_cfg = require('config.lang.lua')
+            local lua_cfg = r('config.lang.lua')
             local opts = lua_cfg.lua_luarocks({})
             --require('luarocks-nvim').setup(opts)
-            require('luarocks').setup(opts)
+            r('luarocks').setup(opts)
         end,
         src = 'https://github.com/vhyrro/luarocks.nvim',
         update = true,
@@ -51,75 +54,75 @@ vim.pack.add({
             'InsertEnter',
         },
         hook = function()
-            local cmp_cfg = require('config.lang.cmp').blink_cmp()
-            require('blink.cmp').setup(cmp_cfg)
+            local cmp_cfg = r('config.lang.cmp').blink_cmp()
+            r('blink.cmp').setup(cmp_cfg)
         end,
         src = 'https://github.com/Saghen/blink.cmp',
         update = true,
-        version = vim.version.range('1.*'),
+        version = v.range('1.*'),
     },
     {
         branch = 'main',
         hook = function()
-            require('config.core.tree').treesitter({})
+            r('config.core.tree').treesitter({})
         end,
         src = 'https://github.com/nvim-treesitter/nvim-treesitter',
         update = true,
         version = nil,
     },
     {
+        src = 'https://github.com/nvim-treesitter/nvim-treesitter-textobjects',
+        version = 'main',
+    },
+    {
         branch = 'master',
         src = 'https://github.com/L3MON4D3/LuaSnip',
-        version = vim.version.range('2.*'),
+        version = v.range('2.*'),
     },
     {
-        branch = 'main',
         src = 'https://github.com/rafamadriz/friendly-snippets',
         update = true,
-        version = nil,
+        version = 'main',
     },
     {
-        branch = 'main',
         src = 'https://github.com/hrsh7th/cmp-nvim-lua',
         update = true,
-        version = nil,
+        version = 'main',
     },
     {
-        branch = 'main',
         src = 'https://github.com/hrsh7th/cmp-buffer',
-        version = nil,
+        version = 'main',
     },
     {
         branch = 'master',
         src = 'https://github.com/moyiz/blink-emoji.nvim',
-        version = nil,
+        version = 'master',
     },
     {
         branch = 'master',
         src = 'https://github.com/Kaiser-Yang/blink-cmp-dictionary',
         update = true,
-        version = vim.version.range('2.*'),
+        version = v.range('2.*'),
     },
     {
         branch = 'main',
         src = 'https://github.com/Saghen/blink.compat',
         update = true,
-        version = vim.version.range('2.*'),
+        version = v.range('2.*'),
     },
     {
         branch = 'main',
         hook = function()
-            require('config.core.flash').flash_cfg()
+            r('config.core.flash').flash_cfg()
         end,
         src = 'https://github.com/folke/flash.nvim',
         update = true,
-        version = vim.version.range('2.*'),
+        version = v.range('2.*'),
     },
-
     {
         branch = 'main',
         hook = function()
-            require('mini.ai').setup()
+            r('mini.ai').setup()
         end,
         opts = {
             custom_textobjects = {},
@@ -128,7 +131,7 @@ vim.pack.add({
         },
         src = 'https://github.com/echasnovski/mini.nvim',
         update = true,
-        version = vim.version.range('0.*'),
+        version = v.range('0.*'),
     },
     {
         cmd = {
@@ -136,10 +139,11 @@ vim.pack.add({
             'Trouble',
         },
         hook = function(spec)
-            require('trouble').setup(spec.opts)
+            r('trouble').setup(spec.opts)
         end,
-        opts = require('config.core.trouble')(),
+        opts = r('config.core.trouble')(),
         src = 'https://github.com/folke/trouble.nvim',
+        version = 'main',
     },
 })
 return {

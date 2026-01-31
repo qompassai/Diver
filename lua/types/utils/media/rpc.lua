@@ -4,68 +4,68 @@
 -- ----------------------------------------
 ---@meta
 ---@class media.rpc.Stream
----@field write                               fun(self: media.rpc.Stream, data: string|string[])
----@field read_start                          fun(self: media.rpc.Stream, cb: fun(chunk: string|nil))
----@field read_stop                           fun(self: media.rpc.Stream)
----@field close                               fun(self: media.rpc.Stream, signal?: string, noblock?: boolean)
----@class media.rpc.StdioStream :             media.rpc.Stream
----@field _in                                 uv.uv_pipe_t
----@field _out                                uv.uv_pipe_t
----@alias media.rpc.StdioStreamCtor { open: fun(): media.rpc.StdioStream }
----@class media.rpc.SocketStream :            media.rpc.Stream
----@field _socket?                             uv.uv_pipe_t|uv.uv_tcp_t
----@field _stream_error?                      string
----@class media.rpc.ProcStream :              media.rpc.Stream
----@field _proc                               uv.uv_process_t|nil
----@field _pid                                integer|string|nil
----@field _child_stdin                        uv.uv_pipe_t
----@field _child_stdout                       uv.uv_pipe_t
----@field _child_stderr                       uv.uv_pipe_t
----@field _closed                             integer|nil
----@field _on_exit                            fun(closed: integer?)|nil
----@field stdout                              string
----@field stderr                              string
----@field output                              fun(self: media.rpc.ProcStream): string
----@field stdout_eof                          boolean
----@field stderr_eof                          boolean
----@field collect_text                        boolean
----@field status                              integer|nil
----@field signal                              integer|nil
+---@field write                                            fun(self: media.rpc.Stream, data: string|string[])
+---@field read_start                                       fun(self: media.rpc.Stream, cb: fun(chunk: string|nil))
+---@field read_stop                                        fun(self: media.rpc.Stream)
+---@field close                                            fun(self: media.rpc.Stream, signal?: string, noblock?: boolean)
+---@class media.rpc.StdioStream                            :             media.rpc.Stream
+---@field _in                                              uv.uv_pipe_t
+---@field _out                                             uv.uv_pipe_t
+---@alias media.rpc.StdioStreamCtor                        { open: fun(): media.rpc.StdioStream }
+---@class media.rpc.SocketStream                           :            media.rpc.Stream
+---@field _socket?                                         uv.uv_pipe_t|uv.uv_tcp_t
+---@field _stream_error?                                   string
+---@class media.rpc.ProcStream                             :              media.rpc.Stream
+---@field _proc                                            uv.uv_process_t|nil
+---@field _pid                                             integer|string|nil
+---@field _child_stdin                                     uv.uv_pipe_t
+---@field _child_stdout                                    uv.uv_pipe_t
+---@field _child_stderr                                    uv.uv_pipe_t
+---@field _closed                                          integer|nil
+---@field _on_exit                                         fun(closed: integer?)|nil
+---@field stdout                                           string
+---@field stderr                                           string
+---@field output                                           fun(self: media.rpc.ProcStream): string
+---@field stdout_eof                                       boolean
+---@field stderr_eof                                       boolean
+---@field collect_text                                     boolean
+---@field status                                           integer|nil
+---@field signal                                           integer|nil
 ---@class media.rpc.Response
----@field _rpc_stream                         media.rpc.RpcStream
----@field _request_id                         any
+---@field _rpc_stream                                      media.rpc.RpcStream
+---@field _request_id                                      any
 ---@class media.rpc.RpcStream
----@field close                               fun(self: media.rpc.RpcStream, signal?: string, noblock?: boolean)
----@field _stream                             media.rpc.Stream
----@field _pack                               table
----@field _session                            vim.mpack.Session
+---@field close                                            fun(self: media.rpc.RpcStream, signal?: string, noblock?: boolean)
+---@field _stream                                          media.rpc.Stream
+---@field _pack                                            table
+---@field _session                                         vim.mpack.Session
 ---@class media.rpc.Session
----@field _pending_messages                   table[]
----@field _rpc_stream                         media.rpc.RpcStream
----@field _prepare                            uv.uv_prepare_t
----@field _timer                              uv.uv_timer_t
----@field _is_running                         boolean
----@field closed                              boolean|nil
----@field eof_err                             any
----@field safe_pcall                          fun(f: function, ...: any): boolean, any
+---@field _pending_messages                                table[]
+---@field _rpc_stream                                      media.rpc.RpcStream
+---@field _prepare                                         uv.uv_prepare_t
+---@field _timer                                           uv.uv_timer_t
+---@field _is_running                                      boolean
+---@field closed                                           boolean|nil
+---@field eof_err                                          any
+---@field safe_pcall                                       fun(f: function, ...: any): boolean, any
 ---@class media.rpc.Client
----@field _session                            media.rpc.Session
----@field api                                 table
----@field fn                                  table
----@field request                             fun(self: media.rpc.Client, method: string, ...: any): boolean, any
----@field notify                              fun(self: media.rpc.Client, method: string, ...: any)
----@field close                               fun(self: media.rpc.Client)
+---@field _session                                         media.rpc.Session
+---@field api                                              table
+---@field fn                                               table
+---@field request                                          fun(self: media.rpc.Client, method: string, ...: any): boolean, any
+---@field notify                                           fun(self: media.rpc.Client, method: string, ...: any)
+---@field close                                            fun(self: media.rpc.Client)
 ---@class media.rpc.Module
----@field connect?                            fun(file_or_address: string): media.rpc.Client
----@field Client?                              media.rpc.Client
----@field Session?                             media.rpc.Session
----@field RpcStream?                           media.rpc.RpcStream
----@field StdioStream?                         media.rpc.StdioStream
----@field SocketStream?                        media.rpc.SocketStream
----@field ProcStream?                          media.rpc.ProcStream
+---@field connect?                                         fun(file_or_address: string): media.rpc.Client
+---@field Client?                                          media.rpc.Client
+---@field Session?                                         media.rpc.Session
+---@field RpcStream?                                       media.rpc.RpcStream
+---@field StdioStream?                                     media.rpc.StdioStream
+---@field SocketStream?                                    media.rpc.SocketStream
+---@field ProcStream?                                      media.rpc.ProcStream
 ---@type media.rpc.Module
 ---@class vim.mpack.Session
----@field receive                             fun(self: vim.mpack.Session, data: string, pos: integer): string, any, any, any, integer
----@field request                             fun(self: vim.mpack.Session, cb: fun(err: any, result: any)): string
----@field notify                              fun(self: vim.mpack.Session): string
----@field reply                               fun(self: vim.mpack.Session, id: any): string
+---@field receive                                          fun(self: vim.mpack.Session, data: string, pos: integer): string, any, any, any, integer
+---@field request                                          fun(self: vim.mpack.Session, cb: fun(err: any, result: any)): string
+---@field notify                                           fun(self: vim.mpack.Session): string
+---@field reply                                            fun(self: vim.mpack.Session, id: any): string

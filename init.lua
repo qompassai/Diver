@@ -4,14 +4,21 @@
 -- --------------------------------------------------
 local bo = vim.bo ---@type vim.bo
 local cmd = vim.cmd
+local env = vim.env
+--local function xdg_data()
+--    return env.XDG_DATA_HOME or (env.HOME .. '/.local/share')
+--end
 local g = vim.g
+local go = vim.go
 local l = vim.loader
 local o = vim.o ---@type vim.o
 local opt = vim.opt
 local wo = vim.wo ---@type vim.wo
 bo.autocomplete = true
+bo.autoindent = true
 bo.autoread = true
 bo.backupcopy = 'auto'
+bo.busy = 1
 bo.completeopt = 'menu,menuone,noselect'
 bo.expandtab = true
 bo.fileencoding = 'utf-8'
@@ -24,6 +31,7 @@ bo.modeline = true
 bo.modifiable = true
 bo.nrformats = 'hex'
 bo.shiftwidth = 4
+bo.smartindent = true
 bo.spellfile = vim.fn.stdpath('config') .. '/nvim/spell/en.utf-8.add'
 bo.spelllang = 'en_us'
 bo.spelloptions = 'camel'
@@ -36,8 +44,13 @@ bo.textwidth = 120
 bo.undofile = true
 cmd('filetype plugin on')
 cmd('filetype plugin indent on')
+cmd([[
+  packadd nvim.undotree
+]])
 cmd('set completeopt+=noselect')
+cmd('syntax on')
 cmd.runtime('macros/matchit.vim')
+env.LUAROCKS_CONFIG = env.HOME .. '/.config/luarocks/luarocks-5.1.lua'
 g.deprecation_warnings = true
 g.editorconfig = true
 g.git_command_ssh = 1
@@ -54,6 +67,8 @@ g.mapleader = ' '
 g.maplocalleader = '\\'
 g.mkdp_markdown_css = vim.fn.expand('$XDG_CONFIG_HOME/nvim/markdown.css') ---@type string
 g.mkdp_theme = 'dark'
+g.netrw_altfile = 1
+g.netrw_preview = 1
 g.node_host_prog = '/usr/bin/node'
 g.perl_host_prog = '/usr/bin/perl'
 g.sqlite_clib_path = '/usr/lib/libsqlite3.so'
@@ -83,6 +98,10 @@ g.vim_markdown_frontmatter = 1
 g.vim_markdown_toml_frontmatter = 1
 g.vim_markdown_json_frontmatter = 1
 g.which_key_disable_health_check = 1
+if env.SSH_TTY then
+    g.clipboard = 'osc52'
+end
+go.expandtab = true
 l.enable()
 require('config.init').config({
     core = true,
@@ -90,6 +109,7 @@ require('config.init').config({
     cloud = true,
     debug = false,
     edu = true,
+    lang = true,
     nav = true,
     ui = true,
 })
@@ -116,6 +136,7 @@ o.fileencodings = 'utf-8,ucs-bom,default,latin1'
 o.fileformats = 'unix,dos,mac'
 o.formatoptions = 'tcqj'
 o.guicursor = 'n-v-c:underline,i-ci:ver25,r-cr:hor20'
+g.guifont = 'PragmataPro Mono Liga:h14'
 o.hidden = true
 o.history = 1000
 o.hlsearch = true
@@ -177,14 +198,16 @@ opt.complete:remove('i')
 o.tags = './tags;,tags'
 opt.viminfo:append('!')
 wo.breakindent = true
+wo.breakindentopt = 'shift:2,sbr'
 wo.concealcursor = 'nc'
 wo.conceallevel = 0
 wo.cursorbind = false
 wo.cursorline = true
 wo.cursorlineopt = 'both'
+wo.foldcolumn = '1'
 wo.foldenable = false
 wo.foldlevel = 99
-wo.foldexpr = 'nvim_treesitter#foldexpr()'
+wo.foldexpr = 'v:lua.vim.treesitter.foldexpr()'
 wo.foldmethod = 'manual'
 wo.lhistory = 10
 wo.linebreak = true
@@ -193,7 +216,9 @@ wo.list = true
 wo.number = true
 wo.relativenumber = true
 wo.scrolloff = 8
+wo.showbreak = '↪'
 wo.sidescrolloff = 8
+wo.signcolumn = 'number'
 wo.smoothscroll = true
 wo.spell = true
 wo.virtualedit = 'block'

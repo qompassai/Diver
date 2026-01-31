@@ -7,6 +7,51 @@
 ---| '"always"'
 ---| '"exported"'
 ---| '"diagnostics"'
+---@class lsp.HandlerContext
+---@field bufnr integer
+---@field method? string
+---@field client_id? integer
+---@class lsp.Position
+---@field line integer 0-based.
+---@field character integer 0-based utf-16 character offset.
+---@class lsp.Range
+---@field start lsp.Position
+---@field ["end"] lsp.Position
+---@class lsp.Location
+---@field uri string
+---@field range lsp.Range
+---@alias lsp.DefinitionResult lsp.Location|lsp.Location[]|nil
+---@class lsp.TextDocumentIdentifier
+---@field uri string
+---@class lsp.TextDocumentPositionParams
+---@field textDocument lsp.TextDocumentIdentifier
+---@field position lsp.Position
+---@class lsp.ResponseError
+---@field code integer
+---@field message string
+---@field data? any
+-- Hover (very small model; enough for your `result.contents` handling)
+---@class lsp.MarkupContent
+---@field kind string
+---@field value string
+---@alias lsp.HoverContents string|lsp.MarkupContent|lsp.MarkupContent[]
+---@class lsp.Hover
+---@field contents lsp.HoverContents
+---@field range? lsp.Range
+---@class vim.lsp
+---@field buf_request fun(bufnr: integer, method: string, params: any, handler?: fun(err: lsp.ResponseError|nil, result: any, ctx: any, config: any)): boolean|integer
+---@field get_clients fun(opts?: {bufnr?: integer, name?: string}): vim.lsp.Client[]
+---@field get_Clients fun(opts?: {bufnr?: integer, name?: string}): vim.lsp.Client[]
+---@field util vim.lsp.util
+vim.lsp.get_clients = vim.lsp.get_clients
+vim.lsp.buf_request = vim.lsp.buf_request
+vim.lsp.get_Clients = vim.lsp.get_Clients or vim.lsp.get_clients
+---@class vim.lsp.Client
+---@field id integer
+---@field name string
+---@class vim.lsp.util
+vim.lsp = vim.lsp or {}
+vim.lsp.util = vim.lsp.util or {}
 ---@class                                                                            vim.lsp.Config
 ---@field additionalArgs?                                                            string[]
 ---@field args?                                                                      string[]
@@ -395,23 +440,10 @@
 ---@field yaml.style.flowMapping?                                                     'allow'|'forbid'
 ---@field yaml.style.flowSequence?                                                    'allow'|'forbid'
 ---@field yaml.yamlVersion?                                                           '1.2'|'1.1'
----@class HlOpts
----@field bg?                                                                         string
----@field bold?                                                                       boolean
----@field fg?                                                                         string
----@field get?                                                                        fun(opts?: vim.lsp.Config.CompletionGetOpts)
----@field italic?                                                                     boolean
----@field sp?                                                                         string
----@field undercurl?                                                                  boolean
----@field underline?                                                                  boolean
+
 ---@class vim.lsp.Config.LspModule
 ---@field codelens?                                                                   vim.lsp.Config.CodeLensModule
 ---@field completion?                                                                 vim.lsp.Config.CompletionModule
----@class VimExtendedLsp : vim.lsp.Config.LspModule
----@class VimExtendedAPI
----@field lsp                                                                         VimExtendedLsp
----@class NvimApi
----@field nvim_set_hl                                                                 fun(ns_id: integer, name: string, val: HlOpts)
 ---@lsp.mod.deprecated                                                                gui=strikethrough
 ---@lsp.typemod.function.async                                                        guifg=Pink
 ---@class RaRunnableArgs

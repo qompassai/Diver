@@ -3,8 +3,35 @@
 -- Copyright (C) 2025 Qompass AI, All rights reserved
 -- ----------------------------------------
 local M = {}
-vim.api.nvim_create_autocmd('BufWritePost', {
-    pattern = '*.py',
+local api = vim.api
+local fn = vim.fn
+local header = require('utils.docs')
+local lsp = vim.lsp
+local notify = vim.notify
+local group = api.nvim_create_augroup('Python', {
+    clear = true,
+})
+api.nvim_create_autocmd('BufNewFile', {
+    group = group,
+    pattern = { '*.py' },
+    callback = function()
+        if api.nvim_buf_get_lines(0, 0, 1, false)[1] ~= '' then
+            return
+        end
+        local filepath = fn.expand('%:p')
+        local shebang = '#!/usr/bin/env python3'
+        local hdr = header.make_header(filepath, '#')
+        local lines = { shebang, '' }
+        vim.list_extend(lines, hdr)
+        api.nvim_buf_set_lines(0, 0, 0, false, lines)
+        vim.cmd('normal! G')
+    end,
+})
+api.nvim_create_autocmd('BufWritePost', {
+    group = group,
+    pattern = {
+        '*.py',
+    },
     callback = function(args)
         require('config.core.lint').lint({
             name = 'bandit',
@@ -16,13 +43,12 @@ vim.api.nvim_create_autocmd('BufWritePost', {
         })
     end,
 })
-vim.api.nvim_create_autocmd('FileType', {
+api.nvim_create_autocmd('FileType', {
+    group = group,
     pattern = 'python',
     callback = function()
-        vim.opt_local.autoindent = true
-        vim.opt_local.smartindent = true
-        vim.api.nvim_buf_create_user_command(0, 'PythonLint', function()
-            vim.lsp.buf.format({
+        api.nvim_buf_create_user_command(0, 'PythonLint', function()
+            lsp.buf.format({
                 filter = function(client)
                     return client.name == 'ruff_ls' or client.name == 'pyrefly_ls' or client.name == 'ty_ls'
                 end,
@@ -31,20 +57,20 @@ vim.api.nvim_create_autocmd('FileType', {
             vim.notify('Python code linted and formatted', vim.log.levels.INFO)
         end, {})
         vim.api.nvim_buf_create_user_command(0, 'PyTestFile', function()
-            local file = vim.fn.expand('%:p')
+            local file = fn.expand('%:p')
             vim.cmd('split | terminal pytest ' .. file)
         end, {})
-        vim.api.nvim_buf_create_user_command(0, 'PyTestFunc', function()
-            local file = vim.fn.expand('%:p')
-            local cmd = 'pytest ' .. file .. '::' .. vim.fn.expand('<cword>') .. ' -v'
+        api.nvim_buf_create_user_command(0, 'PyTestFunc', function()
+            local file = fn.expand('%:p')
+            local cmd = 'pytest ' .. file .. '::' .. fn.expand('<cword>') .. ' -v'
             vim.cmd('split | terminal ' .. cmd)
         end, {})
     end,
 })
-vim.api.nvim_create_autocmd('BufWritePre', {
+api.nvim_create_autocmd('BufWritePre', {
     pattern = '*.py',
     callback = function(args)
-        vim.lsp.buf.format({
+        lsp.buf.format({
             async = true,
             bufnr = args.buf,
             filter = function(client)
@@ -73,7 +99,7 @@ local function start_blackd()
         blackd.job = nil
         if res.code ~= 0 then
             vim.schedule(function()
-                vim.notify('blackd exited with code ' .. res.code, vim.log.levels.WARN)
+                notify('blackd exited with code ' .. res.code, vim.log.levels.WARN)
             end)
         end
     end)
@@ -85,14 +111,15 @@ local function stop_blackd()
     blackd.job:kill('term')
     blackd.job = nil
 end
-vim.api.nvim_create_autocmd('FileType', {
+api.nvim_create_autocmd('FileType', {
+    group = group,
     pattern = 'python',
     callback = function(args)
         blackd.count = blackd.count + 1
         if blackd.count == 1 then
             start_blackd()
         end
-        vim.api.nvim_create_autocmd('BufWipeout', {
+        api.nvim_create_autocmd('BufWipeout', {
             buffer = args.buf,
             once = true,
             callback = function()
@@ -105,8 +132,8 @@ vim.api.nvim_create_autocmd('FileType', {
         })
     end,
 })
-vim.api.nvim_create_user_command('PyLintAll', function()
-    local file = vim.fn.expand('%:p')
+api.nvim_create_user_command('PyLintAll', function()
+    local file = fn.expand('%:p')
     local cmds = {
         {
             'ruff',
@@ -128,8 +155,8 @@ vim.api.nvim_create_user_command('PyLintAll', function()
         },
     }
     for _, cmd in ipairs(cmds) do
-        if vim.fn.executable(cmd[1]) == 1 then
-            vim.fn.jobstart(cmd, {
+        if fn.executable(cmd[1]) == 1 then
+            fn.jobstart(cmd, {
                 stdout_buffered = true,
                 stderr_buffered = true,
                 on_stdout = function(_, data, _)
@@ -139,7 +166,7 @@ vim.api.nvim_create_user_command('PyLintAll', function()
                     local out = table.concat(data, '')
                     if out ~= '' then
                         vim.schedule(function()
-                            vim.notify(table.concat(cmd, ' ') .. ': ' .. out, vim.log.levels.INFO)
+                            notify(table.concat(cmd, ' ') .. ': ' .. out, vim.log.levels.INFO)
                         end)
                     end
                 end,
@@ -147,15 +174,16 @@ vim.api.nvim_create_user_command('PyLintAll', function()
         end
     end
 end, {})
-vim.api.nvim_create_autocmd('BufWritePost', {
+api.nvim_create_autocmd('BufWritePost', {
+    group = group,
     pattern = '*.py',
     callback = function(args)
-        if vim.fn.executable('blackd-client') == 0 then
+        if fn.executable('blackd-client') == 0 then
             return
         end
-        vim.fn.jobstart({
+        fn.jobstart({
             'blackd-client',
-            vim.api.nvim_buf_get_name(args.buf),
+            api.nvim_buf_get_name(args.buf),
         }, {
             stdout_buffered = true,
             stderr_buffered = true,
@@ -163,8 +191,9 @@ vim.api.nvim_create_autocmd('BufWritePost', {
     end,
 })
 vim.api.nvim_create_autocmd('LspAttach', {
+    group = group,
     callback = function(args)
-        local client = vim.lsp.get_client_by_id(args.data.client_id)
+        local client = lsp.get_client_by_id(args.data.client_id)
         if not client then
             return
         end
@@ -179,31 +208,31 @@ vim.api.nvim_create_autocmd('LspAttach', {
     end,
 })
 function M.start()
-    if M.chan and vim.fn.chanclose then
+    if M.chan and fn.chanclose then
         return M.chan
     end
-    local script = vim.fn.stdpath('config') .. '/scripts/host.py'
-    if vim.fn.filereadable(script) == 0 then
-        vim.notify('Python RPC host script not found: ' .. script, vim.log.levels.ERROR)
+    local script = fn.stdpath('config') .. '/scripts/host.py'
+    if fn.filereadable(script) == 0 then
+        notify('Python RPC host script not found: ' .. script, vim.log.levels.ERROR)
         return nil
     end
     local cmd = {
         'python3',
         script,
     }
-    local chan = vim.fn.jobstart(cmd, {
+    local chan = fn.jobstart(cmd, {
         rpc = true,
         on_exit = function(_, code, _)
             if code ~= 0 then
                 vim.schedule(function()
-                    vim.notify('Python RPC host exited with code ' .. code, vim.log.levels.WARN)
+                    notify('Python RPC host exited with code ' .. code, vim.log.levels.WARN)
                 end)
             end
             M.chan = nil
         end,
     })
     if chan <= 0 then
-        vim.notify('Failed to start Python RPC host', vim.log.levels.ERROR)
+        notify('Failed to start Python RPC host', vim.log.levels.ERROR)
         return nil
     end
     M.chan = chan
@@ -211,16 +240,16 @@ function M.start()
 end
 
 function M.setup_commands()
-    vim.api.nvim_create_user_command('PyHostPing', function()
+    api.nvim_create_user_command('PyHostPing', function()
         local chan = M.start()
         if not chan then
             return
         end
         local ok, res = pcall(vim.rpcrequest, chan, 'nvim_eval', '"pyhost:ok"')
         if ok then
-            vim.notify('Python host responded: ' .. tostring(res), vim.log.levels.INFO)
+            notify('Python host responded: ' .. tostring(res), vim.log.levels.INFO)
         else
-            vim.notify('Python host ping failed: ' .. tostring(res), vim.log.levels.ERROR)
+            notify('Python host ping failed: ' .. tostring(res), vim.log.levels.ERROR)
         end
     end, {})
 end

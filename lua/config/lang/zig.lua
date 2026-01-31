@@ -2,7 +2,27 @@
 -- Qompass AI Diver Zig Config
 -- Copyright (C) 2025 Qompass AI, All rights reserved
 -- ----------------------------------------
-vim.api.nvim_create_autocmd('BufWritePre', {
+local api = vim.api
+local fn = vim.fn
+local header = require('utils.docs')
+local group = api.nvim_create_augroup('Zig', {
+    clear = true,
+})
+api.nvim_create_autocmd('BufNewFile', {
+    group = group,
+    pattern = { '*.zig' },
+    callback = function()
+        if api.nvim_buf_get_lines(0, 0, 1, false)[1] ~= '' then
+            return
+        end
+        local filepath = fn.expand('%:p')
+        local hdr = header.make_header(filepath, '//')
+        api.nvim_buf_set_lines(0, 0, 0, false, hdr)
+        vim.cmd('normal! G')
+    end,
+})
+api.nvim_create_autocmd('BufWritePre', {
+    group = group,
     pattern = {
         '*.zig',
         '*.zon',
@@ -11,7 +31,7 @@ vim.api.nvim_create_autocmd('BufWritePre', {
         vim.lsp.buf.format()
     end,
 })
-vim.api.nvim_create_autocmd('BufWritePre', {
+api.nvim_create_autocmd('BufWritePre', {
     pattern = {
         '*.zig',
         '*.zon',
@@ -28,7 +48,7 @@ vim.api.nvim_create_autocmd('BufWritePre', {
         })
     end,
 })
-vim.api.nvim_create_user_command('ZigTest', function()
+api.nvim_create_user_command('ZigTest', function()
     vim.fn.jobstart({
         'zig',
         'test',
@@ -157,7 +177,7 @@ vim.api.nvim_create_user_command('ZigRangeAction', function()
 end, {
     range = true,
 })
-vim.api.nvim_create_autocmd('LspAttach', {
+api.nvim_create_autocmd('LspAttach', {
     callback = function(args)
         local client = vim.lsp.get_client_by_id(args.data.client_id)
         if client and client.name == 'z_ls' then

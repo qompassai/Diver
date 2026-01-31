@@ -138,7 +138,87 @@ function M.blink_cmp()
     },
   }
 end
-
+function M.lua_cmp()
+    if vim.g.use_blink_cmp then
+        return {
+            sources = {
+                {
+                    name = 'lsp',
+                },
+                {
+                    name = 'luasnip',
+                },
+                {
+                    name = 'buffer',
+                },
+                {
+                    name = 'nvim_lua',
+                    via = 'compat',
+                },
+                {
+                    name = 'lazydev',
+                },
+            },
+            performance = {
+                async = true,
+                throttle = 50,
+            },
+            appearance = {
+                kind_icons = require('lazyvim.config').icons.kinds, ---@type string
+                nerd_font_variant = 'mono',
+                use_nvim_cmp_as_default = false,
+            },
+            completion = {
+                accept = {
+                    auto_brackets = true,
+                },
+                menu = {
+                    draw = {
+                        treesitter = {
+                            'lsp',
+                        },
+                    },
+                },
+                documentation = {
+                    auto_show = true,
+                },
+            },
+        }
+    else
+        local cmp = require('cmp') ---@type table
+        return {
+            snippet = {
+                expand = function(args)
+                    require('luasnip').lsp_expand(args.body)
+                end,
+            },
+            mapping = cmp.mapping.preset.insert({ ---@type string[]
+                ['<C-b>'] = cmp.mapping.scroll_docs(-4), ---@type string[]
+                ['<C-f>'] = cmp.mapping.scroll_docs(4), ---@type string[]
+                ['<C-Space>'] = cmp.mapping.complete(), ---@type string[]
+                ['<C-e>'] = cmp.mapping.abort(), ---@type string[]
+                ['<CR>'] = cmp.mapping.confirm({ select = true }), ---@type string[]
+            }),
+            sources = {
+                {
+                    name = 'nvim_lua',
+                },
+                {
+                    name = 'nvim_lsp',
+                },
+                {
+                    name = 'luasnip',
+                },
+                {
+                    name = 'buffer',
+                },
+            },
+            experimental = {
+                ghost_text = true,
+            },
+        }
+    end
+end
 function M.nvim_cmp()
   local cmp = require('cmp') ---@type table
   local luasnip = require('luasnip') ---@type table

@@ -3,8 +3,32 @@
 -- Copyright (C) 2025 Qompass AI, All rights reserved
 -- -----------------------------------------
 local M = {}
-vim.api.nvim_create_user_command('PhpStan', function()
-    if vim.fn.executable('phpstan') == 1 then
+local api = vim.api
+local fn = vim.fn
+local group = api.nvim_create_augroup('PHP', {
+    clear = true,
+})
+local header = require('utils.docs')
+api.nvim_create_autocmd('BufNewFile', {
+    group = group,
+    pattern = {
+        '*.php',
+    },
+    callback = function()
+        if api.nvim_buf_get_lines(0, 0, 1, false)[1] ~= '' then
+            return
+        end
+        local filepath = fn.expand('%:p')
+        local shebang = '#!/usr/bin/env php'
+        local hdr = header.make_header(filepath, '//')
+        local lines = { shebang, '' }
+        vim.list_extend(lines, hdr)
+        api.nvim_buf_set_lines(0, 0, 0, false, lines)
+        vim.cmd('normal! G')
+    end,
+})
+api.nvim_create_user_command('PhpStan', function()
+    if fn.executable('phpstan') == 1 then
         vim.cmd('!phpstan analyse')
     else
         vim.echo('phpstan not found in PATH', vim.log.levels.ERROR)
@@ -12,8 +36,8 @@ vim.api.nvim_create_user_command('PhpStan', function()
 end, {
     desc = 'Run PHPStan analysis',
 })
-vim.api.nvim_create_user_command('Pint', function()
-    if vim.fn.executable('pint') == 1 then
+api.nvim_create_user_command('Pint', function()
+    if fn.executable('pint') == 1 then
         vim.cmd('!pint')
     else
         vim.echo('pint not found in PATH', vim.log.levels.ERROR)
@@ -21,7 +45,7 @@ vim.api.nvim_create_user_command('Pint', function()
 end, {
     desc = 'Run Laravel Pint formatter',
 })
-vim.api.nvim_create_autocmd('LspAttach', {
+api.nvim_create_autocmd('LspAttach', {
     callback = function(args)
         local client_id = args.data and args.data.client_id
         if not client_id then
@@ -37,7 +61,7 @@ vim.api.nvim_create_autocmd('LspAttach', {
         end
     end,
 })
-vim.api.nvim_create_autocmd('BufWritePre', {
+api.nvim_create_autocmd('BufWritePre', {
     pattern = {
         '*.php',
         '*.phtml',
@@ -46,7 +70,7 @@ vim.api.nvim_create_autocmd('BufWritePre', {
         vim.lsp.buf.format()
     end,
 })
-vim.api.nvim_create_autocmd('BufWritePre', {
+api.nvim_create_autocmd('BufWritePre', {
     pattern = {
         '*.php',
         '*.phtml',
@@ -55,21 +79,24 @@ vim.api.nvim_create_autocmd('BufWritePre', {
         vim.lsp.buf.code_action({
             context = {
                 diagnostics = {},
-                only = { 'source.fixAll' },
+                only = {
+                    'source.fixAll',
+                },
             },
             apply = true,
         })
     end,
 })
-vim.api.nvim_create_user_command('PhpTest', function()
-    vim.fn.jobstart({
+api.nvim_create_user_command('PhpTest', function()
+    fn.jobstart({
         'phpunit',
-        vim.fn.expand('%:p'),
+        fn.expand('%:p'),
     }, {
         detach = true,
     })
 end, {})
 vim.api.nvim_create_autocmd('BufWritePre', {
+    group = group,
     pattern = '*.php',
     callback = function(args)
         vim.lsp.buf.format({
@@ -89,8 +116,8 @@ vim.api.nvim_create_user_command('PhpQuickfix', function()
         apply = true,
     })
 end, {})
-
 vim.api.nvim_create_autocmd('BufWritePre', {
+    group = group,
     pattern = {
         '*.php',
         '*.phtml',
@@ -115,9 +142,10 @@ vim.api.nvim_create_autocmd('BufWritePre', {
     end,
 })
 vim.api.nvim_create_autocmd('BufWritePost', {
+    group = group,
     pattern = '*.php',
     callback = function(args)
-        vim.fn.jobstart({
+        fn.jobstart({
             'php',
             '-l',
             vim.api.nvim_buf_get_name(args.buf),
@@ -168,12 +196,11 @@ vim.api.nvim_create_user_command('PhpCodeAction', function()
         apply = true,
     })
 end, {})
-vim.api.nvim_create_user_command('PhpRangeAction', function()
+api.nvim_create_user_command('PhpRangeAction', function()
     local bufnr = 0
     local diagnostics = vim.diagnostic.get(bufnr)
     local start_pos = vim.api.nvim_buf_get_mark(bufnr, '<')
     local end_pos = vim.api.nvim_buf_get_mark(bufnr, '>')
-
     vim.lsp.buf.code_action({
         context = {
             diagnostics = diagnostics,
@@ -183,8 +210,14 @@ vim.api.nvim_create_user_command('PhpRangeAction', function()
             },
         },
         range = {
-            start = { start_pos[1], start_pos[2] },
-            ['end'] = { end_pos[1], end_pos[2] },
+            start = {
+                start_pos[1],
+                start_pos[2],
+            },
+            ['end'] = {
+                end_pos[1],
+                end_pos[2],
+            },
         },
         filter = function(_, client_id)
             local client = vim.lsp.get_client_by_id(client_id)
@@ -192,8 +225,11 @@ vim.api.nvim_create_user_command('PhpRangeAction', function()
         end,
         apply = false,
     })
-end, { range = true })
-vim.api.nvim_create_autocmd('LspAttach', {
+end, {
+    range = true,
+})
+api.nvim_create_autocmd('LspAttach', {
+    group = group,
     callback = function(args)
         local client = vim.lsp.get_client_by_id(args.data.client_id)
         if client and (client.name == 'intelephense' or client.name == 'phpactor') then

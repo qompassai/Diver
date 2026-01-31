@@ -4,6 +4,39 @@
 -- --------------------------------------------------
 ---@module 'mappings.lspmap'
 local M = {}
+local api = vim.api
+M.rust_editions = {
+    ['2021'] = '2021',
+    ['2024'] = '2024',
+}
+M.rust_toolchains = {
+    stable = 'stable',
+    nightly = 'nightly',
+    beta = 'beta',
+}
+M.rust_default_edition = '2024'
+M.rust_default_toolchain = 'nightly'
+M.current_edition = M.rust_default_edition
+M.current_toolchain = M.rust_default_toolchain
+function M.rust_edition(edition)
+    if M.rust_editions[edition] then
+        M.current_edition = edition
+        vim.echo('Rust edition set to ' .. edition, vim.log.levels.INFO)
+        vim.cmd('LspRestart')
+    else
+        vim.echo('Invalid Rust edition: ' .. tostring(edition), vim.log.levels.ERROR)
+    end
+end
+
+function M.rust_set_toolchain(tc)
+    if M.rust_toolchains[tc] then
+        M.current_toolchain = tc
+        vim.echo('Rust toolchain set to ' .. tc, vim.log.levels.INFO)
+        vim.cmd('LspRestart')
+    else
+        vim.echo('Invalid Rust toolchain: ' .. tostring(tc), vim.log.levels.ERROR)
+    end
+end
 ---@alias LspAttachArgs { buf: integer, data: { client_id: integer } }
 function M.setup_lspmap() ---@return nil
     local function on_list(options) ---@param options table
@@ -271,6 +304,37 @@ function M.setup_lspmap() ---@return nil
                         desc = 'TypeScript document symbols (Telescope)',
                     })
                 )
+  api.nvim_create_user_command('RustEdition', function(o)
+        M.rust_edition(o.args)
+    end, {
+        nargs = 1,
+        complete = function()
+            return vim.tbl_keys(M.rust_editions)
+        end,
+    })
+    api.nvim_create_user_command('RustToolchain', function(o)
+        M.rust_set_toolchain(o.args)
+    end, {
+        nargs = 1,
+        complete = function()
+            return vim.tbl_keys(M.rust_toolchains)
+        end,
+    })
+                map('n', '<leader>re', function()
+                    vim.ui.select(vim.tbl_keys(M.rust_editions), {
+                        prompt = 'Select Rust edition',
+                    }, M.rust_edition)
+                end, {
+                    desc = 'Rust: select edition',
+                })
+
+                map('n', '<leader>rt', function()
+                    vim.ui.select(vim.tbl_keys(M.rust_toolchains), {
+                        prompt = 'Select Rust toolchain',
+                    }, M.rust_set_toolchain)
+                end, {
+                    desc = 'Rust: select toolchain',
+                })
             end
         end
     end

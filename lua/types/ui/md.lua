@@ -3,240 +3,240 @@
 -- Copyright (C) 2025 Qompass AI, All rights reserved
 -- ----------------------------------------
 ---@meta
----@alias MdImageIntegrationsMarkdown           image.DocumentIntegrationOpts
----@alias MdImageIntegrationsNeorg              image.DocumentIntegrationOpts
----@alias MdImageIntegrationsTypst              image.DocumentIntegrationOpts
----@alias MdImageIntegrationsHtml               image.DocumentIntegrationOpts
----@alias MdImageIntegrationsCss                image.DocumentIntegrationOpts
----@class                 image.API
----@field clear?                                fun(id?: string)
----@field setup                                 fun(options?: Options)
----@field from_file                             fun(path: string, options?: image.ImageOptions): image.Image|nil
----@field from_url                              fun(url: string, options?: image.ImageOptions, callback: fun(image: image.Image|nil))
----@field get_images                            fun(opts?: { window?: number, buffer?: number, namespace?: string }): image.Image[]
----@field hijack_buffer                         fun(path: string, window?: number, buffer?: number, options?: image.ImageOptions): image.Image|nil
----@field disable?                              fun()
----@field is_enabled?                           fun(): boolean
----@field enable                                fun()
----@class                 MdImageOptions : image.Options
----@field integrations                          {
+---@alias MdImageIntegrationsMarkdown                      image.DocumentIntegrationOpts
+---@alias MdImageIntegrationsNeorg                         image.DocumentIntegrationOpts
+---@alias MdImageIntegrationsTypst                         image.DocumentIntegrationOpts
+---@alias MdImageIntegrationsHtml                          image.DocumentIntegrationOpts
+---@alias MdImageIntegrationsCss                           image.DocumentIntegrationOpts
+---@class                    image.API
+---@field clear?                                           fun(id?: string)
+---@field setup                                            fun(options?: Options)
+---@field from_file                                        fun(path: string, options?: image.ImageOptions): image.Image|nil
+---@field from_url                                         fun(url: string, options?: image.ImageOptions, callback: fun(image: image.Image|nil))
+---@field get_images                                       fun(opts?: { window?: number, buffer?: number, namespace?: string }): image.Image[]
+---@field hijack_buffer                                    fun(path: string, window?: number, buffer?: number, options?: image.ImageOptions): image.Image|nil
+---@field disable?                                         fun()
+---@field is_enabled?                                      fun(): boolean
+---@field enable                                           fun()
+---@class                    MdImageOptions                :image.Options
+---@field integrations                                     {
 ---  markdown?:                                 MdImageIntegrationsMarkdown,
 ---  neorg?:                                    MdImageIntegrationsNeorg,
 ---  typst?:                                    MdImageIntegrationsTypst,
 ---  html?:                                     MdImageIntegrationsHtml,
 ---  css?:                                      MdImageIntegrationsCss }
----@class             image.RenderMdOpts
----@field enabled?                              boolean
----@field render_modes?                         string[]
----@field max_file_size?                        number
----@field debounce?                             number
----@field preset?                               string
----@field log_level?                            string|nil
----@field log_runtime?                          boolean
----@field file_types?                           table
----@field overrides?                            table
----@field custom_handlers? table[]
+---@class                    image.RenderMdOpts
+---@field enabled?                                         boolean
+---@field render_modes?                                    string[]
+---@field max_file_size?                                   number
+---@field debounce?                                        number
+---@field preset?                                          string
+---@field log_level?                                       string|nil
+---@field log_runtime?                                     boolean
+---@field file_types?                                      table
+---@field overrides?                                       table
+---@field custom_handlers?                                 table[]
 ---@class image.MdPdfOptions
----@field margins? string
----@field highlight? string
----@field toc? boolean
----@field preview_cmd? string|string[]
----@field ignore_viewer_state? boolean
----@field fonts? {
+---@field margins?                                         string
+---@field highlight?                                       string
+---@field toc?                                             boolean
+---@field preview_cmd?                                     string|string[]
+---@field ignore_viewer_state?                             boolean
+---@field fonts?                                           {
 ---  main_font?: string,
 ---  sans_font?: string,
 ---  mono_font?: string,
 ---  math_font?: string}
----@field pandoc_user_args? string[]
----@field output_path? string
----@field pdf_engine? string
+---@field pandoc_user_args?                                string[]
+---@field output_path?                                     string
+---@field pdf_engine?                                      string
 ---@class           image.MdDiagramOpts
----@field integrations table
----@field events table
----@field renderer_options table
+---@field integrations                                     table
+---@field events                                           table
+---@field renderer_options                                 table
 ---@class           image.MdLivePreviewOpts
----@field port?                                 number
----@field browser? string
----@field dynamic_root? boolean
----@field sync_scroll? boolean
----@field picker? string
+---@field port?                                            number
+---@field browser?                                         string
+---@field dynamic_root?                                    boolean
+---@field sync_scroll?                                     boolean
+---@field picker?                                          string
 ---@class image.MdTreesitterOpts
----@field sync_install? boolean
----@field ignore_install? string[]
----@field auto_install? boolean
----@field modules? table
----@field ensure_installed? string[]
----@field highlight table
+---@field sync_install?                                    boolean
+---@field ignore_install?                                  string[]
+---@field auto_install?                                    boolean
+---@field modules?                                         table
+---@field ensure_installed?                                string[]
+---@field highlight                                        table
 ---@class image.MdConfigOptions
----@field on_attach? function
----@field capabilities?                         table
+---@field on_attach?                                       function
+---@field capabilities?                                    table
 ---@class                 image.State
----@field backend                               image.Backend
----@field disable_decorator_handling            boolean
----@field enabled                               boolean
----@field options                               Options
----@field images?                               { [string]: image.Image }
----@field extmarks_namespace?                   any
----@field remote_cache                          { [string]: string }
----@field tmp_dir                               string
----@field hijacked_win_buf_images               { [string]: image.Image }
----@field processor                             image.ImageProcessor
+---@field backend                                          image.Backend
+---@field disable_decorator_handling                       boolean
+---@field enabled                                          boolean
+---@field options                                          Options
+---@field images?                                          { [string]: image.Image }
+---@field extmarks_namespace?                              any
+---@field remote_cache                                     { [string]: string }
+---@field tmp_dir                                          string
+---@field hijacked_win_buf_images                          { [string]: image.Image }
+---@field processor                                        image.ImageProcessor
 ---@class             image.DocumentIntegrationOpts
----@field enabled?                              boolean
----@field download_remote_images?               boolean
----@field clear_in_insert_mode?                 boolean
----@field only_render_image_at_cursor?          boolean
----@field only_render_image_at_cursor_mode?     "inline"|"popup"
----@field resolve_image_path?                   function
----@field floating_windows?                     boolean
----@alias image.IntegrationOptions              image.DocumentIntegrationOpts
+---@field enabled?                                         boolean
+---@field download_remote_images?                          boolean
+---@field clear_in_insert_mode?                            boolean
+---@field only_render_image_at_cursor?                     boolean
+---@field only_render_image_at_cursor_mode?                "inline"|"popup"
+---@field resolve_image_path?                              function
+---@field floating_windows?                                boolean
+---@alias image.IntegrationOptions                         image.DocumentIntegrationOpts
 ---@class image.Options
----@field backend                               'kitty'|'ueberzug'
----@field integrations                          table<string, image.IntegrationOptions>
----@field max_width?                            number
----@field max_height?                           number
----@field max_width_window_percentage?          number
----@field max_height_window_percentage?         number
----@field scale_factor?                         number
----@field kitty_method                          'normal'|'unicode-placeholders'
----@field window_overlap_clear_enabled?         boolean
----@field window_overlap_clear_ft_ignore?       string[]
----@field editor_only_render_when_focused?      boolean
----@field tmux_show_only_in_active_window?      boolean
----@field hijack_file_patterns?                 string[]
----@field processor?                            string
+---@field backend                                          'kitty'|'ueberzug'
+---@field integrations                                     table<string, image.IntegrationOptions>
+---@field max_width?                                       number
+---@field max_height?                                      number
+---@field max_width_window_percentage?                     number
+---@field max_height_window_percentage?                    number
+---@field scale_factor?                                    number
+---@field kitty_method                                     'normal'|'unicode-placeholders'
+---@field window_overlap_clear_enabled?                    boolean
+---@field window_overlap_clear_ft_ignore?                  string[]
+---@field editor_only_render_when_focused?                 boolean
+---@field tmux_show_only_in_active_window?                 boolean
+---@field hijack_file_patterns?                            string[]
+---@field processor?                                       string
 ---@class image.BackendFeatures
----@field crop                                  boolean
----@class image.Backend
----@field features                              image.BackendFeatures
----@field state                                 image.State
----@field setup                                 fun(state: image.State)
----@field render                                fun(image: image.Image, x: number, y: number, width?: number, height?: number)
----@field clear                                 fun(id?: string, shallow?: boolean)
+---@field crop                                             boolean
+---@class                    image.Backend
+---@field features                                         image.BackendFeatures
+---@field state                                            image.State
+---@field setup                                            fun(state: image.State)
+---@field render                                           fun(image: image.Image, x: number, y: number, width?: number, height?: number)
+---@field clear                                            fun(id?: string, shallow?: boolean)
 ---@class image.ImageGeometry
----@field x?                                    number
----@field y?                                    number
----@field row?                                  number
----@field col?                                  number
----@field width?                                number
----@field height?                               number
----@class image.ImageOptions: image.ImageGeometry
----@field id?                                   string
----@field window?                               number
----@field buffer?                               number
----@field with_virtual_padding?                 boolean
----@field inline?                               boolean
----@field namespace?                            string
----@field max_width_window_percentage?          number
----@field max_height_window_percentage?         number
+---@field x?                                               number
+---@field y?                                               number
+---@field row?                                             number
+---@field col?                                             number
+---@field width?                                           number
+---@field height?                                          number
+---@class image.ImageOptions:                              image.ImageGeometry
+---@field id?                                              string
+---@field window?                                          number
+---@field buffer?                                          number
+---@field with_virtual_padding?                            boolean
+---@field inline?                                          boolean
+---@field namespace?                                       string
+---@field max_width_window_percentage?                     number
+---@field max_height_window_percentage?                    number
 ---@class           image.ImageBounds
----@field top?                                   number
----@field right?                                 number
----@field bottom?                                number
----@field left?                                  number
+---@field top?                                             number
+---@field right?                                           number
+---@field bottom?                                          number
+---@field left?                                            number
 ---@class image.MagickRockImage
----@field adaptive_resize?                       fun(self: image.MagickRockImage, width: number, height: number)
----@field clone?                                 fun(self: image.MagickRockImage): image.MagickRockImage
----@field composite                              fun(self: image.MagickRockImage, source: image.MagickRockImage, x: number, y: number, operator?: string)
----@field crop                                   fun(self: image.MagickRockImage, width: number, height: number, x?: number, y?: number)
----@field destroy                                fun(self: image.MagickRockImage)
----@field get_format fun(self:                   image.MagickRockImage): string
----@field get_height fun(self:                   image.MagickRockImage): number
----@field get_width                              fun(self: image.MagickRockImage): number
----@field modulate                               fun(self: image.MagickRockImage, brightness?: number, saturation?: number, hue?: number)
----@field resize                                 fun(self: image.MagickRockImage, width: number, height: number)
----@field resize_and_crop                        fun(self: image.MagickRockImage, width: number, height: number)
----@field scale                                  fun(self: image.MagickRockImage, width: number, height: number)
----@field set_format                             fun(self: image.MagickRockImage, format: string)
----@field write                                  fun(self: image.MagickRockImage, path: string)
+---@field adaptive_resize?                                 fun(self: image.MagickRockImage, width: number, height: number)
+---@field clone?                                           fun(self: image.MagickRockImage): image.MagickRockImage
+---@field composite                                        fun(self: image.MagickRockImage, source: image.MagickRockImage, x: number, y: number, operator?: string)
+---@field crop                                             fun(self: image.MagickRockImage, width: number, height: number, x?: number, y?: number)
+---@field destroy                                          fun(self: image.MagickRockImage)
+---@field get_format                                       fun(self:                   image.MagickRockImage): string
+---@field get_height                                       fun(self:                   image.MagickRockImage): number
+---@field get_width                                        fun(self: image.MagickRockImage): number
+---@field modulate                                         fun(self: image.MagickRockImage, brightness?: number, saturation?: number, hue?: number)
+---@field resize                                           fun(self: image.MagickRockImage, width: number, height: number)
+---@field resize_and_crop                                  fun(self: image.MagickRockImage, width: number, height: number)
+---@field scale                                            fun(self: image.MagickRockImage, width: number, height: number)
+---@field set_format                                       fun(self: image.MagickRockImage, format: string)
+---@field write                                            fun(self: image.MagickRockImage, path: string)
 ---@class image.Image
----@field bounds?                                image.ImageBounds
----@field id?                                    string
----@field internal_id?                           number
----@field path?                                  string
----@field resized_path                           string
----@field cropped_path                           string
----@field original_path                          string
----@field image_width                            number
----@field image_height                           number
----@field max_width_window_percentage?           number
----@field max_height_window_percentage?          number
----@field window?                                number
----@field buffer?                                number
----@field with_virtual_padding?                  boolean
----@field inline?                                boolean
----@field geometry                               image.ImageGeometry
----@field rendered_geometry                      image.ImageGeometry
----@field is_rendered                            boolean
----@field resize_hash?                           string
----@field crop_hash?                             string
----@field global_state?                          image.State
----@field render?                                fun(self: image.Image, geometry?: image.ImageGeometry)
----@field clear                                  fun(self: image.Image, shallow?: boolean)
----@field move                                   fun(self: image.Image, x: number, y: number)
----@field brightness                             fun(self: image.Image, brightness: number)
----@field saturation                             fun(self: image.Image, saturation: number)
----@field hue                                    fun(self: image.Image, hue: number)
----@field namespace?                             string
----@field extmark?                               { id: number, row: number, col: number }
----@field last_modified?                         number
----@field has_extmark_moved                      fun (self:image.Image): (boolean, number?, number?)
----@field ignore_global_max_size?                boolean
+---@field bounds?                                          image.ImageBounds
+---@field id?                                              string
+---@field internal_id?                                     number
+---@field path?                                            string
+---@field resized_path                                     string
+---@field cropped_path                                     string
+---@field original_path                                    string
+---@field image_width                                      number
+---@field image_height                                     number
+---@field max_width_window_percentage?                     number
+---@field max_height_window_percentage?                    number
+---@field window?                                          number
+---@field buffer?                                          number
+---@field with_virtual_padding?                            boolean
+---@field inline?                                          boolean
+---@field geometry                                         image.ImageGeometry
+---@field rendered_geometry                                image.ImageGeometry
+---@field is_rendered                                      boolean
+---@field resize_hash?                                     string
+---@field crop_hash?                                       string
+---@field global_state?                                    image.State
+---@field render?                                          fun(self: image.Image, geometry?: image.ImageGeometry)
+---@field clear                                            fun(self: image.Image, shallow?: boolean)
+---@field move                                             fun(self: image.Image, x: number, y: number)
+---@field brightness                                       fun(self: image.Image, brightness: number)
+---@field saturation                                       fun(self: image.Image, saturation: number)
+---@field hue                                              fun(self: image.Image, hue: number)
+---@field namespace?                                       string
+---@field extmark?                                         { id: number, row: number, col: number }
+---@field last_modified?                                   number
+---@field has_extmark_moved                                fun (self:image.Image): (boolean, number?, number?)
+---@field ignore_global_max_size?                          boolean
 ---@class             image.ImageProcessor
----@field get_format?                            fun(path: string): string
----@field convert_to_png?                        fun(path: string, output_path?: string): string
----@field get_dimensions?                        fun(path: string): { width: number, height: number }
----@field resize                                 fun(path: string, width: number, height: number, output_path?: string): string
----@field crop                                   fun(path: string, x: number, y: number, width: number, height: number, output_path?: string): string
----@field brightness                             fun(path: string, brightness: number, output_path?: string): string
----@field saturation                             fun(path: string, saturation: number, output_path?: string): string
----@field hue                                    fun(path: string, hue: number, output_path?: string): string
+---@field get_format?                                      fun(path: string): string
+---@field convert_to_png?                                  fun(path: string, output_path?: string): string
+---@field get_dimensions?                                  fun(path: string): { width: number, height: number }
+---@field resize                                           fun(path: string, width: number, height: number, output_path?: string): string
+---@field crop                                             fun(path: string, x: number, y: number, width: number, height: number, output_path?: string): string
+---@field brightness                                       fun(path: string, brightness: number, output_path?: string): string
+---@field saturation                                       fun(path: string, saturation: number, output_path?: string): string
+---@field hue                                              fun(path: string, hue: number, output_path?: string): string
 ---@class image.IntegrationContext
----@field options?                               image.IntegrationOptions
----@field state?                                 image.State
+---@field options?                                         image.IntegrationOptions
+---@field state?                                           image.State
 ---@class image.Integration
----@field setup?                                 fun(api: image.API, options: image.IntegrationOptions, state: image.State)
+---@field setup?                                           fun(api: image.API, options: image.IntegrationOptions, state: image.State)
 ---@class image.Window
----@field buffer?                                number
----@field buffer_filetype?                       string
----@field buffer_is_listed?                      boolean
----@field height?                                number
----@field id?                                    number
----@field x?                                     number
----@field y?                                     number
----@field width?                                 number
----@field scroll_x?                              number
----@field scroll_y?                              number
----@field is_visible?                            boolean
----@field is_normal?                             boolean
----@field is_floating?                           boolean
----@field rect?                                  { top: number, right: number, bottom: number, left: number }
----@field masks?                                 { x: number, y: number, width: number, height: number }[]
----@field zindex                                 number
+---@field buffer?                                          number
+---@field buffer_filetype?                                 string
+---@field buffer_is_listed?                                boolean
+---@field height?                                          number
+---@field id?                                              number
+---@field x?                                               number
+---@field y?                                               number
+---@field width?                                           number
+---@field scroll_x?                                        number
+---@field scroll_y?                                        number
+---@field is_visible?                                      boolean
+---@field is_normal?                                       boolean
+---@field is_floating?                                     boolean
+---@field rect?                                            { top: number, right: number, bottom: number, left: number }
+---@field masks?                                           { x: number, y: number, width: number, height: number }[]
+---@field zindex                                           number
 ---@class image.KittyControlConfig
----@field action?                               't'|"T"|"p"|"d"|"f"|"c"|"a"|"q"
----@field image_id?                             string|number
----@field image_number?                         number
----@field placement_id?                         string|number
----@field quiet?                                0|1|2
----@field transmit_format?                      32|24|100
----@field transmit_medium?                      'd'|'f'|'t'|'s'
----@field transmit_more?                        0|1
----@field transmit_width?                       number
----@field transmit_height?                      number
----@field transmit_file_size?                   number
----@field transmit_file_offset?                 number
----@field transmit_compression?                 0|1
----@field display_x?                            number
----@field display_y?                            number
----@field display_width?                        number
----@field display_height?                       number
----@field display_x_offset?                     number
----@field display_y_offset?                     number
----@field display_columns?                      number
----@field display_rows?                         number
----@field display_cursor_policy?                0|1
----@field display_virtual_placeholder?          0|1
----@field display_zindex?                       number
----@field display_delete?                       'a'|'A'|'i'|'I'|'p'
----@field tty?                                  string
+---@field action?                                          't'|"T"|"p"|"d"|"f"|"c"|"a"|"q"
+---@field image_id?                                        string|number
+---@field image_number?                                    number
+---@field placement_id?                                    string|number
+---@field quiet?                                           0|1|2
+---@field transmit_format?                                 32|24|100
+---@field transmit_medium?                                 'd'|'f'|'t'|'s'
+---@field transmit_more?                                   0|1
+---@field transmit_width?                                  number
+---@field transmit_height?                                 number
+---@field transmit_file_size?                              number
+---@field transmit_file_offset?                            number
+---@field transmit_compression?                            0|1
+---@field display_x?                                       number
+---@field display_y?                                       number
+---@field display_width?                                   number
+---@field display_height?                                  number
+---@field display_x_offset?                                number
+---@field display_y_offset?                                number
+---@field display_columns?                                 number
+---@field display_rows?                                    number
+---@field display_cursor_policy?                           0|1
+---@field display_virtual_placeholder?                     0|1
+---@field display_zindex?                                  number
+---@field display_delete?                                  'a'|'A'|'i'|'I'|'p'
+---@field tty?                                             string

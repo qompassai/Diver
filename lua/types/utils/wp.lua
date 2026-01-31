@@ -96,7 +96,7 @@ Feature = Feature
 ---@field ALL?                                             integer
 ---@type                     WPFeatureFlags
 Features = Features
----@class                    WPFilterNodes                                    :table<integer, WPLocalModule>
+---@class                    WPFilterNodes                 :table<integer, WPLocalModule>
 ---@type                     WPFilterNodes
 filter_nodes = filter_nodes
 ---@class                    WPGSource
@@ -265,17 +265,17 @@ ProcUtils = ProcUtils
 ---@return                   WPSessionItem
 function SessionItem(type_name) end
 
----@class                    WPSessionItemEvent             :WPEvent
+---@class                    WPSessionItemEvent            :WPEvent
 ---@field get_subject?                                     fun(self: WPSessionItemEvent): WPSessionItem
 ---@class                    WPSessionItemFeature
 ---@field ACTIVE?                                          integer
----@class                    WPSessionItemFixed             :WPSessionItem
+---@class                    WPSessionItemFixed            :WPSessionItem
 ---@field id                                               integer
----@class                    WPSessionItemLink              :WPObject
+---@class                    WPSessionItemLink             :WPObject
 ---@field get_active_features?                             fun(self: WPSessionItemLink): integer
 ---@field properties?                                      WPProperties
 ---@field remove?                                          fun(self: WPSessionItemLink)
----@class                    WPSessionItemManager           :WPObjectManager
+---@class                    WPSessionItemManager          :WPObjectManager
 ---@field iterate?                                         fun(self: WPSessionItemManager, filter?: table): fun(): WPSessionItem|WPSessionItemLink
 ---@field lookup?                                          fun(self: WPSessionItemManager, args: table): WPObject|nil
 ---@class                    WPSettings
@@ -284,7 +284,7 @@ function SessionItem(type_name) end
 ---@field get_float?                                       fun(key: string): number
 ---@field subscribe?                                       fun(key: string, cb: fun()): nil
 ---@type                     WPSettings
----@class                    WPSimpleEventHook              :        WPObject
+---@class                    WPSimpleEventHook             :        WPObject
 ---@field register?                                        fun(self: WPSimpleEventHook)
 ---@field remove?                                          fun(self: WPSimpleEventHook)
 

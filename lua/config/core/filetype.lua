@@ -35,15 +35,14 @@ vim.filetype.add({
         frag = 'glsl',
         geom = 'glsl',
         gohtmltmpl = 'gohtmltmpl',
-        h = 'c',
-        handlebars = 'html.handlebars',
+        h = 'cpp',
         handlebars = 'handlebars',
         hbs = 'html.handlebars',
         hcl = 'hcl',
         hh = 'cpp',
         hpp = 'cpp',
         hxx = 'cpp',
-        js = 'javascriptreact',
+        js = 'javascript',
         jsx = 'javascriptreact',
         leaf = 'leaf',
         mdx = 'mdx',
@@ -87,6 +86,12 @@ vim.filetype.add({
         ['CMakePresets.json'] = 'cmake',
         ['CMakeUserPresets.json'] = 'cmake',
         Crystal = 'crystal',
+        ['Dockerfile'] = 'dockerfile',
+        ['Containerfile'] = 'dockerfile',
+        ['compose.yml'] = 'yaml.docker-compose',
+        ['compose.yaml'] = 'yaml.docker-compose',
+        ['docker-compose.yml'] = 'yaml.docker-compose',
+        ['docker-compose.yaml'] = 'yaml.docker-compose',
         ['.eslintrc.js'] = 'javascript',
         ['.eslintrc.cjs'] = 'javascript',
         ['Makefile.local'] = 'make',
@@ -96,6 +101,32 @@ vim.filetype.add({
         ['tsconfig.json'] = 'jsonc',
     },
     pattern = {
+        ['.*'] = function(path, bufnr)
+            if path:match('%.%w+$') then
+                return nil
+            end
+            local first = (vim.api.nvim_buf_get_lines(bufnr, 0, 1, false)[1] or '')
+            local env_interp = first:match('^#!%s*/usr/bin/env%s+%-S%s+([%w%._%-]+)')
+                or first:match('^#!%s*/usr/bin/env%s+([%w%._%-]+)')
+            local bin_interp = first:match('^#!%s*/.-/([%w%._%-]+)')
+            local interp = env_interp or bin_interp
+            if not interp then
+                return nil
+            end
+            local map = {
+                bash = 'sh',
+                sh = 'sh',
+                zsh = 'zsh',
+                fish = 'fish',
+                python = 'python',
+                python3 = 'python',
+                node = 'javascript',
+                lua = 'lua',
+                ruby = 'ruby',
+                php = 'php',
+            }
+            return map[interp]
+        end,
         ['.*%.agda'] = 'agda',
         ['.*/.*%.als'] = 'alloy',
         ['.*%.ansible%.ya?ml'] = 'yaml.ansible',
@@ -105,9 +136,11 @@ vim.filetype.add({
         ['.*%.clar'] = 'clar',
         ['.*%.clarity'] = 'clarity',
         ['.*/cobol_src/.*'] = 'cobol',
+        ['Containerfile%..+'] = 'dockerfile',
         ['.*/copybooks/.*'] = 'cobol',
         ['.*%.crystal'] = 'crystal',
         ['.*%.d.ts'] = 'typescript',
+        ['Dockerfile%..+'] = 'dockerfile',
         ['.*%.edge'] = 'edge',
         ['.*%.eex'] = 'html-eex',
         ['^.*/gitconfig.*$'] = 'gitconfig',
@@ -115,8 +148,9 @@ vim.filetype.add({
         ['^.*/gitcommit.*$'] = 'gitcommit',
         ['.*/%.github[%w/]+workflows[%w/]+.*%.ya?ml'] = 'yaml.github',
         ['%.gitlab%-ci%.ya?ml'] = 'yaml.gitlab',
-        ['*.gjs'] = 'javascript.glimmer',
-        ['*.gts'] = 'typescript.glimmer',
+        ['.*%.gjs$'] = 'javascript.glimmer',
+    ['.*%.gts$'] = 'typescript.glimmer',
+        ['.*/handlers/.*%.ya?ml'] = 'yaml.ansible',
         ['.*%.heex'] = 'html-eex',
         ['.*%.html%.antlers'] = 'html.antlers',
         ['.*/hypr/.+%.conf'] = 'hyprlang',
@@ -124,10 +158,13 @@ vim.filetype.add({
         ['.*%.lagda%.md'] = 'agda',
         ['.*%.lagda%.typ'] = 'agda',
         ['%.pg%.sql$'] = 'pgsql',
+        ['.*/playbooks/.*%.ya?ml'] = 'yaml.ansible',
         ['.*%.postcss'] = 'postcss',
         ['%.postgres%.sql$'] = 'pgsql',
         ['.*%.razor'] = 'razor',
+        ['.*/roles/.*%.ya?ml'] = 'yaml.ansible',
         ['.*%.sugarss'] = 'sugarss',
+        ['.*/tasks/.*%.ya?ml'] = 'yaml.ansible',
         ['.*/templates/.*%.yaml'] = 'helm',
         ['.*/templates/.*%.yml'] = 'helm',
         ['.*/templates/.*%.tpl'] = 'helm',

@@ -2,7 +2,6 @@
 -- Qompass AI Diver Nix Lang Config
 -- Copyright (C) 2025 Qompass AI, All rights reserved
 -- -------------------------------------------------
----@module 'config.lang.nix'
 local M = {}
 ---@param opts? table
 function M.nix_autocmds(opts) ---@return nil|string[]
@@ -26,7 +25,6 @@ vim.api.nvim_create_autocmd('FileType', {
     callback = function()
         vim.opt_local.tabstop = 2
         vim.opt_local.shiftwidth = 2
-        vim.opt_local.expandtab = true
         vim.opt_local.conceallevel = 2
     end,
 })
@@ -38,7 +36,7 @@ vim.api.nvim_create_autocmd('BufWritePre', {
     callback = function(args)
         vim.lsp.buf.format({
             bufnr = args.buf,
-            async = false,
+            async = true,
         })
     end,
 })
@@ -144,8 +142,14 @@ vim.api.nvim_create_user_command('NixRangeAction', function()
             },
         },
         range = {
-            start = { start_pos[1], start_pos[2] },
-            ['end'] = { end_pos[1], end_pos[2] },
+            start = {
+                start_pos[1],
+                start_pos[2],
+            },
+            ['end'] = {
+                end_pos[1],
+                end_pos[2],
+            },
         },
         filter = function(_, client_id)
             local client = vim.lsp.get_client_by_id(client_id)

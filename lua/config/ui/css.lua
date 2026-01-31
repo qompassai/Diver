@@ -3,6 +3,12 @@
 -- Copyright (C) 2025 Qompass AI, All rights reserved
 -----------------------------------------------------
 local M = {}
+local api = vim.api
+local fn = vim.fn
+local group = api.nvim_create_augroup('CSS', {
+    clear = true,
+})
+local header = require('utils.docs')
 local gtk_selectors = {
     ['backdrop'] = {
         documentation = 'GTK-specific pseudo-class for backdrop/unfocused window state',
@@ -193,7 +199,21 @@ function M.setup_gtk_completions()
 end
 
 function M.css_autocmds()
-    vim.api.nvim_create_autocmd('FileType', {
+    api.nvim_create_autocmd('BufNewFile', {
+        group = group,
+        pattern = { '*.css', '*.scss' },
+        callback = function()
+            if api.nvim_buf_get_lines(0, 0, 1, false)[1] ~= '' then
+                return
+            end
+            local filepath = fn.expand('%:p')
+            local hdr = header.make_header(filepath, '/*')
+
+            api.nvim_buf_set_lines(0, 0, 0, false, hdr)
+            vim.cmd('normal! G')
+        end,
+    })
+    api.nvim_create_autocmd('FileType', {
         pattern = {
             'css',
             'scss',
@@ -258,7 +278,7 @@ function M.css_colorizer(opts)
     }
     local merged = vim.tbl_deep_extend('force', default_opts, opts)
     colorizer.setup(merged)
-    vim.api.nvim_create_autocmd('FileType', {
+    api.nvim_create_autocmd('FileType', {
         pattern = merged.filetypes,
         callback = function()
             colorizer.attach_to_buffer(0)
@@ -272,9 +292,9 @@ function M.css_config(opts)
     M.css_colorizer(opts.colorizer)
     M.setup_gtk_completions()
     return {
+        autocmds = M.css_autocmds,
         setup = M.css_config,
         colorizer = M.css_colorizer,
-        autocmds = M.css_autocmds,
         gtk_completions = M.setup_gtk_completions,
     }
 end
