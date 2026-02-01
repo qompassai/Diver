@@ -5,14 +5,17 @@
 local bo = vim.bo ---@type vim.bo
 local cmd = vim.cmd
 local env = vim.env
---local function xdg_data()
---    return env.XDG_DATA_HOME or (env.HOME .. '/.local/share')
---end
 local g = vim.g
 local go = vim.go
 local l = vim.loader
 local o = vim.o ---@type vim.o
 local opt = vim.opt
+env.VIMRUNTIME = vim.fn.expand('~/.local/share/nvim/runtime')
+opt.runtimepath:prepend(vim.env.VIMRUNTIME)
+opt.runtimepath:prepend(vim.fn.stdpath('data') .. '/site')
+opt.runtimepath:prepend(vim.fn.stdpath('data') .. '/lazy/nvim-treesitter')
+local uid = vim.fn.system('id -u'):gsub('\n', '')
+local user = env.USER or vim.fn.system('whoami'):gsub('\n', '')
 local wo = vim.wo ---@type vim.wo
 bo.autocomplete = true
 bo.autoindent = true
@@ -51,6 +54,7 @@ cmd('set completeopt+=noselect')
 cmd('syntax on')
 cmd.runtime('macros/matchit.vim')
 env.LUAROCKS_CONFIG = env.HOME .. '/.config/luarocks/luarocks-5.1.lua'
+env.VIMRUNTIME = vim.fn.expand('~/.local/share/nvim/runtime')
 g.deprecation_warnings = true
 g.editorconfig = true
 g.git_command_ssh = 1
@@ -73,6 +77,7 @@ g.node_host_prog = '/usr/bin/node'
 g.perl_host_prog = '/usr/bin/perl'
 g.sqlite_clib_path = '/usr/lib/libsqlite3.so'
 g.python3_host_prog = '/usr/bin/python3'
+g.query_lint_on = {}
 g.ruby_host_prog = '/usr/bin/neovim-ruby-host'
 g.rust_cargo_check_all_targets = true
 g.rust_cargo_check_benches = true
@@ -98,6 +103,22 @@ g.vim_markdown_frontmatter = 1
 g.vim_markdown_toml_frontmatter = 1
 g.vim_markdown_json_frontmatter = 1
 g.which_key_disable_health_check = 1
+g.xdg_bin_home = env.XDG_BIN_HOME or vim.fn.expand('~/.local/bin')
+g.xdg_cache_home = vim.env.XDG_CACHE_HOME or vim.fn.expand('~/.cache')
+g.xdg_config_dirs = env.XDG_CONFIG_DIRS or vim.fn.expand('~/.config/xdg:/etc/xdg:/usr/local/etc/xdg:/usr/etc/xdg')
+g.xdg_config_home = vim.env.XDG_CONFIG_HOME or vim.fn.expand('~/.config')
+g.xdg_current_desktop = env.XDG_CURRENT_DESKTOP or 'Hyprland'
+g.xdg_current_session = env.XDG_CURRENT_SESSION or 'Hyprland'
+g.xdg_data_dirs = env.XDG_DATA_DIRS or vim.fn.expand('~/.local/share:/usr/local/share:/usr/share')
+g.xdg_data_home = vim.env.XDG_DATA_HOME or vim.fn.expand('~/.local/share')
+g.xdg_desktop_dir = env.XDG_DESKTOP_DIR or vim.fn.expand('~/.Desktop')
+g.xdg_desktop_portal_dir = env.XDG_DESKTOP_PORTAL_DIR or ('/run/user/' .. uid .. '/xdg-desktop-portal/portals')
+g.xdg_documents_dir = env.XDG_DOCUMENTS_DIR or vim.fn.expand('~/.Documents')
+g.xdg_download_dir = env.XDG_DOWNLOAD_DIR or vim.fn.expand('~/.Downloads')
+g.nix_per_user_profile = '/nix/var/nix/profiles/per-user/' .. user
+g.xdg_state_home = vim.env.XDG_STATE_HOME or vim.fn.expand('~/.local/state')
+g.xdg_runtime_dir = env.XDG_RUNTIME_DIR or ('/run/user/' .. vim.fn.system('id -u'):gsub('\n', ''))
+g.xdg_utils_debug_level = env.XDG_UTILS_DEBUG_LEVEL or 3
 if env.SSH_TTY then
     g.clipboard = 'osc52'
 end
@@ -136,7 +157,7 @@ o.fileencodings = 'utf-8,ucs-bom,default,latin1'
 o.fileformats = 'unix,dos,mac'
 o.formatoptions = 'tcqj'
 o.guicursor = 'n-v-c:underline,i-ci:ver25,r-cr:hor20'
-g.guifont = 'PragmataPro Mono Liga:h14'
+g.guifont = 'DaddyTimeMono Nerd Font Mono:h13'
 o.hidden = true
 o.history = 1000
 o.hlsearch = true
@@ -190,13 +211,15 @@ o.wildignorecase = true
 o.wildmenu = true
 o.wildmode = 'noselect'
 o.winborder = 'rounded'
-o.wrap = true
+o.wrap = false
 o.writebackup = true
 opt.comments:append('fb:•')
 opt.complete:remove('i')
 --opt.packpath = vim.opt.runtimepath:get() ---@type string[]
+opt.runtimepath:prepend(vim.fn.stdpath('data') .. '/site')
 o.tags = './tags;,tags'
 opt.viminfo:append('!')
+
 wo.breakindent = true
 wo.breakindentopt = 'shift:2,sbr'
 wo.concealcursor = 'nc'
@@ -215,9 +238,9 @@ wo.list = true
 --wo.listchars = ''
 wo.number = true
 wo.relativenumber = true
-wo.scrolloff = 8
+wo.scrolloff = 20
 wo.showbreak = '↪'
-wo.sidescrolloff = 8
+wo.sidescrolloff = 20
 wo.signcolumn = 'number'
 wo.smoothscroll = true
 wo.spell = true

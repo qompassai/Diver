@@ -4,7 +4,7 @@
 ------------------------------------------------------
 return ---@type vim.lsp.Config
 {
-    capabilities = require('config.core.lsp').capabilities,
+  --  capabilities = require('config.core.lsp').capabilities,
     cmd = {
         'hyprls',
     },
@@ -12,7 +12,7 @@ return ---@type vim.lsp.Config
         'hyprlang',
         'hypr',
     },
-    on_attach = require('config.core.lsp').on_attach,
+  --  on_attach = require('config.core.lsp').on_attach,
     settings = {
         hyprls = {
             colorProvider = {

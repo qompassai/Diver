@@ -3,6 +3,7 @@
 -- Copyright (C) 2025 Qompass AI, All rights reserved
 -----------------------------------------------------
 local M = {}
+local api = vim.api
 function M.md_anchor(link, opts)
     opts = opts or {}
     local prefix = opts.prefix or '#'
@@ -16,7 +17,7 @@ function M.md_anchor(link, opts)
 end
 
 function M.md_autocmds()
-    vim.api.nvim_create_autocmd('FileType', {
+    api.nvim_create_autocmd('FileType', {
         pattern = {
             'markdown',
             'md',
@@ -33,7 +34,9 @@ function M.md_autocmds()
             vim.g.mkdp_browser = ''
             vim.g.mkdp_echo_preview_url = 1
             vim.g.mkdp_page_title = '${name}'
-            vim.g.mkdp_filetypes = { 'markdown' }
+            vim.g.mkdp_filetypes = {
+                'markdown',
+            }
         end,
     })
 end
@@ -59,10 +62,10 @@ function M.md_diagram(opts)
             renderer_options = {
                 mermaid = {
                     background = nil,
+                    height = 600,
                     theme = 'dark',
                     scale = 1,
                     width = 800,
-                    height = 600,
                 },
                 plantuml = {
                     charset = 'utf-8',
@@ -81,7 +84,7 @@ function M.md_diagram(opts)
                 },
             },
         },
-        vim.api.nvim_create_user_command('DiagramRender', function()
+        api.nvim_create_user_command('DiagramRender', function()
             require('diagram').render_buffer()
         end, {})
     )
@@ -93,8 +96,6 @@ function M.md_image(opts)
     opts = opts or {}
     require('image').setup({
         backend = 'kitty',
-        kitty_method = 'normal',
-        processor = 'magick_cli',
         integrations = {
             markdown = {
                 enabled = true,
@@ -145,10 +146,12 @@ function M.md_image(opts)
                 floating_windows = true,
             },
         },
+        kitty_method = 'normal',
         max_width = nil,
         max_height = nil,
         max_width_window_percentage = nil,
         max_height_window_percentage = 50,
+        processor = 'magick_cli',
         window_overlap_clear_enabled = false,
         window_overlap_clear_ft_ignore = {
             'cmp_menu',
@@ -200,8 +203,8 @@ function M.md_pdf(opts)
             math_font = 'Libertinus Math',
         },
         pandoc_user_args = opts.pandoc_user_args, ---@type string[]
-        output_path = opts.output_path or './',
         pdf_engine = opts.pdf_engine or 'lualatex',
+        output_path = opts.output_path or './',
     })
     return opts
 end
@@ -211,12 +214,12 @@ function M.md_rendermd(opts)
     require('render-markdown').setup({
         enabled = true,
         render_modes = { ---@type string[]
-            'n',
             'c',
+            'n',
             't',
         },
-        max_file_size = 100.0,
         debounce = 100,
+        max_file_size = 100.0,
         preset = 'none',
         log_level = nil,
         log_runtime = false,
@@ -254,8 +257,8 @@ function M.md_rendermd(opts)
             },
         },
         anti_conceal = {
-            enabled = true,
             disabled_modes = true,
+            enabled = true,
             above = 0,
             below = 0,
             ignore = {
@@ -436,14 +439,16 @@ function M.md_rendermd(opts)
                 scope_highlight = nil,
             },
             custom = {
-                todo = { raw = '[-]', rendered = '󰥔 ', highlight = 'RenderMarkdownTodo', scope_highlight = nil },
+                todo = {
+                    highlight = 'RenderMarkdownTodo',
+                    raw = '[-]',
+                    rendered = '󰥔 ',
+                    scope_highlight = nil,
+                },
             },
         },
         quote = {
             enabled = true,
-            render_modes = true,
-            icon = '▋',
-            repeat_linebreak = true,
             highlight = {
                 'RenderMarkdownQuote1',
                 'RenderMarkdownQuote2',
@@ -452,13 +457,16 @@ function M.md_rendermd(opts)
                 'RenderMarkdownQuote5',
                 'RenderMarkdownQuote6',
             },
+            icon = '▋',
+            render_modes = true,
+            repeat_linebreak = true,
         },
         pipe_table = { ---@type table[]
+            cell = 'trimmed',
             enabled = true,
             render_modes = true,
             preset = 'none',
             style = 'full',
-            cell = 'padded',
             padding = 1,
             min_width = 0,
             border = {
@@ -476,9 +484,9 @@ function M.md_rendermd(opts)
             },
             border_virtual = true, ---@type boolean
             alignment_indicator = '━',
+            filler = 'RenderMarkdownTableFill',
             head = 'RenderMarkdownTableHead',
             row = 'RenderMarkdownTableRow',
-            filler = 'RenderMarkdownTableFill',
         },
         callout = { ---@type table[]
             note = {
@@ -749,10 +757,10 @@ function M.md_rendermd(opts)
             buflisted = {},
             buftype = {
                 nofile = {
-                    render_modes = true,
                     padding = {
                         highlight = 'NormalFloat',
                     },
+                    render_modes = true,
                     sign = {
                         enabled = true,
                     },
@@ -782,7 +790,7 @@ function M.md_treesitter(opts)
 end
 
 function M.md_table_mode()
-    vim.api.nvim_create_autocmd('FileType', {
+    api.nvim_create_autocmd('FileType', {
         pattern = {
             'markdown',
             'md',
@@ -792,6 +800,7 @@ function M.md_table_mode()
         end,
     })
 end
+
 function M.md_config(opts)
     opts = opts or {}
     M.md_anchor(opts)

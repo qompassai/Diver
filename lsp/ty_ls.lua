@@ -4,6 +4,7 @@
 -----------------------------------------------------
 return ---@type vim.lsp.Config
 {
+    capabilities = require('config.core.lsp').capabilities,
     cmd = {
         'ty',
         'server',
@@ -11,6 +12,11 @@ return ---@type vim.lsp.Config
     filetypes = {
         'python',
     },
+    init_options = {
+        logFile = '/tmp/ty-lsp.log',
+        logLevel = 'info',
+    },
+    on_attach = require('config.core.lsp').on_attach,
     root_markers = {
         'ty.toml',
         'pyproject.toml',
@@ -107,9 +113,5 @@ return ---@type vim.lsp.Config
                 rename = true,
             },
         },
-    },
-    init_options = {
-        logFile = '/tmp/ty-lsp.log',
-        logLevel = 'info',
     },
 }

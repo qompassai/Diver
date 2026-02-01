@@ -3,6 +3,59 @@
 -- Copyright (C) 2025 Qompass AI, All rights reserved
 -- -------------------------------------------------
 local M = {}
+---@class NixPaths
+local Nix = {}
+local g = vim.g
+---@param name string Executable name
+---@return string|nil
+function Nix.find_bin(name)
+    local search_paths = {
+        g.nix_user_profile .. '/bin/' .. name,
+        g.nix_per_user_profile .. '/bin/' .. name,
+        '/nix/var/nix/profiles/default/bin/' .. name,
+        '/run/current-system/sw/bin/' .. name,
+    }
+    for _, path in ipairs(search_paths) do
+        if vim.fn.executable(path) == 1 then
+            return path
+        end
+    end
+    return nil
+end
+--- Find library in Nix profiles
+---@param name string
+---@return string|nil
+function Nix.find_lib(name)
+    local search_paths = {
+        g.nix_user_profile .. '/lib/' .. name,
+        '/nix/var/nix/profiles/default/lib/' .. name,
+        '/run/current-system/sw/lib/' .. name,
+    }
+    for _, path in ipairs(search_paths) do
+        if vim.fn.filereadable(path) == 1 then
+            return path
+        end
+    end
+    return nil
+end
+--- Check if running on NixOS
+---@return boolean
+function Nix.is_nixos()
+    return vim.fn.filereadable('/etc/NIXOS') == 1 or vim.fn.isdirectory('/run/current-system') == 1
+end
+--- Get Nix channel for current user
+---@return string|nil
+function Nix.get_channel()
+    local channel_path = vim.fn.expand('~/.nix-channels')
+    if vim.fn.filereadable(channel_path) == 1 then
+        local channels = vim.fn.readfile(channel_path)
+        if #channels > 0 then
+            return channels[1]:match('^%S+')
+        end
+    end
+    return nil
+end
+_G.Nix = Nix
 ---@param opts? table
 function M.nix_autocmds(opts) ---@return nil|string[]
     opts = opts or {}

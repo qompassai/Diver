@@ -7,7 +7,6 @@ return {
     require('config.lang.bash'),
     require('config.lang.cmp'),
     require('config.lang.go'),
-    require('config.lang.hypr'),
     require('config.lang.js'),
     require('config.lang.julia'),
     require('config.lang.latex'),

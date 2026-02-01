@@ -3,6 +3,8 @@
 -- Copyright (C) 2025 Qompass AI, All rights reserved
 -- ----------------------------------------
 local M = {}
+local api = vim.api
+local fs = vim.fs
 function M.simple_colon_parser(output, bufnr, opts)
     opts = opts or {}
     local pattern = opts.pattern or '^(.-):(%d+):(%d+):%s*(.+)$'
@@ -10,8 +12,8 @@ function M.simple_colon_parser(output, bufnr, opts)
     if output == '' then
         return diagnostics
     end
-    local bufname = vim.api.nvim_buf_get_name(bufnr)
-    local filename = vim.fs.basename(bufname)
+    local bufname = api.nvim_buf_get_name(bufnr)
+    local filename = fs.basename(bufname)
     for line in
         vim.gsplit(output, '\n', {
             plain = true,
@@ -25,7 +27,7 @@ function M.simple_colon_parser(output, bufnr, opts)
         if path and lnum and msg then
             lnum = tonumber(lnum) - 1
             col = tonumber(col or 1) - 1
-            if vim.fs.basename(path) == filename or path == bufname then
+            if fs.basename(path) == filename or path == bufname then
                 table.insert(diagnostics, {
                     lnum = lnum,
                     end_lnum = lnum,

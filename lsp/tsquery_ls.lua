@@ -2,75 +2,422 @@
 -- Qompass AI TS Query LSP Spec
 -- Copyright (C) 2025 Qompass AI, All rights reserved
 -- --------------------------------------------------
----@source  https://github.com/ribru17/ts_query_ls
-vim.g.query_lint_on = {}
 return ---@type vim.lsp.Config
 {
+    capabilities = require('config.core.lsp').capabilities,
     cmd = {
         'ts_query_ls',
     },
     filetypes = {
         'query',
     },
+    init_options = {},
+    on_attach = require('config.core.lsp').on_attach,
+    on_new_config = function(config)
+        local ok, parser_config = pcall(require, 'nvim-treesitter.parsers')
+        if ok then
+            local install_dir = parser_config.get_parser_configs().install_info
+                    and parser_config.get_parser_configs().install_info.install_dir
+                or vim.fn.stdpath('data') .. '/lazy/nvim-treesitter/parser'
+            config.init_options.parser_install_directories = { install_dir }
+        end
+    end,
     root_markers = {
         '.git',
         '.tsqueryrc.json',
     },
-    init_options = {
-        parser_aliases = {
-            c = 'c',
-            ecma = 'javascript',
-            js = 'javascript',
-            jsx = 'javascript',
-            php_only = 'php',
-        },
-        language_retrieval_patterns = {
-            'languages/src/([^/]+)/[^/]+%.scm$',
-        },
-        diagnostic_options = {
-            string_argument_style = 'prefer_quoted',
-            warn_unused_underscore_captures = true,
-        },
-        formatting_options = {
-            dot_prefix_predicates = false,
+    settings = { ---@source  https://github.com/ribru17/ts_query_ls
+        tsquery = {
+            diagnostic_options = {
+                check_field_names = true,
+                check_node_types = true,
+                string_argument_style = 'prefer_quoted',
+                warn_deprecated_syntax = true,
+                warn_unused_captures = true,
+                warn_unused_underscore_captures = true,
+            },
+            formatting_options = {
+                align_predicates = true,
+                bracket_spacing = true,
+                consistent_string_quotes = 'single',
+                dot_prefix_predicates = false,
+                group_predicates_by_type = true,
+                indent_size = 2,
+                max_line_length = 100,
+                trailing_comma = true,
+                parentheses_spacing = false,
+                newline_before_predicates = true,
+                sort_captures = true,
+            },
+            language_retrieval_patterns = {
+                'languages/src/([^/]+)/[^/]+\\.scm$',
+                'queries/([^/]+)/[^/]+\\.scm$',
+            },
+            parser_aliases = {
+                agda = 'agda',
+                arduino = 'cpp',
+                bash = 'bash',
+                blade = 'blade',
+                bri = 'brioche',
+                c = 'c',
+                cairo = 'cairo',
+                cbl = 'cobol',
+                CBL = 'cobol',
+                CBLLE = 'cobol',
+                cc = 'cpp',
+                cjs = 'javascript',
+                clar = 'clarity',
+                clarity = 'clarity',
+                cobol = 'cobol',
+                comp = 'glsl',
+                cpp = 'cpp',
+                cpy = 'cobol',
+                CPY = 'cobol',
+                cr = 'crystal',
+                cs = 'c_sharp',
+                cts = 'typescript',
+                cuda = 'cpp',
+                cxx = 'cpp',
+                cypher = 'cypher',
+                ['d.ts'] = 'typescript',
+                dockerfile = 'dockerfile',
+                ecma = 'javascript',
+                edge = 'edge',
+                ejs = 'ejs',
+                erb = 'eruby',
+                eex = 'eex',
+                frag = 'glsl',
+                fs = 'fsharp',
+                geom = 'glsl',
+                gjs = 'glimmer_javascript',
+                gohtmltmpl = 'gotmpl',
+                golang = 'go',
+                gts = 'glimmer_typescript',
+                h = 'c',
+                handlebars = 'handlebars',
+                hbs = 'handlebars',
+                hcl = 'hcl',
+                heex = 'heex',
+                help = 'vimdoc',
+                hh = 'cpp',
+                hpp = 'cpp',
+                hyprlang = 'hyprlang',
+                hxx = 'cpp',
+                js = 'javascript',
+                jsx = 'javascript',
+                kt = 'kotlin',
+                ['lagda.md'] = 'agda',
+                ['lagda.typ'] = 'agda',
+                leaf = 'leaf',
+                js = 'javascript',
+                jsx = 'javascript',
+                md = 'markdown',
+                mdx = 'mdx',
+                mjs = 'javascript',
+                mojo = 'mojo',
+                mts = 'typescript',
+                njk = 'nunjucks',
+                nunjucks = 'nunjucks',
+                pgsql = 'sql',
+                php8 = 'php',
+                php_only = 'php',
+                ['postgres.sql'] = 'sql',
+                postcss = 'css',
+                psql = 'sql',
+                py = 'python',
+                pyi = 'python',
+                rake = 'ruby',
+                razor = 'razor',
+                rb = 'ruby',
+                rs = 'rust',
+                rst = 'rst',
+                schelp = 'scdoc',
+                sh = 'bash',
+                slim = 'slim',
+                snippets = 'snippets',
+                sugarss = 'css',
+                svh = 'verilog',
+                tesc = 'glsl',
+                tese = 'glsl',
+                tf = 'terraform',
+                tfvars = 'terraform',
+                tpl = 'helm',
+                tsx = 'tsx',
+                txt = 'vimdoc',
+                v = 'verilog',
+                verilog = 'verilog',
+                vh = 'verilog',
+                yaml = 'yaml',
+                ['yaml.ansible'] = 'yaml',
+                ['yaml.docker-compose'] = 'yaml',
+                ['yaml.github'] = 'yaml',
+                ['yaml.gitlab'] = 'yaml',
+                ['yaml.helm-values'] = 'yaml',
+                yml = 'yaml',
+                ['yml.ansible'] = 'yaml',
+                ziggy = 'ziggy',
+                ['ziggy-schema'] = 'ziggy_schema',
+                zir = 'zir',
+                zsh = 'bash',
+                ['🔥'] = 'mojo',
+            },
+            parser_install_directories = {
+                vim.fn.stdpath('data') .. '/lazy/nvim-treesitter/parser',
+                vim.fn.stdpath('data') .. '/site/pack/*/start/nvim-treesitter/parser',
+                vim.fn.stdpath('data') .. '/site/pack/packer/start/nvim-treesitter/parser',
+                '/usr/lib/tree-sitter',
+                '/usr/local/lib/tree-sitter',
+                vim.fn.expand('~/.local/lib/tree-sitter'),
+            },
+            ['$schema'] = 'https://raw.githubusercontent.com/ribru17/ts_query_ls/refs/heads/master/schemas/config.json',
+            supported_abi_versions = {
+                start = 13,
+                ['end'] = 15,
+            },
             valid_captures = {
+                folds = {
+                    fold = 'Foldable regions',
+                },
                 highlights = {
+                    attribute = 'Attributes',
+                    boolean = 'Boolean literals',
+                    comment = 'Comments',
+                    constant = 'Constants',
+                    ['constant.builtin'] = 'Built-in constants',
+                    ['function'] = 'Function names',
+                    ['function.builtin'] = 'Built-in functions',
+                    ['function.call'] = 'Function call site',
+                    ['function.method'] = 'Method definition',
+                    keyword = 'Language keywords',
+                    ['keyword.function'] = 'Function keywords (def, function, etc.)',
+                    ['keyword.operator'] = 'Operator keywords (and, or, not)',
+                    ['keyword.return'] = 'Return keywords',
+                    number = 'Numeric literals',
+                    operator = 'Operators (+, -, *, /)',
+                    property = 'Object properties',
+                    ['punctuation.bracket'] = 'Brackets ([], {}, ())',
+                    ['punctuation.delimiter'] = 'Delimiters (,, ;, :)',
+                    string = 'String literals',
+                    ['string.escape'] = 'Escape sequences in strings',
+                    tag = 'Tags (HTML/XML)',
+                    type = 'Type names',
+                    ['type.builtin'] = 'Built-in types',
                     variable = 'Simple identifiers',
                     ['variable.parameter'] = 'Parameters of a function',
                 },
+                indents = {
+                    ['indent.auto'] = 'Auto-indent',
+                    ['indent.begin'] = 'Increase indent',
+                    ['indent.branch'] = 'Branch point',
+                    ['indent.dedent'] = 'Dedent immediately',
+                    ['indent.end'] = 'Decrease indent',
+                    ['indent.ignore'] = 'Ignore for indentation',
+                    ['indent.zero'] = 'Zero indent',
+                },
+                injections = {
+                    ['injection.content'] = 'Content to be injected',
+                    ['injection.language'] = 'Language name for injection',
+                },
+                locals = {
+                    ['local.definition'] = 'Variable definitions',
+                    ['local.reference'] = 'Variable references',
+                    ['local.scope'] = 'Scope boundaries',
+                },
+                textobjects = {
+                    ['block.inner'] = 'Inner code block',
+                    ['block.outer'] = 'Outer code block',
+                    ['call.inner'] = 'Inner function call arguments',
+                    ['call.outer'] = 'Outer function call',
+                    ['class.inner'] = 'Inner class body',
+                    ['class.outer'] = 'Outer class scope',
+                    ['comment.outer'] = 'Outer comment block',
+                    ['conditional.inner'] = 'Inner conditional',
+                    ['conditional.outer'] = 'Outer conditional',
+                    ['function.inner'] = 'Inner function body',
+                    ['function.outer'] = 'Outer function scope',
+                    ['loop.inner'] = 'Inner loop body',
+                    ['loop.outer'] = 'Outer loop',
+                    ['parameter.inner'] = 'Inner parameter',
+                    ['parameter.outer'] = 'Outer parameter',
+                },
             },
-        },
-        valid_predicates = {
-            ['any-of'] = {
-                parameters = {
-                    {
+            valid_directives = {
+                ['make-short'] = {
+                    description = 'Shorten the match',
+                    parameters = { {
+                        arity = 'required',
                         type = 'capture',
-                        arity = 'required',
-                    },
-                    {
-                        type = 'string',
-                        arity = 'required',
-                    },
-                    {
-                        type = 'string',
-                        arity = 'variadic',
-                        constraint = 'integer',
+                    } },
+                },
+                offset = {
+                    description = 'Offset the capture position',
+                    parameters = {
+                        {
+                            arity = 'required',
+                            type = 'capture',
+                        },
+                        {
+                            arity = 'required',
+                            type = 'string',
+                        },
+                        {
+                            arity = 'optional',
+                            type = 'string',
+                        },
                     },
                 },
-                description = 'Checks for equality between multiple strings',
+                set = {
+                    description = 'Set a property for this pattern',
+                    parameters = {
+                        {
+                            arity = 'required',
+                            type = 'string',
+                        },
+                        {
+                            arity = 'optional',
+                            type = 'string',
+                        },
+                    },
+                },
+                trim = {
+                    description = 'Trim whitespace from capture',
+                    parameters = {
+                        {
+                            arity = 'required',
+                            type = 'capture',
+                        },
+                    },
+                },
+            },
+            valid_predicates = {
+                ['any-of'] = {
+                    description = 'Checks if a capture equals any of the given strings',
+                    ['not'] = true,
+                    parameters = {
+                        {
+                            arity = 'required',
+                            type = 'capture',
+                        },
+                        {
+                            arity = 'variadic',
+                            type = 'string',
+                        },
+                    },
+                    contains = {
+                        any = true,
+                        description = 'Checks if a capture contains a substring',
+                        ['not'] = true,
+                        parameters = {
+                            {
+                                arity = 'required',
+                                type = 'capture',
+                            },
+                            {
+                                arity = 'required',
+                                type = 'string',
+                            },
+                        },
+                    },
+                    eq = {
+                        any = true,
+                        description = 'Checks for equality between two nodes, or a node and a string',
+                        ['not'] = true,
+                        parameters = {
+                            {
+                                arity = 'required',
+                                type = 'capture',
+                            },
+                            {
+                                arity = 'required',
+                                type = 'any',
+                            },
+                        },
+                    },
+                    ['has-ancestor'] = {
+                        description = 'Checks if first capture is an ancestor of second',
+                        ['not'] = true,
+                        parameters = {
+                            {
+                                arity = 'required',
+                                type = 'capture',
+                            },
+                            {
+                                arity = 'required',
+                                type = 'capture',
+                            },
+                        },
+                    },
+                    ['has-parent'] = {
+                        description = 'Checks if first capture is the parent of second',
+                        ['not'] = true,
+                        parameters = {
+                            {
+                                arity = 'required',
+                                type = 'capture',
+                            },
+                            {
+                                arity = 'required',
+                                type = 'capture',
+                            },
+                        },
+                    },
+                    is = {
+                        description = 'Checks if a node is of a certain type',
+                        ['not'] = true,
+                        parameters = {
+                            {
+                                arity = 'required',
+                                type = 'string',
+                            },
+                        },
+                    },
+                    ['lua-match'] = {
+                        any = true,
+                        description = 'Checks if a capture matches a Lua pattern',
+                        ['not'] = true,
+                        parameters = {
+                            {
+                                arity = 'required',
+                                type = 'capture',
+                            },
+                            {
+                                arity = 'required',
+                                type = 'string',
+                            },
+                        },
+                    },
+                    match = {
+                        any = true,
+                        description = 'Checks if a capture matches a regex pattern',
+                        ['not'] = true,
+                        parameters = {
+                            {
+                                arity = 'required',
+                                type = 'capture',
+                            },
+                            {
+                                arity = 'required',
+                                type = 'string',
+                            },
+                        },
+                    },
+                    ['vim-match'] = {
+                        any = true,
+                        description = 'Checks if a capture matches a Vim regex pattern',
+                        ['not'] = true,
+                        parameters = {
+                            {
+                                arity = 'required',
+                                type = 'capture',
+                            },
+                            {
+                                arity = 'required',
+                                type = 'string',
+                            },
+                        },
+                    },
+                },
             },
         },
-        valid_directives = {},
-        supported_abi_versions = {
-            start = 13,
-            ['end'] = 15,
-        },
-        parser_install_directories = {
-            -- vim.fn.stdpath('data') .. '/site/parser',
-            vim.fs.joinpath(vim.fn.stdpath('data'), 'lazy', 'nvim-treesitter', 'parser'),
-        },
     },
-    on_attach = function(_, buf)
-        vim.bo[buf].omnifunc = 'v:lua.vim.lsp.omnifunc'
-    end,
 }

@@ -64,7 +64,7 @@ p.add({
     {
         branch = 'main',
         hook = function()
-            r('config.core.tree').treesitter({})
+            require('config.core.tree').treesitter({})
         end,
         src = 'https://github.com/nvim-treesitter/nvim-treesitter',
         update = true,
