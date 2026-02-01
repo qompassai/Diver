@@ -1,9 +1,6 @@
 <!-- /qompassai/Diver/lsp/README.md -->
-
 <!-- Qompass AI Diver LSP Docs -->
-
 <!-- Copyright (C) 2026 Qompass AI, All rights reserved -->
-
 <!-- ---------------------------------------- -->
 
 <div align="center">
@@ -26,7 +23,26 @@
  <div style="background: #f8f9fa; padding: 15px; border-radius: 5px; margin-top: 10px; font-family: monospace;">
 
 ```bash
-:TODO
+mkdir -p ~/.local/src
+cd ~/.local/src
+wget https://github.com/alire-project/alire/releases/download/v2.0.2/alr-2.0.2-bin-x86_64-linux.zip
+unzip alr-2.0.2-bin-x86_64-linux.zip
+cp bin/alr ~/.local/bin/
+mkdir -p ~/.config/alire
+cat > ~/.config/alire/config.toml << 'EOF'
+[settings]
+cache_dir = "$XDG_CACHE_HOME/alire"
+config_dir = "$XDG_CONFIG_HOME/alire"
+toolchain_dir = "$XDG_DATA_HOME/alire/toolchains"
+EOF
+alr toolchain --select gnat_native
+alr toolchain --select gprbuild
+mkdir -p ~/tmp/als-install && cd ~/tmp/als-install
+alr init --bin als_installer
+cd als_installer
+alr with ada_language_server
+alr build --release
+cp -v ~/.local/share/alire/builds/ada_language_server*/ada_language_server ~/.local/bin/
 ```
 
 </div>
@@ -4183,7 +4199,10 @@ pnpm add -g fish-lsp@latest
  <div style="background: #f8f9fa; padding: 15px; border-radius: 5px; margin-top: 10px; font-family: monospace;">
 
 ```bash
-:TODO
+cargo install --git https://github.com/nushell/nushell nu
+#cargo install --git https://github.com/nushell/nushell nu_plugin_query  \
+#cargo install nu_plugin_formats --git https://github.com/nushell/nushell  \
+#cargo install nu_plugin_polars --git https://github.com/nushell/nushell
 ```
 
 </div>

@@ -11,17 +11,14 @@ return ---@type vim.lsp.Config
     filetypes = {
         'query',
     },
-    init_options = {},
+    init_options = {
+        parser_install_directories = {
+            vim.fn.stdpath('data') .. '/lazy/nvim-treesitter/parser',
+            vim.fn.stdpath('data') .. '/site/pack/core/opt/nvim-treesitter/parser',
+            vim.fn.expand('~/.local/lib/nvim/parser'),
+        },
+    },
     on_attach = require('config.core.lsp').on_attach,
-    on_new_config = function(config)
-        local ok, parser_config = pcall(require, 'nvim-treesitter.parsers')
-        if ok then
-            local install_dir = parser_config.get_parser_configs().install_info
-                    and parser_config.get_parser_configs().install_info.install_dir
-                or vim.fn.stdpath('data') .. '/lazy/nvim-treesitter/parser'
-            config.init_options.parser_install_directories = { install_dir }
-        end
-    end,
     root_markers = {
         '.git',
         '.tsqueryrc.json',
@@ -160,14 +157,6 @@ return ---@type vim.lsp.Config
                 zir = 'zir',
                 zsh = 'bash',
                 ['🔥'] = 'mojo',
-            },
-            parser_install_directories = {
-                vim.fn.stdpath('data') .. '/lazy/nvim-treesitter/parser',
-                vim.fn.stdpath('data') .. '/site/pack/*/start/nvim-treesitter/parser',
-                vim.fn.stdpath('data') .. '/site/pack/packer/start/nvim-treesitter/parser',
-                '/usr/lib/tree-sitter',
-                '/usr/local/lib/tree-sitter',
-                vim.fn.expand('~/.local/lib/tree-sitter'),
             },
             ['$schema'] = 'https://raw.githubusercontent.com/ribru17/ts_query_ls/refs/heads/master/schemas/config.json',
             supported_abi_versions = {

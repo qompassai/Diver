@@ -5,17 +5,18 @@
 local bo = vim.bo ---@type vim.bo
 local cmd = vim.cmd
 local env = vim.env
+local fn = vim.fn
 local g = vim.g
 local go = vim.go
 local l = vim.loader
 local o = vim.o ---@type vim.o
 local opt = vim.opt
 env.VIMRUNTIME = vim.fn.expand('~/.local/share/nvim/runtime')
-opt.runtimepath:prepend(vim.env.VIMRUNTIME)
-opt.runtimepath:prepend(vim.fn.stdpath('data') .. '/site')
-opt.runtimepath:prepend(vim.fn.stdpath('data') .. '/lazy/nvim-treesitter')
-local uid = vim.fn.system('id -u'):gsub('\n', '')
-local user = env.USER or vim.fn.system('whoami'):gsub('\n', '')
+opt.runtimepath:prepend(env.VIMRUNTIME)
+opt.runtimepath:prepend(fn.stdpath('data') .. '/site')
+opt.runtimepath:prepend(fn.stdpath('data') .. '/lazy/nvim-treesitter')
+local uid = fn.system('id -u'):gsub('\n', '')
+local user = env.USER or fn.system('whoami'):gsub('\n', '')
 local wo = vim.wo ---@type vim.wo
 bo.autocomplete = true
 bo.autoindent = true
@@ -35,14 +36,13 @@ bo.modifiable = true
 bo.nrformats = 'hex'
 bo.shiftwidth = 4
 bo.smartindent = true
-bo.spellfile = vim.fn.stdpath('config') .. '/nvim/spell/en.utf-8.add'
+bo.spellfile = fn.stdpath('config') .. '/nvim/spell/en.utf-8.add'
 bo.spelllang = 'en_us'
 bo.spelloptions = 'camel'
 bo.swapfile = false
 bo.softtabstop = 2
-bo.syntax = 'on'
+--bo.syntax = 'on'
 bo.tabstop = 2
-bo.tags = './tags;,tags'
 bo.textwidth = 120
 bo.undofile = true
 cmd('filetype plugin on')
@@ -50,11 +50,10 @@ cmd('filetype plugin indent on')
 cmd([[
   packadd nvim.undotree
 ]])
-cmd('set completeopt+=noselect')
 cmd('syntax on')
 cmd.runtime('macros/matchit.vim')
 env.LUAROCKS_CONFIG = env.HOME .. '/.config/luarocks/luarocks-5.1.lua'
-env.VIMRUNTIME = vim.fn.expand('~/.local/share/nvim/runtime')
+env.VIMRUNTIME = fn.expand('~/.local/share/nvim/runtime')
 g.deprecation_warnings = true
 g.editorconfig = true
 g.git_command_ssh = 1
@@ -69,7 +68,7 @@ g.loaded_ruby_provider = 1
 g.lsp_enable_on_demand = true
 g.mapleader = ' '
 g.maplocalleader = '\\'
-g.mkdp_markdown_css = vim.fn.expand('$XDG_CONFIG_HOME/nvim/markdown.css') ---@type string
+g.mkdp_markdown_css = fn.expand('$XDG_CONFIG_HOME/nvim/markdown.css') ---@type string
 g.mkdp_theme = 'dark'
 g.netrw_altfile = 1
 g.netrw_preview = 1
@@ -103,21 +102,21 @@ g.vim_markdown_frontmatter = 1
 g.vim_markdown_toml_frontmatter = 1
 g.vim_markdown_json_frontmatter = 1
 g.which_key_disable_health_check = 1
-g.xdg_bin_home = env.XDG_BIN_HOME or vim.fn.expand('~/.local/bin')
-g.xdg_cache_home = vim.env.XDG_CACHE_HOME or vim.fn.expand('~/.cache')
-g.xdg_config_dirs = env.XDG_CONFIG_DIRS or vim.fn.expand('~/.config/xdg:/etc/xdg:/usr/local/etc/xdg:/usr/etc/xdg')
-g.xdg_config_home = vim.env.XDG_CONFIG_HOME or vim.fn.expand('~/.config')
+g.xdg_bin_home = env.XDG_BIN_HOME or fn.expand('~/.local/bin')
+g.xdg_cache_home = env.XDG_CACHE_HOME or fn.expand('~/.cache')
+g.xdg_config_dirs = env.XDG_CONFIG_DIRS or fn.expand('~/.config/xdg:/etc/xdg:/usr/local/etc/xdg:/usr/etc/xdg')
+g.xdg_config_home = env.XDG_CONFIG_HOME or fn.expand('~/.config')
 g.xdg_current_desktop = env.XDG_CURRENT_DESKTOP or 'Hyprland'
 g.xdg_current_session = env.XDG_CURRENT_SESSION or 'Hyprland'
-g.xdg_data_dirs = env.XDG_DATA_DIRS or vim.fn.expand('~/.local/share:/usr/local/share:/usr/share')
-g.xdg_data_home = vim.env.XDG_DATA_HOME or vim.fn.expand('~/.local/share')
-g.xdg_desktop_dir = env.XDG_DESKTOP_DIR or vim.fn.expand('~/.Desktop')
+g.xdg_data_dirs = env.XDG_DATA_DIRS or fn.expand('~/.local/share:/usr/local/share:/usr/share')
+g.xdg_data_home = env.XDG_DATA_HOME or fn.expand('~/.local/share')
+g.xdg_desktop_dir = env.XDG_DESKTOP_DIR or fn.expand('~/.Desktop')
 g.xdg_desktop_portal_dir = env.XDG_DESKTOP_PORTAL_DIR or ('/run/user/' .. uid .. '/xdg-desktop-portal/portals')
-g.xdg_documents_dir = env.XDG_DOCUMENTS_DIR or vim.fn.expand('~/.Documents')
-g.xdg_download_dir = env.XDG_DOWNLOAD_DIR or vim.fn.expand('~/.Downloads')
+g.xdg_documents_dir = env.XDG_DOCUMENTS_DIR or fn.expand('~/.Documents')
+g.xdg_download_dir = env.XDG_DOWNLOAD_DIR or fn.expand('~/.Downloads')
 g.nix_per_user_profile = '/nix/var/nix/profiles/per-user/' .. user
-g.xdg_state_home = vim.env.XDG_STATE_HOME or vim.fn.expand('~/.local/state')
-g.xdg_runtime_dir = env.XDG_RUNTIME_DIR or ('/run/user/' .. vim.fn.system('id -u'):gsub('\n', ''))
+g.xdg_state_home = env.XDG_STATE_HOME or fn.expand('~/.local/state')
+g.xdg_runtime_dir = env.XDG_RUNTIME_DIR or ('/run/user/' .. fn.system('id -u'):gsub('\n', ''))
 g.xdg_utils_debug_level = env.XDG_UTILS_DEBUG_LEVEL or 3
 if env.SSH_TTY then
     g.clipboard = 'osc52'
@@ -197,13 +196,13 @@ o.startofline = false
 o.switchbuf = 'uselast'
 o.tabpagemax = 50
 o.termguicolors = true
-o.tm = 500
+--o.tm = 500
 o.timeout = true
 o.timeoutlen = 300
 o.title = true
 o.ttimeoutlen = 10
 o.ttyfast = true
-o.undodir = vim.fn.stdpath('config') .. '/undo'
+o.undodir = fn.stdpath('config') .. '/undo'
 o.updatetime = 50
 o.viewoptions = 'unix,slash'
 o.wildignore = '*.a'
@@ -216,10 +215,8 @@ o.writebackup = true
 opt.comments:append('fb:•')
 opt.complete:remove('i')
 --opt.packpath = vim.opt.runtimepath:get() ---@type string[]
-opt.runtimepath:prepend(vim.fn.stdpath('data') .. '/site')
 o.tags = './tags;,tags'
 opt.viminfo:append('!')
-
 wo.breakindent = true
 wo.breakindentopt = 'shift:2,sbr'
 wo.concealcursor = 'nc'
@@ -231,8 +228,7 @@ wo.foldcolumn = '1'
 wo.foldenable = false
 wo.foldlevel = 99
 wo.foldexpr = 'v:lua.vim.treesitter.foldexpr()'
-wo.foldmethod = 'manual'
-wo.lhistory = 10
+wo.foldmethod = 'expr'
 wo.linebreak = true
 wo.list = true
 --wo.listchars = ''
