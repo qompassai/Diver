@@ -8,11 +8,10 @@ local api = vim.api
 local register = vim.treesitter.language.register
 local ts = vim.treesitter
 function M.treesitter(opts)
-    require('nvim-treesitter.install').prefer_git = true
-    require('nvim-treesitter.configs').setup(opts)
-    local configs = require('nvim-treesitter.configs')
-    local parser_dir = vim.g.xdg_data_home .. '/nvim/treesitter'
-    vim.opt.runtimepath:prepend(parser_dir)
+    local xdg_data = os.getenv('XDG_DATA_HOME') or (os.getenv('HOME') .. '/.local/share')
+    local parser_dir = xdg_data .. '/nvim/runtime/parser'
+    vim.fn.mkdir(parser_dir, 'p')
+    vim.opt.runtimepath:prepend(xdg_data .. '/nvim/runtime')
     require('nvim-treesitter.install').prefer_git = true
     local parser_config = require('nvim-treesitter.parsers').get_parser_configs()
     parser_config.objc = {
@@ -371,7 +370,8 @@ function M.treesitter(opts)
         },
     }
     local final_config = vim.tbl_deep_extend('force', base_config, opts or {})
-    configs.setup(final_config)
+
+    require('nvim-treesitter.configs').setup(final_config)
 end
 
 function M.tree_cfg(opts)
@@ -438,31 +438,30 @@ register('yaml', {
     'yaml.gitlab',
     'yaml.helm-values',
 })
+
 api.nvim_create_autocmd('FileType', {
-    group = vim.api.nvim_create_augroup('TreesitterStart', {
+    group = api.nvim_create_augroup('TreesitterStart', {
         clear = true,
     }),
     pattern = '*',
     callback = function(args)
         local buf = args.buf
         local lang = ts.language.get_lang(args.match)
+
         if not lang then
             return
         end
-        local buftype = api.nvim_get_option_value('buftype', {
-            buf = buf,
-        })
+
+        local buftype = api.nvim_get_option_value('buftype', { buf = buf })
         if buftype ~= '' then
             return
         end
-        local ok = pcall(function()
+
+        pcall(function()
             if pcall(ts.language.add, lang) then
                 ts.start(buf, lang)
             end
         end)
-        if not ok then
-            return
-        end
     end,
 })
 

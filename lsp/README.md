@@ -1,6 +1,9 @@
 <!-- /qompassai/Diver/lsp/README.md -->
+
 <!-- Qompass AI Diver LSP Docs -->
+
 <!-- Copyright (C) 2026 Qompass AI, All rights reserved -->
+
 <!-- ---------------------------------------- -->
 
 <div align="center">
@@ -793,9 +796,7 @@ ln -s "$CLOJURE_LSP_DIR/bin/clojure-lsp" "$HOME/.local/bin/clojure-lsp"
   </summary>
   <blockquote style="font-size: 1.2em; line-height: 1.8; padding: 25px; background: #f8f9fa; border-left: 6px solid #667eea; border-radius: 8px; margin: 15px 0; box-shadow: 0 2px 8px rgba(0,0,0,0.1);">
     <ul>
-      <li>
           <a href="https://github.com/qompassai/diver/blob/main/lsp/cmake_ls.lua">cmake_ls</a>
-      </li>
            <p>
       <a href="https://github.com/regen100/cmake-language-server">CMake LSP Reference</a>
     </p>
@@ -812,9 +813,7 @@ uv tool install cmake-language-server
 ```
 
   </div>
-      <li>
         <a href="https://github.com/qompassai/diver/blob/main/lsp/neocmake_ls.lua">neocmake_ls</a>
-      </li>
               <p>
       <a href="https://github.com/neocmakelsp/neocmakelsp">NeoCmake LSP Reference</a>
     </p>
@@ -838,9 +837,7 @@ uv tool install cmake-language-server
   </summary>
   <blockquote style="font-size: 1.2em; line-height: 1.8; padding: 25px; background: #f8f9fa; border-left: 6px solid #667eea; border-radius: 8px; margin: 15px 0; box-shadow: 0 2px 8px rgba(0,0,0,0.1);">
     <ul>
-      <li>
           <a href="https://github.com/qompassai/diver/blob/main/lsp/crystalline_ls.lua">cds_ls</a>
-      </li>
       <p>
       <a href="https://cap.cloud.sap/docs/tools/cds-editors#cds-editor">CDS LSP Reference</a>
     </p>
@@ -864,9 +861,7 @@ pnpm add -g @sap/cds-lsp@latest
   </summary>
   <blockquote style="font-size: 1.2em; line-height: 1.8; padding: 25px; background: #f8f9fa; border-left: 6px solid #667eea; border-radius: 8px; margin: 15px 0; box-shadow: 0 2px 8px rgba(0,0,0,0.1);">
     <ul>
-      <li>
           <a href="https://github.com/qompassai/diver/blob/main/lsp/crystalline_ls.lua">crystalline_ls</a>
-      </li>
       <p>
       <a href="https://github.com/elbywan/crystalline">Crystalline LSP Reference</a>
     </p>
@@ -4947,10 +4942,7 @@ cargo install --git https://github.com/wgsl-analyzer/wgsl-analyzer wgsl-analyzer
   </summary>
   <blockquote style="font-size: 1.2em; line-height: 1.8; padding: 25px; background: #f8f9fa; border-left: 6px solid #667eea; border-radius: 8px; margin: 15px 0; box-shadow: 0 2px 8px rgba(0,0,0,0.1);">
     <ul>
-      <li>
         <a href="https://github.com/qompassai/diver/blob/main/lsp/lemminx.lua">lemminx_ls</a>
-      </li>
-    </ul>
           <p>
       <a href="https://github.com/eclipse-lemminx/lemminx?tab=readme-ov-file">Lemminx LSP Reference</a>
     </p>
@@ -4962,6 +4954,7 @@ cd lemminx && ./mvnw clean verify
 ```
 
 </div>
+    </ul>
   </blockquote>
 </details>
 <details>
@@ -4974,9 +4967,7 @@ cd lemminx && ./mvnw clean verify
   </summary>
   <blockquote style="font-size: 1.2em; line-height: 1.8; padding: 25px; background: #f8f9fa; border-left: 6px solid #667eea; border-radius: 8px; margin: 15px 0; box-shadow: 0 2px 8px rgba(0,0,0,0.1);">
     <ul>
-      <li>
         <a href="https://github.com/qompassai/diver/blob/main/lsp/yaml_ls.lua">yaml_ls</a>
-      </li>
         <p>
       <a href="https://github.com/redhat-developer/yaml-language-server">Yaml LSP Reference</a>
     </p>
@@ -4987,9 +4978,7 @@ pnpm add -g yaml-language-server@latest
 ```
 
 </div>
-        <li>
         <a href="https://github.com/qompassai/diver/blob/main/lsp/yamllint_ls.lua">yamllint_ls</a>
-      </li>
     </ul>
     <p>
       <a href="https://yamllint.readthedocs.io/en/stable/">Yamllint LSP Reference</a>
@@ -5019,9 +5008,7 @@ uv tool intsall yamllint
   </summary>
   <blockquote style="font-size: 1.2em; line-height: 1.8; padding: 25px; background: #f8f9fa; border-left: 6px solid #667eea; border-radius: 8px; margin: 15px 0; box-shadow: 0 2px 8px rgba(0,0,0,0.1);">
     <ul>
-      <li>
         <a href="https://github.com/qompassai/diver/blob/main/lsp/ziggy_ls.lua">ziggy_ls</a>
-      </li>
        <p>
       <a href="https://ziggy-lang.io/documentation/ziggy-lsp/">Ziggy LSP Reference</a>
     </p>
@@ -5032,9 +5019,7 @@ git clone https://github.com/kristoff-it/ziggy.git && cd ziggy && zig build -Dop
 ```
 
 </div>
-      <li>
         <a href="https://github.com/qompassai/diver/blob/main/lsp/ziggy_schema_ls.lua">ziggy_schema_ls</a>
-      </li>
        <p>
       <a href="https://ziggy-lang.io/documentation/ziggy-lsp/">Ziggy LSP Reference</a>
     </p>
@@ -5045,9 +5030,7 @@ git clone https://github.com/kristoff-it/ziggy.git && cd ziggy && zig build -Dop
 ```
 
 </div>
-      <li>
         <a href="https://github.com/qompassai/diver/blob/main/lsp/z_ls.lua">z_ls</a>
-      </li>
     </ul>
        <p>
       <a href="https://zigtools.org/zls/install/">Zig LSP Reference</a>

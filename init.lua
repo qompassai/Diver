@@ -4,6 +4,7 @@
 -- --------------------------------------------------
 local bo = vim.bo ---@type vim.bo
 local cmd = vim.cmd
+local data_home = vim.env.XDG_DATA_HOME or vim.fn.expand('~/.local/share')
 local env = vim.env
 local fn = vim.fn
 local g = vim.g
@@ -11,10 +12,9 @@ local go = vim.go
 local l = vim.loader
 local o = vim.o ---@type vim.o
 local opt = vim.opt
-env.VIMRUNTIME = vim.fn.expand('~/.local/share/nvim/runtime')
 opt.runtimepath:prepend(env.VIMRUNTIME)
 opt.runtimepath:prepend(fn.stdpath('data') .. '/site')
-opt.runtimepath:prepend(fn.stdpath('data') .. '/lazy/nvim-treesitter')
+opt.runtimepath:prepend(data_home .. '/nvim/runtime')
 local uid = fn.system('id -u'):gsub('\n', '')
 local user = env.USER or fn.system('whoami'):gsub('\n', '')
 local wo = vim.wo ---@type vim.wo

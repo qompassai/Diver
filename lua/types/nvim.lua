@@ -3,14 +3,31 @@
 -- Copyright (C) 2025 Qompass AI, All rights reserved
 ------------------------------------------------------
 ---@meta
----@alias vim.CompleteDoneReason                            string
----@alias vim.CompleteFuncRefresh                           'always'
+---@alias vim.CompleteDoneReason                           string
+---@alias vim.CompleteFuncRefresh                          'always'
 ---@alias vim.CompleteFuncReturn                           integer|vim.CompleteMatches|vim.CompleteFuncResult
 ---@alias vim.CompleteMatches                              string[]|vim.CompletedItem[]
----@alias vim.fs.EntryType                                  'file'|'directory'|'link'|'fifo'|'socket'|'char'|'block'|'unknown'
----@alias uv_fs_scandir_t                                   userdata
----@alias vim.uv.FsScandirHandle                            userdata
----@alias vim.uv.FsScandirType 'file'|"directory"|"link"|"fifo"|"socket"|"char"|"block"|"unknown"
+---@alias vim.fs.EntryType                                 'file'|'directory'|'link'|'fifo'|'socket'|'char'|'block'|'unknown'
+---@alias uv_fs_scandir_t                                  userdata
+---@alias vim.uv.FsScandirHandle                           userdata
+---@alias vim.uv.FsScandirType                             'file'|'directory'|'link'|'fifo'|'socket'|'char'|'block'|'unknown'
+--- @class                   CoxpcallModule
+--- @field pcall                                            fun(f: function, ...: any): boolean, any
+--- @field xpcall                                           fun(f: function, err: function, ...: any): boolean, any
+--- @field running                                          fun(coro?: thread): thread?
+--- @param f                                                function
+--- @param ...                                              any
+--- @return boolean                                         success
+--- @return any                                             ...
+function copcall(f, ...) end
+
+--- @param f                                               function
+--- @param err                                             function
+--- @param ...                                             any
+--- @return boolean                                        success
+--- @return any                                            ...
+function coxpcall(f, err, ...) end
+
 ---@class                    vim
 ---@field pesc                                             fun(s: string): string
 ---@class                    vim.api
