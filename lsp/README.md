@@ -2207,7 +2207,7 @@ pnpm add -D -E @marko/language-server@latest
  <div style="background: #f8f9fa; padding: 15px; border-radius: 5px; margin-top: 10px; font-family: monospace;">
 
 ```bash
-:TODO
+pnpm add -g oxlint@latest
 ```
 
 </div>
@@ -2233,7 +2233,9 @@ pnpm add -D -E @marko/language-server@latest
  <div style="background: #f8f9fa; padding: 15px; border-radius: 5px; margin-top: 10px; font-family: monospace;">
 
 ```bash
-:TODO
+mkdir -p $XDG_DATA_HOME/jimmer-dto-lsp && \
+curl -L https://github.com/Enaium/jimmer-dto-lsp/releases/latest/download/server.jar \
+  -o ~/.local/share/jimmer-dto-lsp/server.jar
 ```
 
 </div>
@@ -2881,7 +2883,20 @@ cargo install --git https://github.com/rvben/rumdl
  <div style="background: #f8f9fa; padding: 15px; border-radius: 5px; margin-top: 10px; font-family: monospace;">
 
 ```bash
-:TODO
+git clone https://github.com/mathworks/MATLAB-language-server.git && \
+cd MATLAB-language-server && \
+npm install && \
+cd src/licensing/gui && npm install && cd ../../.. && \
+npm run compile && \
+mkdir -p ~/.local/share/matlab-language-server && \
+cp -r out/* ~/.local/share/matlab-language-server/ && \
+mkdir -p ~/.local/bin && \
+cat > ~/.local/bin/matlab-language-server << 'EOF'
+#!/bin/bash
+exec node ~/.local/share/matlab-language-server/index.js "$@"
+EOF
+chmod +x ~/.local/bin/matlab-language-server && \
+echo "MATLAB Language Server installed to ~/.local/bin/matlab-language-server"
 ```
 
    </div>
@@ -3570,7 +3585,14 @@ echo "  $NAME --help"
  <div style="background: #f8f9fa; padding: 15px; border-radius: 5px; margin-top: 10px; font-family: monospace;">
 
 ```bash
-:TODO
+mkdir -p ~/.local/share/powershell-editor-services && \
+cd ~/.local/share/powershell-editor-services && \
+curl -s https://api.github.com/repos/PowerShell/PowerShellEditorServices/releases/latest | \
+grep "browser_download_url.*PowerShellEditorServices.zip" | \
+cut -d '"' -f 4 | \
+xargs curl -L -o pses.zip && \
+unzip -q pses.zip && \
+rm pses.zip
 ```
 
    </div>

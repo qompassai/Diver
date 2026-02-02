@@ -12,6 +12,7 @@ return ---@type vim.lsp.Config
         'lua',
         'luau',
     },
+    init_options = {},
     on_attach = require('config.core.lsp').on_attach,
     root_markers = {
         '.emmyrc.json',
@@ -148,6 +149,7 @@ return ---@type vim.lsp.Config
                     unbalanced = 'Warning',
                     unused = 'Hint',
                 },
+                ignoredFiles = 'Disable',
                 libraryFiles = 'Opened',
                 neededFileStatus = {
                     deprecated = 'Any',
@@ -177,7 +179,7 @@ return ---@type vim.lsp.Config
             doc = {
                 regengine = 'lua',
             },
-            format = {
+            format = { ---@source https://luals.github.io/wiki/settings/#format
                 enable = true,
                 defaultConfig = {
                     align_array_table = true,
@@ -327,6 +329,7 @@ return ---@type vim.lsp.Config
                 ignoreDir = {
                     'build',
                     'node_modules',
+                    vim.fn.expand('$XDG_DATA_HOME') .. '/nvim/runtime/**',
                     vim.fs.normalize('~/.GH/Qompass/Diver/'),
                     vim.fs.normalize('~/.GH/Qompass/Lua/'),
                     '.vscode',
