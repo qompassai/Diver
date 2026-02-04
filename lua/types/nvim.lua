@@ -28,6 +28,23 @@ function copcall(f, ...) end
 --- @return any                                            ...
 function coxpcall(f, err, ...) end
 
+---@class gh.Opts
+---@field branch?                                          string
+---@field cmd?                                             string[]
+---@field data? table|any
+---@field event? string[]
+---@field ft? string[]
+---@field hook? fun(spec?: vim.pack.Spec)
+---@field keys? table[]
+---@field name? string
+---@field opts? table
+---@field update? boolean
+---@field version? string|vim.Version|vim.VersionRange
+---@param repo string
+---@param opts? gh.Opts
+---@return string|vim.pack.Spec
+function _G.gh(repo, opts) end
+
 ---@class                    vim
 ---@field pesc                                             fun(s: string): string
 ---@class                    vim.api
@@ -46,10 +63,10 @@ vim.api = vim.api
 ---@field buf                                              integer
 ---@field data?                                            any
 ---@class                    vim.api.CreateAutocmdOpts
+---@field desc?                                            string
 ---@field group?                                           integer
 ---@field pattern?                                         string|string[]
 ---@field buffer?                                          integer
----@field desc?                                            string
 ---@field once?                                            boolean
 ---@field nested?                                          boolean
 ---@field callback?                                        fun(args: vim.api.AutocmdCallbackArgs)
@@ -281,8 +298,8 @@ vim.fs = vim.fs or {}
 ---@field tags                                             vim.opt.Option<string|string[]>
 ---@field viminfo                                          vim.opt.Option<string|string[]>
 ---@field wildignore                                       vim.opt.Option<string|string[]>
----@class                    vim.opt_local                 :vim.opt
----@class                   vim.opt_global                 :vim.opt
+---@class                    vim.opt_local:                vim.opt
+---@class                    vim.opt_global:               vim.opt
 ---@class                    OptionMethods<T>
 ---@field append?                                          fun(self:OptionMethods<T>, value:any)
 ---@field comments?                                        OptionMethods<string|string[]>
@@ -294,9 +311,24 @@ vim.fs = vim.fs or {}
 ---@field nrformats?                                       OptionMethods<string|string[]>
 ---@field tags?                                            OptionMethods<string|string[]>
 ---@field viminfo?                                         OptionMethods<string|string[]>
+---@class vim.pack.Spec
+---@field branch? string
+---@field cmd? string[]
+---@field data? table|any
+---@field event? string[]
+---@field ft? string[]
+---@field hook? fun(spec?: vim.pack.Spec)
+---@field keys? table[]
+---@field name? string
+---@field opts? table
+---@field repo? string
+---@field src string
+---@field update? boolean
+---@field version? string|vim.Version|vim.VersionRange
+
 ---@class                    vim.wo
 ---@field breakindent?                                     boolean
----@field conceallevel?                                    0|1|2|3
+---@field conceallevel?                                    0|1|2|3|integer
 ---@field cursorbind?                                      boolean
 ---@field cursorline?                                      boolean
 ---@field cursorlineopt?                                   'both'|'line'|'number'

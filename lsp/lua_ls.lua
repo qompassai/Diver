@@ -53,6 +53,8 @@ return ---@type vim.lsp.Config
                     'duplicate-index',
                     'duplicate-set-field',
                     'duplicate-doc-alias',
+                    'incomplete-signature-doc',
+                    'inject-field',
                     'duplicate-doc-field',
                 },
                 disableScheme = {
@@ -80,6 +82,7 @@ return ---@type vim.lsp.Config
                     'formKey', ---wp
                     'futils', ---wp
                     'getStoredStreamProps', ---wp
+                    'gpg_id_to_name', --gpg
                     'GLib', ---wp
                     'group', ---wp
                     'group_loopback_modules', ---wp
@@ -102,6 +105,7 @@ return ---@type vim.lsp.Config
                     'Pod', ---wp
                     'ProcUtils', ---wp
                     'PW_AUDIO_NAMESPACE', ---wp
+                    'recipients', --gpg
                     'reconfigureAudioAdapters', ---wp
                     'require',
                     'restore_stream_hook', ---wp
@@ -132,7 +136,7 @@ return ---@type vim.lsp.Config
                     redefined = 'Any',
                     strict = 'Any',
                     --strong = 'Opened',
-                    ['type-check'] = 'Any',
+                    ['type-check'] = 'Opened',
                     unused = 'Any',
                 },
                 groupSeverity = {
@@ -329,6 +333,7 @@ return ---@type vim.lsp.Config
                 ignoreDir = {
                     'build',
                     'node_modules',
+                    vim.fs.normalize('~/.local/share/nvim/runtime/'),
                     vim.fn.expand('$XDG_DATA_HOME') .. '/nvim/runtime/**',
                     vim.fs.normalize('~/.GH/Qompass/Diver/'),
                     vim.fs.normalize('~/.GH/Qompass/Lua/'),

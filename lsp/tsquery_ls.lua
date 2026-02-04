@@ -408,5 +408,13 @@ return ---@type vim.lsp.Config
                 },
             },
         },
+        vim.api.nvim_create_autocmd('FileType', {
+            pattern = 'query',
+            callback = function(ev)
+                if vim.bo[ev.buf].buftype == 'nofile' then
+                    return
+                end
+            end,
+        }),
     },
 }

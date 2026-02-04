@@ -2,20 +2,32 @@
 -- Qompass AI Diver Plugins Init
 -- Copyright (C) 2025 Qompass AI, All rights reserved
 ------------------------------------------------------
-local a = vim.api
-local p = vim.pack
-local r = require
-local v = vim.version
-vim.opt.packpath = vim.opt.runtimepath:get() ---@type string[]
-a.nvim_create_user_command('PackUpdate', function()
-    a.nvim_echo({
+---@param repo string
+---@return string|vim.pack.Spec
+_G.gh = function(repo, opts)
+    if opts then
+        ---@cast opts vim.pack.Spec
+        opts.src = 'https://github.com/' .. repo
+        return opts
+    end
+    return 'https://github.com/' .. repo
+end
+local add = vim.pack.add
+local api = vim.api
+local sops = require('config.cicd.sops')
+local tree = require('config.core.tree')
+local update = vim.pack.update
+local range = vim.version.range
+vim.opt.packpath = vim.opt.runtimepath:get()
+api.nvim_create_user_command('PackUpdate', function()
+    api.nvim_echo({
         {
             'Updating plugins…',
             'None',
         },
     }, false, {})
-    p.update()
-    a.nvim_echo({
+    update()
+    api.nvim_echo({
         {
             'Plugins updated!',
             'None',
@@ -24,128 +36,100 @@ a.nvim_create_user_command('PackUpdate', function()
 end, {
     desc = 'Update all vim.pack plugins',
 })
-p.add({
-    {
-        event = {
-            'BufEnter',
-        },
+add({
+    gh('trixnz/sops.nvim', {
+        event = { 'BufEnter' },
         hook = function()
-            r('config.cicd.sops').sops()
+            sops.sops()
         end,
-        src = 'https://github.com/trixnz/sops.nvim',
         update = true,
         version = 'main',
-    },
-    {
+    }),
+    gh('vhyrro/luarocks.nvim', {
         branch = 'main',
         hook = function()
-            local lua_cfg = r('config.lang.lua')
+            local lua_cfg = require('config.lang.lua')
             local opts = lua_cfg.lua_luarocks({})
-            --require('luarocks-nvim').setup(opts)
-            r('luarocks').setup(opts)
+            require('luarocks').setup(opts)
         end,
-        src = 'https://github.com/vhyrro/luarocks.nvim',
         update = true,
-        version = nil,
-    },
-    {
-        branch = 'main',
-        event = {
-            'InsertEnter',
-        },
+    }),
+    gh('Saghen/blink.cmp', {
+        event = { 'InsertEnter' },
         hook = function()
-            local cmp_cfg = r('config.lang.cmp').blink_cmp()
-            r('blink.cmp').setup(cmp_cfg)
+            local cmp_cfg = require('config.lang.cmp').blink_cmp()
+            require('blink.cmp').setup(cmp_cfg)
         end,
-        src = 'https://github.com/Saghen/blink.cmp',
         update = true,
-        version = v.range('1.*'),
-    },
-    {
-        branch = 'main',
+        version = range('1.*'),
+    }),
+    gh('nvim-treesitter/nvim-treesitter', {
         hook = function()
-            require('config.core.tree').treesitter({})
+            tree.treesitter({})
         end,
-        src = 'https://github.com/nvim-treesitter/nvim-treesitter',
         update = true,
-        version = nil,
-    },
-    {
-        src = 'https://github.com/nvim-treesitter/nvim-treesitter-textobjects',
+    }),
+    gh('nvim-treesitter/nvim-treesitter-textobjects', {
         version = 'main',
-    },
-    {
-        branch = 'master',
-        src = 'https://github.com/L3MON4D3/LuaSnip',
-        version = v.range('2.*'),
-    },
-    {
-        src = 'https://github.com/rafamadriz/friendly-snippets',
+    }),
+    gh('L3MON4D3/LuaSnip', {
+        version = range('2.*'),
+    }),
+    gh('rafamadriz/friendly-snippets', {
         update = true,
         version = 'main',
-    },
-    {
-        src = 'https://github.com/hrsh7th/cmp-nvim-lua',
+    }),
+    gh('hrsh7th/cmp-nvim-lua', {
         update = true,
         version = 'main',
-    },
-    {
-        src = 'https://github.com/hrsh7th/cmp-buffer',
-        version = 'main',
-    },
-    {
-        branch = 'master',
-        src = 'https://github.com/moyiz/blink-emoji.nvim',
+    }),
+    gh('hrsh7th/cmp-buffer'),
+    gh('moyiz/blink-emoji.nvim', {
         version = 'master',
-    },
-    {
-        branch = 'master',
-        src = 'https://github.com/Kaiser-Yang/blink-cmp-dictionary',
+    }),
+    gh('Kaiser-Yang/blink-cmp-dictionary', {
         update = true,
-        version = v.range('2.*'),
-    },
-    {
-        branch = 'main',
-        src = 'https://github.com/Saghen/blink.compat',
+        version = range('2.*'),
+    }),
+    gh('Saghen/blink.compat', {
         update = true,
-        version = v.range('2.*'),
-    },
-    {
-        branch = 'main',
+        version = range('2.*'),
+    }),
+    gh('folke/flash.nvim', {
         hook = function()
-            r('config.core.flash').flash_cfg()
+            require('config.core.flash').flash_cfg()
         end,
-        src = 'https://github.com/folke/flash.nvim',
         update = true,
-        version = v.range('2.*'),
-    },
-    {
-        branch = 'main',
+        version = range('2.*'),
+    }),
+    gh('echasnovski/mini.nvim', {
         hook = function()
-            r('mini.ai').setup()
+            require('mini.ai').setup()
         end,
         opts = {
             custom_textobjects = {},
             n_lines = 500,
             search_method = 'cover_or_next',
         },
-        src = 'https://github.com/echasnovski/mini.nvim',
         update = true,
-        version = v.range('0.*'),
-    },
-    {
+        version = range('0.*'),
+    }),
+    gh('folke/trouble.nvim', {
         cmd = {
             'TroubleToggle',
             'Trouble',
         },
         hook = function(spec)
-            r('trouble').setup(spec.opts)
+            require('trouble').setup(spec.opts)
         end,
-        opts = r('config.core.trouble')(),
-        src = 'https://github.com/folke/trouble.nvim',
+        opts = require('config.core.trouble')(),
         version = 'main',
-    },
+    }),
+}, {
+    confirm = false,
+    load = true,
 })
+require('plugins.nav')
 return {
     {
         import = 'plugins.core',
@@ -165,9 +149,6 @@ return {
         },
         {
             import = 'plugins.lang',
-        },
-        {
-            import = 'plugins.nav',
         },
         {
             import = 'plugins.ui',

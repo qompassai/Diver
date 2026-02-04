@@ -8,7 +8,7 @@ local fn = vim.fn
 local group = api.nvim_create_augroup('Python', {
     clear = true,
 })
-local header = require('utils.docs')
+local header = require('utils.docs.docs')
 local log = vim.log
 local notify = vim.notify
 api.nvim_set_option_value('shiftwidth', 4, {

@@ -1,9 +1,9 @@
--- csound.lua
--- Qompass AI Diver CSound Config
+-- /qompassai/Diver/lua/utils/media/csound.lua
+-- Qompass AI Diver Media CSound Utils
 -- Copyright (C) 2026 Qompass AI, All rights reserved
 -- ----------------------------------------
 local M = {}
-
+local WARN = vim.log.levels.WARN
 local template = [[
 <CsoundSynthesizer>
 <CsOptions>
@@ -46,7 +46,7 @@ function M.get_manual_dir()
     end
 end
 
-local os_name = vim.loop.os_uname().sysname
+local os_name = vim.uv.os_uname().sysname
 function M.open_manual()
     local manual_dir = M.get_manual_dir()
     local opcode = vim.fn.expand('<cword>')
@@ -63,23 +63,24 @@ function M.open_manual()
         vim.fn.jobstart({
             'open',
             manual_page,
-        }, { detach = true })
+        }, {
+            detach = true,
+        })
     elseif os_name == 'Windows_NT' or os_name == 'Windows' or os_name == 'Mingw' then
         vim.fn.jobstart({
             'start',
             manual_page,
-        }, { detach = true })
+        }, {
+            detach = true,
+        })
     else
-        vim.notify(
-            'Cannot detect OS. Set g:os to one of "Linux", "OSX", "Windows", "Mingw", "Haiku".',
-            vim.log.levels.WARN
-        )
+        vim.notify('Cannot detect OS. Set g:os to one of "Linux", "OSX", "Windows", "Mingw", "Haiku".', WARN)
     end
 end
 
 function M.open_example()
     if vim.g.csound_manual == nil then
-        vim.notify('g:csound_manual is not set; point it to the HTML csound manual directory', vim.log.levels.WARN)
+        vim.notify('g:csound_manual is not set; point it to the HTML csound manual directory', WARN)
         return
     end
     local opcode = vim.fn.expand('<cword>')
@@ -88,7 +89,7 @@ function M.open_example()
         vim.cmd.tabnew()
         vim.cmd(('silent view %s'):format(vim.fn.fnameescape(examplecsd)))
     else
-        vim.notify(examplecsd .. ' does not exist', vim.log.levels.WARN)
+        vim.notify(examplecsd .. ' does not exist', WARN)
     end
 end
 

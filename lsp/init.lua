@@ -33,7 +33,7 @@ vim.lsp.enable({
     --'bazelrc_ls',
     'beancount_ls',
     'bicep_ls',
-    -- 'biome_ls',
+     'biome_ls',
     'bitbake_ls',
     'blueprint_ls',
     'bq_ls',

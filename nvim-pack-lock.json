@@ -1,7 +1,7 @@
 {
   "plugins": {
     "LuaSnip": {
-      "rev": "3732756842a2f7e0e76a7b0487e9692072857277",
+      "rev": "5a1e39223db9a0498024a77b8441169d260c8c25",
       "src": "https://github.com/L3MON4D3/LuaSnip",
       "version": "2.0.0 - 3.0.0"
     },
@@ -63,6 +63,11 @@
       "src": "https://github.com/rafamadriz/friendly-snippets",
       "version": "'main'"
     },
+    "fzf-lua": {
+      "rev": "36d60dd59cd9bc0442352119fc0e45e1c9011e03",
+      "src": "https://github.com/ibhagwan/fzf-lua",
+      "version": "'main'"
+    },
     "lazydev.nvim": {
       "rev": "5231c62aa83c2f8dc8e7ba957aa77098cda1257d",
       "src": "https://github.com/folke/lazydev.nvim"
@@ -88,11 +93,16 @@
     "neo-tree.nvim": {
       "rev": "4925f31285940af2805f5bfe52dcffa2037ecab2",
       "src": "https://github.com/nvim-neo-tree/neo-tree.nvim",
-      "version": "3.0.0 - 4.0.0"
+      "version": "'v3.x'"
     },
     "neotest": {
       "rev": "deadfb1af5ce458742671ad3a013acb9a6b41178",
       "src": "https://github.com/nvim-neotest/neotest"
+    },
+    "nui.nvim": {
+      "rev": "de740991c12411b663994b2860f1a4fd0937c130",
+      "src": "https://github.com/MunifTanjim/nui.nvim",
+      "version": "'main'"
     },
     "nvim-treesitter": {
       "rev": "42fc28ba918343ebfd5565147a42a26580579482",
@@ -106,11 +116,18 @@
     },
     "nvim-web-devicons": {
       "rev": "803353450c374192393f5387b6a0176d0972b848",
-      "src": "https://github.com/nvim-tree/nvim-web-devicons"
+      "src": "https://github.com/nvim-tree/nvim-web-devicons",
+      "version": "'master'"
+    },
+    "nvim-window-picker": {
+      "rev": "6382540b2ae5de6c793d4aa2e3fe6dbb518505ec",
+      "src": "https://github.com/s1n7ax/nvim-window-picker",
+      "version": "2.0.0 - 3.0.0"
     },
     "plenary.nvim": {
       "rev": "b9fd5226c2f76c951fc8ed5923d85e4de065e509",
-      "src": "https://github.com/nvim-lua/plenary.nvim"
+      "src": "https://github.com/nvim-lua/plenary.nvim",
+      "version": "'master'"
     },
     "sops.nvim": {
       "rev": "5946285744ffef26b792839d9130135365bfa8ea",

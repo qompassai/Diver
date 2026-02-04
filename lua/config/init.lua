@@ -3,67 +3,70 @@
 -- Copyright (C) 2025 Qompass AI, All rights reserved
 ------------------------------------------------------
 local M = {}
+local levels = vim.log.levels
 function M.config(opts)
-  opts = opts or {}
-  local verbose = opts.debug or false
-  local function safe_require(name)
-    local ok, mod = pcall(require, name)
-    if not ok then
-      if verbose then
-        vim.notify(string.format('[Diver] Failed to load %s: %s', name, mod), vim.log.levels.ERROR)
-      end
-      return nil
+    opts = opts or {}
+    local verbose = opts.debug or false
+    local function safe_require(name)
+        local ok, mod = pcall(require, name)
+        if not ok then
+            if verbose then
+                vim.notify(string.format('[Diver] Failed to load %s: %s', name, mod), levels.ERROR)
+            end
+            return nil
+        end
+        if verbose then
+            vim.notify(string.format('[Diver] Loaded %s', name), vim.log.levels.INFO)
+        end
+        return mod
     end
-    if verbose then
-      vim.notify(string.format('[Diver] Loaded %s', name), vim.log.levels.INFO)
+    vim.env.FONTCONFIG_DEBUG = 'none'
+    safe_require('types')
+    safe_require('utils')
+    local keys = safe_require('config.keymaps')
+    if keys and keys.setup then
+        keys.setup()
     end
-    return mod
-  end
-  vim.env.FONTCONFIG_DEBUG = 'none'
-  safe_require('types')
-  safe_require('utils')
-  local keys = safe_require('config.keymaps')
-  if keys and keys.setup then
-    keys.setup()
-  end
-  safe_require('config.lazy')
-  if opts.core ~= false then safe_require('config.core') end
-  if opts.cicd ~= false then
-    local cicd = safe_require('config.cicd')
-    if cicd and cicd.cicd_config then
-      cicd.cicd_config(opts)
+    safe_require('config.lazy')
+    if opts.core ~= false then
+        safe_require('config.core')
     end
-  end
-  if opts.cloud ~= false then
-    local cloud = safe_require('config.cloud')
-    if cloud and cloud.cloud_config then
-      cloud.cloud_config(opts)
+    if opts.cicd ~= false then
+        local cicd = safe_require('config.cicd')
+        if cicd and cicd.cicd_config then
+            cicd.cicd_config(opts)
+        end
     end
-  end
-  if opts.edu ~= false then
-    local edu = safe_require('config.edu')
-    if edu and edu.edu_config then
-      edu.edu_config(opts)
+    if opts.cloud ~= false then
+        local cloud = safe_require('config.cloud')
+        if cloud and cloud.cloud_config then
+            cloud.cloud_config(opts)
+        end
     end
-  end
-   if opts.lang ~= false then
-     local lang = safe_require('config.lang')
-     if lang and lang.lang_config then
-       lang.lang_config(opts)
-     end
-  end
-  if opts.nav ~= false then
-    local nav = safe_require('config.nav')
-    if nav and nav.nav_config then
-      nav.nav_config(opts)
+    if opts.edu ~= false then
+        local edu = safe_require('config.edu')
+        if edu and edu.edu_config then
+            edu.edu_config(opts)
+        end
     end
-  end
-  if opts.ui ~= false then
-    local ui = safe_require('config.ui')
-    if ui and ui.ui_config then
-      ui.ui_config(opts)
+    if opts.lang ~= false then
+        local lang = safe_require('config.lang')
+        if lang and lang.lang_config then
+            lang.lang_config(opts)
+        end
     end
-  end
+    if opts.nav ~= false then
+        local nav = safe_require('config.nav')
+        if nav and nav.nav_config then
+            nav.nav_config(opts)
+        end
+    end
+    if opts.ui ~= false then
+        local ui = safe_require('config.ui')
+        if ui and ui.ui_config then
+            ui.ui_config(opts)
+        end
+    end
 end
 
 return M

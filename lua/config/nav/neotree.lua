@@ -19,8 +19,8 @@ function M.neotree_cfg(opts)
         default_source = 'filesystem',
         enable_diagnostics = true,
         enable_git_status = true,
-        enable_modified_markers = true, -- Show markers for files with unsaved changes.
-        enable_opened_markers = true, -- Enable tracking of opened files. Required for `components.name.highlight_opened_files`
+        enable_modified_markers = true,
+        enable_opened_markers = true,
         enable_refresh_on_write = true, -- Refresh the tree when a file is written. Only used if `use_libuv_file_watcher` is false.
         enable_cursor_hijack = true,
         git_status_async = true,
@@ -47,7 +47,7 @@ function M.neotree_cfg(opts)
         use_popups_for_input = true, -- If false, inputs will use vim.ui.input() instead of custom floats.
         use_default_mappings = true,
         source_selector = {
-            winbar = true, -- toggle to show selector on winbar
+            winbar = true,
             statusline = true, -- toggle to show selector on statusline
             show_scrolled_off_parent_node = false, -- this will replace the tabs with the parent path
             -- of the top visible node when scrolled down.
@@ -294,7 +294,7 @@ function M.neotree_cfg(opts)
                         },
                         { 'git_status', zindex = 10, align = 'right', hide_when_expanded = true },
                         { 'file_size', zindex = 10, align = 'right' },
-                        { 'type', zindex = 10, align = 'right' },
+                     { 'type',    zindex = 10, align = 'right' },
                         { 'last_modified', zindex = 10, align = 'right' },
                         { 'created', zindex = 10, align = 'right' },
                     },
@@ -321,7 +321,7 @@ function M.neotree_cfg(opts)
                         { 'diagnostics', zindex = 20, align = 'right' },
                         { 'git_status', zindex = 10, align = 'right' },
                         { 'file_size', zindex = 10, align = 'right' },
-                        { 'type', zindex = 10, align = 'right' },
+                { 'type',         zindex = 10, align = 'right' },
                         { 'last_modified', zindex = 10, align = 'right' },
                         { 'created', zindex = 10, align = 'right' },
                     },
@@ -589,7 +589,7 @@ function M.neotree_cfg(opts)
         buffers = {
             bind_to_cwd = true,
             follow_current_file = {
-                enabled = true, -- This will find and focus the file in the active buffer every time
+                enabled = true,
                 --              -- the current file is changed while the tree is open.
                 leave_dirs_open = false, -- `false` closes auto expanded dirs, such as with `:Neotree reveal`
             },
@@ -663,7 +663,7 @@ function M.neotree_cfg(opts)
                 mappings = {
                     ['<cr>'] = 'jump_to_symbol',
                     ['o'] = 'jump_to_symbol',
-                    ['A'] = 'noop', -- also accepts the config.show_path and config.insert_as options.
+                    ['A'] = 'noop',
                     ['d'] = 'noop',
                     ['y'] = 'noop',
                     ['x'] = 'noop',
