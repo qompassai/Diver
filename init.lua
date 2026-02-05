@@ -121,6 +121,7 @@ g.xdg_utils_debug_level = env.XDG_UTILS_DEBUG_LEVEL or 3
 if env.SSH_TTY then
     g.clipboard = 'osc52'
 end
+env.MOJO_STDLIB_PATH = vim.fn.expand('~/.local/share/mojo/.pixi/envs/default/lib/mojo')
 go.expandtab = true
 l.enable()
 require('config.init').config({

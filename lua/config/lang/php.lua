@@ -8,7 +8,7 @@ local fn = vim.fn
 local group = api.nvim_create_augroup('PHP', {
     clear = true,
 })
-local header = require('utils.docs')
+local header = require('utils.docs.docs')
 api.nvim_create_autocmd('BufNewFile', {
     group = group,
     pattern = {

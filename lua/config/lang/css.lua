@@ -1,0 +1,562 @@
+-- /qompassai/Diver/lua/config/lang/css.lua
+-- Qompass AI Diver CSS Config
+-- Copyright (C) 2026 Qompass AI, All rights reserved
+-- ----------------------------------------
+local M = {} ---@version 5.1, JIT
+local api = vim.api
+local augroup = vim.api.nvim_create_augroup
+local autocmd = vim.api.nvim_create_autocmd
+local client_by_id = vim.lsp.get_client_by_id
+local code_action = vim.lsp.buf.code_action
+local findfile = vim.fn.findfile
+local ERROR = vim.log.levels.ERROR
+local get = vim.diagnostic.get
+local INFO = vim.log.levels.INFO
+local jobstart = vim.fn.jobstart
+local lsp = vim.lsp
+local notify = vim.notify
+local schedule = vim.schedule
+local fn = vim.fn
+local header = require('utils.docs.docs')
+local group = augroup('CSS', {
+    clear = true,
+})
+local usercmd = vim.api.nvim_create_user_command
+local CSS_LSP_NAMES = {
+    'cssls',
+    'css-lsp',
+    'css_ls',
+    'cssmodules_ls',
+    'cssmodule_ls',
+    'cssvariables_ls',
+    'cssvariable_ls',
+    'somesass_ls',
+    'tailwindcss',
+    'tailwindcss_ls',
+    'biome',
+    'emmet_ls',
+}
+local function is_css_lsp(client)
+    if not client then
+        return false
+    end
+    for _, name in ipairs(CSS_LSP_NAMES) do
+        if client.name == name then
+            return true
+        end
+    end
+    return false
+end
+local gtk_selectors = {
+    ['backdrop'] = {
+        documentation = 'GTK-specific pseudo-class for backdrop/unfocused window state',
+        function_selector = false,
+    },
+    ['drop'] = {
+        args = 'active',
+        documentation = 'GTK-specific pseudo-class for drag-and-drop states',
+        function_selector = true,
+    },
+}
+local gtk_properties = {
+    ['-gtk-dpi'] = {
+        documentation = 'Controls DPI scaling for GTK applications',
+    },
+    ['-gtk-icon-filter'] = {
+        documentation = 'Applies filter effects to icons',
+    },
+    ['-gtk-icon-palette'] = {
+        documentation = 'Defines color palette for symbolic icons',
+    },
+    ['-gtk-secondary-caret-color'] = {
+        documentation = 'Sets the color of the secondary caret in bidirectional text',
+    },
+    ['-gtk-icon-shadow'] = {
+        documentation = 'Applies shadow effects to icons',
+    },
+    ['-gtk-icon-size'] = {
+        documentation = 'Sets the size of icons',
+    },
+    ['-gtk-icon-source'] = {
+        documentation = 'Specifies the source image for icons',
+    },
+    ['-gtk-icon-style'] = {
+        documentation = 'Controls icon rendering style',
+    },
+    ['-gtk-icon-transform'] = {
+        documentation = 'Applies CSS transforms to icons',
+    },
+}
+local gtk_colors = {
+    ['@accent_color'] = 'Accent color used across widgets for important/interactive elements',
+    ['@accent_bg_color'] = 'Accent background color',
+    ['@accent_fg_color'] = 'Accent foreground color',
+    ['@borders'] = 'Border color for high contrast mode',
+    ['@card_bg_color'] = 'Card and boxed list background color',
+    ['@card_fg_color'] = 'Card and boxed list foreground color',
+    ['@card_shade_color'] = 'Card and boxed list shade color',
+    ['@destructive_color'] = 'Color for dangerous actions like deleting files',
+    ['@destructive_bg_color'] = 'Destructive action background color',
+    ['@destructive_fg_color'] = 'Destructive action foreground color',
+    ['@error_bg_color'] = 'Error background color',
+    ['@error_color'] = 'Error status color',
+    ['@error_fg_color'] = 'Error foreground color',
+    ['@headerbar_bg_color'] = 'Header bar background color',
+    ['@headerbar_fg_color'] = 'Header bar foreground color',
+    ['@headerbar_border_color'] = 'Header bar border color',
+    ['@headerbar_backdrop_color'] = 'Header bar backdrop state color',
+    ['@headerbar_shade_color'] = 'Header bar shade color',
+    ['@popover_bg_color'] = 'Popover background color',
+    ['@popover_fg_color'] = 'Popover foreground color',
+    ['@scrollbar_outline_color'] = 'Scrollbar outline for visibility',
+    ['@shade_color'] = 'Scroll undershoots and transitions (partially transparent black)',
+    ['@sidebar_bg_color'] = 'Sidebar background color',
+    ['@sidebar_fg_color'] = 'Sidebar foreground color',
+    ['@sidebar_backdrop_color'] = 'Sidebar backdrop state color',
+    ['@sidebar_shade_color'] = 'Sidebar shade color',
+    ['@success_color'] = 'Success status color',
+    ['@success_bg_color'] = 'Success background color',
+    ['@success_fg_color'] = 'Success foreground color',
+    ['@view_bg_color'] = 'View background color (TextView, etc)',
+    ['@view_fg_color'] = 'View foreground color',
+    ['@warning_bg_color'] = 'Warning background color',
+    ['@warning_color'] = 'Warning status color',
+    ['@warning_fg_color'] = 'Warning foreground color',
+    ['@window_bg_color'] = 'Window background color',
+    ['@window_fg_color'] = 'Window foreground color',
+}
+
+local gtk_functions = {
+    alpha = {
+        documentation = 'Replaces alpha value of color. Range: 0 to 1',
+        snippet = 'alpha(${1:color}, ${2:alpha})',
+    },
+    lighter = {
+        documentation = 'Produces a brighter variant of the passed color',
+        snippet = 'lighter($0)',
+    },
+    darker = {
+        documentation = 'Produces a darker variant of the passed color',
+        snippet = 'darker($0)',
+    },
+    shade = {
+        documentation = 'Changes lightness of color. Range: 0 (black) to 2 (white)',
+        snippet = 'shade(${1:color}, ${2:factor})',
+    },
+    mix = {
+        documentation = 'Interpolates between two colors',
+        snippet = 'mix(${1:color1}, ${2:color2}, ${3:factor})',
+    },
+    ['-gtk-recolor'] = {
+        documentation = 'Recolors icon from URI with the selected palette',
+        snippet = '-gtk-recolor(${1:url})',
+    },
+    ['-gtk-icontheme'] = {
+        documentation = 'Looks up themed icon, respecting -gtk-icon-palette property',
+        snippet = '-gtk-icontheme(${1:icon-name})',
+    },
+    ['-gtk-scaled'] = {
+        documentation = 'Provides normal and hi-resolution image variants',
+        snippet = '-gtk-scaled(${1:normal-url}, ${2:hidpi-url})',
+    },
+}
+local function setup_gtk_completions()
+    local original_handler = vim.lsp.handlers['textDocument/completion']
+    vim.lsp.handlers['textDocument/completion'] = function(err, result, ctx, config)
+        if not result or vim.tbl_isempty(result) then
+            return original_handler(err, result, ctx, config)
+        end
+        local bufname = api.nvim_buf_get_name(ctx.bufnr)
+        local is_gtk_css = bufname:match('%.gtk%.css$')
+            or bufname:match('/gtk%-[34]/')
+            or bufname:match('/themes/.-/gtk')
+        if is_gtk_css then
+            local items = result.items or result
+            for prop_name, prop_data in pairs(gtk_properties) do
+                table.insert(items, {
+                    label = prop_name,
+                    kind = vim.lsp.protocol.CompletionItemKind.Property,
+                    documentation = {
+                        kind = 'markdown',
+                        value = prop_data.documentation,
+                    },
+                    insertText = prop_name .. ': ',
+                    insertTextFormat = vim.lsp.protocol.InsertTextFormat.PlainText,
+                    sortText = '0' .. prop_name,
+                })
+            end
+            for color_var, color_docs in pairs(gtk_colors) do
+                table.insert(items, {
+                    label = color_var,
+                    kind = vim.lsp.protocol.CompletionItemKind.Color,
+                    documentation = {
+                        kind = 'markdown',
+                        value = color_docs,
+                    },
+                    insertText = color_var,
+                    insertTextFormat = vim.lsp.protocol.InsertTextFormat.PlainText,
+                    sortText = '1' .. color_var,
+                })
+            end
+            for func_name, func_data in pairs(gtk_functions) do
+                table.insert(items, {
+                    label = func_name,
+                    kind = vim.lsp.protocol.CompletionItemKind.Function,
+                    documentation = {
+                        kind = 'markdown',
+                        value = func_data.documentation,
+                    },
+                    insertText = func_data.snippet,
+                    insertTextFormat = vim.lsp.protocol.InsertTextFormat.Snippet,
+                    sortText = '2' .. func_name,
+                })
+            end
+            for selector_name, selector_data in pairs(gtk_selectors) do
+                local insert_text = selector_name
+                local insert_format = vim.lsp.protocol.InsertTextFormat.PlainText
+                if selector_data.function_selector then
+                    insert_text = selector_data.snippet or (selector_name .. '($0)')
+                    insert_format = vim.lsp.protocol.InsertTextFormat.Snippet
+                end
+                table.insert(items, {
+                    label = ':' .. selector_name,
+                    kind = vim.lsp.protocol.CompletionItemKind.Keyword,
+                    documentation = {
+                        kind = 'markdown',
+                        value = selector_data.documentation,
+                    },
+                    insertText = ':' .. insert_text,
+                    insertTextFormat = insert_format,
+                    sortText = '3:' .. selector_name,
+                })
+            end
+        end
+        return original_handler(err, result, ctx, config)
+    end
+end
+autocmd('BufNewFile', {
+    group = group,
+    pattern = {
+        '*.css',
+        '*.scss',
+        '*.sass',
+        '*.less',
+        '*.postcss',
+    },
+    callback = function()
+        local lines = api.nvim_buf_get_lines(0, 0, 1, false) ---@type string[]
+        if lines[1] ~= '' then
+            return
+        end
+        local filepath = fn.expand('%:p') ---@type string
+        local hdr = header.make_header(filepath, '/*')
+        api.nvim_buf_set_lines(0, 0, 0, false, hdr)
+        vim.cmd('normal! G')
+    end,
+})
+autocmd('BufWritePre', {
+    group = group,
+    pattern = {
+        '*.css',
+        '*.scss',
+        '*.sass',
+        '*.less',
+        '*.postcss',
+    },
+    callback = function(args) ---@param args {buf: integer, file: string, match: string}
+        lsp.buf.format({
+            bufnr = args.buf,
+            async = false,
+        })
+    end,
+})
+autocmd('BufWritePre', {
+    group = group,
+    pattern = {
+        '*.css',
+        '*.scss',
+        '*.sass',
+        '*.less',
+        '*.postcss',
+    },
+    callback = function()
+        code_action({
+            context = {
+                diagnostics = {},
+                only = {
+                    'source.fixAll',
+                },
+            },
+            apply = true,
+        })
+    end,
+})
+autocmd('FileType', {
+    group = group,
+    pattern = {
+        'css',
+        'scss',
+        'sass',
+        'less',
+        'postcss',
+    },
+    callback = function()
+        vim.opt_local.tabstop = 2
+        vim.opt_local.shiftwidth = 2
+        vim.opt_local.expandtab = true
+    end,
+})
+usercmd('CssFormat', function()
+    ---@type string
+    local prettier = findfile('node_modules/.bin/prettier', '.;') --[[@as string]]
+    ---@type string
+    local biome = findfile('node_modules/.bin/biome', '.;') --[[@as string]]
+    if biome ~= '' then
+        jobstart({
+            biome,
+            'format',
+            '--write',
+            fn.expand('%:p'),
+        }, {
+            on_exit = function(_, code, _)
+                schedule(function()
+                    if code == 0 then
+                        notify('Formatted with Biome', INFO)
+                        vim.cmd('e!')
+                    else
+                        notify('Biome formatting failed', ERROR)
+                    end
+                end)
+            end,
+        })
+    elseif prettier ~= '' then
+        jobstart({
+            prettier,
+            '--write',
+            fn.expand('%:p'),
+        }, {
+            on_exit = function(_, code, _)
+                schedule(function()
+                    if code == 0 then
+                        notify('Formatted with Prettier', INFO)
+                        vim.cmd('e!')
+                    else
+                        notify('Prettier formatting failed', ERROR)
+                    end
+                end)
+            end,
+        })
+    else
+        lsp.buf.format({
+            async = false,
+        })
+        notify('Formatted with LSP', INFO)
+    end
+end, {})
+usercmd('CssLint', function()
+    ---@type string
+    local stylelint = findfile('node_modules/.bin/stylelint', '.;') --[[@as string]]
+    ---@type string
+    local biome = findfile('node_modules/.bin/biome', '.;') --[[@as string]]
+    if biome ~= '' then
+        jobstart({
+            biome,
+            'lint',
+            fn.expand('%:p'),
+        }, {
+            stdout_buffered = true,
+            on_stdout = function(_, data, _)
+                if not data then
+                    return
+                end
+                local out = table.concat(data, '')
+                if out ~= '' then
+                    schedule(function()
+                        notify('biome: ' .. out, INFO)
+                    end)
+                end
+            end,
+        })
+    elseif stylelint ~= '' then
+        jobstart({
+            stylelint,
+            fn.expand('%:p'),
+        }, {
+            stdout_buffered = true,
+            on_stdout = function(_, data, _)
+                if not data then
+                    return
+                end
+                local out = table.concat(data, '')
+                if out ~= '' then
+                    schedule(function()
+                        notify('stylelint: ' .. out, INFO)
+                    end)
+                end
+            end,
+        })
+    else
+        notify('No linter found (stylelint or biome)', ERROR)
+    end
+end, {})
+usercmd('CssQuickfix', function()
+    local diagnostics = get(0)
+    code_action({
+        context = {
+            diagnostics = diagnostics,
+            only = {
+                'quickfix',
+            },
+            triggerKind = lsp.protocol.CodeActionTriggerKind.Invoked,
+        },
+        apply = true,
+    })
+end, {})
+autocmd('BufWritePre', {
+    group = group,
+    pattern = {
+        '*.css',
+        '*.scss',
+        '*.sass',
+        '*.less',
+        '*.postcss',
+    },
+    callback = function(args)
+        local diagnostics = get(args.buf)
+        code_action({
+            context = {
+                diagnostics = diagnostics,
+                only = {
+                    'source.organizeImports',
+                    'source.fixAll',
+                },
+                triggerKind = lsp.protocol.CodeActionTriggerKind.Source,
+            },
+            apply = true,
+            filter = function(_, client_id)
+                local client = client_by_id(client_id)
+                return is_css_lsp(client)
+            end,
+        })
+    end,
+})
+autocmd('BufWritePost', {
+    group = group,
+    pattern = {
+        '*.css',
+        '*.scss',
+        '*.sass',
+        '*.less',
+        '*.postcss',
+    },
+    callback = function(args)
+        ---@type string
+        local stylelint = findfile('node_modules/.bin/stylelint', '.;') --[[@as string]]
+        ---@type string
+        local biome = findfile('node_modules/.bin/biome', '.;') --[[@as string]]
+
+        if biome ~= '' then
+            jobstart({
+                biome,
+                'lint',
+                '--formatter=compact',
+                api.nvim_buf_get_name(args.buf),
+            }, {
+                stdout_buffered = true,
+                on_stdout = function(_, data, _)
+                    if not data then
+                        return
+                    end
+                    local out = table.concat(data, '')
+                    if out ~= '' and not out:match('^%s*$') then
+                        schedule(function()
+                            notify('biome: ' .. out, INFO)
+                        end)
+                    end
+                end,
+            })
+        elseif stylelint ~= '' then
+            jobstart({
+                stylelint,
+                '--formatter=compact',
+                api.nvim_buf_get_name(args.buf),
+            }, {
+                stdout_buffered = true,
+                on_stdout = function(_, data, _)
+                    if not data then
+                        return
+                    end
+                    local out = table.concat(data, '')
+                    if out ~= '' and not out:match('^%s*$') then
+                        schedule(function()
+                            notify('stylelint: ' .. out, INFO)
+                        end)
+                    end
+                end,
+            })
+        end
+    end,
+})
+usercmd('CssCodeAction', function()
+    local diagnostics = get(0)
+    code_action({
+        context = {
+            diagnostics = diagnostics,
+            only = {
+                'quickfix',
+                'refactor',
+                'source.organizeImports',
+                'source.fixAll',
+            },
+        },
+        filter = function(_, client_id)
+            local client = client_by_id(client_id)
+            return is_css_lsp(client)
+        end,
+        apply = true,
+    })
+end, {})
+
+usercmd('CssRangeAction', function()
+    local bufnr = 0
+    local diagnostics = get(bufnr)
+    local start_pos = api.nvim_buf_get_mark(bufnr, '<')
+    local end_pos = api.nvim_buf_get_mark(bufnr, '>')
+    code_action({
+        context = {
+            diagnostics = diagnostics,
+            only = {
+                'quickfix',
+                'refactor.extract',
+            },
+        },
+        range = {
+            start = {
+                start_pos[1],
+                start_pos[2],
+            },
+            ['end'] = {
+                end_pos[1],
+                end_pos[2],
+            },
+        },
+        filter = function(_, client_id)
+            local client = client_by_id(client_id)
+            return is_css_lsp(client)
+        end,
+        apply = false,
+    })
+end, {
+    range = true,
+})
+autocmd('LspAttach', {
+    group = group,
+    callback = function(args)
+        local client = client_by_id(args.data.client_id)
+        if is_css_lsp(client) then
+            vim.bo[args.buf].omnifunc = 'v:lua.vim.lsp.omnifunc'
+        end
+    end,
+})
+setup_gtk_completions()
+return M

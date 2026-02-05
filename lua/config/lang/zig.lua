@@ -1,18 +1,28 @@
 -- /qompassai/Diver/lua/config/lang/zig.lua
 -- Qompass AI Diver Zig Config
--- Copyright (C) 2025 Qompass AI, All rights reserved
+-- Copyright (C) 2026 Qompass AI, All rights reserved
 -- ----------------------------------------
+local M = {} ---@version 5.1, JIT
 local api = vim.api
+local augroup = vim.api.nvim_create_augroup
+local autocmd = vim.api.nvim_create_autocmd
+local code_action = vim.lsp.buf.code_action
+local get = vim.diagnostic.get
+local jobstart = vim.fn.jobstart
+local lsp = vim.lsp
 local fn = vim.fn
-local header = require('utils.docs')
-local group = api.nvim_create_augroup('Zig', {
+local header = require('utils.docs.docs')
+local group = augroup('Zig', {
     clear = true,
 })
-api.nvim_create_autocmd('BufNewFile', {
+local uv = vim.uv
+local usercmd = vim.api.nvim_create_user_command
+autocmd('BufNewFile', {
     group = group,
     pattern = { '*.zig' },
     callback = function()
-        if api.nvim_buf_get_lines(0, 0, 1, false)[1] ~= '' then
+        local lines = api.nvim_buf_get_lines(0, 0, 1, false)
+        if lines[1] ~= '' then
             return
         end
         local filepath = fn.expand('%:p')
@@ -21,95 +31,35 @@ api.nvim_create_autocmd('BufNewFile', {
         vim.cmd('normal! G')
     end,
 })
-api.nvim_create_autocmd('BufWritePre', {
+autocmd('BufWritePre', {
     group = group,
-    pattern = {
-        '*.zig',
-        '*.zon',
-    },
-    callback = function()
-        vim.lsp.buf.format()
-    end,
-})
-api.nvim_create_autocmd('BufWritePre', {
-    pattern = {
-        '*.zig',
-        '*.zon',
-    },
-    callback = function()
-        vim.lsp.buf.code_action({
-            context = {
-                diagnostics = {},
-                only = {
-                    'source.fixAll',
-                },
-            },
-            apply = true,
-        })
-    end,
-})
-api.nvim_create_user_command('ZigTest', function()
-    vim.fn.jobstart({
-        'zig',
-        'test',
-        vim.fn.expand('%:p'),
-    }, {
-        detach = true,
-    })
-end, {})
-
-vim.api.nvim_create_autocmd('BufWritePre', {
-    pattern = '*.zig',
+    pattern = { '*.zig', '*.zon' },
     callback = function(args)
-        vim.lsp.buf.format({
-            bufnr = args.buf,
-            async = false,
-        })
-    end,
-})
-vim.api.nvim_create_user_command('ZigQuickfix', function()
-    local diagnostics = vim.diagnostic.get(0)
-    vim.lsp.buf.code_action({
-        context = {
-            diagnostics = diagnostics,
-            only = {
-                'quickfix',
-            },
-            triggerKind = vim.lsp.protocol.CodeActionTriggerKind.Invoked,
-        },
-        apply = true,
-    })
-end, {})
-vim.api.nvim_create_autocmd('BufWritePre', {
-    pattern = {
-        '*.zig',
-        '*.zon',
-    },
-    callback = function(args)
-        local diagnostics = vim.diagnostic.get(args.buf)
-        vim.lsp.buf.code_action({
+        local diagnostics = get(args.buf)
+        code_action({
             context = {
                 diagnostics = diagnostics,
                 only = {
                     'source.organizeImports',
                     'source.fixAll',
                 },
-                triggerKind = vim.lsp.protocol.CodeActionTriggerKind.Source,
+                triggerKind = lsp.protocol.CodeActionTriggerKind.Source,
             },
             apply = true,
             filter = function(_, client_id)
-                local client = vim.lsp.get_client_by_id(client_id)
+                local client = lsp.get_client_by_id(client_id)
                 return client ~= nil and client.name == 'z_ls'
             end,
         })
     end,
 })
-vim.api.nvim_create_autocmd('BufWritePost', {
+autocmd('BufWritePost', {
+    group = group,
     pattern = '*.zig',
     callback = function(args)
-        vim.fn.jobstart({
+        jobstart({
             'zlint',
-            vim.api.nvim_buf_get_name(args.buf),
+            api.nvim_buf_get_name(args.buf),
         }, {
             stdout_buffered = true,
             on_stdout = function(_, data, _)
@@ -126,9 +76,23 @@ vim.api.nvim_create_autocmd('BufWritePost', {
         })
     end,
 })
-vim.api.nvim_create_user_command('ZigCodeAction', function()
-    local diagnostics = vim.diagnostic.get(0)
-    vim.lsp.buf.code_action({
+usercmd('ZigTest', function()
+    jobstart({ 'zig', 'test', fn.expand('%:p') }, { detach = true })
+end, {})
+usercmd('ZigQuickfix', function()
+    local diagnostics = get(0)
+    code_action({
+        context = {
+            diagnostics = diagnostics,
+            only = { 'quickfix' },
+            triggerKind = lsp.protocol.CodeActionTriggerKind.Invoked,
+        },
+        apply = true,
+    })
+end, {})
+usercmd('ZigCodeAction', function()
+    local diagnostics = get(0)
+    code_action({
         context = {
             diagnostics = diagnostics,
             only = {
@@ -139,18 +103,18 @@ vim.api.nvim_create_user_command('ZigCodeAction', function()
             },
         },
         filter = function(_, client_id)
-            local client = vim.lsp.get_client_by_id(client_id)
+            local client = lsp.get_client_by_id(client_id)
             return client ~= nil and client.name == 'z_ls'
         end,
         apply = true,
     })
 end, {})
-vim.api.nvim_create_user_command('ZigRangeAction', function()
+usercmd('ZigRangeAction', function()
     local bufnr = 0
-    local diagnostics = vim.diagnostic.get(bufnr)
-    local start_pos = vim.api.nvim_buf_get_mark(bufnr, '<')
-    local end_pos = vim.api.nvim_buf_get_mark(bufnr, '>')
-    vim.lsp.buf.code_action({
+    local diagnostics = get(bufnr)
+    local start_pos = api.nvim_buf_get_mark(bufnr, '<')
+    local end_pos = api.nvim_buf_get_mark(bufnr, '>')
+    code_action({
         context = {
             diagnostics = diagnostics,
             only = {
@@ -159,44 +123,30 @@ vim.api.nvim_create_user_command('ZigRangeAction', function()
             },
         },
         range = {
-            start = {
-                start_pos[1],
-                start_pos[2],
-            },
-            ['end'] = {
-                end_pos[1],
-                end_pos[2],
-            },
+            start = { start_pos[1], start_pos[2] },
+            ['end'] = { end_pos[1], end_pos[2] },
         },
         filter = function(_, client_id)
-            local client = vim.lsp.get_client_by_id(client_id)
+            local client = lsp.get_client_by_id(client_id)
             return client ~= nil and client.name == 'z_ls'
         end,
         apply = false,
     })
-end, {
-    range = true,
-})
-api.nvim_create_autocmd('LspAttach', {
-    callback = function(args)
-        local client = vim.lsp.get_client_by_id(args.data.client_id)
-        if client and client.name == 'z_ls' then
-            vim.bo[args.buf].omnifunc = 'v:lua.vim.lsp.omnifunc'
-        end
-    end,
-})
-vim.api.nvim_create_autocmd('FileType', {
-    group = vim.api.nvim_create_augroup('ziggy_schema', {}),
+end, { range = true })
+
+autocmd('FileType', {
+    group = augroup('ziggy_schema', { clear = true }),
     pattern = 'ziggy_schema',
     callback = function()
-        vim.lsp.start({
+        local cwd = uv and uv.cwd() or fn.getcwd()
+        if not cwd then
+            return
+        end
+        lsp.start({
             name = 'Ziggy LSP',
-            cmd = {
-                'ziggy',
-                'lsp',
-                '--schema',
-            },
-            root_dir = vim.uv.cwd(),
+            cmd = { 'ziggy', 'lsp', '--schema' },
+            root_dir = cwd,
         })
     end,
 })
+return M

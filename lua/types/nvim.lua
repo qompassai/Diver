@@ -31,49 +31,59 @@ function coxpcall(f, err, ...) end
 ---@class gh.Opts
 ---@field branch?                                          string
 ---@field cmd?                                             string[]
----@field data? table|any
----@field event? string[]
----@field ft? string[]
----@field hook? fun(spec?: vim.pack.Spec)
----@field keys? table[]
----@field name? string
----@field opts? table
----@field update? boolean
----@field version? string|vim.Version|vim.VersionRange
----@param repo string
----@param opts? gh.Opts
+---@field data?                                            table|any
+---@field event?                                           string[]
+---@field ft?                                              string[]
+---@field hook?                                            fun(spec?: vim.pack.Spec)
+---@field keys?                                            table[]
+---@field name?                                            string
+---@field opts?                                            table
+---@field update?                                          boolean
+---@field version?                                         string|vim.Version|vim.VersionRange
+---@param repo                                             string
+---@param opts?                                            gh.Opts
 ---@return string|vim.pack.Spec
 function _G.gh(repo, opts) end
 
 ---@class                    vim
+---@field api                                              vim.api
+---@field diagnostic                                       vim.diagnostic
+---@field fn                                               vim.fn
+---@field lsp                                              vim.lsp
 ---@field pesc                                             fun(s: string): string
 ---@class                    vim.api
----@field nvim_create_augroup?                             fun(name: string, opts: table): integer
----@field nvim_create_autocmd?                             fun(event: string|string[], opts: vim.api.CreateAutocmdOpts): integer
+---@field nvim_buf_get_lines                               fun(buffer: integer, start: integer, end: integer, strict_indexing: boolean): string[]
+---@field nvim_buf_get_name                                fun(buffer: integer): string
+---@field nvim_buf_get_mark                                fun(buffer: integer, name: string): integer[]
+---@field nvim_buf_set_lines                               fun(buffer: integer, start: integer, end_: integer, strict_indexing: boolean, replacement: string[]): nil
+---@field nvim_create_augroup                              fun(name: string, opts: table): integer
+---@field nvim_create_autocmd                              fun(event: string|string[], opts: vim.api.CreateAutocmdOpts): integer
+---@field nvim_create_user_command                         fun(name: string, command: function|string, opts: table): nil
+---@field nvim_get_current_buf                             fun(): integer
 ---@field nvim_get_runtime_file?                           fun(pattern: string, all: boolean): string[]
----@field nvim_set_option_value?                           fun(name: string, value: any, opts: table)
+---@field nvim_set_option_value                            fun(name: string, value: any, opts: table): nil
 ---@type                     vim.api
 vim.api = vim.api
 ---@class                    vim.api.AutocmdCallbackArgs
----@field id                                               integer
----@field event                                            string
----@field group?                                           integer
----@field match                                            string
----@field file                                             string
 ---@field buf                                              integer
 ---@field data?                                            any
+---@field id                                               integer
+---@field event                                            string
+---@field file                                             string
+---@field group?                                           integer
+---@field match                                            string
 ---@class                    vim.api.CreateAutocmdOpts
+---@field buffer?                                          integer
+---@field callback?                                        fun(args: vim.api.AutocmdCallbackArgs)
 ---@field desc?                                            string
 ---@field group?                                           integer
 ---@field pattern?                                         string|string[]
----@field buffer?                                          integer
 ---@field once?                                            boolean
 ---@field nested?                                          boolean
----@field callback?                                        fun(args: vim.api.AutocmdCallbackArgs)
 ---@field command?                                         string
----@class vim.b
+---@class                    vim.b
 ---@field lsp_enable_on_demand?                            boolean
----@class vim.bo
+---@class                    vim.bo
 ---@field autocomplete?                                    boolean
 ---@field autoread?                                        boolean
 ---@field backupcopy?                                      'yes'|'no'|'auto'|'breaksymlink'|'breakhardlink'|string
@@ -102,33 +112,45 @@ vim.api = vim.api
 ---@class                    vim.CompleteFuncResult
 ---@field refresh?                                         vim.CompleteFuncRefresh
 ---@field words                                            vim.CompleteMatches
+---@class                    vim.diagnostic
+---@field get                                              fun(bufnr?: integer, opts?: table): vim.Diagnostic[]
+---@class                    vim.Diagnostic
+---@field lnum                                             integer
+---@field col                                              integer
+---@field message                                          string
+---@field severity                                         integer
+---@field source?                                          string
 ---@class                    vim.fn
----@field abs?                                              fun(expr: number): number
----@field acos?                                             fun(expr: number): number
----@field add?                                              fun(object: any, expr: any): any
----@field and?                                              fun(expr: number, expr1: number): integer
----@field api_info?                                         fun(): table
----@field append?                                           fun(lnum: integer|string, text: string|string[]): 0|1
----@field executable?                                       fun(name: string): integer
----@field expand?                                           fun(expr: string): string
----@field has?                                              fun(feature: string): integer
----@field stdpath?                                          fun(what: 'config'|'data'|'state'|'cache'|'log'): string
+---@field abs?                                             fun(expr: number): number
+---@field acos?                                            fun(expr: number): number
+---@field add?                                             fun(object: any, expr: any): any
+---@field and?                                             fun(expr: number, expr1: number): integer
+---@field api_info?                                        fun(): table
+---@field append?                                          fun(lnum: integer|string, text: string|string[]): 0|1
+---@field executable?                                      fun(name: string): integer
+---@field expand?                                          fun(expr: string): string
+---@field getcwd                                           fun(): string
+---@field has?                                             fun(feature: string): integer
+---@field input                                            fun(prompt: string, default?: string, completion?: string): string
+---@field jobstart                                         fun(cmd: string[]|string, opts: table): integer
+---@field stdpath?                                         fun(what: 'config'|'data'|'state'|'cache'|'log'): string
+---@field strftime                                         fun(format: string, time: integer): string
 vim.fn = vim.fn
 ---@class                    vim.fs
----@field abspath                                         fun(path: string): string
----@field basename                                        fun(file: string|nil): string|nil
----@field dirname                                         fun(file: string|nil): string|nil
----@field normalize                                       fun(path: string, opts?: { expand_env?: boolean, win?: boolean }): string
----@field joinpath                                        fun(...: string): string
----@field find                                            fun(
+---@field abspath                                          fun(path: string): string
+---@field basename                                         fun(file: string|nil): string|nil
+---@field dirname                                          fun(file: string|nil): string|nil
+---@field normalize                                        fun(path: string, opts?: { expand_env?: boolean, win?: boolean }): string
+---@field joinpath                                         fun(...: string): string
+---@field find                                             fun(
 ---  names:                                                string|string[]|fun(name: string, path: string): boolean,
 ---  opts:                                                 { path?: string, upward?: boolean, stop?: string, type?: string, limit?: number, follow?: boolean }|nil)): string[]
----@field parents                                         fun(start: string): (fun(_, dir: string): string|nil), nil, string|nil
----@field relative_path                                         fun(base: string, target: string, opts?: table): string|nil
+---@field parents                                          fun(start: string): (fun(_, dir: string): string|nil), nil, string|nil
+---@field relative_path                                    fun(base: string, target: string, opts?: table): string|nil
 ---@field rm                                               fun(path: string, opts?: { recursive?: boolean, force?: boolean }): nil
----@field snippet_entry                                   string
+---@field snippet_entry                                    string
 vim.fs = vim.fs or {}
----@type vim.fs
+---@type                     vim.fs
 ---@class                    vim.fs.DirEntry
 ---@field name                                             string
 ---@field type                                             vim.fs.EntryType
@@ -141,7 +163,7 @@ vim.fs = vim.fs or {}
 ---@field loaded_illuminate?                               boolean
 ---@field loaded_netrw?                                    integer
 ---@field loaded_netrwPlugin?                              integer
----@field loaded_node_provider?                            0|1
+---@field loaded_node_provider?                            0|1|integer
 ---@field loaded_perl_provider?                            0|1
 ---@field loaded_python_provider?                          0|1
 ---@field loaded_ruby_provider?                            0|1
@@ -284,9 +306,9 @@ vim.fs = vim.fs or {}
 ---@field wrap?                                            boolean
 ---@field writebackup?                                     boolean
 ---@class                    vim.opt.Option<T>
----@field get?                                              fun(self: vim.opt.Option<T>): T
----@field append?                                           fun(self: vim.opt.Option<T>, value: any)
----@field remove?                                           fun(self: vim.opt.Option<T>, value: any)
+---@field get?                                             fun(self: vim.opt.Option<T>): T
+---@field append?                                          fun(self: vim.opt.Option<T>, value: any)
+---@field remove?                                          fun(self: vim.opt.Option<T>, value: any)
 
 ---@class                    vim.opt
 ---@field backspace                                        vim.opt.Option<string|string[]>
@@ -311,21 +333,20 @@ vim.fs = vim.fs or {}
 ---@field nrformats?                                       OptionMethods<string|string[]>
 ---@field tags?                                            OptionMethods<string|string[]>
 ---@field viminfo?                                         OptionMethods<string|string[]>
----@class vim.pack.Spec
----@field branch? string
----@field cmd? string[]
----@field data? table|any
----@field event? string[]
----@field ft? string[]
----@field hook? fun(spec?: vim.pack.Spec)
----@field keys? table[]
----@field name? string
----@field opts? table
----@field repo? string
----@field src string
----@field update? boolean
----@field version? string|vim.Version|vim.VersionRange
-
+---@class                    vim.pack.Spec
+---@field branch?                                          string
+---@field cmd?                                             string[]
+---@field data?                                            table|any
+---@field event?                                           string[]
+---@field ft?                                              string[]
+---@field hook?                                            fun(spec?: vim.pack.Spec)
+---@field keys?                                            table[]
+---@field name?                                            string
+---@field opts?                                            table
+---@field repo?                                            string
+---@field src                                              string
+---@field update?                                          boolean
+---@field version?                                         string|vim.Version|vim.VersionRange
 ---@class                    vim.wo
 ---@field breakindent?                                     boolean
 ---@field conceallevel?                                    0|1|2|3|integer
@@ -367,13 +388,13 @@ vim.fs = vim.fs or {}
 ---@field fs_scandir                                       fun(path: string): vim.uv.FsScandirHandle|nil
 ---@field fs_scandir_next                                  fun(fs: vim.uv.FsScandirHandle): string|nil, vim.uv.FsScandirType|nil
 ---@field fs_stat                                          fun(path: string): vim.uv.FsStat|nil
----@class vim.uv.FsStat
+---@class                    vim.uv.FsStat
 ---@field type                                             vim.uv.FsScandirType
 ---@field size                                             integer
 ---@class                    vim.v
 ---@field completed_item?                                  vim.CompletedItem
 ---@field event?                                           vim.VEvent
----@class vim.CompletedItem
+---@class                    vim.CompletedItem
 ---@field abbr?                                            string
 ---@field dup?                                             integer
 ---@field menu?                                            string
