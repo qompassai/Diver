@@ -1,5 +1,5 @@
 -- /qompassai/Diver/lua/ui/line.lua
--- Qompass AI LuaLine Config
+-- Qompass AI Diver LuaLine Config
 -- Copyright (C) 2025 Qompass AI, All rights reserved
 -- ----------------------------------------
 local M = {}

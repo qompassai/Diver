@@ -91,7 +91,7 @@ function M.md_diagram(opts)
     return opts
 end
 
----@class Options
+---@class image.Options
 function M.md_image(opts)
     opts = opts or {}
     require('image').setup({
@@ -773,22 +773,6 @@ function M.md_rendermd(opts)
     return opts
 end
 
-function M.md_treesitter(opts)
-    opts = opts or {}
-    opts.sync_install = opts.sync_install or true
-    opts.ignore_install = opts.ignore_install or {}
-    opts.auto_install = opts.auto_install ~= false
-    opts.modules = opts.modules or {}
-    opts.ensure_installed = opts.ensure_installed or {}
-    opts.highlight = opts.highlight or {}
-    opts.highlight.enable = opts.highlight.enable ~= false
-    opts.highlight.additional_vim_regex_highlighting = opts.highlight.additional_vim_regex_highlighting
-        or {
-            'markdown',
-        }
-    require('nvim-treesitter.configs').setup(opts)
-end
-
 function M.md_table_mode()
     api.nvim_create_autocmd('FileType', {
         pattern = {
@@ -805,10 +789,8 @@ function M.md_config(opts)
     opts = opts or {}
     M.md_anchor(opts)
     M.md_autocmds()
-    M.md_lsp(opts.on_attach, opts.capabilities)
     M.md_image(opts)
     M.md_livepreview(opts)
-    M.md_treesitter(opts)
     M.md_preview(opts)
     M.md_rendermd(opts)
     M.md_pdf(opts)

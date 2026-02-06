@@ -2,6 +2,7 @@
 -- Qompass AI User Experience(UX) Utils Base64
 -- Copyright (C) 2026 Qompass AI, All rights reserved
 -- --------------------------------------------------
+---@version JIT
 if bit == nil then
     bit = require('bit')
 end
@@ -74,10 +75,8 @@ local function base64(val)
     }
 
     local function char1(byte1)
-        -- 252: 0b11111100
         return b64[bit.rshift(bit.band(string.byte(byte1), 252), 2) + 1]
     end
-
     local function char2(byte1, byte2)
         return b64[bit.lshift(bit.band(string.byte(byte1), 3), 4) + bit.rshift(bit.band(string.byte(byte2), 240), 4) + 1]
     end
@@ -85,10 +84,8 @@ local function base64(val)
         return b64[bit.lshift(bit.band(string.byte(byte2), 15), 2) + bit.rshift(bit.band(string.byte(byte3), 192), 6) + 1]
     end
     local function char4(byte3)
-        -- 63: 0b00111111
         return b64[bit.band(string.byte(byte3), 63) + 1]
     end
-
     local result = ''
     for byte1, byte2, byte3 in string.gmatch(val, '(.)(.)(.)') do
         result = result .. char1(byte1) .. char2(byte1, byte2) .. char3(byte2, byte3) .. char4(byte3)

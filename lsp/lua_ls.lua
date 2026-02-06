@@ -49,6 +49,7 @@ return ---@type vim.lsp.Config
             },
             diagnostics = {
                 disable = {
+                    'await-in-sync',
                     'lowercase-global',
                     'duplicate-index',
                     'duplicate-set-field',
@@ -56,6 +57,8 @@ return ---@type vim.lsp.Config
                     'incomplete-signature-doc',
                     'inject-field',
                     'duplicate-doc-field',
+                    'redundant-parameter',
+                    'redundant-return-value',
                 },
                 disableScheme = {
                     'git',

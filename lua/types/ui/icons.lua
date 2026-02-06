@@ -3,7 +3,8 @@
 -- Qompass AI Diver UI Icon Types
 -- Copyright (C) 2026 Qompass AI, All rights reserved
 -- --------------------------------------------------
-local M = {}
+---@meta
+local M = {} ---@version JIT
 ---@class                    nerdy.config
 ---@field copy_to_clipboard                                boolean
 ---@field max_recents                                      integer

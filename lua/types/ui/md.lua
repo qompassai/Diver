@@ -10,7 +10,7 @@
 ---@alias MdImageIntegrationsCss                           image.DocumentIntegrationOpts
 ---@class                    image.API
 ---@field clear?                                           fun(id?: string)
----@field setup                                            fun(options?: Options)
+---@field setup                                            fun(options?: image.Options)
 ---@field from_file                                        fun(path: string, options?: image.ImageOptions): image.Image|nil
 ---@field from_url                                         fun(url: string, options?: image.ImageOptions, callback: fun(image: image.Image|nil))
 ---@field get_images                                       fun(opts?: { window?: number, buffer?: number, namespace?: string }): image.Image[]
@@ -74,7 +74,7 @@
 ---@field backend                                          image.Backend
 ---@field disable_decorator_handling                       boolean
 ---@field enabled                                          boolean
----@field options                                          Options
+---@field options                                          image.Options
 ---@field images?                                          { [string]: image.Image }
 ---@field extmarks_namespace?                              any
 ---@field remote_cache                                     { [string]: string }
@@ -120,7 +120,7 @@
 ---@field col?                                             number
 ---@field width?                                           number
 ---@field height?                                          number
----@class image.ImageOptions:                              image.ImageGeometry
+---@class                    image.ImageOptions:           image.ImageGeometry
 ---@field id?                                              string
 ---@field window?                                          number
 ---@field buffer?                                          number

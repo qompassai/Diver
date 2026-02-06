@@ -2,7 +2,7 @@
 -- Qompass AI Diver Zig Config
 -- Copyright (C) 2026 Qompass AI, All rights reserved
 -- ----------------------------------------
-local M = {} ---@version 5.1, JIT
+local M = {} ---@version  JIT
 local api = vim.api
 local augroup = vim.api.nvim_create_augroup
 local autocmd = vim.api.nvim_create_autocmd
@@ -133,7 +133,6 @@ usercmd('ZigRangeAction', function()
         apply = false,
     })
 end, { range = true })
-
 autocmd('FileType', {
     group = augroup('ziggy_schema', { clear = true }),
     pattern = 'ziggy_schema',

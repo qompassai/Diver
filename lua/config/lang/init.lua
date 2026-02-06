@@ -5,8 +5,11 @@
 return {
     require('config.lang.arduino'),
     require('config.lang.bash'),
+    require('config.lang.c'),
     require('config.lang.cmp'),
+    require('config.lang.cpp'),
     require('config.lang.css'),
+    require('config.lang.elixir'),
     require('config.lang.go'),
     require('config.lang.js'),
     require('config.lang.julia'),

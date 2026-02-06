@@ -1,11 +1,9 @@
 #!/usr/bin/env lua
-
--- /qompassai/Diver/lua/utils/ux/init.lua
--- Qompass AI User Experience(UX) Utils
+-- /qompassai/Diver/lua/utils/red/init.lua
+-- Qompass AI Diver Redteam Utils
 -- Copyright (C) 2026 Qompass AI, All rights reserved
 -- --------------------------------------------------
 local M = {} ---@version JIT
-require('utils.ux.nb')
-require('utils.ux.ui')
-require('utils.ux.w3m')
+require('utils.red.red')
+require('utils.red.shark')
 return M

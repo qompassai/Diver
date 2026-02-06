@@ -81,6 +81,22 @@ vim.api = vim.api
 ---@field once?                                            boolean
 ---@field nested?                                          boolean
 ---@field command?                                         string
+---@meta
+---@class vim.api.keyset.create_autocmd
+---@field group?                                           integer|string
+---@field pattern?                                         string|string[]
+---@field buffer?                                          integer
+---@field desc?                                            string
+---@field callback?                                        fun():boolean?
+---@field command?                                         string
+---@field once?                                            boolean
+---@field nested?                                          boolean
+
+---@param event                                            string|string[]
+---@param opts                                             vim.api.keyset.create_autocmd
+---@return integer
+function vim.api.nvim_create_autocmd(event, opts) end
+
 ---@class                    vim.b
 ---@field lsp_enable_on_demand?                            boolean
 ---@class                    vim.bo

@@ -16,7 +16,7 @@
       "version": "'master'"
     },
     "blink.cmp": {
-      "rev": "3033d278848129899f94843e12ebb83a31342faa",
+      "rev": "4b18c32adef2898f95cdef6192cbd5796c1a332d",
       "src": "https://github.com/Saghen/blink.cmp",
       "version": "1.0.0 - 2.0.0"
     },
@@ -35,8 +35,7 @@
     },
     "cmp-buffer": {
       "rev": "b74fab3656eea9de20a9b8116afa3cfc4ec09657",
-      "src": "https://github.com/hrsh7th/cmp-buffer",
-      "version": "'main'"
+      "src": "https://github.com/hrsh7th/cmp-buffer"
     },
     "cmp-nvim-lua": {
       "rev": "e3a22cb071eb9d6508a156306b102c45cd2d573d",
@@ -64,9 +63,8 @@
       "version": "'main'"
     },
     "fzf-lua": {
-      "rev": "36d60dd59cd9bc0442352119fc0e45e1c9011e03",
-      "src": "https://github.com/ibhagwan/fzf-lua",
-      "version": "'main'"
+      "rev": "c86b72c62b01d2242cafa45fb0d1fc3bf66e6a2b",
+      "src": "https://github.com/ibhagwan/fzf-lua"
     },
     "lazydev.nvim": {
       "rev": "5231c62aa83c2f8dc8e7ba957aa77098cda1257d",
@@ -93,7 +91,7 @@
     "neo-tree.nvim": {
       "rev": "4925f31285940af2805f5bfe52dcffa2037ecab2",
       "src": "https://github.com/nvim-neo-tree/neo-tree.nvim",
-      "version": "'v3.x'"
+      "version": "3.0.0 - 4.0.0"
     },
     "neotest": {
       "rev": "deadfb1af5ce458742671ad3a013acb9a6b41178",
@@ -106,8 +104,7 @@
     },
     "nvim-treesitter": {
       "rev": "42fc28ba918343ebfd5565147a42a26580579482",
-      "src": "https://github.com/nvim-treesitter/nvim-treesitter",
-      "version": "'master'"
+      "src": "https://github.com/nvim-treesitter/nvim-treesitter"
     },
     "nvim-treesitter-textobjects": {
       "rev": "a0e182ae21fda68c59d1f36c9ed45600aef50311",
@@ -115,7 +112,7 @@
       "version": "'main'"
     },
     "nvim-web-devicons": {
-      "rev": "803353450c374192393f5387b6a0176d0972b848",
+      "rev": "746ffbb17975ebd6c40142362eee1b0249969c5c",
       "src": "https://github.com/nvim-tree/nvim-web-devicons",
       "version": "'master'"
     },
@@ -140,7 +137,8 @@
     },
     "trouble.nvim": {
       "rev": "bd67efe408d4816e25e8491cc5ad4088e708a69a",
-      "src": "https://github.com/folke/trouble.nvim"
+      "src": "https://github.com/folke/trouble.nvim",
+      "version": "'main'"
     },
     "twilight.nvim": {
       "rev": "664e752f4a219801265cc3fc18782b457b58c1e1",

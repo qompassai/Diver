@@ -4,11 +4,15 @@
 -- ---------------------------------------------------
 local M = {} ---@version 5.1, JIT
 local api = vim.api
+local bo = vim.bo
 local augroup = vim.api.nvim_create_augroup
 local autocmd = vim.api.nvim_create_autocmd
+local bufgm = vim.api.nvim_buf_get_mark
+local bufsl = vim.api.nvim_buf_set_lines
 local client_by_id = vim.lsp.get_client_by_id
 local cmd = vim.cmd
 local code_action = vim.lsp.buf.code_action
+local extend = vim.list_extend
 local findfile = vim.fn.findfile
 local ERROR = vim.log.levels.ERROR
 local get = vim.diagnostic.get
@@ -26,7 +30,7 @@ local usercmd = vim.api.nvim_create_user_command
 local function buf_is_empty()
     return api.nvim_buf_get_lines(0, 0, 1, false)[1] == ''
 end
-api.nvim_create_autocmd('BufNewFile', {
+autocmd('BufNewFile', {
     group = group,
     pattern = {
         '*.scala',
@@ -37,11 +41,11 @@ api.nvim_create_autocmd('BufNewFile', {
         end
         local filepath = fn.expand('%:p')
         local hdr = header.make_header(filepath, '//')
-        api.nvim_buf_set_lines(0, 0, 0, false, hdr)
-        vim.cmd('normal! G')
+        bufsl(0, 0, 0, false, hdr)
+        cmd('normal! G')
     end,
 })
-api.nvim_create_autocmd('BufNewFile', {
+autocmd('BufNewFile', {
     group = group,
     pattern = {
         '*.sc',
@@ -54,8 +58,8 @@ api.nvim_create_autocmd('BufNewFile', {
         local shebang = '#!/usr/bin/env -S scala-cli shebang'
         local hdr = header.make_header(filepath, '//')
         local lines = { shebang, '' }
-        vim.list_extend(lines, hdr)
-        api.nvim_buf_set_lines(0, 0, 0, false, lines)
+        extend(lines, hdr)
+        bufsl(0, 0, 0, false, lines)
         vim.cmd('normal! G')
     end,
 })
@@ -71,14 +75,11 @@ autocmd('BufNewFile', {
         local filepath = fn.expand('%:p')
         local hdr = header.make_header(filepath, '//')
         local lines = {}
-        vim.list_extend(lines, hdr)
-
-        -- Determine if this is a test file
+        extend(lines, hdr)
         local filename = fn.expand('%:t')
         local is_test = filepath:match('/test/') or filename:match('Test%.scala$') or filename:match('Spec%.scala$')
-
         if is_test then
-            vim.list_extend(lines, {
+            extend(lines, {
                 '',
                 'import org.scalatest.flatspec.AnyFlatSpec',
                 'import org.scalatest.matchers.should.Matchers',
@@ -88,20 +89,15 @@ autocmd('BufNewFile', {
                 '}',
             })
         else
-            -- Check if in a src directory with package structure
             local package_path = filepath:match('src/main/scala/(.+)/')
             if package_path then
                 local package = package_path:gsub('/', '.')
-                vim.list_extend(lines, {
-                    '',
-                    'package ' .. package,
-                    '',
-                    'object ' .. filename:gsub('%.scala$', '') .. ' {',
-                    '  ',
-                    '}',
-                })
+                extend(
+                    lines,
+                    { '', 'package ' .. package, '', 'object ' .. filename:gsub('%.scala$', '') .. ' {', '  ', '}' }
+                )
             else
-                vim.list_extend(lines, {
+                extend(lines, {
                     '',
                     'object ' .. filename:gsub('%.scala$', '') .. ' {',
                     '  def main(args: Array[String]): Unit = {',
@@ -111,7 +107,7 @@ autocmd('BufNewFile', {
                 })
             end
         end
-        api.nvim_buf_set_lines(0, 0, 0, false, lines)
+        bufsl(0, 0, 0, false, lines)
         cmd('normal! G')
         fn.search('  $')
     end,
@@ -121,11 +117,11 @@ autocmd('FileType', {
     pattern = 'scala',
     callback = function(args)
         local bufnr = args.buf
-        vim.bo[bufnr].tabstop = 2
-        vim.bo[bufnr].shiftwidth = 2
-        vim.bo[bufnr].softtabstop = 2
-        vim.bo[bufnr].expandtab = true
-        vim.bo[bufnr].commentstring = '// %s'
+        bo[bufnr].tabstop = 2
+        bo[bufnr].shiftwidth = 2
+        bo[bufnr].softtabstop = 2
+        bo[bufnr].expandtab = true
+        bo[bufnr].commentstring = '// %s'
     end,
 })
 autocmd('BufWritePre', {
@@ -152,11 +148,7 @@ autocmd('BufWritePre', {
 })
 autocmd('BufWritePost', {
     group = group,
-    pattern = {
-        '*.scala',
-        '*.sc',
-        '*.sbt',
-    },
+    pattern = { '*.scala', '*.sc', '*.sbt' },
     callback = function(args)
         local scalafmt_conf = findfile('.scalafmt.conf', '.;')
         if scalafmt_conf ~= '' and fn.executable('scalafmt') == 1 then
@@ -245,6 +237,8 @@ usercmd('ScalaTest', function(opts)
                 if package_path then
                     local fqn = package_path:gsub('/', '.')
                     jobstart({ 'sbt', 'testOnly ' .. fqn }, { detach = false })
+                elseif test_class ~= '' then
+                    jobstart({ 'sbt', 'testOnly *' .. test_class }, { detach = false })
                 else
                     jobstart({ 'sbt', 'test' }, { detach = false })
                 end
@@ -275,7 +269,6 @@ end, {})
 usercmd('ScalaConsole', function()
     local build_sbt = findfile('build.sbt', '.;')
     local build_sc = findfile('build.sc', '.;')
-
     if build_sbt ~= '' then
         cmd('terminal sbt console')
     elseif build_sc ~= '' then
@@ -394,7 +387,6 @@ usercmd('ScalaUpdate', function()
         notify('sbt not found', ERROR)
     end
 end, {})
-
 usercmd('ScalaMetalsBuild', function()
     local clients = vim.lsp.get_clients({ name = 'metals', bufnr = 0 })
     if clients[1] then
@@ -403,7 +395,6 @@ usercmd('ScalaMetalsBuild', function()
         notify('Metals client not found', ERROR)
     end
 end, {})
-
 usercmd('ScalaMetalsConnect', function()
     local clients = vim.lsp.get_clients({ name = 'metals', bufnr = 0 })
     if clients[1] then
@@ -425,18 +416,12 @@ usercmd('ScalaQuickfix', function()
         apply = true,
     })
 end, {})
-
 usercmd('ScalaCodeAction', function()
     local diagnostics = get(0)
     code_action({
         context = {
             diagnostics = diagnostics,
-            only = {
-                'quickfix',
-                'refactor',
-                'source.organizeImports',
-                'source.fixAll',
-            },
+            only = { 'quickfix', 'refactor', 'source.organizeImports', 'source.fixAll' },
         },
         filter = function(_, client_id)
             local client = client_by_id(client_id)
@@ -445,29 +430,19 @@ usercmd('ScalaCodeAction', function()
         apply = true,
     })
 end, {})
-
 usercmd('ScalaRangeAction', function()
     local bufnr = 0
     local diagnostics = get(bufnr)
-    local start_pos = api.nvim_buf_get_mark(bufnr, '<')
-    local end_pos = api.nvim_buf_get_mark(bufnr, '>')
+    local start_pos = bufgm(bufnr, '<')
+    local end_pos = bufgm(bufnr, '>')
     code_action({
         context = {
             diagnostics = diagnostics,
-            only = {
-                'quickfix',
-                'refactor.extract',
-            },
+            only = { 'quickfix', 'refactor.extract' },
         },
         range = {
-            start = {
-                start_pos[1],
-                start_pos[2],
-            },
-            ['end'] = {
-                end_pos[1],
-                end_pos[2],
-            },
+            start = { start_pos[1], start_pos[2] },
+            ['end'] = { end_pos[1], end_pos[2] },
         },
         filter = function(_, client_id)
             local client = client_by_id(client_id)

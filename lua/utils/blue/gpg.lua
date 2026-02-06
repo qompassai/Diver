@@ -1,7 +1,7 @@
 -- gnupg.lua - GnuPG utility for Neovim
 -- Copyright (C) 2025 Qompass AI, All rights reserved
 ------------------------------------------------------
-local M = {}
+local M = {} ---@version JIT
 local api = vim.api
 local b = vim.b
 local contains = vim.tbl_contains
@@ -30,6 +30,7 @@ local shelltemp = true
 local shellredirsave = ''
 local shellsave = ''
 local shelltempsave = true
+local split = vim.split
 local messages_lang = ''
 local init_run = false
 local function shellescape( ---@return string
@@ -119,7 +120,7 @@ local function gpg_system( ---@return string
   commandline = commandline .. ' ' .. stderrredirnull
   debug(dict.level or 2, 'command: ' .. commandline)
   pre_cmd()
-  local result = vim.system(vim.split(commandline, ' '), {
+  local result = vim.system(split(commandline, ' '), {
     text = true,
   }):wait()
   post_cmd()
@@ -159,14 +160,14 @@ local function gpg_name_to_id(name) ---@param name string
   if vim.o.encoding ~= 'utf-8' then
     output = vim.fn.iconv(output, 'utf-8', vim.o.encoding)
   end
-  local lines = vim.split(output, '\n')
+  local lines = split(output, '\n')
   local gpgids = {}
   local seen_keys = {}
   local skip_key = false
   local choices = 'The name "' .. name .. '" is ambiguous. Please select the correct key:\n'
   local counter = 0
   for _, line in ipairs(lines) do
-    local fields = vim.split(line, ':')
+    local fields = split(line, ':')
     if fields[1] == 'pub' then
       if seen_keys[fields[5]] then
         skip_key = true
@@ -177,13 +178,17 @@ local function gpg_name_to_id(name) ---@param name string
           local identity = fields[5]
           insert(gpgids, identity)
           if fn.exists('*strftime') == 1 then
-            choices = choices
-                .. counter
-                .. ': ID: 0x'
-                .. identity
-                .. ' created at '
-                .. fn.strftime('%c', tonumber(fields[6]))
-                .. '\n'
+            local ts = tonumber(fields[6])
+            if ts then
+              ---@cast ts integer
+              choices = choices
+                  .. counter
+                  .. ': ID: 0x'
+                  .. identity
+                  .. ' created at '
+                  .. fn.strftime('%c', ts)
+                  .. '\n'
+            end
           else
             choices = choices .. counter .. ': ID: 0x' .. identity .. '\n'
           end
@@ -241,11 +246,11 @@ local function gpg_id_to_name(identity) ---@param identity string
   if vim.o.encoding ~= 'utf-8' then
     output = vim.fn.iconv(output, 'utf-8', vim.o.encoding)
   end
-  local lines = vim.split(output, '\n')
+  local lines = split(output, '\n')
   local pubseen = false
   local uid = ''
   for _, line in ipairs(lines) do
-    local fields = vim.split(line, ':')
+    local fields = split(line, ':')
     if not pubseen then
       if fields[1] == 'pub' then
         if fields[12] and fields[12]:match('[eE]') then
@@ -255,13 +260,17 @@ local function gpg_id_to_name(identity) ---@param identity string
     else
       if fields[1] == 'uid' then
         if fn.exists('*strftime') == 1 then
-          uid = fields[10]
-              .. GPG_MAGIC_STRING
-              .. '(ID: 0x'
-              .. identity
-              .. ' created at '
-              .. fn.strftime('%c', tonumber(fields[6]))
-              .. ')'
+          local ts = tonumber(fields[6])
+          if ts then
+            ---@cast ts integer
+            uid = fields[10]
+                .. GPG_MAGIC_STRING
+                .. '(ID: 0x'
+                .. identity
+                .. ' created at '
+                .. fn.strftime('%c', ts)
+                .. ')'
+          end
         else
           uid = fields[10] .. GPG_MAGIC_STRING .. '(ID: 0x' .. identity .. ')'
         end
@@ -381,7 +390,7 @@ function M.init(bufread) ---@param bufread boolean
   end
   local ver = tonumber(gpgversion) or 0
   if ver >= 2.1 or (env.GPG_AGENT_INFO and vim.g.GPGUseAgent == 1) then
-    if not vim.env.GPG_TTY and vim.fn.has('gui_running') == 0 then
+    if not env.GPG_TTY and vim.fn.has('gui_running') == 0 then
       if fn.executable('tty') == 1 then
         local result = vim.system({
           'tty',
@@ -419,7 +428,7 @@ function M.decrypt(bufread) ---@param bufread boolean
     GPGRecipients = {}
     echo({
       {
-        'g:GPGDefaultRecipients is not a Vim list, please correct this in your vimrc!',
+        'g:GPGDefaultRecipients is not a Vim list, please correct this in your gpg config!',
         'WarningMsg',
       },
     }, true, {})

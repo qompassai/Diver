@@ -15,29 +15,6 @@ end
 local g = vim.g
 local range = vim.version.range
 vim.pack.add({
-    gh('cameron-wags/rainbow_csv.nvim', {
-        version = 'master',
-        filetypes = {
-            'csv',
-            'csv_pipe',
-            'csv_semicolon',
-            'csv_whitespace',
-            'rfc_csv',
-            'rfc_semicolon',
-            'tsv',
-        },
-        cmd = {
-            'RainbowDelim',
-            'RainbowDelimQuoted',
-            'RainbowDelimSimple',
-            'RainbowMultiDelim',
-        },
-        hook = function()
-            require('rainbow_csv').setup({
-                delim = ',',
-            })
-        end,
-    }),
     gh('kkharji/sqlite.lua', {
         version = 'master',
         hook = function()

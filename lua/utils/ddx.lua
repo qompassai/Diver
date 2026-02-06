@@ -3,8 +3,9 @@
 -- Copyright (C) 2026 Qompass AI, All rights reserved
 -- ----------------------------------------
 local api = vim.api
-local l = vim.log
-local n = vim.notify
+local ERROR = vim.log.levels.ERROR
+local ft = vim.bo.filetype
+local notify = vim.notify
 local uv = vim.uv
 api.nvim_create_user_command('ConfigSelfCheck', function()
     require('tests.selfcheck').run()
@@ -15,7 +16,7 @@ end
 api.nvim_create_autocmd('BufReadPost', {
     pattern = '*',
     callback = function()
-        if vim.bo.filetype == 'nvimpager' then
+        if ft == 'nvimpager' then
             strip_ansi()
         end
     end,
@@ -50,9 +51,9 @@ local function to_module(root, path)
     end
     return rel
 end
----@param root string
+
 ---@return string[]
-local function collect_lua_files(root)
+local function collect_lua_files(root) ---@param root string
     local files = {}
     local function walk(dir)
         for _, entry in ipairs(scandir(dir)) do
@@ -73,7 +74,6 @@ local function selfcheck()
     local ok_count, err_count = 0, 0
     local state_dir = vim.fn.stdpath('state')
     local log_path = state_dir .. '/selfcheck.log'
-
     local fh = io.open(log_path, 'w')
     if fh then
         fh:write(('[selfcheck] %s\n'):format(os.date('%Y-%m-%d %H:%M:%S')))
@@ -91,7 +91,7 @@ local function selfcheck()
             err_count = err_count + 1
             local short_file = file:gsub(lua_root .. '/', '')
             local msg = string.format('[selfcheck] %s FAILED:\n  %s\n  File: %s', mod, err, short_file)
-            n(msg, l.levels.ERROR)
+            notify(msg, ERROR)
             if fh then
                 fh:write(msg .. '\n')
                 fh:write(string.rep('-', 80) .. '\n')
@@ -99,7 +99,7 @@ local function selfcheck()
         end
     end
     local summary = string.format('[selfcheck] %d OK, %d FAILED (log: %s)', ok_count, err_count, log_path)
-    n(summary, err_count == 0 and l.levels.INFO or l.levels.ERROR)
+    notify(summary, err_count == 0 and vim.log.levels.INFO or ERROR)
     if fh then
         fh:write(('\n[selfcheck] %d OK, %d FAILED\n'):format(ok_count, err_count))
         fh:close()

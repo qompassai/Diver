@@ -15,31 +15,12 @@ end
 local add = vim.pack.add
 local range = vim.version.range
 add({
-  gh('nvim-lua/plenary.nvim', {
-    update = true,
-    version = 'master',
-  }),
-  gh('MunifTanjim/nui.nvim', {
-    update = true,
-    version = 'main',
-  }),
-  gh('ibhagwan/fzf-lua', {
-    update = true,
-    version = 'main',
-  }),
   gh('chipsenkbeil/distant.nvim', {
     hook = function()
       require('distant'):setup()
     end,
     update = true,
     version = 'v0.3',
-  }),
-  gh('glacambre/firenvim', {
-    hook = function()
-      vim.fn['firenvim#install'](0)
-    end,
-    update = true,
-    version = 'main',
   }),
   gh('amitds1997/remote-nvim.nvim', {
     hook = function()
@@ -76,7 +57,6 @@ add({
     update = true,
     version = 'main',
   }),
-
   gh('samsze0/utils.nvim', {
     update = true,
     version = 'main',

@@ -1,10 +1,10 @@
 #!/usr/bin/env lua
-
--- init.lua
--- Qompass AI - [ ]
+-- /qompassai/Diver/lua/utils/docs/init.lua
+-- Qompass AI Docs Utils Init
 -- Copyright (C) 2026 Qompass AI, All rights reserved
 -- ----------------------------------------
-local M = {}
-M.docs = require('utils.docs.docs')
-M.clipboard = require('utils.docs.clipboard')
+local M = {} ---@version JIT
+require('utils.docs.clipboard')
+require('utils.docs.docs')
+require('utils.docs.mime')
 return M
