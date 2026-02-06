@@ -119,20 +119,20 @@ g.xdg_state_home = env.XDG_STATE_HOME or fn.expand('~/.local/state')
 g.xdg_runtime_dir = env.XDG_RUNTIME_DIR or ('/run/user/' .. fn.system('id -u'):gsub('\n', ''))
 g.xdg_utils_debug_level = env.XDG_UTILS_DEBUG_LEVEL or 3
 if env.SSH_TTY then
-    g.clipboard = 'osc52'
+  g.clipboard = 'osc52'
 end
 env.MOJO_STDLIB_PATH = fn.expand('~/.local/share/mojo/.pixi/envs/default/lib/mojo')
 go.expandtab = true
 l.enable()
 require('config.init').config({
-    core = true,
-    cicd = true,
-    cloud = true,
-    debug = false,
-    edu = true,
-    lang = true,
-    nav = true,
-    ui = true,
+  core = true,
+  cicd = true,
+  cloud = true,
+  debug = false,
+  edu = true,
+  lang = true,
+  nav = true,
+  ui = true,
 })
 --require('config')
 require('linters')

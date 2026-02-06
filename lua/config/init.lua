@@ -21,7 +21,6 @@ function M.config(opts)
         return mod
     end
     vim.env.FONTCONFIG_DEBUG = 'none'
-    safe_require('types')
     safe_require('utils')
     local keys = safe_require('config.keymaps')
     if keys and keys.setup then
