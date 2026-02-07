@@ -67,7 +67,6 @@ function M.buf_get_ts_highlights(bufnr, lnum)
     end)
     return highlights
 end
-
 local STHighlighter = vim.lsp.semantic_tokens.__STHighlighter
 ---@private
 local function lower_bound(tokens, line, lo, hi)
@@ -124,7 +123,6 @@ function M.buf_get_lsp_highlights(bufnr, lnum)
     end
     return lsp_highlights
 end
-
 ---@param item vim.qf.QuickFixItem
 ---@param line string
 ---@return vim.qf.TSHighlight[]

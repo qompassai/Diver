@@ -219,7 +219,6 @@ usercmd('TexCodeAction', function() ---@command TexCodeAction
     apply = true,
   })
 end, {})
---- Run range code actions for visual selection in TeX.
 usercmd('TexRangeAction', function() ---@command TexRangeAction
   local bufnr = 0
   local diagnostics = vim.diagnostic.get(bufnr)
@@ -248,13 +247,5 @@ usercmd('TexRangeAction', function() ---@command TexRangeAction
   })
 end, {
   range = true,
-})
-autocmd('LspAttach', {
-  callback = function(args)
-    local client = vim.lsp.get_client_by_id(args.data.client_id)
-    if client and (client.name == 'texlab' or client.name == 'ltex') then
-      vim.bo[args.buf].omnifunc = 'v:lua.vim.lsp.omnifunc'
-    end
-  end,
 })
 return latex

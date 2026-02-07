@@ -68,7 +68,7 @@
 ---@field char_height                                      integer
 ---@field fps                                              integer
 ---@field output                                           string
----@field use_font                                         boolean
+---@field use_fontrend                                         boolean
 ---@field font_path                                        string
 ---@field kind                                             'ffmpeg'|'x264'|'raw'
 ---@class media.RenderModule

@@ -190,4 +190,196 @@ function M.fzf_setup()
     end, {})
 end
 
+local fn = vim.fn
+---@param lines string[]
+---@param sink fun(selection: string)
+local function fzf_pick(lines, sink)
+    if not lines or #lines == 0 then
+        vim.notify('fzf: no entries', vim.log.levels.INFO)
+        return
+    end
+    local fzf = 'fzf'
+    local opts = {
+        '--ansi',
+        '--prompt=❯ ',
+        '--reverse',
+    }
+    local stdin = table.concat(lines, '')
+    local job_id
+    job_id = fn.jobstart({ fzf, unpack(opts) }, {
+        stdin = 'pipe',
+        stdout_buffered = true,
+        on_stdout = function(_, data, _)
+            if not data or not data[1] or data[1] == '' then
+                return
+            end
+            sink(data[1])
+        end,
+        on_exit = function()
+            if job_id then
+                fn.jobstop(job_id)
+            end
+        end,
+    })
+    fn.chansend(job_id, stdin)
+    fn.chanclose(job_id, 'stdin')
+end
+
+M.fzf_pick = fzf_pick
+local function project_files()
+    if fn.executable('fd') == 1 then
+        return fn.systemlist({
+            'fd',
+            '--type',
+            'f',
+            '--strip-cwd-prefix',
+        })
+    else
+        return fn.systemlist({
+            'find',
+            '.',
+            '-type',
+            'f',
+        })
+    end
+end
+
+function M.files()
+    local lines = project_files()
+    fzf_pick(lines, function(line)
+        if not line or line == '' then
+            return
+        end
+        vim.api.nvim_command('edit ' .. fn.fnameescape(line))
+    end)
+end
+
+function M.buffers()
+    local bufs = vim.api.nvim_list_bufs()
+    local lines = {}
+    for _, b in ipairs(bufs) do
+        if vim.api.nvim_buf_is_loaded(b) and fn.buflisted(b) == 1 then
+            local name = vim.api.nvim_buf_get_name(b)
+            if name == '' then
+                name = '[No Name]'
+            end
+            table.insert(lines, string.format('%d %s', b, name))
+        end
+    end
+    fzf_pick(lines, function(line)
+        local id = tonumber(line:match('^(%d+)'))
+        if id ~= nil then ---@cast id integer
+            vim.api.nvim_set_current_buf(id)
+        end
+    end)
+end
+
+function M.document_symbols()
+    local params = vim.lsp.util.make_text_document_params()
+    vim.lsp.buf_request(0, 'textDocument/documentSymbol', { textDocument = params }, function(err, result, ctx, _)
+        if err or not result then
+            vim.notify('LSP: no symbols', vim.log.levels.WARN)
+            return
+        end
+        local items = vim.lsp.util.symbols_to_items(result, 0) or {}
+        local lines = {}
+        for _, it in ipairs(items) do
+            local lnum = it.lnum + 1
+            local text = it.text or ''
+            local fname = it.filename or vim.api.nvim_buf_get_name(ctx.bufnr)
+            fname = fname ~= '' and fname or '[Current]'
+            table.insert(lines, string.format('%s:%d:%s', fname, lnum, text))
+        end
+        fzf_pick(lines, function(line)
+            local file, lnum = line:match('^(.-):(%d+):')
+            if file and lnum then
+                vim.cmd('edit ' .. fn.fnameescape(file))
+                local row = tonumber(lnum)
+                if row ~= nil then
+                    ---@cast row integer
+                    vim.api.nvim_win_set_cursor(0, {
+                        row,
+                        0,
+                    })
+                end
+            end
+        end)
+    end)
+end
+
+vim.opt.incsearch = true
+vim.opt.hlsearch = true
+function M.smart_hlsearch()
+    local pattern = vim.fn.getreg('/')
+    local enable = pattern ~= nil and pattern ~= ''
+    if vim.v.hlsearch ~= (enable and 1 or 0) then
+        vim.opt.hlsearch = enable
+    end
+end
+
+function M.highlight_word_under_cursor()
+    local word = vim.fn.expand('<cword>')
+    if word == nil or word == '' then
+        return
+    end
+    vim.cmd('keepjumps normal! m`')
+    vim.fn.setreg('/', '\\V' .. vim.fn.escape(word, '\\'))
+    M.smart_hlsearch()
+end
+
+function M.next_match()
+    vim.cmd('keepjumps normal! n')
+    M.smart_hlsearch()
+end
+
+function M.prev_match()
+    vim.cmd('keepjumps normal! N')
+    M.smart_hlsearch()
+end
+
+function M.substitute(cmd)
+    local cursor = vim.api.nvim_win_get_cursor(0)
+    local old_search = vim.fn.getreg('/')
+    vim.cmd('keepjumps ' .. cmd)
+    vim.api.nvim_win_set_cursor(0, cursor)
+    vim.fn.setreg('/', old_search)
+    M.smart_hlsearch()
+end
+
+function M.setup_mappings()
+    local map = vim.keymap.set
+    local opts = { noremap = true, silent = true }
+
+    map('n', '*', function()
+        require('utils.search').highlight_word_under_cursor()
+    end, opts)
+
+    map('n', 'n', function()
+        require('utils.search').next_match()
+    end, opts)
+
+    map('n', 'N', function()
+        require('utils.search').prev_match()
+    end, opts)
+
+    map('n', '<leader>h', function()
+        if vim.v.hlsearch == 1 then
+            vim.opt.hlsearch = false
+        else
+            M.smart_hlsearch()
+        end
+    end, opts)
+end
+
+local group = vim.api.nvim_create_augroup('SmartSearchSetup', { clear = true })
+vim.api.nvim_create_autocmd('VimEnter', {
+    group = group,
+    callback = function()
+        local ok, search = pcall(require, 'utils.search')
+        if ok then
+            search.setup_mappings()
+        end
+    end,
+})
+
 return M

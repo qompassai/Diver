@@ -2,7 +2,7 @@
 -- Qompass AI Diver LuaLine Config
 -- Copyright (C) 2025 Qompass AI, All rights reserved
 -- ----------------------------------------
-local M = {}
+local M = {} ---@version JIT
 local function encoding_with_bom()
     local enc = vim.bo.fenc ~= '' and vim.bo.fenc or vim.o.enc
     if enc == 'utf-8' and not vim.bo.bomb then

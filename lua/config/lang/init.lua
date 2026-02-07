@@ -1,31 +1,37 @@
--- /qompassai/Diver/lua/config/lang/init.lua
--- Qompass AI Diver Lang Init
--- Copyright (C) 2025 Qompass AI, All rights reserved
--- -----------------------------------------
-return {
-    require('config.lang.arduino'),
-    require('config.lang.bash'),
-    require('config.lang.c'),
-    require('config.lang.cmp'),
-    require('config.lang.cpp'),
-    require('config.lang.css'),
-    require('config.lang.elixir'),
-    require('config.lang.go'),
-    require('config.lang.js'),
-    require('config.lang.julia'),
-    require('config.lang.kotlin'),
-    require('config.lang.mojo'),
-    require('config.lang.latex'),
-    require('config.lang.lua'),
-    require('config.lang.mojo'),
-    require('config.lang.nix'),
-    require('config.lang.odin'),
-    require('config.lang.php'),
-    require('config.lang.python'),
-    require('config.lang.ruby'),
-    require('config.lang.rust'),
-    require('config.lang.scala'),
-    require('config.lang.toml'),
-    require('config.lang.ts'),
-    require('config.lang.zig'),
+#!/usr/bin/env lua
+-- /home/phaedrus/.config/nvim/lua/config/lang/init.lua
+-- Qompass AI Diver Language Config Init
+-- Copyright (C) 2026 Qompass AI, All rights reserved
+-- --------------------------------------------------------
+local M = {}
+local modules = { ---@version JIT
+  'arduino',
+  'bash',
+  'c',
+  'cmp',
+  'cpp',
+  'css',
+  'elixir',
+  'go',
+  'js',
+  'julia',
+  'kotlin',
+  'latex',
+  'lua',
+  'mojo',
+  'nix',
+  'odin',
+  'php',
+  'python',
+  'ruby',
+  'rust',
+  'scala',
+  'toml',
+  'ts',
+  'zig',
 }
+
+for _, module in ipairs(modules) do
+  require('config.lang.' .. module)
+end
+return M
