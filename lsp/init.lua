@@ -135,7 +135,7 @@ vim.lsp.enable({
     'janet_ls', ---:TODO install janet-lsp, jpm, validate ---@source
     'java_ls',
     'jdt_ls',
-    'jedi_ls', ---:TODO validate ---@source https://github.com/pappasam/jedi-language-server
+--    'jedi_ls', ---:TODO validate ---@source https://github.com/pappasam/jedi-language-server
     'jimmerdto_ls', ---:TODO validate ---@source https://github.com/Enaium/jimmer-dto-lsp
     'jinja_ls', ---:TODO
     'jq_ls',

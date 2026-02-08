@@ -2,8 +2,8 @@
 -- Qompass AI Diver Themes Config
 -- Copyright (C) 2025 Qompass AI, All rights reserved
 -----------------------------------------------------
----@module 'config.ui.themes'
-local M = {}
+local M = {} ---@version JIT
+local ERROR = vim.log.levels.ERROR
 M.current_theme = 'nightfox' ---@type string
 M.themes = {
     catppuccin = {
@@ -213,7 +213,7 @@ function M.set_theme(theme_name)
     end
     local ok_setup, err_setup = pcall(theme.setup)
     if not ok_setup then
-        vim.echo('Failed to set up theme ' .. theme_name .. ': ' .. err_setup, vim.log.levels.ERROR)
+        vim.echo('Failed to set up theme ' .. theme_name .. ': ' .. err_setup, ERROR)
         return false
     end
     local ok_apply, err_apply = pcall(theme.apply)

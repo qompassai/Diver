@@ -3339,7 +3339,6 @@ cpan Perl::LanguageServer
 
 ```bash
 cpan PLS
-
 ```
 
 # OR
@@ -3366,7 +3365,6 @@ unzip perlnavigator.zip
 cd perlnavigator-linux-x86_64
 chmod +x perlnavigator
 mv perlnavigator "$HOME/.local/bin/"
-
 ```
 
 </div>
@@ -3525,7 +3523,7 @@ chmod +x postgres-language-server
 <a href="https://github.com/qompassai/diver/blob/main/lsp/postgrestoo_ls.lua">postgrestoo_ls</a>
 </li>
  <p>
-      <a href=":TODO">PostgresTools LSP Reference</a>
+      <a href="https://pg-language-server.com/latest/">PostgresTools LSP Reference</a>
     </p>
  <div style="background: #f8f9fa; padding: 15px; border-radius: 5px; margin-top: 10px; font-family: monospace;">
 
@@ -5063,7 +5061,6 @@ git clone https://github.com/kristoff-it/ziggy.git && cd ziggy && zig build -Dop
 git clone https://github.com/zigtools/zls && cd zls && zig build -Doptimize=ReleaseSafe
 ```
 
+</div>
   </blockquote>
 </details>
-</div>
-```

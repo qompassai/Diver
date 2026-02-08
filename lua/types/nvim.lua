@@ -60,7 +60,7 @@ function _G.gh(repo, opts) end
 ---@field nvim_create_autocmd                              fun(event: string|string[], opts: vim.api.CreateAutocmdOpts): integer
 ---@field nvim_create_user_command                         fun(name: string, command: function|string, opts: table): nil
 ---@field nvim_get_current_buf                             fun(): integer
----@field nvim_get_runtime_file?                           fun(pattern: string, all: boolean): string[]
+---@field nvim_get_runtime_file                            fun(pattern: string, all: boolean): string[]
 ---@field nvim_set_option_value                            fun(name: string, value: any, opts: table): nil
 ---@type                     vim.api
 vim.api = vim.api

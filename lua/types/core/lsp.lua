@@ -15,7 +15,7 @@
 ---| 'standard'
 ---| 'strict'
 ---@class lsp.HandlerContext
----@field bufnr                                            integer
+---@field bufnr?                                            integer
 ---@field method?                                          string
 ---@field client_id?                                       integer
 ---@class lsp.Position

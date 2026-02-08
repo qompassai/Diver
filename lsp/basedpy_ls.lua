@@ -28,6 +28,7 @@ local function set_python_path(command) ---@param command { args: string }
 end
 return ---@type vim.lsp.Config
 {
+  capabilities = require('config.core.lsp').capabilities,
     cmd = {
         'basedpyright-langserver',
         '--stdio',
@@ -188,7 +189,7 @@ return ---@type vim.lsp.Config
                 typeCheckingMode = 'standard',
                 typeshedPaths = {
                     '/usr/lib/python3.13/site-packages',
-                     '~/.local/lib/python3.13/site-packages',
+                    '~/.local/lib/python3.13/site-packages',
                 },
                 useLibraryCodeForTypes = true,
                 useTypingExtensions = true,
@@ -203,6 +204,7 @@ return ---@type vim.lsp.Config
             },
         },
     },
+   on_attach = require('config.core.lsp').on_attach,
     on_attach = function(client, bufnr)
         vim.api.nvim_buf_create_user_command(bufnr, 'BasedPyReanalyze', function()
             client:notify('workspace/didChangeConfiguration', {

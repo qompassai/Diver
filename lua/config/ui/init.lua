@@ -3,10 +3,11 @@
 -- Qompass AI Diver UI Init
 -- Copyright (C) 2026 Qompass AI, All rights reserved
 -----------------------------------------------------
-local M = {}
-local modules = { ---@version JIT
+local M = {} ---@version JIT
+local modules = {
     'colors',
     'decor',
+    'float',
     'icons',
     'illuminate',
     'line',
@@ -18,5 +19,5 @@ local modules = { ---@version JIT
 }
 for _, module in ipairs(modules) do
     require('conf.ui.' .. module)
-  end
+end
 return M
