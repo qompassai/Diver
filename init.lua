@@ -249,3 +249,5 @@ wo.smoothscroll = true
 wo.spell = true
 wo.virtualedit = 'block'
 wo.wrap = true
+opt.winblend = 40
+opt.pumblend = 40
