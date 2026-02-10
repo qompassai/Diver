@@ -4,19 +4,27 @@
 -- --------------------------------------------------
 local bo = vim.bo ---@type vim.bo
 local cmd = vim.cmd
-local data_home = vim.env.XDG_DATA_HOME or vim.fn.expand('~/.local/share')
 local env = vim.env
 local fn = vim.fn
+local is_windows = fn.has('win32') == 1 or fn.has('win64') == 1
 local g = vim.g
 local go = vim.go
 local l = vim.loader
 local o = vim.o ---@type vim.o
 local opt = vim.opt
+local data_home = vim.env.XDG_DATA_HOME
+    or (is_windows and vim.fn.expand('~/AppData/Local') or vim.fn.expand('~/.local/share'))
 opt.runtimepath:prepend(env.VIMRUNTIME)
 opt.runtimepath:prepend(fn.stdpath('data') .. '/site')
 opt.runtimepath:prepend(data_home .. '/nvim/runtime')
-local uid = fn.system('id -u'):gsub('\n', '')
-local user = env.USER or fn.system('whoami'):gsub('\n', '')
+local uid, user
+if is_windows then
+    user = env.USERNAME or env.USER
+    uid = user
+else
+    uid = fn.system('id -u'):gsub('\n', '')
+    user = env.USER or fn.system('whoami'):gsub('\n', '')
+end
 local wo = vim.wo ---@type vim.wo
 bo.autocomplete = true
 bo.autoindent = true
@@ -36,7 +44,7 @@ bo.modifiable = true
 bo.nrformats = 'hex'
 bo.shiftwidth = 4
 bo.smartindent = true
-bo.spellfile = fn.stdpath('config') .. '/nvim/spell/en.utf-8.add'
+bo.spellfile = fn.stdpath('config') .. '/spell/en.utf-8.add'
 bo.spelllang = 'en_us'
 bo.spelloptions = 'camel'
 bo.swapfile = false
@@ -52,8 +60,12 @@ cmd([[
 ]])
 cmd('syntax on')
 cmd.runtime('macros/matchit.vim')
-env.LUAROCKS_CONFIG = env.HOME .. '/.config/luarocks/luarocks-5.1.lua'
-env.VIMRUNTIME = fn.expand('~/.local/share/nvim/runtime')
+if not is_windows then
+    env.LUAROCKS_CONFIG = env.HOME .. '/.config/luarocks/luarocks-5.1.lua'
+    env.VIMRUNTIME = fn.expand('~/.local/share/nvim/runtime')
+else
+    env.VIMRUNTIME = fn.stdpath('data') .. '/runtime'
+end
 g.deprecation_warnings = true
 g.editorconfig = true
 g.git_command_ssh = 1
@@ -68,16 +80,21 @@ g.loaded_ruby_provider = 1
 g.lsp_enable_on_demand = true
 g.mapleader = ' '
 g.maplocalleader = '\\'
-g.mkdp_markdown_css = fn.expand('$XDG_CONFIG_HOME/nvim/markdown.css') ---@type string
+g.mkdp_markdown_css = (env.XDG_CONFIG_HOME or (is_windows and fn.expand('~/AppData/Local') or fn.expand('~/.config')))
+    .. '/nvim/markdown.css' ---@type string
 g.mkdp_theme = 'dark'
 g.netrw_altfile = 1
 g.netrw_preview = 1
-g.node_host_prog = '/usr/bin/node'
-g.perl_host_prog = '/usr/bin/perl'
-g.sqlite_clib_path = '/usr/lib/libsqlite3.so'
-g.python3_host_prog = '/usr/bin/python3'
+if not is_windows then
+    g.node_host_prog = '/usr/bin/node'
+    g.perl_host_prog = '/usr/bin/perl'
+    g.sqlite_clib_path = '/usr/lib/libsqlite3.so'
+    g.python3_host_prog = '/usr/bin/python3'
+    g.ruby_host_prog = '/usr/bin/neovim-ruby-host'
+else
+    g.python3_host_prog = 'python'
+end
 g.query_lint_on = {}
-g.ruby_host_prog = '/usr/bin/neovim-ruby-host'
 g.rust_cargo_check_all_targets = true
 g.rust_cargo_check_benches = true
 g.rust_conceal = false
@@ -102,27 +119,49 @@ g.vim_markdown_frontmatter = 1
 g.vim_markdown_toml_frontmatter = 1
 g.vim_markdown_json_frontmatter = 1
 g.which_key_disable_health_check = 1
-g.xdg_bin_home = env.XDG_BIN_HOME or fn.expand('~/.local/bin')
-g.xdg_cache_home = env.XDG_CACHE_HOME or fn.expand('~/.cache')
-g.xdg_config_dirs = env.XDG_CONFIG_DIRS or fn.expand('~/.config/xdg:/etc/xdg:/usr/local/etc/xdg:/usr/etc/xdg')
-g.xdg_config_home = env.XDG_CONFIG_HOME or fn.expand('~/.config')
-g.xdg_current_desktop = env.XDG_CURRENT_DESKTOP or 'Hyprland'
-g.xdg_current_session = env.XDG_CURRENT_SESSION or 'Hyprland'
-g.xdg_data_dirs = env.XDG_DATA_DIRS or fn.expand('~/.local/share:/usr/local/share:/usr/share')
-g.xdg_data_home = env.XDG_DATA_HOME or fn.expand('~/.local/share')
-g.xdg_desktop_dir = env.XDG_DESKTOP_DIR or fn.expand('~/.Desktop')
-g.xdg_desktop_portal_dir = env.XDG_DESKTOP_PORTAL_DIR or ('/run/user/' .. uid .. '/xdg-desktop-portal/portals')
-g.xdg_documents_dir = env.XDG_DOCUMENTS_DIR or fn.expand('~/.Documents')
-g.xdg_download_dir = env.XDG_DOWNLOAD_DIR or fn.expand('~/.Downloads')
-g.nix_per_user_profile = '/nix/var/nix/profiles/per-user/' .. user
-g.xdg_state_home = env.XDG_STATE_HOME or fn.expand('~/.local/state')
-g.xdg_runtime_dir = env.XDG_RUNTIME_DIR or ('/run/user/' .. fn.system('id -u'):gsub('\n', ''))
+g.xdg_bin_home = env.XDG_BIN_HOME or (is_windows and fn.expand('~/AppData/Local/Programs') or fn.expand('~/.local/bin'))
+g.xdg_cache_home = env.XDG_CACHE_HOME or (is_windows and fn.expand('~/AppData/Local/Temp') or fn.expand('~/.cache'))
+g.xdg_config_dirs = is_windows and ''
+    or (env.XDG_CONFIG_DIRS or fn.expand('~/.config/xdg:/etc/xdg:/usr/local/etc/xdg:/usr/etc/xdg'))
+g.xdg_config_home = env.XDG_CONFIG_HOME or (is_windows and fn.expand('~/AppData/Local') or fn.expand('~/.config'))
+if not is_windows then
+    g.xdg_current_desktop = env.XDG_CURRENT_DESKTOP or 'Hyprland'
+    g.xdg_current_session = env.XDG_CURRENT_SESSION or 'Hyprland'
+end
+g.xdg_data_dirs = is_windows and '' or (env.XDG_DATA_DIRS or fn.expand('~/.local/share:/usr/local/share:/usr/share'))
+g.xdg_data_home = env.XDG_DATA_HOME or (is_windows and fn.expand('~/AppData/Local') or fn.expand('~/.local/share'))
+g.xdg_desktop_dir = env.XDG_DESKTOP_DIR or fn.expand(is_windows and '~/Desktop' or '~/.Desktop')
+
+if not is_windows then
+    g.xdg_desktop_portal_dir = env.XDG_DESKTOP_PORTAL_DIR or ('/run/user/' .. uid .. '/xdg-desktop-portal/portals')
+end
+g.xdg_documents_dir = env.XDG_DOCUMENTS_DIR or fn.expand(is_windows and '~/Documents' or '~/.Documents')
+g.xdg_download_dir = env.XDG_DOWNLOAD_DIR or fn.expand(is_windows and '~/Downloads' or '~/.Downloads')
+if not is_windows then
+    g.nix_per_user_profile = '/nix/var/nix/profiles/per-user/' .. user
+end
+g.xdg_state_home = env.XDG_STATE_HOME or (is_windows and fn.expand('~/AppData/Local') or fn.expand('~/.local/state'))
+g.xdg_runtime_dir = env.XDG_RUNTIME_DIR
+    or (is_windows and (env.TEMP or fn.expand('~/AppData/Local/Temp')) or ('/run/user/' .. uid))
 g.xdg_utils_debug_level = env.XDG_UTILS_DEBUG_LEVEL or 3
 if env.SSH_TTY then
     g.clipboard = 'osc52'
 end
-env.MOJO_STDLIB_PATH = fn.expand('~/.local/share/mojo/.pixi/envs/default/lib/mojo')
+if not is_windows then
+    env.MOJO_STDLIB_PATH = fn.expand('~/.local/share/mojo/.pixi/envs/default/lib/mojo')
+else
+    env.MOJO_STDLIB_PATH = fn.expand('~/AppData/Local/mojo/.pixi/envs/default/lib/mojo')
+end
 go.expandtab = true
+if is_windows then
+    o.shell = fn.executable('pwsh') == 1 and 'pwsh' or 'powershell'
+    o.shellcmdflag =
+        [[-NoLogo -NoProfile -ExecutionPolicy RemoteSigned -Command [Console]::InputEncoding=[Console]::OutputEncoding=[System.Text.UTF8Encoding]::new();$PSDefaultParameterValues['Out-File:Encoding']="utf8";]]
+    o.shellredir = '2>&1 | Out-File -Encoding UTF8 %s; exit $LastExitCode'
+    o.shellpipe = '2>&1 | Out-File -Encoding UTF8 %s; exit $LastExitCode'
+    o.shellquote = ''
+    o.shellxquote = ''
+end
 l.enable()
 require('config.init').config({
     core = true,
@@ -191,6 +230,7 @@ o.report = 9999
 o.ruler = true
 o.secure = true
 o.sessionoptions = 'curdir,folds,help,tabpages,terminal,winsize'
+o.shellslash = true
 o.shortmess = 'IF'
 o.showmode = false
 o.showtabline = 2
@@ -209,7 +249,7 @@ o.timeoutlen = 300
 o.title = true
 o.ttimeoutlen = 10
 o.ttyfast = true
-o.undodir = fn.stdpath('config') .. '/undo'
+o.undodir = fn.stdpath('data') .. '/undo'
 o.updatetime = 50
 o.viewoptions = 'unix,slash'
 o.wildignore = '*.a'
