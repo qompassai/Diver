@@ -12,7 +12,7 @@ local function find_pses_bundle()
     }
     for _, path in ipairs(possible_paths) do
         if vim.fn.isdirectory(path) == 1 then
-            vim.notify('Found PowerShell Editor Services at: ' .. path, vim.log.levels.INFO)
+            vim.api.nvim_echo({ { 'PowerShell Editor Services found at: ' .. path, 'Comment' } }, false, {})
             return path
         end
     end
@@ -40,7 +40,7 @@ return ---@type vim.lsp.Config
         'psm1',
         'psd1',
     },
-  on_attach = require('config.core.lsp').on_attach,
+    on_attach = require('config.core.lsp').on_attach,
     settings = {
         powershell = {
             codeFormatting = {

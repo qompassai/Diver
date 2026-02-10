@@ -216,7 +216,7 @@ vim.lsp.enable({
     'psalm_ls', ---lsp/linter
     'pug_ls',
     'puppet_ls',
-    'pwrshelles_ls',
+   -- 'pwrshelles_ls',
     'pyrefly_ls',
     'qml_ls',
     'qlue_ls', ---:TODO validate
