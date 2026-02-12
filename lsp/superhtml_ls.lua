@@ -4,6 +4,7 @@
 -----------------------------------------------------
 return ---@type vim.lsp.Config
 {
+    capabilities = require('config.core.lsp').capabilities,
     cmd = {
         'superhtml',
         'lsp',
@@ -16,4 +17,5 @@ return ---@type vim.lsp.Config
     root_markers = {
         '.git',
     },
+    settings = {},
 }

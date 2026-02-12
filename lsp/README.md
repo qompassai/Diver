@@ -1731,6 +1731,61 @@ chmod +x "${XDG_BIN_HOME}/helm_ls"
 <details>
  <summary style="font-size: 1.4em; font-weight: bold; padding: 15px; background: #667eea; color: white; border-radius: 10px; cursor: pointer; margin: 10px 0; display: flex; align-items: center; gap: 8px;">
     <div class="icon-row" style="display: flex; align-items: center; gap: 6px;">
+      <img src="https://raw.githubusercontent.com/qompassai/svg/refs/heads/main/assets/icons/html/html.svg"
+           alt="html width="60" height="60" title="HTML" />
+    </div>
+    <strong>HTML</strong>
+  </summary>
+  <blockquote style="font-size: 1.2em; line-height: 1.8; padding: 25px; background: #f8f9fa; border-left: 6px solid #667eea; border-radius: 8px; margin: 15px 0; box-shadow: 0 2px 8px rgba(0,0,0,0.1);">
+        <ul>
+    <li>
+        <a href="https://github.com/qompassai/diver/blob/main/lsp/html_ls.lua">html_ls</a>
+     </li>
+           <p>
+      <a href="https://github.com/hrsh7th/vscode-langservers-extracted">HTML LSP Reference</a>
+    </p>
+ <div style="background: #f8f9fa; padding: 15px; border-radius: 5px; margin-top: 10px; font-family: monospace;">
+
+```bash
+pnpm add -g vscode-langservers-extracted
+```
+
+</div>
+  <li>
+          <a href="https://github.com/qompassai/diver/blob/main/lsp/vshtml_ls.lua">vshtml_ls</a>
+      </li>
+                   <p>
+      <a href="https://github.com/microsoft/vscode-html-languageservice">HTML Language Service LSP Reference</a>
+    </p>
+ <div style="background: #f8f9fa; padding: 15px; border-radius: 5px; margin-top: 10px; font-family: monospace;">
+
+```bash
+pnpm add g vscode-html-languageservice
+```
+
+</div>
+ <li>
+        <a href="https://github.com/qompassai/diver/blob/main/lsp/superhtml_ls.lua">superhtml_ls</a>
+     </li>
+           <p>
+      <a href=" https://github.com/kristoff-it/superhtml">SuperHTML LSP Reference</a>
+    </p>
+ <div style="background: #f8f9fa; padding: 15px; border-radius: 5px; margin-top: 10px; font-family: monospace;">
+
+```bash
+git clone https://github.com/kristoff-it/superhtml.git --recursive \
+cd superhtml \
+zig build -Doptimize=ReleaseSafe \
+cp zig-out/bin/superhtml ~/.local/bin/
+```
+
+</div>
+    </ul>
+  </blockquote>
+</details>
+<details>
+ <summary style="font-size: 1.4em; font-weight: bold; padding: 15px; background: #667eea; color: white; border-radius: 10px; cursor: pointer; margin: 10px 0; display: flex; align-items: center; gap: 8px;">
+    <div class="icon-row" style="display: flex; align-items: center; gap: 6px;">
       <img src="https://raw.githubusercontent.com/qompassai/svg/refs/heads/main/assets/icons/herb/herb.svg"
            alt="herb" width="60" height="60" title="Herb" />
     </div>
@@ -4936,9 +4991,8 @@ cargo install --git https://github.com/g-plane/wasm-language-tools
   </summary>
   <blockquote style="font-size: 1.2em; line-height: 1.8; padding: 25px; background: #f8f9fa; border-left: 6px solid #667eea; border-radius: 8px; margin: 15px 0; box-shadow: 0 2px 8px rgba(0,0,0,0.1);">
     <ul>
-      <li>
         <a href="https://github.com/qompassai/diver/blob/main/lsp/wgslana_ls.lua">wgslana_ls</a>
-      </li>
+    </ul>
      <p>
       <a href="https://github.com/wgsl-analyzer/wgsl-analyzer">WGSL Analyzer LSP Reference</a>
     </p>
@@ -4948,9 +5002,8 @@ cargo install --git https://github.com/g-plane/wasm-language-tools
 cargo install --git https://github.com/wgsl-analyzer/wgsl-analyzer wgsl-analyzer
 ```
 
-  </ul>
 </div>
-  </blockquote>
+</blockquote>
 </details>
 <details>
  <summary style="font-size: 1.4em; font-weight: bold; padding: 15px; background: #667eea; color: white; border-radius: 10px; cursor: pointer; margin: 10px 0; display: flex; align-items: center; gap: 8px;">
@@ -5001,7 +5054,7 @@ pnpm add -g yaml-language-server@latest
         <a href="https://github.com/qompassai/diver/blob/main/lsp/yamllint_ls.lua">yamllint_ls</a>
     </ul>
     <p>
-      <a href="https://yamllint.readthedocs.io/en/stable/">Yamllint LSP Reference</a>
+      <a href="https://yamllint.readthedocs.io/en/stable">Yamllint LSP Reference</a>
     </p>
  <div style="background: #f8f9fa; padding: 15px; border-radius: 5px; margin-top: 10px; font-family: monospace;">
 
@@ -5053,7 +5106,7 @@ git clone https://github.com/kristoff-it/ziggy.git && cd ziggy && zig build -Dop
         <a href="https://github.com/qompassai/diver/blob/main/lsp/z_ls.lua">z_ls</a>
     </ul>
        <p>
-      <a href="https://zigtools.org/zls/install/">Zig LSP Reference</a>
+      <a href="https://zigtools.org/zls/install">Zig LSP Reference</a>
     </p>
  <div style="background: #f8f9fa; padding: 15px; border-radius: 5px; margin-top: 10px; font-family: monospace;">
 

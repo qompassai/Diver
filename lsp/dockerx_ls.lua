@@ -2,9 +2,9 @@
 -- Qompass AI Diver Dockerx LSP Spec
 -- Copyright (C) 2026 Qompass AI, All rights reserved
 -- ----------------------------------------
-
 return ---@type vim.lsp.Config
 {
+    capabilities = require('config.core.lsp').capabilities,
     cmd = {
         'docker-language-server',
         'start',

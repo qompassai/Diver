@@ -4,6 +4,7 @@
 -- ---------------------------------------------------
 return ---@type vim.lsp.Config
 {
+    capabilities = require('config.core.lsp').capabilities,
     cmd = {
         'docker-langserver',
         '--stdio',
@@ -11,6 +12,7 @@ return ---@type vim.lsp.Config
     filetypes = {
         'dockerfile',
     },
+    on_attach = require('config.core.lsp').on_attach,
     root_markers = {
         'compose.yaml',
         'compose.yml',
