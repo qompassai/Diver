@@ -210,7 +210,7 @@ M.linters_by_ft = {
     typescriptreact = {},
     vue = {},
     wgsl = 'naga',
-    xml = 'xmllint',
+   -- xml = 'xmllint',
     --yaml = {
     --  'yamllint',
     --},

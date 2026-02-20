@@ -5,24 +5,50 @@
 #####################################################
 # Reference: https://neovim.io/doc2/build/
 set -euo pipefail
-PREFIX="${HOME}/.local"
+IS_WSL=0
+IS_TERMUX=0
+case "$(uname -s)" in
+  Linux)
+    if grep -qi microsoft /proc/version 2> /dev/null; then
+      IS_WSL=1
+    fi
+    ;;
+esac
+if [[ ${PREFIX-} == *com.termux* ]] \
+  || [[ ${SHELL-} == *com.termux* ]] \
+  || [[ ${HOME} == *com.termux* ]]; then
+  IS_TERMUX=1
+fi
+if ((IS_TERMUX)); then
+  PREFIX="${PREFIX:-/data/data/com.termux/files/usr}"
+else
+  PREFIX="${HOME}/.local"
+fi
 BIN_DIR="$PREFIX/bin"
-INIT_LUA="$HOME/.config/nvim/init.lua"
+XDG_CONFIG_HOME="${XDG_CONFIG_HOME:-$HOME/.config}"
 XDG_DATA_HOME="${XDG_DATA_HOME:-$HOME/.local/share}"
+INIT_LUA="$XDG_CONFIG_HOME/nvim/init.lua"
 NVIM_DATA_DIR="$XDG_DATA_HOME/nvim"
 BUILD_DIR="${BUILD_DIR:-$HOME/src/neovim-nightly}"
-TMP_DIR="${TMPDIR:-/tmp}/nvim-bootstrap-$$"
+if ((IS_TERMUX)); then
+  TMP_DIR="${TMPDIR:-$PREFIX/tmp}/nvim-bootstrap-$$"
+else
+  TMP_DIR="${TMPDIR:-/tmp}/nvim-bootstrap-$$"
+fi
 mkdir -p "$BIN_DIR" "$NVIM_DATA_DIR" "${BUILD_DIR}" "${TMP_DIR}"
 OS='linux'
 ARCH='x86_64'
+if ((IS_TERMUX)); then
+  OS='android'
+  ARCH="$(uname -m)" # aarch64 on most modern Android devices
+fi
 download_and_extract()
 {
   local url=$1
   local dest_dir=$2
   local strip_top=${3:-0}
   mkdir -p "$dest_dir"
-  local fname
-  fname="$TMP_DIR/$(basename "$url")"
+  local fname="$TMP_DIR/$(basename "$url")"
   curl -L --fail -o "$fname" "$url"
   case "$fname" in
     *.tar.gz | *.tgz)
@@ -50,7 +76,11 @@ download_and_extract()
 }
 install_git()
 {
-  local ver="2.47.0"
+  if ((IS_TERMUX)); then
+    pkg install -y git
+    return 0
+  fi
+  local ver="2.53.0"
   local url="https://mirrors.edge.kernel.org/pub/software/scm/git/git-${ver}.tar.xz"
   local dest="$TMP_DIR/git-src"
   download_and_extract "$url" "$dest"
@@ -64,7 +94,11 @@ install_git()
 }
 install_cmake()
 {
-  local ver="4.2.1"
+  if ((IS_TERMUX)); then
+    pkg install -y cmake
+    return 0
+  fi
+  local ver="4.2.3"
   local url="https://github.com/Kitware/CMake/releases/download/v${ver}/cmake-${ver}-${OS}-${ARCH}.tar.gz"
   local dest="$PREFIX/cmake-${ver}"
   download_and_extract "$url" "$dest" 1
@@ -75,6 +109,10 @@ install_cmake()
 }
 install_ninja()
 {
+  if ((IS_TERMUX)); then
+    pkg install -y ninja
+    return 0
+  fi
   local url="https://github.com/ninja-build/ninja/releases/latest/download/ninja-${OS}.zip"
   local dest="$TMP_DIR/ninja"
   download_and_extract "$url" "$dest"
@@ -82,7 +120,11 @@ install_ninja()
 }
 install_clang()
 {
-  local ver="21.1.6"
+  if ((IS_TERMUX)); then
+    pkg install -y clang
+    return 0
+  fi
+  local ver="21.1.8"
   local url="https://github.com/llvm/llvm-project/releases/download/llvmorg-${ver}/clang+llvm-${ver}-x86_64-linux-gnu-ubuntu-22.04.tar.xz"
   local dest="$PREFIX/clang-${ver}"
   download_and_extract "$url" "$dest" 1
@@ -91,19 +133,28 @@ install_clang()
 }
 install_pkg_config()
 {
-  local ver="0.29.2"
-  local url="https://pkgconfig.freedesktop.org/releases/pkg-config-${ver}.tar.gz"
-  local dest="$TMP_DIR/pkg-config-src"
+  if ((IS_TERMUX)); then
+    pkg install -y pkg-config
+    return 0
+  fi
+  local ver="2.3.0"
+  local url="https://distfiles.ariadne.space/pkgconf/pkgconf-${ver}.tar.xz"
+  local dest="$TMP_DIR/pkgconf-src"
   download_and_extract "$url" "$dest"
   (
     cd "$dest"
-    ./configure --prefix="$PREFIX" --with-internal-glib
+    ./configure --prefix="$PREFIX" --with-system-libdir=/usr/lib --with-system-includedir=/usr/include
     make -j"$(nproc)"
     make install
   )
+  ln -sf "$BIN_DIR/pkgconf" "$BIN_DIR/pkg-config" 2> /dev/null || true
 }
 install_tar()
 {
+  if ((IS_TERMUX)); then
+    pkg install -y tar
+    return 0
+  fi
   local ver="1.35"
   local url="https://ftp.gnu.org/gnu/tar/tar-${ver}.tar.gz"
   local dest="$TMP_DIR/tar-src"
@@ -117,6 +168,10 @@ install_tar()
 }
 install_make()
 {
+  if ((IS_TERMUX)); then
+    pkg install -y make
+    return 0
+  fi
   local ver="4.4.1"
   local url="https://ftp.gnu.org/gnu/make/make-${ver}.tar.gz"
   local dest="$TMP_DIR/make-src"
@@ -127,61 +182,77 @@ install_make()
     make -j"$(nproc)"
     make install
   )
-  install_luajit_and_lua_ls()
-  {
-    local lj_ver="2.1.0-beta3"
-    local lj_url="https://luajit.org/download/LuaJIT-${lj_ver}.tar.gz"
-    local lj_dest="$TMP_DIR/LuaJIT-${lj_ver}"
-    download_and_extract "$lj_url" "$TMP_DIR"
-    (
-      cd "$lj_dest"
-      make -j"$(nproc)" PREFIX="$PREFIX"
-      make install PREFIX="$PREFIX"
-    )
-    local lr_ver="3.11.1"
-    local lr_url="https://luarocks.github.io/luarocks/releases/luarocks-${lr_ver}.tar.gz"
-    local lr_dest="$TMP_DIR/luarocks-${lr_ver}"
-    download_and_extract "$lr_url" "$TMP_DIR"
-    (
-      cd "$lr_dest"
-      ./configure \
-        --prefix="$PREFIX" \
-        --with-lua="$PREFIX" \
-        --with-lua-include="$PREFIX/include/luajit-2.1" \
-        --lua-suffix=jit
-      make -j"$(nproc)"
-      make install
-    )
-    export PATH="$BIN_DIR:$PATH"
+}
+install_luajit_and_lua_ls()
+{
+  if ((IS_TERMUX)); then
+    pkg install -y luajit lua-language-server 2> /dev/null || true
+    if command -v lua-language-server > /dev/null 2>&1; then
+      cat > "$BIN_DIR/lua_ls" << 'EOF'
+#!/usr/bin/env bash
+exec lua-language-server "$@"
+EOF
+      chmod +x "$BIN_DIR/lua_ls"
+    fi
+    return 0
+  fi
+  local lj_dest="$TMP_DIR/LuaJIT-git"
+  if [[ ! -d "$lj_dest/.git" ]]; then
+    git clone https://luajit.org/git/luajit.git "$lj_dest"
+  else
+    git -C "$lj_dest" pull
+  fi
+  (
+    cd "$lj_dest"
+    make -j"$(nproc)" PREFIX="$PREFIX"
+    make install PREFIX="$PREFIX"
+  )
+  local lr_ver="3.12.2"
+  local lr_url="https://luarocks.github.io/luarocks/releases/luarocks-${lr_ver}.tar.gz"
+  local lr_dest="$TMP_DIR/luarocks-${lr_ver}"
+  download_and_extract "$lr_url" "$TMP_DIR"
+  (
+    cd "$lr_dest"
+    ./configure \
+      --prefix="$PREFIX" \
+      --with-lua="$PREFIX" \
+      --with-lua-include="$PREFIX/include/luajit-2.1" \
+      --lua-suffix=jit
+    make -j"$(nproc)"
+    make install
+  )
+  export PATH="$BIN_DIR:$PATH"
+  if command -v luarocks > /dev/null 2>&1; then
     luarocks install --lua-dir="$PREFIX" lua-language-server || {
       echo "Warning: luarocks lua-language-server install failed; check rock name/availability."
     }
-    cat > "$BIN_DIR/lua_ls" << 'EOF'
+  fi
+
+  cat > "$BIN_DIR/lua_ls" << 'EOF'
 #!/usr/bin/env bash
-# Wrapper for lua-language-server (installed via LuaRocks/LuaJIT)
 exec lua-language-server "$@"
 EOF
-    chmod +x "$BIN_DIR/lua_ls"
-  }
+  chmod +x "$BIN_DIR/lua_ls"
 }
 NEEDED_TOOLS=(git curl tar make clang cmake ninja bash pkg-config)
 MISSING=()
+
 need_tool()
 {
   local t=$1
-  if command -v "$t" > /dev/null 2>&1; then
-    return 0
-  elif [[ -x "$BIN_DIR/$t" ]]; then
-    return 0
-  else
-    return 1
-  fi
+  command -v "$t" > /dev/null 2>&1 && return 0
+  [[ -x "$BIN_DIR/$t" ]] && return 0
+  return 1
 }
 for tool in "${NEEDED_TOOLS[@]}"; do
-  if ! need_tool "$tool"; then
-    MISSING+=("$tool")
-  fi
+  need_tool "$tool" || MISSING+=("$tool")
 done
+if ((IS_TERMUX)); then
+  pkg update -y
+  pkg upgrade -y
+  pkg install -y git curl tar make clang cmake ninja pkg-config python nodejs ruby 2> /dev/null || true
+fi
+
 if [[ ${#MISSING[@]} -gt 0 ]]; then
   echo "→ Bootstrapping missing tools into $PREFIX:"
   for t in "${MISSING[@]}"; do
@@ -205,6 +276,17 @@ if [[ ${#MISSING[@]} -gt 0 ]]; then
   done
 fi
 export PATH="$BIN_DIR:$PATH"
+if ((IS_WSL)); then
+  case "$PWD" in
+    /mnt/*)
+      echo "⚠ WSL2: building under /mnt is slow due to 9P cross-filesystem overhead."
+      echo "  Recommend cloning/building under your Linux home (~/) instead."
+      ;;
+  esac
+fi
+if ((IS_TERMUX)) && command -v nvim > /dev/null 2>&1; then
+  echo "→ Neovim already present in Termux; continuing with runtime/LSP/langhost setup."
+fi
 if [[ -d "$BUILD_DIR/.git" ]]; then
   cd "$BUILD_DIR"
   git fetch --all --tags
@@ -212,8 +294,13 @@ else
   git clone https://github.com/neovim/neovim "$BUILD_DIR" --recursive
   cd "$BUILD_DIR"
 fi
-git switch nightly
+git switch master || git checkout master
 rm -rf build .deps
+if ((IS_TERMUX)); then
+  export CC="${CC:-clang}"
+  export CXX="${CXX:-clang++}"
+  export PKG_CONFIG="${PKG_CONFIG:-pkg-config}"
+fi
 cmake -S cmake.deps -B .deps -G Ninja \
   -D CMAKE_BUILD_TYPE=RelWithDebInfo \
   -D USE_BUNDLED=ON \
@@ -227,16 +314,18 @@ cmake --build build
 cmake --install build
 RUNTIME_SRC="$PREFIX/share/nvim/runtime"
 RUNTIME_DEST="$NVIM_DATA_DIR/runtime"
+
 if [[ -d $RUNTIME_SRC ]]; then
   mkdir -p "$NVIM_DATA_DIR"
-  if [[ -d $RUNTIME_DEST ]] && [[ ! -L ${RUNTIME_DEST} ]]; then
-    mv "${RUNTIME_DEST}" "${RUNTIME_DEST}.backup-$(date +%s)"
+  if [[ -d $RUNTIME_DEST ]] && [[ ! -L $RUNTIME_DEST ]]; then
+    mv "$RUNTIME_DEST" "${RUNTIME_DEST}.backup-$(date +%s)"
   fi
   [[ -L $RUNTIME_DEST ]] && rm "$RUNTIME_DEST"
   cp -r "$RUNTIME_SRC" "$RUNTIME_DEST"
-  XDG_CONFIG_HOME="${XDG_CONFIG_HOME:-$HOME/.config}"
+
   INIT_LUA="$XDG_CONFIG_HOME/nvim/init.lua"
   mkdir -p "$(dirname "$INIT_LUA")"
+
   RUNTIME_BLOCK='local data_runtime = vim.fn.stdpath("data") .. "/runtime"
 if vim.fn.isdirectory(data_runtime) == 1 then
   vim.opt.runtimepath:prepend(data_runtime)
@@ -257,11 +346,11 @@ if vim.fn.isdirectory(data_runtime) == 1 then
   vim.opt.runtimepath:prepend(data_runtime)
 end
 EOINIT
-    echo "✓ Created $INIT_LUA with runtime setup"
+    echo "✓ Created init.lua with runtime setup at $INIT_LUA"
   fi
 fi
 add_path_line="export PATH=\"$BIN_DIR:\$PATH\""
-for rc in "$HOME/.bashrc" "${HOME}/.zshrc" "$HOME/.config/fish/config.fish"; do
+for rc in "$HOME/.bashrc" "$HOME/.zshrc" "$HOME/.config/fish/config.fish" "$HOME/.profile"; do
   [[ -f $rc ]] || continue
   if ! grep -Fq "$BIN_DIR" "$rc"; then
     printf '\n# Added by Neovim nightly installer\n%s\n' "$add_path_line" >> "$rc"
@@ -278,17 +367,31 @@ if [[ -d $PARSER_SRC ]]; then
   fi
   [[ -L $PARSER_DEST ]] && rm "$PARSER_DEST"
   mkdir -p "$PARSER_DEST"
-  cp -v "$PARSER_SRC"/*.so "$PARSER_DEST"/ 2> /dev/null || {
-    echo "⚠ No parser files found to copy"
-  }
+  cp -v "$PARSER_SRC"/*.so "$PARSER_DEST"/ 2> /dev/null || echo "⚠ No parser .so files found to copy"
   parser_count=$(find "$PARSER_DEST" -name "*.so" | wc -l)
   echo "✓ Installed $parser_count tree-sitter parsers"
 else
   echo "⚠ Parser directory not found: $PARSER_SRC"
   echo "  Install parsers first: nvim -c 'TSInstall all' -c 'q'"
 fi
-pnpm add -g neovim && pip install --user pynvim && gem install neovim
+install_luajit_and_lua_ls
+if command -v pnpm > /dev/null 2>&1; then
+  pnpm add -g neovim || echo "⚠ pnpm neovim host install failed"
+elif command -v npm > /dev/null 2>&1; then
+  npm install -g neovim || echo "⚠ npm neovim host install failed"
+fi
+if command -v pip > /dev/null 2>&1; then
+  pip install --user pynvim || echo "⚠ pynvim install failed"
+elif command -v pip3 > /dev/null 2>&1; then
+  pip3 install --user pynvim || echo "⚠ pynvim install failed"
+fi
+if command -v gem > /dev/null 2>&1; then
+  gem install neovim || echo "⚠ Ruby neovim host install failed"
+fi
 NVIM_BIN="$BIN_DIR/nvim"
+if ((IS_TERMUX)) && [[ ! -x $NVIM_BIN ]] && command -v nvim > /dev/null 2>&1; then
+  NVIM_BIN="$(command -v nvim)"
+fi
 if [[ -x $NVIM_BIN ]]; then
   echo "Neovim → $NVIM_BIN"
   "$NVIM_BIN" --version | sed -n '1,8p'

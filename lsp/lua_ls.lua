@@ -66,8 +66,10 @@ return ---@type vim.lsp.Config
                 enable = true,
                 globals = {
                     'agutils', ---wp
+                    'ARGS', --buildcache
                     'assert',
                     'AsyncEventHook', ---wp
+                    'bcache', --buildcache
                     'bit32', ---wp
                     'buildDefaultChannelVolumes', ---wp
                     'client',
@@ -111,6 +113,7 @@ return ---@type vim.lsp.Config
                     'recipients', --gpg
                     'reconfigureAudioAdapters', ---wp
                     'require',
+                    'require_std', --buildcache
                     'restore_stream_hook', ---wp
                     'route_settings_metadata_changed_hook', ---wp
                     'rs_metadata', ---wp
