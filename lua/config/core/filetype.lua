@@ -211,6 +211,8 @@ vim.filetype.add({
         ['.*/templates/.*%.yaml'] = 'helm',
         ['.*/templates/.*%.yml'] = 'helm',
         ['.*/templates/.*%.tpl'] = 'helm',
+        ['.*%-tplg%.conf'] = 'alsaconf',
+        ['.*%.tplg%.conf'] = 'alsaconf',
         ['tsconfig.*%.json'] = 'jsonc',
         ['.*/values.*%.ya?ml'] = 'yaml.helm-values',
         ['.*/[Ww]indows[Pp]ower[Ss]hell/.*%.ps1'] = 'ps1',
