@@ -74,6 +74,7 @@ vim.filetype.add({
         service = 'systemd',
         slim = 'slim',
         snippets = 'snippets',
+        spec = 'dosini',
         sugarss = 'sugarss',
         svh = 'systemverilog',
         tesc = 'glsl',
