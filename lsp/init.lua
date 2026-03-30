@@ -28,7 +28,7 @@ vim.lsp.enable({
     'azurepipelines_ls',
     'b_ls', ---:TODO validate ---@source https://github.com/hhu-stups/b-language-server
     'bacon_ls',
-    'basedpy_ls',
+  --  'basedpy_ls',
     'bash_ls',
     --'bazelrc_ls',
     'beancount_ls',
@@ -72,7 +72,7 @@ vim.lsp.enable({
     'dockerx_ls',
     'dolmen_ls', ---:TODO validate
     'dot_ls', ---:TODO
-    'dprint_ls', ---:TODO validate and finish config
+   -- 'dprint_ls', ---:TODO validate and finish config
     'dts_ls', ---:TODO validate
     'earthly_ls', ---:TODO validate
     'editorcc_ls', ---lsp/linter

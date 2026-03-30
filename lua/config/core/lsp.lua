@@ -1,10 +1,9 @@
--- /qompassai/Diver/lsp/lsp.lua
--- Qompass AI Diver Native LSP Config
+-- /qompassai/Diver/lua/config/core/lsp.lua
+-- Qompass AI Diver Core LSP Config
 -- Copyright (C) 2025 Qompass AI, All rights reserved
 -----------------------------------------------------
 local M = {}
 local lspmap = require('mappings.lspmap')
-
 function M.on_attach(client, bufnr)
     if client.server_capabilities.completionProvider then
         vim.lsp.completion.enable(true, client.id, bufnr, {
@@ -74,7 +73,7 @@ function M.on_attach(client, bufnr)
             if not detached_client then
                 return
             end
-            if detached_client:supports_method('textDocument/formatting') then
+            if detached_client.server_capabilities.documentFormattingProvider then
                 vim.api.nvim_clear_autocmds({
                     group = vim.api.nvim_create_augroup('LspFormatOnSave', { clear = false }),
                     buffer = args.buf,
@@ -348,13 +347,14 @@ vim.api.nvim_create_autocmd('User', {
         vim.lsp.semantic_tokens.highlight_token(token, args.buf, args.data.client_id, 'MyMutableVariableHighlight')
     end,
 })
-vim.lsp.handlers['textDocument/publishDiagnostics'] = function(err, result, ctx, _)
+--[[vim.lsp.handlers['textDocument/publishDiagnostics'] = function(err, result, ctx, _)
     local client = vim.lsp.get_client_by_id(ctx.client_id)
     if not client then
         return
-    end
-    vim.lsp.diagnostic.on_publish_diagnostics(err, result, ctx)
+      end
+    vim.diagnostic.on_publish_diagnostics(err, result, ctx)
 end
+--]]
 vim.api.nvim_create_autocmd('LspProgress', {
     callback = function(ev)
         local value = ev.data.params.value ---@type table

@@ -1,4 +1,3 @@
--- /qompassai/Diver/lua/plugins/ui/noice.lua
 -- Qompass AI Diver Noice Plugin Spec
 -- Copyright (C) 2025 Qompass AI, All rights reserved
 -----------------------------------------------------
@@ -9,7 +8,6 @@ return {
     opts = {
         lsp = {
             override = {
-                ['cmp.entry.get_documentation'] = true,
                 ['vim.lsp.util.convert_input_to_markdown_lines'] = true,
                 ['vim.lsp.util.stylize_markdown'] = true,
             },
@@ -17,24 +15,7 @@ return {
                 enabled = true,
             },
             signature = {
-                enabled = true,
-                auto_open = {
-                    enabled = true,
-                    trigger = true,
-                    luasnip = true,
-                    throttle = 50,
-                },
-                routes = {
-                    {
-                        filter = {
-                            event = 'msg_show',
-                            find = 'which%-key',
-                        },
-                        opts = {
-                            skip = true,
-                        },
-                    },
-                },
+                enabled = false,
             },
         },
         presets = {
@@ -48,10 +29,7 @@ return {
             cmdline_popup = {
                 border = {
                     style = 'rounded',
-                    padding = {
-                        0,
-                        1,
-                    },
+                    padding = { 0, 1 },
                 },
                 relative = 'editor',
                 position = {
@@ -70,22 +48,38 @@ return {
         routes = {
             {
                 filter = {
+                    event = 'notify',
+                    find = 'Invalid.*col.*out of range',
+                },
+                opts = { skip = true },
+            },
+            {
+                filter = {
+                    event = 'notify',
+                    find = 'Decoration provider.*inlayhint',
+                },
+                opts = { skip = true },
+            },
+            {
+                filter = {
+                    event = 'msg_show',
+                    find = 'which%-key',
+                },
+                opts = { skip = true },
+            },
+            {
+                filter = {
                     event = 'msg_show',
                     find = 'written',
                 },
-                opts = {
-                    skip = true,
-                    replace = true,
-                },
+                opts = { skip = true, replace = true },
             },
             {
                 filter = {
                     event = 'msg_show',
                     kind = 'search_count',
                 },
-                opts = {
-                    skip = true,
-                },
+                opts = { skip = true },
             },
         },
     },
@@ -102,10 +96,10 @@ return {
                 top_down = false,
                 render = 'compact',
                 icons = {
-                    ERROR = '',
-                    WARN = '',
-                    INFO = '',
-                    DEBUG = '',
+                    ERROR = '',
+                    WARN = '',
+                    INFO = '',
+                    DEBUG = '',
                     TRACE = '✎',
                 },
             },
