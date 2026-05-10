@@ -290,7 +290,7 @@ vim.lsp.enable({
     'ts_ls',
     'tsquery_ls',
     'tsp_ls',
-    'ttags_ls',
+    --'ttags_ls',
     'turbo_ls',
     --'tvmffinav_ls', --validate
     'twiggy_ls',

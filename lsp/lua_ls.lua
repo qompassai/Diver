@@ -13,15 +13,37 @@ return ---@type vim.lsp.Config
         'luau',
     },
     init_options = {},
-    on_attach = require('config.core.lsp').on_attach,
+    on_attach = function(client, bufnr)
+        require('config.core.lsp').on_attach(client, bufnr)
+
+        local root = client.root_dir or ''
+        if not (root:match('/hypr') or root:match('/Hyprland') or root:match('/hyprland')) then
+            return
+        end
+        local hypr_settings = {
+            Lua = {
+                runtime = { version = 'Lua 5.4' },
+                diagnostics = { globals = { 'hl' } },
+                workspace = {
+                    library = {
+                        vim.fs.normalize('~/.GH/Qompass/Hyprland/stubs'),
+                        '/usr/share/hypr/stubs',
+                    },
+                },
+            },
+        }
+        vim.lsp.buf_notify(bufnr, 'workspace/didChangeConfiguration', {
+            settings = hypr_settings,
+        })
+    end,
     root_markers = {
+        '.luarc.jsonc',
         '.emmyrc.json',
         '.git',
         'luacheckrc',
         '.luacheckrc',
         '.luarc.json',
         'luarc.json',
-        '.luarc.jsonc',
         'luarc.jsonc',
         '.luarc.json5',
         'selene.toml',
@@ -50,13 +72,14 @@ return ---@type vim.lsp.Config
             diagnostics = {
                 disable = {
                     'await-in-sync',
-                    'lowercase-global',
-                    'duplicate-index',
-                    'duplicate-set-field',
                     'duplicate-doc-alias',
+                    'duplicate-doc-field',
+                    'duplicate-index',
+                    'lowercase-global',
+                    'duplicate-set-field',
+
                     'incomplete-signature-doc',
                     'inject-field',
-                    'duplicate-doc-field',
                     'redundant-parameter',
                     'redundant-return-value',
                 },
@@ -91,6 +114,8 @@ return ---@type vim.lsp.Config
                     'GLib', ---wp
                     'group', ---wp
                     'group_loopback_modules', ---wp
+                    'hl', ---hyprland
+                    'HyprLayoutCtx', ---hyprland
                     'ImplMetadata', ---wp
                     'Interest', ---wp
                     'it',
@@ -131,6 +156,7 @@ return ---@type vim.lsp.Config
                     'toggleState', ---wp
                     'use',
                     'vim',
+                    'windowspace', --hyprland
                 },
                 groupFileStatus = {
                     ambiguity = 'Any',

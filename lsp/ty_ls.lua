@@ -16,7 +16,11 @@ return ---@type vim.lsp.Config
         logFile = '/tmp/ty-lsp.log',
         logLevel = 'info',
     },
-    on_attach = require('config.core.lsp').on_attach,
+    on_attach = function(client, bufnr)
+        require('config.core.lsp').on_attach(client, bufnr)
+        client.server_capabilities.inlayHintProvider = nil
+        client.server_capabilities.hoverProvider = false
+    end,
     root_markers = {
         'ty.toml',
         'pyproject.toml',

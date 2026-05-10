@@ -102,6 +102,7 @@ vim.filetype.add({
         brioche = 'brioche',
         ['build.zig'] = 'zig',
         ['build.zig.zon'] = 'zon',
+        ['buildozer.spec'] = 'dosini',
         Cairo = 'cairo',
         ['CMakePresets.json'] = 'cmake',
         ['CMakeUserPresets.json'] = 'cmake',

@@ -2,6 +2,20 @@
 -- Qompass AI Diver Ruff LSP Config
 -- Copyright (C) 2025 Qompass AI, All rights reserved
 -- -------------------------------------------------
+---@param bufnr integer
+---@param kind string
+local function ruff_action(bufnr, kind)
+    vim.lsp.buf.code_action({
+        context = {
+            only = {
+                kind,
+            }, ---@as lsp.CodeActionKind[]
+            diagnostics = {},
+        },
+        apply = true,
+        bufnr = bufnr,
+    })
+end
 return ---@type vim.lsp.Config
 {
     capabilities = require('config.core.lsp').capabilities,
@@ -13,8 +27,26 @@ return ---@type vim.lsp.Config
     filetypes = {
         'python',
     },
-    on_attach = function(client)
+    on_attach = function(client, bufnr)
         client.server_capabilities.semanticTokensProvider = nil
+        client.server_capabilities.inlayHintProvider = nil
+        client.server_capabilities.hoverProvider = false
+
+        local augroup = vim.api.nvim_create_augroup('ruff_fix_on_save_' .. bufnr, {
+            clear = true,
+        })
+        vim.api.nvim_create_autocmd('BufWritePre', {
+            group = augroup,
+            buffer = bufnr,
+            callback = function()
+                vim.lsp.inlay_hint.enable(false, {
+                    bufnr = bufnr,
+                })
+                ruff_action(bufnr, 'source.fixAll.ruff')
+                ruff_action(bufnr, 'source.organizeImports.ruff')
+                vim.lsp.buf.format({ bufnr = bufnr, async = false })
+            end,
+        })
     end,
     root_markers = {
         '.git',
@@ -65,9 +97,9 @@ return ---@type vim.lsp.Config
             lint = {
                 enable = true,
                 extendSelect = {
-                    'W',
                     'C4',
                     'SIM',
+                    'W',
                 },
                 ignore = {
                     'E4',
@@ -75,13 +107,13 @@ return ---@type vim.lsp.Config
                 },
                 preview = true,
                 select = {
+                    'B',
                     'E',
                     'F',
                     'I',
+                    'N',
                     'UP',
                     'W',
-                    'N',
-                    'B',
                 },
             },
             logLevel = 'info',
@@ -89,19 +121,4 @@ return ---@type vim.lsp.Config
             showSyntaxErrors = true,
         },
     },
-    vim.api.nvim_create_autocmd('LspAttach', {
-        group = vim.api.nvim_create_augroup('lsp_attach_disable_ruff_hover', {
-            clear = true,
-        }),
-        callback = function(args)
-            local client = vim.lsp.get_client_by_id(args.data.client_id)
-            if client == nil then
-                return
-            end
-            if client.name == 'ruff' then
-                client.server_capabilities.hoverProvider = false
-            end
-        end,
-        desc = 'LSP: Disable hover capability from Ruff',
-    }),
 }

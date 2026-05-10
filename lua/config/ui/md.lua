@@ -119,6 +119,13 @@ function M.md_image(opts)
                     'norg',
                 },
             },
+            neotree = {
+                clear_in_insert_mode = true,
+                download_remote_images = true,
+                enabled = true,
+                only_render_image_at_cursor = false,
+                only_render_image_at_cursor_mode = 'popup',
+            },
             typst = {
                 enabled = true,
                 filetypes = {
