@@ -14,8 +14,8 @@
 ---| 'recommended'
 ---| 'standard'
 ---| 'strict'
----@class lsp.HandlerContext
----@field bufnr?                                            integer
+---@class                    lsp.HandlerContext
+---@field bufnr?                                           integer
 ---@field method?                                          string
 ---@field client_id?                                       integer
 ---@class lsp.Position
@@ -47,7 +47,7 @@
 ---@class vim.lsp
 ---@field buf                                              vim.lsp.buf
 ---@field get_client_by_id                                 fun(client_id: integer): vim.lsp.Client?
----@field start fun(config: table, opts?: table): integer?
+---@field start                                            fun(config: table, opts?: table): integer?
 ---@field buf_request                                      fun(bufnr: integer, method: string, params: any, handler?: fun(err: lsp.ResponseError|nil, result: any, ctx: any, config: any)): boolean|integer
 ---@field get_clients                                      fun(opts?: {bufnr?: integer, name?: string}): vim.lsp.Client[]
 ---@field get_Clients                                      fun(opts?: {bufnr?: integer, name?: string}): vim.lsp.Client[]
@@ -103,7 +103,7 @@ vim.lsp.util = vim.lsp.util or {}
 ---@field refresh?                                         fun(opts?: { bufnr?: integer })
 ---@field run?                                             fun()
 ---@field save?                                            fun(lenses?: lsp.CodeLens[], bufnr: integer, client_id: integer)
----@class vim.lsp.Config.CompletionEnableOpts
+---@class                    vim.lsp.Config.CompletionEnableOpts
 ---@field autotrigger?                                     boolean
 ---@field cmp?                                             fun(a: table, b: table): boolean
 ---@field convert?                                         fun(item: lsp.CompletionItem): table
@@ -139,7 +139,7 @@ vim.lsp.util = vim.lsp.util or {}
 ---@field organizeImportsLocale?                           'auto'|'en'
 ---@field organizeImportsTypeOrder?                        'last'|'inline'|'first'
 ---@field quotePreference?                                 'auto'|'double'|'single'
----@class vim.lsp.Config.init_options.tsserver
+---@class                    vim.lsp.Config.init_options.tsserver
 ---@field fallbackPath?                                    string|nil
 ---@field logDirectory?                                    string|nil
 ---@field logVerbosity?                                    'off'|'normal'|'requestTime'|'terse'|'verbose'

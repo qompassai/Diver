@@ -1,7 +1,6 @@
 #!/usr/bin/env lua
-
 -- tree.lua
--- Qompass AI - [ ]
+-- Qompass AI  Treesitter Core Types
 -- Copyright (C) 2026 Qompass AI, All rights reserved
 -- ----------------------------------------
 ---@meta
