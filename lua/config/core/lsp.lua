@@ -57,12 +57,12 @@ function M.on_attach(client, bufnr)
     then
         vim.api.nvim_create_autocmd('BufWritePre', {
             buffer = bufnr,
-          callback = function(args)
-    vim.lsp.buf.format({
-        async = false,
-        bufnr = args.buf,
-    })
-end,
+            callback = function(args)
+                vim.lsp.buf.format({
+                    async = false,
+                    bufnr = args.buf,
+                })
+            end,
         })
     end
     vim.api.nvim_create_autocmd('LspDetach', {
@@ -371,7 +371,10 @@ vim.api.nvim_create_autocmd('LspProgress', {
 })
 vim.api.nvim_create_autocmd('LspTokenUpdate', {
     callback = function(args)
-        local token = args.data.token ---@type table
+        if not vim.api.nvim_buf_is_valid(args.buf) then
+            return
+        end
+        local token = args.data.token
         if token.type == 'variable' and not token.modifiers.readonly then
             vim.lsp.semantic_tokens.highlight_token(token, args.buf, args.data.client_id, 'MyMutableVariableHighlight')
         end
