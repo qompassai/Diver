@@ -4,7 +4,7 @@
 -- ----------------------------------------
 local M = {}
 M.linters_by_ft = {
-   --'abaplint_ls', ---:TODO: ---validate ---@source https://github.com/abaplint/abaplint | https://www.npmjs.com/org/abaplint
+    --'abaplint_ls', ---:TODO: ---validate ---@source https://github.com/abaplint/abaplint | https://www.npmjs.com/org/abaplint
     asm = {
         'llvm-mc',
     },
@@ -166,9 +166,10 @@ M.linters_by_ft = {
         'psscriptanalyzer',
     },
     pug = 'pug-lint',
-    qml = {
+    --[[qml = {
         'qmllint',
     },
+    --]]
     r = {},
     ruby = {
         'solargraph',
@@ -210,7 +211,7 @@ M.linters_by_ft = {
     typescriptreact = {},
     vue = {},
     wgsl = 'naga',
-   -- xml = 'xmllint',
+    -- xml = 'xmllint',
     --yaml = {
     --  'yamllint',
     --},

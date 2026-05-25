@@ -15,18 +15,22 @@ return ---@type vim.lsp.Config
     init_options = {},
     on_attach = function(client, bufnr)
         require('config.core.lsp').on_attach(client, bufnr)
-
         local root = client.root_dir or ''
         if not (root:match('/hypr') or root:match('/Hyprland') or root:match('/hyprland')) then
             return
         end
         local hypr_settings = {
             Lua = {
-                runtime = { version = 'Lua 5.4' },
-                diagnostics = { globals = { 'hl' } },
+                runtime = {
+                    version = 'Lua 5.4',
+                },
+                diagnostics = {
+                    globals = {
+                        'hl',
+                    },
+                },
                 workspace = {
                     library = {
-                        vim.fs.normalize('~/.GH/Qompass/Hyprland/stubs'),
                         '/usr/share/hypr/stubs',
                     },
                 },
@@ -87,7 +91,7 @@ return ---@type vim.lsp.Config
                     'git',
                 },
                 enable = true,
-                globals = {
+                gbalils = {
                     'agutils', ---wp
                     'ARGS', --buildcache
                     'assert',
