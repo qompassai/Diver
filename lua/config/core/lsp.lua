@@ -40,9 +40,11 @@ function M.on_attach(client, bufnr)
         })
     end
     if client:supports_method('textDocument/inlayHint') and vim.lsp.inlay_hint then
-        vim.lsp.inlay_hint.enable(true, {
-            bufnr = bufnr,
-        })
+        vim.defer_fn(function()
+            if vim.api.nvim_buf_is_valid(bufnr) then
+                vim.lsp.inlay_hint.enable(true, { bufnr = bufnr })
+            end
+        end, 150)
     end
     if client.server_capabilities.semanticTokensProvider then
         vim.lsp.semantic_tokens.enable(true, {
@@ -55,12 +57,12 @@ function M.on_attach(client, bufnr)
     then
         vim.api.nvim_create_autocmd('BufWritePre', {
             buffer = bufnr,
-            callback = function(args)
-                vim.lsp.buf.format({
-                    async = true,
-                    bufnr = args.buf,
-                })
-            end,
+          callback = function(args)
+    vim.lsp.buf.format({
+        async = false,
+        bufnr = args.buf,
+    })
+end,
         })
     end
     vim.api.nvim_create_autocmd('LspDetach', {
