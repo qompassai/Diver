@@ -2,19 +2,21 @@
 -- Qompass AI GLSL Analyzer LSP Spec
 -- Copyright (C) 2025 Qompass AI, All rights reserved
 ------------------------------------------------------
----@type vim.lsp.Config
-return {
+---@source https://github.com/nolanderc/glsl_analyzer
+return ---@type vim.lsp.Config
+{
+    capabilities = require('config.core.lsp').capabilities,
     cmd = {
         'glsl_analyzer',
     },
     filetypes = {
+        'comp',
         'glsl',
-        -- 'vert',
-        -- 'frag',
-        -- 'geom',
-        -- 'tesc',
-        -- 'tese',
-        -- 'comp',
+        'vert',
+        'frag',
+        'geom',
+        'tesc',
+        'tese',
     },
     codeActionProvider = {
         codeActionKinds = {
@@ -33,12 +35,19 @@ return {
                 '--port',
                 '7000',
             },
+            defines = {
+                'USE_NORMALMAP=1',
+                'QUALITY=2',
+            },
             includePaths = {
                 'shaders/includes',
+                'shaders/include',
                 'vendor/glsl',
+                'vendor/shaders',
             },
-            defines = { 'USE_NORMALMAP=1', 'QUALITY=2' },
-            formatter = { enabled = true },
+            formatter = {
+                enabled = true,
+            },
         },
     },
 }

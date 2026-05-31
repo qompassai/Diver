@@ -2,13 +2,9 @@
 -- Qompass AI Diver Apex LSP Spec
 -- Copyright (C) 2025 Qompass AI, All rights reserved
 -- ---------------------------------------------------
-vim.filetype.add({
-    pattern = {
-        ['.*/*.cls'] = 'apex',
-    },
-})
----@type vim.lsp.Config
-return {
+---@source https://developer.salesforce.com/docs/platform/sfvscode-extensions/guide/apex-language-server.html
+return ---@type vim.lsp.Config
+{
     apex_jar_path = vim.fn.stdpath('data') .. '/apex-ls/apex-jorje-lsp.jar',
     apex_enable_semantic_errors = false,
     apex_enable_completion_statistics = false,
