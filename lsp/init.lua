@@ -28,12 +28,12 @@ vim.lsp.enable({
     'azurepipelines_ls',
     'b_ls', ---:TODO validate ---@source https://github.com/hhu-stups/b-language-server
     'bacon_ls',
-  --  'basedpy_ls',
+    --  'basedpy_ls',
     'bash_ls',
     --'bazelrc_ls',
     'beancount_ls',
     'bicep_ls',
-     'biome_ls',
+    'biome_ls',
     'bitbake_ls',
     'blueprint_ls',
     'bq_ls',
@@ -72,14 +72,14 @@ vim.lsp.enable({
     'dockerx_ls',
     'dolmen_ls', ---:TODO validate
     'dot_ls', ---:TODO
-   -- 'dprint_ls', ---:TODO validate and finish config
+    -- 'dprint_ls', ---:TODO validate and finish config
     'dts_ls', ---:TODO validate
     'earthly_ls', ---:TODO validate
     'editorcc_ls', ---lsp/linter
     'elixir_ls',
     'elm_ls',
     'elp_ls',
-    'ember_ls',
+    --'ember_ls',
     'emmet_ls',
     --'emmylua_ls',
     'esbonio_ls',
@@ -103,7 +103,7 @@ vim.lsp.enable({
     --'gitlabduo_ls', ---:TODO
     'glasgow_ls',
     'gleam_ls',
-    'glint_ls', ---:TODO validate
+    -- 'glint_ls', ---:TODO validate
     'glslana_ls',
     'golangcilint_ls', ---:TODO validate
     'gn_ls', ---:TODO validate os(https://github.com/google/gn-language-server) vs msft(https://github.com/microsoft/gnls)
@@ -135,7 +135,7 @@ vim.lsp.enable({
     'janet_ls', ---:TODO install janet-lsp, jpm, validate ---@source
     'java_ls',
     'jdt_ls',
---    'jedi_ls', ---:TODO validate ---@source https://github.com/pappasam/jedi-language-server
+    --    'jedi_ls', ---:TODO validate ---@source https://github.com/pappasam/jedi-language-server
     'jimmerdto_ls', ---:TODO validate ---@source https://github.com/Enaium/jimmer-dto-lsp
     'jinja_ls', ---:TODO
     'jq_ls',
@@ -216,7 +216,7 @@ vim.lsp.enable({
     'psalm_ls', ---lsp/linter
     'pug_ls',
     'puppet_ls',
-   -- 'pwrshelles_ls',
+    -- 'pwrshelles_ls',
     'pyrefly_ls',
     'qml_ls',
     'qlue_ls', ---:TODO validate
@@ -286,8 +286,8 @@ vim.lsp.enable({
     'tilt_ls', ---:TODO install/validate ---@source https://github.com/tilt-dev/tilt
     'tofu_ls',
     'tombi_ls', ---lsp/linter
-    'tsgo_ls',
-    'ts_ls',
+    -- 'tsgo_ls',
+    --  'ts_ls',
     'tsquery_ls',
     'tsp_ls',
     --'ttags_ls',
