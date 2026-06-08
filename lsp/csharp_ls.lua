@@ -2,19 +2,28 @@
 -- Qompass AI Diver Csharp LSP Config
 -- Copyright (C) 2025 Qompass AI, All rights reserved
 -----------------------------------------------------
----@type vim.lsp.Config
-return {
+
+return ---@type vim.lsp.Config
+{
+    capabilities = require('config.core.lsp'),
     cmd = {
         'csharp-ls',
+        '--features',
+        'metadata-uris',
     },
     filetypes = {
         'cs',
     },
-    init_options = {
-        AutomaticWorkspaceInit = true,
-    },
     root_markers = {
         '.sln',
         '.csproj',
+    },
+    settings = {
+        csharp = {
+            useMetadataUris = true,
+            csharp_ls = {
+                AutomaticWorkspaceInit = true,
+            },
+        },
     },
 }

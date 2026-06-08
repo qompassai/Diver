@@ -2,23 +2,45 @@
 -- Qompass AI Diver Deno LSP Config
 -- Copyright (C) 2025 Qompass AI, All rights reserved
 -- --------------------------------------------------
----@type vim.lsp.Config
-return {
+---@param _ lsp.InitializeParams?
+---@param config vim.lsp.Config
+---@return boolean?
+local function before_init(_, config)
+    local fname = vim.api.nvim_buf_get_name(0)
+    if fname == '' then
+        return
+    end
+    local deno_root = vim.fs.root(fname, {
+        'deno.json',
+        'deno.jsonc',
+    })
+    if not deno_root then
+        return false
+    end
+
+    config.workspace_folders = {
+        {
+            name = 'deno',
+            uri = vim.uri_from_fname(deno_root),
+        },
+    }
+end
+
+return ---@type vim.lsp.Config
+{
     cmd = {
         'deno',
         'lsp',
     },
     filetypes = {
         'javascript',
-        'json',
-        'jsonc',
         'jsx',
-        --'markdown',
         'typescriptreact',
         'javascriptreact',
         'tsx',
         'typescript',
     },
+    before_init = before_init,
     init_options = {
         deno = {
             enable = true,
@@ -53,7 +75,5 @@ return {
     root_markers = {
         'deno.json',
         'deno.jsonc',
-        'tsconfig.json',
-        '.git',
     },
 }

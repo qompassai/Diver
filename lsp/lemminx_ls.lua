@@ -1,9 +1,10 @@
 -- /qompassai/Diver/lsp/lemminx.lua
--- Qompass AI Lemminx XML LSP Config
+-- Qompass AI LemMinX XML LSP Config
 -- Copyright (C) 2025 Qompass AI, All rights reserved
 -- --------------------------------------------------
 ---@type vim.lsp.Config
 return {
+    capabilities = require('config.core.lsp').capabilities,
     cmd = {
         'lemminx',
     },
@@ -11,93 +12,71 @@ return {
         'atom',
         'rss',
         'svg',
+        'xaml',
+        'xml',
         'xsd',
         'xsl',
         'xslt',
-        'xml',
     },
     root_markers = {
+        '*.csproj',
+        '*.sln',
         '.git',
-        'pom.xml',
         'build.gradle',
-        'settings.gradle',
         'build.xml',
         'ivy.xml',
+        'pom.xml',
+        'settings.gradle',
     },
     settings = {
         xml = {
+            capabilities = {
+                formatting = true,
+            },
+
+            catalogs = {
+                vim.fn.expand('~/.config/lemminx/catalog.xml'),
+            },
+
+            completion = {
+                autoCloseTags = true,
+            },
+
+            fileAssociations = {
+                {
+                    pattern = '*.xaml',
+                    systemId = vim.fn.expand('~/.local/share/schemas/xaml/xaml2006.xsd'),
+                },
+                {
+                    pattern = '*.xml',
+                    systemId = 'https://www.w3.org/2001/XMLSchema.xsd',
+                },
+                {
+                    pattern = '*.xsd',
+                    systemId = 'https://www.w3.org/2001/XMLSchema.xsd',
+                },
+            },
             format = {
                 enabled = true,
-                splitAttributes = false,
+                formatComments = true,
                 joinCDATALines = false,
                 joinCommentLines = false,
                 joinContentLines = false,
                 spaceBeforeEmptyCloseTag = true,
-            },
-            completion = {
-                autoCloseTags = true,
-                defaultNamespace = '',
-                useSchemaLocation = true,
-            },
-            validation = {
-                enabled = true,
-                schemas = {
-                    {
-                        fileMatch = {
-                            '*.xsd',
-                            '*.xml',
-                        },
-                        url = 'https://www.w3.org/2001/XMLSchema.xsd',
-                    },
-                },
+                splitAttributes = false,
             },
             logs = {
-                enabled = true,
-                file = vim.fn.expand('$XDG_DATA_HOME/lemminx/lemminx.log'),
-                trace = true,
+                client = true,
+                file = vim.fn.expand('~/.local/state/lemminx/lemminx.log'),
             },
-            hover = {
-                enabled = true,
+            trace = {
+                server = 'verbose',
             },
-            folding = {
+            useCache = true,
+            validation = {
                 enabled = true,
-            },
-        },
-    },
-    init_options = {
-        settings = {
-            xml = {
-                trace = {
-                    server = 'verbose',
-                },
-                catalogs = {
-                    'catalog.xml',
-                    'catalog2.xml',
-                },
-                logs = {
-                    client = true,
-                    file = vim.fn.expand('~/.local/state/lemminx/lemminx.log'),
-                },
-                format = {
-                    enabled = true,
-                    splitAttributes = false,
-                    joinCDATALines = false,
-                    joinCommentLines = false,
-                    joinContentLines = false,
-                    spaceBeforeEmptyCloseTag = true,
-                },
-                completion = {
-                    autoCloseTags = true,
-                },
-                useCache = true,
-                validation = {
-                    noGrammar = 'hint',
-                    enabled = true,
-                    schema = true,
-                },
-                capabilities = {
-                    formatting = true,
-                },
+                noGrammar = 'hint',
+                schema = true,
             },
         },
     },

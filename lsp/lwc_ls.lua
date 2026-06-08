@@ -2,8 +2,9 @@
 -- Qompass AI Lightning Web Components (LWC) LSP Spec
 -- Copyright (C) 2025 Qompass AI, All rights reserved
 -- -------------------------------------------------
----@type vim.lsp.Config
-return {
+
+return ---@type vim.lsp.Config
+{
     cmd = {
         'lwc-language-server',
         '--stdio',
@@ -19,6 +20,7 @@ return {
     },
     root_markers = {
         'sfdx-project.json',
+        'sfdx-project.jsonc',
     },
     settings = {},
 }

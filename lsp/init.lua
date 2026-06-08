@@ -13,7 +13,7 @@ vim.lsp.enable({
     'aiken_ls',
     'air_ls',
     'alloy_ls',
-    'angular_ls',
+    --'angular_ls',
     'ansible_ls',
     --'antlers_ls',
     'apex_ls',
@@ -24,6 +24,7 @@ vim.lsp.enable({
     'atlas_ls',
     'atopile_ls',
     'autotoo_ls',
+    'avalonia_ls',
     'awk_ls',
     'azurepipelines_ls',
     'b_ls', ---:TODO validate ---@source https://github.com/hhu-stups/b-language-server
@@ -118,7 +119,7 @@ vim.lsp.enable({
     --'harper_ls',
     --'haxe_ls', ---:TODO validate
     'helm_ls',
-    'herb_ls',
+    --'herb_ls',
     --'hhvm_ls',            ---:TODO compile/install and validate ---@source https://github.com/facebook/hhvm
     'hlasm_ls', ---:TODO validate
     --'homeassist_ls',      ---:TODO
@@ -190,7 +191,7 @@ vim.lsp.enable({
     --'nx_ls',
     'ocaml_ls',
     'o_ls',
-    'omnisharp_ls',
+    --'omnisharp_ls',
     'opencl_ls',
     'openscad_ls',
     'oxlint_ls', ---lsp/linter
