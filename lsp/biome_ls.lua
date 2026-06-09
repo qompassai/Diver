@@ -4,7 +4,7 @@
 -----------------------------------------------------
 return ---@type vim.lsp.Config
 {
-    capabilities = require('config.core.lsp').capabilities,
+    --   capabilities = require('config.core.lsp').capabilities,
     cmd = {
         'biome',
         'lsp-proxy',
@@ -18,7 +18,7 @@ return ---@type vim.lsp.Config
         'javascriptreact',
         'json',
         'jsonc',
-        'markdown',
+        -- 'markdown',
         'mdx',
         'spajson',
         'svelte',

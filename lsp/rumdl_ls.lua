@@ -14,6 +14,7 @@ return ---@type vim.lsp.Config
     root_markers = {
         '.git',
         '.rumdl.toml',
+        'rumdl.toml',
     },
     settings = {
         rumdl = {
@@ -27,7 +28,6 @@ return ---@type vim.lsp.Config
                 enable = {
                     'MD001',
                     'MD003',
-                    'MD013',
                 },
                 exclude = {
                     '*.tmp.md',
@@ -42,8 +42,8 @@ return ---@type vim.lsp.Config
                     'README.md',
                     'docs/**/*.md',
                 },
-                line_length = 120,
-                respect_gitignore = false,
+                line_length = 350,
+                respect_gitignore = true,
             },
             ['per-file-ignores'] = {
                 ['**/TOC.md'] = {
@@ -63,6 +63,50 @@ return ---@type vim.lsp.Config
                     'MD003',
                     'MD022',
                 },
+            },
+            MD013 = {
+                ['line-length'] = 350,
+                ['code-blocks'] = false,
+                tables = false,
+                headings = false,
+                paragraphs = true,
+                strict = false,
+                reflow = true,
+                ['reflow-mode'] = 'default',
+                ['length-mode'] = 'visual',
+            },
+            MD022 = {
+                ['lines-above'] = {
+                    0,
+                    0,
+                    1,
+                    1,
+                    1,
+                    1,
+                },
+                ['lines-below'] = {
+                    0,
+                    0,
+                    1,
+                    0,
+                    0,
+                    0,
+                },
+            },
+            MD029 = {
+                style = 'ordered',
+            },
+            MD046 = {
+                style = 'consistent',
+            },
+            MD048 = {
+                style = 'backtick',
+            },
+            MD051 = {
+                ['anchor-style'] = 'github',
+            },
+            MD055 = {
+                style = 'leading_and_trailing',
             },
         },
     },

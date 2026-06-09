@@ -22,6 +22,102 @@ function M.on_attach(client, bufnr)
             autotrigger = true,
         })
     end
+    if client.name == 'csharp_ls' then
+        vim.keymap.set('n', '<leader>cc', vim.lsp.buf.code_action, {
+            buffer = bufnr,
+            desc = 'C# code action',
+        })
+        vim.keymap.set('n', '<leader>cr', vim.lsp.buf.rename, {
+            buffer = bufnr,
+            desc = 'C# rename symbol',
+        })
+        vim.keymap.set('n', '<leader>cR', vim.lsp.buf.references, {
+            buffer = bufnr,
+            desc = 'C# references',
+        })
+        vim.keymap.set('n', '<leader>ci', vim.lsp.buf.implementation, {
+            buffer = bufnr,
+            desc = 'C# implementations',
+        })
+        vim.keymap.set('n', '<leader>cs', vim.lsp.buf.document_symbol, {
+            buffer = bufnr,
+            desc = 'C# document symbols',
+        })
+
+        if client.server_capabilities.documentRangeFormattingProvider then
+            vim.keymap.set('v', '<leader>cF', function()
+                vim.lsp.buf.format({
+                    async = false,
+                    range = {
+                        start = vim.api.nvim_buf_get_mark(0, '<'),
+                        ['end'] = vim.api.nvim_buf_get_mark(0, '>'),
+                    },
+                    bufnr = bufnr,
+                    filter = function(c)
+                        return c.name == client.name
+                    end,
+                })
+            end, {
+                buffer = bufnr,
+                desc = 'Format C# selection',
+            })
+        end
+    end
+    if client.name == 'avalonia_ls' then
+        vim.keymap.set('n', '<leader>xa', vim.lsp.buf.code_action, {
+            buffer = bufnr,
+            desc = 'Avalonia code action',
+        })
+        vim.keymap.set('n', '<leader>xd', vim.lsp.buf.definition, {
+            buffer = bufnr,
+            desc = 'Avalonia definition',
+        })
+        vim.keymap.set('n', '<leader>xh', vim.lsp.buf.hover, {
+            buffer = bufnr,
+            desc = 'Avalonia hover',
+        })
+        vim.keymap.set('n', '<leader>xr', vim.lsp.buf.references, {
+            buffer = bufnr,
+            desc = 'Avalonia references',
+        })
+        vim.keymap.set('n', '<leader>xs', vim.lsp.buf.document_symbol, {
+            buffer = bufnr,
+            desc = 'Avalonia document symbols',
+        })
+        if client.server_capabilities.documentFormattingProvider then
+            vim.keymap.set('n', '<leader>xf', function()
+                vim.lsp.buf.format({
+                    async = false,
+                    bufnr = bufnr,
+                    filter = function(c)
+                        return c.name == client.name
+                    end,
+                })
+            end, {
+                buffer = bufnr,
+                desc = 'Format Avalonia buffer',
+            })
+        end
+
+        if client.server_capabilities.documentRangeFormattingProvider then
+            vim.keymap.set('v', '<leader>xF', function()
+                vim.lsp.buf.format({
+                    async = false,
+                    range = {
+                        start = vim.api.nvim_buf_get_mark(0, '<'),
+                        ['end'] = vim.api.nvim_buf_get_mark(0, '>'),
+                    },
+                    bufnr = bufnr,
+                    filter = function(c)
+                        return c.name == client.name
+                    end,
+                })
+            end, {
+                buffer = bufnr,
+                desc = 'Format Avalonia selection',
+            })
+        end
+    end
     if client.server_capabilities.documentHighlightProvider then
         vim.api.nvim_create_autocmd({
             'CursorHold',
@@ -38,6 +134,22 @@ function M.on_attach(client, bufnr)
             buffer = bufnr,
             callback = vim.lsp.buf.clear_references,
         })
+    end
+    if client.name == 'pwrshelles_ls' then
+        if client.server_capabilities.documentRangeFormattingProvider then
+            vim.keymap.set('v', '<leader>pF', function()
+                vim.lsp.buf.format({
+                    async = false,
+                    range = {
+                        start = vim.api.nvim_buf_get_mark(0, '<'),
+                        ['end'] = vim.api.nvim_buf_get_mark(0, '>'),
+                    },
+                })
+            end, {
+                buffer = bufnr,
+                desc = 'Format PowerShell selection',
+            })
+        end
     end
     if client:supports_method('textDocument/inlayHint') and vim.lsp.inlay_hint then
         vim.defer_fn(function()
@@ -77,7 +189,9 @@ function M.on_attach(client, bufnr)
             end
             if detached_client.server_capabilities.documentFormattingProvider then
                 vim.api.nvim_clear_autocmds({
-                    group = vim.api.nvim_create_augroup('LspFormatOnSave', { clear = false }),
+                    group = vim.api.nvim_create_augroup('LspFormatOnSave', {
+                        clear = false,
+                    }),
                     buffer = args.buf,
                 })
             end
@@ -85,7 +199,9 @@ function M.on_attach(client, bufnr)
     })
     lspmap.on_attach({
         buf = bufnr,
-        data = { client_id = client.id },
+        data = {
+            client_id = client.id,
+        },
     })
 end
 

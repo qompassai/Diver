@@ -430,6 +430,7 @@ register('verilog', {
     'verilog',
     'systemverilog',
 })
+register('xml', 'xaml')
 register('yaml', {
     'yaml',
     'yaml.ansible',
@@ -438,7 +439,6 @@ register('yaml', {
     'yaml.gitlab',
     'yaml.helm-values',
 })
-
 api.nvim_create_autocmd('FileType', {
     group = api.nvim_create_augroup('TreesitterStart', {
         clear = true,
@@ -447,16 +447,15 @@ api.nvim_create_autocmd('FileType', {
     callback = function(args)
         local buf = args.buf
         local lang = ts.language.get_lang(args.match)
-
         if not lang then
             return
         end
-
-        local buftype = api.nvim_get_option_value('buftype', { buf = buf })
+        local buftype = api.nvim_get_option_value('buftype', {
+            buf = buf,
+        })
         if buftype ~= '' then
             return
         end
-
         pcall(function()
             if pcall(ts.language.add, lang) then
                 ts.start(buf, lang)

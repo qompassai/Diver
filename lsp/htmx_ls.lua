@@ -5,6 +5,7 @@
 ---@source https://htmx.org/reference/#config | https://github.com/ThePrimeagen/htmx-lsp
 return ---@type vim.lsp.Config
 {
+    -- capabilities = require('config.core.lsp'),
     cmd = {
         'htmx-lsp',
     },
@@ -53,6 +54,7 @@ return ---@type vim.lsp.Config
         'svelte',
         'templ',
     },
+    on_attach = require('config.core.lsp').on_attach,
     root_markers = {
         '.git',
     },
@@ -60,6 +62,7 @@ return ---@type vim.lsp.Config
         htmx = {
             config = {
                 allowNestedOobSwaps = true,
+                allowScriptTags = false,
                 defaultSettleDelay = 20,
                 defaultSwapDelay = 0,
                 defaultSwapStyle = 'innerHTML',

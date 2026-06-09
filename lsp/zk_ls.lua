@@ -58,7 +58,7 @@ return ---@type vim.lsp.Config
         'zk',
         'lsp',
     },
-    filetypes = { ---@type string[]
+    filetypes = {
         'markdown',
     },
     root_markers = { ---@type string[]

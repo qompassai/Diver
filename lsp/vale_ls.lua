@@ -2,6 +2,7 @@
 -- Qompass AI Vale LSP Spec
 -- Copyright (C) 2025 Qompass AI, All rights reserved
 -- ----------------------------------------
+---@source https://vale.sh/docs/guides/lsp
 return ---@type vim.lsp.Config
 {
     cmd = {
@@ -9,7 +10,7 @@ return ---@type vim.lsp.Config
     },
     filetypes = {
         'asciidoc',
-        'markdown',
+        --  'markdown',
         'text',
         'tex',
         'rst',
@@ -18,6 +19,17 @@ return ---@type vim.lsp.Config
     },
     root_markers = {
         '.vale.ini',
+        '_vale.ini',
     },
-    settings = {},
+    settings = {
+        ['vale-ls'] = {
+            initializationOptions = {
+                installVale = true,
+                filter = nil,
+                configPath = vim.env.VALE_CONFIG_PATH
+                    or vim.fs.joinpath(vim.env.XDG_CONFIG_HOME or (vim.env.HOME .. '/.config'), 'vale', '.vale.ini'),
+                syncOnStartup = true,
+            },
+        },
+    },
 }

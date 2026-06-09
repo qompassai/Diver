@@ -21,6 +21,9 @@ api.nvim_create_autocmd('BufReadPost', {
         end
     end,
 })
+vim.lsp.set_log_level = function()
+    error('vim.lsp.set_log_level() is deprecated; use vim.lsp.log.set_level()')
+end
 local function scandir(root)
     local handle = uv.fs_scandir(root)
     if not handle then

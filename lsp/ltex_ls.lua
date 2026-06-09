@@ -7,13 +7,14 @@ return {
     cmd = { ---@type string[]
         'ltex-ls',
     },
-    filetypes = { ---@type string[]
+    filetypes = {
         'bib',
         'context',
         'gitcommit',
         'html',
         'lualatex',
         'mail',
+        'markdown',
         'rmd',
         'org',
         'plaintex',

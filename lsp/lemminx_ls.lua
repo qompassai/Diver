@@ -10,6 +10,7 @@ return {
     },
     filetypes = {
         'atom',
+        'csproj',
         'rss',
         'svg',
         'xaml',
@@ -20,13 +21,16 @@ return {
     },
     root_markers = {
         '*.csproj',
-        '*.sln',
+        'Directory.Build.props',
+        'Directory.Packages.props',
+
         '.git',
         'build.gradle',
         'build.xml',
         'ivy.xml',
         'pom.xml',
         'settings.gradle',
+        '*.sln',
     },
     settings = {
         xml = {

@@ -19,13 +19,14 @@ return ---@type vim.lsp.Config
         '.git',
     },
     settings = {
-        yamlls = {
+        yaml = {
             redhat = {
                 telemetry = {
                     enabled = false,
                 },
             },
             completion = true,
+            disableDefaultProperties = true,
             hover = true,
             validate = true,
             yamlVersion = '1.2',
@@ -36,7 +37,6 @@ return ---@type vim.lsp.Config
                 printWidth = 80,
                 singleQuote = true,
             },
-
             schemaStore = {
                 enable = true,
                 url = 'https://www.schemastore.org/api/json/catalog.json',
@@ -52,7 +52,7 @@ return ---@type vim.lsp.Config
                 ['https://raw.githubusercontent.com/yannh/kubernetes-json-schema/refs/heads/master/v1.32.1-standalone-strict/all.json'] = 'helm/values*.yaml',
             },
             maxItemsComputed = 5000,
-            disableDefaultProperties = true,
+
             suggest = {
                 parentSkeletonSelectedFirst = false,
             },

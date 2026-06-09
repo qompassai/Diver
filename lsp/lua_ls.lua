@@ -41,8 +41,8 @@ return ---@type vim.lsp.Config
         })
     end,
     root_markers = {
-        '.luarc.jsonc',
         '.emmyrc.json',
+        '.luarc.jsonc',
         '.git',
         'luacheckrc',
         '.luacheckrc',

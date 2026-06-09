@@ -4,19 +4,19 @@
 -- ----------------------------------------
 ---@type vim.lsp.Config
 return {
-    cmd = { ---@type string[]
+    cmd = {
         'prosemd-lsp',
         '--stdio',
     },
-    filetypes = { ---@type string[]
-        'markdown',
+    filetypes = {
+        'markdown.readme',
     },
-    root_markers = { ---@type string[]
+    root_markers = {
         '.git',
     },
     settings = {
         prosemd = {
-            validate = true, ---@type boolean
+            validate = true,
         },
     },
 }

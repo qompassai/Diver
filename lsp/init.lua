@@ -5,7 +5,6 @@
 ---@source https://microsoft.github.io/language-server-protocol/implementors/servers/
 ---@source https://langserver.org/
 vim.lsp.enable({
-
     -- 'abl_ls', ---:TODO validate ---@source https://github.com/vscode-abl/vscode-abl
     'ada_ls',
     'agda_ls',
@@ -53,7 +52,7 @@ vim.lsp.enable({
     'clojure_ls',
     'cmake_ls',
     'cobol_ls',
-    --'codebook_ls', ---:TODO validate
+    --  'codebook_ls', ---:TODO validate
     'codeql_ls', ---:TODO ---@source https://github.com/github/codeql
     --'contextive_ls',  ---:TODO add glossary then validate
     'copilot_ls.lua', ---:TODO validate
@@ -81,7 +80,7 @@ vim.lsp.enable({
     'elm_ls',
     'elp_ls',
     --'ember_ls',
-    'emmet_ls',
+    -- 'emmet_ls',
     --'emmylua_ls',
     'esbonio_ls',
     'expert_ls',
@@ -125,9 +124,10 @@ vim.lsp.enable({
     --'homeassist_ls',      ---:TODO
     'hoon_ls',
     'html_ls',
+    'htmlhint_ls',
     'htmx_ls',
     --'hydra_ls',
-    'hypr_ls',
+    -- 'hypr_ls',
     'idris2_ls', ---:TODO validate ---@source https://github.com/idris-community/idris2-lsp
     'ink_ls', ---:TODO validate ---@source https://github.com/ink-analyzer/ink-analyzer/tree/master/crates/lsp-server
     'intelephense_ls',
@@ -155,7 +155,7 @@ vim.lsp.enable({
     'lean_ls',
     'lelwel_ls', ---:TODO validate ---@source https://github.com/0x2a-42/lelwel
     'lemminx_ls', ---:TODO validate
-    --'ltex_ls',
+    'ltex_ls',
     'ltexplus_ls',
     'lua_ls',
     'luau_ls',
@@ -165,7 +165,7 @@ vim.lsp.enable({
     'markojs_ls',
     'marksman_ls',
     'matlab_ls',
-    --'mdxana_ls',
+    'mdxana_ls',
     'metals_ls',
     'millet_ls',
     'mint_ls',
@@ -212,12 +212,11 @@ vim.lsp.enable({
     'postgres_ls',
     'prisma_ls',
     'prolog_ls', ---:TODO validate
-    --'prosemd_ls',
     'proto_ls',
     'psalm_ls', ---lsp/linter
     'pug_ls',
     'puppet_ls',
-    -- 'pwrshelles_ls',
+    'pwrshelles_ls',
     'pyrefly_ls',
     'qml_ls',
     'qlue_ls', ---:TODO validate
@@ -227,7 +226,7 @@ vim.lsp.enable({
     --'rech_ls'             ---:TODO https://github.com/RechInformatica/rech-editor-cobol/tree/master/src/lsp
     'regal_ls', ---:TODO validate ---linter/lsp
     'rego_ls', ---:TODO validate
-    'remark_ls',
+    --'remark_ls',
     'rescript_ls',
     'robotcode_ls',
     'robotframework_ls',
@@ -236,7 +235,7 @@ vim.lsp.enable({
     'rpmspec_ls',
     'rubocop_ls',
     'ruby_ls', ---:TODO validate
-    --'rumdl_ls', ---:TODO validate
+    'rumdl_ls', ---:TODO validate
     'ruff_ls',
     'rune_ls',
     'rustana_ls',
@@ -287,12 +286,12 @@ vim.lsp.enable({
     'tilt_ls', ---:TODO install/validate ---@source https://github.com/tilt-dev/tilt
     'tofu_ls',
     'tombi_ls', ---lsp/linter
-    -- 'tsgo_ls',
+    'tsgo_ls',
     --  'ts_ls',
     'tsquery_ls',
     'tsp_ls',
     --'ttags_ls',
-    'turbo_ls',
+    --  'turbo_ls',
     --'tvmffinav_ls', --validate
     'twiggy_ls',
     'ty_ls',
@@ -306,7 +305,7 @@ vim.lsp.enable({
     --'vana_ls' ---TODO: install/validate ---@source  https://github.com/vlang/v-analyzer
     'vacuum_ls', ---TODO: install/validate ---@source  https://github.com/daveshanley/vacuum
     'vala_ls', ---TODO:  https://github.com/Prince781/vala-language-server
-    --'vale_ls',      ---:TODO validate ---@source https://github.com/errata-ai/vale-ls
+    'vale_ls', ---:TODO validate ---@source https://github.com/errata-ai/vale-ls
     --'vectorcode_ls',---:TODO
     'verible_ls', ---TODO: install/validate ---@source  https://github.com/chipsalliance/verible
     'veridian_ls',
@@ -319,7 +318,7 @@ vim.lsp.enable({
     'wasmlangtoo_ls',
     'wc_ls', ---:TODO install/validate-  ---@source https://github.com/wc-toolkit/wc-language-server
     'wgslana_ls',
-    --'yaml_ls',
+    'yaml_ls',
     --'y_ls',
     --'yara_ls'
     'ziggy_ls',
@@ -379,6 +378,7 @@ vim.lsp.enable({
 ---'pact_ls', ---outdated ---@source https://github.com/kadena-io/pact-lsp
 --'papyrus_ls', ---outdated https://github.com/joelday/papyrus-lang
 --'polymer_ls' ---deprecated ---@source https://github.com/Polymer/tools/tree/master/packages/editor-service
+--   'prosemd_ls', ---outdated https://github.com/kitten/prosemd-lsp
 --'py_ls', ---notusing| basedpyright instead
 --'pylyzer_ls',  ---deprecated for ty ---@source https://github.com/mtshiba/pylyzer
 ---'pyre', ---deprecated for pyrefly

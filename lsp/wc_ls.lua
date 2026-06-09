@@ -16,7 +16,7 @@ return ---@type vim.lsp.Config
         'javascript',
         'javascriptreact',
         'less',
-        'markdown',
+        -- 'markdown',
         'mdx',
         'scss',
         'svelte',

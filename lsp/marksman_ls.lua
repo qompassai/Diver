@@ -12,6 +12,8 @@ return ---@type vim.lsp.Config
         'markdown',
         'markdown.mdx',
     },
+    on_attach = require('config.core.lsp').on_attach,
+    --[[
     on_attach = function(client, bufnr)
         client.server_capabilities.documentFormattingProvider = false
         vim.api.nvim_buf_create_user_command(bufnr, 'MarksmanHeadings', function()
@@ -24,9 +26,10 @@ return ---@type vim.lsp.Config
             vim.lsp.buf.rename()
         end, {})
     end,
+--]]
     root_markers = {
-        '.marksman.toml',
         '.git',
+        '.marksman.toml',
         '.hg',
         '.svn',
     },

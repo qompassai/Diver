@@ -217,15 +217,21 @@ function M.setup_ddxmap()
     }) --- Press <Space> d a to choose and activate a debug adapter
     map('n', '<leader>dv', function()
         require('dap').set_log_level('DEBUG')
+
+        -- New: use the non-deprecated LSP logging API
+        if vim.lsp and vim.lsp.log and vim.lsp.log.set_level then
+            vim.lsp.log.set_level('debug')
+        end
+
         vim.api.nvim_echo({
             {
-                'Debug verbosity increased',
+                'Debug verbosity increased (DAP + LSP)',
                 'None',
             },
         }, false, {})
     end, {
         desc = 'Verbose Debug Mode',
-    }) --- Press <Space> d v to enable verbose debug logging
+    })
 end
 
 return M
