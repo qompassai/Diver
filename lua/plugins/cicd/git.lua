@@ -12,9 +12,6 @@ return {
             'LazyGitFilter',
             'LazyGitFilterCurrentFile',
         },
-        dependencies = {
-            'nvim-lua/plenary.nvim',
-        },
         keys = {
             { '<leader>lg', '<cmd>LazyGit<cr>', desc = 'LazyGit' },
         },
@@ -22,7 +19,6 @@ return {
     {
         'NeogitOrg/neogit',
         dependencies = {
-            'nvim-lua/plenary.nvim',
             'sindrets/diffview.nvim',
             'ibhagwan/fzf-lua',
         },

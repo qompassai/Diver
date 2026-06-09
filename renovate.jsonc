@@ -25,7 +25,6 @@
         "luv",
         "nvim",
         "neovim",
-        "plenary",
         "telescope"
       ],
       "allowedVersions": [

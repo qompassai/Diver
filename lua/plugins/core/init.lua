@@ -22,15 +22,6 @@ vim.pack.add({ ---@type vim.pack.Spec[]
             })
         end,
     },
-    --[[
-  {
-    branch = 'main',
-    hook = function()
-      require('config.core.plenary')
-    end,
-    src = 'https://github.com/nvim-lua/plenary.nvim',
-  },
-  --]]
     {
         branch = 'main',
         src = 'https://github.com/ms-jpq/coq_nvim',
@@ -62,22 +53,6 @@ vim.pack.add({ ---@type vim.pack.Spec[]
         opts = require('config.core.trouble')(),
         hook = function(spec)
             require('trouble').setup(spec.opts)
-        end,
-    },
-    {
-        name = 'neotest',
-        src = 'https://github.com/nvim-neotest/neotest',
-        opts = {
-            adapters = {
-                'neotest-plenary',
-            },
-        },
-        hook = function()
-            require('neotest').setup({
-                adapters = {
-                    require('neotest-plenary'),
-                },
-            })
         end,
     },
     {
