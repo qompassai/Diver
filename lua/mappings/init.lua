@@ -17,6 +17,7 @@ M.setup = function()
         'mojomap',
         'navmap',
         'pymap',
+        'utilmap',
     }
     for _, name in ipairs(mapping_files) do
         local ok, mod = pcall(require, 'mappings.' .. name)

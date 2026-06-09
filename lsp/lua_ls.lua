@@ -365,7 +365,7 @@ return ---@type vim.lsp.Config
                 statusBar = true,
             },
             workspace = { ---@source https://luals.github.io/wiki/settings/#workspace
-                checkThirdParty = 'Apply',
+                checkThirdParty = false,
                 ignoreDir = {
                     'build',
                     'node_modules',

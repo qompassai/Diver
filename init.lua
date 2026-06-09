@@ -17,6 +17,9 @@ local data_home = vim.env.XDG_DATA_HOME
 opt.runtimepath:prepend(env.VIMRUNTIME)
 opt.runtimepath:prepend(fn.stdpath('data') .. '/site')
 opt.runtimepath:prepend(data_home .. '/nvim/runtime')
+vim.keymap.set('n', '<Space>', '<Nop>', {
+    silent = true,
+})
 local uid, user
 if is_windows then
     user = env.USERNAME or env.USER
