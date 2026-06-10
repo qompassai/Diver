@@ -14,15 +14,36 @@ function M.setup_cicdmap()
                 silent = true,
                 buffer = bufnr,
             }
+            local function toggle_netrw()
+                for _, win in ipairs(vim.api.nvim_list_wins()) do
+                    local buf = vim.api.nvim_win_get_buf(win)
+                    local ft = vim.api.nvim_get_option_value('filetype', { buf = buf })
+                    if ft == 'netrw' then
+                        vim.api.nvim_win_close(win, true)
+                        return
+                    end
+                end
+                vim.cmd('Lexplore')
+            end
+
+            map('n', '<leader>e', toggle_netrw, {
+                desc = 'Toggle Explorer',
+            })
+
+            map('n', '<C-n>', toggle_netrw, {
+                desc = 'Toggle Explorer',
+            })
             -- map("n", "<leader>nt", "<cmd>NvimTreeToggle<CR>", vim.tbl_extend("force", opts, { desc = "NvimTree toggle window" }))
             -- In normal mode, press 'Space' + 'n' + 't' to open or close the NvimTree window
-
+            --[[
             map('n', '<leader>e', ':Neotree toggle<CR>', {
                 desc = 'Toggle Explorer',
             }) --- In normal mode, press 'Space' + 'e' to focus on the NvimTree window
             map('n', '<C-n>', ':Neotree toggle<CR>', {
                 desc = 'Toggle Explorer',
             })
+            --]]
+            --
             map(
                 'n',
                 '<leader>h',

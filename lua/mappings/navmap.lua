@@ -24,7 +24,7 @@ function M.setup_navmap()
                 silent = true,
                 buffer = bufnr,
             }
-            map(
+            --[[   map(
                 'n',
                 '<leader>e',
                 '<cmd>Neotree toggle<cr>',
@@ -40,6 +40,7 @@ function M.setup_navmap()
                     desc = 'Focus Neo-tree',
                 })
             )
+            --]]
             map(
                 {
                     'n',

@@ -15,16 +15,7 @@ return ---@type vim.lsp.Config
         'cs',
     },
     on_attach = require('config.core.lsp').on_attach,
-    --[[
-    on_attach = function(client, bufnr)
-        client.server_capabilities.inlineCompletionProvider = true
-        client.server_capabilities.inlayHintProvider = true
-        client.server_capabilities.semanticTokensProvider = nil
-        client.server_capabilities.codeLensProvider = nil
-        client.server_capabilities.documentHighlightProvider = nil
-        require('config.core.lsp').on_attach(client, bufnr)
-    end,
-    --]]
+    --]
     root_markers = {
         '.csproj',
         '.sln',

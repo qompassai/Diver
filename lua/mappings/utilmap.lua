@@ -52,10 +52,8 @@ local function setup_quickfix_mappings()
     map('n', '<leader>zN', '<cmd>cnewer<cr>', 'Quickfix newer list')
     map('n', '<leader>zP', '<cmd>colder<cr>', 'Quickfix older list')
 end
-
 local function setup_audio_commands()
     vim.opt.makeprg = 'make'
-
     create_user_command('AudioPreview', 'make preview', 'Build audio preview target')
     create_user_command('AudioFinal', 'make final', 'Build final audio target')
     create_user_command('AudioPlay', function()
@@ -70,7 +68,12 @@ local function setup_audio_commands()
     map('n', '<leader>xp', '<cmd>AudioPlay<cr>', 'Audio play')
     map('n', '<leader>xv', '<cmd>AudioPreview<cr>', 'Audio preview')
 end
-
+local ok, fzf = pcall(require, 'fzf-lua')
+if ok then
+    vim.keymap.set('n', '<leader>?', function()
+        fzf.keymaps()
+    end, { desc = 'Keymap cheatsheet (fzf-lua)', silent = true, noremap = true })
+end
 M.setup_utilmap = function()
     setup_terminal_mappings()
     setup_quickfix_mappings()

@@ -235,7 +235,7 @@ vim.lsp.enable({
     'rpmspec_ls',
     'rubocop_ls',
     'ruby_ls', ---:TODO validate
-    'rumdl_ls', ---:TODO validate
+    -- 'rumdl_ls', ---:TODO validate
     'ruff_ls',
     'rune_ls',
     'rustana_ls',
