@@ -106,7 +106,7 @@ return ---@type vim.lsp.Config
                     'git',
                 },
                 enable = true,
-                gbalils = {
+                goballs = {
                     'agutils', ---wp
                     'ARGS', --buildcache
                     'assert',
@@ -179,16 +179,16 @@ return ---@type vim.lsp.Config
                 },
                 groupFileStatus = {
                     ambiguity = 'Any',
-                   await  = 'Any',
+                    await = 'Any',
                     codestyle = 'Opened',
                     duplicate = 'Any',
-                   global  = 'Any',
-                    luadoc = 'Any',
+                  global   = 'Any',
+                   luadoc  = 'Any',
                     redefined = 'Any',
               strict       = 'Any',
                     --strong = 'Opened',
                     ['type-check'] = 'Opened',
-                  unused   = 'Any',
+                 unused    = 'Any',
                 },
                 groupSeverity = {
                     ambiguity = 'Warning',
