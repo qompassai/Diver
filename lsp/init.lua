@@ -155,7 +155,7 @@ vim.lsp.enable({
     'lean_ls',
     'lelwel_ls', ---:TODO validate ---@source https://github.com/0x2a-42/lelwel
     'lemminx_ls', ---:TODO validate
-    'ltex_ls',
+    --'ltex_ls',
     'ltexplus_ls',
     'lua_ls',
     'luau_ls',

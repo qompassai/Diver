@@ -1,4 +1,4 @@
-# ~/.config/nvim/lua/utils/words.txt
+# ~/.config/nvim/lua/utils/docs/dictionary/words.txt
 # ----------------------------------
 # Copyright (C) 2025 Qompass AI, All rights reserved
 
@@ -16910,3 +16910,5 @@ actionary
 actioner
 actionize
 actio
+gradle
+gradlew

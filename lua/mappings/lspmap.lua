@@ -3,6 +3,7 @@
 -- Copyright (C) 2025 Qompass AI, All rights reserved
 -- --------------------------------------------------
 ---@module 'mappings.lspmap'
+
 local M = {}
 local api = vim.api
 M.rust_editions = {
@@ -37,6 +38,7 @@ function M.rust_set_toolchain(tc)
         vim.echo('Invalid Rust toolchain: ' .. tostring(tc), vim.log.levels.ERROR)
     end
 end
+
 ---@alias LspAttachArgs { buf: integer, data: { client_id: integer } }
 function M.setup_lspmap() ---@return nil
     local function on_list(options) ---@param options table
@@ -304,22 +306,22 @@ function M.setup_lspmap() ---@return nil
                         desc = 'TypeScript document symbols (Telescope)',
                     })
                 )
-  api.nvim_create_user_command('RustEdition', function(o)
-        M.rust_edition(o.args)
-    end, {
-        nargs = 1,
-        complete = function()
-            return vim.tbl_keys(M.rust_editions)
-        end,
-    })
-    api.nvim_create_user_command('RustToolchain', function(o)
-        M.rust_set_toolchain(o.args)
-    end, {
-        nargs = 1,
-        complete = function()
-            return vim.tbl_keys(M.rust_toolchains)
-        end,
-    })
+                api.nvim_create_user_command('RustEdition', function(o)
+                    M.rust_edition(o.args)
+                end, {
+                    nargs = 1,
+                    complete = function()
+                        return vim.tbl_keys(M.rust_editions)
+                    end,
+                })
+                api.nvim_create_user_command('RustToolchain', function(o)
+                    M.rust_set_toolchain(o.args)
+                end, {
+                    nargs = 1,
+                    complete = function()
+                        return vim.tbl_keys(M.rust_toolchains)
+                    end,
+                })
                 map('n', '<leader>re', function()
                     vim.ui.select(vim.tbl_keys(M.rust_editions), {
                         prompt = 'Select Rust edition',
@@ -340,6 +342,27 @@ function M.setup_lspmap() ---@return nil
     end
 end
 
+vim.api.nvim_create_user_command('LspInfo', function()
+    local bufnr = vim.api.nvim_get_current_buf()
+    local clients = vim.lsp.get_clients({ bufnr = bufnr })
+    if vim.tbl_isempty(clients) then
+        print('No LSP clients attached to current buffer')
+        return
+    end
+    print('LSP clients for buffer ' .. bufnr .. ':')
+    for _, client in ipairs(clients) do
+        print(
+            ('- %s (id=%d, name=%s)'):format(
+                client.name or 'unknown',
+                client.id or -1,
+                client.config and client.config.name or 'n/a'
+            )
+        )
+    end
+end, {})
+vim.keymap.set('n', '<leader>li', '<cmd>LspInfo<cr>', {
+    desc = 'LSP info',
+})
 return M
 --]]
 --[[local registry = require('mason-registry')

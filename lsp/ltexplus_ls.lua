@@ -27,6 +27,7 @@ return ---@type vim.lsp.Config
         'html',
         'org',
         'lualatex',
+        'markdown',
         'plaintex',
         'quarto',
         'mail',
@@ -48,7 +49,9 @@ return ---@type vim.lsp.Config
             additionalRules = {
                 enablePickyRules = false,
                 languageModel = vim.fn.expand('$XDG_DATA_HOME/ltex/language-model'),
-                motherTongue = {},
+                motherTongue = {
+                    'en-US',
+                },
             },
             bibtex = {
                 fields = {
@@ -66,7 +69,8 @@ return ---@type vim.lsp.Config
             },
             dictionary = {
                 ['en-US'] = {
-                    '$XDG_CONFIG_HOME/nvim/spell/dictionary.txt',
+                    '$XDG_DATA_HOME/nvim/spell/dictionary.txt',
+                    '$XDG_DATA_HOME/nvim/utils/docs/dictionary/words.txt',
                 },
             },
             disabledRules = {
@@ -79,16 +83,16 @@ return ---@type vim.lsp.Config
                 'bibtex',
                 'context',
                 'context.tex',
-                --'gitcommit',
+                'gitcommit',
                 'html',
                 'latex',
-                --'lualatex',
-                --'mail',
+                'lualatex',
+                'mail',
                 'markdown',
                 'mdx',
                 'neorg',
                 'org',
-                --'plaintex',
+                'plaintex',
                 'quarto',
                 'rmd',
                 'rnoweb',
@@ -131,11 +135,13 @@ return ---@type vim.lsp.Config
                     FencedCodeBlock = 'ignore',
                 },
             },
+            paragraphCacheEnabled = true,
+            paragraphCacheTtlMinutes = 30,
             sentenceCacheSize = 2000,
             statusBarItem = true,
         },
         ['ltex-ls'] = {
-            logllevel = 'finer',
+            logllevel = 'finest', ---"severe", "warning", "info", "config", "fine", "finer", "finest"
             path = vim.fn.expand('$XDG_DATA_HOME/ltex/ltex-ls-plus'),
         },
         java = {
@@ -143,6 +149,8 @@ return ---@type vim.lsp.Config
             maximumHeapSize = 2048,
             path = {},
         },
+        maxRequestSize = 20000,
+        statuBarItem = true,
         trace = {
             server = 'verbose',
         },

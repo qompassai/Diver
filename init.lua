@@ -58,17 +58,18 @@ bo.textwidth = 120
 bo.undofile = true
 cmd('filetype plugin on')
 cmd('filetype plugin indent on')
-cmd([[
-  packadd nvim.undotree
-]])
-cmd('syntax on')
-cmd.runtime('macros/matchit.vim')
+--cmd([[
+--  packadd nvim.undotree
+--]])
+--cmd('syntax on')
+--[[cmd.runtime('macros/matchit.vim')
 if not is_windows then
     env.LUAROCKS_CONFIG = env.HOME .. '/.config/luarocks/luarocks-5.1.lua'
     env.VIMRUNTIME = fn.expand('~/.local/share/nvim/runtime')
 else
     env.VIMRUNTIME = fn.stdpath('data') .. '/runtime'
 end
+--]]
 g.deprecation_warnings = true
 g.editorconfig = true
 g.git_command_ssh = 1

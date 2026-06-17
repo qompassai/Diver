@@ -3,6 +3,31 @@
 -- Copyright (C) 2025 Qompass AI, All rights reserved
 -- ---------------------------------------------------
 -- pnpm add -g  @typescript/native-preview@latest
+local function path_exists(path)
+    return path and vim.uv.fs_stat(path) ~= nil
+end
+local function is_spfx_root(root)
+    if not root or root == '' then
+        return false
+    end
+    return path_exists(root .. '/config/package-solution.json')
+        or path_exists(root .. '/config/config.json')
+        or path_exists(root .. '/gulpfile.js')
+        or path_exists(root .. '/.yo-rc.json')
+end
+local function get_client_root(client)
+    local root = client and client.config and client.config.root_dir or nil
+    if type(root) == 'string' then
+        return root
+    end
+    return nil
+end
+local function notify(msg, level)
+    vim.notify(msg, level or vim.log.levels.INFO, {
+        title = 'tsgo',
+    })
+end
+
 return ---@type vim.lsp.Config
 {
     cmd = {
@@ -21,16 +46,23 @@ return ---@type vim.lsp.Config
     root_markers = {
         'bun.lockb',
         'bun.lock',
+        'config/package-solution.json',
+        'config/config.json',
         '.git',
+        'gulpfile.js',
         'package.json',
         'package.jsonc',
         'package-lock.json',
         'package-lock.jsonc',
         'pnpm-lock.yaml',
         'tsconfig.json',
+        'tsconfig.jsonc',
         'tsconfig.base.json',
+        'tsconfig.base.jsonc',
         'jsconfig.json',
+        'jsconfig.jsonc',
         'yarn.lock',
+        '.yo-rc.json',
     },
     settings = {
         completions = {
@@ -41,11 +73,11 @@ return ---@type vim.lsp.Config
         },
         implicitProjectConfiguration = {
             checkJs = true,
-            experimentalDecorators = true,
-            module = 'esnext',
-            strictFunctionTypes = true,
-            strictNullChecks = true,
-            target = 'ES2020',
+            --     experimentalDecorators = true,
+            --    module = 'esnext',
+            --   strictFunctionTypes = true,
+            --  strictNullChecks = true,
+            --  target = 'ES2020',
         },
         javascript = {
             format = {
@@ -270,22 +302,32 @@ return ---@type vim.lsp.Config
             vim.cmd('botright copen')
         end,
     },
-    on_attach = function(Client, bufnr)
+    on_attach = function(client, bufnr)
+        local root = get_client_root(client)
+        local spfx = is_spfx_root(root)
+        vim.b[bufnr].qompass_tsgo_spfx = spfx
         vim.api.nvim_buf_create_user_command(bufnr, 'LspTypescriptSourceAction', function()
+            local cap = client.server_capabilities.codeActionProvider
+            local kinds = type(cap) == 'table' and cap.codeActionKinds or {}
+
             local source_actions = vim.tbl_filter(function(action)
                 return vim.startswith(action, 'source.')
-            end, Client.server_capabilities.codeActionProvider.codeActionKinds)
+            end, kinds or {})
             vim.lsp.buf.code_action({
                 context = {
                     only = source_actions,
                     diagnostics = {},
                 },
             })
-        end, {})
+        end, {
+            desc = 'TypeScript source actions',
+        })
+
         vim.api.nvim_buf_create_user_command(bufnr, 'LspTypescriptGoToSourceDefinition', function()
             local win = vim.api.nvim_get_current_win()
-            local params = vim.lsp.util.make_position_params(win, Client.offset_encoding)
-            Client:exec_cmd({
+            local params = vim.lsp.util.make_position_params(win, client.offset_encoding)
+
+            client:exec_cmd({
                 command = '_typescript.goToSourceDefinition',
                 title = 'Go to source definition',
                 arguments = {
@@ -296,19 +338,60 @@ return ---@type vim.lsp.Config
                 bufnr = bufnr,
             }, function(err, result)
                 if err then
-                    vim.echo('Go to source definition failed: ' .. err.message, vim.log.levels.ERROR)
+                    vim.notify('Go to source definition failed: ' .. err.message, vim.log.levels.ERROR)
                     return
                 end
                 if not result or vim.tbl_isempty(result) then
-                    vim.echo('No source definition found', vim.log.levels.INFO)
+                    vim.notify('No source definition found', vim.log.levels.INFO)
                     return
                 end
-                vim.lsp.util.show_document(result[1], Client.offset_encoding, {
+                vim.lsp.util.show_document(result[1], client.offset_encoding, {
                     focus = true,
                 })
             end)
         end, {
             desc = 'Go to source definition',
         })
+        if spfx then
+            vim.api.nvim_buf_create_user_command(bufnr, 'SpfxServe', function()
+                vim.cmd('terminal gulp serve')
+            end, {
+                desc = 'SPFx gulp serve',
+            })
+            vim.api.nvim_buf_create_user_command(bufnr, 'SpfxBundle', function(opts)
+                local ship = opts.args == 'ship'
+                vim.cmd(ship and 'terminal gulp bundle --ship' or 'terminal gulp bundle')
+            end, {
+                desc = 'SPFx gulp bundle [ship]',
+                nargs = '?',
+                complete = function()
+                    return { 'ship' }
+                end,
+            })
+            vim.api.nvim_buf_create_user_command(bufnr, 'SpfxPackage', function(opts)
+                local ship = opts.args == 'ship'
+                vim.cmd(ship and 'terminal gulp package-solution --ship' or 'terminal gulp package-solution')
+            end, {
+                desc = 'SPFx gulp package-solution [ship]',
+                nargs = '?',
+                complete = function()
+                    return {
+                        'ship',
+                    }
+                end,
+            })
+            vim.api.nvim_buf_create_user_command(bufnr, 'SpfxDoctor', function()
+                local lines = {
+                    'SPFx root: ' .. (root or 'unknown'),
+                    'package-solution.json: ' .. tostring(path_exists((root or '') .. '/config/package-solution.json')),
+                    'config.json: ' .. tostring(path_exists((root or '') .. '/config/config.json')),
+                    'gulpfile.js: ' .. tostring(path_exists((root or '') .. '/gulpfile.js')),
+                    '.yo-rc.json: ' .. tostring(path_exists((root or '') .. '/.yo-rc.json')),
+                }
+                notify(table.concat(lines, '\n'), vim.log.levels.INFO)
+            end, {
+                desc = 'Show SPFx detection details',
+            })
+        end
     end,
 }
