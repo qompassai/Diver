@@ -1,10 +1,10 @@
--- /qompassai/Diver/lua/mappings/pymap.lua
+-- /qompassai/Diver/lua/mappings/langmap.lua
 -- Qompass AI Diver Python Lang Mappings
 -- Copyright (C) 2025 Qompass AI, All rights reserved
 -- --------------------------------------------------
----@module 'mappings.pymap'
+---@module 'mappings.langmap'
 local M = {}
-function M.setup_pymap()
+function M.setup_langmap()
     local map = vim.keymap.set
     vim.api.nvim_create_autocmd('LspAttach', {
         callback = function(ev)
@@ -14,6 +14,28 @@ function M.setup_pymap()
                 silent = true,
                 buffer = bufnr,
             }
+            vim.api.nvim_create_autocmd('FileType', {
+                pattern = {
+                    'mojo',
+                },
+                callback = function(args)
+                    if vim.bo[args.buf].filetype ~= 'mojo' then
+                        return
+                    end
+                    vim.opt_local.tabstop = 4
+                    vim.opt_local.shiftwidth = 4
+                    vim.opt_local.expandtab = true
+                    map('n', '<leader>mr', ':MojoRun<CR>', {
+                        buffer = args.buf,
+                        desc = 'Run Mojo file',
+                    })
+                    map('n', '<leader>dmf', ':MojoDebug<CR>', {
+                        buffer = args.buf,
+                        desc = 'Debug Mojo file',
+                    })
+                end,
+            })
+
             map(
                 'n',
                 '<leader>pl',

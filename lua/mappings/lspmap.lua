@@ -3,7 +3,6 @@
 -- Copyright (C) 2025 Qompass AI, All rights reserved
 -- --------------------------------------------------
 ---@module 'mappings.lspmap'
-
 local M = {}
 local api = vim.api
 M.rust_editions = {
@@ -131,14 +130,6 @@ function M.setup_lspmap() ---@return nil
             vim.lsp.buf.rename,
             vim.tbl_extend('force', opts, {
                 desc = 'Rename symbol',
-            })
-        )
-        map(
-            'n',
-            '<leader>sr',
-            vim.lsp.buf.references,
-            vim.tbl_extend('force', opts, {
-                desc = ' [s]earch [r]eferences',
             })
         )
         map(

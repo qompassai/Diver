@@ -12,11 +12,11 @@ M.setup = function()
         'ddxmap',
         'disable',
         'genmap',
+        'langmap',
         'lspmap',
         'lintmap',
         'mojomap',
         'navmap',
-        'pymap',
         'utilmap',
     }
     for _, name in ipairs(mapping_files) do
