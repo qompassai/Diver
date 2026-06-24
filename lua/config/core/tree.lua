@@ -327,8 +327,16 @@ function M.treesitter(opts)
                     [']c'] = '@class.outer',
                     [']l'] = '@loop.outer',
                     [']i'] = '@conditional.outer',
-                    [']s'] = { query = '@scope', query_group = 'locals', desc = 'Next scope' },
-                    [']z'] = { query = '@fold', query_group = 'folds', desc = 'Next fold' },
+                    [']s'] = {
+                        query = '@scope',
+                        query_group = 'locals',
+                        desc = 'Next scope',
+                    },
+                    [']z'] = {
+                        query = '@fold',
+                        query_group = 'folds',
+                        desc = 'Next fold',
+                    },
                 },
                 goto_next_end = {
                     [']M'] = '@function.outer',

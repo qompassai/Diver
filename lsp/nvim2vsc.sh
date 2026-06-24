@@ -23,8 +23,8 @@ if [[ ! -d $SRC_DIR ]]; then
   echo "error: source directory not found: $SRC_DIR" >&2
   exit 1
 fi
-mkdir -p "$OUT_DIR/.vscode" "$OUT_DIR/lsp-export"
-MANIFEST="$OUT_DIR/lsp-export/manifest.json"
+mkdir -p "$OUT_DIR/.vscode" "$OUT_DIR"
+MANIFEST="$OUT_DIR/manifest.json"
 SETTINGS="$OUT_DIR/.vscode/settings.json"
 cat > "$SETTINGS" << 'JSON'
 {
@@ -124,10 +124,6 @@ for p in files:
     vscode_stub = {
         'server': server,
         'source': str(rel),
-        'notes': [
-            'VS Code cannot directly consume Neovim Lua LSP configs.',
-            'This file is a migration stub for translating settings manually or with a follow-up script.'
-        ],
         'recommended_extension': None,
         'settings': {},
         'files': [],

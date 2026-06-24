@@ -52,6 +52,11 @@
       "src": "https://github.com/ms-jpq/coq_nvim",
       "version": "'dev'"
     },
+    "distant.nvim": {
+      "rev": "67d6b066e8490725718b79f643966f4eafc7da3c",
+      "src": "https://github.com/chipsenkbeil/distant.nvim",
+      "version": "'v0.3'"
+    },
     "flash.nvim": {
       "rev": "fcea7ff883235d9024dc41e638f164a450c14ca2",
       "src": "https://github.com/folke/flash.nvim",
@@ -126,10 +131,30 @@
       "src": "https://github.com/nvim-lua/plenary.nvim",
       "version": "'master'"
     },
+    "remote-nvim.nvim": {
+      "rev": "9992c2fb8bf4f11aca2c8be8db286b506f92efcb",
+      "src": "https://github.com/amitds1997/remote-nvim.nvim",
+      "version": ">=0.0.0"
+    },
+    "remote-sshfs.nvim": {
+      "rev": "7a12a1677bbe96ca98f0c713448ac1f518ba09b7",
+      "src": "https://github.com/nosduco/remote-sshfs.nvim",
+      "version": "'main'"
+    },
     "sops.nvim": {
       "rev": "5946285744ffef26b792839d9130135365bfa8ea",
       "src": "https://github.com/trixnz/sops.nvim",
       "version": "'main'"
+    },
+    "sqlite.lua": {
+      "rev": "50092d60feb242602d7578398c6eb53b4a8ffe7b",
+      "src": "https://github.com/kkharji/sqlite.lua",
+      "version": "'master'"
+    },
+    "toggleterm.nvim": {
+      "rev": "50ea089fc548917cc3cc16b46a8211833b9e3c7c",
+      "src": "https://github.com/akinsho/toggleterm.nvim",
+      "version": "2.0.0 - 3.0.0"
     },
     "transparent.nvim": {
       "rev": "a4145c52f5421f1626a4d7dc0f41e785c4439944",
@@ -143,6 +168,31 @@
     "twilight.nvim": {
       "rev": "664e752f4a219801265cc3fc18782b457b58c1e1",
       "src": "https://github.com/folke/twilight.nvim"
+    },
+    "utils.nvim": {
+      "rev": "925cd0b145a35c401b2221d59b27d13beff25900",
+      "src": "https://github.com/samsze0/utils.nvim",
+      "version": "'main'"
+    },
+    "vim-dadbod": {
+      "rev": "6d1d41da4873a445c5605f2005ad2c68c99d8770",
+      "src": "https://github.com/tpope/vim-dadbod",
+      "version": "'master'"
+    },
+    "vim-dadbod-completion": {
+      "rev": "a8dac0b3cf6132c80dc9b18bef36d4cf7a9e1fe6",
+      "src": "https://github.com/kristijanhusak/vim-dadbod-completion",
+      "version": "'master'"
+    },
+    "vim-dadbod-ui": {
+      "rev": "afd07819d8efcefc3317205b855ad4e3513b0011",
+      "src": "https://github.com/kristijanhusak/vim-dadbod-ui",
+      "version": "'master'"
+    },
+    "websocket.nvim": {
+      "rev": "06e6d62c72276f789420ad93c00ecd85ab9af218",
+      "src": "https://github.com/samsze0/websocket.nvim",
+      "version": "'main'"
     },
     "which-key.nvim": {
       "rev": "3aab2147e74890957785941f0c1ad87d0a44c15a",

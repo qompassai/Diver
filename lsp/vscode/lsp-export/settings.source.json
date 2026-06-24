@@ -1,0 +1,11 @@
+{
+  "files.associations": {},
+  "json.schemaDownload.enable": true,
+  "editor.formatOnSave": true,
+  "editor.codeActionsOnSave": {
+    "source.fixAll": "explicit"
+  },
+  "lua.workspace.checkThirdParty": false,
+  "lua.telemetry.enable": false,
+  "typescript.tsdk": "node_modules/typescript/lib"
+}

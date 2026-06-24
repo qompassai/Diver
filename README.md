@@ -1,6 +1,20 @@
-<!----------/qompassai/diver/README.md ------------------->
+<!----------/qompassai/Diver/README.md ------------------->
 <!-- ----------Qompass AI Diver -------------------------->
-<!-- Copyright (C) 2025 Qompass AI, All rights reserved -->
+<!--
+Copyright (c) 2026 Matt Qompass AI
+
+Licensed under the Apache License, Version 2.0 (the "License");
+you may not use this file except in compliance with the License.
+You may obtain a copy of the License at
+
+    http://www.apache.org/licenses/LICENSE-2.0
+
+Unless required by applicable law or agreed to in writing, software
+distributed under the License is distributed on an "AS IS" BASIS,
+WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+See the License for the specific language governing permissions and
+limitations under the License.
+-->
 <!-------------------------------------------------------->
 
 <h2> Qompass AI Diver </h3>
@@ -10,10 +24,18 @@
 ![Repository Views](https://komarev.com/ghpvc/?username=qompassai-diver)
 ![GitHub all releases](https://img.shields.io/github/downloads/qompassai/diver/total?style=flat-square)
 
+<!-------------------------------------------------------->
+
+<h2>Qompass AI Diver</h2>
+
+<h3>Your Blazingly Fast Everything Editor</h3>
+
+![Repository Views](https://komarev.com/ghpvc/?username=qompassai-diver)
+![GitHub all releases](https://img.shields.io/github/downloads/qompassai/diver/total?style=flat-square)
+
 <p align="center">
   <a href="https://neovim.io/">
-    <img src="https://img.shields.io/badge/Neovim-0.12+-57A143?style=for-the-badge&logo=neovim&logoColor=white"
-      alt="Neovim">
+    <img src="https://img.shields.io/badge/Neovim-0.12+-57A143?style=for-the-badge&logo=neovim&logoColor=white" alt="Neovim">
   </a>
   <br>
   <a href="https://www.lua.org/">
@@ -28,6 +50,11 @@
   <br>
   <a href="https://doi.org/10.5281/zenodo.16171391">
     <img src="https://zenodo.org/badge/DOI/10.5281/zenodo.16171391.svg" alt="DOI">
+  </a>
+  <a href="./LICENSE">
+    <img src="https://img.shields.io/badge/License-Apache%202.0-blue.svg" alt="License: Apache 2.0">
+  </a>
+</p> src="https://zenodo.org/badge/DOI/10.5281/zenodo.16171391.svg" alt="DOI">
   </a>
   <a href="https://www.gnu.org/licenses/agpl-3.0">
     <img src="https://img.shields.io/badge/License-AGPL%20v3-blue.svg" alt="License: AGPL v3">

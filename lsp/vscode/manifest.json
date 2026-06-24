@@ -1,0 +1,16 @@
+[
+  {
+    "server": "settings",
+    "source": ".vscode/settings.json",
+    "copied_to": "lsp-export/settings.source.json",
+    "stub": "lsp-export/settings.vscode.json",
+    "recommended_extension": null
+  },
+  {
+    "server": "manifest",
+    "source": "manifest.json",
+    "copied_to": "lsp-export/manifest.source.json",
+    "stub": "lsp-export/manifest.vscode.json",
+    "recommended_extension": null
+  }
+]

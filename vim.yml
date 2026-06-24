@@ -42,7 +42,7 @@ globals:
     spy:
       any: true
     snapshot:
-      args: []
+      args:
     is_not:
       has_error:
         args:
@@ -79,7 +79,7 @@ globals:
         - type: any
           required: false
     just_runs:
-      args: []
+      args:
     returns:
       args:
         - type: any

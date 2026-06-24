@@ -1,0 +1,30 @@
+[
+  {
+    "server": "settings",
+    "source": ".vscode/settings.json",
+    "copied_to": "lsp-export/settings.source.json",
+    "stub": "lsp-export/settings.vscode.json",
+    "recommended_extension": null
+  },
+  {
+    "server": "manifest",
+    "source": "lsp-export/manifest.json",
+    "copied_to": "lsp-export/manifest.source.json",
+    "stub": "lsp-export/manifest.vscode.json",
+    "recommended_extension": null
+  },
+  {
+    "server": "settings.source",
+    "source": "lsp-export/settings.source.json",
+    "copied_to": "lsp-export/settings.source.source.json",
+    "stub": "lsp-export/settings.source.vscode.json",
+    "recommended_extension": null
+  },
+  {
+    "server": "settings.vscode",
+    "source": "lsp-export/settings.vscode.json",
+    "copied_to": "lsp-export/settings.vscode.source.json",
+    "stub": "lsp-export/settings.vscode.vscode.json",
+    "recommended_extension": null
+  }
+]

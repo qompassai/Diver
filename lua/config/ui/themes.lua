@@ -289,9 +289,6 @@ function M.setup_cord(opts)
                 cursor_update = 'on_hold',
             },
         },
-        server = {
-            update = 'fetch',
-        },
         appearance = M.setup_appearance(),
         text = {
             viewing = 'Viewing $s',
@@ -299,25 +296,11 @@ function M.setup_cord(opts)
             workspace = 'In $s',
         },
         idle = {
-            show_idle = true,
             timeout = 300000,
-            text = 'Idle',
             tooltip = '💤',
         },
-        hooks = M.setup_hooks().hooks,
     })
     return instance
-end
-
-function M.setup_hooks(opts)
-    opts = opts or {}
-    return {
-        hooks = {
-            on_idle = function(activity)
-                activity.details = 'Away from keyboard'
-            end,
-        },
-    }
 end
 
 function M.cord_setup(opts)
@@ -340,7 +323,6 @@ function M.cord_setup(opts)
     M.apply_current_theme(opts)
     M.setup_cord(opts)
     M.cord_initialized = true
-    M.setup_hooks(opts)
     M.update_cord_theme()
 end
 

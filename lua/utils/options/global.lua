@@ -1,14 +1,16 @@
-#!/usr/bin/env lua
+#!/usr/bin/env lua5.1
 
--- global.lua
--- Qompass AI - [ ]
+-- /qompassai/Diver/lua/utils/options/global.lua
+-- Qompass AI Neovim Global Options
 -- Copyright (C) 2026 Qompass AI, All rights reserved
 -- ----------------------------------------
 local M = {}
 local o = vim.o
+local env = vim.env
 local go = vim.go
 local g = vim.g
 local fn = vim.fn
+local is_windows = fn.has('win32') == 1 or fn.has('win64') == 1
 local opt = vim.opt
 function M.setup()
     g.deprecation_warnings = true
@@ -16,8 +18,8 @@ function M.setup()
     g.git_command_ssh = 1
     g.guipty = true
     g.loaded_illuminate = true
-    --g.loaded_netrw = 1
-    --g.loaded_netrwPlugin = 1
+    g.loaded_netrw = 1
+    g.loaded_netrwPlugin = 1
     g.loaded_node_provider = 1
     g.loaded_perl_provider = 1
     g.loaded_python_provider = 1
@@ -25,18 +27,17 @@ function M.setup()
     g.lsp_enable_on_demand = true
     g.mapleader = ' '
     g.maplocalleader = '\\'
-        --g.mkdp_markdown_css = (env.XDG_CONFIG_HOME or (is_windows and fn.expand('~/AppData/Local') or fn.expand('~/.config')))
-        .. '/nvim/markdown.css' ---@type string
+    g.mkdp_markdown_css = (
+        env.XDG_CONFIG_HOME or (is_windows and fn.expand('~/AppData/Local') or fn.expand('~/.config'))
+    ) .. '/nvim/markdown.css' ---@type string
     g.mkdp_theme = 'dark'
     g.netrw_altfile = 1
     g.netrw_preview = 1
-    --if not is_windows then
     g.node_host_prog = '/usr/bin/node'
     g.perl_host_prog = '/usr/bin/perl'
     g.sqlite_clib_path = '/usr/lib/libsqlite3.so'
     g.python3_host_prog = '/usr/bin/python3'
     g.ruby_host_prog = '/usr/bin/neovim-ruby-host'
-    --else
     g.python3_host_prog = 'python'
 end
 
@@ -162,7 +163,6 @@ o.splitright = true
 o.startofline = false
 o.switchbuf = 'uselast'
 o.tabpagemax = 50
-o.termguicolors = true
 o.timeout = true
 o.timeoutlen = 300
 o.title = true

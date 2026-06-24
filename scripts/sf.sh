@@ -5,6 +5,37 @@
 # ----------------------------------------
 # Reference: https://developer.salesforce.com/docs/platform/salesforce-cli-reference/guide/cli_reference.html
 set -euo pipefail
+
+SF_CONFIG_DIR="${HOME}/.config/sf"
+ALLOWLIST_FILE="${SF_CONFIG_DIR}/unsignedPluginAllowList.json"
+
+mkdir -p "${SF_CONFIG_DIR}"
+
+cat > "${ALLOWLIST_FILE}" << 'JSON'
+[
+  "@cristiand391/sf-plugin-fzf-cmp",
+  "@dx-cli-toolbox/sfdx-toolbox-package-utils",
+  "@jayree/sfdx-plugin-manifest",
+  "@jayree/sfdx-plugin-org",
+  "@jayree/sfdx-plugin-prettier",
+  "@jayree/sfdx-plugin-source",
+  "aura-helper-sfdx",
+  "heat-sfdx-cli",
+  "kc-sf-plugin",
+  "lightning-flow-scanner",
+  "mo-dx-plugin",
+  "sfdmu",
+  "sfdx-browserforce-plugin",
+  "sfdx-git-delta",
+  "sfdx-git-packager",
+  "sfdx-hardis",
+  "sfdx-plugin-source-read",
+  "sfdx-plugin-update-notifier",
+  "shane-sfdx-plugins",
+  "texei-sfdx-plugin"
+]
+JSON
+
 sf plugins install \
   @cristiand391/sf-plugin-fzf-cmp \
   @dx-cli-toolbox/sfdx-toolbox-package-utils \
