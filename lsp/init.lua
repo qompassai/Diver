@@ -8,6 +8,7 @@ vim.lsp.enable({
     -- 'abl_ls', ---:TODO validate ---@source https://github.com/vscode-abl/vscode-abl
     'ada_ls',
     'agda_ls',
+    'agentscript_ls',
     'ai_ls', ---:TODO validate
     'aiken_ls',
     'air_ls',
@@ -25,7 +26,7 @@ vim.lsp.enable({
     'autotoo_ls',
     'avalonia_ls',
     'awk_ls',
-    'azurepipelines_ls',
+    -- 'azurepipelines_ls',
     'b_ls', ---:TODO validate ---@source https://github.com/hhu-stups/b-language-server
     'bacon_ls',
     --  'basedpy_ls',

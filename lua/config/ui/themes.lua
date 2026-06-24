@@ -257,8 +257,33 @@ function M.setup_cord(opts)
     opts = opts or {}
     local cord_mod = require('cord')
     local instance = cord_mod.setup({
-        assets = M.cord_assets(),
-        editor = { client = 'neovim', tooltip = 'The Superior Text Editor' },
+        assets = {
+            lua = {
+                icon = 'lua',
+                tooltip = 'Lighting up with Lua',
+                type = 0,
+            },
+            rust = {
+                icon = 'rust',
+                tooltip = 'Rocking it in Rust',
+                type = 0,
+            },
+            markdown = {
+                icon = 'markdown',
+                tooltip = 'Writing Markdown',
+                type = 0,
+            },
+        },
+        buttons = {
+            {
+                label = 'Neovim Website',
+                url = 'https://neovim.io',
+            },
+        },
+        editor = {
+            client = 'neovim',
+            tooltip = 'The Superior Text Editor',
+        },
         advanced = {
             plugin = {
                 cursor_update = 'on_hold',
@@ -268,122 +293,20 @@ function M.setup_cord(opts)
             update = 'fetch',
         },
         appearance = M.setup_appearance(),
-        text = M.setup_text(),
-        buttons = M.setup_buttons(),
-        idle = M.cord_idle().idle,
-        timestamp = M.cord_idle().timestamp,
+        text = {
+            viewing = 'Viewing $s',
+            editing = 'Editing $s',
+            workspace = 'In $s',
+        },
+        idle = {
+            show_idle = true,
+            timeout = 300000,
+            text = 'Idle',
+            tooltip = '💤',
+        },
         hooks = M.setup_hooks().hooks,
     })
     return instance
-end
-
-function M.cord_idle(opts)
-    opts = opts or {}
-    return {
-        idle = {
-            state_text = 'AFK',
-            details_text = 'Idle in Neovim',
-            timeout = 300,
-        },
-        timestamp = {
-            reset_on_idle = true,
-        },
-    }
-end
-
-function M.cord_assets(opts)
-    opts = opts or {}
-    return {
-        file_assets = function()
-            if opts.filename then
-                if opts.filename:match('%.lua$') then
-                    return {
-                        type = 'language',
-                        icon = 'lua',
-                        text = 'Lighting up with Lua',
-                    }
-                elseif opts.filename:match('%.rs$') then
-                    return {
-                        type = 'language',
-                        icon = 'rust',
-                        text = 'Rocking out with Rust',
-                    }
-                elseif opts.filename:match('%.md?$') or opts.filename:match('%.markdown$') then
-                    return {
-                        type = 'language',
-                        icon = 'markdown',
-                        text = 'Making it in Markdown',
-                    }
-                end
-            end
-            if opts.filetype == 'lua' then
-                return {
-                    type = 'language',
-                    icon = 'lua',
-                    text = 'Lighting it up with Lua',
-                }
-            elseif opts.filetype == 'rust' then
-                return {
-                    type = 'language',
-                    icon = 'rust',
-                    text = 'Rocking it in Rust',
-                }
-            elseif opts.filetype == 'markdown' then
-                return {
-                    type = 'language',
-                    icon = 'markdown',
-                    text = 'Writing Markdown',
-                }
-            end
-            return {
-                type = 'language',
-                text = 'Editing ' .. (opts.filetype or 'file'),
-            }
-        end,
-    }
-end
-
-function M.setup_text()
-    return {
-        editing = function(opts)
-            if opts.filetype == 'lua' then
-                return 'Scripting in Lua: ' .. opts.filename
-            elseif opts.filetype == 'rust' then
-                return '🦀 Crafting in Rust: ' .. opts.filename
-            else
-                return 'Editing ' .. opts.filename
-            end
-        end,
-        watching = 'Viewing ${filename}',
-        workspace = function(opts)
-            local hour = tonumber(os.date('%H'))
-            local status = hour >= 22 and '🌙 Late night coding'
-                or hour >= 18 and '🌆 Evening session'
-                or hour >= 12 and '☀️ Afternoon coding'
-                or hour >= 5 and '🌅 Morning productivity'
-                or '🌙 Midnight hacking'
-            return string.format('%s: %s', status, opts.workspace or 'Unknown project')
-        end,
-    }
-end
-
-function M.setup_buttons()
-    return {
-        buttons = function(opts)
-            local buttons = {}
-            if opts.repo_url then
-                table.insert(buttons, {
-                    label = 'View Repository',
-                    url = opts.repo_url, ---@type string
-                })
-            end
-            table.insert(buttons, {
-                label = 'Neovim Website',
-                url = 'https://neovim.io',
-            })
-            return buttons
-        end,
-    }
 end
 
 function M.setup_hooks(opts)
@@ -401,16 +324,18 @@ function M.cord_setup(opts)
     opts = opts or {}
     local ok, themes = pcall(require, 'config.ui.themes')
     if not ok then
-        vim.echo('Failed to load theme config: ' .. tostring(themes), vim.log.levels.ERROR)
-        return
+        vim.notify('Failed to load theme config: ' .. tostring(themes), vim.log.levels.ERROR, {
+            title = 'Themes',
+        })
     end
     if not themes.apply_current_theme() then
         return
     end
     local setup_ok, cord = pcall(themes.setup_cord)
     if not setup_ok then
-        vim.echo('Cord setup failed: ' .. tostring(cord), vim.log.levels.ERROR)
-        return
+        vim.notify('Cord setup failed: ' .. tostring(cord), vim.log.levels.ERROR, {
+            title = 'Cord',
+        })
     end
     M.apply_current_theme(opts)
     M.setup_cord(opts)

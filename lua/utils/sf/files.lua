@@ -1,70 +1,61 @@
+-- lua/utils/sf/files.lua
+local cmdutil = require('utils.sf.cmdutil')
 local util = require('utils.sf.util')
-local apex = require('utils.sf.apex')
 
 local M = {}
 
-function M.lwc_bundle_dir(file)
-    return file:match('(.*/lwc/[^/]+)')
-end
-
-function M.aura_bundle_dir(file)
-    return file:match('(.*/aura/[^/]+)')
-end
-
 function M.deploy_current()
-    if not util.ensure_sf() or not util.has_file() then
-        return
-    end
+  if not util.ensure_sf() or not util.ensure_project() then return end
+  local file = vim.fn.expand('%:p')
+  if file == '' then return end
+  util.open_term_cmd('sf project deploy start --source-file ' .. util.shellescape(file), 20)
+end
 
-    local file = util.current_file()
-    local lwc = M.lwc_bundle_dir(file)
-    local aura = M.aura_bundle_dir(file)
+function M.deploy_file(opts)
+  if not util.ensure_sf() or not util.ensure_project() then return end
+  local file = cmdutil.get_arg(opts) or vim.fn.input('File to deploy> ', vim.fn.expand('%:p'), 'file')
+  if file == '' then return end
+  util.open_term_cmd('sf project deploy start --source-file ' .. util.shellescape(file), 20)
+end
 
-    if lwc then
-        util.open_term_cmd('sf project deploy start --source-dir ' .. util.shellescape(lwc), 16)
-        return
-    end
+function M.deploy_manifest(opts)
+  if not util.ensure_sf() or not util.ensure_project() then return end
+  local file = cmdutil.get_arg(opts) or vim.fn.input('Manifest file> ', 'package.xml', 'file')
+  if file == '' then return end
+  util.open_term_cmd('sf project deploy start --manifest ' .. util.shellescape(file), 20)
+end
 
-    if aura then
-        util.open_term_cmd('sf project deploy start --source-dir ' .. util.shellescape(aura), 16)
-        return
-    end
+function M.deploy_project(opts)
+  if not util.ensure_sf() or not util.ensure_project() then return end
+  local path = cmdutil.get_arg(opts) or 'force-app'
+  util.open_term_cmd('sf project deploy start --source-dir ' .. util.shellescape(path), 20)
+end
 
-    util.open_term_cmd('sf project deploy start --source-dir ' .. util.shellescape(file), 16)
+function M.deploy_validate(opts)
+  if not util.ensure_sf() or not util.ensure_project() then return end
+  local path = cmdutil.get_arg(opts) or 'force-app'
+  util.open_term_cmd('sf project deploy validate --source-dir ' .. util.shellescape(path), 20)
 end
 
 function M.retrieve_current()
-    if not util.ensure_sf() or not util.has_file() then
-        return
-    end
-    local file = util.current_file()
-    util.open_term_cmd('sf project retrieve start --source-dir ' .. util.shellescape(file), 16)
+  if not util.ensure_sf() or not util.ensure_project() then return end
+  local file = vim.fn.expand('%:p')
+  if file == '' then return end
+  util.open_term_cmd('sf project retrieve start --source-file ' .. util.shellescape(file), 20)
 end
 
-function M.smart_action()
-    if not util.ensure_sf() or not util.has_file() then
-        return
-    end
+function M.retrieve_file(opts)
+  if not util.ensure_sf() or not util.ensure_project() then return end
+  local file = cmdutil.get_arg(opts) or vim.fn.input('File to retrieve> ', vim.fn.expand('%:p'), 'file')
+  if file == '' then return end
+  util.open_term_cmd('sf project retrieve start --source-file ' .. util.shellescape(file), 20)
+end
 
-    local file = util.current_file()
-    local ft = util.filetype()
-
-    if ft == 'apex' and apex.is_apex_script(file) then
-        apex.run_current_file()
-        return
-    end
-
-    if ft == 'apex' and apex.is_apex_metadata(file) then
-        M.deploy_current()
-        return
-    end
-
-    if M.lwc_bundle_dir(file) or M.aura_bundle_dir(file) then
-        M.deploy_current()
-        return
-    end
-
-    M.deploy_current()
+function M.retrieve_manifest(opts)
+  if not util.ensure_sf() or not util.ensure_project() then return end
+  local file = cmdutil.get_arg(opts) or vim.fn.input('Manifest file> ', 'package.xml', 'file')
+  if file == '' then return end
+  util.open_term_cmd('sf project retrieve start --manifest ' .. util.shellescape(file), 20)
 end
 
 return M

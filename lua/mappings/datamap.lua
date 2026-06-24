@@ -1,5 +1,5 @@
 -- /qompassai/Diver/lua/mappings/datamap.lua
--- Qompass AI Diver Data Plugin Mappings
+-- Qompass AI Diver Data  Mappings
 -- Copyright (C) 2025 Qompass AI, All rights reserved
 -- --------------------------------------------------
 ---@module 'mappings.datamap'
@@ -20,13 +20,13 @@ function M.setup_datamap()
     vim.api.nvim_buf_set_extmark(bufnr, ns, lnum, -1, {
       virt_text = {
         {
-          ' ⟹ ' .. math, 'Comment'
-        }
+          ' ⟹ ' .. math,
+          'Comment',
+        },
       },
       virt_text_pos = 'eol',
     })
   end
-
   local function toggle_all_math()
     local bufnr = vim.api.nvim_get_current_buf()
     if vim.b.latex_preview_enabled then
@@ -40,7 +40,12 @@ function M.setup_datamap()
       local math = line:match('%$(.-)%$') or line:match('%$%$(.-)%$%$')
       if math then
         vim.api.nvim_buf_set_extmark(bufnr, ns, i - 1, -1, {
-          virt_text = { { ' ⟹ ' .. math, 'Comment' } },
+          virt_text = {
+            {
+              ' ⟹ ' .. math,
+              'Comment',
+            },
+          },
           virt_text_pos = 'eol',
         })
       end
@@ -54,14 +59,99 @@ function M.setup_datamap()
         silent = true,
         buffer = bufnr,
       }
-      map('n', '<leader>mp', toggle_line_math, vim.tbl_extend('force', opts, {
-        desc = 'Preview LaTeX (virt text)',
-      }))
-      map('n', '<leader>mt', toggle_all_math, vim.tbl_extend('force', opts, {
-        desc = 'Toggle LaTeX virt text',
-      }))
+      map(
+        'n',
+        '<leader>mp',
+        toggle_line_math,
+        vim.tbl_extend('force', opts, {
+          desc = 'Preview LaTeX (virt text)',
+        })
+      )
+
+      map(
+        'n',
+        '<leader>mt',
+        toggle_all_math,
+        vim.tbl_extend('force', opts, {
+          desc = 'Toggle LaTeX virt text',
+        })
+      )
     end,
   })
+end
+
+function M.setup_sf_query_maps()
+  local map = vim.keymap.set
+  vim.api.nvim_create_autocmd('FileType', {
+    pattern = {
+      'soql', 'sosl' },
+    callback = function(ev)
+      local bufnr = ev.buf
+      local ft = vim.bo[bufnr].filetype
+      local opts = {
+        noremap = true,
+        silent = true,
+        buffer = bufnr,
+      }
+      if ft == 'soql' then
+        map(
+          'n',
+          '<leader>sfr',
+          '<cmd>SfSoqlRun<cr>',
+          vim.tbl_extend('force', opts, {
+            desc = 'SF: run SOQL',
+          })
+        )
+        map(
+          'n',
+          '<leader>sft',
+          '<cmd>SfSoqlTemplate<cr>',
+          vim.tbl_extend('force', opts, {
+            desc = 'SF: SOQL template',
+          })
+        )
+      end
+      if ft == 'sosl' then
+        map(
+          'n',
+          '<leader>sfr',
+          '<cmd>SfSoslRun<cr>',
+          vim.tbl_extend('force', opts, {
+            desc = 'SF: run SOSL',
+          })
+        )
+        map(
+          'n',
+          '<leader>sft',
+          '<cmd>SfSoslTemplate<cr>',
+          vim.tbl_extend('force', opts, {
+            desc = 'SF: SOSL template',
+          })
+        )
+      end
+      map(
+        'n',
+        '<leader>sfl',
+        '<cmd>SfQueryLint<cr>',
+        vim.tbl_extend('force', opts, {
+          desc = 'SF: lint query',
+        })
+      )
+      map(
+        'n',
+        '<leader>sfR',
+        '<cmd>SfQueryRun<cr>',
+        vim.tbl_extend('force', opts, {
+          desc = 'SF: run query (auto)',
+        })
+      )
+    end,
+  })
+end
+
+function M.setup()
+  M.setup_datamap()
+  M.setup_sf_query_maps()
 end
 
 return M

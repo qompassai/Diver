@@ -155,7 +155,6 @@ local function setup_salesforce_commands()
         end
         vim.cmd('terminal sf org open')
     end, 'Open Salesforce org in browser')
-
     create_user_command('SfRunCurrentTestClass', function()
         local name = current_basename()
         local file = current_file()

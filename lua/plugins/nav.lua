@@ -37,7 +37,7 @@ add({
         end,
         update = true,
     }),
-    gh('nvim-neo-tree/neo-tree.nvim', {
+    --[[   gh('nvim-neo-tree/neo-tree.nvim', {
         cmd = {
             'Neotree',
             'NeoTreeClose',
@@ -52,6 +52,7 @@ add({
         update = true,
         version = range('3.*'),
     }),
+      --]]
     gh('s1n7ax/nvim-window-picker', {
         hook = function()
             require('window-picker').setup({

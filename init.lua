@@ -177,12 +177,7 @@ require('config.init').config({
     nav = true,
     ui = true,
 })
---require('config')
-require('linters')
-require('mappings')
-require('plugins')
---require('types')
-require('utils')
+
 o.allowrevins = true
 o.ambiwidth = 'single'
 o.autochdir = true
