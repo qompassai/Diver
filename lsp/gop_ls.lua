@@ -14,7 +14,6 @@ return ---@type vim.lsp.Config
         'gotmpl',
         'gowork',
     },
-    on_attach = require('config.core.lsp').on_attach,
     root_markers = {
         'go.mod',
         'go.work',

@@ -37,22 +37,6 @@ add({
         end,
         update = true,
     }),
-    --[[   gh('nvim-neo-tree/neo-tree.nvim', {
-        cmd = {
-            'Neotree',
-            'NeoTreeClose',
-            'NeoTreeFloat',
-            'NeoTreeFocus',
-            'NeoTreeReveal',
-            'NeoTreeShow',
-        },
-        hook = function()
-            require('neo-tree').setup(require('config.nav.neotree').neotree_cfg())
-        end,
-        update = true,
-        version = range('3.*'),
-    }),
-      --]]
     gh('s1n7ax/nvim-window-picker', {
         hook = function()
             require('window-picker').setup({

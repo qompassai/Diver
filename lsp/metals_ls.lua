@@ -24,7 +24,6 @@ return {
             snippetAutoIndent = false, ---@type boolean
         },
     },
-      on_attach = require('config.core.lsp').on_attach,
     settings = {
         metals = {
             javaHome = '/usr/lib/jvm/default',

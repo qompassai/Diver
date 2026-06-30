@@ -58,7 +58,6 @@ return ---@type vim.lsp.Config
         'svelte',
         'templ',
     },
-    on_attach = require('config.core.lsp').on_attach,
     root_markers = {
         '.git',
     },
@@ -84,8 +83,8 @@ return ---@type vim.lsp.Config
                 indicatorClass = 'htmx-indicator',
                 inlineScriptNonce = '',
                 methodsThatUseUrlParams = {
-                    'get',
                     'delete',
+                    'get',
                     'head',
                 },
                 reportValidityOfForms = true,

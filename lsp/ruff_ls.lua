@@ -18,7 +18,6 @@ local function ruff_action(bufnr, kind)
 end
 return ---@type vim.lsp.Config
 {
-    capabilities = require('config.core.lsp').capabilities,
     cmd = {
         'ruff',
         'server',
@@ -31,7 +30,6 @@ return ---@type vim.lsp.Config
         client.server_capabilities.semanticTokensProvider = nil
         client.server_capabilities.inlayHintProvider = nil
         client.server_capabilities.hoverProvider = false
-
         local augroup = vim.api.nvim_create_augroup('ruff_fix_on_save_' .. bufnr, {
             clear = true,
         })

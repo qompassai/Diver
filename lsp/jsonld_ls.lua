@@ -4,15 +4,14 @@
 ---------------------------------------------------------------------
 return ---@type vim.lsp.Config
 {
-  cmd = {
-    'jsonld-lsp',
-    '--stdio',
-  },
-  filetypes = {
-    'jsonld',
-  },
-  init_options = {
-  },
-  root_markers = { '.git' },
-  settings = {},
+    cmd = {
+        'jsonld-lsp',
+        '--stdio',
+    },
+    filetypes = {
+        'jsonld',
+    },
+    init_options = {},
+    root_markers = { '.git' },
+    settings = {},
 }

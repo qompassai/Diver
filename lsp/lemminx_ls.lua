@@ -4,7 +4,6 @@
 -- --------------------------------------------------
 ---@type vim.lsp.Config
 return {
-    capabilities = require('config.core.lsp').capabilities,
     cmd = {
         'lemminx',
     },
@@ -20,13 +19,13 @@ return {
         'xslt',
     },
     root_markers = {
+        'build.gradle',
+        'build.xml',
         '*.csproj',
         'Directory.Build.props',
         'Directory.Packages.props',
-
         '.git',
-        'build.gradle',
-        'build.xml',
+
         'ivy.xml',
         'pom.xml',
         'settings.gradle',
@@ -37,15 +36,12 @@ return {
             capabilities = {
                 formatting = true,
             },
-
             catalogs = {
                 vim.fn.expand('~/.config/lemminx/catalog.xml'),
             },
-
             completion = {
                 autoCloseTags = true,
             },
-
             fileAssociations = {
                 {
                     pattern = '*.xaml',

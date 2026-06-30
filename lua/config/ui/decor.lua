@@ -29,7 +29,12 @@ local function select_node(node)
         return
     end
     local srow, scol, erow, ecol = node:range()
-    vim.fn.setpos('v', { 0, srow + 1, scol + 1, 0 })
+    vim.fn.setpos('v', {
+        0,
+        srow + 1,
+        scol + 1,
+        0,
+    })
     vim.fn.setpos('.', { 0, erow + 1, ecol, 0 })
     vim.cmd('normal! gv')
 end
@@ -164,7 +169,10 @@ local function mark_functions(bufnr)
     end
 end
 local function setup_function_signs_autocmd()
-    vim.api.nvim_create_autocmd({ 'BufEnter', 'BufWritePost' }, {
+    vim.api.nvim_create_autocmd({
+        'BufEnter',
+        'BufWritePost',
+    }, {
         group = vim.api.nvim_create_augroup('TSDecorSigns', { clear = true }),
         callback = function(args)
             mark_functions(args.buf)
@@ -174,7 +182,9 @@ end
 M.setup = function(opts)
     opts = opts or {}
     if opts.incremental_selection ~= false then
-        vim.keymap.set('x', 'gn', inc_node, { desc = 'TS select node' })
+        vim.keymap.set('x', 'gn', inc_node, {
+            desc = 'TS select node',
+        })
         vim.keymap.set('x', 'gN', inc_parent, { desc = 'TS select parent' })
         vim.keymap.set('x', 'g-', dec_node, { desc = 'TS select child' })
     end

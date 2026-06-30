@@ -48,7 +48,6 @@ return ---@type vim.lsp.Config
             settings = hypr_settings,
         })
     end,
-    on_attach = require('config.core.lsp').on_attach,
     root_markers = {
         '.emmyrc.json',
         '.emmyrc.jsonc',
@@ -179,16 +178,16 @@ return ---@type vim.lsp.Config
                 },
                 groupFileStatus = {
                     ambiguity = 'Any',
-                  await   = 'Any',
+                    await = 'Any',
                     codestyle = 'Opened',
                     duplicate = 'Any',
-                   global  = 'Any',
-              luadoc       = 'Any',
+                    global = 'Any',
+                    luadoc = 'Any',
                     redefined = 'Any',
-              strict       = 'Any',
+                    strict = 'Any',
                     --strong = 'Opened',
                     ['type-check'] = 'Opened',
-              unused       = 'Any',
+                    unused = 'Any',
                 },
                 groupSeverity = {
                     ambiguity = 'Warning',

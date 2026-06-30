@@ -4,21 +4,21 @@
 -- --------------------------------------------------
 ---@type vim.lsp.Config
 return {
-  cmd = {
-    'pnpm',
-    'exec',
-    'azure-pipelines-language-server',
-    '--stdio',
-  },
-  filetypes = {
-    'yaml',
-  },
-  root_markers = {
-    'azure-pipelines.yml',
-    '.git',
-  },
-  settings = {
-    --[[
+    cmd = {
+        'pnpm',
+        'exec',
+        'azure-pipelines-language-server',
+        '--stdio',
+    },
+    filetypes = {
+        'yaml',
+    },
+    root_markers = {
+        'azure-pipelines.yml',
+        '.git',
+    },
+    settings = {
+        --[[
     yaml = {
       customTags = {},
       completion = true,
@@ -49,5 +49,5 @@ return {
       validate = true,
     },
     --]]
-  },
+    },
 }

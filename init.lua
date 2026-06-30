@@ -194,6 +194,7 @@ require('config.init').config({
 require('linters')
 require('mappings')
 require('plugins')
+require('types')
 o.allowrevins = true
 o.ambiwidth = 'single'
 o.autochdir = true

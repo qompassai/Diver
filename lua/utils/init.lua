@@ -15,6 +15,7 @@ M.blue = safe_require('utils.blue')
 M.ddx = safe_require('utils.ddx')
 M.docs = safe_require('utils.docs')
 M.media = safe_require('utils.media')
+M.options = safe_require('utils.options')
 M.red = safe_require('utils.red')
 M.sf = safe_require('utils.sf')
 if M.sf and M.sf.setup then

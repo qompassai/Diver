@@ -4,14 +4,14 @@
 ------------------------------------------------------
 return ---@type vim.lsp.Config
 {
-  cmd = {
-    'htmlhint',
-  },
-  filetypes = {
-    'html',
-    'htm',
-  },
-  settings = {
-    htmlhint = {},
-  },
+    cmd = {
+        'htmlhint',
+    },
+    filetypes = {
+        'html',
+        'htm',
+    },
+    settings = {
+        htmlhint = {},
+    },
 }

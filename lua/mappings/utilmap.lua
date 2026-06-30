@@ -4,15 +4,23 @@
 -----------------------------------------------------
 ---@module 'mappings.utilmap'
 local M = {}
-
-local function map(mode, lhs, rhs, desc)
-    vim.keymap.set(mode, lhs, rhs, {
+---@param mode string|string[]
+---@param lhs string
+---@param rhs string|function
+---@param opts? string|table
+local function map(mode, lhs, rhs, opts)
+    local options = {
         silent = true,
         noremap = true,
-        desc = desc,
-    })
-end
+    }
+    if type(opts) == 'string' then
+        options.desc = opts
+    elseif type(opts) == 'table' then
+        options = vim.tbl_extend('force', options, opts)
+    end
 
+    vim.keymap.set(mode, lhs, rhs, options)
+end
 local function create_user_command(name, rhs, desc)
     vim.api.nvim_create_user_command(name, rhs, {
         desc = desc,
@@ -37,7 +45,6 @@ local function setup_terminal_mappings()
     create_user_command('AudioTerm', function()
         vim.cmd('botright 12split | terminal')
     end, 'Open utility terminal split')
-
     map('n', '<leader>zt', '<cmd>AudioTerm<cr>', 'Audio terminal')
 end
 
@@ -49,6 +56,9 @@ local function setup_quickfix_mappings()
     map('n', '<leader>zN', '<cmd>cnewer<cr>', 'Quickfix newer list')
     map('n', '<leader>zP', '<cmd>colder<cr>', 'Quickfix older list')
 end
+map('n', '<leader>ip', function()
+    require('config.image').toggle()
+end, 'Toggle image preview')
 local function setup_audio_commands()
     vim.opt.makeprg = 'make'
     create_user_command('AudioPreview', 'make preview', 'Build audio preview target')

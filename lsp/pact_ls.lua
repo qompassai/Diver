@@ -10,7 +10,7 @@ return ---@type vim.lsp.Config
     filetypes = {
         'pact',
     },
-       on_attach = require('config.core.lsp').on_attach,
+    on_attach = require('config.core.lsp').on_attach,
     root_markers = {
         '.git',
     },

@@ -4,7 +4,6 @@
 -- --------------------------------------------------
 return ---@type vim.lsp.Config
 {
-    capabilities = require('config.core.lsp').capabilities,
     cmd = {
         'ts_query_ls',
     },
@@ -18,7 +17,6 @@ return ---@type vim.lsp.Config
             vim.fn.expand('~/.local/lib/nvim/parser'),
         },
     },
-    on_attach = require('config.core.lsp').on_attach,
     root_markers = {
         '.git',
         '.tsqueryrc.json',
@@ -233,10 +231,12 @@ return ---@type vim.lsp.Config
             valid_directives = {
                 ['make-short'] = {
                     description = 'Shorten the match',
-                    parameters = { {
-                        arity = 'required',
-                        type = 'capture',
-                    } },
+                    parameters = {
+                        {
+                            arity = 'required',
+                            type = 'capture',
+                        },
+                    },
                 },
                 offset = {
                     description = 'Offset the capture position',

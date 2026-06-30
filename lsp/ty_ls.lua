@@ -4,7 +4,6 @@
 -----------------------------------------------------
 return ---@type vim.lsp.Config
 {
-    capabilities = require('config.core.lsp').capabilities,
     cmd = {
         'ty',
         'server',

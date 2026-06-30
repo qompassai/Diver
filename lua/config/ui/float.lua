@@ -5,16 +5,16 @@
 local M = {}
 local shell = vim.o.shell
 local defaults = {
-    file = nil, -- file to open
-    cmd = vim.o.shell, -- terminal command to run
-    cwd = vim.fn.getcwd, -- cwd of the command
+    file = nil,
+    cmd = vim.o.shell,
+    cwd = vim.fn.getcwd,
     id = function()
         return vim.v.count
     end, -- float identifier
     start_in_insert = true,
     focus = true,
     on_open = nil,
-    on_exit = nil, -- callback(term, buf) when buffer is destroyed
+    on_exit = nil,
     window = {
         col = nil, -- supports percentages (<=1) and absolute sizes (>1)
         row = nil, -- supports percentages (<=1) and absolute sizes (>1)
@@ -86,7 +86,7 @@ local function get_win_opts(config)
             col = 0
         elseif opts.h_align == 'right' then
             col = vim.o.columns - width
-        else -- default to "center
+        else
             col = math.floor((vim.o.columns - width) / 2)
         end
     end

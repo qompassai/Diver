@@ -6,7 +6,6 @@ local qs_imports = '/usr/share/quickshell'
 local qt_docs = '/usr/share/doc/qt6'
 return ---@type vim.lsp.Config
 {
-    capabilities = require('config.core.lsp').capabilities,
     cmd = {
         'qmlls6',
         '--build-dir',
@@ -38,6 +37,5 @@ return ---@type vim.lsp.Config
             '.git',
         }, { path = fname, upward = true })[1]) or vim.fn.getcwd()
     end,
-    on_attach = require('config.core.lsp').on_attach,
     settings = {},
 }

@@ -19,11 +19,11 @@ return ---@type vim.lsp.Config
         '*.mk',
     },
     settings = {
-      make = {
-        command = {
-          'make-language-server'
+        make = {
+            command = {
+                'make-language-server',
+            },
+            filetypes = 'make',
         },
-        filetypes = 'make'
-      }
     },
 }

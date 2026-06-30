@@ -4188,6 +4188,78 @@ xtask proc-macro-srv-cli ungrammar2json
   </blockquote>
 </details>
 <details>
+  <summary style="font-size: 1.4em; font-weight: bold; padding: 15px; background: #667eea; color: white; border-radius: 10px; cursor: pointer; margin: 10px 0; display: flex; align-items: center; gap: 8px;">
+    <div class="icon-row" style="display: flex; align-items: center; gap: 6px;">
+      <img src="https://raw.githubusercontent.com/qompassai/svg/refs/heads/main/assets/icons/sf/sf.svg"
+           alt="python" width="60" height="60" title="Python" />
+    </div>
+    <strong>Salesforce: Apex, AgentScript, LWC, SOQL</strong>
+  </summary>
+  <blockquote style="font-size: 1.2em; line-height: 1.8; padding: 25px; background: #f8f9fa; border-left: 6px solid #667eea; border-radius: 8px; margin: 15px 0; box-shadow: 0 2px 8px rgba(0,0,0,0.1);">
+    <ul>
+      <li>
+        <a href="https://github.com/qompassai/diver/blob/main/lsp/agentscript_ls.lua">agentscript_ls</a>
+      </li>
+      <p>
+      <a href="https://github.com/salesforce/agentscript">AgentScript Reference</a>
+    </p>
+ <div style="background: #f8f9fa; padding: 15px; border-radius: 5px; margin-top: 10px; font-family: monospace;">
+
+```bash
+pip install basedpyright
+```
+
+   </div>
+      <li>
+        <a href="https://github.com/qompassai/diver/blob/main/lsp/apex_ls.lua">p_ls</a>
+      </li>
+             <p>
+      <a
+href="https://developer.salesforce.com/docs/platform/sfvscode-extensions/guide/apex-language-server.html">Apex LSP Reference</a>
+    </p>
+ <div style="background: #f8f9fa; padding: 15px; border-radius: 5px; margin-top: 10px; font-family: monospace;">
+
+```bash
+pip install pyrefly
+```
+
+   </div>
+      <li>
+        <a href="https://github.com/qompassai/diver/blob/main/lsp/lwc_ls.lua">ruff_ls</a>
+      </li>
+             <p>
+      <a href="https://docs.astral.sh/ruff/">Ruff LSP Reference</a>
+    </p>
+ <div style="background: #f8f9fa; padding: 15px; border-radius: 5px; margin-top: 10px; font-family: monospace;">
+
+```bash
+curl -LsSf https://astral.sh/ruff/install.sh | sh
+```
+
+   </div>
+         <li>
+        <a href="https://github.com/qompassai/diver/blob/main/lsp/soql_ls.lua">ty_ls</a>
+      </li>
+    </ul>
+       <p>
+      <a href="https://posit-dev.github.io/air/integration-github-actions.html">SOQL LSP Reference</a>
+    </p>
+ <div style="background: #f8f9fa; padding: 15px; border-radius: 5px; margin-top: 10px; font-family: monospace;">
+
+```bash
+uv tool install ty
+```
+
+# OR
+
+```bash
+pip install ty
+```
+
+   </div>
+  </blockquote>
+</details>
+<details>
  <summary style="font-size: 1.4em; font-weight: bold; padding: 15px; background: #667eea; color: white; border-radius: 10px; cursor: pointer; margin: 10px 0; display: flex; align-items: center; gap: 8px;">
     <div class="icon-row" style="display: flex; align-items: center; gap: 6px;">
       <img src="https://raw.githubusercontent.com/qompassai/svg/refs/heads/main/assets/icons/scala/scala.svg"

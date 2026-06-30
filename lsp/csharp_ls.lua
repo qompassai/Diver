@@ -5,7 +5,6 @@
 ---@source https://github.com/razzmatazz/csharp-language-server/blob/main/docs/features.md
 return ---@type vim.lsp.Config
 {
-    --capabilities = require('config.core.lsp'),
     cmd = {
         'csharp-ls',
         '--features',
@@ -14,8 +13,6 @@ return ---@type vim.lsp.Config
     filetypes = {
         'cs',
     },
-    on_attach = require('config.core.lsp').on_attach,
-    --]
     root_markers = {
         '.csproj',
         '.sln',

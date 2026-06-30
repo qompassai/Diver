@@ -23,7 +23,9 @@ vim.pack.add({
     }),
     gh('akinsho/toggleterm.nvim', {
         version = range('2.*'),
-        event = { 'VeryLazy' },
+        event = {
+            'VeryLazy',
+        },
         cmd = { 'ToggleTerm' },
         hook = function()
             require('toggleterm').setup({

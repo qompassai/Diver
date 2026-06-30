@@ -10,7 +10,6 @@ return ---@type vim.lsp.Config
     filetypes = {
         'agda',
     },
-    on_attach = require('config.core.lsp').on_attach,
     root_markers = {
         '*.agda_lib',
         '.git',

@@ -4,7 +4,6 @@
 -- ----------------------------------------
 return ---@type vim.lsp.Config
 {
-    capabilities = require('config.core.lsp').capabilities,
     cmd = {
         'mojo-lsp-server',
         '--log=info',
@@ -18,7 +17,6 @@ return ---@type vim.lsp.Config
     filetypes = {
         'mojo',
     },
-    on_attach = require('config.core.lsp').on_attach,
     root_markers = {
         '.git',
         'pixi.toml',

@@ -4,7 +4,6 @@
 ---------------------------------------------------------------------
 return ---@type vim.lsp.Config
 {
-    capabilities = require('config.core.lsp').capabilities,
     cmd = {
         'vscode-json-language-server',
         '--stdio',
@@ -27,7 +26,6 @@ return ---@type vim.lsp.Config
         },
         provideFormatter = false,
     },
-    on_attach = require('config.core.lsp').on_attach,
     root_markers = {
         '.git',
     },
@@ -59,7 +57,7 @@ return ---@type vim.lsp.Config
                         '.angular-cli.json',
                         'angular-cli.json',
                     },
-                   url =  'https://raw.githubusercontent.com/angular/angular-cli/v10.1.6/packages/angular/cli/lib/config/schema.json',
+                    url = 'https://raw.githubusercontent.com/angular/angular-cli/v10.1.6/packages/angular/cli/lib/config/schema.json',
                 },
                 {
                     description = 'asm-lsp configuration',
@@ -307,7 +305,7 @@ return ---@type vim.lsp.Config
                         'cspell.yaml',
                         'cspell.yml',
                     },
-                   url =  'https://raw.githubusercontent.com/streetsidesoftware/cspell/main/packages/cspell-types/cspell.schema.json',
+                    url = 'https://raw.githubusercontent.com/streetsidesoftware/cspell/main/packages/cspell-types/cspell.schema.json',
                 },
                 {
                     description = 'CSS Comb configuration file',
@@ -322,7 +320,7 @@ return ---@type vim.lsp.Config
                 {
                     description = 'CVE record format',
                     fileMatch = { 'CVE-*.json' },
-                  url =   'https://raw.githubusercontent.com/CVEProject/cve-schema/master/schema/docs/CVE_Record_Format_bundled.json',
+                    url = 'https://raw.githubusercontent.com/CVEProject/cve-schema/master/schema/docs/CVE_Record_Format_bundled.json',
                 },
                 {
                     description = 'Cypress.io test runner configuration file',

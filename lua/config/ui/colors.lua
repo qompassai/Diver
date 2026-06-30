@@ -1,5 +1,5 @@
 -- /qompassai/Diver/lua/config/ui/colors.lua
--- Qompass AI Diver Colors Config
+-- Qompass AI Diver UI Colors Config
 -- Copyright (C) 2025 Qompass AI, All rights reserved
 -- ----------------------------------------
 local M = {} ---@version JIT
@@ -22,7 +22,9 @@ function M.setup_colorizer(opts)
     if not ok then
         return
     end
-    local group = augroup('CSS', { clear = false })
+    local group = augroup('CSS', {
+        clear = false,
+    })
     local default_opts = {
         filetypes = {
             'astro',
@@ -55,7 +57,12 @@ function M.setup_colorizer(opts)
             hsl_fn = true,
             mode = 'background',
             tailwind = true,
-            sass = { enable = true, parsers = { 'css' } },
+            sass = {
+                enable = true,
+                parsers = {
+                    'css',
+                },
+            },
             virtualtext = '■',
             always_update = true,
         },
@@ -77,8 +84,14 @@ function M.setup_highlights()
         local function diag_hl(type, fg, bg)
             local prefix = 'Diagnostic'
             set_hl(0, prefix .. type, { fg = fg })
-            set_hl(0, prefix .. 'VirtualText' .. type, { fg = fg, bg = bg })
-            set_hl(0, prefix .. 'Underline' .. type, { undercurl = true, sp = fg })
+            set_hl(0, prefix .. 'VirtualText' .. type, {
+                fg = fg,
+                bg = bg,
+            })
+            set_hl(0, prefix .. 'Underline' .. type, {
+                undercurl = true,
+                sp = fg,
+            })
             set_hl(0, prefix .. 'Sign' .. type, { fg = fg })
             set_hl(0, prefix .. 'Floating' .. type, { fg = fg })
         end
@@ -241,8 +254,15 @@ function M.setup_highlights()
                 bg = '#1a1b26',
                 blend = 50,
             },
-            Pmenu = { fg = '#c0caf5', bg = '#1f2335' },
-            PmenuSel = { fg = '#000000', bg = '#7aa2f7', bold = true },
+            Pmenu = {
+                fg = '#c0caf5',
+                bg = '#1f2335',
+            },
+            PmenuSel = {
+                fg = '#000000',
+                bg = '#7aa2f7',
+                bold = true,
+            },
             PmenuSbar = { bg = '#292e42' },
             PmenuThumb = { bg = '#565f89' },
             PmenuKind = { fg = '#e0af68', bg = '#1f2335' },
@@ -276,7 +296,10 @@ function M.setup_highlights()
     autocmd('BufEnter', {
         once = true,
         callback = function()
-            set_hl(0, 'Comment', { fg = colors.comment, italic = true })
+            set_hl(0, 'Comment', {
+                fg = colors.comment,
+                italic = true,
+            })
             set_hl(0, '@comment', { fg = colors.comment, italic = true })
             set_hl(0, '@comment.documentation', { italic = true, fg = colors.comment_doc })
         end,

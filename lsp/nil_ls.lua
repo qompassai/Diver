@@ -11,7 +11,6 @@ return ---@type vim.lsp.Config
     filetypes = {
         'nix',
     },
-    on_attach = require('config.core.lsp').on_attach,
     root_markers = {
         'default.nix',
         'flake.nix',

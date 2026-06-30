@@ -27,7 +27,6 @@ return ---@type vim.lsp.Config
         'typescript.tsx',
         'vue',
     },
-    on_attach = require('config.core.lsp').on_attach,
     root_markers = {
         'package-lock.json',
         'yarn.lock',

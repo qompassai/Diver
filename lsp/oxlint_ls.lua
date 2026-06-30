@@ -30,7 +30,6 @@ return ---@type vim.lsp.Config
         'typescriptreact',
         'typescript.tsx',
     },
-  on_attach = require('config.core.lsp').on_attach,
     root_markers = {
         'oxlint',
         '.oxlintrc.json',

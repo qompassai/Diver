@@ -5,7 +5,6 @@
 ---@source https://github.com/nolanderc/glsl_analyzer
 return ---@type vim.lsp.Config
 {
-    capabilities = require('config.core.lsp').capabilities,
     cmd = {
         'glsl_analyzer',
     },

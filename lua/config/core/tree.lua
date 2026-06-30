@@ -2,31 +2,31 @@
 -- Qompass AI Diver TreeSitter Config Module
 -- Copyright (C) 2025 Qompass AI, All rights reserved
 ------------------------------------------------------
----@source https://github.com/tree-sitter/tree-sitter/wiki/List-of-parsers
 local M = {}
-local api = vim.api
 local register = vim.treesitter.language.register
-local ts = vim.treesitter
+
 function M.treesitter(opts)
-    local xdg_data = os.getenv('XDG_DATA_HOME') or (os.getenv('HOME') .. '/.local/share')
-    local parser_dir = xdg_data .. '/nvim/runtime/parser'
-    vim.fn.mkdir(parser_dir, 'p')
-    vim.opt.runtimepath:prepend(xdg_data .. '/nvim/runtime')
-    require('nvim-treesitter.install').prefer_git = true
-    local parser_config = require('nvim-treesitter.parsers').get_parser_configs()
+    opts = opts or {}
+    local install = require('nvim-treesitter.install')
+    local parsers = require('nvim-treesitter.parsers')
+    local configs = require('nvim-treesitter.configs')
+
+    install.prefer_git = true
+
+    local parser_config = parsers.get_parser_configs()
+
     parser_config.objc = {
         install_info = {
             url = 'https://github.com/merico-dev/tree-sitter-objc',
-            files = {
-                'src/parser.c',
-            },
+            files = { 'src/parser.c' },
             branch = 'main',
             generate_requires_npm = false,
             requires_generate_from_grammar = false,
         },
         filetype = 'objc',
     }
-    local base_config = { ---@source :lua =require('nvim-treesitter.parsers').get_parser_configs()
+
+    local base_config = {
         auto_install = true,
         ensure_installed = {
             'ada',
@@ -36,17 +36,17 @@ function M.treesitter(opts)
             'arduino',
             'asm',
             'astro',
-            --'authzed',
             'awk',
             'bash',
             'bass',
             'beancount',
-            'blade',
             'bibtex',
             'bicep',
             'bitbake',
+            'blade',
             'blueprint',
             'c',
+            'c_sharp',
             'caddy',
             'cairo',
             'clojure',
@@ -54,7 +54,6 @@ function M.treesitter(opts)
             'comment',
             'commonlisp',
             'cpp',
-            'c_sharp',
             'css',
             'csv',
             'cuda',
@@ -114,7 +113,6 @@ function M.treesitter(opts)
             'idris',
             'inko',
             'ini',
-            --'ipkg',
             'java',
             'javadoc',
             'jinja',
@@ -123,19 +121,17 @@ function M.treesitter(opts)
             'json',
             'json5',
             'jsonc',
-            -- 'json_schema',
             'julia',
             'just',
             'kcl',
             'kconfig',
             'kotlin',
+            'latex',
             'llvm',
-            -- 'llvm_mir',
             'lua',
             'luadoc',
             'luap',
             'luau',
-            'latex',
             'm68k',
             'make',
             'markdown',
@@ -144,11 +140,11 @@ function M.treesitter(opts)
             'mermaid',
             'meson',
             'mlir',
+            'muttrc',
             'nginx',
             'ninja',
             'nix',
             'norg',
-            'muttrc',
             'objc',
             'objdump',
             'ocaml',
@@ -167,8 +163,8 @@ function M.treesitter(opts)
             'properties',
             'proto',
             'puppet',
-            'python',
             'pymanifest',
+            'python',
             'query',
             'r',
             'regex',
@@ -229,104 +225,38 @@ function M.treesitter(opts)
             'ziggy',
             'ziggy_schema',
         },
+
+        ignore_install = {},
+
         highlight = {
-            additional_vim_regex_highlighting = false, ---legacy
+            enable = true,
+            additional_vim_regex_highlighting = false,
+        },
+
+        indent = {
             enable = true,
         },
-        ignore_install = {},
+
         incremental_selection = {
             enable = true,
             keymaps = {
                 init_selection = 'gnn',
-                node_decremental = 'grm',
                 node_incremental = 'grn',
                 scope_incremental = 'grc',
+                node_decremental = 'grm',
             },
         },
-        indent = {
-            enable = true,
-        },
-        move = {
-            enable = true,
-            set_jumps = true,
-            goto_next_end = {
-                [']C'] = '@class.outer',
-                [']F'] = '@call.outer',
-                [']I'] = '@conditional.outer',
-                [']L'] = '@loop.outer',
-                [']M'] = '@function.outer',
-            },
-            goto_next_start = {
-                [']c'] = '@class.outer',
-                [']i'] = '@conditional.outer',
-                [']l'] = '@loop.outer',
-                [']m'] = '@function.outer',
-                [']s'] = {
-                    query = '@scope',
-                    query_group = 'locals',
-                    desc = 'Next scope',
-                },
-                [']z'] = {
-                    query = '@fold',
-                    query_group = 'folds',
-                    desc = 'Next fold',
-                },
-            },
-            goto_previous_end = {
-                ['[C'] = '@class.outer',
-                ['[F'] = '@call.outer',
-                ['[I'] = '@conditional.outer',
-                ['[L'] = '@loop.outer',
-                ['[M'] = '@function.outer',
-            },
-            goto_previous_start = {
-                ['[c'] = '@class.outer',
-                ['[f'] = '@call.outer',
-                ['[i'] = '@conditional.outer',
-                ['[l'] = '@loop.outer',
-                ['[m'] = '@function.outer',
-            },
-        },
-        parser_install_dir = parser_dir,
-        swap = {
-            enable = true,
-            swap_next = {
-                ['<leader>a'] = '@parameter.inner',
-                ['<leader>c'] = '@class.outer',
-                ['<leader>f'] = '@function.outer',
-                ['<leader>l'] = '@loop.outer',
-            },
-            swap_previous = {
-                ['<leader>A'] = '@parameter.inner',
-                ['<leader>C'] = '@class.outer',
-                ['<leader>F'] = '@function.outer',
-                ['<leader>L'] = '@loop.outer',
-            },
-        },
-        sync_install = false,
+
         textobjects = {
-            select = {
-                enable = true,
-                lookahead = true,
-                keymaps = {
-                    ['aa'] = '@parameter.outer',
-                    ['ac'] = '@class.outer',
-                    ['af'] = '@function.outer',
-                    ['al'] = '@loop.outer',
-                    ['ia'] = '@parameter.inner',
-                    ['ic'] = '@class.inner',
-                    ['if'] = '@function.inner',
-                    ['il'] = '@loop.inner',
-                },
-            },
             move = {
                 enable = true,
                 set_jumps = true,
+
                 goto_next_start = {
-                    [']m'] = '@function.outer',
                     [']c'] = '@class.outer',
-                    [']l'] = '@loop.outer',
                     [']i'] = '@conditional.outer',
+                    [']l'] = '@loop.outer',
+                    [']m'] = '@function.outer',
                     [']s'] = {
                         query = '@scope',
                         query_group = 'locals',
@@ -338,138 +268,39 @@ function M.treesitter(opts)
                         desc = 'Next fold',
                     },
                 },
+
                 goto_next_end = {
-                    [']M'] = '@function.outer',
                     [']C'] = '@class.outer',
-                    [']L'] = '@loop.outer',
-                    [']I'] = '@conditional.outer',
                     [']F'] = '@call.outer',
+                    [']I'] = '@conditional.outer',
+                    [']L'] = '@loop.outer',
+                    [']M'] = '@function.outer',
                 },
+
                 goto_previous_start = {
-                    ['[m'] = '@function.outer',
                     ['[c'] = '@class.outer',
-                    ['[l'] = '@loop.outer',
-                    ['[i'] = '@conditional.outer',
                     ['[f'] = '@call.outer',
+                    ['[i'] = '@conditional.outer',
+                    ['[l'] = '@loop.outer',
+                    ['[m'] = '@function.outer',
                 },
+
                 goto_previous_end = {
-                    ['[M'] = '@function.outer',
                     ['[C'] = '@class.outer',
-                    ['[L'] = '@loop.outer',
-                    ['[I'] = '@conditional.outer',
                     ['[F'] = '@call.outer',
-                },
-            },
-            swap = {
-                enable = true,
-                swap_next = {
-                    ['<leader>a'] = '@parameter.inner',
-                    ['<leader>c'] = '@class.outer',
-                    ['<leader>f'] = '@function.outer',
-                    ['<leader>l'] = '@loop.outer',
-                },
-                swap_previous = {
-                    ['<leader>A'] = '@parameter.inner',
-                    ['<leader>C'] = '@class.outer',
-                    ['<leader>F'] = '@function.outer',
-                    ['<leader>L'] = '@loop.outer',
+                    ['[I'] = '@conditional.outer',
+                    ['[L'] = '@loop.outer',
+                    ['[M'] = '@function.outer',
                 },
             },
         },
     }
-    local final_config = vim.tbl_deep_extend('force', base_config, opts or {})
 
-    require('nvim-treesitter.configs').setup(final_config)
+    local config = vim.tbl_deep_extend('force', base_config, opts)
+    configs.setup(config)
+
+    register('bash', 'zsh')
+    register('markdown', 'mdx')
 end
-
-function M.tree_cfg(opts)
-    opts = opts or {}
-    M.treesitter(opts)
-    return {
-        treesitter = vim.tbl_deep_extend('force', M.options and M.options.treesitter or {}, opts),
-    }
-end
-
-register('bash', 'sh')
-register('bash', 'zsh')
-register('c', 'objc')
-register('cmake', 'cmake')
-register('cpp', 'cpp')
-register('css', {
-    'postcss',
-    'sugarss',
-})
-register('dockerfile', 'dockerfile')
-register('embedded_template', 'eruby')
-register('git_config', {
-    'gitconfig',
-    'gitignore',
-})
-register('gitcommit', 'gitcommit')
-register('glimmer', {
-    'javascript.glimmer',
-    'typescript.glimmer',
-})
-register('glsl', 'glsl')
-register('go', 'gohtmltmpl')
-register('hcl', {
-    'hcl',
-    'terraform',
-})
-register('html', {
-    'html.antlers',
-    'html.handlebars',
-})
-register('json', 'jsonc')
-register('latex', 'tex')
-register('linkerscript', 'ld')
-register('make', 'make')
-register('markdown', {
-    'markdown',
-    'mdx',
-    'rmd',
-})
-register('sql', 'pgsql')
-register('typescript', {
-    'typescript',
-    'typescriptreact',
-})
-register('verilog', {
-    'verilog',
-    'systemverilog',
-})
-register('xml', 'xaml')
-register('yaml', {
-    'yaml',
-    'yaml.ansible',
-    'yaml.docker-compose',
-    'yaml.github',
-    'yaml.gitlab',
-    'yaml.helm-values',
-})
-api.nvim_create_autocmd('FileType', {
-    group = api.nvim_create_augroup('TreesitterStart', {
-        clear = true,
-    }),
-    pattern = '*',
-    callback = function(args)
-        local buf = args.buf
-        local lang = ts.language.get_lang(args.match)
-        if not lang then
-            return
-        end
-        local buftype = api.nvim_get_option_value('buftype', {
-            buf = buf,
-        })
-        if buftype ~= '' then
-            return
-        end
-        pcall(function()
-            if pcall(ts.language.add, lang) then
-                ts.start(buf, lang)
-            end
-        end)
-    end,
-})
 
 return M
