@@ -1,0 +1,298 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN"
+   "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd">
+<html>
+<meta http-equiv="Content-Type" content="text/html; charset=UTF-8"/>
+<head>
+    <title>Learn Lua with Diver</title>
+    <link rel="stylesheet" href="../ldoc.css" type="text/css" />
+</head>
+<body>
+
+<div id="container">
+
+<div id="product">
+	<div id="product_logo"></div>
+	<div id="product_name"><big><b></b></big></div>
+	<div id="product_description"></div>
+</div> <!-- id="product" -->
+
+
+<div id="main">
+
+
+<!-- Menu -->
+
+<div id="navigation">
+<br/>
+<h1>Diver :: Learn Lua</h1>
+
+
+<ul>
+  <li><a href="../index.html">Index</a></li>
+</ul>
+
+<h2>Contents</h2>
+<ul>
+<li><a href="#Concept">Concept </a></li>
+<li><a href="#In_Diver">In Diver </a></li>
+<li><a href="#Reference">Reference </a></li>
+<li><a href="#Try_it_yourself">Try it yourself </a></li>
+<li><a href="#What_is__still__a_plugin__and_why_">What is *still* a plugin (and why) </a></li>
+</ul>
+
+
+<h2>Topics</h2>
+<ul class="">
+  <li><a href="../topics/00-introduction.md.html">00-introduction</a></li>
+  <li><a href="../topics/01-values-and-types.md.html">01-values-and-types</a></li>
+  <li><a href="../topics/02-variables-and-scope.md.html">02-variables-and-scope</a></li>
+  <li><a href="../topics/03-tables.md.html">03-tables</a></li>
+  <li><a href="../topics/04-functions.md.html">04-functions</a></li>
+  <li><a href="../topics/05-control-flow.md.html">05-control-flow</a></li>
+  <li><a href="../topics/06-strings-and-patterns.md.html">06-strings-and-patterns</a></li>
+  <li><a href="../topics/07-modules-and-require.md.html">07-modules-and-require</a></li>
+  <li><a href="../topics/08-error-handling.md.html">08-error-handling</a></li>
+  <li><a href="../topics/09-the-vim-api.md.html">09-the-vim-api</a></li>
+  <li><a href="../topics/10-luacats-annotations.md.html">10-luacats-annotations</a></li>
+  <li><strong>11-neovim-013-native</strong></li>
+  <li><a href="../topics/12-putting-it-together.md.html">12-putting-it-together</a></li>
+</ul>
+<h2>Modules</h2>
+<ul class="nowrap">
+  <li><a href="../modules/learn_lua.html">learn_lua</a></li>
+  <li><a href="../modules/learn_tables.html">learn_tables</a></li>
+  <li><a href="../modules/learn_vim_api.html">learn_vim_api</a></li>
+</ul>
+
+</div>
+
+<div id="content">
+
+
+<h1>11 · Neovim 0.13 Native</h1>
+
+<p><a name="Concept"></a></p>
+<h2>Concept</h2>
+
+<p>The biggest recent shift in Neovim (across 0.11 → 0.13) is that features that
+used to <em>require</em> community plugins are now <strong>built in</strong>. <code>diver</code>'s design goal
+— "rely on no plugins if possible, make everything native" — is only achievable
+because of these changes. This chapter maps each native feature to the Lua you
+write to use it, and to where <code>diver</code> already does.</p>
+
+<h3>1. Native plugin management — <code>vim.pack</code></h3>
+
+<p>Older configs needed <code>packer</code>, <code>lazy.nvim</code>, etc. Neovim 0.13 ships
+<code>vim.pack</code>:</p>
+
+
+<pre>
+vim.pack.<span class="function-name">add</span>({
+    { src = <span class="string">'https://github.com/folke/which-key.nvim'</span>, version = <span class="string">'main'</span> },
+    { src = <span class="string">'https://github.com/Saghen/blink.cmp'</span>, version = vim.version.<span class="function-name">range</span>(<span class="string">'1.*'</span>) },
+})
+vim.pack.<span class="function-name">update</span>()   <span class="comment">-- update everything</span>
+</pre>
+
+
+<p>Each entry is a plain Lua <strong>table spec</strong> (Chapter 03) with <code>src</code>, optional
+<code>version</code>/<code>branch</code>, and <code>update</code>. No plugin manager to install first.</p>
+
+<h3>2. Native LSP configuration — the <code>lsp/</code> directory</h3>
+
+<p>Older configs needed <code>nvim-lspconfig</code> plus a <code>require(&apos;lspconfig&apos;).xxx.setup{}</code>
+call for every server. Neovim 0.13 reads **<code>lsp/&lt;name&gt;.lua</code>** files directly. A
+file like <code>lsp/clangd_ls.lua</code> just returns a config table:</p>
+
+
+<pre>
+<span class="comment">-- lsp/foo.lua
+</span><span class="keyword">return</span> {
+    cmd       = { <span class="string">'foo-language-server'</span> },
+    filetypes = { <span class="string">'foo'</span> },
+    root_markers = { <span class="string">'.git'</span> },
+}
+</pre>
+
+
+<p>…and you switch it on with one line:</p>
+
+
+<pre>
+vim.lsp.<span class="function-name">enable</span>(<span class="string">'foo'</span>)
+</pre>
+
+
+<p>Neovim merges every <code>lsp/&lt;name&gt;.lua</code> on the <code>runtimepath</code>, with
+<code>after/lsp/&lt;name&gt;.lua</code> winning last. You define behaviour with <code>vim.lsp.config</code>
+and activate with <code>vim.lsp.enable</code> — no plugin in the chain.</p>
+
+<h3>3. Native completion — <code>vim.lsp.completion.enable</code></h3>
+
+<p>Older configs needed <code>nvim-cmp</code> + sources + <code>LuaSnip</code>. Neovim 0.13 has built-in
+completion. You turn it on per-client inside an <code>LspAttach</code> autocommand:</p>
+
+
+<pre>
+vim.lsp.completion.<span class="function-name">enable</span>(<span class="keyword">true</span>, client.id, bufnr, { autotrigger = <span class="keyword">true</span> })
+</pre>
+
+
+<p>with these global options (set in <code>diver</code>'s <code>init.lua</code>):</p>
+
+
+<pre>
+vim.bo.autocomplete = <span class="keyword">true</span>
+vim.bo.completeopt = <span class="string">'menu,menuone,noselect'</span>
+</pre>
+
+
+<h3>4. Native inline (ghost-text) completion</h3>
+
+<p>Neovim 0.13 adds <code>textDocument/inlineCompletion</code> support:</p>
+
+
+<pre>
+vim.lsp.inline_completion.<span class="function-name">enable</span>(<span class="keyword">true</span>, {
+    bufnr = bufnr, client_id = client.id, autotrigger = <span class="keyword">true</span>,
+})
+</pre>
+
+
+<h3>5. Built-in global LSP keymaps</h3>
+
+<p>Modern Neovim creates these <em>unconditionally</em> — you do not map them yourself:
+<code>grn</code> rename, <code>gra</code> code action, <code>grr</code> references, <code>gri</code> implementation,
+<code>grt</code> type definition, <code>gO</code> document symbols, and <code>&lt;C-s&gt;</code> signature help in
+insert mode.</p>
+
+<h3>6. New native options used in <code>diver</code></h3>
+
+<p><code>&apos;autocomplete&apos;</code>, <code>&apos;autowriteall&apos;</code>, treesitter-based folding
+(<code>foldexpr = &apos;v:lua.vim.treesitter.foldexpr()&apos;</code>), and <code>&apos;winborder&apos;</code> are all
+recent native options that <code>init.lua</code> sets directly.</p>
+
+<p><a name="In_Diver"></a></p>
+<h2>In Diver</h2>
+
+<p>**<code>vim.pack</code>** — <code>lua/plugins/init.lua</code>:</p>
+
+
+<pre>
+<span class="keyword">local</span> add = vim.pack.add
+<span class="keyword">local</span> range = vim.version.range
+<span class="keyword">local</span> plugins = {
+    { src = <span class="function-name">github</span>(<span class="string">'Saghen/blink.cmp'</span>), update = <span class="keyword">true</span>, version = <span class="function-name">range</span>(<span class="string">'1.*'</span>) },
+    { src = <span class="function-name">github</span>(<span class="string">'folke/which-key.nvim'</span>), update = <span class="keyword">true</span>, version = <span class="string">'main'</span> },
+    <span class="comment">-- ...
+</span>}
+</pre>
+
+
+<p>and <code>lua/plugins/core/init.lua</code>:</p>
+
+
+<pre>
+vim.pack.<span class="function-name">add</span>({ <span class="comment">---@type vim.pack.Spec[]
+</span>    ...
+})
+</pre>
+
+
+<p><strong>Native LSP completion + inline completion</strong> — <code>lua/config/core/lsp.lua</code>,
+<code>M.on_attach</code>:</p>
+
+
+<pre>
+<span class="keyword">if</span> client.server_capabilities.completionProvider <span class="keyword">then</span>
+    vim.lsp.completion.<span class="function-name">enable</span>(<span class="keyword">true</span>, client.id, bufnr, {
+        autotrigger = <span class="keyword">true</span>,
+        convert = <span class="keyword">function</span>(item)
+            <span class="keyword">return</span> { abbr = item.label:<span class="function-name">gsub</span>(<span class="string">'%b()'</span>, <span class="string">''</span>) }
+        <span class="keyword">end</span>,
+    })
+<span class="keyword">end</span>
+<span class="keyword">if</span> client.server_capabilities.inlineCompletionProvider <span class="keyword">then</span>
+    vim.lsp.inline_completion.<span class="function-name">enable</span>(<span class="keyword">true</span>, {
+        bufnr = bufnr, client_id = client.id, autotrigger = <span class="keyword">true</span>,
+    })
+<span class="keyword">end</span>
+</pre>
+
+
+<p>That <code>convert</code> callback uses a Lua pattern (<code>%b()</code> = a balanced <code>(...)</code> pair) to
+strip the parentheses from completion labels — Chapter 06 in the wild.</p>
+
+<p>**The <code>lsp/</code> directory** — the repo's top-level <code>lsp/</code> folder holds hundreds of
+<code>*_ls.lua</code> files, each returning a server config table. <code>init.lua</code> sets
+<code>g.lsp_enable_on_demand = true</code> so they activate as needed.</p>
+
+<p><strong>Native treesitter folding</strong> — <code>init.lua</code>:</p>
+
+
+<pre>
+wo.foldexpr   = <span class="string">'v:lua.vim.treesitter.foldexpr()'</span>
+wo.foldmethod = <span class="string">'expr'</span>
+</pre>
+
+
+<p>and the Lua-side fold helper in <code>lua/utils/docs/docs.lua</code>:</p>
+
+
+<pre>
+<span class="keyword">function</span> M.<span class="function-name">foldexpr</span>()
+    ...
+    <span class="keyword">return</span> b[buf].ts_folds <span class="keyword">and</span> tree.<span class="function-name">foldexpr</span>() <span class="keyword">or</span> <span class="string">'0'</span>
+<span class="keyword">end</span>
+</pre>
+
+
+<p><strong>Native options</strong> — <code>init.lua</code> sets <code>bo.autocomplete = true</code>,
+<code>o.autowriteall = true</code>, <code>o.winborder = &apos;rounded&apos;</code>, all without a plugin.</p>
+
+<p><a name="What_is__still__a_plugin__and_why_"></a></p>
+<h2>What is <em>still</em> a plugin (and why)</h2>
+
+<p><code>diver</code> is plugin-<em>minimal</em>, not plugin-<em>zero</em>. A handful remain because their
+job has no native equivalent yet: <code>blink.cmp</code> (a richer completion UI),
+<code>nvim-treesitter</code> (grammar installation/updates), <code>which-key.nvim</code>, <code>LuaSnip</code>.
+The lesson: prefer native first, reach for a plugin only when the native API
+genuinely cannot do the job — and even then, load it with the native
+<code>vim.pack</code>.</p>
+
+<p><a name="Reference"></a></p>
+<h2>Reference</h2>
+
+<p>In the **<a href="../modules/learn_vim_api.html#">learn_vim_api</a>** module:</p>
+
+<ul>
+    <li><code>enable_completion(client, bufnr)</code> — the annotated <code>LspAttach</code> →
+    <code>vim.lsp.completion.enable</code> flow, including the nested-field truthiness guard.</li>
+    <li><code>pack_specs(repos)</code> — builds the <code>vim.pack.Spec[]</code> list from <code>owner/name</code>
+    shorthands, showing the spec table shape.</li>
+</ul>
+
+<p><a name="Try_it_yourself"></a></p>
+<h2>Try it yourself</h2>
+
+
+<pre>
+:checkhealth vim.<span class="function-name">lsp</span>          " see Enabled Configurations from your lsp/ dir
+:lua <span class="global">print</span>(vim.<span class="function-name">inspect</span>(vim.lsp.<span class="function-name">get_clients</span>()))
+:lua <span class="global">print</span>(<span class="global">type</span>(vim.pack), <span class="global">type</span>(vim.lsp.completion.enable))
+</pre>
+
+
+<p>The final chapter ties everything together — <strong>Chapter 12, Putting It
+Together</strong>.</p>
+
+
+</div> <!-- id="content" -->
+</div> <!-- id="main" -->
+<div id="about">
+<i>generated by <a href="http://github.com/lunarmodules/LDoc">LDoc 1.5.0</a></i>
+<i style="float:right;">Last updated 2026-06-30 16:53:09 </i>
+</div> <!-- id="about" -->
+</div> <!-- id="container" -->
+</body>
+</html>

@@ -1,0 +1,253 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN"
+   "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd">
+<html>
+<meta http-equiv="Content-Type" content="text/html; charset=UTF-8"/>
+<head>
+    <title>Learn Lua with Diver</title>
+    <link rel="stylesheet" href="../ldoc.css" type="text/css" />
+</head>
+<body>
+
+<div id="container">
+
+<div id="product">
+	<div id="product_logo"></div>
+	<div id="product_name"><big><b></b></big></div>
+	<div id="product_description"></div>
+</div> <!-- id="product" -->
+
+
+<div id="main">
+
+
+<!-- Menu -->
+
+<div id="navigation">
+<br/>
+<h1>Diver :: Learn Lua</h1>
+
+
+<ul>
+  <li><a href="../index.html">Index</a></li>
+</ul>
+
+<h2>Contents</h2>
+<ul>
+<li><a href="#Reading__init_lua__top_to_bottom">Reading `init.lua` top to bottom </a></li>
+<li><a href="#Your_first_safe_edit">Your first safe edit </a></li>
+<li><a href="#Where_to_go_next">Where to go next </a></li>
+</ul>
+
+
+<h2>Topics</h2>
+<ul class="">
+  <li><a href="../topics/00-introduction.md.html">00-introduction</a></li>
+  <li><a href="../topics/01-values-and-types.md.html">01-values-and-types</a></li>
+  <li><a href="../topics/02-variables-and-scope.md.html">02-variables-and-scope</a></li>
+  <li><a href="../topics/03-tables.md.html">03-tables</a></li>
+  <li><a href="../topics/04-functions.md.html">04-functions</a></li>
+  <li><a href="../topics/05-control-flow.md.html">05-control-flow</a></li>
+  <li><a href="../topics/06-strings-and-patterns.md.html">06-strings-and-patterns</a></li>
+  <li><a href="../topics/07-modules-and-require.md.html">07-modules-and-require</a></li>
+  <li><a href="../topics/08-error-handling.md.html">08-error-handling</a></li>
+  <li><a href="../topics/09-the-vim-api.md.html">09-the-vim-api</a></li>
+  <li><a href="../topics/10-luacats-annotations.md.html">10-luacats-annotations</a></li>
+  <li><a href="../topics/11-neovim-013-native.md.html">11-neovim-013-native</a></li>
+  <li><strong>12-putting-it-together</strong></li>
+</ul>
+<h2>Modules</h2>
+<ul class="nowrap">
+  <li><a href="../modules/learn_lua.html">learn_lua</a></li>
+  <li><a href="../modules/learn_tables.html">learn_tables</a></li>
+  <li><a href="../modules/learn_vim_api.html">learn_vim_api</a></li>
+</ul>
+
+</div>
+
+<div id="content">
+
+
+<h1>12 · Putting It Together</h1>
+
+<p>You now have every piece. This final chapter does two things: it reads
+<code>diver</code>'s <code>init.lua</code> end-to-end so the whole boot sequence clicks into place,
+and then it walks you through making your <strong>first safe edit</strong>.</p>
+
+<p><a name="Reading__init_lua__top_to_bottom"></a></p>
+<h2>Reading <code>init.lua</code> top to bottom</h2>
+
+<p>Open <code>init.lua</code> at the repo root and follow along. With Chapters 01–11 behind
+you, every line should now be legible.</p>
+
+<p><strong>Lines 1–17 — the header.</strong> A <code>--[[ ... ]]</code> block comment holding the Apache
+license. Block comments use <code>--[[ ... ]]</code>; you met long brackets in Chapter 06.</p>
+
+<p><strong>Lines 19–28 — aliasing (Chapter 02).</strong> A wall of <code>local x = vim.y</code>:</p>
+
+
+<pre>
+<span class="keyword">local</span> bo  = vim.bo
+<span class="keyword">local</span> cmd = vim.cmd
+<span class="keyword">local</span> fn  = vim.fn
+<span class="keyword">local</span> g   = vim.g
+<span class="keyword">local</span> o   = vim.o
+<span class="keyword">local</span> opt = vim.opt
+</pre>
+
+
+<p>Some carry inline LuaCATS types: <code>local o = vim.o ---@type vim.o</code> (Chapter 10).</p>
+
+<p><strong>Lines 23, 37–44 — platform detection (Chapters 01 &amp; 05).</strong></p>
+
+
+<pre>
+<span class="keyword">local</span> is_windows = fn.<span class="function-name">has</span>(<span class="string">'win32'</span>) == <span class="number">1</span> <span class="keyword">or</span> fn.<span class="function-name">has</span>(<span class="string">'win64'</span>) == <span class="number">1</span>
+</pre>
+
+
+<p>The <code>== 1</code> is mandatory because <code>0</code> is truthy. Then an `if is_windows then …
+else … end` decides how to find the user id.</p>
+
+<p><strong>Lines 46–72 — buffer options (Chapter 09).</strong> <code>bo.shiftwidth = 4</code>, etc.</p>
+
+<p><strong>Lines 87–167 — globals and environment (Chapters 06 &amp; 09).</strong> Huge <code>g.*</code>
+and <code>env.*</code> block, full of <code>..</code> path concatenation and <code>or</code> defaults:</p>
+
+
+<pre>
+g.xdg_config_home = env.XDG_CONFIG_HOME
+    <span class="keyword">or</span> (is_windows <span class="keyword">and</span> fn.<span class="function-name">expand</span>(<span class="string">'~/AppData/Local'</span>) <span class="keyword">or</span> fn.<span class="function-name">expand</span>(<span class="string">'~/.config'</span>))
+</pre>
+
+
+<p>Read that as: use <code>$XDG_CONFIG_HOME</code> if set, otherwise the platform default —
+the ternary idiom (Chapter 05) nested inside an <code>or</code> default.</p>
+
+<p>**Line 183 — <code>l.enable()</code>.** Turns on <code>vim.loader</code>, the bytecode cache, for
+faster startup.</p>
+
+<p><strong>Lines 184–197 — the require chain (Chapter 07).</strong> The heart of the boot:</p>
+
+
+<pre>
+<span class="global">require</span>(<span class="string">'config.init'</span>).<span class="function-name">config</span>({
+    core = <span class="keyword">true</span>, cicd = <span class="keyword">true</span>, cloud = <span class="keyword">true</span>, <span class="global">debug</span> = <span class="keyword">false</span>,
+    edu = <span class="keyword">true</span>, lang = <span class="keyword">true</span>, nav = <span class="keyword">true</span>, ui = <span class="keyword">true</span>,
+})
+<span class="global">require</span>(<span class="string">'linters'</span>)
+<span class="global">require</span>(<span class="string">'mappings'</span>)
+<span class="global">require</span>(<span class="string">'plugins'</span>)
+<span class="global">require</span>(<span class="string">'types'</span>)
+</pre>
+
+
+<p>A single table (Chapter 03) drives which subsystems load. <code>config.init</code>'s
+<code>M.config</code> then <code>safe_require</code>s each one (Chapter 08) so a failure degrades
+gracefully.</p>
+
+<p><strong>Lines 198–309 — global + window options (Chapter 09).</strong> The long <code>o.*</code>,
+<code>opt.*</code>, and <code>wo.*</code> tail, including the Neovim 0.13 natives from Chapter 11:</p>
+
+
+<pre>
+o.autowriteall = <span class="keyword">true</span>
+wo.foldexpr = <span class="string">'v:lua.vim.treesitter.foldexpr()'</span>
+o.winborder = <span class="string">'rounded'</span>
+</pre>
+
+
+<p>That is the entire startup, and you can now explain all of it.</p>
+
+<p><a name="Your_first_safe_edit"></a></p>
+<h2>Your first safe edit</h2>
+
+<p>Let us add a tiny, reversible feature: a <code>:DiverHello</code> command that greets you.
+This exercises modules, functions, the Vim API, and annotations all at once.</p>
+
+<ol>
+    <li><strong>Create a new module file</strong> <code>lua/utils/hello.lua</code>:</li>
+</ol>
+
+<p>   ```lua
+   -- lua/utils/hello.lua
+   local M = {}</p>
+
+<p>   --- Greet the current user in the message area.
+   ---@param name? string  the name to greet; defaults to $USER
+   ---@return string greeting  the text that was shown
+   function M.greet(name)</p>
+
+<pre>
+name = name <span class="keyword">or</span> vim.env.USER <span class="keyword">or</span> <span class="string">'diver'</span>          <span class="comment">-- <code>or</code> default (Ch. 02/05)
+</span><span class="keyword">local</span> msg = (<span class="string">'Hello, %s!'</span>):<span class="function-name">format</span>(name)          <span class="comment">-- :format (Ch. 06)
+</span>vim.<span class="function-name">notify</span>(msg, vim.log.levels.INFO)             <span class="comment">-- Vim API (Ch. 09)
+</span><span class="keyword">return</span> msg
+</pre>
+
+<p>   end</p>
+
+<p>   vim.api.nvim<em>create</em>user_command('DiverHello', function(opts)</p>
+
+<pre>
+M.<span class="function-name">greet</span>(opts.args ~= <span class="string">''</span> <span class="keyword">and</span> opts.args <span class="keyword">or</span> <span class="keyword">nil</span>)    <span class="comment">-- ternary idiom (Ch. 05)</span>
+</pre>
+
+<p>   end, { nargs = '?' })                                -- table attrs (Ch. 03)</p>
+
+<p>   return M                                             -- module return (Ch. 07)
+   ```</p>
+
+<ol>
+    <li><strong>Load it.</strong> Add one line near the other requires in <code>init.lua</code> (or in an
+    appropriate aggregator):</li>
+</ol>
+
+<p>   ```lua
+   require('utils.hello')
+   ```</p>
+
+<ol>
+    <li><strong>Try it</strong> after restarting Neovim:</li>
+</ol>
+
+<p>   ```vim
+   :DiverHello
+   :DiverHello Matt
+   :lua print(require('utils.hello').greet('world'))
+   ```</p>
+
+<ol>
+    <li><strong>Undo it</strong> by deleting the file and the require line. Because the feature is
+    isolated in its own module and wrapped in normal APIs, removing it cannot
+    break anything else — exactly the property <code>diver</code>'s structure is designed
+    to give you.</li>
+</ol>
+
+<p>If you did that and understood every line, you have met the goal of this course:
+you can read <code>diver</code>, and you can change it safely.</p>
+
+<p><a name="Where_to_go_next"></a></p>
+<h2>Where to go next</h2>
+
+<ul>
+    <li><strong>Read more leaf modules.</strong> Now tackle <code>lua/config/core/qf.lua</code> (quickfix),
+    <code>lua/config/core/tree.lua</code> (treesitter), and <code>lua/config/core/lint.lua</code>. They
+    reuse every pattern you have learned.</li>
+    <li><strong>Lean on the annotations.</strong> With <code>lua-language-server</code> running, hover and
+    go-to-definition turn the whole config into an explorable, typed surface.</li>
+    <li><strong>Regenerate these docs</strong> whenever you add annotated modules — see the
+    <code>README.md</code> in this folder for the one-line <code>ldoc</code> command.</li>
+</ul>
+
+<p>Welcome to writing Lua.</p>
+
+
+</div> <!-- id="content" -->
+</div> <!-- id="main" -->
+<div id="about">
+<i>generated by <a href="http://github.com/lunarmodules/LDoc">LDoc 1.5.0</a></i>
+<i style="float:right;">Last updated 2026-06-30 16:53:09 </i>
+</div> <!-- id="about" -->
+</div> <!-- id="container" -->
+</body>
+</html>

@@ -1,0 +1,449 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN"
+   "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd">
+<html>
+<meta http-equiv="Content-Type" content="text/html; charset=UTF-8"/>
+<head>
+    <title>Learn Lua with Diver</title>
+    <link rel="stylesheet" href="../ldoc.css" type="text/css" />
+</head>
+<body>
+
+<div id="container">
+
+<div id="product">
+	<div id="product_logo"></div>
+	<div id="product_name"><big><b></b></big></div>
+	<div id="product_description"></div>
+</div> <!-- id="product" -->
+
+
+<div id="main">
+
+
+<!-- Menu -->
+
+<div id="navigation">
+<br/>
+<h1>Diver :: Learn Lua</h1>
+
+
+<ul>
+  <li><a href="../index.html">Index</a></li>
+</ul>
+
+<h2>Contents</h2>
+<ul>
+<li><a href="#Functions">Functions</a></li>
+</ul>
+
+
+<h2>Modules</h2>
+<ul class="nowrap">
+  <li><a href="../modules/learn_lua.html">learn_lua</a></li>
+  <li><a href="../modules/learn_tables.html">learn_tables</a></li>
+  <li><strong>learn_vim_api</strong></li>
+</ul>
+<h2>Topics</h2>
+<ul class="">
+  <li><a href="../topics/00-introduction.md.html">00-introduction</a></li>
+  <li><a href="../topics/01-values-and-types.md.html">01-values-and-types</a></li>
+  <li><a href="../topics/02-variables-and-scope.md.html">02-variables-and-scope</a></li>
+  <li><a href="../topics/03-tables.md.html">03-tables</a></li>
+  <li><a href="../topics/04-functions.md.html">04-functions</a></li>
+  <li><a href="../topics/05-control-flow.md.html">05-control-flow</a></li>
+  <li><a href="../topics/06-strings-and-patterns.md.html">06-strings-and-patterns</a></li>
+  <li><a href="../topics/07-modules-and-require.md.html">07-modules-and-require</a></li>
+  <li><a href="../topics/08-error-handling.md.html">08-error-handling</a></li>
+  <li><a href="../topics/09-the-vim-api.md.html">09-the-vim-api</a></li>
+  <li><a href="../topics/10-luacats-annotations.md.html">10-luacats-annotations</a></li>
+  <li><a href="../topics/11-neovim-013-native.md.html">11-neovim-013-native</a></li>
+  <li><a href="../topics/12-putting-it-together.md.html">12-putting-it-together</a></li>
+</ul>
+
+</div>
+
+<div id="content">
+
+<h1>Module <code>learn_vim_api</code></h1>
+<p>The Neovim API, taught from the Diver config.</p>
+<p> Once you can read Lua, the next wall is the <code>vim.*</code> API. This module maps the
+ exact pieces <code>diver</code> leans on, with the Neovim 0.13 native model front and
+ centre: <code>vim.opt</code> / <code>vim.o</code>, <code>vim.keymap.set</code>, <code>vim.api.nvim_create_autocmd</code>,
+ <code>vim.lsp</code>, <code>vim.pack</code>, and <code>vim.treesitter</code>. No plugins are required for any
+ of this — it is all built in.</p>
+
+<p> These functions are illustrative wrappers: they show the <em>shape</em> of each API
+ call as used in <code>diver</code>, with annotations, so the docs read like a che-sheet
+ you can click through.</p>
+    <h3>Info:</h3>
+    <ul>
+        <li><strong>License</strong>: Apache-2.0</li>
+        <li><strong>Author</strong>: Qompass AI</li>
+    </ul>
+
+
+<h2><a href="#Functions">Functions</a></h2>
+<table class="function_list">
+	<tr>
+	<td class="name" nowrap><a href="#options_cheatsheet">options_cheatsheet ()</a></td>
+	<td class="summary">Set an editor option four different ways (and explain when to use each).</td>
+	</tr>
+	<tr>
+	<td class="name" nowrap><a href="#map">map (mode, lhs, rhs, opts)</a></td>
+	<td class="summary">Define a keymap the modern way.</td>
+	</tr>
+	<tr>
+	<td class="name" nowrap><a href="#on">on (event, callback, extra)</a></td>
+	<td class="summary">Register an autocommand with a Lua callback.</td>
+	</tr>
+	<tr>
+	<td class="name" nowrap><a href="#get_lines">get_lines (bufnr, first_zero_based, last_exclusive)</a></td>
+	<td class="summary">Read lines from a buffer (remembering the 0-based, end-exclusive rule).</td>
+	</tr>
+	<tr>
+	<td class="name" nowrap><a href="#command">command (name, callback, attrs)</a></td>
+	<td class="summary">Create a <code>:MyCommand</code> that runs Lua.</td>
+	</tr>
+	<tr>
+	<td class="name" nowrap><a href="#enable_completion">enable_completion (client, bufnr)</a></td>
+	<td class="summary">Enable native LSP completion when the server supports it.</td>
+	</tr>
+	<tr>
+	<td class="name" nowrap><a href="#pack_specs">pack_specs (repos)</a></td>
+	<td class="summary">Add plugins with the built-in <code>vim.pack</code> (no plugin manager required).</td>
+	</tr>
+</table>
+
+<br/>
+<br/>
+
+
+    <h2 class="section-header "><a name="Functions"></a>Functions</h2>
+
+    <dl class="function">
+    <dt>
+    <a name = "options_cheatsheet"></a>
+    <strong>options_cheatsheet ()</strong>
+    </dt>
+    <dd>
+
+<p>Set an editor option four different ways (and explain when to use each). </p>
+
+<p> <code>init.lua</code> aliases all of these at the top: <code>local o = vim.o</code>,
+ <code>local bo = vim.bo</code>, <code>local wo = vim.wo</code>, <code>local opt = vim.opt</code>.</p>
+
+<ul>
+    <li><code>vim.o.x = v</code>   — global/simple scalar option (e.g. <code>o.termguicolors</code>).</li>
+    <li><code>vim.bo.x = v</code>  — buffer-local option (e.g. <code>bo.shiftwidth = 4</code>).</li>
+    <li><code>vim.wo.x = v</code>  — window-local option (e.g. <code>wo.number = true</code>).</li>
+    <li><code>vim.opt.x</code>     — a rich wrapper supporting <code>:append</code>, <code>:remove</code>, <code>:prepend</code>
+    for list/flag options (e.g. <code>opt.runtimepath:prepend(...)</code>).</li>
+</ul>
+
+
+
+    </ul>
+    </ul>
+    </ul>
+    </ul>
+    </ul>
+    </ul>
+    </ul>
+
+
+    <h3>Returns:</h3>
+    <ol>
+
+        string
+    </ol>
+
+
+
+
+</dd>
+    <dt>
+    <a name = "map"></a>
+    <strong>map (mode, lhs, rhs, opts)</strong>
+    </dt>
+    <dd>
+    Define a keymap the modern way. </p>
+
+<p> <code>vim.keymap.set(mode, lhs, rhs, opts)</code> is the one true keymap function in
+ modern Neovim — no more <code>nvim_set_keymap</code> boilerplate. <code>rhs</code> may be a string
+ (<code>:RoseChatNew&lt;CR&gt;</code>) <strong>or a Lua function</strong> (like <code>toggle_netrw</code>). <code>diver</code>
+ aliases it as <code>local map = vim.keymap.set</code> in every <code>lua/mappings/*</code> file.
+
+    </ul>
+    </ul>
+    </ul>
+    </ul>
+    </ul>
+    </ul>
+    </ul>
+
+    <h3>Parameters:</h3>
+    <ul>
+        <li><span class="parameter">mode</span>
+         string|string[]
+        </li>
+        <li><span class="parameter">lhs</span>
+         string
+        </li>
+        <li><span class="parameter">rhs</span>
+         string|function
+        </li>
+        <li><span class="parameter">opts</span>
+        ? vim.keymap.set.Opts
+        </li>
+    </ul>
+
+
+
+
+    <h3>Usage:</h3>
+    <ul>
+        <pre class="example">learn_vim_api.<span class="function-name">map</span>(<span class="string">"n"</span>, <span class="string">"&lt;leader&gt;e"</span>, <span class="keyword">function</span>() vim.<span class="function-name">cmd</span>(<span class="string">"Lexplore"</span>) <span class="keyword">end</span>,
+                  { desc = <span class="string">"Toggle Explorer"</span> })</pre>
+    </ul>
+
+</dd>
+    <dt>
+    <a name = "on"></a>
+    <strong>on (event, callback, extra)</strong>
+    </dt>
+    <dd>
+    Register an autocommand with a Lua callback. </p>
+
+<p> Autocommands run your code on editor events. <code>diver</code> uses them heavily —
+ <code>LspAttach</code> to wire buffer-local keymaps (<code>lua/mappings/aimap.lua</code>),
+ <code>BufWritePost</code> to render Markdown to PDF (<code>lua/utils/docs/docs.lua</code>). The
+ callback receives one <code>args</code> table; <code>args.buf</code> is the buffer, <code>args.file</code>
+ the filename.
+
+    </ul>
+    </ul>
+    </ul>
+    </ul>
+    </ul>
+    </ul>
+    </ul>
+
+    <h3>Parameters:</h3>
+    <ul>
+        <li><span class="parameter">event</span>
+         string|string[]
+        </li>
+        <li><span class="parameter">callback</span>
+         fun(args: table)
+        </li>
+        <li><span class="parameter">extra</span>
+        ? table
+        </li>
+    </ul>
+
+    <h3>Returns:</h3>
+    <ol>
+
+        integer autocmd_id
+    </ol>
+
+
+
+    <h3>Usage:</h3>
+    <ul>
+        <pre class="example">learn_vim_api.<span class="function-name">on</span>(<span class="string">"BufWritePost"</span>, <span class="keyword">function</span>(a) <span class="global">print</span>(<span class="string">"saved"</span>, a.file) <span class="keyword">end</span>,
+                 { pattern = <span class="string">"*.md"</span> })</pre>
+    </ul>
+
+</dd>
+    <dt>
+    <a name = "get_lines"></a>
+    <strong>get_lines (bufnr, first_zero_based, last_exclusive)</strong>
+    </dt>
+    <dd>
+    Read lines from a buffer (remembering the 0-based, end-exclusive rule). </p>
+
+<p> <code>nvim_buf_get_lines(buf, start, end_, strict)</code> uses <strong>0-based</strong> indices and an
+ <strong>exclusive</strong> end. To read the single current line <code>v.lnum</code> (which is
+ 1-based) you pass <code>v.lnum - 1, v.lnum</code> — exactly what <code>M.foldtext</code> does in
+ <code>lua/utils/docs/docs.lua</code>.
+
+    </ul>
+    </ul>
+    </ul>
+    </ul>
+    </ul>
+    </ul>
+    </ul>
+
+    <h3>Parameters:</h3>
+    <ul>
+        <li><span class="parameter">bufnr</span>
+         integer
+        </li>
+        <li><span class="parameter">first_zero_based</span>
+         integer
+        </li>
+        <li><span class="parameter">last_exclusive</span>
+         integer
+        </li>
+    </ul>
+
+    <h3>Returns:</h3>
+    <ol>
+
+        string[]
+    </ol>
+
+
+
+    <h3>Usage:</h3>
+    <ul>
+        <pre class="example"><span class="keyword">local</span> lines = learn_vim_api.<span class="function-name">get_lines</span>(<span class="number">0</span>, <span class="number">0</span>, -<span class="number">1</span>) <span class="comment">-- whole buffer</span></pre>
+    </ul>
+
+</dd>
+    <dt>
+    <a name = "command"></a>
+    <strong>command (name, callback, attrs)</strong>
+    </dt>
+    <dd>
+    Create a <code>:MyCommand</code> that runs Lua. </p>
+
+<p> <code>diver</code> defines <code>:Align</code>, <code>:Json2Lua</code>, <code>:JsonC2Lua</code> this way in
+ <code>lua/utils/docs/docs.lua</code>. The callback gets an <code>opts</code> table with the range
+ (<code>opts.line1</code>, <code>opts.line2</code>) and any args.
+
+    </ul>
+    </ul>
+    </ul>
+    </ul>
+    </ul>
+    </ul>
+    </ul>
+
+    <h3>Parameters:</h3>
+    <ul>
+        <li><span class="parameter">name</span>
+         string
+        </li>
+        <li><span class="parameter">callback</span>
+         fun(opts: table)
+        </li>
+        <li><span class="parameter">attrs</span>
+        ? table
+        </li>
+    </ul>
+
+
+
+
+    <h3>Usage:</h3>
+    <ul>
+        <pre class="example">learn_vim_api.<span class="function-name">command</span>(<span class="string">"HelloDiver"</span>, <span class="keyword">function</span>() <span class="global">print</span>(<span class="string">"hi"</span>) <span class="keyword">end</span>)</pre>
+    </ul>
+
+</dd>
+    <dt>
+    <a name = "enable_completion"></a>
+    <strong>enable_completion (client, bufnr)</strong>
+    </dt>
+    <dd>
+    Enable native LSP completion when the server supports it. </p>
+
+<p> This is the heart of <code>M.on_attach</code> in <code>lua/config/core/lsp.lua</code>, and the
+ reason <code>diver</code> needs <strong>no completion plugin</strong>. Inside an <code>LspAttach</code>
+ callback you receive the <code>client</code>; if it advertises a completion provider
+ you switch on the <em>built-in</em> <code>vim.lsp.completion.enable</code>. Neovim 0.13 also
+ adds <code>vim.lsp.inline_completion.enable</code> for ghost-text suggestions.
+
+    </ul>
+    </ul>
+    </ul>
+    </ul>
+    </ul>
+    </ul>
+    </ul>
+
+    <h3>Parameters:</h3>
+    <ul>
+        <li><span class="parameter">client</span>
+         vim.lsp.Client
+        </li>
+        <li><span class="parameter">bufnr</span>
+         integer
+        </li>
+    </ul>
+
+    <h3>Returns:</h3>
+    <ol>
+
+        boolean enabled
+    </ol>
+
+
+
+    <h3>Usage:</h3>
+    <ul>
+        <pre class="example">vim.api.<span class="function-name">nvim_create_autocmd</span>(<span class="string">"LspAttach"</span>, {
+  callback = <span class="keyword">function</span>(ev)
+    <span class="keyword">local</span> c = vim.lsp.<span class="function-name">get_client_by_id</span>(ev.data.client_id)
+    learn_vim_api.<span class="function-name">enable_completion</span>(c, ev.buf)
+  <span class="keyword">end</span>,
+})</pre>
+    </ul>
+
+</dd>
+    <dt>
+    <a name = "pack_specs"></a>
+    <strong>pack_specs (repos)</strong>
+    </dt>
+    <dd>
+    Add plugins with the built-in <code>vim.pack</code> (no plugin manager required). </p>
+
+<p> Neovim 0.13 ships <code>vim.pack.add{ {src=...}, ... }</code>, which <code>diver</code> uses in
+ <code>lua/plugins/init.lua</code> and <code>lua/plugins/core/init.lua</code>. Each spec is a table
+ with a git <code>src</code>, optional <code>version</code> (e.g. <code>vim.version.range(&apos;1.*&apos;)</code>), and
+ <code>branch</code>. This function shows the spec shape.
+
+    </ul>
+    </ul>
+    </ul>
+    </ul>
+    </ul>
+    </ul>
+    </ul>
+
+    <h3>Parameters:</h3>
+    <ul>
+        <li><span class="parameter">repos</span>
+         string[]
+        </li>
+    </ul>
+
+    <h3>Returns:</h3>
+    <ol>
+
+        vim.pack.Spec[]
+    </ol>
+
+
+
+    <h3>Usage:</h3>
+    <ul>
+        <pre class="example"><span class="keyword">local</span> specs = learn_vim_api.<span class="function-name">pack_specs</span>({ <span class="string">"folke/which-key.nvim"</span> })</pre>
+    </ul>
+
+</dd>
+</dl>
+
+
+</div> <!-- id="content" -->
+</div> <!-- id="main" -->
+<div id="about">
+<i>generated by <a href="http://github.com/lunarmodules/LDoc">LDoc 1.5.0</a></i>
+<i style="float:right;">Last updated 2026-06-30 16:53:09 </i>
+</div> <!-- id="about" -->
+</div> <!-- id="container" -->
+</body>
+</html>

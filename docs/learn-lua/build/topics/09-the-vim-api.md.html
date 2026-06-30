@@ -1,0 +1,230 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN"
+   "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd">
+<html>
+<meta http-equiv="Content-Type" content="text/html; charset=UTF-8"/>
+<head>
+    <title>Learn Lua with Diver</title>
+    <link rel="stylesheet" href="../ldoc.css" type="text/css" />
+</head>
+<body>
+
+<div id="container">
+
+<div id="product">
+	<div id="product_logo"></div>
+	<div id="product_name"><big><b></b></big></div>
+	<div id="product_description"></div>
+</div> <!-- id="product" -->
+
+
+<div id="main">
+
+
+<!-- Menu -->
+
+<div id="navigation">
+<br/>
+<h1>Diver :: Learn Lua</h1>
+
+
+<ul>
+  <li><a href="../index.html">Index</a></li>
+</ul>
+
+<h2>Contents</h2>
+<ul>
+<li><a href="#Concept">Concept </a></li>
+<li><a href="#In_Diver">In Diver </a></li>
+<li><a href="#Reference">Reference </a></li>
+<li><a href="#Try_it_yourself">Try it yourself </a></li>
+</ul>
+
+
+<h2>Topics</h2>
+<ul class="">
+  <li><a href="../topics/00-introduction.md.html">00-introduction</a></li>
+  <li><a href="../topics/01-values-and-types.md.html">01-values-and-types</a></li>
+  <li><a href="../topics/02-variables-and-scope.md.html">02-variables-and-scope</a></li>
+  <li><a href="../topics/03-tables.md.html">03-tables</a></li>
+  <li><a href="../topics/04-functions.md.html">04-functions</a></li>
+  <li><a href="../topics/05-control-flow.md.html">05-control-flow</a></li>
+  <li><a href="../topics/06-strings-and-patterns.md.html">06-strings-and-patterns</a></li>
+  <li><a href="../topics/07-modules-and-require.md.html">07-modules-and-require</a></li>
+  <li><a href="../topics/08-error-handling.md.html">08-error-handling</a></li>
+  <li><strong>09-the-vim-api</strong></li>
+  <li><a href="../topics/10-luacats-annotations.md.html">10-luacats-annotations</a></li>
+  <li><a href="../topics/11-neovim-013-native.md.html">11-neovim-013-native</a></li>
+  <li><a href="../topics/12-putting-it-together.md.html">12-putting-it-together</a></li>
+</ul>
+<h2>Modules</h2>
+<ul class="nowrap">
+  <li><a href="../modules/learn_lua.html">learn_lua</a></li>
+  <li><a href="../modules/learn_tables.html">learn_tables</a></li>
+  <li><a href="../modules/learn_vim_api.html">learn_vim_api</a></li>
+</ul>
+
+</div>
+
+<div id="content">
+
+
+<h1>09 · The Vim API</h1>
+
+<p><a name="Concept"></a></p>
+<h2>Concept</h2>
+
+<p>Everything so far has been the Lua <em>language</em>. Now we meet the <code>vim</code> global —
+the table Neovim injects into every Lua chunk, giving you the whole editor as a
+programmable object. You do not <code>require(&apos;vim&apos;)</code>; it is simply always there.
+(That is why <code>.luarc.json</code> lists <code>vim</code> as a known global.)</p>
+
+<p>Here are the corners of <code>vim</code> that <code>diver</code> actually uses, grouped so you can
+navigate them.</p>
+
+<h3>Options — <code>vim.o</code>, <code>vim.bo</code>, <code>vim.wo</code>, <code>vim.opt</code></h3>
+
+<p>| Accessor | Scope | Example |
+|----------|-------|---------|
+| <code>vim.o</code>  | global scalar | <code>vim.o.termguicolors = true</code> |
+| <code>vim.bo</code> | buffer-local | <code>vim.bo.shiftwidth = 4</code> |
+| <code>vim.wo</code> | window-local | <code>vim.wo.number = true</code> |
+| <code>vim.opt</code>| list/flag-aware | <code>vim.opt.runtimepath:prepend(p)</code> |</p>
+
+<p>Use <code>vim.opt</code> when an option is a comma-list or flag-set and you want to
+<code>:append</code>, <code>:remove</code>, or <code>:prepend</code> rather than overwrite the whole thing.</p>
+
+<h3>Variables and environment — <code>vim.g</code>, <code>vim.env</code>, <code>vim.fn</code></h3>
+
+<ul>
+    <li><code>vim.g.mapleader = &apos; &apos;</code> — global Vim variables (<code>g:</code> in Vimscript).</li>
+    <li><code>vim.env.HOME</code> — environment variables.</li>
+    <li><code>vim.fn.expand(&apos;~/.config&apos;)</code> — call <strong>any</strong> classic Vimscript function from
+    Lua. <code>vim.fn.has</code>, <code>vim.fn.stdpath</code>, <code>vim.fn.system</code> are all here.</li>
+</ul>
+
+<h3>Commands — <code>vim.cmd</code></h3>
+
+<p><code>vim.cmd(&apos;filetype plugin on&apos;)</code> runs an Ex command as if typed at <code>:</code>.</p>
+
+<h3>The structured API — <code>vim.api.*</code></h3>
+
+<p>These are the fast, modern, <strong>0-based</strong> functions (note: 0-based, unlike Lua
+tables which are 1-based — this is the #1 source of off-by-one bugs):</p>
+
+<ul>
+    <li><code>vim.api.nvim_buf_get_lines(buf, start, end_, strict)</code> — read lines.</li>
+    <li><code>vim.api.nvim_buf_set_lines(...)</code> — write lines.</li>
+    <li><code>vim.api.nvim_create_autocmd(event, spec)</code> — react to events.</li>
+    <li><code>vim.api.nvim_create_user_command(name, fn, attrs)</code> — define <code>:Commands</code>.</li>
+</ul>
+
+<h3>Keymaps — <code>vim.keymap.set</code></h3>
+
+<p><code>vim.keymap.set(mode, lhs, rhs, opts)</code> — <code>rhs</code> can be a string command or a Lua
+function. The one keymap call you will ever need.</p>
+
+<h3>Utilities — <code>vim.tbl_extend</code>, <code>vim.inspect</code>, <code>vim.notify</code>, <code>vim.split</code></h3>
+
+<ul>
+    <li><code>vim.tbl_extend(&apos;force&apos;, a, b)</code> / <code>vim.tbl_deep_extend</code> — merge tables.</li>
+    <li><code>vim.inspect(t)</code> — pretty-print a table (your debugging best friend).</li>
+    <li><code>vim.notify(msg, level)</code> — show a message; <code>level</code> from <code>vim.log.levels</code>.</li>
+    <li><code>vim.split(s, sep, opts)</code> / <code>vim.gsplit(...)</code> — split strings.</li>
+</ul>
+
+<p><a name="In_Diver"></a></p>
+<h2>In Diver</h2>
+
+<p><code>init.lua</code> is a 300-line tour of the options API. Sample:</p>
+
+
+<pre>
+bo.shiftwidth = <span class="number">4</span>              <span class="comment">-- buffer option
+</span>g.mapleader = <span class="string">' '</span>              <span class="comment">-- global variable
+</span>o.termguicolors = <span class="keyword">true</span>         <span class="comment">-- global option
+</span>opt.runtimepath:<span class="function-name">prepend</span>(env.VIMRUNTIME)   <span class="comment">-- list option, prepend
+</span>wo.number = <span class="keyword">true</span>               <span class="comment">-- window option
+</span>wo.relativenumber = <span class="keyword">true</span>
+</pre>
+
+
+<p>The <strong>0-based gotcha</strong>, live, in <code>lua/config/core/parser.lua</code>:</p>
+
+
+<pre>
+lnum = <span class="global">tonumber</span>(lnum) - <span class="number">1</span>                 <span class="comment">-- compiler said line N (1-based) ...
+</span>col  = <span class="global">tonumber</span>(col <span class="keyword">or</span> <span class="number">1</span>) - <span class="number">1</span>             <span class="comment">-- ... API wants N-1 (0-based)
+</span><span class="global">table</span>.<span class="function-name">insert</span>(diagnostics, { lnum = lnum, col = col, ... })
+</pre>
+
+
+<p>And in <code>lua/utils/docs/docs.lua</code>'s <code>M.foldtext</code>:</p>
+
+
+<pre>
+<span class="keyword">return</span> <span class="function-name">bufgl</span>(<span class="number">0</span>, v.lnum - <span class="number">1</span>, v.lnum, <span class="keyword">false</span>)[<span class="number">1</span>]
+</pre>
+
+
+<p><code>v.lnum</code> is the 1-based current line; <code>v.lnum - 1, v.lnum</code> reads exactly that
+one line through the 0-based, end-exclusive API. The trailing <code>[1]</code> grabs the
+first (only) element of the returned list.</p>
+
+<p>**<code>vim.fn</code> + truthiness** — <code>init.lua</code>:</p>
+
+
+<pre>
+<span class="keyword">local</span> is_windows = fn.<span class="function-name">has</span>(<span class="string">'win32'</span>) == <span class="number">1</span> <span class="keyword">or</span> fn.<span class="function-name">has</span>(<span class="string">'win64'</span>) == <span class="number">1</span>
+</pre>
+
+
+<p><strong>Defining a command with a range</strong> — <code>lua/utils/docs/docs.lua</code>:</p>
+
+
+<pre>
+<span class="function-name">usercmd</span>(<span class="string">'Align'</span>, <span class="keyword">function</span>(opts)
+    <span class="keyword">for</span> lnum = opts.line1, opts.line2 <span class="keyword">do</span> ... <span class="keyword">end</span>
+<span class="keyword">end</span>, { range = <span class="keyword">true</span> })
+</pre>
+
+
+<p><a name="Reference"></a></p>
+<h2>Reference</h2>
+
+<p>The **<a href="../modules/learn_vim_api.html#">learn_vim_api</a>** module is your clickable cheat-sheet, with one annotated
+wrapper per API area:</p>
+
+<ul>
+    <li><code>options_cheatsheet()</code> — when to use <code>o</code> / <code>bo</code> / <code>wo</code> / <code>opt</code>.</li>
+    <li><code>map(mode, lhs, rhs, opts)</code> — <code>vim.keymap.set</code>.</li>
+    <li><code>on(event, callback, extra)</code> — <code>nvim_create_autocmd</code>.</li>
+    <li><code>get_lines(buf, first, last)</code> — the 0-based, end-exclusive read.</li>
+    <li><code>command(name, callback, attrs)</code> — <code>nvim_create_user_command</code>.</li>
+    <li><code>enable_completion</code> / <code>pack_specs</code> — the Neovim 0.13 native bits (Chapter 11).</li>
+</ul>
+
+<p><a name="Try_it_yourself"></a></p>
+<h2>Try it yourself</h2>
+
+
+<pre>
+:lua <span class="global">print</span>(vim.<span class="function-name">inspect</span>(vim.api.<span class="function-name">nvim_buf_get_lines</span>(<span class="number">0</span>, <span class="number">0</span>, <span class="number">3</span>, <span class="keyword">false</span>)))
+:lua <span class="global">print</span>(vim.fn.<span class="function-name">stdpath</span>(<span class="string">'config'</span>))
+:lua vim.<span class="function-name">notify</span>(<span class="string">'hello from lua'</span>, vim.log.levels.INFO)
+:lua <span class="global">print</span>(vim.o.shiftwidth, vim.bo.shiftwidth)
+</pre>
+
+
+<p>Next we make these comments do double duty as a type-checker — <strong>Chapter 10,
+LuaCATS Annotations</strong>.</p>
+
+
+</div> <!-- id="content" -->
+</div> <!-- id="main" -->
+<div id="about">
+<i>generated by <a href="http://github.com/lunarmodules/LDoc">LDoc 1.5.0</a></i>
+<i style="float:right;">Last updated 2026-06-30 16:53:09 </i>
+</div> <!-- id="about" -->
+</div> <!-- id="container" -->
+</body>
+</html>

@@ -1,0 +1,240 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN"
+   "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd">
+<html>
+<meta http-equiv="Content-Type" content="text/html; charset=UTF-8"/>
+<head>
+    <title>Learn Lua with Diver</title>
+    <link rel="stylesheet" href="../ldoc.css" type="text/css" />
+</head>
+<body>
+
+<div id="container">
+
+<div id="product">
+	<div id="product_logo"></div>
+	<div id="product_name"><big><b></b></big></div>
+	<div id="product_description"></div>
+</div> <!-- id="product" -->
+
+
+<div id="main">
+
+
+<!-- Menu -->
+
+<div id="navigation">
+<br/>
+<h1>Diver :: Learn Lua</h1>
+
+
+<ul>
+  <li><a href="../index.html">Index</a></li>
+</ul>
+
+<h2>Contents</h2>
+<ul>
+<li><a href="#Concept">Concept </a></li>
+<li><a href="#In_Diver">In Diver </a></li>
+<li><a href="#Reference">Reference </a></li>
+<li><a href="#Try_it_yourself">Try it yourself </a></li>
+</ul>
+
+
+<h2>Topics</h2>
+<ul class="">
+  <li><a href="../topics/00-introduction.md.html">00-introduction</a></li>
+  <li><a href="../topics/01-values-and-types.md.html">01-values-and-types</a></li>
+  <li><a href="../topics/02-variables-and-scope.md.html">02-variables-and-scope</a></li>
+  <li><a href="../topics/03-tables.md.html">03-tables</a></li>
+  <li><a href="../topics/04-functions.md.html">04-functions</a></li>
+  <li><a href="../topics/05-control-flow.md.html">05-control-flow</a></li>
+  <li><strong>06-strings-and-patterns</strong></li>
+  <li><a href="../topics/07-modules-and-require.md.html">07-modules-and-require</a></li>
+  <li><a href="../topics/08-error-handling.md.html">08-error-handling</a></li>
+  <li><a href="../topics/09-the-vim-api.md.html">09-the-vim-api</a></li>
+  <li><a href="../topics/10-luacats-annotations.md.html">10-luacats-annotations</a></li>
+  <li><a href="../topics/11-neovim-013-native.md.html">11-neovim-013-native</a></li>
+  <li><a href="../topics/12-putting-it-together.md.html">12-putting-it-together</a></li>
+</ul>
+<h2>Modules</h2>
+<ul class="nowrap">
+  <li><a href="../modules/learn_lua.html">learn_lua</a></li>
+  <li><a href="../modules/learn_tables.html">learn_tables</a></li>
+  <li><a href="../modules/learn_vim_api.html">learn_vim_api</a></li>
+</ul>
+
+</div>
+
+<div id="content">
+
+
+<h1>06 · Strings and Patterns</h1>
+
+<p><a name="Concept"></a></p>
+<h2>Concept</h2>
+
+<p>Strings are immutable text. You can quote them three ways:</p>
+
+
+<pre>
+<span class="keyword">local</span> a = <span class="string">'single quotes'</span>
+<span class="keyword">local</span> b = <span class="string">"double quotes"</span>          <span class="comment">-- identical to single
+</span><span class="keyword">local</span> c = <span class="string">[[ long string
+that spans multiple lines ]]</span>       <span class="comment">-- "long bracket" form, no escaping needed</span>
+</pre>
+
+
+<p><code>diver</code>'s <code>.stylua.toml</code> sets <code>quote_style = &quot;AutoPreferSingle&quot;</code>, which is why
+the config overwhelmingly uses <code>&apos;single&apos;</code> quotes. The <code>[[ ... ]]</code> form is used
+for license headers and multi-line templates (see <code>schema.lua</code>'s
+<code>copyright_notice</code>).</p>
+
+<h3>Joining strings: <code>..</code></h3>
+
+<p>The concatenation operator is two dots:</p>
+
+
+<pre>
+<span class="keyword">local</span> path = fn.<span class="function-name">stdpath</span>(<span class="string">'config'</span>) .. <span class="string">'/spell/en.utf-8.add'</span>
+</pre>
+
+
+<p><code>..</code> glues strings (and numbers, which auto-convert) together. You see this
+constantly in path building throughout <code>init.lua</code>.</p>
+
+<h3>Formatting: <a href="https://www.lua.org/manual/5.1/manual.html#pdf-string.format">string.format</a> and the <code>:format</code> method</h3>
+
+
+<pre>
+<span class="global">string</span>.<span class="function-name">format</span>(<span class="string">'[Diver] Loaded %s'</span>, name)   <span class="comment">-- function call form
+</span>(<span class="string">'[Diver] Loaded %s'</span>):<span class="function-name">format</span>(name)          <span class="comment">-- method call form — same result</span>
+</pre>
+
+
+<p>The <code>%s</code> is a placeholder ("put a string here"); <code>%d</code> is for integers. Both
+forms appear in <code>diver</code>. The <code>(&apos;...&apos;):format(...)</code> shape works because in Lua
+you can call a string-library method directly <em>on</em> a string literal.</p>
+
+<h3>Length and the <code>#</code> operator</h3>
+
+<p><code>#s</code> gives the byte length of a string (and, separately, the array length of a
+table — Chapter 03).</p>
+
+<h3>Lua patterns — NOT regular expressions</h3>
+
+<p>This is a crucial gotcha. Lua has its own lightweight pattern language for
+matching text. <strong>It is not PCRE / regex.</strong> The differences that bite people:</p>
+
+<p>| You want | Regex | Lua pattern |
+|----------|-------|-------------|
+| "any character" | <code>.</code> | <code>.</code> (same) |
+| "a digit" | <code>\d</code> | <code>%d</code> |
+| "a space" | <code>\s</code> | <code>%s</code> |
+| "a word char" | <code>\w</code> | <code>%w</code> |
+| "zero or more" | <code>*</code> | <code>*</code> (same) |
+| "the literal <code>%</code>" | <code>%</code> or <code>\%</code> | <code>%%</code> |
+| "escape a magic char" | <code>\</code> | <code>%</code> |</p>
+
+<p>The magic characters you must escape with <code>%</code> are: <code>( ) . % + - * ? [ ] ^ $</code>.</p>
+
+<p>The two pattern functions you will meet most:</p>
+
+<ul>
+    <li><code>s:match(pattern)</code> — return the first match (and any captures in <code>()</code>), or
+    <code>nil</code>.</li>
+    <li><code>s:gsub(pattern, replacement)</code> — return a copy with all matches replaced, plus
+    the count.</li>
+</ul>
+
+
+<pre>
+<span class="keyword">local</span> path, line = (<span class="string">"init.lua:42"</span>):<span class="function-name">match</span>(<span class="string">"^(.-):(%d+)"</span>)
+<span class="comment">-- path = "init.lua", line = "42"   (still a string — convert with tonumber)</span>
+</pre>
+
+
+<p><a name="In_Diver"></a></p>
+<h2>In Diver</h2>
+
+<p><strong>Path concatenation</strong> — <code>init.lua</code>:</p>
+
+
+<pre>
+g.python3_host_prog = <span class="string">'/usr/bin/python3'</span>
+o.undodir = fn.<span class="function-name">stdpath</span>(<span class="string">'data'</span>) .. <span class="string">'/undo'</span>
+</pre>
+
+
+<p>**<code>:format</code> for messages** — <code>lua/config/init.lua</code>:</p>
+
+
+<pre>
+<span class="function-name">notify</span>(<span class="function-name">fmt</span>(<span class="string">'[Diver] Failed to load %s: %s'</span>, name, mod), levels.ERROR)
+</pre>
+
+
+<p>(where <code>local fmt = string.format</code> at the top — Chapter 02 aliasing.)</p>
+
+<p><strong>A Lua pattern parsing compiler output</strong> — <code>lua/config/core/parser.lua</code>:</p>
+
+
+<pre>
+<span class="keyword">local</span> pattern = opts.pattern <span class="keyword">or</span> <span class="string">'^(.-):(%d+):(%d+):%s*(.+)$'</span>
+<span class="keyword">local</span> path, lnum, col, msg = line:<span class="function-name">match</span>(pattern)
+</pre>
+
+
+<p>Read that pattern with your new knowledge:
+<code>^(.-)</code> capture everything up to the first colon (the file),
+<code>:(%d+)</code> a colon then digits (the line number),
+<code>:(%d+)</code> another colon and digits (the column),
+<code>:%s*(.+)$</code> a colon, optional spaces, then the rest (the message) to end of
+line. Four captures, four variables — multiple returns from <code>match</code>.</p>
+
+<p>**<code>gsub</code> cleaning JSON-with-comments into real JSON** —
+<code>lua/utils/docs/docs.lua</code>, the <code>:Json2Lua</code> command:</p>
+
+
+<pre>
+json_str = json_str:<span class="function-name">gsub</span>(<span class="string">'//[^\n]*'</span>, <span class="string">''</span>)      <span class="comment">-- strip // line comments
+</span>json_str = json_str:<span class="function-name">gsub</span>(<span class="string">'/%*.-%*/'</span>, <span class="string">''</span>)       <span class="comment">-- strip /* block comments */
+</span>json_str = json_str:<span class="function-name">gsub</span>(<span class="string">',(%s*[}%]])'</span>, <span class="string">'%1'</span>)  <span class="comment">-- drop trailing commas</span>
+</pre>
+
+
+<p>Notice <code>/%*</code> and <code>%*/</code> — the <code>*</code> is escaped with <code>%</code> because <code>*</code> is magic. And
+<code>%1</code> in the replacement means "whatever capture #1 matched."</p>
+
+<p><a name="Reference"></a></p>
+<h2>Reference</h2>
+
+<p>The string idioms are demonstrated throughout the reference modules — e.g.
+<a href="../modules/learn_lua.html#safe_require">learn_lua.safe_require</a> and <a href="../modules/learn_lua.html#call_if_function">learn_lua.call_if_function</a> both build messages
+with <code>:format</code>, and <a href="../modules/learn_vim_api.html#pack_specs">learn_vim_api.pack_specs</a> concatenates the GitHub URL with
+<code>..</code>.</p>
+
+<p><a name="Try_it_yourself"></a></p>
+<h2>Try it yourself</h2>
+
+
+<pre>
+:lua <span class="global">print</span>((<span class="string">'a'</span> .. <span class="string">'b'</span> .. <span class="string">'c'</span>))
+:lua <span class="global">print</span>((<span class="string">'user=%s id=%d'</span>):<span class="function-name">format</span>(<span class="string">'matt'</span>, <span class="number">42</span>))
+:lua <span class="global">print</span>((<span class="string">'init.lua:42:7'</span>):<span class="function-name">match</span>(<span class="string">'^(.-):(%d+):(%d+)'</span>))
+:lua <span class="global">print</span>((<span class="string">"x.y.z"</span>):<span class="function-name">gsub</span>(<span class="string">"%."</span>, <span class="string">"/"</span>))
+</pre>
+
+
+<p>Next: how files find and load each other — **Chapter 07, Modules and
+<a href="https://www.lua.org/manual/5.1/manual.html#pdf-require">require</a>**.</p>
+
+
+</div> <!-- id="content" -->
+</div> <!-- id="main" -->
+<div id="about">
+<i>generated by <a href="http://github.com/lunarmodules/LDoc">LDoc 1.5.0</a></i>
+<i style="float:right;">Last updated 2026-06-30 16:53:09 </i>
+</div> <!-- id="about" -->
+</div> <!-- id="container" -->
+</body>
+</html>
