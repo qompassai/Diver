@@ -29,7 +29,7 @@ local function code_action_status()
         return ''
     end
     if code_action_available then
-        return '💡 CA'
+        return ' CA'
     end
     return ''
 end
