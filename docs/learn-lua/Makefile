@@ -1,5 +1,5 @@
 # /qompassai/Diver/docs/learn-lua/Makefile
-# Qompass AI Diver :: build the "Learn Lua" course with LDoc
+# Qompass AI Diver Luadoc MakeFile
 # Copyright (C) 2026 Qompass AI, All rights reserved
 # ----------------------------------------------------------------------------
 # Targets:
@@ -8,8 +8,6 @@
 #   make clean      remove ./build
 #   make check      sanity-check that ldoc is installed
 #
-# No Neovim plugins are required: this uses the standalone `ldoc` CLI plus a
-# Markdown backend (markdown or discount), both installable via LuaRocks.
 
 LDOC    ?= ldoc
 CONFIG  ?= config.ld

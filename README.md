@@ -17,15 +17,6 @@ limitations under the License.
 -->
 <!-------------------------------------------------------->
 
-<h2> Qompass AI Diver </h3>
-
-  <h3> Your Blazingly Fast Everything Editor </h3>
-
-![Repository Views](https://komarev.com/ghpvc/?username=qompassai-diver)
-![GitHub all releases](https://img.shields.io/github/downloads/qompassai/diver/total?style=flat-square)
-
-<!-------------------------------------------------------->
-
 <h2>Qompass AI Diver</h2>
 
 <h3>Your Blazingly Fast Everything Editor</h3>
@@ -35,11 +26,11 @@ limitations under the License.
 
 <p align="center">
   <a href="https://neovim.io/">
-    <img src="https://img.shields.io/badge/Neovim-0.12+-57A143?style=for-the-badge&logo=neovim&logoColor=white" alt="Neovim">
+    <img src="https://img.shields.io/badge/Neovim-0.13+-57A143?style=for-the-badge&logo=neovim&logoColor=white" alt="Neovim">
   </a>
   <br>
   <a href="https://www.lua.org/">
-    <img src="https://img.shields.io/badge/Lua-5.1+LuaJIT-blue?style=flat-square" alt="Lua">
+    <img src="https://img.shields.io/badge/Lua-5.1%2BLuaJIT-blue?style=flat-square" alt="Lua">
   </a>
   <a href="https://github.com/neovim/neovim/wiki/FAQ">
     <img src="https://img.shields.io/badge/Neovim_Lua_Config-Docs-blue?style=flat-square" alt="Neovim Lua Config Docs">
@@ -52,20 +43,12 @@ limitations under the License.
     <img src="https://zenodo.org/badge/DOI/10.5281/zenodo.16171391.svg" alt="DOI">
   </a>
   <a href="./LICENSE">
-    <img src="https://img.shields.io/badge/License-Apache%202.0-blue.svg" alt="License: Apache 2.0">
-  </a>
-</p> src="https://zenodo.org/badge/DOI/10.5281/zenodo.16171391.svg" alt="DOI">
-  </a>
-  <a href="https://www.gnu.org/licenses/agpl-3.0">
-    <img src="https://img.shields.io/badge/License-AGPL%20v3-blue.svg" alt="License: AGPL v3">
-  </a>
-  <a href="./LICENSE-QCDA">
-    <img src="https://img.shields.io/badge/license-Q--CDA-lightgrey.svg" alt="License: Q-CDA">
+    <img src="https://img.shields.io/badge/license-Apache--2.0-blue.svg" alt="License: Apache 2.0">
   </a>
 </p>
 
 <details>
-<summary style="font-size: 1.4em; font-weight: bold; padding: 15px; background: #667eea; color: white; border-radius: 10px; cursor: pointer; margin: 10px 0;"><strong>🧭 Qompass Diver Map</strong></summary>
+<summary style="font-size: 1.4em; font-weight: bold; padding: 15px; background: #667eea; color: white; border-radius: 10px; cursor: pointer; margin: 10px 0;"><strong>🧭 Diver Map</strong></summary>
 <blockquote style="font-size: 1.2em; line-height: 1.8; padding: 25px; background: #f8f9fa; border-left: 6px solid #667eea; border-radius: 8px; margin: 15px 0; box-shadow: 0 2px 8px rgba(0,0,0,0.1);">
 
 ```lua

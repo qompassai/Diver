@@ -6,10 +6,6 @@ and it is built with **LDoc** (LuaDoc) from comments written in **LuaCATS**
 annotation style — so the same comments that document the lessons also
 type-check inside Neovim via `lua-language-server`.
 
-> Audience: you understand basic programming concepts (bool vs. float,
-> variables, functions) but cannot yet write Lua from scratch without heavy AI
-> help. By Chapter 12 you will be able to read `diver` and edit it safely.
-
 ## What is in here
 
 ```
@@ -127,4 +123,4 @@ table.
 
 ## License
 
-Apache-2.0, © Qompass AI — same as the rest of `diver`.
+Apache-2.0, © Qompass AI 
