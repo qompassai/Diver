@@ -61,7 +61,12 @@ vim.lsp.enable({
   --'coq_ls',
   'crystalline_ls',
   'csharp_ls',
+  --'csskit_ls',
+  --'ctags_ls',
+  --lsp/dexter_ls.lua
+  --lsp/zizmor_ls.lua
   'cucumber_ls', ---:TODO Validate
+  --cql_ls
   'dafny_ls', ---:TODO validate
   --'delphi_ls'           ---:TODO ---@source https://docwiki.embarcadero.com/RADStudio/Florence/en/Code_Insight_Reference
   -- 'debputy_ls', ---:TODO validate ---@source https://salsa.debian.org/debian/debputy
@@ -396,7 +401,6 @@ vim.lsp.enable({
 ---  --'scry_ls', --deprecated for crystalline
 --scheme_ls --not using https://gitlab.com/Serenata/Serenata
 -- 'served_ls', ---outdated ---@source https://github.com/Pure-D/serve-d
-
 --'shader_ls' ---outdated https://github.com/shader-ls/shader-language-server
 ---'sixtyfps_ls', ---deprecated replaced with slint
 ---smarty_ls ---outdated
