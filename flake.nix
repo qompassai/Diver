@@ -62,8 +62,6 @@
     plugin-gitsigns-nvim.flake = false;
     plugin-glow-nvim.url = "github:ellisonleao/glow.nvim";
     plugin-glow-nvim.flake = false;
-    plugin-gruvbox.url = "github:ellisonleao/gruvbox.nvim";
-    plugin-gruvbox.flake = false;
     plugin-indent-blankline.url = "github:lukas-reineke/indent-blankline.nvim";
     plugin-indent-blankline.flake = false;
     plugin-kommentary.url = "github:b3nj5m1n/kommentary";
@@ -98,12 +96,8 @@
     plugin-nvim-dap.flake = false;
     plugin-dressing_nvim.url = "github:stevearc/dressing.nvim";
     plugin-dressing_nvim.flake = false;
-    plugin-lazygit_nvim.url = "github:kdheepak/lazygit.nvim";
-    plugin-lazygit_nvim.flake = false;
     plugin-lazy_nvim.url = "github:folke/lazy.nvim";
     plugin-lazy_nvim.flake = false;
-    plugin-mason_lspconfig_nvim.url = "github:williamboman/mason-lspconfig.nvim";
-    plugin-mason_lspconfig_nvim.flake = false;
     plugin-nvim-lightbulb.url = "github:kosayoda/nvim-lightbulb";
     plugin-nvim-lightbulb.flake = false;
     plugin-nvim-lspconfig.url = "github:neovim/nvim-lspconfig";
@@ -126,8 +120,6 @@
     plugin-open-browser.flake = false;
     plugin-plantuml-previewer.url = "github:weirongxu/plantuml-previewer.vim";
     plugin-plantuml-previewer.flake = false;
-    plugin-plantuml-syntax.url = "github:aklt/plantuml-syntax";
-    plugin-plantuml-syntax.flake = false;
     plugin-plenary-nvim.url = "github:nvim-lua/plenary.nvim";
     plugin-plenary-nvim.flake = false;
     plugin-registers.url = "github:tversteeg/registers.nvim";

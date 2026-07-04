@@ -1,23 +1,21 @@
 #!/usr/bin/env lua5.1, JIT
 
--- csskit_ls.lua
--- Qompass AI Diver CSSKit LSP Spec
+-- /qompassai/diver/lsp/vimdoc_ls.lua
+-- Qompass AI Diver Vimdoc LSP Spec
 -- Copyright (C) 2026 Qompass AI, All rights reserved
 -- ----------------------------------------
----@source  https://github.com/csskit/csskit
----pnpm add -g csskit
-
+---@source https://github.com/barrettruth/vimdoc-language-server
 ---@type vim.lsp.Config
 return {
   cmd = {
-    'csskit',
-    'lsp',
+    'vimdoc-language-server',
   },
   filetypes = {
-    'css',
+    'help',
   },
   root_markers = {
-    'package.json',
+    'doc',
     '.git',
   },
+  workspace_required = false,
 }

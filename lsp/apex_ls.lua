@@ -55,10 +55,16 @@ local function apex_cmd(dispatchers, config)
   return vim.lsp.rpc.start(cmd, dispatchers)
 end
 local function setup_apex_format_on_save()
-  local group = vim.api.nvim_create_augroup('apex-external-format', { clear = true })
+  local group = vim.api.nvim_create_augroup('apex-external-format', {
+    clear = true,
+  })
   vim.api.nvim_create_autocmd('BufWritePost', {
     group = group,
-    pattern = { '*.cls', '*.trigger', '*.apex' },
+    pattern = {
+      '*.cls',
+      '*.trigger',
+      '*.apex',
+    },
     callback = function(args)
       local buf = args.buf
       if not vim.api.nvim_buf_is_valid(buf) then
@@ -99,9 +105,13 @@ local function setup_apex_format_on_save()
                 vim.cmd('checktime ' .. vim.fn.fnameescape(file))
               end
             elseif #stderr > 0 then
-              vim.notify(table.concat(stderr, '\n'), vim.log.levels.WARN, { title = 'apexfmt' })
+              vim.notify(table.concat(stderr, '\n'), vim.log.levels.WARN, {
+                title = 'apexfmt',
+              })
             else
-              vim.notify('apexfmt failed for ' .. file, vim.log.levels.WARN, { title = 'apexfmt' })
+              vim.notify('apexfmt failed for ' .. file, vim.log.levels.WARN, {
+                title = 'apexfmt',
+              })
             end
           end)
         end,
@@ -118,7 +128,9 @@ return ---@type vim.lsp.Config
   apex_java_home = nil,
   apex_jvm_max_heap = '2048M',
   cmd = apex_cmd,
-  filetypes = { 'apex' },
+  filetypes = {
+    'apex',
+  },
   root_markers = {
     'sfdx-project.json',
     '.git',

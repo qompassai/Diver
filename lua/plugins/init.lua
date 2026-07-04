@@ -22,7 +22,7 @@ local plugins = {
   {
     src = github('akinsho/bufferline.nvim'),
     update = true,
-    version = '*',
+    version = 'main',
   },
   {
     src = github('nvim-treesitter/nvim-treesitter'),
@@ -40,6 +40,7 @@ local plugins = {
   },
   {
     src = github('nvim-treesitter/nvim-treesitter-textobjects'),
+    update = true,
     version = 'main',
   },
   {
@@ -141,13 +142,11 @@ plugin_setup[github('echasnovski/mini.nvim')] = function()
 end
 plugin_setup[github('akinsho/bufferline.nvim')] = function()
   vim.opt.termguicolors = true
-
   local ok, bufferline = pcall(require, 'bufferline')
   if not ok then
     vim.notify('bufferline.nvim not available: ' .. tostring(bufferline), vim.log.levels.ERROR)
     return
   end
-
   bufferline.setup({
     options = {
       diagnostics = 'nvim_lsp',
@@ -206,13 +205,13 @@ function M.setup_plugins()
     end
   end
 end
-
---- Install/load all configured vim.pack plugins after validating specs.
 function M.bootstrap()
   local ok, errors = M.validate_specs()
   if not ok then
     for _, err in ipairs(errors) do
-      vim.notify(err, vim.log.levels.ERROR, { title = 'vim.pack spec validation' })
+      vim.notify(err, vim.log.levels.ERROR, {
+        title = 'vim.pack spec validation',
+      })
     end
     return
   end
@@ -224,11 +223,9 @@ function M.bootstrap()
 
   M.setup_plugins()
 end
-
 api.nvim_create_user_command('PackUpdate', function()
   vim.notify('Opening plugin update confirmation buffer…', vim.log.levels.INFO)
   update()
-
   api.nvim_create_autocmd('BufWritePost', {
     pattern = '*',
     once = true,
@@ -241,14 +238,11 @@ api.nvim_create_user_command('PackUpdate', function()
 end, {
   desc = 'Update all vim.pack plugins (interactive - :write to confirm)',
 })
-
 api.nvim_create_user_command('PackUpdateAuto', function()
   vim.notify('Updating plugins (auto-confirm)…', vim.log.levels.INFO)
-
   local ok, err = pcall(function()
     update(nil, { confirm = true })
   end)
-
   if ok then
     vim.notify('Plugins updated successfully!', vim.log.levels.INFO)
   else
