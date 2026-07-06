@@ -1,22 +1,39 @@
--- /qompassai/Diver/lsp/rust_analyzer.lua
--- Qompass AI Rust_analyzer LSP Config
--- Copyright (C) 2025 Qompass AI, All rights reserved
--- ----------------------------------------
+-- #################################################################
+-- /qompassai/diver/lsp/rustana_ls.lua
+-- Qompass AI Diver Rustana Ls
+-- SPDX-License-Identifier: Apache-2.0
+-- Copyright (c) 2026 Qompass AI
+--
+-- Licensed under the Apache License, Version 2.0 (the "License");
+-- you may not use this file except in compliance with the License.
+-- You may obtain a copy of the License at:
+--   http://www.apache.org/licenses/LICENSE-2.0
+--
+-- Unless required by applicable law or agreed to in writing, software
+-- distributed under the License is distributed on an "AS IS" BASIS,
+-- WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+-- See the License for the specific language governing permissions and
+-- limitations under the License.
+-- #################################################################
+---@source https://rust-analyzer.github.io/book/index.html
+--[[
 ---@param fname string
 local function is_library(fname) ---@return string|nil
-    local user_home = vim.fs.normalize(vim.env.HOME)
-    local cargo_home = os.getenv('CARGO_HOME') or user_home .. '/.cargo'
-    local registry = cargo_home .. '/registry/src'
-    local git_registry = cargo_home .. '/git/checkouts'
-    local rustup_home = os.getenv('RUSTUP_HOME') or user_home .. '/.rustup'
-    local toolchains = rustup_home .. '/toolchains'
-    for _, item in ipairs({ toolchains, registry, git_registry }) do
-        if vim.fs.relpath(item, fname) then
-            local clients = vim.lsp.get_clients({ name = 'rust_analyzer' }) ---@type vim.lsp.Client[]
-            return #clients > 0 and clients[#clients].config.root_dir or nil
-        end
+  local user_home = vim.fs.normalize(vim.env.HOME)
+  local cargo_home = os.getenv('CARGO_HOME') or (user_home .. '/.cargo')
+  local registry = cargo_home .. '/registry/src'
+  local git_registry = cargo_home .. '/git/checkouts'
+  local rustup_home = os.getenv('RUSTUP_HOME') or (user_home .. '/.rustup')
+  local toolchains = rustup_home .. '/toolchains'
+
+  for _, item in ipairs({ toolchains, registry, git_registry }) do
+    if vim.fs.relpath(item, fname) then
+      local clients = vim.lsp.get_clients({ name = 'rust_analyzer' }) ---@type vim.lsp.Client[]
+      return #clients > 0 and clients[#clients].config.root_dir or nil
     end
+  end
 end
+--]]
 return ---@type vim.lsp.Config
 {
     cmd = {
@@ -25,52 +42,12 @@ return ---@type vim.lsp.Config
     filetypes = {
         'rust',
     },
-    root_dir = function(bufnr, on_dir)
-        local fname = vim.api.nvim_buf_get_name(bufnr)
-        local reused_dir = is_library(fname)
-        if reused_dir then
-            on_dir(reused_dir)
-            return
-        end
-        local cargo_crate_dir = vim.fs(fname, { ---@type string|nil
-            'Cargo.toml',
-        })
-        local cargo_workspace_root ---@type string
-        if cargo_crate_dir == nil then
-            on_dir(vim.fs(fname, {
-                'rust-project.json',
-            }) or vim.fs.dirname(vim.fs.find('.git')[1]))
-            return
-        end
-        local cmd = { ---@type string[]
-            'cargo',
-            'metadata',
-            '--no-deps',
-            '--format-version',
-            '1',
-            '--manifest-path',
-            cargo_crate_dir .. '/Cargo.toml',
-        }
-        vim.system(cmd, {
-            text = true,
-        }, function(output) ---@param output { code: integer, stdout: string|nil, stderr: string|nil }
-            if output.code == 0 then
-                if output.stdout then
-                    local result = vim.json.decode(output.stdout) ---@type { workspace_root?: string }
-                    if result['workspace_root'] then
-                        cargo_workspace_root = vim.fs.normalize(result['workspace_root']) ---@type string
-                    end
-                end
-                on_dir(cargo_workspace_root or cargo_crate_dir)
-            else
-                vim.schedule(function()
-                    vim.notify(
-                        ('[rust_analyzer] cmd failed with code %d: %s\n%s'):format(output.code, cmd, output.stderr)
-                    )
-                end)
-            end
-        end)
-    end,
+    root_markers = {
+        'Cargo.toml',
+        'rust-project.json',
+        '.git',
+    },
+
     capabilities = {
         experimental = {
             serverStatusNotification = true,

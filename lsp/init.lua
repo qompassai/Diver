@@ -94,7 +94,7 @@ vim.lsp.enable({
   'facility_ls',
   'fennel_ls',
   'fish_ls',
-  'flow_ls',
+  --'flow_ls', --:TODO
   'flux_ls',
   'foam_ls',
   'fort_ls',

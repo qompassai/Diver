@@ -40,7 +40,7 @@ OS='linux'
 ARCH='x86_64'
 if ((IS_TERMUX)); then
   OS='android'
-  ARCH="$(uname -m)" # aarch64 on most modern Android devices
+  ARCH="$(uname -m)"
 fi
 download_and_extract()
 {
@@ -227,7 +227,6 @@ EOF
       echo "Warning: luarocks lua-language-server install failed; check rock name/availability."
     }
   fi
-
   cat > "$BIN_DIR/lua_ls" << 'EOF'
 #!/usr/bin/env bash
 exec lua-language-server "$@"
@@ -236,7 +235,6 @@ EOF
 }
 NEEDED_TOOLS=(git curl tar make clang cmake ninja bash pkg-config)
 MISSING=()
-
 need_tool()
 {
   local t=$1
@@ -252,7 +250,6 @@ if ((IS_TERMUX)); then
   pkg upgrade -y
   pkg install -y git curl tar make clang cmake ninja pkg-config python nodejs ruby 2> /dev/null || true
 fi
-
 if [[ ${#MISSING[@]} -gt 0 ]]; then
   echo "→ Bootstrapping missing tools into $PREFIX:"
   for t in "${MISSING[@]}"; do
@@ -314,7 +311,6 @@ cmake --build build
 cmake --install build
 RUNTIME_SRC="$PREFIX/share/nvim/runtime"
 RUNTIME_DEST="$NVIM_DATA_DIR/runtime"
-
 if [[ -d $RUNTIME_SRC ]]; then
   mkdir -p "$NVIM_DATA_DIR"
   if [[ -d $RUNTIME_DEST ]] && [[ ! -L $RUNTIME_DEST ]]; then
@@ -322,10 +318,8 @@ if [[ -d $RUNTIME_SRC ]]; then
   fi
   [[ -L $RUNTIME_DEST ]] && rm "$RUNTIME_DEST"
   cp -r "$RUNTIME_SRC" "$RUNTIME_DEST"
-
   INIT_LUA="$XDG_CONFIG_HOME/nvim/init.lua"
   mkdir -p "$(dirname "$INIT_LUA")"
-
   RUNTIME_BLOCK='local data_runtime = vim.fn.stdpath("data") .. "/runtime"
 if vim.fn.isdirectory(data_runtime) == 1 then
   vim.opt.runtimepath:prepend(data_runtime)
@@ -357,7 +351,7 @@ for rc in "$HOME/.bashrc" "$HOME/.zshrc" "$HOME/.config/fish/config.fish" "$HOME
     echo "→ PATH updated in $rc"
   fi
 done
-PARSER_SRC="${HOME}/.local/share/nvim/lazy/nvim-treesitter/parser"
+PARSER_SRC="${XDG_DATA_HOME}/nvim/lazy/nvim-treesitter/parser"
 PARSER_DEST="$NVIM_DATA_DIR/runtime/parser"
 if [[ -d $PARSER_SRC ]]; then
   echo "→ Installing parsers to runtime"

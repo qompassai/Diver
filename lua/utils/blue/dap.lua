@@ -4,8 +4,6 @@
 -- Qompass AI - [ ]
 -- Copyright (C) 2026 Qompass AI, All rights reserved
 -- ----------------------------------------
-
-
 local M = {}
 local ns = vim.api.nvim_create_namespace("dap-virtual-text-util")
 local plugin_id = "dap-virtual-text-util"
