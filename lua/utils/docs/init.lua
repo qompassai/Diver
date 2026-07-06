@@ -1,16 +1,12 @@
-#!/usr/bin/env lua
+#!/usr/bin/env lua5.1 JIT
 -- /qompassai/Diver/lua/utils/docs/init.lua
 -- Qompass AI Docs Utils Init
 -- Copyright (C) 2026 Qompass AI, All rights reserved
 -- ----------------------------------------
 local M = {}
-local modules = { ---@version JIT
-  'bounty',
-  'clipboard',
-  'docs',
-  'mime'
-}
-for _, module in ipairs(modules) do
-  require('utils.docs.' .. module)
-end
+require('utils.docs.bounty')
+require('utils.docs.clipboard')
+require('utils.docs.docs').setup()
+require('utils.docs.mime')
+require('utils.docs.license').setup()
 return M
