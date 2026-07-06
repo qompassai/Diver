@@ -167,6 +167,7 @@ local function comment_prefix(bufnr)
     qml = '//',
     razor = '@*',
     ruby = '#',
+    rust = '//',
     rst = '..',
     rst = '//',
     scala = '//',

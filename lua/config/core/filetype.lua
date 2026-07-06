@@ -154,6 +154,7 @@ vim.filetype.add({
   },
   filename = {
     ['ansible.cfg'] = 'ansible',
+    ['Appfile'] = 'ruby',
     ['atlas.hcl'] = 'atlas-config',
     ['.bashrc'] = 'bash',
     brioche = 'brioche',
@@ -172,6 +173,7 @@ vim.filetype.add({
     ['docker-compose.yaml'] = 'yaml.docker-compose',
     ['.eslintrc.js'] = 'javascript',
     ['.eslintrc.cjs'] = 'javascript',
+    ['Fastfile'] = 'ruby',
     ['jupyter_notebook_config.py'] = 'python',
     ['.luacheckrc'] = 'lua',
     ['.luarc.jsonc'] = 'jsonc',
@@ -181,6 +183,7 @@ vim.filetype.add({
     ['Microsoft.VSCode_profile.ps1'] = 'ps1',
     ['pg_dump.sql'] = 'pgsql',
     ['PKGBUILD'] = 'pkgbuild',
+    ['Pluginfile'] = 'ruby',
     ['.powershellrc'] = 'ps1',
     ['powershell.config.json'] = 'jsonc',
     ['profile.ps1'] = 'ps1',
