@@ -6,13 +6,13 @@ vim.bo.shiftwidth = 2
 vim.bo.tabstop = 2
 vim.bo.expandtab = false
 vim.api.nvim_create_autocmd('BufWritePre', {
-    buffer = 0,
-    callback = function(args)
-        if vim.lsp.buf.server_ready() then
-            vim.lsp.buf.format({
-                bufnr = args.buf,
-                async = true,
-            })
-        end
-    end,
+  buffer = 0,
+  callback = function(args)
+    if vim.lsp.buf.server_ready() then
+      vim.lsp.buf.format({
+        bufnr = args.buf,
+        async = true,
+      })
+    end
+  end,
 })

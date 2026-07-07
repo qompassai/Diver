@@ -4,20 +4,50 @@
 -- ---------------------------------------------------
 return ---@type vim.lsp.Config
 {
-    cmd = {
-        'kotlin-language-server',
+  cmd = {
+    'kotlin-language-server',
+  },
+  filetypes = {
+    'kotlin',
+  },
+  root_markers = {
+    '.git',
+    'build.gradle',
+    'build.gradle.kts',
+    'gradle.properties',
+    'pom.xml',
+    'settings.gradle',
+    'settings.gradle.kts',
+  },
+  settings = {
+    kotlin = {
+      compiler = {
+        jvm = {
+          target = '17',
+        },
+      },
+      completion = {
+        snippets = {
+          enabled = true,
+        },
+      },
+      debugAdapter = {
+        enabled = true,
+      },
+      externalSources = {
+        autoConvertToKotlin = true,
+        useKlsScheme = true,
+      },
+      indexing = {
+        enabled = true,
+      },
+      languageServer = {
+        enabled = true,
+        transport = 'stdio',
+      },
+      trace = {
+        server = 'off',
+      },
     },
-    filetypes = {
-        'kotlin',
-    },
-    root_markers = {
-        'build.gradle',
-        'build.gradle.kts',
-        'build.xml',
-        'settings.gradle',
-        'settings.gradle.kts',
-
-        'pom.xml',
-    },
-    settings = {},
+  },
 }

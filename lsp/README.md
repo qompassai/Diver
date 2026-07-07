@@ -4225,15 +4225,15 @@ pip install pyrefly
 
    </div>
       <li>
-        <a href="https://github.com/qompassai/diver/blob/main/lsp/lwc_ls.lua">ruff_ls</a>
+        <a href="https://github.com/qompassai/diver/blob/main/lsp/lwc_ls.lua">lwc_ls</a>
       </li>
              <p>
-      <a href="https://docs.astral.sh/ruff/">Ruff LSP Reference</a>
+      <a href="https://developer.salesforce.com/docs/platform/lwc/guide/get-started-introduction.html">LWC LSP Reference</a>
     </p>
  <div style="background: #f8f9fa; padding: 15px; border-radius: 5px; margin-top: 10px; font-family: monospace;">
 
 ```bash
-curl -LsSf https://astral.sh/ruff/install.sh | sh
+:TODO
 ```
 
    </div>
@@ -4242,18 +4242,24 @@ curl -LsSf https://astral.sh/ruff/install.sh | sh
       </li>
     </ul>
        <p>
-      <a href="https://posit-dev.github.io/air/integration-github-actions.html">SOQL LSP Reference</a>
+      <a href="https://github.com/forcedotcom/soql-language-server">SOQL LSP Reference</a>
     </p>
  <div style="background: #f8f9fa; padding: 15px; border-radius: 5px; margin-top: 10px; font-family: monospace;">
 
 ```bash
-uv tool install ty
+: "${XDG_DATA_HOME:=$HOME/.local/share}"
+mkdir -p "$XDG_DATA_HOME/pnpm"
+export PNPM_HOME="$XDG_DATA_HOME/pnpm"
+export PATH="$PNPM_HOME/bin:$PATH"
+pnpm config set global-bin-dir "$PNPM_HOME/bin"
+pnpm add -g @salesforce/soql-language-server
 ```
 
 # OR
 
 ```bash
-pip install ty
+npm install @salesforce/soql-language-server
+
 ```
 
    </div>

@@ -50,7 +50,6 @@ local function apex_cmd(dispatchers, config)
   if jvm.maxHeap or config.apex_jvm_max_heap then
     table.insert(cmd, '-Xmx' .. (jvm.maxHeap or config.apex_jvm_max_heap))
   end
-
   table.insert(cmd, 'apex.jorje.lsp.ApexLanguageServerLauncher')
   return vim.lsp.rpc.start(cmd, dispatchers)
 end
@@ -119,9 +118,7 @@ local function setup_apex_format_on_save()
     end,
   })
 end
-
 setup_apex_format_on_save()
-
 return ---@type vim.lsp.Config
 {
   apex_jar_path = vim.fn.stdpath('data') .. '/apex-ls/apex-jorje-lsp.jar',
