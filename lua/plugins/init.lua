@@ -132,7 +132,7 @@ end
 plugin_setup[github('folke/flash.nvim')] = function()
   require('config.core.flash').flash_cfg()
 end
-
+--[[
 plugin_setup[github('echasnovski/mini.nvim')] = function()
   require('mini.ai').setup({
     custom_textobjects = {},
@@ -140,6 +140,7 @@ plugin_setup[github('echasnovski/mini.nvim')] = function()
     search_method = 'cover_or_next',
   })
 end
+--]]
 plugin_setup[github('akinsho/bufferline.nvim')] = function()
   vim.opt.termguicolors = true
   local ok, bufferline = pcall(require, 'bufferline')

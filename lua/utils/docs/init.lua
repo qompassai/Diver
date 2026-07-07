@@ -7,6 +7,7 @@ local M = {}
 require('utils.docs.bounty')
 require('utils.docs.clipboard')
 require('utils.docs.docs').setup()
+require('utils.docs.mail')
 require('utils.docs.mime')
 require('utils.docs.license').setup()
 return M

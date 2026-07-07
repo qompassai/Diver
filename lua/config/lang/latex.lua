@@ -8,9 +8,9 @@ local code_action = vim.lsp.buf.code_action
 local fmt = vim.lsp.buf.format
 ---@return string
 local function get_relative_path(filepath) ---@param filepath string
-  local qompass_idx = filepath:find('/qompassai/')
-  if qompass_idx then
-    return filepath:sub(qompass_idx + 1)
+  local idx = filepath:find('/qompassai/')
+  if idx then
+    return filepath:sub(idx + 1)
   else
     return vim.fn.fnamemodify(filepath, ':~:.')
   end
@@ -50,7 +50,6 @@ local function make_header(filepath, comment)
     }
   end
 end
-
 autocmd('BufNewFile', {
   pattern = { '*.tex' },
   group = vim.api.nvim_create_augroup('qompass_latex_header', {
@@ -237,7 +236,10 @@ usercmd('TexRangeAction', function() ---@command TexRangeAction
         start_pos[1],
         start_pos[2],
       },
-      ['end'] = { end_pos[1], end_pos[2] },
+      ['end'] = {
+        end_pos[1],
+        end_pos[2],
+      },
     },
     filter = function(_, client_id)
       local client = vim.lsp.get_client_by_id(client_id)

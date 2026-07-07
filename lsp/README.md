@@ -4206,7 +4206,13 @@ xtask proc-macro-srv-cli ungrammar2json
  <div style="background: #f8f9fa; padding: 15px; border-radius: 5px; margin-top: 10px; font-family: monospace;">
 
 ```bash
-pip install basedpyright
+cargo install busbar-sf-agentscript-lsp
+```
+
+# OR
+
+```bash
+pnpm add -g -g @agentscript/lsp-server
 ```
 
    </div>

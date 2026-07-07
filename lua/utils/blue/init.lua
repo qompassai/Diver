@@ -3,15 +3,20 @@
 -- Qompass AI Diver BlueTeam Utils
 -- Copyright (C) 2026 Qompass AI, All rights reserved
 -- --------------------------------------------------
-local M = {} ---@version JIT
-local modules = {
-  'base64',
-  'dap',
-  'gpg',
-  'sops',
-  'ssh',
-}
-for _, module in ipairs(modules) do
-  require('utils.blue.' .. module)
-end
+local M = {}
+require('utils.blue.base64')
+require('utils.blue.gpg')
+require('utils.blue.sops').setup({
+  supported_file_formats = {
+    '*.enc.yaml',
+    '*.enc.yml',
+  },
+})
+require('utils.blue.ssh').setup({
+  ssh_binary = 'ssh',
+  scp_binary = 'scp',
+  notify_prefix = '[Blue SSH] ',
+})
+require('utils.blue.dap').setup()
+
 return M

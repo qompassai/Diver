@@ -151,15 +151,13 @@
 ---@field listeners dap.Listeners
 ---@field session fun(): dap.Session|nil
 ---
-
 ---@class TSNode
 ---@field id fun(self: TSNode): integer
 ---@field start fun(self: TSNode): integer, integer, integer?
 ---@field range fun(self: TSNode): integer, integer, integer, integer
-
 ---@alias dap_virtual_text_chunk [string, string]
----@class dap_virtual_text_item: dap_virtual_text_chunk
----@field node TSNode
+----@class dap_virtual_text_item: dap_virtual_text_chunk
+----@field node TSNode
 ---@class nvim_dap_virtual_text_options
 ---@field enabled boolean
 ---@field all_frames boolean
@@ -185,24 +183,21 @@
 local dap = require('dap')
 
 ---@type table<integer, dap.StackFrame>
-local last_frames = {}
-
+--local last_frames = {}
 ---@type dap.StackFrame|nil
-local stopped_frame = nil
-
+--local stopped_frame = nil
 ---@type string|nil
-local error_set = nil
-
+--local error_set = nil
 ---@type string|nil
-local info_set = nil
+--local info_set = nil
 
----@param scopes dap.Scope[]?
----@param lang string
----@return table<string, { value: dap.Variable, presentationHint: string|nil }>
-local function variables_from_scopes(scopes, lang) end
----@param lang string
----@param query_name string
----@return vim.treesitter.Query|nil
-local function get_query(lang, query_name)
-  return vim.treesitter.query.get(lang, query_name)
-end
+----@param scopes dap.Scope[]?
+----@param lang string
+----@return table<string, { value: dap.Variable, presentationHint: string|nil }>
+--local function variables_from_scopes(scopes, lang) end
+----@param lang string
+----@param query_name string
+----@return vim.treesitter.Query|nil
+--local function get_query(lang, query_name)
+--  return vim.treesitter.query.get(lang, query_name)
+--end

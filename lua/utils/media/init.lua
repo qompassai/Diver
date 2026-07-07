@@ -4,8 +4,8 @@
 -- Copyright (C) 2026 Qompass AI, All rights reserved
 -- ----------------------------------------
 local M = {} ---@version JIT
-M.csound = require('utils.media.csound')
+M.audio = require('utils.media.audio')
 M.encoder = require('utils.media.encoder')
-M.encoder = require('utils.media.mail')
 M.rpc = require('utils.media.rpc')
+M.vulkan = require('utils.media.vulkan')
 return M

@@ -5,22 +5,21 @@
 -----------------------------------------------------
 local M = {}
 local startup_modules = {
-    'colors',
-    'decor',
-    'float',
-    'icons',
-    'image',
-    'illuminate',
-    'line',
-    'md',
-    'nerd',
-    'padding',
-    'render',
-    'themes',
+  'colors',
+  'decor',
+  'float',
+  'icons',
+  'image',
+  'illuminate',
+  'line',
+  'nerd',
+  'padding',
+  'render',
+  'themes',
 }
 function M.setup()
-    for _, module in ipairs(startup_modules) do
-        require('config.ui.' .. module)
-    end
+  for _, module in ipairs(startup_modules) do
+    require('config.ui.' .. module)
+  end
 end
 return M
