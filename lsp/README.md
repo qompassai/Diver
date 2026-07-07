@@ -4220,7 +4220,9 @@ href="https://developer.salesforce.com/docs/platform/sfvscode-extensions/guide/a
  <div style="background: #f8f9fa; padding: 15px; border-radius: 5px; margin-top: 10px; font-family: monospace;">
 
 ```bash
-pip install pyrefly
+mkdir -p "${XDG_DATA_HOME}"/apex
+cd "${XDG_DATA_HOME}"/apex
+wget 'https://github.com/forcedotcom/salesforcedx-vscode/raw/main/packages/salesforcedx-vscode-apex/jars/apex-jorje-lsp.jar' -O apex-jorje-lsp.jar
 ```
 
    </div>
