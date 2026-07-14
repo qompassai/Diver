@@ -24,7 +24,7 @@ return ---@type vim.lsp.Config
       'http',
       'https',
     },
-    provideFormatter = false,
+    provideFormatter = true,
   },
   root_markers = {
     'build.gradle',
@@ -388,7 +388,10 @@ return ---@type vim.lsp.Config
         },
         {
           description = 'Detekt Configuration File',
-          fileMatch = { 'detekt.yml', 'detekt.yaml' },
+          fileMatch = {
+            'detekt.yml',
+            'detekt.yaml',
+          },
           url = 'https://www.schemastore.org/detekt-1.22.0.json',
         },
         {
@@ -402,7 +405,9 @@ return ---@type vim.lsp.Config
         },
         {
           description = '.NET tools manifest file',
-          fileMatch = { 'dotnet-tools.json' },
+          fileMatch = {
+            'dotnet-tools.json',
+          },
           url = 'https://www.schemastore.org/dotnet-tools.json',
         },
         {
@@ -514,7 +519,10 @@ return ---@type vim.lsp.Config
         },
         {
           description = 'Drupal Migration',
-          fileMatch = { '*.migration.*.yml', '**/migrations/*.yml' },
+          fileMatch = {
+            '*.migration.*.yml',
+            '**/migrations/*.yml',
+          },
           url = 'https://www.schemastore.org/drupal-migration.json',
         },
         {

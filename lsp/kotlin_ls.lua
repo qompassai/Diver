@@ -6,6 +6,7 @@ return ---@type vim.lsp.Config
 {
   cmd = {
     'kotlin-language-server',
+    '--stdio',
   },
   filetypes = {
     'kotlin',

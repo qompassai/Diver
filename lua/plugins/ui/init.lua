@@ -14,8 +14,6 @@ end
 add('plugins.ui.css')
 add('plugins.ui.icons')
 add('plugins.ui.md')
-add('plugins.ui.bufferline')
 add('plugins.ui.noice')
-add('plugins.ui.themes')
 
 return specs

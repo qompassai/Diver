@@ -86,7 +86,7 @@ local function jsonc_to_lua()
   bo[0].filetype = 'lua'
   notify('Converted to Lua', levels.INFO)
 end
-
+--[[
 ---@param infile string
 local function markdown_pdf(infile)
   if infile == '' then
@@ -115,6 +115,7 @@ local function markdown_pdf(infile)
     end,
   })
 end
+--]]
 function M.setup()
   local group = api.nvim_create_augroup('docs', {
     clear = true,
@@ -172,6 +173,7 @@ function M.setup()
   api.nvim_create_user_command('JsonC2Lua', jsonc_to_lua, {
     desc = 'Convert current JSONC buffer to Lua',
   })
+  --[[
   api.nvim_create_user_command('MarkdownPdf', function(opts)
     local infile = opts.args ~= '' and opts.args or api.nvim_buf_get_name(0)
     markdown_pdf(infile)
@@ -180,6 +182,7 @@ function M.setup()
     complete = 'file',
     desc = 'Convert current markdown file or given file to PDF',
   })
+  --]]
   map('n', '<leader>cj', json_to_lua, {
     desc = 'Convert JSON to Lua',
     silent = true,
@@ -188,12 +191,14 @@ function M.setup()
     desc = 'Convert JSONC to Lua',
     silent = true,
   })
+  --[[
   map('n', '<leader>cp', function()
     markdown_pdf(api.nvim_buf_get_name(0))
   end, {
     desc = 'Convert Markdown to PDF',
     silent = true,
   })
+  --]]
 end
 
 return M

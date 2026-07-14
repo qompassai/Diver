@@ -4,6 +4,14 @@
 ------------------------------------------------------
 local api = vim.api
 local add = vim.pack.add
+local gh = function(x)
+  return 'https://github.com/' .. x
+end
+--[[
+local cb = function(x)
+  return 'https://codeberg.org/' .. x
+end
+--]]
 local update = vim.pack.update
 local range = vim.version.range
 local tree = require('config.core.tree')
@@ -15,83 +23,118 @@ end
 local plugin_setup = {}
 local plugins = {
   {
-    src = github('Saghen/blink.cmp'),
+    src = gh('Saghen/blink.cmp'),
     update = true,
     version = range('1.*'),
   },
   {
-    src = github('akinsho/bufferline.nvim'),
+    src = gh('Saghen/blink.compat'),
     update = true,
-    version = 'main',
-  },
-  {
-    src = github('nvim-treesitter/nvim-treesitter'),
-    update = true,
-  },
-  {
-    src = github('vhyrro/luarocks.nvim'),
-    branch = 'main',
-    update = true,
-  },
-  {
-    src = github('folke/which-key.nvim'),
-    update = true,
-    version = 'main',
-  },
-  {
-    src = github('nvim-treesitter/nvim-treesitter-textobjects'),
-    update = true,
-    version = 'main',
-  },
-  {
-    src = github('L3MON4D3/LuaSnip'),
     version = range('2.*'),
   },
   {
-    src = github('rafamadriz/friendly-snippets'),
+    src = gh('hrsh7th/cmp-nvim-lua'),
     update = true,
     version = 'main',
   },
   {
-    src = github('hrsh7th/cmp-nvim-lua'),
+    src = gh('hrsh7th/cmp-buffer'),
+  },
+  {
+    src = gh('nvim-treesitter/nvim-treesitter'),
     update = true,
     version = 'main',
   },
   {
-    src = github('hrsh7th/cmp-buffer'),
+    src = gh('vhyrro/luarocks.nvim'),
+    update = true,
+    version = 'main',
   },
   {
-    src = github('moyiz/blink-emoji.nvim'),
+    src = gh('folke/which-key.nvim'),
+    update = true,
+    version = 'main',
+  },
+  {
+    src = gh('nvim-treesitter/nvim-treesitter-textobjects'),
+    update = true,
+    version = 'main',
+  },
+  {
+    src = gh('L3MON4D3/LuaSnip'),
+    update = true,
+    version = range('2.*'),
+  },
+  {
+    src = gh('rafamadriz/friendly-snippets'),
+    update = true,
+    version = 'main',
+  },
+
+  {
+    src = gh('moyiz/blink-emoji.nvim'),
     version = 'master',
   },
   {
-    src = github('Kaiser-Yang/blink-cmp-dictionary'),
+    src = gh('Kaiser-Yang/blink-cmp-dictionary'),
     update = true,
     version = range('2.*'),
   },
   {
-    src = github('nvim-lualine/lualine.nvim'),
+    src = gh('nvim-lualine/lualine.nvim'),
     update = true,
     version = 'master',
   },
   {
-    src = github('nvim-tree/nvim-web-devicons'),
+    data = {
+      priority = 1000,
+    },
+    src = gh('olimorris/onedarkpro.nvim'),
     update = true,
   },
   {
-    src = github('Saghen/blink.compat'),
-    update = true,
-    version = range('2.*'),
+    src = gh('catppuccin/nvim'),
+  },
+  {
+    src = gh('EdenEast/nightfox.nvim'),
+  },
+  {
+    src = gh('folke/tokyonight.nvim'),
+    name = 'tokyonight.nvim',
+  },
+  {
+    src = gh('marko-cerovac/material.nvim'),
+  },
+  {
+    src = gh('Mofiqul/dracula.nvim'),
+  },
+  {
+    src = gh('navarasu/onedark.nvim'),
+    name = 'onedark.nvim',
+  },
+  {
+    src = gh('projekt0n/github-nvim-theme'),
+    name = 'github-nvim-theme',
+  },
+  -- { src = gh('sainnhe/gruvbox-material'), name = 'gruvbox-material' },
+  {
+    src = gh('shaunsingh/nord.nvim'),
+    name = 'nord.nvim',
+  },
+  {
+    src = gh('vyfor/cord.nvim'),
+    data = {
+      event = 'BufEnter',
+      config = function()
+        local opts = {}
+        require('config.ui.themes').cord_setup(opts)
+      end,
+    },
   },
   {
     src = github('folke/flash.nvim'),
     update = true,
     version = range('2.*'),
-  },
-  {
-    src = github('echasnovski/mini.nvim'),
-    update = true,
-    version = range('0.*'),
   },
 }
 plugin_setup[github('Saghen/blink.cmp')] = function()
@@ -141,6 +184,7 @@ plugin_setup[github('echasnovski/mini.nvim')] = function()
   })
 end
 --]]
+--[[
 plugin_setup[github('akinsho/bufferline.nvim')] = function()
   vim.opt.termguicolors = true
   local ok, bufferline = pcall(require, 'bufferline')
@@ -158,6 +202,7 @@ plugin_setup[github('akinsho/bufferline.nvim')] = function()
     },
   })
 end
+--]]
 --- @return boolean ok
 --- @return string[] errors
 function M.validate_specs()
@@ -184,6 +229,7 @@ function M.validate_specs()
 
   return #errors == 0, errors
 end
+
 --- @return table[]
 function M.specs()
   return plugins
@@ -206,6 +252,7 @@ function M.setup_plugins()
     end
   end
 end
+
 function M.bootstrap()
   local ok, errors = M.validate_specs()
   if not ok then
@@ -224,6 +271,7 @@ function M.bootstrap()
 
   M.setup_plugins()
 end
+
 api.nvim_create_user_command('PackUpdate', function()
   vim.notify('Opening plugin update confirmation buffer…', vim.log.levels.INFO)
   update()
@@ -273,12 +321,10 @@ api.nvim_create_user_command('PackAdd', function(opts)
       load = true,
     })
   end)
-
   if not ok then
     vim.notify('PackAdd failed: ' .. tostring(err), vim.log.levels.ERROR)
     return
   end
-
   vim.notify('Plugin added: ' .. repo, vim.log.levels.INFO)
 end, {
   nargs = 1,

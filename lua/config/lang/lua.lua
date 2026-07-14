@@ -99,6 +99,18 @@ local function modernize_deprecated_highlights(text)
 
   return text, changed
 end
+
+local function modernize_deprecated_lsp_execute_command(text)
+  local changed = false
+
+  text = text:gsub('vim%.lsp%.buf%.execute_command%s*%(%s*action%.command%s*%)', function()
+    changed = true
+    return 'client:exec_cmd(action.command, { bufnr = bufnr })'
+  end)
+
+  return text, changed
+end
+
 local function modernize_lua_text(text)
   local original = text
   local replacements = {
@@ -167,13 +179,19 @@ local function modernize_lua_text(text)
     { 'vim%.pretty_print', 'vim.print' },
     { 'vim%.tbl_islist', 'vim.islist' },
   }
+
   for i = 1, #replacements do
     local item = replacements[i]
     text = text:gsub(item[1], item[2])
   end
+
   local highlight_changed
   text, highlight_changed = modernize_deprecated_highlights(text)
-  return text, (text ~= original) or highlight_changed
+
+  local exec_changed
+  text, exec_changed = modernize_deprecated_lsp_execute_command(text)
+
+  return text, (text ~= original) or highlight_changed or exec_changed
 end
 local function modernize_current_buffer()
   local bufnr = api.nvim_get_current_buf()
@@ -234,13 +252,11 @@ local function format_with_stylua(bufnr)
 
   return true
 end
-
 local function insert_lua_header()
   local first_line = api.nvim_buf_get_lines(0, 0, 1, false)[1]
   if first_line ~= '' then
     return
   end
-
   local filepath = fn.expand('%:p')
   local shebang = '#!/usr/bin/env lua'
   local generated_header = header.make_header(filepath, '--')
@@ -278,13 +294,11 @@ local function lua_range_action()
     apply = false,
   })
 end
-
 function M.lua_luarocks(opts)
   return vim.tbl_deep_extend('force', {
     rocks = M.luarocks,
   }, opts or {})
 end
-
 function M.setup()
   create_autocmd('BufNewFile', {
     group = group,
@@ -292,7 +306,6 @@ function M.setup()
     callback = insert_lua_header,
     desc = 'Insert Lua shebang and header for new files',
   })
-
   create_autocmd('BufWritePre', {
     group = group,
     pattern = '*.lua',
@@ -300,23 +313,19 @@ function M.setup()
       local bufnr = args.buf
       local text = get_buffer_text(bufnr)
       local updated, changed = modernize_lua_text(text)
-
       if changed then
         local view = fn.winsaveview()
         set_buffer_text(bufnr, updated)
         fn.winrestview(view)
       end
-
       format_with_stylua(bufnr)
     end,
     desc = 'Modernize deprecated Lua APIs and format Lua buffers before save',
   })
-
   create_user_command('LuaRangeAction', lua_range_action, {
     range = true,
     desc = 'Run Lua LSP code action on selected range',
   })
-
   create_user_command('LuaModernize', modernize_current_buffer, {
     desc = 'Modernize deprecated Lua and Neovim API usage in current buffer',
   })
