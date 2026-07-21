@@ -98,18 +98,12 @@
     plugin-dressing_nvim.flake = false;
     plugin-lazy_nvim.url = "github:folke/lazy.nvim";
     plugin-lazy_nvim.flake = false;
-    plugin-nvim-lightbulb.url = "github:kosayoda/nvim-lightbulb";
-    plugin-nvim-lightbulb.flake = false;
     plugin-nvim-lspconfig.url = "github:neovim/nvim-lspconfig";
     plugin-nvim-lspconfig.flake = false;
     plugin-nvim-neoclip.url = "github:AckslD/nvim-neoclip.lua";
     plugin-nvim-neoclip.flake = false;
-    plugin-neo_tree_nvim.url = "github:nvim-neo-tree/neo-tree.nvim";
-    plugin-neo_tree_nvim.flake = false;
     plugin-nvim-tree-lua.url = "github:kyazdani42/nvim-tree.lua";
     plugin-nvim-tree-lua.flake = false;
-    plugin-nvim-ts-autotag.url = "github:windwp/nvim-ts-autotag";
-    plugin-nvim-ts-autotag.flake = false;
     plugin-nvim-treesitter-context.url = "github:nvim-treesitter/nvim-treesitter-context";
     plugin-nvim-treesitter-context.flake = false;
     plugin-nvim-web-devicons.url = "github:kyazdani42/nvim-web-devicons";
@@ -135,8 +129,6 @@
     plugin-tokyonight.url = "github:folke/tokyonight.nvim";
     plugin-tokyonight.flake = false;
     plugin-trouble.url = "github:folke/trouble.nvim";
-    plugin-trouble.flake = false;
-    plugin-vim-be-good.url = "github:ThePrimeagen/vim-be-good";
     plugin-vim-be-good.flake = false;
     plugin-vim-vsnip.url = "github:hrsh7th/vim-vsnip";
     plugin-vim-vsnip.flake = false;

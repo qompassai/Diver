@@ -14,5 +14,5 @@ require('types.core.plugins')
 require('types.core.quickfix')
 require('types.core.schema')
 require('types.core.tree')
-require('types.core.trouble')
+--require('types.core.trouble')
 return M

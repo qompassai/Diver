@@ -1,8 +1,26 @@
 #!/usr/bin/env bash
-# /qompassai/Diver/scripts/generate
-# Qompass AI Schema Luarocks Rootless Script
+# /qompassai/Diver/scripts/lua/luarocks
+# Qompass AI Diver Luarocks Rootless Script
 # Copyright (C) 2025 Qompass AI, All rights reserved
 # ----------------------------------------
+set -euo pipefail
+XDG_DATA_HOME="${XDG_DATA_HOME:-$HOME/.local/share}"
+XDG_CONFIG_HOME="${XDG_CONFIG_HOME:-$HOME/.config}"
+XDG_CACHE_HOME="${XDG_CACHE_HOME:-$HOME/.cache}"
+PREFIX="${PREFIX:-$HOME/.local}"
+BUILD_DIR="$XDG_CACHE_HOME/luarocks-build"
+mkdir -p "$BUILD_DIR"
+cd "$BUILD_DIR"
+
+echo "Detecting latest LuaRocks release..."
+latest_tag="$(
+  curl -s https://api.github.com/repos/luarocks/luarocks/releases/latest |
+    grep -Eo '"tag_name":\s*"[^"]+"' |
+    head -n1 |
+    cut -d'"' -f4
+)"
+latest_version="${latest_tag#v}"
+
 cd || /tmp
 wget https://luarocks.org/releases/luarocks-3.13.0.tar.gz
 tar zxpf luarocks-3.13.0.tar.gz

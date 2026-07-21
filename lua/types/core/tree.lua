@@ -4,7 +4,7 @@
 -- Copyright (C) 2026 Qompass AI, All rights reserved
 -- --------------------------------------------------
 ---@class TSNode
----@field type fun(self: TSNode): string
+---@field type                                             fun(self: TSNode): string
 ---@field named fun(self: TSNode): boolean
 ---@field id fun(self: TSNode): string|integer
 ---@field parent fun(self: TSNode): TSNode|nil

@@ -1,9 +1,9 @@
+#!/usr/bin/env sh
 ## qompassai/Diver/ansi/apple.sh
 ## Qompass AI Diver Ansi Apple Art
 ## Copyright (C) 2025 Qompass AI, All rights reserved
 #####################################################
 
-#!/usr/bin/env sh
 
 printf "\e[49m                \e[38;5;184;49m▄\e[38;5;148;49m▄▄▄\e[49m                          \e[m
 \e[49m              \e[38;5;148;48;5;148m▄▄\e[38;5;148;48;5;184m▄\e[38;5;148;48;5;148m▄▄▄\e[38;5;148;48;5;184m▄\e[38;5;184;48;5;184m▄\e[38;5;148;49m▄\e[49m                       \e[m
