@@ -17,7 +17,6 @@ limitations under the License.
 --]]
 -- --------------------------------------------------
 local bo = vim.bo ---@type vim.bo
-local cmd = vim.cmd
 local env = vim.env
 local fn = vim.fn
 local is_windows = fn.has('win32') == 1 or fn.has('win64') == 1
@@ -43,19 +42,17 @@ else
 	user = env.USER or fn.system('whoami'):gsub('\n', '')
 end
 local wo = vim.wo ---@type vim.wo
-bo.autocomplete = true
+bo.autocomplete = false
 bo.autoindent = true
 bo.autoread = true
 bo.backupcopy = 'auto'
-bo.busy = 1
+bo.busy = 0
 bo.completeopt = 'menu,menuone,noselect'
 bo.expandtab = true
 bo.fileencoding = 'utf-8'
 bo.grepprg = 'rg --vimgrep'
 bo.iminsert = 0
 bo.imsearch = -1
-bo.lisp = true
-bo.lispwords = 'defgeneric,block,catch'
 bo.modeline = true
 bo.modifiable = true
 bo.nrformats = 'hex'
@@ -66,24 +63,10 @@ bo.spelllang = 'en_us'
 bo.spelloptions = 'camel'
 bo.swapfile = false
 bo.softtabstop = 2
-bo.syntax = 'on'
+bo.syntax = 'ON'
 bo.tabstop = 2
 bo.textwidth = 120
 bo.undofile = true
-cmd('filetype plugin on')
-cmd('filetype plugin indent on')
---cmd([[
---  packadd nvim.undotree
---]])
---cmd('syntax on')
---[[cmd.runtime('macros/matchit.vim')
-if not is_windows then
-    env.LUAROCKS_CONFIG = env.HOME .. '/.config/luarocks/luarocks-5.1.lua'
-    env.VIMRUNTIME = fn.expand('~/.local/share/nvim/runtime')
-else
-    env.VIMRUNTIME = fn.stdpath('data') .. '/runtime'
-end
---]]
 g.deprecation_warnings = true
 g.editorconfig = false
 g.git_command_ssh = 1
@@ -191,7 +174,8 @@ require('config.init').config({
 	nav = true,
 	ui = true,
 })
-require('linters')
+require('fixers').setup()
+require('linters').setup()
 require('mappings')
 require('plugins')
 require('types')
@@ -260,6 +244,7 @@ o.splitright = true
 o.startofline = false
 o.switchbuf = 'uselast'
 o.tabpagemax = 50
+o.tags = './tags;,tags'
 o.termguicolors = true
 --o.tm = 500
 o.timeout = true
@@ -277,14 +262,17 @@ o.wildmode = 'noselect'
 o.winborder = 'rounded'
 o.wrap = false
 o.writebackup = true
+opt.autoindent = true
+opt.binary = false
 opt.comments:append('fb:•')
 opt.complete:remove('i')
 opt.encoding = 'utf-8'
 opt.fileencoding = 'utf-8'
 opt.fileencodings = { 'ucs-bom', 'utf-8', 'default' }
+opt.lbr = true
 opt.scrolloff = 8
+opt.spell = true
 --opt.packpath = vim.opt.runtimepath:get() ---@type string[]
-o.tags = './tags;,tags'
 opt.viminfo:append('!')
 wo.breakindent = true
 wo.breakindentopt = 'shift:2,sbr'
@@ -308,7 +296,6 @@ wo.showbreak = '↪'
 wo.sidescrolloff = 20
 wo.signcolumn = 'number'
 wo.smoothscroll = true
-wo.spell = true
 wo.virtualedit = 'block'
 wo.wrap = true
 opt.winblend = 40
