@@ -4,8 +4,91 @@
 -- ----------------------------------------
 -- 'bash-debug-adapter' --outdated ---@source https://github.com/rogalmic/vscode-bash-debug
 
--- ~/.config/nvim/lua/dap/init.lua
--- Built-in Neovim 0.13 DAP setup, no plugins
+--[[
+android.lua
+ansible.lua
+apache_camel.lua
+apex.lua
+ballerina.lua
+bash.lua
+c.lua
+cpp.lua
+c_cpp.lua
+c_cpp_rust.lua
+c_cpp_rust_midas.lua
+csharp.lua
+cobol.lua
+cordova.lua
+crystal.lua
+dart.lua
+debug.lua
+chrome.lua
+dotnet.lua
+edge.lua
+electron.lua
+elixir.lua
+emulicious.lua
+erlang_edb.lua
+erlang_ls.lua
+esp32.lua
+firefox.lua
+firefox_remote.lua
+flash.lua
+flutter.lua
+fortran.lua
+gdscript.lua
+go.lua
+godot.lua
+harbour.lua
+haskell.lua
+haskell_phoityne.lua
+haxe_eval.lua
+hashlink.lua
+hxcpp.lua
+java.lua
+javascript.lua
+javascript_timetravel.lua
+jsir.lua
+karate.lua
+kotlin.lua
+latex.lua
+lldb.lua
+lldb_dap.lua
+lua.lua
+luau.lua
+mock.lua
+mono.lua
+nativescript.lua
+node.lua
+objectivec.lua
+ocaml.lua
+onescript.lua
+openqasm.lua
+papyrus.lua
+perl.lua
+perl_languageserver.lua
+php.lua
+powershell.lua
+puppet.lua
+python.lua
+r.lua
+react_native.lua
+ruby.lua
+ruby_byebug.lua
+ruby_lsp.lua
+ruby_rdbg.lua
+rust.lua
+rust_embedded.lua
+scala.lua
+squirrel.lua
+swi_prolog.lua
+swf.lua
+tla.lua
+unity.lua
+varphi.lua
+vdm.lua
+z80.lua
+--]]
 
 local api = vim.api
 local fn = vim.fn
