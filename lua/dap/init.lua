@@ -95,7 +95,9 @@ local fn = vim.fn
 local debug = vim.debug
 
 local M = {}
-
+pcall(function()
+\trequire("dap.rust").setup()
+end)
 ---@type table<string, integer>
 local namespaces = {}
 
