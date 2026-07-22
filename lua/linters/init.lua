@@ -531,23 +531,42 @@ function M.run(bufnr)
 end
 
 function M.setup()
-	local group = api.nvim_create_augroup('qompass.linters', {
-		clear = true,
-	})
+        local group = api.nvim_create_augroup('qompass.linters', { clear = true })
 
-	api.nvim_create_autocmd('BufWritePost', {
-		group = group,
-		desc = 'Run configured linters for the current buffer',
-		callback = function(event)
-			M.run(event.buf)
+        api.nvim_create_autocmd('FileType', {
+                group = group,
+                desc = 'Run linters when filetype is detected',
+                callback = function(event)
+                        M.run(event.buf)
+                end,
+        })
+
+        api.nvim_create_autocmd('BufWritePost', {
+                group = group,
+                desc = 'Redetect filetype if needed, then lint on save',
+                callback = function(event)
+                        local bufnr = event.buf
+                        if not api.nvim_buf_is_valid(bufnr) then
+                                return
+                        end
+
+                        if vim.bo[bufnr].filetype == '' then
+                                vim.cmd('silent! filetype detect')
+                        end
+
+                        M.run(bufnr)
+                end,
+        })
+
+        api.nvim_create_user_command('Lint', function()
+                M.run(0)
+        end, {
+                desc = 'Run configured linters for the current buffer',
+        })
+end
+
+)
 		end,
 	})
-
-	api.nvim_create_user_command('Lint', function()
-		M.run(0)
-	end, {
-		desc = 'Run configured linters for the current buffer',
-	})
-end
 
 return M
