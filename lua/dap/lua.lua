@@ -1,14 +1,6 @@
 -- ~/.config/nvim/lua/dap/lua.lua
--- Lua DAP configuration for Neovim 0.13 built-in vim.debug, no plugins
 --
--- Targets:
--- - Plain Lua files
--- - LuaJIT
--- - Project-local execution
--- - Optional attach/remote config for lua-debug style workflows
---
--- This module assumes you have a working standalone Lua debug adapter available.
--- The most practical choice is actboy168/lua-debug.
+-- actboy168/lua-debug.
 
 local api = vim.api
 local fn = vim.fn
