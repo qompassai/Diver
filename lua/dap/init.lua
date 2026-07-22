@@ -98,6 +98,9 @@ local M = {}
 pcall(function()
 \trequire("dap.rust").setup()
 end)
+pcall(function()
+\trequire("dap.zig").setup()
+end)
 ---@type table<string, integer>
 local namespaces = {}
 
