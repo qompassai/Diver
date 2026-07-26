@@ -1,425 +1,417 @@
 -- ~/.config/nvim/lua/dap/kotlin.lua
 -- Kotlin DAP configuration for Neovim 0.13 built-in vim.debug, no plugins
---
--- Uses fwcd/kotlin-debug-adapter as the preferred adapter.
--- Supports:
--- - Gradle/Maven Kotlin/JVM launch
--- - Main class launch
--- - Current-file-derived main class guess
--- - JDWP attach to an existing JVM process
-
 local api = vim.api
 local fn = vim.fn
-local uv = vim.uv or vim.loop
+local uv = vim.uv or vim.uv
 local debug = vim.debug
-
+local FILETYPES = { kotlin = true }
+local FILETYPE_PATTERNS = { 'kotlin' }
+local FILE_PATTERNS = { '*.kt', '*.kts' }
 local M = {}
 
 M.adapter = {
-\tname = "kotlin",
-\tcommand = "kotlin-debug-adapter",
+	name = 'kotlin',
+	command = 'kotlin-debug-adapter',
 }
 
 local function notify(msg, level)
-\tvim.notify(msg, level or vim.log.levels.INFO, { title = "dap.kotlin" })
+	vim.notify(msg, level or vim.log.levels.INFO, { title = 'dap.kotlin' })
 end
 
 local function executable(cmd)
-\treturn fn.executable(cmd) == 1
+	return fn.executable(cmd) == 1
 end
 
 local function input(prompt, default, completion)
-\treturn fn.input(prompt, default or "", completion or "")
+	return fn.input(prompt, default or '', completion or '')
 end
 
 local function cwd()
-\treturn fn.getcwd()
+	return fn.getcwd()
 end
 
 local function current_file()
-\treturn api.nvim_buf_get_name(0)
+	return api.nvim_buf_get_name(0)
 end
 
 local function file_exists(path)
-\treturn type(path) == "string" and path ~= "" and uv.fs_stat(path) ~= nil
+	return type(path) == 'string' and path ~= '' and uv.fs_stat(path) ~= nil
 end
 
 local function is_dir(path)
-\tlocal stat = uv.fs_stat(path)
-\treturn stat and stat.type == "directory" or false
+	local stat = uv.fs_stat(path)
+	return stat and stat.type == 'directory' or false
 end
 
 local function path_join(...)
-\treturn table.concat({ ... }, "/")
+	return table.concat({ ... }, '/')
 end
 
 local function workspace_root()
-\tlocal file = current_file()
-\tlocal start = file ~= "" and file or cwd()
+	local file = current_file()
+	local start = file ~= '' and file or cwd()
 
-\tlocal root = vim.fs.root(start, {
-\t\t"build.gradle.kts",
-\t\t"build.gradle",
-\t\t"settings.gradle.kts",
-\t\t"settings.gradle",
-\t\t"pom.xml",
-\t\t".git",
-\t})
+	local root = vim.fs.root(start, {
+		'build.gradle.kts',
+		'build.gradle',
+		'settings.gradle.kts',
+		'settings.gradle',
+		'pom.xml',
+		'.git',
+	})
 
-\treturn root or cwd()
+	return root or cwd()
 end
 
 local function has_gradle(root)
-\treturn file_exists(path_join(root, "build.gradle.kts")) or file_exists(path_join(root, "build.gradle"))
+	return file_exists(path_join(root, 'build.gradle.kts')) or file_exists(path_join(root, 'build.gradle'))
 end
 
 local function has_maven(root)
-\treturn file_exists(path_join(root, "pom.xml"))
+	return file_exists(path_join(root, 'pom.xml'))
 end
 
 local function compiled_output_candidates(root)
-\treturn {
-\t\tpath_join(root, "build", "classes", "kotlin", "main"),
-\t\tpath_join(root, "build", "classes", "java", "main"),
-\t\tpath_join(root, "target", "classes", "kotlin", "main"),
-\t\tpath_join(root, "target", "classes"),
-\t}
+	return {
+		path_join(root, 'build', 'classes', 'kotlin', 'main'),
+		path_join(root, 'build', 'classes', 'java', 'main'),
+		path_join(root, 'target', 'classes', 'kotlin', 'main'),
+		path_join(root, 'target', 'classes'),
+	}
 end
 
 local function has_compiled_output(root)
-\tfor _, path in ipairs(compiled_output_candidates(root)) do
-\t\tif is_dir(path) then
-\t\t\treturn true
-\t\tend
-\tend
-\treturn false
+	for _, path in ipairs(compiled_output_candidates(root)) do
+		if is_dir(path) then
+			return true
+		end
+	end
+	return false
 end
 
 local function ensure_adapter()
-\tif executable(M.adapter.command) then
-\t\treturn true
-\tend
-
-\tnotify(
-\t\t("Kotlin DAP adapter not found: %s
-Install fwcd/kotlin-debug-adapter and put it in PATH.")
-\t\t\t:format(M.adapter.command),
-\t\tvim.log.levels.ERROR
-\t)
-\treturn false
+	if executable(M.adapter.command) then
+		return true
+	end
+	notify(
+		('Kotlin DAP adapter not found: %s Install fwcd/kotlin-debug-adapter and put it in PATH.'):format(
+			M.adapter.command
+		),
+		vim.log.levels.ERROR
+	)
+	return false
 end
-
 local function ensure_project_root()
-\tlocal root = workspace_root()
-\tif not has_gradle(root) and not has_maven(root) then
-\t\tnotify("Kotlin debug requires a Gradle or Maven project root", vim.log.levels.ERROR)
-\t\treturn nil
-\tend
-\treturn root
+	local root = workspace_root()
+	if not has_gradle(root) and not has_maven(root) then
+		notify('Kotlin debug requires a Gradle or Maven project root', vim.log.levels.ERROR)
+		return nil
+	end
+	return root
 end
 
 local function ensure_built(root)
-\tif has_compiled_output(root) then
-\t\treturn true
-\tend
+	if has_compiled_output(root) then
+		return true
+	end
 
-\tlocal build_now = input("No compiled Kotlin classes found. Build now? [Y/n]: ", "Y")
-\tif build_now:lower() == "n" then
-\t\tnotify("Build required before Kotlin debug launch", vim.log.levels.WARN)
-\t\treturn false
-\tend
+	local build_now = input('No compiled Kotlin classes found. Build now? [Y/n]: ', 'Y')
+	if build_now:lower() == 'n' then
+		notify('Build required before Kotlin debug launch', vim.log.levels.WARN)
+		return false
+	end
 
-\tlocal result
-\tif has_gradle(root) then
-\t\tif executable("gradle") then
-\t\t\tresult = vim.system({ "gradle", "classes" }, { cwd = root, text = true }):wait()
-\t\telseif executable("./gradlew") then
-\t\t\tresult = vim.system({ "./gradlew", "classes" }, { cwd = root, text = true }):wait()
-\t\telseif file_exists(path_join(root, "gradlew")) then
-\t\t\tresult = vim.system({ path_join(root, "gradlew"), "classes" }, { cwd = root, text = true }):wait()
-\t\tend
-\telseif has_maven(root) then
-\t\tif executable("mvn") then
-\t\t\tresult = vim.system({ "mvn", "-DskipTests", "compile" }, { cwd = root, text = true }):wait()
-\t\tend
-\tend
+	local result
+	if has_gradle(root) then
+		if executable('gradle') then
+			result = vim.system({ 'gradle', 'classes' }, { cwd = root, text = true }):wait()
+		elseif executable('./gradlew') then
+			result = vim.system({ './gradlew', 'classes' }, { cwd = root, text = true }):wait()
+		elseif file_exists(path_join(root, 'gradlew')) then
+			result = vim.system({ path_join(root, 'gradlew'), 'classes' }, { cwd = root, text = true }):wait()
+		end
+	elseif has_maven(root) then
+		if executable('mvn') then
+			result = vim.system({ 'mvn', '-DskipTests', 'compile' }, { cwd = root, text = true }):wait()
+		end
+	end
 
-\tif not result then
-\t\tnotify("No supported build command found for Kotlin project", vim.log.levels.ERROR)
-\t\treturn false
-\tend
+	if not result then
+		notify('No supported build command found for Kotlin project', vim.log.levels.ERROR)
+		return false
+	end
 
-\tif result.code ~= 0 then
-\t\tlocal stderr = result.stderr ~= "" and result.stderr or "Kotlin build failed"
-\t\tnotify(stderr, vim.log.levels.ERROR)
-\t\treturn false
-\tend
+	if result.code ~= 0 then
+		local stderr = result.stderr ~= '' and result.stderr or 'Kotlin build failed'
+		notify(stderr, vim.log.levels.ERROR)
+		return false
+	end
 
-\treturn has_compiled_output(root)
+	return has_compiled_output(root)
 end
 
 local function prompt_args()
-\tlocal raw = input("Args: ", "")
-\tif raw == "" then
-\t\treturn {}
-\tend
-\treturn vim.split(raw, "%s+", { trimempty = true })
+	local raw = input('Args: ', '')
+	if raw == '' then
+		return {}
+	end
+	return vim.split(raw, '%s+', { trimempty = true })
 end
 
 local function prompt_vm_args()
-\tlocal raw = input("VM args: ", "")
-\tif raw == "" then
-\t\treturn {}
-\tend
-\treturn vim.split(raw, "%s+", { trimempty = true })
+	local raw = input('VM args: ', '')
+	if raw == '' then
+		return {}
+	end
+	return vim.split(raw, '%s+', { trimempty = true })
 end
 
 local function prompt_env()
-\tlocal env = {}
-\twhile true do
-\t\tlocal key = input("Env key (blank to finish): ", "")
-\t\tif key == "" then
-\t\t\tbreak
-\t\tend
-\t\tenv[key] = input("Env value for " .. key .. ": ", "")
-\tend
-\treturn env
+	local env = {}
+	while true do
+		local key = input('Env key (blank to finish): ', '')
+		if key == '' then
+			break
+		end
+		env[key] = input('Env value for ' .. key .. ': ', '')
+	end
+	return env
 end
 
 local function package_name_from_file(file)
-\tif file == "" or not file_exists(file) then
-\t\treturn nil
-\tend
+	if file == '' or not file_exists(file) then
+		return nil
+	end
 
-\tfor _, line in ipairs(fn.readfile(file)) do
-\t\tlocal pkg = line:match("^%s*package%s+([%w%._]+)")
-\t\tif pkg then
-\t\t\treturn pkg
-\t\tend
-\tend
+	for _, line in ipairs(fn.readfile(file)) do
+		local pkg = line:match('^%s*package%s+([%w%._]+)')
+		if pkg then
+			return pkg
+		end
+	end
 
-\treturn nil
+	return nil
 end
 
 local function class_name_from_file(file)
-\tif file == "" then
-\t\treturn nil
-\tend
-\treturn fn.fnamemodify(file, ":t:r")
+	if file == '' then
+		return nil
+	end
+	return fn.fnamemodify(file, ':t:r')
 end
 
 local function guessed_main_class()
-\tlocal file = current_file()
-\tif file == "" then
-\t\treturn nil
-\tend
+	local file = current_file()
+	if file == '' then
+		return nil
+	end
 
-\tlocal cls = class_name_from_file(file)
-\tif not cls then
-\t\treturn nil
-\tend
+	local cls = class_name_from_file(file)
+	if not cls then
+		return nil
+	end
 
-\tlocal pkg = package_name_from_file(file)
-\tif pkg and pkg ~= "" then
-\t\treturn pkg .. "." .. cls
-\tend
+	local pkg = package_name_from_file(file)
+	if pkg and pkg ~= '' then
+		return pkg .. '.' .. cls
+	end
 
-\treturn cls
+	return cls
 end
 
 local function choose_main_class()
-\tlocal guess = guessed_main_class() or ""
-\tlocal main_class = input("Kotlin main class: ", guess)
-\tif main_class == "" then
-\t\treturn nil
-\tend
-\treturn main_class
+	local guess = guessed_main_class() or ''
+	local main_class = input('Kotlin main class: ', guess)
+	if main_class == '' then
+		return nil
+	end
+	return main_class
 end
 
 local function start(config)
-\tif not ensure_adapter() then
-\t\treturn
-\tend
+	if not ensure_adapter() then
+		return
+	end
 
-\tconfig.type = M.adapter.name
-\tdebug.start(config)
+	config.type = M.adapter.name
+	debug.start(config)
 end
 
 function M.build()
-\tlocal root = ensure_project_root()
-\tif not root then
-\t\treturn
-\tend
+	local root = ensure_project_root()
+	if not root then
+		return
+	end
 
-\tif ensure_built(root) then
-\t\tnotify("Kotlin project build complete")
-\tend
+	if ensure_built(root) then
+		notify('Kotlin project build complete')
+	end
 end
 
 function M.launch_main()
-\tlocal root = ensure_project_root()
-\tif not root then
-\t\treturn
-\tend
+	local root = ensure_project_root()
+	if not root then
+		return
+	end
 
-\tif not ensure_built(root) then
-\t\treturn
-\tend
+	if not ensure_built(root) then
+		return
+	end
 
-\tlocal main_class = choose_main_class()
-\tif not main_class then
-\t\tnotify("Main class is required", vim.log.levels.ERROR)
-\t\treturn
-\tend
+	local main_class = choose_main_class()
+	if not main_class then
+		notify('Main class is required', vim.log.levels.ERROR)
+		return
+	end
 
-\tstart({
-\t\trequest = "launch",
-\t\tname = "Kotlin launch main",
-\t\tprojectRoot = root,
-\t\tmainClass = main_class,
-\t\targs = prompt_args(),
-\t\tvmArgs = prompt_vm_args(),
-\t\tenv = prompt_env(),
-\t\tstopOnEntry = false,
-\t})
+	start({
+		request = 'launch',
+		name = 'Kotlin launch main',
+		projectRoot = root,
+		mainClass = main_class,
+		args = prompt_args(),
+		vmArgs = prompt_vm_args(),
+		env = prompt_env(),
+		stopOnEntry = false,
+	})
 end
 
 function M.launch_current_file()
-\tlocal root = ensure_project_root()
-\tif not root then
-\t\treturn
-\tend
+	local root = ensure_project_root()
+	if not root then
+		return
+	end
 
-\tif not ensure_built(root) then
-\t\treturn
-\tend
+	if not ensure_built(root) then
+		return
+	end
 
-\tlocal file = current_file()
-\tif file == "" or not file_exists(file) then
-\t\tnotify("Current Kotlin file not found", vim.log.levels.ERROR)
-\t\treturn
-\tend
+	local file = current_file()
+	if file == '' or not file_exists(file) then
+		notify('Current Kotlin file not found', vim.log.levels.ERROR)
+		return
+	end
 
-\tlocal main_class = guessed_main_class()
-\tif not main_class then
-\t\tnotify("Could not infer main class from current file", vim.log.levels.ERROR)
-\t\treturn
-\tend
+	local main_class = guessed_main_class()
+	if not main_class then
+		notify('Could not infer main class from current file', vim.log.levels.ERROR)
+		return
+	end
 
-\tstart({
-\t\trequest = "launch",
-\t\tname = "Kotlin launch current file",
-\t\tprojectRoot = root,
-\t\tmainClass = main_class,
-\t\targs = prompt_args(),
-\t\tvmArgs = prompt_vm_args(),
-\t\tenv = prompt_env(),
-\t\tstopOnEntry = false,
-\t})
+	start({
+		request = 'launch',
+		name = 'Kotlin launch current file',
+		projectRoot = root,
+		mainClass = main_class,
+		args = prompt_args(),
+		vmArgs = prompt_vm_args(),
+		env = prompt_env(),
+		stopOnEntry = false,
+	})
 end
 
 function M.launch_prompt()
-\tlocal root = ensure_project_root()
-\tif not root then
-\t\treturn
-\tend
+	local root = ensure_project_root()
+	if not root then
+		return
+	end
 
-\tif not ensure_built(root) then
-\t\treturn
-\tend
+	if not ensure_built(root) then
+		return
+	end
 
-\tlocal main_class = input("Main class: ", "")
-\tif main_class == "" then
-\t\tnotify("Main class is required", vim.log.levels.ERROR)
-\t\treturn
-\tend
+	local main_class = input('Main class: ', '')
+	if main_class == '' then
+		notify('Main class is required', vim.log.levels.ERROR)
+		return
+	end
 
-\tstart({
-\t\trequest = "launch",
-\t\tname = "Kotlin launch prompt",
-\t\tprojectRoot = root,
-\t\tmainClass = main_class,
-\t\targs = prompt_args(),
-\t\tvmArgs = prompt_vm_args(),
-\t\tenv = prompt_env(),
-\t\tstopOnEntry = false,
-\t})
+	start({
+		request = 'launch',
+		name = 'Kotlin launch prompt',
+		projectRoot = root,
+		mainClass = main_class,
+		args = prompt_args(),
+		vmArgs = prompt_vm_args(),
+		env = prompt_env(),
+		stopOnEntry = false,
+	})
 end
 
 function M.attach_jdwp()
-\tlocal host = input("Host: ", "127.0.0.1")
-\tif host == "" then
-\t\thost = "127.0.0.1"
-\tend
+	local host = input('Host: ', '127.0.0.1')
+	if host == '' then
+		host = '127.0.0.1'
+	end
 
-\tlocal port = tonumber(input("Port: ", "5005"))
-\tif not port then
-\t\tnotify("Invalid port", vim.log.levels.ERROR)
-\t\treturn
-\tend
+	local port = tonumber(input('Port: ', '5005'))
+	if not port then
+		notify('Invalid port', vim.log.levels.ERROR)
+		return
+	end
 
-\tdebug.start({
-\t\ttype = "kotlin-jvm",
-\t\trequest = "attach",
-\t\tname = "Kotlin attach JDWP",
-\t\thostName = host,
-\t\tport = port,
-\t\tcwd = workspace_root(),
-\t})
+	debug.start({
+		type = 'kotlin-jvm',
+		request = 'attach',
+		name = 'Kotlin attach JDWP',
+		hostName = host,
+		port = port,
+		cwd = workspace_root(),
+	})
 end
 
 function M.gradle_debug_hint()
-\tlocal root = workspace_root()
-\tlocal lines = {
-\t\t"Gradle Kotlin/JVM debug examples:",
-\t\t"",
-\t\t"./gradlew run --debug-jvm",
-\t\t"./gradlew test --debug-jvm",
-\t\t"",
-\t\t"Then attach with host 127.0.0.1 and port 5005 if your JVM is listening there.",
-\t\t"",
-\t\t"Project root:",
-\t\troot,
-\t}
+	local root = workspace_root()
+	local lines = {
+		'Gradle Kotlin/JVM debug examples:',
+		'',
+		'./gradlew run --debug-jvm',
+		'./gradlew test --debug-jvm',
+		'',
+		'Then attach with host 127.0.0.1 and port 5005 if your JVM is listening there.',
+		'',
+		'Project root:',
+		root,
+	}
 
-\tvim.cmd("new")
-\tlocal buf = api.nvim_get_current_buf()
-\tapi.nvim_buf_set_lines(buf, 0, -1, false, lines)
-\tvim.bo[buf].bufhidden = "wipe"
-\tvim.bo[buf].filetype = "markdown"
+	vim.cmd('new')
+	local buf = api.nvim_get_current_buf()
+	api.nvim_buf_set_lines(buf, 0, -1, false, lines)
+	vim.bo[buf].bufhidden = 'wipe'
+	vim.bo[buf].filetype = 'markdown'
 end
 
 function M.setup()
-\tapi.nvim_create_user_command("KotlinDapBuild", M.build, {
-\t\tdesc = "Build Kotlin project classes",
-\t})
+	api.nvim_create_user_command('KotlinDapBuild', M.build, {
+		desc = 'Build Kotlin project classes',
+	})
 
-\tapi.nvim_create_user_command("KotlinDapMain", M.launch_main, {
-\t\tdesc = "Debug Kotlin main class",
-\t})
+	api.nvim_create_user_command('KotlinDapMain', M.launch_main, {
+		desc = 'Debug Kotlin main class',
+	})
 
-\tapi.nvim_create_user_command("KotlinDapFile", M.launch_current_file, {
-\t\tdesc = "Debug current Kotlin file as main class",
-\t})
+	api.nvim_create_user_command('KotlinDapFile', M.launch_current_file, {
+		desc = 'Debug current Kotlin file as main class',
+	})
 
-\tapi.nvim_create_user_command("KotlinDapPrompt", M.launch_prompt, {
-\t\tdesc = "Prompt for Kotlin main class and debug it",
-\t})
+	api.nvim_create_user_command('KotlinDapPrompt', M.launch_prompt, {
+		desc = 'Prompt for Kotlin main class and debug it',
+	})
 
-\tapi.nvim_create_user_command("KotlinDapAttach", M.attach_jdwp, {
-\t\tdesc = "Attach to Kotlin/JVM JDWP process",
-\t})
+	api.nvim_create_user_command('KotlinDapAttach', M.attach_jdwp, {
+		desc = 'Attach to Kotlin/JVM JDWP process',
+	})
 
-\tapi.nvim_create_user_command("KotlinGradleDebugHint", M.gradle_debug_hint, {
-\t\tdesc = "Show Gradle debug attach hint",
-\t})
+	api.nvim_create_user_command('KotlinGradleDebugHint', M.gradle_debug_hint, {
+		desc = 'Show Gradle debug attach hint',
+	})
 
-\tvim.keymap.set("n", "<leader>kb", M.build, { desc = "Kotlin DAP build" })
-\tvim.keymap.set("n", "<leader>km", M.launch_main, { desc = "Kotlin DAP main" })
-\tvim.keymap.set("n", "<leader>kf", M.launch_current_file, { desc = "Kotlin DAP file" })
-\tvim.keymap.set("n", "<leader>kp", M.launch_prompt, { desc = "Kotlin DAP prompt" })
-\tvim.keymap.set("n", "<leader>ka", M.attach_jdwp, { desc = "Kotlin DAP attach" })
-\tvim.keymap.set("n", "<leader>kh", M.gradle_debug_hint, { desc = "Kotlin gradle debug hint" })
+	vim.keymap.set('n', '<leader>kb', M.build, { desc = 'Kotlin DAP build' })
+	vim.keymap.set('n', '<leader>km', M.launch_main, { desc = 'Kotlin DAP main' })
+	vim.keymap.set('n', '<leader>kf', M.launch_current_file, { desc = 'Kotlin DAP file' })
+	vim.keymap.set('n', '<leader>kp', M.launch_prompt, { desc = 'Kotlin DAP prompt' })
+	vim.keymap.set('n', '<leader>ka', M.attach_jdwp, { desc = 'Kotlin DAP attach' })
+	vim.keymap.set('n', '<leader>kh', M.gradle_debug_hint, { desc = 'Kotlin gradle debug hint' })
 end
 
 return M

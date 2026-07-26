@@ -1,555 +1,562 @@
 -- ~/.config/nvim/lua/dap/python.lua
--- Python DAP configuration for Neovim 0.13 built-in vim.debug, no plugins
 
 local api = vim.api
 local fn = vim.fn
-local uv = vim.uv or vim.loop
+local uv = vim.uv or vim.uv
 local debug = vim.debug
-
-local M = {}
-
-M.adapter = {
-\tname = "debugpy",
+local FILETYPES = {
+	python = true,
 }
-
+local FILETYPE_PATTERNS = {
+	'python',
+}
+local FILE_PATTERNS = {
+	'*.py',
+	'*.pyw',
+}
+local M = {}
+M.adapter = {
+	name = 'debugpy',
+}
 local function notify(msg, level)
-\tvim.notify(msg, level or vim.log.levels.INFO, { title = "dap.python" })
+	vim.notify(msg, level or vim.log.levels.INFO, {
+		title = 'dap.python',
+	})
 end
-
 local function cwd()
-\treturn fn.getcwd()
+	return fn.getcwd()
 end
-
 local function input(prompt, default, completion)
-\treturn fn.input(prompt, default or "", completion or "")
+	return fn.input(prompt, default or '', completion or '')
 end
-
 local function executable(cmd)
-\treturn fn.executable(cmd) == 1
+	return fn.executable(cmd) == 1
 end
-
 local function file_exists(path)
-\treturn type(path) == "string" and path ~= "" and uv.fs_stat(path) ~= nil
+	return type(path) == 'string' and path ~= '' and uv.fs_stat(path) ~= nil
 end
-
 local function current_file()
-\treturn api.nvim_buf_get_name(0)
+	return api.nvim_buf_get_name(0)
 end
-
 local function workspace_root()
-\tlocal file = current_file()
-\tif file == "" then
-\t\treturn cwd()
-\tend
+	local file = current_file()
+	if file == '' then
+		return cwd()
+	end
+	local root = vim.fs.root(file, {
+		'pyproject.toml',
+		'setup.py',
+		'setup.cfg',
+		'requirements.txt',
+		'.venv',
+		'venv',
+		'.git',
+	})
 
-\tlocal root = vim.fs.root(file, {
-\t\t"pyproject.toml",
-\t\t"setup.py",
-\t\t"setup.cfg",
-\t\t"requirements.txt",
-\t\t".venv",
-\t\t"venv",
-\t\t".git",
-\t})
-
-\treturn root or cwd()
+	return root or cwd()
 end
 
 local function path_join(...)
-\treturn table.concat({ ... }, "/")
+	return table.concat({ ... }, '/')
 end
 
 local function is_windows()
-\treturn uv.os_uname().sysname == "Windows_NT"
+	return uv.os_uname().sysname == 'Windows_NT'
 end
 
 local function venv_python(root)
-\tif is_windows() then
-\t\tlocal candidates = {
-\t\t\tpath_join(root, ".venv", "Scripts", "python.exe"),
-\t\t\tpath_join(root, "venv", "Scripts", "python.exe"),
-\t\t}
-\t\tfor _, path in ipairs(candidates) do
-\t\t\tif file_exists(path) then
-\t\t\t\treturn path
-\t\t\tend
-\t\tend
-\telse
-\t\tlocal candidates = {
-\t\t\tpath_join(root, ".venv", "bin", "python"),
-\t\t\tpath_join(root, "venv", "bin", "python"),
-\t\t}
-\t\tfor _, path in ipairs(candidates) do
-\t\t\tif file_exists(path) then
-\t\t\t\treturn path
-\t\t\tend
-\t\tend
-\tend
-\treturn nil
+	if is_windows() then
+		local candidates = {
+			path_join(root, '.venv', 'Scripts', 'python.exe'),
+			path_join(root, 'venv', 'Scripts', 'python.exe'),
+		}
+		for _, path in ipairs(candidates) do
+			if file_exists(path) then
+				return path
+			end
+		end
+	else
+		local candidates = {
+			path_join(root, '.venv', 'bin', 'python'),
+			path_join(root, 'venv', 'bin', 'python'),
+		}
+		for _, path in ipairs(candidates) do
+			if file_exists(path) then
+				return path
+			end
+		end
+	end
+	return nil
 end
 
 local function resolve_python()
-\tlocal root = workspace_root()
-\tlocal from_venv = venv_python(root)
-\tif from_venv then
-\t\treturn from_venv
-\tend
+	local root = workspace_root()
+	local from_venv = venv_python(root)
+	if from_venv then
+		return from_venv
+	end
 
-\tlocal env_python = vim.env.VIRTUAL_ENV
-\tif env_python and env_python ~= "" then
-\t\tif is_windows() then
-\t\t\tlocal path = path_join(env_python, "Scripts", "python.exe")
-\t\t\tif file_exists(path) then
-\t\t\t\treturn path
-\t\t\tend
-\t\telse
-\t\t\tlocal path = path_join(env_python, "bin", "python")
-\t\t\tif file_exists(path) then
-\t\t\t\treturn path
-\t\t\tend
-\t\tend
-\tend
+	local env_python = vim.env.VIRTUAL_ENV
+	if env_python and env_python ~= '' then
+		if is_windows() then
+			local path = path_join(env_python, 'Scripts', 'python.exe')
+			if file_exists(path) then
+				return path
+			end
+		else
+			local path = path_join(env_python, 'bin', 'python')
+			if file_exists(path) then
+				return path
+			end
+		end
+	end
 
-\tif executable("python3") then
-\t\treturn "python3"
-\tend
-\tif executable("python") then
-\t\treturn "python"
-\tend
+	if executable('python3') then
+		return 'python3'
+	end
+	if executable('python') then
+		return 'python'
+	end
 
-\treturn nil
+	return nil
 end
 
 local function ensure_python()
-\tlocal py = resolve_python()
-\tif not py then
-\t\tnotify("No Python interpreter found", vim.log.levels.ERROR)
-\t\treturn nil
-\tend
-\treturn py
+	local py = resolve_python()
+	if not py then
+		notify('No Python interpreter found', vim.log.levels.ERROR)
+		return nil
+	end
+	return py
 end
 
 local function ensure_debugpy(py)
-\tlocal result = vim.system({ py, "-c", "import debugpy" }, { text = true }):wait()
-\tif result.code == 0 then
-\t\treturn true
-\tend
-
-\tnotify(
-\t\t("debugpy is not installed for %s
-Install it with: %s -m pip install --upgrade debugpy")
-\t\t\t:format(py, py),
-\t\tvim.log.levels.ERROR
-\t)
-\treturn false
+	local result = vim.system({
+		py,
+		'-c',
+		'import debugpy',
+	}, { text = true }):wait()
+	if result.code == 0 then
+		return true
+	end
+	notify(
+		('debugpy is not installed for %s Install it with: %s -m pip install --upgrade debugpy'):format(py, py),
+		vim.log.levels.ERROR
+	)
+	return false
 end
 
 local function start(config)
-\tlocal py = ensure_python()
-\tif not py then
-\t\treturn
-\tend
-\tif not ensure_debugpy(py) then
-\t\treturn
-\tend
+	local py = ensure_python()
+	if not py then
+		return
+	end
+	if not ensure_debugpy(py) then
+		return
+	end
 
-\tconfig.type = M.adapter.name
-\tconfig.python = py
-\tdebug.start(config)
+	config.type = M.adapter.name
+	config.python = py
+	debug.start(config)
 end
 
 local function prompt_args()
-\tlocal raw = input("Args: ", "")
-\tif raw == "" then
-\t\treturn {}
-\tend
-\treturn vim.split(raw, "%s+", { trimempty = true })
+	local raw = input('Args: ', '')
+	if raw == '' then
+		return {}
+	end
+	return vim.split(raw, '%s+', { trimempty = true })
 end
 
 local function prompt_env()
-\tlocal env = {}
-\twhile true do
-\t\tlocal key = input("Env key (blank to finish): ", "")
-\t\tif key == "" then
-\t\t\tbreak
-\t\tend
-\t\tenv[key] = input("Env value for " .. key .. ": ", "")
-\tend
-\treturn env
+	local env = {}
+	while true do
+		local key = input('Env key (blank to finish): ', '')
+		if key == '' then
+			break
+		end
+		env[key] = input('Env value for ' .. key .. ': ', '')
+	end
+	return env
 end
 
 local function prompt_port(default)
-\tlocal port = tonumber(input("Port: ", tostring(default or 5678)))
-\tif not port then
-\t\treturn nil
-\tend
-\treturn port
+	local port = tonumber(input('Port: ', tostring(default or 5678)))
+	if not port then
+		return nil
+	end
+	return port
 end
 
 local function prompt_host(default)
-\tlocal host = input("Host: ", default or "127.0.0.1")
-\tif host == "" then
-\t\treturn "127.0.0.1"
-\tend
-\treturn host
+	local host = input('Host: ', default or '127.0.0.1')
+	if host == '' then
+		return '127.0.0.1'
+	end
+	return host
 end
 
 local function module_name_from_file(file, root)
-\tif file == "" or root == "" then
-\t\treturn nil
-\tend
+	if file == '' or root == '' then
+		return nil
+	end
 
-\tlocal rel = fn.fnamemodify(file, ":.")
-\tif rel == file then
-\t\trel = file:gsub("^" .. vim.pesc(root .. "/"), "")
-\tend
+	local rel = fn.fnamemodify(file, ':.')
+	if rel == file then
+		rel = file:gsub('^' .. vim.pesc(root .. '/'), '')
+	end
 
-\trel = rel:gsub("%.py$", "")
-\trel = rel:gsub("/", ".")
-\trel = rel:gsub("\\", ".")
-\trel = rel:gsub("^src%.", "")
+	rel = rel:gsub('%.py$', '')
+	rel = rel:gsub('/', '.')
+	rel = rel:gsub('\\', '.')
+	rel = rel:gsub('^src%.', '')
 
-\tif rel == "" then
-\t\treturn nil
-\tend
+	if rel == '' then
+		return nil
+	end
 
-\treturn rel
+	return rel
 end
 
 function M.launch_file()
-\tlocal file = current_file()
-\tif file == "" or not file_exists(file) then
-\t\tnotify("Current Python file not found", vim.log.levels.ERROR)
-\t\treturn
-\tend
+	local file = current_file()
+	if file == '' or not file_exists(file) then
+		notify('Current Python file not found', vim.log.levels.ERROR)
+		return
+	end
 
-\tstart({
-\t\trequest = "launch",
-\t\tname = "Python launch file",
-\t\tprogram = file,
-\t\tcwd = workspace_root(),
-\t\targs = prompt_args(),
-\t\tenv = prompt_env(),
-\t\tconsole = "integratedTerminal",
-\t\tjustMyCode = true,
-\t\tstopOnEntry = false,
-\t})
+	start({
+		request = 'launch',
+		name = 'Python launch file',
+		program = file,
+		cwd = workspace_root(),
+		args = prompt_args(),
+		env = prompt_env(),
+		console = 'integratedTerminal',
+		justMyCode = true,
+		stopOnEntry = false,
+	})
 end
 
 function M.launch_file_all_code()
-\tlocal file = current_file()
-\tif file == "" or not file_exists(file) then
-\t\tnotify("Current Python file not found", vim.log.levels.ERROR)
-\t\treturn
-\tend
+	local file = current_file()
+	if file == '' or not file_exists(file) then
+		notify('Current Python file not found', vim.log.levels.ERROR)
+		return
+	end
 
-\tstart({
-\t\trequest = "launch",
-\t\tname = "Python launch file (all code)",
-\t\tprogram = file,
-\t\tcwd = workspace_root(),
-\t\targs = prompt_args(),
-\t\tenv = prompt_env(),
-\t\tconsole = "integratedTerminal",
-\t\tjustMyCode = false,
-\t\tstopOnEntry = false,
-\t})
+	start({
+		request = 'launch',
+		name = 'Python launch file (all code)',
+		program = file,
+		cwd = workspace_root(),
+		args = prompt_args(),
+		env = prompt_env(),
+		console = 'integratedTerminal',
+		justMyCode = false,
+		stopOnEntry = false,
+	})
 end
 
 function M.launch_module()
-\tlocal file = current_file()
-\tlocal root = workspace_root()
-\tlocal default_module = module_name_from_file(file, root) or ""
-\tlocal module = input("Python module: ", default_module)
+	local file = current_file()
+	local root = workspace_root()
+	local default_module = module_name_from_file(file, root) or ''
+	local module = input('Python module: ', default_module)
 
-\tif module == "" then
-\t\tnotify("No module specified", vim.log.levels.ERROR)
-\t\treturn
-\tend
+	if module == '' then
+		notify('No module specified', vim.log.levels.ERROR)
+		return
+	end
 
-\tstart({
-\t\trequest = "launch",
-\t\tname = "Python launch module",
-\t\tmodule = module,
-\t\tcwd = root,
-\t\targs = prompt_args(),
-\t\tenv = prompt_env(),
-\t\tconsole = "integratedTerminal",
-\t\tjustMyCode = true,
-\t\tstopOnEntry = false,
-\t})
+	start({
+		request = 'launch',
+		name = 'Python launch module',
+		module = module,
+		cwd = root,
+		args = prompt_args(),
+		env = prompt_env(),
+		console = 'integratedTerminal',
+		justMyCode = true,
+		stopOnEntry = false,
+	})
 end
 
 function M.launch_pytest()
-\tlocal root = workspace_root()
-\tlocal target = current_file()
+	local root = workspace_root()
+	local target = current_file()
 
-\tif target == "" then
-\t\ttarget = input("pytest target: ", root, "file")
-\tend
-\tif target == "" then
-\t\tnotify("No pytest target specified", vim.log.levels.ERROR)
-\t\treturn
-\tend
+	if target == '' then
+		target = input('pytest target: ', root, 'file')
+	end
+	if target == '' then
+		notify('No pytest target specified', vim.log.levels.ERROR)
+		return
+	end
 
-\tstart({
-\t\trequest = "launch",
-\t\tname = "Python pytest",
-\t\tmodule = "pytest",
-\t\tcwd = root,
-\t\targs = vim.list_extend({ target }, prompt_args()),
-\t\tenv = prompt_env(),
-\t\tconsole = "integratedTerminal",
-\t\tjustMyCode = false,
-\t\tstopOnEntry = false,
-\t})
+	start({
+		request = 'launch',
+		name = 'Python pytest',
+		module = 'pytest',
+		cwd = root,
+		args = vim.list_extend({ target }, prompt_args()),
+		env = prompt_env(),
+		console = 'integratedTerminal',
+		justMyCode = false,
+		stopOnEntry = false,
+	})
 end
 
 function M.launch_unittest()
-\tlocal root = workspace_root()
-\tlocal target = input("unittest module or path: ", current_file() ~= "" and current_file() or root)
+	local root = workspace_root()
+	local target = input('unittest module or path: ', current_file() ~= '' and current_file() or root)
 
-\tif target == "" then
-\t\tnotify("No unittest target specified", vim.log.levels.ERROR)
-\t\treturn
-\tend
+	if target == '' then
+		notify('No unittest target specified', vim.log.levels.ERROR)
+		return
+	end
 
-\tstart({
-\t\trequest = "launch",
-\t\tname = "Python unittest",
-\t\tmodule = "unittest",
-\t\tcwd = root,
-\t\targs = vim.list_extend({ target }, prompt_args()),
-\t\tenv = prompt_env(),
-\t\tconsole = "integratedTerminal",
-\t\tjustMyCode = false,
-\t\tstopOnEntry = false,
-\t})
+	start({
+		request = 'launch',
+		name = 'Python unittest',
+		module = 'unittest',
+		cwd = root,
+		args = vim.list_extend({ target }, prompt_args()),
+		env = prompt_env(),
+		console = 'integratedTerminal',
+		justMyCode = false,
+		stopOnEntry = false,
+	})
 end
 
 function M.launch_django()
-\tlocal root = workspace_root()
-\tlocal manage = path_join(root, "manage.py")
+	local root = workspace_root()
+	local manage = path_join(root, 'manage.py')
 
-\tif not file_exists(manage) then
-\t\tmanage = input("manage.py path: ", root .. "/", "file")
-\tend
-\tif manage == "" or not file_exists(manage) then
-\t\tnotify("manage.py not found", vim.log.levels.ERROR)
-\t\treturn
-\tend
+	if not file_exists(manage) then
+		manage = input('manage.py path: ', root .. '/', 'file')
+	end
+	if manage == '' or not file_exists(manage) then
+		notify('manage.py not found', vim.log.levels.ERROR)
+		return
+	end
 
-\tstart({
-\t\trequest = "launch",
-\t\tname = "Python Django runserver",
-\t\tprogram = manage,
-\t\tcwd = root,
-\t\targs = vim.list_extend({ "runserver" }, prompt_args()),
-\t\tenv = prompt_env(),
-\t\tconsole = "integratedTerminal",
-\t\tjustMyCode = true,
-\t\tdjango = true,
-\t\tstopOnEntry = false,
-\t})
+	start({
+		request = 'launch',
+		name = 'Python Django runserver',
+		program = manage,
+		cwd = root,
+		args = vim.list_extend({ 'runserver' }, prompt_args()),
+		env = prompt_env(),
+		console = 'integratedTerminal',
+		justMyCode = true,
+		django = true,
+		stopOnEntry = false,
+	})
 end
 
 function M.launch_flask()
-\tlocal root = workspace_root()
-\tlocal app = input("FLASK_APP: ", "app.py")
+	local root = workspace_root()
+	local app = input('FLASK_APP: ', 'app.py')
 
-\tif app == "" then
-\t\tnotify("FLASK_APP is required", vim.log.levels.ERROR)
-\t\treturn
-\tend
+	if app == '' then
+		notify('FLASK_APP is required', vim.log.levels.ERROR)
+		return
+	end
 
-\tlocal env = prompt_env()
-\tenv.FLASK_APP = app
+	local env = prompt_env()
+	env.FLASK_APP = app
 
-\tstart({
-\t\trequest = "launch",
-\t\tname = "Python Flask",
-\t\tmodule = "flask",
-\t\tcwd = root,
-\t\targs = vim.list_extend({ "run", "--no-debugger" }, prompt_args()),
-\t\tenv = env,
-\t\tconsole = "integratedTerminal",
-\t\tjustMyCode = true,
-\t\tjinja = true,
-\t\tstopOnEntry = false,
-\t})
+	start({
+		request = 'launch',
+		name = 'Python Flask',
+		module = 'flask',
+		cwd = root,
+		args = vim.list_extend({ 'run', '--no-debugger' }, prompt_args()),
+		env = env,
+		console = 'integratedTerminal',
+		justMyCode = true,
+		jinja = true,
+		stopOnEntry = false,
+	})
 end
 
 function M.attach_socket()
-\tlocal root = workspace_root()
-\tlocal host = prompt_host("127.0.0.1")
-\tlocal port = prompt_port(5678)
+	local root = workspace_root()
+	local host = prompt_host('127.0.0.1')
+	local port = prompt_port(5678)
 
-\tif not port then
-\t\tnotify("Invalid port", vim.log.levels.ERROR)
-\t\treturn
-\tend
+	if not port then
+		notify('Invalid port', vim.log.levels.ERROR)
+		return
+	end
 
-\tstart({
-\t\trequest = "attach",
-\t\tname = "Python attach socket",
-\t\tconnect = {
-\t\t\thost = host,
-\t\t\tport = port,
-\t\t},
-\t\tpathMappings = {
-\t\t\t{
-\t\t\t\tlocalRoot = root,
-\t\t\t\tremoteRoot = ".",
-\t\t\t},
-\t\t},
-\t\tjustMyCode = false,
-\t})
+	start({
+		request = 'attach',
+		name = 'Python attach socket',
+		connect = {
+			host = host,
+			port = port,
+		},
+		pathMappings = {
+			{
+				localRoot = root,
+				remoteRoot = '.',
+			},
+		},
+		justMyCode = false,
+	})
 end
 
 function M.attach_pid()
-\tlocal py = ensure_python()
-\tif not py then
-\t\treturn
-\tend
-\tif not ensure_debugpy(py) then
-\t\treturn
-\tend
+	local py = ensure_python()
+	if not py then
+		return
+	end
+	if not ensure_debugpy(py) then
+		return
+	end
 
-\tlocal pid = tonumber(input("PID: ", ""))
-\tif not pid then
-\t\tnotify("Invalid PID", vim.log.levels.ERROR)
-\t\treturn
-\tend
+	local pid = tonumber(input('PID: ', ''))
+	if not pid then
+		notify('Invalid PID', vim.log.levels.ERROR)
+		return
+	end
 
-\tlocal port = prompt_port(5678)
-\tif not port then
-\t\tnotify("Invalid port", vim.log.levels.ERROR)
-\t\treturn
-\tend
+	local port = prompt_port(5678)
+	if not port then
+		notify('Invalid port', vim.log.levels.ERROR)
+		return
+	end
 
-\tlocal result = vim.system({
-\t\tpy,
-\t\t"-m",
-\t\t"debugpy",
-\t\t"--listen",
-\t\ttostring(port),
-\t\t"--pid",
-\t\ttostring(pid),
-\t}, {
-\t\ttext = true,
-\t}):wait()
+	local result = vim.system({
+		py,
+		'-m',
+		'debugpy',
+		'--listen',
+		tostring(port),
+		'--pid',
+		tostring(pid),
+	}, {
+		text = true,
+	}):wait()
 
-\tif result.code ~= 0 then
-\t\tlocal stderr = (result.stderr and result.stderr ~= "") and result.stderr or "Failed to inject debugpy into process"
-\t\tnotify(stderr, vim.log.levels.ERROR)
-\t\treturn
-\tend
+	if result.code ~= 0 then
+		local stderr = (result.stderr and result.stderr ~= '') and result.stderr
+			or 'Failed to inject debugpy into process'
+		notify(stderr, vim.log.levels.ERROR)
+		return
+	end
 
-\tstart({
-\t\trequest = "attach",
-\t\tname = "Python attach PID",
-\t\tconnect = {
-\t\t\thost = "127.0.0.1",
-\t\t\tport = port,
-\t\t},
-\t\tpathMappings = {
-\t\t\t{
-\t\t\t\tlocalRoot = workspace_root(),
-\t\t\t\tremoteRoot = ".",
-\t\t\t},
-\t\t},
-\t\tjustMyCode = false,
-\t})
+	start({
+		request = 'attach',
+		name = 'Python attach PID',
+		connect = {
+			host = '127.0.0.1',
+			port = port,
+		},
+		pathMappings = {
+			{
+				localRoot = workspace_root(),
+				remoteRoot = '.',
+			},
+		},
+		justMyCode = false,
+	})
 end
 
 function M.run_with_wait()
-\tlocal py = ensure_python()
-\tif not py then
-\t\treturn
-\tend
-\tif not ensure_debugpy(py) then
-\t\treturn
-\tend
+	local py = ensure_python()
+	if not py then
+		return
+	end
+	if not ensure_debugpy(py) then
+		return
+	end
 
-\tlocal file = current_file()
-\tif file == "" or not file_exists(file) then
-\t\tnotify("Current Python file not found", vim.log.levels.ERROR)
-\t\treturn
-\tend
+	local file = current_file()
+	if file == '' or not file_exists(file) then
+		notify('Current Python file not found', vim.log.levels.ERROR)
+		return
+	end
 
-\tlocal port = prompt_port(5678)
-\tif not port then
-\t\tnotify("Invalid port", vim.log.levels.ERROR)
-\t\treturn
-\tend
+	local port = prompt_port(5678)
+	if not port then
+		notify('Invalid port', vim.log.levels.ERROR)
+		return
+	end
 
-\tlocal cmd = {
-\t\tpy,
-\t\t"-m",
-\t\t"debugpy",
-\t\t"--listen",
-\t\ttostring(port),
-\t\t"--wait-for-client",
-\t\tfile,
-\t}
-\tvim.list_extend(cmd, prompt_args())
+	local cmd = {
+		py,
+		'-m',
+		'debugpy',
+		'--listen',
+		tostring(port),
+		'--wait-for-client',
+		file,
+	}
+	vim.list_extend(cmd, prompt_args())
 
-\tvim.cmd("botright split")
-\tvim.fn.termopen(cmd, { cwd = workspace_root() })
-\tnotify(("Started debugpy wait-for-client on port %d"):format(port))
+	vim.cmd('botright new')
+
+	local job_id = vim.fn.jobstart(cmd, {
+		cwd = workspace_root(),
+		term = true,
+	})
+
+	if job_id <= 0 then
+		notify('Failed to start debugpy terminal')
+		return
+	end
+
+	vim.cmd.startinsert()
+	notify(('Started debugpy wait-for-client on port %d'):format(port))
 end
-
 function M.setup()
-\tapi.nvim_create_user_command("PythonDapFile", M.launch_file, {
-\t\tdesc = "Debug current Python file",
-\t})
+	api.nvim_create_user_command('PythonDapFile', M.launch_file, {
+		desc = 'Debug current Python file',
+	})
+	api.nvim_create_user_command('PythonDapFileAll', M.launch_file_all_code, {
+		desc = 'Debug current Python file with library code',
+	})
+	api.nvim_create_user_command('PythonDapModule', M.launch_module, {
+		desc = 'Debug Python module',
+	})
+	api.nvim_create_user_command('PythonDapPytest', M.launch_pytest, {
+		desc = 'Debug pytest target',
+	})
+	api.nvim_create_user_command('PythonDapUnitTest', M.launch_unittest, {
+		desc = 'Debug unittest target',
+	})
+	api.nvim_create_user_command('PythonDapDjango', M.launch_django, {
+		desc = 'Debug Django runserver',
+	})
 
-\tapi.nvim_create_user_command("PythonDapFileAll", M.launch_file_all_code, {
-\t\tdesc = "Debug current Python file with library code",
-\t})
+	api.nvim_create_user_command('PythonDapFlask', M.launch_flask, {
+		desc = 'Debug Flask app',
+	})
 
-\tapi.nvim_create_user_command("PythonDapModule", M.launch_module, {
-\t\tdesc = "Debug Python module",
-\t})
+	api.nvim_create_user_command('PythonDapAttach', M.attach_socket, {
+		desc = 'Attach to debugpy socket',
+	})
 
-\tapi.nvim_create_user_command("PythonDapPytest", M.launch_pytest, {
-\t\tdesc = "Debug pytest target",
-\t})
+	api.nvim_create_user_command('PythonDapAttachPid', M.attach_pid, {
+		desc = 'Inject debugpy into PID and attach',
+	})
 
-\tapi.nvim_create_user_command("PythonDapUnitTest", M.launch_unittest, {
-\t\tdesc = "Debug unittest target",
-\t})
-
-\tapi.nvim_create_user_command("PythonDapDjango", M.launch_django, {
-\t\tdesc = "Debug Django runserver",
-\t})
-
-\tapi.nvim_create_user_command("PythonDapFlask", M.launch_flask, {
-\t\tdesc = "Debug Flask app",
-\t})
-
-\tapi.nvim_create_user_command("PythonDapAttach", M.attach_socket, {
-\t\tdesc = "Attach to debugpy socket",
-\t})
-
-\tapi.nvim_create_user_command("PythonDapAttachPid", M.attach_pid, {
-\t\tdesc = "Inject debugpy into PID and attach",
-\t})
-
-\tapi.nvim_create_user_command("PythonDapWait", M.run_with_wait, {
-\t\tdesc = "Run current file with debugpy --wait-for-client",
-\t})
-
-\tvim.keymap.set("n", "<leader>pf", M.launch_file, { desc = "Python DAP file" })
-\tvim.keymap.set("n", "<leader>pF", M.launch_file_all_code, { desc = "Python DAP file all code" })
-\tvim.keymap.set("n", "<leader>pm", M.launch_module, { desc = "Python DAP module" })
-\tvim.keymap.set("n", "<leader>pt", M.launch_pytest, { desc = "Python DAP pytest" })
-\tvim.keymap.set("n", "<leader>pu", M.launch_unittest, { desc = "Python DAP unittest" })
-\tvim.keymap.set("n", "<leader>pd", M.launch_django, { desc = "Python DAP django" })
-\tvim.keymap.set("n", "<leader>pl", M.launch_flask, { desc = "Python DAP flask" })
-\tvim.keymap.set("n", "<leader>pa", M.attach_socket, { desc = "Python DAP attach" })
-\tvim.keymap.set("n", "<leader>pA", M.attach_pid, { desc = "Python DAP attach pid" })
-\tvim.keymap.set("n", "<leader>pw", M.run_with_wait, { desc = "Python DAP wait" })
+	api.nvim_create_user_command('PythonDapWait', M.run_with_wait, {
+		desc = 'Run current file with debugpy --wait-for-client',
+	})
+	vim.keymap.set('n', '<leader>pf', M.launch_file, { desc = 'Python DAP file' })
+	vim.keymap.set('n', '<leader>pF', M.launch_file_all_code, { desc = 'Python DAP file all code' })
+	vim.keymap.set('n', '<leader>pm', M.launch_module, { desc = 'Python DAP module' })
+	vim.keymap.set('n', '<leader>pt', M.launch_pytest, { desc = 'Python DAP pytest' })
+	vim.keymap.set('n', '<leader>pu', M.launch_unittest, { desc = 'Python DAP unittest' })
+	vim.keymap.set('n', '<leader>pd', M.launch_django, { desc = 'Python DAP django' })
+	vim.keymap.set('n', '<leader>pl', M.launch_flask, { desc = 'Python DAP flask' })
+	vim.keymap.set('n', '<leader>pa', M.attach_socket, { desc = 'Python DAP attach' })
+	vim.keymap.set('n', '<leader>pA', M.attach_pid, { desc = 'Python DAP attach pid' })
+	vim.keymap.set('n', '<leader>pw', M.run_with_wait, { desc = 'Python DAP wait' })
 end
 
 return M

@@ -1,588 +1,757 @@
 -- ~/.config/nvim/lua/dap/go.lua
--- Go DAP configuration for Neovim 0.13 built-in vim.debug, no plugins
+-- Qompass AI Diver Go DAP Config
+-- Copyright (C) 2026 Qompass AI, All rights reserved
+-- -------------------------------------------------
+-- This module intentionally does not configure LSP clients, diagnostics,
+-- formatters, or linters. Existing Go tooling keeps its own lifecycle.
 
 local api = vim.api
-local fn = vim.fn
-local uv = vim.uv or vim.loop
 local debug = vim.debug
+local fn = vim.fn
+local uv = vim.uv
 
 local M = {}
 
-M.adapter = {
-\tname = "delve",
-\tcommand = "dlv",
-\targs = { "dap", "--listen=127.0.0.1:0" },
+local FILETYPES = {
+	go = true,
 }
 
-local function notify(msg, level)
-\tvim.notify(msg, level or vim.log.levels.INFO, { title = "dap.go" })
+local FILETYPE_PATTERNS = {
+	'go',
+}
+
+local FILE_PATTERNS = {
+	'*.go',
+}
+
+local CONFIGURED_FLAG = 'qompass_go_dap_configured'
+
+M.adapter = {
+	name = 'delve',
+	command = 'dlv',
+	args = {
+		'dap',
+		'--listen=127.0.0.1:0',
+	},
+}
+
+---@param message string
+---@param level? integer
+local function notify(message, level)
+	vim.notify(message, level or vim.log.levels.INFO, {
+		title = 'dap.go',
+	})
 end
 
-local function executable(cmd)
-\treturn fn.executable(cmd) == 1
+---@param command string
+---@return boolean
+local function executable(command)
+	return fn.executable(command) == 1
 end
 
-local function cwd()
-\treturn fn.getcwd()
-end
-
+---@param prompt string
+---@param default? string
+---@param completion? string
+---@return string
 local function input(prompt, default, completion)
-\treturn fn.input(prompt, default or "", completion or "")
+	return fn.input(prompt, default or '', completion or '')
 end
 
+---@param path string
+---@return boolean
 local function file_exists(path)
-\treturn type(path) == "string" and path ~= "" and uv.fs_stat(path) ~= nil
+	return path ~= '' and uv.fs_stat(path) ~= nil
 end
 
+---@param path string
+---@return boolean
 local function is_executable(path)
-\treturn file_exists(path) and fn.executable(path) == 1
+	return file_exists(path) and fn.executable(path) == 1
 end
 
-local function current_file()
-\treturn api.nvim_buf_get_name(0)
+---@param bufnr integer
+---@return string
+local function buffer_file(bufnr)
+	return api.nvim_buf_get_name(bufnr)
 end
 
-local function goos_windows()
-\treturn vim.uv.os_uname().sysname == "Windows_NT"
+---@param bufnr integer
+---@return boolean
+local function filename_matches(bufnr)
+	local name = buffer_file(bufnr):lower()
+
+	for _, pattern in ipairs(FILE_PATTERNS) do
+		local suffix = pattern:match('^%*(%..+)$')
+		if suffix and name:sub(-#suffix) == suffix:lower() then
+			return true
+		end
+	end
+
+	return false
 end
 
-local function normalize_sep(path)
-\tif goos_windows() then
-\t\treturn (path:gsub("/", "\\"))
-\tend
-\treturn path
+---@param bufnr integer
+---@return boolean
+local function is_go_buffer(bufnr)
+	if not api.nvim_buf_is_valid(bufnr) then
+		return false
+	end
+
+	return FILETYPES[vim.bo[bufnr].filetype] == true or filename_matches(bufnr)
 end
 
-local function joinpath(...)
-\treturn normalize_sep(table.concat({ ... }, "/"))
+---@return integer?
+local function current_go_buffer()
+	local bufnr = api.nvim_get_current_buf()
+	if is_go_buffer(bufnr) then
+		return bufnr
+	end
+
+	notify('Go DAP is available only in Go buffers', vim.log.levels.ERROR)
+	return nil
 end
 
-local function workspace_root()
-\tlocal file = current_file()
-\tif file == "" then
-\t\treturn cwd()
-\tend
+---@param bufnr integer
+---@return boolean
+local function update_buffer(bufnr)
+	local file = buffer_file(bufnr)
+	if file == '' then
+		notify('Save the Go buffer before starting the debugger', vim.log.levels.ERROR)
+		return false
+	end
 
-\tlocal root = vim.fs.root(file, {
-\t\t"go.work",
-\t\t"go.mod",
-\t\t".git",
-\t})
+	if not vim.bo[bufnr].modified then
+		return true
+	end
 
-\treturn root or cwd()
+	local ok, err = pcall(api.nvim_buf_call, bufnr, function()
+		vim.cmd('silent update')
+	end)
+
+	if not ok then
+		notify('Unable to save the Go buffer: ' .. tostring(err), vim.log.levels.ERROR)
+		return false
+	end
+
+	return true
 end
 
-local function current_dir()
-\tlocal file = current_file()
-\tif file == "" then
-\t\treturn cwd()
-\tend
-\treturn fn.fnamemodify(file, ":p:h")
+---@param bufnr integer
+---@return string
+local function package_dir(bufnr)
+	local file = buffer_file(bufnr)
+	if file == '' then
+		return fn.getcwd()
+	end
+
+	return vim.fs.dirname(file) or fn.getcwd()
 end
 
-local function buf_name()
-\tlocal file = current_file()
-\tif file == "" then
-\t\treturn ""
-\tend
-\treturn fn.fnamemodify(file, ":t")
+---@param bufnr integer
+---@return string
+local function workspace_root(bufnr)
+	local file = buffer_file(bufnr)
+	if file == '' then
+		return fn.getcwd()
+	end
+
+	return vim.fs.root(file, {
+		'go.work',
+		'go.mod',
+		'.git',
+	}) or package_dir(bufnr)
 end
 
-local function buf_stem()
-\tlocal name = buf_name()
-\treturn name:gsub("%.go$", "")
-end
-
-local function ensure_adapter()
-\tif executable(M.adapter.command) then
-\t\treturn true
-\tend
-
-\tnotify(
-\t\t("Go DAP adapter not found: %s
-Install Delve and ensure it is available in PATH.")
-\t\t\t:format(M.adapter.command),
-\t\tvim.log.levels.ERROR
-\t)
-\treturn false
-end
-
-local function start(config)
-\tif not ensure_adapter() then
-\t\treturn
-\tend
-
-\tconfig.type = M.adapter.name
-\tdebug.start(config)
-end
-
+---@param args string[]
+---@param run_cwd string
+---@return string?
 local function go_env(args, run_cwd)
-\tlocal cmd = { "go" }
-\tvim.list_extend(cmd, args)
+	if not executable('go') then
+		return nil
+	end
 
-\tlocal result = vim.system(cmd, {
-\t\tcwd = run_cwd or workspace_root(),
-\t\ttext = true,
-\t}):wait()
+	local command = { 'go' }
+	vim.list_extend(command, args)
 
-\tif result.code ~= 0 or not result.stdout or result.stdout == "" then
-\t\treturn nil
-\tend
+	local result = vim.system(command, {
+		cwd = run_cwd,
+		text = true,
+	}):wait()
 
-\treturn vim.trim(result.stdout)
+	if result.code ~= 0 or not result.stdout or result.stdout == '' then
+		return nil
+	end
+
+	return vim.trim(result.stdout)
 end
 
-local function go_env_gomod(run_cwd)
-\tif not executable("go") then
-\t\treturn nil
-\tend
-\treturn go_env({ "env", "GOMOD" }, run_cwd)
+---@param value string
+---@return boolean
+local function valid_go_env_path(value)
+	return value ~= '' and value ~= '/dev/null' and value ~= 'NUL'
 end
 
-local function go_env_gowork(run_cwd)
-\tif not executable("go") then
-\t\treturn nil
-\tend
-\treturn go_env({ "env", "GOWORK" }, run_cwd)
+---@param bufnr integer
+---@return string
+local function module_root(bufnr)
+	local package = package_dir(bufnr)
+	local gomod = go_env({ 'env', 'GOMOD' }, package)
+
+	if type(gomod) == 'string' and valid_go_env_path(gomod) then
+		return vim.fs.dirname(gomod) or workspace_root(bufnr)
+	end
+
+	return workspace_root(bufnr)
 end
 
-local function module_root()
-\tlocal gomod = go_env_gomod(workspace_root())
-\tif gomod and gomod ~= "" and gomod ~= "/dev/null" and gomod ~= "NUL" then
-\t\treturn fn.fnamemodify(gomod, ":p:h")
-\tend
-\treturn workspace_root()
+---@param bufnr integer
+---@return string
+local function work_root(bufnr)
+	local package = package_dir(bufnr)
+	local gowork = go_env({ 'env', 'GOWORK' }, package)
+
+	if type(gowork) == 'string' and valid_go_env_path(gowork) then
+		return vim.fs.dirname(gowork) or workspace_root(bufnr)
+	end
+
+	return workspace_root(bufnr)
 end
 
-local function work_root()
-\tlocal gowork = go_env_gowork(workspace_root())
-\tif gowork and gowork ~= "" and gowork ~= "/dev/null" and gowork ~= "NUL" then
-\t\treturn fn.fnamemodify(gowork, ":p:h")
-\tend
-\treturn workspace_root()
+---@param bufnr integer
+---@return string
+local function build_output_dir(bufnr)
+	local root = workspace_root(bufnr)
+	local digest = fn.sha256(root):sub(1, 16)
+
+	return vim.fs.joinpath(fn.stdpath('cache'), 'qompass-dap', 'go', digest)
 end
 
-local function package_dir_for_file()
-\tlocal file = current_file()
-\tif file == "" then
-\t\treturn workspace_root()
-\tend
-\treturn fn.fnamemodify(file, ":p:h")
-end
-
-local function test_binary_name(dir)
-\tlocal base = fn.fnamemodify(dir, ":t")
-\tif base == "" then
-\t\tbase = "go-test"
-\tend
-\tlocal name = base .. ".test"
-\tif goos_windows() then
-\t\tname = name .. ".exe"
-\tend
-\treturn name
-end
-
-local function build_output_dir()
-\treturn joinpath(workspace_root(), ".nvim", "debug")
-end
-
+---@param path string
+---@return boolean
 local function ensure_dir(path)
-\tfn.mkdir(path, "p")
-\treturn path
+	if file_exists(path) then
+		return true
+	end
+
+	if fn.mkdir(path, 'p') == -1 or not file_exists(path) then
+		notify('Unable to create DAP cache directory: ' .. path, vim.log.levels.ERROR)
+		return false
+	end
+
+	return true
 end
 
+---@param value string
+---@return string
+local function safe_filename(value)
+	local result = value:gsub('[^%w._-]', '_')
+	return result ~= '' and result or 'go-debug'
+end
+
+---@param bufnr integer
+---@return string
+local function package_binary_name(bufnr)
+	local name = fn.fnamemodify(package_dir(bufnr), ':t')
+	name = safe_filename(name)
+
+	if uv.os_uname().sysname == 'Windows_NT' then
+		name = name .. '.exe'
+	end
+
+	return name
+end
+
+---@param bufnr integer
+---@return string
+local function test_binary_name(bufnr)
+	local name = safe_filename(fn.fnamemodify(package_dir(bufnr), ':t'))
+	name = name .. '.test'
+
+	if uv.os_uname().sysname == 'Windows_NT' then
+		name = name .. '.exe'
+	end
+
+	return name
+end
+
+---@return string[]
 local function prompt_args()
-\tlocal raw = input("Args: ", "")
-\tif raw == "" then
-\t\treturn {}
-\tend
-\treturn vim.split(raw, "%s+", { trimempty = true })
+	local value = input('Args: ')
+	if value == '' then
+		return {}
+	end
+
+	return vim.split(value, '%s+', { trimempty = true })
 end
 
+---@return table<string, string>
 local function prompt_env()
-\tlocal env = {}
-\twhile true do
-\t\tlocal key = input("Env key (blank to finish): ", "")
-\t\tif key == "" then
-\t\t\tbreak
-\t\tend
-\t\tenv[key] = input("Env value for " .. key .. ": ", "")
-\tend
-\treturn env
+	---@type table<string, string>
+	local env = {}
+
+	while true do
+		local key = input('Env key (blank to finish): ')
+		if key == '' then
+			break
+		end
+
+		if key:find('=', 1, true) then
+			notify('Environment variable names cannot contain "="', vim.log.levels.ERROR)
+		else
+			env[key] = input('Env value for ' .. key .. ': ')
+		end
+	end
+
+	return env
 end
 
-local function choose(items, prompt)
-\tif #items == 0 then
-\t\treturn nil
-\tend
+---@return boolean
+local function ensure_adapter()
+	if executable(M.adapter.command) then
+		return true
+	end
 
-\tlocal choices = { prompt or "Select:" }
-\tfor i, item in ipairs(items) do
-\t\tchoices[#choices + 1] = string.format("%d. %s", i, fn.fnamemodify(item, ":t"))
-\tend
-
-\tlocal idx = fn.inputlist(choices)
-\tif idx < 1 or idx > #items then
-\t\treturn nil
-\tend
-
-\treturn items[idx]
+	notify(
+		('Go DAP adapter not found: %s. Install Delve and ensure it is in PATH.'):format(M.adapter.command),
+		vim.log.levels.ERROR
+	)
+	return false
 end
 
-local function scandir_execs(dir)
-\tif not file_exists(dir) then
-\t\treturn {}
-\tend
+---@param bufnr integer
+---@param config table
+local function start(bufnr, config)
+	if not is_go_buffer(bufnr) then
+		notify('Refusing to start Go DAP outside a Go buffer', vim.log.levels.ERROR)
+		return
+	end
 
-\tlocal scanner = uv.fs_scandir(dir)
-\tif not scanner then
-\t\treturn {}
-\tend
+	if not update_buffer(bufnr) or not ensure_adapter() then
+		return
+	end
 
-\tlocal items = {}
-\twhile true do
-\t\tlocal name, typ = uv.fs_scandir_next(scanner)
-\t\tif not name then
-\t\t\tbreak
-\t\tend
-
-\t\tlocal path = joinpath(dir, name)
-\t\tif typ == "file" and is_executable(path) then
-\t\t\titems[#items + 1] = path
-\t\tend
-\tend
-
-\ttable.sort(items)
-\treturn items
+	config.type = M.adapter.name
+	config.cwd = config.cwd or workspace_root(bufnr)
+	config.dlvCwd = config.dlvCwd or workspace_root(bufnr)
+	debug.start(config)
 end
 
-local function candidate_binaries()
-\treturn scandir_execs(build_output_dir())
+---@param bufnr integer
+---@param name string
+---@param mode 'debug'|'test'
+---@param program string
+---@param extra? table
+---@return table
+local function launch_config(bufnr, name, mode, program, extra)
+	local config = {
+		request = 'launch',
+		name = name,
+		mode = mode,
+		program = program,
+		cwd = workspace_root(bufnr),
+		dlvCwd = workspace_root(bufnr),
+		args = prompt_args(),
+		env = prompt_env(),
+		stopOnEntry = false,
+	}
+
+	if extra then
+		config = vim.tbl_extend('force', config, extra)
+	end
+
+	return config
 end
 
-local function resolve_executable(default)
-\tlocal bins = candidate_binaries()
-\tif #bins == 1 then
-\t\treturn bins[1]
-\tend
-\tif #bins > 1 then
-\t\tlocal picked = choose(bins, "Go executable:")
-\t\tif picked then
-\t\t\treturn picked
-\t\tend
-\tend
-
-\tlocal program = input("Path to executable: ", default or (build_output_dir() .. "/"), "file")
-\tif program == "" then
-\t\treturn nil
-\tend
-\treturn program
-end
-
+---@param args string[]
+---@param run_cwd string
+---@return boolean
 local function go_build(args, run_cwd)
-\tlocal root = run_cwd or workspace_root()
+	if not executable('go') then
+		notify('Go toolchain not found in PATH', vim.log.levels.ERROR)
+		return false
+	end
 
-\tif not executable("go") then
-\t\tnotify("go not found in PATH", vim.log.levels.ERROR)
-\t\treturn false
-\tend
+	local command = { 'go' }
+	vim.list_extend(command, args)
+	notify('Running: ' .. table.concat(command, ' '))
 
-\tlocal cmd = { "go" }
-\tvim.list_extend(cmd, args)
+	local result = vim.system(command, {
+		cwd = run_cwd,
+		text = true,
+	}):wait()
 
-\tnotify("Running: " .. table.concat(cmd, " "))
+	if result.code == 0 then
+		return true
+	end
 
-\tlocal result = vim.system(cmd, {
-\t\tcwd = root,
-\t\ttext = true,
-\t}):wait()
+	local message = result.stderr
+	if not message or message == '' then
+		message = result.stdout
+	end
+	if not message or message == '' then
+		message = 'Go command failed'
+	end
 
-\tif result.code ~= 0 then
-\t\tlocal stderr = (result.stderr and result.stderr ~= "") and result.stderr or "go command failed"
-\t\tnotify(stderr, vim.log.levels.ERROR)
-\t\treturn false
-\tend
-
-\treturn true
+	notify(vim.trim(message), vim.log.levels.ERROR)
+	return false
 end
 
-local function current_main_file()
-\tlocal file = current_file()
-\tif file == "" or not file:match("%.go$") then
-\t\treturn nil
-\tend
+---@param directory string
+---@return string[]
+local function executable_files(directory)
+	if not file_exists(directory) then
+		return {}
+	end
 
-\tlocal lines = api.nvim_buf_get_lines(0, 0, math.min(api.nvim_buf_line_count(0), 50), false)
-\tlocal pkg_main = false
-\tlocal has_main = false
+	local scanner = uv.fs_scandir(directory)
+	if not scanner then
+		return {}
+	end
 
-\tfor _, line in ipairs(lines) do
-\t\tif line:match("^%s*package%s+main%s*$") then
-\t\t\tpkg_main = true
-\t\tend
-\t\tif line:match("^%s*func%s+main%s*%(") then
-\t\t\thas_main = true
-\t\tend
-\tend
+	---@type string[]
+	local results = {}
 
-\tif pkg_main and has_main then
-\t\treturn file
-\tend
+	while true do
+		local name, kind = uv.fs_scandir_next(scanner)
+		if not name then
+			break
+		end
 
-\treturn nil
+		local path = vim.fs.joinpath(directory, name)
+		if kind == 'file' and is_executable(path) then
+			results[#results + 1] = path
+		end
+	end
+
+	table.sort(results)
+	return results
 end
 
-local function default_launch_program()
-\tlocal main_file = current_main_file()
-\tif main_file then
-\t\treturn main_file
-\tend
-\treturn package_dir_for_file()
+---@param items string[]
+---@param prompt string
+---@return string?
+local function choose_file(items, prompt)
+	if #items == 0 then
+		return nil
+	end
+
+	if #items == 1 then
+		return items[1]
+	end
+
+	local choices = { prompt }
+	for index, item in ipairs(items) do
+		choices[#choices + 1] = string.format('%d. %s', index, fn.fnamemodify(item, ':t'))
+	end
+
+	local selected = fn.inputlist(choices)
+	if selected < 1 or selected > #items then
+		return nil
+	end
+
+	return items[selected]
 end
 
-local function launch_config(name, mode, program, extra)
-\tlocal config = {
-\t\trequest = "launch",
-\t\tname = name,
-\t\tmode = mode,
-\t\tprogram = program,
-\t\tcwd = workspace_root(),
-\t\targs = prompt_args(),
-\t\tenv = prompt_env(),
-\t\tstopOnEntry = false,
-\t}
-\tif extra then
-\t\tconfig = vim.tbl_extend("force", config, extra)
-\tend
-\treturn config
+---@param bufnr integer
+---@return string?
+local function resolve_executable(bufnr)
+	local output_dir = build_output_dir(bufnr)
+	local program = choose_file(executable_files(output_dir), 'Go executable:')
+
+	if program then
+		return program
+	end
+
+	local value = input('Path to executable: ', output_dir .. '/', 'file')
+
+	return value ~= '' and value or nil
 end
 
 function M.run_package()
-\tstart(launch_config(
-\t\t"Go launch package",
-\t\t"debug",
-\t\tdefault_launch_program()
-\t))
+	local bufnr = current_go_buffer()
+	if not bufnr then
+		return
+	end
+
+	start(bufnr, launch_config(bufnr, 'Go launch package', 'debug', package_dir(bufnr)))
 end
 
 function M.run_module_root()
-\tstart(launch_config(
-\t\t"Go launch module",
-\t\t"debug",
-\t\tmodule_root()
-\t))
+	local bufnr = current_go_buffer()
+	if not bufnr then
+		return
+	end
+
+	start(bufnr, launch_config(bufnr, 'Go launch module root', 'debug', module_root(bufnr)))
 end
 
 function M.run_workspace_root()
-\tstart(launch_config(
-\t\t"Go launch workspace",
-\t\t"debug",
-\t\twork_root()
-\t))
+	local bufnr = current_go_buffer()
+	if not bufnr then
+		return
+	end
+
+	start(bufnr, launch_config(bufnr, 'Go launch workspace root', 'debug', work_root(bufnr)))
 end
 
 function M.debug_test_file()
-\tlocal file = current_file()
-\tif file == "" or not file:match("_test%.go$") then
-\t\tnotify("Current buffer is not a Go test file", vim.log.levels.ERROR)
-\t\treturn
-\tend
+	local bufnr = current_go_buffer()
+	if not bufnr then
+		return
+	end
 
-\tstart(launch_config(
-\t\t"Go debug test file",
-\t\t"test",
-\t\tfile
-\t))
+	local file = buffer_file(bufnr)
+	if not file:match('_test%.go$') then
+		notify('Current buffer is not a Go test file', vim.log.levels.ERROR)
+		return
+	end
+
+	start(bufnr, launch_config(bufnr, 'Go debug tests from current file package', 'test', package_dir(bufnr)))
 end
 
 function M.debug_test_package()
-\tlocal dir = package_dir_for_file()
-\tstart(launch_config(
-\t\t"Go debug test package",
-\t\t"test",
-\t\tdir
-\t))
+	local bufnr = current_go_buffer()
+	if not bufnr then
+		return
+	end
+
+	start(bufnr, launch_config(bufnr, 'Go debug package tests', 'test', package_dir(bufnr)))
 end
 
 function M.build_binary()
-\tlocal outdir = ensure_dir(build_output_dir())
-\tlocal default = joinpath(outdir, buf_stem() ~= "" and buf_stem() or fn.fnamemodify(package_dir_for_file(), ":t"))
-\tif goos_windows() then
-\t\tdefault = default .. ".exe"
-\tend
+	local bufnr = current_go_buffer()
+	if not bufnr or not update_buffer(bufnr) then
+		return
+	end
 
-\tlocal output = input("Build output: ", default, "file")
-\tif output == "" then
-\t\treturn
-\tend
+	local output_dir = build_output_dir(bufnr)
+	if not ensure_dir(output_dir) then
+		return
+	end
 
-\tgo_build({ "build", "-gcflags=all=-N -l", "-o", output, default_launch_program() }, workspace_root())
+	local default = vim.fs.joinpath(output_dir, package_binary_name(bufnr))
+	local output = input('Build output: ', default, 'file')
+	if output == '' then
+		return
+	end
+
+	go_build({
+		'build',
+		'-gcflags=all=-N -l',
+		'-o',
+		output,
+		package_dir(bufnr),
+	}, workspace_root(bufnr))
 end
 
 function M.build_test_binary()
-\tlocal outdir = ensure_dir(build_output_dir())
-\tlocal pkg = package_dir_for_file()
-\tlocal default = joinpath(outdir, test_binary_name(pkg))
+	local bufnr = current_go_buffer()
+	if not bufnr or not update_buffer(bufnr) then
+		return
+	end
 
-\tlocal output = input("Test binary output: ", default, "file")
-\tif output == "" then
-\t\treturn
-\tend
+	local output_dir = build_output_dir(bufnr)
+	if not ensure_dir(output_dir) then
+		return
+	end
 
-\tgo_build({ "test", "-c", "-gcflags=all=-N -l", "-o", output, pkg }, workspace_root())
+	local default = vim.fs.joinpath(output_dir, test_binary_name(bufnr))
+	local output = input('Test binary output: ', default, 'file')
+
+	if output == '' then
+		return
+	end
+	go_build({
+		'test',
+		'-c',
+		'-gcflags=all=-N -l',
+		'-o',
+		output,
+		package_dir(bufnr),
+	}, workspace_root(bufnr))
 end
 
 function M.run_executable()
-\tlocal default = build_output_dir() .. "/"
-\tlocal program = resolve_executable(default)
-\tif not program or not file_exists(program) then
-\t\tnotify("Go executable not found", vim.log.levels.ERROR)
-\t\treturn
-\tend
+	local bufnr = current_go_buffer()
+	if not bufnr then
+		return
+	end
 
-\tstart({
-\t\trequest = "launch",
-\t\tname = "Go launch executable",
-\t\tmode = "exec",
-\t\tprogram = program,
-\t\tcwd = workspace_root(),
-\t\targs = prompt_args(),
-\t\tenv = prompt_env(),
-\t\tstopOnEntry = false,
-\t})
+	local program = resolve_executable(bufnr)
+	if not program or not is_executable(program) then
+		notify('Go executable not found or is not executable', vim.log.levels.ERROR)
+		return
+	end
+
+	start(bufnr, {
+		request = 'launch',
+		name = 'Go launch executable',
+		mode = 'exec',
+		program = program,
+		cwd = workspace_root(bufnr),
+		dlvCwd = workspace_root(bufnr),
+		args = prompt_args(),
+		env = prompt_env(),
+		stopOnEntry = false,
+	})
 end
 
 function M.debug_test_binary()
-\tlocal outdir = ensure_dir(build_output_dir())
-\tlocal pkg = package_dir_for_file()
-\tlocal default = joinpath(outdir, test_binary_name(pkg))
+	local bufnr = current_go_buffer()
+	if not bufnr or not update_buffer(bufnr) then
+		return
+	end
 
-\tif not go_build({ "test", "-c", "-gcflags=all=-N -l", "-o", default, pkg }, workspace_root()) then
-\t\treturn
-\tend
+	local output_dir = build_output_dir(bufnr)
+	if not ensure_dir(output_dir) then
+		return
+	end
 
-\tif not file_exists(default) then
-\t\tnotify("Compiled test executable not found", vim.log.levels.ERROR)
-\t\treturn
-\tend
+	local program = vim.fs.joinpath(output_dir, test_binary_name(bufnr))
 
-\tlocal test_filter = input("Test filter (-test.run): ", "")
-\tlocal args = {}
-\tif test_filter ~= "" then
-\t\tvim.list_extend(args, { "-test.run", test_filter })
-\tend
-\tvim.list_extend(args, prompt_args())
+	if
+		not go_build({
+			'test',
+			'-c',
+			'-gcflags=all=-N -l',
+			'-o',
+			program,
+			package_dir(bufnr),
+		}, workspace_root(bufnr))
+	then
+		return
+	end
 
-\tstart({
-\t\trequest = "launch",
-\t\tname = "Go debug test binary",
-\t\tmode = "exec",
-\t\tprogram = default,
-\t\tcwd = workspace_root(),
-\t\targs = args,
-\t\tenv = prompt_env(),
-\t\tstopOnEntry = false,
-\t})
+	if not is_executable(program) then
+		notify('Compiled Go test executable not found', vim.log.levels.ERROR)
+		return
+	end
+
+	local test_filter = input('Test filter (-test.run, optional): ')
+	local args = {}
+
+	if test_filter ~= '' then
+		vim.list_extend(args, {
+			'-test.run',
+			test_filter,
+		})
+	end
+	vim.list_extend(args, prompt_args())
+	start(bufnr, {
+		request = 'launch',
+		name = 'Go debug compiled test binary',
+		mode = 'exec',
+		program = program,
+		cwd = workspace_root(bufnr),
+		dlvCwd = workspace_root(bufnr),
+		args = args,
+		env = prompt_env(),
+		stopOnEntry = false,
+	})
 end
 
 function M.attach_pid()
-\tlocal pid = tonumber(input("PID: ", ""))
-\tif not pid then
-\t\tnotify("Invalid PID", vim.log.levels.ERROR)
-\t\treturn
-\tend
+	local bufnr = current_go_buffer()
+	if not bufnr then
+		return
+	end
 
-\tstart({
-\t\trequest = "attach",
-\t\tname = "Go attach PID",
-\t\tmode = "local",
-\t\tprocessId = pid,
-\t\tcwd = workspace_root(),
-\t\tstopOnEntry = false,
-\t})
+	local raw_pid = tonumber(input('PID: '))
+	if not raw_pid or raw_pid < 1 or raw_pid % 1 ~= 0 then
+		notify('PID must be a positive integer', vim.log.levels.ERROR)
+		return
+	end
+
+	start(bufnr, {
+		request = 'attach',
+		name = 'Go attach PID',
+		mode = 'local',
+		processId = math.floor(raw_pid),
+		cwd = workspace_root(bufnr),
+		dlvCwd = workspace_root(bufnr),
+		stopOnEntry = false,
+	})
 end
 
-function M.attach_executable()
-\tlocal default = build_output_dir() .. "/"
-\tlocal program = input("Path to executable: ", default, "file")
-\tif program == "" or not file_exists(program) then
-\t\tnotify("Executable not found", vim.log.levels.ERROR)
-\t\treturn
-\tend
+---@param bufnr integer
+local function configure_buffer(bufnr)
+	if not is_go_buffer(bufnr) then
+		return
+	end
 
-\tlocal pid = tonumber(input("PID: ", ""))
-\tif not pid then
-\t\tnotify("Invalid PID", vim.log.levels.ERROR)
-\t\treturn
-\tend
+	if vim.b[bufnr][CONFIGURED_FLAG] then
+		return
+	end
+	vim.b[bufnr][CONFIGURED_FLAG] = true
 
-\tstart({
-\t\trequest = "attach",
-\t\tname = "Go attach executable",
-\t\tmode = "local",
-\t\tprocessId = pid,
-\t\tprogram = program,
-\t\tcwd = workspace_root(),
-\t\tstopOnEntry = false,
-\t})
+	api.nvim_buf_create_user_command(bufnr, 'GoDapBuild', M.build_binary, {
+		desc = 'Build an unoptimized Go debug executable',
+	})
+	api.nvim_buf_create_user_command(bufnr, 'GoDapBuildTest', M.build_test_binary, {
+		desc = 'Build an unoptimized Go test executable',
+	})
+	api.nvim_buf_create_user_command(bufnr, 'GoDapRun', M.run_package, {
+		desc = 'Debug the current Go package',
+	})
+	api.nvim_buf_create_user_command(bufnr, 'GoDapModule', M.run_module_root, {
+		desc = 'Debug the current Go module root',
+	})
+	api.nvim_buf_create_user_command(bufnr, 'GoDapWorkspace', M.run_workspace_root, {
+		desc = 'Debug the current Go workspace root',
+	})
+	api.nvim_buf_create_user_command(bufnr, 'GoDapExec', M.run_executable, {
+		desc = 'Debug a prebuilt Go executable',
+	})
+	api.nvim_buf_create_user_command(bufnr, 'GoDapTestFile', M.debug_test_file, {
+		desc = 'Debug tests from the current Go test file package',
+	})
+	api.nvim_buf_create_user_command(bufnr, 'GoDapTest', M.debug_test_package, {
+		desc = 'Debug tests in the current Go package',
+	})
+	api.nvim_buf_create_user_command(bufnr, 'GoDapTestBinary', M.debug_test_binary, {
+		desc = 'Build and debug a Go test executable',
+	})
+	api.nvim_buf_create_user_command(bufnr, 'GoDapAttachPid', M.attach_pid, {
+		desc = 'Attach Delve to a running Go process',
+	})
+	local function map(lhs, rhs, description)
+		vim.keymap.set('n', lhs, rhs, {
+			buf = bufnr,
+			desc = description,
+			silent = true,
+		})
+	end
+	map('<leader>dgb', M.build_binary, 'Go DAP build')
+	map('<leader>dgB', M.build_test_binary, 'Go DAP build test')
+	map('<leader>dgr', M.run_package, 'Go DAP run package')
+	map('<leader>dgm', M.run_module_root, 'Go DAP run module')
+	map('<leader>dgw', M.run_workspace_root, 'Go DAP run workspace')
+	map('<leader>dge', M.run_executable, 'Go DAP run executable')
+	map('<leader>dgt', M.debug_test_package, 'Go DAP test package')
+	map('<leader>dgT', M.debug_test_file, 'Go DAP test file')
+	map('<leader>dgx', M.debug_test_binary, 'Go DAP test binary')
+	map('<leader>dga', M.attach_pid, 'Go DAP attach PID')
 end
-
 function M.setup()
-\tapi.nvim_create_user_command("GoDapBuild", M.build_binary, {
-\t\tdesc = "go build -gcflags=all=-N -l",
-\t})
-
-\tapi.nvim_create_user_command("GoDapBuildTest", M.build_test_binary, {
-\t\tdesc = "go test -c -gcflags=all=-N -l",
-\t})
-
-\tapi.nvim_create_user_command("GoDapRun", M.run_package, {
-\t\tdesc = "Debug Go package or current main file",
-\t})
-
-\tapi.nvim_create_user_command("GoDapModule", M.run_module_root, {
-\t\tdesc = "Debug Go module root",
-\t})
-
-\tapi.nvim_create_user_command("GoDapWorkspace", M.run_workspace_root, {
-\t\tdesc = "Debug Go workspace root",
-\t})
-
-\tapi.nvim_create_user_command("GoDapExec", M.run_executable, {
-\t\tdesc = "Debug prebuilt Go executable",
-\t})
-
-\tapi.nvim_create_user_command("GoDapTestFile", M.debug_test_file, {
-\t\tdesc = "Debug current Go test file",
-\t})
-
-\tapi.nvim_create_user_command("GoDapTest", M.debug_test_package, {
-\t\tdesc = "Debug Go tests in current package",
-\t})
-
-\tapi.nvim_create_user_command("GoDapTestBinary", M.debug_test_binary, {
-\t\tdesc = "Build test binary and debug it",
-\t})
-
-\tapi.nvim_create_user_command("GoDapAttachPid", M.attach_pid, {
-\t\tdesc = "Attach debugger to running Go PID",
-\t})
-
-\tapi.nvim_create_user_command("GoDapAttachExe", M.attach_executable, {
-\t\tdesc = "Attach debugger to Go executable with PID",
-\t})
-
-\tvim.keymap.set("n", "<leader>gb", M.build_binary, { desc = "Go DAP build" })
-\tvim.keymap.set("n", "<leader>gB", M.build_test_binary, { desc = "Go DAP build test" })
-\tvim.keymap.set("n", "<leader>gd", M.run_package, { desc = "Go DAP run" })
-\tvim.keymap.set("n", "<leader>gm", M.run_module_root, { desc = "Go DAP module" })
-\tvim.keymap.set("n", "<leader>gw", M.run_workspace_root, { desc = "Go DAP workspace" })
-\tvim.keymap.set("n", "<leader>ge", M.run_executable, { desc = "Go DAP exec" })
-\tvim.keymap.set("n", "<leader>gt", M.debug_test_package, { desc = "Go DAP test package" })
-\tvim.keymap.set("n", "<leader>gT", M.debug_test_file, { desc = "Go DAP test file" })
-\tvim.keymap.set("n", "<leader>gA", M.debug_test_binary, { desc = "Go DAP test binary" })
-\tvim.keymap.set("n", "<leader>ga", M.attach_pid, { desc = "Go DAP attach pid" })
-\tvim.keymap.set("n", "<leader>gE", M.attach_executable, { desc = "Go DAP attach exe" })
+	local group = api.nvim_create_augroup('qompass.dap.go', {
+		clear = true,
+	})
+	api.nvim_create_autocmd('FileType', {
+		group = group,
+		pattern = FILETYPE_PATTERNS,
+		desc = 'Enable Go DAP for Go filetypes',
+		callback = function(event)
+			configure_buffer(event.buf)
+		end,
+	})
+	api.nvim_create_autocmd({ 'BufReadPost', 'BufNewFile' }, {
+		group = group,
+		pattern = FILE_PATTERNS,
+		desc = 'Enable Go DAP for Go files',
+		callback = function(event)
+			configure_buffer(event.buf)
+		end,
+	})
+	configure_buffer(api.nvim_get_current_buf())
 end
-
 return M

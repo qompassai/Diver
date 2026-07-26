@@ -1,409 +1,520 @@
 -- ~/.config/nvim/lua/dap/scala.lua
-
+-- Qompass AI Diver Scala DAP Config
+-- Copyright (C) 2026 Qompass AI, All rights reserved
+-- --------------------------------------------------
 local api = vim.api
-local fn = vim.fn
-local uv = vim.uv or vim.loop
 local debug = vim.debug
-
+local fn = vim.fn
+local uv = vim.uv
 local M = {}
-
-local function notify(msg, level)
-\tvim.notify(msg, level or vim.log.levels.INFO, { title = "dap.scala" })
+local SCALA_FILETYPES = {
+	scala = true,
+	sbt = true,
+}
+local SCALA_PATTERNS = {
+	'*.scala',
+	'*.sc',
+	'*.sbt',
+}
+local RUN_TYPES = {
+	run = true,
+	runOrTestFile = true,
+	testFile = true,
+	testTarget = true,
+}
+local setup_done = false
+---@param message string
+---@param level? integer
+local function notify(message, level)
+	vim.notify(message, level or vim.log.levels.INFO, {
+		title = 'dap.scala',
+	})
 end
-
-local function cwd()
-\treturn fn.getcwd()
-end
-
-local function current_file()
-\treturn api.nvim_buf_get_name(0)
-end
-
-local function file_exists(path)
-\treturn type(path) == "string" and path ~= "" and uv.fs_stat(path) ~= nil
-end
-
+---@param prompt string
+---@param default? string
+---@param completion? string
+---@return string
 local function input(prompt, default, completion)
-\treturn fn.input(prompt, default or "", completion or "")
+	return fn.input(prompt, default or '', completion or '')
 end
 
-local function workspace_root()
-\tlocal file = current_file()
-\tlocal start = file ~= "" and file or cwd()
-
-\tlocal root = vim.fs.root(start, {
-\t\t"build.sbt",
-\t\t"project.scala",
-\t\t"build.sc",
-\t\t".bsp",
-\t\t".metals",
-\t\t".git",
-\t})
-
-\treturn root or cwd()
+---@param bufnr integer
+---@return string
+local function buffer_name(bufnr)
+	return api.nvim_buf_get_name(bufnr)
 end
 
-local function path_to_uri(path)
-\treturn vim.uri_from_fname(path)
-end
+---@param bufnr integer
+---@return boolean
+local function is_scala_buffer(bufnr)
+	if not api.nvim_buf_is_valid(bufnr) then
+		return false
+	end
 
-local function buf_lsp_clients(bufnr)
-\tlocal clients = vim.lsp.get_clients({ bufnr = bufnr })
-\tif #clients == 0 then
-\t\tclients = vim.lsp.get_clients()
-\tend
-\treturn clients
-end
+	if SCALA_FILETYPES[vim.bo[bufnr].filetype] then
+		return true
+	end
 
+	local name = buffer_name(bufnr):lower()
+	return name:match('%.scala$') ~= nil or name:match('%.sc$') ~= nil or name:match('%.sbt$') ~= nil
+end
+---@return integer?
+local function current_scala_buffer()
+	local bufnr = api.nvim_get_current_buf()
+	if is_scala_buffer(bufnr) then
+		return bufnr
+	end
+
+	notify('Scala DAP is available only in Scala, Scala script, and sbt buffers', vim.log.levels.ERROR)
+	return nil
+end
+---@param bufnr integer
+---@return vim.lsp.Client?
 local function metals_client(bufnr)
-\tfor _, client in ipairs(buf_lsp_clients(bufnr or 0)) do
-\t\tif client.name == "metals" then
-\t\t\treturn client
-\t\tend
-\tend
-\treturn nil
+	if not is_scala_buffer(bufnr) then
+		return nil
+	end
+	for _, client in
+		ipairs(vim.lsp.get_clients({
+			bufnr = bufnr,
+		}))
+	do
+		if client.name == 'metals' then
+			return client
+		end
+	end
+
+	return nil
 end
 
-local function has_metals(bufnr)
-\treturn metals_client(bufnr) ~= nil
+---@return integer?, vim.lsp.Client?
+local function current_metals_context()
+	local bufnr = current_scala_buffer()
+	if not bufnr then
+		return nil, nil
+	end
+
+	local client = metals_client(bufnr)
+	if not client then
+		notify('Metals is not attached to the current Scala buffer', vim.log.levels.ERROR)
+		return nil, nil
+	end
+
+	return bufnr, client
 end
 
+---@param path string
+---@return boolean
+local function file_exists(path)
+	return path ~= '' and uv.fs_stat(path) ~= nil
+end
+
+---@param bufnr integer
+---@return string
+local function workspace_root(bufnr)
+	local name = buffer_name(bufnr)
+	local start = name ~= '' and name or fn.getcwd()
+	local root = vim.fs.root(start, {
+		'build.sbt',
+		'project.scala',
+		'build.sc',
+		'.bsp',
+		'.metals',
+		'.git',
+	})
+
+	return root or fn.getcwd()
+end
+
+---@return string[]
 local function prompt_args()
-\tlocal raw = input("Args: ", "")
-\tif raw == "" then
-\t\treturn {}
-\tend
-\treturn vim.split(raw, "%s+", { trimempty = true })
+	local value = input('Args: ')
+	if value == '' then
+		return {}
+	end
+
+	return vim.split(value, '%s+', {
+		trimempty = true,
+	})
 end
 
+---@return string[]
 local function prompt_jvm_options()
-\tlocal raw = input("JVM options: ", "")
-\tif raw == "" then
-\t\treturn {}
-\tend
-\treturn vim.split(raw, "%s+", { trimempty = true })
+	local value = input('JVM options: ')
+	if value == '' then
+		return {}
+	end
+
+	return vim.split(value, '%s+', {
+		trimempty = true,
+	})
 end
 
+---@return table<string, string>
 local function prompt_env()
-\tlocal env = {}
-\twhile true do
-\t\tlocal key = input("Env key (blank to finish): ", "")
-\t\tif key == "" then
-\t\t\tbreak
-\t\tend
-\t\tenv[key] = input("Env value for " .. key .. ": ", "")
-\tend
-\treturn env
+	---@type table<string, string>
+	local env = {}
+
+	while true do
+		local key = input('Env key (blank to finish): ')
+		if key == '' then
+			break
+		end
+		env[key] = input('Env value for ' .. key .. ': ')
+	end
+
+	return env
 end
 
+---@return string?
 local function prompt_env_file()
-\tlocal env_file = input("Env file (optional): ", "")
-\tif env_file == "" then
-\t\treturn nil
-\tend
-\treturn env_file
+	local value = input('Env file (optional): ', '', 'file')
+	return value ~= '' and value or nil
 end
 
-local function lsp_request_sync(client, method, params, timeout_ms)
-\tlocal result = client.request_sync(method, params, timeout_ms or 30000, 0)
-\tif not result then
-\t\treturn nil, "No response from Metals"
-\tend
-\tif result.err then
-\t\treturn nil, result.err.message or "Metals request failed"
-\tend
-\treturn result.result, nil
+---@return string?
+local function prompt_build_target()
+	local value = input('Build target (optional): ')
+	return value ~= '' and value or nil
 end
 
-local function start_uri_adapter(uri, name)
-\tdebug.start({
-\t\ttype = "scala",
-\t\trequest = "attach",
-\t\tname = name or "Scala (Metals)",
-\t\turi = uri,
-\t})
+---@return string?
+local function prompt_run_type()
+	local value = input('Run type (run|runOrTestFile|testFile|testTarget): ', 'runOrTestFile')
+
+	if value == '' then
+		return 'runOrTestFile'
+	end
+
+	if not RUN_TYPES[value] then
+		notify('Invalid Scala run type: ' .. value, vim.log.levels.ERROR)
+		return nil
+	end
+
+	return value
 end
 
-local function discover_or_prompt_build_target()
-\tlocal target = input("Build target (optional): ", "")
-\tif target == "" then
-\t\treturn nil
-\tend
-\treturn target
+---@param client vim.lsp.Client
+---@param bufnr integer
+---@param command string
+---@param arguments table
+---@return any?, string?
+local function execute_metals_command(client, bufnr, command, arguments)
+	local response = client:request_sync('workspace/executeCommand', {
+		command = command,
+		arguments = { arguments },
+	}, 30000, bufnr)
+
+	if not response then
+		return nil, 'No response from Metals'
+	end
+
+	if response.err then
+		local message = type(response.err) == 'table' and response.err.message or nil
+		return nil, message or tostring(response.err)
+	end
+
+	return response.result, nil
+end
+
+---@param result any
+---@return string?
+local function adapter_uri(result)
+	if type(result) == 'string' and result ~= '' then
+		return result
+	end
+
+	if type(result) == 'table' and type(result.uri) == 'string' and result.uri ~= '' then
+		return result.uri
+	end
+
+	return nil
+end
+
+---@param bufnr integer
+---@param uri string
+---@param name string
+local function start_uri_adapter(bufnr, uri, name)
+	debug.start({
+		type = 'scala',
+		request = 'attach',
+		name = name,
+		uri = uri,
+		cwd = workspace_root(bufnr),
+		sourceLanguages = { 'scala' },
+	})
+end
+
+---@param bufnr integer
+---@param client vim.lsp.Client
+---@param params table
+---@param name string
+local function start_metals_debug(bufnr, client, params, name)
+	local result, err = execute_metals_command(client, bufnr, 'debug-adapter-start', params)
+
+	if err then
+		notify(err, vim.log.levels.ERROR)
+		return
+	end
+
+	local uri = adapter_uri(result)
+	if not uri then
+		notify('Metals did not return a debug adapter URI', vim.log.levels.ERROR)
+		return
+	end
+
+	start_uri_adapter(bufnr, uri, name)
+end
+
+---@param lines string[]
+---@param filetype string
+local function show_scratch_buffer(lines, filetype)
+	vim.cmd('botright new')
+	local bufnr = api.nvim_get_current_buf()
+	api.nvim_buf_set_lines(bufnr, 0, -1, false, lines)
+	vim.bo[bufnr].bufhidden = 'wipe'
+	vim.bo[bufnr].buftype = 'nofile'
+	vim.bo[bufnr].filetype = filetype
+	vim.bo[bufnr].swapfile = false
+	vim.bo[bufnr].modifiable = false
 end
 
 function M.debug_main()
-\tlocal bufnr = api.nvim_get_current_buf()
-\tlocal client = metals_client(bufnr)
-\tif not client then
-\t\tnotify("Metals LSP client not attached", vim.log.levels.ERROR)
-\t\treturn
-\tend
+	local bufnr, client = current_metals_context()
+	if not bufnr or not client then
+		return
+	end
 
-\tlocal main_class = input("Main class: ", "")
-\tif main_class == "" then
-\t\tnotify("Main class is required", vim.log.levels.ERROR)
-\t\treturn
-\tend
+	local main_class = input('Main class: ')
+	if main_class == '' then
+		notify('Main class is required', vim.log.levels.ERROR)
+		return
+	end
 
-\tlocal params = {
-\t\tmainClass = main_class,
-\t\tbuildTarget = discover_or_prompt_build_target(),
-\t\targs = prompt_args(),
-\t\tjvmOptions = prompt_jvm_options(),
-\t\tenv = prompt_env(),
-\t\tenvFile = prompt_env_file(),
-\t}
-
-\tlocal result, err = lsp_request_sync(client, "workspace/executeCommand", {
-\t\tcommand = "debug-adapter-start",
-\t\targuments = { params },
-\t})
-
-\tif err then
-\t\tnotify(err, vim.log.levels.ERROR)
-\t\treturn
-\tend
-
-\tlocal uri = type(result) == "string" and result or (type(result) == "table" and result.uri or nil)
-\tif not uri then
-\t\tnotify("Metals did not return a debug adapter URI", vim.log.levels.ERROR)
-\t\treturn
-\tend
-
-\tstart_uri_adapter(uri, "Scala debug main")
+	start_metals_debug(bufnr, client, {
+		mainClass = main_class,
+		buildTarget = prompt_build_target(),
+		args = prompt_args(),
+		jvmOptions = prompt_jvm_options(),
+		env = prompt_env(),
+		envFile = prompt_env_file(),
+	}, 'Scala debug main')
 end
 
 function M.debug_test_class()
-\tlocal bufnr = api.nvim_get_current_buf()
-\tlocal client = metals_client(bufnr)
-\tif not client then
-\t\tnotify("Metals LSP client not attached", vim.log.levels.ERROR)
-\t\treturn
-\tend
+	local bufnr, client = current_metals_context()
+	if not bufnr or not client then
+		return
+	end
 
-\tlocal test_class = input("Test class: ", "")
-\tif test_class == "" then
-\t\tnotify("Test class is required", vim.log.levels.ERROR)
-\t\treturn
-\tend
+	local test_class = input('Test class: ')
+	if test_class == '' then
+		notify('Test class is required', vim.log.levels.ERROR)
+		return
+	end
 
-\tlocal params = {
-\t\ttestClass = test_class,
-\t\tbuildTarget = discover_or_prompt_build_target(),
-\t\targs = prompt_args(),
-\t\tjvmOptions = prompt_jvm_options(),
-\t\tenv = prompt_env(),
-\t\tenvFile = prompt_env_file(),
-\t}
-
-\tlocal result, err = lsp_request_sync(client, "workspace/executeCommand", {
-\t\tcommand = "debug-adapter-start",
-\t\targuments = { params },
-\t})
-
-\tif err then
-\t\tnotify(err, vim.log.levels.ERROR)
-\t\treturn
-\tend
-
-\tlocal uri = type(result) == "string" and result or (type(result) == "table" and result.uri or nil)
-\tif not uri then
-\t\tnotify("Metals did not return a debug adapter URI", vim.log.levels.ERROR)
-\t\treturn
-\tend
-
-\tstart_uri_adapter(uri, "Scala debug test class")
+	start_metals_debug(bufnr, client, {
+		testClass = test_class,
+		buildTarget = prompt_build_target(),
+		args = prompt_args(),
+		jvmOptions = prompt_jvm_options(),
+		env = prompt_env(),
+		envFile = prompt_env_file(),
+	}, 'Scala debug test class')
 end
 
 function M.debug_current_file()
-\tlocal bufnr = api.nvim_get_current_buf()
-\tlocal client = metals_client(bufnr)
-\tif not client then
-\t\tnotify("Metals LSP client not attached", vim.log.levels.ERROR)
-\t\treturn
-\tend
+	local bufnr, client = current_metals_context()
+	if not bufnr or not client then
+		return
+	end
 
-\tlocal file = current_file()
-\tif file == "" or not file_exists(file) then
-\t\tnotify("Current Scala file not found", vim.log.levels.ERROR)
-\t\treturn
-\tend
+	local file = buffer_name(bufnr)
+	if not file_exists(file) then
+		notify('Current Scala file not found', vim.log.levels.ERROR)
+		return
+	end
 
-\tlocal run_type = input("Run type (run|runOrTestFile|testFile|testTarget): ", "runOrTestFile")
-\tif run_type == "" then
-\t\trun_type = "runOrTestFile"
-\tend
+	local run_type = prompt_run_type()
+	if not run_type then
+		return
+	end
 
-\tlocal params = {
-\t\tpath = path_to_uri(file),
-\t\trunType = run_type,
-\t\targs = prompt_args(),
-\t\tjvmOptions = prompt_jvm_options(),
-\t\tenv = prompt_env(),
-\t\tenvFile = prompt_env_file(),
-\t}
-
-\tlocal result, err = lsp_request_sync(client, "workspace/executeCommand", {
-\t\tcommand = "debug-adapter-start",
-\t\targuments = { params },
-\t})
-
-\tif err then
-\t\tnotify(err, vim.log.levels.ERROR)
-\t\treturn
-\tend
-
-\tlocal uri = type(result) == "string" and result or (type(result) == "table" and result.uri or nil)
-\tif not uri then
-\t\tnotify("Metals did not return a debug adapter URI", vim.log.levels.ERROR)
-\t\treturn
-\tend
-
-\tstart_uri_adapter(uri, "Scala debug current file")
+	start_metals_debug(bufnr, client, {
+		path = vim.uri_from_fname(file),
+		runType = run_type,
+		args = prompt_args(),
+		jvmOptions = prompt_jvm_options(),
+		env = prompt_env(),
+		envFile = prompt_env_file(),
+	}, 'Scala debug current file')
 end
 
 function M.run_command_for_file()
-\tlocal bufnr = api.nvim_get_current_buf()
-\tlocal client = metals_client(bufnr)
-\tif not client then
-\t\tnotify("Metals LSP client not attached", vim.log.levels.ERROR)
-\t\treturn
-\tend
+	local bufnr, client = current_metals_context()
+	if not bufnr or not client then
+		return
+	end
 
-\tlocal file = current_file()
-\tif file == "" or not file_exists(file) then
-\t\tnotify("Current Scala file not found", vim.log.levels.ERROR)
-\t\treturn
-\tend
+	local file = buffer_name(bufnr)
+	if not file_exists(file) then
+		notify('Current Scala file not found', vim.log.levels.ERROR)
+		return
+	end
 
-\tlocal run_type = input("Run type (run|runOrTestFile|testFile|testTarget): ", "runOrTestFile")
-\tif run_type == "" then
-\t\trun_type = "runOrTestFile"
-\tend
+	local run_type = prompt_run_type()
+	if not run_type then
+		return
+	end
 
-\tlocal params = {
-\t\tpath = path_to_uri(file),
-\t\trunType = run_type,
-\t\targs = prompt_args(),
-\t\tjvmOptions = prompt_jvm_options(),
-\t\tenv = prompt_env(),
-\t\tenvFile = prompt_env_file(),
-\t}
+	local result, err = execute_metals_command(client, bufnr, 'discover-jvm-run-command', {
+		path = vim.uri_from_fname(file),
+		runType = run_type,
+		args = prompt_args(),
+		jvmOptions = prompt_jvm_options(),
+		env = prompt_env(),
+		envFile = prompt_env_file(),
+	})
 
-\tlocal result, err = lsp_request_sync(client, "workspace/executeCommand", {
-\t\tcommand = "discover-jvm-run-command",
-\t\targuments = { params },
-\t})
+	if err then
+		notify(err, vim.log.levels.ERROR)
+		return
+	end
 
-\tif err then
-\t\tnotify(err, vim.log.levels.ERROR)
-\t\treturn
-\tend
-
-\tlocal lines = vim.split(vim.inspect(result), "
-", { trimempty = false })
-\tvim.cmd("new")
-\tlocal buf = api.nvim_get_current_buf()
-\tapi.nvim_buf_set_lines(buf, 0, -1, false, lines)
-\tvim.bo[buf].filetype = "lua"
-\tvim.bo[buf].bufhidden = "wipe"
+	show_scratch_buffer(vim.split(vim.inspect(result), '\n', { plain = true }), 'lua')
 end
 
 function M.attach_jdwp()
-\tlocal host = input("Host: ", "127.0.0.1")
-\tif host == "" then
-\t\thost = "127.0.0.1"
-\tend
+	local bufnr, client = current_metals_context()
+	if not bufnr or not client then
+		return
+	end
 
-\tlocal port = tonumber(input("Port: ", "5005"))
-\tif not port then
-\t\tnotify("Invalid port", vim.log.levels.ERROR)
-\t\treturn
-\tend
+	local host = input('Host: ', '127.0.0.1')
+	if host == '' then
+		host = '127.0.0.1'
+	end
 
-\tdebug.start({
-\t\ttype = "scala-jvm",
-\t\trequest = "attach",
-\t\tname = "Scala attach JDWP",
-\t\thostName = host,
-\t\tport = port,
-\t\tcwd = workspace_root(),
-\t})
+	local raw_port = tonumber(input('Port: ', '5005'))
+	if not raw_port or raw_port < 1 or raw_port > 65535 or raw_port % 1 ~= 0 then
+		notify('Port must be an integer from 1 through 65535', vim.log.levels.ERROR)
+		return
+	end
+
+	start_metals_debug(bufnr, client, {
+		hostName = host,
+		port = math.floor(raw_port),
+		buildTarget = prompt_build_target(),
+	}, 'Scala attach JDWP')
 end
 
 function M.sbt_debug_hint()
-\tlocal lines = {
-\t\t"Start sbt with a debug port, for example:",
-\t\t"sbt -jvm-debug 5005",
-\t\t"",
-\t\t"Then use :ScalaDapAttach to attach to localhost:5005",
-\t}
+	if not current_scala_buffer() then
+		return
+	end
 
-\tvim.cmd("new")
-\tlocal buf = api.nvim_get_current_buf()
-\tapi.nvim_buf_set_lines(buf, 0, -1, false, lines)
-\tvim.bo[buf].bufhidden = "wipe"
-\tvim.bo[buf].filetype = "markdown"
+	show_scratch_buffer({
+		'Start sbt with a debug port, for example:',
+		'sbt -jvm-debug 5005',
+		'',
+		'Then use :ScalaDapAttach to attach through Metals.',
+	}, 'markdown')
 end
 
 function M.trace_files_hint()
-\tlocal cache = vim.env.HOME .. "/.cache/metals"
-\tlocal lines = {
-\t\t"Metals DAP trace files on Linux:",
-\t\tcache .. "/dap-server.trace.json",
-\t\tcache .. "/dap-client.trace.json",
-\t}
+	if not current_scala_buffer() then
+		return
+	end
 
-\tvim.cmd("new")
-\tlocal buf = api.nvim_get_current_buf()
-\tapi.nvim_buf_set_lines(buf, 0, -1, false, lines)
-\tvim.bo[buf].bufhidden = "wipe"
-\tvim.bo[buf].filetype = "markdown"
+	local home = vim.env.HOME or uv.os_homedir() or ''
+	local cache = home .. '/.cache/metals'
+	show_scratch_buffer({
+		'Metals DAP trace files on Linux:',
+		cache .. '/dap-server.trace.json',
+		cache .. '/dap-client.trace.json',
+	}, 'markdown')
+end
+
+---@param bufnr integer
+local function configure_buffer(bufnr)
+	if not is_scala_buffer(bufnr) then
+		return
+	end
+
+	if vim.b[bufnr].qompass_scala_dap_configured then
+		return
+	end
+	vim.b[bufnr].qompass_scala_dap_configured = true
+
+	api.nvim_buf_create_user_command(bufnr, 'ScalaDapMain', M.debug_main, {
+		desc = 'Debug Scala main class through buffer-local Metals',
+	})
+	api.nvim_buf_create_user_command(bufnr, 'ScalaDapTest', M.debug_test_class, {
+		desc = 'Debug Scala test class through buffer-local Metals',
+	})
+	api.nvim_buf_create_user_command(bufnr, 'ScalaDapFile', M.debug_current_file, {
+		desc = 'Debug current Scala file through buffer-local Metals',
+	})
+	api.nvim_buf_create_user_command(bufnr, 'ScalaRunCommand', M.run_command_for_file, {
+		desc = 'Discover the JVM command for the current Scala file',
+	})
+	api.nvim_buf_create_user_command(bufnr, 'ScalaDapAttach', M.attach_jdwp, {
+		desc = 'Attach to a JVM through buffer-local Metals',
+	})
+	api.nvim_buf_create_user_command(bufnr, 'ScalaSbtDebugHint', M.sbt_debug_hint, {
+		desc = 'Show the sbt debug attach hint',
+	})
+	api.nvim_buf_create_user_command(bufnr, 'ScalaDapTraceHint', M.trace_files_hint, {
+		desc = 'Show Metals DAP trace file paths',
+	})
+
+	local map_opts = function(description)
+		return {
+			buffer = bufnr,
+			desc = description,
+			silent = true,
+		}
+	end
+	vim.keymap.set('n', '<leader>sm', M.debug_main, map_opts('Scala DAP main'))
+	vim.keymap.set('n', '<leader>st', M.debug_test_class, map_opts('Scala DAP test'))
+	vim.keymap.set('n', '<leader>sf', M.debug_current_file, map_opts('Scala DAP file'))
+	vim.keymap.set('n', '<leader>sr', M.run_command_for_file, map_opts('Scala run command'))
+	vim.keymap.set('n', '<leader>sa', M.attach_jdwp, map_opts('Scala attach JDWP'))
+	vim.keymap.set('n', '<leader>sh', M.sbt_debug_hint, map_opts('Scala sbt debug hint'))
+	vim.keymap.set('n', '<leader>sx', M.trace_files_hint, map_opts('Scala DAP trace hint'))
 end
 
 function M.setup()
-\tif not has_metals(0) then
-\t\tvim.schedule(function()
-\t\t\tnotify("Scala DAP prefers Metals. Attach Metals to use debug-adapter-start.", vim.log.levels.INFO)
-\t\tend)
-\tend
+	if setup_done then
+		configure_buffer(api.nvim_get_current_buf())
+		return
+	end
+	setup_done = true
 
-\tapi.nvim_create_user_command("ScalaDapMain", M.debug_main, {
-\t\tdesc = "Debug Scala main class via Metals",
-\t})
+	local group = api.nvim_create_augroup('qompass.dap.scala', { clear = true })
 
-\tapi.nvim_create_user_command("ScalaDapTest", M.debug_test_class, {
-\t\tdesc = "Debug Scala test class via Metals",
-\t})
+	api.nvim_create_autocmd('FileType', {
+		group = group,
+		pattern = { 'scala', 'sbt' },
+		desc = 'Enable Scala DAP for Scala filetypes',
+		callback = function(event)
+			configure_buffer(event.buf)
+		end,
+	})
 
-\tapi.nvim_create_user_command("ScalaDapFile", M.debug_current_file, {
-\t\tdesc = "Debug current Scala file via Metals discovery",
-\t})
+	api.nvim_create_autocmd({
+		'BufReadPost',
+		'BufNewFile',
+	}, {
+		group = group,
+		pattern = SCALA_PATTERNS,
+		desc = 'Enable Scala DAP for Scala file extensions',
+		callback = function(event)
+			configure_buffer(event.buf)
+		end,
+	})
 
-\tapi.nvim_create_user_command("ScalaRunCommand", M.run_command_for_file, {
-\t\tdesc = "Discover JVM shell command for current Scala file",
-\t})
-
-\tapi.nvim_create_user_command("ScalaDapAttach", M.attach_jdwp, {
-\t\tdesc = "Attach to Scala/JVM JDWP process",
-\t})
-
-\tapi.nvim_create_user_command("ScalaSbtDebugHint", M.sbt_debug_hint, {
-\t\tdesc = "Show sbt debug attach hint",
-\t})
-
-\tapi.nvim_create_user_command("ScalaDapTraceHint", M.trace_files_hint, {
-\t\tdesc = "Show Metals DAP trace file paths",
-\t})
-
-\tvim.keymap.set("n", "<leader>sm", M.debug_main, { desc = "Scala DAP main" })
-\tvim.keymap.set("n", "<leader>st", M.debug_test_class, { desc = "Scala DAP test" })
-\tvim.keymap.set("n", "<leader>sf", M.debug_current_file, { desc = "Scala DAP file" })
-\tvim.keymap.set("n", "<leader>sr", M.run_command_for_file, { desc = "Scala run command" })
-\tvim.keymap.set("n", "<leader>sa", M.attach_jdwp, { desc = "Scala attach JDWP" })
-\tvim.keymap.set("n", "<leader>sh", M.sbt_debug_hint, { desc = "Scala sbt debug hint" })
-\tvim.keymap.set("n", "<leader>sx", M.trace_files_hint, { desc = "Scala DAP trace hint" })
+	configure_buffer(api.nvim_get_current_buf())
 end
 
 return M

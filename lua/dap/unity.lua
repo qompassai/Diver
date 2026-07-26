@@ -1,293 +1,291 @@
 -- ~/.config/nvim/lua/dap/unity.lua
 local api = vim.api
 local fn = vim.fn
-local uv = vim.uv or vim.loop
+local uv = vim.uv or vim.uv
 local debug = vim.debug
-
+local FILETYPES = { cs = true }
+local FILETYPE_PATTERNS = { 'cs' }
+local FILE_PATTERNS = { '*.cs' }
 local M = {}
 
 M.adapter = {
-\tname = "coreclr",
-\tcommand = "netcoredbg",
-\targs = { "--interpreter=vscode" },
+	name = 'coreclr',
+	command = 'netcoredbg',
+	args = { '--interpreter=vscode' },
 }
-
 local function notify(msg, level)
-\tvim.notify(msg, level or vim.log.levels.INFO, { title = "dap.unity" })
+	vim.notify(msg, level or vim.log.levels.INFO, { title = 'dap.unity' })
 end
 
 local function executable(cmd)
-\treturn fn.executable(cmd) == 1
+	return fn.executable(cmd) == 1
 end
 
 local function input(prompt, default, completion)
-\treturn fn.input(prompt, default or "", completion or "")
+	return fn.input(prompt, default or '', completion or '')
 end
 
 local function cwd()
-\treturn fn.getcwd()
+	return fn.getcwd()
 end
 
 local function current_file()
-\treturn api.nvim_buf_get_name(0)
+	return api.nvim_buf_get_name(0)
 end
 
 local function file_exists(path)
-\treturn type(path) == "string" and path ~= "" and uv.fs_stat(path) ~= nil
+	return type(path) == 'string' and path ~= '' and uv.fs_stat(path) ~= nil
 end
 
 local function is_dir(path)
-\tlocal stat = uv.fs_stat(path)
-\treturn stat and stat.type == "directory" or false
+	local stat = uv.fs_stat(path)
+	return stat and stat.type == 'directory' or false
 end
 
 local function path_join(...)
-\treturn table.concat({ ... }, "/")
+	return table.concat({ ... }, '/')
 end
 
 local function workspace_root()
-\tlocal file = current_file()
-\tlocal start = file ~= "" and file or cwd()
+	local file = current_file()
+	local start = file ~= '' and file or cwd()
 
-\tlocal root = vim.fs.root(start, {
-\t\t"Assets",
-\t\t"Packages",
-\t\t"ProjectSettings",
-\t\t"*.sln",
-\t\t".git",
-\t})
+	local root = vim.fs.root(start, {
+		'Assets',
+		'Packages',
+		'ProjectSettings',
+		'*.sln',
+		'.git',
+	})
 
-\treturn root or cwd()
+	return root or cwd()
 end
 
 local function ensure_adapter()
-\tif executable(M.adapter.command) then
-\t\treturn true
-\tend
+	if executable(M.adapter.command) then
+		return true
+	end
 
-\tnotify(
-\t\t("Unity debugger not found: %s
-Install Samsung/netcoredbg and put it in PATH.")
-\t\t\t:format(M.adapter.command),
-\t\tvim.log.levels.ERROR
-\t)
-\treturn false
+	notify(
+		('Unity debugger not found: %sInstall Samsung/netcoredbg and put it in PATH.'):format(M.adapter.command),
+		vim.log.levels.ERROR
+	)
+	return false
 end
 
 local function start(config)
-\tif not ensure_adapter() then
-\t\treturn
-\tend
+	if not ensure_adapter() then
+		return
+	end
 
-\tconfig.type = M.adapter.name
-\tconfig.adapter = {
-\t\ttype = "executable",
-\t\tcommand = M.adapter.command,
-\t\targs = M.adapter.args,
-\t}
-\tdebug.start(config)
+	config.type = M.adapter.name
+	config.adapter = {
+		type = 'executable',
+		command = M.adapter.command,
+		args = M.adapter.args,
+	}
+	debug.start(config)
 end
 
 local function prompt_args()
-\tlocal raw = input("Args: ", "")
-\tif raw == "" then
-\t\treturn {}
-\tend
-\treturn vim.split(raw, "%s+", { trimempty = true })
+	local raw = input('Args: ', '')
+	if raw == '' then
+		return {}
+	end
+	return vim.split(raw, '%s+', { trimempty = true })
 end
 
 local function prompt_env()
-\tlocal env = {}
-\twhile true do
-\t\tlocal key = input("Env key (blank to finish): ", "")
-\t\tif key == "" then
-\t\t\tbreak
-\t\tend
-\t\tenv[key] = input("Env value for " .. key .. ": ", "")
-\tend
-\treturn env
+	local env = {}
+	while true do
+		local key = input('Env key (blank to finish): ', '')
+		if key == '' then
+			break
+		end
+		env[key] = input('Env value for ' .. key .. ': ', '')
+	end
+	return env
 end
 
 local function unity_root()
-\tlocal root = workspace_root()
-\tif is_dir(path_join(root, "Assets")) and is_dir(path_join(root, "ProjectSettings")) then
-\t\treturn root
-\tend
-\treturn root
+	local root = workspace_root()
+	if is_dir(path_join(root, 'Assets')) and is_dir(path_join(root, 'ProjectSettings')) then
+		return root
+	end
+	return root
 end
 
 local function dll_candidates(root)
-\tlocal product = fn.fnamemodify(root, ":t")
-\treturn {
-\t\tpath_join(root, "Library", "ScriptAssemblies", "Assembly-CSharp.dll"),
-\t\tpath_join(root, "Library", "ScriptAssemblies", "Assembly-CSharp-Editor.dll"),
-\t\tpath_join(root, "Build", product .. ".dll"),
-\t\tpath_join(root, product .. ".dll"),
-\t}
+	local product = fn.fnamemodify(root, ':t')
+	return {
+		path_join(root, 'Library', 'ScriptAssemblies', 'Assembly-CSharp.dll'),
+		path_join(root, 'Library', 'ScriptAssemblies', 'Assembly-CSharp-Editor.dll'),
+		path_join(root, 'Build', product .. '.dll'),
+		path_join(root, product .. '.dll'),
+	}
 end
 
 local function guess_unity_dll()
-\tlocal root = unity_root()
-\tfor _, dll in ipairs(dll_candidates(root)) do
-\t\tif file_exists(dll) then
-\t\t\treturn dll
-\t\tend
-\tend
-\treturn path_join(root, "Library", "ScriptAssemblies", "Assembly-CSharp.dll")
+	local root = unity_root()
+	for _, dll in ipairs(dll_candidates(root)) do
+		if file_exists(dll) then
+			return dll
+		end
+	end
+	return path_join(root, 'Library', 'ScriptAssemblies', 'Assembly-CSharp.dll')
 end
 
 local function prompt_program()
-\tlocal dll = input("Path to Unity managed DLL: ", guess_unity_dll(), "file")
-\tif dll == "" then
-\t\treturn nil
-\tend
-\treturn dll
+	local dll = input('Path to Unity managed DLL: ', guess_unity_dll(), 'file')
+	if dll == '' then
+		return nil
+	end
+	return dll
 end
 
 local function pick_pid_from_ps()
-\tlocal cmd = [[ps -eo pid=,comm= | grep -Ei 'Unity|UnityHub|mono|dotnet' | head -n 50]]
-\tlocal result = vim.system({ "sh", "-c", cmd }, { text = true }):wait()
+	local cmd = [[ps -eo pid=,comm= | grep -Ei 'Unity|UnityHub|mono|dotnet' | head -n 50]]
+	local result = vim.system({ 'sh', '-c', cmd }, { text = true }):wait()
 
-\tif result.code ~= 0 or not result.stdout or result.stdout == "" then
-\t\treturn nil
-\tend
+	if result.code ~= 0 or not result.stdout or result.stdout == '' then
+		return nil
+	end
 
-\tlocal lines = vim.split(vim.trim(result.stdout), "
-", { trimempty = true })
-\tif #lines == 0 then
-\t\treturn nil
-\tend
+	local lines = vim.split(vim.trim(result.stdout), '', { trimempty = true })
+	if #lines == 0 then
+		return nil
+	end
 
-\tlocal choices = { "Select Unity/.NET process:" }
-\tfor i, line in ipairs(lines) do
-\t\tchoices[#choices + 1] = string.format("%d. %s", i, vim.trim(line))
-\tend
+	local choices = { 'Select Unity/.NET process:' }
+	for i, line in ipairs(lines) do
+		choices[#choices + 1] = string.format('%d. %s', i, vim.trim(line))
+	end
 
-\tlocal idx = fn.inputlist(choices)
-\tif idx < 1 or idx > #lines then
-\t\treturn nil
-\tend
+	local idx = fn.inputlist(choices)
+	if idx < 1 or idx > #lines then
+		return nil
+	end
 
-\tlocal pid = tonumber(vim.trim(lines[idx]):match("^(%d+)"))
-\treturn pid
+	local pid = tonumber(vim.trim(lines[idx]):match('^(%d+)'))
+	return pid
 end
 
 function M.launch_dll()
-\tlocal program = prompt_program()
-\tif not program or program == "" then
-\t\tnotify("Managed DLL path is required", vim.log.levels.ERROR)
-\t\treturn
-\tend
+	local program = prompt_program()
+	if not program or program == '' then
+		notify('Managed DLL path is required', vim.log.levels.ERROR)
+		return
+	end
 
-\tstart({
-\t\trequest = "launch",
-\t\tname = "Unity launch managed DLL",
-\t\tprogram = program,
-\t\tcwd = unity_root(),
-\t\targs = prompt_args(),
-\t\tenv = prompt_env(),
-\t\tstopAtEntry = false,
-\t\tconsole = "internalConsole",
-\t})
+	start({
+		request = 'launch',
+		name = 'Unity launch managed DLL',
+		program = program,
+		cwd = unity_root(),
+		args = prompt_args(),
+		env = prompt_env(),
+		stopAtEntry = false,
+		console = 'internalConsole',
+	})
 end
 
 function M.attach_pid()
-\tlocal pid = pick_pid_from_ps()
-\tif not pid then
-\t\tpid = tonumber(input("PID: ", ""))
-\tend
+	local pid = pick_pid_from_ps()
+	if not pid then
+		pid = tonumber(input('PID: ', ''))
+	end
 
-\tif not pid then
-\t\tnotify("Invalid PID", vim.log.levels.ERROR)
-\t\treturn
-\tend
+	if not pid then
+		notify('Invalid PID', vim.log.levels.ERROR)
+		return
+	end
 
-\tstart({
-\t\trequest = "attach",
-\t\tname = "Unity attach PID",
-\t\tprocessId = pid,
-\t\tcwd = unity_root(),
-\t})
+	start({
+		request = 'attach',
+		name = 'Unity attach PID',
+		processId = pid,
+		cwd = unity_root(),
+	})
 end
 
 function M.attach_server()
-\tlocal port = tonumber(input("Port: ", "4711"))
-\tif not port then
-\t\tnotify("Invalid port", vim.log.levels.ERROR)
-\t\treturn
-\tend
+	local port = tonumber(input('Port: ', '4711'))
+	if not port then
+		notify('Invalid port', vim.log.levels.ERROR)
+		return
+	end
 
-\tdebug.start({
-\t\ttype = "unity-server",
-\t\trequest = "attach",
-\t\tname = "Unity attach server",
-\t\thost = input("Host: ", "127.0.0.1"),
-\t\tport = port,
-\t})
+	debug.start({
+		type = 'unity-server',
+		request = 'attach',
+		name = 'Unity attach server',
+		host = input('Host: ', '127.0.0.1'),
+		port = port,
+	})
 end
 
 function M.open_script_assemblies()
-\tlocal root = unity_root()
-\tlocal dir = path_join(root, "Library", "ScriptAssemblies")
+	local root = unity_root()
+	local dir = path_join(root, 'Library', 'ScriptAssemblies')
 
-\tif not is_dir(dir) then
-\t\tnotify("Library/ScriptAssemblies not found", vim.log.levels.WARN)
-\t\treturn
-\tend
+	if not is_dir(dir) then
+		notify('Library/ScriptAssemblies not found', vim.log.levels.WARN)
+		return
+	end
 
-\tvim.cmd("edit " .. fn.fnameescape(dir))
+	vim.cmd('edit ' .. fn.fnameescape(dir))
 end
 
 function M.unity_info()
-\tlocal root = unity_root()
-\tlocal lines = {
-\t\t"Unity DAP notes",
-\t\t"",
-\t\t"Project root: " .. root,
-\t\t"Managed assembly guess: " .. guess_unity_dll(),
-\t\t"",
-\t\t"Recommended workflow:",
-\t\t"- Use your C# LSP for code intelligence.",
-\t\t"- Let Unity generate .sln/.csproj files.",
-\t\t"- Use :UnityDapAttach for a running Unity-related process.",
-\t\t"- Use :UnityDapLaunch if you specifically want to launch a managed DLL.",
-\t\t"",
-\t\t"Adapter:",
-\t\t"- netcoredbg --interpreter=vscode",
-\t}
+	local root = unity_root()
+	local lines = {
+		'Unity DAP notes',
+		'',
+		'Project root: ' .. root,
+		'Managed assembly guess: ' .. guess_unity_dll(),
+		'',
+		'Recommended workflow:',
+		'- Use your C# LSP for code intelligence.',
+		'- Let Unity generate .sln/.csproj files.',
+		'- Use :UnityDapAttach for a running Unity-related process.',
+		'- Use :UnityDapLaunch if you specifically want to launch a managed DLL.',
+		'',
+		'Adapter:',
+		'- netcoredbg --interpreter=vscode',
+	}
 
-\tvim.cmd("new")
-\tlocal buf = api.nvim_get_current_buf()
-\tapi.nvim_buf_set_lines(buf, 0, -1, false, lines)
-\tvim.bo[buf].bufhidden = "wipe"
-\tvim.bo[buf].filetype = "markdown"
+	vim.cmd('new')
+	local buf = api.nvim_get_current_buf()
+	api.nvim_buf_set_lines(buf, 0, -1, false, lines)
+	vim.bo[buf].bufhidden = 'wipe'
+	vim.bo[buf].filetype = 'markdown'
 end
 
 function M.setup()
-\tapi.nvim_create_user_command("UnityDapLaunch", M.launch_dll, {
-\t\tdesc = "Launch Unity managed DLL with netcoredbg",
-\t})
+	api.nvim_create_user_command('UnityDapLaunch', M.launch_dll, {
+		desc = 'Launch Unity managed DLL with netcoredbg',
+	})
 
-\tapi.nvim_create_user_command("UnityDapAttach", M.attach_pid, {
-\t\tdesc = "Attach to running Unity/.NET process",
-\t})
+	api.nvim_create_user_command('UnityDapAttach', M.attach_pid, {
+		desc = 'Attach to running Unity/.NET process',
+	})
 
-\tapi.nvim_create_user_command("UnityDapServer", M.attach_server, {
-\t\tdesc = "Attach to Unity debug server/port",
-\t})
+	api.nvim_create_user_command('UnityDapServer', M.attach_server, {
+		desc = 'Attach to Unity debug server/port',
+	})
 
-\tapi.nvim_create_user_command("UnityScriptAssemblies", M.open_script_assemblies, {
-\t\tdesc = "Open Unity Library/ScriptAssemblies directory",
-\t})
+	api.nvim_create_user_command('UnityScriptAssemblies', M.open_script_assemblies, {
+		desc = 'Open Unity Library/ScriptAssemblies directory',
+	})
 
-\tapi.nvim_create_user_command("UnityDapInfo", M.unity_info, {
-\t\tdesc = "Show Unity DAP info",
-\t})
+	api.nvim_create_user_command('UnityDapInfo', M.unity_info, {
+		desc = 'Show Unity DAP info',
+	})
 
-\tvim.keymap.set("n", "<leader>ul", M.launch_dll, { desc = "Unity DAP launch" })
-\tvim.keymap.set("n", "<leader>ua", M.attach_pid, { desc = "Unity DAP attach" })
-\tvim.keymap.set("n", "<leader>us", M.attach_server, { desc = "Unity DAP server" })
-\tvim.keymap.set("n", "<leader>ui", M.unity_info, { desc = "Unity DAP info" })
+	vim.keymap.set('n', '<leader>ul', M.launch_dll, { desc = 'Unity DAP launch' })
+	vim.keymap.set('n', '<leader>ua', M.attach_pid, { desc = 'Unity DAP attach' })
+	vim.keymap.set('n', '<leader>us', M.attach_server, { desc = 'Unity DAP server' })
+	vim.keymap.set('n', '<leader>ui', M.unity_info, { desc = 'Unity DAP info' })
 end
 
 return M
