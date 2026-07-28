@@ -194,38 +194,29 @@ local function clear_stopped_signs()
 	end
 	stopped_bufnr = nil
 end
-
 ---@param session any
 local function place_stopped_sign(session)
 	clear_stopped_signs()
-
 	if not session or not session.current_frame then
 		return
 	end
-
 	local frame = session.current_frame
 	local source = frame.source or {}
 	local path = source.path
-
 	if type(path) ~= 'string' or path == '' then
 		return
 	end
-
 	local raw_bufnr = fn.bufadd(path)
 	if type(raw_bufnr) ~= 'number' or raw_bufnr < 1 then
 		return
 	end
-
 	local bufnr = math.floor(raw_bufnr)
 	fn.bufload(bufnr)
-
 	local raw_lnum = frame.line
 	if type(raw_lnum) ~= 'number' or raw_lnum < 1 or raw_lnum % 1 ~= 0 then
 		return
 	end
-
 	local lnum = math.floor(raw_lnum)
-
 	api.nvim_buf_set_extmark(bufnr, namespace('stopped'), lnum - 1, 0, {
 		sign_text = '→',
 		sign_hl_group = 'DiagnosticSignHint',
@@ -247,7 +238,6 @@ local function prompt_args()
 	end
 	return vim.split(line, '%s+', { trimempty = true })
 end
-
 local function prompt_cwd()
 	local cwd = fn.input('Cwd: ', fn.getcwd(), 'dir')
 	if cwd == nil or cwd == '' then
@@ -262,7 +252,6 @@ local function start(adapter, config)
 	config.type = adapter
 	debug.start(config)
 end
-
 function M.toggle_breakpoint()
 	debug.toggle_breakpoint()
 	refresh_all_breakpoint_signs()
@@ -285,24 +274,20 @@ function M.set_logpoint()
 	debug.toggle_breakpoint(nil, nil, message)
 	refresh_all_breakpoint_signs()
 end
-
 function M.clear_breakpoints()
 	if debug.clear_breakpoints then
 		debug.clear_breakpoints()
 	end
 	refresh_all_breakpoint_signs()
 end
-
 function M.continue()
 	debug.continue()
 end
-
 function M.pause()
 	if debug.pause then
 		debug.pause()
 	end
 end
-
 function M.terminate()
 	clear_stopped_signs()
 	if debug.terminate then

@@ -30,7 +30,7 @@ M.linters_by_ft = {
 	cairo = 'scarb',
 	chef = 'cookstyle', ---foodcritic deprecated
 	clojure = {
-		'clj-kondo',
+		--	'clj-kondo',
 	},
 	cmake = {
 		'cmake-lint',
@@ -110,7 +110,7 @@ M.linters_by_ft = {
 	justfile = {},
 	kotlin = {
 		--'kotlinc',
-		'ktlint',
+		--	'ktlint',
 	},
 	latex = {
 		'lacheck',

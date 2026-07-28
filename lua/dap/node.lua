@@ -1,10 +1,13 @@
 -- ~/.config/nvim/lua/dap/node.lua
--- Node.js DAP configuration for Neovim 0.13 built-in vim.debug, no plugins
-
+-- Qompass AI Diver Node.js DAP Config
+-- Copyright (C) 2026 Qompass AI, All rights reserved
+-- ------------------------------------------------------
 local api = vim.api
 local fn = vim.fn
-local uv = vim.uv or vim.uv
-local debug = vim.debug
+local uv = vim.uv
+local M = {}
+local ADAPTER_NAME = 'pwa-node'
+local CONFIGURED_FLAG = 'qompass_node_dap_configured'
 local FILETYPES = {
 	javascript = true,
 	javascriptreact = true,
@@ -24,495 +27,858 @@ local FILE_PATTERNS = {
 	'*.cjs',
 	'*.ts',
 	'*.tsx',
+	'*.mts',
+	'*.cts',
 }
-local M = {}
-
-M.adapter = {
-	name = 'pwa-node',
-	command = 'node',
+local SOURCE_SUFFIXES = {
+	['.js'] = true,
+	['.jsx'] = true,
+	['.mjs'] = true,
+	['.cjs'] = true,
+	['.ts'] = true,
+	['.tsx'] = true,
+	['.mts'] = true,
+	['.cts'] = true,
+}
+local TYPESCRIPT_SUFFIXES = {
+	['.ts'] = true,
+	['.tsx'] = true,
+	['.mts'] = true,
+	['.cts'] = true,
 }
 
-local function notify(msg, level)
-	vim.notify(msg, level or vim.log.levels.INFO, { title = 'dap.node' })
-end
+local ROOT_MARKERS = {
+	'package.json',
+	'pnpm-lock.yaml',
+	'yarn.lock',
+	'package-lock.json',
+	'npm-shrinkwrap.json',
+	'tsconfig.json',
+	'jsconfig.json',
+	'.git',
+}
 
-local function executable(cmd)
-	return fn.executable(cmd) == 1
+M.adapters = {
+	node = {
+		name = ADAPTER_NAME,
+		command = 'node',
+	},
+}
+M.adapter = M.adapters.node
+---@type string?
+local cached_debug_server
+---@param message string
+---@param level? integer
+local function notify(message, level)
+	vim.notify(message, level or vim.log.levels.INFO, {
+		title = 'dap.node',
+	})
 end
-local function cwd()
-	return fn.getcwd()
+---@param command string
+---@return boolean
+local function executable(command)
+	return fn.executable(command) == 1
 end
-
+---@param path string?
+---@return boolean
+local function file_exists(path)
+	if type(path) ~= 'string' or path == '' then
+		return false
+	end
+	local stat = uv.fs_stat(path)
+	return stat ~= nil and stat.type == 'file'
+end
+---@param prompt string
+---@param default? string
+---@param completion? string
+---@return string
 local function input(prompt, default, completion)
 	return fn.input(prompt, default or '', completion or '')
 end
-
-local function file_exists(path)
-	return type(path) == 'string' and path ~= '' and uv.fs_stat(path) ~= nil
+---@param value string?
+---@return string
+local function trim(value)
+	return type(value) == 'string' and vim.trim(value) or ''
 end
 
-local function is_dir(path)
-	local stat = type(path) == 'string' and path ~= '' and uv.fs_stat(path) or nil
-	return stat and stat.type == 'directory' or false
+---@param bufnr integer
+---@return string
+local function buffer_file(bufnr)
+	return api.nvim_buf_get_name(bufnr)
 end
 
-local function current_file()
-	return api.nvim_buf_get_name(0)
-end
+---@param path string
+---@return string
+local function suffix(path)
+	local lower = path:lower()
 
-local function workspace_root()
-	local file = current_file()
-	if file == '' then
-		return cwd()
-	end
-
-	local root = vim.fs.root(file, {
-		'package.json',
-		'tsconfig.json',
-		'jsconfig.json',
-		'.git',
-	})
-
-	return root or cwd()
-end
-
-local function joinpath(...)
-	return vim.fs.joinpath(...)
-end
-
-local function data_path()
-	return fn.stdpath('data')
-end
-
-local function js_debug_paths()
-	local mason_root = joinpath(data_path(), 'mason', 'packages', 'js-debug-adapter')
-	return {
-		joinpath(mason_root, 'js-debug', 'src', 'dapDebugServer.js'),
-		joinpath(mason_root, 'js-debug', 'out', 'src', 'dapDebugServer.js'),
-	}
-end
-
-local function resolve_js_debug_server()
-	for _, path in ipairs(js_debug_paths()) do
-		if file_exists(path) then
-			return path
+	for candidate in pairs(SOURCE_SUFFIXES) do
+		if lower:sub(-#candidate) == candidate then
+			return candidate
 		end
 	end
 
-	local default = joinpath(data_path(), 'mason', 'packages', 'js-debug-adapter')
-	local picked = input('Path to dapDebugServer.js: ', default .. '/', 'file')
-	if picked == '' then
-		return nil
-	end
-	return picked
+	return ''
 end
 
-local function ensure_adapter()
-	if not executable(M.adapter.command) then
-		notify('node not found in PATH', vim.log.levels.ERROR)
+---@param bufnr integer
+---@return boolean
+local function filename_matches(bufnr)
+	return SOURCE_SUFFIXES[suffix(buffer_file(bufnr))] == true
+end
+
+---@param bufnr integer
+---@return boolean
+local function is_node_buffer(bufnr)
+	if not api.nvim_buf_is_valid(bufnr) or not api.nvim_buf_is_loaded(bufnr) then
 		return false
 	end
 
-	local server = resolve_js_debug_server()
-	if not server or not file_exists(server) then
-		notify(
-			'js-debug adapter not found. Install js-debug-adapter and ensure dapDebugServer.js is available.',
-			vim.log.levels.ERROR
-		)
+	local name = buffer_file(bufnr)
+	if name == '' or vim.bo[bufnr].buftype ~= '' then
 		return false
 	end
 
-	M.adapter.args = { server, '${port}', '127.0.0.1' }
-	return true
+	return FILETYPES[vim.bo[bufnr].filetype] == true or filename_matches(bufnr)
 end
 
-local function start(config)
-	if not ensure_adapter() then
-		return
+---@param start string
+---@return string
+local function project_root(start)
+	local root = vim.fs.root(start, ROOT_MARKERS)
+	if root then
+		return root
 	end
 
-	config.type = M.adapter.name
-	debug.start(config)
+	local directory = vim.fs.dirname(start)
+	return directory or fn.getcwd()
 end
 
-local function prompt_args()
-	local raw = input('Args: ', '')
-	if raw == '' then
-		return {}
+---@param bufnr integer
+---@return integer?, string?, string?
+local function current_node_context(bufnr)
+	bufnr = bufnr or api.nvim_get_current_buf()
+	if not is_node_buffer(bufnr) then
+		notify('Node DAP is available only in JavaScript/TypeScript source buffers', vim.log.levels.ERROR)
+		return nil, nil, nil
 	end
-	return vim.split(raw, '%s+', { trimempty = true })
+	local file = buffer_file(bufnr)
+	local root = project_root(file)
+	return bufnr, root, file
 end
-
-local function prompt_env()
-	local env = {}
-	while true do
-		local key = input('Env key (blank to finish): ', '')
-		if key == '' then
-			break
-		end
-		env[key] = input('Env value for ' .. key .. ': ', '')
-	end
-	return env
-end
-
-local function package_json_path()
-	return joinpath(workspace_root(), 'package.json')
-end
-
+---@param path string
+---@return table?
 local function read_json(path)
 	if not file_exists(path) then
 		return nil
 	end
 
-	local lines = fn.readfile(path)
-	if not lines or vim.tbl_isempty(lines) then
+	local ok, lines = pcall(fn.readfile, path)
+	if not ok or type(lines) ~= 'table' or #lines == 0 then
 		return nil
 	end
 
-	local ok, decoded = pcall(vim.json.decode, table.concat(lines, ''))
-	if not ok or type(decoded) ~= 'table' then
+	local decoded_ok, decoded = pcall(vim.json.decode, table.concat(lines, '\n'))
+	if not decoded_ok or type(decoded) ~= 'table' then
 		return nil
 	end
 
 	return decoded
 end
 
-local function package_json()
-	return read_json(package_json_path())
-end
-local function package_scripts()
-	local pkg = package_json()
-	if type(pkg) ~= 'table' or type(pkg.scripts) ~= 'table' then
-		return {}
-	end
-	return pkg.scripts
+---@param root string
+---@return table?
+local function package_json(root)
+	return read_json(vim.fs.joinpath(root, 'package.json'))
 end
 
-local function script_names()
-	local names = {}
-	for name, _ in pairs(package_scripts()) do
-		names[#names + 1] = name
-	end
-	table.sort(names)
-	return names
-end
-
-local function choose(items, prompt)
+---@param items string[]
+---@param prompt string
+---@return string?
+local function pick(items, prompt)
 	if #items == 0 then
 		return nil
 	end
 
-	local choices = { prompt or 'Select:' }
-	for i, item in ipairs(items) do
-		choices[#choices + 1] = string.format('%d. %s', i, item)
+	if #items == 1 then
+		return items[1]
 	end
 
-	local idx = fn.inputlist(choices)
-	if idx < 1 or idx > #items then
+	local choices = { prompt }
+	for index, item in ipairs(items) do
+		choices[#choices + 1] = string.format('%d. %s', index, item)
+	end
+
+	local choice = fn.inputlist(choices)
+	if choice < 1 or choice > #items then
 		return nil
 	end
 
-	return items[idx]
+	return items[choice]
 end
 
-local function candidate_programs(dir)
-	if not is_dir(dir) then
-		return {}
+---@param raw string
+---@return string[]?, string?
+local function parse_arguments(raw)
+	local arguments = {}
+	local current = {}
+	local quote
+	local escaped = false
+	local token_started = false
+
+	local function finish()
+		if token_started then
+			arguments[#arguments + 1] = table.concat(current)
+			current = {}
+			token_started = false
+		end
 	end
 
-	local scanner = uv.fs_scandir(dir)
-	if not scanner then
-		return {}
+	for index = 1, #raw do
+		local character = raw:sub(index, index)
+
+		if escaped then
+			current[#current + 1] = character
+			escaped = false
+			token_started = true
+		elseif character == '\\' and quote ~= "'" then
+			escaped = true
+			token_started = true
+		elseif quote then
+			if character == quote then
+				quote = nil
+			else
+				current[#current + 1] = character
+			end
+			token_started = true
+		elseif character == '"' or character == "'" then
+			quote = character
+			token_started = true
+		elseif character:match('%s') then
+			finish()
+		else
+			current[#current + 1] = character
+			token_started = true
+		end
 	end
 
-	local items = {}
+	if escaped then
+		return nil, 'Arguments end with an incomplete escape'
+	end
+
+	if quote then
+		return nil, 'Arguments contain an unterminated quote'
+	end
+
+	finish()
+	return arguments, nil
+end
+
+---@param prompt? string
+---@return string[]?
+local function prompt_arguments(prompt)
+	local raw = input(prompt or 'Program arguments: ')
+	local arguments, err = parse_arguments(raw)
+
+	if not arguments then
+		notify(err or 'Unable to parse arguments', vim.log.levels.ERROR)
+		return nil
+	end
+
+	return arguments
+end
+
+---@return table<string, string>?
+local function prompt_environment()
+	local environment = {}
+
 	while true do
-		local name, typ = uv.fs_scandir_next(scanner)
-		if not name then
+		local name = trim(input('Environment variable (blank to finish): '))
+		if name == '' then
 			break
 		end
 
-		local path = joinpath(dir, name)
-		if
-			typ == 'file'
-			and (
-				name:match('%.js$')
-				or name:match('%.cjs$')
-				or name:match('%.mjs$')
-				or name:match('%.ts$')
-				or name:match('%.cts$')
-				or name:match('%.mts$')
-			)
-		then
-			items[#items + 1] = path
+		if not name:match('^[%a_][%w_]*$') then
+			notify('Invalid environment-variable name: ' .. name, vim.log.levels.ERROR)
+			return nil
 		end
-	end
-	table.sort(items)
-	return items
-end
-local function resolve_program()
-	local file = current_file()
-	if file ~= '' and file:match('%.[cm]?[jt]s$') then
-		return file
-	end
-	local root = workspace_root()
-	local bins = candidate_programs(root)
-	if #bins == 1 then
-		return bins[1]
-	end
-	if #bins > 1 then
-		local short = {}
-		local map = {}
-		for _, item in ipairs(bins) do
-			local rel = item:gsub('^' .. vim.pesc(root .. '/'), '')
-			short[#short + 1] = rel
-			map[rel] = item
-		end
-		local picked = choose(short, 'Node program:')
-		if picked then
-			return map[picked]
-		end
+
+		environment[name] = input(('Value for %s: '):format(name))
 	end
 
-	local program = input('Path to program: ', root .. '/', 'file')
-	if program == '' then
+	return environment
+end
+
+---@param default integer
+---@param prompt? string
+---@return integer?
+local function resolve_port(default, prompt)
+	local value = tonumber(input(prompt or 'Inspector port: ', tostring(default)))
+
+	if not value or value < 1 or value > 65535 or value % 1 ~= 0 then
+		notify('Port must be an integer from 1 through 65535', vim.log.levels.ERROR)
 		return nil
 	end
-	return program
+
+	return math.floor(value)
 end
 
-local function has_local_bin(name)
-	return file_exists(joinpath(workspace_root(), 'node_modules', '.bin', name))
+---@param root string
+---@param name string
+---@return string?
+local function local_executable(root, name)
+	local path = vim.fs.joinpath(root, 'node_modules', '.bin', name)
+	return file_exists(path) and path or nil
 end
 
-local function detect_runtime()
-	if has_local_bin('tsx') then
-		return 'tsx'
+---@param command string
+---@return string?
+local function executable_path(command)
+	local path = fn.exepath(command)
+	return path ~= '' and path or nil
+end
+
+---@param root string
+---@param program string
+---@return string?
+local function resolve_runtime(root, program)
+	if not TYPESCRIPT_SUFFIXES[suffix(program)] then
+		return executable_path('node')
 	end
-	if has_local_bin('ts-node') then
-		return 'ts-node'
+
+	local tsx = local_executable(root, 'tsx') or executable_path('tsx')
+	if tsx then
+		return tsx
 	end
-	return 'node'
+
+	local ts_node = local_executable(root, 'ts-node') or executable_path('ts-node')
+	if ts_node then
+		return ts_node
+	end
+
+	local selected = input('TypeScript runtime (tsx or ts-node): ', '', 'shellcmd')
+	if selected ~= '' and executable(selected) then
+		return executable_path(selected) or selected
+	end
+
+	notify(
+		'TypeScript requires an executable runtime such as tsx or ts-node; refusing an invalid launch',
+		vim.log.levels.ERROR
+	)
+	return nil
+end
+---@param root string
+---@return string[]
+local function package_scripts(root)
+	local package = package_json(root)
+	if not package or type(package.scripts) ~= 'table' then
+		return {}
+	end
+
+	local scripts = {}
+	for name, command in pairs(package.scripts) do
+		if type(name) == 'string' and type(command) == 'string' then
+			scripts[#scripts + 1] = name
+		end
+	end
+
+	table.sort(scripts)
+	return scripts
 end
 
-local function default_skip_files()
+---@param root string
+---@return string?
+local function package_manager(root)
+	local package = package_json(root)
+	local declared = package and type(package.packageManager) == 'string' and package.packageManager:match('^([^@]+)')
+
+	local candidates = {}
+
+	if declared then
+		candidates[#candidates + 1] = declared
+	end
+	if file_exists(vim.fs.joinpath(root, 'pnpm-lock.yaml')) then
+		candidates[#candidates + 1] = 'pnpm'
+	end
+	if file_exists(vim.fs.joinpath(root, 'yarn.lock')) then
+		candidates[#candidates + 1] = 'yarn'
+	end
+	candidates[#candidates + 1] = 'npm'
+
+	for _, candidate in ipairs(candidates) do
+		if candidate and executable(candidate) then
+			return executable_path(candidate) or candidate
+		end
+	end
+
+	return nil
+end
+
+---@param root string
+---@return string[]
+local function skip_files(root)
 	return {
 		'<node_internals>/**',
-		joinpath(workspace_root(), 'node_modules', '**'),
+		vim.fs.joinpath(root, 'node_modules', '**'),
 	}
 end
 
-function M.run_file()
-	local program = resolve_program()
-	if not program or not file_exists(program) then
-		notify('Program not found', vim.log.levels.ERROR)
-		return
-	end
-
-	local runtime = detect_runtime()
-	local ext = fn.fnamemodify(program, ':e')
-	local runtime_executable = runtime
-	local runtime_args = {}
-
-	if runtime == 'node' and (ext == 'ts' or ext == 'cts' or ext == 'mts') then
-		notify('TypeScript file detected but no tsx/ts-node runtime found', vim.log.levels.WARN)
-	end
-
-	start({
-		request = 'launch',
-		name = 'Node launch file',
-		program = program,
-		cwd = workspace_root(),
-		args = prompt_args(),
-		env = prompt_env(),
-		console = 'integratedTerminal',
-		internalConsoleOptions = 'neverOpen',
-		skipFiles = default_skip_files(),
-		sourceMaps = true,
-		smartStep = true,
-		runtimeExecutable = runtime_executable,
-		runtimeArgs = runtime_args,
-	})
+---@param root string
+---@return string[]
+local function out_files(root)
+	return {
+		vim.fs.joinpath(root, '**', '*.js'),
+		vim.fs.joinpath(root, '**', '*.cjs'),
+		vim.fs.joinpath(root, '**', '*.mjs'),
+		'!' .. vim.fs.joinpath(root, 'node_modules', '**'),
+	}
 end
-function M.run_npm_script()
-	local scripts = script_names()
-	if #scripts == 0 then
-		notify('No package.json scripts found', vim.log.levels.ERROR)
-		return
-	end
-	local script = choose(scripts, 'npm script:')
-	if not script then
-		return
-	end
-	start({
-		request = 'launch',
-		name = 'Node launch npm script',
-		cwd = workspace_root(),
-		runtimeExecutable = 'npm',
-		runtimeArgs = {
-			'run',
-			script,
-			'--',
-		},
-		args = prompt_args(),
-		env = prompt_env(),
-		console = 'integratedTerminal',
-		internalConsoleOptions = 'neverOpen',
-		skipFiles = default_skip_files(),
+
+---@param root string
+---@return string[]
+local function source_map_locations(root)
+	return {
+		vim.fs.joinpath(root, '**'),
+		'!' .. vim.fs.joinpath(root, 'node_modules', '**'),
+	}
+end
+
+---@param root string
+---@return table
+local function common_configuration(root)
+	return {
+		type = ADAPTER_NAME,
+		cwd = root,
+		console = 'internalConsole',
+		internalConsoleOptions = 'openOnSessionStart',
+		outputCapture = 'std',
+		skipFiles = skip_files(root),
 		sourceMaps = true,
 		smartStep = true,
-	})
+		outFiles = out_files(root),
+		resolveSourceMapLocations = source_map_locations(root),
+	}
+end
+
+---@param destination table
+---@param source table
+---@return table
+local function extend(destination, source)
+	for key, value in pairs(source) do
+		destination[key] = value
+	end
+
+	return destination
+end
+
+---@return string[]
+local function debug_server_candidates()
+	local data = fn.stdpath('data')
+	local configured = vim.g.qompass_node_dap_server
+	local environment = vim.env.NVIM_JS_DEBUG_SERVER
+
+	return {
+		type(configured) == 'string' and configured or '',
+		type(environment) == 'string' and environment or '',
+		vim.fs.joinpath(data, 'vscode-js-debug', 'js-debug', 'src', 'dapDebugServer.js'),
+		vim.fs.joinpath(data, 'vscode-js-debug', 'src', 'dapDebugServer.js'),
+		vim.fs.joinpath(data, 'vscode-js-debug', 'dapDebugServer.js'),
+		'/usr/share/vscode-js-debug/dapDebugServer.js',
+		'/usr/share/vscode-js-debug/src/dapDebugServer.js',
+		'/usr/lib/vscode-js-debug/dapDebugServer.js',
+		'/opt/vscode-js-debug/dapDebugServer.js',
+	}
+end
+
+---@return string?
+local function resolve_debug_server()
+	if file_exists(cached_debug_server) then
+		return cached_debug_server
+	end
+
+	for _, candidate in ipairs(debug_server_candidates()) do
+		if file_exists(candidate) then
+			cached_debug_server = candidate
+			return candidate
+		end
+	end
+
+	local selected = input(
+		'Path to standalone vscode-js-debug dapDebugServer.js: ',
+		vim.fs.joinpath(fn.stdpath('data'), 'vscode-js-debug') .. '/',
+		'file'
+	)
+
+	if not file_exists(selected) then
+		notify(
+			'Standalone vscode-js-debug dapDebugServer.js was not found; set NVIM_JS_DEBUG_SERVER or vim.g.qompass_node_dap_server',
+			vim.log.levels.ERROR
+		)
+		return nil
+	end
+
+	cached_debug_server = selected
+	return selected
+end
+
+---@class NodeDapAdapter
+---@field name string
+---@field type string
+---@field host string
+---@field port string
+---@field executable { command: string, args: string[] }
+
+---@return NodeDapAdapter?
+function M.resolve_adapter()
+	local node = executable_path(M.adapters.node.command)
+	if not node then
+		notify('node not found in PATH', vim.log.levels.ERROR)
+		return nil
+	end
+
+	local server = resolve_debug_server()
+	if not server then
+		return nil
+	end
+
+	local adapter = {
+		name = ADAPTER_NAME,
+		type = 'server',
+		host = '127.0.0.1',
+		port = '${port}',
+		executable = {
+			command = node,
+			args = {
+				server,
+				'${port}',
+				'127.0.0.1',
+			},
+		},
+	}
+
+	M.adapters.node.args = adapter.executable.args
+	M.adapters.node.server = server
+
+	return adapter
+end
+
+---@param silent? boolean
+---@return table?
+local function debug_client(silent)
+	local client = rawget(vim, 'debug')
+
+	if type(client) ~= 'table' or type(client.start) ~= 'function' then
+		if not silent then
+			notify(
+				'vim.debug is unavailable. Neovim 0.13 does not include a native DAP client; load the same DAP core used by dap/android.lua',
+				vim.log.levels.ERROR
+			)
+		end
+		return nil
+	end
+
+	return client
+end
+
+---@param configuration table
+local function start(configuration)
+	local client = debug_client()
+	if not client then
+		return
+	end
+
+	local adapter = M.resolve_adapter()
+	if not adapter then
+		return
+	end
+
+	local ok, err = pcall(client.start, configuration, adapter)
+	if not ok then
+		notify('Unable to start Node DAP: ' .. tostring(err), vim.log.levels.ERROR)
+	end
+end
+
+---@param file string
+---@param root string
+---@return string?
+local function resolve_program(file, root)
+	if file_exists(file) and SOURCE_SUFFIXES[suffix(file)] then
+		return file
+	end
+
+	local selected = input('Node program: ', root .. '/', 'file')
+	if not file_exists(selected) or not SOURCE_SUFFIXES[suffix(selected)] then
+		notify('Select an existing JavaScript/TypeScript source file', vim.log.levels.ERROR)
+		return nil
+	end
+	return selected
+end
+function M.run_file()
+	local _, root, file = current_node_context(api.nvim_get_current_buf())
+	if not root or not file then
+		return
+	end
+
+	local program = resolve_program(file, root)
+	if not program then
+		return
+	end
+
+	local runtime = resolve_runtime(root, program)
+	if not runtime then
+		return
+	end
+
+	local arguments = prompt_arguments()
+	if not arguments then
+		return
+	end
+
+	local environment = prompt_environment()
+	if not environment then
+		return
+	end
+
+	start(extend(common_configuration(root), {
+		request = 'launch',
+		name = 'Node: launch current file',
+		program = program,
+		runtimeExecutable = runtime,
+		args = arguments,
+		env = environment,
+	}))
+end
+
+function M.run_package_script()
+	local _, root = current_node_context(api.nvim_get_current_buf())
+	if not root then
+		return
+	end
+
+	local script = pick(package_scripts(root), 'Package script:')
+	if not script then
+		notify('No package.json script selected', vim.log.levels.WARN)
+		return
+	end
+	local manager = package_manager(root)
+	if not manager then
+		notify('No supported package manager found in PATH', vim.log.levels.ERROR)
+		return
+	end
+	local arguments = prompt_arguments('Script arguments: ')
+	if not arguments then
+		return
+	end
+	local environment = prompt_environment()
+	if not environment then
+		return
+	end
+	local runtime_arguments = {
+		'run',
+		script,
+	}
+	if #arguments > 0 then
+		runtime_arguments[#runtime_arguments + 1] = '--'
+		vim.list_extend(runtime_arguments, arguments)
+	end
+
+	start(extend(common_configuration(root), {
+		request = 'launch',
+		name = ('Node: %s run %s'):format(fn.fnamemodify(manager, ':t'), script),
+		runtimeExecutable = manager,
+		runtimeArgs = runtime_arguments,
+		env = environment,
+	}))
 end
 
 function M.attach_port()
-	local port = tonumber(input('Port: ', '9229'))
-	if not port then
-		notify('Invalid port', vim.log.levels.ERROR)
+	local _, root = current_node_context(api.nvim_get_current_buf())
+	if not root then
 		return
 	end
 
-	start({
+	local port = resolve_port(9229)
+	if not port then
+		return
+	end
+
+	start(extend(common_configuration(root), {
 		request = 'attach',
-		name = 'Node attach port',
+		name = ('Node: attach 127.0.0.1:%d'):format(port),
 		address = '127.0.0.1',
 		port = port,
-		cwd = workspace_root(),
-		restart = true,
 		continueOnAttach = true,
-		skipFiles = default_skip_files(),
-		sourceMaps = true,
-		smartStep = true,
-	})
+		restart = false,
+	}))
 end
-
 function M.attach_pid()
-	local pid = tonumber(input('PID: ', ''))
-	if not pid then
-		notify('Invalid PID', vim.log.levels.ERROR)
+	local _, root = current_node_context(api.nvim_get_current_buf())
+	if not root then
 		return
 	end
-
-	start({
+	local value = trim(input('Node process ID: '))
+	local pid = tonumber(value)
+	if not pid or pid < 1 or pid % 1 ~= 0 then
+		notify('Process ID must be a positive integer', vim.log.levels.ERROR)
+		return
+	end
+	start(extend(common_configuration(root), {
 		request = 'attach',
-		name = 'Node attach PID',
-		processId = tostring(pid),
-		cwd = workspace_root(),
+		name = ('Node: attach PID %d'):format(pid),
+		processId = tostring(math.floor(pid)),
 		continueOnAttach = true,
-		skipFiles = default_skip_files(),
-		sourceMaps = true,
-		smartStep = true,
-	})
+	}))
 end
-
-function M.attach_next_dev()
-	local port = tonumber(input('Next inspect port: ', '9229'))
-	if not port then
-		notify('Invalid port', vim.log.levels.ERROR)
+---@param root string
+---@param candidates string[]
+---@return string?
+local function first_existing(root, candidates)
+	for _, candidate in ipairs(candidates) do
+		local path = vim.fs.joinpath(root, candidate)
+		if file_exists(path) then
+			return path
+		end
+	end
+	return nil
+end
+---@param runner string
+---@param candidates string[]
+---@param default_arguments string[]
+local function run_test_runner(runner, candidates, default_arguments)
+	local _, root = current_node_context(api.nvim_get_current_buf())
+	if not root then
 		return
 	end
 
-	start({
-		request = 'attach',
-		name = 'Node attach Next dev',
-		address = '127.0.0.1',
-		port = port,
-		cwd = workspace_root(),
-		restart = true,
-		continueOnAttach = true,
-		skipFiles = default_skip_files(),
-		sourceMaps = true,
-		smartStep = true,
-	})
+	local program = first_existing(root, candidates)
+	if not program then
+		notify(('%s was not found in this workspace'):format(runner), vim.log.levels.ERROR)
+		return
+	end
+
+	local extra_arguments = prompt_arguments(('%s arguments: '):format(runner))
+	if not extra_arguments then
+		return
+	end
+
+	local environment = prompt_environment()
+	if not environment then
+		return
+	end
+
+	local arguments = vim.deepcopy(default_arguments)
+	vim.list_extend(arguments, extra_arguments)
+
+	start(extend(common_configuration(root), {
+		request = 'launch',
+		name = ('Node: debug %s'):format(runner),
+		program = program,
+		runtimeExecutable = executable_path('node'),
+		args = arguments,
+		env = environment,
+	}))
 end
 
 function M.run_jest()
-	local jest = joinpath(workspace_root(), 'node_modules', 'jest', 'bin', 'jest.js')
-	if not file_exists(jest) then
-		notify('jest not found in node_modules', vim.log.levels.ERROR)
-		return
-	end
+	run_test_runner('Jest', {
+		'node_modules/jest/bin/jest.js',
+		'node_modules/jest-cli/bin/jest.js',
+	}, {
+		'--runInBand',
+	})
+end
 
-	start({
-		request = 'launch',
-		name = 'Node debug Jest',
-		runtimeExecutable = 'node',
-		runtimeArgs = { jest, '--runInBand' },
-		cwd = workspace_root(),
-		args = prompt_args(),
-		env = prompt_env(),
-		console = 'integratedTerminal',
-		internalConsoleOptions = 'neverOpen',
-		skipFiles = default_skip_files(),
-		sourceMaps = true,
-		smartStep = true,
+function M.run_vitest()
+	run_test_runner('Vitest', {
+		'node_modules/vitest/vitest.mjs',
+	}, {
+		'--no-file-parallelism',
 	})
 end
 
 function M.run_mocha()
-	local mocha = joinpath(workspace_root(), 'node_modules', 'mocha', 'bin', 'mocha.js')
-	if not file_exists(mocha) then
-		notify('mocha not found in node_modules', vim.log.levels.ERROR)
+	run_test_runner('Mocha', {
+		'node_modules/mocha/bin/mocha.js',
+		'node_modules/mocha/bin/_mocha',
+	}, {})
+end
+M.run_npm_script = M.run_package_script
+M.attach_next_dev = M.attach_port
+---@param bufnr integer
+local function configure_buffer(bufnr)
+	if not is_node_buffer(bufnr) or vim.b[bufnr][CONFIGURED_FLAG] then
 		return
 	end
 
-	start({
-		request = 'launch',
-		name = 'Node debug Mocha',
-		runtimeExecutable = 'node',
-		runtimeArgs = { mocha },
-		cwd = workspace_root(),
-		args = prompt_args(),
-		env = prompt_env(),
-		console = 'integratedTerminal',
-		internalConsoleOptions = 'neverOpen',
-		skipFiles = default_skip_files(),
-		sourceMaps = true,
-		smartStep = true,
+	vim.b[bufnr][CONFIGURED_FLAG] = true
+
+	api.nvim_buf_create_user_command(bufnr, 'NodeDapRun', M.run_file, {
+		desc = 'Debug the current JavaScript/TypeScript file with Node',
 	})
+	api.nvim_buf_create_user_command(bufnr, 'NodeDapScript', M.run_package_script, {
+		desc = 'Debug a package.json script',
+	})
+	api.nvim_buf_create_user_command(bufnr, 'NodeDapAttach', M.attach_port, {
+		desc = 'Attach to a Node inspector on 127.0.0.1',
+	})
+	api.nvim_buf_create_user_command(bufnr, 'NodeDapAttachPid', M.attach_pid, {
+		desc = 'Attach to a Node process ID',
+	})
+	api.nvim_buf_create_user_command(bufnr, 'NodeDapNext', M.attach_next_dev, {
+		desc = 'Attach to a Next.js Node inspector on 127.0.0.1',
+	})
+	api.nvim_buf_create_user_command(bufnr, 'NodeDapJest', M.run_jest, {
+		desc = 'Debug Jest',
+	})
+	api.nvim_buf_create_user_command(bufnr, 'NodeDapVitest', M.run_vitest, {
+		desc = 'Debug Vitest',
+	})
+	api.nvim_buf_create_user_command(bufnr, 'NodeDapMocha', M.run_mocha, {
+		desc = 'Debug Mocha',
+	})
+
+	local function map(lhs, rhs, description)
+		vim.keymap.set('n', lhs, rhs, {
+			buffer = bufnr,
+			desc = description,
+			silent = true,
+		})
+	end
+
+	map('<leader>dnl', M.run_file, 'Node launch file')
+	map('<leader>dns', M.run_package_script, 'Node package script')
+	map('<leader>dna', M.attach_port, 'Node attach port')
+	map('<leader>dnp', M.attach_pid, 'Node attach PID')
+	map('<leader>dnn', M.attach_next_dev, 'Node attach Next.js')
+	map('<leader>dnj', M.run_jest, 'Node debug Jest')
+	map('<leader>dnv', M.run_vitest, 'Node debug Vitest')
+	map('<leader>dnm', M.run_mocha, 'Node debug Mocha')
 end
 
 function M.setup()
-	api.nvim_create_user_command('NodeDapRun', M.run_file, {
-		desc = 'Debug Node file',
+	local group = api.nvim_create_augroup('qompass.dap.node', {
+		clear = true,
 	})
 
-	api.nvim_create_user_command('NodeDapScript', M.run_npm_script, {
-		desc = 'Debug npm script',
+	api.nvim_create_autocmd('FileType', {
+		group = group,
+		pattern = FILETYPE_PATTERNS,
+		desc = 'Enable Node DAP for JavaScript/TypeScript buffers',
+		callback = function(event)
+			configure_buffer(event.buf)
+		end,
 	})
 
-	api.nvim_create_user_command('NodeDapAttach', M.attach_port, {
-		desc = 'Attach to Node inspect port',
+	api.nvim_create_autocmd({ 'BufReadPost', 'BufNewFile' }, {
+		group = group,
+		pattern = FILE_PATTERNS,
+		desc = 'Enable Node DAP for JavaScript/TypeScript source files',
+		callback = function(event)
+			configure_buffer(event.buf)
+		end,
 	})
 
-	api.nvim_create_user_command('NodeDapAttachPid', M.attach_pid, {
-		desc = 'Attach to Node process ID',
-	})
-
-	api.nvim_create_user_command('NodeDapNext', M.attach_next_dev, {
-		desc = 'Attach to Next.js dev server',
-	})
-
-	api.nvim_create_user_command('NodeDapJest', M.run_jest, {
-		desc = 'Debug Jest tests',
-	})
-
-	api.nvim_create_user_command('NodeDapMocha', M.run_mocha, {
-		desc = 'Debug Mocha tests',
-	})
-
-	vim.keymap.set('n', '<leader>nd', M.run_file, {
-		desc = 'Node DAP run',
-	})
-	vim.keymap.set('n', '<leader>ns', M.run_npm_script, {
-		desc = 'Node DAP script',
-	})
-	vim.keymap.set('n', '<leader>na', M.attach_port, {
-		desc = 'Node DAP attach port',
-	})
-	vim.keymap.set('n', '<leader>nA', M.attach_pid, { desc = 'Node DAP attach pid' })
-	vim.keymap.set('n', '<leader>nn', M.attach_next_dev, { desc = 'Node DAP next' })
-	vim.keymap.set('n', '<leader>nj', M.run_jest, { desc = 'Node DAP jest' })
-	vim.keymap.set('n', '<leader>nm', M.run_mocha, { desc = 'Node DAP mocha' })
+	configure_buffer(api.nvim_get_current_buf())
 end
 
 return M

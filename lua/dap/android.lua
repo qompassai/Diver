@@ -2,21 +2,15 @@
 -- Qompass AI Diver Android DAP Config
 -- Copyright (C) 2026 Qompass AI, All rights reserved
 -- ------------------------------------------------------
--- This module intentionally does not configure Java/Kotlin LSP clients,
--- diagnostics, formatters, or linters. Existing tooling keeps its lifecycle.
-
 local api = vim.api
 local debug = vim.debug
 local fn = vim.fn
 local uv = vim.uv
-
 local M = {}
-
 local FILETYPES = {
 	java = true,
 	kotlin = true,
 }
-
 local FILETYPE_PATTERNS = {
 	'java',
 	'kotlin',
@@ -328,43 +322,34 @@ local function ensure_adb()
 	if executable(M.adapters.adb.command) then
 		return true
 	end
-
 	notify('adb not found in PATH', vim.log.levels.ERROR)
 	return false
 end
-
----@return boolean
-local function ensure_jdb()
+local function ensure_jdb() ---@return boolean
 	if executable(M.adapters.jdb.command) then
 		return true
 	end
-
 	notify('jdb not found in PATH', vim.log.levels.ERROR)
 	return false
 end
-
 ---@return boolean
 local function ensure_lldb()
 	if executable(M.adapters.lldb.command) then
 		return true
 	end
-
 	notify('lldb-dap not found in PATH', vim.log.levels.ERROR)
 	return false
 end
-
 ---@return string[]
 local function connected_devices()
 	if not ensure_adb() then
 		return {}
 	end
-
 	local code, stdout, stderr = system(adb('devices'))
 	if code ~= 0 then
 		notify(trim(stderr) ~= '' and trim(stderr) or 'adb devices failed', vim.log.levels.ERROR)
 		return {}
 	end
-
 	local devices = {}
 	for _, line in ipairs(split_lines(stdout)) do
 		local serial, state = line:match('^(%S+)%s+(%S+)')
@@ -372,11 +357,9 @@ local function connected_devices()
 			devices[#devices + 1] = serial
 		end
 	end
-
 	table.sort(devices)
 	return devices
 end
-
 ---@return string?
 local function choose_device()
 	local devices = connected_devices()
@@ -385,15 +368,12 @@ local function choose_device()
 		selected_device = nil
 		return nil
 	end
-
 	if selected_device and vim.list_contains(devices, selected_device) then
 		return selected_device
 	end
-
 	selected_device = pick(devices, 'Android device:')
 	return selected_device
 end
-
 ---@param value string
 ---@return boolean
 local function valid_qualified_name(value)
@@ -574,7 +554,18 @@ local function list_jdwp(serial)
 
 	return pids
 end
+---@param value string|number|nil
+---@return integer?
+local function positive_integer(value)
+	local parsed = tonumber(value)
+	if not parsed or parsed < 1 or parsed % 1 ~= 0 then
+		return nil
+	end
 
+	local result = math.floor(parsed)
+	---@cast result integer
+	return result
+end
 ---@param serial string
 ---@param package_name string
 ---@return integer?
@@ -582,9 +573,9 @@ local function pid_for_package(serial, package_name)
 	local code, stdout = system(adb_shell(serial, 'pidof', package_name))
 
 	if code == 0 then
-		local pid = tonumber(trim(stdout):match('^(%d+)'))
-		if pid and pid > 0 and pid % 1 == 0 then
-			return math.floor(pid)
+		local pid = positive_integer(trim(stdout):match('^(%d+)'))
+		if pid then
+			return pid
 		end
 	end
 
@@ -603,9 +594,9 @@ local function pid_for_package(serial, package_name)
 			process_name == package_name
 			or (type(process_name) == 'string' and vim.startswith(process_name, package_name .. ':'))
 		then
-			local pid = tonumber(columns[2])
-			if pid and pid > 0 and pid % 1 == 0 then
-				return math.floor(pid)
+			local pid = positive_integer(columns[2])
+			if pid then
+				return pid
 			end
 		end
 	end
@@ -701,28 +692,24 @@ local function forward_jdwp(root, bufnr)
 	local pid = pid_for_package(serial, package_name)
 	if not pid then
 		local selected = pick(list_jdwp(serial), 'JDWP PID:')
-		pid = selected and tonumber(selected) or nil
+		pid = positive_integer(selected)
 	end
 
-	if not pid or pid < 1 or pid % 1 ~= 0 then
+	if not pid then
 		notify('No valid JDWP process selected', vim.log.levels.WARN)
 		return nil
 	end
-	pid = math.floor(pid)
 
 	local port = resolve_port(8700)
 	if not port then
 		return nil
 	end
-
 	local local_spec = ('tcp:%d'):format(port)
 	local code, _, stderr = system(adb('-s', serial, 'forward', local_spec, ('jdwp:%d'):format(pid)))
-
 	if code ~= 0 then
 		notify(trim(stderr) ~= '' and trim(stderr) or 'adb forward failed', vim.log.levels.ERROR)
 		return nil
 	end
-
 	remember_forward(serial, local_spec)
 	notify(string.format('Forwarded localhost:%d to jdwp:%d (%s)', port, pid, package_name))
 	return {
@@ -792,7 +779,6 @@ function M.launch_app()
 		notify(trim(stdout))
 	end
 end
-
 function M.clear_debug_app()
 	local bufnr = current_android_context()
 	if not bufnr or not ensure_adb() then
@@ -872,22 +858,18 @@ function M.native_attach_lldb()
 		notify('Could not resolve the Android process for ' .. package_name, vim.log.levels.ERROR)
 		return
 	end
-
 	local program = input('Local unstripped binary or shared object: ', root .. '/', 'file')
 	if not file_exists(program) then
 		notify('Local native debug binary not found', vim.log.levels.ERROR)
 		return
 	end
-
 	local port = resolve_port(5039)
 	if not port then
 		return
 	end
-
 	local local_spec = ('tcp:%d'):format(port)
 	local remote_spec = ('localfilesystem:/data/data/%s/debug.socket'):format(package_name)
 	local code, _, stderr = system(adb('-s', serial, 'forward', local_spec, remote_spec))
-
 	if code ~= 0 then
 		notify(
 			trim(stderr) ~= '' and trim(stderr) or 'Native socket forwarding failed; ensure lldb-server is listening',
@@ -908,40 +890,32 @@ function M.native_attach_lldb()
 			('platform connect connect://127.0.0.1:%d'):format(port),
 		},
 	})
-
 	notify(string.format('Started LLDB attach for %s (PID %d)', package_name, pid))
 end
-
 function M.logcat()
 	local bufnr, root = current_android_context()
 	if not bufnr or not root or not ensure_adb() then
 		return
 	end
-
 	local serial = choose_device()
 	if not serial then
 		return
 	end
-
 	local job = open_terminal(root, 'logcat', adb('-s', serial, 'logcat'))
-
 	if job then
 		vim.b.android_logcat_job = job
 		notify('Streaming logcat for ' .. serial)
 	end
 end
-
 ---@param bufnr integer
 local function configure_buffer(bufnr)
 	if not is_android_buffer(bufnr) then
 		return
 	end
-
 	if vim.b[bufnr][CONFIGURED_FLAG] then
 		return
 	end
 	vim.b[bufnr][CONFIGURED_FLAG] = true
-
 	api.nvim_buf_create_user_command(bufnr, 'AndroidSelectDevice', M.select_device, {
 		desc = 'Select an Android device or emulator',
 	})
@@ -966,7 +940,6 @@ local function configure_buffer(bufnr)
 	api.nvim_buf_create_user_command(bufnr, 'AndroidLogcat', M.logcat, {
 		desc = 'Stream Android logcat in a terminal buffer',
 	})
-
 	local function map(lhs, rhs, description)
 		vim.keymap.set('n', lhs, rhs, {
 			buf = bufnr,
@@ -974,7 +947,6 @@ local function configure_buffer(bufnr)
 			silent = true,
 		})
 	end
-
 	map('<leader>dad', M.select_device, 'Android select device')
 	map('<leader>dal', M.launch_app, 'Android launch app')
 	map('<leader>dac', M.clear_debug_app, 'Android clear debug app')
@@ -984,12 +956,10 @@ local function configure_buffer(bufnr)
 	map('<leader>dan', M.native_attach_lldb, 'Android native attach')
 	map('<leader>dag', M.logcat, 'Android logcat')
 end
-
 function M.setup()
 	local group = api.nvim_create_augroup('qompass.dap.android', {
 		clear = true,
 	})
-
 	api.nvim_create_autocmd('FileType', {
 		group = group,
 		pattern = FILETYPE_PATTERNS,
@@ -998,7 +968,6 @@ function M.setup()
 			configure_buffer(event.buf)
 		end,
 	})
-
 	api.nvim_create_autocmd({ 'BufReadPost', 'BufNewFile' }, {
 		group = group,
 		pattern = FILE_PATTERNS,
@@ -1007,7 +976,6 @@ function M.setup()
 			configure_buffer(event.buf)
 		end,
 	})
-
 	api.nvim_create_autocmd('VimLeavePre', {
 		group = group,
 		desc = 'Remove forwards created by Android DAP',
@@ -1015,7 +983,6 @@ function M.setup()
 			remove_managed_forwards(true)
 		end,
 	})
-
 	configure_buffer(api.nvim_get_current_buf())
 end
 

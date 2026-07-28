@@ -3,35 +3,49 @@
 -- Copyright (C) 2025 Qompass AI, All rights reserved
 -- ----------------------------------------
 ---@meta
+
 ---@alias vim.lint.Stream
 ---| 'stdout'
 ---| 'stderr'
 ---| 'both'
+
 ---@class vim.lint.Context
 ---@field bufnr integer
 ---@field cwd string
 ---@field filename string
 ---@field filetype string
+
+---@alias vim.lint.Args
+---| string[]
+---| fun(context: vim.lint.Context): string[]
+
+---@alias vim.lint.Cwd
+---| string
+---| fun(context: vim.lint.Context): string
+
 ---@class vim.lint.Config
 ---@field cmd string
 ---@field append_fname? boolean
----@field args? string[]|fun(context: vim.lint.Context): string[]
----@field cwd? string|fun(context: vim.lint.Context): string
+---@field args? vim.lint.Args
+---@field cwd? vim.lint.Cwd
 ---@field env? table<string, string|number>
 ---@field errorformat? string|string[]
 ---@field ignore_exitcode? boolean
 ---@field name? string
----@field parser? fun(output: string, bufnr: integer): vim.Diagnostic.Set[]
+---@field parser? fun(output: string, bufnr: integer): vim.Diagnostic[]
 ---@field stdin? boolean
 ---@field stream? vim.lint.Stream
 ---@field timeout? integer
+
 ---@class vim.lint.LintProc
 ---@field bufnr integer
 ---@field cancelled boolean
 ---@field ns integer
 ---@field proc vim.SystemObj
 ---@field stream vim.lint.Stream
+
 ---@alias vim.lint.Config.Report vim.lint.Config.ReportItem[]
+
 ---@class vim.lint.Config.ReportItem
 ---@field code? string|integer
 ---@field column? integer|string
@@ -44,6 +58,7 @@
 ---@field path? string
 ---@field severity? string|vim.diagnostic.Severity
 ---@field start_col? integer
+
 ---@class vim.lint.TSQueryConfig : vim.lint.Config
 ---@field captures? table<string, vim.diagnostic.Severity>
 ---@field name string

@@ -678,12 +678,10 @@ local function configure_buffer(bufnr)
 	if not is_go_buffer(bufnr) then
 		return
 	end
-
 	if vim.b[bufnr][CONFIGURED_FLAG] then
 		return
 	end
 	vim.b[bufnr][CONFIGURED_FLAG] = true
-
 	api.nvim_buf_create_user_command(bufnr, 'GoDapBuild', M.build_binary, {
 		desc = 'Build an unoptimized Go debug executable',
 	})

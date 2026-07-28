@@ -5,6 +5,7 @@
 -- --------------------------------------------------
 local M = {} ---@version JIT
 require('types.core')
+require('types.dap')
 require('types.lang')
 require('types.nvim')
 require('types.ui')

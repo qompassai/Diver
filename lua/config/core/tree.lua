@@ -239,6 +239,7 @@ function M.treesitter(opts)
 		highlight = {
 			enable = true,
 			additional_vim_regex_highlighting = {
+				'bash',
 				'markdown',
 			},
 		},

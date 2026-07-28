@@ -1,435 +1,783 @@
+-- ~/.config/nvim/lua/dap/bash.lua
+-- Qompass AI Diver Bash DAP Config
+-- Copyright (C) 2026 Qompass AI, All rights reserved
+-- ---------------------------------------------------
 local api = vim.api
-local fn = vim.fn
-local uv = vim.uv or vim.uv
 local debug = vim.debug
-local FILETYPES = { sh = true, bash = true }
-local FILETYPE_PATTERNS = { 'sh', 'bash' }
-local FILE_PATTERNS = { '*.sh', '*.bash' }
+local fn = vim.fn
+local uv = vim.uv
 local M = {}
+local FILETYPES = {
+	bash = true,
+	sh = true,
+}
+
+local FILETYPE_PATTERNS = {
+	'bash',
+	'sh',
+}
+
+local FILE_PATTERNS = {
+	'*.bash',
+	'*.sh',
+}
+
+local CONFIGURED_FLAG = 'qompass_bash_dap_configured'
+local MASON_PACKAGE = vim.fs.joinpath(fn.stdpath('data'), 'mason', 'packages', 'bash-debug-adapter')
+local MASON_WRAPPER = vim.fs.joinpath(MASON_PACKAGE, 'bash-debug-adapter')
+local MASON_EXTENSION = vim.fs.joinpath(MASON_PACKAGE, 'extension')
+local MASON_BASHDB_DIR = vim.fs.joinpath(MASON_EXTENSION, 'bashdb_dir')
+local MASON_BASHDB = vim.fs.joinpath(MASON_BASHDB_DIR, 'bashdb')
+
 M.adapter = {
 	name = 'bashdb',
-	command = nil,
+	command = MASON_WRAPPER,
+	args = {},
 }
-local function notify(msg, level)
-	vim.notify(msg, level or vim.log.levels.INFO, { title = 'dap.bash' })
-end
-local function executable(cmd)
-	return fn.executable(cmd) == 1
+
+---@param message string
+---@param level? integer
+local function notify(message, level)
+	vim.notify(message, level or vim.log.levels.INFO, {
+		title = 'dap.bash',
+	})
 end
 
-local function cwd()
-	return fn.getcwd()
+---@param command string
+---@return boolean
+local function executable(command)
+	return command ~= '' and fn.executable(command) == 1
 end
 
+---@param prompt string
+---@param default? string
+---@param completion? string
+---@return string
 local function input(prompt, default, completion)
 	return fn.input(prompt, default or '', completion or '')
 end
 
-local function file_exists(path)
-	return type(path) == 'string' and path ~= '' and uv.fs_stat(path) ~= nil
-end
-
-local function is_executable(path)
-	return file_exists(path) and fn.executable(path) == 1
-end
-
-local function current_file()
-	return api.nvim_buf_get_name(0)
-end
-
-local function workspace_root()
-	local file = current_file()
-	if file == '' then
-		return cwd()
-	end
-
-	local root = vim.fs.root(file, {
-		'.git',
-		'.envrc',
-		'shell.nix',
-		'flake.nix',
-		'package.json',
-		'Makefile',
-	})
-
-	return root or cwd()
-end
-
-local function joinpath(...)
-	return vim.fs.joinpath(...)
-end
-
-local function data_path()
-	return fn.stdpath('data')
-end
-
-local function mason_pkg_root()
-	return joinpath(data_path(), 'mason', 'packages', 'bash-debug-adapter')
-end
-
-local function default_adapter_command()
-	local root = mason_pkg_root()
-	local candidates = {
-		joinpath(root, 'bash-debug-adapter'),
-		joinpath(root, 'extension', 'out', 'bashDebug.js'),
-	}
-
-	for _, path in ipairs(candidates) do
-		if file_exists(path) then
-			return path
-		end
-	end
-
-	return nil
-end
-
-local function default_bashdb_dir()
-	return joinpath(mason_pkg_root(), 'extension', 'bashdb_dir')
-end
-
-local function default_bashdb()
-	return joinpath(default_bashdb_dir(), 'bashdb')
-end
-
-local function first_executable(paths)
-	for _, path in ipairs(paths) do
-		if executable(path) then
-			return path
-		end
-	end
-	return nil
-end
-
-local function resolve_path_or_input(prompt_text, default)
-	local value = input(prompt_text, default or '', 'file')
-	if value == '' then
+---@param path string
+---@return uv.fs_stat.result?
+local function fs_stat(path)
+	if path == '' then
 		return nil
 	end
+
+	return uv.fs_stat(path)
+end
+
+---@param path string
+---@return boolean
+local function is_file(path)
+	local stat = fs_stat(path)
+	return stat ~= nil and stat.type == 'file'
+end
+
+---@param path string
+---@return boolean
+local function is_dir(path)
+	local stat = fs_stat(path)
+	return stat ~= nil and stat.type == 'directory'
+end
+
+---@param path string
+---@return boolean
+local function is_executable_file(path)
+	return is_file(path) and executable(path)
+end
+
+---@param command string
+---@param candidates? string[]
+---@return string?
+local function resolve_executable(command, candidates)
+	local from_path = fn.exepath(command)
+	if from_path ~= '' and is_executable_file(from_path) then
+		return from_path
+	end
+
+	for _, candidate in ipairs(candidates or {}) do
+		if is_executable_file(candidate) then
+			return candidate
+		end
+	end
+
+	return nil
+end
+
+---@param bufnr integer
+---@return string
+local function buffer_file(bufnr)
+	return api.nvim_buf_get_name(bufnr)
+end
+
+---@param path string
+---@return string?
+local function read_shebang(path)
+	if not is_file(path) then
+		return nil
+	end
+
+	local ok, lines = pcall(fn.readfile, path, '', 1)
+	if not ok or type(lines) ~= 'table' or type(lines[1]) ~= 'string' then
+		return nil
+	end
+
+	return lines[1]:match('^#!%s*(.+)$')
+end
+
+---@param path string
+---@return boolean
+local function has_bash_shebang(path)
+	local shebang = read_shebang(path)
+	return shebang ~= nil and shebang:lower():match('%f[%w]bash%f[^%w_]') ~= nil
+end
+
+---@param path string
+---@return boolean
+local function has_foreign_shell_shebang(path)
+	local shebang = read_shebang(path)
+	if not shebang then
+		return false
+	end
+
+	shebang = shebang:lower()
+	for _, shell in ipairs({ 'dash', 'fish', 'ksh', 'mksh', 'sh', 'zsh' }) do
+		if shebang:match('%f[%w]' .. shell .. '%f[^%w_]') then
+			return true
+		end
+	end
+
+	return false
+end
+
+---@param path string
+---@return boolean
+local function filename_matches(path)
+	local name = path:lower()
+
+	for _, pattern in ipairs(FILE_PATTERNS) do
+		local suffix = pattern:match('^%*(%..+)$')
+		if suffix and name:sub(-#suffix) == suffix:lower() then
+			return true
+		end
+	end
+
+	return false
+end
+
+---@param path string
+---@return boolean
+local function is_bash_script(path)
+	if path == '' or not is_file(path) then
+		return false
+	end
+
+	if has_foreign_shell_shebang(path) then
+		return false
+	end
+
+	return filename_matches(path) or has_bash_shebang(path)
+end
+
+---@param bufnr integer
+---@return boolean
+local function is_bash_buffer(bufnr)
+	if not api.nvim_buf_is_valid(bufnr) then
+		return false
+	end
+
+	local path = buffer_file(bufnr)
+	if path == '' or has_foreign_shell_shebang(path) then
+		return false
+	end
+
+	return FILETYPES[vim.bo[bufnr].filetype] == true or filename_matches(path) or has_bash_shebang(path)
+end
+
+---@return integer?
+local function current_bash_buffer()
+	local bufnr = api.nvim_get_current_buf()
+	if is_bash_buffer(bufnr) then
+		return bufnr
+	end
+
+	notify('Bash DAP is available only in Bash buffers', vim.log.levels.ERROR)
+	return nil
+end
+
+---@param bufnr integer
+---@return boolean
+local function update_buffer(bufnr)
+	local path = buffer_file(bufnr)
+	if path == '' then
+		notify('Save the Bash buffer before starting the debugger', vim.log.levels.ERROR)
+		return false
+	end
+
+	if not vim.bo[bufnr].modified then
+		return true
+	end
+
+	local ok, err = pcall(api.nvim_buf_call, bufnr, function()
+		vim.cmd('silent update')
+	end)
+	if not ok then
+		notify('Unable to save the Bash buffer: ' .. tostring(err), vim.log.levels.ERROR)
+		return false
+	end
+
+	return true
+end
+
+---@param bufnr integer
+---@return string
+local function workspace_root(bufnr)
+	local path = buffer_file(bufnr)
+	if path == '' then
+		return fn.getcwd()
+	end
+
+	return vim.fs.root(path, {
+		'.git',
+		'.envrc',
+		'flake.nix',
+		'shell.nix',
+		'Makefile',
+	}) or vim.fs.dirname(path) or fn.getcwd()
+end
+
+---@param value string
+---@return string
+local function absolute_path(value)
+	return vim.fs.normalize(fn.fnamemodify(value, ':p'))
+end
+
+---@param value string
+---@return boolean
+local function valid_single_line(value)
+	return not value:find('[\r\n%z]')
+end
+
+---@return string?
+local function prompt_args_string()
+	local value = input('Arguments (shell-style string): ', '')
+	if not valid_single_line(value) then
+		notify('Arguments must be a single line without NUL bytes', vim.log.levels.ERROR)
+		return nil
+	end
+
 	return value
 end
 
-local function resolve_adapter_command()
-	if M.adapter.command and file_exists(M.adapter.command) then
-		return M.adapter.command
-	end
-
-	local found = default_adapter_command()
-	if found then
-		M.adapter.command = found
-		return found
-	end
-
-	return resolve_path_or_input('Path to bash-debug-adapter: ', mason_pkg_root() .. '/', 'file')
-end
-
-local function resolve_bash()
-	local env_bash = vim.env.SHELL
-	if env_bash and env_bash ~= '' and executable(env_bash) then
-		return env_bash
-	end
-
-	return first_executable({
-		'/usr/bin/bash',
-		'/bin/bash',
-		'/usr/local/bin/bash',
-	})
-end
-
-local function resolve_cat()
-	return first_executable({
-		'/usr/bin/cat',
-		'/bin/cat',
-		'cat',
-	})
-end
-
-local function resolve_mkfifo()
-	return first_executable({
-		'/usr/bin/mkfifo',
-		'/bin/mkfifo',
-		'mkfifo',
-	})
-end
-
-local function resolve_pkill()
-	return first_executable({
-		'/usr/bin/pkill',
-		'/bin/pkill',
-		'/usr/local/bin/pkill',
-		'pkill',
-	})
-end
-local function ensure_adapter()
-	local adapter_cmd = resolve_adapter_command()
-	if not adapter_cmd or not file_exists(adapter_cmd) then
-		notify(
-			'Bash DAP adapter not found. Install rogalmic Bash Debug / bash-debug-adapter, or set the adapter path manually.',
-			vim.log.levels.ERROR
-		)
-		return false
-	end
-	M.adapter.command = adapter_cmd
-
-	local bashdb = default_bashdb()
-	local bashdb_dir = default_bashdb_dir()
-	local bash = resolve_bash()
-	local cat = resolve_cat()
-	local mkfifo = resolve_mkfifo()
-	local pkill = resolve_pkill()
-
-	if not file_exists(bashdb) then
-		notify('bashdb not found: ' .. bashdb, vim.log.levels.ERROR)
-		return false
-	end
-	if not file_exists(bashdb_dir) then
-		notify('bashdb lib dir not found: ' .. bashdb_dir, vim.log.levels.ERROR)
-		return false
-	end
-	if not bash then
-		notify('bash not found in PATH', vim.log.levels.ERROR)
-		return false
-	end
-	if not cat then
-		notify('cat not found in PATH', vim.log.levels.ERROR)
-		return false
-	end
-	if not mkfifo then
-		notify('mkfifo not found in PATH', vim.log.levels.ERROR)
-		return false
-	end
-	if not pkill then
-		notify('pkill not found in PATH', vim.log.levels.ERROR)
-		return false
-	end
-	return true
-end
-local function start(config)
-	if not ensure_adapter() then
-		return
-	end
-	config.type = M.adapter.name
-	config.pathBashdb = default_bashdb()
-	config.pathBashdbLib = default_bashdb_dir()
-	config.pathBash = resolve_bash()
-	config.pathCat = resolve_cat()
-	config.pathMkfifo = resolve_mkfifo()
-	config.pathPkill = resolve_pkill()
-	config.showDebugOutput = config.showDebugOutput ~= false
-	config.trace = config.trace ~= false
-	config.terminalKind = config.terminalKind or 'integrated'
-
-	debug.start(config)
-end
-
-local function prompt_args()
-	local raw = input('Args: ', '')
-	if raw == '' then
-		return {}
-	end
-	return vim.split(raw, '%s+', { trimempty = true })
-end
+---@return table<string, string>?
 local function prompt_env()
 	local env = {}
+
 	while true do
-		local key = input('Env key (blank to finish): ', '')
+		local key = input('Environment key (blank to finish): ', '')
 		if key == '' then
-			break
+			return env
 		end
-		env[key] = input('Env value for ' .. key .. ': ', '')
+
+		if not key:match('^[%a_][%w_]*$') then
+			notify('Invalid environment variable name: ' .. key, vim.log.levels.ERROR)
+			return nil
+		end
+
+		local value = input('Value for ' .. key .. ': ', '')
+		if not valid_single_line(value) then
+			notify('Environment values must be single-line strings', vim.log.levels.ERROR)
+			return nil
+		end
+
+		env[key] = value
 	end
-	return env
 end
 
-local function candidate_scripts(dir)
-	if not file_exists(dir) then
-		return {}
-	end
-
-	local scanner = uv.fs_scandir(dir)
-	if not scanner then
-		return {}
-	end
-
-	local items = {}
-	while true do
-		local name, typ = uv.fs_scandir_next(scanner)
-		if not name then
-			break
-		end
-		local path = joinpath(dir, name)
-		if typ == 'file' and (name:match('%.sh$') or is_executable(path)) then
-			items[#items + 1] = path
-		end
-	end
-	table.sort(items)
-	return items
-end
+---@param items string[]
+---@param prompt string
+---@return string?
 local function choose(items, prompt)
 	if #items == 0 then
 		return nil
 	end
-	local choices = { prompt or 'Select:' }
-	for i, item in ipairs(items) do
-		choices[#choices + 1] = string.format('%d. %s', i, fn.fnamemodify(item, ':t'))
+	if #items == 1 then
+		return items[1]
 	end
-	local idx = fn.inputlist(choices)
-	if idx < 1 or idx > #items then
+
+	local choices = { prompt }
+	for index, item in ipairs(items) do
+		choices[#choices + 1] = string.format('%d. %s', index, fn.fnamemodify(item, ':t'))
+	end
+
+	local choice = fn.inputlist(choices)
+	if choice < 1 or choice > #items then
 		return nil
 	end
-	return items[idx]
+
+	return items[choice]
 end
-local function resolve_program()
-	local file = current_file()
-	if file ~= '' and file:match('%.sh$') then
-		return file
+
+---@param directory string
+---@return string[]
+local function candidate_scripts(directory)
+	if not is_dir(directory) then
+		return {}
 	end
-	local scripts = candidate_scripts(workspace_root())
-	if #scripts == 1 then
-		return scripts[1]
+
+	local scanner = uv.fs_scandir(directory)
+	if not scanner then
+		return {}
 	end
-	if #scripts > 1 then
-		local picked = choose(scripts, 'Bash script:')
-		if picked then
-			return picked
+
+	local scripts = {}
+	while true do
+		local name, kind = uv.fs_scandir_next(scanner)
+		if not name then
+			break
+		end
+
+		if kind == 'file' or kind == 'link' then
+			local path = vim.fs.joinpath(directory, name)
+			if is_bash_script(path) then
+				scripts[#scripts + 1] = path
+			end
 		end
 	end
 
-	local program = input('Path to script: ', workspace_root() .. '/', 'file')
-	if program == '' then
+	table.sort(scripts)
+	return scripts
+end
+
+---@param bufnr integer
+---@return string?
+local function resolve_program(bufnr)
+	local path = buffer_file(bufnr)
+	if path ~= '' and vim.bo[bufnr].modified and not update_buffer(bufnr) then
 		return nil
 	end
+
+	if is_bash_script(path) then
+		return path
+	end
+
+	local scripts = candidate_scripts(workspace_root(bufnr))
+	local selected = choose(scripts, 'Bash script:')
+	if selected then
+		return selected
+	end
+
+	local value = input('Path to Bash script: ', workspace_root(bufnr) .. '/', 'file')
+	if value == '' then
+		return nil
+	end
+
+	local program = absolute_path(value)
+	if not is_bash_script(program) then
+		notify('Selected file is not a readable Bash script', vim.log.levels.ERROR)
+		return nil
+	end
+
 	return program
 end
 
-local function shellcheck()
-	local program = resolve_program()
-	if not program or not file_exists(program) then
-		notify('Script not found', vim.log.levels.ERROR)
+---@return boolean
+local function resolve_adapter()
+	local wrappers = {
+		MASON_WRAPPER,
+		vim.fs.joinpath(MASON_EXTENSION, 'bash-debug-adapter'),
+	}
+
+	for _, wrapper in ipairs(wrappers) do
+		if is_executable_file(wrapper) then
+			M.adapter.command = wrapper
+			M.adapter.args = {}
+			return true
+		end
+	end
+
+	local path_wrapper = resolve_executable('bash-debug-adapter')
+	if path_wrapper then
+		M.adapter.command = path_wrapper
+		M.adapter.args = {}
+		return true
+	end
+
+	local node = resolve_executable('node', {
+		'/usr/bin/node',
+		'/usr/local/bin/node',
+	})
+	local javascript_candidates = {
+		vim.fs.joinpath(MASON_EXTENSION, 'out', 'bashDebug.js'),
+		vim.fs.joinpath(MASON_PACKAGE, 'out', 'bashDebug.js'),
+	}
+
+	if node then
+		for _, javascript in ipairs(javascript_candidates) do
+			if is_file(javascript) then
+				M.adapter.command = node
+				M.adapter.args = { javascript }
+				return true
+			end
+		end
+	end
+
+	local value = input('Path to bash-debug-adapter executable or bashDebug.js: ', MASON_PACKAGE .. '/', 'file')
+	if value == '' then
+		return false
+	end
+
+	local adapter = absolute_path(value)
+	if adapter:match('%.js$') then
+		if not node or not is_file(adapter) then
+			notify('A readable adapter JavaScript file and Node.js are required', vim.log.levels.ERROR)
+			return false
+		end
+
+		M.adapter.command = node
+		M.adapter.args = { adapter }
+		return true
+	end
+
+	if not is_executable_file(adapter) then
+		notify('The Bash DAP adapter is not executable: ' .. adapter, vim.log.levels.ERROR)
+		return false
+	end
+
+	M.adapter.command = adapter
+	M.adapter.args = {}
+	return true
+end
+
+---@return string?, string?
+local function resolve_bashdb()
+	if is_executable_file(MASON_BASHDB) and is_dir(MASON_BASHDB_DIR) then
+		return MASON_BASHDB, MASON_BASHDB_DIR
+	end
+
+	local executable_path = resolve_executable('bashdb', {
+		'/usr/bin/bashdb',
+		'/usr/local/bin/bashdb',
+	})
+	if executable_path then
+		for _, directory in ipairs({
+			'/usr/share/bashdb',
+			'/usr/local/share/bashdb',
+		}) do
+			if is_dir(directory) then
+				return executable_path, directory
+			end
+		end
+	end
+
+	local bashdb = input('Path to bashdb: ', executable_path or MASON_BASHDB, 'file')
+	if bashdb == '' then
+		return nil, nil
+	end
+	bashdb = absolute_path(bashdb)
+	if not is_executable_file(bashdb) then
+		notify('bashdb is not executable: ' .. bashdb, vim.log.levels.ERROR)
+		return nil, nil
+	end
+
+	local default_library = executable_path == bashdb and '/usr/share/bashdb' or vim.fs.dirname(bashdb) or ''
+	local directory = input('Path to bashdb library directory: ', default_library, 'dir')
+	if directory == '' then
+		return nil, nil
+	end
+	directory = absolute_path(directory)
+	if not is_dir(directory) then
+		notify('bashdb library directory was not found: ' .. directory, vim.log.levels.ERROR)
+		return nil, nil
+	end
+
+	return bashdb, directory
+end
+
+---@class BashDapRuntime
+---@field bash string
+---@field bashdb string
+---@field bashdb_dir string
+---@field cat string
+---@field mkfifo string
+---@field pkill string
+
+---@return BashDapRuntime?
+local function resolve_runtime()
+	if not resolve_adapter() then
+		notify(
+			'Bash DAP adapter not found. Install Mason bash-debug-adapter or rogalmic/bash-debug.',
+			vim.log.levels.ERROR
+		)
+		return nil
+	end
+
+	local node = resolve_executable('node', {
+		'/usr/bin/node',
+		'/usr/local/bin/node',
+	})
+	if not node then
+		notify('Node.js is required by bash-debug-adapter', vim.log.levels.ERROR)
+		return nil
+	end
+
+	local bash = resolve_executable('bash', {
+		'/usr/bin/bash',
+		'/bin/bash',
+		'/usr/local/bin/bash',
+	})
+	local cat = resolve_executable('cat', {
+		'/usr/bin/cat',
+		'/bin/cat',
+	})
+	local mkfifo = resolve_executable('mkfifo', {
+		'/usr/bin/mkfifo',
+		'/bin/mkfifo',
+	})
+	local pkill = resolve_executable('pkill', {
+		'/usr/bin/pkill',
+		'/bin/pkill',
+		'/usr/local/bin/pkill',
+	})
+	local bashdb, bashdb_dir = resolve_bashdb()
+
+	local missing = {}
+	if not bash then
+		missing[#missing + 1] = 'bash'
+	end
+	if not cat then
+		missing[#missing + 1] = 'cat'
+	end
+	if not mkfifo then
+		missing[#missing + 1] = 'mkfifo'
+	end
+	if not pkill then
+		missing[#missing + 1] = 'pkill'
+	end
+	if not bashdb or not bashdb_dir then
+		missing[#missing + 1] = 'bashdb'
+	end
+
+	if #missing > 0 then
+		notify('Missing Bash debugger runtime tools: ' .. table.concat(missing, ', '), vim.log.levels.ERROR)
+		return nil
+	end
+	if not bash or not cat or not mkfifo or not pkill or not bashdb or not bashdb_dir then
+		return nil
+	end
+
+	return {
+		bash = bash,
+		bashdb = bashdb,
+		bashdb_dir = bashdb_dir,
+		cat = cat,
+		mkfifo = mkfifo,
+		pkill = pkill,
+	}
+end
+
+---@param bufnr integer
+---@param config table
+local function start(bufnr, config)
+	if not is_bash_buffer(bufnr) then
+		notify('Bash DAP is available only in Bash buffers', vim.log.levels.ERROR)
+		return
+	end
+	if not update_buffer(bufnr) then
 		return
 	end
 
-	if not executable('shellcheck') then
-		notify('shellcheck not found in PATH', vim.log.levels.ERROR)
+	local runtime = resolve_runtime()
+	if not runtime then
 		return
 	end
 
-	local result = vim.system({ 'shellcheck', program }, {
-		cwd = workspace_root(),
-		text = true,
-	}):wait()
+	config.type = M.adapter.name
+	config.pathBash = runtime.bash
+	config.pathBashdb = runtime.bashdb
+	config.pathBashdbLib = runtime.bashdb_dir
+	config.pathCat = runtime.cat
+	config.pathMkfifo = runtime.mkfifo
+	config.pathPkill = runtime.pkill
+	config.showDebugOutput = config.showDebugOutput == true
+	config.trace = config.trace == true
+	config.terminalKind = config.terminalKind or 'debugConsole'
 
-	if result.code == 0 then
-		notify('shellcheck: no issues found')
+	debug.start(config)
+end
+
+---@param bufnr integer
+---@param program string
+---@param name string
+---@param adapter_trace? boolean
+local function launch(bufnr, program, name, adapter_trace)
+	if not is_bash_script(program) then
+		notify('Bash script not found: ' .. program, vim.log.levels.ERROR)
 		return
 	end
 
-	local msg = (result.stdout and result.stdout ~= '') and result.stdout
-		or ((result.stderr and result.stderr ~= '') and result.stderr)
-		or 'shellcheck reported issues'
-	notify(msg, vim.log.levels.WARN)
+	local args_string = prompt_args_string()
+	if args_string == nil then
+		return
+	end
+
+	local env = prompt_env()
+	if env == nil then
+		return
+	end
+
+	start(bufnr, {
+		request = 'launch',
+		name = name,
+		program = program,
+		cwd = workspace_root(bufnr),
+		argsString = args_string,
+		env = env,
+		showDebugOutput = adapter_trace == true,
+		trace = adapter_trace == true,
+	})
 end
 
 function M.run_script()
-	local program = resolve_program()
-	if not program or not file_exists(program) then
-		notify('Script not found', vim.log.levels.ERROR)
+	local bufnr = current_bash_buffer()
+	if not bufnr then
 		return
 	end
 
-	start({
-		request = 'launch',
-		name = 'Bash launch script',
-		program = program,
-		file = program,
-		cwd = workspace_root(),
-		args = prompt_args(),
-		env = prompt_env(),
-	})
+	local program = resolve_program(bufnr)
+	if program then
+		launch(bufnr, program, 'Bash launch script')
+	end
 end
 
 function M.run_file()
-	local program = current_file()
-	if program == '' or not file_exists(program) then
-		notify('Current file not found', vim.log.levels.ERROR)
+	local bufnr = current_bash_buffer()
+	if not bufnr then
+		return
+	end
+	if not update_buffer(bufnr) then
 		return
 	end
 
-	start({
-		request = 'launch',
-		name = 'Bash launch current file',
-		program = program,
-		file = program,
-		cwd = workspace_root(),
-		args = prompt_args(),
-		env = prompt_env(),
-	})
-end
-
-function M.run_with_xtrace()
-	local program = resolve_program()
-	if not program or not file_exists(program) then
-		notify('Script not found', vim.log.levels.ERROR)
+	local program = buffer_file(bufnr)
+	if not is_bash_script(program) then
+		notify('Current file is not a readable Bash script', vim.log.levels.ERROR)
 		return
 	end
 
-	local args = { '-x' }
-	vim.list_extend(args, prompt_args())
-
-	start({
-		request = 'launch',
-		name = 'Bash launch script (-x)',
-		program = program,
-		file = program,
-		cwd = workspace_root(),
-		args = args,
-		env = prompt_env(),
-	})
+	launch(bufnr, program, 'Bash launch current file')
 end
 
 function M.run_selection()
-	local scripts = candidate_scripts(workspace_root())
-	local picked = choose(scripts, 'Bash script:')
-	if not picked or not file_exists(picked) then
-		notify('Script not found', vim.log.levels.ERROR)
+	local bufnr = current_bash_buffer()
+	if not bufnr then
 		return
 	end
 
-	start({
-		request = 'launch',
-		name = 'Bash launch selected script',
-		program = picked,
-		file = picked,
-		cwd = workspace_root(),
-		args = prompt_args(),
-		env = prompt_env(),
-	})
+	local program = choose(candidate_scripts(workspace_root(bufnr)), 'Bash script:')
+	if program then
+		launch(bufnr, program, 'Bash launch selected script')
+	end
 end
+
+function M.run_prompt()
+	local bufnr = current_bash_buffer()
+	if not bufnr then
+		return
+	end
+
+	local value = input('Path to Bash script: ', workspace_root(bufnr) .. '/', 'file')
+	if value == '' then
+		return
+	end
+
+	local program = absolute_path(value)
+	launch(bufnr, program, 'Bash launch prompted script')
+end
+
+function M.run_with_adapter_trace()
+	local bufnr = current_bash_buffer()
+	if not bufnr then
+		return
+	end
+
+	local program = resolve_program(bufnr)
+	if program then
+		launch(bufnr, program, 'Bash launch with DAP trace', true)
+	end
+end
+
+---@param bufnr integer
+local function configure_buffer(bufnr)
+	if not is_bash_buffer(bufnr) or vim.b[bufnr][CONFIGURED_FLAG] then
+		return
+	end
+
+	vim.b[bufnr][CONFIGURED_FLAG] = true
+
+	api.nvim_buf_create_user_command(bufnr, 'BashDapRun', M.run_script, {
+		desc = 'Debug a Bash script',
+	})
+	api.nvim_buf_create_user_command(bufnr, 'BashDapFile', M.run_file, {
+		desc = 'Debug the current Bash file',
+	})
+	api.nvim_buf_create_user_command(bufnr, 'BashDapSelect', M.run_selection, {
+		desc = 'Select and debug a Bash script',
+	})
+	api.nvim_buf_create_user_command(bufnr, 'BashDapPrompt', M.run_prompt, {
+		desc = 'Prompt for a Bash script to debug',
+	})
+	api.nvim_buf_create_user_command(bufnr, 'BashDapTrace', M.run_with_adapter_trace, {
+		desc = 'Debug Bash with DAP adapter tracing',
+	})
+
+	local map_options = function(description)
+		return {
+			buffer = bufnr,
+			desc = description,
+			silent = true,
+		}
+	end
+
+	vim.keymap.set('n', '<leader>dbr', M.run_script, map_options('Bash DAP run'))
+	vim.keymap.set('n', '<leader>dbf', M.run_file, map_options('Bash DAP current file'))
+	vim.keymap.set('n', '<leader>dbs', M.run_selection, map_options('Bash DAP select'))
+	vim.keymap.set('n', '<leader>dbp', M.run_prompt, map_options('Bash DAP prompt'))
+	vim.keymap.set('n', '<leader>dbt', M.run_with_adapter_trace, map_options('Bash DAP adapter trace'))
+end
+
+local setup_done = false
 
 function M.setup()
-	api.nvim_create_user_command('BashDapRun', M.run_script, {
-		desc = 'Debug bash script',
+	if setup_done then
+		return
+	end
+	setup_done = true
+
+	local group = api.nvim_create_augroup('QompassBashDap', {
+		clear = true,
 	})
 
-	api.nvim_create_user_command('BashDapFile', M.run_file, {
-		desc = 'Debug current bash file',
+	api.nvim_create_autocmd('FileType', {
+		group = group,
+		pattern = FILETYPE_PATTERNS,
+		desc = 'Enable Bash DAP for Bash filetypes',
+		callback = function(event)
+			configure_buffer(event.buf)
+		end,
 	})
 
-	api.nvim_create_user_command('BashDapSelect', M.run_selection, {
-		desc = 'Select and debug bash script',
+	api.nvim_create_autocmd({ 'BufReadPost', 'BufNewFile' }, {
+		group = group,
+		pattern = FILE_PATTERNS,
+		desc = 'Enable Bash DAP for Bash file extensions',
+		callback = function(event)
+			configure_buffer(event.buf)
+		end,
 	})
 
-	api.nvim_create_user_command('BashDapTrace', M.run_with_xtrace, {
-		desc = 'Debug bash script with -x',
-	})
-
-	api.nvim_create_user_command('BashDapCheck', shellcheck, {
-		desc = 'Run shellcheck on bash script',
-	})
-
-	vim.keymap.set('n', '<leader>bd', M.run_script, { desc = 'Bash DAP run' })
-	vim.keymap.set('n', '<leader>bf', M.run_file, { desc = 'Bash DAP file' })
-	vim.keymap.set('n', '<leader>bs', M.run_selection, { desc = 'Bash DAP select' })
-	vim.keymap.set('n', '<leader>bx', M.run_with_xtrace, { desc = 'Bash DAP trace' })
-	vim.keymap.set('n', '<leader>bc', shellcheck, { desc = 'Bash DAP check' })
+	configure_buffer(api.nvim_get_current_buf())
 end
+
 return M
