@@ -15,7 +15,41 @@
 -- See the License for the specific language governing permissions and
 -- limitations under the License.
 -- #################################################################
+--[[
+mkdir -p "$HOME/.local/share"
 
+git clone \
+    --depth 1 \
+    --branch develop \
+    https://github.com/microsoft/build-server-for-gradle.git \
+    "$HOME/.local/share/build-server-for-gradle"
+
+cd "$HOME/.local/share/build-server-for-gradle"
+
+export JAVA_HOME=/usr/lib/jvm/java-17-openjdk
+export PATH="$JAVA_HOME/bin:$PATH"
+
+./gradlew clean build
+
+test -f \
+    "$HOME/.local/share/build-server-for-gradle/server/build/libs/server.jar"
+
+test -f \
+    "$HOME/.local/share/build-server-for-gradle/server/build/libs/plugins/init.gradle"
+
+find \
+    "$HOME/.local/share/build-server-for-gradle/server/build/libs/plugins" \
+    -maxdepth 1 \
+    -type f \
+    -name 'plugin-*.jar'
+
+find \
+    "$HOME/.local/share/build-server-for-gradle/server/build/libs/runtime" \
+    -maxdepth 1 \
+    -type f \
+    -name '*.jar'
+
+--]]
 local api = vim.api
 local fn = vim.fn
 local uv = vim.uv
