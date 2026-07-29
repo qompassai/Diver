@@ -220,10 +220,8 @@ plugin_setup[github('vhyrro/luarocks.nvim')] = function()
 		vim.notify('luarocks-nvim module missing or invalid', vim.log.levels.ERROR)
 		return
 	end
-
 	lr.setup(opts)
 end
-
 plugin_setup[github('folke/which-key.nvim')] = function()
 	require('config.core.whichkey')
 end

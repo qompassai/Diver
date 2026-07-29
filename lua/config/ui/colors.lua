@@ -2,317 +2,955 @@
 -- Qompass AI Diver UI Colors Config
 -- Copyright (C) 2025 Qompass AI, All rights reserved
 -- ----------------------------------------
-local M = {} ---@version JIT
+local M = {}
+
 local api = vim.api
-local set_hl = api.nvim_set_hl
-local autocmd = api.nvim_create_autocmd
-local augroup = api.nvim_create_augroup
-local colors = {
-    comment = '#7f9bb3',
-    comment_doc = '#a0c4ff',
-    error = '#ff5f5f',
-    hint = '#5fd7af',
-    info = '#5fafff',
-    warn = '#ffaf00',
-    ok = '#5fd75f',
+
+local palette = {
+	background = '#1a1b26',
+	background_alt = '#1f2335',
+	background_dark = '#16161e',
+	background_soft = '#292e42',
+	black = '#000000',
+	blue = '#7aa2f7',
+	blue_bright = '#5fafff',
+	blue_dark = '#103070',
+	comment = '#7f9bb3',
+	comment_documentation = '#a0c4ff',
+	cyan = '#7dcfff',
+	cyan_bright = '#7df9ff',
+	error = '#ff5f5f',
+	error_dark = '#db4b4b',
+	foreground = '#c0caf5',
+	green = '#9ece6a',
+	green_bright = '#00ff87',
+	hint = '#5fd7af',
+	info = '#5fafff',
+	magenta = '#bb9af7',
+	muted = '#565f89',
+	ok = '#5fd75f',
+	orange = '#ff9e64',
+	red = '#f7768e',
+	selection = '#103070',
+	separator = '#3b4261',
+	teal = '#0db9d7',
+	white = '#ffffff',
+	yellow = '#e0af68',
+	warn = '#ffaf00',
 }
-function M.setup_colorizer(opts)
-    opts = opts or {}
-    local ok, colorizer = pcall(require, 'colorizer')
-    if not ok then
-        return
-    end
-    local group = augroup('CSS', {
-        clear = false,
-    })
-    local default_opts = {
-        filetypes = {
-            'astro',
-            'css',
-            'html',
-            'javascript',
-            'jsx',
-            'less',
-            'lua',
-            'markdown',
-            'php',
-            'sass',
-            'scss',
-            'stylus',
-            'svelte',
-            'tsx',
-            'typescript',
-            'vim',
-            'vue',
-        },
-        user_default_options = {
-            css = true,
-            css_fn = true,
-            RGB = true,
-            RRGGBB = true,
-            names = true,
-            RRGGBBAA = true,
-            AARRGGBB = true,
-            rgb_fn = true,
-            hsl_fn = true,
-            mode = 'background',
-            tailwind = true,
-            sass = {
-                enable = true,
-                parsers = {
-                    'css',
-                },
-            },
-            virtualtext = '■',
-            always_update = true,
-        },
-        buftypes = {},
-    }
-    local merged = vim.tbl_deep_extend('force', default_opts, opts)
-    colorizer.setup(merged)
-    autocmd('FileType', {
-        group = group,
-        pattern = merged.filetypes,
-        callback = function()
-            colorizer.attach_to_buffer(0)
-        end,
-    })
+
+---@param groups table<string, vim.api.keyset.highlight>
+local function set_highlights(groups)
+	for name, spec in pairs(groups) do
+		api.nvim_set_hl(0, name, spec)
+	end
 end
 
-function M.setup_highlights()
-    vim.schedule(function()
-        local function diag_hl(type, fg, bg)
-            local prefix = 'Diagnostic'
-            set_hl(0, prefix .. type, { fg = fg })
-            set_hl(0, prefix .. 'VirtualText' .. type, {
-                fg = fg,
-                bg = bg,
-            })
-            set_hl(0, prefix .. 'Underline' .. type, {
-                undercurl = true,
-                sp = fg,
-            })
-            set_hl(0, prefix .. 'Sign' .. type, { fg = fg })
-            set_hl(0, prefix .. 'Floating' .. type, { fg = fg })
-        end
-        diag_hl('Error', colors.error, '#3b1f1f')
-        diag_hl('Warn', colors.warn, '#3b2f1f')
-        diag_hl('Info', colors.info, '#1f2f3b')
-        diag_hl('Hint', colors.hint, '#1f3b2f')
-        diag_hl('Ok', colors.ok, '#1f3b1f')
-        local function set_hls(groups)
-            for name, opts in pairs(groups) do
-                set_hl(0, name, opts)
-            end
-        end
-        set_hls({
-            ['@attribute'] = { fg = '#7aa2f7' },
-            ['@boolean'] = { fg = '#ff9e64', bold = false },
-            ['@character'] = { fg = '#7dcfff' },
-            ['@character.special'] = { fg = '#e0af68' },
-            ['@conditional'] = { fg = '#bb9af7', bold = false },
-            ['@constant'] = { fg = '#ff9e64' },
-            ['@constant.builtin'] = { fg = '#ff9e64', bold = false },
-            ['@constant.macro'] = { fg = '#ff9e64', bold = false },
-            ['@constructor'] = { fg = '#7aa2f7', bold = false },
-            ['@error'] = { fg = '#db4b4b' },
-            ['@exception'] = { fg = '#bb9af7', bold = false },
-            ['@field'] = { fg = '#7dcfff' },
-            ['@float'] = { fg = '#ff9e64' },
-            ['@function'] = { fg = '#7aa2f7', bold = false },
-            ['@function.builtin'] = { fg = '#61AFEF', bold = false },
-            ['@function.call'] = { fg = '#7aa2f7' },
-            ['@function.macro'] = { fg = '#7aa2f7', bold = false },
-            ['@include'] = { fg = '#bb9af7', bold = false },
-            ['@keyword'] = { fg = '#bb9af7', bold = false },
-            ['@keyword.function'] = { fg = '#bb9af7', bold = false },
-            ['@keyword.operator'] = { fg = '#bb9af7' },
-            ['@keyword.return'] = { fg = '#bb9af7', bold = false },
-            ['@label'] = { fg = '#7aa2f7' },
-            ['@method'] = { fg = '#7aa2f7', bold = false },
-            ['@method.call'] = { fg = '#7aa2f7' },
-            ['@namespace'] = { fg = '#7dcfff' },
-            ['@number'] = { fg = '#ff9e64' },
-            ['@operator'] = { fg = '#89ddff' },
-            ['@parameter'] = { fg = '#e0af68', italic = true },
-            ['@parameter.reference'] = { fg = '#e0af68' },
-            ['@property'] = { fg = '#7dcfff' },
-            ['@punctuation.bracket'] = { fg = '#a4bac1' },
-            ['@punctuation.delimiter'] = { fg = '#89ddff' },
-            ['@punctuation.special'] = { fg = '#89ddff' },
-            ['@repeat'] = { fg = '#bb9af7', bold = false },
-            ['@string'] = { fg = '#89dceb' },
-            ['@string.escape'] = { fg = '#bb9af7' },
-            ['@string.regex'] = { fg = '#bb9af7' },
-            ['@string.special'] = { fg = '#e0af68' },
-            ['@symbol'] = { fg = '#7dcfff' },
-            ['@tag'] = { fg = '#f7768e' },
-            ['@tag.attribute'] = { fg = '#7dcfff' },
-            ['@tag.delimiter'] = { fg = '#89ddff' },
-            ['@text'] = { fg = '#c0caf5' },
-            ['@text.danger'] = { fg = '#db4b4b', bold = false },
-            ['@text.emphasis'] = { italic = true },
-            ['@text.literal'] = { fg = '#9ece6a' },
-            ['@text.note'] = { fg = '#0db9d7', bold = false },
-            ['@text.reference'] = { fg = '#7dcfff', underline = true },
-            ['@text.strong'] = { bold = true },
-            ['@text.title'] = { fg = '#7aa2f7', bold = true },
-            ['@text.underline'] = { underline = true },
-            ['@text.uri'] = { fg = '#7dcfff', underline = true },
-            ['@text.warning'] = { fg = '#e0af68', bold = false },
-            ['@type'] = { fg = '#7aa2f7', bold = true },
-            ['@type.builtin'] = { fg = '#61AFEF', bold = false },
-            ['@type.definition'] = { fg = '#7aa2f7', bold = false },
-            ['@variable'] = { fg = '#c0caf5' },
-            ['@variable.builtin'] = { fg = '#f7768e', bold = false },
-            Comment = { fg = colors.comment, italic = true },
-            ['@comment'] = { fg = colors.comment, italic = true },
-            ['@comment.documentation'] = { italic = true, fg = colors.comment_doc },
-            CursorColumn = { bg = '#262a32' },
-            CursorLine = { bg = 'none', underline = false },
-            CurSearch = { bg = '#EFBD5D', fg = '#000000' },
-            DiffAdd = { fg = '#00ff87', bg = 'none', bold = false },
-            DiffChange = { fg = colors.warn, bg = 'none' },
-            DiffDelete = { fg = colors.error, bg = 'none', bold = false },
-            DiffText = { fg = '#00bfff', bg = 'none', bold = true },
-            DiagnosticUnderlineError = {
-                undercurl = true,
-                sp = '#db4b4b',
-            },
-            EndOfBuffer = { bg = 'none' },
-            FloatBorder = { bg = 'none' },
-            FoldColumn = { bg = 'none' },
-            Folded = { bg = 'none' },
-            IncSearch = { bg = '#F15664', fg = '#000000' },
-            Search = { bg = '#8BCD5B', fg = '#202020' },
-            IlluminatedWordText = { bg = '#2d3139', underline = false },
-            IlluminatedWordRead = { bg = '#2d3139', underline = false },
-            IlluminatedWordWrite = { bg = '#3d3139', underline = false },
-            IndentBlanklineChar = { fg = '#4DA6FF', nocombine = true },
-            IndentLevel1 = { fg = '#E06C75' },
-            IndentLevel2 = { fg = '#E5C07B' },
-            IndentLevel3 = { fg = '#61AFEF' },
-            IndentLevel4 = { fg = '#D19A66' },
-            IndentLevel5 = { fg = '#98C379' },
-            IndentLevel6 = { fg = '#C678DD' },
-            IndentLevel7 = { fg = '#56B6C2' },
-            ['@keyword.import'] = { link = '@keyword', bold = false },
-            ['@lsp.mod.deprecated'] = {
-                strikethrough = true,
-            },
-            LspSemantic_parameter = { fg = '#89b4fa', italic = true },
-            LspSemantic_property = { fg = '#fab387' },
-            LspSemantic_variable_mutable = { fg = '#f38ba8' },
-            ['@lsp.type.class.lua'] = {
-                fg = '#f7768e',
-                bold = false,
-                italic = true,
-                underline = true,
-            },
-            ['@lsp.type.boolean'] = { link = '@boolean' },
-            ['@lsp.type.builtinType'] = { link = '@type.builtin' },
-            ['@lsp.type.comment'] = { link = '@comment' },
-            ['@lsp.type.enum'] = { link = '@type' },
-            ['@lsp.type.enumMember'] = { link = '@constant' },
-            ['@lsp.type.escapeSequence'] = { link = '@string.escape' },
-            ['@lsp.type.formatSpecifier'] = { link = '@punctuation.special' },
-            ['@lsp.type.interface'] = { fg = '#7aa2f7' },
-            ['@lsp.type.keyword'] = { link = '@keyword' },
-            ['@lsp.type.namespace'] = { link = '@namespace' },
-            ['@lsp.type.number'] = { link = '@number' },
-            ['@lsp.type.operator'] = { link = '@operator' },
-            ['@lsp.type.parameter'] = { link = '@parameter' },
-            ['@lsp.type.property'] = { link = '@property' },
-            ['@lsp.type.selfKeyword'] = { link = '@variable.builtin' },
-            ['@lsp.type.typeAlias'] = { link = '@type.definition' },
-            ['@lsp.type.unresolvedReference'] = { undercurl = true, sp = '#db4b4b' },
-            ['@lsp.type.variable'] = {}, -- Use treesitter for regular variables
-            ['@lsp.typemod.class.defaultLibrary'] = { link = '@type.builtin' },
-            ['@lsp.typemod.enum.defaultLibrary'] = { link = '@type.builtin' },
-            ['@lsp.typemod.enumMember.defaultLibrary'] = { link = '@constant.builtin' },
-            ['@lsp.typemod.function.defaultLibrary'] = { link = '@function.builtin' },
-            ['@lsp.typemod.keyword.async'] = { link = '@keyword' },
-            ['@lsp.typemod.macro.defaultLibrary'] = { link = '@function.builtin' },
-            ['@lsp.typemod.method.defaultLibrary'] = { link = '@function.builtin' },
-            ['@lsp.typemod.operator.injected'] = { link = '@operator' },
-            ['@lsp.typemod.string.injected'] = { link = '@string' },
-            ['@lsp.typemod.type.defaultLibrary'] = { fg = '#61AFEF', bold = false },
-            ['@lsp.typemod.variable.defaultLibrary'] = { link = '@variable.builtin' },
-            ['@lsp.typemod.variable.injected'] = { link = '@variable' },
-            ['@lsp.type.function.lua'] = { fg = '#E5C07B', bold = false },
-            ['@lsp.type.parameter.lua'] = { fg = '#e0af68', bold = false },
-            ['@lsp.type.property.lua'] = { fg = '#7aa2f7', bold = true },
-            ['@lsp.type.variable.lua'] = { fg = '#7df9ff', bold = true },
-            markdownCode = { italic = true },
-            markdownCodeBlock = { italic = false },
-            markdownCodeDelimiter = { italic = false },
-            ModeMsg = { fg = '#c0caf5', bold = false },
-            MoreMsg = { fg = '#0db9d7' },
+---@param severity string
+---@param foreground string
+---@param background string
+local function set_diagnostic_highlights(severity, foreground, background)
+	local prefix = 'Diagnostic'
 
-            Normal = { bg = 'none' },
-            NormalFloat = {
-                bg = '#1a1b26',
-                blend = 50,
-            },
-            Pmenu = {
-                fg = '#c0caf5',
-                bg = '#1f2335',
-            },
-            PmenuSel = {
-                fg = '#000000',
-                bg = '#7aa2f7',
-                bold = true,
-            },
-            PmenuSbar = { bg = '#292e42' },
-            PmenuThumb = { bg = '#565f89' },
-            PmenuKind = { fg = '#e0af68', bg = '#1f2335' },
-            PmenuKindSel = { fg = '#000000', bg = '#7aa2f7' },
-            PmenuExtra = { fg = '#565f89', bg = '#1f2335' },
-            PmenuExtraSel = { fg = '#000000', bg = '#7aa2f7' },
-
-            StatusLine = { fg = '#c0caf5', bg = '#1f2335' },
-            StatusLineNC = { fg = '#565f89', bg = '#16161e' },
-            TabLine = { fg = '#565f89', bg = '#16161e' },
-            TabLineFill = { bg = '#16161e' },
-            TabLineSel = { fg = '#c0caf5', bg = '#1f2335', bold = false },
-            WinBar = { fg = '#c0caf5', bg = 'none' },
-            WinBarNC = { fg = '#565f89', bg = 'none' },
-            WinSeparator = { fg = '#3b4261', bg = 'none' },
-            SignColumn = { bg = 'none' },
-            SpellBad = { undercurl = true, sp = '#db4b4b' },
-            SpellCap = { undercurl = true, sp = '#e0af68' },
-            SpellLocal = { undercurl = true, sp = '#0db9d7' },
-            SpellRare = { undercurl = true, sp = '#1abc9c' },
-            Terminal = { bg = 'none' },
-
-            Pmenu = { bg = 'none' },
-            NvimTreeEndOfBuffer = { bg = 'none' },
-            NvimTreeNormal = { bg = 'none' },
-            NvimTreeVertSplit = { bg = 'none' },
-            ['@punctuation.bracket'] = { fg = '#a4bac1' },
-            Visual = { bg = '#103070' },
-        })
-    end)
-    autocmd('BufEnter', {
-        once = true,
-        callback = function()
-            set_hl(0, 'Comment', {
-                fg = colors.comment,
-                italic = true,
-            })
-            set_hl(0, '@comment', { fg = colors.comment, italic = true })
-            set_hl(0, '@comment.documentation', { italic = true, fg = colors.comment_doc })
-        end,
-    })
+	api.nvim_set_hl(0, prefix .. severity, {
+		fg = foreground,
+	})
+	api.nvim_set_hl(0, prefix .. 'VirtualText' .. severity, {
+		bg = background,
+		fg = foreground,
+	})
+	api.nvim_set_hl(0, prefix .. 'Underline' .. severity, {
+		sp = foreground,
+		undercurl = true,
+	})
+	api.nvim_set_hl(0, prefix .. 'Sign' .. severity, {
+		fg = foreground,
+	})
+	api.nvim_set_hl(0, prefix .. 'Floating' .. severity, {
+		fg = foreground,
+	})
 end
 
-function M.setup(opts)
-    opts = opts or {}
-    M.setup_highlights()
-    if opts.colorizer ~= false then
-        M.setup_colorizer(opts.colorizer)
-    end
+local function apply_diagnostic_highlights()
+	set_diagnostic_highlights('Error', palette.error, '#3b1f1f')
+	set_diagnostic_highlights('Warn', palette.warn, '#3b2f1f')
+	set_diagnostic_highlights('Info', palette.info, '#1f2f3b')
+	set_diagnostic_highlights('Hint', palette.hint, '#1f3b2f')
+	set_diagnostic_highlights('Ok', palette.ok, '#1f3b1f')
+
+	set_highlights({
+		DiagnosticDeprecated = {
+			sp = palette.warn,
+			strikethrough = true,
+		},
+		DiagnosticUnnecessary = {
+			fg = palette.muted,
+		},
+	})
+end
+
+local function apply_editor_highlights()
+	set_highlights({
+		ColorColumn = {
+			bg = palette.background_alt,
+		},
+		CurSearch = {
+			bg = '#efbd5d',
+			fg = palette.black,
+		},
+		CursorColumn = {
+			bg = '#262a32',
+		},
+		CursorLine = {
+			bg = '#20232b',
+		},
+		CursorLineNr = {
+			bold = true,
+			fg = palette.blue,
+		},
+		Directory = {
+			fg = palette.blue,
+		},
+		EndOfBuffer = {
+			bg = 'NONE',
+			fg = palette.background_dark,
+		},
+		ErrorMsg = {
+			bold = true,
+			fg = palette.error,
+		},
+		FloatBorder = {
+			bg = palette.background,
+			fg = palette.separator,
+		},
+		FloatFooter = {
+			bg = palette.background,
+			fg = palette.muted,
+		},
+		FloatTitle = {
+			bg = palette.background,
+			bold = true,
+			fg = palette.blue,
+		},
+		FoldColumn = {
+			bg = 'NONE',
+			fg = palette.muted,
+		},
+		Folded = {
+			bg = palette.background_alt,
+			fg = palette.comment,
+		},
+		IncSearch = {
+			bg = '#f15664',
+			fg = palette.black,
+		},
+		LineNr = {
+			fg = palette.muted,
+		},
+		LineNrAbove = {
+			fg = palette.muted,
+		},
+		LineNrBelow = {
+			fg = palette.muted,
+		},
+		MatchParen = {
+			bold = true,
+			fg = palette.yellow,
+			underline = true,
+		},
+		ModeMsg = {
+			bold = false,
+			fg = palette.foreground,
+		},
+		MoreMsg = {
+			fg = palette.teal,
+		},
+		MsgArea = {
+			fg = palette.foreground,
+		},
+		NonText = {
+			fg = palette.muted,
+		},
+		Normal = {
+			bg = 'NONE',
+			fg = palette.foreground,
+		},
+		NormalFloat = {
+			bg = palette.background,
+			fg = palette.foreground,
+		},
+		NormalNC = {
+			bg = 'NONE',
+			fg = palette.foreground,
+		},
+		Pmenu = {
+			bg = palette.background_alt,
+			fg = palette.foreground,
+		},
+		PmenuExtra = {
+			bg = palette.background_alt,
+			fg = palette.muted,
+		},
+		PmenuExtraSel = {
+			bg = palette.blue,
+			fg = palette.black,
+		},
+		PmenuKind = {
+			bg = palette.background_alt,
+			fg = palette.yellow,
+		},
+		PmenuKindSel = {
+			bg = palette.blue,
+			fg = palette.black,
+		},
+		PmenuMatch = {
+			bg = palette.background_alt,
+			bold = true,
+			fg = palette.cyan,
+		},
+		PmenuMatchSel = {
+			bg = palette.blue,
+			bold = true,
+			fg = palette.black,
+		},
+		PmenuSbar = {
+			bg = palette.background_soft,
+		},
+		PmenuSel = {
+			bg = palette.blue,
+			bold = true,
+			fg = palette.black,
+		},
+		PmenuThumb = {
+			bg = palette.muted,
+		},
+		Question = {
+			fg = palette.cyan,
+		},
+		QuickFixLine = {
+			bg = palette.background_alt,
+			bold = true,
+		},
+		Search = {
+			bg = '#8bcd5b',
+			fg = '#202020',
+		},
+		SignColumn = {
+			bg = 'NONE',
+			fg = palette.muted,
+		},
+		SpecialKey = {
+			fg = palette.muted,
+		},
+		StatusLine = {
+			bg = palette.background_alt,
+			fg = palette.foreground,
+		},
+		StatusLineNC = {
+			bg = palette.background_dark,
+			fg = palette.muted,
+		},
+		Substitute = {
+			bg = palette.red,
+			fg = palette.black,
+		},
+		TabLine = {
+			bg = palette.background_dark,
+			fg = palette.muted,
+		},
+		TabLineFill = {
+			bg = palette.background_dark,
+		},
+		TabLineSel = {
+			bg = palette.background_alt,
+			bold = true,
+			fg = palette.foreground,
+		},
+		Title = {
+			bold = true,
+			fg = palette.blue,
+		},
+		Visual = {
+			bg = palette.selection,
+		},
+		WarningMsg = {
+			fg = palette.warn,
+		},
+		Whitespace = {
+			fg = palette.muted,
+		},
+		WildMenu = {
+			bg = palette.blue,
+			fg = palette.black,
+		},
+		WinBar = {
+			bg = 'NONE',
+			fg = palette.foreground,
+		},
+		WinBarNC = {
+			bg = 'NONE',
+			fg = palette.muted,
+		},
+		WinSeparator = {
+			bg = 'NONE',
+			fg = palette.separator,
+		},
+	})
+end
+
+local function apply_syntax_highlights()
+	set_highlights({
+		Boolean = {
+			fg = palette.orange,
+		},
+		Character = {
+			fg = palette.cyan,
+		},
+		Comment = {
+			fg = palette.comment,
+			italic = true,
+		},
+		Conditional = {
+			fg = palette.magenta,
+		},
+		Constant = {
+			fg = palette.orange,
+		},
+		Debug = {
+			fg = palette.red,
+		},
+		Define = {
+			fg = palette.magenta,
+		},
+		Delimiter = {
+			fg = '#89ddff',
+		},
+		Error = {
+			fg = palette.error_dark,
+		},
+		Exception = {
+			fg = palette.magenta,
+		},
+		Float = {
+			fg = palette.orange,
+		},
+		Function = {
+			fg = palette.blue,
+		},
+		Identifier = {
+			fg = palette.foreground,
+		},
+		Ignore = {
+			fg = palette.muted,
+		},
+		Include = {
+			fg = palette.magenta,
+		},
+		Keyword = {
+			fg = palette.magenta,
+		},
+		Label = {
+			fg = palette.blue,
+		},
+		Macro = {
+			fg = palette.blue,
+		},
+		Number = {
+			fg = palette.orange,
+		},
+		Operator = {
+			fg = '#89ddff',
+		},
+		PreCondit = {
+			fg = palette.magenta,
+		},
+		PreProc = {
+			fg = palette.magenta,
+		},
+		Repeat = {
+			fg = palette.magenta,
+		},
+		Special = {
+			fg = palette.yellow,
+		},
+		SpecialChar = {
+			fg = palette.yellow,
+		},
+		SpecialComment = {
+			fg = palette.comment_documentation,
+			italic = true,
+		},
+		Statement = {
+			fg = palette.magenta,
+		},
+		StorageClass = {
+			fg = palette.blue,
+		},
+		String = {
+			fg = '#89dceb',
+		},
+		Structure = {
+			fg = palette.blue,
+		},
+		Tag = {
+			fg = palette.red,
+		},
+		Todo = {
+			bold = true,
+			fg = palette.warn,
+		},
+		Type = {
+			bold = true,
+			fg = palette.blue,
+		},
+		Typedef = {
+			fg = palette.blue,
+		},
+		Underlined = {
+			underline = true,
+		},
+	})
+end
+
+local function apply_diff_and_spell_highlights()
+	set_highlights({
+		DiffAdd = {
+			bg = 'NONE',
+			fg = palette.green_bright,
+		},
+		DiffChange = {
+			bg = 'NONE',
+			fg = palette.warn,
+		},
+		DiffDelete = {
+			bg = 'NONE',
+			fg = palette.error,
+		},
+		DiffText = {
+			bg = 'NONE',
+			bold = true,
+			fg = '#00bfff',
+		},
+		SpellBad = {
+			sp = palette.error_dark,
+			undercurl = true,
+		},
+		SpellCap = {
+			sp = palette.yellow,
+			undercurl = true,
+		},
+		SpellLocal = {
+			sp = palette.teal,
+			undercurl = true,
+		},
+		SpellRare = {
+			sp = '#1abc9c',
+			undercurl = true,
+		},
+	})
+end
+
+local function apply_treesitter_highlights()
+	set_highlights({
+		['@attribute'] = {
+			fg = palette.blue,
+		},
+		['@attribute.builtin'] = {
+			fg = palette.cyan,
+		},
+		['@boolean'] = {
+			fg = palette.orange,
+		},
+		['@character'] = {
+			fg = palette.cyan,
+		},
+		['@character.special'] = {
+			fg = palette.yellow,
+		},
+		['@comment'] = {
+			fg = palette.comment,
+			italic = true,
+		},
+		['@comment.documentation'] = {
+			fg = palette.comment_documentation,
+			italic = true,
+		},
+		['@comment.error'] = {
+			bold = true,
+			fg = palette.error_dark,
+		},
+		['@comment.note'] = {
+			bold = true,
+			fg = palette.teal,
+		},
+		['@comment.todo'] = {
+			bold = true,
+			fg = palette.blue,
+		},
+		['@comment.warning'] = {
+			bold = true,
+			fg = palette.yellow,
+		},
+		['@constant'] = {
+			fg = palette.orange,
+		},
+		['@constant.builtin'] = {
+			fg = palette.orange,
+		},
+		['@constant.macro'] = {
+			fg = palette.orange,
+		},
+		['@constructor'] = {
+			fg = palette.blue,
+		},
+		['@diff.delta'] = {
+			fg = palette.warn,
+		},
+		['@diff.minus'] = {
+			fg = palette.error,
+		},
+		['@diff.plus'] = {
+			fg = palette.green_bright,
+		},
+		['@function'] = {
+			fg = palette.blue,
+		},
+		['@function.builtin'] = {
+			fg = palette.blue_bright,
+		},
+		['@function.call'] = {
+			fg = palette.blue,
+		},
+		['@function.macro'] = {
+			fg = palette.blue,
+		},
+		['@function.method'] = {
+			fg = palette.blue,
+		},
+		['@function.method.call'] = {
+			fg = palette.blue,
+		},
+		['@keyword'] = {
+			fg = palette.magenta,
+		},
+		['@keyword.conditional'] = {
+			fg = palette.magenta,
+		},
+		['@keyword.conditional.ternary'] = {
+			fg = palette.magenta,
+		},
+		['@keyword.coroutine'] = {
+			fg = palette.magenta,
+		},
+		['@keyword.debug'] = {
+			fg = palette.red,
+		},
+		['@keyword.directive'] = {
+			fg = palette.magenta,
+		},
+		['@keyword.directive.define'] = {
+			fg = palette.magenta,
+		},
+		['@keyword.exception'] = {
+			fg = palette.magenta,
+		},
+		['@keyword.function'] = {
+			fg = palette.magenta,
+		},
+		['@keyword.import'] = {
+			fg = palette.magenta,
+		},
+		['@keyword.modifier'] = {
+			fg = palette.magenta,
+		},
+		['@keyword.operator'] = {
+			fg = palette.magenta,
+		},
+		['@keyword.repeat'] = {
+			fg = palette.magenta,
+		},
+		['@keyword.return'] = {
+			fg = palette.magenta,
+		},
+		['@keyword.type'] = {
+			fg = palette.magenta,
+		},
+		['@label'] = {
+			fg = palette.blue,
+		},
+		['@module'] = {
+			fg = palette.cyan,
+		},
+		['@module.builtin'] = {
+			fg = palette.cyan,
+		},
+		['@number'] = {
+			fg = palette.orange,
+		},
+		['@number.float'] = {
+			fg = palette.orange,
+		},
+		['@operator'] = {
+			fg = '#89ddff',
+		},
+		['@property'] = {
+			fg = palette.cyan,
+		},
+		['@punctuation.bracket'] = {
+			fg = '#a4bac1',
+		},
+		['@punctuation.delimiter'] = {
+			fg = '#89ddff',
+		},
+		['@punctuation.special'] = {
+			fg = '#89ddff',
+		},
+		['@string'] = {
+			fg = '#89dceb',
+		},
+		['@string.documentation'] = {
+			fg = palette.comment_documentation,
+			italic = true,
+		},
+		['@string.escape'] = {
+			fg = palette.magenta,
+		},
+		['@string.regexp'] = {
+			fg = palette.magenta,
+		},
+		['@string.special'] = {
+			fg = palette.yellow,
+		},
+		['@string.special.path'] = {
+			fg = palette.cyan,
+		},
+		['@string.special.symbol'] = {
+			fg = palette.cyan,
+		},
+		['@string.special.url'] = {
+			fg = palette.cyan,
+			underline = true,
+		},
+		['@tag'] = {
+			fg = palette.red,
+		},
+		['@tag.attribute'] = {
+			fg = palette.cyan,
+		},
+		['@tag.builtin'] = {
+			fg = palette.red,
+		},
+		['@tag.delimiter'] = {
+			fg = '#89ddff',
+		},
+		['@type'] = {
+			bold = true,
+			fg = palette.blue,
+		},
+		['@type.builtin'] = {
+			fg = palette.blue_bright,
+		},
+		['@type.definition'] = {
+			fg = palette.blue,
+		},
+		['@variable'] = {
+			fg = palette.foreground,
+		},
+		['@variable.builtin'] = {
+			fg = palette.red,
+		},
+		['@variable.member'] = {
+			fg = palette.cyan,
+		},
+		['@variable.parameter'] = {
+			fg = palette.yellow,
+			italic = true,
+		},
+		['@variable.parameter.builtin'] = {
+			fg = palette.red,
+			italic = true,
+		},
+	})
+end
+
+local function apply_markup_highlights()
+	set_highlights({
+		['@markup.heading'] = {
+			bold = true,
+			fg = palette.blue,
+		},
+		['@markup.heading.1'] = {
+			bold = true,
+			fg = palette.blue,
+		},
+		['@markup.heading.2'] = {
+			bold = true,
+			fg = palette.cyan,
+		},
+		['@markup.heading.3'] = {
+			bold = true,
+			fg = palette.green,
+		},
+		['@markup.heading.4'] = {
+			bold = true,
+			fg = palette.yellow,
+		},
+		['@markup.heading.5'] = {
+			bold = true,
+			fg = palette.orange,
+		},
+		['@markup.heading.6'] = {
+			bold = true,
+			fg = palette.magenta,
+		},
+		['@markup.italic'] = {
+			italic = true,
+		},
+		['@markup.link'] = {
+			fg = palette.cyan,
+		},
+		['@markup.link.label'] = {
+			fg = palette.cyan,
+		},
+		['@markup.link.url'] = {
+			fg = palette.cyan,
+			underline = true,
+		},
+		['@markup.list'] = {
+			fg = palette.blue,
+		},
+		['@markup.list.checked'] = {
+			fg = palette.ok,
+		},
+		['@markup.list.unchecked'] = {
+			fg = palette.muted,
+		},
+		['@markup.math'] = {
+			fg = palette.yellow,
+		},
+		['@markup.quote'] = {
+			fg = palette.comment,
+			italic = true,
+		},
+		['@markup.raw'] = {
+			fg = palette.green,
+		},
+		['@markup.raw.block'] = {
+			fg = palette.green,
+		},
+		['@markup.strikethrough'] = {
+			strikethrough = true,
+		},
+		['@markup.strong'] = {
+			bold = true,
+		},
+		['@markup.underline'] = {
+			underline = true,
+		},
+	})
+end
+
+local function apply_lsp_highlights()
+	set_highlights({
+		LspCodeLens = {
+			fg = palette.muted,
+		},
+		LspCodeLensSeparator = {
+			fg = palette.separator,
+		},
+		LspInlayHint = {
+			bg = palette.background_alt,
+			fg = palette.muted,
+			italic = true,
+		},
+		LspReferenceRead = {
+			bg = '#2d3139',
+		},
+		LspReferenceText = {
+			bg = '#2d3139',
+		},
+		LspReferenceWrite = {
+			bg = '#3d3139',
+		},
+		LspSignatureActiveParameter = {
+			bold = true,
+			fg = palette.yellow,
+		},
+		['@lsp.mod.deprecated'] = {
+			strikethrough = true,
+		},
+		['@lsp.type.boolean'] = {
+			link = '@boolean',
+		},
+		['@lsp.type.builtinType'] = {
+			link = '@type.builtin',
+		},
+		['@lsp.type.class'] = {
+			link = '@type',
+		},
+		['@lsp.type.class.lua'] = {
+			fg = palette.red,
+			italic = true,
+			underline = true,
+		},
+		['@lsp.type.comment'] = {
+			link = '@comment',
+		},
+		['@lsp.type.decorator'] = {
+			link = '@attribute',
+		},
+		['@lsp.type.enum'] = {
+			link = '@type',
+		},
+		['@lsp.type.enumMember'] = {
+			link = '@constant',
+		},
+		['@lsp.type.escapeSequence'] = {
+			link = '@string.escape',
+		},
+		['@lsp.type.event'] = {
+			link = '@type',
+		},
+		['@lsp.type.formatSpecifier'] = {
+			link = '@punctuation.special',
+		},
+		['@lsp.type.function'] = {
+			link = '@function',
+		},
+		['@lsp.type.function.lua'] = {
+			fg = '#e5c07b',
+		},
+		['@lsp.type.interface'] = {
+			link = '@type',
+		},
+		['@lsp.type.keyword'] = {
+			link = '@keyword',
+		},
+		['@lsp.type.macro'] = {
+			link = '@function.macro',
+		},
+		['@lsp.type.method'] = {
+			link = '@function.method',
+		},
+		['@lsp.type.modifier'] = {
+			link = '@keyword.modifier',
+		},
+		['@lsp.type.namespace'] = {
+			link = '@module',
+		},
+		['@lsp.type.number'] = {
+			link = '@number',
+		},
+		['@lsp.type.operator'] = {
+			link = '@operator',
+		},
+		['@lsp.type.parameter'] = {
+			link = '@variable.parameter',
+		},
+		['@lsp.type.parameter.lua'] = {
+			fg = palette.yellow,
+		},
+		['@lsp.type.property'] = {
+			link = '@property',
+		},
+		['@lsp.type.property.lua'] = {
+			bold = true,
+			fg = palette.blue,
+		},
+		['@lsp.type.regexp'] = {
+			link = '@string.regexp',
+		},
+		['@lsp.type.selfKeyword'] = {
+			link = '@variable.builtin',
+		},
+		['@lsp.type.string'] = {
+			link = '@string',
+		},
+		['@lsp.type.struct'] = {
+			link = '@type',
+		},
+		['@lsp.type.type'] = {
+			link = '@type',
+		},
+		['@lsp.type.typeAlias'] = {
+			link = '@type.definition',
+		},
+		['@lsp.type.typeParameter'] = {
+			link = '@type',
+		},
+		['@lsp.type.unresolvedReference'] = {
+			sp = palette.error_dark,
+			undercurl = true,
+		},
+		['@lsp.type.variable'] = {
+			link = '@variable',
+		},
+		['@lsp.type.variable.lua'] = {
+			bold = true,
+			fg = palette.cyan_bright,
+		},
+		['@lsp.typemod.class.defaultLibrary'] = {
+			link = '@type.builtin',
+		},
+		['@lsp.typemod.enum.defaultLibrary'] = {
+			link = '@type.builtin',
+		},
+		['@lsp.typemod.enumMember.defaultLibrary'] = {
+			link = '@constant.builtin',
+		},
+		['@lsp.typemod.function.defaultLibrary'] = {
+			link = '@function.builtin',
+		},
+		['@lsp.typemod.keyword.async'] = {
+			link = '@keyword.coroutine',
+		},
+		['@lsp.typemod.macro.defaultLibrary'] = {
+			link = '@function.builtin',
+		},
+		['@lsp.typemod.method.defaultLibrary'] = {
+			link = '@function.builtin',
+		},
+		['@lsp.typemod.operator.injected'] = {
+			link = '@operator',
+		},
+		['@lsp.typemod.string.injected'] = {
+			link = '@string',
+		},
+		['@lsp.typemod.type.defaultLibrary'] = {
+			link = '@type.builtin',
+		},
+		['@lsp.typemod.variable.defaultLibrary'] = {
+			link = '@variable.builtin',
+		},
+		['@lsp.typemod.variable.injected'] = {
+			link = '@variable',
+		},
+	})
+end
+local function apply_highlights()
+	apply_editor_highlights()
+	apply_syntax_highlights()
+	apply_diff_and_spell_highlights()
+	apply_diagnostic_highlights()
+	apply_treesitter_highlights()
+	apply_markup_highlights()
+	apply_lsp_highlights()
+end
+
+function M.setup()
+	local group = api.nvim_create_augroup('QompassUIColors', {
+		clear = true,
+	})
+
+	api.nvim_create_autocmd('ColorScheme', {
+		callback = apply_highlights,
+		desc = 'Reapply Qompass UI highlights after colorscheme changes',
+		group = group,
+	})
+
+	apply_highlights()
 end
 
 M.setup()
+
 return M
