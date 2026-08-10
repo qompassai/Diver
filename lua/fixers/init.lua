@@ -1,6 +1,6 @@
 -- #################################################################
 -- /qompassai/lua/fixers/init.lua
--- Qompass AI Init
+-- Qompass AI Fixer Init Module
 -- SPDX-License-Identifier: Apache-2.0
 -- Copyright (c) 2026 Qompass AI
 --

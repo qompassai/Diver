@@ -10,7 +10,7 @@ local api = vim.api
 local fn = vim.fn
 local uv = vim.uv
 
----@class QompassImagePlacement
+---@class ImagePlacement
 ---@field id integer|nil
 ---@field key string
 ---@field opts table
@@ -18,7 +18,7 @@ local uv = vim.uv
 ---@field serial integer
 ---@field temp_path string|nil
 
----@class QompassImagePreview
+---@class ImagePreview
 ---@field buf integer|nil
 ---@field enabled boolean
 ---@field path string|nil
@@ -119,12 +119,10 @@ local function normalize_path(path)
 	if type(expanded) ~= 'string' or expanded == '' then
 		return path
 	end
-
 	local absolute = fn.fnamemodify(expanded, ':p')
 	if type(absolute) ~= 'string' or absolute == '' then
 		return expanded
 	end
-
 	return vim.fs.normalize(absolute)
 end
 
@@ -212,12 +210,10 @@ local function convert_with_luamagick(module, source, temp_path)
 	pcall(function()
 		loaded:destroy()
 	end)
-
 	if not write_ok or write_result == false or not is_readable_file(temp_path) then
 		delete_temp(temp_path)
 		return false, 'LuaMagick could not create a PNG preview'
 	end
-
 	return true, nil
 end
 
@@ -256,18 +252,15 @@ local function prepare_png(path, callback)
 				callback(data, temp_path, nil)
 				return
 			end
-
 			delete_temp(temp_path)
 			callback(nil, nil, read_error)
 			return
 		end
-
 		if not M.config.allow_cli_fallback then
 			callback(nil, nil, conversion_error)
 			return
 		end
 	end
-
 	if not M.config.allow_cli_fallback or fn.executable('magick') ~= 1 then
 		callback(nil, nil, 'Install the LuaMagick rock or enable the ImageMagick CLI fallback')
 		return
@@ -307,7 +300,7 @@ end
 
 ---@param key string
 function M.remove(key)
-	---@type QompassImagePlacement|nil
+	---@type ImagePlacement|nil
 	local placement = M.state.placements[key]
 	if not placement then
 		return
@@ -375,7 +368,7 @@ function M.place(key, path, opts)
 		return nil
 	end
 
-	---@type QompassImagePlacement|nil
+	---@type ImagePlacement|nil
 	local existing = M.state.placements[key]
 	if existing and existing.path == path then
 		existing.opts = vim.deepcopy(opts)
@@ -388,7 +381,7 @@ function M.place(key, path, opts)
 	M.remove(key)
 	M.state.serial = M.state.serial + 1
 
-	---@type QompassImagePlacement
+	---@type ImagePlacement
 	local placement = {
 		id = nil,
 		key = key,
@@ -462,18 +455,16 @@ end
 
 ---@return integer
 local function ensure_preview_window()
-	---@type QompassImagePreview
+	---@type ImagePreview
 	local preview = M.state.preview
 	if preview.win and api.nvim_win_is_valid(preview.win) then
 		return preview.win
 	end
-
 	local width, height = preview_dimensions()
 	preview.buf = api.nvim_create_buf(false, true)
 	api.nvim_set_option_value('bufhidden', 'wipe', {
 		buf = preview.buf,
 	})
-
 	preview.win = api.nvim_open_win(preview.buf, false, {
 		border = M.config.preview.border,
 		col = vim.o.columns - width - 2,
@@ -487,7 +478,6 @@ local function ensure_preview_window()
 		width = width,
 		zindex = M.config.preview.zindex,
 	})
-
 	api.nvim_set_option_value('winblend', 0, {
 		win = preview.win,
 	})
@@ -497,7 +487,6 @@ local function ensure_preview_window()
 
 	return preview.win
 end
-
 ---@param path string|nil
 function M.preview(path)
 	path = path or current_image_path()
@@ -512,18 +501,14 @@ function M.preview(path)
 		notify_once('Remote images are not fetched automatically', vim.log.levels.INFO, 'remote')
 		return
 	end
-
 	path = normalize_path(path)
-
 	---@type integer
 	local win = ensure_preview_window()
 	local position = api.nvim_win_get_position(win)
 	local width = api.nvim_win_get_width(win)
 	local height = api.nvim_win_get_height(win)
-
 	M.state.preview.enabled = true
 	M.state.preview.path = path
-
 	M.place('preview', path, {
 		col = position[2] + 2,
 		height = height,
@@ -532,18 +517,14 @@ function M.preview(path)
 		zindex = M.config.preview.zindex + 1,
 	})
 end
-
 M.render = M.preview
-
 ---@param preserve_path boolean|nil
 function M.close_preview(preserve_path)
 	M.remove('preview')
-
 	local preview = M.state.preview
 	if preview.win and api.nvim_win_is_valid(preview.win) then
 		pcall(api.nvim_win_close, preview.win, true)
 	end
-
 	preview.buf = nil
 	preview.enabled = false
 	preview.win = nil
@@ -551,32 +532,26 @@ function M.close_preview(preserve_path)
 		preview.path = nil
 	end
 end
-
 ---@param path string|nil
 function M.toggle(path)
 	if M.state.preview.enabled then
 		M.close_preview()
 		return
 	end
-
 	M.preview(path)
 end
-
 function M.refresh()
 	local path = M.state.preview.path or current_image_path()
 	if not path then
 		return
 	end
-
 	M.close_preview(true)
 	M.preview(path)
 end
-
 function M.setup()
-	local group = api.nvim_create_augroup('QompassNativeImages', {
+	local group = api.nvim_create_augroup('NativeImages', {
 		clear = true,
 	})
-
 	api.nvim_create_user_command('ImagePreview', function(args)
 		local path = args.args ~= '' and args.args or nil
 		M.preview(path)
@@ -585,7 +560,6 @@ function M.setup()
 		force = true,
 		nargs = '?',
 	})
-
 	api.nvim_create_user_command('ImagePreviewToggle', function(args)
 		local path = args.args ~= '' and args.args or nil
 		M.toggle(path)
@@ -594,17 +568,14 @@ function M.setup()
 		force = true,
 		nargs = '?',
 	})
-
 	api.nvim_create_user_command('ImagePreviewRefresh', M.refresh, {
 		force = true,
 	})
-
 	api.nvim_create_user_command('ImagePreviewClose', function()
 		M.close_preview()
 	end, {
 		force = true,
 	})
-
 	api.nvim_create_autocmd('VimResized', {
 		callback = function()
 			if M.state.preview.enabled then
@@ -613,13 +584,10 @@ function M.setup()
 		end,
 		group = group,
 	})
-
 	api.nvim_create_autocmd('VimLeavePre', {
 		callback = clear_all,
 		group = group,
 	})
 end
-
 M.setup()
-
 return M

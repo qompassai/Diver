@@ -88,7 +88,6 @@ local function apply_diagnostic_highlights()
 		},
 	})
 end
-
 local function apply_editor_highlights()
 	set_highlights({
 		ColorColumn = {
@@ -938,13 +937,13 @@ local function apply_highlights()
 end
 
 function M.setup()
-	local group = api.nvim_create_augroup('QompassUIColors', {
+	local group = api.nvim_create_augroup('UIColors', {
 		clear = true,
 	})
 
 	api.nvim_create_autocmd('ColorScheme', {
 		callback = apply_highlights,
-		desc = 'Reapply Qompass UI highlights after colorscheme changes',
+		desc = 'Reapply UI highlights after colorscheme changes',
 		group = group,
 	})
 

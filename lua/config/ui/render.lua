@@ -7,21 +7,21 @@ local api = vim.api
 local fn = vim.fn
 local uv = vim.uv
 local image = require('config.ui.image')
-local namespace = api.nvim_create_namespace('qompass_native_render')
----@alias QompassRenderKind
+local namespace = api.nvim_create_namespace('native_render')
+---@alias RenderKind
 ---| 'css'
 ---| 'html'
 ---| 'image'
 ---| 'latex'
 ---| 'markdown'
 ---| 'video'
----@class QompassRenderBuffer
+---@class RenderBuffer
 ---@field browser_opened boolean
 ---@field enabled boolean
 ---@field frame_path string|nil
 ---@field group_name string
 ---@field job vim.SystemObj|nil
----@field kind QompassRenderKind
+---@field kind RenderKind
 ---@field last_static_html string|nil
 ---@field path string
 ---@field temp_dir string|nil
@@ -50,12 +50,10 @@ M.config = {
 		scale_width = 1280,
 	},
 }
-
 M.state = {
 	buffers = {},
 	notified = {},
 }
-
 local image_extensions = {
 	avif = true,
 	gif = true,
@@ -65,7 +63,6 @@ local image_extensions = {
 	svg = true,
 	webp = true,
 }
-
 local video_extensions = {
 	avi = true,
 	m4v = true,
@@ -163,15 +160,14 @@ local function path_name(path)
 end
 
 ---@param bufnr integer
----@return QompassRenderKind|nil
+---@return RenderKind|nil
 local function detect_kind(bufnr)
 	local filetype = vim.bo[bufnr].filetype
-	---@type QompassRenderKind|nil
+	---@type RenderKind|nil
 	local kind = filetype_kinds[filetype]
 	if kind then
 		return kind
 	end
-
 	local ext = extension(buffer_path(bufnr))
 	if ext and image_extensions[ext] then
 		return 'image'
@@ -195,10 +191,10 @@ local function detect_kind(bufnr)
 end
 
 ---@param bufnr integer
----@param kind QompassRenderKind
----@return QompassRenderBuffer
+---@param kind RenderKind
+---@return RenderBuffer
 local function ensure_state(bufnr, kind)
-	---@type QompassRenderBuffer|nil
+	---@type RenderBuffer|nil
 	local state = M.state.buffers[bufnr]
 	if state then
 		state.kind = kind
@@ -210,7 +206,7 @@ local function ensure_state(bufnr, kind)
 		browser_opened = false,
 		enabled = false,
 		frame_path = nil,
-		group_name = 'QompassRenderBuffer' .. bufnr,
+		group_name = 'RenderBuffer' .. bufnr,
 		job = nil,
 		kind = kind,
 		last_static_html = nil,
@@ -226,7 +222,7 @@ local function ensure_state(bufnr, kind)
 	return state
 end
 
----@param state QompassRenderBuffer
+---@param state RenderBuffer
 ---@return string
 local function ensure_temp_dir(state)
 	if state.temp_dir and fn.isdirectory(state.temp_dir) == 1 then
@@ -282,7 +278,7 @@ end
 ---@return string
 local function reload_script()
 	return table.concat({
-		'<script data-qompass-live-reload>',
+		'<script data-live-reload>',
 		'window.setTimeout(function () {',
 		'  window.location.reload();',
 		'}, ',
@@ -481,7 +477,7 @@ local function css_preview_html(css, title)
 	}, '\n')
 end
 
----@param state QompassRenderBuffer
+---@param state RenderBuffer
 ---@param html string
 ---@param live boolean
 local function publish_browser_html(state, html, live)
@@ -511,7 +507,7 @@ local function publish_browser_html(state, html, live)
 end
 
 ---@param bufnr integer
----@param state QompassRenderBuffer
+---@param state RenderBuffer
 local function render_markdown_browser(bufnr, state)
 	local content = buffer_text(bufnr)
 	local title = path_name(state.path)
@@ -676,7 +672,7 @@ function M.preview_markdown_image(bufnr)
 	image.preview(path)
 end
 
----@param state QompassRenderBuffer
+---@param state RenderBuffer
 local function cancel_job(state)
 	if not state.job then
 		return
@@ -687,7 +683,7 @@ local function cancel_job(state)
 	state.job = nil
 end
 
----@param state QompassRenderBuffer
+---@param state RenderBuffer
 ---@param pdf_path string
 ---@param token integer
 local function render_pdf_page(state, pdf_path, token)
@@ -734,7 +730,7 @@ local function render_pdf_page(state, pdf_path, token)
 end
 
 ---@param bufnr integer
----@param state QompassRenderBuffer
+---@param state RenderBuffer
 local function render_latex(bufnr, state)
 	cancel_job(state)
 	state.token = state.token + 1
@@ -793,7 +789,7 @@ local function render_latex(bufnr, state)
 	end)
 end
 
----@param state QompassRenderBuffer
+---@param state RenderBuffer
 local function stop_video(state)
 	if state.video_timer then
 		pcall(function()
@@ -812,7 +808,7 @@ local function stop_video(state)
 	end
 end
 
----@param state QompassRenderBuffer
+---@param state RenderBuffer
 local function render_video_frame(state)
 	if not state.enabled or state.kind ~= 'video' or state.video_busy then
 		return
@@ -870,7 +866,7 @@ local function render_video_frame(state)
 	end)
 end
 
----@param state QompassRenderBuffer
+---@param state RenderBuffer
 local function start_video(state)
 	stop_video(state)
 	state.enabled = true
@@ -890,7 +886,7 @@ local function start_video(state)
 end
 
 ---@param bufnr integer
----@param state QompassRenderBuffer
+---@param state RenderBuffer
 local function refresh_state(bufnr, state)
 	if not state.enabled or not valid_buffer(bufnr) then
 		return
@@ -914,7 +910,7 @@ local function refresh_state(bufnr, state)
 end
 
 ---@param bufnr integer
----@param state QompassRenderBuffer
+---@param state RenderBuffer
 local function schedule_refresh(bufnr, state)
 	state.token = state.token + 1
 	local token = state.token
@@ -951,7 +947,6 @@ function M.enable(bufnr)
 	local group = api.nvim_create_augroup(state.group_name, {
 		clear = true,
 	})
-
 	if kind == 'markdown' or kind == 'html' or kind == 'css' or kind == 'latex' then
 		api.nvim_create_autocmd({
 			'TextChanged',
@@ -995,7 +990,7 @@ end
 ---@param bufnr integer|nil
 function M.disable(bufnr)
 	bufnr = bufnr or api.nvim_get_current_buf()
-	---@type QompassRenderBuffer|nil
+	---@type RenderBuffer|nil
 	local state = M.state.buffers[bufnr]
 	if not state or not state.enabled then
 		return
@@ -1022,7 +1017,7 @@ end
 ---@param bufnr integer|nil
 function M.toggle(bufnr)
 	bufnr = bufnr or api.nvim_get_current_buf()
-	---@type QompassRenderBuffer|nil
+	---@type RenderBuffer|nil
 	local state = M.state.buffers[bufnr]
 	if state and state.enabled then
 		M.disable(bufnr)
@@ -1034,7 +1029,7 @@ end
 ---@param bufnr integer|nil
 function M.refresh(bufnr)
 	bufnr = bufnr or api.nvim_get_current_buf()
-	---@type QompassRenderBuffer|nil
+	---@type RenderBuffer|nil
 	local state = M.state.buffers[bufnr]
 	if not state or not state.enabled then
 		M.enable(bufnr)
@@ -1045,7 +1040,7 @@ end
 
 function M.status()
 	local bufnr = api.nvim_get_current_buf()
-	---@type QompassRenderBuffer|nil
+	---@type RenderBuffer|nil
 	local state = M.state.buffers[bufnr]
 	if not state then
 		vim.notify('Renderer: inactive', vim.log.levels.INFO)
@@ -1065,7 +1060,7 @@ local function shutdown()
 	end
 
 	for _, bufnr in ipairs(buffers) do
-		---@type QompassRenderBuffer
+		---@type RenderBuffer
 		local state = M.state.buffers[bufnr]
 		M.disable(bufnr)
 		if state.temp_dir then
@@ -1075,7 +1070,7 @@ local function shutdown()
 end
 
 function M.setup()
-	local group = api.nvim_create_augroup('QompassNativeRender', {
+	local group = api.nvim_create_augroup('NativeRender', {
 		clear = true,
 	})
 

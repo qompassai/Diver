@@ -4,12 +4,12 @@
 -- ----------------------------------------
 local M = {}
 require('illuminate').configure({
+	delay = 100,
 	providers = {
 		'lsp',
 		'treesitter',
 		'regex',
 	},
-	delay = 100,
 	filetype_overrides = {},
 	filetypes_denylist = {
 		'dirbuf',

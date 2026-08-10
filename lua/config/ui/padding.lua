@@ -5,7 +5,7 @@
 local api = vim.api
 local fn = vim.fn
 local M = {}
-local namespace = api.nvim_create_namespace('QompassSoftPadding')
+local namespace = api.nvim_create_namespace('SoftPadding')
 local defaults = {
 	auto_enable = {},
 	debounce_ms = 80,
@@ -32,7 +32,7 @@ M.state = {
 	setup = false,
 }
 
----@class QompassPaddingState
+---@class PaddingState
 ---@field enabled boolean
 ---@field mode 'soft'|'dense'
 ---@field notified_limit boolean
@@ -43,7 +43,6 @@ M.state = {
 local function valid_buffer(bufnr)
 	return type(bufnr) == 'number' and api.nvim_buf_is_valid(bufnr) and api.nvim_buf_is_loaded(bufnr)
 end
-
 ---@param mode any
 ---@return 'soft'|'dense'|nil
 local function valid_mode(mode)
@@ -54,7 +53,7 @@ local function valid_mode(mode)
 end
 
 ---@param bufnr integer
----@return QompassPaddingState
+---@return PaddingState
 local function buffer_state(bufnr)
 	local state = M.state.buffers[bufnr]
 	if state then
@@ -69,7 +68,6 @@ local function buffer_state(bufnr)
 	M.state.buffers[bufnr] = state
 	return state
 end
-
 ---@param count integer
 ---@param text string
 ---@param highlight string
@@ -86,14 +84,12 @@ local function virtual_lines(count, text, highlight)
 	end
 	return lines
 end
-
 ---@param bufnr integer
 local function clear(bufnr)
 	if api.nvim_buf_is_valid(bufnr) then
 		api.nvim_buf_clear_namespace(bufnr, namespace, 0, -1)
 	end
 end
-
 ---@param bufnr integer
 ---@param row integer
 ---@param config table
@@ -176,9 +172,7 @@ local function render(bufnr)
 		clear(bufnr)
 		return
 	end
-
 	clear(bufnr)
-
 	local line_count = api.nvim_buf_line_count(bufnr)
 	local max_lines = math.max(1, math.floor(tonumber(M.config.max_lines) or 50000))
 	---@cast max_lines integer
@@ -298,9 +292,7 @@ function M.set_mode(mode, bufnr)
 		schedule_render(bufnr, 0)
 	end
 end
-
----@param bufnr integer|nil
-function M.refresh(bufnr)
+function M.refresh(bufnr) ---@param bufnr integer|nil
 	bufnr = bufnr or api.nvim_get_current_buf()
 	schedule_render(bufnr, 0)
 end
@@ -319,10 +311,9 @@ function M.setup(opts)
 		M.config = vim.tbl_deep_extend('force', {}, M.config, opts)
 	end
 
-	local group = api.nvim_create_augroup('QompassNativePadding', {
+	local group = api.nvim_create_augroup('NativePadding', {
 		clear = true,
 	})
-
 	api.nvim_create_autocmd({
 		'TextChanged',
 		'TextChangedI',
