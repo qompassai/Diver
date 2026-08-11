@@ -1,0 +1,25 @@
+<!--
+local modules = {
+        'alejandra',
+        'blackd',
+        'buildifier',
+        'cookstyle',
+        'css-beautify',
+        'djlint',
+        'eslint_d',
+        'gofumpt',
+        'goimports',
+        'htmlbeautify',
+        'ktlint',
+        'markdownlint',
+        'oxlint',
+        'phpcsfixer',
+        'remark-lint',
+        'rumdl',
+        'shellharden',
+        'sql-formatter',
+        'statix',
+        'stylelint',
+        'textlint',
+}
+-->
