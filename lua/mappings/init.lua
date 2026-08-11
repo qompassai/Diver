@@ -4,40 +4,43 @@
 -----------------------------------------------------
 ---@module 'mappings.init'
 local M = {}
-M.setup = function()
-    local mapping_files = {
-        'aimap',
-        'cicdmap',
-        'datamap',
-        'ddxmap',
-        'disable',
-        'genmap',
-        'langmap',
-        'lspmap',
-        'lintmap',
-        'mojomap',
-        'navmap',
-        'utilmap',
-    }
-    for _, name in ipairs(mapping_files) do
-        local ok, mod = pcall(require, 'mappings.' .. name)
-        if not ok then
-            vim.echo('Failed to load: ' .. name, vim.log.levels.WARN)
-            goto continue
-        end
-        local custom_setup_fn = 'setup_' .. name
-        local default_setup_fn = 'setup'
-        if type(mod[custom_setup_fn]) == 'function' then
-            mod[custom_setup_fn]()
-        elseif type(mod[default_setup_fn]) == 'function' then
-            mod[default_setup_fn]()
-        else
-            vim.echo(
-                string.format('Mapping \'%s\' has neither %s() nor %s()', name, custom_setup_fn, default_setup_fn),
-                vim.log.levels.WARN
-            )
-        end
-        ::continue::
-    end
+local mapping_modules = {
+	'aimap',
+	'cicdmap',
+	'datamap',
+	'ddxmap',
+	'disable',
+	'genmap',
+	'langmap',
+	'lspmap',
+	'lintmap',
+	'utilmap',
+	'navmap',
+}
+---@param message string
+local function warn(message)
+	vim.notify(message, vim.log.levels.WARN, {
+		title = 'Mapping setup',
+	})
+end
+function M.setup()
+	for _, name in ipairs(mapping_modules) do
+		local ok, module_or_error = pcall(require, 'mappings.' .. name)
+		if not ok then
+			warn(('Failed to load mappings.%s: %s'):format(name, tostring(module_or_error)))
+		else
+			local module = module_or_error
+			local setup_name = 'setup_' .. name
+			local setup = module[setup_name] or module.setup
+			if type(setup) ~= 'function' then
+				warn(('mappings.%s has no %s() or setup() function'):format(name, setup_name))
+			else
+				local setup_ok, setup_error = pcall(setup)
+				if not setup_ok then
+					warn(('Failed to configure mappings.%s: %s'):format(name, tostring(setup_error)))
+				end
+			end
+		end
+	end
 end
 return M

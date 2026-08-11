@@ -5,6 +5,8 @@
 local api = vim.api
 local debug = vim.debug
 local fn = vim.fn
+local levels = vim.log.levels
+local map = vim.keymap.set
 local uv = vim.uv
 local M = {}
 local SCALA_FILETYPES = {
@@ -26,7 +28,7 @@ local setup_done = false
 ---@param message string
 ---@param level? integer
 local function notify(message, level)
-	vim.notify(message, level or vim.log.levels.INFO, {
+	vim.notify(message, level or levels.INFO, {
 		title = 'dap.scala',
 	})
 end
@@ -65,7 +67,7 @@ local function current_scala_buffer()
 		return bufnr
 	end
 
-	notify('Scala DAP is available only in Scala, Scala script, and sbt buffers', vim.log.levels.ERROR)
+	notify('Scala DAP is available only in Scala, Scala script, and sbt buffers', levels.ERROR)
 	return nil
 end
 ---@param bufnr integer
@@ -86,17 +88,15 @@ local function metals_client(bufnr)
 
 	return nil
 end
-
 ---@return integer?, vim.lsp.Client?
 local function current_metals_context()
 	local bufnr = current_scala_buffer()
 	if not bufnr then
 		return nil, nil
 	end
-
 	local client = metals_client(bufnr)
 	if not client then
-		notify('Metals is not attached to the current Scala buffer', vim.log.levels.ERROR)
+		notify('Metals is not attached to the current Scala buffer', levels.ERROR)
 		return nil, nil
 	end
 
@@ -122,12 +122,10 @@ local function workspace_root(bufnr)
 		'.metals',
 		'.git',
 	})
-
 	return root or fn.getcwd()
 end
 
----@return string[]
-local function prompt_args()
+local function prompt_args() ---@return string[]
 	local value = input('Args: ')
 	if value == '' then
 		return {}
@@ -137,24 +135,19 @@ local function prompt_args()
 		trimempty = true,
 	})
 end
-
----@return string[]
-local function prompt_jvm_options()
+local function prompt_jvm_options() ---@return string[]
 	local value = input('JVM options: ')
 	if value == '' then
 		return {}
 	end
-
 	return vim.split(value, '%s+', {
 		trimempty = true,
 	})
 end
-
 ---@return table<string, string>
 local function prompt_env()
 	---@type table<string, string>
 	local env = {}
-
 	while true do
 		local key = input('Env key (blank to finish): ')
 		if key == '' then
@@ -162,32 +155,26 @@ local function prompt_env()
 		end
 		env[key] = input('Env value for ' .. key .. ': ')
 	end
-
 	return env
 end
 
----@return string?
-local function prompt_env_file()
+local function prompt_env_file() ---@return string?
 	local value = input('Env file (optional): ', '', 'file')
 	return value ~= '' and value or nil
 end
-
----@return string?
-local function prompt_build_target()
+local function prompt_build_target() ---@return string?
 	local value = input('Build target (optional): ')
 	return value ~= '' and value or nil
 end
-
 ---@return string?
 local function prompt_run_type()
 	local value = input('Run type (run|runOrTestFile|testFile|testTarget): ', 'runOrTestFile')
-
 	if value == '' then
 		return 'runOrTestFile'
 	end
 
 	if not RUN_TYPES[value] then
-		notify('Invalid Scala run type: ' .. value, vim.log.levels.ERROR)
+		notify('Invalid Scala run type: ' .. value, levels.ERROR)
 		return nil
 	end
 
@@ -204,19 +191,15 @@ local function execute_metals_command(client, bufnr, command, arguments)
 		command = command,
 		arguments = { arguments },
 	}, 30000, bufnr)
-
 	if not response then
 		return nil, 'No response from Metals'
 	end
-
 	if response.err then
 		local message = type(response.err) == 'table' and response.err.message or nil
 		return nil, message or tostring(response.err)
 	end
-
 	return response.result, nil
 end
-
 ---@param result any
 ---@return string?
 local function adapter_uri(result)
@@ -259,7 +242,7 @@ local function start_metals_debug(bufnr, client, params, name)
 
 	local uri = adapter_uri(result)
 	if not uri then
-		notify('Metals did not return a debug adapter URI', vim.log.levels.ERROR)
+		notify('Metals did not return a debug adapter URI', levels.ERROR)
 		return
 	end
 
@@ -290,7 +273,6 @@ function M.debug_main()
 		notify('Main class is required', vim.log.levels.ERROR)
 		return
 	end
-
 	start_metals_debug(bufnr, client, {
 		mainClass = main_class,
 		buildTarget = prompt_build_target(),
@@ -383,36 +365,30 @@ function M.run_command_for_file()
 
 	show_scratch_buffer(vim.split(vim.inspect(result), '\n', { plain = true }), 'lua')
 end
-
 function M.attach_jdwp()
 	local bufnr, client = current_metals_context()
 	if not bufnr or not client then
 		return
 	end
-
 	local host = input('Host: ', '127.0.0.1')
 	if host == '' then
 		host = '127.0.0.1'
 	end
-
 	local raw_port = tonumber(input('Port: ', '5005'))
 	if not raw_port or raw_port < 1 or raw_port > 65535 or raw_port % 1 ~= 0 then
 		notify('Port must be an integer from 1 through 65535', vim.log.levels.ERROR)
 		return
 	end
-
 	start_metals_debug(bufnr, client, {
 		hostName = host,
 		port = math.floor(raw_port),
 		buildTarget = prompt_build_target(),
 	}, 'Scala attach JDWP')
 end
-
 function M.sbt_debug_hint()
 	if not current_scala_buffer() then
 		return
 	end
-
 	show_scratch_buffer({
 		'Start sbt with a debug port, for example:',
 		'sbt -jvm-debug 5005',
@@ -475,7 +451,7 @@ local function configure_buffer(bufnr)
 			silent = true,
 		}
 	end
-	vim.keymap.set('n', '<leader>sm', M.debug_main, map_opts('Scala DAP main'))
+	map('n', '<leader>sm', M.debug_main, map_opts('Scala DAP main'))
 	vim.keymap.set('n', '<leader>st', M.debug_test_class, map_opts('Scala DAP test'))
 	vim.keymap.set('n', '<leader>sf', M.debug_current_file, map_opts('Scala DAP file'))
 	vim.keymap.set('n', '<leader>sr', M.run_command_for_file, map_opts('Scala run command'))
@@ -501,7 +477,6 @@ function M.setup()
 			configure_buffer(event.buf)
 		end,
 	})
-
 	api.nvim_create_autocmd({
 		'BufReadPost',
 		'BufNewFile',
@@ -513,7 +488,6 @@ function M.setup()
 			configure_buffer(event.buf)
 		end,
 	})
-
 	configure_buffer(api.nvim_get_current_buf())
 end
 

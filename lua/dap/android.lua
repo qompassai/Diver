@@ -20,7 +20,7 @@ local FILE_PATTERNS = {
 	'*.kt',
 	'*.kts',
 }
-local CONFIGURED_FLAG = 'qompass_android_dap_configured'
+local CONFIGURED_FLAG = 'android_dap_configured'
 M.adapters = {
 	adb = {
 		command = 'adb',
@@ -32,12 +32,8 @@ M.adapters = {
 		command = 'lldb-dap',
 	},
 }
-
----@type string?
-local selected_device
-
----@type table<string, { serial: string, local_spec: string }>
-local managed_forwards = {}
+local selected_device ---@type string?
+local managed_forwards = {} ---@type table<string, { serial: string, local_spec: string }>
 
 ---@param message string
 ---@param level? integer
@@ -46,7 +42,6 @@ local function notify(message, level)
 		title = 'dap.android',
 	})
 end
-
 ---@param command string
 ---@return boolean
 local function executable(command)
@@ -66,7 +61,6 @@ end
 local function input(prompt, default, completion)
 	return fn.input(prompt, default or '', completion or '')
 end
-
 ---@param value string?
 ---@return string
 local function trim(value)
@@ -85,7 +79,6 @@ local function split_lines(value)
 		trimempty = true,
 	})
 end
-
 ---@param command string[]
 ---@param run_cwd? string
 ---@return integer, string, string
@@ -105,16 +98,13 @@ local function pick(items, prompt)
 	if #items == 0 then
 		return nil
 	end
-
 	if #items == 1 then
 		return items[1]
 	end
-
 	local choices = { prompt }
 	for index, item in ipairs(items) do
 		choices[#choices + 1] = string.format('%d. %s', index, item)
 	end
-
 	local choice = fn.inputlist(choices)
 	if choice < 1 or choice > #items then
 		return nil
@@ -122,7 +112,6 @@ local function pick(items, prompt)
 
 	return items[choice]
 end
-
 ---@param bufnr integer
 ---@return string
 local function buffer_file(bufnr)
@@ -272,9 +261,7 @@ local function is_android_buffer(bufnr)
 	if not api.nvim_buf_is_valid(bufnr) then
 		return false
 	end
-
 	local applicable_file = FILETYPES[vim.bo[bufnr].filetype] == true or filename_matches(bufnr)
-
 	return applicable_file and android_project_root(bufnr) ~= nil
 end
 
@@ -388,7 +375,6 @@ local function valid_qualified_name(value)
 		end
 		count = count + 1
 	end
-
 	return count > 0
 end
 
@@ -398,12 +384,9 @@ local function valid_activity_name(activity)
 	if activity == '' then
 		return true
 	end
-
 	local normalized = activity:sub(1, 1) == '.' and activity:sub(2) or activity
-
 	return valid_qualified_name(normalized)
 end
-
 ---@param root string
 ---@param bufnr integer
 ---@return string[]
@@ -414,17 +397,14 @@ local function gradle_candidates(root, bufnr)
 		'build.gradle.kts',
 	})
 	local candidates = {}
-
 	if module_root then
 		candidates[#candidates + 1] = vim.fs.joinpath(module_root, 'build.gradle')
 		candidates[#candidates + 1] = vim.fs.joinpath(module_root, 'build.gradle.kts')
 	end
-
 	candidates[#candidates + 1] = vim.fs.joinpath(root, 'app', 'build.gradle')
 	candidates[#candidates + 1] = vim.fs.joinpath(root, 'app', 'build.gradle.kts')
 	candidates[#candidates + 1] = vim.fs.joinpath(root, 'build.gradle')
 	candidates[#candidates + 1] = vim.fs.joinpath(root, 'build.gradle.kts')
-
 	local results = {}
 	local seen = {}
 	for _, candidate in ipairs(candidates) do
@@ -433,7 +413,6 @@ local function gradle_candidates(root, bufnr)
 			results[#results + 1] = candidate
 		end
 	end
-
 	return results
 end
 
@@ -448,17 +427,14 @@ local function package_from_gradle(root, bufnr)
 					or line:match([[applicationId%s*=?%s*'([^']+)']])
 					or line:match([[namespace%s*=?%s*"([^"]+)"]])
 					or line:match([[namespace%s*=?%s*'([^']+)']])
-
 				if package_name and valid_qualified_name(package_name) then
 					return package_name
 				end
 			end
 		end
 	end
-
 	return nil
 end
-
 ---@param root string
 ---@param bufnr integer
 ---@return string?
@@ -466,21 +442,17 @@ local function package_from_manifest(root, bufnr)
 	local file = buffer_file(bufnr)
 	local candidates = {}
 	local nearby_manifest = manifest_above(file)
-
 	if nearby_manifest then
 		candidates[#candidates + 1] = nearby_manifest
 	end
-
 	candidates[#candidates + 1] = vim.fs.joinpath(root, 'app', 'src', 'main', 'AndroidManifest.xml')
 	candidates[#candidates + 1] = vim.fs.joinpath(root, 'src', 'main', 'AndroidManifest.xml')
-
 	local seen = {}
 	for _, manifest in ipairs(candidates) do
 		if manifest and not seen[manifest] and file_exists(manifest) then
 			seen[manifest] = true
 			for _, line in ipairs(fn.readfile(manifest)) do
 				local package_name = line:match([[package%s*=%s*"([^"]+)"]]) or line:match([[package%s*=%s*'([^']+)']])
-
 				if package_name and valid_qualified_name(package_name) then
 					return package_name
 				end
@@ -497,44 +469,34 @@ end
 local function resolve_package_name(root, bufnr)
 	local guessed = package_from_gradle(root, bufnr) or package_from_manifest(root, bufnr) or ''
 	local package_name = input('Android package: ', guessed)
-
 	if package_name == '' then
 		return nil
 	end
-
 	if not valid_qualified_name(package_name) then
 		notify('Invalid Android package name', vim.log.levels.ERROR)
 		return nil
 	end
-
 	return package_name
 end
-
 ---@return string?
 local function resolve_activity()
 	local activity = input('Launch activity (optional, for example .MainActivity): ')
-
 	if not valid_activity_name(activity) then
 		notify('Invalid Android activity name', vim.log.levels.ERROR)
 		return nil
 	end
-
 	return activity
 end
-
 ---@param default integer
 ---@return integer?
 local function resolve_port(default)
 	local value = tonumber(input('Local TCP port: ', tostring(default)))
-
 	if not value or value < 1 or value > 65535 or value % 1 ~= 0 then
 		notify('Port must be an integer from 1 through 65535', vim.log.levels.ERROR)
 		return nil
 	end
-
 	return math.floor(value)
 end
-
 ---@param serial string
 ---@return string[]
 local function list_jdwp(serial)
@@ -543,7 +505,6 @@ local function list_jdwp(serial)
 		notify(trim(stderr) ~= '' and trim(stderr) or 'adb jdwp failed', vim.log.levels.ERROR)
 		return {}
 	end
-
 	local pids = {}
 	for _, line in ipairs(split_lines(stdout)) do
 		local pid = trim(line)
@@ -551,7 +512,6 @@ local function list_jdwp(serial)
 			pids[#pids + 1] = pid
 		end
 	end
-
 	return pids
 end
 ---@param value string|number|nil
@@ -561,7 +521,6 @@ local function positive_integer(value)
 	if not parsed or parsed < 1 or parsed % 1 ~= 0 then
 		return nil
 	end
-
 	local result = math.floor(parsed)
 	---@cast result integer
 	return result
@@ -571,25 +530,21 @@ end
 ---@return integer?
 local function pid_for_package(serial, package_name)
 	local code, stdout = system(adb_shell(serial, 'pidof', package_name))
-
 	if code == 0 then
 		local pid = positive_integer(trim(stdout):match('^(%d+)'))
 		if pid then
 			return pid
 		end
 	end
-
 	local ps_code, ps_stdout = system(adb_shell(serial, 'ps', '-A'))
 	if ps_code ~= 0 then
 		return nil
 	end
-
 	for _, line in ipairs(split_lines(ps_stdout)) do
 		local columns = vim.split(trim(line), '%s+', {
 			trimempty = true,
 		})
 		local process_name = columns[#columns]
-
 		if
 			process_name == package_name
 			or (type(process_name) == 'string' and vim.startswith(process_name, package_name .. ':'))
@@ -600,10 +555,8 @@ local function pid_for_package(serial, package_name)
 			end
 		end
 	end
-
 	return nil
 end
-
 ---@param serial string
 ---@param local_spec string
 local function remember_forward(serial, local_spec)
@@ -613,7 +566,6 @@ local function remember_forward(serial, local_spec)
 		local_spec = local_spec,
 	}
 end
-
 ---@param silent? boolean
 local function remove_managed_forwards(silent)
 	if not executable(M.adapters.adb.command) then
@@ -622,11 +574,9 @@ local function remove_managed_forwards(silent)
 		end
 		return
 	end
-
 	local removed = 0
 	for key, forward in pairs(managed_forwards) do
 		local code, _, stderr = system(adb('-s', forward.serial, 'forward', '--remove', forward.local_spec))
-
 		if code == 0 then
 			managed_forwards[key] = nil
 			removed = removed + 1
@@ -637,12 +587,10 @@ local function remove_managed_forwards(silent)
 			)
 		end
 	end
-
 	if not silent then
 		notify(('Removed %d Android DAP forward(s)'):format(removed))
 	end
 end
-
 ---@param root string
 ---@param filetype string
 ---@param command string[]
@@ -654,21 +602,17 @@ local function open_terminal(root, filetype, command)
 		cwd = root,
 		term = true,
 	})
-
 	if job <= 0 then
 		notify('Failed to start terminal job', vim.log.levels.ERROR)
 		api.nvim_buf_delete(bufnr, { force = true })
 		return nil
 	end
-
 	vim.bo[bufnr].bufhidden = 'wipe'
 	vim.bo[bufnr].filetype = filetype
 	vim.bo[bufnr].swapfile = false
 	vim.cmd.startinsert()
-
 	return job
 end
-
 ---@class AndroidJdwpForward
 ---@field serial string
 ---@field package_name string
@@ -802,57 +746,46 @@ function M.forward_jdwp()
 	if not bufnr or not root or not ensure_adb() then
 		return
 	end
-
 	forward_jdwp(root, bufnr)
 end
-
 function M.attach_jdb()
 	local bufnr, root = current_android_context()
 	if not bufnr or not root or not ensure_adb() or not ensure_jdb() then
 		return
 	end
-
 	local forward = forward_jdwp(root, bufnr)
 	if not forward then
 		return
 	end
-
 	local job = open_terminal(root, 'jdb', {
 		M.adapters.jdb.command,
 		'-attach',
 		('127.0.0.1:%d'):format(forward.port),
 	})
-
 	if job then
 		notify(('Started jdb on localhost:%d'):format(forward.port))
 	end
 end
-
 function M.clear_forwards()
 	local bufnr = current_android_context()
 	if not bufnr then
 		return
 	end
-
 	remove_managed_forwards(false)
 end
-
 function M.native_attach_lldb()
 	local bufnr, root = current_android_context()
 	if not bufnr or not root or not ensure_adb() or not ensure_lldb() then
 		return
 	end
-
 	local serial = choose_device()
 	if not serial then
 		return
 	end
-
 	local package_name = resolve_package_name(root, bufnr)
 	if not package_name then
 		return
 	end
-
 	local pid = pid_for_package(serial, package_name)
 	if not pid then
 		notify('Could not resolve the Android process for ' .. package_name, vim.log.levels.ERROR)
@@ -915,7 +848,7 @@ local function configure_buffer(bufnr)
 	if vim.b[bufnr][CONFIGURED_FLAG] then
 		return
 	end
-	vim.b[bufnr][CONFIGURED_FLAG] = true
+
 	api.nvim_buf_create_user_command(bufnr, 'AndroidSelectDevice', M.select_device, {
 		desc = 'Select an Android device or emulator',
 	})
@@ -940,24 +873,17 @@ local function configure_buffer(bufnr)
 	api.nvim_buf_create_user_command(bufnr, 'AndroidLogcat', M.logcat, {
 		desc = 'Stream Android logcat in a terminal buffer',
 	})
-	local function map(lhs, rhs, description)
-		vim.keymap.set('n', lhs, rhs, {
-			buf = bufnr,
-			desc = description,
-			silent = true,
-		})
-	end
-	map('<leader>dad', M.select_device, 'Android select device')
-	map('<leader>dal', M.launch_app, 'Android launch app')
-	map('<leader>dac', M.clear_debug_app, 'Android clear debug app')
-	map('<leader>daf', M.forward_jdwp, 'Android forward JDWP')
-	map('<leader>daj', M.attach_jdb, 'Android attach jdb')
-	map('<leader>dax', M.clear_forwards, 'Android clear forwards')
-	map('<leader>dan', M.native_attach_lldb, 'Android native attach')
-	map('<leader>dag', M.logcat, 'Android logcat')
+	vim.b[bufnr][CONFIGURED_FLAG] = true
+	api.nvim_exec_autocmds('User', {
+		pattern = 'AndroidDapConfigured',
+		modeline = false,
+		data = {
+			bufnr = bufnr,
+		},
+	})
 end
 function M.setup()
-	local group = api.nvim_create_augroup('qompass.dap.android', {
+	local group = api.nvim_create_augroup('dap.android', {
 		clear = true,
 	})
 	api.nvim_create_autocmd('FileType', {
@@ -968,7 +894,10 @@ function M.setup()
 			configure_buffer(event.buf)
 		end,
 	})
-	api.nvim_create_autocmd({ 'BufReadPost', 'BufNewFile' }, {
+	api.nvim_create_autocmd({
+		'BufReadPost',
+		'BufNewFile',
+	}, {
 		group = group,
 		pattern = FILE_PATTERNS,
 		desc = 'Enable Android DAP for Android source files',

@@ -36,11 +36,9 @@ local setup_done = false
 local verified_debugpy = {}
 ---@type table<integer, vim.SystemObj>
 local pid_injection_processes = {}
-
 M.adapter = {
 	name = 'debugpy',
 }
-
 ---@param message string
 ---@param level? integer
 local function notify(message, level)
@@ -96,7 +94,6 @@ end
 ---@return boolean
 local function filename_matches(bufnr)
 	local filename = buffer_file(bufnr):lower()
-
 	for _, pattern in ipairs(FILE_PATTERNS) do
 		local suffix = pattern:match('^%*(%..+)$')
 		if suffix ~= nil and filename:sub(-#suffix) == suffix:lower() then
