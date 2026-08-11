@@ -1,246 +1,20 @@
 -- #################################################################
--- /qompassai/lua/scip/ui.lua
--- Qompass AI SCIP UI
--- SPDX-License-Identifier: Apache-2.0
--- Copyright (c) 2026 Qompass AI
--- #################################################################
-
-local api = vim.api
-local fn = vim.fn
-
-local config = require('scip.config')
-local registry = require('scip.registry')
-local root = require('scip.root')
-local utils = require('scip.utils')
-
-local M = {}
-
----Emit a SCIP notification when notifications are enabled.
----@param message string
----@param level? integer
-function M.notify(message, level)
-        if not config.get().notify then
-                return
-        end
-
-        vim.notify(
-                message,
-                level or vim.log.levels.INFO,
-                {
-                        title = 'SCIP',
-                }
-        )
-end
-
----Display successful command output in a scratch split.
----@param title string
----@param text string
----@param filetype? string
-function M.show_output(title, text, filetype)
-        local bufnr = api.nvim_create_buf(false, true)
-
-        api.nvim_buf_set_name(
-                bufnr,
-                ('scip://%s/%d'):format(
-                        title:gsub('%s+', '-'):lower(),
-                        math.floor(vim.uv.hrtime())
-                )
-        )
-
-        api.nvim_set_option_value('bufhidden', 'wipe', {
-                buf = bufnr,
-        })
-
-        api.nvim_set_option_value('swapfile', false, {
-                buf = bufnr,
-        })
-
-        api.nvim_buf_set_lines(
-                bufnr,
-                0,
-                -1,
-                false,
-                utils.text_lines(text)
-        )
-
-        api.nvim_set_option_value('filetype', filetype or 'text', {
-                buf = bufnr,
-        })
-
-        api.nvim_set_option_value('modifiable', false, {
-                buf = bufnr,
-        })
-
-        vim.cmd('botright new')
-        api.nvim_win_set_buf(0, bufnr)
-end
-
----Display failed subprocess output using the quickfix list.
----@param title string
----@param result vim.SystemCompleted
-function M.show_failure(title, result)
-        fn.setqflist({}, 'r', {
-                lines = utils.text_lines(
-                        utils.system_output(result, true)
-                ),
-                title = title,
-        })
-
-        vim.cmd('botright copen')
-end
-
----Show indexer support/readiness for the current buffer.
-function M.coverage()
-        local bufnr = api.nvim_get_current_buf()
-        local current_filetype = vim.bo[bufnr].filetype
-
-        local lines = {
-                'SCIP indexer coverage',
-                '',
-                'Current filetype: '
-                        .. (current_filetype ~= ''
-                                        and current_filetype
-                                or '<none>'),
-                '',
-        }
-
-        local matches = {}
-
-        for _, name in ipairs(registry.names()) do
-                local indexer = registry.get(name)
-
-                if indexer ~= nil then
-                        local project_root =
-                                root.resolve(bufnr, indexer.markers)
-
-                        local ctx = require('scip.context').new(
-                                name,
-                                bufnr,
-                                project_root
-                        )
-
-                        local command =
-                                utils.resolve_command(indexer.command, ctx)
-
-                        local readiness =
-                                command ~= nil
-                                        and utils.executable(command)
-                                        and 'ready'
-                                or 'missing'
-
-                        lines[#lines + 1] = string.format(
-                                '%-12s %-8s %-24s %s',
-                                name,
-                                readiness,
-                                command or '<invalid command>',
-                                table.concat(
-                                        registry.filetypes(indexer),
-                                        ', '
-                                )
-                        )
-
-                        if indexer.filetypes[current_filetype] == true then
-                                matches[#matches + 1] = name
-                        end
-                end
-        end
-
-        lines[#lines + 1] = ''
-
-        if #matches == 0 then
-                lines[#lines + 1] =
-                        'No SCIP indexer is configured for the current filetype.'
-        else
-                lines[#lines + 1] =
-                        'Current filetype indexer: '
-                        .. table.concat(matches, ', ')
-        end
-
-        M.show_output(
-                'SCIP coverage',
-                table.concat(lines, '\n')
-        )
-end
-
----Create native :Scip* commands.
----
----The requires inside callbacks are intentionally lazy. ui.lua is required by
----index.lua for notifications/output, so requiring index.lua at module load
----time here would introduce a circular dependency.
-function M.setup_commands()
-        api.nvim_create_user_command('ScipCancel', function()
-                require('scip.index').cancel()
-        end, {
-                desc = 'Cancel the active SCIP indexer',
-                force = true,
-        })
-
-        api.nvim_create_user_command('ScipCoverage', M.coverage, {
-                desc = 'Show SCIP language coverage and readiness',
-                force = true,
-        })
-
-        api.nvim_create_user_command('ScipHealth', function()
-                require('scip.health').check()
-        end, {
-                desc = 'Run native SCIP health checks',
-                force = true,
-        })
-
-        api.nvim_create_user_command('ScipIndex', function(command)
-                require('scip.index').run(command.args)
-        end, {
-                complete = function()
-                        return registry.names()
-                end,
-                desc = 'Generate a SCIP index for the current project',
-                force = true,
-                nargs = '?',
-        })
-
-        api.nvim_create_user_command('ScipLint', function()
-                require('scip.index').lint()
-        end, {
-                desc = 'Validate the current project SCIP index',
-                force = true,
-        })
-
-        api.nvim_create_user_command('ScipPrint', function()
-                require('scip.index').print()
-        end, {
-                desc = 'Open the current SCIP index as JSON',
-                force = true,
-        })
-
-        api.nvim_create_user_command('ScipSnapshot', function()
-                require('scip.index').snapshot()
-        end, {
-                desc = 'Create a human-readable SCIP snapshot',
-                force = true,
-        })
-
-        api.nvim_create_user_command('ScipStats', function()
-                require('scip.index').stats()
-        end, {
-                desc = 'Show statistics for the current SCIP index',
-                force = true,
-        })
-
-        api.nvim_create_user_command('ScipStatus', function()
-                require('scip.index').status()
-        end, {
-                desc = 'Show SCIP index/indexer status',
-                force = true,
-        })
-end
-
-return M
-
--- #################################################################
 -- /qompassai/lua/scip/health.lua
--- Qompass AI SCIP Health
+-- Qompass AI Health
 -- SPDX-License-Identifier: Apache-2.0
 -- Copyright (c) 2026 Qompass AI
+--
+-- Licensed under the Apache License, Version 2.0 (the "License");
+-- you may not use this file except in compliance with the License.
+-- You may obtain a copy of the License at:
+--   http://www.apache.org/licenses/LICENSE-2.0
+--
+-- Unless required by applicable law or agreed to in writing, software
+-- distributed under the License is distributed on an "AS IS" BASIS,
+-- WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+-- See the License for the specific language governing permissions and
+-- limitations under the License.
+-- #################################################################
 -- #################################################################
 
 local api = vim.api
@@ -255,156 +29,142 @@ local utils = require('scip.utils')
 
 local M = {}
 
----Report an executable as available/unavailable.
----@param command string
----@param label? string
-local function check_executable(command, label)
-        label = label or command
-
-        if utils.executable(command) then
-                health.ok(label .. ': ' .. command)
-        else
-                health.warn(label .. ' not found: ' .. command)
-        end
-end
-
----Check all currently configured indexers.
----@param bufnr integer
-local function check_indexers(bufnr)
-        health.start('Configured SCIP indexers')
-
-        for _, name in ipairs(registry.names()) do
-                local indexer = registry.get(name)
-
-                if indexer ~= nil then
-                        local project_root =
-                                root.resolve(bufnr, indexer.markers)
-
-                        local ctx = context.new(
-                                name,
-                                bufnr,
-                                project_root
-                        )
-
-                        local command, resolve_error =
-                                utils.resolve_command(
-                                        indexer.command,
-                                        ctx
-                                )
-
-                        if command == nil then
-                                health.error(
-                                        ('%s: %s'):format(
-                                                name,
-                                                resolve_error
-                                                        or 'invalid command'
-                                        )
-                                )
-                        elseif utils.executable(command) then
-                                health.ok(
-                                        ('%s: %s'):format(
-                                                name,
-                                                command
-                                        )
-                                )
-                        else
-                                health.warn(
-                                        ('%s: missing %s'):format(
-                                                name,
-                                                command
-                                        )
-                                )
-                        end
-                end
-        end
-end
-
----Check the current project/index state.
----@param bufnr integer
-local function check_project(bufnr)
-        health.start('Current SCIP project')
-
-        local project_root = root.resolve(bufnr)
-        local index_file = config.index_path(project_root)
-
-        health.info('root: ' .. project_root)
-        health.info('index: ' .. index_file)
-
-        local filetype = vim.bo[bufnr].filetype
-
-        health.info(
-                'filetype: '
-                        .. (filetype ~= '' and filetype or '<none>')
-        )
-
-        if utils.path_exists(index_file) then
-                health.ok('SCIP index exists')
-        else
-                health.warn('SCIP index does not exist')
-        end
-
-        local match, detect_error = registry.detect(bufnr)
-
-        if match ~= nil then
-                health.ok(
-                        ('matching indexer: %s (%s)'):format(
-                                match.name,
-                                match.command
-                        )
-                )
-        else
-                health.info(
-                        'matching indexer: none'
-                                .. (
-                                        detect_error ~= nil
-                                                and ' (' .. detect_error .. ')'
-                                        or ''
-                                )
-                )
-        end
-end
-
----Check active asynchronous indexer state.
-local function check_state()
-        health.start('SCIP process state')
-
-        if not state.running() then
-                health.ok('No SCIP indexer process is currently running')
-                return
-        end
-
-        health.info(
-                'indexer: '
-                        .. (state.current.indexer or '<unknown>')
-        )
-
-        health.info(
-                'root: '
-                        .. (state.current.root or '<unknown>')
-        )
-
-        health.info(
-                ('elapsed: %.1f seconds'):format(
-                        state.elapsed()
-                )
-        )
-end
-
----Run native SCIP health diagnostics.
+---Report whether an executable is available.
 ---
----This function is usable directly through :ScipHealth and can also be
----exposed to Neovim's :checkhealth mechanism if this module lives at
----lua/scip/health.lua.
+---This is used for commands that are required independently of a specific
+---language indexer, such as the main `scip` CLI.
+---
+---@param command string Executable name or path to check.
+---@param label? string Human-readable command label.
+---@return nil
+local function check_executable(command, label)
+	local display_name = label or command
+
+	if utils.executable(command) then
+		health.ok(('%s: %s'):format(display_name, command))
+		return
+	end
+
+	health.warn(('%s not found: %s'):format(display_name, command))
+end
+
+---Check all enabled SCIP indexers.
+---
+---Each configured indexer is resolved against the current buffer and project.
+---Dynamic commands, such as a project-local `scip-php`, are resolved before
+---their executability is checked.
+---
+---@param bufnr integer Buffer used to resolve project roots and indexers.
+---@return nil
+local function check_indexers(bufnr)
+	health.start('Configured SCIP indexers')
+
+	for _, name in ipairs(registry.names()) do
+		local indexer = registry.get(name)
+
+		if indexer ~= nil then
+			local project_root = root.resolve(bufnr, indexer.markers)
+
+			local ctx = context.new(name, bufnr, project_root)
+
+			local command, resolve_error = utils.resolve_command(indexer.command, ctx)
+
+			if command == nil then
+				health.error(('%s: %s'):format(name, resolve_error or 'invalid command'))
+			elseif utils.executable(command) then
+				health.ok(('%s: %s'):format(name, command))
+			else
+				health.warn(('%s: missing %s'):format(name, command))
+			end
+		end
+	end
+end
+
+---Check the SCIP state of the current project.
+---
+---Reports the resolved project root, configured index path, current filetype,
+---whether an index already exists, and whether an indexer can be detected for
+---the current buffer.
+---
+---@param bufnr integer Buffer used for project and indexer detection.
+---@return nil
+local function check_project(bufnr)
+	health.start('Current SCIP project')
+
+	local project_root = root.resolve(bufnr)
+	local index_file = config.index_path(project_root)
+	local filetype = vim.bo[bufnr].filetype
+
+	health.info('root: ' .. project_root)
+	health.info('index: ' .. index_file)
+	health.info('filetype: ' .. (filetype ~= '' and filetype or '<none>'))
+
+	if utils.path_exists(index_file) then
+		health.ok('SCIP index exists')
+	else
+		health.warn('SCIP index does not exist')
+	end
+
+	local match, detect_error = registry.detect(bufnr)
+
+	if match ~= nil then
+		health.ok(('matching indexer: %s (%s)'):format(match.name, match.command))
+		return
+	end
+
+	local message = 'matching indexer: none'
+
+	if detect_error ~= nil and detect_error ~= '' then
+		message = ('%s (%s)'):format(message, detect_error)
+	end
+
+	health.info(message)
+end
+
+---Check the active asynchronous SCIP indexer state.
+---
+---When an indexer is running, this reports its name, root, and elapsed
+---execution time. Otherwise, it confirms that no indexing process is active.
+---
+---@return nil
+local function check_state()
+	health.start('SCIP process state')
+
+	if not state.running() then
+		health.ok('No SCIP indexer process is currently running')
+		return
+	end
+
+	health.info('indexer: ' .. (state.current.indexer or '<unknown>'))
+
+	health.info('root: ' .. (state.current.root or '<unknown>'))
+
+	health.info(('elapsed: %.1f seconds'):format(state.elapsed()))
+end
+
+---Run all native SCIP health checks.
+---
+---The module follows Neovim's standard health-provider convention:
+---
+---    lua/scip/health.lua
+---
+---which allows it to be invoked through:
+---
+---    :checkhealth scip
+---
+---It can also be called directly by the native `:ScipHealth` command.
+---
+---@return nil
 function M.check()
-        local bufnr = api.nvim_get_current_buf()
+	local bufnr = api.nvim_get_current_buf()
 
-        health.start('Qompass AI SCIP')
+	health.start('Qompass AI SCIP')
 
-        check_executable('scip', 'SCIP CLI')
+	check_executable('scip', 'SCIP CLI')
 
-        check_indexers(bufnr)
-        check_project(bufnr)
-        check_state()
+	check_indexers(bufnr)
+	check_project(bufnr)
+	check_state()
 end
 
 return M

@@ -2,7 +2,6 @@
 -- Qompass AI Diver Linter Mappings
 -- Copyright (C) 2025 Qompass AI, All rights reserved
 -- --------------------------------------------------
----@module 'mappings.lintmap'
 local M = {}
 function M.setup_lintmap()
 	if M.configured then

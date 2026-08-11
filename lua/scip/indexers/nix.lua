@@ -1,6 +1,6 @@
 -- #################################################################
--- /qompassai/lua/scip/init.lua
--- Qompass AI SCIP Init
+-- /qompassai/lua/scip/indexers/nix.lua
+-- Qompass AI SCIP Nix Indexer
 -- SPDX-License-Identifier: Apache-2.0
 -- Copyright (c) 2026 Qompass AI
 --
@@ -15,27 +15,38 @@
 -- See the License for the specific language governing permissions and
 -- limitations under the License.
 -- #################################################################
--- #################################################################
-local config = require('scip.config')
-local health = require('scip.health')
-local index = require('scip.index')
-local registry = require('scip.registry')
-local ui = require('scip.ui')
-local M = {}
-M.cancel = index.cancel
-M.coverage = ui.coverage
-M.health = health.check
-M.index = index.run
-M.lint = index.lint
-M.print = index.print
-M.register = registry.register
-M.snapshot = index.snapshot
-M.stats = index.stats
-M.status = index.status
----@param opts? ScipConfigOpts
-function M.setup(opts)
-	config.setup(opts)
-	ui.setup_commands()
-end
 
-return M
+---Native SCIP indexer definition for the Nix language.
+---
+---No verified Nix-language SCIP generator is currently available as a
+---standard SCIP indexer. The fact that parts of the SCIP ecosystem use Nix
+---for packaging/build infrastructure does not imply that they index Nix
+---source code.
+---
+---This entry remains disabled until a compatible external `scip-nix`
+---executable is installed or implemented.
+---@type ScipIndexer
+local indexer = {
+	args = {
+		'index',
+		'.',
+	},
+
+	command = 'scip-nix',
+
+	enabled = false,
+
+	filetypes = {
+		nix = true,
+	},
+
+	markers = {
+		'.git',
+		'default.nix',
+		'flake.lock',
+		'flake.nix',
+		'shell.nix',
+	},
+}
+
+return indexer

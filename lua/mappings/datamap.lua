@@ -2,7 +2,6 @@
 -- Qompass AI Diver Data  Mappings
 -- Copyright (C) 2025 Qompass AI, All rights reserved
 -- --------------------------------------------------
----@module 'mappings.datamap'
 local M = {}
 local api = vim.api
 local math_namespace = api.nvim_create_namespace('math_annotations')
@@ -23,11 +22,12 @@ end
 local function extract_math(line)
 	return line:match('%$%$(.-)%$%$') or line:match('%$(.-)%$')
 end
-
----@param bufnr integer
-local function toggle_line_math(bufnr)
+local function toggle_line_math(bufnr) ---@param bufnr integer
 	local lnum = api.nvim_win_get_cursor(0)[1] - 1
-	local marks = api.nvim_buf_get_extmarks(bufnr, math_namespace, { lnum, 0 }, {
+	local marks = api.nvim_buf_get_extmarks(bufnr, math_namespace, {
+		lnum,
+		0,
+	}, {
 		lnum,
 		-1,
 	}, {})
@@ -35,7 +35,6 @@ local function toggle_line_math(bufnr)
 		api.nvim_buf_clear_namespace(bufnr, math_namespace, lnum, lnum + 1)
 		return
 	end
-
 	local line = api.nvim_buf_get_lines(bufnr, lnum, lnum + 1, false)[1] or ''
 	local math = extract_math(line)
 	if not math then
@@ -73,7 +72,6 @@ local function toggle_all_math(bufnr) ---@param bufnr integer
 		end
 	end
 end
-
 ---@param group integer
 local function setup_math_maps(group)
 	api.nvim_create_autocmd('FileType', {
@@ -96,7 +94,6 @@ local function setup_math_maps(group)
 		end,
 	})
 end
-
 local function setup_sf_query_maps(group) ---@param group integer
 	api.nvim_create_autocmd('FileType', {
 		group = group,
@@ -121,7 +118,6 @@ function M.setup_datamap()
 		return
 	end
 	M.configured = true
-
 	local group = api.nvim_create_augroup('DataMappings', {
 		clear = true,
 	})

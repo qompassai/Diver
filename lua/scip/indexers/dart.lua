@@ -1,6 +1,6 @@
 -- #################################################################
--- /qompassai/lua/scip/init.lua
--- Qompass AI SCIP Init
+-- /qompassai/lua/scip/indexers/dart.lua
+-- Qompass AI SCIP Dart Indexer
 -- SPDX-License-Identifier: Apache-2.0
 -- Copyright (c) 2026 Qompass AI
 --
@@ -15,27 +15,33 @@
 -- See the License for the specific language governing permissions and
 -- limitations under the License.
 -- #################################################################
--- #################################################################
-local config = require('scip.config')
-local health = require('scip.health')
-local index = require('scip.index')
-local registry = require('scip.registry')
-local ui = require('scip.ui')
-local M = {}
-M.cancel = index.cancel
-M.coverage = ui.coverage
-M.health = health.check
-M.index = index.run
-M.lint = index.lint
-M.print = index.print
-M.register = registry.register
-M.snapshot = index.snapshot
-M.stats = index.stats
-M.status = index.status
----@param opts? ScipConfigOpts
-function M.setup(opts)
-	config.setup(opts)
-	ui.setup_commands()
-end
 
-return M
+---Arguments used to invoke the globally installed scip_dart package.
+---
+---The final `.` instructs scip_dart to index the project represented by the
+---SCIP context's working directory.
+---
+---@type string[]
+local args = {
+	'pub',
+	'global',
+	'run',
+	'scip_dart',
+	'.',
+}
+
+---@type ScipIndexer
+local indexer = {
+	args = args,
+	command = 'dart',
+	filetypes = {
+		dart = true,
+	},
+	markers = {
+		'.git',
+		'analysis_options.yaml',
+		'pubspec.yaml',
+	},
+}
+
+return indexer

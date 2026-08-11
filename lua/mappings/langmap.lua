@@ -2,7 +2,6 @@
 -- Qompass AI Diver Python Lang Mappings
 -- Copyright (C) 2025 Qompass AI, All rights reserved
 -- --------------------------------------------------
----@module 'mappings.langmap'
 local M = {}
 local api = vim.api
 M.rust_editions = {
@@ -127,18 +126,18 @@ local function setup_rust_maps(group)
 		end,
 	})
 end
-
 function M.setup_langmap()
 	if M.configured then
 		return
 	end
 	M.configured = true
 
-	local group = api.nvim_create_augroup('LanguageMappings', { clear = true })
+	local group = api.nvim_create_augroup('LanguageMappings', {
+		clear = true,
+	})
 	setup_python_maps(group)
 	setup_mojo_maps(group)
 	setup_rust_maps(group)
-
 	api.nvim_create_user_command('RustEdition', function(options)
 		M.rust_edition(options.args)
 	end, {

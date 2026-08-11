@@ -117,7 +117,6 @@ M.module_sources = {
 	rumdl = 'linters.rumdl',
 	scalastyle = 'linters.scalastyle',
 	scarb = 'linters.scarb',
-	secfixes_check = 'linters.secfixes-check',
 	shellcheck = 'linters.shellcheck',
 	sphinx_lint = 'linters.sphinx-lint',
 	statix = 'linters.statix',
@@ -130,13 +129,8 @@ M.module_sources = {
 	yara = 'linters.yara',
 	zlint = 'linters.zlint',
 }
-
----@type table<string, Linter>
-M.definitions = {}
-
----@type table<string, string>
-M.load_errors = {}
-
+M.definitions = {} ---@type table<string, Linter>
+M.load_errors = {} ---@type table<string, string>
 ---@param name string
 ---@param module_name string
 local function load_linter(name, module_name)
@@ -169,7 +163,6 @@ M.linters_by_ft = {
 	},
 	apkbuild = {
 		'apkbuild_lint',
-		'secfixes_check',
 	},
 	asm = {
 		'llvm_mc',
@@ -757,7 +750,6 @@ function M.run_linter(name, bufnr, opts)
 		end
 		return false
 	end
-
 	local command_ok, command_or_error = pcall(command_for, executable_name, definition, context)
 	if not command_ok then
 		diagnostic.reset(namespace(name), bufnr)
@@ -766,14 +758,12 @@ function M.run_linter(name, bufnr, opts)
 	end
 	---@cast command_or_error string[]
 	local command = command_or_error
-
 	local cwd_ok, cwd_or_error = pcall(resolve_cwd, definition, context)
 	if not cwd_ok or type(cwd_or_error) ~= 'string' then
 		diagnostic.reset(namespace(name), bufnr)
 		vim.notify(('%s cwd failed: %s'):format(name, tostring(cwd_or_error)), vim.log.levels.ERROR)
 		return false
 	end
-
 	diagnostic.reset(namespace(name), bufnr)
 	local key = ('%d:%s'):format(bufnr, name)
 	local previous = jobs[key]
@@ -781,7 +771,6 @@ function M.run_linter(name, bufnr, opts)
 		pcall(previous.kill, previous, 15)
 		jobs[key] = nil
 	end
-
 	local generation = (generations[key] or 0) + 1
 	generations[key] = generation
 	local changedtick = api.nvim_buf_get_changedtick(bufnr)
@@ -818,7 +807,6 @@ function M.run_linter(name, bufnr, opts)
 				vim.notify(('Linter %q has no parser or errorformat'):format(name), vim.log.levels.ERROR)
 				return
 			end
-
 			local parse_ok, parsed_or_error = invoke_parser(parser, output, context)
 			if not parse_ok then
 				publish(name, bufnr, {})
@@ -828,7 +816,6 @@ function M.run_linter(name, bufnr, opts)
 			---@cast parsed_or_error vim.Diagnostic.Set[]
 			local parsed = parsed_or_error
 			publish(name, bufnr, parsed)
-
 			if not accepts_exit_code(definition, result.code) and #parsed == 0 then
 				local detail = vim.trim(strip_ansi(output))
 				if #detail > 300 then
@@ -857,14 +844,12 @@ function M.run(bufnr, opts, names)
 	if not M.options.enabled or not buffer_is_eligible(bufnr) then
 		return
 	end
-
 	local selected = names or configured_linters(bufnr)
 	local active = {}
 	for _, name in ipairs(selected) do
 		active[name] = true
 		M.run_linter(name, bufnr, opts)
 	end
-
 	if names == nil then
 		for name, ns in pairs(namespaces) do
 			if not active[name] then
@@ -1081,7 +1066,6 @@ function M.setup(opts)
 			M.stop(event.buf)
 		end,
 	})
-
 	api.nvim_create_user_command('Lint', function(command)
 		if #command.fargs == 0 then
 			M.run(0, { notify = command.bang })
@@ -1136,5 +1120,4 @@ function M.setup(opts)
 		force = true,
 	})
 end
-
 return M

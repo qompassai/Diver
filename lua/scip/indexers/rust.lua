@@ -1,6 +1,6 @@
 -- #################################################################
--- /qompassai/lua/scip/init.lua
--- Qompass AI SCIP Init
+-- /qompassai/lua/scip/indexers/rust.lua
+-- Qompass AI SCIP Rust Indexer
 -- SPDX-License-Identifier: Apache-2.0
 -- Copyright (c) 2026 Qompass AI
 --
@@ -15,27 +15,38 @@
 -- See the License for the specific language governing permissions and
 -- limitations under the License.
 -- #################################################################
--- #################################################################
-local config = require('scip.config')
-local health = require('scip.health')
-local index = require('scip.index')
-local registry = require('scip.registry')
-local ui = require('scip.ui')
-local M = {}
-M.cancel = index.cancel
-M.coverage = ui.coverage
-M.health = health.check
-M.index = index.run
-M.lint = index.lint
-M.print = index.print
-M.register = registry.register
-M.snapshot = index.snapshot
-M.stats = index.stats
-M.status = index.status
----@param opts? ScipConfigOpts
-function M.setup(opts)
-	config.setup(opts)
-	ui.setup_commands()
-end
 
-return M
+---Arguments passed to rust-analyzer.
+---
+---rust-analyzer provides SCIP generation directly through:
+---
+---    rust-analyzer scip .
+---
+---The final `.` indexes the Rust workspace rooted at the cwd selected by the
+---native SCIP framework.
+---@type string[]
+local args = {
+        'scip',
+        '.',
+}
+
+---@type ScipIndexer
+local indexer = {
+        args = args,
+
+        command = 'rust-analyzer',
+
+        filetypes = {
+                rust = true,
+        },
+
+        markers = {
+                '.git',
+                'Cargo.lock',
+                'Cargo.toml',
+                'rust-toolchain',
+                'rust-toolchain.toml',
+        },
+}
+
+return indexer
