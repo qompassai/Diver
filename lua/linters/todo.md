@@ -16,6 +16,7 @@
 <!--  -> limitations under the License.
 <!--   #################################################################
 -->
+---@source https://github.com/mcandre/linters
 # nvim-lint linters
 
 | Linter | Last updated |
