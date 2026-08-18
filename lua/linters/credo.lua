@@ -20,9 +20,9 @@ local diagnostic = vim.diagnostic
 local fs = vim.fs
 
 local ERROR = diagnostic.severity.ERROR
-local HINT = diagnostic.severity.HINT
-local INFO = diagnostic.severity.INFO
 local WARN = diagnostic.severity.WARN
+local INFO = diagnostic.severity.INFO
+local HINT = diagnostic.severity.HINT
 
 local DIAGNOSTICS_MAX = 4096
 local LINE_LENGTH_MAX = 16384
@@ -43,7 +43,6 @@ local function integer(value, fallback)
         assert(fallback >= 0)
 
         local parsed = tonumber(value)
-
         if parsed == nil then
                 return fallback
         end
@@ -76,6 +75,18 @@ end
 local function parse_line(line)
         assert(#line <= LINE_LENGTH_MAX)
 
+        --
+        -- Credo --format=oneline:
+        --
+        --   [C] ↗ lib/foo.ex:12:7 Prefer ...
+        --
+        -- Upstream nvim-lint uses:
+        --
+        --   %[%a%]%s+(.+)%s+[^:]+:(%d+):?(%d*)%s+(.*)
+        --
+        -- We also capture the filename so diagnostics can be restricted
+        -- deterministically to the buffer being linted.
+        --
         local arrow
         local path
         local line_number
@@ -84,23 +95,22 @@ local function parse_line(line)
 
         arrow, path, line_number, column_number, message =
                 line:match(
-                        '^%[%a%]%s+([↑↗→↘↓])%s+(.+)%s+[^:]+:(%d+):?(%d*)%s+(.+)$'
+                        '^%[%a%]%s+([↑↗→↘↓])%s+(.+):(%d+):?(%d*)%s+(.+)$'
                 )
 
         if arrow == nil then
                 return nil
         end
 
-        local severity = severities[arrow]
-
-        if severity == nil then
+        local level = severities[arrow]
+        if level == nil then
                 return nil
         end
 
         return path,
                 integer(line_number, 1),
                 integer(column_number, 1),
-                severity,
+                level,
                 message
 end
 
@@ -112,7 +122,10 @@ local function parse(output, context)
                 return {}
         end
 
-        assert(type(context) == 'table', 'credo parser requires a LintContext')
+        assert(
+                type(context) == 'table',
+                'credo parser requires a LintContext'
+        )
 
         ---@cast context LintContext
 
@@ -124,7 +137,6 @@ local function parse(output, context)
 
         ---@type vim.Diagnostic.Set[]
         local diagnostics = {}
-
         local diagnostics_count = 0
 
         for line in output:gmatch('[^\r\n]+') do
@@ -201,14 +213,10 @@ return ---@type Linter
 
         cwd = function(context)
                 assert(context.root ~= '')
-
                 return context.root
         end,
 
-        exit_codes = {
-                [0] = true,
-                [1] = true,
-        },
+        ignore_exitcode = true,
 
         parser = parse,
 
