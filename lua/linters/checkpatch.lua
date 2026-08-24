@@ -15,6 +15,7 @@
 -- See the License for the specific language governing permissions and
 -- limitations under the License.
 -- #################################################################
+---@source https://docs.kernel.org/dev-tools/checkpatch.html
 
 local diagnostic = vim.diagnostic
 local fs = vim.fs
