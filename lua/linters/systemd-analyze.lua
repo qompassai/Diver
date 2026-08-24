@@ -15,7 +15,7 @@
 -- See the License for the specific language governing permissions and
 -- limitations under the License.
 -- #################################################################
-
+---@source https://www.freedesktop.org/software/systemd/man/latest/systemd-analyze.html?__goaway_challenge=meta-refresh&__goaway_id=44caed9f263ef250d456ec4937eacebb&__goaway_referer=https%3A%2F%2Fwww.google.com%2F
 local diagnostic = vim.diagnostic
 local fs = vim.fs
 
