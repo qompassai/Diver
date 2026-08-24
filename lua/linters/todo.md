@@ -35,7 +35,7 @@
 | [`cfn_lint`](https://github.com/mfussenegger/nvim-lint/blob/master/lua/lint/linters/cfn_lint.lua) | 2025-05-22 |
 |
 
----Not actively maintained --[`cfn_nag`](https://github.com/mfussenegger/nvim-lint/blob/master/lua/lint/linters/cfn_nag.lua) | 2022-11-29 |
+--- Not actively maintained --[`cfn_nag`](https://github.com/mfussenegger/nvim-lint/blob/master/lua/lint/linters/cfn_nag.lua) | 2022-11-29 |
 |
  [`checkbashisms`](https://github.com/mfussenegger/nvim-lint/blob/master/lua/lint/linters/checkbashisms.lua) | 2026-04-09 |
 | [`checkmake`](https://github.com/mfussenegger/nvim-lint/blob/master/lua/lint/linters/checkmake.lua) | 2024-02-06 |
