@@ -24,7 +24,7 @@
 | Linter | Last updated | State | Local config |
 | --- | ---: | :---: | --- |
 | [`actionlint`](https://github.com/mfussenegger/nvim-lint/blob/master/lua/lint/linters/actionlint.lua) | 2025-12-13 | `DONE` | [`actionlint.lua`](./actionlint.lua) |
-| [`alex`](https://github.com/mfussenegger/nvim-lint/blob/master/lua/lint/linters/alex.lua) | 2023-10-18 | `DONE` | — |
+| [`alex`](https://github.com/mfussenegger/nvim-lint/blob/master/lua/lint/linters/alex.lua) | 2023-10-18 | `TO DO` | — |
 | [`ameba`](https://github.com/mfussenegger/nvim-lint/blob/master/lua/lint/linters/ameba.lua) | 2026-05-19 | `DONE` | [`ameba.lua`](./ameba.lua) |
 | [`ansible_lint`](https://github.com/mfussenegger/nvim-lint/blob/master/lua/lint/linters/ansible_lint.lua) | 2025-08-21 | `DONE` | [`ansible_lint.lua`](./ansible_lint.lua) |
 | [`bandit`](https://github.com/mfussenegger/nvim-lint/blob/master/lua/lint/linters/bandit.lua) | 2023-01-15 | `DONE` | [`bandit.lua`](./bandit.lua) |
