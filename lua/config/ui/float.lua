@@ -1,580 +1,206 @@
 -- float.lua
--- Qompass AI Diver UI Float Module
+-- Qompass AI - [ ]
 -- Copyright (C) 2026 Qompass AI, All rights reserved
 -- ----------------------------------------
-local api = vim.api
-local fn = vim.fn
 local M = {}
+local shell = vim.o.shell
 local defaults = {
-	close_on_switch = true,
-	cmd = function()
-		return {
-			vim.o.shell,
-		}
-	end,
-	cwd = function()
-		return fn.getcwd()
-	end,
-	file = nil,
-	focus = true,
-	id = nil,
-	on_exit = nil,
-	on_open = nil,
-	start_in_insert = true,
-	window = {
-		anchor = 'NW',
-		border = 'rounded',
-		col = nil,
-		footer = nil,
-		footer_pos = 'left',
-		focusable = true,
-		h_align = 'center',
-		height = 0.8,
-		mouse = true,
-		noautocmd = false,
-		relative = 'editor',
-		row = nil,
-		style = 'minimal',
-		title = ' Terminal ',
-		title_pos = 'center',
-		v_align = 'center',
-		width = 0.8,
-		zindex = 50,
-	},
-	wo = {
-		cursorcolumn = false,
-		cursorline = false,
-		cursorlineopt = 'both',
-		fillchars = 'eob: ,lastline:…',
-		list = false,
-		listchars = 'extends:…,tab:  ',
-		number = false,
-		relativenumber = false,
-		scrolloff = 0,
-		sidescrolloff = 0,
-		signcolumn = 'no',
-		spell = false,
-		statuscolumn = '',
-		winbar = '',
-		wrap = false,
-	},
+    file = nil,
+    cmd = vim.o.shell,
+    cwd = vim.fn.getcwd,
+    id = function()
+        return vim.v.count
+    end, -- float identifier
+    start_in_insert = true,
+    focus = true,
+    on_open = nil,
+    on_exit = nil,
+    window = {
+        col = nil, -- supports percentages (<=1) and absolute sizes (>1)
+        row = nil, -- supports percentages (<=1) and absolute sizes (>1)
+        width = 0.8, -- supports percentages (<=1) and absolute sizes (>1)
+        height = 0.8, -- supports percentages (<=1) and absolute sizes (>1)
+        h_align = 'center', -- alignment helper if no col, "left", "center", "right"
+        v_align = 'center', -- alignment helper if no row, "top", "center", "bottom"
+        border = 'rounded',
+        zindex = 50,
+        title = '',
+        title_pos = 'center',
+    },
+    wo = {
+        cursorcolumn = false,
+        cursorline = false,
+        cursorlineopt = 'both',
+        fillchars = 'eob: ,lastline:…',
+        list = false,
+        listchars = 'extends:…,tab:  ',
+        number = false,
+        relativenumber = false,
+        signcolumn = 'no',
+        spell = false,
+        winbar = '',
+        statuscolumn = '',
+        wrap = false,
+        sidescrolloff = 0,
+    },
 }
+local function eval_opts(opts)
+    if type(opts) == 'function' then
+        return opts()
+    end
+    if type(opts) == 'table' then
+        local res = {}
+        for k, v in pairs(opts) do
+            res[k] = eval_opts(v)
+        end
+        return res
+    end
+    return opts
+end
+local function valid_buf(buf)
+    return buf and vim.api.nvim_buf_is_valid(buf)
+end
+local function valid_win(win)
+    return win and vim.api.nvim_win_is_valid(win)
+end
+local function get_win_opts(config)
+    local opts = eval_opts(config.window)
+    local width, height = opts.width, opts.height
+    local row, col = opts.row, opts.col
+    width = width <= 1 and math.floor(vim.o.columns * width) or width
+    height = height <= 1 and math.floor(vim.o.lines * height) or height
+    if row then
+        row = (row > 0 and row <= 1) and math.floor(vim.o.lines * row) or row
+    else
+        if opts.v_align == 'top' then
+            row = 0
+        elseif opts.v_align == 'bottom' then
+            row = vim.o.lines - height
+            row = math.floor((vim.o.lines - height) / 2)
+        end
+    end
+    if col then
+        col = (col > 0 and col <= 1) and math.floor(vim.o.columns * col) or col
+    else
+        if opts.h_align == 'left' then
+            col = 0
+        elseif opts.h_align == 'right' then
+            col = vim.o.columns - width
+        else
+            col = math.floor((vim.o.columns - width) / 2)
+        end
+    end
+    opts.relative = 'editor'
+    opts.width = width
+    opts.height = height
+    opts.row = row
+    opts.col = col
+    opts.v_align = nil
+    opts.h_align = nil
+    return opts
+end
+local function create_buf(config)
+    local buf = nil
+    if config.file then
+        buf = vim.fn.bufadd(eval_opts(config.file))
+        vim.fn.bufload(buf)
+    else
+        buf = vim.api.nvim_create_buf(false, true)
+    end
+    return buf
+end
+local function create_win(config, buf)
+    local opts = get_win_opts(config)
+    local win = vim.api.nvim_open_win(buf, true, opts)
+    for opt, val in pairs(config.wo) do
+        vim.wo[win][opt] = val
+    end
+    return win
+end
+local function toggle(config, opts)
+    opts = opts or {}
+    local id = opts.id or eval_opts(config.id)
+    if type(id) ~= 'string' and type(id) ~= 'number' then
+        return
+    end
+    if id == 0 then
+        id = config.prev_id or 1
+    end
+    local term = config.terms[id] or {}
+    local cmd = eval_opts(config.cmd) or shell
+    local cwd = eval_opts(config.cwd) or vim.fn.getcwd()
+    local buf_ready = valid_buf(term.buf)
+    if not buf_ready then
+        term.buf = create_buf(config)
+        if config.on_open then
+            config.on_open(config, term.buf)
+        end
+        if config.on_exit then
+            vim.api.nvim_create_autocmd('BufDelete', {
+                buffer = term.buf,
+                once = true,
+                callback = function()
+                    config.on_exit(config, term.buf)
+                end,
+            })
+        end
+    end
+    if valid_win(term.win) then
+        vim.api.nvim_win_close(term.win, true)
+    else
+        if id ~= config.prev_id then
+            local prev_term = config.terms[config.prev_id] or {}
+            if valid_win(prev_term.win) then
+                vim.api.nvim_win_close(prev_term.win, true)
+            end
+        end
+        local prev_win = vim.api.nvim_get_current_win()
+        term.win = create_win(config, term.buf)
+        if not config.file then
+            if not buf_ready then
+                local job_id = vim.fn.jobstart(cmd, { cwd = cwd, term = true })
+                if job_id == 0 then
+                    vim.notify('floatty.nvim: Invalid arguments for terminal command', vim.log.levels.ERROR)
+                    return
+                elseif job_id == -1 then
+                    vim.notify('floatty.nvim: Terminal command not executable: ' .. cmd, vim.log.levels.ERROR)
+                    return
+                end
+            end
+            if not eval_opts(config.focus) and valid_win(prev_win) then
+                vim.api.nvim_set_current_win(prev_win)
+            elseif eval_opts(config.start_in_insert) then
+                vim.cmd.startinsert()
+            end
+        end
+    end
 
-M.config = vim.deepcopy(defaults)
-M.state = {
-	instances = {},
-	previous_id = 1,
-	setup = false,
-}
-
----@param value any
----@param ... any
----@return any
-local function evaluate(value, ...)
-	if type(value) == 'function' then
-		return value(...)
-	end
-	return value
+    config.prev_id = id
+    config.terms[id] = term
 end
 
----@param buf integer|nil
----@return boolean
-local function valid_buffer(buf)
-	return type(buf) == 'number' and api.nvim_buf_is_valid(buf)
+local function setup(config)
+    config.toggle = function(opts)
+        toggle(config, opts)
+    end
+    config.terms = {}
+    config.prev_id = nil
+    vim.api.nvim_create_autocmd('VimResized', {
+        callback = function()
+            if not config.prev_id then
+                return
+            end
+            local term = config.terms[config.prev_id]
+            if valid_win(term.win) then
+                vim.api.nvim_win_set_config(term.win, get_win_opts(config))
+            end
+        end,
+    })
+    return config
 end
-
----@param win integer|nil
----@return boolean
-local function valid_window(win)
-	return type(win) == 'number' and api.nvim_win_is_valid(win)
+M.setup = function(opts)
+    local config = vim.tbl_deep_extend('force', defaults, opts or {})
+    return setup(config)
 end
-
----@param value any
----@param fallback boolean
----@return boolean
-local function as_boolean(value, fallback)
-	value = evaluate(value)
-	if type(value) == 'boolean' then
-		return value
-	end
-	return fallback
-end
-
----@param value any
----@param available integer
----@param fallback number
----@return integer
-local function dimension(value, available, fallback)
-	value = tonumber(evaluate(value)) or fallback
-	local result
-
-	if value > 0 and value <= 1 then
-		result = math.floor(available * value)
-	else
-		result = math.floor(value)
-	end
-
-	result = math.max(1, math.min(result, available))
-	---@cast result integer
-	return result
-end
-
----@param border any
----@return integer
-local function border_size(border)
-	if border == nil or border == '' or border == 'none' then
-		return 0
-	end
-	return 2
-end
-
----@param requested any
----@param alignment string
----@param available integer
----@param occupied integer
----@return integer
-local function position(requested, alignment, available, occupied)
-	local maximum = math.max(0, available - occupied)
-	local value = tonumber(evaluate(requested))
-
-	if value then
-		if value > 0 and value < 1 then
-			value = math.floor(maximum * value)
-		else
-			value = math.floor(value)
-		end
-	elseif alignment == 'top' or alignment == 'left' then
-		value = 0
-	elseif alignment == 'bottom' or alignment == 'right' then
-		value = maximum
-	else
-		value = math.floor(maximum / 2)
-	end
-
-	value = math.max(0, math.min(value, maximum))
-	---@cast value integer
-	return value
-end
-
----@param opts table|nil
----@return table
-local function merged_config(opts)
-	return vim.tbl_deep_extend('force', {}, M.config, opts or {})
-end
-
----@param window table
----@return table
-local function window_config(window)
-	local columns = math.max(1, vim.o.columns)
-	local lines = math.max(1, vim.o.lines - vim.o.cmdheight)
-	local border = evaluate(window.border)
-	local border_width = border_size(border)
-	local border_height = border_size(border)
-	local available_width = math.max(1, columns - border_width)
-	local available_height = math.max(1, lines - border_height)
-	local width = dimension(window.width, available_width, 0.8)
-	local height = dimension(window.height, available_height, 0.8)
-	local row = position(window.row, window.v_align or 'center', lines, height + border_height)
-	local col = position(window.col, window.h_align or 'center', columns, width + border_width)
-
-	local zindex = math.max(1, math.floor(tonumber(evaluate(window.zindex)) or 50))
-	---@cast zindex integer
-
-	local config = {
-		anchor = evaluate(window.anchor) or 'NW',
-		border = border,
-		col = col,
-		focusable = as_boolean(window.focusable, true),
-		height = height,
-		mouse = as_boolean(window.mouse, true),
-		noautocmd = as_boolean(window.noautocmd, false),
-		relative = evaluate(window.relative) or 'editor',
-		row = row,
-		style = evaluate(window.style) or 'minimal',
-		width = width,
-		zindex = zindex,
-	}
-
-	local title = evaluate(window.title)
-	if title and title ~= '' then
-		config.title = title
-		config.title_pos = evaluate(window.title_pos) or 'center'
-	end
-
-	local footer = evaluate(window.footer)
-	if footer and footer ~= '' then
-		config.footer = footer
-		config.footer_pos = evaluate(window.footer_pos) or 'left'
-	end
-
-	return config
-end
-
----@param win integer
----@param options table
-local function apply_window_options(win, options)
-	for name, value in pairs(options) do
-		pcall(api.nvim_set_option_value, name, evaluate(value), {
-			win = win,
-		})
-	end
-end
-
----@param id string|integer
----@param buf integer
-local function attach_buffer_cleanup(id, buf)
-	api.nvim_create_autocmd('BufWipeout', {
-		buffer = buf,
-		callback = function()
-			local instance = M.state.instances[id]
-			if instance and instance.buf == buf then
-				M.state.instances[id] = nil
-			end
-		end,
-		once = true,
-	})
-end
-
----@param config table
----@return integer, boolean
-local function create_buffer(config)
-	local file = evaluate(config.file)
-
-	if type(file) == 'string' and file ~= '' then
-		local path = fn.fnamemodify(file, ':p')
-		local buf = fn.bufadd(path)
-		fn.bufload(buf)
-		return buf, false
-	end
-
-	local buf = api.nvim_create_buf(false, true)
-	api.nvim_set_option_value('bufhidden', 'hide', {
-		buf = buf,
-	})
-	api.nvim_set_option_value('swapfile', false, {
-		buf = buf,
-	})
-	return buf, true
-end
-
----@param job integer|nil
----@return boolean
-local function job_running(job)
-	if type(job) ~= 'number' or job <= 0 then
-		return false
-	end
-
-	local result = fn.jobwait({
-		job,
-	}, 0)
-	return result[1] == -1
-end
-
----@param id string|integer
----@param instance table
----@param config table
----@return boolean
-local function start_terminal(id, instance, config)
-	if job_running(instance.job) then
-		return true
-	end
-
-	local cmd = evaluate(config.cmd, id, instance)
-	if type(cmd) ~= 'string' and type(cmd) ~= 'table' then
-		vim.notify('Float command must resolve to a string or command list', vim.log.levels.ERROR, {
-			title = 'Native float',
-		})
-		return false
-	end
-
-	local cwd = evaluate(config.cwd, id, instance)
-	if type(cwd) ~= 'string' or cwd == '' or fn.isdirectory(cwd) ~= 1 then
-		cwd = fn.getcwd()
-	end
-
-	local job = fn.jobstart(cmd, {
-		cwd = cwd,
-		on_exit = function(job_id, exit_code, event)
-			vim.schedule(function()
-				local current = M.state.instances[id]
-				if current and current.job == job_id then
-					current.job = nil
-					current.exit_code = exit_code
-				end
-
-				if type(config.on_exit) == 'function' then
-					pcall(config.on_exit, instance, exit_code, event)
-				end
-			end)
-		end,
-		term = true,
-	})
-
-	if job == 0 then
-		vim.notify('Unable to start the terminal: invalid arguments', vim.log.levels.ERROR, {
-			title = 'Native float',
-		})
-		return false
-	end
-
-	if job == -1 then
-		vim.notify('Unable to start the terminal command', vim.log.levels.ERROR, {
-			title = 'Native float',
-		})
-		return false
-	end
-
-	instance.job = job
-	instance.exit_code = nil
-	return true
-end
-
----@param opts table
----@return string|integer
-local function resolve_id(opts)
-	local requested = evaluate(opts.id)
-	if type(requested) == 'string' or type(requested) == 'number' then
-		if requested ~= '' and requested ~= 0 then
-			return requested
-		end
-	end
-
-	if vim.v.count > 0 then
-		local count = math.floor(vim.v.count)
-		---@cast count integer
-		return count
-	end
-
-	return M.state.previous_id or 1
-end
-
----@param id string|integer
----@param config table
-local function close_other_window(id, config)
-	if not as_boolean(config.close_on_switch, true) then
-		return
-	end
-
-	local previous = M.state.instances[M.state.previous_id]
-	if M.state.previous_id ~= id and previous and valid_window(previous.win) then
-		api.nvim_win_close(previous.win, true)
-		previous.win = nil
-	end
-end
-
----@param opts table|nil
----@return table|nil
-function M.open(opts)
-	local config = merged_config(opts)
-	local id = resolve_id(config)
-	local instance = M.state.instances[id]
-
-	if instance and valid_window(instance.win) then
-		if as_boolean(config.focus, true) then
-			api.nvim_set_current_win(instance.win)
-		end
-		return instance
-	end
-
-	close_other_window(id, config)
-
-	local created = false
-	if not instance or not valid_buffer(instance.buf) then
-		local buf, terminal = create_buffer(config)
-		instance = {
-			buf = buf,
-			config = config,
-			exit_code = nil,
-			id = id,
-			job = nil,
-			terminal = terminal,
-			win = nil,
-		}
-		M.state.instances[id] = instance
-		created = true
-		attach_buffer_cleanup(id, buf)
-	else
-		instance.config = config
-	end
-
-	local previous_win = api.nvim_get_current_win()
-	local ok, win = pcall(api.nvim_open_win, instance.buf, true, window_config(config.window))
-
-	if not ok then
-		vim.notify('Unable to open floating window: ' .. tostring(win), vim.log.levels.ERROR, {
-			title = 'Native float',
-		})
-		return nil
-	end
-	---@cast win integer
-
-	instance.win = win
-	apply_window_options(win, config.wo)
-
-	if created and type(config.on_open) == 'function' then
-		pcall(config.on_open, instance)
-	end
-
-	if instance.terminal and not start_terminal(id, instance, config) then
-		M.close(id)
-		return nil
-	end
-
-	M.state.previous_id = id
-
-	local focus = as_boolean(config.focus, true)
-	if not focus and valid_window(previous_win) then
-		api.nvim_set_current_win(previous_win)
-	elseif instance.terminal and as_boolean(config.start_in_insert, true) then
-		vim.cmd.startinsert()
-	end
-
-	return instance
-end
-
----@param id string|integer|nil
----@return boolean
-function M.close(id)
-	id = id or M.state.previous_id
-	local instance = M.state.instances[id]
-	if not instance then
-		return false
-	end
-
-	if valid_window(instance.win) then
-		api.nvim_win_close(instance.win, true)
-	end
-	instance.win = nil
-	return true
-end
-
----@param opts table|nil
----@return table|nil
-function M.toggle(opts)
-	local config = merged_config(opts)
-	local id = resolve_id(config)
-	local instance = M.state.instances[id]
-
-	if instance and valid_window(instance.win) then
-		M.close(id)
-		return instance
-	end
-
-	config.id = id
-	return M.open(config)
-end
-
----@param id string|integer|nil
----@return boolean
-function M.dispose(id)
-	id = id or M.state.previous_id
-	local instance = M.state.instances[id]
-	if not instance then
-		return false
-	end
-
-	M.close(id)
-	if job_running(instance.job) then
-		pcall(fn.jobstop, instance.job)
-	end
-	if valid_buffer(instance.buf) then
-		pcall(api.nvim_buf_delete, instance.buf, {
-			force = true,
-		})
-	end
-	M.state.instances[id] = nil
-	return true
-end
-
----@param id string|integer|nil
----@param data string
----@return boolean
-function M.send(id, data)
-	id = id or M.state.previous_id
-	local instance = M.state.instances[id]
-	if not instance or not job_running(instance.job) then
-		return false
-	end
-
-	return pcall(api.nvim_chan_send, instance.job, data)
-end
-
----@param id string|integer|nil
----@return table|nil
-function M.get(id)
-	id = id or M.state.previous_id
-	return M.state.instances[id]
-end
-
----@param opts table|nil
-function M.setup(opts)
-	if opts then
-		M.config = vim.tbl_deep_extend('force', {}, M.config, opts)
-	end
-
-	api.nvim_create_user_command('FloatTerminalToggle', function(args)
-		local command = args.args ~= '' and args.args or nil
-		local id = args.count > 0 and math.floor(args.count) or nil
-		---@cast id integer|nil
-		M.toggle({
-			cmd = command,
-			id = id,
-		})
-	end, {
-		complete = 'shellcmd',
-		count = true,
-		desc = 'Toggle a native floating terminal',
-		force = true,
-		nargs = '*',
-	})
-
-	api.nvim_create_user_command('FloatTerminalClose', function(args)
-		local id = args.count > 0 and math.floor(args.count) or nil
-		---@cast id integer|nil
-		M.close(id)
-	end, {
-		count = true,
-		desc = 'Close a native floating terminal window',
-		force = true,
-	})
-
-	api.nvim_create_user_command('FloatTerminalDispose', function(args)
-		local id = args.count > 0 and math.floor(args.count) or nil
-		---@cast id integer|nil
-		M.dispose(id)
-	end, {
-		count = true,
-		desc = 'Stop and delete a native floating terminal',
-		force = true,
-	})
-
-	api.nvim_create_user_command('FloatTerminalStatus', function()
-		local instance = M.get()
-		if not instance then
-			vim.notify('No floating terminal instance', vim.log.levels.INFO, {
-				title = 'Native float',
-			})
-			return
-		end
-
-		local message = string.format(
-			'id=%s buffer=%d window=%s job=%s',
-			tostring(instance.id),
-			instance.buf,
-			valid_window(instance.win) and tostring(instance.win) or 'closed',
-			job_running(instance.job) and tostring(instance.job) or 'stopped'
-		)
-		vim.notify(message, vim.log.levels.INFO, {
-			title = 'Native float',
-		})
-	end, {
-		desc = 'Show native floating terminal status',
-		force = true,
-	})
-
-	M.state.setup = true
-end
-
-M.setup()
 
 return M

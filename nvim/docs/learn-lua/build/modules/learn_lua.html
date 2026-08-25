@@ -1,0 +1,535 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN"
+   "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd">
+<html>
+<meta http-equiv="Content-Type" content="text/html; charset=UTF-8"/>
+<head>
+    <title>Learn Lua with Diver</title>
+    <link rel="stylesheet" href="../ldoc.css" type="text/css" />
+</head>
+<body>
+
+<div id="container">
+
+<div id="product">
+	<div id="product_logo"></div>
+	<div id="product_name"><big><b></b></big></div>
+	<div id="product_description"></div>
+</div> <!-- id="product" -->
+
+
+<div id="main">
+
+
+<!-- Menu -->
+
+<div id="navigation">
+<br/>
+<h1>Diver :: Learn Lua</h1>
+
+
+<ul>
+  <li><a href="../index.html">Index</a></li>
+</ul>
+
+<h2>Contents</h2>
+<ul>
+<li><a href="#Functions">Functions</a></li>
+</ul>
+
+
+<h2>Modules</h2>
+<ul class="nowrap">
+  <li><strong>learn_lua</strong></li>
+  <li><a href="../modules/learn_tables.html">learn_tables</a></li>
+  <li><a href="../modules/learn_vim_api.html">learn_vim_api</a></li>
+</ul>
+<h2>Topics</h2>
+<ul class="">
+  <li><a href="../topics/00-introduction.md.html">00-introduction</a></li>
+  <li><a href="../topics/01-values-and-types.md.html">01-values-and-types</a></li>
+  <li><a href="../topics/02-variables-and-scope.md.html">02-variables-and-scope</a></li>
+  <li><a href="../topics/03-tables.md.html">03-tables</a></li>
+  <li><a href="../topics/04-functions.md.html">04-functions</a></li>
+  <li><a href="../topics/05-control-flow.md.html">05-control-flow</a></li>
+  <li><a href="../topics/06-strings-and-patterns.md.html">06-strings-and-patterns</a></li>
+  <li><a href="../topics/07-modules-and-require.md.html">07-modules-and-require</a></li>
+  <li><a href="../topics/08-error-handling.md.html">08-error-handling</a></li>
+  <li><a href="../topics/09-the-vim-api.md.html">09-the-vim-api</a></li>
+  <li><a href="../topics/10-luacats-annotations.md.html">10-luacats-annotations</a></li>
+  <li><a href="../topics/11-neovim-013-native.md.html">11-neovim-013-native</a></li>
+  <li><a href="../topics/12-putting-it-together.md.html">12-putting-it-together</a></li>
+</ul>
+
+</div>
+
+<div id="content">
+
+<h1>Module <code>learn_lua</code></h1>
+<p>Core Lua language, taught from the Diver config.</p>
+<p> This module is a <em>runnable</em> tour of the Lua language features you will meet
+ when reading <code>diver</code>. Every function here is real Lua you could paste into
+ <code>:lua</code> inside Neovim. The comments use two annotation systems at once:</p>
+
+<ul>
+    <li><strong>LDoc tags</strong> (<code>@param</code>, <code>@return</code>, <code>@usage</code>) — these build the HTML docs.</li>
+    <li><strong>LuaCATS annotations</strong> (<code>---@param</code>, <code>---@return</code>, <code>---@type</code>) — these
+    feed <code>lua-language-server</code> so you get hovers and red squiggles in Neovim.</li>
+</ul>
+
+<p> The two look almost identical on purpose. A single triple-dash comment with
+ <code>@param name type description</code> satisfies <em>both</em> tools. That is why <code>diver</code>
+ can document itself and type-check itself from the same comments.</p>
+    <h3>Info:</h3>
+    <ul>
+        <li><strong>License</strong>: Apache-2.0</li>
+        <li><strong>Author</strong>: Qompass AI</li>
+    </ul>
+
+
+<h2><a href="#Functions">Functions</a></h2>
+<table class="function_list">
+	<tr>
+	<td class="name" nowrap><a href="#kind_of">kind_of (value)</a></td>
+	<td class="summary">Return the literal Lua type name of any value.</td>
+	</tr>
+	<tr>
+	<td class="name" nowrap><a href="#is_truthy">is_truthy (value)</a></td>
+	<td class="summary">Demonstrate Lua truthiness.</td>
+	</tr>
+	<tr>
+	<td class="name" nowrap><a href="#default_to">default_to (value, fallback)</a></td>
+	<td class="summary">Pick the first argument that is not <code>nil</code>/<code>false</code>, else a fallback.</td>
+	</tr>
+	<tr>
+	<td class="name" nowrap><a href="#ternary">ternary (cond, when_true, when_false)</a></td>
+	<td class="summary">A safe ternary: <code>cond and a or b</code>.</td>
+	</tr>
+	<tr>
+	<td class="name" nowrap><a href="#to_zero_based">to_zero_based (one_based)</a></td>
+	<td class="summary">Convert a 1-based line number to the 0-based index the API expects.</td>
+	</tr>
+	<tr>
+	<td class="name" nowrap><a href="#bounds">bounds (list)</a></td>
+	<td class="summary">Return several values at once.</td>
+	</tr>
+	<tr>
+	<td class="name" nowrap><a href="#safe_require">safe_require (name)</a></td>
+	<td class="summary">Try to require a module without crashing the whole config.</td>
+	</tr>
+	<tr>
+	<td class="name" nowrap><a href="#call_if_function">call_if_function (maybe_fn, arg)</a></td>
+	<td class="summary">Guard a call so a thrown error becomes a soft warning.</td>
+	</tr>
+	<tr>
+	<td class="name" nowrap><a href="#make_counter">make_counter (start)</a></td>
+	<td class="summary">Build a counter closure.</td>
+	</tr>
+</table>
+
+<br/>
+<br/>
+
+
+    <h2 class="section-header "><a name="Functions"></a>Functions</h2>
+
+    <dl class="function">
+    <dt>
+    <a name = "kind_of"></a>
+    <strong>kind_of (value)</strong>
+    </dt>
+    <dd>
+    Return the literal Lua type name of any value. </p>
+
+<p> Lua has exactly eight types: <code>nil</code>, <code>boolean</code>, <code>number</code>, <a href="https://www.lua.org/manual/5.1/manual.html#5.4">string</a>,
+ <code>function</code>, <a href="https://www.lua.org/manual/5.1/manual.html#5.5">table</a>, <code>userdata</code>, and <code>thread</code>. You already know the
+ difference between a boolean and a float — Lua does <em>not</em> split numbers into
+ int and float as separate types (in Lua 5.1 / LuaJIT, which is what Neovim
+ uses, every number is a 64-bit float). The <code>type()</code> builtin tells you which
+ of the eight you are holding.
+
+    </ul>
+    </ul>
+    </ul>
+    </ul>
+    </ul>
+    </ul>
+    </ul>
+
+    <h3>Parameters:</h3>
+    <ul>
+        <li><span class="parameter">value</span>
+         any
+        </li>
+    </ul>
+
+    <h3>Returns:</h3>
+    <ol>
+
+        type # one of: nil|boolean|number|string|function|table|userdata|thread
+    </ol>
+
+
+
+    <h3>Usage:</h3>
+    <ul>
+        <pre class="example">learn_lua.<span class="function-name">kind_of</span>(<span class="keyword">true</span>)   <span class="comment">--&gt; "boolean"
+</span>learn_lua.<span class="function-name">kind_of</span>(<span class="number">3.14</span>)   <span class="comment">--&gt; "number"
+</span>learn_lua.<span class="function-name">kind_of</span>(<span class="string">"hi"</span>)   <span class="comment">--&gt; "string"
+</span>learn_lua.<span class="function-name">kind_of</span>(<span class="keyword">nil</span>)    <span class="comment">--&gt; "nil"</span></pre>
+    </ul>
+
+</dd>
+    <dt>
+    <a name = "is_truthy"></a>
+    <strong>is_truthy (value)</strong>
+    </dt>
+    <dd>
+    Demonstrate Lua truthiness. </p>
+
+<p> This is the single most important rule for reading <code>diver</code>. In Lua **only
+ <code>false</code> and <code>nil</code> are falsy<em>*. *Everything else is truthy</em> — including <code>0</code>,
+ the empty string <code>&quot;&quot;</code>, and empty tables <code>{}</code>. That is why you constantly see
+ guards like <code>if client.server_capabilities.completionProvider then</code> in
+ <code>lua/config/core/lsp.lua</code>: the field is either a truthy table or <code>nil</code>.
+
+    </ul>
+    </ul>
+    </ul>
+    </ul>
+    </ul>
+    </ul>
+    </ul>
+
+    <h3>Parameters:</h3>
+    <ul>
+        <li><span class="parameter">value</span>
+         any
+        </li>
+    </ul>
+
+    <h3>Returns:</h3>
+    <ol>
+
+        boolean
+    </ol>
+
+
+
+    <h3>Usage:</h3>
+    <ul>
+        <pre class="example">learn_lua.<span class="function-name">is_truthy</span>(<span class="number">0</span>)   <span class="comment">--&gt; true   (0 is truthy in Lua!)
+</span>learn_lua.<span class="function-name">is_truthy</span>(<span class="string">""</span>)  <span class="comment">--&gt; true
+</span>learn_lua.<span class="function-name">is_truthy</span>(<span class="keyword">nil</span>) <span class="comment">--&gt; false</span></pre>
+    </ul>
+
+</dd>
+    <dt>
+    <a name = "default_to"></a>
+    <strong>default_to (value, fallback)</strong>
+    </dt>
+    <dd>
+    Pick the first argument that is not <code>nil</code>/<code>false</code>, else a fallback. </p>
+
+<p> <code>a or b</code> evaluates to <code>a</code> when <code>a</code> is truthy, otherwise to <code>b</code>. <code>diver</code> uses
+ this for defaults all over <code>init.lua</code>, e.g.
+ <code>user = env.USER or fn.system(&apos;whoami&apos;)</code>. It is Lua's equivalent of the
+ <code>??</code> operator in other languages.
+
+    </ul>
+    </ul>
+    </ul>
+    </ul>
+    </ul>
+    </ul>
+    </ul>
+
+    <h3>Parameters:</h3>
+    <ul>
+        <li><span class="parameter">value</span>
+         T?
+        </li>
+        <li><span class="parameter">fallback</span>
+         T
+        </li>
+    </ul>
+
+    <h3>Returns:</h3>
+    <ol>
+
+        T
+    </ol>
+
+
+
+    <h3>Usage:</h3>
+    <ul>
+        <pre class="example">learn_lua.<span class="function-name">default_to</span>(vim.env.EDITOR, <span class="string">"nvim"</span>)</pre>
+    </ul>
+
+</dd>
+    <dt>
+    <a name = "ternary"></a>
+    <strong>ternary (cond, when_true, when_false)</strong>
+    </dt>
+    <dd>
+    A safe ternary: <code>cond and a or b</code>. </p>
+
+<p> Lua has no <code>?:</code> operator. The idiom <code>cond and a or b</code> works **as long as
+ <code>a</code> is never <code>false</code>/<code>nil</code>** (otherwise it would fall through to <code>b</code>). You
+ can see this exact shape in <code>init.lua</code>:
+ <code>o.shell = fn.executable(&apos;pwsh&apos;) == 1 and &apos;pwsh&apos; or &apos;powershell&apos;</code>.
+
+    </ul>
+    </ul>
+    </ul>
+    </ul>
+    </ul>
+    </ul>
+    </ul>
+
+    <h3>Parameters:</h3>
+    <ul>
+        <li><span class="parameter">cond</span>
+         boolean
+        </li>
+        <li><span class="parameter">when_true</span>
+         any
+        </li>
+        <li><span class="parameter">when_false</span>
+         any
+        </li>
+    </ul>
+
+    <h3>Returns:</h3>
+    <ol>
+
+        any
+    </ol>
+
+
+
+
+</dd>
+    <dt>
+    <a name = "to_zero_based"></a>
+    <strong>to_zero_based (one_based)</strong>
+    </dt>
+    <dd>
+    Convert a 1-based line number to the 0-based index the API expects. </p>
+
+<p> This is not just arithmetic — it teaches a real <code>diver</code> gotcha. Vimscript
+ and the user-facing world are <strong>1-based</strong> (line 1 is the first line), but the
+ modern <code>vim.api.*</code> functions are <strong>0-based</strong>. <code>lua/config/core/parser.lua</code>
+ literally does <code>lnum = tonumber(lnum) - 1</code> for exactly this reason.
+
+    </ul>
+    </ul>
+    </ul>
+    </ul>
+    </ul>
+    </ul>
+    </ul>
+
+    <h3>Parameters:</h3>
+    <ul>
+        <li><span class="parameter">one_based</span>
+         number
+        </li>
+    </ul>
+
+    <h3>Returns:</h3>
+    <ol>
+
+        number
+    </ol>
+
+
+
+    <h3>Usage:</h3>
+    <ul>
+        <pre class="example">learn_lua.<span class="function-name">to_zero_based</span>(<span class="number">1</span>) <span class="comment">--&gt; 0</span></pre>
+    </ul>
+
+</dd>
+    <dt>
+    <a name = "bounds"></a>
+    <strong>bounds (list)</strong>
+    </dt>
+    <dd>
+    Return several values at once. </p>
+
+<p> Lua functions can return more than one value. <code>diver</code>'s
+ <code>lua/config/core/schema.lua</code> returns <code>vim.Schema|nil, integer|nil</code> from
+ <code>get_index</code>. Callers can grab as many as they want; extras are discarded.
+
+    </ul>
+    </ul>
+    </ul>
+    </ul>
+    </ul>
+    </ul>
+    </ul>
+
+    <h3>Parameters:</h3>
+    <ul>
+        <li><span class="parameter">list</span>
+         any[]
+        </li>
+    </ul>
+
+    <h3>Returns:</h3>
+    <ol>
+        <li>
+        integer count</li>
+        <li>
+        any first</li>
+        <li>
+        any last</li>
+    </ol>
+
+
+
+    <h3>Usage:</h3>
+    <ul>
+        <pre class="example"><span class="keyword">local</span> n, first, last = learn_lua.<span class="function-name">bounds</span>({<span class="number">10</span>, <span class="number">20</span>, <span class="number">30</span>})</pre>
+    </ul>
+
+</dd>
+    <dt>
+    <a name = "safe_require"></a>
+    <strong>safe_require (name)</strong>
+    </dt>
+    <dd>
+    Try to require a module without crashing the whole config. </p>
+
+<p> This is the single most-used safety pattern in <code>diver</code>. See
+ <code>lua/config/init.lua</code>'s <a href="../modules/learn_lua.html#safe_require">safe_require</a>. <code>pcall(f, ...)</code> runs <code>f</code> inside a
+ protected sandbox and returns <code>ok, result</code>: if <code>f</code> errored, <code>ok</code> is <code>false</code>
+ and <code>result</code> is the error message; otherwise <code>ok</code> is <code>true</code> and <code>result</code> is
+ the return value. A broken plugin therefore cannot take down your editor.
+
+    </ul>
+    </ul>
+    </ul>
+    </ul>
+    </ul>
+    </ul>
+    </ul>
+
+    <h3>Parameters:</h3>
+    <ul>
+        <li><span class="parameter">name</span>
+         string
+        </li>
+    </ul>
+
+    <h3>Returns:</h3>
+    <ol>
+        <li>
+        table|nil module</li>
+        <li>
+        string|nil err</li>
+    </ol>
+
+
+
+    <h3>Usage:</h3>
+    <ul>
+        <pre class="example"><span class="keyword">local</span> mod = learn_lua.<span class="function-name">safe_require</span>(<span class="string">"config.core.lsp"</span>)</pre>
+    </ul>
+
+</dd>
+    <dt>
+    <a name = "call_if_function"></a>
+    <strong>call_if_function (maybe_fn, arg)</strong>
+    </dt>
+    <dd>
+    Guard a call so a thrown error becomes a soft warning. </p>
+
+<p> Mirrors the <code>call_if_present</code> helper in <code>lua/config/init.lua</code>. It checks the
+ argument really is a function before calling it, then wraps the call in
+ <a href="https://www.lua.org/manual/5.1/manual.html#pdf-pcall">pcall</a> so an exception is reported via <code>vim.notify</code> instead of aborting.
+
+    </ul>
+    </ul>
+    </ul>
+    </ul>
+    </ul>
+    </ul>
+    </ul>
+
+    <h3>Parameters:</h3>
+    <ul>
+        <li><span class="parameter">maybe_fn</span>
+         function|any
+        </li>
+        <li><span class="parameter">arg</span>
+         any
+        </li>
+    </ul>
+
+    <h3>Returns:</h3>
+    <ol>
+
+        boolean ran_ok
+    </ol>
+
+
+
+
+</dd>
+    <dt>
+    <a name = "make_counter"></a>
+    <strong>make_counter (start)</strong>
+    </dt>
+    <dd>
+    Build a counter closure. </p>
+
+<p> A closure is a function that "captures" local variables from where it was
+ created. <code>diver</code> uses closures constantly as keymap and autocmd callbacks —
+ e.g. the <code>toggle_netrw</code> function defined <em>inside</em> <code>setup_cicdmap</code> in
+ <code>lua/mappings/cicdmap.lua</code> closes over the surrounding <code>opts</code>.
+
+    </ul>
+    </ul>
+    </ul>
+    </ul>
+    </ul>
+    </ul>
+    </ul>
+
+    <h3>Parameters:</h3>
+    <ul>
+        <li><span class="parameter">start</span>
+        ? integer
+        </li>
+    </ul>
+
+    <h3>Returns:</h3>
+    <ol>
+
+        fun(): integer
+    </ol>
+
+
+
+    <h3>Usage:</h3>
+    <ul>
+        <pre class="example"><span class="keyword">local</span> next_id = learn_lua.<span class="function-name">make_counter</span>(<span class="number">10</span>)
+<span class="function-name">next_id</span>() <span class="comment">--&gt; 11
+</span><span class="function-name">next_id</span>() <span class="comment">--&gt; 12</span></pre>
+    </ul>
+
+</dd>
+</dl>
+
+
+</div> <!-- id="content" -->
+</div> <!-- id="main" -->
+<div id="about">
+<i>generated by <a href="http://github.com/lunarmodules/LDoc">LDoc 1.5.0</a></i>
+<i style="float:right;">Last updated 2026-06-30 16:53:09 </i>
+</div> <!-- id="about" -->
+</div> <!-- id="container" -->
+</body>
+</html>

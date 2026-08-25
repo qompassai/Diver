@@ -1,0 +1,195 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN"
+   "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd">
+<html>
+<meta http-equiv="Content-Type" content="text/html; charset=UTF-8"/>
+<head>
+    <title>Learn Lua with Diver</title>
+    <link rel="stylesheet" href="../ldoc.css" type="text/css" />
+</head>
+<body>
+
+<div id="container">
+
+<div id="product">
+	<div id="product_logo"></div>
+	<div id="product_name"><big><b></b></big></div>
+	<div id="product_description"></div>
+</div> <!-- id="product" -->
+
+
+<div id="main">
+
+
+<!-- Menu -->
+
+<div id="navigation">
+<br/>
+<h1>Diver :: Learn Lua</h1>
+
+
+<ul>
+  <li><a href="../index.html">Index</a></li>
+</ul>
+
+<h2>Contents</h2>
+<ul>
+<li><a href="#Concept">Concept </a></li>
+<li><a href="#In_Diver">In Diver </a></li>
+<li><a href="#Reference">Reference </a></li>
+<li><a href="#Try_it_yourself">Try it yourself </a></li>
+</ul>
+
+
+<h2>Topics</h2>
+<ul class="">
+  <li><a href="../topics/00-introduction.md.html">00-introduction</a></li>
+  <li><strong>01-values-and-types</strong></li>
+  <li><a href="../topics/02-variables-and-scope.md.html">02-variables-and-scope</a></li>
+  <li><a href="../topics/03-tables.md.html">03-tables</a></li>
+  <li><a href="../topics/04-functions.md.html">04-functions</a></li>
+  <li><a href="../topics/05-control-flow.md.html">05-control-flow</a></li>
+  <li><a href="../topics/06-strings-and-patterns.md.html">06-strings-and-patterns</a></li>
+  <li><a href="../topics/07-modules-and-require.md.html">07-modules-and-require</a></li>
+  <li><a href="../topics/08-error-handling.md.html">08-error-handling</a></li>
+  <li><a href="../topics/09-the-vim-api.md.html">09-the-vim-api</a></li>
+  <li><a href="../topics/10-luacats-annotations.md.html">10-luacats-annotations</a></li>
+  <li><a href="../topics/11-neovim-013-native.md.html">11-neovim-013-native</a></li>
+  <li><a href="../topics/12-putting-it-together.md.html">12-putting-it-together</a></li>
+</ul>
+<h2>Modules</h2>
+<ul class="nowrap">
+  <li><a href="../modules/learn_lua.html">learn_lua</a></li>
+  <li><a href="../modules/learn_tables.html">learn_tables</a></li>
+  <li><a href="../modules/learn_vim_api.html">learn_vim_api</a></li>
+</ul>
+
+</div>
+
+<div id="content">
+
+
+<h1>01 · Values and Types</h1>
+
+<p><a name="Concept"></a></p>
+<h2>Concept</h2>
+
+<p>Lua has exactly <strong>eight types</strong>. That is the whole list, and you already half-know it:</p>
+
+<p>| Type | Example | Notes |
+|------|---------|-------|
+| <code>nil</code> | <code>nil</code> | "nothing here." The default value of any unset variable. |
+| <code>boolean</code> | <code>true</code>, <code>false</code> | Only two values. |
+| <code>number</code> | <code>42</code>, <code>3.14</code>, <code>-1</code> | <strong>One</strong> numeric type. On LuaJIT it is a 64-bit float. There is no separate int type. |
+| <a href="https://www.lua.org/manual/5.1/manual.html#5.4">string</a> | <code>&apos;hi&apos;</code>, <code>&quot;hi&quot;</code> | Immutable text. Single or double quotes are identical. |
+| <code>function</code> | <code>function() end</code> | Functions are values you can pass around. |
+| <a href="https://www.lua.org/manual/5.1/manual.html#5.5">table</a> | <code>{ 1, 2, x = 3 }</code> | The only container. Chapter 03 is entirely about these. |
+| <code>userdata</code> | (from C) | Raw C data. You will rarely create these directly. |
+| <code>thread</code> | (coroutines) | For cooperative multitasking. Advanced; skip for now. |</p>
+
+<p>You ask Lua which type you are holding with the built-in <code>type(v)</code>, which
+returns one of those names as a <strong>string</strong>.</p>
+
+
+<pre>
+<span class="global">type</span>(<span class="keyword">true</span>)   <span class="comment">--&gt; "boolean"
+</span><span class="global">type</span>(<span class="number">3.14</span>)   <span class="comment">--&gt; "number"
+</span><span class="global">type</span>(<span class="string">"hi"</span>)   <span class="comment">--&gt; "string"
+</span><span class="global">type</span>(<span class="keyword">nil</span>)    <span class="comment">--&gt; "nil"
+</span><span class="global">type</span>({})     <span class="comment">--&gt; "table"
+</span><span class="global">type</span>(<span class="global">print</span>)  <span class="comment">--&gt; "function"</span>
+</pre>
+
+
+<h3>The one rule that unlocks the config: truthiness</h3>
+
+<p>When Lua evaluates a condition (<code>if</code>, <code>and</code>, <code>or</code>, <code>while</code>), it asks only one
+question: <em>is this value falsy?</em> And the answer is falsy for <strong>exactly two
+values</strong>:</p>
+
+<ul>
+    <li><code>false</code></li>
+    <li><code>nil</code></li>
+</ul>
+
+<p><strong>Everything else is truthy.</strong> This trips up newcomers from other languages:</p>
+
+
+<pre>
+<span class="keyword">if</span> <span class="number">0</span> <span class="keyword">then</span> <span class="global">print</span>(<span class="string">"yes"</span>) <span class="keyword">end</span>    <span class="comment">-- prints "yes" — 0 is TRUE in Lua
+</span><span class="keyword">if</span> <span class="string">""</span> <span class="keyword">then</span> <span class="global">print</span>(<span class="string">"yes"</span>) <span class="keyword">end</span>   <span class="comment">-- prints "yes" — empty string is TRUE
+</span><span class="keyword">if</span> {} <span class="keyword">then</span> <span class="global">print</span>(<span class="string">"yes"</span>) <span class="keyword">end</span>   <span class="comment">-- prints "yes" — empty table is TRUE</span>
+</pre>
+
+
+<p>Only <code>if false</code> and <code>if nil</code> (and therefore any <em>missing</em> table field) are
+false.</p>
+
+<p><a name="In_Diver"></a></p>
+<h2>In Diver</h2>
+
+<p>Open <code>lua/config/core/lsp.lua</code>. The very first thing <code>M.on_attach</code> does is:</p>
+
+
+<pre>
+<span class="keyword">if</span> client.server_capabilities.completionProvider <span class="keyword">then</span>
+</pre>
+
+
+<p><code>completionProvider</code> is either a truthy <strong>table</strong> (the server supports
+completion) or **<code>nil</code>** (it does not). There is no explicit <code>== true</code> — the
+truthiness rule does the work. You will see this hundreds of times across the
+config, e.g. <code>if env.SSH_TTY then</code> in <code>init.lua</code>.</p>
+
+<p>Now look at <code>init.lua</code> line ~23:</p>
+
+
+<pre>
+<span class="keyword">local</span> is_windows = fn.<span class="function-name">has</span>(<span class="string">'win32'</span>) == <span class="number">1</span> <span class="keyword">or</span> fn.<span class="function-name">has</span>(<span class="string">'win64'</span>) == <span class="number">1</span>
+</pre>
+
+
+<p><code>fn.has(...)</code> returns the <strong>number</strong> <code>1</code> or <code>0</code> (Vimscript convention). Because
+<code>0</code> is <em>truthy</em> in Lua, you cannot write <code>if fn.has(&apos;win32&apos;) then</code> — it would be
+true on every platform. That is why the config carefully compares <code>== 1</code>. This
+is a real bug-magnet, and now you can spot it.</p>
+
+<p><a name="Reference"></a></p>
+<h2>Reference</h2>
+
+<p>See the runnable, annotated examples in the **<a href="../modules/learn_lua.html#">learn_lua</a>** module:</p>
+
+<ul>
+    <li><code>learn_lua.kind_of(value)</code> — wraps <code>type()</code>.</li>
+    <li><code>learn_lua.is_truthy(value)</code> — shows the <code>not not value</code> idiom for collapsing
+    any value to a real boolean.</li>
+    <li><code>learn_lua.to_zero_based(n)</code> — the number lesson that explains the 1-based vs
+    0-based gotcha you will meet in Chapter 09.</li>
+</ul>
+
+<p><a name="Try_it_yourself"></a></p>
+<h2>Try it yourself</h2>
+
+<p>Inside Neovim, open the command line and run:</p>
+
+
+<pre>
+:lua <span class="global">print</span>(<span class="global">type</span>(vim.g.mapleader))
+:lua <span class="global">print</span>(<span class="global">type</span>(vim.o.number))
+:lua <span class="keyword">if</span> <span class="number">0</span> <span class="keyword">then</span> <span class="global">print</span>(<span class="string">"0 is truthy"</span>) <span class="keyword">end</span>
+</pre>
+
+
+<p>You have now met every Lua type and the single most important evaluation rule
+in the language. Next: how to <em>name</em> these values — <strong>Chapter 02, Variables and
+Scope</strong>.</p>
+
+
+</div> <!-- id="content" -->
+</div> <!-- id="main" -->
+<div id="about">
+<i>generated by <a href="http://github.com/lunarmodules/LDoc">LDoc 1.5.0</a></i>
+<i style="float:right;">Last updated 2026-06-30 16:53:09 </i>
+</div> <!-- id="about" -->
+</div> <!-- id="container" -->
+</body>
+</html>

@@ -1,0 +1,13 @@
+-- /qompassai/Diver/lua/types/ui/colors.lua
+-- Qompass AI Diver UI Color Types
+-- Copyright (C) 2026 Qompass AI, All rights reserved
+-- ----------------------------------------
+---@class HlOpts
+---@field bg?                                              string
+---@field bold?                                            boolean
+---@field fg?                                              string
+---@field get?                                             fun(opts?: vim.lsp.Config.CompletionGetOpts)
+---@field italic?                                          boolean
+---@field sp?                                              string
+---@field undercurl?                                       boolean
+---@field underline?                                       boolean

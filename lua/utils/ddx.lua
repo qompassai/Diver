@@ -21,11 +21,13 @@ local function strip_ansi(bufnr)
     api.nvim_set_current_buf(cur)
   end
 end
+
 local function scandir(root)
   local handle = uv.fs_scandir(root)
   if not handle then
     return {}
   end
+
   local results = {}
   while true do
     local name, t = uv.fs_scandir_next(handle)
@@ -39,6 +41,7 @@ local function scandir(root)
   end
   return results
 end
+
 local function to_module(root, path)
   local rel = path:gsub('^' .. vim.pesc(root) .. '/?', '')
   rel = rel:gsub('%.lua$', '')
@@ -46,8 +49,10 @@ local function to_module(root, path)
   rel = rel:gsub('%.init$', '')
   return rel
 end
+
 local function collect_lua_files(root)
   local files = {}
+
   local function walk(dir)
     for _, entry in ipairs(scandir(dir)) do
       local full = dir .. '/' .. entry.name
@@ -58,10 +63,12 @@ local function collect_lua_files(root)
       end
     end
   end
+
   walk(root)
   table.sort(files)
   return files
 end
+
 local function make_qf_item(file, text, lnum, col)
   return {
     filename = file,
@@ -70,41 +77,44 @@ local function make_qf_item(file, text, lnum, col)
     text = text,
   }
 end
+
 local function write_log(fh, msg)
   if fh then
     fh:write(msg .. '\n')
   end
 end
+
 local function syntaxcheck_file(file)
-  local ok_read, lines = pcall(vim.fn.readfile, file)
-  if not ok_read then
-    return false, ('unable to read file: %s'):format(tostring(lines))
-  end
-  local src = table.concat(lines, '\n')
-  local chunk, err = load(src, '@' .. file, 't')
+  local chunk, err = loadfile(file)
   if not chunk then
     return false, tostring(err)
   end
   return true, nil
 end
+
 local function parse_lua_error(err)
   if type(err) ~= 'string' then
     return nil, nil
   end
+
   local lnum, msg = err:match(':(%d+):%s*(.+)$')
   if lnum then
     return tonumber(lnum), msg
   end
+
   return nil, err
 end
+
 local function safe_require(mod)
   return pcall(require, mod)
 end
+
 local function check_lazy_state(qf_items, fh)
   local lazy_loaded = package.loaded['lazy'] ~= nil
 
   write_log(fh, ('[probe] lazy loaded: %s'):format(tostring(lazy_loaded)))
   write_log(fh, ('[probe] g:lazy_did_setup: %s'):format(tostring(vim.g.lazy_did_setup)))
+
   if vim.g.lazy_did_setup and not lazy_loaded then
     qf_items[#qf_items + 1] = make_qf_item(
       fn.stdpath('config') .. '/init.lua',
@@ -112,18 +122,22 @@ local function check_lazy_state(qf_items, fh)
     )
   end
 end
+
 local function check_pack_state(qf_items, fh)
   local has_pack = type(vim.pack) == 'table'
   local has_add = type(vim.pack and vim.pack.add) == 'function'
   local has_update = type(vim.pack and vim.pack.update) == 'function'
+
   write_log(fh, ('[probe] vim.pack available: %s'):format(tostring(has_pack)))
   write_log(fh, ('[probe] vim.pack.add available: %s'):format(tostring(has_add)))
   write_log(fh, ('[probe] vim.pack.update available: %s'):format(tostring(has_update)))
+
   if not has_pack then
     qf_items[#qf_items + 1] =
       make_qf_item(fn.stdpath('config') .. '/init.lua', '[vim.pack] vim.pack table is unavailable')
     return
   end
+
   if not has_add then
     qf_items[#qf_items + 1] =
       make_qf_item(fn.stdpath('config') .. '/init.lua', '[vim.pack] vim.pack.add is unavailable')

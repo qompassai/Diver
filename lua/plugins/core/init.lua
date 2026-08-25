@@ -1,0 +1,61 @@
+-- /qompassai/Diver/lua/plugins/core/init.lua
+-- Qompass AI Diver Plugin Core Init
+-- Copyright (C) 2025 Qompass AI, All rights reserved
+-- ----------------------------------------
+vim.pack.add({ ---@type vim.pack.Spec[]
+  {
+    branch = 'main',
+    name = 'cheatsheet.nvim',
+    src = 'https://github.com/sudormrfbin/cheatsheet.nvim',
+    keys = {
+      {
+        '<leader>?',
+        '<cmd>Cheatsheet<CR>',
+        desc = 'Open Cheatsheet',
+      },
+    },
+    hook = function()
+      require('cheatsheet').setup({
+        bundled_cheatsheets = true,
+        bundled_plugin_cheatsheets = true,
+        include_only_installed_plugins = true,
+      })
+    end,
+  },
+  {
+    branch = 'main',
+    src = 'https://github.com/ms-jpq/coq_nvim',
+    version = 'dev',
+    dependencies = {
+      {
+        branch = 'artifacts',
+        src = 'https://github.com/ms-jpq/coq.artifacts',
+      },
+      {
+        branch = '3p',
+        name = 'coq.thirdparty',
+        src = 'https://github.com/ms-jpq/coq.thirdparty',
+      },
+    },
+    init = function()
+      vim.g.coq_settings = {
+        auto_start = true,
+      }
+    end,
+    config = function() end,
+  },
+  {
+    branch = 'main',
+    name = 'neo-tree.nvim',
+    src = 'https://github.com/nvim-neo-tree/neo-tree.nvim',
+    version = vim.version.range('3.*'),
+  },
+  {
+    src = 'https://github.com/folke/which-key.nvim',
+    hook = function()
+      local WK = require('config.core.whichkey')
+      WK.setup()
+    end,
+  },
+})
+return {}

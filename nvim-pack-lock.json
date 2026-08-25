@@ -61,6 +61,11 @@
       "rev": "b08b9245d2973eda91437d2de5c8746b9f510d31",
       "src": "https://github.com/vyfor/cord.nvim"
     },
+    "diagram.nvim": {
+      "rev": "a221810b17cdda2d5fdddba9bab3eba6fab8fabc",
+      "src": "https://github.com/3rd/diagram.nvim",
+      "version": "'master'"
+    },
     "distant.nvim": {
       "rev": "67d6b066e8490725718b79f643966f4eafc7da3c",
       "src": "https://github.com/chipsenkbeil/distant.nvim",
@@ -92,6 +97,11 @@
       "rev": "84a4987ff36798c2fc1169cbaff67960aed9776f",
       "src": "https://github.com/nmac427/guess-indent.nvim"
     },
+    "image.nvim": {
+      "rev": "88351f1f7d9dbae286e671ce3690a49660dd8a5c",
+      "src": "https://github.com/3rd/image.nvim",
+      "version": "'master'"
+    },
     "indent-blankline.nvim": {
       "rev": "d28a3f70721c79e3c5f6693057ae929f3d9c0a03",
       "src": "https://github.com/lukas-reineke/indent-blankline.nvim",
@@ -100,6 +110,11 @@
     "lazydev.nvim": {
       "rev": "5231c62aa83c2f8dc8e7ba957aa77098cda1257d",
       "src": "https://github.com/folke/lazydev.nvim"
+    },
+    "live-preview.nvim": {
+      "rev": "5977060965161f7b3be3166467d03e09d10c68ea",
+      "src": "https://github.com/brianhuster/live-preview.nvim",
+      "version": "'main'"
     },
     "lualine.nvim": {
       "rev": "47f91c416daef12db467145e16bed5bbfe00add8",
@@ -114,6 +129,11 @@
     "material.nvim": {
       "rev": "92f7366a9315cd386bc4fa4d716fde375dda210f",
       "src": "https://github.com/marko-cerovac/material.nvim"
+    },
+    "md-pdf.nvim": {
+      "rev": "d0bab77b6965dcd272c3221e6d42d30194d341e2",
+      "src": "https://github.com/arminveres/md-pdf.nvim",
+      "version": "'main'"
     },
     "mini.ai": {
       "rev": "a995fe9cd4193fb492b5df69175a351a74b3d36b",
@@ -161,12 +181,11 @@
       "src": "https://github.com/catppuccin/nvim"
     },
     "nvim-treesitter": {
-      "rev": "42fc28ba918343ebfd5565147a42a26580579482",
-      "src": "https://github.com/nvim-treesitter/nvim-treesitter",
-      "version": "'main'"
+      "rev": "8b98b4470eb326f1c7b50dae79f8c963568e5720",
+      "src": "https://github.com/nvim-treesitter/nvim-treesitter"
     },
     "nvim-treesitter-textobjects": {
-      "rev": "a0e182ae21fda68c59d1f36c9ed45600aef50311",
+      "rev": "898ee307df58f854d11cd7edd06472574d48014e",
       "src": "https://github.com/nvim-treesitter/nvim-treesitter-textobjects",
       "version": "'main'"
     },
@@ -200,6 +219,11 @@
     "remote-sshfs.nvim": {
       "rev": "7a12a1677bbe96ca98f0c713448ac1f518ba09b7",
       "src": "https://github.com/nosduco/remote-sshfs.nvim",
+      "version": "'main'"
+    },
+    "render-markdown.nvim": {
+      "rev": "f422cb5c6855f150e2ddcfaf44e7157b98b34f6a",
+      "src": "https://github.com/MeanderingProgrammer/render-markdown.nvim",
       "version": "'main'"
     },
     "scnvim": {
@@ -265,8 +289,7 @@
     },
     "which-key.nvim": {
       "rev": "3aab2147e74890957785941f0c1ad87d0a44c15a",
-      "src": "https://github.com/folke/which-key.nvim",
-      "version": "'main'"
+      "src": "https://github.com/folke/which-key.nvim"
     }
   }
 }

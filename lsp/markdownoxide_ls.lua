@@ -30,7 +30,7 @@ return ---@type vim.lsp.Config
       new_file_folder_path = '',
       references_in_codeblocks = false,
       semantic_tokens = true,
-      tags_in_codeblocks = false,
+      tags_in_codeblocks = true,
       title_headings = true,
       unresolved_diagnostics = true,
     },

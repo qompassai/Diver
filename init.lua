@@ -17,6 +17,7 @@ limitations under the License.
 --]]
 -- --------------------------------------------------
 local bo = vim.bo ---@type vim.bo
+local cmd = vim.cmd
 local env = vim.env
 local fn = vim.fn
 local is_windows = fn.has('win32') == 1 or fn.has('win64') == 1
@@ -26,36 +27,36 @@ local l = vim.loader
 local o = vim.o ---@type vim.o
 local opt = vim.opt
 local data_home = vim.env.XDG_DATA_HOME
-	or (is_windows and vim.fn.expand('~/AppData/Local') or vim.fn.expand('~/.local/share'))
-opt.runtimepath:prepend(env.VIMRUNTIME)
-opt.runtimepath:prepend(fn.stdpath('data') .. '/site')
-opt.runtimepath:prepend(data_home .. '/nvim/runtime')
+  or (is_windows and vim.fn.expand('~/AppData/Local') or vim.fn.expand('~/.local/share'))
 vim.keymap.set('n', '<Space>', '<Nop>', {
-	silent = true,
+  silent = true,
 })
 local uid, user
 if is_windows then
-	user = env.USERNAME or env.USER
-	uid = user
+  user = env.USERNAME or env.USER
+  uid = user
 else
-	uid = fn.system('id -u'):gsub('\n', '')
-	user = env.USER or fn.system('whoami'):gsub('\n', '')
+  uid = fn.system('id -u'):gsub('\n', '')
+  user = env.USER or fn.system('whoami'):gsub('\n', '')
 end
 local wo = vim.wo ---@type vim.wo
-bo.autocomplete = false
+bo.autocomplete = true
 bo.autoindent = true
 bo.autoread = true
 bo.backupcopy = 'auto'
-bo.busy = 0
+bo.busy = 1
 bo.completeopt = 'menu,menuone,noselect'
 bo.expandtab = true
 bo.fileencoding = 'utf-8'
 bo.grepprg = 'rg --vimgrep'
 bo.iminsert = 0
 bo.imsearch = -1
+bo.lisp = true
+bo.lispwords = 'defgeneric,block,catch'
 bo.modeline = true
 bo.modifiable = true
 bo.nrformats = 'hex'
+bo.readonly = false
 bo.shiftwidth = 4
 bo.smartindent = true
 bo.spellfile = fn.stdpath('config') .. '/spell/en.utf-8.add'
@@ -63,12 +64,26 @@ bo.spelllang = 'en_us'
 bo.spelloptions = 'camel'
 bo.swapfile = false
 bo.softtabstop = 2
-bo.syntax = 'ON'
+--bo.syntax = 'on'
 bo.tabstop = 2
 bo.textwidth = 120
 bo.undofile = true
+cmd('filetype plugin on')
+cmd('filetype plugin indent on')
+--cmd([[
+--  packadd nvim.undotree
+--]])
+--cmd('syntax on')
+--[[cmd.runtime('macros/matchit.vim')
+if not is_windows then
+    env.LUAROCKS_CONFIG = env.HOME .. '/.config/luarocks/luarocks-5.1.lua'
+    env.VIMRUNTIME = fn.expand('~/.local/share/nvim/runtime')
+else
+    env.VIMRUNTIME = fn.stdpath('data') .. '/runtime'
+end
+--]]
 g.deprecation_warnings = true
-g.editorconfig = false
+g.editorconfig = true
 g.git_command_ssh = 1
 g.guipty = true
 g.loaded_illuminate = true
@@ -82,18 +97,18 @@ g.lsp_enable_on_demand = true
 g.mapleader = ' '
 g.maplocalleader = '\\'
 g.mkdp_markdown_css = (env.XDG_CONFIG_HOME or (is_windows and fn.expand('~/AppData/Local') or fn.expand('~/.config')))
-	.. '/nvim/markdown.css' ---@type string
+  .. '/nvim/markdown.css' ---@type string
 g.mkdp_theme = 'dark'
 g.netrw_altfile = 1
 g.netrw_preview = 1
 if not is_windows then
-	g.node_host_prog = '/usr/bin/node'
-	g.perl_host_prog = '/usr/bin/perl'
-	g.sqlite_clib_path = '/usr/lib/libsqlite3.so'
-	g.python3_host_prog = '/usr/bin/python3'
-	g.ruby_host_prog = '/usr/bin/neovim-ruby-host'
+  g.node_host_prog = '/usr/bin/node'
+  g.perl_host_prog = '/usr/bin/perl'
+  g.sqlite_clib_path = '/usr/lib/libsqlite3.so'
+  g.python3_host_prog = '/usr/bin/python3'
+  g.ruby_host_prog = '/usr/bin/neovim-ruby-host'
 else
-	g.python3_host_prog = 'python'
+  g.python3_host_prog = 'python'
 end
 g.query_lint_on = {}
 g.rust_cargo_check_all_targets = true
@@ -123,59 +138,58 @@ g.which_key_disable_health_check = 1
 g.xdg_bin_home = env.XDG_BIN_HOME or (is_windows and fn.expand('~/AppData/Local/Programs') or fn.expand('~/.local/bin'))
 g.xdg_cache_home = env.XDG_CACHE_HOME or (is_windows and fn.expand('~/AppData/Local/Temp') or fn.expand('~/.cache'))
 g.xdg_config_dirs = is_windows and ''
-	or (env.XDG_CONFIG_DIRS or fn.expand('~/.config/xdg:/etc/xdg:/usr/local/etc/xdg:/usr/etc/xdg'))
+  or (env.XDG_CONFIG_DIRS or fn.expand('~/.config/xdg:/etc/xdg:/usr/local/etc/xdg:/usr/etc/xdg'))
 g.xdg_config_home = env.XDG_CONFIG_HOME or (is_windows and fn.expand('~/AppData/Local') or fn.expand('~/.config'))
 if not is_windows then
-	g.xdg_current_desktop = env.XDG_CURRENT_DESKTOP or 'Hyprland'
-	g.xdg_current_session = env.XDG_CURRENT_SESSION or 'Hyprland'
+  g.xdg_current_desktop = env.XDG_CURRENT_DESKTOP or 'Hyprland'
+  g.xdg_current_session = env.XDG_CURRENT_SESSION or 'Hyprland'
 end
 g.xdg_data_dirs = is_windows and '' or (env.XDG_DATA_DIRS or fn.expand('~/.local/share:/usr/local/share:/usr/share'))
 g.xdg_data_home = env.XDG_DATA_HOME or (is_windows and fn.expand('~/AppData/Local') or fn.expand('~/.local/share'))
 g.xdg_desktop_dir = env.XDG_DESKTOP_DIR or fn.expand(is_windows and '~/Desktop' or '~/.Desktop')
 
 if not is_windows then
-	g.xdg_desktop_portal_dir = env.XDG_DESKTOP_PORTAL_DIR or ('/run/user/' .. uid .. '/xdg-desktop-portal/portals')
+  g.xdg_desktop_portal_dir = env.XDG_DESKTOP_PORTAL_DIR or ('/run/user/' .. uid .. '/xdg-desktop-portal/portals')
 end
 g.xdg_documents_dir = env.XDG_DOCUMENTS_DIR or fn.expand(is_windows and '~/Documents' or '~/.Documents')
 g.xdg_download_dir = env.XDG_DOWNLOAD_DIR or fn.expand(is_windows and '~/Downloads' or '~/.Downloads')
 if not is_windows then
-	g.nix_per_user_profile = '/nix/var/nix/profiles/per-user/' .. user
+  g.nix_per_user_profile = '/nix/var/nix/profiles/per-user/' .. user
 end
 g.xdg_state_home = env.XDG_STATE_HOME or (is_windows and fn.expand('~/AppData/Local') or fn.expand('~/.local/state'))
 g.xdg_runtime_dir = env.XDG_RUNTIME_DIR
-	or (is_windows and (env.TEMP or fn.expand('~/AppData/Local/Temp')) or ('/run/user/' .. uid))
+  or (is_windows and (env.TEMP or fn.expand('~/AppData/Local/Temp')) or ('/run/user/' .. uid))
 g.xdg_utils_debug_level = env.XDG_UTILS_DEBUG_LEVEL or 3
 if env.SSH_TTY then
-	g.clipboard = 'osc52'
+  g.clipboard = 'osc52'
 end
 if not is_windows then
-	env.MOJO_STDLIB_PATH = fn.expand('~/.local/share/mojo/.pixi/envs/default/lib/mojo')
+  env.MOJO_STDLIB_PATH = fn.expand('~/.local/share/mojo/.pixi/envs/default/lib/mojo')
 else
-	env.MOJO_STDLIB_PATH = fn.expand('~/AppData/Local/mojo/.pixi/envs/default/lib/mojo')
+  env.MOJO_STDLIB_PATH = fn.expand('~/AppData/Local/mojo/.pixi/envs/default/lib/mojo')
 end
 go.expandtab = true
 if is_windows then
-	o.shell = fn.executable('pwsh') == 1 and 'pwsh' or 'powershell'
-	o.shellcmdflag =
-		[[-NoLogo -NoProfile -ExecutionPolicy RemoteSigned -Command [Console]::InputEncoding=[Console]::OutputEncoding=[System.Text.UTF8Encoding]::new();$PSDefaultParameterValues['Out-File:Encoding']="utf8";]]
-	o.shellredir = '2>&1 | Out-File -Encoding UTF8 %s; exit $LastExitCode'
-	o.shellpipe = '2>&1 | Out-File -Encoding UTF8 %s; exit $LastExitCode'
-	o.shellquote = ''
-	o.shellxquote = ''
+  o.shell = fn.executable('pwsh') == 1 and 'pwsh' or 'powershell'
+  o.shellcmdflag =
+    [[-NoLogo -NoProfile -ExecutionPolicy RemoteSigned -Command [Console]::InputEncoding=[Console]::OutputEncoding=[System.Text.UTF8Encoding]::new();$PSDefaultParameterValues['Out-File:Encoding']="utf8";]]
+  o.shellredir = '2>&1 | Out-File -Encoding UTF8 %s; exit $LastExitCode'
+  o.shellpipe = '2>&1 | Out-File -Encoding UTF8 %s; exit $LastExitCode'
+  o.shellquote = ''
+  o.shellxquote = ''
 end
 l.enable()
 require('config.init').config({
-	core = true,
-	cicd = true,
-	cloud = true,
-	debug = false,
-	edu = true,
-	lang = true,
-	nav = true,
-	ui = true,
+  core = true,
+  cicd = true,
+  cloud = true,
+  debug = false,
+  edu = true,
+  lang = true,
+  nav = true,
+  ui = true,
 })
-require('fixers').setup()
-require('linters').setup()
+require('linters')
 require('mappings')
 require('plugins')
 require('types')
@@ -185,7 +199,6 @@ o.ambiwidth = 'single'
 o.autochdir = true
 o.autocompletetimeout = 80
 o.autocompletedelay = 0
-o.autoread = true
 o.autowrite = true
 o.autowriteall = true
 o.backup = false
@@ -244,7 +257,6 @@ o.splitright = true
 o.startofline = false
 o.switchbuf = 'uselast'
 o.tabpagemax = 50
-o.tags = './tags;,tags'
 o.termguicolors = true
 --o.tm = 500
 o.timeout = true
@@ -262,17 +274,14 @@ o.wildmode = 'noselect'
 o.winborder = 'rounded'
 o.wrap = false
 o.writebackup = true
-opt.autoindent = true
-opt.binary = false
 opt.comments:append('fb:•')
 opt.complete:remove('i')
 opt.encoding = 'utf-8'
 opt.fileencoding = 'utf-8'
 opt.fileencodings = { 'ucs-bom', 'utf-8', 'default' }
-opt.lbr = true
 opt.scrolloff = 8
-opt.spell = true
 --opt.packpath = vim.opt.runtimepath:get() ---@type string[]
+o.tags = './tags;,tags'
 opt.viminfo:append('!')
 wo.breakindent = true
 wo.breakindentopt = 'shift:2,sbr'
@@ -296,6 +305,7 @@ wo.showbreak = '↪'
 wo.sidescrolloff = 20
 wo.signcolumn = 'number'
 wo.smoothscroll = true
+wo.spell = true
 wo.virtualedit = 'block'
 wo.wrap = true
 opt.winblend = 40

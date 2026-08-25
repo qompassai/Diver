@@ -1,0 +1,249 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN"
+   "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd">
+<html>
+<meta http-equiv="Content-Type" content="text/html; charset=UTF-8"/>
+<head>
+    <title>Learn Lua with Diver</title>
+    <link rel="stylesheet" href="../ldoc.css" type="text/css" />
+</head>
+<body>
+
+<div id="container">
+
+<div id="product">
+	<div id="product_logo"></div>
+	<div id="product_name"><big><b></b></big></div>
+	<div id="product_description"></div>
+</div> <!-- id="product" -->
+
+
+<div id="main">
+
+
+<!-- Menu -->
+
+<div id="navigation">
+<br/>
+<h1>Diver :: Learn Lua</h1>
+
+
+<ul>
+  <li><a href="../index.html">Index</a></li>
+</ul>
+
+<h2>Contents</h2>
+<ul>
+<li><a href="#Concept">Concept </a></li>
+<li><a href="#In_Diver">In Diver </a></li>
+<li><a href="#Reference">Reference </a></li>
+<li><a href="#Try_it_yourself">Try it yourself </a></li>
+<li><a href="#When_to_use_which">When to use which </a></li>
+</ul>
+
+
+<h2>Topics</h2>
+<ul class="">
+  <li><a href="../topics/00-introduction.md.html">00-introduction</a></li>
+  <li><a href="../topics/01-values-and-types.md.html">01-values-and-types</a></li>
+  <li><a href="../topics/02-variables-and-scope.md.html">02-variables-and-scope</a></li>
+  <li><a href="../topics/03-tables.md.html">03-tables</a></li>
+  <li><a href="../topics/04-functions.md.html">04-functions</a></li>
+  <li><a href="../topics/05-control-flow.md.html">05-control-flow</a></li>
+  <li><a href="../topics/06-strings-and-patterns.md.html">06-strings-and-patterns</a></li>
+  <li><a href="../topics/07-modules-and-require.md.html">07-modules-and-require</a></li>
+  <li><strong>08-error-handling</strong></li>
+  <li><a href="../topics/09-the-vim-api.md.html">09-the-vim-api</a></li>
+  <li><a href="../topics/10-luacats-annotations.md.html">10-luacats-annotations</a></li>
+  <li><a href="../topics/11-neovim-013-native.md.html">11-neovim-013-native</a></li>
+  <li><a href="../topics/12-putting-it-together.md.html">12-putting-it-together</a></li>
+</ul>
+<h2>Modules</h2>
+<ul class="nowrap">
+  <li><a href="../modules/learn_lua.html">learn_lua</a></li>
+  <li><a href="../modules/learn_tables.html">learn_tables</a></li>
+  <li><a href="../modules/learn_vim_api.html">learn_vim_api</a></li>
+</ul>
+
+</div>
+
+<div id="content">
+
+
+<h1>08 · Error Handling</h1>
+
+<p><a name="Concept"></a></p>
+<h2>Concept</h2>
+
+<p>Lua's error model has just three verbs. Learn these and you can read every
+defensive line in <code>diver</code>.</p>
+
+<h3><code>error(msg)</code> — raise an error</h3>
+
+
+<pre>
+<span class="global">error</span>(<span class="string">'schema not found: '</span> .. name)
+</pre>
+
+
+<p>This stops the current function and propagates an error up the call stack until
+something catches it (or it reaches the top and Neovim shows a traceback).</p>
+
+<h3><code>assert(value, msg)</code> — raise <em>unless</em> truthy</h3>
+
+
+<pre>
+<span class="global">assert</span>(ok == <span class="number">0</span>, <span class="string">'Write failed: '</span> .. vim.v.errmsg)
+</pre>
+
+
+<p><code>assert(v, msg)</code> returns <code>v</code> unchanged if it is truthy; if <code>v</code> is <code>false</code>/<code>nil</code>
+it calls <code>error(msg)</code>. It is the compact way to say "this had better be true, or
+blow up with this message." <code>diver</code>'s <code>schema.lua</code> uses <a href="https://www.lua.org/manual/5.1/manual.html#pdf-assert">assert</a> a lot for
+internal invariants.</p>
+
+<h3><code>pcall(f, ...)</code> — run <code>f</code> in a protected sandbox</h3>
+
+<p>This is the catch. <a href="https://www.lua.org/manual/5.1/manual.html#pdf-pcall">pcall</a> ("protected call") runs the function and <strong>converts a
+thrown error into an ordinary return value</strong> instead of crashing:</p>
+
+
+<pre>
+<span class="keyword">local</span> ok, result = <span class="global">pcall</span>(risky_function, arg1, arg2)
+<span class="keyword">if</span> ok <span class="keyword">then</span>
+    <span class="comment">-- result is risky_function's return value
+</span><span class="keyword">else</span>
+    <span class="comment">-- result is the ERROR MESSAGE string
+</span><span class="keyword">end</span>
+</pre>
+
+
+<p>It always returns at least two values: a boolean success flag, then either the
+result or the error message. This is the multiple-return contract from
+Chapter 04 in action.</p>
+
+<blockquote>
+    <p>Mental model: <a href="https://www.lua.org/manual/5.1/manual.html#pdf-pcall">pcall</a> is <code>try</code>/<code>catch</code> collapsed into one expression. <code>ok</code>
+    distinguishes the two branches.</p>
+</blockquote>
+
+<p><a name="In_Diver"></a></p>
+<h2>In Diver</h2>
+
+<p>**The foundational pattern — <code>safe_require</code>** in <code>lua/config/init.lua</code>:</p>
+
+
+<pre>
+<span class="keyword">local</span> <span class="keyword">function</span> <span class="function-name">safe_require</span>(name, verbose)
+    <span class="keyword">local</span> ok, mod = <span class="global">pcall</span>(<span class="global">require</span>, name)
+    <span class="keyword">if</span> <span class="keyword">not</span> ok <span class="keyword">then</span>
+        <span class="keyword">if</span> verbose <span class="keyword">then</span>
+            <span class="function-name">notify</span>(<span class="function-name">fmt</span>(<span class="string">'[Diver] Failed to load %s: %s'</span>, name, mod), levels.ERROR)
+        <span class="keyword">end</span>
+        <span class="keyword">return</span> <span class="keyword">nil</span>
+    <span class="keyword">end</span>
+    <span class="keyword">return</span> mod
+<span class="keyword">end</span>
+</pre>
+
+
+<p>When <code>pcall(require, name)</code> fails, <code>mod</code> holds the <strong>error string</strong> (not a
+module), so it can be dropped straight into the notification. The function
+returns <code>nil</code>, and the caller simply skips that subsystem.</p>
+
+<p>**Guarding a call — <code>call_if_present</code>** in the same file:</p>
+
+
+<pre>
+<span class="keyword">local</span> ok, err = <span class="global">pcall</span>(fn, opts)
+<span class="keyword">if</span> <span class="keyword">not</span> ok <span class="keyword">and</span> verbose <span class="keyword">then</span>
+    <span class="function-name">notify</span>(<span class="function-name">fmt</span>(<span class="string">'[Diver] %s.%s failed: %s'</span>, label <span class="keyword">or</span> <span class="string">'module'</span>, method, err), levels.ERROR)
+<span class="keyword">end</span>
+</pre>
+
+
+<p>A plugin's <code>setup</code> can throw, and the editor shrugs it off.</p>
+
+<p>**<a href="https://www.lua.org/manual/5.1/manual.html#pdf-assert">assert</a> for an invariant** — <code>lua/config/core/schema.lua</code>:</p>
+
+
+<pre>
+<span class="global">assert</span>(
+    <span class="keyword">not</span> (has_select <span class="keyword">and</span> has_ignore),
+    <span class="string">'schemastore.json.schemas(): the \'select\' and \'ignore\' settings are mutually exclusive'</span>
+)
+</pre>
+
+
+<p>This documents <em>and</em> enforces a rule: you may pass <a href="https://www.lua.org/manual/5.1/manual.html#pdf-select">select</a> or <code>ignore</code>, never
+both. Notice <code>\&apos;</code> — an escaped single quote inside a single-quoted string.</p>
+
+<p>**<a href="https://www.lua.org/manual/5.1/manual.html#pdf-error">error</a> for a missing entry** — <code>schema.lua</code>:</p>
+
+
+<pre>
+<span class="keyword">if</span> orig_schema == <span class="keyword">nil</span> <span class="keyword">or</span> index == <span class="keyword">nil</span> <span class="keyword">then</span>
+    <span class="global">error</span>(<span class="string">'schemastore.json.schemas(): replace: schema not found: '</span> .. name)
+<span class="keyword">end</span>
+</pre>
+
+
+<p>**<a href="https://www.lua.org/manual/5.1/manual.html#pdf-pcall">pcall</a> probing a feature** — <code>lua/utils/docs/docs.lua</code>, <code>M.foldexpr</code>:</p>
+
+
+<pre>
+b[buf].ts_folds = <span class="global">pcall</span>(tree.get_parser, buf)
+</pre>
+
+
+<p>Here the <em>boolean</em> result of <a href="https://www.lua.org/manual/5.1/manual.html#pdf-pcall">pcall</a> is stored directly: "did a tree-sitter
+parser exist for this buffer?" If <code>get_parser</code> throws, <code>ts_folds</code> becomes
+<code>false</code> and folding falls back gracefully.</p>
+
+<p><a name="When_to_use_which"></a></p>
+<h2>When to use which</h2>
+
+<p>| Situation | Use |
+|-----------|-----|
+| "This must be true or the code is broken." | <a href="https://www.lua.org/manual/5.1/manual.html#pdf-assert">assert</a> |
+| "Report a specific problem and stop this function." | <a href="https://www.lua.org/manual/5.1/manual.html#pdf-error">error</a> |
+| "Try this; I want to handle failure myself, not crash." | <a href="https://www.lua.org/manual/5.1/manual.html#pdf-pcall">pcall</a> |
+| "Try this and I also want a clean traceback on error." | <a href="https://www.lua.org/manual/5.1/manual.html#pdf-xpcall">xpcall</a> |</p>
+
+<p><a name="Reference"></a></p>
+<h2>Reference</h2>
+
+<p>In the **<a href="../modules/learn_lua.html#">learn_lua</a>** module:</p>
+
+<ul>
+    <li><code>safe_require(name)</code> — the annotated <code>pcall(require, ...)</code> helper, returning
+    <code>module, nil</code> or <code>nil, errmsg</code>.</li>
+    <li><code>call_if_function(maybe_fn, arg)</code> — checks the value is callable, then wraps
+    the call in <a href="https://www.lua.org/manual/5.1/manual.html#pdf-pcall">pcall</a> and reports failures via <code>vim.notify</code>.</li>
+</ul>
+
+<p><a name="Try_it_yourself"></a></p>
+<h2>Try it yourself</h2>
+
+
+<pre>
+:lua <span class="global">print</span>(<span class="global">pcall</span>(<span class="keyword">function</span>() <span class="global">error</span>(<span class="string">'boom'</span>) <span class="keyword">end</span>))     <span class="string">" --&gt; false  boom
+:lua print(pcall(function() return 42 end))          "</span> <span class="comment">--&gt; true   42
+</span>:lua <span class="global">print</span>(<span class="global">pcall</span>(<span class="global">require</span>, <span class="string">'does.not.exist'</span>))         <span class="string">" --&gt; false  &lt;error msg&gt;
+:lua local ok = pcall(error, 'x'); print(ok)         "</span> <span class="comment">--&gt; false</span>
+</pre>
+
+
+<p>You now understand the safety net that lets <code>diver</code> survive missing plugins and
+half-broken modules. Next we leave pure Lua and meet the editor — <strong>Chapter 09,
+The Vim API</strong>.</p>
+
+
+</div> <!-- id="content" -->
+</div> <!-- id="main" -->
+<div id="about">
+<i>generated by <a href="http://github.com/lunarmodules/LDoc">LDoc 1.5.0</a></i>
+<i style="float:right;">Last updated 2026-06-30 16:53:09 </i>
+</div> <!-- id="about" -->
+</div> <!-- id="container" -->
+</body>
+</html>

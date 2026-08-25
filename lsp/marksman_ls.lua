@@ -11,6 +11,7 @@ return ---@type vim.lsp.Config
   filetypes = {
     'markdown',
     'markdown.mdx',
+    'markdown.readme',
   },
 
   root_markers = {

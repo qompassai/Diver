@@ -1,0 +1,446 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN"
+   "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd">
+<html>
+<meta http-equiv="Content-Type" content="text/html; charset=UTF-8"/>
+<head>
+    <title>Learn Lua with Diver</title>
+    <link rel="stylesheet" href="../ldoc.css" type="text/css" />
+</head>
+<body>
+
+<div id="container">
+
+<div id="product">
+	<div id="product_logo"></div>
+	<div id="product_name"><big><b></b></big></div>
+	<div id="product_description"></div>
+</div> <!-- id="product" -->
+
+
+<div id="main">
+
+
+<!-- Menu -->
+
+<div id="navigation">
+<br/>
+<h1>Diver :: Learn Lua</h1>
+
+
+<ul>
+  <li><a href="../index.html">Index</a></li>
+</ul>
+
+<h2>Contents</h2>
+<ul>
+<li><a href="#Functions">Functions</a></li>
+</ul>
+
+
+<h2>Modules</h2>
+<ul class="nowrap">
+  <li><a href="../modules/learn_lua.html">learn_lua</a></li>
+  <li><strong>learn_tables</strong></li>
+  <li><a href="../modules/learn_vim_api.html">learn_vim_api</a></li>
+</ul>
+<h2>Topics</h2>
+<ul class="">
+  <li><a href="../topics/00-introduction.md.html">00-introduction</a></li>
+  <li><a href="../topics/01-values-and-types.md.html">01-values-and-types</a></li>
+  <li><a href="../topics/02-variables-and-scope.md.html">02-variables-and-scope</a></li>
+  <li><a href="../topics/03-tables.md.html">03-tables</a></li>
+  <li><a href="../topics/04-functions.md.html">04-functions</a></li>
+  <li><a href="../topics/05-control-flow.md.html">05-control-flow</a></li>
+  <li><a href="../topics/06-strings-and-patterns.md.html">06-strings-and-patterns</a></li>
+  <li><a href="../topics/07-modules-and-require.md.html">07-modules-and-require</a></li>
+  <li><a href="../topics/08-error-handling.md.html">08-error-handling</a></li>
+  <li><a href="../topics/09-the-vim-api.md.html">09-the-vim-api</a></li>
+  <li><a href="../topics/10-luacats-annotations.md.html">10-luacats-annotations</a></li>
+  <li><a href="../topics/11-neovim-013-native.md.html">11-neovim-013-native</a></li>
+  <li><a href="../topics/12-putting-it-together.md.html">12-putting-it-together</a></li>
+</ul>
+
+</div>
+
+<div id="content">
+
+<h1>Module <code>learn_tables</code></h1>
+<p>Tables — Lua's only data structure, taught from the Diver config.</p>
+<p> Lua has <em>one</em> container type: the table. It plays the role of array, map,
+ struct, namespace, and module all at once. Almost every line of <code>diver</code> is
+ building, merging, or iterating tables. Master this module and the config
+ stops looking mysterious.</p>
+    <h3>Info:</h3>
+    <ul>
+        <li><strong>License</strong>: Apache-2.0</li>
+        <li><strong>Author</strong>: Qompass AI</li>
+    </ul>
+
+
+<h2><a href="#Functions">Functions</a></h2>
+<table class="function_list">
+	<tr>
+	<td class="name" nowrap><a href="#make_list">make_list ()</a></td>
+	<td class="summary">Make a list (1-based array) of plugin names.</td>
+	</tr>
+	<tr>
+	<td class="name" nowrap><a href="#each">each (list, fn)</a></td>
+	<td class="summary">Walk a list in order with <a href="https://www.lua.org/manual/5.1/manual.html#pdf-ipairs">ipairs</a>.</td>
+	</tr>
+	<tr>
+	<td class="name" nowrap><a href="#keymap_opts">keymap_opts (bufnr, desc)</a></td>
+	<td class="summary">Build the options table you would hand to <code>vim.keymap.set</code>.</td>
+	</tr>
+	<tr>
+	<td class="name" nowrap><a href="#each_pair">each_pair (map, fn)</a></td>
+	<td class="summary">Walk a map with <a href="https://www.lua.org/manual/5.1/manual.html#pdf-pairs">pairs</a> (order NOT guaranteed).</td>
+	</tr>
+	<tr>
+	<td class="name" nowrap><a href="#dig">dig (root, path)</a></td>
+	<td class="summary">Safely read a deeply-nested field without crashing on a missing parent.</td>
+	</tr>
+	<tr>
+	<td class="name" nowrap><a href="#merge">merge (base, overrides)</a></td>
+	<td class="summary">Merge a base options table with per-call overrides.</td>
+	</tr>
+	<tr>
+	<td class="name" nowrap><a href="#module_convention">module_convention ()</a></td>
+	<td class="summary">Explain why almost every diver file starts with <code>local M = {}</code>.</td>
+	</tr>
+	<tr>
+	<td class="name" nowrap><a href="#with_defaults">with_defaults (opts)</a></td>
+	<td class="summary">Normalise an optional options table, applying defaults.</td>
+	</tr>
+</table>
+
+<br/>
+<br/>
+
+
+    <h2 class="section-header "><a name="Functions"></a>Functions</h2>
+
+    <dl class="function">
+    <dt>
+    <a name = "make_list"></a>
+    <strong>make_list ()</strong>
+    </dt>
+    <dd>
+    Make a list (1-based array) of plugin names. </p>
+
+<p> When you write <code>{ a, b, c }</code> with no keys, Lua assigns integer keys starting
+ at <strong>1</strong>. This is the "sequence" or "array part" of a table. <code>diver</code>'s
+ <code>lua/utils/docs/init.lua</code> does exactly this with its <code>modules</code> list, then
+ loops it with <a href="https://www.lua.org/manual/5.1/manual.html#pdf-ipairs">ipairs</a>.
+
+    </ul>
+    </ul>
+    </ul>
+    </ul>
+    </ul>
+    </ul>
+    </ul>
+
+
+    <h3>Returns:</h3>
+    <ol>
+
+        string[]
+    </ol>
+
+
+
+    <h3>Usage:</h3>
+    <ul>
+        <pre class="example"><span class="keyword">local</span> list = learn_tables.<span class="function-name">make_list</span>(); <span class="global">print</span>(list[<span class="number">1</span>]) <span class="comment">--&gt; "bounty"</span></pre>
+    </ul>
+
+</dd>
+    <dt>
+    <a name = "each"></a>
+    <strong>each (list, fn)</strong>
+    </dt>
+    <dd>
+    Walk a list in order with <a href="https://www.lua.org/manual/5.1/manual.html#pdf-ipairs">ipairs</a>. </p>
+
+<p> <code>ipairs(t)</code> yields <code>index, value</code> pairs from 1 upward and **stops at the
+ first <code>nil</code>**. Use it whenever order matters. This mirrors the require-loop
+ in <code>lua/utils/docs/init.lua</code> and <code>lua/types/core/init.lua</code>.
+
+    </ul>
+    </ul>
+    </ul>
+    </ul>
+    </ul>
+    </ul>
+    </ul>
+
+    <h3>Parameters:</h3>
+    <ul>
+        <li><span class="parameter">list</span>
+         any[]
+        </li>
+        <li><span class="parameter">fn</span>
+         fun(index: integer, value: any)
+        </li>
+    </ul>
+
+
+
+
+    <h3>Usage:</h3>
+    <ul>
+        <pre class="example">learn_tables.<span class="function-name">each</span>(list, <span class="keyword">function</span>(i, v) <span class="global">print</span>(i, v) <span class="keyword">end</span>)</pre>
+    </ul>
+
+</dd>
+    <dt>
+    <a name = "keymap_opts"></a>
+    <strong>keymap_opts (bufnr, desc)</strong>
+    </dt>
+    <dd>
+    Build the options table you would hand to <code>vim.keymap.set</code>. </p>
+
+<p> When you write keys explicitly (<code>{ noremap = true }</code>) the table is acting as
+ a map / record. This is the exact <code>opts</code> table built in
+ <code>lua/mappings/aimap.lua</code> before each mapping. Note: <code>desc</code> powers which-key
+ and <code>:map</code> listings.
+
+    </ul>
+    </ul>
+    </ul>
+    </ul>
+    </ul>
+    </ul>
+    </ul>
+
+    <h3>Parameters:</h3>
+    <ul>
+        <li><span class="parameter">bufnr</span>
+         integer
+        </li>
+        <li><span class="parameter">desc</span>
+         string
+        </li>
+    </ul>
+
+    <h3>Returns:</h3>
+    <ol>
+
+        { noremap: boolean, silent: boolean, buffer: integer, desc: string }
+    </ol>
+
+
+
+    <h3>Usage:</h3>
+    <ul>
+        <pre class="example"><span class="keyword">local</span> o = learn_tables.<span class="function-name">keymap_opts</span>(<span class="number">0</span>, <span class="string">"Toggle Explorer"</span>)</pre>
+    </ul>
+
+</dd>
+    <dt>
+    <a name = "each_pair"></a>
+    <strong>each_pair (map, fn)</strong>
+    </dt>
+    <dd>
+    Walk a map with <a href="https://www.lua.org/manual/5.1/manual.html#pdf-pairs">pairs</a> (order NOT guaranteed). </p>
+
+<p> <code>pairs(t)</code> iterates <em>every</em> key, string or number, in an <strong>unspecified
+ order</strong>. Use it for maps/records where order does not matter. <code>diver</code> uses
+ it in <code>schema.lua</code> (<code>for name, schema in pairs(opts.replace)</code>).
+
+    </ul>
+    </ul>
+    </ul>
+    </ul>
+    </ul>
+    </ul>
+    </ul>
+
+    <h3>Parameters:</h3>
+    <ul>
+        <li><span class="parameter">map</span>
+         table<any, any>
+        </li>
+        <li><span class="parameter">fn</span>
+         fun(key: any, value: any)
+        </li>
+    </ul>
+
+
+
+
+
+</dd>
+    <dt>
+    <a name = "dig"></a>
+    <strong>dig (root, path)</strong>
+    </dt>
+    <dd>
+    Safely read a deeply-nested field without crashing on a missing parent. </p>
+
+<p> Indexing <code>nil</code> (<code>a.b.c</code> when <code>a.b</code> is nil) raises an error. <code>diver</code> avoids
+ this with <code>vim.tbl_get</code> and with <code>and</code>-chains. Here we show the hand-rolled
+ version so you understand what those helpers do under the hood.
+
+    </ul>
+    </ul>
+    </ul>
+    </ul>
+    </ul>
+    </ul>
+    </ul>
+
+    <h3>Parameters:</h3>
+    <ul>
+        <li><span class="parameter">root</span>
+         table
+        </li>
+        <li><span class="parameter">path</span>
+         string[]
+        </li>
+    </ul>
+
+    <h3>Returns:</h3>
+    <ol>
+
+        any
+    </ol>
+
+
+
+    <h3>Usage:</h3>
+    <ul>
+        <pre class="example"><span class="keyword">local</span> v = learn_tables.<span class="function-name">dig</span>(client, {<span class="string">"server_capabilities"</span>, <span class="string">"hoverProvider"</span>})</pre>
+    </ul>
+
+</dd>
+    <dt>
+    <a name = "merge"></a>
+    <strong>merge (base, overrides)</strong>
+    </dt>
+    <dd>
+    Merge a base options table with per-call overrides. </p>
+
+<p> This is THE pattern behind <code>vim.tbl_extend(&apos;force&apos;, opts, { desc = ... })</code>
+ seen all over <code>lua/mappings/</code>. Later keys win. <code>diver</code> also uses the
+ deep variant <code>vim.tbl_deep_extend(&apos;force&apos;, M.config, config)</code> in
+ <code>schema.lua</code>'s <code>setup</code>.
+
+    </ul>
+    </ul>
+    </ul>
+    </ul>
+    </ul>
+    </ul>
+    </ul>
+
+    <h3>Parameters:</h3>
+    <ul>
+        <li><span class="parameter">base</span>
+         table
+        </li>
+        <li><span class="parameter">overrides</span>
+         table
+        </li>
+    </ul>
+
+    <h3>Returns:</h3>
+    <ol>
+
+        table
+    </ol>
+
+
+
+    <h3>Usage:</h3>
+    <ul>
+        <pre class="example"><span class="keyword">local</span> o = learn_tables.<span class="function-name">merge</span>({silent=<span class="keyword">true</span>}, {desc=<span class="string">"My map"</span>})</pre>
+    </ul>
+
+</dd>
+    <dt>
+    <a name = "module_convention"></a>
+    <strong>module_convention ()</strong>
+    </dt>
+    <dd>
+    Explain why almost every diver file starts with <code>local M = {}</code>. </p>
+
+<p> A Lua module is just a table you <code>return</code> at the bottom of the file. You
+ attach public functions as <code>function M.foo() end</code> and keep helpers as
+ <code>local function bar() end</code>. <code>require(&apos;config.core.lsp&apos;)</code> then hands the
+ caller back exactly that <code>M</code> table. This function returns a description of
+ the convention so it shows up in the generated docs.
+
+    </ul>
+    </ul>
+    </ul>
+    </ul>
+    </ul>
+    </ul>
+    </ul>
+
+
+    <h3>Returns:</h3>
+    <ol>
+
+        string
+    </ol>
+
+
+
+
+</dd>
+    <dt>
+    <a name = "with_defaults"></a>
+    <strong>with_defaults (opts)</strong>
+    </dt>
+    <dd>
+    Normalise an optional options table, applying defaults. </p>
+
+<p> Public functions in <code>diver</code> accept a single <code>opts</code> table and start with
+ <code>opts = opts or {}</code> so callers can omit it entirely (see
+ <code>M.config(opts)</code> in <code>lua/config/init.lua</code> and <code>simple_colon_parser</code> in
+ <code>parser.lua</code>). This makes APIs forgiving and future-proof.
+
+    </ul>
+    </ul>
+    </ul>
+    </ul>
+    </ul>
+    </ul>
+    </ul>
+
+    <h3>Parameters:</h3>
+    <ul>
+        <li><span class="parameter">opts</span>
+        ? { severity?: string, source?: string }
+        </li>
+    </ul>
+
+    <h3>Returns:</h3>
+    <ol>
+
+        { severity: string, source: string }
+    </ol>
+
+
+
+    <h3>Usage:</h3>
+    <ul>
+        <pre class="example">learn_tables.<span class="function-name">with_defaults</span>()                 <span class="comment">--&gt; {severity="WARN", source="diver"}
+</span>learn_tables.<span class="function-name">with_defaults</span>({source=<span class="string">"lint"</span>})  <span class="comment">--&gt; {severity="WARN", source="lint"}</span></pre>
+    </ul>
+
+</dd>
+</dl>
+
+
+</div> <!-- id="content" -->
+</div> <!-- id="main" -->
+<div id="about">
+<i>generated by <a href="http://github.com/lunarmodules/LDoc">LDoc 1.5.0</a></i>
+<i style="float:right;">Last updated 2026-06-30 16:53:09 </i>
+</div> <!-- id="about" -->
+</div> <!-- id="container" -->
+</body>
+</html>

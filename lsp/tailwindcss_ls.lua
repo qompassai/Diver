@@ -47,7 +47,7 @@ return ---@type vim.lsp.Config
     'leaf',
     'less',
     'liquid',
-    'markdown',
+    --'markdown',
     'javascript',
     'javascriptreact',
     'mdx',

@@ -1,0 +1,93 @@
+-- /qompassai/Diver/lua/types/ui/line.lua
+-- Qompass AI LuaLine Types Config
+-- Copyright (C) 2025 Qompass AI, All rights reserved
+-- ----------------------------------------
+---@meta
+---@class                    lualine.Config
+---@field options                                          lualine.Options
+---@field sections                                         lualine.Sections
+---@field inactive_sections                                lualine.Sections
+---@field tabline?                                         lualine.Tabline
+---@field winbar?                                          lualine.Winbar
+---@field inactive_winbar?                                 lualine.Winbar
+---@field extensions?                                      string[]
+---@class                    lualine.Options
+---@field icons_enabled?                                   boolean
+---@field theme?                                           string|table
+---@field component_separators?                            lualine.Separators
+---@field section_separators?                              lualine.Separators
+---@field disabled_filetypes?                              lualine.DisabledFiletypes
+---@field ignore_focus?                                    string[]
+---@field always_divide_middle?                            boolean
+---@field globalstatus?                                    boolean
+---@field refresh?                                         lualine.RefreshConfig
+---@class lualine.Separators
+---@field left?                                            string
+---@field right?                                           string
+---@class lualine.DisabledFiletypes
+---@field statusline?                                      string[]
+---@field winbar?                                          string[]
+---@class lualine.RefreshConfig
+---@field statusline?                                      integer
+---@field tabline?                                         integer
+---@field winbar?                                          integer
+---@field refresh_time?                                    integer
+---@field events?                                          string[]
+---@class lualine.Sections
+---@field lualine_a?                                       lualine.Component[]
+---@field lualine_b?                                       lualine.Component[]
+---@field lualine_c?                                       lualine.Component[]
+---@field lualine_x?                                       lualine.Component[]
+---@field lualine_y?                                       lualine.Component[]
+---@field lualine_z?                                       lualine.Component[]
+---@class lualine.Tabline
+---@field lualine_a?                                       lualine.Component[]
+---@field lualine_b?                                       lualine.Component[]
+---@field lualine_c?                                       lualine.Component[]
+---@field lualine_x?                                       lualine.Component[]
+---@field lualine_y?                                       lualine.Component[]
+---@field lualine_z?                                       lualine.Component[]
+---@class lualine.Winbar
+---@field lualine_a?                                       lualine.Component[]
+---@field lualine_b?                                       lualine.Component[]
+---@field lualine_c?                                       lualine.Component[]
+---@field lualine_x?                                       lualine.Component[]
+---@field lualine_y?                                       lualine.Component[]
+---@field lualine_z?                                       lualine.Component[]
+---@alias lualine.Component                                string|function|lualine.ComponentConfig
+---@class lualine.ComponentConfig
+---@field [1]?                                             string|function
+---@field icon?                                            string|lualine.IconConfig
+---@field icons_enabled?                                   boolean
+---@field colored?                                         boolean
+---@field color?                                           lualine.ColorConfig
+---@field separator?                                       string|lualine.Separators
+---@field cond?                                            function
+---@field padding?                                         integer|table
+---@class lualine.IconConfig
+---@field align?                                           'left'|'right'
+---@class lualine.ColorConfig
+---@field fg?                                              string
+---@field bg?                                              string
+---@class lualine.DiagnosticsComponent                     : lualine.ComponentConfig
+---@field sources?                                         string[]
+---@field sections?                                        string[]
+---@field diagnostics_color?                               table<string, lualine.ColorConfig>
+---@field symbols?                                         table<string, string>
+---@field update_in_insert?                                boolean
+---@class lualine.DiffComponent                            : lualine.ComponentConfig
+---@field diff_color?                                      table<string, string>
+---@field symbols?                                         table<string, string>
+---@class lualine.FilenameComponent                        : lualine.ComponentConfig
+---@field file_status?                                     boolean
+---@field path?                                            integer
+---@field symbols?                                         table<string, string>
+---@class lualine.TabsComponent                            : lualine.ComponentConfig
+---@field mode?                                            integer
+---@field use_mode_colors?                                 boolean
+---@field max_length?                                      integer
+---@class LineModule
+---@field setup_autocmds                                   fun(): nil
+---@field get_config                                       fun(): lualine.Config
+local M = {}
+return M
