@@ -1,5 +1,5 @@
 -- #################################################################
--- /qompassai/lua/linters/hadolint.lua
+-- /qompassai/diver/lua/linters/hadolint.lua
 -- Qompass AI Hadolint
 -- SPDX-License-Identifier: Apache-2.0
 -- Copyright (c) 2026 Qompass AI
