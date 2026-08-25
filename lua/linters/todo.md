@@ -124,7 +124,7 @@
 | [`oelint-adv`](https://github.com/mfussenegger/nvim-lint/blob/master/lua/lint/linters/oelint-adv.lua) | 2026-06-25 | `TODO` | — |
 | [`opa_check`](https://github.com/mfussenegger/nvim-lint/blob/master/lua/lint/linters/opa_check.lua) | 2024-01-18 | `TODO` | — |
 | [`oxlint`](https://github.com/mfussenegger/nvim-lint/blob/master/lua/lint/linters/oxlint.lua) | 2025-08-28 | `DONE` | [`oxlint.lua`](./oxlint.lua) |
-| [`panache`](https://github.com/mfussenegger/nvim-lint/blob/master/lua/lint/linters/panache.lua) | 2026-05-13 | `TODO` | — |
+| [`panache`](https://github.com/mfussenegger/nvim-lint/blob/master/lua/lint/linters/panache.lua) | 2026-05-13 | `DONE` | panache.lua |
 | [`perlcritic`](https://github.com/mfussenegger/nvim-lint/blob/master/lua/lint/linters/perlcritic.lua) | 2024-02-29 | `TODO` | — |
 | [`perlimports`](https://github.com/mfussenegger/nvim-lint/blob/master/lua/lint/linters/perlimports.lua) | 2023-08-21 | `TODO` | — |
 | [`pflake8`](https://github.com/mfussenegger/nvim-lint/blob/master/lua/lint/linters/pflake8.lua) | 2023-11-09 | `TODO` | — |
