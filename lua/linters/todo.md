@@ -39,7 +39,7 @@
 | [`checkbashisms`](https://github.com/mfussenegger/nvim-lint/blob/master/lua/lint/linters/checkbashisms.lua) | 2026-04-09 | `DONE` | [`checkbashisms.lua`](./checkbashisms.lua) |
 | [`checkmake`](https://github.com/mfussenegger/nvim-lint/blob/master/lua/lint/linters/checkmake.lua) | 2024-02-06 | `DONE` | [`checkmake.lua`](./checkmake.lua) |
 | [`checkpatch`](https://github.com/mfussenegger/nvim-lint/blob/master/lua/lint/linters/checkpatch.lua) | 2025-12-11 | `DONE` | [`checkpatch.lua`](./checkpatch.lua) |
-| [`checkstyle`](https://github.com/mfussenegger/nvim-lint/blob/master/lua/lint/linters/checkstyle.lua) | 2025-06-05 | `TODO` | — |
+| [`checkstyle`](https://github.com/mfussenegger/nvim-lint/blob/master/lua/lint/linters/checkstyle.lua) | 2025-06-05 | `TODO` | [`checkstyle.lua`](./checkstyle.lua) |
 | [`chktex`](https://github.com/mfussenegger/nvim-lint/blob/master/lua/lint/linters/chktex.lua) | 2022-03-07 | `DONE` | [`chktex.lua`](./chktex.lua) |
 | [`clangtidy`](https://github.com/mfussenegger/nvim-lint/blob/master/lua/lint/linters/clangtidy.lua) | 2026-05-19 | `DONE` | [`clangtidy.lua`](./clangtidy.lua) |
 | [`clazy`](https://github.com/mfussenegger/nvim-lint/blob/master/lua/lint/linters/clazy.lua) | 2021-12-11 | `TODO` | — |
