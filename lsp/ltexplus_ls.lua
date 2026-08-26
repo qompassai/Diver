@@ -27,7 +27,7 @@ return ---@type vim.lsp.Config
     'html',
     'org',
     'lualatex',
-    'markdown',
+    --   'markdown',
     'plaintex',
     'quarto',
     'mail',

@@ -4,7 +4,7 @@
 -- ----------------------------------------
 ---@meta
 ---@class blink.cmp.Context
----@field bufnr                               integer
+---@field bufnr                                            integer
 ---@field cursor { line: integer, col: integer }
 ---@class blink.cmp.CompletionItem
 ---@field kind integer|nil

@@ -168,7 +168,7 @@ vim.lsp.enable({
   'luau_ls',
   'lwc_ls',
   'm68k_ls',
-  'markdownoxide_ls',
+  -- 'markdownoxide_ls',
   'markojs_ls',
   'marksman_ls',
   'matlab_ls',
@@ -312,7 +312,7 @@ vim.lsp.enable({
   --'vana_ls' ---TODO: install/validate ---@source  https://github.com/vlang/v-analyzer
   'vacuum_ls', ---TODO: install/validate ---@source  https://github.com/daveshanley/vacuum
   'vala_ls', ---TODO:  https://github.com/Prince781/vala-language-server
-  'vale_ls', ---:TODO validate ---@source https://github.com/errata-ai/vale-ls
+  -- 'vale_ls', ---:TODO validate ---@source https://github.com/errata-ai/vale-ls
   --'vectorcode_ls',---:TODO
   'verible_ls', ---TODO: install/validate ---@source  https://github.com/chipsalliance/verible
   'veridian_ls',
