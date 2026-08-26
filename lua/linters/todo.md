@@ -153,7 +153,7 @@
 | [`rpmlint`](https://github.com/mfussenegger/nvim-lint/blob/master/lua/lint/linters/rpmlint.lua) | 2024-12-19 | `TODO` | — |
 | [`rpmspec`](https://github.com/mfussenegger/nvim-lint/blob/master/lua/lint/linters/rpmspec.lua) | 2025-09-24 | `TODO` | — |
 | [`rstcheck`](https://github.com/mfussenegger/nvim-lint/blob/master/lua/lint/linters/rstcheck.lua) | 2021-12-30 | `DONE` | [`rstcheck.lua`](./rstcheck.lua) |
-| [`rstlint`](https://github.com/mfussenegger/nvim-lint/blob/master/lua/lint/linters/rstlint.lua) | 2021-12-30 | `TODO` | — |
+| [`rst-lint`](https://github.com/mfussenegger/nvim-lint/blob/master/lua/lint/linters/rstlint.lua) | 2021-12-30 | `DONE` | [`rst-lint.lua`](./rst-lint.lua) |
 | [`rubocop`](https://github.com/mfussenegger/nvim-lint/blob/master/lua/lint/linters/rubocop.lua) | 2024-02-20 | `TODO` | — |
 | [`ruby`](https://github.com/mfussenegger/nvim-lint/blob/master/lua/lint/linters/ruby.lua) | 2022-05-02 | `TODO` | — |
 | [`ruff`](https://github.com/mfussenegger/nvim-lint/blob/master/lua/lint/linters/ruff.lua) | 2025-07-04 | `TODO` | — |
