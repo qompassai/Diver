@@ -148,7 +148,7 @@
 | [`redocly`](https://github.com/mfussenegger/nvim-lint/blob/master/lua/lint/linters/redocly.lua) | 2025-04-15 | `TODO` | — |
 | [`regal`](https://github.com/mfussenegger/nvim-lint/blob/master/lua/lint/linters/regal.lua) | 2024-01-18 | `DONE` | [`regal.lua`](./regal.lua) |
 | [`revive`](https://github.com/mfussenegger/nvim-lint/blob/master/lua/lint/linters/revive.lua) | 2024-09-12 | `DONE` | [`revive.lua`](./revive.lua) |
-| [`rflint`](https://github.com/mfussenegger/nvim-lint/blob/master/lua/lint/linters/rflint.lua) | 2021-11-24 | `TODO` | — |
+| [`rflint`](https://github.com/mfussenegger/nvim-lint/blob/master/lua/lint/linters/rflint.lua) | 2021-11-24 | `Not Maintained` | — |
 | [`robocop`](https://github.com/mfussenegger/nvim-lint/blob/master/lua/lint/linters/robocop.lua) | 2021-11-25 | `TODO` | — |
 | [`rpmlint`](https://github.com/mfussenegger/nvim-lint/blob/master/lua/lint/linters/rpmlint.lua) | 2024-12-19 | `TODO` | — |
 | [`rpmspec`](https://github.com/mfussenegger/nvim-lint/blob/master/lua/lint/linters/rpmspec.lua) | 2025-09-24 | `TODO` | — |
