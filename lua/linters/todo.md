@@ -46,7 +46,7 @@
 | [`clippy`](https://github.com/mfussenegger/nvim-lint/blob/master/lua/lint/linters/clippy.lua) | 2024-08-08 | `DONE` | [`clippy.lua`](./clippy.lua) |
 | [`clj-kondo`](https://github.com/mfussenegger/nvim-lint/blob/master/lua/lint/linters/clj-kondo.lua) | 2024-12-19 | `DONE` | [`clj-kondo.lua`](./clj-kondo.lua) |
 | [`cmake_lint`](https://github.com/mfussenegger/nvim-lint/blob/master/lua/lint/linters/cmake_lint.lua) | 2025-11-16 | `DONE` | [`cmake-lint.lua`](./cmake-lint.lua) |
-| [`cmakelint`](https://github.com/mfussenegger/nvim-lint/blob/master/lua/lint/linters/cmakelint.lua) | 2023-10-24 | `TODO` | — |
+| [`cmakelint`](https://github.com/mfussenegger/nvim-lint/blob/master/lua/lint/linters/cmakelint.lua) | 2023-10-24 | `TOREMOVE` | — |
 | [`codespell`](https://github.com/mfussenegger/nvim-lint/blob/master/lua/lint/linters/codespell.lua) | 2024-08-16 | `TODO` | — |
 | [`commitlint`](https://github.com/mfussenegger/nvim-lint/blob/master/lua/lint/linters/commitlint.lua) | 2023-10-20 | `DONE` | [`commitlint.lua`](./commitlint.lua) |
 | [`compiler`](https://github.com/mfussenegger/nvim-lint/blob/master/lua/lint/linters/compiler.lua) | 2025-12-23 | `TODO` | — |
