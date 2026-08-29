@@ -42,7 +42,7 @@
 | [`checkstyle`](https://github.com/mfussenegger/nvim-lint/blob/master/lua/lint/linters/checkstyle.lua) | 2025-06-05 | `TODO` | [`checkstyle.lua`](./checkstyle.lua) |
 | [`chktex`](https://github.com/mfussenegger/nvim-lint/blob/master/lua/lint/linters/chktex.lua) | 2022-03-07 | `DONE` | [`chktex.lua`](./chktex.lua) |
 | [`clangtidy`](https://github.com/mfussenegger/nvim-lint/blob/master/lua/lint/linters/clangtidy.lua) | 2026-05-19 | `DONE` | [`clangtidy.lua`](./clangtidy.lua) |
-| [`clazy`](https://github.com/mfussenegger/nvim-lint/blob/master/lua/lint/linters/clazy.lua) | 2021-12-11 | [`clazy.lua`](./clazy.lua) |
+| [`clazy`](https://github.com/mfussenegger/nvim-lint/blob/master/lua/lint/linters/clazy.lua) | 2021-12-11 | `DONE` [`clazy.lua`](./clazy.lua) |
 | [`clippy`](https://github.com/mfussenegger/nvim-lint/blob/master/lua/lint/linters/clippy.lua) | 2024-08-08 | `DONE` | [`clippy.lua`](./clippy.lua) |
 | [`clj-kondo`](https://github.com/mfussenegger/nvim-lint/blob/master/lua/lint/linters/clj-kondo.lua) | 2024-12-19 | `DONE` | [`clj-kondo.lua`](./clj-kondo.lua) |
 | [`cmake_lint`](https://github.com/mfussenegger/nvim-lint/blob/master/lua/lint/linters/cmake_lint.lua) | 2025-11-16 | `DONE` | [`cmake-lint.lua`](./cmake-lint.lua) |
