@@ -28,7 +28,7 @@
 | [`ameba`](https://github.com/mfussenegger/nvim-lint/blob/master/lua/lint/linters/ameba.lua) | 2026-05-19 | `DONE` | [`ameba.lua`](./ameba.lua) |
 | [`ansible_lint`](https://github.com/mfussenegger/nvim-lint/blob/master/lua/lint/linters/ansible_lint.lua) | 2025-08-21 | `DONE` | [`ansible_lint.lua`](./ansible_lint.lua) |
 | [`bandit`](https://github.com/mfussenegger/nvim-lint/blob/master/lua/lint/linters/bandit.lua) | 2023-01-15 | `DONE` | [`bandit.lua`](./bandit.lua) |
-| [`bash`](https://github.com/mfussenegger/nvim-lint/blob/master/lua/lint/linters/bash.lua) | 2024-09-20 | `TODO` | — |
+| [`bash`](https://github.com/mfussenegger/nvim-lint/blob/master/lua/lint/linters/bash.lua) | 2024-09-20 | `DONE` | [`bash.lua`](./bash.lua) |
 | [`bean_check`](https://github.com/mfussenegger/nvim-lint/blob/master/lua/lint/linters/bean_check.lua) | 2023-01-29 | `DONE' | — |
 | [`biomejs`](https://github.com/mfussenegger/nvim-lint/blob/master/lua/lint/linters/biomejs.lua) | 2024-01-15 | `DONE` | [`biome.lua`](./biome.lua) |
 | [`blocklint`](https://github.com/mfussenegger/nvim-lint/blob/master/lua/lint/linters/blocklint.lua) | 2023-10-18 | `TOREMOVE` | 'Overlap with Alex' |
