@@ -36,7 +36,7 @@ return ---@type vim.lsp.Config
     'rnoweb',
     'rst',
     'tex',
-    'text',
+    --'text',
     'typst',
     'xhtml',
   },

@@ -257,7 +257,6 @@ return ---@type vim.lsp.Config
     if fname == '' then
       return
     end
-
     local deno_root = vim.fs.root(fname, {
       'deno.json',
       'deno.jsonc',

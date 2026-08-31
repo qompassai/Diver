@@ -21,6 +21,7 @@ local function github(repo)
 end
 local plugin_setup = {}
 local plugins = {
+  --[[
   {
     src = gh('Saghen/blink.cmp'),
     update = true,
@@ -31,6 +32,7 @@ local plugins = {
     update = true,
     version = range('2.*'),
   },
+  --]]
   {
     src = gh('hrsh7th/cmp-nvim-lua'),
     update = true,
@@ -64,6 +66,7 @@ local plugins = {
     src = gh('rafamadriz/friendly-snippets'),
     version = 'main',
   },
+  --[[
   {
     src = gh('moyiz/blink-emoji.nvim'),
     version = 'master',
@@ -72,6 +75,7 @@ local plugins = {
     src = gh('Kaiser-Yang/blink-cmp-dictionary'),
     version = range('2.*'),
   },
+  --]]
   {
     src = gh('nvim-lualine/lualine.nvim'),
     version = 'master',
@@ -135,10 +139,12 @@ local plugins = {
     version = range('2.*'),
   },
 }
+--[[
 plugin_setup[github('Saghen/blink.cmp')] = function()
   local cmp_cfg = require('config.lang.cmp').blink_cmp()
   require('blink.cmp').setup(cmp_cfg)
 end
+--]]
 plugin_setup[gh('nvim-treesitter/nvim-treesitter')] = function()
   require('config.core.tree').treesitter()
 end

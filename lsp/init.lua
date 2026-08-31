@@ -6,7 +6,7 @@
 ---@source https://langserver.org/
 vim.lsp.enable({
   -- 'abl_ls', ---:TODO validate ---@source https://github.com/vscode-abl/vscode-abl
-  'abaplint_ls',
+  -- 'abaplint_ls',
   'ada_ls',
   --   'agda_ls',
   'agentscript_ls',
@@ -45,7 +45,7 @@ vim.lsp.enable({
   'buf_ls',
   'c3_ls',
   'cairo_ls',
-  'cc_ls',
+  --'cc_ls',
   'cds_ls',
   'chpl_ls', ---:TODO validate ---@source https://github.com/chapel-lang/chapel/tree/main/tools/chpl-language-server
   --'cir_ls',             ---:TODO
@@ -57,7 +57,7 @@ vim.lsp.enable({
   --  'codebook_ls', ---:TODO validate
   'codeql_ls', ---:TODO ---@source https://github.com/github/codeql
   --'contextive_ls',  ---:TODO add glossary then validate
-  'copilot_ls.lua', ---:TODO validate
+  -- 'copilot_ls.lua', ---:TODO validate
   --'coq_ls',
   'crystalline_ls',
   'csharp_ls',
@@ -82,7 +82,7 @@ vim.lsp.enable({
   -- 'dprint_ls', ---:TODO validate and finish config
   'dts_ls', ---:TODO validate
   'earthly_ls', ---:TODO validate
-  'editorcc_ls', ---lsp/linter
+  -- 'editorcc_ls', ---lsp/linter
   'elixir_ls',
   'elm_ls',
   'elp_ls',
@@ -90,8 +90,8 @@ vim.lsp.enable({
   -- 'emmet_ls',
   --'emmylua_ls',
   'esbonio_ls',
-  'expert_ls',
-  'facility_ls',
+  --'expert_ls',
+  --'facility_ls',
   'fennel_ls',
   'fish_ls',
   --'flow_ls', --:TODO
@@ -101,7 +101,7 @@ vim.lsp.enable({
   'fsautocomplete_ls',
   'fstar_ls',
   --'futhark_ls',         ---:TODO install/compile and validate
-  'gauge_ls', ---:TODO validate ---@source https://github.com/getgauge/gauge/
+  --'gauge_ls', ---:TODO validate ---@source https://github.com/getgauge/gauge/
   'gdscript_ls',
   'gdshader_ls',
   --'ghactions_ls',
@@ -170,7 +170,7 @@ vim.lsp.enable({
   'm68k_ls',
   -- 'markdownoxide_ls',
   'markojs_ls',
-  'marksman_ls',
+  --'marksman_ls',
   'matlab_ls',
   'mdxana_ls',
   'metals_ls',
@@ -188,7 +188,7 @@ vim.lsp.enable({
   'nextflow_ls',
   --'next_ls',
   'nginx_ls',
-  'nginxcf_ls',
+  --'nginxcf_ls',
   'nickel_ls',
   'nil_ls',
   'nixd_ls',
@@ -212,7 +212,7 @@ vim.lsp.enable({
   --'pharo_ls'            ---:TODO https://github.com/badetitou/Pharo-LanguageServer
   'phpactor_ls',
   'pico8_ls', ---:TODO validate
-  'plantuml_ls', ---:TODO validate https://github.com/ptdewey/plantuml-lsp
+  -- 'plantuml_ls', ---:TODO validate https://github.com/ptdewey/plantuml-lsp
   'please_ls',
   'pli_ls', ---:TODO validate ---@source https://github.com/zowe/zowe-pli-language-support
   'poryscript_ls', ---:TODO validate  ---@source https://github.com/huderlem/poryscript-pls
@@ -223,7 +223,7 @@ vim.lsp.enable({
   'psalm_ls', ---lsp/linter
   'pug_ls',
   'puppet_ls',
-  'pwrshelles_ls',
+  --'pwrshelles_ls',
   'pyrefly_ls',
   'qml_ls',
   'qlue_ls', ---:TODO validate
@@ -259,37 +259,37 @@ vim.lsp.enable({
   'solidnomic_ls',
   'somesass_ls',
   'sorbet_ls',
-  'sourcekit_ls',
+  --'sourcekit_ls',
   'sq_ls',
   'sqruff_ls',
   'standardrb_ls',
   'starlark_ls',
-  'starp_ls',
+  -- 'starp_ls',
   'statix_ls',
   'steep_ls',
   --'stimulus_ls', ---:TODO validate/come back to
-  'stylable_ls', ---:TODO https://github.com/wix/stylable/tree/master/packages/language-service
+  -- 'stylable_ls', ---:TODO https://github.com/wix/stylable/tree/master/packages/language-service
   'stylua_ls',
   --'stylua3p_ls',
   'superhtml_ls',
   'svelte_ls',
-  'svlant_ls',
+  -- 'svlant_ls',
   'sv_ls',
   --'sway_ls'   ---:TODO https://github.com/FuelLabs/sway/tree/master/sway-lsp
-  'syntaxtree_ls',
+  -- 'syntaxtree_ls',
   'sysl_ls', ---:TODO validate https://github.com/anz-bank/sysl
   'systemd_ls', ---:TODO validate https://github.com/JFryy/systemd-lsp
   'tailwindcss_ls',
   'taplo_ls',
-  'tblgen_ls',
+  --'tblgen_ls',
   'tcl_ls', ---:TODO validate https://github.com/nmoroze/tclint
   --'teal_ls', ---:TODO install and validate
   'templ_ls',
   'termux_ls',
-  'test_ls', ---:TODO validate https://github.com/kbwo/testing-language-server
+  -- 'test_ls', ---:TODO validate https://github.com/kbwo/testing-language-server
   'texlab_ls',
   'text_ls',
-  'tflint_ls',
+  --'tflint_ls',
   'tilt_ls', ---:TODO install/validate ---@source https://github.com/tilt-dev/tilt
   'tofu_ls',
   'tombi_ls', ---lsp/linter
@@ -304,17 +304,17 @@ vim.lsp.enable({
   'ty_ls',
   'typeprof_ls',
   --'typos_ls', ---:TODO validate
-  'typst_ls', ---TODO: validate ---@source https://github.com/nvarner/typst-lsp
+  --'typst_ls', ---TODO: validate ---@source https://github.com/nvarner/typst-lsp
   'uiua_ls', ---:TODO validate  ---@source https://github.com/uiua-lang/uiua/
   'unison_ls', ---:TODO validate ---@source https://github.com/unisonweb/unison/blob/trunk/docs/language-server.markdown
   ---'uv_ls', --doesn't compile
   --'v_ls', ---TODO: install/validate ---@source https://github.com/vlang/vls
   --'vana_ls' ---TODO: install/validate ---@source  https://github.com/vlang/v-analyzer
   'vacuum_ls', ---TODO: install/validate ---@source  https://github.com/daveshanley/vacuum
-  'vala_ls', ---TODO:  https://github.com/Prince781/vala-language-server
+  --'vala_ls', ---TODO:  https://github.com/Prince781/vala-language-server
   -- 'vale_ls', ---:TODO validate ---@source https://github.com/errata-ai/vale-ls
   --'vectorcode_ls',---:TODO
-  'verible_ls', ---TODO: install/validate ---@source  https://github.com/chipsalliance/verible
+  -- 'verible_ls', ---TODO: install/validate ---@source  https://github.com/chipsalliance/verible
   'veridian_ls',
   'veryl_ls',
   --'visualforce_ls', ---TODO: install/validate ---@source https://github.com/forcedotcom/salesforcedx-vscode
@@ -329,7 +329,7 @@ vim.lsp.enable({
   --'y_ls',
   --'yara_ls'
   'ziggy_ls',
-  'ziggy_schema_ls',
+  --'ziggy_schema_ls',
   --'zk_ls', ---:TODO install/validate ---@source  https://github.com/zk-org/zk
   'z_ls',
   --  'zuban_ls', ---:TODO validate ---@source https://docs.zubanls.com/en/latest/usage.html#configuration

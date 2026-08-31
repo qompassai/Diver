@@ -26,7 +26,7 @@ local go = vim.go
 local l = vim.loader
 local o = vim.o ---@type vim.o
 local opt = vim.opt
-local data_home = vim.env.XDG_DATA_HOME
+  --local data_home = vim.env.XDG_DATA_HOME
   or (is_windows and vim.fn.expand('~/AppData/Local') or vim.fn.expand('~/.local/share'))
 vim.keymap.set('n', '<Space>', '<Nop>', {
   silent = true,
@@ -40,7 +40,7 @@ else
   user = env.USER or fn.system('whoami'):gsub('\n', '')
 end
 local wo = vim.wo ---@type vim.wo
-bo.autocomplete = true
+--bo.autocomplete = true
 bo.autoindent = true
 bo.autoread = true
 bo.backupcopy = 'auto'
@@ -127,7 +127,7 @@ g.table_mode_corner = '|'
 g.table_mode_separator = '|'
 g.table_mode_syntax = 1
 g.table_mode_update_time = 300
-g.use_blink_cmp = true
+g.use_blink_cmp = false
 g.vim_markdown_folding_disabled = 1
 g.vim_markdown_follow_anchor = 1
 g.vim_markdown_math = 1
@@ -197,6 +197,7 @@ require('utils')
 o.allowrevins = true
 o.ambiwidth = 'single'
 o.autochdir = true
+o.autocomplete = false
 o.autocompletetimeout = 80
 o.autocompletedelay = 0
 o.autowrite = true
@@ -206,7 +207,9 @@ o.background = 'dark'
 o.backspace = 'indent,eol,start'
 o.clipboard = 'unnamedplus'
 o.cmdheight = 1
+o.completetimeout = 150
 o.completeitemalign = 'abbr,kind,menu'
+o.completeopt = 'menu,menuone,noselect,fuzzy'
 o.confirm = true
 o.debug = 'msg'
 o.diffopt = 'internal,filler,closeoff,algorithm:histogram,indent-heuristic,linematch:60'
@@ -275,7 +278,12 @@ o.winborder = 'rounded'
 o.wrap = false
 o.writebackup = true
 opt.comments:append('fb:•')
-opt.complete:remove('i')
+opt.complete = {
+  '.^20',
+  'w^10',
+  'b^10',
+}
+--opt.complete:remove('i')
 opt.encoding = 'utf-8'
 opt.fileencoding = 'utf-8'
 opt.fileencodings = { 'ucs-bom', 'utf-8', 'default' }
