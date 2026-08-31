@@ -259,7 +259,7 @@ vim.lsp.enable({
   'solidnomic_ls',
   'somesass_ls',
   'sorbet_ls',
-  --'sourcekit_ls',
+  'sourcekit_ls',
   'sq_ls',
   'sqruff_ls',
   'standardrb_ls',
@@ -276,7 +276,7 @@ vim.lsp.enable({
   -- 'svlant_ls',
   'sv_ls',
   --'sway_ls'   ---:TODO https://github.com/FuelLabs/sway/tree/master/sway-lsp
-  -- 'syntaxtree_ls',
+  -- 'stree_ls',
   'sysl_ls', ---:TODO validate https://github.com/anz-bank/sysl
   'systemd_ls', ---:TODO validate https://github.com/JFryy/systemd-lsp
   'tailwindcss_ls',
