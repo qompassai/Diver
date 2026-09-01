@@ -24,37 +24,23 @@ local api = vim.api
 local fn = vim.fn
 local fs = vim.fs
 local levels = vim.log.levels
-local uv = vim.uv
 
 local M = {}
 
-local SOURCE = "postgres-dap"
+local SOURCE = 'postgres-dap'
 
----@type string[]
 local ROOT_MARKERS = {
-  "flyway.conf",
-  "liquibase.properties",
-  "sqitch.conf",
-  "migrations",
-  "db",
-  "database",
-  "schema",
-  ".pg_service.conf",
-  ".git",
+  'flyway.conf',
+  'liquibase.properties',
+  'sqitch.conf',
+  'migrations',
+  'db',
+  'database',
+  'schema',
+  '.pg_service.conf',
+  '.git',
 }
 
----@type string[]
-local SQL_FILETYPES = {
-  "sql",
-  "pgsql",
-  "postgresql",
-}
-
----@class PostgresDapState
----@field adapter string?
----@field database string?
----@field root string?
----@field service string?
 local state = {
   adapter = nil,
   database = nil,
@@ -62,131 +48,81 @@ local state = {
   service = nil,
 }
 
----@param message string
----@param level? integer
 local function notify(message, level)
-  vim.notify(
-    ("[%s] %s"):format(
-      SOURCE,
-      message
-    ),
-    level or levels.INFO
-  )
+  vim.notify(('[%s] %s'):format(SOURCE, message), level or levels.INFO)
 end
 
----@param value unknown
----@return boolean
-local function nonempty_string(value)
-  return type(value) == "string"
-    and value ~= ""
-end
-
----@param path string
----@return boolean
 local function executable(path)
-  return nonempty_string(path)
-    and fn.executable(path) == 1
+  return type(path) == 'string' and path ~= '' and fn.executable(path) == 1
 end
 
----@param path string
----@return string
 local function normalize(path)
-  if path == "" then
-    return ""
+  if type(path) ~= 'string' or path == '' then
+    return ''
   end
 
-  return fs.normalize(
-    fn.fnamemodify(
-      path,
-      ":p"
-    )
-  )
+  return fs.normalize(fn.fnamemodify(path, ':p'))
 end
 
----@param command string
----@return string?
 local function executable_path(command)
   local path = fn.exepath(command)
 
-  if not nonempty_string(path) then
+  if type(path) ~= 'string' or path == '' then
     return nil
   end
 
   return fs.normalize(path)
 end
 
----@param bufnr? integer
----@return string
 local function filename(bufnr)
-  bufnr = bufnr
-    or api.nvim_get_current_buf()
+  bufnr = bufnr or api.nvim_get_current_buf()
 
   if not api.nvim_buf_is_valid(bufnr) then
-    return ""
+    return ''
   end
 
-  local name =
-    api.nvim_buf_get_name(bufnr)
+  local name = api.nvim_buf_get_name(bufnr)
 
-  if name == "" then
-    return ""
+  if name == '' then
+    return ''
   end
 
   return normalize(name)
 end
 
----@param bufnr? integer
----@return string
 local function project_root(bufnr)
-  bufnr = bufnr
-    or api.nvim_get_current_buf()
+  bufnr = bufnr or api.nvim_get_current_buf()
 
   local current = filename(bufnr)
 
-  if current ~= "" then
-    local detected = fs.root(
-      current,
-      ROOT_MARKERS
-    )
+  if current ~= '' then
+    local detected = fs.root(current, ROOT_MARKERS)
 
-    if
-      type(detected) == "string"
-      and detected ~= ""
-    then
+    if type(detected) == 'string' and detected ~= '' then
       return fs.normalize(detected)
     end
 
     local parent = fs.dirname(current)
 
-    if
-      type(parent) == "string"
-      and parent ~= ""
-    then
+    if type(parent) == 'string' and parent ~= '' then
       return fs.normalize(parent)
     end
   end
 
-  return fs.normalize(
-    fn.getcwd()
-  )
+  return fs.normalize(fn.getcwd())
 end
 
----@param command string[]
----@param cwd? string
----@param env? table<string, string>
----@return vim.SystemCompleted?
 local function system(command, cwd, env)
   local ok, result = pcall(function()
-    return vim.system(
-      command,
-      {
+    return vim
+      .system(command, {
         cwd = cwd,
 
         env = env,
 
         text = true,
-      }
-    ):wait()
+      })
+      :wait()
   end)
 
   if not ok then
@@ -196,47 +132,31 @@ local function system(command, cwd, env)
   return result
 end
 
----@return string?
 local function resolve_psql()
-  local configured =
-    vim.env.NVIM_PSQL_EXECUTABLE
+  local configured = vim.env.NVIM_PSQL_EXECUTABLE
 
-  if nonempty_string(configured) then
-    local candidate = normalize(
-      fn.expand(configured)
-    )
+  if type(configured) == 'string' and configured ~= '' then
+    local candidate = normalize(fn.expand(configured))
 
     if executable(candidate) then
       return candidate
     end
 
-    notify(
-      ("NVIM_PSQL_EXECUTABLE is not executable: %s"):format(
-        candidate
-      ),
-      levels.WARN
-    )
+    notify(('NVIM_PSQL_EXECUTABLE is not executable: %s'):format(candidate), levels.WARN)
   end
 
-  return executable_path("psql")
+  return executable_path('psql')
 end
 
----@return string?
 local function resolve_adapter()
-  if
-    state.adapter ~= nil
-    and executable(state.adapter)
-  then
+  if state.adapter ~= nil and executable(state.adapter) then
     return state.adapter
   end
 
-  local configured =
-    vim.env.NVIM_PGDAP_EXECUTABLE
+  local configured = vim.env.NVIM_PGDAP_EXECUTABLE
 
-  if nonempty_string(configured) then
-    local candidate = normalize(
-      fn.expand(configured)
-    )
+  if type(configured) == 'string' and configured ~= '' then
+    local candidate = normalize(fn.expand(configured))
 
     if executable(candidate) then
       state.adapter = candidate
@@ -244,16 +164,10 @@ local function resolve_adapter()
       return candidate
     end
 
-    notify(
-      ("NVIM_PGDAP_EXECUTABLE is not executable: %s"):format(
-        candidate
-      ),
-      levels.WARN
-    )
+    notify(('NVIM_PGDAP_EXECUTABLE is not executable: %s'):format(candidate), levels.WARN)
   end
 
-  local candidate =
-    executable_path("pgdap")
+  local candidate = executable_path('pgdap')
 
   if candidate ~= nil then
     state.adapter = candidate
@@ -264,88 +178,76 @@ local function resolve_adapter()
   return nil
 end
 
----@return string
 local function service()
-  if nonempty_string(state.service) then
-    return state.service
+  local selected = state.service
+
+  if type(selected) == 'string' and selected ~= '' then
+    return selected
   end
 
-  local configured =
-    vim.env.NVIM_PGDAP_SERVICE
-      or vim.env.PGSERVICE
+  local configured = vim.env.NVIM_PGDAP_SERVICE or vim.env.PGSERVICE
 
-  if nonempty_string(configured) then
+  if type(configured) == 'string' and configured ~= '' then
     state.service = configured
 
     return configured
   end
 
-  return ""
+  return ''
 end
 
----@return string
 local function database()
-  if nonempty_string(state.database) then
-    return state.database
+  local selected = state.database
+
+  if type(selected) == 'string' and selected ~= '' then
+    return selected
   end
 
-  local configured =
-    vim.env.NVIM_PGDAP_DATABASE
-      or vim.env.PGDATABASE
+  local configured = vim.env.NVIM_PGDAP_DATABASE or vim.env.PGDATABASE
 
-  if nonempty_string(configured) then
+  if type(configured) == 'string' and configured ~= '' then
     state.database = configured
 
     return configured
   end
 
-  return ""
+  return ''
 end
 
----@return table<string, string>
 local function connection_environment()
   local env = vim.fn.environ()
 
-  --
-  -- Keep libpq responsible for credentials.
-  --
-  -- This intentionally does not introduce PGPASSWORD or a password prompt.
-  --
   local selected_service = service()
 
-  if selected_service ~= "" then
+  if selected_service ~= '' then
     env.PGSERVICE = selected_service
   end
 
   local selected_database = database()
 
-  if selected_database ~= "" then
+  if selected_database ~= '' then
     env.PGDATABASE = selected_database
   end
 
-  if
-    not nonempty_string(
-      env.PGCONNECT_TIMEOUT
-    )
-  then
-    env.PGCONNECT_TIMEOUT = "5"
+  local connect_timeout = env.PGCONNECT_TIMEOUT
+
+  if type(connect_timeout) ~= 'string' or connect_timeout == '' then
+    env.PGCONNECT_TIMEOUT = '5'
   end
 
   return env
 end
 
----@return string
 local function current_file()
   local current = filename()
 
-  if current ~= "" then
+  if current ~= '' then
     return current
   end
 
-  return "${file}"
+  return '${file}'
 end
 
----@return string
 local function cwd()
   local root = project_root()
 
@@ -354,240 +256,135 @@ local function cwd()
   return root
 end
 
----@param query string
----@return vim.SystemCompleted?
 local function psql_query(query)
   local psql = resolve_psql()
 
   if psql == nil then
-    notify(
-      "psql was not found",
-      levels.ERROR
-    )
+    notify('psql was not found', levels.ERROR)
 
     return nil
   end
 
-  return system(
-    {
-      psql,
+  return system({
+    psql,
 
-      "-X",
+    '-X',
 
-      "--no-psqlrc",
+    '--no-psqlrc',
 
-      "--set",
-      "ON_ERROR_STOP=1",
+    '--set',
+    'ON_ERROR_STOP=1',
 
-      "--tuples-only",
+    '--tuples-only',
 
-      "--no-align",
+    '--no-align',
 
-      "--quiet",
+    '--quiet',
 
-      "--command",
-      query,
-    },
-    project_root(),
-    connection_environment()
-  )
+    '--command',
+    query,
+  }, project_root(), connection_environment())
 end
 
----@return boolean
 local function connection_available()
-  local result = psql_query(
-    "SELECT 1;"
-  )
+  local result = psql_query('SELECT 1;')
 
-  return result ~= nil
-    and result.code == 0
-    and vim.trim(
-      result.stdout or ""
-    ) == "1"
+  return result ~= nil and result.code == 0 and vim.trim(result.stdout or '') == '1'
 end
 
----@return boolean
 local function pldbgapi_installed()
-  local result = psql_query(
-    [[
+  local result = psql_query([[
 SELECT EXISTS (
   SELECT 1
   FROM pg_extension
   WHERE extname = 'pldbgapi'
 );
-]]
-  )
+]])
 
-  if
-    result == nil
-    or result.code ~= 0
-  then
+  if result == nil or result.code ~= 0 then
     return false
   end
 
-  local value =
-    vim.trim(
-      result.stdout or ""
-    )
+  local value = vim.trim(result.stdout or '')
 
-  return value == "t"
-    or value == "true"
+  return value == 't' or value == 'true'
 end
 
----@return boolean
 local function debugger_preloaded()
-  local result = psql_query(
-    [[
+  local result = psql_query([[
 SELECT
   current_setting(
     'shared_preload_libraries',
     true
   );
-]]
-  )
+]])
 
-  if
-    result == nil
-    or result.code ~= 0
-  then
+  if result == nil or result.code ~= 0 then
     return false
   end
 
-  local libraries =
-    vim.trim(
-      result.stdout or ""
-    )
+  local libraries = vim.trim(result.stdout or '')
 
-  return libraries:find(
-    "plugin_debugger",
-    1,
-    true
-  ) ~= nil
+  return libraries:find('plugin_debugger', 1, true) ~= nil
 end
 
----@return string?
 local function server_version()
-  local result = psql_query(
-    "SHOW server_version;"
-  )
+  local result = psql_query('SHOW server_version;')
 
-  if
-    result == nil
-    or result.code ~= 0
-  then
+  if result == nil or result.code ~= 0 then
     return nil
   end
 
-  local value =
-    vim.trim(
-      result.stdout or ""
-    )
+  local value = vim.trim(result.stdout or '')
 
-  if value == "" then
+  if value == '' then
     return nil
   end
 
   return value
 end
 
----@return integer?
-local function server_pid()
-  local result = psql_query(
-    "SELECT pg_backend_pid();"
-  )
-
-  if
-    result == nil
-    or result.code ~= 0
-  then
-    return nil
-  end
-
-  local pid =
-    tonumber(
-      vim.trim(
-        result.stdout or ""
-      )
-    )
-
-  if pid == nil then
-    return nil
-  end
-
-  return math.floor(pid)
-end
-
----@return string
 local function prompt_service()
-  local selected = fn.input(
-    "PostgreSQL service: ",
-    service()
-  )
+  local selected = fn.input('PostgreSQL service: ', service())
 
   state.service = selected
 
   return selected
 end
 
----@return string
 local function prompt_database()
-  local selected = fn.input(
-    "PostgreSQL database: ",
-    database()
-  )
+  local selected = fn.input('PostgreSQL database: ', database())
 
   state.database = selected
 
   return selected
 end
 
----@return string
 local function prompt_function()
-  return fn.input(
-    "PL/pgSQL function signature: ",
-    "public."
-  )
+  return fn.input('PL/pgSQL function signature: ', 'public.')
 end
 
----@return string
 local function prompt_procedure()
-  return fn.input(
-    "PL/pgSQL procedure signature: ",
-    "public."
-  )
+  return fn.input('PL/pgSQL procedure signature: ', 'public.')
 end
 
----@return string[]
 local function prompt_arguments()
-  local input = fn.input(
-    "Function arguments: "
-  )
+  local input = fn.input('Function arguments: ')
 
-  if input == "" then
+  if input == '' then
     return {}
   end
 
   return fn.shellsplit(input)
 end
 
----@return integer
 local function prompt_target_pid()
-  local value = fn.input(
-    "PostgreSQL target backend PID: "
-  )
+  local value = fn.input('PostgreSQL target backend PID: ')
 
   local pid = tonumber(value)
 
-  if
-    pid == nil
-    or pid < 1
-  then
-    notify(
-      ("invalid PostgreSQL PID: %s"):format(
-        value
-      ),
-      levels.ERROR
-    )
+  if pid == nil or pid < 1 then
+    notify(('invalid PostgreSQL PID: %s'):format(value), levels.ERROR)
 
     return 0
   end
@@ -595,119 +392,66 @@ local function prompt_target_pid()
   return math.floor(pid)
 end
 
----@return string
 local function prompt_schema()
-  local value = fn.input(
-    "PostgreSQL schema: ",
-    "public"
-  )
+  local value = fn.input('PostgreSQL schema: ', 'public')
 
-  if value == "" then
-    return "public"
+  if value == '' then
+    return 'public'
   end
 
   return value
 end
 
----@return string
-local function prompt_expression()
-  return fn.input(
-    "PL/pgSQL expression: "
-  )
-end
-
----@return string
-local function prompt_variable()
-  return fn.input(
-    "PL/pgSQL variable: "
-  )
-end
-
----@return string
-local function prompt_variable_value()
-  return fn.input(
-    "New variable value: "
-  )
-end
-
 local function select_adapter()
-  local selected = fn.input(
-    "PostgreSQL DAP adapter: ",
-    resolve_adapter() or "",
-    "file"
-  )
+  local selected = fn.input('PostgreSQL DAP adapter: ', resolve_adapter() or '', 'file')
 
-  if selected == "" then
+  if selected == '' then
     return
   end
 
-  selected = normalize(
-    fn.expand(selected)
-  )
+  selected = normalize(fn.expand(selected))
 
   if not executable(selected) then
-    notify(
-      ("not executable: %s"):format(
-        selected
-      ),
-      levels.ERROR
-    )
+    notify(('not executable: %s'):format(selected), levels.ERROR)
 
     return
   end
 
   state.adapter = selected
 
-  if type(M.adapter) == "table" then
+  if type(M.adapter) == 'table' then
     M.adapter.command = selected
   end
 
-  notify(
-    ("PostgreSQL DAP adapter: %s"):format(
-      selected
-    )
-  )
+  notify(('PostgreSQL DAP adapter: %s'):format(selected))
 end
 
 local function select_service()
   local selected = prompt_service()
 
-  if selected == "" then
-    notify(
-      "PostgreSQL service selection cleared"
-    )
+  if selected == '' then
+    notify('PostgreSQL service selection cleared')
 
     return
   end
 
-  notify(
-    ("PostgreSQL service: %s"):format(
-      selected
-    )
-  )
+  notify(('PostgreSQL service: %s'):format(selected))
 end
 
 local function select_database()
   local selected = prompt_database()
 
-  if selected == "" then
-    notify(
-      "PostgreSQL database selection cleared"
-    )
+  if selected == '' then
+    notify('PostgreSQL database selection cleared')
 
     return
   end
 
-  notify(
-    ("PostgreSQL database: %s"):format(
-      selected
-    )
-  )
+  notify(('PostgreSQL database: %s'):format(selected))
 end
 
 local function list_debuggable_functions()
-  local result = psql_query(
-    [[
+  local result = psql_query([[
 SELECT
   format(
     '%I.%I(%s)',
@@ -724,34 +468,22 @@ WHERE l.lanname = 'plpgsql'
 ORDER BY
   n.nspname,
   p.proname;
-]]
-  )
+]])
 
   if result == nil then
     return
   end
 
   if result.code ~= 0 then
-    notify(
-      vim.trim(
-        result.stderr
-          or "failed to query PL/pgSQL functions"
-      ),
-      levels.ERROR
-    )
+    notify(vim.trim(result.stderr or 'failed to query PL/pgSQL functions'), levels.ERROR)
 
     return
   end
 
-  local output =
-    vim.trim(
-      result.stdout or ""
-    )
+  local output = vim.trim(result.stdout or '')
 
-  if output == "" then
-    notify(
-      "no PL/pgSQL functions found"
-    )
+  if output == '' then
+    notify('no PL/pgSQL functions found')
 
     return
   end
@@ -761,91 +493,62 @@ end
 
 local function show_proxy_info()
   if not pldbgapi_installed() then
-    notify(
-      "pldbgapi is not installed in the selected database",
-      levels.WARN
-    )
+    notify('pldbgapi is not installed in the selected database', levels.WARN)
 
     return
   end
 
-  local result = psql_query(
-    [[
+  local result = psql_query([[
 SELECT *
 FROM pldbg_get_proxy_info();
-]]
-  )
+]])
 
   if result == nil then
     return
   end
 
-  local output =
-    vim.trim(
-      result.stdout
-        or result.stderr
-        or ""
-    )
+  local output = vim.trim(result.stdout or result.stderr or '')
 
-  if output == "" then
-    output =
-      "no pldbg proxy information returned"
+  if output == '' then
+    output = 'no pldbg proxy information returned'
   end
 
-  notify(
-    output,
-    result.code == 0
-        and levels.INFO
-      or levels.ERROR
-  )
+  notify(output, result.code == 0 and levels.INFO or levels.ERROR)
 end
 
 local function open_psql()
   local psql = resolve_psql()
 
   if psql == nil then
-    notify(
-      "psql was not found",
-      levels.ERROR
-    )
+    notify('psql was not found', levels.ERROR)
 
     return
   end
 
-  vim.cmd(
-    "botright new"
-  )
+  vim.cmd('botright new')
 
-  local buffer =
-    api.nvim_get_current_buf()
+  local buffer = api.nvim_get_current_buf()
 
-  vim.bo[buffer].bufhidden =
-    "wipe"
+  vim.bo[buffer].bufhidden = 'wipe'
 
-  local job = fn.termopen(
-    {
-      psql,
-      "-X",
-    },
-    {
-      cwd = project_root(),
+  local job = fn.jobstart({
+    psql,
+    '-X',
+  }, {
+    cwd = project_root(),
 
-      env = connection_environment(),
-    }
-  )
+    env = connection_environment(),
+
+    term = true,
+  })
 
   if job <= 0 then
-    notify(
-      "failed to start psql",
-      levels.ERROR
-    )
+    notify('failed to start psql', levels.ERROR)
 
     return
   end
 
-  vim.cmd(
-    "startinsert"
-  )
+  vim.cmd('startinsert')
 end
 
 local function clear_cache()
@@ -854,177 +557,80 @@ local function clear_cache()
   state.root = nil
   state.service = nil
 
-  notify(
-    "PostgreSQL DAP discovery cache cleared"
-  )
+  notify('PostgreSQL DAP discovery cache cleared')
 end
 
 local function status()
   local psql = resolve_psql()
   local adapter = resolve_adapter()
 
-  local connected =
-    psql ~= nil
-      and connection_available()
+  local connected = psql ~= nil and connection_available()
 
-  local extension =
-    connected
-      and pldbgapi_installed()
+  local extension = connected and pldbgapi_installed()
 
-  local preload =
-    connected
-      and debugger_preloaded()
+  local preload = connected and debugger_preloaded()
 
   notify(
     table.concat({
-      "root: "
-        .. project_root(),
+      'root: ' .. project_root(),
 
-      "psql: "
-        .. (psql or "not found"),
+      'psql: ' .. (psql or 'not found'),
 
-      "service: "
-        .. (
-          service() ~= ""
-              and service()
-            or "default libpq resolution"
-        ),
+      'service: ' .. (service() ~= '' and service() or 'default libpq resolution'),
 
-      "database: "
-        .. (
-          database() ~= ""
-              and database()
-            or "default libpq resolution"
-        ),
+      'database: ' .. (database() ~= '' and database() or 'default libpq resolution'),
 
-      "connection: "
-        .. (
-          connected
-              and "available"
-            or "unavailable"
-        ),
+      'connection: ' .. (connected and 'available' or 'unavailable'),
 
-      "server version: "
-        .. (
-          connected
-              and (
-                server_version()
-                  or "unknown"
-              )
-            or "unknown"
-        ),
+      'server version: ' .. (connected and (server_version() or 'unknown') or 'unknown'),
 
-      "pldbgapi: "
-        .. (
-          extension
-              and "installed"
-            or "not detected"
-        ),
+      'pldbgapi: ' .. (extension and 'installed' or 'not detected'),
 
-      "plugin_debugger preload: "
-        .. (
-          preload
-              and "detected"
-            or "not detected"
-        ),
+      'plugin_debugger preload: ' .. (preload and 'detected' or 'not detected'),
 
-      "pgdap: "
-        .. (
-          adapter
-            or "not found"
-        ),
+      'pgdap: ' .. (adapter or 'not found'),
 
-      "DAP: "
-        .. (
-          adapter ~= nil
-              and extension
-              and "available"
-            or "unavailable"
-        ),
-    }, "\n"),
-    (
-      connected
-      and extension
-      and adapter ~= nil
-    )
-        and levels.INFO
-      or levels.WARN
+      'DAP: ' .. (adapter ~= nil and extension and 'available' or 'unavailable'),
+    }, '\n'),
+    (connected and extension and adapter ~= nil) and levels.INFO or levels.WARN
   )
 end
 
---
--- IMPORTANT:
---
--- PostgreSQL currently provides pldbgapi, not a standard DAP server.
---
--- This descriptor expects a standalone `pgdap` bridge implementing DAP over
--- stdin/stdout and translating requests into the pldbgapi API.
---
--- Expected bridge responsibilities include:
---
---   DAP setBreakpoints -> pldbg_set_breakpoint()
---   DAP continue       -> pldbg_continue()
---   DAP next           -> pldbg_step_over()
---   DAP stepIn         -> pldbg_step_into()
---   DAP stackTrace     -> pldbg_get_stack()
---   DAP scopes         -> current selected PL/pgSQL frame
---   DAP variables      -> pldbg_get_variables()
---   DAP setVariable    -> pldbg_deposit_value()
---   DAP disconnect     -> pldbg_abort_target()
---
--- pldbgapi itself does not currently expose a dedicated step-out primitive;
--- a bridge must implement DAP stepOut conservatively using stack state and
--- continue/step operations.
---
----@type table
 M.adapter = {
-  name = "postgres",
+  name = 'postgres',
 
-  type = "executable",
+  type = 'executable',
 
-  command =
-    resolve_adapter()
-      or "pgdap",
+  command = resolve_adapter() or 'pgdap',
 
   args = {
-    "--stdio",
+    '--stdio',
   },
 
   options = {
-    source_filetype = "sql",
+    source_filetype = 'sql',
   },
 }
 
----@type table[]
 local configurations = {
-  --
-  -- Direct debugging:
-  --
-  -- The bridge starts the selected PL/pgSQL routine and owns both the proxy
-  -- and target-side database connections.
-  --
   {
-    name =
-      "PostgreSQL: Debug Function",
+    name = 'PostgreSQL: Debug Function',
 
-    type = "postgres",
+    type = 'postgres',
 
-    request = "launch",
+    request = 'launch',
 
-    mode = "function",
+    mode = 'function',
 
     service = service,
 
     database = database,
 
-    functionName =
-      prompt_function,
+    functionName = prompt_function,
 
-    args =
-      prompt_arguments,
+    args = prompt_arguments,
 
-    sourceFile =
-      current_file,
+    sourceFile = current_file,
 
     cwd = cwd,
 
@@ -1032,27 +638,23 @@ local configurations = {
   },
 
   {
-    name =
-      "PostgreSQL: Debug Procedure",
+    name = 'PostgreSQL: Debug Procedure',
 
-    type = "postgres",
+    type = 'postgres',
 
-    request = "launch",
+    request = 'launch',
 
-    mode = "procedure",
+    mode = 'procedure',
 
     service = service,
 
     database = database,
 
-    procedureName =
-      prompt_procedure,
+    procedureName = prompt_procedure,
 
-    args =
-      prompt_arguments,
+    args = prompt_arguments,
 
-    sourceFile =
-      current_file,
+    sourceFile = current_file,
 
     cwd = cwd,
 
@@ -1060,59 +662,45 @@ local configurations = {
   },
 
   {
-    name =
-      "PostgreSQL: Debug Function Without Entry Stop",
+    name = 'PostgreSQL: Debug Function Without Entry Stop',
 
-    type = "postgres",
+    type = 'postgres',
 
-    request = "launch",
+    request = 'launch',
 
-    mode = "function",
+    mode = 'function',
 
     service = service,
 
     database = database,
 
-    functionName =
-      prompt_function,
+    functionName = prompt_function,
 
-    args =
-      prompt_arguments,
+    args = prompt_arguments,
 
-    sourceFile =
-      current_file,
+    sourceFile = current_file,
 
     cwd = cwd,
 
     stopOnEntry = false,
   },
 
-  --
-  -- Global/in-context debugging:
-  --
-  -- The bridge establishes the global breakpoint through pldbgapi and waits
-  -- for another PostgreSQL backend (web request, job worker, application,
-  -- another psql session, etc.) to invoke the routine.
-  --
   {
-    name =
-      "PostgreSQL: Attach Global Breakpoint",
+    name = 'PostgreSQL: Attach Global Breakpoint',
 
-    type = "postgres",
+    type = 'postgres',
 
-    request = "attach",
+    request = 'attach',
 
-    mode = "global",
+    mode = 'global',
 
     service = service,
 
     database = database,
 
-    functionName =
-      prompt_function,
+    functionName = prompt_function,
 
-    sourceFile =
-      current_file,
+    sourceFile = current_file,
 
     targetPid = 0,
 
@@ -1120,60 +708,47 @@ local configurations = {
   },
 
   {
-    name =
-      "PostgreSQL: Attach Global Breakpoint to Backend PID",
+    name = 'PostgreSQL: Attach Global Breakpoint to Backend PID',
 
-    type = "postgres",
+    type = 'postgres',
 
-    request = "attach",
+    request = 'attach',
 
-    mode = "global",
+    mode = 'global',
 
     service = service,
 
     database = database,
 
-    functionName =
-      prompt_function,
+    functionName = prompt_function,
 
-    sourceFile =
-      current_file,
+    sourceFile = current_file,
 
-    targetPid =
-      prompt_target_pid,
+    targetPid = prompt_target_pid,
 
     stopOnEntry = true,
   },
 
-  --
-  -- Schema-targeted routine resolution is useful when the local file does not
-  -- contain a directly resolvable CREATE FUNCTION/PROCEDURE statement.
-  --
   {
-    name =
-      "PostgreSQL: Debug Function by Schema",
+    name = 'PostgreSQL: Debug Function by Schema',
 
-    type = "postgres",
+    type = 'postgres',
 
-    request = "launch",
+    request = 'launch',
 
-    mode = "function",
+    mode = 'function',
 
     service = service,
 
     database = database,
 
-    schema =
-      prompt_schema,
+    schema = prompt_schema,
 
-    functionName =
-      prompt_function,
+    functionName = prompt_function,
 
-    args =
-      prompt_arguments,
+    args = prompt_arguments,
 
-    sourceFile =
-      current_file,
+    sourceFile = current_file,
 
     cwd = cwd,
 
@@ -1181,7 +756,6 @@ local configurations = {
   },
 }
 
----@type table<string, table[]>
 M.configurations = {
   sql = configurations,
 
@@ -1190,15 +764,13 @@ M.configurations = {
   postgresql = configurations,
 }
 
----@type table<string, DebugCommand>
 M.commands = {
   PostgresDebugAdapter = {
     callback = function()
       select_adapter()
     end,
 
-    desc =
-      "Select PostgreSQL DAP bridge",
+    desc = 'Select PostgreSQL DAP bridge',
   },
 
   PostgresDebugClear = {
@@ -1206,8 +778,7 @@ M.commands = {
       clear_cache()
     end,
 
-    desc =
-      "Clear PostgreSQL debugger discovery cache",
+    desc = 'Clear PostgreSQL debugger discovery cache',
   },
 
   PostgresDebugDatabase = {
@@ -1215,8 +786,7 @@ M.commands = {
       select_database()
     end,
 
-    desc =
-      "Select PostgreSQL database",
+    desc = 'Select PostgreSQL database',
   },
 
   PostgresDebugFunctions = {
@@ -1224,8 +794,7 @@ M.commands = {
       list_debuggable_functions()
     end,
 
-    desc =
-      "List PL/pgSQL functions",
+    desc = 'List PL/pgSQL functions',
   },
 
   PostgresDebugProxy = {
@@ -1233,8 +802,7 @@ M.commands = {
       show_proxy_info()
     end,
 
-    desc =
-      "Show pldbgapi proxy information",
+    desc = 'Show pldbgapi proxy information',
   },
 
   PostgresDebugPsql = {
@@ -1242,8 +810,7 @@ M.commands = {
       open_psql()
     end,
 
-    desc =
-      "Open psql for current PostgreSQL connection",
+    desc = 'Open psql for current PostgreSQL connection',
   },
 
   PostgresDebugService = {
@@ -1251,8 +818,7 @@ M.commands = {
       select_service()
     end,
 
-    desc =
-      "Select PostgreSQL libpq service",
+    desc = 'Select PostgreSQL libpq service',
   },
 
   PostgresDebugStatus = {
@@ -1260,87 +826,79 @@ M.commands = {
       status()
     end,
 
-    desc =
-      "Show PostgreSQL debugger status",
+    desc = 'Show PostgreSQL debugger status',
   },
 }
 
----@type table<string, DebugMapping>
 M.mappings = {
   postgres_debug_database = {
-    lhs = "<leader>dPd",
+    lhs = '<leader>dPd',
 
-    mode = "n",
+    mode = 'n',
 
     rhs = function()
       select_database()
     end,
 
-    desc =
-      "Debug PostgreSQL: Database",
+    desc = 'Debug PostgreSQL: Database',
   },
 
   postgres_debug_functions = {
-    lhs = "<leader>dPf",
+    lhs = '<leader>dPf',
 
-    mode = "n",
+    mode = 'n',
 
     rhs = function()
       list_debuggable_functions()
     end,
 
-    desc =
-      "Debug PostgreSQL: Functions",
+    desc = 'Debug PostgreSQL: Functions',
   },
 
   postgres_debug_psql = {
-    lhs = "<leader>dPp",
+    lhs = '<leader>dPp',
 
-    mode = "n",
+    mode = 'n',
 
     rhs = function()
       open_psql()
     end,
 
-    desc =
-      "Debug PostgreSQL: psql",
+    desc = 'Debug PostgreSQL: psql',
   },
 
   postgres_debug_service = {
-    lhs = "<leader>dPs",
+    lhs = '<leader>dPs',
 
-    mode = "n",
+    mode = 'n',
 
     rhs = function()
       select_service()
     end,
 
-    desc =
-      "Debug PostgreSQL: Service",
+    desc = 'Debug PostgreSQL: Service',
   },
 
   postgres_debug_status = {
-    lhs = "<leader>dPS",
+    lhs = '<leader>dPS',
 
-    mode = "n",
+    mode = 'n',
 
     rhs = function()
       status()
     end,
 
-    desc =
-      "Debug PostgreSQL: Status",
+    desc = 'Debug PostgreSQL: Status',
   },
 }
 
----@param opts? table
 function M.setup(opts)
   opts = opts or {}
 
-  state.root =
-    nonempty_string(opts.root)
-        and fs.normalize(opts.root)
-      or project_root()
+  local configured_root = opts.root
+
+  state.root = type(configured_root) == 'string' and configured_root ~= '' and fs.normalize(configured_root)
+    or project_root()
 
   local adapter = resolve_adapter()
 
@@ -1352,14 +910,14 @@ function M.setup(opts)
     vim.schedule(function()
       notify(
         table.concat({
-          "psql was not found.",
+          'psql was not found.',
 
-          "",
+          '',
 
-          "Install the PostgreSQL client or set:",
+          'Install the PostgreSQL client or set:',
 
-          "  NVIM_PSQL_EXECUTABLE=/path/to/psql",
-        }, "\n"),
+          '  NVIM_PSQL_EXECUTABLE=/path/to/psql',
+        }, '\n'),
         levels.WARN
       )
     end)
@@ -1369,57 +927,49 @@ function M.setup(opts)
     vim.schedule(function()
       notify(
         table.concat({
-          "No PostgreSQL DAP bridge was found.",
+          'No PostgreSQL DAP bridge was found.',
 
-          "",
+          '',
 
-          "pldbgapi itself is not a DAP server.",
+          'pldbgapi itself is not a DAP server.',
 
-          "For vim.debug sessions, install a compatible `pgdap`",
-          "bridge or set:",
+          'For vim.debug sessions, install a compatible `pgdap`',
+          'bridge or set:',
 
-          "  NVIM_PGDAP_EXECUTABLE=/path/to/pgdap",
+          '  NVIM_PGDAP_EXECUTABLE=/path/to/pgdap',
 
-          "",
+          '',
 
-          "psql/pldbgapi health and discovery commands remain usable.",
-        }, "\n"),
+          'psql/pldbgapi health and discovery commands remain usable.',
+        }, '\n'),
         levels.DEBUG
       )
     end)
   end
 end
 
----@return string?
 function M.adapter_path()
   return resolve_adapter()
 end
 
----@return string?
 function M.psql()
   return resolve_psql()
 end
 
----@return string
 function M.root()
   return project_root()
 end
 
----@return boolean
 function M.connection_available()
   return connection_available()
 end
 
----@return boolean
 function M.pldbgapi_available()
   return pldbgapi_installed()
 end
 
----@return boolean
 function M.available()
-  return resolve_adapter() ~= nil
-    and connection_available()
-    and pldbgapi_installed()
+  return resolve_adapter() ~= nil and connection_available() and pldbgapi_installed()
 end
 
 return M

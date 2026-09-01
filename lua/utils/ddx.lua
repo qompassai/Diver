@@ -69,12 +69,13 @@ local function collect_lua_files(root)
   return files
 end
 
-local function make_qf_item(file, text, lnum, col)
+local function make_qf_item(file, text, lnum, col, item_type)
   return {
     filename = file,
     lnum = lnum or 1,
     col = col or 1,
     text = text,
+    type = item_type,
   }
 end
 
@@ -332,9 +333,7 @@ local function check_modules_in_root(root, prefix, qf_items, fh, expect_table)
     local mod = to_module(root, file)
     local full_mod = prefix .. '.' .. mod
     local ok, result = safe_require(full_mod)
-
     write_log(fh, ("[probe:%s] require('%s') = %s"):format(prefix, full_mod, tostring(ok)))
-
     if not ok then
       qf_items[#qf_items + 1] =
         make_qf_item(file, ('[%s] failed to require %s: %s'):format(prefix, full_mod, tostring(result)))
@@ -396,6 +395,714 @@ local function run_luacheck(paths, qf_items, fh)
     end
   end
 end
+
+local tiger_defaults = {
+  active_handles = 80,
+  autocmds = 500,
+  buffer_mib = 32,
+  config_file_kib = 256,
+  hot_autocmds_per_event = 24,
+  loaded_buffers = 80,
+  loaded_modules = 450,
+  lua_memory_mib = 128,
+  rss_mib = 768,
+  startup_source_self_ms = 8,
+  startup_source_total_ms = 20,
+  startup_total_ms = 250,
+}
+
+local tiger_severity_rank = {
+  WARN = 1,
+  INFO = 2,
+}
+
+local tiger_hot_events = {
+  BufEnter = true,
+  BufWinEnter = true,
+  CursorMoved = true,
+  CursorMovedI = true,
+  DiagnosticChanged = true,
+  InsertCharPre = true,
+  LspAttach = true,
+  TextChanged = true,
+  TextChangedI = true,
+  TextChangedP = true,
+  WinResized = true,
+  WinScrolled = true,
+}
+
+local tiger_static_rules = {
+  {
+    category = 'blocking-process',
+    pattern = 'vim%.system%b()%s*:wait%s*%(',
+    message = 'Synchronous vim.system(...):wait() blocks Neovim until the process exits',
+    action = 'Prefer the vim.system() callback form in startup code and frequently triggered callbacks',
+  },
+  {
+    category = 'blocking-process',
+    pattern = 'fn%.system[%a_]*%s*%(',
+    message = 'vim.fn.system()/systemlist() blocks Neovim until the process exits',
+    action = 'Prefer vim.system(..., callback) unless synchronous execution is intentional',
+  },
+  {
+    category = 'blocking-wait',
+    pattern = 'vim%.wait%s*%(',
+    message = 'vim.wait() blocks the caller while polling its condition',
+    action = 'Prefer an event, callback, autocmd, or scheduled continuation on interactive paths',
+  },
+  {
+    category = 'blocking-process',
+    pattern = 'io%.popen%s*%(',
+    message = "io.popen() performs blocking process I/O on Neovim's main thread",
+    action = 'Prefer vim.system() with a callback for interactive work',
+  },
+  {
+    category = 'blocking-process',
+    pattern = 'os%.execute%s*%(',
+    message = 'os.execute() blocks Neovim until the command exits',
+    action = 'Prefer vim.system() with an argument vector and callback',
+  },
+  {
+    category = 'full-buffer-read',
+    pattern = 'nvim_buf_get_lines%([^,]+,%s*0,%s*-1',
+    message = 'Full-buffer reads allocate a Lua copy of every line',
+    action = 'Read only the required range, especially inside autocmd or redraw callbacks',
+  },
+}
+
+local function tiger_thresholds()
+  local overrides = type(vim.g.tigercheck_thresholds) == 'table' and vim.g.tigercheck_thresholds or {}
+  return vim.tbl_deep_extend('force', {}, tiger_defaults, overrides)
+end
+
+local function add_tiger_finding(findings, severity, category, file, lnum, col, message, action)
+  findings[#findings + 1] = {
+    action = action,
+    category = category,
+    col = col or 1,
+    file = file,
+    lnum = lnum or 1,
+    message = message,
+    severity = severity,
+  }
+end
+
+local function tiger_source_location(callback)
+  if type(callback) ~= 'function' then
+    return nil, nil
+  end
+
+  local ok, info = pcall(debug.getinfo, callback, 'S')
+  if not ok or type(info) ~= 'table' or type(info.source) ~= 'string' then
+    return nil, nil
+  end
+
+  local source = info.source
+  if source:sub(1, 1) ~= '@' then
+    return nil, nil
+  end
+
+  return source:sub(2), math.max(tonumber(info.linedefined) or 1, 1)
+end
+
+local function tiger_autocmd_location(autocmd)
+  local file, lnum = tiger_source_location(autocmd.callback)
+  if file then
+    return file, lnum
+  end
+
+  return fn.stdpath('config') .. '/init.lua', 1
+end
+
+local function tiger_runtime_metrics(metrics, findings, thresholds)
+  local config_file = fn.stdpath('config') .. '/init.lua'
+  local loaded_buffers = 0
+  local largest_buffer_bytes = 0
+  local largest_buffer_file = config_file
+
+  for _, bufnr in ipairs(api.nvim_list_bufs()) do
+    if api.nvim_buf_is_valid(bufnr) and api.nvim_buf_is_loaded(bufnr) then
+      loaded_buffers = loaded_buffers + 1
+      local line_count = api.nvim_buf_line_count(bufnr)
+      local ok_offset, bytes = pcall(api.nvim_buf_get_offset, bufnr, line_count)
+      if ok_offset and type(bytes) == 'number' and bytes > largest_buffer_bytes then
+        largest_buffer_bytes = bytes
+        local name = api.nvim_buf_get_name(bufnr)
+        largest_buffer_file = name ~= '' and name or config_file
+      end
+    end
+  end
+
+  local module_count = 0
+  for _ in pairs(package.loaded) do
+    module_count = module_count + 1
+  end
+
+  local lua_memory_mib = collectgarbage('count') / 1024
+  local ok_rss, rss_bytes = pcall(uv.resident_set_memory)
+  local rss_mib = ok_rss and type(rss_bytes) == 'number' and rss_bytes / 1024 / 1024 or nil
+  local handle_count = 0
+  local active_handle_count = 0
+  local handle_types = {}
+
+  if type(uv.walk) == 'function' then
+    uv.walk(function(handle)
+      handle_count = handle_count + 1
+      local handle_type = 'unknown'
+      if type(uv.handle_get_type) == 'function' then
+        local ok_type, value = pcall(uv.handle_get_type, handle)
+        if ok_type and type(value) == 'string' then
+          handle_type = value
+        end
+      end
+      handle_types[handle_type] = (handle_types[handle_type] or 0) + 1
+
+      local ok_active, active = pcall(function()
+        return handle:is_active()
+      end)
+      if ok_active and active then
+        active_handle_count = active_handle_count + 1
+      end
+    end)
+  end
+
+  metrics.active_handles = active_handle_count
+  metrics.handle_count = handle_count
+  metrics.handle_types = handle_types
+  metrics.largest_buffer_mib = largest_buffer_bytes / 1024 / 1024
+  metrics.loaded_buffers = loaded_buffers
+  metrics.loaded_modules = module_count
+  metrics.lua_memory_mib = lua_memory_mib
+  metrics.rss_mib = rss_mib
+
+  if lua_memory_mib >= thresholds.lua_memory_mib then
+    add_tiger_finding(
+      findings,
+      'WARN',
+      'lua-memory',
+      config_file,
+      1,
+      1,
+      ('Lua heap is %.1f MiB; threshold is %.1f MiB'):format(lua_memory_mib, thresholds.lua_memory_mib),
+      'Inspect eagerly loaded modules, retained closures, caches, and large Lua tables'
+    )
+  end
+
+  if rss_mib and rss_mib >= thresholds.rss_mib then
+    add_tiger_finding(
+      findings,
+      'WARN',
+      'resident-memory',
+      config_file,
+      1,
+      1,
+      ('Neovim RSS is %.1f MiB; threshold is %.1f MiB'):format(rss_mib, thresholds.rss_mib),
+      'Compare a clean start, then disable eager plugins or large providers in groups to isolate growth'
+    )
+  end
+
+  if loaded_buffers >= thresholds.loaded_buffers then
+    add_tiger_finding(
+      findings,
+      'WARN',
+      'buffers',
+      config_file,
+      1,
+      1,
+      ('%d loaded buffers exceed the threshold of %d'):format(loaded_buffers, thresholds.loaded_buffers),
+      'Review hidden terminal, preview, scratch, and plugin buffers that are never deleted'
+    )
+  end
+
+  local largest_buffer_mib = largest_buffer_bytes / 1024 / 1024
+  if largest_buffer_mib >= thresholds.buffer_mib then
+    add_tiger_finding(
+      findings,
+      'WARN',
+      'large-buffer',
+      largest_buffer_file,
+      1,
+      1,
+      ('Loaded buffer is approximately %.1f MiB; threshold is %.1f MiB'):format(
+        largest_buffer_mib,
+        thresholds.buffer_mib
+      ),
+      'Avoid full-buffer Lua copies and disable expensive per-line features for very large files'
+    )
+  end
+
+  if module_count >= thresholds.loaded_modules then
+    add_tiger_finding(
+      findings,
+      'WARN',
+      'eager-loading',
+      config_file,
+      1,
+      1,
+      ('%d loaded Lua modules exceed the threshold of %d'):format(module_count, thresholds.loaded_modules),
+      'Compare package.loaded after a clean start and defer language- or filetype-specific modules'
+    )
+  end
+
+  if active_handle_count >= thresholds.active_handles then
+    add_tiger_finding(
+      findings,
+      'WARN',
+      'event-loop',
+      config_file,
+      1,
+      1,
+      ('%d active libuv handles exceed the threshold of %d'):format(active_handle_count, thresholds.active_handles),
+      'Review repeating timers, watchers, jobs, terminals, sockets, and handles not closed during teardown'
+    )
+  end
+end
+
+local function tiger_autocmd_metrics(metrics, findings, thresholds)
+  local ok, autocmds = pcall(api.nvim_get_autocmds, {})
+  if not ok or type(autocmds) ~= 'table' then
+    add_tiger_finding(
+      findings,
+      'INFO',
+      'autocmds',
+      fn.stdpath('config') .. '/init.lua',
+      1,
+      1,
+      'Could not inspect runtime autocommands: ' .. tostring(autocmds),
+      'Run :checkhealth and confirm the current Neovim API is available'
+    )
+    return
+  end
+
+  metrics.autocmds = #autocmds
+  local duplicate_groups = {}
+  local event_counts = {}
+  local event_locations = {}
+
+  for _, autocmd in ipairs(autocmds) do
+    local event = tostring(autocmd.event or '<unknown>')
+    local pattern = tostring(autocmd.pattern or (autocmd.buflocal and '<buffer>' or '*'))
+    local group = tostring(autocmd.group_name or autocmd.group or '<none>')
+    local file, lnum = tiger_autocmd_location(autocmd)
+    local handler
+
+    if type(autocmd.callback) == 'function' then
+      handler = ('%s:%d'):format(file, lnum)
+    elseif autocmd.callback ~= nil then
+      handler = tostring(autocmd.callback)
+    else
+      handler = tostring(autocmd.command or '')
+    end
+
+    local signature = table.concat({ event, pattern, group, handler }, '\31')
+    duplicate_groups[signature] = duplicate_groups[signature]
+      or {
+        count = 0,
+        event = event,
+        file = file,
+        lnum = lnum,
+        pattern = pattern,
+      }
+    duplicate_groups[signature].count = duplicate_groups[signature].count + 1
+
+    if tiger_hot_events[event] and not autocmd.buflocal and (pattern == '*' or pattern == '') then
+      event_counts[event] = (event_counts[event] or 0) + 1
+      event_locations[event] = event_locations[event] or {
+        file = file,
+        lnum = lnum,
+      }
+    end
+  end
+
+  if #autocmds >= thresholds.autocmds then
+    add_tiger_finding(
+      findings,
+      'WARN',
+      'autocmds',
+      fn.stdpath('config') .. '/init.lua',
+      1,
+      1,
+      ('%d runtime autocommands exceed the threshold of %d'):format(#autocmds, thresholds.autocmds),
+      'Review duplicate setup calls and plugins that register handlers repeatedly'
+    )
+  end
+
+  for _, duplicate in pairs(duplicate_groups) do
+    if duplicate.count > 1 then
+      add_tiger_finding(
+        findings,
+        'WARN',
+        'duplicate-autocmd',
+        duplicate.file,
+        duplicate.lnum,
+        1,
+        ('Autocmd appears %d times: event=%s pattern=%s'):format(duplicate.count, duplicate.event, duplicate.pattern),
+        'Ensure setup is idempotent and create the augroup with clear=true before re-registering handlers'
+      )
+    end
+  end
+
+  for event, count in pairs(event_counts) do
+    if count >= thresholds.hot_autocmds_per_event then
+      local location = event_locations[event]
+      add_tiger_finding(
+        findings,
+        'WARN',
+        'hot-autocmd',
+        location.file,
+        location.lnum,
+        1,
+        ('%d global %s handlers run on a high-frequency event'):format(count, event),
+        'Make handlers buffer-local where possible and debounce expensive work'
+      )
+    end
+  end
+end
+
+local function tiger_lsp_metrics(metrics, findings)
+  if not vim.lsp or type(vim.lsp.get_clients) ~= 'function' then
+    return
+  end
+
+  local clients = vim.lsp.get_clients()
+  metrics.lsp_clients = #clients
+  local groups = {}
+
+  for _, client in ipairs(clients) do
+    local root = type(client.config) == 'table' and client.config.root_dir or nil
+    local key = ('%s\31%s'):format(tostring(client.name), tostring(root or '<none>'))
+    groups[key] = groups[key]
+      or {
+        count = 0,
+        name = tostring(client.name),
+        root = tostring(root or '<none>'),
+      }
+    groups[key].count = groups[key].count + 1
+  end
+
+  for _, group in pairs(groups) do
+    if group.count > 1 then
+      local file = fn.stdpath('config') .. '/lsp/' .. group.name .. '.lua'
+      add_tiger_finding(
+        findings,
+        'WARN',
+        'duplicate-lsp',
+        file,
+        1,
+        1,
+        ('%d %s clients share root %s'):format(group.count, group.name, group.root),
+        'Check for duplicate vim.lsp.enable() calls or overlapping filetype activation paths'
+      )
+    end
+  end
+end
+
+local function tiger_static_scan(files, metrics, findings, thresholds)
+  local scanned_bytes = 0
+  local scanned_lines = 0
+
+  for _, file in ipairs(files) do
+    local file_bytes = 0
+    local file_lines = 0
+    local function_definitions = {}
+    local input = io.open(file, 'r')
+    if input then
+      for line in input:lines() do
+        file_lines = file_lines + 1
+        file_bytes = file_bytes + #line + 1
+        local trimmed = line:match('^%s*(.-)%s*$')
+        if trimmed ~= '' and not trimmed:match('^%-%-') then
+          for _, rule in ipairs(tiger_static_rules) do
+            local first = line:find(rule.pattern)
+            if first then
+              add_tiger_finding(findings, 'WARN', rule.category, file, file_lines, first, rule.message, rule.action)
+            end
+          end
+
+          local function_name = line:match('^%s*function%s+([%w_%.:]+)%s*%(')
+            or line:match('^%s*local%s+function%s+([%w_]+)%s*%(')
+            or line:match('^%s*([%w_%.:]+)%s*=%s*function%s*%(')
+          if function_name then
+            local previous = function_definitions[function_name]
+            if previous then
+              add_tiger_finding(
+                findings,
+                'WARN',
+                'duplicate-function',
+                file,
+                file_lines,
+                1,
+                ('Function %s redefines the implementation from line %d'):format(function_name, previous),
+                'Remove the duplicate or rename it; the later definition silently replaces the earlier one'
+              )
+            else
+              function_definitions[function_name] = file_lines
+            end
+          end
+        end
+      end
+      input:close()
+    end
+
+    scanned_bytes = scanned_bytes + file_bytes
+    scanned_lines = scanned_lines + file_lines
+    if file_bytes / 1024 >= thresholds.config_file_kib then
+      add_tiger_finding(
+        findings,
+        'INFO',
+        'large-config-module',
+        file,
+        1,
+        1,
+        ('Lua file is %.1f KiB across %d lines'):format(file_bytes / 1024, file_lines),
+        'Split by responsibility only if this module is eagerly loaded or difficult to profile'
+      )
+    end
+  end
+
+  metrics.scanned_files = #files
+  metrics.scanned_kib = scanned_bytes / 1024
+  metrics.scanned_lines = scanned_lines
+end
+
+local function tiger_startup_metrics(startup_log, metrics, findings, thresholds)
+  if not startup_log or startup_log == '' then
+    add_tiger_finding(
+      findings,
+      'INFO',
+      'startup',
+      fn.stdpath('config') .. '/init.lua',
+      1,
+      1,
+      'No --startuptime log was supplied; live runtime checks still completed',
+      'Use the documented two-pass CLI command to include complete startup attribution'
+    )
+    return
+  end
+
+  startup_log = fn.fnamemodify(fn.expand(startup_log), ':p')
+  if fn.filereadable(startup_log) ~= 1 then
+    add_tiger_finding(
+      findings,
+      'WARN',
+      'startup',
+      startup_log,
+      1,
+      1,
+      'Startup timing log is not readable',
+      'Generate it with nvim --headless --startuptime <file> +qa'
+    )
+    return
+  end
+
+  local sessions = {}
+  local current = {}
+  local input = io.open(startup_log, 'r')
+  if not input then
+    return
+  end
+
+  for line in input:lines() do
+    if line:find('times in msec', 1, true) then
+      current = {}
+      sessions[#sessions + 1] = current
+    else
+      current[#current + 1] = line
+    end
+  end
+  input:close()
+
+  local lines = sessions[#sessions] or current
+  local sources = {}
+  local startup_ms
+
+  for _, line in ipairs(lines) do
+    local clock, total_ms, self_ms, file = line:match('^%s*(%d+%.%d+)%s+(%d+%.%d+)%s+(%d+%.%d+):%s+sourcing%s+(.+)$')
+    if file then
+      local source = sources[file] or {
+        count = 0,
+        self_ms = 0,
+        total_ms = 0,
+      }
+      source.count = source.count + 1
+      source.self_ms = source.self_ms + (tonumber(self_ms) or 0)
+      source.total_ms = source.total_ms + (tonumber(total_ms) or 0)
+      sources[file] = source
+      startup_ms = math.max(startup_ms or 0, tonumber(clock) or 0)
+    end
+
+    local started = line:match('^%s*(%d+%.%d+).+NVIM STARTED')
+    if started then
+      startup_ms = tonumber(started)
+    end
+  end
+
+  metrics.startup_log = startup_log
+  metrics.startup_ms = startup_ms
+
+  if startup_ms and startup_ms >= thresholds.startup_total_ms then
+    add_tiger_finding(
+      findings,
+      'WARN',
+      'startup-total',
+      fn.stdpath('config') .. '/init.lua',
+      1,
+      1,
+      ('Startup took %.1f ms; threshold is %.1f ms'):format(startup_ms, thresholds.startup_total_ms),
+      'Start with the slow source findings below, then compare against nvim --clean'
+    )
+  end
+
+  for file, source in pairs(sources) do
+    if source.self_ms >= thresholds.startup_source_self_ms or source.total_ms >= thresholds.startup_source_total_ms then
+      add_tiger_finding(
+        findings,
+        'WARN',
+        'startup-source',
+        file,
+        1,
+        1,
+        ('Startup source used %.2f ms self / %.2f ms including children across %d load(s)'):format(
+          source.self_ms,
+          source.total_ms,
+          source.count
+        ),
+        'Inspect eager requires and setup work in this file; move filetype-specific work behind activation events'
+      )
+    end
+  end
+end
+
+local function tiger_sort_findings(findings)
+  table.sort(findings, function(left, right)
+    local left_rank = tiger_severity_rank[left.severity] or 99
+    local right_rank = tiger_severity_rank[right.severity] or 99
+    if left_rank ~= right_rank then
+      return left_rank < right_rank
+    end
+    if left.category ~= right.category then
+      return left.category < right.category
+    end
+    if left.file ~= right.file then
+      return left.file < right.file
+    end
+    if left.lnum ~= right.lnum then
+      return left.lnum < right.lnum
+    end
+    return left.col < right.col
+  end)
+end
+
+local function tiger_report_lines(metrics, findings, thresholds)
+  local version = vim.version()
+  local lines = {
+    'Qompass AI Diver Tiger Performance Check',
+    string.rep('=', 80),
+    ('Generated: %s'):format(os.date('%Y-%m-%d %H:%M:%S')),
+    ('Neovim: %d.%d.%d'):format(version.major, version.minor, version.patch),
+    'Scope: snapshot and heuristic audit; findings identify investigation targets, not proof of causation.',
+    '',
+    'Runtime metrics',
+    string.rep('-', 80),
+    ('Lua heap: %.1f MiB (warn >= %.1f)'):format(metrics.lua_memory_mib or 0, thresholds.lua_memory_mib),
+    ('RSS: %s (warn >= %.1f MiB)'):format(
+      metrics.rss_mib and ('%.1f MiB'):format(metrics.rss_mib) or '<unavailable>',
+      thresholds.rss_mib
+    ),
+    ('Loaded Lua modules: %d (warn >= %d)'):format(metrics.loaded_modules or 0, thresholds.loaded_modules),
+    ('Loaded buffers: %d (warn >= %d)'):format(metrics.loaded_buffers or 0, thresholds.loaded_buffers),
+    ('Largest loaded buffer: %.1f MiB (warn >= %.1f)'):format(metrics.largest_buffer_mib or 0, thresholds.buffer_mib),
+    ('Autocommands: %d (warn >= %d)'):format(metrics.autocmds or 0, thresholds.autocmds),
+    ('LSP clients: %d'):format(metrics.lsp_clients or 0),
+    ('libuv handles: %d total / %d active (warn active >= %d)'):format(
+      metrics.handle_count or 0,
+      metrics.active_handles or 0,
+      thresholds.active_handles
+    ),
+    ('Scanned config: %d files / %d lines / %.1f KiB'):format(
+      metrics.scanned_files or 0,
+      metrics.scanned_lines or 0,
+      metrics.scanned_kib or 0
+    ),
+    ('Startup: %s'):format(metrics.startup_ms and ('%.1f ms'):format(metrics.startup_ms) or '<not measured>'),
+    '',
+    'Active handle types',
+    string.rep('-', 80),
+  }
+
+  local handle_names = {}
+  for name in pairs(metrics.handle_types or {}) do
+    handle_names[#handle_names + 1] = name
+  end
+  table.sort(handle_names)
+  if #handle_names == 0 then
+    lines[#lines + 1] = '<none reported>'
+  else
+    for _, name in ipairs(handle_names) do
+      lines[#lines + 1] = ('%-16s %d'):format(name, metrics.handle_types[name])
+    end
+  end
+
+  lines[#lines + 1] = ''
+  lines[#lines + 1] = ('Findings (%d)'):format(#findings)
+  lines[#lines + 1] = string.rep('-', 80)
+  if #findings == 0 then
+    lines[#lines + 1] = 'No configured threshold was exceeded and no static hotspot matched.'
+  else
+    for _, finding in ipairs(findings) do
+      lines[#lines + 1] = ('%s:%d:%d: [%s/%s] %s'):format(
+        finding.file,
+        finding.lnum,
+        finding.col,
+        finding.severity,
+        finding.category,
+        finding.message
+      )
+      if finding.action and finding.action ~= '' then
+        lines[#lines + 1] = ('  action: %s'):format(finding.action)
+      end
+    end
+  end
+
+  lines[#lines + 1] = ''
+  lines[#lines + 1] = 'Threshold overrides'
+  lines[#lines + 1] = string.rep('-', 80)
+  lines[#lines + 1] = 'Set vim.g.tigercheck_thresholds before running ConfigTigerCheck, for example:'
+  lines[#lines + 1] = 'vim.g.tigercheck_thresholds = { startup_total_ms = 180, rss_mib = 512 }'
+  return lines
+end
+
+local function tiger_write_report(report_path, lines)
+  local output, err = io.open(report_path, 'w')
+  if not output then
+    return false, err
+  end
+  output:write(table.concat(lines, '\n'))
+  output:write('\n')
+  output:close()
+  return true, nil
+end
+
+local function tiger_finish_qf(findings)
+  local items = {}
+  for _, finding in ipairs(findings) do
+    local item_type = finding.severity == 'WARN' and 'W' or 'I'
+    local text = ('[%s/%s] %s'):format(finding.severity, finding.category, finding.message)
+    if finding.action and finding.action ~= '' then
+      text = text .. ' | action: ' .. finding.action
+    end
+    items[#items + 1] = make_qf_item(finding.file, text, finding.lnum, finding.col, item_type)
+  end
+
+  fn.setqflist({}, 'r', {
+    title = 'ConfigTigerCheck',
+    items = items,
+  })
+  if #api.nvim_list_uis() > 0 then
+    vim.cmd('copen')
+  end
+end
+
 local function runtimecheck(qf_items, fh)
   write_log(fh, '')
   write_log(fh, '[runtime] starting targeted probes')
@@ -559,6 +1266,70 @@ function M.syntaxcheck()
     fh:close()
   end
 end
+function M.tigercheck(startup_log)
+  local config_root = fn.stdpath('config')
+  local files = collect_lua_files(config_root .. '/lua')
+  local lsp_root = config_root .. '/lsp'
+  if fn.isdirectory(lsp_root) == 1 then
+    vim.list_extend(files, collect_lua_files(lsp_root))
+  end
+
+  local init_file = config_root .. '/init.lua'
+  if fn.filereadable(init_file) == 1 then
+    files[#files + 1] = init_file
+  end
+  table.sort(files)
+
+  local thresholds = tiger_thresholds()
+  local findings = {}
+  local metrics = {}
+  tiger_runtime_metrics(metrics, findings, thresholds)
+  tiger_autocmd_metrics(metrics, findings, thresholds)
+  tiger_lsp_metrics(metrics, findings)
+  tiger_static_scan(files, metrics, findings, thresholds)
+  tiger_startup_metrics(startup_log, metrics, findings, thresholds)
+  tiger_sort_findings(findings)
+
+  local state_dir = fn.stdpath('state')
+  fn.mkdir(state_dir, 'p')
+  local report_path = state_dir .. '/tigercheck.log'
+  local lines = tiger_report_lines(metrics, findings, thresholds)
+  local ok_report, report_err = tiger_write_report(report_path, lines)
+  if not ok_report then
+    add_tiger_finding(
+      findings,
+      'WARN',
+      'report',
+      init_file,
+      1,
+      1,
+      'Could not write Tiger report: ' .. tostring(report_err),
+      'Check permissions for stdpath("state")'
+    )
+    tiger_sort_findings(findings)
+    lines = tiger_report_lines(metrics, findings, thresholds)
+  end
+
+  tiger_finish_qf(findings)
+  local has_warning = false
+  for _, finding in ipairs(findings) do
+    if finding.severity == 'WARN' then
+      has_warning = true
+      break
+    end
+  end
+
+  if #api.nvim_list_uis() == 0 then
+    api.nvim_echo({
+      { table.concat(lines, '\n') .. '\n' },
+    }, false, {})
+  else
+    notify(
+      ('Tiger check: %d finding(s) | report: %s'):format(#findings, report_path),
+      has_warning and levels.WARN or levels.INFO
+    )
+  end
+end
 M.run = M.selfcheck
 api.nvim_create_user_command('ConfigSelfCheck', M.selfcheck, {
   desc = 'Syntax-check all Lua config files and run safe runtime probes',
@@ -570,6 +1341,24 @@ api.nvim_create_user_command('ConfigSelfCheckLog', function()
   vim.cmd(('edit %s'):format(fn.fnameescape(fn.stdpath('state') .. '/selfcheck.log')))
 end, {
   desc = 'Open the ConfigSelfCheck log file',
+})
+-- Interactive: :ConfigTigerCheck[ startup-log]
+-- Complete CLI startup audit:
+-- tiger_startup_log="$(mktemp --suffix=.nvim-startup.log)" || exit 1
+-- trap 'rm -f -- "$tiger_startup_log"' EXIT
+-- nvim --headless --startuptime "$tiger_startup_log" '+qa'
+-- nvim --headless "+ConfigTigerCheck $tiger_startup_log" '+qa'
+api.nvim_create_user_command('ConfigTigerCheck', function(opts)
+  M.tigercheck(opts.args ~= '' and opts.args or nil)
+end, {
+  complete = 'file',
+  desc = 'Audit startup, memory, event-loop, LSP, autocmd, and static performance hotspots',
+  nargs = '?',
+})
+api.nvim_create_user_command('ConfigTigerCheckLog', function()
+  vim.cmd(('edit %s'):format(fn.fnameescape(fn.stdpath('state') .. '/tigercheck.log')))
+end, {
+  desc = 'Open the ConfigTigerCheck human-readable report',
 })
 api.nvim_create_user_command('DiagnosticsWorkspace', M.workspace_diagnostics, {
   desc = 'Populate quickfix with workspace diagnostics',
@@ -610,11 +1399,5 @@ api.nvim_create_autocmd('BufReadPost', {
     end
   end,
 })
-
-if vim.lsp and vim.lsp.log and vim.lsp.log.set_level then
-  vim.lsp.set_log_level = function(...)
-    return vim.lsp.log.set_level(...)
-  end
-end
 
 return M

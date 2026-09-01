@@ -21,18 +21,6 @@ local function github(repo)
 end
 local plugin_setup = {}
 local plugins = {
-  --[[
-  {
-    src = gh('Saghen/blink.cmp'),
-    update = true,
-    version = range('1.*'),
-  },
-  {
-    src = gh('Saghen/blink.compat'),
-    update = true,
-    version = range('2.*'),
-  },
-  --]]
   {
     src = gh('hrsh7th/cmp-nvim-lua'),
     update = true,
@@ -66,16 +54,6 @@ local plugins = {
     src = gh('rafamadriz/friendly-snippets'),
     version = 'main',
   },
-  --[[
-  {
-    src = gh('moyiz/blink-emoji.nvim'),
-    version = 'master',
-  },
-  {
-    src = gh('Kaiser-Yang/blink-cmp-dictionary'),
-    version = range('2.*'),
-  },
-  --]]
   {
     src = gh('nvim-lualine/lualine.nvim'),
     version = 'master',
@@ -88,10 +66,6 @@ local plugins = {
   },
   {
     src = gh('catppuccin/nvim'),
-  },
-  {
-    src = gh('nvim-tree/nvim-web-devicons'),
-    version = 'master',
   },
   {
     src = gh('MeanderingProgrammer/render-markdown.nvim'),
@@ -112,16 +86,13 @@ local plugins = {
   },
   {
     src = gh('navarasu/onedark.nvim'),
-    name = 'onedark.nvim',
   },
   {
     src = gh('projekt0n/github-nvim-theme'),
-    name = 'github-nvim-theme',
   },
   -- { src = gh('sainnhe/gruvbox-material'), name = 'gruvbox-material' },
   {
     src = gh('shaunsingh/nord.nvim'),
-    name = 'nord.nvim',
   },
   {
     src = gh('vyfor/cord.nvim'),
@@ -133,22 +104,10 @@ local plugins = {
       end,
     },
   },
-  {
-    src = github('folke/flash.nvim'),
-    update = true,
-    version = range('2.*'),
-  },
 }
---[[
-plugin_setup[github('Saghen/blink.cmp')] = function()
-  local cmp_cfg = require('config.lang.cmp').blink_cmp()
-  require('blink.cmp').setup(cmp_cfg)
-end
---]]
 plugin_setup[gh('nvim-treesitter/nvim-treesitter')] = function()
   require('config.core.tree').treesitter()
 end
-
 plugin_setup[gh('nvim-treesitter/nvim-treesitter-textobjects')] = function()
   require('config.core.tree').textobjects()
 end
@@ -173,17 +132,11 @@ end
 plugin_setup[github('folke/which-key.nvim')] = function()
   require('config.core.whichkey')
 end
-
 plugin_setup[github('nvim-lualine/lualine.nvim')] = function()
   require('config.ui.line').setup()
 end
-
-plugin_setup[github('folke/flash.nvim')] = function()
-  require('config.core.flash').flash_cfg()
-end
 plugin_setup[gh('3rd/image.nvim')] = function()
   local ok_cfg, result = pcall(require, 'config.lang.md')
-
   if not ok_cfg then
     vim.notify('image.nvim setup: failed to load config.lang.md: ' .. tostring(result), vim.log.levels.ERROR)
     return
@@ -211,13 +164,11 @@ plugin_setup[gh('3rd/diagram.nvim')] = function()
     vim.notify('diagram.nvim setup: config.lang.md.md_diagram missing', vim.log.levels.WARN)
     return
   end
-
   local ok, err = pcall(md_cfg.md_diagram, {})
   if not ok then
     vim.notify('diagram.nvim setup failed: ' .. tostring(err), vim.log.levels.ERROR)
   end
 end
-
 plugin_setup[gh('brianhuster/live-preview.nvim')] = function()
   local ok_cfg, md_cfg = pcall(require, 'config.lang.md')
   if not ok_cfg or type(md_cfg.md_livepreview) ~= 'function' then
@@ -237,7 +188,6 @@ plugin_setup[gh('arminveres/md-pdf.nvim')] = function()
     vim.notify('md-pdf.nvim setup: config.lang.md.md_pdf missing', vim.log.levels.WARN)
     return
   end
-
   local ok, err = pcall(md_cfg.md_pdf, {})
   if not ok then
     vim.notify('md-pdf.nvim setup failed: ' .. tostring(err), vim.log.levels.ERROR)
@@ -255,34 +205,6 @@ plugin_setup[gh('MeanderingProgrammer/render-markdown.nvim')] = function()
     vim.notify('render-markdown.nvim setup failed: ' .. tostring(err), vim.log.levels.ERROR)
   end
 end
---[[
-plugin_setup[github('echasnovski/mini.nvim')] = function()
-  require('mini.ai').setup({
-    custom_textobjects = {},
-    n_lines = 500,
-    search_method = 'cover_or_next',
-  })
-end
---]]
---[[
-plugin_setup[github('akinsho/bufferline.nvim')] = function()
-  vim.opt.termguicolors = true
-  local ok, bufferline = pcall(require, 'bufferline')
-  if not ok then
-    vim.notify('bufferline.nvim not available: ' .. tostring(bufferline), vim.log.levels.ERROR)
-    return
-  end
-  bufferline.setup({
-    options = {
-      diagnostics = 'nvim_lsp',
-      always_show_bufferline = true,
-      show_buffer_close_icons = false,
-      show_close_icon = false,
-      separator_style = 'slant',
-    },
-  })
-end
---]]
 --- @return boolean ok
 --- @return string[] errors
 function M.validate_specs()
@@ -297,7 +219,6 @@ function M.validate_specs()
       elseif not spec.src:match('^https://') then
         errors[#errors + 1] = ('plugins[%d].src is not a URL: %s'):format(i, spec.src)
       end
-
       if spec.version ~= nil and type(spec.version) ~= 'string' and type(spec.version) ~= 'table' then
         errors[#errors + 1] = ('plugins[%d].version has invalid type'):format(i)
       end

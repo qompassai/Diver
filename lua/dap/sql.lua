@@ -29,7 +29,7 @@ local uv = vim.uv
 
 local M = {}
 
-local SOURCE = "sql-debug"
+local SOURCE = 'sql-debug'
 
 ---@alias SqlDebugBackend
 ---| "auto"
@@ -39,23 +39,23 @@ local SOURCE = "sql-debug"
 
 ---@type string[]
 local ROOT_MARKERS = {
-  "flyway.conf",
-  "liquibase.properties",
-  "sqitch.conf",
-  "migrations",
-  "schema",
-  "database",
-  "db",
-  "flake.nix",
-  ".git",
+  'flyway.conf',
+  'liquibase.properties',
+  'sqitch.conf',
+  'migrations',
+  'schema',
+  'database',
+  'db',
+  'flake.nix',
+  '.git',
 }
 
 ---@type string[]
 local SQLITE_EXTENSIONS = {
-  ".db",
-  ".db3",
-  ".sqlite",
-  ".sqlite3",
+  '.db',
+  '.db3',
+  '.sqlite',
+  '.sqlite3',
 }
 
 ---@type table<string, boolean>
@@ -87,7 +87,7 @@ local MUTATING_KEYWORDS = {
 ---@field root string?
 ---@field sqlite_database string?
 local state = {
-  backend = "auto",
+  backend = 'auto',
   root = nil,
   sqlite_database = nil,
 }
@@ -95,26 +95,19 @@ local state = {
 ---@param message string
 ---@param level? integer
 local function notify(message, level)
-  vim.notify(
-    ("[%s] %s"):format(
-      SOURCE,
-      message
-    ),
-    level or levels.INFO
-  )
+  vim.notify(('[%s] %s'):format(SOURCE, message), level or levels.INFO)
 end
 
 ---@param value unknown
 ---@return boolean
 local function callable(value)
-  return type(value) == "function"
+  return type(value) == 'function'
 end
 
 ---@param value unknown
 ---@return boolean
 local function nonempty_string(value)
-  return type(value) == "string"
-    and value ~= ""
+  return type(value) == 'string' and value ~= ''
 end
 
 ---@param path string
@@ -126,8 +119,7 @@ local function is_file(path)
 
   local stat = uv.fs_stat(path)
 
-  return stat ~= nil
-    and stat.type == "file"
+  return stat ~= nil and stat.type == 'file'
 end
 
 ---@param path string
@@ -139,30 +131,23 @@ local function is_directory(path)
 
   local stat = uv.fs_stat(path)
 
-  return stat ~= nil
-    and stat.type == "directory"
+  return stat ~= nil and stat.type == 'directory'
 end
 
 ---@param path string
 ---@return boolean
 local function executable(path)
-  return nonempty_string(path)
-    and fn.executable(path) == 1
+  return nonempty_string(path) and fn.executable(path) == 1
 end
 
 ---@param path string
 ---@return string
 local function normalize(path)
-  if path == "" then
-    return ""
+  if path == '' then
+    return ''
   end
 
-  return fs.normalize(
-    fn.fnamemodify(
-      path,
-      ":p"
-    )
-  )
+  return fs.normalize(fn.fnamemodify(path, ':p'))
 end
 
 ---@param command string
@@ -180,18 +165,16 @@ end
 ---@param bufnr? integer
 ---@return string
 local function filename(bufnr)
-  bufnr = bufnr
-    or api.nvim_get_current_buf()
+  bufnr = bufnr or api.nvim_get_current_buf()
 
   if not api.nvim_buf_is_valid(bufnr) then
-    return ""
+    return ''
   end
 
-  local name =
-    api.nvim_buf_get_name(bufnr)
+  local name = api.nvim_buf_get_name(bufnr)
 
-  if name == "" then
-    return ""
+  if name == '' then
+    return ''
   end
 
   return normalize(name)
@@ -200,11 +183,10 @@ end
 ---@param bufnr? integer
 ---@return string
 local function filetype(bufnr)
-  bufnr = bufnr
-    or api.nvim_get_current_buf()
+  bufnr = bufnr or api.nvim_get_current_buf()
 
   if not api.nvim_buf_is_valid(bufnr) then
-    return ""
+    return ''
   end
 
   return vim.bo[bufnr].filetype
@@ -213,45 +195,32 @@ end
 ---@param bufnr? integer
 ---@return string
 local function project_root(bufnr)
-  bufnr = bufnr
-    or api.nvim_get_current_buf()
+  bufnr = bufnr or api.nvim_get_current_buf()
 
   local current = filename(bufnr)
 
-  if current ~= "" then
-    local detected = fs.root(
-      current,
-      ROOT_MARKERS
-    )
+  if current ~= '' then
+    local detected = fs.root(current, ROOT_MARKERS)
 
-    if
-      type(detected) == "string"
-      and detected ~= ""
-    then
+    if type(detected) == 'string' and detected ~= '' then
       return fs.normalize(detected)
     end
 
     local parent = fs.dirname(current)
 
-    if
-      type(parent) == "string"
-      and parent ~= ""
-    then
+    if type(parent) == 'string' and parent ~= '' then
       return fs.normalize(parent)
     end
   end
 
-  return fs.normalize(
-    fn.getcwd()
-  )
+  return fs.normalize(fn.getcwd())
 end
 
 ---@param value string
 ---@param suffix string
 ---@return boolean
 local function ends_with(value, suffix)
-  return #value >= #suffix
-    and value:sub(-#suffix) == suffix
+  return #value >= #suffix and value:sub(-#suffix) == suffix
 end
 
 ---@param path string
@@ -259,9 +228,7 @@ end
 local function sqlite_filename(path)
   local lower = path:lower()
 
-  for _, extension in ipairs(
-    SQLITE_EXTENSIONS
-  ) do
+  for _, extension in ipairs(SQLITE_EXTENSIONS) do
     if ends_with(lower, extension) then
       return true
     end
@@ -281,17 +248,8 @@ local function sqlite_databases(root)
   local result = {}
 
   for name, kind in fs.dir(root) do
-    if
-      kind == "file"
-      and sqlite_filename(name)
-    then
-      result[#result + 1] =
-        fs.normalize(
-          fs.joinpath(
-            root,
-            name
-          )
-        )
+    if kind == 'file' and sqlite_filename(name) then
+      result[#result + 1] = fs.normalize(fs.joinpath(root, name))
     end
   end
 
@@ -302,52 +260,43 @@ end
 
 ---@return string?
 local function resolve_psql()
-  local configured =
-    vim.env.NVIM_PSQL_EXECUTABLE
+  local configured = vim.env.NVIM_PSQL_EXECUTABLE
 
   if nonempty_string(configured) then
-    local candidate = normalize(
-      fn.expand(configured)
-    )
+    local candidate = normalize(fn.expand(configured))
 
     if executable(candidate) then
       return candidate
     end
   end
 
-  return executable_path("psql")
+  return executable_path('psql')
 end
 
 ---@return string?
 local function resolve_sqlite()
-  local configured =
-    vim.env.NVIM_SQLITE_EXECUTABLE
+  local configured = vim.env.NVIM_SQLITE_EXECUTABLE
 
   if nonempty_string(configured) then
-    local candidate = normalize(
-      fn.expand(configured)
-    )
+    local candidate = normalize(fn.expand(configured))
 
     if executable(candidate) then
       return candidate
     end
   end
 
-  return executable_path("sqlite3")
+  return executable_path('sqlite3')
 end
 
 ---@return string?
 local function configured_sqlite_database()
-  local configured =
-    vim.env.NVIM_SQLITE_DATABASE
+  local configured = vim.env.NVIM_SQLITE_DATABASE
 
   if not nonempty_string(configured) then
     return nil
   end
 
-  local candidate = normalize(
-    fn.expand(configured)
-  )
+  local candidate = normalize(fn.expand(configured))
 
   if is_file(candidate) then
     return candidate
@@ -358,15 +307,11 @@ end
 
 ---@return string?
 local function resolve_sqlite_database()
-  if
-    state.sqlite_database ~= nil
-    and is_file(state.sqlite_database)
-  then
+  if state.sqlite_database ~= nil and is_file(state.sqlite_database) then
     return state.sqlite_database
   end
 
-  local configured =
-    configured_sqlite_database()
+  local configured = configured_sqlite_database()
 
   if configured ~= nil then
     state.sqlite_database = configured
@@ -374,14 +319,10 @@ local function resolve_sqlite_database()
     return configured
   end
 
-  local candidates =
-    sqlite_databases(
-      project_root()
-    )
+  local candidates = sqlite_databases(project_root())
 
   if #candidates == 1 then
-    state.sqlite_database =
-      candidates[1]
+    state.sqlite_database = candidates[1]
 
     return candidates[1]
   end
@@ -391,24 +332,15 @@ end
 
 ---@return boolean
 local function postgres_environment()
-  return nonempty_string(
-    vim.env.PGSERVICE
-  )
-    or nonempty_string(
-      vim.env.PGDATABASE
-    )
-    or nonempty_string(
-      vim.env.PGHOST
-    )
-    or nonempty_string(
-      vim.env.PGPORT
-    )
+  return nonempty_string(vim.env.PGSERVICE)
+    or nonempty_string(vim.env.PGDATABASE)
+    or nonempty_string(vim.env.PGHOST)
+    or nonempty_string(vim.env.PGPORT)
 end
 
 ---@return SqlDebugBackend?
 local function database_url_backend()
-  local url =
-    vim.env.DATABASE_URL
+  local url = vim.env.DATABASE_URL
 
   if not nonempty_string(url) then
     return nil
@@ -416,29 +348,12 @@ local function database_url_backend()
 
   local lower = url:lower()
 
-  if
-    lower:find(
-      "postgres://",
-      1,
-      true
-    ) == 1
-    or lower:find(
-      "postgresql://",
-      1,
-      true
-    ) == 1
-  then
-    return "postgres"
+  if lower:find('postgres://', 1, true) == 1 or lower:find('postgresql://', 1, true) == 1 then
+    return 'postgres'
   end
 
-  if
-    lower:find(
-      "sqlite://",
-      1,
-      true
-    ) == 1
-  then
-    return "sqlite"
+  if lower:find('sqlite://', 1, true) == 1 then
+    return 'sqlite'
   end
 
   return nil
@@ -446,260 +361,176 @@ end
 
 ---@return SqlDebugBackend
 local function detect_backend()
-  if state.backend ~= "auto" then
+  if state.backend ~= 'auto' then
     return state.backend
   end
 
-  local configured =
-    vim.env.NVIM_SQL_BACKEND
+  local configured = vim.env.NVIM_SQL_BACKEND
 
   if nonempty_string(configured) then
-    local normalized =
-      configured:lower()
+    local normalized = configured:lower()
 
-    if
-      normalized == "postgres"
-      or normalized == "postgresql"
-      or normalized == "pgsql"
-    then
-      return "postgres"
+    if normalized == 'postgres' or normalized == 'postgresql' or normalized == 'pgsql' then
+      return 'postgres'
     end
 
-    if normalized == "sqlite" then
-      return "sqlite"
+    if normalized == 'sqlite' then
+      return 'sqlite'
     end
 
-    if normalized == "generic" then
-      return "generic"
+    if normalized == 'generic' then
+      return 'generic'
     end
   end
 
   if POSTGRES_FILETYPES[filetype()] then
-    return "postgres"
+    return 'postgres'
   end
 
-  local url_backend =
-    database_url_backend()
+  local url_backend = database_url_backend()
 
   if url_backend ~= nil then
     return url_backend
   end
 
   if postgres_environment() then
-    return "postgres"
+    return 'postgres'
   end
 
-  if
-    configured_sqlite_database() ~= nil
-  then
-    return "sqlite"
+  if configured_sqlite_database() ~= nil then
+    return 'sqlite'
   end
 
-  if
-    #sqlite_databases(
-      project_root()
-    ) == 1
-  then
-    return "sqlite"
+  if #sqlite_databases(project_root()) == 1 then
+    return 'sqlite'
   end
 
-  return "generic"
+  return 'generic'
 end
 
 ---@param text string
 ---@param position integer
 ---@return string?
-local function dollar_quote_at(
-  text,
-  position
-)
-  if text:sub(
-    position,
-    position
-  ) ~= "$"
-  then
+local function dollar_quote_at(text, position)
+  if text:sub(position, position) ~= '$' then
     return nil
   end
 
   local tail = text:sub(position)
 
-  return tail:match(
-    "^%$%$"
-  )
-    or tail:match(
-      "^%$[%a_][%w_]*%$"
-    )
+  return tail:match('^%$%$') or tail:match('^%$[%a_][%w_]*%$')
 end
 
 ---@param text string
 ---@param cursor_offset integer
 ---@return string
-local function statement_from_text(
-  text,
-  cursor_offset
-)
+local function statement_from_text(text, cursor_offset)
   local start_offset = 1
   local statement_start = 1
   local statement_end = #text
 
-  local state_name = "normal"
+  local state_name = 'normal'
   local dollar_tag
   local block_depth = 0
   local index = 1
 
   while index <= #text do
-    local char =
-      text:sub(index, index)
+    local char = text:sub(index, index)
 
-    local next_char =
-      text:sub(
-        index + 1,
-        index + 1
-      )
+    local next_char = text:sub(index + 1, index + 1)
 
-    if state_name == "normal" then
-      if
-        char == "-"
-        and next_char == "-"
-      then
-        state_name =
-          "line-comment"
+    if state_name == 'normal' then
+      if char == '-' and next_char == '-' then
+        state_name = 'line-comment'
 
         index = index + 2
-      elseif
-        char == "/"
-        and next_char == "*"
-      then
-        state_name =
-          "block-comment"
+      elseif char == '/' and next_char == '*' then
+        state_name = 'block-comment'
 
         block_depth = 1
 
         index = index + 2
       elseif char == "'" then
-        state_name =
-          "single-quote"
+        state_name = 'single-quote'
 
         index = index + 1
       elseif char == '"' then
-        state_name =
-          "double-quote"
+        state_name = 'double-quote'
 
         index = index + 1
-      elseif char == "$" then
-        local tag =
-          dollar_quote_at(
-            text,
-            index
-          )
+      elseif char == '$' then
+        local tag = dollar_quote_at(text, index)
 
         if tag ~= nil then
-          state_name =
-            "dollar-quote"
+          state_name = 'dollar-quote'
 
           dollar_tag = tag
 
-          index =
-            index + #tag
+          index = index + #tag
         else
           index = index + 1
         end
-      elseif char == ";" then
-        if
-          cursor_offset >= statement_start
-          and cursor_offset <= index
-        then
+      elseif char == ';' then
+        if cursor_offset >= statement_start and cursor_offset <= index then
           statement_end = index
 
           break
         end
 
-        statement_start =
-          index + 1
+        statement_start = index + 1
 
         index = index + 1
       else
         index = index + 1
       end
-    elseif
-      state_name == "line-comment"
-    then
-      if char == "\n" then
-        state_name = "normal"
+    elseif state_name == 'line-comment' then
+      if char == '\n' then
+        state_name = 'normal'
       end
 
       index = index + 1
-    elseif
-      state_name == "block-comment"
-    then
-      if
-        char == "/"
-        and next_char == "*"
-      then
-        block_depth =
-          block_depth + 1
+    elseif state_name == 'block-comment' then
+      if char == '/' and next_char == '*' then
+        block_depth = block_depth + 1
 
         index = index + 2
-      elseif
-        char == "*"
-        and next_char == "/"
-      then
-        block_depth =
-          block_depth - 1
+      elseif char == '*' and next_char == '/' then
+        block_depth = block_depth - 1
 
         index = index + 2
 
         if block_depth == 0 then
-          state_name = "normal"
+          state_name = 'normal'
         end
       else
         index = index + 1
       end
-    elseif
-      state_name == "single-quote"
-    then
-      if
-        char == "'"
-        and next_char == "'"
-      then
+    elseif state_name == 'single-quote' then
+      if char == "'" and next_char == "'" then
         index = index + 2
       elseif char == "'" then
-        state_name = "normal"
+        state_name = 'normal'
 
         index = index + 1
       else
         index = index + 1
       end
-    elseif
-      state_name == "double-quote"
-    then
-      if
-        char == '"'
-        and next_char == '"'
-      then
+    elseif state_name == 'double-quote' then
+      if char == '"' and next_char == '"' then
         index = index + 2
       elseif char == '"' then
-        state_name = "normal"
+        state_name = 'normal'
 
         index = index + 1
       else
         index = index + 1
       end
-    elseif
-      state_name == "dollar-quote"
-    then
-      if
-        dollar_tag ~= nil
-        and text:sub(
-          index,
-          index + #dollar_tag - 1
-        ) == dollar_tag
-      then
-        index =
-          index + #dollar_tag
+    elseif state_name == 'dollar-quote' then
+      if dollar_tag ~= nil and text:sub(index, index + #dollar_tag - 1) == dollar_tag then
+        index = index + #dollar_tag
 
         dollar_tag = nil
-        state_name = "normal"
+        state_name = 'normal'
       else
         index = index + 1
       end
@@ -710,12 +541,7 @@ local function statement_from_text(
     statement_start = start_offset
   end
 
-  local statement = vim.trim(
-    text:sub(
-      statement_start,
-      statement_end
-    )
-  )
+  local statement = vim.trim(text:sub(statement_start, statement_end))
 
   return statement
 end
@@ -723,207 +549,126 @@ end
 ---@param bufnr? integer
 ---@return string
 local function current_statement(bufnr)
-  bufnr = bufnr
-    or api.nvim_get_current_buf()
+  bufnr = bufnr or api.nvim_get_current_buf()
 
   if not api.nvim_buf_is_valid(bufnr) then
-    return ""
+    return ''
   end
 
-  local lines =
-    api.nvim_buf_get_lines(
-      bufnr,
-      0,
-      -1,
-      false
-    )
+  local lines = api.nvim_buf_get_lines(bufnr, 0, -1, false)
 
   if #lines == 0 then
-    return ""
+    return ''
   end
 
-  local cursor =
-    api.nvim_win_get_cursor(0)
+  local cursor = api.nvim_win_get_cursor(0)
 
-  local cursor_line =
-    cursor[1]
+  local cursor_line = cursor[1]
 
-  local cursor_column =
-    cursor[2]
+  local cursor_column = cursor[2]
 
   local offset = 1
 
   for index = 1, cursor_line - 1 do
-    offset =
-      offset
-      + #lines[index]
-      + 1
+    offset = offset + #lines[index] + 1
   end
 
-  offset =
-    offset + cursor_column
+  offset = offset + cursor_column
 
-  local text =
-    table.concat(
-      lines,
-      "\n"
-    )
+  local text = table.concat(lines, '\n')
 
-  return statement_from_text(
-    text,
-    offset
-  )
+  return statement_from_text(text, offset)
 end
 
 ---@param sql string
 ---@return string?
 local function first_keyword(sql)
-  local cleaned = sql:gsub(
-    "^%s*%-%-[^\n]*\n",
-    ""
-  )
+  local cleaned = sql:gsub('^%s*%-%-[^\n]*\n', '')
 
-  return cleaned:match(
-    "^%s*([%a_]+)"
-  )
+  return cleaned:match('^%s*([%a_]+)')
 end
 
 ---@param sql string
 ---@return boolean
 local function potentially_mutating(sql)
-  local keyword =
-    first_keyword(sql)
+  local keyword = first_keyword(sql)
 
   if keyword == nil then
     return false
   end
 
-  return MUTATING_KEYWORDS[
-    keyword:upper()
-  ] == true
+  return MUTATING_KEYWORDS[keyword:upper()] == true
 end
 
 ---@param title string
 ---@param output string
 ---@param stderr? string
-local function show_output(
-  title,
-  output,
-  stderr
-)
+local function show_output(title, output, stderr)
   local text = output
 
-  if
-    nonempty_string(stderr)
-  then
-    if nonempty_string(text) then
-      text =
-        text
-        .. "\n\n--- stderr ---\n"
-        .. stderr
+  if type(stderr) == 'string' and stderr ~= '' then
+    if text ~= '' then
+      text = text .. '\n\n--- stderr ---\n' .. stderr
     else
       text = stderr
     end
   end
 
-  if not nonempty_string(text) then
-    text = "(no output)"
+  if text == '' then
+    text = '(no output)'
   end
 
-  vim.cmd("botright new")
+  vim.cmd('botright new')
 
-  local bufnr =
-    api.nvim_get_current_buf()
+  local bufnr = api.nvim_get_current_buf()
 
-  vim.bo[bufnr].buftype =
-    "nofile"
+  vim.bo[bufnr].buftype = 'nofile'
 
-  vim.bo[bufnr].bufhidden =
-    "wipe"
+  vim.bo[bufnr].bufhidden = 'wipe'
 
-  vim.bo[bufnr].swapfile =
-    false
+  vim.bo[bufnr].swapfile = false
 
-  vim.bo[bufnr].modifiable =
-    true
+  vim.bo[bufnr].modifiable = true
 
-  vim.bo[bufnr].filetype =
-    "sql"
+  vim.bo[bufnr].filetype = 'sql'
 
-  api.nvim_buf_set_name(
-    bufnr,
-    ("[SQL Debug: %s]"):format(
-      title
-    )
-  )
+  api.nvim_buf_set_name(bufnr, ('[SQL Debug: %s]'):format(title))
 
   api.nvim_buf_set_lines(
     bufnr,
     0,
     -1,
     false,
-    vim.split(
-      text,
-      "\n",
-      {
-        plain = true,
-      }
-    )
+    vim.split(text, '\n', {
+      plain = true,
+    })
   )
 
-  vim.bo[bufnr].modifiable =
-    false
+  vim.bo[bufnr].modifiable = false
 
-  vim.bo[bufnr].modified =
-    false
+  vim.bo[bufnr].modified = false
 end
 
 ---@param command string[]
 ---@param options table
 ---@param title string
-local function run_async(
-  command,
-  options,
-  title
-)
+local function run_async(command, options, title)
   options = options or {}
 
   options.text = true
 
-  local ok, process =
-    pcall(
-      vim.system,
-      command,
-      options,
-      function(result)
-        vim.schedule(function()
-          show_output(
-            title,
-            result.stdout or "",
-            result.stderr or ""
-          )
+  local ok, process = pcall(vim.system, command, options, function(result)
+    vim.schedule(function()
+      show_output(title, result.stdout or '', result.stderr or '')
 
-          if result.code ~= 0 then
-            notify(
-              ("%s exited with status %d"):format(
-                title,
-                result.code
-              ),
-              levels.WARN
-            )
-          end
-        end)
+      if result.code ~= 0 then
+        notify(('%s exited with status %d'):format(title, result.code), levels.WARN)
       end
-    )
+    end)
+  end)
 
   if not ok then
-    notify(
-      ("%s failed to start: %s"):format(
-        title,
-        tostring(process)
-      ),
-      levels.ERROR
-    )
+    notify(('%s failed to start: %s'):format(title, tostring(process)), levels.ERROR)
   end
 end
 
@@ -931,13 +676,8 @@ end
 local function postgres_environment_table()
   local env = fn.environ()
 
-  if
-    not nonempty_string(
-      env.PGCONNECT_TIMEOUT
-    )
-  then
-    env.PGCONNECT_TIMEOUT =
-      "5"
+  if not nonempty_string(env.PGCONNECT_TIMEOUT) then
+    env.PGCONNECT_TIMEOUT = '5'
   end
 
   return env
@@ -945,360 +685,260 @@ end
 
 ---@param sql string
 ---@param title string
-local function postgres_run(
-  sql,
-  title
-)
-  local psql =
-    resolve_psql()
+local function postgres_run(sql, title)
+  local psql = resolve_psql()
 
   if psql == nil then
-    notify(
-      "psql was not found",
-      levels.ERROR
-    )
+    notify('psql was not found', levels.ERROR)
 
     return
   end
 
-  run_async(
-    {
-      psql,
+  run_async({
+    psql,
 
-      "-X",
+    '-X',
 
-      "--no-psqlrc",
+    '--no-psqlrc',
 
-      "--set",
-      "ON_ERROR_STOP=1",
+    '--set',
+    'ON_ERROR_STOP=1',
 
-      "--pset",
-      "pager=off",
-    },
-    {
-      cwd = project_root(),
+    '--pset',
+    'pager=off',
+  }, {
+    cwd = project_root(),
 
-      env =
-        postgres_environment_table(),
+    env = postgres_environment_table(),
 
-      stdin =
-        sql .. "\n",
-    },
-    title
-  )
+    stdin = sql .. '\n',
+  }, title)
 end
 
 ---@param sql string
 ---@param title string
-local function sqlite_run(
-  sql,
-  title
-)
-  local sqlite =
-    resolve_sqlite()
+local function sqlite_run(sql, title)
+  local sqlite = resolve_sqlite()
 
   if sqlite == nil then
-    notify(
-      "sqlite3 was not found",
-      levels.ERROR
-    )
+    notify('sqlite3 was not found', levels.ERROR)
 
     return
   end
 
-  local database =
-    resolve_sqlite_database()
+  local database = resolve_sqlite_database()
 
   if database == nil then
     notify(
       table.concat({
-        "SQLite database was not resolved.",
+        'SQLite database was not resolved.',
 
-        "",
+        '',
 
-        "Use :SqlDebugDatabase or set:",
+        'Use :SqlDebugDatabase or set:',
 
-        "  NVIM_SQLITE_DATABASE=/path/to/database.sqlite",
-      }, "\n"),
+        '  NVIM_SQLITE_DATABASE=/path/to/database.sqlite',
+      }, '\n'),
       levels.ERROR
     )
 
     return
   end
 
-  run_async(
-    {
-      sqlite,
+  run_async({
+    sqlite,
 
-      "-batch",
+    '-batch',
 
-      database,
-    },
-    {
-      cwd = project_root(),
+    database,
+  }, {
+    cwd = project_root(),
 
-      stdin =
-        table.concat({
-          ".bail on",
-          ".headers on",
-          ".mode box",
-          sql,
-          "",
-        }, "\n"),
-    },
-    title
-  )
+    stdin = table.concat({
+      '.bail on',
+      '.headers on',
+      '.mode box',
+      sql,
+      '',
+    }, '\n'),
+  }, title)
 end
 
 ---@param sql string
 ---@param title string
-local function execute_for_backend(
-  sql,
-  title
-)
-  local backend =
-    detect_backend()
+local function execute_for_backend(sql, title)
+  local backend = detect_backend()
 
-  if backend == "postgres" then
-    postgres_run(
-      sql,
-      title
-    )
+  if backend == 'postgres' then
+    postgres_run(sql, title)
 
     return
   end
 
-  if backend == "sqlite" then
-    sqlite_run(
-      sql,
-      title
-    )
+  if backend == 'sqlite' then
+    sqlite_run(sql, title)
 
     return
   end
 
   notify(
     table.concat({
-      "No executable SQL backend is selected.",
+      'No executable SQL backend is selected.',
 
-      "",
+      '',
 
-      "Use :SqlDebugBackend to choose PostgreSQL or SQLite.",
-    }, "\n"),
+      'Use :SqlDebugBackend to choose PostgreSQL or SQLite.',
+    }, '\n'),
     levels.WARN
   )
 end
 
 local function execute_statement()
-  local sql =
-    current_statement()
+  local sql = current_statement()
 
-  if sql == "" then
-    notify(
-      "no SQL statement found under cursor",
-      levels.WARN
-    )
+  if sql == '' then
+    notify('no SQL statement found under cursor', levels.WARN)
 
     return
   end
 
   if potentially_mutating(sql) then
-    local answer = fn.confirm(
-      "Execute a potentially mutating SQL statement?",
-      "&Execute\n&Cancel",
-      2
-    )
+    local answer = fn.confirm('Execute a potentially mutating SQL statement?', '&Execute\n&Cancel', 2)
 
     if answer ~= 1 then
       return
     end
   end
 
-  execute_for_backend(
-    sql,
-    "Execute"
-  )
+  execute_for_backend(sql, 'Execute')
 end
 
 local function explain_statement()
-  local sql =
-    current_statement()
+  local sql = current_statement()
 
-  if sql == "" then
-    notify(
-      "no SQL statement found under cursor",
-      levels.WARN
-    )
+  if sql == '' then
+    notify('no SQL statement found under cursor', levels.WARN)
 
     return
   end
 
-  local backend =
-    detect_backend()
+  local backend = detect_backend()
 
-  if backend == "postgres" then
+  if backend == 'postgres' then
     postgres_run(
       table.concat({
-        "EXPLAIN (",
-        "  VERBOSE,",
-        "  COSTS,",
-        "  SETTINGS,",
-        "  SUMMARY,",
-        "  FORMAT TEXT",
-        ")",
+        'EXPLAIN (',
+        '  VERBOSE,',
+        '  COSTS,',
+        '  SETTINGS,',
+        '  SUMMARY,',
+        '  FORMAT TEXT',
+        ')',
         sql,
-      }, "\n"),
-      "PostgreSQL EXPLAIN"
+      }, '\n'),
+      'PostgreSQL EXPLAIN'
     )
 
     return
   end
 
-  if backend == "sqlite" then
-    sqlite_run(
-      "EXPLAIN QUERY PLAN "
-        .. sql,
-      "SQLite Query Plan"
-    )
+  if backend == 'sqlite' then
+    sqlite_run('EXPLAIN QUERY PLAN ' .. sql, 'SQLite Query Plan')
 
     return
   end
 
-  notify(
-    "EXPLAIN requires a PostgreSQL or SQLite backend",
-    levels.WARN
-  )
+  notify('EXPLAIN requires a PostgreSQL or SQLite backend', levels.WARN)
 end
 
 local function sqlite_bytecode()
-  if detect_backend() ~= "sqlite" then
-    notify(
-      "SQLite bytecode inspection requires the SQLite backend",
-      levels.WARN
-    )
+  if detect_backend() ~= 'sqlite' then
+    notify('SQLite bytecode inspection requires the SQLite backend', levels.WARN)
 
     return
   end
 
-  local sql =
-    current_statement()
+  local sql = current_statement()
 
-  if sql == "" then
-    notify(
-      "no SQL statement found under cursor",
-      levels.WARN
-    )
+  if sql == '' then
+    notify('no SQL statement found under cursor', levels.WARN)
 
     return
   end
 
-  sqlite_run(
-    "EXPLAIN " .. sql,
-    "SQLite VDBE Bytecode"
-  )
+  sqlite_run('EXPLAIN ' .. sql, 'SQLite VDBE Bytecode')
 end
 
 local function sqlite_full_trace()
-  if detect_backend() ~= "sqlite" then
-    notify(
-      "SQLite full EQP tracing requires the SQLite backend",
-      levels.WARN
-    )
+  if detect_backend() ~= 'sqlite' then
+    notify('SQLite full EQP tracing requires the SQLite backend', levels.WARN)
 
     return
   end
 
-  local sql =
-    current_statement()
+  local sql = current_statement()
 
-  if sql == "" then
-    notify(
-      "no SQL statement found under cursor",
-      levels.WARN
-    )
+  if sql == '' then
+    notify('no SQL statement found under cursor', levels.WARN)
 
     return
   end
 
-  local answer = fn.confirm(
-    "SQLite .eqp full executes the statement. Continue?",
-    "&Execute\n&Cancel",
-    2
-  )
+  local answer = fn.confirm('SQLite .eqp full executes the statement. Continue?', '&Execute\n&Cancel', 2)
 
   if answer ~= 1 then
     return
   end
 
-  local sqlite =
-    resolve_sqlite()
+  local sqlite = resolve_sqlite()
 
-  local database =
-    resolve_sqlite_database()
+  local database = resolve_sqlite_database()
 
-  if
-    sqlite == nil
-    or database == nil
-  then
-    notify(
-      "SQLite executable/database is unavailable",
-      levels.ERROR
-    )
+  if sqlite == nil or database == nil then
+    notify('SQLite executable/database is unavailable', levels.ERROR)
 
     return
   end
 
-  run_async(
-    {
-      sqlite,
-      "-batch",
-      database,
-    },
-    {
-      cwd = project_root(),
+  run_async({
+    sqlite,
+    '-batch',
+    database,
+  }, {
+    cwd = project_root(),
 
-      stdin =
-        table.concat({
-          ".bail on",
-          ".headers on",
-          ".mode box",
-          ".eqp full",
-          sql,
-          "",
-        }, "\n"),
-    },
-    "SQLite EQP Full"
-  )
+    stdin = table.concat({
+      '.bail on',
+      '.headers on',
+      '.mode box',
+      '.eqp full',
+      sql,
+      '',
+    }, '\n'),
+  }, 'SQLite EQP Full')
 end
 
 local function postgres_profile()
-  if detect_backend() ~= "postgres" then
-    notify(
-      "PostgreSQL profiling requires the PostgreSQL backend",
-      levels.WARN
-    )
+  if detect_backend() ~= 'postgres' then
+    notify('PostgreSQL profiling requires the PostgreSQL backend', levels.WARN)
 
     return
   end
 
-  local sql =
-    current_statement()
+  local sql = current_statement()
 
-  if sql == "" then
-    notify(
-      "no SQL statement found under cursor",
-      levels.WARN
-    )
+  if sql == '' then
+    notify('no SQL statement found under cursor', levels.WARN)
 
     return
   end
 
   local answer = fn.confirm(
     table.concat({
-      "EXPLAIN ANALYZE executes the SQL statement.",
-      "Run it inside a transaction and roll it back?",
-    }, "\n"),
-    "&Profile\n&Cancel",
+      'EXPLAIN ANALYZE executes the SQL statement.',
+      'Run it inside a transaction and roll it back?',
+    }, '\n'),
+    '&Profile\n&Cancel',
     2
   )
 
@@ -1308,77 +948,60 @@ local function postgres_profile()
 
   postgres_run(
     table.concat({
-      "BEGIN;",
+      'BEGIN;',
 
       "SET LOCAL statement_timeout = '30s';",
 
-      "EXPLAIN (",
-      "  ANALYZE,",
-      "  BUFFERS,",
-      "  WAL,",
-      "  SETTINGS,",
-      "  SUMMARY,",
-      "  FORMAT TEXT",
-      ")",
+      'EXPLAIN (',
+      '  ANALYZE,',
+      '  BUFFERS,',
+      '  WAL,',
+      '  SETTINGS,',
+      '  SUMMARY,',
+      '  FORMAT TEXT',
+      ')',
 
       sql,
 
-      "ROLLBACK;",
-    }, "\n"),
-    "PostgreSQL Profile"
+      'ROLLBACK;',
+    }, '\n'),
+    'PostgreSQL Profile'
   )
 end
 
 local function sqlite_profile_available()
-  local sqlite =
-    resolve_sqlite()
+  local sqlite = resolve_sqlite()
 
-  local database =
-    resolve_sqlite_database()
+  local database = resolve_sqlite_database()
 
-  if
-    sqlite == nil
-    or database == nil
-  then
+  if sqlite == nil or database == nil then
     return false
   end
 
   local ok, result = pcall(function()
-    return vim.system(
-      {
+    return vim
+      .system({
         sqlite,
-        "-batch",
+        '-batch',
         database,
-      },
-      {
-        stdin =
-          "PRAGMA compile_options;\n",
+      }, {
+        stdin = 'PRAGMA compile_options;\n',
 
         text = true,
-      }
-    ):wait()
+      })
+      :wait()
   end)
 
   if not ok then
     return false
   end
 
-  return result.code == 0
-    and (
-      result.stdout or ""
-    ):find(
-      "ENABLE_STMT_SCANSTATUS",
-      1,
-      true
-    ) ~= nil
+  return result.code == 0 and (result.stdout or ''):find('ENABLE_STMT_SCANSTATUS', 1, true) ~= nil
 end
 
 local function sqlite_profile()
-  if detect_backend() ~= "sqlite" then
-    notify(
-      "SQLite profiling requires the SQLite backend",
-      levels.WARN
-    )
+  if detect_backend() ~= 'sqlite' then
+    notify('SQLite profiling requires the SQLite backend', levels.WARN)
 
     return
   end
@@ -1386,344 +1009,252 @@ local function sqlite_profile()
   if not sqlite_profile_available() then
     notify(
       table.concat({
-        "This sqlite3 build does not advertise",
+        'This sqlite3 build does not advertise',
 
-        "SQLITE_ENABLE_STMT_SCANSTATUS.",
+        'SQLITE_ENABLE_STMT_SCANSTATUS.',
 
-        "",
+        '',
 
-        "Use EXPLAIN QUERY PLAN or VDBE inspection instead.",
-      }, "\n"),
+        'Use EXPLAIN QUERY PLAN or VDBE inspection instead.',
+      }, '\n'),
       levels.WARN
     )
 
     return
   end
 
-  local sql =
-    current_statement()
+  local sql = current_statement()
 
-  if sql == "" then
-    notify(
-      "no SQL statement found under cursor",
-      levels.WARN
-    )
+  if sql == '' then
+    notify('no SQL statement found under cursor', levels.WARN)
 
     return
   end
 
-  local answer = fn.confirm(
-    "SQLite scan-status profiling executes the statement. Continue?",
-    "&Profile\n&Cancel",
-    2
-  )
+  local answer = fn.confirm('SQLite scan-status profiling executes the statement. Continue?', '&Profile\n&Cancel', 2)
 
   if answer ~= 1 then
     return
   end
 
-  local sqlite =
-    resolve_sqlite()
+  local sqlite = resolve_sqlite()
 
-  local database =
-    resolve_sqlite_database()
+  local database = resolve_sqlite_database()
 
-  if
-    sqlite == nil
-    or database == nil
-  then
+  if sqlite == nil or database == nil then
     return
   end
 
-  run_async(
-    {
-      sqlite,
-      "-batch",
-      database,
-    },
-    {
-      cwd = project_root(),
+  run_async({
+    sqlite,
+    '-batch',
+    database,
+  }, {
+    cwd = project_root(),
 
-      stdin =
-        table.concat({
-          ".bail on",
-          ".headers on",
-          ".mode box",
-          ".scanstats on",
-          sql,
-          "",
-        }, "\n"),
-    },
-    "SQLite Profile"
-  )
+    stdin = table.concat({
+      '.bail on',
+      '.headers on',
+      '.mode box',
+      '.scanstats on',
+      sql,
+      '',
+    }, '\n'),
+  }, 'SQLite Profile')
 end
 
 local function profile_statement()
-  local backend =
-    detect_backend()
+  local backend = detect_backend()
 
-  if backend == "postgres" then
+  if backend == 'postgres' then
     postgres_profile()
 
     return
   end
 
-  if backend == "sqlite" then
+  if backend == 'sqlite' then
     sqlite_profile()
 
     return
   end
 
-  notify(
-    "profiling requires a PostgreSQL or SQLite backend",
-    levels.WARN
-  )
+  notify('profiling requires a PostgreSQL or SQLite backend', levels.WARN)
 end
 
 local function select_backend()
   local selected = fn.inputlist({
-    "SQL debug backend:",
+    'SQL debug backend:',
 
-    "1. Auto",
+    '1. Auto',
 
-    "2. PostgreSQL",
+    '2. PostgreSQL',
 
-    "3. SQLite",
+    '3. SQLite',
 
-    "4. Generic SQL",
+    '4. Generic SQL',
   })
 
   if selected == 1 then
-    state.backend = "auto"
+    state.backend = 'auto'
   elseif selected == 2 then
-    state.backend = "postgres"
+    state.backend = 'postgres'
   elseif selected == 3 then
-    state.backend = "sqlite"
+    state.backend = 'sqlite'
   elseif selected == 4 then
-    state.backend = "generic"
+    state.backend = 'generic'
   else
     return
   end
 
-  notify(
-    ("SQL backend: %s (resolved: %s)"):format(
-      state.backend,
-      detect_backend()
-    )
-  )
+  notify(('SQL backend: %s (resolved: %s)'):format(state.backend, detect_backend()))
 end
 
 local function select_sqlite_database()
-  local current =
-    resolve_sqlite_database()
-      or project_root()
+  local current = resolve_sqlite_database() or project_root()
 
-  local selected = fn.input(
-    "SQLite database: ",
-    current,
-    "file"
-  )
+  local selected = fn.input('SQLite database: ', current, 'file')
 
-  if selected == "" then
+  if selected == '' then
     return
   end
 
-  selected = normalize(
-    fn.expand(selected)
-  )
+  selected = normalize(fn.expand(selected))
 
   if not is_file(selected) then
-    notify(
-      ("database file does not exist: %s"):format(
-        selected
-      ),
-      levels.ERROR
-    )
+    notify(('database file does not exist: %s'):format(selected), levels.ERROR)
 
     return
   end
 
-  state.sqlite_database =
-    selected
+  state.sqlite_database = selected
 
-  state.backend =
-    "sqlite"
+  state.backend = 'sqlite'
 
-  notify(
-    ("SQLite database: %s"):format(
-      selected
-    )
-  )
+  notify(('SQLite database: %s'):format(selected))
 end
 
 local function open_postgres()
-  local psql =
-    resolve_psql()
+  local psql = resolve_psql()
 
   if psql == nil then
-    notify(
-      "psql was not found",
-      levels.ERROR
-    )
+    notify('psql was not found', levels.ERROR)
 
     return
   end
 
-  vim.cmd("botright new")
+  vim.cmd('botright new')
 
-  local bufnr =
-    api.nvim_get_current_buf()
+  local bufnr = api.nvim_get_current_buf()
 
-  vim.bo[bufnr].bufhidden =
-    "wipe"
+  vim.bo[bufnr].bufhidden = 'wipe'
 
-  local job = fn.termopen(
-    {
-      psql,
-      "-X",
-      "--no-psqlrc",
-    },
-    {
-      cwd = project_root(),
+  local job = fn.jobstart({
+    psql,
+    '-X',
+    '--no-psqlrc',
+  }, {
+    cwd = project_root(),
 
-      env =
-        postgres_environment_table(),
-    }
-  )
+    env = postgres_environment_table(),
+
+    term = true,
+  })
 
   if job <= 0 then
-    notify(
-      "failed to start psql",
-      levels.ERROR
-    )
+    notify('failed to start psql', levels.ERROR)
 
     return
   end
 
-  vim.cmd("startinsert")
+  vim.cmd('startinsert')
 end
 
 local function open_sqlite()
-  local sqlite =
-    resolve_sqlite()
+  local sqlite = resolve_sqlite()
 
   if sqlite == nil then
-    notify(
-      "sqlite3 was not found",
-      levels.ERROR
-    )
+    notify('sqlite3 was not found', levels.ERROR)
 
     return
   end
 
-  local database =
-    resolve_sqlite_database()
+  local database = resolve_sqlite_database()
 
   if database == nil then
     select_sqlite_database()
 
-    database =
-      resolve_sqlite_database()
+    database = resolve_sqlite_database()
   end
 
   if database == nil then
     return
   end
 
-  vim.cmd("botright new")
+  vim.cmd('botright new')
 
-  local bufnr =
-    api.nvim_get_current_buf()
+  local bufnr = api.nvim_get_current_buf()
 
-  vim.bo[bufnr].bufhidden =
-    "wipe"
+  vim.bo[bufnr].bufhidden = 'wipe'
 
-  local job = fn.termopen(
-    {
-      sqlite,
-      database,
-    },
-    {
-      cwd = project_root(),
-    }
-  )
+  local job = fn.jobstart({
+    sqlite,
+    database,
+  }, {
+    cwd = project_root(),
+
+    term = true,
+  })
 
   if job <= 0 then
-    notify(
-      "failed to start sqlite3",
-      levels.ERROR
-    )
+    notify('failed to start sqlite3', levels.ERROR)
 
     return
   end
 
-  vim.cmd("startinsert")
+  vim.cmd('startinsert')
 end
 
 local function open_backend_shell()
-  local backend =
-    detect_backend()
+  local backend = detect_backend()
 
-  if backend == "postgres" then
+  if backend == 'postgres' then
     open_postgres()
 
     return
   end
 
-  if backend == "sqlite" then
+  if backend == 'sqlite' then
     open_sqlite()
 
     return
   end
 
-  notify(
-    "select PostgreSQL or SQLite before opening a database shell",
-    levels.WARN
-  )
+  notify('select PostgreSQL or SQLite before opening a database shell', levels.WARN)
 end
 
 local function start_postgres_dap()
-  if detect_backend() ~= "postgres" then
-    notify(
-      "true SQL DAP debugging is currently available only through the PostgreSQL backend",
-      levels.WARN
-    )
+  if detect_backend() ~= 'postgres' then
+    notify('true SQL DAP debugging is currently available only through the PostgreSQL backend', levels.WARN)
 
     return
   end
 
-  local ok, dap =
-    pcall(
-      require,
-      "dap"
-    )
+  local ok, dap = pcall(require, 'dap')
 
-  if
-    not ok
-    or type(dap) ~= "table"
-  then
-    notify(
-      "native DAP registry could not be loaded",
-      levels.ERROR
-    )
+  if not ok or type(dap) ~= 'table' then
+    notify('native DAP registry could not be loaded', levels.ERROR)
 
     return
   end
 
   if not callable(dap.load) then
-    notify(
-      "native DAP registry does not expose load()",
-      levels.ERROR
-    )
+    notify('native DAP registry does not expose load()', levels.ERROR)
 
     return
   end
 
-  if not dap.load("postgres") then
-    notify(
-      "PostgreSQL DAP module could not be loaded",
-      levels.ERROR
-    )
+  if not dap.load('postgres') then
+    notify('PostgreSQL DAP module could not be loaded', levels.ERROR)
 
     return
   end
@@ -1734,97 +1265,46 @@ local function start_postgres_dap()
     return
   end
 
-  notify(
-    "PostgreSQL DAP loaded; use :DebugRun to start it"
-  )
+  notify('PostgreSQL DAP loaded; use :DebugRun to start it')
 end
 
 local function status()
-  local backend =
-    detect_backend()
+  local backend = detect_backend()
 
-  local sqlite_db =
-    resolve_sqlite_database()
+  local sqlite_db = resolve_sqlite_database()
 
-  notify(
-    table.concat({
-      "root: "
-        .. project_root(),
+  notify(table.concat({
+    'root: ' .. project_root(),
 
-      "configured backend: "
-        .. state.backend,
+    'configured backend: ' .. state.backend,
 
-      "resolved backend: "
-        .. backend,
+    'resolved backend: ' .. backend,
 
-      "current statement:",
-      current_statement() ~= ""
-          and current_statement()
-        or "(none)",
+    'current statement:',
+    current_statement() ~= '' and current_statement() or '(none)',
 
-      "psql: "
-        .. (
-          resolve_psql()
-            or "not found"
-        ),
+    'psql: ' .. (resolve_psql() or 'not found'),
 
-      "PostgreSQL connection hints: "
-        .. (
-          postgres_environment()
-              and "present"
-            or "not detected"
-        ),
+    'PostgreSQL connection hints: ' .. (postgres_environment() and 'present' or 'not detected'),
 
-      "sqlite3: "
-        .. (
-          resolve_sqlite()
-            or "not found"
-        ),
+    'sqlite3: ' .. (resolve_sqlite() or 'not found'),
 
-      "SQLite database: "
-        .. (
-          sqlite_db
-            or "not selected"
-        ),
+    'SQLite database: ' .. (sqlite_db or 'not selected'),
 
-      "SQLite scanstatus profiling: "
-        .. (
-          backend == "sqlite"
-              and sqlite_profile_available()
-              and "available"
-            or "unavailable/not selected"
-        ),
+    'SQLite scanstatus profiling: '
+      .. (backend == 'sqlite' and sqlite_profile_available() and 'available' or 'unavailable/not selected'),
 
-      "true DAP backend: "
-        .. (
-          backend == "postgres"
-              and "PostgreSQL via dap.postgres/pgdap"
-            or "none"
-        ),
-    }, "\n")
-  )
+    'true DAP backend: ' .. (backend == 'postgres' and 'PostgreSQL via dap.postgres/pgdap' or 'none'),
+  }, '\n'))
 end
 
 local function clear_cache()
-  state.backend = "auto"
+  state.backend = 'auto'
   state.root = nil
   state.sqlite_database = nil
 
-  notify(
-    "SQL debug state cleared"
-  )
+  notify('SQL debug state cleared')
 end
-
---
--- Generic SQL deliberately does NOT register a fake DAP adapter.
---
--- PostgreSQL source-level PL/pgSQL debugging is delegated to dap.postgres,
--- where a real pgdap/pldbgapi bridge can provide DAP semantics.
---
--- SQLite does not expose a stored-procedure source runtime. Its useful
--- debugger equivalents are query-plan inspection, VDBE bytecode inspection,
--- scan-status profiling, and native debugging of the SQLite engine itself.
---
 
 ---@type table<string, DebugCommand>
 M.commands = {
@@ -1833,8 +1313,7 @@ M.commands = {
       select_backend()
     end,
 
-    desc =
-      "Select SQL debug backend",
+    desc = 'Select SQL debug backend',
   },
 
   SqlDebugClear = {
@@ -1842,8 +1321,7 @@ M.commands = {
       clear_cache()
     end,
 
-    desc =
-      "Clear SQL debug state",
+    desc = 'Clear SQL debug state',
   },
 
   SqlDebugDatabase = {
@@ -1851,8 +1329,7 @@ M.commands = {
       select_sqlite_database()
     end,
 
-    desc =
-      "Select SQLite database",
+    desc = 'Select SQLite database',
   },
 
   SqlDebugExecute = {
@@ -1860,8 +1337,7 @@ M.commands = {
       execute_statement()
     end,
 
-    desc =
-      "Execute SQL statement under cursor",
+    desc = 'Execute SQL statement under cursor',
   },
 
   SqlDebugExplain = {
@@ -1869,8 +1345,7 @@ M.commands = {
       explain_statement()
     end,
 
-    desc =
-      "Explain SQL statement under cursor",
+    desc = 'Explain SQL statement under cursor',
   },
 
   SqlDebugPostgres = {
@@ -1878,8 +1353,7 @@ M.commands = {
       start_postgres_dap()
     end,
 
-    desc =
-      "Start PostgreSQL PL/pgSQL DAP",
+    desc = 'Start PostgreSQL PL/pgSQL DAP',
   },
 
   SqlDebugProfile = {
@@ -1887,8 +1361,7 @@ M.commands = {
       profile_statement()
     end,
 
-    desc =
-      "Profile SQL statement under cursor",
+    desc = 'Profile SQL statement under cursor',
   },
 
   SqlDebugShell = {
@@ -1896,8 +1369,7 @@ M.commands = {
       open_backend_shell()
     end,
 
-    desc =
-      "Open native database shell",
+    desc = 'Open native database shell',
   },
 
   SqlDebugSQLiteBytecode = {
@@ -1905,8 +1377,7 @@ M.commands = {
       sqlite_bytecode()
     end,
 
-    desc =
-      "Show SQLite VDBE bytecode",
+    desc = 'Show SQLite VDBE bytecode',
   },
 
   SqlDebugSQLiteTrace = {
@@ -1914,8 +1385,7 @@ M.commands = {
       sqlite_full_trace()
     end,
 
-    desc =
-      "Run SQLite full EQP trace",
+    desc = 'Run SQLite full EQP trace',
   },
 
   SqlDebugStatus = {
@@ -1923,115 +1393,106 @@ M.commands = {
       status()
     end,
 
-    desc =
-      "Show SQL debug status",
+    desc = 'Show SQL debug status',
   },
 }
 
 ---@type table<string, DebugMapping>
 M.mappings = {
   sql_debug_backend = {
-    lhs = "<leader>dSb",
+    lhs = '<leader>dSb',
 
-    mode = "n",
+    mode = 'n',
 
     rhs = function()
       select_backend()
     end,
 
-    desc =
-      "Debug SQL: Backend",
+    desc = 'Debug SQL: Backend',
   },
 
   sql_debug_execute = {
-    lhs = "<leader>dSe",
+    lhs = '<leader>dSe',
 
-    mode = "n",
+    mode = 'n',
 
     rhs = function()
       execute_statement()
     end,
 
-    desc =
-      "Debug SQL: Execute",
+    desc = 'Debug SQL: Execute',
   },
 
   sql_debug_explain = {
-    lhs = "<leader>dSx",
+    lhs = '<leader>dSx',
 
-    mode = "n",
+    mode = 'n',
 
     rhs = function()
       explain_statement()
     end,
 
-    desc =
-      "Debug SQL: Explain",
+    desc = 'Debug SQL: Explain',
   },
 
   sql_debug_postgres = {
-    lhs = "<leader>dSd",
+    lhs = '<leader>dSd',
 
-    mode = "n",
+    mode = 'n',
 
     rhs = function()
       start_postgres_dap()
     end,
 
-    desc =
-      "Debug SQL: PostgreSQL DAP",
+    desc = 'Debug SQL: PostgreSQL DAP',
   },
 
   sql_debug_profile = {
-    lhs = "<leader>dSp",
+    lhs = '<leader>dSp',
 
-    mode = "n",
+    mode = 'n',
 
     rhs = function()
       profile_statement()
     end,
 
-    desc =
-      "Debug SQL: Profile",
+    desc = 'Debug SQL: Profile',
   },
 
   sql_debug_shell = {
-    lhs = "<leader>dSr",
+    lhs = '<leader>dSr',
 
-    mode = "n",
+    mode = 'n',
 
     rhs = function()
       open_backend_shell()
     end,
 
-    desc =
-      "Debug SQL: REPL / shell",
+    desc = 'Debug SQL: REPL / shell',
   },
 
   sql_debug_sqlite_bytecode = {
-    lhs = "<leader>dSv",
+    lhs = '<leader>dSv',
 
-    mode = "n",
+    mode = 'n',
 
     rhs = function()
       sqlite_bytecode()
     end,
 
-    desc =
-      "Debug SQL: SQLite VDBE",
+    desc = 'Debug SQL: SQLite VDBE',
   },
 
   sql_debug_status = {
-    lhs = "<leader>dSs",
+    lhs = '<leader>dSs',
 
-    mode = "n",
+    mode = 'n',
 
     rhs = function()
       status()
     end,
 
-    desc =
-      "Debug SQL: Status",
+    desc = 'Debug SQL: Status',
   },
 }
 
@@ -2039,40 +1500,26 @@ M.mappings = {
 function M.setup(opts)
   opts = opts or {}
 
-  state.root =
-    nonempty_string(opts.root)
-        and fs.normalize(opts.root)
-      or project_root()
+  state.root = nonempty_string(opts.root) and fs.normalize(opts.root) or project_root()
 
-  local configured =
-    vim.env.NVIM_SQL_BACKEND
+  local configured = vim.env.NVIM_SQL_BACKEND
 
   if nonempty_string(configured) then
-    local backend =
-      configured:lower()
+    local backend = configured:lower()
 
-    if
-      backend == "postgres"
-      or backend == "postgresql"
-      or backend == "pgsql"
-    then
-      state.backend =
-        "postgres"
-    elseif backend == "sqlite" then
-      state.backend =
-        "sqlite"
-    elseif backend == "generic" then
-      state.backend =
-        "generic"
+    if backend == 'postgres' or backend == 'postgresql' or backend == 'pgsql' then
+      state.backend = 'postgres'
+    elseif backend == 'sqlite' then
+      state.backend = 'sqlite'
+    elseif backend == 'generic' then
+      state.backend = 'generic'
     end
   end
 
-  local configured_database =
-    configured_sqlite_database()
+  local configured_database = configured_sqlite_database()
 
   if configured_database ~= nil then
-    state.sqlite_database =
-      configured_database
+    state.sqlite_database = configured_database
   end
 end
 

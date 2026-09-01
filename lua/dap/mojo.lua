@@ -29,25 +29,25 @@ local uv = vim.uv
 
 local M = {}
 
-local SOURCE = "mojo-dap"
+local SOURCE = 'mojo-dap'
 
 ---@type string[]
 local ROOT_MARKERS = {
-  "pixi.toml",
-  "pixi.lock",
-  "pyproject.toml",
-  "uv.lock",
-  ".python-version",
-  "mojoproject.toml",
-  ".git",
+  'pixi.toml',
+  'pixi.lock',
+  'pyproject.toml',
+  'uv.lock',
+  '.python-version',
+  'mojoproject.toml',
+  '.git',
 }
 
 ---@type string[]
 local MOJO_LOCAL_CANDIDATES = {
-  ".venv/bin/mojo",
-  ".pixi/envs/default/bin/mojo",
-  ".pixi/envs/dev/bin/mojo",
-  "venv/bin/mojo",
+  '.venv/bin/mojo',
+  '.pixi/envs/default/bin/mojo',
+  '.pixi/envs/dev/bin/mojo',
+  'venv/bin/mojo',
 }
 
 ---@class MojoDapState
@@ -65,33 +65,13 @@ local state = {
 ---@param message string
 ---@param level? integer
 local function notify(message, level)
-  vim.notify(
-    ("[%s] %s"):format(
-      SOURCE,
-      message
-    ),
-    level or levels.INFO
-  )
+  vim.notify(('[%s] %s'):format(SOURCE, message), level or levels.INFO)
 end
 
 ---@param value unknown
 ---@return boolean
 local function nonempty_string(value)
-  return type(value) == "string"
-    and value ~= ""
-end
-
----@param path string
----@return boolean
-local function is_file(path)
-  if not nonempty_string(path) then
-    return false
-  end
-
-  local stat = uv.fs_stat(path)
-
-  return stat ~= nil
-    and stat.type == "file"
+  return type(value) == 'string' and value ~= ''
 end
 
 ---@param path string
@@ -103,27 +83,23 @@ local function is_directory(path)
 
   local stat = uv.fs_stat(path)
 
-  return stat ~= nil
-    and stat.type == "directory"
+  return stat ~= nil and stat.type == 'directory'
 end
 
 ---@param path string
 ---@return boolean
 local function executable(path)
-  return nonempty_string(path)
-    and fn.executable(path) == 1
+  return nonempty_string(path) and fn.executable(path) == 1
 end
 
 ---@param path string
 ---@return string
 local function normalize(path)
-  if path == "" then
-    return ""
+  if path == '' then
+    return ''
   end
 
-  return fs.normalize(
-    fn.fnamemodify(path, ":p")
-  )
+  return fs.normalize(fn.fnamemodify(path, ':p'))
 end
 
 ---@param command string
@@ -141,17 +117,16 @@ end
 ---@param bufnr? integer
 ---@return string
 local function filename(bufnr)
-  bufnr = bufnr
-    or api.nvim_get_current_buf()
+  bufnr = bufnr or api.nvim_get_current_buf()
 
   if not api.nvim_buf_is_valid(bufnr) then
-    return ""
+    return ''
   end
 
   local name = api.nvim_buf_get_name(bufnr)
 
-  if name == "" then
-    return ""
+  if name == '' then
+    return ''
   end
 
   return normalize(name)
@@ -160,37 +135,25 @@ end
 ---@param bufnr? integer
 ---@return string
 local function project_root(bufnr)
-  bufnr = bufnr
-    or api.nvim_get_current_buf()
+  bufnr = bufnr or api.nvim_get_current_buf()
 
   local current = filename(bufnr)
 
-  if current ~= "" then
-    local detected = fs.root(
-      current,
-      ROOT_MARKERS
-    )
+  if current ~= '' then
+    local detected = fs.root(current, ROOT_MARKERS)
 
-    if
-      type(detected) == "string"
-      and detected ~= ""
-    then
+    if type(detected) == 'string' and detected ~= '' then
       return fs.normalize(detected)
     end
 
     local parent = fs.dirname(current)
 
-    if
-      type(parent) == "string"
-      and parent ~= ""
-    then
+    if type(parent) == 'string' and parent ~= '' then
       return fs.normalize(parent)
     end
   end
 
-  return fs.normalize(
-    fn.getcwd()
-  )
+  return fs.normalize(fn.getcwd())
 end
 
 ---@param command string[]
@@ -198,13 +161,12 @@ end
 ---@return vim.SystemCompleted?
 local function system(command, cwd)
   local ok, result = pcall(function()
-    return vim.system(
-      command,
-      {
+    return vim
+      .system(command, {
         cwd = cwd,
         text = true,
-      }
-    ):wait()
+      })
+      :wait()
   end)
 
   if not ok then
@@ -223,67 +185,43 @@ local function command_version(path)
 
   local result = system({
     path,
-    "--version",
+    '--version',
   })
 
-  if
-    result == nil
-    or result.code ~= 0
-  then
+  if result == nil or result.code ~= 0 then
     return nil
   end
 
-  local output = vim.trim(
-    result.stdout or ""
-  )
+  local output = vim.trim(result.stdout or '')
 
-  if output == "" then
-    output = vim.trim(
-      result.stderr or ""
-    )
+  if output == '' then
+    output = vim.trim(result.stderr or '')
   end
 
-  if output == "" then
+  if output == '' then
     return nil
   end
 
-  return output:match("[^\r\n]+")
+  return output:match('[^\r\n]+')
 end
 
 ---@param root string
 ---@return string?
 local function project_mojo(root)
-  for _, relative in ipairs(
-    MOJO_LOCAL_CANDIDATES
-  ) do
-    local candidate = fs.joinpath(
-      root,
-      relative
-    )
+  for _, relative in ipairs(MOJO_LOCAL_CANDIDATES) do
+    local candidate = fs.joinpath(root, relative)
 
     if executable(candidate) then
       return fs.normalize(candidate)
     end
   end
 
-  --
-  -- Pixi environments can be user-named rather than just "default" or "dev".
-  --
-  local pixi_envs = fs.joinpath(
-    root,
-    ".pixi",
-    "envs"
-  )
+  local pixi_envs = fs.joinpath(root, '.pixi', 'envs')
 
   if is_directory(pixi_envs) then
     for name, kind in fs.dir(pixi_envs) do
-      if kind == "directory" then
-        local candidate = fs.joinpath(
-          pixi_envs,
-          name,
-          "bin",
-          "mojo"
-        )
+      if kind == 'directory' then
+        local candidate = fs.joinpath(pixi_envs, name, 'bin', 'mojo')
 
         if executable(candidate) then
           return fs.normalize(candidate)
@@ -299,21 +237,14 @@ end
 local function resolve_mojo()
   local root = project_root()
 
-  if
-    state.root == root
-    and state.mojo ~= nil
-    and executable(state.mojo)
-  then
+  if state.root == root and state.mojo ~= nil and executable(state.mojo) then
     return state.mojo
   end
 
-  local configured =
-    vim.env.NVIM_MOJO_EXECUTABLE
+  local configured = vim.env.NVIM_MOJO_EXECUTABLE
 
   if nonempty_string(configured) then
-    local candidate = normalize(
-      fn.expand(configured)
-    )
+    local candidate = normalize(fn.expand(configured))
 
     if executable(candidate) then
       state.root = root
@@ -322,16 +253,10 @@ local function resolve_mojo()
       return candidate
     end
 
-    notify(
-      (
-        "NVIM_MOJO_EXECUTABLE is not executable: %s"
-      ):format(candidate),
-      levels.WARN
-    )
+    notify(('NVIM_MOJO_EXECUTABLE is not executable: %s'):format(candidate), levels.WARN)
   end
 
-  local local_mojo =
-    project_mojo(root)
+  local local_mojo = project_mojo(root)
 
   if local_mojo ~= nil then
     state.root = root
@@ -340,8 +265,7 @@ local function resolve_mojo()
     return local_mojo
   end
 
-  local path_mojo =
-    executable_path("mojo")
+  local path_mojo = executable_path('mojo')
 
   if path_mojo ~= nil then
     state.root = root
@@ -355,21 +279,14 @@ end
 
 ---@return string?
 local function resolve_lldb_dap()
-  if
-    state.lldb_dap ~= nil
-    and executable(state.lldb_dap)
-  then
+  if state.lldb_dap ~= nil and executable(state.lldb_dap) then
     return state.lldb_dap
   end
 
-  local configured =
-    vim.env.NVIM_MOJO_LLDB_DAP
-      or vim.env.NVIM_LLDB_DAP
+  local configured = vim.env.NVIM_MOJO_LLDB_DAP or vim.env.NVIM_LLDB_DAP
 
   if nonempty_string(configured) then
-    local candidate = normalize(
-      fn.expand(configured)
-    )
+    local candidate = normalize(fn.expand(configured))
 
     if executable(candidate) then
       state.lldb_dap = candidate
@@ -377,16 +294,10 @@ local function resolve_lldb_dap()
       return candidate
     end
 
-    notify(
-      (
-        "configured lldb-dap is not executable: %s"
-      ):format(candidate),
-      levels.WARN
-    )
+    notify(('configured lldb-dap is not executable: %s'):format(candidate), levels.WARN)
   end
 
-  local candidate =
-    executable_path("lldb-dap")
+  local candidate = executable_path('lldb-dap')
 
   if candidate ~= nil then
     state.lldb_dap = candidate
@@ -399,8 +310,7 @@ end
 
 ---@return boolean
 local function cuda_gdb_available()
-  return executable_path("cuda-gdb")
-    ~= nil
+  return executable_path('cuda-gdb') ~= nil
 end
 
 ---@return string
@@ -412,24 +322,11 @@ local function cwd()
   return root
 end
 
----@return string
-local function current_file()
-  local current = filename()
-
-  if current ~= "" then
-    return current
-  end
-
-  return "${file}"
-end
-
 ---@return string[]
 local function prompt_args()
-  local input = fn.input(
-    "Mojo runtime arguments: "
-  )
+  local input = fn.input('Mojo runtime arguments: ')
 
-  if input == "" then
+  if input == '' then
     return {}
   end
 
@@ -438,33 +335,22 @@ end
 
 ---@return table<string, string>
 local function prompt_environment()
-  local input = fn.input(
-    "Environment KEY=VALUE pairs: "
-  )
+  local input = fn.input('Environment KEY=VALUE pairs: ')
 
-  if input == "" then
+  if input == '' then
     return {}
   end
 
   ---@type table<string, string>
   local result = {}
 
-  for _, item in ipairs(
-    fn.shellsplit(input)
-  ) do
-    local key, value = item:match(
-      "^([%a_][%w_]*)=(.*)$"
-    )
+  for _, item in ipairs(fn.shellsplit(input)) do
+    local key, value = item:match('^([%a_][%w_]*)=(.*)$')
 
     if key ~= nil then
       result[key] = value
     else
-      notify(
-        (
-          "ignoring invalid environment assignment: %s"
-        ):format(item),
-        levels.WARN
-      )
+      notify(('ignoring invalid environment assignment: %s'):format(item), levels.WARN)
     end
   end
 
@@ -473,22 +359,12 @@ end
 
 ---@return integer
 local function prompt_pid()
-  local value = fn.input(
-    "Process ID: "
-  )
+  local value = fn.input('Process ID: ')
 
   local pid = tonumber(value)
 
-  if
-    pid == nil
-    or pid < 1
-  then
-    notify(
-      ("invalid PID: %s"):format(
-        value
-      ),
-      levels.ERROR
-    )
+  if pid == nil or pid < 1 then
+    notify(('invalid PID: %s'):format(value), levels.ERROR)
 
     return 0
   end
@@ -498,32 +374,20 @@ end
 
 ---@return string
 local function prompt_binary()
-  local default = state.executable
-    or project_root()
+  local default = state.executable or project_root()
 
-  local selected = fn.input(
-    "Mojo/native executable: ",
-    default,
-    "file"
-  )
+  local selected = fn.input('Mojo/native executable: ', default, 'file')
 
-  if selected == "" then
-    return ""
+  if selected == '' then
+    return ''
   end
 
-  selected = normalize(
-    fn.expand(selected)
-  )
+  selected = normalize(fn.expand(selected))
 
   if not executable(selected) then
-    notify(
-      ("not an executable: %s"):format(
-        selected
-      ),
-      levels.ERROR
-    )
+    notify(('not an executable: %s'):format(selected), levels.ERROR)
 
-    return ""
+    return ''
   end
 
   state.executable = selected
@@ -533,17 +397,9 @@ end
 
 ---@return string
 local function build_directory()
-  local directory = fs.joinpath(
-    fn.stdpath("cache"),
-    "dap",
-    "mojo"
-  )
+  local directory = fs.joinpath(fn.stdpath('cache'), 'dap', 'mojo')
 
-  fn.mkdir(
-    directory,
-    "p",
-    "0700"
-  )
+  fn.mkdir(directory, 'p', '0700')
 
   return fs.normalize(directory)
 end
@@ -551,23 +407,11 @@ end
 ---@param source string
 ---@return string
 local function debug_binary_path(source)
-  local stem = fs.basename(source):gsub(
-    "%.mojo$",
-    ""
-  )
+  local stem = fs.basename(source):gsub('%.mojo$', '')
 
-  local hash = fn.sha256(source):sub(
-    1,
-    12
-  )
+  local hash = fn.sha256(source):sub(1, 12)
 
-  return fs.joinpath(
-    build_directory(),
-    ("%s-%s"):format(
-      stem,
-      hash
-    )
-  )
+  return fs.joinpath(build_directory(), ('%s-%s'):format(stem, hash))
 end
 
 ---@param extra_flags? string[]
@@ -577,143 +421,88 @@ local function build_current(extra_flags)
   local source = filename()
 
   if mojo == nil then
-    notify(
-      "Mojo executable was not found",
-      levels.ERROR
-    )
+    notify('Mojo executable was not found', levels.ERROR)
 
     return nil
   end
 
-  if source == "" then
-    notify(
-      "current buffer has no filename",
-      levels.ERROR
-    )
+  if source == '' then
+    notify('current buffer has no filename', levels.ERROR)
 
     return nil
   end
 
-  if not source:lower():match("%.mojo$") then
-    notify(
-      (
-        "current file does not look like Mojo source: %s"
-      ):format(source),
-      levels.ERROR
-    )
+  if not source:lower():match('%.mojo$') then
+    notify(('current file does not look like Mojo source: %s'):format(source), levels.ERROR)
 
     return nil
   end
 
-  local output =
-    debug_binary_path(source)
+  local output = debug_binary_path(source)
 
   ---@type string[]
   local command = {
     mojo,
-    "build",
-
-    --
-    -- Maintained Mojo documentation recommends these settings when
-    -- producing a binary intended for source debugging.
-    --
-    "-O0",
-    "-g",
-
-    "-o",
+    'build',
+    '-O0',
+    '-g',
+    '-o',
     output,
   }
 
-  if
-    type(extra_flags) == "table"
-    and #extra_flags > 0
-  then
-    vim.list_extend(
-      command,
-      extra_flags
-    )
+  if type(extra_flags) == 'table' and #extra_flags > 0 then
+    vim.list_extend(command, extra_flags)
   end
 
   command[#command + 1] = source
 
-  notify(
-    (
-      "building debug executable: %s"
-    ):format(
-      fs.basename(source)
-    )
-  )
+  notify(('building debug executable: %s'):format(fs.basename(source)))
 
-  local result = system(
-    command,
-    project_root()
-  )
+  local result = system(command, project_root())
 
   if result == nil then
-    notify(
-      "failed to invoke mojo build",
-      levels.ERROR
-    )
+    notify('failed to invoke mojo build', levels.ERROR)
 
     return nil
   end
 
   if result.code ~= 0 then
-    local message = vim.trim(
-      result.stderr
-        or result.stdout
-        or "mojo build failed"
-    )
+    local message = vim.trim(result.stderr or result.stdout or 'mojo build failed')
 
-    notify(
-      message ~= ""
-          and message
-        or "mojo build failed",
-      levels.ERROR
-    )
+    notify(message ~= '' and message or 'mojo build failed', levels.ERROR)
 
     return nil
   end
 
   if not executable(output) then
-    notify(
-      (
-        "Mojo build completed but output is not executable: %s"
-      ):format(output),
-      levels.ERROR
-    )
+    notify(('Mojo build completed but output is not executable: %s'):format(output), levels.ERROR)
 
     return nil
   end
 
-  state.executable =
-    fs.normalize(output)
+  state.executable = fs.normalize(output)
 
   return state.executable
 end
 
 ---@return string
 local function build_then_program()
-  return build_current()
-    or ""
+  return build_current() or ''
 end
 
 ---@return string
 local function build_then_program_with_asserts()
   return build_current({
-    "-D",
-    "ASSERT=all",
-  }) or ""
+    '-D',
+    'ASSERT=all',
+  }) or ''
 end
 
 ---@return string[]
 local function cli_compile_options()
-  local input = fn.input(
-    "Mojo compiler/debug options: ",
-    "-O0 -g"
-  )
+  local input = fn.input('Mojo compiler/debug options: ', '-O0 -g')
 
-  if input == "" then
+  if input == '' then
     return {}
   end
 
@@ -722,37 +511,25 @@ end
 
 ---@param cuda boolean
 ---@param break_on_launch? boolean
-local function open_mojo_debug_terminal(
-  cuda,
-  break_on_launch
-)
+local function open_mojo_debug_terminal(cuda, break_on_launch)
   local mojo = resolve_mojo()
 
   if mojo == nil then
-    notify(
-      "Mojo executable was not found",
-      levels.ERROR
-    )
+    notify('Mojo executable was not found', levels.ERROR)
 
     return
   end
 
   if cuda and not cuda_gdb_available() then
-    notify(
-      "cuda-gdb is not available in PATH",
-      levels.ERROR
-    )
+    notify('cuda-gdb is not available in PATH', levels.ERROR)
 
     return
   end
 
   local source = filename()
 
-  if source == "" then
-    notify(
-      "current buffer has no filename",
-      levels.ERROR
-    )
+  if source == '' then
+    notify('current buffer has no filename', levels.ERROR)
 
     return
   end
@@ -760,117 +537,75 @@ local function open_mojo_debug_terminal(
   ---@type string[]
   local command = {
     mojo,
-    "debug",
+    'debug',
   }
 
   if cuda then
-    command[#command + 1] =
-      "--cuda-gdb"
+    command[#command + 1] = '--cuda-gdb'
 
     if break_on_launch then
-      command[#command + 1] =
-        "--break-on-launch"
+      command[#command + 1] = '--break-on-launch'
     end
   end
 
-  vim.list_extend(
-    command,
-    cli_compile_options()
-  )
+  vim.list_extend(command, cli_compile_options())
 
   command[#command + 1] = source
 
-  local runtime_args =
-    prompt_args()
+  local runtime_args = prompt_args()
 
-  vim.list_extend(
-    command,
-    runtime_args
-  )
+  vim.list_extend(command, runtime_args)
 
-  vim.cmd("botright new")
+  vim.cmd('botright new')
 
-  local buffer =
-    api.nvim_get_current_buf()
+  local buffer = api.nvim_get_current_buf()
 
-  vim.bo[buffer].bufhidden =
-    "wipe"
+  vim.bo[buffer].bufhidden = 'wipe'
 
-  local job = fn.termopen(
-    command,
-    {
-      cwd = project_root(),
+  local job = fn.jobstart(command, {
+    cwd = project_root(),
 
-      on_exit = function(_, code)
-        vim.schedule(function()
-          notify(
-            (
-              "mojo debug exited with status %d"
-            ):format(code),
-            code == 0
-                and levels.INFO
-              or levels.WARN
-          )
-        end)
-      end,
-    }
-  )
+    term = true,
+
+    on_exit = function(_, code)
+      vim.schedule(function()
+        notify(('mojo debug exited with status %d'):format(code), code == 0 and levels.INFO or levels.WARN)
+      end)
+    end,
+  })
 
   if job <= 0 then
-    notify(
-      "failed to start mojo debug terminal",
-      levels.ERROR
-    )
+    notify('failed to start mojo debug terminal', levels.ERROR)
 
     return
   end
 
-  vim.cmd("startinsert")
+  vim.cmd('startinsert')
 end
 
 local function debug_cpu_cli()
-  open_mojo_debug_terminal(
-    false,
-    false
-  )
+  open_mojo_debug_terminal(false, false)
 end
 
 local function debug_cuda_cli()
-  open_mojo_debug_terminal(
-    true,
-    false
-  )
+  open_mojo_debug_terminal(true, false)
 end
 
 local function debug_cuda_break_cli()
-  open_mojo_debug_terminal(
-    true,
-    true
-  )
+  open_mojo_debug_terminal(true, true)
 end
 
 local function select_mojo()
-  local selected = fn.input(
-    "Mojo executable: ",
-    resolve_mojo() or "",
-    "file"
-  )
+  local selected = fn.input('Mojo executable: ', resolve_mojo() or '', 'file')
 
-  if selected == "" then
+  if selected == '' then
     return
   end
 
-  selected = normalize(
-    fn.expand(selected)
-  )
+  selected = normalize(fn.expand(selected))
 
   if not executable(selected) then
-    notify(
-      ("not executable: %s"):format(
-        selected
-      ),
-      levels.ERROR
-    )
+    notify(('not executable: %s'):format(selected), levels.ERROR)
 
     return
   end
@@ -878,52 +613,31 @@ local function select_mojo()
   state.root = project_root()
   state.mojo = selected
 
-  notify(
-    ("Mojo executable: %s"):format(
-      selected
-    )
-  )
+  notify(('Mojo executable: %s'):format(selected))
 end
 
 local function select_lldb_dap()
-  local selected = fn.input(
-    "lldb-dap executable: ",
-    resolve_lldb_dap() or "",
-    "file"
-  )
+  local selected = fn.input('lldb-dap executable: ', resolve_lldb_dap() or '', 'file')
 
-  if selected == "" then
+  if selected == '' then
     return
   end
 
-  selected = normalize(
-    fn.expand(selected)
-  )
+  selected = normalize(fn.expand(selected))
 
   if not executable(selected) then
-    notify(
-      ("not executable: %s"):format(
-        selected
-      ),
-      levels.ERROR
-    )
+    notify(('not executable: %s'):format(selected), levels.ERROR)
 
     return
   end
 
   state.lldb_dap = selected
 
-  if
-    type(M.adapter) == "table"
-  then
+  if type(M.adapter) == 'table' then
     M.adapter.command = selected
   end
 
-  notify(
-    ("lldb-dap: %s"):format(
-      selected
-    )
-  )
+  notify(('lldb-dap: %s'):format(selected))
 end
 
 local function clear_cache()
@@ -932,102 +646,57 @@ local function clear_cache()
   state.mojo = nil
   state.root = nil
 
-  notify(
-    "Mojo DAP discovery cache cleared"
-  )
+  notify('Mojo DAP discovery cache cleared')
 end
 
 local function status()
   local mojo = resolve_mojo()
   local lldb = resolve_lldb_dap()
-  local cuda_gdb =
-    executable_path("cuda-gdb")
+  local cuda_gdb = executable_path('cuda-gdb')
 
-  notify(
-    table.concat({
-      "root: "
-        .. project_root(),
+  notify(table.concat({
+    'root: ' .. project_root(),
 
-      "Mojo: "
-        .. (mojo or "not found"),
+    'Mojo: ' .. (mojo or 'not found'),
 
-      "Mojo version: "
-        .. (
-          mojo ~= nil
-              and (
-                command_version(mojo)
-                  or "unknown"
-              )
-            or "unknown"
-        ),
+    'Mojo version: ' .. (mojo ~= nil and (command_version(mojo) or 'unknown') or 'unknown'),
 
-      "lldb-dap: "
-        .. (lldb or "not found"),
+    'lldb-dap: ' .. (lldb or 'not found'),
 
-      "cuda-gdb: "
-        .. (cuda_gdb or "not found"),
+    'cuda-gdb: ' .. (cuda_gdb or 'not found'),
 
-      "native DAP: "
-        .. (
-          lldb ~= nil
-              and "available"
-            or "unavailable"
-        ),
+    'native DAP: ' .. (lldb ~= nil and 'available' or 'unavailable'),
 
-      "Mojo CPU CLI debugger: "
-        .. (
-          mojo ~= nil
-              and "available"
-            or "unavailable"
-        ),
+    'Mojo CPU CLI debugger: ' .. (mojo ~= nil and 'available' or 'unavailable'),
 
-      "Mojo NVIDIA GPU debugger: "
-        .. (
-          mojo ~= nil
-              and cuda_gdb ~= nil
-              and "available"
-            or "unavailable"
-        ),
+    'Mojo NVIDIA GPU debugger: ' .. (mojo ~= nil and cuda_gdb ~= nil and 'available' or 'unavailable'),
 
-      "cached debug executable: "
-        .. (
-          state.executable
-            or "none"
-        ),
-    }, "\n")
-  )
+    'cached debug executable: ' .. (state.executable or 'none'),
+  }, '\n'))
 end
 
 --
--- Maintained Mojo documentation currently exposes `mojo-lldb` and
--- `mojo-cuda-gdb` as VS Code debugger TYPES, not as standalone executable
--- DAP servers.
---
--- The editor-independent DAP path used here is therefore LLVM's lldb-dap
--- against a native Mojo executable built with full debug information.
---
 ---@type table
 M.adapter = {
-  name = "mojo-native-lldb",
+  name = 'mojo-native-lldb',
 
-  type = "executable",
+  type = 'executable',
 
-  command = resolve_lldb_dap()
-    or "lldb-dap",
+  command = resolve_lldb_dap() or 'lldb-dap',
 
   options = {
-    source_filetype = "mojo",
+    source_filetype = 'mojo',
   },
 }
 
 ---@type table[]
 local configurations = {
   {
-    name = "Mojo: Build Debug + Launch",
+    name = 'Mojo: Build Debug + Launch',
 
-    type = "mojo-native-lldb",
+    type = 'mojo-native-lldb',
 
-    request = "launch",
+    request = 'launch',
 
     program = build_then_program,
 
@@ -1043,11 +712,11 @@ local configurations = {
   },
 
   {
-    name = "Mojo: Build Debug + Launch with Arguments",
+    name = 'Mojo: Build Debug + Launch with Arguments',
 
-    type = "mojo-native-lldb",
+    type = 'mojo-native-lldb',
 
-    request = "launch",
+    request = 'launch',
 
     program = build_then_program,
 
@@ -1063,11 +732,11 @@ local configurations = {
   },
 
   {
-    name = "Mojo: Build Debug + Assertions + Launch",
+    name = 'Mojo: Build Debug + Assertions + Launch',
 
-    type = "mojo-native-lldb",
+    type = 'mojo-native-lldb',
 
-    request = "launch",
+    request = 'launch',
 
     program = build_then_program_with_asserts,
 
@@ -1083,11 +752,11 @@ local configurations = {
   },
 
   {
-    name = "Mojo: Build Debug + Stop on Entry",
+    name = 'Mojo: Build Debug + Stop on Entry',
 
-    type = "mojo-native-lldb",
+    type = 'mojo-native-lldb',
 
-    request = "launch",
+    request = 'launch',
 
     program = build_then_program,
 
@@ -1101,11 +770,11 @@ local configurations = {
   },
 
   {
-    name = "Mojo: Debug Existing Binary",
+    name = 'Mojo: Debug Existing Binary',
 
-    type = "mojo-native-lldb",
+    type = 'mojo-native-lldb',
 
-    request = "launch",
+    request = 'launch',
 
     program = prompt_binary,
 
@@ -1121,11 +790,11 @@ local configurations = {
   },
 
   {
-    name = "Mojo: Attach PID with LLDB DAP",
+    name = 'Mojo: Attach PID with LLDB DAP',
 
-    type = "mojo-native-lldb",
+    type = 'mojo-native-lldb',
 
-    request = "attach",
+    request = 'attach',
 
     pid = prompt_pid,
   },
@@ -1143,15 +812,11 @@ M.commands = {
       local output = build_current()
 
       if output ~= nil then
-        notify(
-          ("debug executable: %s"):format(
-            output
-          )
-        )
+        notify(('debug executable: %s'):format(output))
       end
     end,
 
-    desc = "Build current Mojo file with -O0 -g",
+    desc = 'Build current Mojo file with -O0 -g',
   },
 
   MojoDebugClear = {
@@ -1159,7 +824,7 @@ M.commands = {
       clear_cache()
     end,
 
-    desc = "Clear Mojo debugger discovery cache",
+    desc = 'Clear Mojo debugger discovery cache',
   },
 
   MojoDebugCpuCli = {
@@ -1167,7 +832,7 @@ M.commands = {
       debug_cpu_cli()
     end,
 
-    desc = "Debug current Mojo file with official Mojo LLDB CLI",
+    desc = 'Debug current Mojo file with official Mojo LLDB CLI',
   },
 
   MojoDebugCudaCli = {
@@ -1175,7 +840,7 @@ M.commands = {
       debug_cuda_cli()
     end,
 
-    desc = "Debug current Mojo file with CUDA-GDB",
+    desc = 'Debug current Mojo file with CUDA-GDB',
   },
 
   MojoDebugCudaBreak = {
@@ -1183,7 +848,7 @@ M.commands = {
       debug_cuda_break_cli()
     end,
 
-    desc = "Debug Mojo GPU and break on kernel launch",
+    desc = 'Debug Mojo GPU and break on kernel launch',
   },
 
   MojoDebugLldbDap = {
@@ -1191,7 +856,7 @@ M.commands = {
       select_lldb_dap()
     end,
 
-    desc = "Select LLDB DAP executable",
+    desc = 'Select LLDB DAP executable',
   },
 
   MojoDebugMojo = {
@@ -1199,7 +864,7 @@ M.commands = {
       select_mojo()
     end,
 
-    desc = "Select Mojo executable",
+    desc = 'Select Mojo executable',
   },
 
   MojoDebugStatus = {
@@ -1207,82 +872,82 @@ M.commands = {
       status()
     end,
 
-    desc = "Show Mojo debugger status",
+    desc = 'Show Mojo debugger status',
   },
 }
 
 ---@type table<string, DebugMapping>
 M.mappings = {
   mojo_debug_build = {
-    lhs = "<leader>dMb",
+    lhs = '<leader>dMb',
 
-    mode = "n",
+    mode = 'n',
 
     rhs = function()
       build_current()
     end,
 
-    desc = "Debug Mojo: Build",
+    desc = 'Debug Mojo: Build',
   },
 
   mojo_debug_cpu = {
-    lhs = "<leader>dMc",
+    lhs = '<leader>dMc',
 
-    mode = "n",
+    mode = 'n',
 
     rhs = function()
       debug_cpu_cli()
     end,
 
-    desc = "Debug Mojo: Official CPU debugger",
+    desc = 'Debug Mojo: Official CPU debugger',
   },
 
   mojo_debug_cuda = {
-    lhs = "<leader>dMg",
+    lhs = '<leader>dMg',
 
-    mode = "n",
+    mode = 'n',
 
     rhs = function()
       debug_cuda_cli()
     end,
 
-    desc = "Debug Mojo: CUDA-GDB",
+    desc = 'Debug Mojo: CUDA-GDB',
   },
 
   mojo_debug_cuda_break = {
-    lhs = "<leader>dMK",
+    lhs = '<leader>dMK',
 
-    mode = "n",
+    mode = 'n',
 
     rhs = function()
       debug_cuda_break_cli()
     end,
 
-    desc = "Debug Mojo: CUDA break on kernel",
+    desc = 'Debug Mojo: CUDA break on kernel',
   },
 
   mojo_debug_status = {
-    lhs = "<leader>dMs",
+    lhs = '<leader>dMs',
 
-    mode = "n",
+    mode = 'n',
 
     rhs = function()
       status()
     end,
 
-    desc = "Debug Mojo: Status",
+    desc = 'Debug Mojo: Status',
   },
 
   mojo_debug_toolchain = {
-    lhs = "<leader>dMt",
+    lhs = '<leader>dMt',
 
-    mode = "n",
+    mode = 'n',
 
     rhs = function()
       select_mojo()
     end,
 
-    desc = "Debug Mojo: Select toolchain",
+    desc = 'Debug Mojo: Select toolchain',
   },
 }
 
@@ -1290,10 +955,7 @@ M.mappings = {
 function M.setup(opts)
   opts = opts or {}
 
-  state.root =
-    nonempty_string(opts.root)
-        and fs.normalize(opts.root)
-      or project_root()
+  state.root = nonempty_string(opts.root) and fs.normalize(opts.root) or project_root()
 
   local mojo = resolve_mojo()
   local lldb = resolve_lldb_dap()
@@ -1306,15 +968,15 @@ function M.setup(opts)
     vim.schedule(function()
       notify(
         table.concat({
-          "Mojo executable was not found.",
-          "",
-          "Resolution order:",
-          "  NVIM_MOJO_EXECUTABLE",
-          "  project .venv/bin/mojo",
-          "  project .pixi/envs/*/bin/mojo",
-          "  project venv/bin/mojo",
-          "  PATH mojo",
-        }, "\n"),
+          'Mojo executable was not found.',
+          '',
+          'Resolution order:',
+          '  NVIM_MOJO_EXECUTABLE',
+          '  project .venv/bin/mojo',
+          '  project .pixi/envs/*/bin/mojo',
+          '  project venv/bin/mojo',
+          '  PATH mojo',
+        }, '\n'),
         levels.WARN
       )
     end)
@@ -1324,14 +986,14 @@ function M.setup(opts)
     vim.schedule(function()
       notify(
         table.concat({
-          "lldb-dap was not found.",
-          "",
-          "Native DAP debugging of precompiled Mojo binaries",
-          "requires LLVM lldb-dap.",
-          "",
-          "Set:",
-          "  NVIM_MOJO_LLDB_DAP=/path/to/lldb-dap",
-        }, "\n"),
+          'lldb-dap was not found.',
+          '',
+          'Native DAP debugging of precompiled Mojo binaries',
+          'requires LLVM lldb-dap.',
+          '',
+          'Set:',
+          '  NVIM_MOJO_LLDB_DAP=/path/to/lldb-dap',
+        }, '\n'),
         levels.WARN
       )
     end)
@@ -1360,8 +1022,7 @@ end
 
 ---@return boolean
 function M.cuda_debug_available()
-  return resolve_mojo() ~= nil
-    and cuda_gdb_available()
+  return resolve_mojo() ~= nil and cuda_gdb_available()
 end
 
 return M

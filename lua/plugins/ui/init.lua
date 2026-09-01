@@ -7,11 +7,9 @@ local specs = {}
 ---@param mod string
 local function add(mod)
   local ok, result = pcall(require, mod)
-
   if not ok then
     error(('Failed to load %q:\n%s'):format(mod, result), 2)
   end
-
   if type(result) ~= 'table' then
     error(('Module %q must return a list of plugin specs; received %s'):format(mod, type(result)), 2)
   end
@@ -31,7 +29,7 @@ local function add(mod)
   end
 end
 
-add('plugins.ui.css')
+--add('plugins.ui.css')
 add('plugins.ui.icons')
 add('plugins.ui.md')
 

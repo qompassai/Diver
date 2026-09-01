@@ -20,7 +20,6 @@
 
 local diagnostic = vim.diagnostic
 local fs = vim.fs
-local uv = vim.uv
 
 local ERROR = diagnostic.severity.ERROR
 local HINT = diagnostic.severity.HINT
@@ -33,6 +32,7 @@ local OUTPUT_LENGTH_MAX = 16 * 1024 * 1024
 
 local floor = math.floor
 local max = math.max
+local char = string.char
 local tonumber = tonumber
 local type = type
 
@@ -49,23 +49,6 @@ local severities = {
 
   hint = HINT,
   note = HINT,
-}
-
----@type string[]
-local config_candidates = {
-  'redocly.yaml',
-  'redocly.yml',
-
-  '.redocly.yaml',
-  '.redocly.yml',
-
-  'redocly.json',
-
-  'config/redocly.yaml',
-  'config/redocly.yml',
-
-  '.config/redocly.yaml',
-  '.config/redocly.yml',
 }
 
 ---@class RedoclyCheckstyleEntry
@@ -101,116 +84,71 @@ local function severity(value)
   return severities[value:lower()] or WARN
 end
 
----@param path string
----@return boolean
-local function exists(path)
-  return uv.fs_stat(path) ~= nil
-end
-
----@param root string
----@param candidates string[]
+---@param codepoint integer
 ---@return string?
-local function find_candidate(root, candidates)
-  assert(root ~= '')
-
-  for index = 1, #candidates do
-    local candidate = fs.joinpath(
-      root,
-      candidates[index]
-    )
-
-    if exists(candidate) then
-      return candidate
-    end
+local function utf8_character(codepoint)
+  if codepoint < 0 or codepoint > 0x10FFFF or (codepoint >= 0xD800 and codepoint <= 0xDFFF) then
+    return nil
   end
 
-  return nil
+  if codepoint <= 0x7F then
+    return char(codepoint)
+  end
+
+  if codepoint <= 0x7FF then
+    return char(0xC0 + floor(codepoint / 0x40), 0x80 + codepoint % 0x40)
+  end
+
+  if codepoint <= 0xFFFF then
+    return char(0xE0 + floor(codepoint / 0x1000), 0x80 + floor(codepoint / 0x40) % 0x40, 0x80 + codepoint % 0x40)
+  end
+
+  return char(
+    0xF0 + floor(codepoint / 0x40000),
+    0x80 + floor(codepoint / 0x1000) % 0x40,
+    0x80 + floor(codepoint / 0x40) % 0x40,
+    0x80 + codepoint % 0x40
+  )
+end
+
+---@param digits string
+---@param base integer
+---@return string
+local function numeric_entity(digits, base)
+  local codepoint = tonumber(digits, base)
+  if codepoint == nil then
+    return ''
+  end
+
+  codepoint = floor(codepoint)
+  if
+    (codepoint < 0x20 and codepoint ~= 0x09 and codepoint ~= 0x0A and codepoint ~= 0x0D)
+    or codepoint == 0xFFFE
+    or codepoint == 0xFFFF
+  then
+    return ''
+  end
+
+  return utf8_character(codepoint) or ''
 end
 
 ---@param value string
 ---@return string
 local function xml_decode(value)
-  --
-  -- Decode the five predefined XML entities first. Numeric entities are
-  -- handled separately below.
-  --
+  value = value:gsub('&#[xX]([%x]+);', function(digits)
+    return numeric_entity(digits, 16)
+  end)
+  value = value:gsub('&#(%d+);', function(digits)
+    return numeric_entity(digits, 10)
+  end)
+
+  -- Decode ampersand last to avoid recursively decoding values such as
+  -- &amp;#65; into "A" during a single XML entity-decoding pass.
   value = value:gsub('&quot;', '"')
   value = value:gsub('&apos;', "'")
   value = value:gsub('&lt;', '<')
   value = value:gsub('&gt;', '>')
   value = value:gsub('&amp;', '&')
-
-  --
-  -- Decimal numeric character references.
-  --
-  value = value:gsub(
-    '&#(%d+);',
-    function(number)
-      local codepoint = tonumber(number)
-
-      if
-        codepoint == nil
-        or codepoint < 0
-        or codepoint > 0x10FFFF
-        or (
-          codepoint >= 0xD800
-          and codepoint <= 0xDFFF
-        )
-      then
-        return ''
-      end
-
-      local ok, character = pcall(
-        utf8.char,
-        codepoint
-      )
-
-      if
-        not ok
-        or type(character) ~= 'string'
-      then
-        return ''
-      end
-
-      return character
-    end
-  )
-
-  --
-  -- Hexadecimal numeric character references.
-  --
-  value = value:gsub(
-    '&#[xX]([%x]+);',
-    function(number)
-      local codepoint = tonumber(number, 16)
-
-      if
-        codepoint == nil
-        or codepoint < 0
-        or codepoint > 0x10FFFF
-        or (
-          codepoint >= 0xD800
-          and codepoint <= 0xDFFF
-        )
-      then
-        return ''
-      end
-
-      local ok, character = pcall(
-        utf8.char,
-        codepoint
-      )
-
-      if
-        not ok
-        or type(character) ~= 'string'
-      then
-        return ''
-      end
-
-      return character
-    end
-  )
 
   return value
 end
@@ -224,9 +162,7 @@ local function normalize_message(value)
   value = value:gsub('\r', '\n')
 
   if #value > MESSAGE_LENGTH_MAX then
-    value =
-      value:sub(1, MESSAGE_LENGTH_MAX)
-      .. '\n[message truncated]'
+    value = value:sub(1, MESSAGE_LENGTH_MAX) .. '\n[message truncated]'
   end
 
   return value
@@ -245,10 +181,7 @@ local function attribute(attributes, name)
   -- tiny and stable Checkstyle document and each diagnostic is represented by
   -- a self-contained <error ... /> element.
   --
-  local pattern =
-    '%f[%w]'
-    .. name
-    .. '%s*=%s*"([^"]*)"'
+  local pattern = '%f[%w]' .. name .. '%s*=%s*"([^"]*)"'
 
   local value = attributes:match(pattern)
 
@@ -260,6 +193,23 @@ local function attribute(attributes, name)
 end
 
 ---@param path string
+---@return boolean
+local function is_absolute_path(path)
+  local first = path:sub(1, 1)
+  if first == '/' then
+    return true
+  end
+
+  local prefix = path:sub(1, 2)
+  if prefix == '\\\\' or prefix == '//' then
+    return true
+  end
+
+  local separator = path:sub(3, 3)
+  return first:match('%a') ~= nil and path:sub(2, 2) == ':' and (separator == '/' or separator == '\\')
+end
+
+---@param path string
 ---@param root string
 ---@return string
 local function normalize_path(path, root)
@@ -267,92 +217,54 @@ local function normalize_path(path, root)
   assert(root ~= '')
 
   if path:sub(1, 7) == 'file://' then
-    local ok, filename = pcall(
-      vim.uri_to_fname,
-      path
-    )
+    local ok, filename = pcall(vim.uri_to_fname, path)
 
-    if
-      ok
-      and type(filename) == 'string'
-      and filename ~= ''
-    then
+    if ok and type(filename) == 'string' and filename ~= '' then
       return fs.normalize(filename)
     end
   end
 
-  if fs.is_absolute(path) then
+  if is_absolute_path(path) then
     return fs.normalize(path)
   end
 
-  return fs.normalize(
-    fs.joinpath(root, path)
-  )
+  return fs.normalize(fs.joinpath(root, path))
 end
 
 ---@param candidate string
 ---@param filename string
 ---@param root string
 ---@return boolean
-local function belongs_to_buffer(
-  candidate,
-  filename,
-  root
-)
+local function belongs_to_buffer(candidate, filename, root)
   assert(candidate ~= '')
   assert(filename ~= '')
   assert(root ~= '')
 
-  return normalize_path(
-    candidate,
-    root
-  ) == filename
+  return normalize_path(candidate, root) == filename
 end
 
 ---@param attributes string
 ---@param file string
 ---@return RedoclyCheckstyleEntry?
-local function checkstyle_entry(
-  attributes,
-  file
-)
+local function checkstyle_entry(attributes, file)
   assert(file ~= '')
 
-  local message =
-    attribute(attributes, 'message')
+  local message = attribute(attributes, 'message')
 
-  if
-    message == nil
-    or message == ''
-  then
+  if message == nil or message == '' then
     return nil
   end
 
-  local source =
-    attribute(attributes, 'source')
+  local source = attribute(attributes, 'source')
 
-  local level =
-    attribute(attributes, 'severity')
-    or 'warning'
+  local level = attribute(attributes, 'severity') or 'warning'
 
   return {
     filename = file,
 
-    line = max(
-      integer(
-        attribute(attributes, 'line'),
-        1
-      ),
-      1
-    ),
+    line = max(integer(attribute(attributes, 'line'), 1), 1),
 
-    column = max(
-      integer(
-        attribute(attributes, 'column'),
-        1
-      ),
-      1
-    ),
+    column = max(integer(attribute(attributes, 'column'), 1), 1),
 
     severity = level,
     message = normalize_message(message),
@@ -363,19 +275,9 @@ end
 ---@param entry RedoclyCheckstyleEntry
 ---@param filename string
 ---@param root string
----@return vim.Diagnostic?
-local function diagnostic_from_entry(
-  entry,
-  filename,
-  root
-)
-  if
-    not belongs_to_buffer(
-      entry.filename,
-      filename,
-      root
-    )
-  then
+---@return vim.Diagnostic.Set?
+local function diagnostic_from_entry(entry, filename, root)
+  if not belongs_to_buffer(entry.filename, filename, root) then
     return nil
   end
 
@@ -383,22 +285,13 @@ local function diagnostic_from_entry(
   -- Checkstyle coordinates are one-based.
   -- Neovim diagnostic coordinates are zero-based.
   --
-  local lnum = max(
-    entry.line - 1,
-    0
-  )
+  local lnum = max(entry.line - 1, 0)
 
-  local col = max(
-    entry.column - 1,
-    0
-  )
+  local col = max(entry.column - 1, 0)
 
   local code = entry.source
 
-  if
-    type(code) ~= 'string'
-    or code == ''
-  then
+  if type(code) ~= 'string' or code == '' then
     code = nil
   end
 
@@ -416,9 +309,7 @@ local function diagnostic_from_entry(
 
     message = entry.message,
 
-    severity = severity(
-      entry.severity
-    ),
+    severity = severity(entry.severity),
 
     source = 'redocly',
     code = code,
@@ -426,6 +317,23 @@ local function diagnostic_from_entry(
     user_data = {
       rule = code,
       severity = entry.severity,
+    },
+  }
+end
+
+---@param message string
+---@return vim.Diagnostic.Set[]
+local function parser_diagnostic(message)
+  return {
+    {
+      lnum = 0,
+      end_lnum = 0,
+      col = 0,
+      end_col = 1,
+      message = normalize_message(message),
+      severity = ERROR,
+      source = 'redocly',
+      code = 'parser',
     },
   }
 end
@@ -438,26 +346,28 @@ local function parse(output, context)
     return {}
   end
 
-  assert(
-    type(context) == 'table',
-    'redocly parser requires a LintContext'
-  )
+  assert(type(context) == 'table', 'redocly parser requires a LintContext')
 
   ---@cast context LintContext
 
   assert(context.filename ~= '')
   assert(context.root ~= '')
 
-  assert(
-    #output <= OUTPUT_LENGTH_MAX,
-    'redocly output exceeded maximum size'
-  )
+  if #output > OUTPUT_LENGTH_MAX then
+    return parser_diagnostic(('Redocly output exceeded the %d-byte parser limit'):format(OUTPUT_LENGTH_MAX))
+  end
 
-  local filename =
-    fs.normalize(context.filename)
+  if not output:find('<checkstyle', 1, true) then
+    return parser_diagnostic('Redocly returned non-Checkstyle output:\n' .. output)
+  end
 
-  local root =
-    fs.normalize(context.root)
+  if not output:find('</checkstyle>', 1, true) then
+    return parser_diagnostic('Redocly returned an incomplete Checkstyle document')
+  end
+
+  local filename = fs.normalize(context.filename)
+
+  local root = fs.normalize(context.root)
 
   ---@type vim.Diagnostic.Set[]
   local diagnostics = {}
@@ -473,53 +383,33 @@ local function parse(output, context)
   -- belonging to a referenced document from being incorrectly attributed to
   -- the current buffer.
   --
-  for file_attributes, body in output:gmatch(
-    '<file%s+([^>]-)>(.-)</file>'
-  ) do
+  for file_attributes, body in output:gmatch('<file%s+([^>]-)>(.-)</file>') do
     if #diagnostics >= DIAGNOSTICS_MAX then
       break
     end
 
-    local file =
-      attribute(file_attributes, 'name')
+    local file = attribute(file_attributes, 'name')
 
-    if
-      file ~= nil
-      and file ~= ''
-    then
-      for error_attributes in body:gmatch(
-        '<error%s+([^>]-)/>'
-      ) do
+    if file ~= nil and file ~= '' then
+      for error_attributes in body:gmatch('<error%s+([^>]-)/>') do
         if #diagnostics >= DIAGNOSTICS_MAX then
           break
         end
 
-        local raw =
-          checkstyle_entry(
-            error_attributes,
-            file
-          )
+        local raw = checkstyle_entry(error_attributes, file)
 
         if raw ~= nil then
-          local entry =
-            diagnostic_from_entry(
-              raw,
-              filename,
-              root
-            )
+          local entry = diagnostic_from_entry(raw, filename, root)
 
           if entry ~= nil then
-            diagnostics[#diagnostics + 1] =
-              entry
+            diagnostics[#diagnostics + 1] = entry
           end
         end
       end
     end
   end
 
-  assert(
-    #diagnostics <= DIAGNOSTICS_MAX
-  )
+  assert(#diagnostics <= DIAGNOSTICS_MAX)
 
   return diagnostics
 end

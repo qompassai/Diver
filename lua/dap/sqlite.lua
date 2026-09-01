@@ -33,28 +33,28 @@ local uv = vim.uv
 
 local M = {}
 
-local SOURCE = "sqlite-dap"
+local SOURCE = 'sqlite-dap'
 
 ---@type string[]
 local ROOT_MARKERS = {
-  "sqlite3.c",
-  "sqlite3.h",
-  "Makefile",
-  "CMakeLists.txt",
-  "meson.build",
-  "database",
-  "db",
-  "migrations",
-  "schema",
-  ".git",
+  'sqlite3.c',
+  'sqlite3.h',
+  'Makefile',
+  'CMakeLists.txt',
+  'meson.build',
+  'database',
+  'db',
+  'migrations',
+  'schema',
+  '.git',
 }
 
 ---@type string[]
 local DATABASE_EXTENSIONS = {
-  ".db",
-  ".db3",
-  ".sqlite",
-  ".sqlite3",
+  '.db',
+  '.db3',
+  '.sqlite',
+  '.sqlite3',
 }
 
 ---@class SQLiteDapState
@@ -64,7 +64,7 @@ local DATABASE_EXTENSIONS = {
 ---@field root string?
 ---@field sqlite3 string?
 local state = {
-  adapter = "lldb",
+  adapter = 'lldb',
   database = nil,
   executable = nil,
   root = nil,
@@ -74,20 +74,13 @@ local state = {
 ---@param message string
 ---@param level? integer
 local function notify(message, level)
-  vim.notify(
-    ("[%s] %s"):format(
-      SOURCE,
-      message
-    ),
-    level or levels.INFO
-  )
+  vim.notify(('[%s] %s'):format(SOURCE, message), level or levels.INFO)
 end
 
 ---@param value unknown
 ---@return boolean
 local function nonempty_string(value)
-  return type(value) == "string"
-    and value ~= ""
+  return type(value) == 'string' and value ~= ''
 end
 
 ---@param path string
@@ -99,8 +92,7 @@ local function is_file(path)
 
   local stat = uv.fs_stat(path)
 
-  return stat ~= nil
-    and stat.type == "file"
+  return stat ~= nil and stat.type == 'file'
 end
 
 ---@param path string
@@ -112,30 +104,23 @@ local function is_directory(path)
 
   local stat = uv.fs_stat(path)
 
-  return stat ~= nil
-    and stat.type == "directory"
+  return stat ~= nil and stat.type == 'directory'
 end
 
 ---@param path string
 ---@return boolean
 local function executable(path)
-  return nonempty_string(path)
-    and fn.executable(path) == 1
+  return nonempty_string(path) and fn.executable(path) == 1
 end
 
 ---@param path string
 ---@return string
 local function normalize(path)
-  if path == "" then
-    return ""
+  if path == '' then
+    return ''
   end
 
-  return fs.normalize(
-    fn.fnamemodify(
-      path,
-      ":p"
-    )
-  )
+  return fs.normalize(fn.fnamemodify(path, ':p'))
 end
 
 ---@param command string
@@ -153,18 +138,16 @@ end
 ---@param bufnr? integer
 ---@return string
 local function filename(bufnr)
-  bufnr = bufnr
-    or api.nvim_get_current_buf()
+  bufnr = bufnr or api.nvim_get_current_buf()
 
   if not api.nvim_buf_is_valid(bufnr) then
-    return ""
+    return ''
   end
 
-  local name =
-    api.nvim_buf_get_name(bufnr)
+  local name = api.nvim_buf_get_name(bufnr)
 
-  if name == "" then
-    return ""
+  if name == '' then
+    return ''
   end
 
   return normalize(name)
@@ -173,39 +156,25 @@ end
 ---@param bufnr? integer
 ---@return string
 local function project_root(bufnr)
-  bufnr = bufnr
-    or api.nvim_get_current_buf()
+  bufnr = bufnr or api.nvim_get_current_buf()
 
   local current = filename(bufnr)
 
-  if current ~= "" then
-    local detected = fs.root(
-      current,
-      ROOT_MARKERS
-    )
+  if current ~= '' then
+    local detected = fs.root(current, ROOT_MARKERS)
 
-    if
-      type(detected) == "string"
-      and detected ~= ""
-    then
-      return fs.normalize(
-        detected
-      )
+    if type(detected) == 'string' and detected ~= '' then
+      return fs.normalize(detected)
     end
 
     local parent = fs.dirname(current)
 
-    if
-      type(parent) == "string"
-      and parent ~= ""
-    then
+    if type(parent) == 'string' and parent ~= '' then
       return fs.normalize(parent)
     end
   end
 
-  return fs.normalize(
-    fn.getcwd()
-  )
+  return fs.normalize(fn.getcwd())
 end
 
 ---@param command string[]
@@ -213,13 +182,12 @@ end
 ---@return vim.SystemCompleted?
 local function system(command, cwd)
   local ok, result = pcall(function()
-    return vim.system(
-      command,
-      {
+    return vim
+      .system(command, {
         cwd = cwd,
         text = true,
-      }
-    ):wait()
+      })
+      :wait()
   end)
 
   if not ok then
@@ -233,8 +201,7 @@ end
 ---@param suffix string
 ---@return boolean
 local function ends_with(value, suffix)
-  return #value >= #suffix
-    and value:sub(-#suffix) == suffix
+  return #value >= #suffix and value:sub(-#suffix) == suffix
 end
 
 ---@param path string
@@ -242,9 +209,7 @@ end
 local function is_database_filename(path)
   local lower = path:lower()
 
-  for _, extension in ipairs(
-    DATABASE_EXTENSIONS
-  ) do
+  for _, extension in ipairs(DATABASE_EXTENSIONS) do
     if ends_with(lower, extension) then
       return true
     end
@@ -256,43 +221,20 @@ end
 ---@param root string
 ---@param depth integer
 ---@param result string[]
-local function collect_databases(
-  root,
-  depth,
-  result
-)
-  if
-    depth > 3
-    or not is_directory(root)
-  then
+local function collect_databases(root, depth, result)
+  if depth > 3 or not is_directory(root) then
     return
   end
 
   for name, kind in fs.dir(root) do
-    local path = fs.joinpath(
-      root,
-      name
-    )
+    local path = fs.joinpath(root, name)
 
-    if kind == "directory" then
-      if
-        name ~= ".git"
-        and name ~= "node_modules"
-        and name ~= "target"
-        and name ~= "build"
-      then
-        collect_databases(
-          path,
-          depth + 1,
-          result
-        )
+    if kind == 'directory' then
+      if name ~= '.git' and name ~= 'node_modules' and name ~= 'target' and name ~= 'build' then
+        collect_databases(path, depth + 1, result)
       end
-    elseif
-      kind == "file"
-      and is_database_filename(name)
-    then
-      result[#result + 1] =
-        fs.normalize(path)
+    elseif kind == 'file' and is_database_filename(name) then
+      result[#result + 1] = fs.normalize(path)
     end
   end
 end
@@ -302,11 +244,7 @@ local function database_candidates()
   ---@type string[]
   local result = {}
 
-  collect_databases(
-    project_root(),
-    0,
-    result
-  )
+  collect_databases(project_root(), 0, result)
 
   table.sort(result)
 
@@ -315,20 +253,14 @@ end
 
 ---@return string?
 local function resolve_sqlite3()
-  if
-    state.sqlite3 ~= nil
-    and executable(state.sqlite3)
-  then
+  if state.sqlite3 ~= nil and executable(state.sqlite3) then
     return state.sqlite3
   end
 
-  local configured =
-    vim.env.NVIM_SQLITE_EXECUTABLE
+  local configured = vim.env.NVIM_SQLITE_EXECUTABLE
 
   if nonempty_string(configured) then
-    local candidate = normalize(
-      fn.expand(configured)
-    )
+    local candidate = normalize(fn.expand(configured))
 
     if executable(candidate) then
       state.sqlite3 = candidate
@@ -336,16 +268,10 @@ local function resolve_sqlite3()
       return candidate
     end
 
-    notify(
-      ("NVIM_SQLITE_EXECUTABLE is not executable: %s"):format(
-        candidate
-      ),
-      levels.WARN
-    )
+    notify(('NVIM_SQLITE_EXECUTABLE is not executable: %s'):format(candidate), levels.WARN)
   end
 
-  local candidate =
-    executable_path("sqlite3")
+  local candidate = executable_path('sqlite3')
 
   if candidate ~= nil then
     state.sqlite3 = candidate
@@ -358,20 +284,14 @@ end
 
 ---@return string?
 local function resolve_database()
-  if
-    state.database ~= nil
-    and is_file(state.database)
-  then
+  if state.database ~= nil and is_file(state.database) then
     return state.database
   end
 
-  local configured =
-    vim.env.NVIM_SQLITE_DATABASE
+  local configured = vim.env.NVIM_SQLITE_DATABASE
 
   if nonempty_string(configured) then
-    local candidate = normalize(
-      fn.expand(configured)
-    )
+    local candidate = normalize(fn.expand(configured))
 
     if is_file(candidate) then
       state.database = candidate
@@ -379,16 +299,10 @@ local function resolve_database()
       return candidate
     end
 
-    notify(
-      ("NVIM_SQLITE_DATABASE does not exist: %s"):format(
-        candidate
-      ),
-      levels.WARN
-    )
+    notify(('NVIM_SQLITE_DATABASE does not exist: %s'):format(candidate), levels.WARN)
   end
 
-  local candidates =
-    database_candidates()
+  local candidates = database_candidates()
 
   if #candidates == 1 then
     state.database = candidates[1]
@@ -401,42 +315,32 @@ end
 
 ---@return string?
 local function resolve_lldb_dap()
-  local configured =
-    vim.env.NVIM_SQLITE_LLDB_DAP
-      or vim.env.NVIM_LLDB_DAP
+  local configured = vim.env.NVIM_SQLITE_LLDB_DAP or vim.env.NVIM_LLDB_DAP
 
   if nonempty_string(configured) then
-    local candidate = normalize(
-      fn.expand(configured)
-    )
+    local candidate = normalize(fn.expand(configured))
 
     if executable(candidate) then
       return candidate
     end
   end
 
-  return executable_path(
-    "lldb-dap"
-  )
+  return executable_path('lldb-dap')
 end
 
 ---@return string?
 local function resolve_gdb()
-  local configured =
-    vim.env.NVIM_SQLITE_GDB_DAP
-      or vim.env.NVIM_GDB_DAP
+  local configured = vim.env.NVIM_SQLITE_GDB_DAP or vim.env.NVIM_GDB_DAP
 
   if nonempty_string(configured) then
-    local candidate = normalize(
-      fn.expand(configured)
-    )
+    local candidate = normalize(fn.expand(configured))
 
     if executable(candidate) then
       return candidate
     end
   end
 
-  return executable_path("gdb")
+  return executable_path('gdb')
 end
 
 ---@return boolean
@@ -449,45 +353,38 @@ local function gdb_supports_dap()
 
   local result = system({
     gdb,
-    "--quiet",
-    "--batch",
-    "-ex",
-    "python import sys; print(sys.version_info[0])",
+    '--quiet',
+    '--batch',
+    '-ex',
+    'python import sys; print(sys.version_info[0])',
   })
 
-  return result ~= nil
-    and result.code == 0
+  return result ~= nil and result.code == 0
 end
 
 ---@return string
 local function active_adapter_type()
-  if
-    state.adapter == "lldb"
-    and resolve_lldb_dap() ~= nil
-  then
-    return "sqlite-lldb"
+  if state.adapter == 'lldb' and resolve_lldb_dap() ~= nil then
+    return 'sqlite-lldb'
   end
 
-  if
-    state.adapter == "gdb"
-    and gdb_supports_dap()
-  then
-    return "sqlite-gdb"
+  if state.adapter == 'gdb' and gdb_supports_dap() then
+    return 'sqlite-gdb'
   end
 
   if resolve_lldb_dap() ~= nil then
-    state.adapter = "lldb"
+    state.adapter = 'lldb'
 
-    return "sqlite-lldb"
+    return 'sqlite-lldb'
   end
 
   if gdb_supports_dap() then
-    state.adapter = "gdb"
+    state.adapter = 'gdb'
 
-    return "sqlite-gdb"
+    return 'sqlite-gdb'
   end
 
-  return "sqlite-lldb"
+  return 'sqlite-lldb'
 end
 
 ---@return string?
@@ -500,25 +397,20 @@ local function sqlite_version()
 
   local result = system({
     sqlite,
-    "--version",
+    '--version',
   })
 
-  if
-    result == nil
-    or result.code ~= 0
-  then
+  if result == nil or result.code ~= 0 then
     return nil
   end
 
-  local value = vim.trim(
-    result.stdout or ""
-  )
+  local value = vim.trim(result.stdout or '')
 
-  if value == "" then
+  if value == '' then
     return nil
   end
 
-  return value:match("[^\r\n]+")
+  return value:match('[^\r\n]+')
 end
 
 ---@return string[]
@@ -526,38 +418,29 @@ local function compile_options()
   local sqlite = resolve_sqlite3()
   local database = resolve_database()
 
-  if
-    sqlite == nil
-    or database == nil
-  then
+  if sqlite == nil or database == nil then
     return {}
   end
 
   local result = system({
     sqlite,
-    "-batch",
+    '-batch',
     database,
-    "PRAGMA compile_options;",
+    'PRAGMA compile_options;',
   })
 
-  if
-    result == nil
-    or result.code ~= 0
-  then
+  if result == nil or result.code ~= 0 then
     return {}
   end
 
   ---@type string[]
   local options = {}
 
-  for line in (
-    result.stdout or ""
-  ):gmatch("[^\r\n]+") do
+  for line in (result.stdout or ''):gmatch('[^\r\n]+') do
     local value = vim.trim(line)
 
-    if value ~= "" then
-      options[#options + 1] =
-        value
+    if value ~= '' then
+      options[#options + 1] = value
     end
   end
 
@@ -567,9 +450,7 @@ end
 ---@param option string
 ---@return boolean
 local function has_compile_option(option)
-  for _, value in ipairs(
-    compile_options()
-  ) do
+  for _, value in ipairs(compile_options()) do
     if value == option then
       return true
     end
@@ -580,23 +461,17 @@ end
 
 ---@return boolean
 local function has_scanstatus()
-  return has_compile_option(
-    "ENABLE_STMT_SCANSTATUS"
-  )
+  return has_compile_option('ENABLE_STMT_SCANSTATUS')
 end
 
 ---@return boolean
 local function has_sqlite_debug()
-  return has_compile_option(
-    "DEBUG"
-  )
+  return has_compile_option('DEBUG')
 end
 
 ---@return boolean
 local function has_bytecode_vtab()
-  return has_compile_option(
-    "ENABLE_BYTECODE_VTAB"
-  )
+  return has_compile_option('ENABLE_BYTECODE_VTAB')
 end
 
 ---@return string
@@ -610,14 +485,12 @@ end
 
 ---@return string
 local function database_program()
-  return resolve_sqlite3()
-    or "sqlite3"
+  return resolve_sqlite3() or 'sqlite3'
 end
 
 ---@return string[]
 local function database_args()
-  local database =
-    resolve_database()
+  local database = resolve_database()
 
   if database == nil then
     return {}
@@ -630,22 +503,12 @@ end
 
 ---@return integer
 local function prompt_pid()
-  local input = fn.input(
-    "SQLite process PID: "
-  )
+  local input = fn.input('SQLite process PID: ')
 
   local pid = tonumber(input)
 
-  if
-    pid == nil
-    or pid < 1
-  then
-    notify(
-      ("invalid PID: %s"):format(
-        input
-      ),
-      levels.ERROR
-    )
+  if pid == nil or pid < 1 then
+    notify(('invalid PID: %s'):format(input), levels.ERROR)
 
     return 0
   end
@@ -655,30 +518,18 @@ end
 
 ---@return string
 local function prompt_executable()
-  local selected = fn.input(
-    "SQLite embedding executable: ",
-    state.executable
-      or project_root(),
-    "file"
-  )
+  local selected = fn.input('SQLite embedding executable: ', state.executable or project_root(), 'file')
 
-  if selected == "" then
-    return ""
+  if selected == '' then
+    return ''
   end
 
-  selected = normalize(
-    fn.expand(selected)
-  )
+  selected = normalize(fn.expand(selected))
 
   if not executable(selected) then
-    notify(
-      ("not an executable: %s"):format(
-        selected
-      ),
-      levels.ERROR
-    )
+    notify(('not an executable: %s'):format(selected), levels.ERROR)
 
-    return ""
+    return ''
   end
 
   state.executable = selected
@@ -688,11 +539,9 @@ end
 
 ---@return string[]
 local function prompt_program_args()
-  local input = fn.input(
-    "Program arguments: "
-  )
+  local input = fn.input('Program arguments: ')
 
-  if input == "" then
+  if input == '' then
     return {}
   end
 
@@ -701,22 +550,13 @@ end
 
 ---@return string
 local function buffer_text()
-  local bufnr =
-    api.nvim_get_current_buf()
+  local bufnr = api.nvim_get_current_buf()
 
   if not api.nvim_buf_is_valid(bufnr) then
-    return ""
+    return ''
   end
 
-  return table.concat(
-    api.nvim_buf_get_lines(
-      bufnr,
-      0,
-      -1,
-      false
-    ),
-    "\n"
-  )
+  return table.concat(api.nvim_buf_get_lines(bufnr, 0, -1, false), '\n')
 end
 
 ---@return string
@@ -725,24 +565,12 @@ local function current_statement()
   -- Prefer the generic SQL layer when it is available because that module
   -- contains the more complete SQL statement parser.
   --
-  local ok, sql =
-    pcall(
-      require,
-      "dap.sql"
-    )
+  local ok, sql = pcall(require, 'dap.sql')
 
-  if
-    ok
-    and type(sql) == "table"
-    and type(sql.statement) == "function"
-  then
-    local statement =
-      sql.statement()
+  if ok and type(sql) == 'table' and type(sql.statement) == 'function' then
+    local statement = sql.statement()
 
-    if
-      type(statement) == "string"
-      and statement ~= ""
-    then
+    if type(statement) == 'string' and statement ~= '' then
       return statement
     end
   end
@@ -750,153 +578,93 @@ local function current_statement()
   --
   -- Conservative standalone fallback.
   --
-  local lines =
-    api.nvim_buf_get_lines(
-      0,
-      0,
-      -1,
-      false
-    )
+  local lines = api.nvim_buf_get_lines(0, 0, -1, false)
 
-  local cursor =
-    api.nvim_win_get_cursor(0)
+  local cursor = api.nvim_win_get_cursor(0)
 
-  local line_index =
-    cursor[1]
+  local line_index = cursor[1]
 
   local start_line = line_index
   local end_line = line_index
 
   while start_line > 1 do
-    if
-      lines[start_line - 1]:find(
-        ";",
-        1,
-        true
-      ) ~= nil
-    then
+    if lines[start_line - 1]:find(';', 1, true) ~= nil then
       break
     end
 
-    start_line =
-      start_line - 1
+    start_line = start_line - 1
   end
 
   while end_line <= #lines do
-    if
-      lines[end_line]:find(
-        ";",
-        1,
-        true
-      ) ~= nil
-    then
+    if lines[end_line]:find(';', 1, true) ~= nil then
       break
     end
 
-    end_line =
-      end_line + 1
+    end_line = end_line + 1
   end
 
   if end_line > #lines then
     end_line = #lines
   end
 
-  return vim.trim(
-    table.concat(
-      vim.list_slice(
-        lines,
-        start_line,
-        end_line
-      ),
-      "\n"
-    )
-  )
+  return vim.trim(table.concat(vim.list_slice(lines, start_line, end_line), '\n'))
 end
 
 ---@param title string
 ---@param stdout string
 ---@param stderr string
-local function show_output(
-  title,
-  stdout,
-  stderr
-)
+local function show_output(title, stdout, stderr)
   local output = stdout
 
-  if stderr ~= "" then
-    if output ~= "" then
-      output =
-        output
-        .. "\n\n--- stderr ---\n"
-        .. stderr
+  if stderr ~= '' then
+    if output ~= '' then
+      output = output .. '\n\n--- stderr ---\n' .. stderr
     else
       output = stderr
     end
   end
 
-  if output == "" then
-    output = "(no output)"
+  if output == '' then
+    output = '(no output)'
   end
 
-  vim.cmd("botright new")
+  vim.cmd('botright new')
 
-  local bufnr =
-    api.nvim_get_current_buf()
+  local bufnr = api.nvim_get_current_buf()
 
-  vim.bo[bufnr].buftype =
-    "nofile"
+  vim.bo[bufnr].buftype = 'nofile'
 
-  vim.bo[bufnr].bufhidden =
-    "wipe"
+  vim.bo[bufnr].bufhidden = 'wipe'
 
-  vim.bo[bufnr].swapfile =
-    false
+  vim.bo[bufnr].swapfile = false
 
-  vim.bo[bufnr].modifiable =
-    true
+  vim.bo[bufnr].modifiable = true
 
-  api.nvim_buf_set_name(
-    bufnr,
-    ("[SQLite: %s]"):format(
-      title
-    )
-  )
+  api.nvim_buf_set_name(bufnr, ('[SQLite: %s]'):format(title))
 
   api.nvim_buf_set_lines(
     bufnr,
     0,
     -1,
     false,
-    vim.split(
-      output,
-      "\n",
-      {
-        plain = true,
-      }
-    )
+    vim.split(output, '\n', {
+      plain = true,
+    })
   )
 
-  vim.bo[bufnr].modifiable =
-    false
+  vim.bo[bufnr].modifiable = false
 
-  vim.bo[bufnr].modified =
-    false
+  vim.bo[bufnr].modified = false
 end
 
 ---@param input string
 ---@param title string
-local function sqlite_run(
-  input,
-  title
-)
+local function sqlite_run(input, title)
   local sqlite = resolve_sqlite3()
   local database = resolve_database()
 
   if sqlite == nil then
-    notify(
-      "sqlite3 was not found",
-      levels.ERROR
-    )
+    notify('sqlite3 was not found', levels.ERROR)
 
     return
   end
@@ -904,118 +672,85 @@ local function sqlite_run(
   if database == nil then
     notify(
       table.concat({
-        "SQLite database was not resolved.",
-        "",
-        "Use :SQLiteDebugDatabase or set:",
-        "  NVIM_SQLITE_DATABASE=/path/to/database.sqlite",
-      }, "\n"),
+        'SQLite database was not resolved.',
+        '',
+        'Use :SQLiteDebugDatabase or set:',
+        '  NVIM_SQLITE_DATABASE=/path/to/database.sqlite',
+      }, '\n'),
       levels.ERROR
     )
 
     return
   end
 
-  vim.system(
-    {
-      sqlite,
-      "-batch",
-      database,
-    },
-    {
-      cwd = project_root(),
+  vim.system({
+    sqlite,
+    '-batch',
+    database,
+  }, {
+    cwd = project_root(),
 
-      stdin = table.concat({
-        ".bail on",
-        ".headers on",
-        ".mode box",
-        input,
-        "",
-      }, "\n"),
+    stdin = table.concat({
+      '.bail on',
+      '.headers on',
+      '.mode box',
+      input,
+      '',
+    }, '\n'),
 
-      text = true,
-    },
-    function(result)
-      vim.schedule(function()
-        show_output(
-          title,
-          result.stdout or "",
-          result.stderr or ""
-        )
+    text = true,
+  }, function(result)
+    vim.schedule(function()
+      show_output(title, result.stdout or '', result.stderr or '')
 
-        if result.code ~= 0 then
-          notify(
-            ("%s exited with status %d"):format(
-              title,
-              result.code
-            ),
-            levels.WARN
-          )
-        end
-      end)
-    end
-  )
+      if result.code ~= 0 then
+        notify(('%s exited with status %d'):format(title, result.code), levels.WARN)
+      end
+    end)
+  end)
 end
 
 local function query_plan()
-  local statement =
-    current_statement()
+  local statement = current_statement()
 
-  if statement == "" then
-    notify(
-      "no SQL statement found under cursor",
-      levels.WARN
-    )
+  if statement == '' then
+    notify('no SQL statement found under cursor', levels.WARN)
 
     return
   end
 
-  sqlite_run(
-    "EXPLAIN QUERY PLAN "
-      .. statement,
-    "Query Plan"
-  )
+  sqlite_run('EXPLAIN QUERY PLAN ' .. statement, 'Query Plan')
 end
 
 local function bytecode()
-  local statement =
-    current_statement()
+  local statement = current_statement()
 
-  if statement == "" then
-    notify(
-      "no SQL statement found under cursor",
-      levels.WARN
-    )
+  if statement == '' then
+    notify('no SQL statement found under cursor', levels.WARN)
 
     return
   end
 
-  sqlite_run(
-    "EXPLAIN " .. statement,
-    "VDBE Bytecode"
-  )
+  sqlite_run('EXPLAIN ' .. statement, 'VDBE Bytecode')
 end
 
 local function eqp_full()
-  local statement =
-    current_statement()
+  local statement = current_statement()
 
-  if statement == "" then
-    notify(
-      "no SQL statement found under cursor",
-      levels.WARN
-    )
+  if statement == '' then
+    notify('no SQL statement found under cursor', levels.WARN)
 
     return
   end
 
   local answer = fn.confirm(
     table.concat({
-      ".eqp full shows query-plan and VDBE information",
-      "and then executes the SQL statement.",
-      "",
-      "Continue?",
-    }, "\n"),
-    "&Execute\n&Cancel",
+      '.eqp full shows query-plan and VDBE information',
+      'and then executes the SQL statement.',
+      '',
+      'Continue?',
+    }, '\n'),
+    '&Execute\n&Cancel',
     2
   )
 
@@ -1025,35 +760,31 @@ local function eqp_full()
 
   sqlite_run(
     table.concat({
-      ".echo on",
-      ".eqp full",
+      '.echo on',
+      '.eqp full',
       statement,
-    }, "\n"),
-    "EQP Full"
+    }, '\n'),
+    'EQP Full'
   )
 end
 
 local function eqp_trace()
-  local statement =
-    current_statement()
+  local statement = current_statement()
 
-  if statement == "" then
-    notify(
-      "no SQL statement found under cursor",
-      levels.WARN
-    )
+  if statement == '' then
+    notify('no SQL statement found under cursor', levels.WARN)
 
     return
   end
 
   local answer = fn.confirm(
     table.concat({
-      ".eqp trace enables VDBE tracing and executes",
-      "the selected SQL statement.",
-      "",
-      "Continue?",
-    }, "\n"),
-    "&Trace\n&Cancel",
+      '.eqp trace enables VDBE tracing and executes',
+      'the selected SQL statement.',
+      '',
+      'Continue?',
+    }, '\n'),
+    '&Trace\n&Cancel',
     2
   )
 
@@ -1063,11 +794,11 @@ local function eqp_trace()
 
   sqlite_run(
     table.concat({
-      ".echo on",
-      ".eqp trace",
+      '.echo on',
+      '.eqp trace',
       statement,
-    }, "\n"),
-    "EQP Trace"
+    }, '\n'),
+    'EQP Trace'
   )
 end
 
@@ -1075,34 +806,26 @@ local function scanstatus()
   if not has_scanstatus() then
     notify(
       table.concat({
-        "This SQLite build does not advertise",
-        "SQLITE_ENABLE_STMT_SCANSTATUS.",
-        "",
-        "Use EXPLAIN QUERY PLAN or VDBE inspection instead.",
-      }, "\n"),
+        'This SQLite build does not advertise',
+        'SQLITE_ENABLE_STMT_SCANSTATUS.',
+        '',
+        'Use EXPLAIN QUERY PLAN or VDBE inspection instead.',
+      }, '\n'),
       levels.WARN
     )
 
     return
   end
 
-  local statement =
-    current_statement()
+  local statement = current_statement()
 
-  if statement == "" then
-    notify(
-      "no SQL statement found under cursor",
-      levels.WARN
-    )
+  if statement == '' then
+    notify('no SQL statement found under cursor', levels.WARN)
 
     return
   end
 
-  local answer = fn.confirm(
-    "Scan-status profiling executes the SQL statement. Continue?",
-    "&Profile\n&Cancel",
-    2
-  )
+  local answer = fn.confirm('Scan-status profiling executes the SQL statement. Continue?', '&Profile\n&Cancel', 2)
 
   if answer ~= 1 then
     return
@@ -1110,82 +833,55 @@ local function scanstatus()
 
   sqlite_run(
     table.concat({
-      ".scanstats on",
+      '.scanstats on',
       statement,
-    }, "\n"),
-    "Scan Status"
+    }, '\n'),
+    'Scan Status'
   )
 end
 
 local function execute_statement()
-  local statement =
-    current_statement()
+  local statement = current_statement()
 
-  if statement == "" then
-    notify(
-      "no SQL statement found under cursor",
-      levels.WARN
-    )
+  if statement == '' then
+    notify('no SQL statement found under cursor', levels.WARN)
 
     return
   end
 
-  local answer = fn.confirm(
-    "Execute the current SQLite statement?",
-    "&Execute\n&Cancel",
-    2
-  )
+  local answer = fn.confirm('Execute the current SQLite statement?', '&Execute\n&Cancel', 2)
 
   if answer ~= 1 then
     return
   end
 
-  sqlite_run(
-    statement,
-    "Execute"
-  )
+  sqlite_run(statement, 'Execute')
 end
 
 local function execute_buffer()
   local text = buffer_text()
 
-  if text == "" then
-    notify(
-      "current buffer is empty",
-      levels.WARN
-    )
+  if text == '' then
+    notify('current buffer is empty', levels.WARN)
 
     return
   end
 
-  local answer = fn.confirm(
-    "Execute the entire SQL buffer against the selected database?",
-    "&Execute\n&Cancel",
-    2
-  )
+  local answer = fn.confirm('Execute the entire SQL buffer against the selected database?', '&Execute\n&Cancel', 2)
 
   if answer ~= 1 then
     return
   end
 
-  sqlite_run(
-    text,
-    "Execute Buffer"
-  )
+  sqlite_run(text, 'Execute Buffer')
 end
 
 local function schema()
-  sqlite_run(
-    ".schema",
-    "Schema"
-  )
+  sqlite_run('.schema', 'Schema')
 end
 
 local function tables()
-  sqlite_run(
-    ".tables",
-    "Tables"
-  )
+  sqlite_run('.tables', 'Tables')
 end
 
 local function indexes()
@@ -1202,56 +898,40 @@ ORDER BY
   tbl_name,
   name;
 ]],
-    "Indexes"
+    'Indexes'
   )
 end
 
 local function database_info()
   sqlite_run(
     table.concat({
-      ".databases",
-      ".dbconfig",
-    }, "\n"),
-    "Database"
+      '.databases',
+      '.dbconfig',
+    }, '\n'),
+    'Database'
   )
 end
 
 local function integrity_check()
-  sqlite_run(
-    "PRAGMA integrity_check;",
-    "Integrity Check"
-  )
+  sqlite_run('PRAGMA integrity_check;', 'Integrity Check')
 end
 
 local function quick_check()
-  sqlite_run(
-    "PRAGMA quick_check;",
-    "Quick Check"
-  )
+  sqlite_run('PRAGMA quick_check;', 'Quick Check')
 end
 
 local function foreign_key_check()
-  sqlite_run(
-    "PRAGMA foreign_key_check;",
-    "Foreign Key Check"
-  )
+  sqlite_run('PRAGMA foreign_key_check;', 'Foreign Key Check')
 end
 
 local function optimize()
-  local answer = fn.confirm(
-    "Run PRAGMA optimize on the selected SQLite database?",
-    "&Optimize\n&Cancel",
-    2
-  )
+  local answer = fn.confirm('Run PRAGMA optimize on the selected SQLite database?', '&Optimize\n&Cancel', 2)
 
   if answer ~= 1 then
     return
   end
 
-  sqlite_run(
-    "PRAGMA optimize;",
-    "Optimize"
-  )
+  sqlite_run('PRAGMA optimize;', 'Optimize')
 end
 
 local function open_shell()
@@ -1259,92 +939,61 @@ local function open_shell()
   local database = resolve_database()
 
   if sqlite == nil then
-    notify(
-      "sqlite3 was not found",
-      levels.ERROR
-    )
+    notify('sqlite3 was not found', levels.ERROR)
 
     return
   end
 
   if database == nil then
-    notify(
-      "no SQLite database selected",
-      levels.ERROR
-    )
+    notify('no SQLite database selected', levels.ERROR)
 
     return
   end
 
-  vim.cmd("botright new")
+  vim.cmd('botright new')
 
-  local bufnr =
-    api.nvim_get_current_buf()
+  local bufnr = api.nvim_get_current_buf()
 
-  vim.bo[bufnr].bufhidden =
-    "wipe"
+  vim.bo[bufnr].bufhidden = 'wipe'
 
-  local job = fn.termopen(
-    {
-      sqlite,
-      database,
-    },
-    {
-      cwd = project_root(),
-    }
-  )
+  local job = fn.jobstart({
+    sqlite,
+    database,
+  }, {
+    cwd = project_root(),
+
+    term = true,
+  })
 
   if job <= 0 then
-    notify(
-      "failed to start sqlite3",
-      levels.ERROR
-    )
+    notify('failed to start sqlite3', levels.ERROR)
 
     return
   end
 
-  vim.cmd("startinsert")
+  vim.cmd('startinsert')
 end
 
 local function select_database()
-  local candidates =
-    database_candidates()
+  local candidates = database_candidates()
 
   if #candidates > 0 then
     local choices = {
-      "SQLite database:",
+      'SQLite database:',
     }
 
-    for index, candidate in ipairs(
-      candidates
-    ) do
-      choices[#choices + 1] =
-        ("%d. %s"):format(
-          index,
-          candidate
-        )
+    for index, candidate in ipairs(candidates) do
+      choices[#choices + 1] = ('%d. %s'):format(index, candidate)
     end
 
-    choices[#choices + 1] =
-      ("%d. Other..."):format(
-        #candidates + 1
-      )
+    choices[#choices + 1] = ('%d. Other...'):format(#candidates + 1)
 
-    local selected =
-      fn.inputlist(choices)
+    local selected = fn.inputlist(choices)
 
-    if
-      selected >= 1
-      and selected <= #candidates
-    then
-      state.database =
-        candidates[selected]
+    if selected >= 1 and selected <= #candidates then
+      state.database = candidates[selected]
 
-      notify(
-        ("SQLite database: %s"):format(
-          state.database
-        )
-      )
+      notify(('SQLite database: %s'):format(state.database))
 
       return
     end
@@ -1354,251 +1003,145 @@ local function select_database()
     end
   end
 
-  local selected = fn.input(
-    "SQLite database: ",
-    resolve_database()
-      or project_root(),
-    "file"
-  )
+  local selected = fn.input('SQLite database: ', resolve_database() or project_root(), 'file')
 
-  if selected == "" then
+  if selected == '' then
     return
   end
 
-  selected = normalize(
-    fn.expand(selected)
-  )
+  selected = normalize(fn.expand(selected))
 
   if not is_file(selected) then
-    notify(
-      ("database does not exist: %s"):format(
-        selected
-      ),
-      levels.ERROR
-    )
+    notify(('database does not exist: %s'):format(selected), levels.ERROR)
 
     return
   end
 
   state.database = selected
 
-  notify(
-    ("SQLite database: %s"):format(
-      selected
-    )
-  )
+  notify(('SQLite database: %s'):format(selected))
 end
 
 local function select_sqlite3()
-  local selected = fn.input(
-    "sqlite3 executable: ",
-    resolve_sqlite3() or "",
-    "file"
-  )
+  local selected = fn.input('sqlite3 executable: ', resolve_sqlite3() or '', 'file')
 
-  if selected == "" then
+  if selected == '' then
     return
   end
 
-  selected = normalize(
-    fn.expand(selected)
-  )
+  selected = normalize(fn.expand(selected))
 
   if not executable(selected) then
-    notify(
-      ("not executable: %s"):format(
-        selected
-      ),
-      levels.ERROR
-    )
+    notify(('not executable: %s'):format(selected), levels.ERROR)
 
     return
   end
 
   state.sqlite3 = selected
 
-  notify(
-    ("sqlite3: %s"):format(
-      selected
-    )
-  )
+  notify(('sqlite3: %s'):format(selected))
 end
 
 local function select_adapter()
   local selected = fn.inputlist({
-    "SQLite native debugger:",
-    "1. LLDB DAP",
-    "2. GDB DAP",
+    'SQLite native debugger:',
+    '1. LLDB DAP',
+    '2. GDB DAP',
   })
 
   if selected == 1 then
     if resolve_lldb_dap() == nil then
-      notify(
-        "lldb-dap is unavailable",
-        levels.ERROR
-      )
+      notify('lldb-dap is unavailable', levels.ERROR)
 
       return
     end
 
-    state.adapter = "lldb"
+    state.adapter = 'lldb'
 
-    notify(
-      "SQLite native debugger: LLDB DAP"
-    )
+    notify('SQLite native debugger: LLDB DAP')
   elseif selected == 2 then
     if not gdb_supports_dap() then
-      notify(
-        "GDB DAP is unavailable",
-        levels.ERROR
-      )
+      notify('GDB DAP is unavailable', levels.ERROR)
 
       return
     end
 
-    state.adapter = "gdb"
+    state.adapter = 'gdb'
 
-    notify(
-      "SQLite native debugger: GDB DAP"
-    )
+    notify('SQLite native debugger: GDB DAP')
   end
 end
 
 local function clear_cache()
-  state.adapter = "lldb"
+  state.adapter = 'lldb'
   state.database = nil
   state.executable = nil
   state.root = nil
   state.sqlite3 = nil
 
-  notify(
-    "SQLite debug state cleared"
-  )
+  notify('SQLite debug state cleared')
 end
 
 local function status()
-  local options =
-    compile_options()
+  local options = compile_options()
 
-  notify(
-    table.concat({
-      "root: "
-        .. project_root(),
+  notify(table.concat({
+    'root: ' .. project_root(),
 
-      "sqlite3: "
-        .. (
-          resolve_sqlite3()
-            or "not found"
-        ),
+    'sqlite3: ' .. (resolve_sqlite3() or 'not found'),
 
-      "SQLite version: "
-        .. (
-          sqlite_version()
-            or "unknown"
-        ),
+    'SQLite version: ' .. (sqlite_version() or 'unknown'),
 
-      "database: "
-        .. (
-          resolve_database()
-            or "not selected"
-        ),
+    'database: ' .. (resolve_database() or 'not selected'),
 
-      "native debugger: "
-        .. state.adapter,
+    'native debugger: ' .. state.adapter,
 
-      "lldb-dap: "
-        .. (
-          resolve_lldb_dap()
-            or "not found"
-        ),
+    'lldb-dap: ' .. (resolve_lldb_dap() or 'not found'),
 
-      "GDB DAP: "
-        .. (
-          gdb_supports_dap()
-              and "available"
-            or "unavailable"
-        ),
+    'GDB DAP: ' .. (gdb_supports_dap() and 'available' or 'unavailable'),
 
-      "SQLITE_DEBUG: "
-        .. (
-          has_sqlite_debug()
-              and "enabled"
-            or "disabled"
-        ),
+    'SQLITE_DEBUG: ' .. (has_sqlite_debug() and 'enabled' or 'disabled'),
 
-      "SQLITE_ENABLE_STMT_SCANSTATUS: "
-        .. (
-          has_scanstatus()
-              and "enabled"
-            or "disabled"
-        ),
+    'SQLITE_ENABLE_STMT_SCANSTATUS: ' .. (has_scanstatus() and 'enabled' or 'disabled'),
 
-      "SQLITE_ENABLE_BYTECODE_VTAB: "
-        .. (
-          has_bytecode_vtab()
-              and "enabled"
-            or "disabled"
-        ),
+    'SQLITE_ENABLE_BYTECODE_VTAB: ' .. (has_bytecode_vtab() and 'enabled' or 'disabled'),
 
-      "compile options: "
-        .. (
-          #options > 0
-              and tostring(#options)
-            or "unknown"
-        ),
+    'compile options: ' .. (#options > 0 and tostring(#options) or 'unknown'),
 
-      "SQL source-level DAP: none",
+    'SQL source-level DAP: none',
 
-      "native C/C++ DAP: "
-        .. (
-          resolve_lldb_dap() ~= nil
-              or gdb_supports_dap()
-                and "available"
-              or "unavailable"
-        ),
-    }, "\n")
-  )
+    'native C/C++ DAP: ' .. (resolve_lldb_dap() ~= nil or gdb_supports_dap() and 'available' or 'unavailable'),
+  }, '\n'))
 end
 
---
--- SQLite SQL is compiled into VDBE bytecode and does not expose a
--- source-level SQL debugger protocol.
---
--- These adapters therefore debug the native sqlite3 executable, SQLite
--- itself, or another application embedding libsqlite3.
---
 ---@type table<string, table>
 M.adapters = {
-  ["sqlite-lldb"] = {
-    name = "sqlite-lldb",
+  ['sqlite-lldb'] = {
+    name = 'sqlite-lldb',
 
-    type = "executable",
+    type = 'executable',
 
-    command =
-      resolve_lldb_dap()
-        or "lldb-dap",
+    command = resolve_lldb_dap() or 'lldb-dap',
 
     options = {
-      source_filetype = "c",
+      source_filetype = 'c',
     },
   },
 
-  ["sqlite-gdb"] = {
-    name = "sqlite-gdb",
+  ['sqlite-gdb'] = {
+    name = 'sqlite-gdb',
 
-    type = "executable",
+    type = 'executable',
 
-    command =
-      resolve_gdb()
-        or "gdb",
+    command = resolve_gdb() or 'gdb',
 
     args = {
-      "-q",
-      "-i=dap",
+      '-q',
+      '-i=dap',
     },
 
     options = {
-      source_filetype = "c",
+      source_filetype = 'c',
     },
   },
 }
@@ -1610,11 +1153,11 @@ local native_configurations = {
   -- SQLite's C source rather than in the .sql file.
   --
   {
-    name = "SQLite Native: sqlite3 CLI",
+    name = 'SQLite Native: sqlite3 CLI',
 
     type = active_adapter_type,
 
-    request = "launch",
+    request = 'launch',
 
     program = database_program,
 
@@ -1628,11 +1171,11 @@ local native_configurations = {
   },
 
   {
-    name = "SQLite Native: sqlite3 CLI (Stop on Entry)",
+    name = 'SQLite Native: sqlite3 CLI (Stop on Entry)',
 
     type = active_adapter_type,
 
-    request = "launch",
+    request = 'launch',
 
     program = database_program,
 
@@ -1649,11 +1192,11 @@ local native_configurations = {
   -- Debug an application that embeds SQLite.
   --
   {
-    name = "SQLite Native: Embedding Application",
+    name = 'SQLite Native: Embedding Application',
 
     type = active_adapter_type,
 
-    request = "launch",
+    request = 'launch',
 
     program = prompt_executable,
 
@@ -1667,11 +1210,11 @@ local native_configurations = {
   },
 
   {
-    name = "SQLite Native: Attach PID",
+    name = 'SQLite Native: Attach PID',
 
     type = active_adapter_type,
 
-    request = "attach",
+    request = 'attach',
 
     pid = prompt_pid,
   },
@@ -1695,7 +1238,7 @@ M.commands = {
       select_adapter()
     end,
 
-    desc = "Select SQLite native debugger",
+    desc = 'Select SQLite native debugger',
   },
 
   SQLiteDebugBytecode = {
@@ -1703,7 +1246,7 @@ M.commands = {
       bytecode()
     end,
 
-    desc = "Show SQLite VDBE bytecode",
+    desc = 'Show SQLite VDBE bytecode',
   },
 
   SQLiteDebugClear = {
@@ -1711,7 +1254,7 @@ M.commands = {
       clear_cache()
     end,
 
-    desc = "Clear SQLite debug state",
+    desc = 'Clear SQLite debug state',
   },
 
   SQLiteDebugDatabase = {
@@ -1719,7 +1262,7 @@ M.commands = {
       select_database()
     end,
 
-    desc = "Select SQLite database",
+    desc = 'Select SQLite database',
   },
 
   SQLiteDebugDatabaseInfo = {
@@ -1727,7 +1270,7 @@ M.commands = {
       database_info()
     end,
 
-    desc = "Show SQLite database configuration",
+    desc = 'Show SQLite database configuration',
   },
 
   SQLiteDebugEQPFull = {
@@ -1735,7 +1278,7 @@ M.commands = {
       eqp_full()
     end,
 
-    desc = "Run SQLite .eqp full",
+    desc = 'Run SQLite .eqp full',
   },
 
   SQLiteDebugEQPTrace = {
@@ -1743,7 +1286,7 @@ M.commands = {
       eqp_trace()
     end,
 
-    desc = "Run SQLite .eqp trace",
+    desc = 'Run SQLite .eqp trace',
   },
 
   SQLiteDebugExecute = {
@@ -1751,7 +1294,7 @@ M.commands = {
       execute_statement()
     end,
 
-    desc = "Execute SQLite statement under cursor",
+    desc = 'Execute SQLite statement under cursor',
   },
 
   SQLiteDebugExecuteBuffer = {
@@ -1759,7 +1302,7 @@ M.commands = {
       execute_buffer()
     end,
 
-    desc = "Execute current SQL buffer",
+    desc = 'Execute current SQL buffer',
   },
 
   SQLiteDebugForeignKeys = {
@@ -1767,7 +1310,7 @@ M.commands = {
       foreign_key_check()
     end,
 
-    desc = "Run SQLite foreign key check",
+    desc = 'Run SQLite foreign key check',
   },
 
   SQLiteDebugIndexes = {
@@ -1775,7 +1318,7 @@ M.commands = {
       indexes()
     end,
 
-    desc = "Show SQLite indexes",
+    desc = 'Show SQLite indexes',
   },
 
   SQLiteDebugIntegrity = {
@@ -1783,7 +1326,7 @@ M.commands = {
       integrity_check()
     end,
 
-    desc = "Run SQLite integrity check",
+    desc = 'Run SQLite integrity check',
   },
 
   SQLiteDebugOptimize = {
@@ -1791,7 +1334,7 @@ M.commands = {
       optimize()
     end,
 
-    desc = "Run PRAGMA optimize",
+    desc = 'Run PRAGMA optimize',
   },
 
   SQLiteDebugPlan = {
@@ -1799,7 +1342,7 @@ M.commands = {
       query_plan()
     end,
 
-    desc = "Show SQLite query plan",
+    desc = 'Show SQLite query plan',
   },
 
   SQLiteDebugQuickCheck = {
@@ -1807,7 +1350,7 @@ M.commands = {
       quick_check()
     end,
 
-    desc = "Run SQLite quick check",
+    desc = 'Run SQLite quick check',
   },
 
   SQLiteDebugScanStatus = {
@@ -1815,7 +1358,7 @@ M.commands = {
       scanstatus()
     end,
 
-    desc = "Profile SQLite statement with scanstatus",
+    desc = 'Profile SQLite statement with scanstatus',
   },
 
   SQLiteDebugSchema = {
@@ -1823,7 +1366,7 @@ M.commands = {
       schema()
     end,
 
-    desc = "Show SQLite schema",
+    desc = 'Show SQLite schema',
   },
 
   SQLiteDebugShell = {
@@ -1831,7 +1374,7 @@ M.commands = {
       open_shell()
     end,
 
-    desc = "Open SQLite shell",
+    desc = 'Open SQLite shell',
   },
 
   SQLiteDebugSQLite = {
@@ -1839,7 +1382,7 @@ M.commands = {
       select_sqlite3()
     end,
 
-    desc = "Select sqlite3 executable",
+    desc = 'Select sqlite3 executable',
   },
 
   SQLiteDebugStatus = {
@@ -1847,7 +1390,7 @@ M.commands = {
       status()
     end,
 
-    desc = "Show SQLite debug status",
+    desc = 'Show SQLite debug status',
   },
 
   SQLiteDebugTables = {
@@ -1855,118 +1398,118 @@ M.commands = {
       tables()
     end,
 
-    desc = "Show SQLite tables",
+    desc = 'Show SQLite tables',
   },
 }
 
 ---@type table<string, DebugMapping>
 M.mappings = {
   sqlite_debug_bytecode = {
-    lhs = "<leader>dQb",
+    lhs = '<leader>dQb',
 
-    mode = "n",
+    mode = 'n',
 
     rhs = function()
       bytecode()
     end,
 
-    desc = "Debug SQLite: VDBE bytecode",
+    desc = 'Debug SQLite: VDBE bytecode',
   },
 
   sqlite_debug_database = {
-    lhs = "<leader>dQd",
+    lhs = '<leader>dQd',
 
-    mode = "n",
+    mode = 'n',
 
     rhs = function()
       select_database()
     end,
 
-    desc = "Debug SQLite: Database",
+    desc = 'Debug SQLite: Database',
   },
 
   sqlite_debug_execute = {
-    lhs = "<leader>dQe",
+    lhs = '<leader>dQe',
 
-    mode = "n",
+    mode = 'n',
 
     rhs = function()
       execute_statement()
     end,
 
-    desc = "Debug SQLite: Execute",
+    desc = 'Debug SQLite: Execute',
   },
 
   sqlite_debug_full = {
-    lhs = "<leader>dQf",
+    lhs = '<leader>dQf',
 
-    mode = "n",
+    mode = 'n',
 
     rhs = function()
       eqp_full()
     end,
 
-    desc = "Debug SQLite: EQP full",
+    desc = 'Debug SQLite: EQP full',
   },
 
   sqlite_debug_plan = {
-    lhs = "<leader>dQp",
+    lhs = '<leader>dQp',
 
-    mode = "n",
+    mode = 'n',
 
     rhs = function()
       query_plan()
     end,
 
-    desc = "Debug SQLite: Query plan",
+    desc = 'Debug SQLite: Query plan',
   },
 
   sqlite_debug_scanstatus = {
-    lhs = "<leader>dQr",
+    lhs = '<leader>dQr',
 
-    mode = "n",
+    mode = 'n',
 
     rhs = function()
       scanstatus()
     end,
 
-    desc = "Debug SQLite: Scan status",
+    desc = 'Debug SQLite: Scan status',
   },
 
   sqlite_debug_shell = {
-    lhs = "<leader>dQi",
+    lhs = '<leader>dQi',
 
-    mode = "n",
+    mode = 'n',
 
     rhs = function()
       open_shell()
     end,
 
-    desc = "Debug SQLite: Shell",
+    desc = 'Debug SQLite: Shell',
   },
 
   sqlite_debug_status = {
-    lhs = "<leader>dQs",
+    lhs = '<leader>dQs',
 
-    mode = "n",
+    mode = 'n',
 
     rhs = function()
       status()
     end,
 
-    desc = "Debug SQLite: Status",
+    desc = 'Debug SQLite: Status',
   },
 
   sqlite_debug_trace = {
-    lhs = "<leader>dQt",
+    lhs = '<leader>dQt',
 
-    mode = "n",
+    mode = 'n',
 
     rhs = function()
       eqp_trace()
     end,
 
-    desc = "Debug SQLite: VDBE trace",
+    desc = 'Debug SQLite: VDBE trace',
   },
 }
 
@@ -1974,44 +1517,38 @@ M.mappings = {
 function M.setup(opts)
   opts = opts or {}
 
-  state.root =
-    nonempty_string(opts.root)
-        and fs.normalize(opts.root)
-      or project_root()
+  state.root = nonempty_string(opts.root) and fs.normalize(opts.root) or project_root()
 
   if resolve_sqlite3() == nil then
     vim.schedule(function()
       notify(
         table.concat({
-          "sqlite3 was not found.",
-          "",
-          "Install SQLite or set:",
-          "  NVIM_SQLITE_EXECUTABLE=/path/to/sqlite3",
-        }, "\n"),
+          'sqlite3 was not found.',
+          '',
+          'Install SQLite or set:',
+          '  NVIM_SQLITE_EXECUTABLE=/path/to/sqlite3',
+        }, '\n'),
         levels.WARN
       )
     end)
   end
 
-  if
-    resolve_lldb_dap() == nil
-    and not gdb_supports_dap()
-  then
+  if resolve_lldb_dap() == nil and not gdb_supports_dap() then
     vim.schedule(function()
       notify(
         table.concat({
-          "No native SQLite debugger is available.",
-          "",
-          "SQL inspection remains fully usable.",
-          "For native SQLite C debugging install either:",
-          "  lldb-dap",
-          "  gdb with DAP/Python support",
-        }, "\n"),
+          'No native SQLite debugger is available.',
+          '',
+          'SQL inspection remains fully usable.',
+          'For native SQLite C debugging install either:',
+          '  lldb-dap',
+          '  gdb with DAP/Python support',
+        }, '\n'),
         levels.DEBUG
       )
     end)
   elseif resolve_lldb_dap() == nil then
-    state.adapter = "gdb"
+    state.adapter = 'gdb'
   end
 end
 

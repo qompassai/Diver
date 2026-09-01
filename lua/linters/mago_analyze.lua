@@ -16,6 +16,8 @@
 -- limitations under the License.
 -- #################################################################
 ---@source https://github.com/carthage-software/mago
+---@source https://mago.carthage.software/main/en/tools/analyzer/command-reference
+---@source https://mago.carthage.software/main/en/fundamentals/shared-reporting-options
 
 local diagnostic = vim.diagnostic
 local fs = vim.fs
@@ -26,7 +28,15 @@ local INFO = diagnostic.severity.INFO
 local WARN = diagnostic.severity.WARN
 
 local DIAGNOSTICS_MAX = 4096
+local MESSAGE_LENGTH_MAX = 16 * 1024
 local OUTPUT_LENGTH_MAX = 16 * 1024 * 1024
+
+local floor = math.floor
+local max = math.max
+local min = math.min
+local tonumber = tonumber
+local tostring = tostring
+local type = type
 
 ---@class MagoAnalyzePosition
 ---@field column? integer
@@ -39,42 +49,84 @@ local OUTPUT_LENGTH_MAX = 16 * 1024 * 1024
 
 ---@class MagoAnalyzeViolation
 ---@field code? string
+---@field level? string
 ---@field message? string
 ---@field severity? string
 ---@field span? MagoAnalyzeSpan
 
 ---@type table<string, integer>
 local severities = {
-        error = ERROR,
-        help = HINT,
-        info = INFO,
-        note = INFO,
-        warning = WARN,
+  error = ERROR,
+  help = HINT,
+  info = INFO,
+  note = INFO,
+  warn = WARN,
+  warning = WARN,
 }
 
 ---@param value integer|number|string|nil
 ---@param fallback integer
 ---@return integer
 local function integer(value, fallback)
-        assert(fallback >= 0)
+  assert(fallback >= 0)
 
-        local parsed = tonumber(value)
+  local parsed = tonumber(value)
+  if parsed == nil then
+    return fallback
+  end
 
-        if parsed == nil then
-                return fallback
-        end
-
-        return math.floor(parsed)
+  return floor(parsed)
 end
 
 ---@param level string|nil
 ---@return integer
 local function severity(level)
-        if level == nil then
-                return WARN
-        end
+  if type(level) ~= 'string' then
+    return WARN
+  end
 
-        return severities[level:lower()] or WARN
+  return severities[level:lower()] or WARN
+end
+
+---@param message string
+---@return string
+local function normalize_message(message)
+  message = message:gsub('\r\n', '\n')
+  message = message:gsub('\r', '\n')
+
+  if #message > MESSAGE_LENGTH_MAX then
+    return message:sub(1, MESSAGE_LENGTH_MAX) .. '\n[message truncated]'
+  end
+
+  return message
+end
+
+---@param path string
+---@return boolean
+local function is_absolute_path(path)
+  local first = path:sub(1, 1)
+  if first == '/' then
+    return true
+  end
+
+  local prefix = path:sub(1, 2)
+  if prefix == '\\\\' or prefix == '//' then
+    return true
+  end
+
+  local separator = path:sub(3, 3)
+  return first:match('%a') ~= nil and path:sub(2, 2) == ':' and (separator == '/' or separator == '\\')
+end
+
+---@param path string
+---@param root string
+---@return string
+local function normalize_path(path, root)
+  if is_absolute_path(path) then
+    return fs.normalize(path)
+  end
+
+  return fs.normalize(fs.joinpath(root, path))
 end
 
 ---@param path string
@@ -82,272 +134,237 @@ end
 ---@param root string
 ---@return boolean
 local function belongs_to_buffer(path, filename, root)
-        assert(path ~= '')
-        assert(filename ~= '')
-        assert(root ~= '')
+  assert(path ~= '')
+  assert(filename ~= '')
+  assert(root ~= '')
 
-        if path == '-' or path == '<stdin>' then
-                return true
-        end
+  if path == '-' or path == '<stdin>' then
+    return true
+  end
 
-        local candidate
-
-        if fs.is_absolute(path) then
-                candidate = fs.normalize(path)
-        else
-                candidate = fs.normalize(
-                        fs.joinpath(root, path)
-                )
-        end
-
-        return candidate == filename
+  return normalize_path(path, root) == filename
 end
 
 ---@param violation MagoAnalyzeViolation
 ---@param filename string
 ---@param root string
----@return vim.Diagnostic?
-local function diagnostic_from_violation(
-        violation,
-        filename,
-        root
-)
-        local span = violation.span
+---@return vim.Diagnostic.Set?
+local function diagnostic_from_violation(violation, filename, root)
+  local span = violation.span
+  if type(span) ~= 'table' then
+    return nil
+  end
 
-        if type(span) ~= 'table' then
-                return nil
-        end
+  local path = span.file
+  if type(path) ~= 'string' or path == '' then
+    return nil
+  end
 
-        local path = span.file
+  if not belongs_to_buffer(path, filename, root) then
+    return nil
+  end
 
-        if type(path) ~= 'string' or path == '' then
-                return nil
-        end
+  local start = span.start
+  local finish = span['end']
+  local start_line = 0
+  local start_column = 0
 
-        if not belongs_to_buffer(path, filename, root) then
-                return nil
-        end
+  if type(start) == 'table' then
+    start_line = max(integer(start.line, 1) - 1, 0)
+    start_column = max(integer(start.column, 1) - 1, 0)
+  end
 
-        local start = span.start
-        local finish = span['end']
+  local end_line = start_line
+  local end_column = start_column + 1
 
-        local start_line = 0
-        local start_column = 0
+  if type(finish) == 'table' then
+    end_line = max(integer(finish.line, start_line + 1) - 1, start_line)
 
-        if type(start) == 'table' then
-                start_line = math.max(
-                        integer(start.line, 1) - 1,
-                        0
-                )
+    local minimum_end_column = end_line == start_line and start_column + 1 or 0
+    end_column = max(integer(finish.column, minimum_end_column + 1) - 1, minimum_end_column)
+  end
 
-                start_column = math.max(
-                        integer(start.column, 1) - 1,
-                        0
-                )
-        end
+  local message = violation.message
+  if type(message) ~= 'string' or message == '' then
+    message = 'Mago analyzer violation'
+  else
+    message = normalize_message(message)
+  end
 
-        local end_line = start_line
-        local end_column = start_column + 1
+  local code = violation.code
+  if type(code) ~= 'string' or code == '' then
+    code = nil
+  end
 
-        if type(finish) == 'table' then
-                end_line = math.max(
-                        integer(
-                                finish.line,
-                                start_line + 1
-                        ) - 1,
-                        start_line
-                )
+  return {
+    lnum = start_line,
+    end_lnum = end_line,
+    col = start_column,
+    end_col = end_column,
+    message = message,
+    severity = severity(violation.severity or violation.level),
+    source = 'mago_analyze',
+    code = code,
+    user_data = {
+      analyzer = 'mago',
+    },
+  }
+end
 
-                local minimum_end_column =
-                        end_line == start_line
-                                and start_column + 1
-                                or 0
+---@param value any
+---@return MagoAnalyzeViolation[]
+local function violation_list(value)
+  if type(value) ~= 'table' or not vim.islist(value) then
+    return {}
+  end
 
-                end_column = math.max(
-                        integer(
-                                finish.column,
-                                minimum_end_column + 1
-                        ) - 1,
-                        minimum_end_column
-                )
-        end
+  ---@type MagoAnalyzeViolation[]
+  local violations = {}
+  for index = 1, #value do
+    local candidate = value[index]
+    if type(candidate) == 'table' then
+      violations[#violations + 1] = candidate
+    end
+  end
 
-        local message = violation.message
-
-        if type(message) ~= 'string' or message == '' then
-                message = 'Mago analyzer violation'
-        end
-
-        local code = violation.code
-
-        if type(code) ~= 'string' or code == '' then
-                code = nil
-        end
-
-        return {
-                lnum = start_line,
-                end_lnum = end_line,
-                col = start_column,
-                end_col = end_column,
-                message = message,
-                severity = severity(violation.severity),
-                source = 'mago_analyze',
-                code = code,
-                user_data = {
-                        analyzer = 'mago',
-                },
-        }
+  return violations
 end
 
 ---@param decoded any
 ---@return MagoAnalyzeViolation[]
 local function violations_from_json(decoded)
-        if type(decoded) ~= 'table' then
-                return {}
-        end
+  if type(decoded) ~= 'table' then
+    return {}
+  end
 
-        if vim.islist(decoded) then
-                ---@cast decoded MagoAnalyzeViolation[]
-                return decoded
-        end
+  if vim.islist(decoded) then
+    return violation_list(decoded)
+  end
 
-        if type(decoded.issues) == 'table' then
-                ---@cast decoded.issues MagoAnalyzeViolation[]
-                return decoded.issues
-        end
+  local issues = decoded['issues']
+  if issues ~= nil then
+    return violation_list(issues)
+  end
 
-        if type(decoded.diagnostics) == 'table' then
-                ---@cast decoded.diagnostics MagoAnalyzeViolation[]
-                return decoded.diagnostics
-        end
+  local diagnostics = decoded['diagnostics']
+  if diagnostics ~= nil then
+    return violation_list(diagnostics)
+  end
 
-        return {}
+  return {}
+end
+
+---@param message string
+---@return vim.Diagnostic.Set[]
+local function parser_diagnostic(message)
+  return {
+    {
+      lnum = 0,
+      end_lnum = 0,
+      col = 0,
+      end_col = 1,
+      message = normalize_message(message),
+      severity = ERROR,
+      source = 'mago_analyze',
+      code = 'parser',
+    },
+  }
 end
 
 ---@param output string
 ---@param context LintContext|integer
 ---@return vim.Diagnostic.Set[]
 local function parse(output, context)
-        if output == '' then
-                return {}
-        end
+  if output == '' then
+    return {}
+  end
 
-        assert(
-                type(context) == 'table',
-                'mago_analyze parser requires a LintContext'
-        )
+  assert(type(context) == 'table', 'mago_analyze parser requires a LintContext')
+  ---@cast context LintContext
 
-        ---@cast context LintContext
+  assert(context.filename ~= '')
+  assert(context.root ~= '')
 
-        assert(context.filename ~= '')
-        assert(context.root ~= '')
+  if #output > OUTPUT_LENGTH_MAX then
+    return parser_diagnostic(('Mago output exceeded the %d-byte parser limit'):format(OUTPUT_LENGTH_MAX))
+  end
 
-        assert(
-                #output <= OUTPUT_LENGTH_MAX,
-                'mago_analyze output exceeded maximum size'
-        )
+  local ok, decoded = pcall(vim.json.decode, output)
+  if not ok then
+    return parser_diagnostic('Mago returned invalid JSON: ' .. tostring(decoded))
+  end
 
-        local ok, decoded = pcall(vim.json.decode, output)
+  local violations = violations_from_json(decoded)
+  if #violations == 0 then
+    return {}
+  end
 
-        if not ok or type(decoded) ~= 'table' then
-                return {}
-        end
+  local filename = fs.normalize(context.filename)
+  local root = fs.normalize(context.root)
 
-        local violations = violations_from_json(decoded)
+  ---@type vim.Diagnostic.Set[]
+  local diagnostics = {}
+  local violations_count = min(#violations, DIAGNOSTICS_MAX)
 
-        if #violations == 0 then
-                return {}
-        end
+  for index = 1, violations_count do
+    local entry = diagnostic_from_violation(violations[index], filename, root)
+    if entry ~= nil then
+      diagnostics[#diagnostics + 1] = entry
+    end
+  end
 
-        local filename = fs.normalize(context.filename)
-        local root = fs.normalize(context.root)
-
-        ---@type vim.Diagnostic.Set[]
-        local diagnostics = {}
-        local diagnostics_count = 0
-
-        local violations_count =
-                math.min(#violations, DIAGNOSTICS_MAX)
-
-        for index = 1, violations_count do
-                local violation = violations[index]
-
-                if type(violation) == 'table' then
-                        local entry =
-                                diagnostic_from_violation(
-                                        violation,
-                                        filename,
-                                        root
-                                )
-
-                        if entry ~= nil then
-                                diagnostics_count =
-                                        diagnostics_count + 1
-
-                                diagnostics[diagnostics_count] =
-                                        entry
-                        end
-                end
-        end
-
-        assert(diagnostics_count <= DIAGNOSTICS_MAX)
-        assert(diagnostics_count == #diagnostics)
-
-        return diagnostics
+  return diagnostics
 end
 
 ---@param context LintContext
 ---@return string[]
 local function args(context)
-        assert(context.filename ~= '')
+  assert(context.filename ~= '')
 
-        return {
-                'analyze',
+  return {
+    'analyze',
 
-                -- Analyze the live Neovim buffer rather than only
-                -- the last-saved file contents.
-                '--stdin-input',
+    '--stdin-input',
 
-                -- Machine-readable diagnostics.
-                '--reporting-format',
-                'json',
+    '--reporting-format',
+    'json',
 
-                -- Preserve the real logical project filename while
-                -- source text itself arrives through stdin.
-                context.filename,
-        }
+    context.filename,
+  }
 end
 
 return ---@type Linter
 {
-        automatic = false,
+  automatic = false,
+  cmd = 'mago',
+  args = args,
+  append_fname = false,
 
-        cmd = 'mago',
+  cwd = function(context)
+    assert(context.root ~= '')
+    return context.root
+  end,
 
-        args = args,
+  ignore_exitcode = true,
+  parser = parse,
 
-        append_fname = false,
+  root_markers = {
+    'mago.toml',
+    'mago.yaml',
+    'mago.yml',
+    'mago.json',
+    'mago.dist.toml',
+    'mago.dist.yaml',
+    'mago.dist.yml',
+    'mago.dist.json',
+    'composer.json',
+    'composer.lock',
+    'phpunit.xml',
+    'phpunit.xml.dist',
+    '.git',
+  },
 
-        cwd = function(context)
-                assert(context.root ~= '')
-
-                return context.root
-        end,
-
-        ignore_exitcode = true,
-
-        parser = parse,
-
-        root_markers = {
-                'mago.toml',
-                'composer.json',
-                'composer.lock',
-                'phpunit.xml',
-                'phpunit.xml.dist',
-                '.git',
-        },
-
-        stdin = true,
-        stream = 'stdout',
-        timeout = 30000,
+  stdin = true,
+  stream = 'stdout',
+  timeout = 30000,
 }

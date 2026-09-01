@@ -1,4 +1,4 @@
--- #################################################################
+-- -- #################################################################
 -- ~/.config/nvim/lua/dap/kotlin.lua
 -- Native Kotlin Debug Adapter Configuration
 -- SPDX-License-Identifier: Apache-2.0
@@ -25,21 +25,21 @@ local uv = vim.uv
 
 local M = {}
 
-local ADAPTER_NAME = "kotlin-jvm"
+local ADAPTER_NAME = 'kotlin-jvm'
 
 local DEFAULT_DEBUG_PORT = 5005
 
-local NOTIFY_PREFIX = "[kotlin-debug] "
+local NOTIFY_PREFIX = '[kotlin-debug] '
 
 ---@type string[]
 local ROOT_MARKERS = {
-  "build.gradle.kts",
-  "build.gradle",
-  "settings.gradle.kts",
-  "settings.gradle",
-  "gradlew",
-  "pom.xml",
-  ".git",
+  'build.gradle.kts',
+  'build.gradle',
+  'settings.gradle.kts',
+  'settings.gradle',
+  'gradlew',
+  'pom.xml',
+  '.git',
 }
 
 ---@param message string
@@ -59,23 +59,23 @@ end
 local function is_directory(path)
   local stat = uv.fs_stat(path)
 
-  return stat ~= nil and stat.type == "directory"
+  return stat ~= nil and stat.type == 'directory'
 end
 
----@param executable string
+---@param command string
 ---@return boolean
-local function executable(executable)
-  return fn.executable(executable) == 1
+local function executable(command)
+  return fn.executable(command) == 1
 end
 
 ---@param path string
 ---@return string
 local function normalize(path)
-  if path == "" then
-    return ""
+  if path == '' then
+    return ''
   end
 
-  return fs.normalize(fn.fnamemodify(path, ":p"))
+  return fs.normalize(fn.fnamemodify(path, ':p'))
 end
 
 ---@param bufnr? integer
@@ -91,13 +91,13 @@ end
 local function root(bufnr)
   local current = filename(bufnr)
 
-  if current == "" then
+  if current == '' then
     return fn.getcwd()
   end
 
   local detected = fs.root(current, ROOT_MARKERS)
 
-  if type(detected) == "string" and detected ~= "" then
+  if type(detected) == 'string' and detected ~= '' then
     return normalize(detected)
   end
 
@@ -108,7 +108,7 @@ end
 ---@param opts? vim.SystemOpts
 ---@return vim.SystemCompleted
 local function system(command, opts)
-  opts = vim.tbl_extend("force", {
+  opts = vim.tbl_extend('force', {
     text = true,
   }, opts or {})
 
@@ -125,17 +125,17 @@ local function check_result(result, context)
 
   local detail = result.stderr
 
-  if type(detail) ~= "string" or detail == "" then
+  if type(detail) ~= 'string' or detail == '' then
     detail = result.stdout
   end
 
-  detail = type(detail) == "string" and vim.trim(detail) or ""
+  detail = type(detail) == 'string' and vim.trim(detail) or ''
 
-  if detail == "" then
-    detail = ("exit status %d"):format(result.code)
+  if detail == '' then
+    detail = ('exit status %d'):format(result.code)
   end
 
-  notify(("%s failed: %s"):format(context, detail), levels.ERROR)
+  notify(('%s failed: %s'):format(context, detail), levels.ERROR)
 
   return false
 end
@@ -144,12 +144,12 @@ end
 local function java()
   local configured = env.JAVA
 
-  if type(configured) == "string" and configured ~= "" and executable(configured) then
+  if type(configured) == 'string' and configured ~= '' and executable(configured) then
     return configured
   end
 
-  if executable("java") then
-    return "java"
+  if executable('java') then
+    return 'java'
   end
 
   return nil
@@ -159,7 +159,7 @@ end
 local function java_home()
   local configured = env.JAVA_HOME
 
-  if type(configured) == "string" and configured ~= "" and is_directory(configured) then
+  if type(configured) == 'string' and configured ~= '' and is_directory(configured) then
     return normalize(configured)
   end
 
@@ -171,7 +171,7 @@ local function java_home()
 
   local resolved = fn.exepath(java_executable)
 
-  if resolved == "" then
+  if resolved == '' then
     return nil
   end
 
@@ -187,20 +187,20 @@ local function java_home()
     return nil
   end
 
-  return normalize(fs.dirname(bin) or "")
+  return normalize(fs.dirname(bin) or '')
 end
 
 ---@return string?
 local function kotlin_debug_adapter()
   local configured = env.KOTLIN_DEBUG_ADAPTER
 
-  if type(configured) == "string" and configured ~= "" and executable(configured) then
+  if type(configured) == 'string' and configured ~= '' and executable(configured) then
     return configured
   end
 
   local candidates = {
-    "kotlin-debug-adapter",
-    "kotlin-debug",
+    'kotlin-debug-adapter',
+    'kotlin-debug',
   }
 
   for index = 1, #candidates do
@@ -214,8 +214,8 @@ end
 
 ---@return string?
 local function gradle()
-  if executable("gradle") then
-    return "gradle"
+  if executable('gradle') then
+    return 'gradle'
   end
 
   return nil
@@ -225,7 +225,7 @@ end
 ---@return string?
 local function gradle_command(workspace)
   local candidates = {
-    fs.joinpath(workspace, "gradlew"),
+    fs.joinpath(workspace, 'gradlew'),
   }
 
   for index = 1, #candidates do
@@ -243,19 +243,19 @@ local function gradle_build(workspace)
   local command = gradle_command(workspace)
 
   if command == nil then
-    notify("Gradle is not available", levels.ERROR)
+    notify('Gradle is not available', levels.ERROR)
 
     return nil
   end
 
   local result = system({
     command,
-    "classes",
+    'classes',
   }, {
     cwd = workspace,
   })
 
-  if not check_result(result, "Gradle classes build") then
+  if not check_result(result, 'Gradle classes build') then
     return nil
   end
 
@@ -266,13 +266,13 @@ end
 ---@return string[]
 local function classpath_candidates(workspace)
   return {
-    fs.joinpath(workspace, "build", "classes", "java", "main"),
+    fs.joinpath(workspace, 'build', 'classes', 'java', 'main'),
 
-    fs.joinpath(workspace, "build", "classes", "kotlin", "main"),
+    fs.joinpath(workspace, 'build', 'classes', 'kotlin', 'main'),
 
-    fs.joinpath(workspace, "build", "resources", "main"),
+    fs.joinpath(workspace, 'build', 'resources', 'main'),
 
-    fs.joinpath(workspace, "out", "production"),
+    fs.joinpath(workspace, 'out', 'production'),
   }
 end
 
@@ -295,7 +295,7 @@ end
 
 ---@return string
 local function path_separator()
-  return package.config:sub(1, 1) == "\\" and ";" or ":"
+  return package.config:sub(1, 1) == '\\' and ';' or ':'
 end
 
 ---@param values string[]
@@ -306,9 +306,9 @@ end
 
 ---@return string?
 local function input_main_class()
-  local value = fn.input("Kotlin main class: ")
+  local value = fn.input('Kotlin main class: ')
 
-  if value == "" then
+  if value == '' then
     return nil
   end
 
@@ -317,16 +317,16 @@ end
 
 ---@return string[]
 local function program_arguments()
-  local input = fn.input("Program arguments: ")
+  local input = fn.input('Program arguments: ')
 
-  if input == "" then
+  if input == '' then
     return {}
   end
 
   ---@type string[]
   local args = {}
 
-  for value in input:gmatch("%S+") do
+  for value in input:gmatch('%S+') do
     args[#args + 1] = value
   end
 
@@ -335,9 +335,9 @@ end
 
 ---@return integer?
 local function input_pid()
-  local value = fn.input("JVM PID: ")
+  local value = fn.input('JVM PID: ')
 
-  if value == "" then
+  if value == '' then
     return nil
   end
 
@@ -371,11 +371,11 @@ end
 local function debug_host()
   local value = env.KOTLIN_DEBUG_HOST
 
-  if type(value) == "string" and value ~= "" then
+  if type(value) == 'string' and value ~= '' then
     return value
   end
 
-  return "127.0.0.1"
+  return '127.0.0.1'
 end
 
 ---@param workspace string
@@ -420,16 +420,16 @@ end
 ---@return string[]
 local function java_exec_args()
   return {
-    "-ea",
+    '-ea',
   }
 end
 
 M.adapter = {
-  command = kotlin_debug_adapter() or "kotlin-debug-adapter",
+  command = kotlin_debug_adapter() or 'kotlin-debug-adapter',
 
   name = ADAPTER_NAME,
 
-  type = "executable",
+  type = 'executable',
 }
 
 M.configurations = {
@@ -455,9 +455,9 @@ M.configurations = {
 
       mainClass = launch_program,
 
-      name = "Kotlin: Gradle build + launch",
+      name = 'Kotlin: Gradle build + launch',
 
-      request = "launch",
+      request = 'launch',
 
       type = ADAPTER_NAME,
     },
@@ -481,9 +481,9 @@ M.configurations = {
 
       mainClass = input_main_class,
 
-      name = "Kotlin: Launch main class",
+      name = 'Kotlin: Launch main class',
 
-      request = "launch",
+      request = 'launch',
 
       type = ADAPTER_NAME,
     },
@@ -491,21 +491,21 @@ M.configurations = {
     {
       hostName = debug_host,
 
-      name = "Kotlin: Attach JDWP",
+      name = 'Kotlin: Attach JDWP',
 
       port = debug_port,
 
-      request = "attach",
+      request = 'attach',
 
       type = ADAPTER_NAME,
     },
 
     {
-      name = "Kotlin: Attach JVM PID",
+      name = 'Kotlin: Attach JVM PID',
 
       processId = input_pid,
 
-      request = "attach",
+      request = 'attach',
 
       type = ADAPTER_NAME,
     },
@@ -513,7 +513,7 @@ M.configurations = {
 }
 
 M.filetypes = {
-  "kotlin",
+  'kotlin',
 }
 
 M.commands = {
@@ -522,11 +522,11 @@ M.commands = {
       local workspace_root = root()
 
       if gradle_build(workspace_root) ~= nil then
-        notify("Gradle classes build completed")
+        notify('Gradle classes build completed')
       end
     end,
 
-    desc = "Build Kotlin classes with Gradle",
+    desc = 'Build Kotlin classes with Gradle',
   },
 
   KotlinDebugClasspath = {
@@ -535,8 +535,8 @@ M.commands = {
 
       local value = join_classpath(project_classpath(workspace_root))
 
-      if value == "" then
-        notify("No Kotlin classpath directories found", levels.WARN)
+      if value == '' then
+        notify('No Kotlin classpath directories found', levels.WARN)
 
         return
       end
@@ -544,7 +544,7 @@ M.commands = {
       notify(value)
     end,
 
-    desc = "Show Kotlin debug classpath",
+    desc = 'Show Kotlin debug classpath',
   },
 
   KotlinDebugJavaHome = {
@@ -552,7 +552,7 @@ M.commands = {
       local value = java_home()
 
       if value == nil then
-        notify("JAVA_HOME could not be resolved", levels.WARN)
+        notify('JAVA_HOME could not be resolved', levels.WARN)
 
         return
       end
@@ -560,7 +560,7 @@ M.commands = {
       notify(value)
     end,
 
-    desc = "Show resolved Java home",
+    desc = 'Show resolved Java home',
   },
 }
 
@@ -569,13 +569,13 @@ function M.setup(_opts)
   local adapter = kotlin_debug_adapter()
 
   if adapter == nil then
-    notify("kotlin-debug-adapter is not available", levels.WARN)
+    notify('kotlin-debug-adapter is not available', levels.WARN)
   else
     M.adapter.command = adapter
   end
 
   if java() == nil then
-    notify("java is not available", levels.WARN)
+    notify('java is not available', levels.WARN)
   end
 end
 

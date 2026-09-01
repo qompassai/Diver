@@ -24,40 +24,39 @@ local api = vim.api
 local fn = vim.fn
 local fs = vim.fs
 local levels = vim.log.levels
-local uv = vim.uv
 
 local M = {}
 
-local SOURCE = "python-dap"
-local DEFAULT_ATTACH_HOST = "127.0.0.1"
+local SOURCE = 'python-dap'
+local DEFAULT_ATTACH_HOST = '127.0.0.1'
 local DEFAULT_ATTACH_PORT = 5678
 
 ---@type string[]
 local ROOT_MARKERS = {
-  "pyproject.toml",
-  "uv.lock",
-  "poetry.lock",
-  "Pipfile",
-  "requirements.txt",
-  "setup.py",
-  "setup.cfg",
-  "tox.ini",
-  ".python-version",
-  ".git",
+  'pyproject.toml',
+  'uv.lock',
+  'poetry.lock',
+  'Pipfile',
+  'requirements.txt',
+  'setup.py',
+  'setup.cfg',
+  'tox.ini',
+  '.python-version',
+  '.git',
 }
 
 ---@type string[]
 local VENV_DIRECTORIES = {
-  ".venv",
-  "venv",
-  ".env",
-  "env",
+  '.venv',
+  'venv',
+  '.env',
+  'env',
 }
 
 ---@type string[]
 local PYTHON_EXECUTABLES = {
-  "python3",
-  "python",
+  'python3',
+  'python',
 }
 
 ---@class PythonDapState
@@ -73,48 +72,29 @@ local state = {
 ---@param message string
 ---@param level? integer
 local function notify(message, level)
-  vim.notify(
-    ("[%s] %s"):format(SOURCE, message),
-    level or levels.INFO
-  )
+  vim.notify(('[%s] %s'):format(SOURCE, message), level or levels.INFO)
 end
 
 ---@param value unknown
 ---@return boolean
 local function nonempty_string(value)
-  return type(value) == "string" and value ~= ""
+  return type(value) == 'string' and value ~= ''
 end
 
 ---@param path string
 ---@return boolean
 local function executable(path)
-  return nonempty_string(path)
-    and fn.executable(path) == 1
-end
-
----@param path string
----@return boolean
-local function readable(path)
-  if not nonempty_string(path) then
-    return false
-  end
-
-  local stat = uv.fs_stat(path)
-
-  return stat ~= nil
-    and stat.type == "file"
+  return nonempty_string(path) and fn.executable(path) == 1
 end
 
 ---@param path string
 ---@return string
 local function normalize(path)
-  if path == "" then
-    return ""
+  if path == '' then
+    return ''
   end
 
-  return fs.normalize(
-    fn.fnamemodify(path, ":p")
-  )
+  return fs.normalize(fn.fnamemodify(path, ':p'))
 end
 
 ---@param bufnr? integer
@@ -123,13 +103,13 @@ local function buffer_filename(bufnr)
   bufnr = bufnr or api.nvim_get_current_buf()
 
   if not api.nvim_buf_is_valid(bufnr) then
-    return ""
+    return ''
   end
 
   local name = api.nvim_buf_get_name(bufnr)
 
-  if name == "" then
-    return ""
+  if name == '' then
+    return ''
   end
 
   return normalize(name)
@@ -142,19 +122,16 @@ local function project_root(bufnr)
 
   local filename = buffer_filename(bufnr)
 
-  if filename ~= "" then
-    local detected = fs.root(
-      filename,
-      ROOT_MARKERS
-    )
+  if filename ~= '' then
+    local detected = fs.root(filename, ROOT_MARKERS)
 
-    if type(detected) == "string" and detected ~= "" then
+    if type(detected) == 'string' and detected ~= '' then
       return fs.normalize(detected)
     end
 
     local parent = fs.dirname(filename)
 
-    if type(parent) == "string" and parent ~= "" then
+    if type(parent) == 'string' and parent ~= '' then
       return fs.normalize(parent)
     end
   end
@@ -165,23 +142,14 @@ end
 ---@param path string
 ---@return string
 local function venv_python(path)
-  return fs.joinpath(
-    path,
-    "bin",
-    "python"
-  )
+  return fs.joinpath(path, 'bin', 'python')
 end
 
 ---@param root string
 ---@return string?
 local function project_venv_python(root)
   for _, directory in ipairs(VENV_DIRECTORIES) do
-    local candidate = venv_python(
-      fs.joinpath(
-        root,
-        directory
-      )
-    )
+    local candidate = venv_python(fs.joinpath(root, directory))
 
     if executable(candidate) then
       return fs.normalize(candidate)
@@ -240,20 +208,13 @@ local function resolve_project_python(root)
   local configured = vim.env.NVIM_PYTHON_DEBUG_INTERPRETER
 
   if nonempty_string(configured) then
-    local expanded = normalize(
-      fn.expand(configured)
-    )
+    local expanded = normalize(fn.expand(configured))
 
     if executable(expanded) then
       return expanded
     end
 
-    notify(
-      ("NVIM_PYTHON_DEBUG_INTERPRETER is not executable: %s"):format(
-        expanded
-      ),
-      levels.WARN
-    )
+    notify(('NVIM_PYTHON_DEBUG_INTERPRETER is not executable: %s'):format(expanded), levels.WARN)
   end
 
   --
@@ -282,12 +243,11 @@ end
 ---@return vim.SystemCompleted?
 local function system(command)
   local ok, result = pcall(function()
-    return vim.system(
-      command,
-      {
+    return vim
+      .system(command, {
         text = true,
-      }
-    ):wait()
+      })
+      :wait()
   end)
 
   if not ok then
@@ -306,12 +266,11 @@ local function has_debugpy(python)
 
   local result = system({
     python,
-    "-c",
-    "import debugpy",
+    '-c',
+    'import debugpy',
   })
 
-  return result ~= nil
-    and result.code == 0
+  return result ~= nil and result.code == 0
 end
 
 ---@return string?
@@ -327,9 +286,7 @@ local function resolve_adapter_python()
   local configured = vim.env.NVIM_DEBUGPY_PYTHON
 
   if nonempty_string(configured) then
-    local candidate = normalize(
-      fn.expand(configured)
-    )
+    local candidate = normalize(fn.expand(configured))
 
     if executable(candidate) and has_debugpy(candidate) then
       state.adapter_interpreter = candidate
@@ -337,12 +294,7 @@ local function resolve_adapter_python()
       return candidate
     end
 
-    notify(
-      ("NVIM_DEBUGPY_PYTHON does not provide debugpy: %s"):format(
-        candidate
-      ),
-      levels.WARN
-    )
+    notify(('NVIM_DEBUGPY_PYTHON does not provide debugpy: %s'):format(candidate), levels.WARN)
   end
 
   --
@@ -363,11 +315,7 @@ local function resolve_adapter_python()
   for _, command in ipairs(PYTHON_EXECUTABLES) do
     local candidate = fn.exepath(command)
 
-    if
-      nonempty_string(candidate)
-      and executable(candidate)
-      and has_debugpy(candidate)
-    then
+    if nonempty_string(candidate) and executable(candidate) and has_debugpy(candidate) then
       candidate = fs.normalize(candidate)
 
       state.adapter_interpreter = candidate
@@ -391,27 +339,21 @@ local function adapter_python()
   -- Keep the adapter structurally valid even when debugpy is missing.
   -- setup() produces a useful warning before a session is attempted.
   --
-  return fn.exepath("python3") ~= ""
-      and fn.exepath("python3")
-    or "python3"
+  return fn.exepath('python3') ~= '' and fn.exepath('python3') or 'python3'
 end
 
 ---@return string
 local function debuggee_python()
   local root = project_root()
 
-  if
-    state.interpreter ~= nil
-    and state.root == root
-    and executable(state.interpreter)
-  then
+  if state.interpreter ~= nil and state.root == root and executable(state.interpreter) then
     return state.interpreter
   end
 
   local python = resolve_project_python(root)
 
   if python == nil then
-    return "python3"
+    return 'python3'
   end
 
   state.interpreter = python
@@ -436,18 +378,18 @@ end
 local function current_file()
   local filename = buffer_filename()
 
-  if filename ~= "" then
+  if filename ~= '' then
     return filename
   end
 
-  return "${file}"
+  return '${file}'
 end
 
 ---@return string[]
 local function prompt_args()
-  local input = fn.input("Python arguments: ")
+  local input = fn.input('Python arguments: ')
 
-  if input == "" then
+  if input == '' then
     return {}
   end
 
@@ -459,35 +401,21 @@ end
 
 ---@return string
 local function prompt_module()
-  return fn.input(
-    "Python module: ",
-    "",
-    "file"
-  )
+  return fn.input('Python module: ', '', 'file')
 end
 
 ---@return integer?
 local function prompt_port()
-  local value = fn.input(
-    "debugpy port: ",
-    tostring(DEFAULT_ATTACH_PORT)
-  )
+  local value = fn.input('debugpy port: ', tostring(DEFAULT_ATTACH_PORT))
 
-  if value == "" then
+  if value == '' then
     return nil
   end
 
   local port = tonumber(value)
 
-  if
-    port == nil
-    or port < 1
-    or port > 65535
-  then
-    notify(
-      ("invalid TCP port: %s"):format(value),
-      levels.ERROR
-    )
+  if port == nil or port < 1 or port > 65535 then
+    notify(('invalid TCP port: %s'):format(value), levels.ERROR)
 
     return nil
   end
@@ -499,31 +427,18 @@ end
 local function select_python()
   local root = project_root()
 
-  local default = resolve_project_python(root)
-    or fn.exepath("python3")
-    or ""
+  local default = resolve_project_python(root) or fn.exepath('python3') or ''
 
-  local selected = fn.input(
-    "Python interpreter: ",
-    default,
-    "file"
-  )
+  local selected = fn.input('Python interpreter: ', default, 'file')
 
-  if selected == "" then
+  if selected == '' then
     return nil
   end
 
-  selected = normalize(
-    fn.expand(selected)
-  )
+  selected = normalize(fn.expand(selected))
 
   if not executable(selected) then
-    notify(
-      ("not an executable Python interpreter: %s"):format(
-        selected
-      ),
-      levels.ERROR
-    )
+    notify(('not an executable Python interpreter: %s'):format(selected), levels.ERROR)
 
     return nil
   end
@@ -531,11 +446,7 @@ local function select_python()
   state.interpreter = selected
   state.root = root
 
-  notify(
-    ("debug interpreter: %s"):format(
-      selected
-    )
-  )
+  notify(('debug interpreter: %s'):format(selected))
 
   return selected
 end
@@ -544,7 +455,7 @@ local function clear_selected_python()
   state.interpreter = nil
   state.root = nil
 
-  notify("project interpreter selection cleared")
+  notify('project interpreter selection cleared')
 end
 
 local function show_interpreter()
@@ -552,13 +463,11 @@ local function show_interpreter()
   local debuggee = debuggee_python()
   local adapter = resolve_adapter_python()
 
-  notify(
-    table.concat({
-      "root: " .. root,
-      "debuggee: " .. debuggee,
-      "adapter: " .. (adapter or "debugpy unavailable"),
-    }, "\n")
-  )
+  notify(table.concat({
+    'root: ' .. root,
+    'debuggee: ' .. debuggee,
+    'adapter: ' .. (adapter or 'debugpy unavailable'),
+  }, '\n'))
 end
 
 local function check_health()
@@ -566,23 +475,19 @@ local function check_health()
   local adapter = resolve_adapter_python()
 
   local messages = {
-    "Python DAP",
-    "",
-    "project root: " .. project_root(),
-    "debuggee interpreter: " .. (python or "not found"),
-    "debugpy interpreter: " .. (adapter or "not found"),
+    'Python DAP',
+    '',
+    'project root: ' .. project_root(),
+    'debuggee interpreter: ' .. (python or 'not found'),
+    'debugpy interpreter: ' .. (adapter or 'not found'),
   }
 
   if adapter == nil then
-    messages[#messages + 1] = ""
-    messages[#messages + 1] =
-      "debugpy is required by the native Python DAP adapter"
+    messages[#messages + 1] = ''
+    messages[#messages + 1] = 'debugpy is required by the native Python DAP adapter'
   end
 
-  notify(
-    table.concat(messages, "\n"),
-    adapter ~= nil and levels.INFO or levels.WARN
-  )
+  notify(table.concat(messages, '\n'), adapter ~= nil and levels.INFO or levels.WARN)
 end
 
 --
@@ -596,19 +501,19 @@ end
 --
 ---@type table
 M.adapter = {
-  name = "debugpy",
+  name = 'debugpy',
 
-  type = "executable",
+  type = 'executable',
 
   command = adapter_python(),
 
   args = {
-    "-m",
-    "debugpy.adapter",
+    '-m',
+    'debugpy.adapter',
   },
 
   options = {
-    source_filetype = "python",
+    source_filetype = 'python',
   },
 }
 
@@ -616,11 +521,11 @@ M.adapter = {
 M.configurations = {
   python = {
     {
-      name = "Python: Current File",
+      name = 'Python: Current File',
 
-      type = "debugpy",
+      type = 'debugpy',
 
-      request = "launch",
+      request = 'launch',
 
       program = current_file,
 
@@ -628,7 +533,7 @@ M.configurations = {
 
       python = debuggee_python_command,
 
-      console = "integratedTerminal",
+      console = 'integratedTerminal',
 
       justMyCode = true,
 
@@ -638,11 +543,11 @@ M.configurations = {
     },
 
     {
-      name = "Python: Current File with Arguments",
+      name = 'Python: Current File with Arguments',
 
-      type = "debugpy",
+      type = 'debugpy',
 
-      request = "launch",
+      request = 'launch',
 
       program = current_file,
 
@@ -652,7 +557,7 @@ M.configurations = {
 
       args = prompt_args,
 
-      console = "integratedTerminal",
+      console = 'integratedTerminal',
 
       justMyCode = true,
 
@@ -662,11 +567,11 @@ M.configurations = {
     },
 
     {
-      name = "Python: Module",
+      name = 'Python: Module',
 
-      type = "debugpy",
+      type = 'debugpy',
 
-      request = "launch",
+      request = 'launch',
 
       module = prompt_module,
 
@@ -674,7 +579,7 @@ M.configurations = {
 
       python = debuggee_python_command,
 
-      console = "integratedTerminal",
+      console = 'integratedTerminal',
 
       justMyCode = true,
 
@@ -684,25 +589,25 @@ M.configurations = {
     },
 
     {
-      name = "Python: pytest Current File",
+      name = 'Python: pytest Current File',
 
-      type = "debugpy",
+      type = 'debugpy',
 
-      request = "launch",
+      request = 'launch',
 
-      module = "pytest",
+      module = 'pytest',
 
       args = {
         current_file,
-        "-vv",
-        "-s",
+        '-vv',
+        '-s',
       },
 
       cwd = debug_cwd,
 
       python = debuggee_python_command,
 
-      console = "integratedTerminal",
+      console = 'integratedTerminal',
 
       justMyCode = false,
 
@@ -712,26 +617,26 @@ M.configurations = {
     },
 
     {
-      name = "Python: pytest Current File - Stop First Failure",
+      name = 'Python: pytest Current File - Stop First Failure',
 
-      type = "debugpy",
+      type = 'debugpy',
 
-      request = "launch",
+      request = 'launch',
 
-      module = "pytest",
+      module = 'pytest',
 
       args = {
         current_file,
-        "-vv",
-        "-s",
-        "-x",
+        '-vv',
+        '-s',
+        '-x',
       },
 
       cwd = debug_cwd,
 
       python = debuggee_python_command,
 
-      console = "integratedTerminal",
+      console = 'integratedTerminal',
 
       justMyCode = false,
 
@@ -741,11 +646,11 @@ M.configurations = {
     },
 
     {
-      name = "Python: Attach localhost:5678",
+      name = 'Python: Attach localhost:5678',
 
-      type = "debugpy",
+      type = 'debugpy',
 
-      request = "attach",
+      request = 'attach',
 
       connect = {
         host = DEFAULT_ATTACH_HOST,
@@ -756,11 +661,11 @@ M.configurations = {
     },
 
     {
-      name = "Python: Attach localhost (Choose Port)",
+      name = 'Python: Attach localhost (Choose Port)',
 
-      type = "debugpy",
+      type = 'debugpy',
 
-      request = "attach",
+      request = 'attach',
 
       connect = {
         host = DEFAULT_ATTACH_HOST,
@@ -779,7 +684,7 @@ M.commands = {
       check_health()
     end,
 
-    desc = "Check Python debug adapter configuration",
+    desc = 'Check Python debug adapter configuration',
   },
 
   PythonDebugInterpreter = {
@@ -787,7 +692,7 @@ M.commands = {
       select_python()
     end,
 
-    desc = "Select Python debug interpreter",
+    desc = 'Select Python debug interpreter',
   },
 
   PythonDebugInterpreterClear = {
@@ -795,7 +700,7 @@ M.commands = {
       clear_selected_python()
     end,
 
-    desc = "Clear selected Python debug interpreter",
+    desc = 'Clear selected Python debug interpreter',
   },
 
   PythonDebugInterpreterShow = {
@@ -803,46 +708,46 @@ M.commands = {
       show_interpreter()
     end,
 
-    desc = "Show Python debug interpreters",
+    desc = 'Show Python debug interpreters',
   },
 }
 
 ---@type table<string, DebugMapping>
 M.mappings = {
   python_debug_check = {
-    lhs = "<leader>dPc",
+    lhs = '<leader>dPc',
 
-    mode = "n",
+    mode = 'n',
 
     rhs = function()
       check_health()
     end,
 
-    desc = "Debug Python: Check configuration",
+    desc = 'Debug Python: Check configuration',
   },
 
   python_debug_interpreter = {
-    lhs = "<leader>dPi",
+    lhs = '<leader>dPi',
 
-    mode = "n",
+    mode = 'n',
 
     rhs = function()
       select_python()
     end,
 
-    desc = "Debug Python: Select interpreter",
+    desc = 'Debug Python: Select interpreter',
   },
 
   python_debug_interpreter_show = {
-    lhs = "<leader>dPs",
+    lhs = '<leader>dPs',
 
-    mode = "n",
+    mode = 'n',
 
     rhs = function()
       show_interpreter()
     end,
 
-    desc = "Debug Python: Show interpreter",
+    desc = 'Debug Python: Show interpreter',
   },
 }
 
@@ -856,11 +761,11 @@ function M.setup(opts)
     vim.schedule(function()
       notify(
         table.concat({
-          "debugpy was not found.",
-          "",
-          "Install debugpy into a Python interpreter or set:",
-          "NVIM_DEBUGPY_PYTHON=/path/to/python",
-        }, "\n"),
+          'debugpy was not found.',
+          '',
+          'Install debugpy into a Python interpreter or set:',
+          'NVIM_DEBUGPY_PYTHON=/path/to/python',
+        }, '\n'),
         levels.WARN
       )
     end)

@@ -28,24 +28,24 @@ local uv = vim.uv
 
 local M = {}
 
-local SOURCE = "nix-dap"
+local SOURCE = 'nix-dap'
 
 ---@type string[]
 local ROOT_MARKERS = {
-  "flake.nix",
-  "flake.lock",
-  "default.nix",
-  "shell.nix",
-  "configuration.nix",
-  "home.nix",
-  ".envrc",
-  ".git",
+  'flake.nix',
+  'flake.lock',
+  'default.nix',
+  'shell.nix',
+  'configuration.nix',
+  'home.nix',
+  '.envrc',
+  '.git',
 }
 
 ---@type string[]
 local ADAPTER_EXECUTABLES = {
-  "nix-debug-adapter",
-  "dawn",
+  'nix-debug-adapter',
+  'dawn',
 }
 
 ---@class NixDapState
@@ -61,20 +61,13 @@ local state = {
 ---@param message string
 ---@param level? integer
 local function notify(message, level)
-  vim.notify(
-    ("[%s] %s"):format(
-      SOURCE,
-      message
-    ),
-    level or levels.INFO
-  )
+  vim.notify(('[%s] %s'):format(SOURCE, message), level or levels.INFO)
 end
 
 ---@param value unknown
 ---@return boolean
 local function nonempty_string(value)
-  return type(value) == "string"
-    and value ~= ""
+  return type(value) == 'string' and value ~= ''
 end
 
 ---@param path string
@@ -86,30 +79,23 @@ local function is_file(path)
 
   local stat = uv.fs_stat(path)
 
-  return stat ~= nil
-    and stat.type == "file"
+  return stat ~= nil and stat.type == 'file'
 end
 
 ---@param path string
 ---@return boolean
 local function executable(path)
-  return nonempty_string(path)
-    and fn.executable(path) == 1
+  return nonempty_string(path) and fn.executable(path) == 1
 end
 
 ---@param path string
 ---@return string
 local function normalize(path)
-  if path == "" then
-    return ""
+  if path == '' then
+    return ''
   end
 
-  return fs.normalize(
-    fn.fnamemodify(
-      path,
-      ":p"
-    )
-  )
+  return fs.normalize(fn.fnamemodify(path, ':p'))
 end
 
 ---@param command string
@@ -127,18 +113,16 @@ end
 ---@param bufnr? integer
 ---@return string
 local function filename(bufnr)
-  bufnr = bufnr
-    or api.nvim_get_current_buf()
+  bufnr = bufnr or api.nvim_get_current_buf()
 
   if not api.nvim_buf_is_valid(bufnr) then
-    return ""
+    return ''
   end
 
-  local name =
-    api.nvim_buf_get_name(bufnr)
+  local name = api.nvim_buf_get_name(bufnr)
 
-  if name == "" then
-    return ""
+  if name == '' then
+    return ''
   end
 
   return normalize(name)
@@ -147,37 +131,25 @@ end
 ---@param bufnr? integer
 ---@return string
 local function project_root(bufnr)
-  bufnr = bufnr
-    or api.nvim_get_current_buf()
+  bufnr = bufnr or api.nvim_get_current_buf()
 
   local current = filename(bufnr)
 
-  if current ~= "" then
-    local detected = fs.root(
-      current,
-      ROOT_MARKERS
-    )
+  if current ~= '' then
+    local detected = fs.root(current, ROOT_MARKERS)
 
-    if
-      type(detected) == "string"
-      and detected ~= ""
-    then
+    if type(detected) == 'string' and detected ~= '' then
       return fs.normalize(detected)
     end
 
     local parent = fs.dirname(current)
 
-    if
-      type(parent) == "string"
-      and parent ~= ""
-    then
+    if type(parent) == 'string' and parent ~= '' then
       return fs.normalize(parent)
     end
   end
 
-  return fs.normalize(
-    fn.getcwd()
-  )
+  return fs.normalize(fn.getcwd())
 end
 
 ---@param command string[]
@@ -185,13 +157,12 @@ end
 ---@return vim.SystemCompleted?
 local function system(command, cwd)
   local ok, result = pcall(function()
-    return vim.system(
-      command,
-      {
+    return vim
+      .system(command, {
         cwd = cwd,
         text = true,
-      }
-    ):wait()
+      })
+      :wait()
   end)
 
   if not ok then
@@ -203,20 +174,14 @@ end
 
 ---@return string?
 local function resolve_nix()
-  if
-    state.nix ~= nil
-    and executable(state.nix)
-  then
+  if state.nix ~= nil and executable(state.nix) then
     return state.nix
   end
 
-  local configured =
-    vim.env.NVIM_NIX_EXECUTABLE
+  local configured = vim.env.NVIM_NIX_EXECUTABLE
 
   if nonempty_string(configured) then
-    local candidate = normalize(
-      fn.expand(configured)
-    )
+    local candidate = normalize(fn.expand(configured))
 
     if executable(candidate) then
       state.nix = candidate
@@ -224,16 +189,10 @@ local function resolve_nix()
       return candidate
     end
 
-    notify(
-      ("NVIM_NIX_EXECUTABLE is not executable: %s"):format(
-        candidate
-      ),
-      levels.WARN
-    )
+    notify(('NVIM_NIX_EXECUTABLE is not executable: %s'):format(candidate), levels.WARN)
   end
 
-  local candidate =
-    executable_path("nix")
+  local candidate = executable_path('nix')
 
   if candidate ~= nil then
     state.nix = candidate
@@ -246,21 +205,14 @@ end
 
 ---@return string?
 local function resolve_adapter()
-  if
-    state.adapter ~= nil
-    and executable(state.adapter)
-  then
+  if state.adapter ~= nil and executable(state.adapter) then
     return state.adapter
   end
 
-  local configured =
-    vim.env.NVIM_DAWN_EXECUTABLE
-      or vim.env.NVIM_NIX_DAP
+  local configured = vim.env.NVIM_DAWN_EXECUTABLE or vim.env.NVIM_NIX_DAP
 
   if nonempty_string(configured) then
-    local candidate = normalize(
-      fn.expand(configured)
-    )
+    local candidate = normalize(fn.expand(configured))
 
     if executable(candidate) then
       state.adapter = candidate
@@ -268,19 +220,11 @@ local function resolve_adapter()
       return candidate
     end
 
-    notify(
-      ("configured DAWN adapter is not executable: %s"):format(
-        candidate
-      ),
-      levels.WARN
-    )
+    notify(('configured DAWN adapter is not executable: %s'):format(candidate), levels.WARN)
   end
 
-  for _, name in ipairs(
-    ADAPTER_EXECUTABLES
-  ) do
-    local candidate =
-      executable_path(name)
+  for _, name in ipairs(ADAPTER_EXECUTABLES) do
+    local candidate = executable_path(name)
 
     if candidate ~= nil then
       state.adapter = candidate
@@ -302,21 +246,16 @@ local function nix_version()
 
   local result = system({
     nix,
-    "--version",
+    '--version',
   })
 
-  if
-    result == nil
-    or result.code ~= 0
-  then
+  if result == nil or result.code ~= 0 then
     return nil
   end
 
-  local value = vim.trim(
-    result.stdout or ""
-  )
+  local value = vim.trim(result.stdout or '')
 
-  if value == "" then
+  if value == '' then
     return nil
   end
 
@@ -325,50 +264,36 @@ end
 
 ---@return boolean
 local function is_flake()
-  return is_file(
-    fs.joinpath(
-      project_root(),
-      "flake.nix"
-    )
-  )
+  return is_file(fs.joinpath(project_root(), 'flake.nix'))
 end
 
 ---@return string
 local function current_file()
   local current = filename()
 
-  if current ~= "" then
+  if current ~= '' then
     return current
   end
 
-  return "${file}"
+  return '${file}'
 end
 
 ---@return string
 local function flake_file()
-  local candidate = fs.joinpath(
-    project_root(),
-    "flake.nix"
-  )
+  local candidate = fs.joinpath(project_root(), 'flake.nix')
 
   if is_file(candidate) then
     return fs.normalize(candidate)
   end
 
-  notify(
-    "flake.nix was not found in the current project",
-    levels.ERROR
-  )
+  notify('flake.nix was not found in the current project', levels.ERROR)
 
   return current_file()
 end
 
 ---@return string
 local function default_nix_file()
-  local candidate = fs.joinpath(
-    project_root(),
-    "default.nix"
-  )
+  local candidate = fs.joinpath(project_root(), 'default.nix')
 
   if is_file(candidate) then
     return fs.normalize(candidate)
@@ -379,10 +304,7 @@ end
 
 ---@return string
 local function shell_nix_file()
-  local candidate = fs.joinpath(
-    project_root(),
-    "shell.nix"
-  )
+  local candidate = fs.joinpath(project_root(), 'shell.nix')
 
   if is_file(candidate) then
     return fs.normalize(candidate)
@@ -393,10 +315,7 @@ end
 
 ---@return string
 local function configuration_nix_file()
-  local candidate = fs.joinpath(
-    project_root(),
-    "configuration.nix"
-  )
+  local candidate = fs.joinpath(project_root(), 'configuration.nix')
 
   if is_file(candidate) then
     return fs.normalize(candidate)
@@ -407,10 +326,7 @@ end
 
 ---@return string
 local function home_nix_file()
-  local candidate = fs.joinpath(
-    project_root(),
-    "home.nix"
-  )
+  local candidate = fs.joinpath(project_root(), 'home.nix')
 
   if is_file(candidate) then
     return fs.normalize(candidate)
@@ -420,92 +336,56 @@ local function home_nix_file()
 end
 
 local function select_adapter()
-  local selected = fn.input(
-    "DAWN executable: ",
-    resolve_adapter() or "",
-    "file"
-  )
+  local selected = fn.input('DAWN executable: ', resolve_adapter() or '', 'file')
 
-  if selected == "" then
+  if selected == '' then
     return
   end
 
-  selected = normalize(
-    fn.expand(selected)
-  )
+  selected = normalize(fn.expand(selected))
 
   if not executable(selected) then
-    notify(
-      ("not executable: %s"):format(
-        selected
-      ),
-      levels.ERROR
-    )
+    notify(('not executable: %s'):format(selected), levels.ERROR)
 
     return
   end
 
   state.adapter = selected
 
-  if type(M.adapter) == "table" then
+  if type(M.adapter) == 'table' then
     M.adapter.command = selected
   end
 
-  notify(
-    ("DAWN adapter: %s"):format(
-      selected
-    )
-  )
+  notify(('DAWN adapter: %s'):format(selected))
 end
 
 local function select_nix()
-  local selected = fn.input(
-    "Nix executable: ",
-    resolve_nix() or "",
-    "file"
-  )
+  local selected = fn.input('Nix executable: ', resolve_nix() or '', 'file')
 
-  if selected == "" then
+  if selected == '' then
     return
   end
 
-  selected = normalize(
-    fn.expand(selected)
-  )
+  selected = normalize(fn.expand(selected))
 
   if not executable(selected) then
-    notify(
-      ("not executable: %s"):format(
-        selected
-      ),
-      levels.ERROR
-    )
+    notify(('not executable: %s'):format(selected), levels.ERROR)
 
     return
   end
 
   state.nix = selected
 
-  notify(
-    ("Nix executable: %s"):format(
-      selected
-    )
-  )
+  notify(('Nix executable: %s'):format(selected))
 end
 
 ---@param arguments string[]
 ---@param title string
-local function run_nix(
-  arguments,
-  title
-)
+local function run_nix(arguments, title)
   local nix = resolve_nix()
 
   if nix == nil then
-    notify(
-      "nix executable was not found",
-      levels.ERROR
-    )
+    notify('nix executable was not found', levels.ERROR)
 
     return
   end
@@ -514,244 +394,148 @@ local function run_nix(
     nix,
   }
 
-  vim.list_extend(
-    command,
-    arguments
-  )
+  vim.list_extend(command, arguments)
 
-  vim.cmd(
-    "botright new"
-  )
+  vim.cmd('botright new')
 
-  local bufnr =
-    api.nvim_get_current_buf()
+  local bufnr = api.nvim_get_current_buf()
 
-  vim.bo[bufnr].bufhidden =
-    "wipe"
+  vim.bo[bufnr].bufhidden = 'wipe'
 
-  vim.bo[bufnr].filetype =
-    "nixdebug"
+  vim.bo[bufnr].filetype = 'nixdebug'
 
-  local job = fn.termopen(
-    command,
-    {
-      cwd = project_root(),
+  local job = fn.jobstart(command, {
+    cwd = project_root(),
 
-      on_exit = function(_, code)
-        vim.schedule(function()
-          notify(
-            ("%s exited with status %d"):format(
-              title,
-              code
-            ),
-            code == 0
-                and levels.INFO
-              or levels.WARN
-          )
-        end)
-      end,
-    }
-  )
+    term = true,
+
+    on_exit = function(_, code)
+      vim.schedule(function()
+        notify(('%s exited with status %d'):format(title, code), code == 0 and levels.INFO or levels.WARN)
+      end)
+    end,
+  })
 
   if job <= 0 then
-    notify(
-      ("failed to start %s"):format(
-        title
-      ),
-      levels.ERROR
-    )
+    notify(('failed to start %s'):format(title), levels.ERROR)
 
     return
   end
 
-  vim.cmd(
-    "startinsert"
-  )
+  vim.cmd('startinsert')
 end
 
 local function flake_check()
   if not is_flake() then
-    notify(
-      "current project has no flake.nix",
-      levels.ERROR
-    )
+    notify('current project has no flake.nix', levels.ERROR)
 
     return
   end
 
-  run_nix(
-    {
-      "flake",
-      "check",
-      "--show-trace",
-    },
-    "nix flake check"
-  )
+  run_nix({
+    'flake',
+    'check',
+    '--show-trace',
+  }, 'nix flake check')
 end
 
 local function flake_show()
   if not is_flake() then
-    notify(
-      "current project has no flake.nix",
-      levels.ERROR
-    )
+    notify('current project has no flake.nix', levels.ERROR)
 
     return
   end
 
-  run_nix(
-    {
-      "flake",
-      "show",
-      "--show-trace",
-    },
-    "nix flake show"
-  )
+  run_nix({
+    'flake',
+    'show',
+    '--show-trace',
+  }, 'nix flake show')
 end
 
 local function flake_metadata()
   if not is_flake() then
-    notify(
-      "current project has no flake.nix",
-      levels.ERROR
-    )
+    notify('current project has no flake.nix', levels.ERROR)
 
     return
   end
 
-  run_nix(
-    {
-      "flake",
-      "metadata",
-      "--json",
-    },
-    "nix flake metadata"
-  )
+  run_nix({
+    'flake',
+    'metadata',
+    '--json',
+  }, 'nix flake metadata')
 end
 
 local function flake_build()
   if not is_flake() then
-    notify(
-      "current project has no flake.nix",
-      levels.ERROR
-    )
+    notify('current project has no flake.nix', levels.ERROR)
 
     return
   end
 
-  local attribute = fn.input(
-    "Flake output: ",
-    ".#"
-  )
+  local attribute = fn.input('Flake output: ', '.#')
 
-  if attribute == "" then
+  if attribute == '' then
     return
   end
 
-  run_nix(
-    {
-      "build",
-      attribute,
-      "--show-trace",
-      "--print-build-logs",
-    },
-    "nix build"
-  )
+  run_nix({
+    'build',
+    attribute,
+    '--show-trace',
+    '--print-build-logs',
+  }, 'nix build')
 end
 
 local function flake_eval()
   if not is_flake() then
-    notify(
-      "current project has no flake.nix",
-      levels.ERROR
-    )
+    notify('current project has no flake.nix', levels.ERROR)
 
     return
   end
 
-  local attribute = fn.input(
-    "Flake attribute: ",
-    ".#"
-  )
+  local attribute = fn.input('Flake attribute: ', '.#')
 
-  if attribute == "" then
+  if attribute == '' then
     return
   end
 
-  run_nix(
-    {
-      "eval",
-      attribute,
-      "--show-trace",
-    },
-    "nix eval"
-  )
+  run_nix({
+    'eval',
+    attribute,
+    '--show-trace',
+  }, 'nix eval')
 end
 
 local function flake_repl()
   if not is_flake() then
-    notify(
-      "current project has no flake.nix",
-      levels.ERROR
-    )
+    notify('current project has no flake.nix', levels.ERROR)
 
     return
   end
 
-  run_nix(
-    {
-      "repl",
-      ".",
-    },
-    "nix repl"
-  )
+  run_nix({
+    'repl',
+    '.',
+  }, 'nix repl')
 end
 
 local function eval_current_file()
   local current = filename()
 
-  if current == "" then
-    notify(
-      "current buffer has no filename",
-      levels.ERROR
-    )
+  if current == '' then
+    notify('current buffer has no filename', levels.ERROR)
 
     return
   end
 
-  run_nix(
-    {
-      "eval",
-      "--file",
-      current,
-      "--show-trace",
-    },
-    "nix eval"
-  )
-end
-
-local function instantiate_current_file()
-  local current = filename()
-
-  if current == "" then
-    notify(
-      "current buffer has no filename",
-      levels.ERROR
-    )
-
-    return
-  end
-
-  run_nix(
-    {
-      "eval",
-      "--file",
-      current,
-      "--show-trace",
-      "--raw",
-    },
-    "nix eval"
-  )
+  run_nix({
+    'eval',
+    '--file',
+    current,
+    '--show-trace',
+  }, 'nix eval')
 end
 
 local function clear_cache()
@@ -759,9 +543,7 @@ local function clear_cache()
   state.nix = nil
   state.root = nil
 
-  notify(
-    "Nix DAP discovery cache cleared"
-  )
+  notify('Nix DAP discovery cache cleared')
 end
 
 local function status()
@@ -770,143 +552,104 @@ local function status()
 
   notify(
     table.concat({
-      "root: "
-        .. project_root(),
+      'root: ' .. project_root(),
 
-      "Nix: "
-        .. (nix or "not found"),
+      'Nix: ' .. (nix or 'not found'),
 
-      "Nix version: "
-        .. (
-          nix_version()
-            or "unknown"
-        ),
+      'Nix version: ' .. (nix_version() or 'unknown'),
 
-      "flake: "
-        .. (
-          is_flake()
-              and "yes"
-            or "no"
-        ),
+      'flake: ' .. (is_flake() and 'yes' or 'no'),
 
-      "flake.nix: "
-        .. fs.joinpath(
-          project_root(),
-          "flake.nix"
-        ),
+      'flake.nix: ' .. fs.joinpath(project_root(), 'flake.nix'),
 
-      "DAWN: "
-        .. (
-          adapter
-            or "not found"
-        ),
+      'DAWN: ' .. (adapter or 'not found'),
 
-      "DAWN maturity: WIP",
+      'DAWN maturity: WIP',
 
-      "DAP type: nix",
+      'DAP type: nix',
 
-      "DAP request: launch",
-    }, "\n"),
-    adapter ~= nil
-        and levels.INFO
-      or levels.WARN
+      'DAP request: launch',
+    }, '\n'),
+    adapter ~= nil and levels.INFO or levels.WARN
   )
 end
 
 --
--- DAWN's currently documented editor contract is intentionally minimal:
---
---   adapter type: executable
---   DAP type:     nix
---   request:      launch
---   program:      Nix source file
---
--- Do not invent unsupported DAWN-specific configuration fields until the
--- adapter documents them.
---
 ---@type table
 M.adapter = {
-  name = "nix",
+  name = 'nix',
 
-  type = "executable",
+  type = 'executable',
 
-  command =
-    resolve_adapter()
-      or "nix-debug-adapter",
+  command = resolve_adapter() or 'nix-debug-adapter',
 
   args = {},
 
   options = {
-    source_filetype = "nix",
+    source_filetype = 'nix',
   },
 }
 
 ---@type table[]
 local configurations = {
   {
-    name = "Nix: Debug Current File",
+    name = 'Nix: Debug Current File',
 
-    type = "nix",
+    type = 'nix',
 
-    request = "launch",
+    request = 'launch',
 
-    program =
-      current_file,
+    program = current_file,
   },
 
   {
-    name = "Nix: Debug flake.nix",
+    name = 'Nix: Debug flake.nix',
 
-    type = "nix",
+    type = 'nix',
 
-    request = "launch",
+    request = 'launch',
 
-    program =
-      flake_file,
+    program = flake_file,
   },
 
   {
-    name = "Nix: Debug default.nix",
+    name = 'Nix: Debug default.nix',
 
-    type = "nix",
+    type = 'nix',
 
-    request = "launch",
+    request = 'launch',
 
-    program =
-      default_nix_file,
+    program = default_nix_file,
   },
 
   {
-    name = "Nix: Debug shell.nix",
+    name = 'Nix: Debug shell.nix',
 
-    type = "nix",
+    type = 'nix',
 
-    request = "launch",
+    request = 'launch',
 
-    program =
-      shell_nix_file,
+    program = shell_nix_file,
   },
 
   {
-    name = "Nix: Debug configuration.nix",
+    name = 'Nix: Debug configuration.nix',
 
-    type = "nix",
+    type = 'nix',
 
-    request = "launch",
+    request = 'launch',
 
-    program =
-      configuration_nix_file,
+    program = configuration_nix_file,
   },
 
   {
-    name = "Nix: Debug home.nix",
+    name = 'Nix: Debug home.nix',
 
-    type = "nix",
+    type = 'nix',
 
-    request = "launch",
+    request = 'launch',
 
-    program =
-      home_nix_file,
+    program = home_nix_file,
   },
 }
 
@@ -922,8 +665,7 @@ M.commands = {
       select_adapter()
     end,
 
-    desc =
-      "Select DAWN Nix debug adapter",
+    desc = 'Select DAWN Nix debug adapter',
   },
 
   NixDebugClear = {
@@ -931,8 +673,7 @@ M.commands = {
       clear_cache()
     end,
 
-    desc =
-      "Clear Nix DAP discovery cache",
+    desc = 'Clear Nix DAP discovery cache',
   },
 
   NixDebugEval = {
@@ -940,8 +681,7 @@ M.commands = {
       eval_current_file()
     end,
 
-    desc =
-      "Evaluate current Nix file",
+    desc = 'Evaluate current Nix file',
   },
 
   NixDebugFlakeBuild = {
@@ -949,8 +689,7 @@ M.commands = {
       flake_build()
     end,
 
-    desc =
-      "Build Nix flake output",
+    desc = 'Build Nix flake output',
   },
 
   NixDebugFlakeCheck = {
@@ -958,8 +697,7 @@ M.commands = {
       flake_check()
     end,
 
-    desc =
-      "Check current Nix flake",
+    desc = 'Check current Nix flake',
   },
 
   NixDebugFlakeEval = {
@@ -967,8 +705,7 @@ M.commands = {
       flake_eval()
     end,
 
-    desc =
-      "Evaluate Nix flake output",
+    desc = 'Evaluate Nix flake output',
   },
 
   NixDebugFlakeMetadata = {
@@ -976,8 +713,7 @@ M.commands = {
       flake_metadata()
     end,
 
-    desc =
-      "Show Nix flake metadata",
+    desc = 'Show Nix flake metadata',
   },
 
   NixDebugFlakeRepl = {
@@ -985,8 +721,7 @@ M.commands = {
       flake_repl()
     end,
 
-    desc =
-      "Open Nix REPL for current flake",
+    desc = 'Open Nix REPL for current flake',
   },
 
   NixDebugFlakeShow = {
@@ -994,8 +729,7 @@ M.commands = {
       flake_show()
     end,
 
-    desc =
-      "Show Nix flake outputs",
+    desc = 'Show Nix flake outputs',
   },
 
   NixDebugNix = {
@@ -1003,8 +737,7 @@ M.commands = {
       select_nix()
     end,
 
-    desc =
-      "Select Nix executable",
+    desc = 'Select Nix executable',
   },
 
   NixDebugStatus = {
@@ -1012,89 +745,82 @@ M.commands = {
       status()
     end,
 
-    desc =
-      "Show Nix debugger status",
+    desc = 'Show Nix debugger status',
   },
 }
 
 ---@type table<string, DebugMapping>
 M.mappings = {
   nix_debug_adapter = {
-    lhs = "<leader>dNa",
+    lhs = '<leader>dNa',
 
-    mode = "n",
+    mode = 'n',
 
     rhs = function()
       select_adapter()
     end,
 
-    desc =
-      "Debug Nix: Select DAWN",
+    desc = 'Debug Nix: Select DAWN',
   },
 
   nix_debug_eval = {
-    lhs = "<leader>dNe",
+    lhs = '<leader>dNe',
 
-    mode = "n",
+    mode = 'n',
 
     rhs = function()
       eval_current_file()
     end,
 
-    desc =
-      "Debug Nix: Evaluate file",
+    desc = 'Debug Nix: Evaluate file',
   },
 
   nix_debug_flake_check = {
-    lhs = "<leader>dNc",
+    lhs = '<leader>dNc',
 
-    mode = "n",
+    mode = 'n',
 
     rhs = function()
       flake_check()
     end,
 
-    desc =
-      "Debug Nix: Flake check",
+    desc = 'Debug Nix: Flake check',
   },
 
   nix_debug_flake_repl = {
-    lhs = "<leader>dNr",
+    lhs = '<leader>dNr',
 
-    mode = "n",
+    mode = 'n',
 
     rhs = function()
       flake_repl()
     end,
 
-    desc =
-      "Debug Nix: Flake REPL",
+    desc = 'Debug Nix: Flake REPL',
   },
 
   nix_debug_flake_show = {
-    lhs = "<leader>dNf",
+    lhs = '<leader>dNf',
 
-    mode = "n",
+    mode = 'n',
 
     rhs = function()
       flake_show()
     end,
 
-    desc =
-      "Debug Nix: Flake outputs",
+    desc = 'Debug Nix: Flake outputs',
   },
 
   nix_debug_status = {
-    lhs = "<leader>dNs",
+    lhs = '<leader>dNs',
 
-    mode = "n",
+    mode = 'n',
 
     rhs = function()
       status()
     end,
 
-    desc =
-      "Debug Nix: Status",
+    desc = 'Debug Nix: Status',
   },
 }
 
@@ -1102,30 +828,26 @@ M.mappings = {
 function M.setup(opts)
   opts = opts or {}
 
-  state.root =
-    nonempty_string(opts.root)
-        and fs.normalize(opts.root)
-      or project_root()
+  state.root = nonempty_string(opts.root) and fs.normalize(opts.root) or project_root()
 
   local adapter = resolve_adapter()
 
   if adapter ~= nil then
-    M.adapter.command =
-      adapter
+    M.adapter.command = adapter
   end
 
   if resolve_nix() == nil then
     vim.schedule(function()
       notify(
         table.concat({
-          "Nix was not found.",
+          'Nix was not found.',
 
-          "",
+          '',
 
-          "Install `nix` or set:",
+          'Install `nix` or set:',
 
-          "  NVIM_NIX_EXECUTABLE=/path/to/nix",
-        }, "\n"),
+          '  NVIM_NIX_EXECUTABLE=/path/to/nix',
+        }, '\n'),
         levels.WARN
       )
     end)
@@ -1135,21 +857,21 @@ function M.setup(opts)
     vim.schedule(function()
       notify(
         table.concat({
-          "DAWN / nix-debug-adapter was not found.",
+          'DAWN / nix-debug-adapter was not found.',
 
-          "",
+          '',
 
-          "Set one of:",
+          'Set one of:',
 
-          "  NVIM_DAWN_EXECUTABLE=/path/to/nix-debug-adapter",
+          '  NVIM_DAWN_EXECUTABLE=/path/to/nix-debug-adapter',
 
-          "  NVIM_NIX_DAP=/path/to/nix-debug-adapter",
+          '  NVIM_NIX_DAP=/path/to/nix-debug-adapter',
 
-          "",
+          '',
 
-          "DAWN is currently WIP, so Nix inspection commands",
-          "remain available even if the DAP adapter is absent.",
-        }, "\n"),
+          'DAWN is currently WIP, so Nix inspection commands',
+          'remain available even if the DAP adapter is absent.',
+        }, '\n'),
         levels.DEBUG
       )
     end)
