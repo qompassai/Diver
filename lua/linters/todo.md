@@ -68,8 +68,7 @@
 | [`dotenv_linter`](https://github.com/mfussenegger/nvim-lint/blob/master/lua/lint/linters/dotenv_linter.lua) | 2025-11-01 | `DONE` | [`dotenv-linter.lua`](./dotenv-linter.lua) |
 | [`dxc`](https://github.com/mfussenegger/nvim-lint/blob/master/lua/lint/linters/dxc.lua) | 2022-06-18 | `TODO` | — |
 | [`editorconfig-checker`](https://github.com/mfussenegger/nvim-lint/blob/master/lua/lint/linters/editorconfig-checker.lua) | 2023-09-30 | `DONE` | [`editorconfig-checker.lua`](./editorconfig-checker.lua) |
-| [`erb_lint`](https://github.com/mfussenegger/nvim-lint/blob/master/lua/lint/linters/erb_lint.lua)
-| 2023-06-11 | `DONE` | [`erb_lint.lua`](./erb_lint.lua) | |
+| [`erb_lint`](https://github.com/mfussenegger/nvim-lint/blob/master/lua/lint/linters/erb_lint.lua) | 2023-06-11 | `DONE` | [`erb_lint.lua`](./erb_lint.lua) |
 | [`eslint`](https://github.com/mfussenegger/nvim-lint/blob/master/lua/lint/linters/eslint.lua)
 | 2024-06-26 | `DONE` | — |
 | [`eslint_d`](https://github.com/mfussenegger/nvim-lint/blob/master/lua/lint/linters/eslint_d.lua) | 2025-11-01 | `DONE` | [`eslint_d.lua`](./eslint_d.lua) |
