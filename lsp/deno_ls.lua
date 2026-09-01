@@ -22,26 +22,10 @@
 
 local api = vim.api
 local fs = vim.fs
+local levels = vim.log.levels
 local lsp = vim.lsp
 
-local core_lsp =
-  require('config.core.lsp')
-
-local capabilities =
-  vim.tbl_deep_extend(
-    'force',
-    {},
-    core_lsp.capabilities,
-    {
-      experimental = {
-        --
-        -- Deno's experimental testing protocol requires both the client and
-        -- server to advertise `testingApi`.
-        --
-        testingApi = true,
-      },
-    }
-  )
+local JSON_NULL = vim.NIL
 
 ---@type string[]
 local unstable_features = {
@@ -69,53 +53,57 @@ local function find_deno_root(filename)
     return nil
   end
 
-  return fs.root(
-    filename,
-    {
-      'deno.json',
-      'deno.jsonc',
-    }
-  )
+  return fs.root(filename, {
+    'deno.json',
+    'deno.jsonc',
+  })
+end
+
+---@param root string
+---@return string
+local function workspace_name(root)
+  assert(root ~= '', 'root must not be empty')
+
+  local basename = fs.basename(root)
+
+  if type(basename) == 'string' and basename ~= '' then
+    return basename
+  end
+
+  return 'deno'
 end
 
 ---@param _ lsp.InitializeParams?
 ---@param config vim.lsp.Config
 ---@return boolean?
 local function before_init(_, config)
-  local bufnr =
-    api.nvim_get_current_buf()
+  local bufnr = api.nvim_get_current_buf()
 
-  local filename =
-    api.nvim_buf_get_name(bufnr)
+  local filename = api.nvim_buf_get_name(bufnr)
 
   if filename == '' then
     return false
   end
 
-  local root =
-    find_deno_root(filename)
+  local root = find_deno_root(filename)
 
   --
   -- Tiger boundary:
   --
-  -- Never enable Deno merely because a source buffer happens to use a
-  -- JavaScript / TypeScript filetype. A deno.json or deno.jsonc must own the
-  -- workspace.
+  -- JavaScript or TypeScript filetype alone must never activate Deno.
+  -- The workspace must explicitly contain deno.json or deno.jsonc.
   --
   if root == nil then
     return false
   end
 
-  config.root_dir =
-    root
+  config.root_dir = root
 
   config.workspace_folders = {
     {
-      name =
-        fs.basename(root),
+      name = workspace_name(root),
 
-      uri =
-        vim.uri_from_fname(root),
+      uri = vim.uri_from_fname(root),
     },
   }
 
@@ -124,119 +112,88 @@ end
 
 ---@param client vim.lsp.Client
 ---@param bufnr integer
-local function cache_dependencies(
-  client,
-  bufnr
-)
-  client:request(
-    'workspace/executeCommand',
-    {
-      command =
-        'deno.cache',
+local function cache_dependencies(client, bufnr)
+  client:request('workspace/executeCommand', {
+    command = 'deno.cache',
 
-      arguments = {
-        {
-          referrer =
-            vim.uri_from_bufnr(
-              bufnr
-            ),
+    arguments = {
+      {
+        referrer = vim.uri_from_bufnr(bufnr),
 
-          uris = {},
-        },
+        uris = {},
       },
     },
-    nil,
-    bufnr
-  )
+  }, nil, bufnr)
 end
 
 ---@param client vim.lsp.Client
 local function reload_configuration(client)
-  client:notify(
-    'workspace/didChangeConfiguration',
-    {
-      settings =
-        client.config.settings,
-    }
-  )
+  client:notify('workspace/didChangeConfiguration', {
+    settings = client.config.settings,
+  })
 end
 
 ---@param client vim.lsp.Client
 ---@param bufnr integer
 local function on_attach(client, bufnr)
-  core_lsp.on_attach(
-    client,
-    bufnr
-  )
+  --
+  -- Generic LSP attachment behavior is handled globally by
+  -- config/core/lsp.lua through LspAttach.
+  --
+  -- Keep this callback strictly Deno-specific.
+  --
 
-  api.nvim_buf_create_user_command(
-    bufnr,
-    'DenoCache',
-    function()
-      cache_dependencies(
-        client,
-        bufnr
-      )
-    end,
-    {
-      desc =
-        'Cache Deno dependencies',
-    }
-  )
+  api.nvim_buf_create_user_command(bufnr, 'DenoCache', function()
+    cache_dependencies(client, bufnr)
+  end, {
+    desc = 'Cache Deno dependencies',
 
-  api.nvim_buf_create_user_command(
-    bufnr,
-    'DenoReload',
-    function()
-      reload_configuration(
-        client
-      )
-    end,
-    {
-      desc =
-        'Reload Deno workspace configuration',
-    }
-  )
+    force = true,
+  })
 
-  api.nvim_buf_create_user_command(
-    bufnr,
-    'DenoRestart',
-    function()
-      local client_id =
-        client.id
+  api.nvim_buf_create_user_command(bufnr, 'DenoReload', function()
+    reload_configuration(client)
+  end, {
+    desc = 'Reload Deno workspace configuration',
 
-      client:stop(true)
+    force = true,
+  })
 
-      vim.schedule(
-        function()
-          lsp.enable(
-            'deno_ls',
-            true
-          )
+  api.nvim_buf_create_user_command(bufnr, 'DenoRestart', function()
+    local client_id = client.id
 
-          vim.notify(
-            ('Restarted Deno LSP client %d'):format(
-              client_id
-            ),
-            vim.log.levels.INFO
-          )
-        end
-      )
-    end,
-    {
-      desc =
-        'Restart Deno language server',
-    }
-  )
+    client:stop(true)
+
+    vim.schedule(function()
+      lsp.enable('deno_ls', false)
+
+      lsp.enable('deno_ls', true)
+
+      vim.notify(string.format('Restarted Deno LSP client %d', client_id), levels.INFO)
+    end)
+  end, {
+    desc = 'Restart Deno language server',
+
+    force = true,
+  })
 end
 
 return ---@type vim.lsp.Config
 {
-  before_init =
-    before_init,
+  before_init = before_init,
 
-  capabilities =
-    capabilities,
+  --
+  -- Only capabilities specific to Deno belong here.
+  --
+  -- Shared client capabilities are supplied globally by:
+  --
+  --   vim.lsp.config('*', ...)
+  --
+  capabilities = {
+    experimental = {
+      testingApi = true,
+    },
+  },
 
   cmd = {
     'deno',
@@ -254,39 +211,38 @@ return ---@type vim.lsp.Config
 
   init_options = {
     --
-    -- Initialization options are kept intentionally aligned with workspace
-    -- settings so Deno starts with the same policy before its first
-    -- workspace/configuration request.
+    -- vim.NIL serializes to JSON null.
     --
-    cache = nil,
+    -- Do not use Lua nil for explicit LSP JSON values because nil removes
+    -- the table key and violates Neovim's JSON-value type.
+    --
+    cache = JSON_NULL,
 
     certificateStores = {
       'mozilla',
       'system',
     },
 
-    config = nil,
+    config = JSON_NULL,
 
     enable = true,
 
     enablePaths = {},
 
-    importMap = nil,
+    importMap = JSON_NULL,
 
     internalDebug = true,
 
     lint = true,
 
-    tlsCertificate = nil,
+    tlsCertificate = JSON_NULL,
 
-    unstable =
-      unstable_features,
+    unstable = unstable_features,
 
     unsafelyIgnoreCertificateErrors = {},
   },
 
-  on_attach =
-    on_attach,
+  on_attach = on_attach,
 
   root_markers = {
     'deno.json',
@@ -295,7 +251,7 @@ return ---@type vim.lsp.Config
 
   settings = {
     deno = {
-      cache = nil,
+      cache = JSON_NULL,
 
       certificateStores = {
         'mozilla',
@@ -314,9 +270,6 @@ return ---@type vim.lsp.Config
         testArgs = {
           '--allow-all',
 
-          --
-          -- Enable all current granular unstable runtime features for tests.
-          --
           '--unstable-broadcast-channel',
           '--unstable-bundle',
           '--unstable-cron',
@@ -335,7 +288,7 @@ return ---@type vim.lsp.Config
         },
       },
 
-      config = nil,
+      config = JSON_NULL,
 
       documentPreloadLimit = 10000,
 
@@ -343,7 +296,7 @@ return ---@type vim.lsp.Config
 
       enablePaths = {},
 
-      importMap = nil,
+      importMap = JSON_NULL,
 
       inlayHints = {
         enumMemberValues = {
@@ -357,8 +310,7 @@ return ---@type vim.lsp.Config
         parameterNames = {
           enabled = 'all',
 
-          suppressWhenArgumentMatchesName =
-            false,
+          suppressWhenArgumentMatchesName = false,
         },
 
         parameterTypes = {
@@ -372,20 +324,18 @@ return ---@type vim.lsp.Config
         variableTypes = {
           enabled = true,
 
-          suppressWhenTypeMatchesName =
-            false,
+          suppressWhenTypeMatchesName = false,
         },
       },
 
       internalDebug = true,
 
       --
-      -- nil means "do not start an inspector automatically".
+      -- Do not automatically expose an inspector for deno lsp itself.
       --
-      -- Set to a concrete port only when actively debugging the Deno language
-      -- server itself.
+      -- JSON null is intentional.
       --
-      internalInspect = nil,
+      internalInspect = JSON_NULL,
 
       lint = true,
 
@@ -398,33 +348,25 @@ return ---@type vim.lsp.Config
       suggest = {
         autoImports = true,
 
-        completeFunctionCalls =
-          true,
+        completeFunctionCalls = true,
 
         imports = {
           autoDiscover = true,
 
           hosts = {
-            ['https://cdn.jsdelivr.net'] =
-              true,
+            ['https://cdn.jsdelivr.net'] = true,
 
-            ['https://deno.land'] =
-              true,
+            ['https://deno.land'] = true,
 
-            ['https://esm.sh'] =
-              true,
+            ['https://esm.sh'] = true,
 
-            ['https://gist.githubusercontent.com'] =
-              true,
+            ['https://gist.githubusercontent.com'] = true,
 
-            ['https://jsr.io'] =
-              true,
+            ['https://jsr.io'] = true,
 
-            ['https://raw.esm.sh'] =
-              true,
+            ['https://raw.esm.sh'] = true,
 
-            ['https://raw.githubusercontent.com'] =
-              true,
+            ['https://raw.githubusercontent.com'] = true,
           },
         },
 
@@ -467,20 +409,16 @@ return ---@type vim.lsp.Config
         enable = true,
       },
 
-      tlsCertificate = nil,
+      tlsCertificate = JSON_NULL,
 
       --
-      -- Current Deno versions accept an array of granular unstable feature
-      -- names instead of relying on the deprecated blanket --unstable flag.
+      -- Granular unstable feature names are explicit so the enabled
+      -- experimental surface remains auditable.
       --
-      unstable =
-        unstable_features,
+      unstable = unstable_features,
 
       --
-      -- Intentionally empty:
-      --
-      -- enabling every feature should not require globally disabling TLS
-      -- verification.
+      -- Never globally disable TLS verification.
       --
       unsafelyIgnoreCertificateErrors = {},
     },
@@ -498,8 +436,7 @@ return ---@type vim.lsp.Config
         parameterNames = {
           enabled = 'all',
 
-          suppressWhenArgumentMatchesName =
-            false,
+          suppressWhenArgumentMatchesName = false,
         },
 
         parameterTypes = {
@@ -513,28 +450,22 @@ return ---@type vim.lsp.Config
         variableTypes = {
           enabled = true,
 
-          suppressWhenTypeMatchesName =
-            false,
+          suppressWhenTypeMatchesName = false,
         },
       },
 
       preferences = {
         autoImportFileExcludePatterns = {},
 
-        importModuleSpecifier =
-          'shortest',
+        importModuleSpecifier = 'shortest',
 
-        jsxAttributeCompletionStyle =
-          'auto',
+        jsxAttributeCompletionStyle = 'auto',
 
-        preferTypeOnlyAutoImports =
-          true,
+        preferTypeOnlyAutoImports = true,
 
-        quoteStyle =
-          'single',
+        quoteStyle = 'single',
 
-        useAliasesForRenames =
-          true,
+        useAliasesForRenames = true,
       },
 
       suggest = {
@@ -544,16 +475,13 @@ return ---@type vim.lsp.Config
           enabled = true,
         },
 
-        completeFunctionCalls =
-          true,
+        completeFunctionCalls = true,
 
         enabled = true,
 
-        includeAutomaticOptionalChainCompletions =
-          true,
+        includeAutomaticOptionalChainCompletions = true,
 
-        includeCompletionsForImportStatements =
-          true,
+        includeCompletionsForImportStatements = true,
 
         names = true,
 
@@ -582,8 +510,7 @@ return ---@type vim.lsp.Config
         parameterNames = {
           enabled = 'all',
 
-          suppressWhenArgumentMatchesName =
-            false,
+          suppressWhenArgumentMatchesName = false,
         },
 
         parameterTypes = {
@@ -597,28 +524,22 @@ return ---@type vim.lsp.Config
         variableTypes = {
           enabled = true,
 
-          suppressWhenTypeMatchesName =
-            false,
+          suppressWhenTypeMatchesName = false,
         },
       },
 
       preferences = {
         autoImportFileExcludePatterns = {},
 
-        importModuleSpecifier =
-          'shortest',
+        importModuleSpecifier = 'shortest',
 
-        jsxAttributeCompletionStyle =
-          'auto',
+        jsxAttributeCompletionStyle = 'auto',
 
-        preferTypeOnlyAutoImports =
-          true,
+        preferTypeOnlyAutoImports = true,
 
-        quoteStyle =
-          'single',
+        quoteStyle = 'single',
 
-        useAliasesForRenames =
-          true,
+        useAliasesForRenames = true,
       },
 
       suggest = {
@@ -628,16 +549,13 @@ return ---@type vim.lsp.Config
           enabled = true,
         },
 
-        completeFunctionCalls =
-          true,
+        completeFunctionCalls = true,
 
         enabled = true,
 
-        includeAutomaticOptionalChainCompletions =
-          true,
+        includeAutomaticOptionalChainCompletions = true,
 
-        includeCompletionsForImportStatements =
-          true,
+        includeCompletionsForImportStatements = true,
 
         names = true,
 

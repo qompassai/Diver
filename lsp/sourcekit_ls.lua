@@ -15,49 +15,58 @@
 -- See the License for the specific language governing permissions and
 -- limitations under the License.
 -- #################################################################
+
+local LANGUAGE_IDS = {
+  objc = 'objective-c',
+  objcpp = 'objective-cpp',
+}
+
 return ---@type vim.lsp.Config
 {
-  cmd = {
-    'sourcekit-lsp',
-  },
-  filetypes = {
-    'swift',
-    'objc',
-    'objcpp',
-    'c',
-    'cpp',
-  },
-  root_markers = {
-    'buildServer.json',
-    {
-      '*.xcodeproj',
-      '*.xcworkspace',
-    },
-    {
-      'compile_commands.json',
-      'Package.swift',
-    },
-    '.git',
-  },
-  get_language_id = function(_, filetype)
-    local language_ids = {
-      objc = 'objective-c',
-      objcpp = 'objective-cpp',
-    }
-    return language_ids[filetype] or filetype
-  end,
-  capabilities = vim.tbl_deep_extend('force', require('config.core.lsp').capabilities, {
-    workspace = {
-      didChangeWatchedFiles = {
-        dynamicRegistration = true,
-      },
-    },
+  capabilities = {
     textDocument = {
       diagnostic = {
         dynamicRegistration = true,
         relatedDocumentSupport = true,
       },
     },
-  }),
-  on_attach = require('config.core.lsp').on_attach,
+
+    workspace = {
+      didChangeWatchedFiles = {
+        dynamicRegistration = true,
+      },
+    },
+  },
+
+  cmd = {
+    'sourcekit-lsp',
+  },
+
+  filetypes = {
+    'c',
+    'cpp',
+    'objc',
+    'objcpp',
+    'swift',
+  },
+
+  get_language_id = function(_, filetype)
+    return LANGUAGE_IDS[filetype] or filetype
+  end,
+
+  root_markers = {
+    'buildServer.json',
+
+    {
+      '*.xcodeproj',
+      '*.xcworkspace',
+    },
+
+    {
+      'compile_commands.json',
+      'Package.swift',
+    },
+
+    '.git',
+  },
 }

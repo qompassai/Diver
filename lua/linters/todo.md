@@ -151,7 +151,7 @@
 | [`regal`](https://github.com/mfussenegger/nvim-lint/blob/master/lua/lint/linters/regal.lua) | 2024-01-18 | `DONE` | [`regal.lua`](./regal.lua) |
 | [`revive`](https://github.com/mfussenegger/nvim-lint/blob/master/lua/lint/linters/revive.lua) | 2024-09-12 | `DONE` | [`revive.lua`](./revive.lua) |
 | [`rflint`](https://github.com/mfussenegger/nvim-lint/blob/master/lua/lint/linters/rflint.lua) | 2021-11-24 | `Not Maintained` | — |
-| [`robocop`](https://github.com/mfussenegger/nvim-lint/blob/master/lua/lint/linters/robocop.lua) | 2021-11-25 | `TODO` | — |
+| [`robocop`](https://github.com/mfussenegger/nvim-lint/blob/master/lua/lint/linters/robocop.lua) | 2021-11-25 | `TOREMOVE` | 'NOTMAINTAINED' |
 | [`rpmlint`](https://github.com/mfussenegger/nvim-lint/blob/master/lua/lint/linters/rpmlint.lua) | 2024-12-19 | `TODO` | — |
 | [`rpmspec`](https://github.com/mfussenegger/nvim-lint/blob/master/lua/lint/linters/rpmspec.lua) | 2025-09-24 | `TODO` | — |
 | [`rstcheck`](https://github.com/mfussenegger/nvim-lint/blob/master/lua/lint/linters/rstcheck.lua) | 2021-12-30 | `DONE` | [`rstcheck.lua`](./rstcheck.lua) |
@@ -189,7 +189,7 @@
 | [`tlint`](https://github.com/mfussenegger/nvim-lint/blob/master/lua/lint/linters/tlint.lua) | 2023-11-29 | `TODO` | — |
 | [`tofu`](https://github.com/mfussenegger/nvim-lint/blob/master/lua/lint/linters/tofu.lua) | 2026-02-16 | `TODO` | — |
 | [`tombi`](https://github.com/mfussenegger/nvim-lint/blob/master/lua/lint/linters/tombi.lua) | 2025-11-06 | `TODO` | — |
-| [`trivy`](https://github.com/mfussenegger/nvim-lint/blob/master/lua/lint/linters/trivy.lua) | 2024-05-31 | `TODO` | — |
+| [`trivy`](https://github.com/mfussenegger/nvim-lint/blob/master/lua/lint/linters/trivy.lua) | 2024-05-31 | `DONE` | — |
 | [`trivy_secret`](https://github.com/mfussenegger/nvim-lint/blob/master/lua/lint/linters/trivy_secret.lua) | 2026-06-20 | `TODO` | — |
 | [`ts-standard`](https://github.com/mfussenegger/nvim-lint/blob/master/lua/lint/linters/ts-standard.lua) | 2025-01-18 | `TODO` | — |
 | [`twig-cs-fixer`](https://github.com/mfussenegger/nvim-lint/blob/master/lua/lint/linters/twig-cs-fixer.lua) | 2025-03-26 | `TODO` | — |

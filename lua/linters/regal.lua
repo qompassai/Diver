@@ -1,6 +1,6 @@
 -- #################################################################
--- /qompassai/lua/linters/regal.lua
--- Qompass AI Regal
+-- /qompassai/Diver/lua/linters/regal.lua
+-- Qompass AI Diver Native Regal Tiger Linter
 -- SPDX-License-Identifier: Apache-2.0
 -- Copyright (c) 2026 Qompass AI
 --
@@ -19,18 +19,30 @@
 
 local diagnostic = vim.diagnostic
 local fs = vim.fs
+local json = vim.json
 
 local ERROR = diagnostic.severity.ERROR
+local HINT = diagnostic.severity.HINT
+local INFO = diagnostic.severity.INFO
 local WARN = diagnostic.severity.WARN
 
 local DIAGNOSTICS_MAX = 4096
+local MESSAGE_LENGTH_MAX = 16 * 1024
 local OUTPUT_LENGTH_MAX = 16 * 1024 * 1024
 
+local floor = math.floor
+local max = math.max
+local min = math.min
+local tonumber = tonumber
+local type = type
+
+local SOURCE = 'regal'
+
 ---@class RegalLocation
+---@field col? integer
+---@field ["end"]? RegalLocation
 ---@field file? string
 ---@field row? integer
----@field col? integer
----@field end? RegalLocation
 
 ---@class RegalViolation
 ---@field category? string
@@ -43,33 +55,85 @@ local OUTPUT_LENGTH_MAX = 16 * 1024 * 1024
 ---@field violations? RegalViolation[]
 
 ---@type table<string, integer>
-local severities = {
-        error = ERROR,
-        warning = WARN,
+local SEVERITIES = {
+  error = ERROR,
+  hint = HINT,
+  info = INFO,
+  warning = WARN,
 }
 
 ---@param value integer|number|string|nil
 ---@param fallback integer
 ---@return integer
 local function integer(value, fallback)
-        assert(fallback >= 0)
+  assert(fallback >= 0, 'fallback must be non-negative')
 
-        local parsed = tonumber(value)
-        if parsed == nil then
-                return fallback
-        end
+  local parsed = tonumber(value)
 
-        return math.floor(parsed)
+  if parsed == nil then
+    return fallback
+  end
+
+  return floor(parsed)
+end
+
+---@param value string
+---@return string
+local function trim(value)
+  assert(type(value) == 'string', 'value must be a string')
+
+  return (value:gsub('^%s*(.-)%s*$', '%1'))
+end
+
+---@param value string
+---@return string
+local function normalize_message(value)
+  assert(type(value) == 'string', 'value must be a string')
+
+  value = value:gsub('\r\n', '\n')
+
+  value = value:gsub('\r', '\n')
+
+  value = trim(value)
+
+  if #value > MESSAGE_LENGTH_MAX then
+    value = value:sub(1, MESSAGE_LENGTH_MAX) .. '\n[message truncated]'
+  end
+
+  return value
 end
 
 ---@param level string|nil
 ---@return integer
 local function severity(level)
-        if level == nil then
-                return ERROR
-        end
+  if type(level) ~= 'string' or level == '' then
+    return WARN
+  end
 
-        return severities[level:lower()] or ERROR
+  return SEVERITIES[level:lower()] or WARN
+end
+
+---@param path string
+---@param root string
+---@return string
+local function normalize_path(path, root)
+  assert(path ~= '', 'path must not be empty')
+
+  assert(root ~= '', 'root must not be empty')
+
+  if path:sub(1, 7) == 'file://' then
+    local ok, filename = pcall(vim.uri_to_fname, path)
+
+    if ok and type(filename) == 'string' and filename ~= '' then
+      return fs.normalize(filename)
+    end
+  end
+
+  if path:sub(1, 1) == '/' then
+    return fs.normalize(path)
+  end
+
+  return fs.normalize(fs.joinpath(root, path))
 end
 
 ---@param path string
@@ -77,204 +141,211 @@ end
 ---@param root string
 ---@return boolean
 local function belongs_to_buffer(path, filename, root)
-        assert(path ~= '')
-        assert(filename ~= '')
-        assert(root ~= '')
+  assert(path ~= '', 'path must not be empty')
 
-        local candidate
+  assert(filename ~= '', 'filename must not be empty')
 
-        if fs.is_absolute(path) then
-                candidate = fs.normalize(path)
-        else
-                candidate = fs.normalize(fs.joinpath(root, path))
-        end
+  assert(root ~= '', 'root must not be empty')
 
-        return candidate == filename
+  return normalize_path(path, root) == normalize_path(filename, root)
 end
 
 ---@param violation RegalViolation
+---@param bufnr integer
 ---@param filename string
 ---@param root string
 ---@return vim.Diagnostic?
-local function diagnostic_from_violation(violation, filename, root)
-        local location = violation.location
+local function diagnostic_from_violation(violation, bufnr, filename, root)
+  local location = violation.location
 
-        if type(location) ~= 'table' then
-                return nil
-        end
+  if type(location) ~= 'table' then
+    return nil
+  end
 
-        local path = location.file
-        if type(path) ~= 'string' or path == '' then
-                return nil
-        end
+  local path = location.file
 
-        if not belongs_to_buffer(path, filename, root) then
-                return nil
-        end
+  if type(path) ~= 'string' or path == '' then
+    return nil
+  end
 
-        local start_line = math.max(integer(location.row, 1) - 1, 0)
-        local start_column = math.max(integer(location.col, 1) - 1, 0)
+  if not belongs_to_buffer(path, filename, root) then
+    return nil
+  end
 
-        local end_line = start_line
-        local end_column = start_column + 1
+  local start_line = max(integer(location.row, 1) - 1, 0)
 
-        if type(location.end) == 'table' then
-                end_line = math.max(
-                        integer(location.end.row, start_line + 1) - 1,
-                        start_line
-                )
+  local start_column = max(integer(location.col, 1) - 1, 0)
 
-                local minimum_end_column =
-                        end_line == start_line
-                                and start_column + 1
-                                or 0
+  local end_line = start_line
 
-                end_column = math.max(
-                        integer(
-                                location.end.col,
-                                minimum_end_column + 1
-                        ) - 1,
-                        minimum_end_column
-                )
-        end
+  local end_column = start_column + 1
 
-        local title = violation.title
-        local description = violation.description
+  local end_location = location['end']
 
-        local message
+  if type(end_location) == 'table' then
+    end_line = max(integer(end_location.row, start_line + 1) - 1, start_line)
 
-        if
-                type(description) == 'string'
-                and description ~= ''
-        then
-                message = description
-        elseif type(title) == 'string' and title ~= '' then
-                message = title
-        else
-                message = 'Regal policy violation'
-        end
+    local minimum_end_column = end_line == start_line and start_column + 1 or 0
 
-        return {
-                lnum = start_line,
-                end_lnum = end_line,
-                col = start_column,
-                end_col = end_column,
-                message = message,
-                severity = severity(violation.level),
-                source = 'regal',
-                code = title,
-                user_data = {
-                        category = violation.category,
-                },
-        }
+    end_column = max(integer(end_location.col, minimum_end_column + 1) - 1, minimum_end_column)
+  end
+
+  local title = violation.title
+
+  local description = violation.description
+
+  local message
+
+  if type(description) == 'string' and description ~= '' then
+    message = description
+  elseif type(title) == 'string' and title ~= '' then
+    message = title
+  else
+    message = 'Regal policy violation'
+  end
+
+  message = normalize_message(message)
+
+  local code
+
+  if type(title) == 'string' and title ~= '' then
+    code = title
+  end
+
+  return {
+    bufnr = bufnr,
+
+    lnum = start_line,
+    end_lnum = end_line,
+
+    col = start_column,
+    end_col = end_column,
+
+    message = message,
+
+    severity = severity(violation.level),
+
+    source = SOURCE,
+    code = code,
+
+    user_data = {
+      category = violation.category,
+
+      level = violation.level,
+    },
+  }
 end
 
 ---@param output string
 ---@param context LintContext|integer
 ---@return vim.Diagnostic.Set[]
 local function parse(output, context)
-        if output == '' then
-                return {}
-        end
+  if output == '' then
+    return {}
+  end
 
-        assert(
-                type(context) == 'table',
-                'regal parser requires a LintContext'
-        )
+  assert(type(context) == 'table', 'regal parser requires a LintContext')
 
-        ---@cast context LintContext
+  ---@cast context LintContext
 
-        assert(context.filename ~= '')
-        assert(context.root ~= '')
-        assert(
-                #output <= OUTPUT_LENGTH_MAX,
-                'regal output exceeded maximum size'
-        )
+  assert(type(context.bufnr) == 'number' and context.bufnr >= 0, 'context.bufnr must be a valid buffer number')
 
-        local ok, decoded = pcall(vim.json.decode, output)
+  assert(type(context.filename) == 'string' and context.filename ~= '', 'context.filename must be a non-empty string')
 
-        if not ok or type(decoded) ~= 'table' then
-                return {}
-        end
+  assert(type(context.root) == 'string' and context.root ~= '', 'context.root must be a non-empty string')
 
-        ---@cast decoded RegalReport
+  assert(#output <= OUTPUT_LENGTH_MAX, 'regal output exceeded maximum size')
 
-        local violations = decoded.violations
-        if type(violations) ~= 'table' then
-                return {}
-        end
+  local ok, decoded = pcall(json.decode, output)
 
-        local filename = fs.normalize(context.filename)
-        local root = context.root
+  if not ok or type(decoded) ~= 'table' then
+    return {}
+  end
 
-        ---@type vim.Diagnostic.Set[]
-        local diagnostics = {}
-        local diagnostics_count = 0
+  ---@cast decoded RegalReport
 
-        local violations_count =
-                math.min(#violations, DIAGNOSTICS_MAX)
+  local violations = decoded.violations
 
-        for index = 1, violations_count do
-                local violation = violations[index]
+  if type(violations) ~= 'table' then
+    return {}
+  end
 
-                if type(violation) == 'table' then
-                        local entry = diagnostic_from_violation(
-                                violation,
-                                filename,
-                                root
-                        )
+  local filename = normalize_path(context.filename, context.root)
 
-                        if entry ~= nil then
-                                diagnostics_count =
-                                        diagnostics_count + 1
+  local root = fs.normalize(context.root)
 
-                                diagnostics[diagnostics_count] = entry
-                        end
-                end
-        end
+  ---@type vim.Diagnostic.Set[]
+  local diagnostics = {}
 
-        assert(diagnostics_count <= DIAGNOSTICS_MAX)
-        assert(diagnostics_count == #diagnostics)
+  local violations_count = min(#violations, DIAGNOSTICS_MAX)
 
-        return diagnostics
+  for index = 1, violations_count do
+    local violation = violations[index]
+
+    if type(violation) == 'table' then
+      ---@cast violation RegalViolation
+
+      local entry = diagnostic_from_violation(violation, context.bufnr, filename, root)
+
+      if entry ~= nil then
+        diagnostics[#diagnostics + 1] = entry
+      end
+    end
+  end
+
+  assert(#diagnostics <= DIAGNOSTICS_MAX, 'diagnostic limit exceeded')
+
+  return diagnostics
+end
+
+---@param context LintContext
+---@return string[]
+local function args(context)
+  assert(type(context.filename) == 'string' and context.filename ~= '', 'context.filename must be a non-empty string')
+
+  return {
+    'lint',
+
+    '--format=json',
+
+    context.filename,
+  }
+end
+
+---@param context LintContext
+---@return string
+local function cwd(context)
+  assert(type(context.root) == 'string' and context.root ~= '', 'context.root must be a non-empty string')
+
+  return fs.normalize(context.root)
 end
 
 return ---@type Linter
 {
-        automatic = false,
+  automatic = false,
 
-        cmd = 'regal',
+  cmd = 'regal',
 
-        args = function(context)
-                assert(context.filename ~= '')
+  args = args,
 
-                return {
-                        'lint',
-                        '--format=json',
-                        context.filename,
-                }
-        end,
+  append_fname = false,
 
-        append_fname = false,
+  cwd = cwd,
 
-        cwd = function(context)
-                assert(context.root ~= '')
+  ignore_exitcode = true,
 
-                return context.root
-        end,
+  parser = parse,
 
-        ignore_exitcode = true,
+  root_markers = {
+    '.regal',
+    '.regal.yaml',
+    'rego.mod',
+    '.git',
+  },
 
-        parser = parse,
+  stdin = false,
 
-        root_markers = {
-                '.regal',
-                '.regal.yaml',
-                'rego.mod',
-                '.git',
-        },
+  stream = 'stdout',
 
-        stdin = false,
-        stream = 'stdout',
-        timeout = 30000,
+  timeout = 30000,
 }

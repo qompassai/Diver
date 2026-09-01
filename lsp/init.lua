@@ -6,7 +6,7 @@
 ---@source https://langserver.org/
 vim.lsp.enable({
   -- 'abl_ls', ---:TODO validate ---@source https://github.com/vscode-abl/vscode-abl
-  -- 'abaplint_ls',
+  'abaplint_ls',
   'ada_ls',
   --   'agda_ls',
   'agentscript_ls',
@@ -71,7 +71,7 @@ vim.lsp.enable({
   --'delphi_ls'           ---:TODO ---@source https://docwiki.embarcadero.com/RADStudio/Florence/en/Code_Insight_Reference
   -- 'debputy_ls', ---:TODO validate ---@source https://salsa.debian.org/debian/debputy
   --'denizen_ls',          ---:TODO ---@source https://github.com/DenizenScript/DenizenVSCode
-  'deno_ls', ---lsp/linter
+  --'deno_ls', ---lsp/linter
   'dj_ls', ---:TODO
   'djt_ls', ---:TODO
   'docker_ls', ---:TODO
