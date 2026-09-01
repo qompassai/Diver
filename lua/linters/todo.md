@@ -69,9 +69,7 @@
 | [`dxc`](https://github.com/mfussenegger/nvim-lint/blob/master/lua/lint/linters/dxc.lua) | 2022-06-18 | `TODO` | — |
 | [`editorconfig-checker`](https://github.com/mfussenegger/nvim-lint/blob/master/lua/lint/linters/editorconfig-checker.lua) | 2023-09-30 | `DONE` | [`editorconfig-checker.lua`](./editorconfig-checker.lua) |
 | [`erb_lint`](https://github.com/mfussenegger/nvim-lint/blob/master/lua/lint/linters/erb_lint.lua) | 2023-06-11 | `DONE` | [`erb_lint.lua`](./erb_lint.lua) |
-| [`eslint`](https://github.com/mfussenegger/nvim-lint/blob/master/lua/lint/linters/eslint.lua)
-| 2024-06-26 | `DONE` | — |
-| [`eslint_d`](https://github.com/mfussenegger/nvim-lint/blob/master/lua/lint/linters/eslint_d.lua) | 2025-11-01 | `DONE` | [`eslint_d.lua`](./eslint_d.lua) |
+|  [`eslint_d`](https://github.com/mfussenegger/nvim-lint/blob/master/lua/lint/linters/eslint_d.lua) | 2025-11-01 | `DONE` | [`eslint_d.lua`](./eslint_d.lua) |
 | [`eugene`](https://github.com/mfussenegger/nvim-lint/blob/master/lua/lint/linters/eugene.lua) | 2024-08-08 | `TODO` | — |
 | [`fennel`](https://github.com/mfussenegger/nvim-lint/blob/master/lua/lint/linters/fennel.lua) | 2022-04-24 | `TODO` | — |
 | [`fieldalignment`](https://github.com/mfussenegger/nvim-lint/blob/master/lua/lint/linters/fieldalignment.lua) | 2025-09-14 | `DONE` | [`fieldalignment.lua`](./fieldalignment.lua) |
