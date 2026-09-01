@@ -1176,7 +1176,7 @@ local function create_mappings()
     }
   end
 
-  vim.keymap.set("n", "<F5>", M.continue, opts("Debug: Continue"))
+  vim.keymap.set("n", "<F5>", M.run, opts("Debug: Run / Continue"))
 
   vim.keymap.set("n", "<F6>", M.pause, opts("Debug: Pause"))
 
