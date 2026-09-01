@@ -54,7 +54,7 @@
 | [`cpplint`](https://github.com/mfussenegger/nvim-lint/blob/master/lua/lint/linters/cpplint.lua) | 2023-11-29 | `TODO` | — |
 | [`credo`](https://github.com/mfussenegger/nvim-lint/blob/master/lua/lint/linters/credo.lua) | 2026-06-06 | `DONE` | [`credo.lua`](./credo.lua) |
 | [`cspell`](https://github.com/mfussenegger/nvim-lint/blob/master/lua/lint/linters/cspell.lua) | 2025-12-19 | `TODO` | — |
-| [`cue`](https://github.com/mfussenegger/nvim-lint/blob/master/lua/lint/linters/cue.lua) | 2024-02-20 | `TODO` | — |
+| [`cue`](https://github.com/mfussenegger/nvim-lint/blob/master/lua/lint/linters/cue.lua) | 2024-02-20 | `DONE` | [`cue.lua`](./cue.lua) |
 | [`curlylint`](https://github.com/mfussenegger/nvim-lint/blob/master/lua/lint/linters/curlylint.lua) | 2023-01-18 | `TODO` | — |
 | [`dash`](https://github.com/mfussenegger/nvim-lint/blob/master/lua/lint/linters/dash.lua) | 2023-12-27 | `TODO` | — |
 | [`dclint`](https://github.com/mfussenegger/nvim-lint/blob/master/lua/lint/linters/dclint.lua) | 2025-10-07 | `TODO` | — |
