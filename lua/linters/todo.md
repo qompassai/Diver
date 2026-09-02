@@ -80,7 +80,7 @@
 | [`fsharplint`](https://github.com/mfussenegger/nvim-lint/blob/master/lua/lint/linters/fsharplint.lua) | 2025-07-20 | `TODO` | — |
 | [`gawk`](https://github.com/mfussenegger/nvim-lint/blob/master/lua/lint/linters/gawk.lua) | 2024-10-17 | `TODO` | — |
 | [`gdlint`](https://github.com/mfussenegger/nvim-lint/blob/master/lua/lint/linters/gdlint.lua) | 2025-05-13 | `TODO` | — |
-| [`ghdl`](https://github.com/mfussenegger/nvim-lint/blob/master/lua/lint/linters/ghdl.lua) | 2025-01-06 | `TODO` | — |
+| [`ghdl`](https://github.com/mfussenegger/nvim-lint/blob/master/lua/lint/linters/ghdl.lua) | 2025-01-06 | `DONE` | [`ghdl.lua`](./ghdl.lua) |
 | [`gitleaks`](https://github.com/mfussenegger/nvim-lint/blob/master/lua/lint/linters/gitleaks.lua) | 2026-01-05 | `TODO` | — |
 | [`gitlint`](https://github.com/mfussenegger/nvim-lint/blob/master/lua/lint/linters/gitlint.lua) | 2025-09-14 | `TODO` | — |
 | [`glslc`](https://github.com/mfussenegger/nvim-lint/blob/master/lua/lint/linters/glslc.lua) | 2022-05-01 | `TODO` | — |
