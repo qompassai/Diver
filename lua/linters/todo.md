@@ -93,7 +93,7 @@
 | [`inko`](https://github.com/mfussenegger/nvim-lint/blob/master/lua/lint/linters/inko.lua) | 2022-01-20 | `TODO` | — |
 | [`janet`](https://github.com/mfussenegger/nvim-lint/blob/master/lua/lint/linters/janet.lua) | 2026-06-17 | `DONE` | [`janet.lua`](./janet.lua) |
 | [`joker`](https://github.com/mfussenegger/nvim-lint/blob/master/lua/lint/linters/joker.lua) | 2023-12-08 | `DONE` | [`joker.lua`](./joker.lua) |
-| [`jq`](https://github.com/mfussenegger/nvim-lint/blob/master/lua/lint/linters/jq.lua) | 2025-01-18 | `TODO` | — |
+| [`jq`](https://github.com/mfussenegger/nvim-lint/blob/master/lua/lint/linters/jq.lua) | 2025-01-18 | `DONE` | [`jq.lua`](./jq.lua) |
 | [`jshint`](https://github.com/mfussenegger/nvim-lint/blob/master/lua/lint/linters/jshint.lua) | 2021-12-11 | `TODO` | — |
 | [`json5`](https://github.com/mfussenegger/nvim-lint/blob/master/lua/lint/linters/json5.lua) | 2025-06-04 | `TODO` | — |
 | [`json_tool`](https://github.com/mfussenegger/nvim-lint/blob/master/lua/lint/linters/json_tool.lua) | 2025-11-19 | `TODO` | — |
