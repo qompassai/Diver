@@ -51,13 +51,13 @@
 | [`commitlint`](https://github.com/mfussenegger/nvim-lint/blob/master/lua/lint/linters/commitlint.lua) | 2023-10-20 | `DONE` | [`commitlint.lua`](./commitlint.lua) |
 | [`compiler`](https://github.com/mfussenegger/nvim-lint/blob/master/lua/lint/linters/compiler.lua) | 2025-12-23 | `TODO` | — |
 | [`cppcheck`](https://github.com/mfussenegger/nvim-lint/blob/master/lua/lint/linters/cppcheck.lua) | 2024-05-13 | `DONE` | [`cppcheck.lua`](./cppcheck.lua) |
-| [`cpplint`](https://github.com/mfussenegger/nvim-lint/blob/master/lua/lint/linters/cpplint.lua) | 2023-11-29 | `TODO` | — |
+| [`cpplint`](https://github.com/mfussenegger/nvim-lint/blob/master/lua/lint/linters/cpplint.lua) | 2023-11-29 | `TOREMOVE` | `Not Maintained`|
 | [`credo`](https://github.com/mfussenegger/nvim-lint/blob/master/lua/lint/linters/credo.lua) | 2026-06-06 | `DONE` | [`credo.lua`](./credo.lua) |
 | [`cspell`](https://github.com/mfussenegger/nvim-lint/blob/master/lua/lint/linters/cspell.lua) | 2025-12-19 | `TODO` | — |
 | [`cue`](https://github.com/mfussenegger/nvim-lint/blob/master/lua/lint/linters/cue.lua) | 2024-02-20 | `DONE` | [`cue.lua`](./cue.lua) |
 | [`curlylint`](https://github.com/mfussenegger/nvim-lint/blob/master/lua/lint/linters/curlylint.lua) | 2023-01-18 | `TODO` | — |
 | [`dash`](https://github.com/mfussenegger/nvim-lint/blob/master/lua/lint/linters/dash.lua) | 2023-12-27 | `TODO` | — |
-| [`dclint`](https://github.com/mfussenegger/nvim-lint/blob/master/lua/lint/linters/dclint.lua) | 2025-10-07 | `TODO` | — |
+| [`dclint`](https://github.com/mfussenegger/nvim-lint/blob/master/lua/lint/linters/dclint.lua) | 2025-10-07 | `TOREMOVE` | `Not maintained` |
 | [`deadnix`](https://github.com/mfussenegger/nvim-lint/blob/master/lua/lint/linters/deadnix.lua) | 2024-04-05 | `DONE` | [`deadnix.lua`](./deadnix.lua) |
 | [`deno`](https://github.com/mfussenegger/nvim-lint/blob/master/lua/lint/linters/deno.lua) | 2023-10-06 | `TOREMOVE` | — |
 | [`detect-secrets`](https://github.com/mfussenegger/nvim-lint/blob/master/lua/lint/linters/detect-secrets.lua) | 2026-04-09 | `DONE` | [`detect-secrets.lua`](./detect-secrets.lua) |
