@@ -75,7 +75,7 @@
 | [`fieldalignment`](https://github.com/mfussenegger/nvim-lint/blob/master/lua/lint/linters/fieldalignment.lua) | 2025-09-14 | `DONE` | [`fieldalignment.lua`](./fieldalignment.lua) |
 | [`fish`](https://github.com/mfussenegger/nvim-lint/blob/master/lua/lint/linters/fish.lua) | 2025-01-05 | `TODO` | — |
 | [`flake8`](https://github.com/mfussenegger/nvim-lint/blob/master/lua/lint/linters/flake8.lua) | 2023-12-27 | `TODO` | — |
-| [`flawfinder`](https://github.com/mfussenegger/nvim-lint/blob/master/lua/lint/linters/flawfinder.lua) | 2021-12-11 | `TODO` | — |
+| [`flawfinder`](https://github.com/mfussenegger/nvim-lint/blob/master/lua/lint/linters/flawfinder.lua) | 2021-12-11 | `DONE` | [`flawfinder.lua`](./flawfinder.lua) |
 | [`fortitude`](https://github.com/mfussenegger/nvim-lint/blob/master/lua/lint/linters/fortitude.lua) | 2025-04-19 | `TODO` | — |
 | [`fsharplint`](https://github.com/mfussenegger/nvim-lint/blob/master/lua/lint/linters/fsharplint.lua) | 2025-07-20 | `TODO` | — |
 | [`gawk`](https://github.com/mfussenegger/nvim-lint/blob/master/lua/lint/linters/gawk.lua) | 2024-10-17 | `TODO` | — |
