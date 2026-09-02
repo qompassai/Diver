@@ -177,7 +177,7 @@
 | [`svlint`](https://github.com/mfussenegger/nvim-lint/blob/master/lua/lint/linters/svlint.lua) | 2024-10-03 | `TODO` | — |
 | [`swiftlint`](https://github.com/mfussenegger/nvim-lint/blob/master/lua/lint/linters/swiftlint.lua) | 2024-03-14 | `TODO` | — |
 | [`systemd-analyze`](https://github.com/mfussenegger/nvim-lint/blob/master/lua/lint/linters/systemd-analyze.lua) | 2024-08-16 | `DONE` | [`systemd-analyze.lua`](./systemd-analyze.lua) |
-| [`systemdlint`](https://github.com/mfussenegger/nvim-lint/blob/master/lua/lint/linters/systemdlint.lua) | 2024-02-20 | `TODO` | — |
+| [`systemdlint`](https://github.com/mfussenegger/nvim-lint/blob/master/lua/lint/linters/systemdlint.lua) | 2024-02-20 | `DONE` | [`systemd-analyze.lua`](./systemd-analyze.lua) |
 | [`tclint`](https://github.com/mfussenegger/nvim-lint/blob/master/lua/lint/linters/tclint.lua) | 2025-11-19 | `TODO` | — |
 | [`terraform_validate`](https://github.com/mfussenegger/nvim-lint/blob/master/lua/lint/linters/terraform_validate.lua) | 2026-02-16 | `TODO` | — |
 | [`tflint`](https://github.com/mfussenegger/nvim-lint/blob/master/lua/lint/linters/tflint.lua) | 2025-04-03 | `DONE` | [`tflint.lua`](./tflint.lua) |
