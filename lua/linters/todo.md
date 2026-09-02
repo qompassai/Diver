@@ -144,7 +144,7 @@
 | [`pylint`](https://github.com/mfussenegger/nvim-lint/blob/master/lua/lint/linters/pylint.lua) | 2024-08-08 | `TODO` | — |
 | [`pyrefly`](https://github.com/mfussenegger/nvim-lint/blob/master/lua/lint/linters/pyrefly.lua) | 2025-12-04 | `DONE` | [`pyrefly.lua`](./pyrefly.lua) |
 | [`quick-lint-js`](https://github.com/mfussenegger/nvim-lint/blob/master/lua/lint/linters/quick-lint-js.lua) | 2024-01-18 | `TODO` | — |
-| [`redocly`](https://github.com/mfussenegger/nvim-lint/blob/master/lua/lint/linters/redocly.lua) | 2025-04-15 | `TODO` | — |
+| [`redocly`](https://github.com/mfussenegger/nvim-lint/blob/master/lua/lint/linters/redocly.lua) | 2025-04-15 | `DONE` | [`redocly.lua`](./redocly.lua) |
 | [`regal`](https://github.com/mfussenegger/nvim-lint/blob/master/lua/lint/linters/regal.lua) | 2024-01-18 | `DONE` | [`regal.lua`](./regal.lua) |
 | [`revive`](https://github.com/mfussenegger/nvim-lint/blob/master/lua/lint/linters/revive.lua) | 2024-09-12 | `DONE` | [`revive.lua`](./revive.lua) |
 | [`rflint`](https://github.com/mfussenegger/nvim-lint/blob/master/lua/lint/linters/rflint.lua) | 2021-11-24 | `Not Maintained` | — |
