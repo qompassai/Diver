@@ -171,7 +171,7 @@
 | [`squawk`](https://github.com/mfussenegger/nvim-lint/blob/master/lua/lint/linters/squawk.lua) | 2025-12-04 | `TODO` | — |
 | [`standardjs`](https://github.com/mfussenegger/nvim-lint/blob/master/lua/lint/linters/standardjs.lua) | 2024-12-19 | `TODO` | — |
 | [`standardrb`](https://github.com/mfussenegger/nvim-lint/blob/master/lua/lint/linters/standardrb.lua) | 2022-03-07 | `TODO` | — |
-| [`staticcheck`](https://github.com/mfussenegger/nvim-lint/blob/master/lua/lint/linters/staticcheck.lua) | 2023-07-20 | `TODO` | — |
+| [`staticcheck`](https://github.com/mfussenegger/nvim-lint/blob/master/lua/lint/linters/staticcheck.lua) | 2023-07-20 | `DONE` | [`buf_lint.lua`](./buf_lint.lua) |
 | [`statix`](https://github.com/mfussenegger/nvim-lint/blob/master/lua/lint/linters/statix.lua) | 2023-12-28 | `DONE` | [`statix.lua`](./statix.lua) |
 | [`stylelint`](https://github.com/mfussenegger/nvim-lint/blob/master/lua/lint/linters/stylelint.lua) | 2025-08-28 | `DONE` | [`stylelint.lua`](./stylelint.lua) |
 | [`svlint`](https://github.com/mfussenegger/nvim-lint/blob/master/lua/lint/linters/svlint.lua) | 2024-10-03 | `TODO` | — |
