@@ -34,8 +34,8 @@
 | [`blocklint`](https://github.com/mfussenegger/nvim-lint/blob/master/lua/lint/linters/blocklint.lua) | 2023-10-18 | `TOREMOVE` | 'Overlap with Alex' |
 | [`buf_lint`](https://github.com/mfussenegger/nvim-lint/blob/master/lua/lint/linters/buf_lint.lua) | 2023-04-02 | `DONE` | [`buf_lint.lua`](./buf_lint.lua) |
 | [`buildifier`](https://github.com/mfussenegger/nvim-lint/blob/master/lua/lint/linters/buildifier.lua) | 2023-08-03 | `DONE` | [`buildifier.lua`](./buildifier.lua) |
-| [`cfn_lint`](https://github.com/mfussenegger/nvim-lint/blob/master/lua/lint/linters/cfn_lint.lua) | 2025-05-22 | `TODO` | — |
-| [`cfn_nag`](https://github.com/mfussenegger/nvim-lint/blob/master/lua/lint/linters/cfn_nag.lua) | 2022-11-29 | `TODO` | — |
+| [`cfn-lint`](https://github.com/mfussenegger/nvim-lint/blob/master/lua/lint/linters/cfn_lint.lua) | 2025-05-22 | `DONE` | [`cfn-lint.lua`](./cfn-lint.lua) |
+| [`cfn_nag`](https://github.com/mfussenegger/nvim-lint/blob/master/lua/lint/linters/cfn_nag.lua) | 2022-11-29 | `TOREMOVE` | `Not Maintained` |
 | [`checkbashisms`](https://github.com/mfussenegger/nvim-lint/blob/master/lua/lint/linters/checkbashisms.lua) | 2026-04-09 | `DONE` | [`checkbashisms.lua`](./checkbashisms.lua) |
 | [`checkmake`](https://github.com/mfussenegger/nvim-lint/blob/master/lua/lint/linters/checkmake.lua) | 2024-02-06 | `DONE` | [`checkmake.lua`](./checkmake.lua) |
 | [`checkpatch`](https://github.com/mfussenegger/nvim-lint/blob/master/lua/lint/linters/checkpatch.lua) | 2025-12-11 | `DONE` | [`checkpatch.lua`](./checkpatch.lua) |
