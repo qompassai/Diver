@@ -49,8 +49,7 @@
 | [`cmakelint`](https://github.com/mfussenegger/nvim-lint/blob/master/lua/lint/linters/cmakelint.lua) | 2023-10-24 | `TOREMOVE` | — |
 | [`codespell`](https://github.com/mfussenegger/nvim-lint/blob/master/lua/lint/linters/codespell.lua) | 2024-08-16 | `DONE` | [`codespell.lua`](./codespell.lua) |
 | [`commitlint`](https://github.com/mfussenegger/nvim-lint/blob/master/lua/lint/linters/commitlint.lua) | 2023-10-20 | `DONE` | [`commitlint.lua`](./commitlint.lua) |
-| [`compiler`](https://github.com/mfussenegger/nvim-lint/blob/master/lua/lint/linters/compiler.lua) | 2025-12-23 | `TODO` | — |
-| [`cppcheck`](https://github.com/mfussenegger/nvim-lint/blob/master/lua/lint/linters/cppcheck.lua) | 2024-05-13 | `DONE` | [`cppcheck.lua`](./cppcheck.lua) |
+|  [`cppcheck`](https://github.com/mfussenegger/nvim-lint/blob/master/lua/lint/linters/cppcheck.lua) | 2024-05-13 | `DONE` | [`cppcheck.lua`](./cppcheck.lua) |
 | [`cpplint`](https://github.com/mfussenegger/nvim-lint/blob/master/lua/lint/linters/cpplint.lua) | 2023-11-29 | `TOREMOVE` | `Not Maintained`|
 | [`credo`](https://github.com/mfussenegger/nvim-lint/blob/master/lua/lint/linters/credo.lua) | 2026-06-06 | `DONE` | [`credo.lua`](./credo.lua) |
 | [`cue`](https://github.com/mfussenegger/nvim-lint/blob/master/lua/lint/linters/cue.lua) | 2024-02-20 | `DONE` | [`cue.lua`](./cue.lua) |
