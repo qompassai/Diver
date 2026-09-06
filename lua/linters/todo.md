@@ -69,7 +69,7 @@
 | [`erb_lint`](https://github.com/mfussenegger/nvim-lint/blob/master/lua/lint/linters/erb_lint.lua) | 2023-06-11 | `DONE` | [`erb_lint.lua`](./erb_lint.lua) |
 |  [`eslint_d`](https://github.com/mfussenegger/nvim-lint/blob/master/lua/lint/linters/eslint_d.lua) | 2025-11-01 | `DONE` | [`eslint_d.lua`](./eslint_d.lua) |
 | [`eugene`](https://github.com/mfussenegger/nvim-lint/blob/master/lua/lint/linters/eugene.lua) | 2024-08-08 | `DONE` | [`eugene.lua`](./eugene.lua) |
-| [`fennel`](https://github.com/mfussenegger/nvim-lint/blob/master/lua/lint/linters/fennel.lua) | 2022-04-24 | `TODO` | — |
+| [`fennel`](https://github.com/mfussenegger/nvim-lint/blob/master/lua/lint/linters/fennel.lua) | 2022-04-24 | `TOREMOVE` | `Rolled into Fennel LSP config` |
 | [`fieldalignment`](https://github.com/mfussenegger/nvim-lint/blob/master/lua/lint/linters/fieldalignment.lua) | 2025-09-14 | `DONE` | [`fieldalignment.lua`](./fieldalignment.lua) |
 | [`fish`](https://github.com/mfussenegger/nvim-lint/blob/master/lua/lint/linters/fish.lua) | 2025-01-05 | `TOREMOVE` | `Rolled into LSP` |
 | [`flake8`](https://github.com/mfussenegger/nvim-lint/blob/master/lua/lint/linters/flake8.lua) | 2023-12-27 | `TODO` | — |
