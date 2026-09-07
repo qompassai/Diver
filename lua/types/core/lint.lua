@@ -76,6 +76,4 @@
 ---@class lint.TSQueryConfig : vim.lint.Config
 ---@field name? string
 
--- Compatibility alias for older specifications. Neovim's canonical type is
--- `vim.diagnostic.Severity`.
 ---@alias vim.Diagnostic.SeverityValue vim.diagnostic.Severity

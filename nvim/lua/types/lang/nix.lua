@@ -1,4 +1,0 @@
--- /qompassai/Diver/lua/types/lang/nix.lua
--- Qompass AI Diver Nix Lang Types
--- Copyright (C) 2025 Qompass AI, All rights reserved
-------------------------------------------------------
