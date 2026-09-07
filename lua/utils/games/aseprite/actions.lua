@@ -99,6 +99,88 @@ function M.export_gif()
   end, 'animated GIF')
 end
 
+-- TODO (README): "palette/theme sync command".
+--
+-- WHY TWO SEPARATE STEPS (export, then sync) instead of one action:
+-- exporting a palette is a pure, repeatable, read-only operation on
+-- the sprite (safe to run anytime); copying a file into Aseprite's
+-- own config directory mutates state OUTSIDE this project (closer to
+-- `cp` into `/etc/` than into a build/ directory). Tiger Style favors
+-- small, single-purpose functions over one action that quietly does
+-- both -- if sync ever needs confirmation or a dry-run flag later,
+-- only one of the two functions changes.
+function M.export_palette()
+  local bin = util.require_binary()
+  if not bin then
+    return
+  end
+  local sprite = util.current_sprite_or_prompt()
+  if not sprite then
+    return
+  end
+  local out = shared_util.trim(
+    vim.fn.input('Aseprite palette export path: ', vim.fn.fnamemodify(sprite, ':r') .. '.gpl', 'file')
+  )
+  if out == '' then
+    return
+  end
+
+  -- `--save-as *.gpl` makes Aseprite write the sprite's current
+  -- palette in GIMP Palette format instead of image data -- the
+  -- extension alone selects the export kind, same as `scp file.tar.gz`
+  -- vs `file.txt` picking transfer mode by suffix, not by flag.
+  output.run_with_progress(
+    'AsepriteExportPalette',
+    'Exporting palette for ' .. vim.fs.basename(sprite),
+    { bin, '-b', sprite, '--save-as', out },
+    {
+      show_output = true,
+      success = 'Palette exported: ' .. out,
+      failure = 'Palette export failed.',
+    }
+  )
+end
+
+function M.sync_palette_to_user_config()
+  local source = shared_util.trim(vim.fn.input('Palette (.gpl) to sync: ', '', 'file'))
+  if source == '' then
+    return
+  end
+  assert(source:sub(-4) == '.gpl', 'Aseprite: sync_palette_to_user_config expects a .gpl file, got: ' .. source)
+
+  local dest_dir = util.user_palette_dir()
+  vim.fn.mkdir(dest_dir, 'p')
+  local dest = dest_dir .. '/' .. vim.fs.basename(source)
+
+  local ok, err = pcall(vim.uv.fs_copyfile, vim.fn.expand(source), dest)
+  if not ok then
+    notify('Aseprite: failed to sync palette: ' .. tostring(err), levels.ERROR)
+    return
+  end
+  notify('Aseprite: palette synced to ' .. dest .. ' (restart Aseprite, or reload via Edit > Palette > Load Palette).', levels.INFO)
+end
+
+-- TODO (README): "tileset export preset" -- the existing
+-- `export_sprite_sheet` action always packs frames with Aseprite's
+-- default layout; this preset exposes the `--sheet-type` choice the
+-- CLI actually supports, the same way a `tar` wrapper might expose
+-- `--format` instead of hardcoding one archive layout for every call.
+function M.export_sheet_type_preset()
+  vim.ui.select(config.sheet_types, {
+    prompt = 'Sheet type for tileset/sprite-sheet export:',
+  }, function(sheet_type)
+    if sheet_type == nil then
+      return
+    end
+    assert(vim.tbl_contains(config.sheet_types, sheet_type), 'Aseprite: unexpected sheet type: ' .. tostring(sheet_type))
+
+    batch_export('.png', function(out)
+      local data = vim.fn.fnamemodify(out, ':r') .. '.json'
+      return { '--sheet', out, '--sheet-type', sheet_type, '--data', data, '--format', 'json-array' }
+    end, 'tileset (' .. sheet_type .. ')')
+  end)
+end
+
 function M.run_script()
   local bin = util.require_binary()
   if not bin then
@@ -145,6 +227,9 @@ function M.get_actions()
     { id = 'export_sprite_sheet', label = 'Export sprite sheet + JSON', group = 'Export', run = M.export_sprite_sheet },
     { id = 'export_png_sequence', label = 'Export PNG sequence', group = 'Export', run = M.export_png_sequence },
     { id = 'export_gif', label = 'Export animated GIF', group = 'Export', run = M.export_gif },
+    { id = 'export_sheet_type_preset', label = 'Export tileset (choose sheet type)', group = 'Export', run = M.export_sheet_type_preset },
+    { id = 'export_palette', label = 'Export palette (.gpl)', group = 'Palette', run = M.export_palette },
+    { id = 'sync_palette_to_user_config', label = 'Sync palette into Aseprite user config', group = 'Palette', run = M.sync_palette_to_user_config },
     { id = 'run_script', label = 'Run Lua script (headless)', group = 'Scripting', run = M.run_script },
     { id = 'describe_environment', label = 'Describe environment', group = 'Scripting', run = M.describe_environment },
   }

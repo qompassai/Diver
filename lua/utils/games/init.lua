@@ -57,6 +57,16 @@ function M.setup()
   vim.api.nvim_create_user_command('Games', function()
     M.show_menu()
   end, { desc = 'Open a combined Aseprite/Godot/Redot/Unity/Unreal action menu' })
+
+  -- `:GamesDoctor` is a muscle-memory alias for `:checkhealth
+  -- utils.games` -- Nvim's health framework already auto-discovers
+  -- `lua/utils/games/health.lua` because it sits at this module's own
+  -- path, so this command does nothing but call the standard entry
+  -- point (the same relationship `:LspInfo`-style plugin commands
+  -- have to their own `:checkhealth <name>` report).
+  vim.api.nvim_create_user_command('GamesDoctor', function()
+    vim.cmd('checkhealth utils.games')
+  end, { desc = 'Report every engine\'s resolved binary/root (Aseprite/Godot/Redot/Unity/Unreal)' })
 end
 
 -- Combined picker across every loaded engine, each action prefixed

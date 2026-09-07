@@ -23,11 +23,106 @@
 local shared_util = require('utils.games.shared.util')
 local shared_ui = require('utils.games.shared.ui')
 local output_factory = require('utils.games.shared.output')
+local events = require('utils.games.shared.events')
 
 local notify = vim.notify
 local levels = vim.log.levels
+local uv = vim.uv or vim.loop
 
 local M = {}
+
+-- Fixed, explicit bounds for the export-manifest directory walk
+-- (Tiger Style: a recursive scan without a hard ceiling is the Lua
+-- equivalent of `find /` with no `-maxdepth` -- fine on a small
+-- project, a real problem on someone's home-lab NAS mount). These
+-- are generous enough for any real Godot/Redot project and cheap
+-- enough to keep a dry-run feeling instant.
+local EXPORT_SCAN_MAX_DEPTH = 16
+local EXPORT_SCAN_MAX_ENTRIES = 20000
+
+-- Directories that hold generated/cache data rather than source --
+-- walking into them would make every dry-run report "everything
+-- changed" after any build, the same way `rsync`-ing a `.git/` or a
+-- `node_modules/` tree produces noise nobody wants to diff.
+local EXPORT_SCAN_IGNORED_DIRS = { ['.git'] = true, ['.import'] = true, ['.godot'] = true, ['.mono'] = true }
+
+-- File extensions that actually affect an export's output: scenes,
+-- scripts, and Godot's per-asset import metadata (a changed .import
+-- means the asset pipeline will re-bake something even if the
+-- source asset itself is unchanged).
+local EXPORT_SCAN_RELEVANT_EXTENSIONS = { tscn = true, gd = true, import = true }
+
+---@param root string
+---@param out_files string[]  appended in place
+---@param entry_counter integer[]  single-element counter cell (Lua has no `inout` params)
+---@param depth integer
+local function scan_export_relevant_files(root, out_files, entry_counter, depth)
+  assert(type(root) == 'string' and root ~= '', 'games.shared.godot_engine: scan root is required')
+  assert(
+    depth <= EXPORT_SCAN_MAX_DEPTH,
+    ('games.shared.godot_engine: directory nesting exceeded EXPORT_SCAN_MAX_DEPTH=%d at %s'):format(
+      EXPORT_SCAN_MAX_DEPTH,
+      root
+    )
+  )
+
+  local handle = uv.fs_scandir(root)
+  if not handle then
+    return
+  end
+
+  while entry_counter[1] <= EXPORT_SCAN_MAX_ENTRIES do
+    local entry_name, entry_type = uv.fs_scandir_next(handle)
+    if not entry_name then
+      return
+    end
+    entry_counter[1] = entry_counter[1] + 1
+
+    local full_path = root .. '/' .. entry_name
+    if entry_type == 'directory' then
+      if not EXPORT_SCAN_IGNORED_DIRS[entry_name] then
+        scan_export_relevant_files(full_path, out_files, entry_counter, depth + 1)
+      end
+    else
+      local extension = entry_name:match('%.([%w]+)$')
+      if extension and EXPORT_SCAN_RELEVANT_EXTENSIONS[extension] then
+        out_files[#out_files + 1] = full_path
+      end
+    end
+  end
+end
+
+---@param engine_name string
+---@return string
+local function export_manifest_path(engine_name)
+  local state_dir = vim.fn.stdpath('state') .. '/games-nvim'
+  vim.fn.mkdir(state_dir, 'p')
+  return state_dir .. '/' .. engine_name:lower() .. '-export-state.json'
+end
+
+---@param path string
+---@return table  always a table with a `files` field, even on read failure
+local function read_export_manifest(path)
+  local ok, contents = pcall(shared_util.read_file, path)
+  if not ok or contents == nil or contents == '' then
+    return { files = {} }
+  end
+  local decode_ok, decoded = pcall(vim.json.decode, contents)
+  if not decode_ok or type(decoded) ~= 'table' or type(decoded.files) ~= 'table' then
+    return { files = {} }
+  end
+  return decoded
+end
+
+---@param path string
+---@param manifest table
+local function write_export_manifest(path, manifest)
+  assert(type(manifest) == 'table' and type(manifest.files) == 'table', 'games.shared.godot_engine: manifest.files is required')
+  local encoded = vim.json.encode(manifest)
+  local file = assert(io.open(path, 'w'), 'games.shared.godot_engine: could not open manifest for write: ' .. path)
+  file:write(encoded)
+  file:close()
+end
 
 ---@param opts table
 ---  name          display name, e.g. "Godot" or "Redot"
@@ -52,9 +147,13 @@ function M.new(opts)
 
   local config = {
     output_filetype = output_filetype,
-    group_order = { 'Editor', 'Run', 'Export', 'Project' },
+    group_order = { 'Editor', 'Run', 'Export', 'Debug', 'Project' },
   }
   engine.config = config
+  -- Exposed so callers (e.g. health.lua's GamesDoctor probes) can
+  -- label a report row without re-deriving "Godot" vs "Redot" from
+  -- the module path -- one source of truth for the display name.
+  engine.name = name
 
   local util = {}
   engine.util = util
@@ -192,6 +291,36 @@ function M.new(opts)
         success = 'Export finished: ' .. output_path,
         failure = 'Export failed.',
         cwd = root,
+        -- Refreshes the dry-run baseline on every SUCCESSFUL export so
+        -- the next `export_dry_run` call reports "no changes" until a
+        -- source file is touched again -- the same idea as a `make`
+        -- target's own outputs updating the mtimes it will compare
+        -- against next time, kept correct without asking the user to
+        -- remember a separate "mark as exported" step.
+        on_success = function()
+          local files = {}
+          local entry_counter = { 0 }
+          scan_export_relevant_files(root, files, entry_counter, 0)
+          local current = {}
+          for _, path in ipairs(files) do
+            local stat = uv.fs_stat(path)
+            if stat then
+              current[path] = stat.mtime.sec
+            end
+          end
+          write_export_manifest(export_manifest_path(name), { files = current, saved_at = os.time() })
+
+          -- Fire the shared `User GamesTaskCompleted` event (see
+          -- shared/events.lua for why this uses a plain `User`
+          -- autocmd rather than CmdAtom) so anything else in your
+          -- config -- a statusline, a notification aggregator, a
+          -- future plugin -- can react to "an export just finished"
+          -- without this module needing to know it exists.
+          events.fire_task_result(name:lower(), 'export_' .. preset_kind:lower(), true, { output_path = output_path })
+        end,
+        on_failure = function()
+          events.fire_task_result(name:lower(), 'export_' .. preset_kind:lower(), false, { output_path = output_path })
+        end,
       }
     )
   end
@@ -216,6 +345,111 @@ function M.new(opts)
     )
   end
 
+  -- TODO (README): "--dry-run scene diff before export".
+  --
+  -- WHY mtimes instead of a real content diff: a byte-for-byte diff
+  -- of binary .import cache files would be noisy and slow for no
+  -- benefit -- the question a developer actually has before kicking
+  -- off a multi-minute export is "did ANY export-relevant file
+  -- change since I last exported", which mtime comparison answers
+  -- correctly and near-instantly. This is the same tradeoff `make`
+  -- makes when it uses mtimes instead of hashing every source file.
+  function actions.export_dry_run()
+    local root = util.require_root()
+    if not root then
+      return
+    end
+
+    local manifest_path = export_manifest_path(name)
+    local previous = read_export_manifest(manifest_path)
+
+    local files = {}
+    local entry_counter = { 0 }
+    scan_export_relevant_files(root, files, entry_counter, 0)
+    if entry_counter[1] > EXPORT_SCAN_MAX_ENTRIES then
+      notify(
+        string.format(
+          '%s: directory scan stopped after EXPORT_SCAN_MAX_ENTRIES=%d entries; report may be incomplete.',
+          name,
+          EXPORT_SCAN_MAX_ENTRIES
+        ),
+        levels.WARN
+      )
+    end
+
+    local changed = {}
+    for _, path in ipairs(files) do
+      local stat = uv.fs_stat(path)
+      if stat then
+        local previous_mtime = previous.files[path]
+        if previous_mtime == nil or previous_mtime ~= stat.mtime.sec then
+          changed[#changed + 1] = path
+        end
+      end
+    end
+    table.sort(changed)
+
+    if #changed == 0 then
+      notify(name .. ': dry-run found no changed .tscn/.gd/.import files since the last recorded export.', levels.INFO)
+      return
+    end
+
+    local quickfix_items = {}
+    for _, path in ipairs(changed) do
+      quickfix_items[#quickfix_items + 1] = { filename = path, text = 'changed since last ' .. name .. ' export' }
+    end
+    vim.fn.setqflist(quickfix_items, 'r')
+    vim.cmd('copen')
+    notify(
+      string.format('%s: %d file(s) changed since last export (see quickfix).', name, #changed),
+      levels.INFO
+    )
+  end
+
+  -- TODO (README): "DAP wiring alongside the existing GDScript LSP".
+  --
+  -- HONEST SCOPE NOTE (do not skip reading this if you're extending
+  -- this file): Unreal exposes `lua/dap/unreal.lua` because Unreal's
+  -- C++ layer talks to lldb-dap/GDB over the real Debug Adapter
+  -- Protocol -- a general-purpose, language-server-shaped debug
+  -- protocol, the same category of thing as an LSP but for stepping
+  -- through code instead of completing it. Godot 4 (and Redot 4)
+  -- ship NO general-purpose DAP server. Their actual remote-debugging
+  -- mechanism is `--remote-debug tcp://host:port`: the exported/run
+  -- build opens a TCP connection back to a *listening Godot editor
+  -- instance* and speaks Godot's own internal debug wire protocol,
+  -- not DAP. Faking a `lua/dap/godot.lua` that pretends to be a DAP
+  -- adapter here would be actively misleading, so we do not ship one.
+  -- What we CAN honestly offer is a one-key launcher for that real
+  -- mechanism -- the equivalent of a documented `ssh -R` reverse
+  -- tunnel helper rather than a fake protocol shim.
+  function actions.remote_debug_launch()
+    local bin, root = util.require_binary(), util.require_root()
+    if not bin or not root then
+      return
+    end
+
+    local port_input = shared_util.trim(
+      vim.fn.input(name .. ' remote-debug port (editor must already be listening): ', '6007')
+    )
+    if port_input == '' then
+      return
+    end
+    local port = tonumber(port_input)
+    assert(port ~= nil and port > 0 and port < 65536, 'games.' .. name:lower() .. ': port must be a number between 1 and 65535')
+
+    vim.fn.jobstart({ bin, '--path', root, '--remote-debug', ('tcp://127.0.0.1:%d'):format(port) }, { detach = true })
+    notify(
+      string.format(
+        '%s: launched with --remote-debug tcp://127.0.0.1:%d -- open Debugger > Remote in a running %s editor first.',
+        name,
+        port,
+        name
+      ),
+      levels.INFO
+    )
+  end
+
   function actions.get_actions()
     return {
       { id = 'open_editor', label = 'Open editor', group = 'Editor', run = actions.open_editor },
@@ -225,6 +459,8 @@ function M.new(opts)
       { id = 'check_current_script', label = 'Check current script (parse only)', group = 'Run', run = actions.check_current_script },
       { id = 'export_release', label = 'Export release', group = 'Export', run = actions.export_release },
       { id = 'export_debug', label = 'Export debug', group = 'Export', run = actions.export_debug },
+      { id = 'export_dry_run', label = 'Export dry-run (changed-file report)', group = 'Export', run = actions.export_dry_run },
+      { id = 'remote_debug_launch', label = 'Launch with --remote-debug (not DAP)', group = 'Debug', run = actions.remote_debug_launch },
       { id = 'describe_project', label = 'Describe project', group = 'Project', run = actions.describe_project },
     }
   end
@@ -293,6 +529,8 @@ function M.new(opts)
     map('n', key('c'), actions.check_current_script, { desc = name .. ': Check current script' })
     map('n', key('x'), actions.export_release, { desc = name .. ': Export release' })
     map('n', key('d'), actions.export_debug, { desc = name .. ': Export debug' })
+    map('n', key('y'), actions.export_dry_run, { desc = name .. ': Export dry-run (changed files)' })
+    map('n', key('b'), actions.remote_debug_launch, { desc = name .. ': Launch with --remote-debug' })
   end
 
   function engine.setup()

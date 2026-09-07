@@ -52,6 +52,9 @@ function M.setup_keymaps()
   map('n', '<leader>geg', actions.generate_project_files, { desc = 'Unreal: Generate project files' })
   map('n', '<leader>geb', actions.build_project, { desc = 'Unreal: Build' })
   map('n', '<leader>gep', actions.package_project, { desc = 'Unreal: Package' })
+  map('n', '<leader>gec', actions.cook_only, { desc = 'Unreal: Cook only' })
+  map('n', '<leader>ges', actions.bootstrap_engine_checkout, { desc = 'Unreal: Bootstrap fresh engine checkout' })
+  map('n', '<leader>gek', actions.package_plugin, { desc = 'Unreal: Package editor plugin' })
   map('n', '<leader>gel', actions.open_logs, { desc = 'Unreal: Open logs' })
 end
 

@@ -84,6 +84,36 @@ function M.generate_project_files_script(engine_root)
   return engine_root .. '/Engine/Build/BatchFiles/Linux/GenerateProjectFiles.sh'
 end
 
+-- IMPORTANT: this is a DIFFERENT script from `generate_project_files_script`
+-- above, the way `apt-get update` and `apt-get install` are both
+-- "apt-get" but do different jobs. `generate_project_files_script`
+-- regenerates IDE project files for an existing PROJECT against an
+-- already-built engine (it lives under Engine/Build/BatchFiles/ and
+-- is what `:UnrealGenerateProjectFiles` calls). The two functions
+-- below bootstrap the ENGINE checkout itself, right after `git
+-- clone`, before it has ever been built -- they live at the engine
+-- root, not under Engine/Build/BatchFiles/, and Epic's own Linux
+-- quickstart documents running them in this exact order.
+function M.engine_setup_script(engine_root)
+  if vim.fn.has('win32') == 1 or vim.fn.has('win64') == 1 then
+    return engine_root .. '/Setup.bat'
+  end
+  if vim.fn.has('mac') == 1 or vim.fn.has('macunix') == 1 then
+    return engine_root .. '/Setup.command'
+  end
+  return engine_root .. '/Setup.sh'
+end
+
+function M.engine_generate_project_files_script(engine_root)
+  if vim.fn.has('win32') == 1 or vim.fn.has('win64') == 1 then
+    return engine_root .. '/GenerateProjectFiles.bat'
+  end
+  if vim.fn.has('mac') == 1 or vim.fn.has('macunix') == 1 then
+    return engine_root .. '/GenerateProjectFiles.command'
+  end
+  return engine_root .. '/GenerateProjectFiles.sh'
+end
+
 function M.run_uat_script(engine_root)
   if vim.fn.has('win32') == 1 or vim.fn.has('win64') == 1 then
     return engine_root .. '/Engine/Build/BatchFiles/RunUAT.bat'

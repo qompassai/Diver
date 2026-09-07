@@ -19,12 +19,29 @@ local util = require('utils.games.unity.util')
 local config = require('utils.games.unity.config')
 local shared_util = require('utils.games.shared.util')
 local output_factory = require('utils.games.shared.output')
+local async_util = require('utils.games.shared.async_util')
 
 local notify = vim.notify
 local levels = vim.log.levels
 local output = output_factory.new(config.output_filetype)
 
 local M = {}
+
+-- Fixed, explicit bound (Tiger Style): nobody legitimately needs a
+-- single `:UnityBuildMatrix` invocation to queue more than this many
+-- sequential batchmode builds -- past this, something upstream (a
+-- copy-paste error in the target list, a CI script gone wrong) is
+-- more likely than a real request, and we want that to fail loudly
+-- immediately rather than silently queue hours of builds.
+local MAX_BUILD_TARGETS = 8
+
+-- Batchmode builds legitimately take a long time (minified, this can
+-- be minutes per target); this ceiling exists only so a genuinely
+-- hung Unity process (e.g. waiting on a license-activation dialog it
+-- can never show in batch mode) eventually gets reported instead of
+-- silently occupying the terminal forever -- comparable to wrapping
+-- a flaky remote command in `timeout(1)` with a generous limit.
+local BUILD_MATRIX_TIMEOUT_MS = 2 * 60 * 60 * 1000
 
 function M.open_editor()
   local root = util.require_root()
@@ -79,6 +96,114 @@ function M.build_project()
     failure = 'Build failed. See ' .. log_file,
     cwd = root,
   })
+end
+
+-- TODO (README): "multi-target batch build (-buildTarget matrix)".
+function M.build_target_matrix()
+  local root = util.require_root()
+  if not root then
+    return
+  end
+  local editor = util.require_editor(root)
+  if not editor then
+    return
+  end
+
+  local method = shared_util.trim(vim.fn.input('Unity build method (Class.Method): '))
+  if method == '' then
+    return
+  end
+
+  local targets_input = shared_util.trim(
+    vim.fn.input('Build targets, comma-separated (e.g. StandaloneLinux64,StandaloneWindows64,Android): ')
+  )
+  if targets_input == '' then
+    return
+  end
+
+  local targets = {}
+  for candidate in targets_input:gmatch('[^,]+') do
+    local trimmed = shared_util.trim(candidate)
+    if trimmed ~= '' then
+      targets[#targets + 1] = trimmed
+    end
+  end
+  assert(#targets > 0, 'Unity: build_target_matrix requires at least one target')
+  assert(
+    #targets <= MAX_BUILD_TARGETS,
+    ('Unity: %d targets exceeds MAX_BUILD_TARGETS=%d'):format(#targets, MAX_BUILD_TARGETS)
+  )
+
+  vim.fn.mkdir(root .. '/build', 'p')
+
+  notify(('Unity: starting sequential batch build for %d target(s)...'):format(#targets), levels.INFO)
+
+  -- WHY SEQUENTIAL, NOT CONCURRENT (Tiger Style: state the constraint
+  -- instead of silently working around it): Unity's batchmode locks
+  -- the project's Library/ asset database for the lifetime of the
+  -- process -- the same way two `apt`/`dpkg` invocations can't both
+  -- hold /var/lib/dpkg/lock at once. Running N targets concurrently
+  -- against the SAME project directory does not build N targets
+  -- faster; it corrupts the asset database. `vim.async` gives us
+  -- ordered `await`s without nested on_success callbacks -- exactly
+  -- the "do A, then B, then C, stop early if any fails" shape this
+  -- needs, read top-to-bottom like a shell script instead of a
+  -- callback staircase.
+  local ok, result = async_util.run_bounded(function()
+    local per_target_results = {}
+    for _, target in ipairs(targets) do
+      local log_file = root .. '/build/unity-build-' .. target .. '.log'
+      local cmd = {
+        editor,
+        '-batchmode',
+        '-nographics',
+        '-quit',
+        '-projectPath',
+        root,
+        '-executeMethod',
+        method,
+        '-buildTarget',
+        target,
+        '-logFile',
+        log_file,
+      }
+      local await_ok, completed = vim.async.pawait(async_util.system_task(cmd, { cwd = root, text = true }))
+      per_target_results[#per_target_results + 1] = {
+        target = target,
+        ok = await_ok and completed ~= nil and completed.code == 0,
+        log_file = log_file,
+      }
+    end
+    return per_target_results
+  end, BUILD_MATRIX_TIMEOUT_MS)
+
+  if not ok then
+    notify('Unity: build matrix did not complete: ' .. tostring(result), levels.ERROR)
+    return
+  end
+
+  local summary_lines = {}
+  local quickfix_failures = {}
+  for _, entry in ipairs(result) do
+    summary_lines[#summary_lines + 1] = string.format(
+      '%s: %s (%s)',
+      entry.target,
+      entry.ok and 'OK' or 'FAILED',
+      entry.log_file
+    )
+    if not entry.ok then
+      quickfix_failures[#quickfix_failures + 1] = { filename = entry.log_file, text = entry.target .. ' build failed' }
+    end
+  end
+
+  notify(
+    'Unity build matrix finished:\n' .. table.concat(summary_lines, '\n'),
+    #quickfix_failures == 0 and levels.INFO or levels.ERROR
+  )
+  if #quickfix_failures > 0 then
+    vim.fn.setqflist(quickfix_failures, 'r')
+    vim.cmd('copen')
+  end
 end
 
 function M.run_tests()
@@ -161,6 +286,130 @@ function M.open_editor_log()
   vim.cmd('edit ' .. vim.fn.fnameescape(path))
 end
 
+local function manifest_path(root)
+  return root .. '/' .. config.packages_dir .. '/' .. config.manifest_filename
+end
+
+local function lockfile_path(root)
+  return root .. '/' .. config.packages_dir .. '/' .. config.lockfile_filename
+end
+
+-- TODO (README): "Package Manager resolve/lock actions" (list side).
+--
+-- WHY TWO FILES: `manifest.json` is what YOU asked for (the Lua
+-- table equivalent of a `package.json` `dependencies` block);
+-- `packages-lock.json` is what Unity actually RESOLVED last time it
+-- opened the project (transitive versions included) -- the same
+-- requested-vs-resolved distinction as `package.json` vs
+-- `package-lock.json` in the Node.js world, or a `.pyproject.toml`
+-- vs. a fully pinned lockfile. Showing both side by side answers
+-- "what did I ask for" and "what am I actually running" in one view.
+function M.packages_list()
+  local root = util.require_root()
+  if not root then
+    return
+  end
+
+  local manifest_contents = shared_util.read_file(manifest_path(root))
+  if manifest_contents == nil then
+    notify('Unity: no Packages/manifest.json found at ' .. manifest_path(root), levels.ERROR)
+    return
+  end
+  local decode_ok, manifest = pcall(vim.json.decode, manifest_contents)
+  if not decode_ok or type(manifest) ~= 'table' or type(manifest.dependencies) ~= 'table' then
+    notify('Unity: Packages/manifest.json could not be parsed as expected.', levels.ERROR)
+    return
+  end
+
+  local lock_contents = shared_util.read_file(lockfile_path(root))
+  local lock_decode_ok, lock = pcall(vim.json.decode, lock_contents or '')
+  local resolved = {}
+  if lock_decode_ok and type(lock) == 'table' and type(lock.dependencies) == 'table' then
+    resolved = lock.dependencies
+  end
+
+  local package_names = {}
+  for package_name in pairs(manifest.dependencies) do
+    package_names[#package_names + 1] = package_name
+  end
+  table.sort(package_names)
+
+  local lines = { 'Unity packages -- requested (manifest.json) vs. resolved (packages-lock.json):', '' }
+  for _, package_name in ipairs(package_names) do
+    local requested = tostring(manifest.dependencies[package_name])
+    local resolved_entry = resolved[package_name]
+    local resolved_version = (resolved_entry and resolved_entry.version) or 'unresolved (open the editor once to resolve)'
+    lines[#lines + 1] = string.format('  %-42s requested=%-24s resolved=%s', package_name, requested, resolved_version)
+  end
+
+  local buf = vim.api.nvim_create_buf(false, true)
+  vim.api.nvim_buf_set_lines(buf, 0, -1, false, lines)
+  vim.bo[buf].filetype = 'unity-packages'
+  vim.bo[buf].buftype = 'nofile'
+  vim.bo[buf].bufhidden = 'wipe'
+  vim.bo[buf].modifiable = false
+  vim.cmd('botright split')
+  vim.api.nvim_win_set_buf(vim.api.nvim_get_current_win(), buf)
+end
+
+-- TODO (README): "Package Manager resolve/lock actions" (add side).
+--
+-- Precondition: manifest.json must already exist and parse as a
+-- table -- a Unity project always ships one, so a missing/unparsable
+-- file means the detected "root" isn't really a Unity project, and
+-- we fail loudly with that explanation instead of creating a
+-- malformed file from scratch.
+function M.packages_add()
+  local root = util.require_root()
+  if not root then
+    return
+  end
+
+  local path = manifest_path(root)
+  local contents = shared_util.read_file(path)
+  if contents == nil then
+    notify('Unity: no Packages/manifest.json found at ' .. path, levels.ERROR)
+    return
+  end
+  local decode_ok, manifest = pcall(vim.json.decode, contents)
+  if not decode_ok or type(manifest) ~= 'table' then
+    notify('Unity: Packages/manifest.json could not be parsed as expected.', levels.ERROR)
+    return
+  end
+  manifest.dependencies = manifest.dependencies or {}
+
+  local package_name = shared_util.trim(vim.fn.input('Package id (e.g. com.unity.timeline): '))
+  if package_name == '' then
+    return
+  end
+  local version_or_url = shared_util.trim(vim.fn.input('Version, or a git URL for a git-hosted package: '))
+  if version_or_url == '' then
+    return
+  end
+
+  manifest.dependencies[package_name] = version_or_url
+
+  local write_ok, write_err = pcall(function()
+    local encoded = vim.json.encode(manifest)
+    local file = assert(io.open(path, 'w'), 'could not open manifest.json for write: ' .. path)
+    file:write(encoded)
+    file:close()
+  end)
+  if not write_ok then
+    notify('Unity: failed to write manifest.json: ' .. tostring(write_err), levels.ERROR)
+    return
+  end
+
+  notify(
+    string.format(
+      'Unity: added "%s": "%s" to Packages/manifest.json. Open the editor (or run Reimport assets) to resolve it.',
+      package_name,
+      version_or_url
+    ),
+    levels.INFO
+  )
+end
+
 function M.describe_project()
   local root = util.find_root()
   notify(
@@ -177,8 +426,11 @@ function M.get_actions()
   return {
     { id = 'open_editor', label = 'Open editor', group = 'Editor', run = M.open_editor },
     { id = 'build_project', label = 'Build (batchmode -executeMethod)', group = 'Build', run = M.build_project },
+    { id = 'build_target_matrix', label = 'Build target matrix (-buildTarget, sequential)', group = 'Build', run = M.build_target_matrix },
     { id = 'refresh_project', label = 'Reimport assets (batchmode)', group = 'Build', run = M.refresh_project },
     { id = 'run_tests', label = 'Run tests', group = 'Test', run = M.run_tests },
+    { id = 'packages_list', label = 'List packages (requested vs. resolved)', group = 'Packages', run = M.packages_list },
+    { id = 'packages_add', label = 'Add package to manifest.json', group = 'Packages', run = M.packages_add },
     { id = 'open_editor_log', label = 'Open Editor.log', group = 'Project', run = M.open_editor_log },
     { id = 'describe_project', label = 'Describe project', group = 'Project', run = M.describe_project },
   }

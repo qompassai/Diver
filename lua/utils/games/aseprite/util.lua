@@ -55,6 +55,21 @@ function M.is_sprite_file(path)
   return false
 end
 
+-- Resolves Aseprite's own per-OS user palette directory (see
+-- config.user_palette_dir_by_os for why this matters). Returns the
+-- path unconditionally -- callers that need it to exist should
+-- `vim.fn.mkdir(path, 'p')` themselves right before writing, the same
+-- way you'd `mkdir -p` a destination just before an `scp`, not ahead
+-- of time on spec.
+function M.user_palette_dir()
+  if shared_util.is_windows() then
+    return config.user_palette_dir_by_os.windows
+  elseif shared_util.is_mac() then
+    return config.user_palette_dir_by_os.mac
+  end
+  return config.user_palette_dir_by_os.linux
+end
+
 -- Returns the current buffer's file if it looks like an Aseprite
 -- sprite, otherwise prompts for one.
 function M.current_sprite_or_prompt()

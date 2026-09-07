@@ -53,6 +53,9 @@ function M.setup_keymaps()
   map('n', '<leader>gas', actions.export_sprite_sheet, { desc = 'Aseprite: Export sprite sheet' })
   map('n', '<leader>gag', actions.export_gif, { desc = 'Aseprite: Export GIF' })
   map('n', '<leader>gar', actions.run_script, { desc = 'Aseprite: Run script' })
+  map('n', '<leader>gat', actions.export_sheet_type_preset, { desc = 'Aseprite: Export tileset (choose sheet type)' })
+  map('n', '<leader>gap', actions.export_palette, { desc = 'Aseprite: Export palette (.gpl)' })
+  map('n', '<leader>gay', actions.sync_palette_to_user_config, { desc = 'Aseprite: Sync palette to user config' })
 end
 
 function M.setup()

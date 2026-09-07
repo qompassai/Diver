@@ -52,6 +52,9 @@ function M.setup_keymaps()
   map('n', '<leader>gub', actions.build_project, { desc = 'Unity: Build' })
   map('n', '<leader>gut', actions.run_tests, { desc = 'Unity: Run tests' })
   map('n', '<leader>gul', actions.open_editor_log, { desc = 'Unity: Open Editor.log' })
+  map('n', '<leader>gum', actions.build_target_matrix, { desc = 'Unity: Build target matrix' })
+  map('n', '<leader>gup', actions.packages_list, { desc = 'Unity: List packages' })
+  map('n', '<leader>gua', actions.packages_add, { desc = 'Unity: Add package' })
 end
 
 function M.setup()

@@ -21,7 +21,14 @@ M.env_names = { 'NVIM_UNITY_EDITOR_BIN', 'UNITY_EDITOR_BIN', 'UNITY_BIN' }
 M.fallback_binaries = { 'unity-editor', 'Unity', 'unity' }
 M.root_markers = { 'ProjectSettings/ProjectVersion.txt' }
 M.output_filetype = 'unity-output'
-M.group_order = { 'Editor', 'Build', 'Test', 'Project' }
+M.group_order = { 'Editor', 'Build', 'Test', 'Packages', 'Project' }
+
+-- Package Manager file names, relative to the project root -- kept
+-- as named constants rather than inline strings so both actions
+-- (list and add) can never drift apart on the path.
+M.packages_dir = 'Packages'
+M.manifest_filename = 'manifest.json'
+M.lockfile_filename = 'packages-lock.json'
 
 -- Unity Hub install roots per platform, in priority order. The first
 -- readable one wins; each is joined with the detected editor version.
