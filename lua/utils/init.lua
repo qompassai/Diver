@@ -28,6 +28,11 @@ if M.dev and M.dev.setup then
   M.dev.setup()
 end
 
+M.games = safe_require('utils.games')
+if M.games and M.games.setup then
+  M.games.setup()
+end
+
 if M.bsp and M.bsp.setup then
   M.bsp.setup({
     cargo = true,
