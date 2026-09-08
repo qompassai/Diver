@@ -9,6 +9,20 @@ local diagnostic = vim.diagnostic
 local fn = vim.fn
 
 local M = {}
+-- Optional explicit `loadfile(...)({ lazy = true, no_updates = true })` embedding mode lets a
+-- host reuse this runner without eager definition loads or the updater. `require('linters')`
+-- retains its existing behavior because required modules receive no chunk arguments.
+local module_options = ...
+if type(module_options) ~= 'table' then
+  module_options = {}
+end
+M.completion_api_version = 1
+-- Completion results embed captured process output; cap it so a chatty linter cannot grow a
+-- result (and any host transport carrying it) without limit.
+local OUTPUT_BYTES_MAX = 65536
+-- vim.system() reports this exit code when its own timeout terminated the process.
+local TIMEOUT_EXIT_CODE = 124
+local SIGTERM = 15
 
 ---@alias LintStream 'stdout'|'stderr'|'both'
 
@@ -145,8 +159,23 @@ local function load_linter(name, module_name)
   M.definitions[name] = result
 end
 
-for name, module_name in pairs(M.module_sources) do
-  load_linter(name, module_name)
+if not module_options.lazy then
+  for name, module_name in pairs(M.module_sources) do
+    load_linter(name, module_name)
+  end
+end
+
+--- Returns the registered definition, lazily loading its module when embedding deferred it.
+---@param name string
+---@return Linter?
+function M.get_definition(name)
+  vim.validate({
+    name = { name, 'string' },
+  })
+  if M.definitions[name] == nil and M.module_sources[name] ~= nil then
+    load_linter(name, M.module_sources[name])
+  end
+  return M.definitions[name]
 end
 
 ---@type table<string, string[]>
@@ -363,7 +392,9 @@ M.linters_by_ft = {
     'zlint',
   },
 }
-require('linters.update').setup(M.linters_by_ft)
+if not module_options.no_updates then
+  require('linters.update').setup(M.linters_by_ft)
+end
 ---@type table<string, boolean>
 M.manual_linters = {
   checkpatch = true,
@@ -682,18 +713,66 @@ local function publish(name, bufnr, diagnostics)
   diagnostic.set(namespace(name), bufnr, diagnostics)
 end
 
+---@class LintRunOptions
+---@field automatic? boolean
+---@field notify? boolean
+---@field timeout? number # Per-run process timeout in milliseconds, overriding the definition.
+---@field root? string # Context root and default cwd, applied before definition functions run.
+---@field on_complete? fun(result: table) # Receives exactly one terminal result per run.
+---@field validate_context? fun(context: LintContext, command: string[], cwd: string): boolean
+
 ---@param name string
 ---@param bufnr? integer
----@param opts? { automatic?: boolean, notify?: boolean }
----@return boolean
+---@param opts? LintRunOptions
+---@return boolean started
+---@return table? handle # Per-run cancellation handle when started.
 function M.run_linter(name, bufnr, opts)
   opts = opts or {}
+  -- Option types are a host programming error, not an operating condition, so fail loudly.
+  vim.validate({
+    name = { name, 'string' },
+    opts = { opts, 'table' },
+    timeout = { opts.timeout, 'number', true },
+    root = { opts.root, 'string', true },
+    on_complete = { opts.on_complete, 'function', true },
+    validate_context = { opts.validate_context, 'function', true },
+  })
+  if opts.timeout ~= nil then
+    assert(opts.timeout > 0, 'timeout must be a positive number of milliseconds')
+  end
   bufnr = resolve_bufnr(bufnr)
-  if not buffer_is_eligible(bufnr) then
+  local completed = false
+  -- Every run reports exactly one terminal result; later calls are ignored so racing
+  -- cancellation and process completion cannot double-report.
+  local function finish(status, fields)
+    if completed then
+      return
+    end
+    completed = true
+    local result = vim.tbl_extend('force', {
+      name = name,
+      bufnr = bufnr,
+      status = status,
+      verified = status == 'ok',
+    }, fields or {})
+    if opts.on_complete then
+      local ok, err = pcall(opts.on_complete, result)
+      if not ok then
+        vim.schedule(function()
+          vim.notify(tostring(err), vim.log.levels.ERROR)
+        end)
+      end
+    end
+  end
+  local function reject(status, reason)
+    finish(status, { reason = reason })
     return false
   end
+  if not buffer_is_eligible(bufnr) then
+    return reject('unavailable', 'buffer is not eligible for native linting')
+  end
 
-  local definition = M.definitions[name]
+  local definition = M.get_definition(name)
   if type(definition) ~= 'table' then
     diagnostic.reset(namespace(name), bufnr)
     if opts.notify then
@@ -702,11 +781,11 @@ function M.run_linter(name, bufnr, opts)
         title = 'Native linters',
       })
     end
-    return false
+    return reject('unavailable', M.load_errors[name] or 'linter is not registered')
   end
   if opts.automatic and not runs_automatically(name, definition) then
     diagnostic.reset(namespace(name), bufnr)
-    return false
+    return reject('unavailable', 'linter does not run automatically')
   end
 
   local configured_cmd = definition.cmd
@@ -724,22 +803,26 @@ function M.run_linter(name, bufnr, opts)
       end
       vim.notify(('Linter executable not found: %s'):format(requested), vim.log.levels.WARN)
     end
-    return false
+    return reject('unavailable', 'linter executable is not installed')
   end
 
   local context = context_for(bufnr, definition)
+  if opts.root then
+    context.cwd = opts.root
+    context.root = opts.root
+  end
   if context.modified and not definition.stdin then
     diagnostic.reset(namespace(name), bufnr)
     if opts.notify then
       vim.notify(('%s reads the saved file; write the buffer before linting'):format(name), vim.log.levels.INFO)
     end
-    return false
+    return reject('stale', 'linter reads disk but buffer has unsaved changes')
   end
   local command_ok, command_or_error = pcall(command_for, executable_name, definition, context)
   if not command_ok then
     diagnostic.reset(namespace(name), bufnr)
     vim.notify(('%s command failed: %s'):format(name, tostring(command_or_error)), vim.log.levels.ERROR)
-    return false
+    return reject('error', tostring(command_or_error))
   end
   ---@cast command_or_error string[]
   local command = command_or_error
@@ -747,7 +830,17 @@ function M.run_linter(name, bufnr, opts)
   if not cwd_ok or type(cwd_or_error) ~= 'string' then
     diagnostic.reset(namespace(name), bufnr)
     vim.notify(('%s cwd failed: %s'):format(name, tostring(cwd_or_error)), vim.log.levels.ERROR)
-    return false
+    return reject('error', tostring(cwd_or_error))
+  end
+  if opts.validate_context then
+    local valid, permitted = pcall(opts.validate_context, context, command, cwd_or_error)
+    if not valid then
+      return reject('error', 'linter context rejected: ' .. tostring(permitted))
+    end
+    -- Only an exact `true` permits spawning; truthy values are not a policy decision.
+    if permitted ~= true then
+      return reject('error', 'linter context rejected: ' .. tostring(permitted))
+    end
   end
   diagnostic.reset(namespace(name), bufnr)
   local key = ('%d:%s'):format(bufnr, name)
@@ -766,22 +859,45 @@ function M.run_linter(name, bufnr, opts)
     }),
     stdin = definition.stdin and buffer_input(bufnr) or nil,
     text = true,
-    timeout = definition.timeout or 30000,
+    timeout = opts.timeout or definition.timeout or 30000,
   }
 
   local job
-  job = vim.system(command, system_options, function(result)
+  local started, job_or_error = pcall(vim.system, command, system_options, function(result)
     vim.schedule(function()
       if generations[key] ~= generation then
+        finish('stale', { reason = 'run was cancelled or superseded', changedtick = changedtick })
         return
       end
       if jobs[key] == job then
         jobs[key] = nil
       end
       if not api.nvim_buf_is_valid(bufnr) then
+        finish('stale', { reason = 'buffer was removed', changedtick = changedtick })
         return
       end
       if api.nvim_buf_get_changedtick(bufnr) ~= changedtick then
+        finish('stale', { reason = 'buffer changed while linting', changedtick = changedtick })
+        return
+      end
+      if api.nvim_buf_get_name(bufnr) ~= context.filename then
+        finish('stale', { reason = 'buffer changed while linting', changedtick = changedtick })
+        return
+      end
+      if result.code == TIMEOUT_EXIT_CODE then
+        finish('timeout', {
+          exit_code = result.code,
+          signal = result.signal,
+          changedtick = changedtick,
+        })
+        return
+      end
+      if (result.signal or 0) ~= 0 then
+        finish('failed', {
+          reason = 'linter terminated by signal',
+          exit_code = result.code,
+          signal = result.signal,
+        })
         return
       end
 
@@ -790,17 +906,44 @@ function M.run_linter(name, bufnr, opts)
       if parser == nil then
         publish(name, bufnr, {})
         vim.notify(('Linter %q has no parser or errorformat'):format(name), vim.log.levels.ERROR)
+        finish('error', { reason = 'linter has no parser or errorformat', exit_code = result.code })
         return
       end
       local parse_ok, parsed_or_error = invoke_parser(parser, output, context)
       if not parse_ok then
         publish(name, bufnr, {})
         vim.notify(('%s parser failed: %s'):format(name, tostring(parsed_or_error)), vim.log.levels.ERROR)
+        finish('error', { reason = tostring(parsed_or_error), exit_code = result.code })
         return
       end
       ---@cast parsed_or_error vim.Diagnostic.Set[]
       local parsed = parsed_or_error
-      publish(name, bufnr, parsed)
+      if not vim.islist(parsed) then
+        finish('error', {
+          reason = 'linter parser must return a diagnostic array',
+          exit_code = result.code,
+        })
+        return
+      end
+      local published, publish_error = pcall(publish, name, bufnr, parsed)
+      if not published then
+        finish('error', { reason = tostring(publish_error), exit_code = result.code })
+        return
+      end
+      if not api.nvim_buf_is_valid(bufnr) then
+        finish('stale', {
+          reason = 'buffer changed while publishing diagnostics',
+          changedtick = changedtick,
+        })
+        return
+      end
+      if api.nvim_buf_get_changedtick(bufnr) ~= changedtick then
+        finish('stale', {
+          reason = 'buffer changed while publishing diagnostics',
+          changedtick = changedtick,
+        })
+        return
+      end
       if not accepts_exit_code(definition, result.code) and #parsed == 0 then
         local detail = vim.trim(strip_ansi(output))
         if #detail > 300 then
@@ -811,10 +954,52 @@ function M.run_linter(name, bufnr, opts)
           vim.log.levels.ERROR
         )
       end
+      -- Diagnostics or a rejected exit code fail the run. An accepted nonzero exit with no
+      -- parsed diagnostics is not proof of a clean check, so it stays unverified.
+      local status
+      local reason
+      if #parsed > 0 then
+        status = 'failed'
+      elseif not accepts_exit_code(definition, result.code) then
+        status = 'failed'
+      elseif result.code == 0 then
+        status = 'ok'
+      else
+        status = 'unverified'
+        reason = 'accepted nonzero exit without parsed diagnostics is not a clean check'
+      end
+      finish(status, {
+        exit_code = result.code,
+        signal = result.signal,
+        changedtick = changedtick,
+        diagnostics = parsed,
+        namespace = namespace(name),
+        stdout = (result.stdout or ''):sub(1, OUTPUT_BYTES_MAX),
+        stderr = (result.stderr or ''):sub(1, OUTPUT_BYTES_MAX),
+        reason = reason,
+      })
     end)
   end)
+  if not started then
+    return reject('error', tostring(job_or_error))
+  end
+  job = job_or_error
   jobs[key] = job
-  return true
+  local handle = {
+    cancel = function(status)
+      if not completed and generations[key] == generation then
+        -- Bumping the generation makes the pending vim.system callback report stale
+        -- instead of publishing diagnostics for a run the caller abandoned.
+        generations[key] = generation + 1
+        if jobs[key] == job then
+          jobs[key] = nil
+        end
+        pcall(job.kill, job, SIGTERM)
+      end
+      finish(status or 'stale', { reason = 'run cancelled by caller', changedtick = changedtick })
+    end,
+  }
+  return true, handle
 end
 
 ---@param bufnr? integer
