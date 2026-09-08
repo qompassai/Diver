@@ -1,4 +1,0 @@
--- qompassai/Diver/lua/config/lang/julia.lua
--- Qompass AI Diver Julia Lang Config
--- Copyright (C) 2025 Qompass AI, All rights reserved
--- --------------------------------------------------
