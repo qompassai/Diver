@@ -1,0 +1,244 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN"
+   "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd">
+<html>
+<meta http-equiv="Content-Type" content="text/html; charset=UTF-8"/>
+<head>
+    <title>Learn Lua with Diver</title>
+    <link rel="stylesheet" href="../ldoc.css" type="text/css" />
+</head>
+<body>
+
+<div id="container">
+
+<div id="product">
+	<div id="product_logo"></div>
+	<div id="product_name"><big><b></b></big></div>
+	<div id="product_description"></div>
+</div> <!-- id="product" -->
+
+
+<div id="main">
+
+
+<!-- Menu -->
+
+<div id="navigation">
+<br/>
+<h1>Diver :: Learn Lua</h1>
+
+
+<ul>
+  <li><a href="../index.html">Index</a></li>
+</ul>
+
+<h2>Contents</h2>
+<ul>
+<li><a href="#Concept">Concept </a></li>
+<li><a href="#In_Diver">In Diver </a></li>
+<li><a href="#Reference">Reference </a></li>
+<li><a href="#Try_it_yourself">Try it yourself </a></li>
+<li><a href="#Why__safe_require__exists">Why `safe_require` exists </a></li>
+</ul>
+
+
+<h2>Topics</h2>
+<ul class="">
+  <li><a href="../topics/00-introduction.md.html">00-introduction</a></li>
+  <li><a href="../topics/01-values-and-types.md.html">01-values-and-types</a></li>
+  <li><a href="../topics/02-variables-and-scope.md.html">02-variables-and-scope</a></li>
+  <li><a href="../topics/03-tables.md.html">03-tables</a></li>
+  <li><a href="../topics/04-functions.md.html">04-functions</a></li>
+  <li><a href="../topics/05-control-flow.md.html">05-control-flow</a></li>
+  <li><a href="../topics/06-strings-and-patterns.md.html">06-strings-and-patterns</a></li>
+  <li><strong>07-modules-and-require</strong></li>
+  <li><a href="../topics/08-error-handling.md.html">08-error-handling</a></li>
+  <li><a href="../topics/09-the-vim-api.md.html">09-the-vim-api</a></li>
+  <li><a href="../topics/10-luacats-annotations.md.html">10-luacats-annotations</a></li>
+  <li><a href="../topics/11-neovim-013-native.md.html">11-neovim-013-native</a></li>
+  <li><a href="../topics/12-putting-it-together.md.html">12-putting-it-together</a></li>
+</ul>
+<h2>Modules</h2>
+<ul class="nowrap">
+  <li><a href="../modules/learn_lua.html">learn_lua</a></li>
+  <li><a href="../modules/learn_tables.html">learn_tables</a></li>
+  <li><a href="../modules/learn_vim_api.html">learn_vim_api</a></li>
+</ul>
+
+</div>
+
+<div id="content">
+
+
+<h1>07 · Modules and <a href="https://www.lua.org/manual/5.1/manual.html#pdf-require">require</a></h1>
+
+<p><a name="Concept"></a></p>
+<h2>Concept</h2>
+
+<p>A <strong>module</strong> in Lua is nothing fancier than a file that returns a value —
+almost always a table. Another file pulls it in with <a href="https://www.lua.org/manual/5.1/manual.html#pdf-require">require</a>:</p>
+
+
+<pre>
+<span class="comment">-- file: lua/config/core/lsp.lua
+</span><span class="keyword">local</span> M = {}
+<span class="keyword">function</span> M.<span class="function-name">on_attach</span>(client, bufnr) ... <span class="keyword">end</span>
+<span class="keyword">return</span> M
+</pre>
+
+
+
+<pre>
+<span class="comment">-- somewhere else
+</span><span class="keyword">local</span> lsp = <span class="global">require</span>(<span class="string">'config.core.lsp'</span>)
+lsp.<span class="function-name">on_attach</span>(client, bufnr)
+</pre>
+
+
+<p>Three rules cover 95% of what you need:</p>
+
+<ol>
+    <li><strong>Dots are directory separators.</strong> <code>require(&apos;config.core.lsp&apos;)</code> loads
+    <code>lua/config/core/lsp.lua</code> (relative to a directory on the <code>runtimepath</code>).
+    <code>require(&apos;utils.docs&apos;)</code> loads <code>lua/utils/docs/init.lua</code> — a folder with an
+    <code>init.lua</code> acts as the module for that folder name.</li>
+    <li>**<a href="https://www.lua.org/manual/5.1/manual.html#pdf-require">require</a> returns whatever the file returns** — usually the <code>M</code> table. So
+    <code>local lsp = require(...)</code> gives you that exact table.</li>
+    <li>**<a href="https://www.lua.org/manual/5.1/manual.html#pdf-require">require</a> caches.** The first <code>require(&apos;x&apos;)</code> runs the file; every later
+    <code>require(&apos;x&apos;)</code> in the same session returns the <em>same</em> cached table without
+    re-running it. This is why requiring a module twice is cheap and safe.</li>
+</ol>
+
+<h3>The <code>init.lua</code> aggregator pattern</h3>
+
+<p>A folder's <code>init.lua</code> typically just requires its siblings, acting as a single
+entry point:</p>
+
+
+<pre>
+<span class="comment">-- lua/config/core/init.lua
+</span><span class="global">require</span>(<span class="string">'config.core.filetype'</span>)
+<span class="global">require</span>(<span class="string">'config.core.fixer'</span>)
+<span class="global">require</span>(<span class="string">'config.core.lsp'</span>)
+<span class="comment">-- ...one line per file in the folder...</span>
+</pre>
+
+
+<p>Now <code>require(&apos;config.core&apos;)</code> pulls in the whole <code>core/</code> directory in the right
+order. <code>diver</code> uses this pattern at every level.</p>
+
+<p><a name="In_Diver"></a></p>
+<h2>In Diver</h2>
+
+<p>Start at the top and trace the chain — this is the spine of the whole config:</p>
+
+<ol>
+    <li>**<code>init.lua</code>** (the repo root) ends with:</li>
+</ol>
+
+<p>   ```lua
+   require('config.init').config({ core = true, cicd = true, ... })
+   require('linters')
+   require('mappings')
+   require('plugins')
+   require('types')
+   ```</p>
+
+<ol>
+    <li>**<code>lua/config/init.lua</code>** defines <code>M.config(opts)</code>, which conditionally
+    requires each subsystem based on the <code>opts</code> flags:</li>
+</ol>
+
+<p>   ```lua
+   if opts.core ~= false then</p>
+
+<pre>
+<span class="function-name">safe_require</span>(<span class="string">'config.core'</span>, verbose)
+</pre>
+
+<p>   end
+   ```</p>
+
+<p>   Note <code>~= false</code>: the subsystem loads unless you <em>explicitly</em> pass <code>false</code>.
+   Omitting the flag (so it is <code>nil</code>) still loads it, because <code>nil ~= false</code> is
+   true. That is a deliberate, learner-trap-aware design choice.</p>
+
+<ol>
+    <li><p>**<code>lua/config/core/init.lua</code>** is the aggregator that requires
+    <code>filetype</code>, <code>fixer</code>, <code>lsp</code>, <code>parser</code>, <code>qf</code>, <code>schema</code>, <code>tree</code>, <code>whichkey</code>,
+    and so on.</p></li>
+    <li><p>Each leaf file (e.g. <code>lua/config/core/lsp.lua</code>) is a `local M = {} ...
+    return M` module.</p></li>
+</ol>
+
+<p>The <code>lua/utils/docs/init.lua</code> file shows the <strong>loop</strong> variant of the aggregator:</p>
+
+
+<pre>
+<span class="keyword">local</span> modules = { <span class="string">'bounty'</span>, <span class="string">'clipboard'</span>, <span class="string">'docs'</span>, <span class="string">'mime'</span> }
+<span class="keyword">for</span> _, <span class="global">module</span> <span class="keyword">in</span> <span class="global">ipairs</span>(modules) <span class="keyword">do</span>
+    <span class="global">require</span>(<span class="string">'utils.docs.'</span> .. <span class="global">module</span>)
+<span class="keyword">end</span>
+</pre>
+
+
+<p>Same idea as listing the requires by hand, but data-driven.</p>
+
+<p><a name="Why__safe_require__exists"></a></p>
+<h2>Why <code>safe_require</code> exists</h2>
+
+<p><code>diver</code> rarely calls bare <a href="https://www.lua.org/manual/5.1/manual.html#pdf-require">require</a> for optional subsystems. It uses the
+<code>safe_require</code> helper from <code>lua/config/init.lua</code>:</p>
+
+
+<pre>
+<span class="keyword">local</span> <span class="keyword">function</span> <span class="function-name">safe_require</span>(name, verbose)
+    <span class="keyword">local</span> ok, mod = <span class="global">pcall</span>(<span class="global">require</span>, name)
+    <span class="keyword">if</span> <span class="keyword">not</span> ok <span class="keyword">then</span>
+        <span class="keyword">if</span> verbose <span class="keyword">then</span> <span class="function-name">notify</span>(...) <span class="keyword">end</span>
+        <span class="keyword">return</span> <span class="keyword">nil</span>
+    <span class="keyword">end</span>
+    <span class="keyword">return</span> mod
+<span class="keyword">end</span>
+</pre>
+
+
+<p>If a module is missing or throws while loading, the editor still starts — you
+just lose that one feature. This is the difference between a config that
+degrades gracefully and one that drops you at a stack trace on every launch. We
+unpack <a href="https://www.lua.org/manual/5.1/manual.html#pdf-pcall">pcall</a> fully in the next chapter.</p>
+
+<p><a name="Reference"></a></p>
+<h2>Reference</h2>
+
+<p><code>learn_lua.safe_require(name)</code> in the **<a href="../modules/learn_lua.html#">learn_lua</a>** module is a faithful,
+annotated copy of the real helper — it returns <code>module, nil</code> on success or
+<code>nil, errmsg</code> on failure, so you can see the multiple-return contract.</p>
+
+<p><code>learn_tables.module_convention()</code> returns the one-line description of the
+<code>local M = {}</code> → <code>return M</code> shape.</p>
+
+<p><a name="Try_it_yourself"></a></p>
+<h2>Try it yourself</h2>
+
+
+<pre>
+:lua <span class="keyword">local</span> u = <span class="global">require</span>(<span class="string">'config.init'</span>); <span class="global">print</span>(<span class="global">type</span>(u), <span class="global">type</span>(u.config))
+:lua <span class="global">print</span>(<span class="global">package</span>.loaded[<span class="string">'config.init'</span>] ~= <span class="keyword">nil</span>)   " <span class="keyword">true</span>: it is cached
+</pre>
+
+
+<p><a href="https://www.lua.org/manual/5.1/manual.html#pdf-package.loaded">package.loaded</a> is the cache table <a href="https://www.lua.org/manual/5.1/manual.html#pdf-require">require</a> consults. Seeing your module in
+there proves rule #3.</p>
+
+<p>Next: what happens when loading goes wrong — <strong>Chapter 08, Error Handling</strong>.</p>
+
+
+</div> <!-- id="content" -->
+</div> <!-- id="main" -->
+<div id="about">
+<i>generated by <a href="http://github.com/lunarmodules/LDoc">LDoc 1.5.0</a></i>
+<i style="float:right;">Last updated 2026-06-30 16:53:09 </i>
+</div> <!-- id="about" -->
+</div> <!-- id="container" -->
+</body>
+</html>

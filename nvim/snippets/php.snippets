@@ -1,0 +1,22 @@
+snippet si
+    self::info('lll $1', ['value' => $2]);$3
+
+snippet li
+    Log::info('lll $1', ['value' => $2]);$3
+
+snippet gfailing
+        /**
+         * @group failing
+         */
+
+snippet @failing
+        /**
+         * @group failing
+         */
+
+snippet ech
+    echo PHP_EOL . '$1' . $2 . PHP_EOL;
+    $3
+
+snippet echjo
+    echo PHP_EOL . json_encode($1) . PHP_EOL;$2

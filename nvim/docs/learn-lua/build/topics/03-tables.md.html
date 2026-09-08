@@ -1,0 +1,235 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN"
+   "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd">
+<html>
+<meta http-equiv="Content-Type" content="text/html; charset=UTF-8"/>
+<head>
+    <title>Learn Lua with Diver</title>
+    <link rel="stylesheet" href="../ldoc.css" type="text/css" />
+</head>
+<body>
+
+<div id="container">
+
+<div id="product">
+	<div id="product_logo"></div>
+	<div id="product_name"><big><b></b></big></div>
+	<div id="product_description"></div>
+</div> <!-- id="product" -->
+
+
+<div id="main">
+
+
+<!-- Menu -->
+
+<div id="navigation">
+<br/>
+<h1>Diver :: Learn Lua</h1>
+
+
+<ul>
+  <li><a href="../index.html">Index</a></li>
+</ul>
+
+<h2>Contents</h2>
+<ul>
+<li><a href="#Concept">Concept </a></li>
+<li><a href="#In_Diver">In Diver </a></li>
+<li><a href="#Reference">Reference </a></li>
+<li><a href="#Try_it_yourself">Try it yourself </a></li>
+</ul>
+
+
+<h2>Topics</h2>
+<ul class="">
+  <li><a href="../topics/00-introduction.md.html">00-introduction</a></li>
+  <li><a href="../topics/01-values-and-types.md.html">01-values-and-types</a></li>
+  <li><a href="../topics/02-variables-and-scope.md.html">02-variables-and-scope</a></li>
+  <li><strong>03-tables</strong></li>
+  <li><a href="../topics/04-functions.md.html">04-functions</a></li>
+  <li><a href="../topics/05-control-flow.md.html">05-control-flow</a></li>
+  <li><a href="../topics/06-strings-and-patterns.md.html">06-strings-and-patterns</a></li>
+  <li><a href="../topics/07-modules-and-require.md.html">07-modules-and-require</a></li>
+  <li><a href="../topics/08-error-handling.md.html">08-error-handling</a></li>
+  <li><a href="../topics/09-the-vim-api.md.html">09-the-vim-api</a></li>
+  <li><a href="../topics/10-luacats-annotations.md.html">10-luacats-annotations</a></li>
+  <li><a href="../topics/11-neovim-013-native.md.html">11-neovim-013-native</a></li>
+  <li><a href="../topics/12-putting-it-together.md.html">12-putting-it-together</a></li>
+</ul>
+<h2>Modules</h2>
+<ul class="nowrap">
+  <li><a href="../modules/learn_lua.html">learn_lua</a></li>
+  <li><a href="../modules/learn_tables.html">learn_tables</a></li>
+  <li><a href="../modules/learn_vim_api.html">learn_vim_api</a></li>
+</ul>
+
+</div>
+
+<div id="content">
+
+
+<h1>03 · Tables</h1>
+
+<p><a name="Concept"></a></p>
+<h2>Concept</h2>
+
+<p>Lua has <strong>one</strong> data structure: the <strong>table</strong>. There is no separate array, list,
+dictionary, set, struct, or object type. The table does all of those jobs. Learn
+the table and you have learned Lua's entire data model.</p>
+
+<p>A table is a collection of <strong>key → value</strong> pairs:</p>
+
+
+<pre>
+<span class="keyword">local</span> t = {
+    [<span class="number">1</span>] = <span class="string">"first"</span>,       <span class="comment">-- key 1, value "first"
+</span>    name = <span class="string">"diver"</span>,      <span class="comment">-- key "name", value "diver"
+</span>    enabled = <span class="keyword">true</span>,      <span class="comment">-- key "enabled", value true
+</span>}
+</pre>
+
+
+<p>You read and write entries with either <code>t[key]</code> or, for string keys that look
+like identifiers, the shorthand <code>t.key</code>:</p>
+
+
+<pre>
+t[<span class="number">1</span>]        <span class="comment">--&gt; "first"
+</span>t.name      <span class="comment">--&gt; "diver"   (same as t["name"])
+</span>t.version = <span class="number">13</span>            <span class="comment">-- add a new entry</span>
+</pre>
+
+
+<h3>The two halves of every table</h3>
+
+<p>By convention a table has two parts:</p>
+
+<ul>
+    <li><strong>The array part</strong> (a "sequence"): integer keys starting at <strong>1</strong>. You write
+    it with no keys: <code>{ &quot;a&quot;, &quot;b&quot;, &quot;c&quot; }</code> is <code>{ [1]=&quot;a&quot;, [2]=&quot;b&quot;, [3]=&quot;c&quot; }</code>.</li>
+    <li><strong>The hash part</strong> (a "map" / "record"): string or other keys. You write it
+    with named keys: <code>{ noremap = true, silent = true }</code>.</li>
+</ul>
+
+<p>A single table can have both at once. The length operator <code>#t</code> gives the length
+of the <strong>array part</strong> only.</p>
+
+<blockquote>
+    <p><strong>1-based, always.</strong> Lua sequences start at index <strong>1</strong>, not 0. <code>t[1]</code> is the
+    first element. (The <code>vim.api.*</code> functions are a separate, 0-based world — see
+    Chapter 09. Do not confuse the two.)</p>
+</blockquote>
+
+<h3>Walking a table: <a href="https://www.lua.org/manual/5.1/manual.html#pdf-ipairs">ipairs</a> vs <a href="https://www.lua.org/manual/5.1/manual.html#pdf-pairs">pairs</a></h3>
+
+
+<pre>
+<span class="keyword">for</span> i, v <span class="keyword">in</span> <span class="global">ipairs</span>(list) <span class="keyword">do</span> ... <span class="keyword">end</span>   <span class="comment">-- ordered, array part only, stops at nil
+</span><span class="keyword">for</span> k, v <span class="keyword">in</span> <span class="global">pairs</span>(map)  <span class="keyword">do</span> ... <span class="keyword">end</span>    <span class="comment">-- every key, ANY order</span>
+</pre>
+
+
+<p>Use <a href="https://www.lua.org/manual/5.1/manual.html#pdf-ipairs">ipairs</a> when <strong>order matters</strong> and the table is a list. Use <a href="https://www.lua.org/manual/5.1/manual.html#pdf-pairs">pairs</a> when
+you just need every entry of a map and order is irrelevant.</p>
+
+<p><a name="In_Diver"></a></p>
+<h2>In Diver</h2>
+
+<p><strong>Table as a list</strong> — <code>lua/utils/docs/init.lua</code>:</p>
+
+
+<pre>
+<span class="keyword">local</span> modules = { <span class="string">'bounty'</span>, <span class="string">'clipboard'</span>, <span class="string">'docs'</span>, <span class="string">'mime'</span> }
+<span class="keyword">for</span> _, <span class="global">module</span> <span class="keyword">in</span> <span class="global">ipairs</span>(modules) <span class="keyword">do</span>
+    <span class="global">require</span>(<span class="string">'utils.docs.'</span> .. <span class="global">module</span>)
+<span class="keyword">end</span>
+</pre>
+
+
+<p>The <code>_</code> is a throwaway name for the index we do not use. This loops the list <em>in
+order</em> and requires each sub-module.</p>
+
+<p><strong>Table as options/record</strong> — <code>lua/mappings/aimap.lua</code>:</p>
+
+
+<pre>
+<span class="keyword">local</span> opts = {
+    noremap = <span class="keyword">true</span>,
+    silent  = <span class="keyword">true</span>,
+    buffer  = bufnr,
+}
+</pre>
+
+
+<p>This is a record describing how a keymap should behave.</p>
+
+<p><strong>Table as a nested config</strong> — <code>init.lua</code> ends by calling:</p>
+
+
+<pre>
+<span class="global">require</span>(<span class="string">'config.init'</span>).<span class="function-name">config</span>({
+    core = <span class="keyword">true</span>, cicd = <span class="keyword">true</span>, cloud = <span class="keyword">true</span>,
+    <span class="global">debug</span> = <span class="keyword">false</span>, edu = <span class="keyword">true</span>, lang = <span class="keyword">true</span>, nav = <span class="keyword">true</span>, ui = <span class="keyword">true</span>,
+})
+</pre>
+
+
+<p>A single table is passed as the whole configuration. Inside
+<code>lua/config/init.lua</code>, that table arrives as the <code>opts</code> parameter and is read
+field by field (<code>if opts.core ~= false then ...</code>).</p>
+
+<p><strong>Table merging</strong> — <code>lua/mappings/aimap.lua</code> again:</p>
+
+
+<pre>
+vim.<span class="function-name">tbl_extend</span>(<span class="string">'force'</span>, opts, { desc = <span class="string">'[r]ose [c]hat'</span> })
+</pre>
+
+
+<p><code>vim.tbl_extend(&apos;force&apos;, a, b)</code> returns a <em>new</em> table that is <code>a</code> with <code>b</code>'s
+keys stamped on top ("force" = later keys win). <code>diver</code> also uses the deep
+version <code>vim.tbl_deep_extend(&apos;force&apos;, M.config, config)</code> in <code>schema.lua</code>.</p>
+
+<p><a name="Reference"></a></p>
+<h2>Reference</h2>
+
+<p>The **<a href="../modules/learn_tables.html#">learn_tables</a>** module mirrors every pattern above with annotated,
+runnable functions:</p>
+
+<ul>
+    <li><code>make_list()</code> and <code>each(list, fn)</code> — the list / <a href="https://www.lua.org/manual/5.1/manual.html#pdf-ipairs">ipairs</a> pattern.</li>
+    <li><code>keymap_opts(bufnr, desc)</code> and <code>each_pair(map, fn)</code> — the record / <a href="https://www.lua.org/manual/5.1/manual.html#pdf-pairs">pairs</a>
+    pattern.</li>
+    <li><code>dig(root, path)</code> — safe nested access without crashing on a missing parent.</li>
+    <li><code>merge(base, overrides)</code> — a hand-rolled <code>vim.tbl_extend</code> so you can see the
+    mechanics.</li>
+    <li><code>with_defaults(opts)</code> — the <code>opts = opts or {}</code> defaulting idiom.</li>
+</ul>
+
+<p><a name="Try_it_yourself"></a></p>
+<h2>Try it yourself</h2>
+
+
+<pre>
+:lua <span class="keyword">local</span> t = {<span class="number">10</span>,<span class="number">20</span>,<span class="number">30</span>}; <span class="global">print</span>(#t, t[<span class="number">1</span>], t[<span class="number">3</span>])
+:lua <span class="keyword">for</span> k,v <span class="keyword">in</span> <span class="global">pairs</span>({a=<span class="number">1</span>,b=<span class="number">2</span>}) <span class="keyword">do</span> <span class="global">print</span>(k,v) <span class="keyword">end</span>
+:lua <span class="global">print</span>(vim.<span class="function-name">inspect</span>(vim.<span class="function-name">tbl_extend</span>(<span class="string">'force'</span>, {a=<span class="number">1</span>}, {a=<span class="number">2</span>,b=<span class="number">3</span>})))
+</pre>
+
+
+<p><code>vim.inspect(t)</code> pretty-prints any table — it is your best friend for exploring
+the config interactively.</p>
+
+<p>Next: the values you store <em>inside</em> tables most often — <strong>Chapter 04,
+Functions</strong>.</p>
+
+
+</div> <!-- id="content" -->
+</div> <!-- id="main" -->
+<div id="about">
+<i>generated by <a href="http://github.com/lunarmodules/LDoc">LDoc 1.5.0</a></i>
+<i style="float:right;">Last updated 2026-06-30 16:53:09 </i>
+</div> <!-- id="about" -->
+</div> <!-- id="container" -->
+</body>
+</html>

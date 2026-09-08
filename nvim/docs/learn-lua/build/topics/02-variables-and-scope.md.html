@@ -1,0 +1,216 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN"
+   "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd">
+<html>
+<meta http-equiv="Content-Type" content="text/html; charset=UTF-8"/>
+<head>
+    <title>Learn Lua with Diver</title>
+    <link rel="stylesheet" href="../ldoc.css" type="text/css" />
+</head>
+<body>
+
+<div id="container">
+
+<div id="product">
+	<div id="product_logo"></div>
+	<div id="product_name"><big><b></b></big></div>
+	<div id="product_description"></div>
+</div> <!-- id="product" -->
+
+
+<div id="main">
+
+
+<!-- Menu -->
+
+<div id="navigation">
+<br/>
+<h1>Diver :: Learn Lua</h1>
+
+
+<ul>
+  <li><a href="../index.html">Index</a></li>
+</ul>
+
+<h2>Contents</h2>
+<ul>
+<li><a href="#Concept">Concept </a></li>
+<li><a href="#In_Diver">In Diver </a></li>
+<li><a href="#Reference">Reference </a></li>
+<li><a href="#Try_it_yourself">Try it yourself </a></li>
+</ul>
+
+
+<h2>Topics</h2>
+<ul class="">
+  <li><a href="../topics/00-introduction.md.html">00-introduction</a></li>
+  <li><a href="../topics/01-values-and-types.md.html">01-values-and-types</a></li>
+  <li><strong>02-variables-and-scope</strong></li>
+  <li><a href="../topics/03-tables.md.html">03-tables</a></li>
+  <li><a href="../topics/04-functions.md.html">04-functions</a></li>
+  <li><a href="../topics/05-control-flow.md.html">05-control-flow</a></li>
+  <li><a href="../topics/06-strings-and-patterns.md.html">06-strings-and-patterns</a></li>
+  <li><a href="../topics/07-modules-and-require.md.html">07-modules-and-require</a></li>
+  <li><a href="../topics/08-error-handling.md.html">08-error-handling</a></li>
+  <li><a href="../topics/09-the-vim-api.md.html">09-the-vim-api</a></li>
+  <li><a href="../topics/10-luacats-annotations.md.html">10-luacats-annotations</a></li>
+  <li><a href="../topics/11-neovim-013-native.md.html">11-neovim-013-native</a></li>
+  <li><a href="../topics/12-putting-it-together.md.html">12-putting-it-together</a></li>
+</ul>
+<h2>Modules</h2>
+<ul class="nowrap">
+  <li><a href="../modules/learn_lua.html">learn_lua</a></li>
+  <li><a href="../modules/learn_tables.html">learn_tables</a></li>
+  <li><a href="../modules/learn_vim_api.html">learn_vim_api</a></li>
+</ul>
+
+</div>
+
+<div id="content">
+
+
+<h1>02 · Variables and Scope</h1>
+
+<p><a name="Concept"></a></p>
+<h2>Concept</h2>
+
+<p>You create a variable by assigning to a name:</p>
+
+
+<pre>
+x = <span class="number">10</span>        <span class="comment">-- GLOBAL variable (avoid this!)
+</span><span class="keyword">local</span> y = <span class="number">10</span>  <span class="comment">-- LOCAL variable (always prefer this)</span>
+</pre>
+
+
+<p>The keyword **<code>local</code>** is the most important word in day-to-day Lua. Without
+it, every variable is <strong>global</strong> — visible to every file in the whole Neovim
+session, easy to clobber by accident, and slower to access. With <code>local</code>, the
+variable is confined to its <strong>block</strong> (the file, function, or <code>do ... end</code> it
+lives in).</p>
+
+<blockquote>
+    <p>Rule of thumb: in <code>diver</code>, <em>everything</em> is <code>local</code> unless there is a specific
+    reason for it to be global. The only sanctioned globals are <code>vim</code>,
+    <code>safe_require</code>, and <code>jit</code> — and you can see that whitelist in <code>.luarc.json</code>
+    and <code>.luacheckrc</code>.</p>
+</blockquote>
+
+<h3>Scope is lexical (where it is written)</h3>
+
+<p>A <code>local</code> is visible from the line it is declared to the end of its enclosing
+block:</p>
+
+
+<pre>
+<span class="keyword">local</span> <span class="keyword">function</span> <span class="function-name">outer</span>()
+    <span class="keyword">local</span> secret = <span class="number">42</span>      <span class="comment">-- visible inside <code>outer</code>
+</span>    <span class="keyword">return</span> <span class="keyword">function</span>()
+        <span class="keyword">return</span> secret      <span class="comment">-- the inner function can still see it (a closure!)
+</span>    <span class="keyword">end</span>
+<span class="keyword">end</span>
+<span class="global">print</span>(secret)              <span class="comment">-- ERROR: <code>secret</code> is nil here — out of scope</span>
+</pre>
+
+
+<h3>Aliasing: the top-of-file <code>local x = vim.y</code> pattern</h3>
+
+<p>Open <code>init.lua</code> and look at the first 30 lines:</p>
+
+
+<pre>
+<span class="keyword">local</span> bo  = vim.bo
+<span class="keyword">local</span> cmd = vim.cmd
+<span class="keyword">local</span> env = vim.env
+<span class="keyword">local</span> fn  = vim.fn
+<span class="keyword">local</span> g   = vim.g
+<span class="keyword">local</span> o   = vim.o
+<span class="keyword">local</span> opt = vim.opt
+</pre>
+
+
+<p>This is <strong>aliasing</strong>. Each line copies a reference to a <code>vim.*</code> table into a
+short <code>local</code>. Three reasons <code>diver</code> does this everywhere:</p>
+
+<ol>
+    <li><strong>Speed</strong> — looking up a <code>local</code> is faster than repeatedly indexing the
+    global <code>vim</code> table.</li>
+    <li><strong>Brevity</strong> — <code>o.number = true</code> reads better than <code>vim.o.number = true</code>
+    across 300 lines.</li>
+    <li><strong>Intent</strong> — the block of aliases at the top tells you, at a glance, which
+    parts of the API this file touches.</li>
+</ol>
+
+<p><a name="In_Diver"></a></p>
+<h2>In Diver</h2>
+
+<p><code>lua/utils/docs/docs.lua</code> opens with a long alias block:</p>
+
+
+<pre>
+<span class="keyword">local</span> autocmd = vim.api.nvim_create_autocmd
+<span class="keyword">local</span> bo      = vim.bo
+<span class="keyword">local</span> concat  = <span class="global">table</span>.concat
+<span class="keyword">local</span> decode  = vim.json.decode
+<span class="keyword">local</span> ERROR   = vim.log.levels.ERROR
+<span class="keyword">local</span> notify  = vim.notify
+</pre>
+
+
+<p>Notice it aliases <strong>standard library</strong> functions too (<a href="https://www.lua.org/manual/5.1/manual.html#pdf-table.concat">table.concat</a>), not just
+<code>vim.*</code>. The <code>ERROR</code>/<code>INFO</code> aliases pull constants out of <code>vim.log.levels</code> so
+later calls read like <code>notify(msg, ERROR)</code>.</p>
+
+<h3>The <code>local M = {}</code> idiom</h3>
+
+<p>Nearly every file begins with:</p>
+
+
+<pre>
+<span class="keyword">local</span> M = {}
+<span class="comment">-- ... attach functions to M ...
+</span><span class="keyword">return</span> M
+</pre>
+
+
+<p><code>M</code> is just a local table named "M" by convention (think "Module"). You hang the
+file's public functions on it (<code>function M.on_attach() end</code>) and <code>return M</code> at
+the bottom. Anything you keep as <code>local function helper()</code> instead stays
+<strong>private</strong> to the file. This is how Lua does encapsulation — there is no
+<code>public</code>/<code>private</code> keyword, just whether a name is reachable from the returned
+table. Chapter 07 covers how <a href="https://www.lua.org/manual/5.1/manual.html#pdf-require">require</a> picks this <code>M</code> up.</p>
+
+<p><a name="Reference"></a></p>
+<h2>Reference</h2>
+
+<ul>
+    <li><code>learn_lua.make_counter(start)</code> in the **<a href="../modules/learn_lua.html#">learn_lua</a>** module is the clearest
+    scope demo: the inner function keeps using the <code>local n</code> after the outer
+    function has returned. That captured-variable behaviour is a <strong>closure</strong>, and
+    it is only possible because of lexical scope.</li>
+    <li><code>learn_tables.module_convention()</code> in **<a href="../modules/learn_tables.html#">learn_tables</a>** returns a one-line
+    summary of the <code>local M = {}</code> pattern.</li>
+</ul>
+
+<p><a name="Try_it_yourself"></a></p>
+<h2>Try it yourself</h2>
+
+
+<pre>
+:lua <span class="keyword">local</span> a = <span class="number">5</span>; <span class="global">print</span>(a)     <span class="string">" works: a is local to this one :lua call
+:lua print(a)                  "</span> prints <span class="keyword">nil</span>: the previous <span class="backtick"><code>a</code></span> is gone
+</pre>
+
+
+<p>You now know how to name values and control who can see them. Next we tackle the
+single most important type in Lua — <strong>Chapter 03, Tables</strong>.</p>
+
+
+</div> <!-- id="content" -->
+</div> <!-- id="main" -->
+<div id="about">
+<i>generated by <a href="http://github.com/lunarmodules/LDoc">LDoc 1.5.0</a></i>
+<i style="float:right;">Last updated 2026-06-30 16:53:09 </i>
+</div> <!-- id="about" -->
+</div> <!-- id="container" -->
+</body>
+</html>

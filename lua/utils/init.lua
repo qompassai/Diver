@@ -2,10 +2,6 @@
 -- Qompass AI Diver Utils
 -- Copyright (C) 2025 Qompass AI, All rights reserved
 -- --------------------------------------------------
--- /qompassai/Diver/lua/utils/init.lua
--- Qompass AI Diver Utils
--- Copyright (C) 2025 Qompass AI, All rights reserved
--- --------------------------------------------------
 local M = {} ---@version JIT
 
 local function safe_require(module)
@@ -26,6 +22,11 @@ M.red = safe_require('utils.red')
 M.dev = safe_require('utils.dev')
 if M.dev and M.dev.setup then
   M.dev.setup()
+end
+
+M.games = safe_require('utils.games')
+if M.games and M.games.setup then
+  M.games.setup()
 end
 
 if M.bsp and M.bsp.setup then

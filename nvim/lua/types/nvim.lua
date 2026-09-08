@@ -1,0 +1,438 @@
+-- /qompassai/Diver/lua/types/nvim.lua
+-- Qompass AI Diver Nvim Types
+-- Copyright (C) 2025 Qompass AI, All rights reserved
+------------------------------------------------------
+---@meta
+---@alias vim.CompleteDoneReason                           string
+---@alias vim.CompleteFuncRefresh                          'always'
+---@alias vim.CompleteFuncReturn                           integer|vim.CompleteMatches|vim.CompleteFuncResult
+---@alias vim.CompleteMatches                              string[]|vim.CompletedItem[]
+---@alias vim.fs.EntryType                                 'file'|'directory'|'link'|'fifo'|'socket'|'char'|'block'|'unknown'
+---@alias uv_fs_scandir_t                                  userdata
+---@alias vim.uv.FsScandirHandle                           userdata
+---@alias vim.uv.FsScandirType                             'file'|'directory'|'link'|'fifo'|'socket'|'char'|'block'|'unknown'
+--- @class                   CoxpcallModule
+--- @field pcall                                            fun(f: function, ...: any): boolean, any
+--- @field xpcall                                           fun(f: function, err: function, ...: any): boolean, any
+--- @field running                                          fun(coro?: thread): thread?
+--- @param f                                                function
+--- @param ...                                              any
+--- @return boolean                                         success
+--- @return any                                             ...
+function copcall(f, ...) end
+
+--- @param f                                               function
+--- @param err                                             function
+--- @param ...                                             any
+--- @return boolean                                        success
+--- @return any                                            ...
+function coxpcall(f, err, ...) end
+
+---@class gh.Opts
+---@field branch?                                          string
+---@field cmd?                                             string[]
+---@field data?                                            table|any
+---@field event?                                           string[]
+---@field ft?                                              string[]
+---@field hook?                                            fun(spec?: vim.pack.Spec)
+---@field keys?                                            table[]
+---@field name?                                            string
+---@field opts?                                            table
+---@field update?                                          boolean
+---@field version?                                         string|vim.Version|vim.VersionRange
+---@param repo                                             string
+---@param opts?                                            gh.Opts
+---@return string|vim.pack.Spec
+function _G.gh(repo, opts) end
+
+---@class                    vim
+---@field api                                              vim.api
+---@field diagnostic                                       vim.diagnostic
+---@field fn                                               vim.fn
+---@field lsp                                              vim.lsp
+---@field pesc                                             fun(s: string): string
+---@class                    vim.api
+---@field nvim_buf_get_lines                               fun(buffer: integer, start: integer, end: integer, strict_indexing: boolean): string[]
+---@field nvim_buf_get_name                                fun(buffer: integer): string
+---@field nvim_buf_get_mark                                fun(buffer: integer, name: string): integer[]
+---@field nvim_buf_set_lines                               fun(buffer: integer, start: integer, end_: integer, strict_indexing: boolean, replacement: string[]): nil
+---@field nvim_create_augroup                              fun(name: string, opts: table): integer
+---@field nvim_create_autocmd                              fun(event: string|string[], opts: vim.api.CreateAutocmdOpts): integer
+---@field nvim_create_user_command                         fun(name: string, command: function|string, opts: table): nil
+---@field nvim_get_current_buf                             fun(): integer
+---@field nvim_get_runtime_file                            fun(pattern: string, all: boolean): string[]
+---@field nvim_set_option_value                            fun(name: string, value: any, opts: table): nil
+---@type                     vim.api
+vim.api = vim.api
+---@class                    vim.api.AutocmdCallbackArgs
+---@field buf                                              integer
+---@field data?                                            any
+---@field id                                               integer
+---@field event                                            string
+---@field file                                             string
+---@field group?                                           integer
+---@field match                                            string
+---@class                    vim.api.CreateAutocmdOpts
+---@field buffer?                                          integer
+---@field callback?                                        fun(args: vim.api.AutocmdCallbackArgs)
+---@field desc?                                            string
+---@field group?                                           integer
+---@field pattern?                                         string|string[]
+---@field once?                                            boolean
+---@field nested?                                          boolean
+---@field command?                                         string
+---@meta
+---@class vim.api.keyset.create_autocmd
+---@field group?                                           integer|string
+---@field pattern?                                         string|string[]
+---@field buffer?                                          integer
+---@field desc?                                            string
+---@field callback?                                        fun():boolean?
+---@field command?                                         string
+---@field once?                                            boolean
+---@field nested?                                          boolean
+
+---@param event                                            string|string[]
+---@param opts                                             vim.api.keyset.create_autocmd
+---@return integer
+function vim.api.nvim_create_autocmd(event, opts) end
+
+---@class                    vim.b
+---@field lsp_enable_on_demand?                            boolean
+---@class                    vim.bo
+---@field autocomplete?                                    boolean
+---@field autoread?                                        boolean
+---@field backupcopy?                                      'yes'|'no'|'auto'|'breaksymlink'|'breakhardlink'|string
+---@field completeopt?                                     string|string[] "menu","menuone","noselect","noinsert","popup","preview","fuzzy","longest","preinsert","nearest","nosort"
+---@field expandtab?                                       boolean
+---@field fileencoding?                                    string
+---@field filetype?                                        string
+---@field grepprg?                                         string
+---@field iminsert?                                        integer
+---@field imsearch?                                        integer
+---@field lisp?                                            boolean
+---@field lispwords?                                       string
+---@field modeline?                                        boolean
+---@field modifiable?                                      boolean
+---@field nrformats?                                       string|string[] { 'bin','hex' }
+---@field readonly?                                        boolean
+---@field spelllang?                                       string
+---@field spellfile?                                       string
+---@field spelloptions?                                    string 'camel'
+---@field shiftwidth?                                      integer
+---@field softtabstop?                                     integer
+---@field swapfile?                                        boolean
+---@field syntax?                                          'enable'|'on'|'off'|string
+---@field tabstop?                                         integer
+---@field undofile?                                        boolean
+---@class                    vim.CompleteFuncResult
+---@field refresh?                                         vim.CompleteFuncRefresh
+---@field words                                            vim.CompleteMatches
+---@class                    vim.diagnostic
+---@field get                                              fun(bufnr?: integer, opts?: table): vim.Diagnostic[]
+---@class                    vim.Diagnostic
+---@field lnum                                             integer
+---@field col                                              integer
+---@field message                                          string
+---@field severity                                         integer
+---@field source?                                          string
+---@class                    vim.fn
+---@field abs?                                             fun(expr: number): number
+---@field acos?                                            fun(expr: number): number
+---@field add?                                             fun(object: any, expr: any): any
+---@field and?                                             fun(expr: number, expr1: number): integer
+---@field api_info?                                        fun(): table
+---@field append?                                          fun(lnum: integer|string, text: string|string[]): 0|1
+---@field executable?                                      fun(name: string): integer
+---@field expand?                                          fun(expr: string): string
+---@field getcwd                                           fun(): string
+---@field has?                                             fun(feature: string): integer
+---@field input                                            fun(prompt: string, default?: string, completion?: string): string
+---@field jobstart                                         fun(cmd: string[]|string, opts: table): integer
+---@field stdpath?                                         fun(what: 'config'|'data'|'state'|'cache'|'log'): string
+---@field strftime                                         fun(format: string, time: integer): string
+vim.fn = vim.fn
+---@class                    vim.fs
+---@field abspath                                          fun(path: string): string
+---@field basename                                         fun(file: string|nil): string|nil
+---@field dirname                                          fun(file: string|nil): string|nil
+---@field normalize                                        fun(path: string, opts?: { expand_env?: boolean, win?: boolean }): string
+---@field joinpath                                         fun(...: string): string
+---@field find                                             fun(
+---  names:                                                string|string[]|fun(name: string, path: string): boolean,
+---  opts:                                                 { path?: string, upward?: boolean, stop?: string, type?: string, limit?: number, follow?: boolean }|nil)): string[]
+---@field parents                                          fun(start: string): (fun(_, dir: string): string|nil), nil, string|nil
+---@field relative_path                                    fun(base: string, target: string, opts?: table): string|nil
+---@field rm                                               fun(path: string, opts?: { recursive?: boolean, force?: boolean }): nil
+---@field snippet_entry                                    string
+vim.fs = vim.fs or {}
+---@type                     vim.fs
+---@class                    vim.fs.DirEntry
+---@field name                                             string
+---@field type                                             vim.fs.EntryType
+---@class                     vim.g
+---@field clipboard?                                       'clip'|'doitclient'|'lemonade'|'osc52'|'pbcopy'|'putclip'|'termux'|'tmux'|'wayclip'|'wl-copy'|'win32yank'|'xclip'|'xsel'
+---@field deprecation_warnings?                            boolean
+---@field editorconfig?                                    boolean
+---@field git_command_ssh?                                 integer
+---@field guipty?                                          boolean
+---@field loaded_illuminate?                               boolean
+---@field loaded_netrw?                                    integer
+---@field loaded_netrwPlugin?                              integer
+---@field loaded_node_provider?                            0|1|integer
+---@field loaded_perl_provider?                            0|1
+---@field loaded_python_provider?                          0|1
+---@field loaded_ruby_provider?                            0|1
+---@field mapleader?                                       string
+---@field maplocalleader?                                  string
+---@field mkdp_markdown_css?                               string
+---@field mkdp_theme?                                      string
+---@field node_host_prog?                                  string
+---@field perl_host_prog?                                  string
+---@field python3_host_prog?                               string
+---@field ruby_host_prog?                                  string
+---@field rust_cargo_check_all_targets?                    boolean
+---@field rust_cargo_check_benches?                        boolean
+---@field rust_conceal?                                    boolean
+---@field rust_conceal_pub?                                boolean
+---@field rust_playpen_url?                                string
+---@field rust_recommended_style?                          boolean
+---@field rust_shortener_url?                              string
+---@field rustfmt_detect_version?                          boolean
+---@field rustfmt_emit_files?                              boolean
+---@field ruff_makeprg_params?                             string
+---@field semantic_tokens_enabled?                         boolean
+---@field sqlite_clib_path?                                string
+---@field syntax_on?                                       boolean
+---@field table_mode_always_active?                        integer
+---@field table_mode_corner?                               string
+---@field table_mode_separator?                            string
+---@field table_mode_syntax?                               integer
+---@field table_mode_update_time?                          integer
+---@field use_blink_cmp?                                   boolean
+---@field vim_markdown_folding_disabled?                   integer
+---@field vim_markdown_math?                               integer
+---@field vim_markdown_frontmatter?                        integer
+---@field vim_markdown_toml_frontmatter?                   integer
+---@field vim_markdown_json_frontmatter?                   integer
+---@field vim_markdown_follow_anchor?                      integer
+---@field which_key_disable_health_check?                  integer
+---@field use_blink_cmp?                                   boolean
+---@class                    vim.o
+---@field allowrevins?                                     boolean
+---@field ambiwidth?                                       string
+---@field autochdir?                                       boolean
+---@field autocompletedelay?                               integer
+---@field autocompletetimeout?                             integer
+---@field autowrite?                                       boolean
+---@field autowriteall?                                    boolean
+---@field backup?                                          boolean
+---@field background?                                      'dark'|'light'
+---@field backspace?                                       string|string[] { "indent","eol","start" }
+---@field clipboard?                                       string|string[]  "unnamedplus" or { "unnamedplus" }
+---@field cmdheight?                                       integer
+---@field comments?                                        string|string[]
+---@field complete?                                        string|string[]
+---@field completeitemalign?                               "abbr,kind,menu"
+---@field concealcursor?                                   string "nc", "nivc"
+---@field conceallevel?                                    0|1|2|3
+---@field confirm?                                         boolean
+---@field cursorline?                                      boolean
+---@field debug?                                           ''|'msg'|'throw'|'beep'|string
+---@field diffopt?                                         string|string[]  'internal,filler,closeoff,algorithm:histogram,indent-heuristic,linematch'
+---@field encoding?                                        string
+---@field errorbells?                                      boolean
+---@field exrc?                                            boolean
+---@field fileencodings?                                   string|string[]
+---@field fileformats?                                     string
+---@field formatoptions?                                   string
+---@field guicursor?                                       string
+---@field hidden?                                          boolean
+---@field highlight?                                       boolean
+---@field history?                                         integer
+---@field hlsearch?                                        boolean
+---@field icon?                                            boolean
+---@field ignorecase?                                      boolean
+---@field inccommand?                                      ''|'nosplit'|'split'|string
+---@field incsearch?                                       boolean
+---@field isprint?                                         string "@,161-255"
+---@field joinspaces?                                      boolean
+---@field jumpoptions?                                     ''|'clean'|'stack'|'view'|string
+---@field langnoremap?                                     boolean
+---@field langremap?                                       boolean
+---@field laststatus?                                      0|1|2|3
+---@field lazyredraw?                                      boolean
+---@field linespace?                                       integer
+---@field lispwords?                                       string|string[]
+---@field listchars?                                       string
+---@field magic?                                           boolean
+---@field mat?                                             integer
+---@field maxsearchcount?                                  integer
+---@field modelines?                                       integer
+---@field mouse?                                           ''|'a'|'nvi'|'nv'|'ni'|'v'|'n'|'i'|'r'|string
+---@field mousescroll?                                     string "ver:3,hor:6"
+---@field number?                                          boolean
+---@field packpath?                                        string|string[]
+---@field pumheight?                                       integer
+---@field redrawtime?                                      integer
+---@field relativenumber?                                  boolean
+---@field report?                                          integer
+---@field ruler?                                           boolean
+---@field scrolloff?                                       integer
+---@field secure?                                          boolean
+---@field sessionoptions?                                  string|string[] 'curdir,folds,help,tabpages,terminal,winsize'
+---@field shiftwidth?                                      integer
+---@field shortmess?                                       string  'IF'
+---@field showmode?                                        boolean
+---@field showtabline?                                     0|1|2|integer
+---@field sidescroll?                                      integer
+---@field sidescrolloff?                                   integer
+---@field smartcase?                                       boolean
+---@field smarttab?                                        boolean
+---@field smoothscroll?                                    boolean
+---@field softtabstop?                                     integer
+---@field spell?                                           boolean
+---@field spelllang?                                       string|string[] 'en_us' or { 'en_us' }
+---@field splitbelow?                                      boolean
+---@field splitright?                                      boolean
+---@field startofline?                                     boolean
+---@field switchbuf?                                       string 'uselast'
+---@field tabpagemax?                                      integer
+---@field tags?                                            string|string[]
+---@field tabstop?                                         integer
+---@field termguicolors?                                   boolean
+---@field textwidth?                                       integer
+---@field timeout?                                         boolean
+---@field timeoutlen?                                      integer
+---@field title?                                           boolean
+---@field tm?                                              integer   'timeoutlen'
+---@field ttimeoutlen?                                     integer
+---@field ttyfast?                                         boolean
+---@field undodir?                                         string
+---@field undofile?                                        boolean
+---@field updatetime?                                      integer
+---@field viewoptions?                                     string|string[]  "unix,slash"
+---@field viminfo?                                         string|string[]
+---@field virtualedit?                                     ''|'block'|'onemore'|'all'|string
+---@field wildignore?                                      string|string[]   { "*.a","*.o",... }
+---@field wildignorecase?                                  boolean
+---@field wildmenu?                                        boolean
+---@field wildmode?                                        string|string[] 'noselect'
+---@field winborder?                                       'none'|'single'|'double'|'rounded'|'solid'|'shadow'|string
+---@field wrap?                                            boolean
+---@field writebackup?                                     boolean
+---@class                    vim.opt.Option<T>
+---@field get?                                             fun(self: vim.opt.Option<T>): T
+---@field append?                                          fun(self: vim.opt.Option<T>, value: any)
+---@field remove?                                          fun(self: vim.opt.Option<T>, value: any)
+
+---@class                    vim.opt
+---@field backspace                                        vim.opt.Option<string|string[]>
+---@field comments                                         vim.opt.Option<string|string[]>
+---@field complete                                         vim.opt.Option<string|string[]>
+---@field listchars                                        vim.opt.Option<table<string,string>>
+---@field lispwords                                        vim.opt.Option<string|string[]>
+---@field nrformats                                        vim.opt.Option<string|string[]>
+---@field tags                                             vim.opt.Option<string|string[]>
+---@field viminfo                                          vim.opt.Option<string|string[]>
+---@field wildignore                                       vim.opt.Option<string|string[]>
+---@class                    vim.opt_local:                vim.opt
+---@class                    vim.opt_global:               vim.opt
+---@class                    OptionMethods<T>
+---@field append?                                          fun(self:OptionMethods<T>, value:any)
+---@field comments?                                        OptionMethods<string|string[]>
+---@field complete?                                        OptionMethods<string|string[]>
+---@field get?                                             fun(self:OptionMethods<T>):T
+---@field remove?                                          fun(self:OptionMethods<T>, value:any)
+---@field listchars?                                       OptionMethods<table<string,string>>
+---@field lispwords?                                       OptionMethods<string|string[]>
+---@field nrformats?                                       OptionMethods<string|string[]>
+---@field tags?                                            OptionMethods<string|string[]>
+---@field viminfo?                                         OptionMethods<string|string[]>
+---@class                    vim.pack.Spec
+---@field branch?                                          string
+---@field cmd?                                             string[]
+---@field data?                                            table|any
+---@field event?                                           string[]
+---@field ft?                                              string[]
+---@field hook?                                            fun(spec?: vim.pack.Spec)
+---@field keys?                                            table[]
+---@field name?                                            string
+---@field opts?                                            table
+---@field repo?                                            string
+---@field src                                              string
+---@field update?                                          boolean
+---@field version?                                         string|vim.Version|vim.VersionRange
+---@class                    vim.wo
+---@field breakindent?                                     boolean
+---@field conceallevel?                                    0|1|2|3|integer
+---@field cursorbind?                                      boolean
+---@field cursorline?                                      boolean
+---@field cursorlineopt?                                   'both'|'line'|'number'
+---@field foldenable?                                      boolean
+---@field foldexpr?                                        string
+---@field foldlevel?                                       integer
+---@field foldmethod?                                      'manual'|'marker'|'expr'|'syntax'|'indent'|'diff'|string
+---@field lhistory?                                        integer
+---@field linebreak?                                       boolean
+---@field list?                                            boolean
+---@field listchars?                                       table<string,string> { space="_", tab=">~", ... }
+---@field number?                                          boolean
+---@field sidescrolloff?                                   integer
+---@field smoothscroll?                                    boolean
+---@field scrolloff?                                       integer
+---@field virtualedit?                                     string
+---@field wrap?                                            boolean
+---@class                    vim.treesitter.language
+---@field register                                         fun(lang: string, filetype: string|string[])
+---@field get_lang                                         fun(filetype: string): string
+---@field get_filetypes                                    fun(lang: string): string[]
+---@field add                                              fun(lang: string, opts?: { path?: string, with_runtime?: boolean }): boolean, string|nil
+---@class                    vim.treesitter.query
+---@field set                                              fun(lang: string, query_name: string, text: string)
+---@field get                                              fun(lang: string, query_name: string): vim.treesitter.Query|nil
+---@field parse                                            fun(lang: string, text: string): vim.treesitter.Query
+---@class                    vim.treesitter
+---@field language                                         vim.treesitter.language
+---@field query                                            vim.treesitter.query
+---@field start                                            fun(bufnr?: integer, lang?: string)
+---@field stop                                             fun(bufnr?: integer, lang?: string)
+---@class                    vim.uv
+---@field available_parallelism?                           fun(): integer
+---@field fs_scandir?                                      fun(path: string): uv_fs_scandir_t|nil
+---@field fs_scandir_next?                                 fun(fs: uv_fs_scandir_t): string|nil, string|nil
+---@field fs_scandir                                       fun(path: string): vim.uv.FsScandirHandle|nil
+---@field fs_scandir_next                                  fun(fs: vim.uv.FsScandirHandle): string|nil, vim.uv.FsScandirType|nil
+---@field fs_stat                                          fun(path: string): vim.uv.FsStat|nil
+---@class                    vim.uv.FsStat
+---@field type                                             vim.uv.FsScandirType
+---@field size                                             integer
+---@class                    vim.v
+---@field completed_item?                                  vim.CompletedItem
+---@field event?                                           vim.VEvent
+---@class                    vim.CompletedItem
+---@field abbr?                                            string
+---@field dup?                                             integer
+---@field menu?                                            string
+---@field kind?                                            string
+---@field info?                                            string
+---@field incomplete?                                      string
+---@field icase?                                           integer
+---@field equal?                                           integer
+---@field empty?                                           integer
+---@field user_data?                                       any
+---@field word                                             string
+---@class                    vim.VEvent
+---@class                    vim.VEventCompleteChanged :   vim.VEvent
+---@field completed_item?                                  vim.CompletedItem
+---@field col?                                             integer
+---@field height?                                          integer
+---@field row?                                             integer
+---@field scrollbar?                                       boolean
+---@field size?                                            integer
+---@field width?                                           integer
+---@class                    vim.VEventCompleteDonePre :   vim.VEvent
+---@class                    vim.NotifyOpts
+---@field on_open?                                         fun(win: integer)
+---@field title?                                           string
+---@field timeout?                                         integer

@@ -1,0 +1,249 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN"
+   "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd">
+<html>
+<meta http-equiv="Content-Type" content="text/html; charset=UTF-8"/>
+<head>
+    <title>Learn Lua with Diver</title>
+    <link rel="stylesheet" href="../ldoc.css" type="text/css" />
+</head>
+<body>
+
+<div id="container">
+
+<div id="product">
+	<div id="product_logo"></div>
+	<div id="product_name"><big><b></b></big></div>
+	<div id="product_description"></div>
+</div> <!-- id="product" -->
+
+
+<div id="main">
+
+
+<!-- Menu -->
+
+<div id="navigation">
+<br/>
+<h1>Diver :: Learn Lua</h1>
+
+
+<ul>
+  <li><a href="../index.html">Index</a></li>
+</ul>
+
+<h2>Contents</h2>
+<ul>
+<li><a href="#Concept">Concept </a></li>
+<li><a href="#In_Diver">In Diver </a></li>
+<li><a href="#Reference">Reference </a></li>
+<li><a href="#Try_it_yourself">Try it yourself </a></li>
+</ul>
+
+
+<h2>Topics</h2>
+<ul class="">
+  <li><a href="../topics/00-introduction.md.html">00-introduction</a></li>
+  <li><a href="../topics/01-values-and-types.md.html">01-values-and-types</a></li>
+  <li><a href="../topics/02-variables-and-scope.md.html">02-variables-and-scope</a></li>
+  <li><a href="../topics/03-tables.md.html">03-tables</a></li>
+  <li><strong>04-functions</strong></li>
+  <li><a href="../topics/05-control-flow.md.html">05-control-flow</a></li>
+  <li><a href="../topics/06-strings-and-patterns.md.html">06-strings-and-patterns</a></li>
+  <li><a href="../topics/07-modules-and-require.md.html">07-modules-and-require</a></li>
+  <li><a href="../topics/08-error-handling.md.html">08-error-handling</a></li>
+  <li><a href="../topics/09-the-vim-api.md.html">09-the-vim-api</a></li>
+  <li><a href="../topics/10-luacats-annotations.md.html">10-luacats-annotations</a></li>
+  <li><a href="../topics/11-neovim-013-native.md.html">11-neovim-013-native</a></li>
+  <li><a href="../topics/12-putting-it-together.md.html">12-putting-it-together</a></li>
+</ul>
+<h2>Modules</h2>
+<ul class="nowrap">
+  <li><a href="../modules/learn_lua.html">learn_lua</a></li>
+  <li><a href="../modules/learn_tables.html">learn_tables</a></li>
+  <li><a href="../modules/learn_vim_api.html">learn_vim_api</a></li>
+</ul>
+
+</div>
+
+<div id="content">
+
+
+<h1>04 · Functions</h1>
+
+<p><a name="Concept"></a></p>
+<h2>Concept</h2>
+
+<p>A function is a value, just like a number or a string. You can store it in a
+variable, put it in a table, pass it as an argument, and return it from another
+function. This is what people mean when they say Lua has "first-class
+functions," and it is why <code>diver</code> can hand callbacks to autocommands and
+keymaps.</p>
+
+<h3>Three ways to write the same function</h3>
+
+
+<pre>
+<span class="comment">-- 1. Assign an anonymous function to a local
+</span><span class="keyword">local</span> <span class="keyword">function</span> <span class="function-name">add</span>(a, b) <span class="keyword">return</span> a + b <span class="keyword">end</span>
+
+<span class="comment">-- 2. The same thing, spelled out
+</span><span class="keyword">local</span> add = <span class="keyword">function</span>(a, b) <span class="keyword">return</span> a + b <span class="keyword">end</span>
+
+<span class="comment">-- 3. Attach to a module table (the diver default for public functions)
+</span><span class="keyword">function</span> M.<span class="function-name">add</span>(a, b) <span class="keyword">return</span> a + b <span class="keyword">end</span>
+</pre>
+
+
+<p>Form 3 is sugar for <code>M.add = function(a, b) ... end</code>. You will see it at the top
+of every public function in the config.</p>
+
+<h3>Calling with a table — no parentheses needed</h3>
+
+<p>When a function takes a single table argument, Lua lets you drop the
+parentheses:</p>
+
+
+<pre>
+vim.pack.<span class="function-name">add</span>({ { src = <span class="string">"..."</span> } })   <span class="comment">-- explicit
+</span>vim.pack.<span class="function-name">add</span>{ { src = <span class="string">"..."</span> } }     <span class="comment">-- same thing, table-call sugar</span>
+</pre>
+
+
+<p><code>diver</code> uses both styles. Do not be thrown by the missing <code>()</code> — <code>f{...}</code> is
+just <code>f({...})</code>.</p>
+
+<h3>Multiple return values</h3>
+
+<p>A Lua function can return more than one value at once:</p>
+
+
+<pre>
+<span class="keyword">local</span> <span class="keyword">function</span> <span class="function-name">minmax</span>(t)
+    <span class="keyword">return</span> <span class="global">math</span>.<span class="function-name">min</span>(<span class="global">unpack</span>(t)), <span class="global">math</span>.<span class="function-name">max</span>(<span class="global">unpack</span>(t))
+<span class="keyword">end</span>
+<span class="keyword">local</span> lo, hi = <span class="function-name">minmax</span>({<span class="number">3</span>, <span class="number">1</span>, <span class="number">9</span>})   <span class="comment">-- lo = 1, hi = 9</span>
+</pre>
+
+
+<p>Callers take as many as they want; the rest are discarded. The common
+<code>ok, result = pcall(...)</code> pattern (Chapter 08) relies on this.</p>
+
+<h3>Functions as arguments (callbacks)</h3>
+
+<p>This is the pattern that makes the whole config tick. You pass a function <em>to</em>
+another function so it can be called later, when some event happens:</p>
+
+
+<pre>
+vim.api.<span class="function-name">nvim_create_autocmd</span>(<span class="string">"BufWritePost"</span>, {
+    callback = <span class="keyword">function</span>(args)        <span class="comment">-- this runs every time you save
+</span>        <span class="global">print</span>(<span class="string">"saved "</span> .. args.file)
+    <span class="keyword">end</span>,
+})
+</pre>
+
+
+<h3>Closures: functions that remember</h3>
+
+<p>When you define a function <em>inside</em> another, the inner one can still see the
+outer one's locals — even after the outer function has returned. That captured
+state is a <strong>closure</strong>.</p>
+
+<p><a name="In_Diver"></a></p>
+<h2>In Diver</h2>
+
+<p>**Public functions on <code>M</code>** — <code>lua/config/core/lsp.lua</code>:</p>
+
+
+<pre>
+<span class="keyword">function</span> M.<span class="function-name">on_attach</span>(client, bufnr)
+    ...
+<span class="keyword">end</span>
+</pre>
+
+
+<p><strong>A callback passed to an autocommand</strong> — <code>lua/utils/docs/docs.lua</code>:</p>
+
+
+<pre>
+<span class="function-name">autocmd</span>(<span class="string">'BufWritePost'</span>, {
+    pattern = { <span class="string">'*.md'</span>, <span class="string">'*.markdown'</span> },
+    callback = <span class="keyword">function</span>(args)
+        <span class="keyword">local</span> infile = args.file
+        <span class="comment">-- ... build a pandoc command, run it asynchronously ...
+</span>    <span class="keyword">end</span>,
+})
+</pre>
+
+
+<p><strong>A closure used as a keymap target</strong> — <code>lua/mappings/cicdmap.lua</code>:</p>
+
+
+<pre>
+<span class="keyword">local</span> <span class="keyword">function</span> <span class="function-name">toggle_netrw</span>()
+    <span class="keyword">for</span> _, win <span class="keyword">in</span> <span class="global">ipairs</span>(vim.api.<span class="function-name">nvim_list_wins</span>()) <span class="keyword">do</span>
+        ...
+    <span class="keyword">end</span>
+    vim.<span class="function-name">cmd</span>(<span class="string">'Lexplore'</span>)
+<span class="keyword">end</span>
+<span class="function-name">map</span>(<span class="string">'n'</span>, <span class="string">'&lt;leader&gt;e'</span>, toggle_netrw, { desc = <span class="string">'Toggle Explorer'</span> })
+</pre>
+
+
+<p><code>toggle_netrw</code> is defined inside <code>setup_cicdmap</code>, closes over the surrounding
+scope, and is then handed to <code>vim.keymap.set</code> as the action to run on
+<code>&lt;leader&gt;e</code>.</p>
+
+<p><strong>Multiple returns</strong> — <code>lua/config/core/schema.lua</code>:</p>
+
+
+<pre>
+<span class="keyword">local</span> <span class="keyword">function</span> <span class="function-name">get_index</span>(index, tbl, key)
+    <span class="keyword">local</span> i = index[key]
+    <span class="keyword">if</span> <span class="keyword">not</span> i <span class="keyword">then</span> <span class="keyword">return</span> <span class="keyword">nil</span> <span class="keyword">end</span>
+    <span class="keyword">return</span> tbl[i], i        <span class="comment">-- returns TWO values: the schema and its index
+</span><span class="keyword">end</span>
+</pre>
+
+
+<p><a name="Reference"></a></p>
+<h2>Reference</h2>
+
+<p>In the **<a href="../modules/learn_lua.html#">learn_lua</a>** module:</p>
+
+<ul>
+    <li><code>bounds(list)</code> returns <strong>three</strong> values (count, first, last) to demonstrate
+    multiple returns.</li>
+    <li><code>make_counter(start)</code> returns a <strong>closure</strong> — call it repeatedly and watch the
+    captured <code>n</code> increase.</li>
+    <li><code>call_if_function(maybe_fn, arg)</code> shows the "is this actually callable?" guard
+    (<code>type(x) == &apos;function&apos;</code>) that <code>diver</code>'s <code>call_if_present</code> uses before
+    invoking a module method.</li>
+</ul>
+
+<p>In the **<a href="../modules/learn_vim_api.html#">learn_vim_api</a>** module, <code>map</code>, <code>on</code>, and <code>command</code> are thin wrappers
+that each accept a <strong>callback function</strong> the way the real APIs do.</p>
+
+<p><a name="Try_it_yourself"></a></p>
+<h2>Try it yourself</h2>
+
+
+<pre>
+:lua <span class="keyword">local</span> f = <span class="keyword">function</span>(x) <span class="keyword">return</span> x*<span class="number">2</span> <span class="keyword">end</span>; <span class="global">print</span>(<span class="function-name">f</span>(<span class="number">21</span>))
+:lua <span class="keyword">local</span> n,a,b = (<span class="keyword">function</span>() <span class="keyword">return</span> <span class="number">3</span>, <span class="string">'x'</span>, <span class="string">'y'</span> <span class="keyword">end</span>)(); <span class="global">print</span>(n,a,b)
+</pre>
+
+
+<p>Next: the keywords that decide <em>which</em> function runs — <strong>Chapter 05, Control
+Flow</strong>.</p>
+
+
+</div> <!-- id="content" -->
+</div> <!-- id="main" -->
+<div id="about">
+<i>generated by <a href="http://github.com/lunarmodules/LDoc">LDoc 1.5.0</a></i>
+<i style="float:right;">Last updated 2026-06-30 16:53:09 </i>
+</div> <!-- id="about" -->
+</div> <!-- id="container" -->
+</body>
+</html>

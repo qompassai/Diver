@@ -1,0 +1,279 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN"
+   "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd">
+<html>
+<meta http-equiv="Content-Type" content="text/html; charset=UTF-8"/>
+<head>
+    <title>Learn Lua with Diver</title>
+    <link rel="stylesheet" href="../ldoc.css" type="text/css" />
+</head>
+<body>
+
+<div id="container">
+
+<div id="product">
+	<div id="product_logo"></div>
+	<div id="product_name"><big><b></b></big></div>
+	<div id="product_description"></div>
+</div> <!-- id="product" -->
+
+
+<div id="main">
+
+
+<!-- Menu -->
+
+<div id="navigation">
+<br/>
+<h1>Diver :: Learn Lua</h1>
+
+
+<ul>
+  <li><a href="../index.html">Index</a></li>
+</ul>
+
+<h2>Contents</h2>
+<ul>
+<li><a href="#Concept">Concept </a></li>
+<li><a href="#In_Diver">In Diver </a></li>
+<li><a href="#Reference">Reference </a></li>
+<li><a href="#Try_it_yourself">Try it yourself </a></li>
+<li><a href="#How_this_documentation_was_built">How this documentation was built </a></li>
+</ul>
+
+
+<h2>Topics</h2>
+<ul class="">
+  <li><a href="../topics/00-introduction.md.html">00-introduction</a></li>
+  <li><a href="../topics/01-values-and-types.md.html">01-values-and-types</a></li>
+  <li><a href="../topics/02-variables-and-scope.md.html">02-variables-and-scope</a></li>
+  <li><a href="../topics/03-tables.md.html">03-tables</a></li>
+  <li><a href="../topics/04-functions.md.html">04-functions</a></li>
+  <li><a href="../topics/05-control-flow.md.html">05-control-flow</a></li>
+  <li><a href="../topics/06-strings-and-patterns.md.html">06-strings-and-patterns</a></li>
+  <li><a href="../topics/07-modules-and-require.md.html">07-modules-and-require</a></li>
+  <li><a href="../topics/08-error-handling.md.html">08-error-handling</a></li>
+  <li><a href="../topics/09-the-vim-api.md.html">09-the-vim-api</a></li>
+  <li><strong>10-luacats-annotations</strong></li>
+  <li><a href="../topics/11-neovim-013-native.md.html">11-neovim-013-native</a></li>
+  <li><a href="../topics/12-putting-it-together.md.html">12-putting-it-together</a></li>
+</ul>
+<h2>Modules</h2>
+<ul class="nowrap">
+  <li><a href="../modules/learn_lua.html">learn_lua</a></li>
+  <li><a href="../modules/learn_tables.html">learn_tables</a></li>
+  <li><a href="../modules/learn_vim_api.html">learn_vim_api</a></li>
+</ul>
+
+</div>
+
+<div id="content">
+
+
+<h1>10 · LuaCATS Annotations</h1>
+
+<p><a name="Concept"></a></p>
+<h2>Concept</h2>
+
+<p>Lua is dynamically typed — a variable can hold a number now and a string later,
+and Lua will not complain. That freedom is also a hazard in a 64,000-line
+config. The fix is <strong>annotations</strong>: special comments that <em>describe</em> the types
+without changing the runtime behaviour. Two tools read them:</p>
+
+<ul>
+    <li>**<code>lua-language-server</code>** reads them as <strong>LuaCATS</strong> (Lua Comment And Type
+    System) to give you hovers, completion, and red squiggles in Neovim.</li>
+    <li><strong>LDoc</strong> reads the same comments to generate the HTML documentation you are
+    reading.</li>
+</ul>
+
+<p>Annotations always start with <strong>three</strong> dashes and an <code>@tag</code>:</p>
+
+
+<pre>
+<span class="comment">---@param name string</span>
+</pre>
+
+
+<p>(Two dashes <code>--</code> is a normal comment; three dashes <code>---</code> marks an annotation /
+doc comment. The extra dash is the whole difference.)</p>
+
+<h3>The annotations you will actually use</h3>
+
+<p>| Annotation | Means |
+|------------|-------|
+| <code>---@param name type [desc]</code> | this function parameter has this type |
+| <code>---@return type [name] [desc]</code> | this function returns this type |
+| <code>---@type type</code> | this variable/expression has this type |
+| <code>---@class Name</code> | declare a record type with named fields |
+| <code>---@field name type</code> | a field of the current <code>@class</code> |
+| <code>---@alias Name typeA\|typeB</code> | a named union of types |
+| <code>---@cast x type</code> | tell the checker "trust me, <code>x</code> is this type now" |
+| <code>---@module &apos;name&apos;</code> | this file <em>is</em> the named module |
+| <code>---@meta</code> | this whole file is type-declarations only, never executed |
+| <code>---@generic T</code> | a type variable, for functions that preserve a type |</p>
+
+<h3>The type vocabulary</h3>
+
+<ul>
+    <li>Primitives: <code>nil</code>, <code>boolean</code>, <code>number</code>, <code>integer</code>, <a href="https://www.lua.org/manual/5.1/manual.html#5.4">string</a>, <code>function</code>,
+    <a href="https://www.lua.org/manual/5.1/manual.html#5.5">table</a>, <code>any</code>.</li>
+    <li><strong>Optional</strong>: a trailing <code>?</code> means "or nil" — <code>string?</code> is "string or nil".</li>
+    <li><strong>Unions</strong>: <code>string|number</code> is "either".</li>
+    <li><strong>Arrays</strong>: <code>string[]</code> is "a list of strings".</li>
+    <li><strong>Typed tables</strong>: <code>table&lt;string, integer&gt;</code> is "keys are strings, values are
+    integers"; or inline records <code>{ desc: string, buffer: integer }</code>.</li>
+    <li><strong>Function types</strong>: <code>fun(a: integer): boolean</code>.</li>
+</ul>
+
+<h3>One comment, two jobs</h3>
+
+<p>This is the payoff. A function documented like this:</p>
+
+
+<pre>
+<span class="comment">---@param value any
+</span><span class="comment">---@param fallback any
+</span><span class="comment">---@return any
+</span><span class="keyword">function</span> M.<span class="function-name">default_to</span>(value, fallback)
+    <span class="keyword">return</span> value <span class="keyword">or</span> fallback
+<span class="keyword">end</span>
+</pre>
+
+
+<p>…gives you autocomplete + a type warning if you misuse it in Neovim, <strong>and</strong>
+becomes a formatted entry in these docs. You never write the documentation
+twice.</p>
+
+<p><a name="In_Diver"></a></p>
+<h2>In Diver</h2>
+
+<p>The clearest place to read annotations is <code>lua/types/</code>. Those files are pure
+declaration files marked with <code>---@meta</code> — they teach the language server about
+shapes without running any code.</p>
+
+<p><code>lua/types/core/autocmds.lua</code> declares a class:</p>
+
+
+<pre>
+<span class="comment">---@meta
+</span><span class="comment">---@class Autocmds
+</span><span class="comment">---@field go_autocmds?  fun()
+</span><span class="comment">---@field md_autocmds?  fun()
+</span><span class="comment">---@field nix_autocmds? fun(opts?: table)</span>
+</pre>
+
+
+<p>Read it as: "there is a type called <code>Autocmds</code>; it may have a <code>go_autocmds</code>
+field which is a function taking no args, etc." The <code>?</code> after each field name
+means the field is optional.</p>
+
+<p><code>lua/types/core/lsp.lua</code> shows aliases and richer classes:</p>
+
+
+<pre>
+<span class="comment">---@alias HlsMode
+</span><span class="comment">---| '"always"'
+</span><span class="comment">---| '"exported"'
+</span><span class="comment">---| '"diagnostics"'
+</span>
+<span class="comment">---@class lsp.Position
+</span><span class="comment">---@field line      integer
+</span><span class="comment">---@field character integer</span>
+</pre>
+
+
+<p>An <code>@alias</code> with <code>---|</code> lines is an enum: <code>HlsMode</code> is one of those three string
+literals.</p>
+
+<p>Annotations also appear <strong>inline</strong> in regular code. In <code>init.lua</code>:</p>
+
+
+<pre>
+<span class="keyword">local</span> o = vim.o <span class="comment">---@type vim.o</span>
+</pre>
+
+
+<p>and in <code>lua/plugins/init.lua</code>:</p>
+
+
+<pre>
+vim.pack.<span class="function-name">add</span>({ <span class="comment">---@type vim.pack.Spec[]</span>
+</pre>
+
+
+<p>The <code>---@cast</code> form (used in <code>lua/plugins/cloud.lua</code>) narrows a type mid-function:</p>
+
+
+<pre>
+<span class="comment">---@cast opts vim.pack.Spec</span>
+</pre>
+
+
+<p>This tells the checker "from here on, treat <code>opts</code> as a <code>vim.pack.Spec</code>," which
+silences a false warning without any runtime cost.</p>
+
+<h3>How <code>diver</code> is configured to enforce them</h3>
+
+<ul>
+    <li><code>.luarc.json</code> sets <code>runtime.version = &quot;LuaJIT&quot;</code>, the <code>runtime.path</code>, and the
+    known globals (<code>vim</code>, <code>safe_require</code>, <code>jit</code>). This is what the language server
+    reads.</li>
+    <li><code>.luacheckrc</code> configures the separate <code>luacheck</code> linter, declaring <code>vim</code> as a
+    global so it does not flag it as undefined.</li>
+    <li><code>.stylua.toml</code> configures the <code>stylua</code> formatter (4-space indent, single
+    quotes, 120 columns) so the whole config stays consistent.</li>
+</ul>
+
+<p><a name="How_this_documentation_was_built"></a></p>
+<h2>How this documentation was built</h2>
+
+<p>The comments in the reference modules (<a href="../modules/learn_lua.html#">learn_lua</a>, <a href="../modules/learn_tables.html#">learn_tables</a>,
+<a href="../modules/learn_vim_api.html#">learn_vim_api</a>) deliberately carry <strong>both</strong> styles at once:</p>
+
+
+<pre>
+<span class="comment">--- Pick the first non-nil argument.
+</span><span class="comment">-- @tparam any value the preferred value     &lt;- LDoc reads this
+</span><span class="comment">-- @treturn any value or fallback
+</span><span class="comment">---@param value any                          &lt;- lua-language-server reads this
+</span><span class="comment">---@return any
+</span><span class="keyword">function</span> M.<span class="function-name">default_to</span>(value, fallback) ... <span class="keyword">end</span>
+</pre>
+
+
+<p>LDoc's <code>@tparam</code>/<code>@treturn</code> and LuaCATS's <code>@param</code>/<code>@return</code> describe the same
+thing. In your own <code>diver</code> files you can usually get away with the single
+<code>---@param</code> / <code>---@return</code> form, which both tools understand. The <code>config.ld</code>
+file in this folder is what tells LDoc how to find and render all of it.</p>
+
+<p><a name="Reference"></a></p>
+<h2>Reference</h2>
+
+<p>Open the <strong>"View source"</strong> link on any function in the three reference modules.
+Every one is annotated in this dual style — they are the worked examples for
+this entire chapter.</p>
+
+<p><a name="Try_it_yourself"></a></p>
+<h2>Try it yourself</h2>
+
+<p>In Neovim (with <code>lua-language-server</code> running), open any <code>learn_*.lua</code> file and:</p>
+
+<ol>
+    <li>Hover a function name — the annotation renders as a signature tooltip.</li>
+    <li>Call <code>M.to_zero_based(&quot;oops&quot;)</code> and watch the language server flag the string
+    where a <code>number</code> was annotated.</li>
+</ol>
+
+<p>Next: the changes that make <code>diver</code> a <em>plugin-minimal</em> config — <strong>Chapter 11,
+Neovim 0.13 Native</strong>.</p>
+
+
+</div> <!-- id="content" -->
+</div> <!-- id="main" -->
+<div id="about">
+<i>generated by <a href="http://github.com/lunarmodules/LDoc">LDoc 1.5.0</a></i>
+<i style="float:right;">Last updated 2026-06-30 16:53:09 </i>
+</div> <!-- id="about" -->
+</div> <!-- id="container" -->
+</body>
+</html>

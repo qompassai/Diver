@@ -1,0 +1,259 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN"
+   "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd">
+<html>
+<meta http-equiv="Content-Type" content="text/html; charset=UTF-8"/>
+<head>
+    <title>Learn Lua with Diver</title>
+    <link rel="stylesheet" href="../ldoc.css" type="text/css" />
+</head>
+<body>
+
+<div id="container">
+
+<div id="product">
+	<div id="product_logo"></div>
+	<div id="product_name"><big><b></b></big></div>
+	<div id="product_description"></div>
+</div> <!-- id="product" -->
+
+
+<div id="main">
+
+
+<!-- Menu -->
+
+<div id="navigation">
+<br/>
+<h1>Diver :: Learn Lua</h1>
+
+
+<ul>
+  <li><a href="../index.html">Index</a></li>
+</ul>
+
+<h2>Contents</h2>
+<ul>
+<li><a href="#Concept">Concept </a></li>
+<li><a href="#In_Diver">In Diver </a></li>
+<li><a href="#Reference">Reference </a></li>
+<li><a href="#Try_it_yourself">Try it yourself </a></li>
+</ul>
+
+
+<h2>Topics</h2>
+<ul class="">
+  <li><a href="../topics/00-introduction.md.html">00-introduction</a></li>
+  <li><a href="../topics/01-values-and-types.md.html">01-values-and-types</a></li>
+  <li><a href="../topics/02-variables-and-scope.md.html">02-variables-and-scope</a></li>
+  <li><a href="../topics/03-tables.md.html">03-tables</a></li>
+  <li><a href="../topics/04-functions.md.html">04-functions</a></li>
+  <li><strong>05-control-flow</strong></li>
+  <li><a href="../topics/06-strings-and-patterns.md.html">06-strings-and-patterns</a></li>
+  <li><a href="../topics/07-modules-and-require.md.html">07-modules-and-require</a></li>
+  <li><a href="../topics/08-error-handling.md.html">08-error-handling</a></li>
+  <li><a href="../topics/09-the-vim-api.md.html">09-the-vim-api</a></li>
+  <li><a href="../topics/10-luacats-annotations.md.html">10-luacats-annotations</a></li>
+  <li><a href="../topics/11-neovim-013-native.md.html">11-neovim-013-native</a></li>
+  <li><a href="../topics/12-putting-it-together.md.html">12-putting-it-together</a></li>
+</ul>
+<h2>Modules</h2>
+<ul class="nowrap">
+  <li><a href="../modules/learn_lua.html">learn_lua</a></li>
+  <li><a href="../modules/learn_tables.html">learn_tables</a></li>
+  <li><a href="../modules/learn_vim_api.html">learn_vim_api</a></li>
+</ul>
+
+</div>
+
+<div id="content">
+
+
+<h1>05 · Control Flow</h1>
+
+<p><a name="Concept"></a></p>
+<h2>Concept</h2>
+
+<p>Control flow is how you make code take decisions and repeat work. Lua keeps this
+small — there are only a handful of keywords, and you have seen most of them
+already.</p>
+
+<h3><code>if</code> / <code>elseif</code> / <code>else</code> / <code>end</code></h3>
+
+
+<pre>
+<span class="keyword">if</span> cond1 <span class="keyword">then</span>
+    <span class="comment">-- ...
+</span><span class="keyword">elseif</span> cond2 <span class="keyword">then</span>
+    <span class="comment">-- ...
+</span><span class="keyword">else</span>
+    <span class="comment">-- ...
+</span><span class="keyword">end</span>
+</pre>
+
+
+<p>Every block ends with <code>end</code>. There are no curly braces and no colons. Remember
+Chapter 01: the conditions are judged by <strong>truthiness</strong>, so <code>if x then</code> means
+"if <code>x</code> is anything other than <code>false</code> or <code>nil</code>."</p>
+
+<h3>The numeric <code>for</code></h3>
+
+
+<pre>
+<span class="keyword">for</span> i = <span class="number">1</span>, <span class="number">10</span> <span class="keyword">do</span>        <span class="comment">-- i goes 1,2,...,10 (inclusive on both ends)
+</span>    <span class="global">print</span>(i)
+<span class="keyword">end</span>
+
+<span class="keyword">for</span> i = <span class="number">10</span>, <span class="number">1</span>, -<span class="number">1</span> <span class="keyword">do</span>    <span class="comment">-- count DOWN with a step of -1
+</span>    <span class="global">print</span>(i)
+<span class="keyword">end</span>
+</pre>
+
+
+<p>Note Lua's <code>for</code> is <strong>inclusive</strong> of the final value — <code>1, 10</code> runs ten times.</p>
+
+<h3>The generic <code>for</code> (with <a href="https://www.lua.org/manual/5.1/manual.html#pdf-ipairs">ipairs</a> / <a href="https://www.lua.org/manual/5.1/manual.html#pdf-pairs">pairs</a>)</h3>
+
+
+<pre>
+<span class="keyword">for</span> index, value <span class="keyword">in</span> <span class="global">ipairs</span>(list) <span class="keyword">do</span> ... <span class="keyword">end</span>
+<span class="keyword">for</span> key,   value <span class="keyword">in</span> <span class="global">pairs</span>(map)   <span class="keyword">do</span> ... <span class="keyword">end</span>
+</pre>
+
+
+<p>You met these in Chapter 03. They are the workhorse loops of the config.</p>
+
+<h3><code>while</code> and <code>repeat</code></h3>
+
+
+<pre>
+<span class="keyword">while</span> condition <span class="keyword">do</span> ... <span class="keyword">end</span>
+<span class="keyword">repeat</span> ... <span class="keyword">until</span> condition     <span class="comment">-- runs the body at least once</span>
+</pre>
+
+
+<p>These are rarer in <code>diver</code> but appear in parsing loops.</p>
+
+<h3>There is no ternary <code>?:</code> — use <code>and</code>/<code>or</code></h3>
+
+<p>Lua has no <code>cond ? a : b</code>. The idiom is:</p>
+
+
+<pre>
+<span class="keyword">local</span> result = cond <span class="keyword">and</span> when_true <span class="keyword">or</span> when_false
+</pre>
+
+
+<p>This works **as long as <code>when_true</code> is never <code>false</code>/<code>nil</code>** — otherwise it
+would wrongly fall through to <code>when_false</code>. When the true branch might be falsy,
+fall back to a full <code>if</code>.</p>
+
+<h3>Early <code>return</code> and the <code>not</code> guard</h3>
+
+<p>A clean Lua style returns early to avoid deep nesting:</p>
+
+
+<pre>
+<span class="keyword">local</span> <span class="keyword">function</span> <span class="function-name">handle</span>(mod)
+    <span class="keyword">if</span> <span class="keyword">not</span> mod <span class="keyword">then</span> <span class="keyword">return</span> <span class="keyword">end</span>   <span class="comment">-- bail out immediately
+</span>    <span class="comment">-- ... the happy path, un-indented ...
+</span><span class="keyword">end</span>
+</pre>
+
+
+<p><a name="In_Diver"></a></p>
+<h2>In Diver</h2>
+
+<p>**<code>if</code>/<code>elseif</code>/<code>else</code> choosing a comment style** — <code>lua/utils/docs/docs.lua</code>,
+inside <code>M.make_header</code>:</p>
+
+
+<pre>
+<span class="keyword">if</span> comment == <span class="string">'&lt;!--'</span> <span class="keyword">then</span>
+    ...
+<span class="keyword">elseif</span> comment == <span class="string">'/*'</span> <span class="keyword">then</span>
+    ...
+<span class="keyword">else</span>
+    ...
+<span class="keyword">end</span>
+</pre>
+
+
+<p><strong>A guard with early return</strong> — <code>lua/config/init.lua</code>, <code>call_if_present</code>:</p>
+
+
+<pre>
+<span class="keyword">local</span> <span class="keyword">function</span> <span class="function-name">call_if_present</span>(mod, method, opts, verbose, label)
+    <span class="keyword">if</span> <span class="keyword">not</span> mod <span class="keyword">then</span> <span class="keyword">return</span> <span class="keyword">end</span>
+    <span class="keyword">local</span> fn = mod[method]
+    <span class="keyword">if</span> <span class="global">type</span>(fn) ~= <span class="string">'function'</span> <span class="keyword">then</span> <span class="keyword">return</span> <span class="keyword">end</span>
+    ...
+<span class="keyword">end</span>
+</pre>
+
+
+<p>Two <code>if ... return end</code> guards filter out the bad cases first, so the real work
+runs at the bottom with no nesting.</p>
+
+<p><strong>The ternary idiom</strong> — <code>init.lua</code>:</p>
+
+
+<pre>
+o.shell = fn.<span class="function-name">executable</span>(<span class="string">'pwsh'</span>) == <span class="number">1</span> <span class="keyword">and</span> <span class="string">'pwsh'</span> <span class="keyword">or</span> <span class="string">'powershell'</span>
+</pre>
+
+
+<p>If <code>pwsh</code> is on the <code>$PATH</code>, use it; otherwise fall back to <code>powershell</code>. This
+is safe because both branches are non-empty strings.</p>
+
+<p>**A <code>for</code> loop over a range** — <code>lua/utils/docs/docs.lua</code>, the <code>:Align</code> command:</p>
+
+
+<pre>
+<span class="keyword">for</span> lnum = start_line, end_line <span class="keyword">do</span>
+    <span class="keyword">local</span> line = <span class="function-name">bufgl</span>(<span class="number">0</span>, lnum - <span class="number">1</span>, lnum, <span class="keyword">false</span>)[<span class="number">1</span>]
+    ...
+<span class="keyword">end</span>
+</pre>
+
+
+<p>A classic numeric <code>for</code> walking a line range, with the <code>- 1</code> to convert to the
+0-based buffer API (Chapter 09).</p>
+
+<p><a name="Reference"></a></p>
+<h2>Reference</h2>
+
+<p>In the **<a href="../modules/learn_lua.html#">learn_lua</a>** module:</p>
+
+<ul>
+    <li><code>ternary(cond, a, b)</code> is the <code>cond and a or b</code> idiom, with the caveat
+    documented.</li>
+    <li><code>default_to(value, fallback)</code> is the pure <code>or</code> default — <code>value or fallback</code>.</li>
+</ul>
+
+<p>In **<a href="../modules/learn_tables.html#">learn_tables</a>**, <code>each</code> and <code>each_pair</code> are the two generic-<code>for</code> loop
+shapes.</p>
+
+<p><a name="Try_it_yourself"></a></p>
+<h2>Try it yourself</h2>
+
+
+<pre>
+:lua <span class="keyword">for</span> i = <span class="number">3</span>, <span class="number">1</span>, -<span class="number">1</span> <span class="keyword">do</span> <span class="global">print</span>(i) <span class="keyword">end</span>
+:lua <span class="keyword">local</span> x = <span class="keyword">nil</span>; <span class="global">print</span>(x <span class="keyword">and</span> <span class="string">"set"</span> <span class="keyword">or</span> <span class="string">"unset"</span>)
+:lua <span class="keyword">local</span> <span class="keyword">function</span> <span class="function-name">g</span>(v) <span class="keyword">if</span> <span class="keyword">not</span> v <span class="keyword">then</span> <span class="keyword">return</span> <span class="string">"none"</span> <span class="keyword">end</span> <span class="keyword">return</span> v <span class="keyword">end</span> <span class="global">print</span>(<span class="function-name">g</span>(), <span class="function-name">g</span>(<span class="number">5</span>))
+</pre>
+
+
+<p>You can now branch and loop. Next we handle the most-manipulated value type in a
+config — <strong>Chapter 06, Strings and Patterns</strong>.</p>
+
+
+</div> <!-- id="content" -->
+</div> <!-- id="main" -->
+<div id="about">
+<i>generated by <a href="http://github.com/lunarmodules/LDoc">LDoc 1.5.0</a></i>
+<i style="float:right;">Last updated 2026-06-30 16:53:09 </i>
+</div> <!-- id="about" -->
+</div> <!-- id="container" -->
+</body>
+</html>

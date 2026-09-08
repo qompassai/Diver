@@ -1,0 +1,316 @@
+#!/usr/bin/env lua
+-- /qompassai/Diver/lua/types/lang/python.lua
+-- Qompass AI Diver Python Lang Types
+-- Copyright (C) 2025 Qompass AI, All rights reserved
+------------------------------------------------------
+---@meta
+---@class Python.Module
+---@field chan?                                            integer
+---@field start                                            fun(): integer|nil
+---@field setup_commands                                   fun(): nil
+---@class Python.Globals
+---@field python3_host_prog?                               string
+---@field python_host_prog?                                string
+---@field loaded_python_provider?                          integer
+---@field loaded_python3_provider?                         integer
+---@type Python.Module
+---@alias python.interpreter_version
+---| '3.8'
+---| '3.9'
+---| '3.10'
+---| '3.11'
+---| '3.12'
+---| '3.13'
+---| '3.14'
+---@alias python.lsp_client
+---| 'basedpyright'
+---| 'pyrefly_ls'
+---| 'pylsp'
+---| 'pylyzer'
+---| 'ruff_ls'
+---| 'ty_ls'
+---@alias python.linter
+---| 'bandit'
+---| 'flake8'
+---| 'mypy'
+---| 'pylint'
+---| 'pyrefly'
+---| 'ruff'
+---| 'vulture'
+---@alias python.formatter
+---| 'black'
+---| 'blackd'
+---| 'isort'
+---| 'ruff'
+---| 'yapf'
+---@alias python.test_framework
+---| 'pytest'
+---| 'unittest'
+---| 'nose'
+---| 'nose2'
+---@alias python.import_style
+---| 'google'
+---| 'pep8'
+---| 'cryptography'
+---| 'pycharm'
+---@alias ruff.line_length
+---| 79
+---| 88
+---| 100
+---| 120
+---@alias ruff.target_version
+---| 'py38'
+---| 'py39'
+---| 'py310'
+---| 'py311'
+---| 'py312'
+---| 'py313'
+---| 'py314'
+---@alias ruff.select_code
+---| 'A'    # flake8-builtins
+---| 'ARG'  # flake8-unused-arguments
+---| 'B'    # flake8-bugbear
+---| 'C4'   # flake8-comprehensions
+---| 'C90'  # mccabe
+---| 'D'    # pydocstyle
+---| 'E'    # pycodestyle errors
+---| 'F'    # pyflakes
+---| 'I'    # isort
+---| 'N'    # pep8-naming
+---| 'PL'   # pylint
+---| 'Q'    # flake8-quotes
+---| 'RUF'  # ruff-specific
+---| 'S'    # flake8-bandit
+---| 'T20'  # flake8-print
+---| 'UP'   # pyupgrade
+---| 'W'    # pycodestyle warnings
+---@class python.config
+---@field interpreter?                                     string
+---@field version?                                         python.interpreter_version
+---@field venv_path?                                       string
+---@field venv_name?                                       string Virtual environment name
+---@field host_prog?                                       string Path to Python host program
+---@field lsp_clients?                                     python.lsp_client[]
+---@field linters?                                         python.linter[] Enabled linters
+---@field formatters?                                      python.formatter[] Enabled formatters
+---@field test_framework?                                  python.test_framework Test framework to use
+---@field format_on_save?                                  boolean Auto-format on save
+---@field lint_on_save?                                    boolean Auto-lint on save
+---@field organize_imports?                                boolean Auto-organize imports
+---@class ruff.config
+---@field cache_dir?                                       string Cache directory for ruff
+---@field exclude?                                         string[] Files/directories to exclude
+---@field extend_exclude?                                  string[] Additional excludes
+---@field extend_include?                                  string[] Additional includes
+---@field extend_select?                                   ruff.select_code[] Additional rules
+---@field fix?                                             boolean Enable auto-fix
+---@field fix_only?                                        boolean Only apply fixes
+---@field fixable?                                         ruff.select_code[] Fixable rules
+---@field format?                                          ruff.format_config
+---@field ignore?                                          ruff.select_code[]
+---@field line_length?                                     ruff.line_length
+---@field per_file_ignores?                                table<string, ruff.select_code[]>
+---@field preview?                                         boolean
+---@field select?                                          ruff.select_code[] Rules to enable
+---@field show_fixes?                                      boolean Show available fixes
+---@field target_version?                                  ruff.target_version Target Python version
+---@field unfixable?                                       ruff.select_code[] Unfixable rules
+---@field unsafe_fixes?                                    boolean
+---@class ruff.format_config
+---@field docstring_code_format?                           boolean
+---@field docstring_code_line_length?                      number
+---@field indent_style?                                    'space'|'tab' Indentation style
+---@field line_ending?                                     'auto'|'lf'|'cr'|'crlf' Line ending
+---@field quote_style?                                     'single'|'double' Quote style
+---@field skip_magic_trailing_comma?                       boolean Skip magic trailing comma
+
+---@class ruff.lint_config
+---@field allowed_confusables?                             string[] Allowed unicode confusables
+---@field dummy_variable_rgx?                              string Dummy variable regex
+---@field explicit_preview_rules?                          boolean Explicit preview rules
+---@field extend_per_file_ignores?                         table<string, ruff.select_code[]> Extend per-file ignores
+---@field extend_safe_fixes?                               ruff.select_code[] Extend safe fixes
+---@field extend_unsafe_fixes?                             ruff.select_code[] Extend unsafe fixes
+---@field external?                                        string[] External tools
+---@field flake8_annotations?                              ruff.flake8_annotations Flake8 annotations config
+---@field flake8_bandit?                                   ruff.flake8_bandit Flake8 bandit config
+---@field flake8_bugbear?                                  ruff.flake8_bugbear Flake8 bugbear config
+---@field ignore_init_module_imports?                      boolean Ignore __init__ imports
+---@field isort?                                           ruff.isort Isort config
+---@field logger_objects?                                  string[] Logger object names
+---@field mccabe?                                          ruff.mccabe McCabe complexity config
+---@field pep8_naming?                                     ruff.pep8_naming PEP8 naming config
+---@field pydocstyle?                                      ruff.pydocstyle Pydocstyle config
+---@field pylint?                                          ruff.pylint Pylint config
+---@field pyupgrade?                                       ruff.pyupgrade Pyupgrade config
+---@field task_tags?                                       string[] Task tags (TODO, FIXME, etc)
+---@class ruff.flake8_annotations
+---@field allow_star_arg_any?                              boolean Allow Any in *args
+---@field mypy_init_return?                                boolean Mypy-style __init__ return
+---@field suppress_dummy_args?                             boolean
+---@field suppress_none_returning?                         boolean
+---@class ruff.flake8_bandit
+---@field check_typed_exception?                           boolean Check typed exceptions
+---@field hardcoded_bind_all_interfaces?                   boolean Check bind to 0.0.0.0
+---@field hardcoded_tmp_directory?                         string[] Hardcoded tmp directories
+---@class ruff.flake8_bugbear
+---@field extend_immutable_calls?                          string[] Extend immutable calls
+---@class ruff.isort
+---@field case_sensitive?                                  boolean Case-sensitive sorting
+---@field classes?                                         string[] Class imports
+---@field combine_as_imports?                              boolean Combine as imports
+---@field constants?                                       string[] Constant imports
+---@field detect_same_package?                             boolean Detect same package
+---@field extra_standard_library?                          string[] Extra standard library
+---@field force_single_line?                               boolean Force single line
+---@field force_sort_within_sections?                      boolean Force sort within sections
+---@field force_wrap_aliases?                              boolean
+---@field forced_separate?                                 string[] Forced separate sections
+---@field from_first?                                      boolean From imports first
+---@field known_first_party?                               string[] Known first party
+---@field known_local_folder?                              string[] Known local folders
+---@field known_third_party?                               string[] Known third party
+---@field length_sort?                                     boolean Length-based sorting
+---@field length_sort_straight?                            boolean Straight length sort
+---@field lines_after_imports?                             number Lines after imports
+---@field lines_between_types?                             number Lines between import types
+---@field no_lines_before?                                 string[] No lines before sections
+---@field order_by_type?                                   boolean Order by type
+---@field relative_imports_order?                          'closest-to-furthest'|'furthest-to-closest' Relative import order
+---@field required_imports?                                string[] Required imports
+---@field section_order?                                   string[] Section order
+---@field sections?                                        table<string, string[]> Custom sections
+---@field single_line_exclusions?                          string[]
+---@field split_on_trailing_comma?                         boolean Split on trailing comma
+---@field variables?                                       string[] Variable imports
+---@class ruff.mccabe
+---@field max_complexity?                                  number
+
+---@class ruff.pep8_naming
+---@field classmethod_decorators?                          string[] Classmethod decorators
+---@field extend_ignore_names?                             string[] Extend ignore names
+---@field ignore_names?                                    string[] Ignore names
+---@field staticmethod_decorators?                         string[] Staticmethod decorators
+---@class ruff.pydocstyle
+---@field convention?                                      'google'|'numpy'|'pep257'
+---@field ignore_decorators?                               string[] Ignore decorators
+---@field property_decorators?                             string[] Property decorators
+---@class ruff.pylint
+---@field allow_dunder_method_names?                       string[]
+---@field allow_magic_value_types?                         string[] Allow magic value types
+---@field max_args?                                        number Max function arguments
+---@field max_bool_expr?                                   number Max boolean expressions
+---@field max_branches?                                    number Max branches
+---@field max_locals?                                      number Max local variables
+---@field max_nested_blocks?                               number Max nested blocks
+---@field max_positional_args?                             number Max positional arguments
+---@field max_public_methods?                              number Max public methods
+---@field max_returns?                                     number Max return statements
+---@field max_statements?                                  number Max statements
+---@class ruff.pyupgrade
+---@field keep_runtime_typing?                             boolean Keep runtime typing
+---@class pytest.config
+---@field args?                                            string[]
+---@field cache_dir?                                       string
+---@field collect_ignore?                                  string[]
+---@field collect_ignore_glob?                             string[]
+---@field console_output_style?                            'classic'|'progress'|'count'
+---@field disable_warnings?                                boolean Disable warnings
+---@field doctest_glob?                                    string[] Doctest glob patterns
+---@field doctest_optionflags?                             string[] Doctest option flags
+---@field filterwarnings?                                  string[] Warning filters
+---@field log_auto_indent?                                 boolean|string Auto-indent logs
+---@field log_cli?                                         boolean Enable live logging
+---@field log_cli_date_format?                             string CLI log date format
+---@field log_cli_format?                                  string CLI log format
+---@field log_cli_level?                                   'DEBUG'|'INFO'|'WARNING'|'ERROR'|'CRITICAL' CLI log level
+---@field log_date_format?                                 string Log date format
+---@field log_file?                                        string Log file path
+---@field log_file_date_format?                            string File log date format
+---@field log_file_format?                                 string File log format
+---@field log_file_level?                                  'DEBUG'|'INFO'|'WARNING'|'ERROR'|'CRITICAL'
+---@field log_format?                                      string
+---@field log_level?                                       'DEBUG'|'INFO'|'WARNING'|'ERROR'|'CRITICAL' Log level
+---@field markers?                                         string[]
+---@field minversion?                                      string Minimum pytest version
+---@field norecursedirs?                                   string[] Directories to not recurse
+---@field python_classes?                                  string[] Test class patterns
+---@field python_files?                                    string[] Test file patterns
+---@field python_functions?                                string[] Test function patterns
+---@field pythonpath?                                      string[] Python path additions
+---@field required_plugins?                                string[] Required plugins
+---@field testpaths?                                       string[] Test paths
+---@field usefixtures?                                     string[] Use fixtures
+---@field verbosity?                                       number Verbosity level
+---@field xfail_strict?                                    boolean Strict xfail
+
+---@class bandit.config
+---@field exclude_dirs?                                    string[] Directories to exclude
+---@field profile?                                         string Profile name
+---@field recursive?                                       boolean Recursive scan
+---@field severity_level?                                  'all'|'low'|'medium'|'high' Minimum severity
+---@field skips?                                           string[] Test IDs to skip
+---@field tests?                                           string[] Test IDs to run
+
+---@class mypy.config
+---@field allow_incomplete_defs?                           boolean Allow incomplete defs
+---@field allow_redefinition?                              boolean Allow redefinition
+---@field allow_untyped_calls?                             boolean Allow untyped calls
+---@field allow_untyped_decorators?                        boolean Allow untyped decorators
+---@field allow_untyped_defs?                              boolean Allow untyped defs
+---@field cache_dir?                                       string Cache directory
+---@field check_untyped_defs?                              boolean Check untyped defs
+---@field disallow_any_decorated?                          boolean Disallow any decorated
+---@field disallow_any_explicit?                           boolean Disallow explicit any
+---@field disallow_any_expr?                               boolean Disallow any in expressions
+---@field disallow_any_generics?                           boolean Disallow any in generics
+---@field disallow_any_unimported?                         boolean Disallow unimported any
+---@field disallow_incomplete_defs?                        boolean Disallow incomplete defs
+---@field disallow_subclassing_any?                        boolean Disallow subclassing any
+---@field disallow_untyped_calls?                          boolean Disallow untyped calls
+---@field disallow_untyped_decorators?                     boolean Disallow untyped decorators
+---@field disallow_untyped_defs?                           boolean Disallow untyped defs
+---@field exclude?                                         string[] Files to exclude
+---@field files?                                           string[] Files to check
+---@field follow_imports?                                  'normal'|'silent'|'skip'|'error' Follow imports strategy
+---@field ignore_errors?                                   boolean Ignore all errors
+---@field ignore_missing_imports?                          boolean Ignore missing imports
+---@field implicit_reexport?                               boolean Implicit reexport
+---@field namespace_packages?                              boolean Enable namespace packages
+---@field plugins?                                         string[] Mypy plugins
+---@field python_version?                                  string Python version
+---@field show_column_numbers?                             boolean Show column numbers
+---@field show_error_codes?                                boolean Show error codes
+---@field strict?                                          boolean Enable strict mode
+---@field strict_equality?                                 boolean Strict equality
+---@field strict_optional?                                 boolean Strict optional
+---@field warn_no_return?                                  boolean Warn on no return
+---@field warn_redundant_casts?                            boolean Warn on redundant casts
+---@field warn_return_any?                                 boolean Warn on return any
+---@field warn_unused_configs?                             boolean Warn on unused configs
+---@field warn_unused_ignores?                             boolean Warn on unused ignores
+---@field warn_unreachable?                                boolean Warn on unreachable code
+---@class basedpyright.config
+---@field analysis?                                        basedpyright.analysis Analysis settings
+---@field python?                                          basedpyright.python Python settings
+---@class basedpyright.analysis
+---@field autoImportCompletions?                           boolean
+---@field autoSearchPaths?                                 boolean Auto search paths
+---@field diagnosticMode?                                  'openFilesOnly'|'workspace' Diagnostic mode
+---@field diagnosticSeverityOverrides?                     table<string, string> Diagnostic overrides
+---@field exclude?                                         string[] Excluded paths
+---@field extraPaths?                                      string[] Extra paths
+---@field ignore?                                          string[] Ignored paths
+---@field include?                                         string[] Included paths
+---@field logLevel?                                        'Error'|'Warning'|'Information'|'Trace' Log level
+---@field stubPath?                                        string Stub path
+---@field typeCheckingMode?                                'off'|'basic'|'standard'|'strict'|'all' Type checking mode
+---@field typeshedPaths?                                   string[] Typeshed paths
+---@field useLibraryCodeForTypes?                          boolean Use library code for types
+---@field venv?                                            string Virtual environment
+---@field venvPath?                                        string Virtual environment path
+---@class basedpyright.python
+---@field analysis?                                        table
+---@field pythonPath?                                      string
+---@field venvPath?                                        string
+return {}

@@ -364,12 +364,9 @@ local function detect_backend()
   if state.backend ~= 'auto' then
     return state.backend
   end
-
   local configured = vim.env.NVIM_SQL_BACKEND
-
   if nonempty_string(configured) then
     local normalized = configured:lower()
-
     if normalized == 'postgres' or normalized == 'postgresql' or normalized == 'pgsql' then
       return 'postgres'
     end
@@ -415,12 +412,9 @@ local function dollar_quote_at(text, position)
   if text:sub(position, position) ~= '$' then
     return nil
   end
-
   local tail = text:sub(position)
-
   return tail:match('^%$%$') or tail:match('^%$[%a_][%w_]*%$')
 end
-
 ---@param text string
 ---@param cursor_offset integer
 ---@return string
@@ -442,7 +436,6 @@ local function statement_from_text(text, cursor_offset)
     if state_name == 'normal' then
       if char == '-' and next_char == '-' then
         state_name = 'line-comment'
-
         index = index + 2
       elseif char == '/' and next_char == '*' then
         state_name = 'block-comment'
