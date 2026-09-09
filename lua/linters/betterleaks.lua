@@ -1,285 +1,281 @@
 -- #################################################################
--- /qompassai/lua/linters/betterleaks.lua
--- Qompass AI Betterleaks
+-- ~/.config/nvim/lua/linters/betterleaks.lua
+-- Native BetterLeaks Linter
 -- SPDX-License-Identifier: Apache-2.0
--- Copyright (c) 2026 Qompass AI
---
--- Licensed under the Apache License, Version 2.0 (the "License");
--- you may not use this file except in compliance with the License.
--- You may obtain a copy of the License at:
---   http://www.apache.org/licenses/LICENSE-2.0
---
--- Unless required by applicable law or agreed to in writing, software
--- distributed under the License is distributed on an "AS IS" BASIS,
--- WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
--- See the License for the specific language governing permissions and
--- limitations under the License.
 -- #################################################################
-
+---@source https://github.com/betterleaks/betterleaks
+---@source https://github.com/betterleaks/betterleaks/blob/main/cmd/stdin.go
+---@source https://github.com/betterleaks/betterleaks/blob/main/report/finding.go
+--
+-- Requires BetterLeaks with stdin --set-attr support on Neovim's PATH.
+-- Uses the same Linter / LintContext interface as cfn-lint.lua.
+-- Register 'betterleaks' with your native linter loader for desired filetypes.
+--
+-- Policy:
+--   * scan current buffer contents through stdin, including unsaved edits;
+--   * preserve the filename as a project-relative path attribute;
+--   * use native JSON, full redaction, and no live credential validation;
+--   * never copy Secret, Match, context, or arbitrary attributes into diagnostics;
+--   * use bounded parsing, deterministic traversal, and no shell interpolation;
+--   * retain BetterLeaks configuration/environment precedence;
+--   * disable archive/encoding expansion to keep editor locations meaningful.
+--
+-- Stdin has no Git history. Path-dependent filters use --set-attr path=... .
+-- Unnamed buffers have no path attribute. Git-specific filters/baselines are
+-- not equivalent to a repository scan. This module does not scan other files.
+-- Output limits apply at parsing time; the runner owns process-output buffering,
+-- cancellation, and rejecting stale results after the buffer changes.
+-- Raw operational output is deliberately not echoed: it may contain source text.
 local diagnostic = vim.diagnostic
 local fs = vim.fs
+local json = vim.json
 
-local ERROR = diagnostic.severity.ERROR
-local WARN = diagnostic.severity.WARN
+local SOURCE = 'betterleaks'
+local MAX_DIAGNOSTICS = 512
+local MAX_OUTPUT_BYTES = 16 * 1024 * 1024
+local MAX_RULE_BYTES = 256
+local MAX_POSITION = 2147483647
 
-local DIAGNOSTICS_MAX = 4096
-local OUTPUT_LENGTH_MAX = 16 * 1024 * 1024
-local RUNS_MAX = 64
-local RESULTS_MAX = 4096
+local ROOT_MARKERS = {
+  { '.betterleaks.toml', '.gitleaks.toml' },
+  '.git',
+}
 
----@class BetterleaksSarifMessage
----@field text? string
+---@param value any
+---@return string?
+local function string_value(value)
+  if type(value) == 'string' and value ~= '' then
+    return value
+  end
 
----@class BetterleaksSarifArtifactLocation
----@field uri? string
-
----@class BetterleaksSarifRegion
----@field startLine? integer
----@field startColumn? integer
----@field endLine? integer
----@field endColumn? integer
-
----@class BetterleaksSarifPhysicalLocation
----@field artifactLocation? BetterleaksSarifArtifactLocation
----@field region? BetterleaksSarifRegion
-
----@class BetterleaksSarifLocation
----@field physicalLocation? BetterleaksSarifPhysicalLocation
-
----@class BetterleaksSarifResult
----@field level? string
----@field locations? BetterleaksSarifLocation[]
----@field message? BetterleaksSarifMessage
----@field ruleId? string
-
----@class BetterleaksSarifRun
----@field results? BetterleaksSarifResult[]
-
----@class BetterleaksSarif
----@field runs? BetterleaksSarifRun[]
-
----@param value integer|number|string|nil
----@param fallback integer
----@return integer
-local function integer(value, fallback)
-        assert(fallback >= 0)
-
-        local parsed = tonumber(value)
-        if parsed == nil then
-                return fallback
-        end
-
-        return math.floor(parsed)
+  return nil
 end
 
----@param value string|nil
----@return integer
-local function severity(value)
-        if value == 'error' then
-                return ERROR
-        end
+---@param context LintContext
+---@return string
+local function project_root(context)
+  local root = string_value(context.root)
 
-        return WARN
+  if root ~= nil then
+    return fs.normalize(root)
+  end
+
+  local filename = string_value(context.filename)
+
+  if filename ~= nil then
+    local detected = fs.root(filename, ROOT_MARKERS)
+
+    if detected ~= nil then
+      return fs.normalize(detected)
+    end
+
+    local parent = fs.dirname(filename)
+
+    if parent ~= nil and parent ~= '' then
+      return fs.normalize(parent)
+    end
+  end
+
+  return fs.normalize(string_value(context.cwd) or vim.fn.getcwd())
 end
 
----@param path string
----@param filename string
----@param root string
----@return boolean
-local function belongs_to_buffer(path, filename, root)
-        assert(path ~= '')
-        assert(filename ~= '')
-        assert(root ~= '')
+---@param context LintContext
+---@return string?
+local function source_path(context)
+  local filename = string_value(context.filename)
 
-        local candidate
+  if filename == nil then
+    return nil
+  end
 
-        if fs.is_absolute(path) then
-                candidate = fs.normalize(path)
-        else
-                candidate = fs.normalize(fs.joinpath(root, path))
-        end
+  local path = fs.normalize(filename)
+  local root = project_root(context)
+  local prefix = root == '/' and '/' or root .. '/'
 
-        return candidate == filename
+  if path:sub(1, #prefix) == prefix then
+    return path:sub(#prefix + 1)
+  end
+
+  return path
 end
 
----@param result BetterleaksSarifResult
----@param filename string
----@param root string
+---@param value any
+---@return integer?
+local function positive_integer(value)
+  if type(value) ~= 'number' or value ~= value or value < 1 or value > MAX_POSITION then
+    return nil
+  end
+
+  if value ~= math.floor(value) then
+    return nil
+  end
+
+  return math.floor(value)
+end
+
+---@param context LintContext
+---@param code string
+---@param message string
+---@return vim.Diagnostic
+local function status_diagnostic(context, code, message)
+  return {
+    bufnr = context.bufnr,
+    code = code,
+    col = 0,
+    lnum = 0,
+    message = message,
+    severity = diagnostic.severity.WARN,
+    source = SOURCE,
+  }
+end
+
+---@class BetterleaksFinding
+---@field RuleID? string
+---@field StartLine? integer
+---@field EndLine? integer
+---@field StartColumn? integer
+---@field EndColumn? integer
+
+---@param finding BetterleaksFinding
+---@param context LintContext
 ---@return vim.Diagnostic?
-local function diagnostic_from_result(result, filename, root)
-        local locations = result.locations
-        if type(locations) ~= 'table' or #locations == 0 then
-                return nil
-        end
+local function finding_diagnostic(finding, context)
+  local rule = string_value(finding.RuleID)
+  local start_line = positive_integer(finding.StartLine)
 
-        local physical = locations[1].physicalLocation
-        if type(physical) ~= 'table' then
-                return nil
-        end
+  if rule == nil or start_line == nil then
+    return nil
+  end
 
-        local artifact = physical.artifactLocation
-        local region = physical.region
+  -- Accept rule identifiers only; do not display free-form report descriptions.
+  if #rule > MAX_RULE_BYTES or rule:find('[^%w_.%-]') ~= nil then
+    rule = 'secret-detected'
+  end
 
-        if type(artifact) ~= 'table' or type(region) ~= 'table' then
-                return nil
-        end
+  local end_line = positive_integer(finding.EndLine) or start_line
+  local col = (positive_integer(finding.StartColumn) or 1) - 1
+  local end_col = positive_integer(finding.EndColumn) or col
 
-        local path = artifact.uri
-        if type(path) ~= 'string' or path == '' then
-                return nil
-        end
+  -- BetterLeaks uses one-based inclusive ends; Neovim uses exclusive byte ends.
+  if end_line < start_line or (end_line == start_line and end_col < col) then
+    end_line = start_line
+    end_col = col
+  end
 
-        if not belongs_to_buffer(path, filename, root) then
-                return nil
-        end
-
-        local message_table = result.message
-        local message = type(message_table) == 'table'
-                        and message_table.text
-                or nil
-
-        if type(message) ~= 'string' or message == '' then
-                message = 'Potential secret detected'
-        end
-
-        local start_line = math.max(integer(region.startLine, 1) - 1, 0)
-        local start_column = math.max(integer(region.startColumn, 1) - 1, 0)
-
-        local end_line = math.max(
-                integer(region.endLine, start_line + 1) - 1,
-                start_line
-        )
-
-        local end_column = math.max(
-                integer(region.endColumn, start_column + 2) - 1,
-                end_line == start_line and start_column + 1 or 0
-        )
-
-        return {
-                lnum = start_line,
-                end_lnum = end_line,
-                col = start_column,
-                end_col = end_column,
-                message = message,
-                severity = severity(result.level),
-                source = 'betterleaks',
-                code = result.ruleId,
-        }
+  return {
+    bufnr = context.bufnr,
+    code = rule,
+    col = col,
+    end_col = end_col,
+    end_lnum = end_line - 1,
+    lnum = start_line - 1,
+    message = 'Potential secret detected (' .. rule .. '). Remove it from source; rotate it if exposed.',
+    severity = diagnostic.severity.WARN,
+    source = SOURCE,
+  }
 end
 
 ---@param output string
----@param context LintContext|integer
----@return vim.Diagnostic.Set[]
+---@param context LintContext
+---@return vim.Diagnostic[]
 local function parse(output, context)
-        if output == '' then
-                return {}
-        end
+  assert(type(context) == 'table', 'betterleaks parser requires LintContext')
+  assert(type(context.bufnr) == 'number', 'betterleaks parser requires context.bufnr')
 
-        assert(
-                type(context) == 'table',
-                'betterleaks parser requires a LintContext'
-        )
+  if #output > MAX_OUTPUT_BYTES then
+    return { status_diagnostic(context, 'output-limit', 'BetterLeaks output exceeded the 16 MiB parser limit; scan results are incomplete.') }
+  end
 
-        ---@cast context LintContext
+  local text = vim.trim(output)
 
-        assert(context.filename ~= '')
-        assert(context.root ~= '')
-        assert(#output <= OUTPUT_LENGTH_MAX, 'betterleaks output exceeded limit')
+  if text == '' then
+    return { status_diagnostic(context, 'missing-report', 'BetterLeaks returned no JSON report. Check the executable, configuration, and timeout.') }
+  end
 
-        local ok, decoded = pcall(vim.json.decode, output)
+  -- Go encodes a nil findings slice as null; an empty slice becomes [].
+  if text == 'null' then
+    return {}
+  end
 
-        if not ok or type(decoded) ~= 'table' then
-                return {}
-        end
+  local ok, decoded = pcall(json.decode, text)
 
-        ---@cast decoded BetterleaksSarif
+  if not ok or type(decoded) ~= 'table' or text:sub(1, 1) ~= '[' then
+    return { status_diagnostic(context, 'invalid-report', 'BetterLeaks did not return a clean JSON findings array. Check configuration and CLI compatibility; raw output is withheld.') }
+  end
 
-        local runs = decoded.runs
-        if type(runs) ~= 'table' then
-                return {}
-        end
+  ---@type vim.Diagnostic[]
+  local diagnostics = {}
+  local malformed = false
+  local count = math.min(#decoded, MAX_DIAGNOSTICS)
 
-        local filename = fs.normalize(context.filename)
-        local root = context.root
+  for index = 1, count do
+    local finding = decoded[index]
+    local item
 
-        ---@type vim.Diagnostic.Set[]
-        local diagnostics = {}
-        local diagnostics_count = 0
-        local runs_count = math.min(#runs, RUNS_MAX)
+    if type(finding) == 'table' then
+      item = finding_diagnostic(finding, context)
+    end
 
-        for run_index = 1, runs_count do
-                local results = runs[run_index].results
+    if item ~= nil then
+      diagnostics[#diagnostics + 1] = item
+    else
+      malformed = true
+    end
+  end
 
-                if type(results) == 'table' then
-                        local results_count = math.min(#results, RESULTS_MAX)
+  if malformed then
+    diagnostics[#diagnostics + 1] = status_diagnostic(context, 'invalid-finding', 'BetterLeaks returned findings with invalid rule IDs or locations; some results could not be displayed.')
+  end
 
-                        for result_index = 1, results_count do
-                                if diagnostics_count >= DIAGNOSTICS_MAX then
-                                        break
-                                end
+  if #decoded > MAX_DIAGNOSTICS then
+    diagnostics[#diagnostics + 1] = status_diagnostic(context, 'diagnostic-limit', 'Only the first 512 BetterLeaks findings were processed; run a separate scan for the complete report.')
+  end
 
-                                local entry = diagnostic_from_result(
-                                        results[result_index],
-                                        filename,
-                                        root
-                                )
-
-                                if entry ~= nil then
-                                        diagnostics_count = diagnostics_count + 1
-                                        diagnostics[diagnostics_count] = entry
-                                end
-                        end
-                end
-
-                if diagnostics_count >= DIAGNOSTICS_MAX then
-                        break
-                end
-        end
-
-        assert(diagnostics_count <= DIAGNOSTICS_MAX)
-        assert(diagnostics_count == #diagnostics)
-
-        return diagnostics
+  return diagnostics
 end
 
-return ---@type Linter
-{
-        automatic = false,
+---@param context LintContext
+---@return string[]
+local function arguments(context)
+  assert(type(context) == 'table', 'betterleaks arguments require LintContext')
 
-        cmd = 'betterleaks',
+  ---@type string[]
+  local args = {
+    'stdin',
+    '--report-format', 'json',
+    '--report-path', '-',
+    '--redact=100',
+    '--validation=false',
+    '--no-banner',
+    '--no-color',
+    '--log-level', 'error',
+    '--exit-code', '0',
+    '--max-archive-depth', '0',
+    '--max-decode-depth', '0',
+    '--timeout', '30',
+  }
 
-        args = function(context)
-                assert(context.filename ~= '')
+  local path = source_path(context)
 
-                return {
-                        'dir',
-                        context.filename,
-                        '--no-banner',
-                        '--no-color',
-                        '--report-format=sarif',
-                        '--report-path=-',
-                }
-        end,
+  if path ~= nil then
+    args[#args + 1] = '--set-attr'
+    args[#args + 1] = 'path=' .. path
+  end
 
-        append_fname = false,
+  return args
+end
 
-        cwd = function(context)
-                assert(context.root ~= '')
-                return context.root
-        end,
-
-        ignore_exitcode = true,
-
-        parser = parse,
-
-        root_markers = {
-                '.betterleaks.toml',
-                'betterleaks.toml',
-                '.betterleaksignore',
-                '.git',
-        },
-
-        stdin = false,
-        stream = 'stdout',
-        timeout = 30000,
+---@type Linter
+return {
+  args = arguments,
+  append_fname = false,
+  automatic = true,
+  cmd = 'betterleaks',
+  cwd = project_root,
+  ignore_exitcode = true,
+  parser = parse,
+  root_markers = ROOT_MARKERS,
+  stdin = true,
+  stream = 'both',
+  timeout = 35000,
 }
