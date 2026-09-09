@@ -82,7 +82,7 @@
 | [`ghdl`](https://github.com/mfussenegger/nvim-lint/blob/master/lua/lint/linters/ghdl.lua) | 2025-01-06 | `DONE` | [`ghdl.lua`](./ghdl.lua) |
 | [`gitleaks`](https://github.com/mfussenegger/nvim-lint/blob/master/lua/lint/linters/gitleaks.lua) | 2026-01-05 | `TODO` | — |
 | [`gitlint`](https://github.com/mfussenegger/nvim-lint/blob/master/lua/lint/linters/gitlint.lua) | 2025-09-14 | `TODO` | — |
-| [`glslc`](https://github.com/mfussenegger/nvim-lint/blob/master/lua/lint/linters/glslc.lua) | 2022-05-01 | `TODO` | — |
+| [`glslc`](https://github.com/mfussenegger/nvim-lint/blob/master/lua/lint/linters/glslc.lua) | 2022-05-01 | `DONE` | — |
 | [`golangcilint`](https://github.com/mfussenegger/nvim-lint/blob/master/lua/lint/linters/golangcilint.lua) | 2025-12-17 | `DONE` | [`golangcilint.lua`](./golangcilint.lua) |
 | [`hadolint`](https://github.com/mfussenegger/nvim-lint/blob/master/lua/lint/linters/hadolint.lua) | 2023-10-18 | `DONE` | [`hadolint.lua`](./hadolint.lua) |
 | [`herb`](https://github.com/mfussenegger/nvim-lint/blob/master/lua/lint/linters/herb.lua) | 2026-05-13 | `TODO` | — |
