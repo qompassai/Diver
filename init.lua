@@ -96,14 +96,12 @@ g.loaded_ruby_provider = 1
 g.lsp_enable_on_demand = true
 g.mapleader = ' '
 g.maplocalleader = '\\'
-g.mkdp_markdown_css = (env.XDG_CONFIG_HOME or (is_windows and fn.expand('~/AppData/Local') or fn.expand('~/.config')))
-  .. '/nvim/markdown.css' ---@type string
 g.mkdp_theme = 'dark'
 g.netrw_altfile = 1
 g.netrw_preview = 1
 if not is_windows then
-  g.node_host_prog = '/usr/bin/node'
-  g.perl_host_prog = '/usr/bin/perl'
+  g.node_host_prog = 'node'
+  g.perl_host_prog = 'perl'
   g.sqlite_clib_path = '/usr/lib/libsqlite3.so'
   g.python3_host_prog = '/usr/bin/python3'
   g.ruby_host_prog = '/usr/bin/neovim-ruby-host'

@@ -1,4 +1,3 @@
-ib.lua
 -- /qompassai/Diver/lua/utils/docs/bib.lua
 -- Qompass AI Diver Bibliography Utils
 -- Copyright (C) 2026 Qompass AI, All rights reserved
@@ -85,7 +84,9 @@ function M.setup()
     else
       vim.notify('No duplicate BibTeX keys found', vim.log.levels.INFO)
     end
-  end, { desc = 'Find duplicate BibTeX keys' })
+  end, {
+    desc = 'Find duplicate BibTeX keys',
+  })
 
   api.nvim_create_user_command('BibCheck', function(opts)
     local path = opts.args ~= '' and opts.args or api.nvim_buf_get_name(0)

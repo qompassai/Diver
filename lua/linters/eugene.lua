@@ -229,9 +229,7 @@ end
 ---@param rule table
 ---@return string?
 local function rule_code(rule)
-  return string_value(rule.id)
-    or string_value(rule.code)
-    or string_value(rule.rule_id)
+  return string_value(rule.id) or string_value(rule.code) or string_value(rule.rule_id)
 end
 
 ---@param rule table
@@ -245,11 +243,7 @@ local function rule_message(rule)
   local condition = string_value(rule.condition)
 
   if condition ~= nil and compact(condition) ~= compact(name) then
-    name = string.format(
-      '%s: %s',
-      compact(name),
-      compact(condition)
-    )
+    name = string.format('%s: %s', compact(name), compact(condition))
   else
     name = compact(name)
   end
@@ -268,10 +262,7 @@ local function rule_diagnostic(statement, rule, context)
   local hint_url
 
   if code ~= nil then
-    hint_url = string.format(
-      'https://kaveland.no/eugene/hints/%s/',
-      code
-    )
+    hint_url = string.format('https://kaveland.no/eugene/hints/%s/', code)
   end
 
   return {
@@ -324,11 +315,7 @@ local function parse_report(report, context, diagnostics)
           end
 
           if type(rule) == 'table' then
-            diagnostics[#diagnostics + 1] = rule_diagnostic(
-              statement,
-              rule,
-              context
-            )
+            diagnostics[#diagnostics + 1] = rule_diagnostic(statement, rule, context)
           end
         end
       end
@@ -355,10 +342,7 @@ local function error_message(output)
     local normalized = compact(line)
     local lower = normalized:lower()
 
-    if
-      lower:find('error', 1, true) ~= nil
-      or lower:find('syntax', 1, true) ~= nil
-    then
+    if lower:find('error', 1, true) ~= nil or lower:find('syntax', 1, true) ~= nil then
       return truncate(normalized, MAX_MESSAGE_BYTES)
     end
   end
@@ -369,10 +353,7 @@ local function error_message(output)
     return nil
   end
 
-  return truncate(
-    compact(first),
-    MAX_MESSAGE_BYTES
-  )
+  return truncate(compact(first), MAX_MESSAGE_BYTES)
 end
 
 ---@param output string
@@ -385,8 +366,7 @@ local function parse_failure(output, context)
     return {}
   end
 
-  local line_number = output:match('[Ll][Ii][Nn][Ee]%s+(%d+)')
-    or output:match('line%s+(%d+)')
+  local line_number = output:match('[Ll][Ii][Nn][Ee]%s+(%d+)') or output:match('line%s+(%d+)')
 
   local lnum = zero_based_line(line_number)
 
@@ -430,10 +410,7 @@ local function oversized_output(context)
 
       lnum = 0,
 
-      message = string.format(
-        'Eugene output exceeded the %d-byte parser limit',
-        MAX_OUTPUT_BYTES
-      ),
+      message = string.format('Eugene output exceeded the %d-byte parser limit', MAX_OUTPUT_BYTES),
 
       severity = diagnostic.severity.WARN,
 
@@ -446,15 +423,9 @@ end
 ---@param context LintContext
 ---@return vim.Diagnostic[]
 local function parse(output, context)
-  assert(
-    type(context) == 'table',
-    'eugene parser requires LintContext'
-  )
+  assert(type(context) == 'table', 'eugene parser requires LintContext')
 
-  assert(
-    type(context.bufnr) == 'number',
-    'eugene parser requires context.bufnr'
-  )
+  assert(type(context.bufnr) == 'number', 'eugene parser requires context.bufnr')
 
   if output == '' then
     return {}
@@ -473,11 +444,7 @@ local function parse(output, context)
   ---@type table[]
   local reports = {}
 
-  collect_reports(
-    decoded,
-    reports,
-    0
-  )
+  collect_reports(decoded, reports, 0)
 
   if #reports == 0 then
     return {}
@@ -487,12 +454,7 @@ local function parse(output, context)
   local diagnostics = {}
 
   for index = 1, #reports do
-    parse_report(
-      reports[index],
-      context,
-      diagnostics
-    )
-
+    parse_report(reports[index], context, diagnostics)
     if #diagnostics >= MAX_DIAGNOSTICS then
       break
     end
@@ -514,22 +476,13 @@ return {
   },
 
   append_fname = false,
-
   automatic = false,
-
   cmd = 'eugene',
-
   cwd = project_root,
-
   ignore_exitcode = true,
-
   parser = parse,
-
   root_markers = ROOT_MARKERS,
-
   stdin = true,
-
   stream = 'both',
-
   timeout = 30000,
 }

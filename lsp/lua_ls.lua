@@ -107,10 +107,10 @@ return ---@type vim.lsp.Config
         enable = true,
         globals = {
           'agutils', ---wp
-          'ARGS', --buildcache
+          'ARGS', ---buildcache
           'assert',
           'AsyncEventHook', ---wp
-          'bcache', --buildcache
+          'bcache', ---buildcache
           'bit32', ---wp
           'buildDefaultChannelVolumes', ---wp
           'client',
@@ -156,7 +156,7 @@ return ---@type vim.lsp.Config
           'recipients', --gpg
           'reconfigureAudioAdapters', ---wp
           'require',
-          'require_std', --buildcache
+          'require_std', ---buildcache
           'restore_stream_hook', ---wp
           'route_settings_metadata_changed_hook', ---wp
           'rs_metadata', ---wp
@@ -174,7 +174,7 @@ return ---@type vim.lsp.Config
           'toggleState', ---wp
           'use',
           'vim',
-          'windowspace', --hyprland
+          'windowspace', ---hyprland
         },
         groupFileStatus = {
           ambiguity = 'Any',
@@ -198,7 +198,7 @@ return ---@type vim.lsp.Config
           luadoc = 'Warning',
           redefined = 'Warning',
           strict = 'Warning',
-          --  strong = 'Warning',
+          -- strong = 'Warning',
           ['type-check'] = 'Error',
           unbalanced = 'Warning',
           unused = 'Hint',
@@ -305,10 +305,9 @@ return ---@type vim.lsp.Config
         await = true,
         awaitPropagate = true,
         enable = true,
-        semicolon = 'All',
-        setType = true,
         paramName = 'All',
         paramType = true,
+        semicolon = 'All',
         setType = true,
       },
       hover = { ---@source https://luals.github.io/wiki/settings/#hover
@@ -664,6 +663,7 @@ return ---@type vim.lsp.Config
           'volumes',
           'Warning',
           'weak',
+          'wget',
           'when',
           'while',
           'window',

@@ -9,7 +9,7 @@ existing `require('linters')`, registration, or `setup()` defaults.
 
 ```lua
 local diver = '/absolute/path/to/diver'
--- Makes selected definition dependencies available; does not source Diver init.
+<!-- Makes selected definition dependencies available; does not source Diver init.-->
 vim.opt.runtimepath:append(diver)
 local runner = assert(loadfile(diver .. '/lua/linters/init.lua'))({
   lazy = true,       -- defer definition modules until requested

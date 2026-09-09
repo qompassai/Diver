@@ -74,7 +74,9 @@
 | [`fish`](https://github.com/mfussenegger/nvim-lint/blob/master/lua/lint/linters/fish.lua) | 2025-01-05 | `TOREMOVE` | `Rolled into LSP` |
 | [`flake8`](https://github.com/mfussenegger/nvim-lint/blob/master/lua/lint/linters/flake8.lua) | 2023-12-27 | `TODO` | — |
 | [`flawfinder`](https://github.com/mfussenegger/nvim-lint/blob/master/lua/lint/linters/flawfinder.lua) | 2021-12-11 | `DONE` | [`flawfinder.lua`](./flawfinder.lua) |
-| [`fortitude`](https://github.com/mfussenegger/nvim-lint/blob/master/lua/lint/linters/fortitude.lua) | 2025-04-19 | `TODO` | — |
+| [`fortitude`](https://github.com/mfussenegger/nvim-lint/blob/master/lua/lint/linters/fortitude.lua) | 2025-04-19 | `DONE` | [`fortitude.lua`](./fortitude.lua)  |
+| [`gdlint`](https://github.com/mfussenegger/nvim-lint/blob/master/lua/lint/linters/gdlint.lua) | 2025-05-13 | `DONE` | [`gdlint.lua`](./gdlint.lua) |
+ |
 | [`fsharplint`](https://github.com/mfussenegger/nvim-lint/blob/master/lua/lint/linters/fsharplint.lua) | 2025-07-20 | `TODO` | — |
 | [`gawk`](https://github.com/mfussenegger/nvim-lint/blob/master/lua/lint/linters/gawk.lua) | 2024-10-17 | `TODO` | — |
 | [`gdlint`](https://github.com/mfussenegger/nvim-lint/blob/master/lua/lint/linters/gdlint.lua) | 2025-05-13 | `DONE` | [`gdlint.lua`](./gdlint.lua) |
@@ -129,12 +131,12 @@
 | [`phpcs`](https://github.com/mfussenegger/nvim-lint/blob/master/lua/lint/linters/phpcs.lua) | 2025-05-22 | `TODO` | — |
 | [`phpinsights`](https://github.com/mfussenegger/nvim-lint/blob/master/lua/lint/linters/phpinsights.lua) | 2024-09-14 | `TODO` | — |
 | [`phpmd`](https://github.com/mfussenegger/nvim-lint/blob/master/lua/lint/linters/phpmd.lua) | 2024-03-20 | `TODO` | — |
-| [`phpstan`](https://github.com/mfussenegger/nvim-lint/blob/master/lua/lint/linters/phpstan.lua) | 2025-04-05 | `TODO` | — |
-| [`pmd`](https://github.com/mfussenegger/nvim-lint/blob/master/lua/lint/linters/pmd.lua) | 2025-06-05 | `TODO` | — |
+| [`phpstan`](https://github.com/mfussenegger/nvim-lint/blob/master/lua/lint/linters/phpstan.lua) | 2025-04-05 | `TODO` | -|
+| [`pmd`](https://github.com/mfussenegger/nvim-lint/blob/master/lua/lint/linters/pmd.lua) | 2025-06-05 | `DONE` | [`pmd.lua`](./pmd.lua)  |
 | [`pony`](https://github.com/mfussenegger/nvim-lint/blob/master/lua/lint/linters/pony.lua) | 2024-01-07 | `TODO` | — |
 | [`prisma-lint`](https://github.com/mfussenegger/nvim-lint/blob/master/lua/lint/linters/prisma-lint.lua) | 2023-12-05 | `TODO` | — |
 | [`proselint`](https://github.com/mfussenegger/nvim-lint/blob/master/lua/lint/linters/proselint.lua) | 2026-01-07 | `DONE` | [`proselint.lua`](./proselint.lua) |
-| [`protolint`](https://github.com/mfussenegger/nvim-lint/blob/master/lua/lint/linters/protolint.lua) | 2024-10-31 | `TODO` | — |
+| [`protolint`](https://github.com/mfussenegger/nvim-lint/blob/master/lua/lint/linters/protolint.lua) | 2024-10-31 | `DONE` | [`protolint.lua`](./protolint.lua)  |
 | [`psalm`](https://github.com/mfussenegger/nvim-lint/blob/master/lua/lint/linters/psalm.lua) | 2024-01-02 | `TODO` | — |
 | [`puppet-lint`](https://github.com/mfussenegger/nvim-lint/blob/master/lua/lint/linters/puppet-lint.lua) | 2023-11-08 | `DONE` | [`puppet-lint.lua`](./puppet-lint.lua) |
 | [`pycodestyle`](https://github.com/mfussenegger/nvim-lint/blob/master/lua/lint/linters/pycodestyle.lua) | 2021-12-11 | `TODO` | — |
@@ -151,7 +153,7 @@
 | [`rpmspec`](https://github.com/mfussenegger/nvim-lint/blob/master/lua/lint/linters/rpmspec.lua) | 2025-09-24 | `TODO` | — |
 | [`rstcheck`](https://github.com/mfussenegger/nvim-lint/blob/master/lua/lint/linters/rstcheck.lua) | 2021-12-30 | `DONE` | [`rstcheck.lua`](./rstcheck.lua) |
 | [`rst-lint`](https://github.com/mfussenegger/nvim-lint/blob/master/lua/lint/linters/rstlint.lua) | 2021-12-30 | `DONE` | [`rst-lint.lua`](./rst-lint.lua) |
-| [`rubocop`](https://github.com/mfussenegger/nvim-lint/blob/master/lua/lint/linters/rubocop.lua) | 2024-02-20 | `TODO` | — |
+| [`rubocop`](https://github.com/mfussenegger/nvim-lint/blob/master/lua/lint/linters/rubocop.lua) | 2024-02-20 | `DONE` | [`rubocop.lua`](./rubocop.lua) |
 | [`ruby`](https://github.com/mfussenegger/nvim-lint/blob/master/lua/lint/linters/ruby.lua) | 2022-05-02 | `TODO` | — |
 | [`ruff`](https://github.com/mfussenegger/nvim-lint/blob/master/lua/lint/linters/ruff.lua) | 2025-07-04 | `TODO` | — |
 | [`rumdl`](https://github.com/mfussenegger/nvim-lint/blob/master/lua/lint/linters/rumdl.lua) | 2025-11-13 | `DONE` | [`rumdl.lua`](./rumdl.lua) |
@@ -159,12 +161,12 @@
 | [`selene`](https://github.com/mfussenegger/nvim-lint/blob/master/lua/lint/linters/selene.lua) | 2023-09-21 | `TODO` | — |
 | [`shellcheck`](https://github.com/mfussenegger/nvim-lint/blob/master/lua/lint/linters/shellcheck.lua) | 2025-06-05 | `DONE` | [`shellcheck.lua`](./shellcheck.lua) |
 | [`slang`](https://github.com/mfussenegger/nvim-lint/blob/master/lua/lint/linters/slang.lua) | 2024-10-02 | `TODO` | — |
-| [`snakemake`](https://github.com/mfussenegger/nvim-lint/blob/master/lua/lint/linters/snakemake.lua) | 2024-09-22 | `TODO` | — |
+| [`snakemake`](https://github.com/mfussenegger/nvim-lint/blob/master/lua/lint/linters/snakemake.lua) | 2024-09-22 | `DONE` | — |
 | [`snyk_iac`](https://github.com/mfussenegger/nvim-lint/blob/master/lua/lint/linters/snyk_iac.lua) | 2023-10-20 | `TODO` | — |
 | [`solhint`](https://github.com/mfussenegger/nvim-lint/blob/master/lua/lint/linters/solhint.lua) | 2023-08-19 | `TODO` | — |
 | [`spectral`](https://github.com/mfussenegger/nvim-lint/blob/master/lua/lint/linters/spectral.lua) | 2026-01-31 | `TODO` | — |
 | [`sphinx-lint`](https://github.com/mfussenegger/nvim-lint/blob/master/lua/lint/linters/sphinx-lint.lua) | 2024-11-18 | `DONE` | [`sphinx-lint.lua`](./sphinx-lint.lua) |
-| [`sqlfluff`](https://github.com/mfussenegger/nvim-lint/blob/master/lua/lint/linters/sqlfluff.lua) | 2026-01-05 | `TODO` | — |
+| [`sqlfluff`](https://github.com/mfussenegger/nvim-lint/blob/master/lua/lint/linters/sqlfluff.lua) | 2026-01-05 | `DONE` | `[`sqlfluff.lua`](./sqlfluff.lua) ` |
 | [`sqruff`](https://github.com/mfussenegger/nvim-lint/blob/master/lua/lint/linters/sqruff.lua) | 2025-01-21 | `TODO` | — |
 | [`squawk`](https://github.com/mfussenegger/nvim-lint/blob/master/lua/lint/linters/squawk.lua) | 2025-12-04 | `TODO` | — |
 | [`standardjs`](https://github.com/mfussenegger/nvim-lint/blob/master/lua/lint/linters/standardjs.lua) | 2024-12-19 | `TODO` | — |
@@ -180,7 +182,7 @@
 | [`terraform_validate`](https://github.com/mfussenegger/nvim-lint/blob/master/lua/lint/linters/terraform_validate.lua) | 2026-02-16 | `TODO` | — |
 | [`tflint`](https://github.com/mfussenegger/nvim-lint/blob/master/lua/lint/linters/tflint.lua) | 2025-04-03 | `DONE` | [`tflint.lua`](./tflint.lua) |
 | [`tfsec`](https://github.com/mfussenegger/nvim-lint/blob/master/lua/lint/linters/tfsec.lua) | 2023-07-26 | `TODO` | — |
-| [`tidy`](https://github.com/mfussenegger/nvim-lint/blob/master/lua/lint/linters/tidy.lua) | 2024-08-16 | `TODO` | — |
+| [`html-tidy`](https://github.com/mfussenegger/nvim-lint/blob/master/lua/lint/linters/tidy.lua) | 2024-08-16 | `DONE | — |
 | [`tlint`](https://github.com/mfussenegger/nvim-lint/blob/master/lua/lint/linters/tlint.lua) | 2023-11-29 | `TODO` | — |
 | [`tofu`](https://github.com/mfussenegger/nvim-lint/blob/master/lua/lint/linters/tofu.lua) | 2026-02-16 | `TODO` | — |
 | [`tombi`](https://github.com/mfussenegger/nvim-lint/blob/master/lua/lint/linters/tombi.lua) | 2025-11-06 | `TODO` | — |

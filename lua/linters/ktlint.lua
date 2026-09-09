@@ -91,13 +91,9 @@ end
 ---@return string
 local function normalize_message(value)
   assert(type(value) == 'string', 'value must be a string')
-
   value = strip_ansi(value)
-
   value = value:gsub('\r\n', '\n')
-
   value = value:gsub('\r', '\n')
-
   value = trim(value)
 
   if #value > MESSAGE_LENGTH_MAX then
@@ -257,20 +253,14 @@ local function diagnostic_from_entry(entry, bufnr, filename, root)
 
   return {
     bufnr = bufnr,
-
     lnum = lnum,
     end_lnum = lnum,
-
     col = col,
     end_col = col + 1,
-
     message = entry.message,
-
     severity = WARN,
-
     source = SOURCE,
     code = entry.code,
-
     user_data = {
       rule = entry.code,
     },
@@ -394,9 +384,6 @@ return ---@type Linter
     '.ktlint-baseline.xml',
     'ktlint-baseline.xml',
 
-    --
-    -- Generic repository boundary.
-    --
     '.git',
   },
 

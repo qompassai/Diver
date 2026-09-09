@@ -18,54 +18,8 @@
 -- #################################################################
 ---@source https://github.com/david-a-wheeler/flawfinder
 ---@source https://dwheeler.com/flawfinder/
---
--- Arch Linux:
---
---   sudo pacman -S flawfinder
---
--- Verify:
---
---   flawfinder --version
---
--- Flawfinder performs lexical security analysis of C/C++ source code.
--- It is complementary to compiler diagnostics, clang-tidy, cppcheck,
--- clangd, and other semantic/static-analysis tooling.
---
--- Tiger policy:
---
---   * analyze only the current source file;
---   * use machine-readable CSV output;
---   * request column-accurate diagnostics;
---   * suppress Flawfinder's human-oriented header/footer noise;
---   * retain source-level reviewed suppressions;
---   * reject unbounded parser output;
---   * cap individual diagnostic messages;
---   * cap total diagnostics;
---   * map Flawfinder's 0-5 risk model onto vim.diagnostic severity;
---   * preserve CWE/category/rule/fingerprint metadata;
---   * avoid shell execution and interpolation;
---   * remain compatible with Neovim's Lua 5.1 runtime contract.
---
--- Flawfinder risk model:
---
---   5 -> ERROR
---   4 -> ERROR
---   3 -> WARN
---   2 -> WARN
---   1 -> INFO
---   0 -> HINT
---
--- Editor mode intentionally honors:
---
---   /* Flawfinder: ignore */
---
--- For independent security auditing, run:
---
---   flawfinder --neverignore --minlevel=0 <path>
---
--- separately so deliberately reviewed editor suppressions can also be
--- audited.
-
+---@source https://neovim.io/doc/user/diagnostic/
+---@source https://neovim.io/doc/user/lua/
 local diagnostic = vim.diagnostic
 local fs = vim.fs
 
@@ -146,6 +100,16 @@ local function zero_based(value)
   return number - 1
 end
 
+---@param path string
+---@return boolean
+local function is_absolute(path)
+  if path:sub(1, 1) == '/' then
+    return true
+  end
+
+  return path:match('^%a:[/\\]') ~= nil or path:sub(1, 2) == '\\\\'
+end
+
 ---@param context LintContext
 ---@return string
 local function project_root(context)
@@ -158,10 +122,7 @@ local function project_root(context)
   local filename = string_value(context.filename)
 
   if filename ~= nil then
-    local detected = fs.root(
-      filename,
-      ROOT_MARKERS
-    )
+    local detected = fs.root(filename, ROOT_MARKERS)
 
     if type(detected) == 'string' and detected ~= '' then
       return fs.normalize(detected)
@@ -180,9 +141,7 @@ local function project_root(context)
     return fs.normalize(cwd)
   end
 
-  return fs.normalize(
-    vim.fn.getcwd()
-  )
+  return fs.normalize(vim.fn.getcwd())
 end
 
 ---@param level integer
@@ -216,9 +175,7 @@ end
 ---@param line string
 ---@return string[]
 local function parse_csv_line(line)
-  ---@type string[]
   local fields = {}
-
   local field = {}
   local index = 1
   local quoted = false
@@ -228,17 +185,11 @@ local function parse_csv_line(line)
       break
     end
 
-    local character = line:sub(
-      index,
-      index
-    )
+    local character = line:sub(index, index)
 
     if quoted then
       if character == '"' then
-        local next_character = line:sub(
-          index + 1,
-          index + 1
-        )
+        local next_character = line:sub(index + 1, index + 1)
 
         if next_character == '"' then
           if #field < MAX_FIELD_BYTES then
@@ -281,7 +232,6 @@ end
 ---@param value string
 ---@return string[]
 local function split_cwes(value)
-  ---@type string[]
   local result = {}
 
   for cwe in value:gmatch('CWE%-?%d+') do
@@ -294,25 +244,15 @@ end
 ---@param warning string
 ---@param suggestion string
 ---@return string
-local function diagnostic_message(
-  warning,
-  suggestion
-)
+local function diagnostic_message(warning, suggestion)
   local message = compact(warning)
   local fix = compact(suggestion)
 
   if fix ~= '' then
-    message = string.format(
-      '%s Suggestion: %s',
-      message,
-      fix
-    )
+    message = string.format('%s Suggestion: %s', message, fix)
   end
 
-  return truncate(
-    message,
-    MAX_MESSAGE_BYTES
-  )
+  return truncate(message, MAX_MESSAGE_BYTES)
 end
 
 ---@class FlawfinderFinding
@@ -332,22 +272,6 @@ end
 ---@param fields string[]
 ---@return FlawfinderFinding?
 local function finding(fields)
-  --
-  -- Current Flawfinder CSV columns:
-  --
-  --   File
-  --   Line
-  --   Column
-  --   Level
-  --   Category
-  --   Name
-  --   Warning
-  --   Suggestion
-  --   Note
-  --   CWEs
-  --   Context
-  --   Fingerprint
-  --
   if #fields < 10 then
     return nil
   end
@@ -356,39 +280,22 @@ local function finding(fields)
   local line = tonumber(fields[2])
   local level = tonumber(fields[4])
 
-  if
-    file == nil
-    or line == nil
-    or level == nil
-  then
+  if file == nil or line == nil or level == nil then
     return nil
   end
 
   return {
     category = fields[5] or '',
-
     column = integer_value(fields[3]),
-
     context = fields[11] or '',
-
-    cwes = split_cwes(
-      fields[10] or ''
-    ),
-
+    cwes = split_cwes(fields[10] or ''),
     file = file,
-
     fingerprint = fields[12] or '',
-
     level = math.floor(level),
-
     line = math.floor(line),
-
     name = fields[6] or '',
-
     note = fields[9] or '',
-
     suggestion = fields[8] or '',
-
     warning = fields[7] or '',
   }
 end
@@ -397,9 +304,7 @@ end
 ---@param context LintContext
 ---@return boolean
 local function same_file(path, context)
-  local filename = string_value(
-    context.filename
-  )
+  local filename = string_value(context.filename)
 
   if filename == nil then
     return false
@@ -407,110 +312,53 @@ local function same_file(path, context)
 
   local candidate = path
 
-  if not fs.isabs(candidate) then
-    candidate = fs.joinpath(
-      project_root(context),
-      candidate
-    )
+  if not is_absolute(candidate) then
+    candidate = fs.joinpath(project_root(context), candidate)
   end
 
-  return fs.normalize(candidate)
-    == fs.normalize(filename)
+  return fs.normalize(candidate) == fs.normalize(filename)
 end
 
 ---@param item FlawfinderFinding
 ---@param context LintContext
 ---@return vim.Diagnostic
-local function make_diagnostic(
-  item,
-  context
-)
-  local lnum = zero_based(
-    item.line
-  )
-
-  local col = zero_based(
-    item.column
-  )
-
-  local message = diagnostic_message(
-    item.warning,
-    item.suggestion
-  )
+local function make_diagnostic(item, context)
+  local lnum = zero_based(item.line)
+  local col = zero_based(item.column)
+  local message = diagnostic_message(item.warning, item.suggestion)
 
   if not same_file(item.file, context) then
-    message = string.format(
-      '%s: %s',
-      item.file,
-      message
-    )
-
+    message = string.format('%s: %s', item.file, message)
     lnum = 0
     col = 0
   end
 
-  local code = string_value(
-    item.name
-  )
+  local code = string_value(item.name)
 
-  if
-    code == nil
-    and #item.cwes > 0
-  then
+  if code == nil and #item.cwes > 0 then
     code = item.cwes[1]
   end
 
   return {
     bufnr = context.bufnr,
-
     code = code,
-
     col = col,
-
     end_col = col,
-
     end_lnum = lnum,
-
     lnum = lnum,
-
     message = message,
-
-    severity = severity(
-      item.level
-    ),
-
+    severity = severity(item.level),
     source = SOURCE,
-
     user_data = {
-      category = string_value(
-        item.category
-      ),
-
-      context = string_value(
-        item.context
-      ),
-
+      category = string_value(item.category),
+      context = string_value(item.context),
       cwes = item.cwes,
-
-      fingerprint = string_value(
-        item.fingerprint
-      ),
-
+      fingerprint = string_value(item.fingerprint),
       level = item.level,
-
-      note = string_value(
-        item.note
-      ),
-
+      note = string_value(item.note),
       path = item.file,
-
-      rule = string_value(
-        item.name
-      ),
-
-      suggestion = string_value(
-        item.suggestion
-      ),
+      rule = string_value(item.name),
+      suggestion = string_value(item.suggestion),
     },
   }
 end
@@ -521,24 +369,13 @@ local function oversized_output(context)
   return {
     {
       bufnr = context.bufnr,
-
       code = 'output-limit',
-
       col = 0,
-
       end_col = 0,
-
       end_lnum = 0,
-
       lnum = 0,
-
-      message = string.format(
-        'Flawfinder output exceeded the %d-byte parser limit',
-        MAX_OUTPUT_BYTES
-      ),
-
+      message = string.format('Flawfinder output exceeded the %d-byte parser limit', MAX_OUTPUT_BYTES),
       severity = diagnostic.severity.WARN,
-
       source = SOURCE,
     },
   }
@@ -548,15 +385,8 @@ end
 ---@param context LintContext
 ---@return vim.Diagnostic[]
 local function parse(output, context)
-  assert(
-    type(context) == 'table',
-    'flawfinder parser requires LintContext'
-  )
-
-  assert(
-    type(context.bufnr) == 'number',
-    'flawfinder parser requires context.bufnr'
-  )
+  assert(type(context) == 'table', 'flawfinder parser requires LintContext')
+  assert(type(context.bufnr) == 'number', 'flawfinder parser requires context.bufnr')
 
   if output == '' then
     return {}
@@ -568,10 +398,7 @@ local function parse(output, context)
 
   output = strip_bom(output)
 
-  ---@type vim.Diagnostic[]
   local diagnostics = {}
-
-  local first_line = true
 
   for line in output:gmatch('[^\r\n]+') do
     if #diagnostics >= MAX_DIAGNOSTICS then
@@ -579,31 +406,15 @@ local function parse(output, context)
     end
 
     local fields = parse_csv_line(line)
-
-    --
-    -- --csv always emits a header row. Do not rely solely on its position,
-    -- however, because defensive parsing costs essentially nothing.
-    --
-    local header = fields[1] == 'File'
-      and fields[2] == 'Line'
-      and fields[3] == 'Column'
+    local header = fields[1] == 'File' and fields[2] == 'Line' and fields[3] == 'Column'
 
     if not header then
       local item = finding(fields)
 
-      if
-        item ~= nil
-        and item.level >= MIN_RISK_LEVEL
-      then
-        diagnostics[#diagnostics + 1] =
-          make_diagnostic(
-            item,
-            context
-          )
+      if item ~= nil and item.level >= MIN_RISK_LEVEL then
+        diagnostics[#diagnostics + 1] = make_diagnostic(item, context)
       end
     end
-
-    first_line = false
   end
 
   return diagnostics
@@ -612,46 +423,19 @@ end
 ---@param context LintContext
 ---@return string[]
 local function arguments(context)
-  assert(
-    type(context) == 'table',
-    'flawfinder arguments require LintContext'
-  )
+  assert(type(context) == 'table', 'flawfinder arguments require LintContext')
 
-  local filename = string_value(
-    context.filename
-  )
+  local filename = string_value(context.filename)
 
   if filename == nil then
     return {}
   end
 
   return {
-    --
-    -- CSV is Flawfinder's recommended machine-processing format.
-    --
     '--csv',
-
-    --
-    -- Explicitly request columns even though current CSV output contains
-    -- them. This documents our requirement and keeps editor intent clear.
-    --
     '--columns',
-
-    --
-    -- Suppress status/progress output.
-    --
     '--quiet',
-
-    --
-    -- Tiger's editor baseline reports risk level 1 and above.
-    --
-    '--minlevel='
-      .. tostring(MIN_RISK_LEVEL),
-
-    --
-    -- Analyze exactly the current source file rather than recursively
-    -- scanning the project on every editor lint invocation.
-    --
+    '--minlevel=' .. tostring(MIN_RISK_LEVEL),
     filename,
   }
 end
@@ -659,38 +443,14 @@ end
 ---@type Linter
 return {
   args = arguments,
-
   append_fname = false,
-
-  --
-  -- Flawfinder is security analysis rather than a lightweight syntax
-  -- checker. Prefer save/on-demand execution instead of every keystroke.
-  --
   automatic = false,
-
   cmd = 'flawfinder',
-
   cwd = project_root,
-
-  --
-  -- Flawfinder normally exits successfully even when findings exist.
-  -- Keeping this enabled also prevents unusual scanner exit behavior from
-  -- discarding already emitted diagnostics.
-  --
   ignore_exitcode = true,
-
   parser = parse,
-
   root_markers = ROOT_MARKERS,
-
-  --
-  -- Flawfinder operates on paths and recursively handles directories.
-  -- Passing the actual current filename also gives us stable locations and
-  -- source fingerprints.
-  --
   stdin = false,
-
   stream = 'both',
-
   timeout = 30000,
 }

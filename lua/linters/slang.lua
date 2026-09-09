@@ -126,10 +126,7 @@ end
 ---@param fallback string
 ---@return string
 local function string_or(value, fallback)
-  if
-    type(value) ~= 'string'
-    or value == ''
-  then
+  if type(value) ~= 'string' or value == '' then
     return fallback
   end
 
@@ -143,12 +140,7 @@ local function normalize_message(value)
   value = value:gsub('\r', '\n')
 
   if #value > MESSAGE_LENGTH_MAX then
-    value =
-      value:sub(
-        1,
-        MESSAGE_LENGTH_MAX
-      )
-      .. '\n[message truncated]'
+    value = value:sub(1, MESSAGE_LENGTH_MAX) .. '\n[message truncated]'
   end
 
   return value
@@ -158,23 +150,17 @@ end
 ---@return integer
 local function severity(value)
   if type(value) == 'number' then
-    return severity_numbers[
-      floor(value)
-    ] or WARN
+    return severity_numbers[floor(value)] or WARN
   end
 
   if type(value) == 'string' then
     local numeric = tonumber(value)
 
     if numeric ~= nil then
-      return severity_numbers[
-        floor(numeric)
-      ] or WARN
+      return severity_numbers[floor(numeric)] or WARN
     end
 
-    return severity_names[
-      value:lower()
-    ] or WARN
+    return severity_names[value:lower()] or WARN
   end
 
   return WARN
@@ -189,17 +175,11 @@ end
 ---@param root string
 ---@param candidates string[]
 ---@return string?
-local function find_candidate(
-  root,
-  candidates
-)
+local function find_candidate(root, candidates)
   assert(root ~= '')
 
   for index = 1, #candidates do
-    local candidate = fs.joinpath(
-      root,
-      candidates[index]
-    )
+    local candidate = fs.joinpath(root, candidates[index])
 
     if exists(candidate) then
       return candidate
@@ -212,24 +192,14 @@ end
 ---@param path string
 ---@param root string
 ---@return string
-local function normalize_path(
-  path,
-  root
-)
+local function normalize_path(path, root)
   assert(path ~= '')
   assert(root ~= '')
 
   if path:sub(1, 7) == 'file://' then
-    local ok, filename = pcall(
-      vim.uri_to_fname,
-      path
-    )
+    local ok, filename = pcall(vim.uri_to_fname, path)
 
-    if
-      ok
-      and type(filename) == 'string'
-      and filename ~= ''
-    then
+    if ok and type(filename) == 'string' and filename ~= '' then
       return fs.normalize(filename)
     end
   end
@@ -238,31 +208,19 @@ local function normalize_path(
     return fs.normalize(path)
   end
 
-  return fs.normalize(
-    fs.joinpath(
-      root,
-      path
-    )
-  )
+  return fs.normalize(fs.joinpath(root, path))
 end
 
 ---@param candidate string
 ---@param filename string
 ---@param root string
 ---@return boolean
-local function belongs_to_buffer(
-  candidate,
-  filename,
-  root
-)
+local function belongs_to_buffer(candidate, filename, root)
   assert(candidate ~= '')
   assert(filename ~= '')
   assert(root ~= '')
 
-  return normalize_path(
-    candidate,
-    root
-  ) == filename
+  return normalize_path(candidate, root) == filename
 end
 
 ---@param entry SlangJsonDiagnostic
@@ -271,71 +229,40 @@ local function diagnostic_filename(entry)
   local location = entry.location
 
   if type(location) == 'table' then
-    local value =
-      location.file
-      or location.fileName
-      or location.filename
+    local value = location.file or location.fileName or location.filename
 
-    if
-      type(value) == 'string'
-      and value ~= ''
-    then
+    if type(value) == 'string' and value ~= '' then
       return value
     end
   end
 
   local range = entry.range
 
-  if
-    type(range) == 'table'
-    and type(range.start) == 'table'
-  then
+  if type(range) == 'table' and type(range.start) == 'table' then
     local start = range.start
 
-    local value =
-      start.file
-      or start.fileName
-      or start.filename
+    local value = start.file or start.fileName or start.filename
 
-    if
-      type(value) == 'string'
-      and value ~= ''
-    then
+    if type(value) == 'string' and value ~= '' then
       return value
     end
   end
 
   local ranges = entry.ranges
 
-  if
-    type(ranges) == 'table'
-    and type(ranges[1]) == 'table'
-    and type(ranges[1].start) == 'table'
-  then
+  if type(ranges) == 'table' and type(ranges[1]) == 'table' and type(ranges[1].start) == 'table' then
     local start = ranges[1].start
 
-    local value =
-      start.file
-      or start.fileName
-      or start.filename
+    local value = start.file or start.fileName or start.filename
 
-    if
-      type(value) == 'string'
-      and value ~= ''
-    then
+    if type(value) == 'string' and value ~= '' then
       return value
     end
   end
 
-  local value =
-    entry.file
-    or entry.fileName
-    or entry.filename
+  local value = entry.file or entry.fileName or entry.filename
 
-  if
-    type(value) == 'string'
-    and value ~= ''
-  then
+  if type(value) == 'string' and value ~= '' then
     return value
   end
 
@@ -351,133 +278,67 @@ local function diagnostic_position(entry)
   local location = entry.location
 
   if type(location) == 'table' then
-    local line = max(
-      integer(location.line, 1),
-      1
-    )
+    local line = max(integer(location.line, 1), 1)
 
-    local column = max(
-      integer(location.column, 1),
-      1
-    )
+    local column = max(integer(location.column, 1), 1)
 
     return line, column, nil, nil
   end
 
   local range = entry.range
 
-  if
-    type(range) == 'table'
-    and type(range.start) == 'table'
-  then
+  if type(range) == 'table' and type(range.start) == 'table' then
     local start = range.start
     local finish = range['end']
 
-    local line = max(
-      integer(start.line, 1),
-      1
-    )
+    local line = max(integer(start.line, 1), 1)
 
-    local column = max(
-      integer(start.column, 1),
-      1
-    )
+    local column = max(integer(start.column, 1), 1)
 
     local end_line
     local end_column
 
     if type(finish) == 'table' then
-      end_line = max(
-        integer(
-          finish.line,
-          line
-        ),
-        line
-      )
+      end_line = max(integer(finish.line, line), line)
 
-      end_column = max(
-        integer(
-          finish.column,
-          column + 1
-        ),
-        1
-      )
+      end_column = max(integer(finish.column, column + 1), 1)
     end
 
-    return
-      line,
-      column,
-      end_line,
-      end_column
+    return line, column, end_line, end_column
   end
 
   local ranges = entry.ranges
 
-  if
-    type(ranges) == 'table'
-    and type(ranges[1]) == 'table'
-    and type(ranges[1].start) == 'table'
-  then
+  if type(ranges) == 'table' and type(ranges[1]) == 'table' and type(ranges[1].start) == 'table' then
     local first = ranges[1]
     local start = first.start
     local finish = first['end']
 
-    local line = max(
-      integer(start.line, 1),
-      1
-    )
+    local line = max(integer(start.line, 1), 1)
 
-    local column = max(
-      integer(start.column, 1),
-      1
-    )
+    local column = max(integer(start.column, 1), 1)
 
     local end_line
     local end_column
 
     if type(finish) == 'table' then
-      end_line = max(
-        integer(
-          finish.line,
-          line
-        ),
-        line
-      )
+      end_line = max(integer(finish.line, line), line)
 
-      end_column = max(
-        integer(
-          finish.column,
-          column + 1
-        ),
-        1
-      )
+      end_column = max(integer(finish.column, column + 1), 1)
     end
 
-    return
-      line,
-      column,
-      end_line,
-      end_column
+    return line, column, end_line, end_column
   end
 
-  return
-    max(integer(entry.line, 1), 1),
-    max(integer(entry.column, 1), 1),
-    nil,
-    nil
+  return max(integer(entry.line, 1), 1), max(integer(entry.column, 1), 1), nil, nil
 end
 
 ---@param entry SlangJsonDiagnostic
 ---@return string?
 local function diagnostic_code(entry)
-  local option =
-    entry.optionName
-    or entry.option
+  local option = entry.optionName or entry.option
 
-  if
-    type(option) == 'string'
-    and option ~= ''
-  then
+  if type(option) == 'string' and option ~= '' then
     if option:sub(1, 2) == '-W' then
       return option
     end
@@ -494,9 +355,7 @@ local function diagnostic_code(entry)
   end
 
   if type(entry.code) == 'number' then
-    return tostring(
-      floor(entry.code)
-    )
+    return tostring(floor(entry.code))
   end
 
   return nil
@@ -506,85 +365,47 @@ end
 ---@param filename string
 ---@param root string
 ---@return vim.Diagnostic?
-local function diagnostic_from_entry(
-  entry,
-  filename,
-  root
-)
-  local source_file =
-    diagnostic_filename(entry)
+local function diagnostic_from_entry(entry, filename, root)
+  local source_file = diagnostic_filename(entry)
 
   --
   -- Some global elaboration diagnostics may not have a source file.
   -- Since this adapter invokes slang against one editor buffer, preserve
   -- such diagnostics rather than silently discarding them.
   --
-  if
-    source_file ~= nil
-    and not belongs_to_buffer(
-      source_file,
-      filename,
-      root
-    )
-  then
+  if source_file ~= nil and not belongs_to_buffer(source_file, filename, root) then
     return nil
   end
 
-  local line,
-    column,
-    end_line,
-    end_column =
-      diagnostic_position(entry)
+  local line, column, end_line, end_column = diagnostic_position(entry)
 
   --
   -- Slang reports one-based source coordinates.
   -- Neovim diagnostics are zero-based.
   --
-  local lnum = max(
-    line - 1,
-    0
-  )
+  local lnum = max(line - 1, 0)
 
-  local col = max(
-    column - 1,
-    0
-  )
+  local col = max(column - 1, 0)
 
   local end_lnum = lnum
 
   if end_line ~= nil then
-    end_lnum = max(
-      end_line - 1,
-      lnum
-    )
+    end_lnum = max(end_line - 1, lnum)
   end
 
   local end_col
 
   if end_column ~= nil then
-    end_col = max(
-      end_column - 1,
-      end_lnum == lnum
-          and col + 1
-        or 0
-    )
+    end_col = max(end_column - 1, end_lnum == lnum and col + 1 or 0)
   else
     end_col = col + 1
   end
 
-  local message = string_or(
-    entry.formattedMessage,
-    string_or(
-      entry.message,
-      'slang diagnostic'
-    )
-  )
+  local message = string_or(entry.formattedMessage, string_or(entry.message, 'slang diagnostic'))
 
-  message =
-    normalize_message(message)
+  message = normalize_message(message)
 
-  local code =
-    diagnostic_code(entry)
+  local code = diagnostic_code(entry)
 
   return {
     lnum = lnum,
@@ -595,8 +416,7 @@ local function diagnostic_from_entry(
 
     message = message,
 
-    severity =
-      severity(entry.severity),
+    severity = severity(entry.severity),
 
     source = 'slang',
     code = code,
@@ -623,8 +443,7 @@ local function diagnostic_array(decoded)
     return decoded
   end
 
-  local diagnostics =
-    decoded.diagnostics
+  local diagnostics = decoded.diagnostics
 
   if type(diagnostics) == 'table' then
     return diagnostics
@@ -641,74 +460,47 @@ local function parse(output, context)
     return {}
   end
 
-  assert(
-    type(context) == 'table',
-    'slang parser requires a LintContext'
-  )
+  assert(type(context) == 'table', 'slang parser requires a LintContext')
 
   ---@cast context LintContext
 
   assert(context.filename ~= '')
   assert(context.root ~= '')
 
-  assert(
-    #output <= OUTPUT_LENGTH_MAX,
-    'slang output exceeded maximum size'
-  )
+  assert(#output <= OUTPUT_LENGTH_MAX, 'slang output exceeded maximum size')
 
-  local ok, decoded = pcall(
-    json.decode,
-    output
-  )
+  local ok, decoded = pcall(json.decode, output)
 
-  if
-    not ok
-    or type(decoded) ~= 'table'
-  then
+  if not ok or type(decoded) ~= 'table' then
     return {}
   end
 
-  local raw_diagnostics =
-    diagnostic_array(decoded)
+  local raw_diagnostics = diagnostic_array(decoded)
 
-  local filename =
-    fs.normalize(context.filename)
+  local filename = fs.normalize(context.filename)
 
-  local root =
-    fs.normalize(context.root)
+  local root = fs.normalize(context.root)
 
   ---@type vim.Diagnostic.Set[]
   local diagnostics = {}
 
-  local count = min(
-    #raw_diagnostics,
-    DIAGNOSTICS_MAX
-  )
+  local count = min(#raw_diagnostics, DIAGNOSTICS_MAX)
 
   for index = 1, count do
-    local raw =
-      raw_diagnostics[index]
+    local raw = raw_diagnostics[index]
 
     if type(raw) == 'table' then
       ---@cast raw SlangJsonDiagnostic
 
-      local entry =
-        diagnostic_from_entry(
-          raw,
-          filename,
-          root
-        )
+      local entry = diagnostic_from_entry(raw, filename, root)
 
       if entry ~= nil then
-        diagnostics[#diagnostics + 1] =
-          entry
+        diagnostics[#diagnostics + 1] = entry
       end
     end
   end
 
-  assert(
-    #diagnostics <= DIAGNOSTICS_MAX
-  )
+  assert(#diagnostics <= DIAGNOSTICS_MAX)
 
   return diagnostics
 end
@@ -719,8 +511,7 @@ local function args(context)
   assert(context.filename ~= '')
   assert(context.root ~= '')
 
-  local root =
-    fs.normalize(context.root)
+  local root = fs.normalize(context.root)
 
   local argv = {
     --
@@ -760,25 +551,15 @@ local function args(context)
     tostring(DIAGNOSTICS_MAX),
   }
 
-  local waiver =
-    find_candidate(
-      root,
-      waiver_candidates
-    )
+  local waiver = find_candidate(root, waiver_candidates)
 
   if waiver ~= nil then
-    argv[#argv + 1] =
-      '--waiver-file'
+    argv[#argv + 1] = '--waiver-file'
 
-    argv[#argv + 1] =
-      waiver
+    argv[#argv + 1] = waiver
   end
 
-  local filelist =
-    find_candidate(
-      root,
-      filelist_candidates
-    )
+  local filelist = find_candidate(root, filelist_candidates)
 
   --
   -- A project file list can carry include paths, package files, defines, and
@@ -789,15 +570,12 @@ local function args(context)
   -- checking still happens when the file list is incomplete.
   --
   if filelist ~= nil then
-    argv[#argv + 1] =
-      '-f'
+    argv[#argv + 1] = '-f'
 
-    argv[#argv + 1] =
-      filelist
+    argv[#argv + 1] = filelist
   end
 
-  argv[#argv + 1] =
-    context.filename
+  argv[#argv + 1] = context.filename
 
   return argv
 end
@@ -819,35 +597,23 @@ return ---@type Linter
   end,
 
   --
-  -- Compilation errors necessarily produce a nonzero process result.
-  -- Those are valid lint results, not adapter failures.
-  --
   ignore_exitcode = true,
 
   parser = parse,
 
   root_markers = {
-    --
-    -- Slang / simulator-style file lists.
-    --
     'slang.f',
     'files.f',
     'filelist.f',
     'rtl.f',
     'sources.f',
 
-    --
-    -- Diagnostic waiver configuration.
-    --
     'slang-waivers.toml',
     '.slang-waivers.toml',
 
     'config/slang-waivers.toml',
     '.config/slang-waivers.toml',
 
-    --
-    -- Common HDL project manifests.
-    --
     'Bender.yml',
     'bender.yml',
 

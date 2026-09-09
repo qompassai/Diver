@@ -9,18 +9,12 @@ local diagnostic = vim.diagnostic
 local fn = vim.fn
 
 local M = {}
--- Optional explicit `loadfile(...)({ lazy = true, no_updates = true })` embedding mode lets a
--- host reuse this runner without eager definition loads or the updater. `require('linters')`
--- retains its existing behavior because required modules receive no chunk arguments.
 local module_options = ...
 if type(module_options) ~= 'table' then
   module_options = {}
 end
 M.completion_api_version = 1
--- Completion results embed captured process output; cap it so a chatty linter cannot grow a
--- result (and any host transport carrying it) without limit.
 local OUTPUT_BYTES_MAX = 65536
--- vim.system() reports this exit code when its own timeout terminated the process.
 local TIMEOUT_EXIT_CODE = 124
 local SIGTERM = 15
 
@@ -954,8 +948,6 @@ function M.run_linter(name, bufnr, opts)
           vim.log.levels.ERROR
         )
       end
-      -- Diagnostics or a rejected exit code fail the run. An accepted nonzero exit with no
-      -- parsed diagnostics is not proof of a clean check, so it stays unverified.
       local status
       local reason
       if #parsed > 0 then
@@ -988,8 +980,6 @@ function M.run_linter(name, bufnr, opts)
   local handle = {
     cancel = function(status)
       if not completed and generations[key] == generation then
-        -- Bumping the generation makes the pending vim.system callback report stale
-        -- instead of publishing diagnostics for a run the caller abandoned.
         generations[key] = generation + 1
         if jobs[key] == job then
           jobs[key] = nil

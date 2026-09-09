@@ -43,48 +43,48 @@ local STRING_LENGTH_MAX = 16384
 
 ---@type table<string, integer>
 local severities = {
-        Error = ERROR,
-        Warning = WARN,
-        Suggestion = HINT,
+  Error = ERROR,
+  Warning = WARN,
+  Suggestion = HINT,
 }
 
 ---@param value string|number|nil
 ---@param fallback integer
 ---@return integer
 local function integer(value, fallback)
-        assert(fallback >= 0)
+  assert(fallback >= 0)
 
-        local parsed = tonumber(value)
+  local parsed = tonumber(value)
 
-        if parsed == nil then
-                return fallback
-        end
+  if parsed == nil then
+    return fallback
+  end
 
-        return math.floor(parsed)
+  return math.floor(parsed)
 end
 
 ---@param value string|nil
 ---@return integer
 local function severity(value)
-        if value == nil then
-                return WARN
-        end
+  if value == nil then
+    return WARN
+  end
 
-        return severities[value] or WARN
+  return severities[value] or WARN
 end
 
 ---@param value string|nil
 ---@return string?
 local function bounded_string(value)
-        if type(value) ~= 'string' or value == '' then
-                return nil
-        end
+  if type(value) ~= 'string' or value == '' then
+    return nil
+  end
 
-        if #value > STRING_LENGTH_MAX then
-                return value:sub(1, STRING_LENGTH_MAX)
-        end
+  if #value > STRING_LENGTH_MAX then
+    return value:sub(1, STRING_LENGTH_MAX)
+  end
 
-        return value
+  return value
 end
 
 ---@param path string
@@ -92,89 +92,79 @@ end
 ---@param root string
 ---@return boolean
 local function belongs_to_buffer(path, filename, root)
-        assert(path ~= '')
-        assert(filename ~= '')
-        assert(root ~= '')
+  assert(path ~= '')
+  assert(filename ~= '')
+  assert(root ~= '')
 
-        local candidate
+  local candidate
 
-        if fs.is_absolute(path) then
-                candidate = fs.normalize(path)
-        else
-                candidate = fs.normalize(
-                        fs.joinpath(root, path)
-                )
-        end
-
-        return candidate == filename
+  if fs.is_absolute(path) then
+    candidate = fs.normalize(path)
+  else
+    candidate = fs.normalize(fs.joinpath(root, path))
+  end
+  return candidate == filename
 end
 
 ---@param hint HLintHint
 ---@return string
 local function message_from_hint(hint)
-        local name = bounded_string(hint.hint)
-        local from = bounded_string(hint.from)
-        local to = bounded_string(hint.to)
+  local name = bounded_string(hint.hint)
+  local from = bounded_string(hint.from)
+  local to = bounded_string(hint.to)
 
-        if name == nil then
-                name = 'HLint suggestion'
-        end
+  if name == nil then
+    name = 'HLint suggestion'
+  end
 
-        if from ~= nil and to ~= nil then
-                return ('%s: %s → %s'):format(
-                        name,
-                        from,
-                        to
-                )
-        end
+  if from ~= nil and to ~= nil then
+    return ('%s: %s → %s'):format(name, from, to)
+  end
 
-        if from ~= nil then
-                return ('%s: %s'):format(
-                        name,
-                        from
-                )
-        end
+  if from ~= nil then
+    return ('%s: %s'):format(name, from)
+  end
 
-        return name
+  return name
 end
 
 ---@param hint HLintHint
 ---@return string[]?
 local function notes_from_hint(hint)
-        local note = hint.note
+  local note = hint.note
 
-        if type(note) == 'string' then
-                local value = bounded_string(note)
+  if type(note) == 'string' then
+    local value = bounded_string(note)
 
-                if value ~= nil then
-                        return { value }
-                end
+    if value ~= nil then
+      return { value }
+    end
 
-                return nil
-        end
+    return nil
+  end
 
-        if type(note) ~= 'table' then
-                return nil
-        end
+  if type(note) ~= 'table' then
+    return nil
+  end
 
-        ---@type string[]
-        local notes = {}
-        local notes_count = 0
+  ---@type string[]
+  local notes = {}
+  local notes_count = 0
 
-        for index = 1, math.min(#note, 64) do
-                local value = bounded_string(note[index])
+  for index = 1, math.min(#note, 64) do
+    local value = bounded_string(note[index])
 
-                if value ~= nil then
-                        notes_count = notes_count + 1
-                        notes[notes_count] = value
-                end
-        end
+    if value ~= nil then
+      notes_count = notes_count + 1
+      notes[notes_count] = value
+    end
+  end
 
-        if notes_count == 0 then
-                return nil
-        end
+  if notes_count == 0 then
+    return nil
+  end
 
-        return notes
+  return notes
 end
 
 ---@param hint HLintHint
@@ -182,180 +172,137 @@ end
 ---@param root string
 ---@return vim.Diagnostic?
 local function diagnostic_from_hint(hint, filename, root)
-        local path = hint.file
+  local path = hint.file
 
-        if type(path) ~= 'string' or path == '' then
-                return nil
-        end
+  if type(path) ~= 'string' or path == '' then
+    return nil
+  end
 
-        if not belongs_to_buffer(path, filename, root) then
-                return nil
-        end
+  if not belongs_to_buffer(path, filename, root) then
+    return nil
+  end
 
-        local start_line = math.max(
-                integer(hint.startLine, 1) - 1,
-                0
-        )
+  local start_line = math.max(integer(hint.startLine, 1) - 1, 0)
 
-        local start_column = math.max(
-                integer(hint.startColumn, 1) - 1,
-                0
-        )
+  local start_column = math.max(integer(hint.startColumn, 1) - 1, 0)
 
-        local end_line = math.max(
-                integer(
-                        hint.endLine,
-                        start_line + 1
-                ) - 1,
-                start_line
-        )
+  local end_line = math.max(integer(hint.endLine, start_line + 1) - 1, start_line)
 
-        local minimum_end_column =
-                end_line == start_line
-                        and start_column + 1
-                        or 0
+  local minimum_end_column = end_line == start_line and start_column + 1 or 0
 
-        local end_column = math.max(
-                integer(
-                        hint.endColumn,
-                        minimum_end_column + 1
-                ) - 1,
-                minimum_end_column
-        )
+  local end_column = math.max(integer(hint.endColumn, minimum_end_column + 1) - 1, minimum_end_column)
 
-        return {
-                lnum = start_line,
-                end_lnum = end_line,
-                col = start_column,
-                end_col = end_column,
-                message = message_from_hint(hint),
-                severity = severity(hint.severity),
-                source = 'hlint',
-                code = hint.hint,
-                user_data = {
-                        from = hint.from,
-                        to = hint.to,
-                        note = notes_from_hint(hint),
-                },
-        }
+  return {
+    lnum = start_line,
+    end_lnum = end_line,
+    col = start_column,
+    end_col = end_column,
+    message = message_from_hint(hint),
+    severity = severity(hint.severity),
+    source = 'hlint',
+    code = hint.hint,
+    user_data = {
+      from = hint.from,
+      to = hint.to,
+      note = notes_from_hint(hint),
+    },
+  }
 end
 
 ---@param output string
 ---@param context LintContext|integer
 ---@return vim.Diagnostic.Set[]
 local function parse(output, context)
-        if output == '' then
-                return {}
-        end
+  if output == '' then
+    return {}
+  end
 
-        assert(
-                type(context) == 'table',
-                'hlint parser requires a LintContext'
-        )
+  assert(type(context) == 'table', 'hlint parser requires a LintContext')
 
-        ---@cast context LintContext
+  ---@cast context LintContext
 
-        assert(context.filename ~= '')
-        assert(context.root ~= '')
+  assert(context.filename ~= '')
+  assert(context.root ~= '')
 
-        assert(
-                #output <= OUTPUT_LENGTH_MAX,
-                'hlint output exceeded maximum size'
-        )
+  assert(#output <= OUTPUT_LENGTH_MAX, 'hlint output exceeded maximum size')
 
-        local ok, decoded = pcall(
-                vim.json.decode,
-                output
-        )
+  local ok, decoded = pcall(vim.json.decode, output)
 
-        if not ok or type(decoded) ~= 'table' then
-                return {}
-        end
+  if not ok or type(decoded) ~= 'table' then
+    return {}
+  end
 
-        local filename = fs.normalize(context.filename)
-        local root = context.root
+  local filename = fs.normalize(context.filename)
+  local root = context.root
 
-        ---@type vim.Diagnostic.Set[]
-        local diagnostics = {}
-        local diagnostics_count = 0
+  ---@type vim.Diagnostic.Set[]
+  local diagnostics = {}
+  local diagnostics_count = 0
 
-        local hints_count = math.min(
-                #decoded,
-                DIAGNOSTICS_MAX
-        )
+  local hints_count = math.min(#decoded, DIAGNOSTICS_MAX)
 
-        for index = 1, hints_count do
-                local hint = decoded[index]
+  for index = 1, hints_count do
+    local hint = decoded[index]
 
-                if type(hint) == 'table' then
-                        ---@cast hint HLintHint
+    if type(hint) == 'table' then
+      ---@cast hint HLintHint
 
-                        local entry = diagnostic_from_hint(
-                                hint,
-                                filename,
-                                root
-                        )
+      local entry = diagnostic_from_hint(hint, filename, root)
 
-                        if entry ~= nil then
-                                diagnostics_count =
-                                        diagnostics_count + 1
+      if entry ~= nil then
+        diagnostics_count = diagnostics_count + 1
 
-                                diagnostics[diagnostics_count] =
-                                        entry
-                        end
-                end
-        end
+        diagnostics[diagnostics_count] = entry
+      end
+    end
+  end
 
-        assert(
-                diagnostics_count <= DIAGNOSTICS_MAX
-        )
+  assert(diagnostics_count <= DIAGNOSTICS_MAX)
 
-        assert(
-                diagnostics_count == #diagnostics
-        )
+  assert(diagnostics_count == #diagnostics)
 
-        return diagnostics
+  return diagnostics
 end
 
 return ---@type Linter
 {
-        automatic = false,
+  automatic = false,
 
-        cmd = 'hlint',
+  cmd = 'hlint',
 
-        args = function(context)
-                assert(context.filename ~= '')
+  args = function(context)
+    assert(context.filename ~= '')
 
-                return {
-                        '--json',
-                        '--no-exit-code',
-                        context.filename,
-                }
-        end,
+    return {
+      '--json',
+      '--no-exit-code',
+      context.filename,
+    }
+  end,
 
-        append_fname = false,
+  append_fname = false,
 
-        cwd = function(context)
-                assert(context.root ~= '')
+  cwd = function(context)
+    assert(context.root ~= '')
 
-                return context.root
-        end,
+    return context.root
+  end,
 
-        ignore_exitcode = true,
+  ignore_exitcode = true,
 
-        parser = parse,
+  parser = parse,
 
-        root_markers = {
-                '.hlint.yaml',
-                'cabal.project',
-                'cabal.project.local',
-                'stack.yaml',
-                'package.yaml',
-                '*.cabal',
-                '.git',
-        },
+  root_markers = {
+    '.hlint.yaml',
+    'cabal.project',
+    'cabal.project.local',
+    'stack.yaml',
+    'package.yaml',
+    '*.cabal',
+    '.git',
+  },
 
-        stdin = false,
-        stream = 'stdout',
-        timeout = 30000,
+  stdin = false,
+  stream = 'stdout',
+  timeout = 30000,
 }

@@ -68,29 +68,6 @@
 --          --path /path/to/your/godot/project \
 --          --clickable
 --
--- This does NOT require the addon to be enabled in the Godot editor for
--- every project. Neovim can use the dedicated standalone clone above.
---
--- If you instead vendor:
---
---   addons/gdscript-linter/
---
--- directly into each Godot project, this module also detects that layout and
--- may execute the project-local CLI copy.
---
--- `.gdlint.cfg` remains project-local and is consumed by the upstream
--- analyzer. This keeps rule policy out of the Neovim adapter.
---
--- Neovim compatibility:
---
--- This module targets Neovim's Lua 5.1-compatible API surface. It avoids
--- Lua 5.2+ language features and LuaJIT-only APIs and uses current:
---
---   vim.fs
---   vim.fn
---   vim.diagnostic
---
--- APIs only.
 
 local diagnostic = vim.diagnostic
 local fn = vim.fn
@@ -100,47 +77,36 @@ local uv = vim.uv
 local MAX_DIAGNOSTICS = 512
 local MAX_MESSAGE_BYTES = 2048
 local MAX_OUTPUT_BYTES = 8 * 1024 * 1024
-local SOURCE = "gdlint"
+local SOURCE = 'gdlint'
 
 ---@type string[]
 local ROOT_MARKERS = {
-  ".gdlint.cfg",
-  "project.godot",
-  ".git",
+  '.gdlint.cfg',
+  'project.godot',
+  '.git',
 }
 
 ---@type string[]
 local GODOT_EXECUTABLES = {
-  "godot",
-  "godot4",
-  "redot",
+  'godot',
+  'godot4',
+  'redot',
 }
 
-local CLI_RELATIVE_PATH =
-  "addons/gdscript-linter/analyzer/analyze-cli.gd"
+local CLI_RELATIVE_PATH = 'addons/gdscript-linter/analyzer/analyze-cli.gd'
 
-local DEFAULT_INSTALL_ROOT =
-  fs.joinpath(
-    fn.stdpath("data"),
-    "godot-gdscript-linter"
-  )
+local DEFAULT_INSTALL_ROOT = fs.joinpath(fn.stdpath('data'), 'godot-gdscript-linter')
 
 ---@param value unknown
 ---@return boolean
 local function nonempty_string(value)
-  return type(value) == "string"
-    and value ~= ""
+  return type(value) == 'string' and value ~= ''
 end
 
 ---@param value string
 ---@return string
 local function compact(value)
-  return vim.trim(
-    value:gsub(
-      "%s+",
-      " "
-    )
-  )
+  return vim.trim(value:gsub('%s+', ' '))
 end
 
 ---@param value string
@@ -152,16 +118,10 @@ local function truncate(value, limit)
   end
 
   if limit <= 3 then
-    return value:sub(
-      1,
-      limit
-    )
+    return value:sub(1, limit)
   end
 
-  return value:sub(
-    1,
-    limit - 3
-  ) .. "..."
+  return value:sub(1, limit - 3) .. '...'
 end
 
 ---@param value unknown
@@ -173,8 +133,7 @@ local function zero_based_line(value)
     return 0
   end
 
-  local line =
-    math.floor(number)
+  local line = math.floor(number)
 
   if line <= 1 then
     return 0
@@ -192,8 +151,7 @@ local function zero_based_col(value)
     return 0
   end
 
-  local col =
-    math.floor(number)
+  local col = math.floor(number)
 
   if col <= 1 then
     return 0
@@ -209,11 +167,9 @@ local function is_file(path)
     return false
   end
 
-  local stat =
-    uv.fs_stat(path)
+  local stat = uv.fs_stat(path)
 
-  return stat ~= nil
-    and stat.type == "file"
+  return stat ~= nil and stat.type == 'file'
 end
 
 ---@param path string
@@ -223,33 +179,25 @@ local function is_directory(path)
     return false
   end
 
-  local stat =
-    uv.fs_stat(path)
+  local stat = uv.fs_stat(path)
 
-  return stat ~= nil
-    and stat.type == "directory"
+  return stat ~= nil and stat.type == 'directory'
 end
 
 ---@param path string
 ---@return string
 local function normalize(path)
-  if path == "" then
-    return ""
+  if path == '' then
+    return ''
   end
 
-  return fs.normalize(
-    fn.fnamemodify(
-      path,
-      ":p"
-    )
-  )
+  return fs.normalize(fn.fnamemodify(path, ':p'))
 end
 
 ---@param command string
 ---@return string?
 local function exepath(command)
-  local path =
-    fn.exepath(command)
+  local path = fn.exepath(command)
 
   if not nonempty_string(path) then
     return nil
@@ -260,25 +208,18 @@ end
 
 ---@return string?
 local function godot_executable()
-  local configured =
-    vim.env.NVIM_GODOT_EXECUTABLE
+  local configured = vim.env.NVIM_GODOT_EXECUTABLE
 
   if nonempty_string(configured) then
-    local candidate =
-      normalize(
-        fn.expand(configured)
-      )
+    local candidate = normalize(fn.expand(configured))
 
     if fn.executable(candidate) == 1 then
       return candidate
     end
   end
 
-  for _, command in ipairs(
-    GODOT_EXECUTABLES
-  ) do
-    local candidate =
-      exepath(command)
+  for _, command in ipairs(GODOT_EXECUTABLES) do
+    local candidate = exepath(command)
 
     if candidate ~= nil then
       return candidate
@@ -292,62 +233,34 @@ end
 ---@return string
 local function project_root(context)
   if nonempty_string(context.root) then
-    local root =
-      fs.normalize(context.root)
+    local root = fs.normalize(context.root)
 
-    if
-      is_file(
-        fs.joinpath(
-          root,
-          "project.godot"
-        )
-      )
-    then
+    if is_file(fs.joinpath(root, 'project.godot')) then
       return root
     end
   end
 
   if nonempty_string(context.filename) then
-    local detected =
-      fs.root(
-        context.filename,
-        {
-          "project.godot",
-        }
-      )
+    local detected = fs.root(context.filename, {
+      'project.godot',
+    })
 
-    if
-      type(detected) == "string"
-      and detected ~= ""
-    then
+    if type(detected) == 'string' and detected ~= '' then
       return fs.normalize(detected)
     end
 
-    detected =
-      fs.root(
-        context.filename,
-        {
-          ".gdlint.cfg",
-          ".git",
-        }
-      )
+    detected = fs.root(context.filename, {
+      '.gdlint.cfg',
+      '.git',
+    })
 
-    if
-      type(detected) == "string"
-      and detected ~= ""
-    then
+    if type(detected) == 'string' and detected ~= '' then
       return fs.normalize(detected)
     end
 
-    local parent =
-      fs.dirname(
-        context.filename
-      )
+    local parent = fs.dirname(context.filename)
 
-    if
-      type(parent) == "string"
-      and parent ~= ""
-    then
+    if type(parent) == 'string' and parent ~= '' then
       return fs.normalize(parent)
     end
   end
@@ -356,19 +269,13 @@ local function project_root(context)
     return fs.normalize(context.cwd)
   end
 
-  return fs.normalize(
-    fn.getcwd()
-  )
+  return fs.normalize(fn.getcwd())
 end
 
 ---@param root string
 ---@return string?
 local function project_local_linter_root(root)
-  local cli =
-    fs.joinpath(
-      root,
-      CLI_RELATIVE_PATH
-    )
+  local cli = fs.joinpath(root, CLI_RELATIVE_PATH)
 
   if is_file(cli) then
     return root
@@ -379,26 +286,15 @@ end
 
 ---@return string?
 local function configured_linter_root()
-  local configured =
-    vim.env.NVIM_GDLINT_ROOT
+  local configured = vim.env.NVIM_GDLINT_ROOT
 
   if not nonempty_string(configured) then
     return nil
   end
 
-  local root =
-    normalize(
-      fn.expand(configured)
-    )
+  local root = normalize(fn.expand(configured))
 
-  if
-    is_file(
-      fs.joinpath(
-        root,
-        CLI_RELATIVE_PATH
-      )
-    )
-  then
+  if is_file(fs.joinpath(root, CLI_RELATIVE_PATH)) then
     return root
   end
 
@@ -407,32 +303,13 @@ end
 
 ---@return string?
 local function default_linter_root()
-  if
-    is_file(
-      fs.joinpath(
-        DEFAULT_INSTALL_ROOT,
-        CLI_RELATIVE_PATH
-      )
-    )
-  then
+  if is_file(fs.joinpath(DEFAULT_INSTALL_ROOT, CLI_RELATIVE_PATH)) then
     return DEFAULT_INSTALL_ROOT
   end
 
-  local local_share =
-    normalize(
-      fn.expand(
-        "~/.local/share/godot-gdscript-linter"
-      )
-    )
+  local local_share = normalize(fn.expand('~/.local/share/godot-gdscript-linter'))
 
-  if
-    is_file(
-      fs.joinpath(
-        local_share,
-        CLI_RELATIVE_PATH
-      )
-    )
-  then
+  if is_file(fs.joinpath(local_share, CLI_RELATIVE_PATH)) then
     return local_share
   end
 
@@ -442,50 +319,35 @@ end
 ---@param context LintContext
 ---@return string?
 local function linter_root(context)
-  local root =
-    project_root(context)
+  local root = project_root(context)
 
-  local local_root =
-    project_local_linter_root(root)
+  local local_root = project_local_linter_root(root)
 
   if local_root ~= nil then
     return local_root
   end
 
-  return configured_linter_root()
-    or default_linter_root()
+  return configured_linter_root() or default_linter_root()
 end
 
 ---@param value string
 ---@return integer
 local function severity(value)
-  local lower =
-    value:lower()
+  local lower = value:lower()
 
-  if
-    lower == "critical"
-    or lower == "error"
-  then
+  if lower == 'critical' or lower == 'error' then
     return diagnostic.severity.ERROR
   end
 
-  if
-    lower == "warning"
-    or lower == "warn"
-  then
+  if lower == 'warning' or lower == 'warn' then
     return diagnostic.severity.WARN
   end
 
-  if
-    lower == "info"
-    or lower == "information"
-  then
+  if lower == 'info' or lower == 'information' then
     return diagnostic.severity.INFO
   end
 
-  if
-    lower == "hint"
-  then
+  if lower == 'hint' then
     return diagnostic.severity.HINT
   end
 
@@ -495,10 +357,7 @@ end
 ---@param output string
 ---@return string
 local function strip_ansi(output)
-  return output:gsub(
-    "\27%[[%d;]*[mK]",
-    ""
-  )
+  return output:gsub('\27%[[%d;]*[mK]', '')
 end
 
 ---@class GdLintRecord
@@ -516,14 +375,9 @@ local function normalize_code(text)
     return nil
   end
 
-  local code =
-    vim.trim(text)
+  local code = vim.trim(text)
 
-  if
-    code:match(
-      "^[%w_-]+$"
-    ) ~= nil
-  then
+  if code:match('^[%w_-]+$') ~= nil then
     return code
   end
 
@@ -554,23 +408,9 @@ local function parse_clickable(line)
   local code
   local message
 
-  path,
-    line_number,
-    column,
-    level,
-    code,
-    message =
-    line:match(
-      "^(.+):(%d+):(%d+):%s*([%a]+)%s+%[([%w_-]+)%]:%s*(.+)$"
-    )
+  path, line_number, column, level, code, message = line:match('^(.+):(%d+):(%d+):%s*([%a]+)%s+%[([%w_-]+)%]:%s*(.+)$')
 
-  if
-    path ~= nil
-    and line_number ~= nil
-    and column ~= nil
-    and level ~= nil
-    and message ~= nil
-  then
+  if path ~= nil and line_number ~= nil and column ~= nil and level ~= nil and message ~= nil then
     return {
       path = path,
       line = tonumber(line_number) or 1,
@@ -581,21 +421,9 @@ local function parse_clickable(line)
     }
   end
 
-  path,
-    line_number,
-    level,
-    code,
-    message =
-    line:match(
-      "^(.+):(%d+):%s*([%a]+)%s+%[([%w_-]+)%]:%s*(.+)$"
-    )
+  path, line_number, level, code, message = line:match('^(.+):(%d+):%s*([%a]+)%s+%[([%w_-]+)%]:%s*(.+)$')
 
-  if
-    path ~= nil
-    and line_number ~= nil
-    and level ~= nil
-    and message ~= nil
-  then
+  if path ~= nil and line_number ~= nil and level ~= nil and message ~= nil then
     return {
       path = path,
       line = tonumber(line_number) or 1,
@@ -606,22 +434,9 @@ local function parse_clickable(line)
     }
   end
 
-  path,
-    line_number,
-    column,
-    level,
-    message =
-    line:match(
-      "^(.+):(%d+):(%d+):%s*([%a]+):%s*(.+)$"
-    )
+  path, line_number, column, level, message = line:match('^(.+):(%d+):(%d+):%s*([%a]+):%s*(.+)$')
 
-  if
-    path ~= nil
-    and line_number ~= nil
-    and column ~= nil
-    and level ~= nil
-    and message ~= nil
-  then
+  if path ~= nil and line_number ~= nil and column ~= nil and level ~= nil and message ~= nil then
     return {
       path = path,
       line = tonumber(line_number) or 1,
@@ -632,20 +447,9 @@ local function parse_clickable(line)
     }
   end
 
-  path,
-    line_number,
-    level,
-    message =
-    line:match(
-      "^(.+):(%d+):%s*([%a]+):%s*(.+)$"
-    )
+  path, line_number, level, message = line:match('^(.+):(%d+):%s*([%a]+):%s*(.+)$')
 
-  if
-    path ~= nil
-    and line_number ~= nil
-    and level ~= nil
-    and message ~= nil
-  then
+  if path ~= nil and line_number ~= nil and level ~= nil and message ~= nil then
     return {
       path = path,
       line = tonumber(line_number) or 1,
@@ -667,54 +471,29 @@ local function same_file(path, context)
     return false
   end
 
-  local root =
-    project_root(context)
+  local root = project_root(context)
 
   local candidate = path
 
   if not fs.isabs(candidate) then
-    candidate =
-      fs.joinpath(
-        root,
-        candidate
-      )
+    candidate = fs.joinpath(root, candidate)
   end
 
-  return normalize(candidate)
-    == normalize(context.filename)
+  return normalize(candidate) == normalize(context.filename)
 end
 
 ---@param record GdLintRecord
 ---@param context LintContext
 ---@return vim.Diagnostic
-local function record_diagnostic(
-  record,
-  context
-)
-  local lnum =
-    zero_based_line(
-      record.line
-    )
+local function record_diagnostic(record, context)
+  local lnum = zero_based_line(record.line)
 
-  local col =
-    zero_based_col(
-      record.column
-    )
+  local col = zero_based_col(record.column)
 
-  local message =
-    compact(
-      record.message
-    )
+  local message = compact(record.message)
 
-  if not same_file(
-    record.path,
-    context
-  ) then
-    message = string.format(
-      "%s: %s",
-      record.path,
-      message
-    )
+  if not same_file(record.path, context) then
+    message = string.format('%s: %s', record.path, message)
 
     --
     -- The analyzer scans the project, not necessarily only the current
@@ -728,8 +507,7 @@ local function record_diagnostic(
   return {
     bufnr = context.bufnr,
 
-    code =
-      record.code,
+    code = record.code,
 
     col = col,
 
@@ -739,24 +517,16 @@ local function record_diagnostic(
 
     lnum = lnum,
 
-    message = truncate(
-      message,
-      MAX_MESSAGE_BYTES
-    ),
+    message = truncate(message, MAX_MESSAGE_BYTES),
 
-    severity =
-      severity(
-        record.severity
-      ),
+    severity = severity(record.severity),
 
     source = SOURCE,
 
     user_data = {
-      path =
-        record.path,
+      path = record.path,
 
-      severity =
-        record.severity,
+      severity = record.severity,
     },
   }
 end
@@ -764,43 +534,22 @@ end
 ---@param line string
 ---@return boolean
 local function operational_error(line)
-  local lower =
-    line:lower()
+  local lower = line:lower()
 
-  return lower:find(
-    "error:",
-    1,
-    true
-  ) ~= nil
-    or lower:find(
-      "failed",
-      1,
-      true
-    ) ~= nil
-    or lower:find(
-      "not found",
-      1,
-      true
-    ) ~= nil
-    or lower:find(
-      "cannot open",
-      1,
-      true
-    ) ~= nil
+  return lower:find('error:', 1, true) ~= nil
+    or lower:find('failed', 1, true) ~= nil
+    or lower:find('not found', 1, true) ~= nil
+    or lower:find('cannot open', 1, true) ~= nil
 end
 
 ---@param line string
 ---@param context LintContext
 ---@return vim.Diagnostic
-local function operational_diagnostic(
-  line,
-  context
-)
+local function operational_diagnostic(line, context)
   return {
     bufnr = context.bufnr,
 
-    code =
-      "operational-error",
+    code = 'operational-error',
 
     col = 0,
 
@@ -810,13 +559,9 @@ local function operational_diagnostic(
 
     lnum = 0,
 
-    message = truncate(
-      compact(line),
-      MAX_MESSAGE_BYTES
-    ),
+    message = truncate(compact(line), MAX_MESSAGE_BYTES),
 
-    severity =
-      diagnostic.severity.ERROR,
+    severity = diagnostic.severity.ERROR,
 
     source = SOURCE,
   }
@@ -824,15 +569,12 @@ end
 
 ---@param context LintContext
 ---@return vim.Diagnostic[]
-local function missing_runtime(
-  context
-)
+local function missing_runtime(context)
   return {
     {
       bufnr = context.bufnr,
 
-      code =
-        "missing-runtime",
+      code = 'missing-runtime',
 
       col = 0,
 
@@ -842,11 +584,9 @@ local function missing_runtime(
 
       lnum = 0,
 
-      message =
-        "Godot/Redot executable was not found; set NVIM_GODOT_EXECUTABLE or install Godot",
+      message = 'Godot/Redot executable was not found; set NVIM_GODOT_EXECUTABLE or install Godot',
 
-      severity =
-        diagnostic.severity.ERROR,
+      severity = diagnostic.severity.ERROR,
 
       source = SOURCE,
     },
@@ -855,15 +595,12 @@ end
 
 ---@param context LintContext
 ---@return vim.Diagnostic[]
-local function missing_linter(
-  context
-)
+local function missing_linter(context)
   return {
     {
       bufnr = context.bufnr,
 
-      code =
-        "missing-linter",
+      code = 'missing-linter',
 
       col = 0,
 
@@ -874,13 +611,12 @@ local function missing_linter(
       lnum = 0,
 
       message = table.concat({
-        "GDScript Linter CLI was not found; clone ",
-        "graydwarf/godot-gdscript-linter and set ",
-        "NVIM_GDLINT_ROOT to its repository root",
+        'GDScript Linter CLI was not found; clone ',
+        'graydwarf/godot-gdscript-linter and set ',
+        'NVIM_GDLINT_ROOT to its repository root',
       }),
 
-      severity =
-        diagnostic.severity.ERROR,
+      severity = diagnostic.severity.ERROR,
 
       source = SOURCE,
     },
@@ -889,15 +625,12 @@ end
 
 ---@param context LintContext
 ---@return vim.Diagnostic[]
-local function oversized_output(
-  context
-)
+local function oversized_output(context)
   return {
     {
       bufnr = context.bufnr,
 
-      code =
-        "output-limit",
+      code = 'output-limit',
 
       col = 0,
 
@@ -907,13 +640,9 @@ local function oversized_output(
 
       lnum = 0,
 
-      message = string.format(
-        "gdlint output exceeded the %d-byte parser limit",
-        MAX_OUTPUT_BYTES
-      ),
+      message = string.format('gdlint output exceeded the %d-byte parser limit', MAX_OUTPUT_BYTES),
 
-      severity =
-        diagnostic.severity.WARN,
+      severity = diagnostic.severity.WARN,
 
       source = SOURCE,
     },
@@ -923,79 +652,46 @@ end
 ---@param output string
 ---@param context LintContext
 ---@return vim.Diagnostic[]
-local function parse(
-  output,
-  context
-)
-  assert(
-    type(context) == "table",
-    "gdlint parser requires LintContext"
-  )
+local function parse(output, context)
+  assert(type(context) == 'table', 'gdlint parser requires LintContext')
 
-  assert(
-    type(context.bufnr) == "number",
-    "gdlint parser requires context.bufnr"
-  )
+  assert(type(context.bufnr) == 'number', 'gdlint parser requires context.bufnr')
 
   if godot_executable() == nil then
-    return missing_runtime(
-      context
-    )
+    return missing_runtime(context)
   end
 
   if linter_root(context) == nil then
-    return missing_linter(
-      context
-    )
+    return missing_linter(context)
   end
 
-  if output == "" then
+  if output == '' then
     return {}
   end
 
   if #output > MAX_OUTPUT_BYTES then
-    return oversized_output(
-      context
-    )
+    return oversized_output(context)
   end
 
-  local text =
-    strip_ansi(output)
+  local text = strip_ansi(output)
 
   ---@type vim.Diagnostic[]
   local diagnostics = {}
 
-  for raw_line in text:gmatch(
-    "[^\r\n]+"
-  ) do
-    if
-      #diagnostics
-      >= MAX_DIAGNOSTICS
-    then
+  for raw_line in text:gmatch('[^\r\n]+') do
+    if #diagnostics >= MAX_DIAGNOSTICS then
       break
     end
 
-    local line =
-      vim.trim(raw_line)
+    local line = vim.trim(raw_line)
 
-    if line ~= "" then
-      local record =
-        parse_clickable(line)
+    if line ~= '' then
+      local record = parse_clickable(line)
 
       if record ~= nil then
-        diagnostics[
-          #diagnostics + 1
-        ] = record_diagnostic(
-          record,
-          context
-        )
+        diagnostics[#diagnostics + 1] = record_diagnostic(record, context)
       elseif operational_error(line) then
-        diagnostics[
-          #diagnostics + 1
-        ] = operational_diagnostic(
-          line,
-          context
-        )
+        diagnostics[#diagnostics + 1] = operational_diagnostic(line, context)
       end
     end
   end
@@ -1006,16 +702,11 @@ end
 ---@param context LintContext
 ---@return string[]
 local function arguments(context)
-  assert(
-    type(context) == "table",
-    "gdlint arguments require LintContext"
-  )
+  assert(type(context) == 'table', 'gdlint arguments require LintContext')
 
-  local root =
-    project_root(context)
+  local root = project_root(context)
 
-  local analyzer_root =
-    linter_root(context)
+  local analyzer_root = linter_root(context)
 
   if analyzer_root == nil then
     return {}
@@ -1027,33 +718,29 @@ local function arguments(context)
   -- `--path` after Godot's `--` argument.
   --
   return {
-    "--headless",
+    '--headless',
 
-    "--path",
+    '--path',
     analyzer_root,
 
-    "--script",
-    "res://" .. CLI_RELATIVE_PATH,
+    '--script',
+    'res://' .. CLI_RELATIVE_PATH,
 
-    "--",
+    '--',
 
-    "--path",
+    '--path',
     root,
 
-    "--clickable",
+    '--clickable',
   }
 end
 
 ---@param context LintContext
 ---@return string
 local function command(context)
-  assert(
-    type(context) == "table",
-    "gdlint command requires LintContext"
-  )
+  assert(type(context) == 'table', 'gdlint command requires LintContext')
 
-  return godot_executable()
-    or "godot"
+  return godot_executable() or 'godot'
 end
 
 ---@type Linter
@@ -1093,7 +780,7 @@ return {
 
   stdin = false,
 
-  stream = "both",
+  stream = 'both',
 
   timeout = 60000,
 }
