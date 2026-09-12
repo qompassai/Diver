@@ -113,7 +113,7 @@
 | [`markdownlint`](https://github.com/mfussenegger/nvim-lint/blob/master/lua/lint/linters/markdownlint.lua) | 2024-09-22 | `DONE` | [`markdownlint.lua`](./markdownlint.lua) |
 | [`markuplint`](https://github.com/mfussenegger/nvim-lint/blob/master/lua/lint/linters/markuplint.lua) | 2024-02-24 | `TODO` | — |
 | [`mbake`](https://github.com/mfussenegger/nvim-lint/blob/master/lua/lint/linters/mbake.lua) | 2026-03-26 | `DONE` | [`mbake.lua`](./mbake.lua) |
-| [`mh_lint`](https://github.com/mfussenegger/nvim-lint/blob/master/lua/lint/linters/mh_lint.lua) | 2025-12-04 | `TODO` | — |
+| [`mh_lint`](https://github.com/mfussenegger/nvim-lint/blob/master/lua/lint/linters/mh_lint.lua) | 2025-12-04 | `DONE` | [`mh_lint.lua`](./mh_lint.lua) |
 | [`mlint`](https://github.com/mfussenegger/nvim-lint/blob/master/lua/lint/linters/mlint.lua) | 2021-12-11 | `TODO` | — |
 | [`mypy`](https://github.com/mfussenegger/nvim-lint/blob/master/lua/lint/linters/mypy.lua) | 2025-03-17 | `TODO` | — |
 | [`nagelfar`](https://github.com/mfussenegger/nvim-lint/blob/master/lua/lint/linters/nagelfar.lua) | 2022-10-25 | `TODO` | — |
