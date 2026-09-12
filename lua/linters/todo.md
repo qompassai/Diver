@@ -77,7 +77,7 @@
 | [`fortitude`](https://github.com/mfussenegger/nvim-lint/blob/master/lua/lint/linters/fortitude.lua) | 2025-04-19 | `DONE` | [`fortitude.lua`](./fortitude.lua)  |
 | [`gdlint`](https://github.com/mfussenegger/nvim-lint/blob/master/lua/lint/linters/gdlint.lua) | 2025-05-13 | `DONE` | [`gdlint.lua`](./gdlint.lua) |
 | [`fsharplint`](https://github.com/mfussenegger/nvim-lint/blob/master/lua/lint/linters/fsharplint.lua) | 2025-07-20 | `TODO` | — |
-| [`gawk`](https://github.com/mfussenegger/nvim-lint/blob/master/lua/lint/linters/gawk.lua) | 2024-10-17 | `TODO` | — |
+| [`gawk`](https://github.com/mfussenegger/nvim-lint/blob/master/lua/lint/linters/gawk.lua) | 2024-10-17 | `DONE` | [`gawk.lua`](./gawk.lua) |
 | [`gdlint`](https://github.com/mfussenegger/nvim-lint/blob/master/lua/lint/linters/gdlint.lua) | 2025-05-13 | `DONE` | [`gdlint.lua`](./gdlint.lua) |
 | [`ghdl`](https://github.com/mfussenegger/nvim-lint/blob/master/lua/lint/linters/ghdl.lua) | 2025-01-06 | `DONE` | [`ghdl.lua`](./ghdl.lua) |
 | [`betterleaks`](https://github.com/mfussenegger/nvim-lint/blob/master/lua/lint/linters/gitleaks.lua) | 2026-01-05 | `DONE` | [`betterleaks.lua`](./betterleaks.lua) |
