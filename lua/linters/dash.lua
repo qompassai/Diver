@@ -1,15 +1,15 @@
 -- #################################################################
--- ~/.config/nvim/lua/linters/gawk.lua
--- Qompass AI Diver Native gawk Linter
+-- ~/.config/nvim/lua/linters/dash.lua
+-- Qompass AI Diver Native dash Linter
 -- SPDX-License-Identifier: Apache-2.0
 -- #################################################################
----@source https://www.gnu.org/software/gawk/manual/html_node/Options.html
+---@source http://gondor.apana.org.au/~herbert/dash/
 -- Native Linter/LintContext interface from cfn-lint.lua, Lua 5.1 compatible.
--- Arch Linux: sudo pacman -S --needed gawk coreutils
+-- Arch Linux: sudo pacman -S --needed dash coreutils
 -- See dash-gawk-setup.md for the full option policy and runner contract.
 -- /usr/bin/env supplies a clean, deterministic environment without a shell.
 -- Timeout, streaming, changed-buffer cancellation belong to the native runner.
-local SOURCE = 'gawk'
+local SOURCE = 'dash'
 local severity = vim.diagnostic.severity
 local MAX_OUTPUT = 4 * 1024 * 1024
 local MAX_DIAGNOSTICS = 256
@@ -69,59 +69,18 @@ end
 ---@return vim.Diagnostic[]
 local function parse(output, context)
   if #output > MAX_OUTPUT then
-    return { finding(context, 'gawk output exceeded the 4 MiB parser limit.') }
+    return { finding(context, 'dash output exceeded the 4 MiB parser limit.') }
   end
-  ---@type vim.Diagnostic[]
   local result = {}
-  ---@type string?
-  local excerpt
   for line in output:gmatch('[^\r\n]+') do
     if #result >= MAX_DIAGNOSTICS then
       result[#result + 1] = finding(context, 'Additional diagnostics omitted.', nil, severity.WARN)
       break
     end
-    local file, row, message = line:match('^.-gawk: (.-):(%d+):%s?(.*)$')
-    if line:match('^.-gawk: In file included from ') then
-      -- The following finding carries the included filename and line.
-    elseif file and row and message then
-      local warning = message:match('^warning:') ~= nil
-      local caret = message:match('^%s*%^%s*(.*)$')
-      local explicit = warning or message:match('^error:') or message:match('^fatal:')
-      if caret or explicit then
-        local text = caret or message
-        if caret and excerpt then
-          text = text .. ' | ' .. excerpt
-        end
-        local item = finding(
-          context,
-          text,
-          file == '-' and tonumber(row) or nil,
-          warning and severity.WARN or severity.ERROR
-        )
-        item.user_data = { filename = file, reported_line = tonumber(row) }
-        if file ~= '-' then
-          item.message = clean(file .. ':' .. row .. ': ' .. item.message)
-        end
-        result[#result + 1] = item
-        excerpt = nil
-      else
-        -- Gawk prints a source excerpt before its caret/message line.
-        if excerpt then
-          result[#result + 1] = finding(context, excerpt)
-        end
-        excerpt = line
-      end
-    elseif vim.trim(line) ~= '' and not line:match('^.-gawk: In file included from ') then
-      if excerpt then
-        result[#result + 1] = finding(context, excerpt)
-        excerpt = nil
-      end
-      local warning = line:match('gawk: warning:') ~= nil
-      result[#result + 1] = finding(context, line, nil, warning and severity.WARN or severity.ERROR)
+    if vim.trim(line) ~= '' then
+      local row, message = line:match('^.-dash: (%d+): (.+)$')
+      result[#result + 1] = finding(context, message or line, tonumber(row))
     end
-  end
-  if excerpt and #result < MAX_DIAGNOSTICS then
-    result[#result + 1] = finding(context, excerpt)
   end
   return result
 end
@@ -133,15 +92,10 @@ local function arguments(_context)
     '-i',
     'LC_ALL=C',
     'PATH=/usr/bin:/bin',
-    'AWKPATH=.',
-    'AWKLIBPATH=/nonexistent',
-    '/usr/bin/gawk',
-    '--lint', -- All compile-time lint warnings, including GNU extensions.
-    '--sandbox', -- Prohibit dynamic extensions if a loading path is reached.
-    '--no-optimize', -- Preserve checks that optimization could eliminate.
-    '--pretty-print=/dev/null', -- Compile only; discard formatted output.
-    '--file=-', -- Program text is the unsaved current buffer, not input data.
-    '--', -- No runtime data files or variable assignments.
+    '/usr/bin/dash',
+    '-n', -- Parse commands without executing them.
+    '-s', -- Read the entire current buffer from standard input.
+    '--', -- No script pathname, arguments, login mode, or interactive mode.
   }
 end
 
