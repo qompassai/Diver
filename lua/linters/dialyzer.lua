@@ -1,47 +1,45 @@
 -- #################################################################
--- /qompassai/Diver/lua/linters/dialyzer.lua
--- Qompass AI Diver Native Dialyzer Linter
+-- /qompassai/Diver/lua/linters/dialyxer.lua
+-- Qompass AI Diver Native Dialyzer + Dialyxir Linter
 -- SPDX-License-Identifier: Apache-2.0
 -- Copyright (c) 2026 Qompass AI
---
--- Licensed under the Apache License, Version 2.0 (the "License");
--- you may not use this file except in compliance with the License.
--- You may obtain a copy of the License at:
---   http://www.apache.org/licenses/LICENSE-2.0
---
--- Unless required by applicable law or agreed to in writing, software
--- distributed under the License is distributed on an "AS IS" BASIS,
--- WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
--- See the License for the specific language governing permissions and
--- limitations under the License.
 -- #################################################################
 ---@source https://www.erlang.org/docs/26/man/dialyzer.html
----@source https://www.erlang.org/docs/26/apps/dialyzer/dialyzer_chapter.html
+---@source https://hexdocs.pm/dialyxir/readme.html
+
 local diagnostic = vim.diagnostic
 local fs = vim.fs
 local uv = vim.uv
-local ERROR = diagnostic.severity.ERROR
+
 local WARN = diagnostic.severity.WARN
+
 local DIAGNOSTICS_MAX = 4096
 local LINE_LENGTH_MAX = 64 * 1024
 local MESSAGE_LENGTH_MAX = 16 * 1024
 local OUTPUT_LENGTH_MAX = 16 * 1024 * 1024
+
 local floor = math.floor
 local max = math.max
 local tonumber = tonumber
 local type = type
 
-local SOURCE = 'dialyzer'
+local SOURCE_DIALYZER = 'dialyzer'
+local SOURCE_DIALYXIR = 'dialyxir'
+
+local DIALYZER_TIMEOUT_MS = 120000
+local DIALYXIR_TIMEOUT_MS = 600000
+
+local DIALYXIR_PLT_ROOT = 'priv/plts/dialyxir'
+local DIALYXIR_CORE_PLT_PATH = 'priv/plts/dialyxir/core'
+local DIALYXIR_PROJECT_PLT_PATH = 'priv/plts/dialyxir/project.plt'
 
 ---@type string[]
-local PLT_CANDIDATES = {
+local DIRECT_PLT_CANDIDATES = {
     '.dialyzer_plt',
     'dialyzer.plt',
-
     '_build/default/dialyzer.plt',
     '_build/dev/dialyzer.plt',
     '_build/test/dialyzer.plt',
-
     'priv/plts/dialyzer.plt',
 }
 
@@ -49,6 +47,14 @@ local PLT_CANDIDATES = {
 local INCLUDE_CANDIDATES = {
     'include',
     'src',
+}
+
+---@type string[]
+local TIGER_WARNING_FLAGS = {
+    '-Wunmatched_returns',
+    '-Werror_handling',
+    '-Wextra_return',
+    '-Wmissing_return',
 }
 
 ---@class DialyzerParsedDiagnostic
@@ -99,7 +105,7 @@ end
 local function strip_ansi(value)
     assert(type(value) == 'string')
 
-    return (value:gsub('\27%[[%d;?]*[ -/]*[@-~]', ''))
+    return (value:gsub('\u0017%[[%d;?]*[ -/]*[@-~]', ''))
 end
 
 ---@param value string
@@ -108,15 +114,17 @@ local function normalize_message(value)
     assert(type(value) == 'string')
 
     value = strip_ansi(value)
-
-    value = value:gsub('\r\n', '\n')
-
-    value = value:gsub('\r', '\n')
-
+    value = value:gsub('
+', '
+')
+    value = value:gsub('
+', '
+')
     value = trim(value)
 
     if #value > MESSAGE_LENGTH_MAX then
-        value = value:sub(1, MESSAGE_LENGTH_MAX) .. '\n[message truncated]'
+        value = value:sub(1, MESSAGE_LENGTH_MAX) .. '
+[message truncated]'
     end
 
     return value
@@ -141,14 +149,14 @@ end
 
 ---@param root string
 ---@return string?
-local function plt_file(root)
+local function direct_plt_file(root)
     local environment = vim.env.DIALYZER_PLT
 
     if type(environment) == 'string' and environment ~= '' and exists(environment) then
         return fs.normalize(environment)
     end
 
-    return find_candidate(root, PLT_CANDIDATES)
+    return find_candidate(root, DIRECT_PLT_CANDIDATES)
 end
 
 ---@param root string
@@ -156,7 +164,6 @@ end
 local function include_directories(root)
     assert(root ~= '')
 
-    ---@type string[]
     local directories = {}
 
     for index = 1, #INCLUDE_CANDIDATES do
@@ -167,9 +174,6 @@ local function include_directories(root)
         end
     end
 
-    --
-    -- Rebar3 dependencies commonly expose Erlang headers here.
-    --
     local deps = fs.joinpath(root, '_build', 'default', 'lib')
 
     if is_directory(deps) then
@@ -177,6 +181,35 @@ local function include_directories(root)
     end
 
     return directories
+end
+
+---@param root string
+---@return boolean
+local function is_mix_project(root)
+    assert(root ~= '')
+
+    return exists(fs.joinpath(root, 'mix.exs'))
+end
+
+---@param filename string
+---@return boolean
+local function is_elixir_source(filename)
+    return filename:sub(-3) == '.ex' or filename:sub(-4) == '.exs'
+end
+
+---@param filename string
+---@return boolean
+local function is_erlang_source(filename)
+    return filename:sub(-4) == '.erl'
+end
+
+---@param context LintContext
+---@return boolean
+local function use_dialyxir(context)
+    assert(context.filename ~= '')
+    assert(context.root ~= '')
+
+    return is_mix_project(context.root) and is_elixir_source(context.filename)
 end
 
 ---@param path string
@@ -224,22 +257,11 @@ local function parse_line(line)
 
     line = strip_ansi(line)
 
-    --
-    -- With:
-    --
-    --   --fullpath
-    --   --error_location column
-    --   --no_indentation
-    --
-    -- Dialyzer warnings are formatted approximately as:
-    --
-    --   /path/foo.erl:12:7: The call ...
-    --
-    local filename, source_line, column, message = line:match('^(.+):(%d+):(%d+):%s*(.+)$')
+    local filename, source_line, column, message =
+        line:match('^(.+):(%d+):(%d+):%s*(.+)$')
 
     if filename ~= nil and source_line ~= nil and column ~= nil and message ~= nil then
         local parsed_line = integer(source_line, 0)
-
         local parsed_column = integer(column, 0)
 
         if parsed_line < 1 or parsed_column < 1 then
@@ -260,9 +282,6 @@ local function parse_line(line)
         }
     end
 
-    --
-    -- Some warnings may have only a line position.
-    --
     filename, source_line, message = line:match('^(.+):(%d+):%s*(.+)$')
 
     if filename == nil or source_line == nil or message == nil then
@@ -298,7 +317,9 @@ local function diagnostic_code(message)
         return 'contract'
     end
 
-    if lower:find('will never return', 1, true) or lower:find('has no local return', 1, true) then
+    if lower:find('will never return', 1, true)
+        or lower:find('has no local return', 1, true)
+    then
         return 'no-return'
     end
 
@@ -306,7 +327,9 @@ local function diagnostic_code(message)
         return 'failing-call'
     end
 
-    if lower:find('pattern', 1, true) and lower:find('never match', 1, true) then
+    if lower:find('pattern', 1, true)
+        and lower:find('never match', 1, true)
+    then
         return 'no-match'
     end
 
@@ -332,37 +355,28 @@ end
 ---@param entry DialyzerParsedDiagnostic
 ---@param filename string
 ---@param root string
+---@param source string
+---@param analyzer string
 ---@return vim.Diagnostic?
-local function diagnostic_from_entry(entry, filename, root)
+local function diagnostic_from_entry(entry, filename, root, source, analyzer)
     if not belongs_to_buffer(entry.filename, filename, root) then
         return nil
     end
 
-    --
-    -- Dialyzer source locations are one-based.
-    -- Neovim diagnostic locations are zero-based.
-    --
     local lnum = max(entry.line - 1, 0)
-
     local col = max(entry.column - 1, 0)
 
     return {
         lnum = lnum,
         end_lnum = lnum,
-
         col = col,
         end_col = col + 1,
-
         message = entry.message,
-
         severity = WARN,
-
-        source = SOURCE,
-
+        source = source,
         code = diagnostic_code(entry.message),
-
         user_data = {
-            analyzer = 'success-typing',
+            analyzer = analyzer,
         },
     }
 end
@@ -378,20 +392,21 @@ local function parse(output, context)
     assert(type(context) == 'table', 'dialyzer parser requires a LintContext')
 
     ---@cast context LintContext
-
     assert(context.filename ~= '')
     assert(context.root ~= '')
-
     assert(#output <= OUTPUT_LENGTH_MAX, 'dialyzer output exceeded maximum size')
 
     local filename = fs.normalize(context.filename)
-
     local root = fs.normalize(context.root)
 
-    ---@type vim.Diagnostic.Set[]
+    local dialyxir = use_dialyxir(context)
+    local source = dialyxir and SOURCE_DIALYXIR or SOURCE_DIALYZER
+    local analyzer = dialyxir and 'dialyxir' or 'success-typing'
+
     local diagnostics = {}
 
-    for line in output:gmatch('[^\r\n]+') do
+    for line in output:gmatch('[^
+]+') do
         if #diagnostics >= DIAGNOSTICS_MAX then
             break
         end
@@ -399,7 +414,7 @@ local function parse(output, context)
         local raw = parse_line(line)
 
         if raw ~= nil then
-            local entry = diagnostic_from_entry(raw, filename, root)
+            local entry = diagnostic_from_entry(raw, filename, root, source, analyzer)
 
             if entry ~= nil then
                 diagnostics[#diagnostics + 1] = entry
@@ -412,82 +427,133 @@ local function parse(output, context)
     return diagnostics
 end
 
+---@param argv string[]
+---@param flags string[]
+local function append_flags(argv, flags)
+    for index = 1, #flags do
+        argv[#argv + 1] = flags[index]
+    end
+end
+
 ---@param context LintContext
 ---@return string[]
-local function args(context)
+local function direct_dialyzer_args(context)
     assert(context.filename ~= '')
     assert(context.root ~= '')
 
     local root = fs.normalize(context.root)
 
     local argv = {
-        --
-        -- Analyze Erlang source instead of BEAM bytecode. This is the correct
-        -- editor-facing mode because the current buffer may not yet have a
-        -- corresponding compiled module.
-        --
         '--src',
-
-        --
-        -- Make ownership checks deterministic even if Dialyzer changes cwd or
-        -- encounters source files through include paths.
-        --
         '--fullpath',
-
-        --
-        -- Request the most precise location available.
-        --
         '--error_location',
         'column',
-
-        --
-        -- Keep each warning on one physical line so the native parser does not
-        -- need to reconstruct Dialyzer's pretty-printed type expressions.
-        --
         '--no_indentation',
-
-        --
-        -- Reduce progress chatter without suppressing actual warnings.
-        --
         '--quiet',
-
-        --
-        -- Tiger warning extensions.
-        --
-        -- These are useful additional contract / correctness checks and are
-        -- officially supported warning groups rather than the more experimental
-        -- overspec/specdiff developer diagnostics.
-        --
-        '-Wunmatched_returns',
-        '-Werror_handling',
-        '-Wextra_return',
-        '-Wmissing_return',
-
-        context.filename,
     }
 
-    local plt = plt_file(root)
+    append_flags(argv, TIGER_WARNING_FLAGS)
+
+    local plt = direct_plt_file(root)
 
     if plt ~= nil then
-        --
-        -- Explicitly select an existing project or environment PLT.
-        --
-        -- If none exists, Dialyzer retains its normal default PLT behavior.
-        --
-        table.insert(argv, #argv, '--plt')
-
-        table.insert(argv, #argv, plt)
+        argv[#argv + 1] = '--plt'
+        argv[#argv + 1] = plt
     end
 
     local includes = include_directories(root)
 
     for index = 1, #includes do
-        table.insert(argv, #argv, '-I')
-
-        table.insert(argv, #argv, includes[index])
+        argv[#argv + 1] = '-I'
+        argv[#argv + 1] = includes[index]
     end
 
+    argv[#argv + 1] = context.filename
+
     return argv
+end
+
+---@param root string
+---@return string[]
+local function dialyxir_args(root)
+    assert(root ~= '')
+
+    --
+    -- Dialyxir's configuration is deliberately supplied only on this
+    -- invocation. No config/config.exs or project-local Dialyxir settings
+    -- are required for the command itself.
+    --
+    return {
+        'dialyzer',
+
+        --
+        -- Project behavior.
+        --
+        '--no-compile',
+        '--no-check',
+
+        --
+        -- Preserve Dialyzer-compatible locations for parse_line().
+        --
+        '--format',
+        'dialyzer',
+
+        --
+        -- Explicit PLT ownership and stable repository-local paths.
+        --
+        '--plt-core-path',
+        fs.joinpath(root, DIALYXIR_CORE_PLT_PATH),
+
+        '--plt-local-path',
+        fs.joinpath(root, DIALYXIR_PROJECT_PLT_PATH),
+
+        --
+        -- Include the direct application dependency tree in the project PLT.
+        --
+        '--plt-add-deps',
+        'app_tree',
+
+        --
+        -- Make common Mix/runtime apps available when a project depends on
+        -- them. Missing apps only matter when the project actually uses them.
+        --
+        '--plt-add-apps',
+        'mix',
+        '--plt-add-apps',
+        'ex_unit',
+
+        --
+        -- Tiger warning policy. These are forwarded to Dialyzer.
+        --
+        '--flags',
+        '-Wunmatched_returns',
+        '-Werror_handling',
+        '-Wextra_return',
+        '-Wmissing_return',
+    }
+end
+
+---@param context LintContext
+---@return string
+local function cmd(context)
+    if use_dialyxir(context) then
+        return 'mix'
+    end
+
+    return 'dialyzer'
+end
+
+---@param context LintContext
+---@return string[]
+local function args(context)
+    assert(context.filename ~= '')
+    assert(context.root ~= '')
+
+    if use_dialyxir(context) then
+        return dialyxir_args(fs.normalize(context.root))
+    end
+
+    return direct_dialyzer_args(context)
 end
 
 ---@param context LintContext
@@ -498,11 +564,21 @@ local function cwd(context)
     return fs.normalize(context.root)
 end
 
+---@param context LintContext
+---@return integer
+local function timeout(context)
+    if use_dialyxir(context) then
+        return DIALYXIR_TIMEOUT_MS
+    end
+
+    return DIALYZER_TIMEOUT_MS
+end
+
 return ---@type Linter
 {
     automatic = false,
 
-    cmd = 'dialyzer',
+    cmd = cmd,
 
     args = args,
 
@@ -510,63 +586,26 @@ return ---@type Linter
 
     cwd = cwd,
 
-    --
-    -- Dialyzer's documented exit statuses are:
-    --
-    --   0 = no warnings
-    --   1 = analysis/tool problem
-    --   2 = warnings were emitted
-    --
-    -- Status 2 is therefore normal diagnostic-producing behavior.
-    --
     ignore_exitcode = true,
 
     parser = parse,
 
     root_markers = {
-        --
-        -- Rebar3.
-        --
         'rebar.config',
         'rebar.config.script',
         'rebar.lock',
-
-        --
-        -- Erlang.mk.
-        --
         'erlang.mk',
-
-        --
-        -- Mix projects can contain Erlang source and can use Dialyzer through
-        -- their generated BEAM / PLT ecosystem.
-        --
         'mix.exs',
         'mix.lock',
-
-        --
-        -- Explicit PLTs.
-        --
         '.dialyzer_plt',
         'dialyzer.plt',
-
-        --
-        -- OTP application metadata.
-        --
         'src',
-
         '.git',
     },
 
     stdin = false,
 
-    --
-    -- Formatted Dialyzer warnings are emitted on stdout.
-    --
     stream = 'stdout',
 
-    --
-    -- Success typing and PLT consistency work can be substantially heavier than
-    -- ordinary syntax linting.
-    --
-    timeout = 120000,
+    timeout = timeout,
 }
