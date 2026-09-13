@@ -111,7 +111,7 @@
 | [`mago_lint`](https://github.com/mfussenegger/nvim-lint/blob/master/lua/lint/linters/mago_lint.lua) | 2025-11-19 | `TODO` | — |
 | [`markdownlint-cli2`](https://github.com/mfussenegger/nvim-lint/blob/master/lua/lint/linters/markdownlint-cli2.lua) | 2026-01-07 | `DONE` | — |
 [`markdownlint-cli2.lua`](./markdownlint-cli2.lua) | [`markdownlint`](https://github.com/mfussenegger/nvim-lint/blob/master/lua/lint/linters/markdownlint.lua) | 2024-09-22 | `DONE` | [`markdownlint.lua`](./markdownlint.lua) |
-| [`markuplint`](https://github.com/mfussenegger/nvim-lint/blob/master/lua/lint/linters/markuplint.lua) | 2024-02-24 | `TODO` | — |
+| [`markuplint`](https://github.com/mfussenegger/nvim-lint/blob/master/lua/lint/linters/markuplint.lua) | 2024-02-24 | `DONE` | [`markuplint.lua`](./markuplint.lua) |
 | [`mbake`](https://github.com/mfussenegger/nvim-lint/blob/master/lua/lint/linters/mbake.lua) | 2026-03-26 | `DONE` | [`mbake.lua`](./mbake.lua) |
 | [`mh_lint`](https://github.com/mfussenegger/nvim-lint/blob/master/lua/lint/linters/mh_lint.lua) | 2025-12-04 | `DONE` | [`mh_lint.lua`](./mh_lint.lua) |
 | [`mlint`](https://github.com/mfussenegger/nvim-lint/blob/master/lua/lint/linters/mlint.lua) | 2021-12-11 | `TODO` | — |
