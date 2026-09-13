@@ -94,10 +94,10 @@
 | [`joker`](https://github.com/mfussenegger/nvim-lint/blob/master/lua/lint/linters/joker.lua) | 2023-12-08 | `DONE` | [`joker.lua`](./joker.lua) |
 | [`jq`](https://github.com/mfussenegger/nvim-lint/blob/master/lua/lint/linters/jq.lua) | 2025-01-18 | `DONE` | [`jq.lua`](./jq.lua) |
 | [`jshint`](https://github.com/mfussenegger/nvim-lint/blob/master/lua/lint/linters/jshint.lua) | 2021-12-11 | `TOREMOVE` | `Not Maintained` |
-| [`json5`](https://github.com/mfussenegger/nvim-lint/blob/master/lua/lint/linters/json5.lua) | 2025-06-04 | `TODO` | — |
+| [`json5`](https://github.com/mfussenegger/nvim-lint/blob/master/lua/lint/linters/json5.lua) | 2025-06-04 | `DONE` | [`jq.lua`](./jq.lua) |
 | [`json_tool`](https://github.com/mfussenegger/nvim-lint/blob/master/lua/lint/linters/json_tool.lua) | 2025-11-19 | `TODO` | — |
 | [`jsonlint`](https://github.com/mfussenegger/nvim-lint/blob/master/lua/lint/linters/jsonlint.lua) | 2023-10-11 | `TODO` | — |
-| [`ksh`](https://github.com/mfussenegger/nvim-lint/blob/master/lua/lint/linters/ksh.lua) | 2024-09-20 | `TODO` | — |
+| [`ksh`](https://github.com/mfussenegger/nvim-lint/blob/master/lua/lint/linters/ksh.lua) | 2024-09-20 | `DONE` | [`ksh.lua`](./ksh.lua) |
 | [`ktlint`](https://github.com/mfussenegger/nvim-lint/blob/master/lua/lint/linters/ktlint.lua) | 2024-02-01 | `DONE` | [`ktlint.lua`](./ktlint.lua) |
 | [`lacheck`](https://github.com/mfussenegger/nvim-lint/blob/master/lua/lint/linters/lacheck.lua) | 2022-03-09 | `DONE` | [`lacheck.lua`](./lacheck.lua) |
 | [`languagetool`](https://github.com/mfussenegger/nvim-lint/blob/master/lua/lint/linters/languagetool.lua) | 2023-10-12 | `TODO` | — |
