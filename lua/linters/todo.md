@@ -120,7 +120,7 @@
 | [`nagelfar`](https://github.com/mfussenegger/nvim-lint/blob/master/lua/lint/linters/nagelfar.lua) | 2022-10-25 | `TODO` | — |
 | [`nix`](https://github.com/mfussenegger/nvim-lint/blob/master/lua/lint/linters/nix.lua) | 2021-12-11 | `DONE` | [`nix.lua`](./nix.lua) |
 | [`npm-groovy-lint`](https://github.com/mfussenegger/nvim-lint/blob/master/lua/lint/linters/npm-groovy-lint.lua) | 2026-01-28 | `TODO` | — |
-| [`oelint-adv`](https://github.com/mfussenegger/nvim-lint/blob/master/lua/lint/linters/oelint-adv.lua) | 2026-06-25 | `TODO` | — |
+| [`oelint-adv`](https://github.com/mfussenegger/nvim-lint/blob/master/lua/lint/linters/oelint-adv.lua) | 2026-06-25 | `DONE` | `[oelint-adv.lua]`(./oelint-adv.lua) |
 | [`opa_check`](https://github.com/mfussenegger/nvim-lint/blob/master/lua/lint/linters/opa_check.lua) | 2024-01-18 | `TODO` | — |
 | [`oxlint`](https://github.com/mfussenegger/nvim-lint/blob/master/lua/lint/linters/oxlint.lua) | 2025-08-28 | `DONE` | [`oxlint.lua`](./oxlint.lua) |
 | [`panache`](https://github.com/mfussenegger/nvim-lint/blob/master/lua/lint/linters/panache.lua) | 2026-05-13 | `DONE` | panache.lua |
