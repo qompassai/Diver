@@ -201,7 +201,7 @@
 | [`vsg`](https://github.com/mfussenegger/nvim-lint/blob/master/lua/lint/linters/vsg.lua) | 2024-06-26 | `TODO` | — |
 | [`vulture`](https://github.com/mfussenegger/nvim-lint/blob/master/lua/lint/linters/vulture.lua) | 2022-01-05 | `DONE` | [`vulture.lua`](./vulture.lua) |
 | [`woke`](https://github.com/mfussenegger/nvim-lint/blob/master/lua/lint/linters/woke.lua) | 2023-10-18 | `TODO` | — |
-| [`write_good`](https://github.com/mfussenegger/nvim-lint/blob/master/lua/lint/linters/write_good.lua) | 2023-10-19 | `TODO` | — |
+| [`write_good`](https://github.com/mfussenegger/nvim-lint/blob/master/lua/lint/linters/write_good.lua) | 2023-10-19 | `TOREMOVE` | `Not Maintaned` |
 | [`yamllint`](https://github.com/mfussenegger/nvim-lint/blob/master/lua/lint/linters/yamllint.lua) | 2023-05-29 | `DONE` | [`yamllint.lua`](./yamllint.lua) |
 | [`yq`](https://github.com/mfussenegger/nvim-lint/blob/master/lua/lint/linters/yq.lua) | 2024-09-14 | `TODO` | — |
 | [`zig`](https://github.com/mfussenegger/nvim-lint/blob/master/lua/lint/linters/zig.lua) | 2022-01-24 | `TODO` | — |
