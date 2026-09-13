@@ -160,7 +160,7 @@
 | [`saltlint`](https://github.com/mfussenegger/nvim-lint/blob/master/lua/lint/linters/saltlint.lua) | 2024-01-15 | `TODO` | — |
 | [`selene`](https://github.com/mfussenegger/nvim-lint/blob/master/lua/lint/linters/selene.lua) | 2023-09-21 | `TODO` | — |
 | [`shellcheck`](https://github.com/mfussenegger/nvim-lint/blob/master/lua/lint/linters/shellcheck.lua) | 2025-06-05 | `DONE` | [`shellcheck.lua`](./shellcheck.lua) |
-| [`slang`](https://github.com/mfussenegger/nvim-lint/blob/master/lua/lint/linters/slang.lua) | 2024-10-02 | `TODO` | — |
+| [`slang`](https://github.com/mfussenegger/nvim-lint/blob/master/lua/lint/linters/slang.lua) | 2024-10-02 | `DONE` | [`slang.lua`](./slang.lua) |
 | [`snakemake`](https://github.com/mfussenegger/nvim-lint/blob/master/lua/lint/linters/snakemake.lua) | 2024-09-22 | `DONE` | — |
 | [`snyk_iac`](https://github.com/mfussenegger/nvim-lint/blob/master/lua/lint/linters/snyk_iac.lua) | 2023-10-20 | `TODO` | — |
 | [`solhint`](https://github.com/mfussenegger/nvim-lint/blob/master/lua/lint/linters/solhint.lua) | 2023-08-19 | `TODO` | — |
