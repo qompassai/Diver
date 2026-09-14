@@ -108,6 +108,8 @@ vim.filetype.add({
     psd1 = 'ps1',
     psql = 'pgsql',
     psrc = 'ps1',
+    ql = 'ql',
+    qll = 'ql',
     razor = 'razor',
     ['README.md'] = 'markdown.readme',
     reST = 'rst',
