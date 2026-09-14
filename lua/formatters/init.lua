@@ -75,7 +75,9 @@ M.module_sources = {
   ['autopep8'] = 'formatters.autopep8',
   ['awkfmt'] = 'formatters.awkfmt',
   ['bean_format'] = 'formatters.bean_format',
-  ['bibclean'] = 'formatters.bibclean',
+  --[[
+['bibclean'] = 'formatters.bibclean',
+--]]
   ['bibtex_tidy'] = 'formatters.bibtex_tidy',
   ['bicep_format'] = 'formatters.bicep_format',
   ['biome'] = 'formatters.biome',
