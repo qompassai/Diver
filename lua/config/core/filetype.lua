@@ -5,7 +5,9 @@
 vim.filetype.add({
   extension = {
     ada = 'ada',
+    adb = 'ada',
     adoc = 'asciidoc',
+    ads = 'ada',
     asciidoc = 'asciidoc',
     agda = 'agda',
     antlers = 'antlers',
