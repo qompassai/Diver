@@ -61,6 +61,7 @@ vim.lsp.enable({
   --'contextive_ls',  ---:TODO add glossary then validate
   -- 'copilot_ls.lua', ---:TODO validate
   --'coq_ls',
+  'crates_ls',
   'crystalline_ls',
   'csharp_ls',
   --'csskit_ls',
