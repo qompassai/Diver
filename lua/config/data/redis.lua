@@ -151,13 +151,13 @@ local defaults = {
         notify = true,
 }
 
----@class QompassRedisConfigOpts
+---@class RedisConfigOpts
 ---@field notify? boolean
 
----@type QompassRedisConfigOpts
+---@type RedisConfigOpts
 M.config = vim.deepcopy(defaults)
 
----@class QompassRedisConnection
+---@class RedisConnection
 ---@field database? integer
 ---@field host? string
 ---@field password? string
@@ -165,17 +165,17 @@ M.config = vim.deepcopy(defaults)
 ---@field tls? boolean
 ---@field user? string
 
----@class QompassRedisSession
+---@class RedisSession
 ---@field bufnr integer
 ---@field conn QompassRedisConnection
 ---@field readonly boolean
 ---@field root string
 
----@class QompassRedisQueryOpts
+---@class RedisQueryOpts
 ---@field readonly? boolean
 
 M.state = {
-        ---@type table<integer, QompassRedisSession>
+        ---@type table<integer, RedisSession>
         sessions = {},
 }
 
@@ -240,7 +240,7 @@ local function resolve_root(bufnr)
         return vim.fn.getcwd()
 end
 
----@param conn QompassRedisConnection
+---@param conn RedisConnection
 ---@return boolean
 ---@return string|nil
 local function validate_connection(conn)
@@ -288,7 +288,7 @@ local function validate_connection(conn)
 end
 
 ---@param bufnr integer
----@return QompassRedisSession|nil
+---@return RedisSession|nil
 local function get_session(bufnr)
         if not buffer_is_usable(bufnr) then
                 return nil
@@ -297,7 +297,7 @@ local function get_session(bufnr)
         return M.state.sessions[bufnr]
 end
 
----@param opts QompassRedisQueryOpts|nil
+---@param opts RedisQueryOpts|nil
 ---@return boolean
 local function resolve_query_readonly(opts)
         if type(opts) ~= 'table' then
@@ -331,7 +331,7 @@ local function check_readonly_command(command)
         return true, nil
 end
 
----@param conn QompassRedisConnection
+---@param conn RedisConnection
 ---@param mode_flags string[]
 ---@return string[]
 local function build_argv(conn, mode_flags)
@@ -368,7 +368,7 @@ local function build_argv(conn, mode_flags)
         return argv
 end
 
----@param conn QompassRedisConnection
+---@param conn RedisConnection
 ---@return table<string, string>|nil
 local function build_env(conn)
         if conn.password == nil then
@@ -379,9 +379,9 @@ local function build_env(conn)
 end
 
 ---@param bufnr integer
----@param conn QompassRedisConnection
+---@param conn RedisConnection
 ---@param readonly? boolean
----@return QompassRedisSession|nil
+---@return RedisSession|nil
 ---@return string|nil
 function M.attach(bufnr, conn, readonly)
         bufnr = bufnr or api.nvim_get_current_buf()
@@ -400,7 +400,7 @@ function M.attach(bufnr, conn, readonly)
                 return nil, validation_error
         end
 
-        ---@type QompassRedisSession
+        ---@type RedisSession
         local session = {
                 bufnr = bufnr,
                 conn = vim.deepcopy(conn),
@@ -500,7 +500,7 @@ local function show_result_buffer(lines, title)
         api.nvim_win_set_height(api.nvim_get_current_win(), math.min(20, #lines + 1))
 end
 
----@param conn QompassRedisConnection
+---@param conn RedisConnection
 ---@param input string
 ---@param mode_flags string[]
 ---@param on_done fun(result: vim.SystemCompleted)
@@ -520,7 +520,7 @@ local function run_process(conn, input, mode_flags, on_done)
         end)
 end
 
----@param session QompassRedisSession
+---@param session RedisSession
 ---@param input string
 ---@param title string
 local function run_and_show(session, input, title)
@@ -560,10 +560,10 @@ end
 ---
 ---Send one command per call; --json covers a single command's reply.
 ---
----@param conn QompassRedisConnection
+---@param conn RedisConnection
 ---@param command string Redis command to run, e.g. "GET mykey".
 ---@param on_result fun(value: any, err: string|nil)
----@param opts? QompassRedisQueryOpts
+---@param opts? RedisQueryOpts
 function M.query(conn, command, on_result, opts)
         if not has_redis_cli() then
                 on_result(nil, 'redis-cli executable was not found on PATH')
@@ -620,9 +620,9 @@ end
 ---
 ---opts.readonly defaults to true, matching M.query.
 ---
----@param conn QompassRedisConnection
+---@param conn RedisConnection
 ---@param command string Redis command to run.
----@param opts? QompassRedisQueryOpts
+---@param opts? RedisQueryOpts
 ---@return any value
 ---@return string|nil err
 function M.query_sync(conn, command, opts)
@@ -683,7 +683,7 @@ end
 ---@param bufnr integer
 ---@param command string
 ---@param on_result fun(value: any, err: string|nil)
----@param opts? QompassRedisQueryOpts
+---@param opts? RedisQueryOpts
 function M.query_buffer(bufnr, command, on_result, opts)
         local session = get_session(bufnr)
 
@@ -807,7 +807,7 @@ function M.terminal()
 end
 
 ---@param args string
----@return QompassRedisConnection|nil
+---@return RedisConnection|nil
 ---@return string|nil
 local function parse_connection_args(args)
         local tokens = vim.split(args, '%s+', { trimempty = true })
@@ -934,7 +934,7 @@ function M.redis_ftd()
         })
 end
 
----@param opts? QompassRedisConfigOpts
+---@param opts? RedisConfigOpts
 ---@return table
 function M.setup(opts)
         M.config = vim.tbl_deep_extend('force', vim.deepcopy(defaults), opts or {})
