@@ -8,15 +8,35 @@
 --
 -- Talks to the `sqlite3` CLI directly through vim.system and :terminal.
 -- No vim-dadbod, no vim-dadbod-ui, no vim-dadbod-completion, no FFI binding.
+-- Sibling of lua/config/data/duckdb.lua: same shape, same safety bounds,
+-- same command naming convention.
+--
+-- Two access paths are provided on purpose:
+--   1. Human commands (:Sqlite*) for interactive use in a buffer. These
+--      follow whatever readonly state the buffer's session was attached
+--      with (:SqliteAttach! for readonly, :SqliteAttach for read/write).
+--   2. A buffer-independent Lua API (M.query / M.query_sync) for AI agents
+--      or scripts that call this module directly, with no buffer, no
+--      window, and no notify() side effects — just rows or an error.
+--      Agent calls default to readonly = true. A caller must pass
+--      { readonly = false } explicitly to allow writes; there is no bang
+--      shorthand here because there is no command line to attach one to.
 --
 -- Commands:
---   :SqliteAttach [path]     Attach a database file to the current buffer.
+--   :SqliteAttach[!] [path]  Attach a database file (bang = readonly).
 --   :SqliteDetach            Detach the current buffer's database.
 --   :SqliteRun               Run the buffer, or a visual range, as SQL.
 --   :SqliteTables            List tables in the attached database.
 --   :SqliteSchema [table]    Show schema for the database or one table.
 --   :SqliteTerminal          Open an interactive sqlite3 REPL in a split.
 --   :SqliteInfo              Show the current buffer's attachment info.
+--
+-- Agent API:
+--   require('config.data.sqlite').query(path, sql, on_result, opts)
+--   require('config.data.sqlite').query_sync(path, sql, opts)
+--   require('config.data.sqlite').query_buffer(bufnr, sql, on_result, opts)
+--   -- opts.readonly defaults to true for all three; pass
+--   -- { readonly = false } to allow the query to write.
 --
 -- Auto-attach: opening a *.sql buffer looks for exactly one sibling
 -- *.sqlite3/*.sqlite/*.db file next to it, or in the project root, and
@@ -40,6 +60,8 @@ local DB_EXTENSIONS = {
         sqlite3 = true,
 }
 
+local MEMORY_PATH = ':memory:'
+
 local defaults = {
         auto_attach = true,
         command_flags = { '-batch', '-header', '-column' },
@@ -57,7 +79,11 @@ M.config = vim.deepcopy(defaults)
 ---@class QompassSqliteSession
 ---@field bufnr integer
 ---@field path string
+---@field readonly boolean
 ---@field root string
+
+---@class QompassSqliteQueryOpts
+---@field readonly? boolean
 
 M.state = {
         ---@type table<integer, QompassSqliteSession>
@@ -184,11 +210,50 @@ local function get_session(bufnr)
         return M.state.sessions[bufnr]
 end
 
+---@param opts QompassSqliteQueryOpts|nil
+---@return boolean
+local function resolve_query_readonly(opts)
+        if type(opts) ~= 'table' then
+                return true
+        end
+
+        if opts.readonly == nil then
+                return true
+        end
+
+        return opts.readonly == true
+end
+
+---@param path string
+---@param readonly boolean
+---@param extra_flags string[]
+---@return string[]
+local function build_argv(path, readonly, extra_flags)
+        local argv = { 'sqlite3' }
+
+        for _, flag in ipairs(M.config.command_flags) do
+                argv[#argv + 1] = flag
+        end
+
+        if readonly then
+                argv[#argv + 1] = '-readonly'
+        end
+
+        for _, flag in ipairs(extra_flags or {}) do
+                argv[#argv + 1] = flag
+        end
+
+        argv[#argv + 1] = path
+
+        return argv
+end
+
 ---@param bufnr integer
 ---@param path string
+---@param readonly? boolean
 ---@return QompassSqliteSession|nil
 ---@return string|nil
-function M.attach(bufnr, path)
+function M.attach(bufnr, path, readonly)
         bufnr = bufnr or api.nvim_get_current_buf()
 
         if not buffer_is_usable(bufnr) then
@@ -203,26 +268,34 @@ function M.attach(bufnr, path)
                 return nil, 'path must be a non-empty string'
         end
 
-        local resolved = vim.fs.normalize(path)
-        local stat = uv.fs_stat(resolved)
+        local resolved = path
 
-        if stat == nil then
-                return nil, 'database file does not exist: ' .. resolved
-        end
+        if path ~= MEMORY_PATH then
+                resolved = vim.fs.normalize(path)
+                local stat = uv.fs_stat(resolved)
 
-        if stat.type ~= 'file' then
-                return nil, 'database path is not a regular file: ' .. resolved
+                if stat == nil and not readonly then
+                        -- sqlite3 creates a new database file on first write when the
+                        -- path does not yet exist; only refuse when readonly was
+                        -- requested against a database that cannot exist yet.
+                        notify('Database does not exist yet, it will be created: ' .. resolved)
+                elseif stat == nil and readonly then
+                        return nil, 'database file does not exist: ' .. resolved
+                elseif stat ~= nil and stat.type ~= 'file' then
+                        return nil, 'database path is not a regular file: ' .. resolved
+                end
         end
 
         ---@type QompassSqliteSession
         local session = {
                 bufnr = bufnr,
                 path = resolved,
+                readonly = readonly == true,
                 root = resolve_root(bufnr),
         }
 
         M.state.sessions[bufnr] = session
-        notify('Attached ' .. resolved)
+        notify('Attached ' .. resolved .. (session.readonly and ' (readonly)' or ''))
 
         return session, nil
 end
@@ -254,6 +327,7 @@ function M.info(bufnr)
         notify(vim.inspect({
                 bufnr = session.bufnr,
                 path = session.path,
+                readonly = session.readonly,
                 root = session.root,
         }))
 end
@@ -300,23 +374,17 @@ local function show_result_buffer(lines, title)
         api.nvim_win_set_height(api.nvim_get_current_win(), math.min(20, #lines + 1))
 end
 
----@param session QompassSqliteSession
+---@param path string
+---@param readonly boolean
 ---@param sql string
+---@param extra_flags string[]
 ---@param on_done fun(result: vim.SystemCompleted)
-local function run_batch(session, sql, on_done)
-        assert(type(session) == 'table')
+local function run_process(path, readonly, sql, extra_flags, on_done)
+        assert(path_is_safe(path))
         assert(type(sql) == 'string')
         assert(#sql <= SQL_BYTES_MAX, 'query exceeds size bound')
 
-        local argv = { 'sqlite3' }
-
-        for _, flag in ipairs(M.config.command_flags) do
-                argv[#argv + 1] = flag
-        end
-
-        argv[#argv + 1] = session.path
-
-        vim.system(argv, {
+        vim.system(build_argv(path, readonly, extra_flags), {
                 stdin = sql,
                 text = true,
                 timeout = QUERY_TIMEOUT_MS,
@@ -331,9 +399,10 @@ end
 ---@param sql string
 ---@param title string
 local function run_and_show(session, sql, title)
-        run_batch(session, sql, function(result)
+        run_process(session.path, session.readonly, sql, {}, function(result)
                 if result.code ~= 0 then
-                        local message = result.stderr ~= '' and result.stderr or 'sqlite3 exited with code ' .. result.code
+                        local message = result.stderr ~= '' and result.stderr
+                                or 'sqlite3 exited with code ' .. result.code
                         notify(message, vim.log.levels.ERROR)
                         return
                 end
@@ -352,9 +421,145 @@ local function run_and_show(session, sql, title)
         end)
 end
 
+---Run SQL against a database file and return decoded rows.
+---
+---This is the agent-facing entry point: it takes an explicit path rather
+---than reading buffer state, produces no notify() calls, and hands back
+---plain Lua tables (one per row) or an error string. Safe to call from a
+---script, a keymap, or an external Lua caller with no buffer/window.
+---
+---opts.readonly defaults to true: an agent-initiated query cannot write
+---unless the caller explicitly passes { readonly = false }.
+---
+---@param path string Database file path, or ':memory:'.
+---@param sql string SQL text to run.
+---@param on_result fun(rows: table[]|nil, err: string|nil)
+---@param opts? QompassSqliteQueryOpts
+function M.query(path, sql, on_result, opts)
+        if not has_sqlite3() then
+                on_result(nil, 'sqlite3 executable was not found on PATH')
+                return
+        end
+
+        if not path_is_safe(path) then
+                on_result(nil, 'path must be a non-empty string')
+                return
+        end
+
+        if type(sql) ~= 'string' or sql:match('^%s*$') then
+                on_result(nil, 'sql must be a non-empty string')
+                return
+        end
+
+        local readonly = resolve_query_readonly(opts)
+
+        run_process(path, readonly, sql, { '-json' }, function(result)
+                if result.code ~= 0 then
+                        on_result(nil, result.stderr ~= '' and result.stderr
+                                or 'sqlite3 exited with code ' .. result.code)
+                        return
+                end
+
+                local output = (result.stdout or ''):match('^%s*(.-)%s*$')
+
+                if output == '' then
+                        on_result({}, nil)
+                        return
+                end
+
+                local ok, decoded = pcall(vim.json.decode, output)
+
+                if not ok then
+                        on_result(nil, 'failed to decode sqlite3 JSON output: ' .. tostring(decoded))
+                        return
+                end
+
+                if type(decoded) ~= 'table' then
+                        on_result(nil, 'sqlite3 JSON output was not an array')
+                        return
+                end
+
+                on_result(decoded, nil)
+        end)
+end
+
+---Blocking variant of M.query for scripted/headless callers.
+---
+---opts.readonly defaults to true, matching M.query.
+---
+---@param path string Database file path, or ':memory:'.
+---@param sql string SQL text to run.
+---@param opts? QompassSqliteQueryOpts
+---@return table[]|nil rows
+---@return string|nil err
+function M.query_sync(path, sql, opts)
+        if not has_sqlite3() then
+                return nil, 'sqlite3 executable was not found on PATH'
+        end
+
+        if not path_is_safe(path) then
+                return nil, 'path must be a non-empty string'
+        end
+
+        if type(sql) ~= 'string' or sql:match('^%s*$') then
+                return nil, 'sql must be a non-empty string'
+        end
+
+        local readonly = resolve_query_readonly(opts)
+
+        local result = vim.system(build_argv(path, readonly, { '-json' }), {
+                stdin = sql,
+                text = true,
+                timeout = QUERY_TIMEOUT_MS,
+        }):wait()
+
+        if result.code ~= 0 then
+                return nil, result.stderr ~= '' and result.stderr
+                        or 'sqlite3 exited with code ' .. result.code
+        end
+
+        local output = (result.stdout or ''):match('^%s*(.-)%s*$')
+
+        if output == '' then
+                return {}, nil
+        end
+
+        local ok, decoded = pcall(vim.json.decode, output)
+
+        if not ok then
+                return nil, 'failed to decode sqlite3 JSON output: ' .. tostring(decoded)
+        end
+
+        if type(decoded) ~= 'table' then
+                return nil, 'sqlite3 JSON output was not an array'
+        end
+
+        return decoded, nil
+end
+
+---opts.readonly defaults to true, independent of the session's own
+---readonly state, matching M.query and M.query_sync. Pass
+---{ readonly = false } to allow a write against a read/write session.
+---
+---@param bufnr integer
+---@param sql string
+---@param on_result fun(rows: table[]|nil, err: string|nil)
+---@param opts? QompassSqliteQueryOpts
+function M.query_buffer(bufnr, sql, on_result, opts)
+        local session = get_session(bufnr)
+
+        if session == nil then
+                on_result(nil, 'no database is attached to this buffer')
+                return
+        end
+
+        M.query(session.path, sql, on_result, opts)
+end
+
 ---@param bufnr integer
 ---@param line1 integer
 ---@param line2 integer
+---@return string
 local function buffer_sql(bufnr, line1, line2)
         local lines = api.nvim_buf_get_lines(bufnr, line1 - 1, line2, false)
         return table.concat(lines, '\n')
@@ -423,8 +628,16 @@ function M.terminal()
                 return
         end
 
+        local argv = { 'sqlite3' }
+
+        if session.readonly then
+                argv[#argv + 1] = '-readonly'
+        end
+
+        argv[#argv + 1] = session.path
+
         vim.cmd('botright split')
-        vim.fn.termopen({ 'sqlite3', session.path })
+        vim.fn.termopen(argv)
         vim.cmd('startinsert')
 end
 
@@ -471,18 +684,19 @@ local function create_commands()
                 local path = opts.args
 
                 if path == '' then
-                        notify('Usage: :SqliteAttach path/to/database.sqlite3', vim.log.levels.ERROR)
+                        notify('Usage: :SqliteAttach[!] path/to/database.sqlite3', vim.log.levels.ERROR)
                         return
                 end
 
-                local session, err = M.attach(api.nvim_get_current_buf(), path)
+                local session, err = M.attach(api.nvim_get_current_buf(), path, opts.bang)
 
                 if session == nil then
                         notify(err or 'failed to attach database', vim.log.levels.ERROR)
                 end
         end, {
+                bang = true,
                 complete = 'file',
-                desc = 'Attach a SQLite database file to the current buffer',
+                desc = 'Attach a SQLite database file to the current buffer (bang = readonly)',
                 nargs = 1,
         })
 
