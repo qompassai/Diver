@@ -137,7 +137,7 @@
 | [`prisma-lint`](https://github.com/mfussenegger/nvim-lint/blob/master/lua/lint/linters/prisma-lint.lua) | 2023-12-05 | `TODO` | — |
 | [`proselint`](https://github.com/mfussenegger/nvim-lint/blob/master/lua/lint/linters/proselint.lua) | 2026-01-07 | `DONE` | [`proselint.lua`](./proselint.lua) |
 | [`protolint`](https://github.com/mfussenegger/nvim-lint/blob/master/lua/lint/linters/protolint.lua) | 2024-10-31 | `DONE` | [`protolint.lua`](./protolint.lua)  |
-| [`psalm`](https://github.com/mfussenegger/nvim-lint/blob/master/lua/lint/linters/psalm.lua) | 2024-01-02 | `TODO` | — |
+| [`psalm`](https://github.com/mfussenegger/nvim-lint/blob/master/lua/lint/linters/psalm.lua) | 2024-01-02 | `DONE` | [`psalm.lua`](./psalm.lua) |
 | [`puppet-lint`](https://github.com/mfussenegger/nvim-lint/blob/master/lua/lint/linters/puppet-lint.lua) | 2023-11-08 | `DONE` | [`puppet-lint.lua`](./puppet-lint.lua) |
 | [`pycodestyle`](https://github.com/mfussenegger/nvim-lint/blob/master/lua/lint/linters/pycodestyle.lua) | 2021-12-11 | `TODO` | — |
 | [`pydocstyle`](https://github.com/mfussenegger/nvim-lint/blob/master/lua/lint/linters/pydocstyle.lua) | 2021-12-01 | `TODO` | — |
