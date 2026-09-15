@@ -28,8 +28,8 @@ return {
     '-extra=false',
     '-version=false',
     '-cpuprofile=',
-    '-r=', -- Compatibility flag only; no rewrite.
-    '-s=false', -- Compatibility flag only; suppress deprecation warning.
+    '-r=',
+    '-s=false',
   },
   mode = 'stdin',
   output = 'stdout',
