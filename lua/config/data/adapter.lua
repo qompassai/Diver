@@ -4,9 +4,6 @@
 -- Copyright (C) 2026 Qompass AI, All rights reserved
 -- --------------------------------------------------
 --
--- Plugin-free modernization of vim-dadbod's autoload/db/adapter.vim for
--- Neovim 0.13+. Works alongside lua/config/data/init.lua.
---
 -- What db/adapter.vim did: given a URL, extract its scheme, turn that into
 -- a function-name prefix (db#adapter#{scheme}#), and lazily `runtime` an
 -- autoload/db/adapter/{scheme}.vim file the first time that scheme was
@@ -50,8 +47,8 @@
 local M = {}
 
 local KNOWN_KINDS = {
-        connection = true,
-        file = true,
+  connection = true,
+  file = true,
 }
 
 ---@class DbAdapter
@@ -62,38 +59,38 @@ local KNOWN_KINDS = {
 ---@field schemes table<string, boolean>
 
 M.state = {
-        ---@type table<string, QompassDbAdapter>
-        adapters = {},
-        ---@type table<string, string>
-        extension_index = {},
-        ---@type table<string, string>
-        scheme_index = {},
+  ---@type table<string, DbAdapter>
+  adapters = {},
+  ---@type table<string, string>
+  extension_index = {},
+  ---@type table<string, string>
+  scheme_index = {},
 }
 
 ---@param name string
 ---@return boolean
 local function name_is_valid(name)
-        return type(name) == 'string' and name ~= ''
+  return type(name) == 'string' and name ~= ''
 end
 
 ---@param list string[]|nil
 ---@return table<string, boolean>
 local function to_set(list)
-        local set = {}
+  local set = {}
 
-        if list == nil then
-                return set
-        end
+  if list == nil then
+    return set
+  end
 
-        assert(type(list) == 'table')
+  assert(type(list) == 'table')
 
-        for _, item in ipairs(list) do
-                assert(type(item) == 'string')
-                assert(item ~= '')
-                set[item:lower()] = true
-        end
+  for _, item in ipairs(list) do
+    assert(type(item) == 'string')
+    assert(item ~= '')
+    set[item:lower()] = true
+  end
 
-        return set
+  return set
 end
 
 ---Register a backend adapter under `name`, indexing its schemes and (for
@@ -105,123 +102,123 @@ end
 ---@param name string
 ---@param opts { module: table, schemes: string[], kind: 'file'|'connection', extensions?: string[] }
 function M.register(name, opts)
-        assert(name_is_valid(name), 'adapter name must be a non-empty string')
-        assert(type(opts) == 'table', 'adapter opts must be a table')
-        assert(type(opts.module) == 'table', 'adapter module must be a table')
-        assert(KNOWN_KINDS[opts.kind] == true, "adapter kind must be 'file' or 'connection'")
-        assert(type(opts.schemes) == 'table' and #opts.schemes > 0, 'adapter needs at least one scheme')
+  assert(name_is_valid(name), 'adapter name must be a non-empty string')
+  assert(type(opts) == 'table', 'adapter opts must be a table')
+  assert(type(opts.module) == 'table', 'adapter module must be a table')
+  assert(KNOWN_KINDS[opts.kind] == true, "adapter kind must be 'file' or 'connection'")
+  assert(type(opts.schemes) == 'table' and #opts.schemes > 0, 'adapter needs at least one scheme')
 
-        if opts.kind == 'file' then
-                assert(
-                        type(opts.extensions) == 'table' and #opts.extensions > 0,
-                        "file-kind adapters need at least one entry in 'extensions'"
-                )
-        end
+  if opts.kind == 'file' then
+    assert(
+      type(opts.extensions) == 'table' and #opts.extensions > 0,
+      "file-kind adapters need at least one entry in 'extensions'"
+    )
+  end
 
-        -- Remove this name's previous index entries before re-registering,
-        -- so a scheme/extension does not point at a stale adapter name.
-        local previous = M.state.adapters[name]
+  -- Remove this name's previous index entries before re-registering,
+  -- so a scheme/extension does not point at a stale adapter name.
+  local previous = M.state.adapters[name]
 
-        if previous ~= nil then
-                for scheme in pairs(previous.schemes) do
-                        if M.state.scheme_index[scheme] == name then
-                                M.state.scheme_index[scheme] = nil
-                        end
-                end
+  if previous ~= nil then
+    for scheme in pairs(previous.schemes) do
+      if M.state.scheme_index[scheme] == name then
+        M.state.scheme_index[scheme] = nil
+      end
+    end
 
-                for extension in pairs(previous.extensions) do
-                        if M.state.extension_index[extension] == name then
-                                M.state.extension_index[extension] = nil
-                        end
-                end
-        end
+    for extension in pairs(previous.extensions) do
+      if M.state.extension_index[extension] == name then
+        M.state.extension_index[extension] = nil
+      end
+    end
+  end
 
-        ---@type QompassDbAdapter
-        local entry = {
-                extensions = to_set(opts.extensions),
-                kind = opts.kind,
-                module = opts.module,
-                name = name,
-                schemes = to_set(opts.schemes),
-        }
+  ---@type DbAdapter
+  local entry = {
+    extensions = to_set(opts.extensions),
+    kind = opts.kind,
+    module = opts.module,
+    name = name,
+    schemes = to_set(opts.schemes),
+  }
 
-        M.state.adapters[name] = entry
+  M.state.adapters[name] = entry
 
-        for scheme in pairs(entry.schemes) do
-                M.state.scheme_index[scheme] = name
-        end
+  for scheme in pairs(entry.schemes) do
+    M.state.scheme_index[scheme] = name
+  end
 
-        for extension in pairs(entry.extensions) do
-                M.state.extension_index[extension] = name
-        end
+  for extension in pairs(entry.extensions) do
+    M.state.extension_index[extension] = name
+  end
 end
 
 ---@param name string
 function M.unregister(name)
-        local entry = M.state.adapters[name]
+  local entry = M.state.adapters[name]
 
-        if entry == nil then
-                return
-        end
+  if entry == nil then
+    return
+  end
 
-        for scheme in pairs(entry.schemes) do
-                if M.state.scheme_index[scheme] == name then
-                        M.state.scheme_index[scheme] = nil
-                end
-        end
+  for scheme in pairs(entry.schemes) do
+    if M.state.scheme_index[scheme] == name then
+      M.state.scheme_index[scheme] = nil
+    end
+  end
 
-        for extension in pairs(entry.extensions) do
-                if M.state.extension_index[extension] == name then
-                        M.state.extension_index[extension] = nil
-                end
-        end
+  for extension in pairs(entry.extensions) do
+    if M.state.extension_index[extension] == name then
+      M.state.extension_index[extension] = nil
+    end
+  end
 
-        M.state.adapters[name] = nil
+  M.state.adapters[name] = nil
 end
 
 ---@param scheme string
 ---@return string|nil
 function M.resolve_scheme(scheme)
-        if type(scheme) ~= 'string' then
-                return nil
-        end
+  if type(scheme) ~= 'string' then
+    return nil
+  end
 
-        return M.state.scheme_index[scheme:lower()]
+  return M.state.scheme_index[scheme:lower()]
 end
 
 ---@param extension string
 ---@return string|nil
 function M.resolve_extension(extension)
-        if type(extension) ~= 'string' then
-                return nil
-        end
+  if type(extension) ~= 'string' then
+    return nil
+  end
 
-        return M.state.extension_index[extension:lower()]
+  return M.state.extension_index[extension:lower()]
 end
 
 ---@param name string
----@return QompassDbAdapter|nil
+---@return DbAdapter|nil
 ---@return string|nil
 function M.get(name)
-        local entry = M.state.adapters[name]
+  local entry = M.state.adapters[name]
 
-        if entry == nil then
-                return nil, 'no adapter registered under: ' .. tostring(name)
-        end
+  if entry == nil then
+    return nil, 'no adapter registered under: ' .. tostring(name)
+  end
 
-        return entry, nil
+  return entry, nil
 end
 
 ---@param name string
 ---@return string|nil
 function M.kind(name)
-        local entry = M.state.adapters[name]
+  local entry = M.state.adapters[name]
 
-        if entry == nil then
-                return nil
-        end
+  if entry == nil then
+    return nil
+  end
 
-        return entry.kind
+  return entry.kind
 end
 
 ---Equivalent of db#adapter#supports: does this adapter's module have a
@@ -231,13 +228,13 @@ end
 ---@param fn_name string
 ---@return boolean
 function M.supports(name, fn_name)
-        local entry = M.state.adapters[name]
+  local entry = M.state.adapters[name]
 
-        if entry == nil then
-                return false
-        end
+  if entry == nil then
+    return false
+  end
 
-        return type(entry.module[fn_name]) == 'function'
+  return type(entry.module[fn_name]) == 'function'
 end
 
 ---Equivalent of db#adapter#call: call module[fn_name](...) if it exists.
@@ -249,19 +246,19 @@ end
 ---@param ... any
 ---@return any
 function M.call(name, fn_name, ...)
-        local entry, err = M.get(name)
+  local entry, err = M.get(name)
 
-        if entry == nil then
-                error(err, 0)
-        end
+  if entry == nil then
+    error(err, 0)
+  end
 
-        local fn = entry.module[fn_name]
+  local fn = entry.module[fn_name]
 
-        if type(fn) ~= 'function' then
-                error(string.format('adapter %s has no function %s', name, fn_name), 0)
-        end
+  if type(fn) ~= 'function' then
+    error(string.format('adapter %s has no function %s', name, fn_name), 0)
+  end
 
-        return fn(...)
+  return fn(...)
 end
 
 ---Equivalent of db#adapter#call's optional-default form: call
@@ -274,11 +271,11 @@ end
 ---@param ... any
 ---@return any
 function M.call_or(name, fn_name, default, ...)
-        if not M.supports(name, fn_name) then
-                return default
-        end
+  if not M.supports(name, fn_name) then
+    return default
+  end
 
-        return M.call(name, fn_name, ...)
+  return M.call(name, fn_name, ...)
 end
 
 ---Equivalent of db#adapter#dispatch: resolve a scheme (or bare adapter
@@ -292,16 +289,16 @@ end
 ---@param ... any
 ---@return any
 function M.dispatch(url_or_scheme, fn_name, ...)
-        assert(type(url_or_scheme) == 'string' and url_or_scheme ~= '', 'dispatch needs a URL or scheme string')
+  assert(type(url_or_scheme) == 'string' and url_or_scheme ~= '', 'dispatch needs a URL or scheme string')
 
-        local scheme = url_or_scheme:match('^([%w+.-]+):') or url_or_scheme
-        local name = M.resolve_scheme(scheme) or (M.state.adapters[scheme] ~= nil and scheme or nil)
+  local scheme = url_or_scheme:match('^([%w+.-]+):') or url_or_scheme
+  local name = M.resolve_scheme(scheme) or (M.state.adapters[scheme] ~= nil and scheme or nil)
 
-        if name == nil then
-                error('DB: no adapter for ' .. scheme, 0)
-        end
+  if name == nil then
+    error('DB: no adapter for ' .. scheme, 0)
+  end
 
-        return M.call(name, fn_name, ...)
+  return M.call(name, fn_name, ...)
 end
 
 ---Equivalent of db#adapter#schemes: every scheme known across all
@@ -309,26 +306,26 @@ end
 ---
 ---@return string[]
 function M.schemes()
-        local schemes = {}
+  local schemes = {}
 
-        for scheme in pairs(M.state.scheme_index) do
-                schemes[#schemes + 1] = scheme
-        end
+  for scheme in pairs(M.state.scheme_index) do
+    schemes[#schemes + 1] = scheme
+  end
 
-        table.sort(schemes)
-        return schemes
+  table.sort(schemes)
+  return schemes
 end
 
 ---@return string[]
 function M.names()
-        local names = {}
+  local names = {}
 
-        for name in pairs(M.state.adapters) do
-                names[#names + 1] = name
-        end
+  for name in pairs(M.state.adapters) do
+    names[#names + 1] = name
+  end
 
-        table.sort(names)
-        return names
+  table.sort(names)
+  return names
 end
 
 return M

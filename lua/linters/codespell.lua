@@ -145,15 +145,6 @@ local function parse_line(line)
     return nil
   end
 
-  --
-  -- Current Codespell file diagnostic form:
-  --
-  --   path/file.ext:42: teh ==> the
-  --
-  -- Dictionary entries that cannot be corrected automatically may append:
-  --
-  --   path/file.ext:42: word ==> replacement  | explanation
-  --
   local filename, line_number, wrong, replacement = line:match('^(.+):(%d+):%s+(.+)%s+==>%s+(.*)$')
 
   if filename == nil or line_number == nil or wrong == nil or replacement == nil then
@@ -229,11 +220,6 @@ local function locate_word(bufnr, lnum, wrong, state)
     return 0
   end
 
-  --
-  -- Codespell itself preserves the spelling/case of the matched token in its
-  -- diagnostic output. Searching literally therefore gives us a byte offset,
-  -- which is exactly what vim.Diagnostic expects for `col`.
-  --
   local key = tostring(lnum) .. '\0' .. wrong
 
   local start = state[key] or 1
@@ -241,10 +227,6 @@ local function locate_word(bufnr, lnum, wrong, state)
   local first, last = text:find(wrong, start, true)
 
   if first == nil then
-    --
-    -- A changed buffer can disagree with the on-disk file that Codespell
-    -- analyzed. Fall back to the first occurrence before giving up entirely.
-    --
     first, last = text:find(wrong, 1, true)
   end
 

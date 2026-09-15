@@ -60,9 +60,7 @@ end
 ---@param value string
 ---@return string
 local function compact(value)
-  return vim.trim(
-    value:gsub('%s+', ' ')
-  )
+  return vim.trim(value:gsub('%s+', ' '))
 end
 
 ---@param value string
@@ -73,10 +71,7 @@ local function truncate(value, limit)
     return value
   end
 
-  return value:sub(
-    1,
-    math.max(1, limit - 3)
-  ) .. '...'
+  return value:sub(1, math.max(1, limit - 3)) .. '...'
 end
 
 ---@param value any
@@ -88,10 +83,7 @@ local function zero_based_line(value)
     return 0
   end
 
-  return math.max(
-    0,
-    math.floor(number) - 1
-  )
+  return math.max(0, math.floor(number) - 1)
 end
 
 ---@param value any
@@ -103,10 +95,7 @@ local function zero_based_column(value)
     return 0
   end
 
-  return math.max(
-    0,
-    math.floor(number) - 1
-  )
+  return math.max(0, math.floor(number) - 1)
 end
 
 ---@param value any
@@ -118,52 +107,35 @@ end
 ---@param context LintContext
 ---@return string
 local function project_root(context)
-  local context_root = nonempty_string(
-    context.root
-  )
+  local context_root = nonempty_string(context.root)
 
   if context_root ~= nil then
     return fs.normalize(context_root)
   end
 
-  local filename = nonempty_string(
-    context.filename
-  )
+  local filename = nonempty_string(context.filename)
 
   if filename ~= nil then
-    local detected = fs.root(
-      filename,
-      ROOT_MARKERS
-    )
+    local detected = fs.root(filename, ROOT_MARKERS)
 
-    if
-      type(detected) == 'string'
-      and detected ~= ''
-    then
+    if type(detected) == 'string' and detected ~= '' then
       return fs.normalize(detected)
     end
 
     local parent = fs.dirname(filename)
 
-    if
-      type(parent) == 'string'
-      and parent ~= ''
-    then
+    if type(parent) == 'string' and parent ~= '' then
       return fs.normalize(parent)
     end
   end
 
-  local cwd = nonempty_string(
-    context.cwd
-  )
+  local cwd = nonempty_string(context.cwd)
 
   if cwd ~= nil then
     return fs.normalize(cwd)
   end
 
-  return fs.normalize(
-    vim.fn.getcwd()
-  )
+  return fs.normalize(vim.fn.getcwd())
 end
 
 ---@param code string?
@@ -188,57 +160,32 @@ end
 ---@param violation table
 ---@return string
 local function violation_message(violation)
-  local description = nonempty_string(
-    violation.description
-  ) or 'SQLFluff violation'
+  local description = nonempty_string(violation.description) or 'SQLFluff violation'
 
-  return truncate(
-    compact(description),
-    MAX_MESSAGE_BYTES
-  )
+  return truncate(compact(description), MAX_MESSAGE_BYTES)
 end
 
 ---@param violation table
 ---@param context LintContext
 ---@return vim.Diagnostic
-local function violation_diagnostic(
-  violation,
-  context
-)
-  local code = nonempty_string(
-    violation.code
-  )
+local function violation_diagnostic(violation, context)
+  local code = nonempty_string(violation.code)
 
-  local name = nonempty_string(
-    violation.name
-  )
+  local name = nonempty_string(violation.name)
 
-  local lnum = zero_based_line(
-    violation.start_line_no
-  )
+  local lnum = zero_based_line(violation.start_line_no)
 
-  local col = zero_based_column(
-    violation.start_line_pos
-  )
+  local col = zero_based_column(violation.start_line_pos)
 
-  local end_lnum = zero_based_line(
-    violation.end_line_no
-      or violation.start_line_no
-  )
+  local end_lnum = zero_based_line(violation.end_line_no or violation.start_line_no)
 
-  local end_col = zero_based_column(
-    violation.end_line_pos
-      or violation.start_line_pos
-  )
+  local end_col = zero_based_column(violation.end_line_pos or violation.start_line_pos)
 
   if end_lnum < lnum then
     end_lnum = lnum
   end
 
-  if
-    end_lnum == lnum
-    and end_col < col
-  then
+  if end_lnum == lnum and end_col < col then
     end_col = col
   end
 
@@ -255,21 +202,14 @@ local function violation_diagnostic(
 
     lnum = lnum,
 
-    message = violation_message(
-      violation
-    ),
+    message = violation_message(violation),
 
-    severity = severity(
-      code,
-      boolean(violation.warning)
-    ),
+    severity = severity(code, boolean(violation.warning)),
 
     source = SOURCE,
 
     user_data = {
-      fixes = type(violation.fixes) == 'table'
-          and violation.fixes
-        or nil,
+      fixes = type(violation.fixes) == 'table' and violation.fixes or nil,
 
       rule_name = name,
 
@@ -282,9 +222,7 @@ end
 
 ---@param diagnostic_item vim.Diagnostic
 ---@return string
-local function diagnostic_key(
-  diagnostic_item
-)
+local function diagnostic_key(diagnostic_item)
   return table.concat({
     diagnostic_item.code or '',
     tostring(diagnostic_item.lnum),
@@ -298,10 +236,7 @@ end
 ---@param decoded any
 ---@param context LintContext
 ---@return vim.Diagnostic[]
-local function parse_reports(
-  decoded,
-  context
-)
+local function parse_reports(decoded, context)
   if type(decoded) ~= 'table' then
     return {}
   end
@@ -327,14 +262,9 @@ local function parse_reports(
           end
 
           if type(violation) == 'table' then
-            local item = violation_diagnostic(
-              violation,
-              context
-            )
+            local item = violation_diagnostic(violation, context)
 
-            local key = diagnostic_key(
-              item
-            )
+            local key = diagnostic_key(item)
 
             if seen[key] ~= true then
               seen[key] = true
@@ -358,31 +288,20 @@ local function decode_json(output)
     return nil
   end
 
-  local ok, decoded = pcall(
-    json.decode,
-    text
-  )
+  local ok, decoded = pcall(json.decode, text)
 
   if ok then
     return decoded
   end
 
-  local first = text:find(
-    '[',
-    1,
-    true
-  )
+  local first = text:find('[', 1, true)
 
   local last
 
   local offset = 1
 
   while true do
-    local index = text:find(
-      ']',
-      offset,
-      true
-    )
+    local index = text:find(']', offset, true)
 
     if index == nil then
       break
@@ -392,23 +311,13 @@ local function decode_json(output)
     offset = index + 1
   end
 
-  if
-    first == nil
-    or last == nil
-    or last < first
-  then
+  if first == nil or last == nil or last < first then
     return nil
   end
 
-  local candidate = text:sub(
-    first,
-    last
-  )
+  local candidate = text:sub(first, last)
 
-  ok, decoded = pcall(
-    json.decode,
-    candidate
-  )
+  ok, decoded = pcall(json.decode, candidate)
 
   if not ok then
     return nil
@@ -420,10 +329,7 @@ end
 ---@param output string
 ---@param context LintContext
 ---@return vim.Diagnostic[]
-local function malformed_output(
-  output,
-  context
-)
+local function malformed_output(output, context)
   local message = compact(output)
 
   if message == '' then
@@ -437,17 +343,10 @@ local function malformed_output(
       code = 'output',
 
       col = 0,
-
       end_col = 0,
-
       end_lnum = 0,
-
       lnum = 0,
-
-      message = truncate(
-        message,
-        MAX_MESSAGE_BYTES
-      ),
+      message = truncate(message, MAX_MESSAGE_BYTES),
 
       severity = diagnostic.severity.ERROR,
 
@@ -459,24 +358,15 @@ end
 ---@param output string
 ---@param context LintContext
 ---@return vim.Diagnostic[]
-local function oversized_output(
-  output,
-  context
-)
+local function oversized_output(output, context)
   return {
     {
       bufnr = context.bufnr,
-
       code = 'output-limit',
-
       col = 0,
-
       end_col = 0,
-
       end_lnum = 0,
-
       lnum = 0,
-
       message = string.format(
         'SQLFluff output exceeded the %d-byte parser limit (%d bytes received)',
         MAX_OUTPUT_BYTES,
@@ -493,55 +383,32 @@ end
 ---@param output string
 ---@param context LintContext
 ---@return vim.Diagnostic[]
-local function parse(
-  output,
-  context
-)
-  assert(
-    type(context) == 'table',
-    'sqlfluff parser requires LintContext'
-  )
+local function parse(output, context)
+  assert(type(context) == 'table', 'sqlfluff parser requires LintContext')
 
-  assert(
-    type(context.bufnr) == 'number',
-    'sqlfluff parser requires context.bufnr'
-  )
+  assert(type(context.bufnr) == 'number', 'sqlfluff parser requires context.bufnr')
 
   if output == '' then
     return {}
   end
 
   if #output > MAX_OUTPUT_BYTES then
-    return oversized_output(
-      output,
-      context
-    )
+    return oversized_output(output, context)
   end
 
-  local decoded = decode_json(
-    output
-  )
+  local decoded = decode_json(output)
 
   if decoded == nil then
-    return malformed_output(
-      output,
-      context
-    )
+    return malformed_output(output, context)
   end
 
-  return parse_reports(
-    decoded,
-    context
-  )
+  return parse_reports(decoded, context)
 end
 
 ---@param context LintContext
 ---@return string[]
 local function args(context)
-  assert(
-    type(context) == 'table',
-    'sqlfluff args requires LintContext'
-  )
+  assert(type(context) == 'table', 'sqlfluff args requires LintContext')
 
   ---@type string[]
   local result = {
@@ -562,9 +429,7 @@ local function args(context)
     '--nofail',
   }
 
-  local filename = nonempty_string(
-    context.filename
-  )
+  local filename = nonempty_string(context.filename)
 
   if filename ~= nil then
     result[#result + 1] = '--stdin-filename'

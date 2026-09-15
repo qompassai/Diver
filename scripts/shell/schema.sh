@@ -1,5 +1,5 @@
 #!/usr/bin/env bash
-# /qompassai/Diver/scripts/generate
+# /qompassai/Diver/scripts/schema
 # Qompass AI Schema Generate Script
 # Copyright (C) 2025 Qompass AI, All rights reserved
 # ----------------------------------------

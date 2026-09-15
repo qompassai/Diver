@@ -69,7 +69,21 @@ local function read_json(path)
 end
 
 local function executable(definition)
-  local candidates = type(definition.cmd) == 'table' and definition.cmd or { definition.cmd }
+  local command = definition.cmd
+  ---@type string[]
+  local candidates = {}
+
+  if type(command) == 'string' then
+    candidates[1] = command
+  elseif type(command) == 'table' then
+    ---@cast command string[]
+    for _, candidate in ipairs(command) do
+      if type(candidate) == 'string' then
+        candidates[#candidates + 1] = candidate
+      end
+    end
+  end
+
   for _, candidate in ipairs(candidates) do
     if vim.fn.executable(candidate) == 1 then
       return vim.fn.exepath(candidate)
@@ -115,11 +129,28 @@ local function fetch_latest(name, entry, callback)
   }, { cwd = catalog.root }, function(result)
     local value = result.ok and decode(result.text) or nil
 
-    for field in entry.source.field:gmatch('[^.]+') do
+    local source_field = entry.source.field
+    ---@type string[]
+    local fields = {}
+
+    if type(source_field) == 'string' then
+      ---@cast source_field string
+      for field in string.gmatch(source_field, '[^.]+') do
+        fields[#fields + 1] = field
+      end
+    elseif type(source_field) == 'table' then
+      ---@cast source_field string[]
+      for _, field in ipairs(source_field) do
+        if type(field) == 'string' then
+          fields[#fields + 1] = field
+        end
+      end
+    end
+
+    for _, field in ipairs(fields) do
       value = type(value) == 'table' and value[field] or nil
     end
 
-    -- Do not classify prereleases as stable numeric releases.
     local parsed
     if
       type(value) == 'string'
@@ -453,8 +484,8 @@ function M.check_buffer(bufnr, automatic)
 end
 
 function M.setup()
-  vim.fn.mkdir(catalog.root, 'p', 448)
-  vim.fn.mkdir(catalog.paths[1], 'p', 448)
+  vim.fn.mkdir(catalog.root, 'p', '700')
+  vim.fn.mkdir(catalog.paths[1], 'p', '700')
 
   local separator = vim.fn.has('win32') == 1 and ';' or ':'
   local existing = vim.env.PATH or ''

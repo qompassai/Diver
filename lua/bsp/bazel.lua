@@ -35,553 +35,550 @@ local DIRECTORY_ENTRY_COUNT_MAX = 64
 local ROOT_MARKER_COUNT_MAX = 8
 
 local ROOT_MARKERS = {
-    '.bsp',
-    '.bazelbsp',
-    'MODULE.bazel',
-    'WORKSPACE.bazel',
-    'WORKSPACE',
-    'REPO.bazel',
+  '.bsp',
+  '.bazelbsp',
+  'MODULE.bazel',
+  'WORKSPACE.bazel',
+  'WORKSPACE',
+  'REPO.bazel',
 }
 
 local WORKSPACE_FILES = {
-    'MODULE.bazel',
-    'WORKSPACE.bazel',
-    'WORKSPACE',
-    'REPO.bazel',
+  'MODULE.bazel',
+  'WORKSPACE.bazel',
+  'WORKSPACE',
+  'REPO.bazel',
 }
 
 -- Prefer Hirschgarten's connection name, then other Bazel BSP filenames.
 local CONNECTION_FILES = {
-    'bazelbsp.json',
-    'bazel-bsp.json',
-    'org.jetbrains.bsp.bazel.json',
+  'bazelbsp.json',
+  'bazel-bsp.json',
+  'org.jetbrains.bsp.bazel.json',
 }
 
----@class QompassBspConnection
+---@class BspConnection
 ---@field name string
 ---@field version string|nil
 ---@field bspVersion string
 ---@field languages string[]
 ---@field argv string[]
 
----@class QompassBspBazelConfig
+---@class BspBazelConfig
 ---@field notify boolean|nil
 ---@field connection_name string|nil
 
 local function is_integer(value)
-    if type(value) ~= 'number' then
-        return false
-    end
+  if type(value) ~= 'number' then
+    return false
+  end
 
-    if value ~= value then
-        return false
-    end
+  if value ~= value then
+    return false
+  end
 
-    if value == math.huge or value == -math.huge then
-        return false
-    end
+  if value == math.huge or value == -math.huge then
+    return false
+  end
 
-    return value % 1 == 0
+  return value % 1 == 0
 end
 
 local function notify(message, level)
-    assert(type(message) == 'string')
-    vim.notify('[BSP bazel] ' .. message, level or vim.log.levels.WARN)
+  assert(type(message) == 'string')
+  vim.notify('[BSP bazel] ' .. message, level or vim.log.levels.WARN)
 end
 
 ---@param path string
 ---@return boolean
 local function path_is_safe(path)
-    if type(path) ~= 'string' then
-        return false
-    end
+  if type(path) ~= 'string' then
+    return false
+  end
 
-    if path == '' then
-        return false
-    end
+  if path == '' then
+    return false
+  end
 
-    if path:find('%z') ~= nil then
-        return false
-    end
+  if path:find('%z') ~= nil then
+    return false
+  end
 
-    return true
+  return true
 end
 
 ---@param path string
 ---@return boolean
 local function file_exists(path)
-    assert(path_is_safe(path))
+  assert(path_is_safe(path))
 
-    local stat = uv.fs_stat(path)
+  local stat = uv.fs_stat(path)
 
-    return stat ~= nil and stat.type == 'file'
+  return stat ~= nil and stat.type == 'file'
 end
 
 ---@param path string
 ---@return boolean
 local function dir_exists(path)
-    assert(path_is_safe(path))
+  assert(path_is_safe(path))
 
-    local stat = uv.fs_stat(path)
+  local stat = uv.fs_stat(path)
 
-    return stat ~= nil and stat.type == 'directory'
+  return stat ~= nil and stat.type == 'directory'
 end
 
 ---@param root string
 ---@param name string
 ---@return string
 local function join_root(root, name)
-    assert(path_is_safe(root))
-    assert(type(name) == 'string')
-    assert(name ~= '')
-    assert(not name:find('[/\\]'))
-    assert(name ~= '.')
-    assert(name ~= '..')
+  assert(path_is_safe(root))
+  assert(type(name) == 'string')
+  assert(name ~= '')
+  assert(not name:find('[/\\]'))
+  assert(name ~= '.')
+  assert(name ~= '..')
 
-    return fs.joinpath(root, name)
+  return fs.joinpath(root, name)
 end
 
 ---@param bufnr integer
 ---@return boolean
 local function buffer_is_usable(bufnr)
-    assert(is_integer(bufnr))
+  assert(is_integer(bufnr))
 
-    if bufnr < 0 then
-        return false
-    end
+  if bufnr < 0 then
+    return false
+  end
 
-    return api.nvim_buf_is_valid(bufnr)
+  return api.nvim_buf_is_valid(bufnr)
 end
 
 ---@param root string
 ---@return boolean
 function M.is_bazel_project(root)
-    if not path_is_safe(root) then
-        return false
-    end
-
-    if dir_exists(join_root(root, '.bazelbsp')) then
-        return true
-    end
-
-    for index = 1, #WORKSPACE_FILES do
-        local name = WORKSPACE_FILES[index]
-        assert(type(name) == 'string')
-
-        if file_exists(join_root(root, name)) then
-            return true
-        end
-    end
-
+  if not path_is_safe(root) then
     return false
+  end
+
+  if dir_exists(join_root(root, '.bazelbsp')) then
+    return true
+  end
+
+  for index = 1, #WORKSPACE_FILES do
+    local name = WORKSPACE_FILES[index]
+    assert(type(name) == 'string')
+
+    if file_exists(join_root(root, name)) then
+      return true
+    end
+  end
+
+  return false
 end
 
 ---@param bufnr? integer
 ---@return string|nil
 function M.root(bufnr)
-    bufnr = bufnr or api.nvim_get_current_buf()
+  bufnr = bufnr or api.nvim_get_current_buf()
 
-    if not buffer_is_usable(bufnr) then
-        return nil
-    end
+  if not buffer_is_usable(bufnr) then
+    return nil
+  end
 
-    assert(#ROOT_MARKERS <= ROOT_MARKER_COUNT_MAX)
+  assert(#ROOT_MARKERS <= ROOT_MARKER_COUNT_MAX)
 
-    local root = fs.root(bufnr, ROOT_MARKERS)
+  local root = fs.root(bufnr, ROOT_MARKERS)
 
-    if root == nil then
-        return nil
-    end
+  if root == nil then
+    return nil
+  end
 
-    if not M.is_bazel_project(root) then
-        return nil
-    end
+  if not M.is_bazel_project(root) then
+    return nil
+  end
 
-    return root
+  return root
 end
 
 ---@param name string
 ---@return boolean
 local function connection_name_is_safe(name)
-    if type(name) ~= 'string' then
-        return false
-    end
+  if type(name) ~= 'string' then
+    return false
+  end
 
-    if name == '' then
-        return false
-    end
+  if name == '' then
+    return false
+  end
 
-    if name:find('[/\\]') ~= nil then
-        return false
-    end
+  if name:find('[/\\]') ~= nil then
+    return false
+  end
 
-    if name == '.' or name == '..' then
-        return false
-    end
+  if name == '.' or name == '..' then
+    return false
+  end
 
-    if not name:find('%.json$') then
-        return false
-    end
+  if not name:find('%.json$') then
+    return false
+  end
 
-    return true
+  return true
 end
 
 ---@param root string
 ---@param name string
 ---@return string
 local function connection_path(root, name)
-    assert(M.is_bazel_project(root) or dir_exists(join_root(root, '.bsp')))
-    assert(connection_name_is_safe(name))
+  assert(M.is_bazel_project(root) or dir_exists(join_root(root, '.bsp')))
+  assert(connection_name_is_safe(name))
 
-    return fs.joinpath(root, '.bsp', name)
+  return fs.joinpath(root, '.bsp', name)
 end
 
 ---@param root string
 ---@return string[]
 local function list_connection_candidates(root)
-    assert(path_is_safe(root))
+  assert(path_is_safe(root))
 
-    local names = {}
-    local seen = {}
+  local names = {}
+  local seen = {}
 
-    local function add_name(name)
-        if not connection_name_is_safe(name) then
-            return
-        end
-
-        if seen[name] then
-            return
-        end
-
-        seen[name] = true
-        names[#names + 1] = name
+  local function add_name(name)
+    if not connection_name_is_safe(name) then
+      return
     end
 
-    for index = 1, #CONNECTION_FILES do
-        add_name(CONNECTION_FILES[index])
+    if seen[name] then
+      return
     end
 
-    local bsp_dir = join_root(root, '.bsp')
+    seen[name] = true
+    names[#names + 1] = name
+  end
 
-    if not dir_exists(bsp_dir) then
-        return names
-    end
+  for index = 1, #CONNECTION_FILES do
+    add_name(CONNECTION_FILES[index])
+  end
 
-    local handle, glob_error = uv.fs_scandir(bsp_dir)
+  local bsp_dir = join_root(root, '.bsp')
 
-    if handle == nil then
-        notify('could not scan .bsp: ' .. tostring(glob_error), vim.log.levels.ERROR)
-        return names
-    end
-
-    local entry_count = 0
-
-    while entry_count < DIRECTORY_ENTRY_COUNT_MAX do
-        local name, kind = uv.fs_scandir_next(handle)
-
-        if name == nil then
-            break
-        end
-
-        entry_count = entry_count + 1
-
-        if kind == 'file' then
-            add_name(name)
-        end
-    end
-
+  if not dir_exists(bsp_dir) then
     return names
+  end
+
+  local handle, glob_error = uv.fs_scandir(bsp_dir)
+
+  if handle == nil then
+    notify('could not scan .bsp: ' .. tostring(glob_error), vim.log.levels.ERROR)
+    return names
+  end
+
+  local entry_count = 0
+
+  while entry_count < DIRECTORY_ENTRY_COUNT_MAX do
+    local name, kind = uv.fs_scandir_next(handle)
+
+    if name == nil then
+      break
+    end
+
+    entry_count = entry_count + 1
+
+    if kind == 'file' then
+      add_name(name)
+    end
+  end
+
+  return names
 end
 
 ---@param path string
 ---@return string|nil
 ---@return string|nil
 local function read_bounded_file(path)
-    assert(path_is_safe(path))
+  assert(path_is_safe(path))
 
-    local stat = uv.fs_stat(path)
+  local stat = uv.fs_stat(path)
 
-    if stat == nil or stat.type ~= 'file' then
-        return nil, 'connection file is missing: ' .. path
-    end
+  if stat == nil or stat.type ~= 'file' then
+    return nil, 'connection file is missing: ' .. path
+  end
 
-    if not is_integer(stat.size) or stat.size < 0 then
-        return nil, 'connection file size is invalid: ' .. path
-    end
+  if not is_integer(stat.size) or stat.size < 0 then
+    return nil, 'connection file size is invalid: ' .. path
+  end
 
-    if stat.size > CONNECTION_SIZE_BYTES_MAX then
-        return nil, 'connection file exceeds size bound: ' .. path
-    end
+  if stat.size > CONNECTION_SIZE_BYTES_MAX then
+    return nil, 'connection file exceeds size bound: ' .. path
+  end
 
-    local file, open_error = io.open(path, 'rb')
+  local file, open_error = io.open(path, 'rb')
 
-    if file == nil then
-        return nil, 'failed to open connection file: ' .. tostring(open_error)
-    end
+  if file == nil then
+    return nil, 'failed to open connection file: ' .. tostring(open_error)
+  end
 
-    local data, read_error = file:read(stat.size)
-    file:close()
+  local data, read_error = file:read(stat.size)
+  file:close()
 
-    if data == nil then
-        return nil, 'failed to read connection file: ' .. tostring(read_error)
-    end
+  if data == nil then
+    return nil, 'failed to read connection file: ' .. tostring(read_error)
+  end
 
-    if #data > CONNECTION_SIZE_BYTES_MAX then
-        return nil, 'connection file exceeded size bound after read'
-    end
+  if #data > CONNECTION_SIZE_BYTES_MAX then
+    return nil, 'connection file exceeded size bound after read'
+  end
 
-    return data, nil
+  return data, nil
 end
 
 ---@param argv table
 ---@return string[]|nil
 ---@return string|nil
 local function validate_argv(argv)
-    if type(argv) ~= 'table' then
-        return nil, 'connection argv must be an array'
+  if type(argv) ~= 'table' then
+    return nil, 'connection argv must be an array'
+  end
+
+  local count = #argv
+
+  if count < 1 then
+    return nil, 'connection argv must not be empty'
+  end
+
+  if count > ARGV_COUNT_MAX then
+    return nil, 'connection argv exceeds argument bound'
+  end
+
+  local normalized = {}
+
+  for index = 1, count do
+    local item = argv[index]
+
+    if type(item) ~= 'string' then
+      return nil, 'connection argv items must be strings'
     end
 
-    local count = #argv
-
-    if count < 1 then
-        return nil, 'connection argv must not be empty'
+    if item == '' then
+      return nil, 'connection argv items must not be empty'
     end
 
-    if count > ARGV_COUNT_MAX then
-        return nil, 'connection argv exceeds argument bound'
+    if item:find('%z') ~= nil then
+      return nil, 'connection argv contains NUL'
     end
 
-    local normalized = {}
-
-    for index = 1, count do
-        local item = argv[index]
-
-        if type(item) ~= 'string' then
-            return nil, 'connection argv items must be strings'
-        end
-
-        if item == '' then
-            return nil, 'connection argv items must not be empty'
-        end
-
-        if item:find('%z') ~= nil then
-            return nil, 'connection argv contains NUL'
-        end
-
-        if #item > ARGV_ITEM_LENGTH_MAX then
-            return nil, 'connection argv item exceeds length bound'
-        end
-
-        normalized[index] = item
+    if #item > ARGV_ITEM_LENGTH_MAX then
+      return nil, 'connection argv item exceeds length bound'
     end
 
-    assert(#normalized == count)
+    normalized[index] = item
+  end
 
-    return normalized, nil
+  assert(#normalized == count)
+
+  return normalized, nil
 end
 
 ---@param languages table
 ---@return string[]
 local function validate_languages(languages)
-    if type(languages) ~= 'table' then
-        return {}
+  if type(languages) ~= 'table' then
+    return {}
+  end
+
+  local count = #languages
+
+  if count > ARGV_COUNT_MAX then
+    count = ARGV_COUNT_MAX
+  end
+
+  local normalized = {}
+
+  for index = 1, count do
+    local language = languages[index]
+
+    if type(language) == 'string' and language ~= '' then
+      normalized[#normalized + 1] = language
     end
+  end
 
-    local count = #languages
-
-    if count > ARGV_COUNT_MAX then
-        count = ARGV_COUNT_MAX
-    end
-
-    local normalized = {}
-
-    for index = 1, count do
-        local language = languages[index]
-
-        if type(language) == 'string' and language ~= '' then
-            normalized[#normalized + 1] = language
-        end
-    end
-
-    return normalized
+  return normalized
 end
 
 ---@param decoded table
----@return QompassBspConnection|nil
+---@return BspConnection|nil
 ---@return string|nil
 local function validate_connection(decoded)
-    if type(decoded) ~= 'table' then
-        return nil, 'connection JSON must be an object'
-    end
+  if type(decoded) ~= 'table' then
+    return nil, 'connection JSON must be an object'
+  end
 
-    if type(decoded.bspVersion) ~= 'string' or decoded.bspVersion == '' then
-        return nil, 'connection bspVersion must be a non-empty string'
-    end
+  if type(decoded.bspVersion) ~= 'string' or decoded.bspVersion == '' then
+    return nil, 'connection bspVersion must be a non-empty string'
+  end
 
-    local argv, argv_error = validate_argv(decoded.argv)
+  local argv, argv_error = validate_argv(decoded.argv)
 
-    if argv == nil then
-        return nil, argv_error
-    end
+  if argv == nil then
+    return nil, argv_error
+  end
 
-    local name = decoded.name
+  local name = decoded.name
 
-    if type(name) ~= 'string' or name == '' then
-        name = 'bazelbsp'
-    end
+  if type(name) ~= 'string' or name == '' then
+    name = 'bazelbsp'
+  end
 
-    local version = decoded.version
+  local version = decoded.version
 
-    if type(version) ~= 'string' then
-        version = nil
-    end
+  if type(version) ~= 'string' then
+    version = nil
+  end
 
-    ---@type QompassBspConnection
-    local connection = {
-        name = name,
-        version = version,
-        bspVersion = decoded.bspVersion,
-        languages = validate_languages(decoded.languages),
-        argv = argv,
-    }
+  ---@type BspConnection
+  local connection = {
+    name = name,
+    version = version,
+    bspVersion = decoded.bspVersion,
+    languages = validate_languages(decoded.languages),
+    argv = argv,
+  }
 
-    assert(type(connection.argv) == 'table')
-    assert(#connection.argv >= 1)
+  assert(type(connection.argv) == 'table')
+  assert(#connection.argv >= 1)
 
-    return connection, nil
+  return connection, nil
 end
 
 ---@param root string
 ---@param preferred_name? string
----@return QompassBspConnection|nil
+---@return BspConnection|nil
 ---@return string|nil
 function M.connection(root, preferred_name)
-    if not path_is_safe(root) then
-        return nil, 'root path is invalid'
+  if not path_is_safe(root) then
+    return nil, 'root path is invalid'
+  end
+
+  if not M.is_bazel_project(root) then
+    return nil, 'not a Bazel workspace: ' .. root
+  end
+
+  local names = list_connection_candidates(root)
+
+  if preferred_name ~= nil then
+    if not connection_name_is_safe(preferred_name) then
+      return nil, 'connection_name must be a json filename'
     end
 
-    if not M.is_bazel_project(root) then
-        return nil, 'not a Bazel workspace: ' .. root
-    end
+    table.insert(names, 1, preferred_name)
+  end
 
-    local names = list_connection_candidates(root)
+  local last_error = 'no Bazel BSP connection file under .bsp/'
 
-    if preferred_name ~= nil then
-        if not connection_name_is_safe(preferred_name) then
-            return nil, 'connection_name must be a json filename'
+  for index = 1, #names do
+    local name = names[index]
+    local path = connection_path(root, name)
+
+    if file_exists(path) then
+      local raw, read_error = read_bounded_file(path)
+
+      if raw == nil then
+        last_error = read_error
+      else
+        local ok, decoded = pcall(vim.json.decode, raw)
+
+        if not ok then
+          last_error = 'invalid JSON in ' .. path
+        else
+          local connection, connection_error = validate_connection(decoded)
+
+          if connection ~= nil then
+            return connection, nil
+          end
+
+          last_error = connection_error
         end
-
-        table.insert(names, 1, preferred_name)
+      end
     end
+  end
 
-    local last_error = 'no Bazel BSP connection file under .bsp/'
-
-    for index = 1, #names do
-        local name = names[index]
-        local path = connection_path(root, name)
-
-        if file_exists(path) then
-            local raw, read_error = read_bounded_file(path)
-
-            if raw == nil then
-                last_error = read_error
-            else
-                local ok, decoded = pcall(vim.json.decode, raw)
-
-                if not ok then
-                    last_error = 'invalid JSON in ' .. path
-                else
-                    local connection, connection_error = validate_connection(decoded)
-
-                    if connection ~= nil then
-                        return connection, nil
-                    end
-
-                    last_error = connection_error
-                end
-            end
-        end
-    end
-
-    return nil, last_error
+  return nil, last_error
 end
 
----@param connection QompassBspConnection
+---@param connection BspConnection
 ---@return string[]
 function M.argv(connection)
-    assert(type(connection) == 'table')
-    assert(type(connection.argv) == 'table')
-    assert(#connection.argv >= 1)
+  assert(type(connection) == 'table')
+  assert(type(connection.argv) == 'table')
+  assert(#connection.argv >= 1)
 
-    return connection.argv
+  return connection.argv
 end
 
 ---@param bufnr? integer
 ---@return string|nil
----@return QompassBspConnection|nil
+---@return BspConnection|nil
 ---@return string|nil
 function M.detect(bufnr)
-    local root = M.root(bufnr)
+  local root = M.root(bufnr)
 
-    if root == nil then
-        return nil, nil, 'no Bazel workspace root'
-    end
+  if root == nil then
+    return nil, nil, 'no Bazel workspace root'
+  end
 
-    local connection, connection_error = M.connection(root)
+  local connection, connection_error = M.connection(root)
 
-    if connection == nil then
-        return root, nil, connection_error
-    end
+  if connection == nil then
+    return root, nil, connection_error
+  end
 
-    return root, connection, nil
+  return root, connection, nil
 end
 
----@param config? QompassBspBazelConfig
----@return QompassBspConnection|nil
+---@param config? BspBazelConfig
+---@return BspConnection|nil
 ---@return string|nil
 function M.setup(config)
-    if config == nil then
-        config = {}
+  if config == nil then
+    config = {}
+  end
+
+  if type(config) ~= 'table' then
+    return nil, 'config must be a table'
+  end
+
+  local should_notify = true
+
+  if config.notify ~= nil then
+    if type(config.notify) ~= 'boolean' then
+      return nil, 'config.notify must be a boolean'
     end
 
-    if type(config) ~= 'table' then
-        return nil, 'config must be a table'
+    should_notify = config.notify
+  end
+
+  local root = M.root()
+
+  if root == nil then
+    if should_notify then
+      notify('no Bazel workspace from current buffer')
     end
 
-    local should_notify = true
+    return nil, 'no Bazel workspace from current buffer'
+  end
 
-    if config.notify ~= nil then
-        if type(config.notify) ~= 'boolean' then
-            return nil, 'config.notify must be a boolean'
-        end
+  local connection, connection_error = M.connection(root, config.connection_name)
 
-        should_notify = config.notify
+  if connection == nil then
+    if should_notify then
+      notify(connection_error .. '; install Hirschgarten Bazel BSP so .bsp/bazelbsp.json exists')
     end
 
-    local root = M.root()
+    return nil, connection_error
+  end
 
-    if root == nil then
-        if should_notify then
-            notify('no Bazel workspace from current buffer')
-        end
-
-        return nil, 'no Bazel workspace from current buffer'
-    end
-
-    local connection, connection_error = M.connection(root, config.connection_name)
-
-    if connection == nil then
-        if should_notify then
-            notify(
-                connection_error
-                    .. '; install Hirschgarten Bazel BSP so .bsp/bazelbsp.json exists'
-            )
-        end
-
-        return nil, connection_error
-    end
-
-    return connection, nil
+  return connection, nil
 end
 
 return M

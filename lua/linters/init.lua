@@ -125,6 +125,7 @@ M.module_sources = { ---@type table<string, string>
   scarb = 'linters.scarb',
   shellcheck = 'linters.shellcheck',
   sphinx_lint = 'linters.sphinx-lint',
+  squawk = 'linters.squawk',
   statix = 'linters.statix',
   stylelint = 'linters.stylelint',
   textlint = 'linters.textlint',
@@ -324,6 +325,9 @@ M.linters_by_ft = {
   sh = {
     'checkbashisms',
     'shellcheck',
+  },
+  sql = {
+    'squawk',
   },
   swagger = {
     'lint_openapi',

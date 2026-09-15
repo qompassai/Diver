@@ -2,7 +2,6 @@
 -- Qompass AI Diver Lua Lang Config
 -- Copyright (C) 2025 Qompass AI, All rights reserved
 -- --------------------------------------------------
----@module 'config.lang.lua'
 local M = {}
 local api = vim.api
 local bo = vim.bo
@@ -13,7 +12,9 @@ local set_keymap = vim.keymap.set
 local create_autocmd = api.nvim_create_autocmd
 local create_augroup = api.nvim_create_augroup
 local create_user_command = api.nvim_create_user_command
-local group = create_augroup('lua_config', { clear = true })
+local group = create_augroup('lua_config', {
+  clear = true,
+})
 local header = require('utils.docs.docs')
 M.luarocks = {
   'bit32',
@@ -114,7 +115,10 @@ end
 local function modernize_lua_text(text)
   local original = text
   local replacements = {
-    { 'client%.cancel_request%(', 'client:cancel_request(' },
+    {
+      'client%.cancel_request%(',
+      'client:cancel_request(',
+    },
     { 'client%.is_stopped%(', 'client:is_stopped(' },
     { 'client%.notify%(', 'client:notify(' },
     { 'client%.on_attach%(', 'client:on_attach(' },
@@ -170,14 +174,44 @@ local function modernize_lua_text(text)
       'vim%.diagnostic%.goto_prev%s*%(%s*%)',
       'vim.diagnostic.jump({ count = -1, float = true })',
     },
-    { 'vim%.highlight%.', 'vim.hl.' },
-    { 'vim%.loop', 'vim.uv' },
-    { 'vim%.lsp%.buf%.formatting%s*%(%s*%)', 'vim.lsp.buf.format({ async = true })' },
-    { 'vim%.lsp%.buf%.formatting_sync%s*%(%s*%)', 'vim.lsp.buf.format({ async = false })' },
-    { 'vim%.lsp%.diagnostic%.([%w_]+)', 'vim.diagnostic.%1' },
-    { 'vim%.lsp%.get_active_clients', 'vim.lsp.get_clients' },
-    { 'vim%.pretty_print', 'vim.print' },
-    { 'vim%.tbl_islist', 'vim.islist' },
+    {
+      'vim%.fn%.termopen%s*%(%s*([%a_][%w_]*)%s*%)',
+      function(argv)
+        return 'vim.fn.jobstart(' .. argv .. ', { term = true })'
+      end,
+    },
+    {
+      'vim%.highlight%.',
+      'vim.hl.',
+    },
+    {
+      'vim%.loop',
+      'vim.uv',
+    },
+    {
+      'vim%.lsp%.buf%.formatting%s*%(%s*%)',
+      'vim.lsp.buf.format({ async = true })',
+    },
+    {
+      'vim%.lsp%.buf%.formatting_sync%s*%(%s*%)',
+      'vim.lsp.buf.format({ async = false })',
+    },
+    {
+      'vim%.lsp%.diagnostic%.([%w_]+)',
+      'vim.diagnostic.%1',
+    },
+    {
+      'vim%.lsp%.get_active_clients',
+      'vim.lsp.get_clients',
+    },
+    {
+      'vim%.pretty_print',
+      'vim.print',
+    },
+    {
+      'vim%.tbl_islist',
+      'vim.islist',
+    },
   }
 
   for i = 1, #replacements do
@@ -187,7 +221,6 @@ local function modernize_lua_text(text)
 
   local highlight_changed
   text, highlight_changed = modernize_deprecated_highlights(text)
-
   local exec_changed
   text, exec_changed = modernize_deprecated_lsp_execute_command(text)
 
@@ -329,7 +362,6 @@ function M.setup()
   create_user_command('LuaModernize', modernize_current_buffer, {
     desc = 'Modernize deprecated Lua and Neovim API usage in current buffer',
   })
-
   set_keymap('n', '<leader>md', modernize_current_buffer, {
     desc = 'Modernize deprecated Neovim APIs',
     silent = true,

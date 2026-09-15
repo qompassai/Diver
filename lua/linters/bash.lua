@@ -60,12 +60,7 @@ end
 local function trim(value)
   assert(type(value) == 'string')
 
-  return (
-    value:gsub(
-      '^%s*(.-)%s*$',
-      '%1'
-    )
-  )
+  return (value:gsub('^%s*(.-)%s*$', '%1'))
 end
 
 ---@param value string
@@ -79,12 +74,7 @@ local function normalize_message(value)
   value = trim(value)
 
   if #value > MESSAGE_LENGTH_MAX then
-    value =
-      value:sub(
-        1,
-        MESSAGE_LENGTH_MAX
-      )
-      .. '\n[message truncated]'
+    value = value:sub(1, MESSAGE_LENGTH_MAX) .. '\n[message truncated]'
   end
 
   return value
@@ -98,16 +88,9 @@ local function normalize_path(path, root)
   assert(root ~= '')
 
   if path:sub(1, 7) == 'file://' then
-    local ok, filename = pcall(
-      vim.uri_to_fname,
-      path
-    )
+    local ok, filename = pcall(vim.uri_to_fname, path)
 
-    if
-      ok
-      and type(filename) == 'string'
-      and filename ~= ''
-    then
+    if ok and type(filename) == 'string' and filename ~= '' then
       return fs.normalize(filename)
     end
   end
@@ -116,31 +99,19 @@ local function normalize_path(path, root)
     return fs.normalize(path)
   end
 
-  return fs.normalize(
-    fs.joinpath(
-      root,
-      path
-    )
-  )
+  return fs.normalize(fs.joinpath(root, path))
 end
 
 ---@param candidate string
 ---@param filename string
 ---@param root string
 ---@return boolean
-local function belongs_to_buffer(
-  candidate,
-  filename,
-  root
-)
+local function belongs_to_buffer(candidate, filename, root)
   assert(candidate ~= '')
   assert(filename ~= '')
   assert(root ~= '')
 
-  return normalize_path(
-    candidate,
-    root
-  ) == filename
+  return normalize_path(candidate, root) == filename
 end
 
 ---@param line string
@@ -148,10 +119,7 @@ end
 local function parse_line(line)
   assert(type(line) == 'string')
 
-  if
-    line == ''
-    or #line > LINE_LENGTH_MAX
-  then
+  if line == '' or #line > LINE_LENGTH_MAX then
     return nil
   end
 
@@ -163,62 +131,30 @@ local function parse_line(line)
   --
   -- We intentionally accept only the diagnostic-bearing first form.
   --
-  local filename,
-    line_number,
-    message = line:match(
-      '^(.+):%s+line%s+(%d+):%s+(.+)$'
-    )
+  local filename, line_number, message = line:match('^(.+):%s+line%s+(%d+):%s+(.+)$')
 
-  if
-    filename == nil
-    or line_number == nil
-    or message == nil
-  then
+  if filename == nil or line_number == nil or message == nil then
     return nil
   end
 
-  local parsed_line =
-    integer(line_number, 0)
+  local parsed_line = integer(line_number, 0)
 
   if parsed_line < 1 then
     return nil
   end
 
-  message =
-    normalize_message(message)
+  message = normalize_message(message)
 
   if message == '' then
     return nil
   end
 
-  --
-  -- Bash commonly emits a second source-text line after the useful
-  -- diagnostic. Only messages describing a parser failure are retained.
-  --
-  local lower =
-    message:lower()
+  local lower = message:lower()
 
-  local is_diagnostic =
-    lower:find(
-      'syntax error',
-      1,
-      true
-    ) ~= nil
-    or lower:find(
-      'unexpected eof',
-      1,
-      true
-    ) ~= nil
-    or lower:find(
-      'unexpected end of file',
-      1,
-      true
-    ) ~= nil
-    or lower:find(
-      'unterminated',
-      1,
-      true
-    ) ~= nil
+  local is_diagnostic = lower:find('syntax error', 1, true) ~= nil
+    or lower:find('unexpected eof', 1, true) ~= nil
+    or lower:find('unexpected end of file', 1, true) ~= nil
+    or lower:find('unterminated', 1, true) ~= nil
 
   if not is_diagnostic then
     return nil
@@ -235,18 +171,8 @@ end
 ---@param filename string
 ---@param root string
 ---@return vim.Diagnostic?
-local function diagnostic_from_entry(
-  entry,
-  filename,
-  root
-)
-  if
-    not belongs_to_buffer(
-      entry.filename,
-      filename,
-      root
-    )
-  then
+local function diagnostic_from_entry(entry, filename, root)
+  if not belongs_to_buffer(entry.filename, filename, root) then
     return nil
   end
 
@@ -254,10 +180,7 @@ local function diagnostic_from_entry(
   -- Bash lines are one-based.
   -- vim.Diagnostic lines are zero-based.
   --
-  local lnum = max(
-    entry.line - 1,
-    0
-  )
+  local lnum = max(entry.line - 1, 0)
 
   return {
     lnum = lnum,
@@ -288,58 +211,39 @@ local function parse(output, context)
     return {}
   end
 
-  assert(
-    type(context) == 'table',
-    'bash parser requires a LintContext'
-  )
+  assert(type(context) == 'table', 'bash parser requires a LintContext')
 
   ---@cast context LintContext
 
   assert(context.filename ~= '')
   assert(context.root ~= '')
 
-  assert(
-    #output <= OUTPUT_LENGTH_MAX,
-    'bash output exceeded maximum size'
-  )
+  assert(#output <= OUTPUT_LENGTH_MAX, 'bash output exceeded maximum size')
 
-  local filename =
-    fs.normalize(context.filename)
+  local filename = fs.normalize(context.filename)
 
-  local root =
-    fs.normalize(context.root)
+  local root = fs.normalize(context.root)
 
   ---@type vim.Diagnostic.Set[]
   local diagnostics = {}
 
-  for line in output:gmatch(
-    '[^\r\n]+'
-  ) do
+  for line in output:gmatch('[^\r\n]+') do
     if #diagnostics >= DIAGNOSTICS_MAX then
       break
     end
 
-    local raw =
-      parse_line(line)
+    local raw = parse_line(line)
 
     if raw ~= nil then
-      local entry =
-        diagnostic_from_entry(
-          raw,
-          filename,
-          root
-        )
+      local entry = diagnostic_from_entry(raw, filename, root)
 
       if entry ~= nil then
-        diagnostics[#diagnostics + 1] =
-          entry
+        diagnostics[#diagnostics + 1] = entry
       end
     end
   end
 
-  assert(
-    #diagnostics <= DIAGNOSTICS_MAX
-  )
+  assert(#diagnostics <= DIAGNOSTICS_MAX)
 
   return diagnostics
 end
@@ -374,9 +278,7 @@ end
 local function cwd(context)
   assert(context.root ~= '')
 
-  return fs.normalize(
-    context.root
-  )
+  return fs.normalize(context.root)
 end
 
 return ---@type Linter

@@ -26,7 +26,7 @@ local WARN = diagnostic.severity.WARN
 ---@param fallback integer
 ---@return integer
 local function integer(value, fallback)
-        return math.floor(tonumber(value) or fallback)
+  return math.floor(tonumber(value) or fallback)
 end
 
 ---@param path string
@@ -35,129 +35,120 @@ end
 ---@param basename string
 ---@return boolean
 local function belongs_to_buffer(path, filename, root, basename)
-        if path == '' or path == '-' then
-                return true
-        end
+  if path == '' or path == '-' then
+    return true
+  end
 
-        local candidate
+  local candidate
 
-        if fs.is_absolute(path) then
-                candidate = fs.normalize(path)
-        else
-                candidate = fs.normalize(fs.joinpath(root, path))
-        end
+  if fs.is_absolute(path) then
+    candidate = fs.normalize(path)
+  else
+    candidate = fs.normalize(fs.joinpath(root, path))
+  end
 
-        return candidate == filename or fs.basename(candidate) == basename
+  return candidate == filename or fs.basename(candidate) == basename
 end
 
 ---@param output string
 ---@param context LintContext|integer
 ---@return vim.Diagnostic.Set[]
 local function parse(output, context)
-        if output == '' then
-                return {}
-        end
+  if output == '' then
+    return {}
+  end
 
-        if type(context) ~= 'table' then
-                error('janet parser requires a LintContext', 0)
-        end
+  if type(context) ~= 'table' then
+    error('janet parser requires a LintContext', 0)
+  end
 
-        ---@cast context LintContext
+  ---@cast context LintContext
 
-        local filename = fs.normalize(context.filename)
-        local basename = fs.basename(filename)
-        local root = context.root
+  local filename = fs.normalize(context.filename)
+  local basename = fs.basename(filename)
+  local root = context.root
 
-        ---@type vim.Diagnostic.Set[]
-        local diagnostics = {}
+  ---@type vim.Diagnostic.Set[]
+  local diagnostics = {}
 
-        for line in output:gmatch('[^\r\n]+') do
-                local path
-                local lnum
-                local col
-                local message
-                local level
+  for line in output:gmatch('[^\r\n]+') do
+    local path
+    local lnum
+    local col
+    local message
+    local level
 
-                --
-                -- Janet syntax/checking errors:
-                --
-                --   error: path/to/file.janet:12:7: message
-                --
-                path, lnum, col, message =
-                        line:match('^error:%s*(.-):(%d+):(%d+):%s*(.+)$')
+    --
+    -- Janet syntax/checking errors:
+    --
+    --   error: path/to/file.janet:12:7: message
+    --
+    path, lnum, col, message = line:match('^error:%s*(.-):(%d+):(%d+):%s*(.+)$')
 
-                if path ~= nil then
-                        level = ERROR
-                else
-                        --
-                        -- Janet --lint-warn diagnostics:
-                        --
-                        --   path/to/file.janet:12:7: message
-                        --
-                        path, lnum, col, message =
-                                line:match('^(.-):(%d+):(%d+):%s*(.+)$')
+    if path ~= nil then
+      level = ERROR
+    else
+      --
+      -- Janet --lint-warn diagnostics:
+      --
+      --   path/to/file.janet:12:7: message
+      --
+      path, lnum, col, message = line:match('^(.-):(%d+):(%d+):%s*(.+)$')
 
-                        if path ~= nil then
-                                level = WARN
-                        end
-                end
+      if path ~= nil then
+        level = WARN
+      end
+    end
 
-                if
-                        path ~= nil
-                        and belongs_to_buffer(path, filename, root, basename)
-                then
-                        local row = math.max(integer(lnum, 1) - 1, 0)
-                        local column = math.max(integer(col, 1) - 1, 0)
+    if path ~= nil and belongs_to_buffer(path, filename, root, basename) then
+      local row = math.max(integer(lnum, 1) - 1, 0)
+      local column = math.max(integer(col, 1) - 1, 0)
 
-                        diagnostics[#diagnostics + 1] = {
-                                lnum = row,
-                                end_lnum = row,
-                                col = column,
-                                end_col = column + 1,
-                                message = message,
-                                severity = level,
-                                source = 'janet',
-                        }
-                end
-        end
+      diagnostics[#diagnostics + 1] = {
+        lnum = row,
+        end_lnum = row,
+        col = column,
+        end_col = column + 1,
+        message = message,
+        severity = level,
+        source = 'janet',
+      }
+    end
+  end
 
-        return diagnostics
+  return diagnostics
 end
 
 return ---@type Linter
 {
-        automatic = false,
+  automatic = false,
 
-        cmd = 'janet',
+  cmd = 'janet',
 
-        args = {
-                '-k',
-        },
+  args = {
+    '-k',
+  },
 
-        append_fname = false,
+  append_fname = false,
 
-        cwd = function(context)
-                return context.root
-        end,
+  cwd = function(context)
+    return context.root
+  end,
 
-        --
-        -- `janet -k` may return non-zero while still producing valid
-        -- diagnostics on stderr.
-        --
-        exit_codes = {
-                [0] = true,
-                [1] = true,
-        },
+  exit_codes = {
+    [0] = true,
+    [1] = true,
+  },
 
-        parser = parse,
+  parser = parse,
 
-        root_markers = {
-                'project.janet',
-                'jpm_tree',
-                '.git',
-        },
+  root_markers = {
+    'project.janet',
+    'jpm_tree',
+    '.git',
+  },
 
-        stdin = true,
-        stream = 'stderr',
-        timeout = 30000,
+  stdin = true,
+  stream = 'stderr',
+  timeout = 30000,
 }

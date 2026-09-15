@@ -8,7 +8,7 @@ local notify = vim.notify
 local uv = vim.uv
 local levels = vim.log.levels
 local M = {}
-local ddx_group = api.nvim_create_augroup('QompassDDX', {
+local ddx_group = api.nvim_create_augroup('DDX', {
   clear = true,
 })
 local function strip_ansi(bufnr)
@@ -996,7 +996,7 @@ end
 local function tiger_report_lines(metrics, findings, thresholds)
   local version = vim.version()
   local lines = {
-    'Qompass AI Diver Tiger Performance Check',
+    'Tiger Performance Check',
     string.rep('=', 80),
     ('Generated: %s'):format(os.date('%Y-%m-%d %H:%M:%S')),
     ('Neovim: %d.%d.%d'):format(version.major, version.minor, version.patch),
@@ -1194,7 +1194,7 @@ function M.toggle_loclist()
   vim.cmd('lopen')
 end
 function M.enable_workspace_diagnostics_handler()
-  vim.diagnostic.handlers.qompass_qf = {
+  vim.diagnostic.handlers.qf = {
     show = function(_, _, _, _)
       vim.schedule(function()
         vim.diagnostic.setqflist({
@@ -1212,7 +1212,7 @@ function M.enable_workspace_diagnostics_handler()
   notify('Enabled native workspace diagnostics quickfix handler', levels.INFO)
 end
 function M.disable_workspace_diagnostics_handler()
-  vim.diagnostic.handlers.qompass_qf = nil
+  vim.diagnostic.handlers.qf = nil
   notify('Disabled native workspace diagnostics quickfix handler', levels.INFO)
 end
 function M.selfcheck()

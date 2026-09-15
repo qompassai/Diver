@@ -137,7 +137,6 @@ local function clean_message(value)
   if #text > MAX_MESSAGE_BYTES then
     local finish = MAX_MESSAGE_BYTES - 3
 
-    -- Do not split a UTF-8 codepoint when truncating.
     while finish > 0 do
       local byte = text:byte(finish + 1)
 

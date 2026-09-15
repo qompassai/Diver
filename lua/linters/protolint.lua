@@ -58,7 +58,7 @@
 --   * no table.unpack dependency
 --   * no utf8 library dependency
 --   * no LuaJIT FFI/jit dependency
---   * no deprecated vim.loop usage
+--   * no deprecated vim.uv usage
 --
 -- It uses current:
 --
@@ -75,34 +75,28 @@ local json = vim.json
 local MAX_DIAGNOSTICS = 512
 local MAX_MESSAGE_BYTES = 2048
 local MAX_OUTPUT_BYTES = 4 * 1024 * 1024
-local SOURCE = "protolint"
+local SOURCE = 'protolint'
 
 ---@type string[]
 local ROOT_MARKERS = {
-  ".protolint.yaml",
-  ".protolint.yml",
-  "buf.yaml",
-  "buf.work.yaml",
-  "proto",
-  ".git",
+  '.protolint.yaml',
+  '.protolint.yml',
+  'buf.yaml',
+  'buf.work.yaml',
+  'proto',
+  '.git',
 }
 
 ---@param value unknown
 ---@return boolean
 local function nonempty_string(value)
-  return type(value) == "string"
-    and value ~= ""
+  return type(value) == 'string' and value ~= ''
 end
 
 ---@param value string
 ---@return string
 local function compact(value)
-  return vim.trim(
-    value:gsub(
-      "%s+",
-      " "
-    )
-  )
+  return vim.trim(value:gsub('%s+', ' '))
 end
 
 ---@param value string
@@ -114,16 +108,10 @@ local function truncate(value, limit)
   end
 
   if limit <= 3 then
-    return value:sub(
-      1,
-      limit
-    )
+    return value:sub(1, limit)
   end
 
-  return value:sub(
-    1,
-    limit - 3
-  ) .. "..."
+  return value:sub(1, limit - 3) .. '...'
 end
 
 ---@param value unknown
@@ -165,13 +153,13 @@ end
 ---@param value unknown
 ---@return string?
 local function string_value(value)
-  if type(value) ~= "string" then
+  if type(value) ~= 'string' then
     return nil
   end
 
   local result = vim.trim(value)
 
-  if result == "" then
+  if result == '' then
     return nil
   end
 
@@ -181,19 +169,14 @@ end
 ---@param output string
 ---@return string
 local function strip_ansi(output)
-  return output:gsub(
-    "\27%[[%d;]*[mK]",
-    ""
-  )
+  return output:gsub('\27%[[%d;]*[mK]', '')
 end
 
 ---@param context LintContext
 ---@return string
 local function project_root(context)
   if nonempty_string(context.root) then
-    return fs.normalize(
-      context.root
-    )
+    return fs.normalize(context.root)
   end
 
   if nonempty_string(context.filename) then
@@ -202,58 +185,37 @@ local function project_root(context)
     -- documented upward .protolint.yaml discovery starts from the intended
     -- project.
     --
-    local detected = fs.root(
-      context.filename,
-      {
-        ".protolint.yaml",
-        ".protolint.yml",
-      }
-    )
+    local detected = fs.root(context.filename, {
+      '.protolint.yaml',
+      '.protolint.yml',
+    })
 
-    if
-      type(detected) == "string"
-      and detected ~= ""
-    then
+    if type(detected) == 'string' and detected ~= '' then
       return fs.normalize(detected)
     end
 
-    detected = fs.root(
-      context.filename,
-      {
-        "buf.work.yaml",
-        "buf.yaml",
-        ".git",
-      }
-    )
+    detected = fs.root(context.filename, {
+      'buf.work.yaml',
+      'buf.yaml',
+      '.git',
+    })
 
-    if
-      type(detected) == "string"
-      and detected ~= ""
-    then
+    if type(detected) == 'string' and detected ~= '' then
       return fs.normalize(detected)
     end
 
-    local parent = fs.dirname(
-      context.filename
-    )
+    local parent = fs.dirname(context.filename)
 
-    if
-      type(parent) == "string"
-      and parent ~= ""
-    then
+    if type(parent) == 'string' and parent ~= '' then
       return fs.normalize(parent)
     end
   end
 
   if nonempty_string(context.cwd) then
-    return fs.normalize(
-      context.cwd
-    )
+    return fs.normalize(context.cwd)
   end
 
-  return fs.normalize(
-    vim.fn.getcwd()
-  )
+  return fs.normalize(vim.fn.getcwd())
 end
 
 ---@param value unknown
@@ -267,29 +229,19 @@ local function severity(value)
 
   name = name:lower()
 
-  if
-    name == "error"
-    or name == "fatal"
-  then
+  if name == 'error' or name == 'fatal' then
     return diagnostic.severity.ERROR
   end
 
-  if
-    name == "warning"
-    or name == "warn"
-  then
+  if name == 'warning' or name == 'warn' then
     return diagnostic.severity.WARN
   end
 
-  if
-    name == "note"
-    or name == "info"
-    or name == "information"
-  then
+  if name == 'note' or name == 'info' or name == 'information' then
     return diagnostic.severity.INFO
   end
 
-  if name == "hint" then
+  if name == 'hint' then
     return diagnostic.severity.HINT
   end
 
@@ -300,35 +252,26 @@ end
 ---@param context LintContext
 ---@return string
 local function absolute_path(path, context)
-  if path == "" then
-    return ""
+  if path == '' then
+    return ''
   end
 
   if fs.isabs(path) then
     return fs.normalize(path)
   end
 
-  return fs.normalize(
-    fs.joinpath(
-      project_root(context),
-      path
-    )
-  )
+  return fs.normalize(fs.joinpath(project_root(context), path))
 end
 
 ---@param left string
 ---@param right string
 ---@return boolean
 local function same_path(left, right)
-  if
-    left == ""
-    or right == ""
-  then
+  if left == '' or right == '' then
     return false
   end
 
-  return fs.normalize(left)
-    == fs.normalize(right)
+  return fs.normalize(left) == fs.normalize(right)
 end
 
 ---@param value table
@@ -345,19 +288,13 @@ end
 ---@param value table
 ---@return unknown
 local function record_line(value)
-  return value.line
-    or value.Line
-    or value.lineNumber
-    or value.lineno
+  return value.line or value.Line or value.lineNumber or value.lineno
 end
 
 ---@param value table
 ---@return unknown
 local function record_column(value)
-  return value.column
-    or value.Column
-    or value.col
-    or value.columnNumber
+  return value.column or value.Column or value.col or value.columnNumber
 end
 
 ---@param value table
@@ -383,35 +320,21 @@ end
 ---@param value table
 ---@return unknown
 local function record_severity(value)
-  return value.severity
-    or value.Severity
-    or value.level
-    or value.Level
+  return value.severity or value.Severity or value.level or value.Level
 end
 
 ---@param value table
 ---@return boolean
 local function diagnostic_record(value)
   return record_message(value) ~= nil
-    and (
-      record_line(value) ~= nil
-      or record_file(value) ~= nil
-      or record_rule(value) ~= nil
-    )
+    and (record_line(value) ~= nil or record_file(value) ~= nil or record_rule(value) ~= nil)
 end
 
 ---@param value unknown
 ---@param records table[]
 ---@param depth integer
-local function collect_records(
-  value,
-  records,
-  depth
-)
-  if
-    depth > 6
-    or type(value) ~= "table"
-  then
+local function collect_records(value, records, depth)
+  if depth > 6 or type(value) ~= 'table' then
     return
   end
 
@@ -422,12 +345,8 @@ local function collect_records(
   end
 
   for _, child in pairs(value) do
-    if type(child) == "table" then
-      collect_records(
-        child,
-        records,
-        depth + 1
-      )
+    if type(child) == 'table' then
+      collect_records(child, records, depth + 1)
     end
   end
 end
@@ -435,57 +354,31 @@ end
 ---@param record table
 ---@param context LintContext
 ---@return vim.Diagnostic?
-local function record_diagnostic(
-  record,
-  context
-)
-  local message = record_message(
-    record
-  )
+local function record_diagnostic(record, context)
+  local message = record_message(record)
 
   if message == nil then
     return nil
   end
 
-  local rule = record_rule(
-    record
-  )
+  local rule = record_rule(record)
 
-  local path = record_file(
-    record
-  )
+  local path = record_file(record)
 
-  local lnum = zero_based_line(
-    record_line(record)
-  )
+  local lnum = zero_based_line(record_line(record))
 
-  local col = zero_based_col(
-    record_column(record)
-  )
+  local col = zero_based_col(record_column(record))
 
   if path ~= nil then
-    local normalized = absolute_path(
-      path,
-      context
-    )
+    local normalized = absolute_path(path, context)
 
-    if
-      nonempty_string(context.filename)
-      and not same_path(
-        normalized,
-        fs.normalize(context.filename)
-      )
-    then
+    if nonempty_string(context.filename) and not same_path(normalized, fs.normalize(context.filename)) then
       --
       -- File mode should normally return only diagnostics for the requested
       -- .proto file. Keep this guard nevertheless so plugin/config failures
       -- cannot place another file's coordinates inside the current buffer.
       --
-      message = string.format(
-        "%s: %s",
-        path,
-        message
-      )
+      message = string.format('%s: %s', path, message)
 
       lnum = 0
       col = 0
@@ -505,14 +398,9 @@ local function record_diagnostic(
 
     lnum = lnum,
 
-    message = truncate(
-      compact(message),
-      MAX_MESSAGE_BYTES
-    ),
+    message = truncate(compact(message), MAX_MESSAGE_BYTES),
 
-    severity = severity(
-      record_severity(record)
-    ),
+    severity = severity(record_severity(record)),
 
     source = SOURCE,
 
@@ -529,14 +417,11 @@ end
 local function decode_json(text)
   local trimmed = vim.trim(text)
 
-  if trimmed == "" then
+  if trimmed == '' then
     return nil
   end
 
-  local ok, decoded = pcall(
-    json.decode,
-    trimmed
-  )
+  local ok, decoded = pcall(json.decode, trimmed)
 
   if not ok then
     return nil
@@ -548,113 +433,59 @@ end
 ---@param text string
 ---@return string?
 local function operational_message(text)
-  local cleaned = strip_ansi(
-    vim.trim(text)
-  )
+  local cleaned = strip_ansi(vim.trim(text))
 
-  if cleaned == "" then
+  if cleaned == '' then
     return nil
   end
 
-  --
-  -- Do not turn arbitrary logging into diagnostics. Prefer lines that look
-  -- like actual parser/config/runtime failures.
-  --
-  for line in cleaned:gmatch(
-    "[^\r\n]+"
-  ) do
+  for line in cleaned:gmatch('[^\r\n]+') do
     local normalized = compact(line)
     local lower = normalized:lower()
 
     if
-      lower:find(
-        "error",
-        1,
-        true
-      ) ~= nil
-      or lower:find(
-        "failed",
-        1,
-        true
-      ) ~= nil
-      or lower:find(
-        "invalid",
-        1,
-        true
-      ) ~= nil
-      or lower:find(
-        "parse",
-        1,
-        true
-      ) ~= nil
-      or lower:find(
-        "cannot",
-        1,
-        true
-      ) ~= nil
+      lower:find('error', 1, true) ~= nil
+      or lower:find('failed', 1, true) ~= nil
+      or lower:find('invalid', 1, true) ~= nil
+      or lower:find('parse', 1, true) ~= nil
+      or lower:find('cannot', 1, true) ~= nil
     then
-      return truncate(
-        normalized,
-        MAX_MESSAGE_BYTES
-      )
+      return truncate(normalized, MAX_MESSAGE_BYTES)
     end
   end
 
-  local first = cleaned:match(
-    "([^\r\n]+)"
-  )
+  local first = cleaned:match('([^\r\n]+)')
 
   if first == nil then
     return nil
   end
 
-  return truncate(
-    compact(first),
-    MAX_MESSAGE_BYTES
-  )
+  return truncate(compact(first), MAX_MESSAGE_BYTES)
 end
 
 ---@param output string
 ---@param context LintContext
 ---@return vim.Diagnostic[]
-local function parse_failure(
-  output,
-  context
-)
-  local message = operational_message(
-    output
-  )
+local function parse_failure(output, context)
+  local message = operational_message(output)
 
   if message == nil then
     return {}
   end
 
-  local line_number =
-    output:match(
-      "[Ll]ine%s+(%d+)"
-    )
-      or output:match(
-        ":(%d+):%d+"
-      )
+  local line_number = output:match('[Ll]ine%s+(%d+)') or output:match(':(%d+):%d+')
 
-  local column =
-    output:match(
-      ":%d+:(%d+)"
-    )
+  local column = output:match(':%d+:(%d+)')
 
-  local lnum = zero_based_line(
-    line_number
-  )
+  local lnum = zero_based_line(line_number)
 
-  local col = zero_based_col(
-    column
-  )
+  local col = zero_based_col(column)
 
   return {
     {
       bufnr = context.bufnr,
 
-      code = "protolint-error",
+      code = 'protolint-error',
 
       col = col,
 
@@ -680,7 +511,7 @@ local function oversized_output(context)
     {
       bufnr = context.bufnr,
 
-      code = "output-limit",
+      code = 'output-limit',
 
       col = 0,
 
@@ -690,10 +521,7 @@ local function oversized_output(context)
 
       lnum = 0,
 
-      message = string.format(
-        "protolint output exceeded the %d-byte parser limit",
-        MAX_OUTPUT_BYTES
-      ),
+      message = string.format('protolint output exceeded the %d-byte parser limit', MAX_OUTPUT_BYTES),
 
       severity = diagnostic.severity.WARN,
 
@@ -705,49 +533,29 @@ end
 ---@param output string
 ---@param context LintContext
 ---@return vim.Diagnostic[]
-local function parse(
-  output,
-  context
-)
-  assert(
-    type(context) == "table",
-    "protolint parser requires LintContext"
-  )
+local function parse(output, context)
+  assert(type(context) == 'table', 'protolint parser requires LintContext')
 
-  assert(
-    type(context.bufnr) == "number",
-    "protolint parser requires context.bufnr"
-  )
+  assert(type(context.bufnr) == 'number', 'protolint parser requires context.bufnr')
 
-  if output == "" then
+  if output == '' then
     return {}
   end
 
   if #output > MAX_OUTPUT_BYTES then
-    return oversized_output(
-      context
-    )
+    return oversized_output(context)
   end
 
-  local decoded = decode_json(
-    output
-  )
+  local decoded = decode_json(output)
 
   if decoded == nil then
-    return parse_failure(
-      output,
-      context
-    )
+    return parse_failure(output, context)
   end
 
   ---@type table[]
   local records = {}
 
-  collect_records(
-    decoded,
-    records,
-    0
-  )
+  collect_records(decoded, records, 0)
 
   if #records == 0 then
     return {}
@@ -757,22 +565,14 @@ local function parse(
   local diagnostics = {}
 
   for index = 1, #records do
-    if
-      #diagnostics
-      >= MAX_DIAGNOSTICS
-    then
+    if #diagnostics >= MAX_DIAGNOSTICS then
       break
     end
 
-    local item = record_diagnostic(
-      records[index],
-      context
-    )
+    local item = record_diagnostic(records[index], context)
 
     if item ~= nil then
-      diagnostics[
-        #diagnostics + 1
-      ] = item
+      diagnostics[#diagnostics + 1] = item
     end
   end
 
@@ -782,29 +582,24 @@ end
 ---@param context LintContext
 ---@return string[]
 local function arguments(context)
-  assert(
-    type(context) == "table",
-    "protolint arguments require LintContext"
-  )
+  assert(type(context) == 'table', 'protolint arguments require LintContext')
 
-  if not nonempty_string(
-    context.filename
-  ) then
+  if not nonempty_string(context.filename) then
     return {
-      "lint",
-      "-reporter",
-      "json",
-      "-no-error-on-unmatched-pattern",
+      'lint',
+      '-reporter',
+      'json',
+      '-no-error-on-unmatched-pattern',
     }
   end
 
   return {
-    "lint",
+    'lint',
 
-    "-reporter",
-    "json",
+    '-reporter',
+    'json',
 
-    "-no-error-on-unmatched-pattern",
+    '-no-error-on-unmatched-pattern',
 
     context.filename,
   }
@@ -818,7 +613,7 @@ return {
 
   automatic = true,
 
-  cmd = "protolint",
+  cmd = 'protolint',
 
   cwd = project_root,
 
@@ -839,7 +634,7 @@ return {
 
   stdin = false,
 
-  stream = "both",
+  stream = 'both',
 
   timeout = 30000,
 }

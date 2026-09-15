@@ -19,7 +19,6 @@
 
 local diagnostic = vim.diagnostic
 local fs = vim.fs
-
 local ERROR = diagnostic.severity.ERROR
 local INFO = diagnostic.severity.INFO
 local WARN = diagnostic.severity.WARN
@@ -81,9 +80,7 @@ local function belongs_to_buffer(path, filename, root)
   if fs.is_absolute(path) then
     candidate = fs.normalize(path)
   else
-    candidate = fs.normalize(
-      fs.joinpath(root, path)
-    )
+    candidate = fs.normalize(fs.joinpath(root, path))
   end
 
   return candidate == filename
@@ -96,10 +93,7 @@ local function find_file(root, candidates)
   assert(root ~= '')
 
   for index = 1, #candidates do
-    local candidate = fs.joinpath(
-      root,
-      candidates[index]
-    )
+    local candidate = fs.joinpath(root, candidates[index])
 
     if vim.uv.fs_stat(candidate) ~= nil then
       return candidate
@@ -145,22 +139,9 @@ local function parse_line(line)
   --
   -- /path/Foo.kt:12:5: Some message [RuleName]
   --
-  local file,
-    line_number,
-    column_number,
-    message,
-    code =
-    line:match(
-      '^(.+):(%d+):(%d+):%s*(.-)%s+%[([^%]]+)%]$'
-    )
+  local file, line_number, column_number, message, code = line:match('^(.+):(%d+):(%d+):%s*(.-)%s+%[([^%]]+)%]$')
 
-  if
-    file == nil
-    or line_number == nil
-    or column_number == nil
-    or message == nil
-    or code == nil
-  then
+  if file == nil or line_number == nil or column_number == nil or message == nil or code == nil then
     return nil
   end
 
@@ -178,11 +159,7 @@ end
 ---@param filename string
 ---@param root string
 ---@return vim.Diagnostic?
-local function diagnostic_from_violation(
-  violation,
-  filename,
-  root
-)
+local function diagnostic_from_violation(violation, filename, root)
   local path = violation.file
 
   if type(path) ~= 'string' or path == '' then
@@ -193,15 +170,9 @@ local function diagnostic_from_violation(
     return nil
   end
 
-  local start_line = math.max(
-    integer(violation.line, 1) - 1,
-    0
-  )
+  local start_line = math.max(integer(violation.line, 1) - 1, 0)
 
-  local start_column = math.max(
-    integer(violation.column, 1) - 1,
-    0
-  )
+  local start_column = math.max(integer(violation.column, 1) - 1, 0)
 
   local message = violation.message
 
@@ -238,20 +209,14 @@ local function parse(output, context)
     return {}
   end
 
-  assert(
-    type(context) == 'table',
-    'detekt parser requires a LintContext'
-  )
+  assert(type(context) == 'table', 'detekt parser requires a LintContext')
 
   ---@cast context LintContext
 
   assert(context.filename ~= '')
   assert(context.root ~= '')
 
-  assert(
-    #output <= OUTPUT_LENGTH_MAX,
-    'detekt output exceeded maximum size'
-  )
+  assert(#output <= OUTPUT_LENGTH_MAX, 'detekt output exceeded maximum size')
 
   local filename = fs.normalize(context.filename)
   local root = fs.normalize(context.root)
@@ -268,11 +233,7 @@ local function parse(output, context)
     local violation = parse_line(line)
 
     if violation ~= nil then
-      local entry = diagnostic_from_violation(
-        violation,
-        filename,
-        root
-      )
+      local entry = diagnostic_from_violation(violation, filename, root)
 
       if entry ~= nil then
         diagnostics_count = diagnostics_count + 1
@@ -297,17 +258,12 @@ local function args(context)
 
   local argv = {
     '--build-upon-default-config',
-
-    -- Analyze only the current buffer.
     '--input',
     context.filename,
 
-    -- Any finding is relevant in-editor, but Detekt's exit status
-    -- does not control whether Neovim receives diagnostics.
     '--fail-on-severity',
     'Info',
 
-    -- Keep report paths deterministic relative to the project.
     '--base-path',
     root,
   }

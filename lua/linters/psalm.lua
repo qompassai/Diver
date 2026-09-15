@@ -478,7 +478,12 @@ local ROOT_MARKERS = {
   'composer.json',
   '.git',
 }
-local LIMITS = { output = 16 * 1024 * 1024, records = 10000, diagnostics = 512, message = 4096 }
+local LIMITS = {
+  output = 16 * 1024 * 1024,
+  records = 10000,
+  diagnostics = 512,
+  message = 4096,
+}
 local SEVERITIES = { error = vim.diagnostic.severity.ERROR, info = vim.diagnostic.severity.INFO }
 ---@type string?
 local directory
@@ -566,10 +571,11 @@ local function profile_path(cwd)
   local content = table.concat(lines, '\n') .. '\n'
   if not directory then
     directory = assert(uv.fs_mkdtemp(vim.fn.tempname() .. '-psalm-XXXXXX'))
-    vim.api.nvim_create_autocmd(
-      'VimLeavePre',
-      { once = true, callback = cleanup, desc = 'Remove private Psalm profiles' }
-    )
+    vim.api.nvim_create_autocmd('VimLeavePre', {
+      once = true,
+      callback = cleanup,
+      desc = 'Remove private Psalm profiles',
+    })
   end
   local path = fs.joinpath(directory, tostring(profile_count + 1) .. '.xml')
   local fd = assert(uv.fs_open(path, 'wx', 384))

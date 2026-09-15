@@ -20,12 +20,10 @@
 local diagnostic = vim.diagnostic
 local fs = vim.fs
 local uv = vim.uv
-
 local ERROR = diagnostic.severity.ERROR
 local HINT = diagnostic.severity.HINT
 local INFO = diagnostic.severity.INFO
 local WARN = diagnostic.severity.WARN
-
 local DIAGNOSTICS_MAX = 4096
 local LINE_LENGTH_MAX = 64 * 1024
 local MESSAGE_LENGTH_MAX = 16 * 1024
@@ -55,16 +53,12 @@ local severities = {
 ---@type string[]
 local compilation_database_candidates = {
   'compile_commands.json',
-
   'build/compile_commands.json',
   'Build/compile_commands.json',
-
   'build-debug/compile_commands.json',
   'build-release/compile_commands.json',
-
   'cmake-build-debug/compile_commands.json',
   'cmake-build-release/compile_commands.json',
-
   'out/compile_commands.json',
   'out/build/compile_commands.json',
 
@@ -113,26 +107,13 @@ end
 ---@param value string
 ---@return string
 local function trim(value)
-  return (
-    value:gsub(
-      '^%s*(.-)%s*$',
-      '%1'
-    )
-  )
+  return (value:gsub('^%s*(.-)%s*$', '%1'))
 end
 
 ---@param value string
 ---@return string
 local function strip_ansi(value)
-  --
-  -- Clang normally disables color when stderr is not a terminal, but do not
-  -- depend on terminal detection or user compiler flags. Strip CSI escapes
-  -- defensively before parsing diagnostics.
-  --
-  value = value:gsub(
-    '\27%[[%d;?]*[ -/]*[@-~]',
-    ''
-  )
+  value = value:gsub('\27%[[%d;?]*[ -/]*[@-~]', '')
 
   return value
 end
@@ -148,12 +129,7 @@ local function normalize_message(value)
   value = trim(value)
 
   if #value > MESSAGE_LENGTH_MAX then
-    value =
-      value:sub(
-        1,
-        MESSAGE_LENGTH_MAX
-      )
-      .. '\n[message truncated]'
+    value = value:sub(1, MESSAGE_LENGTH_MAX) .. '\n[message truncated]'
   end
 
   return value
@@ -162,17 +138,11 @@ end
 ---@param root string
 ---@param candidates string[]
 ---@return string?
-local function find_candidate(
-  root,
-  candidates
-)
+local function find_candidate(root, candidates)
   assert(root ~= '')
 
   for index = 1, #candidates do
-    local candidate = fs.joinpath(
-      root,
-      candidates[index]
-    )
+    local candidate = fs.joinpath(root, candidates[index])
 
     if exists(candidate) then
       return fs.normalize(candidate)
@@ -185,33 +155,20 @@ end
 ---@param root string
 ---@return string?
 local function compilation_database(root)
-  return find_candidate(
-    root,
-    compilation_database_candidates
-  )
+  return find_candidate(root, compilation_database_candidates)
 end
 
 ---@param path string
 ---@param root string
 ---@return string
-local function normalize_path(
-  path,
-  root
-)
+local function normalize_path(path, root)
   assert(path ~= '')
   assert(root ~= '')
 
   if path:sub(1, 7) == 'file://' then
-    local ok, filename = pcall(
-      vim.uri_to_fname,
-      path
-    )
+    local ok, filename = pcall(vim.uri_to_fname, path)
 
-    if
-      ok
-      and type(filename) == 'string'
-      and filename ~= ''
-    then
+    if ok and type(filename) == 'string' and filename ~= '' then
       return fs.normalize(filename)
     end
   end
@@ -220,52 +177,31 @@ local function normalize_path(
     return fs.normalize(path)
   end
 
-  return fs.normalize(
-    fs.joinpath(
-      root,
-      path
-    )
-  )
+  return fs.normalize(fs.joinpath(root, path))
 end
 
 ---@param candidate string
 ---@param filename string
 ---@param root string
 ---@return boolean
-local function belongs_to_buffer(
-  candidate,
-  filename,
-  root
-)
+local function belongs_to_buffer(candidate, filename, root)
   assert(candidate ~= '')
   assert(filename ~= '')
   assert(root ~= '')
 
-  return normalize_path(
-    candidate,
-    root
-  ) == filename
+  return normalize_path(candidate, root) == filename
 end
 
 ---@param message string
 ---@return string?
 local function diagnostic_code(message)
   --
-  -- Clazy warnings follow Clang's diagnostic convention:
-  --
-  --   ... [clazy-range-loop]
-  --
   -- Keep only a trailing clazy identifier. Compiler warning groups such as
   -- [-Wunused-variable] are not falsely attributed to Clazy.
   --
-  local code = message:match(
-    '%[(clazy%-[%w_%-]+)%]%s*$'
-  )
+  local code = message:match('%[(clazy%-[%w_%-]+)%]%s*$')
 
-  if
-    type(code) ~= 'string'
-    or code == ''
-  then
+  if type(code) ~= 'string' or code == '' then
     return nil
   end
 
@@ -275,115 +211,53 @@ end
 ---@param message string
 ---@param code string|nil
 ---@return string
-local function remove_code_suffix(
-  message,
-  code
-)
+local function remove_code_suffix(message, code)
   if code == nil then
     return message
   end
 
-  local suffix = '%s*%['
-    .. vim.pesc(code)
-    .. '%]%s*$'
+  local suffix = '%s*%[' .. vim.pesc(code) .. '%]%s*$'
 
-  return trim(
-    message:gsub(
-      suffix,
-      ''
-    )
-  )
+  return trim(message:gsub(suffix, ''))
 end
 
 ---@param line string
 ---@return ClazyParsedDiagnostic?
 local function parse_line(line)
-  if
-    line == ''
-    or #line > LINE_LENGTH_MAX
-  then
+  if line == '' or #line > LINE_LENGTH_MAX then
     return nil
   end
 
   line = strip_ansi(line)
 
-  --
-  -- Clang / Clazy primary diagnostics use:
-  --
-  --   file.cpp:12:8: warning: message [clazy-check]
-  --
-  -- Source snippets, caret lines, include stacks, and summary text do not
-  -- match this grammar and are consequently ignored.
-  --
-  local filename,
-    source_line,
-    column,
-    level,
-    message = line:match(
-      '^(.+):(%d+):(%d+):%s*'
-        .. '([%a]+):%s*'
-        .. '(.+)$'
-    )
+  local filename, source_line, column, level, message = line:match('^(.+):(%d+):(%d+):%s*' .. '([%a]+):%s*' .. '(.+)$')
 
-  if
-    filename == nil
-    or source_line == nil
-    or column == nil
-    or level == nil
-    or message == nil
-  then
-    --
-    -- Some Clang diagnostics have a source line but no column.
-    --
-    filename,
-      source_line,
-      level,
-      message = line:match(
-        '^(.+):(%d+):%s*'
-          .. '([%a]+):%s*'
-          .. '(.+)$'
-      )
+  if filename == nil or source_line == nil or column == nil or level == nil or message == nil then
+    filename, source_line, level, message = line:match('^(.+):(%d+):%s*' .. '([%a]+):%s*' .. '(.+)$')
 
     column = '1'
   end
 
-  if
-    filename == nil
-    or source_line == nil
-    or level == nil
-    or message == nil
-  then
+  if filename == nil or source_line == nil or level == nil or message == nil then
     return nil
   end
 
-  message =
-    normalize_message(message)
+  message = normalize_message(message)
 
   if message == '' then
     return nil
   end
 
-  local code =
-    diagnostic_code(message)
+  local code = diagnostic_code(message)
 
-  message =
-    remove_code_suffix(
-      message,
-      code
-    )
+  message = remove_code_suffix(message, code)
 
   return {
     filename = filename,
 
-    line = max(
-      integer(source_line, 1),
-      1
-    ),
+    line = max(integer(source_line, 1), 1),
 
-    column = max(
-      integer(column, 1),
-      1
-    ),
+    column = max(integer(column, 1), 1),
 
     severity = level,
     message = message,
@@ -395,18 +269,8 @@ end
 ---@param filename string
 ---@param root string
 ---@return vim.Diagnostic?
-local function diagnostic_from_entry(
-  entry,
-  filename,
-  root
-)
-  if
-    not belongs_to_buffer(
-      entry.filename,
-      filename,
-      root
-    )
-  then
+local function diagnostic_from_entry(entry, filename, root)
+  if not belongs_to_buffer(entry.filename, filename, root) then
     return nil
   end
 
@@ -414,15 +278,9 @@ local function diagnostic_from_entry(
   -- Clang source coordinates are one-based.
   -- Neovim diagnostic coordinates are zero-based.
   --
-  local lnum = max(
-    entry.line - 1,
-    0
-  )
+  local lnum = max(entry.line - 1, 0)
 
-  local col = max(
-    entry.column - 1,
-    0
-  )
+  local col = max(entry.column - 1, 0)
 
   return {
     lnum = lnum,
@@ -430,17 +288,11 @@ local function diagnostic_from_entry(
 
     col = col,
 
-    --
-    -- The textual Clang diagnostic stream does not expose a reliable source
-    -- range. Highlight one byte rather than manufacturing an inaccurate
-    -- semantic range.
-    --
     end_col = col + 1,
 
     message = entry.message,
 
-    severity =
-      severity(entry.severity),
+    severity = severity(entry.severity),
 
     source = 'clazy',
     code = entry.code,
@@ -460,58 +312,39 @@ local function parse(output, context)
     return {}
   end
 
-  assert(
-    type(context) == 'table',
-    'clazy parser requires a LintContext'
-  )
+  assert(type(context) == 'table', 'clazy parser requires a LintContext')
 
   ---@cast context LintContext
 
   assert(context.filename ~= '')
   assert(context.root ~= '')
 
-  assert(
-    #output <= OUTPUT_LENGTH_MAX,
-    'clazy output exceeded maximum size'
-  )
+  assert(#output <= OUTPUT_LENGTH_MAX, 'clazy output exceeded maximum size')
 
-  local filename =
-    fs.normalize(context.filename)
+  local filename = fs.normalize(context.filename)
 
-  local root =
-    fs.normalize(context.root)
+  local root = fs.normalize(context.root)
 
   ---@type vim.Diagnostic.Set[]
   local diagnostics = {}
 
-  for line in output:gmatch(
-    '[^\r\n]+'
-  ) do
+  for line in output:gmatch('[^\r\n]+') do
     if #diagnostics >= DIAGNOSTICS_MAX then
       break
     end
 
-    local raw =
-      parse_line(line)
+    local raw = parse_line(line)
 
     if raw ~= nil then
-      local entry =
-        diagnostic_from_entry(
-          raw,
-          filename,
-          root
-        )
+      local entry = diagnostic_from_entry(raw, filename, root)
 
       if entry ~= nil then
-        diagnostics[#diagnostics + 1] =
-          entry
+        diagnostics[#diagnostics + 1] = entry
       end
     end
   end
 
-  assert(
-    #diagnostics <= DIAGNOSTICS_MAX
-  )
+  assert(#diagnostics <= DIAGNOSTICS_MAX)
 
   return diagnostics
 end
@@ -522,8 +355,7 @@ local function args(context)
   assert(context.filename ~= '')
   assert(context.root ~= '')
 
-  local root =
-    fs.normalize(context.root)
+  local root = fs.normalize(context.root)
 
   local argv = {
     --
@@ -536,8 +368,7 @@ local function args(context)
     '-checks=level2',
   }
 
-  local database =
-    compilation_database(root)
+  local database = compilation_database(root)
 
   if database ~= nil then
     argv[#argv + 1] = '-p'
@@ -548,8 +379,7 @@ local function args(context)
   -- Analyze only the current translation unit. Do not recursively invoke
   -- Clazy across every entry in compile_commands.json during editor linting.
   --
-  argv[#argv + 1] =
-    context.filename
+  argv[#argv + 1] = context.filename
 
   return argv
 end
@@ -567,23 +397,14 @@ return ---@type Linter
   cwd = function(context)
     assert(context.root ~= '')
 
-    return fs.normalize(
-      context.root
-    )
+    return fs.normalize(context.root)
   end,
 
-  --
-  -- Clazy / Clang can return nonzero when compiler or analysis diagnostics
-  -- are produced. The diagnostic stream remains useful to Neovim.
-  --
   ignore_exitcode = true,
 
   parser = parse,
 
   root_markers = {
-    --
-    -- Compilation databases.
-    --
     'compile_commands.json',
 
     'build/compile_commands.json',
@@ -598,9 +419,6 @@ return ---@type Linter
     'out/compile_commands.json',
     '.build/compile_commands.json',
 
-    --
-    -- CMake / Qt projects.
-    --
     'CMakeLists.txt',
     'CMakePresets.json',
     'CMakeUserPresets.json',
@@ -623,10 +441,6 @@ return ---@type Linter
 
   stdin = false,
 
-  --
-  -- Clang-family diagnostics are emitted through stderr.
-  --
   stream = 'stderr',
-
   timeout = 120000,
 }

@@ -585,32 +585,16 @@ local function arguments(context)
 
     '-Ges',
 
-    --
-    -- Keep warning identifiers such as [-Wfoo] in diagnostics.
-    --
     '-fdiagnostics-show-option',
 
-    --
-    -- Avoid ANSI escape sequences in Neovim parser input.
-    --
     '-fdiagnostics-color=never',
 
-    --
-    -- Current DXC default is HLSL 2021, but making it explicit prevents
-    -- behavior changing silently when compiler defaults evolve.
-    --
     '-HV',
     hlsl_version(),
 
-    --
-    -- Target profile.
-    --
     '-T',
     target,
 
-    --
-    -- Search the shader's own directory first.
-    --
     '-I',
     include_root(context),
 
@@ -641,9 +625,6 @@ local function arguments(context)
     table.insert(args, #args, '-E')
   end
 
-  --
-  -- Optional Vulkan/SPIR-V validation path.
-  --
   if truthy(vim.env.NVIM_DXC_SPIRV) then
     table.insert(args, 1, '-spirv')
 
@@ -669,9 +650,6 @@ return {
 
   cwd = project_root,
 
-  --
-  -- Compilation diagnostics naturally produce non-zero exits.
-  --
   ignore_exitcode = true,
 
   parser = parse,

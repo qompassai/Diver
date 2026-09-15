@@ -315,7 +315,7 @@ local function ruleset(context)
     return 'rulesets/java/quickstart.xml'
   end
 
-  return '__qompass_pmd_ruleset_required__.xml'
+  return '__pmd_ruleset_required__.xml'
 end
 
 ---@param context LintContext
@@ -647,7 +647,7 @@ local function parse_failure(output, context)
     return {}
   end
 
-  if message:find('__qompass_pmd_ruleset_required__.xml', 1, true) ~= nil then
+  if message:find('__pmd_ruleset_required__.xml', 1, true) ~= nil then
     message = 'PMD requires a ruleset for this language; ' .. 'set PMD_RULESET or add a project PMD ruleset'
   end
 

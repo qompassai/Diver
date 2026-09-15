@@ -10,7 +10,7 @@ vim.lsp.enable({
   -- 'abl_ls', ---:TODO validate ---@source https://github.com/vscode-abl/vscode-abl
   --'abaplint_ls',
   'ada_ls',
-  --   'agda_ls',
+  --'agda_ls',
   'agentscript_ls',
   'ai_ls', ---:TODO validate
   'aiken_ls',
@@ -329,7 +329,7 @@ vim.lsp.enable({
   'wgslana_ls',
   'yaml_ls',
   --'y_ls',
-  --'yara_ls'
+  'yara_ls',
   'ziggy_ls',
   --'ziggy_schema_ls',
   --'zk_ls', ---:TODO install/validate ---@source  https://github.com/zk-org/zk

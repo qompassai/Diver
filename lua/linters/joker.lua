@@ -116,7 +116,6 @@ end
 ---@return string
 local function normalize_path(path, root)
   assert(path ~= '', 'path must not be empty')
-
   assert(root ~= '', 'root must not be empty')
 
   if path:sub(1, 7) == 'file://' then
@@ -140,11 +139,8 @@ end
 ---@return boolean
 local function belongs_to_buffer(candidate, filename, root)
   assert(candidate ~= '', 'candidate must not be empty')
-
   assert(filename ~= '', 'filename must not be empty')
-
   assert(root ~= '', 'root must not be empty')
-
   return normalize_path(candidate, root) == normalize_path(filename, root)
 end
 
@@ -354,7 +350,6 @@ return ---@type Linter
 
   root_markers = {
     '.joker',
-
     'bb.edn',
     'deps.edn',
     'project.clj',

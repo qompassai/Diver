@@ -1,5 +1,6 @@
--- /qompassai/lua/scip/indexers/dotnet.lua
--- Qompass AI SCIP .NET Indexer
+-- #################################################################
+-- /qompassai/lsp/crates_ls.lua
+-- Qompass AI Diver Crates LSP Spec
 -- SPDX-License-Identifier: Apache-2.0
 -- Copyright (c) 2026 Qompass AI
 --
@@ -14,23 +15,28 @@
 -- See the License for the specific language governing permissions and
 -- limitations under the License.
 -- #################################################################
-
----@type ScipIndexer                                                       local indexer = {
-        args = {                                                                           'index',
-        },
-        command = 'scip-dotnet',
-        filetypes = {
-                cs = true,
-                fsharp = true,
-                vb = true,
-        },
-        markers = {
-                '.git',
-                'Directory.Build.props',
-                'Directory.Build.targets',
-                'Directory.Packages.props',
-                'global.json',
-        },
+return ---@type vim.lsp.Config
+{
+  cmd = {
+    'crates-lsp',
+  },
+  filetypes = {
+    'toml',
+  },
+  root_markers = {
+    'Cargo.toml',
+  },
+  init_options = {
+    files = {
+      'Cargo.toml',
+    },
+    use_api = false,
+    inlay_hints = true,
+    up_to_date_hint = '✓',
+    needs_update_hint = ' {}',
+    diagnostics = true,
+    unknown_dep_severity = 2,
+    needs_update_severity = 3,
+    up_to_date_severity = 4,
+  },
 }
-
-return indexer
