@@ -203,13 +203,13 @@ local function infer_backend_from_path(path)
         return FILE_EXTENSION_BACKENDS[extension:lower()]
 end
 
----@class QompassDbParsedUrl
+---@class DbParsedUrl
 ---@field backend string
 ---@field path? string
 ---@field conn? table
 
 ---@param url string
----@return QompassDbParsedUrl|nil
+---@return DbParsedUrl|nil
 ---@return string|nil
 local function parse_url(url)
         if not url:match('^[%w+.-]+:') then
@@ -657,7 +657,7 @@ local function create_autocmds()
         })
 end
 
----@param opts? QompassDbConfigOpts
+---@param opts? DbConfigOpts
 ---@return table
 function M.setup(opts)
         M.config = vim.tbl_deep_extend('force', vim.deepcopy(defaults), opts or {})
