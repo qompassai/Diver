@@ -387,20 +387,6 @@ end
 ---@param line string
 ---@return GdLintRecord?
 local function parse_clickable(line)
-  --
-  -- Keep this parser deliberately permissive.
-  --
-  -- The addon documents `--clickable` as Godot Output-panel style output,
-  -- but its user-facing format can evolve independently of this module.
-  --
-  -- Accepted forms include:
-  --
-  --   path.gd:12: Warning: message
-  --   path.gd:12:4: Warning: message
-  --   path.gd:12: WARNING [unused-variable]: message
-  --   path.gd:12:4: CRITICAL [sealed-violation]: message
-  --
-
   local path
   local line_number
   local column
@@ -494,12 +480,6 @@ local function record_diagnostic(record, context)
 
   if not same_file(record.path, context) then
     message = string.format('%s: %s', record.path, message)
-
-    --
-    -- The analyzer scans the project, not necessarily only the current
-    -- buffer. Cross-file issues cannot safely be positioned inside the
-    -- current buffer, so anchor them at 0:0 while retaining the path.
-    --
     lnum = 0
     col = 0
   end
@@ -712,11 +692,6 @@ local function arguments(context)
     return {}
   end
 
-  --
-  -- The upstream CLI supports external-project analysis by running the CLI
-  -- script from its own Godot project and passing the target via the second
-  -- `--path` after Godot's `--` argument.
-  --
   return {
     '--headless',
 
@@ -748,30 +723,11 @@ return {
   args = arguments,
 
   append_fname = false,
-
-  --
-  -- The upstream analyzer performs project-wide analysis rather than
-  -- lightweight single-buffer linting. Leave it manual by default so every
-  -- keystroke/save does not start an entire headless Godot project scan.
-  --
-  -- If your lint runner already debounces project-wide tools aggressively,
-  -- this can safely be changed to true.
-  --
   automatic = false,
-
   cmd = command,
 
   cwd = project_root,
 
-  --
-  -- Upstream documented exit codes:
-  --
-  --   0 = clean
-  --   1 = warnings
-  --   2 = critical issues
-  --
-  -- Both 1 and 2 contain valid diagnostics and must still be parsed.
-  --
   ignore_exitcode = true,
 
   parser = parse,

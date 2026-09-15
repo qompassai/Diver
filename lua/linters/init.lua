@@ -710,9 +710,9 @@ end
 ---@class LintRunOptions
 ---@field automatic? boolean
 ---@field notify? boolean
----@field timeout? number # Per-run process timeout in milliseconds, overriding the definition.
----@field root? string # Context root and default cwd, applied before definition functions run.
----@field on_complete? fun(result: table) # Receives exactly one terminal result per run.
+---@field timeout? number
+---@field root? string
+---@field on_complete? fun(result: table)
 ---@field validate_context? fun(context: LintContext, command: string[], cwd: string): boolean
 
 ---@param name string
@@ -722,9 +722,11 @@ end
 ---@return table? handle # Per-run cancellation handle when started.
 function M.run_linter(name, bufnr, opts)
   opts = opts or {}
-  -- Option types are a host programming error, not an operating condition, so fail loudly.
   vim.validate({
-    name = { name, 'string' },
+    name = {
+      name,
+      'string',
+    },
     opts = { opts, 'table' },
     timeout = { opts.timeout, 'number', true },
     root = { opts.root, 'string', true },
@@ -736,8 +738,6 @@ function M.run_linter(name, bufnr, opts)
   end
   bufnr = resolve_bufnr(bufnr)
   local completed = false
-  -- Every run reports exactly one terminal result; later calls are ignored so racing
-  -- cancellation and process completion cannot double-report.
   local function finish(status, fields)
     if completed then
       return
@@ -831,7 +831,6 @@ function M.run_linter(name, bufnr, opts)
     if not valid then
       return reject('error', 'linter context rejected: ' .. tostring(permitted))
     end
-    -- Only an exact `true` permits spawning; truthy values are not a policy decision.
     if permitted ~= true then
       return reject('error', 'linter context rejected: ' .. tostring(permitted))
     end
@@ -871,11 +870,17 @@ function M.run_linter(name, bufnr, opts)
         return
       end
       if api.nvim_buf_get_changedtick(bufnr) ~= changedtick then
-        finish('stale', { reason = 'buffer changed while linting', changedtick = changedtick })
+        finish('stale', {
+          reason = 'buffer changed while linting',
+          changedtick = changedtick,
+        })
         return
       end
       if api.nvim_buf_get_name(bufnr) ~= context.filename then
-        finish('stale', { reason = 'buffer changed while linting', changedtick = changedtick })
+        finish('stale', {
+          reason = 'buffer changed while linting',
+          changedtick = changedtick,
+        })
         return
       end
       if result.code == TIMEOUT_EXIT_CODE then
@@ -900,14 +905,20 @@ function M.run_linter(name, bufnr, opts)
       if parser == nil then
         publish(name, bufnr, {})
         vim.notify(('Linter %q has no parser or errorformat'):format(name), vim.log.levels.ERROR)
-        finish('error', { reason = 'linter has no parser or errorformat', exit_code = result.code })
+        finish('error', {
+          reason = 'linter has no parser or errorformat',
+          exit_code = result.code,
+        })
         return
       end
       local parse_ok, parsed_or_error = invoke_parser(parser, output, context)
       if not parse_ok then
         publish(name, bufnr, {})
         vim.notify(('%s parser failed: %s'):format(name, tostring(parsed_or_error)), vim.log.levels.ERROR)
-        finish('error', { reason = tostring(parsed_or_error), exit_code = result.code })
+        finish('error', {
+          reason = tostring(parsed_or_error),
+          exit_code = result.code,
+        })
         return
       end
       ---@cast parsed_or_error vim.Diagnostic.Set[]
@@ -921,7 +932,10 @@ function M.run_linter(name, bufnr, opts)
       end
       local published, publish_error = pcall(publish, name, bufnr, parsed)
       if not published then
-        finish('error', { reason = tostring(publish_error), exit_code = result.code })
+        finish('error', {
+          reason = tostring(publish_error),
+          exit_code = result.code,
+        })
         return
       end
       if not api.nvim_buf_is_valid(bufnr) then
@@ -1038,7 +1052,9 @@ local function schedule(bufnr, immediate)
   end
   timers[bufnr] = vim.defer_fn(function()
     timers[bufnr] = nil
-    M.run(bufnr, { automatic = true })
+    M.run(bufnr, {
+      automatic = true,
+    })
   end, M.options.debounce_ms)
 end
 
@@ -1203,7 +1219,9 @@ function M.setup(opts)
     })
   end
 
-  local group = api.nvim_create_augroup('native_linters', { clear = true })
+  local group = api.nvim_create_augroup('native_linters', {
+    clear = true,
+  })
   api.nvim_create_autocmd(M.options.events, {
     group = group,
     desc = 'Run native asynchronous linters',

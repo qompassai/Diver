@@ -5,18 +5,7 @@
 -- #################################################################
 ---@source https://github.com/wasm-fmt/wgslfmt
 -- @wasm-fmt/wgslfmt is a JS/WASM library, not a command named wgslfmt.
--- This file embeds its Node adapter. No companion script or Neovim plugin.
--- Install the pinned npm package in TOOLING.directory; see README.md.
--- Loading this module performs no installation, process launch or file writes.
--- The native runner provides cancellation, timeout, undo and stale-result checks.
--- Input/output are UTF-8 source; no diagnostic parser or on-disk source writes.
--- This formatter is not a WGSL validator; keep your WGSL LSP/linter enabled.
--- A conservative token check rejects token-changing output. Version 0.1.0
--- was observed merging @vertex fn into @vertexfn. Comments are skipped by
--- this guard; it is not proof of semantic equivalence or full grammar support.
 local fs = vim.fs
-
--- Every formatter option exported by @wasm-fmt/wgslfmt 0.1.0.
 local CONFIG = {
   trailing_commas = 'ignore', -- 'ignore' | 'insert' | 'remove'
   indent_symbol = '    ', -- Four spaces; use '\t' or '  ' if desired.
@@ -132,16 +121,9 @@ try {
 ---@param context FormatterContext
 ---@return string[]
 local function arguments(context)
-  assert(
-    context.filetype == 'wgsl' or context.filetype == 'wgsl_bevy',
-    'wgslfmt requires a WGSL buffer'
-  )
-  local manifest =
-    fs.joinpath(TOOLING.directory, 'node_modules', '@wasm-fmt', 'wgslfmt', 'package.json')
-  assert(
-    vim.fn.filereadable(manifest) == 1,
-    'Install @wasm-fmt/wgslfmt@0.1.0 in ' .. TOOLING.directory
-  )
+  assert(context.filetype == 'wgsl' or context.filetype == 'wgsl_bevy', 'wgslfmt requires a WGSL buffer')
+  local manifest = fs.joinpath(TOOLING.directory, 'node_modules', '@wasm-fmt', 'wgslfmt', 'package.json')
+  assert(vim.fn.filereadable(manifest) == 1, 'Install @wasm-fmt/wgslfmt@0.1.0 in ' .. TOOLING.directory)
   return {
     '--max-old-space-size=' .. tostring(TOOLING.js_heap_mib),
     '--input-type=module',
@@ -162,8 +144,16 @@ return {
   args = arguments,
   mode = 'stdin',
   output = 'stdout',
-  root_markers = { 'Cargo.toml', 'package.json', '.git' },
-  env = { NODE_OPTIONS = '', NODE_PATH = '', NO_COLOR = '1' },
+  root_markers = {
+    'Cargo.toml',
+    'package.json',
+    '.git',
+  },
+  env = {
+    NODE_OPTIONS = '',
+    NODE_PATH = '',
+    NO_COLOR = '1',
+  },
   exit_codes = { 0 },
   automatic = true,
   allow_empty = false,

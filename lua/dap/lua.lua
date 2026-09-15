@@ -497,44 +497,49 @@ end
 
 ---@param callback fun(processes: QompassLuaDebugProcess[]?, error_message: string?)
 local function discover_processes(callback)
-  run_system('process-discovery', {
-    'ps',
-    '-eo',
-    'pid=,comm=,args=',
-  }, PROCESS_TIMEOUT, function(result, spawn_error)
-    if result == nil then
-      callback(nil, spawn_error or 'Unable to start ps')
+  run_system(
+    'process-discovery',
+    {
+      'ps',
+      '-eo',
+      'pid=,comm=,args=',
+    },
+    PROCESS_TIMEOUT,
+    function(result, spawn_error)
+      if result == nil then
+        callback(nil, spawn_error or 'Unable to start ps')
 
-      return
-    end
-
-    if result.code ~= 0 then
-      callback(nil, system_error(result, 'ps'))
-
-      return
-    end
-
-    ---@type QompassLuaDebugProcess[]
-    local processes = {}
-
-    for line in (result.stdout or ''):gmatch('[^\r\n]+') do
-      local process = parse_process(line)
-
-      if process ~= nil then
-        processes[#processes + 1] = process
-      end
-    end
-
-    table.sort(processes, function(left, right)
-      if left.executable == right.executable then
-        return left.pid < right.pid
+        return
       end
 
-      return left.executable < right.executable
-    end)
+      if result.code ~= 0 then
+        callback(nil, system_error(result, 'ps'))
 
-    callback(processes, nil)
-  end)
+        return
+      end
+
+      ---@type QompassLuaDebugProcess[]
+      local processes = {}
+
+      for line in (result.stdout or ''):gmatch('[^\r\n]+') do
+        local process = parse_process(line)
+
+        if process ~= nil then
+          processes[#processes + 1] = process
+        end
+      end
+
+      table.sort(processes, function(left, right)
+        if left.executable == right.executable then
+          return left.pid < right.pid
+        end
+
+        return left.executable < right.executable
+      end)
+
+      callback(processes, nil)
+    end
+  )
 end
 
 ---@param callback QompassLuaValidationCallback
@@ -547,24 +552,29 @@ local function validate_adapter(callback)
     return
   end
 
-  run_system('adapter-validation', {
-    adapter,
-    '--help',
-  }, VALIDATION_TIMEOUT, function(result, spawn_error)
-    if result == nil then
-      callback(false, spawn_error or ('Unable to start %s'):format(adapter))
+  run_system(
+    'adapter-validation',
+    {
+      adapter,
+      '--help',
+    },
+    VALIDATION_TIMEOUT,
+    function(result, spawn_error)
+      if result == nil then
+        callback(false, spawn_error or ('Unable to start %s'):format(adapter))
 
-      return
+        return
+      end
+
+      if result.code ~= 0 and result.code ~= 1 then
+        callback(false, system_error(result, adapter))
+
+        return
+      end
+
+      callback(true, executable_path(adapter) or adapter)
     end
-
-    if result.code ~= 0 and result.code ~= 1 then
-      callback(false, system_error(result, adapter))
-
-      return
-    end
-
-    callback(true, executable_path(adapter) or adapter)
-  end)
+  )
 end
 
 ---@param callback QompassLuaValidationCallback
@@ -577,34 +587,39 @@ local function validate_runtime(callback)
     return
   end
 
-  run_system('runtime-validation', {
-    lua,
-    '-v',
-  }, VALIDATION_TIMEOUT, function(result, spawn_error)
-    if result == nil then
-      callback(false, spawn_error or ('Unable to start %s'):format(lua))
+  run_system(
+    'runtime-validation',
+    {
+      lua,
+      '-v',
+    },
+    VALIDATION_TIMEOUT,
+    function(result, spawn_error)
+      if result == nil then
+        callback(false, spawn_error or ('Unable to start %s'):format(lua))
 
-      return
+        return
+      end
+
+      if result.code ~= 0 then
+        callback(false, system_error(result, lua))
+
+        return
+      end
+
+      local version = vim.trim(result.stdout or '')
+
+      if version == '' then
+        version = vim.trim(result.stderr or '')
+      end
+
+      if version == '' then
+        version = executable_path(lua) or lua
+      end
+
+      callback(true, version)
     end
-
-    if result.code ~= 0 then
-      callback(false, system_error(result, lua))
-
-      return
-    end
-
-    local version = vim.trim(result.stdout or '')
-
-    if version == '' then
-      version = vim.trim(result.stderr or '')
-    end
-
-    if version == '' then
-      version = executable_path(lua) or lua
-    end
-
-    callback(true, version)
-  end)
+  )
 end
 
 local function show_adapter()
@@ -893,4 +908,3 @@ function M.teardown()
   selected_process = nil
 end
 return M
-

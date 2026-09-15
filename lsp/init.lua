@@ -1,3 +1,5 @@
+#!/usr/bin/env luajit
+---@version >5.1
 -- /qompassai/dotfiles./config/lsp/init.lua
 -- Qompass AI Diver LSP Init Spec
 -- Copyright (C) 2025 Qompass AI, All rights reserved
@@ -6,7 +8,7 @@
 ---@source https://langserver.org/
 vim.lsp.enable({
   -- 'abl_ls', ---:TODO validate ---@source https://github.com/vscode-abl/vscode-abl
-  'abaplint_ls',
+  --'abaplint_ls',
   'ada_ls',
   --   'agda_ls',
   'agentscript_ls',
@@ -30,7 +32,7 @@ vim.lsp.enable({
   -- 'azurepipelines_ls',
   'b_ls', ---:TODO validate ---@source https://github.com/hhu-stups/b-language-server
   'bacon_ls',
-  --  'basedpy_ls',
+  'basedpy_ls',
   'bash_ls',
   --'bazelrc_ls',
   'beancount_ls',

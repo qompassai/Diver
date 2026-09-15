@@ -22,14 +22,6 @@ end
 local plugin_setup = {}
 local plugins = {
   {
-    src = gh('hrsh7th/cmp-nvim-lua'),
-    update = true,
-    version = 'main',
-  },
-  {
-    src = gh('hrsh7th/cmp-buffer'),
-  },
-  {
     src = gh('nvim-treesitter/nvim-treesitter'),
     version = 'main',
   },

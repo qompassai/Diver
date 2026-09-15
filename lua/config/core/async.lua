@@ -1,3 +1,5 @@
+#!/usr/bin/env luajit
+---@version JIT
 -- #################################################################
 -- /lua/config/core/async.lua
 -- Native Neovim Async Utilities

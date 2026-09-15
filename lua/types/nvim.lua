@@ -1,3 +1,4 @@
+#!/usr/bin/env lua5.1, JIT
 -- /qompassai/Diver/lua/types/nvim.lua
 -- Qompass AI Diver Nvim Types
 -- Copyright (C) 2025 Qompass AI, All rights reserved

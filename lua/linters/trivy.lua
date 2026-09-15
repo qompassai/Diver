@@ -53,13 +53,10 @@ local SEVERITIES = {
 local CONFIG_CANDIDATES = {
   'trivy.yaml',
   'trivy.yml',
-
   '.trivy.yaml',
   '.trivy.yml',
-
   'config/trivy.yaml',
   'config/trivy.yml',
-
   '.config/trivy.yaml',
   '.config/trivy.yml',
 }
@@ -68,13 +65,10 @@ local CONFIG_CANDIDATES = {
 local SECRET_CONFIG_CANDIDATES = {
   'trivy-secret.yaml',
   'trivy-secret.yml',
-
   '.trivy-secret.yaml',
   '.trivy-secret.yml',
-
   'config/trivy-secret.yaml',
   'config/trivy-secret.yml',
-
   '.config/trivy-secret.yaml',
   '.config/trivy-secret.yml',
 }
@@ -487,38 +481,13 @@ local function args(context)
 
   local argv = {
     'fs',
-
-    --
-    -- Editor-facing Trivy should report findings, not terminate as a CI gate.
-    --
     '--exit-code',
     '0',
-
-    --
-    -- Structured output gives stable rule IDs, severity, target paths, and
-    -- source line ranges.
-    --
     '--format',
     'json',
-
-    --
-    -- Suppress progress and informational noise.
-    --
     '--quiet',
-
-    --
-    -- Tiger editor scope:
-    --
-    -- * misconfig catches IaC / deployment / infrastructure policy problems
-    -- * secret catches leaked credentials and tokens
-    --
-    -- Vulnerability and license scanners are intentionally omitted here
-    -- because their findings generally describe packages rather than precise
-    -- source locations in the active buffer.
-    --
     '--scanners',
     'misconfig,secret',
-
     '--skip-version-check',
   }
 
@@ -569,29 +538,20 @@ return ---@type Linter
   root_markers = {
     'trivy.yaml',
     'trivy.yml',
-
     '.trivy.yaml',
     '.trivy.yml',
-
     'trivy-secret.yaml',
     'trivy-secret.yml',
-
     '.trivyignore',
     '.trivyignore.yaml',
-
     'Dockerfile',
-
     'compose.yaml',
     'compose.yml',
-
     'docker-compose.yaml',
     'docker-compose.yml',
-
     'Chart.yaml',
-
     'main.tf',
     'terragrunt.hcl',
-
     '.git',
   },
 

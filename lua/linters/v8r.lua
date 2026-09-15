@@ -1,4 +1,3 @@
-.lua
 -- #################################################################
 -- ~/.config/nvim/lua/linters/v8r.lua
 -- Native v8r JSON / JSON5 / YAML / TOML Schema Linter
@@ -41,8 +40,14 @@ local MAX_OUTPUT_BYTES = 16 * 1024 * 1024
 local MAX_MESSAGE_BYTES = 4096
 local MAX_RESULTS = 1024
 local CONFIG_MARKERS = {
-  '.v8rrc', '.v8rrc.json', '.v8rrc.yaml', '.v8rrc.yml',
-  '.v8rrc.js', '.v8rrc.cjs', 'v8r.config.js', 'v8r.config.cjs',
+  '.v8rrc',
+  '.v8rrc.json',
+  '.v8rrc.yaml',
+  '.v8rrc.yml',
+  '.v8rrc.js',
+  '.v8rrc.cjs',
+  'v8r.config.js',
+  'v8r.config.cjs',
 }
 local ROOT_MARKERS = { CONFIG_MARKERS, 'package.json', '.git' }
 
@@ -188,18 +193,36 @@ local function parse(output, context)
   assert(type(context.bufnr) == 'number', 'v8r parser requires context.bufnr')
 
   if context.modified then
-    return { status_diagnostic(context, 'save-required', 'Save this buffer before running v8r; it validates the file on disk.') }
+    return {
+      status_diagnostic(
+        context,
+        'save-required',
+        'Save this buffer before running v8r; it validates the file on disk.'
+      ),
+    }
   end
   local filename = string_value(context.filename)
   if filename == nil then
     return { status_diagnostic(context, 'filename-required', 'Save this buffer before running v8r.') }
   end
   if #output > MAX_OUTPUT_BYTES then
-    return { status_diagnostic(context, 'output-limit', 'v8r output exceeded the 16 MiB parser limit; validation results are incomplete.') }
+    return {
+      status_diagnostic(
+        context,
+        'output-limit',
+        'v8r output exceeded the 16 MiB parser limit; validation results are incomplete.'
+      ),
+    }
   end
   local ok, decoded = pcall(json.decode, output)
   if not ok or type(decoded) ~= 'table' or type(decoded.results) ~= 'table' or not vim.islist(decoded.results) then
-    return { status_diagnostic(context, 'invalid-report', 'v8r returned no valid JSON results. Check configuration, ignored files, CLI compatibility and the timeout.') }
+    return {
+      status_diagnostic(
+        context,
+        'invalid-report',
+        'v8r returned no valid JSON results. Check configuration, ignored files, CLI compatibility and the timeout.'
+      ),
+    }
   end
 
   local cwd = project_root(context)
@@ -220,12 +243,22 @@ local function parse(output, context)
       local schema = string_value(result.schemaLocation)
       local document = result.documentIndex
       local prefix = ''
-      if type(document) == 'number' and document >= 0 and document < MAX_RESULTS and document == math.floor(document) then
+      if
+        type(document) == 'number'
+        and document >= 0
+        and document < MAX_RESULTS
+        and document == math.floor(document)
+      then
         prefix = string.format('Document [%d]: ', document)
       else
         document = nil
       end
-      if result.valid == false and type(result.errors) == 'table' and vim.islist(result.errors) and #result.errors > 0 then
+      if
+        result.valid == false
+        and type(result.errors) == 'table'
+        and vim.islist(result.errors)
+        and #result.errors > 0
+      then
         for error_index = 1, #result.errors do
           processed = processed + 1
           if processed > MAX_DIAGNOSTICS or #diagnostics >= MAX_DIAGNOSTICS then
@@ -266,7 +299,12 @@ local function parse(output, context)
           end
         end
       elseif result.valid ~= true or result.code ~= 0 then
-        diagnostics[#diagnostics + 1] = status_diagnostic(context, 'validation-incomplete', prefix .. 'v8r could not complete validation. Check input syntax, schema discovery, schema references and network access.')
+        diagnostics[#diagnostics + 1] = status_diagnostic(
+          context,
+          'validation-incomplete',
+          prefix
+            .. 'v8r could not complete validation. Check input syntax, schema discovery, schema references and network access.'
+        )
       end
       if #diagnostics >= MAX_DIAGNOSTICS then
         if index < #decoded.results then
@@ -278,13 +316,25 @@ local function parse(output, context)
   end
 
   if not matched then
-    diagnostics[#diagnostics + 1] = status_diagnostic(context, 'no-result', 'v8r returned no result for this file. Check ignore rules and filename matching.')
+    diagnostics[#diagnostics + 1] = status_diagnostic(
+      context,
+      'no-result',
+      'v8r returned no result for this file. Check ignore rules and filename matching.'
+    )
   end
   if malformed then
-    diagnostics[#diagnostics + 1] = status_diagnostic(context, 'malformed-result', 'Some v8r report entries could not be parsed; results are incomplete.')
+    diagnostics[#diagnostics + 1] = status_diagnostic(
+      context,
+      'malformed-result',
+      'Some v8r report entries could not be parsed; results are incomplete.'
+    )
   end
   if limited then
-    diagnostics[#diagnostics + 1] = status_diagnostic(context, 'result-limit', 'v8r reached the editor parser limit; run the CLI for a complete report.')
+    diagnostics[#diagnostics + 1] = status_diagnostic(
+      context,
+      'result-limit',
+      'v8r reached the editor parser limit; run the CLI for a complete report.'
+    )
   end
   return diagnostics
 end
@@ -297,7 +347,6 @@ local function arguments(context)
   assert(filename ~= nil, 'v8r requires a saved filename')
   local cwd = project_root(context)
   local path = relative_path(absolute_path(filename, string_value(context.cwd) or cwd), cwd)
-  -- v8r passes positional arguments through node-glob even without a shell.
   local backslash = string.char(92)
   local pattern = path:gsub('[*?%[%]{}()!+@' .. backslash .. ']', function(character)
     return backslash .. character
@@ -309,7 +358,6 @@ local function arguments(context)
     args[#args + 1] = '--schema'
     args[#args + 1] = schema
   end
-  -- Prefix prevents option-like filenames; v8r's positional parser rejects --.
   args[#args + 1] = './' .. pattern
   return args
 end

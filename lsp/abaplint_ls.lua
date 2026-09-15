@@ -1,3 +1,5 @@
+#!/usr/bin/env luajit
+---@version >5.1
 -- /qompassai/Diver/lsp/abaplint_ls.lua
 -- Qompass AI Diver Abaplint LSP Spec
 -- Copyright (C) 2025 Qompass AI, All rights reserved

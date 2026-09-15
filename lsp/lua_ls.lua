@@ -504,6 +504,7 @@ return ---@type vim.lsp.Config
           'integer',
           'interest',
           'Information',
+          'ipairs',
           'item',
           'items',
           'json',

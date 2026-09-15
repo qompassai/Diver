@@ -159,8 +159,6 @@ function M.md_image(opts)
     processor = 'magick_cli',
     window_overlap_clear_enabled = false,
     window_overlap_clear_ft_ignore = {
-      'cmp_menu',
-      'cmp_docs',
       'scrollview',
       'scrollview_sign',
     },

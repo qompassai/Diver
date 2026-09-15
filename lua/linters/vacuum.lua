@@ -6,36 +6,11 @@
 ---@source https://github.com/daveshanley/vacuum
 ---@source https://quobix.com/vacuum/commands/spectral-report/
 ---@source https://github.com/daveshanley/vacuum/blob/main/model/results.go
---
--- Requires vacuum on Neovim's PATH. Tested CLI: vacuum 0.30.3.
--- Register 'vacuum' for OpenAPI/AsyncAPI YAML and JSON buffers in your native
--- linter loader; do not apply it indiscriminately to unrelated YAML/JSON.
--- Uses the same Linter / LintContext interface as cfn-lint.lua.
---
--- Scans unsaved buffers via stdin. No temporary files, shell, or auto-fixing.
--- Uses spectral-report --stdout, not the human-readable lint table.
--- Remote/local references retain vacuum's default resolution behavior.
--- Base defaults to the current file's directory; referenced files are read
--- from disk, so unsaved changes in those other buffers are not included.
--- The runner must cancel obsolete jobs and reject results after buffer edits.
---
--- Vacuum's report coordinates come directly from YAML nodes: ONE-based lines
--- and Unicode columns, despite the Spectral report name. Zero means unknown.
--- Start columns are converted to Neovim UTF-8 byte offsets. End positions are
--- retained only in metadata: vacuum may report another node's start as the end,
--- so this adapter does not invent an inclusive/exclusive highlight range.
--- External-file findings with a distinct source are filtered out.
---
 -- Reads vacuum.conf.yaml through vacuum's own configuration loader.
 -- Optional overrides:
 --   NVIM_VACUUM_RULESET=/path/to/spectral.yaml
 --   NVIM_VACUUM_IGNORE_FILE=/path/to/ignore.yaml
 --   NVIM_VACUUM_BASE=/path/to/specs       (or a base URL)
--- Configured base is overridden by this adapter; use NVIM_VACUUM_BASE when
--- reference resolution needs a different base. Ruleset paths are relative to
--- the selected working directory. Use trusted rulesets/custom functions.
--- Passive update checks are disabled. TLS verification stays at its default.
--- Parser bounds apply after process capture; the runner owns output buffering.
 local diagnostic = vim.diagnostic
 local fs = vim.fs
 local uv = vim.uv
@@ -71,7 +46,6 @@ end
 local function project_root(context)
   local filename = string_value(context.filename)
 
-  -- Prefer the nearest vacuum configuration, even inside a larger repository.
   if filename ~= nil then
     local configured = fs.root(filename, 'vacuum.conf.yaml')
 
@@ -131,7 +105,6 @@ local function clean_message(value)
   if #text > MAX_MESSAGE_BYTES then
     local finish = MAX_MESSAGE_BYTES - 3
 
-    -- Do not split a UTF-8 codepoint when truncating.
     while finish > 0 do
       local byte = text:byte(finish + 1)
 
@@ -157,7 +130,9 @@ local function status_diagnostic(context, code, message)
     bufnr = context.bufnr,
     code = code,
     col = 0,
+    end_col = 0,
     lnum = 0,
+    end_lnum = 0,
     message = message,
     severity = diagnostic.severity.WARN,
     source = SOURCE,
@@ -189,7 +164,6 @@ local function byte_column(bufnr, lnum, column)
   while offset <= #line and characters < column do
     offset = offset + 1
 
-    -- Neovim represents decoded buffer text as UTF-8. Skip continuation bytes.
     while offset <= #line do
       local byte = line:byte(offset)
 
@@ -277,12 +251,20 @@ local function parse(output, context)
   assert(type(context) == 'table', 'vacuum parser requires LintContext')
   assert(type(context.bufnr) == 'number', 'vacuum parser requires context.bufnr')
   if #output > MAX_OUTPUT_BYTES then
-    return { status_diagnostic(context, 'output-limit', 'vacuum exceeded the 16 MiB parser limit; results are incomplete.') }
+    return {
+      status_diagnostic(context, 'output-limit', 'vacuum exceeded the 16 MiB parser limit; results are incomplete.'),
+    }
   end
   local text = vim.trim(output)
   local ok, decoded = pcall(json.decode, text)
   if not ok or type(decoded) ~= 'table' or text:sub(1, 1) ~= '[' or not vim.islist(decoded) then
-    return { status_diagnostic(context, 'invalid-report', 'vacuum returned no valid JSON report. Check document syntax, configuration, rulesets, reference resolution and the timeout.') }
+    return {
+      status_diagnostic(
+        context,
+        'invalid-report',
+        'vacuum returned no valid JSON report. Check document syntax, configuration, rulesets, reference resolution and the timeout.'
+      ),
+    }
   end
 
   ---@type vim.Diagnostic[]
@@ -304,7 +286,9 @@ local function parse(output, context)
         bufnr = context.bufnr,
         code = code and clean_message(code) or nil,
         col = col,
+        end_col = col,
         lnum = lnum,
+        end_lnum = lnum,
         message = clean_message(finding.message),
         severity = severity,
         source = SOURCE,
@@ -318,10 +302,18 @@ local function parse(output, context)
     end
   end
   if malformed then
-    diagnostics[#diagnostics + 1] = status_diagnostic(context, 'malformed-result', 'Some vacuum findings could not be decoded; results are incomplete.')
+    diagnostics[#diagnostics + 1] = status_diagnostic(
+      context,
+      'malformed-result',
+      'Some vacuum findings could not be decoded; results are incomplete.'
+    )
   end
   if #decoded > MAX_DIAGNOSTICS then
-    diagnostics[#diagnostics + 1] = status_diagnostic(context, 'result-limit', 'Only the first 512 vacuum report entries were processed; run the CLI for the complete report.')
+    diagnostics[#diagnostics + 1] = status_diagnostic(
+      context,
+      'result-limit',
+      'Only the first 512 vacuum report entries were processed; run the CLI for the complete report.'
+    )
   end
   return diagnostics
 end
@@ -338,7 +330,8 @@ local function arguments(context)
     '--no-pretty',
     '--no-style',
     '--no-update-check',
-    '--base', reference_base(context),
+    '--base',
+    reference_base(context),
   }
   local ruleset = string_value(vim.env.NVIM_VACUUM_RULESET)
   if ruleset ~= nil then
@@ -367,3 +360,4 @@ return {
   stream = 'stdout',
   timeout = 60000,
 }
+

@@ -65,19 +65,13 @@ end
 ---@return string
 local function normalize_message(value)
   assert(type(value) == 'string', 'value must be a string')
-
   value = strip_ansi(value)
-
   value = value:gsub('\r\n', '\n')
-
   value = value:gsub('\r', '\n')
-
   value = trim(value)
-
   if #value > MESSAGE_LENGTH_MAX then
     value = value:sub(1, MESSAGE_LENGTH_MAX) .. '\n[message truncated]'
   end
-
   return value
 end
 
@@ -96,11 +90,8 @@ local function parse_line(line)
   if message == nil or line_text == nil or column_text == nil then
     return nil
   end
-
   local line_number = integer(line_text, 0)
-
   local column = integer(column_text, 0)
-
   if line_number < 1 then
     return nil
   end
@@ -110,7 +101,6 @@ local function parse_line(line)
   end
 
   message = normalize_message(message)
-
   if message == '' then
     message = 'Invalid JSON'
   end
@@ -155,17 +145,13 @@ local function parse(output, context)
   end
 
   assert(type(context) == 'table', 'jq parser requires a LintContext')
-
   ---@cast context LintContext
-
   assert(type(context.bufnr) == 'number' and context.bufnr >= 0, 'context.bufnr must be a valid buffer number')
 
   assert(type(context.filename) == 'string' and context.filename ~= '', 'context.filename must be a non-empty string')
 
   assert(type(context.root) == 'string' and context.root ~= '', 'context.root must be a non-empty string')
-
   assert(#output <= OUTPUT_LENGTH_MAX, 'jq output exceeded maximum size')
-
   ---@type vim.Diagnostic.Set[]
   local diagnostics = {}
 
@@ -173,9 +159,7 @@ local function parse(output, context)
     if #diagnostics >= DIAGNOSTICS_MAX then
       break
     end
-
     local entry = parse_line(raw_line)
-
     if entry ~= nil then
       diagnostics[#diagnostics + 1] = diagnostic_from_entry(entry, context.bufnr)
     end
@@ -190,28 +174,12 @@ end
 ---@return string[]
 local function args(context)
   assert(type(context.filename) == 'string' and context.filename ~= '', 'context.filename must be a non-empty string')
-
   return {
-    --
-    -- Return a nonzero status when the parsed result is false/null or when
-    -- parsing fails. The parser only consumes actual "parse error" messages,
-    -- so a valid JSON value of false/null does not become a diagnostic.
-    --
     '--exit-status',
-
-    --
-    -- Disable ANSI color unconditionally so stderr remains deterministic.
-    --
     '--monochrome-output',
-
-    --
-    -- Identity filter: parse the input completely without transforming its
-    -- semantics.
-    --
     '.',
   }
 end
-
 ---@param context LintContext
 ---@return string
 local function cwd(context)
@@ -222,36 +190,13 @@ end
 
 return ---@type Linter
 {
-  --
-  -- jq is a lightweight parser and consumes the current buffer over stdin.
-  -- It is safe to run automatically without depending on an on-disk copy.
-  --
   automatic = true,
-
   cmd = 'jq',
-
   args = args,
-
   append_fname = false,
-
   cwd = cwd,
-
-  --
-  -- jq exit statuses include:
-  --
-  --   0 = successful result
-  --   1 = final value was false/null under --exit-status
-  --   2 = usage/system error
-  --   3 = jq program compilation error
-  --   4 = no valid result under --exit-status
-  --
-  -- JSON parse failures are therefore represented through nonzero process
-  -- status, while stderr contains the actual diagnostic we parse.
-  --
   ignore_exitcode = true,
-
   parser = parse,
-
   root_markers = {
     'package.json',
     'pyproject.toml',
@@ -260,16 +205,7 @@ return ---@type Linter
 
     '.git',
   },
-
-  --
-  -- Analyze the active Neovim buffer, including unsaved edits.
-  --
   stdin = true,
-
-  --
-  -- jq writes parser diagnostics to stderr.
-  --
   stream = 'stderr',
-
   timeout = 10000,
 }

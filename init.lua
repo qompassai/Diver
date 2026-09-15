@@ -1,3 +1,5 @@
+#!/usr/bin/env luajit
+---@version >5.1
 -- /qompassai/Diver/init.lua
 -- Qompass AI Diver Init
 --[[
@@ -16,7 +18,7 @@ See the License for the specific language governing permissions and
 limitations under the License.
 --]]
 -- --------------------------------------------------
-local bo = vim.bo ---@type vim.bo
+local bo = vim.bo
 local cmd = vim.cmd
 local env = vim.env
 local fn = vim.fn
@@ -26,8 +28,9 @@ local go = vim.go
 local l = vim.loader
 local o = vim.o ---@type vim.o
 local opt = vim.opt
-  --local data_home = vim.env.XDG_DATA_HOME
-  or (is_windows and vim.fn.expand('~/AppData/Local') or vim.fn.expand('~/.local/share'))
+local opt_local = vim.opt_local
+local opt_global = vim.opt_global
+local data_home = fn.stdpath('data')
 vim.keymap.set('n', '<Space>', '<Nop>', {
   silent = true,
 })
@@ -42,7 +45,7 @@ end
 local wo = vim.wo ---@type vim.wo
 --bo.autocomplete = true
 bo.autoindent = true
-bo.autoread = true
+opt_global.autoread = true
 bo.backupcopy = 'auto'
 bo.busy = 1
 bo.completeopt = 'menu,menuone,noselect'
@@ -104,7 +107,7 @@ if not is_windows then
   g.perl_host_prog = 'perl'
   g.sqlite_clib_path = '/usr/lib/libsqlite3.so'
   g.python3_host_prog = '/usr/bin/python3'
-  g.ruby_host_prog = '/usr/bin/neovim-ruby-host'
+  g.ruby_host_prog = 'neovim-ruby-host'
 else
   g.python3_host_prog = 'python'
 end
@@ -187,6 +190,8 @@ require('config.init').config({
   nav = true,
   ui = true,
 })
+require('dap')
+require('formatters')
 require('linters')
 require('mappings')
 require('plugins')

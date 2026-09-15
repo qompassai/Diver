@@ -1,4 +1,4 @@
-#!/usr/bin/env lua
+#!/usr/bin/env lua5.1, JIT
 -- /qompassai/Diver/lua/types/init.lua
 -- Qompass AI Diver Types
 -- Copyright (C) 2025 Qompass AI, All rights reserved

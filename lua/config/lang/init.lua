@@ -1,4 +1,4 @@
-#!/usr/bin/env lua
+#!/usr/bin/env lua5.1
 -- /home/phaedrus/.config/nvim/lua/config/lang/init.lua
 -- Qompass AI Diver Language Config Init
 -- Copyright (C) 2026 Qompass AI, All rights reserved
@@ -8,7 +8,7 @@ local modules = { ---@version JIT
   'arduino',
   'bash',
   'c',
-  'cmp',
+  --'cmp',
   'cpp',
   'css',
   'elixir',

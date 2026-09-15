@@ -3,16 +3,8 @@
 -- Qompass AI Diver Native BibTeX Tidy Formatter
 -- Copyright (C) 2026 Qompass AI, All rights reserved
 -- #################################################################
--- bibtex-tidy 1.15.1 JS API, invoked with Node, no Neovim plugin.
--- Native formatters/init.lua supplies FormatterSpec/FormatterContext.
--- All upstream options are explicitly represented below, including CLI-only
--- options (ignored by tidy()). No config files are discovered or executed.
--- No source paths are sent to Node. No automatic installation or file writes.
--- The runner owns timeout, cancellation, undo and stale-result rejection.
 local fs = vim.fs
 
--- Complete option inventory from bibtex-tidy 1.15.1's declaration file.
--- CLI-only values are inert API metadata; this wrapper always uses stdin/stdout.
 local CONFIG = {
   help = false,
   v2 = '', -- CLI-only experimental mode disabled.
@@ -166,8 +158,17 @@ return {
   mode = 'stdin',
   output = 'stdout',
   cwd = working_directory,
-  root_markers = { '.latexmkrc', 'latexmkrc', 'tectonic.toml', '.git' },
-  env = { NO_COLOR = '1', NODE_OPTIONS = '', NODE_PATH = '' },
+  root_markers = {
+    '.latexmkrc',
+    'latexmkrc',
+    'tectonic.toml',
+    '.git',
+  },
+  env = {
+    NO_COLOR = '1',
+    NODE_OPTIONS = '',
+    NODE_PATH = '',
+  },
   exit_codes = { 0 },
   automatic = true,
   allow_empty = false,
