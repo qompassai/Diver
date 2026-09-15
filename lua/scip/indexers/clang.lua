@@ -16,8 +16,6 @@
 -- limitations under the License.
 -- #################################################################
 
-local fs = vim.fs
-
 local utils = require('scip.utils')
 
 ---Locate the compilation database used by scip-clang.
@@ -25,7 +23,7 @@ local utils = require('scip.utils')
 ---The compilation database describes the exact compiler invocation for each
 ---translation unit and is required for accurate C/C++/Objective-C indexing.
 ---
----@param context QompassScipContext SCIP indexing context.
+---@param context ScipContext SCIP indexing context.
 ---@return string[] args Arguments passed to scip-clang.
 local function args(context)
         return {
@@ -34,7 +32,7 @@ local function args(context)
         }
 end
 
----@type QompassScipIndexer
+---@type ScipIndexer
 local indexer = {
         args = args,
 
