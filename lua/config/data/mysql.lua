@@ -85,13 +85,13 @@ local defaults = {
         notify = true,
 }
 
----@class QompassMysqlConfigOpts
+---@class MysqlConfigOpts
 ---@field notify? boolean
 
----@type QompassMysqlConfigOpts
+---@type MysqlConfigOpts
 M.config = vim.deepcopy(defaults)
 
----@class QompassMysqlConnection
+---@class MysqlConnection
 ---@field database? string
 ---@field defaults_file? string
 ---@field host? string
@@ -99,17 +99,17 @@ M.config = vim.deepcopy(defaults)
 ---@field socket? string
 ---@field user? string
 
----@class QompassMysqlSession
+---@class MysqlSession
 ---@field bufnr integer
----@field conn QompassMysqlConnection
+---@field conn MysqlConnection
 ---@field readonly boolean
 ---@field root string
 
----@class QompassMysqlQueryOpts
+---@class MysqlQueryOpts
 ---@field readonly? boolean
 
 M.state = {
-        ---@type table<integer, QompassMysqlSession>
+        ---@type table<integer, MysqlSession>
         sessions = {},
 }
 
@@ -174,7 +174,7 @@ local function resolve_root(bufnr)
         return vim.fn.getcwd()
 end
 
----@param conn QompassMysqlConnection
+---@param conn MysqlConnection
 ---@return boolean
 ---@return string|nil
 local function validate_connection(conn)
@@ -224,7 +224,7 @@ local function validate_connection(conn)
 end
 
 ---@param bufnr integer
----@return QompassMysqlSession|nil
+---@return MysqlSession|nil
 local function get_session(bufnr)
         if not buffer_is_usable(bufnr) then
                 return nil
@@ -233,7 +233,7 @@ local function get_session(bufnr)
         return M.state.sessions[bufnr]
 end
 
----@param opts QompassMysqlQueryOpts|nil
+---@param opts MysqlQueryOpts|nil
 ---@return boolean
 local function resolve_query_readonly(opts)
         if type(opts) ~= 'table' then
@@ -247,7 +247,7 @@ local function resolve_query_readonly(opts)
         return opts.readonly == true
 end
 
----@param conn QompassMysqlConnection
+---@param conn MysqlConnection
 ---@param readonly boolean
 ---@param mode_flags string[]
 ---@return string[]
@@ -292,9 +292,9 @@ local function build_argv(conn, readonly, mode_flags)
 end
 
 ---@param bufnr integer
----@param conn QompassMysqlConnection
+---@param conn MysqlConnection
 ---@param readonly? boolean
----@return QompassMysqlSession|nil
+---@return MysqlSession|nil
 ---@return string|nil
 function M.attach(bufnr, conn, readonly)
         bufnr = bufnr or api.nvim_get_current_buf()
@@ -313,7 +313,7 @@ function M.attach(bufnr, conn, readonly)
                 return nil, validation_error
         end
 
-        ---@type QompassMysqlSession
+        ---@type MysqlSession
         local session = {
                 bufnr = bufnr,
                 conn = vim.deepcopy(conn),
@@ -412,7 +412,7 @@ local function show_result_buffer(lines, title)
         api.nvim_win_set_height(api.nvim_get_current_win(), math.min(20, #lines + 1))
 end
 
----@param conn QompassMysqlConnection
+---@param conn MysqlConnection
 ---@param readonly boolean
 ---@param sql string
 ---@param mode_flags string[]
@@ -432,7 +432,7 @@ local function run_process(conn, readonly, sql, mode_flags, on_done)
         end)
 end
 
----@param session QompassMysqlSession
+---@param session MysqlSession
 ---@param sql string
 ---@param title string
 local function run_and_show(session, sql, title)
@@ -505,10 +505,10 @@ end
 ---Send one statement per call. Multi-statement batches produce
 ---concatenated tab-separated blocks this parser does not separate.
 ---
----@param conn QompassMysqlConnection
+---@param conn MysqlConnection
 ---@param sql string SQL text to run.
 ---@param on_result fun(rows: table[]|nil, err: string|nil)
----@param opts? QompassMysqlQueryOpts
+---@param opts? MysqlQueryOpts
 function M.query(conn, sql, on_result, opts)
         if not has_mysql() then
                 on_result(nil, 'mysql executable was not found on PATH')
@@ -544,9 +544,9 @@ end
 ---
 ---opts.readonly defaults to true, matching M.query.
 ---
----@param conn QompassMysqlConnection
+---@param conn MysqlConnection
 ---@param sql string SQL text to run.
----@param opts? QompassMysqlQueryOpts
+---@param opts? MysqlQueryOpts
 ---@return table[]|nil rows
 ---@return string|nil err
 function M.query_sync(conn, sql, opts)
@@ -587,7 +587,7 @@ end
 ---@param bufnr integer
 ---@param sql string
 ---@param on_result fun(rows: table[]|nil, err: string|nil)
----@param opts? QompassMysqlQueryOpts
+---@param opts? MysqlQueryOpts
 function M.query_buffer(bufnr, sql, on_result, opts)
         local session = get_session(bufnr)
 
@@ -685,7 +685,7 @@ function M.terminal()
 end
 
 ---@param args string
----@return QompassMysqlConnection|nil
+---@return MysqlConnection|nil
 ---@return string|nil
 local function parse_connection_args(args)
         local tokens = vim.split(args, '%s+', { trimempty = true })
@@ -801,7 +801,7 @@ local function create_autocmds()
         })
 end
 
----@param opts? QompassMysqlConfigOpts
+---@param opts? MysqlConfigOpts
 ---@return table
 function M.setup(opts)
         M.config = vim.tbl_deep_extend('force', vim.deepcopy(defaults), opts or {})
