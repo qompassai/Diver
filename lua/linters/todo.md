@@ -102,7 +102,7 @@
 | [`lacheck`](https://github.com/mfussenegger/nvim-lint/blob/master/lua/lint/linters/lacheck.lua) | 2022-03-09 | `DONE` | [`lacheck.lua`](./lacheck.lua) |
 | [`languagetool`](https://github.com/mfussenegger/nvim-lint/blob/master/lua/lint/linters/languagetool.lua) | 2023-10-12 | `TODO` | — |
 | [`lint-openapi`](https://github.com/mfussenegger/nvim-lint/blob/master/lua/lint/linters/lint-openapi.lua) | 2025-12-06 | `DONE` | [`lint-openapi.lua`](./lint-openapi.lua) |
-| [`ls_lint`](https://github.com/mfussenegger/nvim-lint/blob/master/lua/lint/linters/ls_lint.lua) | 2025-11-15 | `TODO` | — |
+| [`ls_lint`](https://github.com/mfussenegger/nvim-lint/blob/master/lua/lint/linters/ls_lint.lua) | 2025-11-15 | `TOREMOVE` | `Not Maintained` |
 | [`lslint`](https://github.com/mfussenegger/nvim-lint/blob/master/lua/lint/linters/lslint.lua) | 2025-07-20 | `TODO` | — |
 | [`luac`](https://github.com/mfussenegger/nvim-lint/blob/master/lua/lint/linters/luac.lua) | 2024-09-20 | `DONE` | [`luac.lua`](./luac.lua) |
 | [`luacheck`](https://github.com/mfussenegger/nvim-lint/blob/master/lua/lint/linters/luacheck.lua) | 2022-10-16 | `DONE` | [`luacheck.lua`](./luacheck.lua) |
