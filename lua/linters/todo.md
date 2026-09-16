@@ -120,10 +120,10 @@
 | [`nagelfar`](https://github.com/mfussenegger/nvim-lint/blob/master/lua/lint/linters/nagelfar.lua) | 2022-10-25 | `TOREMOVE' | `Not Maintained`` |
 | [`nix`](https://github.com/mfussenegger/nvim-lint/blob/master/lua/lint/linters/nix.lua) | 2021-12-11 | `DONE` | [`nix.lua`](./nix.lua) |
 | [`npm-groovy-lint`](https://github.com/mfussenegger/nvim-lint/blob/master/lua/lint/linters/npm-groovy-lint.lua) | 2026-01-28 | `TODO` | — |
-| [`oelint-adv`](https://github.com/mfussenegger/nvim-lint/blob/master/lua/lint/linters/oelint-adv.lua) | 2026-06-25 | `DONE` | `[oelint-adv.lua]`(./oelint-adv.lua) |
-| [`opa_check`](https://github.com/mfussenegger/nvim-lint/blob/master/lua/lint/linters/opa_check.lua) | 2024-01-18 | `DONE` | ['opa_checks.lua'](./opa_checks.lua) |
+| [`oelint-adv`](https://github.com/mfussenegger/nvim-lint/blob/master/lua/lint/linters/oelint-adv.lua) | 2026-06-25 | `DONE` | ['oelint-adv.lua'](./oelint-adv.lua) |
+| [`opa_check`](https://github.com/mfussenegger/nvim-lint/blob/master/lua/lint/linters/opa_check.lua) | 2024-01-18 | `DONE` | ['opa_check.lua'](./opa_check.lua) |
 | [`oxlint`](https://github.com/mfussenegger/nvim-lint/blob/master/lua/lint/linters/oxlint.lua) | 2025-08-28 | `DONE` | [`oxlint.lua`](./oxlint.lua) |
-| [`panache`](https://github.com/mfussenegger/nvim-lint/blob/master/lua/lint/linters/panache.lua) | 2026-05-13 | `DONE` | panache.lua |
+| [`panache`](https://github.com/mfussenegger/nvim-lint/blob/master/lua/lint/linters/panache.lua) | 2026-05-13 | `DONE` | [`panache.lua`](./panache.lua)|
 | [`perlcritic`](https://github.com/mfussenegger/nvim-lint/blob/master/lua/lint/linters/perlcritic.lua) | 2024-02-29 | `DONE` | ['perlecritic.lua'](./perlcritic.lua) |
 | [`perlimports`](https://github.com/mfussenegger/nvim-lint/blob/master/lua/lint/linters/perlimports.lua) | 2023-08-21 | `TODO` | — |
 | [`pflake8`](https://github.com/mfussenegger/nvim-lint/blob/master/lua/lint/linters/pflake8.lua) | 2023-11-09 | `TODO` | — |
