@@ -190,11 +190,13 @@ require('config.init').config({
   nav = true,
   ui = true,
 })
+require('bsp')
 require('dap')
 require('formatters')
 require('linters')
 require('mappings')
 require('plugins')
+require('scip')
 require('types')
 require('utils')
 o.allowrevins = true

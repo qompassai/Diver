@@ -210,7 +210,6 @@ local function applicable(context)
   if filename == nil then
     return false
   end
-
   if unit_extension(filename) then
     return true
   end
@@ -384,13 +383,5 @@ return {
 
   timeout = 30000,
 
-  --
-  -- Optional extension understood by Diver's native lint dispatcher. If your
-  -- current Linter type does not yet expose `condition`, either add:
-  --
-  --   ---@field condition? fun(context: LintContext): boolean
-  --
-  -- or remove this member and control invocation through linters_by_ft.
-  --
   condition = applicable,
 }
