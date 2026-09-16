@@ -129,7 +129,7 @@
 | [`pflake8`](https://github.com/mfussenegger/nvim-lint/blob/master/lua/lint/linters/pflake8.lua) | 2023-11-09 | `TODO` | — |
 | [`php`](https://github.com/mfussenegger/nvim-lint/blob/master/lua/lint/linters/php.lua) | 2023-07-13 | `TODO` | — |
 | [`phpcs`](https://github.com/mfussenegger/nvim-lint/blob/master/lua/lint/linters/phpcs.lua) | 2025-05-22 | `TODO` | — |
-| [`phpinsights`](https://github.com/mfussenegger/nvim-lint/blob/master/lua/lint/linters/phpinsights.lua) | 2024-09-14 | `TODO` | — |
+| [`phpinsights`](https://github.com/mfussenegger/nvim-lint/blob/master/lua/lint/linters/phpinsights.lua) | 2024-09-14 | `DONE` | ['phpinsights.lua'](./phpinsights.lua) |
 | [`phpmd`](https://github.com/mfussenegger/nvim-lint/blob/master/lua/lint/linters/phpmd.lua) | 2024-03-20 | `TODO` | — |
 | [`phpstan`](https://github.com/mfussenegger/nvim-lint/blob/master/lua/lint/linters/phpstan.lua) | 2025-04-05 | `DONE` | ['phpstan.lua'](./phpstan.lua)|
 | [`pmd`](https://github.com/mfussenegger/nvim-lint/blob/master/lua/lint/linters/pmd.lua) | 2025-06-05 | `DONE` | [`pmd.lua`](./pmd.lua)  |
