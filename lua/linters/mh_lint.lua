@@ -10,30 +10,12 @@
 --   uv tool install miss-hit
 -- Verify that mh_lint is on Neovim's PATH: mh_lint --version
 --
--- Native Linter / LintContext interface; register 'mh_lint' for MATLAB .m
--- buffers (and Octave buffers if you use a separate octave filetype).
--- Run after saving, normally on BufWritePost. The CLI reads disk files.
--- The runner must skip unnamed buffers and reject stale process results.
--- Simulink containers are deliberately excluded: their block locations cannot
--- be mapped directly to a Neovim text buffer. No temporary files or shell.
---
--- Uses --brief to retain check IDs, --single to bound worker overhead, and
--- UTF-8 input by default. No style checks, fixing, or MATLAB execution.
--- Honors miss_hit.cfg / .miss_hit and justification pragmas automatically.
--- Low checks -> INFO; medium -> WARN; high and syntax/lex errors -> ERROR.
--- CLI lines are one-based; columns are zero-based Unicode character offsets.
--- Columns are converted to Neovim UTF-8 byte offsets against the saved buffer.
--- The brief format has no end position, so none is invented.
---
 -- Optional overrides (each value is passed as a single argv entry):
 --   NVIM_MH_LINT_MATLAB=2021a
 --   NVIM_MH_LINT_OCTAVE=6.4       -- mutually exclusive with MATLAB override
 --   NVIM_MH_LINT_ENCODING=cp1252  -- must match the saved file's encoding
 --   NVIM_MH_LINT_ENTRY_POINT=my_entry
--- An entry point enables project analysis and may analyze additional files.
--- Findings in other .m files are not attached to this buffer. Configuration
--- errors are shown at the buffer start with their original location included.
--- Parser limits do not limit process-output buffering; the runner owns that.
+
 local diagnostic = vim.diagnostic
 local fs = vim.fs
 local uv = vim.uv
@@ -162,6 +144,8 @@ local function status_diagnostic(context, code, message)
     bufnr = context.bufnr,
     code = code,
     col = 0,
+    end_col = 0,
+    end_lnum = 0,
     lnum = 0,
     message = message,
     severity = diagnostic.severity.WARN,
@@ -206,7 +190,6 @@ local function byte_column(bufnr, lnum, column)
   while offset <= #line and characters < column do
     offset = offset + 1
 
-    -- Neovim represents decoded buffer text as UTF-8. Skip continuation bytes.
     while offset <= #line do
       local byte = line:byte(offset)
 
@@ -351,6 +334,8 @@ local function parse(output, context)
               bufnr = context.bufnr,
               code = code,
               col = col,
+              end_col = col,
+              end_lnum = lnum,
               lnum = lnum,
               message = text,
               severity = severity,

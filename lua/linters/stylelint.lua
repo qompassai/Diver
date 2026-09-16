@@ -134,14 +134,14 @@ local function project_root(context)
   return fs.normalize(vim.fn.getcwd())
 end
 
----@param severity string?
+---@param level string?
 ---@return integer
-local function severity(severity)
-  if severity == nil then
+local function severity(level)
+  if level == nil then
     return diagnostic.severity.WARN
   end
 
-  local lower = severity:lower()
+  local lower = level:lower()
 
   if lower == 'error' then
     return diagnostic.severity.ERROR

@@ -36,44 +36,44 @@ local M = {}
 ---@param name string
 ---@return ScipIndexer?
 function M.get(name)
-        local indexer = config.get().indexers[name]
+  local indexer = config.get().indexers[name]
 
-        if indexer == nil or indexer.enabled == false then
-                return nil
-        end
+  if indexer == nil or indexer.enabled == false then
+    return nil
+  end
 
-        return indexer
+  return indexer
 end
 
 ---Return enabled indexer names in configured priority order.
 ---@return string[]
 function M.names()
-        local names = {}
+  local names = {}
 
-        for _, name in ipairs(config.get().indexer_order) do
-                if M.get(name) ~= nil then
-                        names[#names + 1] = name
-                end
-        end
+  for _, name in ipairs(config.get().indexer_order) do
+    if M.get(name) ~= nil then
+      names[#names + 1] = name
+    end
+  end
 
-        return names
+  return names
 end
 
 ---Return sorted filetypes supported by an indexer.
 ---@param indexer ScipIndexer
 ---@return string[]
 function M.filetypes(indexer)
-        local filetypes = {}
+  local filetypes = {}
 
-        for filetype, enabled in pairs(indexer.filetypes) do
-                if enabled then
-                        filetypes[#filetypes + 1] = filetype
-                end
-        end
+  for filetype, enabled in pairs(indexer.filetypes) do
+    if enabled then
+      filetypes[#filetypes + 1] = filetype
+    end
+  end
 
-        table.sort(filetypes)
+  table.sort(filetypes)
 
-        return filetypes
+  return filetypes
 end
 
 ---Determine whether an indexer matches a buffer's filetype and project.
@@ -81,13 +81,13 @@ end
 ---@param bufnr integer
 ---@return string?
 function M.matching_root(indexer, bufnr)
-        local filetype = vim.bo[bufnr].filetype
+  local filetype = vim.bo[bufnr].filetype
 
-        if indexer.filetypes[filetype] ~= true then
-                return nil
-        end
+  if indexer.filetypes[filetype] ~= true then
+    return nil
+  end
 
-        return root.find(bufnr, indexer.markers)
+  return root.find(bufnr, indexer.markers)
 end
 
 ---Resolve a named indexer for a buffer.
@@ -96,117 +96,117 @@ end
 ---@param root_override? string
 ---@return ScipMatch?, string?
 function M.resolve(name, bufnr, root_override)
-        local indexer = M.get(name)
+  local indexer = M.get(name)
 
-        if indexer == nil then
-                return nil, 'Unknown or disabled SCIP indexer: ' .. name
-        end
+  if indexer == nil then
+    return nil, 'Unknown or disabled SCIP indexer: ' .. name
+  end
 
-        local project_root
+  local project_root
 
-        if root_override ~= nil and root_override ~= '' then
-                project_root = vim.fs.normalize(root_override)
-        else
-                project_root = root.resolve(bufnr, indexer.markers)
-        end
+  if root_override ~= nil and root_override ~= '' then
+    project_root = vim.fs.normalize(root_override)
+  else
+    project_root = root.resolve(bufnr, indexer.markers)
+  end
 
-        local ctx = context.new(name, bufnr, project_root)
-        local command, command_error = utils.resolve_command(indexer.command, ctx)
+  local ctx = context.new(name, bufnr, project_root)
+  local command, command_error = utils.resolve_command(indexer.command, ctx)
 
-        if command == nil then
-                return nil, command_error
-        end
+  if command == nil then
+    return nil, command_error
+  end
 
-        if not utils.executable(command) then
-                return nil, 'SCIP indexer is not executable: ' .. command
-        end
+  if not utils.executable(command) then
+    return nil, 'SCIP indexer is not executable: ' .. command
+  end
 
-        return {
-                command = command,
-                context = ctx,
-                indexer = indexer,
-                name = name,
-        }, nil
+  return {
+    command = command,
+    context = ctx,
+    indexer = indexer,
+    name = name,
+  }, nil
 end
 
 ---Auto-detect the first ready indexer matching the current buffer.
 ---@param bufnr? integer
 ---@return ScipMatch?, string?
 function M.detect(bufnr)
-        bufnr = bufnr or api.nvim_get_current_buf()
+  bufnr = bufnr or api.nvim_get_current_buf()
 
-        local missing = {}
+  local missing = {}
 
-        for _, name in ipairs(config.get().indexer_order) do
-                local indexer = M.get(name)
+  for _, name in ipairs(config.get().indexer_order) do
+    local indexer = M.get(name)
 
-                if indexer ~= nil then
-                        local project_root = M.matching_root(indexer, bufnr)
+    if indexer ~= nil then
+      local project_root = M.matching_root(indexer, bufnr)
 
-                        if project_root ~= nil then
-                                local ctx = context.new(name, bufnr, project_root)
-                                local command, command_error = utils.resolve_command(indexer.command, ctx)
+      if project_root ~= nil then
+        local ctx = context.new(name, bufnr, project_root)
+        local command, command_error = utils.resolve_command(indexer.command, ctx)
 
-                                if command ~= nil and utils.executable(command) then
-                                        return {
-                                                command = command,
-                                                context = ctx,
-                                                indexer = indexer,
-                                                name = name,
-                                        },
-                                                nil
-                                end
-
-                                if command ~= nil then
-                                        missing[#missing + 1] = command
-                                elseif command_error ~= nil then
-                                        missing[#missing + 1] = command_error
-                                end
-                        end
-                end
+        if command ~= nil and utils.executable(command) then
+          return {
+            command = command,
+            context = ctx,
+            indexer = indexer,
+            name = name,
+          },
+            nil
         end
 
-        if #missing > 0 then
-                return nil, 'Missing/unavailable SCIP indexer: ' .. table.concat(missing, ', ')
+        if command ~= nil then
+          missing[#missing + 1] = command
+        elseif command_error ~= nil then
+          missing[#missing + 1] = command_error
         end
+      end
+    end
+  end
 
-        return nil, 'No configured SCIP indexer matches this buffer and project'
+  if #missing > 0 then
+    return nil, 'Missing/unavailable SCIP indexer: ' .. table.concat(missing, ', ')
+  end
+
+  return nil, 'No configured SCIP indexer matches this buffer and project'
 end
 
 ---Register or replace a native SCIP indexer.
 ---@param name string
 ---@param indexer ScipIndexer
 function M.register(name, indexer)
-        vim.validate('name', name, 'string')
-        vim.validate('indexer', indexer, 'table')
+  vim.validate('name', name, 'string')
+  vim.validate('indexer', indexer, 'table')
 
-        if name == '' then
-                error('SCIP indexer name must not be empty')
-        end
+  if name == '' then
+    error('SCIP indexer name must not be empty')
+  end
 
-        if type(indexer.command) ~= 'string' and type(indexer.command) ~= 'function' then
-                error('SCIP indexer command must be a string or function')
-        end
+  if type(indexer.command) ~= 'string' and type(indexer.command) ~= 'function' then
+    error('SCIP indexer command must be a string or function')
+  end
 
-        if type(indexer.args) ~= 'table' and type(indexer.args) ~= 'function' then
-                error('SCIP indexer args must be a table or function')
-        end
+  if type(indexer.args) ~= 'table' and type(indexer.args) ~= 'function' then
+    error('SCIP indexer args must be a table or function')
+  end
 
-        if type(indexer.filetypes) ~= 'table' then
-                error('SCIP indexer filetypes must be a table')
-        end
+  if type(indexer.filetypes) ~= 'table' then
+    error('SCIP indexer filetypes must be a table')
+  end
 
-        if type(indexer.markers) ~= 'table' then
-                error('SCIP indexer markers must be a table')
-        end
+  if type(indexer.markers) ~= 'table' then
+    error('SCIP indexer markers must be a table')
+  end
 
-        local cfg = config.get()
+  local cfg = config.get()
 
-        cfg.indexers[name] = vim.deepcopy(indexer)
+  cfg.indexers[name] = vim.deepcopy(indexer)
 
-        if not vim.tbl_contains(cfg.indexer_order, name) then
-                cfg.indexer_order[#cfg.indexer_order + 1] = name
-        end
+  if not vim.tbl_contains(cfg.indexer_order, name) then
+    cfg.indexer_order[#cfg.indexer_order + 1] = name
+  end
 end
 
 return M

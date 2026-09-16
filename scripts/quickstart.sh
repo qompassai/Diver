@@ -5,6 +5,38 @@
 #####################################################
 # Reference: https://neovim.io/doc2/build/
 set -euo pipefail
+SCRIPT_DIR="$(cd -- "$(dirname -- "${BASH_SOURCE[0]}")" && pwd -P)"
+REPO_ROOT="$(cd -- "$SCRIPT_DIR/.." && pwd -P)"
+
+# Expected repository layout:
+#
+#   Diver/
+#   ├── scripts/
+#   │   └── quickstart.sh
+#   └── lsp/
+#       ├── cargo.sh
+#       ├── go.sh
+#       ├── js.sh
+#       ├── py.sh
+#       └── ...
+#
+# Override when your installers live elsewhere:
+#
+#   DIVER_LSP_DIR=/path/to/installers ./scripts/quickstart.sh
+#
+LSP_INSTALL_DIR="${DIVER_LSP_DIR:-$REPO_ROOT/lsp}"
+
+# Set to 0 to build/install Neovim without invoking LSP installers.
+#
+#   DIVER_INSTALL_LSPS=0 ./scripts/quickstart.sh
+#
+INSTALL_LSPS="${DIVER_INSTALL_LSPS:-1}"
+
+# Set to 1 when a failed individual LSP installer should fail quickstart.
+#
+#   DIVER_LSP_STRICT=1 ./scripts/quickstart.sh
+#
+LSP_STRICT="${DIVER_LSP_STRICT:-0}"
 IS_WSL=0
 IS_TERMUX=0
 case "$(uname -s)" in
@@ -184,6 +216,63 @@ install_make()
   )
 }
 install_luajit_and_lua_ls()
+run_lsp_installers()
+{
+  if [[ $INSTALL_LSPS != 1 ]]; then
+    echo "→ Skipping LSP installers (DIVER_INSTALL_LSPS=$INSTALL_LSPS)"
+    return 0
+  fi
+
+  if [[ ! -d $LSP_INSTALL_DIR ]]; then
+    echo "⚠ LSP installer directory not found: $LSP_INSTALL_DIR"
+    echo "  Set DIVER_LSP_DIR to the directory containing the installer scripts."
+    return 0
+  fi
+
+  local script
+  local failures=0
+  local installers=()
+
+  shopt -s nullglob globstar
+
+  for script in "$LSP_INSTALL_DIR"/**/*.sh; do
+    [[ -f $script ]] || continue
+    installers+=("$script")
+  done
+
+  shopt -u nullglob globstar
+
+  if [[ ${#installers[@]} -eq 0 ]]; then
+    echo "⚠ No LSP installer scripts found under: $LSP_INSTALL_DIR"
+    return 0
+  fi
+
+  echo "→ Running ${#installers[@]} LSP installer script(s) from $LSP_INSTALL_DIR"
+
+  for script in "${installers[@]}"; do
+    echo
+    echo "→ LSP installer: ${script#$REPO_ROOT/}"
+
+    if bash "$script"; then
+      echo "✓ Completed: ${script#$REPO_ROOT/}"
+    else
+      failures=$((failures + 1))
+      echo "⚠ Failed: ${script#$REPO_ROOT/}" >&2
+
+      if [[ $LSP_STRICT == 1 ]]; then
+        echo "Error: stopping because DIVER_LSP_STRICT=1" >&2
+        return 1
+      fi
+    fi
+  done
+
+  if ((failures > 0)); then
+    echo "⚠ $failures LSP installer script(s) failed."
+    echo "  Neovim installation completed; inspect the failed installer output above."
+  else
+    echo "✓ All LSP installer scripts completed."
+  fi
+}
 {
   if ((IS_TERMUX)); then
     pkg install -y luajit lua-language-server 2> /dev/null || true

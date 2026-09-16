@@ -29,12 +29,13 @@ return {
 
   stream = 'stdout',
 
-  parser = function(output, context)
+  parser = function(output)
     if output == '' then
       return {}
     end
 
     local ok, reports = pcall(vim.json.decode, output)
+
     if not ok or type(reports) ~= 'table' then
       return {
         {
@@ -78,6 +79,7 @@ return {
 
     return diagnostics
   end,
+
   root_markers = {
     'eslint.config.js',
     'eslint.config.mjs',

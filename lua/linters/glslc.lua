@@ -214,8 +214,6 @@ local function args(context)
   ---@type string[]
   local result = {
     '-c',
-
-    -- Do not create a .spv artifact while linting.
     '-o',
     '/dev/null',
   }
@@ -230,9 +228,6 @@ local function args(context)
     end
   end
 
-  -- glslc reads the current Neovim buffer from stdin. For generic `.glsl`
-  -- files where no stage can be derived from the filename, glslc may still
-  -- infer it from `#pragma shader_stage(...)` in the source.
   result[#result + 1] = '-'
 
   return result
@@ -248,11 +243,7 @@ local function diagnostic_belongs_to_buffer(filename, context)
 
   local normalized = filename:gsub('\\', '/')
 
-  if
-    normalized == '-'
-    or normalized == '<stdin>'
-    or normalized == 'stdin'
-  then
+  if normalized == '-' or normalized == '<stdin>' or normalized == 'stdin' then
     return true
   end
 
@@ -289,15 +280,9 @@ end
 local function clean_message(message)
   local normalized = compact(message)
 
-  normalized = normalized:gsub(
-    '%s*%[[%w_.%-]+%]%s*$',
-    ''
-  )
+  normalized = normalized:gsub('%s*%[[%w_.%-]+%]%s*$', '')
 
-  return truncate(
-    normalized,
-    MAX_MESSAGE_BYTES
-  )
+  return truncate(normalized, MAX_MESSAGE_BYTES)
 end
 
 ---@param filename string?
@@ -307,14 +292,7 @@ end
 ---@param message string
 ---@param context LintContext
 ---@return vim.Diagnostic?
-local function make_diagnostic(
-  filename,
-  line,
-  column,
-  level,
-  message,
-  context
-)
+local function make_diagnostic(filename, line, column, level, message, context)
   if not diagnostic_belongs_to_buffer(filename, context) then
     return nil
   end
@@ -365,43 +343,18 @@ local function parse_diagnostic_line(line, context)
   --   -:12:5: error: message
   --
   -- Parse the most precise form first.
-  local filename,
-    line_number,
-    column_number,
-    level,
-    message = text:match(
-      '^(.+):(%d+):(%d+):%s*'
-        .. '(fatal error|error|warning|note|info):%s*(.+)$'
-    )
+  local filename, line_number, column_number, level, message =
+    text:match('^(.+):(%d+):(%d+):%s*' .. '(fatal error|error|warning|note|info):%s*(.+)$')
 
   if message ~= nil then
-    return make_diagnostic(
-      filename,
-      line_number,
-      column_number,
-      level,
-      message,
-      context
-    )
+    return make_diagnostic(filename, line_number, column_number, level, message, context)
   end
 
-  filename,
-    line_number,
-    level,
-    message = text:match(
-      '^(.+):(%d+):%s*'
-        .. '(fatal error|error|warning|note|info):%s*(.+)$'
-    )
+  filename, line_number, level, message =
+    text:match('^(.+):(%d+):%s*' .. '(fatal error|error|warning|note|info):%s*(.+)$')
 
   if message ~= nil then
-    return make_diagnostic(
-      filename,
-      line_number,
-      nil,
-      level,
-      message,
-      context
-    )
+    return make_diagnostic(filename, line_number, nil, level, message, context)
   end
 
   -- Some glslang-originated messages include a numeric source-string
@@ -409,13 +362,8 @@ local function parse_diagnostic_line(line, context)
   --
   --   ERROR: 0:12: 'foo' : undeclared identifier
   --   WARNING: 0:4: extension ...
-  local upper_level,
-    source_id,
-    glslang_line,
-    glslang_message = text:match(
-      '^(ERROR|WARNING|INFO|NOTE):%s*'
-        .. '([^:]+):(%d+):%s*(.+)$'
-    )
+  local upper_level, source_id, glslang_line, glslang_message =
+    text:match('^(ERROR|WARNING|INFO|NOTE):%s*' .. '([^:]+):(%d+):%s*(.+)$')
 
   if glslang_message ~= nil then
     local normalized_level
@@ -430,14 +378,7 @@ local function parse_diagnostic_line(line, context)
       normalized_level = 'info'
     end
 
-    local diagnostic_item = make_diagnostic(
-      nil,
-      glslang_line,
-      nil,
-      normalized_level,
-      glslang_message,
-      context
-    )
+    local diagnostic_item = make_diagnostic(nil, glslang_line, nil, normalized_level, glslang_message, context)
 
     if diagnostic_item ~= nil then
       diagnostic_item.user_data = {
@@ -448,31 +389,15 @@ local function parse_diagnostic_line(line, context)
     return diagnostic_item
   end
 
-  -- Driver-level diagnostics do not always contain a source position:
-  --
-  --   glslc: error: ...
-  --   glslc: warning: ...
-  local driver_level,
-    driver_message = text:match(
-      '^glslc:%s*'
-        .. '(fatal error|error|warning|note|info):%s*(.+)$'
-    )
+  local driver_level, driver_message = text:match('^glslc:%s*' .. '(fatal error|error|warning|note|info):%s*(.+)$')
 
   if driver_message ~= nil then
-    return make_diagnostic(
-      nil,
-      nil,
-      nil,
-      driver_level,
-      driver_message,
-      context
-    )
+    return make_diagnostic(nil, nil, nil, driver_level, driver_message, context)
   end
 
   return nil
 end
 
----@param output string
 ---@param context LintContext
 ---@return vim.Diagnostic[]
 local function oversized_output(context)
@@ -490,10 +415,7 @@ local function oversized_output(context)
 
       lnum = 0,
 
-      message = string.format(
-        'glslc output exceeded the %d-byte parser limit',
-        MAX_OUTPUT_BYTES
-      ),
+      message = string.format('glslc output exceeded the %d-byte parser limit', MAX_OUTPUT_BYTES),
 
       severity = diagnostic.severity.WARN,
 
@@ -506,15 +428,9 @@ end
 ---@param context LintContext
 ---@return vim.Diagnostic[]
 local function parse(output, context)
-  assert(
-    type(context) == 'table',
-    'glslc parser requires LintContext'
-  )
+  assert(type(context) == 'table', 'glslc parser requires LintContext')
 
-  assert(
-    type(context.bufnr) == 'number',
-    'glslc parser requires context.bufnr'
-  )
+  assert(type(context.bufnr) == 'number', 'glslc parser requires context.bufnr')
 
   if output == '' then
     return {}
@@ -534,18 +450,13 @@ local function parse(output, context)
       break
     end
 
-    local item = parse_diagnostic_line(
-      line,
-      context
-    )
+    local item = parse_diagnostic_line(line, context)
 
     if item ~= nil then
       diagnostics[#diagnostics + 1] = item
     end
   end
 
-  -- If glslc failed but emitted an unfamiliar diagnostic format, retain the
-  -- first meaningful line rather than silently discarding the compiler error.
   if #diagnostics == 0 then
     for line in text:gmatch('[^\r\n]+') do
       local message = compact(line)
@@ -564,10 +475,7 @@ local function parse(output, context)
 
           lnum = 0,
 
-          message = truncate(
-            message,
-            MAX_MESSAGE_BYTES
-          ),
+          message = truncate(message, MAX_MESSAGE_BYTES),
 
           severity = diagnostic.severity.ERROR,
 
@@ -585,24 +493,14 @@ end
 ---@type Linter
 return {
   args = args,
-
   append_fname = false,
-
   automatic = false,
-
   cmd = 'glslc',
-
   cwd = project_root,
-
   ignore_exitcode = true,
-
   parser = parse,
-
   root_markers = ROOT_MARKERS,
-
   stdin = true,
-
   stream = 'both',
-
   timeout = 30000,
 }

@@ -27,26 +27,25 @@
 ---executable is installed or implemented.
 ---@type ScipIndexer
 local indexer = {
-        args = {
-                'index',
-                '.',
-        },
+  args = {
+    'index',
+    '.',
+  },
+  command = 'scip-nix',
 
-        command = 'scip-nix',
+  enabled = false,
 
-        enabled = false,
+  filetypes = {
+    nix = true,
+  },
 
-        filetypes = {
-                nix = true,
-        },
-
-        markers = {
-                '.git',
-                'default.nix',
-                'flake.lock',
-                'flake.nix',
-                'shell.nix',
-        },
+  markers = {
+    '.git',
+    'default.nix',
+    'flake.lock',
+    'flake.nix',
+    'shell.nix',
+  },
 }
 
 return indexer

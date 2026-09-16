@@ -1,475 +1,352 @@
 -- /qompassai/Diver/lua/mappings/lspmap.lua
--- Qompass AI Diver Language Server Protocol (LSP) Mappings
--- Copyright (C) 2025 Qompass AI, All rights reserved
--- --------------------------------------------------
----@module 'mappings.lspmap'
+-- Qompass AI Diver Language Server Protocol mappings
+-- Neovim 0.13+
+
 local M = {}
+
 local api = vim.api
-api.nvim_create_user_command('LspStart', function(opts)
-  local name = opts.args ~= '' and opts.args or vim.bo.filetype
-  if not name or name == '' then
-    vim.notify('LspStart: missing server name', vim.log.levels.ERROR)
-    return
-  end
-  local ok_enable, err_enable = pcall(vim.lsp.enable, name)
-  if not ok_enable then
-    vim.notify(('LspStart: failed to enable %s: %s'):format(name, err_enable), vim.log.levels.ERROR)
-    return
-  end
-  local bufnr = vim.api.nvim_get_current_buf()
-  local clients = vim.lsp.get_clients({ bufnr = bufnr, name = name })
-  if #clients > 0 then
-    vim.notify(('LSP already running: %s'):format(name), vim.log.levels.INFO)
-    return
-  end
-  vim.notify(('Enabled LSP: %s'):format(name), vim.log.levels.INFO)
-  vim.cmd('edit')
-end, {
-  nargs = '?',
-  complete = function()
-    return vim.tbl_keys(vim.lsp.config or {})
-  end,
-  desc = 'Enable and start an LSP for the current buffer',
-})
-api.nvim_create_user_command('LspStop', function(opts)
-  local name = opts.args ~= '' and opts.args or nil
-  local bufnr = vim.api.nvim_get_current_buf()
-  local clients = vim.lsp.get_clients({
-    bufnr = bufnr,
-    name = name,
-  })
-
-  if #clients == 0 then
-    vim.notify(
-      name and ('No running LSP named: ' .. name) or 'No running LSP clients for current buffer',
-      vim.log.levels.WARN
-    )
-    return
-  end
-
-  for _, client in ipairs(clients) do
-    client:stop()
-  end
-  if name then
-    pcall(vim.lsp.enable, name, false)
-  end
-  vim.notify(name and ('Stopped LSP: ' .. name) or 'Stopped LSP clients for current buffer', vim.log.levels.INFO)
-end, {
-  nargs = '?',
-  complete = function()
-    local names = {}
-    for _, client in ipairs(vim.lsp.get_clients({ bufnr = 0 })) do
-      names[#names + 1] = client.name
-    end
-    return vim.fn.uniq(vim.fn.sort(names))
-  end,
-  desc = 'Stop LSP client(s) for the current buffer',
-})
-api.nvim_create_user_command('LspRestart', function(opts)
-  local name = opts.args ~= '' and opts.args or nil
-  local bufnr = vim.api.nvim_get_current_buf()
-  local targets = vim.lsp.get_clients({
-    bufnr = bufnr,
-    name = name,
-  })
-  local names = {}
-  for _, client in ipairs(targets) do
-    client:stop()
-    names[client.name] = true
-  end
-  if name then
-    names[name] = true
-  end
-  for server_name, _ in pairs(names) do
-    pcall(vim.lsp.enable, server_name)
-  end
-
-  vim.schedule(function()
-    vim.cmd('edit')
-  end)
-end, {
-  nargs = '?',
-  complete = function()
-    local names = {}
-    for _, client in ipairs(vim.lsp.get_clients({ bufnr = 0 })) do
-      names[#names + 1] = client.name
-    end
-    return vim.fn.uniq(vim.fn.sort(names))
-  end,
-  desc = 'Restart LSP client(s) for the current buffer',
-})
+local diagnostic = vim.diagnostic
+local lsp = vim.lsp
 
 M.rust_editions = {
   ['2021'] = '2021',
   ['2024'] = '2024',
 }
+
 M.rust_toolchains = {
   stable = 'stable',
-  nightly = 'nightly',
   beta = 'beta',
+  nightly = 'nightly',
 }
+
 M.rust_default_edition = '2024'
 M.rust_default_toolchain = 'nightly'
 M.current_edition = M.rust_default_edition
 M.current_toolchain = M.rust_default_toolchain
-function M.rust_edition(edition)
-  if M.rust_editions[edition] then
-    M.current_edition = edition
-    vim.echo('Rust edition set to ' .. edition, vim.log.levels.INFO)
-    vim.cmd('LspRestart')
-  else
-    vim.echo('Invalid Rust edition: ' .. tostring(edition), vim.log.levels.ERROR)
-  end
-end
-
-function M.rust_set_toolchain(tc)
-  if M.rust_toolchains[tc] then
-    M.current_toolchain = tc
-    vim.echo('Rust toolchain set to ' .. tc, vim.log.levels.INFO)
-    vim.cmd('LspRestart')
-  else
-    vim.echo('Invalid Rust toolchain: ' .. tostring(tc), vim.log.levels.ERROR)
-  end
-end
 
 ---@alias LspAttachArgs { buf: integer, data: { client_id: integer } }
-function M.setup_lspmap() ---@return nil
-  local function on_list(options) ---@param options table
-    vim.fn.setqflist({}, ' ', options)
-    vim.cmd.cfirst()
-  end
-  function M.on_attach(args) ---@param args LspAttachArgs
-    local bufnr = args.buf ---@type integer
-    local client = vim.lsp.get_client_by_id(args.data.client_id)
-    local clients = vim.lsp.get_clients({ bufnr = bufnr }) ---@type vim.lsp.Client[]
-    local map = vim.keymap.set
-    local opts = {
-      buffer = bufnr,
-      silent = true,
-    }
-    map(
-      'n',
-      'ca',
-      vim.lsp.buf.code_action,
-      vim.tbl_extend('force', opts, {
-        desc = 'Code actions',
-      })
-    )
-    map('n', 'gd', function()
-      for _, c in ipairs(clients) do
-        if c:supports_method('textDocument/definition') then
-          vim.lsp.buf.definition({
-            loclist = true,
-            on_list = on_list,
-          })
-          return
-        end
-      end
-      vim.echo('No LSP supports textDocument/definition for this buffer', vim.log.levels.WARN)
-    end, {
-      buffer = bufnr,
-      silent = true,
-    })
-    if vim.lsp.buf.document_color then
-      map('n', '<leader>lc', vim.lsp.buf.document_color, {
-        buffer = bufnr,
-        silent = true,
-        desc = 'LSP document color',
-      })
-    end
-    map(
-      'n',
-      'gs',
-      vim.lsp.buf.document_symbol,
-      vim.tbl_extend('force', opts, {
-        desc = 'Show document symbols',
-      })
-    )
-    map(
-      'n',
-      'f',
-      function()
-        if #clients > 0 then
-          vim.lsp.buf.format({
-            async = true,
-            bufnr = bufnr,
-          })
-        else
-          vim.echo('No active LSP client with formatting support.', vim.log.levels.WARN)
-        end
-      end,
-      vim.tbl_extend('force', opts, {
-        desc = 'Format buffer (LSP if available)',
-      })
-    )
-    map(
-      'n',
-      'K',
-      vim.lsp.buf.hover,
-      vim.tbl_extend('force', opts, {
-        desc = 'Show hover information',
-      })
-    )
-    map(
-      'n',
-      'gI',
-      vim.lsp.buf.implementation,
-      vim.tbl_extend('force', opts, {
-        desc = 'Go to implementation',
-      })
-    )
-    map(
-      'n',
-      '<leader>rn',
-      vim.lsp.buf.rename,
-      vim.tbl_extend('force', opts, {
-        desc = 'Rename symbol',
-      })
-    )
-    map(
-      'n',
-      'gw',
-      vim.lsp.buf.workspace_symbol,
-      vim.tbl_extend('force', opts, {
-        desc = 'Show workspace symbols',
-      })
-    )
-    map(
-      'n',
-      '[d',
-      function()
-        vim.diagnostic.jump({
-          count = -1,
-        })
-      end,
-      vim.tbl_extend('force', opts, {
-        desc = 'Previous diagnostic',
-      })
-    )
-    map(
-      'n',
-      ']d',
-      function()
-        vim.diagnostic.jump({
-          count = 1,
-        })
-      end,
-      vim.tbl_extend('force', opts, {
-        desc = 'Next diagnostic',
-      })
-    )
-    map(
-      'n',
-      '<leader>fD',
-      function()
-        vim.diagnostic.open_float(nil, {
-          scope = 'line',
-        })
-      end,
-      vim.tbl_extend('force', opts, {
-        desc = 'Show line diagnostics',
-      })
-    )
-    map('n', '<leader>li', vim.cmd.LspInfo, {
-      buffer = bufnr,
-      silent = true,
-      desc = 'Show LSP info',
-    })
-    if client and client:supports_method('textDocument/signatureHelp') and vim.lsp.buf.signature_help then
-      map(
-        'i',
-        '<C-k>',
-        vim.lsp.buf.signature_help,
-        vim.tbl_extend('force', opts, {
-          desc = 'Show signature help',
-        })
-      )
-    end
-    map('i', '<C-Space>', function()
-      if vim.lsp.completion and vim.lsp.completion.get then
-        vim.lsp.completion.get()
-        return ''
-      end
-      return vim.api.nvim_replace_termcodes('<C-x><C-o>', true, false, true)
-    end, {
-      buffer = bufnr,
-      expr = true,
-      desc = 'Trigger LSP completion',
-    })
-    map('i', '<Tab>', function()
-      if vim.lsp.inline_completion and vim.lsp.inline_completion.get then
-        if not vim.lsp.inline_completion.get() then
-          return '<Tab>'
-        end
-        return ''
-      end
-      return '<Tab>'
-    end, {
-      expr = true,
-      desc = 'Accept the current inline completion',
-    })
-    if vim.bo[bufnr].filetype == 'typescript' or vim.bo[bufnr].filetype == 'typescriptreact' then
-      map('n', '<leader>ct', '<Nop>', {
-        buffer = bufnr,
-        silent = true,
-        desc = '+TypeScript',
-      })
-      map(
-        'n',
-        '<leader>naw',
-        vim.lsp.buf.add_workspace_folder,
-        vim.tbl_extend('force', opts, {
-          desc = '[n]vim-LSP [a]dd [w]orkspace folder',
-        }) --- In normal mode, press 'Space' + 'n'+ 'w' + 'a' to add the current folder as a workspace.
-      )
 
-      map(
-        'n',
-        '<leader>nrw',
-        vim.lsp.buf.remove_workspace_folder,
-        vim.tbl_extend('force', opts, {
-          desc = '[n]vim-LSP [r]emove [w]orkspace folder',
-        }) --- In normal mode, press 'Space' + 'w' + 'r' to remove the current folder workspace.
-      )
-      map(
-        'n',
-        '<leader>nlw',
-        function()
-          print(vim.inspect(vim.lsp.buf.list_workspace_folders()))
-        end,
-        vim.tbl_extend('force', opts, {
-          desc = '[n]vim-LSP [l]ist [w]orkspace folders',
-        }) --- In normal mode, press 'Space' + 'w' + 'l' to list all folders currently in the workspace.
-      )
-      map(
-        'n',
-        '<leader>cta',
-        vim.lsp.buf.code_action,
-        vim.tbl_extend('force', opts, {
-          desc = 'TypeScript code actions',
-        })
-      )
-      map(
-        'n',
-        '<leader>ctr',
-        vim.lsp.buf.rename,
-        vim.tbl_extend('force', opts, {
-          desc = 'TypeScript rename symbol',
-        })
-      )
-      map(
-        'n',
-        '<leader>cti',
-        '<cmd>TypescriptOrganizeImports<cr>',
-        vim.tbl_extend('force', opts, {
-          desc = 'TypeScript organize imports',
-        })
-      )
-      map(
-        'n',
-        '<leader>ctd',
-        '<cmd>TypescriptGoToSourceDefinition<cr>',
-        vim.tbl_extend('force', opts, {
-          desc = 'TypeScript go to source definition',
-        })
-      )
-      map(
-        'n',
-        '<leader>ctt',
-        '<cmd>TypescriptAddMissingImports<cr>',
-        vim.tbl_extend('force', opts, {
-          desc = 'TypeScript add missing imports',
-        })
-      )
-      local ok, _ = pcall(require, 'telescope.builtin')
-      if ok then
-        map(
-          'n',
-          '<leader>cts',
-          "<cmd>lua require('telescope.builtin').lsp_document_symbols()<cr>",
-          vim.tbl_extend('force', opts, {
-            desc = 'TypeScript document symbols (Telescope)',
-          })
-        )
-        api.nvim_create_user_command('RustEdition', function(o)
-          M.rust_edition(o.args)
-        end, {
-          nargs = 1,
-          complete = function()
-            return vim.tbl_keys(M.rust_editions)
-          end,
-        })
-        api.nvim_create_user_command('RustToolchain', function(o)
-          M.rust_set_toolchain(o.args)
-        end, {
-          nargs = 1,
-          complete = function()
-            return vim.tbl_keys(M.rust_toolchains)
-          end,
-        })
-        map('n', '<leader>re', function()
-          vim.ui.select(vim.tbl_keys(M.rust_editions), {
-            prompt = 'Select Rust edition',
-          }, M.rust_edition)
-        end, {
-          desc = 'Rust: select edition',
-        })
-
-        map('n', '<leader>rt', function()
-          vim.ui.select(vim.tbl_keys(M.rust_toolchains), {
-            prompt = 'Select Rust toolchain',
-          }, M.rust_set_toolchain)
-        end, {
-          desc = 'Rust: select toolchain',
-        })
-      end
-    end
-  end
+---@param level integer
+---@param message string
+local function notify(level, message)
+  vim.notify(message, level, {
+    title = 'Diver LSP',
+  })
 end
 
-vim.api.nvim_create_user_command('LspInfo', function()
-  local bufnr = vim.api.nvim_get_current_buf()
-  local clients = vim.lsp.get_clients({ bufnr = bufnr })
-  if vim.tbl_isempty(clients) then
-    print('No LSP clients attached to current buffer')
+---@param bufnr integer
+---@param method string
+---@return boolean
+local function supports_method(bufnr, method)
+  for _, client in ipairs(lsp.get_clients({ bufnr = bufnr })) do
+    if client:supports_method(method) then
+      return true
+    end
+  end
+
+  return false
+end
+
+---@param name string
+---@param callback fun(argument: string)
+---@param options any
+local function user_command(name, callback, options)
+  pcall(api.nvim_del_user_command, name)
+
+  api.nvim_create_user_command(name, function(command)
+    ---@cast command { args: string }
+    callback(command.args)
+  end, options)
+end
+
+---@param edition string
+function M.rust_edition(edition)
+  if M.rust_editions[edition] == nil then
+    notify(vim.log.levels.ERROR, 'Invalid Rust edition: ' .. tostring(edition))
     return
   end
-  print('LSP clients for buffer ' .. bufnr .. ':')
-  for _, client in ipairs(clients) do
-    print(
-      ('- %s (id=%d, name=%s)'):format(
-        client.name or 'unknown',
-        client.id or -1,
-        client.config and client.config.name or 'n/a'
-      )
-    )
-  end
-end, {})
-vim.keymap.set('n', '<leader>li', '<cmd>LspInfo<cr>', {
-  desc = 'LSP info',
-})
-return M
---]]
---[[local registry = require('mason-registry')
 
-function M.setup_masonmap()
-    ---@return table<string, string[]>
-    function M.get_language_map()
-        if not registry.get_all_package_specs then
-            return {}
-        end
-        ---@type table<string, string[]>
-        local languages = {}
-        for _, pkg_spec in ipairs(registry.get_all_package_specs()) do
-            for _, language in ipairs(pkg_spec.languages) do
-                language = language:lower()
-                if not languages[language] then
-                    languages[language] = {}
-                end
-                table.insert(languages[language], pkg_spec.name)
-            end
-        end
-        return languages
-    end
+  M.current_edition = edition
+  notify(vim.log.levels.INFO, 'Rust edition set to ' .. edition)
+  vim.cmd('LspRestart')
 end
---]]
+
+---@param toolchain string
+function M.rust_set_toolchain(toolchain)
+  if M.rust_toolchains[toolchain] == nil then
+    notify(vim.log.levels.ERROR, 'Invalid Rust toolchain: ' .. tostring(toolchain))
+    return
+  end
+
+  M.current_toolchain = toolchain
+  notify(vim.log.levels.INFO, 'Rust toolchain set to ' .. toolchain)
+  vim.cmd('LspRestart')
+end
+
+local function attached_client_names()
+  local names = {}
+
+  for _, client in ipairs(lsp.get_clients({ bufnr = 0 })) do
+    names[#names + 1] = client.name
+  end
+
+  return vim.fn.uniq(vim.fn.sort(names))
+end
+
+local function setup_commands()
+  user_command('LspStart', function(argument)
+    local name = argument ~= '' and argument or vim.bo.filetype
+
+    if name == '' then
+      notify(vim.log.levels.ERROR, 'LspStart: missing server name')
+      return
+    end
+
+    local ok, err = pcall(lsp.enable, name)
+
+    if not ok then
+      notify(vim.log.levels.ERROR, ('LspStart: failed to enable %s: %s'):format(name, err))
+      return
+    end
+
+    vim.cmd('edit')
+    notify(vim.log.levels.INFO, 'Enabled LSP: ' .. name)
+  end, {
+    nargs = '?',
+    complete = function()
+      return vim.tbl_keys(lsp.config)
+    end,
+    desc = 'Enable an LSP configuration for the current buffer',
+  })
+
+  user_command('LspStop', function(argument)
+    local name = argument ~= '' and argument or nil
+    local clients = lsp.get_clients({
+      bufnr = api.nvim_get_current_buf(),
+      name = name,
+    })
+
+    if #clients == 0 then
+      notify(
+        vim.log.levels.WARN,
+        name and ('No running LSP named: ' .. name) or 'No LSP clients are attached to this buffer'
+      )
+      return
+    end
+
+    for _, client in ipairs(clients) do
+      client:stop()
+    end
+
+    if name ~= nil then
+      pcall(lsp.enable, name, false)
+    end
+
+    notify(vim.log.levels.INFO, name and ('Stopped LSP: ' .. name) or 'Stopped LSP clients for this buffer')
+  end, {
+    nargs = '?',
+    complete = attached_client_names,
+    desc = 'Stop current-buffer LSP client(s)',
+  })
+
+  user_command('LspRestart', function(argument)
+    local requested_name = argument ~= '' and argument or nil
+    local bufnr = api.nvim_get_current_buf()
+    local clients = lsp.get_clients({
+      bufnr = bufnr,
+      name = requested_name,
+    })
+    local names = {}
+
+    for _, client in ipairs(clients) do
+      client:stop()
+      names[client.name] = true
+    end
+
+    if requested_name ~= nil then
+      names[requested_name] = true
+    end
+
+    if vim.tbl_isempty(names) then
+      notify(vim.log.levels.WARN, 'No LSP clients to restart for this buffer')
+      return
+    end
+
+    vim.defer_fn(function()
+      for name in pairs(names) do
+        local ok, err = pcall(lsp.enable, name)
+
+        if not ok then
+          notify(vim.log.levels.ERROR, ('LspRestart: failed to enable %s: %s'):format(name, err))
+        end
+      end
+
+      if api.nvim_buf_is_valid(bufnr) then
+        api.nvim_buf_call(bufnr, function()
+          vim.cmd('edit')
+        end)
+      end
+    end, 100)
+  end, {
+    nargs = '?',
+    complete = attached_client_names,
+    desc = 'Restart current-buffer LSP client(s)',
+  })
+
+  user_command('LspInfo', function()
+    local bufnr = api.nvim_get_current_buf()
+    local clients = lsp.get_clients({ bufnr = bufnr })
+
+    if #clients == 0 then
+      notify(vim.log.levels.INFO, 'No LSP clients are attached to this buffer')
+      return
+    end
+
+    local lines = { ('LSP clients for buffer %d:'):format(bufnr) }
+
+    for _, client in ipairs(clients) do
+      lines[#lines + 1] = ('- %s (id=%d)'):format(client.name, client.id)
+    end
+
+    notify(vim.log.levels.INFO, table.concat(lines, '\n'))
+  end, {
+    desc = 'Show LSP clients attached to the current buffer',
+  })
+
+  user_command('RustEdition', function(argument)
+    M.rust_edition(argument)
+  end, {
+    nargs = 1,
+    complete = function()
+      return vim.tbl_keys(M.rust_editions)
+    end,
+    desc = 'Select Rust edition and restart LSP clients',
+  })
+
+  user_command('RustToolchain', function(argument)
+    M.rust_set_toolchain(argument)
+  end, {
+    nargs = 1,
+    complete = function()
+      return vim.tbl_keys(M.rust_toolchains)
+    end,
+    desc = 'Select Rust toolchain and restart LSP clients',
+  })
+end
+
+---@param bufnr integer
+local function setup_buffer_maps(bufnr)
+  local function map(mode, lhs, rhs, description)
+    vim.keymap.set(mode, lhs, rhs, {
+      buffer = bufnr,
+      silent = true,
+      desc = description,
+    })
+  end
+
+  map('n', 'ca', lsp.buf.code_action, 'Code actions')
+
+  map('n', 'gd', function()
+    if not supports_method(bufnr, 'textDocument/definition') then
+      notify(vim.log.levels.WARN, 'No LSP supports textDocument/definition for this buffer')
+      return
+    end
+
+    lsp.buf.definition({
+      pos = vim.pos.cursor(bufnr, api.nvim_win_get_cursor(0)),
+      loclist = true,
+    })
+  end, 'Go to definition')
+
+  map('n', 'gI', lsp.buf.implementation, 'Go to implementation')
+  map('n', 'K', lsp.buf.hover, 'Show hover information')
+  map('n', 'gs', lsp.buf.document_symbol, 'Show document symbols')
+  map('n', 'gw', lsp.buf.workspace_symbol, 'Show workspace symbols')
+  map('n', '<leader>rn', lsp.buf.rename, 'Rename symbol')
+
+  map('n', 'f', function()
+    if not supports_method(bufnr, 'textDocument/formatting') then
+      notify(vim.log.levels.WARN, 'No active LSP client supports formatting')
+      return
+    end
+
+    lsp.buf.format({
+      async = true,
+      bufnr = bufnr,
+    })
+  end, 'Format buffer')
+
+  map('n', '[d', function()
+    diagnostic.jump({ count = -1 })
+  end, 'Previous diagnostic')
+
+  map('n', ']d', function()
+    diagnostic.jump({ count = 1 })
+  end, 'Next diagnostic')
+
+  map('n', '<leader>fD', function()
+    diagnostic.open_float(nil, { scope = 'line' })
+  end, 'Show line diagnostics')
+
+  map('n', '<leader>li', '<cmd>LspInfo<cr>', 'Show LSP info')
+
+  map('i', '<C-Space>', function()
+    if lsp.completion and lsp.completion.get then
+      lsp.completion.get()
+      return ''
+    end
+
+    return api.nvim_replace_termcodes('<C-x><C-o>', true, false, true)
+  end, 'Trigger LSP completion')
+
+  map('i', '<Tab>', function()
+    if lsp.inline_completion and lsp.inline_completion.get then
+      if lsp.inline_completion.get() then
+        return ''
+      end
+    end
+
+    return '<Tab>'
+  end, 'Accept inline completion')
+
+  if vim.bo[bufnr].filetype == 'rust' then
+    map('n', '<leader>re', function()
+      vim.ui.select(vim.tbl_keys(M.rust_editions), {
+        prompt = 'Select Rust edition',
+      }, M.rust_edition)
+    end, 'Rust: select edition')
+
+    map('n', '<leader>rt', function()
+      vim.ui.select(vim.tbl_keys(M.rust_toolchains), {
+        prompt = 'Select Rust toolchain',
+      }, M.rust_set_toolchain)
+    end, 'Rust: select toolchain')
+  end
+end
+
+---@param args LspAttachArgs
+function M.on_attach(args)
+  if not api.nvim_buf_is_valid(args.buf) then
+    return
+  end
+
+  setup_buffer_maps(args.buf)
+
+  local client = lsp.get_client_by_id(args.data.client_id)
+
+  if client ~= nil and client:supports_method('textDocument/signatureHelp') then
+    vim.keymap.set('i', '<C-k>', lsp.buf.signature_help, {
+      buffer = args.buf,
+      silent = true,
+      desc = 'Show signature help',
+    })
+  end
+end
+
+function M.setup_lspmap()
+  setup_commands()
+end
+
+M.setup = M.setup_lspmap
+
+return M

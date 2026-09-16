@@ -1,6 +1,6 @@
 -- #################################################################
--- /qompassai/lua/scip/config.lua
--- Qompass AI Config
+-- /qompassai/diver/lua/scip/config.lua
+-- Qompass AI Diver SCIP Config
 -- SPDX-License-Identifier: Apache-2.0
 -- Copyright (c) 2026 Qompass AI
 --
@@ -57,56 +57,56 @@ local M = {}
 ---
 ---@return table<string, ScipIndexer>
 local function default_indexers()
-        return {
-                clang = require('scip.indexers.clang'),
-                dart = require('scip.indexers.dart'),
-                dotnet = require('scip.indexers.dotnet'),
-                go = require('scip.indexers.go'),
-                java = require('scip.indexers.java'),
-                latex = require('scip.indexers.latex'),
-                lua = require('scip.indexers.lua'),
-                nix = require('scip.indexers.nix'),
-                php = require('scip.indexers.php'),
-                python = require('scip.indexers.python'),
-                ruby = require('scip.indexers.ruby'),
-                rust = require('scip.indexers.rust'),
-                typescript = require('scip.indexers.typescript'),
-                zig = require('scip.indexers.zig'),
-        }
+  return {
+    clang = require('scip.indexers.clang'),
+    dart = require('scip.indexers.dart'),
+    dotnet = require('scip.indexers.dotnet'),
+    go = require('scip.indexers.go'),
+    java = require('scip.indexers.java'),
+    latex = require('scip.indexers.latex'),
+    lua = require('scip.indexers.lua'),
+    nix = require('scip.indexers.nix'),
+    php = require('scip.indexers.php'),
+    python = require('scip.indexers.python'),
+    ruby = require('scip.indexers.ruby'),
+    rust = require('scip.indexers.rust'),
+    typescript = require('scip.indexers.typescript'),
+    zig = require('scip.indexers.zig'),
+  }
 end
 
 ---@type ScipConfig
 local defaults = {
-        index_file = 'index.scip',
-        indexer_order = {
-                'clang',
-                'dart',
-                'dotnet',
-                'go',
-                'java',
-                'latex',
-                'lua',
-                'nix',
-                'php',
-                'python',
-                'ruby',
-                'rust',
-                'typescript',
-                'zig',
-        },
+  index_file = 'index.scip',
+  indexer_order = {
+    'clang',
+    'dart',
+    'dotnet',
+    'go',
+    'java',
+    'latex',
+    'lua',
+    'nix',
+    'php',
+    'python',
+    'ruby',
+    'rust',
+    'typescript',
+    'zig',
+  },
 
-        indexers = default_indexers(),
+  indexers = default_indexers(),
 
-        lint_after_index = true,
+  lint_after_index = true,
 
-        notify = true,
+  notify = true,
 
-        root_markers = {
-                '.git',
-                '.hg',
-        },
+  root_markers = {
+    '.git',
+    '.hg',
+  },
 
-        timeout = 300000,
+  timeout = 300000,
 }
 
 ---@type ScipConfig
@@ -115,7 +115,7 @@ M.values = vim.deepcopy(defaults)
 ---Return the currently active SCIP configuration.
 ---@return ScipConfig
 function M.get()
-        return M.values
+  return M.values
 end
 
 ---Resolve the configured SCIP index path for a project.
@@ -126,13 +126,13 @@ end
 ---@param root string Project root.
 ---@return string index_path Resolved SCIP index path.
 function M.index_path(root)
-        local configured = M.values.index_file
+  local configured = M.values.index_file
 
-        if configured:sub(1, 1) == '/' then
-                return fs.normalize(configured)
-        end
+  if configured:sub(1, 1) == '/' then
+    return fs.normalize(configured)
+  end
 
-        return fs.joinpath(root, configured)
+  return fs.joinpath(root, configured)
 end
 
 ---Reset the active configuration to the built-in defaults.
@@ -142,9 +142,9 @@ end
 ---runtime mutations made to `M.values`.
 ---@return nil
 function M.reset()
-        defaults.indexers = default_indexers()
+  defaults.indexers = default_indexers()
 
-        M.values = vim.deepcopy(defaults)
+  M.values = vim.deepcopy(defaults)
 end
 
 ---Apply user configuration on top of the built-in defaults.
@@ -155,13 +155,13 @@ end
 ---@param opts? ScipConfigOpts User SCIP configuration.
 ---@return nil
 function M.setup(opts)
-        opts = opts or {}
+  opts = opts or {}
 
-        defaults.indexers = default_indexers()
+  defaults.indexers = default_indexers()
 
-        M.values = vim.tbl_deep_extend('force', vim.deepcopy(defaults), opts)
+  M.values = vim.tbl_deep_extend('force', vim.deepcopy(defaults), opts)
 
-        table.sort(M.values.indexer_order)
+  table.sort(M.values.indexer_order)
 end
 
 return M

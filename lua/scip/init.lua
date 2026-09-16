@@ -34,8 +34,8 @@ M.stats = index.stats
 M.status = index.status
 ---@param opts? ScipConfigOpts
 function M.setup(opts)
-        config.setup(opts)
-        ui.setup_commands()
+  config.setup(opts)
+  ui.setup_commands()
 end
 
 return M

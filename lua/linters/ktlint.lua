@@ -154,6 +154,16 @@ local function remove_code_suffix(message, code)
   return trim(message)
 end
 
+---@param message string
+---@return integer
+local function entry_severity(message)
+  if message:lower():match('^error:%s*') ~= nil then
+    return ERROR
+  end
+
+  return WARN
+end
+
 ---@param line string
 ---@return KtlintParsedDiagnostic?
 local function parse_line(line)
@@ -247,8 +257,8 @@ local function diagnostic_from_entry(entry, bufnr, filename, root)
   if entry.filename ~= nil and entry.filename ~= '' and not belongs_to_buffer(entry.filename, filename, root) then
     return nil
   end
-  local lnum = max(entry.line - 1, 0)
 
+  local lnum = max(entry.line - 1, 0)
   local col = max(entry.column - 1, 0)
 
   return {
@@ -258,7 +268,7 @@ local function diagnostic_from_entry(entry, bufnr, filename, root)
     col = col,
     end_col = col + 1,
     message = entry.message,
-    severity = WARN,
+    severity = entry_severity(entry.message),
     source = SOURCE,
     code = entry.code,
     user_data = {
@@ -349,49 +359,26 @@ end
 return ---@type Linter
 {
   automatic = true,
-
   cmd = 'ktlint',
-
   args = args,
-
   append_fname = false,
-
   cwd = cwd,
-
   ignore_exitcode = true,
-
   parser = parse,
-
   root_markers = {
-    --
-    --
     '.editorconfig',
-
-    --
-    --
     'build.gradle',
     'build.gradle.kts',
-
     'gradle.properties',
     'gradlew',
-
     'settings.gradle',
     'settings.gradle.kts',
-
-    --
-    -- Optional ktlint baseline.
-    --
     '.ktlint-baseline.xml',
     'ktlint-baseline.xml',
-
     '.git',
   },
 
   stdin = true,
-
-  --
-  --
   stream = 'stderr',
-
   timeout = 30000,
 }

@@ -6,29 +6,6 @@
 ---@source https://github.com/chris48s/v8r
 ---@source https://chris48s.github.io/v8r/configuration/
 --
--- Requires an installed v8r executable on Neovim's PATH. Never invokes npx
--- or installs packages during linting. Native Linter / LintContext interface.
--- Register 'v8r' for json, jsonc, json5, yaml and toml as appropriate; parser
--- selection is owned by v8r and may require a customCatalog parser override.
--- Run on saved files, normally BufWritePost. The runner must skip unnamed
--- buffers and reject results after edits. stdin is not supported by this CLI.
---
--- The JSON report has JSON Pointer instance paths, not source coordinates.
--- Findings are file-level diagnostics at line/column zero; no guessed ranges.
--- Multi-document YAML indices are retained (zero-based, as reported by v8r).
--- Schema keywords, schema locations and instance paths are retained; arbitrary
--- input values from AJV params are not copied into diagnostic metadata.
---
--- Project config, plugins, catalogs and ignore files remain authoritative.
--- Remote schemas/catalogs can be fetched by v8r; this is not an offline mode.
--- Use trusted JavaScript configs and plugins. Automatic scans use existing
--- v8r caching policy, with a 60-second runner timeout and bounded parser.
--- Optional: NVIM_V8R_SCHEMA=/absolute/path/schema.json (or a schema URL).
--- Relative override paths resolve against the selected project working dir.
--- V8R_CONFIG_FILE retains its upstream meaning; paths in that file are still
--- resolved against the working directory, not its own directory.
--- Logs remain on stderr; only stdout is decoded as JSON. Operational failures
--- produce a diagnostic even when the report has no detailed error message.
 local diagnostic = vim.diagnostic
 local fs = vim.fs
 local uv = vim.uv
@@ -126,7 +103,6 @@ local function clean_message(value)
   if #text > MAX_MESSAGE_BYTES then
     local finish = MAX_MESSAGE_BYTES - 3
 
-    -- Do not split a UTF-8 codepoint when truncating.
     while finish > 0 do
       local byte = text:byte(finish + 1)
 
@@ -152,6 +128,8 @@ local function status_diagnostic(context, code, message)
     bufnr = context.bufnr,
     code = code,
     col = 0,
+    end_col = 0,
+    end_lnum = 0,
     lnum = 0,
     message = message,
     severity = diagnostic.severity.WARN,
@@ -176,12 +154,15 @@ local function relative_path(path, cwd)
 
   ---@type string[]
   local parts = {}
-  for index = common + 1, #root_parts do
+
+  for _ = common + 1, #root_parts do
     parts[#parts + 1] = '..'
   end
+
   for index = common + 1, #target_parts do
     parts[#parts + 1] = target_parts[index]
   end
+
   return table.concat(parts, '/')
 end
 
@@ -234,8 +215,15 @@ local function parse(output, context)
   local limited = #decoded.results > MAX_RESULTS
   local processed = 0
 
-  for index = 1, math.min(#decoded.results, MAX_RESULTS) do
-    local result = decoded.results[index]
+  local result_index = 0
+
+  for _, result in ipairs(decoded.results) do
+    result_index = result_index + 1
+
+    if result_index > MAX_RESULTS then
+      limited = true
+      break
+    end
     if type(result) ~= 'table' or string_value(result.fileLocation) == nil then
       malformed = true
     elseif canonical_path(result.fileLocation, cwd) == target then
@@ -285,6 +273,8 @@ local function parse(output, context)
               bufnr = context.bufnr,
               code = clean_message(keyword),
               col = 0,
+              end_col = 0,
+              end_lnum = 0,
               lnum = 0,
               message = clean_message(text),
               severity = diagnostic.severity.ERROR,
@@ -307,7 +297,7 @@ local function parse(output, context)
         )
       end
       if #diagnostics >= MAX_DIAGNOSTICS then
-        if index < #decoded.results then
+        if result_index < #decoded.results then
           limited = true
         end
         break

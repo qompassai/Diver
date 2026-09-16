@@ -1,7 +1,6 @@
 -- ###########################################################################
 -- ~/.config/nvim/lua/linters/pmd.lua
 -- Qompass AI Diver PMD Linter
---
 -- SPDX-License-Identifier: Apache-2.0
 -- Copyright (c) 2026 Qompass AI
 --
@@ -574,10 +573,6 @@ local function decode_json(output)
     return decoded
   end
 
-  --
-  -- Keep parsing resilient when PMD or a Java wrapper prepends non-JSON
-  -- startup output before the JSON report.
-  --
   local object_start = text:find('{', 1, true)
   local array_start = text:find('[', 1, true)
 

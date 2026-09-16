@@ -6,34 +6,7 @@
 ---@source https://github.com/Checkmarx/kics
 ---@source https://docs.kics.io/latest/commands/
 ---@source https://docs.kics.io/latest/results/
---
--- Requires python3 and kics on PATH, including KICS query/library assets.
--- Linter / LintContext interface for Neovim 0.13+. Register 'kics' only for
--- supported IaC buffers: Terraform, Dockerfile, Kubernetes, CloudFormation,
--- Ansible, etc. Prefer BufWritePost; this scanner reads saved files.
--- A single-file scan cannot replace a complete repository security scan.
---
--- KICS writes reports to disk. An embedded Python stdlib bridge creates a
--- private temporary report directory, invokes KICS without a shell, reads a
--- bounded JSON report, and removes the directory on success, failure, timeout
--- and SIGTERM. SIGKILL cannot run cleanup; avoid hard-killing the bridge.
--- Scan lifetime: 110 seconds; outer runner timeout: 120 seconds.
--- The runner owns stale-result rejection. No input copies or auto-remediation.
---
--- Secrets scanning remains enabled. Diagnostic messages retain only query
--- names/descriptions; actual/expected values, snippets, resource names and
--- search values are not copied. KICS reports can contain secrets, hence the
--- private directory and restrictive umask. Raw process logs are suppressed.
--- Full-description downloads and crash reporting are disabled for this child.
---
--- Options (absolute paths recommended):
---   NVIM_KICS_CONFIG=/path/kics.config   (otherwise use project kics.config)
---   NVIM_KICS_QUERIES_PATH=/path/assets/queries
---   NVIM_KICS_LIBRARIES_PATH=/path/assets/libraries
--- KICS_* environment settings remain available; editor-owned flags override
--- path, report/log destinations, concurrency and result exit-code policy.
--- CLI flags and report schema checked against upstream docs; KICS itself was
--- not available for an end-to-end scan during creation.
+
 local diagnostic = vim.diagnostic
 local fs = vim.fs
 local uv = vim.uv
@@ -224,6 +197,8 @@ local function status_diagnostic(context, code, message)
     bufnr = context.bufnr,
     code = code,
     col = 0,
+    end_col = 0,
+    end_lnum = 0,
     lnum = 0,
     message = message,
     severity = diagnostic.severity.WARN,
@@ -251,11 +226,25 @@ local function parse(output, context)
   end
   local ok, report = pcall(json.decode, output)
   if not ok or type(report) ~= 'table' then
-    return { status_diagnostic(context, 'invalid-report', 'KICS returned no valid report. Check python3, kics, configuration and the timeout.') }
+    return {
+      status_diagnostic(
+        context,
+        'invalid-report',
+        'KICS returned no valid report. Check python3, kics, configuration and the timeout.'
+      ),
+    }
   end
   local bridge_error = string_value(report.bridge_error)
   if bridge_error ~= nil then
-    return { status_diagnostic(context, 'scan-failed', 'KICS scan unavailable (' .. clean_message(bridge_error) .. '). Check the saved file, executable, query assets and configuration.') }
+    return {
+      status_diagnostic(
+        context,
+        'scan-failed',
+        'KICS scan unavailable ('
+          .. clean_message(bridge_error)
+          .. '). Check the saved file, executable, query assets and configuration.'
+      ),
+    }
   end
   local queries = report.queries
   if type(queries) ~= 'table' or not vim.islist(queries) then
@@ -301,6 +290,8 @@ local function parse(output, context)
             bufnr = context.bufnr,
             code = code and clean_message(code) or nil,
             col = 0,
+            end_col = 0,
+            end_lnum = lnum,
             lnum = lnum,
             message = clean_message(message),
             severity = SEVERITIES[level] or diagnostic.severity.WARN,
@@ -320,19 +311,34 @@ local function parse(output, context)
     end
   end
   if malformed then
-    diagnostics[#diagnostics + 1] = status_diagnostic(context, 'malformed-results', 'Some KICS findings could not be decoded; results are incomplete.')
+    diagnostics[#diagnostics + 1] = status_diagnostic(
+      context,
+      'malformed-results',
+      'Some KICS findings could not be decoded; results are incomplete.'
+    )
   end
-  if positive(report.files_failed_to_scan) or positive(report.queries_failed_to_execute)
+  if
+    positive(report.files_failed_to_scan)
+    or positive(report.queries_failed_to_execute)
     or positive(report.queries_failed_to_compute_similarity_id)
     or (type(report.editor_exit_code) == 'number' and report.editor_exit_code ~= 0)
   then
-    diagnostics[#diagnostics + 1] = status_diagnostic(context, 'partial-scan', 'KICS reported scan or query failures; these results are incomplete.')
+    diagnostics[#diagnostics + 1] =
+      status_diagnostic(context, 'partial-scan', 'KICS reported scan or query failures; these results are incomplete.')
   end
   if report.files_scanned == 0 or report.files_parsed == 0 or report.queries_total == 0 then
-    diagnostics[#diagnostics + 1] = status_diagnostic(context, 'empty-scan', 'KICS scanned no files, parsed no files, or ran no queries. Check supported platforms, exclusions and query assets.')
+    diagnostics[#diagnostics + 1] = status_diagnostic(
+      context,
+      'empty-scan',
+      'KICS scanned no files, parsed no files, or ran no queries. Check supported platforms, exclusions and query assets.'
+    )
   end
   if limited then
-    diagnostics[#diagnostics + 1] = status_diagnostic(context, 'result-limit', 'KICS reached the editor report limit; run a separate scan for complete results.')
+    diagnostics[#diagnostics + 1] = status_diagnostic(
+      context,
+      'result-limit',
+      'KICS reached the editor report limit; run a separate scan for complete results.'
+    )
   end
   return diagnostics
 end
@@ -353,7 +359,9 @@ local function arguments(context)
     end
   end
   return {
-    '-I', '-c', BRIDGE,
+    '-I',
+    '-c',
+    BRIDGE,
     json.encode({
       filename = absolute_path(filename, string_value(context.cwd) or root),
       modified = context.modified == true,

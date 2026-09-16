@@ -28,33 +28,33 @@ local utils = require('scip.utils')
 ---@param context ScipContext SCIP indexing context.
 ---@return string[] args Arguments passed to scip-ruby.
 local function args(context)
-        local sorbet_config = fs.joinpath(context.root, 'sorbet', 'config')
+  local sorbet_config = fs.joinpath(context.root, 'sorbet', 'config')
 
-        if utils.path_exists(sorbet_config) then
-                return {}
-        end
+  if utils.path_exists(sorbet_config) then
+    return {}
+  end
 
-        return {
-                '.',
-        }
+  return {
+    '.',
+  }
 end
 
 ---@type ScipIndexer
 local indexer = {
-        args = args,
-        command = 'scip-ruby',
+  args = args,
+  command = 'scip-ruby',
 
-        filetypes = {
-                ruby = true,
-        },
-        markers = {
-                '.git',
-                '.ruby-version',
-                'Gemfile',
-                'Gemfile.lock',
-                'Rakefile',
-                'sorbet',
-        },
+  filetypes = {
+    ruby = true,
+  },
+  markers = {
+    '.git',
+    '.ruby-version',
+    'Gemfile',
+    'Gemfile.lock',
+    'Rakefile',
+    'sorbet',
+  },
 }
 
 return indexer

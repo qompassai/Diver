@@ -1,72 +1,22 @@
 -- #################################################################
--- ~/.config/nvim/lua/linters/gdlint.lua
+-- /qompassai/lua/linters/gdlint.lua
 -- Qompass AI Diver Native GDScript Linter
 -- Copyright (C) 2026 Qompass AI, All rights reserved
 -- SPDX-License-Identifier: Apache-2.0
---
--- Licensed under the Apache License, Version 2.0 (the "License");
--- you may not use this file except in compliance with the License.
--- You may obtain a copy of the License at:
---
---     http://www.apache.org/licenses/LICENSE-2.0
---
--- Unless required by applicable law or agreed to in writing, software
--- distributed under the License is distributed on an "AS IS" BASIS,
--- WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
--- See the License for the specific language governing permissions and
--- limitations under the License.
 -- #################################################################
 ---@source https://godotengine.org/asset-library/asset/4612
 ---@source https://github.com/graydwarf/godot-gdscript-linter
 ---@source https://docs.godotengine.org/en/latest/tutorials/editor/command_line_tutorial.html
 --
--- Installation for Neovim / headless use:
+-- This linter invokes godot-gdscript-linter's analyzer CLI through a headless
+-- Godot or Redot executable. Configure optional overrides with:
 --
--- This linter is a Godot addon, not a standalone `gdlint` executable.
--- Diver runs its CLI entry point directly through a headless Godot binary.
+--   NVIM_GODOT_EXECUTABLE=/path/to/godot
+--   NVIM_GDLINT_ROOT=/path/to/godot-gdscript-linter
 --
--- Recommended Arch Linux setup:
+-- A discovered linter root must contain:
 --
---   1. Install Godot:
---
---        sudo pacman -S godot
---
---      Or, for a locally managed Godot/Redot binary, set:
---
---        export NVIM_GODOT_EXECUTABLE=/absolute/path/to/godot
---
---      Redot may also be used when its CLI remains compatible with the
---      Godot command-line flags required by this module:
---
---        export NVIM_GODOT_EXECUTABLE=/absolute/path/to/redot
---
---   2. Install one standalone copy of the linter source:
---
---        mkdir -p ~/.local/share
---
---        git clone \
---          https://github.com/graydwarf/godot-gdscript-linter.git \
---          ~/.local/share/godot-gdscript-linter
---
---      The cloned tree must contain:
---
---        project.godot
---        addons/gdscript-linter/analyzer/analyze-cli.gd
---
---   3. Optionally override the discovery path:
---
---        export NVIM_GDLINT_ROOT="$HOME/.local/share/godot-gdscript-linter"
---
---   4. Verify the same command Neovim will use:
---
---        godot \
---          --headless \
---          --path "$HOME/.local/share/godot-gdscript-linter" \
---          --script \
---          res://addons/gdscript-linter/analyzer/analyze-cli.gd \
---          -- \
---          --path /path/to/your/godot/project \
---          --clickable
+--   addons/gdscript-linter/analyzer/analyze-cli.gd
 --
 
 local diagnostic = vim.diagnostic
@@ -78,6 +28,12 @@ local MAX_DIAGNOSTICS = 512
 local MAX_MESSAGE_BYTES = 2048
 local MAX_OUTPUT_BYTES = 8 * 1024 * 1024
 local SOURCE = 'gdlint'
+
+local CLI_RELATIVE_PATH = 'addons/gdscript-linter/analyzer/analyze-cli.gd'
+local DEFAULT_INSTALL_ROOT = fs.joinpath(fn.stdpath('data'), 'godot-gdscript-linter')
+
+local ANSI_ESCAPE_PATTERN = string.char(27) .. '%[[%d;]*[mK]'
+local NONEMPTY_LINE_PATTERN = '[^' .. string.char(13) .. string.char(10) .. ']+'
 
 ---@type string[]
 local ROOT_MARKERS = {
@@ -92,10 +48,6 @@ local GODOT_EXECUTABLES = {
   'godot4',
   'redot',
 }
-
-local CLI_RELATIVE_PATH = 'addons/gdscript-linter/analyzer/analyze-cli.gd'
-
-local DEFAULT_INSTALL_ROOT = fs.joinpath(fn.stdpath('data'), 'godot-gdscript-linter')
 
 ---@param value unknown
 ---@return boolean
@@ -151,19 +103,19 @@ local function zero_based_col(value)
     return 0
   end
 
-  local col = math.floor(number)
+  local column = math.floor(number)
 
-  if col <= 1 then
+  if column <= 1 then
     return 0
   end
 
-  return col - 1
+  return column - 1
 end
 
 ---@param path string
 ---@return boolean
 local function is_file(path)
-  if not nonempty_string(path) then
+  if path == '' then
     return false
   end
 
@@ -174,14 +126,18 @@ end
 
 ---@param path string
 ---@return boolean
-local function is_directory(path)
-  if not nonempty_string(path) then
-    return false
+local function is_absolute_path(path)
+  if path:sub(1, 1) == '/' then
+    return true
   end
 
-  local stat = uv.fs_stat(path)
+  local separator = string.char(92)
 
-  return stat ~= nil and stat.type == 'directory'
+  if path:sub(1, 2) == separator .. separator then
+    return true
+  end
+
+  return path:match('^%a:[/\\]') ~= nil
 end
 
 ---@param path string
@@ -275,9 +231,7 @@ end
 ---@param root string
 ---@return string?
 local function project_local_linter_root(root)
-  local cli = fs.joinpath(root, CLI_RELATIVE_PATH)
-
-  if is_file(cli) then
+  if is_file(fs.joinpath(root, CLI_RELATIVE_PATH)) then
     return root
   end
 
@@ -320,7 +274,6 @@ end
 ---@return string?
 local function linter_root(context)
   local root = project_root(context)
-
   local local_root = project_local_linter_root(root)
 
   if local_root ~= nil then
@@ -357,21 +310,21 @@ end
 ---@param output string
 ---@return string
 local function strip_ansi(output)
-  return output:gsub('\27%[[%d;]*[mK]', '')
+  return output:gsub(ANSI_ESCAPE_PATTERN, '')
 end
 
 ---@class GdLintRecord
 ---@field path string
----@field line integer
----@field column integer
+---@field line number
+---@field column number
 ---@field severity string
----@field code string?
+---@field code? string
 ---@field message string
 
----@param text string
+---@param text string?
 ---@return string?
 local function normalize_code(text)
-  if not nonempty_string(text) then
+  if type(text) ~= 'string' or text == '' then
     return nil
   end
 
@@ -396,7 +349,7 @@ local function parse_clickable(line)
 
   path, line_number, column, level, code, message = line:match('^(.+):(%d+):(%d+):%s*([%a]+)%s+%[([%w_-]+)%]:%s*(.+)$')
 
-  if path ~= nil and line_number ~= nil and column ~= nil and level ~= nil and message ~= nil then
+  if path ~= nil and line_number ~= nil and column ~= nil and level ~= nil and code ~= nil and message ~= nil then
     return {
       path = path,
       line = tonumber(line_number) or 1,
@@ -409,7 +362,7 @@ local function parse_clickable(line)
 
   path, line_number, level, code, message = line:match('^(.+):(%d+):%s*([%a]+)%s+%[([%w_-]+)%]:%s*(.+)$')
 
-  if path ~= nil and line_number ~= nil and level ~= nil and message ~= nil then
+  if path ~= nil and line_number ~= nil and level ~= nil and code ~= nil and message ~= nil then
     return {
       path = path,
       line = tonumber(line_number) or 1,
@@ -428,7 +381,6 @@ local function parse_clickable(line)
       line = tonumber(line_number) or 1,
       column = tonumber(column) or 1,
       severity = level,
-      code = nil,
       message = message,
     }
   end
@@ -441,7 +393,6 @@ local function parse_clickable(line)
       line = tonumber(line_number) or 1,
       column = 1,
       severity = level,
-      code = nil,
       message = message,
     }
   end
@@ -457,12 +408,10 @@ local function same_file(path, context)
     return false
   end
 
-  local root = project_root(context)
-
   local candidate = path
 
-  if not fs.isabs(candidate) then
-    candidate = fs.joinpath(root, candidate)
+  if not is_absolute_path(candidate) then
+    candidate = fs.joinpath(project_root(context), candidate)
   end
 
   return normalize(candidate) == normalize(context.filename)
@@ -473,9 +422,7 @@ end
 ---@return vim.Diagnostic
 local function record_diagnostic(record, context)
   local lnum = zero_based_line(record.line)
-
   local col = zero_based_col(record.column)
-
   local message = compact(record.message)
 
   if not same_file(record.path, context) then
@@ -486,26 +433,16 @@ local function record_diagnostic(record, context)
 
   return {
     bufnr = context.bufnr,
-
     code = record.code,
-
     col = col,
-
     end_col = col,
-
     end_lnum = lnum,
-
     lnum = lnum,
-
     message = truncate(message, MAX_MESSAGE_BYTES),
-
     severity = severity(record.severity),
-
     source = SOURCE,
-
     user_data = {
       path = record.path,
-
       severity = record.severity,
     },
   }
@@ -528,21 +465,13 @@ end
 local function operational_diagnostic(line, context)
   return {
     bufnr = context.bufnr,
-
     code = 'operational-error',
-
     col = 0,
-
     end_col = 0,
-
     end_lnum = 0,
-
     lnum = 0,
-
     message = truncate(compact(line), MAX_MESSAGE_BYTES),
-
     severity = diagnostic.severity.ERROR,
-
     source = SOURCE,
   }
 end
@@ -553,21 +482,13 @@ local function missing_runtime(context)
   return {
     {
       bufnr = context.bufnr,
-
       code = 'missing-runtime',
-
       col = 0,
-
       end_col = 0,
-
       end_lnum = 0,
-
       lnum = 0,
-
       message = 'Godot/Redot executable was not found; set NVIM_GODOT_EXECUTABLE or install Godot',
-
       severity = diagnostic.severity.ERROR,
-
       source = SOURCE,
     },
   }
@@ -579,25 +500,17 @@ local function missing_linter(context)
   return {
     {
       bufnr = context.bufnr,
-
       code = 'missing-linter',
-
       col = 0,
-
       end_col = 0,
-
       end_lnum = 0,
-
       lnum = 0,
-
       message = table.concat({
         'GDScript Linter CLI was not found; clone ',
         'graydwarf/godot-gdscript-linter and set ',
         'NVIM_GDLINT_ROOT to its repository root',
       }),
-
       severity = diagnostic.severity.ERROR,
-
       source = SOURCE,
     },
   }
@@ -609,21 +522,13 @@ local function oversized_output(context)
   return {
     {
       bufnr = context.bufnr,
-
       code = 'output-limit',
-
       col = 0,
-
       end_col = 0,
-
       end_lnum = 0,
-
       lnum = 0,
-
       message = string.format('gdlint output exceeded the %d-byte parser limit', MAX_OUTPUT_BYTES),
-
       severity = diagnostic.severity.WARN,
-
       source = SOURCE,
     },
   }
@@ -634,7 +539,6 @@ end
 ---@return vim.Diagnostic[]
 local function parse(output, context)
   assert(type(context) == 'table', 'gdlint parser requires LintContext')
-
   assert(type(context.bufnr) == 'number', 'gdlint parser requires context.bufnr')
 
   if godot_executable() == nil then
@@ -653,12 +557,10 @@ local function parse(output, context)
     return oversized_output(context)
   end
 
+  local diagnostics = {}
   local text = strip_ansi(output)
 
-  ---@type vim.Diagnostic[]
-  local diagnostics = {}
-
-  for raw_line in text:gmatch('[^\r\n]+') do
+  for raw_line in text:gmatch(NONEMPTY_LINE_PATTERN) do
     if #diagnostics >= MAX_DIAGNOSTICS then
       break
     end
@@ -684,8 +586,6 @@ end
 local function arguments(context)
   assert(type(context) == 'table', 'gdlint arguments require LintContext')
 
-  local root = project_root(context)
-
   local analyzer_root = linter_root(context)
 
   if analyzer_root == nil then
@@ -694,49 +594,30 @@ local function arguments(context)
 
   return {
     '--headless',
-
     '--path',
     analyzer_root,
-
     '--script',
     'res://' .. CLI_RELATIVE_PATH,
-
     '--',
-
     '--path',
-    root,
-
+    project_root(context),
     '--clickable',
   }
 end
 
----@param context LintContext
----@return string
-local function command(context)
-  assert(type(context) == 'table', 'gdlint command requires LintContext')
-
-  return godot_executable() or 'godot'
-end
+local CMD = godot_executable() or 'godot'
 
 ---@type Linter
 return {
   args = arguments,
-
   append_fname = false,
   automatic = false,
-  cmd = command,
-
+  cmd = CMD,
   cwd = project_root,
-
   ignore_exitcode = true,
-
   parser = parse,
-
   root_markers = ROOT_MARKERS,
-
   stdin = false,
-
   stream = 'both',
-
   timeout = 60000,
 }

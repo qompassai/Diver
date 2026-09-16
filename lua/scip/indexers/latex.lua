@@ -14,7 +14,7 @@
 -- See the License for the specific language governing permissions and
 -- limitations under the License.
 -- #################################################################
-                                                                           ---Native SCIP indexer definition for LaTeX.
+---Native SCIP indexer definition for LaTeX.
 ---
 ---No verified standard LaTeX-to-SCIP indexer is currently available.
 ---Existing LaTeX indexing utilities generally generate document indexes,
@@ -24,28 +24,28 @@
 ---installed or implemented.
 ---@type ScipIndexer
 local indexer = {
-        args = {
-                'index',
-                '.',
-        },
+  args = {
+    'index',
+    '.',
+  },
 
-        command = 'scip-latex',
+  command = 'scip-latex',
 
-        enabled = false,
+  enabled = false,
 
-        filetypes = {
-                bib = true,
-                latex = true,
-                plaintex = true,
-                tex = true,
-        },
+  filetypes = {
+    bib = true,
+    latex = true,
+    plaintex = true,
+    tex = true,
+  },
 
-        markers = {
-                '.git',
-                '.latexmkrc',
-                'latexmkrc',
-                'texmf.cnf',
-        },
+  markers = {
+    '.git',
+    '.latexmkrc',
+    'latexmkrc',
+    'texmf.cnf',
+  },
 }
 
 return indexer

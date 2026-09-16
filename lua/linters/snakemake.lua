@@ -1,3 +1,4 @@
+-- #################################################################
 -- /qompassai/lua/linters/snakemake.lua
 -- Qompass AI Diver Native Snakemake Linter
 -- Copyright (C) 2026 Qompass AI, All rights reserved
@@ -26,21 +27,7 @@
 --
 --   snakemake --lint --snakefile <filename>
 --
--- The linter checks Snakemake workflow quality and best practices.  It is not
--- a formatter; use lua/linters/snakefmt.lua for formatting conformance.
---
--- Snakemake's documented linter invocation does not expose a stable,
--- machine-readable diagnostics format.  This parser therefore accepts common
--- file:line and rule-oriented output, while safely surfacing operational
--- failures as one `snakemake-error` diagnostic.
---
--- For complete workflow analysis, run:
---
---   snakemake --lint
---
--- separately from editor linting.  Run from a project root where Snakefile,
--- workflow/Snakefile, or another workflow entrypoint is available.
---
+
 local diagnostic = vim.diagnostic
 local fs = vim.fs
 
@@ -49,6 +36,11 @@ local MAX_LINE_BYTES = 16 * 1024
 local MAX_MESSAGE_BYTES = 2048
 local MAX_OUTPUT_BYTES = 8 * 1024 * 1024
 local SOURCE = 'snakemake'
+
+local ANSI_ESCAPE_PATTERN = string.char(27) .. [[%[[%d;]*[mK]]
+local NONEMPTY_LINE_PATTERN = [[^\n]+]]
+local RULE_FINDING_PATTERN = [[^[Rr]ule%s+["']?([^:"']+)["']?%s*:%s*(.+)$]]
+local NEWLINE = string.char(10)
 
 ---@type string[]
 local ROOT_MARKERS = {
@@ -114,10 +106,24 @@ local function zero_based_line(value)
   return line - 1
 end
 
+---@param path string
+---@return boolean
+local function is_absolute_path(path)
+  if path:sub(1, 1) == '/' then
+    return true
+  end
+
+  if path:sub(1, 2) == [[\\]] then
+    return true
+  end
+
+  return path:match('^%a:[/\\]') ~= nil
+end
+
 ---@param output string
 ---@return string
 local function strip_ansi(output)
-  return output:gsub('\u0017%[[%d;]*[mK]', '')
+  return output:gsub(ANSI_ESCAPE_PATTERN, '')
 end
 
 ---@param context LintContext
@@ -162,7 +168,7 @@ local function absolute_path(path, context)
     return ''
   end
 
-  if fs.isabs(path) then
+  if is_absolute_path(path) then
     return fs.normalize(path)
   end
 
@@ -205,7 +211,7 @@ local function severity(level)
 end
 
 ---@class SnakemakeFinding
----@field line integer
+---@field line number
 ---@field message string
 ---@field path string
 ---@field rule string
@@ -223,19 +229,14 @@ local function parse_finding(line)
   local level
   local message
 
-  path, line_number, level, message =
-    line:match('^(.+):(%d+):%s*([Ee]rror|[Ww]arning|[Ii]nfo|[Hh]int):%s*(.+)$')
+  path, line_number, level, message = line:match('^(.+):(%d+):%s*([Ee]rror|[Ww]arning|[Ii]nfo|[Hh]int):%s*(.+)$')
 
   if path ~= nil and line_number ~= nil and level ~= nil and message ~= nil then
     return {
       line = tonumber(line_number) or 1,
-
       message = message,
-
       path = path,
-
       rule = 'lint',
-
       severity = level,
     }
   end
@@ -245,31 +246,23 @@ local function parse_finding(line)
   if path ~= nil and line_number ~= nil and message ~= nil then
     return {
       line = tonumber(line_number) or 1,
-
       message = message,
-
       path = path,
-
       rule = 'lint',
-
       severity = 'warning',
     }
   end
 
   local rule_name
 
-  rule_name, message = line:match('^[Rr]ule%s+["' .. "'" .. ']?([^:"' .. "'" .. ']+)["' .. "'" .. ']?%s*:%s*(.+)$')
+  rule_name, message = line:match(RULE_FINDING_PATTERN)
 
   if rule_name ~= nil and message ~= nil then
     return {
       line = 1,
-
       message = message,
-
       path = '',
-
       rule = rule_name,
-
       severity = 'warning',
     }
   end
@@ -290,35 +283,23 @@ local function finding_diagnostic(finding, context)
 
     if not same_path(absolute, fs.normalize(filename)) then
       message = string.format('%s: %s', finding.path, message)
-
       lnum = 0
     end
   end
 
   return {
     bufnr = context.bufnr,
-
     code = finding.rule,
-
     col = 0,
-
     end_col = 0,
-
     end_lnum = lnum,
-
     lnum = lnum,
-
     message = truncate(message, MAX_MESSAGE_BYTES),
-
     severity = severity(finding.severity),
-
     source = SOURCE,
-
     user_data = {
       path = finding.path,
-
       rule = finding.rule,
-
       snakemake_severity = finding.severity,
     },
   }
@@ -349,8 +330,7 @@ local function error_message(output)
     return nil
   end
 
-  for raw_line in text:gmatch('[^
-]+') do
+  for raw_line in text:gmatch(NONEMPTY_LINE_PATTERN) do
     local line = compact(raw_line)
 
     if line ~= '' and operational_error(line) then
@@ -374,21 +354,13 @@ local function parse_failure(output, context)
   return {
     {
       bufnr = context.bufnr,
-
       code = 'snakemake-error',
-
       col = 0,
-
       end_col = 0,
-
       end_lnum = 0,
-
       lnum = 0,
-
       message = message,
-
       severity = diagnostic.severity.ERROR,
-
       source = SOURCE,
     },
   }
@@ -400,24 +372,13 @@ local function oversized_output(context)
   return {
     {
       bufnr = context.bufnr,
-
       code = 'output-limit',
-
       col = 0,
-
       end_col = 0,
-
       end_lnum = 0,
-
       lnum = 0,
-
-      message = string.format(
-        'snakemake --lint output exceeded the %d-byte parser limit',
-        MAX_OUTPUT_BYTES
-      ),
-
+      message = string.format('snakemake --lint output exceeded the %d-byte parser limit', MAX_OUTPUT_BYTES),
       severity = diagnostic.severity.WARN,
-
       source = SOURCE,
     },
   }
@@ -428,7 +389,6 @@ end
 ---@return vim.Diagnostic[]
 local function parse(output, context)
   assert(type(context) == 'table', 'snakemake parser requires LintContext')
-
   assert(type(context.bufnr) == 'number', 'snakemake parser requires context.bufnr')
 
   if output == '' then
@@ -447,8 +407,7 @@ local function parse(output, context)
   ---@type string[]
   local failures = {}
 
-  for raw_line in text:gmatch('[^
-]+') do
+  for raw_line in text:gmatch(NONEMPTY_LINE_PATTERN) do
     if #diagnostics >= MAX_DIAGNOSTICS then
       break
     end
@@ -467,8 +426,7 @@ local function parse(output, context)
   end
 
   if #diagnostics == 0 and #failures > 0 then
-    return parse_failure(table.concat(failures, '
-'), context)
+    return parse_failure(table.concat(failures, NEWLINE), context)
   end
 
   return diagnostics
@@ -487,7 +445,6 @@ local function arguments(context)
 
   return {
     '--lint',
-
     '--snakefile',
     filename,
   }
@@ -496,24 +453,14 @@ end
 ---@type Linter
 return {
   args = arguments,
-
   append_fname = false,
-
   automatic = false,
-
   cmd = 'snakemake',
-
   cwd = project_root,
-
   ignore_exitcode = true,
-
   parser = parse,
-
   root_markers = ROOT_MARKERS,
-
   stdin = false,
-
   stream = 'both',
-
   timeout = 30000,
 }
