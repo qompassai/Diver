@@ -119,7 +119,7 @@
 | [`mypy`](https://github.com/mfussenegger/nvim-lint/blob/master/lua/lint/linters/mypy.lua) | 2025-03-17 | `TODO` | — |
 | [`nagelfar`](https://github.com/mfussenegger/nvim-lint/blob/master/lua/lint/linters/nagelfar.lua) | 2022-10-25 | `TOREMOVE' | `Not Maintained`` |
 | [`nix`](https://github.com/mfussenegger/nvim-lint/blob/master/lua/lint/linters/nix.lua) | 2021-12-11 | `DONE` | [`nix.lua`](./nix.lua) |
-| [`npm-groovy-lint`](https://github.com/mfussenegger/nvim-lint/blob/master/lua/lint/linters/npm-groovy-lint.lua) | 2026-01-28 | `TODO` | — |
+| [`npm-groovy-lint`](https://github.com/mfussenegger/nvim-lint/blob/master/lua/lint/linters/npm-groovy-lint.lua) | 2026-01-28 | `DONE` | [`npm-groovy-lint`](./npm-groovy-lint.lua) |
 | [`oelint-adv`](https://github.com/mfussenegger/nvim-lint/blob/master/lua/lint/linters/oelint-adv.lua) | 2026-06-25 | `DONE` | ['oelint-adv.lua'](./oelint-adv.lua) |
 | [`opa_check`](https://github.com/mfussenegger/nvim-lint/blob/master/lua/lint/linters/opa_check.lua) | 2024-01-18 | `DONE` | ['opa_check.lua'](./opa_check.lua) |
 | [`oxlint`](https://github.com/mfussenegger/nvim-lint/blob/master/lua/lint/linters/oxlint.lua) | 2025-08-28 | `DONE` | [`oxlint.lua`](./oxlint.lua) |
