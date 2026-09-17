@@ -60,7 +60,7 @@
 | [`deno`](https://github.com/mfussenegger/nvim-lint/blob/master/lua/lint/linters/deno.lua) | 2023-10-06 | `TOREMOVE` | — |
 | [`detect-secrets`](https://github.com/mfussenegger/nvim-lint/blob/master/lua/lint/linters/detect-secrets.lua) | 2026-04-09 | `DONE` | [`detect-secrets.lua`](./detect-secrets.lua) |
 | [`detekt`](https://github.com/mfussenegger/nvim-lint/blob/master/lua/lint/linters/detekt.lua) | 2026-06-19 | `DONE` |[`detekt.lua`](./detekt.lua) |
-| [`dialyxir`](https://github.com/mfussenegger/nvim-lint/blob/master/lua/lint/linters/dialyxir.lua) | 2026-05-13 | `TODO` | — |
+| [`dialyzir`](https://github.com/mfussenegger/nvim-lint/blob/master/lua/lint/linters/dialyzir.lua) | 2026-05-13 | `DONE` | [`dialyzer.lua`](./dialyzer.lua) |
 | [`djlint`](https://github.com/mfussenegger/nvim-lint/blob/master/lua/lint/linters/djlint.lua) | 2023-07-30 | `DONE` | [`djlint.lua`](./djlint.lua) |
 | [`dmypy`](https://github.com/mfussenegger/nvim-lint/blob/master/lua/lint/linters/dmypy.lua) | 2024-12-19 | `DONE` | [`dmypy.lua`](./dmypy.lua) | |
 | [`dotenv_linter`](https://github.com/mfussenegger/nvim-lint/blob/master/lua/lint/linters/dotenv_linter.lua) | 2025-11-01 | `DONE` | [`dotenv-linter.lua`](./dotenv-linter.lua) |
