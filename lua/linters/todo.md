@@ -134,7 +134,7 @@
 | [`phpstan`](https://github.com/mfussenegger/nvim-lint/blob/master/lua/lint/linters/phpstan.lua) | 2025-04-05 | `DONE` | ['phpstan.lua'](./phpstan.lua)|
 | [`pmd`](https://github.com/mfussenegger/nvim-lint/blob/master/lua/lint/linters/pmd.lua) | 2025-06-05 | `DONE` | [`pmd.lua`](./pmd.lua)  |
 | [`pony-lint`](https://github.com/mfussenegger/nvim-lint/blob/master/lua/lint/linters/pony.lua) | 2024-01-07 | `DONE` | ['pony-lint.lua'](./ponylint.lua) |
-| [`prisma-lint`](https://github.com/mfussenegger/nvim-lint/blob/master/lua/lint/linters/prisma-lint.lua) | 2023-12-05 | `TODO` | — |
+| [`prisma-lint`](https://github.com/mfussenegger/nvim-lint/blob/master/lua/lint/linters/prisma-lint.lua) | 2023-12-05 | `DONE` | [`prisma-lint`](./prisma-lint.lua) |
 | [`proselint`](https://github.com/mfussenegger/nvim-lint/blob/master/lua/lint/linters/proselint.lua) | 2026-01-07 | `DONE` | [`proselint.lua`](./proselint.lua) |
 | [`protolint`](https://github.com/mfussenegger/nvim-lint/blob/master/lua/lint/linters/protolint.lua) | 2024-10-31 | `DONE` | [`protolint.lua`](./protolint.lua)  |
 | [`psalm`](https://github.com/mfussenegger/nvim-lint/blob/master/lua/lint/linters/psalm.lua) | 2024-01-02 | `DONE` | ['psalm.lua'](./psalm.lua) |
