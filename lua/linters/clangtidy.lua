@@ -1,19 +1,8 @@
 -- #################################################################
--- /qompassai/lua/linters/clangtidy.lua
--- Qompass AI Clang-Tidy
+-- /qompassai/Diver/lua/linters/clangtidy.lua
+-- Qompass AI Diver Native Clang-Tidy Linter
 -- SPDX-License-Identifier: Apache-2.0
 -- Copyright (c) 2026 Qompass AI
---
--- Licensed under the Apache License, Version 2.0 (the "License");
--- you may not use this file except in compliance with the License.
--- You may obtain a copy of the License at:
---   http://www.apache.org/licenses/LICENSE-2.0
---
--- Unless required by applicable law or agreed to in writing, software
--- distributed under the License is distributed on an "AS IS" BASIS,
--- WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
--- See the License for the specific language governing permissions and
--- limitations under the License.
 -- #################################################################
 
 local diagnostic = vim.diagnostic
@@ -21,224 +10,238 @@ local fs = vim.fs
 local uv = vim.uv
 
 local ERROR = diagnostic.severity.ERROR
-local WARN = diagnostic.severity.WARN
-local INFO = diagnostic.severity.INFO
 local HINT = diagnostic.severity.HINT
+local INFO = diagnostic.severity.INFO
+local WARN = diagnostic.severity.WARN
 
----@type table<string, string|false>
-local compilation_database_cache = {}
+local DIAGNOSTICS_MAX = 4096
+local LINE_LENGTH_MAX = 64 * 1024
+local TIMEOUT_MS = 60000
+
+local SOURCE = 'clang-tidy'
+
+---@class ClangTidyContext : LintContext
+---@field bufnr integer
+---@field cwd string
+---@field filename string
+---@field root string
 
 ---@type table<string, integer>
 local severities = {
-        ['error'] = ERROR,
-        ['fatal error'] = ERROR,
-        ['warning'] = WARN,
-        ['warn'] = WARN,
-        ['information'] = INFO,
-        ['info'] = INFO,
-        ['note'] = HINT,
-        ['hint'] = HINT,
+  ['error'] = ERROR,
+  ['fatal error'] = ERROR,
+  ['hint'] = HINT,
+  ['information'] = INFO,
+  ['info'] = INFO,
+  ['note'] = HINT,
+  ['warn'] = WARN,
+  ['warning'] = WARN,
 }
 
 ---@param value string|number|nil
 ---@param fallback integer
 ---@return integer
 local function integer(value, fallback)
-        return math.floor(tonumber(value) or fallback)
+  local parsed = tonumber(value)
+  if parsed == nil then
+    return fallback
+  end
+
+  parsed = math.floor(parsed)
+  return parsed >= 0 and parsed or fallback
 end
 
 ---@param value string|nil
 ---@return integer
 local function severity(value)
-        if value == nil then
-                return WARN
-        end
+  return value and severities[value:lower()] or WARN
+end
 
-        return severities[value:lower()] or WARN
+---@param path string
+---@return string
+local function normalize_path(path)
+  return fs.normalize(path) or path
+end
+
+---@param path string
+---@return string
+local function path_basename(path)
+  return fs.basename(path) or path
+end
+
+---@param path string
+---@return boolean
+local function is_absolute_path(path)
+  return path:sub(1, 1) == '/' or path:match('^%a:[/\\]') ~= nil or path:match('^\\\\') ~= nil
 end
 
 ---@param path string
 ---@return boolean
 local function is_file(path)
-        local stat = uv.fs_stat(path)
-        return stat ~= nil and stat.type == 'file'
+  local stat = uv.fs_stat(path)
+  return stat ~= nil and stat.type == 'file'
 end
 
----@param root string
+---@param value unknown
 ---@return string?
-local function compilation_database(root)
-        local cached = compilation_database_cache[root]
+local function configured_build_directory(value)
+  if type(value) ~= 'string' or value == '' then
+    return nil
+  end
 
-        if cached ~= nil then
-                return cached ~= false and cached or nil
-        end
+  local directory = normalize_path(value)
+  return is_file(fs.joinpath(directory, 'compile_commands.json')) and directory or nil
+end
 
-        --
-        -- Prefer the project root first because some generators symlink or
-        -- copy compile_commands.json there.
-        --
-        local candidates = {
-                root,
-                fs.joinpath(root, 'build'),
-                fs.joinpath(root, 'build-debug'),
-                fs.joinpath(root, 'build-release'),
-                fs.joinpath(root, 'cmake-build-debug'),
-                fs.joinpath(root, 'cmake-build-release'),
-                fs.joinpath(root, 'out'),
-        }
+---@param context ClangTidyContext
+---@return string?
+local function compilation_database(context)
+  local buffer_override = configured_build_directory(vim.b[context.bufnr].clangtidy_build_dir)
+  if buffer_override then
+    return buffer_override
+  end
 
-        for _, directory in ipairs(candidates) do
-                if is_file(fs.joinpath(directory, 'compile_commands.json')) then
-                        compilation_database_cache[root] = directory
-                        return directory
-                end
-        end
+  local global_override = configured_build_directory(vim.g.clangtidy_build_dir)
+  if global_override then
+    return global_override
+  end
 
-        compilation_database_cache[root] = false
-        return nil
+  local root = normalize_path(context.root)
+  local candidates = {
+    root,
+    fs.joinpath(root, 'build'),
+    fs.joinpath(root, 'build-debug'),
+    fs.joinpath(root, 'build-release'),
+    fs.joinpath(root, 'cmake-build-debug'),
+    fs.joinpath(root, 'cmake-build-release'),
+    fs.joinpath(root, 'out'),
+  }
+
+  for _, directory in ipairs(candidates) do
+    if is_file(fs.joinpath(directory, 'compile_commands.json')) then
+      return directory
+    end
+  end
+
+  return nil
 end
 
 ---@param path string
----@param normalized_filename string
+---@param filename string
 ---@param root string
 ---@param basename string
 ---@return boolean
-local function belongs_to_buffer(path, normalized_filename, root, basename)
-        if path == '' then
-                return true
-        end
+local function belongs_to_buffer(path, filename, root, basename)
+  if path == '' then
+    return true
+  end
 
-        local candidate
+  local candidate = is_absolute_path(path) and normalize_path(path) or normalize_path(fs.joinpath(root, path))
 
-        if fs.is_absolute(path) then
-                candidate = fs.normalize(path)
-        else
-                candidate = fs.normalize(fs.joinpath(root, path))
-        end
+  if candidate == filename then
+    return true
+  end
 
-        if candidate == normalized_filename then
-                return true
-        end
-
-        --
-        -- clang-tidy can occasionally print a path in a representation that
-        -- differs from the path Neovim has for the buffer. Basename matching
-        -- provides a conservative fallback.
-        --
-        return fs.basename(candidate) == basename
+  -- A bare filename is safe to match only when Clang-Tidy supplied no path.
+  return not path:find('/', 1, true) and not path:find('\\', 1, true) and path_basename(candidate) == basename
 end
 
 ---@param output string
 ---@param context LintContext|integer
 ---@return vim.Diagnostic.Set[]
 local function parse(output, context)
-        if output == '' then
-                return {}
-        end
+  if output == '' then
+    return {}
+  end
 
-        if type(context) ~= 'table' then
-                error('clang-tidy parser requires a LintContext', 0)
-        end
+  if type(context) ~= 'table' then
+    error('clang-tidy parser requires a LintContext', 0)
+  end
 
-        ---@cast context LintContext
+  ---@cast context ClangTidyContext
 
-        local filename = fs.normalize(context.filename)
-        local basename = fs.basename(filename)
-        local root = context.root
+  local filename = normalize_path(context.filename)
+  local root = normalize_path(context.root)
+  local basename = path_basename(filename)
 
-        ---@type vim.Diagnostic.Set[]
-        local diagnostics = {}
+  ---@type vim.Diagnostic.Set[]
+  local diagnostics = {}
 
-        --
-        -- Match only actual clang diagnostics:
-        --
-        --   foo.cpp:12:4: warning: diagnostic text [check-name]
-        --
-        -- Non-diagnostic lines such as source snippets, carets and suppression
-        -- summaries are ignored without raising errors.
-        --
-        for line in output:gmatch('[^\r\n]+') do
-                local path, lnum, col, level, message =
-                        line:match('^(.-):(%d+):(%d+):%s*([^:]+):%s*(.+)$')
+  for line in output:gmatch('[^\r\n]+') do
+    if #diagnostics >= DIAGNOSTICS_MAX then
+      break
+    end
 
-                if path ~= nil then
-                        local text, code =
-                                message:match('^(.-)%s+%[([^%]]+)%]%s*$')
+    if #line <= LINE_LENGTH_MAX then
+      local path, lnum, col, level, message = line:match('^(.-):(%d+):(%d+):%s*([^:]+):%s*(.+)$')
 
-                        text = text or message
+      if path and lnum and col and level and message and belongs_to_buffer(path, filename, root, basename) then
+        local text, code = message:match('^(.-)%s+%[([^%]]+)%]%s*$')
+        local row = math.max(integer(lnum, 1) - 1, 0)
+        local column = math.max(integer(col, 1) - 1, 0)
 
-                        if belongs_to_buffer(
-                                path,
-                                filename,
-                                root,
-                                basename
-                        ) then
-                                local row = math.max(integer(lnum, 1) - 1, 0)
-                                local column = math.max(integer(col, 1) - 1, 0)
+        diagnostics[#diagnostics + 1] = {
+          code = code,
+          col = column,
+          end_col = column + 1,
+          end_lnum = row,
+          lnum = row,
+          message = text or message,
+          severity = severity(level),
+          source = SOURCE,
+        }
+      end
+    end
+  end
 
-                                diagnostics[#diagnostics + 1] = {
-                                        lnum = row,
-                                        end_lnum = row,
-                                        col = column,
-                                        end_col = column + 1,
-                                        message = text,
-                                        severity = severity(level),
-                                        source = 'clang-tidy',
-                                        code = code,
-                                }
-                        end
-                end
-        end
-
-        return diagnostics
+  return diagnostics
 end
 
-return ---@type Linter
-{
-        automatic = false,
+---@param context LintContext
+---@return string[]
+local function args(context)
+  ---@cast context ClangTidyContext
 
-        cmd = 'clang-tidy',
+  local result = {
+    '--quiet',
+  }
 
-        args = function(context)
-                local database = compilation_database(context.root)
+  local database = compilation_database(context)
+  if database then
+    result[#result + 1] = '-p'
+    result[#result + 1] = database
+  end
 
-                if database ~= nil then
-                        return {
-                                '--quiet',
-                                '-p',
-                                database,
-                                context.filename,
-                        }
-                end
+  result[#result + 1] = context.filename
+  return result
+end
 
-                return {
-                        '--quiet',
-                        context.filename,
-                }
-        end,
+---@param context LintContext
+---@return string
+local function cwd(context)
+  return normalize_path(context.root)
+end
 
-        append_fname = false,
-
-        cwd = function(context)
-                return context.root
-        end,
-
-        exit_codes = {
-                [0] = true,
-                [1] = true,
-        },
-
-        parser = parse,
-
-        root_markers = {
-                '.clang-tidy',
-                'compile_commands.json',
-                'CMakeLists.txt',
-                'meson.build',
-                '.git',
-        },
-
-        stdin = false,
-        stream = 'stdout',
-        timeout = 60000,
+---@type Linter
+return {
+  automatic = false,
+  cmd = 'clang-tidy',
+  args = args,
+  append_fname = false,
+  cwd = cwd,
+  exit_codes = {
+    [0] = true,
+    [1] = true,
+  },
+  parser = parse,
+  root_markers = {
+    '.clang-tidy',
+    'compile_commands.json',
+    'CMakeLists.txt',
+    'meson.build',
+    '.git',
+  },
+  stdin = false,
+  stream = 'both',
+  timeout = TIMEOUT_MS,
 }

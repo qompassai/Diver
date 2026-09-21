@@ -2,33 +2,46 @@
 -- Qompass AI Docker LSP Config
 -- Copyright (C) 2025 Qompass AI, All rights reserved
 -- ---------------------------------------------------
+---@source https://github.com/docker/docker-language-server
+--- go install github.com/docker/docker-language-server/cmd/docker-language-server@latest
+
 return ---@type vim.lsp.Config
 {
-    cmd = {
-        'docker-langserver',
-        '--stdio',
+  cmd = {
+    'docker-langserver',
+    'start',
+    '--stdio',
+  },
+  filetypes = {
+    'dockerfile',
+  },
+  root_markers = {
+    'compose.yaml',
+    'compose.yml',
+    'docker-bake.json',
+    'docker-bake.hcl',
+    'docker-bake.override.hcl',
+    'docker-bake.override.json',
+    'docker-compose.yaml',
+    'docker-compose.yml',
+    'Dockerfile',
+  },
+
+  settings = {
+    dockercomposeExperimental = {
+      composeSupport = true,
     },
-    filetypes = {
-        'dockerfile',
+    dockerfileExperimental = {
+      removeOverlappingIssues = false,
     },
-    root_markers = {
-        'compose.yaml',
-        'compose.yml',
-        'docker-bake.json',
-        'docker-bake.hcl',
-        'docker-bake.override.hcl',
-        'docker-bake.override.json',
-        'docker-compose.yaml',
-        'docker-compose.yml',
-        'Dockerfile',
-    },
-    settings = {
-        docker = {
-            languageserver = {
-                formatter = {
-                    ignoreMultilineInstructions = true,
-                },
-            },
+    telemetry = 'off',
+
+    docker = {
+      languageserver = {
+        formatter = {
+          ignoreMultilineInstructions = true,
         },
+      },
     },
+  },
 }

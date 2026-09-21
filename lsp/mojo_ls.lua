@@ -2,28 +2,34 @@
 -- Qompass AI Diver Mojo LSP Spec
 -- Copyright (C) 2025 Qompass AI, All rights reserved
 -- ----------------------------------------
+---@source  https://github.com/modularml/mojo
 return ---@type vim.lsp.Config
 {
-    cmd = {
-        'mojo-lsp-server',
-        '--log=info',
-        -- '--pretty',
-        --  '--attach-debugger-on-startup',
+  cmd = {
+    'mojo-lsp-server',
+    '--log=info',
+    -- '--pretty',
+    --  '--attach-debugger-on-startup',
+  },
+  cmd_env = {
+    CONDA_PREFIX = vim.fn.expand('~/.local/share/mojo/.pixi/envs/default'),
+    MOJO_STDLIB_PATH = vim.fn.expand('~/.local/share/mojo/.pixi/envs/default/lib/mojo'),
+  },
+  filetypes = {
+    'mojo',
+  },
+  root_markers = {
+    {
+      'pixi.toml',
+      'pixi.lock',
     },
-    cmd_env = {
-        CONDA_PREFIX = vim.fn.expand('~/.local/share/mojo/.pixi/envs/default'),
-        MOJO_STDLIB_PATH = vim.fn.expand('~/.local/share/mojo/.pixi/envs/default/lib/mojo'),
+    {
+      '.git',
     },
-    filetypes = {
-        'mojo',
+  },
+  settings = {
+    mojo = {
+      stdlib_path = vim.fn.expand('~/.local/share/mojo/.pixi/envs/default/lib/mojo'),
     },
-    root_markers = {
-        '.git',
-        'pixi.toml',
-    },
-    settings = {
-        mojo = {
-            stdlib_path = vim.fn.expand('~/.local/share/mojo/.pixi/envs/default/lib/mojo'),
-        },
-    },
+  },
 }

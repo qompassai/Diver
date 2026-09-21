@@ -1,5 +1,4 @@
-#!/usr/bin/env lua
-
+#!/usr/bin/env lua5.1
 -- edu.lua
 -- Qompass AI - [ ]
 -- Copyright (C) 2026 Qompass AI, All rights reserved
@@ -24,9 +23,6 @@ vim.pack.add({
   },
   {
     src = 'https://github.com/nvim-treesitter/nvim-treesitter',
-  },
-  {
-    src = 'https://github.com/nvim-tree/nvim-web-devicons',
   },
   {
     src = 'https://github.com/folke/which-key.nvim',
@@ -110,7 +106,10 @@ do
     twilight.setup({
       dimming = {
         alpha = 0.25,
-        color = { 'Normal', '#ffffff' },
+        color = {
+          'Normal',
+          '#ffffff',
+        },
         term_bg = '#000000',
         inactive = false,
       },

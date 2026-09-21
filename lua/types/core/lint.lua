@@ -7,9 +7,9 @@
 
 ---@class LintContext
 ---@field bufnr                                  integer Buffer receiving diagnostics.
----@field cwd string Default working directory for the linter process.
----@field filename string Normalized absolute buffer filename.
----@field filetype string Current Neovim buffer filetype.
+---@field cwd                                              string Default working directory for the linter process.
+---@field filename                                         string Normalized absolute buffer filename.
+---@field filetype                                         string Current Neovim buffer filetype.
 ---@field modified boolean Whether the buffer contains unsaved changes.
 ---@field root string Detected project root.
 
@@ -40,8 +40,8 @@
 -- Runtime behavior remains defined by `Linter`; the additional fields below
 -- preserve metadata used by older Qompass AI linter and report definitions.
 ---@class vim.lint.Config : Linter
----@field code? string Legacy diagnostic or report code.
----@field column? integer|string Legacy diagnostic column.
+---@field code?                                            string Legacy diagnostic or report code.
+---@field column?                                          integer|string Legacy diagnostic column.
 ---@field file_name? string Legacy diagnostic filename.
 ---@field kind? string Legacy diagnostic kind.
 ---@field level? string Legacy diagnostic level.

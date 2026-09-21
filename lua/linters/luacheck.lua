@@ -4,24 +4,14 @@
 -- SPDX-License-Identifier: Apache-2.0
 -- Copyright (c) 2026 Qompass AI
 --
-
--- Licensed under the Apache License, Version 2.0 (the "License");
--- you may not use this file except in compliance with the License.
--- You may obtain a copy of the License at:
---   http://www.apache.org/licenses/LICENSE-2.0
+-- Detects a Lua target per buffer. Precedence:
+-- 1. vim.b[bufnr].luacheck_std
+-- 2. A Lua shebang, e.g. #!/usr/bin/env lua5.4 or luajit
+-- 3. A leading ---@version annotation
+-- 4. vim.g.luacheck_std
 --
--- Unless required by applicable law or agreed to in writing, software
--- distributed under the License is distributed on an "AS IS" BASIS,
--- WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
--- See the License for the specific language governing permissions and
--- limitations under the License.
 -- #################################################################
--- Detects a Lua target per buffer. The precedence is:
---   1. vim.b[bufnr].luacheck_std
---   2. A Lua shebang, such as #!/usr/bin/env lua5.4 or luajit
---   3. A leading ---@version annotation
---   4. vim.g.luacheck_std
---   5. The Neovim/LuaJIT default
+
 local api = vim.api
 local diagnostic = vim.diagnostic
 local fn = vim.fn
@@ -54,6 +44,7 @@ local type = type
 ---@field requested string
 ---@field standard string
 ---@field neovim boolean
+---@field hyprland boolean
 
 local STANDARD_CANDIDATES = {
   luajit = {
@@ -162,7 +153,6 @@ local function normalize_standard(value)
   end
 
   local compact = value:lower():gsub('%s+', '')
-  compact = compact:gsub('^lua', 'lua')
 
   if compact == 'jit' or compact == 'luajit' or compact == 'lua51jit' then
     return 'luajit'
@@ -189,6 +179,7 @@ local function has_standard(standard)
     standard,
     '--version',
   })
+
   standard_checked[standard] = true
   standard_available[standard] = vim.v.shell_error == 0
   return standard_available[standard]
@@ -217,6 +208,7 @@ local function resolve_standard(requested)
           )
         end)
       end
+
       return candidate
     end
   end
@@ -307,6 +299,28 @@ local function is_neovim_context(context, header)
 end
 
 ---@param context LintContext
+---@return boolean
+local function is_hyprland_context(context)
+  local override = vim.b[context.bufnr].luacheck_hyprland
+  if type(override) == 'boolean' then
+    return override
+  end
+
+  local filename = context.filename:lower()
+  return filename:find('/.config/hypr/', 1, true) ~= nil or filename:find('/qompassai/hyprland/', 1, true) ~= nil
+end
+
+---@param context LintContext
+---@return string
+local function default_standard_for(context)
+  if is_hyprland_context(context) then
+    return 'lua54'
+  end
+
+  return 'luajit'
+end
+
+---@param context LintContext
 ---@return LuacheckTarget
 local function target_for(context)
   assert(type(context) == 'table')
@@ -314,16 +328,18 @@ local function target_for(context)
   assert(type(context.filename) == 'string')
 
   local header = buffer_header(context.bufnr)
+  local hyprland = is_hyprland_context(context)
   local requested = normalize_standard(vim.b[context.bufnr].luacheck_std)
     or standard_from_shebang(header)
     or standard_from_annotation(header)
     or normalize_standard(vim.g.luacheck_std)
-    or 'luajit'
+    or default_standard_for(context)
 
   return {
     requested = requested,
     standard = resolve_standard(requested),
     neovim = is_neovim_context(context, header),
+    hyprland = hyprland,
   }
 end
 
@@ -344,7 +360,7 @@ local function parse_line(line)
   local line_number, start_column, end_column, code, message =
     line:match('^.-:(%d+):(%d+)%-(%d+):%s*%(([EW]%d%d%d)%)%s*(.+)$')
 
-  if line_number ~= nil and start_column ~= nil and end_column ~= nil and code ~= nil and message ~= nil then
+  if line_number and start_column and end_column and code and message then
     local parsed_line = integer(line_number, 0)
     local parsed_start_column = integer(start_column, 0)
     local parsed_end_column = integer(end_column, 0)
@@ -364,7 +380,7 @@ local function parse_line(line)
   end
 
   line_number, start_column, code, message = line:match('^.-:(%d+):(%d+):%s*%(([EW]%d%d%d)%)%s*(.+)$')
-  if line_number == nil or start_column == nil or code == nil or message == nil then
+  if not line_number or not start_column or not code or not message then
     return nil
   end
 
@@ -458,6 +474,13 @@ local function parse(output, context)
   return diagnostics
 end
 
+---@param result string[]
+---@param name string
+local function add_global(result, name)
+  result[#result + 1] = '--globals'
+  result[#result + 1] = name
+end
+
 ---@param context LintContext
 ---@return string[]
 local function args(context)
@@ -481,8 +504,11 @@ local function args(context)
   }
 
   if target.neovim then
-    result[#result + 1] = '--globals'
-    result[#result + 1] = 'vim'
+    add_global(result, 'vim')
+  end
+
+  if target.hyprland then
+    add_global(result, 'hl')
   end
 
   result[#result + 1] = '--filename'
