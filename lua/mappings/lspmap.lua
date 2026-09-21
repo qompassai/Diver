@@ -341,6 +341,16 @@ function M.on_attach(args)
       desc = 'Show signature help',
     })
   end
+
+  if client ~= nil and client:supports_method('textDocument/codeLens') then
+    lsp.codelens.enable(true, { bufnr = args.buf })
+
+    vim.keymap.set('n', '<leader>cl', lsp.codelens.run, {
+      buffer = args.buf,
+      silent = true,
+      desc = 'Run code lens',
+    })
+  end
 end
 
 function M.setup_lspmap()
