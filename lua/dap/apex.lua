@@ -1,5 +1,5 @@
 -- #################################################################
--- ~/.config/nvim/lua/dap/apex.lua
+-- /qompassai/diver/lua/dap/apex.lua
 -- Qompass AI Diver Native Salesforce Apex Debug Adapter Configuration
 -- Copyright (C) 2026 Qompass AI, All rights reserved
 -- SPDX-License-Identifier: Apache-2.0
