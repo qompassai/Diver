@@ -68,11 +68,9 @@ require('lazy').setup({
     {
       import = 'plugins.core',
     },
-    --]]
     {
       import = 'plugins.cicd',
     },
-    --[[
     {
       import = 'plugins.cloud',
     },

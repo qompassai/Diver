@@ -446,6 +446,7 @@ local function build_current(extra_flags)
     'build',
     '-O0',
     '-g',
+    '--debug-info-language=C',
     '-o',
     output,
   }

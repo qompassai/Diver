@@ -69,18 +69,18 @@ local DEBUGGABLE_PROCESS_NAMES = {
   nvim = true,
 }
 
----@class QompassLuaDebugProcess
+---@class LuaDebugProcess
 ---@field command string
 ---@field executable string
 ---@field pid integer
 
----@alias QompassLuaValidationCallback fun(ok: boolean, message: string)
----@alias QompassLuaSystemCallback fun(result: vim.SystemCompleted?, error_message: string?)
+---@alias LuaValidationCallback fun(ok: boolean, message: string)
+---@alias LuaSystemCallback fun(result: vim.SystemCompleted?, error_message: string?)
 
 ---@type table<string, vim.SystemObj>
 local active_systems = {}
 
----@type QompassLuaDebugProcess?
+---@type LuaDebugProcess?
 local selected_process = nil
 
 ---@param message string
@@ -379,7 +379,7 @@ local function neovim_config_arguments()
 end
 
 ---@param line string
----@return QompassLuaDebugProcess?
+---@return LuaDebugProcess?
 local function parse_process(line)
   local pid_text, process_name, command = line:match('^%s*(%d+)%s+(%S+)%s+(.+)$')
 
@@ -403,7 +403,7 @@ local function parse_process(line)
     return nil
   end
 
-  ---@type QompassLuaDebugProcess
+  ---@type LuaDebugProcess
   local process = {
     command = command,
     executable = process_name,
@@ -444,7 +444,7 @@ end
 ---@param name string
 ---@param command string[]
 ---@param timeout integer
----@param callback QompassLuaSystemCallback
+---@param callback LuaSystemCallback
 local function run_system(name, command, timeout, callback)
   cancel_system(name)
 
@@ -495,7 +495,7 @@ local function system_error(result, command)
   return ('%s exited with code %d'):format(command, result.code)
 end
 
----@param callback fun(processes: QompassLuaDebugProcess[]?, error_message: string?)
+---@param callback fun(processes: LuaDebugProcess[]?, error_message: string?)
 local function discover_processes(callback)
   run_system(
     'process-discovery',
@@ -518,7 +518,7 @@ local function discover_processes(callback)
         return
       end
 
-      ---@type QompassLuaDebugProcess[]
+      ---@type LuaDebugProcess[]
       local processes = {}
 
       for line in (result.stdout or ''):gmatch('[^\r\n]+') do
@@ -542,7 +542,7 @@ local function discover_processes(callback)
   )
 end
 
----@param callback QompassLuaValidationCallback
+---@param callback LuaValidationCallback
 local function validate_adapter(callback)
   local adapter = lua_debug_adapter()
 
@@ -577,7 +577,7 @@ local function validate_adapter(callback)
   )
 end
 
----@param callback QompassLuaValidationCallback
+---@param callback LuaValidationCallback
 local function validate_runtime(callback)
   local lua = lua_executable()
 

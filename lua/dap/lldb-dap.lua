@@ -22,7 +22,7 @@ local fn = vim.fn
 local uv = vim.uv
 local M = {}
 local ADAPTER_NAME = 'lldb-dap'
-local CONFIGURED_FLAG = 'qompass_lldb_dap_configured'
+local CONFIGURED_FLAG = 'lldb_dap_configured'
 local MAX_EXECUTABLES = 40
 local MAX_SCAN_DEPTH = 3
 local FILETYPES = {
@@ -685,7 +685,7 @@ end
 
 ---@return string[]
 local function adapter_candidates()
-  local configured = vim.g.qompass_lldb_dap_path
+  local configured = vim.g.lldb_dap_path
   local environment = vim.env.NVIM_LLDB_DAP
 
   return {
@@ -725,7 +725,7 @@ function M.resolve_adapter()
   cached_adapter_command = cached_adapter_command or xcrun_lldb_dap()
   if not cached_adapter_command then
     notify(
-      'lldb-dap was not found. On Arch Linux install the lldb package; otherwise set NVIM_LLDB_DAP or vim.g.qompass_lldb_dap_path',
+      'lldb-dap was not found. On Arch Linux install the lldb package; otherwise set NVIM_LLDB_DAP or vim.g.lldb_dap_path',
       vim.log.levels.ERROR
     )
     return nil
@@ -778,8 +778,6 @@ local function start(configuration)
     args = adapter.args,
   }
 
-  -- The second argument is ignored by one-argument clients and allows a
-  -- plugin-free custom DAP core to consume the resolved adapter directly.
   local ok, err = pcall(client.start, configuration, adapter)
   if not ok then
     notify('Unable to start LLDB DAP: ' .. tostring(err), vim.log.levels.ERROR)
@@ -1094,7 +1092,7 @@ function M.help()
     '- Arch Linux: `pacman -S lldb`',
     '- macOS with Xcode: `xcrun -f lldb-dap`',
     '- Override: `NVIM_LLDB_DAP=/absolute/path/to/lldb-dap`',
-    '- Lua override: `vim.g.qompass_lldb_dap_path = "/absolute/path/to/lldb-dap"`',
+    '- Lua override: `vim.g.lldb_dap_path = "/absolute/path/to/lldb-dap"`',
   }
 
   vim.cmd('botright new')
@@ -1169,7 +1167,7 @@ local function configure_buffer(bufnr)
 end
 
 function M.setup()
-  local group = api.nvim_create_augroup('qompass.dap.lldb', {
+  local group = api.nvim_create_augroup('dap.lldb', {
     clear = true,
   })
 
