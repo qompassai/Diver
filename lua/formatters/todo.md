@@ -1,375 +1,712 @@
 # Native Formatter TODO
 
-A plugin-free formatter adoption checklist curated from Conform.nvim's current formatter catalog. Each formatter below is an external CLI or language-toolchain command to invoke directly from native Neovim Lua, LSP formatting, task commands, pre-commit hooks, or CI.
-
-## Rules
+Updated: 2026-09-21
+
+Plugin-free formatter roadmap for the native Neovim 0.13+ formatter framework.
+
+The priorities below favor:
+
+1. canonical language/toolchain formatters;
+2. actively maintained projects;
+3. tools that are already installed on this Arch system;
+4. formatters with clean stdin/stdout or deterministic file-mode behavior;
+5. avoiding multiple competing full-file formatters for the same filetype.
+
+## Status legend
+
+- [x] Native formatter adapter already exists.
+- [ ] Native formatter adapter still needs to be written.
+- **Installed** means the formatter appeared as installed in the supplied Arch/AUR package snapshot.
+- **Canonical** means the formatter is provided by, or tightly coupled to, the language/toolchain.
+- **Preferred** means it should normally be the first formatter tried for that filetype.
+- **Alternative** means keep it available for repositories that explicitly standardize on it.
+
+---
+
+# 1. Completed native formatter framework
+
+## Framework
+
+- [x] `init.lua`
+- [x] `catalog.lua`
+- [x] `process.lua`
+- [x] `tools.lua`
+
+Keep process execution centralized here rather than duplicating `vim.system()` or
+`config.core.async` orchestration in every formatter adapter.
+
+## Completed formatter adapters
+
+- [x] `alejandra.lua` — Nix
+- [x] `bibtex-tidy.lua` — BibTeX
+- [x] `clang_format.lua` — C/C++/Objective-C and related Clang-supported languages
+- [x] `d2.lua` — D2 diagrams
+- [x] `dioxus.lua` — Dioxus / RSX
+- [x] `gofumpt.lua` — Go
+- [x] `goimports.lua` — Go import-aware formatting
+- [x] `jsonnetfmt.lua` — Jsonnet
+- [x] `ktfmt.lua` — Kotlin
+- [x] `phpcsfixer.lua` — PHP
+- [x] `pint.lua` — Laravel PHP
+- [x] `shfmt.lua` — shell
+- [x] `uncrustify.lua` — configurable C-family formatting
+- [x] `wgslfmt.lua` — WGSL
+
+**Current total: 14 formatter adapters + 4 framework modules.**
+
+---
+
+# 2. P0 — highest-value formatters still to implement
+
+These should be the next adapters because they cover major languages in the
+configuration and are modern, canonical, or very actively maintained.
+
+## Lua / LuaJIT / Luau
+
+- [ ] **`stylua.lua` — StyLua**
+  - **Preferred**
+  - Upstream: <https://github.com/JohnnyMorganz/StyLua>
+  - Actively maintained; 2.5.x releases shipped in 2026.
+  - Support stdin/stdout and explicit config discovery.
+  - Prefer repository `.stylua.toml` / `stylua.toml`.
+  - Keep `lua-format` only as a repository-specific alternative, not a default.
+  - Do not chain StyLua and LuaFormatter.
+
+## Python
+
+- [ ] **`ruff_format.lua` — Ruff formatter**
+  - **Preferred for new repositories**
+  - Upstream: <https://github.com/astral-sh/ruff>
+  - Very actively maintained through 2026.
+  - Use `ruff format`.
+  - Keep lint/fix actions separate from formatting.
+  - Preserve Black compatibility as a policy choice rather than chaining tools.
+
+- [ ] **`black.lua` — Black**
+  - **Alternative**
+  - **Installed**
+  - Use only when a repository explicitly standardizes on Black.
+  - Do not run Black and Ruff formatter sequentially.
+
+## Rust
+
+- [ ] **`rustfmt.lua` — rustfmt**
+  - **Canonical**
+  - Prefer `cargo fmt` for project-aware formatting.
+  - Support direct `rustfmt` for isolated buffers only when appropriate.
+  - Respect `rustfmt.toml`.
+  - Keep import organization separate unless the toolchain owns it.
+
+## JavaScript / TypeScript / JSON / CSS / web
+
+- [ ] **`biome.lua` — Biome**
+  - **Preferred for Biome-owned repositories**
+  - **Installed**
+  - Upstream: <https://github.com/biomejs/biome>
+  - Very active 2.5.x release line in 2026.
+  - Cover JavaScript, TypeScript, JSX/TSX, JSON/JSONC, CSS, and supported web formats.
+  - Do not automatically chain with Prettier or Oxfmt.
+
+- [ ] **`oxfmt.lua` — Oxfmt**
+  - **Modern alternative**
+  - Upstream: <https://github.com/oxc-project/oxc>
+  - Rapidly maintained in 2026; use only for repositories choosing Oxc formatting.
+  - Keep as an alternative to Biome/Prettier, not a second pass.
+
+- [ ] **`prettier.lua` — Prettier**
+  - **Alternative / broad ecosystem fallback**
+  - **Installed**
+  - Useful for Markdown, YAML, GraphQL, HTML and plugin-owned ecosystems.
+  - Prefer project-local executable when `package.json` owns the version.
+  - Do not run after Biome/Oxfmt on the same buffer.
+
+## Nix
+
+- [ ] **`nixfmt.lua` — nixfmt**
+  - **Canonical / preferred for new Nix repositories**
+  - Upstream: <https://github.com/NixOS/nixfmt>
+  - Official Nix formatter with active 1.x releases in 2026.
+  - Keep the completed `alejandra.lua` for repositories already standardized on Alejandra.
+  - Do not run nixfmt and Alejandra sequentially.
+
+## TOML
+
+- [ ] **`tombi.lua` — Tombi**
+  - **Preferred**
+  - **Installed**
+  - Upstream: <https://github.com/tombi-toml/tombi>
+  - Modern Rust formatter/linter/LSP with active releases.
+  - Use only its formatting operation from the formatter layer.
+  - Keep lint/LSP concerns outside the formatter runner.
+
+- [ ] `taplo.lua` — Taplo
+  - **Alternative**
+  - Useful when a repository already owns Taplo configuration.
+  - Do not chain Tombi and Taplo.
+
+## YAML
+
+- [ ] **`yamlfmt.lua` — yamlfmt**
+  - **Preferred**
+  - Upstream: <https://github.com/google/yamlfmt>
+  - Actively maintained; 0.21.0 released in 2026.
+  - Preserve comments and repository configuration.
+
+- [ ] `yamlfix.lua` — yamlfix
+  - **Installed**
+  - Alternative for repositories that already use yamlfix.
+  - Do not run both yamlfix and yamlfmt on save.
+
+## Markdown
+
+- [ ] **`mdformat.lua` — mdformat**
+  - **Installed**
+  - Upstream: <https://github.com/executablebooks/mdformat>
+  - Good CommonMark-oriented formatter.
+  - Support project plugin configuration explicitly.
+
+- [ ] `rumdl.lua` — Rumdl formatter mode
+  - **Installed**
+  - Keep formatting separate from Rumdl diagnostics/lint execution.
+  - Do not automatically run both Rumdl formatting and mdformat.
+
+## SQL
+
+- [ ] **`sqruff.lua` — Sqruff**
+  - **Preferred modern SQL option**
+  - Upstream: <https://github.com/quarylabs/sqruff>
+  - Active releases in 2026.
+  - Make SQL dialect an explicit formatter option/root setting.
+
+- [ ] `pgformatter.lua` — pgFormatter
+  - **Installed**
+  - Prefer for PostgreSQL-specific repositories.
+
+- [ ] `sqlfluff.lua` — SQLFluff
+  - Alternative when the repository already uses SQLFluff.
+  - Do not combine SQLFluff fixes and another SQL full-file formatter automatically.
+
+## SystemVerilog / Verilog
+
+- [ ] **`verible.lua` — Verible**
+  - **Preferred**
+  - Upstream: <https://github.com/chipsalliance/verible>
+  - Actively released in 2026.
+  - Use `verible-verilog-format`.
+  - Prefer the maintained stable package over stale/orphaned `-git` packaging.
+
+## Typst
+
+- [ ] **`typstyle.lua` — Typstyle**
+  - **Preferred**
+  - **Installed**
+  - Use instead of the orphaned `typstfmt-bin`.
+  - Avoid a second Typst formatting pass.
+
+---
 
-- [ ] Select one formatter of record for each file type.
-- [ ] Pin every formatter version in a lockfile, toolchain file, package manifest, or CI action.
-- [ ] Use formatters in write mode locally and check/diff mode in CI.
-- [ ] Keep linting, security scanning, and import organization separate from full-file formatting unless the selected tool intentionally owns both.
-- [ ] Do not chain competing full-file formatters on save.
-
-## Core native formatters
-
-### Lua and Neovim
-
-- [ ] Install [StyLua](https://github.com/JohnnyMorganz/StyLua) for Lua, LuaJIT, and Luau.
-- [ ] Add a repository `stylua.toml` or `.stylua.toml` where style must be explicit.
-- [ ] Use `stylua file.lua` locally.
-- [ ] Use `stylua --check .` in CI.
-
-### Shell
-
-- [ ] Install [shfmt](https://github.com/mvdan/sh) for Bash, POSIX shell, and mksh layout formatting.
-- [ ] Choose shell dialect flags deliberately, for example `shfmt -ln bash -w script.sh`.
-- [ ] Use ShellCheck separately for static analysis; do not treat it as a formatter.
-- [ ] Use Shellharden only as an explicit Bash hardening rewrite, not as automatic layout formatting.
-
-### Go
-
-- [ ] Use [gofumpt](https://github.com/mvdan/gofumpt) as the Go formatter of record.
-- [ ] Use `gofumpt -w file.go` locally.
-- [ ] Use `gofumpt -d .` in CI.
-- [ ] Use persistent `gopls` organize-imports code actions for import management.
-- [ ] Do not automatically chain goimports and gofumpt on each save.
-- [ ] Use `gofmt` instead only when the repository intentionally wants standard toolchain formatting with no gofumpt policy.
-
-### Rust
-
-- [ ] Use rustfmt through `cargo fmt`.
-- [ ] Add `rustfmt.toml` only for supported, deliberate formatting policy.
-- [ ] Use `cargo fmt` locally.
-- [ ] Use `cargo fmt --check` in CI.
-
-### Python
-
-- [ ] Use [Ruff formatter](https://docs.astral.sh/ruff/formatter/) for new Python repositories.
-- [ ] Configure Ruff in `pyproject.toml`.
-- [ ] Use `ruff format .` locally.
-- [ ] Use `ruff format --check .` in CI.
-- [ ] Use Black instead only when the repository already standardizes on [Black](https://black.readthedocs.io/).
-- [ ] Do not run Black and Ruff formatter automatically on the same files.
-- [ ] Treat `blackd` as an optional persistent Black service, not as a separate formatting engine.
-
-### JavaScript, TypeScript, JSON, and web assets
-
-- [ ] Choose [Biome](https://biomejs.dev/formatter/) or [Prettier](https://prettier.io/) as the repository formatter of record.
-- [ ] Use Biome for JS, TS, JSON, JSONC, CSS, HTML, GraphQL, and supported web assets when the project already uses `biome.json` or `biome.jsonc`.
-- [ ] Use `biome format --write .` locally.
-- [ ] Use `biome format .` in CI.
-- [ ] Use Prettier for JSON5, Markdown, HTML, CSS, YAML, GraphQL, and plugin-supported languages.
-- [ ] Use `prettier --write .` locally.
-- [ ] Use `prettier --check .` in CI.
-- [ ] Do not run Prettier and Biome automatically over the same files.
-- [ ] Treat `prettierd` as an optional persistent Prettier service, not a distinct formatter policy.
-
-### Nix
-
-- [ ] Prefer [nixfmt-rfc-style](https://github.com/NixOS/nixfmt) for new Nix repositories.
-- [ ] Use `nixfmt file.nix` locally.
-- [ ] Use Alejandra only when the repository already standardizes on [Alejandra](https://github.com/kamadorueda/alejandra).
-- [ ] Do not run nixfmt-rfc-style and Alejandra over the same Nix source automatically.
-
-### Elixir and Erlang
-
-- [ ] Use `mix format` for Elixir and configure formatting inputs in `.formatter.exs`.
-- [ ] Use `mix format --check-formatted` in CI.
-- [ ] Use [erlfmt](https://github.com/WhatsApp/erlfmt) for Erlang.
-- [ ] Use `erlfmt -w src/*.erl` locally.
-- [ ] Keep Dialyzer/Dialyxir analysis separate from formatting.
-
-### C, C++, Objective-C, and CMake
-
-- [ ] Use [clang-format](https://clang.llvm.org/docs/ClangFormat.html) for C-family source.
-- [ ] Commit a `.clang-format` file before enforcing it broadly.
-- [ ] Use `clang-format -i file.cpp` locally.
-- [ ] Select either [gersemi](https://github.com/BlankSpruce/gersemi) or cmake-format for CMake.
-- [ ] Do not run both CMake formatters automatically.
-
-### Terraform, OpenTofu, and HCL
-
-- [ ] Use `terraform fmt -recursive` for Terraform projects.
-- [ ] Use `terraform fmt -check -recursive` in CI.
-- [ ] Use `tofu fmt -recursive` for OpenTofu projects.
-- [ ] Use the formatter corresponding to the tool that owns the project.
-- [ ] Use `packer fmt .` for Packer HCL projects.
-
-### Solidity
-
-- [ ] Use `forge fmt` for Foundry-owned Solidity projects.
-- [ ] Use Prettier Plugin Solidity only when the repository's formatting policy is already Prettier-based.
-- [ ] Do not run forge fmt and Prettier Plugin Solidity automatically on the same contracts.
-- [ ] Keep Solhint and Slither separate as lint/security-analysis tools.
-
-### Data and documentation
-
-- [ ] Use [Taplo](https://taplo.tamasfe.dev/) for TOML: `taplo format file.toml`.
-- [ ] Use [yamlfmt](https://github.com/google/yamlfmt) or repository-owned Prettier for YAML, but not both.
-- [ ] Use [mdformat](https://github.com/executablebooks/mdformat) or repository-owned Prettier for Markdown, but not both.
-- [ ] Use `xmllint --format -o file.xml file.xml` for XML reformatting.
-- [ ] Use [SQLFluff](https://docs.sqlfluff.com/) where dialect-aware SQL formatting and linting matter.
-- [ ] Use [sql-formatter](https://github.com/sql-formatter-org/sql-formatter) only for formatting-focused SQL workflows with a supported dialect.
-- [ ] Use hledger-fmt only for hledger journal layout; use `hledger check` separately for accounting validation.
-
-## Additional language choices
-
-- [ ] Assembly: [asmfmt](https://github.com/klauspost/asmfmt) â€” `asmfmt -w file.s`
-- [ ] Bazel/Starlark: [buildifier](https://github.com/bazelbuild/buildtools) â€” `buildifier -w BUILD.bazel`
-- [ ] Bicep: `bicep format file.bicep`
-- [ ] Clojure/EDN: [cljfmt](https://github.com/weavejester/cljfmt) â€” `cljfmt fix`
-- [ ] Crystal: `crystal tool format`
-- [ ] CUE: `cue fmt ./...`
-- [ ] D: [dfmt](https://github.com/dlang-community/dfmt) â€” `dfmt -i source.d`
-- [ ] Dart: `dart format .`
-- [ ] Elm: [elm-format](https://github.com/avh4/elm-format) â€” `elm-format --yes src/`
-- [ ] F#: [Fantomas](https://fsprojects.github.io/fantomas/) â€” `fantomas .`
-- [ ] Fish: `fish_indent -w script.fish`
-- [ ] Fortran: [fprettify](https://github.com/fortran-lang/fprettify) â€” `fprettify -w source.f90`
-- [ ] GDScript: [gdformat](https://github.com/Scony/godot-gdscript-formatter) â€” `gdformat file.gd`
-- [ ] Gleam: `gleam format`
-- [ ] Haskell: [Fourmolu](https://github.com/fourmolu/fourmolu) â€” `fourmolu --mode inplace file.hs`
-- [ ] Java: [google-java-format](https://github.com/google/google-java-format) â€” `google-java-format -i File.java`
-- [ ] Jsonnet: `jsonnetfmt -i file.jsonnet`
-- [ ] Kotlin: [ktfmt](https://github.com/facebook/ktfmt) â€” `ktfmt --kotlinlang-style -w file.kt`
-- [ ] LaTeX: [latexindent](https://github.com/cmhughes/latexindent.pl) â€” `latexindent -w file.tex`
-- [ ] Nim: `nimpretty file.nim`
-- [ ] OCaml: [ocamlformat](https://github.com/ocaml-ppx/ocamlformat) â€” `ocamlformat --inplace file.ml`
-- [ ] Odin: `odinfmt file.odin`
-- [ ] PHP: [PHP CS Fixer](https://github.com/PHP-CS-Fixer/PHP-CS-Fixer) â€” `php-cs-fixer fix file.php`
-- [ ] Laravel PHP: [Pint](https://laravel.com/docs/pint) â€” `./vendor/bin/pint`
-- [ ] Perl: [Perl::Tidy](https://perltidy.sourceforge.net/) â€” `perltidy -b file.pl`
-- [ ] R: [styler](https://styler.r-lib.org/) â€” `Rscript -e 'styler::style_dir()'`
-- [ ] ReScript: `rescript format -all`
-- [ ] Ruby: RuboCop autocorrection or StandardRB; select one policy per repository
-- [ ] Scala: [Scalafmt](https://scalameta.org/scalafmt/) â€” `scalafmt`
-- [ ] Swift: [swift-format](https://github.com/swiftlang/swift-format) â€” `swift-format format -i file.swift`
-- [ ] TypeSpec: `tsp format .`
-- [ ] Typst: [typstyle](https://github.com/Enter-tainer/typstyle) â€” `typstyle file.typ`
-- [ ] V: `v fmt -w file.v`
-- [ ] Verilog/SystemVerilog: [Verible](https://github.com/chipsalliance/verible) â€” `verible-verilog-format --inplace file.sv`
-- [ ] Zig: `zig fmt src`
-
-## Native Neovim implementation
-
-- [ ] Use native Lua and `vim.system()` rather than Conform.nvim or another formatter plugin.
-- [ ] Use stdin plus captured stdout only for formatters designed to return formatted text.
-- [ ] Use file-writing formatter commands only when their exit status is zero, then reload the buffer while preserving view/cursor state.
-- [ ] Do not run destructive `--fix`, `--replace`, autocorrection, import organization, and full-file formatting as an unreviewed combined on-save action.
-- [ ] Add a manual format command before enabling `BufWritePre` automation.
-- [ ] Make each project root choose its own formatter executable and configuration file.
-
-## Native Neovim implementation
-
-- [ ] Use native Lua and `vim.system()` rather than Conform.nvim or another formatter plugin.
-- [ ] Use stdin plus captured stdout only for formatters designed to return formatted text.
-- [ ] Use file-writing formatter commands only when their exit status is zero, then reload the buffer while preserving view/cursor state.
-- [ ] Do not run destructive `--fix`, `--replace`, autocorrection, import organization, and full-file formatting as an unreviewed combined on-save action.
-- [ ] Add a manual format command before enabling `BufWritePre` automation.
-- [ ] Make each project root choose its own formatter executable and configuration file.
-
-# Native Uncrustify formatter
-
-This module uses the `FormatterSpec` interface in your supplied
-`lua/formatters/init.lua`. It requires no formatter plugin and no changes to
-your LSP or linter modules. Your loader already registers
-`formatters.uncrustify` and lists it as the second alternative for C and C++.
-
-The accompanying policy explicitly assigns **all 901 options in Uncrustify
-0.83.0**. `ignore`, `false`, zero, and empty strings are intentional values.
-The catalog is version-specific; it does not claim to cover options added by
-future releases. There is no version-discovery subprocess on each format.
-
-## Install
-
-Install the Arch package with a full system upgrade:
-
-```bash
-sudo pacman -Syu uncrustify
-uncrustify --version
-uncrustify --count-options
-```
-
-Place the files at these paths, relative to `vim.fn.stdpath('config')`:
-
-| Delivered file | Destination |
-| --- | --- |
-| `uncrustify.lua` | `lua/formatters/uncrustify.lua` |
-| `uncrustify.cfg` | `uncrustify.cfg` |
-
-Normally that directory is `~/.config/nvim`; `NVIM_APPNAME` and XDG settings
-are respected by `stdpath`. The executable is explicitly
-`/usr/bin/uncrustify`, the Arch package location. Change `COMMAND` in the
-module if you deliberately use a different installation.
-
-Your existing formatter setup must already call `require('formatters').setup()`.
-If it does, keep that call. Once the module is installed, use:
-
-```vim
-:Format uncrustify
-:Format! uncrustify
-:FormatInfo
-:FormatStop
-```
-
-The first command is asynchronous; the bang waits within the runner's deadline.
-`:FormatLsp` remains available for explicit LSP formatting.
-
-## Choose formatter precedence
-
-Your existing C/C++ chains prefer `clang_format`. To prefer Uncrustify, add
-these assignments after loading the runner:
-
-```lua
-local formatters = require('formatters')
-
-formatters.formatters_by_ft.c = {
-    { 'uncrustify', 'clang_format' },
-}
-formatters.formatters_by_ft.cpp = {
-    { 'uncrustify', 'clang_format' },
-}
-```
-
-The nested list means â€œfirst available executable.â€ A selected formatter's
-failure stops the operation; it does not run the next alternative or fall back
-to an LSP. Explicit `:Format uncrustify` selects Uncrustify regardless of order.
-Do not use `{ 'uncrustify', 'clang_format' }` as the entire filetype value:
-that would run both sequentially.
-
-The module supports these mappings:
-
-| Neovim filetype | Uncrustify language |
-| --- | --- |
-| `c` | `C` |
-| `cpp` | `CPP` |
-| `cs` | `CS` |
-| `d`, `dlang` | `D` |
-| `java` | `JAVA` |
-| `objc` | `OC` |
-| `objcpp` | `OC+` |
-| `pawn` | `PAWN` |
-| `vala` | `VALA` |
-
-Use the same nested-list pattern to select it for those other filetypes.
-CUDA, OpenCL, GLSL and arbitrary C-like filetypes are not silently mapped to C++.
-Uncrustify is not a Lua formatter; the Lua integration follows your Tiger Style
-guide, and the policy formats the languages above.
-
-## Explicit execution policy
-
-| Setting | Value or behavior |
-| --- | --- |
-| Input/output | Current buffer through stdin; formatted text through stdout |
-| Accepted exit status | `0`, with signal checks owned by the runner |
-| Working directory | Root supplied by the runner using the module's root markers |
-| Configuration | Explicit `-c` path; no implicit home/environment config lookup |
-| Language | Explicit `-l` from the table above, including unnamed buffers |
-| Logging | `-L 1-2`: errors and warnings; no debug dumps |
-| Environment overrides | `LANG=C`, `LC_ALL=C`, `TZ=UTC`; other environment inherited |
-| Text protocol | LF, UTF-8 output, no output BOM, no single-byte transcoding |
-| Input tab width | Current buffer's `tabstop`, explicitly passed with `--set` |
-| Output indentation | Policy file controls it: four spaces by default |
-| Config selection | Buffer override, then global override, then `stdpath('config')/uncrustify.cfg` |
-| Config filesystem check | Nonempty regular-file target, at most 1 MiB; symlinks followed |
-| Path bound | 4096 bytes; absolute paths without control characters |
-| Input/output bounds | Module: 2 MiB input, 4 MiB output; runner also bounds captured streams |
-| Empty output | Rejected for non-whitespace input; whitespace-only input remains unchanged |
-| Automatic eligibility | `true`; actual format-on-save remains controlled by the runner |
-| File writes by Uncrustify | None requested; no source filenames or output paths passed |
-| Extra tooling | No shell, daemon, temporary files, runtime downloads, cache or extra autocmds |
-
-`--replace`, `--no-backup`, `--if-changed`, `--check`, file-list processing,
-fragment mode, type files, tracking and debug output are deliberately absent
-from formatting argv. These are switches, not boolean settings accepting
-`false`. In particular, `--if-changed` would suppress stdout for unchanged input
-and violate the runner's replacement-text contract.
-
-The runner owns process cancellation, streaming limits, deadlines, stale-buffer
-checks, view preservation, and final buffer edits. Its supplied defaults are
-3000 ms for manual formatting, 1500 ms on save, 128 KiB stderr capture,
-`format_on_save=false`, `preserve_eol=true`, and `lsp='fallback'`.
-Keep those limits in the runner's existing setup call; `FormatterSpec` has no
-per-tool timeout or stderr-handler field. The module does not add unsupported
-linter fields such as `stdin`, `parser`, `append_fname`, or `ignore_exitcode`.
-
-Variable tab stops are rejected because Uncrustify has one input tab width.
-Tab widths outside its supported 1â€“32 range are also rejected. `shiftwidth`
-and `expandtab` do not override this policy's output indentation.
-
-## Configuration and style
-
-The policy selects four spaces, attached braces, ordinary operator/comma
-spacing, expanded statement lines, and a 100-column wrapping target. Some
-language-specific spacing rules deliberately retain the input. A 100-column
-target is not a guarantee for indivisible tokens, strings, preserved macros,
-or comments.
-
-Token-rewrite options, include/import sorting, comment reflow/conversion,
-generated comment templates, and brace insertion/removal are disabled.
-Macro bodies and continuation lines are preserved by their explicit settings.
-A formatter cannot establish bounds, add correct assertions, prove semantic
-equivalence, or enforce the other engineering rules in your Tiger Style guide.
-
-To choose another complete policy explicitly:
-
-```lua
-vim.g.uncrustify_config = '/absolute/path/to/uncrustify.cfg'
--- Or set only the current buffer:
-vim.b.uncrustify_config = '/absolute/project/path/uncrustify.cfg'
-```
-
-An override replaces the policy; it is not layered over the included file.
-Use a copy of the complete policy if you want every option to remain explicit.
-Relative paths, `false`, and unexpanded `~` are rejected. Project configs are
-not searched automatically. Any includes or templates you subsequently enable
-in your own policy are interpreted by Uncrustify; the adapter is not a sandbox.
-
-The adapter always overrides `newlines`, `utf8_bom`, `utf8_force`, `utf8_byte`
-and `input_tab_size` to satisfy the buffer transport contract. Neovim retains
-the buffer's fileformat and BOM metadata; with your runner's `preserve_eol=true`,
-its original final-newline setting is preserved too.
-
-## Check changes and tool upgrades
-
-Run configuration checks in a terminal where stderr is visible:
-
-```bash
-uncrustify --version
-uncrustify --count-options
-uncrustify -c ~/.config/nvim/uncrustify.cfg --update-config
-```
-
-**Upstream limitation verified on 0.83.0:** an unknown option in a config file
-can print a warning and still exit successfully. Your supplied runner captures
-stderr but does not display it on successful exits, and its decoder receives
-only stdout and context. Consequently, this adapter cannot guarantee that
-every invalid user-edited config is rejected. Check stderr after editing the
-policy or upgrading; the delivered policy was validated without warnings.
-
-On an upgrade, compare the installed tool's `--show-config` catalog and the
-expanded `--update-config` output against the saved policy. Review new options
-before adopting their values. Do not assume matching counts alone prove that
-the option names and behavior match.
-
-## Validation performed
-
-- Built upstream Uncrustify 0.83.0 and compared all 901 policy names against its
-  live catalog; effective values exactly matched every assignment.
-- Ran 41 integration checks through your unmodified supplied loader on Neovim
-  `v0.13.0-dev-1638+ge7e29d9b6d`.
-- Exercised all ten filetype mappings and verified unchanged output on a second
-  formatting pass for each fixture.
-- Checked unnamed/empty buffers, unsupported filetypes, missing/relative config
-  paths, paths containing spaces, tab-width errors, stale asynchronous results,
-  and fileformat/BOM/final-newline metadata preservation.
-- Checked macro, include-order, comment and UTF-8 string preservation on a C
-  fixture; both original and formatted C passed GCC C17 syntax checks with
-  `-Wall -Wextra -Werror`.
-
-These checks cover the supplied fixtures and integration contract, not every
-construct accepted by each language. LuaLS static type checking was not run.
-
-Sources: [Uncrustify 0.83.0 source and CLI implementation](https://github.com/uncrustify/uncrustify/tree/uncrustify-0.83.0),
-[option definitions](https://github.com/uncrustify/uncrustify/blob/uncrustify-0.83.0/src/options.h),
-[Arch manual](https://man.archlinux.org/man/uncrustify.1.en).
+# 3. P1 — major language/toolchain formatters
+
+## Java
+
+- [ ] **`google_java_format.lua` — google-java-format**
+  - **Preferred**
+  - Upstream: <https://github.com/google/google-java-format>
+  - Active 1.36.x release line in 2026.
+  - Support stdin/stdout and range formatting where useful.
+  - Remember the formatter itself currently requires a modern JDK.
+
+## Scala
+
+- [ ] **`scalafmt.lua` — Scalafmt**
+  - **Installed**
+  - Upstream: <https://github.com/scalameta/scalafmt>
+  - Active 3.11.x releases in 2026.
+  - Respect `.scalafmt.conf`.
+
+## Haskell
+
+- [ ] **`fourmolu.lua` — Fourmolu**
+  - **Preferred when configurability is wanted**
+  - Upstream: <https://github.com/fourmolu/fourmolu>
+  - Maintained fork tracking Ormolu improvements.
+
+- [ ] `ormolu.lua` — Ormolu
+  - Alternative for repositories standardizing on canonical Ormolu output.
+  - Do not run Fourmolu and Ormolu sequentially.
+
+## Swift
+
+- [ ] **`swift_format.lua` — swift-format**
+  - **Canonical**
+  - Upstream: <https://github.com/swiftlang/swift-format>
+  - Active release line matching modern Swift toolchains.
+  - Prefer the toolchain-provided `swift format` when available.
+
+## OCaml
+
+- [ ] **`ocamlformat.lua` — OCamlFormat**
+  - **Canonical**
+  - Upstream: <https://github.com/ocaml-ppx/ocamlformat>
+  - Active 0.29.x release line in 2026.
+  - Respect `.ocamlformat`.
+
+## Erlang
+
+- [ ] **`erlfmt.lua` — erlfmt**
+  - **Preferred**
+  - Upstream: <https://github.com/WhatsApp/erlfmt>
+  - 1.8.0 released in 2026.
+
+## Elixir
+
+- [ ] **`mix_format.lua` — `mix format`**
+  - **Canonical**
+  - Respect `.formatter.exs`.
+  - Prefer project-root execution rather than formatting outside a Mix project.
+
+## F#
+
+- [ ] **`fantomas.lua` — Fantomas**
+  - **Preferred**
+  - Use the upstream .NET tool even if a particular AUR binary package is orphaned.
+  - Prefer project/tool-manifest version when available.
+
+## D
+
+- [ ] **`dfmt.lua` — dfmt**
+  - **Installed**
+  - Canonical ecosystem choice for D source formatting.
+
+## GDScript
+
+- [ ] **`gdformat.lua` — gdformat / gdtoolkit**
+  - **Preferred**
+  - Upstream: <https://github.com/Scony/godot-gdscript-toolkit>
+  - Active fixes and releases in 2026.
+  - Keep gdlint separate from formatting.
+
+## Fortran
+
+- [ ] **`fprettify.lua` — fprettify**
+  - Prefer for modern Fortran.
+  - Do not mix with unrelated fixed-form rewriters without explicit project policy.
+
+## Ada
+
+- [ ] **`gnatformat.lua` — GNATformat**
+  - Prefer the GNAT/Ada toolchain formatter.
+  - Keep formatting version aligned with the compiler/toolchain where possible.
+
+## C#
+
+- [ ] **`csharpier.lua` — CSharpier**
+  - Prefer the maintained upstream/source package rather than an orphaned binary package.
+  - Keep `dotnet format` as a separate project-policy alternative.
+
+## Clojure / EDN
+
+- [ ] **`cljfmt.lua` — cljfmt**
+  - Standard formatter choice for Clojure-family source.
+  - Keep Joker formatting as an optional alternate workflow only.
+
+---
+
+# 4. P1 — build/config/document formatters
+
+## CMake
+
+- [ ] **`gersemi.lua` — Gersemi**
+  - **Installed**
+  - Modern CMake formatter; good default for new adapters.
+
+- [ ] `cmake_format.lua` — cmake-format
+  - **Installed**
+  - Alternative for repositories already configured around cmakelang.
+  - Do not run Gersemi and cmake-format sequentially.
+
+## Bazel / Starlark
+
+- [ ] **`buildifier.lua` — Buildifier**
+  - **Canonical**
+  - Use `buildifier` from Bazel buildtools.
+  - Cover `BUILD`, `BUILD.bazel`, `.bzl`, and related Starlark files.
+
+## Terraform / OpenTofu / HCL
+
+- [ ] **`terraform_fmt.lua` — `terraform fmt`**
+  - **Canonical for Terraform**
+
+- [ ] **`tofu_fmt.lua` — `tofu fmt`**
+  - **Canonical for OpenTofu**
+
+- [ ] `packer_fmt.lua` — `packer fmt`
+  - Only for Packer-owned HCL projects.
+
+Do not route all HCL through one formatter without project ownership detection.
+
+## CUE
+
+- [ ] **`cue_fmt.lua` — `cue fmt`**
+  - **Canonical**
+  - Prefer project-aware execution.
+
+## Dockerfile
+
+- [ ] `dockerfmt.lua`
+  - Add only after verifying behavior against modern Dockerfile syntax.
+  - Lower priority than canonical language/toolchain formatters.
+
+## Device Tree
+
+- [ ] `dtsfmt.lua`
+  - Useful because Device Tree parsers already exist in the Neovim configuration.
+  - Keep lower priority than Verible/C-family/toolchain adapters.
+
+## Makefiles
+
+- [ ] `mbake.lua`
+  - **Installed**
+  - Formatter/linter; expose formatting only from this layer.
+
+## XML
+
+- [ ] `xmllint.lua`
+  - Good broadly available XML formatter.
+
+- [ ] `xmlformatter.lua`
+  - **Installed**
+  - Optional Python-based alternative.
+
+Do not chain both.
+
+## LaTeX
+
+- [ ] **`tex_fmt.lua` — tex-fmt**
+  - **Installed**
+  - Modern Rust implementation; high-priority LaTeX choice.
+
+- [ ] `latexindent.lua`
+  - Alternative for repositories with existing `latexindent` configuration.
+
+- [ ] `llf.lua`
+  - **Installed**
+  - Keep as optional specialized alternative rather than default.
+
+## BibTeX
+
+- [x] `bibtex-tidy.lua`
+  - Already covered; no need to add another default BibTeX formatter.
+
+---
+
+# 5. P2 — canonical toolchain formatters worth adding
+
+These are strong additions, but lower priority because they are narrower or
+already have acceptable LSP/toolchain formatting paths.
+
+- [ ] `dart_format.lua` — `dart format`
+- [ ] `fish_indent.lua` — `fish_indent`
+- [ ] `gleam_format.lua` — `gleam format`
+- [ ] `zig_fmt.lua` — `zig fmt`
+- [ ] `crystal_format.lua` — `crystal tool format`
+- [ ] `rescript_format.lua` — `rescript format`
+- [ ] `v_fmt.lua` — `v fmt`
+- [ ] `nimpretty.lua` — `nimpretty`
+- [ ] `bicep_format.lua` — `bicep format`
+- [ ] `forge_fmt.lua` — `forge fmt` for Solidity/Foundry
+- [ ] `perltidy.lua` — Perl::Tidy
+- [ ] `rubocop.lua` — RuboCop autocorrection for Ruby repositories choosing RuboCop
+- [ ] `standardrb.lua` — StandardRB alternative for Ruby
+- [ ] `styler.lua` — R `styler`
+- [ ] `air.lua` — Air formatter for R repositories choosing Air
+- [ ] `fnlfmt.lua` — Fennel
+  - **Installed**
+- [ ] `blade_formatter.lua` — Blade
+  - **Installed**
+- [ ] `nginxbeautifier.lua` — nginx
+  - **Installed**
+- [ ] `kdlfmt.lua` — KDL
+  - **Installed**
+- [ ] `verusfmt.lua` — Verus
+  - **Installed**
+- [ ] `jfmt.lua` — JSON
+  - **Installed**
+  - Optional only; JSON is already covered by Biome/Prettier and should not be double-formatted.
+- [ ] `formatjson.lua` — JSON
+  - **Installed**
+  - Optional only for repositories explicitly selecting it.
+
+---
+
+# 6. Universal / query-driven formatter
+
+- [ ] **`topiary.lua` — Topiary**
+  - **Installed**
+  - Upstream: <https://github.com/tweag/topiary>
+  - Tree-sitter-query-driven universal formatter.
+  - Valuable as a fallback for languages with no strong canonical formatter.
+  - Do not make it the default for languages already served by a canonical formatter.
+  - Particularly interesting for the native Neovim setup because both systems already
+    rely heavily on Tree-sitter query semantics.
+
+---
+
+# 7. Tools that should not be prioritized as new defaults
+
+These may remain installed or supported for repository-specific reasons, but
+should not displace a stronger maintained/canonical formatter.
+
+- [ ] Do **not** add `typstfmt-bin` as the default; use Typstyle.
+- [ ] Do **not** add orphaned `nixpkgs-fmt` as the default; use nixfmt or the existing Alejandra adapter.
+- [ ] Do **not** add `blacktex` as the primary LaTeX formatter; prefer tex-fmt or latexindent.
+- [ ] Do **not** add `blackd-systemd` as a formatter target; use Ruff or Black directly.
+- [ ] Do **not** add `fsqlf` as the SQL default; prefer Sqruff, SQLFluff, or pgFormatter.
+- [ ] Do **not** treat `glsl_analyzer` as a formatter adapter merely because it exposes formatting through LSP.
+- [ ] Do **not** prioritize `astyle` for C/C++ while clang-format and Uncrustify are already implemented.
+- [ ] Do **not** prioritize `knfmt` unless a repository explicitly requires OpenBSD KNF style.
+- [ ] Do **not** automatically chain `ktlint` formatting after the existing `ktfmt.lua`.
+- [ ] Do **not** use StandardJS / `ts-standard` as a second formatting pass after Biome/Oxfmt/Prettier.
+- [ ] Do **not** create multiple JSON formatters in the default chain.
+- [ ] Do **not** automatically chain goimports and gofumpt unless import organization is intentionally part of the selected Go policy.
+
+---
+
+# 8. Recommended implementation order
+
+## Wave 1 — core daily languages
+
+- [ ] `stylua.lua`
+- [ ] `ruff_format.lua`
+- [ ] `rustfmt.lua`
+- [ ] `biome.lua`
+- [ ] `nixfmt.lua`
+- [ ] `tombi.lua`
+- [ ] `yamlfmt.lua`
+- [ ] `mdformat.lua`
+
+## Wave 2 — data, HDL, JVM, documentation
+
+- [ ] `sqruff.lua`
+- [ ] `verible.lua`
+- [ ] `typstyle.lua`
+- [ ] `google_java_format.lua`
+- [ ] `scalafmt.lua`
+- [ ] `tex_fmt.lua`
+- [ ] `gersemi.lua`
+- [ ] `buildifier.lua`
+
+## Wave 3 — language coverage
+
+- [ ] `fourmolu.lua`
+- [ ] `swift_format.lua`
+- [ ] `ocamlformat.lua`
+- [ ] `erlfmt.lua`
+- [ ] `fantomas.lua`
+- [ ] `dfmt.lua`
+- [ ] `gdformat.lua`
+- [ ] `gnatformat.lua`
+- [ ] `csharpier.lua`
+- [ ] `cljfmt.lua`
+
+## Wave 4 — toolchain and specialist coverage
+
+- [ ] `terraform_fmt.lua`
+- [ ] `tofu_fmt.lua`
+- [ ] `cue_fmt.lua`
+- [ ] `dart_format.lua`
+- [ ] `fish_indent.lua`
+- [ ] `gleam_format.lua`
+- [ ] `zig_fmt.lua`
+- [ ] `crystal_format.lua`
+- [ ] `forge_fmt.lua`
+- [ ] `perltidy.lua`
+- [ ] `styler.lua`
+- [ ] `topiary.lua`
+
+---
+
+# 9. Native formatter runner work still worth doing
+
+These are framework improvements rather than new formatter adapters.
+
+## Async/process execution
+
+- [ ] Route asynchronous formatter execution through the corrected `config.core.async`
+      abstraction rather than requiring each adapter to understand `vim.async`.
+- [ ] Keep `require('config.core.async')` passive at startup.
+- [ ] Centralize cancellation in `process.lua`.
+- [ ] Cancel the previous formatter task for a buffer when a newer generation supersedes it.
+- [ ] Keep generation IDs so stale async output can never overwrite newer buffer contents.
+- [ ] Bound captured stdout and stderr.
+- [ ] Bound formatter execution time.
+- [ ] Kill timed-out child processes cleanly.
+- [ ] Never block LSP initialization on formatter/async availability.
+
+## Buffer safety
+
+- [ ] Snapshot `changedtick` before formatting.
+- [ ] Reject stale formatter output when the buffer changed during execution.
+- [ ] Preserve cursor/view.
+- [ ] Preserve fileformat.
+- [ ] Preserve final newline.
+- [ ] Preserve BOM metadata where relevant.
+- [ ] Reject unexpectedly empty output for non-empty source.
+- [ ] Apply edits only after successful process exit and validation.
+- [ ] Prefer atomic whole-buffer replacement or validated minimal edits.
+- [ ] Never silently overwrite a modified unloaded/reloaded buffer.
+
+## Root/config discovery
+
+- [ ] Centralize root-marker discovery in `tools.lua`.
+- [ ] Prefer project-local executables where ecosystems expect them.
+- [ ] Allow a formatter to declare configuration/root markers declaratively.
+- [ ] Cache executable discovery without permanently caching missing commands.
+- [ ] Invalidate executable/version caches when `$PATH` or project root changes.
+- [ ] Make workspace trust a prerequisite for project-local executable execution.
+
+## Formatter specification
+
+- [ ] Keep formatter modules declarative whenever possible.
+- [ ] Add explicit `stdin` / file-mode capability.
+- [ ] Add accepted exit-code policy.
+- [ ] Add output-empty policy.
+- [ ] Add supported filetypes.
+- [ ] Add root markers.
+- [ ] Add config markers.
+- [ ] Add environment overrides only when required.
+- [ ] Add executable/version probe metadata without running a probe on every format.
+- [ ] Add optional range-format capability.
+- [ ] Add explicit mutually-exclusive formatter groups.
+
+## User commands and introspection
+
+- [ ] `:Format`
+- [ ] `:Format!`
+- [ ] `:FormatInfo`
+- [ ] `:FormatStop`
+- [ ] `:FormatLsp`
+- [ ] Show selected formatter, executable, root, config file, stdin/file mode, and running state.
+- [ ] Show why a formatter was skipped or unavailable.
+- [ ] Show active fallback chain without executing it.
+
+## Save formatting
+
+- [ ] Keep format-on-save disabled by default.
+- [ ] Permit per-project or per-buffer opt-in.
+- [ ] Use strict save-time deadlines.
+- [ ] Never cascade through multiple competing formatters after a selected formatter fails.
+- [ ] Do not silently fall back to LSP after an explicitly selected external formatter fails.
+- [ ] Make LSP fallback policy explicit: `never`, `fallback`, or `prefer`.
+
+---
+
+# 10. Formatter policy by filetype
+
+The final goal is one formatter of record per repository/filetype, with
+alternatives selected only when repository policy requires them.
+
+| Filetype | Preferred | Existing / alternative |
+| --- | --- | --- |
+| Lua | StyLua | LuaFormatter only if repo-owned |
+| Shell | shfmt | **done** |
+| Go | gofumpt | goimports for import policy; both adapters done |
+| Rust | rustfmt | — |
+| Python | Ruff formatter | Black |
+| JS/TS | Biome or Oxfmt | Prettier |
+| JSON | Biome | Prettier / jfmt / formatjson |
+| Nix | nixfmt | Alejandra **done** |
+| TOML | Tombi | Taplo |
+| YAML | yamlfmt | yamlfix |
+| Markdown | mdformat | Prettier / Rumdl |
+| C/C++ | clang-format | Uncrustify; both done |
+| Kotlin | ktfmt | **done** |
+| PHP | PHP CS Fixer | **done** |
+| Laravel | Pint | **done** |
+| Java | google-java-format | — |
+| Scala | Scalafmt | — |
+| Haskell | Fourmolu | Ormolu |
+| Swift | swift-format | — |
+| OCaml | OCamlFormat | — |
+| Erlang | erlfmt | — |
+| Elixir | mix format | — |
+| F# | Fantomas | — |
+| D | dfmt | — |
+| GDScript | gdformat | — |
+| Ada | GNATformat | — |
+| C# | CSharpier | dotnet format |
+| SystemVerilog | Verible | — |
+| WGSL | wgslfmt | **done** |
+| Typst | Typstyle | — |
+| CMake | Gersemi | cmake-format |
+| Bazel/Starlark | Buildifier | — |
+| Terraform | terraform fmt | — |
+| OpenTofu | tofu fmt | — |
+| CUE | cue fmt | — |
+| LaTeX | tex-fmt | latexindent / llf |
+| BibTeX | bibtex-tidy | **done** |
+| Jsonnet | jsonnetfmt | **done** |
+| D2 | d2 | **done** |
+| Dioxus/RSX | dioxus | **done** |
+| Odin | odinfmt | — |
+| Zig | zig fmt | — |
+| Fish | fish_indent | — |
+| Gleam | gleam format | — |
+| Dart | dart format | — |
+| Clojure | cljfmt | — |
+
+---
+
+# 11. Maintenance notes from the 2026 review
+
+The following projects showed clear current maintenance signals during the
+2026-09 review and are therefore good candidates for the native formatter
+roadmap:
+
+- StyLua — active 2.5.x releases in 2026.
+- Ruff — active 0.16.x releases in 2026.
+- Biome — active 2.5.x release line.
+- Oxfmt/Oxc — frequent releases through September 2026.
+- nixfmt — active 1.x releases in 2026.
+- Tombi — active 1.x releases in 2026.
+- yamlfmt — 0.21.0 released in January 2026.
+- Sqruff — active 0.39.x release line in 2026.
+- Verible — active release builds in 2026.
+- Scalafmt — 3.11.5 released in July 2026.
+- google-java-format — 1.36.0 released in July 2026.
+- swift-format — 603.0.0 released in June 2026.
+- OCamlFormat — 0.29.0 released in March 2026.
+- erlfmt — 1.8.0 released in February 2026.
+- GDScript Toolkit / gdformat — active fixes/releases in 2026.
+- Fourmolu — continues tracking upstream Ormolu improvements.
+- Topiary — maintained Tree-sitter-query-based universal formatter and useful fallback.
+
+---
+
+# 12. Definition of done for each new formatter adapter
+
+A formatter should not be marked complete merely because the executable runs.
+
+For every new `lua/formatters/<name>.lua` adapter:
+
+- [ ] Explicit command/executable.
+- [ ] Explicit supported filetypes.
+- [ ] Explicit stdin versus file-mode behavior.
+- [ ] Explicit arguments.
+- [ ] Explicit accepted exit codes.
+- [ ] Explicit root markers.
+- [ ] Explicit config markers where applicable.
+- [ ] No shell interpolation.
+- [ ] No unbounded output capture.
+- [ ] No implicit network/download behavior.
+- [ ] No plugin dependency.
+- [ ] No direct LSP dependency.
+- [ ] Compatible with the centralized native process runner.
+- [ ] Compatible with cancellation/stale-buffer protection.
+- [ ] Idempotence checked on representative fixtures.
+- [ ] Empty/unnamed-buffer behavior checked.
+- [ ] Missing executable behavior checked.
+- [ ] Nonzero exit behavior checked.
+- [ ] Unicode input checked.
+- [ ] CRLF/final-newline preservation checked where relevant.
+- [ ] Adapter documented in this TODO and formatter catalog.
