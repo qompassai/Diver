@@ -218,7 +218,9 @@ function M.setup_ddxmap()
           { title = 'ddx mappings' }
         )
       else
-        vim.notify(('DAP adapter %s is not configured'):format(choice), vim.log.levels.WARN, { title = 'ddx mappings' })
+        vim.notify(('DAP adapter %s is not configured'):format(choice), vim.log.levels.WARN, {
+          title = 'ddx mappings',
+        })
       end
     end)
   end, {

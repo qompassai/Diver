@@ -4,11 +4,6 @@
 -- Copyright (C) 2026 Qompass AI, All rights reserved
 -- --------------------------------------------------
 --
--- Plugin-free re-implementation of vim-dadbod's db.vim :DB command for
--- Neovim 0.13+, dispatching across the native sibling backends:
---   lua/config/data/sqlite.lua   lua/config/data/duckdb.lua
---   lua/config/data/mysql.lua    lua/config/data/psql.lua
---
 -- What this reproduces from db.vim:
 --   - URL resolution: explicit arg > named connection (dbx.lua) > b:db >
 --     g:db > $DATABASE_URL > last URL used this session.
@@ -21,17 +16,6 @@
 --   - Range support for the current line, a visual selection, or the
 --     whole buffer, via Neovim's range= command option.
 --
--- What this deliberately does NOT reproduce, and why:
---   - Inline user:password@host URLs with inputsecret() prompting and an
---     in-memory password cache. Every sibling backend already refuses a
---     bare password field for the same reason db.vim's model is risky: a
---     password embedded in a URL or passed on argv is visible to other
---     local users via `ps`. Use ?service=, ?passfile=, or ?defaults_file=
---     in the URL instead, which the sibling backends read from a file.
---   - dbext buffer-variable clobbering (db#clobber_dbext). That was a
---     compatibility shim for a second, older plugin this project does not
---     use.
---   - `< filename` input redirection and window/tab-scoped w:db/t:db
 --     tiers. Buffer-local (b:db) and global (g:db) cover the common case;
 --     add window/tab tiers here later if you actually need them.
 --   - Mid-query cancellation. Queries run through vim.system with a
@@ -72,10 +56,6 @@ local BACKENDS = {
   mysql = mysql,
   psql = psql,
 }
-
--- File-path backends take (bufnr, path, readonly). Connection backends
--- take (bufnr, conn_table, readonly). Both shapes line up positionally,
--- so dispatch through this table works without branching on backend kind.
 local FILE_BACKENDS = {
   sqlite = true,
   duckdb = true,

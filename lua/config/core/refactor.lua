@@ -1,6 +1,9 @@
+-- /qompassai/Diver/lua/config/core/refactor.lua
+-- Native refactor configuration
+-- SPDX-License-Identifier: Apache-2.0
 -- #################################################################
--- /qompassai/lua/utils/bsp/commands.lua
--- Qompass AI BSP Util Commands
+-- /qompassai/lua/config/core/refactor.lua
+-- Qompass AI Refactor
 -- SPDX-License-Identifier: Apache-2.0
 -- Copyright (c) 2026 Qompass AI
 --
@@ -15,12 +18,12 @@
 -- See the License for the specific language governing permissions and
 -- limitations under the License.
 -- #################################################################
-local M = {}
-function M.setup(config)
-  vim.api.nvim_create_user_command('BspInfo', function()
-    vim.notify(vim.inspect(config))
-  end, {
-    desc = 'Show BSP configuration',
-  })
-end
-return M
+
+return require('refactor').setup({
+  commands = true,
+  debug = {
+    output_location = 'below',
+    block_count_max = 1024,
+    cleanup_line_max = 250000,
+  },
+})

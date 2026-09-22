@@ -13,7 +13,11 @@ local function safe_require(module)
   return result
 end
 M.blue = require('utils.blue')
-M.bsp = safe_require('utils.bsp')
+M.codeactions = safe_require('utils.codeactions')
+
+if M.codeactions and M.codeactions.setup then
+  M.codeactions.setup()
+end
 M.ddx = require('utils.ddx')
 M.docs = require('utils.docs')
 M.media = require('utils.media')
@@ -27,14 +31,6 @@ end
 M.games = safe_require('utils.games')
 if M.games and M.games.setup then
   M.games.setup()
-end
-
-if M.bsp and M.bsp.setup then
-  M.bsp.setup({
-    cargo = true,
-    auto_detect = true,
-    cargo_bsp_binary = 'cargo-bsp',
-  })
 end
 
 M.ux = safe_require('utils.ux')
