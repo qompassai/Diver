@@ -1,59 +1,15 @@
--- /qompassai/Diver/lua/mappings/langmappings.lua
+-- ~/.config/nvim/lua/mappings/langmap.lua
+-- Native filetype tasks; explicit argv, saved files, bounded jobs/output/deadlines.
 -- SPDX-License-Identifier: Apache-2.0
--- Native language task mappings; Neovim 0.13+, LuaJIT; vim.api / vim.system.
---
--- Install: replace 'langmap' with 'langmappings' in mappings/init.lua.
--- Or call require('mappings.langmappings').setup() once after setting your leaders.
--- Set vim.g.maplocalleader BEFORE setup; this module never changes either leader.
---
--- Normal-mode, buffer-local keys (only applicable task keys are installed):
---   <LocalLeader>la  Actions: alphabetized task menu
---   <LocalLeader>lb  Build project
---   <LocalLeader>lc  Check file/project
---   <LocalLeader>lo  Output from the most recently completed task
---   <LocalLeader>lr  Run file/project (noninteractive)
---   <LocalLeader>ls  Status: filetype, configured servers, tasks, collisions
---   <LocalLeader>lt  Test file/project
---   <LocalLeader>lx  Cancel this buffer's task or pending selection
---
--- LSP navigation/formatting, DAP, SCIP and Rust toolchain keys stay with their
--- existing owners. No plugins, user commands, indentation changes or auto-runs.
--- Existing normal-mode mappings, including prefix conflicts, are preserved.
--- Mapping owners loaded LATER can still replace mappings; load this file last.
---
--- Tasks use saved files, explicit argv and cwd, bounded output/concurrency/time.
--- Build/check/test can execute project code. Default: review cwd/argv before each
--- run. options.is_trusted(root) may delegate to your EXISTING workspace policy;
--- only literal true bypasses that review. No trust is silently persisted here.
--- A task is not sandboxed; do not authorize an untrusted build/check command.
--- Cancellation targets the direct process, not arbitrary grandchildren.
---
--- Extend/replace a whole profile in trusted editor configuration, for example:
--- require('mappings.langmappings').setup({
---     profiles = {
---         python = {
---             markers = { 'pyproject.toml' },
---             tasks = {
---                 t = {
---                     argv = { 'uv', 'run', 'pytest', '{file}' },
---                     label = 'Test current file with uv',
---                     project = true,
---                 },
---             },
---         },
---     },
--- })
--- Tokens {file}, {root} are substituted inside individual argv elements only.
--- Root is the nearest profile marker; project tasks require a matching marker.
--- File tasks fall back to the saved file's directory. No shell expansion occurs.
--- JVM profiles use Gradle on PATH; adapt to your reviewed wrapper/Maven workflow.
--- Run is for finite batch programs: stdin is closed and timeout defaults to 120 s.
---
--- Sources: https://neovim.io/doc/user/lua/#vim.system()
---          https://neovim.io/doc/user/api/#nvim_create_autocmd()
---          https://neovim.io/doc/user/lsp/#vim.lsp.config
+-- <LocalLeader>t: a actions, b build, c check, o output, r run, s status, t test, x cancel.
+-- A profile owns its filetype's tools. No unrelated-language menu entries or plugins.
+-- The existing run-once review remains the default. is_trusted(root) may delegate
+-- to your workspace policy; only literal true bypasses that review.
+-- Cancellation kills the direct child, not an arbitrary descendant process tree.
+-- Profiles and task keys are alphabetical; setup has no automatic task execution.
 
 local M = {}
+local core = require('mappings._core')
 local api = vim.api
 local fn = vim.fn
 local uv = vim.uv
@@ -79,8 +35,7 @@ local TIMEOUT_MS_MAX = 600000
 ---@class LanguageMappingsOptions
 ---@field is_trusted? fun(root: string): boolean
 ---@field prefix? string
----@field profiles? table<string, LanguageProfile>
----@field servers? string[] Replace the source snapshot; an empty list disables discovery.
+---@field profiles? table<string, LanguageProfile|false>
 
 ---@class LanguageInvocation
 ---@field argv string[]
@@ -101,241 +56,6 @@ local TIMEOUT_MS_MAX = 600000
 ---@field stopped boolean
 ---@field truncated boolean
 ---@field timer? uv.uv_timer_t
-
----@class LanguageOwnedMap
----@field callback fun()
----@field lhs string
-
----@type string[]
-local SERVERS = {
-  'ada_ls',
-  'agentscript_ls',
-  'ai_ls',
-  'aiken_ls',
-  'air_ls',
-  'alloy_ls',
-  'ansible_ls',
-  'apex_ls',
-  'arduino_ls',
-  'asm_ls',
-  'astgrep_ls',
-  'astro_ls',
-  'atlas_ls',
-  'atopile_ls',
-  'autotoo_ls',
-  'avalonia_ls',
-  'awk_ls',
-  'b_ls',
-  'bacon_ls',
-  'basedpy_ls',
-  'bash_ls',
-  'beancount_ls',
-  'bicep_ls',
-  'biome_ls',
-  'bitbake_ls',
-  'blueprint_ls',
-  'bq_ls',
-  'brioche_ls',
-  'bsc_ls',
-  'buck2_ls',
-  'buf_ls',
-  'c3_ls',
-  'cairo_ls',
-  'cds_ls',
-  'chpl_ls',
-  'clangd_ls',
-  'clarinet_ls',
-  'clojure_ls',
-  'cmake_ls',
-  'cobol_ls',
-  'codeql_ls',
-  'crates_ls',
-  'crystalline_ls',
-  'csharp_ls',
-  'cucumber_ls',
-  'dafny_ls',
-  'dj_ls',
-  'djt_ls',
-  'docker_ls',
-  'dockercompose_ls',
-  'dockerx_ls',
-  'dolmen_ls',
-  'dot_ls',
-  'dts_ls',
-  'earthly_ls',
-  'elixir_ls',
-  'elm_ls',
-  'elp_ls',
-  'esbonio_ls',
-  'fennel_ls',
-  'fish_ls',
-  'flux_ls',
-  'foam_ls',
-  'fort_ls',
-  'fsautocomplete_ls',
-  'fstar_ls',
-  'gdscript_ls',
-  'gdshader_ls',
-  'ghcide_ls',
-  'glasgow_ls',
-  'gleam_ls',
-  'glslana_ls',
-  'gn_ls',
-  'golangcilint_ls',
-  'gop_ls',
-  'grain_ls',
-  'graphql_ls',
-  'h_ls',
-  'helm_ls',
-  'hlasm_ls',
-  'hoon_ls',
-  'html_ls',
-  'htmlhint_ls',
-  'htmx_ls',
-  'idris2_ls',
-  'ink_ls',
-  'intelephense_ls',
-  'janet_ls',
-  'java_ls',
-  'jdt_ls',
-  'jimmerdto_ls',
-  'jinja_ls',
-  'jq_ls',
-  'json_ls',
-  'jsonld_ls',
-  'jsonnet_ls',
-  'julia_ls',
-  'just_ls',
-  'kconfig_ls',
-  'kotlin_ls',
-  'laravel_ls',
-  'larkparse_ls',
-  'lean_ls',
-  'lelwel_ls',
-  'lemminx_ls',
-  'ltexplus_ls',
-  'lua_ls',
-  'luau_ls',
-  'lwc_ls',
-  'm68k_ls',
-  'markojs_ls',
-  'matlab_ls',
-  'mdxana_ls',
-  'metals_ls',
-  'millet_ls',
-  'mint_ls',
-  'mlir_ls',
-  'mlirpdll_ls',
-  'mm0_ls',
-  'mojo_ls',
-  'motoko_ls',
-  'msbuildptoo_ls',
-  'muon_ls',
-  'mutt_ls',
-  'neocmake_ls',
-  'nextflow_ls',
-  'nginx_ls',
-  'nickel_ls',
-  'nil_ls',
-  'nixd_ls',
-  'ntt_ls',
-  'nu_ls',
-  'o_ls',
-  'ocaml_ls',
-  'opencl_ls',
-  'openscad_ls',
-  'oxlint_ls',
-  'pas_ls',
-  'pb_ls',
-  'perl_ls',
-  'perlnav_ls',
-  'perlp_ls',
-  'pest_ls',
-  'phan_ls',
-  'phpactor_ls',
-  'pico8_ls',
-  'please_ls',
-  'pli_ls',
-  'poryscript_ls',
-  'postgres_ls',
-  'prisma_ls',
-  'prolog_ls',
-  'proto_ls',
-  'psalm_ls',
-  'pug_ls',
-  'puppet_ls',
-  'pyrefly_ls',
-  'qlue_ls',
-  'qml_ls',
-  'racket_ls',
-  'regal_ls',
-  'rego_ls',
-  'rescript_ls',
-  'robotcode_ls',
-  'robotframework_ls',
-  'rocq_ls',
-  'roslyn_ls',
-  'rpmspec_ls',
-  'rubocop_ls',
-  'ruby_ls',
-  'ruff_ls',
-  'rune_ls',
-  'rustana_ls',
-  'shopifytheme_ls',
-  'slangd_ls',
-  'slint_ls',
-  'smithy_ls',
-  'solang_ls',
-  'solargraph_ls',
-  'solc_ls',
-  'solidity_ls',
-  'solidnomic_ls',
-  'somesass_ls',
-  'sorbet_ls',
-  'sourcekit_ls',
-  'sq_ls',
-  'sqruff_ls',
-  'standardrb_ls',
-  'starlark_ls',
-  'statix_ls',
-  'steep_ls',
-  'stylua_ls',
-  'superhtml_ls',
-  'sv_ls',
-  'svelte_ls',
-  'sysl_ls',
-  'systemd_ls',
-  'tailwindcss_ls',
-  'taplo_ls',
-  'tcl_ls',
-  'templ_ls',
-  'termux_ls',
-  'texlab_ls',
-  'text_ls',
-  'tilt_ls',
-  'tofu_ls',
-  'tombi_ls',
-  'tsgo_ls',
-  'tsp_ls',
-  'tsquery_ls',
-  'twiggy_ls',
-  'ty_ls',
-  'typeprof_ls',
-  'uiua_ls',
-  'unison_ls',
-  'vacuum_ls',
-  'veridian_ls',
-  'veryl_ls',
-  'vim_ls',
-  'vue_ls',
-  'wasmlangtoo_ls',
-  'wc_ls',
-  'wgslana_ls',
-  'yaml_ls',
-  'yara_ls',
-  'z_ls',
-  'ziggy_ls',
-}
 
 ---@param label string
 ---@param argv string[]
@@ -382,7 +102,11 @@ local PROFILES = {
         '--',
         '{file}',
       }),
-      r = task('Run Bash file', { 'bash', '--', '{file}' }),
+      r = task('Run Bash file', {
+        'bash',
+        '--',
+        '{file}',
+      }),
     },
   },
   c = {
@@ -403,15 +127,21 @@ local PROFILES = {
     },
   },
   clojure = {
-    markers = { 'deps.edn' },
-    tasks = { r = task('Run Clojure file', {
-      'clojure',
-      '-M',
-      '{file}',
-    }, true) },
+    markers = {
+      'deps.edn',
+    },
+    tasks = {
+      r = task('Run Clojure file', {
+        'clojure',
+        '-M',
+        '{file}',
+      }, true),
+    },
   },
   cmake = {
-    markers = { 'CMakeLists.txt' },
+    markers = {
+      'CMakeLists.txt',
+    },
     tasks = {
       b = task('Build CMake project', {
         'cmake',
@@ -470,7 +200,11 @@ local PROFILES = {
   fish = {
     markers = {},
     tasks = {
-      c = task('Check Fish syntax', { 'fish', '--no-execute', '{file}' }),
+      c = task('Check Fish syntax', {
+        'fish',
+        '--no-execute',
+        '{file}',
+      }),
       r = task('Run Fish file', { 'fish', '{file}' }),
     },
   },
@@ -509,10 +243,12 @@ local PROFILES = {
   },
   janet = {
     markers = {},
-    tasks = { r = task('Run Janet file', {
-      'janet',
-      '{file}',
-    }) },
+    tasks = {
+      r = task('Run Janet file', {
+        'janet',
+        '{file}',
+      }),
+    },
   },
   java = {
     markers = {
@@ -559,9 +295,18 @@ local PROFILES = {
   kotlin = {
     markers = { 'build.gradle', 'build.gradle.kts' },
     tasks = {
-      b = task('Build Gradle project', { 'gradle', 'build' }, true),
-      c = task('Check Gradle project', { 'gradle', 'check' }, true),
-      t = task('Test Gradle project', { 'gradle', 'test' }, true),
+      b = task('Build Gradle project', {
+        'gradle',
+        'build',
+      }, true),
+      c = task('Check Gradle project', {
+        'gradle',
+        'check',
+      }, true),
+      t = task('Test Gradle project', {
+        'gradle',
+        'test',
+      }, true),
     },
   },
   lean = {
@@ -569,10 +314,12 @@ local PROFILES = {
       'lakefile.lean',
       'lakefile.toml',
     },
-    tasks = { b = task('Build Lean project', {
-      'lake',
-      'build',
-    }, true) },
+    tasks = {
+      b = task('Build Lean project', {
+        'lake',
+        'build',
+      }, true),
+    },
   },
   lua = {
     markers = {},
@@ -586,17 +333,27 @@ local PROFILES = {
   mojo = {
     markers = { 'mojoproject.toml', 'pixi.toml' },
     tasks = {
-      b = task('Build Mojo file', { 'mojo', 'build', '{file}' }),
-      r = task('Run Mojo file', { 'mojo', 'run', '{file}' }),
+      b = task('Build Mojo file', {
+        'mojo',
+        'build',
+        '{file}',
+      }),
+      r = task('Run Mojo file', {
+        'mojo',
+        'run',
+        '{file}',
+      }),
     },
   },
   nix = {
     markers = {},
-    tasks = { c = task('Parse Nix file', {
-      'nix-instantiate',
-      '--parse',
-      '{file}',
-    }) },
+    tasks = {
+      c = task('Parse Nix file', {
+        'nix-instantiate',
+        '--parse',
+        '{file}',
+      }),
+    },
   },
   ocaml = {
     markers = { 'dune-project' },
@@ -639,7 +396,10 @@ local PROFILES = {
     markers = {},
     tasks = {
       c = task('Check PHP syntax', { 'php', '-l', '{file}' }),
-      r = task('Run PHP file', { 'php', '{file}' }),
+      r = task('Run PHP file', {
+        'php',
+        '{file}',
+      }),
     },
   },
   python = {
@@ -653,7 +413,11 @@ local PROFILES = {
         'python',
         '{file}',
       }),
-      t = task('Test Python project', { 'python', '-m', 'pytest' }, true),
+      t = task('Test Python project', {
+        'python',
+        '-m',
+        'pytest',
+      }, true),
     },
   },
   racket = {
@@ -663,7 +427,11 @@ local PROFILES = {
         'racket',
         '{file}',
       }),
-      t = task('Test Racket file', { 'raco', 'test', '{file}' }),
+      t = task('Test Racket file', {
+        'raco',
+        'test',
+        '{file}',
+      }),
     },
   },
   rego = {
@@ -676,7 +444,11 @@ local PROFILES = {
   ruby = {
     markers = {},
     tasks = {
-      c = task('Check Ruby syntax', { 'ruby', '-c', '{file}' }),
+      c = task('Check Ruby syntax', {
+        'ruby',
+        '-c',
+        '{file}',
+      }),
       r = task('Run Ruby file', { 'ruby', '{file}' }),
     },
   },
@@ -782,14 +554,22 @@ local ALIASES = {
   vue = 'typescript',
 }
 
+local COMMAND_TASKS = {
+  soql = {
+    c = {
+      command = 'SfQueryLint',
+      label = 'Check SOQL query',
+    },
+    r = { command = 'SfSoqlRun', label = 'Run SOQL query' },
+  },
+  sosl = {
+    c = { command = 'SfQueryLint', label = 'Check SOSL query' },
+    r = { command = 'SfSoslRun', label = 'Run SOSL query' },
+  },
+}
+
 ---@type table<string, LanguageProfile>
 local profiles = {}
----@type table<string, string[]>
-local filetype_servers = {}
----@type table<integer, LanguageOwnedMap[]>
-local owned_maps = {}
----@type table<integer, string[]>
-local collisions = {}
 ---@type table<integer, LanguageJob>
 local jobs = {}
 ---@type table<integer, integer>
@@ -813,6 +593,7 @@ end
 local function usable(bufnr)
   return api.nvim_buf_is_valid(bufnr)
     and api.nvim_buf_is_loaded(bufnr)
+    and vim.b[bufnr].nvim_dir == nil
     and vim.bo[bufnr].buftype == ''
     and vim.bo[bufnr].filetype ~= ''
 end
@@ -820,67 +601,17 @@ end
 ---@param keys string
 ---@return string
 local function keycodes(keys)
-  return api.nvim_replace_termcodes(keys, true, true, true)
+  local expanded = keys:gsub('<LocalLeader>', function()
+    return vim.g.maplocalleader or '\\'
+  end)
+  expanded = expanded:gsub('<Leader>', function()
+    return vim.g.mapleader or '\\'
+  end)
+  return api.nvim_replace_termcodes(expanded, true, true, true)
 end
 
----@param lhs string
----@param rhs string
----@return boolean
-local function overlaps(lhs, rhs)
-  return lhs:sub(1, #rhs) == rhs or rhs:sub(1, #lhs) == lhs
-end
-
----@param bufnr integer
----@param lhs string
----@return boolean
-local function conflicts(bufnr, lhs)
-  local encoded = keycodes(lhs)
-  local maps = api.nvim_get_keymap('n')
-  vim.list_extend(maps, api.nvim_buf_get_keymap(bufnr, 'n'))
-  for _, mapping in ipairs(maps) do
-    if overlaps(encoded, keycodes(mapping.lhs)) then
-      return true
-    end
-  end
-  return false
-end
-
----@param bufnr integer
 local function clear_maps(bufnr)
-  local previous = owned_maps[bufnr] or {}
-  if api.nvim_buf_is_valid(bufnr) then
-    for _, mapping in ipairs(api.nvim_buf_get_keymap(bufnr, 'n')) do
-      for _, owned in ipairs(previous) do
-        if mapping.callback == owned.callback then
-          vim.keymap.del('n', owned.lhs, { buf = bufnr })
-        end
-      end
-    end
-  end
-  owned_maps[bufnr] = nil
-  collisions[bufnr] = nil
-end
-
----@param bufnr integer
----@param suffix string
----@param callback fun()
----@param label string
-local function install_map(bufnr, suffix, callback, label)
-  local lhs = prefix .. suffix
-  if conflicts(bufnr, lhs) then
-    local skipped = collisions[bufnr] or {}
-    skipped[#skipped + 1] = lhs
-    collisions[bufnr] = skipped
-    return
-  end
-  vim.keymap.set('n', lhs, callback, {
-    buf = bufnr,
-    desc = 'Language: ' .. label,
-    silent = true,
-  })
-  local owned = owned_maps[bufnr] or {}
-  owned[#owned + 1] = { callback = callback, lhs = lhs }
-  owned_maps[bufnr] = owned
+  core.clear('langmap', bufnr)
 end
 
 ---@param lines string[]
@@ -902,8 +633,8 @@ function M.status(bufnr)
   end
   local filetype = vim.bo[bufnr].filetype
   local lines = { 'Filetype: ' .. filetype, 'Prefix: ' .. vim.fn.keytrans(prefix) }
-  for _, name in ipairs(filetype_servers[filetype] or {}) do
-    lines[#lines + 1] = 'Configured server: ' .. name
+  for _, client in ipairs(vim.lsp.get_clients({ bufnr = bufnr })) do
+    lines[#lines + 1] = 'Attached server: ' .. client.name
   end
   local profile = profiles[filetype]
   if profile then
@@ -912,9 +643,6 @@ function M.status(bufnr)
     end
   else
     lines[#lines + 1] = 'No default task profile; add options.profiles.'
-  end
-  for _, lhs in ipairs(collisions[bufnr] or {}) do
-    lines[#lines + 1] = 'Preserved existing mapping: ' .. vim.fn.keytrans(lhs)
   end
   table.sort(lines)
   show_lines(lines)
@@ -948,6 +676,17 @@ local function close_timer(job)
   end
 end
 
+---@param process vim.SystemObj
+---@param signal_number integer
+local function signal_process(process, signal_number)
+  local ok, err = pcall(process.kill, process, signal_number)
+  if not ok then
+    vim.schedule(function()
+      notify('Could not signal task process: ' .. tostring(err), vim.log.levels.WARN)
+    end)
+  end
+end
+
 ---@param job LanguageJob
 local function stop_job(job)
   if job.stopped then
@@ -957,11 +696,11 @@ local function stop_job(job)
   close_timer(job)
   local process = job.process
   if process then
-    pcall(process.kill, process, 15)
+    signal_process(process, 15)
     job.timer = vim.defer_fn(function()
       job.timer = nil
       if jobs[job.invocation.bufnr] == job then
-        pcall(process.kill, process, 9)
+        signal_process(process, 9)
       end
     end, 1000)
   end
@@ -1008,7 +747,13 @@ local function finish(job, result)
   local summary = ('%s: exit %d, signal %d'):format(job.invocation.label, result.code, result.signal)
   local output = table.concat(job.chunks):gsub('%z', '?')
   last_output = { summary, 'cwd: ' .. job.invocation.cwd, '' }
-  vim.list_extend(last_output, vim.split(output, '\n', { maxsplit = 8192, plain = true }))
+  local lines = vim.split(output, '\n', { plain = true })
+  for index = 1, math.min(#lines, 8192) do
+    last_output[#last_output + 1] = lines[index]
+  end
+  if #lines > 8192 then
+    last_output[#last_output + 1] = '[Output line limit reached.]'
+  end
   if job.truncated then
     last_output[#last_output + 1] = '[Output limit reached; task cancelled.]'
   elseif job.stopped then
@@ -1016,7 +761,7 @@ local function finish(job, result)
   end
   if api.nvim_buf_is_valid(bufnr) then
     local level = result.code == 0 and vim.log.levels.INFO or vim.log.levels.WARN
-    notify(summary .. '; use Language Output to inspect.', level)
+    notify(summary .. '; use ' .. vim.fn.keytrans(prefix) .. 'o for output.', level)
   end
 end
 
@@ -1070,7 +815,7 @@ local function launch(invocation)
   job.timer = vim.defer_fn(function()
     job.timer = nil
     if jobs[bufnr] == job then
-      pcall(process.kill, process, 9)
+      signal_process(process, 9)
     end
   end, invocation.timeout_ms + 1000)
 end
@@ -1172,6 +917,11 @@ local function authorize(invocation)
   local policy = options.is_trusted
   if policy then
     local ok, trusted = pcall(policy, invocation.cwd)
+    if not ok then
+      pending[bufnr] = nil
+      notify('Workspace policy failed: ' .. tostring(trusted), vim.log.levels.ERROR)
+      return
+    end
     if ok and trusted == true then
       pending[bufnr] = nil
       launch(invocation)
@@ -1190,6 +940,14 @@ local function authorize(invocation)
   end)
 end
 
+---@param selected LanguageTask
+---@return boolean
+local function available_task(selected)
+  local executable = selected.argv[1]
+  -- Relative executables are resolved against the project at invocation time.
+  return executable:find('[/\\]') ~= nil or fn.executable(executable) == 1
+end
+
 ---@param key string Action suffix: b, c, r or t.
 ---@param bufnr? integer
 function M.run(key, bufnr)
@@ -1199,6 +957,12 @@ function M.run(key, bufnr)
   end
   local profile = profiles[vim.bo[bufnr].filetype]
   local selected = profile and profile.tasks[key]
+  local commands = COMMAND_TASKS[vim.bo[bufnr].filetype]
+  local command = commands and commands[key]
+  if command and fn.exists(':' .. command.command) == 2 then
+    core.command(command.command)()
+    return
+  end
   if not profile or not selected then
     notify('This filetype has no task for key: ' .. key)
     return
@@ -1216,11 +980,36 @@ function M.actions(bufnr)
     return
   end
   local profile = profiles[vim.bo[bufnr].filetype]
+  local commands = COMMAND_TASKS[vim.bo[bufnr].filetype]
+  if commands then
+    local items = {}
+    for key, item in pairs(commands) do
+      if fn.exists(':' .. item.command) == 2 then
+        items[#items + 1] = {
+          label = item.label,
+          run = function()
+            M.run(key, bufnr)
+          end,
+        }
+      end
+    end
+    core.select(bufnr, items, 'Query actions: ' .. vim.bo[bufnr].filetype)
+    return
+  end
   if not profile or vim.tbl_isempty(profile.tasks) then
     notify('No task profile for this filetype; configure options.profiles.')
     return
   end
-  local keys = vim.tbl_keys(profile.tasks)
+  local keys = {}
+  for key, selected in pairs(profile.tasks) do
+    if available_task(selected) then
+      keys[#keys + 1] = key
+    end
+  end
+  if #keys == 0 then
+    notify('No configured task executable is available for this filetype.')
+    return
+  end
   table.sort(keys, function(lhs, rhs)
     return profile.tasks[lhs].label < profile.tasks[rhs].label
   end)
@@ -1259,7 +1048,8 @@ function M.attach(bufnr)
   end
   local filetype = vim.bo[bufnr].filetype
   local profile = profiles[filetype]
-  if not profile and not filetype_servers[filetype] then
+  local commands = COMMAND_TASKS[filetype]
+  if not profile and not commands then
     return
   end
   ---@type table<string, { callback: fun(), label: string }>
@@ -1286,43 +1076,42 @@ function M.attach(bufnr)
   }
   if profile then
     for key, selected in pairs(profile.tasks) do
+      if available_task(selected) then
+        mappings[key] = {
+          callback = function()
+            M.run(key, bufnr)
+          end,
+          label = selected.label,
+        }
+      end
+    end
+  end
+  for key, item in pairs(commands or {}) do
+    if fn.exists(':' .. item.command) == 2 then
       mappings[key] = {
         callback = function()
           M.run(key, bufnr)
         end,
-        label = selected.label,
+        label = item.label,
       }
     end
   end
   local keys = vim.tbl_keys(mappings)
   table.sort(keys)
+  local definitions = {}
   for _, key in ipairs(keys) do
     local mapping = mappings[key]
-    install_map(bufnr, key, mapping.callback, mapping.label)
+    definitions[#definitions + 1] = {
+      lhs = prefix .. key,
+      rhs = mapping.callback,
+      desc = mapping.label,
+    }
   end
+  core.install('langmap', bufnr, definitions)
 end
 
-local function discover()
-  filetype_servers = {}
-  local servers = vim.deepcopy(options.servers or SERVERS)
-  table.sort(servers)
-  for _, name in ipairs(servers) do
-    local ok, config = pcall(function()
-      return vim.lsp.config[name]
-    end)
-    if ok and config and config.filetypes then
-      for _, filetype in ipairs(config.filetypes) do
-        local names = filetype_servers[filetype] or {}
-        names[#names + 1] = name
-        filetype_servers[filetype] = names
-      end
-    end
-  end
-end
-
--- Refresh after changing LSP config filetypes without rerunning setup.
+-- Refresh loaded buffers after tools or task profiles change.
 function M.refresh()
-  discover()
   for _, bufnr in ipairs(api.nvim_list_bufs()) do
     M.attach(bufnr)
   end
@@ -1330,7 +1119,8 @@ end
 
 ---@param profile LanguageProfile
 local function validate_profile(profile)
-  assert(type(profile.markers) == 'table', 'profile.markers must be a list')
+  assert(type(profile) == 'table', 'profile must be a table')
+  assert(type(profile.markers) == 'table' and vim.islist(profile.markers), 'profile.markers must be a list')
   assert(#profile.markers <= 32, 'too many project markers')
   assert(type(profile.tasks) == 'table', 'profile.tasks must be a table')
   for _, marker in ipairs(profile.markers) do
@@ -1339,7 +1129,7 @@ local function validate_profile(profile)
   for key, selected in pairs(profile.tasks) do
     assert(key == 'b' or key == 'c' or key == 'r' or key == 't', 'invalid task key')
     assert(type(selected.label) == 'string' and selected.label ~= '', 'missing task label')
-    assert(type(selected.argv) == 'table', 'task.argv must be a list')
+    assert(type(selected.argv) == 'table' and vim.islist(selected.argv), 'task.argv must be a list')
     assert(#selected.argv > 0 and #selected.argv <= ARGV_MAX, 'invalid argv size')
     for _, argument in ipairs(selected.argv) do
       assert(type(argument) == 'string', 'argv entries must be strings')
@@ -1347,11 +1137,13 @@ local function validate_profile(profile)
     end
     assert(selected.argv[1] ~= '', 'missing executable')
     local timeout = selected.timeout_ms or TIMEOUT_MS
+    assert(type(timeout) == 'number', 'timeout_ms must be numeric')
     assert(timeout % 1 == 0 and timeout >= 1 and timeout <= TIMEOUT_MS_MAX, 'invalid timeout')
   end
 end
 
 function M.teardown()
+  core.teardown('langmap')
   if group ~= 0 then
     api.nvim_del_augroup_by_id(group)
     group = 0
@@ -1361,12 +1153,10 @@ function M.teardown()
     job.stopped = true
     close_timer(job)
     if job.process then
-      pcall(job.process.kill, job.process, 9)
+      signal_process(job.process, 9)
     end
   end
-  for bufnr in pairs(owned_maps) do
-    clear_maps(bufnr)
-  end
+  jobs = {}
 end
 
 ---@param opts? LanguageMappingsOptions
@@ -1377,12 +1167,17 @@ function M.setup(opts)
     updated[alias] = vim.deepcopy(PROFILES[target])
   end
   for filetype, profile in pairs(configured.profiles or {}) do
-    updated[filetype] = vim.deepcopy(profile)
+    if profile == false then
+      updated[filetype] = nil
+    else
+      updated[filetype] = vim.deepcopy(profile)
+    end
   end
+  assert(vim.tbl_count(updated) <= 256, 'too many filetype profiles')
   for _, profile in pairs(updated) do
     validate_profile(profile)
   end
-  local next_prefix = configured.prefix or '<LocalLeader>l'
+  local next_prefix = configured.prefix or '<LocalLeader>t'
   assert(type(next_prefix) == 'string' and next_prefix ~= '', 'invalid prefix')
   assert(#next_prefix <= 64, 'prefix too long')
   assert(not configured.is_trusted or type(configured.is_trusted) == 'function')
@@ -1391,10 +1186,10 @@ function M.setup(opts)
   profiles = updated
   prefix = keycodes(next_prefix)
   group = api.nvim_create_augroup('LanguageMappings', { clear = true })
-  api.nvim_create_autocmd({ 'BufEnter', 'FileType', 'LspAttach' }, {
+  api.nvim_create_autocmd({ 'BufEnter', 'FileType' }, {
     callback = function(event)
-      if event.event == 'LspAttach' then
-        discover()
+      if event.event == 'FileType' then
+        M.cancel(event.buf)
       end
       M.attach(event.buf)
     end,
@@ -1415,7 +1210,7 @@ function M.setup(opts)
   M.refresh()
 end
 
--- Compatible with the supplied mapping loader's setup_<filename> convention.
+M.setup_langmap = M.setup
 M.setup_langmappings = M.setup
 
 return M

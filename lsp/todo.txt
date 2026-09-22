@@ -1,3 +1,70 @@
+Code Actions to add
+
+## Confirmed: implements code actions (60)
+
+- ansible_ls
+- astro_ls
+- basedpy_ls
+- bicep_ls
+- biome_ls
+- clangd_ls
+- clojure_ls
+- cmake_ls
+- crystalline_ls
+- csharp_ls
+- dockercompose_ls
+- docker_ls
+- elixir_ls
+- esbonio_ls
+- fsautocomplete_ls
+- gdscript_ls
+- gleam_ls
+- golangcilint_ls
+- graphql_ls
+- html_ls
+- intelephense_ls
+- java_ls
+- jdt_ls
+- jsonnet_ls
+- kotlin_ls
+- lua_ls
+- luau_ls
+- matlab_ls
+- metals_ls
+- mint_ls
+- neocmake_ls
+- nickel_ls
+- nil_ls
+- nixd_ls
+- ocaml_ls
+- perl_ls
+- phpactor_ls
+- prisma_ls
+- psalm_ls
+- robotcode_ls
+- robotframework_ls
+- roslyn_ls
+- rubocop_ls
+- ruby_ls
+- ruff_ls
+- solargraph_ls
+- sorbet_ls
+- sourcekit_ls
+- sqruff_ls
+- standardrb_ls
+- statix_ls
+- steep_ls
+- superhtml_ls
+- svelte_ls
+- tailwindcss_ls
+- taplo_ls
+- templ_ls
+- texlab_ls
+- vue_ls
+- yaml_ls
+
+
+# Configs to make
 anakin_language_server
 ballerina
 bright_script

@@ -1,241 +1,111 @@
--- /qompassai/Diver/lua/mappings/genmap.lua
--- Qompass AI Diver General Mappings
--- Copyright (C) 2025 Qompass AI, All rights reserved
--- --------------------------------------------------
----@module 'mappings.genmap'
-
+-- General editing and native directory browsing, independent of LSP attachment.
+-- SPDX-License-Identifier: Apache-2.0
+local api = vim.api
+local core = require('mappings._core')
 local M = {}
+local OWNER = 'genmap'
 
-function M.setup_genmap()
-    local map = vim.keymap.set
-
-    local cmd_opts = {
-        expr = true,
-        noremap = true,
-        silent = true,
-    }
-
-    map(
-        'c',
-        '<C-j>',
-        function()
-            if vim.fn.pumvisible() == 1 then
-                return '<C-n>'
-            end
-            return '<C-j>'
-        end,
-        vim.tbl_extend('force', cmd_opts, {
-            desc = 'Next command-line completion item',
-        })
-    )
-
-    map(
-        'c',
-        '<C-k>',
-        function()
-            if vim.fn.pumvisible() == 1 then
-                return '<C-p>'
-            end
-            return '<C-k>'
-        end,
-        vim.tbl_extend('force', cmd_opts, {
-            desc = 'Previous command-line completion item',
-        })
-    )
-
-    map(
-        'c',
-        '<Down>',
-        function()
-            if vim.fn.pumvisible() == 1 then
-                return '<C-n>'
-            end
-            return '<Down>'
-        end,
-        vim.tbl_extend('force', cmd_opts, {
-            desc = 'Next command-line completion item',
-        })
-    )
-
-    map(
-        'c',
-        '<Up>',
-        function()
-            if vim.fn.pumvisible() == 1 then
-                return '<C-p>'
-            end
-            return '<Up>'
-        end,
-        vim.tbl_extend('force', cmd_opts, {
-            desc = 'Previous command-line completion item',
-        })
-    )
-
-    map(
-        'c',
-        'j',
-        function()
-            if vim.fn.pumvisible() == 1 then
-                return '<C-n>'
-            end
-            return 'j'
-        end,
-        vim.tbl_extend('force', cmd_opts, {
-            desc = 'Next command-line completion item',
-        })
-    )
-
-    map(
-        'c',
-        'k',
-        function()
-            if vim.fn.pumvisible() == 1 then
-                return '<C-p>'
-            end
-            return 'k'
-        end,
-        vim.tbl_extend('force', cmd_opts, {
-            desc = 'Previous command-line completion item',
-        })
-    )
-
-    map('n', '<leader>U', function()
-        vim.pack.update(nil, {
-            force = true,
-        })
-    end, {
-        desc = 'Force update vim.pack plugins',
-        noremap = true,
-        silent = true,
-    })
-
-    vim.api.nvim_create_autocmd('LspAttach', {
-        callback = function(ev)
-            local bufnr = ev.buf
-            local opts = {
-                buffer = bufnr,
-                noremap = true,
-                silent = true,
+local function buffers()
+    local items = {}
+    for _, bufnr in ipairs(api.nvim_list_bufs()) do
+        if vim.bo[bufnr].buflisted then
+            local name = api.nvim_buf_get_name(bufnr)
+            items[#items + 1] = {
+                label = name ~= '' and name or ('[No name] ' .. bufnr),
+                run = function()
+                    if api.nvim_buf_is_valid(bufnr) then
+                        api.nvim_set_current_buf(bufnr)
+                    end
+                end,
             }
+        end
+    end
+    core.select(api.nvim_get_current_buf(), items, 'Buffers')
+end
 
-            map(
-                'i',
-                '<C-b>',
-                '<ESC>^i',
-                vim.tbl_extend('force', opts, {
-                    desc = 'Move to the beginning of the line',
-                })
-            )
+local function directory()
+    local win = api.nvim_get_current_win()
+    vim.ui.input(
+        { prompt = 'Window directory: ', default = vim.fn.getcwd(), completion = 'dir' },
+        function(path)
+            if not path or path == '' or not api.nvim_win_is_valid(win) then
+                return
+            end
+            path = vim.fn.fnamemodify(vim.fn.expand(path), ':p')
+            if vim.fn.isdirectory(path) ~= 1 then
+                core.notify('Directory does not exist: ' .. path)
+                return
+            end
+            api.nvim_win_call(win, function()
+                api.nvim_cmd({ cmd = 'lcd', args = { path }, magic = { file = false } }, {})
+            end)
+        end
+    )
+end
 
-            map(
-                'n',
-                '<C-c>',
-                '<cmd>%y+<CR>',
-                vim.tbl_extend('force', opts, {
-                    desc = 'Copy the entire file to the clipboard',
-                })
-            )
+local function completion(next_item, fallback)
+    return function()
+        if vim.fn.wildmenumode() == 1 or vim.fn.pumvisible() == 1 then
+            return next_item
+        end
+        return fallback
+    end
+end
 
-            map(
-                'i',
-                '<C-e>',
-                '<End>',
-                vim.tbl_extend('force', opts, {
-                    desc = 'Move to the end of the line',
-                })
-            )
-
-            map(
-                'n',
-                '<Esc>',
-                '<cmd>noh<CR>',
-                vim.tbl_extend('force', opts, {
-                    desc = 'Clear search highlights',
-                })
-            )
-
-            map(
-                'i',
-                '<C-h>',
-                '<Left>',
-                vim.tbl_extend('force', opts, {
-                    desc = 'Move left by one character',
-                })
-            )
-
-            map(
-                'n',
-                '<C-h>',
-                '<C-w>h',
-                vim.tbl_extend('force', opts, {
-                    desc = 'Switch to the window on the left',
-                })
-            )
-
-            map(
-                'i',
-                '<C-j>',
-                '<Down>',
-                vim.tbl_extend('force', opts, {
-                    desc = 'Move down by one line',
-                })
-            )
-
-            map(
-                'n',
-                '<C-j>',
-                '<C-w>j',
-                vim.tbl_extend('force', opts, {
-                    desc = 'Switch to the window below',
-                })
-            )
-
-            map(
-                'i',
-                '<C-k>',
-                '<Up>',
-                vim.tbl_extend('force', opts, {
-                    desc = 'Move up by one line',
-                })
-            )
-
-            map(
-                'n',
-                '<C-k>',
-                '<C-w>k',
-                vim.tbl_extend('force', opts, {
-                    desc = 'Switch to the window above',
-                })
-            )
-
-            map(
-                'i',
-                '<C-l>',
-                '<Right>',
-                vim.tbl_extend('force', opts, {
-                    desc = 'Move right by one character',
-                })
-            )
-
-            map(
-                'n',
-                '<C-l>',
-                '<C-w>l',
-                vim.tbl_extend('force', opts, {
-                    desc = 'Switch to the window on the right',
-                })
-            )
-
-            map(
-                'n',
-                '<C-s>',
-                '<cmd>w<CR>',
-                vim.tbl_extend('force', opts, {
-                    desc = 'Save the current file',
-                })
-            )
-        end,
+function M.setup()
+    core.teardown(OWNER)
+    core.install(OWNER, 0, {
+        { lhs = '<C-h>', rhs = '<C-w>h', desc = 'Window left' },
+        { lhs = '<C-j>', rhs = '<C-w>j', desc = 'Window below' },
+        {
+            lhs = '<C-j>',
+            mode = 'c',
+            expr = true,
+            rhs = completion('<C-n>', '<C-j>'),
+            desc = 'Next command completion',
+        },
+        { lhs = '<C-k>', rhs = '<C-w>k', desc = 'Window above' },
+        {
+            lhs = '<C-k>',
+            mode = 'c',
+            expr = true,
+            rhs = completion('<C-p>', '<C-k>'),
+            desc = 'Previous command completion',
+        },
+        { lhs = '<C-l>', rhs = '<C-w>l', desc = 'Window right' },
+        { lhs = '<C-s>', rhs = '<Cmd>update<CR>', desc = 'Save changed buffer' },
+        { lhs = '<Esc>', rhs = '<Cmd>nohlsearch<CR><Esc>', desc = 'Clear search highlight' },
+        { lhs = '<Leader>bb', rhs = buffers, desc = 'Choose buffer' },
+        { lhs = '<Leader>bd', rhs = '<Cmd>bdelete<CR>', desc = 'Close buffer without force' },
+        { lhs = '<Leader>cd', rhs = directory, desc = 'Change window directory' },
+        {
+            lhs = '<Leader>e',
+            rhs = function()
+                local count = vim.v.count > 0 and tostring(vim.v.count) or ''
+                local keys =
+                    api.nvim_replace_termcodes(count .. '<Plug>(nvim-dir-up)', true, false, true)
+                api.nvim_feedkeys(keys, 'm', false)
+            end,
+            desc = 'Browse parent directory (native dir)',
+        },
+        { lhs = '<Leader>ff', rhs = ':find ', desc = 'Find file using path and wildmenu' },
+        { lhs = '<Leader>fh', rhs = ':help ', desc = 'Find help' },
+        { lhs = '<Leader>fo', rhs = '<Cmd>browse oldfiles<CR>', desc = 'Choose recent file' },
+        { lhs = '<Leader>hc', rhs = '<Cmd>checkhealth<CR>', desc = 'Native health checks' },
+        { lhs = '<Leader>mi', rhs = core.report, desc = 'Mapping conflict report' },
+        {
+            lhs = '<Leader>pu',
+            rhs = function()
+                vim.pack.update()
+            end,
+            desc = 'Review package updates',
+        },
+        { lhs = '<Leader>ya', rhs = '<Cmd>%yank +<CR>', desc = 'Copy buffer to clipboard' },
     })
 end
 
+function M.teardown()
+    core.teardown(OWNER)
+end
+M.setup_genmap = M.setup
 return M

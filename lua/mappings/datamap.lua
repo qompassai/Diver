@@ -1,157 +1,115 @@
--- /qompassai/Diver/lua/mappings/datamap.lua
--- Qompass AI Diver Data  Mappings
--- Copyright (C) 2025 Qompass AI, All rights reserved
--- --------------------------------------------------
----@module 'mappings.datamap'
+-- Filetype-local math annotations and query templates; no preview plugins.
+-- SPDX-License-Identifier: Apache-2.0
+local api = vim.api
+local core = require('mappings._core')
 local M = {}
-function M.setup_datamap()
-  local map = vim.keymap.set
-  local ns = vim.api.nvim_create_namespace('latex_preview')
-  local function toggle_line_math()
-    local bufnr = vim.api.nvim_get_current_buf()
-    local lnum = vim.api.nvim_win_get_cursor(0)[1] - 1
-    local marks = vim.api.nvim_buf_get_extmarks(bufnr, ns, { lnum, 0 }, { lnum, -1 }, {})
-    if #marks > 0 then
-      vim.api.nvim_buf_clear_namespace(bufnr, ns, lnum, lnum + 1)
-      return
-    end
-    local line = vim.api.nvim_buf_get_lines(bufnr, lnum, lnum + 1, false)[1] or ''
-    local math = line:match('%$(.-)%$') or line:match('%$%$(.-)%$%$') or line
-    vim.api.nvim_buf_set_extmark(bufnr, ns, lnum, -1, {
-      virt_text = {
-        {
-          ' ⟹ ' .. math,
-          'Comment',
-        },
-      },
+local OWNER = 'datamap'
+local LINE_COUNT_MAX = 10000
+local LINE_BYTES_MAX = 8192
+local namespace = api.nvim_create_namespace('native_mapping_math')
+local FILETYPES = {
+  markdown = true,
+  plaintex = true,
+  rmd = true,
+  tex = true,
+}
+
+local function expression(line)
+  if #line > LINE_BYTES_MAX then
+    return nil
+  end
+  return line:match('%$%$(.-)%$%$')
+    or line:match('%$(.-)%$')
+    or line:match('\\%((.-)\\%)')
+    or line:match('\\%[(.-)\\%]')
+end
+
+local function annotate(bufnr, row, line)
+  local text = expression(line)
+  if text and text ~= '' then
+    api.nvim_buf_set_extmark(bufnr, namespace, row, 0, {
+      virt_text = { { ' math: ' .. text, 'Comment' } },
       virt_text_pos = 'eol',
     })
   end
-  local function toggle_all_math()
-    local bufnr = vim.api.nvim_get_current_buf()
-    if vim.b.latex_preview_enabled then
-      vim.api.nvim_buf_clear_namespace(bufnr, ns, 0, -1)
-      vim.b.latex_preview_enabled = false
-      return
-    end
-    vim.b.latex_preview_enabled = true
-    local lines = vim.api.nvim_buf_get_lines(bufnr, 0, -1, false)
-    for i, line in ipairs(lines) do
-      local math = line:match('%$(.-)%$') or line:match('%$%$(.-)%$%$')
-      if math then
-        vim.api.nvim_buf_set_extmark(bufnr, ns, i - 1, -1, {
-          virt_text = {
-            {
-              ' ⟹ ' .. math,
-              'Comment',
-            },
-          },
-          virt_text_pos = 'eol',
-        })
-      end
-    end
-  end
-  vim.api.nvim_create_autocmd('LspAttach', {
-    callback = function(ev)
-      local bufnr = ev.buf
-      local opts = {
-        noremap = true,
-        silent = true,
-        buffer = bufnr,
-      }
-      map(
-        'n',
-        '<leader>mp',
-        toggle_line_math,
-        vim.tbl_extend('force', opts, {
-          desc = 'Preview LaTeX (virt text)',
-        })
-      )
-
-      map(
-        'n',
-        '<leader>mt',
-        toggle_all_math,
-        vim.tbl_extend('force', opts, {
-          desc = 'Toggle LaTeX virt text',
-        })
-      )
-    end,
-  })
 end
 
-function M.setup_sf_query_maps()
-  local map = vim.keymap.set
-  vim.api.nvim_create_autocmd('FileType', {
-    pattern = {
-      'soql', 'sosl' },
-    callback = function(ev)
-      local bufnr = ev.buf
-      local ft = vim.bo[bufnr].filetype
-      local opts = {
-        noremap = true,
-        silent = true,
-        buffer = bufnr,
-      }
-      if ft == 'soql' then
-        map(
-          'n',
-          '<leader>sfr',
-          '<cmd>SfSoqlRun<cr>',
-          vim.tbl_extend('force', opts, {
-            desc = 'SF: run SOQL',
-          })
-        )
-        map(
-          'n',
-          '<leader>sft',
-          '<cmd>SfSoqlTemplate<cr>',
-          vim.tbl_extend('force', opts, {
-            desc = 'SF: SOQL template',
-          })
-        )
-      end
-      if ft == 'sosl' then
-        map(
-          'n',
-          '<leader>sfr',
-          '<cmd>SfSoslRun<cr>',
-          vim.tbl_extend('force', opts, {
-            desc = 'SF: run SOSL',
-          })
-        )
-        map(
-          'n',
-          '<leader>sft',
-          '<cmd>SfSoslTemplate<cr>',
-          vim.tbl_extend('force', opts, {
-            desc = 'SF: SOSL template',
-          })
-        )
-      end
-      map(
-        'n',
-        '<leader>sfl',
-        '<cmd>SfQueryLint<cr>',
-        vim.tbl_extend('force', opts, {
-          desc = 'SF: lint query',
-        })
-      )
-      map(
-        'n',
-        '<leader>sfR',
-        '<cmd>SfQueryRun<cr>',
-        vim.tbl_extend('force', opts, {
-          desc = 'SF: run query (auto)',
-        })
-      )
-    end,
-  })
+local function all_math(bufnr)
+  api.nvim_buf_clear_namespace(bufnr, namespace, 0, -1)
+  local count = api.nvim_buf_line_count(bufnr)
+  if count > LINE_COUNT_MAX then
+    core.notify('Math annotation limit: ' .. LINE_COUNT_MAX .. ' lines')
+    return
+  end
+  for index, line in ipairs(api.nvim_buf_get_lines(bufnr, 0, -1, false)) do
+    annotate(bufnr, index - 1, line)
+  end
+end
+
+local function line_math(bufnr)
+  local row = api.nvim_win_get_cursor(0)[1] - 1
+  local marks = api.nvim_buf_get_extmarks(bufnr, namespace, { row, 0 }, { row, -1 }, {})
+  api.nvim_buf_clear_namespace(bufnr, namespace, row, row + 1)
+  if #marks == 0 then
+    annotate(bufnr, row, api.nvim_buf_get_lines(bufnr, row, row + 1, false)[1] or '')
+  end
+end
+
+local function attach(bufnr)
+  local maps = {}
+  local filetype = vim.bo[bufnr].filetype
+  if core.source(bufnr) and FILETYPES[filetype] then
+    maps = {
+      {
+        lhs = '<LocalLeader>ma',
+        rhs = function()
+          all_math(bufnr)
+        end,
+        desc = 'Annotate math expressions',
+      },
+      {
+        lhs = '<LocalLeader>mc',
+        rhs = function()
+          api.nvim_buf_clear_namespace(bufnr, namespace, 0, -1)
+        end,
+        desc = 'Clear math annotations',
+      },
+      {
+        lhs = '<LocalLeader>ml',
+        rhs = function()
+          line_math(bufnr)
+        end,
+        desc = 'Toggle line math annotation',
+      },
+    }
+  else
+    api.nvim_buf_clear_namespace(bufnr, namespace, 0, -1)
+  end
+  local command = ({ soql = 'SfSoqlTemplate', sosl = 'SfSoslTemplate' })[filetype]
+  if command and vim.fn.exists(':' .. command) == 2 then
+    maps[#maps + 1] = {
+      lhs = '<LocalLeader>mq',
+      rhs = core.command(command),
+      desc = 'Query template for ' .. filetype,
+    }
+  end
+  core.install(OWNER, bufnr, maps)
 end
 
 function M.setup()
-  M.setup_datamap()
-  M.setup_sf_query_maps()
+  core.watch(OWNER, attach, {
+    'BufEnter',
+    'FileType',
+  })
 end
-
+function M.teardown()
+  core.teardown(OWNER)
+  for _, bufnr in ipairs(api.nvim_list_bufs()) do
+    if core.usable(bufnr) then
+      api.nvim_buf_clear_namespace(bufnr, namespace, 0, -1)
+    end
+  end
+end
+M.setup_datamap = M.setup
+M.setup_sf_query_maps = M.setup
 return M

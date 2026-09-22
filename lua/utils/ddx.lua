@@ -4,10 +4,199 @@
 -- ----------------------------------------
 local api = vim.api
 local fn = vim.fn
+local levels = vim.log.levels
+local lsp = vim.lsp
 local notify = vim.notify
 local uv = vim.uv
-local levels = vim.log.levels
+
 local M = {}
+local SERVER_COUNT_MAX = 512
+local INIT_TIMEOUT_MS = 2500
+local INIT_POLL_MS = 50
+local STOP_TIMEOUT_MS = 1000
+
+---@class TigerAuditResult
+---@field name string
+---@field status "code_actions"|"no_code_actions"|"not_installed"|"failed_to_start"|"timed_out"
+---@field kinds string[]?
+---@field detail string?
+
+local function is_nonempty_string(value)
+  return type(value) == 'string' and value ~= ''
+end
+
+local function discover_configured_servers()
+  local paths = api.nvim_get_runtime_file('lsp/*.lua', true)
+  local seen = {}
+
+  for _, path in ipairs(paths) do
+    local name = vim.fn.fnamemodify(path, ':t:r')
+    if is_nonempty_string(name) then
+      seen[name] = true
+    end
+  end
+
+  local names = {}
+  for name in pairs(seen) do
+    names[#names + 1] = name
+  end
+  table.sort(names)
+
+  assert(#names <= SERVER_COUNT_MAX, 'discovered server count exceeds audit bound')
+
+  return names
+end
+
+local function resolve_config(name)
+  local ok, config = pcall(function()
+    return lsp.config[name]
+  end)
+
+  if not ok or type(config) ~= 'table' then
+    return nil, 'config could not be resolved'
+  end
+
+  config = vim.deepcopy(config)
+  config.name = config.name or name
+
+  return config, nil
+end
+
+local function static_command_binary(config)
+  if type(config.cmd) == 'table' and is_nonempty_string(config.cmd[1]) then
+    return config.cmd[1]
+  end
+  return nil
+end
+local function probe_server(name)
+  local config, resolve_error = resolve_config(name)
+  if config == nil then
+    return { name = name, status = 'failed_to_start', detail = resolve_error }
+  end
+
+  local binary = static_command_binary(config)
+  if binary ~= nil and vim.fn.executable(binary) ~= 1 then
+    return { name = name, status = 'not_installed', detail = binary }
+  end
+
+  config.root_dir = vim.fn.getcwd()
+
+  local scratch_bufnr = api.nvim_create_buf(false, true)
+  local client_id
+
+  local start_ok, start_result = pcall(lsp.start, config, {
+    bufnr = scratch_bufnr,
+    attach = true,
+  })
+
+  if not start_ok or start_result == nil then
+    api.nvim_buf_delete(scratch_bufnr, { force = true })
+    return { name = name, status = 'failed_to_start', detail = tostring(start_result) }
+  end
+
+  client_id = start_result
+
+  local client = lsp.get_client_by_id(client_id)
+  local initialized = vim.wait(INIT_TIMEOUT_MS, function()
+    client = lsp.get_client_by_id(client_id)
+    return client ~= nil and client.initialized == true
+  end, INIT_POLL_MS)
+
+  local result
+  if not initialized or client == nil then
+    result = { name = name, status = 'timed_out' }
+  else
+    local provider = client.server_capabilities and client.server_capabilities.codeActionProvider
+    if provider == true then
+      result = { name = name, status = 'code_actions' }
+    elseif type(provider) == 'table' then
+      result = { name = name, status = 'code_actions', kinds = provider.codeActionKinds }
+    else
+      result = { name = name, status = 'no_code_actions' }
+    end
+  end
+
+  if client ~= nil then
+    pcall(function()
+      client:stop(true)
+    end)
+    vim.wait(STOP_TIMEOUT_MS, function()
+      return lsp.get_client_by_id(client_id) == nil
+    end, INIT_POLL_MS)
+  end
+
+  if api.nvim_buf_is_valid(scratch_bufnr) then
+    api.nvim_buf_delete(scratch_bufnr, { force = true })
+  end
+
+  return result
+end
+
+local STATUS_LABELS = {
+  code_actions = 'YES',
+  no_code_actions = 'no',
+  not_installed = 'not installed',
+  failed_to_start = 'failed to start',
+  timed_out = 'timed out',
+}
+
+local function render_report(results)
+  local lines = {
+    'LSP Code Action Audit',
+    string.format('Servers discovered: %d', #results),
+    '',
+  }
+
+  for _, result in ipairs(results) do
+    local label = STATUS_LABELS[result.status] or result.status
+    local extra = ''
+
+    if result.kinds ~= nil and #result.kinds > 0 then
+      extra = ' (' .. table.concat(result.kinds, ', ') .. ')'
+    elseif result.detail ~= nil then
+      extra = ' [' .. result.detail .. ']'
+    end
+
+    lines[#lines + 1] = string.format('%-24s %-16s%s', result.name, label, extra)
+  end
+
+  return lines
+end
+
+local function open_report_buffer(lines)
+  local bufnr = api.nvim_create_buf(false, true)
+  api.nvim_buf_set_lines(bufnr, 0, -1, false, lines)
+  vim.bo[bufnr].filetype = 'lspcodeactionaudit'
+  vim.bo[bufnr].modifiable = false
+  vim.cmd('split')
+  api.nvim_win_set_buf(0, bufnr)
+end
+
+function M.run(opts)
+  opts = opts or {}
+  assert(type(opts) == 'table')
+
+  local names = opts.names or discover_configured_servers()
+  assert(type(names) == 'table')
+  assert(#names <= SERVER_COUNT_MAX)
+
+  local results = {}
+  for index = 1, #names do
+    results[index] = probe_server(names[index])
+  end
+
+  local lines = render_report(results)
+  open_report_buffer(lines)
+
+  return results
+end
+
+api.nvim_create_user_command('LspCodeActionAudit', function()
+  M.run()
+end, {
+  desc = 'Probe every configured LSP for textDocument/codeAction support',
+})
+
 local ddx_group = api.nvim_create_augroup('DDX', {
   clear = true,
 })
@@ -1136,7 +1325,7 @@ local function finish_qf(qf_items)
   end
 end
 
-function M.buffer_diagnostics(bufnr)
+function M.buffer_diagnostics(bufnr) --- @param bufnr? integer
   bufnr = bufnr or api.nvim_get_current_buf()
   vim.diagnostic.setloclist({
     open = false,
@@ -1205,7 +1394,10 @@ function M.enable_workspace_diagnostics_handler()
     end,
     hide = function()
       vim.schedule(function()
-        fn.setqflist({}, 'r', { title = 'Workspace Diagnostics', items = {} })
+        fn.setqflist({}, 'r', {
+          title = 'Workspace Diagnostics',
+          items = {},
+        })
       end)
     end,
   }

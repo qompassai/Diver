@@ -4,8 +4,8 @@
 -- ----------------------------------------
 require('config.core.async')
 require('config.core.filetype')
-require('config.core.fixer')
-require('config.core.flash')
+--require('config.core.fixer')
+--require('config.core.flash')
 require('config.core.lint')
 require('config.core.lsp')
 require('config.core.parser')

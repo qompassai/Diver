@@ -7,7 +7,6 @@ local api = vim.api
 local uv = vim.uv
 local fs = vim.fs
 local M = {}
-M.completion_api_version = 2
 
 ---@class FormatterContext
 ---@field bufnr integer
@@ -25,7 +24,7 @@ M.completion_api_version = 2
 ---@field args? string[]|fun(context: FormatterContext): string[]
 ---@field mode? 'stdin'|'tempfile'
 ---@field cwd? string|fun(context: FormatterContext): string
----@field env? table<string,string>
+---@field env? table
 ---@field root_markers? string[]
 ---@field exit_codes? integer[]
 ---@field output? 'stdout'|'file'
@@ -33,18 +32,16 @@ M.completion_api_version = 2
 ---@field allow_empty? boolean Explicit permission to turn nonempty input into empty output.
 ---@field automatic? boolean Permit use in default chains and on save.
 ---@field extension? string Tempfile extension for unnamed buffers.
+---@field pre_transform? fun(text: string): string Pure text transform, runs once before this stage's argv/context are built.
 
 ---@class FormatterRunOptions
----@field automatic? boolean Internal/on-save use; respects automatic=false.
 ---@field bufnr? integer
 ---@field names? string[] Explicit sequential formatter names.
 ---@field async? boolean Default true; false waits within timeout_ms.
 ---@field timeout_ms? integer Total deadline for all stages, not per stage.
 ---@field lsp? 'fallback'|'never'|'only'
 ---@field notify? boolean
----@field preview? boolean Produce formatted text without changing the buffer.
----@field validate_context? fun(context: FormatterContext): boolean
----@field validate_result? fun(bufnr: integer): boolean
+---@field automatic? boolean Internal/on-save use; respects automatic=false.
 
 M.options = {
   enabled = true,
@@ -59,20 +56,14 @@ M.options = {
   preserve_eol = true,
   blackd_url = 'http://127.0.0.1:45484/',
   sql_language = 'sql',
-  lsp_preference = {
-    'stylua_ls',
-    'biome_ls',
-    'ruff_ls',
-    'clangd_ls',
-    'gop_ls',
-    'rustana_ls',
-  },
+  lsp_preference = { 'stylua_ls', 'biome_ls', 'ruff_ls', 'clangd_ls', 'gop_ls', 'rustana_ls' },
 }
+
 ---@type table<string, FormatterSpec>
 M.definitions = {}
----@type table<string,string>
+---@type table<string, string>
 M.load_errors = {}
----@type table<string,string>
+---@type table<string, string>
 M.module_sources = {
   ['aiken_fmt'] = 'formatters.aiken_fmt',
   ['air'] = 'formatters.air',
@@ -81,8 +72,8 @@ M.module_sources = {
   ['awkfmt'] = 'formatters.awkfmt',
   ['bean_format'] = 'formatters.bean_format',
   --[[
-['bibclean'] = 'formatters.bibclean',
---]]
+  ['bibclean'] = 'formatters.bibclean',
+  --]]
   ['bibtex_tidy'] = 'formatters.bibtex_tidy',
   ['bicep_format'] = 'formatters.bicep_format',
   ['biome'] = 'formatters.biome',
@@ -213,746 +204,145 @@ M.module_sources = {
   ['zprint'] = 'formatters.zprint',
 }
 
+-- Outer entries are sequential stages. A nested list chooses the first available
+-- alternative; it does NOT run every competing formatter. Missing future modules
+-- are inactive. Go intentionally runs goimports and then gofumpt/gofmt.
 ---@type table<string, (string|string[])[]>
 M.formatters_by_ft = {
-  ['aiken'] = {
-    {
-      'aiken_fmt',
-    },
-  },
-  ['astro'] = {
-    {
-      'prettierd',
-      'prettier',
-    },
-  },
-  ['awk'] = {
-    {
-      'awkfmt',
-    },
-  },
-  ['bash'] = {
-    {
-      'shfmt',
-    },
-  },
-  ['beancount'] = {
-    {
-      'bean_format',
-    },
-  },
-  ['bib'] = {
-    {
-      'bibtex_tidy',
-    },
-  },
-  ['bicep'] = {
-    {
-      'bicep_format',
-    },
-  },
-  ['bzl'] = {
-    {
-      'buildifier',
-    },
-  },
-  ['bzlmod'] = {
-    {
-      'buildifier',
-    },
-  },
-  ['c'] = {
-    {
-      'clang_format',
-      'uncrustify',
-    },
-  },
-  ['cabal'] = {
-    {
-      'cabal_fmt',
-    },
-  },
-  ['cairo'] = {
-    {
-      'scarb_fmt',
-    },
-  },
-  ['clojure'] = {
-    {
-      'cljfmt',
-      'zprint',
-    },
-  },
-  ['cmake'] = {
-    {
-      'cmake_format',
-    },
-  },
-  ['commonlisp'] = {
-    {
-      'cl_format',
-    },
-  },
-  ['cpp'] = {
-    {
-      'clang_format',
-      'uncrustify',
-    },
-  },
-  ['cs'] = {
-    {
-      'csharpier',
-    },
-  },
-  ['cuda'] = {
-    {
-      'clang_format',
-    },
-  },
-  ['cue'] = {
-    {
-      'cue_fmt',
-    },
-  },
-  ['d'] = {
-    {
-      'dfmt',
-    },
-  },
-  ['dart'] = {
-    {
-      'dart_format',
-    },
-  },
-  ['dhall'] = {
-    {
-      'dhall_format',
-    },
-  },
-  ['dockerfile'] = {
-    {
-      'dprint',
-    },
-  },
-  ['dlang'] = {
-    {
-      'dfmt',
-    },
-  },
-  ['eelixir'] = {
-    {
-      'mix_format',
-    },
-  },
-  ['elixir'] = {
-    {
-      'mix_format',
-    },
-  },
-  ['elm'] = {
-    {
-      'elm_format',
-    },
-  },
-  ['erlang'] = {
-    {
-      'erlfmt',
-      'efmt',
-    },
-  },
-  ['eruby'] = {
-    {
-      'erb_formatter',
-      'htmlbeautify',
-    },
-  },
-  ['fennel'] = {
-    {
-      'fnlfmt',
-    },
-  },
-  ['fish'] = {
-    {
-      'fish_indent',
-    },
-  },
-  ['fortran'] = {
-    {
-      'fprettify',
-      'findent',
-    },
-  },
-  ['fsharp'] = {
-    {
-      'fantomas',
-    },
-  },
-  ['gdscript'] = {
-    {
-      'gdformat',
-    },
-  },
-  ['gleam'] = {
-    {
-      'gleam_format',
-    },
-  },
-  ['glsl'] = {
-    {
-      'clang_format',
-    },
-  },
-  ['go'] = {
-    'goimports',
-    {
-      'gofumpt',
-      'gofmt',
-    },
-  },
-  ['grain'] = {
-    {
-      'grain_format',
-    },
-  },
-  ['graphql'] = {
-    {
-      'prettierd',
-      'prettier',
-    },
-  },
-  ['haskell'] = {
-    {
-      'fourmolu',
-      'ormolu',
-      'brittany',
-    },
-  },
-  ['hcl'] = {
-    {
-      'hclfmt',
-      'packer_fmt',
-    },
-  },
-  ['heex'] = {
-    {
-      'mix_format',
-    },
-  },
-  ['hledger'] = {
-    {
-      'hledger_fmt',
-    },
-  },
-  ['hlsl'] = {
-    {
-      'clang_format',
-    },
-  },
-  ['html'] = {
-    {
-      'prettierd',
-      'prettier',
-      'superhtml',
-    },
-  },
-  ['htmlangular'] = {
-    {
-      'prettierd',
-      'prettier',
-    },
-  },
-  ['htmldjango'] = {
-    {
-      'djlint',
-    },
-  },
-  ['htmljinja'] = {
-    {
-      'djlint',
-    },
-  },
-  ['http'] = {
-    {
-      'kulala_fmt',
-    },
-  },
-  ['java'] = {
-    {
-      'google_java_format',
-      'clang_format',
-    },
-  },
-  ['janet'] = {
-    {
-      'janet_format',
-    },
-  },
-  ['javascript'] = {
-    {
-      'biome',
-      'prettierd',
-      'prettier',
-      'deno_fmt',
-    },
-  },
-  ['javascriptreact'] = {
-    {
-      'biome',
-      'prettierd',
-      'prettier',
-      'deno_fmt',
-    },
-  },
-  ['jinja'] = {
-    {
-      'djlint',
-    },
-  },
-  ['json'] = {
-    {
-      'biome',
-      'prettierd',
-      'prettier',
-      'jq',
-    },
-  },
-  ['json5'] = {
-    {
-      'prettierd',
-      'prettier',
-    },
-  },
-  ['jsonc'] = {
-    {
-      'biome',
-      'prettierd',
-      'prettier',
-    },
-  },
-  ['jsonnet'] = {
-    {
-      'jsonnetfmt',
-    },
-  },
-  ['julia'] = {
-    {
-      'julia_formatter',
-    },
-  },
-  ['just'] = {
-    {
-      'just_fmt',
-    },
-  },
-  ['kcl'] = {
-    {
-      'kcl_fmt',
-    },
-  },
-  ['kotlin'] = {
-    {
-      'ktfmt',
-      'ktlint',
-    },
-  },
-  ['latex'] = {
-    {
-      'latexindent',
-      'tex_fmt',
-    },
-  },
-  ['ledger'] = {
-    {
-      'hledger_fmt',
-    },
-  },
-  ['less'] = {
-    {
-      'prettierd',
-      'prettier',
-    },
-  },
-  ['liquid'] = {
-    {
-      'prettier',
-    },
-  },
-  ['lua'] = {
-    {
-      'stylua',
-    },
-  },
-  ['luau'] = {
-    {
-      'stylua',
-    },
-  },
-  ['make'] = {
-    {
-      'mbake',
-    },
-  },
-  ['markdown'] = {
-    {
-      'rumdl_fmt',
-      'prettierd',
-      'prettier',
-      'mdformat',
-      'panache',
-    },
-  },
-  ['matlab'] = {
-    {
-      'mh_style',
-    },
-  },
-  ['mdx'] = {
-    {
-      'prettierd',
-      'prettier',
-    },
-  },
-  ['meson'] = {
-    {
-      'muon_fmt',
-    },
-  },
-  ['nomad'] = {
-    {
-      'nomad_fmt',
-    },
-  },
-  ['nginx'] = {
-    {
-      'nginxfmt',
-    },
-  },
-  ['nickel'] = {
-    {
-      'nickel_format',
-    },
-  },
-  ['nix'] = {
-    {
-      'alejandra',
-      'nixfmt',
-      'nixpkgs_fmt',
-    },
-  },
-  ['nushell'] = {
-    {
-      'nufmt',
-    },
-  },
-  ['objc'] = {
-    {
-      'clang_format',
-    },
-  },
-  ['objcpp'] = {
-    {
-      'clang_format',
-    },
-  },
-  ['ocaml'] = {
-    {
-      'ocamlformat',
-    },
-  },
-  ['ocamlinterface'] = {
-    {
-      'ocamlformat',
-    },
-  },
-  ['opencl'] = {
-    {
-      'clang_format',
-    },
-  },
-  ['pascal'] = {
-    {
-      'ptop',
-    },
-  },
-  ['perl'] = {
-    {
-      'perltidy',
-    },
-  },
-  ['php'] = {
-    {
-      'phpcsfixer',
-      'mago_format',
-      'pint',
-      'phpcbf',
-    },
-  },
-  ['plaintex'] = {
-    {
-      'latexindent',
-      'tex_fmt',
-    },
-  },
-  ['proto'] = {
-    {
-      'buf_format',
-      'clang_format',
-    },
-  },
-  ['ps1'] = {
-    {
-      'powershell_formatter',
-    },
-  },
-  ['puppet'] = {
-    {
-      'puppet_lint_fix',
-    },
-  },
-  ['purescript'] = {
-    {
-      'purs_tidy',
-    },
-  },
-  ['python'] = {
-    {
-      'ruff_format',
-      'blackd',
-      'black',
-      'yapf',
-      'autopep8',
-    },
-  },
-  ['qml'] = {
-    {
-      'qmlformat',
-    },
-  },
-  ['r'] = {
-    {
-      'air',
-      'styler',
-    },
-  },
-  ['racket'] = {
-    {
-      'raco_fmt',
-    },
-  },
-  ['reason'] = {
-    {
-      'refmt',
-    },
-  },
-  ['rego'] = {
-    {
-      'opa_fmt',
-    },
-  },
-  ['rescript'] = {
-    {
-      'rescript_format',
-    },
-  },
-  ['robot'] = {
-    {
-      'robotidy',
-    },
-  },
-  ['rst'] = {
-    {
-      'docstrfmt',
-    },
-  },
-  ['ruby'] = {
-    {
-      'cookstyle',
-      'rubocop',
-      'standardrb',
-      'rubyfmt',
-    },
-  },
-  ['rust'] = {
-    {
-      'rustfmt',
-    },
-  },
-  ['sbt'] = {
-    {
-      'scalafmt',
-    },
-  },
-  ['scala'] = {
-    {
-      'scalafmt',
-    },
-  },
-  ['scheme'] = {
-    {
-      'schemat',
-    },
-  },
-  ['scss'] = {
-    {
-      'prettierd',
-      'prettier',
-    },
-  },
-  ['sh'] = {
-    {
-      'shfmt',
-    },
-  },
-  ['snakemake'] = {
-    {
-      'snakefmt',
-    },
-  },
-  ['solidity'] = {
-    {
-      'forge_fmt',
-      'prettier',
-    },
-  },
-  ['sql'] = {
-    {
-      'sql-formatter',
-      'sqlfluff',
-      'sqruff',
-      'pg_format',
-    },
-  },
-  ['starlark'] = {
-    {
-      'buildifier',
-    },
-  },
-  ['svelte'] = {
-    {
-      'prettierd',
-      'prettier',
-    },
-  },
-  ['svg'] = {
-    {
-      'prettierd',
-      'prettier',
-      'xmlformat',
-    },
-  },
-  ['swift'] = {
-    {
-      'swift_format',
-      'swiftformat',
-    },
-  },
-  ['systemverilog'] = {
-    {
-      'verible_verilog_format',
-    },
-  },
-  ['templ'] = {
-    {
-      'templ_fmt',
-    },
-  },
-  ['terraform'] = {
-    {
-      'terraform_fmt',
-      'tofu_fmt',
-    },
-  },
-  ['terraform-vars'] = {
-    {
-      'terraform_fmt',
-      'tofu_fmt',
-    },
-  },
-  ['tex'] = {
-    {
-      'latexindent',
-      'tex_fmt',
-    },
-  },
-  ['toml'] = {
-    {
-      'taplo',
-      'tombi',
-    },
-  },
-  ['twig'] = {
-    {
-      'twig_cs_fixer',
-      'prettier',
-    },
-  },
-  ['typescript'] = {
-    {
-      'biome',
-      'prettierd',
-      'prettier',
-      'deno_fmt',
-    },
-  },
-  ['typescriptreact'] = {
-    {
-      'biome',
-      'prettierd',
-      'prettier',
-      'deno_fmt',
-    },
-  },
-  ['typst'] = {
-    {
-      'typstyle',
-      'typstfmt',
-    },
-  },
-  ['v'] = {
-    {
-      'v_fmt',
-    },
-  },
-  ['verilog'] = {
-    {
-      'verible_verilog_format',
-    },
-  },
-  ['vhdl'] = {
-    {
-      'vsg',
-    },
-  },
-  ['vue'] = {
-    {
-      'prettierd',
-      'prettier',
-    },
-  },
-  ['wgsl'] = {
-    {
-      'wgslfmt',
-    },
-  },
-  ['xml'] = {
-    {
-      'xmlformat',
-      'xmllint',
-    },
-  },
-  ['yaml'] = {
-    {
-      'yamlfmt',
-      'prettierd',
-      'prettier',
-    },
-  },
-  ['zig'] = {
-    {
-      'zigfmt',
-    },
-  },
+  ['aiken'] = { 'aiken_fmt' },
+  ['astro'] = { 'prettierd', 'prettier' },
+  ['awk'] = { 'awkfmt' },
+  ['bash'] = { 'shfmt' },
+  ['beancount'] = { 'bean_format' },
+  ['bib'] = { 'bibtex_tidy' },
+  ['bicep'] = { 'bicep_format' },
+  ['bzl'] = { 'buildifier' },
+  ['bzlmod'] = { 'buildifier' },
+  ['c'] = { 'clang_format', 'uncrustify' },
+  ['cabal'] = { 'cabal_fmt' },
+  ['cairo'] = { 'scarb_fmt' },
+  ['clojure'] = { 'cljfmt', 'zprint' },
+  ['cmake'] = { 'cmake_format' },
+  ['commonlisp'] = { 'cl_format' },
+  ['cpp'] = { 'clang_format', 'uncrustify' },
+  ['cs'] = { 'csharpier' },
+  ['cuda'] = { 'clang_format' },
+  ['cue'] = { 'cue_fmt' },
+  ['d'] = { 'dfmt' },
+  ['dart'] = { 'dart_format' },
+  ['dhall'] = { 'dhall_format' },
+  ['dockerfile'] = { 'dprint' },
+  ['dlang'] = { 'dfmt' },
+  ['eelixir'] = { 'mix_format' },
+  ['elixir'] = { 'mix_format' },
+  ['elm'] = { 'elm_format' },
+  ['erlang'] = { 'erlfmt', 'efmt' },
+  ['eruby'] = { 'erb_formatter', 'htmlbeautify' },
+  ['fennel'] = { 'fnlfmt' },
+  ['fish'] = { 'fish_indent' },
+  ['fortran'] = { 'fprettify', 'findent' },
+  ['fsharp'] = { 'fantomas' },
+  ['gdscript'] = { 'gdformat' },
+  ['gleam'] = { 'gleam_format' },
+  ['glsl'] = { 'clang_format' },
+  ['go'] = { 'goimports', 'gofumpt', 'gofmt' },
+  ['grain'] = { 'grain_format' },
+  ['graphql'] = { 'prettierd', 'prettier' },
+  ['haskell'] = { 'fourmolu', 'ormolu', 'brittany' },
+  ['hcl'] = { 'hclfmt', 'packer_fmt' },
+  ['heex'] = { 'mix_format' },
+  ['hledger'] = { 'hledger_fmt' },
+  ['hlsl'] = { 'clang_format' },
+  ['html'] = { 'prettierd', 'prettier', 'superhtml' },
+  ['htmlangular'] = { 'prettierd', 'prettier' },
+  ['htmldjango'] = { 'djlint' },
+  ['htmljinja'] = { 'djlint' },
+  ['http'] = { 'kulala_fmt' },
+  ['java'] = { 'google_java_format', 'clang_format' },
+  ['janet'] = { 'janet_format' },
+  ['javascript'] = { 'biome', 'prettierd', 'prettier', 'deno_fmt' },
+  ['javascriptreact'] = { 'biome', 'prettierd', 'prettier', 'deno_fmt' },
+  ['jinja'] = { 'djlint' },
+  ['json'] = { 'biome', 'prettierd', 'prettier', 'jq' },
+  ['json5'] = { 'prettierd', 'prettier' },
+  ['jsonc'] = { 'biome', 'prettierd', 'prettier' },
+  ['jsonnet'] = { 'jsonnetfmt' },
+  ['julia'] = { 'julia_formatter' },
+  ['just'] = { 'just_fmt' },
+  ['kcl'] = { 'kcl_fmt' },
+  ['kotlin'] = { 'ktfmt', 'ktlint' },
+  ['latex'] = { 'latexindent', 'tex_fmt' },
+  ['ledger'] = { 'hledger_fmt' },
+  ['less'] = { 'prettierd', 'prettier' },
+  ['liquid'] = { 'prettier' },
+  ['lua'] = { 'stylua' },
+  ['luau'] = { 'stylua' },
+  ['make'] = { 'mbake' },
+  ['markdown'] = { 'rumdl_fmt', 'prettierd', 'prettier', 'mdformat', 'panache' },
+  ['matlab'] = { 'mh_style' },
+  ['mdx'] = { 'prettierd', 'prettier' },
+  ['meson'] = { 'muon_fmt' },
+  ['nomad'] = { 'nomad_fmt' },
+  ['nginx'] = { 'nginxfmt' },
+  ['nickel'] = { 'nickel_format' },
+  ['nix'] = { 'alejandra', 'nixfmt', 'nixpkgs_fmt' },
+  ['nushell'] = { 'nufmt' },
+  ['objc'] = { 'clang_format' },
+  ['objcpp'] = { 'clang_format' },
+  ['ocaml'] = { 'ocamlformat' },
+  ['ocamlinterface'] = { 'ocamlformat' },
+  ['opencl'] = { 'clang_format' },
+  ['pascal'] = { 'ptop' },
+  ['perl'] = { 'perltidy' },
+  ['php'] = { 'phpcsfixer', 'mago_format', 'pint', 'phpcbf' },
+  ['plaintex'] = { 'latexindent', 'tex_fmt' },
+  ['proto'] = { 'buf_format', 'clang_format' },
+  ['ps1'] = { 'powershell_formatter' },
+  ['puppet'] = { 'puppet_lint_fix' },
+  ['purescript'] = { 'purs_tidy' },
+  ['python'] = { 'ruff_format', 'blackd', 'black', 'yapf', 'autopep8' },
+  ['qml'] = { 'qmlformat' },
+  ['r'] = { 'air', 'styler' },
+  ['racket'] = { 'raco_fmt' },
+  ['reason'] = { 'refmt' },
+  ['rego'] = { 'opa_fmt' },
+  ['rescript'] = { 'rescript_format' },
+  ['robot'] = { 'robotidy' },
+  ['rst'] = { 'docstrfmt' },
+  ['ruby'] = { 'cookstyle', 'rubocop', 'standardrb', 'rubyfmt' },
+  ['rust'] = { 'rustfmt' },
+  ['sbt'] = { 'scalafmt' },
+  ['scala'] = { 'scalafmt' },
+  ['scheme'] = { 'schemat' },
+  ['scss'] = { 'prettierd', 'prettier' },
+  ['sh'] = { 'shfmt' },
+  ['snakemake'] = { 'snakefmt' },
+  ['solidity'] = { 'forge_fmt', 'prettier' },
+  ['sql'] = { 'sql-formatter', 'sqlfluff', 'sqruff', 'pg_format' },
+  ['starlark'] = { 'buildifier' },
+  ['svelte'] = { 'prettierd', 'prettier' },
+  ['svg'] = { 'prettierd', 'prettier', 'xmlformat' },
+  ['swift'] = { 'swift_format', 'swiftformat' },
+  ['systemverilog'] = { 'verible_verilog_format' },
+  ['templ'] = { 'templ_fmt' },
+  ['terraform'] = { 'terraform_fmt', 'tofu_fmt' },
+  ['terraform-vars'] = { 'terraform_fmt', 'tofu_fmt' },
+  ['tex'] = { 'latexindent', 'tex_fmt' },
+  ['toml'] = { 'taplo', 'tombi' },
+  ['twig'] = { 'twig_cs_fixer', 'prettier' },
+  ['typescript'] = { 'biome', 'prettierd', 'prettier', 'deno_fmt' },
+  ['typescriptreact'] = { 'biome', 'prettierd', 'prettier', 'deno_fmt' },
+  ['typst'] = { 'typstyle', 'typstfmt' },
+  ['v'] = { 'v_fmt' },
+  ['verilog'] = { 'verible_verilog_format' },
+  ['vhdl'] = { 'vsg' },
+  ['vue'] = { 'prettierd', 'prettier' },
+  ['wgsl'] = { 'wgslfmt' },
+  ['xml'] = { 'xmlformat', 'xmllint' },
+  ['yaml'] = { 'yamlfmt', 'prettierd', 'prettier' },
+  ['zig'] = { 'zigfmt' },
 }
+
 M.manual_formatters = {
   shellharden = true,
 }
@@ -1066,11 +456,7 @@ local function available(name, automatic)
   end
   local cmd = executable(definition.cmd)
   if cmd then
-    return {
-      name = name,
-      definition = definition,
-      cmd = cmd,
-    }
+    return { name = name, definition = definition, cmd = cmd }
   end
 end
 
@@ -1100,14 +486,7 @@ end
 local function context_for(bufnr, definition, input)
   local filename = api.nvim_buf_get_name(bufnr)
   local cwd = vim.fn.getcwd()
-  local markers = definition.root_markers
-    or {
-      '.git',
-      'package.json',
-      'composer.json',
-      'go.mod',
-      'pyproject.toml',
-    }
+  local markers = definition.root_markers or { '.git', 'package.json', 'composer.json', 'go.mod', 'pyproject.toml' }
   local root = filename ~= '' and fs.root(filename, markers) or nil
   root = root or (filename ~= '' and fs.dirname(filename)) or cwd
   local width = vim.bo[bufnr].shiftwidth
@@ -1342,6 +721,12 @@ run_step = function(job, index)
   end
   local definition = step.definition
   local ok, setup = pcall(function()
+    if definition.pre_transform then
+      local transformed = definition.pre_transform(job.text)
+      assert(type(transformed) == 'string', 'pre_transform must return a string')
+      job.text = transformed
+    end
+
     local context = context_for(job.bufnr, definition, job.text)
     if definition.mode == 'tempfile' then
       write_temp(job, context, definition)
@@ -1353,10 +738,7 @@ run_step = function(job, index)
       assert(type(arg) == 'string' and not arg:find('%z'), 'Formatter argv requires NUL-free strings')
       argv[#argv + 1] = arg
     end
-    return {
-      context = context,
-      argv = argv,
-    }
+    return { context = context, argv = argv }
   end)
   if not ok then
     cleanup_temp(job)
@@ -1443,10 +825,7 @@ run_step = function(job, index)
 end
 
 local function lsp_client(bufnr)
-  local clients = vim.lsp.get_clients({
-    bufnr = bufnr,
-    method = 'textDocument/formatting',
-  })
+  local clients = vim.lsp.get_clients({ bufnr = bufnr, method = 'textDocument/formatting' })
   local rank = {}
   for index, name in ipairs(M.options.lsp_preference) do
     rank[name] = index
@@ -1508,10 +887,7 @@ local function run_lsp(job)
           type(range) == 'table' and type(range.start) == 'table' and type(range['end']) == 'table',
           'LSP edit requires range'
         )
-        for _, point in ipairs({
-          range.start,
-          range['end'],
-        }) do
+        for _, point in ipairs({ range.start, range['end'] }) do
           assert(
             type(point.line) == 'number'
               and point.line >= 0
@@ -1617,58 +993,6 @@ function M.format(opts, callback)
     end
   end
   return job
-end
-
----@param bufnr? integer
----@return boolean
-function M.is_running(bufnr)
-  local job = jobs[current(bufnr)]
-  return job ~= nil and not job.done
-end
-
----@param job table
-function M.cancel_job(job)
-  if type(job) == 'table' and jobs[job.bufnr] == job then
-    cancel(job, 'cancelled')
-  end
-end
-
----@param preview table
----@return table
-function M.apply_preview(preview)
-  assert(
-    type(preview) == 'table'
-      and preview.done
-      and preview.status == 'ok'
-      and preview.opts.preview == true
-      and type(preview.preview_text) == 'string',
-    'A successful preview is required'
-  )
-
-  if jobs[preview.bufnr] then
-    return {
-      done = true,
-      status = 'busy',
-      changed = false,
-      error = 'Another formatter is running for this buffer',
-    }
-  end
-
-  local commit = {
-    bufnr = preview.bufnr,
-    snapshot = preview.snapshot,
-    text = preview.preview_text,
-    opts = {
-      notify = false,
-      validate_result = preview.opts.validate_result,
-    },
-    done = false,
-    changed = false,
-    status = 'running',
-  }
-
-  apply(commit)
-  return commit
 end
 
 function M.run(bufnr, opts, names)
@@ -1819,10 +1143,7 @@ function M.setup(opts)
     end,
   })
   api.nvim_create_user_command('Format', function(command)
-    M.format({
-      names = #command.fargs > 0 and command.fargs or nil,
-      async = not command.bang,
-    })
+    M.format({ names = #command.fargs > 0 and command.fargs or nil, async = not command.bang })
   end, {
     nargs = '*',
     bang = true,
@@ -1831,9 +1152,7 @@ function M.setup(opts)
     desc = 'Format buffer; bang waits synchronously',
   })
   api.nvim_create_user_command('FormatLsp', function()
-    M.format({
-      lsp = 'only',
-    })
+    M.format({ lsp = 'only' })
   end, {
     force = true,
     desc = 'Format with one native LSP client',
@@ -1844,10 +1163,7 @@ function M.setup(opts)
   api.nvim_create_user_command('FormatDisable', function()
     vim.b.format_disabled = true
     M.stop(0)
-  end, {
-    force = true,
-    desc = 'Disable formatting for this buffer',
-  })
+  end, { force = true, desc = 'Disable formatting for this buffer' })
   api.nvim_create_user_command('FormatEnable', function()
     vim.b.format_disabled = false
   end, { force = true, desc = 'Enable formatting for this buffer' })

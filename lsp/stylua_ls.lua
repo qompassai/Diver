@@ -18,6 +18,7 @@ return ---@type vim.lsp.Config
     'luau',
   },
   on_attach = function(client)
+    client.server_capabilities.codeActionProvider = false
     client.server_capabilities.documentFormattingProvider = true
     client.server_capabilities.documentRangeFormattingProvider = true
     client.server_capabilities.completionProvider = nil
@@ -25,7 +26,6 @@ return ---@type vim.lsp.Config
     client.server_capabilities.definitionProvider = false
     client.server_capabilities.referencesProvider = false
     client.server_capabilities.renameProvider = false
-    client.server_capabilities.codeActionProvider = false
   end,
   root_markers = {
     '.editorconfig',

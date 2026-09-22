@@ -1,250 +1,208 @@
--- /qompassai/Diver/lua/mappings/ddxmap.lua
--- Qompass AI Diver Diag/debug (ddx) Mappings
--- Copyright (C) 2025 Qompass AI, All rights reserved
--- --------------------------------------------------
----@module 'mappings.ddxmap'
-local M = {}
+-- Filetype-aware debug actions; no nvim-dap, dap-python or dapui dependency.
+-- SPDX-License-Identifier: Apache-2.0
 local api = vim.api
-local map = vim.keymap.set
-local ddx_group = api.nvim_create_augroup('DDXMappings', {
-  clear = true,
-})
-local function buf_map(bufnr, mode, lhs, rhs, desc)
-  map(mode, lhs, rhs, {
-    noremap = true,
-    silent = true,
-    buffer = bufnr,
-    desc = desc,
-  })
-end
-local function safe_require(mod)
-  local ok, result = pcall(require, mod)
-  if ok then
-    return result
+local core = require('mappings._core')
+local M = {}
+local OWNER = 'ddxmap'
+local CONFIGURATION_COUNT_MAX = 128
+local NATIVE_FILETYPES = {
+  ada = true,
+  asm = true,
+  c = true,
+  cpp = true,
+  cuda = true,
+  fortran = true,
+  rust = true,
+  zig = true,
+}
+local options = {}
+local group
+
+local function backend(bufnr)
+  local wrapper = options.wrapper or package.loaded.dap
+  if type(wrapper) ~= 'table' or type(wrapper.registry) ~= 'function' or type(wrapper.backend) ~= 'function' then
+    return nil, {}
   end
-
-  vim.notify(
-    ('Failed to require %s: %s'):format(mod, tostring(result)),
-    vim.log.levels.ERROR,
-    { title = 'ddx mappings' }
-  )
-  return nil
+  local native = wrapper.backend()
+  local registry = wrapper.registry()
+  if type(native) ~= 'table' or type(registry) ~= 'table' or type(registry.configurations) ~= 'table' then
+    return nil, {}
+  end
+  local configurations = registry.configurations[vim.bo[bufnr].filetype] or {}
+  return native, configurations
 end
 
-function M.setup_ddxmap()
-  map('n', '<leader>S', '<cmd>ConfigSelfCheck<CR>', {
-    noremap = true,
-    silent = true,
-    desc = 'Run Neovim config self-check',
-  })
-
-  map('n', '<leader>SL', '<cmd>ConfigSelfCheckLog<CR>', {
-    noremap = true,
-    silent = true,
-    desc = 'Open config self-check log',
-  })
-  map('n', '<leader>SS', '<cmd>ConfigSyntaxCheck<CR>', {
-    noremap = true,
-    silent = true,
-    desc = 'Run config syntax check',
-  })
-  api.nvim_create_autocmd('FileType', {
-    group = ddx_group,
-    pattern = 'python',
-    callback = function(args)
-      local bufnr = args.buf
-      buf_map(bufnr, 'n', '<leader>dpm', function()
-        local dap_python = safe_require('dap-python')
-        if dap_python and type(dap_python.test_method) == 'function' then
-          dap_python.test_method()
-        end
-      end, '[d]ebug [p]ython [m]ethod')
-
-      buf_map(bufnr, 'n', '<leader>dpc', function()
-        local dap_python = safe_require('dap-python')
-        if dap_python and type(dap_python.test_class) == 'function' then
-          dap_python.test_class()
-        end
-      end, '[d]ebug [p]ython [c]lass')
-
-      buf_map(bufnr, 'n', '<leader>dps', function()
-        local dap_python = safe_require('dap-python')
-        if dap_python and type(dap_python.debug_selection) == 'function' then
-          dap_python.debug_selection()
-        end
-      end, '[d]ebug [p]ython [s]election')
-    end,
-  })
-
-  api.nvim_create_autocmd('LspAttach', {
-    group = ddx_group,
-    callback = function(ev)
-      local bufnr = ev.buf
-
-      buf_map(bufnr, 'n', '<leader>dl', function()
-        local cfg = vim.diagnostic.config() or {}
-        local lines = cfg.virtual_lines
-        if lines == nil then
-          lines = false
-        end
-
-        local new_state = not lines
-        vim.diagnostic.config({
-          virtual_lines = new_state,
-          virtual_text = not new_state,
-        })
-
-        vim.api.nvim_echo({
-          { 'Diagnostic virtual_lines: ' .. (new_state and 'enabled' or 'disabled'), 'None' },
-        }, false, {})
-      end, 'Toggle diagnostic virtual_lines')
-
-      buf_map(bufnr, 'n', '<leader>dq', function()
-        vim.diagnostic.setqflist()
-      end, 'Show project diagnostics')
-
-      buf_map(bufnr, 'n', '<leader>mp', '<cmd>MarkdownPreview<CR>', 'Markdown Preview')
-      buf_map(bufnr, 'n', '<leader>ms', '<cmd>MarkdownPreviewStop<CR>', 'Stop Markdown Preview')
-      buf_map(bufnr, 'n', '<leader>mt', '<cmd>TableModeToggle<CR>', 'Toggle Table Mode')
-      buf_map(bufnr, 'n', '<leader>mi', '<cmd>KittyScrollbackGenerateImage<CR>', 'Generate image from code block')
-      buf_map(bufnr, 'v', '<leader>mr', ':SnipRun<CR>', 'Run selected code')
-    end,
-  })
-
-  map('n', '<leader>ds', function()
-    local dap = safe_require('dap')
-    if dap and type(dap.continue) == 'function' then
-      dap.continue()
+local function start_native(bufnr)
+  local native, configurations = backend(bufnr)
+  local items = {}
+  if native and type(native.run) == 'function' then
+    for index = 1, math.min(#configurations, CONFIGURATION_COUNT_MAX) do
+      local config = configurations[index]
+      items[#items + 1] = {
+        label = config.name or ('Configuration ' .. index),
+        run = function()
+          native.run(vim.deepcopy(config))
+        end,
+      }
     end
-  end, {
-    noremap = true,
-    silent = true,
-    desc = 'Start/Continue Debug',
-  })
+  end
+  core.select(bufnr, items, 'Debug configurations: ' .. vim.bo[bufnr].filetype)
+end
 
-  map('n', '<leader>db', function()
-    local dap = safe_require('dap')
-    if dap and type(dap.toggle_breakpoint) == 'function' then
-      dap.toggle_breakpoint()
-    end
-  end, {
-    noremap = true,
-    silent = true,
-    desc = 'Toggle Breakpoint',
-  })
-
-  map('n', '<leader>dS', function()
-    local dap = safe_require('dap')
-    if dap and type(dap.step_over) == 'function' then
-      dap.step_over()
-    end
-  end, {
-    noremap = true,
-    silent = true,
-    desc = 'Step Over',
-  })
-
-  map('n', '<leader>di', function()
-    local dap = safe_require('dap')
-    if dap and type(dap.step_into) == 'function' then
-      dap.step_into()
-    end
-  end, {
-    noremap = true,
-    silent = true,
-    desc = 'Step Into',
-  })
-
-  map('n', '<leader>do', function()
-    local dap = safe_require('dap')
-    if dap and type(dap.step_out) == 'function' then
-      dap.step_out()
-    end
-  end, {
-    noremap = true,
-    silent = true,
-    desc = 'Step Out',
-  })
-
-  map('n', '<leader>dr', function()
-    local dap = safe_require('dap')
-    if dap and dap.repl and type(dap.repl.toggle) == 'function' then
-      dap.repl.toggle()
-    end
-  end, {
-    noremap = true,
-    silent = true,
-    desc = 'Toggle REPL',
-  })
-
-  map('n', '<leader>du', function()
-    local dapui = safe_require('dapui')
-    if dapui and type(dapui.toggle) == 'function' then
-      dapui.toggle()
-    end
-  end, {
-    noremap = true,
-    silent = true,
-    desc = 'Toggle DAP UI',
-  })
-
-  map('n', '<leader>da', function()
-    local dap = safe_require('dap')
-    if not dap or type(dap.adapters) ~= 'table' then
+local function start_termdebug(bufnr)
+  if vim.g.termdebug_is_running then
+    core.notify('A Termdebug session is already running')
+    return
+  end
+  local tick = api.nvim_buf_get_changedtick(bufnr)
+  local filetype = vim.bo[bufnr].filetype
+  vim.ui.input({ prompt = 'Executable for GDB: ', completion = 'file' }, function(path)
+    if not path or path == '' then
       return
     end
+    if
+      not core.source(bufnr)
+      or api.nvim_get_current_buf() ~= bufnr
+      or vim.bo[bufnr].filetype ~= filetype
+      or api.nvim_buf_get_changedtick(bufnr) ~= tick
+    then
+      core.notify('Buffer changed during selection; invoke debug again')
+      return
+    end
+    path = vim.fn.fnamemodify(vim.fn.expand(path), ':p')
+    if path:find('%z') or path:find('[\r\n]') or vim.fn.filereadable(path) ~= 1 then
+      core.notify('Choose a readable executable')
+      return
+    end
+    if vim.fn.exists(':Termdebug') ~= 2 then
+      vim.cmd('packadd termdebug')
+    end
+    -- Structured Ex arguments, no shell interpolation of the selected path.
+    api.nvim_cmd({ cmd = 'Termdebug', args = { path }, magic = { file = false } }, {})
+  end)
+end
 
-    vim.ui.select({
-      'python',
-      'cpp',
-      'rust',
-    }, {
-      prompt = 'Select debug adapter:',
-      format_item = function(item)
-        return ' ' .. item:upper()
+local function available_actions(bufnr)
+  local items = {}
+  local native, configurations = backend(bufnr)
+  if native and #configurations > 0 and type(native.run) == 'function' then
+    items[#items + 1] = {
+      key = 'r',
+      label = 'Run filetype debug configuration',
+      run = function()
+        start_native(bufnr)
       end,
-    }, function(choice)
-      if not choice then
-        return
+    }
+    for _, action in ipairs({
+      { 'b', 'Breakpoint', 'toggle_breakpoint' },
+      { 'c', 'Continue', 'continue' },
+      { 'i', 'Step into', 'step_into' },
+      { 'n', 'Step over', 'step_over' },
+      { 'o', 'Step out', 'step_out' },
+      { 'p', 'Pause', 'pause' },
+      { 'x', 'Terminate', 'terminate' },
+    }) do
+      if type(native[action[3]]) == 'function' then
+        items[#items + 1] = { key = action[1], label = action[2], run = native[action[3]] }
       end
-
-      local adapter = dap.adapters[choice]
-      if type(adapter) == 'function' then
-        adapter()
-      elseif adapter ~= nil then
-        vim.notify(
-          ('DAP adapter %s is configured but not callable'):format(choice),
-          vim.log.levels.WARN,
-          { title = 'ddx mappings' }
-        )
-      else
-        vim.notify(('DAP adapter %s is not configured'):format(choice), vim.log.levels.WARN, {
-          title = 'ddx mappings',
-        })
+    end
+    return items
+  end
+  if options.termdebug ~= false and NATIVE_FILETYPES[vim.bo[bufnr].filetype] and vim.fn.executable('gdb') == 1 then
+    if not vim.g.termdebug_is_running then
+      items[#items + 1] = {
+        key = 'r',
+        label = 'Start bundled Termdebug (GDB)',
+        run = function()
+          start_termdebug(bufnr)
+        end,
+      }
+    else
+      for _, action in ipairs({
+        { 'b', 'Breakpoint', 'ToggleBreak' },
+        { 'c', 'Continue', 'Continue' },
+        { 'e', 'Evaluate cursor expression', 'Evaluate' },
+        { 'i', 'Step into', 'Step' },
+        { 'n', 'Step over', 'Over' },
+        { 'o', 'Step out', 'Finish' },
+        { 'p', 'Pause', 'Stop' },
+      }) do
+        if vim.fn.exists(':' .. action[3]) == 2 then
+          items[#items + 1] = {
+            key = action[1],
+            label = action[2],
+            run = core.command(action[3]),
+          }
+        end
       end
-    end)
-  end, {
-    noremap = true,
-    silent = true,
-    desc = 'Select Debug Adapter',
-  })
+    end
+  end
+  return items
+end
 
-  map('n', '<leader>dv', function()
-    local dap = safe_require('dap')
-    if dap and type(dap.set_log_level) == 'function' then
-      dap.set_log_level('DEBUG')
+function M.actions(bufnr)
+  bufnr = bufnr or api.nvim_get_current_buf()
+  core.select(bufnr, available_actions(bufnr), 'Debug: ' .. vim.bo[bufnr].filetype)
+end
+
+local function attach(bufnr)
+  local maps = {}
+  if core.source(bufnr) then
+    local items = available_actions(bufnr)
+    if #items > 0 then
+      maps[#maps + 1] = {
+        lhs = '<LocalLeader>da',
+        rhs = function()
+          M.actions(bufnr)
+        end,
+        desc = 'Choose filetype debugger action',
+      }
+      for _, item in ipairs(items) do
+        maps[#maps + 1] = {
+          lhs = '<LocalLeader>d' .. item.key,
+          rhs = function()
+            -- Re-resolve the backend/session at invocation time.
+            for _, current in ipairs(available_actions(bufnr)) do
+              if current.key == item.key then
+                current.run()
+                return
+              end
+            end
+            core.notify('Debug action is no longer available')
+          end,
+          desc = item.label,
+        }
+      end
     end
-    if vim.lsp and vim.lsp.log and vim.lsp.log.set_level then
-      vim.lsp.log.set_level('debug')
-    end
-    vim.api.nvim_echo({
-      { 'Debug verbosity increased (DAP + LSP)', 'None' },
-    }, false, {})
-  end, {
-    noremap = true,
-    silent = true,
-    desc = 'Verbose Debug Mode',
+  end
+  core.install(OWNER, bufnr, maps)
+end
+
+function M.teardown()
+  core.teardown(OWNER)
+  if group then
+    api.nvim_del_augroup_by_id(group)
+    group = nil
+  end
+end
+
+function M.setup(opts)
+  M.teardown()
+  options = opts or {}
+  core.watch(OWNER, attach, { 'BufEnter', 'FileType' })
+  group = api.nvim_create_augroup('NativeMappings_debug_lifecycle', { clear = true })
+  api.nvim_create_autocmd('User', {
+    group = group,
+    pattern = { 'TermdebugStartPost', 'TermdebugStopPost' },
+    callback = function()
+      for _, bufnr in ipairs(api.nvim_list_bufs()) do
+        if core.usable(bufnr) then
+          attach(bufnr)
+        end
+      end
+    end,
   })
 end
 
+M.setup_ddxmap = M.setup
 return M

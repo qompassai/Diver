@@ -1,11 +1,8 @@
--- /qompassai/Diver/lua/mappings/init.lua
--- Qompass AI Diver Mappings Module
--- Copyright (C) 2025 Qompass AI, All rights reserved
------------------------------------------------------
----@module 'mappings.init'
+-- Native mapping loader; set Leader and LocalLeader before calling setup().
+-- SPDX-License-Identifier: Apache-2.0
+local core = require('mappings._core')
 local M = {}
-M.setup = function()
-  local mapping_files = {
+local MODULES = {
     'aimap',
     'cicdmap',
     'datamap',
@@ -13,32 +10,49 @@ M.setup = function()
     'disable',
     'genmap',
     'langmap',
-    'lspmap',
     'lintmap',
-    'mojomap',
-    'navmap',
-    'refactormap',
-    'utilmap',
-  }
-  for _, name in ipairs(mapping_files) do
-    local ok, mod = pcall(require, 'mappings.' .. name)
-    if not ok then
-      vim.echo('Failed to load: ' .. name, vim.log.levels.WARN)
-      goto continue
+    'lspmap',
+}
+local loaded = {}
+
+function M.teardown()
+    for index = #loaded, 1, -1 do
+        local entry = loaded[index]
+        if type(entry.module.teardown) == 'function' then
+            local ok, err = pcall(entry.module.teardown)
+            if not ok then
+                core.notify(entry.name .. ': ' .. tostring(err), vim.log.levels.ERROR)
+            end
+        end
     end
-    local custom_setup_fn = 'setup_' .. name
-    local default_setup_fn = 'setup'
-    if type(mod[custom_setup_fn]) == 'function' then
-      mod[custom_setup_fn]()
-    elseif type(mod[default_setup_fn]) == 'function' then
-      mod[default_setup_fn]()
-    else
-      vim.echo(
-        string.format("Mapping '%s' has neither %s() nor %s()", name, custom_setup_fn, default_setup_fn),
-        vim.log.levels.WARN
-      )
-    end
-    ::continue::
-  end
+    loaded = {}
 end
+
+---@param opts? table Module options keyed by filename without .lua.
+---@return boolean ok, string[] errors
+function M.setup(opts)
+    opts = opts or {}
+    assert(type(opts) == 'table', 'Mapping options must be a table')
+    M.teardown()
+    local errors = {}
+    for _, name in ipairs(MODULES) do
+        if opts[name] ~= false then
+            local ok, module = pcall(require, 'mappings.' .. name)
+            if ok and type(module) == 'table' and type(module.setup) == 'function' then
+                loaded[#loaded + 1] = { name = name, module = module }
+                ok, module = pcall(module.setup, opts[name])
+            else
+                ok, module = false, tostring(module)
+            end
+            if not ok then
+                errors[#errors + 1] = name .. ': ' .. tostring(module)
+            end
+        end
+    end
+    if #errors > 0 then
+        core.notify(table.concat(errors, '\n'), vim.log.levels.ERROR)
+    end
+    return #errors == 0, errors
+end
+
 return M

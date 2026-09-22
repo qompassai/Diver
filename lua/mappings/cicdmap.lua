@@ -1,176 +1,119 @@
--- /qompassai/Diver/lua/mappings/cicdmap.lua
--- Qompass AI Diver CICD Mappings
--- Copyright (C) 2025 Qompass AI, All rights reserved
--- --------------------------------------------------
----@module 'mappings.cicdmap'
+-- Reusable native terminals. Shells are interactive and user initiated.
+-- SPDX-License-Identifier: Apache-2.0
+local api = vim.api
+local core = require('mappings._core')
 local M = {}
-function M.setup_cicdmap()
-  local map = vim.keymap.set
-  vim.api.nvim_create_autocmd('LspAttach', {
-    callback = function(ev)
-      local bufnr = ev.buf
-      local opts = {
-        noremap = true,
-        silent = true,
-        buffer = bufnr,
-      }
+local OWNER = 'cicdmap'
+local terminals = {}
+local group
 
-      map(
-        'n',
-        '<leader>h',
-        function()
-          require('toggleterm.terminal').Terminal
-            :new({
-              direction = '[h]orizontal toggleterm',
-            })
-            :toggle()
-        end,
-        vim.tbl_extend('force', opts, {
-          desc = 'TT: new horizontal terminal',
-        }) --- In normal mode, press 'Space' + 'h' to open a new horizontal terminal
-      )
-      map(
-        'n',
-        '<leader>v',
-        function()
-          require('toggleterm.terminal').Terminal
-            :new({
-              direction = 'vertical toggleterm',
-            })
-            :toggle()
-        end,
-        vim.tbl_extend('force', opts, {
-          desc = 'TT: new vertical terminal',
+local function open_window(kind, bufnr)
+    if kind == 'float' then
+        local width = math.max(1, math.floor(vim.o.columns * 0.8))
+        local height = math.max(1, math.floor((vim.o.lines - 2) * 0.8))
+        return api.nvim_open_win(bufnr, true, {
+            relative = 'editor',
+            width = width,
+            height = height,
+            row = math.max(0, math.floor((vim.o.lines - height) / 2) - 1),
+            col = math.max(0, math.floor((vim.o.columns - width) / 2)),
+            border = 'single',
+            style = 'minimal',
         })
-      )
-      -- In normal mode, press 'Space' + 'v' to open a new vertical terminal
-      map(
-        {
-          'n',
-          't',
-        },
-        '<A-v>',
-        function()
-          require('toggleterm.terminal').Terminal
-            :new({
-              direction = 'vertical',
-              --   id = 'vtoggleTerm',
-            })
-            :toggle()
-        end,
-        vim.tbl_extend('force', opts, {
-          desc = 'TT: toggle vertical terminal',
-        })
-      )
-      -- In normal or terminal mode, press 'Alt' + 'v' to toggle a vertical terminal on and off
-      map(
-        { 'n', 't' },
-        '<A-h>',
-        function()
-          require('toggleterm.terminal').Terminal
-            :new({
-              direction = 'horizontal',
-              --      id = 'htoggleTerm',
-            })
-            :toggle()
-        end,
-        vim.tbl_extend('force', opts, {
-          desc = 'TT: toggle horizontal terminal',
-        })
-      )
-      -- In normal or terminal mode, press 'Alt' + 'h' to toggle a horizontal terminal
-      map(
-        { 'n', 't' },
-        '<A-i>',
-        function()
-          require('toggleterm.terminal').Terminal
-            :new({
-              direction = 'float',
-              --      id = 'floatTerm',
-            })
-            :toggle()
-        end,
-        vim.tbl_extend('force', opts, {
-          desc = 'TT: toggle floating terminal',
-        })
-      )
-      -- In normal or terminal mode, press 'Alt' + 'i' to toggle a floating terminal
-
-      map(
-        'n',
-        '<leader>zi',
-        '<cmd>:Zi<CR>',
-        vim.tbl_extend('force', opts, {
-          desc = 'Zoxide interactive',
-        }) --- In normal mode, press 'Space' + 'z' + 'i' to interactively navigate with Zoxide
-      )
-      map(
-        'n',
-        '<leader>zq',
-        ':Z ',
-        vim.tbl_extend('force', opts, {
-          desc = 'Zoxide query',
-        }) --- In normal mode, press 'Space' + 'z' + 'q' followed by a directory name to query Zoxide
-      )
-      map(
-        'n',
-        '<leader>zs',
-        '<cmd>:Telescope zoxide list<CR><C-s>',
-        vim.tbl_extend('force', opts, {
-          desc = 'Zoxide split window',
-        }) --- In normal mode, press 'Space' + 'z' + 's' to open selected directory in split
-      )
-      map(
-        'n',
-        '<leader>zv',
-        '<cmd>:Telescope zoxide list<CR><C-v>',
-        vim.tbl_extend('force', opts, {
-          desc = 'Zoxide vertical split',
-        }) --- In normal mode, press 'Space' + 'z' + 'v' to open in vertical split
-      )
-      map(
-        'n',
-        '<leader>zl',
-        '<cmd>:Lz ',
-        vim.tbl_extend('force', opts, {
-          desc = 'Zoxide local to window',
-        }) --- In normal mode, press 'Space' + 'z' + 'l' to change directory local to window
-      )
-      map(
-        'n',
-        '<leader>zt',
-        '<cmd>:Tz ',
-        vim.tbl_extend('force', opts, {
-          desc = 'Zoxide local to tab',
-        }) --- In normal mode, press 'Space' + 'z' + 't' to change directory local to tab
-      )
-
-      map(
-        'n',
-        '<leader>zli',
-        '<cmd>:Lzi<CR>',
-        vim.tbl_extend('force', opts, {
-          desc = 'Zoxide interactive local to window',
-        }) --- In normal mode, press 'Space' + 'z' + 'l' + 'i' for interactive window-local navigation
-      )
-      map(
-        'n',
-        '<leader>zti',
-        '<cmd>:Tzi<CR>',
-        vim.tbl_extend('force', opts, {
-          desc = 'Zoxide interactive local to tab',
-        }) --- In normal mode, press 'Space' + 'z' + 't' + 'i' for interactive tab-local navigation
-      )
-      map(
-        'n',
-        '<leader>za',
-        "<cmd>:lua require('telescope').extensions.zoxide.add()<CR>",
-        vim.tbl_extend('force', opts, {
-          desc = 'Zoxide add current directory',
-        }) --- In normal mode, press 'Space' + 'z' + 'a' to add current directory to zoxide database
-      )
-    end,
-  })
+    end
+    vim.cmd(kind == 'vertical' and 'botright vsplit' or 'botright split')
+    api.nvim_win_set_buf(0, bufnr)
+    return api.nvim_get_current_win()
 end
 
+function M.toggle(kind)
+    assert(kind == 'float' or kind == 'horizontal' or kind == 'vertical')
+    local entry = terminals[kind]
+    if
+        entry
+        and entry.win
+        and api.nvim_win_is_valid(entry.win)
+        and api.nvim_win_get_buf(entry.win) == entry.buf
+    then
+        if #api.nvim_tabpage_list_wins(0) > 1 then
+            api.nvim_win_close(entry.win, true)
+        else
+            api.nvim_win_set_buf(entry.win, api.nvim_create_buf(true, false))
+        end
+        entry.win = nil
+        return
+    end
+    local fresh = not entry or not api.nvim_buf_is_valid(entry.buf)
+    if fresh then
+        entry = { buf = api.nvim_create_buf(false, true) }
+        terminals[kind] = entry
+        vim.bo[entry.buf].bufhidden = 'hide'
+        vim.bo[entry.buf].swapfile = false
+    end
+    entry.win = open_window(kind, entry.buf)
+    if fresh then
+        -- jobstart() with term=true is native; termopen() is deprecated.
+        entry.job = vim.fn.jobstart(vim.o.shell, { term = true, cwd = vim.fn.getcwd() })
+        if entry.job <= 0 then
+            core.notify('Could not start the configured shell', vim.log.levels.ERROR)
+            api.nvim_buf_delete(entry.buf, { force = true })
+            terminals[kind] = nil
+            return
+        end
+    end
+    vim.cmd.startinsert()
+end
+
+function M.teardown()
+    core.teardown(OWNER)
+    if group then
+        api.nvim_del_augroup_by_id(group)
+        group = nil
+    end
+    -- Shell sessions intentionally survive mapping reloads; closing a mapping
+    -- layer must not kill a user's interactive process. :bdelete! closes one.
+end
+
+function M.setup()
+    M.teardown()
+    core.install(OWNER, 0, {
+        {
+            lhs = '<A-h>',
+            mode = { 'n', 't' },
+            rhs = function()
+                M.toggle('horizontal')
+            end,
+            desc = 'Toggle horizontal terminal',
+        },
+        {
+            lhs = '<A-i>',
+            mode = { 'n', 't' },
+            rhs = function()
+                M.toggle('float')
+            end,
+            desc = 'Toggle floating terminal',
+        },
+        {
+            lhs = '<A-v>',
+            mode = { 'n', 't' },
+            rhs = function()
+                M.toggle('vertical')
+            end,
+            desc = 'Toggle vertical terminal',
+        },
+    })
+    group = api.nvim_create_augroup('NativeMappings_terminal_lifecycle', { clear = true })
+    api.nvim_create_autocmd('BufWipeout', {
+        group = group,
+        callback = function(event)
+            for kind, entry in pairs(terminals) do
+                if entry.buf == event.buf then
+                    terminals[kind] = nil
+                end
+            end
+        end,
+    })
+end
+
+M.setup_cicdmap = M.setup
 return M
