@@ -324,7 +324,7 @@ end, {
   desc = 'Add a new plugin from GitHub',
 })
 M.bootstrap()
-require('plugins.nav')
-require('plugins.edu')
-require('plugins.ui')
+require('plugin.nav')
+require('plugin.edu')
+require('plugin.ui')
 return M

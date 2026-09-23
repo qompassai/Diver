@@ -66,26 +66,26 @@ require('lazy').setup({
     },
     --[[
     {
-      import = 'plugins.core',
+      import = 'plugin.core',
     },
     {
-      import = 'plugins.cicd',
+      import = 'plugin.cicd',
     },
     {
-      import = 'plugins.cloud',
+      import = 'plugin.cloud',
     },
     {
-      import = 'plugins.data',
+      import = 'plugin.data',
     },
     {
-      import = 'plugins.edu',
+      import = 'plugin.edu',
     },
     {
-      import = 'plugins.lang',
+      import = 'plugin.lang',
     },
     --]]
     {
-      import = 'plugins.ui',
+      import = 'plugin.ui',
     },
   },
   defaults = {

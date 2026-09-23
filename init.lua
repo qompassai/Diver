@@ -26,11 +26,9 @@ local is_windows = fn.has('win32') == 1 or fn.has('win64') == 1
 local g = vim.g
 local go = vim.go
 local l = vim.loader
-local o = vim.o ---@type vim.o
+local o = vim.o
 local opt = vim.opt
-local opt_local = vim.opt_local
 local opt_global = vim.opt_global
-local data_home = fn.stdpath('data')
 vim.keymap.set('n', '<Space>', '<Nop>', {
   silent = true,
 })
@@ -42,7 +40,7 @@ else
   uid = fn.system('id -u'):gsub('\n', '')
   user = env.USER or fn.system('whoami'):gsub('\n', '')
 end
-local wo = vim.wo ---@type vim.wo
+local wo = vim.wo
 --bo.autocomplete = true
 bo.autoindent = true
 opt_global.autoread = true
@@ -91,14 +89,14 @@ g.git_command_ssh = 1
 g.guipty = true
 g.loaded_illuminate = true
 --g.loaded_netrw = 1
---g.loaded_netrwPlugin = 1
+g.loaded_netrwPlugin = 1
 g.loaded_node_provider = 1
 g.loaded_perl_provider = 1
 g.loaded_python_provider = 1
 g.loaded_ruby_provider = 1
 g.lsp_enable_on_demand = true
 g.mapleader = ' '
-g.maplocalleader = '\\'
+g.maplocalleader = ' '
 g.mkdp_theme = 'dark'
 g.netrw_altfile = 1
 g.netrw_preview = 1
@@ -195,7 +193,7 @@ require('dap')
 require('formatters')
 require('linters')
 require('mappings')
-require('plugins')
+require('plugin')
 require('scip')
 require('types')
 require('utils')

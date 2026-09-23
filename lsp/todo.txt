@@ -2,11 +2,11 @@ Code Actions to add
 
 ## Confirmed: implements code actions (60)
 
-- ansible_ls
-- astro_ls
+#- ansible_ls
+#- astro_ls
 - basedpy_ls
 - bicep_ls
-- biome_ls
+#- biome_ls
 - clangd_ls
 - clojure_ls
 - cmake_ls

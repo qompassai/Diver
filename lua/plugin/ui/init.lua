@@ -30,7 +30,7 @@ local function add(mod)
 end
 
 --add('plugins.ui.css')
-add('plugins.ui.icons')
-add('plugins.ui.md')
+add('plugin.ui.icons')
+add('plugin.ui.md')
 
 return specs

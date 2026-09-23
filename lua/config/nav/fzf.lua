@@ -20,7 +20,12 @@ local SYMBOL_DEPTH_MAX = 32
 local SYMBOL_COUNT_MAX = 40000
 local CLIENT_COUNT_MAX = 32
 local ROOT_MARKERS = {
-    '.git', 'Cargo.toml', 'flake.nix', 'go.mod', 'package.json', 'pyproject.toml',
+    '.git',
+    'Cargo.toml',
+    'flake.nix',
+    'go.mod',
+    'package.json',
+    'pyproject.toml',
 }
 
 ---@class NativeFzfItem
@@ -58,6 +63,7 @@ M.options = {
     binaries = { 'fzf', 'sk' },
     projects_directory = fn.expand('~/projects'),
     prompt = '❯ ',
+    picker = 'native',
 }
 
 ---@param message string
@@ -76,8 +82,11 @@ end
 ---@param value any
 ---@return boolean
 local function is_integer(value)
-    return type(value) == 'number' and value == value and value ~= math.huge
-        and value ~= -math.huge and value % 1 == 0
+    return type(value) == 'number'
+        and value == value
+        and value ~= math.huge
+        and value ~= -math.huge
+        and value % 1 == 0
 end
 
 ---@param value any
@@ -175,8 +184,12 @@ end
 local function cancel_requests(session)
     for index = 1, #session.requests do
         local request = session.requests[index]
-        cleanup_call('Cancel LSP request', request.client.cancel_request,
-            request.client, request.id)
+        cleanup_call(
+            'Cancel LSP request',
+            request.client.cancel_request,
+            request.client,
+            request.id
+        )
     end
     session.requests = {}
 end
@@ -422,8 +435,15 @@ local function launch_picker(session, items, sink, prompt)
     local script = 'exec "$1" --layout=reverse --cycle --no-multi '
         .. '--delimiter "$2" --with-nth "2.." --prompt "$3" < "$4" > "$5"'
     local job = fn.jobstart({
-        shell, '-c', script, 'native-fzf', picker, '\t', clean_label(prompt),
-        session.input_path, session.output_path,
+        shell,
+        '-c',
+        script,
+        'native-fzf',
+        picker,
+        '\t',
+        clean_label(prompt),
+        session.input_path,
+        session.output_path,
     }, {
         term = true,
         cwd = session.cwd,
@@ -450,6 +470,53 @@ local function launch_picker(session, items, sink, prompt)
     vim.cmd.startinsert()
 end
 
+-- Native UI remains usable without an external picker or a POSIX shell.
+local function native_picker(session, items, sink, prompt)
+    local function select(candidates)
+        if not is_current(session) or not origin_valid(session) then
+            return
+        end
+        vim.ui.select(candidates, {
+            prompt = prompt,
+            format_item = function(item)
+                return clean_label(item.label)
+            end,
+        }, function(item)
+            local valid = is_current(session) and origin_valid(session)
+            close_session(session)
+            if item and valid then
+                api.nvim_set_current_win(session.origin_window)
+                local ok, err = pcall(sink, item.value, item)
+                if not ok then
+                    notify('Selection: ' .. tostring(err), vim.log.levels.ERROR)
+                end
+            end
+        end)
+    end
+    if #items <= 200 then
+        select(items)
+        return
+    end
+    vim.ui.input({ prompt = prompt .. 'Fuzzy filter (top 200): ' }, function(query)
+        if not is_current(session) then
+            return
+        end
+        if not query then
+            close_session(session)
+            return
+        end
+        if #query > 4096 then
+            fail(session, 'Filter exceeds 4096 bytes')
+            return
+        end
+        if query == '' then
+            select(vim.list_slice(items, 1, 200))
+        else
+            select(fn.matchfuzzy(items, query, { key = 'label', limit = 200 }))
+        end
+    end)
+end
+
 ---@param session NativeFzfSession
 ---@param items NativeFzfItem[]
 ---@param sink fun(value: any, item: NativeFzfItem)
@@ -468,7 +535,8 @@ local function present(session, items, sink, prompt)
         return
     end
     assert(#items <= ITEM_COUNT_MAX)
-    local ok, err = pcall(launch_picker, session, items, sink, prompt)
+    local picker = M.options.picker == 'fzf' and launch_picker or native_picker
+    local ok, err = pcall(picker, session, items, sink, prompt)
     if not ok then
         fail(session, 'Open picker: ' .. tostring(err))
     end
@@ -541,19 +609,32 @@ local function run(session, command, cwd, callback, allow_no_match)
     local ok, process = pcall(vim.system, command, {
         cwd = cwd,
         timeout = PROCESS_TIMEOUT_MS,
-        stdout = function(err, data) capture(false, err, data) end,
-        stderr = function(err, data) capture(true, err, data) end,
+        stdout = function(err, data)
+            capture(false, err, data)
+        end,
+        stderr = function(err, data)
+            capture(true, err, data)
+        end,
     }, function(result)
         vim.schedule(function()
             session.process = nil
             if not is_current(session) then
                 return
             end
-            if failure or result.signal ~= 0 or result.code ~= 0
-                and not (allow_no_match and result.code == 1) then
-                fail(session, failure or ('%s failed (%d): %s'):format(
-                    command[1], result.code, clean_label(table.concat(stderr))
-                ))
+            if
+                failure
+                or result.signal ~= 0
+                or result.code ~= 0 and not (allow_no_match and result.code == 1)
+            then
+                fail(
+                    session,
+                    failure
+                        or ('%s failed (%d): %s'):format(
+                            command[1],
+                            result.code,
+                            clean_label(table.concat(stderr))
+                        )
+                )
                 return
             end
             local called, callback_error = pcall(callback, table.concat(stdout), result.code)
@@ -598,7 +679,7 @@ local function edit(path)
         error('Invalid file path.')
     end
     -- Structured Ex arguments prevent filenames containing bars/newlines becoming commands.
-    api.nvim_cmd({ cmd = 'edit', args = { path } }, {})
+    api.nvim_cmd({ cmd = 'edit', args = { path }, magic = { file = false, bar = false } }, {})
 end
 
 ---@param path string
@@ -639,10 +720,21 @@ function M.files()
     ---@type string[]
     local command
     if fd ~= nil then
-        command = { fd, '-0', '--type', 'f', '--type', 'l',
-            '--hidden', '--exclude', '.git', '.', '.' }
+        command = {
+            fd,
+            '-0',
+            '--type',
+            'f',
+            '--type',
+            'l',
+            '--hidden',
+            '--exclude',
+            '.git',
+            '.',
+            '.',
+        }
     elseif rg ~= nil then
-        command = { rg, '--files', '-0', '--hidden', '--glob', '!.git' }
+        command = { rg, '--no-config', '--files', '-0', '--hidden', '--glob', '!.git' }
     elseif find ~= nil then
         command = { find, '.', '-name', '.git', '-prune', '-o', '-type', 'f', '-print0' }
     else
@@ -693,9 +785,13 @@ local function symbol_location(symbol, default_uri)
         return nil
     end
     for _, position in ipairs({ range.start, range['end'] }) do
-        if type(position) ~= 'table' or not is_integer(position.line)
-            or not is_integer(position.character) or position.line < 0
-            or position.character < 0 then
+        if
+            type(position) ~= 'table'
+            or not is_integer(position.line)
+            or not is_integer(position.character)
+            or position.line < 0
+            or position.character < 0
+        then
             return nil
         end
     end
@@ -732,7 +828,8 @@ local function collect_symbols(symbols, uri, encoding, items, budget)
                 if location ~= nil then
                     local name = type(symbol.name) == 'string' and symbol.name or '<unnamed>'
                     local label = ('%s%s  line %d'):format(
-                        string.rep('  ', frame.depth), clean_label(name),
+                        string.rep('  ', frame.depth),
+                        clean_label(name),
                         location.range.start.line + 1
                     )
                     append_item(items, label, { location = location, encoding = encoding })
@@ -740,7 +837,9 @@ local function collect_symbols(symbols, uri, encoding, items, budget)
                 if type(symbol.children) == 'table' and #symbol.children > 0 then
                     if frame.depth < SYMBOL_DEPTH_MAX then
                         stack[#stack + 1] = {
-                            symbols = symbol.children, index = 1, depth = frame.depth + 1,
+                            symbols = symbol.children,
+                            index = 1,
+                            depth = frame.depth + 1,
                         }
                     else
                         budget.truncated = true
@@ -772,8 +871,10 @@ local function present_symbols(session, clients, responses, prompt)
         local client = clients[index]
         local response = responses[client.id]
         if response ~= nil and response.error ~= nil then
-            notify(client.name .. ': ' .. clean_label(tostring(response.error.message)),
-                vim.log.levels.WARN)
+            notify(
+                client.name .. ': ' .. clean_label(tostring(response.error.message)),
+                vim.log.levels.WARN
+            )
         elseif response ~= nil and type(response.result) == 'table' then
             collect_symbols(response.result, uri, client.offset_encoding, items, budget)
         end
@@ -802,7 +903,9 @@ local function request_symbols(method, params, prompt)
         fail(session, 'Expected 1–32 attached LSP clients supporting ' .. method .. '.')
         return
     end
-    table.sort(clients, function(left, right) return left.id < right.id end)
+    table.sort(clients, function(left, right)
+        return left.id < right.id
+    end)
     local responses = {}
     local remaining = #clients
     local finished = false
@@ -822,7 +925,11 @@ local function request_symbols(method, params, prompt)
     end
     for index = 1, #clients do
         local client = clients[index]
-        local ok, sent, request_id = pcall(client.request, client, method, params,
+        local ok, sent, request_id = pcall(
+            client.request,
+            client,
+            method,
+            params,
             function(err, result)
                 if finished or not is_current(session) then
                     return
@@ -832,13 +939,17 @@ local function request_symbols(method, params, prompt)
                 if remaining == 0 then
                     finish()
                 end
-            end, session.origin_buffer)
+            end,
+            session.origin_buffer
+        )
         if ok and sent and request_id ~= nil then
             session.requests[#session.requests + 1] = { client = client, id = request_id }
         else
             remaining = remaining - 1
-            notify('Request failed for ' .. client.name .. ': ' .. tostring(sent),
-                vim.log.levels.WARN)
+            notify(
+                'Request failed for ' .. client.name .. ': ' .. tostring(sent),
+                vim.log.levels.WARN
+            )
         end
     end
     if remaining == 0 then
@@ -904,9 +1015,14 @@ local function collect_marks(entries, origin_buffer, items)
     for index = 1, math.min(#entries, ITEM_COUNT_MAX) do
         local entry = entries[index]
         local position = entry.pos
-        if type(entry.mark) == 'string' and type(position) == 'table'
-            and is_integer(position[2]) and position[2] > 0
-            and is_integer(position[3]) and position[3] > 0 then
+        if
+            type(entry.mark) == 'string'
+            and type(position) == 'table'
+            and is_integer(position[2])
+            and position[2] > 0
+            and is_integer(position[3])
+            and position[3] > 0
+        then
             local bufnr = position[1]
             local path = entry.file
             if is_integer(bufnr) and bufnr > 0 and api.nvim_buf_is_valid(bufnr) then
@@ -916,7 +1032,10 @@ local function collect_marks(entries, origin_buffer, items)
                 path = api.nvim_buf_get_name(bufnr)
             end
             append_item(items, ('%s  %s:%d'):format(entry.mark, path or '[No Name]', position[2]), {
-                bufnr = bufnr, path = path, line = position[2], column = position[3] - 1,
+                bufnr = bufnr,
+                path = path,
+                line = position[2],
+                column = position[3] - 1,
             })
         end
     end
@@ -927,7 +1046,9 @@ function M.marks()
     local bufnr = api.nvim_get_current_buf()
     collect_marks(fn.getmarklist(), bufnr, items)
     collect_marks(fn.getmarklist(bufnr), bufnr, items)
-    table.sort(items, function(left, right) return left.label < right.label end)
+    table.sort(items, function(left, right)
+        return left.label < right.label
+    end)
     M.fzf_pick(items, function(mark)
         if is_integer(mark.bufnr) and mark.bufnr > 0 and api.nvim_buf_is_valid(mark.bufnr) then
             fn.bufload(mark.bufnr)
@@ -985,20 +1106,30 @@ local function present_grep(session, output)
             local data = record.data
             local path, text = rg_text(data.path), rg_text(data.lines)
             local match = type(data.submatches) == 'table' and data.submatches[1] or nil
-            if not valid_string(path) or not is_integer(data.line_number)
-                or data.line_number < 1 or type(match) ~= 'table'
-                or not is_integer(match.start) or match.start < 0 then
+            if
+                not valid_string(path)
+                or not is_integer(data.line_number)
+                or data.line_number < 1
+                or type(match) ~= 'table'
+                or not is_integer(match.start)
+                or match.start < 0
+            then
                 fail(session, 'Malformed ripgrep match.')
                 return
             end
             local label = ('%s:%d:%d:%s'):format(
-                path, data.line_number, match.start + 1, text or ''
+                path,
+                data.line_number,
+                match.start + 1,
+                text or ''
             )
-            if not append_item(items, label, {
-                path = fs.joinpath(session.cwd, path),
-                line = data.line_number,
-                column = match.start,
-            }) then
+            if
+                not append_item(items, label, {
+                    path = fs.joinpath(session.cwd, path),
+                    line = data.line_number,
+                    column = match.start,
+                })
+            then
                 fail(session, 'More than 20000 grep matches; narrow the query.')
                 return
             end
@@ -1094,14 +1225,22 @@ local function present_git_status(session, output, root)
         append_item(items, status .. ' ' .. path, fs.joinpath(root, path))
         index = index + 1
     end
-    table.sort(items, function(left, right) return left.value < right.value end)
+    table.sort(items, function(left, right)
+        return left.value < right.value
+    end)
     present(session, items, edit, 'Git status❯ ')
 end
 
 function M.git_status()
     with_git_root(function(session, git, root)
-        run(session, { git, 'status', '--porcelain=v1', '-z', '--untracked-files=all' },
-            root, function(output) present_git_status(session, output, root) end)
+        run(
+            session,
+            { git, 'status', '--porcelain=v1', '-z', '--untracked-files=all' },
+            root,
+            function(output)
+                present_git_status(session, output, root)
+            end
+        )
     end)
 end
 
@@ -1142,38 +1281,60 @@ function M.projects()
         fail(session, 'find is required for project discovery.')
         return
     end
-    run(session, { find, '.', '-mindepth', '1', '-maxdepth', '2', '-name', '.git',
-        '-prune', '-o', '-type', 'd', '-print0' }, directory, function(output)
-        local paths, err = records(output, '\0')
-        if paths == nil then
-            fail(session, tostring(err))
-            return
-        end
-        table.sort(paths)
-        local items = {}
-        for index = 1, #paths do
-            append_item(items, paths[index], fs.joinpath(directory, paths[index]))
-        end
-        present(session, items, function(path)
-            local current_stat = uv.fs_stat(path)
-            if current_stat == nil or current_stat.type ~= 'directory' then
-                error('Selected directory no longer exists.')
-            end
-            api.nvim_set_current_dir(path)
-            -- Capture the chosen cwd without deriving another root from the old buffer.
-            local selected_session = begin_session()
-            selected_session.cwd = path
-            local finder = executable_path('find')
-            if finder == nil then
-                fail(selected_session, 'find is required for project files.')
+    run(
+        session,
+        {
+            find,
+            '.',
+            '-mindepth',
+            '1',
+            '-maxdepth',
+            '2',
+            '-name',
+            '.git',
+            '-prune',
+            '-o',
+            '-type',
+            'd',
+            '-print0',
+        },
+        directory,
+        function(output)
+            local paths, err = records(output, '\0')
+            if paths == nil then
+                fail(session, tostring(err))
                 return
             end
-            run(selected_session, { finder, '.', '-name', '.git', '-prune', '-o',
-                '-type', 'f', '-print0' }, path, function(files)
-                present_paths(selected_session, files, path, 'Project files❯ ')
-            end)
-        end, 'Projects❯ ')
-    end)
+            table.sort(paths)
+            local items = {}
+            for index = 1, #paths do
+                append_item(items, paths[index], fs.joinpath(directory, paths[index]))
+            end
+            present(session, items, function(path)
+                local current_stat = uv.fs_stat(path)
+                if current_stat == nil or current_stat.type ~= 'directory' then
+                    error('Selected directory no longer exists.')
+                end
+                api.nvim_set_current_dir(path)
+                -- Capture the chosen cwd without deriving another root from the old buffer.
+                local selected_session = begin_session()
+                selected_session.cwd = path
+                local finder = executable_path('find')
+                if finder == nil then
+                    fail(selected_session, 'find is required for project files.')
+                    return
+                end
+                run(
+                    selected_session,
+                    { finder, '.', '-name', '.git', '-prune', '-o', '-type', 'f', '-print0' },
+                    path,
+                    function(files)
+                        present_paths(selected_session, files, path, 'Project files❯ ')
+                    end
+                )
+            end, 'Projects❯ ')
+        end
+    )
 end
 
 function M.smart_hlsearch()
@@ -1237,6 +1398,21 @@ function M.substitute(command)
     end
 end
 
+local owned_commands = {}
+local function command(name, callback, opts)
+    local existing = api.nvim_get_commands({ builtin = false })[name]
+    if existing then
+        if owned_commands[name] == existing.definition then
+            return
+        end
+        notify('Preserving existing command :' .. name, vim.log.levels.WARN)
+        return
+    end
+    opts.force = false
+    api.nvim_create_user_command(name, callback, opts)
+    owned_commands[name] = api.nvim_get_commands({ builtin = false })[name].definition
+end
+
 local function create_commands()
     ---@type { name: string, callback: fun() }[]
     local commands = {
@@ -1256,11 +1432,13 @@ local function create_commands()
     }
     for index = 1, #commands do
         local name, callback = commands[index].name, commands[index].callback
-        api.nvim_create_user_command(name, function() callback() end, { force = true })
+        command(name, function()
+            callback()
+        end, {})
     end
-    api.nvim_create_user_command('NativeFzfGrep', function(options)
+    command('NativeFzfGrep', function(options)
         M.live_grep(options.args ~= '' and options.args or nil)
-    end, { force = true, nargs = '*' })
+    end, { nargs = '*' })
 end
 
 ---@param options? NativeFzfOptions|table
@@ -1273,9 +1451,14 @@ function M.setup(options)
         return nil, 'FZF options must be a table.'
     end
     local candidate = vim.tbl_deep_extend('force', vim.deepcopy(M.options), options)
-    if type(candidate.binaries) ~= 'table' or #candidate.binaries < 1
-        or #candidate.binaries > 8 or not valid_string(candidate.projects_directory)
-        or not valid_string(candidate.prompt) then
+    if
+        type(candidate.binaries) ~= 'table'
+        or #candidate.binaries < 1
+        or #candidate.binaries > 8
+        or not valid_string(candidate.projects_directory)
+        or not valid_string(candidate.prompt)
+        or (candidate.picker ~= 'native' and candidate.picker ~= 'fzf')
+    then
         return nil, 'Invalid FZF binaries, projects_directory, or prompt.'
     end
     for index = 1, #candidate.binaries do

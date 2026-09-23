@@ -1,201 +1,160 @@
 -- /qompassai/Diver/lua/config/markdown/render.lua
--- Qompass AI Diver UI Render Config
+-- Qompass AI Diver Markdown Decorations
 -- Copyright (C) 2025 Qompass AI, All rights reserved
 -- ----------------------------------------
----@module 'config.ui.render'
+-- Native extmark decorations. Image rendering is delegated to config.ui.image,
+-- which uses vim.ui.img and has no image.nvim dependency.
+
 local M = {}
-local ns = vim.api.nvim_create_namespace('render')
----@param bufnr integer
+local namespace = vim.api.nvim_create_namespace('markdown_render')
+
 local function clear(bufnr)
-    vim.api.nvim_buf_clear_namespace(bufnr, ns, 0, -1)
+  vim.api.nvim_buf_clear_namespace(bufnr, namespace, 0, -1)
 end
 
 ---@param bufnr integer
----@return vim.treesitter.LanguageTree|nil
-local function get_parser(bufnr)
-    local ok, parser = pcall(vim.treesitter.get_parser, bufnr, 'markdown')
-    if not ok then
-        return nil
-    end
-    return parser
-end
-
----@param path string
-local function magick_preview(path)
-    local ok, magick = pcall(require, 'magick')
-    if not ok then
-        return
-    end
-
-    local ok_img, img = pcall(magick.load_image, path)
-    if not ok_img or not img then
-        return
-    end
-
-    img:destroy()
+---@return vim.treesitter.LanguageTree?
+local function parser_for(bufnr)
+  local ok, parser = pcall(vim.treesitter.get_parser, bufnr, 'markdown')
+  return ok and parser or nil
 end
 
 ---@param bufnr integer
----@return nil
-local function render_buffer(bufnr)
-    clear(bufnr)
-
-    local parser = get_parser(bufnr)
-    if not parser then
-        return
-    end
-
-    local trees = parser:parse() ---@type TSTree[]
-    local tstree = trees[1]
-    if not tstree then
-        return
-    end
-
-    local root = tstree:root() ---@type TSNode
-    local query = vim.treesitter.query.parse(
-        'markdown',
-        [[
-      (atx_heading) @heading
-      (setext_heading) @heading
-
-      (list_item
-        (paragraph
-          (inline) @list_marker)) @list
-
-      (task_list_marker_unchecked) @checkbox_unchecked
-      (task_list_marker_checked)   @checkbox_checked
-
-      (image
-        destination: (link_destination) @image_dest) @image
-    ]]
-    )
-
-    for id, node in query:iter_captures(root, bufnr, 0, -1) do
-        local name = query.captures[id]
-        local sr, sc, er, ec = node:range()
-
-        if name == 'heading' then
-            local line = vim.api.nvim_buf_get_lines(bufnr, sr, sr + 1, false)[1] or ''
-            local hashes = line:match('^(#+)')
-            local level = hashes and #hashes or 1
-
-            vim.api.nvim_buf_set_extmark(bufnr, ns, sr, 0, {
-                virt_text = {
-                    { string.rep('▌', level) .. ' ', 'Title' },
-                },
-                virt_text_pos = 'overlay',
-            })
-
-            vim.api.nvim_buf_set_extmark(bufnr, ns, er, 0, {
-                virt_lines = {
-                    {
-                        { string.rep('─', math.max(10, #line)), 'Comment' },
-                    },
-                },
-                virt_lines_above = false,
-            })
-        elseif name == 'list' then
-            vim.api.nvim_buf_set_extmark(bufnr, ns, sr, 0, {
-                virt_text = {
-                    { '• ', 'Identifier' },
-                },
-                virt_text_pos = 'overlay',
-            })
-        elseif name == 'checkbox_unchecked' or name == 'checkbox_checked' then
-            local icon = (name == 'checkbox_checked') and ' ' or ' '
-
-            vim.api.nvim_buf_set_extmark(bufnr, ns, sr, sc, {
-                virt_text = {
-                    { icon, 'Identifier' },
-                },
-                virt_text_pos = 'overlay',
-                end_col = ec,
-            })
-        elseif name == 'image' then
-            vim.api.nvim_buf_set_extmark(bufnr, ns, sr, sc, {
-                virt_text = {
-                    { '🖼 ', 'Special' },
-                },
-                virt_text_pos = 'overlay',
-            })
-        elseif name == 'image_dest' then
-            local text = vim.treesitter.get_node_text(node, bufnr)
-            if text and #text > 0 then
-                text = text:gsub('^<', ''):gsub('>$', '')
-                if not text:match('^https?://') then
-                    magick_preview(text)
-                end
-            end
-        end
-    end
+local function refresh_image(bufnr)
+  local ok, image = pcall(require, 'config.ui.image')
+  if ok and type(image.refresh) == 'function' and vim.api.nvim_get_current_buf() == bufnr then
+    image.refresh()
+  end
 end
 
 ---@param bufnr integer
----@return nil
+local function render(bufnr)
+  clear(bufnr)
+
+  local parser = parser_for(bufnr)
+  if not parser then
+    refresh_image(bufnr)
+    return
+  end
+
+  local parsed_ok, trees = pcall(parser.parse, parser)
+  local tree = parsed_ok and trees[1] or nil
+  if not tree then
+    refresh_image(bufnr)
+    return
+  end
+
+  local query_ok, query = pcall(
+    vim.treesitter.query.parse,
+    'markdown',
+    [[
+    (atx_heading) @heading
+    (setext_heading) @heading
+    (task_list_marker_unchecked) @checkbox_unchecked
+    (task_list_marker_checked) @checkbox_checked
+    (image) @image
+  ]]
+  )
+  if not query_ok then
+    refresh_image(bufnr)
+    return
+  end
+
+  for id, node in query:iter_captures(tree:root(), bufnr, 0, -1) do
+    local capture = query.captures[id]
+    local row, column, end_row, end_column = node:range()
+
+    if capture == 'heading' then
+      local line = vim.api.nvim_buf_get_lines(bufnr, row, row + 1, false)[1] or ''
+      local hashes = line:match('^(#+)')
+      local level = hashes and #hashes or 1
+
+      vim.api.nvim_buf_set_extmark(bufnr, namespace, row, 0, {
+        virt_text = { { string.rep('▌', level) .. ' ', 'Title' } },
+        virt_text_pos = 'overlay',
+      })
+
+      vim.api.nvim_buf_set_extmark(bufnr, namespace, end_row, 0, {
+        virt_lines = { { { string.rep('─', math.max(10, #line)), 'Comment' } } },
+      })
+    elseif capture == 'checkbox_unchecked' or capture == 'checkbox_checked' then
+      local icon = capture == 'checkbox_checked' and ' ' or ' '
+      vim.api.nvim_buf_set_extmark(bufnr, namespace, row, column, {
+        end_col = end_column,
+        virt_text = { { icon, 'Identifier' } },
+        virt_text_pos = 'overlay',
+      })
+    elseif capture == 'image' then
+      vim.api.nvim_buf_set_extmark(bufnr, namespace, row, column, {
+        virt_text = { { '🖼 ', 'Special' } },
+        virt_text_pos = 'overlay',
+      })
+    end
+  end
+
+  refresh_image(bufnr)
+end
+
+---@param bufnr integer
 local function attach(bufnr)
-    local group = vim.api.nvim_create_augroup('markdown_render_' .. bufnr, {
-        clear = true,
-    })
+  local group = vim.api.nvim_create_augroup('MarkdownRender' .. bufnr, { clear = true })
 
-    vim.api.nvim_create_autocmd({
-        'BufEnter',
-        'TextChanged',
-        'TextChangedI',
-        'InsertLeave',
-    }, {
-        group = group,
-        buffer = bufnr,
-        callback = function(args)
-            render_buffer(args.buf)
-        end,
-    })
+  vim.api.nvim_create_autocmd({
+    'BufEnter',
+    'CursorMoved',
+    'InsertLeave',
+    'TextChanged',
+  }, {
+    buffer = bufnr,
+    group = group,
+    callback = function(args)
+      render(args.buf)
+    end,
+  })
 
-    vim.api.nvim_create_autocmd('BufWipeout', {
-        group = group,
-        buffer = bufnr,
-        callback = function(args)
-            clear(args.buf)
-        end,
-    })
+  vim.api.nvim_create_autocmd('BufWipeout', {
+    buffer = bufnr,
+    group = group,
+    callback = function(args)
+      clear(args.buf)
+      local ok, image = pcall(require, 'config.ui.image')
+      if ok and type(image.clear) == 'function' then
+        image.clear()
+      end
+    end,
+  })
 
-    render_buffer(bufnr)
+  render(bufnr)
 end
 
----@return nil
 function M.enable()
-    local bufnr = vim.api.nvim_get_current_buf()
-    local ft = vim.bo[bufnr].filetype
-
-    if ft ~= 'markdown' and ft ~= 'markdown.mdx' then
-        return
-    end
-
+  local bufnr = vim.api.nvim_get_current_buf()
+  local filetype = vim.bo[bufnr].filetype
+  if filetype == 'markdown' or filetype == 'markdown.mdx' then
     attach(bufnr)
+  end
 end
 
----@return nil
 function M.disable()
-    local bufnr = vim.api.nvim_get_current_buf()
-    local group = 'markdown_render_' .. bufnr
+  local bufnr = vim.api.nvim_get_current_buf()
+  pcall(vim.api.nvim_del_augroup_by_name, 'MarkdownRender' .. bufnr)
+  clear(bufnr)
 
-    pcall(vim.api.nvim_del_augroup_by_name, group)
-    clear(bufnr)
+  local ok, image = pcall(require, 'config.ui.image')
+  if ok and type(image.clear) == 'function' then
+    image.clear()
+  end
 end
 
----@return nil
 function M.toggle()
-    local bufnr = vim.api.nvim_get_current_buf()
-    local group = 'markdown_render_' .. bufnr
-
-    local ok = pcall(vim.api.nvim_get_autocmds, {
-        group = group,
-    })
-
-    if ok then
-        M.disable()
-    else
-        M.enable()
-    end
+  local bufnr = vim.api.nvim_get_current_buf()
+  local group = 'MarkdownRender' .. bufnr
+  local attached = #vim.api.nvim_get_autocmds({ group = group }) > 0
+  if attached then
+    M.disable()
+  else
+    M.enable()
+  end
 end
 
 return M

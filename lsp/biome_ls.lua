@@ -38,7 +38,9 @@ return ---@type vim.lsp.Config
   },
 
   on_attach = function(client, bufnr)
-    local group = vim.api.nvim_create_augroup('BiomeWriteActions', { clear = false })
+    local group = vim.api.nvim_create_augroup('BiomeWriteActions', {
+      clear = false,
+    })
 
     vim.api.nvim_clear_autocmds({
       group = group,
@@ -49,11 +51,19 @@ return ---@type vim.lsp.Config
       group = group,
       buffer = bufnr,
       callback = function()
-        local params = vim.lsp.util.make_range_params(0, client.offset_encoding)
-        params.context = { only = { 'source.organizeImports.biome', 'source.fixAll.biome' } }
-
+        local range_params = vim.lsp.util.make_range_params(0, client.offset_encoding)
+        local params = {
+          textDocument = range_params.textDocument,
+          range = range_params.range,
+          context = {
+            only = {
+              'quickfix.biome',
+              'source.organizeImports.biome',
+              'source.fixAll.biome',
+            },
+          },
+        }
         local result = vim.lsp.buf_request_sync(bufnr, 'textDocument/codeAction', params, 3000)
-
         if result then
           for _, res in pairs(result) do
             for _, action in pairs(res.result or {}) do
@@ -68,7 +78,6 @@ return ---@type vim.lsp.Config
             end
           end
         end
-
         if client.server_capabilities.documentFormattingProvider then
           vim.lsp.buf.format({
             bufnr = bufnr,
@@ -148,7 +157,11 @@ return ---@type vim.lsp.Config
         },
         overrides = {
           {
-            includes = { '**/*.svelte', '**/*.astro', '**/*.vue' },
+            includes = {
+              '**/*.svelte',
+              '**/*.astro',
+              '**/*.vue',
+            },
             linter = {
               enabled = true,
               domains = {

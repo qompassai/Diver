@@ -12,6 +12,7 @@ local MODULES = {
     'langmap',
     'lintmap',
     'lspmap',
+    'navmap',
 }
 local loaded = {}
 

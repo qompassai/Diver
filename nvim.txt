@@ -32,7 +32,23 @@
 │   │   │   ├── index.html
 │   │   │   ├── ldoc.css
 │   │   │   ├── modules
+│   │   │   │   ├── learn_lua.html
+│   │   │   │   ├── learn_tables.html
+│   │   │   │   └── learn_vim_api.html
 │   │   │   └── topics
+│   │   │       ├── 00-introduction.md.html
+│   │   │       ├── 01-values-and-types.md.html
+│   │   │       ├── 02-variables-and-scope.md.html
+│   │   │       ├── 03-tables.md.html
+│   │   │       ├── 04-functions.md.html
+│   │   │       ├── 05-control-flow.md.html
+│   │   │       ├── 06-strings-and-patterns.md.html
+│   │   │       ├── 07-modules-and-require.md.html
+│   │   │       ├── 08-error-handling.md.html
+│   │   │       ├── 09-the-vim-api.md.html
+│   │   │       ├── 10-luacats-annotations.md.html
+│   │   │       ├── 11-neovim-013-native.md.html
+│   │   │       └── 12-putting-it-together.md.html
 │   │   ├── config.ld
 │   │   ├── guide
 │   │   │   ├── 00-introduction.md
@@ -449,6 +465,18 @@
 │   ├── z_ls.lua
 │   └── zuban_ls.lua
 ├── lua
+│   ├── acp
+│   │   ├── commands.lua
+│   │   ├── context.lua
+│   │   ├── health.lua
+│   │   ├── init.lua
+│   │   ├── permissions.lua
+│   │   ├── protocol.lua
+│   │   ├── registry.lua
+│   │   ├── rpc.lua
+│   │   ├── session.lua
+│   │   ├── store.lua
+│   │   └── ui.lua
 │   ├── bsp
 │   │   ├── bazel.lua
 │   │   ├── cargo.lua
@@ -466,13 +494,12 @@
 │   │   ├── core
 │   │   │   ├── async.lua
 │   │   │   ├── filetype.lua
-│   │   │   ├── fixer.lua
-│   │   │   ├── flash.lua
 │   │   │   ├── init.lua
 │   │   │   ├── lint.lua
 │   │   │   ├── lsp.lua
 │   │   │   ├── parser.lua
 │   │   │   ├── qf.lua
+│   │   │   ├── refactor.lua
 │   │   │   ├── schema.lua
 │   │   │   ├── tree.lua
 │   │   │   └── whichkey.lua
@@ -531,10 +558,12 @@
 │   │   │   └── zig.lua
 │   │   ├── lazy.lua
 │   │   ├── nav
-│   │   │   ├── align.lua
 │   │   │   ├── fzf.lua
+│   │   │   ├── init.lua
 │   │   │   ├── neotree.lua
-│   │   │   └── nt.lua
+│   │   │   ├── nt.lua
+│   │   │   ├── ripgrep.lua
+│   │   │   └── searxng.lua
 │   │   └── ui
 │   │       ├── colors.lua
 │   │       ├── decor.lua
@@ -604,6 +633,7 @@
 │   │   ├── clang_format.lua
 │   │   ├── d2.lua
 │   │   ├── dioxus.lua
+│   │   ├── gersemi.lua
 │   │   ├── gofumpt.lua
 │   │   ├── goimports.lua
 │   │   ├── init.lua
@@ -612,6 +642,7 @@
 │   │   ├── phpcsfixer.lua
 │   │   ├── pint.lua
 │   │   ├── process.lua
+│   │   ├── scalafmt.lua
 │   │   ├── shfmt.lua
 │   │   ├── todo.md
 │   │   ├── tools.lua
@@ -785,6 +816,7 @@
 │   ├── mappings
 │   │   ├── aimap.lua
 │   │   ├── cicdmap.lua
+│   │   ├── _core.lua
 │   │   ├── datamap.lua
 │   │   ├── ddxmap.lua
 │   │   ├── disable.lua
@@ -793,10 +825,8 @@
 │   │   ├── langmap.lua
 │   │   ├── lintmap.lua
 │   │   ├── lspmap.lua
-│   │   ├── navmap.lua
-│   │   ├── README.md
-│   │   └── utilmap.lua
-│   ├── plugins
+│   │   └── navmap.lua
+│   ├── plugin
 │   │   ├── ai
 │   │   ├── cloud
 │   │   │   ├── distant.lua
@@ -808,6 +838,7 @@
 │   │   ├── cloud.lua
 │   │   ├── core
 │   │   │   └── init.lua
+│   │   ├── dir.lua
 │   │   ├── edu.lua
 │   │   ├── init.lua
 │   │   ├── lang
@@ -821,6 +852,11 @@
 │   │       ├── md.lua
 │   │       ├── noice.lua
 │   │       └── themes.lua
+│   ├── refactor
+│   │   ├── core.lua
+│   │   ├── debug.lua
+│   │   ├── init.lua
+│   │   └── lsp.lua
 │   ├── scip
 │   │   ├── config.lua
 │   │   ├── context.lua
@@ -883,9 +919,18 @@
 │   │   │   └── line.lua
 │   │   └── utils
 │   │       ├── blue
+│   │       │   ├── dap.lua
+│   │       │   ├── gpg.lua
+│   │       │   └── init.lua
 │   │       ├── init.lua
 │   │       ├── media
+│   │       │   ├── encoder.lua
+│   │       │   ├── init.lua
+│   │       │   ├── rpc.lua
+│   │       │   └── video.lua
 │   │       ├── red
+│   │       │   ├── init.lua
+│   │       │   └── red.lua
 │   │       ├── unreal.lua
 │   │       ├── vulkan.lua
 │   │       └── wp.lua
@@ -897,21 +942,37 @@
 │       │   ├── init.lua
 │       │   ├── sops.lua
 │       │   └── ssh.lua
-│       ├── bsp
-│       │   ├── cargo.lua
-│       │   ├── commands.lua
-│       │   └── init.lua
+│       ├── codeactions.lua
 │       ├── ddx.lua
 │       ├── dev
 │       │   ├── android
+│       │   │   ├── actions.lua
+│       │   │   ├── commands.lua
+│       │   │   ├── config.lua
+│       │   │   ├── devices.lua
+│       │   │   ├── gradle.lua
+│       │   │   ├── init.lua
+│       │   │   ├── output.lua
+│       │   │   ├── recent.lua
+│       │   │   ├── ui.lua
+│       │   │   └── util.lua
 │       │   ├── init.lua
 │       │   └── sf
+│       │       ├── agent.lua
+│       │       ├── analyzer.lua
+│       │       ├── apex.lua
+│       │       ├── core.lua
+│       │       ├── data.lua
+│       │       ├── init.lua
+│       │       ├── org.lua
+│       │       └── project.lua
 │       ├── docs
 │       │   ├── bib.lua
 │       │   ├── bounty.lua
 │       │   ├── citation.lua
 │       │   ├── clipboard.lua
 │       │   ├── dictionary
+│       │   │   └── words.txt
 │       │   ├── diff.lua
 │       │   ├── docs.lua
 │       │   ├── equations.lua
@@ -930,15 +991,39 @@
 │       │   └── zotero.lua
 │       ├── games
 │       │   ├── aseprite
+│       │   │   ├── actions.lua
+│       │   │   ├── commands.lua
+│       │   │   ├── config.lua
+│       │   │   ├── init.lua
+│       │   │   └── util.lua
 │       │   ├── docs
+│       │   │   └── LUA-FOR-NETWORK-LINUX-FOLKS.md
 │       │   ├── godot
+│       │   │   └── init.lua
 │       │   ├── health.lua
 │       │   ├── init.lua
 │       │   ├── README.md
 │       │   ├── redot
+│       │   │   └── init.lua
 │       │   ├── shared
+│       │   │   ├── async_util.lua
+│       │   │   ├── events.lua
+│       │   │   ├── godot_engine.lua
+│       │   │   ├── output.lua
+│       │   │   ├── ui.lua
+│       │   │   └── util.lua
 │       │   ├── unity
+│       │   │   ├── actions.lua
+│       │   │   ├── commands.lua
+│       │   │   ├── config.lua
+│       │   │   ├── init.lua
+│       │   │   └── util.lua
 │       │   └── unreal
+│       │       ├── actions.lua
+│       │       ├── commands.lua
+│       │       ├── config.lua
+│       │       ├── init.lua
+│       │       └── util.lua
 │       ├── init.lua
 │       ├── media
 │       │   ├── audio.lua
@@ -1167,11 +1252,17 @@
 ├── spell
 │   └── en.utf-8.add
 ├── tests
+│   ├── dir.lua
 │   ├── lua
+│   │   ├── core_nav.lua
+│   │   ├── run.lua
 │   │   └── websocket.lua
-│   └── rust
-│       └── rust-ffi.lua
+│   ├── python
+│   │   └── searx_fixture.py
+│   ├── rust
+│   │   └── rust-ffi.lua
+│   └── startup.lua
 ├── vim.toml
 └── vim.yml
 
-108 directories, 1067 files
+110 directories, 1156 files

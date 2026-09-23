@@ -1,13 +1,12 @@
 #!/usr/bin/env luajit
 ---@version >5.1
--- /qompassai/Diver/lua/config/init.lua
--- Qompass AI Diver Config Module
+-- /qompassai/Diver/lua/config/nav/init.lua
+-- Qompass AI Diver Nav Config Module
 -- Copyright (C) 2025 Qompass AI, All rights reserved
 ------------------------------------------------------
 local M = {}
 
 local notify = vim.notify
-local env = vim.env
 local fmt = string.format
 local levels = (vim.log and vim.log.levels)
   or {
@@ -18,6 +17,7 @@ local levels = (vim.log and vim.log.levels)
     ERROR = 4,
     OFF = 5,
   }
+
 local function safe_require(name, verbose)
   local ok, mod = pcall(require, name)
   if not ok then
@@ -26,13 +26,27 @@ local function safe_require(name, verbose)
     end
     return nil
   end
+  if type(mod) ~= 'table' then
+    if verbose then
+      notify(
+        fmt(
+          "[Diver] %s loaded but returned %s instead of a table (missing 'return M'?); skipping setup",
+          name,
+          type(mod)
+        ),
+        levels.WARN
+      )
+    end
+    return nil
+  end
   if verbose then
     notify(fmt('[Diver] Loaded %s', name), levels.INFO)
   end
   return mod
 end
+
 local function call_if_present(mod, method, opts, verbose, label)
-  if not mod then
+  if type(mod) ~= 'table' then
     return
   end
   local fn = mod[method]
@@ -44,33 +58,21 @@ local function call_if_present(mod, method, opts, verbose, label)
     notify(fmt('[Diver] %s.%s failed: %s', label or 'module', method, err), levels.ERROR)
   end
 end
-function M.config(opts)
+
+local SUBMODULES = {
+  'config.nav.fzf',
+  'config.nav.nt',
+  'config.nav.ripgrep',
+  'config.nav.searxng',
+}
+
+---@param opts table?
+function M.nav_config(opts)
   opts = opts or {}
   local verbose = opts.debug == true
-  env.FONTCONFIG_DEBUG = 'none'
-  safe_require('utils', verbose)
-  local keys = safe_require('config.keymaps', verbose)
-  if keys and type(keys.setup) == 'function' then
-    local ok, err = pcall(keys.setup)
-    if not ok and verbose then
-      notify(fmt('[Diver] config.keymaps.setup failed: %s', err), levels.ERROR)
-    end
-  end
-  safe_require('config.lazy', verbose)
-  if opts.core ~= false then
-    safe_require('config.core', verbose)
-  end
-  if opts.lang ~= false then
-    local lang = safe_require('config.lang', verbose)
-    call_if_present(lang, 'lang_config', opts, verbose, 'config.lang')
-  end
-  if opts.nav ~= false then
-    local nav = safe_require('config.nav', verbose)
-    call_if_present(nav, 'nav_config', opts, verbose, 'config.nav')
-  end
-  if opts.ui ~= false then
-    local ui = safe_require('config.ui', verbose)
-    call_if_present(ui, 'ui_config', opts, verbose, 'config.ui')
+  for _, name in ipairs(SUBMODULES) do
+    local mod = safe_require(name, verbose)
+    call_if_present(mod, 'setup', opts, verbose, name)
   end
 end
 

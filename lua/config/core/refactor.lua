@@ -1,29 +1,22 @@
 -- /qompassai/Diver/lua/config/core/refactor.lua
--- Native refactor configuration
+-- Native Diver refactor facade configuration; no third-party refactor plugin.
 -- SPDX-License-Identifier: Apache-2.0
--- #################################################################
--- /qompassai/lua/config/core/refactor.lua
--- Qompass AI Refactor
--- SPDX-License-Identifier: Apache-2.0
--- Copyright (c) 2026 Qompass AI
---
--- Licensed under the Apache License, Version 2.0 (the "License");
--- you may not use this file except in compliance with the License.
--- You may obtain a copy of the License at:
---   http://www.apache.org/licenses/LICENSE-2.0
---
--- Unless required by applicable law or agreed to in writing, software
--- distributed under the License is distributed on an "AS IS" BASIS,
--- WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
--- See the License for the specific language governing permissions and
--- limitations under the License.
--- #################################################################
-
-return require('refactor').setup({
-  commands = true,
-  debug = {
-    output_location = 'below',
-    block_count_max = 1024,
-    cleanup_line_max = 250000,
-  },
-})
+local M = {}
+local defaults = {
+    commands = true,
+    debug = { block_count_max = 1024, cleanup_line_max = 250000, output_location = 'below' },
+}
+function M.setup(opts)
+    assert(opts == nil or type(opts) == 'table', 'refactor options must be a table')
+    local ok, facade = pcall(require, 'refactor')
+    if not ok or type(facade) ~= 'table' or type(facade.setup) ~= 'function' then
+        return nil, 'Diver lua/refactor/ is unavailable: ' .. tostring(facade)
+    end
+    return facade.setup(vim.tbl_deep_extend('force', vim.deepcopy(defaults), opts or {}))
+end
+-- Keep the original require-time configuration contract.
+local ok, err = M.setup()
+if ok == nil and err then
+    vim.notify(err, vim.log.levels.WARN)
+end
+return M

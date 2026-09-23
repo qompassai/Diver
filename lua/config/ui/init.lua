@@ -1,8 +1,10 @@
-#!/usr/bin/env lua5.1
+#!/usr/bin/env luajit
 -- /home/phaedrus/.config/nvim/lua/config/ui/init.lua
 -- Qompass AI Diver UI Init
 -- Copyright (C) 2026 Qompass AI, All rights reserved
------------------------------------------------------
+-- ----------------------------------------
+-- Native UI setup. Markdown decorations and PNG previews use the local
+-- config.markdown.render and config.ui.image modules, not image.nvim.
 
 local M = {}
 
@@ -20,24 +22,13 @@ local startup_modules = {
   'themes',
 }
 
----@type ui.image.Options
 local image_options = {
-  allow_http = false,
-  cache_entry_count_max = 32,
-  debounce_ms = 150,
-  enabled = false,
-  image_bytes_max = 10 * 1024 * 1024,
-  markdown_filetypes = {
-    markdown = true,
-    ['markdown.mdx'] = true,
-  },
-  notify_errors = false,
-  pending_request_count_max = 1,
-  preview_height_fraction = 0.70,
-  preview_margin = 2,
-  preview_row = 2,
-  preview_width_fraction = 0.32,
-  preview_zindex = 60,
+  enabled = true,
+  height = 16,
+  margin = 2,
+  row = 2,
+  width = 42,
+  zindex = 60,
 }
 
 ---@param module_name string
@@ -46,34 +37,49 @@ local function load_startup_module(module_name)
   assert(module_name ~= '')
 
   local ok, require_error = pcall(require, 'config.ui.' .. module_name)
-
   if not ok then
     error(('failed to load config.ui.%s: %s'):format(module_name, tostring(require_error)))
   end
 end
 
 local function setup_image_preview()
-  local image_preview = require('config.ui.image')
+  local image = require('config.ui.image')
+  assert(type(image) == 'table', 'config.ui.image must return a module table')
+  assert(type(image.setup) == 'function', 'config.ui.image must expose setup(options)')
 
-  if type(image_preview) ~= 'table' then
-    error('config.ui.image must return a module table')
+  image.setup(image_options)
+end
+
+local function setup_markdown_rendering()
+  local render = require('config.markdown.render')
+  assert(type(render) == 'table', 'config.markdown.render must return a module table')
+  assert(type(render.enable) == 'function', 'config.markdown.render must expose enable()')
+
+  local group = vim.api.nvim_create_augroup('MarkdownRendering', {
+    clear = true,
+  })
+
+  vim.api.nvim_create_autocmd('FileType', {
+    group = group,
+    pattern = { 'markdown', 'markdown.mdx' },
+    callback = render.enable,
+    desc = 'Enable Qompass Markdown decorations and native image refreshes',
+  })
+
+  local bufnr = vim.api.nvim_get_current_buf()
+  local filetype = vim.bo[bufnr].filetype
+  if filetype == 'markdown' or filetype == 'markdown.mdx' then
+    render.enable()
   end
-
-  if type(image_preview.setup) ~= 'function' then
-    error('config.ui.image must expose setup(options)')
-  end
-
-  image_preview.setup(image_options)
 end
 
 function M.setup()
   for index = 1, #startup_modules do
-    local module_name = startup_modules[index]
-
-    load_startup_module(module_name)
+    load_startup_module(startup_modules[index])
   end
 
   setup_image_preview()
+  setup_markdown_rendering()
 end
 
 return M

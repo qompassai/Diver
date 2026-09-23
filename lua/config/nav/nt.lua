@@ -174,7 +174,7 @@ end
 ---@param options {prompt: string}
 local function pick_items(module_name, items, sink, options)
   local ok, picker = pcall(require, module_name)
-  if ok and type(picker) == 'table' and type(picker.fzf_pick) == 'function' and fn.executable('sh') == 1 then
+  if ok and type(picker) == 'table' and type(picker.fzf_pick) == 'function' then
     picker.fzf_pick(items, sink, options)
     return
   end
@@ -459,10 +459,14 @@ do
         .. "[Convert]::FromBase64String('"
         .. payload
         .. "')))"
-      M.run(
-        { 'pwsh', '-NoLogo', '-NoProfile', '-NoExit', '-EncodedCommand', encoded_script(source) },
-        { elevated = true, cwd = fn.getcwd() }
-      )
+      M.run({
+        'pwsh',
+        '-NoLogo',
+        '-NoProfile',
+        '-NoExit',
+        '-EncodedCommand',
+        encoded_script(source),
+      }, { elevated = true, cwd = fn.getcwd() })
       return
     end
     local shell = fn.exepath('bash')
@@ -581,10 +585,13 @@ do
   ---@param output string
   local function present(root, output)
     local items = {
-      { label = '[Actions for this directory]', value = {
-        kind = 'actions',
-        path = root,
-      } },
+      {
+        label = '[Actions for this directory]',
+        value = {
+          kind = 'actions',
+          path = root,
+        },
+      },
       { label = '../', value = { kind = 'd', path = vim.fs.dirname(root) or '/' } },
     }
     for kind, path in output:gmatch('([^%z]+)%z([^%z]+)%z') do
@@ -592,11 +599,13 @@ do
         notify('Admin picker limited to 10000 entries.')
         break
       end
-      items[#items + 1] =
-        { label = kind .. '  ' .. label(path), value = {
+      items[#items + 1] = {
+        label = kind .. '  ' .. label(path),
+        value = {
           kind = kind,
           path = path,
-        } }
+        },
+      }
     end
     table.sort(items, function(a, b)
       return a.label < b.label
@@ -1251,7 +1260,7 @@ function M.find_files()
     return
   end
   M.cancel()
-  local argv = { executable, '--files', '--null', '--glob', '!.git' }
+  local argv = { executable, '--no-config', '--files', '--null', '--glob', '!.git' }
   if M.config.show_hidden then
     argv[#argv + 1] = '--hidden'
   end
@@ -1294,10 +1303,6 @@ end
 ---@param action 'document_symbols'|'git_status'
 local function source_picker(action)
   M.cancel()
-  if WINDOWS and fn.executable('sh') ~= 1 then
-    notify('This FZF Git/symbol picker requires Git for Windows sh.exe on PATH.')
-    return
-  end
   local picker = fzf()
   if not picker then
     return
@@ -1474,7 +1479,9 @@ function M.permissions()
     if type(mode) ~= 'string' or mode == '' or not current(saved) or not same_entry(item.path, original) then
       return
     end
-    operations.run({ 'chmod', '--', mode, item.path }, { cwd = saved.cwd }, function(code)
+    operations.run({ 'chmod', '--', mode, item.path }, {
+      cwd = saved.cwd,
+    }, function(code)
       if code == 0 then
         refresh_snapshot(saved)
       end
@@ -1598,15 +1605,21 @@ local function attach(bufnr)
     { 'x', M.symlink, 'Create symbolic link' },
     { 'y', M.yank_path, 'Copy entry path' },
   }
+  table.sort(mappings, function(a, b)
+    if a[1]:lower() ~= b[1]:lower() then
+      return a[1]:lower() < b[1]:lower()
+    end
+    return a[1] < b[1]
+  end)
   for _, mapping in ipairs(mappings) do
     vim.keymap.set('n', mapping[1], mapping[2], {
-      buf = bufnr,
+      buffer = bufnr,
       desc = 'Explorer: ' .. mapping[3],
       silent = true,
     })
   end
   vim.keymap.set('n', '-', '<Plug>(nvim-dir-up)', {
-    buf = bufnr,
+    buffer = bufnr,
     desc = 'Explorer: Parent directory',
     silent = true,
   })
@@ -1647,18 +1660,59 @@ local function render(bufnr)
   end)
 end
 
+---@param message string
+---@return false
+local function backend_error(message)
+  vim.notify_once(message, vim.log.levels.ERROR, { title = 'Native explorer' })
+  return false
+end
+
 ---@return boolean
 local function backend()
-  if fn.has('nvim-0.13') ~= 1 or #api.nvim_get_runtime_file('plugin/dir.lua', false) == 0 then
-    notify('This config needs Neovim 0.13 with the builtin dir plugin.', vim.log.levels.ERROR)
-    return false
+  if fn.has('nvim-0.13') ~= 1 then
+    return backend_error('Native explorer needs Neovim 0.13 or newer.')
+  end
+  local runtime = vim.env.VIMRUNTIME
+  if type(runtime) ~= 'string' or runtime == '' then
+    return backend_error('$VIMRUNTIME is unset; install the runtime shipped with this Neovim binary.')
+  end
+  local plugin = fs.joinpath(runtime, 'plugin', 'dir.lua')
+  if fn.filereadable(plugin) ~= 1 then
+    return backend_error('Native directory plugin missing: ' .. plugin .. '. Check :echo $VIMRUNTIME.')
   end
   if vim.g.loaded_nvim_dir_plugin == nil then
-    vim.cmd.runtime('plugin/dir.lua')
+    -- :runtime searches user config first and may find the retired local shim.
+    local ok, err = pcall(api.nvim_cmd, {
+      cmd = 'source',
+      args = { plugin },
+      magic = { bar = false, file = false },
+    }, {})
+    if not ok then
+      return backend_error(
+        'Cannot load '
+          .. plugin
+          .. ': '
+          .. tostring(err)
+          .. '. Install the binary and runtime from the same nightly, then restart.'
+      )
+    end
   end
-  if fn.maparg('<Plug>(nvim-dir-reload)', 'n') == '' then
-    notify('The builtin dir plugin is disabled; remove loaded_nvim_dir_plugin from your config.')
-    return false
+  local mapping = fn.maparg('<Plug>(nvim-dir-reload)', 'n', false, true)
+  local ok, handlers = pcall(api.nvim_get_autocmds, { event = 'BufEnter', group = 'nvim.dir' })
+  if next(mapping) == nil or not ok or #handlers == 0 then
+    return backend_error(
+      'Native directory browser is blocked or incomplete. Remove any assignment to '
+        .. 'loaded_nvim_dir_plugin from your config, replace the old local dir.lua shim, and restart. '
+        .. 'If already loaded, check for config that removes the nvim.dir autocommands.'
+    )
+  end
+  local available, err = pcall(require, 'nvim.dir')
+  if not available then
+    return backend_error(
+      'Cannot load the native directory module: '
+        .. tostring(err)
+        .. '. Check that $VIMRUNTIME and runtimepath belong to the running Neovim build.'
+    )
   end
   return true
 end
@@ -1763,6 +1817,7 @@ function M.create_commands()
 end
 
 ---@param opts? {fzf_module?: string, position?: 'left'|'right', show_hidden?: boolean, width?: integer}
+---@return boolean
 function M.setup(opts)
   local config = vim.tbl_extend('force', {}, M.config, opts or {})
   assert(config.position == 'left' or config.position == 'right', 'position: left or right')
@@ -1771,7 +1826,7 @@ function M.setup(opts)
   assert(type(config.show_hidden) == 'boolean', 'show_hidden must be boolean')
   assert(type(config.fzf_module) == 'string' and config.fzf_module ~= '', 'invalid FZF module')
   if not backend() then
-    return
+    return false
   end
   M.cancel()
   M.config = {
@@ -1809,6 +1864,7 @@ function M.setup(opts)
       attach(bufnr)
     end
   end
+  return true
 end
 
 return M

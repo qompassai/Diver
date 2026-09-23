@@ -33,7 +33,6 @@ local function format_buffer(bufnr)
       items[#items + 1] = {
         label = client.name .. ' [' .. client.id .. ']',
         run = function()
-          -- Apply synchronously: no stale asynchronous edits after user typing.
           vim.lsp.buf.format({
             bufnr = bufnr,
             id = client.id,
@@ -69,9 +68,7 @@ local function attach(bufnr)
         lhs = '<LocalLeader>cl',
         desc = 'Lint current filetype',
         rhs = function()
-          lint.run(bufnr, {
-            notify = true,
-          })
+          lint.run(bufnr, { notify = true })
         end,
       }
     end

@@ -7,6 +7,24 @@
 ---@source https://docs.basedpyright.com/latest/configuration/language-server-settings/
 local api = vim.api
 
+local function default_python_path()
+  local candidates = vim.fn.has('win32') == 1 and {
+    'python.exe',
+    'python3.exe',
+    'py.exe',
+  } or {
+    'python3',
+    'python',
+  }
+  for _, name in ipairs(candidates) do
+    local path = vim.fn.exepath(name)
+    if path ~= '' then
+      return path
+    end
+  end
+  return 'python3'
+end
+
 ---@param client vim.lsp.Client
 ---@param bufnr integer
 local function on_attach(client, bufnr)
@@ -44,7 +62,9 @@ local function on_attach(client, bufnr)
     })
     client.settings = settings
     client.config.settings = settings
-    client:notify('workspace/didChangeConfiguration', { settings = settings })
+    client:notify('workspace/didChangeConfiguration', {
+      settings = settings,
+    })
   end, {
     desc = 'Set Python interpreter for this BasedPyright workspace',
     nargs = 1,
@@ -55,8 +75,13 @@ end
 
 ---@type vim.lsp.Config
 return {
-  cmd = { 'basedpyright-langserver', '--stdio' },
-  filetypes = { 'python' },
+  cmd = {
+    'basedpyright-langserver',
+    '--stdio',
+  },
+  filetypes = {
+    'python',
+  },
   root_markers = {
     'pyrightconfig.json',
     'pyproject.toml',
@@ -67,7 +92,9 @@ return {
     '.git',
   },
   settings = {
-    python = { pythonPath = 'python3' },
+    python = {
+      pythonPath = default_python_path(),
+    },
     basedpyright = {
       disableLanguageServices = false,
       disableOrganizeImports = true,

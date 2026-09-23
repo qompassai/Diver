@@ -5,7 +5,7 @@
 ----@param path string
 ----@return boolean
 --local function exists(path)
---  return vim.uv.fs_stat(path) ~= nil
+-- return vim.uv.fs_stat(path) ~= nil
 --end
 --local xdg_runtime = vim.fs.normalize('$XDG_DATA_HOME/nvim/runtime/')
 --local qompass_diver = vim.fs.normalize('~/.GH/Qompass/Diver/')
@@ -23,6 +23,31 @@ return ---@type vim.lsp.Config
   init_options = {},
   on_attach = function(client, bufnr)
     require('config.core.lsp').on_attach(client, bufnr)
+
+    -- lua_ls's "mark as global" (undefined-global) and diagnostic-specific
+    -- fixes (missing-parameter, undefined-field, assign-type-mismatch, etc.)
+    -- are server-native: they fire automatically whenever their underlying
+    -- diagnostic is enabled and a textDocument/codeAction request reaches
+    -- the cursor position. Nothing else toggles them on; this keymap was
+    -- the only piece missing -- without it, nothing ever requests them.
+    vim.keymap.set({ 'n', 'v' }, '<LocalLeader>la', vim.lsp.buf.code_action, {
+      buffer = bufnr,
+      desc = 'Lua: code actions for diagnostic under cursor/selection',
+    })
+
+    vim.api.nvim_buf_create_user_command(bufnr, 'AlignAnno', function(cmd_opts)
+      local col = tonumber(cmd_opts.fargs[1]) or 60
+      local width = col - 1
+      local fmt = '%-' .. width .. 's %s'
+      local pattern = [[^\(\s*---@\S\+\s\+\S\+\)\s\+\(.*\)$]]
+      local repl = ([[\=printf('%s', submatch(1), submatch(2))]]):format(fmt)
+      vim.cmd(('%d,%ds/%s/%s/'):format(cmd_opts.line1, cmd_opts.line2, pattern, repl))
+    end, {
+      nargs = 1,
+      range = true,
+      desc = 'Align trailing text after a ---@ annotation to a target column',
+    })
+
     local root = client.root_dir or ''
     if not (root:match('/hypr') or root:match('/Hyprland') or root:match('/hyprland')) then
       return
@@ -81,8 +106,12 @@ return ---@type vim.lsp.Config
         callSnippet = 'Both',
         displayContext = 1,
         enable = true,
+        showWord = 'Fallback',
         keywordSnippet = 'Both',
+        requireSeparator = '.',
+        showParams = true,
         postfix = '@',
+        workspaceWord = true,
       },
       diagnostics = {
         disable = {
@@ -93,7 +122,7 @@ return ---@type vim.lsp.Config
           --'duplicate-doc-field',
           -- 'duplicate-index',
           'lowercase-global',
-          --  'duplicate-set-field',
+          -- 'duplicate-set-field',
           -- 'incomplete-signature-doc',
           -- 'inject-field',
           'name-style-check',
@@ -240,7 +269,6 @@ return ---@type vim.lsp.Config
           ['undefined-field'] = 'Error',
           ['undefined-global'] = 'Error!',
           ['unreachable-code'] = 'Hint!',
-
           ['unused-local'] = 'Hint',
           ['unused-vararg'] = 'Hint!',
         },
@@ -695,9 +723,9 @@ return ---@type vim.lsp.Config
           'wrap',
         },
       },
-      --   telemetry = {
-      --       enable = false,
-      --   },
+      -- telemetry = {
+      -- enable = false,
+      -- },
       type = { ---@source https://luals.github.io/wiki/settings/#type
         castNumberToInteger = false,
         checkTableShape = true,

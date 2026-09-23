@@ -161,7 +161,6 @@ local function attach(bufnr)
         maps[#maps + 1] = {
           lhs = '<LocalLeader>d' .. item.key,
           rhs = function()
-            -- Re-resolve the backend/session at invocation time.
             for _, current in ipairs(available_actions(bufnr)) do
               if current.key == item.key then
                 current.run()
@@ -189,7 +188,19 @@ end
 function M.setup(opts)
   M.teardown()
   options = opts or {}
+  assert(type(options) == 'table', 'ddxmap options must be a table')
+  local checks = {}
+  for _, entry in ipairs({
+    { '<leader>hl', 'ConfigSelfCheckLog', 'Open config self-check log' },
+    { '<leader>hs', 'ConfigSelfCheck', 'Run config self-check' },
+    { '<leader>hy', 'ConfigSyntaxCheck', 'Run config syntax check' },
+  }) do
+    if vim.fn.exists(':' .. entry[2]) == 2 then
+      checks[#checks + 1] = { lhs = entry[1], rhs = core.command(entry[2]), desc = entry[3] }
+    end
+  end
   core.watch(OWNER, attach, { 'BufEnter', 'FileType' })
+  core.install(OWNER, 0, checks)
   group = api.nvim_create_augroup('NativeMappings_debug_lifecycle', { clear = true })
   api.nvim_create_autocmd('User', {
     group = group,
