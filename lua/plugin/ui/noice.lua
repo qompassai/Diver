@@ -68,7 +68,9 @@ return {
           event = 'msg_show',
           find = 'which%-key',
         },
-        opts = { skip = true },
+        opts = {
+          skip = true,
+        },
       },
       {
         filter = {
@@ -82,7 +84,9 @@ return {
           event = 'msg_show',
           kind = 'search_count',
         },
-        opts = { skip = true },
+        opts = {
+          skip = true,
+        },
       },
     },
   },

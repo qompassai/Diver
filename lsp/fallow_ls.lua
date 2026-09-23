@@ -1,0 +1,88 @@
+-- #################################################################
+-- /qompassai/lsp/fallow_ls.lua
+-- Qompass AI Fallow LSP Spec
+-- SPDX-License-Identifier: Apache-2.0
+-- Copyright (c) 2026 Qompass AI
+--
+-- Licensed under the Apache License, Version 2.0 (the "License");
+-- you may not use this file except in compliance with the License.
+-- You may obtain a copy of the License at:
+--   http://www.apache.org/licenses/LICENSE-2.0
+--
+-- Unless required by applicable law or agreed to in writing, software
+-- distributed under the License is distributed on an "AS IS" BASIS,
+-- WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+-- See the License for the specific language governing permissions and
+-- limitations under the License.
+-- #################################################################
+return ---@type vim.lsp.Config
+{
+  cmd = {
+    'fallow-lsp',
+  },
+  filetypes = {
+    'javascript',
+    'javascriptreact',
+    'typescript',
+    'typescriptreact',
+  },
+  init_options = {
+    allowRemoteExtends = false,
+    duplication = {
+      mode = 'mild',
+    },
+    health = {
+      inlineComplexity = false,
+    },
+    issueTypes = {
+      ['boundary-violation'] = true,
+      ['circular-dependencies'] = true,
+      ['dev-dependencies-in-production'] = true,
+      ['duplicate-exports'] = true,
+      ['dynamic-segment-name-conflict'] = true,
+      ['empty-catalog-groups'] = true,
+      ['invalid-client-export'] = true,
+      ['misconfigured-dependency-overrides'] = true,
+      ['misplaced-directive'] = true,
+      ['mixed-client-server-barrel'] = true,
+      ['policy-violation'] = true,
+      ['private-type-leaks'] = true,
+      ['re-export-cycle'] = true,
+      ['route-collision'] = true,
+      ['security-client-server-leak'] = true,
+      ['security-sink'] = true,
+      ['stale-suppressions'] = true,
+      ['test-only-dependencies'] = true,
+      ['type-only-dependencies'] = true,
+      ['unlisted-dependencies'] = true,
+      ['unprovided-injects'] = true,
+      ['unrendered-components'] = true,
+      ['unresolved-catalog-references'] = true,
+      ['unresolved-imports'] = true,
+      ['unused-catalog-entries'] = true,
+      ['unused-class-members'] = true,
+      ['unused-component-emits'] = true,
+      ['unused-component-inputs'] = true,
+      ['unused-component-outputs'] = true,
+      ['unused-component-props'] = true,
+      ['unused-dependencies'] = true,
+      ['unused-dependency-overrides'] = true,
+      ['unused-dev-dependencies'] = true,
+      ['unused-enum-members'] = true,
+      ['unused-exports'] = true,
+      ['unused-files'] = true,
+      ['unused-load-data-keys'] = true,
+      ['unused-optional-dependencies'] = true,
+      ['unused-server-actions'] = true,
+      ['unused-store-members'] = true,
+      ['unused-svelte-events'] = true,
+      ['unused-types'] = true,
+    },
+    mutedCategories = {},
+  },
+  root_markers = {
+    '.fallowrc.json',
+    '.git',
+    'package.json',
+  },
+}
