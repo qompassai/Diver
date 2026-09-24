@@ -34,7 +34,11 @@ not_globals = {}
 -- unset keeps the default "do not filter".
 quiet = 0
 ranges = false
+-- "files" is declared because luacheck's luacheckrc std does not
+-- list it; without this, the files["..."] override below warns as
+-- undefined global when this file is itself linted.
 read_globals = {
+  "files",
   "vim",
 }
 redefined = true
