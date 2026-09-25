@@ -22,7 +22,7 @@ local M = {}
 ---@param path string
 ---@return boolean
 function M.path_exists(path)
-  return uv.fs_stat(path) ~= nil
+    return uv.fs_stat(path) ~= nil
 end
 
 ---Return whether a command is executable.
@@ -32,29 +32,29 @@ end
 ---@param command string
 ---@return boolean
 function M.executable(command)
-  if command:find('/', 1, true) ~= nil then
-    local stat = uv.fs_stat(command)
+    if command:find('/', 1, true) ~= nil then
+        local stat = uv.fs_stat(command)
 
-    return stat ~= nil and stat.type == 'file'
-  end
+        return stat ~= nil and stat.type == 'file'
+    end
 
-  return vim.fn.executable(command) == 1
+    return vim.fn.executable(command) == 1
 end
 
 ---Convert command output into display-buffer or quickfix lines.
 ---@param text string
 ---@return string[]
 function M.text_lines(text)
-  if text == '' then
-    return {
-      'No output.',
-    }
-  end
+    if text == '' then
+        return {
+            'No output.',
+        }
+    end
 
-  return vim.split(text:gsub('\r\n', '\n'), '\n', {
-    plain = true,
-    trimempty = true,
-  })
+    return vim.split(text:gsub('\r\n', '\n'), '\n', {
+        plain = true,
+        trimempty = true,
+    })
 end
 
 ---Choose useful output from a completed system process.
@@ -62,43 +62,43 @@ end
 ---@param prefer_stderr? boolean
 ---@return string
 function M.system_output(result, prefer_stderr)
-  local stderr = result.stderr or ''
-  local stdout = result.stdout or ''
+    local stderr = result.stderr or ''
+    local stdout = result.stdout or ''
 
-  if prefer_stderr and stderr ~= '' then
+    if prefer_stderr and stderr ~= '' then
+        return stderr
+    end
+
+    if stdout ~= '' then
+        return stdout
+    end
+
     return stderr
-  end
-
-  if stdout ~= '' then
-    return stdout
-  end
-
-  return stderr
 end
 
 ---Find a C/C++ compilation database commonly produced by CMake.
 ---@param root string
 ---@return string
 function M.compilation_database(root)
-  local candidates = {
-    fs.joinpath(root, 'compile_commands.json'),
-    fs.joinpath(root, 'build', 'compile_commands.json'),
-    fs.joinpath(root, 'cmake-build-debug', 'compile_commands.json'),
-    fs.joinpath(root, 'cmake-build-release', 'compile_commands.json'),
-  }
+    local candidates = {
+        fs.joinpath(root, 'compile_commands.json'),
+        fs.joinpath(root, 'build', 'compile_commands.json'),
+        fs.joinpath(root, 'cmake-build-debug', 'compile_commands.json'),
+        fs.joinpath(root, 'cmake-build-release', 'compile_commands.json'),
+    }
 
-  for _, candidate in ipairs(candidates) do
-    if M.path_exists(candidate) then
-      return candidate
+    for _, candidate in ipairs(candidates) do
+        if M.path_exists(candidate) then
+            return candidate
+        end
     end
-  end
 
-  error(
-    'No compile_commands.json found under '
-      .. root
-      .. '. Configure CMake with '
-      .. '-DCMAKE_EXPORT_COMPILE_COMMANDS=ON.'
-  )
+    error(
+        'No compile_commands.json found under '
+            .. root
+            .. '. Configure CMake with '
+            .. '-DCMAKE_EXPORT_COMPILE_COMMANDS=ON.'
+    )
 end
 
 ---Resolve an indexer's dynamic/static command.
@@ -106,25 +106,25 @@ end
 ---@param context ScipContext
 ---@return string?, string?
 function M.resolve_command(value, context)
-  if type(value) == 'string' then
-    if value == '' then
-      return nil, 'SCIP indexer command is empty'
+    if type(value) == 'string' then
+        if value == '' then
+            return nil, 'SCIP indexer command is empty'
+        end
+
+        return value, nil
     end
 
-    return value, nil
-  end
+    local ok, result = pcall(value, context)
 
-  local ok, result = pcall(value, context)
+    if not ok then
+        return nil, tostring(result)
+    end
 
-  if not ok then
-    return nil, tostring(result)
-  end
+    if type(result) ~= 'string' or result == '' then
+        return nil, 'SCIP indexer command must resolve to a non-empty string'
+    end
 
-  if type(result) ~= 'string' or result == '' then
-    return nil, 'SCIP indexer command must resolve to a non-empty string'
-  end
-
-  return result, nil
+    return result, nil
 end
 
 ---Resolve an indexer's dynamic/static argument list.
@@ -132,22 +132,22 @@ end
 ---@param context ScipContext
 ---@return string[]?, string?
 function M.resolve_args(value, context)
-  if type(value) == 'table' then
-    return vim.deepcopy(value), nil
-  end
+    if type(value) == 'table' then
+        return vim.deepcopy(value), nil
+    end
 
-  local ok, result = pcall(value, context)
+    local ok, result = pcall(value, context)
 
-  if not ok then
-    return nil, tostring(result)
-  end
+    if not ok then
+        return nil, tostring(result)
+    end
 
-  if type(result) ~= 'table' then
-    return nil, 'SCIP indexer args must resolve to a string array'
-  end
+    if type(result) ~= 'table' then
+        return nil, 'SCIP indexer args must resolve to a string array'
+    end
 
-  ---@cast result string[]
-  return result, nil
+    ---@cast result string[]
+    return result, nil
 end
 
 return M

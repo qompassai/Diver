@@ -38,79 +38,79 @@ local PATH_SEPARATOR = '/'
 
 ---@type table<string, integer>
 local severities = {
-  error = ERROR,
-  info = INFO,
-  warning = WARN,
+    error = ERROR,
+    info = INFO,
+    warning = WARN,
 }
 
 ---@param value integer|number|string|nil
 ---@param fallback integer
 ---@return integer
 local function integer(value, fallback)
-  assert(type(fallback) == 'number')
-  assert(fallback >= 0)
-  assert(fallback == math.floor(fallback))
+    assert(type(fallback) == 'number')
+    assert(fallback >= 0)
+    assert(fallback == math.floor(fallback))
 
-  local parsed = tonumber(value)
+    local parsed = tonumber(value)
 
-  if parsed == nil then
-    return fallback
-  end
+    if parsed == nil then
+        return fallback
+    end
 
-  if parsed ~= parsed then
-    return fallback
-  end
-  if parsed == math.huge or parsed == -math.huge then
-    return fallback
-  end
+    if parsed ~= parsed then
+        return fallback
+    end
+    if parsed == math.huge or parsed == -math.huge then
+        return fallback
+    end
 
-  local floored = math.floor(parsed)
+    local floored = math.floor(parsed)
 
-  ---@cast floored integer
+    ---@cast floored integer
 
-  return floored
+    return floored
 end
 
 ---@param level string?
 ---@return integer
 local function severity(level)
-  if level == nil or level == '' then
-    return WARN
-  end
+    if level == nil or level == '' then
+        return WARN
+    end
 
-  return severities[level:lower()] or WARN
+    return severities[level:lower()] or WARN
 end
 
 ---@param path string
 ---@return boolean
 local function is_absolute_path(path)
-  assert(type(path) == 'string')
+    assert(type(path) == 'string')
 
-  if path == '' then
+    if path == '' then
+        return false
+    end
+
+    if path:sub(1, 1) == PATH_SEPARATOR then
+        return true
+    end
+
+    if path:match('^%a:[/\\]') then
+        return true
+    end
+
+    if path:match('^[/\\][/\\]') then
+        return true
+    end
+
     return false
-  end
-
-  if path:sub(1, 1) == PATH_SEPARATOR then
-    return true
-  end
-
-  if path:match('^%a:[/\\]') then
-    return true
-  end
-
-  if path:match('^[/\\][/\\]') then
-    return true
-  end
-
-  return false
 end
 
 ---@param path string
 ---@return string
 local function normalize_path(path)
-  assert(type(path) == 'string' and path ~= '')
+    assert(type(path) == 'string' and path ~= '')
 
-  return fs.normalize(path)
+    return fs.normalize(path)
 end
 
 ---@param path string
@@ -118,49 +118,49 @@ end
 ---@param root string
 ---@return boolean
 local function belongs_to_buffer(path, filename, root)
-  assert(type(path) == 'string' and path ~= '')
-  assert(type(filename) == 'string' and filename ~= '')
-  assert(type(root) == 'string' and root ~= '')
+    assert(type(path) == 'string' and path ~= '')
+    assert(type(filename) == 'string' and filename ~= '')
+    assert(type(root) == 'string' and root ~= '')
 
-  if path == '<stdin>' or path == '-' then
-    return true
-  end
+    if path == '<stdin>' or path == '-' then
+        return true
+    end
 
-  local candidate
+    local candidate
 
-  if is_absolute_path(path) then
-    candidate = normalize_path(path)
-  else
-    candidate = normalize_path(fs.joinpath(root, path))
-  end
+    if is_absolute_path(path) then
+        candidate = normalize_path(path)
+    else
+        candidate = normalize_path(fs.joinpath(root, path))
+    end
 
-  return candidate == filename
+    return candidate == filename
 end
 
 ---@param line string
 ---@return PanacheViolation?
 local function parse_line(line)
-  assert(type(line) == 'string')
+    assert(type(line) == 'string')
 
-  if line == '' then
-    return nil
-  end
+    if line == '' then
+        return nil
+    end
 
-  local file, line_number, column_number, level, code, message =
-    line:match('^(.+):(%d+):(%d+):%s+([%a]+)%[([^%]]+)%]:%s+(.+)$')
+    local file, line_number, column_number, level, code, message =
+        line:match('^(.+):(%d+):(%d+):%s+([%a]+)%[([^%]]+)%]:%s+(.+)$')
 
-  if file == nil or line_number == nil or column_number == nil or level == nil or code == nil or message == nil then
-    return nil
-  end
+    if file == nil or line_number == nil or column_number == nil or level == nil or code == nil or message == nil then
+        return nil
+    end
 
-  return {
-    code = code,
-    column = integer(column_number, 1),
-    file = file,
-    line = integer(line_number, 1),
-    message = message,
-    severity = level,
-  }
+    return {
+        code = code,
+        column = integer(column_number, 1),
+        file = file,
+        line = integer(line_number, 1),
+        message = message,
+        severity = level,
+    }
 end
 
 ---@param violation PanacheViolation
@@ -169,35 +169,35 @@ end
 ---@param root string
 ---@return vim.Diagnostic?
 local function diagnostic_from_violation(violation, bufnr, filename, root)
-  assert(type(violation) == 'table')
-  assert(type(bufnr) == 'number' and bufnr >= 0)
-  assert(type(filename) == 'string' and filename ~= '')
-  assert(type(root) == 'string' and root ~= '')
+    assert(type(violation) == 'table')
+    assert(type(bufnr) == 'number' and bufnr >= 0)
+    assert(type(filename) == 'string' and filename ~= '')
+    assert(type(root) == 'string' and root ~= '')
 
-  if not belongs_to_buffer(violation.file, filename, root) then
-    return nil
-  end
+    if not belongs_to_buffer(violation.file, filename, root) then
+        return nil
+    end
 
-  local start_line = math.max(integer(violation.line, 1) - 1, 0)
-  local start_column = math.max(integer(violation.column, 1) - 1, 0)
+    local start_line = math.max(integer(violation.line, 1) - 1, 0)
+    local start_column = math.max(integer(violation.column, 1) - 1, 0)
 
-  ---@type vim.Diagnostic
-  local entry = {
-    bufnr = bufnr,
-    code = violation.code,
-    col = start_column,
-    end_col = start_column + 1,
-    end_lnum = start_line,
-    lnum = start_line,
-    message = violation.message,
-    severity = severity(violation.severity),
-    source = 'panache',
-    user_data = {
-      tool = 'panache',
-    },
-  }
+    ---@type vim.Diagnostic
+    local entry = {
+        bufnr = bufnr,
+        code = violation.code,
+        col = start_column,
+        end_col = start_column + 1,
+        end_lnum = start_line,
+        lnum = start_line,
+        message = violation.message,
+        severity = severity(violation.severity),
+        source = 'panache',
+        user_data = {
+            tool = 'panache',
+        },
+    }
 
-  return entry
+    return entry
 end
 
 ---@param context LintContext|integer
@@ -205,106 +205,106 @@ end
 ---@return string filename
 ---@return string root
 local function context_fields(context)
-  if type(context) ~= 'table' then
-    error('panache parser requires a LintContext, not an integer context')
-  end
-  local bufnr = context.bufnr
-  local filename = context.filename
-  local root = context.root
+    if type(context) ~= 'table' then
+        error('panache parser requires a LintContext, not an integer context')
+    end
+    local bufnr = context.bufnr
+    local filename = context.filename
+    local root = context.root
 
-  assert(type(bufnr) == 'number' and bufnr >= 0)
-  assert(type(filename) == 'string' and filename ~= '')
-  assert(type(root) == 'string' and root ~= '')
+    assert(type(bufnr) == 'number' and bufnr >= 0)
+    assert(type(filename) == 'string' and filename ~= '')
+    assert(type(root) == 'string' and root ~= '')
 
-  local integer_bufnr = math.floor(bufnr)
+    local integer_bufnr = math.floor(bufnr)
 
-  assert(integer_bufnr == bufnr)
+    assert(integer_bufnr == bufnr)
 
-  ---@cast integer_bufnr integer
+    ---@cast integer_bufnr integer
 
-  return integer_bufnr, filename, root
+    return integer_bufnr, filename, root
 end
 
 ---@param output string
 ---@param context LintContext|integer
 ---@return vim.Diagnostic[]
 local function parse(output, context)
-  assert(type(output) == 'string')
+    assert(type(output) == 'string')
 
-  if output == '' then
-    return {}
-  end
-
-  assert(#output <= OUTPUT_LENGTH_MAX, 'panache output exceeded maximum size')
-
-  local bufnr, context_filename, context_root = context_fields(context)
-  local filename = normalize_path(context_filename)
-  local root = normalize_path(context_root)
-
-  ---@type vim.Diagnostic[]
-  local diagnostics = {}
-
-  for line in output:gmatch('[^\r\n]+') do
-    if #diagnostics >= DIAGNOSTICS_MAX then
-      break
+    if output == '' then
+        return {}
     end
 
-    local violation = parse_line(line)
+    assert(#output <= OUTPUT_LENGTH_MAX, 'panache output exceeded maximum size')
 
-    if violation ~= nil then
-      local entry = diagnostic_from_violation(violation, bufnr, filename, root)
+    local bufnr, context_filename, context_root = context_fields(context)
+    local filename = normalize_path(context_filename)
+    local root = normalize_path(context_root)
 
-      if entry ~= nil then
-        diagnostics[#diagnostics + 1] = entry
-      end
+    ---@type vim.Diagnostic[]
+    local diagnostics = {}
+
+    for line in output:gmatch('[^\r\n]+') do
+        if #diagnostics >= DIAGNOSTICS_MAX then
+            break
+        end
+
+        local violation = parse_line(line)
+
+        if violation ~= nil then
+            local entry = diagnostic_from_violation(violation, bufnr, filename, root)
+
+            if entry ~= nil then
+                diagnostics[#diagnostics + 1] = entry
+            end
+        end
     end
-  end
 
-  assert(#diagnostics <= DIAGNOSTICS_MAX)
+    assert(#diagnostics <= DIAGNOSTICS_MAX)
 
-  return diagnostics
+    return diagnostics
 end
 
 return ---@type Linter
 {
-  append_fname = false,
-  automatic = false,
+    append_fname = false,
+    automatic = false,
 
-  args = function(context)
-    assert(type(context.filename) == 'string' and context.filename ~= '')
+    args = function(context)
+        assert(type(context.filename) == 'string' and context.filename ~= '')
 
-    return {
-      '--no-cache',
-      '--no-color',
-      'lint',
-      '--message-format',
-      'short',
-      context.filename,
-    }
-  end,
+        return {
+            '--no-cache',
+            '--no-color',
+            'lint',
+            '--message-format',
+            'short',
+            context.filename,
+        }
+    end,
 
-  cmd = 'panache',
+    cmd = 'panache',
 
-  cwd = function(context)
-    assert(type(context.root) == 'string' and context.root ~= '')
+    cwd = function(context)
+        assert(type(context.root) == 'string' and context.root ~= '')
 
-    return context.root
-  end,
+        return context.root
+    end,
 
-  ignore_exitcode = true,
-  parser = parse,
+    ignore_exitcode = true,
+    parser = parse,
 
-  root_markers = {
-    '.panache.toml',
-    'panache.toml',
-    '.config/panache.toml',
-    '_quarto.yml',
-    '.quarto.yml',
-    'quarto.yml',
-    '.git',
-  },
+    root_markers = {
+        '.panache.toml',
+        'panache.toml',
+        '.config/panache.toml',
+        '_quarto.yml',
+        '.quarto.yml',
+        'quarto.yml',
+        '.git',
+    },
 
-  stdin = false,
-  stream = 'stdout',
-  timeout = 30000,
+    stdin = false,
+    stream = 'stdout',
+    timeout = 30000,
 }

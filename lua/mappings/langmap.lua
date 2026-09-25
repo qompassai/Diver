@@ -697,11 +697,7 @@ local function finish(job, result)
     end
     jobs[bufnr] = nil
     close_timer(job)
-    local summary = ('%s: exit %d, signal %d'):format(
-        job.invocation.label,
-        result.code,
-        result.signal
-    )
+    local summary = ('%s: exit %d, signal %d'):format(job.invocation.label, result.code, result.signal)
     local output = table.concat(job.chunks):gsub('%z', '?')
     last_output = { summary, 'cwd: ' .. job.invocation.cwd, '' }
     local lines = vim.split(output, '\n', { plain = true })
@@ -785,9 +781,7 @@ local function resolve_executable(executable, cwd)
         local resolved = fn.exepath(executable)
         return resolved ~= '' and fn.fnamemodify(resolved, ':p') or ''
     end
-    local absolute = executable:sub(1, 1) == '/'
-        or executable:sub(1, 1) == '\\'
-        or executable:match('^%a:[/\\]') ~= nil
+    local absolute = executable:sub(1, 1) == '/' or executable:sub(1, 1) == '\\' or executable:match('^%a:[/\\]') ~= nil
     if not absolute then
         executable = vim.fs.joinpath(cwd, executable)
     end
@@ -1060,8 +1054,7 @@ function M.attach(bufnr)
     local definitions = {}
     for _, key in ipairs(keys) do
         local mapping = mappings[key]
-        definitions[#definitions + 1] =
-            { lhs = prefix .. key, rhs = mapping.callback, desc = mapping.label }
+        definitions[#definitions + 1] = { lhs = prefix .. key, rhs = mapping.callback, desc = mapping.label }
     end
     core.install('langmap', bufnr, definitions)
 end
@@ -1076,10 +1069,7 @@ end
 ---@param profile LanguageProfile
 local function validate_profile(profile)
     assert(type(profile) == 'table', 'profile must be a table')
-    assert(
-        type(profile.markers) == 'table' and vim.islist(profile.markers),
-        'profile.markers must be a list'
-    )
+    assert(type(profile.markers) == 'table' and vim.islist(profile.markers), 'profile.markers must be a list')
     assert(#profile.markers <= 32, 'too many project markers')
     assert(type(profile.tasks) == 'table', 'profile.tasks must be a table')
     for _, marker in ipairs(profile.markers) do
@@ -1088,10 +1078,7 @@ local function validate_profile(profile)
     for key, selected in pairs(profile.tasks) do
         assert(key == 'b' or key == 'c' or key == 'r' or key == 't', 'invalid task key')
         assert(type(selected.label) == 'string' and selected.label ~= '', 'missing task label')
-        assert(
-            type(selected.argv) == 'table' and vim.islist(selected.argv),
-            'task.argv must be a list'
-        )
+        assert(type(selected.argv) == 'table' and vim.islist(selected.argv), 'task.argv must be a list')
         assert(#selected.argv > 0 and #selected.argv <= ARGV_MAX, 'invalid argv size')
         for _, argument in ipairs(selected.argv) do
             assert(type(argument) == 'string', 'argv entries must be strings')

@@ -44,62 +44,68 @@ local CODE = 'syntax'
 ---@param fallback integer
 ---@return integer
 local function integer(value, fallback)
-  assert(fallback >= 0)
+    assert(fallback >= 0)
 
-  local parsed = tonumber(value)
+    local parsed = tonumber(value)
 
-  if parsed == nil then
-    return fallback
-  end
+    if parsed == nil then
+        return fallback
+    end
 
-  return floor(parsed)
+    return floor(parsed)
 end
 
 ---@param value string
 ---@return string
 local function trim(value)
-  assert(type(value) == 'string')
+    assert(type(value) == 'string')
 
-  return (value:gsub('^%s*(.-)%s*$', '%1'))
+    return (value:gsub('^%s*(.-)%s*$', '%1'))
 end
 
 ---@param value string
 ---@return string
 local function normalize_message(value)
-  assert(type(value) == 'string')
+    assert(type(value) == 'string')
 
-  value = value:gsub('\r\n', '\n')
-  value = value:gsub('\r', '\n')
+    value = value:gsub('\r\n', '\n')
+    value = value:gsub('\r', '\n')
 
-  value = trim(value)
+    value = trim(value)
 
-  if #value > MESSAGE_LENGTH_MAX then
-    value = value:sub(1, MESSAGE_LENGTH_MAX) .. '\n[message truncated]'
-  end
+    if #value > MESSAGE_LENGTH_MAX then
+        value = value:sub(1, MESSAGE_LENGTH_MAX) .. '\n[message truncated]'
+    end
 
-  return value
+    return value
 end
 
 ---@param path string
----@param root string
----@return string
+---@return boolean
+local function is_absolute(path)
+    assert(type(path) == 'string')
+    assert(path ~= '')
+
+    return vim.fn.isabsolutepath(path) == 1
+end
+
 local function normalize_path(path, root)
-  assert(path ~= '')
-  assert(root ~= '')
+    assert(path ~= '')
+    assert(root ~= '')
 
-  if path:sub(1, 7) == 'file://' then
-    local ok, filename = pcall(vim.uri_to_fname, path)
+    if path:sub(1, 7) == 'file://' then
+        local ok, filename = pcall(vim.uri_to_fname, path)
 
-    if ok and type(filename) == 'string' and filename ~= '' then
-      return fs.normalize(filename)
+        if ok and type(filename) == 'string' and filename ~= '' then
+            return fs.normalize(filename)
+        end
     end
-  end
 
-  if fs.is_absolute(path) then
-    return fs.normalize(path)
-  end
+    if is_absolute(path) then
+        return fs.normalize(path)
+    end
 
-  return fs.normalize(fs.joinpath(root, path))
+    return fs.normalize(fs.joinpath(root, path))
 end
 
 ---@param candidate string
@@ -107,218 +113,218 @@ end
 ---@param root string
 ---@return boolean
 local function belongs_to_buffer(candidate, filename, root)
-  assert(candidate ~= '')
-  assert(filename ~= '')
-  assert(root ~= '')
+    assert(candidate ~= '')
+    assert(filename ~= '')
+    assert(root ~= '')
 
-  return normalize_path(candidate, root) == filename
+    return normalize_path(candidate, root) == filename
 end
 
 ---@param line string
 ---@return BashParsedDiagnostic?
 local function parse_line(line)
-  assert(type(line) == 'string')
+    assert(type(line) == 'string')
 
-  if line == '' or #line > LINE_LENGTH_MAX then
-    return nil
-  end
+    if line == '' or #line > LINE_LENGTH_MAX then
+        return nil
+    end
 
-  --
-  -- Typical Bash parser output:
-  --
-  --   file.sh: line 12: syntax error near unexpected token `fi'
-  --   file.sh: line 12: `fi'
-  --
-  -- We intentionally accept only the diagnostic-bearing first form.
-  --
-  local filename, line_number, message = line:match('^(.+):%s+line%s+(%d+):%s+(.+)$')
+    --
+    -- Typical Bash parser output:
+    --
+    --   file.sh: line 12: syntax error near unexpected token `fi'
+    --   file.sh: line 12: `fi'
+    --
+    -- We intentionally accept only the diagnostic-bearing first form.
+    --
+    local filename, line_number, message = line:match('^(.+):%s+line%s+(%d+):%s+(.+)$')
 
-  if filename == nil or line_number == nil or message == nil then
-    return nil
-  end
+    if filename == nil or line_number == nil or message == nil then
+        return nil
+    end
 
-  local parsed_line = integer(line_number, 0)
+    local parsed_line = integer(line_number, 0)
 
-  if parsed_line < 1 then
-    return nil
-  end
+    if parsed_line < 1 then
+        return nil
+    end
 
-  message = normalize_message(message)
+    message = normalize_message(message)
 
-  if message == '' then
-    return nil
-  end
+    if message == '' then
+        return nil
+    end
 
-  local lower = message:lower()
+    local lower = message:lower()
 
-  local is_diagnostic = lower:find('syntax error', 1, true) ~= nil
-    or lower:find('unexpected eof', 1, true) ~= nil
-    or lower:find('unexpected end of file', 1, true) ~= nil
-    or lower:find('unterminated', 1, true) ~= nil
+    local is_diagnostic = lower:find('syntax error', 1, true) ~= nil
+        or lower:find('unexpected eof', 1, true) ~= nil
+        or lower:find('unexpected end of file', 1, true) ~= nil
+        or lower:find('unterminated', 1, true) ~= nil
 
-  if not is_diagnostic then
-    return nil
-  end
+    if not is_diagnostic then
+        return nil
+    end
 
-  return {
-    filename = filename,
-    line = parsed_line,
-    message = message,
-  }
+    return {
+        filename = filename,
+        line = parsed_line,
+        message = message,
+    }
 end
 
 ---@param entry BashParsedDiagnostic
 ---@param filename string
 ---@param root string
----@return vim.Diagnostic?
+---@return vim.Diagnostic.Set?
 local function diagnostic_from_entry(entry, filename, root)
-  if not belongs_to_buffer(entry.filename, filename, root) then
-    return nil
-  end
-
-  --
-  -- Bash lines are one-based.
-  -- vim.Diagnostic lines are zero-based.
-  --
-  local lnum = max(entry.line - 1, 0)
-
-  return {
-    lnum = lnum,
-    end_lnum = lnum,
+    if not belongs_to_buffer(entry.filename, filename, root) then
+        return nil
+    end
 
     --
-    -- Bash's parser error stream normally reports a line but not a reliable
-    -- source column. Do not invent semantic precision that Bash didn't give
-    -- us.
+    -- Bash lines are one-based.
+    -- vim.Diagnostic lines are zero-based.
     --
-    col = 0,
-    end_col = 1,
+    local lnum = max(entry.line - 1, 0)
 
-    message = entry.message,
+    return {
+        lnum = lnum,
+        end_lnum = lnum,
 
-    severity = ERROR,
+        --
+        -- Bash's parser error stream normally reports a line but not a reliable
+        -- source column. Do not invent semantic precision that Bash didn't give
+        -- us.
+        --
+        col = 0,
+        end_col = 1,
 
-    source = SOURCE,
-    code = CODE,
-  }
+        message = entry.message,
+
+        severity = ERROR,
+
+        source = SOURCE,
+        code = CODE,
+    }
 end
 
 ---@param output string
 ---@param context LintContext|integer
 ---@return vim.Diagnostic.Set[]
 local function parse(output, context)
-  if output == '' then
-    return {}
-  end
-
-  assert(type(context) == 'table', 'bash parser requires a LintContext')
-
-  ---@cast context LintContext
-
-  assert(context.filename ~= '')
-  assert(context.root ~= '')
-
-  assert(#output <= OUTPUT_LENGTH_MAX, 'bash output exceeded maximum size')
-
-  local filename = fs.normalize(context.filename)
-
-  local root = fs.normalize(context.root)
-
-  ---@type vim.Diagnostic.Set[]
-  local diagnostics = {}
-
-  for line in output:gmatch('[^\r\n]+') do
-    if #diagnostics >= DIAGNOSTICS_MAX then
-      break
+    if output == '' then
+        return {}
     end
 
-    local raw = parse_line(line)
+    assert(type(context) == 'table', 'bash parser requires a LintContext')
 
-    if raw ~= nil then
-      local entry = diagnostic_from_entry(raw, filename, root)
+    ---@cast context LintContext
 
-      if entry ~= nil then
-        diagnostics[#diagnostics + 1] = entry
-      end
+    assert(context.filename ~= '')
+    assert(context.root ~= '')
+
+    assert(#output <= OUTPUT_LENGTH_MAX, 'bash output exceeded maximum size')
+
+    local filename = fs.normalize(context.filename)
+
+    local root = fs.normalize(context.root)
+
+    ---@type vim.Diagnostic.Set[]
+    local diagnostics = {}
+
+    for line in output:gmatch('[^\r\n]+') do
+        if #diagnostics >= DIAGNOSTICS_MAX then
+            break
+        end
+
+        local raw = parse_line(line)
+
+        if raw ~= nil then
+            local entry = diagnostic_from_entry(raw, filename, root)
+
+            if entry ~= nil then
+                diagnostics[#diagnostics + 1] = entry
+            end
+        end
     end
-  end
 
-  assert(#diagnostics <= DIAGNOSTICS_MAX)
+    assert(#diagnostics <= DIAGNOSTICS_MAX)
 
-  return diagnostics
+    return diagnostics
 end
 
 ---@param context LintContext
 ---@return string[]
 local function args(context)
-  assert(context.filename ~= '')
-  assert(context.root ~= '')
+    assert(context.filename ~= '')
+    assert(context.root ~= '')
 
-  return {
-    --
-    -- noexec:
-    --
-    -- Read and parse the complete script but execute no commands.
-    --
-    '-n',
+    return {
+        --
+        -- noexec:
+        --
+        -- Read and parse the complete script but execute no commands.
+        --
+        '-n',
 
-    --
-    -- Prevent environment-specific startup behavior from influencing the
-    -- syntax-check process.
-    --
-    '--noprofile',
-    '--norc',
+        --
+        -- Prevent environment-specific startup behavior from influencing the
+        -- syntax-check process.
+        --
+        '--noprofile',
+        '--norc',
 
-    context.filename,
-  }
+        context.filename,
+    }
 end
 
 ---@param context LintContext
 ---@return string
 local function cwd(context)
-  assert(context.root ~= '')
+    assert(context.root ~= '')
 
-  return fs.normalize(context.root)
+    return fs.normalize(context.root)
 end
 
 return ---@type Linter
 {
-  automatic = true,
+    automatic = true,
 
-  cmd = 'bash',
+    cmd = 'bash',
 
-  args = args,
+    args = args,
 
-  append_fname = false,
+    append_fname = false,
 
-  cwd = cwd,
+    cwd = cwd,
 
-  --
-  -- A Bash parser error results in a nonzero process exit. That is normal
-  -- diagnostic-producing behavior for this adapter.
-  --
-  ignore_exitcode = true,
+    --
+    -- A Bash parser error results in a nonzero process exit. That is normal
+    -- diagnostic-producing behavior for this adapter.
+    --
+    ignore_exitcode = true,
 
-  parser = parse,
+    parser = parse,
 
-  root_markers = {
-    '.bashrc',
-    '.bash_profile',
-    '.bash_logout',
+    root_markers = {
+        '.bashrc',
+        '.bash_profile',
+        '.bash_logout',
 
-    'Bashfile',
+        'Bashfile',
 
-    'Makefile',
+        'Makefile',
 
-    '.git',
-  },
+        '.git',
+    },
 
-  stdin = false,
+    stdin = false,
 
-  --
-  -- Bash parser diagnostics are written to stderr.
-  --
-  stream = 'stderr',
+    --
+    -- Bash parser diagnostics are written to stderr.
+    --
+    stream = 'stderr',
 
-  timeout = 15000,
+    timeout = 15000,
 }

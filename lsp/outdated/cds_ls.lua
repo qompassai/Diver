@@ -3,7 +3,7 @@
 -- Copyright (C) 2025 Qompass AI, All rights reserved
 -- ----------------------------------------
 -- pnpm i -g @sap/cds-lsp
-vim.lsp.config = {
+vim.lsp.config('cds', {
     cmd = {
         'cds-lsp',
         '--stdio',
@@ -22,4 +22,4 @@ vim.lsp.config = {
             validate = true,
         },
     },
-}
+})

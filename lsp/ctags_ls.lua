@@ -7,12 +7,12 @@
 
 ---@type vim.lsp.Config
 return {
-  cmd = {
-    'ctags-lsp',
-  },
-  root_markers = {
-    'tags',
-    '.tags',
-    '.git',
-  },
+    cmd = {
+        'ctags-lsp',
+    },
+    root_markers = {
+        'tags',
+        '.tags',
+        '.git',
+    },
 }

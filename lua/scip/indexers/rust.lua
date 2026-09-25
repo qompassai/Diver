@@ -25,27 +25,27 @@
 ---native SCIP framework.
 ---@type string[]
 local args = {
-  'scip',
-  '.',
+    'scip',
+    '.',
 }
 
 ---@type ScipIndexer
 local indexer = {
-  args = args,
+    args = args,
 
-  command = 'rust-analyzer',
+    command = 'rust-analyzer',
 
-  filetypes = {
-    rust = true,
-  },
+    filetypes = {
+        rust = true,
+    },
 
-  markers = {
-    '.git',
-    'Cargo.lock',
-    'Cargo.toml',
-    'rust-toolchain',
-    'rust-toolchain.toml',
-  },
+    markers = {
+        '.git',
+        'Cargo.lock',
+        'Cargo.toml',
+        'rust-toolchain',
+        'rust-toolchain.toml',
+    },
 }
 
 return indexer

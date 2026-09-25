@@ -6,6 +6,7 @@ local M = {}
 local options = {}
 local generation, process, last = 0, nil, nil
 
+---@param text string
 local function notify(text)
     vim.notify(text, vim.log.levels.WARN, { title = 'SearXNG' })
 end
@@ -22,6 +23,11 @@ local function clean(text)
     return (tostring(text or ''):sub(1, 2048):gsub('[%c]', ' '))
 end
 
+---Parse a SearXNG JSON response into picker results.
+---
+---Plain-language version: takes the raw text the search server sent back and
+---turns each result into an entry the picker can show.
+---@param body string Raw HTTP response body from the SearXNG instance.
 ---@return table[]?, string?
 function M.parse(body)
     if type(body) ~= 'string' or #body > 2 * 1024 * 1024 then
@@ -29,8 +35,7 @@ function M.parse(body)
     end
     local ok, value = pcall(vim.json.decode, body)
     if not ok or type(value) ~= 'table' or type(value.results) ~= 'table' then
-        return nil,
-            'Instance did not return a JSON results array; enable search.formats: [html, json]'
+        return nil, 'Instance did not return a JSON results array; enable search.formats: [html, json]'
     end
     local results = {}
     for index = 1, math.min(#value.results, 200) do
@@ -133,30 +138,24 @@ function M.search(query, page)
         end
         vim.list_extend(argv, { '--url', instance:gsub('/+$', '') .. '/search' })
         local err
-        process, err = async.spawn(
-            argv,
-            { timeout = 22000, max_output_bytes = 2 * 1024 * 1024 },
-            function(result)
-                if token ~= generation then
-                    return
-                end
-                process = nil
-                if result.code ~= 0 or result.error then
-                    notify(
-                        result.error
-                            or clean(result.stderr) .. ' (JSON may be disabled on the instance)'
-                    )
-                    return
-                end
-                local results, parse_error = M.parse(result.stdout)
-                if not results then
-                    notify(parse_error)
-                    return
-                end
-                last = { query = value, page = page, results = results }
-                M.results()
+        process, err = async.spawn(argv, { timeout = 22000, max_output_bytes = 2 * 1024 * 1024 }, function(result)
+            if token ~= generation then
+                return
             end
-        )
+            process = nil
+            if result.code ~= 0 or result.error then
+                notify(result.error or clean(result.stderr) .. ' (JSON may be disabled on the instance)')
+                return
+            end
+            local results, parse_error = M.parse(result.stdout)
+            if not results then
+                assert(parse_error ~= nil, 'M.parse returned no results and no error')
+                notify(parse_error)
+                return
+            end
+            last = { query = value, page = page, results = results }
+            M.results()
+        end)
         if err then
             notify(err)
         end

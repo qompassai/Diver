@@ -1,3 +1,9 @@
+--- checkbashisms linter adapter — shell-script portability checker wiring.
+---
+--- Plain-language version: a linter is like a spell-checker, but for code instead of words. This file teaches
+--- Neovim how to run the `checkbashisms` program and turn its complaints into squiggles under your code. It only
+--- runs when linting is triggered (usually on save), and only if `checkbashisms` is installed on your computer.
+---@module 'linters.checkbashisms'
 -- #################################################################
 -- /qompassai/Diver/lua/linters/checkbashisms.lua
 -- Qompass AI Diver Native Checkbashisms Linter
@@ -132,7 +138,7 @@ local function parse(output, context)
             break
         end
 
-        local _filename, line_text, column_text, message = line:match(OUTPUT_LINE_PATTERN)
+        local _, line_text, column_text, message = line:match(OUTPUT_LINE_PATTERN)
 
         if line_text ~= nil and column_text ~= nil and message ~= nil then
             local lnum = parse_positive_integer(line_text)

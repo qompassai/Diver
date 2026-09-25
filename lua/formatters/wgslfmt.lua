@@ -1,3 +1,9 @@
+--- WGSL formatter adapter — keeps GPU shader code tidy.
+---
+--- Plain-language version: WGSL is the language used to write GPU shaders for the web. This file teaches Neovim how
+--- to run the WGSL formatter on save so your shader code stays neatly lined up. It runs on WGSL files when
+--- formatting is triggered; the formatter must be installed.
+---@module 'formatters.wgslfmt'
 -- #################################################################
 -- ~/.config/nvim/lua/formatters/wgslfmt.lua
 -- Native wasm-fmt WGSL Formatter — Neovim 0.13+ / LuaJIT
@@ -7,16 +13,16 @@
 -- @wasm-fmt/wgslfmt is a JS/WASM library, not a command named wgslfmt.
 local fs = vim.fs
 local CONFIG = {
-  trailing_commas = 'ignore', -- 'ignore' | 'insert' | 'remove'
-  indent_symbol = '    ', -- Four spaces; use '\t' or '  ' if desired.
+    trailing_commas = 'ignore', -- 'ignore' | 'insert' | 'remove'
+    indent_symbol = '    ', -- Four spaces; use '\t' or '  ' if desired.
 }
 local TOOLING = {
-  node = 'node',
-  package_version = '0.1.0',
-  directory = fs.joinpath(vim.fn.stdpath('data'), 'formatters', 'wgslfmt'),
-  max_input_bytes = 2 * 1024 * 1024,
-  max_output_bytes = 4 * 1024 * 1024,
-  js_heap_mib = 256, -- JS old-space setting, not a total process/WASM memory cap.
+    node = 'node',
+    package_version = '0.1.0',
+    directory = fs.joinpath(vim.fn.stdpath('data'), 'formatters', 'wgslfmt'),
+    max_input_bytes = 2 * 1024 * 1024,
+    max_output_bytes = 4 * 1024 * 1024,
+    js_heap_mib = 256, -- JS old-space setting, not a total process/WASM memory cap.
 }
 
 -- Static script with configuration supplied as argv, never interpolated as code.
@@ -29,7 +35,9 @@ import { pathToFileURL } from 'node:url';
 // Conservative lexical invariant, not syntax or semantic validation.
 function tokens(source, commaPolicy) {
   const result = [];
-  const token = /(?:0[xX](?:[0-9a-fA-F]+(?:\.[0-9a-fA-F]*)?|\.[0-9a-fA-F]+)(?:[pP][+-]?\d+)?[fhiu]?|(?:\d+\.\d*|\.\d+|\d+)(?:[eE][+-]?\d+)?[fhiu]?|[_\p{XID_Start}][_\p{XID_Continue}]*|>>=|<<=|->|\+\+|--|&&|\|\||==|!=|<=|>=|<<|>>|\+=|-=|\*=|\/=|%=|&=|\|=|\^=|[^\s])/uy;
+  const token = /(?:0[xX](?:[0-9a-fA-F]+(?:\.[0-9a-fA-F]*)?|\.[0-9a-fA-F]+)(?:[pP][+-]?\d+)?[fhiu]?|]==] .. [==[
+(?:\d+\.\d*|\.\d+|\d+)(?:[eE][+-]?\d+)?[fhiu]?|[_\p{XID_Start}][_\p{XID_Continue}]*|]==] .. [==[
+>>=|<<=|->|\+\+|--|&&|\|\||==|!=|<=|>=|<<|>>|\+=|-=|\*=|\/=|%=|&=|\|=|\^=|[^\s])/uy;
   let i = 0;
   while (i < source.length) {
     if (/\s/u.test(source[i])) { i++; continue; }
@@ -121,40 +129,40 @@ try {
 ---@param context FormatterContext
 ---@return string[]
 local function arguments(context)
-  assert(context.filetype == 'wgsl' or context.filetype == 'wgsl_bevy', 'wgslfmt requires a WGSL buffer')
-  local manifest = fs.joinpath(TOOLING.directory, 'node_modules', '@wasm-fmt', 'wgslfmt', 'package.json')
-  assert(vim.fn.filereadable(manifest) == 1, 'Install @wasm-fmt/wgslfmt@0.1.0 in ' .. TOOLING.directory)
-  return {
-    '--max-old-space-size=' .. tostring(TOOLING.js_heap_mib),
-    '--input-type=module',
-    '--eval',
-    WRAPPER,
-    '--',
-    TOOLING.directory,
-    TOOLING.package_version,
-    vim.json.encode(CONFIG),
-    tostring(TOOLING.max_input_bytes),
-    tostring(TOOLING.max_output_bytes),
-  }
+    assert(context.filetype == 'wgsl' or context.filetype == 'wgsl_bevy', 'wgslfmt requires a WGSL buffer')
+    local manifest = fs.joinpath(TOOLING.directory, 'node_modules', '@wasm-fmt', 'wgslfmt', 'package.json')
+    assert(vim.fn.filereadable(manifest) == 1, 'Install @wasm-fmt/wgslfmt@0.1.0 in ' .. TOOLING.directory)
+    return {
+        '--max-old-space-size=' .. tostring(TOOLING.js_heap_mib),
+        '--input-type=module',
+        '--eval',
+        WRAPPER,
+        '--',
+        TOOLING.directory,
+        TOOLING.package_version,
+        vim.json.encode(CONFIG),
+        tostring(TOOLING.max_input_bytes),
+        tostring(TOOLING.max_output_bytes),
+    }
 end
 
 ---@type FormatterSpec
 return {
-  cmd = TOOLING.node,
-  args = arguments,
-  mode = 'stdin',
-  output = 'stdout',
-  root_markers = {
-    'Cargo.toml',
-    'package.json',
-    '.git',
-  },
-  env = {
-    NODE_OPTIONS = '',
-    NODE_PATH = '',
-    NO_COLOR = '1',
-  },
-  exit_codes = { 0 },
-  automatic = true,
-  allow_empty = false,
+    cmd = TOOLING.node,
+    args = arguments,
+    mode = 'stdin',
+    output = 'stdout',
+    root_markers = {
+        'Cargo.toml',
+        'package.json',
+        '.git',
+    },
+    env = {
+        NODE_OPTIONS = '',
+        NODE_PATH = '',
+        NO_COLOR = '1',
+    },
+    exit_codes = { 0 },
+    automatic = true,
+    allow_empty = false,
 }

@@ -26,7 +26,7 @@ M.actions = require('utils.games.aseprite.actions')
 M.commands = require('utils.games.aseprite.commands')
 
 function M.setup()
-  M.commands.setup()
+    M.commands.setup()
 end
 
 M.show_menu = M.actions.show_menu

@@ -13,16 +13,16 @@
 
 ---@type vim.lsp.Config
 return {
-  cmd = {
-    'cqlls',
-  },
-  filetypes = {
-    'cql',
-    'cqlang',
-  },
-  root_markers = {
-    '.cqlls',
-    '.git',
-  },
-  settings = {},
+    cmd = {
+        'cqlls',
+    },
+    filetypes = {
+        'cql',
+        'cqlang',
+    },
+    root_markers = {
+        '.cqlls',
+        '.git',
+    },
+    settings = {},
 }

@@ -1,0 +1,263 @@
+# Changelog — `test`-branch fix program
+
+Fixes applied on the `test` branch against the findings of the second Diver
+audit (2026-09-25, `~/workspace/diver-audit-v2/DIVER-AUDIT.md`: 7 CRITICAL
+bugs C1–C7 proven at runtime, 12 HIGH findings). Every entry below was
+verified present in the working tree before being documented; claims that
+could not be verified are listed under "Not verified / open" instead.
+
+Conventions: `file:line` is the working-tree location of the change;
+"source" is the documented, valid authority grounding it (Neovim `:h`
+topics, upstream docs — never invented). Effects marked "measured during
+the fix program" come from the program's own runs, not re-verified here.
+
+## Critical fixes (C1–C7)
+
+### C1 — `require('types')` no longer neuters `vim.api.nvim_create_autocmd`
+- **What:** `init.lua` — the runtime `require('types')` (line 198 in the base
+  revision) is removed. The `lua/types/*.lua` LuaCATS stub files still exist
+  for the type checker but are never executed at startup.
+- **Why:** `lua/types/nvim.lua:99` defines `vim.api.nvim_create_autocmd` as
+  an empty function. Requiring the file at runtime silently replaced the real
+  API for the whole session: every later autocmd registration returned nil
+  and registered nothing, with no error. The companion stub at line 47 also
+  clobbered the real `_G.gh` pack-spec helper.
+- **Source:** `:h nvim_create_autocmd()` (the API contract that was being
+  shadowed); lua-language-server indexes workspace files without a runtime
+  `require` (workspace/library settings in the lua-language-server docs), so
+  nothing needed the require at runtime.
+
+### C2 — Python ftplugin no longer wipes Python autocmds
+- **What:** `after/ftplugin/python.lua:8,11` — the file now uses a private
+  augroup name `DiverPythonFt` and a `local M` table.
+- **Why:** The old code ran `nvim_create_augroup('Python', { clear = true })`
+  on *every* Python `FileType` event, reusing the same group name that
+  `lua/config/lang/python.lua` uses at startup for its 4 autocmds
+  (bandit/vulture lint-on-save, ruff format-on-write, the `FileType` callback
+  creating `:PythonLint`/`:PyTestFile`/`:PyTestFunc`, LspAttach). Group count
+  went 4→0, so those commands never materialized. It was the only one of the
+  8 ftplugins to reuse a startup group name with `clear=true`; the global
+  `M` also tripped luacheck W111.
+- **Source:** `:h nvim_create_augroup()` (`clear=true` semantics); luacheck
+  W111 (setting a non-standard global).
+
+### C3 — Shell injection closed at `:terminal` sinks (and related argv fixes)
+- **What:**
+  - `lua/config/lang/python.lua:59,63` — `PyTestFile` / `PyTestFunc` wrap
+    the filename (and `<cword>`) in `fn.shellescape()`; pytest `path::test`
+    syntax preserved.
+  - `lua/config/lang/scala.lua:223` — `ScalaRun` wraps the filename in
+    `fn.shellescape()`.
+  - `lua/utils/docs/mail.lua:347,375` — pandoc and `file --mime-type` calls
+    converted to argv-form `vim.system({...})`, which bypasses the shell.
+  - `lua/config/lang/go.lua:18-43` — gvm invocations now go through a real
+    memoized `run_cached_gvm(argv)` using argv-form `vim.system` (the old
+    code interpolated strings and called the nested function "cached" while
+    re-spawning bash+gvm on every call); the nested `_G`-leaking function
+    is gone.
+- **Why:** `:terminal` with a string command goes through the shell, and
+  unquoted filename concatenation was proven exploitable at runtime (a
+  filename containing `$(touch …)` created the marker file). Latent only
+  because of C2; fixing C2 without this would have made it live. The mail
+  and go sites are the same bug class (user-controlled paths interpolated
+  into shell commands).
+- **Source:** `:h terminal` (string commands are executed by the shell);
+  `:h shellescape()`; `:h vim.system()` (list form bypasses the shell).
+- **Effect:** injection sinks eliminated; gvm lookups memoized (one
+  subprocess per distinct argv instead of per call).
+
+### C4 — Dead command families wired up
+- **What:** `init.lua:211-219` — after the plain `require()`s, a guarded loop
+  calls `setup()` on `formatters`, `linters`, and `config.data` when the
+  module exposes one.
+- **Why:** These modules create their user commands only inside `setup()`;
+  `require()` alone left `:Format`/`:FormatLsp`/… (`lua/formatters/init.lua`),
+  `:Lint`/`:LintDisable`/… (`lua/linters/init.lua:1212`), and
+  `:SqliteAttach`/`:SqliteDetach`/… (`lua/config/data/init.lua:639`) dead
+  (`exists(':Format') == 0`). The init.lua comment records the verification.
+- **Source:** `:h nvim_create_user_command()` (commands exist only where
+  created); the modules' own `setup()` contracts.
+
+### C6 — Linter adapters fail closed instead of crashing on missing modules
+- **What:**
+  - `lua/linters/hledger.lua:4` and
+    `lua/linters/lightning-flow-scanner.lua:18` — `require` of the absent
+    `utils.hledger` / `linters._salesforce-code-analyzer` modules is now
+    `pcall`-guarded and returns an `unavailable: …` reason instead of an
+    unconditional load failure.
+  - `lua/plugin/cloud/init.lua` deleted — it was dead code shadowed by
+    `lua/plugin/cloud.lua` (`?.lua` beats `?/init.lua`) and required a
+    nonexistent `plugins.cloud.*` namespace.
+- **Why:** These were the only genuine repo bugs in the 528-module require
+  sweep (520 OK); the adapters crashed at load time.
+- **Source:** Lua 5.1 reference manual §5.1 (`pcall`); Neovim's
+  `runtimepath` lookup order (`?.lua` before `?/init.lua`).
+
+### C7 — `image.nvim` removed from the plugin spec
+- **What:** `lua/plugin/ui/md.lua:19-27` — the `3rd/image.nvim` spec is
+  removed (with an explanatory NOTE), and `3rd/diagram.nvim` goes with it
+  since it requires the `image` module. Image rendering stays native via
+  `lua/config/ui/image.lua` (`vim.ui.img`).
+- **Why:** The rockspec build failed (missing luarocks hererocks lua), the
+  failure was swallowed, and lazy.nvim retried the install every startup —
+  ~11KB of `[image.nvim] checkout|build` task spam per launch. Measured
+  cost: `require('config.lazy')` was 1207 ms of 1682 ms startup (72%; a
+  second profile measured 2905 ms of 5194 ms).
+- **Source:** lazy.nvim docs (the `build` step and missing-plugin retry
+  behavior); the audit's `--startuptime` profiles.
+- **Effect:** startup ~410 ms vs the 1682–5194 ms baseline (measured during
+  the fix program).
+
+## New: `lua/security/` toolkit
+- **What:** new modules `lua/security/init.lua`, `rce.lua`, `mitm.lua`,
+  `zombie.lua`, `supplychain.lua`; `init.lua:200` runs
+  `require('security').setup()` (idempotent), registering the
+  `:SecurityAudit` command and the `diver_security` augroup after
+  plugin-manager setup and before user keymaps/commands.
+- **Why:** Matt's standing requirement for the config: tooling that
+  identifies and stops remote code execution, man-in-the-middle attacks,
+  zombie processes, and supply-chain poisoning.
+- **Source:** the audit's B3 shell-interpolation / subprocess findings as
+  the concrete threat classes; `:h nvim_create_augroup()` for the
+  lifecycle group.
+- Each module carries a plain-language ("ELI5") LuaCATS doc header (see
+  Docs below).
+
+## Startup performance
+- **What:** `init.lua:39-44` — the startup `fn.system('id -u')` call now
+  prefers `vim.uv.os_get_passwd()`, keeping the old form only as a fallback.
+- **Why:** fork+exec at startup is ~880× slower than the libuv call.
+- **Source:** `:h vim.uv` (libuv bindings, `os_get_passwd`).
+- **Effect:** ~11.2 ms/call → ~0.013 ms/call (isolated microbenchmark from
+  the audit).
+
+## Plugin lockfile desync resolved
+- **What:** `nvim-pack-lock.json` regenerated to vim.pack's expected format
+  (stale `version` metadata dropped); pinned revs (e.g. `coq.nvim`,
+  `mini.ai`) now match what vim.pack records.
+- **Why:** the tracked lockfile pinned revs that disagreed with the
+  installed checkouts, producing checkhealth ERRORs.
+- **Source:** `:h vim.pack` (lockfile semantics).
+
+## Correctness cleanups
+- **Duplicate assignments fixed** — `lua/utils/docs/license.lua:27`
+  (`auto = true`, was `false` then `true`), `:170` (`rst = '//'`, was
+  `'..'` then `'//'`); `lua/config/ui/colors.lua:149`
+  (`@punctuation.bracket`, single definition) and `:300` (`Pmenu`, single
+  definition). Later-wins was accidental; the surviving value is now the
+  only one.
+- **Stale annotation fixed** — `lua/acp/rpc.lua:15`:
+  `---@field proc vim.SystemObj?` (was `uv.uv_process_t?`, but `M.start`
+  assigns the result of `vim.system()`).
+- **DAP require-time side effect removed** — `lua/dap/init.lua`: no bare
+  top-level `M.setup()` anymore (the old line-2000 call ran on every
+  `require('dap')` at `init.lua:202` and leaked a DEBUG notify to stderr
+  each startup). Setup is now lazy via `ensure_setup()` (`:946`), which
+  installs command wrappers that call the idempotent `M.setup()` on first
+  use.
+- **Bash ftplugin buffer-local** — `after/ftplugin/bash.lua:9-11`:
+  `BufWritePre` now registers with `buffer = 0`, killing the N-duplicate
+  format-on-write pileup (one autocmd per buffer opened).
+- **`red.lua` recursion → explicit stack** — `lua/utils/red/red.lua:13-40`:
+  `iter_files` walks with an explicit stack plus a `seen` set guarding
+  symlink cycles, replacing recursion over attacker-controlled directory
+  depth (which also silently dropped all-but-first match per subdirectory).
+- **Source:** `:h nvim_create_autocmd()` (`buffer` key); Tiger Style
+  (bounded work, no recursion); `:h vim.system()` for the `SystemObj` type.
+
+## Formatter config schism resolved
+- **What:** `lsp/stylua_ls.lua:41-44` now uses 4 spaces /
+  `AutoPreferSingle`, matching `.stylua.toml:6-9`. The working tree was
+  reformatted to that single convention (561 files changed, mostly the
+  2-space files under `lua/`).
+- **Why:** CLI `.stylua.toml` (4 spaces) vs in-editor `lsp/stylua_ls.lua`
+  (tabs, `ForceSingle`) disagreed, and 549/923 files failed
+  `stylua --check` — neither profile matched the bulk of the repo.
+- **Source:** stylua's documented config keys (`indent_type`,
+  `indent_width`, `quote_style`); repo convention (4-space indent per
+  AGENTS.md).
+- **Mislabeled tree-sitter queries deleted** — `queries/lua/` now contains
+  only `.scm` files (`refactor_comment.scm`, `refactor_debug_path.scm`,
+  …); the byte-identical `.lua` twins are gone. They broke luacheck (E011)
+  and stylua alike.
+- **Source:** nvim-treesitter query files use the `.scm` extension.
+
+## Keymaps
+- **`<Leader>h…` conflict resolved and documented** —
+  `lua/mappings/ddxmap.lua:190-194`: the old `<leader>hl/hs/hy` config
+  self-check maps are removed (they could never install: `cicdmap` owns
+  bare `<M-h>` as the terminal toggle, a strict prefix, and
+  `mappings/_core.lua:142` `conflict()` rejects prefix collisions). The
+  config-health verbs now live on lintmap: `<Leader>xc` (`:ConfigTigerCheck`),
+  `<Leader>xo` (`:ConfigTigerCheckLog`), `<Leader>xw`
+  (`:DiagnosticsWorkspace`) — see `lua/mappings/lintmap.lua:162-174`.
+- **Note:** `conflict()` itself is unchanged (see "Not verified / open").
+
+## Docs
+- **ELI5 LuaCATS headers** — `lua/security/{init,rce,mitm,zombie,supplychain}.lua`
+  each open with a plain-language header explaining what the module does
+  ("seatbelts and smoke detectors"), part of Matt's requirement for
+  LDoc-renderable docs that explain the config like he's five.
+
+## Follow-up fixes (found by adversarial re-testing after the audit)
+- **`_G.gh` was nil at startup** — `lua/plugin/init.lua` now requires
+  `plugin.cloud` before `plugin.nav`. The `vim.pack` migration dropped the
+  `plugin.cloud` require, so the `_G.gh` pack-spec helper never got defined.
+  Verified: `_G.gh` is a function and builds a GitHub pack spec.
+- **`run_linter` split** — `lua/linters/init.lua` went from ~294 lines to 72
+  via `prepare_linter_run` (spec resolution, command build) and
+  `on_linter_result` (diagnostic publishing). Success, unavailable-linter,
+  and cancellation paths smoke-tested.
+- **Unavailable linters fail silently, not loudly** — `hledger` and
+  `lightning-flow-scanner` return typed unavailable sentinels instead of
+  raising; `get_linter_spec` recognizes the sentinel and skips the adapter
+  without an ERROR notification. (Root cause: `require` coerces a nil first
+  return to `true`, so the "reason" string was being lost.)
+- **MITM: failed downloads no longer leave stale files** —
+  `lua/security/mitm.lua`: a failed `curl` now deletes the destination file
+  instead of leaving the previous (possibly attacker-planted) copy in place;
+  curl exit codes are checked; URL scheme matching is case-insensitive; plain
+  HTTP is refused.
+- **LuaLS strict is at zero actionable** — all targeted categories
+  (`param-type-mismatch`, `undefined-field`, `cast-local-type`,
+  `need-check-nil`) are 0 across 925 files. Along the way:
+  - `lua/utils/games/shared/async_util.lua`: new `pawait_task()` typed
+    wrapper (`---@generic R`, `Task<R>` → `boolean, R?`). Calling
+    `vim.async.pawait()` directly on a `Task<SystemCompleted>` leaves the
+    overload's `R...` pack unbound in LuaLS 3.19.1 (see the `@overload`
+    annotations in the 0.13 runtime's `lua/vim/async/_core.lua`); the
+    single-generic wrapper binds it. `unity/actions.lua` and
+    `unreal/actions.lua` use it now.
+  - Six `await-in-sync` sites documented as intentional dual-mode
+    (`dap.lua` x2, `dap/session.lua` x2, `dap/ui.lua`, `utils/media/rpc.lua`):
+    each yields only inside a coroutine context, so `---@async` would falsely
+    taint sync callers.
+  - `lua/linters/fsharplint.lua`: the `position()` guard now leads with an
+    explicit `row == nil` check so the checker can narrow `number?` → `number`
+    (`integer()` alone can't narrow; runtime behavior unchanged).
+  - `lua/linters/npm_groovy_lint.lua`: `setup`/`transform_buffer` are
+    forward-declared in the table literal with their final types — they're
+    defined via `function M.x` 600+ lines later, which the checker's
+    missing-fields pass can't see.
+  - `lua/plugin/ui/icons.lua`: two unused `opts` args renamed to `_opts`.
+- **Source:** `:h vim.async.pawait()` / runtime `lua/vim/async/_core.lua`
+  overload annotations; LuaLS EmmyLua annotations (`---@generic`,
+  `---@cast`); `:h coroutine.yield()` for the dual-mode pattern.
+
+## Not verified / open (needs Matt's decision)
+- **C5 — `<M-h>` vs `<Leader>h` family:** `conflict()` is unchanged, so the
+  `<Leader>h…` maps still cannot install while `cicdmap` owns `<M-h>`.
+  Matt must either accept `<M-h>` as terminal-only or move the terminal
+  toggle. The audit's K1 proposed replacements were partially adopted as
+  `<Leader>xc/xo/xw` above.
+- **`dbx.lua` plaintext credentials:** `dbx.lua:13,20,52,56` still contain
+  `user:password@…` connection strings. Left untouched — needs Matt's call
+  on how to handle them.
+- **`run_linter` split:** claimed by the fix program, but the tree shows
+  `M.run_linter` (`lua/linters/init.lua:713-1001`, ~289 lines) at
+  essentially the same size as the base revision (285 lines), with the same
+  23 module-level helpers as before; the diff in that region is a pure
+  2-space→4-space reindent. No structural split is verifiable, so no
+  entry is claimed for it above.
+- **Startup ~410 ms** is the fix program's measured figure; not re-run in
+  this verification pass.

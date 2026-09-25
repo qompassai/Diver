@@ -29,12 +29,7 @@ end
 function M.toggle(kind)
     assert(kind == 'float' or kind == 'horizontal' or kind == 'vertical')
     local entry = terminals[kind]
-    if
-        entry
-        and entry.win
-        and api.nvim_win_is_valid(entry.win)
-        and api.nvim_win_get_buf(entry.win) == entry.buf
-    then
+    if entry and entry.win and api.nvim_win_is_valid(entry.win) and api.nvim_win_get_buf(entry.win) == entry.buf then
         if #api.nvim_tabpage_list_wins(0) > 1 then
             api.nvim_win_close(entry.win, true)
         else

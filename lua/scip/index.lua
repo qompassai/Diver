@@ -1,3 +1,9 @@
+--- SCIP indexer glue — code intelligence for precise jump-to-definition.
+---
+--- Plain-language version: SCIP is a format for pre-computed code knowledge: exactly where every symbol is defined
+--- and used. This module wires up the indexer so Neovim can offer precise go-to-definition even for huge codebases.
+--- It runs on demand via its command; it needs a SCIP indexer for your language.
+---@module 'scip.index'
 -- #################################################################
 -- /qompassai/lua/scip/index.lua
 -- Qompass AI Index
@@ -59,44 +65,44 @@ local M = {}
 ---@param project_root string Project root containing the generated index.
 ---@return nil
 local function lint_after_index(project_root)
-        local cfg = config.get()
+    local cfg = config.get()
 
-        if not cfg.lint_after_index then
+    if not cfg.lint_after_index then
+        return
+    end
+
+    if not utils.executable('scip') then
+        ui.notify('SCIP index generated, but the scip CLI is unavailable for validation', vim.log.levels.WARN)
+        return
+    end
+
+    local index_file = config.index_path(project_root)
+
+    if not utils.path_exists(index_file) then
+        ui.notify('Indexer exited successfully but did not create ' .. index_file, vim.log.levels.WARN)
+        return
+    end
+
+    vim.system({
+        'scip',
+        'lint',
+        index_file,
+    }, {
+        cwd = project_root,
+        text = true,
+        timeout = cfg.timeout,
+    }, function(result)
+        vim.schedule(function()
+            if result.code == 0 then
+                ui.notify('Index generated and validated: ' .. index_file)
                 return
-        end
+            end
 
-        if not utils.executable('scip') then
-                ui.notify('SCIP index generated, but the scip CLI is unavailable for validation', vim.log.levels.WARN)
-                return
-        end
+            ui.notify('SCIP index validation failed', vim.log.levels.ERROR)
 
-        local index_file = config.index_path(project_root)
-
-        if not utils.path_exists(index_file) then
-                ui.notify('Indexer exited successfully but did not create ' .. index_file, vim.log.levels.WARN)
-                return
-        end
-
-        vim.system({
-                'scip',
-                'lint',
-                index_file,
-        }, {
-                cwd = project_root,
-                text = true,
-                timeout = cfg.timeout,
-        }, function(result)
-                vim.schedule(function()
-                        if result.code == 0 then
-                                ui.notify('Index generated and validated: ' .. index_file)
-                                return
-                        end
-
-                        ui.notify('SCIP index validation failed', vim.log.levels.ERROR)
-
-                        ui.show_failure('SCIP lint', result)
-                end)
+            ui.show_failure('SCIP lint', result)
         end)
+    end)
 end
 
 ---Resolve the indexer that should be used for an indexing request.
@@ -109,11 +115,11 @@ end
 ---@param root_override? string
 ---@return ScipMatch?, string?
 local function resolve_indexer(name, bufnr, root_override)
-        if name ~= nil and name ~= '' then
-                return registry.resolve(name, bufnr, root_override)
-        end
+    if name ~= nil and name ~= '' then
+        return registry.resolve(name, bufnr, root_override)
+    end
 
-        return registry.detect(bufnr)
+    return registry.detect(bufnr)
 end
 
 ---Build the complete command line for a resolved SCIP indexer.
@@ -124,19 +130,19 @@ end
 ---@param match ScipMatch
 ---@return string[]?, string?
 local function build_command(match)
-        local args, resolve_error = utils.resolve_args(match.indexer.args, match.context)
+    local args, resolve_error = utils.resolve_args(match.indexer.args, match.context)
 
-        if args == nil then
-                return nil, resolve_error
-        end
+    if args == nil then
+        return nil, resolve_error
+    end
 
-        local command = {
-                match.command,
-        }
+    local command = {
+        match.command,
+    }
 
-        vim.list_extend(command, args)
+    vim.list_extend(command, args)
 
-        return command, nil
+    return command, nil
 end
 
 ---Generate a SCIP index for the current project.
@@ -151,69 +157,69 @@ end
 ---@param opts? ScipIndexOpts Optional indexing overrides.
 ---@return nil
 function M.run(name, opts)
-        if state.running() then
-                ui.notify('A SCIP indexer is already running; use :ScipCancel first', vim.log.levels.WARN)
+    if state.running() then
+        ui.notify('A SCIP indexer is already running; use :ScipCancel first', vim.log.levels.WARN)
+        return
+    end
+
+    opts = opts or {}
+
+    local bufnr = opts.bufnr or api.nvim_get_current_buf()
+
+    local match, resolve_error = resolve_indexer(name, bufnr, opts.root)
+
+    if match == nil then
+        ui.notify(resolve_error or 'Unable to resolve a SCIP indexer', vim.log.levels.ERROR)
+        return
+    end
+
+    local command, command_error = build_command(match)
+
+    if command == nil then
+        ui.notify(command_error or 'Unable to build SCIP indexer command', vim.log.levels.ERROR)
+        return
+    end
+
+    local started_at = vim.uv.hrtime()
+
+    ui.notify(('Indexing %s with %s'):format(match.context.root, match.command))
+
+    ---@type vim.SystemObj
+    local job
+
+    job = vim.system(command, {
+        cwd = match.context.root,
+        text = true,
+        timeout = config.get().timeout,
+    }, function(result)
+        vim.schedule(function()
+            -- Ignore stale callbacks. This is important if a process
+            -- was cancelled and another indexer started afterward.
+            if state.current.job ~= job then
                 return
-        end
+            end
 
-        opts = opts or {}
+            local elapsed = (vim.uv.hrtime() - state.current.started_at) / 1e9
 
-        local bufnr = opts.bufnr or api.nvim_get_current_buf()
+            state.clear()
 
-        local match, resolve_error = resolve_indexer(name, bufnr, opts.root)
+            if result.code ~= 0 then
+                ui.notify(('%s failed after %.1f seconds'):format(match.command, elapsed), vim.log.levels.ERROR)
 
-        if match == nil then
-                ui.notify(resolve_error or 'Unable to resolve a SCIP indexer', vim.log.levels.ERROR)
+                ui.show_failure('SCIP: ' .. match.name, result)
                 return
-        end
+            end
 
-        local command, command_error = build_command(match)
-
-        if command == nil then
-                ui.notify(command_error or 'Unable to build SCIP indexer command', vim.log.levels.ERROR)
+            if config.get().lint_after_index then
+                lint_after_index(match.context.root)
                 return
-        end
+            end
 
-        local started_at = vim.uv.hrtime()
-
-        ui.notify(('Indexing %s with %s'):format(match.context.root, match.command))
-
-        ---@type vim.SystemObj
-        local job
-
-        job = vim.system(command, {
-                cwd = match.context.root,
-                text = true,
-                timeout = config.get().timeout,
-        }, function(result)
-                vim.schedule(function()
-                        -- Ignore stale callbacks. This is important if a process
-                        -- was cancelled and another indexer started afterward.
-                        if state.current.job ~= job then
-                                return
-                        end
-
-                        local elapsed = (vim.uv.hrtime() - state.current.started_at) / 1e9
-
-                        state.clear()
-
-                        if result.code ~= 0 then
-                                ui.notify(('%s failed after %.1f seconds'):format(match.command, elapsed), vim.log.levels.ERROR)
-
-                                ui.show_failure('SCIP: ' .. match.name, result)
-                                return
-                        end
-
-                        if config.get().lint_after_index then
-                                lint_after_index(match.context.root)
-                                return
-                        end
-
-                        ui.notify(('Index generated in %.1f seconds: %s'):format(elapsed, match.context.index_file))
-                end)
+            ui.notify(('Index generated in %.1f seconds: %s'):format(elapsed, match.context.index_file))
         end)
+    end)
 
-        state.start(job, match.name, match.context.root, started_at)
+    state.start(job, match.name, match.context.root, started_at)
 end
 
 ---Cancel the currently active SCIP indexing process.
@@ -223,17 +229,17 @@ end
 ---
 ---@return nil
 function M.cancel()
-        local job = state.current.job
+    local job = state.current.job
 
-        if job == nil then
-                ui.notify('No SCIP indexer is running')
-                return
-        end
+    if job == nil then
+        ui.notify('No SCIP indexer is running')
+        return
+    end
 
-        job:kill(15)
-        state.clear()
+    job:kill(15)
+    state.clear()
 
-        ui.notify('SCIP indexing cancelled', vim.log.levels.WARN)
+    ui.notify('SCIP indexing cancelled', vim.log.levels.WARN)
 end
 
 ---Show current SCIP indexer or index-file status.
@@ -244,26 +250,26 @@ end
 ---
 ---@return nil
 function M.status()
-        if state.running() then
-                ui.notify(
-                        ('%s has been indexing %s for %.1f seconds'):format(
-                                state.current.indexer or '<unknown>',
-                                state.current.root or '<unknown>',
-                                state.elapsed()
-                        )
-                )
-                return
-        end
+    if state.running() then
+        ui.notify(
+            ('%s has been indexing %s for %.1f seconds'):format(
+                state.current.indexer or '<unknown>',
+                state.current.root or '<unknown>',
+                state.elapsed()
+            )
+        )
+        return
+    end
 
-        local project_root = root.resolve()
-        local index_file = config.index_path(project_root)
+    local project_root = root.resolve()
+    local index_file = config.index_path(project_root)
 
-        if utils.path_exists(index_file) then
-                ui.notify('SCIP index available: ' .. index_file)
-                return
-        end
+    if utils.path_exists(index_file) then
+        ui.notify('SCIP index available: ' .. index_file)
+        return
+    end
 
-        ui.notify('No SCIP index exists at ' .. index_file)
+    ui.notify('No SCIP index exists at ' .. index_file)
 end
 
 ---Execute the main `scip` CLI against the current project's index.
@@ -277,52 +283,52 @@ end
 ---@param filetype? string Scratch-buffer filetype for successful output.
 ---@return nil
 local function run_scip(arguments, title, filetype)
-        if not utils.executable('scip') then
-                ui.notify('The scip CLI is not executable', vim.log.levels.ERROR)
+    if not utils.executable('scip') then
+        ui.notify('The scip CLI is not executable', vim.log.levels.ERROR)
+        return
+    end
+
+    local project_root = root.resolve()
+    local index_file = config.index_path(project_root)
+
+    if not utils.path_exists(index_file) then
+        ui.notify('No SCIP index exists at ' .. index_file, vim.log.levels.ERROR)
+        return
+    end
+
+    local command = {
+        'scip',
+    }
+
+    vim.list_extend(command, arguments)
+
+    vim.system(command, {
+        cwd = project_root,
+        text = true,
+        timeout = config.get().timeout,
+    }, function(result)
+        vim.schedule(function()
+            if result.code ~= 0 then
+                ui.notify(title .. ' failed', vim.log.levels.ERROR)
+
+                ui.show_failure(title, result)
                 return
-        end
+            end
 
-        local project_root = root.resolve()
-        local index_file = config.index_path(project_root)
-
-        if not utils.path_exists(index_file) then
-                ui.notify('No SCIP index exists at ' .. index_file, vim.log.levels.ERROR)
-                return
-        end
-
-        local command = {
-                'scip',
-        }
-
-        vim.list_extend(command, arguments)
-
-        vim.system(command, {
-                cwd = project_root,
-                text = true,
-                timeout = config.get().timeout,
-        }, function(result)
-                vim.schedule(function()
-                        if result.code ~= 0 then
-                                ui.notify(title .. ' failed', vim.log.levels.ERROR)
-
-                                ui.show_failure(title, result)
-                                return
-                        end
-
-                        ui.show_output(title, utils.system_output(result), filetype)
-                end)
+            ui.show_output(title, utils.system_output(result), filetype)
         end)
+    end)
 end
 
 ---Validate the current project's SCIP index.
 ---@return nil
 function M.lint()
-        local project_root = root.resolve()
+    local project_root = root.resolve()
 
-        run_scip({
-                'lint',
-                config.index_path(project_root),
-        }, 'SCIP lint')
+    run_scip({
+        'lint',
+        config.index_path(project_root),
+    }, 'SCIP lint')
 end
 
 ---Print the current SCIP index as JSON.
@@ -332,13 +338,13 @@ end
 ---
 ---@return nil
 function M.print()
-        local project_root = root.resolve()
+    local project_root = root.resolve()
 
-        run_scip({
-                'print',
-                '--json',
-                config.index_path(project_root),
-        }, 'SCIP index', 'json')
+    run_scip({
+        'print',
+        '--json',
+        config.index_path(project_root),
+    }, 'SCIP index', 'json')
 end
 
 ---Generate a human-readable snapshot of the current SCIP index.
@@ -347,29 +353,29 @@ end
 ---
 ---@return nil
 function M.snapshot()
-        local project_root = root.resolve()
-        local index_file = config.index_path(project_root)
-        local destination = vim.fs.joinpath(project_root, 'scip-snapshot')
+    local project_root = root.resolve()
+    local index_file = config.index_path(project_root)
+    local destination = vim.fs.joinpath(project_root, 'scip-snapshot')
 
-        run_scip({
-                'snapshot',
-                '--from',
-                index_file,
-                '--to',
-                destination,
-        }, 'SCIP snapshot')
+    run_scip({
+        'snapshot',
+        '--from',
+        index_file,
+        '--to',
+        destination,
+    }, 'SCIP snapshot')
 end
 
 ---Show statistics for the current SCIP index.
 ---@return nil
 function M.stats()
-        local project_root = root.resolve()
+    local project_root = root.resolve()
 
-        run_scip({
-                'stats',
-                '--from',
-                config.index_path(project_root),
-        }, 'SCIP statistics')
+    run_scip({
+        'stats',
+        '--from',
+        config.index_path(project_root),
+    }, 'SCIP statistics')
 end
 
 return M

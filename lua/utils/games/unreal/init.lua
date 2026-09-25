@@ -22,7 +22,7 @@ M.util = require('utils.games.unreal.util')
 M.actions = require('utils.games.unreal.actions')
 M.commands = require('utils.games.unreal.commands')
 function M.setup()
-  M.commands.setup()
+    M.commands.setup()
 end
 
 M.show_menu = M.actions.show_menu

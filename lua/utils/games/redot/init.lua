@@ -17,22 +17,22 @@
 -- #################################################################
 local factory = require('utils.games.shared.godot_engine')
 return factory.new({
-  name = 'Redot',
-  command_prefix = 'Redot',
-  leader = '<leader>gr',
-  binaries = {
-    'redot4',
-    'redot',
-    'Redot',
-    'Redot_v4',
-  },
-  env_names = {
-    'NVIM_REDOT_BIN',
-    'REDOT_BIN',
-    'REDOT4_BIN',
-  },
-  root_markers = {
-    'project.godot',
-  },
-  output_filetype = 'redot-output',
+    name = 'Redot',
+    command_prefix = 'Redot',
+    leader = '<leader>gr',
+    binaries = {
+        'redot4',
+        'redot',
+        'Redot',
+        'Redot_v4',
+    },
+    env_names = {
+        'NVIM_REDOT_BIN',
+        'REDOT_BIN',
+        'REDOT4_BIN',
+    },
+    root_markers = {
+        'project.godot',
+    },
+    output_filetype = 'redot-output',
 })

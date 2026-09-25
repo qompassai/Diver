@@ -36,33 +36,33 @@ local type = type
 
 ---@type table<string, integer>
 local severities = {
-  error = ERROR,
-  fatal = ERROR,
+    error = ERROR,
+    fatal = ERROR,
 
-  warning = WARN,
-  warn = WARN,
+    warning = WARN,
+    warn = WARN,
 
-  note = INFO,
-  remark = INFO,
-  info = INFO,
+    note = INFO,
+    remark = INFO,
+    info = INFO,
 
-  ignored = HINT,
-  hint = HINT,
+    ignored = HINT,
+    hint = HINT,
 }
 
 ---@type string[]
 local compilation_database_candidates = {
-  'compile_commands.json',
-  'build/compile_commands.json',
-  'Build/compile_commands.json',
-  'build-debug/compile_commands.json',
-  'build-release/compile_commands.json',
-  'cmake-build-debug/compile_commands.json',
-  'cmake-build-release/compile_commands.json',
-  'out/compile_commands.json',
-  'out/build/compile_commands.json',
+    'compile_commands.json',
+    'build/compile_commands.json',
+    'Build/compile_commands.json',
+    'build-debug/compile_commands.json',
+    'build-release/compile_commands.json',
+    'cmake-build-debug/compile_commands.json',
+    'cmake-build-release/compile_commands.json',
+    'out/compile_commands.json',
+    'out/build/compile_commands.json',
 
-  '.build/compile_commands.json',
+    '.build/compile_commands.json',
 }
 
 ---@class ClazyParsedDiagnostic
@@ -77,107 +77,113 @@ local compilation_database_candidates = {
 ---@param fallback integer
 ---@return integer
 local function integer(value, fallback)
-  assert(fallback >= 0)
+    assert(fallback >= 0)
 
-  local parsed = tonumber(value)
+    local parsed = tonumber(value)
 
-  if parsed == nil then
-    return fallback
-  end
+    if parsed == nil then
+        return fallback
+    end
 
-  return floor(parsed)
+    return floor(parsed)
 end
 
 ---@param value string|nil
 ---@return integer
 local function severity(value)
-  if type(value) ~= 'string' then
-    return WARN
-  end
+    if type(value) ~= 'string' then
+        return WARN
+    end
 
-  return severities[value:lower()] or WARN
+    return severities[value:lower()] or WARN
 end
 
 ---@param path string
 ---@return boolean
 local function exists(path)
-  return uv.fs_stat(path) ~= nil
+    return uv.fs_stat(path) ~= nil
 end
 
 ---@param value string
 ---@return string
 local function trim(value)
-  return (value:gsub('^%s*(.-)%s*$', '%1'))
+    return (value:gsub('^%s*(.-)%s*$', '%1'))
 end
 
 ---@param value string
 ---@return string
 local function strip_ansi(value)
-  value = value:gsub('\27%[[%d;?]*[ -/]*[@-~]', '')
+    value = value:gsub('\27%[[%d;?]*[ -/]*[@-~]', '')
 
-  return value
+    return value
 end
 
 ---@param value string
 ---@return string
 local function normalize_message(value)
-  value = strip_ansi(value)
+    value = strip_ansi(value)
 
-  value = value:gsub('\r\n', '\n')
-  value = value:gsub('\r', '\n')
+    value = value:gsub('\r\n', '\n')
+    value = value:gsub('\r', '\n')
 
-  value = trim(value)
+    value = trim(value)
 
-  if #value > MESSAGE_LENGTH_MAX then
-    value = value:sub(1, MESSAGE_LENGTH_MAX) .. '\n[message truncated]'
-  end
+    if #value > MESSAGE_LENGTH_MAX then
+        value = value:sub(1, MESSAGE_LENGTH_MAX) .. '\n[message truncated]'
+    end
 
-  return value
+    return value
 end
 
 ---@param root string
 ---@param candidates string[]
 ---@return string?
 local function find_candidate(root, candidates)
-  assert(root ~= '')
+    assert(root ~= '')
 
-  for index = 1, #candidates do
-    local candidate = fs.joinpath(root, candidates[index])
+    for index = 1, #candidates do
+        local candidate = fs.joinpath(root, candidates[index])
 
-    if exists(candidate) then
-      return fs.normalize(candidate)
+        if exists(candidate) then
+            return fs.normalize(candidate)
+        end
     end
-  end
 
-  return nil
+    return nil
 end
 
 ---@param root string
 ---@return string?
 local function compilation_database(root)
-  return find_candidate(root, compilation_database_candidates)
+    return find_candidate(root, compilation_database_candidates)
 end
 
 ---@param path string
----@param root string
----@return string
+---@return boolean
+local function is_absolute(path)
+    assert(type(path) == 'string')
+    assert(path ~= '')
+
+    return vim.fn.isabsolutepath(path) == 1
+end
+
 local function normalize_path(path, root)
-  assert(path ~= '')
-  assert(root ~= '')
+    assert(path ~= '')
+    assert(root ~= '')
 
-  if path:sub(1, 7) == 'file://' then
-    local ok, filename = pcall(vim.uri_to_fname, path)
+    if path:sub(1, 7) == 'file://' then
+        local ok, filename = pcall(vim.uri_to_fname, path)
 
-    if ok and type(filename) == 'string' and filename ~= '' then
-      return fs.normalize(filename)
+        if ok and type(filename) == 'string' and filename ~= '' then
+            return fs.normalize(filename)
+        end
     end
-  end
 
-  if fs.is_absolute(path) then
-    return fs.normalize(path)
-  end
+    if is_absolute(path) then
+        return fs.normalize(path)
+    end
 
-  return fs.normalize(fs.joinpath(root, path))
+    return fs.normalize(fs.joinpath(root, path))
 end
 
 ---@param candidate string
@@ -185,262 +191,263 @@ end
 ---@param root string
 ---@return boolean
 local function belongs_to_buffer(candidate, filename, root)
-  assert(candidate ~= '')
-  assert(filename ~= '')
-  assert(root ~= '')
+    assert(candidate ~= '')
+    assert(filename ~= '')
+    assert(root ~= '')
 
-  return normalize_path(candidate, root) == filename
+    return normalize_path(candidate, root) == filename
 end
 
 ---@param message string
 ---@return string?
 local function diagnostic_code(message)
-  --
-  -- Keep only a trailing clazy identifier. Compiler warning groups such as
-  -- [-Wunused-variable] are not falsely attributed to Clazy.
-  --
-  local code = message:match('%[(clazy%-[%w_%-]+)%]%s*$')
+    --
+    -- Keep only a trailing clazy identifier. Compiler warning groups such as
+    -- [-Wunused-variable] are not falsely attributed to Clazy.
+    --
+    local code = message:match('%[(clazy%-[%w_%-]+)%]%s*$')
 
-  if type(code) ~= 'string' or code == '' then
-    return nil
-  end
+    if type(code) ~= 'string' or code == '' then
+        return nil
+    end
 
-  return code
+    return code
 end
 
 ---@param message string
 ---@param code string|nil
 ---@return string
 local function remove_code_suffix(message, code)
-  if code == nil then
-    return message
-  end
+    if code == nil then
+        return message
+    end
 
-  local suffix = '%s*%[' .. vim.pesc(code) .. '%]%s*$'
+    local suffix = '%s*%[' .. vim.pesc(code) .. '%]%s*$'
 
-  return trim(message:gsub(suffix, ''))
+    return trim(message:gsub(suffix, ''))
 end
 
 ---@param line string
 ---@return ClazyParsedDiagnostic?
 local function parse_line(line)
-  if line == '' or #line > LINE_LENGTH_MAX then
-    return nil
-  end
+    if line == '' or #line > LINE_LENGTH_MAX then
+        return nil
+    end
 
-  line = strip_ansi(line)
+    line = strip_ansi(line)
 
-  local filename, source_line, column, level, message = line:match('^(.+):(%d+):(%d+):%s*' .. '([%a]+):%s*' .. '(.+)$')
+    local filename, source_line, column, level, message =
+        line:match('^(.+):(%d+):(%d+):%s*' .. '([%a]+):%s*' .. '(.+)$')
 
-  if filename == nil or source_line == nil or column == nil or level == nil or message == nil then
-    filename, source_line, level, message = line:match('^(.+):(%d+):%s*' .. '([%a]+):%s*' .. '(.+)$')
+    if filename == nil or source_line == nil or column == nil or level == nil or message == nil then
+        filename, source_line, level, message = line:match('^(.+):(%d+):%s*' .. '([%a]+):%s*' .. '(.+)$')
 
-    column = '1'
-  end
+        column = '1'
+    end
 
-  if filename == nil or source_line == nil or level == nil or message == nil then
-    return nil
-  end
+    if filename == nil or source_line == nil or level == nil or message == nil then
+        return nil
+    end
 
-  message = normalize_message(message)
+    message = normalize_message(message)
 
-  if message == '' then
-    return nil
-  end
+    if message == '' then
+        return nil
+    end
 
-  local code = diagnostic_code(message)
+    local code = diagnostic_code(message)
 
-  message = remove_code_suffix(message, code)
+    message = remove_code_suffix(message, code)
 
-  return {
-    filename = filename,
+    return {
+        filename = filename,
 
-    line = max(integer(source_line, 1), 1),
+        line = max(integer(source_line, 1), 1),
 
-    column = max(integer(column, 1), 1),
+        column = max(integer(column, 1), 1),
 
-    severity = level,
-    message = message,
-    code = code,
-  }
+        severity = level,
+        message = message,
+        code = code,
+    }
 end
 
 ---@param entry ClazyParsedDiagnostic
 ---@param filename string
 ---@param root string
----@return vim.Diagnostic?
+---@return vim.Diagnostic.Set?
 local function diagnostic_from_entry(entry, filename, root)
-  if not belongs_to_buffer(entry.filename, filename, root) then
-    return nil
-  end
+    if not belongs_to_buffer(entry.filename, filename, root) then
+        return nil
+    end
 
-  --
-  -- Clang source coordinates are one-based.
-  -- Neovim diagnostic coordinates are zero-based.
-  --
-  local lnum = max(entry.line - 1, 0)
+    --
+    -- Clang source coordinates are one-based.
+    -- Neovim diagnostic coordinates are zero-based.
+    --
+    local lnum = max(entry.line - 1, 0)
 
-  local col = max(entry.column - 1, 0)
+    local col = max(entry.column - 1, 0)
 
-  return {
-    lnum = lnum,
-    end_lnum = lnum,
+    return {
+        lnum = lnum,
+        end_lnum = lnum,
 
-    col = col,
+        col = col,
 
-    end_col = col + 1,
+        end_col = col + 1,
 
-    message = entry.message,
+        message = entry.message,
 
-    severity = severity(entry.severity),
+        severity = severity(entry.severity),
 
-    source = 'clazy',
-    code = entry.code,
+        source = 'clazy',
+        code = entry.code,
 
-    user_data = {
-      check = entry.code,
-      clang_severity = entry.severity,
-    },
-  }
+        user_data = {
+            check = entry.code,
+            clang_severity = entry.severity,
+        },
+    }
 end
 
 ---@param output string
 ---@param context LintContext|integer
 ---@return vim.Diagnostic.Set[]
 local function parse(output, context)
-  if output == '' then
-    return {}
-  end
-
-  assert(type(context) == 'table', 'clazy parser requires a LintContext')
-
-  ---@cast context LintContext
-
-  assert(context.filename ~= '')
-  assert(context.root ~= '')
-
-  assert(#output <= OUTPUT_LENGTH_MAX, 'clazy output exceeded maximum size')
-
-  local filename = fs.normalize(context.filename)
-
-  local root = fs.normalize(context.root)
-
-  ---@type vim.Diagnostic.Set[]
-  local diagnostics = {}
-
-  for line in output:gmatch('[^\r\n]+') do
-    if #diagnostics >= DIAGNOSTICS_MAX then
-      break
+    if output == '' then
+        return {}
     end
 
-    local raw = parse_line(line)
+    assert(type(context) == 'table', 'clazy parser requires a LintContext')
 
-    if raw ~= nil then
-      local entry = diagnostic_from_entry(raw, filename, root)
+    ---@cast context LintContext
 
-      if entry ~= nil then
-        diagnostics[#diagnostics + 1] = entry
-      end
+    assert(context.filename ~= '')
+    assert(context.root ~= '')
+
+    assert(#output <= OUTPUT_LENGTH_MAX, 'clazy output exceeded maximum size')
+
+    local filename = fs.normalize(context.filename)
+
+    local root = fs.normalize(context.root)
+
+    ---@type vim.Diagnostic.Set[]
+    local diagnostics = {}
+
+    for line in output:gmatch('[^\r\n]+') do
+        if #diagnostics >= DIAGNOSTICS_MAX then
+            break
+        end
+
+        local raw = parse_line(line)
+
+        if raw ~= nil then
+            local entry = diagnostic_from_entry(raw, filename, root)
+
+            if entry ~= nil then
+                diagnostics[#diagnostics + 1] = entry
+            end
+        end
     end
-  end
 
-  assert(#diagnostics <= DIAGNOSTICS_MAX)
+    assert(#diagnostics <= DIAGNOSTICS_MAX)
 
-  return diagnostics
+    return diagnostics
 end
 
 ---@param context LintContext
 ---@return string[]
 local function args(context)
-  assert(context.filename ~= '')
-  assert(context.root ~= '')
+    assert(context.filename ~= '')
+    assert(context.root ~= '')
 
-  local root = fs.normalize(context.root)
+    local root = fs.normalize(context.root)
 
-  local argv = {
+    local argv = {
+        --
+        -- Tiger profile:
+        --
+        -- Level 2 is Clazy's strictest predefined level. Upstream describes its
+        -- checks as still having very few false positives, although some are
+        -- intentionally noisier or more opinionated than level 0 / level 1.
+        --
+        '-checks=level2',
+    }
+
+    local database = compilation_database(root)
+
+    if database ~= nil then
+        argv[#argv + 1] = '-p'
+        argv[#argv + 1] = database
+    end
+
     --
-    -- Tiger profile:
+    -- Analyze only the current translation unit. Do not recursively invoke
+    -- Clazy across every entry in compile_commands.json during editor linting.
     --
-    -- Level 2 is Clazy's strictest predefined level. Upstream describes its
-    -- checks as still having very few false positives, although some are
-    -- intentionally noisier or more opinionated than level 0 / level 1.
-    --
-    '-checks=level2',
-  }
+    argv[#argv + 1] = context.filename
 
-  local database = compilation_database(root)
-
-  if database ~= nil then
-    argv[#argv + 1] = '-p'
-    argv[#argv + 1] = database
-  end
-
-  --
-  -- Analyze only the current translation unit. Do not recursively invoke
-  -- Clazy across every entry in compile_commands.json during editor linting.
-  --
-  argv[#argv + 1] = context.filename
-
-  return argv
+    return argv
 end
 
 return ---@type Linter
 {
-  automatic = false,
+    automatic = false,
 
-  cmd = 'clazy-standalone',
+    cmd = 'clazy-standalone',
 
-  args = args,
+    args = args,
 
-  append_fname = false,
+    append_fname = false,
 
-  cwd = function(context)
-    assert(context.root ~= '')
+    cwd = function(context)
+        assert(context.root ~= '')
 
-    return fs.normalize(context.root)
-  end,
+        return fs.normalize(context.root)
+    end,
 
-  ignore_exitcode = true,
+    ignore_exitcode = true,
 
-  parser = parse,
+    parser = parse,
 
-  root_markers = {
-    'compile_commands.json',
+    root_markers = {
+        'compile_commands.json',
 
-    'build/compile_commands.json',
-    'Build/compile_commands.json',
+        'build/compile_commands.json',
+        'Build/compile_commands.json',
 
-    'build-debug/compile_commands.json',
-    'build-release/compile_commands.json',
+        'build-debug/compile_commands.json',
+        'build-release/compile_commands.json',
 
-    'cmake-build-debug/compile_commands.json',
-    'cmake-build-release/compile_commands.json',
+        'cmake-build-debug/compile_commands.json',
+        'cmake-build-release/compile_commands.json',
 
-    'out/compile_commands.json',
-    '.build/compile_commands.json',
+        'out/compile_commands.json',
+        '.build/compile_commands.json',
 
-    'CMakeLists.txt',
-    'CMakePresets.json',
-    'CMakeUserPresets.json',
+        'CMakeLists.txt',
+        'CMakePresets.json',
+        'CMakeUserPresets.json',
 
-    'meson.build',
+        'meson.build',
 
-    --
-    -- qmake.
-    --
-    '*.pro',
-    '*.pri',
+        --
+        -- qmake.
+        --
+        '*.pro',
+        '*.pri',
 
-    --
-    -- Qbs.
-    --
-    'qbs.qbs',
+        --
+        -- Qbs.
+        --
+        'qbs.qbs',
 
-    '.git',
-  },
+        '.git',
+    },
 
-  stdin = false,
+    stdin = false,
 
-  stream = 'stderr',
-  timeout = 120000,
+    stream = 'stderr',
+    timeout = 120000,
 }

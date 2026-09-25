@@ -7,15 +7,15 @@ local M = {}
 require('utils.blue.base64')
 require('utils.blue.gpg')
 require('utils.blue.sops').setup({
-  supported_file_formats = {
-    '*.enc.yaml',
-    '*.enc.yml',
-  },
+    supported_file_formats = {
+        '*.enc.yaml',
+        '*.enc.yml',
+    },
 })
 require('utils.blue.ssh').setup({
-  ssh_binary = 'ssh',
-  scp_binary = 'scp',
-  notify_prefix = '[Blue SSH] ',
+    ssh_binary = 'ssh',
+    scp_binary = 'scp',
+    notify_prefix = '[Blue SSH] ',
 })
 require('utils.blue.dap').setup()
 

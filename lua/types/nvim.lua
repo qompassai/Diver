@@ -1,4 +1,10 @@
 #!/usr/bin/env lua5.1, JIT
+--- Neovim API types — type-checker dictionary (never runs).
+---
+--- Plain-language version: this file never runs -- Neovim never loads it at startup. It is a dictionary of shapes
+--- (type annotations) for the lua-language-server type checker, so the editor can offer completions and catch
+--- mistakes while you edit. Think of it as the answer key the teacher uses, not a lesson.
+---@module 'types.nvim'
 -- /qompassai/Diver/lua/types/nvim.lua
 -- Qompass AI Diver Nvim Types
 -- Copyright (C) 2025 Qompass AI, All rights reserved
@@ -8,10 +14,10 @@
 ---@alias vim.CompleteFuncRefresh                          'always'
 ---@alias vim.CompleteFuncReturn                           integer|vim.CompleteMatches|vim.CompleteFuncResult
 ---@alias vim.CompleteMatches                              string[]|vim.CompletedItem[]
----@alias vim.fs.EntryType                                 'file'|'directory'|'link'|'fifo'|'socket'|'char'|'block'|'unknown'
+---@alias vim.fs.EntryType 'file'|'directory'|'link'|'fifo'|'socket'|'char'|'block'|'unknown'
 ---@alias uv_fs_scandir_t                                  userdata
 ---@alias vim.uv.FsScandirHandle                           userdata
----@alias vim.uv.FsScandirType                             'file'|'directory'|'link'|'fifo'|'socket'|'char'|'block'|'unknown'
+---@alias vim.uv.FsScandirType 'file'|'directory'|'link'|'fifo'|'socket'|'char'|'block'|'unknown'
 --- @class                   CoxpcallModule
 --- @field pcall                                            fun(f: function, ...: any): boolean, any
 --- @field xpcall                                           fun(f: function, err: function, ...: any): boolean, any
@@ -53,16 +59,17 @@ function _G.gh(repo, opts) end
 ---@field lsp                                              vim.lsp
 ---@field pesc                                             fun(s: string): string
 ---@class                    vim.api
----@field nvim_buf_get_lines                               fun(buffer: integer, start: integer, end: integer, strict_indexing: boolean): string[]
+---@field nvim_buf_get_lines fun(buffer: integer, start: integer, end: integer, strict_indexing: boolean ): string[]
 ---@field nvim_buf_get_name                                fun(buffer: integer): string
 ---@field nvim_buf_get_mark                                fun(buffer: integer, name: string): integer[]
----@field nvim_buf_set_lines                               fun(buffer: integer, start: integer, end_: integer, strict_indexing: boolean, replacement: string[]): nil
+---@field nvim_buf_set_lines                               SetLine
 ---@field nvim_create_augroup                              fun(name: string, opts: table): integer
----@field nvim_create_autocmd                              fun(event: string|string[], opts: vim.api.CreateAutocmdOpts): integer
+---@field nvim_create_autocmd fun(event: string|string[], opts: vim.api.CreateAutocmdOpts): integer
 ---@field nvim_create_user_command                         fun(name: string, command: function|string, opts: table): nil
 ---@field nvim_get_current_buf                             fun(): integer
 ---@field nvim_get_runtime_file                            fun(pattern: string, all: boolean): string[]
 ---@field nvim_set_option_value                            fun(name: string, value: any, opts: table): nil
+---@alias SetLine fun(buf: integer, start: integer, end_: integer, strict_indexing: boolean, replacement: string[]): nil
 ---@type                     vim.api
 vim.api = vim.api
 ---@class                    vim.api.AutocmdCallbackArgs
@@ -82,17 +89,6 @@ vim.api = vim.api
 ---@field once?                                            boolean
 ---@field nested?                                          boolean
 ---@field command?                                         string
----@meta
----@class vim.api.keyset.create_autocmd
----@field group?                                           integer|string
----@field pattern?                                         string|string[]
----@field buffer?                                          integer
----@field desc?                                            string
----@field callback?                                        fun():boolean?
----@field command?                                         string
----@field once?                                            boolean
----@field nested?                                          boolean
-
 ---@param event                                            string|string[]
 ---@param opts                                             vim.api.keyset.create_autocmd
 ---@return integer
@@ -104,7 +100,9 @@ function vim.api.nvim_create_autocmd(event, opts) end
 ---@field autocomplete?                                    boolean
 ---@field autoread?                                        boolean
 ---@field backupcopy?                                      'yes'|'no'|'auto'|'breaksymlink'|'breakhardlink'|string
----@field completeopt?                                     string|string[] "menu","menuone","noselect","noinsert","popup","preview","fuzzy","longest","preinsert","nearest","nosort"
+---@field completeopt? string|string[]
+---|"menu"|"menuone"|"noselect"|"noinsert"|"popup"|"preview"|"fuzzy"|"longest"
+---|"preinsert"|"nearest"|"nosort"
 ---@field expandtab?                                       boolean
 ---@field fileencoding?                                    string
 ---@field filetype?                                        string
@@ -131,12 +129,6 @@ function vim.api.nvim_create_autocmd(event, opts) end
 ---@field words                                            vim.CompleteMatches
 ---@class                    vim.diagnostic
 ---@field get                                              fun(bufnr?: integer, opts?: table): vim.Diagnostic[]
----@class                    vim.Diagnostic
----@field lnum                                             integer
----@field col                                              integer
----@field message                                          string
----@field severity                                         integer
----@field source?                                          string
 ---@class                    vim.fn
 ---@field abs?                                             fun(expr: number): number
 ---@field acos?                                            fun(expr: number): number
@@ -148,23 +140,28 @@ function vim.api.nvim_create_autocmd(event, opts) end
 ---@field expand?                                          fun(expr: string): string
 ---@field getcwd                                           fun(): string
 ---@field has?                                             fun(feature: string): integer
----@field input                                            fun(prompt: string, default?: string, completion?: string): string
+---@field input fun(prompt: string, default?: string, completion?: string): string
 ---@field jobstart                                         fun(cmd: string[]|string, opts: table): integer
 ---@field stdpath?                                         fun(what: 'config'|'data'|'state'|'cache'|'log'): string
----@field strftime                                         fun(format: string, time: integer): string
+---@field strftime                                         fun(format: string, time?: integer): string
 vim.fn = vim.fn
 ---@class                    vim.fs
 ---@field abspath                                          fun(path: string): string
 ---@field basename                                         fun(file: string|nil): string|nil
 ---@field dirname                                          fun(file: string|nil): string|nil
----@field normalize                                        fun(path: string, opts?: { expand_env?: boolean, win?: boolean }): string
+---@field normalize fun(path: string, opts?: { expand_env?: boolean, win?: boolean }): string
 ---@field joinpath                                         fun(...: string): string
----@field find                                             fun(
----  names:                                                string|string[]|fun(name: string, path: string): boolean,
----  opts:                                                 { path?: string, upward?: boolean, stop?: string, type?: string, limit?: number, follow?: boolean }|nil)): string[]
----@field parents                                          fun(start: string): (fun(_, dir: string): string|nil), nil, string|nil
+---@field find fun(names: string|string[]|fun(name: string, path: string): boolean, opts: vim.fs.FindOpts|nil): string[]
+---@field parents fun(start: string): (fun(_, dir: string): string|nil), nil, string|nil
 ---@field relative_path                                    fun(base: string, target: string, opts?: table): string|nil
----@field rm                                               fun(path: string, opts?: { recursive?: boolean, force?: boolean }): nil
+---@field rm fun(path: string, opts?: { recursive?: boolean, force?: boolean }): nil
+---@class vim.fs.FindOpts
+---@field path? string
+---@field upward? boolean
+---@field stop? string
+---@field type? string
+---@field limit? number
+---@field follow? boolean
 ---@field snippet_entry                                    string
 vim.fs = vim.fs or {}
 ---@type                     vim.fs
@@ -172,7 +169,9 @@ vim.fs = vim.fs or {}
 ---@field name                                             string
 ---@field type                                             vim.fs.EntryType
 ---@class                     vim.g
----@field clipboard?                                       'clip'|'doitclient'|'lemonade'|'osc52'|'pbcopy'|'putclip'|'termux'|'tmux'|'wayclip'|'wl-copy'|'win32yank'|'xclip'|'xsel'
+---@field clipboard?
+---|'clip'|'doitclient'|'lemonade'|'osc52'|'pbcopy'|'putclip'|'termux'|'tmux'
+---|'wayclip'|'wl-copy'|'win32yank'|'xclip'|'xsel'
 ---@field deprecation_warnings?                            boolean
 ---@field editorconfig?                                    boolean
 ---@field git_command_ssh?                                 integer
@@ -218,7 +217,6 @@ vim.fs = vim.fs or {}
 ---@field vim_markdown_json_frontmatter?                   integer
 ---@field vim_markdown_follow_anchor?                      integer
 ---@field which_key_disable_health_check?                  integer
----@field use_blink_cmp?                                   boolean
 ---@class                    vim.o
 ---@field allowrevins?                                     boolean
 ---@field ambiwidth?                                       string
@@ -240,7 +238,7 @@ vim.fs = vim.fs or {}
 ---@field confirm?                                         boolean
 ---@field cursorline?                                      boolean
 ---@field debug?                                           ''|'msg'|'throw'|'beep'|string
----@field diffopt?                                         string|string[]  'internal,filler,closeoff,algorithm:histogram,indent-heuristic,linematch'
+---@field diffopt? string|string[] 'internal,filler,closeoff,algorithm:histogram,indent-heuristic,linematch'
 ---@field encoding?                                        string
 ---@field errorbells?                                      boolean
 ---@field exrc?                                            boolean
@@ -351,19 +349,11 @@ vim.fs = vim.fs or {}
 ---@field tags?                                            OptionMethods<string|string[]>
 ---@field viminfo?                                         OptionMethods<string|string[]>
 ---@class                    vim.pack.Spec
----@field branch?                                          string
----@field cmd?                                             string[]
----@field data?                                            table|any
----@field event?                                           string[]
 ---@field ft?                                              string[]
 ---@field hook?                                            fun(spec?: vim.pack.Spec)
 ---@field keys?                                            table[]
----@field name?                                            string
----@field opts?                                            table
 ---@field repo?                                            string
----@field src                                              string
 ---@field update?                                          boolean
----@field version?                                         string|vim.Version|vim.VersionRange
 ---@class                    vim.wo
 ---@field breakindent?                                     boolean
 ---@field conceallevel?                                    0|1|2|3|integer
@@ -388,10 +378,10 @@ vim.fs = vim.fs or {}
 ---@field register                                         fun(lang: string, filetype: string|string[])
 ---@field get_lang                                         fun(filetype: string): string
 ---@field get_filetypes                                    fun(lang: string): string[]
----@field add                                              fun(lang: string, opts?: { path?: string, with_runtime?: boolean }): boolean, string|nil
+---@field add fun(lang: string, opts?: { path?: string, with_runtime?: boolean }): boolean, string|nil
 ---@class                    vim.treesitter.query
 ---@field set                                              fun(lang: string, query_name: string, text: string)
----@field get                                              fun(lang: string, query_name: string): vim.treesitter.Query|nil
+---@field get fun(lang: string, query_name: string): vim.treesitter.Query|nil
 ---@field parse                                            fun(lang: string, text: string): vim.treesitter.Query
 ---@class                    vim.treesitter
 ---@field language                                         vim.treesitter.language
@@ -403,7 +393,7 @@ vim.fs = vim.fs or {}
 ---@field fs_scandir?                                      fun(path: string): uv_fs_scandir_t|nil
 ---@field fs_scandir_next?                                 fun(fs: uv_fs_scandir_t): string|nil, string|nil
 ---@field fs_scandir                                       fun(path: string): vim.uv.FsScandirHandle|nil
----@field fs_scandir_next                                  fun(fs: vim.uv.FsScandirHandle): string|nil, vim.uv.FsScandirType|nil
+---@field fs_scandir_next fun(fs: vim.uv.FsScandirHandle): string|nil, vim.uv.FsScandirType|nil
 ---@field fs_stat                                          fun(path: string): vim.uv.FsStat|nil
 ---@class                    vim.uv.FsStat
 ---@field type                                             vim.uv.FsScandirType

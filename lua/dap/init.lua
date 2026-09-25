@@ -29,7 +29,7 @@ local MODULE_PREFIX = 'dap.'
 local NOTIFY_PREFIX = '[debug] '
 
 local augroup = api.nvim_create_augroup('NativeDebug', {
-  clear = true,
+    clear = true,
 })
 
 ---@class DebugCommand
@@ -71,8 +71,8 @@ local augroup = api.nvim_create_augroup('NativeDebug', {
 
 ---@type DebugRegistry
 local registry = {
-  adapters = {},
-  configurations = {},
+    adapters = {},
+    configurations = {},
 }
 
 ---@type table<string, DebugModule>
@@ -101,129 +101,129 @@ local setup_complete = false
 ---@param message string
 ---@param level? integer
 local function notify(message, level)
-  vim.notify(NOTIFY_PREFIX .. message, level or levels.INFO)
+    vim.notify(NOTIFY_PREFIX .. message, level or levels.INFO)
 end
 
 ---@param value unknown
 ---@return boolean
 local function callable(value)
-  return type(value) == 'function'
+    return type(value) == 'function'
 end
 
 ---@param value unknown
 ---@return boolean
 local function nonempty_string(value)
-  return type(value) == 'string' and value ~= ''
+    return type(value) == 'string' and value ~= ''
 end
 
 ---@param path string
 ---@return string
 local function normalize(path)
-  if path == '' then
-    return ''
-  end
+    if path == '' then
+        return ''
+    end
 
-  return fs.normalize(fn.fnamemodify(path, ':p'))
+    return fs.normalize(fn.fnamemodify(path, ':p'))
 end
 
 ---@param path string
 ---@return boolean
 local function exists(path)
-  if not nonempty_string(path) then
-    return false
-  end
+    if not nonempty_string(path) then
+        return false
+    end
 
-  return uv.fs_stat(path) ~= nil
+    return uv.fs_stat(path) ~= nil
 end
 
 ---@param path string
 ---@return boolean
 local function is_directory(path)
-  if not nonempty_string(path) then
-    return false
-  end
+    if not nonempty_string(path) then
+        return false
+    end
 
-  local stat = uv.fs_stat(path)
+    local stat = uv.fs_stat(path)
 
-  return stat ~= nil and stat.type == 'directory'
+    return stat ~= nil and stat.type == 'directory'
 end
 
 ---@param bufnr? integer
 ---@return string
 function M.filename(bufnr)
-  bufnr = bufnr or api.nvim_get_current_buf()
+    bufnr = bufnr or api.nvim_get_current_buf()
 
-  if not api.nvim_buf_is_valid(bufnr) then
-    return ''
-  end
+    if not api.nvim_buf_is_valid(bufnr) then
+        return ''
+    end
 
-  local name = api.nvim_buf_get_name(bufnr)
+    local name = api.nvim_buf_get_name(bufnr)
 
-  if name == '' then
-    return ''
-  end
+    if name == '' then
+        return ''
+    end
 
-  return normalize(name)
+    return normalize(name)
 end
 
 ---@param bufnr? integer
 ---@return string
 function M.filetype(bufnr)
-  bufnr = bufnr or api.nvim_get_current_buf()
+    bufnr = bufnr or api.nvim_get_current_buf()
 
-  if not api.nvim_buf_is_valid(bufnr) then
-    return ''
-  end
+    if not api.nvim_buf_is_valid(bufnr) then
+        return ''
+    end
 
-  return vim.bo[bufnr].filetype
+    return vim.bo[bufnr].filetype
 end
 
 ---@param bufnr? integer
 ---@return string
 function M.root(bufnr)
-  bufnr = bufnr or api.nvim_get_current_buf()
+    bufnr = bufnr or api.nvim_get_current_buf()
 
-  local filename = M.filename(bufnr)
+    local filename = M.filename(bufnr)
 
-  if filename == '' then
-    return normalize(fn.getcwd())
-  end
+    if filename == '' then
+        return normalize(fn.getcwd())
+    end
 
-  local detected = fs.root(filename, {
-    '.git',
-    '.hg',
-    '.svn',
-  })
+    local detected = fs.root(filename, {
+        '.git',
+        '.hg',
+        '.svn',
+    })
 
-  if type(detected) == 'string' and detected ~= '' then
-    return fs.normalize(detected)
-  end
+    if type(detected) == 'string' and detected ~= '' then
+        return fs.normalize(detected)
+    end
 
-  return fs.dirname(filename) or normalize(fn.getcwd())
+    return fs.dirname(filename) or normalize(fn.getcwd())
 end
 
 ---@param command string
 ---@return boolean
 function M.executable(command)
-  assert(nonempty_string(command), 'command must be a non-empty string')
+    assert(nonempty_string(command), 'command must be a non-empty string')
 
-  return fn.executable(command) == 1
+    return fn.executable(command) == 1
 end
 
 ---@param path string
 ---@return boolean
 function M.exists(path)
-  assert(nonempty_string(path), 'path must be a non-empty string')
+    assert(nonempty_string(path), 'path must be a non-empty string')
 
-  return exists(path)
+    return exists(path)
 end
 
 ---@param path string
 ---@return string
 function M.normalize(path)
-  assert(type(path) == 'string', 'path must be a string')
+    assert(type(path) == 'string', 'path must be a string')
 
-  return normalize(path)
+    return normalize(path)
 end
 
 --
@@ -232,41 +232,41 @@ end
 
 ---@return table?
 local function native_backend()
-  local candidate = rawget(vim, 'debug')
+    local candidate = rawget(vim, 'debug')
 
-  if type(candidate) ~= 'table' then
-    return nil
-  end
+    if type(candidate) ~= 'table' then
+        return nil
+    end
 
-  return candidate
+    return candidate
 end
 
 ---@return boolean
 function M.backend_available()
-  return native_backend() ~= nil
+    return native_backend() ~= nil
 end
 
 ---@return table?
 function M.backend()
-  return native_backend()
+    return native_backend()
 end
 
 ---@return DebugRegistry
 function M.registry()
-  return registry
+    return registry
 end
 
 ---@param table_value table
 ---@param key string
 ---@return function?
 local function method(table_value, key)
-  local value = table_value[key]
+    local value = table_value[key]
 
-  if not callable(value) then
-    return nil
-  end
+    if not callable(value) then
+        return nil
+    end
 
-  return value
+    return value
 end
 
 ---@param name string
@@ -274,53 +274,53 @@ end
 ---@param ... unknown
 ---@return boolean, unknown?
 local function protected_call(name, callback, ...)
-  if not callable(callback) then
-    return false, nil
-  end
+    if not callable(callback) then
+        return false, nil
+    end
 
-  local ok, result = pcall(callback, ...)
+    local ok, result = pcall(callback, ...)
 
-  if not ok then
-    notify(('%s failed: %s'):format(name, tostring(result)), levels.ERROR)
+    if not ok then
+        notify(('%s failed: %s'):format(name, tostring(result)), levels.ERROR)
 
-    return false, nil
-  end
+        return false, nil
+    end
 
-  return true, result
+    return true, result
 end
 
 ---@param names string[]
 ---@param ... unknown
 ---@return boolean, unknown?
 local function backend_call_any(names, ...)
-  local backend = native_backend()
+    local backend = native_backend()
 
-  if backend == nil then
-    notify('native DAP backend is unavailable', levels.WARN)
+    if backend == nil then
+        notify('native DAP backend is unavailable', levels.WARN)
+
+        return false, nil
+    end
+
+    for _, name in ipairs(names) do
+        local callback = method(backend, name)
+
+        if callback ~= nil then
+            return protected_call(name, callback, ...)
+        end
+    end
+
+    notify(('native debug backend does not provide %s'):format(table.concat(names, ' or ')), levels.WARN)
 
     return false, nil
-  end
-
-  for _, name in ipairs(names) do
-    local callback = method(backend, name)
-
-    if callback ~= nil then
-      return protected_call(name, callback, ...)
-    end
-  end
-
-  notify(('native debug backend does not provide %s'):format(table.concat(names, ' or ')), levels.WARN)
-
-  return false, nil
 end
 
 ---@param name string
 ---@param ... unknown
 ---@return boolean, unknown?
 local function backend_call(name, ...)
-  return backend_call_any({
-    name,
-  }, ...)
+    return backend_call_any({
+        name,
+    }, ...)
 end
 
 --
@@ -330,210 +330,210 @@ end
 ---@param bufnr integer
 ---@return string
 local function buffer_directory(bufnr)
-  local filename = M.filename(bufnr)
+    local filename = M.filename(bufnr)
 
-  if filename == '' then
-    return ''
-  end
+    if filename == '' then
+        return ''
+    end
 
-  return fs.dirname(filename) or ''
+    return fs.dirname(filename) or ''
 end
 
 ---@param start string
 ---@param marker string
 ---@return string?
 local function find_upward_marker(start, marker)
-  local directory = start
+    local directory = start
 
-  while nonempty_string(directory) do
-    if exists(fs.joinpath(directory, marker)) then
-      return fs.normalize(directory)
+    while nonempty_string(directory) do
+        if exists(fs.joinpath(directory, marker)) then
+            return fs.normalize(directory)
+        end
+
+        local parent = fs.dirname(directory)
+
+        if parent == nil or parent == directory then
+            break
+        end
+
+        directory = parent
     end
 
-    local parent = fs.dirname(directory)
-
-    if parent == nil or parent == directory then
-      break
-    end
-
-    directory = parent
-  end
-
-  return nil
+    return nil
 end
 
 ---@param directory string
 ---@param suffix string
 ---@return boolean
 local function directory_has_suffix(directory, suffix)
-  if not is_directory(directory) then
-    return false
-  end
-
-  local ok, iterator = pcall(fs.dir, directory)
-
-  if not ok then
-    return false
-  end
-
-  for name, kind in iterator do
-    if kind == 'file' and #name >= #suffix and name:sub(-#suffix) == suffix then
-      return true
+    if not is_directory(directory) then
+        return false
     end
-  end
 
-  return false
+    local ok, iterator = pcall(fs.dir, directory)
+
+    if not ok then
+        return false
+    end
+
+    for name, kind in iterator do
+        if kind == 'file' and #name >= #suffix and name:sub(-#suffix) == suffix then
+            return true
+        end
+    end
+
+    return false
 end
 
 ---@param start string
 ---@param suffix string
 ---@return string?
 local function find_upward_suffix(start, suffix)
-  local directory = start
+    local directory = start
 
-  while nonempty_string(directory) do
-    if directory_has_suffix(directory, suffix) then
-      return fs.normalize(directory)
+    while nonempty_string(directory) do
+        if directory_has_suffix(directory, suffix) then
+            return fs.normalize(directory)
+        end
+
+        local parent = fs.dirname(directory)
+
+        if parent == nil or parent == directory then
+            break
+        end
+
+        directory = parent
     end
 
-    local parent = fs.dirname(directory)
-
-    if parent == nil or parent == directory then
-      break
-    end
-
-    directory = parent
-  end
-
-  return nil
+    return nil
 end
 
 ---@param bufnr integer
 ---@return string?
 local function android_root(bufnr)
-  local directory = buffer_directory(bufnr)
+    local directory = buffer_directory(bufnr)
 
-  if directory == '' then
-    return nil
-  end
-
-  local manifest_root = find_upward_marker(directory, 'AndroidManifest.xml')
-
-  if manifest_root ~= nil then
-    return manifest_root
-  end
-
-  local root = fs.root(directory, {
-    'settings.gradle',
-    'settings.gradle.kts',
-    'build.gradle',
-    'build.gradle.kts',
-    'gradlew',
-    '.git',
-  })
-
-  if type(root) ~= 'string' or root == '' then
-    return nil
-  end
-
-  local manifests = {
-    fs.joinpath(root, 'AndroidManifest.xml'),
-
-    fs.joinpath(root, 'src', 'main', 'AndroidManifest.xml'),
-
-    fs.joinpath(root, 'app', 'src', 'main', 'AndroidManifest.xml'),
-  }
-
-  for _, manifest in ipairs(manifests) do
-    if exists(manifest) then
-      return fs.normalize(root)
+    if directory == '' then
+        return nil
     end
-  end
 
-  return nil
+    local manifest_root = find_upward_marker(directory, 'AndroidManifest.xml')
+
+    if manifest_root ~= nil then
+        return manifest_root
+    end
+
+    local root = fs.root(directory, {
+        'settings.gradle',
+        'settings.gradle.kts',
+        'build.gradle',
+        'build.gradle.kts',
+        'gradlew',
+        '.git',
+    })
+
+    if type(root) ~= 'string' or root == '' then
+        return nil
+    end
+
+    local manifests = {
+        fs.joinpath(root, 'AndroidManifest.xml'),
+
+        fs.joinpath(root, 'src', 'main', 'AndroidManifest.xml'),
+
+        fs.joinpath(root, 'app', 'src', 'main', 'AndroidManifest.xml'),
+    }
+
+    for _, manifest in ipairs(manifests) do
+        if exists(manifest) then
+            return fs.normalize(root)
+        end
+    end
+
+    return nil
 end
 
 ---@param bufnr integer
 ---@return boolean
 local function is_android_project(bufnr)
-  return android_root(bufnr) ~= nil
+    return android_root(bufnr) ~= nil
 end
 
 ---@param bufnr integer
 ---@return string?
 local function unreal_root(bufnr)
-  local directory = buffer_directory(bufnr)
+    local directory = buffer_directory(bufnr)
 
-  if directory == '' then
-    return nil
-  end
+    if directory == '' then
+        return nil
+    end
 
-  return find_upward_suffix(directory, '.uproject')
+    return find_upward_suffix(directory, '.uproject')
 end
 
 ---@param bufnr integer
 ---@return boolean
 local function is_unreal_project(bufnr)
-  return unreal_root(bufnr) ~= nil
+    return unreal_root(bufnr) ~= nil
 end
 
 ---@param bufnr integer
 ---@return string?
 local function sqlite_root(bufnr)
-  if nonempty_string(vim.env.NVIM_SQLITE_DATABASE) then
-    return M.root(bufnr)
-  end
-
-  local configured = vim.env.NVIM_SQL_BACKEND
-
-  if nonempty_string(configured) and configured:lower() == 'sqlite' then
-    return M.root(bufnr)
-  end
-
-  local directory = buffer_directory(bufnr)
-
-  if directory == '' then
-    return nil
-  end
-
-  local root = fs.root(directory, {
-    '.git',
-  })
-
-  root = root or directory
-
-  local extensions = {
-    '.db',
-    '.db3',
-    '.sqlite',
-    '.sqlite3',
-  }
-
-  local ok, iterator = pcall(fs.dir, root)
-
-  if not ok then
-    return nil
-  end
-
-  for name, kind in iterator do
-    if kind == 'file' then
-      local lower = name:lower()
-
-      for _, extension in ipairs(extensions) do
-        if #lower >= #extension and lower:sub(-#extension) == extension then
-          return fs.normalize(root)
-        end
-      end
+    if nonempty_string(vim.env.NVIM_SQLITE_DATABASE) then
+        return M.root(bufnr)
     end
-  end
 
-  return nil
+    local configured = vim.env.NVIM_SQL_BACKEND
+
+    if nonempty_string(configured) and configured:lower() == 'sqlite' then
+        return M.root(bufnr)
+    end
+
+    local directory = buffer_directory(bufnr)
+
+    if directory == '' then
+        return nil
+    end
+
+    local root = fs.root(directory, {
+        '.git',
+    })
+
+    root = root or directory
+
+    local extensions = {
+        '.db',
+        '.db3',
+        '.sqlite',
+        '.sqlite3',
+    }
+
+    local ok, iterator = pcall(fs.dir, root)
+
+    if not ok then
+        return nil
+    end
+
+    for name, kind in iterator do
+        if kind == 'file' then
+            local lower = name:lower()
+
+            for _, extension in ipairs(extensions) do
+                if #lower >= #extension and lower:sub(-#extension) == extension then
+                    return fs.normalize(root)
+                end
+            end
+        end
+    end
+
+    return nil
 end
 
 ---@param bufnr integer
 ---@return boolean
 local function is_sqlite_project(bufnr)
-  return sqlite_root(bufnr) ~= nil
+    return sqlite_root(bufnr) ~= nil
 end
 
 --
@@ -542,209 +542,209 @@ end
 
 ---@type DebugModuleSpec[]
 local MODULES = {
-  {
-    filetypes = {
-      'java',
-      'kotlin',
-      'rust',
+    {
+        filetypes = {
+            'java',
+            'kotlin',
+            'rust',
+        },
+
+        module = 'android',
+
+        condition = function(bufnr)
+            return is_android_project(bufnr)
+        end,
+
+        root = android_root,
     },
 
-    module = 'android',
+    {
+        filetypes = {
+            'apex',
+        },
 
-    condition = function(bufnr)
-      return is_android_project(bufnr)
-    end,
-
-    root = android_root,
-  },
-
-  {
-    filetypes = {
-      'apex',
+        module = 'apex',
     },
 
-    module = 'apex',
-  },
+    {
+        filetypes = {
+            'bash',
+            'sh',
+        },
 
-  {
-    filetypes = {
-      'bash',
-      'sh',
+        module = 'bash',
     },
 
-    module = 'bash',
-  },
+    {
+        filetypes = {
+            'cs',
+            'razor',
+        },
 
-  {
-    filetypes = {
-      'cs',
-      'razor',
+        module = 'csharp',
     },
 
-    module = 'csharp',
-  },
+    {
+        filetypes = {
+            'go',
+        },
 
-  {
-    filetypes = {
-      'go',
+        module = 'go',
     },
 
-    module = 'go',
-  },
+    {
+        filetypes = {
+            'java',
+        },
 
-  {
-    filetypes = {
-      'java',
+        module = 'java',
     },
 
-    module = 'java',
-  },
+    {
+        filetypes = {
+            'kotlin',
+        },
 
-  {
-    filetypes = {
-      'kotlin',
+        module = 'kotlin',
     },
 
-    module = 'kotlin',
-  },
+    {
+        filetypes = {
+            'lua',
+        },
 
-  {
-    filetypes = {
-      'lua',
+        module = 'lua',
     },
 
-    module = 'lua',
-  },
+    {
+        filetypes = {
+            'mojo',
+        },
 
-  {
-    filetypes = {
-      'mojo',
+        module = 'mojo',
     },
 
-    module = 'mojo',
-  },
+    {
+        filetypes = {
+            'nix',
+        },
 
-  {
-    filetypes = {
-      'nix',
+        module = 'nix',
     },
 
-    module = 'nix',
-  },
+    {
+        filetypes = {
+            'javascript',
+            'javascriptreact',
+            'javascript.glimmer',
+            'typescript',
+            'typescriptreact',
+            'typescript.glimmer',
+            'glimmer',
+        },
 
-  {
-    filetypes = {
-      'javascript',
-      'javascriptreact',
-      'javascript.glimmer',
-      'typescript',
-      'typescriptreact',
-      'typescript.glimmer',
-      'glimmer',
+        module = 'node',
     },
 
-    module = 'node',
-  },
+    {
+        filetypes = {
+            'pgsql',
+            'postgresql',
+        },
 
-  {
-    filetypes = {
-      'pgsql',
-      'postgresql',
+        module = 'postgres',
     },
 
-    module = 'postgres',
-  },
+    {
+        filetypes = {
+            'ps1',
+            'powershell',
+        },
 
-  {
-    filetypes = {
-      'ps1',
-      'powershell',
+        module = 'powershell',
     },
 
-    module = 'powershell',
-  },
+    {
+        filetypes = {
+            'python',
+        },
 
-  {
-    filetypes = {
-      'python',
+        module = 'python',
     },
 
-    module = 'python',
-  },
+    {
+        filetypes = {
+            'rust',
+        },
 
-  {
-    filetypes = {
-      'rust',
+        module = 'rust',
     },
 
-    module = 'rust',
-  },
+    {
+        filetypes = {
+            'scala',
+        },
 
-  {
-    filetypes = {
-      'scala',
+        module = 'scala',
     },
 
-    module = 'scala',
-  },
+    {
+        filetypes = {
+            'sql',
+        },
 
-  {
-    filetypes = {
-      'sql',
+        module = 'sql',
     },
 
-    module = 'sql',
-  },
+    {
+        filetypes = {
+            'sql',
+        },
 
-  {
-    filetypes = {
-      'sql',
+        module = 'sqlite',
+
+        condition = function(bufnr)
+            return is_sqlite_project(bufnr)
+        end,
+
+        root = sqlite_root,
     },
 
-    module = 'sqlite',
+    {
+        filetypes = {
+            'sqlite',
+        },
 
-    condition = function(bufnr)
-      return is_sqlite_project(bufnr)
-    end,
-
-    root = sqlite_root,
-  },
-
-  {
-    filetypes = {
-      'sqlite',
+        module = 'sqlite',
     },
 
-    module = 'sqlite',
-  },
+    {
+        filetypes = {
+            'c',
+            'cpp',
+        },
 
-  {
-    filetypes = {
-      'c',
-      'cpp',
+        module = 'unreal',
+
+        condition = function(bufnr)
+            return is_unreal_project(bufnr)
+        end,
+
+        root = unreal_root,
     },
-
-    module = 'unreal',
-
-    condition = function(bufnr)
-      return is_unreal_project(bufnr)
-    end,
-
-    root = unreal_root,
-  },
 }
 
 ---@param spec DebugModuleSpec
 ---@param filetype string
 ---@return boolean
 local function spec_matches_filetype(spec, filetype)
-  for _, candidate in ipairs(spec.filetypes) do
-    if candidate == filetype then
-      return true
+    for _, candidate in ipairs(spec.filetypes) do
+        if candidate == filetype then
+            return true
+        end
     end
-  end
 
-  return false
+    return false
 end
 
 ---@param spec DebugModuleSpec
@@ -752,232 +752,241 @@ end
 ---@param root string
 ---@return boolean
 local function spec_enabled(spec, bufnr, root)
-  if spec.condition == nil then
-    return true
-  end
+    if spec.condition == nil then
+        return true
+    end
 
-  local ok, result = pcall(spec.condition, bufnr, root)
+    local ok, result = pcall(spec.condition, bufnr, root)
 
-  if not ok then
-    notify(('module condition failed for %s: %s'):format(spec.module, tostring(result)), levels.WARN)
+    if not ok then
+        notify(('module condition failed for %s: %s'):format(spec.module, tostring(result)), levels.WARN)
 
-    return false
-  end
+        return false
+    end
 
-  return result == true
+    return result == true
 end
 
 ---@param spec DebugModuleSpec
 ---@param bufnr integer
 ---@return string
 local function spec_root(spec, bufnr)
-  if spec.root ~= nil then
-    local ok, result = pcall(spec.root, bufnr)
+    if spec.root ~= nil then
+        local ok, result = pcall(spec.root, bufnr)
 
-    if ok and nonempty_string(result) then
-      return fs.normalize(result)
+        if ok and type(result) == 'string' and result ~= '' then
+            return fs.normalize(result)
+        end
     end
-  end
 
-  return M.root(bufnr)
+    return M.root(bufnr)
 end
 
 ---@return string[]
 local function module_names()
-  local seen = {}
+    local seen = {}
 
-  ---@type string[]
-  local result = {}
+    ---@type string[]
+    local result = {}
 
-  for _, spec in ipairs(MODULES) do
-    if not seen[spec.module] then
-      seen[spec.module] = true
+    for _, spec in ipairs(MODULES) do
+        if not seen[spec.module] then
+            seen[spec.module] = true
 
-      result[#result + 1] = spec.module
+            result[#result + 1] = spec.module
+        end
     end
-  end
 
-  table.sort(result)
+    table.sort(result)
 
-  return result
+    return result
 end
 
 ---@param name string
 ---@param adapter table
 ---@return boolean
 local function register_adapter(name, adapter)
-  assert(nonempty_string(name), 'adapter name must be non-empty')
+    assert(nonempty_string(name), 'adapter name must be non-empty')
 
-  assert(type(adapter) == 'table', 'adapter must be a table')
+    assert(type(adapter) == 'table', 'adapter must be a table')
 
-  registry.adapters[name] = adapter
+    registry.adapters[name] = adapter
 
-  local backend = native_backend()
+    local backend = native_backend()
 
-  if backend == nil then
-    return false
-  end
+    if backend == nil then
+        return false
+    end
 
-  if type(backend.adapters) == 'table' then
-    backend.adapters[name] = adapter
+    if type(backend.adapters) == 'table' then
+        backend.adapters[name] = adapter
 
-    return true
-  end
+        return true
+    end
 
-  local callback = method(backend, 'register_adapter')
+    local callback = method(backend, 'register_adapter')
 
-  if callback == nil then
-    return false
-  end
+    if callback == nil then
+        return false
+    end
 
-  local ok = protected_call('register_adapter', callback, name, adapter)
+    local ok = protected_call('register_adapter', callback, name, adapter)
 
-  return ok
+    return ok
 end
 
 ---@param configuration table
 ---@return string
 local function configuration_key(configuration)
-  return table.concat({
-    tostring(configuration.name or ''),
+    return table.concat({
+        tostring(configuration.name or ''),
 
-    tostring(configuration.type or ''),
+        tostring(configuration.type or ''),
 
-    tostring(configuration.request or ''),
-  }, '\0')
+        tostring(configuration.request or ''),
+    }, '\0')
 end
 
 ---@param destination table[]
 ---@param source table[]
 local function merge_configurations(destination, source)
-  local seen = {}
+    local seen = {}
 
-  for _, configuration in ipairs(destination) do
-    seen[configuration_key(configuration)] = true
-  end
-
-  for _, configuration in ipairs(source) do
-    local key = configuration_key(configuration)
-
-    if not seen[key] then
-      seen[key] = true
-
-      destination[#destination + 1] = configuration
+    for _, configuration in ipairs(destination) do
+        seen[configuration_key(configuration)] = true
     end
-  end
+
+    for _, configuration in ipairs(source) do
+        local key = configuration_key(configuration)
+
+        if not seen[key] then
+            seen[key] = true
+
+            destination[#destination + 1] = configuration
+        end
+    end
 end
 
 ---@param filetype string
 ---@param configurations table[]
 ---@return boolean
 local function register_configurations(filetype, configurations)
-  assert(nonempty_string(filetype), 'filetype must be non-empty')
+    assert(nonempty_string(filetype), 'filetype must be non-empty')
 
-  assert(type(configurations) == 'table', 'configurations must be a table')
+    assert(type(configurations) == 'table', 'configurations must be a table')
 
-  local merged = registry.configurations[filetype]
+    local merged = registry.configurations[filetype]
 
-  if merged == nil then
-    merged = {}
+    if merged == nil then
+        merged = {}
 
-    registry.configurations[filetype] = merged
-  end
-
-  merge_configurations(merged, configurations)
-
-  local backend = native_backend()
-
-  if backend == nil then
-    return false
-  end
-
-  --
-  -- Preferred backend shape:
-  --
-  -- direct mutable configuration registry.
-  --
-  if type(backend.configurations) == 'table' then
-    backend.configurations[filetype] = merged
-
-    return true
-  end
-
-  local callback = method(backend, 'register_configuration')
-
-  if callback == nil then
-    return false
-  end
-
-  local registered = registered_configurations[filetype]
-
-  if registered == nil then
-    registered = {}
-
-    registered_configurations[filetype] = registered
-  end
-
-  local success = true
-
-  for _, configuration in ipairs(configurations) do
-    local key = configuration_key(configuration)
-
-    if not registered[key] then
-      local ok = protected_call('register_configuration', callback, filetype, configuration)
-
-      if ok then
-        registered[key] = true
-      else
-        success = false
-      end
+        registry.configurations[filetype] = merged
     end
-  end
 
-  return success
+    merge_configurations(merged, configurations)
+
+    local backend = native_backend()
+
+    if backend == nil then
+        return false
+    end
+
+    --
+    -- Preferred backend shape:
+    --
+    -- direct mutable configuration registry.
+    --
+    if type(backend.configurations) == 'table' then
+        backend.configurations[filetype] = merged
+
+        return true
+    end
+
+    local callback = method(backend, 'register_configuration')
+
+    if callback == nil then
+        return false
+    end
+
+    local registered = registered_configurations[filetype]
+
+    if registered == nil then
+        registered = {}
+
+        registered_configurations[filetype] = registered
+    end
+
+    local success = true
+
+    for _, configuration in ipairs(configurations) do
+        local key = configuration_key(configuration)
+
+        if not registered[key] then
+            local ok = protected_call('register_configuration', callback, filetype, configuration)
+
+            if ok then
+                registered[key] = true
+            else
+                success = false
+            end
+        end
+    end
+
+    return success
 end
 
 --
 -- Commands
 --
 
+---@param action function
+---@return function
+local function ensure_setup(action)
+    return function(...)
+        M.setup()
+        return action(...)
+    end
+end
+
 ---@param name string
 ---@param spec DebugCommand
 local function register_command(name, spec)
-  if registered_commands[name] then
-    return
-  end
+    if registered_commands[name] then
+        return
+    end
 
-  if not nonempty_string(name) or type(spec) ~= 'table' or not callable(spec.callback) then
-    return
-  end
+    if not nonempty_string(name) or type(spec) ~= 'table' or not callable(spec.callback) then
+        return
+    end
 
-  local existing = api.nvim_get_commands({
-    builtin = false,
-  })
+    local existing = api.nvim_get_commands({
+        builtin = false,
+    })
 
-  if existing[name] ~= nil then
+    if existing[name] ~= nil then
+        registered_commands[name] = true
+
+        return
+    end
+
+    api.nvim_create_user_command(name, ensure_setup(spec.callback), {
+        bang = spec.bang == true,
+
+        complete = spec.complete,
+
+        desc = spec.desc,
+
+        nargs = spec.nargs or 0,
+    })
+
     registered_commands[name] = true
-
-    return
-  end
-
-  api.nvim_create_user_command(name, spec.callback, {
-    bang = spec.bang == true,
-
-    complete = spec.complete,
-
-    desc = spec.desc,
-
-    nargs = spec.nargs or 0,
-  })
-
-  registered_commands[name] = true
 end
 
 ---@param commands table<string, DebugCommand>
 local function register_commands(commands)
-  for name, spec in pairs(commands) do
-    register_command(name, spec)
-  end
+    for name, spec in pairs(commands) do
+        register_command(name, spec)
+    end
 end
 
 --
@@ -988,56 +997,56 @@ end
 ---@param lhs string
 ---@return string
 local function mapping_key(mode, lhs)
-  if type(mode) == 'table' then
-    local modes = vim.deepcopy(mode)
+    if type(mode) == 'table' then
+        local modes = vim.deepcopy(mode)
 
-    table.sort(modes)
+        table.sort(modes)
 
-    return table.concat(modes, ',') .. '\0' .. lhs
-  end
+        return table.concat(modes, ',') .. '\0' .. lhs
+    end
 
-  return tostring(mode or 'n') .. '\0' .. lhs
+    return tostring(mode or 'n') .. '\0' .. lhs
 end
 
 ---@param name string
 ---@param spec DebugMapping
 local function register_mapping(name, spec)
-  if type(spec) ~= 'table' then
-    return
-  end
+    if type(spec) ~= 'table' then
+        return
+    end
 
-  if not nonempty_string(spec.lhs) then
-    return
-  end
+    if not nonempty_string(spec.lhs) then
+        return
+    end
 
-  local rhs = spec.rhs
+    local rhs = spec.rhs
 
-  if type(rhs) ~= 'string' and not callable(rhs) then
-    return
-  end
+    if type(rhs) ~= 'string' and not callable(rhs) then
+        return
+    end
 
-  local key = mapping_key(spec.mode, spec.lhs)
+    local key = mapping_key(spec.mode, spec.lhs)
 
-  if registered_mappings[key] then
-    return
-  end
+    if registered_mappings[key] then
+        return
+    end
 
-  vim.keymap.set(spec.mode or 'n', spec.lhs, rhs, {
-    desc = spec.desc,
+    vim.keymap.set(spec.mode or 'n', spec.lhs, rhs, {
+        desc = spec.desc,
 
-    silent = true,
-  })
+        silent = true,
+    })
 
-  registered_mappings[key] = true
+    registered_mappings[key] = true
 
-  registered_mappings[name] = true
+    registered_mappings[name] = true
 end
 
 ---@param mappings table<string, DebugMapping>
 local function register_mappings(mappings)
-  for name, spec in pairs(mappings) do
-    register_mapping(name, spec)
-  end
+    for name, spec in pairs(mappings) do
+        register_mapping(name, spec)
+    end
 end
 
 --
@@ -1047,77 +1056,77 @@ end
 ---@param module_name string
 ---@return DebugModule?
 local function require_module(module_name)
-  if modules[module_name] ~= nil then
-    return modules[module_name]
-  end
+    if modules[module_name] ~= nil then
+        return modules[module_name]
+    end
 
-  if failed_modules[module_name] then
-    return nil
-  end
+    if failed_modules[module_name] then
+        return nil
+    end
 
-  local ok, module = pcall(require, MODULE_PREFIX .. module_name)
+    local ok, module = pcall(require, MODULE_PREFIX .. module_name)
 
-  if not ok then
-    failed_modules[module_name] = true
+    if not ok then
+        failed_modules[module_name] = true
 
-    notify(('failed to load %s: %s'):format(module_name, tostring(module)), levels.WARN)
+        notify(('failed to load %s: %s'):format(module_name, tostring(module)), levels.WARN)
 
-    return nil
-  end
+        return nil
+    end
 
-  if type(module) ~= 'table' then
-    failed_modules[module_name] = true
+    if type(module) ~= 'table' then
+        failed_modules[module_name] = true
 
-    notify(('%s must return a table'):format(module_name), levels.ERROR)
+        notify(('%s must return a table'):format(module_name), levels.ERROR)
 
-    return nil
-  end
+        return nil
+    end
 
-  modules[module_name] = module
+    modules[module_name] = module
 
-  return module
+    return module
 end
 
 ---@param module_name string
 ---@param module DebugModule
 local function register_module_definition(module_name, module)
-  if module_definitions_registered[module_name] then
-    return
-  end
-
-  if type(module.adapters) == 'table' then
-    for name, adapter in pairs(module.adapters) do
-      if nonempty_string(name) and type(adapter) == 'table' then
-        register_adapter(name, adapter)
-      end
+    if module_definitions_registered[module_name] then
+        return
     end
-  end
 
-  if type(module.adapter) == 'table' then
-    local name = module.adapter.name
-
-    if nonempty_string(name) then
-      register_adapter(name, module.adapter)
+    if type(module.adapters) == 'table' then
+        for name, adapter in pairs(module.adapters) do
+            if nonempty_string(name) and type(adapter) == 'table' then
+                register_adapter(name, adapter)
+            end
+        end
     end
-  end
 
-  if type(module.configurations) == 'table' then
-    for filetype, configurations in pairs(module.configurations) do
-      if nonempty_string(filetype) and type(configurations) == 'table' then
-        register_configurations(filetype, configurations)
-      end
+    if type(module.adapter) == 'table' then
+        local name = module.adapter.name
+
+        if nonempty_string(name) then
+            register_adapter(name, module.adapter)
+        end
     end
-  end
 
-  if type(module.commands) == 'table' then
-    register_commands(module.commands)
-  end
+    if type(module.configurations) == 'table' then
+        for filetype, configurations in pairs(module.configurations) do
+            if nonempty_string(filetype) and type(configurations) == 'table' then
+                register_configurations(filetype, configurations)
+            end
+        end
+    end
 
-  if type(module.mappings) == 'table' then
-    register_mappings(module.mappings)
-  end
+    if type(module.commands) == 'table' then
+        register_commands(module.commands)
+    end
 
-  module_definitions_registered[module_name] = true
+    if type(module.mappings) == 'table' then
+        register_mappings(module.mappings)
+    end
+
+    module_definitions_registered[module_name] = true
 end
 
 ---@param module_name string
@@ -1125,43 +1134,43 @@ end
 ---@param bufnr integer
 ---@param root string
 local function activate_module(module_name, module, bufnr, root)
-  if not callable(module.setup) then
-    return
-  end
+    if not callable(module.setup) then
+        return
+    end
 
-  local activations = module_activations[module_name]
+    local activations = module_activations[module_name]
 
-  if activations == nil then
-    activations = {}
+    if activations == nil then
+        activations = {}
 
-    module_activations[module_name] = activations
-  end
+        module_activations[module_name] = activations
+    end
 
-  local activation_key = fs.normalize(root)
+    local activation_key = fs.normalize(root)
 
-  if activations[activation_key] then
-    return
-  end
+    if activations[activation_key] then
+        return
+    end
 
-  local backend = native_backend()
+    local backend = native_backend()
 
-  local ok, setup_error = pcall(module.setup, {
-    backend = backend,
+    local ok, setup_error = pcall(module.setup, {
+        backend = backend,
 
-    bufnr = bufnr,
+        bufnr = bufnr,
 
-    debug = backend,
+        debug = backend,
 
-    root = root,
-  })
+        root = root,
+    })
 
-  if not ok then
-    notify(('%s setup failed for %s: %s'):format(module_name, root, tostring(setup_error)), levels.ERROR)
+    if not ok then
+        notify(('%s setup failed for %s: %s'):format(module_name, root, tostring(setup_error)), levels.ERROR)
 
-    return
-  end
+        return
+    end
 
-  activations[activation_key] = true
+    activations[activation_key] = true
 end
 
 ---@param module_name string
@@ -1169,225 +1178,232 @@ end
 ---@param root? string
 ---@return boolean
 function M.load(module_name, bufnr, root)
-  assert(nonempty_string(module_name), 'module_name must be non-empty')
+    assert(nonempty_string(module_name), 'module_name must be non-empty')
 
-  bufnr = bufnr or api.nvim_get_current_buf()
+    bufnr = bufnr or api.nvim_get_current_buf()
 
-  root = root or M.root(bufnr)
+    root = root or M.root(bufnr)
 
-  local module = require_module(module_name)
+    local module = require_module(module_name)
 
-  if module == nil then
-    return false
-  end
+    if module == nil then
+        return false
+    end
 
-  register_module_definition(module_name, module)
+    register_module_definition(module_name, module)
 
-  activate_module(module_name, module, bufnr, fs.normalize(root))
+    activate_module(module_name, module, bufnr, fs.normalize(root))
 
-  return true
+    return true
 end
 
 ---@param filetype string
 ---@param bufnr? integer
 function M.load_filetype(filetype, bufnr)
-  if filetype == '' then
-    return
-  end
-
-  bufnr = bufnr or api.nvim_get_current_buf()
-
-  if not api.nvim_buf_is_valid(bufnr) then
-    return
-  end
-
-  for _, spec in ipairs(MODULES) do
-    if spec_matches_filetype(spec, filetype) then
-      local root = spec_root(spec, bufnr)
-
-      if spec_enabled(spec, bufnr, root) then
-        M.load(spec.module, bufnr, root)
-      end
+    if filetype == '' then
+        return
     end
-  end
+
+    bufnr = bufnr or api.nvim_get_current_buf()
+
+    if not api.nvim_buf_is_valid(bufnr) then
+        return
+    end
+
+    for _, spec in ipairs(MODULES) do
+        if spec_matches_filetype(spec, filetype) then
+            local root = spec_root(spec, bufnr)
+
+            if spec_enabled(spec, bufnr, root) then
+                M.load(spec.module, bufnr, root)
+            end
+        end
+    end
 end
 
 ---@return string[]
 function M.loaded()
-  local result = {}
+    local result = {}
 
-  for module_name in pairs(modules) do
-    result[#result + 1] = module_name
-  end
+    for module_name in pairs(modules) do
+        result[#result + 1] = module_name
+    end
 
-  table.sort(result)
+    table.sort(result)
 
-  return result
+    return result
 end
 
 ---@return string[]
 function M.failed()
-  local result = {}
+    local result = {}
 
-  for module_name, failed in pairs(failed_modules) do
-    if failed then
-      result[#result + 1] = module_name
+    for module_name, failed in pairs(failed_modules) do
+        if failed then
+            result[#result + 1] = module_name
+        end
     end
-  end
 
-  table.sort(result)
+    table.sort(result)
 
-  return result
+    return result
 end
 
 ---@param module_name string
 ---@return string[]
 function M.activations(module_name)
-  local roots = module_activations[module_name]
+    local roots = module_activations[module_name]
 
-  if roots == nil then
-    return {}
-  end
-
-  local result = {}
-
-  for root, active in pairs(roots) do
-    if active then
-      result[#result + 1] = root
+    if roots == nil then
+        return {}
     end
-  end
 
-  table.sort(result)
+    local result = {}
 
-  return result
+    for root, active in pairs(roots) do
+        if active then
+            result[#result + 1] = root
+        end
+    end
+
+    table.sort(result)
+
+    return result
 end
 
 --
 -- Session controls
 --
 
-function M.continue()
-  backend_call_any({
-    'continue',
-    'run',
-    'start',
-  })
+---@param opts? {new?: boolean} forwarded to the backend's continue/run/start
+function M.continue(opts)
+    backend_call_any({
+        'continue',
+        'run',
+        'start',
+    }, opts)
 end
 
 function M.disconnect()
-  backend_call_any({
-    'disconnect',
-    'stop',
-    'terminate',
-  })
+    backend_call_any({
+        'disconnect',
+        'stop',
+        'terminate',
+    })
 end
 
 function M.pause()
-  backend_call('pause')
+    backend_call('pause')
 end
 
 function M.restart()
-  local backend = native_backend()
+    local backend = native_backend()
 
-  if backend == nil then
-    notify('native DAP backend is unavailable', levels.WARN)
+    if backend == nil then
+        notify('native DAP backend is unavailable', levels.WARN)
 
-    return
-  end
+        return
+    end
 
-  local callback = method(backend, 'restart')
+    local callback = method(backend, 'restart')
 
-  if callback ~= nil then
-    protected_call('restart', callback)
+    if callback ~= nil then
+        protected_call('restart', callback)
 
-    return
-  end
+        return
+    end
 
-  local stop_callback = method(backend, 'stop') or method(backend, 'terminate')
+    local stop_callback = method(backend, 'stop') or method(backend, 'terminate')
 
-  local run_callback = method(backend, 'run_last') or method(backend, 'run') or method(backend, 'start')
+    local run_callback = method(backend, 'run_last') or method(backend, 'run') or method(backend, 'start')
 
-  if stop_callback == nil or run_callback == nil then
-    notify('native debug backend cannot restart sessions', levels.WARN)
+    if stop_callback == nil or run_callback == nil then
+        notify('native debug backend cannot restart sessions', levels.WARN)
 
-    return
-  end
+        return
+    end
 
-  local ok = protected_call('stop', stop_callback)
+    local ok = protected_call('stop', stop_callback)
 
-  if not ok then
-    return
-  end
+    if not ok then
+        return
+    end
 
-  vim.schedule(function()
-    protected_call('run', run_callback)
-  end)
+    vim.schedule(function()
+        protected_call('run', run_callback)
+    end)
 end
 
-function M.run()
-  local bufnr = api.nvim_get_current_buf()
+---@param config? dap.Configuration configuration to run; forwarded to the backend
+---@param opts? dap.run.opts forwarded to the backend's run/start/continue
+function M.run(config, opts)
+    local bufnr = api.nvim_get_current_buf()
 
-  local filetype = M.filetype(bufnr)
+    local filetype = M.filetype(bufnr)
 
-  M.load_filetype(filetype, bufnr)
-  backend_call_any({
-    'run',
-    'start',
-    'continue',
-  })
+    M.load_filetype(filetype, bufnr)
+    backend_call_any({
+        'run',
+        'start',
+        'continue',
+    }, config, opts)
 end
 
 function M.run_last()
-  backend_call_any({
-    'run_last',
-    'run',
-    'start',
-  })
+    backend_call_any({
+        'run_last',
+        'run',
+        'start',
+    })
 end
 
-function M.step_back()
-  backend_call_any({
-    'step_back',
-    'stepBack',
-  })
+---@param opts? dap.step.opts? step options forwarded to the backend
+function M.step_back(opts)
+    backend_call_any({
+        'step_back',
+        'stepBack',
+    }, opts)
 end
 
-function M.step_into()
-  backend_call_any({
-    'step_into',
-    'stepInto',
-  })
+---@param opts? dap.step.opts? step options forwarded to the backend
+function M.step_into(opts)
+    backend_call_any({
+        'step_into',
+        'stepInto',
+    }, opts)
 end
 
-function M.step_out()
-  backend_call_any({
-    'step_out',
-    'stepOut',
-  })
+---@param opts? dap.step.opts? step options forwarded to the backend
+function M.step_out(opts)
+    backend_call_any({
+        'step_out',
+        'stepOut',
+    }, opts)
 end
 
-function M.step_over()
-  backend_call_any({
-    'step_over',
-    'stepOver',
-    'next',
-  })
+---@param opts? dap.step.opts? step options forwarded to the backend
+function M.step_over(opts)
+    backend_call_any({
+        'step_over',
+        'stepOver',
+        'next',
+    }, opts)
 end
 
 function M.stop()
-  backend_call_any({
-    'stop',
-    'terminate',
-    'disconnect',
-  })
+    backend_call_any({
+        'stop',
+        'terminate',
+        'disconnect',
+    })
 end
 
 function M.terminate()
-  backend_call_any({
-    'terminate',
-    'stop',
-    'disconnect',
-  })
+    backend_call_any({
+        'terminate',
+        'stop',
+        'disconnect',
+    })
 end
 
 --
@@ -1395,125 +1411,125 @@ end
 --
 
 function M.toggle_breakpoint()
-  local backend = native_backend()
+    local backend = native_backend()
 
-  if backend ~= nil then
-    local callback = method(backend, 'toggle_breakpoint') or method(backend, 'toggleBreakpoint')
+    if backend ~= nil then
+        local callback = method(backend, 'toggle_breakpoint') or method(backend, 'toggleBreakpoint')
 
-    if callback ~= nil then
-      protected_call('toggle_breakpoint', callback)
+        if callback ~= nil then
+            protected_call('toggle_breakpoint', callback)
 
-      return
-    end
-  end
-
-  local ok, breakpoints = pcall(require, 'dap.breakpoints')
-
-  if ok and type(breakpoints) == 'table' and callable(breakpoints.toggle) then
-    local success, breakpoint_error = pcall(breakpoints.toggle)
-
-    if not success then
-      notify(('breakpoint toggle failed: %s'):format(tostring(breakpoint_error)), levels.ERROR)
+            return
+        end
     end
 
-    return
-  end
+    local ok, breakpoints = pcall(require, 'dap.breakpoints')
 
-  notify('no breakpoint backend is available', levels.WARN)
+    if ok and type(breakpoints) == 'table' and callable(breakpoints.toggle) then
+        local success, breakpoint_error = pcall(breakpoints.toggle)
+
+        if not success then
+            notify(('breakpoint toggle failed: %s'):format(tostring(breakpoint_error)), levels.ERROR)
+        end
+
+        return
+    end
+
+    notify('no breakpoint backend is available', levels.WARN)
 end
 
 function M.clear_breakpoints()
-  local backend = native_backend()
+    local backend = native_backend()
 
-  if backend ~= nil then
-    local callback = method(backend, 'clear_breakpoints') or method(backend, 'clearBreakpoints')
+    if backend ~= nil then
+        local callback = method(backend, 'clear_breakpoints') or method(backend, 'clearBreakpoints')
 
-    if callback ~= nil then
-      protected_call('clear_breakpoints', callback)
+        if callback ~= nil then
+            protected_call('clear_breakpoints', callback)
 
-      return
+            return
+        end
     end
-  end
 
-  local ok, breakpoints = pcall(require, 'dap.breakpoints')
+    local ok, breakpoints = pcall(require, 'dap.breakpoints')
 
-  if ok and type(breakpoints) == 'table' and callable(breakpoints.clear) then
-    pcall(breakpoints.clear)
+    if ok and type(breakpoints) == 'table' and callable(breakpoints.clear) then
+        pcall(breakpoints.clear)
 
-    return
-  end
+        return
+    end
 
-  notify('no breakpoint backend is available', levels.WARN)
+    notify('no breakpoint backend is available', levels.WARN)
 end
 
 function M.set_conditional_breakpoint()
-  local condition = fn.input('Breakpoint condition: ')
+    local condition = fn.input('Breakpoint condition: ')
 
-  if condition == '' then
-    return
-  end
-
-  local backend = native_backend()
-
-  if backend ~= nil then
-    local callback = method(backend, 'set_breakpoint') or method(backend, 'setBreakpoint')
-
-    if callback ~= nil then
-      protected_call('set_breakpoint', callback, {
-        condition = condition,
-      })
-
-      return
+    if condition == '' then
+        return
     end
-  end
 
-  local ok, breakpoints = pcall(require, 'dap.breakpoints')
+    local backend = native_backend()
 
-  if ok and type(breakpoints) == 'table' and callable(breakpoints.set) then
-    pcall(breakpoints.set, {
-      condition = condition,
-    })
+    if backend ~= nil then
+        local callback = method(backend, 'set_breakpoint') or method(backend, 'setBreakpoint')
 
-    return
-  end
+        if callback ~= nil then
+            protected_call('set_breakpoint', callback, {
+                condition = condition,
+            })
 
-  notify('no breakpoint backend is available', levels.WARN)
+            return
+        end
+    end
+
+    local ok, breakpoints = pcall(require, 'dap.breakpoints')
+
+    if ok and type(breakpoints) == 'table' and callable(breakpoints.set) then
+        pcall(breakpoints.set, {
+            condition = condition,
+        })
+
+        return
+    end
+
+    notify('no breakpoint backend is available', levels.WARN)
 end
 
 function M.set_logpoint()
-  local message = fn.input('Log point message: ')
+    local message = fn.input('Log point message: ')
 
-  if message == '' then
-    return
-  end
-
-  local backend = native_backend()
-
-  if backend ~= nil then
-    local callback = method(backend, 'set_breakpoint') or method(backend, 'setBreakpoint')
-
-    if callback ~= nil then
-      protected_call('set_breakpoint', callback, {
-        log_message = message,
-        logMessage = message,
-      })
-
-      return
+    if message == '' then
+        return
     end
-  end
 
-  local ok, breakpoints = pcall(require, 'dap.breakpoints')
+    local backend = native_backend()
 
-  if ok and type(breakpoints) == 'table' and callable(breakpoints.set) then
-    pcall(breakpoints.set, {
-      log_message = message,
-      logMessage = message,
-    })
+    if backend ~= nil then
+        local callback = method(backend, 'set_breakpoint') or method(backend, 'setBreakpoint')
 
-    return
-  end
+        if callback ~= nil then
+            protected_call('set_breakpoint', callback, {
+                log_message = message,
+                logMessage = message,
+            })
 
-  notify('no breakpoint backend is available', levels.WARN)
+            return
+        end
+    end
+
+    local ok, breakpoints = pcall(require, 'dap.breakpoints')
+
+    if ok and type(breakpoints) == 'table' and callable(breakpoints.set) then
+        pcall(breakpoints.set, {
+            log_message = message,
+            logMessage = message,
+        })
+
+        return
+    end
+
+    notify('no breakpoint backend is available', levels.WARN)
 end
 
 --
@@ -1521,75 +1537,75 @@ end
 --
 
 function M.repl()
-  local backend = native_backend()
+    local backend = native_backend()
 
-  if backend ~= nil then
-    local callback = method(backend, 'repl')
+    if backend ~= nil then
+        local callback = method(backend, 'repl')
 
-    if callback ~= nil then
-      protected_call('repl', callback)
+        if callback ~= nil then
+            protected_call('repl', callback)
 
-      return
+            return
+        end
     end
-  end
 
-  local ok, widgets = pcall(require, 'dap.widgets')
+    local ok, widgets = pcall(require, 'dap.widgets')
 
-  if ok and type(widgets) == 'table' and callable(widgets.repl) then
-    pcall(widgets.repl)
+    if ok and type(widgets) == 'table' and callable(widgets.repl) then
+        pcall(widgets.repl)
 
-    return
-  end
+        return
+    end
 
-  notify('no debug REPL backend is available', levels.WARN)
+    notify('no debug REPL backend is available', levels.WARN)
 end
 
 function M.hover()
-  local backend = native_backend()
+    local backend = native_backend()
 
-  if backend ~= nil then
-    local callback = method(backend, 'hover')
+    if backend ~= nil then
+        local callback = method(backend, 'hover')
 
-    if callback ~= nil then
-      protected_call('hover', callback)
+        if callback ~= nil then
+            protected_call('hover', callback)
 
-      return
+            return
+        end
     end
-  end
 
-  local ok, widgets = pcall(require, 'dap.widgets')
+    local ok, widgets = pcall(require, 'dap.widgets')
 
-  if ok and type(widgets) == 'table' and callable(widgets.hover) then
-    pcall(widgets.hover)
+    if ok and type(widgets) == 'table' and callable(widgets.hover) then
+        pcall(widgets.hover)
 
-    return
-  end
+        return
+    end
 
-  notify('no debug hover backend is available', levels.WARN)
+    notify('no debug hover backend is available', levels.WARN)
 end
 
 function M.scopes()
-  local backend = native_backend()
+    local backend = native_backend()
 
-  if backend ~= nil then
-    local callback = method(backend, 'scopes')
+    if backend ~= nil then
+        local callback = method(backend, 'scopes')
 
-    if callback ~= nil then
-      protected_call('scopes', callback)
+        if callback ~= nil then
+            protected_call('scopes', callback)
 
-      return
+            return
+        end
     end
-  end
 
-  local ok, widgets = pcall(require, 'dap.widgets')
+    local ok, widgets = pcall(require, 'dap.widgets')
 
-  if ok and type(widgets) == 'table' and callable(widgets.scopes) then
-    pcall(widgets.scopes)
+    if ok and type(widgets) == 'table' and callable(widgets.scopes) then
+        pcall(widgets.scopes)
 
-    return
-  end
+        return
+    end
 
-  notify('no debug scopes backend is available', levels.WARN)
+    notify('no debug scopes backend is available', levels.WARN)
 end
 
 --
@@ -1597,45 +1613,45 @@ end
 --
 
 function M.status()
-  local bufnr = api.nvim_get_current_buf()
+    local bufnr = api.nvim_get_current_buf()
 
-  local filetype = M.filetype(bufnr)
+    local filetype = M.filetype(bufnr)
 
-  local loaded = M.loaded()
+    local loaded = M.loaded()
 
-  local failed = M.failed()
+    local failed = M.failed()
 
-  local applicable = {}
+    local applicable = {}
 
-  for _, spec in ipairs(MODULES) do
-    if spec_matches_filetype(spec, filetype) then
-      local root = spec_root(spec, bufnr)
+    for _, spec in ipairs(MODULES) do
+        if spec_matches_filetype(spec, filetype) then
+            local root = spec_root(spec, bufnr)
 
-      if spec_enabled(spec, bufnr, root) then
-        applicable[#applicable + 1] = ('%s [%s]'):format(spec.module, root)
-      end
+            if spec_enabled(spec, bufnr, root) then
+                applicable[#applicable + 1] = ('%s [%s]'):format(spec.module, root)
+            end
+        end
     end
-  end
 
-  table.sort(applicable)
+    table.sort(applicable)
 
-  notify(table.concat({
-    'backend: ' .. (M.backend_available() and 'available' or 'unavailable'),
+    notify(table.concat({
+        'backend: ' .. (M.backend_available() and 'available' or 'unavailable'),
 
-    'filetype: ' .. (filetype ~= '' and filetype or 'none'),
+        'filetype: ' .. (filetype ~= '' and filetype or 'none'),
 
-    'root: ' .. M.root(bufnr),
+        'root: ' .. M.root(bufnr),
 
-    'applicable modules: ' .. (#applicable > 0 and table.concat(applicable, ', ') or 'none'),
+        'applicable modules: ' .. (#applicable > 0 and table.concat(applicable, ', ') or 'none'),
 
-    'registered adapters: ' .. tostring(vim.tbl_count(registry.adapters)),
+        'registered adapters: ' .. tostring(vim.tbl_count(registry.adapters)),
 
-    'configuration filetypes: ' .. tostring(vim.tbl_count(registry.configurations)),
+        'configuration filetypes: ' .. tostring(vim.tbl_count(registry.configurations)),
 
-    'loaded modules: ' .. (#loaded > 0 and table.concat(loaded, ', ') or 'none'),
+        'loaded modules: ' .. (#loaded > 0 and table.concat(loaded, ', ') or 'none'),
 
-    'failed modules: ' .. (#failed > 0 and table.concat(failed, ', ') or 'none'),
-  }, '\n'))
+        'failed modules: ' .. (#failed > 0 and table.concat(failed, ', ') or 'none'),
+    }, '\n'))
 end
 
 --
@@ -1643,184 +1659,184 @@ end
 --
 
 local function create_commands()
-  ---@type table<string, DebugCommand>
-  local commands = {
-    DebugBreakpoint = {
-      callback = function()
-        M.toggle_breakpoint()
-      end,
+    ---@type table<string, DebugCommand>
+    local commands = {
+        DebugBreakpoint = {
+            callback = function()
+                M.toggle_breakpoint()
+            end,
 
-      desc = 'Toggle debug breakpoint',
-    },
+            desc = 'Toggle debug breakpoint',
+        },
 
-    DebugBreakpointClear = {
-      callback = function()
-        M.clear_breakpoints()
-      end,
+        DebugBreakpointClear = {
+            callback = function()
+                M.clear_breakpoints()
+            end,
 
-      desc = 'Clear all debug breakpoints',
-    },
+            desc = 'Clear all debug breakpoints',
+        },
 
-    DebugBreakpointCondition = {
-      callback = function()
-        M.set_conditional_breakpoint()
-      end,
+        DebugBreakpointCondition = {
+            callback = function()
+                M.set_conditional_breakpoint()
+            end,
 
-      desc = 'Set conditional breakpoint',
-    },
+            desc = 'Set conditional breakpoint',
+        },
 
-    DebugContinue = {
-      callback = function()
-        M.continue()
-      end,
+        DebugContinue = {
+            callback = function()
+                M.continue()
+            end,
 
-      desc = 'Continue debug session',
-    },
+            desc = 'Continue debug session',
+        },
 
-    DebugDisconnect = {
-      callback = function()
-        M.disconnect()
-      end,
+        DebugDisconnect = {
+            callback = function()
+                M.disconnect()
+            end,
 
-      desc = 'Disconnect debug session',
-    },
+            desc = 'Disconnect debug session',
+        },
 
-    DebugHover = {
-      callback = function()
-        M.hover()
-      end,
+        DebugHover = {
+            callback = function()
+                M.hover()
+            end,
 
-      desc = 'Inspect value under cursor',
-    },
+            desc = 'Inspect value under cursor',
+        },
 
-    DebugLoad = {
-      callback = function(args)
-        M.load(args.args, api.nvim_get_current_buf())
-      end,
+        DebugLoad = {
+            callback = function(args)
+                M.load(args.args, api.nvim_get_current_buf())
+            end,
 
-      complete = function()
-        return module_names()
-      end,
+            complete = function()
+                return module_names()
+            end,
 
-      desc = 'Load debug adapter module',
+            desc = 'Load debug adapter module',
 
-      nargs = 1,
-    },
+            nargs = 1,
+        },
 
-    DebugLogpoint = {
-      callback = function()
-        M.set_logpoint()
-      end,
+        DebugLogpoint = {
+            callback = function()
+                M.set_logpoint()
+            end,
 
-      desc = 'Set debug logpoint',
-    },
+            desc = 'Set debug logpoint',
+        },
 
-    DebugPause = {
-      callback = function()
-        M.pause()
-      end,
+        DebugPause = {
+            callback = function()
+                M.pause()
+            end,
 
-      desc = 'Pause debug session',
-    },
+            desc = 'Pause debug session',
+        },
 
-    DebugRepl = {
-      callback = function()
-        M.repl()
-      end,
+        DebugRepl = {
+            callback = function()
+                M.repl()
+            end,
 
-      desc = 'Open debug REPL',
-    },
+            desc = 'Open debug REPL',
+        },
 
-    DebugRestart = {
-      callback = function()
-        M.restart()
-      end,
+        DebugRestart = {
+            callback = function()
+                M.restart()
+            end,
 
-      desc = 'Restart debug session',
-    },
+            desc = 'Restart debug session',
+        },
 
-    DebugRun = {
-      callback = function()
-        M.run()
-      end,
+        DebugRun = {
+            callback = function()
+                M.run()
+            end,
 
-      desc = 'Start debug session',
-    },
+            desc = 'Start debug session',
+        },
 
-    DebugRunLast = {
-      callback = function()
-        M.run_last()
-      end,
+        DebugRunLast = {
+            callback = function()
+                M.run_last()
+            end,
 
-      desc = 'Run previous debug configuration',
-    },
+            desc = 'Run previous debug configuration',
+        },
 
-    DebugScopes = {
-      callback = function()
-        M.scopes()
-      end,
+        DebugScopes = {
+            callback = function()
+                M.scopes()
+            end,
 
-      desc = 'Show debug scopes',
-    },
+            desc = 'Show debug scopes',
+        },
 
-    DebugStatus = {
-      callback = function()
-        M.status()
-      end,
+        DebugStatus = {
+            callback = function()
+                M.status()
+            end,
 
-      desc = 'Show native debug status',
-    },
+            desc = 'Show native debug status',
+        },
 
-    DebugStepBack = {
-      callback = function()
-        M.step_back()
-      end,
+        DebugStepBack = {
+            callback = function()
+                M.step_back()
+            end,
 
-      desc = 'Step backward',
-    },
+            desc = 'Step backward',
+        },
 
-    DebugStepInto = {
-      callback = function()
-        M.step_into()
-      end,
+        DebugStepInto = {
+            callback = function()
+                M.step_into()
+            end,
 
-      desc = 'Step into',
-    },
+            desc = 'Step into',
+        },
 
-    DebugStepOut = {
-      callback = function()
-        M.step_out()
-      end,
+        DebugStepOut = {
+            callback = function()
+                M.step_out()
+            end,
 
-      desc = 'Step out',
-    },
+            desc = 'Step out',
+        },
 
-    DebugStepOver = {
-      callback = function()
-        M.step_over()
-      end,
+        DebugStepOver = {
+            callback = function()
+                M.step_over()
+            end,
 
-      desc = 'Step over',
-    },
+            desc = 'Step over',
+        },
 
-    DebugStop = {
-      callback = function()
-        M.stop()
-      end,
+        DebugStop = {
+            callback = function()
+                M.stop()
+            end,
 
-      desc = 'Stop debug session',
-    },
+            desc = 'Stop debug session',
+        },
 
-    DebugTerminate = {
-      callback = function()
-        M.terminate()
-      end,
+        DebugTerminate = {
+            callback = function()
+                M.terminate()
+            end,
 
-      desc = 'Terminate debuggee',
-    },
-  }
+            desc = 'Terminate debuggee',
+        },
+    }
 
-  register_commands(commands)
+    register_commands(commands)
 end
 
 --
@@ -1828,48 +1844,48 @@ end
 --
 
 local function create_mappings()
-  local function opts(desc)
-    return {
-      desc = desc,
-      silent = true,
-    }
-  end
+    local function opts(desc)
+        return {
+            desc = desc,
+            silent = true,
+        }
+    end
 
-  vim.keymap.set('n', '<F5>', M.run, opts('Debug: Run / Continue'))
+    vim.keymap.set('n', '<F5>', ensure_setup(M.run), opts('Debug: Run / Continue'))
 
-  vim.keymap.set('n', '<F6>', M.pause, opts('Debug: Pause'))
+    vim.keymap.set('n', '<F6>', ensure_setup(M.pause), opts('Debug: Pause'))
 
-  vim.keymap.set('n', '<F7>', M.run_last, opts('Debug: Run last'))
+    vim.keymap.set('n', '<F7>', ensure_setup(M.run_last), opts('Debug: Run last'))
 
-  vim.keymap.set('n', '<F8>', M.toggle_breakpoint, opts('Debug: Toggle breakpoint'))
+    vim.keymap.set('n', '<F8>', ensure_setup(M.toggle_breakpoint), opts('Debug: Toggle breakpoint'))
 
-  vim.keymap.set('n', '<F9>', M.terminate, opts('Debug: Terminate'))
+    vim.keymap.set('n', '<F9>', ensure_setup(M.terminate), opts('Debug: Terminate'))
 
-  vim.keymap.set('n', '<F10>', M.step_over, opts('Debug: Step over'))
+    vim.keymap.set('n', '<F10>', ensure_setup(M.step_over), opts('Debug: Step over'))
 
-  vim.keymap.set('n', '<F11>', M.step_into, opts('Debug: Step into'))
+    vim.keymap.set('n', '<F11>', ensure_setup(M.step_into), opts('Debug: Step into'))
 
-  vim.keymap.set('n', '<F12>', M.step_out, opts('Debug: Step out'))
+    vim.keymap.set('n', '<F12>', ensure_setup(M.step_out), opts('Debug: Step out'))
 
-  vim.keymap.set('n', '<leader>dB', M.set_conditional_breakpoint, opts('Debug: Conditional breakpoint'))
+    vim.keymap.set('n', '<leader>dB', ensure_setup(M.set_conditional_breakpoint), opts('Debug: Conditional breakpoint'))
 
-  vim.keymap.set('n', '<leader>db', M.toggle_breakpoint, opts('Debug: Breakpoint'))
+    vim.keymap.set('n', '<leader>db', ensure_setup(M.toggle_breakpoint), opts('Debug: Breakpoint'))
 
-  vim.keymap.set('n', '<leader>dc', M.continue, opts('Debug: Continue'))
+    vim.keymap.set('n', '<leader>dc', ensure_setup(M.continue), opts('Debug: Continue'))
 
-  vim.keymap.set('n', '<leader>dh', M.hover, opts('Debug: Hover'))
+    vim.keymap.set('n', '<leader>dh', ensure_setup(M.hover), opts('Debug: Hover'))
 
-  vim.keymap.set('n', '<leader>dl', M.set_logpoint, opts('Debug: Logpoint'))
+    vim.keymap.set('n', '<leader>dl', ensure_setup(M.set_logpoint), opts('Debug: Logpoint'))
 
-  vim.keymap.set('n', '<leader>dp', M.pause, opts('Debug: Pause'))
+    vim.keymap.set('n', '<leader>dp', ensure_setup(M.pause), opts('Debug: Pause'))
 
-  vim.keymap.set('n', '<leader>dr', M.run, opts('Debug: Run'))
+    vim.keymap.set('n', '<leader>dr', ensure_setup(M.run), opts('Debug: Run'))
 
-  vim.keymap.set('n', '<leader>dR', M.restart, opts('Debug: Restart'))
+    vim.keymap.set('n', '<leader>dR', ensure_setup(M.restart), opts('Debug: Restart'))
 
-  vim.keymap.set('n', '<leader>ds', M.scopes, opts('Debug: Scopes'))
+    vim.keymap.set('n', '<leader>ds', ensure_setup(M.scopes), opts('Debug: Scopes'))
 
-  vim.keymap.set('n', '<leader>dt', M.terminate, opts('Debug: Terminate'))
+    vim.keymap.set('n', '<leader>dt', ensure_setup(M.terminate), opts('Debug: Terminate'))
 end
 
 --
@@ -1878,92 +1894,92 @@ end
 
 ---@param bufnr integer
 local function persist_buffer_breakpoints(bufnr)
-  local ok, breakpoints = pcall(require, 'dap.breakpoints')
+    local ok, breakpoints = pcall(require, 'dap.breakpoints')
 
-  if not ok or type(breakpoints) ~= 'table' or not callable(breakpoints.save) then
-    return
-  end
+    if not ok or type(breakpoints) ~= 'table' or not callable(breakpoints.save) then
+        return
+    end
 
-  pcall(breakpoints.save, bufnr)
+    pcall(breakpoints.save, bufnr)
 end
 
 local function persist_all_breakpoints()
-  local ok, breakpoints = pcall(require, 'dap.breakpoints')
+    local ok, breakpoints = pcall(require, 'dap.breakpoints')
 
-  if not ok or type(breakpoints) ~= 'table' or not callable(breakpoints.save_all) then
-    return
-  end
+    if not ok or type(breakpoints) ~= 'table' or not callable(breakpoints.save_all) then
+        return
+    end
 
-  pcall(breakpoints.save_all)
+    pcall(breakpoints.save_all)
 end
 
 local function teardown_modules()
-  for module_name, module in pairs(modules) do
-    if type(module) == 'table' and callable(module.teardown) then
-      local ok, teardown_error = pcall(module.teardown)
+    for module_name, module in pairs(modules) do
+        if type(module) == 'table' and callable(module.teardown) then
+            local ok, teardown_error = pcall(module.teardown)
 
-      if not ok then
-        notify(('%s teardown failed: %s'):format(module_name, tostring(teardown_error)), levels.WARN)
-      end
+            if not ok then
+                notify(('%s teardown failed: %s'):format(module_name, tostring(teardown_error)), levels.WARN)
+            end
+        end
     end
-  end
 end
 
 local function create_autocmds()
-  api.nvim_create_autocmd('FileType', {
-    callback = function(args)
-      if not api.nvim_buf_is_valid(args.buf) then
-        return
-      end
+    api.nvim_create_autocmd('FileType', {
+        callback = function(args)
+            if not api.nvim_buf_is_valid(args.buf) then
+                return
+            end
 
-      M.load_filetype(vim.bo[args.buf].filetype, args.buf)
-    end,
+            M.load_filetype(vim.bo[args.buf].filetype, args.buf)
+        end,
 
-    desc = 'Load project-aware native debug modules',
+        desc = 'Load project-aware native debug modules',
 
-    group = augroup,
-  })
+        group = augroup,
+    })
 
-  api.nvim_create_autocmd('BufEnter', {
-    callback = function(args)
-      if not api.nvim_buf_is_valid(args.buf) then
-        return
-      end
+    api.nvim_create_autocmd('BufEnter', {
+        callback = function(args)
+            if not api.nvim_buf_is_valid(args.buf) then
+                return
+            end
 
-      local filetype = vim.bo[args.buf].filetype
+            local filetype = vim.bo[args.buf].filetype
 
-      if filetype == '' then
-        return
-      end
+            if filetype == nil or filetype == '' then
+                return
+            end
 
-      M.load_filetype(filetype, args.buf)
-    end,
+            M.load_filetype(filetype, args.buf)
+        end,
 
-    desc = 'Activate debug modules for current project root',
+        desc = 'Activate debug modules for current project root',
 
-    group = augroup,
-  })
+        group = augroup,
+    })
 
-  api.nvim_create_autocmd('BufWipeout', {
-    callback = function(args)
-      persist_buffer_breakpoints(args.buf)
-    end,
+    api.nvim_create_autocmd('BufWipeout', {
+        callback = function(args)
+            persist_buffer_breakpoints(args.buf)
+        end,
 
-    desc = 'Persist debug breakpoints',
+        desc = 'Persist debug breakpoints',
 
-    group = augroup,
-  })
+        group = augroup,
+    })
 
-  api.nvim_create_autocmd('VimLeavePre', {
-    callback = function()
-      persist_all_breakpoints()
-      teardown_modules()
-    end,
+    api.nvim_create_autocmd('VimLeavePre', {
+        callback = function()
+            persist_all_breakpoints()
+            teardown_modules()
+        end,
 
-    desc = 'Persist and teardown debug state',
+        desc = 'Persist and teardown debug state',
 
-    group = augroup,
-  })
+        group = augroup,
+    })
 end
 
 --
@@ -1972,36 +1988,43 @@ end
 
 ---@param opts? table
 function M.setup(opts)
-  opts = opts or {}
+    opts = opts or {}
 
-  if setup_complete then
-    return
-  end
+    if setup_complete then
+        return
+    end
 
-  setup_complete = true
+    setup_complete = true
 
-  create_autocmds()
-  create_commands()
+    create_autocmds()
+    create_commands()
 
-  if opts.mappings ~= false then
-    create_mappings()
-  end
+    if opts.mappings ~= false then
+        create_mappings()
+    end
 
-  local bufnr = api.nvim_get_current_buf()
+    local bufnr = api.nvim_get_current_buf()
 
-  local filetype = M.filetype(bufnr)
+    local filetype = M.filetype(bufnr)
 
-  if filetype ~= '' then
-    M.load_filetype(filetype, bufnr)
-  end
+    if filetype ~= '' then
+        M.load_filetype(filetype, bufnr)
+    end
 
-  if not M.backend_available() then
-    vim.schedule(function()
-      notify('vim.debug is unavailable; adapter definitions remain available in the local registry', levels.DEBUG)
-    end)
-  end
+    if not M.backend_available() then
+        vim.schedule(function()
+            notify('vim.debug is unavailable; adapter definitions remain available in the local registry', levels.DEBUG)
+        end)
+    end
 end
 
-M.setup()
+-- Require-time surface is commands and mappings only. The first use of any
+-- of them runs M.setup() (idempotent) via ensure_setup(), which installs
+-- autocmds, loads the filetype adapter, and runs the backend check. Keeping
+-- require() free of setup side effects means merely loading the module
+-- (e.g. from another module's top level) never installs autocmds or emits
+-- notifications; setup() is explicit and safe to call more than once.
+create_commands()
+create_mappings()
 
 return M

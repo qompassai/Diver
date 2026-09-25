@@ -5,18 +5,18 @@
 local M = {} ---@version JIT
 
 local function safe_require(module)
-  local ok, result = pcall(require, module)
-  if not ok then
-    vim.notify('Failed to load ' .. module .. ': ' .. tostring(result), vim.log.levels.WARN)
-    return nil
-  end
-  return result
+    local ok, result = pcall(require, module)
+    if not ok then
+        vim.notify('Failed to load ' .. module .. ': ' .. tostring(result), vim.log.levels.WARN)
+        return nil
+    end
+    return result
 end
 M.blue = require('utils.blue')
 M.codeactions = safe_require('utils.codeactions')
 
 if M.codeactions and M.codeactions.setup then
-  M.codeactions.setup()
+    M.codeactions.setup()
 end
 M.ddx = require('utils.ddx')
 M.docs = require('utils.docs')
@@ -25,32 +25,32 @@ M.options = require('utils.options')
 M.red = safe_require('utils.red')
 M.dev = safe_require('utils.dev')
 if M.dev and M.dev.setup then
-  M.dev.setup()
+    M.dev.setup()
 end
 
 M.games = safe_require('utils.games')
 if M.games and M.games.setup then
-  M.games.setup()
+    M.games.setup()
 end
 
 M.ux = safe_require('utils.ux')
 M.dictionary = {
-  path = vim.fn.stdpath('config') .. '/lua/utils/docs/dictionary',
-  file = 'words.txt',
-  load_words = function()
-    local dict = vim.fn.stdpath('config') .. '/lua/utils/docs/dictionary/words.txt'
-    local f = io.open(dict, 'r')
-    if not f then
-      vim.notify('Failed to open dictionary: ' .. dict, vim.log.levels.WARN)
-      return {}
-    end
-    local t = {}
-    for line in f:lines() do
-      t[#t + 1] = line
-    end
-    f:close()
-    return t
-  end,
+    path = vim.fn.stdpath('config') .. '/lua/utils/docs/dictionary',
+    file = 'words.txt',
+    load_words = function()
+        local dict = vim.fn.stdpath('config') .. '/lua/utils/docs/dictionary/words.txt'
+        local f = io.open(dict, 'r')
+        if not f then
+            vim.notify('Failed to open dictionary: ' .. dict, vim.log.levels.WARN)
+            return {}
+        end
+        local t = {}
+        for line in f:lines() do
+            t[#t + 1] = line
+        end
+        f:close()
+        return t
+    end,
 }
 
 return M

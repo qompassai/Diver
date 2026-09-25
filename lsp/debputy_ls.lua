@@ -6,20 +6,20 @@
 ---@source  https://salsa.debian.org/debian/debputy
 return ---@type vim.lsp.Config
 {
-  cmd = {
-    'debputy',
-    'lsp',
-    'server',
-  },
-  filetypes = {
-    'autopkgtest',
-    'debcontrol',
-    'debcopyright',
-    'debchangelog',
-    'make',
-    'yaml',
-  },
-  root_markers = {
-    'debian',
-  },
+    cmd = {
+        'debputy',
+        'lsp',
+        'server',
+    },
+    filetypes = {
+        'autopkgtest',
+        'debcontrol',
+        'debcopyright',
+        'debchangelog',
+        'make',
+        'yaml',
+    },
+    root_markers = {
+        'debian',
+    },
 }

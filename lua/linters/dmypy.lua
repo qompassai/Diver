@@ -40,19 +40,19 @@ local SOURCE = 'dmypy'
 
 ---@type table<string, integer>
 local SEVERITIES = {
-  error = ERROR,
-  warning = WARN,
-  warn = WARN,
-  note = INFO,
-  info = INFO,
+    error = ERROR,
+    warning = WARN,
+    warn = WARN,
+    note = INFO,
+    info = INFO,
 }
 
 ---@type string[]
 local CONFIG_CANDIDATES = {
-  'mypy.ini',
-  '.mypy.ini',
-  'pyproject.toml',
-  'setup.cfg',
+    'mypy.ini',
+    '.mypy.ini',
+    'pyproject.toml',
+    'setup.cfg',
 }
 
 ---@class DmypyParsedDiagnostic
@@ -69,612 +69,457 @@ local CONFIG_CANDIDATES = {
 ---@param fallback integer
 ---@return integer
 local function integer(value, fallback)
-  assert(fallback >= 0)
+    assert(fallback >= 0)
 
-  local parsed = tonumber(value)
+    local parsed = tonumber(value)
 
-  if parsed == nil then
-    return fallback
-  end
+    if parsed == nil then
+        return fallback
+    end
 
-  return floor(parsed)
+    return floor(parsed)
 end
 
 ---@param value string|nil
 ---@return integer
 local function severity(value)
-  if type(value) ~= 'string' then
-    return ERROR
-  end
+    if type(value) ~= 'string' then
+        return ERROR
+    end
 
-  return SEVERITIES[value:lower()] or ERROR
+    return SEVERITIES[value:lower()] or ERROR
 end
 
 ---@param path string
 ---@return boolean
 local function exists(path)
-  return uv.fs_stat(path) ~= nil
+    return uv.fs_stat(path) ~= nil
 end
 
 ---@param value string
 ---@return string
 local function trim(value)
-  assert(type(value) == 'string')
+    assert(type(value) == 'string')
 
-  return (
-    value:gsub(
-      '^%s*(.-)%s*$',
-      '%1'
-    )
-  )
+    return (value:gsub('^%s*(.-)%s*$', '%1'))
 end
 
 ---@param value string
 ---@return string
 local function strip_ansi(value)
-  assert(type(value) == 'string')
+    assert(type(value) == 'string')
 
-  return (
-    value:gsub(
-      '\27%[[%d;?]*[ -/]*[@-~]',
-      ''
-    )
-  )
+    return (value:gsub('\27%[[%d;?]*[ -/]*[@-~]', ''))
 end
 
 ---@param value string
 ---@return string
 local function normalize_message(value)
-  assert(type(value) == 'string')
+    assert(type(value) == 'string')
 
-  value = strip_ansi(value)
-  value = value:gsub('\r\n', '\n')
-  value = value:gsub('\r', '\n')
-  value = trim(value)
+    value = strip_ansi(value)
+    value = value:gsub('\r\n', '\n')
+    value = value:gsub('\r', '\n')
+    value = trim(value)
 
-  if #value > MESSAGE_LENGTH_MAX then
-    value =
-      value:sub(
-        1,
-        MESSAGE_LENGTH_MAX
-      )
-      .. '\n[message truncated]'
-  end
+    if #value > MESSAGE_LENGTH_MAX then
+        value = value:sub(1, MESSAGE_LENGTH_MAX) .. '\n[message truncated]'
+    end
 
-  return value
+    return value
 end
 
 ---@param root string
 ---@return string?
 local function config_file(root)
-  assert(root ~= '')
+    assert(root ~= '')
 
-  for index = 1, #CONFIG_CANDIDATES do
-    local candidate = fs.joinpath(
-      root,
-      CONFIG_CANDIDATES[index]
-    )
+    for index = 1, #CONFIG_CANDIDATES do
+        local candidate = fs.joinpath(root, CONFIG_CANDIDATES[index])
 
-    if exists(candidate) then
-      return fs.normalize(candidate)
+        if exists(candidate) then
+            return fs.normalize(candidate)
+        end
     end
-  end
 
-  return nil
+    return nil
 end
 
 ---@param path string
----@param root string
----@return string
+---@return boolean
+local function is_absolute(path)
+    assert(type(path) == 'string')
+    assert(path ~= '')
+
+    return vim.fn.isabsolutepath(path) == 1
+end
+
 local function normalize_path(path, root)
-  assert(path ~= '')
-  assert(root ~= '')
+    assert(path ~= '')
+    assert(root ~= '')
 
-  if path:sub(1, 7) == 'file://' then
-    local ok, filename = pcall(
-      vim.uri_to_fname,
-      path
-    )
+    if path:sub(1, 7) == 'file://' then
+        local ok, filename = pcall(vim.uri_to_fname, path)
 
-    if
-      ok
-      and type(filename) == 'string'
-      and filename ~= ''
-    then
-      return fs.normalize(filename)
+        if ok and type(filename) == 'string' and filename ~= '' then
+            return fs.normalize(filename)
+        end
     end
-  end
 
-  if fs.is_absolute(path) then
-    return fs.normalize(path)
-  end
+    if is_absolute(path) then
+        return fs.normalize(path)
+    end
 
-  return fs.normalize(
-    fs.joinpath(
-      root,
-      path
-    )
-  )
+    return fs.normalize(fs.joinpath(root, path))
 end
 
 ---@param candidate string
 ---@param filename string
 ---@param root string
 ---@return boolean
-local function belongs_to_buffer(
-  candidate,
-  filename,
-  root
-)
-  assert(candidate ~= '')
-  assert(filename ~= '')
-  assert(root ~= '')
+local function belongs_to_buffer(candidate, filename, root)
+    assert(candidate ~= '')
+    assert(filename ~= '')
+    assert(root ~= '')
 
-  return normalize_path(
-    candidate,
-    root
-  ) == filename
+    return normalize_path(candidate, root) == filename
 end
 
 ---@param message string
 ---@return string?
 local function diagnostic_code(message)
-  local code = message:match(
-    '%s+%[([%w_%-]+)%]%s*$'
-  )
+    local code = message:match('%s+%[([%w_%-]+)%]%s*$')
 
-  if
-    type(code) ~= 'string'
-    or code == ''
-  then
-    return nil
-  end
+    if type(code) ~= 'string' or code == '' then
+        return nil
+    end
 
-  return code
+    return code
 end
 
 ---@param message string
 ---@param code string|nil
 ---@return string
-local function remove_code_suffix(
-  message,
-  code
-)
-  if code == nil then
-    return message
-  end
+local function remove_code_suffix(message, code)
+    if code == nil then
+        return message
+    end
 
-  return trim(
-    message:gsub(
-      '%s+%['
-        .. vim.pesc(code)
-        .. '%]%s*$',
-      ''
-    )
-  )
+    return trim(message:gsub('%s+%[' .. vim.pesc(code) .. '%]%s*$', ''))
 end
 
 ---@param line string
 ---@return DmypyParsedDiagnostic?
 local function parse_line(line)
-  assert(type(line) == 'string')
+    assert(type(line) == 'string')
 
-  if
-    line == ''
-    or #line > LINE_LENGTH_MAX
-  then
-    return nil
-  end
+    if line == '' or #line > LINE_LENGTH_MAX then
+        return nil
+    end
 
-  line = strip_ansi(line)
+    line = strip_ansi(line)
 
-  --
-  -- With --show-error-end:
-  --
-  --   file.py:12:4:12:9: error: message [assignment]
-  --
-  local filename,
-    start_line,
-    start_column,
-    end_line,
-    end_column,
-    level,
-    message = line:match(
-      '^(.+):(%d+):(%d+):(%d+):(%d+):%s*'
-        .. '([%a]+):%s*(.+)$'
-    )
+    --
+    -- With --show-error-end:
+    --
+    --   file.py:12:4:12:9: error: message [assignment]
+    --
+    local filename, start_line, start_column, end_line, end_column, level, message =
+        line:match('^(.+):(%d+):(%d+):(%d+):(%d+):%s*' .. '([%a]+):%s*(.+)$')
 
-  if
-    filename ~= nil
-    and start_line ~= nil
-    and start_column ~= nil
-    and end_line ~= nil
-    and end_column ~= nil
-    and level ~= nil
-    and message ~= nil
-  then
-    local code =
-      diagnostic_code(message)
+    if
+        filename ~= nil
+        and start_line ~= nil
+        and start_column ~= nil
+        and end_line ~= nil
+        and end_column ~= nil
+        and level ~= nil
+        and message ~= nil
+    then
+        local code = diagnostic_code(message)
 
-    message =
-      remove_code_suffix(
-        normalize_message(message),
-        code
-      )
+        message = remove_code_suffix(normalize_message(message), code)
+
+        return {
+            filename = filename,
+
+            line = max(integer(start_line, 1), 1),
+
+            --
+            -- Mypy columns are already zero-based.
+            --
+            column = max(integer(start_column, 0), 0),
+
+            end_line = max(integer(end_line, 1), 1),
+
+            end_column = max(integer(end_column, 0), 0),
+
+            severity = level,
+            message = message,
+            code = code,
+        }
+    end
+
+    --
+    -- Fallback form without end coordinates:
+    --
+    --   file.py:12:4: error: message [assignment]
+    --
+    filename, start_line, start_column, level, message = line:match('^(.+):(%d+):(%d+):%s*' .. '([%a]+):%s*(.+)$')
+
+    if filename == nil or start_line == nil or start_column == nil or level == nil or message == nil then
+        return nil
+    end
+
+    local code = diagnostic_code(message)
+
+    message = remove_code_suffix(normalize_message(message), code)
+
+    if message == '' then
+        return nil
+    end
 
     return {
-      filename = filename,
+        filename = filename,
 
-      line = max(
-        integer(start_line, 1),
-        1
-      ),
+        line = max(integer(start_line, 1), 1),
 
-      --
-      -- Mypy columns are already zero-based.
-      --
-      column = max(
-        integer(start_column, 0),
-        0
-      ),
+        column = max(integer(start_column, 0), 0),
 
-      end_line = max(
-        integer(end_line, 1),
-        1
-      ),
-
-      end_column = max(
-        integer(end_column, 0),
-        0
-      ),
-
-      severity = level,
-      message = message,
-      code = code,
+        severity = level,
+        message = message,
+        code = code,
     }
-  end
-
-  --
-  -- Fallback form without end coordinates:
-  --
-  --   file.py:12:4: error: message [assignment]
-  --
-  filename,
-    start_line,
-    start_column,
-    level,
-    message = line:match(
-      '^(.+):(%d+):(%d+):%s*'
-        .. '([%a]+):%s*(.+)$'
-    )
-
-  if
-    filename == nil
-    or start_line == nil
-    or start_column == nil
-    or level == nil
-    or message == nil
-  then
-    return nil
-  end
-
-  local code =
-    diagnostic_code(message)
-
-  message =
-    remove_code_suffix(
-      normalize_message(message),
-      code
-    )
-
-  if message == '' then
-    return nil
-  end
-
-  return {
-    filename = filename,
-
-    line = max(
-      integer(start_line, 1),
-      1
-    ),
-
-    column = max(
-      integer(start_column, 0),
-      0
-    ),
-
-    severity = level,
-    message = message,
-    code = code,
-  }
 end
 
 ---@param entry DmypyParsedDiagnostic
 ---@param filename string
 ---@param root string
----@return vim.Diagnostic?
-local function diagnostic_from_entry(
-  entry,
-  filename,
-  root
-)
-  if
-    not belongs_to_buffer(
-      entry.filename,
-      filename,
-      root
-    )
-  then
-    return nil
-  end
+---@return vim.Diagnostic.Set?
+local function diagnostic_from_entry(entry, filename, root)
+    if not belongs_to_buffer(entry.filename, filename, root) then
+        return nil
+    end
 
-  --
-  -- Mypy line numbers are one-based.
-  -- Mypy columns are zero-based.
-  --
-  local lnum = max(
-    entry.line - 1,
-    0
-  )
+    --
+    -- Mypy line numbers are one-based.
+    -- Mypy columns are zero-based.
+    --
+    local lnum = max(entry.line - 1, 0)
 
-  local col = max(
-    entry.column,
-    0
-  )
+    local col = max(entry.column, 0)
 
-  local end_lnum = lnum
-  local end_col = col + 1
+    local end_lnum = lnum
+    local end_col = col + 1
 
-  if entry.end_line ~= nil then
-    end_lnum = max(
-      entry.end_line - 1,
-      lnum
-    )
-  end
+    if entry.end_line ~= nil then
+        end_lnum = max(entry.end_line - 1, lnum)
+    end
 
-  if entry.end_column ~= nil then
-    end_col = max(
-      entry.end_column,
-      end_lnum == lnum
-          and col + 1
-        or 0
-    )
-  end
+    local end_column = entry.end_column
+    if end_column ~= nil then
+        end_col = max(end_column, end_lnum == lnum and col + 1 or 0)
+    end
 
-  return {
-    lnum = lnum,
-    end_lnum = end_lnum,
+    return {
+        lnum = lnum,
+        end_lnum = end_lnum,
 
-    col = col,
-    end_col = end_col,
+        col = col,
+        end_col = end_col,
 
-    message = entry.message,
+        message = entry.message,
 
-    severity =
-      severity(entry.severity),
+        severity = severity(entry.severity),
 
-    source = SOURCE,
-    code = entry.code,
+        source = SOURCE,
+        code = entry.code,
 
-    user_data = {
-      error_code = entry.code,
-      mypy_severity = entry.severity,
-    },
-  }
+        user_data = {
+            error_code = entry.code,
+            mypy_severity = entry.severity,
+        },
+    }
 end
 
 ---@param output string
 ---@param context LintContext|integer
 ---@return vim.Diagnostic.Set[]
 local function parse(output, context)
-  if output == '' then
-    return {}
-  end
-
-  assert(
-    type(context) == 'table',
-    'dmypy parser requires a LintContext'
-  )
-
-  ---@cast context LintContext
-
-  assert(context.filename ~= '')
-  assert(context.root ~= '')
-
-  assert(
-    #output <= OUTPUT_LENGTH_MAX,
-    'dmypy output exceeded maximum size'
-  )
-
-  local filename =
-    fs.normalize(
-      context.filename
-    )
-
-  local root =
-    fs.normalize(
-      context.root
-    )
-
-  ---@type vim.Diagnostic.Set[]
-  local diagnostics = {}
-
-  for line in output:gmatch(
-    '[^\r\n]+'
-  ) do
-    if #diagnostics >= DIAGNOSTICS_MAX then
-      break
+    if output == '' then
+        return {}
     end
 
-    local raw =
-      parse_line(line)
+    assert(type(context) == 'table', 'dmypy parser requires a LintContext')
 
-    if raw ~= nil then
-      local entry =
-        diagnostic_from_entry(
-          raw,
-          filename,
-          root
-        )
+    ---@cast context LintContext
 
-      if entry ~= nil then
-        diagnostics[#diagnostics + 1] =
-          entry
-      end
+    assert(context.filename ~= '')
+    assert(context.root ~= '')
+
+    assert(#output <= OUTPUT_LENGTH_MAX, 'dmypy output exceeded maximum size')
+
+    local filename = fs.normalize(context.filename)
+
+    local root = fs.normalize(context.root)
+
+    ---@type vim.Diagnostic.Set[]
+    local diagnostics = {}
+
+    for line in output:gmatch('[^\r\n]+') do
+        if #diagnostics >= DIAGNOSTICS_MAX then
+            break
+        end
+
+        local raw = parse_line(line)
+
+        if raw ~= nil then
+            local entry = diagnostic_from_entry(raw, filename, root)
+
+            if entry ~= nil then
+                diagnostics[#diagnostics + 1] = entry
+            end
+        end
     end
-  end
 
-  assert(
-    #diagnostics <= DIAGNOSTICS_MAX
-  )
+    assert(#diagnostics <= DIAGNOSTICS_MAX)
 
-  return diagnostics
+    return diagnostics
 end
 
 ---@param context LintContext
 ---@return string[]
 local function args(context)
-  assert(context.filename ~= '')
-  assert(context.root ~= '')
+    assert(context.filename ~= '')
+    assert(context.root ~= '')
 
-  local root =
-    fs.normalize(
-      context.root
-    )
+    local root = fs.normalize(context.root)
 
-  local argv = {
-    'run',
+    local argv = {
+        'run',
 
-    --
-    -- Keep idle daemon state bounded. The next lint invocation starts it
-    -- again automatically.
-    --
-    '--timeout',
-    '900',
+        --
+        -- Keep idle daemon state bounded. The next lint invocation starts it
+        -- again automatically.
+        --
+        '--timeout',
+        '900',
 
-    '--',
+        '--',
 
-    --
-    -- Deterministic editor diagnostics.
-    --
-    '--no-color-output',
-    '--no-pretty',
-    '--no-error-summary',
-    '--hide-error-context',
+        --
+        -- Deterministic editor diagnostics.
+        --
+        '--no-color-output',
+        '--no-pretty',
+        '--no-error-summary',
+        '--hide-error-context',
 
-    --
-    -- Preserve stable rule IDs such as:
-    --
-    --   [assignment]
-    --   [arg-type]
-    --   [override]
-    --   [type-arg]
-    --
-    '--show-error-codes',
+        --
+        -- Preserve stable rule IDs such as:
+        --
+        --   [assignment]
+        --   [arg-type]
+        --   [override]
+        --   [type-arg]
+        --
+        '--show-error-codes',
 
-    --
-    -- Exact source spans are substantially better than a manufactured
-    -- one-column diagnostic.
-    --
-    '--show-error-end',
+        --
+        -- Exact source spans are substantially better than a manufactured
+        -- one-column diagnostic.
+        --
+        '--show-error-end',
 
-    --
-    -- Tiger profile: dmypy should complement BasedPyright and Ty rather than
-    -- repeat every strict inference diagnostic they already produce.
-    --
-    '--follow-imports=normal',
+        --
+        -- Tiger profile: dmypy should complement BasedPyright and Ty rather than
+        -- repeat every strict inference diagnostic they already produce.
+        --
+        '--follow-imports=normal',
 
-    --
-    -- Keep mypy's warnings that are especially useful for compatibility and
-    -- explicit type-contract maintenance.
-    --
-    '--warn-unused-ignores',
-    '--warn-redundant-casts',
-    '--warn-unreachable',
-    '--extra-checks',
+        --
+        -- Keep mypy's warnings that are especially useful for compatibility and
+        -- explicit type-contract maintenance.
+        --
+        '--warn-unused-ignores',
+        '--warn-redundant-casts',
+        '--warn-unreachable',
+        '--extra-checks',
 
-    --
-    -- Intentional overlap reduction:
-    --
-    -- BasedPyright and Ty already perform aggressive "unknown / Any" analysis.
-    -- Do not force mypy's full --strict profile here.
-    --
+        --
+        -- Intentional overlap reduction:
+        --
+        -- BasedPyright and Ty already perform aggressive "unknown / Any" analysis.
+        -- Do not force mypy's full --strict profile here.
+        --
 
-    context.filename,
-  }
+        context.filename,
+    }
 
-  local config =
-    config_file(root)
+    local config = config_file(root)
 
-  if config ~= nil then
-    --
-    -- Explicit configuration makes daemon identity deterministic when the
-    -- repository contains several Python configuration files.
-    --
-    table.insert(
-      argv,
-      #argv,
-      '--config-file=' .. config
-    )
-  end
+    if config ~= nil then
+        --
+        -- Explicit configuration makes daemon identity deterministic when the
+        -- repository contains several Python configuration files.
+        --
+        table.insert(argv, #argv, '--config-file=' .. config)
+    end
 
-  return argv
+    return argv
 end
 
 ---@param context LintContext
 ---@return string
 local function cwd(context)
-  assert(context.root ~= '')
+    assert(context.root ~= '')
 
-  return fs.normalize(
-    context.root
-  )
+    return fs.normalize(context.root)
 end
 
 return ---@type Linter
 {
-  automatic = false,
+    automatic = false,
 
-  cmd = 'dmypy',
+    cmd = 'dmypy',
 
-  args = args,
+    args = args,
 
-  append_fname = false,
+    append_fname = false,
 
-  cwd = cwd,
+    cwd = cwd,
 
-  --
-  -- Mypy returns a nonzero status when type errors exist. Those errors are
-  -- valid linter output.
-  --
-  ignore_exitcode = true,
+    --
+    -- Mypy returns a nonzero status when type errors exist. Those errors are
+    -- valid linter output.
+    --
+    ignore_exitcode = true,
 
-  parser = parse,
+    parser = parse,
 
-  root_markers = {
-    'mypy.ini',
-    '.mypy.ini',
+    root_markers = {
+        'mypy.ini',
+        '.mypy.ini',
 
-    'pyproject.toml',
-    'setup.cfg',
+        'pyproject.toml',
+        'setup.cfg',
 
-    'setup.py',
+        'setup.py',
 
-    'uv.lock',
-    'poetry.lock',
-    'Pipfile',
+        'uv.lock',
+        'poetry.lock',
+        'Pipfile',
 
-    '.git',
-  },
+        '.git',
+    },
 
-  stdin = false,
+    stdin = false,
 
-  --
-  -- Normal mypy diagnostic reports are returned on stdout. Operational daemon
-  -- failures use stderr.
-  --
-  stream = 'stdout',
+    --
+    -- Normal mypy diagnostic reports are returned on stdout. Operational daemon
+    -- failures use stderr.
+    --
+    stream = 'stdout',
 
-  timeout = 60000,
+    timeout = 60000,
 }

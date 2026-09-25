@@ -42,5 +42,4 @@ if ok and w3m then
         nargs = 1,
         complete = 'customlist,v:lua.require("w3m").list_user_agents',
     })
-else
 end

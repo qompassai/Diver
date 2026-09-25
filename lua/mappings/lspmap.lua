@@ -90,6 +90,22 @@ local function attach(bufnr)
                 end,
             }
         end
+        maps[#maps + 1] = {
+            lhs = '<LocalLeader>lk',
+            desc = 'Audit server code actions',
+            rhs = core.command('LspCodeActionAudit'),
+        }
+        maps[#maps + 1] = {
+            lhs = '<LocalLeader>lc',
+            desc = 'Code actions here',
+            rhs = core.command('CodeActionsHere'),
+            mode = { 'n', 'x' },
+        }
+        maps[#maps + 1] = {
+            lhs = '<LocalLeader>ls',
+            desc = 'Toggle semantic tokens',
+            rhs = core.command('LspSemanticTokensToggle'),
+        }
         for _, item in ipairs({
             { 'gD', 'textDocument/declaration', vim.lsp.buf.declaration, 'Declaration' },
             { 'gd', 'textDocument/definition', vim.lsp.buf.definition, 'Definition' },

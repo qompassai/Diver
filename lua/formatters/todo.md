@@ -44,15 +44,17 @@ Keep process execution centralized here rather than duplicating `vim.system()` o
 - [x] `dioxus.lua` — Dioxus / RSX
 - [x] `gofumpt.lua` — Go
 - [x] `goimports.lua` — Go import-aware formatting
+- [x] `google_java_format.lua` — Java (Google Java Style)
 - [x] `jsonnetfmt.lua` — Jsonnet
 - [x] `ktfmt.lua` — Kotlin
+- [x] `nixfmt.lua` — Nix (tiger-style profile: width 100, 2-space indent, `--strict`)
 - [x] `phpcsfixer.lua` — PHP
 - [x] `pint.lua` — Laravel PHP
 - [x] `shfmt.lua` — shell
 - [x] `uncrustify.lua` — configurable C-family formatting
 - [x] `wgslfmt.lua` — WGSL
 
-**Current total: 14 formatter adapters + 4 framework modules.**
+**Current total: 16 formatter adapters + 4 framework modules.**
 
 ---
 
@@ -122,10 +124,13 @@ configuration and are modern, canonical, or very actively maintained.
 
 ## Nix
 
-- [ ] **`nixfmt.lua` — nixfmt**
+- [x] **`nixfmt.lua` — nixfmt**
   - **Canonical / preferred for new Nix repositories**
   - Upstream: <https://github.com/NixOS/nixfmt>
-  - Official Nix formatter with active 1.x releases in 2026.
+  - Official Nix formatter with active 1.x releases in 2026; adapter reviewed against 1.5.0.
+  - Tiger-style nix profile: `--width 100`, two-space `--indent 2`, `--strict` for
+    input-independent deterministic output. stdin via `-` with `--filename`;
+    nixfmt reads no config files, so these flags are the pinned profile.
   - Keep the completed `alejandra.lua` for repositories already standardized on Alejandra.
   - Do not run nixfmt and Alejandra sequentially.
 
@@ -178,8 +183,11 @@ configuration and are modern, canonical, or very actively maintained.
   - Active releases in 2026.
   - Make SQL dialect an explicit formatter option/root setting.
 
-- [ ] `pgformatter.lua` — pgFormatter
-  - **Installed**
+- [x] `pg_format.lua` — pgFormatter
+  - Module name is `pg_format` to match the existing `init.lua` registry
+    (`['pg_format'] = 'formatters.pg_format'`) and the `sql` filetype chain.
+  - Tiger-style SQL profile pinned in flags: 4-space indent, wrap-limit 100,
+    `--no-rcfile` for deterministic output (pgFormatter v5.11).
   - Prefer for PostgreSQL-specific repositories.
 
 - [ ] `sqlfluff.lua` — SQLFluff
@@ -209,12 +217,13 @@ configuration and are modern, canonical, or very actively maintained.
 
 ## Java
 
-- [ ] **`google_java_format.lua` — google-java-format**
+- [x] **`google_java_format.lua` — google-java-format**
   - **Preferred**
   - Upstream: <https://github.com/google/google-java-format>
-  - Active 1.36.x release line in 2026.
-  - Support stdin/stdout and range formatting where useful.
-  - Remember the formatter itself currently requires a modern JDK.
+  - Active 1.36.x release line in 2026; adapter pins 1.36.1.
+  - stdin/stdout via `-` with `--assume-filename`; no range formatting yet.
+  - Requires a JDK (not JRE), version 21 or newer; `--add-exports` flags
+    are passed unconditionally for JEP 396 (JDK 16+).
 
 ## Scala
 
@@ -382,9 +391,11 @@ Do not chain both.
 
 ## LaTeX
 
-- [ ] **`tex_fmt.lua` — tex-fmt**
+- [x] **`tex_fmt.lua` — tex-fmt**
   - **Installed**
   - Modern Rust implementation; high-priority LaTeX choice.
+  - Tiger-style LaTeX profile pinned in flags: `--tabsize 4`, `--wraplen 100`,
+    `--noconfig` for deterministic output (tex-fmt v0.5.7); stdin via `--stdin`.
 
 - [ ] `latexindent.lua`
   - Alternative for repositories with existing `latexindent` configuration.
@@ -405,15 +416,15 @@ Do not chain both.
 These are strong additions, but lower priority because they are narrower or
 already have acceptable LSP/toolchain formatting paths.
 
-- [ ] `dart_format.lua` — `dart format`
-- [ ] `fish_indent.lua` — `fish_indent`
-- [ ] `gleam_format.lua` — `gleam format`
-- [ ] `zig_fmt.lua` — `zig fmt`
-- [ ] `crystal_format.lua` — `crystal tool format`
-- [ ] `rescript_format.lua` — `rescript format`
-- [ ] `v_fmt.lua` — `v fmt`
-- [ ] `nimpretty.lua` — `nimpretty`
-- [ ] `bicep_format.lua` — `bicep format`
+- [x] `dart_format.lua` — `dart format`
+- [x] `fish_indent.lua` — `fish_indent`
+- [x] `gleam_format.lua` — `gleam format`
+- [x] `zig_fmt.lua` — `zig fmt`
+- [x] `crystal_format.lua` — `crystal tool format`
+- [x] `rescript_format.lua` — `rescript format`
+- [x] `v_fmt.lua` — `v fmt`
+- [x] `nimpretty.lua` — `nimpretty`
+- [x] `bicep_format.lua` — `bicep format`
 - [ ] `forge_fmt.lua` — `forge fmt` for Solidity/Foundry
 - [ ] `perltidy.lua` — Perl::Tidy
 - [ ] `rubocop.lua` — RuboCop autocorrection for Ruby repositories choosing RuboCop
@@ -480,7 +491,7 @@ should not displace a stronger maintained/canonical formatter.
 - [ ] `ruff_format.lua`
 - [ ] `rustfmt.lua`
 - [ ] `biome.lua`
-- [ ] `nixfmt.lua`
+- [x] `nixfmt.lua`
 - [ ] `tombi.lua`
 - [ ] `yamlfmt.lua`
 - [ ] `mdformat.lua`
@@ -492,7 +503,7 @@ should not displace a stronger maintained/canonical formatter.
 - [ ] `typstyle.lua`
 - [ ] `google_java_format.lua`
 - [ ] `scalafmt.lua`
-- [ ] `tex_fmt.lua`
+- [x] `tex_fmt.lua`
 - [ ] `gersemi.lua`
 - [ ] `buildifier.lua`
 
@@ -514,11 +525,11 @@ should not displace a stronger maintained/canonical formatter.
 - [ ] `terraform_fmt.lua`
 - [ ] `tofu_fmt.lua`
 - [ ] `cue_fmt.lua`
-- [ ] `dart_format.lua`
-- [ ] `fish_indent.lua`
-- [ ] `gleam_format.lua`
-- [ ] `zig_fmt.lua`
-- [ ] `crystal_format.lua`
+- [x] `dart_format.lua`
+- [x] `fish_indent.lua`
+- [x] `gleam_format.lua`
+- [x] `zig_fmt.lua`
+- [x] `crystal_format.lua`
 - [ ] `forge_fmt.lua`
 - [ ] `perltidy.lua`
 - [ ] `styler.lua`
@@ -615,7 +626,7 @@ alternatives selected only when repository policy requires them.
 | Python | Ruff formatter | Black |
 | JS/TS | Biome or Oxfmt | Prettier |
 | JSON | Biome | Prettier / jfmt / formatjson |
-| Nix | nixfmt | Alejandra **done** |
+| Nix | nixfmt **done** | Alejandra **done** |
 | TOML | Tombi | Taplo |
 | YAML | yamlfmt | yamlfix |
 | Markdown | mdformat | Prettier / Rumdl |

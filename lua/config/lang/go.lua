@@ -14,23 +14,43 @@ local INFO = vim.log.levels.INFO
 local jobstart = vim.fn.jobstart
 local lsp = vim.lsp
 local notify = vim.notify
-local function run_cached_gvm(cmd)
-    local handle = io.popen('bash -c \'source ~/.gvm/scripts/gvm && ' .. cmd .. '\'')
-    if not handle then
-        return nil
+local GVM_TIMEOUT_MS = 15000
+local gvm_cache = {} ---@type table<string, string|false>
+---@param argv string[] command and arguments to run with gvm on PATH
+---@return string|nil trimmed stdout, or nil when the command fails
+local function run_cached_gvm(argv)
+    assert(type(argv) == 'table' and #argv > 0, 'gvm argv must be a non-empty list')
+    local cache_key = table.concat(argv, '\0')
+    local cached = gvm_cache[cache_key]
+    if cached ~= nil then
+        return cached == false and nil or cached
     end
-    local result = handle:read('*a')
-    handle:close()
-    return result and vim.trim(result) or nil
+    -- argv form through bash: the gvm script must be sourced, but the
+    -- caller-supplied command is passed as "$@" and never interpolated
+    -- into a shell string. Results are memoized; the old version was
+    -- named "cached" but re-spawned bash+gvm on every call.
+    local result = vim.system({
+        'bash',
+        '-c',
+        'source ~/.gvm/scripts/gvm && exec "$@"',
+        'bash',
+        unpack(argv),
+    }, {
+        text = true,
+        timeout = GVM_TIMEOUT_MS,
+    }):wait()
+    local trimmed = (result.code == 0 and result.stdout ~= '') and vim.trim(result.stdout) or nil
+    gvm_cache[cache_key] = trimmed or false
+    return trimmed
 end
 local function get_go_bin()
-    return run_cached_gvm('which go') or 'go'
+    return run_cached_gvm({ 'which', 'go' }) or 'go'
 end
 local function get_gopath()
-    return run_cached_gvm('go env GOPATH') or os.getenv('GOPATH') or ''
+    return run_cached_gvm({ 'go', 'env', 'GOPATH' }) or os.getenv('GOPATH') or ''
 end
 local function get_go_version()
-    return run_cached_gvm('go version') or ''
+    return run_cached_gvm({ 'go', 'version' }) or ''
 end
 local header = require('utils.docs.docs')
 local group = augroup('Go', {
@@ -212,19 +232,11 @@ local function go_dap()
     return require('dap')
 end
 function M.go_dap()
-    ---@return string|nil
-    function run_cached_gvm(cmd) ---@param cmd string
-        local handle = io.popen('bash -c \'source ~/.gvm/scripts/gvm && ' .. cmd .. '\'')
-        if not handle then
-            return nil
-        end
-        local result = handle:read('*a')
-        handle:close()
-        return result and vim.trim(result) or nil
-    end
-
+    -- uses the module-level cached run_cached_gvm; the old nested copy
+    -- was a global _G assignment shadowing nothing (outer callers hold
+    -- the local upvalue) and spawned a fresh bash on every call.
     local function get_dlv_bin() ---@return string
-        return run_cached_gvm('which dlv') or 'dlv'
+        return run_cached_gvm({ 'which', 'dlv' }) or 'dlv'
     end
     local dap_go_ok, dap_go = pcall(require, 'dap-go')
     if dap_go_ok then
@@ -295,9 +307,7 @@ usercmd('GoStaticcheck', function()
         end,
     })
 end, {})
----@param opts table|nil
-function M.go_cfg(opts)
-    opts = opts or {}
-end
+---@param _opts table|nil
+function M.go_cfg(_opts) end
 
 return M

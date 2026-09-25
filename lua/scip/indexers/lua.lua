@@ -26,25 +26,25 @@
 ---writes a valid SCIP index.
 ---@type ScipIndexer
 local indexer = {
-  args = {
-    'index',
-    '.',
-  },
+    args = {
+        'index',
+        '.',
+    },
 
-  command = 'scip-lua',
+    command = 'scip-lua',
 
-  enabled = false,
-  filetypes = {
-    lua = true,
-  },
+    enabled = false,
+    filetypes = {
+        lua = true,
+    },
 
-  markers = {
-    '.git',
-    '.luarc.json',
-    '.luarc.jsonc',
-    'lua',
-    'rockspec',
-  },
+    markers = {
+        '.git',
+        '.luarc.json',
+        '.luarc.jsonc',
+        'lua',
+        'rockspec',
+    },
 }
 
 return indexer

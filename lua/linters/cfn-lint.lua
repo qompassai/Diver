@@ -1,3 +1,9 @@
+--- cfn-lint linter adapter — AWS CloudFormation template checker wiring.
+---
+--- Plain-language version: a linter is like a spell-checker, but for code instead of words. This file teaches
+--- Neovim how to run the `cfn-lint` program and turn its complaints into squiggles under your code. It only runs
+--- when linting is triggered (usually on save), and only if `cfn-lint` is installed on your computer.
+---@module 'linters.cfn_lint'
 -- #################################################################
 -- ~/.config/nvim/lua/linters/cfn-lint.lua
 -- Qompass AI Diver Native AWS CloudFormation Linter
@@ -76,192 +82,193 @@ local MAX_PARSE_DEPTH = 6
 local SOURCE = 'cfn-lint'
 
 local ROOT_MARKERS = {
-  {
-    '.cfnlintrc',
-    '.cfnlintrc.yaml',
-    '.cfnlintrc.yml',
-  },
-  {
-    'template.yaml',
-    'template.yml',
-    'template.json',
-  },
-  {
-    'samconfig.toml',
-    'serverless.yml',
-    'serverless.yaml',
-  },
-  '.git',
+    {
+        '.cfnlintrc',
+        '.cfnlintrc.yaml',
+        '.cfnlintrc.yml',
+    },
+    {
+        'template.yaml',
+        'template.yml',
+        'template.json',
+    },
+    {
+        'samconfig.toml',
+        'serverless.yml',
+        'serverless.yaml',
+    },
+    '.git',
 }
 
 ---@param value any
 ---@return string?
 local function string_value(value)
-  if type(value) ~= 'string' or value == '' then
-    return nil
-  end
+    if type(value) ~= 'string' or value == '' then
+        return nil
+    end
 
-  return value
+    return value
 end
 
 ---@param value string
 ---@return string
 local function compact(value)
-  return vim.trim(value:gsub('%s+', ' '))
+    return vim.trim(value:gsub('%s+', ' '))
 end
 
 ---@param value string
 ---@param limit integer
 ---@return string
 local function truncate(value, limit)
-  if #value <= limit then
-    return value
-  end
+    if #value <= limit then
+        return value
+    end
 
-  if limit <= 3 then
-    return value:sub(1, limit)
-  end
+    if limit <= 3 then
+        return value:sub(1, limit)
+    end
 
-  return value:sub(1, limit - 3) .. '...'
+    return value:sub(1, limit - 3) .. '...'
 end
 
 ---@param value any
 ---@return integer
 local function zero_based(value)
-  local number = tonumber(value)
+    local number = tonumber(value)
 
-  if number == nil then
-    return 0
-  end
+    if number == nil then
+        return 0
+    end
 
-  local integer = math.floor(number)
+    local integer = math.floor(number)
 
-  if integer <= 1 then
-    return 0
-  end
+    if integer <= 1 then
+        return 0
+    end
 
-  return integer - 1
+    return integer - 1
 end
 
 ---@param output string
 ---@return string
 local function strip_ansi(output)
-  return output:gsub('\27%[[%d;]*[mK]', '')
+    local cleaned = output:gsub('\27%[[%d;]*[mK]', '')
+    return cleaned
 end
 
 ---@param value string?
 ---@return boolean
 local function truthy(value)
-  if value == nil then
-    return false
-  end
+    if value == nil then
+        return false
+    end
 
-  local normalized = value:lower()
+    local normalized = value:lower()
 
-  return normalized == '1' or normalized == 'true' or normalized == 'yes' or normalized == 'on'
+    return normalized == '1' or normalized == 'true' or normalized == 'yes' or normalized == 'on'
 end
 
 ---@param value string?
 ---@return string[]
 local function split_csv(value)
-  ---@type string[]
-  local result = {}
+    ---@type string[]
+    local result = {}
 
-  if value == nil or value == '' then
-    return result
-  end
-
-  for item in value:gmatch('[^,]+') do
-    local normalized = vim.trim(item)
-
-    if normalized ~= '' then
-      result[#result + 1] = normalized
+    if value == nil or value == '' then
+        return result
     end
-  end
 
-  return result
+    for item in value:gmatch('[^,]+') do
+        local normalized = vim.trim(item)
+
+        if normalized ~= '' then
+            result[#result + 1] = normalized
+        end
+    end
+
+    return result
 end
 
 ---@param context LintContext
 ---@return string
 local function project_root(context)
-  local context_root = string_value(context.root)
+    local context_root = string_value(context.root)
 
-  if context_root ~= nil then
-    return fs.normalize(context_root)
-  end
-
-  local filename = string_value(context.filename)
-
-  if filename ~= nil then
-    local detected = fs.root(filename, ROOT_MARKERS)
-
-    if type(detected) == 'string' and detected ~= '' then
-      return fs.normalize(detected)
+    if context_root ~= nil then
+        return fs.normalize(context_root)
     end
 
-    local parent = fs.dirname(filename)
+    local filename = string_value(context.filename)
 
-    if type(parent) == 'string' and parent ~= '' then
-      return fs.normalize(parent)
+    if filename ~= nil then
+        local detected = fs.root(filename, ROOT_MARKERS)
+
+        if type(detected) == 'string' and detected ~= '' then
+            return fs.normalize(detected)
+        end
+
+        local parent = fs.dirname(filename)
+
+        if type(parent) == 'string' and parent ~= '' then
+            return fs.normalize(parent)
+        end
     end
-  end
 
-  local cwd = string_value(context.cwd)
+    local cwd = string_value(context.cwd)
 
-  if cwd ~= nil then
-    return fs.normalize(cwd)
-  end
+    if cwd ~= nil then
+        return fs.normalize(cwd)
+    end
 
-  return fs.normalize(vim.fn.getcwd())
+    return fs.normalize(vim.fn.getcwd())
 end
 
 ---@param level string?
 ---@return integer
 local function severity(level)
-  if level == nil then
+    if level == nil then
+        return diagnostic.severity.WARN
+    end
+
+    local normalized = level:lower()
+
+    if normalized == 'error' then
+        return diagnostic.severity.ERROR
+    end
+
+    if normalized == 'warning' or normalized == 'warn' then
+        return diagnostic.severity.WARN
+    end
+
+    if normalized == 'informational' or normalized == 'information' or normalized == 'info' then
+        return diagnostic.severity.INFO
+    end
+
     return diagnostic.severity.WARN
-  end
-
-  local normalized = level:lower()
-
-  if normalized == 'error' then
-    return diagnostic.severity.ERROR
-  end
-
-  if normalized == 'warning' or normalized == 'warn' then
-    return diagnostic.severity.WARN
-  end
-
-  if normalized == 'informational' or normalized == 'information' or normalized == 'info' then
-    return diagnostic.severity.INFO
-  end
-
-  return diagnostic.severity.WARN
 end
 
 ---@param rule_id string?
 ---@return integer
 local function severity_from_rule(rule_id)
-  if rule_id == nil then
+    if rule_id == nil then
+        return diagnostic.severity.WARN
+    end
+
+    local prefix = rule_id:sub(1, 1):upper()
+
+    if prefix == 'E' then
+        return diagnostic.severity.ERROR
+    end
+
+    if prefix == 'W' then
+        return diagnostic.severity.WARN
+    end
+
+    if prefix == 'I' then
+        return diagnostic.severity.INFO
+    end
+
     return diagnostic.severity.WARN
-  end
-
-  local prefix = rule_id:sub(1, 1):upper()
-
-  if prefix == 'E' then
-    return diagnostic.severity.ERROR
-  end
-
-  if prefix == 'W' then
-    return diagnostic.severity.WARN
-  end
-
-  if prefix == 'I' then
-    return diagnostic.severity.INFO
-  end
-
-  return diagnostic.severity.WARN
 end
 
 ---@class CfnLintPosition
@@ -291,392 +298,392 @@ end
 ---@param value any
 ---@return boolean
 local function finding_record(value)
-  if type(value) ~= 'table' then
-    return false
-  end
+    if type(value) ~= 'table' then
+        return false
+    end
 
-  return string_value(value.Message) ~= nil
-    and (type(value.Rule) == 'table' or type(value.Location) == 'table' or string_value(value.Id) ~= nil)
+    return string_value(value.Message) ~= nil
+        and (type(value.Rule) == 'table' or type(value.Location) == 'table' or string_value(value.Id) ~= nil)
 end
 
 ---@param value any
 ---@param findings table[]
 ---@param depth integer
 local function collect_findings(value, findings, depth)
-  if depth > MAX_PARSE_DEPTH or type(value) ~= 'table' then
-    return
-  end
-
-  if finding_record(value) then
-    findings[#findings + 1] = value
-
-    return
-  end
-
-  for _, child in pairs(value) do
-    if type(child) == 'table' then
-      collect_findings(child, findings, depth + 1)
+    if depth > MAX_PARSE_DEPTH or type(value) ~= 'table' then
+        return
     end
-  end
+
+    if finding_record(value) then
+        findings[#findings + 1] = value
+
+        return
+    end
+
+    for _, child in pairs(value) do
+        if type(child) == 'table' then
+            collect_findings(child, findings, depth + 1)
+        end
+    end
 end
 
 ---@param location CfnLintLocation?
 ---@return integer, integer, integer, integer
 local function diagnostic_range(location)
-  if type(location) ~= 'table' then
-    return 0, 0, 0, 0
-  end
-
-  local start = location.Start
-  local finish = location.End
-
-  local lnum = 0
-  local col = 0
-  local end_lnum = 0
-  local end_col = 0
-
-  if type(start) == 'table' then
-    lnum = zero_based(start.LineNumber)
-
-    col = zero_based(start.ColumnNumber)
-  end
-
-  end_lnum = lnum
-  end_col = col
-
-  if type(finish) == 'table' then
-    if finish.LineNumber ~= nil then
-      end_lnum = zero_based(finish.LineNumber)
+    if type(location) ~= 'table' then
+        return 0, 0, 0, 0
     end
 
-    if finish.ColumnNumber ~= nil then
-      end_col = zero_based(finish.ColumnNumber)
-    end
-  end
+    local start = location.Start
+    local finish = location.End
 
-  if end_lnum < lnum or (end_lnum == lnum and end_col < col) then
+    local lnum = 0
+    local col = 0
+    local end_lnum
+    local end_col
+
+    if type(start) == 'table' then
+        lnum = zero_based(start.LineNumber)
+
+        col = zero_based(start.ColumnNumber)
+    end
+
     end_lnum = lnum
     end_col = col
-  end
 
-  return lnum, col, end_lnum, end_col
+    if type(finish) == 'table' then
+        if finish.LineNumber ~= nil then
+            end_lnum = zero_based(finish.LineNumber)
+        end
+
+        if finish.ColumnNumber ~= nil then
+            end_col = zero_based(finish.ColumnNumber)
+        end
+    end
+
+    if end_lnum < lnum or (end_lnum == lnum and end_col < col) then
+        end_lnum = lnum
+        end_col = col
+    end
+
+    return lnum, col, end_lnum, end_col
 end
 
 ---@param path any
 ---@return string?
 local function location_path(path)
-  if type(path) ~= 'table' then
-    return nil
-  end
-
-  ---@type string[]
-  local parts = {}
-
-  for index = 1, #path do
-    local value = path[index]
-
-    if type(value) == 'string' or type(value) == 'number' then
-      parts[#parts + 1] = tostring(value)
+    if type(path) ~= 'table' then
+        return nil
     end
-  end
 
-  if #parts == 0 then
-    return nil
-  end
+    ---@type string[]
+    local parts = {}
 
-  return table.concat(parts, '.')
+    for index = 1, #path do
+        local value = path[index]
+
+        if type(value) == 'string' or type(value) == 'number' then
+            parts[#parts + 1] = tostring(value)
+        end
+    end
+
+    if #parts == 0 then
+        return nil
+    end
+
+    return table.concat(parts, '.')
 end
 
 ---@param finding CfnLintFinding
 ---@param context LintContext
 ---@return vim.Diagnostic?
 local function finding_diagnostic(finding, context)
-  local message = string_value(finding.Message)
+    local message = string_value(finding.Message)
 
-  if message == nil then
-    return nil
-  end
+    if message == nil then
+        return nil
+    end
 
-  local rule = finding.Rule
+    local rule = finding.Rule
 
-  local rule_id
+    local rule_id
 
-  if type(rule) == 'table' then
-    rule_id = string_value(rule.Id)
-  end
+    if type(rule) == 'table' then
+        rule_id = string_value(rule.Id)
+    end
 
-  if rule_id == nil then
-    rule_id = string_value(finding.Id)
-  end
+    if rule_id == nil then
+        rule_id = string_value(finding.Id)
+    end
 
-  local lnum, col, end_lnum, end_col = diagnostic_range(finding.Location)
+    local lnum, col, end_lnum, end_col = diagnostic_range(finding.Location)
 
-  local level = string_value(finding.Level)
+    local level = string_value(finding.Level)
 
-  local diagnostic_severity
+    local diagnostic_severity
 
-  if level ~= nil then
-    diagnostic_severity = severity(level)
-  else
-    diagnostic_severity = severity_from_rule(rule_id)
-  end
+    if level ~= nil then
+        diagnostic_severity = severity(level)
+    else
+        diagnostic_severity = severity_from_rule(rule_id)
+    end
 
-  local path
+    local path
 
-  if type(finding.Location) == 'table' then
-    path = location_path(finding.Location.Path)
-  end
+    if type(finding.Location) == 'table' then
+        path = location_path(finding.Location.Path)
+    end
 
-  return {
-    bufnr = context.bufnr,
+    return {
+        bufnr = context.bufnr,
 
-    code = rule_id,
+        code = rule_id,
 
-    col = col,
+        col = col,
 
-    end_col = end_col,
+        end_col = end_col,
 
-    end_lnum = end_lnum,
+        end_lnum = end_lnum,
 
-    lnum = lnum,
+        lnum = lnum,
 
-    message = truncate(compact(message), MAX_MESSAGE_BYTES),
+        message = truncate(compact(message), MAX_MESSAGE_BYTES),
 
-    severity = diagnostic_severity,
+        severity = diagnostic_severity,
 
-    source = SOURCE,
+        source = SOURCE,
 
-    user_data = {
-      filename = string_value(finding.Filename),
+        user_data = {
+            filename = string_value(finding.Filename),
 
-      id = string_value(finding.Id),
+            id = string_value(finding.Id),
 
-      parent_id = string_value(finding.ParentId),
+            parent_id = string_value(finding.ParentId),
 
-      path = path,
+            path = path,
 
-      rule = rule_id,
+            rule = rule_id,
 
-      rule_description = type(rule) == 'table' and string_value(rule.Description) or nil,
+            rule_description = type(rule) == 'table' and string_value(rule.Description) or nil,
 
-      rule_short_description = type(rule) == 'table' and string_value(rule.ShortDescription) or nil,
+            rule_short_description = type(rule) == 'table' and string_value(rule.ShortDescription) or nil,
 
-      rule_source = type(rule) == 'table' and string_value(rule.Source) or nil,
-    },
-  }
+            rule_source = type(rule) == 'table' and string_value(rule.Source) or nil,
+        },
+    }
 end
 
 ---@param output string
 ---@return any?
 local function decode_output(output)
-  local text = vim.trim(output)
+    local text = vim.trim(output)
 
-  if text == '' then
-    return nil
-  end
+    if text == '' then
+        return nil
+    end
 
-  local ok, decoded = pcall(json.decode, text)
+    local ok, decoded = pcall(json.decode, text)
 
-  if not ok then
-    return nil
-  end
+    if not ok then
+        return nil
+    end
 
-  return decoded
+    return decoded
 end
 
 ---@param output string
 ---@return string?
 local function operational_message(output)
-  local text = strip_ansi(vim.trim(output))
+    local text = strip_ansi(vim.trim(output))
 
-  if text == '' then
-    return nil
-  end
-
-  for raw_line in text:gmatch('[^\r\n]+') do
-    local line = compact(raw_line)
-
-    local lower = line:lower()
-
-    if
-      lower:find('error', 1, true) ~= nil
-      or lower:find('failed', 1, true) ~= nil
-      or lower:find('cannot', 1, true) ~= nil
-      or lower:find('invalid', 1, true) ~= nil
-      or lower:find('configuration', 1, true) ~= nil
-      or lower:find('traceback', 1, true) ~= nil
-    then
-      return truncate(line, MAX_MESSAGE_BYTES)
+    if text == '' then
+        return nil
     end
-  end
 
-  return nil
+    for raw_line in text:gmatch('[^\r\n]+') do
+        local line = compact(raw_line)
+
+        local lower = line:lower()
+
+        if
+            lower:find('error', 1, true) ~= nil
+            or lower:find('failed', 1, true) ~= nil
+            or lower:find('cannot', 1, true) ~= nil
+            or lower:find('invalid', 1, true) ~= nil
+            or lower:find('configuration', 1, true) ~= nil
+            or lower:find('traceback', 1, true) ~= nil
+        then
+            return truncate(line, MAX_MESSAGE_BYTES)
+        end
+    end
+
+    return nil
 end
 
 ---@param output string
 ---@param context LintContext
 ---@return vim.Diagnostic[]
 local function parse_failure(output, context)
-  local message = operational_message(output)
+    local message = operational_message(output)
 
-  if message == nil then
-    return {}
-  end
+    if message == nil then
+        return {}
+    end
 
-  return {
-    {
-      bufnr = context.bufnr,
+    return {
+        {
+            bufnr = context.bufnr,
 
-      code = 'cfn-lint-error',
+            code = 'cfn-lint-error',
 
-      col = 0,
+            col = 0,
 
-      end_col = 0,
+            end_col = 0,
 
-      end_lnum = 0,
+            end_lnum = 0,
 
-      lnum = 0,
+            lnum = 0,
 
-      message = message,
+            message = message,
 
-      severity = diagnostic.severity.ERROR,
+            severity = diagnostic.severity.ERROR,
 
-      source = SOURCE,
-    },
-  }
+            source = SOURCE,
+        },
+    }
 end
 
 ---@param context LintContext
 ---@return vim.Diagnostic[]
 local function oversized_output(context)
-  return {
-    {
-      bufnr = context.bufnr,
+    return {
+        {
+            bufnr = context.bufnr,
 
-      code = 'output-limit',
+            code = 'output-limit',
 
-      col = 0,
+            col = 0,
 
-      end_col = 0,
+            end_col = 0,
 
-      end_lnum = 0,
+            end_lnum = 0,
 
-      lnum = 0,
+            lnum = 0,
 
-      message = string.format('cfn-lint output exceeded the %d-byte parser limit', MAX_OUTPUT_BYTES),
+            message = string.format('cfn-lint output exceeded the %d-byte parser limit', MAX_OUTPUT_BYTES),
 
-      severity = diagnostic.severity.WARN,
+            severity = diagnostic.severity.WARN,
 
-      source = SOURCE,
-    },
-  }
+            source = SOURCE,
+        },
+    }
 end
 
 ---@param output string
 ---@param context LintContext
 ---@return vim.Diagnostic[]
 local function parse(output, context)
-  assert(type(context) == 'table', 'cfn-lint parser requires LintContext')
+    assert(type(context) == 'table', 'cfn-lint parser requires LintContext')
 
-  assert(type(context.bufnr) == 'number', 'cfn-lint parser requires context.bufnr')
+    assert(type(context.bufnr) == 'number', 'cfn-lint parser requires context.bufnr')
 
-  if output == '' then
-    return {}
-  end
-
-  if #output > MAX_OUTPUT_BYTES then
-    return oversized_output(context)
-  end
-
-  local decoded = decode_output(output)
-
-  if decoded == nil then
-    return parse_failure(output, context)
-  end
-
-  ---@type table[]
-  local findings = {}
-
-  collect_findings(decoded, findings, 0)
-
-  if #findings == 0 then
-    return {}
-  end
-
-  ---@type vim.Diagnostic[]
-  local diagnostics = {}
-
-  for index = 1, #findings do
-    if #diagnostics >= MAX_DIAGNOSTICS then
-      break
+    if output == '' then
+        return {}
     end
 
-    local item = finding_diagnostic(findings[index], context)
-
-    if item ~= nil then
-      diagnostics[#diagnostics + 1] = item
+    if #output > MAX_OUTPUT_BYTES then
+        return oversized_output(context)
     end
-  end
 
-  return diagnostics
+    local decoded = decode_output(output)
+
+    if decoded == nil then
+        return parse_failure(output, context)
+    end
+
+    ---@type table[]
+    local findings = {}
+
+    collect_findings(decoded, findings, 0)
+
+    if #findings == 0 then
+        return {}
+    end
+
+    ---@type vim.Diagnostic[]
+    local diagnostics = {}
+
+    for index = 1, #findings do
+        if #diagnostics >= MAX_DIAGNOSTICS then
+            break
+        end
+
+        local item = finding_diagnostic(findings[index], context)
+
+        if item ~= nil then
+            diagnostics[#diagnostics + 1] = item
+        end
+    end
+
+    return diagnostics
 end
 
 ---@param context LintContext
 ---@return string[]
 local function arguments(context)
-  assert(type(context) == 'table', 'cfn-lint arguments require LintContext')
+    assert(type(context) == 'table', 'cfn-lint arguments require LintContext')
 
-  ---@type string[]
-  local args = {
-    '--format',
-    'json',
+    ---@type string[]
+    local args = {
+        '--format',
+        'json',
 
-    '--include-checks',
-    'I',
+        '--include-checks',
+        'I',
 
-    '--non-zero-exit-code',
-    'none',
-  }
+        '--non-zero-exit-code',
+        'none',
+    }
 
-  if truthy(vim.env.NVIM_CFN_LINT_EXPERIMENTAL) then
-    args[#args + 1] = '--include-experimental'
-  end
-
-  local regions = split_csv(string_value(vim.env.NVIM_CFN_LINT_REGIONS))
-
-  if #regions > 0 then
-    args[#args + 1] = '--regions'
-
-    for index = 1, #regions do
-      args[#args + 1] = regions[index]
+    if truthy(vim.env.NVIM_CFN_LINT_EXPERIMENTAL) then
+        args[#args + 1] = '--include-experimental'
     end
-  end
-  args[#args + 1] = '-'
 
-  return args
+    local regions = split_csv(string_value(vim.env.NVIM_CFN_LINT_REGIONS))
+
+    if #regions > 0 then
+        args[#args + 1] = '--regions'
+
+        for index = 1, #regions do
+            args[#args + 1] = regions[index]
+        end
+    end
+    args[#args + 1] = '-'
+
+    return args
 end
 
 ---@type Linter
 return {
-  args = arguments,
+    args = arguments,
 
-  append_fname = false,
+    append_fname = false,
 
-  automatic = true,
+    automatic = true,
 
-  cmd = 'cfn-lint',
+    cmd = 'cfn-lint',
 
-  cwd = project_root,
+    cwd = project_root,
 
-  ignore_exitcode = true,
+    ignore_exitcode = true,
 
-  parser = parse,
+    parser = parse,
 
-  root_markers = ROOT_MARKERS,
+    root_markers = ROOT_MARKERS,
 
-  stdin = true,
+    stdin = true,
 
-  stream = 'both',
+    stream = 'both',
 
-  timeout = 60000,
+    timeout = 60000,
 }

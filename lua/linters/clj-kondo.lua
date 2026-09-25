@@ -2,22 +2,21 @@
 -- Qompass AI CLJ-Kondo Linter Spec
 -- Copyright (C) 2025 Qompass AI, All rights reserved
 -- ----------------------------------------
-local function get_file_name()
-    return vim.api.nvim_buf_get_name(0)
-end
 return { ---@type vim.lint.Config
     cmd = 'clj-kondo',
     stdin = true,
     stream = 'stdout',
     ignore_exitcode = true,
-    args = {
-        '--config',
-        '{:output {:format :json}}',
-        '--filename',
-        get_file_name,
-        '--lint',
-        '-',
-    },
+    args = function(context)
+        return {
+            '--config',
+            '{:output {:format :json}}',
+            '--filename',
+            context.filename,
+            '--lint',
+            '-',
+        }
+    end,
     parser = function(output)
         local decoded = vim.json.decode(output) or {}
         local findings = decoded.findings or {}

@@ -37,77 +37,77 @@ local fs = vim.fs
 ---@param context FormatterContext
 ---@return string
 local function working_directory(context)
-  return context.root
+    return context.root
 end
 
 ---@param context FormatterContext
 ---@return string?
 local function project_config(context)
-  local directory = context.root
-  if context.filename ~= '' then
-    directory = fs.dirname(context.filename) or context.root
-  end
-  while directory do
-    for _, name in ipairs({ '.php-cs-fixer.php', '.php-cs-fixer.dist.php' }) do
-      local path = fs.joinpath(directory, name)
-      local stat = vim.uv.fs_stat(path)
-      if stat and stat.type == 'file' then
-        return path
-      end
+    local directory = context.root
+    if context.filename ~= '' then
+        directory = fs.dirname(context.filename) or context.root
     end
-    if directory == context.root then
-      break
+    while directory do
+        for _, name in ipairs({ '.php-cs-fixer.php', '.php-cs-fixer.dist.php' }) do
+            local path = fs.joinpath(directory, name)
+            local stat = vim.uv.fs_stat(path)
+            if stat and stat.type == 'file' then
+                return path
+            end
+        end
+        if directory == context.root then
+            break
+        end
+        local parent = fs.dirname(directory)
+        if parent == directory then
+            break
+        end
+        directory = parent
     end
-    local parent = fs.dirname(directory)
-    if parent == directory then
-      break
-    end
-    directory = parent
-  end
-  return nil
+    return nil
 end
 
 ---@param context FormatterContext
 ---@return string[]
 local function arguments(context)
-  local tempfile = context.tempfile
-  if not tempfile or tempfile == '' then
-    error('phpcsfixer requires a private tempfile from the native formatter runner')
-  end
-  local args = {
-    'fix',
-    '--allow-risky=no',
-    '--allow-unsupported-php-version=no',
-    '--using-cache=no',
-    '--path-mode=override',
-    '--format=json',
-    '--show-progress=none',
-    '--sequential',
-    '--no-ansi',
-    '--no-interaction',
-  }
-  local config = project_config(context)
-  if config then
-    args[#args + 1] = '--config=' .. config
-  else
-    args[#args + 1] = '--rules=@PSR12'
-  end
-  args[#args + 1] = '--'
-  args[#args + 1] = tempfile
-  return args
+    local tempfile = context.tempfile
+    if not tempfile or tempfile == '' then
+        error('phpcsfixer requires a private tempfile from the native formatter runner')
+    end
+    local args = {
+        'fix',
+        '--allow-risky=no',
+        '--allow-unsupported-php-version=no',
+        '--using-cache=no',
+        '--path-mode=override',
+        '--format=json',
+        '--show-progress=none',
+        '--sequential',
+        '--no-ansi',
+        '--no-interaction',
+    }
+    local config = project_config(context)
+    if config then
+        args[#args + 1] = '--config=' .. config
+    else
+        args[#args + 1] = '--rules=@PSR12'
+    end
+    args[#args + 1] = '--'
+    args[#args + 1] = tempfile
+    return args
 end
 
 ---@type FormatterSpec
 return {
-  cmd = 'php-cs-fixer',
-  args = arguments,
-  mode = 'tempfile',
-  output = 'file',
-  cwd = working_directory,
-  root_markers = { '.php-cs-fixer.php', '.php-cs-fixer.dist.php', 'composer.json', '.git' },
-  env = { NO_COLOR = '1', PHP_CS_FIXER_FUTURE_MODE = '0', PHP_CS_FIXER_IGNORE_ENV = '0' },
-  exit_codes = { 0 },
-  automatic = true,
-  allow_empty = false,
-  extension = 'php',
+    cmd = 'php-cs-fixer',
+    args = arguments,
+    mode = 'tempfile',
+    output = 'file',
+    cwd = working_directory,
+    root_markers = { '.php-cs-fixer.php', '.php-cs-fixer.dist.php', 'composer.json', '.git' },
+    env = { NO_COLOR = '1', PHP_CS_FIXER_FUTURE_MODE = '0', PHP_CS_FIXER_IGNORE_ENV = '0' },
+    exit_codes = { 0 },
+    automatic = true,
+    allow_empty = false,
+    extension = 'php',
 }

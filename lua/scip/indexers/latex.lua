@@ -24,28 +24,28 @@
 ---installed or implemented.
 ---@type ScipIndexer
 local indexer = {
-  args = {
-    'index',
-    '.',
-  },
+    args = {
+        'index',
+        '.',
+    },
 
-  command = 'scip-latex',
+    command = 'scip-latex',
 
-  enabled = false,
+    enabled = false,
 
-  filetypes = {
-    bib = true,
-    latex = true,
-    plaintex = true,
-    tex = true,
-  },
+    filetypes = {
+        bib = true,
+        latex = true,
+        plaintex = true,
+        tex = true,
+    },
 
-  markers = {
-    '.git',
-    '.latexmkrc',
-    'latexmkrc',
-    'texmf.cnf',
-  },
+    markers = {
+        '.git',
+        '.latexmkrc',
+        'latexmkrc',
+        'texmf.cnf',
+    },
 }
 
 return indexer

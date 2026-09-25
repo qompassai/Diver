@@ -1,3 +1,8 @@
+--- Nix language config — formatter and helpers for editing Nix files.
+---
+--- Plain-language version: when you open a Nix file (NixOS/Home Manager configs, flakes), this module picks the
+--- formatter and related tooling. It runs on Nix filetypes; the formatter must be installed to run.
+---@module 'config.lang.nix'
 -- /qompassai/Diver/lua/config/lang/nix.lua
 -- Qompass AI Diver Nix Lang Config
 -- Copyright (C) 2025 Qompass AI, All rights reserved
@@ -196,11 +201,9 @@ usercmd('NixFormat', function()
     local formatter = 'nixfmt'
     if fn.executable('nixfmt-rfc-style') == 1 then
         formatter = 'nixfmt-rfc-style'
-    elseif fn.executable('nixfmt') == 1 then
-        formatter = 'nixfmt'
     elseif fn.executable('alejandra') == 1 then
         formatter = 'alejandra'
-    else
+    elseif fn.executable('nixfmt') ~= 1 then
         notify('No Nix formatter found (nixfmt/alejandra)', ERROR)
         return
     end

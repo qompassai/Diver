@@ -16,21 +16,21 @@ local group
 
 ---@param opts? table Reserved for future options; currently unused.
 function M.setup(opts)
-  assert(opts == nil or type(opts) == 'table', 'acp.setup expects a table or nil')
+    assert(opts == nil or type(opts) == 'table', 'acp.setup expects a table or nil')
 
-  require('acp.commands')
+    require('acp.commands')
 
-  if group then
-    return
-  end
-  group = api.nvim_create_augroup('AcpLifecycle', { clear = true })
-  api.nvim_create_autocmd('VimLeavePre', {
-    group = group,
-    callback = function()
-      require('acp.session').stop_all()
-    end,
-    desc = 'Stop all ACP agent sessions on exit',
-  })
+    if group then
+        return
+    end
+    group = api.nvim_create_augroup('AcpLifecycle', { clear = true })
+    api.nvim_create_autocmd('VimLeavePre', {
+        group = group,
+        callback = function()
+            require('acp.session').stop_all()
+        end,
+        desc = 'Stop all ACP agent sessions on exit',
+    })
 end
 
 return M

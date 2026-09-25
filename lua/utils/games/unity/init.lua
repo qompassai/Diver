@@ -26,7 +26,7 @@ M.actions = require('utils.games.unity.actions')
 M.commands = require('utils.games.unity.commands')
 
 function M.setup()
-  M.commands.setup()
+    M.commands.setup()
 end
 
 M.show_menu = M.actions.show_menu

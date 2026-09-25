@@ -26,7 +26,7 @@ M.recent = require('utils.dev.android.recent')
 M.ui = require('utils.dev.android.ui')
 M.util = require('utils.dev.android.util')
 function M.setup()
-  M.commands.setup()
+    M.commands.setup()
 end
 M.show_menu = M.actions.show_menu
 M.run_action_by_id = M.actions.run_action_by_id

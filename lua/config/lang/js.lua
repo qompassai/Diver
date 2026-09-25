@@ -71,7 +71,7 @@ vim.api.nvim_create_user_command('VitestFile', function()
     }, {
         detach = true,
     })
-end, {})
+end, { desc = 'Run Vitest for current file' })
 ---@param opts table|nil
 ---@return any|nil
 local function base_dap_setup(opts)

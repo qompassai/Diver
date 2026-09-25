@@ -19,47 +19,47 @@
 ---@param context FormatterContext
 ---@return string
 local function working_directory(context)
-  if context.filename ~= '' then
-    local directory = vim.fs.dirname(context.filename)
-    if directory then
-      return directory
+    if context.filename ~= '' then
+        local directory = vim.fs.dirname(context.filename)
+        if directory then
+            return directory
+        end
     end
-  end
-  return context.root
+    return context.root
 end
 
 ---@type FormatterSpec
 return {
-  cmd = 'jsonnetfmt',
-  args = {
-    '--indent',
-    '2',
-    '--max-blank-lines',
-    '2',
-    '--string-style',
-    's',
-    '--comment-style',
-    's',
-    '--pretty-field-names',
-    '--no-pad-arrays',
-    '--pad-objects',
-    '--sort-imports',
-    '--use-implicit-plus',
-    '-',
-  },
-  mode = 'stdin',
-  output = 'stdout',
-  cwd = working_directory,
-  root_markers = {
-    'jsonnetfile.json',
-    'jsonnetfile.lock.json',
-    '.git',
-  },
-  env = {
-    NO_COLOR = '1',
-  },
-  exit_codes = { 0 },
-  automatic = true,
-  allow_empty = false,
-  extension = 'jsonnet',
+    cmd = 'jsonnetfmt',
+    args = {
+        '--indent',
+        '2',
+        '--max-blank-lines',
+        '2',
+        '--string-style',
+        's',
+        '--comment-style',
+        's',
+        '--pretty-field-names',
+        '--no-pad-arrays',
+        '--pad-objects',
+        '--sort-imports',
+        '--use-implicit-plus',
+        '-',
+    },
+    mode = 'stdin',
+    output = 'stdout',
+    cwd = working_directory,
+    root_markers = {
+        'jsonnetfile.json',
+        'jsonnetfile.lock.json',
+        '.git',
+    },
+    env = {
+        NO_COLOR = '1',
+    },
+    exit_codes = { 0 },
+    automatic = true,
+    allow_empty = false,
+    extension = 'jsonnet',
 }

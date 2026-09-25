@@ -25,119 +25,119 @@ local COMMAND = '/usr/bin/uncrustify'
 
 ---@type table<string, string>
 local LANGUAGES = {
-  c = 'C',
-  cpp = 'CPP',
-  cs = 'CS',
-  d = 'D',
-  dlang = 'D',
-  java = 'JAVA',
-  objc = 'OC',
-  objcpp = 'OC+',
-  pawn = 'PAWN',
-  vala = 'VALA',
+    c = 'C',
+    cpp = 'CPP',
+    cs = 'CS',
+    d = 'D',
+    dlang = 'D',
+    java = 'JAVA',
+    objc = 'OC',
+    objcpp = 'OC+',
+    pawn = 'PAWN',
+    vala = 'VALA',
 }
 
 ---@type string[]
 local ROOT_MARKERS = {
-  '.git',
-  '.hg',
-  'CMakeLists.txt',
-  'meson.build',
-  'Makefile',
-  'compile_commands.json',
-  'configure.ac',
-  'build.gradle',
-  'build.gradle.kts',
-  'pom.xml',
-  'dub.json',
-  'dub.sdl',
+    '.git',
+    '.hg',
+    'CMakeLists.txt',
+    'meson.build',
+    'Makefile',
+    'compile_commands.json',
+    'configure.ac',
+    'build.gradle',
+    'build.gradle.kts',
+    'pom.xml',
+    'dub.json',
+    'dub.sdl',
 }
 
 ---@param options string[][]
 ---@param text string
 local function add_uncrustify_options(options, text)
-  assert(type(options) == 'table', 'uncrustify options must be a table')
-  assert(type(text) == 'string', 'uncrustify option text must be a string')
+    assert(type(options) == 'table', 'uncrustify options must be a table')
+    assert(type(text) == 'string', 'uncrustify option text must be a string')
 
-  for raw_line in text:gmatch('[^\r\n]+') do
-    local line = raw_line:gsub('%s*#.*$', '')
-    line = vim.trim(line)
+    for raw_line in text:gmatch('[^\r\n]+') do
+        local line = raw_line:gsub('%s*#.*$', '')
+        line = vim.trim(line)
 
-    if line ~= '' then
-      local name, value = line:match('^([%a_][%w_]*)%s*=%s*(.-)%s*$')
-      if not name or value == '' then
-        error('uncrustify: invalid embedded option: ' .. raw_line, 0)
-      end
-      options[#options + 1] = { name, value }
+        if line ~= '' then
+            local name, value = line:match('^([%a_][%w_]*)%s*=%s*(.-)%s*$')
+            if not name or value == '' then
+                error('uncrustify: invalid embedded option: ' .. raw_line, 0)
+            end
+            options[#options + 1] = { name, value }
+        end
     end
-  end
 end
 
 ---@type string[][]
 local STATIC_OPTIONS = {
-  { 'newlines', 'lf' },
-  { 'output_tab_size', '4' },
-  { 'string_escape_char', '92' },
-  { 'string_escape_char2', '0' },
-  { 'string_replace_tab_chars', 'false' },
-  { 'utf8_bom', 'remove' },
-  { 'utf8_force', 'true' },
-  { 'utf8_byte', 'false' },
+    { 'newlines', 'lf' },
+    { 'output_tab_size', '4' },
+    { 'string_escape_char', '92' },
+    { 'string_escape_char2', '0' },
+    { 'string_replace_tab_chars', 'false' },
+    { 'utf8_bom', 'remove' },
+    { 'utf8_force', 'true' },
+    { 'utf8_byte', 'false' },
 
-  { 'tok_split_gte', 'false' },
-  { 'disable_processing_nl_cont', 'true' },
-  { 'disable_processing_cmt', ' *INDENT-OFF*' },
-  { 'enable_processing_cmt', ' *INDENT-ON*' },
-  { 'enable_digraphs', 'false' },
+    { 'tok_split_gte', 'false' },
+    { 'disable_processing_nl_cont', 'true' },
+    { 'disable_processing_cmt', ' *INDENT-OFF*' },
+    { 'enable_processing_cmt', ' *INDENT-ON*' },
+    { 'enable_digraphs', 'false' },
 
-  { 'nl_after_semicolon', 'true' },
-  { 'nl_if_brace', 'add' },
-  { 'nl_for_brace', 'add' },
-  { 'nl_while_brace', 'add' },
-  { 'nl_func_type_name', 'remove' },
-  { 'cmt_width', '120' },
-  { 'cmt_indent_multi', 'true' },
-  { 'pp_indent', 'add' },
-  { 'pp_space_after', 'add' },
-  { 'mod_full_brace_if', 'add' },
-  { 'mod_full_brace_for', 'add' },
-  { 'mod_full_brace_while', 'add' },
+    { 'nl_after_semicolon', 'true' },
+    { 'nl_if_brace', 'add' },
+    { 'nl_for_brace', 'add' },
+    { 'nl_while_brace', 'add' },
+    { 'nl_func_type_name', 'remove' },
+    { 'cmt_width', '120' },
+    { 'cmt_indent_multi', 'true' },
+    { 'pp_indent', 'add' },
+    { 'pp_space_after', 'add' },
+    { 'mod_full_brace_if', 'add' },
+    { 'mod_full_brace_for', 'add' },
+    { 'mod_full_brace_while', 'add' },
 
-  { 'indent_columns', '4' },
-  { 'indent_with_tabs', '0' },
-  { 'indent_continue', '4' },
-  { 'indent_ignore_first_continue', 'false' },
-  { 'indent_continue_class_head', '0' },
-  { 'indent_single_newlines', 'false' },
-  { 'indent_param', '0' },
-  { 'indent_cmt_with_tabs', 'false' },
-  { 'indent_align_string', 'false' },
-  { 'indent_xml_string', '0' },
-  { 'indent_brace', '0' },
-  { 'indent_braces', 'false' },
-  { 'indent_braces_no_func', 'false' },
-  { 'indent_braces_no_class', 'false' },
-  { 'indent_braces_no_struct', 'false' },
-  { 'indent_brace_parent', 'false' },
-  { 'indent_paren_open_brace', 'false' },
-  { 'indent_cs_delegate_brace', 'false' },
-  { 'indent_cs_delegate_body', 'false' },
-  { 'indent_namespace', 'false' },
-  { 'indent_namespace_single_indent', 'false' },
-  { 'indent_namespace_level', '0' },
-  { 'indent_namespace_limit', '0' },
-  { 'indent_namespace_inner_only', 'false' },
-  { 'indent_extern', 'false' },
-  { 'indent_class', 'true' },
-  {
-    'nl_class_brace',
-    'add',
-  },
+    { 'indent_columns', '4' },
+    { 'indent_with_tabs', '0' },
+    { 'indent_continue', '4' },
+    { 'indent_ignore_first_continue', 'false' },
+    { 'indent_continue_class_head', '0' },
+    { 'indent_single_newlines', 'false' },
+    { 'indent_param', '0' },
+    { 'indent_cmt_with_tabs', 'false' },
+    { 'indent_align_string', 'false' },
+    { 'indent_xml_string', '0' },
+    { 'indent_brace', '0' },
+    { 'indent_braces', 'false' },
+    { 'indent_braces_no_func', 'false' },
+    { 'indent_braces_no_class', 'false' },
+    { 'indent_braces_no_struct', 'false' },
+    { 'indent_brace_parent', 'false' },
+    { 'indent_paren_open_brace', 'false' },
+    { 'indent_cs_delegate_brace', 'false' },
+    { 'indent_cs_delegate_body', 'false' },
+    { 'indent_namespace', 'false' },
+    { 'indent_namespace_single_indent', 'false' },
+    { 'indent_namespace_level', '0' },
+    { 'indent_namespace_limit', '0' },
+    { 'indent_namespace_inner_only', 'false' },
+    { 'indent_extern', 'false' },
+    { 'indent_class', 'true' },
+    {
+        'nl_class_brace',
+        'add',
+    },
 }
 
 add_uncrustify_options(
-  STATIC_OPTIONS,
-  [[
+    STATIC_OPTIONS,
+    [[
 sp_arith = force
 sp_arith_additive = force
 sp_assign = force
@@ -417,129 +417,129 @@ sp_after_bit_colon = ignore
 ---@param label string
 ---@return string
 local function absolute_path(value, label)
-  if type(value) ~= 'string' or value == '' then
-    error('uncrustify: ' .. label .. ' must be a nonempty absolute path', 0)
-  end
+    if type(value) ~= 'string' or value == '' then
+        error('uncrustify: ' .. label .. ' must be a nonempty absolute path', 0)
+    end
 
-  if #value > PATH_BYTES_MAX or value:find('[%z\1-\31\127]') then
-    error('uncrustify: invalid or oversized ' .. label, 0)
-  end
+    if #value > PATH_BYTES_MAX or value:find('[%z\1-\31\127]') then
+        error('uncrustify: invalid or oversized ' .. label, 0)
+    end
 
-  if value:sub(1, 1) ~= '/' then
-    error('uncrustify: ' .. label .. ' must be absolute; expand ~ explicitly', 0)
-  end
+    if value:sub(1, 1) ~= '/' then
+        error('uncrustify: ' .. label .. ' must be absolute; expand ~ explicitly', 0)
+    end
 
-  return fs.normalize(value)
+    return fs.normalize(value)
 end
 
 ---@param context FormatterContext
 ---@return string
 local function working_directory(context)
-  assert(type(context) == 'table', 'uncrustify requires FormatterContext')
-  return absolute_path(context.root, 'working directory')
+    assert(type(context) == 'table', 'uncrustify requires FormatterContext')
+    return absolute_path(context.root, 'working directory')
 end
 
 ---@param args string[]
 ---@param name string
 ---@param value string
 local function add_option(args, name, value)
-  assert(type(name) == 'string' and name ~= '', 'uncrustify option name must be nonempty')
-  assert(type(value) == 'string', 'uncrustify option value must be a string')
-  assert(not name:find('[%z\1-\31\127]'), 'uncrustify option name contains a control character')
-  assert(not value:find('%z'), 'uncrustify option value contains NUL')
+    assert(type(name) == 'string' and name ~= '', 'uncrustify option name must be nonempty')
+    assert(type(value) == 'string', 'uncrustify option value must be a string')
+    assert(not name:find('[%z\1-\31\127]'), 'uncrustify option name contains a control character')
+    assert(not value:find('%z'), 'uncrustify option value contains NUL')
 
-  args[#args + 1] = '--set'
-  args[#args + 1] = name .. '=' .. value
+    args[#args + 1] = '--set'
+    args[#args + 1] = name .. '=' .. value
 end
 
 ---@param context FormatterContext
 ---@return string[]
 local function arguments(context)
-  assert(type(context) == 'table', 'uncrustify requires FormatterContext')
-  assert(type(context.bufnr) == 'number', 'uncrustify requires context.bufnr')
-  assert(context.bufnr > 0 and context.bufnr % 1 == 0, 'uncrustify buffer number is invalid')
-  assert(api.nvim_buf_is_valid(context.bufnr), 'uncrustify buffer is invalid')
-  assert(type(context.input) == 'string', 'uncrustify requires context.input')
-  assert(type(context.filetype) == 'string', 'uncrustify requires context.filetype')
+    assert(type(context) == 'table', 'uncrustify requires FormatterContext')
+    assert(type(context.bufnr) == 'number', 'uncrustify requires context.bufnr')
+    assert(context.bufnr > 0 and context.bufnr % 1 == 0, 'uncrustify buffer number is invalid')
+    assert(api.nvim_buf_is_valid(context.bufnr), 'uncrustify buffer is invalid')
+    assert(type(context.input) == 'string', 'uncrustify requires context.input')
+    assert(type(context.filetype) == 'string', 'uncrustify requires context.filetype')
 
-  if #context.input > INPUT_BYTES_MAX or context.input:find('%z') then
-    error('uncrustify: binary input or input larger than 2 MiB rejected', 0)
-  end
+    if #context.input > INPUT_BYTES_MAX or context.input:find('%z') then
+        error('uncrustify: binary input or input larger than 2 MiB rejected', 0)
+    end
 
-  local language = LANGUAGES[context.filetype]
-  if language == nil then
-    error('uncrustify: unsupported filetype: ' .. context.filetype, 0)
-  end
+    local language = LANGUAGES[context.filetype]
+    if language == nil then
+        error('uncrustify: unsupported filetype: ' .. context.filetype, 0)
+    end
 
-  local tab_size = vim.bo[context.bufnr].tabstop
-  if tab_size < 1 or tab_size > TAB_SIZE_MAX then
-    error('uncrustify: tabstop must be between 1 and 32', 0)
-  end
+    local tab_size = vim.bo[context.bufnr].tabstop
+    if tab_size < 1 or tab_size > TAB_SIZE_MAX then
+        error('uncrustify: tabstop must be between 1 and 32', 0)
+    end
 
-  if vim.bo[context.bufnr].vartabstop ~= '' then
-    error('uncrustify: variable tab stops cannot be represented by input_tab_size', 0)
-  end
+    if vim.bo[context.bufnr].vartabstop ~= '' then
+        error('uncrustify: variable tab stops cannot be represented by input_tab_size', 0)
+    end
 
-  local args = {
-    '-l',
-    language,
-    '-L',
-    '1-2',
-  }
+    local args = {
+        '-l',
+        language,
+        '-L',
+        '1-2',
+    }
 
-  add_option(args, 'input_tab_size', tostring(tab_size))
+    add_option(args, 'input_tab_size', tostring(tab_size))
 
-  for _, option in ipairs(STATIC_OPTIONS) do
-    add_option(args, option[1], option[2])
-  end
+    for _, option in ipairs(STATIC_OPTIONS) do
+        add_option(args, option[1], option[2])
+    end
 
-  return args
+    return args
 end
 
 ---@param output string
 ---@param context FormatterContext
 ---@return string
 local function decode(output, context)
-  assert(type(output) == 'string', 'uncrustify output must be a string')
-  assert(type(context) == 'table', 'uncrustify decode requires FormatterContext')
-  assert(type(context.input) == 'string', 'uncrustify decode requires context.input')
+    assert(type(output) == 'string', 'uncrustify output must be a string')
+    assert(type(context) == 'table', 'uncrustify decode requires FormatterContext')
+    assert(type(context.input) == 'string', 'uncrustify decode requires context.input')
 
-  if #output > OUTPUT_BYTES_MAX or output:find('%z') then
-    error('uncrustify: binary output or output larger than 4 MiB rejected', 0)
-  end
-
-  if output == '' and context.input ~= '' then
-    if context.input:find('%S') == nil then
-      return context.input
+    if #output > OUTPUT_BYTES_MAX or output:find('%z') then
+        error('uncrustify: binary output or output larger than 4 MiB rejected', 0)
     end
-    error('uncrustify: empty replacement rejected', 0)
-  end
 
-  if output:sub(1, 3) == '\239\187\191' or output:find('\r', 1, true) then
-    error('uncrustify: expected UTF-8 text without a BOM and with LF endings', 0)
-  end
+    if output == '' and context.input ~= '' then
+        if context.input:find('%S') == nil then
+            return context.input
+        end
+        error('uncrustify: empty replacement rejected', 0)
+    end
 
-  return output
+    if output:sub(1, 3) == '\239\187\191' or output:find('\r', 1, true) then
+        error('uncrustify: expected UTF-8 text without a BOM and with LF endings', 0)
+    end
+
+    return output
 end
 
 ---@type FormatterSpec
 return {
-  cmd = COMMAND,
-  args = arguments,
-  mode = 'stdin',
-  cwd = working_directory,
-  env = {
-    LANG = 'C',
-    LC_ALL = 'C',
-    TZ = 'UTC',
-  },
-  root_markers = ROOT_MARKERS,
-  exit_codes = {
-    0,
-  },
-  output = 'stdout',
-  decode = decode,
-  allow_empty = false,
-  automatic = true,
-  extension = nil,
+    cmd = COMMAND,
+    args = arguments,
+    mode = 'stdin',
+    cwd = working_directory,
+    env = {
+        LANG = 'C',
+        LC_ALL = 'C',
+        TZ = 'UTC',
+    },
+    root_markers = ROOT_MARKERS,
+    exit_codes = {
+        0,
+    },
+    output = 'stdout',
+    decode = decode,
+    allow_empty = false,
+    automatic = true,
+    extension = nil,
 }

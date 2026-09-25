@@ -38,229 +38,209 @@ local LINE_LENGTH_MAX = 16384
 ---@param fallback integer
 ---@return integer
 local function integer(value, fallback)
-        assert(fallback >= 0)
+    assert(fallback >= 0)
 
-        local parsed = tonumber(value)
-        if parsed == nil then
-                return fallback
-        end
+    local parsed = tonumber(value)
+    if parsed == nil then
+        return fallback
+    end
 
-        return math.floor(parsed)
+    return math.floor(parsed)
 end
 
 ---@param path string
----@param filename string
----@param root string
 ---@return boolean
+local function is_absolute(path)
+    assert(type(path) == 'string')
+    assert(path ~= '')
+
+    return vim.fn.isabsolutepath(path) == 1
+end
+
 local function belongs_to_buffer(path, filename, root)
-        assert(path ~= '')
-        assert(filename ~= '')
-        assert(root ~= '')
+    assert(path ~= '')
+    assert(filename ~= '')
+    assert(root ~= '')
 
-        local candidate
+    local candidate
 
-        if fs.is_absolute(path) then
-                candidate = fs.normalize(path)
-        else
-                candidate = fs.normalize(fs.joinpath(root, path))
-        end
+    if is_absolute(path) then
+        candidate = fs.normalize(path)
+    else
+        candidate = fs.normalize(fs.joinpath(root, path))
+    end
 
-        return candidate == filename
+    return candidate == filename
 end
 
 ---@param filename string
 ---@param root string
 ---@return string
 local function relative_path(filename, root)
-        assert(filename ~= '')
-        assert(root ~= '')
+    assert(filename ~= '')
+    assert(root ~= '')
 
-        local normalized_filename = fs.normalize(filename)
-        local normalized_root = fs.normalize(root)
+    local normalized_filename = fs.normalize(filename)
+    local normalized_root = fs.normalize(root)
 
-        if normalized_filename:sub(1, #normalized_root) == normalized_root then
-                local offset = #normalized_root + 2
-                local relative = normalized_filename:sub(offset)
+    if normalized_filename:sub(1, #normalized_root) == normalized_root then
+        local offset = #normalized_root + 2
+        local relative = normalized_filename:sub(offset)
 
-                if relative ~= '' then
-                        return relative
-                end
+        if relative ~= '' then
+            return relative
         end
+    end
 
-        return normalized_filename
+    return normalized_filename
 end
 
 ---@param line string
 ---@return BufLintViolation?
 local function decode_line(line)
-        assert(#line <= LINE_LENGTH_MAX)
+    assert(#line <= LINE_LENGTH_MAX)
 
-        local ok, decoded = pcall(vim.json.decode, line)
+    local ok, decoded = pcall(vim.json.decode, line)
 
-        if not ok or type(decoded) ~= 'table' then
-                return nil
-        end
+    if not ok or type(decoded) ~= 'table' then
+        return nil
+    end
 
-        ---@cast decoded BufLintViolation
-        return decoded
+    ---@cast decoded BufLintViolation
+    return decoded
 end
 
 ---@param violation BufLintViolation
 ---@param filename string
 ---@param root string
----@return vim.Diagnostic?
+---@return vim.Diagnostic.Set?
 local function diagnostic_from_violation(violation, filename, root)
-        local path = violation.path
+    local path = violation.path
 
-        if type(path) ~= 'string' or path == '' then
-                return nil
-        end
+    if type(path) ~= 'string' or path == '' then
+        return nil
+    end
 
-        if not belongs_to_buffer(path, filename, root) then
-                return nil
-        end
+    if not belongs_to_buffer(path, filename, root) then
+        return nil
+    end
 
-        local message = violation.message
-        if type(message) ~= 'string' or message == '' then
-                message = 'Buf lint violation'
-        end
+    local message = violation.message
+    if type(message) ~= 'string' or message == '' then
+        message = 'Buf lint violation'
+    end
 
-        local start_line =
-                math.max(integer(violation.start_line, 1) - 1, 0)
+    local start_line = math.max(integer(violation.start_line, 1) - 1, 0)
 
-        local start_column =
-                math.max(integer(violation.start_column, 1) - 1, 0)
+    local start_column = math.max(integer(violation.start_column, 1) - 1, 0)
 
-        local end_line = math.max(
-                integer(violation.end_line, start_line + 1) - 1,
-                start_line
-        )
+    local end_line = math.max(integer(violation.end_line, start_line + 1) - 1, start_line)
 
-        local minimum_end_column =
-                end_line == start_line
-                        and start_column + 1
-                        or 0
+    local minimum_end_column = end_line == start_line and start_column + 1 or 0
 
-        local end_column = math.max(
-                integer(
-                        violation.end_column,
-                        minimum_end_column + 1
-                ) - 1,
-                minimum_end_column
-        )
+    local end_column = math.max(integer(violation.end_column, minimum_end_column + 1) - 1, minimum_end_column)
 
-        return {
-                lnum = start_line,
-                end_lnum = end_line,
-                col = start_column,
-                end_col = end_column,
-                message = message,
-                severity = ERROR,
-                source = 'buf',
-                code = violation.type,
-        }
+    return {
+        lnum = start_line,
+        end_lnum = end_line,
+        col = start_column,
+        end_col = end_column,
+        message = message,
+        severity = ERROR,
+        source = 'buf',
+        code = violation.type,
+    }
 end
 
 ---@param output string
 ---@param context LintContext|integer
 ---@return vim.Diagnostic.Set[]
 local function parse(output, context)
-        if output == '' then
-                return {}
+    if output == '' then
+        return {}
+    end
+
+    assert(type(context) == 'table', 'buf_lint parser requires a LintContext')
+
+    ---@cast context LintContext
+
+    assert(context.filename ~= '')
+    assert(context.root ~= '')
+
+    local filename = fs.normalize(context.filename)
+    local root = context.root
+
+    ---@type vim.Diagnostic.Set[]
+    local diagnostics = {}
+    local diagnostics_count = 0
+
+    --
+    -- Buf emits one JSON object per violation rather than one JSON array.
+    --
+    for line in output:gmatch('[^\r\n]+') do
+        if diagnostics_count >= DIAGNOSTICS_MAX then
+            break
         end
 
-        assert(
-                type(context) == 'table',
-                'buf_lint parser requires a LintContext'
-        )
+        if #line <= LINE_LENGTH_MAX then
+            local violation = decode_line(line)
 
-        ---@cast context LintContext
+            if violation ~= nil then
+                local entry = diagnostic_from_violation(violation, filename, root)
 
-        assert(context.filename ~= '')
-        assert(context.root ~= '')
+                if entry ~= nil then
+                    diagnostics_count = diagnostics_count + 1
 
-        local filename = fs.normalize(context.filename)
-        local root = context.root
-
-        ---@type vim.Diagnostic.Set[]
-        local diagnostics = {}
-        local diagnostics_count = 0
-
-        --
-        -- Buf emits one JSON object per violation rather than one JSON array.
-        --
-        for line in output:gmatch('[^\r\n]+') do
-                if diagnostics_count >= DIAGNOSTICS_MAX then
-                        break
+                    diagnostics[diagnostics_count] = entry
                 end
-
-                if #line <= LINE_LENGTH_MAX then
-                        local violation = decode_line(line)
-
-                        if violation ~= nil then
-                                local entry = diagnostic_from_violation(
-                                        violation,
-                                        filename,
-                                        root
-                                )
-
-                                if entry ~= nil then
-                                        diagnostics_count =
-                                                diagnostics_count + 1
-
-                                        diagnostics[diagnostics_count] = entry
-                                end
-                        end
-                end
+            end
         end
+    end
 
-        assert(diagnostics_count <= DIAGNOSTICS_MAX)
-        assert(diagnostics_count == #diagnostics)
+    assert(diagnostics_count <= DIAGNOSTICS_MAX)
+    assert(diagnostics_count == #diagnostics)
 
-        return diagnostics
+    return diagnostics
 end
 
 return ---@type Linter
 {
-        automatic = false,
+    automatic = false,
 
-        cmd = 'buf',
+    cmd = 'buf',
 
-        args = function(context)
-                assert(context.filename ~= '')
-                assert(context.root ~= '')
+    args = function(context)
+        assert(context.filename ~= '')
+        assert(context.root ~= '')
 
-                return {
-                        'lint',
-                        '.',
-                        '--error-format=json',
-                        '--path',
-                        relative_path(
-                                context.filename,
-                                context.root
-                        ),
-                }
-        end,
+        return {
+            'lint',
+            '.',
+            '--error-format=json',
+            '--path',
+            relative_path(context.filename, context.root),
+        }
+    end,
 
-        append_fname = false,
+    append_fname = false,
 
-        cwd = function(context)
-                assert(context.root ~= '')
-                return context.root
-        end,
+    cwd = function(context)
+        assert(context.root ~= '')
+        return context.root
+    end,
 
-        ignore_exitcode = true,
+    ignore_exitcode = true,
 
-        parser = parse,
+    parser = parse,
 
-        root_markers = {
-                'buf.yaml',
-                'buf.work.yaml',
-                'buf.lock',
-                '.git',
-        },
+    root_markers = {
+        'buf.yaml',
+        'buf.work.yaml',
+        'buf.lock',
+        '.git',
+    },
 
-        stdin = false,
-        stream = 'stdout',
-        timeout = 30000,
+    stdin = false,
+    stream = 'stdout',
+    timeout = 30000,
 }

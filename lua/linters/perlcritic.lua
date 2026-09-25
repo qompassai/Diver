@@ -199,7 +199,19 @@ set_themes                         = bugs certrule core pbp
 add_themes                         =
 severity                           = 5
 maximum_violations_per_document    = no_limit
-list_funcs = map grep List::Util::first List::MoreUtils::any List::SomeUtils::any List::MoreUtils::all List::SomeUtils::all List::MoreUtils::none List::SomeUtils::none List::MoreUtils::notall List::SomeUtils::notall List::MoreUtils::true List::SomeUtils::true List::MoreUtils::false List::SomeUtils::false List::MoreUtils::firstidx List::SomeUtils::firstidx List::MoreUtils::first_index List::SomeUtils::first_index List::MoreUtils::lastidx List::SomeUtils::lastidx List::MoreUtils::last_index List::SomeUtils::last_index List::MoreUtils::insert_after List::SomeUtils::insert_after List::MoreUtils::insert_after_string List::SomeUtils::insert_after_string
+list_funcs = map grep List::Util::first List::MoreUtils::any ]==] .. table.concat({
+    [==[List::SomeUtils::any List::MoreUtils::all List::SomeUtils::all ]==],
+    [==[List::MoreUtils::none List::SomeUtils::none ]==],
+    [==[List::MoreUtils::notall List::SomeUtils::notall ]==],
+    [==[List::MoreUtils::true List::SomeUtils::true ]==],
+    [==[List::MoreUtils::false List::SomeUtils::false ]==],
+    [==[List::MoreUtils::firstidx List::SomeUtils::firstidx ]==],
+    [==[List::MoreUtils::first_index List::SomeUtils::first_index ]==],
+    [==[List::MoreUtils::lastidx List::SomeUtils::lastidx ]==],
+    [==[List::MoreUtils::last_index List::SomeUtils::last_index ]==],
+    [==[List::MoreUtils::insert_after List::SomeUtils::insert_after ]==],
+    [==[List::MoreUtils::insert_after_string ]==],
+}, '') .. [==[List::SomeUtils::insert_after_string
 add_list_funcs =
 [ControlStructures::ProhibitNegativeExpressionsInUnlessAndUntilConditions]
 set_themes                         = core maintenance pbp
@@ -389,7 +401,12 @@ set_themes                         = bugs certrule core
 add_themes                         =
 severity                           = 5
 maximum_violations_per_document    = no_limit
-modules = Class::ISA {Found use of Class::ISA. This module is deprecated by the Perl 5 Porters.} Pod::Plainer {Found use of Pod::Plainer. This module is deprecated by the Perl 5 Porters.} Shell {Found use of Shell. This module is deprecated by the Perl 5 Porters.} Switch {Found use of Switch. This module is deprecated by the Perl 5 Porters.}
+modules = Class::ISA {Found use of Class::ISA. This module is ]==] .. table.concat({
+    [==[deprecated by the Perl 5 Porters.} Pod::Plainer {Found use of ]==],
+    [==[Pod::Plainer. This module is deprecated by the Perl 5 Porters.} ]==],
+    [==[Shell {Found use of Shell. This module is deprecated by the ]==],
+    [==[Perl 5 Porters.} Switch {Found use of Switch. This module is ]==],
+}, '') .. [==[deprecated by the Perl 5 Porters.}
 modules_file =
 [Modules::ProhibitExcessMainComplexity]
 set_themes                         = complexity core maintenance
@@ -442,7 +459,11 @@ maximum_violations_per_document    = no_limit
 packages = :starts_with_upper
 package_exemptions = main
 subroutines = :single_case
-subroutine_exemptions = AUTOLOAD BUILD BUILDARGS CLEAR CLOSE DELETE DEMOLISH DESTROY EXISTS EXTEND FETCH FETCHSIZE FIRSTKEY GETC NEXTKEY POP PRINT PRINTF PUSH READ READLINE SCALAR SHIFT SPLICE STORE STORESIZE TIEARRAY TIEHANDLE TIEHASH TIESCALAR UNSHIFT UNTIE WRITE
+subroutine_exemptions = AUTOLOAD BUILD BUILDARGS CLEAR CLOSE ]==] .. table.concat({
+    [==[DELETE DEMOLISH DESTROY EXISTS EXTEND FETCH FETCHSIZE FIRSTKEY ]==],
+    [==[GETC NEXTKEY POP PRINT PRINTF PUSH READ READLINE SCALAR SHIFT ]==],
+    [==[SPLICE STORE STORESIZE TIEARRAY TIEHANDLE TIEHASH TIESCALAR ]==],
+}, '') .. [==[UNSHIFT UNTIE WRITE
 local_lexical_variables = :single_case
 local_lexical_variable_exemptions =
 scoped_lexical_variables = :single_case
@@ -866,45 +887,45 @@ maximum_violations_per_document    = no_limit
 local RECORD = string.char(30)
 local FIELD = string.char(31)
 local FORMAT = RECORD .. table.concat({
-  '%l',
-  '%c',
-  '%s',
-  '%P',
-  '%m',
-  '%e',
-  '%f',
+    '%l',
+    '%c',
+    '%s',
+    '%P',
+    '%m',
+    '%e',
+    '%f',
 }, FIELD)
 local CLI = {
-  quiet = true,
-  statistics = false,
-  statistics_only = false,
-  count = false,
-  files_with_violations = false,
-  files_without_violations = false,
-  help = false,
-  options = false,
-  man = false,
-  version = false,
-  list = false,
-  list_enabled = false,
-  list_themes = false,
-  profile_proto = false,
-  doc = '',
+    quiet = true,
+    statistics = false,
+    statistics_only = false,
+    count = false,
+    files_with_violations = false,
+    files_without_violations = false,
+    help = false,
+    options = false,
+    man = false,
+    version = false,
+    list = false,
+    list_enabled = false,
+    list_themes = false,
+    profile_proto = false,
+    doc = '',
 }
 local LIMITS = { output = 16 * 1024 * 1024, records = 10000, diagnostics = 512, message = 4096 }
 local ROOT_MARKERS = {
-  'cpanfile',
-  'Makefile.PL',
-  'Build.PL',
-  'dist.ini',
-  '.git',
+    'cpanfile',
+    'Makefile.PL',
+    'Build.PL',
+    'dist.ini',
+    '.git',
 }
 local SEVERITIES = {
-  [1] = vim.diagnostic.severity.HINT,
-  [2] = vim.diagnostic.severity.INFO,
-  [3] = vim.diagnostic.severity.WARN,
-  [4] = vim.diagnostic.severity.ERROR,
-  [5] = vim.diagnostic.severity.ERROR,
+    [1] = vim.diagnostic.severity.HINT,
+    [2] = vim.diagnostic.severity.INFO,
+    [3] = vim.diagnostic.severity.WARN,
+    [4] = vim.diagnostic.severity.ERROR,
+    [5] = vim.diagnostic.severity.ERROR,
 }
 local uv = vim.uv
 local fs = vim.fs
@@ -914,104 +935,104 @@ local directory
 local profile
 
 local function cleanup()
-  if profile then
-    uv.fs_unlink(profile)
-  end
-  if directory then
-    uv.fs_rmdir(directory)
-  end
+    if profile then
+        uv.fs_unlink(profile)
+    end
+    if directory then
+        uv.fs_rmdir(directory)
+    end
 end
 
 ---@return string
 local function profile_path()
-  if profile then
-    return profile
-  end
-  if not directory then
-    directory = assert(uv.fs_mkdtemp(vim.fn.tempname() .. '-perlcritic-XXXXXX'))
-    vim.api.nvim_create_autocmd('VimLeavePre', {
-      once = true,
-      callback = cleanup,
-      desc = 'Remove private Perl::Critic profile',
-    })
-  end
-  local path = fs.joinpath(directory, 'perlcriticrc')
-  local fd = assert(uv.fs_open(path, 'wx', 384)) -- 0600, exclusive; directory is 0700.
-  local offset = 0
-  while offset < #PROFILE do
-    local written, problem = uv.fs_write(fd, PROFILE:sub(offset + 1), offset)
-    if not written or written == 0 then
-      uv.fs_close(fd)
-      uv.fs_unlink(path)
-      error(problem or 'Cannot write Perl::Critic profile')
+    if profile then
+        return profile
     end
-    offset = offset + written
-  end
-  assert(uv.fs_close(fd))
-  profile = path
-  return path
+    if not directory then
+        directory = assert(uv.fs_mkdtemp(vim.fn.tempname() .. '-perlcritic-XXXXXX'))
+        vim.api.nvim_create_autocmd('VimLeavePre', {
+            once = true,
+            callback = cleanup,
+            desc = 'Remove private Perl::Critic profile',
+        })
+    end
+    local path = fs.joinpath(directory, 'perlcriticrc')
+    local fd = assert(uv.fs_open(path, 'wx', 384)) -- 0600, exclusive; directory is 0700.
+    local offset = 0
+    while offset < #PROFILE do
+        local written, problem = uv.fs_write(fd, PROFILE:sub(offset + 1), offset)
+        if not written or written == 0 then
+            uv.fs_close(fd)
+            uv.fs_unlink(path)
+            error(problem or 'Cannot write Perl::Critic profile')
+        end
+        offset = offset + written
+    end
+    assert(uv.fs_close(fd))
+    profile = path
+    return path
 end
 
 ---@param context LintContext
 ---@return string
 local function root(context)
-  return fs.root(context.filename, ROOT_MARKERS) or context.root or context.cwd
+    return fs.root(context.filename, ROOT_MARKERS) or context.root or context.cwd
 end
 
 ---@param path string
 ---@param cwd string
 ---@return string
 local function canonical(path, cwd)
-  if path:sub(1, 1) ~= '/' then
-    path = fs.joinpath(cwd, path)
-  end
-  path = fs.normalize(path)
-  return uv.fs_realpath(path) or path
+    if path:sub(1, 1) ~= '/' then
+        path = fs.joinpath(cwd, path)
+    end
+    path = fs.normalize(path)
+    return uv.fs_realpath(path) or path
 end
 
 ---@param context LintContext
 ---@return string[]
 local function arguments(context)
-  assert(context.filename ~= '' and not context.modified, 'Perl::Critic requires a named, saved buffer')
-  local filename = canonical(context.filename, context.cwd)
-  local stat = uv.fs_stat(filename)
-  assert(stat and stat.type == 'file', 'Perl::Critic input must be a saved regular file')
-  for name, value in pairs(CLI) do
-    if name ~= 'quiet' then
-      assert(value == false or value == '', 'Perl::Critic reporting mode is incompatible: ' .. name)
+    assert(context.filename ~= '' and not context.modified, 'Perl::Critic requires a named, saved buffer')
+    local filename = canonical(context.filename, context.cwd)
+    local stat = uv.fs_stat(filename)
+    assert(stat and stat.type == 'file', 'Perl::Critic input must be a saved regular file')
+    for name, value in pairs(CLI) do
+        if name ~= 'quiet' then
+            assert(value == false or value == '', 'Perl::Critic reporting mode is incompatible: ' .. name)
+        end
     end
-  end
-  assert(CLI.quiet, 'Quiet mode is required for clean diagnostic output')
-  return {
-    '--profile',
-    profile_path(),
-    '--verbose',
-    FORMAT,
-    '--quiet',
-    '--nocolor',
-    '--nostatistics',
-    '--nostatistics-only',
-    '--',
-    filename,
-  }
+    assert(CLI.quiet, 'Quiet mode is required for clean diagnostic output')
+    return {
+        '--profile',
+        profile_path(),
+        '--verbose',
+        FORMAT,
+        '--quiet',
+        '--nocolor',
+        '--nostatistics',
+        '--nostatistics-only',
+        '--',
+        filename,
+    }
 end
 
 ---@param value string
 ---@return string
 local function clean(value)
-  local text = vim.trim(value:gsub('[%z\1-\31\127]', ' '))
-  if #text > LIMITS.message then
-    local last = LIMITS.message - 3
-    while last > 0 do
-      local byte = text:byte(last + 1)
-      if not byte or byte < 128 or byte >= 192 then
-        break
-      end
-      last = last - 1
+    local text = vim.trim(value:gsub('[%z\1-\31\127]', ' '))
+    if #text > LIMITS.message then
+        local last = LIMITS.message - 3
+        while last > 0 do
+            local byte = text:byte(last + 1)
+            if not byte or byte < 128 or byte >= 192 then
+                break
+            end
+            last = last - 1
+        end
+        text = text:sub(1, last) .. '...'
     end
-    text = text:sub(1, last) .. '...'
-  end
-  return text
+    return text
 end
 
 ---@param context LintContext
@@ -1019,139 +1040,146 @@ end
 ---@param message string
 ---@return vim.Diagnostic
 local function status(context, code, message)
-  return {
-    bufnr = context.bufnr,
-    lnum = 0,
-    col = 0,
-    end_lnum = 0,
-    end_col = 0,
-    source = 'perlcritic',
-    severity = vim.diagnostic.severity.WARN,
-    code = code,
-    message = clean(message),
-  }
+    return {
+        bufnr = context.bufnr,
+        lnum = 0,
+        col = 0,
+        end_lnum = 0,
+        end_col = 0,
+        source = 'perlcritic',
+        severity = vim.diagnostic.severity.WARN,
+        code = code,
+        message = clean(message),
+    }
 end
 
 local function positive_integer(value)
-  local number = tonumber(value)
-  if number and number >= 1 and number < 2147483647 and number == math.floor(number) then
-    return number
-  end
-  return nil
+    local number = tonumber(value)
+    if number and number >= 1 and number < 2147483647 and number == math.floor(number) then
+        return number
+    end
+    return nil
 end
 
 ---@param output string
 ---@param context LintContext
 ---@return vim.Diagnostic[]
 local function parse(output, context)
-  if context.modified then
-    return { status(context, 'save-required', 'Save this buffer before running Perl::Critic.') }
-  end
-  if #output > LIMITS.output then
-    return { status(context, 'output-limit', 'Perl::Critic output exceeded 16 MiB.') }
-  end
-  if output == '' then
-    return {}
-  end
-  if output:sub(1, 1) ~= RECORD then
-    return {
-      status(context, 'invalid-report', 'Unexpected Perl::Critic output; inspect stderr and the installed version.'),
-    }
-  end
-  ---@type vim.Diagnostic[]
-  local diagnostics = {}
-  local target = canonical(context.filename, context.cwd)
-  local count = vim.api.nvim_buf_line_count(context.bufnr)
-  local malformed, foreign, limited = false, false, false
-  local records = 0
-  for record in
-    vim.gsplit(output:sub(2), RECORD, {
-      plain = true,
-    })
-  do
-    records = records + 1
-    if records > LIMITS.records or #diagnostics >= LIMITS.diagnostics then
-      limited = true
-      break
+    if context.modified then
+        return { status(context, 'save-required', 'Save this buffer before running Perl::Critic.') }
     end
-    local parts = vim.split(record, FIELD, { plain = true })
-    local line = positive_integer(parts[1])
-    local column = positive_integer(parts[2])
-    local severity = positive_integer(parts[3])
-    if
-      #parts ~= 7
-      or not line
-      or not column
-      or not severity
-      or not SEVERITIES[severity]
-      or not parts[4]:match('^Perl::Critic::Policy::[%w_:]+$')
-      or parts[5] == ''
-    then
-      malformed = true
-    elseif canonical(parts[7], root(context)) ~= target then
-      foreign = true
-    else
-      ---@cast line integer
-      ---@cast column integer
-      ---@cast severity integer
-
-      local item = status(context, parts[4]:gsub('^Perl::Critic::Policy::', ''), parts[5])
-
-      item.lnum = math.min(line - 1, count - 1)
-      item.severity = SEVERITIES[severity]
-
-      local text = vim.api.nvim_buf_get_lines(context.bufnr, item.lnum, item.lnum + 1, false)[1] or ''
-      local exact = line <= count and not text:find('[\t\128-\255]') and column <= #text + 1
-
-      item.col = exact and column - 1 or 0
-
-      item.end_lnum = item.lnum
-      item.end_col = item.col
-      if parts[6] ~= '' then
-        item.message = clean(item.message .. ' — ' .. parts[6])
-      end
-      item.user_data = {
-        filename = parts[7],
-        reported_line = line,
-        reported_column = column,
-        perlcritic_severity = severity,
-        position_exact = exact,
-      }
-      diagnostics[#diagnostics + 1] = item
+    if #output > LIMITS.output then
+        return { status(context, 'output-limit', 'Perl::Critic output exceeded 16 MiB.') }
     end
-  end
-  if malformed then
-    diagnostics[#diagnostics + 1] =
-      status(context, 'malformed-result', 'Some Perl::Critic records could not be parsed; inspect CLI output.')
-  end
-  if foreign then
-    diagnostics[#diagnostics + 1] =
-      status(context, 'other-files', 'Perl::Critic reported another file; those findings were not attached here.')
-  end
-  if limited then
-    diagnostics[#diagnostics + 1] =
-      status(context, 'result-limit', 'Perl::Critic reached the editor result limit; run the CLI for all findings.')
-  end
-  return diagnostics
+    if output == '' then
+        return {}
+    end
+    if output:sub(1, 1) ~= RECORD then
+        return {
+            status(
+                context,
+                'invalid-report',
+                'Unexpected Perl::Critic output; inspect stderr and the installed version.'
+            ),
+        }
+    end
+    ---@type vim.Diagnostic[]
+    local diagnostics = {}
+    local target = canonical(context.filename, context.cwd)
+    local count = vim.api.nvim_buf_line_count(context.bufnr)
+    local malformed, foreign, limited = false, false, false
+    local records = 0
+    for record in
+        vim.gsplit(output:sub(2), RECORD, {
+            plain = true,
+        })
+    do
+        records = records + 1
+        if records > LIMITS.records or #diagnostics >= LIMITS.diagnostics then
+            limited = true
+            break
+        end
+        local parts = vim.split(record, FIELD, { plain = true })
+        local line = positive_integer(parts[1])
+        local column = positive_integer(parts[2])
+        local severity = positive_integer(parts[3])
+        if
+            #parts ~= 7
+            or not line
+            or not column
+            or not severity
+            or not SEVERITIES[severity]
+            or not parts[4]:match('^Perl::Critic::Policy::[%w_:]+$')
+            or parts[5] == ''
+        then
+            malformed = true
+        elseif canonical(parts[7], root(context)) ~= target then
+            foreign = true
+        else
+            ---@cast line integer
+            ---@cast column integer
+            ---@cast severity integer
+
+            local item = status(context, parts[4]:gsub('^Perl::Critic::Policy::', ''), parts[5])
+
+            item.lnum = math.min(line - 1, count - 1)
+            item.severity = SEVERITIES[severity]
+
+            local text = vim.api.nvim_buf_get_lines(context.bufnr, item.lnum, item.lnum + 1, false)[1] or ''
+            local exact = line <= count and not text:find('[\t\128-\255]') and column <= #text + 1
+
+            item.col = exact and column - 1 or 0
+
+            item.end_lnum = item.lnum
+            item.end_col = item.col
+            if parts[6] ~= '' then
+                item.message = clean(item.message .. ' — ' .. parts[6])
+            end
+            item.user_data = {
+                filename = parts[7],
+                reported_line = line,
+                reported_column = column,
+                perlcritic_severity = severity,
+                position_exact = exact,
+            }
+            diagnostics[#diagnostics + 1] = item
+        end
+    end
+    if malformed then
+        diagnostics[#diagnostics + 1] =
+            status(context, 'malformed-result', 'Some Perl::Critic records could not be parsed; inspect CLI output.')
+    end
+    if foreign then
+        diagnostics[#diagnostics + 1] =
+            status(context, 'other-files', 'Perl::Critic reported another file; those findings were not attached here.')
+    end
+    if limited then
+        diagnostics[#diagnostics + 1] = status(
+            context,
+            'result-limit',
+            'Perl::Critic reached the editor result limit; run the CLI for all findings.'
+        )
+    end
+    return diagnostics
 end
 
 ---@type Linter
 return {
-  cmd = 'perlcritic',
-  args = arguments,
-  append_fname = false,
-  automatic = true,
-  cwd = root,
-  env = {
-    NO_COLOR = '1',
-    PERLCRITIC = '',
-    PERL5OPT = '',
-  },
-  exit_codes = { 0, 2 },
-  ignore_exitcode = false,
-  parser = parse,
-  root_markers = ROOT_MARKERS,
-  stdin = false,
-  stream = 'stdout',
-  timeout = 60000,
+    cmd = 'perlcritic',
+    args = arguments,
+    append_fname = false,
+    automatic = true,
+    cwd = root,
+    env = {
+        NO_COLOR = '1',
+        PERLCRITIC = '',
+        PERL5OPT = '',
+    },
+    exit_codes = { 0, 2 },
+    ignore_exitcode = false,
+    parser = parse,
+    root_markers = ROOT_MARKERS,
+    stdin = false,
+    stream = 'stdout',
+    timeout = 60000,
 }

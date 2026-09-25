@@ -39,10 +39,10 @@ local SOURCE = 'yamllint'
 
 ---@type string[]
 local ROOT_MARKERS = {
-  '.yamllint',
-  '.yamllint.yaml',
-  '.yamllint.yml',
-  '.git',
+    '.yamllint',
+    '.yamllint.yaml',
+    '.yamllint.yml',
+    '.git',
 }
 
 ---@class YamllintDiagnostic
@@ -60,227 +60,227 @@ local ROOT_MARKERS = {
 ---@param value any
 ---@return string?
 local function string_value(value)
-  if type(value) ~= 'string' or value == '' then
-    return nil
-  end
+    if type(value) ~= 'string' or value == '' then
+        return nil
+    end
 
-  return value
+    return value
 end
 
 ---@param value string
 ---@return string
 local function trim(value)
-  assert(type(value) == 'string')
+    assert(type(value) == 'string')
 
-  return (value:gsub('^%s*(.-)%s*$', '%1'))
+    return (value:gsub('^%s*(.-)%s*$', '%1'))
 end
 
 ---@param value string
 ---@return string
 local function compact(value)
-  assert(type(value) == 'string')
+    assert(type(value) == 'string')
 
-  return trim(value:gsub('%s+', ' '))
+    return trim(value:gsub('%s+', ' '))
 end
 
 ---@param value string
 ---@param limit integer
 ---@return string
 local function truncate(value, limit)
-  assert(type(value) == 'string')
-  assert(limit >= 0)
+    assert(type(value) == 'string')
+    assert(limit >= 0)
 
-  if #value <= limit then
-    return value
-  end
+    if #value <= limit then
+        return value
+    end
 
-  if limit <= 3 then
-    return value:sub(1, limit)
-  end
+    if limit <= 3 then
+        return value:sub(1, limit)
+    end
 
-  return value:sub(1, limit - 3) .. '...'
+    return value:sub(1, limit - 3) .. '...'
 end
 
 ---@param value string
 ---@return string
 local function strip_ansi(value)
-  assert(type(value) == 'string')
+    assert(type(value) == 'string')
 
-  return (value:gsub('\27%[[%d;?]*[ -/]*[@-~]', ''))
+    return (value:gsub('\27%[[%d;?]*[ -/]*[@-~]', ''))
 end
 
 ---@param value any
 ---@param fallback integer
 ---@return integer
 local function integer(value, fallback)
-  assert(fallback >= 0)
+    assert(fallback >= 0)
 
-  local parsed = tonumber(value)
+    local parsed = tonumber(value)
 
-  if parsed == nil then
-    return fallback
-  end
+    if parsed == nil then
+        return fallback
+    end
 
-  return math.floor(parsed)
+    return math.floor(parsed)
 end
 
 ---@param value any
 ---@return integer
 local function zero_based_line(value)
-  local line = integer(value, 0)
+    local line = integer(value, 0)
 
-  if line <= 1 then
-    return 0
-  end
+    if line <= 1 then
+        return 0
+    end
 
-  return line - 1
+    return line - 1
 end
 
 ---@param value any
 ---@return integer
 local function zero_based_column(value)
-  local column = integer(value, 0)
+    local column = integer(value, 0)
 
-  if column <= 1 then
-    return 0
-  end
+    if column <= 1 then
+        return 0
+    end
 
-  return column - 1
+    return column - 1
 end
 
 ---@param path string
 ---@return boolean
 local function is_absolute(path)
-  assert(type(path) == 'string')
-  assert(path ~= '')
+    assert(type(path) == 'string')
+    assert(path ~= '')
 
-  return fn.isabsolutepath(path) == 1
+    return fn.isabsolutepath(path) == 1
 end
 
 ---@param path string
 ---@return string
 local function normalize(path)
-  assert(type(path) == 'string')
-  assert(path ~= '')
+    assert(type(path) == 'string')
+    assert(path ~= '')
 
-  return fs.normalize(path)
+    return fs.normalize(path)
 end
 
 ---@param path string
 ---@param root string
 ---@return string
 local function absolute_path(path, root)
-  assert(path ~= '')
-  assert(root ~= '')
+    assert(path ~= '')
+    assert(root ~= '')
 
-  if path:sub(1, 7) == 'file://' then
-    local ok, filename = pcall(vim.uri_to_fname, path)
+    if path:sub(1, 7) == 'file://' then
+        local ok, filename = pcall(vim.uri_to_fname, path)
 
-    if ok and type(filename) == 'string' and filename ~= '' then
-      return normalize(filename)
+        if ok and type(filename) == 'string' and filename ~= '' then
+            return normalize(filename)
+        end
     end
-  end
 
-  if is_absolute(path) then
-    return normalize(path)
-  end
+    if is_absolute(path) then
+        return normalize(path)
+    end
 
-  return normalize(fs.joinpath(root, path))
+    return normalize(fs.joinpath(root, path))
 end
 
 ---@param context LintContext
 ---@return string
 local function project_root(context)
-  local configured_root = string_value(context.root)
+    local configured_root = string_value(context.root)
 
-  if configured_root ~= nil then
-    return normalize(configured_root)
-  end
-
-  local filename = string_value(context.filename)
-
-  if filename ~= nil then
-    local detected = fs.root(filename, ROOT_MARKERS)
-
-    if type(detected) == 'string' and detected ~= '' then
-      return normalize(detected)
+    if configured_root ~= nil then
+        return normalize(configured_root)
     end
 
-    local parent = fs.dirname(filename)
+    local filename = string_value(context.filename)
 
-    if type(parent) == 'string' and parent ~= '' then
-      return normalize(parent)
+    if filename ~= nil then
+        local detected = fs.root(filename, ROOT_MARKERS)
+
+        if type(detected) == 'string' and detected ~= '' then
+            return normalize(detected)
+        end
+
+        local parent = fs.dirname(filename)
+
+        if type(parent) == 'string' and parent ~= '' then
+            return normalize(parent)
+        end
     end
-  end
 
-  local cwd = string_value(context.cwd)
+    local cwd = string_value(context.cwd)
 
-  if cwd ~= nil then
-    return normalize(cwd)
-  end
+    if cwd ~= nil then
+        return normalize(cwd)
+    end
 
-  return normalize(fn.getcwd())
+    return normalize(fn.getcwd())
 end
 
 ---@param candidate string?
 ---@param context LintContext
 ---@return boolean
 local function belongs_to_buffer(candidate, context)
-  local reported = string_value(candidate)
+    local reported = string_value(candidate)
 
-  if reported == nil or reported == '-' or reported == '<stdin>' then
-    return true
-  end
+    if reported == nil or reported == '-' or reported == '<stdin>' then
+        return true
+    end
 
-  local filename = string_value(context.filename)
+    local filename = string_value(context.filename)
 
-  if filename == nil then
-    return true
-  end
+    if filename == nil then
+        return true
+    end
 
-  local root = project_root(context)
-  local resolved_reported = absolute_path(reported, root)
-  local normalized_filename = normalize(filename)
+    local root = project_root(context)
+    local resolved_reported = absolute_path(reported, root)
+    local normalized_filename = normalize(filename)
 
-  return resolved_reported == normalized_filename
+    return resolved_reported == normalized_filename
 end
 
 ---@param level string
 ---@return integer
 local function severity(level)
-  local normalized = level:lower()
+    local normalized = level:lower()
 
-  if normalized == 'error' then
-    return ERROR
-  end
+    if normalized == 'error' then
+        return ERROR
+    end
 
-  if normalized == 'warning' or normalized == 'warn' then
-    return WARN
-  end
+    if normalized == 'warning' or normalized == 'warn' then
+        return WARN
+    end
 
-  return INFO
+    return INFO
 end
 
 ---@param message string
 ---@return string, string?
 local function parse_message(message)
-  assert(type(message) == 'string')
+    assert(type(message) == 'string')
 
-  local text = compact(strip_ansi(message))
-  local body, code = text:match('^(.-)%s*%(([^()]*)%)%s*$')
+    local text = compact(strip_ansi(message))
+    local body, code = text:match('^(.-)%s*%(([^()]*)%)%s*$')
 
-  if body == nil then
-    return truncate(text, MAX_MESSAGE_BYTES), nil
-  end
+    if body == nil then
+        return truncate(text, MAX_MESSAGE_BYTES), nil
+    end
 
-  body = trim(body)
-  code = trim(code)
+    body = trim(body)
+    code = trim(code)
 
-  if code == '' then
-    code = nil
-  end
+    if code == '' then
+        code = nil
+    end
 
-  return truncate(body, MAX_MESSAGE_BYTES), code
+    return truncate(body, MAX_MESSAGE_BYTES), code
 end
 
 ---@class YamllintParsedLine
@@ -293,229 +293,229 @@ end
 ---@param line string
 ---@return YamllintParsedLine?
 local function parse_line(line)
-  assert(type(line) == 'string')
+    assert(type(line) == 'string')
 
-  local cleaned = trim(strip_ansi(line))
+    local cleaned = trim(strip_ansi(line))
 
-  if cleaned == '' then
-    return nil
-  end
+    if cleaned == '' then
+        return nil
+    end
 
-  --
-  local filename, line_number, column, level, message = cleaned:match('^(.+):(%d+):(%d+):%s*%[([^%]]+)%]%s*(.-)%s*$')
+    --
+    local filename, line_number, column, level, message = cleaned:match('^(.+):(%d+):(%d+):%s*%[([^%]]+)%]%s*(.-)%s*$')
 
-  if filename == nil or line_number == nil or column == nil or level == nil or message == nil then
-    return nil
-  end
+    if filename == nil or line_number == nil or column == nil or level == nil or message == nil then
+        return nil
+    end
 
-  local parsed_line = integer(line_number, 0)
-  local parsed_column = integer(column, 0)
+    local parsed_line = integer(line_number, 0)
+    local parsed_column = integer(column, 0)
 
-  if parsed_line < 1 or parsed_column < 1 then
-    return nil
-  end
+    if parsed_line < 1 or parsed_column < 1 then
+        return nil
+    end
 
-  return {
-    filename = filename,
-    line = parsed_line,
-    column = parsed_column,
-    level = level,
-    message = message,
-  }
+    return {
+        filename = filename,
+        line = parsed_line,
+        column = parsed_column,
+        level = level,
+        message = message,
+    }
 end
 
 ---@param parsed YamllintParsedLine
 ---@param context LintContext
 ---@return YamllintDiagnostic?
 local function make_diagnostic(parsed, context)
-  if not belongs_to_buffer(parsed.filename, context) then
-    return nil
-  end
+    if not belongs_to_buffer(parsed.filename, context) then
+        return nil
+    end
 
-  local message, code = parse_message(parsed.message)
-  local lnum = zero_based_line(parsed.line)
-  local col = zero_based_column(parsed.column)
+    local message, code = parse_message(parsed.message)
+    local lnum = zero_based_line(parsed.line)
+    local col = zero_based_column(parsed.column)
 
-  return {
-    bufnr = context.bufnr,
-    code = code,
-    col = col,
-    end_col = col + 1,
-    end_lnum = lnum,
-    lnum = lnum,
-    message = message,
-    severity = severity(parsed.level),
-    source = SOURCE,
-    user_data = {
-      yamllint_filename = parsed.filename,
-      yamllint_level = parsed.level,
-      yamllint_rule = code,
-    },
-  }
+    return {
+        bufnr = context.bufnr,
+        code = code,
+        col = col,
+        end_col = col + 1,
+        end_lnum = lnum,
+        lnum = lnum,
+        message = message,
+        severity = severity(parsed.level),
+        source = SOURCE,
+        user_data = {
+            yamllint_filename = parsed.filename,
+            yamllint_level = parsed.level,
+            yamllint_rule = code,
+        },
+    }
 end
 
 ---@param output string
 ---@return string?
 local function failure_message(output)
-  local text = trim(strip_ansi(output))
+    local text = trim(strip_ansi(output))
 
-  if text == '' then
-    return nil
-  end
-
-  for raw_line in text:gmatch('[^\r\n]+') do
-    local line = compact(raw_line)
-    local lower = line:lower()
-
-    if
-      lower:find('error', 1, true) ~= nil
-      or lower:find('exception', 1, true) ~= nil
-      or lower:find('invalid', 1, true) ~= nil
-      or lower:find('failed', 1, true) ~= nil
-      or lower:find('config', 1, true) ~= nil
-    then
-      return truncate(line, MAX_MESSAGE_BYTES)
+    if text == '' then
+        return nil
     end
-  end
 
-  local first = text:match('([^\r\n]+)')
+    for raw_line in text:gmatch('[^\r\n]+') do
+        local line = compact(raw_line)
+        local lower = line:lower()
 
-  if first == nil then
-    return nil
-  end
+        if
+            lower:find('error', 1, true) ~= nil
+            or lower:find('exception', 1, true) ~= nil
+            or lower:find('invalid', 1, true) ~= nil
+            or lower:find('failed', 1, true) ~= nil
+            or lower:find('config', 1, true) ~= nil
+        then
+            return truncate(line, MAX_MESSAGE_BYTES)
+        end
+    end
 
-  return truncate(compact(first), MAX_MESSAGE_BYTES)
+    local first = text:match('([^\r\n]+)')
+
+    if first == nil then
+        return nil
+    end
+
+    return truncate(compact(first), MAX_MESSAGE_BYTES)
 end
 
 ---@param output string
 ---@param context LintContext
 ---@return YamllintDiagnostic[]
 local function parse_failure(output, context)
-  local message = failure_message(output)
+    local message = failure_message(output)
 
-  if message == nil then
-    return {}
-  end
+    if message == nil then
+        return {}
+    end
 
-  return {
-    {
-      bufnr = context.bufnr,
-      code = 'yamllint-error',
-      col = 0,
-      end_col = 0,
-      end_lnum = 0,
-      lnum = 0,
-      message = message,
-      severity = ERROR,
-      source = SOURCE,
-    },
-  }
+    return {
+        {
+            bufnr = context.bufnr,
+            code = 'yamllint-error',
+            col = 0,
+            end_col = 0,
+            end_lnum = 0,
+            lnum = 0,
+            message = message,
+            severity = ERROR,
+            source = SOURCE,
+        },
+    }
 end
 
 ---@param context LintContext
 ---@return YamllintDiagnostic[]
 local function oversized_output(context)
-  return {
-    {
-      bufnr = context.bufnr,
-      code = 'output-limit',
-      col = 0,
-      end_col = 0,
-      end_lnum = 0,
-      lnum = 0,
-      message = string.format('yamllint output exceeded the %d-byte parser limit', MAX_OUTPUT_BYTES),
-      severity = WARN,
-      source = SOURCE,
-    },
-  }
+    return {
+        {
+            bufnr = context.bufnr,
+            code = 'output-limit',
+            col = 0,
+            end_col = 0,
+            end_lnum = 0,
+            lnum = 0,
+            message = string.format('yamllint output exceeded the %d-byte parser limit', MAX_OUTPUT_BYTES),
+            severity = WARN,
+            source = SOURCE,
+        },
+    }
 end
 
 ---@param output string
 ---@param context LintContext|integer
 ---@return YamllintDiagnostic[]
 local function parse(output, context)
-  if output == '' then
-    return {}
-  end
-
-  assert(type(context) == 'table', 'yamllint parser requires LintContext')
-
-  ---@cast context LintContext
-
-  assert(type(context.bufnr) == 'number', 'yamllint parser requires context.bufnr')
-
-  if #output > MAX_OUTPUT_BYTES then
-    return oversized_output(context)
-  end
-
-  ---@type YamllintDiagnostic[]
-  local diagnostics = {}
-
-  local recognized = false
-
-  for raw_line in output:gmatch('[^\r\n]+') do
-    if #diagnostics >= MAX_DIAGNOSTICS then
-      break
+    if output == '' then
+        return {}
     end
 
-    if #raw_line <= MAX_LINE_BYTES then
-      local parsed = parse_line(raw_line)
+    assert(type(context) == 'table', 'yamllint parser requires LintContext')
 
-      if parsed ~= nil then
-        recognized = true
+    ---@cast context LintContext
 
-        local entry = make_diagnostic(parsed, context)
+    assert(type(context.bufnr) == 'number', 'yamllint parser requires context.bufnr')
 
-        if entry ~= nil then
-          diagnostics[#diagnostics + 1] = entry
+    if #output > MAX_OUTPUT_BYTES then
+        return oversized_output(context)
+    end
+
+    ---@type YamllintDiagnostic[]
+    local diagnostics = {}
+
+    local recognized = false
+
+    for raw_line in output:gmatch('[^\r\n]+') do
+        if #diagnostics >= MAX_DIAGNOSTICS then
+            break
         end
-      end
+
+        if #raw_line <= MAX_LINE_BYTES then
+            local parsed = parse_line(raw_line)
+
+            if parsed ~= nil then
+                recognized = true
+
+                local entry = make_diagnostic(parsed, context)
+
+                if entry ~= nil then
+                    diagnostics[#diagnostics + 1] = entry
+                end
+            end
+        end
     end
-  end
 
-  if recognized then
-    return diagnostics
-  end
+    if recognized then
+        return diagnostics
+    end
 
-  return parse_failure(output, context)
+    return parse_failure(output, context)
 end
 
 ---@param context LintContext
 ---@return string[]
 local function args(context)
-  assert(type(context) == 'table', 'yamllint args requires LintContext')
+    assert(type(context) == 'table', 'yamllint args requires LintContext')
 
-  return {
-    '--format',
-    'parsable',
+    return {
+        '--format',
+        'parsable',
 
-    '-',
-  }
+        '-',
+    }
 end
 
 ---@param context LintContext
 ---@return string
 local function cwd(context)
-  assert(type(context) == 'table', 'yamllint cwd requires LintContext')
+    assert(type(context) == 'table', 'yamllint cwd requires LintContext')
 
-  return project_root(context)
+    return project_root(context)
 end
 
 ---@type Linter
 return {
-  automatic = true,
-  cmd = 'yamllint',
-  args = args,
-  append_fname = false,
-  cwd = cwd,
+    automatic = true,
+    cmd = 'yamllint',
+    args = args,
+    append_fname = false,
+    cwd = cwd,
 
-  ignore_exitcode = true,
+    ignore_exitcode = true,
 
-  parser = parse,
+    parser = parse,
 
-  root_markers = ROOT_MARKERS,
+    root_markers = ROOT_MARKERS,
 
-  stdin = true,
-  stream = 'stdout',
-  timeout = 60000,
+    stdin = true,
+    stream = 'stdout',
+    timeout = 60000,
 }

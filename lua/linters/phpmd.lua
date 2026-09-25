@@ -64,10 +64,10 @@ local MAX_FILES = 1024
 local MAX_RECORDS = 10000
 
 local CONFIG_NAMES = {
-  'phpmd.xml',
-  'phpmd.xml.dist',
-  '.phpmd.xml',
-  '.phpmd.xml.dist',
+    'phpmd.xml',
+    'phpmd.xml.dist',
+    '.phpmd.xml',
+    '.phpmd.xml.dist',
 }
 
 -- PHPMD has no project config file that implies a ruleset the way
@@ -78,11 +78,11 @@ local DEFAULT_RULESETS = 'cleancode,codesize,controversial,design,naming,unusedc
 -- PHPMD priority -> vim.diagnostic.severity. 1 is most severe, 5 is
 -- least severe, per PHPMD's own priority documentation.
 local PRIORITY_SEVERITY = {
-  [1] = vim.diagnostic.severity.ERROR,
-  [2] = vim.diagnostic.severity.WARN,
-  [3] = vim.diagnostic.severity.WARN,
-  [4] = vim.diagnostic.severity.INFO,
-  [5] = vim.diagnostic.severity.HINT,
+    [1] = vim.diagnostic.severity.ERROR,
+    [2] = vim.diagnostic.severity.WARN,
+    [3] = vim.diagnostic.severity.WARN,
+    [4] = vim.diagnostic.severity.INFO,
+    [5] = vim.diagnostic.severity.HINT,
 }
 local DEFAULT_SEVERITY = vim.diagnostic.severity.WARN
 
@@ -90,127 +90,127 @@ local DEFAULT_SEVERITY = vim.diagnostic.severity.WARN
 ---@param cwd string
 ---@return string
 local function canonical(path, cwd)
-  if path:sub(1, 1) ~= '/' then
-    path = fs.joinpath(cwd, path)
-  end
-  return vim.fs.normalize(path)
+    if path:sub(1, 1) ~= '/' then
+        path = fs.joinpath(cwd, path)
+    end
+    return vim.fs.normalize(path)
 end
 
 ---@param cwd string
 ---@return string?
 local function find_config(cwd)
-  for _, name in ipairs(CONFIG_NAMES) do
-    local candidate = fs.joinpath(cwd, name)
-    if uv.fs_stat(candidate) then
-      return candidate
+    for _, name in ipairs(CONFIG_NAMES) do
+        local candidate = fs.joinpath(cwd, name)
+        if uv.fs_stat(candidate) then
+            return candidate
+        end
     end
-  end
-  return nil
+    return nil
 end
 
 ---@param priority integer?
 ---@return integer
 local function severity_for(priority)
-  if type(priority) ~= 'number' then
-    return DEFAULT_SEVERITY
-  end
-  return PRIORITY_SEVERITY[priority] or DEFAULT_SEVERITY
+    if type(priority) ~= 'number' then
+        return DEFAULT_SEVERITY
+    end
+    return PRIORITY_SEVERITY[priority] or DEFAULT_SEVERITY
 end
 
 ---@param output string
 ---@param context LintContext
 ---@return vim.Diagnostic.Set[]
 local function parser(output, context)
-  local result = {}
-  if #output == 0 or #output > MAX_OUTPUT then
-    return result
-  end
-
-  local ok, decoded = pcall(vim.json.decode, output, { luanil = { object = true, array = true } })
-  if not ok or type(decoded) ~= 'table' or type(decoded.files) ~= 'table' then
-    return result
-  end
-
-  local target = canonical(context.filename, context.cwd)
-  local malformed = false
-  local file_count = 0
-  local records = 0
-
-  for _, entry in ipairs(decoded.files) do
-    file_count = file_count + 1
-    if file_count > MAX_FILES then
-      break
+    local result = {}
+    if #output == 0 or #output > MAX_OUTPUT then
+        return result
     end
 
-    if type(entry) ~= 'table' or type(entry.file) ~= 'string' or type(entry.violations) ~= 'table' then
-      malformed = true
-    elseif canonical(entry.file, context.cwd) == target then
-      for _, violation in ipairs(entry.violations) do
-        records = records + 1
-        if records > MAX_RECORDS or #result >= MAX_DIAGNOSTICS then
-          break
+    local ok, decoded = pcall(vim.json.decode, output, { luanil = { object = true, array = true } })
+    if not ok or type(decoded) ~= 'table' or type(decoded.files) ~= 'table' then
+        return result
+    end
+
+    local target = canonical(context.filename, context.cwd)
+    local malformed = false
+    local file_count = 0
+    local records = 0
+
+    for _, entry in ipairs(decoded.files) do
+        file_count = file_count + 1
+        if file_count > MAX_FILES then
+            break
         end
 
-        if type(violation) ~= 'table' then
-          malformed = true
-        else
-          local message = violation.description
-          local line = violation.beginLine
-          if type(message) ~= 'string' or type(line) ~= 'number' then
+        if type(entry) ~= 'table' or type(entry.file) ~= 'string' or type(entry.violations) ~= 'table' then
             malformed = true
-          else
-            table.insert(result, {
-              lnum = math.max(line - 1, 0),
-              col = 0,
-              severity = severity_for(violation.priority),
-              message = message,
-              source = SOURCE,
-              code = violation.rule,
-            })
-          end
+        elseif canonical(entry.file, context.cwd) == target then
+            for _, violation in ipairs(entry.violations) do
+                records = records + 1
+                if records > MAX_RECORDS or #result >= MAX_DIAGNOSTICS then
+                    break
+                end
+
+                if type(violation) ~= 'table' then
+                    malformed = true
+                else
+                    local message = violation.description
+                    local line = violation.beginLine
+                    if type(message) ~= 'string' or type(line) ~= 'number' then
+                        malformed = true
+                    else
+                        table.insert(result, {
+                            lnum = math.max(line - 1, 0),
+                            col = 0,
+                            severity = severity_for(violation.priority),
+                            message = message,
+                            source = SOURCE,
+                            code = violation.rule,
+                        })
+                    end
+                end
+            end
         end
-      end
+
+        if records > MAX_RECORDS or #result >= MAX_DIAGNOSTICS then
+            break
+        end
     end
 
-    if records > MAX_RECORDS or #result >= MAX_DIAGNOSTICS then
-      break
+    if malformed and #result == 0 then
+        vim.notify_once(
+            '[phpmd] received an unrecognized JSON shape; skipping diagnostics for this run',
+            vim.log.levels.WARN
+        )
     end
-  end
 
-  if malformed and #result == 0 then
-    vim.notify_once(
-      '[phpmd] received an unrecognized JSON shape; skipping diagnostics for this run',
-      vim.log.levels.WARN
-    )
-  end
-
-  return result
+    return result
 end
 
 ---@param context LintContext
 ---@return string[]
 local function args(context)
-  local ruleset = find_config(context.cwd) or DEFAULT_RULESETS
-  return {
-    context.filename,
-    'json',
-    ruleset,
-    '--cache',
-    '--cache-file=' .. fs.joinpath(CACHE, 'cache.php'),
-  }
+    local ruleset = find_config(context.cwd) or DEFAULT_RULESETS
+    return {
+        context.filename,
+        'json',
+        ruleset,
+        '--cache',
+        '--cache-file=' .. fs.joinpath(CACHE, 'cache.php'),
+    }
 end
 
 ---@type Linter
 local M = {
-  cmd = { PHP, VENDOR_BINARY },
-  args = args,
-  stdin = false,
-  -- 0 = clean, 2 = violations found; both carry valid JSON on stdout.
-  -- 1 (crash) and 3 (unprocessable file) are real failures and are
-  -- deliberately left out so the runner's normal error path handles them.
-  exit_codes = { 0, 2 },
-  root_markers = { 'composer.json' },
-  parser = parser,
+    cmd = { PHP, VENDOR_BINARY },
+    args = args,
+    stdin = false,
+    -- 0 = clean, 2 = violations found; both carry valid JSON on stdout.
+    -- 1 (crash) and 3 (unprocessable file) are real failures and are
+    -- deliberately left out so the runner's normal error path handles them.
+    exit_codes = { 0, 2 },
+    root_markers = { 'composer.json' },
+    parser = parser,
 }
 
 require('linters').register('phpmd', M)

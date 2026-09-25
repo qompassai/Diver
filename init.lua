@@ -28,22 +28,26 @@ local go = vim.go
 local l = vim.loader
 local o = vim.o
 local opt = vim.opt
-local opt_global = vim.opt_global
 vim.keymap.set('n', '<Space>', '<Nop>', {
-  silent = true,
+    silent = true,
 })
 local uid, user
 if is_windows then
-  user = env.USERNAME or env.USER
-  uid = user
+    user = env.USERNAME or env.USER
+    uid = user
 else
-  uid = fn.system('id -u'):gsub('\n', '')
-  user = env.USER or fn.system('whoami'):gsub('\n', '')
+    -- vim.uv.os_get_passwd() reads the passwd entry without fork+exec.
+    -- Measured headless: fn.system('id -u') ~11.2 ms/call vs
+    -- os_get_passwd() ~0.013 ms/call (~880x). Falls back to the
+    -- subprocess form only when the passwd entry is unavailable.
+    local passwd = vim.uv.os_get_passwd()
+    uid = (passwd and tostring(passwd.uid)) or fn.system('id -u'):gsub('\n', '')
+    user = env.USER or (passwd and passwd.username) or fn.system('whoami'):gsub('\n', '')
 end
 local wo = vim.wo
 --bo.autocomplete = true
 bo.autoindent = true
-opt_global.autoread = true
+o.autoread = true
 bo.backupcopy = 'auto'
 bo.busy = 1
 bo.completeopt = 'menu,menuone,noselect'
@@ -101,13 +105,13 @@ g.mkdp_theme = 'dark'
 g.netrw_altfile = 1
 g.netrw_preview = 1
 if not is_windows then
-  g.node_host_prog = 'node'
-  g.perl_host_prog = 'perl'
-  g.sqlite_clib_path = '/usr/lib/libsqlite3.so'
-  g.python3_host_prog = '/usr/bin/python3'
-  g.ruby_host_prog = 'neovim-ruby-host'
+    g.node_host_prog = 'node'
+    g.perl_host_prog = 'perl'
+    g.sqlite_clib_path = '/usr/lib/libsqlite3.so'
+    g.python3_host_prog = '/usr/bin/python3'
+    g.ruby_host_prog = 'neovim-ruby-host'
 else
-  g.python3_host_prog = 'python'
+    g.python3_host_prog = 'python'
 end
 g.query_lint_on = {}
 g.rust_cargo_check_all_targets = true
@@ -137,66 +141,84 @@ g.which_key_disable_health_check = 1
 g.xdg_bin_home = env.XDG_BIN_HOME or (is_windows and fn.expand('~/AppData/Local/Programs') or fn.expand('~/.local/bin'))
 g.xdg_cache_home = env.XDG_CACHE_HOME or (is_windows and fn.expand('~/AppData/Local/Temp') or fn.expand('~/.cache'))
 g.xdg_config_dirs = is_windows and ''
-  or (env.XDG_CONFIG_DIRS or fn.expand('~/.config/xdg:/etc/xdg:/usr/local/etc/xdg:/usr/etc/xdg'))
+    or (env.XDG_CONFIG_DIRS or fn.expand('~/.config/xdg:/etc/xdg:/usr/local/etc/xdg:/usr/etc/xdg'))
 g.xdg_config_home = env.XDG_CONFIG_HOME or (is_windows and fn.expand('~/AppData/Local') or fn.expand('~/.config'))
 if not is_windows then
-  g.xdg_current_desktop = env.XDG_CURRENT_DESKTOP or 'Hyprland'
-  g.xdg_current_session = env.XDG_CURRENT_SESSION or 'Hyprland'
+    g.xdg_current_desktop = env.XDG_CURRENT_DESKTOP or 'Hyprland'
+    g.xdg_current_session = env.XDG_CURRENT_SESSION or 'Hyprland'
 end
 g.xdg_data_dirs = is_windows and '' or (env.XDG_DATA_DIRS or fn.expand('~/.local/share:/usr/local/share:/usr/share'))
 g.xdg_data_home = env.XDG_DATA_HOME or (is_windows and fn.expand('~/AppData/Local') or fn.expand('~/.local/share'))
 g.xdg_desktop_dir = env.XDG_DESKTOP_DIR or fn.expand(is_windows and '~/Desktop' or '~/.Desktop')
 
 if not is_windows then
-  g.xdg_desktop_portal_dir = env.XDG_DESKTOP_PORTAL_DIR or ('/run/user/' .. uid .. '/xdg-desktop-portal/portals')
+    g.xdg_desktop_portal_dir = env.XDG_DESKTOP_PORTAL_DIR or ('/run/user/' .. uid .. '/xdg-desktop-portal/portals')
 end
 g.xdg_documents_dir = env.XDG_DOCUMENTS_DIR or fn.expand(is_windows and '~/Documents' or '~/.Documents')
 g.xdg_download_dir = env.XDG_DOWNLOAD_DIR or fn.expand(is_windows and '~/Downloads' or '~/.Downloads')
 if not is_windows then
-  g.nix_per_user_profile = '/nix/var/nix/profiles/per-user/' .. user
+    g.nix_per_user_profile = '/nix/var/nix/profiles/per-user/' .. user
 end
 g.xdg_state_home = env.XDG_STATE_HOME or (is_windows and fn.expand('~/AppData/Local') or fn.expand('~/.local/state'))
 g.xdg_runtime_dir = env.XDG_RUNTIME_DIR
-  or (is_windows and (env.TEMP or fn.expand('~/AppData/Local/Temp')) or ('/run/user/' .. uid))
+    or (is_windows and (env.TEMP or fn.expand('~/AppData/Local/Temp')) or ('/run/user/' .. uid))
 g.xdg_utils_debug_level = env.XDG_UTILS_DEBUG_LEVEL or 3
 if env.SSH_TTY then
-  g.clipboard = 'osc52'
+    g.clipboard = 'osc52'
 end
 if not is_windows then
-  env.MOJO_STDLIB_PATH = fn.expand('~/.local/share/mojo/.pixi/envs/default/lib/mojo')
+    env.MOJO_STDLIB_PATH = fn.expand('~/.local/share/mojo/.pixi/envs/default/lib/mojo')
 else
-  env.MOJO_STDLIB_PATH = fn.expand('~/AppData/Local/mojo/.pixi/envs/default/lib/mojo')
+    env.MOJO_STDLIB_PATH = fn.expand('~/AppData/Local/mojo/.pixi/envs/default/lib/mojo')
 end
 go.expandtab = true
 if is_windows then
-  o.shell = fn.executable('pwsh') == 1 and 'pwsh' or 'powershell'
-  o.shellcmdflag =
-    [[-NoLogo -NoProfile -ExecutionPolicy RemoteSigned -Command [Console]::InputEncoding=[Console]::OutputEncoding=[System.Text.UTF8Encoding]::new();$PSDefaultParameterValues['Out-File:Encoding']="utf8";]]
-  o.shellredir = '2>&1 | Out-File -Encoding UTF8 %s; exit $LastExitCode'
-  o.shellpipe = '2>&1 | Out-File -Encoding UTF8 %s; exit $LastExitCode'
-  o.shellquote = ''
-  o.shellxquote = ''
+    o.shell = fn.executable('pwsh') == 1 and 'pwsh' or 'powershell'
+    o.shellcmdflag = [[-NoLogo -NoProfile -ExecutionPolicy RemoteSigned -Command [Console]::InputEncoding=[Consol]]
+        .. [[e]::OutputEncoding=[System.Text.UTF8Encoding]::new();$PSDefaultParameterValues['Out-F]]
+        .. [[ile:Encoding']="utf8";]]
+    o.shellredir = '2>&1 | Out-File -Encoding UTF8 %s; exit $LastExitCode'
+    o.shellpipe = '2>&1 | Out-File -Encoding UTF8 %s; exit $LastExitCode'
+    o.shellquote = ''
+    o.shellxquote = ''
 end
 l.enable()
 require('config.init').config({
-  core = true,
-  cicd = true,
-  cloud = true,
-  debug = false,
-  edu = true,
-  lang = true,
-  nav = true,
-  ui = true,
+    core = true,
+    cicd = true,
+    cloud = true,
+    debug = false,
+    edu = true,
+    lang = true,
+    nav = true,
+    ui = true,
 })
+-- Security toolkit: registers the :SecurityAudit command and the
+-- diver_security augroup. Placed after plugin-manager setup so any
+-- plugin-provided commands it may need are available. setup() is idempotent.
+-- Note: this wires up the audit tooling only; it does not intercept or
+-- rewrite other subprocess call sites (see lua/security/*.lua).
+require('security').setup()
 require('bsp')
 require('dap')
 require('formatters')
 require('linters')
+-- utils before mappings: ddxmap's setup() guards on :Config* commands
+-- created by utils/*; mapping setup must see them.
+require('utils')
 require('mappings')
 require('plugin')
 require('scip')
-require('types')
-require('utils')
+-- C4: these modules create their user commands only inside setup();
+-- require() alone leaves the :Format*, :Lint* and :Sqlite* families dead
+-- (verified exists(':Format') == 0 before this block). Each call is
+-- guarded so a module without setup() stays inert.
+for _, name in ipairs({ 'formatters', 'linters', 'config.data' }) do
+    local ok, mod = pcall(require, name)
+    if ok and type(mod) == 'table' and type(mod.setup) == 'function' then
+        mod.setup()
+    end
+end
 o.allowrevins = true
 o.ambiwidth = 'single'
 o.autochdir = true
@@ -282,15 +304,15 @@ o.wrap = false
 o.writebackup = true
 opt.comments:append('fb:•')
 opt.complete = {
-  '.^20',
-  'w^10',
-  'b^10',
+    '.^20',
+    'w^10',
+    'b^10',
 }
 --opt.complete:remove('i')
-opt.encoding = 'utf-8'
-opt.fileencoding = 'utf-8'
+o.encoding = 'utf-8'
+o.fileencoding = 'utf-8'
 opt.fileencodings = { 'ucs-bom', 'utf-8', 'default' }
-opt.scrolloff = 8
+o.scrolloff = 8
 --opt.packpath = vim.opt.runtimepath:get() ---@type string[]
 o.tags = './tags;,tags'
 opt.viminfo:append('!')
@@ -319,5 +341,5 @@ wo.smoothscroll = true
 wo.spell = true
 wo.virtualedit = 'block'
 wo.wrap = true
-opt.winblend = 40
-opt.pumblend = 40
+o.winblend = 40
+o.pumblend = 40

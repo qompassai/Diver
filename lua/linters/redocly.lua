@@ -38,17 +38,17 @@ local type = type
 
 ---@type table<string, integer>
 local severities = {
-  error = ERROR,
-  fatal = ERROR,
+    error = ERROR,
+    fatal = ERROR,
 
-  warn = WARN,
-  warning = WARN,
+    warn = WARN,
+    warning = WARN,
 
-  info = INFO,
-  information = INFO,
+    info = INFO,
+    information = INFO,
 
-  hint = HINT,
-  note = HINT,
+    hint = HINT,
+    note = HINT,
 }
 
 ---@class RedoclyCheckstyleEntry
@@ -63,172 +63,172 @@ local severities = {
 ---@param fallback integer
 ---@return integer
 local function integer(value, fallback)
-  assert(fallback >= 0)
+    assert(fallback >= 0)
 
-  local parsed = tonumber(value)
+    local parsed = tonumber(value)
 
-  if parsed == nil then
-    return fallback
-  end
+    if parsed == nil then
+        return fallback
+    end
 
-  return floor(parsed)
+    return floor(parsed)
 end
 
 ---@param value string|nil
 ---@return integer
 local function severity(value)
-  if type(value) ~= 'string' then
-    return WARN
-  end
+    if type(value) ~= 'string' then
+        return WARN
+    end
 
-  return severities[value:lower()] or WARN
+    return severities[value:lower()] or WARN
 end
 
 ---@param codepoint integer
 ---@return string?
 local function utf8_character(codepoint)
-  if codepoint < 0 or codepoint > 0x10FFFF or (codepoint >= 0xD800 and codepoint <= 0xDFFF) then
-    return nil
-  end
+    if codepoint < 0 or codepoint > 0x10FFFF or (codepoint >= 0xD800 and codepoint <= 0xDFFF) then
+        return nil
+    end
 
-  if codepoint <= 0x7F then
-    return char(codepoint)
-  end
+    if codepoint <= 0x7F then
+        return char(codepoint)
+    end
 
-  if codepoint <= 0x7FF then
-    return char(0xC0 + floor(codepoint / 0x40), 0x80 + codepoint % 0x40)
-  end
+    if codepoint <= 0x7FF then
+        return char(0xC0 + floor(codepoint / 0x40), 0x80 + codepoint % 0x40)
+    end
 
-  if codepoint <= 0xFFFF then
-    return char(0xE0 + floor(codepoint / 0x1000), 0x80 + floor(codepoint / 0x40) % 0x40, 0x80 + codepoint % 0x40)
-  end
+    if codepoint <= 0xFFFF then
+        return char(0xE0 + floor(codepoint / 0x1000), 0x80 + floor(codepoint / 0x40) % 0x40, 0x80 + codepoint % 0x40)
+    end
 
-  return char(
-    0xF0 + floor(codepoint / 0x40000),
-    0x80 + floor(codepoint / 0x1000) % 0x40,
-    0x80 + floor(codepoint / 0x40) % 0x40,
-    0x80 + codepoint % 0x40
-  )
+    return char(
+        0xF0 + floor(codepoint / 0x40000),
+        0x80 + floor(codepoint / 0x1000) % 0x40,
+        0x80 + floor(codepoint / 0x40) % 0x40,
+        0x80 + codepoint % 0x40
+    )
 end
 
 ---@param digits string
 ---@param base integer
 ---@return string
 local function numeric_entity(digits, base)
-  local codepoint = tonumber(digits, base)
-  if codepoint == nil then
-    return ''
-  end
+    local codepoint = tonumber(digits, base)
+    if codepoint == nil then
+        return ''
+    end
 
-  codepoint = floor(codepoint)
-  if
-    (codepoint < 0x20 and codepoint ~= 0x09 and codepoint ~= 0x0A and codepoint ~= 0x0D)
-    or codepoint == 0xFFFE
-    or codepoint == 0xFFFF
-  then
-    return ''
-  end
+    codepoint = floor(codepoint)
+    if
+        (codepoint < 0x20 and codepoint ~= 0x09 and codepoint ~= 0x0A and codepoint ~= 0x0D)
+        or codepoint == 0xFFFE
+        or codepoint == 0xFFFF
+    then
+        return ''
+    end
 
-  return utf8_character(codepoint) or ''
+    return utf8_character(codepoint) or ''
 end
 
 ---@param value string
 ---@return string
 local function xml_decode(value)
-  value = value:gsub('&#[xX]([%x]+);', function(digits)
-    return numeric_entity(digits, 16)
-  end)
-  value = value:gsub('&#(%d+);', function(digits)
-    return numeric_entity(digits, 10)
-  end)
+    value = value:gsub('&#[xX]([%x]+);', function(digits)
+        return numeric_entity(digits, 16)
+    end)
+    value = value:gsub('&#(%d+);', function(digits)
+        return numeric_entity(digits, 10)
+    end)
 
-  -- Decode ampersand last to avoid recursively decoding values such as
-  -- &amp;#65; into "A" during a single XML entity-decoding pass.
-  value = value:gsub('&quot;', '"')
-  value = value:gsub('&apos;', "'")
-  value = value:gsub('&lt;', '<')
-  value = value:gsub('&gt;', '>')
-  value = value:gsub('&amp;', '&')
+    -- Decode ampersand last to avoid recursively decoding values such as
+    -- &amp;#65; into "A" during a single XML entity-decoding pass.
+    value = value:gsub('&quot;', '"')
+    value = value:gsub('&apos;', "'")
+    value = value:gsub('&lt;', '<')
+    value = value:gsub('&gt;', '>')
+    value = value:gsub('&amp;', '&')
 
-  return value
+    return value
 end
 
 ---@param value string
 ---@return string
 local function normalize_message(value)
-  value = xml_decode(value)
+    value = xml_decode(value)
 
-  value = value:gsub('\r\n', '\n')
-  value = value:gsub('\r', '\n')
+    value = value:gsub('\r\n', '\n')
+    value = value:gsub('\r', '\n')
 
-  if #value > MESSAGE_LENGTH_MAX then
-    value = value:sub(1, MESSAGE_LENGTH_MAX) .. '\n[message truncated]'
-  end
+    if #value > MESSAGE_LENGTH_MAX then
+        value = value:sub(1, MESSAGE_LENGTH_MAX) .. '\n[message truncated]'
+    end
 
-  return value
+    return value
 end
 
 ---@param attributes string
 ---@param name string
 ---@return string?
 local function attribute(attributes, name)
-  assert(name ~= '')
+    assert(name ~= '')
 
-  --
-  -- Checkstyle output uses double-quoted XML attributes.
-  --
-  -- Do not attempt to parse arbitrary XML here; Redocly emits a deliberately
-  -- tiny and stable Checkstyle document and each diagnostic is represented by
-  -- a self-contained <error ... /> element.
-  --
-  local pattern = '%f[%w]' .. name .. '%s*=%s*"([^"]*)"'
+    --
+    -- Checkstyle output uses double-quoted XML attributes.
+    --
+    -- Do not attempt to parse arbitrary XML here; Redocly emits a deliberately
+    -- tiny and stable Checkstyle document and each diagnostic is represented by
+    -- a self-contained <error ... /> element.
+    --
+    local pattern = '%f[%w]' .. name .. '%s*=%s*"([^"]*)"'
 
-  local value = attributes:match(pattern)
+    local value = attributes:match(pattern)
 
-  if value == nil then
-    return nil
-  end
+    if value == nil then
+        return nil
+    end
 
-  return xml_decode(value)
+    return xml_decode(value)
 end
 
 ---@param path string
 ---@return boolean
 local function is_absolute_path(path)
-  local first = path:sub(1, 1)
-  if first == '/' then
-    return true
-  end
+    local first = path:sub(1, 1)
+    if first == '/' then
+        return true
+    end
 
-  local prefix = path:sub(1, 2)
-  if prefix == '\\\\' or prefix == '//' then
-    return true
-  end
+    local prefix = path:sub(1, 2)
+    if prefix == '\\\\' or prefix == '//' then
+        return true
+    end
 
-  local separator = path:sub(3, 3)
-  return first:match('%a') ~= nil and path:sub(2, 2) == ':' and (separator == '/' or separator == '\\')
+    local separator = path:sub(3, 3)
+    return first:match('%a') ~= nil and path:sub(2, 2) == ':' and (separator == '/' or separator == '\\')
 end
 
 ---@param path string
 ---@param root string
 ---@return string
 local function normalize_path(path, root)
-  assert(path ~= '')
-  assert(root ~= '')
+    assert(path ~= '')
+    assert(root ~= '')
 
-  if path:sub(1, 7) == 'file://' then
-    local ok, filename = pcall(vim.uri_to_fname, path)
+    if path:sub(1, 7) == 'file://' then
+        local ok, filename = pcall(vim.uri_to_fname, path)
 
-    if ok and type(filename) == 'string' and filename ~= '' then
-      return fs.normalize(filename)
+        if ok and type(filename) == 'string' and filename ~= '' then
+            return fs.normalize(filename)
+        end
     end
-  end
 
-  if is_absolute_path(path) then
-    return fs.normalize(path)
-  end
+    if is_absolute_path(path) then
+        return fs.normalize(path)
+    end
 
-  return fs.normalize(fs.joinpath(root, path))
+    return fs.normalize(fs.joinpath(root, path))
 end
 
 ---@param candidate string
@@ -236,40 +236,40 @@ end
 ---@param root string
 ---@return boolean
 local function belongs_to_buffer(candidate, filename, root)
-  assert(candidate ~= '')
-  assert(filename ~= '')
-  assert(root ~= '')
+    assert(candidate ~= '')
+    assert(filename ~= '')
+    assert(root ~= '')
 
-  return normalize_path(candidate, root) == filename
+    return normalize_path(candidate, root) == filename
 end
 
 ---@param attributes string
 ---@param file string
 ---@return RedoclyCheckstyleEntry?
 local function checkstyle_entry(attributes, file)
-  assert(file ~= '')
+    assert(file ~= '')
 
-  local message = attribute(attributes, 'message')
+    local message = attribute(attributes, 'message')
 
-  if message == nil or message == '' then
-    return nil
-  end
+    if message == nil or message == '' then
+        return nil
+    end
 
-  local source = attribute(attributes, 'source')
+    local source = attribute(attributes, 'source')
 
-  local level = attribute(attributes, 'severity') or 'warning'
+    local level = attribute(attributes, 'severity') or 'warning'
 
-  return {
-    filename = file,
+    return {
+        filename = file,
 
-    line = max(integer(attribute(attributes, 'line'), 1), 1),
+        line = max(integer(attribute(attributes, 'line'), 1), 1),
 
-    column = max(integer(attribute(attributes, 'column'), 1), 1),
+        column = max(integer(attribute(attributes, 'column'), 1), 1),
 
-    severity = level,
-    message = normalize_message(message),
-    source = source,
-  }
+        severity = level,
+        message = normalize_message(message),
+        source = source,
+    }
 end
 
 ---@param entry RedoclyCheckstyleEntry
@@ -277,231 +277,231 @@ end
 ---@param root string
 ---@return vim.Diagnostic.Set?
 local function diagnostic_from_entry(entry, filename, root)
-  if not belongs_to_buffer(entry.filename, filename, root) then
-    return nil
-  end
-
-  --
-  -- Checkstyle coordinates are one-based.
-  -- Neovim diagnostic coordinates are zero-based.
-  --
-  local lnum = max(entry.line - 1, 0)
-
-  local col = max(entry.column - 1, 0)
-
-  local code = entry.source
-
-  if type(code) ~= 'string' or code == '' then
-    code = nil
-  end
-
-  return {
-    lnum = lnum,
-    end_lnum = lnum,
-
-    col = col,
+    if not belongs_to_buffer(entry.filename, filename, root) then
+        return nil
+    end
 
     --
-    -- Checkstyle doesn't expose an end position. Highlight one byte rather
-    -- than inventing a source range Redocly did not report.
+    -- Checkstyle coordinates are one-based.
+    -- Neovim diagnostic coordinates are zero-based.
     --
-    end_col = col + 1,
+    local lnum = max(entry.line - 1, 0)
 
-    message = entry.message,
+    local col = max(entry.column - 1, 0)
 
-    severity = severity(entry.severity),
+    local code = entry.source
 
-    source = 'redocly',
-    code = code,
+    if type(code) ~= 'string' or code == '' then
+        code = nil
+    end
 
-    user_data = {
-      rule = code,
-      severity = entry.severity,
-    },
-  }
+    return {
+        lnum = lnum,
+        end_lnum = lnum,
+
+        col = col,
+
+        --
+        -- Checkstyle doesn't expose an end position. Highlight one byte rather
+        -- than inventing a source range Redocly did not report.
+        --
+        end_col = col + 1,
+
+        message = entry.message,
+
+        severity = severity(entry.severity),
+
+        source = 'redocly',
+        code = code,
+
+        user_data = {
+            rule = code,
+            severity = entry.severity,
+        },
+    }
 end
 
 ---@param message string
 ---@return vim.Diagnostic.Set[]
 local function parser_diagnostic(message)
-  return {
-    {
-      lnum = 0,
-      end_lnum = 0,
-      col = 0,
-      end_col = 1,
-      message = normalize_message(message),
-      severity = ERROR,
-      source = 'redocly',
-      code = 'parser',
-    },
-  }
+    return {
+        {
+            lnum = 0,
+            end_lnum = 0,
+            col = 0,
+            end_col = 1,
+            message = normalize_message(message),
+            severity = ERROR,
+            source = 'redocly',
+            code = 'parser',
+        },
+    }
 end
 
 ---@param output string
 ---@param context LintContext|integer
 ---@return vim.Diagnostic.Set[]
 local function parse(output, context)
-  if output == '' then
-    return {}
-  end
-
-  assert(type(context) == 'table', 'redocly parser requires a LintContext')
-
-  ---@cast context LintContext
-
-  assert(context.filename ~= '')
-  assert(context.root ~= '')
-
-  if #output > OUTPUT_LENGTH_MAX then
-    return parser_diagnostic(('Redocly output exceeded the %d-byte parser limit'):format(OUTPUT_LENGTH_MAX))
-  end
-
-  if not output:find('<checkstyle', 1, true) then
-    return parser_diagnostic('Redocly returned non-Checkstyle output:\n' .. output)
-  end
-
-  if not output:find('</checkstyle>', 1, true) then
-    return parser_diagnostic('Redocly returned an incomplete Checkstyle document')
-  end
-
-  local filename = fs.normalize(context.filename)
-
-  local root = fs.normalize(context.root)
-
-  ---@type vim.Diagnostic.Set[]
-  local diagnostics = {}
-
-  --
-  -- Redocly Checkstyle output has the form:
-  --
-  --   <file name="...">
-  --     <error ... />
-  --   </file>
-  --
-  -- Parse each file block independently. This prevents an <error> element
-  -- belonging to a referenced document from being incorrectly attributed to
-  -- the current buffer.
-  --
-  for file_attributes, body in output:gmatch('<file%s+([^>]-)>(.-)</file>') do
-    if #diagnostics >= DIAGNOSTICS_MAX then
-      break
+    if output == '' then
+        return {}
     end
 
-    local file = attribute(file_attributes, 'name')
+    assert(type(context) == 'table', 'redocly parser requires a LintContext')
 
-    if file ~= nil and file ~= '' then
-      for error_attributes in body:gmatch('<error%s+([^>]-)/>') do
+    ---@cast context LintContext
+
+    assert(context.filename ~= '')
+    assert(context.root ~= '')
+
+    if #output > OUTPUT_LENGTH_MAX then
+        return parser_diagnostic(('Redocly output exceeded the %d-byte parser limit'):format(OUTPUT_LENGTH_MAX))
+    end
+
+    if not output:find('<checkstyle', 1, true) then
+        return parser_diagnostic('Redocly returned non-Checkstyle output:\n' .. output)
+    end
+
+    if not output:find('</checkstyle>', 1, true) then
+        return parser_diagnostic('Redocly returned an incomplete Checkstyle document')
+    end
+
+    local filename = fs.normalize(context.filename)
+
+    local root = fs.normalize(context.root)
+
+    ---@type vim.Diagnostic.Set[]
+    local diagnostics = {}
+
+    --
+    -- Redocly Checkstyle output has the form:
+    --
+    --   <file name="...">
+    --     <error ... />
+    --   </file>
+    --
+    -- Parse each file block independently. This prevents an <error> element
+    -- belonging to a referenced document from being incorrectly attributed to
+    -- the current buffer.
+    --
+    for file_attributes, body in output:gmatch('<file%s+([^>]-)>(.-)</file>') do
         if #diagnostics >= DIAGNOSTICS_MAX then
-          break
+            break
         end
 
-        local raw = checkstyle_entry(error_attributes, file)
+        local file = attribute(file_attributes, 'name')
 
-        if raw ~= nil then
-          local entry = diagnostic_from_entry(raw, filename, root)
+        if file ~= nil and file ~= '' then
+            for error_attributes in body:gmatch('<error%s+([^>]-)/>') do
+                if #diagnostics >= DIAGNOSTICS_MAX then
+                    break
+                end
 
-          if entry ~= nil then
-            diagnostics[#diagnostics + 1] = entry
-          end
+                local raw = checkstyle_entry(error_attributes, file)
+
+                if raw ~= nil then
+                    local entry = diagnostic_from_entry(raw, filename, root)
+
+                    if entry ~= nil then
+                        diagnostics[#diagnostics + 1] = entry
+                    end
+                end
+            end
         end
-      end
     end
-  end
 
-  assert(#diagnostics <= DIAGNOSTICS_MAX)
+    assert(#diagnostics <= DIAGNOSTICS_MAX)
 
-  return diagnostics
+    return diagnostics
 end
 
 ---@param context LintContext
 ---@return string[]
 local function args(context)
-  assert(context.filename ~= '')
-  assert(context.root ~= '')
+    assert(context.filename ~= '')
+    assert(context.root ~= '')
 
-  local argv = {
-    'lint',
+    local argv = {
+        'lint',
 
-    context.filename,
+        context.filename,
 
-    '--format=checkstyle',
+        '--format=checkstyle',
 
-    --
-    -- Redocly defaults to only 100 displayed problems. An editor linter
-    -- should not silently hide diagnostics merely because a document happens
-    -- to exceed that CLI-oriented presentation limit.
-    --
-    '--max-problems=' .. DIAGNOSTICS_MAX,
+        --
+        -- Redocly defaults to only 100 displayed problems. An editor linter
+        -- should not silently hide diagnostics merely because a document happens
+        -- to exceed that CLI-oriented presentation limit.
+        --
+        '--max-problems=' .. DIAGNOSTICS_MAX,
 
-    --
-    -- Treat malformed Redocly project configuration as a real lint problem.
-    --
-    '--lint-config=error',
-  }
+        --
+        -- Treat malformed Redocly project configuration as a real lint problem.
+        --
+        '--lint-config=error',
+    }
 
-  return argv
+    return argv
 end
 
 return ---@type Linter
 {
-  automatic = false,
+    automatic = false,
 
-  cmd = 'redocly',
+    cmd = 'redocly',
 
-  args = args,
+    args = args,
 
-  append_fname = false,
+    append_fname = false,
 
-  cwd = function(context)
-    assert(context.root ~= '')
+    cwd = function(context)
+        assert(context.root ~= '')
 
-    return context.root
-  end,
+        return context.root
+    end,
 
-  --
-  -- Redocly returns a nonzero status when lint errors are present. Those
-  -- errors are exactly what this adapter needs to turn into diagnostics.
-  --
-  ignore_exitcode = true,
+    --
+    -- Redocly returns a nonzero status when lint errors are present. Those
+    -- errors are exactly what this adapter needs to turn into diagnostics.
+    --
+    ignore_exitcode = true,
 
-  parser = parse,
+    parser = parse,
 
-  root_markers = {
-    'redocly.yaml',
-    'redocly.yml',
+    root_markers = {
+        'redocly.yaml',
+        'redocly.yml',
 
-    '.redocly.yaml',
-    '.redocly.yml',
+        '.redocly.yaml',
+        '.redocly.yml',
 
-    'redocly.json',
+        'redocly.json',
 
-    'config/redocly.yaml',
-    'config/redocly.yml',
+        'config/redocly.yaml',
+        'config/redocly.yml',
 
-    '.config/redocly.yaml',
-    '.config/redocly.yml',
+        '.config/redocly.yaml',
+        '.config/redocly.yml',
 
-    '.redocly.lint-ignore.yaml',
+        '.redocly.lint-ignore.yaml',
 
-    'openapi.yaml',
-    'openapi.yml',
-    'openapi.json',
+        'openapi.yaml',
+        'openapi.yml',
+        'openapi.json',
 
-    'asyncapi.yaml',
-    'asyncapi.yml',
-    'asyncapi.json',
+        'asyncapi.yaml',
+        'asyncapi.yml',
+        'asyncapi.json',
 
-    'arazzo.yaml',
-    'arazzo.yml',
-    'arazzo.json',
+        'arazzo.yaml',
+        'arazzo.yml',
+        'arazzo.json',
 
-    'package.json',
+        'package.json',
 
-    '.git',
-  },
+        '.git',
+    },
 
-  stdin = false,
-  stream = 'stdout',
-  timeout = 60000,
+    stdin = false,
+    stream = 'stdout',
+    timeout = 60000,
 }

@@ -22,10 +22,10 @@ local utils = require('scip.utils')
 
 ---@type string[]
 local source_candidates = {
-        'src/main.zig',
-        'src/lib.zig',
-        'main.zig',
-        'lib.zig',
+    'src/main.zig',
+    'src/lib.zig',
+    'main.zig',
+    'lib.zig',
 }
 
 ---Return a filesystem-safe project/package name.
@@ -37,14 +37,14 @@ local source_candidates = {
 ---@param root string Project root.
 ---@return string
 local function package_name(root)
-        local normalized = fs.normalize(root)
-        local name = fs.basename(normalized)
+    local normalized = fs.normalize(root)
+    local name = fs.basename(normalized)
 
-        if name == nil or name == '' then
-                return 'root'
-        end
+    if name == nil or name == '' then
+        return 'root'
+    end
 
-        return name
+    return name
 end
 
 ---Find the root Zig source file.
@@ -56,31 +56,24 @@ end
 ---@param context ScipContext SCIP indexing context.
 ---@return string
 local function root_source(context)
-        for _, relative in ipairs(source_candidates) do
-                local candidate = fs.joinpath(
-                        context.root,
-                        relative
-                )
+    for _, relative in ipairs(source_candidates) do
+        local candidate = fs.joinpath(context.root, relative)
 
-                if utils.path_exists(candidate) then
-                        return candidate
-                end
+        if utils.path_exists(candidate) then
+            return candidate
         end
+    end
 
-        if
-                context.filename ~= ''
-                and context.filename:match('%.zig$') ~= nil
-                and utils.path_exists(context.filename)
-        then
-                return context.filename
-        end
+    if context.filename ~= '' and context.filename:match('%.zig$') ~= nil and utils.path_exists(context.filename) then
+        return context.filename
+    end
 
-        error(
-                'No Zig root source file found under '
-                        .. context.root
-                        .. '. Expected src/main.zig, src/lib.zig, '
-                        .. 'main.zig, or lib.zig.'
-        )
+    error(
+        'No Zig root source file found under '
+            .. context.root
+            .. '. Expected src/main.zig, src/lib.zig, '
+            .. 'main.zig, or lib.zig.'
+    )
 end
 
 ---Build arguments for scip-zig.
@@ -91,34 +84,35 @@ end
 ---@param context ScipContext SCIP indexing context.
 ---@return string[]
 local function args(context)
-        local package = package_name(context.root)
-        local source = root_source(context)
+    local package = package_name(context.root)
+    local source = root_source(context)
 
-        return {
-                '--root-path',
-                context.root,
-                '--pkg',
-                package,
-                source,
-                '--root-pkg',
-                package,                                                           }
+    return {
+        '--root-path',
+        context.root,
+        '--pkg',
+        package,
+        source,
+        '--root-pkg',
+        package,
+    }
 end
 
 ---@type ScipIndexer
 local indexer = {
-        args = args,
+    args = args,
 
-        command = 'scip-zig',
+    command = 'scip-zig',
 
-        filetypes = {
-                zig = true,
-        },
+    filetypes = {
+        zig = true,
+    },
 
-        markers = {
-                '.git',
-                'build.zig',
-                'build.zig.zon',
-        },
+    markers = {
+        '.git',
+        'build.zig',
+        'build.zig.zon',
+    },
 }
 
 return indexer

@@ -11,6 +11,9 @@ return ---@type vim.lint.Config
     stream = nil,
     ignore_exitcode = false,
     env = nil,
+    ---@param output string
+    ---@param bufnr integer
+    ---@return vim.Diagnostic.Set[]
     parser = function(output, bufnr)
         local diagnostics = {}
         if output == '' then

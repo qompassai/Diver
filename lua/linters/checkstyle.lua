@@ -76,133 +76,128 @@ local type = type
 
 ---@type table<string, integer>
 local severities = {
-  error = ERROR,
-  none = HINT,
-  note = INFO,
-  warning = WARN,
+    error = ERROR,
+    none = HINT,
+    note = INFO,
+    warning = WARN,
 }
 
 ---@type string[]
 local config_candidates = {
-  'checkstyle.xml',
-  'checkstyle-checks.xml',
-  'config/checkstyle/checkstyle.xml',
-  'config/checkstyle/checkstyle-checks.xml',
-  'config/checkstyle.xml',
-  '.checkstyle/checkstyle.xml',
+    'checkstyle.xml',
+    'checkstyle-checks.xml',
+    'config/checkstyle/checkstyle.xml',
+    'config/checkstyle/checkstyle-checks.xml',
+    'config/checkstyle.xml',
+    '.checkstyle/checkstyle.xml',
 }
 
 ---@type string[]
 local properties_candidates = {
-  'checkstyle.properties',
-  'config/checkstyle/checkstyle.properties',
-  'config/checkstyle.properties',
-  '.checkstyle/checkstyle.properties',
+    'checkstyle.properties',
+    'config/checkstyle/checkstyle.properties',
+    'config/checkstyle.properties',
+    '.checkstyle/checkstyle.properties',
 }
 
 ---@param value integer|number|string|nil
 ---@param fallback integer
 ---@return integer
 local function integer(value, fallback)
-  assert(fallback >= 0)
+    assert(fallback >= 0)
 
-  local parsed = tonumber(value)
+    local parsed = tonumber(value)
 
-  if parsed == nil then
-    return fallback
-  end
+    if parsed == nil then
+        return fallback
+    end
 
-  return floor(parsed)
+    return floor(parsed)
 end
 
 ---@param level string|nil
 ---@return integer
 local function severity(level)
-  if level == nil then
-    return WARN
-  end
+    if level == nil then
+        return WARN
+    end
 
-  return severities[level:lower()] or WARN
+    return severities[level:lower()] or WARN
 end
 
 ---@param path string
 ---@return boolean
 local function exists(path)
-  return uv.fs_stat(path) ~= nil
+    return uv.fs_stat(path) ~= nil
 end
 
 ---@param root string
 ---@param candidates string[]
 ---@return string?
 local function find_candidate(root, candidates)
-  assert(root ~= '')
+    assert(root ~= '')
 
-  for index = 1, #candidates do
-    local candidate = fs.joinpath(
-      root,
-      candidates[index]
-    )
+    for index = 1, #candidates do
+        local candidate = fs.joinpath(root, candidates[index])
 
-    if exists(candidate) then
-      return candidate
+        if exists(candidate) then
+            return candidate
+        end
     end
-  end
 
-  return nil
+    return nil
 end
 
 ---@param root string
 ---@return string
 local function config_file(root)
-  local config = find_candidate(
-    root,
-    config_candidates
-  )
+    local config = find_candidate(root, config_candidates)
 
-  --
-  -- Checkstyle accepts built-in configuration resources through -c.
-  --
-  -- If the repository does not provide its own configuration, use the
-  -- bundled Google Java Style configuration rather than silently
-  -- disabling linting.
-  --
-  return config or 'google_checks.xml'
+    --
+    -- Checkstyle accepts built-in configuration resources through -c.
+    --
+    -- If the repository does not provide its own configuration, use the
+    -- bundled Google Java Style configuration rather than silently
+    -- disabling linting.
+    --
+    return config or 'google_checks.xml'
 end
 
 ---@param root string
 ---@return string?
 local function properties_file(root)
-  return find_candidate(
-    root,
-    properties_candidates
-  )
+    return find_candidate(root, properties_candidates)
+end
+
+---@param path string
+---@return boolean
+local function is_absolute(path)
+    assert(type(path) == 'string')
+    assert(path ~= '')
+
+    return vim.fn.isabsolutepath(path) == 1
 end
 
 ---@param uri string
 ---@param root string
 ---@return string
 local function path_from_uri(uri, root)
-  assert(uri ~= '')
-  assert(root ~= '')
+    assert(uri ~= '')
+    assert(root ~= '')
 
-  if uri:sub(1, 7) == 'file://' then
-    local ok, filename = pcall(
-      vim.uri_to_fname,
-      uri
-    )
+    if uri:sub(1, 7) == 'file://' then
+        local ok, filename = pcall(vim.uri_to_fname, uri)
 
-    if ok and type(filename) == 'string' then
-      return fs.normalize(filename)
+        if ok and type(filename) == 'string' then
+            return fs.normalize(filename)
+        end
     end
-  end
 
-  if fs.is_absolute(uri) then
-    return fs.normalize(uri)
-  end
+    if is_absolute(uri) then
+        return fs.normalize(uri)
+    end
 
-  return fs.normalize(
-    fs.joinpath(root, uri)
-  )
+    return fs.normalize(fs.joinpath(root, uri))
 end
 
 ---@param location CheckstyleSarifArtifactLocation
@@ -210,349 +205,292 @@ end
 ---@param root string
 ---@return string?
 local function artifact_path(location, artifacts, root)
-  local uri = location.uri
+    local uri = location.uri
 
-  if type(uri) == 'string' and uri ~= '' then
+    if type(uri) == 'string' and uri ~= '' then
+        return path_from_uri(uri, root)
+    end
+
+    local index = location.index
+
+    if type(index) ~= 'number' or type(artifacts) ~= 'table' then
+        return nil
+    end
+
+    --
+    -- SARIF artifact indexes are zero-based.
+    --
+    local artifact = artifacts[index + 1]
+
+    if type(artifact) ~= 'table' then
+        return nil
+    end
+
+    local artifact_location = artifact.location
+
+    if type(artifact_location) ~= 'table' then
+        return nil
+    end
+
+    uri = artifact_location.uri
+
+    if type(uri) ~= 'string' or uri == '' then
+        return nil
+    end
+
     return path_from_uri(uri, root)
-  end
-
-  local index = location.index
-
-  if
-    type(index) ~= 'number'
-    or type(artifacts) ~= 'table'
-  then
-    return nil
-  end
-
-  --
-  -- SARIF artifact indexes are zero-based.
-  --
-  local artifact = artifacts[index + 1]
-
-  if type(artifact) ~= 'table' then
-    return nil
-  end
-
-  local artifact_location = artifact.location
-
-  if type(artifact_location) ~= 'table' then
-    return nil
-  end
-
-  uri = artifact_location.uri
-
-  if type(uri) ~= 'string' or uri == '' then
-    return nil
-  end
-
-  return path_from_uri(uri, root)
 end
 
 ---@param candidate string
 ---@param filename string
 ---@return boolean
 local function belongs_to_buffer(candidate, filename)
-  assert(candidate ~= '')
-  assert(filename ~= '')
+    assert(candidate ~= '')
+    assert(filename ~= '')
 
-  return fs.normalize(candidate) == filename
+    return fs.normalize(candidate) == filename
 end
 
 ---@param result CheckstyleSarifResult
 ---@param artifacts CheckstyleSarifArtifact[]|nil
 ---@param filename string
 ---@param root string
+---@param bufnr integer
 ---@return vim.Diagnostic?
-local function diagnostic_from_result(
-  result,
-  artifacts,
-  filename,
-  root
-)
-  local locations = result.locations
+local function diagnostic_from_result(result, artifacts, filename, root, bufnr)
+    local locations = result.locations
 
-  if type(locations) ~= 'table' then
-    return nil
-  end
+    if type(locations) ~= 'table' then
+        return nil
+    end
 
-  local location = locations[1]
+    local location = locations[1]
 
-  if type(location) ~= 'table' then
-    return nil
-  end
+    if type(location) ~= 'table' then
+        return nil
+    end
 
-  local physical = location.physicalLocation
+    local physical = location.physicalLocation
 
-  if type(physical) ~= 'table' then
-    return nil
-  end
+    if type(physical) ~= 'table' then
+        return nil
+    end
 
-  local artifact = physical.artifactLocation
+    local artifact = physical.artifactLocation
 
-  if type(artifact) ~= 'table' then
-    return nil
-  end
+    if type(artifact) ~= 'table' then
+        return nil
+    end
 
-  local path = artifact_path(
-    artifact,
-    artifacts,
-    root
-  )
+    local path = artifact_path(artifact, artifacts, root)
 
-  if
-    path == nil
-    or not belongs_to_buffer(path, filename)
-  then
-    return nil
-  end
+    if path == nil or not belongs_to_buffer(path, filename) then
+        return nil
+    end
 
-  local region = physical.region
+    local region = physical.region
 
-  local start_line = 0
-  local start_column = 0
-  local end_line = 0
-  local end_column = 1
+    local start_line = 0
+    local start_column = 0
+    local end_line = 0
+    local end_column = 1
 
-  if type(region) == 'table' then
-    start_line = max(
-      integer(region.startLine, 1) - 1,
-      0
-    )
+    if type(region) == 'table' then
+        start_line = max(integer(region.startLine, 1) - 1, 0)
 
-    start_column = max(
-      integer(region.startColumn, 1) - 1,
-      0
-    )
+        start_column = max(integer(region.startColumn, 1) - 1, 0)
 
-    end_line = max(
-      integer(
-        region.endLine,
-        start_line + 1
-      ) - 1,
-      start_line
-    )
+        end_line = max(integer(region.endLine, start_line + 1) - 1, start_line)
 
-    local minimum_end_column =
-      end_line == start_line
-        and start_column + 1
-        or 0
+        local minimum_end_column = end_line == start_line and start_column + 1 or 0
 
-    --
-    -- SARIF columns are one-based while Neovim columns are zero-based.
-    --
-    -- endColumn represents the first column after the region, so unlike
-    -- startColumn it should not receive an additional -1 adjustment when
-    -- converted to Neovim's exclusive end_col.
-    --
-    end_column = max(
-      integer(
-        region.endColumn,
-        minimum_end_column + 1
-      ) - 1,
-      minimum_end_column
-    )
-  end
+        --
+        -- SARIF columns are one-based while Neovim columns are zero-based.
+        --
+        -- endColumn represents the first column after the region, so unlike
+        -- startColumn it should not receive an additional -1 adjustment when
+        -- converted to Neovim's exclusive end_col.
+        --
+        end_column = max(integer(region.endColumn, minimum_end_column + 1) - 1, minimum_end_column)
+    end
 
-  local message = 'Checkstyle violation'
+    local message = 'Checkstyle violation'
 
-  if
-    type(result.message) == 'table'
-    and type(result.message.text) == 'string'
-    and result.message.text ~= ''
-  then
-    message = result.message.text
-  end
+    if type(result.message) == 'table' and type(result.message.text) == 'string' and result.message.text ~= '' then
+        message = result.message.text
+    end
 
-  local code = result.ruleId
+    local code = result.ruleId
 
-  if type(code) ~= 'string' or code == '' then
-    code = nil
-  end
+    if type(code) ~= 'string' or code == '' then
+        code = nil
+    end
 
-  return {
-    lnum = start_line,
-    end_lnum = end_line,
-    col = start_column,
-    end_col = end_column,
-    message = message,
-    severity = severity(result.level),
-    source = 'checkstyle',
-    code = code,
-    user_data = {
-      rule_index = result.ruleIndex,
-    },
-  }
+    return {
+        bufnr = bufnr,
+        lnum = start_line,
+        end_lnum = end_line,
+        col = start_column,
+        end_col = end_column,
+        message = message,
+        severity = severity(result.level),
+        source = 'checkstyle',
+        code = code,
+        user_data = {
+            rule_index = result.ruleIndex,
+        },
+    }
 end
 
 ---@param output string
 ---@param context LintContext|integer
 ---@return vim.Diagnostic.Set[]
 local function parse(output, context)
-  if output == '' then
-    return {}
-  end
-
-  assert(
-    type(context) == 'table',
-    'checkstyle parser requires a LintContext'
-  )
-
-  ---@cast context LintContext
-
-  assert(context.filename ~= '')
-  assert(context.root ~= '')
-
-  assert(
-    #output <= OUTPUT_LENGTH_MAX,
-    'checkstyle output exceeded maximum size'
-  )
-
-  local ok, decoded = pcall(
-    json.decode,
-    output
-  )
-
-  if not ok or type(decoded) ~= 'table' then
-    return {}
-  end
-
-  ---@cast decoded CheckstyleSarifReport
-
-  local runs = decoded.runs
-
-  if type(runs) ~= 'table' then
-    return {}
-  end
-
-  local filename = fs.normalize(context.filename)
-  local root = fs.normalize(context.root)
-
-  ---@type vim.Diagnostic.Set[]
-  local diagnostics = {}
-  local diagnostics_count = 0
-
-  for run_index = 1, #runs do
-    if diagnostics_count >= DIAGNOSTICS_MAX then
-      break
+    if output == '' then
+        return {}
     end
 
-    local run = runs[run_index]
+    assert(type(context) == 'table', 'checkstyle parser requires a LintContext')
 
-    if type(run) == 'table' then
-      local results = run.results
-      local artifacts = run.artifacts
+    ---@cast context LintContext
 
-      if type(results) == 'table' then
-        local available =
-          DIAGNOSTICS_MAX - diagnostics_count
+    assert(context.filename ~= '')
+    assert(context.root ~= '')
 
-        local results_count =
-          math.min(#results, available)
+    assert(#output <= OUTPUT_LENGTH_MAX, 'checkstyle output exceeded maximum size')
 
-        for result_index = 1, results_count do
-          local result = results[result_index]
+    local ok, decoded = pcall(json.decode, output)
 
-          if type(result) == 'table' then
-            local entry =
-              diagnostic_from_result(
-                result,
-                artifacts,
-                filename,
-                root
-              )
+    if not ok or type(decoded) ~= 'table' then
+        return {}
+    end
 
-            if entry ~= nil then
-              diagnostics_count =
-                diagnostics_count + 1
+    ---@cast decoded CheckstyleSarifReport
 
-              diagnostics[diagnostics_count] =
-                entry
-            end
-          end
+    local runs = decoded.runs
+
+    if type(runs) ~= 'table' then
+        return {}
+    end
+
+    local filename = fs.normalize(context.filename)
+    local root = fs.normalize(context.root)
+
+    ---@type vim.Diagnostic.Set[]
+    local diagnostics = {}
+    local diagnostics_count = 0
+
+    for run_index = 1, #runs do
+        if diagnostics_count >= DIAGNOSTICS_MAX then
+            break
         end
-      end
+
+        local run = runs[run_index]
+
+        if type(run) == 'table' then
+            local results = run.results
+            local artifacts = run.artifacts
+
+            if type(results) == 'table' then
+                local available = DIAGNOSTICS_MAX - diagnostics_count
+
+                local results_count = math.min(#results, available)
+
+                for result_index = 1, results_count do
+                    local result = results[result_index]
+
+                    if type(result) == 'table' then
+                        local entry = diagnostic_from_result(result, artifacts, filename, root, context.bufnr)
+
+                        if entry ~= nil then
+                            diagnostics_count = diagnostics_count + 1
+
+                            diagnostics[diagnostics_count] = entry
+                        end
+                    end
+                end
+            end
+        end
     end
-  end
 
-  assert(diagnostics_count <= DIAGNOSTICS_MAX)
-  assert(diagnostics_count == #diagnostics)
+    assert(diagnostics_count <= DIAGNOSTICS_MAX)
+    assert(diagnostics_count == #diagnostics)
 
-  return diagnostics
+    return diagnostics
 end
 
 ---@param context LintContext
 ---@return string[]
 local function args(context)
-  assert(context.filename ~= '')
-  assert(context.root ~= '')
+    assert(context.filename ~= '')
+    assert(context.root ~= '')
 
-  local root = fs.normalize(context.root)
+    local root = fs.normalize(context.root)
 
-  local argv = {
-    '-c',
-    config_file(root),
+    local argv = {
+        '-c',
+        config_file(root),
 
-    '-f',
-    'sarif',
-  }
+        '-f',
+        'sarif',
+    }
 
-  local properties = properties_file(root)
+    local properties = properties_file(root)
 
-  if properties ~= nil then
-    argv[#argv + 1] = '-p'
-    argv[#argv + 1] = properties
-  end
+    if properties ~= nil then
+        argv[#argv + 1] = '-p'
+        argv[#argv + 1] = properties
+    end
 
-  argv[#argv + 1] = context.filename
+    argv[#argv + 1] = context.filename
 
-  return argv
+    return argv
 end
 
 return ---@type Linter
 {
-  automatic = false,
+    automatic = false,
 
-  cmd = 'checkstyle',
+    cmd = 'checkstyle',
 
-  args = args,
+    args = args,
 
-  append_fname = false,
+    append_fname = false,
 
-  cwd = function(context)
-    assert(context.root ~= '')
+    cwd = function(context)
+        assert(context.root ~= '')
 
-    return context.root
-  end,
+        return context.root
+    end,
 
-  ignore_exitcode = true,
+    ignore_exitcode = true,
 
-  parser = parse,
+    parser = parse,
 
-  root_markers = {
-    'checkstyle.xml',
-    'checkstyle-checks.xml',
+    root_markers = {
+        'checkstyle.xml',
+        'checkstyle-checks.xml',
 
-    'config/checkstyle/checkstyle.xml',
-    'config/checkstyle/checkstyle-checks.xml',
-    'config/checkstyle.xml',
+        'config/checkstyle/checkstyle.xml',
+        'config/checkstyle/checkstyle-checks.xml',
+        'config/checkstyle.xml',
 
-    '.checkstyle/checkstyle.xml',
+        '.checkstyle/checkstyle.xml',
 
-    'checkstyle.properties',
-    'config/checkstyle/checkstyle.properties',
+        'checkstyle.properties',
+        'config/checkstyle/checkstyle.properties',
 
-    'settings.gradle.kts',
-    'settings.gradle',
-    'build.gradle.kts',
-    'build.gradle',
+        'settings.gradle.kts',
+        'settings.gradle',
+        'build.gradle.kts',
+        'build.gradle',
 
-    'pom.xml',
+        'pom.xml',
 
-    '.git',
-  },
+        '.git',
+    },
 
-  stdin = false,
-  stream = 'stdout',
-  timeout = 60000,
+    stdin = false,
+    stream = 'stdout',
+    timeout = 60000,
 }

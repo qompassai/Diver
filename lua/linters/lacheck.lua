@@ -16,19 +16,19 @@
 -- limitations under the License.
 -- #################################################################
 return {
-	name = 'lacheck',
-	cmd = 'lacheck',
-	stdin = false,
-	append_fname = false,
-	args = function(context)
-		return {
-			context.filename,
-		}
-	end,
-	stream = 'stdout',
-	ignore_exitcode = true,
-	errorformat = {
-		'"%f", line %l: %m',
-		'%-G%.%#',
-	},
+    name = 'lacheck',
+    cmd = 'lacheck',
+    stdin = false,
+    append_fname = false,
+    args = function(context)
+        return {
+            context.filename,
+        }
+    end,
+    stream = 'stdout',
+    ignore_exitcode = true,
+    errorformat = {
+        '"%f", line %l: %m',
+        '%-G%.%#',
+    },
 } --[[@as vim.lint.Config]]

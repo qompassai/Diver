@@ -18,34 +18,34 @@ local PROMPT_TIMEOUT_MS = 60000
 ---@param request table Must include a human-readable `title`/`description`.
 ---@return table outcome { outcome: 'allowed'|'denied' }
 function M.prompt(request)
-  assert(type(request) == 'table', 'permission request must be a table')
+    assert(type(request) == 'table', 'permission request must be a table')
 
-  local description = type(request.title) == 'string' and request.title
-    or type(request.description) == 'string' and request.description
-    or '(no description provided)'
+    local description = type(request.title) == 'string' and request.title
+        or type(request.description) == 'string' and request.description
+        or '(no description provided)'
 
-  local choice
-  local done = false
+    local choice
+    local done = false
 
-  vim.ui.select({ 'Allow', 'Deny' }, {
-    prompt = 'ACP permission request: ' .. description,
-  }, function(selected)
-    choice = selected
-    done = true
-  end)
+    vim.ui.select({ 'Allow', 'Deny' }, {
+        prompt = 'ACP permission request: ' .. description,
+    }, function(selected)
+        choice = selected
+        done = true
+    end)
 
-  local completed = vim.wait(PROMPT_TIMEOUT_MS, function()
-    return done
-  end, 20)
+    local completed = vim.wait(PROMPT_TIMEOUT_MS, function()
+        return done
+    end, 20)
 
-  if not completed or choice ~= 'Allow' then
+    if not completed or choice ~= 'Allow' then
+        return {
+            outcome = 'denied',
+        }
+    end
     return {
-      outcome = 'denied',
+        outcome = 'allowed',
     }
-  end
-  return {
-    outcome = 'allowed',
-  }
 end
 
 return M

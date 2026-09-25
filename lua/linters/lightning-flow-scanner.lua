@@ -15,7 +15,12 @@
 -- See the License for the specific language governing permissions and
 -- limitations under the License.
 -- #################################################################
-return require('linters._salesforce-code-analyzer').new({
-	name = 'lightning-flow-scanner',
-	selector = 'flow:Recommended',
+local ok, factory = pcall(require, 'linters._salesforce-code-analyzer')
+if not ok then
+    ---@type LinterUnavailable
+    return { unavailable = 'linters._salesforce-code-analyzer' }
+end
+return factory.new({
+    name = 'lightning-flow-scanner',
+    selector = 'flow:Recommended',
 })

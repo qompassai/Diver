@@ -1,3 +1,9 @@
+--- Unreal Engine helper types — type-checker dictionary (never runs).
+---
+--- Plain-language version: this file never runs -- Neovim never loads it at startup. It is a dictionary of shapes
+--- (type annotations) for the lua-language-server type checker, so the editor can offer completions and catch
+--- mistakes while you edit. Think of it as the answer key the teacher uses, not a lesson.
+---@module 'types.utils.unreal'
 -- /qompassai/Diver/lua/types/utils/unreal.lua
 -- Qompass AI Diver Unreal Utils Type Config
 -- Copyright (C) 2026 Qompass AI, All rights reserved
@@ -29,9 +35,9 @@
 ---@field PlatformName                                     string
 ---@field logFile                                          file*|nil
 ---@field WithEngine                                       boolean|nil
----@field GetTaskAndStatus                                 fun(self:CurrentGenData, taskName:string):(TaskStateName|nil, string)
+---@field GetTaskAndStatus fun(self:CurrentGenData, taskName:string):(TaskStateName|nil, string)
 ---@field GetTaskStatus                                    fun(self:CurrentGenData, taskName:string):TaskStateName|nil
----@field SetTaskStatus                                    fun(self:CurrentGenData, taskName:string, status:TaskStateName, msg:string|nil)
+---@field SetTaskStatus fun(self:CurrentGenData, taskName:string, status:TaskStateName, msg:string|nil)
 ---@field ClearTasks                                       fun(self:CurrentGenData)
 ---@type                     CurrentGenData
 CurrentGenData = CurrentGenData

@@ -41,124 +41,125 @@ local TIDY_SHOW_ERRORS = 512
 
 ---@type string[]
 local ROOT_MARKERS = {
-  'tidy.conf',
-  '.tidyrc',
-  '.htmltidy',
-  'package.json',
-  '.git',
+    'tidy.conf',
+    '.tidyrc',
+    '.htmltidy',
+    'package.json',
+    '.git',
 }
 
 ---@param value any
 ---@return string?
 local function string_value(value)
-  if type(value) ~= 'string' or value == '' then
-    return nil
-  end
+    if type(value) ~= 'string' or value == '' then
+        return nil
+    end
 
-  return value
+    return value
 end
 
 ---@param value string
 ---@return string
 local function compact(value)
-  return vim.trim(value:gsub('%s+', ' '))
+    return vim.trim(value:gsub('%s+', ' '))
 end
 
 ---@param value string
 ---@param limit integer
 ---@return string
 local function truncate(value, limit)
-  if #value <= limit then
-    return value
-  end
+    if #value <= limit then
+        return value
+    end
 
-  if limit <= 3 then
-    return value:sub(1, limit)
-  end
+    if limit <= 3 then
+        return value:sub(1, limit)
+    end
 
-  return value:sub(1, limit - 3) .. '...'
+    return value:sub(1, limit - 3) .. '...'
 end
 
 ---@param value any
 ---@return integer
 local function zero_based(value)
-  local number = tonumber(value)
+    local number = tonumber(value)
 
-  if number == nil then
-    return 0
-  end
+    if number == nil then
+        return 0
+    end
 
-  local integer = math.floor(number)
+    local integer = math.floor(number)
 
-  if integer <= 1 then
-    return 0
-  end
+    if integer <= 1 then
+        return 0
+    end
 
-  return integer - 1
+    return integer - 1
 end
 
 ---@param output string
 ---@return string
 local function strip_ansi(output)
-  return output:gsub('\27%[[%d;]*[mK]', '')
+    local cleaned = output:gsub('\27%[[%d;]*[mK]', '')
+    return cleaned
 end
 
 ---@param context LintContext
 ---@return string
 local function project_root(context)
-  local context_root = string_value(context.root)
+    local context_root = string_value(context.root)
 
-  if context_root ~= nil then
-    return fs.normalize(context_root)
-  end
-
-  local filename = string_value(context.filename)
-
-  if filename ~= nil then
-    local detected = fs.root(filename, ROOT_MARKERS)
-
-    if type(detected) == 'string' and detected ~= '' then
-      return fs.normalize(detected)
+    if context_root ~= nil then
+        return fs.normalize(context_root)
     end
 
-    local parent = fs.dirname(filename)
+    local filename = string_value(context.filename)
 
-    if type(parent) == 'string' and parent ~= '' then
-      return fs.normalize(parent)
+    if filename ~= nil then
+        local detected = fs.root(filename, ROOT_MARKERS)
+
+        if type(detected) == 'string' and detected ~= '' then
+            return fs.normalize(detected)
+        end
+
+        local parent = fs.dirname(filename)
+
+        if type(parent) == 'string' and parent ~= '' then
+            return fs.normalize(parent)
+        end
     end
-  end
 
-  local cwd = string_value(context.cwd)
+    local cwd = string_value(context.cwd)
 
-  if cwd ~= nil then
-    return fs.normalize(cwd)
-  end
+    if cwd ~= nil then
+        return fs.normalize(cwd)
+    end
 
-  return fs.normalize(vim.fn.getcwd())
+    return fs.normalize(vim.fn.getcwd())
 end
 
 ---@param level string?
 ---@return integer
 local function severity(level)
-  if level == nil then
+    if level == nil then
+        return diagnostic.severity.WARN
+    end
+
+    local normalized = level:lower()
+
+    if normalized == 'error' then
+        return diagnostic.severity.ERROR
+    end
+
+    if normalized == 'warning' or normalized == 'warn' then
+        return diagnostic.severity.WARN
+    end
+
+    if normalized == 'info' or normalized == 'information' then
+        return diagnostic.severity.INFO
+    end
+
     return diagnostic.severity.WARN
-  end
-
-  local normalized = level:lower()
-
-  if normalized == 'error' then
-    return diagnostic.severity.ERROR
-  end
-
-  if normalized == 'warning' or normalized == 'warn' then
-    return diagnostic.severity.WARN
-  end
-
-  if normalized == 'info' or normalized == 'information' then
-    return diagnostic.severity.INFO
-  end
-
-  return diagnostic.severity.WARN
 end
 
 ---@class HtmlTidyFinding
@@ -171,337 +172,337 @@ end
 ---@param line string
 ---@return HtmlTidyFinding?
 local function parse_finding(line)
-  if line == '' or #line > MAX_LINE_BYTES then
-    return nil
-  end
+    if line == '' or #line > MAX_LINE_BYTES then
+        return nil
+    end
 
-  local line_number
-  local column
-  local level
-  local code
-  local message
+    local line_number
+    local column
+    local level
+    local code
+    local message
 
-  --
-  -- With:
-  --
-  --   --mute-id yes
-  --
-  -- modern Tidy can emit the message ID alongside the report. Be tolerant of
-  -- multiple placements because distributions/builds can differ slightly.
-  --
-  -- Examples accepted:
-  --
-  --   line 4 column 1 - Warning: [MISSING_TITLE_ELEMENT] inserting ...
-  --   line 4 column 1 - Warning: inserting ... [MISSING_TITLE_ELEMENT]
-  --   line 4 column 1 - Warning: inserting ...
-  --
-  line_number, column, level, code, message =
-    line:match('^line%s+(%d+)%s+column%s+(%d+)%s+%-%s+([%a]+):%s+%[([^%]]+)%]%s*(.+)$')
+    --
+    -- With:
+    --
+    --   --mute-id yes
+    --
+    -- modern Tidy can emit the message ID alongside the report. Be tolerant of
+    -- multiple placements because distributions/builds can differ slightly.
+    --
+    -- Examples accepted:
+    --
+    --   line 4 column 1 - Warning: [MISSING_TITLE_ELEMENT] inserting ...
+    --   line 4 column 1 - Warning: inserting ... [MISSING_TITLE_ELEMENT]
+    --   line 4 column 1 - Warning: inserting ...
+    --
+    line_number, column, level, code, message =
+        line:match('^line%s+(%d+)%s+column%s+(%d+)%s+%-%s+([%a]+):%s+%[([^%]]+)%]%s*(.+)$')
 
-  if line_number ~= nil and column ~= nil and level ~= nil and message ~= nil then
+    if line_number ~= nil and column ~= nil and level ~= nil and message ~= nil then
+        return {
+            code = code,
+
+            column = math.floor(tonumber(column) or 1),
+
+            line = math.floor(tonumber(line_number) or 1),
+
+            message = message,
+
+            severity = level,
+        }
+    end
+
+    line_number, column, level, message, code =
+        line:match('^line%s+(%d+)%s+column%s+(%d+)%s+%-%s+([%a]+):%s+(.+)%s+%[([^%]]+)%]$')
+
+    if line_number ~= nil and column ~= nil and level ~= nil and message ~= nil then
+        return {
+            code = code,
+
+            column = math.floor(tonumber(column) or 1),
+
+            line = math.floor(tonumber(line_number) or 1),
+
+            message = message,
+
+            severity = level,
+        }
+    end
+
+    line_number, column, level, message = line:match('^line%s+(%d+)%s+column%s+(%d+)%s+%-%s+([%a]+):%s+(.+)$')
+
+    if line_number == nil or column == nil or level == nil or message == nil then
+        return nil
+    end
+
     return {
-      code = code,
+        code = nil,
 
-      column = tonumber(column) or 1,
+        column = math.floor(tonumber(column) or 1),
 
-      line = tonumber(line_number) or 1,
+        line = math.floor(tonumber(line_number) or 1),
 
-      message = message,
+        message = message,
 
-      severity = level,
+        severity = level,
     }
-  end
-
-  line_number, column, level, message, code =
-    line:match('^line%s+(%d+)%s+column%s+(%d+)%s+%-%s+([%a]+):%s+(.+)%s+%[([^%]]+)%]$')
-
-  if line_number ~= nil and column ~= nil and level ~= nil and message ~= nil then
-    return {
-      code = code,
-
-      column = tonumber(column) or 1,
-
-      line = tonumber(line_number) or 1,
-
-      message = message,
-
-      severity = level,
-    }
-  end
-
-  line_number, column, level, message = line:match('^line%s+(%d+)%s+column%s+(%d+)%s+%-%s+([%a]+):%s+(.+)$')
-
-  if line_number == nil or column == nil or level == nil or message == nil then
-    return nil
-  end
-
-  return {
-    code = nil,
-
-    column = tonumber(column) or 1,
-
-    line = tonumber(line_number) or 1,
-
-    message = message,
-
-    severity = level,
-  }
 end
 
 ---@param finding HtmlTidyFinding
 ---@param context LintContext
 ---@return vim.Diagnostic
 local function finding_diagnostic(finding, context)
-  local lnum = zero_based(finding.line)
+    local lnum = zero_based(finding.line)
 
-  local col = zero_based(finding.column)
+    local col = zero_based(finding.column)
 
-  return {
-    bufnr = context.bufnr,
+    return {
+        bufnr = context.bufnr,
 
-    code = string_value(finding.code),
+        code = string_value(finding.code),
 
-    col = col,
+        col = col,
 
-    end_col = col,
+        end_col = col,
 
-    end_lnum = lnum,
+        end_lnum = lnum,
 
-    lnum = lnum,
+        lnum = lnum,
 
-    message = truncate(compact(finding.message), MAX_MESSAGE_BYTES),
+        message = truncate(compact(finding.message), MAX_MESSAGE_BYTES),
 
-    severity = severity(finding.severity),
+        severity = severity(finding.severity),
 
-    source = SOURCE,
+        source = SOURCE,
 
-    user_data = {
-      message_id = finding.code,
+        user_data = {
+            message_id = finding.code,
 
-      tidy_severity = finding.severity,
-    },
-  }
+            tidy_severity = finding.severity,
+        },
+    }
 end
 
 ---@param line string
 ---@return boolean
 local function operational_error(line)
-  local lower = line:lower()
+    local lower = line:lower()
 
-  return lower:find('error:', 1, true) ~= nil
-    or lower:find('failed', 1, true) ~= nil
-    or lower:find('cannot', 1, true) ~= nil
-    or lower:find('unknown option', 1, true) ~= nil
-    or lower:find('config', 1, true) ~= nil
+    return lower:find('error:', 1, true) ~= nil
+        or lower:find('failed', 1, true) ~= nil
+        or lower:find('cannot', 1, true) ~= nil
+        or lower:find('unknown option', 1, true) ~= nil
+        or lower:find('config', 1, true) ~= nil
 end
 
 ---@param output string
 ---@return string?
 local function error_message(output)
-  local text = strip_ansi(vim.trim(output))
+    local text = strip_ansi(vim.trim(output))
 
-  if text == '' then
-    return nil
-  end
-
-  for line in text:gmatch('[^\r\n]+') do
-    local normalized = compact(line)
-
-    if operational_error(normalized) then
-      return truncate(normalized, MAX_MESSAGE_BYTES)
+    if text == '' then
+        return nil
     end
-  end
 
-  return nil
+    for line in text:gmatch('[^\r\n]+') do
+        local normalized = compact(line)
+
+        if operational_error(normalized) then
+            return truncate(normalized, MAX_MESSAGE_BYTES)
+        end
+    end
+
+    return nil
 end
 
 ---@param output string
 ---@param context LintContext
 ---@return vim.Diagnostic[]
 local function parse_failure(output, context)
-  local message = error_message(output)
+    local message = error_message(output)
 
-  if message == nil then
-    return {}
-  end
+    if message == nil then
+        return {}
+    end
 
-  return {
-    {
-      bufnr = context.bufnr,
+    return {
+        {
+            bufnr = context.bufnr,
 
-      code = 'tidy-error',
+            code = 'tidy-error',
 
-      col = 0,
+            col = 0,
 
-      end_col = 0,
+            end_col = 0,
 
-      end_lnum = 0,
+            end_lnum = 0,
 
-      lnum = 0,
+            lnum = 0,
 
-      message = message,
+            message = message,
 
-      severity = diagnostic.severity.ERROR,
+            severity = diagnostic.severity.ERROR,
 
-      source = SOURCE,
-    },
-  }
+            source = SOURCE,
+        },
+    }
 end
 
 ---@param context LintContext
 ---@return vim.Diagnostic[]
 local function oversized_output(context)
-  return {
-    {
-      bufnr = context.bufnr,
+    return {
+        {
+            bufnr = context.bufnr,
 
-      code = 'output-limit',
+            code = 'output-limit',
 
-      col = 0,
+            col = 0,
 
-      end_col = 0,
+            end_col = 0,
 
-      end_lnum = 0,
+            end_lnum = 0,
 
-      lnum = 0,
+            lnum = 0,
 
-      message = string.format('HTML Tidy output exceeded the %d-byte parser limit', MAX_OUTPUT_BYTES),
+            message = string.format('HTML Tidy output exceeded the %d-byte parser limit', MAX_OUTPUT_BYTES),
 
-      severity = diagnostic.severity.WARN,
+            severity = diagnostic.severity.WARN,
 
-      source = SOURCE,
-    },
-  }
+            source = SOURCE,
+        },
+    }
 end
 
 ---@param output string
 ---@param context LintContext
 ---@return vim.Diagnostic[]
 local function parse(output, context)
-  assert(type(context) == 'table', 'html-tidy parser requires LintContext')
+    assert(type(context) == 'table', 'html-tidy parser requires LintContext')
 
-  assert(type(context.bufnr) == 'number', 'html-tidy parser requires context.bufnr')
+    assert(type(context.bufnr) == 'number', 'html-tidy parser requires context.bufnr')
 
-  if output == '' then
-    return {}
-  end
-
-  if #output > MAX_OUTPUT_BYTES then
-    return oversized_output(context)
-  end
-
-  local text = strip_ansi(output)
-
-  ---@type vim.Diagnostic[]
-  local diagnostics = {}
-
-  ---@type string[]
-  local unparsed = {}
-
-  for raw_line in text:gmatch('[^\r\n]+') do
-    if #diagnostics >= MAX_DIAGNOSTICS then
-      break
+    if output == '' then
+        return {}
     end
 
-    local line = vim.trim(raw_line)
-
-    if line ~= '' then
-      local finding = parse_finding(line)
-
-      if finding ~= nil then
-        diagnostics[#diagnostics + 1] = finding_diagnostic(finding, context)
-      elseif operational_error(line) then
-        unparsed[#unparsed + 1] = line
-      end
+    if #output > MAX_OUTPUT_BYTES then
+        return oversized_output(context)
     end
-  end
 
-  if #diagnostics == 0 and #unparsed > 0 then
-    return parse_failure(table.concat(unparsed, '\n'), context)
-  end
+    local text = strip_ansi(output)
 
-  return diagnostics
+    ---@type vim.Diagnostic[]
+    local diagnostics = {}
+
+    ---@type string[]
+    local unparsed = {}
+
+    for raw_line in text:gmatch('[^\r\n]+') do
+        if #diagnostics >= MAX_DIAGNOSTICS then
+            break
+        end
+
+        local line = vim.trim(raw_line)
+
+        if line ~= '' then
+            local finding = parse_finding(line)
+
+            if finding ~= nil then
+                diagnostics[#diagnostics + 1] = finding_diagnostic(finding, context)
+            elseif operational_error(line) then
+                unparsed[#unparsed + 1] = line
+            end
+        end
+    end
+
+    if #diagnostics == 0 and #unparsed > 0 then
+        return parse_failure(table.concat(unparsed, '\n'), context)
+    end
+
+    return diagnostics
 end
 
 ---@param context LintContext
 ---@return string[]
 local function arguments(context)
-  assert(type(context) == 'table', 'html-tidy arguments require LintContext')
+    assert(type(context) == 'table', 'html-tidy arguments require LintContext')
 
-  return {
-    --
-    -- Do not emit cleaned/repaired HTML. This is a linter invocation, not a
-    -- formatter invocation.
-    --
-    '--markup',
-    'no',
+    return {
+        --
+        -- Do not emit cleaned/repaired HTML. This is a linter invocation, not a
+        -- formatter invocation.
+        --
+        '--markup',
+        'no',
 
-    --
-    -- Suppress summaries, banners, and nonessential informational output.
-    --
-    '--quiet',
-    'yes',
+        --
+        -- Suppress summaries, banners, and nonessential informational output.
+        --
+        '--quiet',
+        'yes',
 
-    --
-    -- Keep warnings. They are useful lint diagnostics.
-    --
-    '--show-warnings',
-    'yes',
+        --
+        -- Keep warnings. They are useful lint diagnostics.
+        --
+        '--show-warnings',
+        'yes',
 
-    --
-    -- Tidy defaults to showing only six errors. Raise that limit and let the
-    -- Tiger parser's MAX_DIAGNOSTICS enforce the real editor-side bound.
-    --
-    '--show-errors',
-    tostring(TIDY_SHOW_ERRORS),
+        --
+        -- Tidy defaults to showing only six errors. Raise that limit and let the
+        -- Tiger parser's MAX_DIAGNOSTICS enforce the real editor-side bound.
+        --
+        '--show-errors',
+        tostring(TIDY_SHOW_ERRORS),
 
-    --
-    -- Expose stable upstream diagnostic/message identifiers when supported.
-    --
-    '--mute-id',
-    'yes',
+        --
+        -- Expose stable upstream diagnostic/message identifiers when supported.
+        --
+        '--mute-id',
+        'yes',
 
-    --
-    -- `stdin` is intentional. With no filename argument, Tidy reads current
-    -- unsaved buffer contents directly from stdin.
-    --
-  }
+        --
+        -- `stdin` is intentional. With no filename argument, Tidy reads current
+        -- unsaved buffer contents directly from stdin.
+        --
+    }
 end
 
 ---@type Linter
 return {
-  args = arguments,
+    args = arguments,
 
-  append_fname = false,
+    append_fname = false,
 
-  automatic = true,
+    automatic = true,
 
-  cmd = 'tidy',
+    cmd = 'tidy',
 
-  cwd = project_root,
+    cwd = project_root,
 
-  --
-  -- Tidy documents:
-  --
-  --   0 = clean
-  --   1 = warnings
-  --   2 = errors
-  --
-  -- Both 1 and 2 contain valid diagnostics.
-  --
-  ignore_exitcode = true,
+    --
+    -- Tidy documents:
+    --
+    --   0 = clean
+    --   1 = warnings
+    --   2 = errors
+    --
+    -- Both 1 and 2 contain valid diagnostics.
+    --
+    ignore_exitcode = true,
 
-  parser = parse,
+    parser = parse,
 
-  root_markers = ROOT_MARKERS,
+    root_markers = ROOT_MARKERS,
 
-  stdin = true,
+    stdin = true,
 
-  --
-  -- Diagnostic output is normally written to stderr. `both` also protects
-  -- against wrappers/distributions that redirect it to stdout.
-  --
-  stream = 'both',
+    --
+    -- Diagnostic output is normally written to stderr. `both` also protects
+    -- against wrappers/distributions that redirect it to stdout.
+    --
+    stream = 'both',
 
-  timeout = 30000,
+    timeout = 30000,
 }

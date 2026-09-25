@@ -22,30 +22,30 @@
 --- `.` indexes the project rooted at the cwd selected by the SCIP framework.
 ---@type string[]
 local args = {
-  'index',
-  '.',
+    'index',
+    '.',
 }
 
 ---@type ScipIndexer
 local indexer = {
-  args = args,
-  command = 'scip-python',
+    args = args,
+    command = 'scip-python',
 
-  filetypes = {
-    python = true,
-  },
+    filetypes = {
+        python = true,
+    },
 
-  markers = {
-    '.git',
-    'Pipfile',
-    'poetry.lock',
-    'pyproject.toml',
-    'pyrightconfig.json',
-    'requirements.txt',
-    'setup.cfg',
-    'setup.py',
-    'uv.lock',
-  },
+    markers = {
+        '.git',
+        'Pipfile',
+        'poetry.lock',
+        'pyproject.toml',
+        'pyrightconfig.json',
+        'requirements.txt',
+        'setup.cfg',
+        'setup.py',
+        'uv.lock',
+    },
 }
 
 return indexer

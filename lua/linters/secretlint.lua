@@ -56,33 +56,33 @@ local uv = vim.uv
 
 ---@type table<string, integer>
 local severities = {
-        error = diagnostic.severity.ERROR,
-        hint = diagnostic.severity.HINT,
-        info = diagnostic.severity.INFO,
-        information = diagnostic.severity.INFO,
-        warning = diagnostic.severity.WARN,
-        warn = diagnostic.severity.WARN,
+    error = diagnostic.severity.ERROR,
+    hint = diagnostic.severity.HINT,
+    info = diagnostic.severity.INFO,
+    information = diagnostic.severity.INFO,
+    warning = diagnostic.severity.WARN,
+    warn = diagnostic.severity.WARN,
 }
 
 ---@type string[]
 local root_markers = {
-        '.git',
-        '.secretlintignore',
-        '.secretlintrc',
-        '.secretlintrc.js',
-        '.secretlintrc.json',
-        '.secretlintrc.yaml',
-        '.secretlintrc.yml',
-        'package.json',
-        'pnpm-lock.yaml',
-        'yarn.lock',
+    '.git',
+    '.secretlintignore',
+    '.secretlintrc',
+    '.secretlintrc.js',
+    '.secretlintrc.json',
+    '.secretlintrc.yaml',
+    '.secretlintrc.yml',
+    'package.json',
+    'pnpm-lock.yaml',
+    'yarn.lock',
 }
 
 ---Return whether a filesystem path exists.
 ---@param path string
 ---@return boolean
 local function exists(path)
-        return uv.fs_stat(path) ~= nil
+    return uv.fs_stat(path) ~= nil
 end
 
 ---Convert an unknown numeric value to an integer.
@@ -90,28 +90,28 @@ end
 ---@param fallback integer
 ---@return integer
 local function integer(value, fallback)
-        if type(value) == 'number' then
-                return math.floor(value)
+    if type(value) == 'number' then
+        return math.floor(value)
+    end
+
+    if type(value) == 'string' then
+        local parsed = tonumber(value)
+
+        if parsed ~= nil then
+            return math.floor(parsed)
         end
+    end
 
-        if type(value) == 'string' then
-                local parsed = tonumber(value)
-
-                if parsed ~= nil then
-                        return math.floor(parsed)
-                end
-        end
-
-        return fallback
+    return fallback
 end
 
 ---Convert Secretlint severity names to vim.diagnostic severity values.
 ---@param value unknown
 ---@return integer
 local function severity(value)
-        local name = tostring(value or ''):lower()
+    local name = tostring(value or ''):lower()
 
-        return severities[name] or diagnostic.severity.ERROR
+    return severities[name] or diagnostic.severity.ERROR
 end
 
 ---Resolve the starting location from a Secretlint message.
@@ -123,21 +123,19 @@ end
 ---@param message SecretlintMessage
 ---@return integer, integer
 local function start_location(message)
-        local location = message.loc
+    local location = message.loc
 
-        if type(location) ~= 'table' then
-                return 0, 0
-        end
+    if type(location) ~= 'table' then
+        return 0, 0
+    end
 
-        local start = location.start
+    local start = location.start
 
-        if type(start) == 'table' then
-                return math.max(integer(start.line, 1) - 1, 0),
-                        math.max(integer(start.column, 1) - 1, 0)
-        end
+    if type(start) == 'table' then
+        return math.max(integer(start.line, 1) - 1, 0), math.max(integer(start.column, 1) - 1, 0)
+    end
 
-        return math.max(integer(location.line, 1) - 1, 0),
-                math.max(integer(location.column, 1) - 1, 0)
+    return math.max(integer(location.line, 1) - 1, 0), math.max(integer(location.column, 1) - 1, 0)
 end
 
 ---Resolve the ending location from a Secretlint message.
@@ -146,33 +144,27 @@ end
 ---@param col integer
 ---@return integer, integer
 local function end_location(message, lnum, col)
-        local location = message.loc
+    local location = message.loc
 
-        if type(location) ~= 'table' then
-                return lnum, col + 1
-        end
+    if type(location) ~= 'table' then
+        return lnum, col + 1
+    end
 
-        local finish = location['end']
+    local finish = location['end']
 
-        if type(finish) ~= 'table' then
-                return lnum, col + 1
-        end
+    if type(finish) ~= 'table' then
+        return lnum, col + 1
+    end
 
-        local end_lnum = math.max(
-                integer(finish.line, lnum + 1) - 1,
-                lnum
-        )
+    local end_lnum = math.max(integer(finish.line, lnum + 1) - 1, lnum)
 
-        local end_col = math.max(
-                integer(finish.column, col + 2) - 1,
-                0
-        )
+    local end_col = math.max(integer(finish.column, col + 2) - 1, 0)
 
-        if end_lnum == lnum then
-                end_col = math.max(end_col, col + 1)
-        end
+    if end_lnum == lnum then
+        end_col = math.max(end_col, col + 1)
+    end
 
-        return end_lnum, end_col
+    return end_lnum, end_col
 end
 
 ---Build a concise diagnostic code from Secretlint message metadata.
@@ -183,21 +175,15 @@ end
 ---@param message SecretlintMessage
 ---@return string?
 local function diagnostic_code(message)
-        if
-                type(message.messageId) == 'string'
-                and message.messageId ~= ''
-        then
-                return message.messageId
-        end
+    if type(message.messageId) == 'string' and message.messageId ~= '' then
+        return message.messageId
+    end
 
-        if
-                type(message.ruleId) == 'string'
-                and message.ruleId ~= ''
-        then
-                return message.ruleId
-        end
+    if type(message.ruleId) == 'string' and message.ruleId ~= '' then
+        return message.ruleId
+    end
 
-        return nil
+    return nil
 end
 
 ---Build the diagnostic source label.
@@ -207,7 +193,7 @@ end
 ---
 ---@return string
 local function diagnostic_source()
-        return 'secretlint'
+    return 'secretlint'
 end
 
 ---Normalize Secretlint JSON formatter output into a result array.
@@ -222,19 +208,19 @@ end
 ---@param decoded unknown
 ---@return SecretlintResult[]
 local function results(decoded)
-        if type(decoded) ~= 'table' then
-                return {}
-        end
+    if type(decoded) ~= 'table' then
+        return {}
+    end
 
-        if decoded.messages ~= nil or decoded.filePath ~= nil then
-                ---@cast decoded SecretlintResult
-                return {
-                        decoded,
-                }
-        end
+    if decoded.messages ~= nil or decoded.filePath ~= nil then
+        ---@cast decoded SecretlintResult
+        return {
+            decoded,
+        }
+    end
 
-        ---@cast decoded SecretlintResult[]
-        return decoded
+    ---@cast decoded SecretlintResult[]
+    return decoded
 end
 
 ---Parse Secretlint JSON output into native Neovim diagnostics.
@@ -247,86 +233,53 @@ end
 ---@param _context LintContext
 ---@return vim.Diagnostic.Set[]
 local function parse(output, _context)
-        if vim.trim(output) == '' then
-                return {}
-        end
+    if vim.trim(output) == '' then
+        return {}
+    end
 
-        local ok, decoded = pcall(
-                vim.json.decode,
-                output
-        )
+    local ok, decoded = pcall(vim.json.decode, output)
 
-        if not ok then
-                error(
-                        ('invalid secretlint JSON: %s'):format(
-                                vim.trim(output)
-                        ),
-                        0
-                )
-        end
+    if not ok then
+        error(('invalid secretlint JSON: %s'):format(vim.trim(output)), 0)
+    end
 
-        local diagnostics = {}
+    local diagnostics = {}
 
-        for _, result in ipairs(results(decoded)) do
-                if
-                        type(result) == 'table'
-                        and type(result.messages) == 'table'
-                then
-                        for _, message in ipairs(result.messages) do
-                                if type(message) == 'table' then
-                                        local lnum, col =
-                                                start_location(message)
+    for _, result in ipairs(results(decoded)) do
+        if type(result) == 'table' and type(result.messages) == 'table' then
+            for _, message in ipairs(result.messages) do
+                if type(message) == 'table' then
+                    local lnum, col = start_location(message)
 
-                                        local end_lnum, end_col =
-                                                end_location(
-                                                        message,
-                                                        lnum,
-                                                        col
-                                                )
+                    local end_lnum, end_col = end_location(message, lnum, col)
 
-                                        local code =
-                                                diagnostic_code(message)
+                    local code = diagnostic_code(message)
 
-                                        local text = tostring(
-                                                message.message
-                                                        or 'Secret detected'
-                                        )
+                    local text = tostring(message.message or 'Secret detected')
 
-                                        diagnostics[#diagnostics + 1] = {
-                                                code = code,
-                                                col = col,
-                                                end_col = end_col,
-                                                end_lnum = end_lnum,
-                                                lnum = lnum,
-                                                message = code ~= nil
-                                                                and ('[%s] %s'):format(
-                                                                        code,
-                                                                        text
-                                                                )
-                                                        or text,
-                                                severity = severity(
-                                                        message.severity
-                                                ),
-                                                source = diagnostic_source(),
-                                                user_data = {
-                                                        docs_url =
-                                                                message.docsUrl,
-                                                        file =
-                                                                result.filePath,
-                                                        message_id =
-                                                                message.messageId,
-                                                        rule =
-                                                                message.ruleId,
-                                                        rule_parent =
-                                                                message.ruleParentId,
-                                                },
-                                        }
-                                end
-                        end
+                    diagnostics[#diagnostics + 1] = {
+                        code = code,
+                        col = col,
+                        end_col = end_col,
+                        end_lnum = end_lnum,
+                        lnum = lnum,
+                        message = code ~= nil and ('[%s] %s'):format(code, text) or text,
+                        severity = severity(message.severity),
+                        source = diagnostic_source(),
+                        user_data = {
+                            docs_url = message.docsUrl,
+                            file = result.filePath,
+                            message_id = message.messageId,
+                            rule = message.ruleId,
+                            rule_parent = message.ruleParentId,
+                        },
+                    }
                 end
+            end
         end
+    end
 
-        return diagnostics
+    return diagnostics
 end
 
 ---Resolve the Secretlint executable.
@@ -342,18 +295,13 @@ end
 ---@param context LintContext
 ---@return string
 local function command(context)
-        local local_command = fs.joinpath(
-                context.root,
-                'node_modules',
-                '.bin',
-                'secretlint'
-        )
+    local local_command = fs.joinpath(context.root, 'node_modules', '.bin', 'secretlint')
 
-        if exists(local_command) then
-                return local_command
-        end
+    if exists(local_command) then
+        return local_command
+    end
 
-        return 'secretlint'
+    return 'secretlint'
 end
 
 ---Build Secretlint arguments for the current buffer.
@@ -377,12 +325,12 @@ end
 ---@param context LintContext
 ---@return string[]
 local function args(context)
-        return {
-                '--format=json',
-                '--no-color',
-                '--no-terminalLink',
-                '--stdinFileName=' .. context.filename,
-        }
+    return {
+        '--format=json',
+        '--no-color',
+        '--no-terminalLink',
+        '--stdinFileName=' .. context.filename,
+    }
 end
 
 ---Run Secretlint from the project root.
@@ -397,39 +345,39 @@ end
 ---@param context LintContext
 ---@return string
 local function cwd(context)
-        return context.root
+    return context.root
 end
 
 return ---@type Linter
 {
-        append_fname = false,
+    append_fname = false,
 
-        args = args,
+    args = args,
 
-        cmd = command,
+    cmd = command,
 
-        cwd = cwd,
+    cwd = cwd,
 
-        -- 0: no secrets were reported.
-        -- 1: lint findings were reported.
-        --
-        -- Exit code 2 is intentionally not accepted because Secretlint
-        -- documents it as an unexpected/fatal execution error.
-        exit_codes = {
-                [0] = true,
-                [1] = true,
-        },
+    -- 0: no secrets were reported.
+    -- 1: lint findings were reported.
+    --
+    -- Exit code 2 is intentionally not accepted because Secretlint
+    -- documents it as an unexpected/fatal execution error.
+    exit_codes = {
+        [0] = true,
+        [1] = true,
+    },
 
-        parser = parse,
+    parser = parse,
 
-        root_markers = root_markers,
+    root_markers = root_markers,
 
-        -- Current unsaved buffer contents are scanned rather than requiring
-        -- Neovim to write potentially sensitive content to disk first.
-        stdin = true,
+    -- Current unsaved buffer contents are scanned rather than requiring
+    -- Neovim to write potentially sensitive content to disk first.
+    stdin = true,
 
-        -- JSON formatter output is emitted on stdout.
-        stream = 'stdout',
+    -- JSON formatter output is emitted on stdout.
+    stream = 'stdout',
 
-        timeout = 30000,
+    timeout = 30000,
 }

@@ -49,16 +49,16 @@ local RESULT_LINE_COUNT_MAX = 5000
 local SQL_BYTES_MAX = 1048576
 
 local DB_EXTENSIONS = {
-  ddb = true,
-  duckdb = true,
+    ddb = true,
+    duckdb = true,
 }
 
 local MEMORY_PATH = ':memory:'
 
 local defaults = {
-  auto_attach = true,
-  command_flags = { '-batch', '-noheader', '-column' },
-  notify = true,
+    auto_attach = true,
+    command_flags = { '-batch', '-noheader', '-column' },
+    notify = true,
 }
 
 ---@class DuckdbConfigOpts
@@ -79,142 +79,142 @@ M.config = vim.deepcopy(defaults)
 ---@field readonly? boolean
 
 M.state = {
-  ---@type table<integer, DuckdbSession>
-  sessions = {},
+    ---@type table<integer, DuckdbSession>
+    sessions = {},
 }
 
 ---@param message string
 ---@param level? integer
 local function notify(message, level)
-  if not M.config.notify then
-    return
-  end
+    if not M.config.notify then
+        return
+    end
 
-  vim.notify(message, level or vim.log.levels.INFO, {
-    title = 'duckdb',
-  })
+    vim.notify(message, level or vim.log.levels.INFO, {
+        title = 'duckdb',
+    })
 end
 
 ---@return boolean
 local function has_duckdb()
-  return vim.fn.executable('duckdb') == 1
+    return vim.fn.executable('duckdb') == 1
 end
 
 ---@param path string
 ---@return boolean
 local function path_is_safe(path)
-  if type(path) ~= 'string' then
-    return false
-  end
+    if type(path) ~= 'string' then
+        return false
+    end
 
-  if path == '' then
-    return false
-  end
+    if path == '' then
+        return false
+    end
 
-  if path:find('%z') ~= nil then
-    return false
-  end
+    if path:find('%z') ~= nil then
+        return false
+    end
 
-  return true
+    return true
 end
 
 ---@param bufnr integer
 ---@return boolean
 local function buffer_is_usable(bufnr)
-  if type(bufnr) ~= 'number' then
-    return false
-  end
+    if type(bufnr) ~= 'number' then
+        return false
+    end
 
-  if bufnr < 0 then
-    return false
-  end
+    if bufnr < 0 then
+        return false
+    end
 
-  return api.nvim_buf_is_valid(bufnr)
+    return api.nvim_buf_is_valid(bufnr)
 end
 
 ---@param bufnr integer
 ---@return string
 local function resolve_root(bufnr)
-  local root = fs.root(bufnr, { '.git' })
+    local root = fs.root(bufnr, { '.git' })
 
-  if root ~= nil then
-    return root
-  end
+    if root ~= nil then
+        return root
+    end
 
-  return vim.fn.getcwd()
+    return vim.fn.getcwd()
 end
 
 ---@param name string
 ---@return boolean
 local function is_db_filename(name)
-  if type(name) ~= 'string' then
-    return false
-  end
+    if type(name) ~= 'string' then
+        return false
+    end
 
-  local extension = name:match('%.([%w]+)$')
+    local extension = name:match('%.([%w]+)$')
 
-  if extension == nil then
-    return false
-  end
+    if extension == nil then
+        return false
+    end
 
-  return DB_EXTENSIONS[extension:lower()] == true
+    return DB_EXTENSIONS[extension:lower()] == true
 end
 
 ---@param directory string
 ---@return string[]
 local function list_db_candidates(directory)
-  if not path_is_safe(directory) then
-    return {}
-  end
-
-  local handle = uv.fs_scandir(directory)
-
-  if handle == nil then
-    return {}
-  end
-
-  local candidates = {}
-  local entry_count = 0
-
-  while entry_count < DIRECTORY_ENTRY_COUNT_MAX do
-    local name, kind = uv.fs_scandir_next(handle)
-
-    if name == nil then
-      break
+    if not path_is_safe(directory) then
+        return {}
     end
 
-    entry_count = entry_count + 1
+    local handle = uv.fs_scandir(directory)
 
-    if kind == 'file' and is_db_filename(name) then
-      candidates[#candidates + 1] = fs.joinpath(directory, name)
+    if handle == nil then
+        return {}
     end
-  end
 
-  return candidates
+    local candidates = {}
+    local entry_count = 0
+
+    while entry_count < DIRECTORY_ENTRY_COUNT_MAX do
+        local name, kind = uv.fs_scandir_next(handle)
+
+        if name == nil then
+            break
+        end
+
+        entry_count = entry_count + 1
+
+        if kind == 'file' and is_db_filename(name) then
+            candidates[#candidates + 1] = fs.joinpath(directory, name)
+        end
+    end
+
+    return candidates
 end
 
 ---@param bufnr integer
 ---@return DuckdbSession|nil
 local function get_session(bufnr)
-  if not buffer_is_usable(bufnr) then
-    return nil
-  end
+    if not buffer_is_usable(bufnr) then
+        return nil
+    end
 
-  return M.state.sessions[bufnr]
+    return M.state.sessions[bufnr]
 end
 
 ---@param opts DuckdbQueryOpts|nil
 ---@return boolean
 local function resolve_query_readonly(opts)
-  if type(opts) ~= 'table' then
-    return true
-  end
+    if type(opts) ~= 'table' then
+        return true
+    end
 
-  if opts.readonly == nil then
-    return true
-  end
+    if opts.readonly == nil then
+        return true
+    end
 
-  return opts.readonly == true
+    return opts.readonly == true
 end
 
 ---@param path string
@@ -222,25 +222,25 @@ end
 ---@param extra_flags string[]
 ---@return string[]
 local function build_argv(path, readonly, extra_flags)
-  local argv = { 'duckdb' }
+    local argv = { 'duckdb' }
 
-  for _, flag in ipairs(M.config.command_flags) do
-    argv[#argv + 1] = flag
-  end
+    for _, flag in ipairs(M.config.command_flags) do
+        argv[#argv + 1] = flag
+    end
 
-  if readonly then
-    argv[#argv + 1] = '-readonly'
-  end
+    if readonly then
+        argv[#argv + 1] = '-readonly'
+    end
 
-  for _, flag in ipairs(extra_flags or {}) do
-    argv[#argv + 1] = flag
-  end
+    for _, flag in ipairs(extra_flags or {}) do
+        argv[#argv + 1] = flag
+    end
 
-  if path ~= MEMORY_PATH then
-    argv[#argv + 1] = path
-  end
+    if path ~= MEMORY_PATH then
+        argv[#argv + 1] = path
+    end
 
-  return argv
+    return argv
 end
 
 ---@param bufnr integer
@@ -249,121 +249,121 @@ end
 ---@return DuckdbSession|nil
 ---@return string|nil
 function M.attach(bufnr, path, readonly)
-  bufnr = bufnr or api.nvim_get_current_buf()
+    bufnr = bufnr or api.nvim_get_current_buf()
 
-  if not buffer_is_usable(bufnr) then
-    return nil, 'invalid buffer'
-  end
-
-  if not has_duckdb() then
-    return nil, 'duckdb executable was not found on PATH'
-  end
-
-  if not path_is_safe(path) then
-    return nil, 'path must be a non-empty string'
-  end
-
-  local resolved = path
-
-  if path ~= MEMORY_PATH then
-    resolved = vim.fs.normalize(path)
-    local stat = uv.fs_stat(resolved)
-
-    if stat == nil and not readonly then
-      -- DuckDB creates a new database file on first write when the
-      -- path does not yet exist; only refuse when readonly was
-      -- requested against a database that cannot exist yet.
-      notify('Database does not exist yet, it will be created: ' .. resolved)
-    elseif stat == nil and readonly then
-      return nil, 'database file does not exist: ' .. resolved
-    elseif stat ~= nil and stat.type ~= 'file' then
-      return nil, 'database path is not a regular file: ' .. resolved
+    if not buffer_is_usable(bufnr) then
+        return nil, 'invalid buffer'
     end
-  end
 
-  ---@type DuckdbSession
-  local session = {
-    bufnr = bufnr,
-    path = resolved,
-    readonly = readonly == true,
-    root = resolve_root(bufnr),
-  }
+    if not has_duckdb() then
+        return nil, 'duckdb executable was not found on PATH'
+    end
 
-  M.state.sessions[bufnr] = session
-  notify('Attached ' .. resolved .. (session.readonly and ' (readonly)' or ''))
+    if not path_is_safe(path) then
+        return nil, 'path must be a non-empty string'
+    end
 
-  return session, nil
+    local resolved = path
+
+    if path ~= MEMORY_PATH then
+        resolved = vim.fs.normalize(path)
+        local stat = uv.fs_stat(resolved)
+
+        if stat == nil and not readonly then
+            -- DuckDB creates a new database file on first write when the
+            -- path does not yet exist; only refuse when readonly was
+            -- requested against a database that cannot exist yet.
+            notify('Database does not exist yet, it will be created: ' .. resolved)
+        elseif stat == nil and readonly then
+            return nil, 'database file does not exist: ' .. resolved
+        elseif stat ~= nil and stat.type ~= 'file' then
+            return nil, 'database path is not a regular file: ' .. resolved
+        end
+    end
+
+    ---@type DuckdbSession
+    local session = {
+        bufnr = bufnr,
+        path = resolved,
+        readonly = readonly == true,
+        root = resolve_root(bufnr),
+    }
+
+    M.state.sessions[bufnr] = session
+    notify('Attached ' .. resolved .. (session.readonly and ' (readonly)' or ''))
+
+    return session, nil
 end
 
 ---@param bufnr? integer
 function M.detach(bufnr)
-  bufnr = bufnr or api.nvim_get_current_buf()
+    bufnr = bufnr or api.nvim_get_current_buf()
 
-  if M.state.sessions[bufnr] == nil then
-    notify('No database is attached to this buffer', vim.log.levels.WARN)
-    return
-  end
+    if M.state.sessions[bufnr] == nil then
+        notify('No database is attached to this buffer', vim.log.levels.WARN)
+        return
+    end
 
-  M.state.sessions[bufnr] = nil
-  notify('Detached database from buffer ' .. bufnr)
+    M.state.sessions[bufnr] = nil
+    notify('Detached database from buffer ' .. bufnr)
 end
 
 ---@param bufnr? integer
 function M.info(bufnr)
-  bufnr = bufnr or api.nvim_get_current_buf()
+    bufnr = bufnr or api.nvim_get_current_buf()
 
-  local session = get_session(bufnr)
+    local session = get_session(bufnr)
 
-  if session == nil then
-    notify('No database is attached to this buffer', vim.log.levels.WARN)
-    return
-  end
+    if session == nil then
+        notify('No database is attached to this buffer', vim.log.levels.WARN)
+        return
+    end
 
-  notify(vim.inspect({
-    bufnr = session.bufnr,
-    path = session.path,
-    readonly = session.readonly,
-    root = session.root,
-  }))
+    notify(vim.inspect({
+        bufnr = session.bufnr,
+        path = session.path,
+        readonly = session.readonly,
+        root = session.root,
+    }))
 end
 
 ---@param lines string[]
 ---@param title string
 local function show_result_buffer(lines, title)
-  assert(type(lines) == 'table')
-  assert(type(title) == 'string')
+    assert(type(lines) == 'table')
+    assert(type(title) == 'string')
 
-  local truncated = false
+    local truncated = false
 
-  if #lines > RESULT_LINE_COUNT_MAX then
-    truncated = true
-    local bounded = {}
+    if #lines > RESULT_LINE_COUNT_MAX then
+        truncated = true
+        local bounded = {}
 
-    for index = 1, RESULT_LINE_COUNT_MAX do
-      bounded[index] = lines[index]
+        for index = 1, RESULT_LINE_COUNT_MAX do
+            bounded[index] = lines[index]
+        end
+
+        lines = bounded
     end
 
-    lines = bounded
-  end
+    if truncated then
+        lines[#lines + 1] = ''
+        lines[#lines + 1] = string.format('-- output truncated at %d lines --', RESULT_LINE_COUNT_MAX)
+    end
 
-  if truncated then
-    lines[#lines + 1] = ''
-    lines[#lines + 1] = string.format('-- output truncated at %d lines --', RESULT_LINE_COUNT_MAX)
-  end
+    local bufnr = api.nvim_create_buf(false, true)
+    api.nvim_buf_set_lines(bufnr, 0, -1, false, lines)
+    api.nvim_buf_set_name(bufnr, title)
 
-  local bufnr = api.nvim_create_buf(false, true)
-  api.nvim_buf_set_lines(bufnr, 0, -1, false, lines)
-  api.nvim_buf_set_name(bufnr, title)
+    vim.bo[bufnr].buftype = 'nofile'
+    vim.bo[bufnr].bufhidden = 'wipe'
+    vim.bo[bufnr].swapfile = false
+    vim.bo[bufnr].modifiable = false
+    vim.bo[bufnr].filetype = 'duckdbresult'
 
-  vim.bo[bufnr].buftype = 'nofile'
-  vim.bo[bufnr].bufhidden = 'wipe'
-  vim.bo[bufnr].swapfile = false
-  vim.bo[bufnr].modifiable = false
-  vim.bo[bufnr].filetype = 'duckdbresult'
-
-  vim.cmd('botright split')
-  api.nvim_win_set_buf(api.nvim_get_current_win(), bufnr)
-  api.nvim_win_set_height(api.nvim_get_current_win(), math.min(20, #lines + 1))
+    vim.cmd('botright split')
+    api.nvim_win_set_buf(api.nvim_get_current_win(), bufnr)
+    api.nvim_win_resize(api.nvim_get_current_win(), -1, math.min(20, #lines + 1))
 end
 
 ---@param path string
@@ -372,44 +372,44 @@ end
 ---@param extra_flags string[]
 ---@param on_done fun(result: vim.SystemCompleted)
 local function run_process(path, readonly, sql, extra_flags, on_done)
-  assert(path_is_safe(path))
-  assert(type(sql) == 'string')
-  assert(#sql <= SQL_BYTES_MAX, 'query exceeds size bound')
+    assert(path_is_safe(path))
+    assert(type(sql) == 'string')
+    assert(#sql <= SQL_BYTES_MAX, 'query exceeds size bound')
 
-  vim.system(build_argv(path, readonly, extra_flags), {
-    stdin = sql,
-    text = true,
-    timeout = QUERY_TIMEOUT_MS,
-  }, function(result)
-    vim.schedule(function()
-      on_done(result)
+    vim.system(build_argv(path, readonly, extra_flags), {
+        stdin = sql,
+        text = true,
+        timeout = QUERY_TIMEOUT_MS,
+    }, function(result)
+        vim.schedule(function()
+            on_done(result)
+        end)
     end)
-  end)
 end
 
 ---@param session DuckdbSession
 ---@param sql string
 ---@param title string
 local function run_and_show(session, sql, title)
-  run_process(session.path, session.readonly, sql, {}, function(result)
-    if result.code ~= 0 then
-      local message = result.stderr ~= '' and result.stderr or 'duckdb exited with code ' .. result.code
-      notify(message, vim.log.levels.ERROR)
-      return
-    end
+    run_process(session.path, session.readonly, sql, {}, function(result)
+        if result.code ~= 0 then
+            local message = result.stderr ~= '' and result.stderr or 'duckdb exited with code ' .. result.code
+            notify(message, vim.log.levels.ERROR)
+            return
+        end
 
-    local output = result.stdout or ''
-    local lines = vim.split(output, '\n', {
-      plain = true,
-      trimempty = true,
-    })
+        local output = result.stdout or ''
+        local lines = vim.split(output, '\n', {
+            plain = true,
+            trimempty = true,
+        })
 
-    if #lines == 0 then
-      lines = { '-- no rows --' }
-    end
+        if #lines == 0 then
+            lines = { '-- no rows --' }
+        end
 
-    show_result_buffer(lines, title)
-  end)
+        show_result_buffer(lines, title)
+    end)
 end
 
 ---Run SQL against a database file and return decoded rows.
@@ -427,50 +427,50 @@ end
 ---@param on_result fun(rows: table[]|nil, err: string|nil)
 ---@param opts? DuckdbQueryOpts
 function M.query(path, sql, on_result, opts)
-  if not has_duckdb() then
-    on_result(nil, 'duckdb executable was not found on PATH')
-    return
-  end
-
-  if not path_is_safe(path) then
-    on_result(nil, 'path must be a non-empty string')
-    return
-  end
-
-  if type(sql) ~= 'string' or sql:match('^%s*$') then
-    on_result(nil, 'sql must be a non-empty string')
-    return
-  end
-
-  local readonly = resolve_query_readonly(opts)
-
-  run_process(path, readonly, sql, { '-json' }, function(result)
-    if result.code ~= 0 then
-      on_result(nil, result.stderr ~= '' and result.stderr or 'duckdb exited with code ' .. result.code)
-      return
+    if not has_duckdb() then
+        on_result(nil, 'duckdb executable was not found on PATH')
+        return
     end
 
-    local output = (result.stdout or ''):match('^%s*(.-)%s*$')
-
-    if output == '' then
-      on_result({}, nil)
-      return
+    if not path_is_safe(path) then
+        on_result(nil, 'path must be a non-empty string')
+        return
     end
 
-    local ok, decoded = pcall(vim.json.decode, output)
-
-    if not ok then
-      on_result(nil, 'failed to decode duckdb JSON output: ' .. tostring(decoded))
-      return
+    if type(sql) ~= 'string' or sql:match('^%s*$') then
+        on_result(nil, 'sql must be a non-empty string')
+        return
     end
 
-    if type(decoded) ~= 'table' then
-      on_result(nil, 'duckdb JSON output was not an array')
-      return
-    end
+    local readonly = resolve_query_readonly(opts)
 
-    on_result(decoded, nil)
-  end)
+    run_process(path, readonly, sql, { '-json' }, function(result)
+        if result.code ~= 0 then
+            on_result(nil, result.stderr ~= '' and result.stderr or 'duckdb exited with code ' .. result.code)
+            return
+        end
+
+        local output = (result.stdout or ''):match('^%s*(.-)%s*$')
+
+        if output == '' then
+            on_result({}, nil)
+            return
+        end
+
+        local ok, decoded = pcall(vim.json.decode, output)
+
+        if not ok then
+            on_result(nil, 'failed to decode duckdb JSON output: ' .. tostring(decoded))
+            return
+        end
+
+        if type(decoded) ~= 'table' then
+            on_result(nil, 'duckdb JSON output was not an array')
+            return
+        end
+
+        on_result(decoded, nil)
+    end)
 end
 
 ---Blocking variant of M.query for scripted/headless callers.
@@ -483,49 +483,47 @@ end
 ---@return table[]|nil rows
 ---@return string|nil err
 function M.query_sync(path, sql, opts)
-  if not has_duckdb() then
-    return nil, 'duckdb executable was not found on PATH'
-  end
+    if not has_duckdb() then
+        return nil, 'duckdb executable was not found on PATH'
+    end
 
-  if not path_is_safe(path) then
-    return nil, 'path must be a non-empty string'
-  end
+    if not path_is_safe(path) then
+        return nil, 'path must be a non-empty string'
+    end
 
-  if type(sql) ~= 'string' or sql:match('^%s*$') then
-    return nil, 'sql must be a non-empty string'
-  end
+    if type(sql) ~= 'string' or sql:match('^%s*$') then
+        return nil, 'sql must be a non-empty string'
+    end
 
-  local readonly = resolve_query_readonly(opts)
+    local readonly = resolve_query_readonly(opts)
 
-  local result = vim
-    .system(build_argv(path, readonly, { '-json' }), {
-      stdin = sql,
-      text = true,
-      timeout = QUERY_TIMEOUT_MS,
-    })
-    :wait()
+    local result = vim.system(build_argv(path, readonly, { '-json' }), {
+        stdin = sql,
+        text = true,
+        timeout = QUERY_TIMEOUT_MS,
+    }):wait()
 
-  if result.code ~= 0 then
-    return nil, result.stderr ~= '' and result.stderr or 'duckdb exited with code ' .. result.code
-  end
+    if result.code ~= 0 then
+        return nil, result.stderr ~= '' and result.stderr or 'duckdb exited with code ' .. result.code
+    end
 
-  local output = (result.stdout or ''):match('^%s*(.-)%s*$')
+    local output = (result.stdout or ''):match('^%s*(.-)%s*$')
 
-  if output == '' then
-    return {}, nil
-  end
+    if output == '' then
+        return {}, nil
+    end
 
-  local ok, decoded = pcall(vim.json.decode, output)
+    local ok, decoded = pcall(vim.json.decode, output)
 
-  if not ok then
-    return nil, 'failed to decode duckdb JSON output: ' .. tostring(decoded)
-  end
+    if not ok then
+        return nil, 'failed to decode duckdb JSON output: ' .. tostring(decoded)
+    end
 
-  if type(decoded) ~= 'table' then
-    return nil, 'duckdb JSON output was not an array'
-  end
+    if type(decoded) ~= 'table' then
+        return nil, 'duckdb JSON output was not an array'
+    end
 
-  return decoded, nil
+    return decoded, nil
 end
 
 ---opts.readonly defaults to true, independent of the session's own
@@ -537,14 +535,14 @@ end
 ---@param on_result fun(rows: table[]|nil, err: string|nil)
 ---@param opts? DuckdbQueryOpts
 function M.query_buffer(bufnr, sql, on_result, opts)
-  local session = get_session(bufnr)
+    local session = get_session(bufnr)
 
-  if session == nil then
-    on_result(nil, 'no database is attached to this buffer')
-    return
-  end
+    if session == nil then
+        on_result(nil, 'no database is attached to this buffer')
+        return
+    end
 
-  M.query(session.path, sql, on_result, opts)
+    M.query(session.path, sql, on_result, opts)
 end
 
 ---@param bufnr integer
@@ -552,235 +550,235 @@ end
 ---@param line2 integer
 ---@return string
 local function buffer_sql(bufnr, line1, line2)
-  local lines = api.nvim_buf_get_lines(bufnr, line1 - 1, line2, false)
-  return table.concat(lines, '\n')
+    local lines = api.nvim_buf_get_lines(bufnr, line1 - 1, line2, false)
+    return table.concat(lines, '\n')
 end
 
 ---@param opts vim.api.keyset.create_user_command.command_args
 function M.run(opts)
-  local bufnr = api.nvim_get_current_buf()
-  local session = get_session(bufnr)
+    local bufnr = api.nvim_get_current_buf()
+    local session = get_session(bufnr)
 
-  if session == nil then
-    notify('No database is attached to this buffer. Use :DuckdbAttach first', vim.log.levels.ERROR)
-    return
-  end
+    if session == nil then
+        notify('No database is attached to this buffer. Use :DuckdbAttach first', vim.log.levels.ERROR)
+        return
+    end
 
-  local sql = buffer_sql(bufnr, opts.line1, opts.line2)
+    local sql = buffer_sql(bufnr, opts.line1, opts.line2)
 
-  if sql:match('^%s*$') then
-    notify('No SQL to run', vim.log.levels.WARN)
-    return
-  end
+    if sql:match('^%s*$') then
+        notify('No SQL to run', vim.log.levels.WARN)
+        return
+    end
 
-  run_and_show(session, sql, 'duckdb://' .. session.path .. ' [result]')
+    run_and_show(session, sql, 'duckdb://' .. session.path .. ' [result]')
 end
 
 function M.tables()
-  local bufnr = api.nvim_get_current_buf()
-  local session = get_session(bufnr)
+    local bufnr = api.nvim_get_current_buf()
+    local session = get_session(bufnr)
 
-  if session == nil then
-    notify('No database is attached to this buffer. Use :DuckdbAttach first', vim.log.levels.ERROR)
-    return
-  end
+    if session == nil then
+        notify('No database is attached to this buffer. Use :DuckdbAttach first', vim.log.levels.ERROR)
+        return
+    end
 
-  run_and_show(session, 'SHOW TABLES;', 'duckdb://' .. session.path .. ' [tables]')
+    run_and_show(session, 'SHOW TABLES;', 'duckdb://' .. session.path .. ' [tables]')
 end
 
 ---@param table_name? string
 function M.schema(table_name)
-  local bufnr = api.nvim_get_current_buf()
-  local session = get_session(bufnr)
+    local bufnr = api.nvim_get_current_buf()
+    local session = get_session(bufnr)
 
-  if session == nil then
-    notify('No database is attached to this buffer. Use :DuckdbAttach first', vim.log.levels.ERROR)
-    return
-  end
+    if session == nil then
+        notify('No database is attached to this buffer. Use :DuckdbAttach first', vim.log.levels.ERROR)
+        return
+    end
 
-  local sql = table_name
-      and table_name ~= ''
-      and string.format("SELECT * FROM duckdb_columns() WHERE table_name = '%s';", table_name)
-    or 'SHOW ALL TABLES;'
+    local sql = table_name
+            and table_name ~= ''
+            and string.format("SELECT * FROM duckdb_columns() WHERE table_name = '%s';", table_name)
+        or 'SHOW ALL TABLES;'
 
-  run_and_show(session, sql, 'duckdb://' .. session.path .. ' [schema]')
+    run_and_show(session, sql, 'duckdb://' .. session.path .. ' [schema]')
 end
 
 function M.terminal()
-  local bufnr = api.nvim_get_current_buf()
-  local session = get_session(bufnr)
+    local bufnr = api.nvim_get_current_buf()
+    local session = get_session(bufnr)
 
-  if session == nil then
-    notify('No database is attached to this buffer. Use :DuckdbAttach first', vim.log.levels.ERROR)
-    return
-  end
+    if session == nil then
+        notify('No database is attached to this buffer. Use :DuckdbAttach first', vim.log.levels.ERROR)
+        return
+    end
 
-  if not has_duckdb() then
-    notify('duckdb executable was not found on PATH', vim.log.levels.ERROR)
-    return
-  end
+    if not has_duckdb() then
+        notify('duckdb executable was not found on PATH', vim.log.levels.ERROR)
+        return
+    end
 
-  local argv = { 'duckdb' }
+    local argv = { 'duckdb' }
 
-  if session.readonly then
-    argv[#argv + 1] = '-readonly'
-  end
+    if session.readonly then
+        argv[#argv + 1] = '-readonly'
+    end
 
-  if session.path ~= MEMORY_PATH then
-    argv[#argv + 1] = session.path
-  end
+    if session.path ~= MEMORY_PATH then
+        argv[#argv + 1] = session.path
+    end
 
-  vim.cmd('botright split')
-  vim.fn.jobstart(argv, { term = true })
-  vim.cmd('startinsert')
+    vim.cmd('botright split')
+    vim.fn.jobstart(argv, { term = true })
+    vim.cmd('startinsert')
 end
 
 ---@param bufnr integer
 local function try_auto_attach(bufnr)
-  if not M.config.auto_attach then
-    return
-  end
-
-  if get_session(bufnr) ~= nil then
-    return
-  end
-
-  if not has_duckdb() then
-    return
-  end
-
-  local filename = api.nvim_buf_get_name(bufnr)
-
-  if filename == '' then
-    return
-  end
-
-  local directory = fs.dirname(filename)
-  local candidates = list_db_candidates(directory)
-
-  if #candidates == 0 then
-    local root = resolve_root(bufnr)
-
-    if root ~= directory then
-      candidates = list_db_candidates(root)
+    if not M.config.auto_attach then
+        return
     end
-  end
 
-  if #candidates ~= 1 then
-    return
-  end
+    if get_session(bufnr) ~= nil then
+        return
+    end
 
-  M.attach(bufnr, candidates[1])
+    if not has_duckdb() then
+        return
+    end
+
+    local filename = api.nvim_buf_get_name(bufnr)
+
+    if filename == '' then
+        return
+    end
+
+    local directory = fs.dirname(filename)
+    local candidates = list_db_candidates(directory)
+
+    if #candidates == 0 then
+        local root = resolve_root(bufnr)
+
+        if root ~= directory then
+            candidates = list_db_candidates(root)
+        end
+    end
+
+    if #candidates ~= 1 then
+        return
+    end
+
+    M.attach(bufnr, candidates[1])
 end
 
 local function create_commands()
-  api.nvim_create_user_command('DuckdbAttach', function(opts)
-    local path = opts.args
+    api.nvim_create_user_command('DuckdbAttach', function(opts)
+        local path = opts.args
 
-    if path == '' then
-      notify('Usage: :DuckdbAttach[!] path/to/database.duckdb', vim.log.levels.ERROR)
-      return
-    end
+        if path == '' then
+            notify('Usage: :DuckdbAttach[!] path/to/database.duckdb', vim.log.levels.ERROR)
+            return
+        end
 
-    local session, err = M.attach(api.nvim_get_current_buf(), path, opts.bang)
+        local session, err = M.attach(api.nvim_get_current_buf(), path, opts.bang)
 
-    if session == nil then
-      notify(err or 'failed to attach database', vim.log.levels.ERROR)
-    end
-  end, {
-    bang = true,
-    complete = 'file',
-    desc = 'Attach a DuckDB database file to the current buffer (bang = readonly)',
-    nargs = 1,
-  })
+        if session == nil then
+            notify(err or 'failed to attach database', vim.log.levels.ERROR)
+        end
+    end, {
+        bang = true,
+        complete = 'file',
+        desc = 'Attach a DuckDB database file to the current buffer (bang = readonly)',
+        nargs = 1,
+    })
 
-  api.nvim_create_user_command('DuckdbDetach', function()
-    M.detach(api.nvim_get_current_buf())
-  end, {
-    desc = 'Detach the DuckDB database from the current buffer',
-  })
+    api.nvim_create_user_command('DuckdbDetach', function()
+        M.detach(api.nvim_get_current_buf())
+    end, {
+        desc = 'Detach the DuckDB database from the current buffer',
+    })
 
-  api.nvim_create_user_command('DuckdbRun', function(opts)
-    M.run(opts)
-  end, {
-    desc = 'Run the buffer, or a visual range, as SQL against the attached database',
-    range = '%',
-  })
+    api.nvim_create_user_command('DuckdbRun', function(opts)
+        M.run(opts)
+    end, {
+        desc = 'Run the buffer, or a visual range, as SQL against the attached database',
+        range = '%',
+    })
 
-  api.nvim_create_user_command('DuckdbTables', function()
-    M.tables()
-  end, {
-    desc = 'List tables in the attached DuckDB database',
-  })
+    api.nvim_create_user_command('DuckdbTables', function()
+        M.tables()
+    end, {
+        desc = 'List tables in the attached DuckDB database',
+    })
 
-  api.nvim_create_user_command('DuckdbSchema', function(opts)
-    M.schema(opts.args ~= '' and opts.args or nil)
-  end, {
-    desc = 'Show schema for the attached database or one table',
-    nargs = '?',
-  })
+    api.nvim_create_user_command('DuckdbSchema', function(opts)
+        M.schema(opts.args ~= '' and opts.args or nil)
+    end, {
+        desc = 'Show schema for the attached database or one table',
+        nargs = '?',
+    })
 
-  api.nvim_create_user_command('DuckdbTerminal', function()
-    M.terminal()
-  end, {
-    desc = 'Open an interactive duckdb REPL for the attached database',
-  })
+    api.nvim_create_user_command('DuckdbTerminal', function()
+        M.terminal()
+    end, {
+        desc = 'Open an interactive duckdb REPL for the attached database',
+    })
 
-  api.nvim_create_user_command('DuckdbInfo', function()
-    M.info(api.nvim_get_current_buf())
-  end, {
-    desc = "Show the current buffer's DuckDB attachment info",
-  })
+    api.nvim_create_user_command('DuckdbInfo', function()
+        M.info(api.nvim_get_current_buf())
+    end, {
+        desc = "Show the current buffer's DuckDB attachment info",
+    })
 end
 
 local function create_autocmds()
-  local group = api.nvim_create_augroup('NativeDuckdb', {
-    clear = true,
-  })
+    local group = api.nvim_create_augroup('NativeDuckdb', {
+        clear = true,
+    })
 
-  api.nvim_create_autocmd({ 'BufReadPost', 'BufNewFile' }, {
-    callback = function(args)
-      try_auto_attach(args.buf)
-    end,
-    group = group,
-    pattern = '*.sql',
-  })
+    api.nvim_create_autocmd({ 'BufReadPost', 'BufNewFile' }, {
+        callback = function(args)
+            try_auto_attach(args.buf)
+        end,
+        group = group,
+        pattern = '*.sql',
+    })
 
-  api.nvim_create_autocmd('BufDelete', {
-    callback = function(args)
-      M.state.sessions[args.buf] = nil
-    end,
-    group = group,
-  })
+    api.nvim_create_autocmd('BufDelete', {
+        callback = function(args)
+            M.state.sessions[args.buf] = nil
+        end,
+        group = group,
+    })
 end
 
 function M.duckdb_ftd()
-  vim.filetype.add({
-    extension = {
-      ddb = 'sql',
-      duckdb = 'sql',
-    },
-  })
+    vim.filetype.add({
+        extension = {
+            ddb = 'sql',
+            duckdb = 'sql',
+        },
+    })
 end
 
 ---@param opts? DuckdbConfigOpts
 ---@return table
 function M.setup(opts)
-  M.config = vim.tbl_deep_extend('force', vim.deepcopy(defaults), opts or {})
+    M.config = vim.tbl_deep_extend('force', vim.deepcopy(defaults), opts or {})
 
-  if not has_duckdb() then
-    notify(
-      'duckdb executable was not found on PATH. '
-        .. 'Install it from https://duckdb.org/docs/installation/ to use :Duckdb* commands.',
-      vim.log.levels.WARN
-    )
-  end
+    if not has_duckdb() then
+        notify(
+            'duckdb executable was not found on PATH. '
+                .. 'Install it from https://duckdb.org/docs/installation/ to use :Duckdb* commands.',
+            vim.log.levels.WARN
+        )
+    end
 
-  M.duckdb_ftd()
-  create_commands()
-  create_autocmds()
+    M.duckdb_ftd()
+    create_commands()
+    create_autocmds()
 
-  return M
+    return M
 end
 
 return M

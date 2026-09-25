@@ -44,107 +44,107 @@
 --   vim.fn.stdpath('cache') .. '/opencl-language-server.log'
 
 local ROOT_MARKERS = {
-  'compile_commands.json',
-  'compile_flags.txt',
-  '.clangd',
-  '.git',
+    'compile_commands.json',
+    'compile_flags.txt',
+    '.clangd',
+    '.git',
 }
 
 ---@param value string|nil
 ---@return boolean
 local function truthy(value)
-  if value == nil then
-    return false
-  end
+    if value == nil then
+        return false
+    end
 
-  local normalized = value:lower()
+    local normalized = value:lower()
 
-  return normalized == '1' or normalized == 'true' or normalized == 'yes' or normalized == 'on'
+    return normalized == '1' or normalized == 'true' or normalized == 'yes' or normalized == 'on'
 end
 
 ---@return boolean
 local function opencl_device_available()
-  if vim.fn.executable('clinfo') ~= 1 then
-    return false
-  end
+    if vim.fn.executable('clinfo') ~= 1 then
+        return false
+    end
 
-  local output = vim.fn.system({ 'clinfo', '-l' })
+    local output = vim.fn.system({ 'clinfo', '-l' })
 
-  if vim.v.shell_error ~= 0 then
-    return false
-  end
+    if vim.v.shell_error ~= 0 then
+        return false
+    end
 
-  -- `clinfo -l` prints one `Device #...` entry per enumerated device.
-  return type(output) == 'string' and output:find('Device #', 1, true) ~= nil
+    -- `clinfo -l` prints one `Device #...` entry per enumerated device.
+    return type(output) == 'string' and output:find('Device #', 1, true) ~= nil
 end
 
 ---@param bufnr integer
 ---@param on_dir fun(root_dir: string|nil)
 local function root_dir(bufnr, on_dir)
-  if not opencl_device_available() then
-    vim.schedule(function()
-      vim.notify_once(
-        'opencl-language-server was not started: no OpenCL device was found. '
-          .. 'Install a vendor OpenCL ICD/runtime and verify it with `clinfo -l`.',
-        vim.log.levels.INFO,
-        { title = 'OpenCL LSP' }
-      )
-    end)
+    if not opencl_device_available() then
+        vim.schedule(function()
+            vim.notify_once(
+                'opencl-language-server was not started: no OpenCL device was found. '
+                    .. 'Install a vendor OpenCL ICD/runtime and verify it with `clinfo -l`.',
+                vim.log.levels.INFO,
+                { title = 'OpenCL LSP' }
+            )
+        end)
 
-    on_dir(nil)
-    return
-  end
-
-  local filename = vim.api.nvim_buf_get_name(bufnr)
-
-  if filename ~= '' then
-    local detected = vim.fs.root(filename, ROOT_MARKERS)
-
-    if type(detected) == 'string' and detected ~= '' then
-      on_dir(vim.fs.normalize(detected))
-      return
+        on_dir(nil)
+        return
     end
 
-    local parent = vim.fs.dirname(filename)
+    local filename = vim.api.nvim_buf_get_name(bufnr)
 
-    if type(parent) == 'string' and parent ~= '' then
-      on_dir(vim.fs.normalize(parent))
-      return
+    if filename ~= '' then
+        local detected = vim.fs.root(filename, ROOT_MARKERS)
+
+        if type(detected) == 'string' and detected ~= '' then
+            on_dir(vim.fs.normalize(detected))
+            return
+        end
+
+        local parent = vim.fs.dirname(filename)
+
+        if type(parent) == 'string' and parent ~= '' then
+            on_dir(vim.fs.normalize(parent))
+            return
+        end
     end
-  end
 
-  on_dir(vim.fn.getcwd())
+    on_dir(vim.fn.getcwd())
 end
 
 ---@return string[]
 local function command()
-  local args = {
-    'opencl-language-server',
-    '--stdio',
-  }
+    local args = {
+        'opencl-language-server',
+        '--stdio',
+    }
 
-  if truthy(vim.env.NVIM_OPENCL_LS_LOG) then
-    args[#args + 1] = '--enable-file-logging'
-    args[#args + 1] = '--log-file'
-    args[#args + 1] = vim.fn.stdpath('cache') .. '/opencl-language-server.log'
-    args[#args + 1] = '--log-level'
-    args[#args + 1] = '5'
-  end
+    if truthy(vim.env.NVIM_OPENCL_LS_LOG) then
+        args[#args + 1] = '--enable-file-logging'
+        args[#args + 1] = '--log-file'
+        args[#args + 1] = vim.fn.stdpath('cache') .. '/opencl-language-server.log'
+        args[#args + 1] = '--log-level'
+        args[#args + 1] = '5'
+    end
 
-  return args
+    return args
 end
 
 ---@type vim.lsp.Config
 return {
-  cmd = command,
+    cmd = command,
 
-  filetypes = {
-    'opencl',
-  },
+    filetypes = {
+        'opencl',
+    },
 
-  root_dir = root_dir,
+    root_dir = root_dir,
 
-  root_markers = ROOT_MARKERS,
+    root_markers = ROOT_MARKERS,
 
-  single_file_support = false,
+    single_file_support = false,
 }

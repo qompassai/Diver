@@ -1,3 +1,9 @@
+--- Core LSP option types — type-checker dictionary (never runs).
+---
+--- Plain-language version: this file never runs -- Neovim never loads it at startup. It is a dictionary of shapes
+--- (type annotations) for the lua-language-server type checker, so the editor can offer completions and catch
+--- mistakes while you edit. Think of it as the answer key the teacher uses, not a lesson.
+---@module 'types.core.lsp'
 -- /qompassai/Diver/lua/types/core/lsp.lua
 -- Qompass AI Diver Core LSP
 -- Copyright (C) 2025 Qompass AI, All rights reserved
@@ -14,54 +20,15 @@
 ---| 'recommended'
 ---| 'standard'
 ---| 'strict'
----@class                    lsp.HandlerContext
----@field bufnr?                                           integer
----@field method?                                          string
----@field client_id?                                       integer
----@class lsp.Position
----@field line                                             integer
----@field character                                        integer
----@class lsp.Range
----@field start                                            lsp.Position
----@field ["end"]                                          lsp.Position
----@class lsp.Location
----@field uri                                              string
----@field range                                            lsp.Range
 ---@alias lsp.DefinitionResult                             lsp.Location|lsp.Location[]|nil
----@class lsp.TextDocumentIdentifier
----@field uri                                              string
----@class lsp.TextDocumentPositionParams
----@field textDocument                                     lsp.TextDocumentIdentifier
----@field position                                         lsp.Position
----@class lsp.ResponseError
----@field code                                             integer
----@field message                                          string
----@field data?                                            any
----@class lsp.MarkupContent
----@field kind                                             string
----@field value                                            string
 ---@alias lsp.HoverContents                                string|lsp.MarkupContent|lsp.MarkupContent[]
----@class lsp.Hover
----@field contents                                         lsp.HoverContents
----@field range?                                           lsp.Range
 ---@class vim.lsp
 ---@field buf                                              vim.lsp.buf
----@field get_client_by_id                                 fun(client_id: integer): vim.lsp.Client?
----@field start                                            fun(config: table, opts?: table): integer?
----@field buf_request                                      fun(bufnr: integer, method: string, params: any, handler?: fun(err: lsp.ResponseError|nil, result: any, ctx: any, config: any)): boolean|integer
----@field get_clients                                      fun(opts?: {bufnr?: integer, name?: string}): vim.lsp.Client[]
----@field get_Clients                                      fun(opts?: {bufnr?: integer, name?: string}): vim.lsp.Client[]
 ---@field protocol                                         vim.lsp.protocol
 ---@field util                                             vim.lsp.util
-vim.lsp.get_clients = vim.lsp.get_clients
-vim.lsp.buf_request = vim.lsp.buf_request
-vim.lsp.get_Clients = vim.lsp.get_Clients or vim.lsp.get_clients
 ---@class                    vim.lsp.buf
 ---@field format                                           fun(opts?: table): nil
 ---@field code_action                                      fun(opts: table): nil
----@class                    vim.lsp.Client
----@field id                                               integer
----@field name                                             string
 ---@class                    vim.lsp.Config
 ---@field additionalArgs?                                  string[]
 ---@field args?                                            string[]
@@ -93,16 +60,14 @@ vim.lsp.get_Clients = vim.lsp.get_Clients or vim.lsp.get_clients
 ---@class                    vim.lsp.protocol
 ---@field CodeActionTriggerKind                            table
 ---@class                    vim.lsp.util
-vim.lsp = vim.lsp or {}
-vim.lsp.util = vim.lsp.util or {}
 ---@class                    vim.lsp.Config.CodeLensModule
 ---@field clear?                                           fun(client_id?: integer, bufnr?: integer)
----@field display?                                         fun(lenses?: lsp.CodeLens[], bufnr: integer, client_id: integer)
+---@field display? fun(lenses?: lsp.CodeLens[], bufnr: integer, client_id: integer)
 ---@field get?                                             fun(bufnr: integer): lsp.CodeLens[]
----@field on_codelens?                                     fun(err: lsp.ResponseError?, result: lsp.CodeLens[], ctx: lsp.HandlerContext)
+---@field on_codelens? fun(err: lsp.ResponseError?, result: lsp.CodeLens[], ctx: lsp.HandlerContext)
 ---@field refresh?                                         fun(opts?: { bufnr?: integer })
 ---@field run?                                             fun()
----@field save?                                            fun(lenses?: lsp.CodeLens[], bufnr: integer, client_id: integer)
+---@field save? fun(lenses?: lsp.CodeLens[], bufnr: integer, client_id: integer)
 ---@class                    vim.lsp.Config.CompletionEnableOpts
 ---@field autotrigger?                                     boolean
 ---@field cmp?                                             fun(a: table, b: table): boolean
@@ -110,7 +75,7 @@ vim.lsp.util = vim.lsp.util or {}
 ---@class vim.lsp.Config.CompletionGetOpts
 ---@field ctx?                                             lsp.CompletionContext
 ---@class vim.lsp.Config.CompletionModule
----@field enable?                                          fun(enable: boolean, client_id: integer, bufnr: integer, opts?: vim.lsp.Config.CompletionEnableOpts)
+---@field enable? fun(enable: boolean, client_id: integer, bufnr: integer, opts?: vim.lsp.Config.CompletionEnableOpts )
 ---@class vim.lsp.Config.init_options
 ---@field completionDisableFilterText?                     boolean
 ---@field createBaconPreferencesFile?                      boolean
@@ -269,12 +234,20 @@ vim.lsp.util = vim.lsp.util or {}
 ---@field basedpyright.analysis?                           table[]
 ---@field basedpyright.analysis.python?                    { pythonPath: string }
 ---@field basedpyright.analysis.useLibraryCodeForTypes?    boolean
----@field basedpyright.analysisinlayHints?                 { variableTypes: boolean, callArgumentNames: boolean, callArgumentNamesMatching: boolean, functionReturnTypes: boolean, genericTypes: boolean }
+---@class basedpyright.InlayHints
+---@field variableTypes boolean
+---@field callArgumentNames boolean
+---@field callArgumentNamesMatching boolean
+---@field functionReturnTypes boolean
+---@field genericTypes boolean
+---@field basedpyright.analysisinlayHints? basedpyright.InlayHints
 ---@field baesedpyright.analysis.useTypingExtensions?      boolean
 ---@field basedpyright.analysis.failOnWarnings?            boolean
 ---@field basedpyright.analysis.reportUnreachable?         boolean|string
 ---@field basedpyright.analysis.reportAny?                 boolean|string
----@field implicitProjectConfiguration?                    'amd'|'commonjs'|'es6/es2015'|'es2020'|'esnext'| 'node16'|'node18'|'node20'|'nodenext'|'none'| 'preserver'| 'system'|'umd'
+---@field implicitProjectConfiguration?
+---|'amd'|'commonjs'|'es6/es2015'|'es2020'|'esnext'|'node16'|'node18'|'node20'
+---|'nodenext'|'none'|'preserver'|'system'|'umd'
 ---@field ltex.bibtex.fields?                              { [string]: boolean } ---object
 ---@field ltex.checkFrequency?                             'edit'|'manual'|'save'
 ---@field ltex.clearDiagnosticsWhenClosingFile?            boolean

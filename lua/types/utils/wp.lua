@@ -1,3 +1,9 @@
+--- WordPress helper types — type-checker dictionary (never runs).
+---
+--- Plain-language version: this file never runs -- Neovim never loads it at startup. It is a dictionary of shapes
+--- (type annotations) for the lua-language-server type checker, so the editor can offer completions and catch
+--- mistakes while you edit. Think of it as the answer key the teacher uses, not a lesson.
+---@module 'types.utils.wp'
 -- /qompassai/Diver/lua/types/config/wp.lua
 -- Qompass AI Diver WirePlumber Types Config
 -- Copyright (C) 2026 Qompass AI, All rights reserved
@@ -21,10 +27,17 @@
 PW_AUDIO_NAMESPACE = PW_AUDIO_NAMESPACE
 ---@class                    WPAudioStreamProps            :WPProperties
 ---@field ['media.class']?                                 string
+---@class WPEventHookStep
+---@field next string
+---@field execute fun(event: WPEvent, transition: WPAsyncTransition)
+---@class WPAsyncEventHookOpts
+---@field name string
+---@field interests WPEventInterest[]
+---@field steps table<string, WPEventHookStep>
 ---@class                    WPAsyncEventHook              :WPObject
 ---@field register?                                        fun(self: WPAsyncEventHook)
 ---@field remove?                                          fun(self: WPAsyncEventHook)
----@param opts?                                            { name: string, interests: WPEventInterest[], steps: table<string, { next: string, execute: fun(event: WPEvent, transition: WPAsyncTransition) }> }
+---@param opts? WPAsyncEventHookOpts
 ---@return                   WPAsyncEventHook
 function AsyncEventHook(opts) end
 
@@ -52,7 +65,8 @@ function AsyncEventHook(opts) end
 ---@param c?                                               { [1]: string, [2]: string, [3]: any, type?: string }
 ---@return                   WPConstraint
 local function Constraint_ctor(c) end
----@type                                                   fun(c: { [1]: string, [2]: string, [3]: any, type?: string }): WPConstraint
+---@alias WPConstraintArgs { [1]: string, [2]: string, [3]: any, type?: string }
+---@type fun(c: WPConstraintArgs): WPConstraint
 Constraint = Constraint or Constraint_ctor
 ---@class                    WPCore
 ---@field get_vm_type?                                     fun(): string|nil
@@ -140,15 +154,8 @@ Json = Json
 ---@class                    WPDSPConfig
 ---@field rules?                                           WPJsonObject
 ---@class                    WPJsonUtils
----@field match_rules                                      fun(
----  self?:                                                WPJsonUtils,
----  rules:                                                WPJsonObject,
----  props:                                                WPProperties,
----  cb:                                                   WPMatchRuleCallback)
----@field                                                  match_rules_update_properties fun(
----  self?:                                                WPJsonUtils,
----  rules:                                                WPJsonObject,
----  props:                                                WPProperties): WPProperties
+---@field match_rules fun(self?: WPJsonUtils, rules: WPJsonObject, props: WPProperties, cb: WPMatchRuleCallback)
+---@field match_rules_update_properties fun(self?: WPJsonUtils, rules: WPJsonObject, props: WPProperties): WPProperties
 ---@type                     WPJsonUtils
 JsonUtils = JsonUtils
 
@@ -170,17 +177,17 @@ LocalModule = LocalModule or LocalModule_ctor
 ---@field trace?                                           fun(...: any)
 ---@field warning?                                         fun(self: WPLog, object: any|nil, message: string)
 ---@class                    WPMetadata                    :WPObject
----@field activate?                                        fun(self: WPMetadata, features: integer, cb: fun(self: WPMetadata, e: any)): nil
+---@field activate? fun(self: WPMetadata, features: integer, cb: fun(self: WPMetadata, e: any) ): nil
 ---@field changed?                                         fun(self: WPMetadata, subject: integer, key: string)
----@field find?                                            fun(self: WPMetadata, subject: integer, key: string): string|nil
+---@field find? fun(self: WPMetadata, subject: integer, key: string): string|nil
 ---@field name?                                            string
----@field set?                                             fun(self: WPMetadata, subject: integer, key: string, type: string, value: string)
+---@field set? fun(self: WPMetadata, subject: integer, key: string, type: string, value: string)
 ---@type                     WPMetadata
 Metadata = Metadata
 ---@class                    WPMetadataEvent               :WPEvent
 ---@field get_subject?                                     fun(self: WPMetadataEvent): WPMetadata
 ---@class                    WPNode                        :WPObject
----@field activate?                                        fun(self: WPNode, features: integer, cb?: fun(self: WPNode, err: any)): nil
+---@field activate? fun(self: WPNode, features: integer, cb?: fun(self: WPNode, err: any) ): nil
 ---@field get_active_features?                             fun(self: WPNode): integer
 ---@field iterate_params?                                  fun(self: WPNode, id: string): fun(): any
 ---@field properties?                                      WPProperties
@@ -223,11 +230,7 @@ node_directions = node_directions
 ---@field update_permissions?                              fun(self: WPClient, perms: table<any, string>)
 ---@class                     WPObjectManager
 ---@field activate?                                        fun(self: WPObjectManager)
----@field connect?                                         fun(
----  self:                                                 WPObjectManager,
----  signal:                                               string,
----  cb:                                                   fun(om: WPObjectManager, obj: WPObject),
----  data?:                                                any)
+---@field connect? fun(self: WPObjectManager, signal: string, cb: fun(om: WPObjectManager, obj: WPObject), data?: any)
 ---@field get_managed_object?                              fun(self: WPObjectManager, id: number|nil): WPObject|nil
 ---@field iterate?                                         fun(self: WPObjectManager, filter?: table): fun(): WPObject
 ---@field lookup?                                          fun(self: WPObjectManager, id: any): WPObject|WPMetadata|nil
@@ -250,17 +253,18 @@ ProcUtils = ProcUtils
 ---@field get_string?                                      fun(self: WPProperties, key: string): string|nil | nil
 ---@class                    WPProxyFeatures
 ---@field BOUND?                                           integer
+---@alias WPSessionStateCallback fun(item: WPSessionItem, old_state: string, new_state: string)
 ---@class                    WPSessionItem                 :WPObject
----@field activate?                                        fun(self: WPSessionItem, features: integer, cb: fun(self: WPSessionItem, e: any))
+---@field activate? fun(self: WPSessionItem, features: integer, cb: fun(self: WPSessionItem, e: any) )
 ---@field configure?                                       fun(self: WPSessionItem, props: table): boolean
----@field connect?                                         fun(self: WPSessionItem, signal: string, cb: fun(item: WPSessionItem, old_state: string, new_state: string))
+---@field connect? fun(self: WPSessionItem, signal: string, cb: WPSessionStateCallback)
 ---@field get_associated_proxy?                            fun(self: WPSessionItem, kind: string): WPNode|WPObject|nil
 ---@field get_ports_format?                                fun(self: WPSessionItem): any, any
 ---@field id?                                              integer
 ---@field properties?                                      WPProperties
 ---@field register?                                        fun(self: WPSessionItem)
 ---@field remove?                                          fun(self: WPSessionItem)
----@field set_ports_format?                                fun(self: WPSessionItem, f: any, m: any, cb: fun(item: WPSessionItem, e: any))
+---@field set_ports_format? fun(self: WPSessionItem, f: any, m: any, cb: fun(item: WPSessionItem, e: any))
 ---@param type_name                                        string
 ---@return                   WPSessionItem
 function SessionItem(type_name) end
@@ -276,7 +280,7 @@ function SessionItem(type_name) end
 ---@field properties?                                      WPProperties
 ---@field remove?                                          fun(self: WPSessionItemLink)
 ---@class                    WPSessionItemManager          :WPObjectManager
----@field iterate?                                         fun(self: WPSessionItemManager, filter?: table): fun(): WPSessionItem|WPSessionItemLink
+---@field iterate? fun(self: WPSessionItemManager, filter?: table): fun(): WPSessionItem|WPSessionItemLink
 ---@field lookup?                                          fun(self: WPSessionItemManager, args: table): WPObject|nil
 ---@class                    WPSettings
 ---@field get?                                             fun(key: string): WPJsonObject|nil
@@ -284,30 +288,29 @@ function SessionItem(type_name) end
 ---@field get_float?                                       fun(key: string): number
 ---@field subscribe?                                       fun(key: string, cb: fun()): nil
 ---@type                     WPSettings
+---@class WPSimpleEventHookOpts
+---@field name string
+---@field interests WPEventInterest[]
+---@field execute fun(event: WPEvent)
 ---@class                    WPSimpleEventHook             :        WPObject
 ---@field register?                                        fun(self: WPSimpleEventHook)
 ---@field remove?                                          fun(self: WPSimpleEventHook)
 
----@param opts?                                            { name: string, interests: WPEventInterest[], execute: fun(event: WPEvent) }
+---@param opts? WPSimpleEventHookOpts
 ---@return                   WPSimpleEventHook
 function SimpleEventHook(opts) end
 
----@type                                                   fun(opts: { name: string, interests: WPEventInterest[], execute: fun(event: WPEvent) }): WPSimpleEventHook
+---@type fun(opts: WPSimpleEventHookOpts): WPSimpleEventHook
 SimpleEventHook = SimpleEventHook
 ---@class                    SimpleEventHookClass
----@field new                                              fun(opts: { name: string, interests: WPEventInterest[], execute: fun(event: WPEvent) }): WPSimpleEventHook
+---@field new fun(opts: WPSimpleEventHookOpts): WPSimpleEventHook
 ---@class                    WPSpaDevice                   :WPObject
 ---@field activate?                                        fun(self: WPSpaDevice, features: integer): nil
 ---@field connect?                                         fun(self: WPSpaDevice, signal: string, cb: fun(...: any))
 ---@field deactivate?                                      fun(self: WPSpaDevice, features: integer): nil
----@field get_managed_object?                              fun(
----   self:                                                WPSpaDevice,
----   id:                                                  number|nil): WPObject|WPLocalModule|nil
+---@field get_managed_object? fun(self: WPSpaDevice, id: number|nil): WPObject|WPLocalModule|nil
 ---@field set_managed_pending?                             fun(self: WPSpaDevice, id: number): nil
----@field store_managed_object?                            fun(
----   self:                                                WPSpaDevice,
----   id:                                                  number,
----   obj:                                                 WPObject|WPLocalModule|nil): nil
+---@field store_managed_object? fun(self: WPSpaDevice, id: number, obj: WPObject|WPLocalModule|nil): nil
 ---@param factory?                                         string
 ---@param props?                                           WPProperties
 ---@return                                                 WPSpaDevice|nil
@@ -321,20 +324,22 @@ bluetooth_monitor = bluetooth_monitor
 ---@field ENABLED?                                         integer
 ---@class WPState
 ---@field save_after_timeout?                              fun(self: WPState, tbl: table)
+---@alias WPCheckFn fun(self: WPUtils, si: WPSessionItem, om: WPSessionItemManager, handle_nonstreams: boolean): boolean
+---@alias WPRegisterCamNode fun(self: WPUtils, parent: WPObject, id: integer, factory: string, properties: WPProperties)
 ---@class WPUtils
 ---@field cam_data?                                        WPCameraData[] mutils
 ---@field cam_source?                                      WPGSource|nil mutils
----@field canLink?                                         fun(self: WPUtils, si_props: WPProperties, target: WPSessionItem): boolean
----@field checkFilter                                      fun(self: WPUtils, si: WPSessionItem, om: WPSessionItemManager, handle_nonstreams: boolean): boolean
----@field checkFollowDefault?                              fun(self: WPUtils, si: WPSessionItem, target: WPSessionItem|nil)
----@field checkPassthroughCompatibility?                   fun(self: WPUtils, si: WPSessionItem, target: WPSessionItem): boolean, boolean
+---@field canLink? fun(self: WPUtils, si_props: WPProperties, target: WPSessionItem): boolean
+---@field checkFilter WPCheckFn
+---@field checkFollowDefault? fun(self: WPUtils, si: WPSessionItem, target: WPSessionItem|nil)
+---@field checkPassthroughCompatibility? fun(self: WPUtils, si: WPSessionItem, target: WPSessionItem): boolean, boolean
 ---@field clear_flags?                                     fun(self: WPUtils, id: integer): nil
 ---@field clearPriorityMediaRoleLink?                      fun(self: WPUtils, link: WPObject): nil
 ---@field contains_audio_group?                            fun(group: string): boolean autils
 ---@field create_cam_nodes?                                fun(self: WPUtils)
 ---@field isLinked?                                        fun(target: WPSessionItem): boolean, boolean
 ---@field findDefaultLinkable?                             fun(si: WPSessionItem): WPSessionItem|nil
----@field find_duplicate?                                  fun(parent: WPObject, id: number, property: string, value: WPPropValue): boolean
+---@field find_duplicate? fun(parent: WPObject, id: number, property: string, value: WPPropValue): boolean
 ---@field get_application_name?                            fun(): string   cutils
 ---@field get_audio_group?                                 fun(node: any): string|nil
 ---@field get_default_metadata_object?                     fun(): WPMetadata
@@ -344,19 +349,18 @@ bluetooth_monitor = bluetooth_monitor
 ---@field haveAvailableRoutes?                             fun(self: WPUtils, props: WPProperties): boolean
 ---@field is_filter_smart?                                 fun(direction: string, link_group: string|nil): boolean
 ---@field is_filter_disabled?                              fun(direction: string, link_group: string|nil): boolean
----@field is_role_policy_target?                           fun(si_props: WPProperties, target_props: WPProperties): boolean
+---@field is_role_policy_target? fun(si_props: WPProperties, target_props: WPProperties): boolean
 ---@field lookupLink?                                      fun(si_id: integer, peer_id: integer): WPSessionItemLink|nil
 ---@field mediaClassToDirection?                           fun(media_class: string): 'input'|'output'|nil
 ---@field parseBool?                                       fun(var: any): boolean  cutils
 ---@field parseParam?                                      fun(param: any, id: string): any
 ---@field ports_state_signal?                              boolean|nil
----@field register_cam_node?                               fun(self: WPUtils, parent: WPObject, id: integer, factory: string, properties: WPProperties)
----@field sendClientError?                                 fun(self: WPUtils, event: WPEvent, node: WPNode|nil, code: integer, msg: string)
+---@field register_cam_node? WPRegisterCamNode
+---@field sendClientError? fun(self: WPUtils, event: WPEvent, node: WPNode|nil, code: integer, msg: string )
 ---@field set_audio_group?                                 fun(node: any, group: string|nil)
----@field unwrap_select_target_event?                      fun(
----  self:                                                 WPUtils,
----  event:                                                WPEvent): WPObject, WPSessionItemManager, WPSessionItem, WPProperties, table, WPSessionItem|nil
+---@field unwrap_select_target_event? fun(self: WPUtils, event: WPEvent): WPSelectTargetResult
 ---@field updatePriorityMediaRoleLink?                     fun(link: WPSessionItem)
+---@alias WPSelectTargetResult WPObject, WPSessionItemManager, WPSessionItem, WPProperties, table, WPSessionItem|nil
 ---@type                                                   WPUtils
 cutils = cutils
 ---@type                                                   WPUtils

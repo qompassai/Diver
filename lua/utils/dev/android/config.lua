@@ -22,11 +22,11 @@ M.max_recent = 3
 M.search_ns = vim.api.nvim_create_namespace('android-nvim-search')
 M.stderr_ns = vim.api.nvim_create_namespace('android-nvim-stderr')
 M.group_order = {
-  'Build & deploy',
-  'Emulator',
-  'Android Studio',
-  'Device',
-  'Project',
+    'Build & deploy',
+    'Emulator',
+    'Android Studio',
+    'Device',
+    'Project',
 }
 
 return M

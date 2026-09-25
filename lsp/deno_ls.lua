@@ -29,546 +29,546 @@ local JSON_NULL = vim.NIL
 
 ---@type string[]
 local unstable_features = {
-  'broadcast-channel',
-  'bundle',
-  'cron',
-  'detect-cjs',
-  'kv',
-  'lazy-dynamic-imports',
-  'net',
-  'no-legacy-abort',
-  'node-globals',
-  'npm-lazy-caching',
-  'sloppy-imports',
-  'tsgo',
-  'unsafe-proto',
-  'webgpu',
-  'worker-options',
+    'broadcast-channel',
+    'bundle',
+    'cron',
+    'detect-cjs',
+    'kv',
+    'lazy-dynamic-imports',
+    'net',
+    'no-legacy-abort',
+    'node-globals',
+    'npm-lazy-caching',
+    'sloppy-imports',
+    'tsgo',
+    'unsafe-proto',
+    'webgpu',
+    'worker-options',
 }
 
 ---@param filename string
 ---@return string?
 local function find_deno_root(filename)
-  if filename == '' then
-    return nil
-  end
+    if filename == '' then
+        return nil
+    end
 
-  return fs.root(filename, {
-    'deno.json',
-    'deno.jsonc',
-  })
+    return fs.root(filename, {
+        'deno.json',
+        'deno.jsonc',
+    })
 end
 
 ---@param root string
 ---@return string
 local function workspace_name(root)
-  assert(root ~= '', 'root must not be empty')
+    assert(root ~= '', 'root must not be empty')
 
-  local basename = fs.basename(root)
+    local basename = fs.basename(root)
 
-  if type(basename) == 'string' and basename ~= '' then
-    return basename
-  end
+    if type(basename) == 'string' and basename ~= '' then
+        return basename
+    end
 
-  return 'deno'
+    return 'deno'
 end
 
 ---@param _ lsp.InitializeParams?
 ---@param config vim.lsp.Config
 ---@return boolean?
 local function before_init(_, config)
-  local bufnr = api.nvim_get_current_buf()
+    local bufnr = api.nvim_get_current_buf()
 
-  local filename = api.nvim_buf_get_name(bufnr)
+    local filename = api.nvim_buf_get_name(bufnr)
 
-  if filename == '' then
-    return false
-  end
+    if filename == '' then
+        return false
+    end
 
-  local root = find_deno_root(filename)
+    local root = find_deno_root(filename)
 
-  --
-  -- Tiger boundary:
-  --
-  -- JavaScript or TypeScript filetype alone must never activate Deno.
-  -- The workspace must explicitly contain deno.json or deno.jsonc.
-  --
-  if root == nil then
-    return false
-  end
+    --
+    -- Tiger boundary:
+    --
+    -- JavaScript or TypeScript filetype alone must never activate Deno.
+    -- The workspace must explicitly contain deno.json or deno.jsonc.
+    --
+    if root == nil then
+        return false
+    end
 
-  config.root_dir = root
+    config.root_dir = root
 
-  config.workspace_folders = {
-    {
-      name = workspace_name(root),
+    config.workspace_folders = {
+        {
+            name = workspace_name(root),
 
-      uri = vim.uri_from_fname(root),
-    },
-  }
+            uri = vim.uri_from_fname(root),
+        },
+    }
 
-  return true
+    return true
 end
 
 ---@param client vim.lsp.Client
 ---@param bufnr integer
 local function cache_dependencies(client, bufnr)
-  client:request('workspace/executeCommand', {
-    command = 'deno.cache',
+    client:request('workspace/executeCommand', {
+        command = 'deno.cache',
 
-    arguments = {
-      {
-        referrer = vim.uri_from_bufnr(bufnr),
+        arguments = {
+            {
+                referrer = vim.uri_from_bufnr(bufnr),
 
-        uris = {},
-      },
-    },
-  }, nil, bufnr)
+                uris = {},
+            },
+        },
+    }, nil, bufnr)
 end
 
 ---@param client vim.lsp.Client
 local function reload_configuration(client)
-  client:notify('workspace/didChangeConfiguration', {
-    settings = client.config.settings,
-  })
+    client:notify('workspace/didChangeConfiguration', {
+        settings = client.config.settings,
+    })
 end
 
 ---@param client vim.lsp.Client
 ---@param bufnr integer
 local function on_attach(client, bufnr)
-  --
-  -- Generic LSP attachment behavior is handled globally by
-  -- config/core/lsp.lua through LspAttach.
-  --
-  -- Keep this callback strictly Deno-specific.
-  --
+    --
+    -- Generic LSP attachment behavior is handled globally by
+    -- config/core/lsp.lua through LspAttach.
+    --
+    -- Keep this callback strictly Deno-specific.
+    --
 
-  api.nvim_buf_create_user_command(bufnr, 'DenoCache', function()
-    cache_dependencies(client, bufnr)
-  end, {
-    desc = 'Cache Deno dependencies',
+    api.nvim_buf_create_user_command(bufnr, 'DenoCache', function()
+        cache_dependencies(client, bufnr)
+    end, {
+        desc = 'Cache Deno dependencies',
 
-    force = true,
-  })
+        force = true,
+    })
 
-  api.nvim_buf_create_user_command(bufnr, 'DenoReload', function()
-    reload_configuration(client)
-  end, {
-    desc = 'Reload Deno workspace configuration',
+    api.nvim_buf_create_user_command(bufnr, 'DenoReload', function()
+        reload_configuration(client)
+    end, {
+        desc = 'Reload Deno workspace configuration',
 
-    force = true,
-  })
+        force = true,
+    })
 
-  api.nvim_buf_create_user_command(bufnr, 'DenoRestart', function()
-    local client_id = client.id
+    api.nvim_buf_create_user_command(bufnr, 'DenoRestart', function()
+        local client_id = client.id
 
-    client:stop(true)
+        client:stop(true)
 
-    vim.schedule(function()
-      lsp.enable('deno_ls', false)
+        vim.schedule(function()
+            lsp.enable('deno_ls', false)
 
-      lsp.enable('deno_ls', true)
+            lsp.enable('deno_ls', true)
 
-      vim.notify(string.format('Restarted Deno LSP client %d', client_id), levels.INFO)
-    end)
-  end, {
-    desc = 'Restart Deno language server',
+            vim.notify(string.format('Restarted Deno LSP client %d', client_id), levels.INFO)
+        end)
+    end, {
+        desc = 'Restart Deno language server',
 
-    force = true,
-  })
+        force = true,
+    })
 end
 
 return ---@type vim.lsp.Config
 {
-  before_init = before_init,
+    before_init = before_init,
 
-  --
-  -- Only capabilities specific to Deno belong here.
-  --
-  -- Shared client capabilities are supplied globally by:
-  --
-  --   vim.lsp.config('*', ...)
-  --
-  capabilities = {
-    experimental = {
-      testingApi = true,
-    },
-  },
-
-  cmd = {
-    'deno',
-    'lsp',
-  },
-
-  filetypes = {
-    'javascript',
-    'javascriptreact',
-    'jsx',
-    'tsx',
-    'typescript',
-    'typescriptreact',
-  },
-
-  init_options = {
     --
-    -- vim.NIL serializes to JSON null.
+    -- Only capabilities specific to Deno belong here.
     --
-    -- Do not use Lua nil for explicit LSP JSON values because nil removes
-    -- the table key and violates Neovim's JSON-value type.
+    -- Shared client capabilities are supplied globally by:
     --
-    cache = JSON_NULL,
-
-    certificateStores = {
-      'mozilla',
-      'system',
+    --   vim.lsp.config('*', ...)
+    --
+    capabilities = {
+        experimental = {
+            testingApi = true,
+        },
     },
 
-    config = JSON_NULL,
+    cmd = {
+        'deno',
+        'lsp',
+    },
 
-    enable = true,
+    filetypes = {
+        'javascript',
+        'javascriptreact',
+        'jsx',
+        'tsx',
+        'typescript',
+        'typescriptreact',
+    },
 
-    enablePaths = {},
+    init_options = {
+        --
+        -- vim.NIL serializes to JSON null.
+        --
+        -- Do not use Lua nil for explicit LSP JSON values because nil removes
+        -- the table key and violates Neovim's JSON-value type.
+        --
+        cache = JSON_NULL,
 
-    importMap = JSON_NULL,
-
-    internalDebug = true,
-
-    lint = true,
-
-    tlsCertificate = JSON_NULL,
-
-    unstable = unstable_features,
-
-    unsafelyIgnoreCertificateErrors = {},
-  },
-
-  on_attach = on_attach,
-
-  root_markers = {
-    'deno.json',
-    'deno.jsonc',
-  },
-
-  settings = {
-    deno = {
-      cache = JSON_NULL,
-
-      certificateStores = {
-        'mozilla',
-        'system',
-      },
-
-      codeLens = {
-        implementations = true,
-
-        references = true,
-
-        referencesAllFunctions = true,
-
-        test = true,
-
-        testArgs = {
-          '--allow-all',
-
-          '--unstable-broadcast-channel',
-          '--unstable-bundle',
-          '--unstable-cron',
-          '--unstable-detect-cjs',
-          '--unstable-kv',
-          '--unstable-lazy-dynamic-imports',
-          '--unstable-net',
-          '--unstable-no-legacy-abort',
-          '--unstable-node-globals',
-          '--unstable-npm-lazy-caching',
-          '--unstable-sloppy-imports',
-          '--unstable-tsgo',
-          '--unstable-unsafe-proto',
-          '--unstable-webgpu',
-          '--unstable-worker-options',
-        },
-      },
-
-      config = JSON_NULL,
-
-      documentPreloadLimit = 10000,
-
-      enable = true,
-
-      enablePaths = {},
-
-      importMap = JSON_NULL,
-
-      inlayHints = {
-        enumMemberValues = {
-          enabled = true,
+        certificateStores = {
+            'mozilla',
+            'system',
         },
 
-        functionLikeReturnTypes = {
-          enabled = true,
-        },
-
-        parameterNames = {
-          enabled = 'all',
-
-          suppressWhenArgumentMatchesName = false,
-        },
-
-        parameterTypes = {
-          enabled = true,
-        },
-
-        propertyDeclarationTypes = {
-          enabled = true,
-        },
-
-        variableTypes = {
-          enabled = true,
-
-          suppressWhenTypeMatchesName = false,
-        },
-      },
-
-      internalDebug = true,
-
-      --
-      -- Do not automatically expose an inspector for deno lsp itself.
-      --
-      -- JSON null is intentional.
-      --
-      internalInspect = JSON_NULL,
-
-      lint = true,
-
-      maxTsServerMemory = 8192,
-
-      organizeImports = {
-        enabled = true,
-      },
-
-      suggest = {
-        autoImports = true,
-
-        completeFunctionCalls = true,
-
-        imports = {
-          autoDiscover = true,
-
-          hosts = {
-            ['https://cdn.jsdelivr.net'] = true,
-
-            ['https://deno.land'] = true,
-
-            ['https://esm.sh'] = true,
-
-            ['https://gist.githubusercontent.com'] = true,
-
-            ['https://jsr.io'] = true,
-
-            ['https://raw.esm.sh'] = true,
-
-            ['https://raw.githubusercontent.com'] = true,
-          },
-        },
-
-        names = true,
-
-        paths = true,
-      },
-
-      symbols = {
-        document = {
-          enabled = true,
-        },
-
-        workspace = {
-          enabled = true,
-        },
-      },
-
-      testing = {
-        args = {
-          '--allow-all',
-
-          '--unstable-broadcast-channel',
-          '--unstable-bundle',
-          '--unstable-cron',
-          '--unstable-detect-cjs',
-          '--unstable-kv',
-          '--unstable-lazy-dynamic-imports',
-          '--unstable-net',
-          '--unstable-no-legacy-abort',
-          '--unstable-node-globals',
-          '--unstable-npm-lazy-caching',
-          '--unstable-sloppy-imports',
-          '--unstable-tsgo',
-          '--unstable-unsafe-proto',
-          '--unstable-webgpu',
-          '--unstable-worker-options',
-        },
+        config = JSON_NULL,
 
         enable = true,
-      },
 
-      tlsCertificate = JSON_NULL,
+        enablePaths = {},
 
-      --
-      -- Granular unstable feature names are explicit so the enabled
-      -- experimental surface remains auditable.
-      --
-      unstable = unstable_features,
+        importMap = JSON_NULL,
 
-      --
-      -- Never globally disable TLS verification.
-      --
-      unsafelyIgnoreCertificateErrors = {},
+        internalDebug = true,
+
+        lint = true,
+
+        tlsCertificate = JSON_NULL,
+
+        unstable = unstable_features,
+
+        unsafelyIgnoreCertificateErrors = {},
     },
 
-    javascript = {
-      inlayHints = {
-        enumMemberValues = {
-          enabled = true,
-        },
+    on_attach = on_attach,
 
-        functionLikeReturnTypes = {
-          enabled = true,
-        },
-
-        parameterNames = {
-          enabled = 'all',
-
-          suppressWhenArgumentMatchesName = false,
-        },
-
-        parameterTypes = {
-          enabled = true,
-        },
-
-        propertyDeclarationTypes = {
-          enabled = true,
-        },
-
-        variableTypes = {
-          enabled = true,
-
-          suppressWhenTypeMatchesName = false,
-        },
-      },
-
-      preferences = {
-        autoImportFileExcludePatterns = {},
-
-        importModuleSpecifier = 'shortest',
-
-        jsxAttributeCompletionStyle = 'auto',
-
-        preferTypeOnlyAutoImports = true,
-
-        quoteStyle = 'single',
-
-        useAliasesForRenames = true,
-      },
-
-      suggest = {
-        autoImports = true,
-
-        classMemberSnippets = {
-          enabled = true,
-        },
-
-        completeFunctionCalls = true,
-
-        enabled = true,
-
-        includeAutomaticOptionalChainCompletions = true,
-
-        includeCompletionsForImportStatements = true,
-
-        names = true,
-
-        objectLiteralMethodSnippets = {
-          enabled = true,
-        },
-
-        paths = true,
-      },
-
-      updateImportsOnFileMove = {
-        enabled = 'always',
-      },
+    root_markers = {
+        'deno.json',
+        'deno.jsonc',
     },
 
-    typescript = {
-      inlayHints = {
-        enumMemberValues = {
-          enabled = true,
+    settings = {
+        deno = {
+            cache = JSON_NULL,
+
+            certificateStores = {
+                'mozilla',
+                'system',
+            },
+
+            codeLens = {
+                implementations = true,
+
+                references = true,
+
+                referencesAllFunctions = true,
+
+                test = true,
+
+                testArgs = {
+                    '--allow-all',
+
+                    '--unstable-broadcast-channel',
+                    '--unstable-bundle',
+                    '--unstable-cron',
+                    '--unstable-detect-cjs',
+                    '--unstable-kv',
+                    '--unstable-lazy-dynamic-imports',
+                    '--unstable-net',
+                    '--unstable-no-legacy-abort',
+                    '--unstable-node-globals',
+                    '--unstable-npm-lazy-caching',
+                    '--unstable-sloppy-imports',
+                    '--unstable-tsgo',
+                    '--unstable-unsafe-proto',
+                    '--unstable-webgpu',
+                    '--unstable-worker-options',
+                },
+            },
+
+            config = JSON_NULL,
+
+            documentPreloadLimit = 10000,
+
+            enable = true,
+
+            enablePaths = {},
+
+            importMap = JSON_NULL,
+
+            inlayHints = {
+                enumMemberValues = {
+                    enabled = true,
+                },
+
+                functionLikeReturnTypes = {
+                    enabled = true,
+                },
+
+                parameterNames = {
+                    enabled = 'all',
+
+                    suppressWhenArgumentMatchesName = false,
+                },
+
+                parameterTypes = {
+                    enabled = true,
+                },
+
+                propertyDeclarationTypes = {
+                    enabled = true,
+                },
+
+                variableTypes = {
+                    enabled = true,
+
+                    suppressWhenTypeMatchesName = false,
+                },
+            },
+
+            internalDebug = true,
+
+            --
+            -- Do not automatically expose an inspector for deno lsp itself.
+            --
+            -- JSON null is intentional.
+            --
+            internalInspect = JSON_NULL,
+
+            lint = true,
+
+            maxTsServerMemory = 8192,
+
+            organizeImports = {
+                enabled = true,
+            },
+
+            suggest = {
+                autoImports = true,
+
+                completeFunctionCalls = true,
+
+                imports = {
+                    autoDiscover = true,
+
+                    hosts = {
+                        ['https://cdn.jsdelivr.net'] = true,
+
+                        ['https://deno.land'] = true,
+
+                        ['https://esm.sh'] = true,
+
+                        ['https://gist.githubusercontent.com'] = true,
+
+                        ['https://jsr.io'] = true,
+
+                        ['https://raw.esm.sh'] = true,
+
+                        ['https://raw.githubusercontent.com'] = true,
+                    },
+                },
+
+                names = true,
+
+                paths = true,
+            },
+
+            symbols = {
+                document = {
+                    enabled = true,
+                },
+
+                workspace = {
+                    enabled = true,
+                },
+            },
+
+            testing = {
+                args = {
+                    '--allow-all',
+
+                    '--unstable-broadcast-channel',
+                    '--unstable-bundle',
+                    '--unstable-cron',
+                    '--unstable-detect-cjs',
+                    '--unstable-kv',
+                    '--unstable-lazy-dynamic-imports',
+                    '--unstable-net',
+                    '--unstable-no-legacy-abort',
+                    '--unstable-node-globals',
+                    '--unstable-npm-lazy-caching',
+                    '--unstable-sloppy-imports',
+                    '--unstable-tsgo',
+                    '--unstable-unsafe-proto',
+                    '--unstable-webgpu',
+                    '--unstable-worker-options',
+                },
+
+                enable = true,
+            },
+
+            tlsCertificate = JSON_NULL,
+
+            --
+            -- Granular unstable feature names are explicit so the enabled
+            -- experimental surface remains auditable.
+            --
+            unstable = unstable_features,
+
+            --
+            -- Never globally disable TLS verification.
+            --
+            unsafelyIgnoreCertificateErrors = {},
         },
 
-        functionLikeReturnTypes = {
-          enabled = true,
+        javascript = {
+            inlayHints = {
+                enumMemberValues = {
+                    enabled = true,
+                },
+
+                functionLikeReturnTypes = {
+                    enabled = true,
+                },
+
+                parameterNames = {
+                    enabled = 'all',
+
+                    suppressWhenArgumentMatchesName = false,
+                },
+
+                parameterTypes = {
+                    enabled = true,
+                },
+
+                propertyDeclarationTypes = {
+                    enabled = true,
+                },
+
+                variableTypes = {
+                    enabled = true,
+
+                    suppressWhenTypeMatchesName = false,
+                },
+            },
+
+            preferences = {
+                autoImportFileExcludePatterns = {},
+
+                importModuleSpecifier = 'shortest',
+
+                jsxAttributeCompletionStyle = 'auto',
+
+                preferTypeOnlyAutoImports = true,
+
+                quoteStyle = 'single',
+
+                useAliasesForRenames = true,
+            },
+
+            suggest = {
+                autoImports = true,
+
+                classMemberSnippets = {
+                    enabled = true,
+                },
+
+                completeFunctionCalls = true,
+
+                enabled = true,
+
+                includeAutomaticOptionalChainCompletions = true,
+
+                includeCompletionsForImportStatements = true,
+
+                names = true,
+
+                objectLiteralMethodSnippets = {
+                    enabled = true,
+                },
+
+                paths = true,
+            },
+
+            updateImportsOnFileMove = {
+                enabled = 'always',
+            },
         },
 
-        parameterNames = {
-          enabled = 'all',
+        typescript = {
+            inlayHints = {
+                enumMemberValues = {
+                    enabled = true,
+                },
 
-          suppressWhenArgumentMatchesName = false,
+                functionLikeReturnTypes = {
+                    enabled = true,
+                },
+
+                parameterNames = {
+                    enabled = 'all',
+
+                    suppressWhenArgumentMatchesName = false,
+                },
+
+                parameterTypes = {
+                    enabled = true,
+                },
+
+                propertyDeclarationTypes = {
+                    enabled = true,
+                },
+
+                variableTypes = {
+                    enabled = true,
+
+                    suppressWhenTypeMatchesName = false,
+                },
+            },
+
+            preferences = {
+                autoImportFileExcludePatterns = {},
+
+                importModuleSpecifier = 'shortest',
+
+                jsxAttributeCompletionStyle = 'auto',
+
+                preferTypeOnlyAutoImports = true,
+
+                quoteStyle = 'single',
+
+                useAliasesForRenames = true,
+            },
+
+            suggest = {
+                autoImports = true,
+
+                classMemberSnippets = {
+                    enabled = true,
+                },
+
+                completeFunctionCalls = true,
+
+                enabled = true,
+
+                includeAutomaticOptionalChainCompletions = true,
+
+                includeCompletionsForImportStatements = true,
+
+                names = true,
+
+                objectLiteralMethodSnippets = {
+                    enabled = true,
+                },
+
+                paths = true,
+            },
+
+            updateImportsOnFileMove = {
+                enabled = 'always',
+            },
         },
-
-        parameterTypes = {
-          enabled = true,
-        },
-
-        propertyDeclarationTypes = {
-          enabled = true,
-        },
-
-        variableTypes = {
-          enabled = true,
-
-          suppressWhenTypeMatchesName = false,
-        },
-      },
-
-      preferences = {
-        autoImportFileExcludePatterns = {},
-
-        importModuleSpecifier = 'shortest',
-
-        jsxAttributeCompletionStyle = 'auto',
-
-        preferTypeOnlyAutoImports = true,
-
-        quoteStyle = 'single',
-
-        useAliasesForRenames = true,
-      },
-
-      suggest = {
-        autoImports = true,
-
-        classMemberSnippets = {
-          enabled = true,
-        },
-
-        completeFunctionCalls = true,
-
-        enabled = true,
-
-        includeAutomaticOptionalChainCompletions = true,
-
-        includeCompletionsForImportStatements = true,
-
-        names = true,
-
-        objectLiteralMethodSnippets = {
-          enabled = true,
-        },
-
-        paths = true,
-      },
-
-      updateImportsOnFileMove = {
-        enabled = 'always',
-      },
     },
-  },
 }

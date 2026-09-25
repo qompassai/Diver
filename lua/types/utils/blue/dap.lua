@@ -1,4 +1,10 @@
 #!/usr/bin/env lua5.1, JIT
+--- Blueteam DAP helper types — type-checker dictionary (never runs).
+---
+--- Plain-language version: this file never runs -- Neovim never loads it at startup. It is a dictionary of shapes
+--- (type annotations) for the lua-language-server type checker, so the editor can offer completions and catch
+--- mistakes while you edit. Think of it as the answer key the teacher uses, not a lesson.
+---@module 'types.utils.blue.dap'
 
 -- dap.lua
 -- Qompass AI - [ ]
@@ -36,45 +42,8 @@
 ---| 'internal'
 ---| 'final'
 ---| string
----@class dap.VariablePresentationHint
----@field kind?                                            dap.PresentationHintKind
----@field attributes? dap.PresentationHintAttribute[]
----@field visibility? dap.Visibility
----@field lazy? boolean
-
----@class dap.Variable
----@field name string
----@field value string
----@field type? string
----@field presentationHint? dap.VariablePresentationHint|string
----@field evaluateName? string
----@field variablesReference integer
----@field namedVariables? integer
----@field indexedVariables? integer
----@field memoryReference? string
-
----@class dap.Scope
----@field name string
----@field presentationHint? 'arguments'|'locals'|'registers'|string
----@field variablesReference integer
----@field namedVariables? integer
----@field indexedVariables? integer
----@field expensive boolean
----@field source? dap.Source
----@field line? integer
----@field column? integer
----@field endLine?                                         integer
----@field endColumn?                                       integer
----@field variables? table<string, dap.Variable>
 
 ---@class dap.Source
----@field name? string
----@field path? string
----@field sourceReference? integer
----@field presentationHint? 'normal'|'emphasize'|'deemphasize'|string
----@field origin? string
----@field sources? dap.Source[]
----@field adapterData? any
 ---@field checksums? dap.Checksum[]
 
 ---@class dap.Checksum
@@ -82,27 +51,8 @@
 ---@field checksum string
 
 ---@class dap.StackFrame
----@field id integer
----@field name string
----@field source? dap.Source
----@field line integer
----@field column integer
----@field endLine? integer
----@field endColumn? integer
----@field canRestart? boolean
 ---@field instructionPointerReference? string
 ---@field moduleId? integer|string
----@field presentationHint? 'normal'|'label'|'subtle'|string
----@field scopes? dap.Scope[]
-
----@class dap.Thread
----@field id integer
----@field name string
----@field frames? dap.StackFrame[]
-
----@class dap.StackTraceResponse
----@field stackFrames dap.StackFrame[]
----@field totalFrames? integer
 
 ---@class dap.ExceptionDetails
 ---@field message? string
@@ -118,19 +68,7 @@
 ---@field description? string
 ---@field details? dap.ExceptionDetails
 
----@class dap.StoppedEvent
----@field reason string
----@field description? string
----@field threadId? integer
----@field preserveFocusHint? boolean
----@field text? string
----@field allThreadsStopped? boolean
----@field hitBreakpointIds? integer[]
-
 ---@class dap.Session
----@field current_frame? dap.StackFrame
----@field stopped_thread_id? integer
----@field threads table<integer, dap.Thread>
 ---@field _request_scopes fun(self: dap.Session, frame: dap.StackFrame)
 
 ---@class dap.ListenerTable
@@ -158,6 +96,7 @@
 ---@alias dap_virtual_text_chunk [string, string]
 ----@class dap_virtual_text_item: dap_virtual_text_chunk
 ----@field node TSNode
+---@alias DapDisplayCallback fun(dap.Variable, integer, dap.StackFrame, TSNode, nvim_dap_virtual_text_options): string?
 ---@class nvim_dap_virtual_text_options
 ---@field enabled boolean
 ---@field all_frames boolean
@@ -177,10 +116,8 @@
 ---@field error_prefix string
 ---@field info_prefix string
 ---@field filter_references_pattern? string
----@field display_callback fun(variable: dap.Variable, buf: integer, stackframe: dap.StackFrame, node: TSNode, options: nvim_dap_virtual_text_options): string?
+---@field display_callback DapDisplayCallback
 ---
----@type dap.Module
-local dap = require('dap')
 
 ---@type table<integer, dap.StackFrame>
 --local last_frames = {}

@@ -3,6 +3,7 @@
 -- Copyright (C) 2025 Qompass AI, All rights reserved
 ------------------------------------------------------
 local function switch_source_header(client, bufnr)
+    ---@type any
     local method_name = 'textDocument/switchSourceHeader'
     local params = vim.lsp.util.make_text_document_params(bufnr)
     client:request(method_name, params, function(err, result)

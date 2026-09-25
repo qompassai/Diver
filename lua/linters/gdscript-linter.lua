@@ -38,227 +38,206 @@ local OUTPUT_LENGTH_MAX = 16 * 1024 * 1024
 ---@param value string
 ---@return string
 local function matlab_string(value)
-        assert(value ~= '')
+    assert(value ~= '')
 
-        return value:gsub("'", "''")
+    local cleaned = value:gsub("'", "''")
+    return cleaned
 end
 
 ---@param value integer|number|string|nil
 ---@param fallback integer
 ---@return integer
 local function integer(value, fallback)
-        assert(fallback >= 0)
+    assert(fallback >= 0)
 
-        local parsed = tonumber(value)
-        if parsed == nil then
-                return fallback
-        end
+    local parsed = tonumber(value)
+    if parsed == nil then
+        return fallback
+    end
 
-        return math.floor(parsed)
+    return math.floor(parsed)
 end
 
 ---@param value any
 ---@param fallback integer
 ---@return integer
 local function first_integer(value, fallback)
-        if type(value) == 'number' then
-                return integer(value, fallback)
-        end
+    if type(value) == 'number' then
+        return integer(value, fallback)
+    end
 
-        if type(value) ~= 'table' then
-                return fallback
-        end
+    if type(value) ~= 'table' then
+        return fallback
+    end
 
-        local first = value[1]
+    local first = value[1]
 
-        if type(first) == 'table' then
-                return integer(first[1], fallback)
-        end
+    if type(first) == 'table' then
+        return integer(first[1], fallback)
+    end
 
-        return integer(first, fallback)
+    return integer(first, fallback)
 end
 
 ---@param value any
 ---@param fallback integer
 ---@return integer
 local function last_integer(value, fallback)
-        if type(value) == 'number' then
-                return integer(value, fallback)
-        end
+    if type(value) == 'number' then
+        return integer(value, fallback)
+    end
 
-        if type(value) ~= 'table' then
-                return fallback
-        end
+    if type(value) ~= 'table' then
+        return fallback
+    end
 
-        local first = value[1]
+    local first = value[1]
 
-        if type(first) == 'table' then
-                return integer(first[2] or first[1], fallback)
-        end
+    if type(first) == 'table' then
+        return integer(first[2] or first[1], fallback)
+    end
 
-        return integer(value[2] or value[1], fallback)
+    return integer(value[2] or value[1], fallback)
 end
 
 ---@param issue CheckcodeIssue
----@return vim.Diagnostic?
+---@return vim.Diagnostic.Set?
 local function diagnostic_from_issue(issue)
-        local message = issue.message
+    local message = issue.message
 
-        if type(message) ~= 'string' or message == '' then
-                return nil
-        end
+    if type(message) ~= 'string' or message == '' then
+        return nil
+    end
 
-        local start_line = math.max(
-                first_integer(issue.line, 1) - 1,
-                0
-        )
+    local start_line = math.max(first_integer(issue.line, 1) - 1, 0)
 
-        local start_column = math.max(
-                first_integer(issue.column, 1) - 1,
-                0
-        )
+    local start_column = math.max(first_integer(issue.column, 1) - 1, 0)
 
-        local end_column = math.max(
-                last_integer(issue.column, start_column + 2) - 1,
-                start_column + 1
-        )
+    local end_column = math.max(last_integer(issue.column, start_column + 2) - 1, start_column + 1)
 
-        return {
-                lnum = start_line,
-                end_lnum = start_line,
-                col = start_column,
-                end_col = end_column,
-                message = message,
-                severity = WARN,
-                source = 'checkcode',
-                code = issue.id,
-        }
+    return {
+        lnum = start_line,
+        end_lnum = start_line,
+        col = start_column,
+        end_col = end_column,
+        message = message,
+        severity = WARN,
+        source = 'checkcode',
+        code = issue.id,
+    }
 end
 
 ---@param output string
 ---@param context LintContext|integer
 ---@return vim.Diagnostic.Set[]
 local function parse(output, context)
-        if output == '' then
-                return {}
+    if output == '' then
+        return {}
+    end
+
+    assert(type(context) == 'table', 'checkcode parser requires a LintContext')
+
+    ---@cast context LintContext
+
+    assert(context.filename ~= '')
+    assert(context.root ~= '')
+    assert(#output <= OUTPUT_LENGTH_MAX, 'checkcode output exceeded maximum size')
+
+    local ok, decoded = pcall(vim.json.decode, output)
+
+    if not ok or type(decoded) ~= 'table' then
+        return {}
+    end
+
+    ---@cast decoded CheckcodeOutput
+
+    local issues = decoded.issues
+
+    if type(issues) ~= 'table' then
+        return {}
+    end
+
+    ---@type vim.Diagnostic.Set[]
+    local diagnostics = {}
+    local diagnostics_count = 0
+
+    local issues_count = math.min(#issues, DIAGNOSTICS_MAX)
+
+    for index = 1, issues_count do
+        local issue = issues[index]
+
+        if type(issue) == 'table' then
+            local entry = diagnostic_from_issue(issue)
+
+            if entry ~= nil then
+                diagnostics_count = diagnostics_count + 1
+
+                diagnostics[diagnostics_count] = entry
+            end
         end
+    end
 
-        assert(
-                type(context) == 'table',
-                'checkcode parser requires a LintContext'
-        )
+    assert(diagnostics_count <= DIAGNOSTICS_MAX)
+    assert(diagnostics_count == #diagnostics)
 
-        ---@cast context LintContext
-
-        assert(context.filename ~= '')
-        assert(context.root ~= '')
-        assert(
-                #output <= OUTPUT_LENGTH_MAX,
-                'checkcode output exceeded maximum size'
-        )
-
-        local ok, decoded = pcall(vim.json.decode, output)
-
-        if not ok or type(decoded) ~= 'table' then
-                return {}
-        end
-
-        ---@cast decoded CheckcodeOutput
-
-        local issues = decoded.issues
-
-        if type(issues) ~= 'table' then
-                return {}
-        end
-
-        ---@type vim.Diagnostic.Set[]
-        local diagnostics = {}
-        local diagnostics_count = 0
-
-        local issues_count = math.min(
-                #issues,
-                DIAGNOSTICS_MAX
-        )
-
-        for index = 1, issues_count do
-                local issue = issues[index]
-
-                if type(issue) == 'table' then
-                        local entry = diagnostic_from_issue(issue)
-
-                        if entry ~= nil then
-                                diagnostics_count =
-                                        diagnostics_count + 1
-
-                                diagnostics[diagnostics_count] = entry
-                        end
-                end
-        end
-
-        assert(diagnostics_count <= DIAGNOSTICS_MAX)
-        assert(diagnostics_count == #diagnostics)
-
-        return diagnostics
+    return diagnostics
 end
 
 return ---@type Linter
 {
-        automatic = false,
+    automatic = false,
 
-        cmd = 'matlab',
+    cmd = 'matlab',
 
-        args = function(context)
-                assert(context.filename ~= '')
-                assert(context.root ~= '')
+    args = function(context)
+        assert(context.filename ~= '')
+        assert(context.root ~= '')
 
-                local filename = matlab_string(
-                        fs.normalize(context.filename)
-                )
+        local filename = matlab_string(fs.normalize(context.filename))
 
-                --
-                -- checkcode(..., '-struct', '-id', '-fullpath') returns
-                -- structured Code Analyzer diagnostics.
-                --
-                -- jsonencode() converts that structure directly into a
-                -- machine-readable payload for Neovim.
-                --
-                local expression = table.concat({
-                        "try;",
-                        ("i=checkcode('%s','-struct','-id','-fullpath');")
-                                :format(filename),
-                        "fprintf('%s',jsonencode(struct('issues',i)));",
-                        "catch e;",
-                        "fprintf(2,'%s',getReport(e,'extended','hyperlinks','off'));",
-                        "exit(2);",
-                        "end;",
-                        "exit(0);",
-                })
+        --
+        -- checkcode(..., '-struct', '-id', '-fullpath') returns
+        -- structured Code Analyzer diagnostics.
+        --
+        -- jsonencode() converts that structure directly into a
+        -- machine-readable payload for Neovim.
+        --
+        local expression = table.concat({
+            'try;',
+            ("i=checkcode('%s','-struct','-id','-fullpath');"):format(filename),
+            "fprintf('%s',jsonencode(struct('issues',i)));",
+            'catch e;',
+            "fprintf(2,'%s',getReport(e,'extended','hyperlinks','off'));",
+            'exit(2);',
+            'end;',
+            'exit(0);',
+        })
 
-                return {
-                        '-batch',
-                        expression,
-                }
-        end,
+        return {
+            '-batch',
+            expression,
+        }
+    end,
 
-        append_fname = false,
+    append_fname = false,
 
-        cwd = function(context)
-                assert(context.root ~= '')
-                return context.root
-        end,
+    cwd = function(context)
+        assert(context.root ~= '')
+        return context.root
+    end,
 
-        ignore_exitcode = true,
+    ignore_exitcode = true,
 
-        parser = parse,
+    parser = parse,
 
-        root_markers = {
-                'startup.m',
-                'setup.m',
-                'slprj',
-                '.git',
-        },
+    root_markers = {
+        'startup.m',
+        'setup.m',
+        'slprj',
+        '.git',
+    },
 
-        stdin = false,
-        stream = 'stdout',
-        timeout = 120000,
+    stdin = false,
+    stream = 'stdout',
+    timeout = 120000,
 }

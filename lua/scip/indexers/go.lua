@@ -23,22 +23,22 @@ local args = {}
 
 ---@type ScipIndexer
 local indexer = {
-  args = args,
+    args = args,
 
-  command = 'scip-go',
+    command = 'scip-go',
 
-  filetypes = {
-    go = true,
-    gomod = true,
-    gosum = true,
-    gowork = true,
-  },
+    filetypes = {
+        go = true,
+        gomod = true,
+        gosum = true,
+        gowork = true,
+    },
 
-  markers = {
-    '.git',
-    'go.mod',
-    'go.work',
-  },
+    markers = {
+        '.git',
+        'go.mod',
+        'go.work',
+    },
 }
 
 return indexer

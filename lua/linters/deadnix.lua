@@ -17,6 +17,7 @@ return ---@type vim.lint.Config
 	stream = 'stdout',
 	ignore_exitcode = true,
 	---@param bufnr integer
+	---@return vim.Diagnostic.Set[]
 	parser = function(output, bufnr) ---@param output string
 		if output == '' then
 			return {}

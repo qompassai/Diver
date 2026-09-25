@@ -33,43 +33,43 @@ M.lockfile_filename = 'packages-lock.json'
 -- Unity Hub install roots per platform, in priority order. The first
 -- readable one wins; each is joined with the detected editor version.
 function M.hub_roots()
-  if vim.fn.has('win32') == 1 or vim.fn.has('win64') == 1 then
+    if vim.fn.has('win32') == 1 or vim.fn.has('win64') == 1 then
+        return {
+            'C:/Program Files/Unity/Hub/Editor',
+            vim.fn.expand('~') .. '/AppData/Local/Unity/Hub/Editor',
+        }
+    end
+    if vim.fn.has('mac') == 1 or vim.fn.has('macunix') == 1 then
+        return { '/Applications/Unity/Hub/Editor' }
+    end
     return {
-      'C:/Program Files/Unity/Hub/Editor',
-      vim.fn.expand('~') .. '/AppData/Local/Unity/Hub/Editor',
+        vim.fn.expand('~') .. '/Unity/Hub/Editor',
+        '/opt/unity/hub/editor',
+        '/usr/share/unity3d/Hub/Editor',
     }
-  end
-  if vim.fn.has('mac') == 1 or vim.fn.has('macunix') == 1 then
-    return { '/Applications/Unity/Hub/Editor' }
-  end
-  return {
-    vim.fn.expand('~') .. '/Unity/Hub/Editor',
-    '/opt/unity/hub/editor',
-    '/usr/share/unity3d/Hub/Editor',
-  }
 end
 
 -- Path to the Unity binary inside a Hub install for `version`.
 function M.hub_editor_binary(root, version)
-  if vim.fn.has('win32') == 1 or vim.fn.has('win64') == 1 then
-    return root .. '/' .. version .. '/Editor/Unity.exe'
-  end
-  if vim.fn.has('mac') == 1 or vim.fn.has('macunix') == 1 then
-    return root .. '/' .. version .. '/Unity.app/Contents/MacOS/Unity'
-  end
-  return root .. '/' .. version .. '/Editor/Unity'
+    if vim.fn.has('win32') == 1 or vim.fn.has('win64') == 1 then
+        return root .. '/' .. version .. '/Editor/Unity.exe'
+    end
+    if vim.fn.has('mac') == 1 or vim.fn.has('macunix') == 1 then
+        return root .. '/' .. version .. '/Unity.app/Contents/MacOS/Unity'
+    end
+    return root .. '/' .. version .. '/Editor/Unity'
 end
 
 -- Default per-OS Editor.log location (used when no project-local log
 -- has been produced yet).
 function M.default_editor_log()
-  if vim.fn.has('win32') == 1 or vim.fn.has('win64') == 1 then
-    return vim.fn.expand('~') .. '/AppData/Local/Unity/Editor/Editor.log'
-  end
-  if vim.fn.has('mac') == 1 or vim.fn.has('macunix') == 1 then
-    return vim.fn.expand('~') .. '/Library/Logs/Unity/Editor.log'
-  end
-  return vim.fn.expand('~') .. '/.config/unity3d/Editor.log'
+    if vim.fn.has('win32') == 1 or vim.fn.has('win64') == 1 then
+        return vim.fn.expand('~') .. '/AppData/Local/Unity/Editor/Editor.log'
+    end
+    if vim.fn.has('mac') == 1 or vim.fn.has('macunix') == 1 then
+        return vim.fn.expand('~') .. '/Library/Logs/Unity/Editor.log'
+    end
+    return vim.fn.expand('~') .. '/.config/unity3d/Editor.log'
 end
 
 return M

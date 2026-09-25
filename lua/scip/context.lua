@@ -25,13 +25,13 @@ local M = {}
 ---@param root string
 ---@return ScipContext
 function M.new(name, bufnr, root)
-  root = vim.fs.normalize(root)
-  return {
-    bufnr = bufnr,
-    filename = api.nvim_buf_get_name(bufnr),
-    index_file = config.index_path(root),
-    name = name,
-    root = root,
-  }
+    root = vim.fs.normalize(root)
+    return {
+        bufnr = bufnr,
+        filename = api.nvim_buf_get_name(bufnr),
+        index_file = config.index_path(root),
+        name = name,
+        root = root,
+    }
 end
 return M

@@ -20,7 +20,7 @@ end
 return {
     ---@param dispatchers? vim.lsp.rpc.Dispatchers
     ---@param config vim.lsp.ClientConfig
-    ---@return vim.lsp.rpc.PublicClient
+    ---@return vim.lsp.rpc.Client
     cmd = function(dispatchers, config)
         local workspace_dir = get_jdtls_workspace_dir()
         local data_dir = workspace_dir

@@ -47,47 +47,53 @@ local CODE = 'misspelling'
 ---@param value string
 ---@return string
 local function trim(value)
-  assert(type(value) == 'string')
+    assert(type(value) == 'string')
 
-  return (value:gsub('^%s*(.-)%s*$', '%1'))
+    return (value:gsub('^%s*(.-)%s*$', '%1'))
 end
 
 ---@param value string
 ---@return string
 local function normalize_message(value)
-  assert(type(value) == 'string')
+    assert(type(value) == 'string')
 
-  value = value:gsub('\r\n', '\n')
-  value = value:gsub('\r', '\n')
-  value = trim(value)
+    value = value:gsub('\r\n', '\n')
+    value = value:gsub('\r', '\n')
+    value = trim(value)
 
-  if #value > MESSAGE_LENGTH_MAX then
-    value = value:sub(1, MESSAGE_LENGTH_MAX) .. '\n[message truncated]'
-  end
+    if #value > MESSAGE_LENGTH_MAX then
+        value = value:sub(1, MESSAGE_LENGTH_MAX) .. '\n[message truncated]'
+    end
 
-  return value
+    return value
 end
 
 ---@param path string
----@param root string
----@return string
+---@return boolean
+local function is_absolute(path)
+    assert(type(path) == 'string')
+    assert(path ~= '')
+
+    return vim.fn.isabsolutepath(path) == 1
+end
+
 local function normalize_path(path, root)
-  assert(path ~= '')
-  assert(root ~= '')
+    assert(path ~= '')
+    assert(root ~= '')
 
-  if path:sub(1, 7) == 'file://' then
-    local ok, filename = pcall(vim.uri_to_fname, path)
+    if path:sub(1, 7) == 'file://' then
+        local ok, filename = pcall(vim.uri_to_fname, path)
 
-    if ok and type(filename) == 'string' and filename ~= '' then
-      return fs.normalize(filename)
+        if ok and type(filename) == 'string' and filename ~= '' then
+            return fs.normalize(filename)
+        end
     end
-  end
 
-  if fs.is_absolute(path) then
-    return fs.normalize(path)
-  end
+    if is_absolute(path) then
+        return fs.normalize(path)
+    end
 
-  return fs.normalize(fs.joinpath(root, path))
+    return fs.normalize(fs.joinpath(root, path))
 end
 
 ---@param candidate string
@@ -95,114 +101,114 @@ end
 ---@param root string
 ---@return boolean
 local function belongs_to_buffer(candidate, filename, root)
-  assert(candidate ~= '')
-  assert(filename ~= '')
-  assert(root ~= '')
+    assert(candidate ~= '')
+    assert(filename ~= '')
+    assert(root ~= '')
 
-  return normalize_path(candidate, root) == filename
+    return normalize_path(candidate, root) == filename
 end
 
 ---@param value string
 ---@return string
 local function strip_reason(value)
-  assert(type(value) == 'string')
+    assert(type(value) == 'string')
 
-  local replacement = value:match('^(.-)%s%s+|%s+')
+    local replacement = value:match('^(.-)%s%s+|%s+')
 
-  if replacement ~= nil then
-    return trim(replacement)
-  end
+    if replacement ~= nil then
+        return trim(replacement)
+    end
 
-  return trim(value)
+    return trim(value)
 end
 
 ---@param value string
 ---@return string?
 local function extract_reason(value)
-  assert(type(value) == 'string')
+    assert(type(value) == 'string')
 
-  local reason = value:match('%s%s+|%s+(.+)%s*$')
+    local reason = value:match('%s%s+|%s+(.+)%s*$')
 
-  if reason == nil then
-    return nil
-  end
+    if reason == nil then
+        return nil
+    end
 
-  reason = normalize_message(reason)
+    reason = normalize_message(reason)
 
-  if reason == '' then
-    return nil
-  end
+    if reason == '' then
+        return nil
+    end
 
-  return reason
+    return reason
 end
 
 ---@param line string
 ---@return CodespellParsedDiagnostic?
 local function parse_line(line)
-  assert(type(line) == 'string')
+    assert(type(line) == 'string')
 
-  if line == '' or #line > LINE_LENGTH_MAX then
-    return nil
-  end
+    if line == '' or #line > LINE_LENGTH_MAX then
+        return nil
+    end
 
-  local filename, line_number, wrong, replacement = line:match('^(.+):(%d+):%s+(.+)%s+==>%s+(.*)$')
+    local filename, line_number, wrong, replacement = line:match('^(.+):(%d+):%s+(.+)%s+==>%s+(.*)$')
 
-  if filename == nil or line_number == nil or wrong == nil or replacement == nil then
-    return nil
-  end
+    if filename == nil or line_number == nil or wrong == nil or replacement == nil then
+        return nil
+    end
 
-  local parsed_line = tonumber(line_number)
+    local parsed_line = tonumber(line_number)
 
-  if parsed_line == nil then
-    return nil
-  end
+    if parsed_line == nil then
+        return nil
+    end
 
-  parsed_line = math.floor(parsed_line)
+    parsed_line = math.floor(parsed_line)
 
-  if parsed_line < 1 then
-    return nil
-  end
+    if parsed_line < 1 then
+        return nil
+    end
 
-  wrong = trim(wrong)
+    wrong = trim(wrong)
 
-  replacement = normalize_message(replacement)
+    replacement = normalize_message(replacement)
 
-  if wrong == '' or replacement == '' then
-    return nil
-  end
+    if wrong == '' or replacement == '' then
+        return nil
+    end
 
-  return {
-    filename = filename,
-    line = parsed_line,
-    wrong = wrong,
-    replacement = strip_reason(replacement),
-    reason = extract_reason(replacement),
-  }
+    return {
+        filename = filename,
+        line = parsed_line,
+        wrong = wrong,
+        replacement = strip_reason(replacement),
+        reason = extract_reason(replacement),
+    }
 end
 
 ---@param bufnr integer
 ---@param lnum integer
 ---@return string?
 local function buffer_line(bufnr, lnum)
-  if bufnr < 1 or not api.nvim_buf_is_valid(bufnr) then
-    return nil
-  end
+    if bufnr < 1 or not api.nvim_buf_is_valid(bufnr) then
+        return nil
+    end
 
-  local line_count = api.nvim_buf_line_count(bufnr)
+    local line_count = api.nvim_buf_line_count(bufnr)
 
-  if lnum < 0 or lnum >= line_count then
-    return nil
-  end
+    if lnum < 0 or lnum >= line_count then
+        return nil
+    end
 
-  local lines = api.nvim_buf_get_lines(bufnr, lnum, lnum + 1, false)
+    local lines = api.nvim_buf_get_lines(bufnr, lnum, lnum + 1, false)
 
-  local line = lines[1]
+    local line = lines[1]
 
-  if type(line) ~= 'string' then
-    return nil
-  end
+    if type(line) ~= 'string' then
+        return nil
+    end
 
-  return line
+    return line
 end
 
 ---@param bufnr integer
@@ -211,32 +217,32 @@ end
 ---@param state CodespellPositionState
 ---@return integer
 local function locate_word(bufnr, lnum, wrong, state)
-  assert(lnum >= 0)
-  assert(wrong ~= '')
+    assert(lnum >= 0)
+    assert(wrong ~= '')
 
-  local text = buffer_line(bufnr, lnum)
+    local text = buffer_line(bufnr, lnum)
 
-  if text == nil then
-    return 0
-  end
+    if text == nil then
+        return 0
+    end
 
-  local key = tostring(lnum) .. '\0' .. wrong
+    local key = tostring(lnum) .. '\0' .. wrong
 
-  local start = state[key] or 1
+    local start = state[key] or 1
 
-  local first, last = text:find(wrong, start, true)
+    local first, last = text:find(wrong, start, true)
 
-  if first == nil then
-    first, last = text:find(wrong, 1, true)
-  end
+    if first == nil then
+        first, last = text:find(wrong, 1, true)
+    end
 
-  if first == nil or last == nil then
-    return 0
-  end
+    if first == nil or last == nil then
+        return 0
+    end
 
-  state[key] = last + 1
+    state[key] = last + 1
 
-  return first - 1
+    return first - 1
 end
 
 ---@param entry CodespellParsedDiagnostic
@@ -244,153 +250,153 @@ end
 ---@param filename string
 ---@param root string
 ---@param positions CodespellPositionState
----@return vim.Diagnostic?
+---@return vim.Diagnostic.Set?
 local function diagnostic_from_entry(entry, context, filename, root, positions)
-  if not belongs_to_buffer(entry.filename, filename, root) then
-    return nil
-  end
+    if not belongs_to_buffer(entry.filename, filename, root) then
+        return nil
+    end
 
-  local lnum = max(entry.line - 1, 0)
+    local lnum = max(entry.line - 1, 0)
 
-  local col = locate_word(context.bufnr, lnum, entry.wrong, positions)
+    local col = locate_word(context.bufnr, lnum, entry.wrong, positions)
 
-  local end_col = col + #entry.wrong
+    local end_col = col + #entry.wrong
 
-  if end_col <= col then
-    end_col = col + 1
-  end
+    if end_col <= col then
+        end_col = col + 1
+    end
 
-  local message = ('Possible misspelling: %s → %s'):format(entry.wrong, entry.replacement)
+    local message = ('Possible misspelling: %s → %s'):format(entry.wrong, entry.replacement)
 
-  if entry.reason ~= nil then
-    message = message .. ' (' .. entry.reason .. ')'
-  end
+    if entry.reason ~= nil then
+        message = message .. ' (' .. entry.reason .. ')'
+    end
 
-  message = normalize_message(message)
+    message = normalize_message(message)
 
-  return {
-    lnum = lnum,
-    end_lnum = lnum,
+    return {
+        lnum = lnum,
+        end_lnum = lnum,
 
-    col = col,
-    end_col = end_col,
+        col = col,
+        end_col = end_col,
 
-    message = message,
+        message = message,
 
-    severity = WARN,
+        severity = WARN,
 
-    source = SOURCE,
-    code = CODE,
+        source = SOURCE,
+        code = CODE,
 
-    user_data = {
-      wrong = entry.wrong,
-      replacement = entry.replacement,
-      reason = entry.reason,
-    },
-  }
+        user_data = {
+            wrong = entry.wrong,
+            replacement = entry.replacement,
+            reason = entry.reason,
+        },
+    }
 end
 
 ---@param output string
 ---@param context LintContext|integer
 ---@return vim.Diagnostic.Set[]
 local function parse(output, context)
-  if output == '' then
-    return {}
-  end
-
-  assert(type(context) == 'table', 'codespell parser requires a LintContext')
-
-  ---@cast context LintContext
-
-  assert(context.filename ~= '')
-  assert(context.root ~= '')
-
-  assert(#output <= OUTPUT_LENGTH_MAX, 'codespell output exceeded maximum size')
-
-  local filename = fs.normalize(context.filename)
-
-  local root = fs.normalize(context.root)
-
-  ---@type vim.Diagnostic.Set[]
-  local diagnostics = {}
-
-  ---@type CodespellPositionState
-  local positions = {}
-
-  for line in output:gmatch('[^\r\n]+') do
-    if #diagnostics >= DIAGNOSTICS_MAX then
-      break
+    if output == '' then
+        return {}
     end
 
-    local raw = parse_line(line)
+    assert(type(context) == 'table', 'codespell parser requires a LintContext')
 
-    if raw ~= nil then
-      local entry = diagnostic_from_entry(raw, context, filename, root, positions)
+    ---@cast context LintContext
 
-      if entry ~= nil then
-        diagnostics[#diagnostics + 1] = entry
-      end
+    assert(context.filename ~= '')
+    assert(context.root ~= '')
+
+    assert(#output <= OUTPUT_LENGTH_MAX, 'codespell output exceeded maximum size')
+
+    local filename = fs.normalize(context.filename)
+
+    local root = fs.normalize(context.root)
+
+    ---@type vim.Diagnostic.Set[]
+    local diagnostics = {}
+
+    ---@type CodespellPositionState
+    local positions = {}
+
+    for line in output:gmatch('[^\r\n]+') do
+        if #diagnostics >= DIAGNOSTICS_MAX then
+            break
+        end
+
+        local raw = parse_line(line)
+
+        if raw ~= nil then
+            local entry = diagnostic_from_entry(raw, context, filename, root, positions)
+
+            if entry ~= nil then
+                diagnostics[#diagnostics + 1] = entry
+            end
+        end
     end
-  end
 
-  assert(#diagnostics <= DIAGNOSTICS_MAX)
+    assert(#diagnostics <= DIAGNOSTICS_MAX)
 
-  return diagnostics
+    return diagnostics
 end
 
 ---@param context LintContext
 ---@return string[]
 local function args(context)
-  assert(context.filename ~= '')
-  assert(context.root ~= '')
+    assert(context.filename ~= '')
+    assert(context.root ~= '')
 
-  return {
-    '--disable-colors',
+    return {
+        '--disable-colors',
 
-    '--quiet-level',
-    '35',
+        '--quiet-level',
+        '35',
 
-    '--check-hidden',
-    context.filename,
-  }
+        '--check-hidden',
+        context.filename,
+    }
 end
 
 ---@param context LintContext
 ---@return string
 local function cwd(context)
-  assert(context.root ~= '')
+    assert(context.root ~= '')
 
-  return fs.normalize(context.root)
+    return fs.normalize(context.root)
 end
 
 return ---@type Linter
 {
-  automatic = false,
+    automatic = false,
 
-  cmd = 'codespell',
+    cmd = 'codespell',
 
-  args = args,
+    args = args,
 
-  append_fname = false,
+    append_fname = false,
 
-  cwd = cwd,
+    cwd = cwd,
 
-  ignore_exitcode = true,
+    ignore_exitcode = true,
 
-  parser = parse,
+    parser = parse,
 
-  root_markers = {
-    '.codespellrc',
+    root_markers = {
+        '.codespellrc',
 
-    'pyproject.toml',
-    'setup.cfg',
+        'pyproject.toml',
+        'setup.cfg',
 
-    '.git',
-  },
+        '.git',
+    },
 
-  stdin = false,
+    stdin = false,
 
-  stream = 'stdout',
+    stream = 'stdout',
 
-  timeout = 30000,
+    timeout = 30000,
 }

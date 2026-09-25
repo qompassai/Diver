@@ -42,35 +42,35 @@ local SOURCE = 'trivy'
 
 ---@type table<string, integer>
 local SEVERITIES = {
-  CRITICAL = ERROR,
-  HIGH = ERROR,
-  LOW = INFO,
-  MEDIUM = WARN,
-  UNKNOWN = WARN,
+    CRITICAL = ERROR,
+    HIGH = ERROR,
+    LOW = INFO,
+    MEDIUM = WARN,
+    UNKNOWN = WARN,
 }
 
 ---@type string[]
 local CONFIG_CANDIDATES = {
-  'trivy.yaml',
-  'trivy.yml',
-  '.trivy.yaml',
-  '.trivy.yml',
-  'config/trivy.yaml',
-  'config/trivy.yml',
-  '.config/trivy.yaml',
-  '.config/trivy.yml',
+    'trivy.yaml',
+    'trivy.yml',
+    '.trivy.yaml',
+    '.trivy.yml',
+    'config/trivy.yaml',
+    'config/trivy.yml',
+    '.config/trivy.yaml',
+    '.config/trivy.yml',
 }
 
 ---@type string[]
 local SECRET_CONFIG_CANDIDATES = {
-  'trivy-secret.yaml',
-  'trivy-secret.yml',
-  '.trivy-secret.yaml',
-  '.trivy-secret.yml',
-  'config/trivy-secret.yaml',
-  'config/trivy-secret.yml',
-  '.config/trivy-secret.yaml',
-  '.config/trivy-secret.yml',
+    'trivy-secret.yaml',
+    'trivy-secret.yml',
+    '.trivy-secret.yaml',
+    '.trivy-secret.yml',
+    'config/trivy-secret.yaml',
+    'config/trivy-secret.yml',
+    '.config/trivy-secret.yaml',
+    '.config/trivy-secret.yml',
 }
 
 ---@class TrivyPosition
@@ -127,87 +127,87 @@ local SECRET_CONFIG_CANDIDATES = {
 ---@param fallback integer
 ---@return integer
 local function integer(value, fallback)
-  assert(fallback >= 0, 'fallback must be non-negative')
+    assert(fallback >= 0, 'fallback must be non-negative')
 
-  local parsed = tonumber(value)
+    local parsed = tonumber(value)
 
-  if parsed == nil then
-    return fallback
-  end
+    if parsed == nil then
+        return fallback
+    end
 
-  return floor(parsed)
+    return floor(parsed)
 end
 
 ---@param path string
 ---@return boolean
 local function exists(path)
-  return uv.fs_stat(path) ~= nil
+    return uv.fs_stat(path) ~= nil
 end
 
 ---@param value string
 ---@return string
 local function trim(value)
-  assert(type(value) == 'string', 'value must be a string')
+    assert(type(value) == 'string', 'value must be a string')
 
-  return (value:gsub('^%s*(.-)%s*$', '%1'))
+    return (value:gsub('^%s*(.-)%s*$', '%1'))
 end
 
 ---@param value string
 ---@return string
 local function normalize_message(value)
-  assert(type(value) == 'string', 'value must be a string')
+    assert(type(value) == 'string', 'value must be a string')
 
-  value = value:gsub('\r\n', '\n')
+    value = value:gsub('\r\n', '\n')
 
-  value = value:gsub('\r', '\n')
+    value = value:gsub('\r', '\n')
 
-  value = trim(value)
+    value = trim(value)
 
-  if #value > MESSAGE_LENGTH_MAX then
-    value = value:sub(1, MESSAGE_LENGTH_MAX) .. '\n[message truncated]'
-  end
+    if #value > MESSAGE_LENGTH_MAX then
+        value = value:sub(1, MESSAGE_LENGTH_MAX) .. '\n[message truncated]'
+    end
 
-  return value
+    return value
 end
 
 ---@param root string
 ---@param candidates string[]
 ---@return string?
 local function find_candidate(root, candidates)
-  assert(root ~= '', 'root must not be empty')
+    assert(root ~= '', 'root must not be empty')
 
-  for index = 1, #candidates do
-    local candidate = fs.joinpath(root, candidates[index])
+    for index = 1, #candidates do
+        local candidate = fs.joinpath(root, candidates[index])
 
-    if exists(candidate) then
-      return fs.normalize(candidate)
+        if exists(candidate) then
+            return fs.normalize(candidate)
+        end
     end
-  end
 
-  return nil
+    return nil
 end
 
 ---@param path string
 ---@param root string
 ---@return string
 local function normalize_path(path, root)
-  assert(path ~= '', 'path must not be empty')
+    assert(path ~= '', 'path must not be empty')
 
-  assert(root ~= '', 'root must not be empty')
+    assert(root ~= '', 'root must not be empty')
 
-  if path:sub(1, 7) == 'file://' then
-    local ok, filename = pcall(vim.uri_to_fname, path)
+    if path:sub(1, 7) == 'file://' then
+        local ok, filename = pcall(vim.uri_to_fname, path)
 
-    if ok and type(filename) == 'string' and filename ~= '' then
-      return fs.normalize(filename)
+        if ok and type(filename) == 'string' and filename ~= '' then
+            return fs.normalize(filename)
+        end
     end
-  end
 
-  if path:sub(1, 1) == '/' then
-    return fs.normalize(path)
-  end
+    if path:sub(1, 1) == '/' then
+        return fs.normalize(path)
+    end
 
-  return fs.normalize(fs.joinpath(root, path))
+    return fs.normalize(fs.joinpath(root, path))
 end
 
 ---@param candidate string
@@ -215,146 +215,146 @@ end
 ---@param root string
 ---@return boolean
 local function belongs_to_buffer(candidate, filename, root)
-  if candidate == '' or filename == '' or root == '' then
-    return false
-  end
+    if candidate == '' or filename == '' or root == '' then
+        return false
+    end
 
-  return normalize_path(candidate, root) == normalize_path(filename, root)
+    return normalize_path(candidate, root) == normalize_path(filename, root)
 end
 
 ---@param value string|nil
 ---@return integer
 local function severity(value)
-  if type(value) ~= 'string' then
-    return WARN
-  end
+    if type(value) ~= 'string' then
+        return WARN
+    end
 
-  return SEVERITIES[value:upper()] or WARN
+    return SEVERITIES[value:upper()] or WARN
 end
 
 ---@param value unknown
 ---@param fallback string
 ---@return string
 local function string_or(value, fallback)
-  if type(value) ~= 'string' or value == '' then
-    return fallback
-  end
+    if type(value) ~= 'string' or value == '' then
+        return fallback
+    end
 
-  return value
+    return value
 end
 
 ---@param entry TrivyMisconfiguration
 ---@param bufnr integer
 ---@return vim.Diagnostic
 local function diagnostic_from_misconfiguration(entry, bufnr)
-  local cause = entry.CauseMetadata
+    local cause = entry.CauseMetadata
 
-  local start_line = 1
-  local end_line = 1
+    local start_line = 1
+    local end_line = 1
 
-  if type(cause) == 'table' then
-    start_line = max(integer(cause.StartLine, 1), 1)
+    if type(cause) == 'table' then
+        start_line = max(integer(cause.StartLine, 1), 1)
 
-    end_line = max(integer(cause.EndLine, start_line), start_line)
-  end
+        end_line = max(integer(cause.EndLine, start_line), start_line)
+    end
 
-  local lnum = start_line - 1
+    local lnum = start_line - 1
 
-  local end_lnum = end_line - 1
+    local end_lnum = end_line - 1
 
-  local title = string_or(entry.Title, 'Trivy misconfiguration')
+    local title = string_or(entry.Title, 'Trivy misconfiguration')
 
-  local detail = string_or(entry.Message, string_or(entry.Description, title))
+    local detail = string_or(entry.Message, string_or(entry.Description, title))
 
-  local message
+    local message
 
-  if detail == title then
-    message = title
-  else
-    message = title .. ': ' .. detail
-  end
+    if detail == title then
+        message = title
+    else
+        message = title .. ': ' .. detail
+    end
 
-  message = normalize_message(message)
+    message = normalize_message(message)
 
-  local code = entry.ID
+    local code = entry.ID
 
-  if type(code) ~= 'string' or code == '' then
-    code = entry.AVDID
-  end
+    if type(code) ~= 'string' or code == '' then
+        code = entry.AVDID
+    end
 
-  if type(code) ~= 'string' or code == '' then
-    code = 'misconfiguration'
-  end
+    if type(code) ~= 'string' or code == '' then
+        code = 'misconfiguration'
+    end
 
-  return {
-    bufnr = bufnr,
+    return {
+        bufnr = bufnr,
 
-    lnum = lnum,
-    end_lnum = end_lnum,
+        lnum = lnum,
+        end_lnum = end_lnum,
 
-    col = 0,
-    end_col = 1,
+        col = 0,
+        end_col = 1,
 
-    message = message,
+        message = message,
 
-    severity = severity(entry.Severity),
+        severity = severity(entry.Severity),
 
-    source = SOURCE,
-    code = code,
+        source = SOURCE,
+        code = code,
 
-    user_data = {
-      category = 'misconfiguration',
-      namespace = entry.Namespace,
-      primary_url = entry.PrimaryURL,
-      resolution = entry.Resolution,
-      status = entry.Status,
-      trivy_type = entry.Type,
-    },
-  }
+        user_data = {
+            category = 'misconfiguration',
+            namespace = entry.Namespace,
+            primary_url = entry.PrimaryURL,
+            resolution = entry.Resolution,
+            status = entry.Status,
+            trivy_type = entry.Type,
+        },
+    }
 end
 
 ---@param entry TrivySecret
 ---@param bufnr integer
 ---@return vim.Diagnostic
 local function diagnostic_from_secret(entry, bufnr)
-  local start_line = max(integer(entry.StartLine, 1), 1)
+    local start_line = max(integer(entry.StartLine, 1), 1)
 
-  local end_line = max(integer(entry.EndLine, start_line), start_line)
+    local end_line = max(integer(entry.EndLine, start_line), start_line)
 
-  local lnum = start_line - 1
+    local lnum = start_line - 1
 
-  local end_lnum = end_line - 1
+    local end_lnum = end_line - 1
 
-  local title = string_or(entry.Title, 'Potential secret detected')
-  local message = normalize_message(title)
+    local title = string_or(entry.Title, 'Potential secret detected')
+    local message = normalize_message(title)
 
-  local code = entry.RuleID
+    local code = entry.RuleID
 
-  if type(code) ~= 'string' or code == '' then
-    code = 'secret'
-  end
+    if type(code) ~= 'string' or code == '' then
+        code = 'secret'
+    end
 
-  return {
-    bufnr = bufnr,
+    return {
+        bufnr = bufnr,
 
-    lnum = lnum,
-    end_lnum = end_lnum,
+        lnum = lnum,
+        end_lnum = end_lnum,
 
-    col = 0,
-    end_col = 1,
+        col = 0,
+        end_col = 1,
 
-    message = message,
+        message = message,
 
-    severity = severity(entry.Severity),
+        severity = severity(entry.Severity),
 
-    source = SOURCE,
-    code = code,
+        source = SOURCE,
+        code = code,
 
-    user_data = {
-      category = 'secret',
-      secret_category = entry.Category,
-    },
-  }
+        user_data = {
+            category = 'secret',
+            secret_category = entry.Category,
+        },
+    }
 end
 
 ---@param result TrivyResult
@@ -363,201 +363,201 @@ end
 ---@param root string
 ---@param diagnostics vim.Diagnostic.Set[]
 local function parse_result(result, context, filename, root, diagnostics)
-  local target = result.Target
+    local target = result.Target
 
-  if type(target) == 'string' and target ~= '' and not belongs_to_buffer(target, filename, root) then
-    return
-  end
+    if type(target) == 'string' and target ~= '' and not belongs_to_buffer(target, filename, root) then
+        return
+    end
 
-  local misconfigurations = result.Misconfigurations
+    local misconfigurations = result.Misconfigurations
 
-  if type(misconfigurations) == 'table' then
+    if type(misconfigurations) == 'table' then
+        local available = DIAGNOSTICS_MAX - #diagnostics
+
+        local count = min(#misconfigurations, available)
+
+        for index = 1, count do
+            local raw = misconfigurations[index]
+
+            if type(raw) == 'table' then
+                ---@cast raw TrivyMisconfiguration
+
+                diagnostics[#diagnostics + 1] = diagnostic_from_misconfiguration(raw, context.bufnr)
+            end
+        end
+    end
+
+    if #diagnostics >= DIAGNOSTICS_MAX then
+        return
+    end
+
+    local secrets = result.Secrets
+
+    if type(secrets) ~= 'table' then
+        return
+    end
+
     local available = DIAGNOSTICS_MAX - #diagnostics
 
-    local count = min(#misconfigurations, available)
+    local count = min(#secrets, available)
 
     for index = 1, count do
-      local raw = misconfigurations[index]
+        local raw = secrets[index]
 
-      if type(raw) == 'table' then
-        ---@cast raw TrivyMisconfiguration
+        if type(raw) == 'table' then
+            ---@cast raw TrivySecret
 
-        diagnostics[#diagnostics + 1] = diagnostic_from_misconfiguration(raw, context.bufnr)
-      end
+            diagnostics[#diagnostics + 1] = diagnostic_from_secret(raw, context.bufnr)
+        end
     end
-  end
-
-  if #diagnostics >= DIAGNOSTICS_MAX then
-    return
-  end
-
-  local secrets = result.Secrets
-
-  if type(secrets) ~= 'table' then
-    return
-  end
-
-  local available = DIAGNOSTICS_MAX - #diagnostics
-
-  local count = min(#secrets, available)
-
-  for index = 1, count do
-    local raw = secrets[index]
-
-    if type(raw) == 'table' then
-      ---@cast raw TrivySecret
-
-      diagnostics[#diagnostics + 1] = diagnostic_from_secret(raw, context.bufnr)
-    end
-  end
 end
 
 ---@param output string
 ---@param context LintContext|integer
 ---@return vim.Diagnostic.Set[]
 local function parse(output, context)
-  if output == '' then
-    return {}
-  end
-
-  assert(type(context) == 'table', 'trivy parser requires a LintContext')
-
-  ---@cast context LintContext
-
-  assert(type(context.bufnr) == 'number' and context.bufnr >= 0, 'context.bufnr must be a valid buffer number')
-
-  assert(type(context.filename) == 'string' and context.filename ~= '', 'context.filename must be a non-empty string')
-
-  assert(type(context.root) == 'string' and context.root ~= '', 'context.root must be a non-empty string')
-
-  assert(#output <= OUTPUT_LENGTH_MAX, 'trivy output exceeded maximum size')
-
-  local ok, decoded = pcall(json.decode, output)
-
-  if not ok or type(decoded) ~= 'table' then
-    return {}
-  end
-
-  ---@cast decoded TrivyReport
-
-  local results = decoded.Results
-
-  if type(results) ~= 'table' then
-    return {}
-  end
-
-  local filename = normalize_path(context.filename, context.root)
-
-  local root = fs.normalize(context.root)
-
-  ---@type vim.Diagnostic.Set[]
-  local diagnostics = {}
-
-  for index = 1, #results do
-    if #diagnostics >= DIAGNOSTICS_MAX then
-      break
+    if output == '' then
+        return {}
     end
 
-    local raw = results[index]
+    assert(type(context) == 'table', 'trivy parser requires a LintContext')
 
-    if type(raw) == 'table' then
-      ---@cast raw TrivyResult
+    ---@cast context LintContext
 
-      parse_result(raw, context, filename, root, diagnostics)
+    assert(type(context.bufnr) == 'number' and context.bufnr >= 0, 'context.bufnr must be a valid buffer number')
+
+    assert(type(context.filename) == 'string' and context.filename ~= '', 'context.filename must be a non-empty string')
+
+    assert(type(context.root) == 'string' and context.root ~= '', 'context.root must be a non-empty string')
+
+    assert(#output <= OUTPUT_LENGTH_MAX, 'trivy output exceeded maximum size')
+
+    local ok, decoded = pcall(json.decode, output)
+
+    if not ok or type(decoded) ~= 'table' then
+        return {}
     end
-  end
 
-  assert(#diagnostics <= DIAGNOSTICS_MAX, 'diagnostic limit exceeded')
+    ---@cast decoded TrivyReport
 
-  return diagnostics
+    local results = decoded.Results
+
+    if type(results) ~= 'table' then
+        return {}
+    end
+
+    local filename = normalize_path(context.filename, context.root)
+
+    local root = fs.normalize(context.root)
+
+    ---@type vim.Diagnostic.Set[]
+    local diagnostics = {}
+
+    for index = 1, #results do
+        if #diagnostics >= DIAGNOSTICS_MAX then
+            break
+        end
+
+        local raw = results[index]
+
+        if type(raw) == 'table' then
+            ---@cast raw TrivyResult
+
+            parse_result(raw, context, filename, root, diagnostics)
+        end
+    end
+
+    assert(#diagnostics <= DIAGNOSTICS_MAX, 'diagnostic limit exceeded')
+
+    return diagnostics
 end
 
 ---@param context LintContext
 ---@return string[]
 local function args(context)
-  assert(type(context.filename) == 'string' and context.filename ~= '', 'context.filename must be a non-empty string')
+    assert(type(context.filename) == 'string' and context.filename ~= '', 'context.filename must be a non-empty string')
 
-  assert(type(context.root) == 'string' and context.root ~= '', 'context.root must be a non-empty string')
+    assert(type(context.root) == 'string' and context.root ~= '', 'context.root must be a non-empty string')
 
-  local argv = {
-    'fs',
-    '--exit-code',
-    '0',
-    '--format',
-    'json',
-    '--quiet',
-    '--scanners',
-    'misconfig,secret',
-    '--skip-version-check',
-  }
+    local argv = {
+        'fs',
+        '--exit-code',
+        '0',
+        '--format',
+        'json',
+        '--quiet',
+        '--scanners',
+        'misconfig,secret',
+        '--skip-version-check',
+    }
 
-  local config = find_candidate(context.root, CONFIG_CANDIDATES)
+    local config = find_candidate(context.root, CONFIG_CANDIDATES)
 
-  if config ~= nil then
-    argv[#argv + 1] = '--config'
+    if config ~= nil then
+        argv[#argv + 1] = '--config'
 
-    argv[#argv + 1] = config
-  end
+        argv[#argv + 1] = config
+    end
 
-  local secret_config = find_candidate(context.root, SECRET_CONFIG_CANDIDATES)
+    local secret_config = find_candidate(context.root, SECRET_CONFIG_CANDIDATES)
 
-  if secret_config ~= nil then
-    argv[#argv + 1] = '--secret-config'
+    if secret_config ~= nil then
+        argv[#argv + 1] = '--secret-config'
 
-    argv[#argv + 1] = secret_config
-  end
-  argv[#argv + 1] = context.filename
+        argv[#argv + 1] = secret_config
+    end
+    argv[#argv + 1] = context.filename
 
-  return argv
+    return argv
 end
 
 ---@param context LintContext
 ---@return string
 local function cwd(context)
-  assert(type(context.root) == 'string' and context.root ~= '', 'context.root must be a non-empty string')
+    assert(type(context.root) == 'string' and context.root ~= '', 'context.root must be a non-empty string')
 
-  return fs.normalize(context.root)
+    return fs.normalize(context.root)
 end
 
 return ---@type Linter
 {
-  automatic = false,
+    automatic = false,
 
-  cmd = 'trivy',
+    cmd = 'trivy',
 
-  args = args,
+    args = args,
 
-  append_fname = false,
+    append_fname = false,
 
-  cwd = cwd,
+    cwd = cwd,
 
-  ignore_exitcode = true,
+    ignore_exitcode = true,
 
-  parser = parse,
+    parser = parse,
 
-  root_markers = {
-    'trivy.yaml',
-    'trivy.yml',
-    '.trivy.yaml',
-    '.trivy.yml',
-    'trivy-secret.yaml',
-    'trivy-secret.yml',
-    '.trivyignore',
-    '.trivyignore.yaml',
-    'Dockerfile',
-    'compose.yaml',
-    'compose.yml',
-    'docker-compose.yaml',
-    'docker-compose.yml',
-    'Chart.yaml',
-    'main.tf',
-    'terragrunt.hcl',
-    '.git',
-  },
+    root_markers = {
+        'trivy.yaml',
+        'trivy.yml',
+        '.trivy.yaml',
+        '.trivy.yml',
+        'trivy-secret.yaml',
+        'trivy-secret.yml',
+        '.trivyignore',
+        '.trivyignore.yaml',
+        'Dockerfile',
+        'compose.yaml',
+        'compose.yml',
+        'docker-compose.yaml',
+        'docker-compose.yml',
+        'Chart.yaml',
+        'main.tf',
+        'terragrunt.hcl',
+        '.git',
+    },
 
-  stdin = false,
+    stdin = false,
 
-  stream = 'stdout',
+    stream = 'stdout',
 
-  timeout = 120000,
+    timeout = 120000,
 }

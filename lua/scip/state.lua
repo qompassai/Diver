@@ -28,10 +28,10 @@ local M = {}
 
 ---@type ScipState
 M.current = {
-  indexer = nil,
-  job = nil,
-  root = nil,
-  started_at = 0,
+    indexer = nil,
+    job = nil,
+    root = nil,
+    started_at = 0,
 }
 
 --- Return whether a SCIP indexer is currently running.
@@ -40,7 +40,7 @@ M.current = {
 --- indexing operation is in progress.
 ---@return boolean
 function M.running()
-  return M.current.job ~= nil
+    return M.current.job ~= nil
 end
 
 --- Return the elapsed runtime of the active SCIP indexer in seconds.
@@ -48,11 +48,11 @@ end
 --- If no valid start timestamp has been recorded, zero is returned.
 ---@return number
 function M.elapsed()
-  if M.current.started_at == 0 then
-    return 0
-  end
+    if M.current.started_at == 0 then
+        return 0
+    end
 
-  return (uv.hrtime() - M.current.started_at) / 1e9
+    return (uv.hrtime() - M.current.started_at) / 1e9
 end
 
 --- Record a newly started SCIP indexing process.
@@ -66,10 +66,10 @@ end
 ---@param started_at? number Optional vim.uv.hrtime() timestamp.
 ---@return nil
 function M.start(job, indexer, root, started_at)
-  M.current.job = job
-  M.current.indexer = indexer
-  M.current.root = vim.fs.normalize(root)
-  M.current.started_at = started_at or uv.hrtime()
+    M.current.job = job
+    M.current.indexer = indexer
+    M.current.root = vim.fs.normalize(root)
+    M.current.started_at = started_at or uv.hrtime()
 end
 
 --- Clear all active SCIP process state.
@@ -78,10 +78,10 @@ end
 --- the process should also be stopped.
 ---@return nil
 function M.clear()
-  M.current.indexer = nil
-  M.current.job = nil
-  M.current.root = nil
-  M.current.started_at = 0
+    M.current.indexer = nil
+    M.current.job = nil
+    M.current.root = nil
+    M.current.started_at = 0
 end
 
 --- Cancel the active SCIP indexing process.
@@ -90,40 +90,40 @@ end
 --- shut down cleanly. State is cleared immediately after the signal is sent.
 ---@return boolean cancelled True when a process was active and signalled.
 function M.cancel()
-  local job = M.current.job
+    local job = M.current.job
 
-  if job == nil then
-    return false
-  end
+    if job == nil then
+        return false
+    end
 
-  job:kill(15)
-  M.clear()
+    job:kill(15)
+    M.clear()
 
-  return true
+    return true
 end
 
 --- Return the name of the currently active SCIP indexer.
 ---@return string?
 function M.indexer()
-  return M.current.indexer
+    return M.current.indexer
 end
 
 --- Return the active SCIP process object.
 ---@return vim.SystemObj?
 function M.job()
-  return M.current.job
+    return M.current.job
 end
 
 --- Return the project root currently being indexed.
 ---@return string?
 function M.root()
-  return M.current.root
+    return M.current.root
 end
 
 --- Return the recorded high-resolution start timestamp.
 ---@return number
 function M.started_at()
-  return M.current.started_at
+    return M.current.started_at
 end
 
 return M

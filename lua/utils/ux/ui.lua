@@ -29,16 +29,16 @@ M.disable_transparency = transparency.disable
 M.toggle_transparency = transparency.toggle
 M.setup_transparency = transparency.setup
 function M.setup(opts)
-  opts = opts or {}
+    opts = opts or {}
 
-  if opts.len_hints then
-    virtual_text.setup({
-      len_hints = opts.len_hints,
-    })
-  end
+    if opts.len_hints then
+        virtual_text.setup({
+            len_hints = opts.len_hints,
+        })
+    end
 
-  if opts.transparency then
-    transparency.setup(opts.transparency)
-  end
+    if opts.transparency then
+        transparency.setup(opts.transparency)
+    end
 end
 return M

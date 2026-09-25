@@ -69,213 +69,167 @@ local SOURCE = 'vsg'
 
 ---@type string[]
 local ROOT_MARKERS = {
-  'vsg.yaml',
-  'vsg.yml',
-  'vsg.json',
-  '.vsg.yaml',
-  '.vsg.yml',
-  '.vsg.json',
-  'vsg_config.yaml',
-  'vsg_config.yml',
-  'vsg_config.json',
-  'hdl-prj.json',
-  'vhdl_ls.toml',
-  'Makefile',
-  'CMakeLists.txt',
-  '.git',
+    'vsg.yaml',
+    'vsg.yml',
+    'vsg.json',
+    '.vsg.yaml',
+    '.vsg.yml',
+    '.vsg.json',
+    'vsg_config.yaml',
+    'vsg_config.yml',
+    'vsg_config.json',
+    'hdl-prj.json',
+    'vhdl_ls.toml',
+    'Makefile',
+    'CMakeLists.txt',
+    '.git',
 }
 
 ---@type string[]
 local CONFIG_NAMES = {
-  'vsg.yaml',
-  'vsg.yml',
-  'vsg.json',
-  '.vsg.yaml',
-  '.vsg.yml',
-  '.vsg.json',
-  'vsg_config.yaml',
-  'vsg_config.yml',
-  'vsg_config.json',
+    'vsg.yaml',
+    'vsg.yml',
+    'vsg.json',
+    '.vsg.yaml',
+    '.vsg.yml',
+    '.vsg.json',
+    'vsg_config.yaml',
+    'vsg_config.yml',
+    'vsg_config.json',
 }
 
 ---@param value any
 ---@return string?
 local function string_value(value)
-  if type(value) ~= 'string' or value == '' then
-    return nil
-  end
+    if type(value) ~= 'string' or value == '' then
+        return nil
+    end
 
-  return value
+    return value
 end
 
 ---@param value string
 ---@return string
 local function compact(value)
-  return vim.trim(
-    value:gsub(
-      '%s+',
-      ' '
-    )
-  )
+    return vim.trim(value:gsub('%s+', ' '))
 end
 
 ---@param value string
 ---@param limit integer
 ---@return string
 local function truncate(value, limit)
-  if #value <= limit then
-    return value
-  end
+    if #value <= limit then
+        return value
+    end
 
-  if limit <= 3 then
-    return value:sub(
-      1,
-      limit
-    )
-  end
+    if limit <= 3 then
+        return value:sub(1, limit)
+    end
 
-  return value:sub(
-    1,
-    limit - 3
-  ) .. '...'
+    return value:sub(1, limit - 3) .. '...'
 end
 
 ---@param value any
 ---@return integer
 local function zero_based_line(value)
-  local number = tonumber(value)
+    local number = tonumber(value)
 
-  if number == nil then
-    return 0
-  end
+    if number == nil then
+        return 0
+    end
 
-  local line = math.floor(number)
+    local line = math.floor(number)
 
-  if line <= 1 then
-    return 0
-  end
+    if line <= 1 then
+        return 0
+    end
 
-  return line - 1
+    return line - 1
 end
 
 ---@param output string
 ---@return string
 local function strip_ansi(output)
-  return output:gsub(
-    '\27%[[%d;]*[mK]',
-    ''
-  )
+    local cleaned = output:gsub('\27%[[%d;]*[mK]', '')
+    return cleaned
 end
 
 ---@param path string
 ---@return boolean
 local function is_file(path)
-  local stat = vim.uv.fs_stat(path)
+    local stat = vim.uv.fs_stat(path)
 
-  return stat ~= nil
-    and stat.type == 'file'
+    return stat ~= nil and stat.type == 'file'
 end
 
 ---@param context LintContext
 ---@return string
 local function project_root(context)
-  local context_root = string_value(
-    context.root
-  )
+    local context_root = string_value(context.root)
 
-  if context_root ~= nil then
-    return fs.normalize(
-      context_root
-    )
-  end
-
-  local filename = string_value(
-    context.filename
-  )
-
-  if filename ~= nil then
-    local detected = fs.root(
-      filename,
-      ROOT_MARKERS
-    )
-
-    if
-      type(detected) == 'string'
-      and detected ~= ''
-    then
-      return fs.normalize(
-        detected
-      )
+    if context_root ~= nil then
+        return fs.normalize(context_root)
     end
 
-    local parent = fs.dirname(
-      filename
-    )
+    local filename = string_value(context.filename)
 
-    if
-      type(parent) == 'string'
-      and parent ~= ''
-    then
-      return fs.normalize(
-        parent
-      )
+    if filename ~= nil then
+        local detected = fs.root(filename, ROOT_MARKERS)
+
+        if type(detected) == 'string' and detected ~= '' then
+            return fs.normalize(detected)
+        end
+
+        local parent = fs.dirname(filename)
+
+        if type(parent) == 'string' and parent ~= '' then
+            return fs.normalize(parent)
+        end
     end
-  end
 
-  local cwd = string_value(
-    context.cwd
-  )
+    local cwd = string_value(context.cwd)
 
-  if cwd ~= nil then
-    return fs.normalize(
-      cwd
-    )
-  end
+    if cwd ~= nil then
+        return fs.normalize(cwd)
+    end
 
-  return fs.normalize(
-    vim.fn.getcwd()
-  )
+    return fs.normalize(vim.fn.getcwd())
 end
 
 ---@param context LintContext
 ---@return string?
 local function configuration(context)
-  local root = project_root(
-    context
-  )
+    local root = project_root(context)
 
-  for _, name in ipairs(CONFIG_NAMES) do
-    local candidate = fs.joinpath(
-      root,
-      name
-    )
+    for _, name in ipairs(CONFIG_NAMES) do
+        local candidate = fs.joinpath(root, name)
 
-    if is_file(candidate) then
-      return candidate
+        if is_file(candidate) then
+            return candidate
+        end
     end
-  end
 
-  return nil
+    return nil
 end
 
 ---@param level string?
 ---@return integer
 local function severity(level)
-  if level == nil then
+    if level == nil then
+        return diagnostic.severity.ERROR
+    end
+
+    local normalized = level:upper()
+
+    if normalized == 'ERROR' then
+        return diagnostic.severity.ERROR
+    end
+
+    if normalized == 'WARNING' then
+        return diagnostic.severity.WARN
+    end
+
     return diagnostic.severity.ERROR
-  end
-
-  local normalized = level:upper()
-
-  if normalized == 'ERROR' then
-    return diagnostic.severity.ERROR
-  end
-
-  if normalized == 'WARNING' then
-    return diagnostic.severity.WARN
-  end
-
-  return diagnostic.severity.ERROR
 end
 
 ---@class VsgFinding
@@ -288,459 +242,322 @@ end
 ---@param line string
 ---@return VsgFinding?
 local function parse_syntastic_line(line)
-  if
-    line == ''
-    or #line > MAX_LINE_BYTES
-  then
-    return nil
-  end
+    if line == '' or #line > MAX_LINE_BYTES then
+        return nil
+    end
 
-  --
-  -- Official VSG syntastic format:
-  --
-  --   <status>: <filename>(<line_number>)<rule> -- <solution>
-  --
-  -- Example:
-  --
-  --   ERROR: src/foo.vhd(38)entity_017 -- Move : -1 columns
-  --
-  local level
-  local path
-  local line_number
-  local rule
-  local message
+    --
+    -- Official VSG syntastic format:
+    --
+    --   <status>: <filename>(<line_number>)<rule> -- <solution>
+    --
+    -- Example:
+    --
+    --   ERROR: src/foo.vhd(38)entity_017 -- Move : -1 columns
+    --
+    local level
+    local path
+    local line_number
+    local rule
+    local message
 
-  level,
-    path,
-    line_number,
-    rule,
-    message =
-    line:match(
-      '^([A-Z]+):%s+(.+)%((%d+)%)'
-        .. '([%w_]+)%s+%-%-%s+(.+)$'
-    )
+    level, path, line_number, rule, message = line:match('^([A-Z]+):%s+(.+)%((%d+)%)' .. '([%w_]+)%s+%-%-%s+(.+)$')
 
-  if
-    level == nil
-    or path == nil
-    or line_number == nil
-    or rule == nil
-    or message == nil
-  then
-    return nil
-  end
+    if level == nil or path == nil or line_number == nil or rule == nil or message == nil then
+        return nil
+    end
 
-  return {
-    line = tonumber(line_number) or 1,
+    return {
+        line = math.floor(tonumber(line_number) or 1),
 
-    message = message,
+        message = message,
 
-    path = path,
+        path = path,
 
-    rule = rule,
+        rule = rule,
 
-    severity = level,
-  }
+        severity = level,
+    }
 end
 
 ---@param path string
 ---@param context LintContext
 ---@return boolean
 local function same_file(path, context)
-  local filename = string_value(
-    context.filename
-  )
+    local filename = string_value(context.filename)
 
-  if filename == nil then
-    return false
-  end
+    if filename == nil then
+        return false
+    end
 
-  local candidate = path
+    local candidate = path
 
-  if not fs.isabs(candidate) then
-    candidate = fs.joinpath(
-      project_root(context),
-      candidate
-    )
-  end
+    if vim.fn.isabsolutepath(candidate) ~= 1 then
+        candidate = fs.joinpath(project_root(context), candidate)
+    end
 
-  return fs.normalize(candidate)
-    == fs.normalize(filename)
+    return fs.normalize(candidate) == fs.normalize(filename)
 end
 
 ---@param finding VsgFinding
 ---@param context LintContext
 ---@return vim.Diagnostic
-local function finding_diagnostic(
-  finding,
-  context
-)
-  local lnum = zero_based_line(
-    finding.line
-  )
+local function finding_diagnostic(finding, context)
+    local lnum = zero_based_line(finding.line)
 
-  local message = compact(
-    finding.message
-  )
+    local message = compact(finding.message)
 
-  if not same_file(
-    finding.path,
-    context
-  ) then
-    message = string.format(
-      '%s: %s',
-      finding.path,
-      message
-    )
+    if not same_file(finding.path, context) then
+        message = string.format('%s: %s', finding.path, message)
 
-    lnum = 0
-  end
+        lnum = 0
+    end
 
-  return {
-    bufnr = context.bufnr,
+    return {
+        bufnr = context.bufnr,
 
-    code = finding.rule,
+        code = finding.rule,
 
-    col = 0,
+        col = 0,
 
-    end_col = 0,
+        end_col = 0,
 
-    end_lnum = lnum,
+        end_lnum = lnum,
 
-    lnum = lnum,
+        lnum = lnum,
 
-    message = truncate(
-      message,
-      MAX_MESSAGE_BYTES
-    ),
+        message = truncate(message, MAX_MESSAGE_BYTES),
 
-    severity = severity(
-      finding.severity
-    ),
+        severity = severity(finding.severity),
 
-    source = SOURCE,
+        source = SOURCE,
 
-    user_data = {
-      path = finding.path,
+        user_data = {
+            path = finding.path,
 
-      rule = finding.rule,
+            rule = finding.rule,
 
-      vsg_severity = finding.severity,
-    },
-  }
+            vsg_severity = finding.severity,
+        },
+    }
 end
 
 ---@param line string
 ---@return boolean
 local function operational_error(line)
-  local lower = line:lower()
+    local lower = line:lower()
 
-  return lower:find(
-    'deprecated',
-    1,
-    true
-  ) ~= nil
-    or lower:find(
-      'error',
-      1,
-      true
-    ) ~= nil
-    or lower:find(
-      'failed',
-      1,
-      true
-    ) ~= nil
-    or lower:find(
-      'invalid',
-      1,
-      true
-    ) ~= nil
-    or lower:find(
-      'cannot',
-      1,
-      true
-    ) ~= nil
-    or lower:find(
-      'configuration',
-      1,
-      true
-    ) ~= nil
-    or lower:find(
-      'traceback',
-      1,
-      true
-    ) ~= nil
+    return lower:find('deprecated', 1, true) ~= nil
+        or lower:find('error', 1, true) ~= nil
+        or lower:find('failed', 1, true) ~= nil
+        or lower:find('invalid', 1, true) ~= nil
+        or lower:find('cannot', 1, true) ~= nil
+        or lower:find('configuration', 1, true) ~= nil
+        or lower:find('traceback', 1, true) ~= nil
 end
 
 ---@param output string
 ---@return string?
 local function error_message(output)
-  local text = strip_ansi(
-    vim.trim(output)
-  )
+    local text = strip_ansi(vim.trim(output))
 
-  if text == '' then
-    return nil
-  end
-
-  for raw_line in text:gmatch(
-    '[^\r\n]+'
-  ) do
-    local line = compact(
-      raw_line
-    )
-
-    if operational_error(line) then
-      return truncate(
-        line,
-        MAX_MESSAGE_BYTES
-      )
+    if text == '' then
+        return nil
     end
-  end
 
-  return nil
+    for raw_line in text:gmatch('[^\r\n]+') do
+        local line = compact(raw_line)
+
+        if operational_error(line) then
+            return truncate(line, MAX_MESSAGE_BYTES)
+        end
+    end
+
+    return nil
 end
 
 ---@param output string
 ---@param context LintContext
 ---@return vim.Diagnostic[]
-local function parse_failure(
-  output,
-  context
-)
-  local message = error_message(
-    output
-  )
+local function parse_failure(output, context)
+    local message = error_message(output)
 
-  if message == nil then
-    return {}
-  end
+    if message == nil then
+        return {}
+    end
 
-  local line_number =
-    output:match(
-      '[Ll]ine%s+(%d+)'
-    )
-      or output:match(
-        '%((%d+)%)'
-      )
+    local line_number = output:match('[Ll]ine%s+(%d+)') or output:match('%((%d+)%)')
 
-  local lnum = zero_based_line(
-    line_number
-  )
+    local lnum = zero_based_line(line_number)
 
-  return {
-    {
-      bufnr = context.bufnr,
+    return {
+        {
+            bufnr = context.bufnr,
 
-      code = 'vsg-error',
+            code = 'vsg-error',
 
-      col = 0,
+            col = 0,
 
-      end_col = 0,
+            end_col = 0,
 
-      end_lnum = lnum,
+            end_lnum = lnum,
 
-      lnum = lnum,
+            lnum = lnum,
 
-      message = message,
+            message = message,
 
-      severity = diagnostic.severity.ERROR,
+            severity = diagnostic.severity.ERROR,
 
-      source = SOURCE,
-    },
-  }
+            source = SOURCE,
+        },
+    }
 end
 
 ---@param context LintContext
 ---@return vim.Diagnostic[]
 local function oversized_output(context)
-  return {
-    {
-      bufnr = context.bufnr,
+    return {
+        {
+            bufnr = context.bufnr,
 
-      code = 'output-limit',
+            code = 'output-limit',
 
-      col = 0,
+            col = 0,
 
-      end_col = 0,
+            end_col = 0,
 
-      end_lnum = 0,
+            end_lnum = 0,
 
-      lnum = 0,
+            lnum = 0,
 
-      message = string.format(
-        'VSG output exceeded the %d-byte parser limit',
-        MAX_OUTPUT_BYTES
-      ),
+            message = string.format('VSG output exceeded the %d-byte parser limit', MAX_OUTPUT_BYTES),
 
-      severity = diagnostic.severity.WARN,
+            severity = diagnostic.severity.WARN,
 
-      source = SOURCE,
-    },
-  }
+            source = SOURCE,
+        },
+    }
 end
 
 ---@param output string
 ---@param context LintContext
 ---@return vim.Diagnostic[]
 local function parse(output, context)
-  assert(
-    type(context) == 'table',
-    'vsg parser requires LintContext'
-  )
+    assert(type(context) == 'table', 'vsg parser requires LintContext')
 
-  assert(
-    type(context.bufnr) == 'number',
-    'vsg parser requires context.bufnr'
-  )
+    assert(type(context.bufnr) == 'number', 'vsg parser requires context.bufnr')
 
-  if output == '' then
-    return {}
-  end
-
-  if #output > MAX_OUTPUT_BYTES then
-    return oversized_output(
-      context
-    )
-  end
-
-  local text = strip_ansi(
-    output
-  )
-
-  ---@type vim.Diagnostic[]
-  local diagnostics = {}
-
-  ---@type string[]
-  local failures = {}
-
-  for raw_line in text:gmatch(
-    '[^\r\n]+'
-  ) do
-    if
-      #diagnostics
-      >= MAX_DIAGNOSTICS
-    then
-      break
+    if output == '' then
+        return {}
     end
 
-    local line = vim.trim(
-      raw_line
-    )
-
-    if line ~= '' then
-      local finding = parse_syntastic_line(
-        line
-      )
-
-      if finding ~= nil then
-        diagnostics[
-          #diagnostics + 1
-        ] = finding_diagnostic(
-          finding,
-          context
-        )
-      elseif operational_error(line) then
-        failures[
-          #failures + 1
-        ] = line
-      end
+    if #output > MAX_OUTPUT_BYTES then
+        return oversized_output(context)
     end
-  end
 
-  if
-    #diagnostics == 0
-    and #failures > 0
-  then
-    return parse_failure(
-      table.concat(
-        failures,
-        '\n'
-      ),
-      context
-    )
-  end
+    local text = strip_ansi(output)
 
-  return diagnostics
+    ---@type vim.Diagnostic[]
+    local diagnostics = {}
+
+    ---@type string[]
+    local failures = {}
+
+    for raw_line in text:gmatch('[^\r\n]+') do
+        if #diagnostics >= MAX_DIAGNOSTICS then
+            break
+        end
+
+        local line = vim.trim(raw_line)
+
+        if line ~= '' then
+            local finding = parse_syntastic_line(line)
+
+            if finding ~= nil then
+                diagnostics[#diagnostics + 1] = finding_diagnostic(finding, context)
+            elseif operational_error(line) then
+                failures[#failures + 1] = line
+            end
+        end
+    end
+
+    if #diagnostics == 0 and #failures > 0 then
+        return parse_failure(table.concat(failures, '\n'), context)
+    end
+
+    return diagnostics
 end
 
 ---@param context LintContext
 ---@return string[]
 local function arguments(context)
-  assert(
-    type(context) == 'table',
-    'vsg arguments require LintContext'
-  )
+    assert(type(context) == 'table', 'vsg arguments require LintContext')
 
-  ---@type string[]
-  local args = {
-    --
-    -- VSG explicitly documents syntastic output for Vim/editor use.
-    --
-    '--output_format',
-    'syntastic',
+    ---@type string[]
+    local args = {
+        --
+        -- VSG explicitly documents syntastic output for Vim/editor use.
+        --
+        '--output_format',
+        'syntastic',
 
-    --
-    -- Do not halt analysis when an earlier phase reports violations.
-    -- Without this, later style phases may never run.
-    --
-    '--all_phases',
+        --
+        -- Do not halt analysis when an earlier phase reports violations.
+        -- Without this, later style phases may never run.
+        --
+        '--all_phases',
 
-    --
-    -- Read the current Neovim buffer instead of the saved file.
-    --
-    '--stdin',
+        --
+        -- Read the current Neovim buffer instead of the saved file.
+        --
+        '--stdin',
 
-    --
-    -- Keep the editor invocation deterministic and avoid multiprocessing
-    -- overhead. --stdin disables multiprocessing upstream as well.
-    --
-  }
+        --
+        -- Keep the editor invocation deterministic and avoid multiprocessing
+        -- overhead. --stdin disables multiprocessing upstream as well.
+        --
+    }
 
-  local config = configuration(
-    context
-  )
+    local config = configuration(context)
 
-  if config ~= nil then
-    args[#args + 1] =
-      '--configuration'
+    if config ~= nil then
+        args[#args + 1] = '--configuration'
 
-    args[#args + 1] =
-      config
-  end
+        args[#args + 1] = config
+    end
 
-  return args
+    return args
 end
 
 ---@type Linter
 return {
-  args = arguments,
+    args = arguments,
 
-  append_fname = false,
+    append_fname = false,
 
-  --
-  -- VSG is multi-phase AST/style analysis. It is appropriate on save or
-  -- after a short debounce, but is heavier than a lexical checker.
-  --
-  automatic = false,
+    --
+    -- VSG is multi-phase AST/style analysis. It is appropriate on save or
+    -- after a short debounce, but is heavier than a lexical checker.
+    --
+    automatic = false,
 
-  cmd = 'vsg',
+    cmd = 'vsg',
 
-  cwd = project_root,
+    cwd = project_root,
 
-  --
-  -- 1 means lint violations. 2 can mean deprecated rule configuration.
-  -- Either way, emitted diagnostics must be parsed.
-  --
-  ignore_exitcode = true,
+    --
+    -- 1 means lint violations. 2 can mean deprecated rule configuration.
+    -- Either way, emitted diagnostics must be parsed.
+    --
+    ignore_exitcode = true,
 
-  parser = parse,
+    parser = parse,
 
-  root_markers = ROOT_MARKERS,
+    root_markers = ROOT_MARKERS,
 
-  stdin = true,
+    stdin = true,
 
-  stream = 'both',
+    stream = 'both',
 
-  timeout = 60000,
+    timeout = 60000,
 }

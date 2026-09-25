@@ -24,15 +24,16 @@ local utils = require('scip.utils')
 ---@param root string Project root.
 ---@return boolean
 local function has_tsconfig(root)
-  return utils.path_exists(fs.joinpath(root, 'tsconfig.json')) or utils.path_exists(fs.joinpath(root, 'jsconfig.json'))
+    return utils.path_exists(fs.joinpath(root, 'tsconfig.json'))
+        or utils.path_exists(fs.joinpath(root, 'jsconfig.json'))
 end
 
 --- Return whether the project is configured as a pnpm workspace.
 ---@param root string Project root.
 ---@return boolean
 local function has_pnpm_workspace(root)
-  return utils.path_exists(fs.joinpath(root, 'pnpm-workspace.yaml'))
-    or utils.path_exists(fs.joinpath(root, 'pnpm-workspace.yml'))
+    return utils.path_exists(fs.joinpath(root, 'pnpm-workspace.yaml'))
+        or utils.path_exists(fs.joinpath(root, 'pnpm-workspace.yml'))
 end
 
 --- Return whether a package.json declares Yarn/npm-style workspaces.
@@ -42,33 +43,33 @@ end
 ---@param root string Project root.
 ---@return boolean
 local function has_package_workspaces(root)
-  local package_json = fs.joinpath(root, 'package.json')
+    local package_json = fs.joinpath(root, 'package.json')
 
-  if not utils.path_exists(package_json) then
-    return false
-  end
+    if not utils.path_exists(package_json) then
+        return false
+    end
 
-  local file = io.open(package_json, 'r')
+    local file = io.open(package_json, 'r')
 
-  if file == nil then
-    return false
-  end
+    if file == nil then
+        return false
+    end
 
-  local content = file:read('*a')
+    local content = file:read('*a')
 
-  file:close()
+    file:close()
 
-  if content == nil or content == '' then
-    return false
-  end
+    if content == nil or content == '' then
+        return false
+    end
 
-  local ok, decoded = pcall(vim.json.decode, content)
+    local ok, decoded = pcall(vim.json.decode, content)
 
-  if not ok or type(decoded) ~= 'table' then
-    return false
-  end
+    if not ok or type(decoded) ~= 'table' then
+        return false
+    end
 
-  return decoded.workspaces ~= nil
+    return decoded.workspaces ~= nil
 end
 
 --- Build scip-typescript arguments for the current project.
@@ -85,61 +86,61 @@ end
 ---@param context ScipContext SCIP indexing context.
 ---@return string[] args Arguments passed to scip-typescript.
 local function args(context)
-  local project_root = context.root
+    local project_root = context.root
 
-  if has_pnpm_workspace(project_root) then
+    if has_pnpm_workspace(project_root) then
+        return {
+            'index',
+            '--pnpm-workspaces',
+        }
+    end
+
+    if has_package_workspaces(project_root) then
+        return {
+            'index',
+            '--yarn-workspaces',
+        }
+    end
+
+    if has_tsconfig(project_root) then
+        return {
+            'index',
+        }
+    end
+
     return {
-      'index',
-      '--pnpm-workspaces',
+        'index',
+        '--infer-tsconfig',
     }
-  end
-
-  if has_package_workspaces(project_root) then
-    return {
-      'index',
-      '--yarn-workspaces',
-    }
-  end
-
-  if has_tsconfig(project_root) then
-    return {
-      'index',
-    }
-  end
-
-  return {
-    'index',
-    '--infer-tsconfig',
-  }
 end
 
 ---@type ScipIndexer
 local indexer = {
-  args = args,
+    args = args,
 
-  command = 'scip-typescript',
+    command = 'scip-typescript',
 
-  filetypes = {
-    javascript = true,
-    javascriptreact = true,
-    typescript = true,
-    typescriptreact = true,
-  },
+    filetypes = {
+        javascript = true,
+        javascriptreact = true,
+        typescript = true,
+        typescriptreact = true,
+    },
 
-  markers = {
-    '.git',
-    'bun.lock',
-    'bun.lockb',
-    'deno.json',
-    'deno.jsonc',
-    'jsconfig.json',
-    'package.json',
-    'pnpm-lock.yaml',
-    'pnpm-workspace.yaml',
-    'pnpm-workspace.yml',
-    'tsconfig.json',
-    'yarn.lock',
-  },
+    markers = {
+        '.git',
+        'bun.lock',
+        'bun.lockb',
+        'deno.json',
+        'deno.jsonc',
+        'jsconfig.json',
+        'package.json',
+        'pnpm-lock.yaml',
+        'pnpm-workspace.yaml',
+        'pnpm-workspace.yml',
+        'tsconfig.json',
+        'yarn.lock',
+    },
 }
 
 return indexer

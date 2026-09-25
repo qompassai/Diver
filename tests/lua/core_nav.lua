@@ -1,10 +1,16 @@
+--- Navigation self-test — proves the nav helpers work.
+---
+--- Plain-language version: this is a test script, not a feature. It exercises the core navigation helpers and
+--- reports pass or fail, so regressions get caught. It runs headless via `nvim -l`; it is not loaded at startup.
+---@module 'tests.core_nav'
 vim.opt.runtimepath:prepend(vim.fn.getcwd())
 vim.g.mapleader, vim.g.maplocalleader = ' ', ','
 local api, fn = vim.api, vim.fn
 local count, messages = 0, {}
-vim.notify = function(msg)
+-- rawset bypasses LuaLS duplicate-set-field; intentional test double.
+rawset(vim, 'notify', function(msg)
     messages[#messages + 1] = tostring(msg)
-end
+end)
 local function check(value, message)
     assert(value, message)
     count = count + 1
@@ -23,23 +29,14 @@ api.nvim_cmd({ cmd = 'edit', args = { root .. '/a/sample.lua' } }, {})
 vim.bo.filetype = 'lua'
 local source, window = api.nvim_get_current_buf(), api.nvim_get_current_win()
 local parser = require('config.core.parser')
-local diagnostics = parser.simple_colon_parser(
-    'a/sample.lua:1:7: right\nb/sample.lua:1:1: wrong',
-    source,
-    { cwd = root }
-)
+local diagnostics =
+    parser.simple_colon_parser('a/sample.lua:1:7: right\nb/sample.lua:1:1: wrong', source, { cwd = root })
 check(#diagnostics == 1 and diagnostics[1].col == 6, 'Full paths isolate duplicate basenames')
-check(
-    #parser.simple_colon_parser('a/sample.lua:0:1: invalid', source, { cwd = root }) == 0,
-    'Reject zero lines'
-)
+check(#parser.simple_colon_parser('a/sample.lua:0:1: invalid', source, { cwd = root }) == 0, 'Reject zero lines')
 require('config.core.filetype')
 check(vim.filetype.match({ filename = 'CMakePresets.json' }) == 'json', 'CMake JSON remains JSON')
 check(vim.filetype.match({ filename = '/test/roles/task.yml' }) == 'yaml.ansible', 'Ansible yml')
-check(
-    vim.filetype.match({ filename = '/test/example.pg.hcl' }) == 'atlas-schema-postgresql',
-    'HCL suffix'
-)
+check(vim.filetype.match({ filename = '/test/example.pg.hcl' }) == 'atlas-schema-postgresql', 'HCL suffix')
 local qf = require('config.core.qf')
 qf.setup()
 local entries = {
@@ -60,23 +57,27 @@ check(qf.remove(target, 1, 1) and #fn.getqflist() == 1, 'Remove into history')
 check(qf.transfer(target) and #fn.getloclist(window) == 1, 'Copy to location list')
 check(qf.filter(qf.target('loc'), 'no-match') and #fn.getloclist(window) == 0, 'Location filter')
 check(#fn.getqflist() == 1, 'Location filter preserves quickfix')
-local input, delayed = vim.ui.input, nil
-vim.ui.input = function(_, callback)
+local input = vim.ui.input
+---@type fun(input?: string)?
+local delayed = nil
+rawset(vim.ui, 'input', function(_, callback)
     delayed = callback
-end
+end)
 qf.run('filter', 'qf')
 fn.setqflist({}, ' ', { title = 'newer', items = entries })
-delayed('first')
+local prompt = assert(delayed, 'filter picker must prompt for input')
+prompt('first')
 check(#fn.getqflist() == 3, 'Stale filter rejected')
 vim.ui.input = input
-local selected, select_ui = nil, vim.ui.select
-vim.ui.select = function(items, _, callback)
+local selected
+local select_ui = vim.ui.select
+rawset(vim.ui, 'select', function(items, _, callback)
     selected = items
     callback(items[1])
-end
+end)
 qf.history(target)
 check(type(selected) == 'table' and #selected > 0, 'History picker')
-vim.ui.select = select_ui
+rawset(vim.ui, 'select', select_ui)
 fn.setqflist({}, ' ', { title = 'preview', items = entries })
 qf.preview(target, 1)
 check(fn.win_gettype(fn.winnr()) ~= 'preview', 'Preview preserves focus')
@@ -87,13 +88,9 @@ local task = async.system({ 'python3', '-c', 'print("native async")' })
 local result = task:wait(5000)
 check(result.code == 0 and result.stdout:find('native async', 1, true), 'Real native task process')
 local complete
-local process, err = async.spawn(
-    { 'python3', '-c', 'print("x"*10000)' },
-    { max_output_bytes = 512 },
-    function(value)
-        complete = value
-    end
-)
+local process, err = async.spawn({ 'python3', '-c', 'print("x"*10000)' }, { max_output_bytes = 512 }, function(value)
+    complete = value
+end)
 check(process and not err, 'Callback process starts')
 wait(function()
     return complete ~= nil
@@ -106,7 +103,8 @@ end)
 wait(function()
     return complete ~= nil
 end, 'Timeout process finishes')
-check(complete.code ~= 0, 'Deadline failure')
+local timed_out = assert(complete, 'deadline callback must deliver a result')
+check(timed_out.code ~= 0, 'Deadline failure')
 local observed
 local cancelled = async.system({ 'python3', '-c', 'import time; time.sleep(10)' })
 async.observe(cancelled, function(error)
@@ -141,27 +139,28 @@ api.nvim_set_current_win(window)
 local fzf = require('config.nav.fzf')
 check(fzf.setup({ picker = 'native' }), 'Native picker setup')
 local picked
-vim.ui.select = function(items, _, callback)
+rawset(vim.ui, 'select', function(items, _, callback)
     callback(items[1])
-end
+end)
 fzf.fzf_pick({ { label = 'file', value = 42 } }, function(value)
     picked = value
 end)
 check(picked == 42, 'Native picker works without fzf')
 vim.ui.select = select_ui
 local searx = require('config.nav.searxng')
-local found = searx.parse(vim.json.encode({
+local parsed = searx.parse(vim.json.encode({
     results = {
         { title = 'Docs', url = 'https://example.com/docs' },
         { title = 'bad', url = 'file:///etc/passwd' },
         { title = 'bad', url = 'javascript:alert(1)' },
     },
 }))
+local found = assert(parsed, 'valid fixture response must parse')
 check(#found == 1 and found[1].title == 'Docs', 'Only HTTP result URLs')
 check(searx.parse('<html>forbidden</html>') == nil, 'Non-JSON response rejected')
 local spawn, open = async.spawn, vim.ui.open
 local requested, opened
-async.spawn = function(argv, _, callback)
+rawset(async, 'spawn', function(argv, _, callback)
     requested = argv
     vim.schedule(function()
         callback({
@@ -176,23 +175,20 @@ async.spawn = function(argv, _, callback)
         })
     end)
     return { kill = function() end }
-end
-vim.ui.select = function(items, _, callback)
+end)
+rawset(vim.ui, 'select', function(items, _, callback)
     callback(items[1])
-end
-vim.ui.open = function(url)
+end)
+rawset(vim.ui, 'open', function(url)
     opened = url
-end
+end)
 searx.setup({ url = 'http://127.0.0.1:9999', engines = 'github' })
 searx.search('query & literal', 1)
 wait(function()
     return opened ~= nil
 end, 'SearXNG async result')
 check(vim.tbl_contains(requested, 'q=query & literal'), 'Query is one argv value')
-check(
-    requested[2] == '-q' and requested[#requested] == 'http://127.0.0.1:9999/search',
-    'Explicit endpoint, no curlrc'
-)
+check(requested[2] == '-q' and requested[#requested] == 'http://127.0.0.1:9999/search', 'Explicit endpoint, no curlrc')
 check(opened == 'https://example.com/doc', 'Native browser opens selection')
 searx.next_page()
 check(vim.tbl_contains(requested, 'pageno=2'), 'Pagination')
@@ -202,25 +198,23 @@ vim.wait(50)
 -- Exercise real curl against an isolated loopback HTTP service.
 local portfile = root .. '/fixture-port'
 local server_done
-local server = vim.system(
-    { 'python3', bundle .. '/tests/searx_fixture.py', portfile },
-    {},
-    function(r)
-        server_done = r
-    end
-)
+-- The handle is only kept as a GC root so the exit callback stays alive
+-- until the fixture finishes; nothing reads the handle itself.
+local _ = vim.system({ 'python3', bundle .. '/tests/searx_fixture.py', portfile }, {}, function(r)
+    server_done = r
+end)
 wait(function()
     return fn.filereadable(portfile) == 1
 end, 'Loopback fixture starts')
 local port = fn.readfile(portfile)[1]
 local title
-vim.ui.select = function(items, _, callback)
+rawset(vim.ui, 'select', function(items, _, callback)
     title = items[1].title
     callback(items[1])
-end
-vim.ui.open = function(url)
+end)
+rawset(vim.ui, 'open', function(url)
     opened = url
-end
+end)
 opened = nil
 searx.setup({ url = 'http://127.0.0.1:' .. port })
 searx.search('literal & + q=one')
@@ -243,16 +237,17 @@ vim.ui.select, vim.ui.open = select_ui, open
 searx.cancel()
 -- Export and import exercise native errorformat without overwriting files.
 fn.setqflist({}, ' ', { title = 'export', items = entries })
-vim.ui.input = function(_, callback)
+rawset(vim.ui, 'input', function(_, callback)
     callback(root .. '/errors.txt')
-end
+end)
 qf.run('write_file', 'qf')
 check(fn.filereadable(root .. '/errors.txt') == 1, 'Error file export')
 local efm = vim.bo.errorformat
 vim.bo.errorformat = '%f:%l:%c:%m'
 qf.run('load_file', 'qf')
 check(#fn.getqflist() == 3 and fn.getqflist()[1].text == 'second', 'Error file import')
-vim.bo.errorformat, vim.ui.input = efm, input
+vim.bo.errorformat = efm
+vim.ui.input = input
 
 local tree = require('config.core.tree')
 tree.setup({ folds = true })
@@ -276,22 +271,16 @@ explorer.open(root)
 vim.wait(100)
 check(vim.bo.filetype == 'directory', 'Native directory opens')
 check(fn.maparg('a', 'n', false, true).buffer == 1, 'Explorer keys buffer-local')
-check(
-    fn.maparg('a', 'n', false, true).desc == 'Explorer: Create file exclusively',
-    'Explorer buffer option works'
-)
+check(fn.maparg('a', 'n', false, true).desc == 'Explorer: Create file exclusively', 'Explorer buffer option works')
 explorer.close()
 api.nvim_set_current_win(window)
 qf.open('qf')
 check(vim.bo.filetype == 'qf', 'Quickfix filetype')
-check(
-    fn.maparg('dd', 'n', false, true).desc == 'navmap: Remove quickfix entries into history',
-    'Quickfix deletion key'
-)
+check(fn.maparg('dd', 'n', false, true).desc == 'navmap: Remove quickfix entries into history', 'Quickfix deletion key')
 check(fn.maparg('p', 'n', false, true).buffer == 1, 'Quickfix preview local')
-vim.ui.select = function(items, _, callback)
+rawset(vim.ui, 'select', function(items, _, callback)
     callback(items[1])
-end
+end)
 qf.pick(qf.target('qf'))
 check(vim.bo.filetype ~= 'qf', 'Quickfix pick focuses source window')
 vim.ui.select = select_ui
