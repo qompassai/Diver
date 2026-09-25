@@ -11,6 +11,95 @@ Conventions: `file:line` is the working-tree location of the change;
 topics, upstream docs — never invented). Effects marked "measured during
 the fix program" come from the program's own runs, not re-verified here.
 
+## Linter helpers + native Markdown renderer (2026-09-25)
+
+Fourth program on this branch, at Matt's request: implement the two
+missing helpers the linter program left quarantined, and remove
+`render-markdown.nvim` entirely — replacing every capability the config
+used with a native Lua renderer. Worked half-writing / half-adversarial
+until the gates below were green.
+
+### Quarantined linter helpers implemented (2)
+
+- `lua/utils/hledger.lua` (new) — the `journal` policy module
+  `lua/linters/hledger.lua` requires: `hledger -f - check` on stdin,
+  parses `hledger: Error: FILE:LINE[-ENDLINE][:COL]:` blocks into
+  `vim.Diagnostic`s (0-based, ERROR, ANSI stripped, bounded output /
+  message / diagnostic counts). Absent binary → clean "Linter executable
+  not found", never a stack trace.
+- **Source:** https://hledger.org/hledger.html#check (`check` runs the
+  basic checks; zero exit + no output when clean); error layout from
+  https://github.com/hledgerorg/hledger/blob/HEAD/hledger/test/errors/README.md;
+  `-f -` = stdin per the hledger manual.
+- `lua/linters/_salesforce-code-analyzer.lua` (new) — the factory
+  `lua/linters/lightning-flow-scanner.lua` requires:
+  `factory.new({ name, selector })` builds a spec running
+  `sf code-analyzer run --json --rule-selector <selector> --workspace
+  <root> --target <file>`, exit codes 0 and 2 accepted (2 = "violations
+  at/above threshold", still carrying the JSON report), violations found
+  via `violations` / `result`·`data`·`output` keys (depth ≤ 6),
+  severity 1–2 → ERROR, 3 → WARN, 4 → INFO, else HINT.
+- **Source:** https://github.com/Flow-Scanner (project home);
+  `--rule-selector` semantics from
+  https://github.com/laywill/megalinter/blob/HEAD/docs/descriptors/salesforce_code_analyzer_flow.md;
+  `flow:Recommended` usage and exit codes from the sf-code-analyzer
+  SKILL table (https://github.com/nayansai/sf-skills).
+- Wiring (`lua/linters/init.lua`): `hledger` and
+  `lightning_flow_scanner` registered in `M.module_sources`; both
+  quarantine entries removed; the factory module itself documented in
+  `M.unregistered_adapters` (mirrors the `code_analyzer` entry).
+- Adversarial testing (89 attacks, measured during the program) found
+  and fixed: hostile `location.file = "file://"` threw the whole parser
+  (now treated as missing location info); the invalid-JSON error
+  embedded up to 8 MB of output in the notification string (now a
+  300-char excerpt, matching the runner's convention).
+
+### `render-markdown.nvim` removed, native renderer added
+
+- Removed: the `MeanderingProgrammer/render-markdown.nvim` vim.pack
+  spec and `plugin_setup` handler (`lua/plugin/init.lua`), the legacy
+  lazy spec (`lua/plugin/ui/md.lua`), and the 560-line `M.md_rendermd`
+  config (`lua/config/lang/md.lua`). `M.md_config` now calls
+  `require('config.markdown.render').setup(opts)` — same call shape.
+- `lua/config/markdown/render.lua` (new, ~1,240 lines) — pure-Neovim
+  renderer: extmarks + conceal + one shared `vim.uv` timer (100 ms
+  debounce on `TextChanged` / `InsertLeave` / `BufWinEnter`), 100 MB
+  file-size guard, `conceallevel = 3` with anti-conceal on the cursor
+  line. Replicates every feature the old config had enabled: fenced
+  code blocks (borders, language label), thematic breaks, bullets,
+  ordered lists, checkboxes (incl. custom `[-]`), nested blockquotes,
+  GitHub + Obsidian callouts, pipe tables, per-domain link icons, wiki
+  links, footnotes, `==` highlights, indent guides, HTML comments,
+  signs. Headings stay undecorated (old config had them disabled).
+- **Source:** `:h nvim_buf_set_extmark()`, `:h conceal`, `:h
+  vim.uv.new_timer()`, `:h nvim_buf_get_offset()` — Neovim 0.13 API
+  docs; feature list taken from the deleted `md_rendermd` config
+  itself (the old behavior is the spec).
+- `tests/lua/markdown_render.lua` (new): 54-assertion headless
+  functional test — PASS ×4 runs, no flakes (measured during the
+  program).
+- Adversarial testing (measured during the program) found and fixed:
+  `disable()` left a pending debounce timer armed, so a disabled buffer
+  was re-decorated ~100 ms later (pending entry now pruned on detach).
+  Hostile inputs held: 5k nested blockquotes, 1000-column tables,
+  unclosed fences, NUL bytes, CRLF, ZWJ emoji, 56 MB / 100k-line file
+  (5.4 s), 102 MB file correctly skipped by the size guard.
+- Deliberately untouched: `lazy-lock.json` and `nvim-pack-lock.json`
+  still list `render-markdown.nvim` — Matt's WIP, flagged not fixed.
+  `CHANGELOG.md:256` keeps its historical mention.
+
+### Gates (measured during the program)
+
+- `luacheck`: 0 warnings / 0 errors in 660 files.
+- `stylua --check`: clean (`lua/`, `tests/`).
+- `lua-language-server --check`: no problems on all 7 touched files.
+- Headless startup: exit 0; zero `render-markdown` mentions in specs,
+  validation, or notifications.
+- Require sweep: 189/189 (`lua/linters/`, `lua/utils/`,
+  `lua/config/markdown/`); `linters.validate()` → 0 problems.
+- Repo-wide grep: no live `render-markdown`, `RenderMarkdown`,
+  `rendermarkdown`, or `md_rendermd` references remain.
+
 ## Formatter program (2026-09-25): 105 new native formatter adapters
 
 Second program on this branch, at Matt's request: add native formatter

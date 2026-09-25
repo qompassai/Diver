@@ -123,6 +123,7 @@ M.module_sources = { ---@type table<string, string>
     golangcilint = 'linters.golangcilint',
     hadolint = 'linters.hadolint',
     herb = 'linters.herb',
+    hledger = 'linters.hledger',
     hlint = 'linters.hlint',
     html_tidy = 'linters.html-tidy',
     html_validate = 'linters.html_validate',
@@ -136,6 +137,7 @@ M.module_sources = { ---@type table<string, string>
     ksh = 'linters.ksh',
     ktlint = 'linters.ktlint',
     lacheck = 'linters.lacheck',
+    lightning_flow_scanner = 'linters.lightning-flow-scanner',
     lint_openapi = 'linters.lint-openapi',
     llvm_mc = 'linters.llvm-mc',
     luac = 'linters.luac',
@@ -238,10 +240,9 @@ M.load_errors = {} ---@type table<string, string>
 ---can never silently lose the ability to load a file.
 ---@type table<string, string>
 M.unregistered_adapters = {
+    ['linters._salesforce-code-analyzer'] = 'factory module (M.new); instantiated by linters.lightning-flow-scanner',
     ['linters.code_analyzer'] = 'factory module (M.new), not a Linter definition; nothing instantiates it',
-    ['linters.hledger'] = 'requires missing utils.hledger helper; unavailable sentinel until it exists',
     ['linters.latex'] = 'disabled SCIP indexer definition, not a Linter',
-    ['linters.lightning-flow-scanner'] = 'requires missing linters._salesforce-code-analyzer factory',
 }
 ---@param name string
 ---@param module_name string

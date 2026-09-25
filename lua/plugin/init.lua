@@ -60,10 +60,6 @@ local plugins = {
         src = gh('catppuccin/nvim'),
     },
     {
-        src = gh('MeanderingProgrammer/render-markdown.nvim'),
-        version = 'main',
-    },
-    {
         src = gh('EdenEast/nightfox.nvim'),
     },
     {
@@ -149,18 +145,6 @@ plugin_setup[gh('arminveres/md-pdf.nvim')] = function()
     local ok, err = pcall(md_cfg.md_pdf, {})
     if not ok then
         vim.notify('md-pdf.nvim setup failed: ' .. tostring(err), vim.log.levels.ERROR)
-    end
-end
-plugin_setup[gh('MeanderingProgrammer/render-markdown.nvim')] = function()
-    local ok_cfg, md_cfg = pcall(require, 'config.lang.md')
-    if not ok_cfg or type(md_cfg.md_rendermd) ~= 'function' then
-        vim.notify('render-markdown.nvim setup: config.lang.md.md_rendermd missing', vim.log.levels.WARN)
-        return
-    end
-
-    local ok, err = pcall(md_cfg.md_rendermd, {})
-    if not ok then
-        vim.notify('render-markdown.nvim setup failed: ' .. tostring(err), vim.log.levels.ERROR)
     end
 end
 --- @return boolean ok

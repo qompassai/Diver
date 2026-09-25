@@ -48,16 +48,4 @@ return {
         },
         config = configure('md_pdf'),
     },
-    {
-        'MeanderingProgrammer/render-markdown.nvim',
-        dependencies = {
-            'nvim-tree/nvim-web-devicons',
-            'vhyrro/luarocks.nvim',
-        },
-        ft = {
-            'markdown',
-            'mdx',
-        },
-        config = configure('md_rendermd'),
-    },
 }
