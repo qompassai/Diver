@@ -193,6 +193,10 @@ require('config.init').config({
     nav = true,
     ui = true,
 })
+-- Native Markdown renderer: the single attach path. setup() installs one
+-- FileType autocmd for the configured filetypes and is idempotent; the
+-- duplicate attach logic that used to live in config.ui is gone.
+require('config.markdown.render').setup()
 -- Security toolkit: registers the :SecurityAudit command and the
 -- diver_security augroup. Placed after plugin-manager setup so any
 -- plugin-provided commands it may need are available. setup() is idempotent.

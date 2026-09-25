@@ -149,10 +149,32 @@ local function is_absolute(path)
     return vim.fn.isabsolutepath(path) == 1
 end
 
----@param filename? string
 ---@param context LintContext
 ---@return boolean
-local function belongs_to_buffer(filename, context)
+local function buffer_basename_is_ambiguous(context)
+    assert(type(context) == 'table', 'buffer_basename_is_ambiguous requires a LintContext')
+
+    local target = vim.fs.basename(vim.fs.normalize(context.filename) or context.filename)
+    local matches = 0
+    for _, bufnr in ipairs(vim.api.nvim_list_bufs()) do
+        if vim.api.nvim_buf_is_loaded(bufnr) then
+            local name = vim.api.nvim_buf_get_name(bufnr)
+            if name ~= '' and vim.fs.basename(name) == target then
+                matches = matches + 1
+                if matches > 1 then
+                    return true
+                end
+            end
+        end
+    end
+    return false
+end
+
+---@param filename? string
+---@param context LintContext
+---@param basename_ambiguous boolean precomputed by buffer_basename_is_ambiguous
+---@return boolean
+local function belongs_to_buffer(filename, context, basename_ambiguous)
     if filename == nil or filename == '' then
         return true
     end
@@ -173,19 +195,29 @@ local function belongs_to_buffer(filename, context)
         candidate = vim.fs.normalize(joined) or joined
     end
     local normalized = vim.fs.normalize(candidate) or candidate
-    return normalized == buffer_filename or vim.fs.basename(normalized) == vim.fs.basename(buffer_filename)
+    if normalized == buffer_filename then
+        return true
+    end
+    if vim.fs.basename(normalized) ~= vim.fs.basename(buffer_filename) then
+        return false
+    end
+    -- Basename-only match: attribute it only when no other open buffer
+    -- shares the basename. When ambiguous, drop the diagnostic instead of
+    -- risking attribution to the wrong buffer.
+    return not basename_ambiguous
 end
 
 ---@param record SalesforceAnalyzerViolation
 ---@param context LintContext
 ---@param source string
+---@param basename_ambiguous boolean precomputed by buffer_basename_is_ambiguous
 ---@return vim.Diagnostic?
-local function diagnostic_from(record, context, source)
+local function diagnostic_from(record, context, source, basename_ambiguous)
     local locations = type(record.locations) == 'table' and record.locations or {}
     local index = math.max(integer(record.primaryLocationIndex, 0), 0) + 1
     ---@type SalesforceAnalyzerLocation
     local location = type(locations[index]) == 'table' and locations[index] or {}
-    if not belongs_to_buffer(location.file, context) then
+    if not belongs_to_buffer(location.file, context, basename_ambiguous) then
         return nil
     end
 
@@ -299,6 +331,10 @@ function M.new(options)
                 error(('invalid Salesforce Code Analyzer JSON: %s'):format(excerpt), 0)
             end
             ---@cast context LintContext
+            -- One scan per run: two open buffers sharing a basename make
+            -- basename-only attribution ambiguous, so drop those instead
+            -- of risking the wrong buffer.
+            local basename_ambiguous = buffer_basename_is_ambiguous(context)
             local records = find_violations(decoded) or {}
             ---@type vim.Diagnostic[]
             local diagnostics = {}
@@ -307,7 +343,7 @@ function M.new(options)
                     break
                 end
                 if type(record) == 'table' then
-                    local item = diagnostic_from(record, context, options.name)
+                    local item = diagnostic_from(record, context, options.name, basename_ambiguous)
                     if item ~= nil then
                         diagnostics[#diagnostics + 1] = item
                     end

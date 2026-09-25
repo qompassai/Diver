@@ -51,26 +51,16 @@ local function setup_image_preview()
 end
 
 local function setup_markdown_rendering()
+    -- Single attach path: config.markdown.render owns its FileType autocmd
+    -- and the enable/disable lifecycle. The duplicate MarkdownRendering
+    -- augroup that used to live here is gone; setup() is idempotent, so
+    -- calling it from both this (currently unused) entry point and the
+    -- boot sequence can never double-attach.
     local render = require('config.markdown.render')
     assert(type(render) == 'table', 'config.markdown.render must return a module table')
-    assert(type(render.enable) == 'function', 'config.markdown.render must expose enable()')
+    assert(type(render.setup) == 'function', 'config.markdown.render must expose setup()')
 
-    local group = vim.api.nvim_create_augroup('MarkdownRendering', {
-        clear = true,
-    })
-
-    vim.api.nvim_create_autocmd('FileType', {
-        group = group,
-        pattern = { 'markdown', 'markdown.mdx' },
-        callback = render.enable,
-        desc = 'Enable Qompass Markdown decorations and native image refreshes',
-    })
-
-    local bufnr = vim.api.nvim_get_current_buf()
-    local filetype = vim.bo[bufnr].filetype
-    if filetype == 'markdown' or filetype == 'markdown.mdx' then
-        render.enable()
-    end
+    render.setup()
 end
 
 function M.setup()

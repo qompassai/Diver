@@ -579,6 +579,30 @@ bounded parsers:
   overload annotations; LuaLS EmmyLua annotations (`---@generic`,
   `---@cast`); `:h coroutine.yield()` for the dual-mode pattern.
 
+## Follow-up: linter dedup + Markdown attach + basename attribution (2026-09-25)
+
+- **`lua/linters/code_analyzer.lua` is now a thin re-export** of
+  `lua/linters/_salesforce-code-analyzer.lua` (`M.new(options)` delegates
+  to the factory). The old file carried a second copy of the factory whose
+  `belongs_to_buffer` still crashed on `location.file == "file://"` and
+  whose invalid-JSON error was unbounded; both were fixed only in the
+  factory. One implementation now, one place to fix.
+  **Source:** https://github.com/Flow-Scanner (Salesforce Code Analyzer).
+- **Single Markdown attach path** — `lua/config/ui/init.lua` no longer
+  creates its own `MarkdownRendering` FileType augroup; `setup_markdown_rendering()`
+  just calls `config.markdown.render.setup()`, and root `init.lua` boots it
+  explicitly. Verified headless: one FileType definition (three patterns),
+  re-setup adds nothing, FileType re-fire does not double-decorate
+  (9 extmarks before and after), disable clears, enable re-applies one pass.
+- **Same-basename diagnostics are never misattributed** —
+  `lua/linters/_salesforce-code-analyzer.lua` now scans loaded buffers once
+  per run; when two share a basename, basename-only location matches are
+  dropped instead of being attached to the wrong buffer. Exact full-path
+  matches still win; the fallback still applies when unambiguous. Covered
+  by `tests/lua/salesforce_basename.lua` (13 checks: exact/wrong-buffer,
+  ambiguous basename drop, missing-location, unambiguous fallback,
+  `file://` via the re-export).
+
 ## Not verified / open (needs Matt's decision)
 - **C5 — `<M-h>` vs `<Leader>h` family:** `conflict()` is unchanged, so the
   `<Leader>h…` maps still cannot install while `cicdmap` owns `<M-h>`.
