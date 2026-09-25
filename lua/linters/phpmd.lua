@@ -213,6 +213,4 @@ local M = {
     parser = parser,
 }
 
-require('linters').register('phpmd', M)
-
 return M

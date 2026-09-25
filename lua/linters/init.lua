@@ -54,36 +54,86 @@ M.options = {
 }
 M.module_sources = { ---@type table<string, string>
     actionlint = 'linters.actionlint',
+    alex = 'linters.alex',
     ameba = 'linters.ameba',
     ansible_lint = 'linters.ansible_lint',
     apkbuild_lint = 'linters.apkbuild-lint',
     bandit = 'linters.bandit',
+    bash = 'linters.bash',
     bashate = 'linters.bashate',
     bashlint = 'linters.bashlint',
+    betterleaks = 'linters.betterleaks',
     bibclean = 'linters.bibclean',
+    biome = 'linters.biome',
     bootlint = 'linters.bootlint',
+    buf_lint = 'linters.buf_lint',
     buildifier = 'linters.buildifier',
+    cfn_lint = 'linters.cfn-lint',
     checkbashisms = 'linters.checkbashisms',
+    checkcode = 'linters.checkcode',
+    checkmake = 'linters.checkmake',
     checkpatch = 'linters.checkpatch',
+    checkstyle = 'linters.checkstyle',
     chktex = 'linters.chktex',
+    clangtidy = 'linters.clangtidy',
+    clazy = 'linters.clazy',
     clippy = 'linters.clippy',
     clj_kondo = 'linters.clj-kondo',
     cmake_lint = 'linters.cmake-lint',
+    codespell = 'linters.codespell',
+    commitlint = 'linters.commitlint',
     cookstyle = 'linters.cookstyle',
     cppcheck = 'linters.cppcheck',
+    credo = 'linters.credo',
+    csharpier = 'linters.csharpier',
+    cspell = 'linters.cspell',
     csslint = 'linters.csslint',
+    cue = 'linters.cue',
     cypher_lint = 'linters.cypher-lint',
     cython_lint = 'linters.cython-lint',
+    dash = 'linters.dash',
     deadnix = 'linters.deadnix',
+    deno = 'linters.deno',
     desktopval = 'linters.desktopval',
+    detect_secrets = 'linters.detect-secrets',
+    detekt = 'linters.detekt',
+    dialyzer = 'linters.dialyzer',
     djlint = 'linters.djlint',
+    dmypy = 'linters.dmypy',
+    docker_compose = 'linters.docker_compose',
     dotenv_linter = 'linters.dotenv-linter',
+    dxc = 'linters.dxc',
+    editorconfig_checker = 'linters.editorconfig-checker',
+    erb_lint = 'linters.erb_lint',
+    eslint = 'linters.eslint',
     eslint_d = 'linters.eslint_d',
+    eugene = 'linters.eugene',
+    fieldalignment = 'linters.fieldalignment',
+    fish = 'linters.fish',
+    flake8 = 'linters.flake8',
+    flawfinder = 'linters.flawfinder',
+    fortitude = 'linters.fortitude',
+    fsharplint = 'linters.fsharplint',
+    gawk = 'linters.gawk',
+    gdlint = 'linters.gdlint',
+    gdscript_linter = 'linters.gdscript-linter',
+    ghdl = 'linters.ghdl',
+    glinter = 'linters.glinter',
+    glslc = 'linters.glslc',
     golangcilint = 'linters.golangcilint',
     hadolint = 'linters.hadolint',
+    herb = 'linters.herb',
+    hlint = 'linters.hlint',
+    html_tidy = 'linters.html-tidy',
     html_validate = 'linters.html_validate',
     htmlhint = 'linters.htmlhint',
+    janet = 'linters.janet',
     joker = 'linters.joker',
+    jq = 'linters.jq',
+    json5 = 'linters.json5',
+    json_tool = 'linters.json_tool',
+    kics = 'linters.kics',
+    ksh = 'linters.ksh',
     ktlint = 'linters.ktlint',
     lacheck = 'linters.lacheck',
     lint_openapi = 'linters.lint-openapi',
@@ -91,35 +141,108 @@ M.module_sources = { ---@type table<string, string>
     luac = 'linters.luac',
     luacheck = 'linters.luacheck',
     mado = 'linters.mado',
+    mago_analyze = 'linters.mago_analyze',
+    markdown_table_formatter = 'linters.markdown-table-formatter',
     markdownlint = 'linters.markdownlint',
+    markdownlint_cli2 = 'linters.markdownlint-cli2',
+    markuplint = 'linters.markuplint',
+    markuplint_cli2 = 'linters.markuplint-cli2',
+    mbake = 'linters.mbake',
     mdl = 'linters.mdl',
+    mh_lint = 'linters.mh_lint',
+    mypy = 'linters.mypy',
     naga = 'linters.naga',
+    npm_groovy_lint = 'linters.npm_groovy_lint',
     nvcc = 'linters.nvcc',
+    oelint_adv = 'linters.oelint-adv',
+    opa_checks = 'linters.opa_checks',
     oxlint = 'linters.oxlint',
+    panache = 'linters.panache',
+    perlcritic = 'linters.perlcritic',
+    php = 'linters.php',
+    phpcs = 'linters.phpcs',
+    phpinsights = 'linters.phpinsights',
+    phpmd = 'linters.phpmd',
+    phpstan = 'linters.phpstan',
+    pmd = 'linters.pmd',
+    pony_lint = 'linters.pony-lint',
+    prisma_lint = 'linters.prisma-lint',
     proselint = 'linters.proselint',
-    pyrefly = 'linters.pyrefly',
+    protolint = 'linters.protolint',
+    psalm = 'linters.psalm',
     psscriptanalyzer = 'linters.psscryptanalyzer',
     puppet_lint = 'linters.puppet-lint',
+    pycodestyle = 'linters.pycodestyle',
+    pylint = 'linters.pylint',
+    pyrefly = 'linters.pyrefly',
+    quick_lint_js = 'linters.quick-lint-js',
+    redocly = 'linters.redocly',
+    regal = 'linters.regal',
     remark_lint = 'linters.remark-lint',
     revive = 'linters.revive',
+    rpmlint = 'linters.rpmlint',
+    rst_lint = 'linters.rst-lint',
+    rstcheck = 'linters.rstcheck',
+    rubocop = 'linters.rubocop',
+    ruby = 'linters.ruby',
+    ruff = 'linters.ruff',
     rumdl = 'linters.rumdl',
+    scalafix = 'linters.scalafix',
     scalastyle = 'linters.scalastyle',
     scarb = 'linters.scarb',
+    secfixes_check = 'linters.secfixes-check',
+    secretlint = 'linters.secretlint',
+    selene = 'linters.selene',
     shellcheck = 'linters.shellcheck',
+    slang = 'linters.slang',
+    snakefmt = 'linters.snakefmt',
+    snakemake = 'linters.snakemake',
+    solhint = 'linters.solhint',
+    spectral = 'linters.spectral',
     sphinx_lint = 'linters.sphinx-lint',
+    sqlfluff = 'linters.sqlfluff',
+    sqruff = 'linters.sqruff',
     squawk = 'linters.squawk',
+    staticcheck = 'linters.staticcheck',
     statix = 'linters.statix',
     stylelint = 'linters.stylelint',
+    svlint = 'linters.svlint',
+    systemd_analyze = 'linters.systemd-analyze',
+    systemdlint = 'linters.systemdlint',
     textlint = 'linters.textlint',
     tflint = 'linters.tflint',
+    tombi = 'linters.tombi',
+    trivy = 'linters.trivy',
+    twig_cs = 'linters.twig_cs',
+    typos = 'linters.typos',
+    unmake = 'linters.unmake',
+    v8r = 'linters.v8r',
+    vacuum = 'linters.vacuum',
+    vale = 'linters.vale',
     vint = 'linters.vint',
+    vsg = 'linters.vsg',
     vulture = 'linters.vulture',
+    write_good = 'linters.write_good',
     yamllint = 'linters.yamllint',
     yara = 'linters.yara',
+    yq = 'linters.yq',
+    zizmor = 'linters.zizmor',
     zlint = 'linters.zlint',
+    zsh = 'linters.zsh',
 }
 M.definitions = {} ---@type table<string, Linter>
 M.load_errors = {} ---@type table<string, string>
+---Adapters present on disk that are intentionally NOT registered in
+---M.module_sources, with the reason why. M.validate() reports any other
+---on-disk adapter missing from module_sources as an orphan, so the runner
+---can never silently lose the ability to load a file.
+---@type table<string, string>
+M.unregistered_adapters = {
+    ['linters.code_analyzer'] = 'factory module (M.new), not a Linter definition; nothing instantiates it',
+    ['linters.hledger'] = 'requires missing utils.hledger helper; unavailable sentinel until it exists',
+    ['linters.latex'] = 'disabled SCIP indexer definition, not a Linter',
+    ['linters.lightning-flow-scanner'] = 'requires missing linters._salesforce-code-analyzer factory',
+}
 ---@param name string
 ---@param module_name string
 local function load_linter(name, module_name)
@@ -165,11 +288,16 @@ M.linters_by_ft = {
     },
     apkbuild = {
         'apkbuild_lint',
+        'secfixes_check',
     },
     asm = {
         'llvm_mc',
     },
+    awk = {
+        'gawk',
+    },
     bash = {
+        'bash',
         'shellcheck',
     },
     bazel = {
@@ -181,8 +309,13 @@ M.linters_by_ft = {
     bibtex = {
         'bibclean',
     },
+    bitbake = {
+        'oelint_adv',
+    },
     c = {
+        'clangtidy',
         'cppcheck',
+        'flawfinder',
     },
     cairo = {
         'scarb',
@@ -197,16 +330,25 @@ M.linters_by_ft = {
         'cmake_lint',
     },
     cpp = {
+        'clangtidy',
+        'clazy',
         'cppcheck',
+        'flawfinder',
     },
     crystal = {
         'ameba',
+    },
+    cs = {
+        'csharpier',
     },
     css = {
         'stylelint',
     },
     cuda = {
         'nvcc',
+    },
+    cue = {
+        'cue',
     },
     cypher = {
         'cypher_lint',
@@ -219,15 +361,65 @@ M.linters_by_ft = {
     },
     dockerfile = {
         'hadolint',
+        'trivy',
     },
     dotenv = {
+        'betterleaks',
+        'detect_secrets',
         'dotenv_linter',
+        'secretlint',
+    },
+    elixir = {
+        'credo',
+    },
+    erlang = {
+        'dialyzer',
+    },
+    eruby = {
+        'erb_lint',
+        'herb',
+    },
+    fish = {
+        'fish',
+    },
+    fortran = {
+        'fortitude',
+    },
+    fsharp = {
+        'fsharplint',
+    },
+    gdscript = {
+        'gdlint',
+        'gdscript_linter',
+    },
+    gitcommit = {
+        'commitlint',
+    },
+    gleam = {
+        'glinter',
+    },
+    glsl = {
+        'glslc',
     },
     go = {
+        'fieldalignment',
         'golangcilint',
+        'staticcheck',
+    },
+    groovy = {
+        'npm_groovy_lint',
+    },
+    haskell = {
+        'hlint',
+    },
+    hlsl = {
+        'dxc',
     },
     html = {
+        'html_tidy',
         'html_validate',
+        'markuplint',
+        'markuplint_cli2',
     },
     htmlangular = {
         'djlint',
@@ -235,11 +427,22 @@ M.linters_by_ft = {
     htmldjango = {
         'djlint',
     },
+    janet = {
+        'janet',
+    },
     javascript = {
+        'biome',
+        'deno',
+        'eslint',
         'oxlint',
+        'quick_lint_js',
     },
     javascriptreact = {
+        'biome',
+        'deno',
+        'eslint',
         'oxlint',
+        'quick_lint_js',
     },
     jinja = {
         'djlint',
@@ -247,10 +450,25 @@ M.linters_by_ft = {
     jinja2 = {
         'djlint',
     },
+    json = {
+        'biome',
+        'jq',
+        'json_tool',
+        'spectral',
+        'v8r',
+    },
+    json5 = {
+        'json5',
+    },
     jsx = {
+        'biome',
+        'deno',
+        'eslint',
         'oxlint',
+        'quick_lint_js',
     },
     kotlin = {
+        'detekt',
         'ktlint',
     },
     latex = {
@@ -258,15 +476,33 @@ M.linters_by_ft = {
     },
     lua = {
         'luacheck',
+        'selene',
     },
     mail = {
         'proselint',
     },
+    make = {
+        'checkmake',
+        'mbake',
+        'unmake',
+    },
     markdown = {
+        'alex',
+        'cspell',
+        'markdownlint_cli2',
+        'markdown_table_formatter',
+        'panache',
+        'vale',
+        'write_good',
         --	'rumdl',
     },
     ['markdown.mdx'] = {
+        'markdownlint_cli2',
         'rumdl',
+    },
+    matlab = {
+        'checkcode',
+        'mh_lint',
     },
     nix = {
         'statix',
@@ -274,26 +510,69 @@ M.linters_by_ft = {
     },
     openapi = {
         'lint_openapi',
+        'redocly',
+        'spectral',
+        'vacuum',
+    },
+    perl = {
+        'perlcritic',
+    },
+    php = {
+        'mago_analyze',
+        'php',
+        'phpcs',
+        'phpinsights',
+        'phpmd',
+        'phpstan',
+        'psalm',
     },
     plaintex = {
         'chktex',
     },
+    pony = {
+        'pony_lint',
+    },
+    prisma = {
+        'prisma_lint',
+    },
     powershell = {
         'psscriptanalyzer',
+    },
+    proto = {
+        'buf_lint',
+        'protolint',
     },
     puppet = {
         'puppet_lint',
     },
     python = {
         'bandit',
+        'dmypy',
+        'flake8',
+        'mypy',
+        'pycodestyle',
+        'pylint',
         --		'pyrefly',
+        'ruff',
         'vulture',
     },
     quarto = {
+        'markdownlint_cli2',
+        'panache',
         'rumdl',
     },
+    rego = {
+        'opa_checks',
+        'regal',
+    },
     rst = {
+        'rst_lint',
+        'rstcheck',
         'sphinx_lint',
+    },
+    ruby = {
+        'ruby',
+        'rubocop',
     },
     rust = {
         'clippy',
@@ -302,6 +581,7 @@ M.linters_by_ft = {
         'stylelint',
     },
     scala = {
+        'scalafix',
         'scalastyle',
     },
     scss = {
@@ -309,15 +589,42 @@ M.linters_by_ft = {
     },
     sh = {
         'checkbashisms',
+        'dash',
+        'ksh',
         'shellcheck',
     },
+    snakemake = {
+        'snakefmt',
+        'snakemake',
+    },
+    solidity = {
+        'solhint',
+    },
+    spec = {
+        'rpmlint',
+    },
     sql = {
+        'eugene',
+        'sqlfluff',
+        'sqruff',
         'squawk',
     },
     swagger = {
         'lint_openapi',
+        'redocly',
+        'spectral',
+        'vacuum',
+    },
+    systemd = {
+        'systemd_analyze',
+        'systemdlint',
+    },
+    systemverilog = {
+        'slang',
+        'svlint',
     },
     terraform = {
+        'kics',
         'tflint',
     },
     ['terraform-vars'] = {
@@ -326,44 +633,90 @@ M.linters_by_ft = {
     tex = {
         'chktex',
     },
+    text = {
+        'alex',
+        'codespell',
+        'cspell',
+        'editorconfig_checker',
+        'typos',
+        'vale',
+        'write_good',
+    },
+    toml = {
+        'tombi',
+    },
     tsx = {
+        'biome',
+        'deno',
+        'eslint',
         'oxlint',
+        'quick_lint_js',
+    },
+    twig = {
+        'twig_cs',
     },
     typescript = {
+        'biome',
+        'deno',
+        'eslint',
         'oxlint',
+        'quick_lint_js',
     },
     typescriptreact = {
+        'biome',
+        'deno',
+        'eslint',
         'oxlint',
+        'quick_lint_js',
+    },
+    vhdl = {
+        'ghdl',
+        'vsg',
     },
     vim = {
         'vint',
     },
     vue = {
+        'eslint',
         'eslint_d',
     },
     wgsl = {
         'naga',
     },
     yaml = {
+        'cfn_lint',
+        'spectral',
+        'v8r',
         'yamllint',
+        'yq',
     },
     ['yaml.ansible'] = {
         'ansible_lint',
     },
+    ['yaml.docker-compose'] = {
+        'docker_compose',
+    },
     ['yaml.ghaction'] = {
         'actionlint',
+        'zizmor',
     },
     ['yaml.github'] = {
         'actionlint',
+        'zizmor',
     },
     ['yaml.openapi'] = {
         'lint_openapi',
+        'redocly',
+        'spectral',
+        'vacuum',
     },
     yara = {
         'yara',
     },
     yml = {
+        'cfn_lint',
         'yamllint',
+        'yq',
     },
     zig = {
         'zlint',
@@ -374,6 +727,9 @@ M.linters_by_ft = {
     zon = {
         'zlint',
     },
+    zsh = {
+        'zsh',
+    },
 }
 if not module_options.no_updates then
     require('linters.update').setup(M.linters_by_ft)
@@ -383,11 +739,14 @@ M.manual_linters = {
     checkpatch = true,
     clippy = true,
     golangcilint = true,
+    pylint = true,
     pyrefly = true,
     scalastyle = true,
     scarb = true,
+    secretlint = true,
     tflint = true,
     vulture = true,
+    zizmor = true,
 }
 
 local default_exit_codes = {
@@ -1211,7 +1570,8 @@ function M.validate()
         if type(definition) ~= 'table' then
             problems[#problems + 1] = ('linter %q has type %s instead of table'):format(name, type(definition))
         else
-            if type(definition.cmd) ~= 'string' and type(definition.cmd) ~= 'table' then
+            local cmd_type = type(definition.cmd)
+            if cmd_type ~= 'string' and cmd_type ~= 'table' and cmd_type ~= 'function' then
                 problems[#problems + 1] = ('linter %q has an invalid cmd'):format(name)
             end
             if definition.parser == nil and definition.errorformat == nil then
@@ -1219,6 +1579,31 @@ function M.validate()
             end
             if definition.stream ~= nil and not valid_streams[definition.stream] then
                 problems[#problems + 1] = ('linter %q has invalid stream %q'):format(name, definition.stream)
+            end
+        end
+    end
+
+    -- Orphan check: every adapter file under lua/linters/ must be registered
+    -- in M.module_sources (or explicitly listed in M.unregistered_adapters),
+    -- otherwise the runner can never load it.
+    local source = debug.getinfo(1, 'S').source
+    if type(source) == 'string' and source:sub(1, 1) == '@' then
+        local dir = vim.fn.fnamemodify(source:sub(2), ':h')
+        local registered = {}
+        for _, module_name in pairs(M.module_sources) do
+            registered[module_name] = true
+        end
+        for entry, entry_type in vim.fs.dir(dir) do
+            if entry_type == 'file' and entry:sub(-4) == '.lua' then
+                local base = entry:sub(1, -5)
+                if base ~= 'init' and base ~= 'update' and base ~= '_sandbox' then
+                    local module_name = 'linters.' .. base
+                    if not registered[module_name] and not M.unregistered_adapters[module_name] then
+                        problems[#problems + 1] = ('adapter %q is on disk but not registered in module_sources'):format(
+                            module_name
+                        )
+                    end
+                end
             end
         end
     end

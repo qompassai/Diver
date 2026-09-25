@@ -18,6 +18,9 @@ return { ---@type vim.lint.Config
         }
     end,
     parser = function(output)
+        if output == '' then
+            return {}
+        end
         local decoded = vim.json.decode(output) or {}
         local findings = decoded.findings or {}
         local diagnostics = {}

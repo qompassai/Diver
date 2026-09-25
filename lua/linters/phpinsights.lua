@@ -199,6 +199,4 @@ local M = {
     parser = parser,
 }
 
-require('linters').register('phpinsights', M)
-
 return M

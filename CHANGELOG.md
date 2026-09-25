@@ -131,6 +131,132 @@ verifiable here; left as documented behavior, not changed).
 - pint `--preset` vs project-config precedence not verified here
   (pint not installed).
 
+## Linter program (2026-09-25): 21 new adapters, 92 orphans registered
+
+Third program on this branch, at Matt's request: the counterpart to the
+formatter program — complete the linter coverage in `lua/linters/`,
+verify the previously-dead `:Lint*` commands and the C6 modules, audit
+every adapter (source URL, explicit settings, tiger style), and wire
+everything so the whole config stays functional. Worked
+half-writing / half-adversarial until the gates were green.
+
+### New adapters (21)
+
+One file per tool in `lua/linters/`, each with an ELI5 `---` header,
+`---@source` upstream URL, explicit flags, argv-only execution, and
+bounded parsers:
+
+- `cspell` — https://github.com/streetsidesoftware/cspell
+- `deno` — https://docs.deno.com/runtime/reference/cli/lint/
+- `eslint` — https://eslint.org/docs/latest/use/command-line-interface
+- `fish` — https://github.com/fish-shell/fish-shell
+- `flake8` — https://flake8.pycqa.org/
+- `json_tool` — https://docs.python.org/3/library/json.html
+- `markdownlint-cli2` — https://github.com/DavidAnson/markdownlint-cli2
+- `mypy` — https://mypy.readthedocs.io/
+- `php` — https://www.php.net/manual/en/features.commandline.php
+- `pycodestyle` — https://pycodestyle.pycqa.org/
+- `pylint` — https://pylint.readthedocs.io/
+- `quick-lint-js` — https://quick-lint-js.com/
+- `ruby` — https://www.ruby-lang.org/
+- `ruff` — https://github.com/astral-sh/ruff
+- `selene` — https://github.com/Kampfkarren/selene
+- `sqruff` — https://github.com/quarylabs/sqruff
+- `tombi` — https://github.com/tombi-toml/tombi
+- `vale` — https://vale.sh/
+- `write_good` — https://github.com/btford/write-good
+- `zizmor` — https://github.com/woodruffw/zizmor
+- `zsh` — https://www.zsh.org/
+
+### Wiring (`lua/linters/init.lua`)
+
+- `M.module_sources`: 85 → 177 entries, re-sorted (key = filename with
+  `-` → `_`).
+- `M.linters_by_ft`: 25 existing filetype tables extended + 34 new
+  filetype keys; every name verified resolving to a `module_sources`
+  key, no duplicates per filetype.
+- `M.validate()` is now orphan-aware: it scans `lua/linters/` and
+  reports any on-disk adapter missing from `module_sources`, unless
+  listed in the new `M.unregistered_adapters` table.
+- `secretlint` added to `M.manual_linters` (opt-in; a node-based
+  secrets scanner should not auto-run).
+- Removed obsolete self-`register()` calls from `phpcs`,
+  `phpinsights`, `phpmd` (they caused require loops once the modules
+  were registered; `module_sources` covers them now).
+- `validate()` now accepts `function` cmd (the `Linter` type's
+  `LintCmd` alias and the runner both support it).
+
+### C4 / C6 re-verification (headless-proven)
+
+- C4: all 6 `:Lint*` commands (`Lint`, `LintDisable`, `LintEnable`,
+  `LintInfo`, `LintReset`, `LintValidate`) exist after setup, which is
+  genuinely invoked from the root `init.lua` — PASS.
+- C6: `hledger` and `lightning-flow-scanner` require cleanly but their
+  hard dependencies (`utils.hledger`,
+  `linters._salesforce-code-analyzer`) do not exist in the repo, so
+  they can only ever return `{unavailable=...}` sentinels. They are
+  **quarantined** in `M.unregistered_adapters` with documented
+  reasons, not registered as if they worked — needs Matt's call:
+  implement the helpers, or delete the files. (`latex` also
+  quarantined: it is a disabled SCIP indexer, not a linter.)
+
+### Audit findings fixed
+
+- 113 orphan adapters found (on disk, require-clean, unreachable
+  through the runner); 92 registered, 3 quarantined with reasons,
+  the rest were the 18 already-registered new ones.
+- 32 LuaLS strict warnings in the new adapters → 0 (narrowing
+  `---@cast` after range checks, `---@return vim.Diagnostic.Set?`
+  annotations, 2 nil-narrowing restructures in `fish.lua`/`vale.lua`).
+- `deadnix.lua`: removed `goto`/`::continue::` (stylua hard parse
+  error vs the repo's `syntax="All"`), tabs → 4 spaces.
+- `clj-kondo.lua`: parser threw on empty output (the normal clean
+  case) → returns `{}` like the other parsers.
+- `tombi.lua`: `LOCATION_PATTERN` required a space after the filename
+  colon but live output is `at bad.toml:2:1` — could never match;
+  fixed and verified against observed output.
+- `code_analyzer` quarantined: it is a factory (`M.new(options)`),
+  not a `Linter`; nothing instantiates it.
+- 20/20 `---@source` URLs spot-checked against upstream: all
+  canonical, 0 dead, 0 forks.
+
+### Adversarial results
+
+- 52 parsers × 11 hostile inputs (empty, noise, malformed JSON/XML,
+  NUL bytes, 200 KB single line, 1 MiB blob, unicode): 0 unhandled
+  errors; 7 adapters that deliberately `error()` are converted by the
+  runner's `pcall` into ERROR notifications — graceful, no crash.
+- Shell-injection probe (hostile filename with quotes, `$()`,
+  backticks, newline): arrived as exactly one argv element; no marker
+  files created — filenames never enter a shell string.
+- Missing binaries fail cleanly (`status='unavailable'`); 1 MiB+
+  files rejected before spawning; 2 MiB / 40 000-line output parsed
+  in 472 ms.
+
+### Gates (self-measured 2026-09-25, `lua/linters/`, 183 files)
+
+- luacheck 1.2.0 (repo `.luacheckrc`): **0 warnings / 0 errors**
+- stylua 2.5.2 `--check` (repo `.stylua.toml`): **clean**
+- lua-language-server 3.19.1 `--check` (strict profile mirroring
+  `lsp/lua_ls.lua`): **0 diagnostics**
+- Headless require sweep: **183/183**; `setup()` ok;
+  `M.validate()` **0 problems**; 6/6 `:Lint*` commands present
+- Headless startup smoke: exit 0
+
+### ELI5 docs
+
+- Every new adapter carries an ELI5 `---` header.
+- `lua/linters/README.md`: new "New Linter Adapters (21)" section
+  (table: tool → plain-language "what it checks" → filetypes).
+
+### Open / not done (needs Matt's decision)
+
+- `hledger` / `lightning-flow-scanner`: implement the missing helper
+  modules, or delete the adapter files.
+- Cold-start `init.lua` trips on `render-markdown.nvim` bootstrap
+  (`env.lua:20: attempt to index field 'spec'`) during `vim.pack`
+  install — pre-existing, exit still 0, linters unaffected.
+
 ## Critical fixes (C1–C7)
 
 ### C1 — `require('types')` no longer neuters `vim.api.nvim_create_autocmd`

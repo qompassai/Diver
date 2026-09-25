@@ -209,6 +209,4 @@ local M = {
     parser = parser,
 }
 
-require('linters').register('phpcs', M)
-
 return M
