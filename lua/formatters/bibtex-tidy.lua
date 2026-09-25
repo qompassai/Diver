@@ -3,6 +3,20 @@
 -- Qompass AI Diver Native BibTeX Tidy Formatter
 -- Copyright (C) 2026 Qompass AI, All rights reserved
 -- #################################################################
+---@source https://github.com/FlamingTempura/bibtex-tidy
+
+--- BibTeX database tidier — straightens `.bib` files on save.
+---
+--- Plain-language version: BibTeX is the bibliography format LaTeX uses.
+--- This adapter runs the bibtex-tidy Node package on the buffer through a
+--- small wrapper script: the wrapper pins the package version, caps input
+--- and output size, refuses to write anything when tidy reports warnings,
+--- and sanity-checks braces before formatting. Every tidy option is set
+--- explicitly in CONFIG below (nothing inherits a surprise upstream
+--- default); the only flags on the node command itself are the heap cap and
+--- the `--eval` wrapper invocation.
+---@module 'formatters.bibtex-tidy'
+
 local fs = vim.fs
 
 local CONFIG = {
@@ -107,14 +121,17 @@ try {
     throw new Error('Invalid bibtex-tidy result');
   }
   if (rejectWarnings === 'true' && result.warnings.length) {
-    throw new Error(result.warnings.slice(0, 8).map(w => String(w.message).slice(0, 512)).join('\n'));
+    const warnText = result.warnings.slice(0, 8).map(w => String(w.message).slice(0, 512));
+    throw new Error(warnText.join('\n'));
   }
-  if (result.bibtex.includes('\0') || Buffer.byteLength(result.bibtex, 'utf8') > Number(outputLimit)) {
+  const outBytes = Buffer.byteLength(result.bibtex, 'utf8');
+  if (result.bibtex.includes('\0') || outBytes > Number(outputLimit)) {
     throw new Error('Invalid or oversized BibTeX output');
   }
   process.stdout.write(result.bibtex);
 } catch (error) {
-  process.stderr.write(`bibtex-tidy: ${String(error instanceof Error ? error.message : error).slice(0, 8192)}\n`);
+  const errText = String(error instanceof Error ? error.message : error).slice(0, 8192);
+  process.stderr.write(`bibtex-tidy: ${errText}\n`);
   process.exitCode = 1;
 }
 ]==]
@@ -173,4 +190,6 @@ return {
     automatic = true,
     allow_empty = false,
     extension = 'bib',
+    decode = nil,
+    pre_transform = nil,
 }

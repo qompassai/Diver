@@ -15,6 +15,18 @@
 -- See the License for the specific language governing permissions and
 -- limitations under the License.
 -- #################################################################
+---@source https://github.com/google/jsonnet
+
+--- Jsonnet formatter — canonical layout for `.jsonnet` files.
+---
+--- Plain-language version: jsonnetfmt formats Jsonnet (the templating
+--- language for JSON configs). The flags pin the whole style: 2-space
+--- indent, at most 2 blank lines, single-quoted strings and comments,
+--- pretty field names, no padding inside arrays, padding inside objects,
+--- sorted imports, and implicit `+` for object extension. The trailing `-`
+--- reads the buffer from stdin.
+---@module 'formatters.jsonnetfmt'
+
 -- #################################################################
 ---@param context FormatterContext
 ---@return string
@@ -62,4 +74,6 @@ return {
     automatic = true,
     allow_empty = false,
     extension = 'jsonnet',
+    decode = nil,
+    pre_transform = nil,
 }

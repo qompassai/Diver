@@ -11,6 +11,126 @@ Conventions: `file:line` is the working-tree location of the change;
 topics, upstream docs — never invented). Effects marked "measured during
 the fix program" come from the program's own runs, not re-verified here.
 
+## Formatter program (2026-09-25): 105 new native formatter adapters
+
+Second program on this branch, at Matt's request: add native formatter
+configs for every formatter the config did not already cover, wire
+`init.lua`/`catalog.lua` so the whole config stays functional, bring the
+ELI5 docs up to date, and audit the full `lua/formatters/` tree
+(138 files). Worked half-validating / half-adversarial until the gates
+below were green.
+
+### New adapters (105)
+
+105 new `lua/formatters/<name>.lua` adapters, one per tool: aiken_fmt,
+air, autopep8, bean_format, bibtex_tidy, biome, black, blackd, brittany,
+buf_format, buildifier, cabal_fmt, cl_format, cljfmt, cmake_format,
+cookstyle, csharpier, cue_fmt, deno_fmt, dfmt, dhall_format, djlint,
+docstrfmt, dprint, efmt, elm_format, erb_formatter, erlfmt, fantomas,
+findent, fnlfmt, forge_fmt, fourmolu, fprettify, gdformat, gofmt,
+grain_format, hclfmt, hledger_fmt, htmlbeautify, janet_format, jq,
+julia_formatter, just_fmt, kcl_fmt, ktlint, kulala_fmt, latexindent,
+mago_format, mbake, mdformat, mh_style, mix_format, muon_fmt, nginxfmt,
+nickel_format, nomad_fmt, nufmt, ocamlformat, opa_fmt, ormolu, packer_fmt,
+panache, perltidy, phpcbf, powershell_formatter, prettier, prettierd,
+puppet_lint_fix, purs_tidy, qmlformat, raco_fmt, refmt, robotidy, rubocop,
+rubyfmt, ruff_format, rumdl_fmt, rustfmt, schemat, shellharden, snakefmt,
+sqlfluff, sqruff, standardrb, styler, stylua, superhtml, swift_format,
+swiftformat, taplo, templ_fmt, terraform_fmt, tofu_fmt, tombi,
+twig_cs_fixer, typstfmt, typstyle, verible_verilog_format, vsg, xmlformat,
+xmllint, yamlfmt, yapf, zprint.
+
+Every adapter carries an ELI5 `---` header (what the tool does, what each
+flag means, in plain language) and a `---@source` upstream URL; all tool
+flags are explicit (no silent reliance on upstream defaults); all
+subprocess input goes through argv form (`vim.system`), never shell
+interpolation.
+- **Source:** per-adapter `---@source` URLs (upstream project pages);
+  `:h vim.system()` for the argv-form contract.
+
+### Wiring (`init.lua`)
+
+- `module_sources` + `formatters_by_ft` entries for the new adapters.
+- `zigfmt` → `zig_fmt`: the old entry referenced `formatters.zigfmt`,
+  which has no module file; the adapter on disk is `zig_fmt.lua`.
+- `crystal_format` / `nimpretty` wired for the `crystal` / `nim`
+  filetypes.
+- 8 stale inline `M.register` specs removed (alejandra, gofumpt,
+  goimports, htmlbeautify, blackd, and 3 more); only `css-beautify` and
+  `sql-formatter` remain inline — no module files exist for them.
+- Strict-LuaLS fix: the `formatters_by_ft` fallback-chain loops now bind
+  the chain to a `---@type string[]` local, clearing the one
+  `param-type-mismatch` under the `lsp/lua_ls.lua` strict profile
+  (`checkTableShape=true`, `weakNilCheck=false`, `weakUnionCheck=false`).
+- Normalized to the repo's own `.stylua.toml` (4-space indent).
+
+### Tool catalog (`catalog.lua`, +738 lines)
+
+- New installer recipes: cargo (`efmt`, `hledger_fmt`, `nickel_format`,
+  `panache`, `rumdl_fmt`, `schemat`, `sqruff`, `taplo`, `tex_fmt`,
+  `tombi`, `typstfmt`, `typstyle`), Go tools (`buildifier`, `cue_fmt`,
+  `hclfmt`, `jsonnetfmt`, `templ_fmt`, `yamlfmt`), npm, plus new
+  `pip` / `gem` / `composer` / `dotnet` installer helpers.
+- New catalog search paths: `dotnet-tools`, `gems/bin`,
+  `node_modules/.bin`, `python/bin`.
+- All 131 catalog entries carry a source URL (release API or project
+  page).
+- `zigfmt` catalog key renamed to `zig_fmt`; bespoke entries added for
+  `crystal_format` (Crystal ships `crystal tool format`) and `nimpretty`
+  (ships with choosenim).
+- Fixed an over-120-column `instructions` string (`janet_format`).
+
+### Old-adapter audit (12 files)
+
+ELI5 headers added to 11 adapters (bibtex-tidy, clang_format, gersemi,
+gofumpt, goimports, jsonnetfmt, ktfmt, phpcsfixer, pint, scalafmt,
+shfmt); all flags verified explicit; argv-form confirmed everywhere.
+pint's profile is documented as project-config-driven — no `--preset`
+forced, since that could override project configs (precedence not
+verifiable here; left as documented behavior, not changed).
+
+### Source-URL audit
+
+- 133/138 files had a valid `---@source`; fixed 7: `d2.lua`
+  (malformed annotation), `fourmolu.lua` (0-star fork → canonical
+  `fourmolu/fourmolu`), `rubyfmt.lua` (fork → `fables-tales/rubyfmt`),
+  `cmake_format.lua` (null-ls fork snapshot → `cheshirekow/cmake_format`),
+  `uncrustify.lua` (removed stray Neovim-docs URL),
+  `puppet_lint_fix.lua` (plain-http pinned docs → `puppetlabs/puppet-lint`),
+  `bean_format.lua` (null-ls fork → `beancount/beancount`; verified the
+  tool ships with Beancount itself).
+- Framework files (`init.lua`, `catalog.lua`, `process.lua`, `tools.lua`)
+  carry `---@source https://github.com/qompassai/diver`.
+- 17-URL spot check: 0 dead links. Several adapters intentionally cite
+  upstream issues/PRs that document the exact stdin behavior the adapter
+  relies on (e.g. `forge_fmt` → foundry PR 1336, `mix_format` →
+  elixir-lang issue 7411).
+
+### Gates (measured 2026-09-25, `lua/formatters/`, 138 files)
+
+- luacheck 1.2.0 (repo `.luacheckrc`): 0 warnings / 0 errors.
+- stylua 2.5.2 `--check` (repo `.stylua.toml`): clean.
+- lua-language-server 3.19.1 `--check`: 0 problems under the repo
+  `.luarc.json`; 0 problems under the strict `lsp/lua_ls.lua` profile.
+- Headless require sweep: 138/138 modules load, 0 failures.
+- Headless startup smoke: exit 0 ×3, ~291 ms to `NVIM STARTED`
+  (audit baseline was 1682–5194 ms).
+- Adversarial: 105/105 new adapters clean — 0 critical, 0 high, 0 low.
+  320+ hostile args-builder calls (quotes, `$()`, backticks, newlines,
+  unicode, 4000-char paths) all returned clean argv lists; a fake-PATH
+  binary confirmed payloads arrive as single argv elements and never
+  execute; missing binaries fail in ~0 ms with `Formatter unavailable`;
+  13 tempfile-mode adapters leak nothing on success or failure.
+
+### Open / not done (pre-existing, needs Matt's decision)
+
+- 4 `module_sources` names have no module file (`awkfmt`,
+  `nixpkgs_fmt`, `ptop`, `scarb_fmt`) — pre-existing; the runner
+  degrades gracefully (`M.validate()` clean).
+- `dioxus` catalog entry has no filetype wiring — pre-existing gap.
+- pint `--preset` vs project-config precedence not verified here
+  (pint not installed).
+
 ## Critical fixes (C1–C7)
 
 ### C1 — `require('types')` no longer neuters `vim.api.nvim_create_autocmd`

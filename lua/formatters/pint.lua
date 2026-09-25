@@ -3,6 +3,19 @@
 -- Qompass AI Diver Laravel Pint Native Formatter Spec
 -- Copyright (C) 2026 Qompass AI, All rights reserved
 -- #################################################################
+---@source https://github.com/laravel/pint
+
+--- Laravel Pint — opinionated PHP formatting for the buffer.
+---
+--- Plain-language version: Pint is Laravel's PHP formatter. The adapter
+--- copies the buffer to a private tempfile and runs `pint` on that copy
+--- (the `--` keeps the path from being parsed as a flag). Pint's style
+--- profile always comes from the project: `pint.json` is discovered from
+--- the project root (see root_markers), and only when no config exists does
+--- Pint fall back to its built-in Laravel preset. No extra flags are passed
+--- because the project's own config is the pinned profile.
+---@module 'formatters.pint'
+
 -- Requires the native formatters/init.lua supplied earlier, no plugin.
 -- CLI reference: Laravel Pint v1.24.0 (https://github.com/laravel/pint).
 --
@@ -45,4 +58,6 @@ return {
     automatic = true,
     allow_empty = false,
     extension = 'php',
+    decode = nil,
+    pre_transform = nil,
 }

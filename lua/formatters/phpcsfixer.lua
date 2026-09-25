@@ -3,6 +3,20 @@
 -- Qompass AI Diver PHP-CS-Fixer Native Formatter Spec
 -- Copyright (C) 2026 Qompass AI, All rights reserved
 -- #################################################################
+---@source https://github.com/PHP-CS-Fixer/PHP-CS-Fixer
+
+--- PHP fixer — applies the project's PHP-CS-Fixer rules to the buffer.
+---
+--- Plain-language version: PHP-CS-Fixer rewrites PHP to match a rule set.
+--- This adapter copies the buffer to a private tempfile and runs
+--- `php-cs-fixer fix` on the copy: risky rules off, no cache, no ANSI, no
+--- interaction, JSON report on stdout (the formatted code is read back from
+--- the tempfile). The nearest `.php-cs-fixer.php` config supplies the
+--- rules; without one the adapter pins `--rules=@PSR12`.
+--- `--path-mode=override` scopes the run to the buffer's copy even when the
+--- project's Finder would exclude the real file.
+---@module 'formatters.phpcsfixer'
+
 -- Requires the native formatters/init.lua supplied earlier, no plugin.
 -- CLI reference: PHP-CS-Fixer v3.95.25.
 -- Executable: php-cs-fixer on PATH (install separately).
@@ -110,4 +124,6 @@ return {
     automatic = true,
     allow_empty = false,
     extension = 'php',
+    decode = nil,
+    pre_transform = nil,
 }

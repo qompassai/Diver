@@ -27,8 +27,8 @@
 -- See the License for the specific language governing permissions and
 -- limitations under the License.
 --
--- ---@source https://github.com/d2lang/d2
--- ---@source https://d2lang.com/tour/man
+---@source https://github.com/d2lang/d2
+---@source https://d2lang.com/tour/man
 local fs = vim.fs
 
 ---@type string[]

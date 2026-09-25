@@ -12,7 +12,6 @@
 -- Each line becomes: --set name=value
 -- #################################################################
 ---@source https://github.com/uncrustify/uncrustify/tree/uncrustify-0.83.0
----@source https://neovim.io/doc/user/lua.html#vim.system()
 
 local api = vim.api
 local fs = vim.fs

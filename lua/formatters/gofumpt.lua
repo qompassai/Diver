@@ -3,6 +3,20 @@
 -- Qompass AI Diver Gofumpt Native Formatter Spec
 -- Copyright (C) 2026 Qompass AI, All rights reserved
 -- #################################################################
+---@source https://github.com/mvdan/gofumpt
+
+--- Stricter Go formatter — gofmt plus extra rules, import-safe.
+---
+--- Plain-language version: gofumpt is a stricter drop-in for gofmt. Every
+--- flag is pinned off or empty so it only formats: `-l`/`-w`/`-d` never
+--- list, rewrite, or diff files; `-e` still reports syntax errors;
+--- `-lang=` and `-modpath=` stay empty so the language version is
+--- auto-detected; `-extra`, `-s`, profiling, and rewrite rules stay off.
+--- The buffer arrives on stdin and formatted source leaves on stdout; the
+--- runner sets the working directory to the file's folder so module-aware
+--- formatting works.
+---@module 'formatters.gofumpt'
+
 ---@param context FormatterContext
 ---@return string
 local function working_directory(context)
@@ -47,4 +61,6 @@ return {
     automatic = true,
     allow_empty = false,
     extension = 'go',
+    decode = nil,
+    pre_transform = nil,
 }

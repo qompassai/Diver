@@ -3,6 +3,19 @@
 -- Qompass AI Diver Goimports Native Formatter Spec
 -- Copyright (C) 2026 Qompass AI, All rights reserved
 -- #################################################################
+---@source https://pkg.go.dev/golang.org/x/tools/cmd/goimports
+
+--- Go import manager — adds missing imports, drops unused ones.
+---
+--- Plain-language version: goimports formats Go code like gofmt and also
+--- fixes the import block. The flags pin a format-only pipeline: `-l`/`-w`
+--- never touch files, `-d` returns source instead of a diff, `-e` reports
+--- parse errors, `-v` stays quiet, `-format-only=false` keeps the import
+--- fixing on, `-local=` sets no special import prefixes, `-srcdir=` tells
+--- goimports the file's directory for module-aware import resolution, and
+--- profiling/tracing stay disabled.
+---@module 'formatters.goimports'
+
 ---@param context FormatterContext
 ---@return string
 local function working_directory(context)
@@ -58,4 +71,6 @@ return {
     automatic = true,
     allow_empty = false,
     extension = 'go',
+    decode = nil,
+    pre_transform = nil,
 }

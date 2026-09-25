@@ -1,7 +1,17 @@
 -- ~/.config/nvim/lua/formatters/gersemi.lua
 -- Native Gersemi formatter specification for Neovim 0.13+ / LuaJIT.
 -- SPDX-License-Identifier: Apache-2.0
--- https://github.com/BlankSpruce/gersemi
+---@source https://github.com/BlankSpruce/gersemi
+
+--- CMake formatter — tidies `CMakeLists.txt` files without breaking them.
+---
+--- Plain-language version: Gersemi formats CMake files. `--safe` refuses to
+--- change anything it cannot prove is semantics-preserving, `--workers 1`
+--- keeps a single deterministic worker, `--stdin-filepath <name>` tells
+--- Gersemi the filename (used only for style decisions; the buffer itself
+--- arrives on stdin, marked by the trailing `-`), so unsaved buffers format
+--- correctly.
+---@module 'formatters.gersemi'
 -- The shared runner owns processes, deadlines, output bounds, and buffer mutation.
 local fs = vim.fs
 
@@ -44,6 +54,10 @@ local specification = {
     exit_codes = { 0 },
     allow_empty = false,
     automatic = true,
+    cwd = nil,
+    env = {},
+    decode = nil,
+    pre_transform = nil,
 }
 
 return specification

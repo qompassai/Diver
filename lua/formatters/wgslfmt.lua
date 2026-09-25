@@ -1,7 +1,8 @@
 --- WGSL formatter adapter — keeps GPU shader code tidy.
 ---
---- Plain-language version: WGSL is the language used to write GPU shaders for the web. This file teaches Neovim how
---- to run the WGSL formatter on save so your shader code stays neatly lined up. It runs on WGSL files when
+--- Plain-language version: WGSL is the language used to write GPU shaders for
+--- the web. This file teaches Neovim how to run the WGSL formatter on save so
+--- your shader code stays neatly lined up. It runs on WGSL files when
 --- formatting is triggered; the formatter must be installed.
 ---@module 'formatters.wgslfmt'
 -- #################################################################
@@ -35,9 +36,12 @@ import { pathToFileURL } from 'node:url';
 // Conservative lexical invariant, not syntax or semantic validation.
 function tokens(source, commaPolicy) {
   const result = [];
-  const token = /(?:0[xX](?:[0-9a-fA-F]+(?:\.[0-9a-fA-F]*)?|\.[0-9a-fA-F]+)(?:[pP][+-]?\d+)?[fhiu]?|]==] .. [==[
-(?:\d+\.\d*|\.\d+|\d+)(?:[eE][+-]?\d+)?[fhiu]?|[_\p{XID_Start}][_\p{XID_Continue}]*|]==] .. [==[
->>=|<<=|->|\+\+|--|&&|\|\||==|!=|<=|>=|<<|>>|\+=|-=|\*=|\/=|%=|&=|\|=|\^=|[^\s])/uy;
+  const tokenPattern =
+    '(?:0[xX](?:[0-9a-fA-F]+(?:\\.[0-9a-fA-F]*)?|\\.[0-9a-fA-F]+)(?:[pP][+-]?\\d+)?[fhiu]?|' +
+    '(?:\\d+\\.\\d*|\\.\\d+|\\d+)(?:[eE][+-]?\\d+)?[fhiu]?|' +
+    '[_\\p{XID_Start}][_\\p{XID_Continue}]*|>>=|<<=|->|\\+\\+|--|&&|' +
+    '\\|\\||==|!=|<=|>=|<<|>>|\\+=|-=|\\*=|\\/=|%=|&=|\\|=|\\^=|[^\\s])';
+  const token = new RegExp(tokenPattern, 'uy');
   let i = 0;
   while (i < source.length) {
     if (/\s/u.test(source[i])) { i++; continue; }
@@ -98,7 +102,8 @@ try {
   if (manifest.version !== expectedVersion) {
     throw new Error(`Expected @wasm-fmt/wgslfmt ${expectedVersion}, found ${manifest.version}`);
   }
-  const { format } = await import(pathToFileURL(localRequire.resolve('@wasm-fmt/wgslfmt/node')).href);
+  const wgslfmtModule = localRequire.resolve('@wasm-fmt/wgslfmt/node');
+  const { format } = await import(pathToFileURL(wgslfmtModule).href);
   const chunks = [];
   let size = 0;
   for await (const chunk of process.stdin) {
@@ -117,7 +122,9 @@ try {
   const before = tokens(input, config.trailing_commas);
   const after = tokens(output, config.trailing_commas);
   if (before.length !== after.length || before.some((value, index) => value !== after[index])) {
-    throw new Error('Formatter changed WGSL tokens; output rejected (upstream formatter limitation)');
+    throw new Error(
+      'Formatter changed WGSL tokens; output rejected (upstream formatter limitation)'
+    );
   }
   process.stdout.write(output);
 } catch (error) {
@@ -129,9 +136,12 @@ try {
 ---@param context FormatterContext
 ---@return string[]
 local function arguments(context)
-    assert(context.filetype == 'wgsl' or context.filetype == 'wgsl_bevy', 'wgslfmt requires a WGSL buffer')
-    local manifest = fs.joinpath(TOOLING.directory, 'node_modules', '@wasm-fmt', 'wgslfmt', 'package.json')
-    assert(vim.fn.filereadable(manifest) == 1, 'Install @wasm-fmt/wgslfmt@0.1.0 in ' .. TOOLING.directory)
+    local filetype = context.filetype
+    assert(filetype == 'wgsl' or filetype == 'wgsl_bevy', 'wgslfmt requires a WGSL buffer')
+    local pkgdir = fs.joinpath(TOOLING.directory, 'node_modules', '@wasm-fmt', 'wgslfmt')
+    local manifest = fs.joinpath(pkgdir, 'package.json')
+    local readable = vim.fn.filereadable(manifest) == 1
+    assert(readable, 'Install @wasm-fmt/wgslfmt@0.1.0 in ' .. TOOLING.directory)
     return {
         '--max-old-space-size=' .. tostring(TOOLING.js_heap_mib),
         '--input-type=module',
@@ -165,4 +175,7 @@ return {
     exit_codes = { 0 },
     automatic = true,
     allow_empty = false,
+    cwd = nil,
+    decode = nil,
+    pre_transform = nil,
 }

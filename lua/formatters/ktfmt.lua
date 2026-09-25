@@ -3,12 +3,28 @@
 -- Qompass AI Diver Native Kotlin Formatter
 -- Copyright (C) 2026 Qompass AI, All rights reserved
 -- #################################################################
+---@source https://github.com/facebook/ktfmt
+
+--- Kotlin formatter — Meta's ktfmt, run through a small Java adapter.
+---
+--- Plain-language version: ktfmt formats Kotlin code. It has no stdin CLI,
+--- so this adapter launches `java` with a pinned ktfmt JAR plus a companion
+--- `KtfmtStdin.java` adapter that pipes the buffer through. JVM flags are
+--- explicit (UTF-8, headless, serial GC, 2 CPUs, 32-512 MiB heap); the
+--- adapter receives the style knobs as argv — 100-column width, 4-space
+--- indents, complete trailing commas, editorconfig on — and byte caps for
+--- input/output. `debugging_print_ops` is forced false because stdout must
+--- carry only source code.
+---@module 'formatters.ktfmt'
+
 local fs = vim.fs
+
+local KTFMT_DIR = fs.joinpath(vim.fn.stdpath('data'), 'formatters', 'ktfmt')
 
 local TOOLING = {
     java = 'java',
-    jar = fs.joinpath(vim.fn.stdpath('data'), 'formatters', 'ktfmt', 'ktfmt-0.64-with-dependencies.jar'),
-    adapter = fs.joinpath(vim.fn.stdpath('data'), 'formatters', 'ktfmt', 'KtfmtStdin.java'),
+    jar = fs.joinpath(KTFMT_DIR, 'ktfmt-0.64-with-dependencies.jar'),
+    adapter = fs.joinpath(KTFMT_DIR, 'KtfmtStdin.java'),
     max_input_bytes = 2 * 1024 * 1024,
     max_output_bytes = 4 * 1024 * 1024,
     initial_heap_mib = 32,
@@ -105,4 +121,6 @@ return {
     automatic = true,
     allow_empty = false,
     extension = 'kt',
+    decode = nil,
+    pre_transform = nil,
 }

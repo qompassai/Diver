@@ -3,6 +3,20 @@
 -- Qompass AI Diver Native Clang-Format Formatter
 -- Copyright (C) 2026 Qompass AI, All rights reserved
 -- #################################################################
+---@source https://clang.llvm.org/docs/ClangFormat.html
+
+--- C-family formatter — applies the project's `.clang-format` on save.
+---
+--- Plain-language version: clang-format is LLVM's code formatter. This
+--- adapter reads the buffer from stdin and tells clang-format which
+--- language to assume from the file extension. `--style=file` uses the
+--- project's own `.clang-format` (falling back to LLVM style only when no
+--- config file exists, pinned by `--fallback-style=LLVM`);
+--- `--assume-filename=` picks the language; `--fail-on-incomplete-format`
+--- and `--Werror` turn partial or warning-laden output into hard errors so
+--- the buffer is never half-formatted.
+---@module 'formatters.clang_format'
+
 local CONFIG = {
     executable = 'clang-format',
     style = 'file',
@@ -66,4 +80,6 @@ return {
     automatic = true,
     allow_empty = false,
     extension = 'cpp',
+    decode = nil,
+    pre_transform = nil,
 }
