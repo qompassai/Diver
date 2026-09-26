@@ -50,6 +50,42 @@ end
 -- Run one tmux argv through vim.system with the module timeout. Returns
 -- the completed system object on success, or (nil, err) on spawn
 -- failure, non-zero exit, or a termination signal.
+--
+-- run_tmux_async is the non-blocking twin: the wait happens in
+-- libuv and cb fires on the main loop with (result, err). The
+-- callback is wrapped in vim.schedule so callers can rely on main
+-- loop context no matter how Neovim dispatches system callbacks.
+---@param argv string[] argv array; first element must be 'tmux'
+---@param op string operation label used in error messages
+---@param cb fun(result: table?, err: string?)
+local function run_tmux_async(argv, op, cb)
+    assert(type(argv) == 'table', 'argv must be a table')
+    assert(argv[1] == 'tmux', 'argv must start with tmux')
+    assert(type(cb) == 'function', 'cb must be a function')
+    local function finish(result, err)
+        vim.schedule(function()
+            cb(result, err)
+        end)
+    end
+    local ok, sysobj = pcall(vim.system, argv, { text = true, timeout = TMUX_TIMEOUT_MS }, function(res)
+        if res.code == 0 and res.signal == 0 then
+            finish(res)
+            return
+        end
+        local detail = ''
+        if type(res.stderr) == 'string' then
+            detail = trim_message(res.stderr)
+        end
+        if detail == '' and type(res.stdout) == 'string' then
+            detail = trim_message(res.stdout)
+        end
+        finish(nil, 'tmux ' .. op .. ' failed: ' .. detail)
+    end)
+    if not ok then
+        finish(nil, 'tmux ' .. op .. ' failed to start: ' .. tostring(sysobj))
+    end
+end
+
 ---@param argv string[] argv array; first element must be 'tmux'
 ---@param op string operation label used in error messages
 ---@return table? result completed vim.SystemObj on success
@@ -155,6 +191,50 @@ function M.new_session(name, cmd_argv, cwd)
     return true
 end
 
+---Non-blocking twin of new_session: the tmux spawn waits in libuv
+---and cb fires on the main loop with (true) or (nil, err).
+---@param name string
+---@param cmd_argv string[]
+---@param cwd string?
+---@param cb fun(ok: boolean?, err: string?)
+function M.new_session_async(name, cmd_argv, cwd, cb)
+    assert(type(cb) == 'function', 'cb must be a function')
+    if not M.available() then
+        cb(nil, 'tmux not available')
+        return
+    end
+    if not matches_pattern(name, SESSION_NAME_PATTERN) then
+        cb(nil, 'name must match ' .. SESSION_NAME_PATTERN)
+        return
+    end
+    local cmd_ok, cmd_err = validate_cmd_argv(cmd_argv)
+    if not cmd_ok then
+        cb(nil, cmd_err)
+        return
+    end
+    if cwd ~= nil then
+        if type(cwd) ~= 'string' or vim.fn.isdirectory(cwd) ~= 1 then
+            cb(nil, 'cwd must be an existing directory')
+            return
+        end
+    end
+    local argv = { 'tmux', 'new-session', '-d', '-s', name }
+    if cwd ~= nil then
+        argv[#argv + 1] = '-c'
+        argv[#argv + 1] = cwd
+    end
+    for _, arg in ipairs(cmd_argv) do
+        argv[#argv + 1] = arg
+    end
+    run_tmux_async(argv, 'new-session', function(_, run_err)
+        if run_err ~= nil then
+            cb(nil, run_err)
+            return
+        end
+        cb(true)
+    end)
+end
+
 ---@param target string tmux target-pane (session:window.pane or pane id)
 ---@param text string prompt text, written verbatim; may contain anything
 ---@return boolean|nil ok
@@ -212,6 +292,64 @@ function M.send_keys_pane(target, text)
     return true
 end
 
+---Non-blocking twin of send_keys_pane: the three tmux steps chain
+---through libuv and cb fires on the main loop with (true) or
+---(nil, err). The temp file is deleted on every path.
+---@param target string tmux target-pane (session:window.pane or pane id)
+---@param text string prompt text, written verbatim; may contain anything
+---@param cb fun(ok: boolean?, err: string?)
+function M.send_keys_pane_async(target, text, cb)
+    assert(type(cb) == 'function', 'cb must be a function')
+    if not M.available() then
+        cb(nil, 'tmux not available')
+        return
+    end
+    if not matches_pattern(target, TARGET_PATTERN) then
+        cb(nil, 'target must match ' .. TARGET_PATTERN)
+        return
+    end
+    if type(text) ~= 'string' then
+        cb(nil, 'text must be a string')
+        return
+    end
+    if #text > TEXT_BYTES_MAX then
+        cb(nil, 'text exceeds ' .. TEXT_BYTES_MAX .. ' bytes')
+        return
+    end
+    local path, write_err = write_temp_text(text)
+    if path == nil then
+        cb(nil, write_err)
+        return
+    end
+    local function remove_temp()
+        pcall(os.remove, path)
+    end
+    local load_argv = { 'tmux', 'load-buffer', '-b', PROMPT_BUFFER_NAME, path }
+    local paste_argv = { 'tmux', 'paste-buffer', '-b', PROMPT_BUFFER_NAME, '-t', target, '-d' }
+    local keys_argv = { 'tmux', 'send-keys', '-t', target, 'Enter' }
+    local steps = {
+        { load_argv, 'load-buffer' },
+        { paste_argv, 'paste-buffer' },
+        { keys_argv, 'send-keys' },
+    }
+    local function run_step(index)
+        if index > #steps then
+            remove_temp()
+            cb(true)
+            return
+        end
+        run_tmux_async(steps[index][1], steps[index][2], function(_, run_err)
+            if run_err ~= nil then
+                remove_temp()
+                cb(nil, run_err)
+                return
+            end
+            run_step(index + 1)
+        end)
+    end
+    run_step(1)
+end
+
 ---@param target string tmux target-pane (session:window.pane or pane id)
 ---@param lines integer? scrollback lines to capture; default 200, max 2000
 ---@return string? text pane text; may be empty
@@ -247,6 +385,48 @@ function M.capture_pane(target, lines)
     return result.stdout
 end
 
+---Non-blocking twin of capture_pane: cb fires on the main loop with
+---(text, nil); text may be empty. (nil, err) on failure.
+---@param target string tmux target-pane (session:window.pane or pane id)
+---@param lines integer? scrollback lines to capture; default 200, max 2000
+---@param cb fun(text: string?, err: string?)
+function M.capture_pane_async(target, lines, cb)
+    assert(type(cb) == 'function', 'cb must be a function')
+    if not M.available() then
+        cb(nil, 'tmux not available')
+        return
+    end
+    if not matches_pattern(target, TARGET_PATTERN) then
+        cb(nil, 'target must match ' .. TARGET_PATTERN)
+        return
+    end
+    local count = CAPTURE_LINES_DEFAULT
+    if lines ~= nil then
+        if type(lines) ~= 'number' then
+            cb(nil, 'lines must be a number')
+            return
+        end
+        count = math.floor(lines)
+    end
+    count = math.max(1, math.min(count, CAPTURE_LINES_MAX))
+    local argv = {
+        'tmux',
+        'capture-pane',
+        '-t',
+        target,
+        '-p',
+        '-S',
+        '-' .. tostring(count),
+    }
+    run_tmux_async(argv, 'capture-pane', function(result, run_err)
+        if result == nil then
+            cb(nil, run_err)
+            return
+        end
+        cb(result.stdout)
+    end)
+end
+
 ---@param name string tmux session name
 ---@return boolean|nil ok
 ---@return string? err
@@ -263,6 +443,29 @@ function M.kill_session(name)
         return nil, run_err
     end
     return true
+end
+
+---Non-blocking twin of kill_session, for async failure cleanup.
+---@param name string
+---@param cb fun(ok: boolean?, err: string?)
+function M.kill_session_async(name, cb)
+    assert(type(cb) == 'function', 'cb must be a function')
+    if not M.available() then
+        cb(nil, 'tmux not available')
+        return
+    end
+    if not matches_pattern(name, SESSION_NAME_PATTERN) then
+        cb(nil, 'name must match ' .. SESSION_NAME_PATTERN)
+        return
+    end
+    local argv = { 'tmux', 'kill-session', '-t', name }
+    run_tmux_async(argv, 'kill-session', function(_, run_err)
+        if run_err ~= nil then
+            cb(nil, run_err)
+            return
+        end
+        cb(true)
+    end)
 end
 
 ---@return string[]? names session names, empty when tmux has none

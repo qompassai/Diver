@@ -58,6 +58,11 @@ local WAIT_BLOCKED_POLL_MS = 200
 ---@field watch_interval_ms integer? Watch poll interval. Default 5000.
 
 local agents = {} ---@type table<string, HerdAgentRecord>
+---Names with an async spawn currently in flight (tmux session up,
+---readiness poll running). The agents table only gains the entry
+---after readiness, so this is what rejects a duplicate spawn while
+---the first is still starting.
+local pending_spawns = {} ---@type table<string, boolean>
 local setup_done = false
 local spawn_counter = 0 ---@type integer
 
@@ -442,29 +447,200 @@ function M.restore_layout()
     return restored, errors
 end
 
----@param params table socket request params
----@return boolean ok
----@return string? err
-local function backend_spawn(params)
-    if type(params) ~= 'table' then
-        return nil, 'params must be a table'
+---Async twin of wait_for_output: polls the pane on a uv timer instead
+---of vim.wait, so the main loop stays free between polls. cb fires
+---with true once the pane shows output, false on timeout.
+---@param name string tmux session name
+---@param cb fun(ready: boolean)
+local function poll_ready_async(name, cb)
+    assert(type(cb) == 'function', 'cb must be a function')
+    local tmux = require('ai.herd.tmux')
+    local timer = vim.uv.new_timer()
+    if timer == nil then
+        cb(false)
+        return
     end
-    if type(params.cli) ~= 'string' then
-        return nil, 'params.cli must be a string'
+    local finished = false
+    local capturing = false
+    local deadline = vim.uv.now() + READY_TIMEOUT_MS
+    local function finish(ready)
+        if finished then
+            return
+        end
+        finished = true
+        timer:stop()
+        timer:close()
+        cb(ready)
     end
-    spawn_counter = spawn_counter + 1
-    local name = params.name or (params.cli .. '-' .. tostring(spawn_counter))
-    return M.spawn_agent(name, params.cli, params.task, params.cwd)
+    timer:start(READY_POLL_MS, READY_POLL_MS, function()
+        -- One capture at a time: a slow tmux must not stack overlapping
+        -- captures faster than they complete.
+        if capturing or finished then
+            return
+        end
+        capturing = true
+        tmux.capture_pane_async(name, READY_CAPTURE_LINES, function(out, _err)
+            capturing = false
+            if finished then
+                return
+            end
+            if out ~= nil and out:gsub('%s', '') ~= '' then
+                finish(true)
+            elseif vim.uv.now() >= deadline then
+                finish(false)
+            end
+        end)
+    end)
+end
+
+---Async twin of M.spawn_agent for the socket backend: every tmux wait
+---happens in libuv and the readiness poll runs on a uv timer, so the
+---main loop never blocks. cb fires with (true) or (nil, err).
+---@param name string
+---@param cli_name string
+---@param task string?
+---@param cwd string?
+---@param cb fun(ok: boolean?, err: string?)
+local function spawn_agent_async(name, cli_name, task, cwd, cb)
+    assert(type(cb) == 'function', 'cb must be a function')
+    if type(name) ~= 'string' or #name < 1 or #name > NAME_LENGTH_MAX then
+        cb(nil, 'invalid agent name')
+        return
+    end
+    if name:match(NAME_PATTERN) == nil then
+        cb(nil, 'invalid agent name')
+        return
+    end
+    if agents[name] ~= nil then
+        cb(nil, 'agent exists')
+        return
+    end
+    if pending_spawns[name] then
+        cb(nil, 'spawn already in progress')
+        return
+    end
+    if vim.tbl_count(agents) >= AGENT_COUNT_MAX then
+        cb(nil, 'agent limit reached')
+        return
+    end
+    if type(cli_name) ~= 'string' then
+        cb(nil, 'unknown cli')
+        return
+    end
+    local entry = catalog.get(cli_name)
+    if entry == nil then
+        cb(nil, 'unknown cli')
+        return
+    end
+    if task ~= nil and type(task) ~= 'string' then
+        cb(nil, 'task must be a string')
+        return
+    end
+    if cwd ~= nil and (type(cwd) ~= 'string' or cwd == '') then
+        cb(nil, 'cwd must be a non-empty string')
+        return
+    end
+    local tmux = require('ai.herd.tmux')
+    if not tmux.available() then
+        cb(nil, 'tmux not available')
+        return
+    end
+    pending_spawns[name] = true
+    local function done(ok, err)
+        pending_spawns[name] = nil
+        cb(ok, err)
+    end
+    tmux.new_session_async(name, entry.launch_argv(), cwd, function(started, start_err)
+        if not started then
+            done(nil, start_err)
+            return
+        end
+        poll_ready_async(name, function(ready)
+            if not ready then
+                tmux.kill_session_async(name, function()
+                    done(nil, 'agent did not produce output')
+                end)
+                return
+            end
+            local function finish_spawn()
+                local watch = require('ai.herd.watch')
+                watch.track(name, name, cli_name, task)
+                agents[name] = {
+                    name = name,
+                    cli = cli_name,
+                    target = name,
+                    task = task or '',
+                    cwd = cwd,
+                    machine = 'local',
+                    created_at = os.time(),
+                }
+                local saved, save_err = persist_layout()
+                if not saved then
+                    agents[name] = nil
+                    watch.untrack(name)
+                    tmux.kill_session_async(name, function()
+                        done(nil, save_err)
+                    end)
+                    return
+                end
+                done(true)
+            end
+            if task ~= nil and task:match('%S') ~= nil then
+                tmux.send_keys_pane_async(name, task, function(sent, send_err)
+                    if not sent then
+                        tmux.kill_session_async(name, function()
+                            done(nil, send_err)
+                        end)
+                        return
+                    end
+                    finish_spawn()
+                end)
+            else
+                finish_spawn()
+            end
+        end)
+    end)
 end
 
 ---@param params table socket request params
----@return boolean ok
----@return string? err
-local function backend_prompt(params)
+---@param cb fun(ok: boolean?, err: string?)
+local function backend_spawn(params, cb)
     if type(params) ~= 'table' then
-        return nil, 'params must be a table'
+        cb(nil, 'params must be a table')
+        return
     end
-    return M.prompt_agent(params.agent, params.text)
+    if type(params.cli) ~= 'string' then
+        cb(nil, 'params.cli must be a string')
+        return
+    end
+    spawn_counter = spawn_counter + 1
+    local name = params.name or (params.cli .. '-' .. tostring(spawn_counter))
+    spawn_agent_async(name, params.cli, params.task, params.cwd, cb)
+end
+
+---@param params table socket request params
+---@param cb fun(ok: boolean?, result_or_err: any)
+local function backend_prompt(params, cb)
+    if type(params) ~= 'table' then
+        cb(nil, 'params must be a table')
+        return
+    end
+    local agent = type(params.agent) == 'string' and agents[params.agent] or nil
+    if agent == nil or agent.machine ~= 'local' then
+        cb(nil, 'unknown agent')
+        return
+    end
+    local text = params.text
+    if type(text) ~= 'string' or text == '' then
+        cb(nil, 'text must be a non-empty string')
+        return
+    end
+    if #text > TEXT_SIZE_BYTES_MAX then
+        cb(nil, 'text exceeds size limit')
+        return
+    end
+    local tmux = require('ai.herd.tmux')
+    tmux.send_keys_pane_async(agent.target, text, cb)
 end
 
 ---@param params table socket request params
@@ -499,31 +675,59 @@ local function is_settled(state)
     return state.status == 'blocked' or state.status == 'dead'
 end
 
+---Socket backend: wait until an agent is blocked or dead. Timer-based:
+---the old vim.wait blocked the main loop for the whole timeout; the
+---uv timer polls between main-loop turns instead. cb fires with
+---(true) when settled, (nil, err) on timeout or bad params.
 ---@param params table socket request params
----@return boolean ok
----@return string? err
-local function backend_wait_blocked(params)
+---@param cb fun(ok: boolean?, err: string?)
+local function backend_wait_blocked(params, cb)
     if type(params) ~= 'table' then
-        return nil, 'params must be a table'
+        cb(nil, 'params must be a table')
+        return
     end
     if type(params.agent) ~= 'string' then
-        return nil, 'params.agent must be a string'
+        cb(nil, 'params.agent must be a string')
+        return
     end
     local timeout_ms = params.timeout_ms
     if type(timeout_ms) ~= 'number' then
         timeout_ms = WAIT_BLOCKED_TIMEOUT_MS_DEFAULT
     end
-    local lower = WAIT_BLOCKED_TIMEOUT_MS_MIN
-    local upper = WAIT_BLOCKED_TIMEOUT_MS_MAX
-    timeout_ms = clamp(timeout_ms, lower, upper)
+    timeout_ms = clamp(timeout_ms, WAIT_BLOCKED_TIMEOUT_MS_MIN, WAIT_BLOCKED_TIMEOUT_MS_MAX)
+    local agent_name = params.agent
     local watch = require('ai.herd.watch')
-    local done = vim.wait(timeout_ms, function()
-        return is_settled(watch.state()[params.agent])
-    end, WAIT_BLOCKED_POLL_MS)
-    if done == true then
-        return true
+    local timer = vim.uv.new_timer()
+    if timer == nil then
+        cb(nil, 'timer unavailable')
+        return
     end
-    return nil, 'timeout waiting for agent to block'
+    local finished = false
+    local deadline = vim.uv.now() + timeout_ms
+    local function finish(ok, err)
+        if finished then
+            return
+        end
+        finished = true
+        timer:stop()
+        timer:close()
+        cb(ok, err)
+    end
+    timer:start(WAIT_BLOCKED_POLL_MS, WAIT_BLOCKED_POLL_MS, function()
+        -- The check itself is fast-event safe (pure Lua + vim.uv.now),
+        -- but the settle path (reply encode + socket write) runs on the
+        -- main loop, never from this timer callback.
+        vim.schedule(function()
+            if finished then
+                return
+            end
+            if is_settled(watch.state()[agent_name]) then
+                finish(true)
+            elseif vim.uv.now() >= deadline then
+                finish(nil, 'timeout waiting for agent to block')
+            end
+        end)
+    end)
 end
 
 ---@param params table socket request params

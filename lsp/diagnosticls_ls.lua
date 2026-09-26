@@ -1,0 +1,251 @@
+-- /qompassai/Diver/lsp/diagnosticls_ls.lua
+-- Qompass AI Diagnostic-Languageserver LSP Spec
+-- Copyright (C) 2025 Qompass AI, All rights reserved
+-- -------------------------------------------------
+return ---@type vim.lsp.Config
+{
+    cmd = {
+        'diagnostic-languageserver',
+        '--stdio',
+    },
+    filetypes = {
+        'css',
+        'email',
+        'html',
+        'javascript',
+        'javascriptreact',
+        'json',
+        'markdown',
+        'python',
+        'sh',
+        'typescript',
+        'typescriptreact',
+        'yaml',
+    },
+    init_options = {
+        filetypes = {
+            email = 'languagetool',
+            javascript = 'eslint',
+            javascriptreact = 'eslint',
+            markdown = 'markdownlint',
+            python = 'flake8',
+            sh = 'shellcheck',
+            typescript = 'eslint',
+            typescriptreact = 'eslint',
+        },
+        formatFiletypes = {
+            css = 'prettier',
+            html = 'prettier',
+            javascript = 'prettier',
+            javascriptreact = 'prettier',
+            json = 'prettier',
+            markdown = 'prettier',
+            python = 'black',
+            sh = 'shfmt',
+            typescript = 'prettier',
+            typescriptreact = 'prettier',
+            yaml = 'prettier',
+        },
+        formatters = {
+            black = {
+                args = {
+                    '--quiet',
+                    '-',
+                },
+                command = 'black',
+                doesWriteToFile = false,
+                ignoreExitCode = false,
+                isStderr = false,
+                isStdout = true,
+                rootPatterns = {},
+            },
+            prettier = {
+                args = {
+                    '--stdin-filepath',
+                    '%filepath',
+                },
+                command = 'prettier',
+                doesWriteToFile = false,
+                ignoreExitCode = false,
+                isStderr = false,
+                isStdout = true,
+                rootPatterns = {
+                    '.prettierrc',
+                    'prettier.config.js',
+                },
+            },
+            shfmt = {
+                command = 'shfmt',
+                doesWriteToFile = false,
+                ignoreExitCode = false,
+                isStderr = false,
+                isStdout = true,
+                rootPatterns = {},
+            },
+        },
+        linters = {
+            eslint = {
+                args = {
+                    '--stdin',
+                    '--stdin-filename=%filepath',
+                    '--format=json',
+                    '--no-color',
+                },
+                command = 'eslint',
+                debounce = 100,
+                isStderr = false,
+                isStdout = true,
+                offsetColumn = 0,
+                offsetLine = 0,
+                parseJson = {
+                    column = 'column',
+                    endColumn = 'endColumn',
+                    endLine = 'endLine',
+                    errorsRoot = '[0].messages',
+                    line = 'line',
+                    message = '${text} [${ruleId}]',
+                    security = 'severity',
+                },
+                rootPatterns = {
+                    '.eslintrc',
+                    '.eslintrc.js',
+                    '.eslintrc.json',
+                    '.eslintrc.yml',
+                    '.eslintrc.yaml',
+                    'package.json',
+                },
+                securities = {
+                    ['1'] = 'warning',
+                    ['2'] = 'error',
+                },
+                sourceName = 'eslint',
+            },
+            flake8 = {
+                args = {
+                    '--format=%(row)d,%(col)d,%(code).1s,%(code)s: %(text)s',
+                    '-',
+                },
+                command = 'flake8',
+                debounce = 100,
+                formatLines = 1,
+                formatPattern = {
+                    '^(\\d+),(\\d+),([A-Z]),(.*)$',
+                    {
+                        column = 2,
+                        line = 1,
+                        message = 4,
+                        security = 3,
+                    },
+                },
+                isStderr = false,
+                isStdout = true,
+                offsetColumn = 0,
+                offsetLine = 0,
+                rootPatterns = {},
+                securities = {
+                    C = 'error',
+                    E = 'error',
+                    F = 'error',
+                    W = 'warning',
+                },
+                sourceName = 'flake8',
+            },
+            languagetool = {
+                args = {
+                    '-',
+                },
+                command = 'languagetool',
+                debounce = 200,
+                formatLines = 1,
+                formatPattern = {
+                    '^\\d+?\\)\\s+Line\\s+(\\d+),\\s+column\\s+(\\d+),\\s+([^:]+):\\s+(.*)$',
+                    {
+                        column = 2,
+                        line = 1,
+                        message = {
+                            4,
+                            'languagetool',
+                        },
+                        security = 3,
+                    },
+                },
+                isStderr = false,
+                isStdout = true,
+                offsetColumn = 0,
+                offsetLine = 0,
+                rootPatterns = {},
+                securities = {
+                    error = 'error',
+                    warning = 'warning',
+                },
+                sourceName = 'languagetool',
+            },
+            markdownlint = {
+                args = {
+                    '--stdin',
+                },
+                command = 'markdownlint',
+                debounce = 100,
+                formatLines = 1,
+                formatPattern = {
+                    '^(.*):(\\d+):(\\d+)\\s+([A-Z]+[0-9]+)(.*)$',
+                    {
+                        column = 3,
+                        line = 2,
+                        message = 5,
+                        security = 4,
+                        sourceName = 1,
+                    },
+                },
+                isStderr = false,
+                isStdout = true,
+                offsetColumn = 0,
+                offsetLine = 0,
+                rootPatterns = {
+                    '.markdownlint.json',
+                    '.markdownlint.yaml',
+                },
+                securities = {
+                    MD = 'warning',
+                },
+                sourceName = 'markdownlint',
+            },
+            shellcheck = {
+                args = {
+                    '--format=gcc',
+                    '-',
+                },
+                command = 'shellcheck',
+                debounce = 100,
+                formatLines = 1,
+                formatPattern = {
+                    '^[^:]+:(\\d+):(\\d+):\\s+([^:]+):\\s+(.*)$',
+                    {
+                        column = 2,
+                        line = 1,
+                        message = 4,
+                        security = 3,
+                    },
+                },
+                ignore = {
+                    '.git',
+                    'dist/',
+                },
+                isStderr = false,
+                isStdout = true,
+                offsetColumn = 0,
+                offsetLine = 0,
+                rootPatterns = {},
+                securities = {
+                    error = 'error',
+                    note = 'info',
+                    warning = 'warning',
+                },
+                sourceName = 'shellcheck',
+            },
+        },
+    },
+    root_markers = {
+        '.git',
+    },
+}

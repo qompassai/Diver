@@ -133,6 +133,9 @@ local function load_adapter(spec)
     if type(mod.query_sync) ~= 'function' then
         return nil, 'adapter has no query_sync: ' .. spec.module
     end
+    if type(mod.query_async) ~= 'function' then
+        return nil, 'adapter has no query_async: ' .. spec.module
+    end
     return mod, nil
 end
 
@@ -221,20 +224,36 @@ end
 ---@param confirm_token string?
 ---@return boolean ok
 ---@return any result
-local function execute(adapter_name, dsn, text, confirm_token)
+---The managed query pipeline. The sync prelude (validation, request
+---scan, confirmation gate, session acquire) runs inline; the adapter
+---query waits in libuv via adapter.query_async and the postlude
+---(result scan, audit, session release) runs in its callback. cb fires
+---on the main loop with (true, rows) or (false, err); a
+---confirmation_required outcome is a (true, table) reply, as before.
+---@param adapter_name string
+---@param dsn string|table
+---@param text string
+---@param confirm_token string?
+---@param cb fun(ok: boolean, result: any)
+local function execute_async(adapter_name, dsn, text, confirm_token, cb)
+    assert(type(cb) == 'function', 'cb must be a function')
     local spec = adapter_spec(adapter_name)
     if spec == nil then
-        return false, 'unknown adapter: ' .. tostring(adapter_name)
+        cb(false, 'unknown adapter: ' .. tostring(adapter_name))
+        return
     end
     if not clean_bounded_string(text) then
-        return false, 'text must be a non-empty string without NUL bytes'
+        cb(false, 'text must be a non-empty string without NUL bytes')
+        return
     end
     if #text > TEXT_BYTES_MAX then
-        return false, 'text exceeds size bound'
+        cb(false, 'text exceeds size bound')
+        return
     end
     local target, dsn_err, identity = normalize_dsn(spec, dsn, adapter_name)
     if target == nil then
-        return false, dsn_err
+        cb(false, dsn_err)
+        return
     end
     assert(identity ~= nil, 'normalize_dsn returned no identity without error')
     local label = spec.kind == 'file' and (adapter_name .. ':' .. target) or identity
@@ -243,7 +262,8 @@ local function execute(adapter_name, dsn, text, confirm_token)
     local verdict, findings, scan_err = scan.check_request(text)
     if verdict == 'refuse' then
         audit_refusal(label, adapter_name, is_write, 'request_refused', findings, scan_err)
-        return false, 'request refused by security scan'
+        cb(false, 'request refused by security scan')
+        return
     end
     if verdict == 'notify' then
         audit('query.request_findings', {
@@ -260,16 +280,17 @@ local function execute(adapter_name, dsn, text, confirm_token)
         if type(token) ~= 'string' or token == '' then
             local new_token, token_err = confirm.issue(label, preview_of(text))
             if new_token == nil then
-                return false, token_err
+                cb(false, token_err)
+                return
             end
             audit('query.confirm_requested', { adapter = adapter_name, label = label })
-            return false,
-                {
-                    confirmation_required = true,
-                    confirm_token = new_token,
-                    label = label,
-                    preview = preview_of(text),
-                }
+            cb(true, {
+                confirmation_required = true,
+                confirm_token = new_token,
+                label = label,
+                preview = preview_of(text),
+            })
+            return
         end
         local state = confirm.consume(token)
         if state ~= 'approved' then
@@ -278,60 +299,78 @@ local function execute(adapter_name, dsn, text, confirm_token)
                 label = label,
                 token_state = state,
             })
-            return false, 'write not approved (token ' .. state .. ')'
+            cb(false, 'write not approved (token ' .. state .. ')')
+            return
         end
     end
 
     local adapter, load_err = load_adapter(spec)
     if adapter == nil then
-        return false, load_err
+        cb(false, load_err)
+        return
     end
     local session, session_err =
         sessions.acquire('dataaccess:' .. adapter_name .. '|' .. identity, adapter_name, adapter, target, label)
     if session == nil then
-        return false, session_err
+        cb(false, session_err)
+        return
     end
-    local rows, query_err = adapter.query_sync(target, text, { readonly = not is_write })
-    if rows == nil then
-        local redacted = secrets.redact(query_err)
-        session.last_error = redacted
-        sessions.release(session.key)
-        audit('query.failed', { adapter = adapter_name, label = label, error = redacted })
-        return false, redacted
-    end
+    -- The wait happens in libuv; the postlude runs on the main loop
+    -- in the adapter's scheduled callback. The pcall keeps a raising
+    -- adapter from leaking the acquired session.
+    local function on_result(rows, query_err)
+        if rows == nil then
+            local redacted = secrets.redact(query_err)
+            session.last_error = redacted
+            sessions.release(session.key)
+            audit('query.failed', { adapter = adapter_name, label = label, error = redacted })
+            cb(false, redacted)
+            return
+        end
 
-    local result_verdict, result_findings, result_err = scan.check_result(rows)
-    if result_verdict == 'refuse' then
+        local result_verdict, result_findings, result_err = scan.check_result(rows)
+        if result_verdict == 'refuse' then
+            sessions.release(session.key)
+            audit_refusal(label, adapter_name, is_write, 'result_refused', result_findings, result_err)
+            cb(false, 'result refused by security scan')
+            return
+        end
+        if result_verdict == 'notify' then
+            audit('query.result_findings', {
+                adapter = adapter_name,
+                label = label,
+                findings = summarize_findings(result_findings),
+            })
+            notify_findings(result_findings)
+        end
+
+        session.query_count = session.query_count + 1
+        if is_write then
+            session.write_count = session.write_count + 1
+        end
+        session.last_error = nil
         sessions.release(session.key)
-        audit_refusal(label, adapter_name, is_write, 'result_refused', result_findings, result_err)
-        return false, 'result refused by security scan'
-    end
-    if result_verdict == 'notify' then
-        audit('query.result_findings', {
+        audit(is_write and 'query.write_ok' or 'query.ok', {
             adapter = adapter_name,
             label = label,
-            findings = summarize_findings(result_findings),
+            rows = #rows,
         })
-        notify_findings(result_findings)
+        cb(true, rows)
     end
-
-    session.query_count = session.query_count + 1
-    if is_write then
-        session.write_count = session.write_count + 1
+    local started, start_err = pcall(adapter.query_async, target, text, { readonly = not is_write }, on_result)
+    if not started then
+        sessions.release(session.key)
+        audit('query.failed', { adapter = adapter_name, label = label, error = tostring(start_err) })
+        cb(false, 'query failed to start: ' .. tostring(start_err))
     end
-    session.last_error = nil
-    sessions.release(session.key)
-    audit(is_write and 'query.write_ok' or 'query.ok', {
-        adapter = adapter_name,
-        label = label,
-        rows = #rows,
-    })
-    return true, rows
 end
 
 ---Run a query through the managed layer. Reads run free; writes
 ---prompt the operator through ai.security's confirmation flow and run
 ---only on approval. The result callback always runs exactly once.
+---The adapter query itself waits in libuv (adapter.query_async), so
+---neither the socket server nor the interactive caller blocks the
+---main loop while the database works.
 ---@param adapter_name string sqlite|duckdb|mysql|mariadb|psql|redis.
 ---@param dsn string|table Path string (file adapters) or connection table.
 ---@param text string SQL or command text.
@@ -341,23 +380,23 @@ function M.query(adapter_name, dsn, text, opts, on_result)
     assert(type(on_result) == 'function', 'on_result must be a function')
     assert(opts == nil or type(opts) == 'table', 'opts must be a table or nil')
     local token = opts and opts.confirm_token or nil
-    local ok, result = execute(adapter_name, dsn, text, token)
-    if ok then
-        on_result(true, result)
-        return
-    end
-    if type(result) == 'table' and result.confirmation_required then
-        confirm.prompt(result.confirm_token, result.label, result.preview, function(allowed, reason)
-            if not allowed then
-                on_result(false, 'write denied: ' .. tostring(reason))
-                return
-            end
-            local ok2, result2 = execute(adapter_name, dsn, text, result.confirm_token)
-            on_result(ok2, result2)
-        end)
-        return
-    end
-    on_result(false, result)
+    execute_async(adapter_name, dsn, text, token, function(ok, result)
+        if ok then
+            on_result(true, result)
+            return
+        end
+        if type(result) == 'table' and result.confirmation_required then
+            confirm.prompt(result.confirm_token, result.label, result.preview, function(allowed, reason)
+                if not allowed then
+                    on_result(false, 'write denied: ' .. tostring(reason))
+                    return
+                end
+                execute_async(adapter_name, dsn, text, result.confirm_token, on_result)
+            end)
+            return
+        end
+        on_result(false, result)
+    end)
 end
 
 ---Parse a :DataQuery target string. File adapters take a path;
@@ -459,25 +498,25 @@ function M.close(key)
     return true, nil
 end
 
----Socket backend: run a query. Write queries without an approved
----token answer ok=true with { confirmation_required = true } so the
----coordinator can raise the operator prompt through 'confirm'.
+---Socket backend: run a query. The database wait happens in libuv
+---(adapter.query_async); cb fires on the main loop. Write queries
+---without an approved token answer ok=true with
+---{ confirmation_required = true } so the coordinator can raise the
+---operator prompt through 'confirm'.
 ---@param params table<string, any>
----@return boolean ok
----@return any result
-local function backend_query(params)
-    local ok, result = execute(params.adapter, params.dsn, params.text, params.confirm_token)
-    if ok then
-        return true, { rows = result }
-    end
-    if type(result) == 'table' and result.confirmation_required then
-        return true,
-            {
-                confirmation_required = true,
-                confirm_token = result.confirm_token,
-            }
-    end
-    return false, result
+---@param cb fun(ok: boolean, result: any)
+local function backend_query(params, cb)
+    execute_async(params.adapter, params.dsn, params.text, params.confirm_token, function(ok, result)
+        if ok then
+            if type(result) == 'table' and result.confirmation_required then
+                cb(true, result)
+            else
+                cb(true, { rows = result })
+            end
+            return
+        end
+        cb(false, result)
+    end)
 end
 
 ---Socket backend: raise the operator confirmation prompt for a token.

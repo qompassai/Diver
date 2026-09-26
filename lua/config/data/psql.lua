@@ -677,6 +677,59 @@ function M.query_sync(conn, sql, opts)
     return parse_csv_rows(result.stdout or ''), nil
 end
 
+---Non-blocking variant of M.query_sync for the dataaccess bulk lane:
+---the psql wait happens in libuv and cb fires on the main loop
+---with (rows, nil) or (nil, err).
+---
+---opts.readonly defaults to true, matching M.query_sync.
+---
+---@param conn PsqlConnection
+---@param sql string SQL text to run.
+---@param opts? PsqlQueryOpts
+---@param cb fun(rows: table[]|nil, err: string|nil)
+function M.query_async(conn, sql, opts, cb)
+    assert(type(cb) == 'function', 'cb must be a function')
+    -- Every cb invocation goes through vim.schedule so callers can
+    -- rely on main-loop context no matter how Neovim dispatches the
+    -- system callback.
+    local function fail(err)
+        vim.schedule(function()
+            cb(nil, err)
+        end)
+    end
+    if not has_psql() then
+        fail('psql executable was not found on PATH')
+        return
+    end
+    local valid, validation_error = validate_connection(conn)
+    if not valid then
+        fail(validation_error)
+        return
+    end
+    if type(sql) ~= 'string' or sql:match('^%s*$') then
+        fail('sql must be a non-empty string')
+        return
+    end
+    local readonly = resolve_query_readonly(opts)
+    local ok, sysobj = pcall(vim.system, build_argv(conn, readonly, { '--csv' }), {
+        stdin = sql,
+        text = true,
+        timeout = QUERY_TIMEOUT_MS,
+    }, function(result)
+        vim.schedule(function()
+            if result.code ~= 0 then
+                local err = result.stderr ~= '' and result.stderr or 'psql exited with code ' .. result.code
+                cb(nil, err)
+                return
+            end
+            cb(parse_csv_rows(result.stdout or ''), nil)
+        end)
+    end)
+    if not ok then
+        fail('psql failed to start: ' .. tostring(sysobj))
+    end
+end
+
 ---opts.readonly defaults to true, independent of the session's own
 ---readonly state, matching M.query and M.query_sync. Pass
 ---{ readonly = false } to allow a write against a read/write session.

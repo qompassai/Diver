@@ -45,6 +45,15 @@
 
 local M = {}
 
+local sched = require('ai.sched')
+local bulk = require('ai.bulk')
+
+-- Forward declarations: the pump needs handle_line, and the bulk
+-- handlers need bulk_lane, but both are built after the handlers are
+-- defined. All uses happen after module load.
+local pump ---@type AiSched
+local bulk_lane ---@type AiBulkLane
+
 local SOCKET_FILENAME = 'ai-debugbridge.sock'
 local SOCKET_DIR_MODE = '0700'
 local LISTEN_BACKLOG = 128
@@ -367,21 +376,22 @@ local NO_FIELDS = {}
 ---@param client uv.uv_pipe_t
 ---@param state DebugBridgeConnState
 ---@param req table<string, any>
-local function handle_session_acquire(client, state, req)
+local function handle_session_acquire(client, state, line, req)
     local params, err = validate_fields(req, SESSION_ACQUIRE_FIELDS)
     if err ~= nil then
         send_reply(client, state, { ok = false, error = err }, false)
         return
     end
     assert(params ~= nil, 'validate_fields returned no params without error')
-    local ok, backend_ok, result_or_err = pcall(backend.session_acquire, params)
-    send_backend_result(client, state, ok, backend_ok, result_or_err)
+    -- Bulk: DAP session setup runs off the control path; the reply
+    -- arrives via callback.
+    bulk_lane:run(client, state, line, params, backend.session_acquire)
 end
 
 ---@param client uv.uv_pipe_t
 ---@param state DebugBridgeConnState
 ---@param req table<string, any>
-local function handle_session_release(client, state, req)
+local function handle_session_release(client, state, _line, req)
     local params, err = validate_fields(req, SESSION_KEY_FIELDS)
     if err ~= nil then
         send_reply(client, state, { ok = false, error = err }, false)
@@ -395,7 +405,7 @@ end
 ---@param client uv.uv_pipe_t
 ---@param state DebugBridgeConnState
 ---@param req table<string, any>
-local function handle_session_kill(client, state, req)
+local function handle_session_kill(client, state, _line, req)
     local params, err = validate_fields(req, SESSION_KEY_FIELDS)
     if err ~= nil then
         send_reply(client, state, { ok = false, error = err }, false)
@@ -410,7 +420,7 @@ end
 ---@param client uv.uv_pipe_t
 ---@param state DebugBridgeConnState
 ---@param req table<string, any>
-local function handle_set_breakpoint(client, state, req)
+local function handle_set_breakpoint(client, state, _line, req)
     local params, err = validate_fields(req, SET_BREAKPOINT_FIELDS)
     if err ~= nil then
         send_reply(client, state, { ok = false, error = err }, false)
@@ -432,7 +442,7 @@ end
 ---@param client uv.uv_pipe_t
 ---@param state DebugBridgeConnState
 ---@param req table<string, any>
-local function handle_launch_scanned(client, state, req)
+local function handle_launch_scanned(client, state, line, req)
     local params, err = validate_fields(req, LAUNCH_SCANNED_FIELDS)
     if err ~= nil then
         send_reply(client, state, { ok = false, error = err }, false)
@@ -445,14 +455,15 @@ local function handle_launch_scanned(client, state, req)
         return
     end
     audit('launch_scanned', params)
-    local ok, backend_ok, result_or_err = pcall(backend.launch_scanned, params)
-    send_backend_result(client, state, ok, backend_ok, result_or_err)
+    -- Bulk: scanning + DAP launch runs off the control path; the
+    -- reply arrives via callback.
+    bulk_lane:run(client, state, line, params, backend.launch_scanned)
 end
 
 ---@param client uv.uv_pipe_t
 ---@param state DebugBridgeConnState
 ---@param req table<string, any>
-local function handle_bsp_build(client, state, req)
+local function handle_bsp_build(client, state, line, req)
     local params, err = validate_fields(req, BSP_ROOT_FIELDS)
     if err ~= nil then
         send_reply(client, state, { ok = false, error = err }, false)
@@ -464,28 +475,29 @@ local function handle_bsp_build(client, state, req)
         send_reply(client, state, { ok = false, error = list_err }, false)
         return
     end
-    local ok, backend_ok, result_or_err = pcall(backend.bsp_build, params)
-    send_backend_result(client, state, ok, backend_ok, result_or_err)
+    -- Bulk: the build waits in libuv; the reply arrives via callback.
+    bulk_lane:run(client, state, line, params, backend.bsp_build)
 end
 
 ---@param client uv.uv_pipe_t
 ---@param state DebugBridgeConnState
 ---@param req table<string, any>
-local function handle_bsp_targets(client, state, req)
+local function handle_bsp_targets(client, state, line, req)
     local params, err = validate_fields(req, BSP_ROOT_FIELDS)
     if err ~= nil then
         send_reply(client, state, { ok = false, error = err }, false)
         return
     end
     assert(params ~= nil, 'validate_fields returned no params without error')
-    local ok, backend_ok, result_or_err = pcall(backend.bsp_targets, params)
-    send_backend_result(client, state, ok, backend_ok, result_or_err)
+    -- Bulk: target listing waits in libuv; the reply arrives via
+    -- callback.
+    bulk_lane:run(client, state, line, params, backend.bsp_targets)
 end
 
 ---@param client uv.uv_pipe_t
 ---@param state DebugBridgeConnState
 ---@param req table<string, any>
-local function handle_quarantine(client, state, req)
+local function handle_quarantine(client, state, _line, req)
     local params, err = validate_fields(req, QUARANTINE_FIELDS)
     if err ~= nil then
         send_reply(client, state, { ok = false, error = err }, false)
@@ -502,7 +514,7 @@ end
 ---@param client uv.uv_pipe_t
 ---@param state DebugBridgeConnState
 ---@param req table<string, any>
-local function handle_status(client, state, req)
+local function handle_status(client, state, _line, req)
     local params, err = validate_fields(req, NO_FIELDS)
     if err ~= nil then
         send_reply(client, state, { ok = false, error = err }, false)
@@ -517,7 +529,7 @@ end
 ---@param client uv.uv_pipe_t
 ---@param state DebugBridgeConnState
 ---@param req table<string, any>
-local function handle_log_tail(client, state, req)
+local function handle_log_tail(client, state, _line, req)
     local count, count_err = log_tail_param(req)
     if count_err ~= nil then
         send_reply(client, state, { ok = false, error = count_err }, false)
@@ -570,8 +582,53 @@ local function handle_line(client, state, line)
         send_reply(client, state, { ok = false, error = err }, false)
         return
     end
-    handler(client, state, req)
+    handler(client, state, line, req)
 end
+
+---Commands that are tiny and latency-sensitive, or security time
+---critical (quarantine): they jump ahead of bulk commands in the
+---pump. session_acquire, launch_scanned, bsp_build and bsp_targets
+---can spawn processes or block and wait their turn.
+local CONTROL_COMMANDS = {
+    status = true,
+    log_tail = true,
+    session_release = true,
+    session_kill = true,
+    set_breakpoint = true,
+    quarantine = true,
+}
+
+---Classify one framed request line for the pump. Best-effort scan
+---for the "cmd" field with plain string matching (this runs in fast
+---event context, so no vim.* calls); the authoritative JSON decode
+---and validation still happen in handle_line. Undecodable lines and
+---unknown commands count as control so their error replies come back
+---fast instead of waiting behind bulk work.
+---@param line string
+---@return string 'control' or 'bulk'
+local function classify_line(line)
+    local cmd = line:match('"cmd"%s*:%s*"([^"]+)"')
+    if cmd ~= nil and CONTROL_COMMANDS[cmd] == nil then
+        return 'bulk'
+    end
+    return 'control'
+end
+
+pump = sched.new(classify_line, handle_line)
+
+---Bulk lane for session_acquire, launch_scanned, bsp_build and
+---bsp_targets: bounded in-flight work, watchdog, exactly-once
+---callback replies. Watchdog exceeds the slowest legitimate bulk
+---wait (BSP_WAIT_MS_MAX = 120s).
+local BULK_INFLIGHT_MAX = 8
+local BULK_WATCHDOG_MS = 180000
+
+bulk_lane = bulk.new({
+    send_reply = send_reply,
+    send_backend_result = send_backend_result,
+    max_inflight = BULK_INFLIGHT_MAX,
+    watchdog_ms = BULK_WATCHDOG_MS,
+})
 
 ---Frame bytes into newline-delimited messages, enforcing
 ---MESSAGE_BYTES_MAX on each single message.
@@ -601,14 +658,16 @@ local function on_read(client, state, err, chunk)
             return
         end
         if line:find('%S') ~= nil then
-            -- Requests run scheduled on the main loop, never in this
-            -- fast event context: backend calls use vim.fn.* and
-            -- vim.wait, which are forbidden here (E5560). Scheduled
-            -- callbacks run FIFO, so multi-line pipelining stays ordered.
-            -- Each handler rechecks state.closed via send_reply.
-            vim.schedule(function()
-                handle_line(client, state, line)
-            end)
+            -- Control-first pump: requests run scheduled on the main
+            -- loop, never in this fast event context (E5560), and
+            -- control requests jump ahead of bulk ones instead of
+            -- strict FIFO. Each handler rechecks state.closed via
+            -- send_reply. A full pump refuses instead of growing
+            -- without bound.
+            if not pump:enqueue(client, state, line) then
+                local busy = { ok = false, error = 'server busy' }
+                send_reply(client, state, busy, false)
+            end
         end
     end
     if #state.buffer > MESSAGE_BYTES_MAX then
@@ -703,13 +762,15 @@ end
 ---@param b DebugBridgeBackend
 function M.set_backend(b)
     assert(type(b) == 'table', 'backend must be a table')
-    assert(type(b.session_acquire) == 'function', 'backend.session_acquire must be a function')
+    -- Bulk backends take (params, cb): a sync function wired here
+    -- would never call cb and its requests would hang.
+    bulk.assert_callback_fn(b.session_acquire, 'session_acquire')
+    bulk.assert_callback_fn(b.launch_scanned, 'launch_scanned')
+    bulk.assert_callback_fn(b.bsp_build, 'bsp_build')
+    bulk.assert_callback_fn(b.bsp_targets, 'bsp_targets')
     assert(type(b.session_release) == 'function', 'backend.session_release must be a function')
     assert(type(b.session_kill) == 'function', 'backend.session_kill must be a function')
     assert(type(b.set_breakpoint) == 'function', 'backend.set_breakpoint must be a function')
-    assert(type(b.launch_scanned) == 'function', 'backend.launch_scanned must be a function')
-    assert(type(b.bsp_build) == 'function', 'backend.bsp_build must be a function')
-    assert(type(b.bsp_targets) == 'function', 'backend.bsp_targets must be a function')
     assert(type(b.quarantine) == 'function', 'backend.quarantine must be a function')
     assert(type(b.status) == 'function', 'backend.status must be a function')
     backend = b

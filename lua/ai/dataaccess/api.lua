@@ -36,6 +36,15 @@
 
 local M = {}
 
+local sched = require('ai.sched')
+local bulk = require('ai.bulk')
+
+-- Forward declarations: the pump needs handle_line, and the bulk
+-- lane needs the pump, so both are assigned after the handlers are
+-- defined below. Every use happens after module load.
+local pump ---@type AiSched
+local bulk_lane ---@type AiBulkLane
+
 ---@alias DataPipe uv.uv_pipe_t
 
 local SOCKET_FILENAME = 'ai-dataaccess.sock'
@@ -253,23 +262,32 @@ local function handle_backend(client, state, req, spec, method)
     send_backend_result(client, state, ok, backend_ok, result_or_err)
 end
 
-local function handle_query(client, state, req)
-    handle_backend(client, state, req, QUERY_FIELDS, 'query')
+local function handle_query(client, state, line, req)
+    assert(backend ~= nil, 'handle_query with no backend wired')
+    local params, err = validate_fields(req, QUERY_FIELDS)
+    if err ~= nil then
+        send_reply(client, state, { ok = false, error = err }, false)
+        return
+    end
+    assert(params ~= nil, 'validate_fields returned no params without error')
+    -- Bulk: the database wait happens in libuv; the reply arrives via
+    -- callback, off the main loop.
+    bulk_lane:run(client, state, line, params, backend.query)
 end
 
-local function handle_confirm(client, state, req)
+local function handle_confirm(client, state, _line, req)
     handle_backend(client, state, req, CONFIRM_FIELDS, 'confirm')
 end
 
-local function handle_status(client, state, req)
+local function handle_status(client, state, _line, req)
     handle_backend(client, state, req, KEY_OPTIONAL_FIELDS, 'status')
 end
 
-local function handle_close(client, state, req)
+local function handle_close(client, state, _line, req)
     handle_backend(client, state, req, KEY_REQUIRED_FIELDS, 'close')
 end
 
-local function handle_list(client, state, req)
+local function handle_list(client, state, _line, req)
     handle_backend(client, state, req, NO_FIELDS, 'list')
 end
 
@@ -298,8 +316,52 @@ local function handle_line(client, state, line)
         send_reply(client, state, { ok = false, error = 'unknown command: ' .. label }, false)
         return
     end
-    handler(client, state, req)
+    handler(client, state, line, req)
 end
+
+---Commands that are tiny and latency-sensitive: they jump ahead of
+---bulk commands in the pump. confirm replies immediately (the
+---operator's choice lands on the token; the coordinator retries
+---'query' with it), so it is control. query alone does the heavy
+---subprocess work and waits its turn.
+local CONTROL_COMMANDS = {
+    status = true,
+    list = true,
+    close = true,
+    confirm = true,
+}
+
+---Classify one framed request line for the pump. Best-effort scan
+---for the "cmd" field with plain string matching (this runs in fast
+---event context, so no vim.* calls); the authoritative JSON decode
+---and validation still happen in handle_line. Undecodable lines and
+---unknown commands count as control so their error replies come back
+---fast instead of waiting behind bulk work.
+---@param line string
+---@return string 'control' or 'bulk'
+local function classify_line(line)
+    local cmd = line:match('"cmd"%s*:%s*"([^"]+)"')
+    if cmd ~= nil and CONTROL_COMMANDS[cmd] == nil then
+        return 'bulk'
+    end
+    return 'control'
+end
+
+pump = sched.new(classify_line, handle_line)
+
+---At most this many bulk queries run at once; the rest requeue
+---fairly through the pump instead of stampeding database CLIs.
+local BULK_INFLIGHT_MAX = 16
+---Watchdog for one bulk query: exceeds the slowest legitimate query
+---(adapters cap at QUERY_TIMEOUT_MS = 15s).
+local BULK_WATCHDOG_MS = 60000
+
+bulk_lane = bulk.new({
+    send_reply = send_reply,
+    send_backend_result = send_backend_result,
+    max_inflight = BULK_INFLIGHT_MAX,
+    watchdog_ms = BULK_WATCHDOG_MS,
+})
 
 ---Frame bytes into newline-delimited messages, enforcing
 ---MESSAGE_BYTES_MAX on each single message.
@@ -328,13 +390,16 @@ local function on_read(client, state, err, chunk)
             return
         end
         if line:find('%S') ~= nil then
-            -- Scheduled onto the main loop, never run in this fast
-            -- event context: backend calls use vim.fn.* and vim.wait,
-            -- which are forbidden here (E5560). Scheduled callbacks run
-            -- FIFO, so multi-line pipelining stays ordered.
-            vim.schedule(function()
-                handle_line(client, state, line)
-            end)
+            -- Control-first pump: requests run scheduled on the main
+            -- loop, never in this fast event context (E5560), and
+            -- control requests jump ahead of bulk ones instead of
+            -- strict FIFO. Each handler rechecks state.closed via
+            -- send_reply. A full pump refuses instead of growing
+            -- without bound.
+            if not pump:enqueue(client, state, line) then
+                local busy = { ok = false, error = 'server busy' }
+                send_reply(client, state, busy, false)
+            end
         end
     end
     if #state.buffer > MESSAGE_BYTES_MAX then
@@ -427,7 +492,9 @@ end
 ---@param b DataBackend
 function M.set_backend(b)
     assert(type(b) == 'table', 'backend must be a table')
-    assert(type(b.query) == 'function', 'backend.query must be a function')
+    -- query is bulk: it takes (params, cb). A sync function wired
+    -- here would never call cb and its requests would hang.
+    bulk.assert_callback_fn(b.query, 'query')
     assert(type(b.confirm) == 'function', 'backend.confirm must be a function')
     assert(type(b.status) == 'function', 'backend.status must be a function')
     assert(type(b.close) == 'function', 'backend.close must be a function')

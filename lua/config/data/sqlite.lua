@@ -535,6 +535,72 @@ function M.query_sync(path, sql, opts)
     return decoded, nil
 end
 
+---Non-blocking variant of M.query_sync for the dataaccess bulk lane:
+---the sqlite3 wait happens in libuv and cb fires on the main loop
+---with (rows, nil) or (nil, err).
+---
+---opts.readonly defaults to true, matching M.query_sync.
+---
+---@param path string Database file path, or ':memory:'.
+---@param sql string SQL text to run.
+---@param opts? SqliteQueryOpts
+---@param cb fun(rows: table[]|nil, err: string|nil)
+function M.query_async(path, sql, opts, cb)
+    assert(type(cb) == 'function', 'cb must be a function')
+    -- Every cb invocation goes through vim.schedule so callers can
+    -- rely on main-loop context no matter how Neovim dispatches the
+    -- system callback.
+    local function fail(err)
+        vim.schedule(function()
+            cb(nil, err)
+        end)
+    end
+    if not has_sqlite3() then
+        fail('sqlite3 executable was not found on PATH')
+        return
+    end
+    if not path_is_safe(path) then
+        fail('path must be a non-empty string')
+        return
+    end
+    if type(sql) ~= 'string' or sql:match('^%s*$') then
+        fail('sql must be a non-empty string')
+        return
+    end
+    local readonly = resolve_query_readonly(opts)
+    local ok, sysobj = pcall(vim.system, build_argv(path, readonly, { '-json' }), {
+        stdin = sql,
+        text = true,
+        timeout = QUERY_TIMEOUT_MS,
+    }, function(result)
+        vim.schedule(function()
+            if result.code ~= 0 then
+                local err = result.stderr ~= '' and result.stderr or 'sqlite3 exited with code ' .. result.code
+                cb(nil, err)
+                return
+            end
+            local output = (result.stdout or ''):match('^%s*(.-)%s*$')
+            if output == '' then
+                cb({}, nil)
+                return
+            end
+            local dok, decoded = pcall(vim.json.decode, output)
+            if not dok then
+                cb(nil, 'failed to decode sqlite3 JSON output: ' .. tostring(decoded))
+                return
+            end
+            if type(decoded) ~= 'table' then
+                cb(nil, 'sqlite3 JSON output was not an array')
+                return
+            end
+            cb(decoded, nil)
+        end)
+    end)
+    if not ok then
+        fail('sqlite3 failed to start: ' .. tostring(sysobj))
+    end
+end
+
 ---opts.readonly defaults to true, independent of the session's own
 ---readonly state, matching M.query and M.query_sync. Pass
 ---{ readonly = false } to allow a write against a read/write session.

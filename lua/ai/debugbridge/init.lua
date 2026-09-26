@@ -77,25 +77,60 @@ end
 ---@param starter fun(cb: fun(err: string?, result: any?))
 ---@return boolean ok
 ---@return any result_or_err
-local function await_callback_op(label, starter)
+---Lift a fast sync backend fn into the (params, cb) bulk contract.
+---A raise inside fn propagates to the lane's pcall, which turns it
+---into an error reply.
+---@param fn fun(params: table): boolean, any
+---@return fun(params: table, cb: fun(ok: boolean, res: any))
+local function as_async(fn)
+    return function(params, cb)
+        local ok, res = fn(params)
+        cb(ok, res)
+    end
+end
+
+---Run a callback-style op without blocking the main loop: the old
+---vim.wait is replaced by a uv timer enforcing the BSP timeout, so
+---a silent build server fails the request instead of stalling every
+---connection. cb fires on the main loop with (true, result) or
+---(false, err).
+---@param label string
+---@param starter fun(cb: fun(err: any, result: any))
+---@param cb fun(ok: boolean, result_or_err: any)
+local function await_callback_op_async(label, starter, cb)
+    assert(type(cb) == 'function', 'cb must be a function')
     local done = false
-    local op_err = nil
-    local op_result = nil
-    starter(function(err, result)
-        op_err = err
-        op_result = result
+    local timer = vim.uv.new_timer()
+    local function finish(ok, result_or_err)
+        if done then
+            return
+        end
         done = true
+        if timer ~= nil then
+            timer:stop()
+            timer:close()
+        end
+        -- Starter callbacks may fire from any context; the lane's
+        -- reply path needs the main loop.
+        vim.schedule(function()
+            cb(ok, result_or_err)
+        end)
+    end
+    if timer ~= nil then
+        timer:start(BSP_WAIT_MS_MAX, 0, function()
+            finish(false, label .. ' timed out after ' .. tostring(BSP_WAIT_MS_MAX) .. 'ms')
+        end)
+    end
+    local ok, err = pcall(starter, function(cb_err, cb_result)
+        if cb_err ~= nil then
+            finish(false, tostring(cb_err))
+        else
+            finish(true, cb_result)
+        end
     end)
-    local finished = vim.wait(BSP_WAIT_MS_MAX, function()
-        return done
-    end, 50)
-    if not finished then
-        return false, label .. ' timed out after ' .. tostring(BSP_WAIT_MS_MAX) .. 'ms'
+    if not ok then
+        finish(false, 'starter raised: ' .. tostring(err))
     end
-    if op_err ~= nil then
-        return false, tostring(op_err)
-    end
-    return true, op_result
 end
 
 ---Build the backend table the socket API expects: nine functions, each
@@ -135,7 +170,7 @@ local function build_backend(sessions, scanbreak, bsp)
         return dest, nil
     end
     return {
-        session_acquire = function(params)
+        session_acquire = as_async(function(params)
             local adapter, aerr = resolve_adapter(params.adapter_name)
             if adapter == nil then
                 return false, aerr
@@ -156,7 +191,7 @@ local function build_backend(sessions, scanbreak, bsp)
                 return false, err
             end
             return true, { key = key }
-        end,
+        end),
         session_release = function(params)
             local ok, err = sessions.release(params.key)
             if not ok then
@@ -191,7 +226,7 @@ local function build_backend(sessions, scanbreak, bsp)
             end
             return true, { file = path, line = params.line }
         end,
-        launch_scanned = function(params)
+        launch_scanned = as_async(function(params)
             local target, terr = validate_abs_path(params.target)
             if target == nil then
                 return false, terr
@@ -244,28 +279,28 @@ local function build_backend(sessions, scanbreak, bsp)
                     stop_hook = hook_ok and hooked == true,
                     hook_error = (not hook_ok or not hooked) and tostring(hook_err or hooked) or nil,
                 }
-        end,
-        bsp_build = function(params)
-            return await_callback_op('bsp_build', function(cb)
+        end),
+        bsp_build = function(params, cb)
+            await_callback_op_async('bsp_build', function(cb2)
                 bsp.ensure(params.root, function(ensure_err)
                     if ensure_err ~= nil then
-                        cb(ensure_err)
+                        cb2(ensure_err)
                         return
                     end
-                    bsp.build_targets(params.root, params.targets, cb)
+                    bsp.build_targets(params.root, params.targets, cb2)
                 end)
-            end)
+            end, cb)
         end,
-        bsp_targets = function(params)
-            return await_callback_op('bsp_targets', function(cb)
+        bsp_targets = function(params, cb)
+            await_callback_op_async('bsp_targets', function(cb2)
                 bsp.ensure(params.root, function(ensure_err)
                     if ensure_err ~= nil then
-                        cb(ensure_err)
+                        cb2(ensure_err)
                         return
                     end
-                    bsp.list_targets(params.root, cb)
+                    bsp.list_targets(params.root, cb2)
                 end)
-            end)
+            end, cb)
         end,
         quarantine = function(params)
             local path, perr = validate_abs_path(params.path)

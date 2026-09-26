@@ -23,10 +23,13 @@
 -- spawning, prompting, and killing are the backend's job, while this
 -- file owns only the socket protocol.
 --
--- v1 LIMITATION: wait_blocked runs the backend's blocking wait on the
--- server side, so while one connection waits, every other connection
--- stalls until that wait finishes or times out. The coordinator must
--- not share one connection for waiting and control traffic.
+-- v1 SCOPE: requests are served through a control-first pump
+-- (ai.sched): status/list/kill jump ahead of bulk work. Bulk
+-- requests (spawn, prompt, wait_blocked) run on the bulk lane
+-- (ai.bulk): their backends take (params, cb) and wait off the main
+-- loop, so control traffic keeps flowing while bulk work is in
+-- flight. At most BULK_INFLIGHT_MAX bulk requests run at once; the
+-- rest requeue fairly through the pump.
 --
 -- Security notes: nothing here ever spawns a shell and nothing from
 -- the wire is interpolated anywhere; every JSON encode and decode
@@ -34,6 +37,15 @@
 -- backend sees it.
 
 local M = {}
+
+local sched = require('ai.sched')
+local bulk = require('ai.bulk')
+
+-- Forward declarations: the pump needs handle_line, and the bulk
+-- lane needs the pump, so both are assigned after the handlers are
+-- defined below. Every use happens after module load.
+local pump ---@type AiSched
+local bulk_lane ---@type AiBulkLane
 
 local SOCKET_FILENAME = 'herd.sock'
 local SOCKET_DIR_MODE = '0700'
@@ -227,37 +239,42 @@ local AGENT_OPTIONAL_FIELDS = {
 local NO_FIELDS = {}
 
 ---@param client uv_pipe_t
+---@param client uv_pipe_t
 ---@param state HerdConnState
+---@param line string framed request, for the bulk lane's fair requeue
 ---@param req table<string, any>
-local function handle_spawn(client, state, req)
+local function handle_spawn(client, state, line, req)
     local params, err = validate_fields(req, SPAWN_FIELDS)
     if err ~= nil then
         send_reply(client, state, { ok = false, error = err }, false)
         return
     end
     assert(params ~= nil, 'validate_fields returned no params without error')
-    local ok, backend_ok, result_or_err = pcall(backend.spawn, params)
-    send_backend_result(client, state, ok, backend_ok, result_or_err)
+    -- Bulk: the tmux spawn and readiness poll wait in libuv/on a
+    -- timer; the reply arrives via callback, off the main loop.
+    bulk_lane:run(client, state, line, params, backend.spawn)
 end
 
 ---@param client uv_pipe_t
 ---@param state HerdConnState
+---@param line string framed request, for the bulk lane's fair requeue
 ---@param req table<string, any>
-local function handle_prompt(client, state, req)
+local function handle_prompt(client, state, line, req)
     local params, err = validate_fields(req, PROMPT_FIELDS)
     if err ~= nil then
         send_reply(client, state, { ok = false, error = err }, false)
         return
     end
     assert(params ~= nil, 'validate_fields returned no params without error')
-    local ok, backend_ok, result_or_err = pcall(backend.prompt, params)
-    send_backend_result(client, state, ok, backend_ok, result_or_err)
+    -- Bulk: tmux send-keys waits in libuv; reply via callback.
+    bulk_lane:run(client, state, line, params, backend.prompt)
 end
 
 ---@param client uv_pipe_t
 ---@param state HerdConnState
+---@param _line string unused
 ---@param req table<string, any>
-local function handle_status(client, state, req)
+local function handle_status(client, state, _line, req)
     local params, err = validate_fields(req, AGENT_OPTIONAL_FIELDS)
     if err ~= nil then
         send_reply(client, state, { ok = false, error = err }, false)
@@ -268,14 +285,13 @@ local function handle_status(client, state, req)
     send_backend_result(client, state, ok, backend_ok, result_or_err)
 end
 
----v1 LIMITATION: the backend call below blocks the server's event
----loop, so every other connection stalls until this wait finishes or
----times out. See the header; the coordinator must keep waiting and
----control traffic on separate connections.
+---Bulk: the wait runs on a uv timer in the backend, so control
+---traffic keeps flowing while this waits for the agent to settle.
 ---@param client uv_pipe_t
 ---@param state HerdConnState
+---@param line string framed request, for the bulk lane's fair requeue
 ---@param req table<string, any>
-local function handle_wait_blocked(client, state, req)
+local function handle_wait_blocked(client, state, line, req)
     local params, err = validate_fields(req, AGENT_REQUIRED_FIELDS)
     if err ~= nil then
         send_reply(client, state, { ok = false, error = err }, false)
@@ -288,14 +304,14 @@ local function handle_wait_blocked(client, state, req)
     end
     assert(params ~= nil, 'validate_fields returned no params without error')
     params.timeout_ms = timeout_ms
-    local ok, backend_ok, result_or_err = pcall(backend.wait_blocked, params)
-    send_backend_result(client, state, ok, backend_ok, result_or_err)
+    bulk_lane:run(client, state, line, params, backend.wait_blocked)
 end
 
 ---@param client uv_pipe_t
 ---@param state HerdConnState
+---@param _line string unused
 ---@param req table<string, any>
-local function handle_kill(client, state, req)
+local function handle_kill(client, state, _line, req)
     local params, err = validate_fields(req, AGENT_REQUIRED_FIELDS)
     if err ~= nil then
         send_reply(client, state, { ok = false, error = err }, false)
@@ -308,8 +324,9 @@ end
 
 ---@param client uv_pipe_t
 ---@param state HerdConnState
+---@param _line string unused
 ---@param req table<string, any>
-local function handle_list(client, state, req)
+local function handle_list(client, state, _line, req)
     local params, err = validate_fields(req, NO_FIELDS)
     if err ~= nil then
         send_reply(client, state, { ok = false, error = err }, false)
@@ -347,8 +364,49 @@ local function handle_line(client, state, line)
         send_reply(client, state, { ok = false, error = err }, false)
         return
     end
-    handler(client, state, req)
+    handler(client, state, line, req)
 end
+
+---Commands that are tiny and latency-sensitive: they jump ahead of
+---bulk commands in the pump. Everything else (spawn, prompt,
+---wait_blocked) can take a while and waits its turn.
+local CONTROL_COMMANDS = {
+    status = true,
+    list = true,
+    kill = true,
+}
+
+---Classify one framed request line for the pump. Best-effort scan
+---for the "cmd" field with plain string matching (this runs in fast
+---event context, so no vim.* calls); the authoritative JSON decode
+---and validation still happen in handle_line. Undecodable lines and
+---unknown commands count as control so their error replies come back
+---fast instead of waiting behind bulk work.
+---@param line string
+---@return string 'control' or 'bulk'
+local function classify_line(line)
+    local cmd = line:match('"cmd"%s*:%s*"([^"]+)"')
+    if cmd ~= nil and CONTROL_COMMANDS[cmd] == nil then
+        return 'bulk'
+    end
+    return 'control'
+end
+
+pump = sched.new(classify_line, handle_line)
+
+---At most this many bulk requests run at once; the rest requeue
+---fairly through the pump instead of stampeding tmux with spawns.
+local BULK_INFLIGHT_MAX = 16
+---Watchdog for one bulk request: exceeds the slowest legitimate bulk
+---backend (wait_blocked caps at WAIT_BLOCKED_TIMEOUT_MS_MAX = 300s).
+local BULK_WATCHDOG_MS = 360000
+
+bulk_lane = bulk.new({
+    send_reply = send_reply,
+    send_backend_result = send_backend_result,
+    max_inflight = BULK_INFLIGHT_MAX,
+    watchdog_ms = BULK_WATCHDOG_MS,
+})
 
 ---Frame bytes into newline-delimited messages, enforcing
 ---MESSAGE_BYTES_MAX on each single message.
@@ -378,14 +436,16 @@ local function on_read(client, state, err, chunk)
             return
         end
         if line:find('%S') ~= nil then
-            -- Requests run scheduled on the main loop, never in this
-            -- fast event context: backend calls use vim.fn.* and
-            -- vim.wait, which are forbidden here (E5560). Scheduled
-            -- callbacks run FIFO, so multi-line pipelining stays ordered.
-            -- Each handler rechecks state.closed via send_reply.
-            vim.schedule(function()
-                handle_line(client, state, line)
-            end)
+            -- Control-first pump: requests run scheduled on the main
+            -- loop, never in this fast event context (E5560), and
+            -- control requests jump ahead of bulk ones instead of
+            -- strict FIFO. Each handler rechecks state.closed via
+            -- send_reply. A full pump refuses instead of growing
+            -- without bound.
+            if not pump:enqueue(client, state, line) then
+                local busy = { ok = false, error = 'server busy' }
+                send_reply(client, state, busy, false)
+            end
         end
     end
     if #state.buffer > MESSAGE_BYTES_MAX then
@@ -478,11 +538,12 @@ end
 ---@param b HerdBackend
 function M.set_backend(b)
     assert(type(b) == 'table', 'backend must be a table')
-    assert(type(b.spawn) == 'function', 'backend.spawn must be a function')
-    assert(type(b.prompt) == 'function', 'backend.prompt must be a function')
+    -- Bulk backends take (params, cb): a sync function wired here
+    -- would never call cb and its requests would hang.
+    bulk.assert_callback_fn(b.spawn, 'spawn')
+    bulk.assert_callback_fn(b.prompt, 'prompt')
     assert(type(b.status) == 'function', 'backend.status must be a function')
-    local wb = b.wait_blocked
-    assert(type(wb) == 'function', 'backend.wait_blocked must be a function')
+    bulk.assert_callback_fn(b.wait_blocked, 'wait_blocked')
     assert(type(b.kill) == 'function', 'backend.kill must be a function')
     assert(type(b.list) == 'function', 'backend.list must be a function')
     backend = b

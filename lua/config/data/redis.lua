@@ -721,6 +721,76 @@ function M.query_sync(conn, command, opts)
     return decoded, nil
 end
 
+---Non-blocking variant of M.query_sync for the dataaccess bulk lane:
+---the redis-cli wait happens in libuv and cb fires on the main loop
+---with (value, nil) or (nil, err).
+---
+---opts.readonly defaults to true, matching M.query_sync.
+---
+---@param conn RedisConnection
+---@param command string Redis command to run.
+---@param opts? RedisQueryOpts
+---@param cb fun(value: any|nil, err: string|nil)
+function M.query_async(conn, command, opts, cb)
+    assert(type(cb) == 'function', 'cb must be a function')
+    -- Every cb invocation goes through vim.schedule so callers can
+    -- rely on main-loop context no matter how Neovim dispatches the
+    -- system callback.
+    local function fail(err)
+        vim.schedule(function()
+            cb(nil, err)
+        end)
+    end
+    if not has_redis_cli() then
+        fail('redis-cli executable was not found on PATH')
+        return
+    end
+    local valid, validation_error = validate_connection(conn)
+    if not valid then
+        fail(validation_error)
+        return
+    end
+    if type(command) ~= 'string' or command:match('^%s*$') then
+        fail('command must be a non-empty string')
+        return
+    end
+    if resolve_query_readonly(opts) then
+        local allowed, guard_error = check_readonly_command(command)
+        if not allowed then
+            fail(guard_error)
+            return
+        end
+    end
+    local ok, sysobj = pcall(vim.system, build_argv(conn, { '-3', '--json' }), {
+        env = build_env(conn),
+        stdin = command,
+        text = true,
+        timeout = QUERY_TIMEOUT_MS,
+    }, function(result)
+        vim.schedule(function()
+            if result.code ~= 0 then
+                local err = result.stderr ~= '' and result.stderr or 'redis-cli exited with code ' .. result.code
+                cb(nil, err)
+                return
+            end
+            local output = (result.stdout or ''):match('^%s*(.-)%s*$')
+            if output == '' then
+                cb(nil, nil)
+                return
+            end
+            local dok, decoded = pcall(vim.json.decode, output)
+            if not dok then
+                cb(nil, 'failed to decode redis-cli JSON output: ' .. tostring(decoded))
+                return
+            end
+            cb(decoded, nil)
+        end)
+    end)
+    if not ok then
+        fail('redis-cli failed to start: ' .. tostring(sysobj))
+    end
+end
+
 ---opts.readonly defaults to true, independent of the session's own
 ---readonly state, matching M.query and M.query_sync. Pass
 ---{ readonly = false } to allow a write command against a read/write
