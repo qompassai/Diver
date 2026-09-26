@@ -347,3 +347,7 @@ wo.virtualedit = 'block'
 wo.wrap = true
 o.winblend = 40
 o.pumblend = 40
+
+-- Agent protocols (ACP/A2A/SDKs): commands, autocmds, and the A2A SDK
+-- FileType wiring. setup() is idempotent and spawns nothing at startup.
+require('ai').setup()

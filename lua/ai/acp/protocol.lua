@@ -1,4 +1,4 @@
--- /qompassai/Diver/lua/acp/protocol.lua
+-- /qompassai/Diver/lua/ai/acp/protocol.lua
 -- Qompass AI ACP Method Names and Message Builders (Tiger Style)
 -- Copyright (C) 2025 Qompass AI, All rights reserved
 -- ----------------------------------------

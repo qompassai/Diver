@@ -1,4 +1,4 @@
--- /qompassai/Diver/lua/acp/rpc.lua
+-- /qompassai/Diver/lua/ai/acp/rpc.lua
 -- Qompass AI ACP JSON-RPC Transport (Tiger Style)
 -- Copyright (C) 2025 Qompass AI, All rights reserved
 -- ----------------------------------------

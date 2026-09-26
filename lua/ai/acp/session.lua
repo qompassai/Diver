@@ -1,4 +1,4 @@
--- /qompassai/Diver/lua/acp/session.lua
+-- /qompassai/Diver/lua/ai/acp/session.lua
 -- Qompass AI ACP Session Lifecycle (Tiger Style)
 -- Copyright (C) 2025 Qompass AI, All rights reserved
 -- ----------------------------------------
@@ -6,9 +6,9 @@
 -- session: spawn, initialize handshake, session/new, prompt turns, cancel,
 -- teardown. UI rendering lives in acp/ui.lua; persistence in acp/store.lua.
 
-local registry = require('acp.registry')
-local rpc = require('acp.rpc')
-local protocol = require('acp.protocol')
+local registry = require('ai.acp.registry')
+local rpc = require('ai.acp.rpc')
+local protocol = require('ai.acp.protocol')
 
 local M = {}
 

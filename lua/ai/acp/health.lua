@@ -1,10 +1,10 @@
--- /qompassai/Diver/lua/acp/health.lua
+-- /qompassai/Diver/lua/ai/acp/health.lua
 -- Qompass AI ACP checkhealth (Tiger Style)
 -- Copyright (C) 2025 Qompass AI, All rights reserved
 -- ----------------------------------------
--- Run with :checkhealth acp
+-- Run with :checkhealth ai.acp
 
-local registry = require('acp.registry')
+local registry = require('ai.acp.registry')
 
 local M = {}
 

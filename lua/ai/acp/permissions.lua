@@ -1,4 +1,4 @@
--- /qompassai/Diver/lua/acp/permissions.lua
+-- /qompassai/Diver/lua/ai/acp/permissions.lua
 -- Qompass AI ACP Permission Prompts (Tiger Style)
 -- Copyright (C) 2025 Qompass AI, All rights reserved
 -- ----------------------------------------

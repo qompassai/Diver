@@ -1,4 +1,4 @@
-# `lua/acp` — Agent Protocols in Diver
+# `lua/ai` — Agent Protocols in Diver
 
 This directory implements Diver's integrations with two industry protocols
 that unfortunately share the acronym **ACP**, and documents a third one.
@@ -9,10 +9,12 @@ Read this first, because the name collision causes real confusion:
 | 1 | **Agent Context Protocol** | [prmichaelsen/agent-context-protocol](https://github.com/prmichaelsen/agent-context-protocol) | How an agent *remembers*: a documentation-first convention of markdown knowledge files (`agent/`) that persists project understanding across sessions. **No wire protocol, no RPC, no running process.** |
 | 2 | **Agent Client Protocol** | [agentclientprotocol.com](https://agentclientprotocol.com) ([spec repo](https://github.com/agentclientprotocol/agent-client-protocol), [registry](https://github.com/agentclientprotocol/registry)) | How an *editor* drives a *coding agent*: JSON-RPC 2.0 over stdio — spawn agent, handshake, open session, send prompts, stream updates, approve tool use. The "LSP for agents". |
 | 3 | **Agent Communication Protocol** | [agentcommunicationprotocol.dev](https://agentcommunicationprotocol.dev/introduction/welcome) | How *agents talk to each other*: a RESTful API (OpenAPI-defined) for agent discovery, manifests, and run lifecycle — sync, async, and streaming, stateful or stateless. A Linux Foundation project; BeeAI is its reference implementation. |
+| 4 | **Agent2Agent (A2A)** | [a2a-protocol.org](https://a2a-protocol.org) | How *agents talk to each other*: JSON-RPC 2.0 over HTTP with `AgentCard` discovery, task lifecycle, and SSE streaming. Originated at Google; now a Linux Foundation project. **This is the one Diver speaks** (as a client), via `ai/a2a/`. |
 
-Diver integrates **#1** (via `context.lua`) and **#2** (via everything else in
-this directory). Diver does **not** implement #3; it is documented here so
-the three are never confused again.
+Diver integrates **#1** (via `context.lua`), **#2** (via everything under
+`ai/acp/`), and **#4** (via `ai/a2a/`, client side only). Diver does
+**not** implement #3; it is documented here so the three "ACP"s are
+never confused again.
 
 ```
                     ┌─────────────────────────────────────────┐
@@ -123,7 +125,7 @@ Deliberate scoping notes, stated in the module header:
 - It is **documentation tooling only** — no RPC, no subprocess.
 - It is named `context.lua`, not `acp.lua`, precisely so the two
   protocols sharing the "ACP" acronym never collide in a `require(...)`
-  path. `require('acp.context')` ≠ the Agent Client Protocol.
+  path. `require('ai.context')` ≠ the Agent Client Protocol.
 
 ---
 
@@ -189,7 +191,7 @@ middleware (permissions, session management, transcript storage) become
 agent-agnostic. Bridges exist for agents that don't speak ACP natively
 (they wrap a CLI or model API and re-expose it as ACP).
 
-### Diver's integration — everything else in this directory
+### Diver's integration — everything under `ai/acp/`
 
 Diver is a full ACP **client**. Module map:
 
@@ -268,13 +270,202 @@ API**, and only minimal conformance is required for interop.
 **None, currently.** Diver neither serves nor consumes this protocol.
 It is documented here for one reason: when someone says "ACP" in the
 agent-interop conversation, they may mean this — and reaching for
-`lua/acp/` expecting REST endpoints would be a category error.
+`lua/ai/acp/` expecting REST endpoints would be a category error.
+
+---
+
+## 4. Agent2Agent (A2A) — the multi-agent console
+
+**Sources:**
+[spec repo](https://github.com/a2aproject/A2A) ·
+[canonical spec](https://raw.githubusercontent.com/a2aproject/A2A/main/specification/a2a.proto) ·
+[docs](https://a2a-protocol.org)
+
+Originated at Google as the open protocol for **agent-to-agent**
+delegation: one agent hands a task to another without sharing
+internals. It is now a Linux Foundation project. Where ACP (#2) is
+editor↔agent and MCP is agent↔tools, A2A is agent↔agent.
+
+### Which A2A Diver speaks
+
+A2A defines abstract operations (SendMessage, GetTask, CancelTask,
+…) with three wire bindings: **JSONRPC**, **GRPC**, and **HTTP+JSON**.
+Diver implements the **v0.3.x JSON-RPC binding** — the shape the
+broad third-party SDK ecosystem speaks, and the default when a
+card expresses no binding preference. The five official SDKs have
+since moved to v1.0 (ProtoJSON); they are driven separately — see
+"Official SDKs" below.
+
+| Operation | Diver sends (v0.3 JSON-RPC) | v1.0 equivalent |
+|---|---|---|
+| Send message | `message/send` | `SendMessage` / `POST /message:send` |
+| Stream | `message/stream` (SSE) | `SendStreamingMessage` / `POST /message:stream` |
+| Get task | `tasks/get` | `GetTask` / `GET /tasks/{id}` |
+| Cancel task | `tasks/cancel` | `CancelTask` / `POST /tasks/{id}:cancel` |
+
+Wire details, verified against the v0.3-era docs and third-party
+implementations: lowercase `role: "user"`, `kind` discriminators on
+messages and parts (`{kind: "text", text: …}`, `{kind: "message",
+messageId: …, …}`), kebab-case task states (`working`,
+`input-required`, `completed`, …), agent card at
+`/.well-known/agent-card.json` (v0.2.5 used `/.well-known/agent.json`).
+Diver also reads v1.0 cards: if a card carries
+`supportedInterfaces[]` instead of a top-level `url`, the first
+`JSONRPC` interface is used.
+
+### Core concepts
+
+- **AgentCard.** A JSON discovery document: the agent's name, its
+  endpoint, version, `capabilities` (`streaming`,
+  `pushNotifications`), and `skills`. Diver validates every card
+  before use and never executes anything from it — only the
+  resolved endpoint URL is ever touched, and only after
+  scheme/host checks pass.
+- **Tasks.** The execution unit. `message/send` dispatches a message
+  and (usually) returns a Task; `message/stream` does the same over
+  SSE for progress updates; `tasks/get` polls; `tasks/cancel` aborts.
+  Diver treats `completed`, `failed`, `canceled` as terminal and
+  ignores unknown states defensively.
+
+### Diver's integration — `ai/a2a/`, client side only
+
+Diver is an A2A **client and operator console**, not a server. The
+editor discovers agents, dispatches work, watches it, and aggregates
+results; it never accepts inbound A2A connections. Server-side
+orchestration (registries, webhooks, durable queues) belongs to
+**flow**, Diver's Python runtime.
+
+| Module | Responsibility |
+|--------|---------------|
+| `init.lua` | `setup()` entry point. Registers commands, installs a `VimLeavePre` autocmd that cancels all in-flight tasks. No I/O at require time. |
+| `agent_card.lua` | Card validation (required fields, URL policy), `fetch()` from well-known URIs, and the local directory (`register`/`get`/`list`). |
+| `client.lua` | The transport: A2A JSON-RPC 2.0 over HTTP(S) via `curl` through `vim.system` in argv form — no shell, no dependencies. Plain `http://` is accepted **only for loopback hosts** (local flow workers); everything else must be `https://`, and URLs with embedded credentials are rejected. SSE responses are parsed incrementally for `message/stream`. Bounded: 8 MiB responses, 30 s default request timeout. |
+| `tasks.lua` | The supervisor: at most 8 concurrent tasks, FIFO overflow queue (64 max), per-task timeout (10 min default), generation tokens so stale callbacks from canceled tasks are ignored, and a subscriber list for the UI. Finished tasks are retained (128 max) for the monitor. |
+| `fanout.lua` | Scatter-gather: dispatch one spec list to N agents, one `on_done` with results in spec order. Honors the supervisor's bounds; a fan-out-wide timeout cancels stragglers and reports partial results. |
+| `ui.lua` | `:A2aTasks` floating monitor: id, agent, state, elapsed, live-refreshed. `q` closes. |
+| `commands.lua` | `:A2aAgents` (list directory), `:A2aTasks` (monitor), `:A2aCancel [id]` (one task, or all with no argument). Also `:A2aSdks` (installer menu) and `:A2aSdkInstall <lang>`. |
+| `sdks.lua` | Official SDK registry: install commands, toolchain detection, the floating installer menu, op dispatch, and buffer-local `<LocalLeader>aa*` maps wired by filetype. |
+| `sdk_drivers.lua` | One driver program per official SDK (Python, TypeScript, Go, Java, .NET) using its documented client API. Script-kind drivers run under the language runtime; project-kind drivers get a cached scaffold under `stdpath('cache')/a2a-sdk-drivers/`. |
+
+Deliberate scoping notes:
+
+- **No `pushNotifications`.** A2A's webhook push would require the
+  editor to run an inbound HTTP server. `message/stream` over SSE
+  gives progress updates with the connection direction the editor
+  already owns — strictly less attack surface.
+- **No server side.** Exposing Neovim *as* an A2A agent (so other
+  agents can delegate to the editor) is a possible phase 2; it needs
+  an HTTP listener and an auth story, and it does not exist yet.
+- **flow owns orchestration.** Durable multi-step workflows, agent
+  registries shared across machines, and scheduled runs live in
+  flow's Python runtime, which already speaks MCP. `ai/a2a/` is the
+  interactive console in front of it.
+
+### Official SDKs — `ai/a2a/sdks.lua` + `sdk_drivers.lua`
+
+The SDK ecosystem has moved to **v1.0** (ProtoJSON wire shapes),
+while Diver's native client above speaks **v0.3 JSON-RPC**. For
+agents on the v1.0 side, Diver drives the five official SDKs
+directly. One driver program per language, written against the
+SDK's documented client API (all five verified against the SDK
+repos on 2026-09-25):
+
+| Language | Package | Version | Toolchain | Install |
+|---|---|---|---|---|
+| Python | `a2a-sdk` | 1.1.5 | Python 3.10+ | `pip install a2a-sdk` |
+| TypeScript | `@a2a-js/sdk` | 1.2.1 | Node.js 20+ | `npm install @a2a-js/sdk` |
+| Go | `github.com/a2aproject/a2a-go/v2` | v2 | Go 1.26+ | `go get github.com/a2aproject/a2a-go/v2` |
+| Java | `org.a2aproject.sdk:a2a-java-sdk-client` (+ `-transport-jsonrpc`) | 1.3.2.Final | Java 17+ | see below |
+| .NET | `A2A` | — | .NET 8+ | `dotnet add package A2A` |
+
+SDK APIs used per op:
+
+| Op | Python | TypeScript | Go | Java | .NET |
+|---|---|---|---|---|---|
+| card | `A2ACardResolver.get_agent_card()` | `fetch(…/agent-card.json)` | `agentcard.DefaultResolver.Resolve` | `A2A.getAgentCard` | `A2ACardResolver.GetAgentCardAsync` |
+| send | `create_client(...).send_message(SendMessageRequest)` | `client.sendMessage` | `client.SendMessage` | `client.sendMessage(Message, consumers…)` | `A2AClient.SendMessageAsync` |
+| stream | `ClientConfig(streaming=True)` | `client.sendMessageStream` | `client.SendStreamingMessage` | consumers on `sendMessage` | `client.SendStreamingMessageAsync` |
+| get | `client.get_task(GetTaskRequest)` | `client.getTask` | `client.GetTask` | `client.getTask(TaskQueryParams)` | `client.GetTaskAsync` |
+| cancel | `client.cancel_task(CancelTaskRequest)` | `client.cancelTask` | `client.CancelTask` | `client.cancelTask(CancelTaskParams)` | `client.CancelTaskAsync` |
+
+How it works:
+
+- `:A2aSdks` opens a floating installer: `j`/`k` navigate, `<CR>`
+  installs the selected SDK in a terminal, `q` closes.
+  `:A2aSdkInstall <lang>` installs one directly.
+- `sdks.detect_all()` probes each toolchain/SDK concurrently via
+  `vim.system`; the menu shows installed/missing at a glance.
+  Nothing installs itself — detection never writes.
+- Each op asks for the agent's **base URL** (the SDK resolves the
+  card itself; the last URL is remembered as the next default),
+  then hands off to the language's driver. User input travels as
+  process arguments — never interpolated into generated code.
+- Script-kind drivers (Python, TypeScript) run from a temp file
+  under the language runtime; the TS driver runs from Neovim's cwd
+  so a project-local `npm install @a2a-js/sdk` resolves.
+- Project-kind drivers (Go, Java, .NET) get a cached scaffold
+  under `stdpath('cache')/a2a-sdk-drivers/<lang>`, initialized once
+  (`go get`, Maven/Gradle restore via the pom, `dotnet run`
+  restore) and reused. Java passes args through an `args.txt` file
+  because Maven's `-Dexec.args` would re-split them on spaces.
+- `sdks.setup()` wires a single `FileType` autocmd group that gives
+  every SDK filetype buffer-local maps — `<LocalLeader>aaa` (card),
+  `<LocalLeader>aas` (send), `<LocalLeader>aaS` (stream),
+  `<LocalLeader>aag` (get), `<LocalLeader>aac` (cancel),
+  `<LocalLeader>aai` (installer menu). Stream ops run in a
+  `:terminal` split so long output is interactive.
+
+Caveats, labeled as found:
+
+- The Python SDK documents v0.3 compatibility; the TS SDK has an
+  opt-in v0.3 layer. For the others, treat v1.0-only agents as the
+  target — Diver's native client covers v0.3.
+- Java's `cancelTask` takes `CancelTaskParams` per the current
+  source; an older Javadoc example showed `TaskIdParams`.
+- The .NET samples README names the streaming call
+  `SendMessageStreamAsync`; the interface and sample code say
+  `SendStreamingMessageAsync` — the driver uses the latter.
+
+### Quick start
+
+```lua
+local agent_card = require('ai.a2a.agent_card')
+local tasks = require('ai.a2a.tasks')
+local fanout = require('ai.a2a.fanout')
+
+-- Point at a local flow worker and remember it.
+agent_card.fetch('http://127.0.0.1:8100', function(ok, card, err)
+    if ok then
+        agent_card.register('flow-main', card)
+    end
+end)
+
+-- One async task.
+tasks.submit({
+    agent = 'flow-main',
+    message = 'Summarize the diff in lua/ai/a2a/',
+    on_done = function(task)
+        vim.notify('done: ' .. task.state)
+    end,
+})
+
+-- Many agents at once; one callback with every result.
+fanout.run({
+    { agent = 'flow-main', message = 'Review lua/ai/a2a/client.lua' },
+    { agent = 'flow-main', message = 'Review lua/ai/a2a/tasks.lua' },
+}, {}, function(results)
+    for _, r in ipairs(results) do
+        vim.notify(r.agent .. ': ' .. r.state)
+    end
+end)
+```
 
 ---
 
 ## Disambiguation cheat sheet
 
-Three protocols, one acronym, three different jobs:
+Three protocols, one acronym, three different jobs — plus the two that
+complete the picture:
 
 - "How does the agent **remember** project knowledge?" →
   **Agent Context Protocol** — markdown files, no network.
@@ -282,14 +473,20 @@ Three protocols, one acronym, three different jobs:
   **Agent Client Protocol** — JSON-RPC over stdio, client spawns agent.
 - "How do **agents talk to each other**?" →
   **Agent Communication Protocol** — REST API, OpenAPI contract.
+  (Or **A2A** — JSON-RPC over HTTP, AgentCard discovery. Diver speaks
+  A2A as a client via `ai/a2a/`; it does not implement the
+  BeeAI-style REST protocol.)
 - "How does an agent **call tools**?" → **MCP** — the fourth protocol,
   complementary to all three.
 
 Two further collisions worth knowing, so you don't chase the wrong repo:
 
-- In Diver, `require('acp.context')` is the **Context** protocol and
-  everything else under `require('acp.*')` is the **Client** protocol.
+- In Diver, `require('ai.context')` is the **Context** protocol and
+  everything else under `require('ai.acp.*')` is the **Client** protocol.
   The file is deliberately named `context.lua`, not `acp.lua`.
+- `require('ai.a2a.*')` is **Agent2Agent** (originated at Google, now a Linux Foundation project) —
+  a different protocol family from every "ACP" above, despite the
+  overlapping job description with #3.
 - An unrelated community project (`kickflip73/agent-communication-protocol`)
   also calls itself "ACP" — it is a zero-server P2P agent-messaging
   experiment, **not** the Linux Foundation standard documented in

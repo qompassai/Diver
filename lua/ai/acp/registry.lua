@@ -1,4 +1,4 @@
--- /qompassai/Diver/lua/acp/registry.lua
+-- /qompassai/Diver/lua/ai/acp/registry.lua
 -- Qompass AI ACP Agent Registry (Tiger Style)
 -- Copyright (C) 2025 Qompass AI, All rights reserved
 -- ----------------------------------------

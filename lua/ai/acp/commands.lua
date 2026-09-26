@@ -1,15 +1,15 @@
--- /qompassai/Diver/lua/acp/commands.lua
+-- /qompassai/Diver/lua/ai/acp/commands.lua
 -- Qompass AI ACP User Commands (Tiger Style)
 -- Copyright (C) 2025 Qompass AI, All rights reserved
 -- ----------------------------------------
 
 local api = vim.api
-local registry = require('acp.registry')
-local session = require('acp.session')
-local permissions = require('acp.permissions')
-local store = require('acp.store')
-local ui = require('acp.ui')
-local context = require('acp.context')
+local registry = require('ai.acp.registry')
+local session = require('ai.acp.session')
+local permissions = require('ai.acp.permissions')
+local store = require('ai.acp.store')
+local ui = require('ai.acp.ui')
+local context = require('ai.context')
 
 local M = {}
 

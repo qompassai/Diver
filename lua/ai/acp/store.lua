@@ -1,4 +1,4 @@
--- /qompassai/Diver/lua/acp/store.lua
+-- /qompassai/Diver/lua/ai/acp/store.lua
 -- Qompass AI ACP Transcript Persistence (Tiger Style)
 -- Copyright (C) 2025 Qompass AI, All rights reserved
 -- ----------------------------------------
