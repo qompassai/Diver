@@ -3,6 +3,8 @@
 -- Copyright (C) 2025 Qompass AI, All rights reserved
 -----------------------------------------------------
 local M = {}
+-- A2A SDK: <LocalLeader>aa* maps (card/send/stream/get/cancel/install)
+-- are wired for this filetype by ai.a2a.sdks.setup().
 
 ---@return table
 local function base_tools_config(opts) ---@param opts table|nil
@@ -71,7 +73,7 @@ vim.api.nvim_create_user_command('VitestFile', function()
     }, {
         detach = true,
     })
-end, {})
+end, { desc = 'Run Vitest for current file' })
 ---@param opts table|nil
 ---@return any|nil
 local function base_dap_setup(opts)

@@ -59,4 +59,4 @@ return ---@type vim.lsp.Config
                 end
             end,
         })
-    end, {})
+    end, { desc = 'Lint current buffer with Selene' })

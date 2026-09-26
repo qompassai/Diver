@@ -39,6 +39,13 @@ local ROOT_MARKERS = {
 ---@field binaries string[]
 ---@field projects_directory string
 ---@field prompt string
+---@field picker 'native'|'fzf'
+
+---@class NativeFzfSetupOptions
+---@field binaries? string[]
+---@field projects_directory? string
+---@field prompt? string
+---@field picker? 'native'|'fzf'
 
 ---@class NativeFzfSession
 ---@field origin_buffer integer
@@ -82,11 +89,7 @@ end
 ---@param value any
 ---@return boolean
 local function is_integer(value)
-    return type(value) == 'number'
-        and value == value
-        and value ~= math.huge
-        and value ~= -math.huge
-        and value % 1 == 0
+    return type(value) == 'number' and value == value and value ~= math.huge and value ~= -math.huge and value % 1 == 0
 end
 
 ---@param value any
@@ -184,12 +187,7 @@ end
 local function cancel_requests(session)
     for index = 1, #session.requests do
         local request = session.requests[index]
-        cleanup_call(
-            'Cancel LSP request',
-            request.client.cancel_request,
-            request.client,
-            request.id
-        )
+        cleanup_call('Cancel LSP request', request.client.cancel_request, request.client, request.id)
     end
     session.requests = {}
 end
@@ -562,8 +560,11 @@ function M.fzf_pick(items, sink, options)
         end
     end
     local prompt = M.options.prompt
-    if options and valid_string(options.prompt) then
-        prompt = options.prompt
+    if options then
+        local option_prompt = options.prompt
+        if valid_string(option_prompt) and type(option_prompt) == 'string' then
+            prompt = option_prompt
+        end
     end
     present(begin_session(), normalized, sink, prompt)
 end
@@ -621,19 +622,10 @@ local function run(session, command, cwd, callback, allow_no_match)
             if not is_current(session) then
                 return
             end
-            if
-                failure
-                or result.signal ~= 0
-                or result.code ~= 0 and not (allow_no_match and result.code == 1)
-            then
+            if failure or result.signal ~= 0 or result.code ~= 0 and not (allow_no_match and result.code == 1) then
                 fail(
                     session,
-                    failure
-                        or ('%s failed (%d): %s'):format(
-                            command[1],
-                            result.code,
-                            clean_label(table.concat(stderr))
-                        )
+                    failure or ('%s failed (%d): %s'):format(command[1], result.code, clean_label(table.concat(stderr)))
                 )
                 return
             end
@@ -871,10 +863,7 @@ local function present_symbols(session, clients, responses, prompt)
         local client = clients[index]
         local response = responses[client.id]
         if response ~= nil and response.error ~= nil then
-            notify(
-                client.name .. ': ' .. clean_label(tostring(response.error.message)),
-                vim.log.levels.WARN
-            )
+            notify(client.name .. ': ' .. clean_label(tostring(response.error.message)), vim.log.levels.WARN)
         elseif response ~= nil and type(response.result) == 'table' then
             collect_symbols(response.result, uri, client.offset_encoding, items, budget)
         end
@@ -925,31 +914,21 @@ local function request_symbols(method, params, prompt)
     end
     for index = 1, #clients do
         local client = clients[index]
-        local ok, sent, request_id = pcall(
-            client.request,
-            client,
-            method,
-            params,
-            function(err, result)
-                if finished or not is_current(session) then
-                    return
-                end
-                responses[client.id] = { error = err, result = result }
-                remaining = remaining - 1
-                if remaining == 0 then
-                    finish()
-                end
-            end,
-            session.origin_buffer
-        )
+        local ok, sent, request_id = pcall(client.request, client, method, params, function(err, result)
+            if finished or not is_current(session) then
+                return
+            end
+            responses[client.id] = { error = err, result = result }
+            remaining = remaining - 1
+            if remaining == 0 then
+                finish()
+            end
+        end, session.origin_buffer)
         if ok and sent and request_id ~= nil then
             session.requests[#session.requests + 1] = { client = client, id = request_id }
         else
             remaining = remaining - 1
-            notify(
-                'Request failed for ' .. client.name .. ': ' .. tostring(sent),
-                vim.log.levels.WARN
-            )
+            notify('Request failed for ' .. client.name .. ': ' .. tostring(sent), vim.log.levels.WARN)
         end
     end
     if remaining == 0 then
@@ -1117,12 +1096,7 @@ local function present_grep(session, output)
                 fail(session, 'Malformed ripgrep match.')
                 return
             end
-            local label = ('%s:%d:%d:%s'):format(
-                path,
-                data.line_number,
-                match.start + 1,
-                text or ''
-            )
+            local label = ('%s:%d:%d:%s'):format(path, data.line_number, match.start + 1, text or '')
             if
                 not append_item(items, label, {
                     path = fs.joinpath(session.cwd, path),
@@ -1233,14 +1207,9 @@ end
 
 function M.git_status()
     with_git_root(function(session, git, root)
-        run(
-            session,
-            { git, 'status', '--porcelain=v1', '-z', '--untracked-files=all' },
-            root,
-            function(output)
-                present_git_status(session, output, root)
-            end
-        )
+        run(session, { git, 'status', '--porcelain=v1', '-z', '--untracked-files=all' }, root, function(output)
+            present_git_status(session, output, root)
+        end)
     end)
 end
 
@@ -1353,7 +1322,9 @@ end
 ---@param direction 'n'|'N'
 local function search_match(direction)
     local count = math.max(1, vim.v.count1)
-    local ok, err = pcall(vim.cmd, 'keepjumps normal! ' .. tostring(count) .. direction)
+    local ok, err = pcall(function()
+        vim.cmd('keepjumps normal! ' .. tostring(count) .. direction)
+    end)
     if not ok then
         notify(tostring(err), vim.log.levels.WARN)
         return
@@ -1385,7 +1356,9 @@ function M.substitute(command)
     local buffer = api.nvim_get_current_buf()
     local cursor = api.nvim_win_get_cursor(window)
     local search = fn.getreg('/')
-    local ok, err = pcall(vim.cmd, 'keepjumps ' .. command)
+    local ok, err = pcall(function()
+        vim.cmd('keepjumps ' .. command)
+    end)
     fn.setreg('/', search)
     if api.nvim_win_is_valid(window) and api.nvim_win_get_buf(window) == buffer then
         local line = integer_floor(math.min(cursor[1], api.nvim_buf_line_count(buffer)))
@@ -1441,16 +1414,13 @@ local function create_commands()
     end, { nargs = '*' })
 end
 
----@param options? NativeFzfOptions|table
+---@param options? NativeFzfSetupOptions
 ---@return boolean?, string?
 function M.setup(options)
-    if options == nil then
-        options = {}
-    end
-    if type(options) ~= 'table' then
+    if options ~= nil and type(options) ~= 'table' then
         return nil, 'FZF options must be a table.'
     end
-    local candidate = vim.tbl_deep_extend('force', vim.deepcopy(M.options), options)
+    local candidate = vim.tbl_deep_extend('force', vim.deepcopy(M.options), options or {})
     if
         type(candidate.binaries) ~= 'table'
         or #candidate.binaries < 1

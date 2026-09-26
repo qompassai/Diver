@@ -7,41 +7,41 @@
 
 return ---@type vim.lsp.Config
 {
-  cmd = {
-    'docker-langserver',
-    'start',
-    '--stdio',
-  },
-  filetypes = {
-    'dockerfile',
-  },
-  root_markers = {
-    'compose.yaml',
-    'compose.yml',
-    'docker-bake.json',
-    'docker-bake.hcl',
-    'docker-bake.override.hcl',
-    'docker-bake.override.json',
-    'docker-compose.yaml',
-    'docker-compose.yml',
-    'Dockerfile',
-  },
-
-  settings = {
-    dockercomposeExperimental = {
-      composeSupport = true,
+    cmd = {
+        'docker-langserver',
+        'start',
+        '--stdio',
     },
-    dockerfileExperimental = {
-      removeOverlappingIssues = false,
+    filetypes = {
+        'dockerfile',
     },
-    telemetry = 'off',
+    root_markers = {
+        'compose.yaml',
+        'compose.yml',
+        'docker-bake.json',
+        'docker-bake.hcl',
+        'docker-bake.override.hcl',
+        'docker-bake.override.json',
+        'docker-compose.yaml',
+        'docker-compose.yml',
+        'Dockerfile',
+    },
 
-    docker = {
-      languageserver = {
-        formatter = {
-          ignoreMultilineInstructions = true,
+    settings = {
+        dockercomposeExperimental = {
+            composeSupport = true,
         },
-      },
+        dockerfileExperimental = {
+            removeOverlappingIssues = false,
+        },
+        telemetry = 'off',
+
+        docker = {
+            languageserver = {
+                formatter = {
+                    ignoreMultilineInstructions = true,
+                },
+            },
+        },
     },
-  },
 }

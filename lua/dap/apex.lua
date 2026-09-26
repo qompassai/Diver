@@ -1,3 +1,10 @@
+--- Salesforce Apex debugger — debug Apex code from Neovim.
+---
+--- Plain-language version: DAP (Debug Adapter Protocol) is the agreed-upon language debuggers use to talk to
+--- editors: set breakpoints, step through code, inspect variables. This module is the Apex (Salesforce's language)
+--- side of that conversation. It runs when you start an Apex debug session; it needs the Apex debug adapter
+--- installed.
+---@module 'dap.apex'
 -- #################################################################
 -- /qompassai/diver/lua/dap/apex.lua
 -- Qompass AI Diver Native Salesforce Apex Debug Adapter Configuration
@@ -17,8 +24,7 @@
 -- limitations under the License.
 -- #################################################################
 ---@source https://github.com/forcedotcom/salesforcedx-vscode
----@source https://github.com/forcedotcom/salesforcedx-vscode/tree/develop/packages/salesforcedx-vscode-apex-replay-debugger
----@source https://github.com/forcedotcom/salesforcedx-vscode/tree/develop/packages/salesforcedx-vscode-apex-debugger
+-- packages: salesforcedx-vscode-apex-replay-debugger, salesforcedx-vscode-apex-debugger
 
 local api = vim.api
 local fn = vim.fn
@@ -32,33 +38,33 @@ local SOURCE = 'apex-dap'
 
 ---@type string[]
 local ROOT_MARKERS = {
-  'sfdx-project.json',
-  '.sf',
-  '.sfdx',
-  '.git',
+    'sfdx-project.json',
+    '.sf',
+    '.sfdx',
+    '.git',
 }
 
 ---@type string[]
 local REPLAY_ADAPTER_RELATIVE_PATHS = {
-  'packages/salesforcedx-vscode-apex-replay-debugger/dist/apexReplayDebug.js',
-  'salesforcedx-vscode-apex-replay-debugger/dist/apexReplayDebug.js',
-  'dist/apexReplayDebug.js',
+    'packages/salesforcedx-vscode-apex-replay-debugger/dist/apexReplayDebug.js',
+    'salesforcedx-vscode-apex-replay-debugger/dist/apexReplayDebug.js',
+    'dist/apexReplayDebug.js',
 }
 
 ---@type string[]
 local INTERACTIVE_ADAPTER_RELATIVE_PATHS = {
-  'packages/salesforcedx-vscode-apex-debugger/dist/apexDebug.js',
-  'salesforcedx-vscode-apex-debugger/dist/apexDebug.js',
-  'dist/apexDebug.js',
+    'packages/salesforcedx-vscode-apex-debugger/dist/apexDebug.js',
+    'salesforcedx-vscode-apex-debugger/dist/apexDebug.js',
+    'dist/apexDebug.js',
 }
 
 ---@type string[]
 local VSCODE_EXTENSION_ROOTS = {
-  fs.joinpath(fn.expand('~'), '.vscode', 'extensions'),
+    fs.joinpath(fn.expand('~'), '.vscode', 'extensions'),
 
-  fs.joinpath(fn.expand('~'), '.vscode-oss', 'extensions'),
+    fs.joinpath(fn.expand('~'), '.vscode-oss', 'extensions'),
 
-  fs.joinpath(fn.expand('~'), '.var', 'app', 'com.visualstudio.code', 'data', 'vscode', 'extensions'),
+    fs.joinpath(fn.expand('~'), '.var', 'app', 'com.visualstudio.code', 'data', 'vscode', 'extensions'),
 }
 
 ---@class ApexDapState
@@ -67,203 +73,203 @@ local VSCODE_EXTENSION_ROOTS = {
 ---@field last_log string?
 ---@field root string?
 local state = {
-  interactive_adapter = nil,
-  last_log = nil,
-  replay_adapter = nil,
-  root = nil,
+    interactive_adapter = nil,
+    last_log = nil,
+    replay_adapter = nil,
+    root = nil,
 }
 
 ---@param message string
 ---@param level? integer
 local function notify(message, level)
-  vim.notify(('[%s] %s'):format(SOURCE, message), level or levels.INFO)
+    vim.notify(('[%s] %s'):format(SOURCE, message), level or levels.INFO)
 end
 
 ---@param value unknown
 ---@return boolean
 local function nonempty_string(value)
-  return type(value) == 'string' and value ~= ''
+    return type(value) == 'string' and value ~= ''
 end
 
 ---@param path string
 ---@return boolean
 local function exists(path)
-  if not nonempty_string(path) then
-    return false
-  end
+    if not nonempty_string(path) then
+        return false
+    end
 
-  return uv.fs_stat(path) ~= nil
+    return uv.fs_stat(path) ~= nil
 end
 
 ---@param path string
 ---@return boolean
 local function readable_file(path)
-  if not nonempty_string(path) then
-    return false
-  end
+    if not nonempty_string(path) then
+        return false
+    end
 
-  local stat = uv.fs_stat(path)
+    local stat = uv.fs_stat(path)
 
-  return stat ~= nil and stat.type == 'file'
+    return stat ~= nil and stat.type == 'file'
 end
 
 ---@param path string
 ---@return boolean
 local function directory(path)
-  if not nonempty_string(path) then
-    return false
-  end
+    if not nonempty_string(path) then
+        return false
+    end
 
-  local stat = uv.fs_stat(path)
+    local stat = uv.fs_stat(path)
 
-  return stat ~= nil and stat.type == 'directory'
+    return stat ~= nil and stat.type == 'directory'
 end
 
 ---@param path string
 ---@return string
 local function normalize(path)
-  if path == '' then
-    return ''
-  end
+    if path == '' then
+        return ''
+    end
 
-  return fs.normalize(fn.fnamemodify(path, ':p'))
+    return fs.normalize(fn.fnamemodify(path, ':p'))
 end
 
 ---@param command string
 ---@return string?
 local function executable_path(command)
-  local path = fn.exepath(command)
+    local path = fn.exepath(command)
 
-  if not nonempty_string(path) then
-    return nil
-  end
+    if not nonempty_string(path) then
+        return nil
+    end
 
-  return fs.normalize(path)
+    return fs.normalize(path)
 end
 
 ---@param bufnr? integer
 ---@return string
 local function filename(bufnr)
-  bufnr = bufnr or api.nvim_get_current_buf()
+    bufnr = bufnr or api.nvim_get_current_buf()
 
-  if not api.nvim_buf_is_valid(bufnr) then
-    return ''
-  end
+    if not api.nvim_buf_is_valid(bufnr) then
+        return ''
+    end
 
-  local name = api.nvim_buf_get_name(bufnr)
+    local name = api.nvim_buf_get_name(bufnr)
 
-  if name == '' then
-    return ''
-  end
+    if name == '' then
+        return ''
+    end
 
-  return normalize(name)
+    return normalize(name)
 end
 
 ---@param bufnr? integer
 ---@return string
 local function project_root(bufnr)
-  bufnr = bufnr or api.nvim_get_current_buf()
+    bufnr = bufnr or api.nvim_get_current_buf()
 
-  local current_filename = filename(bufnr)
+    local current_filename = filename(bufnr)
 
-  if current_filename ~= '' then
-    local detected = fs.root(current_filename, ROOT_MARKERS)
+    if current_filename ~= '' then
+        local detected = fs.root(current_filename, ROOT_MARKERS)
 
-    if type(detected) == 'string' and detected ~= '' then
-      return fs.normalize(detected)
+        if type(detected) == 'string' and detected ~= '' then
+            return fs.normalize(detected)
+        end
+
+        local parent = fs.dirname(current_filename)
+
+        if type(parent) == 'string' and parent ~= '' then
+            return fs.normalize(parent)
+        end
     end
 
-    local parent = fs.dirname(current_filename)
-
-    if type(parent) == 'string' and parent ~= '' then
-      return fs.normalize(parent)
-    end
-  end
-
-  return fs.normalize(fn.getcwd())
+    return fs.normalize(fn.getcwd())
 end
 
 ---@param value string
 ---@return string
 local function expand_path(value)
-  return normalize(fn.expand(value))
+    return normalize(fn.expand(value))
 end
 
 ---@param root string
 ---@param relative_paths string[]
 ---@return string?
 local function adapter_from_root(root, relative_paths)
-  if not directory(root) then
-    return nil
-  end
-
-  for _, relative in ipairs(relative_paths) do
-    local candidate = fs.joinpath(root, relative)
-
-    if readable_file(candidate) then
-      return fs.normalize(candidate)
+    if not directory(root) then
+        return nil
     end
-  end
 
-  return nil
+    for _, relative in ipairs(relative_paths) do
+        local candidate = fs.joinpath(root, relative)
+
+        if readable_file(candidate) then
+            return fs.normalize(candidate)
+        end
+    end
+
+    return nil
 end
 
 ---@param prefix string
 ---@param adapter_file string
 ---@return string?
 local function adapter_from_extension_directory(prefix, adapter_file)
-  if not directory(prefix) then
+    if not directory(prefix) then
+        return nil
+    end
+
+    local handle = uv.fs_scandir(prefix)
+
+    if handle == nil then
+        return nil
+    end
+
+    ---@type string[]
+    local matches = {}
+
+    while true do
+        local name, entry_type = uv.fs_scandir_next(handle)
+
+        if name == nil then
+            break
+        end
+
+        if entry_type == 'directory' and name:match('^salesforce%.salesforcedx%-vscode%-') then
+            matches[#matches + 1] = name
+        end
+    end
+
+    table.sort(matches, function(left, right)
+        return left > right
+    end)
+
+    for _, name in ipairs(matches) do
+        local candidate = fs.joinpath(prefix, name, 'dist', adapter_file)
+
+        if readable_file(candidate) then
+            return fs.normalize(candidate)
+        end
+    end
+
     return nil
-  end
-
-  local handle = uv.fs_scandir(prefix)
-
-  if handle == nil then
-    return nil
-  end
-
-  ---@type string[]
-  local matches = {}
-
-  while true do
-    local name, entry_type = uv.fs_scandir_next(handle)
-
-    if name == nil then
-      break
-    end
-
-    if entry_type == 'directory' and name:match('^salesforce%.salesforcedx%-vscode%-') then
-      matches[#matches + 1] = name
-    end
-  end
-
-  table.sort(matches, function(left, right)
-    return left > right
-  end)
-
-  for _, name in ipairs(matches) do
-    local candidate = fs.joinpath(prefix, name, 'dist', adapter_file)
-
-    if readable_file(candidate) then
-      return fs.normalize(candidate)
-    end
-  end
-
-  return nil
 end
 
 ---@param adapter_file string
 ---@return string?
 local function adapter_from_vscode_install(adapter_file)
-  for _, root in ipairs(VSCODE_EXTENSION_ROOTS) do
-    local candidate = adapter_from_extension_directory(root, adapter_file)
+    for _, root in ipairs(VSCODE_EXTENSION_ROOTS) do
+        local candidate = adapter_from_extension_directory(root, adapter_file)
 
-    if candidate ~= nil then
-      return candidate
+        if candidate ~= nil then
+            return candidate
+        end
     end
-  end
 
-  return nil
+    return nil
 end
 
 ---@param env_name string
@@ -271,755 +277,755 @@ end
 ---@param adapter_file string
 ---@return string?
 local function resolve_adapter(env_name, relative_paths, adapter_file)
-  local configured = vim.env[env_name]
+    local configured = vim.env[env_name]
 
-  if nonempty_string(configured) then
-    local candidate = expand_path(configured)
+    if nonempty_string(configured) then
+        local candidate = expand_path(configured)
 
-    if readable_file(candidate) then
-      return candidate
+        if readable_file(candidate) then
+            return candidate
+        end
+
+        if directory(candidate) then
+            local nested = adapter_from_root(candidate, relative_paths)
+
+            if nested ~= nil then
+                return nested
+            end
+        end
+
+        notify(('%s does not resolve to a usable adapter: %s'):format(env_name, candidate), levels.WARN)
     end
 
-    if directory(candidate) then
-      local nested = adapter_from_root(candidate, relative_paths)
+    local salesforce_root = vim.env.NVIM_SALESFORCE_DAP_ROOT
 
-      if nested ~= nil then
-        return nested
-      end
+    if nonempty_string(salesforce_root) then
+        local candidate = adapter_from_root(expand_path(salesforce_root), relative_paths)
+
+        if candidate ~= nil then
+            return candidate
+        end
     end
 
-    notify(('%s does not resolve to a usable adapter: %s'):format(env_name, candidate), levels.WARN)
-  end
-
-  local salesforce_root = vim.env.NVIM_SALESFORCE_DAP_ROOT
-
-  if nonempty_string(salesforce_root) then
-    local candidate = adapter_from_root(expand_path(salesforce_root), relative_paths)
-
-    if candidate ~= nil then
-      return candidate
-    end
-  end
-
-  return adapter_from_vscode_install(adapter_file)
+    return adapter_from_vscode_install(adapter_file)
 end
 
 ---@return string?
 local function replay_adapter()
-  if state.replay_adapter ~= nil and readable_file(state.replay_adapter) then
+    if state.replay_adapter ~= nil and readable_file(state.replay_adapter) then
+        return state.replay_adapter
+    end
+
+    state.replay_adapter =
+        resolve_adapter('NVIM_APEX_REPLAY_ADAPTER', REPLAY_ADAPTER_RELATIVE_PATHS, 'apexReplayDebug.js')
+
     return state.replay_adapter
-  end
-
-  state.replay_adapter =
-    resolve_adapter('NVIM_APEX_REPLAY_ADAPTER', REPLAY_ADAPTER_RELATIVE_PATHS, 'apexReplayDebug.js')
-
-  return state.replay_adapter
 end
 
 ---@return string?
 local function interactive_adapter()
-  if state.interactive_adapter ~= nil and readable_file(state.interactive_adapter) then
+    if state.interactive_adapter ~= nil and readable_file(state.interactive_adapter) then
+        return state.interactive_adapter
+    end
+
+    state.interactive_adapter =
+        resolve_adapter('NVIM_APEX_INTERACTIVE_ADAPTER', INTERACTIVE_ADAPTER_RELATIVE_PATHS, 'apexDebug.js')
+
     return state.interactive_adapter
-  end
-
-  state.interactive_adapter =
-    resolve_adapter('NVIM_APEX_INTERACTIVE_ADAPTER', INTERACTIVE_ADAPTER_RELATIVE_PATHS, 'apexDebug.js')
-
-  return state.interactive_adapter
 end
 
 ---@return string
 local function node()
-  return executable_path('node') or 'node'
+    return executable_path('node') or 'node'
 end
 
 ---@param path string?
 ---@param description string
 ---@return string
 local function required_adapter(path, description)
-  if path ~= nil then
-    return path
-  end
+    if path ~= nil then
+        return path
+    end
 
-  notify(('%s adapter was not found'):format(description), levels.ERROR)
+    notify(('%s adapter was not found'):format(description), levels.ERROR)
 
-  return '/nonexistent/qompass-apex-dap-adapter.js'
+    return '/nonexistent/qompass-apex-dap-adapter.js'
 end
 
 ---@return string
 local function debug_root()
-  local root = project_root()
+    local root = project_root()
 
-  state.root = root
+    state.root = root
 
-  return root
+    return root
 end
 
 ---@return string?
 local function choose_log_file()
-  local default = state.last_log
+    local default = state.last_log
 
-  if default == nil then
-    local root = project_root()
+    if default == nil then
+        local root = project_root()
 
-    default = fs.joinpath(root, '.sfdx', 'tools', 'debug', 'logs')
+        default = fs.joinpath(root, '.sfdx', 'tools', 'debug', 'logs')
 
-    if not exists(default) then
-      default = root
+        if not exists(default) then
+            default = root
+        end
     end
-  end
 
-  local selected = fn.input('Apex debug log: ', default, 'file')
+    local selected = fn.input('Apex debug log: ', default, 'file')
 
-  if selected == '' then
-    return nil
-  end
+    if selected == '' then
+        return nil
+    end
 
-  selected = expand_path(selected)
+    selected = expand_path(selected)
 
-  if not readable_file(selected) then
-    notify(('debug log does not exist: %s'):format(selected), levels.ERROR)
+    if not readable_file(selected) then
+        notify(('debug log does not exist: %s'):format(selected), levels.ERROR)
 
-    return nil
-  end
+        return nil
+    end
 
-  state.last_log = selected
+    state.last_log = selected
 
-  return selected
+    return selected
 end
 
 ---@return string
 local function replay_log()
-  local selected = choose_log_file()
+    local selected = choose_log_file()
 
-  if selected ~= nil then
-    return selected
-  end
+    if selected ~= nil then
+        return selected
+    end
 
-  return ''
+    return ''
 end
 
 ---@return string[]
 local function prompt_user_ids()
-  local input = fn.input('Apex debugger user IDs (comma-separated): ')
+    local input = fn.input('Apex debugger user IDs (comma-separated): ')
 
-  if input == '' then
-    return {}
-  end
-
-  ---@type string[]
-  local result = {}
-
-  for item in input:gmatch('[^,]+') do
-    local value = vim.trim(item)
-
-    if value ~= '' then
-      result[#result + 1] = value
+    if input == '' then
+        return {}
     end
-  end
 
-  return result
+    ---@type string[]
+    local result = {}
+
+    for item in input:gmatch('[^,]+') do
+        local value = vim.trim(item)
+
+        if value ~= '' then
+            result[#result + 1] = value
+        end
+    end
+
+    return result
 end
 
 ---@type table<string, boolean>
 local VALID_REQUEST_TYPES = {
-  BATCH_APEX = true,
-  EXECUTE_ANONYMOUS = true,
-  FUTURE = true,
-  INBOUND_EMAIL_SERVICE = true,
-  INVOCABLE_ACTION = true,
-  LIGHTNING = true,
-  QUEUEABLE = true,
-  QUICK_ACTION = true,
-  REMOTE_ACTION = true,
-  REST = true,
-  RUN_TESTS_ASYNCHRONOUS = true,
-  RUN_TESTS_DEPLOY = true,
-  RUN_TESTS_SYNCHRONOUS = true,
-  SCHEDULED = true,
-  SOAP = true,
-  SYNCHRONOUS = true,
-  VISUALFORCE = true,
+    BATCH_APEX = true,
+    EXECUTE_ANONYMOUS = true,
+    FUTURE = true,
+    INBOUND_EMAIL_SERVICE = true,
+    INVOCABLE_ACTION = true,
+    LIGHTNING = true,
+    QUEUEABLE = true,
+    QUICK_ACTION = true,
+    REMOTE_ACTION = true,
+    REST = true,
+    RUN_TESTS_ASYNCHRONOUS = true,
+    RUN_TESTS_DEPLOY = true,
+    RUN_TESTS_SYNCHRONOUS = true,
+    SCHEDULED = true,
+    SOAP = true,
+    SYNCHRONOUS = true,
+    VISUALFORCE = true,
 }
 
 ---@return string[]
 local function prompt_request_types()
-  local input = fn.input('Apex request types (comma-separated, blank=all): ')
+    local input = fn.input('Apex request types (comma-separated, blank=all): ')
 
-  if input == '' then
-    return {}
-  end
-
-  ---@type string[]
-  local result = {}
-
-  for item in input:gmatch('[^,]+') do
-    local value = vim.trim(item):upper()
-
-    if VALID_REQUEST_TYPES[value] then
-      result[#result + 1] = value
-    else
-      notify(('ignoring invalid Apex request type: %s'):format(value), levels.WARN)
+    if input == '' then
+        return {}
     end
-  end
 
-  return result
+    ---@type string[]
+    local result = {}
+
+    for item in input:gmatch('[^,]+') do
+        local value = vim.trim(item):upper()
+
+        if VALID_REQUEST_TYPES[value] then
+            result[#result + 1] = value
+        else
+            notify(('ignoring invalid Apex request type: %s'):format(value), levels.WARN)
+        end
+    end
+
+    return result
 end
 
 ---@return string
 local function prompt_entry_point()
-  return fn.input('Apex entry-point filter: ')
+    return fn.input('Apex entry-point filter: ')
 end
 
 ---@return string
 local function salesforce_project()
-  return debug_root()
+    return debug_root()
 end
 
 ---@return string
 local function prompt_connect_type()
-  local selected = fn.inputlist({
-    'Apex debugger connection:',
-    '1. Default / scratch-org debugger',
-    '2. ISV Customer Debugger',
-  })
+    local selected = fn.inputlist({
+        'Apex debugger connection:',
+        '1. Default / scratch-org debugger',
+        '2. ISV Customer Debugger',
+    })
 
-  if selected == 2 then
-    return 'ISV_DEBUGGER'
-  end
+    if selected == 2 then
+        return 'ISV_DEBUGGER'
+    end
 
-  return 'DEFAULT'
+    return 'DEFAULT'
 end
 
+---@param arguments string[] sf CLI arguments appended to the command
 ---@return vim.SystemCompleted?
 local function run_sf(arguments)
-  local sf = executable_path('sf')
+    local sf = executable_path('sf')
 
-  if sf == nil then
-    notify('Salesforce CLI `sf` is not installed or is not in PATH', levels.ERROR)
+    if sf == nil then
+        notify('Salesforce CLI `sf` is not installed or is not in PATH', levels.ERROR)
 
-    return nil
-  end
+        return nil
+    end
 
-  local command = {
-    sf,
-  }
+    local command = {
+        sf,
+    }
 
-  vim.list_extend(command, arguments)
+    vim.list_extend(command, arguments)
 
-  local ok, result = pcall(function()
-    return vim
-      .system(command, {
-        cwd = project_root(),
-        text = true,
-      })
-      :wait()
-  end)
+    local ok, result = pcall(function()
+        return vim.system(command, {
+            cwd = project_root(),
+            text = true,
+        }):wait()
+    end)
 
-  if not ok then
-    notify(('Salesforce CLI invocation failed: %s'):format(tostring(result)), levels.ERROR)
+    if not ok then
+        notify(('Salesforce CLI invocation failed: %s'):format(tostring(result)), levels.ERROR)
 
-    return nil
-  end
+        return nil
+    end
 
-  return result
+    return result
 end
 
 local function show_sf_orgs()
-  local result = run_sf({
-    'org',
-    'list',
-    '--all',
-  })
+    local result = run_sf({
+        'org',
+        'list',
+        '--all',
+    })
 
-  if result == nil then
-    return
-  end
+    if result == nil then
+        return
+    end
 
-  local output = result.stdout or ''
+    local output = result.stdout or ''
 
-  if output == '' then
-    output = result.stderr or ''
-  end
+    if output == '' then
+        output = result.stderr or ''
+    end
 
-  if output == '' then
-    output = 'Salesforce CLI returned no org information'
-  end
+    if output == '' then
+        output = 'Salesforce CLI returned no org information'
+    end
 
-  notify(output, result.code == 0 and levels.INFO or levels.ERROR)
+    notify(output, result.code == 0 and levels.INFO or levels.ERROR)
 end
 
 local function show_status()
-  local replay = replay_adapter()
-  local interactive = interactive_adapter()
-  local node_path = executable_path('node')
-  local sf_path = executable_path('sf')
+    local replay = replay_adapter()
+    local interactive = interactive_adapter()
+    local node_path = executable_path('node')
+    local sf_path = executable_path('sf')
 
-  notify(
-    table.concat({
-      'root: ' .. project_root(),
+    notify(
+        table.concat({
+            'root: ' .. project_root(),
 
-      'node: ' .. (node_path or 'not found'),
+            'node: ' .. (node_path or 'not found'),
 
-      'sf: ' .. (sf_path or 'not found'),
+            'sf: ' .. (sf_path or 'not found'),
 
-      'replay adapter: ' .. (replay or 'not found'),
+            'replay adapter: ' .. (replay or 'not found'),
 
-      'interactive adapter: ' .. (interactive or 'not found'),
+            'interactive adapter: ' .. (interactive or 'not found'),
 
-      'last replay log: ' .. (state.last_log or 'none'),
-    }, '\n'),
-    (node_path ~= nil and replay ~= nil) and levels.INFO or levels.WARN
-  )
+            'last replay log: ' .. (state.last_log or 'none'),
+        }, '\n'),
+        (node_path ~= nil and replay ~= nil) and levels.INFO or levels.WARN
+    )
 end
 
 local function clear_cached_adapters()
-  state.interactive_adapter = nil
-  state.replay_adapter = nil
+    state.interactive_adapter = nil
+    state.replay_adapter = nil
 
-  notify('Salesforce adapter path cache cleared')
+    notify('Salesforce adapter path cache cleared')
 end
 
 local function select_replay_adapter()
-  local current = replay_adapter() or ''
+    local current = replay_adapter() or ''
 
-  local selected = fn.input('Apex Replay adapter: ', current, 'file')
+    local selected = fn.input('Apex Replay adapter: ', current, 'file')
 
-  if selected == '' then
-    return
-  end
+    if selected == '' then
+        return
+    end
 
-  selected = expand_path(selected)
+    selected = expand_path(selected)
 
-  if not readable_file(selected) then
-    notify(('not a readable adapter: %s'):format(selected), levels.ERROR)
+    if not readable_file(selected) then
+        notify(('not a readable adapter: %s'):format(selected), levels.ERROR)
 
-    return
-  end
+        return
+    end
 
-  state.replay_adapter = selected
+    state.replay_adapter = selected
 
-  if type(M.adapters) == 'table' and type(M.adapters['apex-replay']) == 'table' then
-    M.adapters['apex-replay'].args = {
-      selected,
-    }
-  end
+    if type(M.adapters) == 'table' and type(M.adapters['apex-replay']) == 'table' then
+        M.adapters['apex-replay'].args = {
+            selected,
+        }
+    end
 
-  notify(('Apex Replay adapter: %s'):format(selected))
+    notify(('Apex Replay adapter: %s'):format(selected))
 end
 
 local function select_interactive_adapter()
-  local current = interactive_adapter() or ''
+    local current = interactive_adapter() or ''
 
-  local selected = fn.input('Apex Interactive adapter: ', current, 'file')
+    local selected = fn.input('Apex Interactive adapter: ', current, 'file')
 
-  if selected == '' then
-    return
-  end
+    if selected == '' then
+        return
+    end
 
-  selected = expand_path(selected)
+    selected = expand_path(selected)
 
-  if not readable_file(selected) then
-    notify(('not a readable adapter: %s'):format(selected), levels.ERROR)
+    if not readable_file(selected) then
+        notify(('not a readable adapter: %s'):format(selected), levels.ERROR)
 
-    return
-  end
+        return
+    end
 
-  state.interactive_adapter = selected
+    state.interactive_adapter = selected
 
-  if type(M.adapters) == 'table' and type(M.adapters.apex) == 'table' then
-    M.adapters.apex.args = {
-      selected,
-    }
-  end
+    if type(M.adapters) == 'table' and type(M.adapters.apex) == 'table' then
+        M.adapters.apex.args = {
+            selected,
+        }
+    end
 
-  notify(('Apex Interactive adapter: %s'):format(selected))
+    notify(('Apex Interactive adapter: %s'):format(selected))
 end
 
 ---@type table<string, table>
 M.adapters = {
-  ['apex-replay'] = {
-    name = 'apex-replay',
+    ['apex-replay'] = {
+        name = 'apex-replay',
 
-    type = 'executable',
+        type = 'executable',
 
-    command = node(),
+        command = node(),
 
-    args = {
-      required_adapter(replay_adapter(), 'Apex Replay'),
+        args = {
+            required_adapter(replay_adapter(), 'Apex Replay'),
+        },
+
+        options = {
+            source_filetype = 'apex',
+        },
     },
 
-    options = {
-      source_filetype = 'apex',
+    apex = {
+        name = 'apex',
+
+        type = 'executable',
+
+        command = node(),
+
+        args = {
+            required_adapter(interactive_adapter(), 'Apex Interactive'),
+        },
+
+        options = {
+            source_filetype = 'apex',
+        },
     },
-  },
-
-  apex = {
-    name = 'apex',
-
-    type = 'executable',
-
-    command = node(),
-
-    args = {
-      required_adapter(interactive_adapter(), 'Apex Interactive'),
-    },
-
-    options = {
-      source_filetype = 'apex',
-    },
-  },
 }
 
 ---@type table<string, table[]>
 M.configurations = {
-  apex = {
-    {
-      name = 'Apex: Replay Debug Log',
+    apex = {
+        {
+            name = 'Apex: Replay Debug Log',
 
-      type = 'apex-replay',
+            type = 'apex-replay',
 
-      request = 'launch',
+            request = 'launch',
 
-      logFile = replay_log,
+            logFile = replay_log,
 
-      stopOnEntry = true,
+            stopOnEntry = true,
 
-      trace = false,
+            trace = false,
+        },
+
+        {
+            name = 'Apex: Replay Debug Log (Trace)',
+
+            type = 'apex-replay',
+
+            request = 'launch',
+
+            logFile = replay_log,
+
+            stopOnEntry = true,
+
+            trace = true,
+        },
+
+        {
+            name = 'Apex: Interactive Debugger',
+
+            type = 'apex',
+
+            request = 'launch',
+
+            salesforceProject = salesforce_project,
+
+            userIdFilter = {},
+
+            requestTypeFilter = {},
+
+            entryPointFilter = '',
+
+            connectType = 'DEFAULT',
+
+            trace = false,
+        },
+
+        {
+            name = 'Apex: Interactive Debugger with Filters',
+
+            type = 'apex',
+
+            request = 'launch',
+
+            salesforceProject = salesforce_project,
+
+            userIdFilter = prompt_user_ids,
+
+            requestTypeFilter = prompt_request_types,
+
+            entryPointFilter = prompt_entry_point,
+
+            connectType = 'DEFAULT',
+
+            trace = false,
+        },
+
+        {
+            name = 'Apex: Interactive Debugger (ISV)',
+
+            type = 'apex',
+
+            request = 'launch',
+
+            salesforceProject = salesforce_project,
+
+            userIdFilter = prompt_user_ids,
+
+            requestTypeFilter = prompt_request_types,
+
+            entryPointFilter = prompt_entry_point,
+
+            connectType = 'ISV_DEBUGGER',
+
+            trace = false,
+        },
+
+        {
+            name = 'Apex: Interactive Debugger (Choose Mode)',
+
+            type = 'apex',
+
+            request = 'launch',
+
+            salesforceProject = salesforce_project,
+
+            userIdFilter = prompt_user_ids,
+
+            requestTypeFilter = prompt_request_types,
+
+            entryPointFilter = prompt_entry_point,
+
+            connectType = prompt_connect_type,
+
+            trace = false,
+        },
+
+        {
+            name = 'Apex: Interactive Debugger (Trace)',
+
+            type = 'apex',
+
+            request = 'launch',
+
+            salesforceProject = salesforce_project,
+
+            userIdFilter = {},
+
+            requestTypeFilter = {},
+
+            entryPointFilter = '',
+
+            connectType = 'DEFAULT',
+
+            trace = true,
+        },
     },
 
-    {
-      name = 'Apex: Replay Debug Log (Trace)',
+    ['apex-anon'] = {
+        {
+            name = 'Apex: Replay Debug Log',
 
-      type = 'apex-replay',
+            type = 'apex-replay',
 
-      request = 'launch',
+            request = 'launch',
 
-      logFile = replay_log,
+            logFile = replay_log,
 
-      stopOnEntry = true,
+            stopOnEntry = true,
 
-      trace = true,
+            trace = false,
+        },
+
+        {
+            name = 'Apex: Interactive Debugger',
+
+            type = 'apex',
+
+            request = 'launch',
+
+            salesforceProject = salesforce_project,
+
+            userIdFilter = {},
+
+            requestTypeFilter = {
+                'EXECUTE_ANONYMOUS',
+            },
+
+            entryPointFilter = '',
+
+            connectType = 'DEFAULT',
+
+            trace = false,
+        },
     },
-
-    {
-      name = 'Apex: Interactive Debugger',
-
-      type = 'apex',
-
-      request = 'launch',
-
-      salesforceProject = salesforce_project,
-
-      userIdFilter = {},
-
-      requestTypeFilter = {},
-
-      entryPointFilter = '',
-
-      connectType = 'DEFAULT',
-
-      trace = false,
-    },
-
-    {
-      name = 'Apex: Interactive Debugger with Filters',
-
-      type = 'apex',
-
-      request = 'launch',
-
-      salesforceProject = salesforce_project,
-
-      userIdFilter = prompt_user_ids,
-
-      requestTypeFilter = prompt_request_types,
-
-      entryPointFilter = prompt_entry_point,
-
-      connectType = 'DEFAULT',
-
-      trace = false,
-    },
-
-    {
-      name = 'Apex: Interactive Debugger (ISV)',
-
-      type = 'apex',
-
-      request = 'launch',
-
-      salesforceProject = salesforce_project,
-
-      userIdFilter = prompt_user_ids,
-
-      requestTypeFilter = prompt_request_types,
-
-      entryPointFilter = prompt_entry_point,
-
-      connectType = 'ISV_DEBUGGER',
-
-      trace = false,
-    },
-
-    {
-      name = 'Apex: Interactive Debugger (Choose Mode)',
-
-      type = 'apex',
-
-      request = 'launch',
-
-      salesforceProject = salesforce_project,
-
-      userIdFilter = prompt_user_ids,
-
-      requestTypeFilter = prompt_request_types,
-
-      entryPointFilter = prompt_entry_point,
-
-      connectType = prompt_connect_type,
-
-      trace = false,
-    },
-
-    {
-      name = 'Apex: Interactive Debugger (Trace)',
-
-      type = 'apex',
-
-      request = 'launch',
-
-      salesforceProject = salesforce_project,
-
-      userIdFilter = {},
-
-      requestTypeFilter = {},
-
-      entryPointFilter = '',
-
-      connectType = 'DEFAULT',
-
-      trace = true,
-    },
-  },
-
-  ['apex-anon'] = {
-    {
-      name = 'Apex: Replay Debug Log',
-
-      type = 'apex-replay',
-
-      request = 'launch',
-
-      logFile = replay_log,
-
-      stopOnEntry = true,
-
-      trace = false,
-    },
-
-    {
-      name = 'Apex: Interactive Debugger',
-
-      type = 'apex',
-
-      request = 'launch',
-
-      salesforceProject = salesforce_project,
-
-      userIdFilter = {},
-
-      requestTypeFilter = {
-        'EXECUTE_ANONYMOUS',
-      },
-
-      entryPointFilter = '',
-
-      connectType = 'DEFAULT',
-
-      trace = false,
-    },
-  },
 }
 
 ---@type table<string, DebugCommand>
 M.commands = {
-  ApexDebugAdaptersClear = {
-    callback = function()
-      clear_cached_adapters()
-    end,
+    ApexDebugAdaptersClear = {
+        callback = function()
+            clear_cached_adapters()
+        end,
 
-    desc = 'Clear Apex debug adapter path cache',
-  },
+        desc = 'Clear Apex debug adapter path cache',
+    },
 
-  ApexDebugInteractiveAdapter = {
-    callback = function()
-      select_interactive_adapter()
-    end,
+    ApexDebugInteractiveAdapter = {
+        callback = function()
+            select_interactive_adapter()
+        end,
 
-    desc = 'Select Apex Interactive debug adapter',
-  },
+        desc = 'Select Apex Interactive debug adapter',
+    },
 
-  ApexDebugLog = {
-    callback = function()
-      local selected = choose_log_file()
+    ApexDebugLog = {
+        callback = function()
+            local selected = choose_log_file()
 
-      if selected ~= nil then
-        notify(('Apex replay log: %s'):format(selected))
-      end
-    end,
+            if selected ~= nil then
+                notify(('Apex replay log: %s'):format(selected))
+            end
+        end,
 
-    desc = 'Select Apex Replay debug log',
-  },
+        desc = 'Select Apex Replay debug log',
+    },
 
-  ApexDebugOrgs = {
-    callback = function()
-      show_sf_orgs()
-    end,
+    ApexDebugOrgs = {
+        callback = function()
+            show_sf_orgs()
+        end,
 
-    desc = 'Show Salesforce orgs',
-  },
+        desc = 'Show Salesforce orgs',
+    },
 
-  ApexDebugReplayAdapter = {
-    callback = function()
-      select_replay_adapter()
-    end,
+    ApexDebugReplayAdapter = {
+        callback = function()
+            select_replay_adapter()
+        end,
 
-    desc = 'Select Apex Replay debug adapter',
-  },
+        desc = 'Select Apex Replay debug adapter',
+    },
 
-  ApexDebugStatus = {
-    callback = function()
-      show_status()
-    end,
+    ApexDebugStatus = {
+        callback = function()
+            show_status()
+        end,
 
-    desc = 'Show Apex debugger status',
-  },
+        desc = 'Show Apex debugger status',
+    },
 }
 
 ---@type table<string, DebugMapping>
 M.mappings = {
-  apex_debug_log = {
-    lhs = '<leader>dAl',
+    apex_debug_log = {
+        lhs = '<leader>dAl',
 
-    mode = 'n',
+        mode = 'n',
 
-    rhs = function()
-      local selected = choose_log_file()
+        rhs = function()
+            local selected = choose_log_file()
 
-      if selected ~= nil then
-        notify(('Apex replay log: %s'):format(selected))
-      end
-    end,
+            if selected ~= nil then
+                notify(('Apex replay log: %s'):format(selected))
+            end
+        end,
 
-    desc = 'Debug Apex: Select replay log',
-  },
+        desc = 'Debug Apex: Select replay log',
+    },
 
-  apex_debug_orgs = {
-    lhs = '<leader>dAo',
+    apex_debug_orgs = {
+        lhs = '<leader>dAo',
 
-    mode = 'n',
+        mode = 'n',
 
-    rhs = function()
-      show_sf_orgs()
-    end,
+        rhs = function()
+            show_sf_orgs()
+        end,
 
-    desc = 'Debug Apex: Salesforce orgs',
-  },
+        desc = 'Debug Apex: Salesforce orgs',
+    },
 
-  apex_debug_status = {
-    lhs = '<leader>dAs',
+    apex_debug_status = {
+        lhs = '<leader>dAs',
 
-    mode = 'n',
+        mode = 'n',
 
-    rhs = function()
-      show_status()
-    end,
+        rhs = function()
+            show_status()
+        end,
 
-    desc = 'Debug Apex: Status',
-  },
+        desc = 'Debug Apex: Status',
+    },
 }
 
 ---@param opts? table
+---@return nil
 function M.setup(opts)
-  opts = opts or {}
+    opts = opts or {}
 
-  state.root = nonempty_string(opts.root) and fs.normalize(opts.root) or project_root()
+    state.root = nonempty_string(opts.root) and fs.normalize(opts.root) or project_root()
 
-  local node_path = executable_path('node')
+    local node_path = executable_path('node')
 
-  if node_path == nil then
-    vim.schedule(function()
-      notify('Node.js is required to launch Salesforce Apex debug adapters', levels.ERROR)
-    end)
+    if node_path == nil then
+        vim.schedule(function()
+            notify('Node.js is required to launch Salesforce Apex debug adapters', levels.ERROR)
+        end)
 
-    return
-  end
+        return
+    end
 
-  M.adapters['apex-replay'].command = node_path
+    M.adapters['apex-replay'].command = node_path
 
-  M.adapters.apex.command = node_path
+    M.adapters.apex.command = node_path
 
-  local replay = replay_adapter()
+    local replay = replay_adapter()
 
-  if replay ~= nil then
-    M.adapters['apex-replay'].args = {
-      replay,
-    }
-  end
+    if replay ~= nil then
+        M.adapters['apex-replay'].args = {
+            replay,
+        }
+    end
 
-  local interactive = interactive_adapter()
+    local interactive = interactive_adapter()
 
-  if interactive ~= nil then
-    M.adapters.apex.args = {
-      interactive,
-    }
-  end
+    if interactive ~= nil then
+        M.adapters.apex.args = {
+            interactive,
+        }
+    end
 
-  if replay == nil then
-    vim.schedule(function()
-      notify(
-        table.concat({
-          'Apex Replay adapter was not found.',
-          '',
-          'Set one of:',
-          '  NVIM_APEX_REPLAY_ADAPTER=/path/to/apexReplayDebug.js',
-          '  NVIM_SALESFORCE_DAP_ROOT=/path/to/salesforcedx-vscode',
-        }, '\n'),
-        levels.WARN
-      )
-    end)
-  end
+    if replay == nil then
+        vim.schedule(function()
+            notify(
+                table.concat({
+                    'Apex Replay adapter was not found.',
+                    '',
+                    'Set one of:',
+                    '  NVIM_APEX_REPLAY_ADAPTER=/path/to/apexReplayDebug.js',
+                    '  NVIM_SALESFORCE_DAP_ROOT=/path/to/salesforcedx-vscode',
+                }, '\n'),
+                levels.WARN
+            )
+        end)
+    end
 
-  if interactive == nil then
-    vim.schedule(function()
-      notify(
-        table.concat({
-          'Apex Interactive adapter was not found.',
-          '',
-          'Set one of:',
-          '  NVIM_APEX_INTERACTIVE_ADAPTER=/path/to/apexDebug.js',
-          '  NVIM_SALESFORCE_DAP_ROOT=/path/to/salesforcedx-vscode',
-        }, '\n'),
-        levels.WARN
-      )
-    end)
-  end
+    if interactive == nil then
+        vim.schedule(function()
+            notify(
+                table.concat({
+                    'Apex Interactive adapter was not found.',
+                    '',
+                    'Set one of:',
+                    '  NVIM_APEX_INTERACTIVE_ADAPTER=/path/to/apexDebug.js',
+                    '  NVIM_SALESFORCE_DAP_ROOT=/path/to/salesforcedx-vscode',
+                }, '\n'),
+                levels.WARN
+            )
+        end)
+    end
 end
 
 ---@return string?
 function M.replay_adapter()
-  return replay_adapter()
+    return replay_adapter()
 end
 
 ---@return string?
 function M.interactive_adapter()
-  return interactive_adapter()
+    return interactive_adapter()
 end
 
 ---@return string
 function M.root()
-  return project_root()
+    return project_root()
 end
 
 return M

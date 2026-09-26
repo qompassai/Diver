@@ -41,1252 +41,1250 @@ local DEFAULT_JDWP_HOST = '127.0.0.1'
 local DEFAULT_JDWP_PORT = 5005
 
 local ROOT_MARKERS = {
-  'pom.xml',
+    'pom.xml',
 
-  'mvnw',
+    'mvnw',
 
-  'build.gradle',
+    'build.gradle',
 
-  'build.gradle.kts',
+    'build.gradle.kts',
 
-  'gradlew',
+    'gradlew',
 
-  'settings.gradle',
+    'settings.gradle',
 
-  'settings.gradle.kts',
+    'settings.gradle.kts',
 
-  'build.xml',
+    'build.xml',
 
-  '.classpath',
+    '.classpath',
 
-  '.project',
+    '.project',
 
-  'module-info.java',
+    'module-info.java',
 
-  'WORKSPACE',
+    'WORKSPACE',
 
-  'WORKSPACE.bazel',
+    'WORKSPACE.bazel',
 
-  'BUILD',
+    'BUILD',
 
-  'BUILD.bazel',
+    'BUILD.bazel',
 
-  '.git',
+    '.git',
 }
 
 local STEP_SKIP_CLASSES = {
-  '$JDK',
+    '$JDK',
 
-  '$Libraries',
+    '$Libraries',
 
-  'java.*',
+    'java.*',
 
-  'javax.*',
+    'javax.*',
 
-  'jdk.*',
+    'jdk.*',
 
-  'sun.*',
+    'sun.*',
 
-  'com.sun.*',
+    'com.sun.*',
 }
 
 local state = {
-  endpoint = nil,
+    endpoint = nil,
 
-  java = nil,
+    java = nil,
 
-  java_home = nil,
+    java_home = nil,
 
-  root = nil,
+    root = nil,
 }
 
 local function notify(message, level)
-  vim.notify(('[%s] %s'):format(SOURCE, message), level or levels.INFO)
+    vim.notify(('[%s] %s'):format(SOURCE, message), level or levels.INFO)
 end
 
 local function is_file(path)
-  if type(path) ~= 'string' or path == '' then
-    return false
-  end
+    if type(path) ~= 'string' or path == '' then
+        return false
+    end
 
-  local stat = uv.fs_stat(path)
+    local stat = uv.fs_stat(path)
 
-  return stat ~= nil and stat.type == 'file'
+    return stat ~= nil and stat.type == 'file'
 end
 
 local function executable(path)
-  return type(path) == 'string' and path ~= '' and fn.executable(path) == 1
+    return type(path) == 'string' and path ~= '' and fn.executable(path) == 1
 end
 
 local function normalize(path)
-  if type(path) ~= 'string' or path == '' then
-    return ''
-  end
+    if type(path) ~= 'string' or path == '' then
+        return ''
+    end
 
-  return fs.normalize(fn.fnamemodify(path, ':p'))
+    return fs.normalize(fn.fnamemodify(path, ':p'))
 end
 
 local function executable_path(command)
-  local path = fn.exepath(command)
+    local path = fn.exepath(command)
 
-  if type(path) ~= 'string' or path == '' then
-    return nil
-  end
+    if type(path) ~= 'string' or path == '' then
+        return nil
+    end
 
-  return fs.normalize(path)
+    return fs.normalize(path)
 end
 
 local function filename(bufnr)
-  bufnr = bufnr or api.nvim_get_current_buf()
+    bufnr = bufnr or api.nvim_get_current_buf()
 
-  if not api.nvim_buf_is_valid(bufnr) then
-    return ''
-  end
+    if not api.nvim_buf_is_valid(bufnr) then
+        return ''
+    end
 
-  local name = api.nvim_buf_get_name(bufnr)
+    local name = api.nvim_buf_get_name(bufnr)
 
-  if name == '' then
-    return ''
-  end
+    if name == '' then
+        return ''
+    end
 
-  return normalize(name)
+    return normalize(name)
 end
 
 local function project_root(bufnr)
-  bufnr = bufnr or api.nvim_get_current_buf()
+    bufnr = bufnr or api.nvim_get_current_buf()
 
-  local current = filename(bufnr)
+    local current = filename(bufnr)
 
-  if current ~= '' then
-    local detected = fs.root(current, ROOT_MARKERS)
+    if current ~= '' then
+        local detected = fs.root(current, ROOT_MARKERS)
 
-    if type(detected) == 'string' and detected ~= '' then
-      return fs.normalize(detected)
+        if type(detected) == 'string' and detected ~= '' then
+            return fs.normalize(detected)
+        end
+
+        local parent = fs.dirname(current)
+
+        if type(parent) == 'string' and parent ~= '' then
+            return fs.normalize(parent)
+        end
     end
 
-    local parent = fs.dirname(current)
-
-    if type(parent) == 'string' and parent ~= '' then
-      return fs.normalize(parent)
-    end
-  end
-
-  return fs.normalize(fn.getcwd())
+    return fs.normalize(fn.getcwd())
 end
 
 local function is_jdtls(client)
-  if type(client) ~= 'table' then
-    return false
-  end
+    if type(client) ~= 'table' then
+        return false
+    end
 
-  local name = type(client.name) == 'string' and client.name:lower() or ''
+    local name = type(client.name) == 'string' and client.name:lower() or ''
 
-  return name == 'jdtls' or name == 'eclipse.jdt.ls' or name == 'eclipse-jdtls'
+    return name == 'jdtls' or name == 'eclipse.jdt.ls' or name == 'eclipse-jdtls'
 end
 
 local function jdtls_client(bufnr)
-  bufnr = bufnr or api.nvim_get_current_buf()
+    bufnr = bufnr or api.nvim_get_current_buf()
 
-  local clients = lsp.get_clients({
-    bufnr = bufnr,
-  })
+    local clients = lsp.get_clients({
+        bufnr = bufnr,
+    })
 
-  for _, client in ipairs(clients) do
-    if is_jdtls(client) then
-      return client
+    for _, client in ipairs(clients) do
+        if is_jdtls(client) then
+            return client
+        end
     end
-  end
 
-  local root = project_root(bufnr)
+    local root = project_root(bufnr)
 
-  clients = lsp.get_clients()
+    clients = lsp.get_clients()
 
-  for _, client in ipairs(clients) do
-    if is_jdtls(client) then
-      local client_root = client.root_dir
+    for _, client in ipairs(clients) do
+        if is_jdtls(client) then
+            local client_root = client.root_dir
 
-      if type(client_root) == 'string' and client_root ~= '' and fs.normalize(client_root) == root then
-        return client
-      end
+            if type(client_root) == 'string' and client_root ~= '' and fs.normalize(client_root) == root then
+                return client
+            end
+        end
     end
-  end
 
-  return nil
+    return nil
 end
 
 local function supports_command(client, command)
-  local capabilities = client.server_capabilities
+    local capabilities = client.server_capabilities
 
-  if type(capabilities) ~= 'table' then
-    return false
-  end
-
-  local provider = capabilities.executeCommandProvider
-
-  if type(provider) ~= 'table' then
-    return false
-  end
-
-  local commands = provider.commands
-
-  if type(commands) ~= 'table' then
-    return false
-  end
-
-  for _, candidate in ipairs(commands) do
-    if candidate == command then
-      return true
+    if type(capabilities) ~= 'table' then
+        return false
     end
-  end
 
-  return false
+    local provider = capabilities.executeCommandProvider
+
+    if type(provider) ~= 'table' then
+        return false
+    end
+
+    local commands = provider.commands
+
+    if type(commands) ~= 'table' then
+        return false
+    end
+
+    for _, candidate in ipairs(commands) do
+        if candidate == command then
+            return true
+        end
+    end
+
+    return false
 end
 
 local function java_debug_loaded()
-  local client = jdtls_client()
+    local client = jdtls_client()
 
-  if client == nil then
-    return false
-  end
+    if client == nil then
+        return false
+    end
 
-  return supports_command(client, DEBUG_SESSION_COMMAND)
+    return supports_command(client, DEBUG_SESSION_COMMAND)
 end
 
 local function resolve_java_home()
-  if state.java_home ~= nil and state.java_home ~= '' then
-    return state.java_home
-  end
-
-  local configured = vim.env.NVIM_JAVA_HOME or vim.env.JAVA_HOME
-
-  if type(configured) == 'string' and configured ~= '' then
-    local root = normalize(fn.expand(configured))
-
-    local java = fs.joinpath(root, 'bin', 'java')
-
-    if executable(java) then
-      state.java_home = root
-
-      return root
+    if state.java_home ~= nil and state.java_home ~= '' then
+        return state.java_home
     end
-  end
 
-  local java = executable_path('java')
+    local configured = vim.env.NVIM_JAVA_HOME or vim.env.JAVA_HOME
 
-  if java == nil then
-    return nil
-  end
+    if type(configured) == 'string' and configured ~= '' then
+        local root = normalize(fn.expand(configured))
 
-  local bin = fs.dirname(java)
+        local java = fs.joinpath(root, 'bin', 'java')
 
-  if bin == nil then
-    return nil
-  end
+        if executable(java) then
+            state.java_home = root
 
-  local root = fs.dirname(bin)
+            return root
+        end
+    end
 
-  if root == nil then
-    return nil
-  end
+    local java = executable_path('java')
 
-  state.java_home = fs.normalize(root)
+    if java == nil then
+        return nil
+    end
 
-  return state.java_home
+    local bin = fs.dirname(java)
+
+    if bin == nil then
+        return nil
+    end
+
+    local root = fs.dirname(bin)
+
+    if root == nil then
+        return nil
+    end
+
+    state.java_home = fs.normalize(root)
+
+    return state.java_home
 end
 
 local function resolve_java()
-  if state.java ~= nil and executable(state.java) then
-    return state.java
-  end
-
-  local configured = vim.env.NVIM_JAVA_EXECUTABLE
-
-  if type(configured) == 'string' and configured ~= '' then
-    local candidate = normalize(fn.expand(configured))
-
-    if executable(candidate) then
-      state.java = candidate
-
-      return candidate
+    if state.java ~= nil and executable(state.java) then
+        return state.java
     end
 
-    notify(('NVIM_JAVA_EXECUTABLE is not executable: %s'):format(candidate), levels.WARN)
-  end
+    local configured = vim.env.NVIM_JAVA_EXECUTABLE
 
-  local java_home = resolve_java_home()
+    if type(configured) == 'string' and configured ~= '' then
+        local candidate = normalize(fn.expand(configured))
 
-  if java_home ~= nil then
-    local candidate = fs.joinpath(java_home, 'bin', 'java')
+        if executable(candidate) then
+            state.java = candidate
 
-    if executable(candidate) then
-      state.java = fs.normalize(candidate)
+            return candidate
+        end
 
-      return state.java
+        notify(('NVIM_JAVA_EXECUTABLE is not executable: %s'):format(candidate), levels.WARN)
     end
-  end
 
-  local candidate = executable_path('java')
+    local java_home = resolve_java_home()
 
-  if candidate ~= nil then
-    state.java = candidate
+    if java_home ~= nil then
+        local candidate = fs.joinpath(java_home, 'bin', 'java')
 
-    return candidate
-  end
+        if executable(candidate) then
+            state.java = fs.normalize(candidate)
 
-  return nil
+            return state.java
+        end
+    end
+
+    local candidate = executable_path('java')
+
+    if candidate ~= nil then
+        state.java = candidate
+
+        return candidate
+    end
+
+    return nil
 end
 
 local function system(command, cwd)
-  local ok, result = pcall(function()
-    return vim
-      .system(command, {
-        cwd = cwd,
+    local ok, result = pcall(function()
+        return vim.system(command, {
+            cwd = cwd,
 
-        text = true,
-      })
-      :wait()
-  end)
+            text = true,
+        }):wait()
+    end)
 
-  if not ok then
-    return nil
-  end
+    if not ok then
+        return nil
+    end
 
-  return result
+    return result
 end
 
 local function java_version()
-  local java = resolve_java()
+    local java = resolve_java()
 
-  if java == nil then
-    return nil
-  end
+    if java == nil then
+        return nil
+    end
 
-  local result = system({
-    java,
+    local result = system({
+        java,
 
-    '-version',
-  })
+        '-version',
+    })
 
-  if result == nil or result.code ~= 0 then
-    return nil
-  end
+    if result == nil or result.code ~= 0 then
+        return nil
+    end
 
-  local output = vim.trim(result.stderr or '')
+    local output = vim.trim(result.stderr or '')
 
-  if output == '' then
-    output = vim.trim(result.stdout or '')
-  end
+    if output == '' then
+        output = vim.trim(result.stdout or '')
+    end
 
-  if output == '' then
-    return nil
-  end
+    if output == '' then
+        return nil
+    end
 
-  return output:match('[^\r\n]+')
+    return output:match('[^\r\n]+')
 end
 
 local function requested_java_version()
-  local root = project_root()
+    local root = project_root()
 
-  local java_version_file = fs.joinpath(root, '.java-version')
+    local java_version_file = fs.joinpath(root, '.java-version')
 
-  if is_file(java_version_file) then
-    local lines = fn.readfile(java_version_file, '', 1)
+    if is_file(java_version_file) then
+        local lines = fn.readfile(java_version_file, '', 1)
 
-    local first_line = lines[1]
+        local first_line = lines[1]
 
-    if type(first_line) == 'string' and first_line ~= '' then
-      return vim.trim(first_line)
+        if type(first_line) == 'string' and first_line ~= '' then
+            return vim.trim(first_line)
+        end
     end
-  end
 
-  local tool_versions = fs.joinpath(root, '.tool-versions')
+    local tool_versions = fs.joinpath(root, '.tool-versions')
 
-  if is_file(tool_versions) then
-    local lines = fn.readfile(tool_versions)
+    if is_file(tool_versions) then
+        local lines = fn.readfile(tool_versions)
 
-    for _, line in ipairs(lines) do
-      local version = line:match('^java%s+(%S+)')
+        for _, line in ipairs(lines) do
+            local version = line:match('^java%s+(%S+)')
 
-      if version ~= nil then
-        return version
-      end
+            if version ~= nil then
+                return version
+            end
+        end
     end
-  end
 
-  return nil
+    return nil
 end
 
 local function debug_port(result)
-  if type(result) == 'number' then
-    local port = math.floor(result)
+    if type(result) == 'number' then
+        local port = math.floor(result)
 
-    if port >= 1 and port <= 65535 then
-      return port
+        if port >= 1 and port <= 65535 then
+            return port
+        end
     end
-  end
 
-  if type(result) == 'string' then
-    local port = tonumber(result)
+    if type(result) == 'string' then
+        local port = tonumber(result)
 
-    if port ~= nil and port >= 1 and port <= 65535 then
-      return math.floor(port)
+        if port ~= nil and port >= 1 and port <= 65535 then
+            return math.floor(port)
+        end
     end
-  end
 
-  if type(result) == 'table' then
-    local value = result.port or result.debugPort
+    if type(result) == 'table' then
+        local value = result.port or result.debugPort
 
-    local port = tonumber(value)
+        local port = tonumber(value)
 
-    if port ~= nil and port >= 1 and port <= 65535 then
-      return math.floor(port)
+        if port ~= nil and port >= 1 and port <= 65535 then
+            return math.floor(port)
+        end
     end
-  end
 
-  return nil
+    return nil
 end
 
 local function start_debug_server()
-  local bufnr = api.nvim_get_current_buf()
+    local bufnr = api.nvim_get_current_buf()
 
-  local client = jdtls_client(bufnr)
+    local client = jdtls_client(bufnr)
 
-  if client == nil then
-    notify(
-      table.concat({
-        'Eclipse JDT LS is not attached.',
+    if client == nil then
+        notify(
+            table.concat({
+                'Eclipse JDT LS is not attached.',
 
-        '',
+                '',
 
-        'Java debugging requires the java-debug bundle',
-        'inside the active JDTLS instance.',
-      }, '\n'),
-      levels.ERROR
-    )
+                'Java debugging requires the java-debug bundle',
+                'inside the active JDTLS instance.',
+            }, '\n'),
+            levels.ERROR
+        )
 
-    return nil
-  end
+        return nil
+    end
 
-  if not supports_command(client, DEBUG_SESSION_COMMAND) then
-    notify(
-      table.concat({
-        'JDTLS does not expose vscode.java.startDebugSession.',
+    if not supports_command(client, DEBUG_SESSION_COMMAND) then
+        notify(
+            table.concat({
+                'JDTLS does not expose vscode.java.startDebugSession.',
 
-        '',
+                '',
 
-        'The Microsoft java-debug JAR is probably not loaded',
-        'in JDTLS initializationOptions.bundles.',
-      }, '\n'),
-      levels.ERROR
-    )
+                'The Microsoft java-debug JAR is probably not loaded',
+                'in JDTLS initializationOptions.bundles.',
+            }, '\n'),
+            levels.ERROR
+        )
 
-    return nil
-  end
+        return nil
+    end
 
-  local response = client:request_sync('workspace/executeCommand', {
-    command = DEBUG_SESSION_COMMAND,
+    local response = client:request_sync('workspace/executeCommand', {
+        command = DEBUG_SESSION_COMMAND,
 
-    arguments = {},
-  }, DEBUG_SESSION_TIMEOUT_MS, bufnr)
+        arguments = {},
+    }, DEBUG_SESSION_TIMEOUT_MS, bufnr)
 
-  if response == nil then
-    notify('JDTLS did not respond while starting the Java debug server', levels.ERROR)
+    if response == nil then
+        notify('JDTLS did not respond while starting the Java debug server', levels.ERROR)
 
-    return nil
-  end
+        return nil
+    end
 
-  if response.err ~= nil then
-    notify(('Java debug server startup failed: %s'):format(vim.inspect(response.err)), levels.ERROR)
+    if response.err ~= nil then
+        notify(('Java debug server startup failed: %s'):format(vim.inspect(response.err)), levels.ERROR)
 
-    return nil
-  end
+        return nil
+    end
 
-  local port = debug_port(response.result)
+    local port = debug_port(response.result)
 
-  if port == nil then
-    notify(('JDTLS returned an invalid Java DAP port: %s'):format(vim.inspect(response.result)), levels.ERROR)
+    if port == nil then
+        notify(('JDTLS returned an invalid Java DAP port: %s'):format(vim.inspect(response.result)), levels.ERROR)
 
-    return nil
-  end
+        return nil
+    end
 
-  local endpoint = {
-    host = '127.0.0.1',
+    local endpoint = {
+        host = '127.0.0.1',
 
-    port = port,
-  }
+        port = port,
+    }
 
-  state.endpoint = endpoint
+    state.endpoint = endpoint
 
-  return endpoint
+    return endpoint
 end
 
 local function adapter_port()
-  state.endpoint = nil
+    state.endpoint = nil
 
-  local endpoint = start_debug_server()
+    local endpoint = start_debug_server()
 
-  if endpoint == nil then
-    return 0
-  end
+    if endpoint == nil then
+        return 0
+    end
 
-  return endpoint.port
+    return endpoint.port
 end
 
 local function cwd()
-  local root = project_root()
+    local root = project_root()
 
-  state.root = root
+    state.root = root
 
-  return root
+    return root
 end
 
 local function current_file()
-  local current = filename()
+    local current = filename()
 
-  if current ~= '' then
-    return current
-  end
+    if current ~= '' then
+        return current
+    end
 
-  return '${file}'
+    return '${file}'
 end
 
 local function prompt_main_class()
-  return fn.input('Java main class: ')
+    return fn.input('Java main class: ')
 end
 
 local function prompt_project_name()
-  return fn.input('JDTLS project name (blank = auto): ')
+    return fn.input('JDTLS project name (blank = auto): ')
 end
 
 local function prompt_args()
-  local input = fn.input('Program arguments: ')
+    local input = fn.input('Program arguments: ')
 
-  if input == '' then
-    return {}
-  end
+    if input == '' then
+        return {}
+    end
 
-  return fn.shellsplit(input)
+    return fn.shellsplit(input)
 end
 
 local function prompt_vm_args()
-  local input = fn.input('JVM arguments: ')
+    local input = fn.input('JVM arguments: ')
 
-  if input == '' then
-    return {}
-  end
+    if input == '' then
+        return {}
+    end
 
-  return fn.shellsplit(input)
+    return fn.shellsplit(input)
 end
 
 local function prompt_debug_vm_args()
-  local input = fn.input('JVM arguments: ', '-ea -XX:+ShowCodeDetailsInExceptionMessages')
+    local input = fn.input('JVM arguments: ', '-ea -XX:+ShowCodeDetailsInExceptionMessages')
 
-  if input == '' then
-    return {}
-  end
+    if input == '' then
+        return {}
+    end
 
-  return fn.shellsplit(input)
+    return fn.shellsplit(input)
 end
 
 local function prompt_environment()
-  local input = fn.input('Environment KEY=VALUE pairs: ')
+    local input = fn.input('Environment KEY=VALUE pairs: ')
 
-  if input == '' then
-    return {}
-  end
-
-  local result = {}
-
-  for _, item in ipairs(fn.shellsplit(input)) do
-    local key, value = item:match('^([%a_][%w_]*)=(.*)$')
-
-    if key ~= nil then
-      result[key] = value
-    else
-      notify(('ignoring invalid environment assignment: %s'):format(item), levels.WARN)
+    if input == '' then
+        return {}
     end
-  end
 
-  return result
+    local result = {}
+
+    for _, item in ipairs(fn.shellsplit(input)) do
+        local key, value = item:match('^([%a_][%w_]*)=(.*)$')
+
+        if key ~= nil then
+            result[key] = value
+        else
+            notify(('ignoring invalid environment assignment: %s'):format(item), levels.WARN)
+        end
+    end
+
+    return result
 end
 
 local function prompt_jdwp_host()
-  local host = fn.input('JDWP host: ', DEFAULT_JDWP_HOST)
+    local host = fn.input('JDWP host: ', DEFAULT_JDWP_HOST)
 
-  if host == '' then
-    return DEFAULT_JDWP_HOST
-  end
+    if host == '' then
+        return DEFAULT_JDWP_HOST
+    end
 
-  return host
+    return host
 end
 
 local function prompt_jdwp_port()
-  local input = fn.input('JDWP port: ', tostring(DEFAULT_JDWP_PORT))
+    local input = fn.input('JDWP port: ', tostring(DEFAULT_JDWP_PORT))
 
-  local port = tonumber(input)
+    local port = tonumber(input)
 
-  if port == nil or port < 1 or port > 65535 then
-    notify(('invalid JDWP port: %s'):format(input), levels.ERROR)
+    if port == nil or port < 1 or port > 65535 then
+        notify(('invalid JDWP port: %s'):format(input), levels.ERROR)
 
-    return DEFAULT_JDWP_PORT
-  end
+        return DEFAULT_JDWP_PORT
+    end
 
-  return math.floor(port)
+    return math.floor(port)
 end
 
 local function java_processes()
-  local result = system({
-    'ps',
+    local result = system({
+        'ps',
 
-    '-eo',
+        '-eo',
 
-    'pid=,comm=,args=',
-  })
+        'pid=,comm=,args=',
+    })
 
-  if result == nil or result.code ~= 0 then
-    return {}
-  end
-
-  local processes = {}
-
-  for line in (result.stdout or ''):gmatch('[^\r\n]+') do
-    local pid, command, arguments = line:match('^%s*(%d+)%s+(%S+)%s*(.*)$')
-
-    if pid ~= nil and command ~= nil then
-      local executable_name = command:lower()
-
-      local args = (arguments or ''):lower()
-
-      if executable_name == 'java' or executable_name == 'javaw' or args:find('/java ', 1, true) ~= nil then
-        processes[#processes + 1] = {
-          pid = tonumber(pid),
-
-          command = command,
-
-          arguments = arguments or '',
-        }
-      end
+    if result == nil or result.code ~= 0 then
+        return {}
     end
-  end
 
-  return processes
+    local processes = {}
+
+    for line in (result.stdout or ''):gmatch('[^\r\n]+') do
+        local pid, command, arguments = line:match('^%s*(%d+)%s+(%S+)%s*(.*)$')
+
+        if pid ~= nil and command ~= nil then
+            local executable_name = command:lower()
+
+            local args = (arguments or ''):lower()
+
+            if executable_name == 'java' or executable_name == 'javaw' or args:find('/java ', 1, true) ~= nil then
+                processes[#processes + 1] = {
+                    pid = tonumber(pid),
+
+                    command = command,
+
+                    arguments = arguments or '',
+                }
+            end
+        end
+    end
+
+    return processes
 end
 
 local function show_java_processes()
-  local processes = java_processes()
+    local processes = java_processes()
 
-  if #processes == 0 then
-    notify('no Java processes found', levels.WARN)
+    if #processes == 0 then
+        notify('no Java processes found', levels.WARN)
 
-    return
-  end
+        return
+    end
 
-  local lines = {}
+    local lines = {}
 
-  for _, process in ipairs(processes) do
-    lines[#lines + 1] = ('PID %-7d %s %s'):format(process.pid, process.command, process.arguments)
-  end
+    for _, process in ipairs(processes) do
+        lines[#lines + 1] = ('PID %-7d %s %s'):format(process.pid, process.command, process.arguments)
+    end
 
-  notify(table.concat(lines, '\n'))
+    notify(table.concat(lines, '\n'))
 end
 
 local function optimized_step_filters()
-  return vim.deepcopy(STEP_SKIP_CLASSES)
+    return vim.deepcopy(STEP_SKIP_CLASSES)
 end
 
 local function step_filters()
-  return {
-    skipClasses = optimized_step_filters(),
+    return {
+        skipClasses = optimized_step_filters(),
 
-    skipSynthetics = true,
+        skipSynthetics = true,
 
-    skipStaticInitializers = true,
+        skipStaticInitializers = true,
 
-    skipConstructors = false,
-  }
+        skipConstructors = false,
+    }
 end
 
 local function auto_class_paths()
-  return {
-    '$Auto',
-  }
+    return {
+        '$Auto',
+    }
 end
 
 local function runtime_class_paths()
-  return {
-    '$Runtime',
-  }
+    return {
+        '$Runtime',
+    }
 end
 
 local function test_class_paths()
-  return {
-    '$Test',
-  }
+    return {
+        '$Test',
+    }
 end
 
 local function auto_module_paths()
-  return {
-    '$Auto',
-  }
+    return {
+        '$Auto',
+    }
 end
 
 local function runtime_module_paths()
-  return {
-    '$Runtime',
-  }
+    return {
+        '$Runtime',
+    }
 end
 
 local function test_module_paths()
-  return {
-    '$Test',
-  }
+    return {
+        '$Test',
+    }
 end
 
 local function java_exec()
-  return resolve_java() or 'java'
+    return resolve_java() or 'java'
 end
 
 local function nonempty_project_name()
-  local value = prompt_project_name()
+    local value = prompt_project_name()
 
-  return value
+    return value
 end
 
 local function select_java()
-  local selected = fn.input('Java executable: ', resolve_java() or '', 'file')
+    local selected = fn.input('Java executable: ', resolve_java() or '', 'file')
 
-  if selected == '' then
-    return
-  end
+    if selected == '' then
+        return
+    end
 
-  selected = normalize(fn.expand(selected))
+    selected = normalize(fn.expand(selected))
 
-  if not executable(selected) then
-    notify(('not executable: %s'):format(selected), levels.ERROR)
+    if not executable(selected) then
+        notify(('not executable: %s'):format(selected), levels.ERROR)
 
-    return
-  end
+        return
+    end
 
-  state.java = selected
+    state.java = selected
 
-  local bin = fs.dirname(selected)
+    local bin = fs.dirname(selected)
 
-  if bin ~= nil then
-    state.java_home = fs.dirname(bin)
-  end
+    if bin ~= nil then
+        state.java_home = fs.dirname(bin)
+    end
 
-  notify(('Java executable: %s'):format(selected))
+    notify(('Java executable: %s'):format(selected))
 end
 
 local function clear_cache()
-  state.endpoint = nil
+    state.endpoint = nil
 
-  state.java = nil
+    state.java = nil
 
-  state.java_home = nil
+    state.java_home = nil
 
-  state.root = nil
+    state.root = nil
 
-  notify('Java DAP discovery cache cleared')
+    notify('Java DAP discovery cache cleared')
 end
 
 local function status()
-  local client = jdtls_client()
+    local client = jdtls_client()
 
-  local debug_loaded = client ~= nil and supports_command(client, DEBUG_SESSION_COMMAND)
+    local debug_loaded = client ~= nil and supports_command(client, DEBUG_SESSION_COMMAND)
 
-  notify(
-    table.concat({
-      'root: ' .. project_root(),
+    notify(
+        table.concat({
+            'root: ' .. project_root(),
 
-      'JDTLS: ' .. (client ~= nil and ('%s [id=%d]'):format(client.name, client.id) or 'not attached'),
+            'JDTLS: ' .. (client ~= nil and ('%s [id=%d]'):format(client.name, client.id) or 'not attached'),
 
-      'java-debug bundle: ' .. (debug_loaded and 'loaded' or 'not detected'),
+            'java-debug bundle: ' .. (debug_loaded and 'loaded' or 'not detected'),
 
-      'Java: ' .. (resolve_java() or 'not found'),
+            'Java: ' .. (resolve_java() or 'not found'),
 
-      'JAVA_HOME: ' .. (resolve_java_home() or 'not found'),
+            'JAVA_HOME: ' .. (resolve_java_home() or 'not found'),
 
-      'Java version: ' .. (java_version() or 'unknown'),
+            'Java version: ' .. (java_version() or 'unknown'),
 
-      'project Java version: ' .. (requested_java_version() or 'not specified'),
+            'project Java version: ' .. (requested_java_version() or 'not specified'),
 
-      'DAP broker command: ' .. DEBUG_SESSION_COMMAND,
+            'DAP broker command: ' .. DEBUG_SESSION_COMMAND,
 
-      'last DAP endpoint: '
-        .. (state.endpoint ~= nil and ('%s:%d'):format(state.endpoint.host, state.endpoint.port) or 'none'),
-    }, '\n'),
-    debug_loaded and levels.INFO or levels.WARN
-  )
+            'last DAP endpoint: '
+                .. (state.endpoint ~= nil and ('%s:%d'):format(state.endpoint.host, state.endpoint.port) or 'none'),
+        }, '\n'),
+        debug_loaded and levels.INFO or levels.WARN
+    )
 end
 
 M.adapter = {
-  name = 'java',
+    name = 'java',
 
-  type = 'server',
+    type = 'server',
 
-  host = '127.0.0.1',
+    host = '127.0.0.1',
 
-  port = adapter_port,
+    port = adapter_port,
 
-  options = {
-    source_filetype = 'java',
-  },
+    options = {
+        source_filetype = 'java',
+    },
 }
 
 local configurations = {
-  {
-    name = 'Java: Current File / Main Class',
+    {
+        name = 'Java: Current File / Main Class',
 
-    type = 'java',
+        type = 'java',
 
-    request = 'launch',
+        request = 'launch',
 
-    mainClass = current_file,
+        mainClass = current_file,
 
-    cwd = cwd,
+        cwd = cwd,
 
-    javaExec = java_exec,
+        javaExec = java_exec,
 
-    classPaths = auto_class_paths,
+        classPaths = auto_class_paths,
 
-    modulePaths = auto_module_paths,
+        modulePaths = auto_module_paths,
 
-    console = 'integratedTerminal',
+        console = 'integratedTerminal',
 
-    encoding = 'UTF-8',
+        encoding = 'UTF-8',
 
-    shortenCommandLine = 'auto',
+        shortenCommandLine = 'auto',
 
-    stepFilters = step_filters,
-  },
+        stepFilters = step_filters,
+    },
 
-  {
-    name = 'Java: Current File with Arguments',
+    {
+        name = 'Java: Current File with Arguments',
 
-    type = 'java',
+        type = 'java',
 
-    request = 'launch',
+        request = 'launch',
 
-    mainClass = current_file,
+        mainClass = current_file,
 
-    cwd = cwd,
+        cwd = cwd,
 
-    javaExec = java_exec,
+        javaExec = java_exec,
 
-    args = prompt_args,
+        args = prompt_args,
 
-    vmArgs = prompt_vm_args,
+        vmArgs = prompt_vm_args,
 
-    env = prompt_environment,
+        env = prompt_environment,
 
-    classPaths = auto_class_paths,
+        classPaths = auto_class_paths,
 
-    modulePaths = auto_module_paths,
+        modulePaths = auto_module_paths,
 
-    console = 'integratedTerminal',
+        console = 'integratedTerminal',
 
-    encoding = 'UTF-8',
+        encoding = 'UTF-8',
 
-    shortenCommandLine = 'auto',
+        shortenCommandLine = 'auto',
 
-    stepFilters = step_filters,
-  },
+        stepFilters = step_filters,
+    },
 
-  {
-    name = 'Java: Current File (Debug JVM Preset)',
+    {
+        name = 'Java: Current File (Debug JVM Preset)',
 
-    type = 'java',
+        type = 'java',
 
-    request = 'launch',
+        request = 'launch',
 
-    mainClass = current_file,
+        mainClass = current_file,
 
-    cwd = cwd,
+        cwd = cwd,
 
-    javaExec = java_exec,
+        javaExec = java_exec,
 
-    args = prompt_args,
+        args = prompt_args,
 
-    vmArgs = prompt_debug_vm_args,
+        vmArgs = prompt_debug_vm_args,
 
-    env = prompt_environment,
+        env = prompt_environment,
 
-    classPaths = auto_class_paths,
+        classPaths = auto_class_paths,
 
-    modulePaths = auto_module_paths,
+        modulePaths = auto_module_paths,
 
-    console = 'integratedTerminal',
+        console = 'integratedTerminal',
 
-    encoding = 'UTF-8',
+        encoding = 'UTF-8',
 
-    shortenCommandLine = 'auto',
+        shortenCommandLine = 'auto',
 
-    stepFilters = step_filters,
-  },
+        stepFilters = step_filters,
+    },
 
-  {
-    name = 'Java: Main Class',
+    {
+        name = 'Java: Main Class',
 
-    type = 'java',
+        type = 'java',
 
-    request = 'launch',
+        request = 'launch',
 
-    mainClass = prompt_main_class,
+        mainClass = prompt_main_class,
 
-    cwd = cwd,
+        cwd = cwd,
 
-    javaExec = java_exec,
+        javaExec = java_exec,
 
-    args = prompt_args,
+        args = prompt_args,
 
-    vmArgs = prompt_vm_args,
+        vmArgs = prompt_vm_args,
 
-    env = prompt_environment,
+        env = prompt_environment,
 
-    classPaths = auto_class_paths,
+        classPaths = auto_class_paths,
 
-    modulePaths = auto_module_paths,
+        modulePaths = auto_module_paths,
 
-    console = 'integratedTerminal',
+        console = 'integratedTerminal',
 
-    encoding = 'UTF-8',
+        encoding = 'UTF-8',
 
-    shortenCommandLine = 'auto',
+        shortenCommandLine = 'auto',
 
-    stepFilters = step_filters,
-  },
+        stepFilters = step_filters,
+    },
 
-  {
-    name = 'Java: Main Class + Project',
+    {
+        name = 'Java: Main Class + Project',
 
-    type = 'java',
+        type = 'java',
 
-    request = 'launch',
+        request = 'launch',
 
-    mainClass = prompt_main_class,
+        mainClass = prompt_main_class,
 
-    projectName = nonempty_project_name,
+        projectName = nonempty_project_name,
 
-    cwd = cwd,
+        cwd = cwd,
 
-    javaExec = java_exec,
+        javaExec = java_exec,
 
-    args = prompt_args,
+        args = prompt_args,
 
-    vmArgs = prompt_vm_args,
+        vmArgs = prompt_vm_args,
 
-    env = prompt_environment,
+        env = prompt_environment,
 
-    classPaths = auto_class_paths,
+        classPaths = auto_class_paths,
 
-    modulePaths = auto_module_paths,
+        modulePaths = auto_module_paths,
 
-    console = 'integratedTerminal',
+        console = 'integratedTerminal',
 
-    encoding = 'UTF-8',
+        encoding = 'UTF-8',
 
-    shortenCommandLine = 'auto',
+        shortenCommandLine = 'auto',
 
-    stepFilters = step_filters,
-  },
+        stepFilters = step_filters,
+    },
 
-  {
-    name = 'Java: Main Class (Runtime Classpath)',
+    {
+        name = 'Java: Main Class (Runtime Classpath)',
 
-    type = 'java',
+        type = 'java',
 
-    request = 'launch',
+        request = 'launch',
 
-    mainClass = prompt_main_class,
+        mainClass = prompt_main_class,
 
-    projectName = nonempty_project_name,
+        projectName = nonempty_project_name,
 
-    cwd = cwd,
+        cwd = cwd,
 
-    javaExec = java_exec,
+        javaExec = java_exec,
 
-    args = prompt_args,
+        args = prompt_args,
 
-    vmArgs = prompt_vm_args,
+        vmArgs = prompt_vm_args,
 
-    env = prompt_environment,
+        env = prompt_environment,
 
-    classPaths = runtime_class_paths,
+        classPaths = runtime_class_paths,
 
-    modulePaths = runtime_module_paths,
+        modulePaths = runtime_module_paths,
 
-    console = 'integratedTerminal',
+        console = 'integratedTerminal',
 
-    encoding = 'UTF-8',
+        encoding = 'UTF-8',
 
-    shortenCommandLine = 'auto',
+        shortenCommandLine = 'auto',
 
-    stepFilters = step_filters,
-  },
+        stepFilters = step_filters,
+    },
 
-  {
-    name = 'Java: Main Class (Test Classpath)',
+    {
+        name = 'Java: Main Class (Test Classpath)',
 
-    type = 'java',
+        type = 'java',
 
-    request = 'launch',
+        request = 'launch',
 
-    mainClass = prompt_main_class,
+        mainClass = prompt_main_class,
 
-    projectName = nonempty_project_name,
+        projectName = nonempty_project_name,
 
-    cwd = cwd,
+        cwd = cwd,
 
-    javaExec = java_exec,
+        javaExec = java_exec,
 
-    args = prompt_args,
+        args = prompt_args,
 
-    vmArgs = prompt_debug_vm_args,
+        vmArgs = prompt_debug_vm_args,
 
-    env = prompt_environment,
+        env = prompt_environment,
 
-    classPaths = test_class_paths,
+        classPaths = test_class_paths,
 
-    modulePaths = test_module_paths,
+        modulePaths = test_module_paths,
 
-    console = 'integratedTerminal',
+        console = 'integratedTerminal',
 
-    encoding = 'UTF-8',
+        encoding = 'UTF-8',
 
-    shortenCommandLine = 'auto',
+        shortenCommandLine = 'auto',
 
-    stepFilters = step_filters,
-  },
+        stepFilters = step_filters,
+    },
 
-  {
-    name = 'Java: Attach localhost:5005',
+    {
+        name = 'Java: Attach localhost:5005',
 
-    type = 'java',
+        type = 'java',
 
-    request = 'attach',
+        request = 'attach',
 
-    hostName = DEFAULT_JDWP_HOST,
+        hostName = DEFAULT_JDWP_HOST,
 
-    port = DEFAULT_JDWP_PORT,
+        port = DEFAULT_JDWP_PORT,
 
-    stepFilters = step_filters,
-  },
+        stepFilters = step_filters,
+    },
 
-  {
-    name = 'Java: Attach JDWP',
+    {
+        name = 'Java: Attach JDWP',
 
-    type = 'java',
+        type = 'java',
 
-    request = 'attach',
+        request = 'attach',
 
-    hostName = prompt_jdwp_host,
+        hostName = prompt_jdwp_host,
 
-    port = prompt_jdwp_port,
+        port = prompt_jdwp_port,
 
-    stepFilters = step_filters,
-  },
+        stepFilters = step_filters,
+    },
 }
 
 M.configurations = {
-  java = configurations,
+    java = configurations,
 }
 
 M.commands = {
-  JavaDebugClear = {
-    callback = function()
-      clear_cache()
-    end,
+    JavaDebugClear = {
+        callback = function()
+            clear_cache()
+        end,
 
-    desc = 'Clear Java DAP discovery cache',
-  },
+        desc = 'Clear Java DAP discovery cache',
+    },
 
-  JavaDebugJava = {
-    callback = function()
-      select_java()
-    end,
+    JavaDebugJava = {
+        callback = function()
+            select_java()
+        end,
 
-    desc = 'Select Java executable',
-  },
+        desc = 'Select Java executable',
+    },
 
-  JavaDebugProcesses = {
-    callback = function()
-      show_java_processes()
-    end,
+    JavaDebugProcesses = {
+        callback = function()
+            show_java_processes()
+        end,
 
-    desc = 'Show running Java processes',
-  },
+        desc = 'Show running Java processes',
+    },
 
-  JavaDebugServer = {
-    callback = function()
-      local endpoint = start_debug_server()
+    JavaDebugServer = {
+        callback = function()
+            local endpoint = start_debug_server()
 
-      if endpoint ~= nil then
-        notify(('Java DAP server: %s:%d'):format(endpoint.host, endpoint.port))
-      end
-    end,
+            if endpoint ~= nil then
+                notify(('Java DAP server: %s:%d'):format(endpoint.host, endpoint.port))
+            end
+        end,
 
-    desc = 'Start Java DAP server through JDTLS',
-  },
+        desc = 'Start Java DAP server through JDTLS',
+    },
 
-  JavaDebugStatus = {
-    callback = function()
-      status()
-    end,
+    JavaDebugStatus = {
+        callback = function()
+            status()
+        end,
 
-    desc = 'Show Java debugger status',
-  },
+        desc = 'Show Java debugger status',
+    },
 }
 
 M.mappings = {
-  java_debug_java = {
-    lhs = '<leader>dJj',
+    java_debug_java = {
+        lhs = '<leader>dJj',
 
-    mode = 'n',
+        mode = 'n',
 
-    rhs = function()
-      select_java()
-    end,
+        rhs = function()
+            select_java()
+        end,
 
-    desc = 'Debug Java: Select JDK',
-  },
+        desc = 'Debug Java: Select JDK',
+    },
 
-  java_debug_processes = {
-    lhs = '<leader>dJp',
+    java_debug_processes = {
+        lhs = '<leader>dJp',
 
-    mode = 'n',
+        mode = 'n',
 
-    rhs = function()
-      show_java_processes()
-    end,
+        rhs = function()
+            show_java_processes()
+        end,
 
-    desc = 'Debug Java: Processes',
-  },
+        desc = 'Debug Java: Processes',
+    },
 
-  java_debug_server = {
-    lhs = '<leader>dJd',
+    java_debug_server = {
+        lhs = '<leader>dJd',
 
-    mode = 'n',
+        mode = 'n',
 
-    rhs = function()
-      local endpoint = start_debug_server()
+        rhs = function()
+            local endpoint = start_debug_server()
 
-      if endpoint ~= nil then
-        notify(('Java DAP server: %s:%d'):format(endpoint.host, endpoint.port))
-      end
-    end,
+            if endpoint ~= nil then
+                notify(('Java DAP server: %s:%d'):format(endpoint.host, endpoint.port))
+            end
+        end,
 
-    desc = 'Debug Java: Start DAP server',
-  },
+        desc = 'Debug Java: Start DAP server',
+    },
 
-  java_debug_status = {
-    lhs = '<leader>dJs',
+    java_debug_status = {
+        lhs = '<leader>dJs',
 
-    mode = 'n',
+        mode = 'n',
 
-    rhs = function()
-      status()
-    end,
+        rhs = function()
+            status()
+        end,
 
-    desc = 'Debug Java: Status',
-  },
+        desc = 'Debug Java: Status',
+    },
 }
 
 function M.setup(opts)
-  opts = opts or {}
+    opts = opts or {}
 
-  local configured_root = opts.root
+    local configured_root = opts.root
 
-  state.root = type(configured_root) == 'string' and configured_root ~= '' and fs.normalize(configured_root)
-    or project_root()
+    state.root = type(configured_root) == 'string' and configured_root ~= '' and fs.normalize(configured_root)
+        or project_root()
 
-  if resolve_java() == nil then
-    vim.schedule(function()
-      notify(
-        table.concat({
-          'Java runtime was not found.',
+    if resolve_java() == nil then
+        vim.schedule(function()
+            notify(
+                table.concat({
+                    'Java runtime was not found.',
 
-          '',
+                    '',
 
-          'Set one of:',
+                    'Set one of:',
 
-          '  NVIM_JAVA_EXECUTABLE=/path/to/java',
+                    '  NVIM_JAVA_EXECUTABLE=/path/to/java',
 
-          '  NVIM_JAVA_HOME=/path/to/jdk',
+                    '  NVIM_JAVA_HOME=/path/to/jdk',
 
-          '  JAVA_HOME=/path/to/jdk',
-        }, '\n'),
-        levels.ERROR
-      )
-    end)
-  end
+                    '  JAVA_HOME=/path/to/jdk',
+                }, '\n'),
+                levels.ERROR
+            )
+        end)
+    end
 
-  local client = jdtls_client()
+    local client = jdtls_client()
 
-  if client == nil then
-    vim.schedule(function()
-      notify(
-        table.concat({
-          'Eclipse JDT LS is not currently attached.',
+    if client == nil then
+        vim.schedule(function()
+            notify(
+                table.concat({
+                    'Eclipse JDT LS is not currently attached.',
 
-          '',
+                    '',
 
-          'Java DAP definitions were registered, but debugging',
-          'requires the JDTLS client for this workspace.',
-        }, '\n'),
-        levels.DEBUG
-      )
-    end)
+                    'Java DAP definitions were registered, but debugging',
+                    'requires the JDTLS client for this workspace.',
+                }, '\n'),
+                levels.DEBUG
+            )
+        end)
 
-    return
-  end
+        return
+    end
 
-  if not supports_command(client, DEBUG_SESSION_COMMAND) then
-    vim.schedule(function()
-      notify(
-        table.concat({
-          'Microsoft java-debug was not detected in JDTLS.',
+    if not supports_command(client, DEBUG_SESSION_COMMAND) then
+        vim.schedule(function()
+            notify(
+                table.concat({
+                    'Microsoft java-debug was not detected in JDTLS.',
 
-          '',
+                    '',
 
-          'Add the built java-debug plugin JAR to:',
+                    'Add the built java-debug plugin JAR to:',
 
-          '  initializationOptions.bundles',
+                    '  initializationOptions.bundles',
 
-          '',
+                    '',
 
-          'Expected command after loading:',
+                    'Expected command after loading:',
 
-          '  vscode.java.startDebugSession',
-        }, '\n'),
-        levels.WARN
-      )
-    end)
-  end
+                    '  vscode.java.startDebugSession',
+                }, '\n'),
+                levels.WARN
+            )
+        end)
+    end
 end
 
 function M.java()
-  return resolve_java()
+    return resolve_java()
 end
 
 function M.java_home()
-  return resolve_java_home()
+    return resolve_java_home()
 end
 
 function M.root()
-  return project_root()
+    return project_root()
 end
 
 function M.jdtls()
-  return jdtls_client()
+    return jdtls_client()
 end
 
 function M.available()
-  return resolve_java() ~= nil and java_debug_loaded()
+    return resolve_java() ~= nil and java_debug_loaded()
 end
 
 function M.endpoint()
-  return state.endpoint
+    return state.endpoint
 end
 
 return M

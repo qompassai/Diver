@@ -65,7 +65,7 @@ function M.setup(opts, callback)
         end
 
         local fallback = options.fallback
-        if fallback == false or fallback == preferred then
+        if fallback == nil or fallback == false or fallback == preferred then
             if callback then
                 callback(false, nil, err)
             end

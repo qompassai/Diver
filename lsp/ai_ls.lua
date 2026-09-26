@@ -1,3 +1,11 @@
+--- lsp-ai language-server config — AI completion tutor.
+---
+--- Plain-language version: a language server is a helper program that reads your code and tells Neovim about
+--- errors, completions, and definitions -- like a tutor looking over your shoulder. This file is the introduction
+--- card that tells Neovim how to start the `lsp-ai` tutor for AI-assisted completion. It
+--- only takes effect if `lsp-ai` is installed on your computer. It carries its own model settings (see
+--- init_options).
+---@module 'lsp.ai_ls'
 -- /qompassai/Diver/lsp/ai_ls.lua
 -- Qompass AI Qompass AI LSP Spec
 -- Copyright (C) 2025 Qompass AI, All rights reserved
@@ -29,11 +37,13 @@ return {
                 system = [[
 Instructions:
 - You are an AI programming assistant.
-- Given a piece of code with the cursor location marked by "<CURSOR>", replace "<CURSOR>" with the correct code or comment.
+- Given a piece of code with the cursor location marked by "<CURSOR>", replace ]]
+                    .. [["<CURSOR>" with the correct code or comment.
 - First, think step-by-step.
 - Describe your plan for what to build in pseudocode, written out in great detail.
 - Then output the code replacing the "<CURSOR>"
-- Ensure that your completion fits within the language context of the provided code snippet (e.g., Python, JavaScript, Rust).
+- Ensure that your completion fits within the language context of the provided code snippet ]]
+                    .. [[(e.g., Python, JavaScript, Rust).
 
 Rules:
 - Only respond with code or comments.

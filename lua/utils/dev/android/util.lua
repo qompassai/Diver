@@ -18,69 +18,67 @@
 local M = {}
 
 function M.trim(s)
-  return (s or ''):gsub('^%s*(.-)%s*$', '%1')
+    return (s or ''):gsub('^%s*(.-)%s*$', '%1')
 end
 
 function M.get_android_sdk()
-  local sdk = vim.fn.expand(vim.env.ANDROID_HOME or vim.g.android_sdk or '')
-  if sdk == '' then
-    return nil
-  end
-  return sdk
+    local sdk = vim.fn.expand(vim.env.ANDROID_HOME or vim.g.android_sdk or '')
+    if sdk == '' then
+        return nil
+    end
+    return sdk
 end
 
 function M.android_cli_cmd(args)
-  local cmd = { 'android' }
-  local sdk = M.get_android_sdk()
+    local cmd = { 'android' }
+    local sdk = M.get_android_sdk()
 
-  if sdk then
-    cmd[#cmd + 1] = '--sdk=' .. sdk
-  end
+    if sdk then
+        cmd[#cmd + 1] = '--sdk=' .. sdk
+    end
 
-  for i = 1, #args do
-    cmd[#cmd + 1] = args[i]
-  end
+    for i = 1, #args do
+        cmd[#cmd + 1] = args[i]
+    end
 
-  return cmd
+    return cmd
 end
 
 function M.read_file(path)
-  local file = io.open(path, 'r')
-  if not file then
-    return nil
-  end
+    local file = io.open(path, 'r')
+    if not file then
+        return nil
+    end
 
-  local content = file:read('*all')
-  file:close()
-  return content
+    local content = file:read('*all')
+    file:close()
+    return content
 end
 
 function M.find_gradlew(directory)
-  local cwd = directory or vim.fn.getcwd()
-  local parent = vim.fn.fnamemodify(cwd, ':h')
-  local obj = vim
-    .system({
-      'find',
-      cwd,
-      '-maxdepth',
-      '1',
-      '-name',
-      'gradlew',
-    }, {})
-    :wait()
+    local cwd = directory or vim.fn.getcwd()
+    local parent = vim.fn.fnamemodify(cwd, ':h')
+    local obj = vim.system({
+        'find',
+        cwd,
+        '-maxdepth',
+        '1',
+        '-name',
+        'gradlew',
+    }, {}):wait()
 
-  local result = obj.stdout
-  if result == nil or #result == 0 then
-    if cwd == parent then
-      return nil
+    local result = obj.stdout
+    if result == nil or #result == 0 then
+        if cwd == parent then
+            return nil
+        end
+        return M.find_gradlew(parent)
     end
-    return M.find_gradlew(parent)
-  end
 
-  return {
-    cwd = cwd,
-    gradlew = M.trim(result),
-  }
+    return {
+        cwd = cwd,
+        gradlew = M.trim(result),
+    }
 end
 
 return M

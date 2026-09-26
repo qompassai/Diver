@@ -31,16 +31,16 @@ local M = {}
 ---@param markers? string[] Root markers to search for.
 ---@return string? root Normalized project root, or nil when none is found.
 function M.find(bufnr, markers)
-        local target_bufnr = bufnr or api.nvim_get_current_buf()
-        local root_markers = markers or config.get().root_markers
+    local target_bufnr = bufnr or api.nvim_get_current_buf()
+    local root_markers = markers or config.get().root_markers
 
-        local found = vim.fs.root(target_bufnr, root_markers)
+    local found = vim.fs.root(target_bufnr, root_markers)
 
-        if found == nil then
-                return nil
-        end
+    if found == nil then
+        return nil
+    end
 
-        return vim.fs.normalize(found)
+    return vim.fs.normalize(found)
 end
 
 ---Resolve a SCIP project root for a buffer.
@@ -55,23 +55,23 @@ end
 ---@param markers? string[] Preferred root markers.
 ---@return string root Normalized project root.
 function M.resolve(bufnr, markers)
-        local target_bufnr = bufnr or api.nvim_get_current_buf()
+    local target_bufnr = bufnr or api.nvim_get_current_buf()
 
-        if markers ~= nil then
-                local marked_root = M.find(target_bufnr, markers)
+    if markers ~= nil then
+        local marked_root = M.find(target_bufnr, markers)
 
-                if marked_root ~= nil then
-                        return marked_root
-                end
+        if marked_root ~= nil then
+            return marked_root
         end
+    end
 
-        local configured_root = M.find(target_bufnr, config.get().root_markers)
+    local configured_root = M.find(target_bufnr, config.get().root_markers)
 
-        if configured_root ~= nil then
-                return configured_root
-        end
+    if configured_root ~= nil then
+        return configured_root
+    end
 
-        return vim.fs.normalize(fn.getcwd())
+    return vim.fs.normalize(fn.getcwd())
 end
 
 return M

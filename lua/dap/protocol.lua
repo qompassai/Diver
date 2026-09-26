@@ -1,3 +1,9 @@
+--- DAP protocol shapes — the dictionary the debugger modules share.
+---
+--- Plain-language version: this file writes down the exact shapes of the messages the Debug Adapter Protocol uses
+--- (requests, responses, events), so every debugger module agrees on what a 'breakpoint' or a 'stack frame' looks
+--- like. It is definitions only; nothing runs here.
+---@module 'dap.protocol'
 -- #################################################################
 -- /qompassai/lua/dap/protocol.lua
 -- Qompass AI Protocol
@@ -79,10 +85,10 @@
 ---@field id number
 ---@field name string
 ---@field source dap.Source|nil
----@field line number
----@field column number
----@field endLine nil|number
----@field endColumn nil|number
+---@field line integer
+---@field column integer
+---@field endLine nil|integer
+---@field endColumn nil|integer
 ---@field canRestart boolean|nil
 ---@field presentationHint nil|"normal"|"label"|"subtle";
 ---@field scopes? dap.Scope[] Not part of spec; added by nvim-dap
@@ -143,8 +149,8 @@
 ---@class dap.VariablesArguments
 ---@field variablesReference number variable for which to retrieve its children
 ---@field filter? "indexed"|"named" filter to limit child variables. Both are fetched if nil
----@field start? number index of the first variable to return. If nil children start at 0. Requires `supportsVariablePaging`
----@field count? number number of variables to return. If missing or 0, all variables are returned. Requires `supportsVariablePaging`
+---@field start? number index of the first variable to return (0-based if nil). Requires `supportsVariablePaging`
+---@field count? number variables to return; all are returned if missing or 0. Requires `supportsVariablePaging`
 ---@field format? dap.ValueFormat
 
 ---@class dap.VariableResponse
@@ -181,28 +187,15 @@
 ---@field memoryReference? string
 ---@field valueLocationReference? number
 
+---@alias dap.VariableAttribute
+---|'static'|'constant'|'readOnly'|'rawString'|'hasObjectId'|'canHaveObjectId'
+---|'hasSideEffects'|'hasDataBreakpoint'|string
+
 ---@class dap.VariablePresentationHint
----@field kind?
----|'property'
----|'method'
----|'class'
----|'data'
----|'event'
----|'baseClass'
----|'innerClass'
----|'interface'
----|'mostDerivedClass'
----|'virtual'
----|'dataBreakpoint'
----|string;
----@field attributes? ('static'|'constant'|'readOnly'|'rawString'|'hasObjectId'|'canHaveObjectId'|'hasSideEffects'|'hasDataBreakpoint'|string)[]
----@field visibility?
----|'public'
----|'private'
----|'protected'
----|'internal'
----|'final'
----|string
+---@field kind? 'property'|'method'|'class'|'data'|'event'|'baseClass'
+---|'innerClass'|'interface'|'mostDerivedClass'|'virtual'|'dataBreakpoint'|string
+---@field attributes? dap.VariableAttribute[]
+---@field visibility? 'public'|'private'|'protected'|'internal'|'final'|string
 ---@field lazy? boolean
 
 ---@class dap.Source
@@ -320,17 +313,20 @@
 ---@field verified boolean
 ---@field message? string
 ---@field source? dap.Source
----@field line? number
----@field column? number
----@field endLine? number
----@field endColumn? number
+---@field line? integer
+---@field column? integer
+---@field endLine? integer
+---@field endColumn? integer
 ---@field instructionReference? string
 ---@field offset? number
 
 ---@class dap.InitializedEvent
 
 ---@class dap.StoppedEvent
----@field reason "step"|"breakpoint"|"exception"|"pause"|"entry"|"goto"|"function breakpoint"|"data breakpoint"|"instruction breakpoint"|string;
+---@field reason
+---|"step"|"breakpoint"|"exception"|"pause"|"entry"|"goto"
+---|"function breakpoint"|"data breakpoint"|"instruction breakpoint"
+---|string
 ---@field description nil|string
 ---@field threadId nil|number
 ---@field preserveFocusHint nil|boolean
@@ -393,7 +389,7 @@
 ---@field data? any
 
 ---@class dap.StartDebuggingRequestArguments
----@field configuration table<string, any>
+---@field configuration dap.Configuration
 ---@field request 'launch'|'attach'
 
 ---@class dap.CompletionsResponse
@@ -440,10 +436,10 @@
 ---@field label string By default this is also the text that is inserted when selecting this completion
 ---@field text? string If present and not empty this is inserted instead of the label
 ---@field sortText? string Used to sort completion items if present and not empty. Otherwise label is used
----@field detail? string human-readable string with additional information about this item. Like type or symbol information
+---@field detail? string human-readable string with extra info about this item, like type or symbol info
 ---@field type? dap.CompletionItemType
----@field start? number Start position in UTF-16 code units. (within the `text` attribute of the `completions` request) 0- or 1-based depending on `columnsStartAt1` capability. If omitted, the text is added at the location of the `column` attribute of the `completions` request.
----@field length? number How many characters are overwritten by the completion text. Measured in UTF-16 code units. If missing the value 0 is assumed which results in the completion text being inserted.
+---@field start? number UTF-16 start offset (0- or 1-based per `columnsStartAt1`); defaults to `column`.
+---@field length? number characters overwritten by the completion text (UTF-16 code units); 0 if missing.
 ---@field selectionStart? number
 ---@field selectionLength? number
 

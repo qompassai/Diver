@@ -261,6 +261,8 @@ end
 ---@param forward? boolean Defaults to next; false means previous.
 ---@param ending? boolean Jump to the last included byte instead of the start.
 ---@param query_name? string Defaults to 'textobjects'.
+---@return boolean? jumped True when the cursor moved to a match.
+---@return string? err Plain-language reason when nothing matched; only set when jumped is nil.
 function M.jump(capture, forward, ending, query_name)
     assert(type(capture) == 'string' and #capture <= 128)
     local bufnr = api.nvim_get_current_buf()
@@ -297,12 +299,8 @@ function M.jump(capture, forward, ending, query_name)
                 end
             end
             if
-                forward ~= false
-                    and before(cursor, target)
-                    and (not best or before(target, best))
-                or forward == false
-                    and before(target, cursor)
-                    and (not best or before(best, target))
+                forward ~= false and before(cursor, target) and (not best or before(target, best))
+                or forward == false and before(target, cursor) and (not best or before(best, target))
             then
                 best = target
             end
@@ -318,10 +316,7 @@ end
 
 function M.teardown()
     for win, saved in pairs(configured) do
-        if
-            api.nvim_win_is_valid(win)
-            and vim.wo[win].foldexpr == 'v:lua.vim.treesitter.foldexpr()'
-        then
+        if api.nvim_win_is_valid(win) and vim.wo[win].foldexpr == 'v:lua.vim.treesitter.foldexpr()' then
             vim.wo[win].foldmethod, vim.wo[win].foldexpr = saved.method, saved.expr
         end
     end

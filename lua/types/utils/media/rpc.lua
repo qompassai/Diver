@@ -1,3 +1,9 @@
+--- Media RPC message types — type-checker dictionary (never runs).
+---
+--- Plain-language version: this file never runs -- Neovim never loads it at startup. It is a dictionary of shapes
+--- (type annotations) for the lua-language-server type checker, so the editor can offer completions and catch
+--- mistakes while you edit. Think of it as the answer key the teacher uses, not a lesson.
+---@module 'types.utils.media.rpc'
 -- /qompassai/Diver/lua/types/media/rpc.lua
 -- Qompass AI Media RPC Types Config
 -- Copyright (C) 2026 Qompass AI, All rights reserved
@@ -7,7 +13,7 @@
 ---@field write                                            fun(self: media.rpc.Stream, data: string|string[])
 ---@field read_start                                       fun(self: media.rpc.Stream, cb: fun(chunk: string|nil))
 ---@field read_stop                                        fun(self: media.rpc.Stream)
----@field close                                            fun(self: media.rpc.Stream, signal?: string, noblock?: boolean)
+---@field close fun(self: media.rpc.Stream, signal?: string, noblock?: boolean )
 ---@class media.rpc.StdioStream                            :             media.rpc.Stream
 ---@field _in                                              uv.uv_pipe_t
 ---@field _out                                             uv.uv_pipe_t
@@ -35,7 +41,7 @@
 ---@field _rpc_stream                                      media.rpc.RpcStream
 ---@field _request_id                                      any
 ---@class media.rpc.RpcStream
----@field close                                            fun(self: media.rpc.RpcStream, signal?: string, noblock?: boolean)
+---@field close fun(self: media.rpc.RpcStream, signal?: string, noblock?: boolean )
 ---@field _stream                                          media.rpc.Stream
 ---@field _pack                                            table
 ---@field _session                                         vim.mpack.Session
@@ -52,7 +58,7 @@
 ---@field _session                                         media.rpc.Session
 ---@field api                                              table
 ---@field fn                                               table
----@field request                                          fun(self: media.rpc.Client, method: string, ...: any): boolean, any
+---@field request fun(self: media.rpc.Client, method: string, ...: any ): boolean, any
 ---@field notify                                           fun(self: media.rpc.Client, method: string, ...: any)
 ---@field close                                            fun(self: media.rpc.Client)
 ---@class media.rpc.Module
@@ -65,7 +71,7 @@
 ---@field ProcStream?                                      media.rpc.ProcStream
 ---@type media.rpc.Module
 ---@class vim.mpack.Session
----@field receive                                          fun(self: vim.mpack.Session, data: string, pos: integer): string, any, any, any, integer
----@field request                                          fun(self: vim.mpack.Session, cb: fun(err: any, result: any)): string
+---@field receive fun(self: vim.mpack.Session, data: string, pos: integer ): string, any, any, any, integer
+---@field request fun(self: vim.mpack.Session, cb: fun(err: any, result: any)): string
 ---@field notify                                           fun(self: vim.mpack.Session): string
 ---@field reply                                            fun(self: vim.mpack.Session, id: any): string

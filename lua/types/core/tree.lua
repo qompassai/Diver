@@ -1,4 +1,10 @@
 #!/usr/bin/env lua5.1
+--- Tree option types — type-checker dictionary (never runs).
+---
+--- Plain-language version: this file never runs -- Neovim never loads it at startup. It is a dictionary of shapes
+--- (type annotations) for the lua-language-server type checker, so the editor can offer completions and catch
+--- mistakes while you edit. Think of it as the answer key the teacher uses, not a lesson.
+---@module 'types.core.tree'
 -- /qompassai/diver/lua/types/core/tree.lua
 -- Qompass AI Diver Treesitter Core Types
 -- Copyright (C) 2026 Qompass AI, All rights reserved
@@ -22,7 +28,6 @@
 ---@field included_ranges fun(self: TSTree): table
 
 ---@class vim.treesitter.query.TSMetadata : table
----@field range integer[]|nil
 ---@field text string[]|nil
 
 ---@alias TSMetadata vim.treesitter.query.TSMetadata
@@ -45,12 +50,13 @@
 ---@field parse fun(lang: string, query: string): TSQuery
 
 ---@class vim.treesitter.LanguageTree
----@field parse fun(self: vim.treesitter.LanguageTree, range: {integer: integer, integer: integer}|nil): TSTree[]
----@field root fun(self: vim.treesitter.LanguageTree): TSNode
----@field language_for_range fun(self: vim.treesitter.LanguageTree, range: {integer: integer, integer: integer}): vim.treesitter.LanguageTree
+---@field parse fun(self: TSLanguageTree, range: TSLanguageTreeRange|nil): TSTree[]
+---@field root fun(self: TSLanguageTree): TSNode
+---@field language_for_range fun(self: TSLanguageTree, range: TSLanguageTreeRange): TSLanguageTree
+---@alias TSLanguageTree vim.treesitter.LanguageTree
+---@alias TSLanguageTreeRange {integer: integer, integer: integer}
 
 ---@class vim.treesitter
----@field query vim.treesitter.query
 ---@field get_parser fun(
 ---  bufnr: integer|nil,
 ---  lang: string|nil,

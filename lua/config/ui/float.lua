@@ -1,3 +1,12 @@
+--- Floating-terminal manager — toggle a centered popup terminal.
+---
+--- Plain-language version: a floating window is a popup box hovering over your
+--- code. This module builds one that runs a terminal inside it: setup() takes
+--- your options and returns a config table whose toggle() opens or hides the
+--- popup, keeping one terminal buffer per id and re-centering it when the
+--- editor resizes. The helpers are all local and nothing else requires this
+--- module today; it is standalone.
+---@module 'config.ui.float'
 -- float.lua
 -- Qompass AI - [ ]
 -- Copyright (C) 2026 Qompass AI, All rights reserved
@@ -76,7 +85,6 @@ local function get_win_opts(config)
             row = 0
         elseif opts.v_align == 'bottom' then
             row = vim.o.lines - height
-            row = math.floor((vim.o.lines - height) / 2)
         end
     end
     if col then
@@ -100,7 +108,7 @@ local function get_win_opts(config)
     return opts
 end
 local function create_buf(config)
-    local buf = nil
+    local buf
     if config.file then
         buf = vim.fn.bufadd(eval_opts(config.file))
         vim.fn.bufload(buf)
@@ -198,6 +206,9 @@ local function setup(config)
     })
     return config
 end
+---Apply user options and configure floating windows.
+---@param opts? table option overrides
+---@return table config the effective float configuration
 M.setup = function(opts)
     local config = vim.tbl_deep_extend('force', defaults, opts or {})
     return setup(config)

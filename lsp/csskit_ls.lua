@@ -9,15 +9,15 @@
 
 ---@type vim.lsp.Config
 return {
-  cmd = {
-    'csskit',
-    'lsp',
-  },
-  filetypes = {
-    'css',
-  },
-  root_markers = {
-    'package.json',
-    '.git',
-  },
+    cmd = {
+        'csskit',
+        'lsp',
+    },
+    filetypes = {
+        'css',
+    },
+    root_markers = {
+        'package.json',
+        '.git',
+    },
 }

@@ -1,3 +1,9 @@
+--- Completion option types — type-checker dictionary (never runs).
+---
+--- Plain-language version: this file never runs -- Neovim never loads it at startup. It is a dictionary of shapes
+--- (type annotations) for the lua-language-server type checker, so the editor can offer completions and catch
+--- mistakes while you edit. Think of it as the answer key the teacher uses, not a lesson.
+---@module 'types.core.cmp'
 -- cmp.lua
 -- Qompass AI - [ ]
 -- Copyright (C) 2026 Qompass AI, All rights reserved
@@ -8,12 +14,10 @@
 ---@field cursor { line: integer, col: integer }
 ---@class blink.cmp.CompletionItem
 ---@field kind integer|nil
----@field kind_name string|nil
----@field kind_icon string|nil
 ---@class blink.cmp.SourceProviderConfig
 ---@field name string
 ---@field module string
----@field transform_items                     fun(ctx: blink.cmp.Context, items: blink.cmp.CompletionItem[]): blink.cmp.CompletionItem[]|nil
+---@field transform_items fun(ctx: blink.cmp.Context, items: blink.cmp.CompletionItem[]): blink.cmp.CompletionItem[]|nil
 ---@field kind                                string|nil
 ---@class blink.cmp.SourcesConfig
 ---@field default                             string[]|nil

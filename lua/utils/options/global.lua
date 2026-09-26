@@ -1,4 +1,10 @@
 #!/usr/bin/env lua5.1
+--- Global options — the baseline Neovim settings.
+---
+--- Plain-language version: Neovim has hundreds of settings (line numbers, tabs vs spaces, search behavior). This
+--- module sets the baseline every session starts from. It runs once at startup, before anything else customizes
+--- further.
+---@module 'utils.options.global'
 
 -- /qompassai/Diver/lua/utils/options/global.lua
 -- Qompass AI Neovim Global Options
@@ -12,6 +18,8 @@ local g = vim.g
 local fn = vim.fn
 local is_windows = fn.has('win32') == 1 or fn.has('win64') == 1
 local opt = vim.opt
+---Apply the baseline global Neovim options. Runs once at startup.
+---@return nil
 function M.setup()
     g.deprecation_warnings = true
     g.editorconfig = true
@@ -66,7 +74,8 @@ g.vim_markdown_frontmatter = 1
 g.vim_markdown_toml_frontmatter = 1
 g.vim_markdown_json_frontmatter = 1
 g.which_key_disable_health_check = 1
---g.xdg_bin_home = env.XDG_BIN_HOME or (is_windows and fn.expand('~/AppData/Local/Programs') or fn.expand('~/.local/bin'))
+--g.xdg_bin_home = env.XDG_BIN_HOME
+--  or (is_windows and fn.expand('~/AppData/Local/Programs') or fn.expand('~/.local/bin'))
 --g.xdg_cache_home = env.XDG_CACHE_HOME or (is_windows and fn.expand('~/AppData/Local/Temp') or fn.expand('~/.cache'))
 --g.xdg_config_dirs = is_windows and ''
 --    or (env.XDG_CONFIG_DIRS or fn.expand('~/.config/xdg:/etc/xdg:/usr/local/etc/xdg:/usr/etc/xdg'))
@@ -182,8 +191,8 @@ opt.comments:append('fb:•')
 opt.complete:remove('i')
 o.tags = './tags;,tags'
 opt.viminfo:append('!')
-opt.winblend = 40
-opt.pumblend = 40
+o.winblend = 40
+o.pumblend = 40
 --end
 
 return M

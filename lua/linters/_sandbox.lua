@@ -81,6 +81,10 @@ local function environment_flags(argv, environment, executable)
     end
 end
 
+---@class NativeLintSandboxOptions
+---@field executable string bubblewrap executable name or path
+---@field read_only string[] extra host paths to bind read-only inside the sandbox
+
 ---@param command string[]
 ---@param cwd string
 ---@param context LintContext

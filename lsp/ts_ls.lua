@@ -307,7 +307,7 @@ return ---@type vim.lsp.Config
                     diagnostics = {},
                 },
             })
-        end, {})
+        end, { desc = 'Run TypeScript source actions' })
         vim.api.nvim_buf_create_user_command(bufnr, 'LspTypescriptGoToSourceDefinition', function()
             local win = vim.api.nvim_get_current_win()
             local params = vim.lsp.util.make_position_params(win, Client.offset_encoding)

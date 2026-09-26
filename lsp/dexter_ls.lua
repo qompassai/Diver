@@ -52,10 +52,10 @@
 
 ---@type vim.lsp.Config
 return {
-  cmd = { 'dexter', 'lsp' },
-  filetypes = { 'elixir', 'eelixir', 'heex' },
-  root_markers = { '.dexter/dexter.db', '.dexter.db', '.git', 'mix.exs' },
-  init_options = {
-    followDelegates = true,
-  },
+    cmd = { 'dexter', 'lsp' },
+    filetypes = { 'elixir', 'eelixir', 'heex' },
+    root_markers = { '.dexter/dexter.db', '.dexter.db', '.git', 'mix.exs' },
+    init_options = {
+        followDelegates = true,
+    },
 }

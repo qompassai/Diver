@@ -30,164 +30,165 @@ local SOURCE = 'glinter'
 
 ---@type string[]
 local ROOT_MARKERS = {
-  'gleam.toml',
-  'manifest.toml',
-  '.git',
+    'gleam.toml',
+    'manifest.toml',
+    '.git',
 }
 
 ---@param value any
 ---@return string?
 local function string_value(value)
-  if type(value) ~= 'string' or value == '' then
-    return nil
-  end
+    if type(value) ~= 'string' or value == '' then
+        return nil
+    end
 
-  return value
+    return value
 end
 
 ---@param value string
 ---@return string
 local function compact(value)
-  return vim.trim(value:gsub('%s+', ' '))
+    return vim.trim(value:gsub('%s+', ' '))
 end
 
 ---@param value string
 ---@param limit integer
 ---@return string
 local function truncate(value, limit)
-  if #value <= limit then
-    return value
-  end
+    if #value <= limit then
+        return value
+    end
 
-  if limit <= 3 then
-    return value:sub(1, limit)
-  end
+    if limit <= 3 then
+        return value:sub(1, limit)
+    end
 
-  return value:sub(1, limit - 3) .. '...'
+    return value:sub(1, limit - 3) .. '...'
 end
 
 ---@param value any
 ---@return integer
 local function zero_based_line(value)
-  local number = tonumber(value)
+    local number = tonumber(value)
 
-  if number == nil then
-    return 0
-  end
+    if number == nil then
+        return 0
+    end
 
-  local line = math.floor(number)
+    local line = math.floor(number)
 
-  if line <= 1 then
-    return 0
-  end
+    if line <= 1 then
+        return 0
+    end
 
-  return line - 1
+    return line - 1
 end
 
 ---@param output string
 ---@return string
 local function strip_ansi(output)
-  return output:gsub('\27%[[%d;]*[mK]', '')
+    local cleaned = output:gsub('\27%[[%d;]*[mK]', '')
+    return cleaned
 end
 
 ---@param context LintContext
 ---@return string
 local function project_root(context)
-  local filename = string_value(context.filename)
+    local filename = string_value(context.filename)
 
-  if filename ~= nil then
-    local detected = fs.root(filename, {
-      'gleam.toml',
-    })
+    if filename ~= nil then
+        local detected = fs.root(filename, {
+            'gleam.toml',
+        })
 
-    if type(detected) == 'string' and detected ~= '' then
-      return fs.normalize(detected)
-    end
-  end
-
-  local context_root = string_value(context.root)
-
-  if context_root ~= nil then
-    return fs.normalize(context_root)
-  end
-
-  if filename ~= nil then
-    local detected = fs.root(filename, {
-      '.git',
-    })
-
-    if type(detected) == 'string' and detected ~= '' then
-      return fs.normalize(detected)
+        if type(detected) == 'string' and detected ~= '' then
+            return fs.normalize(detected)
+        end
     end
 
-    local parent = fs.dirname(filename)
+    local context_root = string_value(context.root)
 
-    if type(parent) == 'string' and parent ~= '' then
-      return fs.normalize(parent)
+    if context_root ~= nil then
+        return fs.normalize(context_root)
     end
-  end
 
-  local cwd = string_value(context.cwd)
+    if filename ~= nil then
+        local detected = fs.root(filename, {
+            '.git',
+        })
 
-  if cwd ~= nil then
-    return fs.normalize(cwd)
-  end
+        if type(detected) == 'string' and detected ~= '' then
+            return fs.normalize(detected)
+        end
 
-  return fs.normalize(vim.fn.getcwd())
+        local parent = fs.dirname(filename)
+
+        if type(parent) == 'string' and parent ~= '' then
+            return fs.normalize(parent)
+        end
+    end
+
+    local cwd = string_value(context.cwd)
+
+    if cwd ~= nil then
+        return fs.normalize(cwd)
+    end
+
+    return fs.normalize(vim.fn.getcwd())
 end
 
 ---@param value string?
 ---@return integer
 local function severity(value)
-  if value == nil then
+    if value == nil then
+        return diagnostic.severity.WARN
+    end
+
+    local normalized = value:lower()
+
+    if normalized == 'error' then
+        return diagnostic.severity.ERROR
+    end
+
+    if normalized == 'warning' or normalized == 'warn' then
+        return diagnostic.severity.WARN
+    end
+
+    if normalized == 'info' or normalized == 'information' then
+        return diagnostic.severity.INFO
+    end
+
+    if normalized == 'hint' then
+        return diagnostic.severity.HINT
+    end
+
     return diagnostic.severity.WARN
-  end
-
-  local normalized = value:lower()
-
-  if normalized == 'error' then
-    return diagnostic.severity.ERROR
-  end
-
-  if normalized == 'warning' or normalized == 'warn' then
-    return diagnostic.severity.WARN
-  end
-
-  if normalized == 'info' or normalized == 'information' then
-    return diagnostic.severity.INFO
-  end
-
-  if normalized == 'hint' then
-    return diagnostic.severity.HINT
-  end
-
-  return diagnostic.severity.WARN
 end
 
 ---@param path string
 ---@param context LintContext
 ---@return string
 local function absolute_path(path, context)
-  if path == '' then
-    return ''
-  end
+    if path == '' then
+        return ''
+    end
 
-  if fs.isabs(path) then
-    return fs.normalize(path)
-  end
+    if vim.fn.isabsolutepath(path) == 1 then
+        return fs.normalize(path)
+    end
 
-  return fs.normalize(fs.joinpath(project_root(context), path))
+    return fs.normalize(fs.joinpath(project_root(context), path))
 end
 
 ---@param left string
 ---@param right string
 ---@return boolean
 local function same_path(left, right)
-  if left == '' or right == '' then
-    return false
-  end
+    if left == '' or right == '' then
+        return false
+    end
 
-  return fs.normalize(left) == fs.normalize(right)
+    return fs.normalize(left) == fs.normalize(right)
 end
 
 ---@class GlinterFinding
@@ -200,305 +201,305 @@ end
 ---@param value any
 ---@return boolean
 local function finding_record(value)
-  if type(value) ~= 'table' then
-    return false
-  end
+    if type(value) ~= 'table' then
+        return false
+    end
 
-  return string_value(value.message) ~= nil
-    and (string_value(value.rule) ~= nil or value.line ~= nil or string_value(value.file) ~= nil)
+    return string_value(value.message) ~= nil
+        and (string_value(value.rule) ~= nil or value.line ~= nil or string_value(value.file) ~= nil)
 end
 
 ---@param value any
 ---@param findings table[]
 ---@param depth integer
 local function collect_findings(value, findings, depth)
-  if depth > MAX_PARSE_DEPTH or type(value) ~= 'table' then
-    return
-  end
-
-  if finding_record(value) then
-    findings[#findings + 1] = value
-
-    return
-  end
-
-  for _, child in pairs(value) do
-    if type(child) == 'table' then
-      collect_findings(child, findings, depth + 1)
+    if depth > MAX_PARSE_DEPTH or type(value) ~= 'table' then
+        return
     end
-  end
+
+    if finding_record(value) then
+        findings[#findings + 1] = value
+
+        return
+    end
+
+    for _, child in pairs(value) do
+        if type(child) == 'table' then
+            collect_findings(child, findings, depth + 1)
+        end
+    end
 end
 
 ---@param finding GlinterFinding
 ---@param context LintContext
 ---@return vim.Diagnostic?
 local function finding_diagnostic(finding, context)
-  local message = string_value(finding.message)
+    local message = string_value(finding.message)
 
-  if message == nil then
-    return nil
-  end
-
-  local lnum = zero_based_line(finding.line)
-
-  local path = string_value(finding.file)
-
-  if path ~= nil then
-    local absolute = absolute_path(path, context)
-
-    local filename = string_value(context.filename)
-
-    if filename ~= nil and not same_path(absolute, fs.normalize(filename)) then
-      message = string.format('%s: %s', path, message)
-
-      lnum = 0
+    if message == nil then
+        return nil
     end
-  end
 
-  local rule = string_value(finding.rule)
+    local lnum = zero_based_line(finding.line)
 
-  return {
-    bufnr = context.bufnr,
+    local path = string_value(finding.file)
 
-    code = rule,
+    if path ~= nil then
+        local absolute = absolute_path(path, context)
 
-    col = 0,
+        local filename = string_value(context.filename)
 
-    end_col = 0,
+        if filename ~= nil and not same_path(absolute, fs.normalize(filename)) then
+            message = string.format('%s: %s', path, message)
 
-    end_lnum = lnum,
+            lnum = 0
+        end
+    end
 
-    lnum = lnum,
+    local rule = string_value(finding.rule)
 
-    message = truncate(compact(message), MAX_MESSAGE_BYTES),
+    return {
+        bufnr = context.bufnr,
 
-    severity = severity(string_value(finding.severity)),
+        code = rule,
 
-    source = SOURCE,
+        col = 0,
 
-    user_data = {
-      file = path,
+        end_col = 0,
 
-      rule = rule,
+        end_lnum = lnum,
 
-      glinter_severity = string_value(finding.severity),
-    },
-  }
+        lnum = lnum,
+
+        message = truncate(compact(message), MAX_MESSAGE_BYTES),
+
+        severity = severity(string_value(finding.severity)),
+
+        source = SOURCE,
+
+        user_data = {
+            file = path,
+
+            rule = rule,
+
+            glinter_severity = string_value(finding.severity),
+        },
+    }
 end
 
 ---@param output string
 ---@return any?
 local function decode_output(output)
-  local text = vim.trim(output)
+    local text = vim.trim(output)
 
-  if text == '' then
-    return nil
-  end
+    if text == '' then
+        return nil
+    end
 
-  local ok, decoded = pcall(json.decode, text)
+    local ok, decoded = pcall(json.decode, text)
 
-  if not ok then
-    return nil
-  end
+    if not ok then
+        return nil
+    end
 
-  return decoded
+    return decoded
 end
 
 ---@param output string
 ---@return string?
 local function operational_message(output)
-  local text = strip_ansi(vim.trim(output))
+    local text = strip_ansi(vim.trim(output))
 
-  if text == '' then
-    return nil
-  end
-
-  for raw_line in text:gmatch('[^\r\n]+') do
-    local line = compact(raw_line)
-
-    local lower = line:lower()
-
-    if
-      lower:find('error', 1, true) ~= nil
-      or lower:find('failed', 1, true) ~= nil
-      or lower:find('cannot', 1, true) ~= nil
-      or lower:find('could not', 1, true) ~= nil
-      or lower:find('unknown', 1, true) ~= nil
-      or lower:find('invalid', 1, true) ~= nil
-      or lower:find('gleam.toml', 1, true) ~= nil
-      or lower:find('module', 1, true) ~= nil
-    then
-      return truncate(line, MAX_MESSAGE_BYTES)
+    if text == '' then
+        return nil
     end
-  end
 
-  local first = text:match('([^\r\n]+)')
+    for raw_line in text:gmatch('[^\r\n]+') do
+        local line = compact(raw_line)
 
-  if first == nil then
-    return nil
-  end
+        local lower = line:lower()
 
-  return truncate(compact(first), MAX_MESSAGE_BYTES)
+        if
+            lower:find('error', 1, true) ~= nil
+            or lower:find('failed', 1, true) ~= nil
+            or lower:find('cannot', 1, true) ~= nil
+            or lower:find('could not', 1, true) ~= nil
+            or lower:find('unknown', 1, true) ~= nil
+            or lower:find('invalid', 1, true) ~= nil
+            or lower:find('gleam.toml', 1, true) ~= nil
+            or lower:find('module', 1, true) ~= nil
+        then
+            return truncate(line, MAX_MESSAGE_BYTES)
+        end
+    end
+
+    local first = text:match('([^\r\n]+)')
+
+    if first == nil then
+        return nil
+    end
+
+    return truncate(compact(first), MAX_MESSAGE_BYTES)
 end
 
 ---@param output string
 ---@param context LintContext
 ---@return vim.Diagnostic[]
 local function parse_failure(output, context)
-  local message = operational_message(output)
+    local message = operational_message(output)
 
-  if message == nil then
-    return {}
-  end
+    if message == nil then
+        return {}
+    end
 
-  local line_number = output:match('[Ll]ine%s+(%d+)') or output:match(':(%d+):')
+    local line_number = output:match('[Ll]ine%s+(%d+)') or output:match(':(%d+):')
 
-  local lnum = zero_based_line(line_number)
+    local lnum = zero_based_line(line_number)
 
-  return {
-    {
-      bufnr = context.bufnr,
+    return {
+        {
+            bufnr = context.bufnr,
 
-      code = 'glinter-error',
+            code = 'glinter-error',
 
-      col = 0,
+            col = 0,
 
-      end_col = 0,
+            end_col = 0,
 
-      end_lnum = lnum,
+            end_lnum = lnum,
 
-      lnum = lnum,
+            lnum = lnum,
 
-      message = message,
+            message = message,
 
-      severity = diagnostic.severity.ERROR,
+            severity = diagnostic.severity.ERROR,
 
-      source = SOURCE,
-    },
-  }
+            source = SOURCE,
+        },
+    }
 end
 
 ---@param context LintContext
 ---@return vim.Diagnostic[]
 local function oversized_output(context)
-  return {
-    {
-      bufnr = context.bufnr,
+    return {
+        {
+            bufnr = context.bufnr,
 
-      code = 'output-limit',
-      col = 0,
-      end_col = 0,
-      end_lnum = 0,
-      lnum = 0,
-      message = string.format('Glinter output exceeded the %d-byte parser limit', MAX_OUTPUT_BYTES),
+            code = 'output-limit',
+            col = 0,
+            end_col = 0,
+            end_lnum = 0,
+            lnum = 0,
+            message = string.format('Glinter output exceeded the %d-byte parser limit', MAX_OUTPUT_BYTES),
 
-      severity = diagnostic.severity.WARN,
+            severity = diagnostic.severity.WARN,
 
-      source = SOURCE,
-    },
-  }
+            source = SOURCE,
+        },
+    }
 end
 
 ---@param output string
 ---@param context LintContext
 ---@return vim.Diagnostic[]
 local function parse(output, context)
-  assert(type(context) == 'table', 'glinter parser requires LintContext')
+    assert(type(context) == 'table', 'glinter parser requires LintContext')
 
-  assert(type(context.bufnr) == 'number', 'glinter parser requires context.bufnr')
+    assert(type(context.bufnr) == 'number', 'glinter parser requires context.bufnr')
 
-  if output == '' then
-    return {}
-  end
-
-  if #output > MAX_OUTPUT_BYTES then
-    return oversized_output(context)
-  end
-
-  local decoded = decode_output(output)
-
-  if decoded == nil then
-    return parse_failure(output, context)
-  end
-
-  ---@type table[]
-  local findings = {}
-
-  collect_findings(decoded, findings, 0)
-
-  if #findings == 0 then
-    return {}
-  end
-
-  ---@type vim.Diagnostic[]
-  local diagnostics = {}
-
-  for index = 1, #findings do
-    if #diagnostics >= MAX_DIAGNOSTICS then
-      break
+    if output == '' then
+        return {}
     end
 
-    local item = finding_diagnostic(findings[index], context)
-
-    if item ~= nil then
-      diagnostics[#diagnostics + 1] = item
+    if #output > MAX_OUTPUT_BYTES then
+        return oversized_output(context)
     end
-  end
 
-  return diagnostics
+    local decoded = decode_output(output)
+
+    if decoded == nil then
+        return parse_failure(output, context)
+    end
+
+    ---@type table[]
+    local findings = {}
+
+    collect_findings(decoded, findings, 0)
+
+    if #findings == 0 then
+        return {}
+    end
+
+    ---@type vim.Diagnostic[]
+    local diagnostics = {}
+
+    for index = 1, #findings do
+        if #diagnostics >= MAX_DIAGNOSTICS then
+            break
+        end
+
+        local item = finding_diagnostic(findings[index], context)
+
+        if item ~= nil then
+            diagnostics[#diagnostics + 1] = item
+        end
+    end
+
+    return diagnostics
 end
 
 ---@param context LintContext
 ---@return string[]
 local function arguments(context)
-  assert(type(context) == 'table', 'glinter arguments require LintContext')
+    assert(type(context) == 'table', 'glinter arguments require LintContext')
 
-  local filename = string_value(context.filename)
+    local filename = string_value(context.filename)
 
-  if filename == nil then
+    if filename == nil then
+        return {
+            'run',
+
+            '-m',
+            'glinter',
+
+            '--format',
+            'json',
+        }
+    end
+
     return {
-      'run',
+        'run',
+        '-m',
+        'glinter',
+        '--format',
+        'json',
 
-      '-m',
-      'glinter',
-
-      '--format',
-      'json',
+        filename,
     }
-  end
-
-  return {
-    'run',
-    '-m',
-    'glinter',
-    '--format',
-    'json',
-
-    filename,
-  }
 end
 
 ---@type Linter
 return {
-  args = arguments,
+    args = arguments,
 
-  append_fname = false,
+    append_fname = false,
 
-  automatic = false,
+    automatic = false,
 
-  cmd = 'gleam',
+    cmd = 'gleam',
 
-  cwd = project_root,
+    cwd = project_root,
 
-  ignore_exitcode = true,
+    ignore_exitcode = true,
 
-  parser = parse,
+    parser = parse,
 
-  root_markers = ROOT_MARKERS,
+    root_markers = ROOT_MARKERS,
 
-  stdin = false,
+    stdin = false,
 
-  stream = 'both',
+    stream = 'both',
 
-  timeout = 60000,
+    timeout = 60000,
 }

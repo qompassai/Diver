@@ -11,6 +11,9 @@ return ---@type vim.lint.Config
     args = { 'run', '--out-format', 'line-number', '--path-prefix', vim.loop.cwd() },
     stream = 'stdout',
     ignore_exitcode = true,
+    ---@param output string
+    ---@param bufnr integer
+    ---@return vim.Diagnostic.Set[]
     parser = function(output, bufnr)
         return core_parser.simple_colon_parser(output, bufnr, {
             severity = vim.diagnostic.severity.WARN,

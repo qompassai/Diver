@@ -40,15 +40,15 @@ local SOURCE = 'compose-tiger'
 
 ---@type table<string, integer>
 local DCLINT_SEVERITIES = {
-  ERROR = ERROR,
-  WARNING = WARN,
-  INFO = INFO,
-  HINT = HINT,
+    ERROR = ERROR,
+    WARNING = WARN,
+    INFO = INFO,
+    HINT = HINT,
 
-  error = ERROR,
-  warning = WARN,
-  info = INFO,
-  hint = HINT,
+    error = ERROR,
+    warning = WARN,
+    info = INFO,
+    hint = HINT,
 }
 
 --
@@ -240,791 +240,568 @@ print(
 ---@param fallback integer
 ---@return integer
 local function integer(value, fallback)
-  assert(fallback >= 0)
+    assert(fallback >= 0)
 
-  local parsed = tonumber(value)
+    local parsed = tonumber(value)
 
-  if parsed == nil then
-    return fallback
-  end
+    if parsed == nil then
+        return fallback
+    end
 
-  return floor(parsed)
+    return floor(parsed)
 end
 
 ---@param value string
 ---@return string
 local function trim(value)
-  return (
-    value:gsub(
-      '^%s*(.-)%s*$',
-      '%1'
-    )
-  )
+    return (value:gsub('^%s*(.-)%s*$', '%1'))
 end
 
 ---@param value string
 ---@return string
 local function normalize_message(value)
-  value = value:gsub(
-    '\27%[[%d;?]*[ -/]*[@-~]',
-    ''
-  )
+    value = value:gsub('\27%[[%d;?]*[ -/]*[@-~]', '')
 
-  value = value:gsub(
-    '\r\n',
-    '\n'
-  )
+    value = value:gsub('\r\n', '\n')
 
-  value = value:gsub(
-    '\r',
-    '\n'
-  )
+    value = value:gsub('\r', '\n')
 
-  value = trim(value)
+    value = trim(value)
 
-  if #value > MESSAGE_LENGTH_MAX then
-    value =
-      value:sub(
-        1,
-        MESSAGE_LENGTH_MAX
-      )
-      .. '\n[message truncated]'
-  end
+    if #value > MESSAGE_LENGTH_MAX then
+        value = value:sub(1, MESSAGE_LENGTH_MAX) .. '\n[message truncated]'
+    end
 
-  return value
+    return value
 end
 
 ---@param path string
----@param root string
----@return string
+---@return boolean
+local function is_absolute(path)
+    assert(type(path) == 'string')
+    assert(path ~= '')
+
+    return vim.fn.isabsolutepath(path) == 1
+end
+
 local function normalize_path(path, root)
-  assert(path ~= '')
-  assert(root ~= '')
+    assert(path ~= '')
+    assert(root ~= '')
 
-  if path:sub(1, 7) == 'file://' then
-    local ok, filename = pcall(
-      vim.uri_to_fname,
-      path
-    )
+    if path:sub(1, 7) == 'file://' then
+        local ok, filename = pcall(vim.uri_to_fname, path)
 
-    if
-      ok
-      and type(filename) == 'string'
-      and filename ~= ''
-    then
-      return fs.normalize(filename)
+        if ok and type(filename) == 'string' and filename ~= '' then
+            return fs.normalize(filename)
+        end
     end
-  end
 
-  if fs.is_absolute(path) then
-    return fs.normalize(path)
-  end
+    if is_absolute(path) then
+        return fs.normalize(path)
+    end
 
-  return fs.normalize(
-    fs.joinpath(
-      root,
-      path
-    )
-  )
+    return fs.normalize(fs.joinpath(root, path))
 end
 
 ---@param candidate string
 ---@param filename string
 ---@param root string
 ---@return boolean
-local function belongs_to_buffer(
-  candidate,
-  filename,
-  root
-)
-  assert(candidate ~= '')
-  assert(filename ~= '')
-  assert(root ~= '')
+local function belongs_to_buffer(candidate, filename, root)
+    assert(candidate ~= '')
+    assert(filename ~= '')
+    assert(root ~= '')
 
-  return normalize_path(
-    candidate,
-    root
-  ) == filename
+    return normalize_path(candidate, root) == filename
 end
 
 ---@param value string|nil
 ---@return integer
 local function dclint_severity(value)
-  if type(value) ~= 'string' then
-    return WARN
-  end
+    if type(value) ~= 'string' then
+        return WARN
+    end
 
-  return DCLINT_SEVERITIES[value]
-    or DCLINT_SEVERITIES[value:upper()]
-    or WARN
+    return DCLINT_SEVERITIES[value] or DCLINT_SEVERITIES[value:upper()] or WARN
 end
 
 ---@param entry RdjsonDiagnostic
 ---@return string?
 local function dclint_code(entry)
-  local code = entry.code
+    local code = entry.code
 
-  if type(code) == 'string' then
-    if code ~= '' then
-      return code
+    if type(code) == 'string' then
+        if code ~= '' then
+            return code
+        end
+
+        return nil
     end
 
-    return nil
-  end
+    if type(code) ~= 'table' then
+        return nil
+    end
 
-  if type(code) ~= 'table' then
-    return nil
-  end
+    local value = code.value
 
-  local value = code.value
+    if type(value) ~= 'string' or value == '' then
+        return nil
+    end
 
-  if
-    type(value) ~= 'string'
-    or value == ''
-  then
-    return nil
-  end
-
-  return value
+    return value
 end
 
 ---@param entry RdjsonDiagnostic
 ---@param filename string
 ---@param root string
----@return vim.Diagnostic?
-local function diagnostic_from_dclint(
-  entry,
-  filename,
-  root
-)
-  local location = entry.location
+---@return vim.Diagnostic.Set?
+local function diagnostic_from_dclint(entry, filename, root)
+    local location = entry.location
 
-  if type(location) ~= 'table' then
-    return nil
-  end
+    if type(location) ~= 'table' then
+        return nil
+    end
 
-  local path = location.path
+    local path = location.path
 
-  if
-    type(path) ~= 'string'
-    or path == ''
-  then
-    return nil
-  end
+    if type(path) ~= 'string' or path == '' then
+        return nil
+    end
 
-  if
-    not belongs_to_buffer(
-      path,
-      filename,
-      root
-    )
-  then
-    return nil
-  end
+    if not belongs_to_buffer(path, filename, root) then
+        return nil
+    end
 
-  local range = location.range
+    local range = location.range
 
-  if type(range) ~= 'table' then
-    return nil
-  end
+    if type(range) ~= 'table' then
+        return nil
+    end
 
-  local start = range.start
+    local start = range.start
 
-  if type(start) ~= 'table' then
-    return nil
-  end
+    if type(start) ~= 'table' then
+        return nil
+    end
 
-  local start_line = max(
-    integer(start.line, 1),
-    1
-  )
+    local start_line = max(integer(start.line, 1), 1)
 
-  local start_column = max(
-    integer(start.column, 1),
-    1
-  )
+    local start_column = max(integer(start.column, 1), 1)
 
-  local end_line = start_line
-  local end_column = start_column + 1
+    local end_line = start_line
+    local end_column = start_column + 1
 
-  local finish = range['end']
+    local finish = range['end']
 
-  if type(finish) == 'table' then
-    end_line = max(
-      integer(
-        finish.line,
-        start_line
-      ),
-      start_line
-    )
+    if type(finish) == 'table' then
+        end_line = max(integer(finish.line, start_line), start_line)
 
-    end_column = max(
-      integer(
-        finish.column,
-        start_column + 1
-      ),
-      1
-    )
-  end
+        end_column = max(integer(finish.column, start_column + 1), 1)
+    end
 
-  local lnum =
-    start_line - 1
+    local lnum = start_line - 1
 
-  local col =
-    start_column - 1
+    local col = start_column - 1
 
-  local end_lnum =
-    max(
-      end_line - 1,
-      lnum
-    )
+    local end_lnum = max(end_line - 1, lnum)
 
-  local minimum_end_col =
-    end_lnum == lnum
-        and col + 1
-      or 0
+    local minimum_end_col = end_lnum == lnum and col + 1 or 0
 
-  local neovim_end_col =
-    max(
-      end_column - 1,
-      minimum_end_col
-    )
+    local neovim_end_col = max(end_column - 1, minimum_end_col)
 
-  local message = entry.message
+    local message = entry.message
 
-  if
-    type(message) ~= 'string'
-    or message == ''
-  then
-    message =
-      'DCLint violation'
-  end
+    if type(message) ~= 'string' or message == '' then
+        message = 'DCLint violation'
+    end
 
-  message =
-    normalize_message(message)
+    message = normalize_message(message)
 
-  local code =
-    dclint_code(entry)
+    local code = dclint_code(entry)
 
-  return {
-    lnum = lnum,
-    end_lnum = end_lnum,
+    return {
+        lnum = lnum,
+        end_lnum = end_lnum,
 
-    col = col,
-    end_col = neovim_end_col,
+        col = col,
+        end_col = neovim_end_col,
 
-    message = message,
+        message = message,
 
-    severity =
-      dclint_severity(
-        entry.severity
-      ),
+        severity = dclint_severity(entry.severity),
 
-    source = 'dclint',
-    code = code,
+        source = 'dclint',
+        code = code,
 
-    user_data = {
-      engine = 'dclint',
-      rule = code,
-    },
-  }
+        user_data = {
+            engine = 'dclint',
+            rule = code,
+        },
+    }
 end
 
 ---@param output string
 ---@param diagnostics vim.Diagnostic.Set[]
 ---@param filename string
 ---@param root string
-local function parse_dclint(
-  output,
-  diagnostics,
-  filename,
-  root
-)
-  if output == '' then
-    return
-  end
-
-  local ok, decoded = pcall(
-    json.decode,
-    output
-  )
-
-  if
-    not ok
-    or type(decoded) ~= 'table'
-  then
-    return
-  end
-
-  ---@cast decoded RdjsonResult
-
-  local entries =
-    decoded.diagnostics
-
-  if type(entries) ~= 'table' then
-    return
-  end
-
-  for index = 1, #entries do
-    if #diagnostics >= DIAGNOSTICS_MAX then
-      break
+local function parse_dclint(output, diagnostics, filename, root)
+    if output == '' then
+        return
     end
 
-    local raw = entries[index]
+    local ok, decoded = pcall(json.decode, output)
 
-    if type(raw) == 'table' then
-      local entry =
-        diagnostic_from_dclint(
-          raw,
-          filename,
-          root
-        )
-
-      if entry ~= nil then
-        diagnostics[#diagnostics + 1] =
-          entry
-      end
+    if not ok or type(decoded) ~= 'table' then
+        return
     end
-  end
+
+    ---@cast decoded RdjsonResult
+
+    local entries = decoded.diagnostics
+
+    if type(entries) ~= 'table' then
+        return
+    end
+
+    for index = 1, #entries do
+        if #diagnostics >= DIAGNOSTICS_MAX then
+            break
+        end
+
+        local raw = entries[index]
+
+        if type(raw) == 'table' then
+            local entry = diagnostic_from_dclint(raw, filename, root)
+
+            if entry ~= nil then
+                diagnostics[#diagnostics + 1] = entry
+            end
+        end
+    end
 end
 
 ---@param value string
 ---@return boolean
 local function docker_overlap_warning(value)
-  local lower =
-    value:lower()
+    local lower = value:lower()
 
-  --
-  -- DCLint has a dedicated no-version-field rule. Modern Docker Compose also
-  -- warns that the legacy top-level version field is obsolete.
-  --
-  -- Prefer DCLint's precise source location and rule identifier rather than
-  -- displaying both diagnostics.
-  --
-  return
-    lower:find(
-      'version',
-      1,
-      true
-    ) ~= nil
-    and (
-      lower:find(
-        'obsolete',
-        1,
-        true
-      ) ~= nil
-      or lower:find(
-        'ignored',
-        1,
-        true
-      ) ~= nil
-    )
+    --
+    -- DCLint has a dedicated no-version-field rule. Modern Docker Compose also
+    -- warns that the legacy top-level version field is obsolete.
+    --
+    -- Prefer DCLint's precise source location and rule identifier rather than
+    -- displaying both diagnostics.
+    --
+    return lower:find('version', 1, true) ~= nil
+        and (lower:find('obsolete', 1, true) ~= nil or lower:find('ignored', 1, true) ~= nil)
 end
 
 ---@param line string
 ---@return integer
 local function docker_line_number(line)
-  local value =
-    line:match(
-      '[Ll]ine%s+(%d+)'
-    )
-    or line:match(
-      ':(%d+):%d+:'
-    )
+    local value = line:match('[Ll]ine%s+(%d+)') or line:match(':(%d+):%d+:')
 
-  if value == nil then
-    return 1
-  end
+    if value == nil then
+        return 1
+    end
 
-  return max(
-    integer(value, 1),
-    1
-  )
+    return max(integer(value, 1), 1)
 end
 
 ---@param output string
 ---@param diagnostics vim.Diagnostic.Set[]
 ---@param severity integer
 ---@param failed boolean
-local function parse_docker(
-  output,
-  diagnostics,
-  severity,
-  failed
-)
-  if output == '' then
-    return
-  end
-
-  for raw in output:gmatch(
-    '[^\r\n]+'
-  ) do
-    if #diagnostics >= DIAGNOSTICS_MAX then
-      break
+local function parse_docker(output, diagnostics, severity, failed)
+    if output == '' then
+        return
     end
 
-    local message =
-      normalize_message(raw)
+    for raw in output:gmatch('[^\r\n]+') do
+        if #diagnostics >= DIAGNOSTICS_MAX then
+            break
+        end
 
-    if
-      message ~= ''
-      and (
-        failed
-        or not docker_overlap_warning(
-          message
-        )
-      )
-    then
-      local line =
-        docker_line_number(message)
+        local message = normalize_message(raw)
 
-      diagnostics[#diagnostics + 1] = {
-        lnum = line - 1,
-        end_lnum = line - 1,
+        if message ~= '' and (failed or not docker_overlap_warning(message)) then
+            local line = docker_line_number(message)
+
+            diagnostics[#diagnostics + 1] = {
+                lnum = line - 1,
+                end_lnum = line - 1,
+
+                col = 0,
+                end_col = 1,
+
+                message = message,
+
+                severity = severity,
+
+                source = 'docker-compose',
+
+                code = failed and 'config' or 'warning',
+
+                user_data = {
+                    engine = 'docker-compose',
+                    authoritative = true,
+                },
+            }
+        end
+    end
+end
+
+---@param entry ComposeInfrastructureError
+---@return vim.Diagnostic.Set?
+local function infrastructure_diagnostic(entry)
+    local message = entry.message
+
+    if type(message) ~= 'string' or message == '' then
+        return nil
+    end
+
+    local tool = entry.tool
+
+    if type(tool) ~= 'string' or tool == '' then
+        tool = 'unknown'
+    end
+
+    return {
+        lnum = 0,
+        end_lnum = 0,
 
         col = 0,
         end_col = 1,
 
-        message = message,
+        message = normalize_message(message),
 
-        severity = severity,
+        severity = WARN,
 
-        source = 'docker-compose',
-
-        code =
-          failed
-              and 'config'
-            or 'warning',
+        source = SOURCE,
+        code = 'tool-missing',
 
         user_data = {
-          engine = 'docker-compose',
-          authoritative = true,
+            tool = tool,
         },
-      }
-    end
-  end
-end
-
----@param entry ComposeInfrastructureError
----@return vim.Diagnostic?
-local function infrastructure_diagnostic(entry)
-  local message = entry.message
-
-  if
-    type(message) ~= 'string'
-    or message == ''
-  then
-    return nil
-  end
-
-  local tool = entry.tool
-
-  if
-    type(tool) ~= 'string'
-    or tool == ''
-  then
-    tool = 'unknown'
-  end
-
-  return {
-    lnum = 0,
-    end_lnum = 0,
-
-    col = 0,
-    end_col = 1,
-
-    message =
-      normalize_message(message),
-
-    severity = WARN,
-
-    source = SOURCE,
-    code = 'tool-missing',
-
-    user_data = {
-      tool = tool,
-    },
-  }
+    }
 end
 
 ---@param output string
 ---@param context LintContext|integer
 ---@return vim.Diagnostic.Set[]
 local function parse(output, context)
-  if output == '' then
-    return {}
-  end
+    if output == '' then
+        return {}
+    end
 
-  assert(
-    type(context) == 'table',
-    'docker-compose parser requires a LintContext'
-  )
+    assert(type(context) == 'table', 'docker-compose parser requires a LintContext')
 
-  ---@cast context LintContext
+    ---@cast context LintContext
 
-  assert(context.filename ~= '')
-  assert(context.root ~= '')
+    assert(context.filename ~= '')
+    assert(context.root ~= '')
 
-  assert(
-    #output <= OUTPUT_LENGTH_MAX,
-    'docker-compose output exceeded maximum size'
-  )
+    assert(#output <= OUTPUT_LENGTH_MAX, 'docker-compose output exceeded maximum size')
 
-  local ok, decoded = pcall(
-    json.decode,
-    output
-  )
+    local ok, decoded = pcall(json.decode, output)
 
-  if
-    not ok
-    or type(decoded) ~= 'table'
-  then
-    return {}
-  end
+    if not ok or type(decoded) ~= 'table' then
+        return {}
+    end
 
-  ---@cast decoded ComposeCoordinatorResult
+    ---@cast decoded ComposeCoordinatorResult
 
-  local filename =
-    fs.normalize(
-      context.filename
-    )
+    local filename = fs.normalize(context.filename)
 
-  local root =
-    fs.normalize(
-      context.root
-    )
+    local root = fs.normalize(context.root)
 
-  ---@type vim.Diagnostic.Set[]
-  local diagnostics = {}
+    ---@type vim.Diagnostic.Set[]
+    local diagnostics = {}
 
-  local infrastructure =
-    decoded.infrastructure
+    local infrastructure = decoded.infrastructure
 
-  if type(infrastructure) == 'table' then
-    for index = 1, #infrastructure do
-      if #diagnostics >= DIAGNOSTICS_MAX then
-        break
-      end
+    if type(infrastructure) == 'table' then
+        for index = 1, #infrastructure do
+            if #diagnostics >= DIAGNOSTICS_MAX then
+                break
+            end
 
-      local raw =
-        infrastructure[index]
+            local raw = infrastructure[index]
 
-      if type(raw) == 'table' then
-        local entry =
-          infrastructure_diagnostic(raw)
+            if type(raw) == 'table' then
+                local entry = infrastructure_diagnostic(raw)
 
-        if entry ~= nil then
-          diagnostics[#diagnostics + 1] =
-            entry
+                if entry ~= nil then
+                    diagnostics[#diagnostics + 1] = entry
+                end
+            end
         end
-      end
-    end
-  end
-
-  local docker =
-    decoded.docker
-
-  if type(docker) == 'table' then
-    if docker.timeout then
-      diagnostics[#diagnostics + 1] = {
-        lnum = 0,
-        end_lnum = 0,
-        col = 0,
-        end_col = 1,
-        message =
-          'docker compose config timed out',
-        severity = ERROR,
-        source = 'docker-compose',
-        code = 'timeout',
-      }
-
-      return diagnostics
     end
 
-    local docker_status =
-      docker.status
+    local docker = decoded.docker
 
-    local docker_failed =
-      type(docker_status) ~= 'number'
-      or docker_status ~= 0
+    if type(docker) == 'table' then
+        if docker.timeout then
+            diagnostics[#diagnostics + 1] = {
+                lnum = 0,
+                end_lnum = 0,
+                col = 0,
+                end_col = 1,
+                message = 'docker compose config timed out',
+                severity = ERROR,
+                source = 'docker-compose',
+                code = 'timeout',
+            }
 
-    local docker_stderr =
-      type(docker.stderr) == 'string'
-          and docker.stderr
-        or ''
+            return diagnostics
+        end
 
-    if docker_failed then
-      --
-      -- Stage one failed.
-      --
-      -- Docker owns the diagnostics and DCLint was intentionally not run.
-      --
-      parse_docker(
-        docker_stderr,
-        diagnostics,
-        ERROR,
-        true
-      )
+        local docker_status = docker.status
 
-      if
-        #diagnostics == 0
-        and type(docker.stdout) == 'string'
-      then
-        parse_docker(
-          docker.stdout,
-          diagnostics,
-          ERROR,
-          true
-        )
-      end
+        local docker_failed = type(docker_status) ~= 'number' or docker_status ~= 0
 
-      return diagnostics
+        local docker_stderr = type(docker.stderr) == 'string' and docker.stderr or ''
+
+        if docker_failed then
+            --
+            -- Stage one failed.
+            --
+            -- Docker owns the diagnostics and DCLint was intentionally not run.
+            --
+            parse_docker(docker_stderr, diagnostics, ERROR, true)
+
+            if #diagnostics == 0 and type(docker.stdout) == 'string' then
+                parse_docker(docker.stdout, diagnostics, ERROR, true)
+            end
+
+            return diagnostics
+        end
+
+        --
+        -- Docker accepted the effective model.
+        --
+        -- Keep Docker-specific warnings such as unresolved environment
+        -- interpolation, but suppress warnings whose policy equivalent DCLint
+        -- reports more precisely.
+        --
+        parse_docker(docker_stderr, diagnostics, WARN, false)
     end
 
-    --
-    -- Docker accepted the effective model.
-    --
-    -- Keep Docker-specific warnings such as unresolved environment
-    -- interpolation, but suppress warnings whose policy equivalent DCLint
-    -- reports more precisely.
-    --
-    parse_docker(
-      docker_stderr,
-      diagnostics,
-      WARN,
-      false
-    )
-  end
+    local dclint = decoded.dclint
 
-  local dclint =
-    decoded.dclint
+    if type(dclint) == 'table' then
+        if dclint.timeout then
+            if #diagnostics < DIAGNOSTICS_MAX then
+                diagnostics[#diagnostics + 1] = {
+                    lnum = 0,
+                    end_lnum = 0,
+                    col = 0,
+                    end_col = 1,
 
-  if type(dclint) == 'table' then
-    if dclint.timeout then
-      if #diagnostics < DIAGNOSTICS_MAX then
-        diagnostics[#diagnostics + 1] = {
-          lnum = 0,
-          end_lnum = 0,
-          col = 0,
-          end_col = 1,
+                    message = 'DCLint timed out',
 
-          message =
-            'DCLint timed out',
+                    severity = WARN,
 
-          severity = WARN,
+                    source = 'dclint',
+                    code = 'timeout',
+                }
+            end
 
-          source = 'dclint',
-          code = 'timeout',
-        }
-      end
+            return diagnostics
+        end
 
-      return diagnostics
+        local dclint_stdout = type(dclint.stdout) == 'string' and dclint.stdout or ''
+
+        parse_dclint(dclint_stdout, diagnostics, filename, root)
     end
 
-    local dclint_stdout =
-      type(dclint.stdout) == 'string'
-          and dclint.stdout
-        or ''
+    assert(#diagnostics <= DIAGNOSTICS_MAX)
 
-    parse_dclint(
-      dclint_stdout,
-      diagnostics,
-      filename,
-      root
-    )
-  end
-
-  assert(
-    #diagnostics <= DIAGNOSTICS_MAX
-  )
-
-  return diagnostics
+    return diagnostics
 end
 
 ---@param context LintContext
 ---@return string[]
 local function args(context)
-  assert(context.filename ~= '')
-  assert(context.root ~= '')
+    assert(context.filename ~= '')
+    assert(context.root ~= '')
 
-  return {
-    '-I',
-    '-c',
-    COORDINATOR,
-    context.filename,
-  }
+    return {
+        '-I',
+        '-c',
+        COORDINATOR,
+        context.filename,
+    }
 end
 
 ---@param context LintContext
 ---@return string
 local function cwd(context)
-  assert(context.root ~= '')
+    assert(context.root ~= '')
 
-  return fs.normalize(
-    context.root
-  )
+    return fs.normalize(context.root)
 end
 
 return ---@type Linter
 {
-  automatic = false,
-
-  --
-  -- Python is only the process coordinator. It invokes Docker and DCLint with
-  -- argument arrays and never invokes a shell.
-  --
-  cmd = 'python3',
-
-  args = args,
-
-  append_fname = false,
-
-  cwd = cwd,
-
-  ignore_exitcode = true,
-
-  parser = parse,
-
-  root_markers = {
-    --
-    -- DCLint configuration.
-    --
-    '.dclintrc',
-    '.dclintrc.json',
-    '.dclintrc.yaml',
-    '.dclintrc.yml',
-    '.dclintrc.js',
-    '.dclintrc.cjs',
-
-    'dclint.config.js',
-    'dclint.config.cjs',
-    'dclint.config.mjs',
+    automatic = false,
 
     --
-    -- Compose project files.
+    -- Python is only the process coordinator. It invokes Docker and DCLint with
+    -- argument arrays and never invokes a shell.
     --
-    'compose.yaml',
-    'compose.yml',
+    cmd = 'python3',
 
-    'docker-compose.yaml',
-    'docker-compose.yml',
+    args = args,
+
+    append_fname = false,
+
+    cwd = cwd,
+
+    ignore_exitcode = true,
+
+    parser = parse,
+
+    root_markers = {
+        --
+        -- DCLint configuration.
+        --
+        '.dclintrc',
+        '.dclintrc.json',
+        '.dclintrc.yaml',
+        '.dclintrc.yml',
+        '.dclintrc.js',
+        '.dclintrc.cjs',
+
+        'dclint.config.js',
+        'dclint.config.cjs',
+        'dclint.config.mjs',
+
+        --
+        -- Compose project files.
+        --
+        'compose.yaml',
+        'compose.yml',
+
+        'docker-compose.yaml',
+        'docker-compose.yml',
+
+        --
+        -- Environment / project boundaries.
+        --
+        '.env',
+
+        'package.json',
+
+        '.git',
+    },
+
+    stdin = false,
 
     --
-    -- Environment / project boundaries.
+    -- The coordinator emits exactly one JSON envelope to stdout.
     --
-    '.env',
+    stream = 'stdout',
 
-    'package.json',
-
-    '.git',
-  },
-
-  stdin = false,
-
-  --
-  -- The coordinator emits exactly one JSON envelope to stdout.
-  --
-  stream = 'stdout',
-
-  timeout = 120000,
+    timeout = 120000,
 }

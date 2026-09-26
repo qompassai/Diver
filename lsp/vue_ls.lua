@@ -21,18 +21,17 @@ return ---@type vim.lsp.Config
         ---@param result any
         ---@param context lsp.HandlerContext
         local function typescriptHandler(_, result, context)
-            local ts_Client = vim.lsp.get_clients({ ---@type vim.lsp.Client
+            ---@type vim.lsp.Client?
+            local ts_Client = vim.lsp.get_clients({
                 bufnr = context.bufnr,
                 name = 'ts_ls',
+            })[1] or vim.lsp.get_clients({
+                bufnr = context.bufnr,
+                name = 'vtsls',
+            })[1] or vim.lsp.get_clients({
+                bufnr = context.bufnr,
+                name = 'typescript-tools',
             })[1]
-                or vim.lsp.get_clients({
-                    bufnr = context.bufnr,
-                    name = 'vtsls',
-                })[1]
-                or vim.lsp.get_clients({
-                    bufnr = context.bufnr,
-                    name = 'typescript-tools',
-                })[1]
             if not ts_Client then
                 if retries <= 10 then
                     retries = retries + 1

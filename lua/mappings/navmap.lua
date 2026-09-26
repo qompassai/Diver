@@ -32,8 +32,7 @@ local function structure()
             items[#items + 1] = {
                 label = direction[2] .. ' ' .. spec[2],
                 run = function()
-                    local ok, err =
-                        require('config.core.tree').jump(spec[1], direction[1], false, spec[3])
+                    local ok, err = require('config.core.tree').jump(spec[1], direction[1], false, spec[3])
                     if not ok then
                         core.notify(err)
                     end
@@ -87,11 +86,7 @@ local function attach(bufnr)
                 lhs = 'dd',
                 rhs = function()
                     local row = api.nvim_win_get_cursor(0)[1]
-                    local ok, err = qf.remove(
-                        nil,
-                        row,
-                        math.min(row + vim.v.count1 - 1, api.nvim_buf_line_count(0))
-                    )
+                    local ok, err = qf.remove(nil, row, math.min(row + vim.v.count1 - 1, api.nvim_buf_line_count(0)))
                     if not ok then
                         core.notify(err)
                     end
@@ -107,11 +102,7 @@ local function attach(bufnr)
                     if not ok then
                         core.notify(err)
                     end
-                    api.nvim_feedkeys(
-                        api.nvim_replace_termcodes('<Esc>', true, false, true),
-                        'n',
-                        false
-                    )
+                    api.nvim_feedkeys(api.nvim_replace_termcodes('<Esc>', true, false, true), 'n', false)
                 end,
                 desc = 'Remove selected quickfix entries into history',
             },
@@ -201,6 +192,16 @@ function M.setup(opts)
         end
     end
     core.watch(OWNER, attach)
+    -- :ScipIndex is created by scip.setup(); run setup lazily on first use
+    -- so this mapping is always installed and safe to press.
+    maps[#maps + 1] = {
+        lhs = '<leader>nz',
+        rhs = function()
+            require('scip').setup()
+            core.command('ScipIndex')()
+        end,
+        desc = 'Generate SCIP index for project',
+    }
     core.install(OWNER, 0, maps)
 end
 M.setup_navmap = M.setup

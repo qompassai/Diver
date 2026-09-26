@@ -10,11 +10,11 @@ local M = {}
 ---@field copy_to_clipboard                                boolean
 ---@field max_recents                                      integer
 M.config = {
-  copy_to_clipboard = false,
-  copy_register = '+',
-  max_recents = 30,
+    copy_to_clipboard = false,
+    copy_register = '+',
+    max_recents = 30,
 }
 M.setup = function(opts)
-  M.config = vim.tbl_deep_extend('force', M.config, opts or {})
+    M.config = vim.tbl_deep_extend('force', M.config, opts or {})
 end
 return M

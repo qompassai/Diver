@@ -352,10 +352,8 @@ local function parse_report(report, context)
     end
 
     if #report.violations > LIMITS.violations then
-        diagnostics[#diagnostics + 1] = status_diagnostic(
-            'prisma-lint diagnostics were truncated at ' .. LIMITS.violations,
-            context
-        )
+        diagnostics[#diagnostics + 1] =
+            status_diagnostic('prisma-lint diagnostics were truncated at ' .. LIMITS.violations, context)
     elseif rejected > 0 then
         diagnostics[#diagnostics + 1] = status_diagnostic(
             ('prisma-lint returned %d malformed or foreign-file violation(s)'):format(rejected),
@@ -387,12 +385,7 @@ local function parse_output(output, context)
 
     local ok, report = pcall(json.decode, output)
 
-    if
-        not ok
-        or type(report) ~= 'table'
-        or type(report.violations) ~= 'table'
-        or not vim.islist(report.violations)
-    then
+    if not ok or type(report) ~= 'table' or type(report.violations) ~= 'table' or not vim.islist(report.violations) then
         return {
             status_diagnostic('prisma-lint returned non-JSON output: ' .. output, context),
         }

@@ -4,16 +4,16 @@
 -----------------------------------------------------
 local css_cfg = require('config.ui.colors')
 return {
-  {
-    'windwp/nvim-autopairs',
-    event = 'InsertEnter',
-    config = true,
-  },
-  {
-    'nvchad/nvim-colorizer.lua',
-    event = 'BufReadPre',
-    config = function(_, opts)
-      css_cfg.setup_colorizer(opts)
-    end,
-  },
+    {
+        'windwp/nvim-autopairs',
+        event = 'InsertEnter',
+        config = true,
+    },
+    {
+        'nvchad/nvim-colorizer.lua',
+        event = 'BufReadPre',
+        config = function(_, opts)
+            css_cfg.setup_colorizer(opts)
+        end,
+    },
 }

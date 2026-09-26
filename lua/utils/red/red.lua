@@ -4,30 +4,54 @@
 -- ----------------------------------------
 local M = {}
 local uv = vim.uv or vim.loop
+---@class red.DirFrame
+---@field handle userdata scandir handle for this directory
+---@field root string absolute path of this directory
+---@param root string directory to walk
+---@param exts string[] file suffixes to yield
+---@return fun(): string? iterator over matching paths, depth-first
 local function iter_files(root, exts)
-    local handle = uv.fs_scandir(root)
-    if not handle then
-        return function() end
+    -- Explicit stack instead of recursion: directory depth is
+    -- attacker-controlled (a malicious tree can nest thousands deep),
+    -- and Lua recursion over it risks stack overflow. The `seen` set
+    -- additionally guards against symlink cycles, which would
+    -- otherwise loop forever. Note: the old recursive version also
+    -- abandoned each subdirectory after its first match
+    -- (`for file in iter_files(path, exts) do return file end`);
+    -- this yields every match.
+    local stack = {} ---@type red.DirFrame[]
+    local seen = {} ---@type table<string, boolean>
+    local function push_dir(dir)
+        if seen[dir] then
+            return
+        end
+        seen[dir] = true
+        local handle = uv.fs_scandir(dir)
+        if handle then
+            stack[#stack + 1] = { handle = handle, root = dir }
+        end
     end
+    push_dir(root)
     return function()
-        while true do
-            local name, t = uv.fs_scandir_next(handle)
+        while #stack > 0 do
+            local top = stack[#stack]
+            local name, t = uv.fs_scandir_next(top.handle)
             if not name then
-                return
-            end
-            local path = root .. '/' .. name
-            if t == 'directory' then
-                for file in iter_files(path, exts) do
-                    return file
-                end
+                stack[#stack] = nil
             else
-                for _, ext in ipairs(exts) do
-                    if name:sub(-#ext) == ext then
-                        return path
+                local path = top.root .. '/' .. name
+                if t == 'directory' then
+                    push_dir(path)
+                else
+                    for _, ext in ipairs(exts) do
+                        if name:sub(-#ext) == ext then
+                            return path
+                        end
                     end
                 end
             end
         end
+        return nil
     end
 end
 local function scan_for_patterns(path, patterns)
@@ -104,7 +128,7 @@ local function check_static_patterns()
             pattern = 'vim%.cmd%(%s*["\']source%s+',
             severity = 'info',
             code = 'SOURCE_CMD',
-            message = 'vim.cmd(\'source ...\') in config; verify target path is trusted',
+            message = "vim.cmd('source ...') in config; verify target path is trusted",
         },
         {
             code = 'MODELINE',

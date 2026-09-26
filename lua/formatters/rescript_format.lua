@@ -13,23 +13,28 @@
 ---@param context FormatterContext
 ---@return string[]
 local function build_args(context)
-  if context.filetype ~= 'rescript' then
-    error('rescript_format requires the rescript filetype')
-  end
+    if context.filetype ~= 'rescript' then
+        error('rescript_format requires the rescript filetype')
+    end
 
-  local extension = context.filename:match('%.res[ci]?$') or '.res'
+    local extension = context.filename:match('%.res[ci]?$') or '.res'
 
-  return { 'format', '--stdin', extension }
+    return { 'format', '--stdin', extension }
 end
 
 ---@type FormatterSpec
 return {
-  cmd = 'rescript',
-  args = build_args,
-  mode = 'stdin',
-  output = 'stdout',
-  root_markers = { 'rescript.json', 'bsconfig.json', '.git' },
-  exit_codes = { 0 },
-  automatic = true,
-  allow_empty = false,
+    cmd = 'rescript',
+    args = build_args,
+    mode = 'stdin',
+    output = 'stdout',
+    cwd = nil,
+    env = {},
+    root_markers = { 'rescript.json', 'bsconfig.json', '.git' },
+    exit_codes = { 0 },
+    allow_empty = false,
+    automatic = true,
+    extension = nil,
+    decode = nil,
+    pre_transform = nil,
 }

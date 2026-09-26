@@ -15,6 +15,7 @@
 
 ---@alias LintArgs string[]|fun(context: LintContext): string[]
 ---@alias LintBufferParser fun(output: string, bufnr: integer): vim.Diagnostic.Set[]
+---@alias LintCmd string|string[]|fun(context: LintContext): string|string[]
 ---@alias LintContextParser fun(output: string, context: LintContext): vim.Diagnostic.Set[]
 ---@alias LintCwd string|fun(context: LintContext): string
 ---@alias LintParser LintBufferParser|LintContextParser
@@ -24,7 +25,7 @@
 ---@field append_fname? boolean Append `context.filename`; defaults to true.
 ---@field args? LintArgs Static arguments or a context-aware argument callback.
 ---@field automatic? boolean Permit automatic buffer-event execution; defaults to true.
----@field cmd string|string[] Executable name or ordered executable candidates.
+---@field cmd LintCmd Executable name, ordered executable candidates, or a context-aware resolver.
 ---@field cwd? LintCwd Static or context-aware process working directory.
 ---@field env? table<string, string> Additional process environment variables.
 ---@field errorformat? string|string[] Vim errorformat used when `parser` is absent.
@@ -35,6 +36,13 @@
 ---@field stdin? boolean Send the current buffer through standard input.
 ---@field stream? LintStream Diagnostic stream; defaults to stdout.
 ---@field timeout? integer Process timeout in milliseconds.
+
+-- Sentinel returned by linter adapter modules that cannot produce a real
+-- spec (a helper module failed to load). Consumers must recognize
+-- `unavailable` and skip quietly instead of treating it as a spec or
+-- erroring on a non-table module return.
+---@class LinterUnavailable
+---@field unavailable string Reason the linter definition is unavailable.
 
 -- Compatibility for specifications that still use the nvim-lint-style name.
 -- Runtime behavior remains defined by `Linter`; the additional fields below

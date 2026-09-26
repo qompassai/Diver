@@ -18,22 +18,22 @@
 ---@type ScipIndexer
 
 local indexer = {
-  args = {
-    'index',
-  },
-  command = 'scip-dotnet',
-  filetypes = {
-    cs = true,
-    fsharp = true,
-    vb = true,
-  },
-  markers = {
-    '.git',
-    'Directory.Build.props',
-    'Directory.Build.targets',
-    'Directory.Packages.props',
-    'global.json',
-  },
+    args = {
+        'index',
+    },
+    command = 'scip-dotnet',
+    filetypes = {
+        cs = true,
+        fsharp = true,
+        vb = true,
+    },
+    markers = {
+        '.git',
+        'Directory.Build.props',
+        'Directory.Build.targets',
+        'Directory.Packages.props',
+        'global.json',
+    },
 }
 
 return indexer

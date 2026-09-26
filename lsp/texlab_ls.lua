@@ -1,3 +1,10 @@
+--- texlab language-server config — starts the LaTeX files tutor.
+---
+--- Plain-language version: a language server is a helper program that reads your code and tells Neovim about
+--- errors, completions, and definitions -- like a tutor looking over your shoulder. This file is the introduction
+--- card that tells Neovim how to start the `texlab` tutor whenever you open LaTeX files. It only takes effect if
+--- `texlab` is installed on your computer.
+---@module 'lsp.texlab_ls'
 -- /qompassai/Diver/lsp/texlab.lua
 -- Qompass AI Texlab LSP Spec
 -- Copyright (C) 2025 Qompass AI, All rights reserved
@@ -132,7 +139,8 @@ return ---@type vim.lsp.Config
     on_attach = function(client, bufnr)
         local function buf_build()
             local win = vim.api.nvim_get_current_win()
-            local params = vim.lsp.util.make_position_params(win, client.offset_encoding) ---@diagnostic disable: param-type-mismatch
+            ---@diagnostic disable: param-type-mismatch
+            local params = vim.lsp.util.make_position_params(win, client.offset_encoding)
             client:request('textDocument/build', params, function(err, result)
                 if err then
                     error(tostring(err))

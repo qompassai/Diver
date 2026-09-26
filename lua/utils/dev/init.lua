@@ -19,7 +19,7 @@ local M = {}
 local android = require('utils.dev.android')
 local sf = require('utils.dev.sf')
 function M.setup()
-  android.setup()
-  sf.setup()
+    android.setup()
+    sf.setup()
 end
 return M

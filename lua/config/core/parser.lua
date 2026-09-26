@@ -61,7 +61,7 @@ function M.simple_colon_parser(output, bufnr, opts)
             if #diagnostics == DIAGNOSTICS_MAX then
                 return {}, 'Diagnostic budget exceeded'
             end
-            local text = api.nvim_buf_get_lines(bufnr, row - 1, row, false)[1] or ''
+            local text = api.nvim_buf_get_lines(bufnr, math.floor(row - 1), math.floor(row), false)[1] or ''
             local col = math.min(column - 1, #text)
             diagnostics[#diagnostics + 1] = {
                 lnum = row - 1,

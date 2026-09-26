@@ -1,4 +1,10 @@
 #!/usr/bin/env lua
+--- Python language option types — type-checker dictionary (never runs).
+---
+--- Plain-language version: this file never runs -- Neovim never loads it at startup. It is a dictionary of shapes
+--- (type annotations) for the lua-language-server type checker, so the editor can offer completions and catch
+--- mistakes while you edit. Think of it as the answer key the teacher uses, not a lesson.
+---@module 'types.lang.python'
 -- /qompassai/Diver/lua/types/lang/python.lua
 -- Qompass AI Diver Python Lang Types
 -- Copyright (C) 2025 Qompass AI, All rights reserved
@@ -176,7 +182,7 @@
 ---@field lines_between_types?                             number Lines between import types
 ---@field no_lines_before?                                 string[] No lines before sections
 ---@field order_by_type?                                   boolean Order by type
----@field relative_imports_order?                          'closest-to-furthest'|'furthest-to-closest' Relative import order
+---@field relative_imports_order? 'closest-to-furthest'|'furthest-to-closest' Relative import order
 ---@field required_imports?                                string[] Required imports
 ---@field section_order?                                   string[] Section order
 ---@field sections?                                        table<string, string[]> Custom sections

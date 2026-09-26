@@ -94,7 +94,7 @@ api.nvim_create_user_command('PhpTest', function()
     }, {
         detach = true,
     })
-end, {})
+end, { desc = 'Run PHPUnit for current file' })
 vim.api.nvim_create_autocmd('BufWritePre', {
     group = group,
     pattern = '*.php',
@@ -115,7 +115,7 @@ vim.api.nvim_create_user_command('PhpQuickfix', function()
         },
         apply = true,
     })
-end, {})
+end, { desc = 'Apply PHP quickfix code actions' })
 vim.api.nvim_create_autocmd('BufWritePre', {
     group = group,
     pattern = {
@@ -195,7 +195,7 @@ vim.api.nvim_create_user_command('PhpCodeAction', function()
         end,
         apply = true,
     })
-end, {})
+end, { desc = 'PHP code actions (quickfix/refactor/imports)' })
 api.nvim_create_user_command('PhpRangeAction', function()
     local bufnr = 0
     local diagnostics = vim.diagnostic.get(bufnr)
@@ -226,6 +226,7 @@ api.nvim_create_user_command('PhpRangeAction', function()
         apply = false,
     })
 end, {
+    desc = 'PHP range code actions',
     range = true,
 })
 api.nvim_create_autocmd('LspAttach', {

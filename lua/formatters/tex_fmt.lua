@@ -23,52 +23,51 @@ local TEX_FMT_INDENT = 4
 
 ---@type TexFmtConfig
 local CONFIG = {
-  width = TEX_FMT_WIDTH,
-  indent = TEX_FMT_INDENT,
-  no_config = true,
+    width = TEX_FMT_WIDTH,
+    indent = TEX_FMT_INDENT,
+    no_config = true,
 }
 
-assert(
-  CONFIG.width > 0 and CONFIG.width <= 1000,
-  'tex_fmt: width must be within 1..1000 columns'
-)
-assert(
-  CONFIG.indent > 0 and CONFIG.indent <= 16,
-  'tex_fmt: indent must be within 1..16 spaces'
-)
+assert(CONFIG.width > 0 and CONFIG.width <= 1000, 'tex_fmt: width must be within 1..1000 columns')
+assert(CONFIG.indent > 0 and CONFIG.indent <= 16, 'tex_fmt: indent must be within 1..16 spaces')
 
 local TEX_FILETYPES = { tex = true, latex = true, plaintex = true }
 
 ---@param context FormatterContext
 ---@return string[]
 local function build_args(context)
-  if not TEX_FILETYPES[context.filetype] then
-    error('tex_fmt requires a TeX filetype (tex, latex, plaintex)')
-  end
+    if not TEX_FILETYPES[context.filetype] then
+        error('tex_fmt requires a TeX filetype (tex, latex, plaintex)')
+    end
 
-  local args = {
-    '--stdin',
-    '--tabsize',
-    tostring(CONFIG.indent),
-    '--wraplen',
-    tostring(CONFIG.width),
-  }
+    local args = {
+        '--stdin',
+        '--tabsize',
+        tostring(CONFIG.indent),
+        '--wraplen',
+        tostring(CONFIG.width),
+    }
 
-  if CONFIG.no_config then
-    args[#args + 1] = '--noconfig'
-  end
+    if CONFIG.no_config then
+        args[#args + 1] = '--noconfig'
+    end
 
-  return args
+    return args
 end
 
 ---@type FormatterSpec
 return {
-  cmd = 'tex-fmt',
-  args = build_args,
-  mode = 'stdin',
-  output = 'stdout',
-  root_markers = { '.git' },
-  exit_codes = { 0 },
-  automatic = true,
-  allow_empty = false,
+    cmd = 'tex-fmt',
+    args = build_args,
+    mode = 'stdin',
+    output = 'stdout',
+    cwd = nil,
+    env = {},
+    root_markers = { '.git' },
+    exit_codes = { 0 },
+    allow_empty = false,
+    automatic = true,
+    extension = nil,
+    decode = nil,
+    pre_transform = nil,
 }

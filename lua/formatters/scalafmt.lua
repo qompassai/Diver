@@ -1,7 +1,19 @@
 -- ~/.config/nvim/lua/formatters/scalafmt.lua
 -- Native Scalafmt formatter specification for Neovim 0.13+ / LuaJIT.
 -- SPDX-License-Identifier: Apache-2.0
--- https://github.com/scalameta/scalafmt
+---@source https://github.com/scalameta/scalafmt
+
+--- Scala formatter — formats via the project's `.scalafmt.conf`.
+---
+--- Plain-language version: scalafmt is the Scala code formatter. This
+--- adapter refuses to run without a project config: it walks up at most 128
+--- directories (stopping at the `.git` boundary) to find a readable
+--- `.scalafmt.conf` and runs from that directory. The flags are explicit:
+--- `--stdin`/`--stdout` pipe the buffer through, `--non-interactive` and
+--- `--no-progress-bar` keep it quiet, `--config` points at the found
+--- config, and `--assume-filename` tells scalafmt the dialect from the file
+--- name and extension.
+---@module 'formatters.scalafmt'
 -- The shared runner owns processes, deadlines, output bounds, and buffer mutation.
 local fs = vim.fs
 local uv = vim.uv
@@ -90,6 +102,9 @@ local specification = {
     exit_codes = { 0 },
     allow_empty = false,
     automatic = true,
+    env = {},
+    decode = nil,
+    pre_transform = nil,
 }
 
 return specification

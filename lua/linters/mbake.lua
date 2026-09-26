@@ -25,129 +25,127 @@ local ERROR = diagnostic.severity.ERROR
 ---@param fallback integer
 ---@return integer
 local function integer(value, fallback)
-        return math.floor(tonumber(value) or fallback)
+    return math.floor(tonumber(value) or fallback)
 end
 
 ---@param path string
----@param filename string
----@param root string
----@param basename string
 ---@return boolean
+local function is_absolute(path)
+    assert(type(path) == 'string')
+    assert(path ~= '')
+
+    return vim.fn.isabsolutepath(path) == 1
+end
+
 local function belongs_to_buffer(path, filename, root, basename)
-        if path == '' then
-                return true
-        end
+    if path == '' then
+        return true
+    end
 
-        local candidate = fs.is_absolute(path)
-                        and fs.normalize(path)
-                or fs.normalize(fs.joinpath(root, path))
+    local candidate = is_absolute(path) and fs.normalize(path) or fs.normalize(fs.joinpath(root, path))
 
-        return candidate == filename or fs.basename(candidate) == basename
+    return candidate == filename or fs.basename(candidate) == basename
 end
 
 ---@param message string
 ---@return string
 local function clean_message(message)
-        --
-        -- mbake may emit:
-        --
-        --   *** Some validation error. Stop.
-        --
-        -- Match nvim-lint behavior without performing more work than needed.
-        --
-        message = message:gsub('^%*+%s*', '', 1)
-        message = message:gsub('%s*Stop%.$', '', 1)
+    --
+    -- mbake may emit:
+    --
+    --   *** Some validation error. Stop.
+    --
+    -- Match nvim-lint behavior without performing more work than needed.
+    --
+    message = message:gsub('^%*+%s*', '', 1)
+    message = message:gsub('%s*Stop%.$', '', 1)
 
-        return vim.trim(message)
+    return vim.trim(message)
 end
 
 ---@param output string
 ---@param context LintContext|integer
 ---@return vim.Diagnostic.Set[]
 local function parse(output, context)
-        if output == '' then
-                return {}
+    if output == '' then
+        return {}
+    end
+
+    if type(context) ~= 'table' then
+        error('mbake parser requires a LintContext', 0)
+    end
+
+    ---@cast context LintContext
+
+    local filename = fs.normalize(context.filename)
+    local basename = fs.basename(filename)
+    local root = context.root
+
+    ---@type vim.Diagnostic.Set[]
+    local diagnostics = {}
+
+    --
+    -- Expected mbake output:
+    --
+    --   path/to/file:12: validation message
+    --
+    for line in output:gmatch('[^\r\n]+') do
+        local path, lnum, message = line:match('^%s*(.-):(%d+):%s*(.+)$')
+
+        if path ~= nil and belongs_to_buffer(path, filename, root, basename) then
+            local row = math.max(integer(lnum, 1) - 1, 0)
+
+            diagnostics[#diagnostics + 1] = {
+                lnum = row,
+                end_lnum = row,
+                col = 0,
+                end_col = 1,
+                severity = ERROR,
+                source = 'mbake',
+                message = clean_message(message),
+            }
         end
+    end
 
-        if type(context) ~= 'table' then
-                error('mbake parser requires a LintContext', 0)
-        end
-
-        ---@cast context LintContext
-
-        local filename = fs.normalize(context.filename)
-        local basename = fs.basename(filename)
-        local root = context.root
-
-        ---@type vim.Diagnostic.Set[]
-        local diagnostics = {}
-
-        --
-        -- Expected mbake output:
-        --
-        --   path/to/file:12: validation message
-        --
-        for line in output:gmatch('[^\r\n]+') do
-                local path, lnum, message =
-                        line:match('^%s*(.-):(%d+):%s*(.+)$')
-
-                if
-                        path ~= nil
-                        and belongs_to_buffer(path, filename, root, basename)
-                then
-                        local row = math.max(integer(lnum, 1) - 1, 0)
-
-                        diagnostics[#diagnostics + 1] = {
-                                lnum = row,
-                                end_lnum = row,
-                                col = 0,
-                                end_col = 1,
-                                severity = ERROR,
-                                source = 'mbake',
-                                message = clean_message(message),
-                        }
-                end
-        end
-
-        return diagnostics
+    return diagnostics
 end
 
 return ---@type Linter
 {
-        automatic = false,
+    automatic = false,
 
-        cmd = 'mbake',
+    cmd = 'mbake',
 
-        args = {
-                'validate',
-        },
+    args = {
+        'validate',
+    },
 
-        append_fname = true,
+    append_fname = true,
 
-        cwd = function(context)
-                return context.root
-        end,
+    cwd = function(context)
+        return context.root
+    end,
 
-        --
-        -- Upstream nvim-lint uses ignore_exitcode = true because mbake
-        -- returns failure statuses for validation failures while still
-        -- producing useful diagnostics.
-        --
-        exit_codes = {
-                [0] = true,
-                [1] = true,
-        },
+    --
+    -- Upstream nvim-lint uses ignore_exitcode = true because mbake
+    -- returns failure statuses for validation failures while still
+    -- producing useful diagnostics.
+    --
+    exit_codes = {
+        [0] = true,
+        [1] = true,
+    },
 
-        parser = parse,
+    parser = parse,
 
-        root_markers = {
-                'Makefile',
-                'makefile',
-                'GNUmakefile',
-                '.git',
-        },
+    root_markers = {
+        'Makefile',
+        'makefile',
+        'GNUmakefile',
+        '.git',
+    },
 
-        stdin = false,
-        stream = 'stdout',
-        timeout = 30000,
+    stdin = false,
+    stream = 'stdout',
+    timeout = 30000,
 }

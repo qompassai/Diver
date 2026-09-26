@@ -78,7 +78,7 @@ function M.json.schemas(opts)
     local has_ignore = type(opts.ignore) == 'table' and not vim.tbl_isempty(opts.ignore)
     assert(
         not (has_select and has_ignore),
-        'schemastore.json.schemas(): the \'select\' and \'ignore\' settings are mutually exclusive'
+        "schemastore.json.schemas(): the 'select' and 'ignore' settings are mutually exclusive"
     )
     if has_select then
         schemas = vim.tbl_map(function(name)
@@ -108,9 +108,9 @@ end
 function M.yaml.schemas(opts)
     local origin = M.json.schemas(opts) ---@type vim.Schema[]
     local schemas = {} ---@type { [string]: string[] }
-    vim.tbl_map(function(schema) ---@param schema vim.Schema
+    for _, schema in ipairs(origin) do
         schemas[schema.url] = schema.fileMatch
-    end, origin)
+    end
     return schemas
 end
 

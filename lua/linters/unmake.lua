@@ -59,154 +59,155 @@ local SOURCE = 'unmake'
 
 ---@type string[]
 local ROOT_MARKERS = {
-  'GNUmakefile',
-  'makefile',
-  'Makefile',
-  '.git',
-  '.hg',
-  '.svn',
+    'GNUmakefile',
+    'makefile',
+    'Makefile',
+    '.git',
+    '.hg',
+    '.svn',
 }
 
 ---@param value any
 ---@return string?
 local function string_value(value)
-  if type(value) ~= 'string' or value == '' then
-    return nil
-  end
+    if type(value) ~= 'string' or value == '' then
+        return nil
+    end
 
-  return value
+    return value
 end
 
 ---@param value string
 ---@return string
 local function compact(value)
-  return vim.trim(value:gsub('%s+', ' '))
+    return vim.trim(value:gsub('%s+', ' '))
 end
 
 ---@param value string
 ---@param limit integer
 ---@return string
 local function truncate(value, limit)
-  if #value <= limit then
-    return value
-  end
+    if #value <= limit then
+        return value
+    end
 
-  if limit <= 3 then
-    return value:sub(1, limit)
-  end
+    if limit <= 3 then
+        return value:sub(1, limit)
+    end
 
-  return value:sub(1, limit - 3) .. '...'
+    return value:sub(1, limit - 3) .. '...'
 end
 
 ---@param value any
 ---@return integer
 local function zero_based_line(value)
-  local number = tonumber(value)
+    local number = tonumber(value)
 
-  if number == nil then
-    return 0
-  end
+    if number == nil then
+        return 0
+    end
 
-  local line = math.floor(number)
+    local line = math.floor(number)
 
-  if line <= 1 then
-    return 0
-  end
+    if line <= 1 then
+        return 0
+    end
 
-  return line - 1
+    return line - 1
 end
 
 ---@param output string
 ---@return string
 local function strip_ansi(output)
-  return output:gsub('\27%[[%d;]*[mK]', '')
+    local cleaned = output:gsub('\27%[[%d;]*[mK]', '')
+    return cleaned
 end
 
 ---@param context LintContext
 ---@return string
 local function project_root(context)
-  local context_root = string_value(context.root)
+    local context_root = string_value(context.root)
 
-  if context_root ~= nil then
-    return fs.normalize(context_root)
-  end
-
-  local filename = string_value(context.filename)
-
-  if filename ~= nil then
-    local detected = fs.root(filename, ROOT_MARKERS)
-
-    if type(detected) == 'string' and detected ~= '' then
-      return fs.normalize(detected)
+    if context_root ~= nil then
+        return fs.normalize(context_root)
     end
 
-    local parent = fs.dirname(filename)
+    local filename = string_value(context.filename)
 
-    if type(parent) == 'string' and parent ~= '' then
-      return fs.normalize(parent)
+    if filename ~= nil then
+        local detected = fs.root(filename, ROOT_MARKERS)
+
+        if type(detected) == 'string' and detected ~= '' then
+            return fs.normalize(detected)
+        end
+
+        local parent = fs.dirname(filename)
+
+        if type(parent) == 'string' and parent ~= '' then
+            return fs.normalize(parent)
+        end
     end
-  end
 
-  local cwd = string_value(context.cwd)
+    local cwd = string_value(context.cwd)
 
-  if cwd ~= nil then
-    return fs.normalize(cwd)
-  end
+    if cwd ~= nil then
+        return fs.normalize(cwd)
+    end
 
-  return fs.normalize(vim.fn.getcwd())
+    return fs.normalize(vim.fn.getcwd())
 end
 
 ---@param path string
 ---@param context LintContext
 ---@return string
 local function absolute_path(path, context)
-  if path == '' then
-    return ''
-  end
-  if fs.isabs(path) then
-    return fs.normalize(path)
-  end
+    if path == '' then
+        return ''
+    end
+    if vim.fn.isabsolutepath(path) == 1 then
+        return fs.normalize(path)
+    end
 
-  return fs.normalize(fs.joinpath(project_root(context), path))
+    return fs.normalize(fs.joinpath(project_root(context), path))
 end
 
 ---@param left string
 ---@param right string
 ---@return boolean
 local function same_path(left, right)
-  if left == '' or right == '' then
-    return false
-  end
+    if left == '' or right == '' then
+        return false
+    end
 
-  return fs.normalize(left) == fs.normalize(right)
+    return fs.normalize(left) == fs.normalize(right)
 end
 
 ---@param level string?
 ---@return integer
 local function severity(level)
-  if level == nil then
+    if level == nil then
+        return diagnostic.severity.WARN
+    end
+
+    local normalized = level:lower()
+
+    if normalized == 'error' or normalized == 'fatal' then
+        return diagnostic.severity.ERROR
+    end
+
+    if normalized == 'warning' or normalized == 'warn' then
+        return diagnostic.severity.WARN
+    end
+
+    if normalized == 'info' or normalized == 'information' then
+        return diagnostic.severity.INFO
+    end
+
+    if normalized == 'hint' then
+        return diagnostic.severity.HINT
+    end
+
     return diagnostic.severity.WARN
-  end
-
-  local normalized = level:lower()
-
-  if normalized == 'error' or normalized == 'fatal' then
-    return diagnostic.severity.ERROR
-  end
-
-  if normalized == 'warning' or normalized == 'warn' then
-    return diagnostic.severity.WARN
-  end
-
-  if normalized == 'info' or normalized == 'information' then
-    return diagnostic.severity.INFO
-  end
-
-  if normalized == 'hint' then
-    return diagnostic.severity.HINT
-  end
-
-  return diagnostic.severity.WARN
 end
 
 ---@class UnmakeFinding
@@ -219,282 +220,282 @@ end
 ---@param line string
 ---@return UnmakeFinding?
 local function parse_finding(line)
-  if line == '' or #line > MAX_LINE_BYTES then
-    return nil
-  end
+    if line == '' or #line > MAX_LINE_BYTES then
+        return nil
+    end
 
-  local level
-  local path
-  local line_number
-  local code
-  local message
+    local level
+    local path
+    local line_number
+    local code
+    local message
 
-  level, path, line_number, code, message = line:match('^([%a]+):%s+(.+):(%d+):%s+([A-Z][A-Z0-9_]+):%s+(.+)$')
+    level, path, line_number, code, message = line:match('^([%a]+):%s+(.+):(%d+):%s+([A-Z][A-Z0-9_]+):%s+(.+)$')
 
-  if level ~= nil and path ~= nil and line_number ~= nil and code ~= nil and message ~= nil then
+    if level ~= nil and path ~= nil and line_number ~= nil and code ~= nil and message ~= nil then
+        return {
+            code = code,
+
+            line = math.floor(tonumber(line_number) or 1),
+
+            message = message,
+
+            path = path,
+
+            severity = level,
+        }
+    end
+
+    level, path, code, message = line:match('^([%a]+):%s+(.+):%s+([A-Z][A-Z0-9_]+):%s+(.+)$')
+
+    if level == nil or path == nil or code == nil or message == nil then
+        return nil
+    end
+
     return {
-      code = code,
+        code = code,
 
-      line = tonumber(line_number) or 1,
+        line = 1,
 
-      message = message,
+        message = message,
 
-      path = path,
+        path = path,
 
-      severity = level,
+        severity = level,
     }
-  end
-
-  level, path, code, message = line:match('^([%a]+):%s+(.+):%s+([A-Z][A-Z0-9_]+):%s+(.+)$')
-
-  if level == nil or path == nil or code == nil or message == nil then
-    return nil
-  end
-
-  return {
-    code = code,
-
-    line = 1,
-
-    message = message,
-
-    path = path,
-
-    severity = level,
-  }
 end
 
 ---@param finding UnmakeFinding
 ---@param context LintContext
 ---@return vim.Diagnostic
 local function finding_diagnostic(finding, context)
-  local lnum = zero_based_line(finding.line)
+    local lnum = zero_based_line(finding.line)
 
-  local message = compact(finding.message)
+    local message = compact(finding.message)
 
-  local filename = string_value(context.filename)
+    local filename = string_value(context.filename)
 
-  if filename ~= nil then
-    local absolute = absolute_path(finding.path, context)
+    if filename ~= nil then
+        local absolute = absolute_path(finding.path, context)
 
-    if not same_path(absolute, fs.normalize(filename)) then
-      message = string.format('%s: %s', finding.path, message)
+        if not same_path(absolute, fs.normalize(filename)) then
+            message = string.format('%s: %s', finding.path, message)
 
-      lnum = 0
+            lnum = 0
+        end
     end
-  end
 
-  return {
-    bufnr = context.bufnr,
+    return {
+        bufnr = context.bufnr,
 
-    code = finding.code,
+        code = finding.code,
 
-    col = 0,
+        col = 0,
 
-    end_col = 0,
+        end_col = 0,
 
-    end_lnum = lnum,
+        end_lnum = lnum,
 
-    lnum = lnum,
+        lnum = lnum,
 
-    message = truncate(message, MAX_MESSAGE_BYTES),
+        message = truncate(message, MAX_MESSAGE_BYTES),
 
-    severity = severity(finding.severity),
+        severity = severity(finding.severity),
 
-    source = SOURCE,
+        source = SOURCE,
 
-    user_data = {
-      path = finding.path,
+        user_data = {
+            path = finding.path,
 
-      rule = finding.code,
+            rule = finding.code,
 
-      unmake_severity = finding.severity,
-    },
-  }
+            unmake_severity = finding.severity,
+        },
+    }
 end
 
 ---@param line string
 ---@return boolean
 local function operational_error(line)
-  local lower = line:lower()
+    local lower = line:lower()
 
-  return lower:find('error:', 1, true) ~= nil
-    or lower:find('fatal:', 1, true) ~= nil
-    or lower:find('failed', 1, true) ~= nil
-    or lower:find('cannot', 1, true) ~= nil
-    or lower:find('invalid', 1, true) ~= nil
-    or lower:find('parse', 1, true) ~= nil
+    return lower:find('error:', 1, true) ~= nil
+        or lower:find('fatal:', 1, true) ~= nil
+        or lower:find('failed', 1, true) ~= nil
+        or lower:find('cannot', 1, true) ~= nil
+        or lower:find('invalid', 1, true) ~= nil
+        or lower:find('parse', 1, true) ~= nil
 end
 
 ---@param output string
 ---@return string?
 local function error_message(output)
-  local text = strip_ansi(vim.trim(output))
+    local text = strip_ansi(vim.trim(output))
 
-  if text == '' then
-    return nil
-  end
-
-  for raw_line in text:gmatch('[^\r\n]+') do
-    local line = compact(raw_line)
-
-    if operational_error(line) then
-      return truncate(line, MAX_MESSAGE_BYTES)
+    if text == '' then
+        return nil
     end
-  end
 
-  return nil
+    for raw_line in text:gmatch('[^\r\n]+') do
+        local line = compact(raw_line)
+
+        if operational_error(line) then
+            return truncate(line, MAX_MESSAGE_BYTES)
+        end
+    end
+
+    return nil
 end
 
 ---@param output string
 ---@param context LintContext
 ---@return vim.Diagnostic[]
 local function parse_failure(output, context)
-  local message = error_message(output)
+    local message = error_message(output)
 
-  if message == nil then
-    return {}
-  end
+    if message == nil then
+        return {}
+    end
 
-  local line_number = output:match(':(%d+):') or output:match('[Ll]ine%s+(%d+)')
+    local line_number = output:match(':(%d+):') or output:match('[Ll]ine%s+(%d+)')
 
-  local lnum = zero_based_line(line_number)
+    local lnum = zero_based_line(line_number)
 
-  return {
-    {
-      bufnr = context.bufnr,
+    return {
+        {
+            bufnr = context.bufnr,
 
-      code = 'unmake-error',
+            code = 'unmake-error',
 
-      col = 0,
+            col = 0,
 
-      end_col = 0,
+            end_col = 0,
 
-      end_lnum = lnum,
+            end_lnum = lnum,
 
-      lnum = lnum,
+            lnum = lnum,
 
-      message = message,
+            message = message,
 
-      severity = diagnostic.severity.ERROR,
+            severity = diagnostic.severity.ERROR,
 
-      source = SOURCE,
-    },
-  }
+            source = SOURCE,
+        },
+    }
 end
 
 ---@param context LintContext
 ---@return vim.Diagnostic[]
 local function oversized_output(context)
-  return {
-    {
-      bufnr = context.bufnr,
+    return {
+        {
+            bufnr = context.bufnr,
 
-      code = 'output-limit',
+            code = 'output-limit',
 
-      col = 0,
+            col = 0,
 
-      end_col = 0,
+            end_col = 0,
 
-      end_lnum = 0,
+            end_lnum = 0,
 
-      lnum = 0,
+            lnum = 0,
 
-      message = string.format('unmake output exceeded the %d-byte parser limit', MAX_OUTPUT_BYTES),
+            message = string.format('unmake output exceeded the %d-byte parser limit', MAX_OUTPUT_BYTES),
 
-      severity = diagnostic.severity.WARN,
+            severity = diagnostic.severity.WARN,
 
-      source = SOURCE,
-    },
-  }
+            source = SOURCE,
+        },
+    }
 end
 
 ---@param output string
 ---@param context LintContext
 ---@return vim.Diagnostic[]
 local function parse(output, context)
-  assert(type(context) == 'table', 'unmake parser requires LintContext')
+    assert(type(context) == 'table', 'unmake parser requires LintContext')
 
-  assert(type(context.bufnr) == 'number', 'unmake parser requires context.bufnr')
+    assert(type(context.bufnr) == 'number', 'unmake parser requires context.bufnr')
 
-  if output == '' then
-    return {}
-  end
-
-  if #output > MAX_OUTPUT_BYTES then
-    return oversized_output(context)
-  end
-
-  local text = strip_ansi(output)
-
-  ---@type vim.Diagnostic[]
-  local diagnostics = {}
-
-  ---@type string[]
-  local failures = {}
-
-  for raw_line in text:gmatch('[^\r\n]+') do
-    if #diagnostics >= MAX_DIAGNOSTICS then
-      break
+    if output == '' then
+        return {}
     end
 
-    local line = vim.trim(raw_line)
-
-    if line ~= '' then
-      local finding = parse_finding(line)
-
-      if finding ~= nil then
-        diagnostics[#diagnostics + 1] = finding_diagnostic(finding, context)
-      elseif operational_error(line) then
-        failures[#failures + 1] = line
-      end
+    if #output > MAX_OUTPUT_BYTES then
+        return oversized_output(context)
     end
-  end
 
-  if #diagnostics == 0 and #failures > 0 then
-    return parse_failure(table.concat(failures, '\n'), context)
-  end
+    local text = strip_ansi(output)
 
-  return diagnostics
+    ---@type vim.Diagnostic[]
+    local diagnostics = {}
+
+    ---@type string[]
+    local failures = {}
+
+    for raw_line in text:gmatch('[^\r\n]+') do
+        if #diagnostics >= MAX_DIAGNOSTICS then
+            break
+        end
+
+        local line = vim.trim(raw_line)
+
+        if line ~= '' then
+            local finding = parse_finding(line)
+
+            if finding ~= nil then
+                diagnostics[#diagnostics + 1] = finding_diagnostic(finding, context)
+            elseif operational_error(line) then
+                failures[#failures + 1] = line
+            end
+        end
+    end
+
+    if #diagnostics == 0 and #failures > 0 then
+        return parse_failure(table.concat(failures, '\n'), context)
+    end
+
+    return diagnostics
 end
 
 ---@param context LintContext
 ---@return string[]
 local function arguments(context)
-  assert(type(context) == 'table', 'unmake arguments require LintContext')
+    assert(type(context) == 'table', 'unmake arguments require LintContext')
 
-  local filename = string_value(context.filename)
+    local filename = string_value(context.filename)
 
-  if filename == nil then
-    return {}
-  end
+    if filename == nil then
+        return {}
+    end
 
-  return {
-    filename,
-  }
+    return {
+        filename,
+    }
 end
 
 ---@type Linter
 return {
-  args = arguments,
+    args = arguments,
 
-  append_fname = false,
+    append_fname = false,
 
-  automatic = false,
+    automatic = false,
 
-  cmd = 'unmake',
+    cmd = 'unmake',
 
-  cwd = project_root,
+    cwd = project_root,
 
-  ignore_exitcode = true,
+    ignore_exitcode = true,
 
-  parser = parse,
+    parser = parse,
 
-  root_markers = ROOT_MARKERS,
+    root_markers = ROOT_MARKERS,
 
-  stdin = false,
+    stdin = false,
 
-  stream = 'both',
+    stream = 'both',
 
-  timeout = 30000,
+    timeout = 30000,
 }

@@ -202,19 +202,16 @@ local function prompt_filter(target, exclude)
         notify(err)
         return
     end
-    vim.ui.input(
-        { prompt = exclude and 'Exclude Vim regex: ' or 'Keep Vim regex: ' },
-        function(pattern)
-            if pattern == nil then
-                return
-            end
-            if not current(target, saved) then
-                notify('List changed; invoke filter again')
-                return
-            end
-            report(M.filter(target, pattern, exclude))
+    vim.ui.input({ prompt = exclude and 'Exclude Vim regex: ' or 'Keep Vim regex: ' }, function(pattern)
+        if pattern == nil then
+            return
         end
-    )
+        if not current(target, saved) then
+            notify('List changed; invoke filter again')
+            return
+        end
+        report(M.filter(target, pattern, exclude))
+    end)
 end
 
 function M.history(target)
@@ -247,9 +244,7 @@ function M.history(target)
         if delta ~= 0 then
             execute(
                 target,
-                (target.kind == 'loc' and 'l' or 'c')
-                    .. (delta > 0 and 'newer ' or 'older ')
-                    .. math.abs(delta)
+                (target.kind == 'loc' and 'l' or 'c') .. (delta > 0 and 'newer ' or 'older ') .. math.abs(delta)
             )
         end
     end)
@@ -316,26 +311,20 @@ local function batch(target, files)
         notify(err)
         return
     end
-    vim.ui.input(
-        { prompt = files and 'Ex command per file: ' or 'Ex command per entry: ' },
-        function(command)
-            if not command or command == '' then
-                return
-            end
-            if not current(target, saved) then
-                notify('List changed; invoke batch again')
-                return
-            end
-            if #command > 4096 then
-                notify('Command exceeds 4096 bytes')
-                return
-            end
-            execute(
-                target,
-                (target.kind == 'loc' and 'l' or 'c') .. (files and 'fdo ' or 'do ') .. command
-            )
+    vim.ui.input({ prompt = files and 'Ex command per file: ' or 'Ex command per entry: ' }, function(command)
+        if not command or command == '' then
+            return
         end
-    )
+        if not current(target, saved) then
+            notify('List changed; invoke batch again')
+            return
+        end
+        if #command > 4096 then
+            notify('Command exceeds 4096 bytes')
+            return
+        end
+        execute(target, (target.kind == 'loc' and 'l' or 'c') .. (files and 'fdo ' or 'do ') .. command)
+    end)
 end
 
 ---Pick a valid entry while retaining its list ID across the UI callback.
@@ -355,10 +344,12 @@ function M.pick(target)
             format_item = function(entry)
                 local item = entry.item
                 local name = item.bufnr > 0 and api.nvim_buf_get_name(item.bufnr) or ''
-                return ('%d %s:%d:%d %s')
-                    :format(entry.index, name, item.lnum, item.col, item.text)
-                    :sub(1, 2048)
-                    :gsub('[%c]', ' ')
+                return (
+                    ('%d %s:%d:%d %s')
+                        :format(entry.index, name, item.lnum, item.col, item.text)
+                        :sub(1, 2048)
+                        :gsub('[%c]', ' ')
+                )
             end,
         }, function(choice)
             if not choice then
@@ -460,12 +451,7 @@ function M.write_file(target)
                 notify('Cannot export newline filenames to a line protocol')
                 return
             end
-            local line = ('%s:%d:%d:%s\n'):format(
-                name,
-                item.lnum,
-                item.col,
-                item.text:gsub('[\r\n]', ' ')
-            )
+            local line = ('%s:%d:%d:%s\n'):format(name, item.lnum, item.col, item.text:gsub('[\r\n]', ' '))
             bytes = bytes + #line
             if bytes > 8 * 1024 * 1024 then
                 notify('Export exceeds 8 MiB')
@@ -648,12 +634,7 @@ function M.buf_get_lsp_highlights(bufnr, lnum)
     for col = 0, math.min(#line, 1024) do
         local tokens = vim.lsp.semantic_tokens.get_at_pos(bufnr, lnum - 1, col) or {}
         for _, token in ipairs(tokens) do
-            local key = ('%d:%d:%d:%s'):format(
-                token.client_id,
-                token.start_col,
-                token.end_col,
-                token.type
-            )
+            local key = ('%d:%d:%d:%s'):format(token.client_id, token.start_col, token.end_col, token.type)
             if not seen[key] and #out < HIGHLIGHTS_MAX then
                 seen[key] = true
                 local start = token.line < lnum - 1 and 0 or token.start_col

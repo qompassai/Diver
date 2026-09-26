@@ -1,3 +1,9 @@
+--- vacuum linter adapter — OpenAPI spec checker wiring.
+---
+--- Plain-language version: a linter is like a spell-checker, but for code instead of words. This file teaches
+--- Neovim how to run the `vacuum` program and turn its complaints into squiggles under your code. It only runs when
+--- linting is triggered (usually on save), and only if `vacuum` is installed on your computer.
+---@module 'linters.vacuum'
 -- #################################################################
 -- ~/.config/nvim/lua/linters/vacuum.lua
 -- Native vacuum OpenAPI / AsyncAPI Linter
@@ -25,100 +31,100 @@ local MAX_MESSAGE_BYTES = 4096
 local MAX_PATH_PARTS = 128
 local ROOT_MARKERS = { 'vacuum.conf.yaml', '.git' }
 local SEVERITIES = {
-  [0] = diagnostic.severity.ERROR,
-  [1] = diagnostic.severity.WARN,
-  [2] = diagnostic.severity.INFO,
-  [3] = diagnostic.severity.HINT,
+    [0] = diagnostic.severity.ERROR,
+    [1] = diagnostic.severity.WARN,
+    [2] = diagnostic.severity.INFO,
+    [3] = diagnostic.severity.HINT,
 }
 
 ---@param value any
 ---@return string?
 local function string_value(value)
-  if type(value) == 'string' and value ~= '' then
-    return value
-  end
+    if type(value) == 'string' and value ~= '' then
+        return value
+    end
 
-  return nil
+    return nil
 end
 
 ---@param context LintContext
 ---@return string
 local function project_root(context)
-  local filename = string_value(context.filename)
+    local filename = string_value(context.filename)
 
-  if filename ~= nil then
-    local configured = fs.root(filename, 'vacuum.conf.yaml')
+    if filename ~= nil then
+        local configured = fs.root(filename, 'vacuum.conf.yaml')
 
-    if configured ~= nil then
-      return fs.normalize(configured)
-    end
-  end
-
-  local root = string_value(context.root)
-
-  if root ~= nil then
-    return fs.normalize(root)
-  end
-
-  if filename ~= nil then
-    local detected = fs.root(filename, ROOT_MARKERS)
-
-    if detected ~= nil then
-      return fs.normalize(detected)
+        if configured ~= nil then
+            return fs.normalize(configured)
+        end
     end
 
-    local parent = fs.dirname(filename)
+    local root = string_value(context.root)
 
-    if parent ~= nil and parent ~= '' then
-      return fs.normalize(parent)
+    if root ~= nil then
+        return fs.normalize(root)
     end
-  end
 
-  return fs.normalize(string_value(context.cwd) or vim.fn.getcwd())
+    if filename ~= nil then
+        local detected = fs.root(filename, ROOT_MARKERS)
+
+        if detected ~= nil then
+            return fs.normalize(detected)
+        end
+
+        local parent = fs.dirname(filename)
+
+        if parent ~= nil and parent ~= '' then
+            return fs.normalize(parent)
+        end
+    end
+
+    return fs.normalize(string_value(context.cwd) or vim.fn.getcwd())
 end
 
 ---@param path string
 ---@param cwd string
 ---@return string
 local function absolute_path(path, cwd)
-  if path:sub(1, 1) ~= '/' then
-    path = fs.joinpath(cwd, path)
-  end
+    if path:sub(1, 1) ~= '/' then
+        path = fs.joinpath(cwd, path)
+    end
 
-  return fs.normalize(path)
+    return fs.normalize(path)
 end
 
 ---@param path string
 ---@param cwd string
 ---@return string
 local function canonical_path(path, cwd)
-  local absolute = absolute_path(path, cwd)
+    local absolute = absolute_path(path, cwd)
 
-  return uv.fs_realpath(absolute) or absolute
+    return uv.fs_realpath(absolute) or absolute
 end
 
 ---@param value string
 ---@return string
 local function clean_message(value)
-  local text = vim.trim(value:gsub('[%z\1-\31\127]', ' '):gsub('%s+', ' '))
+    local text = vim.trim(value:gsub('[%z\1-\31\127]', ' '):gsub('%s+', ' '))
 
-  if #text > MAX_MESSAGE_BYTES then
-    local finish = MAX_MESSAGE_BYTES - 3
+    if #text > MAX_MESSAGE_BYTES then
+        local finish = MAX_MESSAGE_BYTES - 3
 
-    while finish > 0 do
-      local byte = text:byte(finish + 1)
+        while finish > 0 do
+            local byte = text:byte(finish + 1)
 
-      if byte == nil or byte < 128 or byte >= 192 then
-        break
-      end
+            if byte == nil or byte < 128 or byte >= 192 then
+                break
+            end
 
-      finish = finish - 1
+            finish = finish - 1
+        end
+
+        text = text:sub(1, finish) .. '...'
     end
 
-    text = text:sub(1, finish) .. '...'
-  end
-
-  return text
+    return text
 end
 
 ---@param context LintContext
@@ -126,17 +132,17 @@ end
 ---@param message string
 ---@return vim.Diagnostic
 local function status_diagnostic(context, code, message)
-  return {
-    bufnr = context.bufnr,
-    code = code,
-    col = 0,
-    end_col = 0,
-    lnum = 0,
-    end_lnum = 0,
-    message = message,
-    severity = diagnostic.severity.WARN,
-    source = SOURCE,
-  }
+    return {
+        bufnr = context.bufnr,
+        code = code,
+        col = 0,
+        end_col = 0,
+        lnum = 0,
+        end_lnum = 0,
+        message = message,
+        severity = diagnostic.severity.WARN,
+        source = SOURCE,
+    }
 end
 
 ---@param bufnr integer
@@ -144,220 +150,224 @@ end
 ---@param column integer
 ---@return integer
 local function byte_column(bufnr, lnum, column)
-  if column == 0 or not api.nvim_buf_is_loaded(bufnr) then
-    return 0
-  end
-
-  if lnum >= api.nvim_buf_line_count(bufnr) then
-    return 0
-  end
-
-  local line = api.nvim_buf_get_lines(bufnr, lnum, lnum + 1, false)[1] or ''
-
-  if #line > MAX_LINE_BYTES then
-    return 0
-  end
-
-  local offset = 1
-  local characters = 0
-
-  while offset <= #line and characters < column do
-    offset = offset + 1
-
-    while offset <= #line do
-      local byte = line:byte(offset)
-
-      if byte < 128 or byte >= 192 then
-        break
-      end
-
-      offset = offset + 1
+    if column == 0 or not api.nvim_buf_is_loaded(bufnr) then
+        return 0
     end
 
-    characters = characters + 1
-  end
+    if lnum >= api.nvim_buf_line_count(bufnr) then
+        return 0
+    end
 
-  return offset - 1
+    local line = api.nvim_buf_get_lines(bufnr, lnum, lnum + 1, false)[1] or ''
+
+    if #line > MAX_LINE_BYTES then
+        return 0
+    end
+
+    local offset = 1
+    local characters = 0
+
+    while offset <= #line and characters < column do
+        offset = offset + 1
+
+        while offset <= #line do
+            local byte = line:byte(offset)
+
+            if byte < 128 or byte >= 192 then
+                break
+            end
+
+            offset = offset + 1
+        end
+
+        characters = characters + 1
+    end
+
+    return offset - 1
 end
 
 ---@param value any
 ---@return integer
 local function coordinate(value)
-  if type(value) ~= 'number' or value ~= value or value < 1 or value > 2147483647 then
-    return 0
-  end
-  return math.floor(value) - 1
+    if type(value) ~= 'number' or value ~= value or value < 1 or value > 2147483647 then
+        return 0
+    end
+    return math.floor(value) - 1
 end
 
 ---@param context LintContext
 ---@return string
 local function reference_base(context)
-  local override = string_value(vim.env.NVIM_VACUUM_BASE)
-  if override ~= nil then
-    return override
-  end
-  local filename = string_value(context.filename)
-  if filename ~= nil then
-    local full = absolute_path(filename, string_value(context.cwd) or project_root(context))
-    local parent = fs.dirname(full)
-    if parent ~= nil then
-      return parent
+    local override = string_value(vim.env.NVIM_VACUUM_BASE)
+    if override ~= nil then
+        return override
     end
-  end
-  return project_root(context)
+    local filename = string_value(context.filename)
+    if filename ~= nil then
+        local full = absolute_path(filename, string_value(context.cwd) or project_root(context))
+        local parent = fs.dirname(full)
+        if parent ~= nil then
+            return parent
+        end
+    end
+    return project_root(context)
 end
 
 ---@param value any
 ---@return string[]
 local function report_path(value)
-  ---@type string[]
-  local parts = {}
-  if type(value) ~= 'table' then
-    return parts
-  end
-  for index = 1, math.min(#value, MAX_PATH_PARTS) do
-    local part = value[index]
-    if type(part) == 'string' or type(part) == 'number' then
-      parts[#parts + 1] = clean_message(tostring(part))
+    ---@type string[]
+    local parts = {}
+    if type(value) ~= 'table' then
+        return parts
     end
-  end
-  return parts
+    for index = 1, math.min(#value, MAX_PATH_PARTS) do
+        local part = value[index]
+        if type(part) == 'string' or type(part) == 'number' then
+            parts[#parts + 1] = clean_message(tostring(part))
+        end
+    end
+    return parts
 end
 
 ---@param source string?
 ---@param context LintContext
 ---@return boolean
 local function current_source(source, context)
-  if source == nil or source == 'stdin' or source == '<stdin>' then
-    return true
-  end
-  local filename = string_value(context.filename)
-  if filename == nil then
-    return false
-  end
-  if source:sub(1, 7) == 'file://' then
-    source = vim.uri_to_fname(source)
-  elseif source:match('^%a[%w+.-]*://') ~= nil then
-    return false
-  end
-  local cwd = project_root(context)
-  return canonical_path(source, cwd) == canonical_path(filename, string_value(context.cwd) or cwd)
+    if source == nil or source == 'stdin' or source == '<stdin>' then
+        return true
+    end
+    local filename = string_value(context.filename)
+    if filename == nil then
+        return false
+    end
+    if source:sub(1, 7) == 'file://' then
+        source = vim.uri_to_fname(source)
+    elseif source:match('^%a[%w+.-]*://') ~= nil then
+        return false
+    end
+    local cwd = project_root(context)
+    return canonical_path(source, cwd) == canonical_path(filename, string_value(context.cwd) or cwd)
 end
 
 ---@param output string
 ---@param context LintContext
 ---@return vim.Diagnostic[]
 local function parse(output, context)
-  assert(type(context) == 'table', 'vacuum parser requires LintContext')
-  assert(type(context.bufnr) == 'number', 'vacuum parser requires context.bufnr')
-  if #output > MAX_OUTPUT_BYTES then
-    return {
-      status_diagnostic(context, 'output-limit', 'vacuum exceeded the 16 MiB parser limit; results are incomplete.'),
-    }
-  end
-  local text = vim.trim(output)
-  local ok, decoded = pcall(json.decode, text)
-  if not ok or type(decoded) ~= 'table' or text:sub(1, 1) ~= '[' or not vim.islist(decoded) then
-    return {
-      status_diagnostic(
-        context,
-        'invalid-report',
-        'vacuum returned no valid JSON report. Check document syntax, configuration, rulesets, reference resolution and the timeout.'
-      ),
-    }
-  end
-
-  ---@type vim.Diagnostic[]
-  local diagnostics = {}
-  local malformed = false
-  for index = 1, math.min(#decoded, MAX_DIAGNOSTICS) do
-    local finding = decoded[index]
-    if type(finding) ~= 'table' or string_value(finding.message) == nil then
-      malformed = true
-    elseif current_source(string_value(finding.source), context) then
-      local range = type(finding.range) == 'table' and finding.range or {}
-      local start = type(range.start) == 'table' and range.start or {}
-      local finish = type(range['end']) == 'table' and range['end'] or {}
-      local lnum = coordinate(start.line)
-      local col = byte_column(context.bufnr, lnum, coordinate(start.character))
-      local severity = SEVERITIES[finding.severity] or diagnostic.severity.WARN
-      local code = string_value(finding.code)
-      diagnostics[#diagnostics + 1] = {
-        bufnr = context.bufnr,
-        code = code and clean_message(code) or nil,
-        col = col,
-        end_col = col,
-        lnum = lnum,
-        end_lnum = lnum,
-        message = clean_message(finding.message),
-        severity = severity,
-        source = SOURCE,
-        user_data = {
-          path = report_path(finding.path),
-          report_source = string_value(finding.source),
-          report_end_line = coordinate(finish.line),
-          report_end_character = coordinate(finish.character),
-        },
-      }
+    assert(type(context) == 'table', 'vacuum parser requires LintContext')
+    assert(type(context.bufnr) == 'number', 'vacuum parser requires context.bufnr')
+    if #output > MAX_OUTPUT_BYTES then
+        return {
+            status_diagnostic(
+                context,
+                'output-limit',
+                'vacuum exceeded the 16 MiB parser limit; results are incomplete.'
+            ),
+        }
     end
-  end
-  if malformed then
-    diagnostics[#diagnostics + 1] = status_diagnostic(
-      context,
-      'malformed-result',
-      'Some vacuum findings could not be decoded; results are incomplete.'
-    )
-  end
-  if #decoded > MAX_DIAGNOSTICS then
-    diagnostics[#diagnostics + 1] = status_diagnostic(
-      context,
-      'result-limit',
-      'Only the first 512 vacuum report entries were processed; run the CLI for the complete report.'
-    )
-  end
-  return diagnostics
+    local text = vim.trim(output)
+    local ok, decoded = pcall(json.decode, text)
+    if not ok or type(decoded) ~= 'table' or text:sub(1, 1) ~= '[' or not vim.islist(decoded) then
+        return {
+            status_diagnostic(
+                context,
+                'invalid-report',
+                'vacuum returned no valid JSON report. Check document syntax, '
+                    .. 'configuration, rulesets, reference resolution and the timeout.'
+            ),
+        }
+    end
+
+    ---@type vim.Diagnostic[]
+    local diagnostics = {}
+    local malformed = false
+    for index = 1, math.min(#decoded, MAX_DIAGNOSTICS) do
+        local finding = decoded[index]
+        if type(finding) ~= 'table' or string_value(finding.message) == nil then
+            malformed = true
+        elseif current_source(string_value(finding.source), context) then
+            local range = type(finding.range) == 'table' and finding.range or {}
+            local start = type(range.start) == 'table' and range.start or {}
+            local finish = type(range['end']) == 'table' and range['end'] or {}
+            local lnum = coordinate(start.line)
+            local col = byte_column(context.bufnr, lnum, coordinate(start.character))
+            local severity = SEVERITIES[finding.severity] or diagnostic.severity.WARN
+            local code = string_value(finding.code)
+            diagnostics[#diagnostics + 1] = {
+                bufnr = context.bufnr,
+                code = code and clean_message(code) or nil,
+                col = col,
+                end_col = col,
+                lnum = lnum,
+                end_lnum = lnum,
+                message = clean_message(finding.message),
+                severity = severity,
+                source = SOURCE,
+                user_data = {
+                    path = report_path(finding.path),
+                    report_source = string_value(finding.source),
+                    report_end_line = coordinate(finish.line),
+                    report_end_character = coordinate(finish.character),
+                },
+            }
+        end
+    end
+    if malformed then
+        diagnostics[#diagnostics + 1] = status_diagnostic(
+            context,
+            'malformed-result',
+            'Some vacuum findings could not be decoded; results are incomplete.'
+        )
+    end
+    if #decoded > MAX_DIAGNOSTICS then
+        diagnostics[#diagnostics + 1] = status_diagnostic(
+            context,
+            'result-limit',
+            'Only the first 512 vacuum report entries were processed; run the CLI for the complete report.'
+        )
+    end
+    return diagnostics
 end
 
 ---@param context LintContext
 ---@return string[]
 local function arguments(context)
-  assert(type(context) == 'table', 'vacuum arguments require LintContext')
-  ---@type string[]
-  local args = {
-    'spectral-report',
-    '--stdin',
-    '--stdout',
-    '--no-pretty',
-    '--no-style',
-    '--no-update-check',
-    '--base',
-    reference_base(context),
-  }
-  local ruleset = string_value(vim.env.NVIM_VACUUM_RULESET)
-  if ruleset ~= nil then
-    args[#args + 1] = '--ruleset'
-    args[#args + 1] = ruleset
-  end
-  local ignore = string_value(vim.env.NVIM_VACUUM_IGNORE_FILE)
-  if ignore ~= nil then
-    args[#args + 1] = '--ignore-file'
-    args[#args + 1] = ignore
-  end
-  return args
+    assert(type(context) == 'table', 'vacuum arguments require LintContext')
+    ---@type string[]
+    local args = {
+        'spectral-report',
+        '--stdin',
+        '--stdout',
+        '--no-pretty',
+        '--no-style',
+        '--no-update-check',
+        '--base',
+        reference_base(context),
+    }
+    local ruleset = string_value(vim.env.NVIM_VACUUM_RULESET)
+    if ruleset ~= nil then
+        args[#args + 1] = '--ruleset'
+        args[#args + 1] = ruleset
+    end
+    local ignore = string_value(vim.env.NVIM_VACUUM_IGNORE_FILE)
+    if ignore ~= nil then
+        args[#args + 1] = '--ignore-file'
+        args[#args + 1] = ignore
+    end
+    return args
 end
 
 ---@type Linter
 return {
-  args = arguments,
-  append_fname = false,
-  automatic = true,
-  cmd = 'vacuum',
-  cwd = project_root,
-  ignore_exitcode = true,
-  parser = parse,
-  root_markers = ROOT_MARKERS,
-  stdin = true,
-  stream = 'stdout',
-  timeout = 60000,
+    args = arguments,
+    append_fname = false,
+    automatic = true,
+    cmd = 'vacuum',
+    cwd = project_root,
+    ignore_exitcode = true,
+    parser = parse,
+    root_markers = ROOT_MARKERS,
+    stdin = true,
+    stream = 'stdout',
+    timeout = 60000,
 }
-

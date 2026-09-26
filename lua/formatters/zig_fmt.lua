@@ -3,6 +3,8 @@
 -- Native zig fmt Formatter — Neovim 0.13+ / LuaJIT
 -- SPDX-License-Identifier: Apache-2.0
 -- #################################################################
+---@source https://ziglang.org/documentation/master/#zig-fmt
+
 ---
 --- Tiger Style note for Zig: `zig fmt --stdin` reads stdin and writes the
 --- formatted source to stdout. The built-in formatter is opinionated
@@ -12,21 +14,26 @@
 ---@param context FormatterContext
 ---@return string[]
 local function build_args(context)
-  if context.filetype ~= 'zig' then
-    error('zig_fmt requires the zig filetype')
-  end
+    if context.filetype ~= 'zig' then
+        error('zig_fmt requires the zig filetype')
+    end
 
-  return { 'fmt', '--stdin' }
+    return { 'fmt', '--stdin' }
 end
 
 ---@type FormatterSpec
 return {
-  cmd = 'zig',
-  args = build_args,
-  mode = 'stdin',
-  output = 'stdout',
-  root_markers = { 'build.zig', 'build.zig.zon', '.git' },
-  exit_codes = { 0 },
-  automatic = true,
-  allow_empty = false,
+    cmd = 'zig',
+    args = build_args,
+    mode = 'stdin',
+    output = 'stdout',
+    cwd = nil,
+    env = {},
+    root_markers = { 'build.zig', 'build.zig.zon', '.git' },
+    exit_codes = { 0 },
+    allow_empty = false,
+    automatic = true,
+    extension = nil,
+    decode = nil,
+    pre_transform = nil,
 }

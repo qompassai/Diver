@@ -28,258 +28,258 @@ local MAX_MESSAGE_BYTES = 4096
 local SOURCE = 'fennel-ls'
 
 local ROOT_MARKERS = {
-  'flsproject.fnl',
-  {
-    '.nfnl.fnl',
-    'fennel.lua',
-  },
-  {
-    'Makefile',
-    'justfile',
-  },
-  {
-    '.git',
-    '.hg',
-  },
+    'flsproject.fnl',
+    {
+        '.nfnl.fnl',
+        'fennel.lua',
+    },
+    {
+        'Makefile',
+        'justfile',
+    },
+    {
+        '.git',
+        '.hg',
+    },
 }
 
 ---@param value string
 ---@param limit integer
 ---@return string
 local function truncate(value, limit)
-  if #value <= limit then
-    return value
-  end
+    if #value <= limit then
+        return value
+    end
 
-  if limit <= 3 then
-    return value:sub(1, limit)
-  end
+    if limit <= 3 then
+        return value:sub(1, limit)
+    end
 
-  return value:sub(1, limit - 3) .. '...'
+    return value:sub(1, limit - 3) .. '...'
 end
 
 ---@param value string
 ---@return string
 local function compact(value)
-  return vim.trim(value:gsub('%s+', ' '))
+    return vim.trim(value:gsub('%s+', ' '))
 end
 
 ---@param severity integer?
 ---@return integer
 local function normalize_severity(severity)
-  if severity == nil then
-    return diagnostic.severity.WARN
-  end
+    if severity == nil then
+        return diagnostic.severity.WARN
+    end
 
-  if severity < diagnostic.severity.ERROR then
-    return diagnostic.severity.ERROR
-  end
+    if severity < diagnostic.severity.ERROR then
+        return diagnostic.severity.ERROR
+    end
 
-  if severity > diagnostic.severity.HINT then
-    return diagnostic.severity.HINT
-  end
+    if severity > diagnostic.severity.HINT then
+        return diagnostic.severity.HINT
+    end
 
-  return severity
+    return severity
 end
 
 local function diagnostics_handler(result, ctx)
-  if result == nil or type(result.diagnostics) ~= 'table' then
-    return
-  end
-
-  if #result.diagnostics > MAX_DIAGNOSTICS then
-    local limited = {}
-
-    for index = 1, MAX_DIAGNOSTICS do
-      limited[index] = result.diagnostics[index]
+    if result == nil or type(result.diagnostics) ~= 'table' then
+        return
     end
 
-    result.diagnostics = limited
-  end
+    if #result.diagnostics > MAX_DIAGNOSTICS then
+        local limited = {}
 
-  for _, item in ipairs(result.diagnostics) do
-    if type(item.message) == 'string' then
-      item.message = truncate(compact(item.message), MAX_MESSAGE_BYTES)
+        for index = 1, MAX_DIAGNOSTICS do
+            limited[index] = result.diagnostics[index]
+        end
+
+        result.diagnostics = limited
     end
 
-    item.severity = normalize_severity(item.severity)
+    for _, item in ipairs(result.diagnostics) do
+        if type(item.message) == 'string' then
+            item.message = truncate(compact(item.message), MAX_MESSAGE_BYTES)
+        end
 
-    if item.source == nil or item.source == '' then
-      item.source = SOURCE
+        item.severity = normalize_severity(item.severity)
+
+        if item.source == nil or item.source == '' then
+            item.source = SOURCE
+        end
     end
-  end
 
-  lsp.handlers['textDocument/publishDiagnostics'](nil, result, ctx)
+    lsp.handlers['textDocument/publishDiagnostics'](nil, result, ctx)
 end
 
 local capabilities = {
-  workspace = {
-    configuration = true,
+    workspace = {
+        configuration = true,
 
-    workspaceFolders = true,
-  },
+        workspaceFolders = true,
+    },
 
-  textDocument = {
-    completion = {
-      contextSupport = true,
+    textDocument = {
+        completion = {
+            contextSupport = true,
 
-      completionItem = {
-        commitCharactersSupport = true,
+            completionItem = {
+                commitCharactersSupport = true,
 
-        deprecatedSupport = true,
+                deprecatedSupport = true,
 
-        documentationFormat = {
-          'markdown',
-          'plaintext',
+                documentationFormat = {
+                    'markdown',
+                    'plaintext',
+                },
+
+                insertReplaceSupport = true,
+
+                insertTextModeSupport = {
+                    valueSet = {
+                        1,
+                        2,
+                    },
+                },
+
+                labelDetailsSupport = true,
+
+                preselectSupport = true,
+
+                resolveSupport = {
+                    properties = {
+                        'documentation',
+                        'detail',
+                        'additionalTextEdits',
+                    },
+                },
+
+                snippetSupport = true,
+
+                tagSupport = {
+                    valueSet = {
+                        1,
+                    },
+                },
+            },
         },
 
-        insertReplaceSupport = true,
-
-        insertTextModeSupport = {
-          valueSet = {
-            1,
-            2,
-          },
+        definition = {
+            linkSupport = true,
         },
 
-        labelDetailsSupport = true,
+        diagnostic = {
+            dynamicRegistration = false,
 
-        preselectSupport = true,
-
-        resolveSupport = {
-          properties = {
-            'documentation',
-            'detail',
-            'additionalTextEdits',
-          },
+            relatedDocumentSupport = true,
         },
 
-        snippetSupport = true,
+        documentSymbol = {
+            hierarchicalDocumentSymbolSupport = true,
 
-        tagSupport = {
-          valueSet = {
-            1,
-          },
+            labelSupport = true,
+
+            symbolKind = {
+                valueSet = {
+                    1,
+                    2,
+                    3,
+                    4,
+                    5,
+                    6,
+                    7,
+                    8,
+                    9,
+                    10,
+                    11,
+                    12,
+                    13,
+                    14,
+                    15,
+                    16,
+                    17,
+                    18,
+                    19,
+                    20,
+                    21,
+                    22,
+                    23,
+                    24,
+                    25,
+                    26,
+                },
+            },
         },
-      },
-    },
 
-    definition = {
-      linkSupport = true,
-    },
-
-    diagnostic = {
-      dynamicRegistration = false,
-
-      relatedDocumentSupport = true,
-    },
-
-    documentSymbol = {
-      hierarchicalDocumentSymbolSupport = true,
-
-      labelSupport = true,
-
-      symbolKind = {
-        valueSet = {
-          1,
-          2,
-          3,
-          4,
-          5,
-          6,
-          7,
-          8,
-          9,
-          10,
-          11,
-          12,
-          13,
-          14,
-          15,
-          16,
-          17,
-          18,
-          19,
-          20,
-          21,
-          22,
-          23,
-          24,
-          25,
-          26,
+        hover = {
+            contentFormat = {
+                'markdown',
+                'plaintext',
+            },
         },
-      },
-    },
 
-    hover = {
-      contentFormat = {
-        'markdown',
-        'plaintext',
-      },
-    },
+        publishDiagnostics = {
+            codeDescriptionSupport = true,
 
-    publishDiagnostics = {
-      codeDescriptionSupport = true,
+            dataSupport = true,
 
-      dataSupport = true,
+            relatedInformation = true,
 
-      relatedInformation = true,
+            tagSupport = {
+                valueSet = {
+                    1,
+                    2,
+                },
+            },
 
-      tagSupport = {
-        valueSet = {
-          1,
-          2,
+            versionSupport = true,
         },
-      },
 
-      versionSupport = true,
+        references = {
+            dynamicRegistration = false,
+        },
+
+        rename = {
+            dynamicRegistration = false,
+
+            prepareSupport = true,
+        },
+
+        synchronization = {
+            didSave = true,
+
+            dynamicRegistration = false,
+
+            willSave = false,
+
+            willSaveWaitUntil = false,
+        },
     },
-
-    references = {
-      dynamicRegistration = false,
-    },
-
-    rename = {
-      dynamicRegistration = false,
-
-      prepareSupport = true,
-    },
-
-    synchronization = {
-      didSave = true,
-
-      dynamicRegistration = false,
-
-      willSave = false,
-
-      willSaveWaitUntil = false,
-    },
-  },
 }
 
 ---@type vim.lsp.Config
 return {
-  cmd = {
-    'fennel-ls',
-  },
+    cmd = {
+        'fennel-ls',
+    },
 
-  filetypes = {
-    'fennel',
-  },
+    filetypes = {
+        'fennel',
+    },
 
-  root_markers = ROOT_MARKERS,
+    root_markers = ROOT_MARKERS,
 
-  single_file_support = true,
+    single_file_support = true,
 
-  capabilities = capabilities,
+    capabilities = capabilities,
 
-  flags = {
-    debounce_text_changes = 150,
-  },
+    flags = {
+        debounce_text_changes = 150,
+    },
 
-  handlers = {
-    ['textDocument/publishDiagnostics'] = diagnostics_handler,
-  },
+    handlers = {
+        ['textDocument/publishDiagnostics'] = diagnostics_handler,
+    },
 
-  settings = {},
+    settings = {},
 }

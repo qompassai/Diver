@@ -9,8 +9,8 @@ require('utils.ux.nb')
 require('utils.ux.ui')
 require('utils.ux.w3m')
 function M.setup(opts)
-  opts = opts or {}
-  M.ui.setup(opts.ui or {})
+    opts = opts or {}
+    M.ui.setup(opts.ui or {})
 end
 
 return M

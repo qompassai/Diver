@@ -1,3 +1,9 @@
+--- Media encoder option types — type-checker dictionary (never runs).
+---
+--- Plain-language version: this file never runs -- Neovim never loads it at startup. It is a dictionary of shapes
+--- (type annotations) for the lua-language-server type checker, so the editor can offer completions and catch
+--- mistakes while you edit. Think of it as the answer key the teacher uses, not a lesson.
+---@module 'types.utils.media.encoder'
 -- /qompassai/Diver/lua/types/utils/encoder.lua
 -- Qompass AI - [ ]
 -- Copyright (C) 2026 Qompass AI, All rights reserved
@@ -18,42 +24,21 @@
 ---@field write_frame                                      fun(self: media.Encoder, rgb_data: any): boolean
 ---@field close                                            fun(self: media.Encoder)
 ---@class                    media.EncoderModule
----@field create                                           fun(width: integer, height: integer, fps: integer, output: string): media.Encoder|nil
----@class                    media.encoder.FFmpeg          :media.Encoder
----@field handle?                                          uv.uv_process_t
----@field stdin?                                           uv.uv_pipe_t
+---@field create fun(width: integer, height: integer, fps: integer, output: string ): media.Encoder|nil
 ---@class media.encoder.Raw                                :                 media.Encoder
 ---@field file                                             integer?
----@class media.encoder.X264:                              media.Encoder
----@field lib                                              any
----@field pts                                              integer
----@field handle                                           integer
----@field pic_in                                           any
----@field pic_in_buf                                       any
----@field param                                            any
----@field param_buf                                        any
----@field file                                             integer
 ---@class media.FontModule
 ---@field render_char                                      fun(char: string): media.Glyph|nil
 ---@type media.FontModule
 ---@class media.FontState
----@field lib                                              ffi.cdata*?
----@field face                                             ffi.cdata*? FreeType face handle
 ---@field char__pixel_width                                integer
 ---@field char_pixel_height                                integer
 ---@type media.FontState
----@class media.Highlight
----@field foreground?                                      integer
----@field background?                                      integer
 ---@class media.FrameCell
 ---@field [1]                                              string
 ---@field [2]                                              media.Highlight
 ---@class media.FrameCellRow
 ---@field [integer]                                        media.FrameCell|nil
----@class media.FrameData
----@field width                                            integer
----@field height                                           integer
----@field cells                                            media.FrameCellRow[]
 ---@class media.GlyphRow
 ---@field [integer]                                        integer
 ---@class media.Glyph
@@ -62,18 +47,9 @@
 ---@field height                                           integer
 ---@field top                                              integer
 ---@field left                                             integer
----@class media.Options
----@field address                                          string
----@field char_width                                       integer
----@field char_height                                      integer
----@field fps                                              integer
----@field output                                           string
----@field use_fontrend                                         boolean
----@field font_path                                        string
----@field kind                                             'ffmpeg'|'x264'|'raw'
 ---@class media.RenderModule
----@field font                                             fun(frame: media.FrameData, char_w: integer, char_h: integer): any
----@field pixel                                            fun(frame: media.FrameData, char_w: integer, char_h: integer): any
+---@field font fun(frame: media.FrameData, char_w: integer, char_h: integer ): any
+---@field pixel fun(frame: media.FrameData, char_w: integer, char_h: integer ): any
 ---@type                                      any
 ---@type                                      integer
 ---@return integer                                         size
@@ -103,28 +79,19 @@
 ---@class media.Thread                                     :                      uv.luv_thread_t
 ---@field thread                                           userdata
 ---@field writer                                           userdata
----@class media.State
----@field dispose?                                         fun()
----@field output?                                          string
----@class (exact)                                          media.Options
----@field fps                                              integer
----@field output                                           string
----@field char_pixel_width                                 integer
----@field char_pixel_height                                integer
----@field use_fontrender                                   boolean
----@field font_path                                        string
----@field address                                          string
----@field encoderkind                                      'ffmpeg'|'x264'|'raw'
 ---@type media.Options
 ---@return string?                                         output
 ---@class media.encoder.FFmpeg                             :              media.Encoder
 ---@class uv
----@field spawn                                            fun(path: string, options: uv.spawn.options, on_exit: fun(code: integer, signal: integer)): uv.uv_process_t|nil, string?
+---@field spawn fun(
+---  path: string,
+---  options: uv.spawn.options,
+---  on_exit: fun(code: integer, signal: integer)
+---): uv.uv_process_t|nil, string?
 ---@field new_pipe                                         fun(ipc: boolean): uv.uv_pipe_t
 ---@type uv
 uv = uv
 ---@class uv.uv_pipe_t
-local _uv_pipe_t = {}
 ---@class uv.uv_stdio_t
 ---@field data                                             any
 ---@field flags                                            integer
@@ -132,16 +99,4 @@ local _uv_pipe_t = {}
 ---@field data                                             any
 ---@field flags                                            integer
 ---@class uv.uv_process_t
-local _uv_process_t2 = {}
----@class uv.spawn.options
----@field args?                                            string[]
----@field stdio?                                           uv.uv_stdio_t[]
----@field env?                                             string[]
----@field cwd?                                             string
----@field uid?                                             integer
----@field gid?                                             integer
----@field verbatim?                                        boolean
----@field detached?                                        boolean
----@field hide?                                            boolean
 ---@class uv.uv_process_t
-local _uv_process_t = {}

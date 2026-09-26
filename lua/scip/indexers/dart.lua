@@ -23,25 +23,25 @@
 ---
 ---@type string[]
 local args = {
-  'pub',
-  'global',
-  'run',
-  'scip_dart',
-  '.',
+    'pub',
+    'global',
+    'run',
+    'scip_dart',
+    '.',
 }
 
 ---@type ScipIndexer
 local indexer = {
-  args = args,
-  command = 'dart',
-  filetypes = {
-    dart = true,
-  },
-  markers = {
-    '.git',
-    'analysis_options.yaml',
-    'pubspec.yaml',
-  },
+    args = args,
+    command = 'dart',
+    filetypes = {
+        dart = true,
+    },
+    markers = {
+        '.git',
+        'analysis_options.yaml',
+        'pubspec.yaml',
+    },
 }
 
 return indexer

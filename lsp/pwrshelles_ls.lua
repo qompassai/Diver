@@ -1,3 +1,11 @@
+--- PowerShellEditorServices language-server config — starts the PowerShell scripts tutor.
+---
+--- Plain-language version: a language server is a helper program that reads your code and tells Neovim about
+--- errors, completions, and definitions -- like a tutor looking over your shoulder. This file is the introduction
+--- card that tells Neovim how to start the `PowerShellEditorServices` tutor whenever you open PowerShell scripts.
+--- It only takes effect if `PowerShellEditorServices` is installed on your computer. It is launched through pwsh
+--- with the editor-services module.
+---@module 'lsp.pwrshelles_ls'
 -- /qompassai/Diver/lsp/powershell_es.lua
 -- Qompass AI PowerShell LSP Spec
 -- Copyright (C) 2026 Qompass AI, All rights reserved
@@ -101,7 +109,8 @@ return ---@type vim.lsp.Config
         '-NoProfile',
         '-Command',
         string.format(
-            [[& '%s' -BundledModulesPath '%s' -LogLevel Normal -HostName 'Neovim' -HostProfileId 'Neovim' -HostVersion '0.12.0' -SessionDetailsPath '%s' -Stdio]],
+            [[& '%s' -BundledModulesPath '%s' -LogLevel Normal -HostName 'Neovim' -HostProfileId 'Neovim']]
+                .. [[ -HostVersion '0.12.0' -SessionDetailsPath '%s' -Stdio]],
             start_script,
             bundle_path,
             session_path

@@ -5,31 +5,31 @@
 ---@source  https://github.com/modularml/mojo
 return ---@type vim.lsp.Config
 {
-  cmd = {
-    'mojo-lsp-server',
-    '--log=info',
-    -- '--pretty',
-    --  '--attach-debugger-on-startup',
-  },
-  cmd_env = {
-    CONDA_PREFIX = vim.fn.expand('~/.local/share/mojo/.pixi/envs/default'),
-    MOJO_STDLIB_PATH = vim.fn.expand('~/.local/share/mojo/.pixi/envs/default/lib/mojo'),
-  },
-  filetypes = {
-    'mojo',
-  },
-  root_markers = {
-    {
-      'pixi.toml',
-      'pixi.lock',
+    cmd = {
+        'mojo-lsp-server',
+        '--log=info',
+        -- '--pretty',
+        --  '--attach-debugger-on-startup',
     },
-    {
-      '.git',
+    cmd_env = {
+        CONDA_PREFIX = vim.fn.expand('~/.local/share/mojo/.pixi/envs/default'),
+        MOJO_STDLIB_PATH = vim.fn.expand('~/.local/share/mojo/.pixi/envs/default/lib/mojo'),
     },
-  },
-  settings = {
-    mojo = {
-      stdlib_path = vim.fn.expand('~/.local/share/mojo/.pixi/envs/default/lib/mojo'),
+    filetypes = {
+        'mojo',
     },
-  },
+    root_markers = {
+        {
+            'pixi.toml',
+            'pixi.lock',
+        },
+        {
+            '.git',
+        },
+    },
+    settings = {
+        mojo = {
+            stdlib_path = vim.fn.expand('~/.local/share/mojo/.pixi/envs/default/lib/mojo'),
+        },
+    },
 }

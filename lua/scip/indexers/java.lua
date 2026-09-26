@@ -25,9 +25,7 @@ local utils = require('scip.utils')
 ---@param name string Relative path.
 ---@return boolean
 local function has(root, name)
-        return utils.path_exists(
-                fs.joinpath(root, name)
-        )
+    return utils.path_exists(fs.joinpath(root, name))
 end
 
 ---Detect the JVM project's build tool.
@@ -39,28 +37,25 @@ end
 ---@param root string Project root.
 ---@return 'gradle'|'maven'|'sbt'|nil
 local function build_tool(root)
-        if
-                has(root, 'build.gradle')
-                or has(root, 'build.gradle.kts')
-                or has(root, 'gradlew')
-                or has(root, 'settings.gradle')
-                or has(root, 'settings.gradle.kts')
-        then
-                return 'gradle'
-        end
+    if
+        has(root, 'build.gradle')
+        or has(root, 'build.gradle.kts')
+        or has(root, 'gradlew')
+        or has(root, 'settings.gradle')
+        or has(root, 'settings.gradle.kts')
+    then
+        return 'gradle'
+    end
 
-        if has(root, 'pom.xml') then
-                return 'maven'
-        end
+    if has(root, 'pom.xml') then
+        return 'maven'
+    end
 
-        if
-                has(root, 'build.sbt')
-                or has(root, 'project/build.properties')
-        then
-                return 'sbt'
-        end
+    if has(root, 'build.sbt') or has(root, 'project/build.properties') then
+        return 'sbt'
+    end
 
-        return nil
+    return nil
 end
 
 ---Build arguments for scip-java.
@@ -72,42 +67,42 @@ end
 ---@param context ScipContext SCIP indexing context.
 ---@return string[] args Arguments passed to scip-java.
 local function args(context)
-        local arguments = {
-                'index',
-        }
+    local arguments = {
+        'index',
+    }
 
-        local tool = build_tool(context.root)
+    local tool = build_tool(context.root)
 
-        if tool ~= nil then
-                arguments[#arguments + 1] = '--build-tool=' .. tool
-        end
+    if tool ~= nil then
+        arguments[#arguments + 1] = '--build-tool=' .. tool
+    end
 
-        return arguments
+    return arguments
 end
 
 ---@type ScipIndexer
 local indexer = {
-        args = args,
+    args = args,
 
-        command = 'scip-java',
+    command = 'scip-java',
 
-        filetypes = {
-                java = true,
-                kotlin = true,
-                scala = true,
-                sbt = true,
-        },
+    filetypes = {
+        java = true,
+        kotlin = true,
+        scala = true,
+        sbt = true,
+    },
 
-        markers = {
-                '.git',
-                'build.gradle',
-                'build.gradle.kts',
-                'build.sbt',
-                'gradlew',
-                'pom.xml',
-                'settings.gradle',
-                'settings.gradle.kts',
-        },
+    markers = {
+        '.git',
+        'build.gradle',
+        'build.gradle.kts',
+        'build.sbt',
+        'gradlew',
+        'pom.xml',
+        'settings.gradle',
+        'settings.gradle.kts',
+    },
 }
 
 return indexer

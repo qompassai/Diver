@@ -220,7 +220,7 @@ usercmd('ScalaRun', function()
         cmd('terminal mill __.run')
     else
         local current_file = fn.expand('%:p')
-        cmd('terminal scala ' .. current_file)
+        cmd('terminal scala ' .. fn.shellescape(current_file))
     end
 end, {})
 usercmd('ScalaTest', function(opts)
@@ -390,7 +390,7 @@ end, {})
 usercmd('ScalaMetalsBuild', function()
     local clients = vim.lsp.get_clients({ name = 'metals', bufnr = 0 })
     if clients[1] then
-        clients[1]:exec_cmd({ command = 'metals.build-import' })
+        clients[1]:exec_cmd({ title = 'Build import', command = 'metals.build-import' })
     else
         notify('Metals client not found', ERROR)
     end
@@ -398,7 +398,7 @@ end, {})
 usercmd('ScalaMetalsConnect', function()
     local clients = vim.lsp.get_clients({ name = 'metals', bufnr = 0 })
     if clients[1] then
-        clients[1]:exec_cmd({ command = 'metals.build-connect' })
+        clients[1]:exec_cmd({ title = 'Build connect', command = 'metals.build-connect' })
     else
         notify('Metals client not found', ERROR)
     end

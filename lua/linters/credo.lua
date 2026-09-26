@@ -29,204 +29,193 @@ local LINE_LENGTH_MAX = 16384
 
 ---@type table<string, integer>
 local severities = {
-        ['↑'] = ERROR,
-        ['↗'] = WARN,
-        ['→'] = INFO,
-        ['↘'] = HINT,
-        ['↓'] = HINT,
+    ['↑'] = ERROR,
+    ['↗'] = WARN,
+    ['→'] = INFO,
+    ['↘'] = HINT,
+    ['↓'] = HINT,
 }
 
 ---@param value string|number|nil
 ---@param fallback integer
 ---@return integer
 local function integer(value, fallback)
-        assert(fallback >= 0)
+    assert(fallback >= 0)
 
-        local parsed = tonumber(value)
-        if parsed == nil then
-                return fallback
-        end
+    local parsed = tonumber(value)
+    if parsed == nil then
+        return fallback
+    end
 
-        return math.floor(parsed)
+    return math.floor(parsed)
 end
 
 ---@param path string
----@param filename string
----@param root string
 ---@return boolean
+local function is_absolute(path)
+    assert(type(path) == 'string')
+    assert(path ~= '')
+
+    return vim.fn.isabsolutepath(path) == 1
+end
+
 local function belongs_to_buffer(path, filename, root)
-        assert(path ~= '')
-        assert(filename ~= '')
-        assert(root ~= '')
+    assert(path ~= '')
+    assert(filename ~= '')
+    assert(root ~= '')
 
-        local candidate
+    local candidate
 
-        if fs.is_absolute(path) then
-                candidate = fs.normalize(path)
-        else
-                candidate = fs.normalize(fs.joinpath(root, path))
-        end
+    if is_absolute(path) then
+        candidate = fs.normalize(path)
+    else
+        candidate = fs.normalize(fs.joinpath(root, path))
+    end
 
-        return candidate == filename
+    return candidate == filename
 end
 
 ---@param line string
 ---@return string?, integer?, integer?, integer?, string?
 local function parse_line(line)
-        assert(#line <= LINE_LENGTH_MAX)
+    assert(#line <= LINE_LENGTH_MAX)
 
-        --
-        -- Credo --format=oneline:
-        --
-        --   [C] ↗ lib/foo.ex:12:7 Prefer ...
-        --
-        -- Upstream nvim-lint uses:
-        --
-        --   %[%a%]%s+(.+)%s+[^:]+:(%d+):?(%d*)%s+(.*)
-        --
-        -- We also capture the filename so diagnostics can be restricted
-        -- deterministically to the buffer being linted.
-        --
-        local arrow
-        local path
-        local line_number
-        local column_number
-        local message
+    --
+    -- Credo --format=oneline:
+    --
+    --   [C] ↗ lib/foo.ex:12:7 Prefer ...
+    --
+    -- Upstream nvim-lint uses:
+    --
+    --   %[%a%]%s+(.+)%s+[^:]+:(%d+):?(%d*)%s+(.*)
+    --
+    -- We also capture the filename so diagnostics can be restricted
+    -- deterministically to the buffer being linted.
+    --
+    local arrow
+    local path
+    local line_number
+    local column_number
+    local message
 
-        arrow, path, line_number, column_number, message =
-                line:match(
-                        '^%[%a%]%s+([↑↗→↘↓])%s+(.+):(%d+):?(%d*)%s+(.+)$'
-                )
+    arrow, path, line_number, column_number, message =
+        line:match('^%[%a%]%s+([↑↗→↘↓])%s+(.+):(%d+):?(%d*)%s+(.+)$')
 
-        if arrow == nil then
-                return nil
-        end
+    if arrow == nil then
+        return nil
+    end
 
-        local level = severities[arrow]
-        if level == nil then
-                return nil
-        end
+    local level = severities[arrow]
+    if level == nil then
+        return nil
+    end
 
-        return path,
-                integer(line_number, 1),
-                integer(column_number, 1),
-                level,
-                message
+    return path, integer(line_number, 1), integer(column_number, 1), level, message
 end
 
 ---@param output string
 ---@param context LintContext|integer
 ---@return vim.Diagnostic.Set[]
 local function parse(output, context)
-        if output == '' then
-                return {}
+    if output == '' then
+        return {}
+    end
+
+    assert(type(context) == 'table', 'credo parser requires a LintContext')
+
+    ---@cast context LintContext
+
+    assert(context.filename ~= '')
+    assert(context.root ~= '')
+
+    local filename = fs.normalize(context.filename)
+    local root = context.root
+
+    ---@type vim.Diagnostic.Set[]
+    local diagnostics = {}
+    local diagnostics_count = 0
+
+    for line in output:gmatch('[^\r\n]+') do
+        if diagnostics_count >= DIAGNOSTICS_MAX then
+            break
         end
 
-        assert(
-                type(context) == 'table',
-                'credo parser requires a LintContext'
-        )
+        if #line <= LINE_LENGTH_MAX then
+            local path
+            local line_number
+            local column_number
+            local level
+            local message
 
-        ---@cast context LintContext
+            path, line_number, column_number, level, message = parse_line(line)
 
-        assert(context.filename ~= '')
-        assert(context.root ~= '')
+            if path ~= nil and belongs_to_buffer(path, filename, root) then
+                assert(line_number ~= nil)
+                assert(column_number ~= nil)
+                assert(level ~= nil)
+                assert(message ~= nil)
 
-        local filename = fs.normalize(context.filename)
-        local root = context.root
+                local row = math.max(line_number - 1, 0)
+                local column = math.max(column_number - 1, 0)
 
-        ---@type vim.Diagnostic.Set[]
-        local diagnostics = {}
-        local diagnostics_count = 0
+                diagnostics_count = diagnostics_count + 1
 
-        for line in output:gmatch('[^\r\n]+') do
-                if diagnostics_count >= DIAGNOSTICS_MAX then
-                        break
-                end
-
-                if #line <= LINE_LENGTH_MAX then
-                        local path
-                        local line_number
-                        local column_number
-                        local level
-                        local message
-
-                        path,
-                        line_number,
-                        column_number,
-                        level,
-                        message = parse_line(line)
-
-                        if
-                                path ~= nil
-                                and belongs_to_buffer(path, filename, root)
-                        then
-                                assert(line_number ~= nil)
-                                assert(column_number ~= nil)
-                                assert(level ~= nil)
-                                assert(message ~= nil)
-
-                                local row = math.max(line_number - 1, 0)
-                                local column = math.max(column_number - 1, 0)
-
-                                diagnostics_count = diagnostics_count + 1
-
-                                diagnostics[diagnostics_count] = {
-                                        lnum = row,
-                                        end_lnum = row,
-                                        col = column,
-                                        end_col = column + 1,
-                                        message = message,
-                                        severity = level,
-                                        source = 'credo',
-                                }
-                        end
-                end
+                diagnostics[diagnostics_count] = {
+                    lnum = row,
+                    end_lnum = row,
+                    col = column,
+                    end_col = column + 1,
+                    message = message,
+                    severity = level,
+                    source = 'credo',
+                }
+            end
         end
+    end
 
-        assert(diagnostics_count <= DIAGNOSTICS_MAX)
-        assert(diagnostics_count == #diagnostics)
+    assert(diagnostics_count <= DIAGNOSTICS_MAX)
+    assert(diagnostics_count == #diagnostics)
 
-        return diagnostics
+    return diagnostics
 end
 
 return ---@type Linter
 {
-        automatic = false,
+    automatic = false,
 
-        cmd = 'mix',
+    cmd = 'mix',
 
-        args = function(context)
-                assert(context.filename ~= '')
+    args = function(context)
+        assert(context.filename ~= '')
 
-                return {
-                        'credo',
-                        'list',
-                        context.filename,
-                        '--read-from-stdin',
-                        '--strict',
-                        '--format=oneline',
-                }
-        end,
+        return {
+            'credo',
+            'list',
+            context.filename,
+            '--read-from-stdin',
+            '--strict',
+            '--format=oneline',
+        }
+    end,
 
-        append_fname = false,
+    append_fname = false,
 
-        cwd = function(context)
-                assert(context.root ~= '')
-                return context.root
-        end,
+    cwd = function(context)
+        assert(context.root ~= '')
+        return context.root
+    end,
 
-        ignore_exitcode = true,
+    ignore_exitcode = true,
 
-        parser = parse,
+    parser = parse,
 
-        root_markers = {
-                '.credo.exs',
-                'mix.exs',
-                '.git',
-        },
+    root_markers = {
+        '.credo.exs',
+        'mix.exs',
+        '.git',
+    },
 
-        stdin = true,
-        stream = 'stdout',
-        timeout = 30000,
+    stdin = true,
+    stream = 'stdout',
+    timeout = 30000,
 }

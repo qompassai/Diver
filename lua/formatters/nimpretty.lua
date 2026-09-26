@@ -16,25 +16,30 @@ local NIMPRETTY_INDENT = 4
 ---@param context FormatterContext
 ---@return string[]
 local function build_args(context)
-  if context.filetype ~= 'nim' then
-    error('nimpretty requires the nim filetype')
-  end
+    if context.filetype ~= 'nim' then
+        error('nimpretty requires the nim filetype')
+    end
 
-  return {
-    '--stdin',
-    '--indent:' .. tostring(NIMPRETTY_INDENT),
-    '--maxLineLen:' .. tostring(NIMPRETTY_WIDTH),
-  }
+    return {
+        '--stdin',
+        '--indent:' .. tostring(NIMPRETTY_INDENT),
+        '--maxLineLen:' .. tostring(NIMPRETTY_WIDTH),
+    }
 end
 
 ---@type FormatterSpec
 return {
-  cmd = 'nimpretty',
-  args = build_args,
-  mode = 'stdin',
-  output = 'stdout',
-  root_markers = { '.git' },
-  exit_codes = { 0 },
-  automatic = true,
-  allow_empty = false,
+    cmd = 'nimpretty',
+    args = build_args,
+    mode = 'stdin',
+    output = 'stdout',
+    cwd = nil,
+    env = {},
+    root_markers = { '.git' },
+    exit_codes = { 0 },
+    allow_empty = false,
+    automatic = true,
+    extension = nil,
+    decode = nil,
+    pre_transform = nil,
 }

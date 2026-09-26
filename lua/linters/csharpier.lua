@@ -38,37 +38,37 @@ local uv = vim.uv
 
 ---@type table<string, integer>
 local severities = {
-        error = diagnostic.severity.ERROR,
-        information = diagnostic.severity.INFO,
-        info = diagnostic.severity.INFO,
-        warning = diagnostic.severity.WARN,
-        warn = diagnostic.severity.WARN,
+    error = diagnostic.severity.ERROR,
+    information = diagnostic.severity.INFO,
+    info = diagnostic.severity.INFO,
+    warning = diagnostic.severity.WARN,
+    warn = diagnostic.severity.WARN,
 }
 
 ---@type string[]
 local root_markers = {
-        '.config/dotnet-tools.json',
-        '.csharpierrc',
-        '.editorconfig',
-        '.git',
-        'Directory.Build.props',
-        'Directory.Build.targets',
-        'Directory.Packages.props',
-        'global.json',
+    '.config/dotnet-tools.json',
+    '.csharpierrc',
+    '.editorconfig',
+    '.git',
+    'Directory.Build.props',
+    'Directory.Build.targets',
+    'Directory.Packages.props',
+    'global.json',
 }
 
 ---Return whether a path exists.
 ---@param path string
 ---@return boolean
 local function exists(path)
-        return uv.fs_stat(path) ~= nil
+    return uv.fs_stat(path) ~= nil
 end
 
 ---Normalize a path for comparison.
 ---@param path string
 ---@return string
 local function normalize(path)
-        return fs.normalize(path)
+    return fs.normalize(path)
 end
 
 ---Resolve a relative path against the linter root.
@@ -76,13 +76,11 @@ end
 ---@param root string
 ---@return string
 local function absolute(path, root)
-        if path:sub(1, 1) == '/' then
-                return normalize(path)
-        end
+    if path:sub(1, 1) == '/' then
+        return normalize(path)
+    end
 
-        return normalize(
-                fs.joinpath(root, path)
-        )
+    return normalize(fs.joinpath(root, path))
 end
 
 ---Strip surrounding whitespace and ANSI terminal escape sequences.
@@ -93,9 +91,9 @@ end
 ---@param value string
 ---@return string
 local function clean(value)
-        value = value:gsub('\27%[[%d;]*m', '')
+    value = value:gsub('\27%[[%d;]*m', '')
 
-        return vim.trim(value)
+    return vim.trim(value)
 end
 
 ---Parse one CSharpier status line.
@@ -111,27 +109,25 @@ end
 ---@param line string
 ---@return CSharpierCheck?
 local function parse_status(line)
-        line = clean(line)
+    line = clean(line)
 
-        local level, file, message = line:match(
-                '^([%a]+)%s+(.+)%s+%-%s+(.+)$'
-        )
+    local level, file, message = line:match('^([%a]+)%s+(.+)%s+%-%s+(.+)$')
 
-        if level == nil or message == nil then
-                return nil
-        end
+    if level == nil or message == nil then
+        return nil
+    end
 
-        local severity_name = level:lower()
+    local severity_name = level:lower()
 
-        if severities[severity_name] == nil then
-                return nil
-        end
+    if severities[severity_name] == nil then
+        return nil
+    end
 
-        return {
-                file = clean(file or ''),
-                message = clean(message),
-                severity = severities[severity_name],
-        }
+    return {
+        file = clean(file or ''),
+        message = clean(message),
+        severity = severities[severity_name],
+    }
 end
 
 ---Parse CSharpier's check output into native Neovim diagnostics.
@@ -148,53 +144,48 @@ end
 ---@param context LintContext
 ---@return vim.Diagnostic.Set[]
 local function parse(output, context)
-        if vim.trim(output) == '' then
-                return {}
+    if vim.trim(output) == '' then
+        return {}
+    end
+
+    local diagnostics = {}
+
+    for line in
+        vim.gsplit(output, '\n', {
+            plain = true,
+            trimempty = true,
+        })
+    do
+        local result = parse_status(line)
+
+        if result ~= nil then
+            local diagnostic_file
+
+            if result.file ~= nil and result.file ~= '' then
+                diagnostic_file = absolute(result.file, context.root)
+            end
+
+            -- When linting one file, ignore status lines that clearly
+            -- belong to some other source file.
+            if diagnostic_file == nil or normalize(diagnostic_file) == normalize(context.filename) then
+                diagnostics[#diagnostics + 1] = {
+                    code = 'CSHARPIER',
+                    col = 0,
+                    end_col = 1,
+                    end_lnum = 0,
+                    lnum = 0,
+                    message = result.message,
+                    severity = result.severity,
+                    source = 'csharpier',
+                    user_data = {
+                        filename = diagnostic_file,
+                    },
+                }
+            end
         end
+    end
 
-        local diagnostics = {}
-
-        for line in vim.gsplit(output, '\n', {
-                plain = true,
-                trimempty = true,
-        }) do
-                local result = parse_status(line)
-
-                if result ~= nil then
-                        local diagnostic_file
-
-                        if result.file ~= nil and result.file ~= '' then
-                                diagnostic_file = absolute(
-                                        result.file,
-                                        context.root
-                                )
-                        end
-
-                        -- When linting one file, ignore status lines that clearly
-                        -- belong to some other source file.
-                        if
-                                diagnostic_file == nil
-                                or normalize(diagnostic_file)
-                                        == normalize(context.filename)
-                        then
-                                diagnostics[#diagnostics + 1] = {
-                                        code = 'CSHARPIER',
-                                        col = 0,
-                                        end_col = 1,
-                                        end_lnum = 0,
-                                        lnum = 0,
-                                        message = result.message,
-                                        severity = result.severity,
-                                        source = 'csharpier',
-                                        user_data = {
-                                                filename = diagnostic_file,
-                                        },
-                                }
-                        end
-                end
-        end
-
-        return diagnostics
+    return diagnostics
 end
 
 ---Determine whether the project uses a local dotnet tool manifest.
@@ -206,13 +197,7 @@ end
 ---@param root string
 ---@return boolean
 local function has_tool_manifest(root)
-        return exists(
-                fs.joinpath(
-                        root,
-                        '.config',
-                        'dotnet-tools.json'
-                )
-        )
+    return exists(fs.joinpath(root, '.config', 'dotnet-tools.json'))
 end
 
 ---Resolve the CSharpier command.
@@ -228,11 +213,11 @@ end
 ---@param context LintContext
 ---@return string
 local function command(context)
-        if has_tool_manifest(context.root) then
-                return 'dotnet'
-        end
+    if has_tool_manifest(context.root) then
+        return 'dotnet'
+    end
 
-        return 'csharpier'
+    return 'csharpier'
 end
 
 ---Build CSharpier arguments for the current file.
@@ -255,24 +240,24 @@ end
 ---@param context LintContext
 ---@return string[]
 local function args(context)
-        local arguments = {}
+    local arguments = {}
 
-        if has_tool_manifest(context.root) then
-                vim.list_extend(arguments, {
-                        'tool',
-                        'run',
-                        'csharpier',
-                        '--',
-                })
-        end
-
+    if has_tool_manifest(context.root) then
         vim.list_extend(arguments, {
-                'check',
-                '--use-cache',
-                context.filename,
+            'tool',
+            'run',
+            'csharpier',
+            '--',
         })
+    end
 
-        return arguments
+    vim.list_extend(arguments, {
+        'check',
+        '--use-cache',
+        context.filename,
+    })
+
+    return arguments
 end
 
 ---Run CSharpier from the detected project root.
@@ -282,37 +267,37 @@ end
 ---@param context LintContext
 ---@return string
 local function cwd(context)
-        return context.root
+    return context.root
 end
 
 return ---@type Linter
 {
-        append_fname = false,
+    append_fname = false,
 
-        args = args,
+    args = args,
 
-        cmd = command,
+    cmd = command,
 
-        cwd = cwd,
+    cwd = cwd,
 
-        -- 0: all checked files are formatted.
-        -- 1: one or more files require formatting.
-        --
-        -- Exit code 1 is therefore valid diagnostic output rather than a
-        -- linter process failure.
-        exit_codes = {
-                [0] = true,
-                [1] = true,
-        },
+    -- 0: all checked files are formatted.
+    -- 1: one or more files require formatting.
+    --
+    -- Exit code 1 is therefore valid diagnostic output rather than a
+    -- linter process failure.
+    exit_codes = {
+        [0] = true,
+        [1] = true,
+    },
 
-        parser = parse,
+    parser = parse,
 
-        root_markers = root_markers,
+    root_markers = root_markers,
 
-        stdin = false,
+    stdin = false,
 
-        -- CSharpier's check/status output is consumed as normal process output.
-        stream = 'stdout',
+    -- CSharpier's check/status output is consumed as normal process output.
+    stream = 'stdout',
 
-        timeout = 30000,
+    timeout = 30000,
 }

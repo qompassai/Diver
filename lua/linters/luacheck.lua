@@ -47,35 +47,35 @@ local type = type
 ---@field hyprland boolean
 
 local STANDARD_CANDIDATES = {
-  luajit = {
-    'luajit',
-    'lua51',
-  },
-  lua51 = {
-    'lua51',
-  },
-  lua52 = {
-    'lua52',
-    'lua51',
-  },
-  lua53 = {
-    'lua53',
-    'lua52',
-    'lua51',
-  },
-  lua54 = {
-    'lua54',
-    'lua53',
-    'lua52',
-    'lua51',
-  },
-  lua55 = {
-    'lua55',
-    'lua54',
-    'lua53',
-    'lua52',
-    'lua51',
-  },
+    luajit = {
+        'luajit',
+        'lua51',
+    },
+    lua51 = {
+        'lua51',
+    },
+    lua52 = {
+        'lua52',
+        'lua51',
+    },
+    lua53 = {
+        'lua53',
+        'lua52',
+        'lua51',
+    },
+    lua54 = {
+        'lua54',
+        'lua53',
+        'lua52',
+        'lua51',
+    },
+    lua55 = {
+        'lua55',
+        'lua54',
+        'lua53',
+        'lua52',
+        'lua51',
+    },
 }
 
 ---@type table<string, boolean>
@@ -91,463 +91,463 @@ local fallback_notified = {}
 ---@param fallback integer
 ---@return integer
 local function integer(value, fallback)
-  assert(fallback >= 0)
+    assert(fallback >= 0)
 
-  local parsed = tonumber(value)
-  if parsed == nil then
-    return fallback
-  end
+    local parsed = tonumber(value)
+    if parsed == nil then
+        return fallback
+    end
 
-  parsed = floor(parsed)
-  if parsed < 0 then
-    return fallback
-  end
+    parsed = floor(parsed)
+    if parsed < 0 then
+        return fallback
+    end
 
-  return parsed
+    return parsed
 end
 
 ---@param value string
 ---@return string
 local function trim(value)
-  assert(type(value) == 'string')
-  return (value:gsub('^%s*(.-)%s*$', '%1'))
+    assert(type(value) == 'string')
+    return (value:gsub('^%s*(.-)%s*$', '%1'))
 end
 
 ---@param value string
 ---@return string
 local function strip_ansi(value)
-  assert(type(value) == 'string')
-  return (value:gsub('\27%[[%d;?]*[ -/]*[@-~]', ''))
+    assert(type(value) == 'string')
+    return (value:gsub('\27%[[%d;?]*[ -/]*[@-~]', ''))
 end
 
 ---@param value string
 ---@return string
 local function normalize_message(value)
-  assert(type(value) == 'string')
+    assert(type(value) == 'string')
 
-  value = strip_ansi(value)
-  value = value:gsub('\r\n', '\n')
-  value = value:gsub('\r', '\n')
-  value = trim(value)
+    value = strip_ansi(value)
+    value = value:gsub('\r\n', '\n')
+    value = value:gsub('\r', '\n')
+    value = trim(value)
 
-  if #value > MESSAGE_LENGTH_MAX then
-    value = value:sub(1, MESSAGE_LENGTH_MAX) .. '\n[message truncated]'
-  end
+    if #value > MESSAGE_LENGTH_MAX then
+        value = value:sub(1, MESSAGE_LENGTH_MAX) .. '\n[message truncated]'
+    end
 
-  return value
+    return value
 end
 
 ---@param code string
 ---@return integer
 local function severity(code)
-  assert(type(code) == 'string')
-  assert(code ~= '')
-  return code:sub(1, 1) == 'E' and ERROR or WARN
+    assert(type(code) == 'string')
+    assert(code ~= '')
+    return code:sub(1, 1) == 'E' and ERROR or WARN
 end
 
 ---@param value unknown
 ---@return string?
 local function normalize_standard(value)
-  if type(value) ~= 'string' then
+    if type(value) ~= 'string' then
+        return nil
+    end
+
+    local compact = value:lower():gsub('%s+', '')
+
+    if compact == 'jit' or compact == 'luajit' or compact == 'lua51jit' then
+        return 'luajit'
+    end
+
+    local major, minor = compact:match('^lua?(5)%.?([1-5])$')
+    if major and minor then
+        return 'lua' .. major .. minor
+    end
+
     return nil
-  end
-
-  local compact = value:lower():gsub('%s+', '')
-
-  if compact == 'jit' or compact == 'luajit' or compact == 'lua51jit' then
-    return 'luajit'
-  end
-
-  local major, minor = compact:match('^lua?(5)%.?([1-5])$')
-  if major and minor then
-    return 'lua' .. major .. minor
-  end
-
-  return nil
 end
 
 ---@param standard string
 ---@return boolean
 local function has_standard(standard)
-  if standard_checked[standard] then
+    if standard_checked[standard] then
+        return standard_available[standard]
+    end
+
+    fn.system({
+        'luacheck',
+        '--std',
+        standard,
+        '--version',
+    })
+
+    standard_checked[standard] = true
+    standard_available[standard] = vim.v.shell_error == 0
     return standard_available[standard]
-  end
-
-  fn.system({
-    'luacheck',
-    '--std',
-    standard,
-    '--version',
-  })
-
-  standard_checked[standard] = true
-  standard_available[standard] = vim.v.shell_error == 0
-  return standard_available[standard]
 end
 
 ---@param requested string
 ---@return string
 local function resolve_standard(requested)
-  local candidates = STANDARD_CANDIDATES[requested] or STANDARD_CANDIDATES.luajit
+    local candidates = STANDARD_CANDIDATES[requested] or STANDARD_CANDIDATES.luajit
 
-  for _, candidate in ipairs(candidates) do
-    if has_standard(candidate) then
-      if candidate ~= requested and not fallback_notified[requested] then
-        fallback_notified[requested] = true
-        vim.schedule(function()
-          vim.notify(
-            ('Luacheck does not provide %s; using %s. Upgrade Luacheck for exact %s support.'):format(
-              requested,
-              candidate,
-              requested
-            ),
-            vim.log.levels.WARN,
-            {
-              title = 'Native Luacheck',
-            }
-          )
-        end)
-      end
+    for _, candidate in ipairs(candidates) do
+        if has_standard(candidate) then
+            if candidate ~= requested and not fallback_notified[requested] then
+                fallback_notified[requested] = true
+                vim.schedule(function()
+                    vim.notify(
+                        ('Luacheck does not provide %s; using %s. Upgrade Luacheck for exact %s support.'):format(
+                            requested,
+                            candidate,
+                            requested
+                        ),
+                        vim.log.levels.WARN,
+                        {
+                            title = 'Native Luacheck',
+                        }
+                    )
+                end)
+            end
 
-      return candidate
+            return candidate
+        end
     end
-  end
 
-  return requested
+    return requested
 end
 
 ---@param bufnr integer
 ---@return string
 local function buffer_header(bufnr)
-  if api.nvim_buf_is_valid(bufnr) and api.nvim_buf_is_loaded(bufnr) then
-    return table.concat(api.nvim_buf_get_lines(bufnr, 0, HEADER_LINES_MAX, false), '\n')
-  end
+    if api.nvim_buf_is_valid(bufnr) and api.nvim_buf_is_loaded(bufnr) then
+        return table.concat(api.nvim_buf_get_lines(bufnr, 0, HEADER_LINES_MAX, false), '\n')
+    end
 
-  return ''
+    return ''
 end
 
 ---@param header string
 ---@return string?
 local function standard_from_shebang(header)
-  local first_line = header:match('^([^\n]*)') or ''
-  local executable = first_line:match('^#!%s*(.-)%s*$')
-  if not executable then
+    local first_line = header:match('^([^\n]*)') or ''
+    local executable = first_line:match('^#!%s*(.-)%s*$')
+    if not executable then
+        return nil
+    end
+
+    local lowered = executable:lower()
+    if lowered:find('luajit', 1, true) then
+        return 'luajit'
+    end
+
+    local major, minor = lowered:match('lua%s*(5)%.?([1-5])')
+    if major and minor then
+        return 'lua' .. major .. minor
+    end
+
     return nil
-  end
-
-  local lowered = executable:lower()
-  if lowered:find('luajit', 1, true) then
-    return 'luajit'
-  end
-
-  local major, minor = lowered:match('lua%s*(5)%.?([1-5])')
-  if major and minor then
-    return 'lua' .. major .. minor
-  end
-
-  return nil
 end
 
 ---@param header string
 ---@return string?
 local function standard_from_annotation(header)
-  local annotation = header:match('%-%-%-@version%s+([^\r\n]+)')
-  if not annotation then
-    return nil
-  end
+    local annotation = header:match('%-%-%-@version%s+([^\r\n]+)')
+    if not annotation then
+        return nil
+    end
 
-  local exact = annotation:match('^%s*(5%.[1-5])%s*$')
-  if exact then
-    return normalize_standard(exact)
-  end
+    local exact = annotation:match('^%s*(5%.[1-5])%s*$')
+    if exact then
+        return normalize_standard(exact)
+    end
 
-  local operator, version = annotation:match('^%s*([><]=?)%s*(5%.[1-5])')
-  if not operator or not version then
-    return nil
-  end
+    local operator, version = annotation:match('^%s*([><]=?)%s*(5%.[1-5])')
+    if not operator or not version then
+        return nil
+    end
 
-  local major, minor = version:match('^(5)%.([1-5])$')
-  local target = tonumber(minor)
-  if operator == '>' and target < 5 then
-    target = target + 1
-  end
+    local major, minor = version:match('^(5)%.([1-5])$')
+    local target = tonumber(minor)
+    if operator == '>' and target < 5 then
+        target = target + 1
+    end
 
-  return 'lua' .. major .. target
+    return 'lua' .. major .. target
 end
 
 ---@param context LintContext
 ---@param header string
 ---@return boolean
 local function is_neovim_context(context, header)
-  local override = vim.b[context.bufnr].luacheck_neovim
-  if type(override) == 'boolean' then
-    return override
-  end
+    local override = vim.b[context.bufnr].luacheck_neovim
+    if type(override) == 'boolean' then
+        return override
+    end
 
-  local filename = context.filename:lower()
-  if
-    filename:find('/.config/nvim/', 1, true)
-    or filename:find('/qompassai/diver/', 1, true)
-    or filename:find('\\appdata\\local\\nvim\\', 1, true)
-  then
-    return true
-  end
+    local filename = context.filename:lower()
+    if
+        filename:find('/.config/nvim/', 1, true)
+        or filename:find('/qompassai/diver/', 1, true)
+        or filename:find('\\appdata\\local\\nvim\\', 1, true)
+    then
+        return true
+    end
 
-  return header:find('vim%.api', 1, false) ~= nil
-    or header:find('vim%.g', 1, false) ~= nil
-    or header:find('vim%.opt', 1, false) ~= nil
+    return header:find('vim%.api', 1, false) ~= nil
+        or header:find('vim%.g', 1, false) ~= nil
+        or header:find('vim%.opt', 1, false) ~= nil
 end
 
 ---@param context LintContext
 ---@return boolean
 local function is_hyprland_context(context)
-  local override = vim.b[context.bufnr].luacheck_hyprland
-  if type(override) == 'boolean' then
-    return override
-  end
+    local override = vim.b[context.bufnr].luacheck_hyprland
+    if type(override) == 'boolean' then
+        return override
+    end
 
-  local filename = context.filename:lower()
-  return filename:find('/.config/hypr/', 1, true) ~= nil or filename:find('/qompassai/hyprland/', 1, true) ~= nil
+    local filename = context.filename:lower()
+    return filename:find('/.config/hypr/', 1, true) ~= nil or filename:find('/qompassai/hyprland/', 1, true) ~= nil
 end
 
 ---@param context LintContext
 ---@return string
 local function default_standard_for(context)
-  if is_hyprland_context(context) then
-    return 'lua54'
-  end
+    if is_hyprland_context(context) then
+        return 'lua54'
+    end
 
-  return 'luajit'
+    return 'luajit'
 end
 
 ---@param context LintContext
 ---@return LuacheckTarget
 local function target_for(context)
-  assert(type(context) == 'table')
-  assert(type(context.bufnr) == 'number')
-  assert(type(context.filename) == 'string')
+    assert(type(context) == 'table')
+    assert(type(context.bufnr) == 'number')
+    assert(type(context.filename) == 'string')
 
-  local header = buffer_header(context.bufnr)
-  local hyprland = is_hyprland_context(context)
-  local requested = normalize_standard(vim.b[context.bufnr].luacheck_std)
-    or standard_from_shebang(header)
-    or standard_from_annotation(header)
-    or normalize_standard(vim.g.luacheck_std)
-    or default_standard_for(context)
+    local header = buffer_header(context.bufnr)
+    local hyprland = is_hyprland_context(context)
+    local requested = normalize_standard(vim.b[context.bufnr].luacheck_std)
+        or standard_from_shebang(header)
+        or standard_from_annotation(header)
+        or normalize_standard(vim.g.luacheck_std)
+        or default_standard_for(context)
 
-  return {
-    requested = requested,
-    standard = resolve_standard(requested),
-    neovim = is_neovim_context(context, header),
-    hyprland = hyprland,
-  }
+    return {
+        requested = requested,
+        standard = resolve_standard(requested),
+        neovim = is_neovim_context(context, header),
+        hyprland = hyprland,
+    }
 end
 
 ---@param line string
 ---@return LuacheckParsedDiagnostic?
 local function parse_line(line)
-  assert(type(line) == 'string')
+    assert(type(line) == 'string')
 
-  if line == '' or #line > LINE_LENGTH_MAX then
-    return nil
-  end
+    if line == '' or #line > LINE_LENGTH_MAX then
+        return nil
+    end
 
-  line = normalize_message(line)
-  if line == '' then
-    return nil
-  end
+    line = normalize_message(line)
+    if line == '' then
+        return nil
+    end
 
-  local line_number, start_column, end_column, code, message =
-    line:match('^.-:(%d+):(%d+)%-(%d+):%s*%(([EW]%d%d%d)%)%s*(.+)$')
+    local line_number, start_column, end_column, code, message =
+        line:match('^.-:(%d+):(%d+)%-(%d+):%s*%(([EW]%d%d%d)%)%s*(.+)$')
 
-  if line_number and start_column and end_column and code and message then
+    if line_number and start_column and end_column and code and message then
+        local parsed_line = integer(line_number, 0)
+        local parsed_start_column = integer(start_column, 0)
+        local parsed_end_column = integer(end_column, 0)
+        message = normalize_message(message)
+
+        if parsed_line < 1 or parsed_start_column < 1 or parsed_end_column < parsed_start_column or message == '' then
+            return nil
+        end
+
+        return {
+            line = parsed_line,
+            column = parsed_start_column,
+            end_column = parsed_end_column,
+            code = code,
+            message = message,
+        }
+    end
+
+    line_number, start_column, code, message = line:match('^.-:(%d+):(%d+):%s*%(([EW]%d%d%d)%)%s*(.+)$')
+    if not line_number or not start_column or not code or not message then
+        return nil
+    end
+
     local parsed_line = integer(line_number, 0)
     local parsed_start_column = integer(start_column, 0)
-    local parsed_end_column = integer(end_column, 0)
     message = normalize_message(message)
 
-    if parsed_line < 1 or parsed_start_column < 1 or parsed_end_column < parsed_start_column or message == '' then
-      return nil
+    if parsed_line < 1 or parsed_start_column < 1 or message == '' then
+        return nil
     end
 
     return {
-      line = parsed_line,
-      column = parsed_start_column,
-      end_column = parsed_end_column,
-      code = code,
-      message = message,
+        line = parsed_line,
+        column = parsed_start_column,
+        end_column = parsed_start_column,
+        code = code,
+        message = message,
     }
-  end
-
-  line_number, start_column, code, message = line:match('^.-:(%d+):(%d+):%s*%(([EW]%d%d%d)%)%s*(.+)$')
-  if not line_number or not start_column or not code or not message then
-    return nil
-  end
-
-  local parsed_line = integer(line_number, 0)
-  local parsed_start_column = integer(start_column, 0)
-  message = normalize_message(message)
-
-  if parsed_line < 1 or parsed_start_column < 1 or message == '' then
-    return nil
-  end
-
-  return {
-    line = parsed_line,
-    column = parsed_start_column,
-    end_column = parsed_start_column,
-    code = code,
-    message = message,
-  }
 end
 
 ---@param entry LuacheckParsedDiagnostic
 ---@return vim.Diagnostic.Set
 local function diagnostic_from_entry(entry)
-  assert(type(entry) == 'table')
+    assert(type(entry) == 'table')
 
-  local lnum = max(entry.line - 1, 0)
-  local col = max(entry.column - 1, 0)
-  local end_col = max(entry.end_column, col + 1)
+    local lnum = max(entry.line - 1, 0)
+    local col = max(entry.column - 1, 0)
+    local end_col = max(entry.end_column, col + 1)
 
-  return {
-    lnum = lnum,
-    end_lnum = lnum,
-    col = col,
-    end_col = end_col,
-    severity = severity(entry.code),
-    source = SOURCE,
-    code = entry.code,
-    message = ('[%s] %s'):format(entry.code, entry.message),
-    user_data = {
-      analyzer = SOURCE,
-    },
-  }
+    return {
+        lnum = lnum,
+        end_lnum = lnum,
+        col = col,
+        end_col = end_col,
+        severity = severity(entry.code),
+        source = SOURCE,
+        code = entry.code,
+        message = ('[%s] %s'):format(entry.code, entry.message),
+        user_data = {
+            analyzer = SOURCE,
+        },
+    }
 end
 
 ---@param output string
 ---@param context LintContext
 ---@return vim.Diagnostic.Set[]
 local function parse(output, context)
-  assert(type(output) == 'string')
-  assert(type(context) == 'table', 'luacheck parser requires a LintContext')
-  assert(#output <= OUTPUT_LENGTH_MAX, 'luacheck output exceeded maximum size')
+    assert(type(output) == 'string')
+    assert(type(context) == 'table', 'luacheck parser requires a LintContext')
+    assert(#output <= OUTPUT_LENGTH_MAX, 'luacheck output exceeded maximum size')
 
-  if output == '' then
-    return {}
-  end
-
-  ---@type vim.Diagnostic.Set[]
-  local diagnostics = {}
-
-  for line in output:gmatch('[^\r\n]+') do
-    if #diagnostics >= DIAGNOSTICS_MAX then
-      break
+    if output == '' then
+        return {}
     end
 
-    local entry = parse_line(line)
-    if entry ~= nil then
-      diagnostics[#diagnostics + 1] = diagnostic_from_entry(entry)
-    end
-  end
+    ---@type vim.Diagnostic.Set[]
+    local diagnostics = {}
 
-  if #diagnostics == 0 then
-    local message = normalize_message(output)
-    if message ~= '' then
-      diagnostics[1] = {
-        lnum = 0,
-        end_lnum = 0,
-        col = 0,
-        end_col = 1,
-        severity = ERROR,
-        source = SOURCE,
-        code = 'invalid-output',
-        message = message,
-        user_data = {
-          analyzer = SOURCE,
-          location = 'unparsed',
-        },
-      }
-    end
-  end
+    for line in output:gmatch('[^\r\n]+') do
+        if #diagnostics >= DIAGNOSTICS_MAX then
+            break
+        end
 
-  return diagnostics
+        local entry = parse_line(line)
+        if entry ~= nil then
+            diagnostics[#diagnostics + 1] = diagnostic_from_entry(entry)
+        end
+    end
+
+    if #diagnostics == 0 then
+        local message = normalize_message(output)
+        if message ~= '' then
+            diagnostics[1] = {
+                lnum = 0,
+                end_lnum = 0,
+                col = 0,
+                end_col = 1,
+                severity = ERROR,
+                source = SOURCE,
+                code = 'invalid-output',
+                message = message,
+                user_data = {
+                    analyzer = SOURCE,
+                    location = 'unparsed',
+                },
+            }
+        end
+    end
+
+    return diagnostics
 end
 
 ---@param result string[]
 ---@param name string
 local function add_global(result, name)
-  result[#result + 1] = '--globals'
-  result[#result + 1] = name
+    result[#result + 1] = '--globals'
+    result[#result + 1] = name
 end
 
 ---@param context LintContext
 ---@return string[]
 local function args(context)
-  assert(type(context) == 'table')
-  assert(type(context.bufnr) == 'number')
-  assert(type(context.filename) == 'string')
-  assert(context.filename ~= '')
+    assert(type(context) == 'table')
+    assert(type(context.bufnr) == 'number')
+    assert(type(context.filename) == 'string')
+    assert(context.filename ~= '')
 
-  local target = target_for(context)
-  local result = {
-    '--formatter',
-    'plain',
-    '--codes',
-    '--ranges',
-    '--no-color',
-    '--no-cache',
-    '--quiet',
-    '--no-config',
-    '--std',
-    target.standard,
-  }
+    local target = target_for(context)
+    local result = {
+        '--formatter',
+        'plain',
+        '--codes',
+        '--ranges',
+        '--no-color',
+        '--no-cache',
+        '--quiet',
+        '--no-config',
+        '--std',
+        target.standard,
+    }
 
-  if target.neovim then
-    add_global(result, 'vim')
-  end
+    if target.neovim then
+        add_global(result, 'vim')
+    end
 
-  if target.hyprland then
-    add_global(result, 'hl')
-  end
+    if target.hyprland then
+        add_global(result, 'hl')
+    end
 
-  result[#result + 1] = '--filename'
-  result[#result + 1] = context.filename
-  result[#result + 1] = '--'
-  result[#result + 1] = '-'
+    result[#result + 1] = '--filename'
+    result[#result + 1] = context.filename
+    result[#result + 1] = '--'
+    result[#result + 1] = '-'
 
-  return result
+    return result
 end
 
 ---@param context LintContext
 ---@return string
 local function cwd(context)
-  assert(type(context) == 'table')
-  assert(type(context.filename) == 'string')
-  assert(context.filename ~= '')
+    assert(type(context) == 'table')
+    assert(type(context.filename) == 'string')
+    assert(context.filename ~= '')
 
-  local directory = fs.dirname(context.filename)
-  if type(directory) == 'string' and directory ~= '' then
-    return fs.normalize(directory)
-  end
+    local directory = fs.dirname(context.filename)
+    if type(directory) == 'string' and directory ~= '' then
+        return fs.normalize(directory)
+    end
 
-  return fn.getcwd()
+    return fn.getcwd()
 end
 
 ---@type Linter
 return {
-  automatic = true,
-  cmd = 'luacheck',
-  args = args,
-  append_fname = false,
-  cwd = cwd,
-  ignore_exitcode = true,
-  parser = parse,
-  root_markers = {
-    '.luacheckrc',
-    '.git',
-  },
-  stdin = true,
-  stream = 'stdout',
-  timeout = TIMEOUT_MS,
+    automatic = true,
+    cmd = 'luacheck',
+    args = args,
+    append_fname = false,
+    cwd = cwd,
+    ignore_exitcode = true,
+    parser = parse,
+    root_markers = {
+        '.luacheckrc',
+        '.git',
+    },
+    stdin = true,
+    stream = 'stdout',
+    timeout = TIMEOUT_MS,
 }

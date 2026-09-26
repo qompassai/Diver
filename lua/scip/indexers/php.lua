@@ -32,13 +32,13 @@ local utils = require('scip.utils')
 ---@param context ScipContext SCIP indexing context.
 ---@return string command Resolved scip-php executable.
 local function command(context)
-  local local_command = fs.joinpath(context.root, 'vendor', 'bin', 'scip-php')
+    local local_command = fs.joinpath(context.root, 'vendor', 'bin', 'scip-php')
 
-  if utils.path_exists(local_command) then
-    return local_command
-  end
+    if utils.path_exists(local_command) then
+        return local_command
+    end
 
-  return 'scip-php'
+    return 'scip-php'
 end
 
 ---Build command-line arguments for scip-php.
@@ -50,23 +50,23 @@ end
 ---@param _context ScipContext SCIP indexing context.
 ---@return string[] args Arguments passed to scip-php.
 local function args(_context)
-  return {}
+    return {}
 end
 
 ---@type ScipIndexer
 local indexer = {
-  args = args,
+    args = args,
 
-  command = command,
+    command = command,
 
-  filetypes = {
-    php = true,
-  },
+    filetypes = {
+        php = true,
+    },
 
-  markers = {
-    '.git',
-    'composer.json',
-    'composer.lock',
-  },
+    markers = {
+        '.git',
+        'composer.json',
+        'composer.lock',
+    },
 }
 return indexer

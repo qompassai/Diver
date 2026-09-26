@@ -1,4 +1,3 @@
-
 -- #################################################################
 -- /qompassai/Diver/lsp/sq_ls.lua
 -- Qompass AI Diver SQL Language Server Config

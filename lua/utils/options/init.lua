@@ -6,8 +6,8 @@
 -- ----------------------------------------
 local M = {}
 function M.setup()
-  --  require('utils.options.buffer')
-  require('utils.options.global')
+    --  require('utils.options.buffer')
+    require('utils.options.global')
 end
 
 return M

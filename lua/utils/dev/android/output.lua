@@ -26,160 +26,162 @@ local api = vim.api
 local config = require('utils.dev.android.config')
 local window = nil
 function M.get_window()
-  return window
+    return window
 end
 
 function M.has_window()
-  return window ~= nil and api.nvim_win_is_valid(window)
+    return window ~= nil and api.nvim_win_is_valid(window)
 end
 
 function M.close_build_window()
-  if M.has_window() then
-    api.nvim_win_close(window, true)
-  end
+    local win = window
+    if win ~= nil and api.nvim_win_is_valid(win) then
+        api.nvim_win_close(win, true)
+    end
 
-  window = nil
+    window = nil
 end
 
 function M.apply_to_window(buf, data)
-  if window == nil or data == nil then
-    return 0, 0
-  end
+    if window == nil or data == nil then
+        return 0, 0
+    end
 
-  local result = {}
-  for line in data:gmatch('[^\n]+') do
-    result[#result + 1] = line
-  end
+    local result = {}
+    for line in data:gmatch('[^\n]+') do
+        result[#result + 1] = line
+    end
 
-  if #result == 0 then
-    return 0, 0
-  end
+    if #result == 0 then
+        return 0, 0
+    end
 
-  local buffer_lines = api.nvim_buf_line_count(buf) or 0
+    local buffer_lines = api.nvim_buf_line_count(buf) or 0
 
-  api.nvim_set_option_value('modifiable', true, { buf = buf })
-  api.nvim_buf_set_lines(buf, buffer_lines, buffer_lines, false, result)
-  api.nvim_set_option_value('modifiable', false, { buf = buf })
+    api.nvim_set_option_value('modifiable', true, { buf = buf })
+    api.nvim_buf_set_lines(buf, buffer_lines, buffer_lines, false, result)
+    api.nvim_set_option_value('modifiable', false, { buf = buf })
 
-  if M.has_window() then
-    api.nvim_win_set_cursor(window, { buffer_lines + #result, 0 })
-  end
+    if M.has_window() then
+        api.nvim_win_set_cursor(window, { buffer_lines + #result, 0 })
+    end
 
-  return buffer_lines, (buffer_lines + #result - 1)
+    return buffer_lines, (buffer_lines + #result - 1)
 end
 
 function M.create_task_progress(title)
-  local progress = {
-    kind = 'progress',
-    source = 'android-nvim',
-    title = title,
-  }
+    local progress = {
+        kind = 'progress',
+        source = 'android-nvim',
+        title = title,
+    }
 
-  local function update(status, percent, message, replace)
-    progress.status = status
-    progress.percent = percent
-    api.nvim_echo({ { message } }, replace, progress)
-    vim.cmd.redraw({ bang = true })
-  end
+    local function update(status, percent, message, replace)
+        progress.status = status
+        progress.percent = percent
+        api.nvim_echo({ { message } }, replace, progress)
+        vim.cmd.redraw({ bang = true })
+    end
 
-  return {
-    start = function(message)
-      update('running', 0, message, true)
-    end,
+    return {
+        start = function(message)
+            update('running', 0, message, true)
+        end,
 
-    tick = function(percent, message)
-      update('running', percent, message, false)
-    end,
+        tick = function(percent, message)
+            update('running', percent, message, false)
+        end,
 
-    done = function(success, message)
-      update(success and 'success' or 'failed', 100, message, true)
-    end,
-  }
+        done = function(success, message)
+            update(success and 'success' or 'failed', 100, message, true)
+        end,
+    }
 end
 
 function M.start_progress_timer(progress, message)
-  progress.start(message)
+    progress.start(message)
 
-  local time_passed = 0
-  local base_message = message:gsub('%.%.$', '')
-  local timer = vim.uv.new_timer()
+    local time_passed = 0
+    local base_message = message:gsub('%.%.$', '')
+    local timer = assert(vim.uv.new_timer(), 'uv timer creation failed')
 
-  timer:start(
-    1000,
-    1000,
-    vim.schedule_wrap(function()
-      time_passed = time_passed + 1
-      local percent = math.min(90, time_passed * 5)
-      progress.tick(percent, ('%s... %ds'):format(base_message, time_passed))
-    end)
-  )
+    timer:start(
+        1000,
+        1000,
+        vim.schedule_wrap(function()
+            time_passed = time_passed + 1
+            local percent = math.min(90, time_passed * 5)
+            progress.tick(percent, ('%s... %ds'):format(base_message, time_passed))
+        end)
+    )
 
-  return timer
+    return timer
 end
 
 function M.create_gradle_system_opts(buf)
-  return {
-    text = true,
+    return {
+        text = true,
 
-    stdout = vim.schedule_wrap(function(_, data)
-      M.apply_to_window(buf, data)
-    end),
-    stderr = vim.schedule_wrap(function(_, data)
-      local start_line, end_line = M.apply_to_window(buf, data)
-      if end_line < start_line then
-        return
-      end
-      for line = start_line, end_line do
-        api.nvim_buf_set_extmark(buf, config.stderr_ns, line, 0, {
-          end_col = -1,
-          hl_group = 'Error',
-        })
-      end
-    end),
-  }
+        stdout = vim.schedule_wrap(function(_, data)
+            M.apply_to_window(buf, data)
+        end),
+        stderr = vim.schedule_wrap(function(_, data)
+            local start_line, end_line = M.apply_to_window(buf, data)
+            if end_line < start_line then
+                return
+            end
+            for line = start_line, end_line do
+                api.nvim_buf_set_extmark(buf, config.stderr_ns, line, 0, {
+                    end_col = -1,
+                    hl_group = 'Error',
+                })
+            end
+        end),
+    }
 end
 
 function M.create_build_window()
-  local previous_win = api.nvim_get_current_win()
-  local buf = api.nvim_create_buf(false, true)
+    local previous_win = api.nvim_get_current_win()
+    local buf = api.nvim_create_buf(false, true)
 
-  api.nvim_set_option_value('modifiable', false, { buf = buf })
-  api.nvim_set_option_value('buftype', 'nofile', { buf = buf })
-  api.nvim_set_option_value('bufhidden', 'wipe', { buf = buf })
-  api.nvim_set_option_value('buflisted', false, { buf = buf })
+    api.nvim_set_option_value('modifiable', false, { buf = buf })
+    api.nvim_set_option_value('buftype', 'nofile', { buf = buf })
+    api.nvim_set_option_value('bufhidden', 'wipe', { buf = buf })
+    api.nvim_set_option_value('buflisted', false, { buf = buf })
 
-  vim.bo[buf].filetype = config.output_filetype
+    vim.bo[buf].filetype = config.output_filetype
 
-  if M.has_window() then
-    api.nvim_win_close(window, true)
-  end
+    local win = window
+    if win ~= nil and api.nvim_win_is_valid(win) then
+        api.nvim_win_close(win, true)
+    end
 
-  window = api.nvim_open_win(buf, false, {
-    split = 'below',
-    width = vim.o.columns,
-    height = 10,
-    style = 'minimal',
-  })
+    window = api.nvim_open_win(buf, false, {
+        split = 'below',
+        width = vim.o.columns,
+        height = 10,
+        style = 'minimal',
+    })
 
-  vim.wo[window].winfixbuf = true
-  vim.wo[window].number = false
-  vim.wo[window].relativenumber = false
-  vim.wo[window].signcolumn = 'no'
-  vim.wo[window].wrap = true
+    vim.wo[window].winfixbuf = true
+    vim.wo[window].number = false
+    vim.wo[window].relativenumber = false
+    vim.wo[window].signcolumn = 'no'
+    vim.wo[window].wrap = true
 
-  if api.nvim_win_is_valid(previous_win) then
-    api.nvim_set_current_win(previous_win)
-  end
+    if api.nvim_win_is_valid(previous_win) then
+        api.nvim_set_current_win(previous_win)
+    end
 
-  api.nvim_create_autocmd('WinClosed', {
-    pattern = tostring(window),
-    once = true,
-    callback = function()
-      window = nil
-    end,
-  })
+    api.nvim_create_autocmd('WinClosed', {
+        pattern = tostring(window),
+        once = true,
+        callback = function()
+            window = nil
+        end,
+    })
 
-  return buf
+    return buf
 end
 
 return M

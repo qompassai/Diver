@@ -1,3 +1,10 @@
+--- Microsoft.CodeAnalysis.LanguageServer language-server config — starts the C# files tutor.
+---
+--- Plain-language version: a language server is a helper program that reads your code and tells Neovim about
+--- errors, completions, and definitions -- like a tutor looking over your shoulder. This file is the introduction
+--- card that tells Neovim how to start the `Microsoft.CodeAnalysis.LanguageServer` tutor whenever you open C#
+--- files. It only takes effect if `Microsoft.CodeAnalysis.LanguageServer` is installed on your computer.
+---@module 'lsp.roslyn_ls'
 -- /qompassai/Diver/lsp/roslyn_ls.lua
 -- Qompass AI Roslyn LSP Spec
 -- Copyright (C) 2025 Qompass AI, All rights reserved
@@ -18,7 +25,8 @@ end
 ---@param client vim.lsp.Client
 ---@return nil|string
 local function on_init_project(client, project_files) ---@param project_files string[]
-    vim.notify('Initializing: projects', vim.log.levels.TRACE, { title = 'roslyn_ls' }) ---@diagnostic disable-next-line: param-type-mismatch
+    vim.notify('Initializing: projects', vim.log.levels.TRACE, { title = 'roslyn_ls' })
+    ---@diagnostic disable-next-line: param-type-mismatch
     client:notify('project/open', {
         projects = vim.tbl_map(function(file)
             return vim.uri_from_fname(file)
@@ -34,7 +42,9 @@ local function refresh_diagnostics(client) ---@param client vim.lsp.Client
         end
     end
 end
-local function roslyn_handlers() ---@return table<string, fun(err?: lsp.ResponseError, result: any, ctx: lsp.HandlerContext, config?: table):any>
+---@alias RoslynHandler fun(err?: lsp.ResponseError, result: any, ctx: lsp.HandlerContext, config?: table): any
+---@return table<string, RoslynHandler>
+local function roslyn_handlers()
     return {
         ['workspace/projectInitializationComplete'] = function(_, _, ctx)
             vim.notify('Roslyn project initialization complete', vim.log.levels.INFO, { title = 'roslyn_ls' })

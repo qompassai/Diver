@@ -1,3 +1,9 @@
+--- oelint-adv linter adapter — Yocto/OpenEmbedded recipe checker wiring.
+---
+--- Plain-language version: a linter is like a spell-checker, but for code instead of words. This file teaches
+--- Neovim how to run the `oelint-adv` program and turn its complaints into squiggles under your code. It only runs
+--- when linting is triggered (usually on save), and only if `oelint-adv` is installed on your computer.
+---@module 'linters.oelint_adv'
 -- #################################################################
 -- ~/.config/nvim/lua/linters/oelint-adv.lua
 -- Native OpenEmbedded / Yocto Linter
@@ -49,107 +55,107 @@ local MAX_POSITION = 2147483647
 local MESSAGE_FORMAT = '{path}\t{line}\t{severity}\t{id}\t{msg}'
 
 local ROOT_MARKERS = {
-  '.oelint.cfg',
-  'conf/layer.conf',
-  '.git',
+    '.oelint.cfg',
+    'conf/layer.conf',
+    '.git',
 }
 
 local SEVERITIES = {
-  error = diagnostic.severity.ERROR,
-  warning = diagnostic.severity.WARN,
-  info = diagnostic.severity.INFO,
+    error = diagnostic.severity.ERROR,
+    warning = diagnostic.severity.WARN,
+    info = diagnostic.severity.INFO,
 }
 
 ---@param value any
 ---@return string?
 local function string_value(value)
-  if type(value) == 'string' and value ~= '' then
-    return value
-  end
+    if type(value) == 'string' and value ~= '' then
+        return value
+    end
 
-  return nil
+    return nil
 end
 
 ---@param context LintContext
 ---@return string
 local function project_root(context)
-  local filename = string_value(context.filename)
+    local filename = string_value(context.filename)
 
-  -- Prefer the nearest linter configuration, even inside a larger repository.
-  if filename ~= nil then
-    local configured = fs.root(filename, '.oelint.cfg')
+    -- Prefer the nearest linter configuration, even inside a larger repository.
+    if filename ~= nil then
+        local configured = fs.root(filename, '.oelint.cfg')
 
-    if configured ~= nil then
-      return fs.normalize(configured)
-    end
-  end
-
-  local root = string_value(context.root)
-
-  if root ~= nil then
-    return fs.normalize(root)
-  end
-
-  if filename ~= nil then
-    local detected = fs.root(filename, ROOT_MARKERS)
-
-    if detected ~= nil then
-      return fs.normalize(detected)
+        if configured ~= nil then
+            return fs.normalize(configured)
+        end
     end
 
-    local parent = fs.dirname(filename)
+    local root = string_value(context.root)
 
-    if parent ~= nil and parent ~= '' then
-      return fs.normalize(parent)
+    if root ~= nil then
+        return fs.normalize(root)
     end
-  end
 
-  return fs.normalize(string_value(context.cwd) or vim.fn.getcwd())
+    if filename ~= nil then
+        local detected = fs.root(filename, ROOT_MARKERS)
+
+        if detected ~= nil then
+            return fs.normalize(detected)
+        end
+
+        local parent = fs.dirname(filename)
+
+        if parent ~= nil and parent ~= '' then
+            return fs.normalize(parent)
+        end
+    end
+
+    return fs.normalize(string_value(context.cwd) or vim.fn.getcwd())
 end
 
 ---@param path string
 ---@param cwd string
 ---@return string
 local function absolute_path(path, cwd)
-  if path:sub(1, 1) ~= '/' then
-    path = fs.joinpath(cwd, path)
-  end
+    if path:sub(1, 1) ~= '/' then
+        path = fs.joinpath(cwd, path)
+    end
 
-  return fs.normalize(path)
+    return fs.normalize(path)
 end
 
 ---@param path string
 ---@param cwd string
 ---@return string
 local function canonical_path(path, cwd)
-  local absolute = absolute_path(path, cwd)
+    local absolute = absolute_path(path, cwd)
 
-  return uv.fs_realpath(absolute) or absolute
+    return uv.fs_realpath(absolute) or absolute
 end
 
 ---@param value string
 ---@return string
 local function clean_message(value)
-  local text = vim.trim(value:gsub('[%z\1-\31\127]', ' '):gsub('%s+', ' '))
+    local text = vim.trim(value:gsub('[%z\1-\31\127]', ' '):gsub('%s+', ' '))
 
-  if #text > MAX_MESSAGE_BYTES then
-    local finish = MAX_MESSAGE_BYTES - 3
+    if #text > MAX_MESSAGE_BYTES then
+        local finish = MAX_MESSAGE_BYTES - 3
 
-    -- Do not split a UTF-8 codepoint when truncating.
-    while finish > 0 do
-      local byte = text:byte(finish + 1)
+        -- Do not split a UTF-8 codepoint when truncating.
+        while finish > 0 do
+            local byte = text:byte(finish + 1)
 
-      if byte == nil or byte < 128 or byte >= 192 then
-        break
-      end
+            if byte == nil or byte < 128 or byte >= 192 then
+                break
+            end
 
-      finish = finish - 1
+            finish = finish - 1
+        end
+
+        text = text:sub(1, finish) .. '...'
     end
 
-    text = text:sub(1, finish) .. '...'
-  end
-
-  return text
+    return text
 end
 
 ---@param context LintContext
@@ -157,206 +163,211 @@ end
 ---@param message string
 ---@return vim.Diagnostic
 local function status_diagnostic(context, code, message)
-  return {
-    bufnr = context.bufnr,
-    code = code,
-    col = 0,
-    end_col = 0,
-    end_lnum = 0,
-    lnum = 0,
-    message = message,
-    severity = diagnostic.severity.WARN,
-    source = SOURCE,
-  }
+    return {
+        bufnr = context.bufnr,
+        code = code,
+        col = 0,
+        end_col = 0,
+        end_lnum = 0,
+        lnum = 0,
+        message = message,
+        severity = diagnostic.severity.WARN,
+        source = SOURCE,
+    }
 end
 
 ---@param output string
 ---@param context LintContext
 ---@return vim.Diagnostic[]
 local function parse(output, context)
-  assert(type(context) == 'table', 'oelint-adv parser requires LintContext')
-  assert(type(context.bufnr) == 'number', 'oelint-adv parser requires context.bufnr')
+    assert(type(context) == 'table', 'oelint-adv parser requires LintContext')
+    assert(type(context.bufnr) == 'number', 'oelint-adv parser requires context.bufnr')
 
-  if context.modified then
-    return {
-      status_diagnostic(
-        context,
-        'save-required',
-        'Save this buffer before running oelint-adv; it reads files from disk.'
-      ),
-    }
-  end
-
-  local filename = string_value(context.filename)
-
-  if filename == nil then
-    return {
-      status_diagnostic(context, 'filename-required', 'Save this buffer to a BitBake file before running oelint-adv.'),
-    }
-  end
-
-  if #output > MAX_OUTPUT_BYTES then
-    return {
-      status_diagnostic(
-        context,
-        'output-limit',
-        'oelint-adv output exceeded the 16 MiB parser limit; results are incomplete.'
-      ),
-    }
-  end
-
-  local cwd = project_root(context)
-  local target = canonical_path(filename, string_value(context.cwd) or cwd)
-  ---@type vim.Diagnostic[]
-  local diagnostics = {}
-  ---@type table<string, boolean>
-  local seen = {}
-  ---@type table<string, string>
-  local paths = {}
-  local unparsed = false
-  local limited = false
-  local line_count = 0
-
-  for raw_line in output:gmatch('[^\r\n]+') do
-    line_count = line_count + 1
-
-    if line_count > MAX_OUTPUT_LINES then
-      limited = true
-      break
+    if context.modified then
+        return {
+            status_diagnostic(
+                context,
+                'save-required',
+                'Save this buffer before running oelint-adv; it reads files from disk.'
+            ),
+        }
     end
 
-    if #raw_line > MAX_LINE_BYTES then
-      unparsed = true
-    else
-      local line = raw_line:gsub('\27%[[%d;]*[mK]', '')
-      local path, row, level, rule, message = line:match('^([^\t]+)\t(%d+)\t([a-z]+)\t([^\t]+)\t(.*)$')
-      local severity = level and SEVERITIES[level] or nil
-      local number = row and tonumber(row) or nil
+    local filename = string_value(context.filename)
 
-      if
-        path ~= nil
-        and rule ~= nil
-        and message ~= nil
-        and severity ~= nil
-        and number ~= nil
-        and number <= MAX_POSITION
-        and #rule <= 256
-      then
-        local resolved = paths[path]
+    if filename == nil then
+        return {
+            status_diagnostic(
+                context,
+                'filename-required',
+                'Save this buffer to a BitBake file before running oelint-adv.'
+            ),
+        }
+    end
 
-        if resolved == nil then
-          resolved = canonical_path(path, cwd)
-          paths[path] = resolved
+    if #output > MAX_OUTPUT_BYTES then
+        return {
+            status_diagnostic(
+                context,
+                'output-limit',
+                'oelint-adv output exceeded the 16 MiB parser limit; results are incomplete.'
+            ),
+        }
+    end
+
+    local cwd = project_root(context)
+    local target = canonical_path(filename, string_value(context.cwd) or cwd)
+    ---@type vim.Diagnostic[]
+    local diagnostics = {}
+    ---@type table<string, boolean>
+    local seen = {}
+    ---@type table<string, string>
+    local paths = {}
+    local unparsed = false
+    local limited = false
+    local line_count = 0
+
+    for raw_line in output:gmatch('[^\r\n]+') do
+        line_count = line_count + 1
+
+        if line_count > MAX_OUTPUT_LINES then
+            limited = true
+            break
         end
 
-        if resolved == target then
-          local text = clean_message(message)
-          local lnum = math.max(0, math.floor(number) - 1)
-          local key = table.concat({ tostring(lnum), tostring(severity), rule, text }, '\t')
-
-          if text == '' then
+        if #raw_line > MAX_LINE_BYTES then
             unparsed = true
-          elseif not seen[key] then
-            if #diagnostics >= MAX_DIAGNOSTICS then
-              limited = true
-              break
+        else
+            local line = raw_line:gsub('\27%[[%d;]*[mK]', '')
+            local path, row, level, rule, message = line:match('^([^\t]+)\t(%d+)\t([a-z]+)\t([^\t]+)\t(.*)$')
+            local severity = level and SEVERITIES[level] or nil
+            local number = row and tonumber(row) or nil
+
+            if
+                path ~= nil
+                and rule ~= nil
+                and message ~= nil
+                and severity ~= nil
+                and number ~= nil
+                and number <= MAX_POSITION
+                and #rule <= 256
+            then
+                local resolved = paths[path]
+
+                if resolved == nil then
+                    resolved = canonical_path(path, cwd)
+                    paths[path] = resolved
+                end
+
+                if resolved == target then
+                    local text = clean_message(message)
+                    local lnum = math.max(0, math.floor(number) - 1)
+                    local key = table.concat({ tostring(lnum), tostring(severity), rule, text }, '\t')
+
+                    if text == '' then
+                        unparsed = true
+                    elseif not seen[key] then
+                        if #diagnostics >= MAX_DIAGNOSTICS then
+                            limited = true
+                            break
+                        end
+
+                        seen[key] = true
+                        diagnostics[#diagnostics + 1] = {
+                            bufnr = context.bufnr,
+                            code = rule,
+                            col = 0,
+                            end_col = 0,
+                            end_lnum = lnum,
+                            lnum = lnum,
+                            message = text,
+                            severity = severity,
+                            source = SOURCE,
+                        }
+                    end
+                end
+            elseif vim.trim(line) ~= '' then
+                unparsed = true
             end
-
-            seen[key] = true
-            diagnostics[#diagnostics + 1] = {
-              bufnr = context.bufnr,
-              code = rule,
-              col = 0,
-              end_col = 0,
-              end_lnum = lnum,
-              lnum = lnum,
-              message = text,
-              severity = severity,
-              source = SOURCE,
-            }
-          end
         end
-      elseif vim.trim(line) ~= '' then
-        unparsed = true
-      end
     end
-  end
 
-  if unparsed then
-    diagnostics[#diagnostics + 1] = status_diagnostic(
-      context,
-      'unparsed-output',
-      'oelint-adv returned unexpected or oversized output. Check its configuration, arguments and Python environment; results may be incomplete.'
-    )
-  end
+    if unparsed then
+        diagnostics[#diagnostics + 1] = status_diagnostic(
+            context,
+            'unparsed-output',
+            'oelint-adv returned unexpected or oversized output. Check its '
+                .. 'configuration, arguments and Python environment; results may be incomplete.'
+        )
+    end
 
-  if limited then
-    diagnostics[#diagnostics + 1] = status_diagnostic(
-      context,
-      'result-limit',
-      'oelint-adv reached the editor parser limit; run the CLI for the complete report.'
-    )
-  end
+    if limited then
+        diagnostics[#diagnostics + 1] = status_diagnostic(
+            context,
+            'result-limit',
+            'oelint-adv reached the editor parser limit; run the CLI for the complete report.'
+        )
+    end
 
-  return diagnostics
+    return diagnostics
 end
 
 ---@param context LintContext
 ---@return string[]
 local function arguments(context)
-  assert(type(context) == 'table', 'oelint-adv arguments require LintContext')
-  local filename = string_value(context.filename)
-  assert(filename ~= nil, 'oelint-adv requires a saved filename')
+    assert(type(context) == 'table', 'oelint-adv arguments require LintContext')
+    local filename = string_value(context.filename)
+    assert(filename ~= nil, 'oelint-adv requires a saved filename')
 
-  local mode = string_value(vim.env.NVIM_OELINT_ADV_MODE) or 'fast'
-  assert(mode == 'fast' or mode == 'all', 'NVIM_OELINT_ADV_MODE must be fast or all')
+    local mode = string_value(vim.env.NVIM_OELINT_ADV_MODE) or 'fast'
+    assert(mode == 'fast' or mode == 'all', 'NVIM_OELINT_ADV_MODE must be fast or all')
 
-  local jobs = tonumber(string_value(vim.env.NVIM_OELINT_ADV_JOBS) or '1')
-  assert(
-    jobs ~= nil and jobs >= 1 and jobs <= 8 and jobs == math.floor(jobs),
-    'NVIM_OELINT_ADV_JOBS must be an integer from 1 to 8'
-  )
+    local jobs = tonumber(string_value(vim.env.NVIM_OELINT_ADV_JOBS) or '1')
+    assert(
+        jobs ~= nil and jobs >= 1 and jobs <= 8 and jobs == math.floor(jobs),
+        'NVIM_OELINT_ADV_JOBS must be an integer from 1 to 8'
+    )
 
-  ---@type string[]
-  local args = {
-    '--quiet',
-    '--exit-zero',
-    '--output',
-    '/dev/stderr',
-    '--outputformat',
-    'stdout',
-    '--messageformat',
-    MESSAGE_FORMAT,
-    '--jobs',
-    tostring(math.floor(jobs)),
-    '--mode',
-    mode,
-  }
+    ---@type string[]
+    local args = {
+        '--quiet',
+        '--exit-zero',
+        '--output',
+        '/dev/stderr',
+        '--outputformat',
+        'stdout',
+        '--messageformat',
+        MESSAGE_FORMAT,
+        '--jobs',
+        tostring(math.floor(jobs)),
+        '--mode',
+        mode,
+    }
 
-  local release = string_value(vim.env.NVIM_OELINT_ADV_RELEASE)
+    local release = string_value(vim.env.NVIM_OELINT_ADV_RELEASE)
 
-  if release ~= nil then
-    args[#args + 1] = '--release'
-    args[#args + 1] = release
-  end
+    if release ~= nil then
+        args[#args + 1] = '--release'
+        args[#args + 1] = release
+    end
 
-  args[#args + 1] = '--'
-  args[#args + 1] = absolute_path(filename, string_value(context.cwd) or project_root(context))
+    args[#args + 1] = '--'
+    args[#args + 1] = absolute_path(filename, string_value(context.cwd) or project_root(context))
 
-  return args
+    return args
 end
 
 ---@type Linter
 return {
-  args = arguments,
-  append_fname = false,
-  automatic = true,
-  cmd = 'oelint-adv',
-  cwd = project_root,
-  ignore_exitcode = true,
-  parser = parse,
-  root_markers = ROOT_MARKERS,
-  stdin = false,
-  stream = 'both',
-  timeout = 60000,
+    args = arguments,
+    append_fname = false,
+    automatic = true,
+    cmd = 'oelint-adv',
+    cwd = project_root,
+    ignore_exitcode = true,
+    parser = parse,
+    root_markers = ROOT_MARKERS,
+    stdin = false,
+    stream = 'both',
+    timeout = 60000,
 }

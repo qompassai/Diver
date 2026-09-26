@@ -26,31 +26,31 @@ local utils = require('scip.utils')
 ---@param context ScipContext SCIP indexing context.
 ---@return string[] args Arguments passed to scip-clang.
 local function args(context)
-  return {
-    '--compdb-path=' .. utils.compilation_database(context.root),
-  }
+    return {
+        '--compdb-path=' .. utils.compilation_database(context.root),
+    }
 end
 
 ---@type ScipIndexer
 local indexer = {
-  args = args,
+    args = args,
 
-  command = 'scip-clang',
+    command = 'scip-clang',
 
-  filetypes = {
-    c = true,
-    cpp = true,
-    cuda = true,
-    objc = true,
-    objcpp = true,
-  },
+    filetypes = {
+        c = true,
+        cpp = true,
+        cuda = true,
+        objc = true,
+        objcpp = true,
+    },
 
-  markers = {
-    '.git',
-    'CMakeLists.txt',
-    'compile_commands.json',
-    'meson.build',
-  },
+    markers = {
+        '.git',
+        'CMakeLists.txt',
+        'compile_commands.json',
+        'meson.build',
+    },
 }
 
 return indexer

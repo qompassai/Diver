@@ -1,3 +1,9 @@
+--- systemd-analyze linter adapter — systemd unit file verifier wiring.
+---
+--- Plain-language version: a linter is like a spell-checker, but for code instead of words. This file teaches
+--- Neovim how to run the `systemd-analyze` program and turn its complaints into squiggles under your code. It only
+--- runs when linting is triggered (usually on save), and only if `systemd-analyze` is installed on your computer.
+---@module 'linters.systemd_analyze'
 -- #################################################################
 -- /qompassai/lua/linters/systemd_analyze.lua
 -- Qompass AI Systemd Analyze
@@ -15,7 +21,7 @@
 -- See the License for the specific language governing permissions and
 -- limitations under the License.
 -- #################################################################
----@source https://www.freedesktop.org/software/systemd/man/latest/systemd-analyze.html?__goaway_challenge=meta-refresh&__goaway_id=44caed9f263ef250d456ec4937eacebb&__goaway_referer=https%3A%2F%2Fwww.google.com%2F
+---@source https://www.freedesktop.org/software/systemd/man/latest/systemd-analyze.html
 local diagnostic = vim.diagnostic
 local fs = vim.fs
 
@@ -29,196 +35,200 @@ local LINE_LENGTH_MAX = 16384
 ---@param fallback integer
 ---@return integer
 local function integer(value, fallback)
-  assert(fallback >= 0)
+    assert(fallback >= 0)
 
-  local parsed = tonumber(value)
-  if parsed == nil then
-    return fallback
-  end
+    local parsed = tonumber(value)
+    if parsed == nil then
+        return fallback
+    end
 
-  return math.floor(parsed)
+    return math.floor(parsed)
 end
 ---@param path string
----@param filename string
----@param root string
----@param basename string
 ---@return boolean
+local function is_absolute(path)
+    assert(type(path) == 'string')
+    assert(path ~= '')
+
+    return vim.fn.isabsolutepath(path) == 1
+end
+
 local function belongs_to_buffer(path, filename, root, basename)
-  assert(path ~= '')
-  assert(filename ~= '')
-  assert(root ~= '')
-  assert(basename ~= '')
+    assert(path ~= '')
+    assert(filename ~= '')
+    assert(root ~= '')
+    assert(basename ~= '')
 
-  if path == basename then
-    return true
-  end
+    if path == basename then
+        return true
+    end
 
-  local candidate
+    local candidate
 
-  if fs.is_absolute(path) then
-    candidate = fs.normalize(path)
-  else
-    candidate = fs.normalize(fs.joinpath(root, path))
-  end
+    if is_absolute(path) then
+        candidate = fs.normalize(path)
+    else
+        candidate = fs.normalize(fs.joinpath(root, path))
+    end
 
-  return candidate == filename or fs.basename(candidate) == basename
+    return candidate == filename or fs.basename(candidate) == basename
 end
 
 ---@param message string
 ---@return integer
 local function severity(message)
-  --
-  -- systemd-analyze does not emit machine-readable severity metadata
-  -- for verify diagnostics. Classify messages that clearly represent
-  -- invalid unit syntax/load failures as errors and everything else
-  -- conservatively as a warning.
-  --
-  if
-    message:find('Unknown ', 1, true) ~= nil
-    or message:find('Invalid ', 1, true) ~= nil
-    or message:find('Failed ', 1, true) ~= nil
-    or message:find('not executable', 1, true) ~= nil
-  then
-    return ERROR
-  end
+    --
+    -- systemd-analyze does not emit machine-readable severity metadata
+    -- for verify diagnostics. Classify messages that clearly represent
+    -- invalid unit syntax/load failures as errors and everything else
+    -- conservatively as a warning.
+    --
+    if
+        message:find('Unknown ', 1, true) ~= nil
+        or message:find('Invalid ', 1, true) ~= nil
+        or message:find('Failed ', 1, true) ~= nil
+        or message:find('not executable', 1, true) ~= nil
+    then
+        return ERROR
+    end
 
-  return WARN
+    return WARN
 end
 
 ---@param line string
 ---@return string?, integer?, string?
 local function parse_line(line)
-  assert(#line <= LINE_LENGTH_MAX)
+    assert(#line <= LINE_LENGTH_MAX)
 
-  --
-  -- Current systemd-analyze verify output can use:
-  --
-  --   [./foo.service:9] Unknown lvalue 'Foo' in section 'Unit'
-  --
-  -- or:
-  --
-  --   foo.service:9: Unknown key name 'Foo' in section 'Service',
-  --                  ignoring.
-  --
+    --
+    -- Current systemd-analyze verify output can use:
+    --
+    --   [./foo.service:9] Unknown lvalue 'Foo' in section 'Unit'
+    --
+    -- or:
+    --
+    --   foo.service:9: Unknown key name 'Foo' in section 'Service',
+    --                  ignoring.
+    --
 
-  local path
-  local line_number
-  local message
+    local path
+    local line_number
+    local message
 
-  path, line_number, message = line:match('^%[(.-):(%d+)%]%s+(.+)$')
+    path, line_number, message = line:match('^%[(.-):(%d+)%]%s+(.+)$')
 
-  if path ~= nil then
-    return path, integer(line_number, 1), message
-  end
+    if path ~= nil then
+        return path, integer(line_number, 1), message
+    end
 
-  path, line_number, message = line:match('^(.-):(%d+):%s+(.+)$')
+    path, line_number, message = line:match('^(.-):(%d+):%s+(.+)$')
 
-  if path ~= nil then
-    return path, integer(line_number, 1), message
-  end
+    if path ~= nil then
+        return path, integer(line_number, 1), message
+    end
 
-  return nil
+    return nil
 end
 
 ---@param output string
 ---@param context LintContext|integer
 ---@return vim.Diagnostic.Set[]
 local function parse(output, context)
-  if output == '' then
-    return {}
-  end
-
-  assert(type(context) == 'table', 'systemd-analyze parser requires a LintContext')
-
-  ---@cast context LintContext
-
-  assert(context.filename ~= '')
-  assert(context.root ~= '')
-
-  local filename = fs.normalize(context.filename)
-  local basename = fs.basename(filename)
-  local root = context.root
-
-  ---@type vim.Diagnostic.Set[]
-  local diagnostics = {}
-  local diagnostics_count = 0
-
-  for line in output:gmatch('[^\r\n]+') do
-    if diagnostics_count >= DIAGNOSTICS_MAX then
-      break
+    if output == '' then
+        return {}
     end
 
-    if #line <= LINE_LENGTH_MAX then
-      local path
-      local line_number
-      local message
+    assert(type(context) == 'table', 'systemd-analyze parser requires a LintContext')
 
-      path, line_number, message = parse_line(line)
+    ---@cast context LintContext
 
-      if
-        path ~= nil
-        and line_number ~= nil
-        and message ~= nil
-        and belongs_to_buffer(path, filename, root, basename)
-      then
-        local row = math.max(line_number - 1, 0)
+    assert(context.filename ~= '')
+    assert(context.root ~= '')
 
-        diagnostics_count = diagnostics_count + 1
+    local filename = fs.normalize(context.filename)
+    local basename = fs.basename(filename)
+    local root = context.root
 
-        diagnostics[diagnostics_count] = {
-          lnum = row,
-          end_lnum = row,
-          col = 0,
-          end_col = 1,
-          message = message,
-          severity = severity(message),
-          source = 'systemd-analyze',
-        }
-      end
+    ---@type vim.Diagnostic.Set[]
+    local diagnostics = {}
+    local diagnostics_count = 0
+
+    for line in output:gmatch('[^\r\n]+') do
+        if diagnostics_count >= DIAGNOSTICS_MAX then
+            break
+        end
+
+        if #line <= LINE_LENGTH_MAX then
+            local path
+            local line_number
+            local message
+
+            path, line_number, message = parse_line(line)
+
+            if
+                path ~= nil
+                and line_number ~= nil
+                and message ~= nil
+                and belongs_to_buffer(path, filename, root, basename)
+            then
+                local row = math.max(line_number - 1, 0)
+
+                diagnostics_count = diagnostics_count + 1
+
+                diagnostics[diagnostics_count] = {
+                    lnum = row,
+                    end_lnum = row,
+                    col = 0,
+                    end_col = 1,
+                    message = message,
+                    severity = severity(message),
+                    source = 'systemd-analyze',
+                }
+            end
+        end
     end
-  end
 
-  assert(diagnostics_count <= DIAGNOSTICS_MAX)
-  assert(diagnostics_count == #diagnostics)
+    assert(diagnostics_count <= DIAGNOSTICS_MAX)
+    assert(diagnostics_count == #diagnostics)
 
-  return diagnostics
+    return diagnostics
 end
 
 return ---@type Linter
 {
-  automatic = false,
+    automatic = false,
 
-  cmd = 'systemd-analyze',
+    cmd = 'systemd-analyze',
 
-  args = function(context)
-    assert(context.filename ~= '')
+    args = function(context)
+        assert(context.filename ~= '')
 
-    return {
-      'verify',
-      '--generators=no',
-      '--man=no',
-      '--recursive-errors=no',
-      context.filename,
-    }
-  end,
+        return {
+            'verify',
+            '--generators=no',
+            '--man=no',
+            '--recursive-errors=no',
+            context.filename,
+        }
+    end,
 
-  append_fname = false,
+    append_fname = false,
 
-  cwd = function(context)
-    assert(context.root ~= '')
+    cwd = function(context)
+        assert(context.root ~= '')
 
-    return context.root
-  end,
+        return context.root
+    end,
 
-  ignore_exitcode = true,
+    ignore_exitcode = true,
 
-  parser = parse,
+    parser = parse,
 
-  root_markers = {
-    '.git',
-  },
+    root_markers = {
+        '.git',
+    },
 
-  stdin = false,
-  stream = 'stderr',
-  timeout = 30000,
+    stdin = false,
+    stream = 'stderr',
+    timeout = 30000,
 }

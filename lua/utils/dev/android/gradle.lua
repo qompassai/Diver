@@ -20,118 +20,118 @@ local M = {}
 local util = require('utils.dev.android.util')
 
 function M.parse_settings_modules(root_dir)
-  local content = util.read_file(root_dir .. '/settings.gradle.kts') or util.read_file(root_dir .. '/settings.gradle')
+    local content = util.read_file(root_dir .. '/settings.gradle.kts') or util.read_file(root_dir .. '/settings.gradle')
 
-  if not content then
-    return {}
-  end
-
-  local modules = {}
-  local seen = {}
-
-  local function add_module(name)
-    name = name:gsub('^:', '')
-    if name ~= '' and not seen[name] then
-      seen[name] = true
-      modules[#modules + 1] = name
+    if not content then
+        return {}
     end
-  end
 
-  for match in content:gmatch('include%s*%(?["\']([^"\']+)["\']') do
-    add_module(match)
-  end
+    local modules = {}
+    local seen = {}
 
-  for match in content:gmatch('include%s+[\'"]([^\'"]+)[\'"]') do
-    add_module(match)
-  end
+    local function add_module(name)
+        name = name:gsub('^:', '')
+        if name ~= '' and not seen[name] then
+            seen[name] = true
+            modules[#modules + 1] = name
+        end
+    end
 
-  return modules
+    for match in content:gmatch('include%s*%(?["\']([^"\']+)["\']') do
+        add_module(match)
+    end
+
+    for match in content:gmatch('include%s+[\'"]([^\'"]+)[\'"]') do
+        add_module(match)
+    end
+
+    return modules
 end
 
 function M.is_application_module(root_dir, module)
-  local content = util.read_file(root_dir .. '/' .. module .. '/build.gradle.kts')
-    or util.read_file(root_dir .. '/' .. module .. '/build.gradle')
+    local content = util.read_file(root_dir .. '/' .. module .. '/build.gradle.kts')
+        or util.read_file(root_dir .. '/' .. module .. '/build.gradle')
 
-  if not content then
-    return false
-  end
+    if not content then
+        return false
+    end
 
-  return content:find('com%.android%.application') ~= nil
-    or content:find('"com.android.application"') ~= nil
-    or content:find("'com.android.application'") ~= nil
+    return content:find('com%.android%.application') ~= nil
+        or content:find('"com.android.application"') ~= nil
+        or content:find("'com.android.application'") ~= nil
 end
 
 function M.find_application_modules(root_dir)
-  local apps = {}
+    local apps = {}
 
-  local modules = M.parse_settings_modules(root_dir)
-  for i = 1, #modules do
-    local module = modules[i]
-    if M.is_application_module(root_dir, module) then
-      apps[#apps + 1] = module
+    local modules = M.parse_settings_modules(root_dir)
+    for i = 1, #modules do
+        local module = modules[i]
+        if M.is_application_module(root_dir, module) then
+            apps[#apps + 1] = module
+        end
     end
-  end
 
-  if #apps == 0 and M.is_application_module(root_dir, 'app') then
-    apps[#apps + 1] = 'app'
-  end
+    if #apps == 0 and M.is_application_module(root_dir, 'app') then
+        apps[#apps + 1] = 'app'
+    end
 
-  return apps
+    return apps
 end
 
 function M.find_application_id(root_dir, module)
-  module = module or 'app'
+    module = module or 'app'
 
-  local content = util.read_file(root_dir .. '/' .. module .. '/build.gradle.kts')
-    or util.read_file(root_dir .. '/' .. module .. '/build.gradle')
+    local content = util.read_file(root_dir .. '/' .. module .. '/build.gradle.kts')
+        or util.read_file(root_dir .. '/' .. module .. '/build.gradle')
 
-  if not content then
-    return nil
-  end
-
-  for line in content:gmatch('[^\r\n]+') do
-    if line:find('applicationId') then
-      local app_id = line:match('applicationId%s*%(?%s*["\']([^"\']+)["\']')
-        or line:match('applicationId%s*=%s*["\']([^"\']+)["\']')
-        or line:match('.*["\']([^"\']+)["\']')
-
-      if app_id then
-        return app_id
-      end
+    if not content then
+        return nil
     end
-  end
 
-  return nil
+    for line in content:gmatch('[^\r\n]+') do
+        if line:find('applicationId') then
+            local app_id = line:match('applicationId%s*%(?%s*["\']([^"\']+)["\']')
+                or line:match('applicationId%s*=%s*["\']([^"\']+)["\']')
+                or line:match('.*["\']([^"\']+)["\']')
+
+            if app_id then
+                return app_id
+            end
+        end
+    end
+
+    return nil
 end
 
 function M.find_debug_apk(root_dir, module)
-  module = module or 'app'
-  local module_dir = root_dir .. '/' .. module
-  local patterns = {
-    module_dir .. '/build/outputs/apk/**/debug/*.apk',
-    module_dir .. '/build/outputs/apk/debug/*.apk',
-  }
+    module = module or 'app'
+    local module_dir = root_dir .. '/' .. module
+    local patterns = {
+        module_dir .. '/build/outputs/apk/**/debug/*.apk',
+        module_dir .. '/build/outputs/apk/debug/*.apk',
+    }
 
-  local newest_path = nil
-  local newest_time = 0
+    local newest_path = nil
+    local newest_time = 0
 
-  for i = 1, #patterns do
-    local files = vim.fn.glob(patterns[i], true, true)
-    for j = 1, #files do
-      local path = files[j]
-      local mtime = vim.fn.getftime(path)
-      if mtime > newest_time then
-        newest_time = mtime
-        newest_path = path
-      end
+    for i = 1, #patterns do
+        local files = vim.fn.glob(patterns[i], true, true)
+        for j = 1, #files do
+            local path = files[j]
+            local mtime = vim.fn.getftime(path)
+            if mtime > newest_time then
+                newest_time = mtime
+                newest_path = path
+            end
+        end
     end
-  end
 
-  return newest_path
+    return newest_path
 end
 
 function M.gradle_module_name(module)
-  return ':' .. module:gsub('^:', '')
+    return ':' .. module:gsub('^:', '')
 end
 
 return M

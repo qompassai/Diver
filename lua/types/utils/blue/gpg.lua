@@ -1,3 +1,9 @@
+--- GnuPG helper types — type-checker dictionary (never runs).
+---
+--- Plain-language version: this file never runs -- Neovim never loads it at startup. It is a dictionary of shapes
+--- (type annotations) for the lua-language-server type checker, so the editor can offer completions and catch
+--- mistakes while you edit. Think of it as the answer key the teacher uses, not a lesson.
+---@module 'types.utils.blue.gpg'
 ---@meta gnupg
 ---@class                    GnuPG.Recipients
 ---@field valid                                            string
@@ -14,7 +20,7 @@
 ---@field special?                                         boolean Pass through as special argument for shellescape
 ---@field cygpath?                                         boolean When true and using Cygwin, adjust path for Gpg4win
 ---@class GnuPG.Config
----@field GPGExecutable?                                   string Path to GPG executable (default: 'gpg --trust-model always')
+---@field GPGExecutable? string Path to GPG executable (default: 'gpg --trust-model always')
 ---@field GPGUseAgent?                                     0|1 Enable gpg-agent (default: 1)
 ---@field GPGPreferSymmetric?                              0|1 Prefer symmetric encryption (default: 0)
 ---@field GPGPreferSign?                                   0|1 Prefer signing files (default: 0)
@@ -32,11 +38,11 @@
 
 ---@class                    gnupg
 local M = {}
----@param bufread                                          boolean True if called from BufReadCmd, false from FileReadCmd
+---@param bufread boolean True if called from BufReadCmd, false from FileReadCmd
 ---@return nil
 function M.init(bufread) end
 
----@param bufread                                          boolean True if called from BufReadCmd, false from FileReadCmd
+---@param bufread boolean True if called from BufReadCmd, false from FileReadCmd
 ---@return nil
 function M.decrypt(bufread) end
 

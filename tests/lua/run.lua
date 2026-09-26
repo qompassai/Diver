@@ -6,12 +6,13 @@ vim.g.mapleader = ' '
 vim.g.maplocalleader = ','
 vim.o.hidden = true
 local passed, errors, notices = 0, {}, {}
-vim.notify = function(message, level)
+local mock_notify = function(message, level)
     notices[#notices + 1] = tostring(message)
     if level == vim.log.levels.ERROR then
         errors[#errors + 1] = tostring(message)
     end
 end
+vim.notify = mock_notify
 local function check(value, message)
     assert(value, message)
     passed = passed + 1
@@ -31,10 +32,7 @@ end
 local function groups_count()
     local count = 0
     for _, item in ipairs(api.nvim_get_autocmds({})) do
-        if
-            (item.group_name or ''):match('^NativeMappings_')
-            or item.group_name == 'LanguageMappings'
-        then
+        if (item.group_name or ''):match('^NativeMappings_') or item.group_name == 'LanguageMappings' then
             count = count + 1
         end
     end
@@ -44,7 +42,7 @@ local root = vim.fn.tempname() .. ' task space $literal'
 vim.fn.mkdir(root, 'p')
 vim.fn.writefile({}, root .. '/pyproject.toml')
 vim.fn.writefile({ 'print("native-task-ok")' }, root .. '/test_sample.py')
-api.nvim_cmd({ cmd = 'edit', args = { root .. '/test_sample.py' }, magic = { file = false } }, {})
+api.nvim_cmd({ cmd = 'edit', args = { root .. '/test_sample.py' }, magic = { bar = false, file = false } }, {})
 set_ft('python')
 local python_buf = api.nvim_get_current_buf()
 local loader = require('mappings')
@@ -71,7 +69,7 @@ set_ft('python')
 
 local real_clients = vim.lsp.get_clients
 local definition_method = true
-vim.lsp.get_clients = function(filter)
+local mock_clients = function(filter)
     if filter.bufnr ~= python_buf then
         return {}
     end
@@ -79,13 +77,14 @@ vim.lsp.get_clients = function(filter)
         {
             id = 700,
             name = 'python-test-lsp',
-            supports_method = function(_, method)
+            supports_method = function(_, method, _bufnr)
                 return definition_method
                     and (method == 'textDocument/definition' or method == 'textDocument/completion')
             end,
         },
     }
 end
+vim.lsp.get_clients = mock_clients
 require('mappings.lspmap').on_attach({ buf = python_buf, data = { client_id = 700 } })
 check(map('gd').buffer == 1, 'definition exists only with a supporting buffer client')
 check(map('gD').lhs == nil, 'unsupported declaration is absent')
@@ -119,10 +118,7 @@ press(',cl')
 press(',cf')
 check(linted == python_buf and formatted == python_buf, 'runner dispatch stays buffer specific')
 set_ft('text')
-check(
-    map(',cl').lhs == nil and map(',cf').lhs == nil,
-    'runner keys do not leak to another filetype'
-)
+check(map(',cl').lhs == nil and map(',cf').lhs == nil, 'runner keys do not leak to another filetype')
 set_ft('python')
 
 local ran
@@ -147,10 +143,11 @@ local wrapper = {
 }
 require('mappings.ddxmap').setup({ wrapper = wrapper, termdebug = false })
 local real_select = vim.ui.select
-vim.ui.select = function(items, _, callback)
+local mock_select_items = function(items, _, callback)
     check(#items == 1 and items[1].label == 'Python only', 'DAP choices are filetype filtered')
     callback(items[1])
 end
+vim.ui.select = mock_select_items
 press(',dr')
 check(ran == 'Python only', 'debug launch receives the selected Python configuration')
 vim.ui.select = real_select
@@ -175,14 +172,16 @@ set_ft('python')
 local language = require('mappings.langmap')
 local real_system = vim.system
 local spawned = 0
-vim.system = function(...)
+local mock_system_count = function(...)
     spawned = spawned + 1
     return real_system(...)
 end
+vim.system = mock_system_count
 local choose
-vim.ui.select = function(_, _, callback)
+local mock_select_choose = function(_, _, callback)
     choose = callback
 end
+vim.ui.select = mock_select_choose
 language.setup()
 language.run('r', python_buf)
 check(type(choose) == 'function', 'untrusted execution requests review')
@@ -216,7 +215,7 @@ vim.system = real_system
 
 local completion
 local signals = {}
-vim.system = function(_, opts, callback)
+local mock_system_overflow = function(_, opts, callback)
     completion = callback
     vim.schedule(function()
         opts.stdout(nil, string.rep('x', 1024 * 1024 + 1))
@@ -227,6 +226,7 @@ vim.system = function(_, opts, callback)
         end,
     }
 end
+vim.system = mock_system_overflow
 language.run('r', python_buf)
 check(
     vim.wait(1000, function()

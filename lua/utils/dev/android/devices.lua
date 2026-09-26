@@ -20,127 +20,125 @@ local M = {}
 local util = require('utils.dev.android.util')
 
 function M.with_adb(callback)
-  local sdk = util.get_android_sdk()
-  if sdk == nil then
-    vim.notify('Android SDK is not defined.', vim.log.levels.ERROR, {})
-    return
-  end
+    local sdk = util.get_android_sdk()
+    if sdk == nil then
+        vim.notify('Android SDK is not defined.', vim.log.levels.ERROR, {})
+        return
+    end
 
-  callback(sdk .. '/platform-tools/adb')
+    callback(sdk .. '/platform-tools/adb')
 end
 
 function M.get_adb_devices(adb)
-  local ids = {}
-  local obj = vim.system({ adb, 'devices' }, {}):wait()
-  local read = obj.stdout or ''
+    local ids = {}
+    local obj = vim.system({ adb, 'devices' }, {}):wait()
+    local read = obj.stdout or ''
 
-  for row in read:gmatch('[^\n]+') do
-    local items = {}
-    for item in row:gmatch('%S+') do
-      items[#items + 1] = item
+    for row in read:gmatch('[^\n]+') do
+        local items = {}
+        for item in row:gmatch('%S+') do
+            items[#items + 1] = item
+        end
+
+        if items[1] and items[1] ~= 'List' then
+            ids[#ids + 1] = items[1]
+        end
     end
 
-    if items[1] and items[1] ~= 'List' then
-      ids[#ids + 1] = items[1]
-    end
-  end
-
-  return ids
+    return ids
 end
 
 function M.get_device_names(adb, ids)
-  local devices = {}
+    local devices = {}
 
-  for i = 1, #ids do
-    local id = ids[i]
-    local cmd
+    for i = 1, #ids do
+        local id = ids[i]
+        local cmd
 
-    if id:match('^emulator') then
-      cmd = { adb, '-s', id, 'emu', 'avd', 'name' }
-    else
-      cmd = { adb, '-s', id, 'shell', 'getprop', 'ro.product.model' }
+        if id:match('^emulator') then
+            cmd = { adb, '-s', id, 'emu', 'avd', 'name' }
+        else
+            cmd = { adb, '-s', id, 'shell', 'getprop', 'ro.product.model' }
+        end
+
+        local obj = vim.system(cmd, {}):wait()
+        if obj.code == 0 then
+            local read = obj.stdout or ''
+            devices[#devices + 1] = util.trim(read:match('^(.-)\n') or read)
+        end
     end
 
-    local obj = vim.system(cmd, {}):wait()
-    if obj.code == 0 then
-      local read = obj.stdout or ''
-      devices[#devices + 1] = util.trim(read:match('^(.-)\n') or read)
-    end
-  end
-
-  return devices
+    return devices
 end
 
 function M.get_running_devices(adb)
-  local devices = {}
-  local ids = M.get_adb_devices(adb)
-  local names = M.get_device_names(adb, ids)
+    local devices = {}
+    local ids = M.get_adb_devices(adb)
+    local names = M.get_device_names(adb, ids)
 
-  for i = 1, #ids do
-    devices[#devices + 1] = {
-      id = util.trim(ids[i]),
-      name = util.trim(names[i] or ids[i]),
-    }
-  end
+    for i = 1, #ids do
+        devices[#devices + 1] = {
+            id = util.trim(ids[i]),
+            name = util.trim(names[i] or ids[i]),
+        }
+    end
 
-  return devices
+    return devices
 end
 
+---@return string[]? avds AVD names, or nil when listing failed.
+---@return string? err Human-readable reason when avds is nil.
 function M.list_avds()
-  local obj = vim
-    .system(
-      util.android_cli_cmd({
-        'emulator',
-        'list',
-      }),
-      { text = true }
-    )
-    :wait()
+    local obj = vim.system(
+        util.android_cli_cmd({
+            'emulator',
+            'list',
+        }),
+        { text = true }
+    ):wait()
 
-  if obj.code ~= 0 then
-    return nil, util.trim(obj.stderr or 'Failed to list emulators.')
-  end
-
-  local avds = {}
-  for line in (obj.stdout or ''):gmatch('[^\r\n]+') do
-    line = util.trim(line)
-    if line ~= '' then
-      avds[#avds + 1] = line
+    if obj.code ~= 0 then
+        return nil, util.trim(obj.stderr or 'Failed to list emulators.')
     end
-  end
 
-  return avds
+    local avds = {}
+    for line in (obj.stdout or ''):gmatch('[^\r\n]+') do
+        line = util.trim(line)
+        if line ~= '' then
+            avds[#avds + 1] = line
+        end
+    end
+
+    return avds
 end
 
 function M.find_main_activity(adb, device_id, application_id)
-  local obj = vim
-    .system({
-      adb,
-      '-s',
-      device_id,
-      'shell',
-      'cmd',
-      'package',
-      'resolve-activity',
-      '--brief',
-      application_id,
-    }, {})
-    :wait()
+    local obj = vim.system({
+        adb,
+        '-s',
+        device_id,
+        'shell',
+        'cmd',
+        'package',
+        'resolve-activity',
+        '--brief',
+        application_id,
+    }, {}):wait()
 
-  if obj.code ~= 0 then
-    return nil
-  end
+    if obj.code ~= 0 then
+        return nil
+    end
 
-  local result = nil
-  for line in (obj.stdout or ''):gmatch('[^\r\n]+') do
-    result = line
-  end
+    local result = nil
+    for line in (obj.stdout or ''):gmatch('[^\r\n]+') do
+        result = line
+    end
 
-  if result == nil then
-    return nil
-  end
+    if result == nil then
+        return nil
+    end
 
-  return util.trim(result)
+    return util.trim(result)
 end
 
 return M

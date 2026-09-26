@@ -1,3 +1,9 @@
+--- buildifier linter adapter — Bazel/Starlark file formatter-checker wiring.
+---
+--- Plain-language version: a linter is like a spell-checker, but for code instead of words. This file teaches
+--- Neovim how to run the `buildifier` program and turn its complaints into squiggles under your code. It only runs
+--- when linting is triggered (usually on save), and only if `buildifier` is installed on your computer.
+---@module 'linters.buildifier'
 -- /qompassai/Diver/linters/buildifier.lua
 -- Qompass AI Diver Buildifier Linter Spec
 -- Copyright (C) 2025 Qompass AI, All rights reserved
@@ -93,7 +99,8 @@ return ---@type vim.lint.Config
         end
         local function parse_stderr_line(line)
             local parts = vim.split(line, ':')
-            local lnum, col, message = 0, 0, ''
+            local lnum, col = 0, 0
+            local message
             if #parts >= 4 then
                 lnum = tonumber(parts[2]) or 1
                 col = tonumber(parts[3]) or 1

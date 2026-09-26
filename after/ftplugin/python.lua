@@ -2,10 +2,13 @@
 -- Qompass AI Diver After Filetype Plugin Python Config
 -- Copyright (C) 2025 Qompass AI, All rights reserved
 -- ----------------------------------------
-M = {}
+-- local: ftplugin chunks are sourced, not required, so a bare `M = {}`
+-- installs a persistent _G entry every time a buffer of this filetype
+-- opens (and every sibling ftplugin doing `M = {}` clobbers it).
+local M = {}
 local api = vim.api
 local fn = vim.fn
-local group = api.nvim_create_augroup('Python', {
+local group = api.nvim_create_augroup('DiverPythonFt', {
     clear = true,
 })
 local header = require('utils.docs.docs')

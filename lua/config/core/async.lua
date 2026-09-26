@@ -72,6 +72,13 @@ local TASKS_MAX = 4096
 ---@field key any
 ---@field task CoreAsyncTask
 
+---@class CoreAsyncSystemOpts : vim.SystemOpts
+---@field max_output_bytes? integer
+---@field timeout? integer
+
+---@class CoreAsyncSystemCompleted : vim.SystemCompleted
+---@field error? string
+
 local native_state = {
     attempted = false,
     module = nil,
@@ -165,10 +172,7 @@ local function assert_task(value, name)
 
     local value_type = type(value)
 
-    assert(
-        value_type == 'table' or value_type == 'userdata',
-        ('%s: expected vim.async task'):format(name)
-    )
+    assert(value_type == 'table' or value_type == 'userdata', ('%s: expected vim.async task'):format(name))
 
     ---@cast value CoreAsyncTask
     assert_callable(name .. '.close', value.close)
@@ -187,10 +191,7 @@ local function copy_command(command)
 
     assert(count > 0, 'command: must not be empty')
 
-    assert(
-        count <= COMMAND_ARGUMENTS_MAX,
-        ('command: exceeds %d arguments'):format(COMMAND_ARGUMENTS_MAX)
-    )
+    assert(count <= COMMAND_ARGUMENTS_MAX, ('command: exceeds %d arguments'):format(COMMAND_ARGUMENTS_MAX))
 
     for key in pairs(command) do
         assert(
@@ -206,10 +207,7 @@ local function copy_command(command)
 
         assert(type(argument) == 'string', ('command[%d]: expected string'):format(index))
 
-        assert(
-            argument:find('\0', 1, true) == nil,
-            ('command[%d]: contains NUL byte'):format(index)
-        )
+        assert(argument:find('\0', 1, true) == nil, ('command[%d]: contains NUL byte'):format(index))
 
         if index == 1 then
             assert(argument ~= '', 'command[1]: executable must not be empty')
@@ -221,8 +219,8 @@ local function copy_command(command)
     return copied
 end
 
----@param opts? vim.SystemOpts
----@return vim.SystemOpts
+---@param opts? CoreAsyncSystemOpts
+---@return CoreAsyncSystemOpts
 local function copy_system_options(opts)
     if opts == nil then
         return {
@@ -238,7 +236,7 @@ local function copy_system_options(opts)
         copied.text = true
     end
 
-    ---@cast copied vim.SystemOpts
+    ---@cast copied CoreAsyncSystemOpts
     return copied
 end
 
@@ -252,7 +250,7 @@ local function truncate_error(message)
     return '[output truncated]\n' .. message:sub(-ERROR_MESSAGE_BYTES_MAX)
 end
 
----@param result vim.SystemCompleted
+---@param result CoreAsyncSystemCompleted
 ---@param executable string
 ---@return string
 local function command_error(result, executable)
@@ -272,11 +270,7 @@ local function command_error(result, executable)
     end
 
     if result.signal ~= 0 then
-        return ('%s exited with code %d after signal %d'):format(
-            executable,
-            result.code,
-            result.signal
-        )
+        return ('%s exited with code %d after signal %d'):format(executable, result.code, result.signal)
     end
 
     return ('%s exited with code %d'):format(executable, result.code)
@@ -295,8 +289,8 @@ end
 
 ---@async
 ---@param command string[]
----@param opts vim.SystemOpts
----@return vim.SystemCompleted
+---@param opts CoreAsyncSystemOpts
+---@return CoreAsyncSystemCompleted
 local function await_system(command, opts)
     local async = native(2)
     local exited = false
@@ -314,7 +308,7 @@ local function await_system(command, opts)
         end
     end
 
-    ---@param done fun(completed: vim.SystemCompleted)
+    ---@param done fun(completed: CoreAsyncSystemCompleted)
     ---@return table
     local function start_process(done)
         local spawn_error
@@ -388,7 +382,7 @@ local function await_system(command, opts)
 
     local result = async.await(start_process)
 
-    ---@cast result vim.SystemCompleted
+    ---@cast result CoreAsyncSystemCompleted
     return result
 end
 
@@ -460,25 +454,31 @@ function M.sleep(duration_ms)
 end
 
 ---@param command string[]
----@param opts? vim.SystemOpts
+---@param opts? CoreAsyncSystemOpts
 ---@return CoreAsyncTask
 function M.system(command, opts)
     local copied_command = copy_command(command)
     local copied_opts = copy_system_options(opts)
 
-    return M.run('system:' .. copied_command[1], function()
+    ---@async
+    ---@return CoreAsyncSystemCompleted
+    local function run_system()
         return await_system(copied_command, copied_opts)
-    end)
+    end
+
+    return M.run('system:' .. copied_command[1], run_system)
 end
 
 ---@param command string[]
----@param opts? vim.SystemOpts
+---@param opts? CoreAsyncSystemOpts
 ---@return CoreAsyncTask
 function M.system_checked(command, opts)
     local copied_command = copy_command(command)
     local copied_opts = copy_system_options(opts)
 
-    return M.run('system_checked:' .. copied_command[1], function()
+    ---@async
+    ---@return CoreAsyncSystemCompleted
+    local function run_system_checked()
         local result = await_system(copied_command, copied_opts)
 
         if result.code ~= 0 then
@@ -486,7 +486,9 @@ function M.system_checked(command, opts)
         end
 
         return result
-    end)
+    end
+
+    return M.run('system_checked:' .. copied_command[1], run_system_checked)
 end
 
 ---@async
@@ -585,10 +587,7 @@ function M.iter(tasks)
     assert(count <= TASKS_MAX, ('tasks: exceeds %d entries'):format(TASKS_MAX))
 
     for key in pairs(tasks) do
-        assert(
-            type(key) == 'number' and key % 1 == 0 and key >= 1 and key <= count,
-            'tasks: expected dense array'
-        )
+        assert(type(key) == 'number' and key % 1 == 0 and key >= 1 and key <= count, 'tasks: expected dense array')
     end
 
     local copied = {} ---@type CoreAsyncTask[]
@@ -702,8 +701,8 @@ local process_count = 0
 local process_group
 
 ---@param command string[]
----@param opts? vim.SystemOpts|table max_output_bytes defaults to 8 MiB, timeout to 30 s.
----@param callback fun(result: vim.SystemCompleted|table)
+---@param opts? CoreAsyncSystemOpts|table max_output_bytes defaults to 8 MiB, timeout to 30 s.
+---@param callback fun(result: CoreAsyncSystemCompleted)
 ---@return vim.SystemObj?, string?
 function M.spawn(command, opts, callback)
     local argv = copy_command(command)
@@ -768,15 +767,22 @@ function M.spawn(command, opts, callback)
             end,
         })
     end
-    local ok, result = pcall(vim.system, argv, settings, function(completed)
+    local ok, result = pcall(vim.system, argv, settings, function(system_completed)
         vim.schedule(function()
             if process and processes[process] then
                 processes[process] = nil
                 process_count = process_count - 1
             end
-            completed.stdout, completed.stderr =
-                table.concat(chunks.stdout), table.concat(chunks.stderr)
-            completed.error = failure
+            -- Build a fresh completion record rather than injecting fields
+            -- into vim.system's result reference.
+            ---@type CoreAsyncSystemCompleted
+            local completed = {
+                code = system_completed.code,
+                signal = system_completed.signal,
+                stdout = table.concat(chunks.stdout),
+                stderr = table.concat(chunks.stderr),
+                error = failure,
+            }
             if failure and completed.code == 0 then
                 completed.code = 1
             end
