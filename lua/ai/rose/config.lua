@@ -21,6 +21,15 @@ local M = {}
 ---@field allow_cloud boolean
 ---@field provider string
 
+---@class AiRoseSpeculativeConfig
+---@field enabled boolean default false; no behavior changes when false
+---@field host string llama.cpp server host for speculative decoding
+---@field port integer llama.cpp server port
+---@field draft_model string draft model path, required when enabled
+---@field n_draft integer draft tokens per step, 1..16
+---@field allow_remote boolean opt in to non-loopback hosts; enforced by ai.inference.speculative
+---@field kv table declared KV precision contract for the server; checked by ai.inference.kv_policy when enabled
+
 ---@class AiRoseAgentConfig
 ---@field max_iterations integer
 ---@field max_repair_rounds integer
@@ -39,6 +48,7 @@ local M = {}
 ---@field workspace string
 ---@field ollama AiRoseOllamaConfig
 ---@field providers AiRoseProvidersConfig
+---@field speculative AiRoseSpeculativeConfig
 ---@field agent AiRoseAgentConfig
 ---@field flow AiRoseFlowConfig
 ---@field mcp table
@@ -59,6 +69,15 @@ M.defaults = {
         enabled = false,
         allow_cloud = false,
         provider = 'ollama',
+    },
+    speculative = {
+        enabled = false,
+        host = '127.0.0.1',
+        port = 8080,
+        draft_model = '',
+        n_draft = 5,
+        allow_remote = false,
+        kv = {},
     },
     agent = {
         max_iterations = 6,
@@ -256,6 +275,26 @@ function M.resolve(opts)
     assert(config.ollama.model ~= '', 'ollama.model is required')
     assert(type(config.ollama.base_url) == 'string', 'ollama.base_url must be a string')
     assert(type(config.providers) == 'table', 'providers must be a configuration table')
+    assert(type(config.speculative) == 'table', 'speculative must be a configuration table')
+    assert(type(config.speculative.enabled) == 'boolean', 'speculative.enabled must be a boolean')
+    assert(type(config.speculative.allow_remote) == 'boolean', 'speculative.allow_remote must be a boolean')
+    if config.speculative.enabled then
+        assert(
+            type(config.speculative.host) == 'string' and config.speculative.host ~= '',
+            'speculative.host is required when speculative.enabled'
+        )
+        integer(config.speculative.port, 1, 65535, 'speculative.port')
+        assert(
+            type(config.speculative.draft_model) == 'string' and config.speculative.draft_model ~= '',
+            'speculative.draft_model is required when speculative.enabled'
+        )
+        integer(config.speculative.n_draft, 1, 16, 'speculative.n_draft')
+        assert(type(config.speculative.kv) == 'table', 'speculative.kv must be a table')
+        local kv_policy = require('ai.inference.kv_policy')
+        local violations, verr = kv_policy.validate(config.speculative.kv)
+        assert(verr == nil, 'speculative.kv: ' .. tostring(verr))
+        assert(#violations == 0, 'speculative.kv violates KV precision policy: ' .. table.concat(violations, '; '))
+    end
 
     validate_checks(config.checks)
     assert(type(config.workspace) == 'string', 'resolved workspace must be a string')
@@ -277,6 +316,7 @@ function M.resolve(opts)
         workspace = config.workspace,
         ollama = config.ollama,
         providers = config.providers,
+        speculative = config.speculative,
         agent = agent,
         flow = config.flow,
         mcp = config.mcp,

@@ -31,11 +31,68 @@ local SEARCH_RESULTS_MAX = 20
 local QUERY_LENGTH_MAX = 200
 local CURL_TIMEOUT_MS = 25000
 local BRAVE_ENDPOINT = 'https://api.search.brave.com/res/v1/web/search'
+local DISCOVERY_CACHE_TTL_S = 3600 -- search results go stale; 1h, not 72h
 
 ---@class McpSearchResult
 ---@field title string
 ---@field url string
 ---@field content string
+
+---@class McpRankOpts
+---@field block_size? integer candidates per coarse block
+---@field pool_size? integer max blocks admitted to the candidate pool
+---@field top_k? integer max ranked results returned
+---@field fine_fn? fun(items: McpSearchResult[], query: string): table[]
+
+---@param results McpSearchResult[]
+---@return McpSearchResult[] detached copy, safe to hand to callers
+local function copy_results(results)
+    local out = {}
+    for _, item in ipairs(results) do
+        out[#out + 1] = { title = item.title, url = item.url, content = item.content }
+    end
+    return out
+end
+
+---@param value any
+---@return boolean the value is a well-shaped cached result list
+local function valid_cached(value)
+    if type(value) ~= 'table' then
+        return false
+    end
+    for _, item in ipairs(value) do
+        if type(item) ~= 'table' then
+            return false
+        end
+        if type(item.title) ~= 'string' or type(item.url) ~= 'string' then
+            return false
+        end
+        if type(item.content) ~= 'string' then
+            return false
+        end
+    end
+    return true
+end
+
+---@type table? cached tiered instance; nil when unavailable
+local tiered_cache = nil
+
+---@return table? cache with put_global/get_global/put_local/get_local, or nil
+local function discovery_cache()
+    if tiered_cache ~= nil then
+        return tiered_cache
+    end
+    local ok, tiered = pcall(require, 'ai.cache.tiered')
+    if not ok or type(tiered) ~= 'table' or type(tiered.new) ~= 'function' then
+        return nil
+    end
+    -- new() never raises; a nil return just means "run uncached".
+    local cache = tiered.new({ global_ttl_s = DISCOVERY_CACHE_TTL_S })
+    if cache ~= nil then
+        tiered_cache = cache
+    end
+    return cache
+end
 
 ---@param query any
 ---@return boolean
@@ -201,17 +258,143 @@ function M.search(query, callback)
         callback('curl is not installed', nil)
         return
     end
+    -- Two-tier result cache (best-effort): the 5-minute local tier
+    -- absorbs repeated queries inside one session; the 1-hour
+    -- global tier survives restarts. Any cache failure -- corrupt
+    -- disk, bad shape, missing module -- falls through to a live
+    -- search, so cached staleness can never break this function.
+    local cache = discovery_cache()
+    local cache_key = 'mcp_discovery:' .. query
+    if cache ~= nil then
+        local cached = cache.get_local(cache_key)
+        if not valid_cached(cached) then
+            cached = cache.get_global(cache_key)
+        end
+        if valid_cached(cached) then
+            callback(nil, copy_results(cached))
+            return
+        end
+    end
+    local function caching_callback(err, results)
+        if err == nil and valid_cached(results) and cache ~= nil then
+            local snapshot = copy_results(results)
+            cache.put_local(cache_key, snapshot)
+            cache.put_global(cache_key, snapshot)
+        end
+        callback(err, results)
+    end
     local base = searxng_base()
     if base ~= nil then
-        search_searxng(base, query, callback)
+        search_searxng(base, query, caching_callback)
         return
     end
     local key = vim.env.BRAVE_API_KEY
     if type(key) == 'string' and key ~= '' then
-        search_brave(key, query, callback)
+        search_brave(key, query, caching_callback)
         return
     end
     callback('no search backend: set SEARXNG_URL or BRAVE_API_KEY', nil)
+end
+
+---Count non-overlapping plain-text occurrences; query terms are
+---never treated as Lua patterns.
+---@param haystack string
+---@param needle string
+---@return integer count
+local function count_occurrences(haystack, needle)
+    if needle == '' then
+        return 0
+    end
+    local count = 0
+    local from = 1
+    while from <= #haystack do
+        local found_start, found_end = haystack:find(needle, from, true)
+        if found_start == nil then
+            break
+        end
+        assert(found_end ~= nil, 'plain find returned start without end')
+        count = count + 1
+        from = found_end + 1
+    end
+    return count
+end
+
+---Weighted token-overlap relevance used as the fine stage by
+---M.search_ranked. This is a LOCAL stand-in for an expensive
+---scorer (for example an LLM judge): title matches count most,
+---then URL, then content. Callers with a real scorer pass their
+---own opts.fine_fn instead.
+---@param items McpSearchResult[]
+---@param query string
+---@return table[] hits shaped as { item = McpSearchResult, score = number }
+local function relevance_fine(items, query)
+    local terms = {}
+    for term in query:lower():gmatch('%w+') do
+        terms[#terms + 1] = term
+    end
+    local hits = {}
+    for _, item in ipairs(items) do
+        local score = 0
+        local fields = {
+            { text = item.title or '', weight = 3 },
+            { text = item.url or '', weight = 2 },
+            { text = item.content or '', weight = 1 },
+        }
+        for _, field in ipairs(fields) do
+            local lowered = field.text:lower()
+            for _, term in ipairs(terms) do
+                score = score + count_occurrences(lowered, term) * field.weight
+            end
+        end
+        hits[#hits + 1] = { item = item, score = score }
+    end
+    return hits
+end
+
+---Optional coarse-to-fine ranked search. Runs the normal M.search
+---(including its cache), then narrows with ai.retrieval.two_stage:
+---a cheap block pass over all results, then the fine scorer only
+---on the candidate pool. M.search itself is unchanged; ranking
+---failures fall back to unranked results rather than erroring.
+---@param query string
+---@param callback fun(err: string?, results: McpSearchResult[]?)
+---@param opts? McpRankOpts
+function M.search_ranked(query, callback, opts)
+    assert(type(callback) == 'function', 'callback must be a function')
+    M.search(query, function(err, results)
+        if err ~= nil or results == nil then
+            callback(err, results)
+            return
+        end
+        local rank_opts = opts or {}
+        local ok, two_stage = pcall(require, 'ai.retrieval.two_stage')
+        if not ok or type(two_stage) ~= 'table' or type(two_stage.rank) ~= 'function' then
+            callback(nil, results)
+            return
+        end
+        local fine_fn = rank_opts.fine_fn
+        if fine_fn == nil then
+            fine_fn = relevance_fine
+        end
+        local ranked = two_stage.rank(results, query, {
+            block_size = rank_opts.block_size,
+            pool_size = rank_opts.pool_size,
+            top_k = rank_opts.top_k,
+            text_of = function(item)
+                return (item.title or '') .. '\n' .. (item.url or '') .. '\n' .. (item.content or '')
+            end,
+            fine_fn = fine_fn,
+        })
+        if ranked == nil then
+            callback(nil, results)
+            return
+        end
+        local out = {}
+        for _, hit in ipairs(ranked) do
+            out[#out + 1] = hit.item
+        end
+        callback(nil, out)
+    end)
 end
 
 ---@param result McpSearchResult
