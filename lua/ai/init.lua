@@ -21,6 +21,15 @@
 --   ai/mcp/     MCP server manager (mcphub-like, no plugins): registry,
 --               stdio client, tool inspection, menu UI, and server
 --               discovery via SearXNG (primary) / Brave (fallback).
+--   ai/webmcp/  Firenvim-style bridge without the plugin: a localhost
+--               WebSocket server exposing named RPC endpoints (SCIP,
+--               recon skills, CLI tools) with WebMCP safety annotations,
+--               plus a dashboard page that registers them via
+--               document.modelContext.registerTool().
+--   ai/recon/   Authorized-engagement pentest tooling: SKILL.md skill
+--               library loader (ai.mcp.skills), bounded CLI tool
+--               wrappers, output parsers, execution gate (auto-
+--               authorized, always audit-logged), and :Recon* commands.
 --   ai/security/
 --               Anti-malware / anti-poisoning: content scanner run over
 --               files before they enter AI context, plus the tool-call
@@ -52,6 +61,7 @@ function M.setup(opts)
     require('ai.herd').setup()
     require('ai.debugbridge').setup()
     require('ai.dataaccess').setup()
+    require('ai.recon').setup()
 end
 
 return M

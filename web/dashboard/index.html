@@ -1,0 +1,213 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Diver Bridge Dashboard</title>
+<style>
+  :root { color-scheme: dark; }
+  body { font-family: system-ui, sans-serif; background: #0d1117; color: #e6edf3;
+         margin: 0; padding: 1rem; max-width: 72rem; }
+  h1 { font-size: 1.25rem; }
+  #status { padding: .5rem .75rem; border-radius: .5rem; margin-bottom: 1rem;
+            background: #161b22; border: 1px solid #30363d; }
+  #status .ok { color: #3fb950; } #status .bad { color: #f85149; }
+  #webmcp-note { font-size: .85rem; color: #8b949e; margin-bottom: 1rem; }
+  .tool { background: #161b22; border: 1px solid #30363d; border-radius: .5rem;
+          padding: .75rem; margin-bottom: .75rem; }
+  .tool h2 { font-size: 1rem; margin: 0 0 .25rem; font-family: monospace; }
+  .tool p { margin: .25rem 0; font-size: .9rem; color: #8b949e; }
+  .hints { font-size: .75rem; margin: .25rem 0; }
+  .hint { display: inline-block; padding: .1rem .4rem; border-radius: 1rem;
+          margin-right: .25rem; background: #21262d; border: 1px solid #30363d; }
+  .hint.warn { border-color: #9e6a03; color: #d29922; }
+  textarea { width: 100%; min-height: 4rem; background: #0d1117; color: #e6edf3;
+             border: 1px solid #30363d; border-radius: .375rem; font-family: monospace;
+             font-size: .85rem; box-sizing: border-box; }
+  button { background: #238636; color: #fff; border: 0; border-radius: .375rem;
+           padding: .4rem .9rem; cursor: pointer; margin-top: .5rem; }
+  button:disabled { background: #30363d; cursor: default; }
+  pre.result { background: #0d1117; border: 1px solid #30363d; border-radius: .375rem;
+               padding: .5rem; overflow: auto; max-height: 24rem; font-size: .8rem;
+               white-space: pre-wrap; }
+</style>
+</head>
+<body>
+<h1>Diver Bridge Dashboard</h1>
+<div id="status">Connecting&hellip;</div>
+<div id="authbar" style="margin-bottom:1rem">
+  <input id="token" type="password" placeholder="Paste bridge token (:ReconToken mint)" size="48"
+    style="background:#161b22;color:#e6edf3;border:1px solid #30363d;border-radius:.375rem;padding:.4rem .6rem">
+  <button id="authbtn">Authenticate</button>
+  <span id="authstate" style="margin-left:.5rem;color:#8b949e">not authenticated</span>
+</div>
+<div id="webmcp-note"></div>
+<div id="tools"></div>
+
+<script>
+'use strict';
+// Tiny JSON-RPC-ish client for the Diver bridge (see lua/ai/webmcp/bridge.lua).
+const PORT = 17871;
+let seq = 0;
+const pending = new Map();
+let ws = null;
+
+const statusEl = document.getElementById('status');
+const noteEl = document.getElementById('webmcp-note');
+const toolsEl = document.getElementById('tools');
+
+function setStatus(ok, text) {
+  statusEl.innerHTML = '<span class="' + (ok ? 'ok' : 'bad') + '">&#9679;</span> ' + text;
+}
+
+function call(method, params) {
+  return new Promise((resolve, reject) => {
+    const id = ++seq;
+    pending.set(id, { resolve, reject });
+    ws.send(JSON.stringify({ id, method, params: params || {} }));
+    setTimeout(() => {
+      if (pending.has(id)) { pending.delete(id); reject(new Error('timeout')); }
+    }, 60000);
+  });
+}
+
+function hintChips(ann) {
+  ann = ann || {};
+  const chips = [];
+  if (ann.readOnlyHint) chips.push('<span class="hint">read-only</span>');
+  if (ann.consequentialHint) chips.push('<span class="hint warn">consequential</span>');
+  if (ann.untrustedContentHint) chips.push('<span class="hint">untrusted-content</span>');
+  return '<div class="hints">' + chips.join('') + '</div>';
+}
+
+// Skill metadata is local/trusted, but escape it anyway: a
+// malicious SKILL.md must not become script execution here.
+function esc(s) {
+  return String(s == null ? '' : s).replace(/[&<>"']/g, c => ({
+    '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;'
+  }[c]));
+}
+
+// Register every bridge endpoint as a WebMCP tool when the browser
+// supports document.modelContext (Chrome's built-in agent surface).
+async function registerWebMCP(tools) {
+  if (!document.modelContext || typeof document.modelContext.registerTool !== 'function') {
+    noteEl.textContent = 'WebMCP not available in this browser: dashboard still works manually.';
+    return;
+  }
+  let n = 0;
+  for (const t of tools) {
+    const toolName = t.name;
+    try {
+      await document.modelContext.registerTool({
+        name: 'diver.' + toolName,
+        title: t.title || toolName,
+        description: t.description || toolName,
+        inputSchema: t.inputSchema || { type: 'object', properties: {} },
+        annotations: {
+          readOnlyHint: !!(t.annotations && t.annotations.readOnlyHint),
+          consequentialHint: !!(t.annotations && t.annotations.consequentialHint),
+          untrustedContentHint: !!(t.annotations && t.annotations.untrustedContentHint),
+        },
+        execute: async (input) => {
+          const res = await call(toolName, input || {});
+          if (!res.ok) throw new Error(res.error || 'bridge error');
+          return res.result;
+        },
+      });
+      n++;
+    } catch (e) { console.warn('webmcp register failed for', toolName, e); }
+  }
+  noteEl.textContent = 'WebMCP: registered ' + n + ' Diver tools with this page\'s agent.';
+}
+
+function renderTools(tools) {
+  toolsEl.innerHTML = '';
+  for (const t of tools) {
+    const div = document.createElement('div');
+    div.className = 'tool';
+    const needsTarget = t.name.startsWith('recon.');
+    const placeholder = needsTarget
+      ? '{\n  "target": "example.com",\n  "args": []\n}'
+      : '{}';
+    div.innerHTML =
+      '<h2>' + esc(t.name) + '</h2>' +
+      '<p>' + esc(t.description) + '</p>' +
+      hintChips(t.annotations) +
+      '<textarea spellcheck="false">' + placeholder.replace(/</g, '&lt;') + '</textarea>' +
+      '<br><button>Run</button>' +
+      '<pre class="result" hidden></pre>';
+    const btn = div.querySelector('button');
+    const area = div.querySelector('textarea');
+    const pre = div.querySelector('pre');
+    btn.addEventListener('click', async () => {
+      btn.disabled = true;
+      pre.hidden = true;
+      let params = {};
+      try { params = JSON.parse(area.value || '{}'); }
+      catch (e) { pre.hidden = false; pre.textContent = 'bad JSON: ' + e.message; btn.disabled = false; return; }
+      try {
+        const res = await call(t.name, params);
+        pre.hidden = false;
+        pre.textContent = JSON.stringify(res, null, 2).slice(0, 20000);
+      } catch (e) {
+        pre.hidden = false;
+        pre.textContent = 'error: ' + e.message;
+      }
+      btn.disabled = false;
+    });
+    toolsEl.appendChild(div);
+  }
+}
+
+function connect() {
+  ws = new WebSocket('ws://127.0.0.1:' + PORT);
+  ws.onopen = async () => {
+    setStatus(true, 'Connected to Diver bridge on :' + PORT);
+    // Tokens are never persisted: typed in, kept in memory, sent once.
+    await tryAuth();
+  };
+  ws.onmessage = (ev) => {
+    let msg;
+    try { msg = JSON.parse(ev.data); } catch (e) { return; }
+    const p = pending.get(msg.id);
+    if (p) { pending.delete(msg.id); p.resolve(msg); }
+  };
+  ws.onclose = () => setStatus(false, 'Disconnected. Start the bridge with :ReconBridge start, then reload.');
+  ws.onerror = () => setStatus(false, 'Connection failed. Is the bridge running? (:ReconBridge start)');
+}
+
+async function tryAuth() {
+  const tokenEl = document.getElementById('token');
+  const stateEl = document.getElementById('authstate');
+  const token = tokenEl.value.trim();
+  if (!token) {
+    stateEl.textContent = 'not authenticated — paste a token from :ReconToken mint';
+    stateEl.style.color = '#f85149';
+    return;
+  }
+  try {
+    const res = await call('bridge.auth', { token });
+    if (res.ok) {
+      stateEl.textContent = 'authenticated (scope ' + res.result.scope + ')';
+      stateEl.style.color = '#3fb950';
+      const tools = await call('bridge.tools', {});
+      if (tools.ok) {
+        renderTools(tools.result.tools || []);
+        await registerWebMCP(tools.result.tools || []);
+      } else {
+        setStatus(false, 'bridge.tools failed: ' + tools.error);
+      }
+    } else {
+      stateEl.textContent = 'auth failed: ' + res.error;
+      stateEl.style.color = '#f85149';
+    }
+  } catch (e) { stateEl.textContent = 'auth error: ' + e.message; stateEl.style.color = '#f85149'; }
+}
+document.getElementById('authbtn').addEventListener('click', () => {
+  if (ws && ws.readyState === WebSocket.OPEN) tryAuth();
+});
+connect();
+</script>
+</body>
+</html>
