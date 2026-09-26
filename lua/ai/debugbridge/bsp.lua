@@ -607,4 +607,83 @@ function M.stop(root)
     log_event('bsp_stop', { root = normalized, stopped = true })
 end
 
+---SCIP index status per build-target language.
+---
+---Plain words: each BSP build target declares language IDs (`scala`,
+---`java`, ...). This reports, per language, which SCIP indexer owns it
+---and whether a fresh index exists — so an agent can decide whether to
+---re-index before a refactor or a code-intel query. Languages are
+---resolved dynamically through `scip.lang`, so multi-language indexers
+---(java → kotlin/scala) map correctly without hardcoding.
+---@class BspScipLanguageStatus
+---@field language string Canonical language.
+---@field indexer string? Owning SCIP indexer, when one exists.
+---@field index_fresh boolean? Freshness, when an indexer exists.
+
+---@param root string Project root.
+---@param callback fun(err: string|nil, statuses: BspScipLanguageStatus[]|nil)
+---@return nil
+function M.scip_status(root, callback)
+    assert(type(callback) == 'function')
+    local normalized, root_error = validate_root(root)
+    if normalized == nil then
+        callback(root_error or 'invalid root', nil)
+        return
+    end
+
+    M.list_targets(normalized, function(list_error, targets)
+        if list_error ~= nil then
+            callback(list_error, nil)
+            return
+        end
+
+        local ok_lang, scip_lang = pcall(require, 'scip.lang')
+        local ok_query, scip_query = pcall(require, 'scip.query')
+
+        if not ok_lang or not ok_query then
+            callback('scip modules unavailable', nil)
+            return
+        end
+
+        ---@type table<string, boolean>
+        local seen = {}
+        ---@type BspScipLanguageStatus[]
+        local statuses = {}
+
+        for _, target in ipairs(targets or {}) do
+            for _, language_id in ipairs(target.language_ids or {}) do
+                if not seen[language_id] then
+                    seen[language_id] = true
+
+                    ---@type BspScipLanguageStatus
+                    local entry = { language = language_id }
+
+                    local match = scip_lang.for_language(language_id)
+
+                    if match ~= nil then
+                        entry.indexer = match.indexer
+
+                        local status = scip_query.status({
+                            language = match.language,
+                            root = normalized,
+                        })
+
+                        if status ~= nil then
+                            entry.index_fresh = status.exists and status.fresh
+                        end
+                    end
+
+                    statuses[#statuses + 1] = entry
+                end
+            end
+        end
+
+        table.sort(statuses, function(a, b)
+            return a.language < b.language
+        end)
+
+        callback(nil, statuses)
+    end)
+end
+
 return M

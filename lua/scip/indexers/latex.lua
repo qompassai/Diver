@@ -31,7 +31,7 @@ local indexer = {
 
     command = 'scip-latex',
 
-    enabled = false,
+    enabled = true,
 
     filetypes = {
         bib = true,

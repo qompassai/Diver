@@ -33,7 +33,7 @@ local indexer = {
 
     command = 'scip-lua',
 
-    enabled = false,
+    enabled = true,
     filetypes = {
         lua = true,
     },

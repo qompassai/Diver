@@ -124,8 +124,20 @@ end
 ---@return nil
 function M.rename(opts)
     opts = opts or {}
+
+    local bufnr = core.bufnr(opts.bufnr)
+
+    -- SCIP pre-flight: warn when the whole-project index is fresher than
+    -- LSP's open-buffer view, so a rename does not silently miss files.
+    -- Advisory only; the rename always proceeds.
+    local ok_scip, scip = pcall(require, 'refactor.scip')
+
+    if ok_scip then
+        scip.confirm(scip.preflight(bufnr))
+    end
+
     vim.lsp.buf.rename(nil, {
-        bufnr = core.bufnr(opts.bufnr),
+        bufnr = bufnr,
     })
 end
 

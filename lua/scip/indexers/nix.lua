@@ -33,7 +33,7 @@ local indexer = {
     },
     command = 'scip-nix',
 
-    enabled = false,
+    enabled = true,
 
     filetypes = {
         nix = true,

@@ -631,6 +631,19 @@ function M.run(spec, overrides, on_done)
     -- The plan stage notes the tiger-style guide when one exists, so the
     -- backend can generate conforming code.
     session.spec.style_note = M.style_note(session.spec.language)
+    -- SCIP context is advisory and async: when the spec names a language
+    -- with a SCIP indexer, ensure a fresh index exists before generation
+    -- so the backend can reference precise project symbols. A missing
+    -- indexer never blocks the build.
+    local ok_scip, builder_scip = pcall(require, 'ai.builder.scip')
+
+    if ok_scip then
+        builder_scip.attach(session.spec, function()
+            run_stage(session, build_env(overrides), 'plan', on_done)
+        end)
+        return
+    end
+
     run_stage(session, build_env(overrides), 'plan', on_done)
 end
 
