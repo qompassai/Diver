@@ -7,10 +7,12 @@
 --             X25519 + ML-KEM-768 hybrid KEM
 --   quantum : ML-DSA-87 signatures, ML-KEM-1024 KEM (pure NIST PQC)
 --
--- Backends: liboqs 0.14.0 through LuaJIT FFI for the PQC parts (built from
+-- Backends: liboqs through LuaJIT FFI for the PQC parts (built from
 -- source; see the audit notes for the build recipe), and the openssl CLI for
--- the classic parts. When liboqs is absent only `classic` is available and
--- every hybrid/quantum call fails loudly instead of silently downgrading.
+-- the classic parts. $LIBOQS_PATH (or vim.g.recon_liboqs_path) selects the
+-- liboqs build (0.16.0); the default path is the older 0.14.0 build. When
+-- liboqs is absent only `classic` is available and every hybrid/quantum call
+-- fails loudly instead of silently downgrading.
 --
 -- Key tables are plain data (JSON-serializable) so the keystore can persist
 -- them. Secrets never hit logs: errors name the operation, not the bytes.
@@ -731,6 +733,14 @@ function M.kem_encaps(key)
         return kem_encaps_classic(key)
     end
     if key.strength == 'hybrid' or key.strength == 'quantum' then
+        if key.strength == 'hybrid' then
+            if type(key.public) ~= 'string' then
+                return nil, 'bad KEM public key'
+            end
+            if type(key.x_public_pem) ~= 'string' then
+                return nil, 'hybrid key missing x_public_pem'
+            end
+        end
         return kem_encaps_pqc(key)
     end
     return nil, 'unknown strength: ' .. tostring(key.strength)
@@ -829,6 +839,9 @@ local function kem_decaps_pqc(key, ct, eph_pub)
     if key.strength == 'hybrid' then
         if type(eph_pub) ~= 'string' then
             return nil, 'hybrid decaps needs the ephemeral X25519 public key'
+        end
+        if type(key.x_private_pem) ~= 'string' then
+            return nil, 'hybrid key missing x_private_pem'
         end
         local tmpk = vim.fn.tempname()
         local tmpp = vim.fn.tempname()
