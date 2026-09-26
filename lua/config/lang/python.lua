@@ -3,6 +3,8 @@
 -- Copyright (C) 2025 Qompass AI, All rights reserved
 -- ----------------------------------------
 local M = {}
+-- A2A SDK: <LocalLeader>aa* maps (card/send/stream/get/cancel/install)
+-- are wired for this filetype by ai.a2a.sdks.setup().
 local api = vim.api
 local cmd = vim.cmd
 local fn = vim.fn
