@@ -49,6 +49,9 @@ function M.setup(opts)
     require('ai.security').setup()
     require('ai.builder').setup()
     require('ai.media').setup()
+    require('ai.herd').setup()
+    require('ai.debugbridge').setup()
+    require('ai.dataaccess').setup()
 end
 
 return M
