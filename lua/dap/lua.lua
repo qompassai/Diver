@@ -131,6 +131,73 @@ local function executable_path(command)
     return fs.normalize(path)
 end
 
+---Relative path of the adapter binary inside a moonwalk checkout once
+---`luamake` has been run there.
+local MOONWALK_BIN_SUFFIX = '/publish/bin/lua-debug'
+
+---@return string?
+---Moonwalk checkout root: `$MOONWALK_ROOT` when it names a directory,
+---else `~/workspace/repos/moonwalk` when it exists.
+local function moonwalk_root()
+    local configured = env.MOONWALK_ROOT
+
+    if type(configured) == 'string' and configured ~= '' then
+        local stat = uv.fs_stat(configured)
+
+        if stat ~= nil and stat.type == 'directory' then
+            return fs.normalize(configured)
+        end
+    end
+
+    local home = env.HOME
+
+    if type(home) == 'string' and home ~= '' then
+        local candidate = fs.joinpath(home, 'workspace', 'repos', 'moonwalk')
+        local stat = uv.fs_stat(candidate)
+
+        if stat ~= nil and stat.type == 'directory' then
+            return fs.normalize(candidate)
+        end
+    end
+
+    return nil
+end
+
+---@return string?
+---Built moonwalk adapter binary, or nil when the checkout is absent or
+---not yet built.
+local function moonwalk_adapter()
+    local root_dir = moonwalk_root()
+
+    if root_dir == nil then
+        return nil
+    end
+
+    local binary = root_dir .. MOONWALK_BIN_SUFFIX
+
+    if executable(binary) then
+        return binary
+    end
+
+    return nil
+end
+
+---@return string?
+---Human-readable hint for building the moonwalk adapter, or nil when
+---there is no checkout to build.
+local function moonwalk_build_hint()
+    local root_dir = moonwalk_root()
+
+    if root_dir == nil then
+        return nil
+    end
+
+    return ('moonwalk checkout at %s is not built; run `luamake` there to produce %s'):format(
+        root_dir,
+        root_dir .. MOONWALK_BIN_SUFFIX
+    )
+end
+
 ---@param path string
 ---@return string
 local function normalize(path)
@@ -198,6 +265,12 @@ local function lua_debug_adapter()
 
     if type(configured) == 'string' and configured ~= '' and executable(configured) then
         return configured
+    end
+
+    local moonwalk = moonwalk_adapter()
+
+    if moonwalk ~= nil then
+        return moonwalk
     end
 
     return first_executable(LUA_DEBUG_ADAPTERS)
@@ -547,7 +620,21 @@ local function validate_adapter(callback)
     local adapter = lua_debug_adapter()
 
     if adapter == nil then
-        callback(false, 'Lua debug adapter not found')
+        local hint = moonwalk_build_hint()
+
+        if hint ~= nil then
+            callback(false, 'Lua debug adapter not found: ' .. hint)
+        else
+            callback(false, 'Lua debug adapter not found')
+        end
+
+        return
+    end
+
+    -- Moonwalk's binary speaks DAP on stdio and answers no `--help`
+    -- probe, so executability is the whole check for the moonwalk build.
+    if adapter == moonwalk_adapter() then
+        callback(true, adapter)
 
         return
     end
@@ -778,10 +865,10 @@ M.configurations = {
             args = program_arguments,
             cwd = workspace,
             env = environment,
-            lua = runtime,
             name = 'Lua: Launch current file',
             program = current_program,
             request = 'launch',
+            runtimeExecutable = runtime,
             stopOnEntry = false,
             type = ADAPTER_NAME,
         },
@@ -789,10 +876,10 @@ M.configurations = {
             args = program_arguments,
             cwd = workspace,
             env = environment,
-            lua = runtime,
             name = 'Lua: Launch selected file',
             program = pick_program,
             request = 'launch',
+            runtimeExecutable = runtime,
             stopOnEntry = false,
             type = ADAPTER_NAME,
         },
@@ -813,10 +900,10 @@ M.configurations = {
             },
             cwd = workspace,
             env = environment,
-            lua = neovim_runtime,
             name = 'Lua: Launch clean Neovim',
             program = current_program,
             request = 'launch',
+            runtimeExecutable = neovim_runtime,
             stopOnEntry = false,
             type = ADAPTER_NAME,
         },
@@ -824,10 +911,10 @@ M.configurations = {
             args = neovim_config_arguments,
             cwd = workspace,
             env = environment,
-            lua = neovim_runtime,
             name = 'Lua: Launch Neovim config',
             program = current_program,
             request = 'launch',
+            runtimeExecutable = neovim_runtime,
             stopOnEntry = false,
             type = ADAPTER_NAME,
         },
@@ -893,7 +980,13 @@ function M.setup()
     local adapter = lua_debug_adapter()
 
     if adapter == nil then
-        notify('lua-debug is not available', levels.WARN)
+        local hint = moonwalk_build_hint()
+
+        if hint ~= nil then
+            notify('lua-debug is not available: ' .. hint, levels.WARN)
+        else
+            notify('lua-debug is not available', levels.WARN)
+        end
     else
         M.adapter.command = adapter
     end
