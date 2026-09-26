@@ -21,6 +21,20 @@
 -- limitations under the License.
 -- #################################################################
 local T = {}
+function T.assert(value, message)
+    assert(value, message)
+end
+function T.assert_eq(a, b, message)
+    assert(a == b, message or ('expected ' .. vim.inspect(a) .. ' == ' .. vim.inspect(b)))
+end
+function T.assert_deep_eq(a, b, message)
+    assert(vim.deep_equal(a, b), message or 'tables not deeply equal')
+end
+
+local here = debug.getinfo(1, 'S').source:sub(2)
+local root = vim.fn.fnamemodify(here, ':h:h:h')
+package.path = root .. '/lua/?.lua;' .. root .. '/lua/?/init.lua;' .. package.path
+
 require('websocket').setup({})
 local WebsocketClient = require('websocket.client').WebsocketClient
 local WebsocketServer = require('websocket.server').WebsocketServer
@@ -120,4 +134,10 @@ client_2:try_send_data('Hi from client 2')
 vim.cmd('sleep 1')
 T.assert_eq(client_1_info.last_message, 'Reply from server')
 T.assert_eq(client_2_info.last_message, 'Reply from server')
+client_1:try_disconnect()
+client_2:try_disconnect()
+server:try_stop()
+T.assert(not client_1:is_active())
+T.assert(not client_2:is_active())
+T.assert(not server:is_active())
 return T
