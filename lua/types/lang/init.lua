@@ -7,10 +7,6 @@ local M = {} ---@version JIT
 require('types.lang.c')
 require('types.lang.cmp')
 require('types.lang.cpp')
-require('types.lang.go')
 require('types.lang.lua')
-require('types.lang.nix')
 require('types.lang.python')
-require('types.lang.ts')
-require('types.lang.zig')
 return M

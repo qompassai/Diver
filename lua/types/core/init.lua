@@ -5,13 +5,6 @@
 -- --------------------------------------------------
 local M = {} ---@version JIT
 require('types.core.autocmds')
-require('types.core.cmp')
-require('types.core.fixer')
 require('types.core.lazy')
-require('types.core.lint')
-require('types.core.lsp')
-require('types.core.plugins')
-require('types.core.quickfix')
-require('types.core.schema')
 require('types.core.tree')
 return M

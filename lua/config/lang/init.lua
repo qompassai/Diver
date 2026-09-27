@@ -14,7 +14,6 @@ local modules = { ---@version JIT
     'elixir',
     'go',
     'js',
-    'julia',
     'kotlin',
     'latex',
     'lua',
@@ -36,4 +35,9 @@ local modules = { ---@version JIT
 for _, module in ipairs(modules) do
     require('config.lang.' .. module)
 end
+
+-- Coverage manifest generator: registers :LangCoverage (re-runnable).
+local coverage_gen = require('config.lang.coverage_gen')
+coverage_gen.setup()
+
 return M
