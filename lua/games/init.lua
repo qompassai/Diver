@@ -27,7 +27,9 @@ end
 local M = {}
 
 M.aseprite = safe_require('games.aseprite')
+M.blender = safe_require('games.blender')
 M.godot = safe_require('games.godot')
+M.love2d = safe_require('games.love2d')
 M.redot = safe_require('games.redot')
 M.unity = safe_require('games.unity')
 M.unreal = safe_require('games.unreal')
@@ -38,8 +40,16 @@ local engines = {
         label = 'Aseprite',
     },
     {
+        key = 'blender',
+        label = 'Blender',
+    },
+    {
         key = 'godot',
         label = 'Godot',
+    },
+    {
+        key = 'love2d',
+        label = 'LÖVE2D',
     },
     {
         key = 'redot',
@@ -66,13 +76,13 @@ function M.setup()
     vim.api.nvim_create_user_command('Games', function()
         M.show_menu()
     end, {
-        desc = 'Open a combined Aseprite/Godot/Redot/Unity/Unreal action menu',
+        desc = 'Open a combined Aseprite/Blender/Godot/LÖVE2D/Redot/Unity/Unreal action menu',
     })
 
     vim.api.nvim_create_user_command('GamesDoctor', function()
         vim.cmd('checkhealth games')
     end, {
-        desc = "Report every engine's resolved binary/root (Aseprite/Godot/Redot/Unity/Unreal)",
+        desc = "Report every engine's resolved binary/root (Aseprite/Blender/Godot/LÖVE2D/Redot/Unity/Unreal)",
     })
 
     vim.keymap.set('n', '<Space>gd', function()
@@ -103,7 +113,9 @@ function M.show_menu()
     end, {
         group_order = {
             'Aseprite',
+            'Blender',
             'Godot',
+            'LÖVE2D',
             'Redot',
             'Unity',
             'Unreal',
