@@ -1161,12 +1161,159 @@ local function check_stage_spec(spec)
     return spec
 end
 
+-- #################################################################
+-- Save-ownership runtime tripwire.
+--
+-- Single-owner doctrine: after the pipeline unification, the ONLY
+-- legitimate BufWritePre autocmd is the pipeline's own (group
+-- 'native_formatters', created by M.setup). Any other live BufWritePre at
+-- the moment a stage registers means a lang file — or something else —
+-- went back to owning save-time behavior directly, so register_stage
+-- trips loudly. Deliberately a notification, not an error: bricking
+-- config load on a heuristic would be worse than the double-format it
+-- guards against. The test-time scan (further below) is the hard
+-- enforcement point: only it can name the offending file and line, since
+-- the autocmd API exposes no source location.
+--
+-- Known exceptions live in M.ownership_runtime_allowlist with a one-line
+-- rationale each, mirroring the linter field allowlist precedent:
+--   * 'native_formatters' — the pipeline itself.
+--   * groupless + descless — lazy.nvim's LazyFile one-shot loader trigger
+--     (lua/config/lazy.lua): self-deletes on first fire, never mutates.
+--   * 'npm_groovy_lint_format' — KNOWN EXCEPTION, do not "fix": the
+--     conditional Groovy formatter in lua/linters/npm_groovy_lint.lua,
+--     gated by its own runtime.format_on_save; outside the scan paths.
+-- #################################################################
+
+---@class OwnershipRuntimeEntry
+---@field group_name? string Match this nvim_get_autocmds group_name.
+---@field no_group? boolean Match only autocmds with no group.
+---@field desc? string Match this autocmd desc.
+---@field no_desc? boolean Match only autocmds with no desc.
+---@field rationale string One line: why this BufWritePre is legitimate.
+
+---@type OwnershipRuntimeEntry[]
+M.ownership_runtime_allowlist = {
+    {
+        group_name = 'native_formatters',
+        rationale = 'The pipeline itself: the single BufWritePre owner ' .. 'created by M.setup.',
+    },
+    {
+        no_group = true,
+        no_desc = true,
+        rationale = 'lazy.nvim LazyFile one-shot loader trigger '
+            .. '(lua/config/lazy.lua): self-deletes on first fire, '
+            .. 'performs no buffer mutation.',
+    },
+    {
+        group_name = 'npm_groovy_lint_format',
+        rationale = 'KNOWN EXCEPTION (do not fix): conditional Groovy '
+            .. 'formatter in lua/linters/npm_groovy_lint.lua, gated by '
+            .. 'its own runtime.format_on_save.',
+    },
+}
+
+---Group id of the pipeline's BufWritePre, captured in M.setup. Compared
+---by id as well as by name so the tripwire also works before setup runs.
+---@type integer?
+local save_pipeline_group_id = nil
+
+---@type table<string, boolean> Offender keys already reported, loudly once.
+local ownership_offenders_reported = {}
+
+---Distinct offenders reported this session; the map stays tiny by design.
+---@type integer
+local ownership_offenders_count = 0
+
+---Upper bound on distinct offenders reported per session.
+local OWNERSHIP_OFFENDERS_MAX = 16
+
+---Whether one allowlist entry matches a live autocmd. An absent key means
+---"don't care"; no_group/no_desc explicitly require the field to be nil.
+---@param entry OwnershipRuntimeEntry
+---@param autocmd table nvim_get_autocmds entry.
+---@return boolean
+local function runtime_allowlisted(entry, autocmd)
+    assert(type(entry) == 'table', 'allowlist entry must be a table')
+    assert(type(autocmd) == 'table', 'autocmd entry must be a table')
+    local group_ok
+    if entry.group_name ~= nil then
+        group_ok = autocmd.group_name == entry.group_name
+    elseif entry.no_group == true then
+        group_ok = autocmd.group_name == nil
+    else
+        group_ok = true
+    end
+    local desc_ok
+    if entry.desc ~= nil then
+        desc_ok = autocmd.desc == entry.desc
+    elseif entry.no_desc == true then
+        desc_ok = autocmd.desc == nil
+    else
+        desc_ok = true
+    end
+    return group_ok and desc_ok
+end
+
+---Loud-but-nonfatal tripwire over live BufWritePre autocmds. Runs inside
+---register_stage so even lazily-registered lang stages are covered; a
+---setup-only check would miss lang files loaded after setup. Each unknown
+---owner is reported once at ERROR level, naming group, desc and pattern —
+---a file:line attribution is impossible here, which is why the static
+---scan below remains the enforcement point.
+---@return nil
+local function trip_save_ownership()
+    local ok, autocmds = pcall(api.nvim_get_autocmds, {
+        event = 'BufWritePre',
+    })
+    if not ok or type(autocmds) ~= 'table' then
+        return
+    end
+    for _, autocmd in ipairs(autocmds) do
+        if type(autocmd) == 'table' and autocmd.group ~= save_pipeline_group_id then
+            local allowlisted = false
+            for _, entry in ipairs(M.ownership_runtime_allowlist) do
+                if runtime_allowlisted(entry, autocmd) then
+                    allowlisted = true
+                    break
+                end
+            end
+            if not allowlisted then
+                local key = tostring(autocmd.group_name) .. '\0' .. tostring(autocmd.desc)
+                if not ownership_offenders_reported[key] then
+                    if ownership_offenders_count >= OWNERSHIP_OFFENDERS_MAX then
+                        return
+                    end
+                    ownership_offenders_reported[key] = true
+                    ownership_offenders_count = ownership_offenders_count + 1
+                    vim.notify(
+                        (
+                            'formatters: rogue save-time BufWritePre outside the pipeline '
+                            .. '(group=%s, desc=%s, pattern=%s). Lang files must register '
+                            .. 'pipeline stages via formatters.register_stage(); a legitimate '
+                            .. 'owner belongs on M.ownership_runtime_allowlist.'
+                        ):format(
+                            tostring(autocmd.group_name),
+                            tostring(autocmd.desc),
+                            tostring(autocmd.pattern)
+                        ),
+                        vim.log.levels.ERROR
+                    )
+                end
+            end
+        end
+    end
+end
+
 ---Register a save pipeline stage. Duplicate names are rejected loudly so a
 ---copy-paste collision can never silently shadow a stage.
 ---@param spec FormatStageSpec
 ---@return nil
 function M.register_stage(spec)
     local stage = check_stage_spec(spec)
+    -- A stage registering while a legacy direct BufWritePre still lives
+    -- means something bypassed the pipeline; trip loudly (nonfatal).
+    trip_save_ownership()
     save_stages[stage.name] = {
         name = stage.name,
         priority = stage.priority,
@@ -1308,6 +1455,525 @@ function M.run_save_stages(bufnr)
     return completed
 end
 
+-- #################################################################
+-- Save-ownership test-time guard: static scan for rogue save hooks.
+--
+-- Enforcement point for the single-owner doctrine. check_save_ownership
+-- scans lua/config/lang/*.lua and after/ftplugin/*.lua for LIVE
+-- (non-comment) BufWritePre autocmd creations and returns each as a
+-- {file, line, snippet} violation; assert_save_ownership raises loudly
+-- naming every file and line. The normal test suite runs it against the
+-- real tree, where it must find zero violations.
+--
+-- "Formatting" for this guard means any live BufWritePre creation in a
+-- scanned file — direct (api.nvim_create_autocmd), aliased
+-- (local autocmd = vim.api.nvim_create_autocmd), event-in-variable
+-- (local SAVE = 'BufWritePre'), table event lists, or legacy
+-- vim.cmd('autocmd BufWritePre ...'). Post-unification NO lang file may
+-- own a save-time autocmd at all, formatting or not: a legitimate
+-- non-formatting BufWritePre (none remain today) goes on
+-- M.ownership_allowlist with a one-line rationale each, mirroring the
+-- linter field allowlist precedent. BufNewFile header insertion and other
+-- non-save events are out of scope by construction.
+--
+-- Tooling note: the brief asked for ast-grep (`sg`), but it is not
+-- installed on this machine (/usr/bin/sg is shadow-utils' newgrp) and
+-- this task carries no download authorization, so the scan is a small
+-- comment/string-aware Lua lexer instead: zero external dependencies,
+-- runs in the same headless nvim as the tests. Known heuristic limits —
+-- 'Buf'..'WritePre' concatenation and other non-literal event
+-- expressions are not detected statically; the runtime tripwire above
+-- covers those because it sees live autocmds, not source text.
+--
+-- KNOWN EXCEPTION (documented, do not fix):
+-- lua/linters/npm_groovy_lint.lua:1050 owns a conditional formatting
+-- BufWritePre gated by its own runtime.format_on_save. It lives outside
+-- the scan paths by design and is allowlisted at runtime; the guard must
+-- never flag it, and nobody should "migrate" it into the pipeline.
+-- #################################################################
+
+---@class OwnershipViolation
+---@field file string Absolute path of the offending file.
+---@field line integer 1-based line number of the offending call.
+---@field snippet string The offending source line, trimmed.
+
+---@class OwnershipAllowlistEntry
+---@field file string Path suffix matched against the violation path
+---(repo-relative like 'lua/config/lang/foo.lua', or absolute for fixtures).
+---@field line integer 1-based line number the entry covers.
+---@field rationale string One line: why this BufWritePre is not a formatter.
+
+---@type OwnershipAllowlistEntry[]
+---Explicit allowlist, mirroring the linter field allowlist precedent. A
+---non-formatting BufWritePre that must remain in a scanned file goes here
+---with a one-line rationale. Empty today: post-unification no lang file
+---owns any save-time autocmd.
+M.ownership_allowlist = {}
+
+---Blank every comment, keeping newlines and every string verbatim, so
+---later analysis sees real code with original line numbers intact.
+---@param source string
+---@return string code
+local function strip_comments(source)
+    local out = {}
+    local i, n = 1, #source
+    while i <= n do
+        local c = source:sub(i, i)
+        if c == '-' and source:sub(i + 1, i + 1) == '-' then
+            local eq = source:match('^%-%-%[(=*)%[', i)
+            if eq ~= nil then
+                local closer = ']' .. eq .. ']'
+                local stop = source:find(closer, i + 4 + #eq, true)
+                stop = stop and (stop + #closer - 1) or n
+                out[#out + 1] = source:sub(i, stop):gsub('[^\n]', ' ')
+                i = stop + 1
+            else
+                local nl = source:find('\n', i + 2, true)
+                local stop = nl and (nl - 1) or n
+                out[#out + 1] = (' '):rep(stop - i + 1)
+                i = stop + 1
+            end
+        elseif c == "'" or c == '"' then
+            local j = i + 1
+            while j <= n do
+                local d = source:sub(j, j)
+                if d == '\\' then
+                    j = j + 2
+                elseif d == c or d == '\n' then
+                    break
+                else
+                    j = j + 1
+                end
+            end
+            local str_end = (j <= n and source:sub(j, j) == c) and j or (j - 1)
+            out[#out + 1] = source:sub(i, str_end)
+            i = str_end + 1
+        elseif c == '[' then
+            local eq = source:match('^%[(=*)%[', i)
+            if eq ~= nil then
+                local closer = ']' .. eq .. ']'
+                local stop = source:find(closer, i + 2 + #eq, true)
+                stop = stop and (stop + #closer - 1) or n
+                out[#out + 1] = source:sub(i, stop)
+                i = stop + 1
+            else
+                out[#out + 1] = c
+                i = i + 1
+            end
+        else
+            out[#out + 1] = c
+            i = i + 1
+        end
+    end
+    return table.concat(out)
+end
+
+---@class StringSpan
+---@field start integer First character of the literal, inclusive.
+---@field finish integer Last character of the literal, inclusive.
+
+---Spans of every string literal (short and long) in comment-free code.
+---@param code string
+---@return StringSpan[]
+local function string_spans(code)
+    local spans = {}
+    local i, n = 1, #code
+    while i <= n do
+        local c = code:sub(i, i)
+        if c == "'" or c == '"' then
+            local j = i + 1
+            while j <= n do
+                local d = code:sub(j, j)
+                if d == '\\' then
+                    j = j + 2
+                elseif d == c or d == '\n' then
+                    break
+                else
+                    j = j + 1
+                end
+            end
+            local str_end = (j <= n and code:sub(j, j) == c) and j or (j - 1)
+            spans[#spans + 1] = { start = i, finish = str_end }
+            i = str_end + 1
+        elseif c == '[' then
+            local eq = code:match('^%[(=*)%[', i)
+            if eq ~= nil then
+                local closer = ']' .. eq .. ']'
+                local stop = code:find(closer, i + 2 + #eq, true)
+                stop = stop and (stop + #closer - 1) or n
+                spans[#spans + 1] = { start = i, finish = stop }
+                i = stop + 1
+            else
+                i = i + 1
+            end
+        else
+            i = i + 1
+        end
+    end
+    return spans
+end
+
+---Replace every span with spaces, preserving positions and newlines.
+---@param code string
+---@param spans StringSpan[]
+---@return string
+local function blank_spans(code, spans)
+    local parts = {}
+    local pos = 1
+    for _, span in ipairs(spans) do
+        parts[#parts + 1] = code:sub(pos, span.start - 1)
+        parts[#parts + 1] = (' '):rep(span.finish - span.start + 1)
+        pos = span.finish + 1
+    end
+    parts[#parts + 1] = code:sub(pos)
+    return table.concat(parts)
+end
+
+---Text of the first call argument starting at paren_pos, or nil when the
+---call is unbalanced. String-aware: commas inside strings, tables, or
+---nested calls never end the argument.
+---@param code string Comment-free source.
+---@param paren_pos integer? Position of the call's opening '('.
+---@return string? arg
+local function first_arg(code, paren_pos)
+    assert(paren_pos ~= nil, 'first_arg needs the opening paren position')
+    local depth = 0
+    local arg_start = paren_pos + 1
+    local i, n = paren_pos, #code
+    while i <= n do
+        local c = code:sub(i, i)
+        if c == "'" or c == '"' then
+            local j = i + 1
+            while j <= n do
+                local d = code:sub(j, j)
+                if d == '\\' then
+                    j = j + 2
+                elseif d == c or d == '\n' then
+                    break
+                else
+                    j = j + 1
+                end
+            end
+            i = (j <= n and code:sub(j, j) == c) and (j + 1) or j
+        elseif c == '[' then
+            local eq = code:match('^%[(=*)%[', i)
+            if eq ~= nil then
+                local closer = ']' .. eq .. ']'
+                local stop = code:find(closer, i + 2 + #eq, true)
+                i = stop and (stop + #closer) or (n + 1)
+            else
+                depth = depth + 1
+                i = i + 1
+            end
+        elseif c == '(' or c == '{' then
+            depth = depth + 1
+            i = i + 1
+        elseif c == ')' then
+            if depth == 1 then
+                return code:sub(arg_start, i - 1)
+            end
+            depth = depth - 1
+            i = i + 1
+        elseif c == '}' or c == ']' then
+            depth = depth - 1
+            i = i + 1
+        elseif c == ',' and depth == 1 then
+            return code:sub(arg_start, i - 1)
+        else
+            i = i + 1
+        end
+    end
+    return nil
+end
+
+---Identifiers assigned the literal 'BufWritePre' (local or not), so an
+---event passed by variable is still recognized. Comparisons (==, ~=) are
+---excluded by requiring a bare '=' before the literal.
+---@param code string Comment-free source.
+---@param spans StringSpan[]
+---@return table<string, boolean> vars
+local function save_event_vars(code, spans)
+    local vars = {}
+    local bare = blank_spans(code, spans)
+    for _, span in ipairs(spans) do
+        local text = code:sub(span.start, span.finish)
+        local inner = text:match('^"(.-)"$') or text:match("^'(.-)'$") or text:match('^%[=*%[(.-)%]=*%]$')
+        if inner == 'BufWritePre' then
+            local before = bare:sub(1, span.start - 1)
+            local name_start, _, name = before:find('([%w_]+)%s*=%s*$')
+            if name ~= nil then
+                local prev = name_start > 1 and before:sub(name_start - 1, name_start - 1) or ' '
+                if not prev:find('[=~<>%w_]') then
+                    vars[name] = true
+                end
+            end
+        end
+    end
+    return vars
+end
+
+---Local names bound to nvim_create_autocmd
+---(local autocmd = vim.api.nvim_create_autocmd), the classic disguise.
+---@param code string Comment-free source.
+---@param spans StringSpan[]
+---@return table<string, boolean> aliases
+local function create_autocmd_aliases(code, spans)
+    local aliases = {}
+    local bare = blank_spans(code, spans)
+    local pos = 1
+    while true do
+        local s, e, name = bare:find('([%w_]+)%s*=%s*[%w_%.%:]*nvim_create_autocmd%f[^%w_]', pos)
+        if s == nil then
+            break
+        end
+        local prev = s > 1 and bare:sub(s - 1, s - 1) or ' '
+        -- A '.' or ':' before the name means a field assignment, and
+        -- '='/'~'/</> mean a comparison, not a binding.
+        if not prev:find('[%w_%.:%=~<>]') then
+            aliases[name] = true
+        end
+        pos = e + 1
+    end
+    return aliases
+end
+
+---Whether a first (event) argument names BufWritePre: as a string literal
+---(bare or inside a table list) or via an event variable.
+---@param arg1 string First argument text.
+---@param vars table<string, boolean> Event variables from save_event_vars.
+---@return boolean
+local function event_arg_is_save(arg1, vars)
+    local spans = string_spans(arg1)
+    for _, span in ipairs(spans) do
+        if arg1:sub(span.start, span.finish):find('BufWritePre', 1, true) then
+            return true
+        end
+    end
+    local bare_arg = blank_spans(arg1, spans)
+    for var in pairs(vars) do
+        if bare_arg:find('%f[%w_]' .. var .. '%f[^%w_]') then
+            return true
+        end
+    end
+    return false
+end
+
+---Whether a vim.cmd first argument issues an autocmd for BufWritePre. A
+---documented heuristic: the string must name BufWritePre and read as an
+---autocmd command (the 'au' abbreviation counts).
+---@param arg1 string First argument text.
+---@return boolean
+local function cmd_arg_is_save(arg1)
+    for _, span in ipairs(string_spans(arg1)) do
+        local text = arg1:sub(span.start, span.finish)
+        if text:find('BufWritePre', 1, true) then
+            local lower = text:lower()
+            if lower:find('autocmd', 1, true) or lower:find('%f[%a]au%f[%A]') then
+                return true
+            end
+        end
+    end
+    return false
+end
+
+---Scan one file for live BufWritePre creations. Comments never match
+---(stripped first); strings are blanked for call discovery but their
+---values still count as event names.
+---@param path string Absolute file path.
+---@return OwnershipViolation[] violations
+local function scan_file(path)
+    local fh = io.open(path, 'r')
+    if fh == nil then
+        return {}
+    end
+    local source = fh:read('*a')
+    fh:close()
+    if source == nil or source == '' then
+        return {}
+    end
+    local code = strip_comments(source)
+    local spans = string_spans(code)
+    local bare = blank_spans(code, spans)
+    local vars = save_event_vars(code, spans)
+    local aliases = create_autocmd_aliases(code, spans)
+    local newlines = {}
+    for nl in code:gmatch('()\n') do
+        newlines[#newlines + 1] = nl
+    end
+    local lines = {}
+    for line in (source .. '\n'):gmatch('(.-)\n') do
+        lines[#lines + 1] = line
+    end
+    local violations = {}
+    ---@param call_start integer
+    local function add_violation(call_start)
+        local line = 1
+        for _, nl in ipairs(newlines) do
+            if nl < call_start then
+                line = line + 1
+            else
+                break
+            end
+        end
+        local snippet = (lines[line] or ''):match('^%s*(.-)%s*$')
+        if #snippet > 117 then
+            snippet = snippet:sub(1, 117) .. '...'
+        end
+        violations[#violations + 1] = {
+            file = path,
+            line = line,
+            snippet = snippet,
+        }
+    end
+    -- Direct and member calls: [vim.]api.nvim_create_autocmd(...). The
+    -- char before the name must not extend the identifier (rejects e.g.
+    -- my_nvim_create_autocmd); '.' and ':' mark member calls.
+    local pos = 1
+    while true do
+        local s, e = bare:find('nvim_create_autocmd%s*%(', pos)
+        if s == nil then
+            break
+        end
+        local before = s > 1 and bare:sub(s - 1, s - 1) or ' '
+        if not before:find('[%w_]') then
+            local arg1 = first_arg(code, e)
+            if arg1 ~= nil and event_arg_is_save(arg1, vars) then
+                add_violation(s)
+            end
+        end
+        pos = e + 1
+    end
+    -- Aliased calls: local autocmd = vim.api.nvim_create_autocmd.
+    for alias in pairs(aliases) do
+        local apos = 1
+        while true do
+            local s, e = bare:find('%f[%w_]' .. alias .. '%s*%(', apos)
+            if s == nil then
+                break
+            end
+            local before = s > 1 and bare:sub(s - 1, s - 1) or ' '
+            -- x.autocmd() is a different function, not the alias.
+            if before ~= '.' and before ~= ':' then
+                local arg1 = first_arg(code, e)
+                if arg1 ~= nil and event_arg_is_save(arg1, vars) then
+                    add_violation(s)
+                end
+            end
+            apos = e + 1
+        end
+    end
+    -- Legacy command form: vim.cmd('autocmd BufWritePre ...').
+    local cpos = 1
+    while true do
+        local s, e = bare:find('%.cmd%s*%(', cpos)
+        if s == nil then
+            break
+        end
+        local arg1 = first_arg(code, e)
+        if arg1 ~= nil and cmd_arg_is_save(arg1) then
+            add_violation(s)
+        end
+        cpos = e + 1
+    end
+    return violations
+end
+
+---Whether a violation is covered by the allowlist. Entries match on a
+---path suffix plus the exact line, so repo-relative entries work against
+---absolute violation paths and fixtures can use absolute entries.
+---@param violation OwnershipViolation
+---@param allowlist OwnershipAllowlistEntry[]
+---@return boolean
+local function violation_allowlisted(violation, allowlist)
+    assert(type(violation) == 'table', 'violation must be a table')
+    for _, entry in ipairs(allowlist) do
+        if violation.line == entry.line and violation.file:sub(-#entry.file) == entry.file then
+            return true
+        end
+    end
+    return false
+end
+
+---Repository root, derived from this module's own source path so the
+---guard works regardless of the caller's working directory.
+---@return string root
+function M.ownership_repo_root()
+    local source = debug.getinfo(M.check_save_ownership, 'S').source
+    assert(source:sub(1, 1) == '@', 'ownership guard: unexpected module source')
+    local root = source:sub(2):match('^(.*)/lua/formatters/init%.lua$')
+    assert(root ~= nil, 'ownership guard: cannot derive repo root')
+    return root
+end
+
+---@class OwnershipCheckOptions
+---@field roots? string[] Directories to scan; defaults to the repo's
+---lang and ftplugin directories. Missing roots are an error, never
+---silently skipped — a typo'd root must not neuter the guard.
+---@field allowlist? OwnershipAllowlistEntry[] Overrides
+---M.ownership_allowlist for this run.
+
+---Scan the lang tree for rogue save-time BufWritePre hooks. Returns every
+---violation sorted by file and line; empty means the tree is clean.
+---@param opts? OwnershipCheckOptions
+---@return OwnershipViolation[] violations
+function M.check_save_ownership(opts)
+    opts = opts or {}
+    local root = M.ownership_repo_root()
+    local roots = opts.roots
+    if roots == nil then
+        roots = { root .. '/lua/config/lang', root .. '/after/ftplugin' }
+    end
+    assert(type(roots) == 'table', 'ownership check roots must be a string array')
+    local allowlist = opts.allowlist or M.ownership_allowlist
+    assert(type(allowlist) == 'table', 'ownership allowlist must be an array')
+    local violations = {}
+    for _, dir in ipairs(roots) do
+        assert(type(dir) == 'string', 'ownership check root must be a string')
+        assert(uv.fs_stat(dir) ~= nil, 'ownership guard: scan root missing: ' .. dir)
+        for name, kind in fs.dir(dir) do
+            if kind == 'file' and name:sub(-4) == '.lua' then
+                local path = dir .. '/' .. name
+                for _, violation in ipairs(scan_file(path)) do
+                    if not violation_allowlisted(violation, allowlist) then
+                        violations[#violations + 1] = violation
+                    end
+                end
+            end
+        end
+    end
+    table.sort(violations, function(left, right)
+        if left.file ~= right.file then
+            return left.file < right.file
+        end
+        return left.line < right.line
+    end)
+    return violations
+end
+
+---Run the guard and raise loudly naming every offending file and line.
+---Intended for tests; the runtime path uses the tripwire instead, because
+---naming a file is impossible from a live autocmd.
+---@param opts? OwnershipCheckOptions
+---@return nil
+function M.assert_save_ownership(opts)
+    local violations = M.check_save_ownership(opts)
+    if #violations == 0 then
+        return
+    end
+    local lines = {
+        (
+            'Save-ownership guard: %d rogue BufWritePre hook(s) outside the '
+            .. 'format pipeline. Lang files must register stages via '
+            .. 'formatters.register_stage(); a legitimate non-formatting '
+            .. 'BufWritePre belongs on M.ownership_allowlist with a rationale.'
+        ):format(#violations),
+    }
+    for _, violation in ipairs(violations) do
+        lines[#lines + 1] = ('  %s:%d: %s'):format(violation.file, violation.line, violation.snippet)
+    end
+    error(table.concat(lines, '\n'))
+end
+
 -- The native external formatter pipeline as the final save stage, keeping
 -- its historical gate (M.options.format_on_save, default false). M.format
 -- honors vim.b.format_disabled itself, and the runner skips everything first.
@@ -1359,6 +2025,8 @@ function M.setup(opts)
     local group = api.nvim_create_augroup('native_formatters', {
         clear = true,
     })
+    -- The tripwire compares live BufWritePre owners against this id.
+    save_pipeline_group_id = group
     api.nvim_create_autocmd({
         'BufWipeout',
         'BufUnload',
