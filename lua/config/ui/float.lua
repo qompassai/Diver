@@ -1,18 +1,17 @@
 --- Floating-terminal manager — toggle a centered popup terminal.
 ---
 --- Plain-language version: a floating window is a popup box hovering over your
---- code. This module builds one that runs a terminal inside it: setup() takes
---- your options and returns a config table whose toggle() opens or hides the
---- popup, keeping one terminal buffer per id and re-centering it when the
---- editor resizes. The helpers are all local and nothing else requires this
---- module today; it is standalone.
+--- code. This module builds one that runs a terminal inside it. setup() takes
+--- your options and returns an instance table with open(), close(), toggle()
+--- and is_open(); one terminal buffer is kept per id and re-centered when the
+--- editor resizes. The module-level open/close/toggle/is_open functions drive a
+--- shared default instance, so any lua/ subdirectory can pop a terminal with one require.
 ---@module 'config.ui.float'
 -- float.lua
 -- Qompass AI - [ ]
 -- Copyright (C) 2026 Qompass AI, All rights reserved
 -- ----------------------------------------
 local M = {}
-local shell = vim.o.shell
 local defaults = {
     file = nil,
     cmd = vim.o.shell,
@@ -85,6 +84,8 @@ local function get_win_opts(config)
             row = 0
         elseif opts.v_align == 'bottom' then
             row = vim.o.lines - height
+        else -- 'center'
+            row = math.floor((vim.o.lines - height) / 2)
         end
     end
     if col then
@@ -125,17 +126,28 @@ local function create_win(config, buf)
     end
     return win
 end
-local function toggle(config, opts)
-    opts = opts or {}
-    local id = opts.id or eval_opts(config.id)
+---@param config table effective float configuration
+---@param opts? table may carry `id`
+---@return string|number|nil id resolved float id
+---@return string|nil err reason the id was rejected
+local function resolve_id(config, opts)
+    local id = (opts and opts.id) or eval_opts(config.id)
     if type(id) ~= 'string' and type(id) ~= 'number' then
-        return
+        return nil, 'float id must be a string or number'
     end
     if id == 0 then
         id = config.prev_id or 1
     end
+    return id
+end
+
+---@param config table effective float configuration
+---@param id string|number resolved float id
+---@return boolean|nil ok
+---@return string|nil err
+local function open_float(config, id)
     local term = config.terms[id] or {}
-    local cmd = eval_opts(config.cmd) or shell
+    local cmd = eval_opts(config.cmd) or vim.o.shell
     local cwd = eval_opts(config.cwd) or vim.fn.getcwd()
     local buf_ready = valid_buf(term.buf)
     if not buf_ready then
@@ -153,43 +165,126 @@ local function toggle(config, opts)
             })
         end
     end
-    if valid_win(term.win) then
-        vim.api.nvim_win_close(term.win, true)
-    else
-        if id ~= config.prev_id then
-            local prev_term = config.terms[config.prev_id] or {}
-            if valid_win(prev_term.win) then
-                vim.api.nvim_win_close(prev_term.win, true)
-            end
-        end
-        local prev_win = vim.api.nvim_get_current_win()
-        term.win = create_win(config, term.buf)
-        if not config.file then
-            if not buf_ready then
-                local job_id = vim.fn.jobstart(cmd, { cwd = cwd, term = true })
-                if job_id == 0 then
-                    vim.notify('floatty.nvim: Invalid arguments for terminal command', vim.log.levels.ERROR)
-                    return
-                elseif job_id == -1 then
-                    vim.notify('floatty.nvim: Terminal command not executable: ' .. cmd, vim.log.levels.ERROR)
-                    return
-                end
-            end
-            if not eval_opts(config.focus) and valid_win(prev_win) then
-                vim.api.nvim_set_current_win(prev_win)
-            elseif eval_opts(config.start_in_insert) then
-                vim.cmd.startinsert()
-            end
+    if id ~= config.prev_id then
+        local prev_term = config.terms[config.prev_id] or {}
+        if valid_win(prev_term.win) then
+            vim.api.nvim_win_close(prev_term.win, true)
         end
     end
-
+    local prev_win = vim.api.nvim_get_current_win()
+    term.win = create_win(config, term.buf)
+    if not config.file then
+        if not buf_ready then
+            local job_id = vim.fn.jobstart(cmd, { cwd = cwd, term = true })
+            if job_id == 0 then
+                vim.notify('config.ui.float: invalid arguments for terminal command', vim.log.levels.ERROR)
+                return nil, 'invalid terminal command arguments'
+            elseif job_id == -1 then
+                vim.notify('config.ui.float: terminal command not executable', vim.log.levels.ERROR)
+                return nil, 'terminal command not executable'
+            end
+        end
+        if not eval_opts(config.focus) and valid_win(prev_win) then
+            vim.api.nvim_set_current_win(prev_win)
+        elseif eval_opts(config.start_in_insert) then
+            vim.cmd.startinsert()
+        end
+    end
     config.prev_id = id
     config.terms[id] = term
+    return true
+end
+
+---@param config table effective float configuration
+---@param id string|number|nil float id, or nil for the current float
+---@return boolean|nil closed true when a window was closed
+---@return string|nil err
+local function close_float(config, id)
+    if id == nil then
+        id = config.prev_id
+    end
+    if type(id) ~= 'string' and type(id) ~= 'number' then
+        return nil, 'float id must be a string or number'
+    end
+    local term = config.terms[id]
+    if term and valid_win(term.win) then
+        vim.api.nvim_win_close(term.win, true)
+        term.win = nil
+        return true
+    end
+    return false
+end
+
+---@param config table effective float configuration
+---@param id string|number|nil float id, or nil for the current float
+---@return boolean
+local function float_is_open(config, id)
+    if id == nil then
+        id = config.prev_id
+    end
+    local term = config.terms[id]
+    return valid_win(term and term.win) == true
+end
+
+---@param config table effective float configuration
+---@param opts? table may carry `id`
+---@return boolean|nil ok
+---@return string|nil err
+local function toggle_float(config, opts)
+    local id, err = resolve_id(config, opts)
+    if not id then
+        return nil, err
+    end
+    if float_is_open(config, id) then
+        return close_float(config, id)
+    end
+    return open_float(config, id)
 end
 
 local function setup(config)
+    ---Open the float for `opts.id` (or the default id); focusing it when already open.
+    ---@param opts? table may carry `id`
+    ---@return boolean|nil ok
+    ---@return string|nil err
+    config.open = function(opts)
+        local id, err = resolve_id(config, opts)
+        if not id then
+            return nil, err
+        end
+        if float_is_open(config, id) then
+            local term = config.terms[id]
+            vim.api.nvim_set_current_win(term.win)
+            return true
+        end
+        return open_float(config, id)
+    end
+    ---Close the float for the given id (or the current one when omitted).
+    ---@param id_or_opts? string|number|table id, opts table with `id`, or nil
+    ---@return boolean|nil closed true when a window was closed
+    ---@return string|nil err
+    config.close = function(id_or_opts)
+        local id = id_or_opts
+        if type(id_or_opts) == 'table' then
+            id = id_or_opts.id
+        end
+        return close_float(config, id)
+    end
+    ---Whether the float for the given id (or the current one) is open.
+    ---@param id_or_opts? string|number|table id, opts table with `id`, or nil
+    ---@return boolean
+    config.is_open = function(id_or_opts)
+        local id = id_or_opts
+        if type(id_or_opts) == 'table' then
+            id = id_or_opts.id
+        end
+        return float_is_open(config, id)
+    end
+    ---Toggle the float for `opts.id` (or the default id).
+    ---@param opts? table may carry `id`
+    ---@return boolean|nil ok
+    ---@return string|nil err
     config.toggle = function(opts)
-        toggle(config, opts)
+        return toggle_float(config, opts)
     end
     config.terms = {}
     config.prev_id = nil
@@ -206,12 +301,54 @@ local function setup(config)
     })
     return config
 end
----Apply user options and configure floating windows.
+---Apply user options and build an independent floating-window instance.
 ---@param opts? table option overrides
----@return table config the effective float configuration
+---@return table instance with open/close/toggle/is_open methods
 M.setup = function(opts)
     local config = vim.tbl_deep_extend('force', defaults, opts or {})
     return setup(config)
+end
+
+---@type table|nil shared default instance, created on first use
+local default_instance = nil
+
+---@return table the shared default float instance
+local function default()
+    if not default_instance then
+        default_instance = M.setup()
+    end
+    return default_instance
+end
+
+---Open (or focus) a float on the shared default instance.
+---@param opts? table may carry `id`, `cmd`, `cwd`
+---@return boolean|nil ok
+---@return string|nil err
+function M.open(opts)
+    return default().open(opts)
+end
+
+---Close a float on the shared default instance.
+---@param id_or_opts? string|number|table id, opts table with `id`, or nil for current
+---@return boolean|nil closed true when a window was closed
+---@return string|nil err
+function M.close(id_or_opts)
+    return default().close(id_or_opts)
+end
+
+---Toggle a float on the shared default instance.
+---@param opts? table may carry `id`
+---@return boolean|nil ok
+---@return string|nil err
+function M.toggle(opts)
+    return default().toggle(opts)
+end
+
+---Whether a float on the shared default instance is open.
+---@param id_or_opts? string|number|table id, opts table with `id`, or nil for current
+---@return boolean
+function M.is_open(id_or_opts)
+    return default().is_open(id_or_opts)
 end
 
 return M

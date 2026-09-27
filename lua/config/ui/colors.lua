@@ -325,5 +325,4 @@ function M.setup(opts)
     end
 end
 
-M.setup()
 return M
