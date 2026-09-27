@@ -225,6 +225,10 @@ require('sync').setup()
 -- Placed with the other toolkit setups; setup() is idempotent and
 -- performs no subprocess I/O itself.
 require('jj').setup()
+-- pass password-store picker: the :Pass* commands.
+-- Placed with the other toolkit setups; setup() is idempotent and
+-- performs no subprocess I/O itself.
+require('pass').setup()
 require('bsp')
 require('dap')
 require('formatters')
