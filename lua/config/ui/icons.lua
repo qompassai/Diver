@@ -9,20 +9,23 @@ local M = {}
 ---   -- OR
 ---   require('icons').setup({}) -- replace {} with your config table
 --- <
+---Configure the icon tables. The deprecation warning fires only on
+---Neovim < 0.10; the setup itself always runs. Idempotent.
+---@param config? table overrides merged over M.config
 M.setup = function(config)
     if vim.fn.has('nvim-0.10') == 0 then
         vim.notify(
             '(icons) Neovim<0.10 is soft deprecated (module works but is not supported).'
                 .. ' Please update your Neovim version.'
         )
-        _G.Icons = M
-        config = M.setup_config(config)
-        M.apply_config(config)
-        M.create_autocommands()
-        M.create_default_hl()
     end
+    _G.Icons = M
+    config = M.setup_config(config)
+    M.apply_config(config)
+    M.create_autocommands()
+    M.create_default_hl()
 end
-M.config = {
+M.default_config = {
     style = 'glyph',
     default = {},
     directory = {},
@@ -35,6 +38,8 @@ M.config = {
         return true
     end,
 }
+--- Live configuration. Rebuilt from M.default_config on every setup().
+M.config = vim.deepcopy(M.default_config)
 M.devicons = {
     override = {
         bash = {
@@ -4959,6 +4964,21 @@ M.os_icons = {
         hl = 'IconsBlue',
     },
 }
+---@param name string argument name used in error messages
+---@param value any value under test
+---@param expected string expected Lua type name
+---@param optional? boolean when true, nil values are allowed
+M.check_type = function(name, value, expected, optional)
+    assert(type(name) == 'string')
+    assert(type(expected) == 'string')
+    if value == nil and optional then
+        return
+    end
+    if type(value) ~= expected then
+        error(('config.ui.icons: %s must be %s, got %s'):format(name, expected, type(value)), 2)
+    end
+end
+
 M.setup_config = function(config)
     M.check_type('config', config, 'table', true)
     config = vim.tbl_deep_extend('force', vim.deepcopy(M.default_config), config or {})
@@ -4976,10 +4996,9 @@ end
 
 M.apply_config = function(config)
     M.config = config
-    M.init_cache(config)
 end
 M.create_autocommands = function()
-    local gr = vim.api.nvim_create_augroup('Icons', {})
+    local gr = vim.api.nvim_create_augroup('Icons', { clear = true })
     vim.api.nvim_create_autocmd('ColorScheme', {
         group = gr,
         callback = M.create_default_hl,
