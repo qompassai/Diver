@@ -197,20 +197,31 @@ end
 ---@param callback fun(err: string?, info: table?)
 local function continue_open(state, abort, callback)
     local kind = state.kind
+    -- The open callback fires exactly once. Sequential failures fail it
+    -- directly; a transport error mid-handshake also fails it instead of
+    -- leaving the caller hanging until its own timeout.
+    local done = false
+    local function fail_open(err)
+        if done then
+            return
+        end
+        done = true
+        abort(err)
+    end
     local proc, serr = driver.spawn(kind, state.profile_dir)
     if proc == nil then
-        abort(serr)
+        fail_open(serr)
         return
     end
     state.proc = proc
     local rok, rerr = driver.wait_ready(kind)
     if not rok then
-        abort(rerr)
+        fail_open(rerr)
         return
     end
     local session, nerr = driver.new_session(kind, state.profile_dir)
     if session == nil then
-        abort(nerr)
+        fail_open(nerr)
         return
     end
     state.session_id = session.session_id
@@ -232,28 +243,34 @@ local function continue_open(state, abort, callback)
             end)
         end,
         on_error = function(err)
+            -- Handshake failure surfaces here, on the uv read thread:
+            -- defer out of fast event context and fail the open so the
+            -- caller's callback fires instead of hanging. After a
+            -- successful open this is notify-only (done is true).
             defer(function()
                 vim.notify('bidi transport error: ' .. err, vim.log.levels.ERROR)
+                fail_open('bidi transport error during open: ' .. err)
             end)
         end,
     })
     if transport == nil then
-        abort(terr)
+        fail_open(terr)
         return
     end
     state.transport = transport
     bsession.status(conn, function(serr2, result)
         if serr2 ~= nil then
-            abort('session.status failed: ' .. serr2)
+            fail_open('session.status failed: ' .. serr2)
             return
         end
         bctx.create(conn, 'tab', function(cerr, context_id)
             if cerr ~= nil then
-                abort(cerr)
+                fail_open(cerr)
                 return
             end
             state.context_id = context_id
             local ready = type(result) == 'table' and result.ready
+            done = true
             callback(nil, {
                 kind = kind,
                 session_id = state.session_id,
