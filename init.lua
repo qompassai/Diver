@@ -239,6 +239,11 @@ require('utils')
 require('mappings')
 -- Tmux navigation + layouts: after mappings so the C-h/j/k/l collision check sees the core window maps.
 require('tmux').setup()
+-- Long-task notifications (the fish `done` plugin's model: a vim.notify +
+-- notify-send toast when a wrapped task exceeds threshold_ms). Placed with
+-- the other toolkit setups; setup() is idempotent and performs no
+-- subprocess I/O itself.
+require('notify').setup()
 require('plugin')
 require('scip')
 -- C4: these modules create their user commands only inside setup();
