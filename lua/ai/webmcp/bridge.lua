@@ -7,7 +7,7 @@
 -- Plain words: Firenvim works by attaching to Neovim over its
 -- built-in msgpack-RPC socket. This module does the same job
 -- without any browser extension or plugin: it opens a WebSocket
--- server on localhost (using Diver's own native lua/websocket),
+-- server on localhost (using Diver's own native lua/ai/websocket),
 -- and speaks a tiny JSON protocol:
 --
 --   -> { "id": 1, "method": "bridge.ping", "params": {} }
@@ -411,7 +411,7 @@ function M.start(opts)
     assert(type(port) == 'number', 'port must be a number')
     require_token = opts.require_token ~= false
     authed = {}
-    local ws = require('websocket.server')
+    local ws = require('ai.websocket.server')
     local srv = ws.WebsocketServer.new({
         host = host,
         port = port,

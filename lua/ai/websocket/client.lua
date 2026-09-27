@@ -11,7 +11,7 @@
 -- callbacks fire on Neovim's main loop.
 ---@module 'websocket.client'
 
-local frame = require('websocket.frame')
+local frame = require('ai.websocket.frame')
 
 -- Reconnect and queue bounds. All limits are named here so a caller can
 -- reason about worst-case memory and retry behavior without reading code.

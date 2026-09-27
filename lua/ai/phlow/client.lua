@@ -11,7 +11,7 @@
 -- no workflow state, it just delivers messages and announcements.
 ---@module 'phlow.client'
 
-local schemas = require('phlow.schemas')
+local schemas = require('ai.phlow.schemas')
 
 local M = {}
 

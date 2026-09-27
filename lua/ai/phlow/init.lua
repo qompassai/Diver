@@ -35,7 +35,7 @@ M.PHLOW_API_VERSION = M.API_VERSION
 function M.connect(opts)
     opts = opts or {}
     assert(type(opts) == 'table', 'opts must be a table')
-    local transports = require('phlow.transports')
+    local transports = require('ai.phlow.transports')
     local errors = {}
     local handle = nil
     local function attempt(name, connect_fn, topts)
@@ -65,7 +65,7 @@ function M.connect(opts)
         end
         return nil, 'all transports failed: ' .. table.concat(errors, '; ')
     end
-    local client = require('phlow.client')
+    local client = require('ai.phlow.client')
     return client.new(handle, { timeout_ms = opts.timeout_ms }), nil
 end
 

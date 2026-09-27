@@ -38,9 +38,9 @@ function M.discover(url, callback, token)
         callback(false, { error = 'url must be ws://host:port' })
         return
     end
-    local ok, wsclient = pcall(require, 'websocket.client')
+    local ok, wsclient = pcall(require, 'ai.websocket.client')
     if not ok then
-        callback(false, { error = 'websocket.client unavailable' })
+        callback(false, { error = 'ai.websocket.client unavailable' })
         return
     end
     local seq = 0

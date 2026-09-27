@@ -21,7 +21,7 @@
 ---Per the Phlow architecture doc, Phlow owns orchestration state and Diver
 ---owns presentation: this module keeps no session state of its own, performs
 ---no retries beyond what the `phlow` client already does, and surfaces every
----failure as `(nil, err)`. The transport-pluggable `lua/phlow/` client is a
+---failure as `(nil, err)`. The transport-pluggable `lua/ai/phlow/` client is a
 ---sibling deliverable; this module assumes its contract and connects lazily.
 ---@source https://github.com/qompassai/phlow
 
@@ -30,12 +30,12 @@ local M = {}
 local SOURCE = 'dap-phlow'
 
 ---@type string
----Canonical command name, per `phlow.schemas` (mirrors the Phlow
+---Canonical command name, per `ai.phlow.schemas` (mirrors the Phlow
 ---`schemas/commands` contract). Do not invent variants.
 local DEBUG_SESSION_CMD = 'debug.start'
 
 ---@type string
----Canonical event name, per `phlow.schemas` (mirrors the Phlow
+---Canonical event name, per `ai.phlow.schemas` (mirrors the Phlow
 ---`schemas/events` contract).
 local DEBUG_EVENT_NAME = 'debug.event'
 
@@ -59,7 +59,7 @@ end
 ---this integration was written against. Returns `(nil, err)` when the
 ---sibling module is missing or its shape does not match.
 local function load_phlow()
-    local ok, phlow = pcall(require, 'phlow')
+    local ok, phlow = pcall(require, 'ai.phlow')
 
     if not ok or type(phlow) ~= 'table' then
         return nil, 'phlow client module is unavailable'

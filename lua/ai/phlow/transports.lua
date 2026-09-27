@@ -188,14 +188,14 @@ function M.websocket.connect(opts)
     if url:sub(1, 6) == 'wss://' then
         return nil, 'wss:// needs TLS, which vim.uv does not provide (follow-up)'
     end
-    local ok_mod, ws = pcall(require, 'websocket')
+    local ok_mod, ws = pcall(require, 'ai.websocket')
     if not ok_mod then
         return nil, 'websocket module unavailable: ' .. tostring(ws)
     end
     ws.setup()
-    local ok_client, client_mod = pcall(require, 'websocket.client')
+    local ok_client, client_mod = pcall(require, 'ai.websocket.client')
     if not ok_client then
-        return nil, 'websocket.client unavailable: ' .. tostring(client_mod)
+        return nil, 'ai.websocket.client unavailable: ' .. tostring(client_mod)
     end
     ---@type PhlowTransportHandle
     local handle = { _closed = false, _on_data = nil }

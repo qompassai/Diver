@@ -9,7 +9,7 @@
 -- Everything is non-blocking: callbacks fire on Neovim's main loop.
 ---@module 'websocket.server'
 
-local frame = require('websocket.frame')
+local frame = require('ai.websocket.frame')
 
 local M = {}
 
