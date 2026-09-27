@@ -11,6 +11,7 @@ local definitions = {
         ads = 'ada',
         asciidoc = 'asciidoc',
         agda = 'agda',
+        agent = 'agentscript',
         antlers = 'antlers',
         apex = 'apex',
         app = 'xml',
