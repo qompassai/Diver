@@ -17,6 +17,20 @@ local config = require('dev.browser.bidi.config')
 
 local M = {}
 
+---Run fn now, or deferred via vim.schedule when inside a fast event
+---context (transport/socket callbacks run on the uv read thread).
+---nvim_* API calls raise E5560 in fast context; deferring keeps them
+---legal. Outside fast context (commands, tests) this runs synchronously.
+---@param fn fun()
+local function defer(fn)
+    local v = rawget(_G, 'vim')
+    if v ~= nil and v.in_fast_event ~= nil and v.in_fast_event() then
+        v.schedule(fn)
+    else
+        fn()
+    end
+end
+
 ---@class BidiSessionState
 ---@field kind string 'chrome' | 'firefox'
 ---@field profile_dir string ephemeral user-data dir
@@ -54,7 +68,7 @@ function M.setup()
         return
     end
     M._setup_done = true
-    wire.set_json(vim.json.encode, vim.json.decode)
+    wire.set_json(vim.json.encode, vim.json.decode, vim.empty_dict)
     vim.api.nvim_create_autocmd('VimLeavePre', {
         desc = 'BiDi: tear down browser session exactly once',
         callback = function()
@@ -207,14 +221,20 @@ local function continue_open(state, abort, callback)
         end,
         on_disconnect = function()
             -- Dropped socket invalidates the session: fail fast, tear down.
-            if current == state then
-                current = nil
-                M._teardown_state(state, real_deps(state))
-                vim.notify('bidi: socket dropped, session closed', vim.log.levels.WARN)
-            end
+            -- Runs on the uv read thread: defer out of fast event context
+            -- (teardown calls vim.fn.delete; notify needs the main loop).
+            defer(function()
+                if current == state then
+                    current = nil
+                    M._teardown_state(state, real_deps(state))
+                    vim.notify('bidi: socket dropped, session closed', vim.log.levels.WARN)
+                end
+            end)
         end,
         on_error = function(err)
-            vim.notify('bidi transport error: ' .. err, vim.log.levels.ERROR)
+            defer(function()
+                vim.notify('bidi transport error: ' .. err, vim.log.levels.ERROR)
+            end)
         end,
     })
     if transport == nil then
@@ -326,18 +346,22 @@ function M.screenshot(callback)
             callback(err, nil)
             return
         end
-        local b64 = vim.base64.encode(png)
-        current.last_screenshot = b64
-        local buf = vim.api.nvim_create_buf(false, true)
-        vim.api.nvim_buf_set_name(buf, 'bidi-screenshot://' .. current.session_id)
-        local lines = { '# BiDi screenshot (base64 PNG, ' .. #png .. ' bytes)', '' }
-        for i = 1, #b64, 76 do
-            lines[#lines + 1] = b64:sub(i, i + 75)
-        end
-        vim.api.nvim_buf_set_lines(buf, 0, -1, false, lines)
-        vim.bo[buf].filetype = 'bidi-screenshot'
-        vim.bo[buf].modifiable = false
-        callback(nil, buf)
+        -- Response callbacks run in fast event context: creating the
+        -- scratch buffer needs the main loop, so defer it.
+        defer(function()
+            local b64 = vim.base64.encode(png)
+            current.last_screenshot = b64
+            local buf = vim.api.nvim_create_buf(false, true)
+            vim.api.nvim_buf_set_name(buf, 'bidi-screenshot://' .. current.session_id)
+            local lines = { '# BiDi screenshot (base64 PNG, ' .. #png .. ' bytes)', '' }
+            for i = 1, #b64, 76 do
+                lines[#lines + 1] = b64:sub(i, i + 75)
+            end
+            vim.api.nvim_buf_set_lines(buf, 0, -1, false, lines)
+            vim.bo[buf].filetype = 'bidi-screenshot'
+            vim.bo[buf].modifiable = false
+            callback(nil, buf)
+        end)
     end)
 end
 
@@ -380,22 +404,26 @@ end
 ---@param method string
 ---@param params table
 function M._network_sink(method, params)
-    local event, nerr = bnetwork._normalize(method, params)
-    if event == nil then
+    -- Event handlers run in fast event context: setqflist needs the
+    -- main loop, so defer it.
+    defer(function()
+        local event, nerr = bnetwork._normalize(method, params)
+        if event == nil then
+            vim.fn.setqflist({}, 'a', {
+                title = 'BiDi network',
+                items = { { text = 'unparseable network event: ' .. nerr, type = 'E' } },
+            })
+            return
+        end
+        local text = (event.method or '?') .. ' ' .. (event.url or '?')
+        if event.status ~= nil then
+            text = text .. ' -> ' .. tostring(event.status)
+        end
         vim.fn.setqflist({}, 'a', {
             title = 'BiDi network',
-            items = { { text = 'unparseable network event: ' .. nerr, type = 'E' } },
+            items = { { text = '[' .. event.kind .. '] ' .. text, type = 'I' } },
         })
-        return
-    end
-    local text = (event.method or '?') .. ' ' .. (event.url or '?')
-    if event.status ~= nil then
-        text = text .. ' -> ' .. tostring(event.status)
-    end
-    vim.fn.setqflist({}, 'a', {
-        title = 'BiDi network',
-        items = { { text = '[' .. event.kind .. '] ' .. text, type = 'I' } },
-    })
+    end)
 end
 
 return M

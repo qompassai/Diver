@@ -132,7 +132,17 @@ end
 local function notify(message, level)
     local v = rawget(_G, 'vim')
     if v ~= nil and v.notify ~= nil then
-        v.notify(message, level)
+        if v.in_fast_event ~= nil and v.in_fast_event() then
+            -- CDP response/event callbacks run inside the uv read handler
+            -- (fast event context): nvim_notify would raise E5560, and the
+            -- raise is swallowed by pcall in session._handle_response, so
+            -- the caller's callback would silently never fire. Defer it.
+            v.schedule(function()
+                v.notify(message, level)
+            end)
+        else
+            v.notify(message, level)
+        end
     end
 end
 

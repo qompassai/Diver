@@ -22,14 +22,27 @@ M.PENDING_MAX = 1024
 
 local json_encode = nil
 local json_decode = nil
+---Factory for the "empty params" value. Neovim passes vim.empty_dict so
+---vim.json.encode renders a JSON object (chromedriver strictly requires
+---params to be a dictionary and rejects "params":[]). Plain-Lua tests
+---keep the default, which preserves the historical encoding.
+local new_empty_dict = function()
+    return {}
+end
 
 ---Provide the JSON codec. In Neovim call
----`wire.set_json(vim.json.encode, vim.json.decode)` once from setup().
+---`wire.set_json(vim.json.encode, vim.json.decode, vim.empty_dict)`
+---once from setup().
 ---@param encode_fn fun(value: any): string
 ---@param decode_fn fun(text: string): any
-function M.set_json(encode_fn, decode_fn)
+---@param empty_dict_fn? fun(): table
+function M.set_json(encode_fn, decode_fn, empty_dict_fn)
     assert(type(encode_fn) == 'function', 'encode_fn must be a function')
     assert(type(decode_fn) == 'function', 'decode_fn must be a function')
+    if empty_dict_fn ~= nil then
+        assert(type(empty_dict_fn) == 'function', 'empty_dict_fn must be a function')
+        new_empty_dict = empty_dict_fn
+    end
     json_encode = encode_fn
     json_decode = decode_fn
 end
@@ -97,7 +110,13 @@ function M.next_command(state, method, params, callback)
         assert(type(callback) == 'function', 'callback must be a function')
         state.pending[id] = callback
     end
-    local frame = { id = id, method = method, params = params or {} }
+    local p = params
+    if p == nil or (type(p) == 'table' and next(p) == nil) then
+        -- Empty params must encode as a JSON object, never []. Some
+        -- drivers (chromedriver) reject a non-dictionary params outright.
+        p = new_empty_dict()
+    end
+    local frame = { id = id, method = method, params = p }
     local ok, text = pcall(json_encode, frame)
     if not ok then
         state.pending[id] = nil

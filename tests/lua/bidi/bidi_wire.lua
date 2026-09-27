@@ -220,3 +220,52 @@ H.test('id wraps at ID_MAX back to 1', true, function()
 end)
 
 os.exit(H.run('bidi_wire'))
+
+-- ------------------------------------------------- empty-params encoding
+-- chromedriver strictly requires params to be a JSON dictionary; an
+-- empty Lua table encodes as [] with naive encoders, which chromedriver
+-- rejects. next_command consults the injected empty_dict factory.
+
+H.test('empty params use the injected empty_dict factory', false, function()
+    wire.set_json(H.json_encode, H.json_decode, function()
+        return { __empty_dict = true }
+    end)
+    local st = new_state()
+    local _, text = wire.next_command(st, 'session.status', {}, nil)
+    local frame = H.json_decode(text)
+    H.eq(type(frame.params), 'table')
+    H.eq(frame.params.__empty_dict, true)
+    wire.set_json(H.json_encode, H.json_decode, function()
+        return {}
+    end)
+end)
+
+H.test('nil params use the empty_dict factory, never encode bare', true, function()
+    wire.set_json(H.json_encode, H.json_decode, function()
+        return { __empty_dict = true }
+    end)
+    local st = new_state()
+    local _, text = wire.next_command(st, 'session.status', nil, nil)
+    local frame = H.json_decode(text)
+    H.eq(type(frame.params), 'table')
+    H.eq(frame.params.__empty_dict, true)
+    wire.set_json(H.json_encode, H.json_decode, function()
+        return {}
+    end)
+end)
+
+H.test('non-empty params bypass the empty_dict factory untouched', true, function()
+    local factory_calls = 0
+    wire.set_json(H.json_encode, H.json_decode, function()
+        factory_calls = factory_calls + 1
+        return {}
+    end)
+    local st = new_state()
+    local _, text = wire.next_command(st, 'm', { a = 1 }, nil)
+    local frame = H.json_decode(text)
+    H.eq(frame.params.a, 1)
+    H.eq(factory_calls, 0)
+    wire.set_json(H.json_encode, H.json_decode, function()
+        return {}
+    end)
+end)

@@ -53,7 +53,9 @@ M.drivers = {
 M.host = '127.0.0.1'
 
 ---HTTP handshake budget per request (driver /status poll and /session).
-M.http_timeout_ms = 5000
+---Firefox cold start with a fresh profile measured 9.6s on 2026-09-27;
+---5s timed out every Firefox open().
+M.http_timeout_ms = 30000
 
 ---How many times to poll GET /status before the driver counts as failed.
 M.ready_attempts_max = 50
