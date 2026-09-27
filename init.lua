@@ -217,6 +217,10 @@ require('ai.herd.personas').setup()
 require('nav').setup()
 -- Khal calendar: floating agenda + quick-add; setup() is idempotent, no I/O at boot.
 require('calendar').setup()
+-- Syncthing + Tailscale phone/sync surface: the :Sync* commands.
+-- Placed with the other toolkit setups; setup() is idempotent and
+-- performs no subprocess I/O itself.
+require('sync').setup()
 require('bsp')
 require('dap')
 require('formatters')
