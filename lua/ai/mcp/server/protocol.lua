@@ -12,12 +12,11 @@
 -- line, no trailing newline) and a JSON codec, which keeps this module
 -- runnable under plain Lua for tests.
 --
--- Error policy: -32600 invalid request, -32601 unknown method, -32602 bad
--- params, -32603 handler crash. A line that is not JSON at all gets no
--- response -- it is dropped and logged (deliberate deviation from the
--- JSON-RPC SHOULD; the scope pins "no crash, no response"). Tool
--- *execution* failures are successful responses with `isError = true`;
--- only unknown tools, bad shapes, and crashes become protocol errors.
+-- Error policy: -32700 parse error (malformed line, null id), -32600
+-- invalid request, -32601 unknown method, -32602 bad params, -32603
+-- handler crash. Tool *execution* failures are successful responses with
+-- `isError = true`; only unknown tools, bad shapes, and crashes become
+-- protocol errors.
 
 local M = {}
 
@@ -32,6 +31,7 @@ local ERR_INVALID_REQUEST = -32600
 local ERR_METHOD_NOT_FOUND = -32601
 local ERR_INVALID_PARAMS = -32602
 local ERR_INTERNAL = -32603
+local ERR_PARSE = -32700
 
 ---@class McpJsonCodec
 ---@field encode fun(value: any): string
@@ -89,6 +89,21 @@ end
 ---@param result table
 local function send_result(server, id, result)
     send(server, id, { result = result })
+end
+
+-- JSON-RPC 2.0 section 5.1: a line that is not JSON at all gets a Parse
+-- error whose id MUST be null (the request id could not be recovered).
+-- The payload is a fixed string on purpose: the codec just failed on this
+-- input, so the error path does not depend on the codec to format itself.
+local PARSE_ERROR_LINE =
+    '{"jsonrpc":"2.0","id":null,"error":{"code":-32700,"message":"Parse error"}}'
+
+---@param server table
+local function send_parse_error(server)
+    local wrote, write_err = pcall(server.write, PARSE_ERROR_LINE)
+    if not wrote then
+        server.on_log('error', 'transport write failed: ' .. tostring(write_err))
+    end
 end
 
 -- Version handshake. Accepts 2025-11-25 and 2024-11-05; anything else
@@ -318,11 +333,13 @@ function M.new(opts)
         return server.initialized
     end
 
-    -- Feed one newline-stripped line from the transport. Never raises and
-    -- never responds to unparsable input.
+    -- Feed one newline-stripped line from the transport. Never raises.
+    -- Blank lines are transport noise and ignored. Unparsable input gets
+    -- a -32700 Parse error (null id); oversized lines are still dropped
+    -- unparsed (transport bound, never decoded).
     ---@param line string
     function server:handle_line(line)
-        if type(line) ~= 'string' or line == '' then
+        if type(line) ~= 'string' or line:match('^%s*$') then
             return
         end
         if #line > LINE_BYTES_MAX then
@@ -330,8 +347,13 @@ function M.new(opts)
             return
         end
         local ok, msg = pcall(server.json.decode, line)
-        if not ok or type(msg) ~= 'table' then
-            server.on_log('warn', 'dropped unparsable line')
+        if not ok then
+            server.on_log('warn', 'unparsable line, sent -32700')
+            send_parse_error(server)
+            return
+        end
+        if type(msg) ~= 'table' then
+            server.on_log('warn', 'dropped non-object line')
             return
         end
         dispatch(server, msg)

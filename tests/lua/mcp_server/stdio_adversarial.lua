@@ -105,13 +105,14 @@ do
     stdio.start(new_server(deps), deps)
     local before_err = #deps.errors
     deps.on_data(ping(1) .. '{garbage\n' .. ping(2) .. '\n\n' .. ping(3))
-    check(#deps.written == 3, 'three valid pings answered out of mixed stream')
+    check(#deps.written == 4, 'three pings + one -32700 out of mixed stream')
     check(#deps.errors > before_err, 'garbage logged to stderr')
-    local ids = {}
+    local msgs = {}
     for _, line in ipairs(deps.written) do
-        ids[#ids + 1] = stub.json.decode(line).id
+        msgs[#msgs + 1] = stub.json.decode(line)
     end
-    check(ids[1] == 1 and ids[2] == 2 and ids[3] == 3, 'mixed stream order preserved')
+    check(msgs[1].id == 1 and msgs[3].id == 2 and msgs[4].id == 3, 'mixed stream order preserved')
+    check(msgs[2].error.code == -32700, 'garbage line -> -32700')
 end
 
 -- A throwing write_stdout cannot crash the server.

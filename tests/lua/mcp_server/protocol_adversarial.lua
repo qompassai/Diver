@@ -49,14 +49,20 @@ local function initialized_server()
     return server, written, logs
 end
 
--- Malformed JSON: no crash, no response, logged.
+-- Malformed JSON: -32700 Parse error with null id, logged, no crash.
 do
     local server, written, logs = initialized_server()
     local before = #written
     server:handle_line('{this is not json')
     server:handle_line('{"jsonrpc": "2.0", "id": 1, "method": ')
     server:handle_line('\0\0\0')
-    check(#written == before, 'malformed JSON produces no response')
+    check(#written == before + 3, 'malformed JSON -> three -32700 responses')
+    for i = 1, 3 do
+        local raw = written[before + i]
+        local res = stub.json.decode(raw)
+        check(res.error.code == -32700, 'malformed line ' .. i .. ' -> -32700')
+        check(raw:find('"id":null', 1, true) ~= nil, 'malformed line ' .. i .. ' -> null id')
+    end
     check(#logs >= 3, 'malformed lines are logged')
     server:handle_line(rpc(9, 'ping'))
     local res = last(written)
