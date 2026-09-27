@@ -17,9 +17,11 @@
 -- #################################################################
 local M = {}
 local android = require('dev.android')
+local apps = require('dev.apps')
 local sf = require('dev.sf')
 function M.setup()
     android.setup()
+    apps.setup()
     sf.setup()
 end
 return M
