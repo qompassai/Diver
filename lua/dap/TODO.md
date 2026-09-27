@@ -51,9 +51,18 @@ Rust| "rust.lua"| ✅| LLDB / GDB
 Scala| "scala.lua"| ✅| Metals + Bloop
 SQL orchestration| "sql.lua"| ✅| Runtime/backend routing
 SQLite| "sqlite.lua"| ✅| VDBE + LLDB/GDB
+Unity| "unity.lua"| ✅| NetCoreDbg (project-gated)
 Unreal Engine| "unreal.lua"| ✅| LLDB/GDB + Unreal inspection
+LLDB (foundation)| "lldb.lua"| ✅| LLDB DAP
+GDB (foundation)| "gdb.lua"| ✅| GDB DAP
+Zig| "zig.lua"| ✅| lldb-dap / CodeLLDB
+Ansible| "ansible.lua"| ✅| ansibug
+Haskell| "haskell.lua"| ✅| haskell-debug-adapter
+PHP| "php.lua"| ✅| vscode-php-debug + Xdebug
+Ruby| "ruby.lua"| ✅| rdbg
+COBOL| "cobol.lua"| ✅| GDB DAP on cobc -g output
 
-Implemented language/runtime modules: 19
+Implemented language/runtime modules: 28
 
 ---
 
@@ -751,18 +760,27 @@ Implemented
 [✅] scala.lua
 [✅] sql.lua
 [✅] sqlite.lua
+[✅] unity.lua
 [✅] unreal.lua
+[✅] lldb.lua
+[✅] gdb.lua
+[✅] zig.lua
+[✅] ansible.lua
+[✅] haskell.lua
+[✅] php.lua
+[✅] ruby.lua
+[✅] cobol.lua
 
-Immediate backlog
+Immediate backlog — completed 2026-09-26
 
-[ ] lldb.lua
-[ ] gdb.lua
-[ ] zig.lua
-[ ] ansible.lua
-[ ] haskell.lua
-[ ] php.lua
-[ ] ruby.lua
-[ ] cobol.lua
+[✅] lldb.lua — LLDB DAP foundation
+[✅] gdb.lua — GDB DAP foundation
+[✅] zig.lua — pre-existing module, retained
+[✅] ansible.lua — ansibug
+[✅] haskell.lua — haskell-debug-adapter
+[✅] php.lua — vscode-php-debug + Xdebug
+[✅] ruby.lua — rdbg
+[✅] cobol.lua — GDB DAP on cobc -g output
 
 Recommended expansion
 

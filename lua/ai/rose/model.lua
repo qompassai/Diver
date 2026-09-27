@@ -82,6 +82,8 @@ end
 ---@param callback fun(err: string?, message: table?)
 ---@return table token
 function M.chat(config, messages, tools, callback)
+    -- PHLOW: legacy request shape; provider and model names live in config.
+    -- Map a neutral ai.model_request onto these arguments with to_legacy().
     if name(config) == 'ollama' then
         return require('ai.rose.ollama').chat(config.ollama, messages, tools, callback)
     end

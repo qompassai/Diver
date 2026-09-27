@@ -18,6 +18,8 @@ function M.chat(config, messages, tools, callback)
     if tools and #tools > 0 then
         payload.tools = tools
     end
+    -- PHLOW: config.options is vendor-only behavior passed verbatim into the
+    -- Ollama payload; a neutral budget/preferences map is future work, not here.
     if config.options then
         payload.options = config.options
     end

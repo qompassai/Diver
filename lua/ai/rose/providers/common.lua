@@ -75,6 +75,9 @@ function M.messages(messages, config)
             'normalized chat accepts text content only; use the raw JSON request API for ' .. 'media/blocks'
         )
         if message._provider then
+            -- PHLOW: provider-managed conversation state is assumed replayable
+            -- only at the same endpoint/API/model. Phlow must retain canonical
+            -- state to replay, audit, migrate, or continue a workflow.
             assert(
                 message.role == 'assistant'
                     and message._provider.name == config.name
