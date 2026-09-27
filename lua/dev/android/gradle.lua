@@ -134,4 +134,47 @@ function M.gradle_module_name(module)
     return ':' .. module:gsub('^:', '')
 end
 
+---@param root_dir? string
+---@return { ok: boolean, reason?: string, root?: string, connection?: string, hint?: string }
+function M.bsp_status(root_dir)
+    local ok, bsp_gradle = pcall(require, 'bsp.servers.gradle')
+    if not ok or type(bsp_gradle) ~= 'table' then
+        return { ok = false, reason = 'BSP Gradle resolver is unavailable' }
+    end
+
+    local root = root_dir
+    if not root or root == '' then
+        root = bsp_gradle.root()
+    end
+    if not root then
+        return { ok = false, reason = 'No Gradle project root was found' }
+    end
+
+    local connection, connection_error = bsp_gradle.connection(root)
+    if not connection then
+        return {
+            hint = 'Generate .bsp/*.json with build-server-for-gradle, then run :BspStart',
+            ok = false,
+            reason = connection_error or 'No BSP connection card',
+            root = root,
+        }
+    end
+
+    local executable, executable_error = bsp_gradle.executable(connection)
+    if not executable then
+        return {
+            connection = connection.name or connection.path,
+            ok = false,
+            reason = executable_error or 'BSP server is not executable',
+            root = root,
+        }
+    end
+
+    return {
+        connection = connection.name or connection.path,
+        ok = true,
+        root = root,
+    }
+end
+
 return M

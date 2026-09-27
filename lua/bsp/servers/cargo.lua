@@ -1,6 +1,19 @@
 -- #################################################################
--- /qompassai/Diver/lua/bsp/cargo.lua
+-- /qompassai/Diver/lua/bsp/servers/cargo.lua
 -- Qompass AI Cargo
+--
+-- Cargo (Rust) connection resolver for the native BSP client.
+--
+-- Plain-language version: reads the `.bsp/*.json` connection card written by
+-- cargo-bsp (https://github.com/cargo-bsp/cargo-bsp) and hands it to the
+-- shared client. This module never downloads binaries and never builds a
+-- shell string.
+--
+-- Maintenance caveat (verified 2026-09-27): upstream cargo-bsp last pushed
+-- 2023-10-12 and is effectively unmaintained. The BSP 2.2.0 spec has since
+-- added official `cargo` and `Rust` protocol extensions, so a maintained
+-- server may appear; until then this resolver keeps working with any
+-- `.bsp/*.json` card, including ones you write by hand for `cargo` itself.
 -- SPDX-License-Identifier: Apache-2.0
 -- Copyright (c) 2026 Qompass AI
 --
@@ -95,12 +108,21 @@ end
 
 ---@param bufnr? integer
 ---@return string|nil
+local ROOT_MARKERS = {
+    '.bsp',
+    'Cargo.toml',
+}
+
+---@return string[]
+function M.markers()
+    return vim.deepcopy(ROOT_MARKERS)
+end
+
+---@param bufnr? integer
+---@return string|nil
 function M.root(bufnr)
     bufnr = bufnr or vim.api.nvim_get_current_buf()
-    local root = vim.fs.root(bufnr, {
-        '.bsp',
-        'Cargo.toml',
-    })
+    local root = vim.fs.root(bufnr, ROOT_MARKERS)
 
     return root and vim.fs.normalize(root) or nil
 end

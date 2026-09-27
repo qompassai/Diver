@@ -23,27 +23,7 @@
 -- limitations under the License.
 -- #################################################################
 local api = vim.api
-local cargo = require('bsp.cargo')
---[[
---mkdir -p "$HOME/.local/src"
-
-git clone \
-        --depth 1 \
-        https://github.com/cargo-bsp/cargo-bsp.git \
-        "$HOME/.local/src/cargo-bsp"
-
-cd "$HOME/.local/src/cargo-bsp"
-
-RUSTUP_TOOLCHAIN=nightly \
-        ./install.sh "$(realpath /path/to/your/rust/project)"
-        jq . /path/to/your/rust/project/.bsp/cargo-bsp.json
-        :BspInfo
-:BspTargets
-:BspCompile
-:BspReload
-:BspRestart
-:BspStop
---]]
+local servers = require('bsp.servers')
 local M = {}
 
 ---@class QompassBspConfig
@@ -51,7 +31,7 @@ local M = {}
 ---@field client_name string
 ---@field client_version string
 ---@field notify boolean
----@field server_name string|nil
+---@field server_name string|nil Registry name from `bsp.servers` (nil = auto-detect).
 ---@field trace boolean
 
 ---@class QompassBspConfigOpts
@@ -106,6 +86,7 @@ end
 ---@field root string
 ---@field rpc QompassBspRpc
 ---@field server_info table|nil
+---@field server_name string|nil
 ---@field targets QompassBspTarget[]
 
 local neovim_version = vim.version()
@@ -114,7 +95,7 @@ local defaults = {
     client_name = 'Neovim',
     client_version = string.format('%d.%d.%d', neovim_version.major, neovim_version.minor, neovim_version.patch),
     notify = true,
-    server_name = 'cargo-bsp',
+    server_name = nil, -- nil = auto-detect from bsp.servers registry
     trace = false,
 }
 
@@ -140,6 +121,37 @@ local function notify(message, level)
     })
 end
 
+---@param bufnr? integer
+---@return table|nil, string|nil, string|nil server module, root, error message
+local function detect_server(bufnr)
+    bufnr = bufnr or api.nvim_get_current_buf()
+
+    local entry
+    if M.config.server_name then
+        entry = servers.get(M.config.server_name)
+        if not entry then
+            return nil, nil, 'Unknown BSP server: ' .. M.config.server_name
+        end
+    else
+        entry = servers.detect(bufnr)
+        if not entry then
+            return nil, nil, 'No BSP project root was found'
+        end
+    end
+
+    local ok, server = pcall(require, entry.module)
+    if not ok or type(server) ~= 'table' or type(server.root) ~= 'function' then
+        return nil, nil, 'Cannot load BSP server module: ' .. entry.module
+    end
+
+    local ok_root, root = pcall(server.root, bufnr)
+    if not ok_root or type(root) ~= 'string' or root == '' then
+        return nil, nil, 'No ' .. entry.name .. ' project root was found'
+    end
+
+    return server, root, entry.name
+end
+
 ---@param root? string
 ---@return string|nil
 local function resolve_root(root)
@@ -147,7 +159,8 @@ local function resolve_root(root)
         return vim.fs.normalize(root)
     end
 
-    return cargo.root()
+    local _, detected = servers.detect()
+    return detected
 end
 
 ---@param root? string
@@ -364,9 +377,9 @@ end
 ---@return nil
 function M.start(bufnr)
     bufnr = bufnr or api.nvim_get_current_buf()
-    local root = cargo.root(bufnr)
-    if not root then
-        notify('No Cargo/BSP project root was found', vim.log.levels.WARN)
+    local server, root, server_name = detect_server(bufnr)
+    if not server then
+        notify(root or 'No BSP project root was found', vim.log.levels.WARN)
         return
     end
 
@@ -376,13 +389,13 @@ function M.start(bufnr)
         return
     end
 
-    local connection, connection_error = cargo.connection(root, M.config.server_name)
+    local connection, connection_error = server.connection(root, M.config.server_name)
     if not connection then
         notify(connection_error or 'No BSP connection is available', vim.log.levels.ERROR)
         return
     end
 
-    local executable, executable_error = cargo.executable(connection)
+    local executable, executable_error = server.executable(connection)
     if not executable then
         notify(executable_error or 'The BSP server is not executable', vim.log.levels.ERROR)
         return
@@ -393,6 +406,7 @@ function M.start(bufnr)
         initialized = false,
         root = root,
         server_info = nil,
+        server_name = server_name,
         targets = {},
     }
 
@@ -619,6 +633,7 @@ function M.info(root)
         initialized = session.initialized,
         root = session.root,
         server = session.server_info,
+        server_name = session.server_name,
         target_count = #session.targets,
     }))
 end
@@ -628,7 +643,7 @@ end
 function M.stop(root)
     root = resolve_root(root)
     if not root then
-        notify('No Cargo/BSP project root was found', vim.log.levels.ERROR)
+        notify('No BSP project root was found', vim.log.levels.ERROR)
         return
     end
 
@@ -662,9 +677,9 @@ end
 ---@return nil
 function M.restart(bufnr)
     bufnr = bufnr or api.nvim_get_current_buf()
-    local root = cargo.root(bufnr)
+    local _, root, err = detect_server(bufnr)
     if not root then
-        notify('No Cargo/BSP project root was found', vim.log.levels.ERROR)
+        notify(err or 'No BSP project root was found', vim.log.levels.ERROR)
         return
     end
 
@@ -701,7 +716,7 @@ local function create_autocmds()
             end
         end,
         group = group,
-        pattern = 'rust',
+        pattern = servers.filetypes(),
     })
     api.nvim_create_autocmd('VimLeavePre', {
         callback = function()

@@ -562,6 +562,29 @@ function M.show_android_info()
     })
 end
 
+function M.bsp_status()
+    local gradlew = util.find_gradlew()
+    local status = gradle.bsp_status(gradlew and gradlew.cwd or nil)
+
+    if status.ok then
+        notify(
+            string.format(
+                'BSP ready via %s at %s. Run :BspStart to connect.',
+                status.connection or 'gradle',
+                status.root or '?'
+            ),
+            levels.INFO
+        )
+        return
+    end
+
+    local message = 'BSP: ' .. (status.reason or 'not available')
+    if status.hint then
+        message = message .. '. ' .. status.hint
+    end
+    notify(message, levels.WARN)
+end
+
 ---Run the Android doctor health check.
 function M.doctor()
     require('dev.android.doctor').run()
@@ -695,6 +718,13 @@ function M.get_actions()
             group = 'Project',
             keywords = 'info sdk environment android',
             run = M.show_android_info,
+        },
+        {
+            id = 'bsp_status',
+            label = 'BSP build-server status',
+            group = 'Project',
+            keywords = 'bsp build server gradle connection',
+            run = M.bsp_status,
         },
         {
             id = 'doctor',

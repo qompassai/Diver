@@ -1,5 +1,5 @@
 -- #################################################################
--- /qompassai/Diver/lua/bsp/bazel.lua
+-- /qompassai/Diver/lua/bsp/servers/bazel.lua
 -- Qompass AI Bazel BSP (Hirschgarten)
 -- SPDX-License-Identifier: Apache-2.0
 -- Copyright (c) 2026 Qompass AI
@@ -151,6 +151,11 @@ local function buffer_is_usable(bufnr)
     end
 
     return api.nvim_buf_is_valid(bufnr)
+end
+
+---@return string[]
+function M.markers()
+    return vim.deepcopy(ROOT_MARKERS)
 end
 
 ---@param root string
@@ -515,6 +520,24 @@ function M.argv(connection)
     assert(#connection.argv >= 1)
 
     return connection.argv
+end
+
+---@param connection BspConnection
+---@return boolean, string|nil
+function M.executable(connection)
+    if type(connection) ~= 'table' or type(connection.argv) ~= 'table' then
+        return false, 'The BSP connection is malformed'
+    end
+
+    local command = connection.argv[1]
+    if not command or command == '' then
+        return false, 'The BSP connection has an empty command'
+    end
+    if vim.fn.executable(command) ~= 1 then
+        return false, 'BSP server is not executable: ' .. command
+    end
+
+    return true, nil
 end
 
 ---@param bufnr? integer

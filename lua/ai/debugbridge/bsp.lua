@@ -17,11 +17,11 @@
 --- `session.rpc.request` directly with a dot-call, exactly like the layer.
 ---
 --- Root validation: the root must be a non-empty absolute path with no `..`
---- segments, and it must contain a recognized project marker (`Cargo.toml`
---- for cargo projects, or one of the Bazel workspace markers that
---- `bsp.bazel`'s `detect()` looks for). Bazel roots validate but cannot be
---- started: the layer's `M.start` only wires cargo connections, so `ensure`
---- reports that honestly instead of inventing support.
+--- segments, and it must contain a project marker recognized by one of the
+--- `bsp.servers` registry entries (Cargo.toml, Gradle files, Bazel workspace
+--- files, build.sbt, ...). Any detected server can be started: the layer's
+--- `M.start` auto-detects the right server, so `ensure` works for every
+--- registered build tool, not just cargo.
 ---@module 'ai.debugbridge.bsp'
 
 local api = vim.api
@@ -49,18 +49,23 @@ local PATH_SEGMENT_COUNT_MAX = 256
 --- Scratch buffer name used to give the layer's `M.start(bufnr)` a buffer
 --- under the root. The file is never created on disk and the buffer is
 --- deleted right after `M.start` returns; it exists only so the layer's
---- `cargo.root(bufnr)` (which searches upward from the buffer's directory
---- for `.bsp`/`Cargo.toml`) resolves to our root without touching the user's
---- buffers.
+--- server detection (which searches upward from the buffer's directory)
+--- resolves to our root without touching the user's buffers.
 local SCRATCH_FILENAME = '.nvim-debugbridge-scratch'
 
---- Bazel workspace markers, mirroring what `bsp.bazel`'s `detect()` accepts.
-local BAZEL_WORKSPACE_MARKERS = {
-    'MODULE.bazel',
-    'WORKSPACE.bazel',
-    'WORKSPACE',
-    'REPO.bazel',
-}
+---@param root string
+---@return QompassBspServerEntry|nil
+local function detect_server(root)
+    assert(type(root) == 'string')
+    assert(root ~= '')
+
+    local ok, bsp_servers = pcall(require, 'bsp.servers')
+    if not ok or type(bsp_servers) ~= 'table' then
+        return nil
+    end
+
+    return bsp_servers.detect_root(root)
+end
 
 ---@class AiDebugBridgeBspTarget
 ---@field uri string
@@ -99,41 +104,6 @@ local function describe_error(err)
     return tostring(err)
 end
 
----@param path string
----@return boolean
-local function is_file(path)
-    assert(type(path) == 'string')
-    local stat = uv.fs_stat(path)
-    return stat ~= nil and stat.type == 'file'
-end
-
----@param path string
----@return boolean
-local function is_dir(path)
-    assert(type(path) == 'string')
-    local stat = uv.fs_stat(path)
-    return stat ~= nil and stat.type == 'directory'
-end
-
----@param root string
----@return string|nil # 'cargo' | 'bazel' | nil when no marker is found
-local function project_kind(root)
-    assert(type(root) == 'string')
-    assert(root ~= '')
-    if is_file(fs.joinpath(root, 'Cargo.toml')) then
-        return 'cargo'
-    end
-    if is_dir(fs.joinpath(root, '.bazelbsp')) then
-        return 'bazel'
-    end
-    for index = 1, #BAZEL_WORKSPACE_MARKERS do
-        if is_file(fs.joinpath(root, BAZEL_WORKSPACE_MARKERS[index])) then
-            return 'bazel'
-        end
-    end
-    return nil
-end
-
 ---@param root any
 ---@return string|nil, string|nil
 local function validate_root(root)
@@ -168,8 +138,9 @@ local function validate_root(root)
     if real_root == nil then
         return nil, 'root does not resolve'
     end
-    if project_kind(real_root) == nil then
-        return nil, 'no recognized project marker (Cargo.toml or Bazel workspace file) under ' .. normalized
+    local entry = detect_server(real_root)
+    if entry == nil then
+        return nil, 'no BSP-detectable project marker under ' .. normalized
     end
     return real_root, nil
 end
@@ -437,12 +408,6 @@ function M.ensure(root, callback)
         callback(message)
         return
     end
-    if project_kind(normalized) ~= 'cargo' then
-        local kind_error = 'bsp start is only wired for cargo projects: ' .. normalized
-        log_event('bsp_error', { error = kind_error, op = 'ensure', root = normalized })
-        callback(kind_error)
-        return
-    end
     local existing = bsp.state.sessions[normalized]
     if existing ~= nil and session_is_live(existing) then
         log_event('bsp_ensure', { reused = true, root = normalized })
@@ -450,9 +415,10 @@ function M.ensure(root, callback)
         return
     end
     -- The layer's M.start(bufnr) derives the project root from the buffer via
-    -- cargo.root(bufnr), which searches upward from the buffer's directory.
-    -- A scratch buffer named under the root is the smallest honest way to
-    -- point it at the right project without touching the user's buffers.
+    -- the bsp.servers registry, which searches upward from the buffer's
+    -- directory. A scratch buffer named under the root is the smallest honest
+    -- way to point it at the right project without touching the user's
+    -- buffers; auto-detection picks the right server for the project kind.
     local bufnr = fn.bufadd(fs.joinpath(normalized, SCRATCH_FILENAME))
     assert(type(bufnr) == 'number')
     assert(bufnr > 0)
