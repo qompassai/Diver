@@ -12,6 +12,9 @@ local MAPPING_COUNT_MAX = 256
 ---@field mode? string|string[]
 ---@field expr? boolean
 ---@field remap? boolean
+-- When true, replace an already-occupied key instead of skipping it.
+-- The displaced mapping is recorded so the override stays visible.
+---@field override? boolean
 
 ---@class OwnedMapping
 ---@field mode string
@@ -23,6 +26,7 @@ local MAPPING_COUNT_MAX = 256
 ---@class OwnerState
 ---@field scopes table<integer, OwnedMapping[]>
 ---@field skipped table<string, string>
+---@field overridden table<string, string>
 ---@field active boolean?
 ---@field group integer?
 
@@ -133,6 +137,11 @@ function M.clear(owner, scope)
             state.skipped[key] = nil
         end
     end
+    for key in pairs(state.overridden) do
+        if key:sub(1, #prefix) == prefix then
+            state.overridden[key] = nil
+        end
+    end
 end
 
 ---@param scope integer
@@ -164,7 +173,7 @@ end
 function M.install(owner, scope, definitions)
     assert(type(owner) == 'string' and owner ~= '')
     assert(#definitions <= MAPPING_COUNT_MAX, 'Too many mappings')
-    owners[owner] = owners[owner] or { scopes = {}, skipped = {} }
+    owners[owner] = owners[owner] or { scopes = {}, skipped = {}, overridden = {} }
     M.clear(owner, scope)
     local state = owners[owner]
     state.scopes[scope] = {}
@@ -186,9 +195,12 @@ function M.install(owner, scope, definitions)
             assert(type(mode) == 'string', 'Each resolved mode must be a single string')
             local key = keys(entry.lhs)
             local occupied = conflict(scope, mode, key)
-            if occupied then
+            if occupied and not entry.override then
                 state.skipped[scope .. ':' .. mode .. ':' .. entry.lhs] = occupied
             else
+                if occupied then
+                    state.overridden[scope .. ':' .. mode .. ':' .. entry.lhs] = occupied
+                end
                 local opts = {
                     desc = owner .. ': ' .. entry.desc,
                     silent = true,
@@ -236,7 +248,7 @@ end
 function M.watch(owner, attach, events)
     M.teardown(owner)
     ---@type OwnerState
-    local state = { scopes = {}, skipped = {}, active = true }
+    local state = { scopes = {}, skipped = {}, overridden = {}, active = true }
     owners[owner] = state
     state.group = api.nvim_create_augroup('NativeMappings_' .. owner, { clear = true })
     local function refresh(bufnr)
@@ -281,6 +293,12 @@ function M.report()
     for _, owner in ipairs(vim.fn.sort(vim.tbl_keys(owners))) do
         for _, key in ipairs(vim.fn.sort(vim.tbl_keys(owners[owner].skipped))) do
             lines[#lines + 1] = owner .. ': ' .. key .. ' -> ' .. owners[owner].skipped[key]
+        end
+    end
+    lines[#lines + 1] = 'Overridden existing mappings (owner: scope:mode:key -> replaced key)'
+    for _, owner in ipairs(vim.fn.sort(vim.tbl_keys(owners))) do
+        for _, key in ipairs(vim.fn.sort(vim.tbl_keys(owners[owner].overridden))) do
+            lines[#lines + 1] = owner .. ': ' .. key .. ' -> ' .. owners[owner].overridden[key]
         end
     end
     M.show(lines, 'Mapping report')

@@ -99,12 +99,25 @@ function M.setup()
             rhs = completion('<C-p>', '<C-k>'),
             desc = 'Previous command completion',
         },
+        -- Displaces the builtin <C-L> (clear/redraw) so all four directions
+        -- navigate symmetrically; redraw moves to <leader>L below.
         {
             lhs = '<C-l>',
             rhs = function()
                 tmux_aware_navigate('right')
             end,
             desc = 'Window right (tmux pane at edge)',
+            override = true,
+        },
+        -- The builtin <C-L> default (displaced above): nohlsearch,
+        -- diffupdate, clear multicursors, then the unmapped <C-L>
+        -- clear/redraw via normal!.
+        {
+            lhs = '<leader>L',
+            rhs = '<Cmd>nohlsearch<Bar>diffupdate'
+                .. '<Bar>call nvim_buf_clear_namespace(0, nvim_create_namespace("nvim.multicursor"), 0, -1)'
+                .. '<Bar>normal! <C-L><CR>',
+            desc = 'Clear and redraw screen',
         },
         {
             lhs = '<C-s>',
