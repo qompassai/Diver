@@ -9,4 +9,6 @@ require('types.lang.cmp')
 require('types.lang.cpp')
 require('types.lang.lua')
 require('types.lang.python')
+require('types.lang.ts')
+require('types.lang.zig')
 return M

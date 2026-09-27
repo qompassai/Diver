@@ -1,0 +1,10 @@
+-- /qompassai/Diver/lua/types/core/fixer.lua
+-- Qompass AI Diver Fixer Types
+-- Copyright (C) 2025 Qompass AI, All rights reserved
+-- ----------------------------------------
+---@meta
+---@class vim.fixer.Config
+---@field allow_non_zero?                             boolean
+---@field args?                                       string[]
+---@field cmd?                                        string
+---@field stdin?                                      boolean
