@@ -8,6 +8,7 @@ local M = {}
 local api = vim.api
 local cmd = vim.cmd
 local fn = vim.fn
+local formatters = require('formatters')
 local group = api.nvim_create_augroup('Python', {
     clear = true,
 })
@@ -29,13 +30,15 @@ api.nvim_create_autocmd('BufWritePost', {
         })
     end,
 })
-api.nvim_create_autocmd('BufWritePre', {
-    group = group,
-    pattern = '*.py',
-    callback = function(args)
+formatters.register_stage({
+    name = 'python_lsp_format',
+    priority = 430,
+    patterns = { '*.py' },
+    desc = 'Format Python sources with ruff before save',
+    run = function(bufnr)
         lsp.buf.format({
             async = false,
-            bufnr = args.buf,
+            bufnr = bufnr,
             filter = function(client)
                 return client.name == 'ruff_ls'
             end,

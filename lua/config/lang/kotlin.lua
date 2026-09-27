@@ -10,6 +10,7 @@ local autocmd = vim.api.nvim_create_autocmd
 local client_by_id = vim.lsp.get_client_by_id
 local code_action = vim.lsp.buf.code_action
 local findfile = vim.fn.findfile
+local formatters = require('formatters')
 local ERROR = vim.log.levels.ERROR
 local get = vim.diagnostic.get
 local INFO = vim.log.levels.INFO
@@ -40,26 +41,30 @@ autocmd('BufNewFile', {
         vim.cmd('normal! G')
     end,
 })
-autocmd('BufWritePre', {
-    group = group,
-    pattern = {
+formatters.register_stage({
+    name = 'kotlin_lsp_format',
+    priority = 415,
+    patterns = {
         '*.kt',
         '*.kts',
     },
-    callback = function(args) ---@param args {buf: integer, file: string, match: string}
+    desc = 'Format Kotlin sources with the attached LSP client before save',
+    run = function(bufnr) ---@param bufnr integer
         lsp.buf.format({
-            bufnr = args.buf,
+            bufnr = bufnr,
             async = false,
         })
     end,
 })
-autocmd('BufWritePre', {
-    group = group,
-    pattern = {
+formatters.register_stage({
+    name = 'kotlin_fixall',
+    priority = 416,
+    patterns = {
         '*.kt',
         '*.kts',
     },
-    callback = function()
+    desc = 'Apply source.fixAll code actions to Kotlin sources before save',
+    run = function()
         code_action({
             context = {
                 diagnostics = {},
@@ -110,14 +115,16 @@ usercmd('KotlinQuickfix', function()
         apply = true,
     })
 end, {})
-autocmd('BufWritePre', {
-    group = group,
-    pattern = {
+formatters.register_stage({
+    name = 'kotlin_organize_imports',
+    priority = 417,
+    patterns = {
         '*.kt',
         '*.kts',
     },
-    callback = function(args)
-        local diagnostics = get(args.buf)
+    desc = 'Organize imports in Kotlin sources before save',
+    run = function(bufnr)
+        local diagnostics = get(bufnr)
         code_action({
             context = {
                 diagnostics = diagnostics,

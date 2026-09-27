@@ -5,6 +5,7 @@
 local M = {}
 local api = vim.api
 local fn = vim.fn
+local formatters = require('formatters')
 local group = api.nvim_create_augroup('PHP', {
     clear = true,
 })
@@ -61,21 +62,27 @@ api.nvim_create_autocmd('LspAttach', {
         end
     end,
 })
-api.nvim_create_autocmd('BufWritePre', {
-    pattern = {
+formatters.register_stage({
+    name = 'php_lsp_format_current',
+    priority = 426,
+    patterns = {
         '*.php',
         '*.phtml',
     },
-    callback = function()
+    desc = 'Format PHP sources with the attached LSP client before save',
+    run = function()
         vim.lsp.buf.format()
     end,
 })
-api.nvim_create_autocmd('BufWritePre', {
-    pattern = {
+formatters.register_stage({
+    name = 'php_fixall',
+    priority = 427,
+    patterns = {
         '*.php',
         '*.phtml',
     },
-    callback = function()
+    desc = 'Apply source.fixAll code actions to PHP sources before save',
+    run = function()
         vim.lsp.buf.code_action({
             context = {
                 diagnostics = {},
@@ -95,12 +102,14 @@ api.nvim_create_user_command('PhpTest', function()
         detach = true,
     })
 end, { desc = 'Run PHPUnit for current file' })
-vim.api.nvim_create_autocmd('BufWritePre', {
-    group = group,
-    pattern = '*.php',
-    callback = function(args)
+formatters.register_stage({
+    name = 'php_lsp_format_sync',
+    priority = 428,
+    patterns = { '*.php' },
+    desc = 'Synchronous LSP format pass for PHP sources before save',
+    run = function(bufnr)
         vim.lsp.buf.format({
-            bufnr = args.buf,
+            bufnr = bufnr,
             async = false,
         })
     end,
@@ -116,14 +125,16 @@ vim.api.nvim_create_user_command('PhpQuickfix', function()
         apply = true,
     })
 end, { desc = 'Apply PHP quickfix code actions' })
-vim.api.nvim_create_autocmd('BufWritePre', {
-    group = group,
-    pattern = {
+formatters.register_stage({
+    name = 'php_organize_imports',
+    priority = 429,
+    patterns = {
         '*.php',
         '*.phtml',
     },
-    callback = function(args)
-        local diagnostics = vim.diagnostic.get(args.buf)
+    desc = 'Organize imports in PHP sources before save',
+    run = function(bufnr)
+        local diagnostics = vim.diagnostic.get(bufnr)
         vim.lsp.buf.code_action({
             context = {
                 diagnostics = diagnostics,

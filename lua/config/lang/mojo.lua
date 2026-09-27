@@ -11,6 +11,7 @@ local code_action = vim.lsp.buf.code_action
 local ERROR = vim.log.levels.ERROR
 local expand = vim.fn.expand --[[@as fun(path: string): string]]
 local filereadable = vim.fn.filereadable
+local formatters = require('formatters')
 local get = vim.diagnostic.get
 local INFO = vim.log.levels.INFO
 local jobstart = vim.fn.jobstart
@@ -79,26 +80,30 @@ autocmd('FileType', {
         vim.opt_local.formatoptions:append('jcroql')
     end,
 })
-autocmd('BufWritePre', {
-    group = group,
-    pattern = {
+formatters.register_stage({
+    name = 'mojo_lsp_format',
+    priority = 422,
+    patterns = {
         '*.mojo',
         '*.🔥',
     },
-    callback = function(args) ---@param args {buf: integer, file: string, match: string}
+    desc = 'Format Mojo sources with the attached LSP client before save',
+    run = function(bufnr) ---@param bufnr integer
         lsp.buf.format({
-            bufnr = args.buf,
+            bufnr = bufnr,
             async = false,
         })
     end,
 })
-autocmd('BufWritePre', {
-    group = group,
-    pattern = {
+formatters.register_stage({
+    name = 'mojo_fixall',
+    priority = 423,
+    patterns = {
         '*.mojo',
         '*.🔥',
     },
-    callback = function()
+    desc = 'Apply source.fixAll code actions to Mojo sources before save',
+    run = function()
         code_action({
             context = {
                 diagnostics = {},
@@ -198,11 +203,13 @@ usercmd('MojoQuickfix', function()
     })
 end, {})
 
-autocmd('BufWritePre', {
-    group = group,
-    pattern = { '*.mojo', '*.🔥' },
-    callback = function(args)
-        local diagnostics = get(args.buf)
+formatters.register_stage({
+    name = 'mojo_organize_imports',
+    priority = 424,
+    patterns = { '*.mojo', '*.🔥' },
+    desc = 'Organize imports in Mojo sources before save',
+    run = function(bufnr)
+        local diagnostics = get(bufnr)
         code_action({
             context = {
                 diagnostics = diagnostics,

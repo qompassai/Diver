@@ -15,6 +15,7 @@ local autocmd = vim.api.nvim_create_autocmd
 local client_by_id = vim.lsp.get_client_by_id
 local code_action = vim.lsp.buf.code_action
 local findfile = vim.fn.findfile
+local formatters = require('formatters')
 local ERROR = vim.log.levels.ERROR
 local get = vim.diagnostic.get
 local INFO = vim.log.levels.INFO
@@ -49,9 +50,10 @@ autocmd('BufNewFile', {
         vim.cmd('normal! G')
     end,
 })
-autocmd('BufWritePre', {
-    group = group,
-    pattern = {
+formatters.register_stage({
+    name = 'cpp_lsp_format',
+    priority = 404,
+    patterns = {
         '*.cpp',
         '*.hpp',
         '*.cc',
@@ -59,17 +61,20 @@ autocmd('BufWritePre', {
         '*.cxx',
         '*.hxx',
     },
-    callback = function(args) ---@param args {buf: integer, file: string, match: string}
+    desc = 'Format C++ sources with the attached LSP client before save',
+    run = function(bufnr) ---@param bufnr integer
         lsp.buf.format({
-            bufnr = args.buf,
+            bufnr = bufnr,
             async = false,
         })
     end,
 })
-autocmd('BufWritePre', {
-    group = group,
-    pattern = { '*.cpp', '*.hpp', '*.cc', '*.hh', '*.cxx', '*.hxx' },
-    callback = function()
+formatters.register_stage({
+    name = 'cpp_fixall',
+    priority = 405,
+    patterns = { '*.cpp', '*.hpp', '*.cc', '*.hh', '*.cxx', '*.hxx' },
+    desc = 'Apply source.fixAll code actions to C++ sources before save',
+    run = function()
         code_action({
             context = {
                 diagnostics = {},
@@ -154,9 +159,10 @@ usercmd('CppQuickfix', function()
     })
 end, {})
 
-autocmd('BufWritePre', {
-    group = group,
-    pattern = {
+formatters.register_stage({
+    name = 'cpp_organize_imports',
+    priority = 406,
+    patterns = {
         '*.cpp',
         '*.hpp',
         '*.cc',
@@ -164,8 +170,9 @@ autocmd('BufWritePre', {
         '*.cxx',
         '*.hxx',
     },
-    callback = function(args)
-        local diagnostics = get(args.buf)
+    desc = 'Organize imports in C++ sources before save',
+    run = function(bufnr)
+        local diagnostics = get(bufnr)
         code_action({
             context = {
                 diagnostics = diagnostics,

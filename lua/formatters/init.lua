@@ -1089,6 +1089,253 @@ local function completions(lead)
     return names
 end
 
+-- #################################################################
+-- Save pipeline stages: single BufWritePre ownership.
+--
+-- Every buffer mutation that must happen before a write registers here as
+-- a stage. One BufWritePre autocmd (created by M.setup) runs them in
+-- deterministic priority order. This replaces the previous sprawl of
+-- per-language BufWritePre autocmds plus the LSP client's own save hook.
+--
+-- Precedence (lower priority runs first):
+--   100-199  buffer text transforms (e.g. the Lua API modernizer)
+--   400-499  per-language save stages migrated from config/lang. Within each
+--            language file, priorities are sequential in the original
+--            BufWritePre declaration order, so a file that declared format,
+--            then fix-all, then organize-imports keeps exactly that order.
+--   900      preferred-client LSP format (config.core.lsp; gated by
+--            g:lsp_format_on_save, default true)
+--   1000     native external formatter pipeline (gated by
+--            formatters.options.format_on_save, default false)
+--
+-- Flag story: vim.b.format_disabled is the hard kill switch — the runner
+-- checks it first and skips every stage, including the LSP ones. The
+-- lsp_format_on_save flag gates only the 900 stage and format_on_save only
+-- the 1000 stage; per-language stages (100-499) run unconditionally,
+-- exactly as their autocmds did before this unification.
+-- #################################################################
+
+---@class FormatStageContext
+---@field bufnr integer Buffer being saved.
+---@field name string Stage name, for logging.
+
+---@class FormatStageSpec
+---@field name string Unique stage name; registering twice is an error.
+---@field priority integer Lower runs first; ties break by name.
+---@field patterns? string[] Autocmd-style filename globs. A pattern without
+---'/' matches against the buffer's filename tail, like autocmd patterns.
+---@field filetypes? string[] Buffer 'filetype' values the stage applies to.
+---@field desc? string Human-readable description.
+---@field run fun(bufnr: integer, ctx: FormatStageContext): boolean? Stage
+---body. Return false for an expected failure the stage already reported;
+---raised errors are caught by the runner, notified once, and never break
+---the save or the stages after them.
+
+---@type table<string, FormatStageSpec>
+local save_stages = {}
+
+---Upper bound on registered stages; keeps the per-save scan bounded.
+local SAVE_STAGE_MAX = 64
+
+---Validate a stage spec. Programmer errors raise loudly: this runs at
+---config load, where a silent mis-registration would be worse than a
+---startup error.
+---@param spec FormatStageSpec
+---@return FormatStageSpec validated spec
+local function check_stage_spec(spec)
+    assert(type(spec) == 'table', 'stage spec must be a table')
+    assert(type(spec.name) == 'string' and spec.name ~= '', 'stage name must be a non-empty string')
+    assert(not save_stages[spec.name], 'format stage already registered: ' .. spec.name)
+    assert(type(spec.priority) == 'number', 'stage priority must be a number')
+    assert(type(spec.run) == 'function', 'stage run must be a function')
+    for _, key in ipairs({ 'patterns', 'filetypes' }) do
+        local value = spec[key]
+        if value ~= nil then
+            assert(type(value) == 'table', 'stage ' .. key .. ' must be a string array')
+            for index, entry in ipairs(value) do
+                assert(type(entry) == 'string', 'stage ' .. key .. '[' .. index .. '] must be a string')
+            end
+        end
+    end
+    assert(#vim.tbl_keys(save_stages) < SAVE_STAGE_MAX, 'too many format stages registered')
+    return spec
+end
+
+---Register a save pipeline stage. Duplicate names are rejected loudly so a
+---copy-paste collision can never silently shadow a stage.
+---@param spec FormatStageSpec
+---@return nil
+function M.register_stage(spec)
+    local stage = check_stage_spec(spec)
+    save_stages[stage.name] = {
+        name = stage.name,
+        priority = stage.priority,
+        patterns = stage.patterns and vim.deepcopy(stage.patterns) or nil,
+        filetypes = stage.filetypes and vim.deepcopy(stage.filetypes) or nil,
+        desc = stage.desc,
+        run = stage.run,
+    }
+end
+
+---Remove a stage by name. Intended for tests; returns true when removed.
+---@param name string
+---@return boolean removed
+function M.unregister_stage(name)
+    assert(type(name) == 'string' and name ~= '', 'stage name must be a non-empty string')
+    if save_stages[name] == nil then
+        return false
+    end
+    save_stages[name] = nil
+    return true
+end
+
+---Fetch a registered stage spec by name (a copy). Intended for tests and
+---for operators inspecting the pipeline; nil when not registered.
+---@param name string
+---@return FormatStageSpec? spec
+function M.get_stage(name)
+    assert(type(name) == 'string' and name ~= '', 'stage name must be a non-empty string')
+    local stage = save_stages[name]
+    if stage == nil then
+        return nil
+    end
+    return {
+        name = stage.name,
+        priority = stage.priority,
+        patterns = stage.patterns and vim.deepcopy(stage.patterns) or nil,
+        filetypes = stage.filetypes and vim.deepcopy(stage.filetypes) or nil,
+        desc = stage.desc,
+        run = stage.run,
+    }
+end
+
+---Convert an autocmd-style glob to a Vim regex. We roll our own instead of
+---vim.fn.glob2regpat because glob2regpat drops a leading `*` (e.g. `*.lua`
+---becomes `\.lua$` with no `^` anchor), which would silently break the
+---common `*.ext` stage patterns.
+---@param pattern string
+---@return string
+local function glob_to_regex(pattern)
+    local parts = {}
+    for i = 1, #pattern do
+        local c = pattern:sub(i, i)
+        if c == '*' then
+            parts[#parts + 1] = '.*'
+        elseif c == '?' then
+            parts[#parts + 1] = '.'
+        elseif c:find('[%^%$%(%)%%%.%[%]%+%-%?]', 1) then
+            -- Escape Vim regex specials with a backslash (not Lua's %).
+            parts[#parts + 1] = '\\' .. c
+        else
+            parts[#parts + 1] = c
+        end
+    end
+    return '^' .. table.concat(parts) .. '$'
+end
+
+---Match one autocmd-style glob against a buffer name.
+---@param pattern string
+---@param bufname string
+---@return boolean
+local function stage_pattern_matches(pattern, bufname)
+    local target = bufname
+    if not pattern:find('/', 1, true) then
+        target = vim.fn.fnamemodify(bufname, ':t')
+    end
+    return vim.fn.match(target, glob_to_regex(pattern)) == 0
+end
+
+---Whether a stage applies to a buffer. A stage with neither patterns nor
+---filetypes applies everywhere (used by the LSP and native pipeline stages).
+---@param stage FormatStageSpec
+---@param bufnr integer
+---@return boolean
+local function stage_applies(stage, bufnr)
+    if stage.patterns == nil and stage.filetypes == nil then
+        return true
+    end
+    if stage.filetypes ~= nil then
+        local filetype = api.nvim_get_option_value('filetype', { buf = bufnr })
+        for _, wanted in ipairs(stage.filetypes) do
+            if filetype == wanted then
+                return true
+            end
+        end
+    end
+    if stage.patterns ~= nil then
+        local bufname = api.nvim_buf_get_name(bufnr)
+        for _, pattern in ipairs(stage.patterns) do
+            if stage_pattern_matches(pattern, bufname) then
+                return true
+            end
+        end
+    end
+    return false
+end
+
+---Run every stage that applies to bufnr in (priority, name) order. A stage
+---that raises never breaks the save: the error is notified once and the
+---pipeline continues. Returns the count of stages that ran cleanly.
+---@param bufnr integer
+---@return integer stages_run
+function M.run_save_stages(bufnr)
+    assert(api.nvim_buf_is_valid(bufnr), 'run_save_stages: invalid buffer')
+    if vim.b[bufnr].format_disabled then
+        return 0
+    end
+    local ordered = {}
+    for _, stage in pairs(save_stages) do
+        if stage_applies(stage, bufnr) then
+            ordered[#ordered + 1] = stage
+        end
+    end
+    -- Deterministic order: pairs() iteration order never leaks through.
+    table.sort(ordered, function(left, right)
+        if left.priority ~= right.priority then
+            return left.priority < right.priority
+        end
+        return left.name < right.name
+    end)
+    local completed = 0
+    for _, stage in ipairs(ordered) do
+        local ok, failed = pcall(stage.run, bufnr, { bufnr = bufnr, name = stage.name })
+        if not ok then
+            notify(('Save stage %q failed: %s'):format(stage.name, message(failed)), vim.log.levels.WARN)
+        elseif failed ~= false then
+            completed = completed + 1
+        end
+    end
+    return completed
+end
+
+-- The native external formatter pipeline as the final save stage, keeping
+-- its historical gate (M.options.format_on_save, default false). M.format
+-- honors vim.b.format_disabled itself, and the runner skips everything first.
+M.register_stage({
+    name = 'native_pipeline',
+    priority = 1000,
+    desc = 'Native external formatters on save',
+    run = function(bufnr)
+        if not (M.options.enabled and M.options.format_on_save) then
+            return true
+        end
+        M.format({
+            bufnr = bufnr,
+            async = false,
+            automatic = true,
+            timeout_ms = M.options.save_timeout_ms,
+            notify = false,
+        }, function(result)
+            if result.error and result.status ~= 'unavailable' then
+                vim.schedule(function()
+                    notify('Saved without formatting: ' .. message(result.error), vim.log.levels.WARN)
+                end)
+            end
+        end)
+        return true
+    end,
+})
+
 function M.setup(opts)
     for _, job in pairs(jobs) do
         cancel(job, 'cancelled')
@@ -1133,23 +1380,9 @@ function M.setup(opts)
     })
     api.nvim_create_autocmd('BufWritePre', {
         group = group,
-        desc = 'Optional bounded native formatting before save',
+        desc = 'Single owner: run the ordered save-format stage pipeline',
         callback = function(event)
-            if M.options.enabled and M.options.format_on_save and not vim.b[event.buf].format_disabled then
-                M.format({
-                    bufnr = event.buf,
-                    async = false,
-                    automatic = true,
-                    timeout_ms = M.options.save_timeout_ms,
-                    notify = false,
-                }, function(result)
-                    if result.error and result.status ~= 'unavailable' then
-                        vim.schedule(function()
-                            notify('Saved without formatting: ' .. message(result.error), vim.log.levels.WARN)
-                        end)
-                    end
-                end)
-            end
+            M.run_save_stages(event.buf)
         end,
     })
     api.nvim_create_user_command('Format', function(command)

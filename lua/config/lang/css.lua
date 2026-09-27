@@ -9,6 +9,7 @@ local autocmd = vim.api.nvim_create_autocmd
 local client_by_id = vim.lsp.get_client_by_id
 local code_action = vim.lsp.buf.code_action
 local findfile = vim.fn.findfile
+local formatters = require('formatters')
 local ERROR = vim.log.levels.ERROR
 local get = vim.diagnostic.get
 local INFO = vim.log.levels.INFO
@@ -254,32 +255,36 @@ autocmd('BufNewFile', {
         vim.cmd('normal! G')
     end,
 })
-autocmd('BufWritePre', {
-    group = group,
-    pattern = {
+formatters.register_stage({
+    name = 'css_lsp_format',
+    priority = 407,
+    patterns = {
         '*.css',
         '*.scss',
         '*.sass',
         '*.less',
         '*.postcss',
     },
-    callback = function(args) ---@param args {buf: integer, file: string, match: string}
+    desc = 'Format stylesheets with the attached LSP client before save',
+    run = function(bufnr) ---@param bufnr integer
         lsp.buf.format({
-            bufnr = args.buf,
+            bufnr = bufnr,
             async = false,
         })
     end,
 })
-autocmd('BufWritePre', {
-    group = group,
-    pattern = {
+formatters.register_stage({
+    name = 'css_fixall',
+    priority = 408,
+    patterns = {
         '*.css',
         '*.scss',
         '*.sass',
         '*.less',
         '*.postcss',
     },
-    callback = function()
+    desc = 'Apply source.fixAll code actions to stylesheets before save',
+    run = function()
         code_action({
             context = {
                 diagnostics = {},
@@ -412,17 +417,19 @@ usercmd('CssQuickfix', function()
         apply = true,
     })
 end, {})
-autocmd('BufWritePre', {
-    group = group,
-    pattern = {
+formatters.register_stage({
+    name = 'css_organize_imports',
+    priority = 409,
+    patterns = {
         '*.css',
         '*.scss',
         '*.sass',
         '*.less',
         '*.postcss',
     },
-    callback = function(args)
-        local diagnostics = get(args.buf)
+    desc = 'Organize imports in stylesheets before save',
+    run = function(bufnr)
+        local diagnostics = get(bufnr)
         code_action({
             context = {
                 diagnostics = diagnostics,

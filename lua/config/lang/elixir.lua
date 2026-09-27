@@ -10,6 +10,7 @@ local client_by_id = vim.lsp.get_client_by_id
 local cmd = vim.cmd
 local code_action = vim.lsp.buf.code_action
 local findfile = vim.fn.findfile
+local formatters = require('formatters')
 local ERROR = vim.log.levels.ERROR
 local get = vim.diagnostic.get
 local INFO = vim.log.levels.INFO
@@ -43,29 +44,33 @@ autocmd('BufNewFile', {
         cmd('normal! G')
     end,
 })
-autocmd('BufWritePre', {
-    group = group,
-    pattern = {
+formatters.register_stage({
+    name = 'elixir_lsp_format',
+    priority = 410,
+    patterns = {
         '*.ex',
         '*.exs',
         '*.eex',
         '*.heex',
         '*.leex',
     },
-    callback = function(args) ---@param args {buf: integer, file: string, match: string}
+    desc = 'Format Elixir sources with the attached LSP client before save',
+    run = function(bufnr) ---@param bufnr integer
         lsp.buf.format({
-            bufnr = args.buf,
+            bufnr = bufnr,
             async = false,
         })
     end,
 })
-autocmd('BufWritePre', {
-    group = group,
-    pattern = {
+formatters.register_stage({
+    name = 'elixir_fixall',
+    priority = 411,
+    patterns = {
         '*.ex',
         '*.exs',
     },
-    callback = function()
+    desc = 'Apply source.fixAll code actions to Elixir sources before save',
+    run = function()
         code_action({
             context = {
                 diagnostics = {},
@@ -172,14 +177,16 @@ usercmd('ElixirQuickfix', function()
         apply = true,
     })
 end, {})
-autocmd('BufWritePre', {
-    group = group,
-    pattern = {
+formatters.register_stage({
+    name = 'elixir_organize_imports',
+    priority = 412,
+    patterns = {
         '*.ex',
         '*.exs',
     },
-    callback = function(args)
-        local diagnostics = get(args.buf)
+    desc = 'Organize imports in Elixir sources before save',
+    run = function(bufnr)
+        local diagnostics = get(bufnr)
         code_action({
             context = {
                 diagnostics = diagnostics,

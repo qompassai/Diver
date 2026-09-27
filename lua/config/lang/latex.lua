@@ -6,6 +6,7 @@ local latex = {}
 local autocmd = vim.api.nvim_create_autocmd
 local code_action = vim.lsp.buf.code_action
 local fmt = vim.lsp.buf.format
+local formatters = require('formatters')
 ---@return string
 local function get_relative_path(filepath) ---@param filepath string
     local idx = filepath:find('/qompassai/')
@@ -66,14 +67,17 @@ autocmd('BufNewFile', {
         end
     end,
 })
-autocmd('BufWritePre', {
-    pattern = {
+formatters.register_stage({
+    name = 'latex_lsp_format',
+    priority = 418,
+    patterns = {
         '*.tex',
         '*.ltx',
     },
-    callback = function(args)
+    desc = 'Format LaTeX sources with the attached LSP client before save',
+    run = function(bufnr)
         fmt({
-            bufnr = args.buf,
+            bufnr = bufnr,
             async = false,
         })
         if vim.fn.executable('latexindent') == 1 or vim.fn.executable('latexindent.pl') == 1 then
@@ -81,7 +85,7 @@ autocmd('BufWritePre', {
             vim.fn.jobstart({
                 bin,
                 '-w',
-                vim.api.nvim_buf_get_name(args.buf),
+                vim.api.nvim_buf_get_name(bufnr),
             }, {
                 stdout_buffered = true,
                 stderr_buffered = true,
@@ -100,12 +104,15 @@ autocmd('BufWritePre', {
         end
     end,
 })
-vim.api.nvim_create_autocmd('BufWritePre', {
-    pattern = {
+formatters.register_stage({
+    name = 'latex_fixall',
+    priority = 419,
+    patterns = {
         '*.tex',
         '*.ltx',
     },
-    callback = function()
+    desc = 'Apply source.fixAll code actions to LaTeX sources before save',
+    run = function()
         code_action({
             context = {
                 diagnostics = {},
@@ -126,11 +133,14 @@ usercmd('TexBuild', function() ---@command TexBuild
         detach = true,
     })
 end, {})
-vim.api.nvim_create_autocmd('BufWritePre', {
-    pattern = '*.tex',
-    callback = function(args)
+formatters.register_stage({
+    name = 'latex_lsp_format_async',
+    priority = 420,
+    patterns = { '*.tex' },
+    desc = 'Async LSP format pass for TeX sources before save',
+    run = function(bufnr)
         fmt({
-            bufnr = args.buf,
+            bufnr = bufnr,
             async = true,
         })
     end,
@@ -148,13 +158,16 @@ usercmd('TexQuickfix', function() ---@command TexQuickfix
         apply = true,
     })
 end, {})
-autocmd('BufWritePre', {
-    pattern = {
+formatters.register_stage({
+    name = 'latex_organize_imports',
+    priority = 421,
+    patterns = {
         '*.tex',
         '*.ltx',
     },
-    callback = function(args)
-        local diagnostics = vim.diagnostic.get(args.buf)
+    desc = 'Organize imports in LaTeX sources before save',
+    run = function(bufnr)
+        local diagnostics = vim.diagnostic.get(bufnr)
         code_action({
             context = {
                 diagnostics = diagnostics,

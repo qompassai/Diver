@@ -12,6 +12,7 @@ local M = {}
 local api = vim.api
 local bo = vim.bo
 local fn = vim.fn
+local formatters = require('formatters')
 local notify = vim.notify
 local levels = vim.log.levels
 local set_keymap = vim.keymap.set
@@ -342,18 +343,24 @@ function M.lua_luarocks(opts)
 end
 ---Set up Lua language tooling (formatter, linters, luarocks).
 ---@return nil
+local setup_done = false
 function M.setup()
+    if setup_done then
+        return
+    end
+    setup_done = true
     create_autocmd('BufNewFile', {
         group = group,
         pattern = '*.lua',
         callback = insert_lua_header,
         desc = 'Insert Lua shebang and header for new files',
     })
-    create_autocmd('BufWritePre', {
-        group = group,
-        pattern = '*.lua',
-        callback = function(args)
-            local bufnr = args.buf
+    formatters.register_stage({
+        name = 'lua_modernize_stylua',
+        priority = 100,
+        patterns = { '*.lua' },
+        desc = 'Modernize deprecated Lua APIs and format Lua buffers before save',
+        run = function(bufnr)
             local text = get_buffer_text(bufnr)
             local updated, changed = modernize_lua_text(text)
             if changed then
@@ -363,7 +370,6 @@ function M.setup()
             end
             format_with_stylua(bufnr)
         end,
-        desc = 'Modernize deprecated Lua APIs and format Lua buffers before save',
     })
     create_user_command('LuaRangeAction', lua_range_action, {
         range = true,

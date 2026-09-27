@@ -7,6 +7,7 @@ local api = vim.api
 local augroup = vim.api.nvim_create_augroup
 local autocmd = vim.api.nvim_create_autocmd
 local code_action = vim.lsp.buf.code_action
+local formatters = require('formatters')
 local get = vim.diagnostic.get
 local jobstart = vim.fn.jobstart
 local lsp = vim.lsp
@@ -31,11 +32,13 @@ autocmd('BufNewFile', {
         vim.cmd('normal! G')
     end,
 })
-autocmd('BufWritePre', {
-    group = group,
-    pattern = { '*.zig', '*.zon' },
-    callback = function(args)
-        local diagnostics = get(args.buf)
+formatters.register_stage({
+    name = 'zig_organize_imports',
+    priority = 433,
+    patterns = { '*.zig', '*.zon' },
+    desc = 'Organize imports in Zig sources before save',
+    run = function(bufnr)
+        local diagnostics = get(bufnr)
         code_action({
             context = {
                 diagnostics = diagnostics,

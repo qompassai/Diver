@@ -26,10 +26,6 @@ local GROUP = {
     core = api.nvim_create_augroup('LspCore', {
         clear = true,
     }),
-
-    format = api.nvim_create_augroup('LspFormat', {
-        clear = true,
-    }),
 }
 
 local DIAGNOSTIC_ICONS = {
@@ -40,7 +36,7 @@ local DIAGNOSTIC_ICONS = {
 }
 local state = {
     attached = {},
-    format_buffers = {},
+    lsp_format_stage_registered = false,
     lsp_init_loaded = false,
     progress_at = {},
     setup = false,
@@ -423,27 +419,30 @@ local function format_buffer(bufnr, include_will_save)
     return true
 end
 
-local function ensure_format_autocmd(bufnr)
-    if state.format_buffers[bufnr] then
+local function ensure_lsp_format_stage()
+    -- Idempotent: the first formatting-capable attach registers the stage;
+    -- later attaches reuse it. The stage itself no-ops on buffers without a
+    -- formatting client, so one registration covers every buffer.
+    if state.lsp_format_stage_registered then
         return
     end
 
-    state.format_buffers[bufnr] = true
+    state.lsp_format_stage_registered = true
 
-    api.nvim_create_autocmd('BufWritePre', {
-        buffer = bufnr,
+    require('formatters').register_stage({
+        name = 'core_lsp_format',
+        priority = 900,
+        desc = 'Format with the preferred attached LSP client',
 
-        callback = function(event)
+        run = function(bufnr)
             if not feature_enabled('lsp_format_on_save', true) then
-                return
+                return true
             end
 
-            format_buffer(event.buf, false)
+            format_buffer(bufnr, false)
+
+            return true
         end,
-
-        desc = 'Format once with the selected native LSP client',
-
-        group = GROUP.format,
     })
 end
 
@@ -468,7 +467,7 @@ function M.on_attach(client, bufnr)
         configure_semantic_tokens(client, bufnr)
 
         if supports(client, METHOD.formatting, bufnr) and not supports(client, METHOD.will_save_wait_until, bufnr) then
-            ensure_format_autocmd(bufnr)
+            ensure_lsp_format_stage()
         end
 
         lspmap.on_attach({
@@ -843,8 +842,6 @@ local function setup_autocmds()
     api.nvim_create_autocmd('BufWipeout', {
         callback = function(event)
             state.attached[event.buf] = nil
-
-            state.format_buffers[event.buf] = nil
         end,
 
         desc = 'Release native LSP buffer state',

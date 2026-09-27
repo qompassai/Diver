@@ -22,6 +22,9 @@ local group = api.nvim_create_augroup('Rust', {
 local usercmd = vim.api.nvim_create_user_command
 local WARN = vim.log.levels.WARN
 ---Register Rust autocmds (format, inlay hints) for rust_analyzer clients.
+---The three save-time BufWritePre hooks are registered as format stages so
+---the single pipeline owner runs them; they are only registered when this
+---function is invoked (the module is dormant until M.rust_cfg is called).
 ---@return nil
 function M.rust_autocmds()
     autocmd('BufNewFile', {
@@ -37,38 +40,48 @@ function M.rust_autocmds()
             vim.cmd('normal! G')
         end,
     })
-    autocmd('BufWritePre', {
-        group = group,
-        pattern = '*.rs',
-        callback = function(args)
-            vim.lsp.buf.format({
-                bufnr = args.buf,
-                async = true,
-            })
-        end,
-    })
-    autocmd('BufWritePre', {
-        group = group,
-        pattern = '*.rs',
-        callback = function(args)
-            local diagnostics = get(args.buf)
-            code_action({
-                context = {
-                    diagnostics = diagnostics,
-                    only = {
-                        'source.fixAll',
-                        'source.organizeImports',
+    local formatters = require('formatters')
+    -- Idempotent: registering twice is an error, so skip if already done.
+    if formatters.get_stage('rust_lsp_format') == nil then
+        formatters.register_stage({
+            name = 'rust_lsp_format',
+            priority = 435,
+            patterns = { '*.rs' },
+            desc = 'Format Rust sources with the attached LSP client before save',
+            run = function(bufnr)
+                vim.lsp.buf.format({
+                    bufnr = bufnr,
+                    async = true,
+                })
+            end,
+        })
+    end
+    if formatters.get_stage('rust_fixall_organize') == nil then
+        formatters.register_stage({
+            name = 'rust_fixall_organize',
+            priority = 436,
+            patterns = { '*.rs' },
+            desc = 'Apply source.fixAll and source.organizeImports to Rust sources before save',
+            run = function(bufnr)
+                local diagnostics = get(bufnr)
+                code_action({
+                    context = {
+                        diagnostics = diagnostics,
+                        only = {
+                            'source.fixAll',
+                            'source.organizeImports',
+                        },
+                        triggerKind = protocol.CodeActionTriggerKind.Source,
                     },
-                    triggerKind = protocol.CodeActionTriggerKind.Source,
-                },
-                apply = true,
-                filter = function(_, client_id)
-                    local client = vim.lsp.get_client_by_id(client_id)
-                    return client ~= nil and client.name == 'rust_analyzer'
-                end,
-            })
-        end,
-    })
+                    apply = true,
+                    filter = function(_, client_id)
+                        local client = vim.lsp.get_client_by_id(client_id)
+                        return client ~= nil and client.name == 'rust_analyzer'
+                    end,
+                })
+            end,
+        })
+    end
     usercmd('RustQuickfix', function()
         local diagnostics = get(0)
         code_action({
@@ -177,15 +190,19 @@ function M.rust_autocmds()
             end,
         })
     end, {})
-    autocmd('BufWritePre', {
-        group = group,
-        pattern = '*.rs',
-        callback = function()
-            vim.lsp.buf.format({
-                async = true,
-            })
-        end,
-    })
+    if formatters.get_stage('rust_lsp_format_current') == nil then
+        formatters.register_stage({
+            name = 'rust_lsp_format_current',
+            priority = 437,
+            patterns = { '*.rs' },
+            desc = 'Async LSP format pass for Rust sources before save',
+            run = function()
+                vim.lsp.buf.format({
+                    async = true,
+                })
+            end,
+        })
+    end
     autocmd('FileType', {
         pattern = 'rust',
         callback = function()

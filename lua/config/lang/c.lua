@@ -9,6 +9,7 @@ local autocmd = vim.api.nvim_create_autocmd
 local client_by_id = vim.lsp.get_client_by_id
 local code_action = vim.lsp.buf.code_action
 local findfile = vim.fn.findfile
+local formatters = require('formatters')
 local ERROR = vim.log.levels.ERROR
 local get = vim.diagnostic.get
 local INFO = vim.log.levels.INFO
@@ -39,26 +40,30 @@ autocmd('BufNewFile', {
         vim.cmd('normal! G')
     end,
 })
-autocmd('BufWritePre', {
-    group = group,
-    pattern = {
+formatters.register_stage({
+    name = 'c_lsp_format',
+    priority = 401,
+    patterns = {
         '*.c',
         '*.h',
     },
-    callback = function(args) ---@param args {buf: integer, file: string, match: string}
+    desc = 'Format C sources with the attached LSP client before save',
+    run = function(bufnr)
         lsp.buf.format({
-            bufnr = args.buf,
+            bufnr = bufnr,
             async = false,
         })
     end,
 })
-autocmd('BufWritePre', {
-    group = group,
-    pattern = {
+formatters.register_stage({
+    name = 'c_fixall',
+    priority = 402,
+    patterns = {
         '*.c',
         '*.h',
     },
-    callback = function()
+    desc = 'Apply source.fixAll code actions to C sources before save',
+    run = function()
         code_action({
             context = {
                 diagnostics = {},
@@ -145,11 +150,13 @@ usercmd('CQuickfix', function()
     })
 end, {})
 
-autocmd('BufWritePre', {
-    group = group,
-    pattern = { '*.c', '*.h' },
-    callback = function(args)
-        local diagnostics = get(args.buf)
+formatters.register_stage({
+    name = 'c_organize_imports',
+    priority = 403,
+    patterns = { '*.c', '*.h' },
+    desc = 'Organize imports in C sources before save',
+    run = function(bufnr)
+        local diagnostics = get(bufnr)
         code_action({
             context = {
                 diagnostics = diagnostics,

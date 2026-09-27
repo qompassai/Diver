@@ -10,6 +10,7 @@ local augroup = vim.api.nvim_create_augroup
 local autocmd = vim.api.nvim_create_autocmd
 local client_by_id = vim.lsp.get_client_by_id
 local code_action = vim.lsp.buf.code_action
+local formatters = require('formatters')
 local get = vim.diagnostic.get
 local fn = vim.fn
 local INFO = vim.log.levels.INFO
@@ -73,12 +74,14 @@ autocmd('BufNewFile', {
         vim.cmd('normal! G')
     end,
 })
-autocmd('BufWritePre', {
-    group = group,
-    pattern = '*.go',
-    callback = function(args)
+formatters.register_stage({
+    name = 'go_lsp_format',
+    priority = 413,
+    patterns = { '*.go' },
+    desc = 'Format Go sources with the attached LSP client before save',
+    run = function(bufnr)
         lsp.buf.format({
-            bufnr = args.buf,
+            bufnr = bufnr,
             async = false,
         })
     end,
@@ -170,11 +173,13 @@ usercmd('GoRangeAction', function()
 end, {
     range = true,
 })
-autocmd('BufWritePre', {
-    group = group,
-    pattern = '*.go',
-    callback = function(args)
-        local diagnostics = get(args.buf)
+formatters.register_stage({
+    name = 'go_organize_imports',
+    priority = 414,
+    patterns = { '*.go' },
+    desc = 'Organize imports in Go sources before save',
+    run = function(bufnr)
+        local diagnostics = get(bufnr)
         code_action({
             context = {
                 diagnostics = diagnostics,

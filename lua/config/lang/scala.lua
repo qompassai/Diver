@@ -14,6 +14,7 @@ local cmd = vim.cmd
 local code_action = vim.lsp.buf.code_action
 local extend = vim.list_extend
 local findfile = vim.fn.findfile
+local formatters = require('formatters')
 local ERROR = vim.log.levels.ERROR
 local get = vim.diagnostic.get
 local INFO = vim.log.levels.INFO
@@ -124,11 +125,13 @@ autocmd('FileType', {
         bo[bufnr].commentstring = '// %s'
     end,
 })
-autocmd('BufWritePre', {
-    group = group,
-    pattern = { '*.scala', '*.sc', '*.sbt' },
-    callback = function(args)
-        local diagnostics = get(args.buf)
+formatters.register_stage({
+    name = 'scala_organize_imports',
+    priority = 432,
+    patterns = { '*.scala', '*.sc', '*.sbt' },
+    desc = 'Organize imports in Scala sources before save',
+    run = function(bufnr)
+        local diagnostics = get(bufnr)
         code_action({
             context = {
                 diagnostics = diagnostics,

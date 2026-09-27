@@ -10,6 +10,7 @@ local client_by_id = vim.lsp.get_client_by_id
 local cmd = vim.cmd
 local code_action = vim.lsp.buf.code_action
 local findfile = vim.fn.findfile
+local formatters = require('formatters')
 local ERROR = vim.log.levels.ERROR
 local get = vim.diagnostic.get
 local INFO = vim.log.levels.INFO
@@ -68,17 +69,19 @@ autocmd('FileType', {
     end,
 })
 
-autocmd('BufWritePre', {
-    group = group,
-    pattern = {
+formatters.register_stage({
+    name = 'ruby_organize_imports',
+    priority = 431,
+    patterns = {
         '*.rb',
         '*.rake',
         'Gemfile',
         'Rakefile',
         'config.ru',
     },
-    callback = function(args)
-        local diagnostics = get(args.buf)
+    desc = 'Organize imports in Ruby sources before save',
+    run = function(bufnr)
+        local diagnostics = get(bufnr)
         code_action({
             context = {
                 diagnostics = diagnostics,
