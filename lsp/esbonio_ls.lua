@@ -42,16 +42,4 @@ return ---@type vim.lsp.Config
         'rest',
         'restructuredtext',
     },
-    vim.api.nvim_create_autocmd('FileType', {
-        pattern = { 'rst', 'rest', 'restructuredtext' },
-        callback = function()
-            vim.lsp.start({
-                name = 'esbonio_ls',
-                cmd = {
-                    'esbonio',
-                },
-                root_dir = vim.fs.dirname(vim.fs.find({ '.git' })[1]),
-            })
-        end,
-    }),
 }

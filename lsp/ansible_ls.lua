@@ -70,24 +70,4 @@ return ---@type vim.lsp.Config
             },
         },
     },
-    vim.api.nvim_create_autocmd('FileType', {
-        pattern = {
-            'yaml.ansible',
-            'ansible',
-        },
-        callback = function()
-            vim.lsp.start({
-                name = 'ansible_ls',
-                cmd = {
-                    'ansible-language-server',
-                    '--stdio',
-                },
-                root_dir = vim.fs.dirname(vim.fs.find({
-                    'ansible.cfg',
-                    '.ansible-lint',
-                    '.git',
-                })[1]),
-            })
-        end,
-    }),
 }

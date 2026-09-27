@@ -14,20 +14,4 @@ return ---@type vim.lsp.Config
     root_markers = {
         'project.bri',
     },
-    vim.api.nvim_create_autocmd('FileType', {
-        pattern = 'brioche',
-        callback = function()
-            vim.lsp.start({
-                name = 'brioche_ls',
-                cmd = {
-                    'brioche',
-                    'lsp',
-                },
-                root_dir = vim.fs.dirname(vim.fs.find({
-                    'project.bri',
-                    '.git',
-                })[1]),
-            })
-        end,
-    }),
 }
