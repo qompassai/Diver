@@ -18,7 +18,7 @@ local gen = require('config.lang.coverage_gen')
 local ok, stats = pcall(gen.regenerate)
 
 local fh = assert(io.open(report_path, 'w'))
-if ok then
+if ok and stats then
     fh:write(('ok: %d filetypes, %d bytes -> %s\n'):format(stats.filetypes, stats.bytes, stats.path))
     fh:write(
         ('lsp: %d files seen, %d loaded, %d skipped\n'):format(stats.lsp_files, stats.lsp_loaded, stats.lsp_skipped)

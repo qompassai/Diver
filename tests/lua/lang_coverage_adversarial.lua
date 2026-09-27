@@ -30,7 +30,7 @@ end
 
 local gen = require('config.lang.coverage_gen')
 
----@return table small synthetic registry data (fixture, not the real registries)
+---@return LangCoverageRaw small synthetic registry data (fixture, not the real registries)
 local function fixture_raw()
     return {
         formatters = {
@@ -89,12 +89,18 @@ end
 -- A6-A9: determinism -- emit twice and regenerate twice are byte-identical.
 do
     local text1 = gen.emit(gen.build(fixture_raw()), {
+        filetypes = 0,
+        bytes = 0,
+        path = 'fixture',
         lsp_files = 0,
         lsp_loaded = 0,
         lsp_skipped = 0,
         dap_entries = 0,
     })
     local text2 = gen.emit(gen.build(fixture_raw()), {
+        filetypes = 0,
+        bytes = 0,
+        path = 'fixture',
         lsp_files = 0,
         lsp_loaded = 0,
         lsp_skipped = 0,
