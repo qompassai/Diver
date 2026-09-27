@@ -237,6 +237,8 @@ require('linters')
 -- created by utils/*; mapping setup must see them.
 require('utils')
 require('mappings')
+-- Tmux navigation + layouts: after mappings so the C-h/j/k/l collision check sees the core window maps.
+require('tmux').setup()
 require('plugin')
 require('scip')
 -- C4: these modules create their user commands only inside setup();
