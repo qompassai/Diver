@@ -203,6 +203,10 @@ require('config.markdown.render').setup()
 -- Note: this wires up the audit tooling only; it does not intercept or
 -- rewrite other subprocess call sites (see lua/security/*.lua).
 require('security').setup()
+-- Git + git-xet integration: gutter signs and the :Git* commands.
+-- Placed with the other toolkit setups; setup() is idempotent and
+-- performs no subprocess I/O itself.
+require('git').setup()
 require('bsp')
 require('dap')
 require('formatters')
