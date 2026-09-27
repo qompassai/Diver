@@ -89,8 +89,9 @@ require('linters')
 -- created by utils/*; mapping setup must see them.
 require('utils')
 require('mappings')
--- Tmux navigation + layouts: after mappings so the C-h/j/k/l collision check sees the core window maps.
-require('tmux').setup()
+-- Tmux navigation + layouts: keymaps disabled; genmap owns C-h/j/k/l and
+-- falls through to the adjacent tmux pane at window edges via tmux.navigate().
+require('tmux').setup({ keymaps_enabled = false })
 -- Long-task notifications (the fish `done` plugin's model: a vim.notify +
 -- notify-send toast when a wrapped task exceeds threshold_ms). Placed with
 -- the other toolkit setups; setup() is idempotent and performs no

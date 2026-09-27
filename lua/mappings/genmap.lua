@@ -49,18 +49,34 @@ local function completion(next_item, fallback)
     end
 end
 
+---Move toward the Neovim window in `direction`, falling through to the
+---adjacent tmux pane at the window edge. A genuine tmux failure stays
+---visible; anything else is a quiet no-op (floating window focused, or no
+---window in that direction while outside tmux).
+---@param direction string 'left'|'right'|'up'|'down'
+local function tmux_aware_navigate(direction)
+    local moved, note = require('tmux').navigate(direction)
+    if moved == nil then
+        core.notify('tmux: navigation failed: ' .. tostring(note), vim.log.levels.ERROR)
+    end
+end
+
 function M.setup()
     core.teardown(OWNER)
     core.install(OWNER, 0, {
         {
             lhs = '<C-h>',
-            rhs = '<C-w>h',
-            desc = 'Window left',
+            rhs = function()
+                tmux_aware_navigate('left')
+            end,
+            desc = 'Window left (tmux pane at edge)',
         },
         {
             lhs = '<C-j>',
-            rhs = '<C-w>j',
-            desc = 'Window below',
+            rhs = function()
+                tmux_aware_navigate('down')
+            end,
+            desc = 'Window below (tmux pane at edge)',
         },
         {
             lhs = '<C-j>',
@@ -71,8 +87,10 @@ function M.setup()
         },
         {
             lhs = '<C-k>',
-            rhs = '<C-w>k',
-            desc = 'Window above',
+            rhs = function()
+                tmux_aware_navigate('up')
+            end,
+            desc = 'Window above (tmux pane at edge)',
         },
         {
             lhs = '<C-k>',
@@ -83,8 +101,10 @@ function M.setup()
         },
         {
             lhs = '<C-l>',
-            rhs = '<C-w>l',
-            desc = 'Window right',
+            rhs = function()
+                tmux_aware_navigate('right')
+            end,
+            desc = 'Window right (tmux pane at edge)',
         },
         {
             lhs = '<C-s>',
