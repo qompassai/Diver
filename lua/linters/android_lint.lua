@@ -264,7 +264,7 @@ local linter = {
     automatic = false,
     root_markers = { 'settings.gradle', 'settings.gradle.kts', 'gradlew' },
     ---@diagnostic disable-next-line: unused-local
-    parse = parse,
+    parser = parse,
 }
 
 return linter

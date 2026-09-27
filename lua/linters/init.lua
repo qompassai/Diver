@@ -1542,6 +1542,104 @@ function M.register(name, definition)
     missing_reported[name] = nil
 end
 
+---Every field a linter definition may carry. Unmarked fields are read by
+---the framework; adapter-local fields are consumed by the adapter's own
+---functions. Anything else is a typo until registered here, so a
+---misspelled field can never silently neuter a linter again (`parse`
+---instead of `parser` cost android_lint its diagnostics; `ignoreexitcode`
+---and `rootmarkers` cost chktex and commitlint their knobs).
+---Programmatic linters with bespoke fields extend M.known_definition_fields.
+---@type table<string, boolean>
+local known_definition_fields = {
+    active_rules = true, -- adapter-local
+    append_fname = true,
+    args = true,
+    automatic = true,
+    available_rules = true, -- adapter-local
+    cli_choices = true, -- adapter-local
+    cmd = true,
+    condition = true, -- adapter-local
+    cwd = true,
+    deprecated_rules = true, -- adapter-local
+    env = true,
+    errorformat = true,
+    exit_codes = true,
+    fixable_rules = true, -- adapter-local
+    ignore_exitcode = true,
+    meta = true,
+    name = true,
+    parser = true,
+    parser_mode = true, -- adapter-local
+    root_markers = true,
+    rule_aliases = true, -- adapter-local
+    rule_levels = true, -- adapter-local
+    schema = true,
+    setup = true, -- adapter-local
+    stdin = true,
+    stream = true,
+    timeout = true,
+    transform_buffer = true, -- adapter-local
+}
+
+M.known_definition_fields = known_definition_fields
+
+---@type integer Unknown fields within this distance earn a hint.
+local SUGGESTION_DISTANCE_MAX = 2
+
+---Levenshtein distance over short field names. The two-row program touches
+---at most (#a + 1) * (#b + 1) cells and bails out early once the distance
+---provably exceeds the hint threshold.
+---@param a string
+---@param b string
+---@return integer
+local function field_distance(a, b)
+    if math.abs(#a - #b) > SUGGESTION_DISTANCE_MAX then
+        return SUGGESTION_DISTANCE_MAX + 1
+    end
+    local prev, curr = {}, {}
+    for j = 0, #b do
+        prev[j] = j
+    end
+    for i = 1, #a do
+        curr[0] = i
+        local row_min = i
+        local a_byte = a:byte(i)
+        for j = 1, #b do
+            local cost = (a_byte == b:byte(j)) and 0 or 1
+            local best = prev[j] + 1
+            if curr[j - 1] + 1 < best then
+                best = curr[j - 1] + 1
+            end
+            if prev[j - 1] + cost < best then
+                best = prev[j - 1] + cost
+            end
+            curr[j] = best
+            if best < row_min then
+                row_min = best
+            end
+        end
+        if row_min > SUGGESTION_DISTANCE_MAX then
+            return SUGGESTION_DISTANCE_MAX + 1
+        end
+        prev, curr = curr, prev
+    end
+    return prev[#b]
+end
+
+---Closest known field to an unknown one, or nil when nothing is near.
+---@param unknown string
+---@return string?
+local function suggest_field(unknown)
+    local best, best_distance = nil, SUGGESTION_DISTANCE_MAX + 1
+    for field, _ in pairs(known_definition_fields) do
+        local distance = field_distance(unknown, field)
+        if distance < best_distance then
+            best, best_distance = field, distance
+        end
+    end
+    return best
+end
+
 ---@return string[]
 function M.validate()
     local problems = {}
@@ -1585,6 +1683,20 @@ function M.validate()
             end
             if definition.stream ~= nil and not valid_streams[definition.stream] then
                 problems[#problems + 1] = ('linter %q has invalid stream %q'):format(name, definition.stream)
+            end
+            for field, _ in pairs(definition) do
+                if not known_definition_fields[field] then
+                    local hint = suggest_field(field)
+                    if hint ~= nil then
+                        problems[#problems + 1] = ('linter %q has unknown field %q (did you mean %q?)'):format(
+                            name,
+                            field,
+                            hint
+                        )
+                    else
+                        problems[#problems + 1] = ('linter %q has unknown field %q'):format(name, field)
+                    end
+                end
             end
         end
     end

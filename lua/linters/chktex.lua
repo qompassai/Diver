@@ -279,7 +279,7 @@ return {
     args = ARGS,
     append_fname = false,
     cmd = 'chktex',
-    ignoreexitcode = true,
+    ignore_exitcode = true,
     parser = parse,
     stdin = true,
     stream = 'stdout',
