@@ -100,6 +100,7 @@ local android_keymaps = {
     { key = 'e', action = 'start_emulator', desc = 'Android: Start emulator' },
     { key = 'x', action = 'stop_emulator', desc = 'Android: Stop emulator' },
     { key = 's', action = 'capture_screen', desc = 'Android: Capture screen' },
+    { key = 'd', action = 'doctor', desc = 'Android: Run doctor' },
 }
 for _, spec in ipairs(android_keymaps) do
     vim.keymap.set('n', '<leader>a' .. spec.key, function()

@@ -131,8 +131,11 @@ function M.create_gradle_system_opts(buf)
                 return
             end
             for line = start_line, end_line do
+                local text = api.nvim_buf_get_lines(buf, line, line + 1, false)[1] or ''
                 api.nvim_buf_set_extmark(buf, config.stderr_ns, line, 0, {
-                    end_col = -1,
+                    -- end_col is a byte offset into the line; -1 is rejected
+                    -- as out of range, so clamp to the line's byte length.
+                    end_col = #text,
                     hl_group = 'Error',
                 })
             end
