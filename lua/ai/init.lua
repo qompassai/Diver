@@ -62,6 +62,7 @@ function M.setup(opts)
     require('ai.debugbridge').setup()
     require('ai.dataaccess').setup()
     require('ai.recon').setup()
+    require('ai.huggingface').setup()
 end
 
 return M
