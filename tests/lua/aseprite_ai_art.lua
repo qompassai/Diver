@@ -93,6 +93,13 @@ check('key_color_hex magenta', import.key_color_hex('magenta') == '#ff00ff')
 local script = import.build_aseprite_script({ key_hex = '#000000', fuzz = 12 })
 check('script uses pixels() API', script:find('img:pixels()', 1, true) ~= nil)
 check('script carries key color', script:find('#000000', 1, true) ~= nil)
+check('script has no app.alert (UI-only, fails in batch)', script:find('app.alert', 1, true) == nil, true)
+check(
+    'script gates RGB color mode before rgba* extractors',
+    script:find('spr.colorMode == ColorMode.RGB', 1, true) ~= nil,
+    true
+)
+check('script wraps mutations in app.transaction', script:find('app.transaction(', 1, true) ~= nil, true)
 
 local argv = import.build_magick_argv({
     magick = 'magick',
