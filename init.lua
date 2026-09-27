@@ -211,6 +211,10 @@ require('git').setup()
 -- persona picker hook. Placed with the other toolkit setups; setup() is
 -- idempotent and performs no I/O itself (the agents dir is scanned lazily).
 require('ai.herd.personas').setup()
+-- Nav directory ring: the :Dir* commands and :Nav* checks. Placed with
+-- the other toolkit setups; setup() is idempotent and performs no
+-- subprocess I/O itself (disk restore only when persist_enabled).
+require('nav').setup()
 require('bsp')
 require('dap')
 require('formatters')
