@@ -21,19 +21,29 @@ local M = {}
 M.drivers = {
     chrome = {
         binary_names = { 'chromedriver' },
-        version = '141.0.7390.54',
+        version = '154.0.8037.57',
         url = 'https://storage.googleapis.com/chrome-for-testing-public/'
-            .. '141.0.7390.54/linux64/chromedriver-linux64.zip',
-        sha256 = '',
+            .. '154.0.8037.57/linux64/chromedriver-linux64.zip',
+        -- Verified 2026-09-27: downloaded from the URL above (official
+        -- Chrome for Testing bucket; version pinned via the
+        -- googlechromelabs.github.io/chrome-for-testing JSON API). CfT
+        -- publishes no checksums, so provenance is HTTPS + version pin.
+        sha256 = 'e2d9334f850f34e9dceba0c850903a5757b212062fefc9f3e2aa94c414a0ae96',
         port = 9515,
         spawn_args = { '--allowed-ips=127.0.0.1' },
     },
     firefox = {
         binary_names = { 'geckodriver' },
-        version = '0.36.0',
+        version = '0.37.1',
         url = 'https://github.com/mozilla/geckodriver/releases/download/'
-            .. 'v0.36.0/geckodriver-v0.36.0-linux64.tar.gz',
-        sha256 = '',
+            .. 'v0.37.1/geckodriver-v0.37.1-linux64.tar.gz',
+        -- Verified 2026-09-27: downloaded from the URL above (official
+        -- mozilla/geckodriver release). Tarball byte size matched the
+        -- GitHub API metadata exactly (2348355). The .asc signature names
+        -- Mozilla's release key 09BEED63F3462A2DFFAB3B875ECB6497C1A20256,
+        -- but the keyserver is unreachable from this sandbox, so GPG
+        -- verification was not possible.
+        sha256 = 'f831b7e61454804e8a307edd951bf8a5f373efe3f718e75454a6485a51f6e39f',
         port = 4444,
         spawn_args = { '--host', '127.0.0.1' },
     },
