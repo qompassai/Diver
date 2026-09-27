@@ -62,9 +62,11 @@ check(query.index_path('/tmp/proj') == '/tmp/proj/index.scip', 'index_path joins
 
 local status, status_err = query.status({ root = '/tmp', language = 'rust' })
 check(status ~= nil, 'status resolves: ' .. tostring(status_err))
-check(status.indexer == 'rust', 'status names the indexer')
-check(status.exists == false, 'missing index reports exists=false')
-check(status.fresh == false, 'missing index reports fresh=false')
+if status then
+    check(status.indexer == 'rust', 'status names the indexer')
+    check(status.exists == false, 'missing index reports exists=false')
+    check(status.fresh == false, 'missing index reports fresh=false')
+end
 
 local bad_status, bad_err = query.status({ root = '/tmp', language = 'cobol' })
 check(bad_status == nil and bad_err ~= nil, 'status rejects unknown language')
@@ -74,8 +76,10 @@ local da_scip = require('ai.dataaccess.scip')
 
 local entry, entry_err = da_scip.status_for_root('/tmp', 'python')
 check(entry ~= nil, 'dataaccess status: ' .. tostring(entry_err))
-check(entry.indexer == 'python', 'dataaccess names the indexer')
-check(entry.root == '/tmp', 'dataaccess normalizes the root')
+if entry then
+    check(entry.indexer == 'python', 'dataaccess names the indexer')
+    check(entry.root == '/tmp', 'dataaccess normalizes the root')
+end
 
 check(da_scip.status_for_root('../evil', 'python') == nil, 'traversal root blocked')
 check(da_scip.status_for_root('relative/path', 'python') == nil, 'relative root blocked')
@@ -91,10 +95,16 @@ check(#inv == 2, 'inventory skips invalid roots, got ' .. #inv)
 -- ai.retrieval.scip: candidate text.
 local ret_scip = require('ai.retrieval.scip')
 check(
-    ret_scip.text_of({ name = 'foo', kind = 'function', language = 'rust' }) == 'function foo rust',
+    ret_scip.text_of({ name = 'foo', kind = 'function', language = 'rust', indexer = 'rust' }) == 'function foo rust',
     'text_of formats candidate'
 )
-check(ret_scip.text_of(nil) == '', 'text_of handles nil')
+-- text_of tolerates nil at runtime; the probe goes through an untyped
+-- alias so the suite can violate the annotation deliberately.
+do
+    ---@type any
+    local any_ret = ret_scip
+    check(any_ret.text_of(nil) == '', 'text_of handles nil')
+end
 
 -- ai.builder.scip: coverage.
 local builder_scip = require('ai.builder.scip')
@@ -116,6 +126,50 @@ check(type(preflight) == 'table', 'preflight returns a table')
 check(preflight.language == 'rust', 'preflight names the language')
 check(type(preflight.lsp_files) == 'number', 'preflight counts LSP files')
 check(refactor_scip.confirm(preflight) == true, 'confirm proceeds')
+
+-- scip apex indexer: community scip-apex, graceful when the binary is absent.
+check(indexer_for('apex') == 'apex', 'apex -> apex indexer')
+
+local registry = require('scip.registry')
+local apex_indexer = registry.get('apex')
+check(apex_indexer ~= nil, 'apex indexer registered')
+if apex_indexer then
+    check(apex_indexer.command == 'scip-apex', 'apex indexer uses the scip-apex binary')
+    check(apex_indexer.args[1] == 'index' and apex_indexer.args[2] == '.', 'apex indexer runs: scip-apex index .')
+    check(apex_indexer.filetypes.apex == true, 'apex indexer claims the apex filetype')
+    local apex_marker = false
+    for _, marker in ipairs(apex_indexer.markers) do
+        if marker == 'sfdx-project.json' then
+            apex_marker = true
+        end
+    end
+    check(apex_marker, 'apex indexer detects sfdx-project.json')
+end
+
+if vim.fn.executable('scip-apex') == 0 then
+    vim.cmd('enew')
+    local resolved, resolve_err = registry.resolve('apex', vim.api.nvim_get_current_buf(), '/tmp')
+    local not_executable = resolve_err ~= nil and resolve_err:find('not executable', 1, true) ~= nil
+    check(
+        resolved == nil and not_executable,
+        'missing scip-apex binary degrades with not-executable, got: ' .. tostring(resolve_err)
+    )
+    local proj = vim.fn.tempname() .. '-apexproj'
+    vim.fn.mkdir(proj, 'p')
+    local marker_handle = io.open(proj .. '/sfdx-project.json', 'w')
+    if marker_handle then
+        marker_handle:write('{}')
+        marker_handle:close()
+    end
+    vim.cmd('edit ' .. vim.fn.fnameescape(proj .. '/Main.cls'))
+    vim.bo.filetype = 'apex'
+    local detected = registry.detect(vim.api.nvim_get_current_buf())
+    check(detected == nil or detected.name ~= 'apex', 'detect skips apex without the scip-apex binary')
+    vim.cmd('enew')
+    vim.fn.delete(proj, 'rf')
+else
+    print('  SKIP: scip-apex installed; missing-binary path not tested')
+end
 
 -- scip.init exposes the new modules.
 local scip = require('scip')

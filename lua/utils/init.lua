@@ -132,6 +132,60 @@ api.nvim_create_autocmd({ 'BufReadPost', 'BufNewFile' }, {
     desc = 'Lazy-load the Salesforce tool suite in Salesforce projects',
 })
 
+-- ---- salesforce stub + project detection --------------------------------
+-- dev/sf/init.lua registers its commands at require time, so requiring it
+-- is sufficient. :Sf loads the suite on demand and reports status; any
+-- buffer inside an sfdx-project.json tree loads it for generic file types
+-- (the suite's own autocmd above covers *.apex/*.cls/*.trigger).
+local load_sf = ensure('dev.sf', function(_) end)
+
+api.nvim_create_user_command('Sf', function()
+    vim.cmd('delcommand Sf')
+    local ok, sf = pcall(require, 'dev.sf')
+    if not ok or type(sf) ~= 'table' or type(sf.core) ~= 'table' then
+        vim.notify('Failed to load the Salesforce suite', vim.log.levels.ERROR)
+        return
+    end
+    local core = sf.core
+    local lines = { 'Salesforce suite loaded.' }
+    if core.in_sf_project() then
+        lines[#lines + 1] = 'Project: ' .. core.root()
+    else
+        lines[#lines + 1] = 'Not inside an sfdx project (no sfdx-project.json found).'
+    end
+    lines[#lines + 1] = 'sf CLI: ' .. (vim.fn.executable('sf') == 1 and 'available' or 'not in PATH')
+    core.notify(table.concat(lines, '\n'), vim.log.levels.INFO)
+end, {
+    desc = 'Load the Salesforce tool suite and show project status',
+})
+
+api.nvim_create_autocmd({ 'BufReadPost', 'BufNewFile' }, {
+    pattern = { '*' },
+    callback = function(event)
+        if package.loaded['dev.sf'] then
+            return
+        end
+        local bufnr = event.buf
+        if not api.nvim_buf_is_valid(bufnr) or vim.bo[bufnr].buftype ~= '' then
+            return
+        end
+        local name = api.nvim_buf_get_name(bufnr)
+        if name == '' then
+            return
+        end
+        local marker = vim.fs.find('sfdx-project.json', {
+            path = vim.fs.dirname(name),
+            type = 'file',
+            upward = true,
+            limit = 1,
+        })
+        if marker[1] then
+            load_sf()
+        end
+    end,
+    desc = 'Lazy-load the Salesforce suite in sfdx-project.json projects',
+})
+
 -- ---- still-eager small utils ------------------------------------------
 M.codeactions = safe_require('utils.codeactions')
 

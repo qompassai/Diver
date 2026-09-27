@@ -58,6 +58,7 @@ local M = {}
 ---@return table<string, ScipIndexer>
 local function default_indexers()
     return {
+        apex = require('scip.indexers.apex'),
         clang = require('scip.indexers.clang'),
         dart = require('scip.indexers.dart'),
         dotnet = require('scip.indexers.dotnet'),
@@ -79,6 +80,7 @@ end
 local defaults = {
     index_file = 'index.scip',
     indexer_order = {
+        'apex',
         'clang',
         'dart',
         'dotnet',
