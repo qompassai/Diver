@@ -5,7 +5,7 @@
 local M = {}
 local api = vim.api
 local fn = vim.fn
-local header = require('utils.docs.docs')
+local header = require('research.docs')
 local group = api.nvim_create_augroup('Bash', {
     clear = true,
 })

@@ -17,7 +17,7 @@ local jobstart = vim.fn.jobstart
 local lsp = vim.lsp
 local notify = vim.notify
 local schedule = vim.schedule
-local header = require('utils.docs.docs')
+local header = require('research.docs')
 local group = augroup('Mojo', {
     clear = true,
 })

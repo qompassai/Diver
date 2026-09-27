@@ -5,7 +5,7 @@
 local M = {}
 local api = vim.api
 local fn = vim.fn
-local header = require('utils.docs')
+local header = require('research')
 local group = api.nvim_create_augroup('Docker', {
     clear = true,
 })

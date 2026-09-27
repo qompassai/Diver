@@ -21,7 +21,7 @@ local create_user_command = api.nvim_create_user_command
 local group = create_augroup('lua_config', {
     clear = true,
 })
-local header = require('utils.docs.docs')
+local header = require('research.docs')
 M.luarocks = {
     'bit32',
     'busted',

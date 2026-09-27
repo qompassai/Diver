@@ -11,7 +11,7 @@ local get = vim.diagnostic.get
 local jobstart = vim.fn.jobstart
 local lsp = vim.lsp
 local fn = vim.fn
-local header = require('utils.docs.docs')
+local header = require('research.docs')
 local group = augroup('Zig', {
     clear = true,
 })

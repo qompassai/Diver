@@ -23,7 +23,7 @@ local lsp = vim.lsp
 local notify = vim.notify
 local schedule = vim.schedule
 local fn = vim.fn
-local header = require('utils.docs.docs')
+local header = require('research.docs')
 local group = augroup('Cpp', {
     clear = true,
 })

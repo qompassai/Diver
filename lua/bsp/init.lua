@@ -6,7 +6,7 @@
 --- back. It runs only when you invoke one of its commands; it needs a BSP-capable build server for your project.
 ---@module 'bsp'
 -- #################################################################
--- /qompassai/lua/utils/bsp/init.lua
+-- /qompassai/Diver/lua/bsp/init.lua
 -- Qompass AI Init
 -- SPDX-License-Identifier: Apache-2.0
 -- Copyright (c) 2026 Qompass AI
@@ -719,7 +719,7 @@ end
 ---@return table
 function M.setup(opts)
     M.config = vim.tbl_deep_extend('force', vim.deepcopy(defaults), opts or {})
-    require('utils.bsp.commands').setup({
+    require('bsp.commands').setup({
         compile = function(root)
             M.compile(root)
         end,

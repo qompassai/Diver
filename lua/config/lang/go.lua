@@ -54,7 +54,7 @@ end
 local function get_go_version()
     return run_cached_gvm({ 'go', 'version' }) or ''
 end
-local header = require('utils.docs.docs')
+local header = require('research.docs')
 local group = augroup('Go', {
     clear = true,
 })

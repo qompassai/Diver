@@ -11,7 +11,7 @@ local fn = vim.fn
 local group = api.nvim_create_augroup('DiverPythonFt', {
     clear = true,
 })
-local header = require('utils.docs.docs')
+local header = require('research.docs')
 local log = vim.log
 local notify = vim.notify
 api.nvim_set_option_value('shiftwidth', 4, {

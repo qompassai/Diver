@@ -4,9 +4,9 @@
 -- Copyright (C) 2025 Qompass AI, All rights reserved
 -- --------------------------------------------------
 local M = {} ---@version JIT
-require('types.utils.media')
-require('types.utils.red')
-require('types.utils.blue')
+require('types.media')
+require('types.security.red')
+require('types.security.blue')
 require('types.utils.unreal')
 require('types.utils.vulkan')
 require('types.utils.wp')

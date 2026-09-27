@@ -1,5 +1,5 @@
 -- #################################################################
--- /qompassai/lua/utils/bsp/cargo.lua
+-- /qompassai/Diver/lua/bsp/cargo.lua
 -- Qompass AI Cargo
 -- SPDX-License-Identifier: Apache-2.0
 -- Copyright (c) 2026 Qompass AI

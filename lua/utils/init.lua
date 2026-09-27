@@ -2,6 +2,22 @@
 -- Qompass AI Diver Utils
 -- Copyright (C) 2025 Qompass AI, All rights reserved
 -- --------------------------------------------------
+--
+-- Supporting modules only. The tool suites that used to live here have moved
+-- to their own homes and are NOT required at startup anymore:
+--
+--   utils.red   -> security.red    (require on demand)
+--   utils.blue  -> security.blue   (require on demand)
+--   utils.dev   -> dev            (android/sf load lazily, see below)
+--   utils.games -> games          (loads on first :Games)
+--   utils.docs  -> research       (require on demand)
+--   utils.media -> media          (require on demand)
+--
+-- Requiring this module stays cheap: only codeactions (a few user commands)
+-- and ddx (one autocmd) are eager. Everything else below loads its suite on
+-- first use, so Unreal tooling is never active while doing Salesforce work.
+local api = vim.api
+
 local M = {} ---@version JIT
 
 local function safe_require(module)
@@ -12,33 +28,122 @@ local function safe_require(module)
     end
     return result
 end
-M.blue = require('utils.blue')
+
+--- Build a loader that requires `modname` and runs `setup(mod)` exactly once,
+--- however often the loader is called. Used for suites whose setup registers
+--- user commands: the stub entry points below delete themselves and let the
+--- real setup re-create them.
+---@param modname string
+---@param setup fun(mod: table)
+---@return fun(): table
+local function ensure(modname, setup)
+    local done = false
+    return function()
+        local mod = require(modname)
+        if not done then
+            done = true
+            setup(mod)
+        end
+        return mod
+    end
+end
+
+-- ---- games ------------------------------------------------------------
+-- :GamesDoctor and <Space>gd only run the read-only health probes, so they
+-- need no setup. :Games needs the full suite: the stub deletes itself so the
+-- real setup() can register the genuine :Games command, then opens the menu.
+local load_games = ensure('games', function(g)
+    g.setup()
+end)
+
+api.nvim_create_user_command('Games', function()
+    vim.cmd('delcommand Games')
+    load_games().show_menu()
+end, {
+    desc = 'Open a combined Aseprite/Godot/Redot/Unity/Unreal action menu',
+})
+
+api.nvim_create_user_command('GamesDoctor', function()
+    vim.cmd('checkhealth games')
+end, {
+    desc = "Report every engine's resolved binary/root (Aseprite/Godot/Redot/Unity/Unreal)",
+})
+
+vim.keymap.set('n', '<Space>gd', function()
+    vim.cmd('checkhealth games')
+end, {
+    desc = "Games: report every engine's resolved binary/root",
+})
+
+-- ---- android ----------------------------------------------------------
+-- Suite setup registers :Android, :AndroidAction, per-action commands and the
+-- <leader>a* keymaps. The stubs below load it on first use; opening an
+-- Android project file does the same, so the per-action commands exist
+-- without invoking :Android first.
+local load_android = ensure('dev.android', function(a)
+    a.setup()
+end)
+
+api.nvim_create_user_command('Android', function()
+    vim.cmd('delcommand Android')
+    load_android().show_menu()
+end, {
+    desc = 'Open Android action menu',
+})
+
+--- Mirrors the keymaps from dev/android/commands.lua setup_keymaps(), which
+--- stays the source of truth for what each key does.
+local android_keymaps = {
+    { key = 'r', action = 'run_debug', desc = 'Android: Run debug' },
+    { key = 'c', action = 'clean', desc = 'Android: Clean project' },
+    { key = 'b', action = 'build_release', desc = 'Android: Build release' },
+    { key = 'e', action = 'start_emulator', desc = 'Android: Start emulator' },
+    { key = 'x', action = 'stop_emulator', desc = 'Android: Stop emulator' },
+    { key = 's', action = 'capture_screen', desc = 'Android: Capture screen' },
+}
+for _, spec in ipairs(android_keymaps) do
+    vim.keymap.set('n', '<leader>a' .. spec.key, function()
+        load_android()
+        require('dev.android.actions').run_action_by_id(spec.action)
+    end, {
+        desc = spec.desc,
+    })
+end
+
+api.nvim_create_autocmd({ 'BufReadPost', 'BufNewFile' }, {
+    pattern = { 'AndroidManifest.xml', '*.gradle', '*.gradle.kts' },
+    once = true,
+    callback = function()
+        load_android()
+    end,
+    desc = 'Lazy-load the Android tool suite in Android projects',
+})
+
+-- ---- salesforce -------------------------------------------------------
+-- dev/sf/init.lua registers its commands and autocmds at require time, so
+-- requiring it is sufficient. Trigger on the distinctive Salesforce file
+-- types (mirrors the suite's own BufEnter patterns).
+api.nvim_create_autocmd({ 'BufReadPost', 'BufNewFile' }, {
+    pattern = { '*.apex', '*.cls', '*.trigger' },
+    once = true,
+    callback = function()
+        require('dev.sf')
+    end,
+    desc = 'Lazy-load the Salesforce tool suite in Salesforce projects',
+})
+
+-- ---- still-eager small utils ------------------------------------------
 M.codeactions = safe_require('utils.codeactions')
 
 if M.codeactions and M.codeactions.setup then
     M.codeactions.setup()
 end
 M.ddx = require('utils.ddx')
-M.docs = require('utils.docs')
-M.media = require('utils.media')
-M.options = require('utils.options')
-M.red = safe_require('utils.red')
-M.dev = safe_require('utils.dev')
-if M.dev and M.dev.setup then
-    M.dev.setup()
-end
-
-M.games = safe_require('utils.games')
-if M.games and M.games.setup then
-    M.games.setup()
-end
-
-M.ux = safe_require('utils.ux')
 M.dictionary = {
-    path = vim.fn.stdpath('config') .. '/lua/utils/docs/dictionary',
+    path = vim.fn.stdpath('config') .. '/lua/research/dictionary',
     file = 'words.txt',
     load_words = function()
-        local dict = vim.fn.stdpath('config') .. '/lua/utils/docs/dictionary/words.txt'
+        local dict = vim.fn.stdpath('config') .. '/lua/research/dictionary/words.txt'
         local f = io.open(dict, 'r')
         if not f then
             vim.notify('Failed to open dictionary: ' .. dict, vim.log.levels.WARN)
