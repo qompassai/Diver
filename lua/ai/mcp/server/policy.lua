@@ -22,8 +22,11 @@ local M = {}
 local PATH_LENGTH_MAX = 4096
 local ARG_LENGTH_MAX = 4096
 local ARG_COUNT_MAX = 32
-local COMMAND_TIMEOUT_MS_MIN = 1000
-local COMMAND_TIMEOUT_MS_MAX = 120000
+
+---Bounds for the run_command timeout_ms argument. Exported so the tool
+---schema shares one source of truth with the policy module.
+M.COMMAND_TIMEOUT_MS_MIN = 1000
+M.COMMAND_TIMEOUT_MS_MAX = 120000
 
 local INVALID_PARAMS_CODE = -32602
 local POLICY_DENIED_CODE = -32000

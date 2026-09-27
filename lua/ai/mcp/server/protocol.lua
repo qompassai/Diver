@@ -95,8 +95,9 @@ end
 -- error whose id MUST be null (the request id could not be recovered).
 -- The payload is a fixed string on purpose: the codec just failed on this
 -- input, so the error path does not depend on the codec to format itself.
+-- (Built with concatenation over ERR_PARSE, still fixed at module load.)
 local PARSE_ERROR_LINE =
-    '{"jsonrpc":"2.0","id":null,"error":{"code":-32700,"message":"Parse error"}}'
+    '{"jsonrpc":"2.0","id":null,"error":{"code":' .. ERR_PARSE .. ',"message":"Parse error"}}'
 
 ---@param server table
 local function send_parse_error(server)

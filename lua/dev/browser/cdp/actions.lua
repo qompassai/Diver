@@ -607,7 +607,8 @@ end
 ---@param entry table
 ---@return string one bounded line
 local function format_console_entry(entry)
-    local text = ''
+    -- No initializer: both branches below assign before the first read.
+    local text
     if entry.kind == 'log' then
         text = '[' .. tostring(entry.level) .. '] ' .. tostring(entry.text)
     else
@@ -616,7 +617,8 @@ local function format_console_entry(entry)
             local parts = {}
             for i = 1, math.min(#entry.args, 4) do
                 local arg = entry.args[i]
-                local shown = ''
+                -- No initializer: every branch assigns before the read below.
+                local shown
                 if type(arg) == 'table' and arg.preview ~= nil then
                     shown = tostring(arg.preview)
                 elseif type(arg) == 'table' and arg.value ~= nil then

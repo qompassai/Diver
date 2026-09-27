@@ -87,10 +87,11 @@ tests[#tests + 1] = {
                 on_choice(items[1])
             end,
         }
-        local allowed, reason = 'unset', 'unset'
+        local allowed = 'unset'
         local prompt_opts = { expression = '1', url = 'https://example.com/', ui = fake_ui }
         security.confirm_eval(prompt_opts, function(a, r)
-            allowed, reason = a, r
+            allowed = a
+            assert(r ~= nil, 'reason provided')
         end)
         t.eq(allowed, true, 'allowed')
         t.ok(seen_prompt:find('https://example.com/', 1, true) ~= nil, 'url in prompt')

@@ -815,7 +815,11 @@ local function def_run_command()
                 maxItems = 32,
             },
             cwd = { type = 'string', maxLength = 4096 },
-            timeout_ms = { type = 'integer', minimum = 1000, maximum = 120000 },
+            timeout_ms = {
+                type = 'integer',
+                minimum = policy.COMMAND_TIMEOUT_MS_MIN,
+                maximum = policy.COMMAND_TIMEOUT_MS_MAX,
+            },
         },
         required = { 'cmd' },
         },

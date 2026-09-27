@@ -42,7 +42,7 @@ function M.check_host(host)
             shown = shown:sub(1, HOST_DISPLAY_MAX) .. '...'
         end
         return nil, "refusing non-loopback host '" .. shown .. "': CDP client is localhost-only"
-            .. ' (no override in MVP)' 
+            .. ' (no override in MVP)'
     end
     return true
 end

@@ -137,7 +137,8 @@ function M.build_prompt(opts)
     local prompt = table.concat(parts, ' ')
     local bad = M.screen_forbidden(prompt)
     if bad then
-        return nil, 'prompt blocked: references forbidden material (' .. bad .. '). Rewrite the concept in your own words.'
+        return nil,
+            'prompt blocked: references forbidden material (' .. bad .. '). Rewrite the concept in your own words.'
     end
     return prompt, nil
 end

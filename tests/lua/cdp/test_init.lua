@@ -4,7 +4,6 @@
 ---@module 'tests.cdp.test_init'
 
 local t = require('cdp.t')
-local json = require('cdp.json')
 local cdp = require('dev.browser.cdp')
 local domains = require('dev.browser.cdp.domains')
 local fixture = require('cdp.fixture')

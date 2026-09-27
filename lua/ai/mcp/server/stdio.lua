@@ -94,7 +94,9 @@ function M.start(server, deps)
 
     local buffer = ''
     local stopped = false
-    local stdin_handle = nil
+    -- Always assigned before handle is returned (or the early-return path
+    -- takes a different handle), so no initializer is needed.
+    local stdin_handle
 
     local function on_data(data)
         if stopped or data == nil or data == '' then

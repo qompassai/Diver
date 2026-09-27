@@ -18,7 +18,7 @@ local fake_tools = {
     list = function()
         return { { name = 'fake', description = 'd', inputSchema = { type = 'object' } } }
     end,
-    call = function(name, args, meta)
+    call = function(name, _args, meta)
         seen_meta = meta
         if name == 'explode' then
             return { content = { { type = 'text', text = 'kaboom' } }, isError = true }

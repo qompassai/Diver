@@ -147,7 +147,7 @@ end
 do
     stub._executables = { echo = true }
     local waited = false
-    stub._system_impl = function(cmd, _)
+    stub._system_impl = function(_cmd, _)
         return {
             wait = function(_self)
                 waited = true

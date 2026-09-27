@@ -73,9 +73,9 @@ tests[#tests + 1] = {
         t.eq(frame.method, 'Runtime.evaluate', 'method')
         t.eq(frame.params.expression, '1 + 1', 'expression')
         t.eq(frame.params.returnByValue, true, 'returnByValue')
-        local frame = '{"id":1,"sessionId":"sess-1",'
+        local raw = '{"id":1,"sessionId":"sess-1",'
             .. '"result":{"result":{"type":"number","value":2}}}'
-        ws:receive_text(frame)
+        ws:receive_text(raw)
         t.eq(got_err, nil, 'no error')
         -- CDP wraps the value once: response.result = { result = RemoteObject }.
         t.eq(got.result.value, 2, 'value returned')

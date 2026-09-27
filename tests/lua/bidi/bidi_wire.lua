@@ -197,7 +197,7 @@ end)
 H.test('unknown event method is counted, handler absence never crashes', true, function()
     local st = new_state()
     local seen = nil
-    st.on_unknown_event = function(method, params)
+    st.on_unknown_event = function(method, _params)
         seen = method
     end
     wire.on_text(st, H.json_encode({ type = 'event', method = 'weird.future', params = {} }))

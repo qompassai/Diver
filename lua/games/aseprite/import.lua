@@ -120,7 +120,7 @@ end
 ---@return integer|nil width
 ---@return integer|nil height
 local function read_png_dimensions(path)
-    local fh, open_err = io.open(path, 'rb')
+    local fh = io.open(path, 'rb')
     if not fh then
         return nil, nil
     end
@@ -200,7 +200,8 @@ function M.build_aseprite_script(opts)
 end
 
 ---Build the ImageMagick argv for the full pipeline. Pure.
----@param opts { magick: string, input: string, output: string, key_hex: string, fuzz: integer, frame_size_px: integer, colors: integer }
+---@param opts table { magick: string, input: string, output: string,
+---    key_hex: string, fuzz: integer, frame_size_px: integer, colors: integer }
 ---@return string[] argv
 function M.build_magick_argv(opts)
     return {
