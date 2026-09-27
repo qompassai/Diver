@@ -84,7 +84,8 @@ end
 
 ---Parse PNG dimensions from the IHDR chunk. Pure: works on raw bytes,
 ---no image library needed. Returns nil when the header is not a PNG
----or is truncated (caller treats as "unknown size").
+---or is truncated (caller treats as "unknown size"). Byte math only --
+---no string.unpack, which does not exist on LuaJIT (Matt's runtime).
 ---@param bytes string first >= 33 bytes of the file
 ---@return integer|nil width
 ---@return integer|nil height
@@ -99,9 +100,15 @@ function M.parse_png_dimensions(bytes)
     if bytes:sub(13, 16) ~= 'IHDR' then
         return nil, nil
     end
-    local w = ('>I4'):unpack(bytes, 17)
-    local h = ('>I4'):unpack(bytes, 21)
-    if w < 1 or h < 1 or w > 65535 or h > 65535 then
+    local function be32(pos)
+        local b1, b2, b3, b4 = bytes:byte(pos, pos + 3)
+        if b1 == nil then
+            return nil
+        end
+        return b1 * 16777216 + b2 * 65536 + b3 * 256 + b4
+    end
+    local w, h = be32(17), be32(21)
+    if w == nil or h == nil or w < 1 or h < 1 or w > 65535 or h > 65535 then
         return nil, nil
     end
     return w, h
