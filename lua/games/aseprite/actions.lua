@@ -19,6 +19,8 @@ local util = require('games.aseprite.util')
 local config = require('games.aseprite.config')
 local shared_util = require('games.shared.util')
 local output_factory = require('games.shared.output')
+local import_pipeline = require('games.aseprite.import')
+local prompt_builder = require('games.aseprite.prompts')
 local notify = vim.notify
 local levels = vim.log.levels
 local output = output_factory.new(config.output_filetype)
@@ -207,10 +209,23 @@ function M.describe_environment()
     notify(
         table.concat({
             'Aseprite binary: ' .. (util.find_binary() or 'not found'),
+            'ImageMagick: ' .. (import_pipeline.detect_processors().magick or 'not found'),
             'Current buffer sprite: ' .. tostring(util.is_sprite_file(vim.api.nvim_buf_get_name(0))),
         }, '\n'),
         levels.INFO
     )
+end
+
+function M.import_art()
+    import_pipeline.import_art()
+end
+
+function M.batch_import()
+    import_pipeline.batch_import()
+end
+
+function M.build_sprite_prompt()
+    prompt_builder.interactive_builder()
 end
 
 function M.get_actions()
@@ -268,6 +283,24 @@ function M.get_actions()
             label = 'Run Lua script (headless)',
             group = 'Scripting',
             run = M.run_script,
+        },
+        {
+            id = 'import_art',
+            label = 'Import AI art → clean sprite',
+            group = 'AI Art',
+            run = M.import_art,
+        },
+        {
+            id = 'batch_import',
+            label = 'Batch import AI art directory',
+            group = 'AI Art',
+            run = M.batch_import,
+        },
+        {
+            id = 'sprite_prompt',
+            label = 'Build AI sprite prompt',
+            group = 'AI Art',
+            run = M.build_sprite_prompt,
         },
         {
             id = 'describe_environment',

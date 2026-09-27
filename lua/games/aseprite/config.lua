@@ -568,7 +568,20 @@
 ---@field mac? string
 ---@field windows? string
 
+---@class AsepriteAiImportConfig
+---@field frame_size_px integer Longest side of the imported sprite, in pixels
+---@field bg_key string Background key color: 'black', 'white', 'magenta', or 'green'
+---@field bg_fuzz_percent integer Color-match tolerance, 0 through 25
+---@field quantize_colors integer Palette size on the ImageMagick path
+---@field auto_open_in_editor boolean Open the result in Aseprite after import
+---@field scale_via_cli boolean Use Aseprite CLI --scale (disable if your build rejects fractional factors)
+
+---@class AsepriteSpritePromptConfig
+---@field default_style string Pixel-art style descriptor used by the prompt builder
+---@field forbidden_tokens string[] Franchise/character tokens that must never appear in a prompt
+
 ---@class AsepriteConfig
+---@field ai_import? AsepriteAiImportConfig
 ---@field binaries? string[]
 ---@field env_names? string[]
 ---@field group_order? string[]
@@ -577,6 +590,7 @@
 ---@field runtime? AsepriteRuntime
 ---@field sheet_types? AsepriteSheetType[]
 ---@field sprite_extensions? string[]
+---@field sprite_prompt? AsepriteSpritePromptConfig
 ---@field user_palette_dir_by_os? AsepritePaletteDirectories
 
 ---@type AsepriteConfig
@@ -597,6 +611,37 @@ M.group_order = {
     'Export',
     'Palette',
     'Scripting',
+    'AI Art',
+}
+
+M.ai_import = {
+    frame_size_px = 128,
+    bg_key = 'black',
+    bg_fuzz_percent = 8,
+    quantize_colors = 64,
+    auto_open_in_editor = true,
+    scale_via_cli = true,
+}
+
+M.sprite_prompt = {
+    default_style = 'detailed 16-bit pixel art game sprite, clean cel-shaded pixels, strong readable silhouette',
+    forbidden_tokens = {
+        'final fantasy',
+        'cloud strife',
+        'barret wallace',
+        'tifa lockhart',
+        'aerith gainsborough',
+        'red xiii',
+        'yuffie kisaragi',
+        'cait sith',
+        'cid highwind',
+        'vincent valentine',
+        'sephiroth',
+        'barret',
+        'tifa',
+        'aerith',
+        'yuffie',
+    },
 }
 
 M.output_filetype = 'aseprite-output'

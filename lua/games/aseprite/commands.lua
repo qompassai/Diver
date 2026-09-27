@@ -69,6 +69,15 @@ function M.setup_keymaps()
     map('n', '<leader>gay', actions.sync_palette_to_user_config, {
         desc = 'Aseprite: Sync palette to user config',
     })
+    map('n', '<leader>gai', actions.import_art, {
+        desc = 'Aseprite: Import AI art → clean sprite',
+    })
+    map('n', '<leader>gab', actions.batch_import, {
+        desc = 'Aseprite: Batch import AI art directory',
+    })
+    map('n', '<leader>gaP', actions.build_sprite_prompt, {
+        desc = 'Aseprite: Build AI sprite prompt',
+    })
 end
 function M.setup()
     M.setup_commands()
