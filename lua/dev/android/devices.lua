@@ -29,18 +29,32 @@ function M.with_adb(callback)
     callback(sdk .. '/platform-tools/adb')
 end
 
+---List attached devices that are authorized and online.
+---
+--- Only rows whose state is exactly 'device' are returned; 'unauthorized',
+--- 'offline', and 'no permissions' rows are excluded because no adb
+--- command can run against them.
+---@param adb string Path to the adb binary.
+---@return string[] ids Device serials.
 function M.get_adb_devices(adb)
-    local ids = {}
-    local obj = vim.system({ adb, 'devices' }, {}):wait()
-    local read = obj.stdout or ''
+    vim.validate('adb', adb, 'string')
 
-    for row in read:gmatch('[^\n]+') do
+    local ids = {}
+    local ok, obj = pcall(vim.system, { adb, 'devices' }, { text = true })
+    if not ok then
+        return ids
+    end
+
+    local done = obj:wait()
+    local read = done.stdout or ''
+
+    for row in read:gmatch('[^\r\n]+') do
         local items = {}
         for item in row:gmatch('%S+') do
             items[#items + 1] = item
         end
 
-        if items[1] and items[1] ~= 'List' then
+        if items[1] ~= nil and items[1] ~= 'List' and items[2] == 'device' then
             ids[#ids + 1] = items[1]
         end
     end
@@ -48,68 +62,128 @@ function M.get_adb_devices(adb)
     return ids
 end
 
-function M.get_device_names(adb, ids)
-    local devices = {}
+---Look up a display name for one device, falling back to its serial.
+---@param adb string Path to the adb binary.
+---@param id string Device serial.
+---@return string name
+local function device_display_name(adb, id)
+    local cmd
 
-    for i = 1, #ids do
-        local id = ids[i]
-        local cmd
-
-        if id:match('^emulator') then
-            cmd = { adb, '-s', id, 'emu', 'avd', 'name' }
-        else
-            cmd = { adb, '-s', id, 'shell', 'getprop', 'ro.product.model' }
-        end
-
-        local obj = vim.system(cmd, {}):wait()
-        if obj.code == 0 then
-            local read = obj.stdout or ''
-            devices[#devices + 1] = util.trim(read:match('^(.-)\n') or read)
-        end
+    if id:match('^emulator') then
+        cmd = { adb, '-s', id, 'emu', 'avd', 'name' }
+    else
+        cmd = { adb, '-s', id, 'shell', 'getprop', 'ro.product.model' }
     end
 
-    return devices
+    local ok, obj = pcall(vim.system, cmd, { text = true })
+    if not ok then
+        return id
+    end
+
+    local done = obj:wait()
+    if done.code ~= 0 then
+        return id
+    end
+
+    local name = util.trim((done.stdout or ''):match('^(.-)\r?\n') or (done.stdout or ''))
+    if name == '' then
+        return id
+    end
+
+    return name
 end
 
+---Look up display names for device serials. The result always aligns with
+---`ids`: a failed lookup falls back to the serial instead of shifting
+---later entries (the old implementation skipped failures and misaligned).
+---@param adb string Path to the adb binary.
+---@param ids string[] Device serials.
+---@return string[] names One name per id.
+function M.get_device_names(adb, ids)
+    vim.validate('adb', adb, 'string')
+    vim.validate('ids', ids, 'table')
+
+    local names = {}
+    for i = 1, #ids do
+        names[#names + 1] = device_display_name(adb, ids[i])
+    end
+
+    return names
+end
+
+---List attached devices with display names. Names always align with ids:
+---a failed lookup falls back to the serial, never shifts the table.
+---@param adb string Path to the adb binary.
+---@return { id: string, name: string }[]
 function M.get_running_devices(adb)
+    vim.validate('adb', adb, 'string')
+
     local devices = {}
     local ids = M.get_adb_devices(adb)
-    local names = M.get_device_names(adb, ids)
 
     for i = 1, #ids do
+        local id = util.trim(ids[i])
         devices[#devices + 1] = {
-            id = util.trim(ids[i]),
-            name = util.trim(names[i] or ids[i]),
+            id = id,
+            name = device_display_name(adb, id),
         }
     end
 
     return devices
 end
 
+---List AVD names with the official SDK tools.
+---
+--- Tries `$SDK/emulator/emulator -list-avds` first, then
+--- `avdmanager list avd` from cmdline-tools. Both degrade gracefully when
+--- the SDK or the tool is missing.
 ---@return string[]? avds AVD names, or nil when listing failed.
 ---@return string? err Human-readable reason when avds is nil.
 function M.list_avds()
-    local obj = vim.system(
-        util.android_cli_cmd({
-            'emulator',
-            'list',
-        }),
-        { text = true }
-    ):wait()
-
-    if obj.code ~= 0 then
-        return nil, util.trim(obj.stderr or 'Failed to list emulators.')
+    local sdk = util.get_android_sdk()
+    if sdk == nil then
+        return nil, 'Android SDK is not defined.'
     end
 
-    local avds = {}
-    for line in (obj.stdout or ''):gmatch('[^\r\n]+') do
-        line = util.trim(line)
-        if line ~= '' then
-            avds[#avds + 1] = line
+    local emulator = sdk .. '/emulator/emulator'
+    if vim.fn.executable(emulator) == 1 then
+        local ok, obj = pcall(vim.system, { emulator, '-list-avds' }, { text = true })
+        if ok then
+            local done = obj:wait()
+            if done.code == 0 then
+                local avds = {}
+                for line in (done.stdout or ''):gmatch('[^\r\n]+') do
+                    line = util.trim(line)
+                    if line ~= '' then
+                        avds[#avds + 1] = line
+                    end
+                end
+
+                return avds
+            end
         end
     end
 
-    return avds
+    local avdmanager = sdk .. '/cmdline-tools/latest/bin/avdmanager'
+    if vim.fn.executable(avdmanager) == 1 then
+        local ok, obj = pcall(vim.system, { avdmanager, 'list', 'avd' }, { text = true })
+        if ok then
+            local done = obj:wait()
+            if done.code == 0 then
+                local avds = {}
+                for line in (done.stdout or ''):gmatch('[^\r\n]+') do
+                    local name = line:match('^%s*Name:%s*(.-)%s*$')
+                    if name ~= nil and name ~= '' then
+                        avds[#avds + 1] = name
+                    end
+                end
+
+                return avds
+            end
+        end
+    end
+
+    return nil, 'Could not list AVDs: emulator and avdmanager are unavailable.'
 end
 
 function M.find_main_activity(adb, device_id, application_id)

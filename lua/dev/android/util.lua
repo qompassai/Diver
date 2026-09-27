@@ -17,12 +17,21 @@
 -- #################################################################
 local M = {}
 
+---Maximum directories to ascend when searching for the Gradle wrapper.
+local FIND_GRADLEW_MAX_DEPTH = 32
+
 function M.trim(s)
     return (s or ''):gsub('^%s*(.-)%s*$', '%1')
 end
 
+---True when Neovim runs on Windows.
+---@return boolean
+function M.is_windows()
+    return vim.fn.has('win32') == 1
+end
+
 function M.get_android_sdk()
-    local sdk = vim.fn.expand(vim.env.ANDROID_HOME or vim.g.android_sdk or '')
+    local sdk = vim.fn.expand(vim.env.ANDROID_HOME or vim.env.ANDROID_SDK_ROOT or vim.g.android_sdk or '')
     if sdk == '' then
         return nil
     end
@@ -55,30 +64,74 @@ function M.read_file(path)
     return content
 end
 
-function M.find_gradlew(directory)
-    local cwd = directory or vim.fn.getcwd()
-    local parent = vim.fn.fnamemodify(cwd, ':h')
-    local obj = vim.system({
-        'find',
-        cwd,
-        '-maxdepth',
-        '1',
-        '-name',
-        'gradlew',
-    }, {}):wait()
+---Find the Gradle wrapper script in a directory, preferring gradlew over gradlew.bat.
+---@param dir string Directory to inspect (no recursion).
+---@return string? path Wrapper script path, or nil.
+local function wrapper_in(dir)
+    local candidates = { dir .. '/gradlew', dir .. '/gradlew.bat' }
 
-    local result = obj.stdout
-    if result == nil or #result == 0 then
-        if cwd == parent then
-            return nil
+    for i = 1, #candidates do
+        if vim.uv.fs_stat(candidates[i]) ~= nil then
+            return candidates[i]
         end
-        return M.find_gradlew(parent)
     end
 
-    return {
-        cwd = cwd,
-        gradlew = M.trim(result),
-    }
+    return nil
+end
+
+---Find the Gradle wrapper by ascending from a directory (bounded).
+---
+--- Pure Lua: no external `find` binary, so it works on Windows too.
+---@param directory? string Starting directory (defaults to the current working directory).
+---@return { cwd: string, gradlew: string }? found Wrapper location, or nil.
+function M.find_gradlew(directory)
+    local cwd = directory or vim.fn.getcwd()
+
+    for _ = 1, FIND_GRADLEW_MAX_DEPTH do
+        local gradlew = wrapper_in(cwd)
+        if gradlew ~= nil then
+            return {
+                cwd = cwd,
+                gradlew = gradlew,
+            }
+        end
+
+        local parent = vim.fn.fnamemodify(cwd, ':h')
+        if parent == cwd then
+            return nil
+        end
+
+        cwd = parent
+    end
+
+    return nil
+end
+
+---Build an argv for the Gradle wrapper that also runs on Windows.
+---
+--- uv-spawned processes cannot execute .bat files directly, so on Windows
+--- the wrapper runs through cmd.exe /c.
+---@param gradlew string Wrapper script path (from M.find_gradlew).
+---@param args string[] Gradle arguments.
+---@return string[] argv
+function M.gradle_argv(gradlew, args)
+    assert(type(gradlew) == 'string' and gradlew ~= '', 'gradlew path must be non-empty')
+    vim.validate('args', args, 'table')
+
+    local argv = {}
+    if M.is_windows() then
+        argv[1] = 'cmd.exe'
+        argv[2] = '/c'
+        argv[3] = gradlew
+    else
+        argv[1] = gradlew
+    end
+
+    for i = 1, #args do
+        argv[#argv + 1] = args[i]
+    end
+
+    return argv
 end
 
 return M

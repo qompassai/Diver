@@ -17,12 +17,17 @@
 -- #################################################################
 local M = {}
 M.actions = require('dev.android.actions')
+M.bsp = require('dev.android.bsp')
 M.commands = require('dev.android.commands')
 M.config = require('dev.android.config')
 M.devices = require('dev.android.devices')
+M.doctor = require('dev.android.doctor')
+M.fdroid = require('dev.android.fdroid')
 M.gradle = require('dev.android.gradle')
+M.matrix = require('dev.android.matrix')
 M.output = require('dev.android.output')
 M.recent = require('dev.android.recent')
+M.subsystems = require('dev.android.subsystems')
 M.ui = require('dev.android.ui')
 M.util = require('dev.android.util')
 function M.setup()

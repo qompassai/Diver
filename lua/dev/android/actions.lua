@@ -27,6 +27,7 @@ local M = {}
 local notify = vim.notify
 local levels = vim.log.levels
 
+local bsp = require('dev.android.bsp')
 local devices = require('dev.android.devices')
 local gradle = require('dev.android.gradle')
 local output = require('dev.android.output')
@@ -82,7 +83,7 @@ function M.refresh_dependencies()
     local buf = output.create_build_window()
 
     vim.system(
-        { gradlew.gradlew, '--refresh-dependencies' },
+        util.gradle_argv(gradlew.gradlew, { '--refresh-dependencies' }),
         output.create_gradle_system_opts(buf),
         vim.schedule_wrap(function(obj)
             timer:stop()
@@ -98,19 +99,15 @@ function M.refresh_dependencies()
     )
 end
 
-function M.build_release()
-    local gradlew = util.find_gradlew()
-    if gradlew == nil then
-        notify('Build failed: gradlew is not found.', levels.ERROR, {})
-        return
-    end
-
+---Build the release through the Gradle CLI (the BSP path is tried first in M.build_release).
+---@param gradlew { gradlew: string, cwd: string }
+local function build_release_cli(gradlew)
     local progress = output.create_task_progress('AndroidBuildRelease')
     local timer = output.start_progress_timer(progress, 'Building release')
     local buf = output.create_build_window()
 
     vim.system(
-        { gradlew.gradlew, 'assembleRelease' },
+        util.gradle_argv(gradlew.gradlew, { 'assembleRelease' }),
         output.create_gradle_system_opts(buf),
         vim.schedule_wrap(function(obj)
             timer:stop()
@@ -126,6 +123,22 @@ function M.build_release()
     )
 end
 
+function M.build_release()
+    local gradlew = util.find_gradlew()
+    if gradlew == nil then
+        notify('Build failed: gradlew is not found.', levels.ERROR, {})
+        return
+    end
+
+    -- Prefer an active BSP session; fall back to ./gradlew when BSP is
+    -- unavailable (BSP compile is generic project compilation — assembleRelease
+    -- still needs the CLI path for signed APK/AAB artifacts when the server
+    -- cannot produce them).
+    bsp.compile_or_fallback(gradlew.cwd, function()
+        build_release_cli(gradlew)
+    end)
+end
+
 function M.clean()
     local gradlew = util.find_gradlew()
     if gradlew == nil then
@@ -138,7 +151,7 @@ function M.clean()
     local buf = output.create_build_window()
 
     vim.system(
-        { gradlew.gradlew, 'clean' },
+        util.gradle_argv(gradlew.gradlew, { 'clean' }),
         output.create_gradle_system_opts(buf),
         vim.schedule_wrap(function(obj)
             timer:stop()
@@ -168,7 +181,7 @@ function M.build_and_install(root_dir, gradle_bin, adb, device, module)
     local buf = output.create_build_window()
 
     vim.system(
-        { gradle_bin, gradle.gradle_module_name(module) .. ':assembleDebug' },
+        util.gradle_argv(gradle_bin, { gradle.gradle_module_name(module) .. ':assembleDebug' }),
         output.create_gradle_system_opts(buf),
         vim.schedule_wrap(function(obj)
             timer:stop()
@@ -548,6 +561,12 @@ function M.show_android_info()
         success = 'Environment info loaded.',
     })
 end
+
+---Run the Android doctor health check.
+function M.doctor()
+    require('dev.android.doctor').run()
+end
+
 function M.android_run_cli()
     devices.with_adb(function(adb)
         local running_devices = devices.get_running_devices(adb)
@@ -676,6 +695,13 @@ function M.get_actions()
             group = 'Project',
             keywords = 'info sdk environment android',
             run = M.show_android_info,
+        },
+        {
+            id = 'doctor',
+            label = 'Run Android doctor',
+            group = 'Project',
+            keywords = 'doctor health check toolchain sdk devices fdroid',
+            run = M.doctor,
         },
     }
 end

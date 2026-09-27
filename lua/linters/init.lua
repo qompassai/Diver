@@ -57,6 +57,7 @@ M.module_sources = { ---@type table<string, string>
     alex = 'linters.alex',
     ameba = 'linters.ameba',
     ansible_lint = 'linters.ansible_lint',
+    android_lint = 'linters.android_lint',
     apkbuild_lint = 'linters.apkbuild-lint',
     bandit = 'linters.bandit',
     bash = 'linters.bash',
@@ -431,6 +432,9 @@ M.linters_by_ft = {
     janet = {
         'janet',
     },
+    java = {
+        'android_lint',
+    },
     javascript = {
         'biome',
         'deno',
@@ -469,6 +473,7 @@ M.linters_by_ft = {
         'quick_lint_js',
     },
     kotlin = {
+        'android_lint',
         'detekt',
         'ktlint',
     },

@@ -80,6 +80,12 @@ function M.setup_keymaps()
     end, {
         desc = 'Android: Capture screen',
     })
+
+    map('n', '<leader>ad', function()
+        actions.run_action_by_id('doctor')
+    end, {
+        desc = 'Android: Run doctor',
+    })
 end
 
 function M.setup()

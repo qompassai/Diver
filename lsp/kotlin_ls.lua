@@ -4,9 +4,10 @@
 -- ---------------------------------------------------
 return ---@type vim.lsp.Config
 {
+    -- stdio is the server's default mode: upstream editor docs invoke
+    -- 'kotlin-language-server' with no arguments, so no flag is needed.
     cmd = {
         'kotlin-language-server',
-        '--stdio',
     },
     filetypes = {
         'kotlin',
