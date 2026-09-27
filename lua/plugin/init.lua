@@ -47,10 +47,6 @@ local plugins = {
         version = 'main',
     },
     {
-        src = gh('nvim-lualine/lualine.nvim'),
-        version = 'master',
-    },
-    {
         data = {
             priority = 1000,
         },
@@ -119,9 +115,6 @@ plugin_setup[github('vhyrro/luarocks.nvim')] = function()
 end
 plugin_setup[github('folke/which-key.nvim')] = function()
     require('config.core.whichkey')
-end
-plugin_setup[github('nvim-lualine/lualine.nvim')] = function()
-    require('config.ui.line').setup()
 end
 plugin_setup[gh('brianhuster/live-preview.nvim')] = function()
     local ok_cfg, md_cfg = pcall(require, 'config.lang.md')

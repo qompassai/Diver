@@ -243,7 +243,7 @@ require('tmux').setup()
 -- notify-send toast when a wrapped task exceeds threshold_ms). Placed with
 -- the other toolkit setups; setup() is idempotent and performs no
 -- subprocess I/O itself.
-require('notify').setup()
+require('tools.notify').setup()
 require('plugin')
 require('scip')
 -- C4: these modules create their user commands only inside setup();
@@ -347,7 +347,13 @@ opt.complete = {
 }
 --opt.complete:remove('i')
 o.encoding = 'utf-8'
-o.fileencoding = 'utf-8'
+-- o.fileencoding is buffer-local: vim.o targets the current buffer, which can
+-- be the plugin manager's (nomodifiable) UI buffer on startups where it
+-- installed or built plugins -> E21 aborts the rest of init.lua. Only write it
+-- on a modifiable buffer.
+if vim.bo.modifiable then
+    o.fileencoding = 'utf-8'
+end
 opt.fileencodings = { 'ucs-bom', 'utf-8', 'default' }
 o.scrolloff = 8
 --opt.packpath = vim.opt.runtimepath:get() ---@type string[]

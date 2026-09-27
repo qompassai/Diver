@@ -98,7 +98,7 @@ end
 ---@field icons table config.ui.icons: icon tables and devicons wiring
 ---@field illuminate table config.ui.illuminate: cursor-word illumination
 ---@field image table config.ui.image: inline PNG preview rendering
----@field line table config.ui.line: statusline (lualine) setup
+---@field line table config.ui.line: statusline setup (native default; plugin removed)
 ---@field nerd table config.ui.nerd: nerd-font glyph data table
 ---@field padding table config.ui.padding: window padding controls
 ---@field themes table config.ui.themes: colorscheme management

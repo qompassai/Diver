@@ -36,7 +36,7 @@ local function val_check(cond, msg)
     end
 end
 
-local notify = require('notify')
+local notify = require('tools.notify')
 
 local fakebin = '/tmp/notify_fakebin'
 local fake_log = '/tmp/notify_fake.log'

@@ -1,4 +1,4 @@
--- /qompassai/Diver/lua/notify/init.lua
+-- /qompassai/Diver/lua/tools/notify.lua
 -- Qompass AI Diver Long-Task Notifications (Tiger Style)
 -- Copyright (C) 2026 Qompass AI, All rights reserved
 -- --------------------------------------------------
@@ -11,14 +11,14 @@
 -- failures escalated to critical urgency.
 --
 -- Core seam -- wrap a unit of work, call done when it finishes:
---   local done = require('notify').wrap({ label = 'backup' })
+--   local done = require('tools.notify').wrap({ label = 'backup' })
 --   done(exit_code)
 --
 -- One-shot path -- run argv through the threshold logic directly:
---   local result, err = require('notify').run({ 'make', 'test' }, { label = 'make test' })
+--   local result, err = require('tools.notify').run({ 'make', 'test' }, { label = 'make test' })
 --
 -- Cargo composition (the cargo module is untouched; see lua/dev/cargo/init.lua):
---   local wrap = require('notify').wrap({ label = 'cargo test' })
+--   local wrap = require('tools.notify').wrap({ label = 'cargo test' })
 --   cargo.run({ subcommand = 'test', on_exit = wrap })
 -- cargo calls on_exit(info) with a JobInfo table carrying exit_code, so
 -- done_fn accepts either a plain exit-code integer or a table with an
@@ -29,7 +29,7 @@
 -- best-effort: an absent binary falls back to vim.notify only and is
 -- never an error. NOTE: the editor notifier is always the global
 -- vim.notify -- never a local named `notify`.
----@module 'notify'
+---@module 'tools.notify'
 
 local M = {}
 
@@ -482,7 +482,7 @@ local DOC_LINES = {
     "it is Matt's own diver module, and these docs are a local float.",
     '',
     'Model:',
-    '  * require("notify").wrap({ label = "backup" }) returns done_fn.',
+    '  * require("tools.notify").wrap({ label = "backup" }) returns done_fn.',
     '  * done_fn(exit_code) measures wall-clock wrap() -> done() via',
     '    M.now_ms() (vim.uv.now(), or the clock_impl test seam).',
     '  * duration >= threshold_ms: vim.notify + notify-send desktop toast.',
@@ -493,7 +493,7 @@ local DOC_LINES = {
     '  * Failures (exit ~= 0) escalate the toast to critical urgency.',
     '',
     'Cargo seam (cargo module untouched):',
-    '  local wrap = require("notify").wrap({ label = "cargo test" })',
+    '  local wrap = require("tools.notify").wrap({ label = "cargo test" })',
     '  cargo.run({ subcommand = "test", on_exit = wrap })',
     '',
     'Commands: :NotifyTest :NotifyDocs :NotifyValidate :NotifyUpdateCheck',
