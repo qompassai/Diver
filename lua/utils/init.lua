@@ -187,6 +187,52 @@ api.nvim_create_autocmd({ 'BufReadPost', 'BufNewFile' }, {
     desc = 'Lazy-load the Salesforce suite in sfdx-project.json projects',
 })
 
+-- ---- cargo ------------------------------------------------------------
+-- dev/cargo/init.lua registers its commands inside setup(). The stubs below
+-- load it on first use; any buffer inside a Cargo.toml tree does the same,
+-- so the :Cargo family exists without invoking :Cargo first.
+local load_cargo = ensure('dev.cargo', function(c)
+    c.setup()
+end)
+
+api.nvim_create_user_command('Cargo', function(cmd_opts)
+    vim.cmd('delcommand Cargo')
+    load_cargo().cmd_cargo(cmd_opts)
+end, {
+    nargs = '*',
+    desc = 'Run cargo in a floating terminal (loads dev.cargo)',
+})
+
+api.nvim_create_user_command('CargoDocs', function(cmd_opts)
+    vim.cmd('delcommand CargoDocs')
+    load_cargo().cmd_docs(cmd_opts)
+end, {
+    desc = 'Open the Cargo Book (loads dev.cargo)',
+})
+
+api.nvim_create_user_command('CargoValidate', function(cmd_opts)
+    vim.cmd('delcommand CargoValidate')
+    load_cargo().cmd_validate(cmd_opts)
+end, {
+    desc = 'Cargo per-tool validation report (loads dev.cargo)',
+})
+
+api.nvim_create_user_command('CargoUpdateCheck', function(cmd_opts)
+    vim.cmd('delcommand CargoUpdateCheck')
+    load_cargo().cmd_update_check(cmd_opts)
+end, {
+    desc = 'Rust toolchain update check (loads dev.cargo)',
+})
+
+api.nvim_create_autocmd({ 'BufReadPost', 'BufNewFile' }, {
+    pattern = { 'Cargo.toml', 'Cargo.lock' },
+    once = true,
+    callback = function()
+        load_cargo()
+    end,
+    desc = 'Lazy-load the Cargo suite in Rust projects',
+})
+
 -- ---- still-eager small utils ------------------------------------------
 M.codeactions = safe_require('utils.codeactions')
 
