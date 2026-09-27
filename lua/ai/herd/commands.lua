@@ -75,12 +75,37 @@ end
 
 ---@param cli_name string
 ---@param name string
-local function ask_task(cli_name, name)
+---@param persona_text string? rendered persona to prepend to the task
+local function ask_task(cli_name, name, persona_text)
     vim.ui.input({ prompt = 'Task (optional): ' }, function(task)
         if task == nil then
             return
         end
-        ask_cwd(cli_name, name, task ~= '' and task or nil)
+        -- The persona text (if any) rides along with the task through
+        -- herd's existing temp-file path; nothing is shell-interpolated.
+        local personas = require('ai.herd.personas')
+        local combined = personas.with_persona(persona_text, task ~= '' and task or nil)
+        ask_cwd(cli_name, name, combined)
+    end)
+end
+
+---Offer an agent-ctrl persona (or none) before the task prompt. Skipped
+---entirely when the personas module's spawn_hook_enabled is false, and
+---when the agents dir yields no personas.
+---@param cli_name string
+---@param name string
+local function ask_persona(cli_name, name)
+    local personas = require('ai.herd.personas')
+    if not personas.spawn_hook_enabled() then
+        ask_task(cli_name, name, nil)
+        return
+    end
+    personas.pick_persona(function(picked)
+        if picked == nil then
+            ask_task(cli_name, name, nil)
+            return
+        end
+        ask_task(cli_name, name, personas.render_prompt(picked))
     end)
 end
 
@@ -94,7 +119,7 @@ local function ask_agent_name(cli_name, cli_label)
         if name == nil or name == '' then
             return
         end
-        ask_task(cli_name, name)
+        ask_persona(cli_name, name)
     end)
 end
 

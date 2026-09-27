@@ -207,6 +207,10 @@ require('security').setup()
 -- Placed with the other toolkit setups; setup() is idempotent and
 -- performs no subprocess I/O itself.
 require('git').setup()
+-- Herd agent-ctrl personas: the :Personas* commands and the :HerdSpawn
+-- persona picker hook. Placed with the other toolkit setups; setup() is
+-- idempotent and performs no I/O itself (the agents dir is scanned lazily).
+require('ai.herd.personas').setup()
 require('bsp')
 require('dap')
 require('formatters')
