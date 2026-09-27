@@ -221,6 +221,10 @@ require('calendar').setup()
 -- Placed with the other toolkit setups; setup() is idempotent and
 -- performs no subprocess I/O itself.
 require('sync').setup()
+-- Jujutsu (jj) integration: the :Jj dispatcher and the :Jj* checks.
+-- Placed with the other toolkit setups; setup() is idempotent and
+-- performs no subprocess I/O itself.
+require('jj').setup()
 require('bsp')
 require('dap')
 require('formatters')
