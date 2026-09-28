@@ -37,6 +37,11 @@ local M = {}
 local SOURCE = 'ansibug'
 local PROBE_TIMEOUT_MS = 5000
 
+-- Bounds for the role-entry breakpoint seeding scan: playbooks and role
+-- task files are user-authored YAML; cap how much we read.
+local ROLE_SCAN_MAX_LINES = 2000
+local TASK_SCAN_MAX_LINES = 2000
+
 ---@type string[]
 local ROOT_MARKERS = {
     'ansible.cfg',
@@ -268,6 +273,251 @@ local function default_playbook(default)
     return default
 end
 
+---@param path string
+---@param max_lines integer
+---@return string[]? lines, string? err
+local function read_lines(path, max_lines)
+    local handle, open_err = io.open(path, 'r')
+
+    if handle == nil then
+        return nil, ('cannot read %s: %s'):format(path, open_err or 'unknown error')
+    end
+
+    local lines = {}
+    local count = 0
+
+    for line in handle:lines() do
+        count = count + 1
+
+        if count > max_lines then
+            break
+        end
+
+        lines[#lines + 1] = line
+    end
+
+    handle:close()
+
+    return lines, nil
+end
+
+---@param value string
+---@return string unquoted value
+local function unquote(value)
+    local quoted = value:match("^'([^']*)'$") or value:match('^"([^"]*)"$')
+
+    if quoted ~= nil then
+        return quoted
+    end
+
+    return value
+end
+
+---Extract a role name from one `roles:` list item.
+---
+---Plain-language version: a playbook lists its roles in a few spellings --
+---`- web`, `- { role: web }`, `- role: web`, `- 'web'`. This reads one
+---list item and pulls out just the role's name, or gives up (nil) when the
+---item is something fancier like a dict with conditionals.
+---@param item string text after the `- ` of a roles list item
+---@return string? role_name
+local function parse_role_name(item)
+    local text = unquote(trim(item))
+
+    -- Dict forms: `- { role: web }` and `- role: web`.
+    local dict_role = text:match('^%{%s*role%s*:%s*([^,}%s]+)') or text:match('^role%s*:%s*([%w_.-]+)%s*$')
+
+    if dict_role ~= nil then
+        return unquote(dict_role)
+    end
+
+    -- Plain form: `- web` (quotes already stripped above).
+    if text:match('^[%w_.-]+$') ~= nil then
+        return text
+    end
+
+    return nil
+end
+
+---Collect every role referenced by `roles:` sections in a playbook.
+---
+---Plain-language version: walks the playbook top to bottom; whenever it
+---finds a `roles:` line it reads the indented `- ...` items under it until
+---the indentation drops back. Inline `roles: [a, b]` lists are not
+---supported (rare in playbooks; documented, not silently misread).
+---@param playbook_path string absolute path of the playbook
+---@return string[]? roles, string? err
+local function playbook_roles(playbook_path)
+    local lines, err = read_lines(playbook_path, ROLE_SCAN_MAX_LINES)
+
+    if lines == nil then
+        return nil, err
+    end
+
+    local roles = {}
+    local i = 1
+
+    while i <= #lines do
+        local indent = lines[i]:match('^(%s*)roles:%s*$')
+
+        if indent == nil then
+            i = i + 1
+        else
+            local base_indent = #indent
+            i = i + 1
+
+            while i <= #lines do
+                local item_line = lines[i]
+
+                if item_line:match('^%s*$') or item_line:match('^%s*#') then
+                    i = i + 1
+                else
+                    local item_indent = #(item_line:match('^(%s*)') or '')
+
+                    if item_indent <= base_indent then
+                        break
+                    end
+
+                    local item = item_line:match('^%s*%-%s+(.-)%s*$')
+
+                    if item ~= nil then
+                        local name = parse_role_name(item)
+
+                        if name ~= nil then
+                            roles[#roles + 1] = name
+                        end
+                    end
+
+                    i = i + 1
+                end
+            end
+        end
+    end
+
+    return roles, nil
+end
+
+---Find the first executable task in a role's tasks file.
+---
+---Plain-language version: the first thing a role actually *does* is the
+---first top-level `- ...` entry in `tasks/main.yml` (skipping blank lines,
+---comments, and the `---` header). That is where the entry breakpoint goes.
+---@param tasks_path string absolute path of tasks/main.yml
+---@return integer? line 1-based line number of the first task
+---@return string? err reason when no task is found
+local function first_task_line(tasks_path)
+    local lines, err = read_lines(tasks_path, TASK_SCAN_MAX_LINES)
+
+    if lines == nil then
+        return nil, err
+    end
+
+    for idx, line in ipairs(lines) do
+        if line:match('^%s*$') or line:match('^%s*#') or line:match('^%s*---%s*$') then
+            -- Not a task: keep scanning.
+        elseif line:match('^%-%s+%S') then
+            return idx, nil
+        end
+    end
+
+    return nil, 'no executable task found'
+end
+
+---@param path string absolute path to load
+---@return integer? bufnr
+---@return string? err
+local function ensure_loaded_buffer(path)
+    local bufnr = fn.bufadd(path)
+
+    if bufnr == nil or bufnr < 1 then
+        return nil, ('cannot create buffer for %s'):format(path)
+    end
+
+    fn.bufload(bufnr)
+
+    return bufnr, nil
+end
+
+---Seed a normal DAP breakpoint on the first task of each role the playbook uses.
+---
+---Plain-language version: ansibug cannot step *into* a role, so this cheats
+---honestly -- before launching, it puts a plain breakpoint on the first
+---task of every role (`roles/<role>/tasks/main.yml`). When the debugger
+---reaches a role it stops at its front door, which is what "step into
+---roles" should have felt like. Roles are resolved next to the playbook;
+---anything unresolvable is reported out loud, never silently skipped. The
+---playbook itself is never modified.
+---@param playbook_path string absolute path of the playbook to launch
+---@return table? result `{ seeded = {...}, unresolved = {...} }`
+---@return string? err when the playbook cannot be read at all
+function M.seed_role_entry_breakpoints(playbook_path)
+    if not nonempty_string(playbook_path) then
+        return nil, 'playbook path must be a non-empty string'
+    end
+
+    local playbook = normalize(playbook_path)
+
+    if fn.filereadable(playbook) ~= 1 then
+        return nil, ('playbook not readable: %s'):format(playbook)
+    end
+
+    local roles, roles_err = playbook_roles(playbook)
+
+    if roles == nil then
+        return nil, roles_err
+    end
+
+    local playbook_dir = fs.dirname(playbook)
+    local breakpoints = require('dap.breakpoints')
+    local seeded = {}
+    local unresolved = {}
+
+    for _, role in ipairs(roles) do
+        -- Role names become path segments: reject anything that could
+        -- escape the roles directory.
+        if role:find('%.%.', 1, true) ~= nil or role:find('/', 1, true) ~= nil then
+            unresolved[#unresolved + 1] = { role = role, reason = 'unsafe role name' }
+        else
+            local tasks_path = fs.normalize(playbook_dir .. '/roles/' .. role .. '/tasks/main.yml')
+            local line, line_err = first_task_line(tasks_path)
+
+            if line == nil then
+                unresolved[#unresolved + 1] = { role = role, reason = line_err }
+            else
+                local bufnr, buf_err = ensure_loaded_buffer(tasks_path)
+
+                if bufnr == nil then
+                    unresolved[#unresolved + 1] = { role = role, reason = buf_err }
+                else
+                    local ok, set_err = pcall(breakpoints.set, {}, bufnr, line)
+
+                    if not ok then
+                        unresolved[#unresolved + 1] =
+                            { role = role, reason = ('breakpoint failed: %s'):format(set_err) }
+                    else
+                        seeded[#seeded + 1] = { role = role, file = tasks_path, line = line }
+                    end
+                end
+            end
+        end
+    end
+
+    if #unresolved > 0 then
+        local reasons = {}
+
+        for _, entry in ipairs(unresolved) do
+            reasons[#reasons + 1] = ('%s (%s)'):format(entry.role, entry.reason)
+        end
+
+        notify(
+            ('role-entry breakpoints: %d unresolved: %s'):format(#unresolved, table.concat(reasons, '; ')),
+            levels.WARN
+        )
+    end
+
+    return { seeded = seeded, unresolved = unresolved }, nil
+end
+
 ---@type table
 M.adapter = {
     name = SOURCE,
@@ -311,7 +561,7 @@ M.configurations = {
             end,
         },
         {
-            name = 'Ansible: Debug Playbook (Step Into Roles)',
+            name = 'Ansible: Debug Playbook (Role-Entry Breakpoints)',
             type = SOURCE,
             request = 'launch',
             playbook = function()
@@ -413,6 +663,50 @@ M.commands = {
         end,
         desc = 'Debug an Ansible playbook with ansibug',
     },
+
+    AnsibleDebugPlaybookRoles = {
+        callback = function()
+            local template = M.configurations['yaml.ansible'][2]
+
+            if template == nil then
+                return
+            end
+
+            local playbook = template.playbook()
+
+            if playbook == nil then
+                notify('No playbook selected.', levels.WARN)
+
+                return
+            end
+
+            --
+            -- ansibug cannot step into roles: seed a plain breakpoint on
+            -- each role's first task, then launch normally. Unresolved
+            -- roles are reported by seed_role_entry_breakpoints; the
+            -- launch still proceeds so a partial seed never blocks a run.
+            --
+            local result, err = M.seed_role_entry_breakpoints(playbook)
+
+            if result == nil then
+                notify(('role breakpoint seeding failed: %s'):format(err), levels.ERROR)
+
+                return
+            end
+
+            notify(('seeded %d role-entry breakpoint(s)'):format(#result.seeded), levels.INFO)
+
+            require('dap').run({
+                name = template.name,
+                type = template.type,
+                request = template.request,
+                playbook = playbook,
+                args = template.args(),
+                cwd = template.cwd(),
+            })
+        end,
+        desc = 'Seed role-entry breakpoints, then debug the playbook with ansibug',
+    },
 }
 
 ---@type table<string, DebugMapping>
@@ -437,6 +731,19 @@ M.mappings = {
             end
         end,
         desc = 'Ansible DAP: Debug playbook',
+    },
+
+    ansible_debug_playbook_roles = {
+        lhs = '<leader>dAr',
+        mode = 'n',
+        rhs = function()
+            local cmd = M.commands.AnsibleDebugPlaybookRoles
+
+            if cmd ~= nil and type(cmd.callback) == 'function' then
+                cmd.callback()
+            end
+        end,
+        desc = 'Ansible DAP: Debug playbook with role-entry breakpoints',
     },
 }
 

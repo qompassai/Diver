@@ -16,6 +16,17 @@ local split = vim.split
 local treesitter = vim.treesitter
 local levels = vim.log.levels
 local map = vim.keymap.set
+
+-- New-file header generation. The lang configs' BufNewFile templates call
+-- `require('research.docs').make_header(filepath, comment)`; it lives here
+-- (rather than a new module) so those 19 call sites keep working unchanged.
+-- Shape ports the local helper in lua/config/lang/latex.lua, except the
+-- relative path keeps its leading slash so generated headers match the
+-- repo's own (`-- /qompassai/Diver/...`, not `-- qompassai/Diver/...`).
+local HEADER_RULE_WIDTH = 40
+local HEADER_DESCRIPTION = 'Qompass AI - [ ]'
+local HEADER_COPYRIGHT = 'Copyright (C) 2026 Qompass AI, All rights reserved'
+local QOMPASSAI_MARKER = '/qompassai/'
 ---@param bufnr integer?
 ---@return integer
 local function current_buf(bufnr)
@@ -26,6 +37,59 @@ end
 local function filetype(bufnr)
     local buf = current_buf(bufnr)
     return bo[buf] and bo[buf].filetype or ''
+end
+---@param filepath string absolute path of the file being created
+---@return string path as shown in the header's first line
+local function header_relpath(filepath)
+    local idx = filepath:find(QOMPASSAI_MARKER, 1, true)
+    if idx ~= nil then
+        return filepath:sub(idx)
+    end
+    return fn.fnamemodify(filepath, ':~:.')
+end
+---Build the four-line comment header stamped into new files.
+---
+---Plain-language version: every new file starts with a little name tag --
+---where it lives, a one-line description placeholder, the copyright line,
+---and a row of dashes. This writes that name tag in whatever comment style
+---the file's language needs: `#` for shell, `--` for Lua, `//` for C-like
+---languages, and `<!--` / `/*` wrapped as block comments for HTML/CSS.
+---
+---Both arguments are programmer-supplied (call sites pass
+---`vim.fn.expand('%:p')` and a literal), so bad input is a programmer error
+---and raises via assert; the return is always a fresh four-line list.
+---@param filepath string absolute path of the file being created
+---@param comment string comment opener for the file's language
+---@return string[] header_lines exactly four lines, ready for nvim_buf_set_lines
+function M.make_header(filepath, comment)
+    assert(type(filepath) == 'string' and filepath ~= '', 'make_header: filepath must be a non-empty string')
+    assert(type(comment) == 'string' and comment ~= '', 'make_header: comment must be a non-empty string')
+    local relpath = header_relpath(filepath)
+    local solid
+    if comment == '<!--' then
+        solid = '<!-- ' .. string.rep('-', HEADER_RULE_WIDTH) .. ' -->'
+        return {
+            '<!-- ' .. relpath .. ' -->',
+            '<!-- ' .. HEADER_DESCRIPTION .. ' -->',
+            '<!-- ' .. HEADER_COPYRIGHT .. ' -->',
+            solid,
+        }
+    elseif comment == '/*' then
+        solid = '/* ' .. string.rep('-', HEADER_RULE_WIDTH) .. ' */'
+        return {
+            '/* ' .. relpath .. ' */',
+            '/* ' .. HEADER_DESCRIPTION .. ' */',
+            '/* ' .. HEADER_COPYRIGHT .. ' */',
+            solid,
+        }
+    end
+    solid = comment .. ' ' .. string.rep('-', HEADER_RULE_WIDTH)
+    return {
+        comment .. ' ' .. relpath,
+        comment .. ' ' .. HEADER_DESCRIPTION,
+        comment .. ' ' .. HEADER_COPYRIGHT,
+        solid,
+    }
 end
 ---@return string
 function M.foldexpr()

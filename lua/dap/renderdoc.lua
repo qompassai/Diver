@@ -488,6 +488,49 @@ end
 
 ---@type table<string, DebugCommand>
 M.commands = {
+    VulkanCapture = {
+        callback = function(args)
+            local fargs = args.fargs or {}
+            local executable = fargs[1]
+
+            if not nonempty_string(executable) then
+                notify('usage: VulkanCapture <executable> [args ...]', levels.ERROR)
+
+                return
+            end
+
+            ---@type string[]
+            local capture_args = {}
+
+            for index = 2, #fargs do
+                capture_args[#capture_args + 1] = fargs[index]
+            end
+
+            local ok, capture_err = M.capture({
+                executable = executable,
+                args = capture_args,
+                -- Vulkan-specific: record API (validation-layer) debug
+                -- events so the capture carries the messages the
+                -- validation layers emitted during the frame.
+                api_validation = true,
+            })
+
+            if not ok then
+                notify(capture_err or 'capture failed', levels.ERROR)
+
+                return
+            end
+
+            notify('capturing Vulkan target (API validation on): ' .. executable)
+        end,
+
+        complete = 'file',
+
+        desc = 'Capture a Vulkan application with RenderDoc (API validation enabled)',
+
+        nargs = '+',
+    },
+
     RenderdocCapture = {
         callback = function(args)
             local fargs = args.fargs or {}
@@ -605,6 +648,35 @@ M.commands = {
 
 ---@type table<string, DebugMapping>
 M.mappings = {
+    renderdoc_vulkan_capture = {
+        lhs = '<leader>dGv',
+
+        mode = 'n',
+
+        rhs = function()
+            local executable = fn.input('Vulkan target executable: ')
+
+            if executable == '' then
+                return
+            end
+
+            local ok, capture_err = M.capture({
+                executable = executable,
+                api_validation = true,
+            })
+
+            if not ok then
+                notify(capture_err or 'capture failed', levels.ERROR)
+
+                return
+            end
+
+            notify('capturing Vulkan target (API validation on): ' .. executable)
+        end,
+
+        desc = 'RenderDoc: Capture Vulkan target (API validation on)',
+    },
+
     renderdoc_capture = {
         lhs = '<leader>dGc',
 

@@ -13,6 +13,7 @@ M.apex = require('dev.sf.apex')
 M.data = require('dev.sf.data')
 M.org = require('dev.sf.org')
 M.project = require('dev.sf.project')
+M.tasks = require('dev.sf.tasks')
 M.trailhead = require('dev.sf.trailhead')
 
 local DOMAIN_MODULES = {
@@ -22,6 +23,7 @@ local DOMAIN_MODULES = {
     M.data,
     M.org,
     M.project,
+    M.tasks,
     M.trailhead,
 }
 

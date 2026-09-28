@@ -1064,7 +1064,7 @@ local SEEDS = {
         languages = { 'ruby' },
         debugger = 'Ruby (debug gem)',
         adapter = 'rdbg',
-        transport = 'stdio',
+        transport = 'unix',
         protocol = 'dap',
         dap_native = true,
         probe = make_probe({
@@ -1073,9 +1073,11 @@ local SEEDS = {
             global_key = 'rdbg_path',
         }),
         build_config = seed_builder('rdbg'),
-        -- NOTE: upstream rdbg speaks DAP over a unix socket (`rdbg --open
-        -- --sock-path`) or TCP (`rdbg --open --port`), never raw stdio; the
-        -- brief seeds 'stdio' and the detail is owned by the ruby worker.
+        -- Upstream rdbg speaks DAP over a unix-domain socket by default
+        -- (`rdbg --command --open --sock-path <path> -- <target...>`); the
+        -- loopback-TCP form (`--host <host> --port <port>`) is the fallback
+        -- when a debug port is selected or the platform requires it. Never
+        -- raw stdio: rdbg has no stdio DAP mode.
     },
     {
         id = 'php-debug',

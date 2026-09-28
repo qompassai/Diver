@@ -19,9 +19,11 @@ local M = {}
 local android = require('dev.android')
 local apps = require('dev.apps')
 local sf = require('dev.sf')
+local vulkan = require('dev.vulkan')
 function M.setup()
     android.setup()
     apps.setup()
     sf.setup()
+    vulkan.setup()
 end
 return M
