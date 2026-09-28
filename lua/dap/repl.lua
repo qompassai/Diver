@@ -29,7 +29,7 @@ local history = {
     max_size = 100,
 }
 
-local autoscroll = vim.fn.has('nvim-0.7') == 1
+local autoscroll = true
 
 ---Maximum lines kept in the REPL buffer. Older lines are dropped after
 ---each append so a chatty adapter cannot grow the buffer without bound.
@@ -45,11 +45,9 @@ local execute -- required for forward reference
 ---@return integer number of lines, excluding the prompt line
 local function line_count(buf)
     assert(vim.bo[buf].buftype == 'prompt', 'buf must have buftype=prompt')
-    if vim.fn.has('nvim-0.12') == 1 then
-        local ok, mark = pcall(api.nvim_buf_get_mark, buf, ':')
-        if ok then
-            return mark[1] - 1
-        end
+    local ok, mark = pcall(api.nvim_buf_get_mark, buf, ':')
+    if ok then
+        return mark[1] - 1
     end
     return api.nvim_buf_line_count(buf) - 1
 end
@@ -108,7 +106,7 @@ local function new_buf()
     })
     vim.fn.prompt_setprompt(buf, prompt)
     vim.fn.prompt_setcallback(buf, execute)
-    if vim.fn.has('nvim-0.7') == 1 then
+    do
         vim.keymap.set('n', 'G', function()
             autoscroll = vim.v.count == 0
             vim.cmd(string.format('normal! %dG', vim.v.count))
@@ -134,15 +132,11 @@ local function new_win(buf, winopts, wincmd)
     api.nvim_command(wincmd or 'belowright split')
     local win = api.nvim_get_current_win()
     api.nvim_win_set_buf(win, buf)
-    if vim.fn.has('nvim-0.11') == 1 then
-        vim.wo[win][0].relativenumber = false
-        vim.wo[win][0].number = false
-        vim.wo[win][0].foldcolumn = '0'
-        vim.wo[win][0].signcolumn = 'auto'
-        vim.wo[win][0].wrap = false
-    else
-        vim.wo[win].wrap = false
-    end
+    vim.wo[win][0].relativenumber = false
+    vim.wo[win][0].number = false
+    vim.wo[win][0].foldcolumn = '0'
+    vim.wo[win][0].signcolumn = 'auto'
+    vim.wo[win][0].wrap = false
     ui.apply_winopts(win, winopts)
     return win
 end

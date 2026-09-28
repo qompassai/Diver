@@ -23,6 +23,7 @@ local M = {}
 ---legal. Outside fast context (commands, tests) this runs synchronously.
 ---@param fn fun()
 local function defer(fn)
+    -- selene: allow(global_usage)
     local v = rawget(_G, 'vim')
     if v ~= nil and v.in_fast_event ~= nil and v.in_fast_event() then
         v.schedule(fn)

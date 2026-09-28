@@ -52,6 +52,7 @@ end
 ---@return string|nil path
 ---@return string|nil err
 function M.new_temp_profile()
+    -- selene: allow(global_usage)
     local v = rawget(_G, 'vim')
     if v == nil or v.fn == nil or v.fn.tempname == nil then
         return nil, 'vim.fn.tempname unavailable'
@@ -84,6 +85,7 @@ function M.remove_temp_profile(path)
     if path:find('-cdp-profile-', 1, true) == nil then
         return nil, 'refusing to delete a non-diver profile path'
     end
+    -- selene: allow(global_usage)
     local v = rawget(_G, 'vim')
     if v == nil or v.fn == nil or v.fn.delete == nil then
         return nil, 'vim.fn.delete unavailable'
@@ -129,6 +131,7 @@ function M.confirm_eval(opts, on_decision)
         .. opts.expression
     local ui = opts.ui
     if ui == nil then
+        -- selene: allow(global_usage)
         local v = rawget(_G, 'vim')
         ui = v and v.ui or nil
     end
@@ -173,6 +176,7 @@ function M.confirm_attach(opts, on_decision)
         .. '\n\nAttaching can observe every open tab.'
     local ui = opts.ui
     if ui == nil then
+        -- selene: allow(global_usage)
         local v = rawget(_G, 'vim')
         ui = v and v.ui or nil
     end

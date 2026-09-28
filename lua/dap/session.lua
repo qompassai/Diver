@@ -1119,8 +1119,8 @@ function Session:_goto(line, source, col)
             utils.notify("No goto targets available. Can't execute goto", vim.log.levels.INFO)
             return
         end
-        local target = ui().pick_if_many(response.targets, 'goto target> ', function(target)
-            return target.label
+        local target = ui().pick_if_many(response.targets, 'goto target> ', function(candidate)
+            return candidate.label
         end)
         if not target then
             return

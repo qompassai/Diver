@@ -310,6 +310,7 @@ function M.getconfigs(path)
             return {}
         end
     end
+    local contents = fp:read('*a')
     return M._load_json(contents)
 end
 

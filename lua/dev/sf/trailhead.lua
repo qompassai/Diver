@@ -54,9 +54,6 @@ local STEP_ARGV_COUNT_MAX = 32
 local STEP_ARGV_BYTES_MAX = 2048
 local SUBSCRIBER_COUNT_MAX = 16
 local JOB_ID_BYTES_MAX = 128
--- Upper bound for reading the persisted state file. The writer's per-field
--- bounds keep real files in the kilobyte range; this only stops a planted
--- multi-megabyte file from exhausting memory on startup.
 local STATE_READ_BYTES_MAX = 16777216
 local STEP_TIMEOUT_MS = 15 * 60 * 1000
 
@@ -1264,8 +1261,8 @@ M.commands = {
         fn = cmd_add_step,
         opts = { desc = 'Add a step to a Trailhead job', nargs = '+' },
     },
-    { name = 'SfTrailheadStart', fn = cmd_start, opts = { desc = 'Start a Trailhead job', nargs = '?' } },
-    { name = 'SfTrailheadCancel', fn = cmd_cancel, opts = { desc = 'Cancel a Trailhead job', nargs = '?' } },
+    { name = 'SfTrailheadStart',   fn = cmd_start,   opts = { desc = 'Start a Trailhead job', nargs = '?' } },
+    { name = 'SfTrailheadCancel',  fn = cmd_cancel,  opts = { desc = 'Cancel a Trailhead job', nargs = '?' } },
     {
         name = 'SfTrailheadCancelAll',
         fn = cmd_cancel_all,
@@ -1283,8 +1280,8 @@ M.commands = {
         opts = { desc = 'Report a Trailhead step failed (external agent)', nargs = '+' },
     },
     { name = 'SfTrailheadStatus', fn = cmd_status, opts = { desc = 'Show Trailhead job status', nargs = '?' } },
-    { name = 'SfTrailheadJobs', fn = cmd_jobs, opts = { desc = 'List Trailhead jobs', nargs = 0 } },
-    { name = 'SfTrailheadLog', fn = cmd_log, opts = { desc = 'Show a Trailhead job log', nargs = '?' } },
+    { name = 'SfTrailheadJobs',   fn = cmd_jobs,   opts = { desc = 'List Trailhead jobs', nargs = 0 } },
+    { name = 'SfTrailheadLog',    fn = cmd_log,    opts = { desc = 'Show a Trailhead job log', nargs = '?' } },
     {
         name = 'SfTrailheadQuests',
         fn = cmd_quests,

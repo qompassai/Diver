@@ -44,6 +44,7 @@ M.CdpSession = CdpSession
 ---@param text string
 ---@return table
 local function default_decode(text)
+    -- selene: allow(global_usage)
     return rawget(_G, 'vim').json.decode(text)
 end
 
@@ -51,12 +52,14 @@ end
 ---@param value table
 ---@return string
 local function default_encode(value)
+    -- selene: allow(global_usage)
     return rawget(_G, 'vim').json.encode(value)
 end
 
 ---Default millisecond clock: vim.uv.now() when available, os.clock fallback.
 ---@return integer
 local function default_clock()
+    -- selene: allow(global_usage)
     local v = rawget(_G, 'vim')
     if v ~= nil and v.uv ~= nil and v.uv.now ~= nil then
         return v.uv.now()

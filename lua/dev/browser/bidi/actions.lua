@@ -1,5 +1,5 @@
 -- Purpose: action-menu entries for the BiDi track, following the
--- dev.android action convention ({id, label, group, keywords, run}).
+-- dev.apps.android action convention ({id, label, group, keywords, run}).
 -- Each action shells out to the matching :Bidi* command so there is one
 -- code path from menu to browser.
 

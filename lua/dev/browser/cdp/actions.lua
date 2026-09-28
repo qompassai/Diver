@@ -120,6 +120,7 @@ end
 ---@param name string User autocmd name, e.g. "CdpConsoleMessage"
 ---@param data table|nil
 local function emit(name, data)
+    -- selene: allow(global_usage)
     local v = rawget(_G, 'vim')
     if v == nil or v.api == nil or v.api.nvim_exec_autocmds == nil then
         return
@@ -130,6 +131,7 @@ end
 ---@param message string
 ---@param level integer|nil
 local function notify(message, level)
+    -- selene: allow(global_usage)
     local v = rawget(_G, 'vim')
     if v ~= nil and v.notify ~= nil then
         if v.in_fast_event ~= nil and v.in_fast_event() then
@@ -149,6 +151,7 @@ end
 ---First usable Chrome/Chromium binary on PATH, or nil.
 ---@return string|nil
 function M.find_chrome()
+    -- selene: allow(global_usage)
     local v = rawget(_G, 'vim')
     if v == nil or v.fn == nil or v.fn.executable == nil then
         return nil
@@ -212,6 +215,7 @@ function M.open(url, opts, callback)
         callback(in_use .. '; use :BrowserAttach', nil)
         return
     end
+    -- selene: allow(global_usage)
     local v = rawget(_G, 'vim')
     local args = {
         bin,
@@ -407,6 +411,7 @@ function M.screenshot(conn, path, callback)
         callback(terr, nil)
         return
     end
+    -- selene: allow(global_usage)
     local v = rawget(_G, 'vim')
     if path == nil then
         path = v.fn.tempname() .. '.png'
@@ -656,6 +661,7 @@ end
 ---@param title string
 ---@param lines string[]
 local function open_scratch(title, lines)
+    -- selene: allow(global_usage)
     local v = rawget(_G, 'vim')
     local buf = v.api.nvim_create_buf(false, true)
     v.api.nvim_buf_set_lines(buf, 0, -1, false, lines)

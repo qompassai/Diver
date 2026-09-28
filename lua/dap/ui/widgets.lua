@@ -429,8 +429,8 @@ do
         new_buf = function()
             return named_widget_buf('expression', true)
         end,
-        before_open = function(view)
-            view.__expression = vim.fn.expand('<cexpr>')
+        before_open = function(v)
+            v.__expression = vim.fn.expand('<cexpr>')
         end,
         render = function(view, expr)
             local session = require('dap').session()

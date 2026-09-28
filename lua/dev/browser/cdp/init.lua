@@ -92,6 +92,7 @@ local function pick_decoder(opts)
         return opts.json_decode
     end
     return function(text)
+        -- selene: allow(global_usage)
         return rawget(_G, 'vim').json.decode(text)
     end
 end
@@ -231,6 +232,7 @@ end
 
 ---@param conn CdpConnection
 local function start_pump(conn)
+    -- selene: allow(global_usage)
     local v = rawget(_G, 'vim')
     if v == nil or v.uv == nil or v.uv.new_timer == nil then
         return
@@ -400,6 +402,7 @@ function M.connect(opts)
         _on_error = on_error,
         _json_decode = pick_decoder(opts),
         _json_encode = opts.json_encode or function(value)
+            -- selene: allow(global_usage)
             return rawget(_G, 'vim').json.encode(value)
         end,
     }
