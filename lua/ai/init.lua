@@ -15,6 +15,9 @@
 --               Flow owns server-side orchestration; this side never runs
 --               an inbound server. a2a/orchestrator.lua fans one task out
 --               across SDK drivers by language and aggregates the results.
+--   ai/agx/     agx agent-trace inspector: :Agx opens the step-through
+--               debugger for Claude Code / Codex / Gemini session files
+--               in a terminal split. Trace inspection only, not DAP.
 --   ai/rose/    rose.nvim fold-in (native, no plugins): chat, agent loop,
 --               Ollama, MCP helpers, validation, and all 10 cloud
 --               providers. Optional generation backend for ai/builder.
@@ -53,6 +56,7 @@ function M.setup(opts)
     require('ai.acp').setup()
     require('ai.a2a').setup()
     require('ai.a2a.orchestrator').setup()
+    require('ai.agx').setup()
     require('ai.rose').setup()
     require('ai.mcp').setup()
     require('ai.security').setup()
