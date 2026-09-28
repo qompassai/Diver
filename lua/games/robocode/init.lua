@@ -100,6 +100,21 @@ function M.dev_robots_dir()
     return vim.fs.normalize(vim.fn.expand(M.config.dev_robots_dir))
 end
 
+---Resolved user-writable Robocode config directory:
+---$XDG_CONFIG_HOME/robocode, falling back to ~/.config/robocode.
+---Robocode writes its settings, robot database, and screenshots under
+---its working directory, so pointing the working directory here keeps
+---the (often root-owned) install dir out of the write path.
+---@return string
+function M.config_dir()
+    local xdg = vim.env.XDG_CONFIG_HOME
+    local base = vim.fn.expand('~/.config')
+    if xdg ~= nil and xdg ~= '' then
+        base = xdg
+    end
+    return vim.fs.normalize(base .. '/robocode')
+end
+
 ---Resolved directory for generated .battle specs (expanded, normalized).
 ---@return string
 function M.battle_dir()
@@ -119,7 +134,8 @@ end
 
 ---Build a Robocode launch from the documented console usage. Returns
 ---nil + reason when java or the install root is unavailable, so callers
----report the gap instead of inventing a launch.
+---report the gap instead of inventing a launch. Ensures the user config
+---dir exists (Robocode writes settings under its working directory).
 ---@param opts games.robocode.LaunchOptions
 ---@return games.robocode.Launch? launch
 ---@return string? err
@@ -133,6 +149,9 @@ function M.build_launch(opts)
         return nil, 'Robocode install root not found (checked $ROBOCODE_HOME and /opt/robocode)'
     end
 
+    local config_dir = M.config_dir()
+    vim.fn.mkdir(config_dir, 'p')
+
     ---@type string[]
     local argv = {
         java,
@@ -143,7 +162,7 @@ function M.build_launch(opts)
         '--add-opens=java.base/java.lang.reflect=ALL-UNNAMED',
         '--add-opens=java.desktop/javax.swing.text=ALL-UNNAMED',
         '--add-opens=java.desktop/sun.awt=ALL-UNNAMED',
-        '-DWORKINGDIRECTORY=' .. root,
+        '-DWORKINGDIRECTORY=' .. config_dir,
     }
     if opts.robot_path ~= nil then
         argv[#argv + 1] = '-DROBOTPATH=' .. opts.robot_path

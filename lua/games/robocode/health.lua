@@ -64,13 +64,10 @@ function M.check()
     elseif vim.fn.executable('robocode') == 1 then
         health.error(
             'robocode wrapper on PATH is a zero-byte stub',
-        health.error(
-            'robocode wrapper on PATH is a zero-byte stub',
             'aur/robocode 1.11.1-1 ships a broken /usr/bin/robocode; '
                 .. 'this module launches via java from '
                 .. root
                 .. ' instead, so battles still work.'
-        )
         )
     else
         health.warn(
@@ -87,6 +84,13 @@ function M.check()
             'robot dev dir missing: ' .. dev_dir,
             'Created automatically by :RobocodeNew; battles need compiled robots there.'
         )
+    end
+
+    local config_dir = robocode.config_dir()
+    if vim.fn.isdirectory(config_dir) == 1 then
+        health.ok('config dir: ' .. config_dir)
+    else
+        health.info('config dir not created yet: ' .. config_dir .. ' (created on first launch)')
     end
 end
 
