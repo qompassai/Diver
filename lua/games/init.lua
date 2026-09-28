@@ -31,8 +31,11 @@ M.blender = safe_require('games.blender')
 M.godot = safe_require('games.godot')
 M.love2d = safe_require('games.love2d')
 M.redot = safe_require('games.redot')
+M.robocode = safe_require('games.robocode')
+M.tic80 = safe_require('games.tic80')
 M.unity = safe_require('games.unity')
 M.unreal = safe_require('games.unreal')
+M.voidsprite = safe_require('games.voidsprite')
 
 local engines = {
     {
@@ -56,12 +59,24 @@ local engines = {
         label = 'Redot',
     },
     {
+        key = 'robocode',
+        label = 'Robocode',
+    },
+    {
+        key = 'tic80',
+        label = 'TIC-80',
+    },
+    {
         key = 'unity',
         label = 'Unity',
     },
     {
         key = 'unreal',
         label = 'Unreal',
+    },
+    {
+        key = 'voidsprite',
+        label = 'Voidsprite',
     },
 }
 
@@ -76,13 +91,15 @@ function M.setup()
     vim.api.nvim_create_user_command('Games', function()
         M.show_menu()
     end, {
-        desc = 'Open a combined Aseprite/Blender/Godot/LÖVE2D/Redot/Unity/Unreal action menu',
+        desc = 'Open a combined Aseprite/Blender/Godot/LÖVE2D/Redot/Robocode/TIC-80/Unity/Unreal/'
+            .. 'Voidsprite action menu',
     })
 
     vim.api.nvim_create_user_command('GamesDoctor', function()
         vim.cmd('checkhealth games')
     end, {
-        desc = "Report every engine's resolved binary/root (Aseprite/Blender/Godot/LÖVE2D/Redot/Unity/Unreal)",
+        desc = "Report every engine's resolved binary/root (Aseprite/Blender/Godot/LÖVE2D/Redot/"
+            .. 'Robocode/TIC-80/Unity/Unreal/Voidsprite)',
     })
 
     vim.keymap.set('n', '<Space>gd', function()
@@ -117,8 +134,11 @@ function M.show_menu()
             'Godot',
             'LÖVE2D',
             'Redot',
+            'Robocode',
+            'TIC-80',
             'Unity',
             'Unreal',
+            'Voidsprite',
         },
         prompt = 'Select a games action:',
     })

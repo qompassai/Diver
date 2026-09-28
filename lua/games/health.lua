@@ -24,7 +24,7 @@
 local async_util = require('games.shared.async_util')
 local shared_util = require('games.shared.util')
 local M = {}
-local EXPECTED_PROBE_COUNT = 5
+local EXPECTED_PROBE_COUNT = 8
 
 ---@param bin string?
 ---@return string?
@@ -166,6 +166,81 @@ local function probe_unreal()
     }
 end
 
+---@return GamesDoctorRow
+local function probe_tic80()
+    local ok, tic80 = pcall(require, 'games.tic80')
+    if not ok then
+        return {
+            name = 'TIC-80',
+            ok = false,
+            warn = false,
+            lines = {
+                'module failed to load: ' .. tostring(tic80),
+            },
+        }
+    end
+    local bin = tic80.find_binary()
+    return {
+        name = 'TIC-80',
+        ok = bin ~= nil,
+        warn = false,
+        lines = {
+            'binary: ' .. (bin or 'not found (install tic80 / tic-80-bin from AUR)'),
+        },
+    }
+end
+
+---@return GamesDoctorRow
+local function probe_voidsprite()
+    local ok, voidsprite = pcall(require, 'games.voidsprite')
+    if not ok then
+        return {
+            name = 'Voidsprite',
+            ok = false,
+            warn = false,
+            lines = {
+                'module failed to load: ' .. tostring(voidsprite),
+            },
+        }
+    end
+    local bin = voidsprite.util.find_binary()
+    return {
+        name = 'Voidsprite',
+        ok = bin ~= nil,
+        warn = false,
+        lines = {
+            'binary: '
+                .. (bin or 'not found (install aur/voidsprite-git or set NVIM_VOIDSPRITE_BIN)'),
+        },
+    }
+end
+
+---@return GamesDoctorRow
+local function probe_robocode()
+    local ok, robocode = pcall(require, 'games.robocode')
+    if not ok then
+        return {
+            name = 'Robocode',
+            ok = false,
+            warn = false,
+            lines = {
+                'module failed to load: ' .. tostring(robocode),
+            },
+        }
+    end
+    local java = robocode.find_java()
+    local root = robocode.find_install_root()
+    return {
+        name = 'Robocode',
+        ok = java ~= nil and root ~= nil,
+        warn = false,
+        lines = {
+            'java: ' .. (java or 'not found (install a JDK)'),
+            'install root: ' .. (root or 'not found (install robocode or set ROBOCODE_HOME)'),
+        },
+    }
+end
+
 ---@return GamesDoctorRow[]
 local function collect_rows()
     ---@type (async fun(): GamesDoctorRow)[]
@@ -180,6 +255,15 @@ local function collect_rows()
         end,
         function()
             return probe_unreal()
+        end,
+        function()
+            return probe_tic80()
+        end,
+        function()
+            return probe_robocode()
+        end,
+        function()
+            return probe_voidsprite()
         end,
     }
     assert(
@@ -237,7 +321,10 @@ function M.check()
     end
 
     local rows = collect_rows()
-    assert(#rows == EXPECTED_PROBE_COUNT, 'games.health.check: collect_rows must always return five rows')
+    assert(
+        #rows == EXPECTED_PROBE_COUNT,
+        'games.health.check: collect_rows must always return eight rows'
+    )
 
     for _, row in ipairs(rows) do
         health.start(row.name)
