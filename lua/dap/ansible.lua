@@ -413,11 +413,11 @@ local function first_task_line(tasks_path)
     end
 
     for idx, line in ipairs(lines) do
-        if line:match('^%s*$') or line:match('^%s*#') or line:match('^%s*---%s*$') then
-            -- Not a task: keep scanning.
-        elseif line:match('^%-%s+%S') then
+        local ignorable = line:match('^%s*$') or line:match('^%s*#') or line:match('^%s*---%s*$')
+        if not ignorable and line:match('^%-%s+%S') then
             return idx, nil
         end
+        -- Otherwise not a task: keep scanning.
     end
 
     return nil, 'no executable task found'
