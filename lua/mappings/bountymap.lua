@@ -41,6 +41,7 @@ function M.setup()
         { lhs = '<Leader>su', rhs = '<Cmd>BountySubmit<CR>', desc = 'Bounty: preview submission' },
         { lhs = '<Leader>si', rhs = '<Cmd>BountyIndex<CR>', desc = 'Bounty: program/report index' },
         { lhs = '<Leader>so', rhs = '<Cmd>BountyTools<CR>', desc = 'Bounty: recon tool availability' },
+        { lhs = '<Leader>sd', rhs = '<Cmd>BountyDashboard<CR>', desc = 'Bounty: dashboard PNG' },
     })
 end
 

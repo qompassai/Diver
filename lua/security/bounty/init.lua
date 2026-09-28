@@ -316,6 +316,10 @@ function M.setup()
         vim.notify(table.concat(lines, '\n'), vim.log.levels.INFO)
     end, { desc = 'Show which recon tools are on PATH' })
 
+    vim.api.nvim_create_user_command('BountyDashboard', function()
+        require('security.bounty.dashboard').show()
+    end, { desc = 'Render the bug-bounty dashboard PNG and preview it' })
+
     vim.api.nvim_create_user_command('BountyProfile', function(opts)
         -- Read-only viewing path: show/list never open gates, never scan,
         -- never touch the network. 'use' only selects the rulebook that
