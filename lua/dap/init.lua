@@ -674,6 +674,15 @@ local MODULES = {
 
     {
         filetypes = {
+            'glsl',
+            'hlsl',
+        },
+
+        module = 'renderdoc',
+    },
+
+    {
+        filetypes = {
             'rust',
         },
 

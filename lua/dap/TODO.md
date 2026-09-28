@@ -677,6 +677,12 @@ Build systems may participate in debug target discovery, but that does not make 
 
 ---
 
+Graphics debuggers
+
+vogl — ❌ No dedicated DAP should be created. Dead upstream: Valve's OpenGL debugger lost its lead developer (Rich Geldreich left Valve in 2014) and the repo has been stale/archived for a decade; RenderDoc (see "renderdoc.lua", a non-DAP helper) covers everything vogl did and more.
+
+---
+
 Recommended implementation roadmap
 
 The updated implementation order should be:
