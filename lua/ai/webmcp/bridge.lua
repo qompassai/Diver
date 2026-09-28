@@ -37,7 +37,7 @@ local PUBLIC_METHODS = { ['bridge.ping'] = true, ['bridge.auth'] = true }
 ---@param kind string 'read' | 'write' | 'execute'
 ---@return table
 local function ann_for(kind)
-    return require('ai.security.annotations').for_endpoint(kind)
+    return require('security.annotations').for_endpoint(kind)
 end
 
 ---Endpoint table: name -> { kind, desc, inputSchema, handler }.
@@ -288,7 +288,7 @@ endpoints['recon.tool'] = {
             respond(false, 'unknown tool: ' .. params.tool)
             return
         end
-        local ann = require('ai.security.annotations')
+        local ann = require('security.annotations')
         local annotations = ann.blank()
         if def.active then
             annotations.consequentialHint = true

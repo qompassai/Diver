@@ -92,7 +92,7 @@ end
 function M.history(session_key)
     ensure_schema()
     local sql = string.format(
-        "SELECT role || '\x1f' || content || '\x1f' || created_at FROM messages "
+        "SELECT role || '\31' || content || '\31' || created_at FROM messages "
             .. 'WHERE session_key = %s ORDER BY id ASC;',
         sql_quote(session_key)
     )
@@ -103,7 +103,7 @@ function M.history(session_key)
 
     local rows = {}
     for line in output:gmatch('[^\n]+') do
-        local role, content, created_at = line:match('^([^\x1f]*)\x1f([^\x1f]*)\x1f([^\x1f]*)$')
+        local role, content, created_at = line:match('^([^\31]*)\31([^\31]*)\31([^\31]*)$')
         if role and content and created_at then
             rows[#rows + 1] = { role = role, content = content, created_at = created_at }
         end

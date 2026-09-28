@@ -90,7 +90,7 @@ function Client:request(method, params, callback, timeout)
     end
     self.sequence = self.sequence + 1
     local id = self.sequence
-    local uv = vim.uv or vim.loop
+    local uv = vim.uv or vim.uv
     local timer = uv.new_timer()
     if not timer then
         defer(callback, 'could not create MCP request timer')
@@ -243,7 +243,7 @@ function Client:close(reason)
         -- MCP defines EOF/process termination, not an invented "shutdown" method.
         pcall(self.process.write, self.process, nil)
         pcall(self.process.kill, self.process, 15)
-        local uv = vim.uv or vim.loop
+        local uv = vim.uv or vim.uv
         self.kill_timer = uv.new_timer()
         if not self.kill_timer then
             pcall(self.process.kill, self.process, 9)

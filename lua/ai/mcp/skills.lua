@@ -55,8 +55,8 @@ local function parse_inline_list(value)
     if inner == nil then
         return out
     end
-    for item in inner:gmatch('[^,]+') do
-        item = item:match('^%s*(.-)%s*$')
+    for raw_item in inner:gmatch('[^,]+') do
+        local item = raw_item:match('^%s*(.-)%s*$')
         if item ~= '' then
             out[#out + 1] = item
         end
@@ -276,7 +276,7 @@ end
 ---@param skill ReconSkill
 ---@return table
 function M.tool_def(skill)
-    local ann = require('ai.security.annotations')
+    local ann = require('security.annotations')
     return {
         name = 'recon.' .. skill.name,
         title = skill.name,
@@ -356,7 +356,7 @@ function M.execute(name, params, via, callback)
         callback(false, { error = 'params.target must be a non-empty string' })
         return
     end
-    local ann = require('ai.security.annotations')
+    local ann = require('security.annotations')
     local annotations = ann.for_skill({ name = skill.name, category = skill.category, tags = skill.tags })
     local gate = require('ai.recon.gate')
     gate.check('recon.' .. name, target, annotations, via, function(allowed, reason)

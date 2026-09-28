@@ -305,7 +305,6 @@ local function run_driver(spec, driver, op, cli_args, opts)
         local ok, handle = pcall(vim.system, argv, sys_opts, function(res)
             cleanup()
             local output = ''
-            local ok = res ~= nil and res.code == 0
             if res ~= nil then
                 output = (res.stdout or '') .. (res.stderr or '')
             end

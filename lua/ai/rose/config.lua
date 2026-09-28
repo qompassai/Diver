@@ -111,7 +111,7 @@ end
 ---@param configured string?
 ---@return string workspace  -- canonical absolute directory path
 local function resolve_workspace(configured)
-    local uv = vim.uv or vim.loop
+    local uv = vim.uv or vim.uv
     local root = configured or uv.cwd()
     assert(type(root) == 'string', 'workspace must be a path')
     assert(root ~= '', 'workspace must be a path')

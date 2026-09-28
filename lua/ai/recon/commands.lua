@@ -73,14 +73,14 @@ local function cmd_keygen(opts)
         notify('usage: ReconKeygen [classic|hybrid|quantum]', vim.log.levels.WARN)
         return
     end
-    local pqc = require('ai.security.pqc')
+    local pqc = require('security.pqc')
     if not pqc.supports(strength) then
         notify(strength .. ' unavailable (backend=' .. pqc.backend() .. '); needs liboqs', vim.log.levels.ERROR)
         return
     end
     notify('generating ' .. strength .. ' signing key (this takes a moment)...')
     vim.schedule(function()
-        local token = require('ai.security.token')
+        local token = require('security.token')
         local key, err = token.generate(strength)
         if key == nil then
             notify('keygen failed: ' .. tostring(err), vim.log.levels.ERROR)
@@ -92,8 +92,8 @@ local function cmd_keygen(opts)
 end
 
 local function cmd_keys()
-    local token = require('ai.security.token')
-    local pqc = require('ai.security.pqc')
+    local token = require('security.token')
+    local pqc = require('security.pqc')
     local lines = { '# Signing keys (backend: ' .. pqc.backend() .. ')', '' }
     for _, k in ipairs(token.list_keys()) do
         lines[#lines + 1] = ('- %s%s  %s / %s  created %s'):format(
@@ -115,7 +115,7 @@ local function cmd_keys()
 end
 
 local function cmd_token(opts)
-    local token = require('ai.security.token')
+    local token = require('security.token')
     local action = opts.fargs[1] or 'show'
     if action == 'mint' then
         local ttl = tonumber(opts.fargs[2]) or token.DEFAULT_TTL
@@ -263,7 +263,7 @@ local function cmd_tools()
 end
 
 local function cmd_auditlog()
-    local auditlog = require('ai.security.auditlog')
+    local auditlog = require('security.auditlog')
     local path = auditlog.path()
     if vim.fn.filereadable(path) ~= 1 then
         notify('audit log is empty (no tool calls recorded yet)')

@@ -10,7 +10,7 @@
 
 local M = {}
 
-local uv = vim.uv or vim.loop
+local uv = vim.uv or vim.uv
 
 local FILE_BYTES_MAX = 1024 * 1024
 local LIST_LIMIT_MAX = 1000

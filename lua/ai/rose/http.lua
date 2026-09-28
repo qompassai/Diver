@@ -7,7 +7,7 @@
 -- process starts. Remote hosts require explicit allow_remote consent.
 
 local M = { active = {} }
-local uv = vim.uv or vim.loop
+local uv = vim.uv or vim.uv
 
 ---@return table? net  -- vim.net when its request API exists
 local function net_api()

@@ -16,7 +16,7 @@ function M.start()
     if vim.fn.exists('*serverstart') ~= 1 then
         return nil, 'native Neovim RPC server unavailable'
     end
-    local uv = vim.uv or vim.loop
+    local uv = vim.uv or vim.uv
     if uv.os_uname().sysname == 'Windows_NT' then
         return nil,
             'private bridge currently requires Unix; flow.bridge=false explicitly opts out of ' .. 'editor protection'
@@ -47,7 +47,7 @@ function M.stop()
     if M.socket then
         pcall(vim.fn.serverstop, M.socket)
     end
-    local uv = vim.uv or vim.loop
+    local uv = vim.uv or vim.uv
     if M.socket then
         uv.fs_unlink(M.socket)
     end

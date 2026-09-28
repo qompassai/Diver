@@ -9,7 +9,7 @@
 --- hands the result table to the caller.
 ---
 --- Reuse, not a fork: sessions live in the layer's own
---- `require('bsp').state.sessions` table, startup goes through the layer's
+--- `require('dev.bsp').state.sessions` table, startup goes through the layer's
 --- `M.start(bufnr)`, and requests go through each session's wrapped rpc
 --- handle (`session.rpc.request`, see `wrap_rpc` in lua/bsp/init.lua). The
 --- layer's local `request()` helper is unreachable from outside, so this
@@ -29,7 +29,7 @@ local fn = vim.fn
 local fs = vim.fs
 local uv = vim.uv
 
-local bsp = require('bsp')
+local bsp = require('dev.bsp')
 
 local M = {}
 

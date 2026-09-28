@@ -201,7 +201,7 @@ function M.stop(callback)
     state = { client = client, callbacks = callbacks }
     M.stopping = state
     client:close('Flow stopped') -- EOF + TERM; MCP escalates to KILL after 500ms.
-    local uv, elapsed, warned = vim.uv or vim.loop, 0, false
+    local uv, elapsed, warned = vim.uv or vim.uv, 0, false
     local timer = uv.new_timer()
     M.stopping.timer = timer
     if not timer then

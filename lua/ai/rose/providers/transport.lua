@@ -7,7 +7,7 @@
 -- temporary request files, curlrc, proxy, redirects, or inherited secrets.
 
 local M = { active = {} }
-local uv = vim.uv or vim.loop
+local uv = vim.uv or vim.uv
 
 -- Escape one curl config value so quotes, backslashes and line breaks cannot end the entry.
 ---@param value string

@@ -52,8 +52,8 @@ function M.check(tool, target, annotations, via, callback)
     assert(type(via) == 'string', 'via must be a string')
     assert(type(callback) == 'function', 'callback must be a function')
 
-    local auditlog = require('ai.security.auditlog')
-    local ann = require('ai.security.annotations')
+    local auditlog = require('security.auditlog')
+    local ann = require('security.annotations')
 
     local needs_confirm = ann.needs_confirmation(annotations)
     if not needs_confirm then
@@ -66,7 +66,7 @@ function M.check(tool, target, annotations, via, callback)
         callback(true, 'allowed: auto-authorized for engaged targets')
         return
     end
-    local security = require('ai.security')
+    local security = require('security')
     security.confirm_tool_call('recon', tool, { target = target }, function(allowed, reason)
         auditlog.append({
             tool = tool,
