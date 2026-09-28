@@ -534,17 +534,9 @@ function M.operator()
     return 'g@'
 end
 
----@param motion_type string
-function M.operator_execute(motion_type)
-    local range
-
-    if motion_type == 'line' then
-        range = "'[,']"
-    elseif motion_type == 'block' then
-        range = "'[,']"
-    else
-        range = "'[,']"
-    end
+---@param _motion_type string
+function M.operator_execute(_motion_type)
+    local range = "'[,']"
 
     vim.cmd(range .. 'DB')
 end

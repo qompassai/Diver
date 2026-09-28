@@ -6,7 +6,6 @@ local M = {} ---@version JIT
 local api = vim.api
 local set_hl = api.nvim_set_hl
 local autocmd = api.nvim_create_autocmd
-local augroup = api.nvim_create_augroup
 local colors = {
     comment = '#7f9bb3',
     comment_doc = '#a0c4ff',
@@ -16,68 +15,6 @@ local colors = {
     warn = '#ffaf00',
     ok = '#5fd75f',
 }
-function M.setup_colorizer(opts)
-    opts = opts or {}
-    local ok, colorizer = pcall(require, 'colorizer')
-    if not ok then
-        return
-    end
-    local group = augroup('CSS', {
-        clear = false,
-    })
-    local default_opts = {
-        filetypes = {
-            'astro',
-            'css',
-            'html',
-            'javascript',
-            'jsx',
-            'less',
-            'lua',
-            'markdown',
-            'php',
-            'sass',
-            'scss',
-            'stylus',
-            'svelte',
-            'tsx',
-            'typescript',
-            'vim',
-            'vue',
-        },
-        user_default_options = {
-            css = true,
-            css_fn = true,
-            RGB = true,
-            RRGGBB = true,
-            names = true,
-            RRGGBBAA = true,
-            AARRGGBB = true,
-            rgb_fn = true,
-            hsl_fn = true,
-            mode = 'background',
-            tailwind = true,
-            sass = {
-                enable = true,
-                parsers = {
-                    'css',
-                },
-            },
-            virtualtext = '■',
-            always_update = true,
-        },
-        buftypes = {},
-    }
-    local merged = vim.tbl_deep_extend('force', default_opts, opts)
-    colorizer.setup(merged)
-    autocmd('FileType', {
-        group = group,
-        pattern = merged.filetypes,
-        callback = function()
-            colorizer.attach_to_buffer(0)
-        end,
-    })
-end
 
 function M.setup_highlights()
     vim.schedule(function()
@@ -320,9 +257,6 @@ end
 function M.setup(opts)
     opts = opts or {}
     M.setup_highlights()
-    if opts.colorizer ~= false then
-        M.setup_colorizer(opts.colorizer)
-    end
 end
 
 return M

@@ -227,7 +227,7 @@ function M.collect()
     local dap_by_ft, dap_entries = parse_dap_modules(root .. '/lua/dap/init.lua')
     raw.dap = dap_by_ft
 
-    local bsp_mod = require('bsp.servers')
+    local bsp_mod = require('dev.bsp.servers')
     local bsp_fts = bsp_mod.filetypes()
     assert(type(bsp_fts) == 'table', 'bsp.servers.filetypes() must return a list')
     for _, ft in ipairs(bsp_fts) do
@@ -411,7 +411,7 @@ function M.emit(manifest, stats)
             .. ' skipped)',
         '--   dap:        filetype catalog (MODULES) in lua/dap/init.lua',
         '--               (' .. stats.dap_entries .. ' entries)',
-        "--   bsp:        require('bsp.servers').filetypes()",
+        "--   bsp:        require('dev.bsp.servers').filetypes()",
         '--   browser:    lua/dev/browser (bidi+cdp) asserted JS/TS set',
         '-- Union filetypes: ' .. #fts,
         '',

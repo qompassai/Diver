@@ -363,6 +363,7 @@ function M.pick(target)
         end)
     end
     if #choices <= 200 then
+        -- selene: allow(must_use)
         select(choices)
         return
     end
@@ -383,6 +384,7 @@ function M.pick(target)
                 break
             end
         end
+        -- selene: allow(must_use)
         select(matches)
     end)
 end

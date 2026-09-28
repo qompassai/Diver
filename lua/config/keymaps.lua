@@ -4,7 +4,7 @@
 -- --------------------------------------------------
 local M = {}
 function M.setup()
-    require('mappings').setup()
+    require('config.mappings').setup()
 end
 
 return M

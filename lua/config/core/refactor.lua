@@ -8,9 +8,9 @@ local defaults = {
 }
 function M.setup(opts)
     assert(opts == nil or type(opts) == 'table', 'refactor options must be a table')
-    local ok, facade = pcall(require, 'refactor')
+    local ok, facade = pcall(require, 'dev.refactor')
     if not ok or type(facade) ~= 'table' or type(facade.setup) ~= 'function' then
-        return nil, 'Diver lua/refactor/ is unavailable: ' .. tostring(facade)
+        return nil, 'Diver lua/dev/refactor/ is unavailable: ' .. tostring(facade)
     end
     return facade.setup(vim.tbl_deep_extend('force', vim.deepcopy(defaults), opts or {}))
 end

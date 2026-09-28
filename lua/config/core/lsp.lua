@@ -11,7 +11,7 @@ local levels = vim.log.levels
 local lsp = vim.lsp
 local uv = vim.uv
 local traceback = debug.traceback
-local lspmap = require('mappings.lspmap')
+local lspmap = require('config.mappings.lspmap')
 assert(type(lspmap.on_attach) == 'function', 'mappings.lspmap.on_attach must be a function')
 local MODULE_NAME = 'config.core.lsp'
 local METHOD = {
@@ -161,7 +161,7 @@ local function setup_diagnostics()
                 min = diagnostic.severity.WARN,
             },
 
-            source = 'if_many',
+            source = true,
         },
 
         severity_sort = true,
@@ -192,6 +192,7 @@ local function setup_diagnostics()
             },
         },
 
+
         underline = {
             severity = {
                 min = diagnostic.severity.WARN,
@@ -212,9 +213,10 @@ local function setup_diagnostics()
                 min = diagnostic.severity.WARN,
             },
 
-            source = 'if_many',
+            source = true,
             spacing = 2,
         },
+
     })
 
     diagnostic.enable(true)

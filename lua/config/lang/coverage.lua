@@ -14,7 +14,7 @@
 --               (354 files, 345 loaded, 9 skipped)
 --   dap:        filetype catalog (MODULES) in lua/dap/init.lua
 --               (20 entries)
---   bsp:        require('bsp.servers').filetypes()
+--   bsp:        require('dev.bsp.servers').filetypes()
 --   browser:    lua/dev/browser (bidi+cdp) asserted JS/TS set
 -- Union filetypes: 448
 

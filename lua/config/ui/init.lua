@@ -4,7 +4,7 @@
 -- Copyright (C) 2026 Qompass AI, All rights reserved
 -- ----------------------------------------
 -- Native UI setup. Markdown decorations and PNG previews use the local
--- config.markdown.render and config.ui.image modules, not image.nvim.
+-- config.ui.render and config.ui.image modules, not image.nvim.
 
 ---Public front door to the interface toolkit, usable from every lua/ subdirectory.
 ---
@@ -20,13 +20,17 @@ local M = {}
 ---@type string[]
 local startup_modules = {
     'colors',
+    'cmdline',
     'decor',
     'float',
     'icons',
     'illuminate',
     'line',
-    'nerd',
+    'lsp_health',
+    -- 'nerd' deferred: 10k-line icon table loads lazily via facade on first
+    -- access (saves ~8ms startup). See facade_names metatable below.
     'padding',
+    'startup_profile',
     'themes',
 }
 
@@ -67,14 +71,14 @@ local function setup_image_preview()
 end
 
 local function setup_markdown_rendering()
-    -- Single attach path: config.markdown.render owns its FileType autocmd
+    -- Single attach path: config.ui.render owns its FileType autocmd
     -- and the enable/disable lifecycle. The duplicate MarkdownRendering
     -- augroup that used to live here is gone; setup() is idempotent, so
     -- calling it from both this (currently unused) entry point and the
     -- boot sequence can never double-attach.
-    local render = require('config.markdown.render')
-    assert(type(render) == 'table', 'config.markdown.render must return a module table')
-    assert(type(render.setup) == 'function', 'config.markdown.render must expose setup()')
+    local render = require('config.ui.render')
+    assert(type(render) == 'table', 'config.ui.render must return a module table')
+    assert(type(render.setup) == 'function', 'config.ui.render must expose setup()')
 
     render.setup()
 end
@@ -92,7 +96,8 @@ function M.ui_config(_opts)
 end
 
 ---@class ConfigUiFacade
----@field colors table config.ui.colors: highlight groups and colorizer setup
+---@field colors table config.ui.colors: highlight groups setup
+---@field cmdline table config.ui.cmdline: native floating cmdline
 ---@field decor table config.ui.decor: treesitter decorations and textobjects
 ---@field float table config.ui.float: floating terminal windows
 ---@field icons table config.ui.icons: icon tables and devicons wiring
@@ -106,6 +111,7 @@ end
 ---@type table<string, boolean>
 local facade_names = {
     colors = true,
+    cmdline = true, -- native floating cmdline
     decor = true,
     float = true,
     icons = true,

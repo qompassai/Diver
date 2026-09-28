@@ -16,6 +16,7 @@ vim.api.nvim_create_autocmd('FileType', {
     end,
 })
 
+-- selene: allow(global_usage)
 _G.apex_foldexpr = function(lnum)
     local line = vim.fn.getline(lnum)
     if line:match('^%s*//%s*#region%b') or line:match('^%s*%(%*%s*#region.*%*%)') then

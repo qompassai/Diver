@@ -492,6 +492,7 @@ local function native_picker(session, items, sink, prompt)
         end)
     end
     if #items <= 200 then
+        -- selene: allow(must_use)
         select(items)
         return
     end
@@ -508,8 +509,10 @@ local function native_picker(session, items, sink, prompt)
             return
         end
         if query == '' then
+            -- selene: allow(must_use)
             select(vim.list_slice(items, 1, 200))
         else
+            -- selene: allow(must_use)
             select(fn.matchfuzzy(items, query, { key = 'label', limit = 200 }))
         end
     end)
