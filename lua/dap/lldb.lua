@@ -221,7 +221,11 @@ local function adapter_env(path)
     local cached = adapter_env_cache[path]
 
     if cached ~= nil then
-        return cached == false and nil or cached
+        if cached == false then
+            return nil
+        end
+
+        return cached
     end
 
     local dir = missing_libpython_dir(path)
@@ -241,7 +245,11 @@ local function adapter_env(path)
 
     adapter_env_cache[path] = env
 
-    return env == false and nil or env
+    if env == false then
+        return nil
+    end
+
+    return env
 end
 
 ---@return string?
@@ -436,6 +444,14 @@ function M.build_launch(opts)
         return nil, 'build_launch requires opts.program'
     end
 
+    if opts.args ~= nil and type(opts.args) ~= 'table' then
+        return nil, 'build_launch requires opts.args to be a list of strings'
+    end
+
+    if opts.cwd ~= nil and not nonempty_string(opts.cwd) then
+        return nil, 'build_launch requires opts.cwd to be a non-empty string'
+    end
+
     local config = {
         name = opts.name or 'LLDB: Launch',
         type = SOURCE,
@@ -466,15 +482,15 @@ end
 function M.build_attach(opts)
     opts = opts or {}
 
-    if opts.pid == nil then
-        return nil, 'build_attach requires opts.pid'
+    if type(opts.pid) ~= 'number' or opts.pid < 1 or opts.pid % 1 ~= 0 then
+        return nil, 'build_attach requires opts.pid to be a positive integer'
     end
 
     return {
         name = opts.name or ('LLDB: Attach %d'):format(opts.pid),
         type = SOURCE,
         request = 'attach',
-        pid = opts.pid,
+        pid = math.floor(opts.pid),
     }
 end
 
@@ -513,8 +529,8 @@ function M.build_remote(opts)
         return nil, 'build_remote requires opts.host'
     end
 
-    if opts.port == nil or opts.port < 1 or opts.port > 65535 then
-        return nil, 'build_remote requires opts.port in 1..65535'
+    if type(opts.port) ~= 'number' or opts.port < 1 or opts.port > 65535 or opts.port % 1 ~= 0 then
+        return nil, 'build_remote requires opts.port to be an integer in 1..65535'
     end
 
     if opts.host ~= '127.0.0.1' and opts.host ~= 'localhost' and opts.host ~= '::1' then

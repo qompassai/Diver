@@ -223,7 +223,7 @@ local function gdb_major_version(path)
     -- Typical first line: "GNU gdb (GDB) 15.2".
     --
     local first = trim(result.stdout:match('[^\r\n]*') or '')
-    local major = first:match('%((.-GDB.-)%) (%d+)%.') or first:match('GDB%s+(%d+)%.')
+    local major = first:match('%(.-GDB.-%) (%d+)%.') or first:match('GDB%s+(%d+)%.')
 
     if major == nil then
         major = first:match('(%d+)%.%d+')
@@ -357,6 +357,14 @@ function M.build_launch(opts)
         return nil, 'build_launch requires opts.program'
     end
 
+    if opts.args ~= nil and type(opts.args) ~= 'table' then
+        return nil, 'build_launch requires opts.args to be a list of strings'
+    end
+
+    if opts.cwd ~= nil and not nonempty_string(opts.cwd) then
+        return nil, 'build_launch requires opts.cwd to be a non-empty string'
+    end
+
     return {
         name = opts.name or 'GDB: Launch',
         type = SOURCE,
@@ -373,15 +381,15 @@ end
 function M.build_attach(opts)
     opts = opts or {}
 
-    if opts.pid == nil then
-        return nil, 'build_attach requires opts.pid'
+    if type(opts.pid) ~= 'number' or opts.pid < 1 or opts.pid % 1 ~= 0 then
+        return nil, 'build_attach requires opts.pid to be a positive integer'
     end
 
     return {
         name = opts.name or ('GDB: Attach %d'):format(opts.pid),
         type = SOURCE,
         request = 'attach',
-        pid = opts.pid,
+        pid = math.floor(opts.pid),
     }
 end
 

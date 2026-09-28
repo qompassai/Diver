@@ -706,6 +706,36 @@ end
 ---@field command string
 ---@field args string[]
 
+---Ask the shared lldb foundation for a resolved adapter, or nil when the
+---foundation is unavailable or finds no working lldb-dap. The foundation
+---owns executable discovery (environment overrides, tilde expansion,
+---libpython LD_LIBRARY_PATH handling); this module keeps its legacy
+---candidate list only as a fallback so the two never drift.
+---@return table?
+local function foundation_adapter()
+    local ok, foundation = pcall(require, 'dap.lldb')
+
+    if not ok or type(foundation) ~= 'table' then
+        return nil
+    end
+
+    if type(foundation.resolve_adapter) ~= 'function' then
+        return nil
+    end
+
+    local resolved_ok, adapter = pcall(foundation.resolve_adapter)
+
+    if not resolved_ok or type(adapter) ~= 'table' then
+        return nil
+    end
+
+    if type(adapter.command) ~= 'string' or adapter.command == '' then
+        return nil
+    end
+
+    return adapter
+end
+
 ---@return LldbDapAdapter?
 function M.resolve_adapter()
     if cached_adapter_command and executable(cached_adapter_command) then
@@ -717,14 +747,21 @@ function M.resolve_adapter()
         }
     end
 
-    for _, candidate in ipairs(adapter_candidates()) do
-        if candidate ~= '' and executable(candidate) then
-            cached_adapter_command = executable_path(candidate) or candidate
-            break
+    local foundation = foundation_adapter()
+
+    if foundation ~= nil then
+        cached_adapter_command = foundation.command
+    else
+        for _, candidate in ipairs(adapter_candidates()) do
+            if candidate ~= '' and executable(candidate) then
+                cached_adapter_command = executable_path(candidate) or candidate
+                break
+            end
         end
+
+        cached_adapter_command = cached_adapter_command or xcrun_lldb_dap()
     end
 
-    cached_adapter_command = cached_adapter_command or xcrun_lldb_dap()
     if not cached_adapter_command then
         notify(
             'lldb-dap was not found. On Arch Linux install the lldb '
@@ -1070,6 +1107,17 @@ function M.attach_remote()
     local host = trim(input('Remote host: ', '127.0.0.1'))
     if not valid_host(host) then
         notify('Remote host contains invalid characters', vim.log.levels.ERROR)
+        return
+    end
+
+    if host ~= '127.0.0.1' and host ~= 'localhost' and host ~= '::1' then
+        -- Remote attach opens a debugger session against another machine.
+        -- Non-loopback targets need an explicit SSH tunnel; refuse to guess
+        -- one silently.
+        notify(
+            'refusing non-loopback remote host without an SSH tunnel: ' .. host,
+            vim.log.levels.ERROR
+        )
         return
     end
 
