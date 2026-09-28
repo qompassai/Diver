@@ -507,6 +507,25 @@ local function check_health()
         'serves: ' .. table.concat(FILETYPES, ', '),
     }
 
+    if M.remote_targets ~= nil then
+        --
+        -- One line: which remote templates are usable with this gdb.
+        -- check_health is defined before the remote section, so the
+        -- names are collected inline from the module table.
+        --
+        local names = {}
+
+        for name in pairs(M.remote_targets) do
+            names[#names + 1] = name
+        end
+
+        table.sort(names)
+
+        messages[#messages + 1] = ('remote template (attach target=host:port): %s'):format(
+            dap_ok and table.concat(names, ', ') or 'unavailable (GDB DAP missing)'
+        )
+    end
+
     if path ~= nil and not dap_ok then
         messages[#messages + 1] = ''
         messages[#messages + 1] = ('this gdb is too old for native DAP (need %d+, have %s)'):format(
@@ -613,6 +632,199 @@ function M.dap_supported()
     local path = find_gdb()
 
     return path ~= nil and supports_dap(path)
+end
+
+-- #################################################################
+-- Remote-target template: GDB as protocol concentrator.
+--
+-- VERDICT (2026-09-28, verified against the GDB manual's DAP page):
+-- GDB expresses a remote target in the *attach* request's `target`
+-- parameter: "The target to which GDB should connect. This is a
+-- string and is passed to the `target remote` command." There is no
+-- launch-request field for `target remote`, so every remote config
+-- below is { request = 'attach', target = 'host:port' }. The same
+-- page recommends supplying `program` for remote targets ("for many
+-- remote targets, this is not the case, and so this should be
+-- supplied"). Deliberately rejected: `stop_at_entry` (stopOnEntry
+-- is launch-only in GDB DAP) and `sysroot` / `solib_search_path`
+-- (GDB defines no DAP attach parameter for them; set them with GDB
+-- commands instead, e.g. via the DAP evaluate/repl or a .gdbinit).
+-- rr's debug-server port is set with --dbgport (verified against
+-- rr-debugger/rr#1990: `rr replay --dbgport 50505 ...`); there is no
+-- well-known default, so the rr entry carries no default_port and
+-- build_remote_target requires an explicit one.
+---@source https://sourceware.org/gdb/current/onlinedocs/gdb.html/Debugger-Adapter-Protocol.html
+---@source https://github.com/qemu/qemu/blob/HEAD/docs/system/gdb.rst
+---@source https://allstar.jhuapl.edu/repo/p4/amd64/openocd/doc/openocd.html/GDB-and-OpenOCD.html
+---@source https://lldb.llvm.org/resources/debugging.html
+
+local PORT_MIN = 1
+local PORT_MAX = 65535
+local DEFAULT_HOST = '127.0.0.1'
+
+---@class GdbRemoteTargetEntry
+---@field label string
+---@field default_port integer? well-known stub port; nil means the caller must pass opts.port
+---@field spawn_hint string exact command that starts the stub
+---@field description string
+
+---@type table<string, GdbRemoteTargetEntry>
+M.remote_targets = {
+    gdbserver = {
+        label = 'gdbserver',
+        default_port = nil,
+        spawn_hint = 'gdbserver :1234 ./prog',
+        description = 'Remote program under gdbserver: Neovim -> GDB DAP -> GDB RSP -> gdbserver.',
+    },
+    qemu = {
+        label = 'QEMU gdbstub',
+        default_port = 1234,
+        spawn_hint = 'qemu-system-x86_64 -s -S ...',
+        description = 'QEMU user/system emulation: Neovim -> GDB DAP -> QEMU gdbstub'
+            .. ' (-s listens on TCP 1234, -S freezes the guest at startup).',
+    },
+    openocd = {
+        label = 'OpenOCD',
+        default_port = 3333,
+        spawn_hint = 'openocd -f interface/<cfg> -f target/<cfg>',
+        description = 'OpenOCD GDB server for JTAG/SWD targets: Neovim -> GDB DAP -> OpenOCD GDB server.',
+    },
+    rr = {
+        label = 'rr replay',
+        default_port = nil,
+        spawn_hint = 'rr replay --dbgport <port> <trace>',
+        description = 'Deterministic replay: rr runs its own RSP debug server and GDB DAP'
+            .. ' attaches to it via target remote host:port (set the port with --dbgport).',
+    },
+    ['lldb-server'] = {
+        label = 'lldb-server',
+        default_port = nil,
+        spawn_hint = 'lldb-server gdbserver 127.0.0.1:1234 -- <prog>',
+        description = 'Remote LLDB: Neovim -> lldb-dap -> LLDB -> lldb-server speaking gdb-remote over TCP.',
+    },
+}
+
+---@return string[] sorted M.remote_targets keys, for deterministic output
+local function remote_target_names()
+    local names = {}
+
+    for name in pairs(M.remote_targets) do
+        names[#names + 1] = name
+    end
+
+    table.sort(names)
+
+    return names
+end
+
+---@class GdbRemoteTargetOpts
+---@field target string one of the M.remote_targets keys (required)
+---@field host? string stub host; defaults to 127.0.0.1; passed through as DAP data, never shell-interpolated
+---@field port? integer stub TCP port; required unless the target defines default_port
+---@field program? string local symbol file; recommended for remote targets
+---@field name? string configuration name override
+---@field sysroot? string rejected: no GDB-DAP attach parameter exists for it
+---@field solib_search_path? string rejected: no GDB-DAP attach parameter exists for it
+---@field stop_at_entry? boolean rejected: stopOnEntry is launch-only in GDB DAP
+
+---@param opts GdbRemoteTargetOpts
+---@return table?, string?
+function M.build_remote_target(opts)
+    opts = opts or {}
+
+    local entry = nil
+
+    if type(opts.target) == 'string' then
+        entry = M.remote_targets[opts.target]
+    end
+
+    if entry == nil then
+        return nil,
+            ('build_remote_target requires opts.target to be one of: %s'):format(
+                table.concat(remote_target_names(), ', ')
+            )
+    end
+
+    --
+    -- These have no expression in GDB DAP's attach parameters; fail
+    -- loudly instead of silently dropping them.
+    --
+    if opts.sysroot ~= nil then
+        return nil,
+            'build_remote_target: sysroot has no GDB-DAP attach expression; use `set sysroot` via evaluate/repl'
+    end
+
+    if opts.solib_search_path ~= nil then
+        return nil,
+            'build_remote_target: solib_search_path has no GDB-DAP attach expression;'
+                .. ' use `set solib-search-path` via evaluate/repl'
+    end
+
+    if opts.stop_at_entry ~= nil then
+        return nil,
+            'build_remote_target: stop_at_entry is launch-only in GDB DAP; remote attach has no such field'
+    end
+
+    local host = DEFAULT_HOST
+
+    if opts.host ~= nil then
+        if not nonempty_string(opts.host) then
+            return nil, 'build_remote_target requires opts.host to be a non-empty string'
+        end
+
+        host = opts.host
+    end
+
+    local port = opts.port
+
+    if port == nil then
+        port = entry.default_port
+
+        if port == nil then
+            return nil,
+                ('build_remote_target: %s defines no default port; pass opts.port'):format(opts.target)
+        end
+    end
+
+    if type(port) ~= 'number' or port % 1 ~= 0 or port < PORT_MIN or port > PORT_MAX then
+        return nil,
+            ('build_remote_target requires opts.port to be an integer in %d-%d'):format(
+                PORT_MIN,
+                PORT_MAX
+            )
+    end
+
+    port = math.floor(port)
+
+    local program = nil
+
+    if opts.program ~= nil then
+        if not nonempty_string(opts.program) then
+            return nil, 'build_remote_target requires opts.program to be a non-empty string'
+        end
+
+        local path = normalize(fn.expand(opts.program))
+        local stat = uv.fs_stat(path)
+
+        if stat == nil or stat.type ~= 'file' then
+            return nil, ('build_remote_target: program is not a file: %s'):format(path)
+        end
+
+        program = path
+    end
+
+    local config = {
+        name = opts.name or ('GDB: Remote %s'):format(entry.label),
+        type = SOURCE,
+        request = 'attach',
+        target = ('%s:%d'):format(host, port),
+    }
+
+    if program ~= nil then
+        config.program = program
+    end
+
+    return config
 end
 
 return M
