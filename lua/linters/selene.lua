@@ -24,6 +24,10 @@
 --- word (`Error` or `Warning`), a lint code like `unused_variable`, and a
 --- span with 0-based line and column numbers. A `Results:` summary trailer
 --- is printed after the JSON; it is not a diagnostic and gets skipped.
+--- When the project has no selene.toml, the linter passes its bundled
+--- fallback config (`selene-default.toml`), so a fresh checkout lints
+--- with every documented knob visible; a project's own selene.toml always
+--- wins and is never overridden.
 ---
 
 local diagnostic = vim.diagnostic
@@ -43,6 +47,15 @@ local max = math.max
 local type = type
 
 local SOURCE = 'selene'
+
+-- Bundled fallback config: every documented selene option with stock
+-- defaults, so a fresh checkout lints without anyone writing selene.toml.
+-- Only used when the project provides no selene.toml of its own.
+local DEFAULT_CONFIG = fs.joinpath(vim.fn.stdpath('config'), 'lua', 'linters', 'selene-default.toml')
+
+local CONFIG_MARKERS = {
+    'selene.toml',
+}
 
 local SEVERITIES = {
     Error = ERROR,
@@ -187,6 +200,65 @@ local function parse(output, _)
     return diagnostics
 end
 
+---@param path string
+---@param cwd string
+---@return string
+local function absolute(path, cwd)
+    if path:sub(1, 1) ~= '/' and not path:match('^%a:[/\\]') then
+        path = fs.joinpath(cwd, path)
+    end
+    return fs.normalize(path)
+end
+
+---@param filename string absolute path of the linted file
+---@return boolean true when the file's directory tree provides selene configuration
+local function has_project_config(filename)
+    return fs.root(filename, CONFIG_MARKERS) ~= nil
+end
+
+---@return string? absolute path of the bundled fallback config, or nil when absent
+local function default_config()
+    if vim.fn.filereadable(DEFAULT_CONFIG) == 1 then
+        return DEFAULT_CONFIG
+    end
+    return nil
+end
+
+---@param context LintContext
+---@return string[]
+local function args(context)
+    assert(context.filename ~= '')
+    assert(context.root ~= '')
+
+    local argv = {
+        -- One JSON object per line; the default rich text is not parsed.
+        '--display-style',
+        'json',
+        -- Read the buffer from stdin.
+        '-',
+    }
+
+    -- Precedence: explicit env override > project selene.toml (selene
+    -- auto-discovers it from the working directory; no flag needed) >
+    -- bundled fallback.
+    local config = vim.env.NVIM_SELENE_CONFIG
+    if type(config) == 'string' and config ~= '' then
+        argv[#argv + 1] = '--config'
+        argv[#argv + 1] = config
+    else
+        local document = absolute(context.filename, context.root)
+        if not has_project_config(document) then
+            local fallback = default_config()
+            if fallback then
+                argv[#argv + 1] = '--config'
+                argv[#argv + 1] = fallback
+            end
+        end
+    end
+
+    return argv
+end
+
 ---@param context LintContext
 ---@return string
 local function cwd(context)
@@ -201,13 +273,7 @@ return ---@type Linter
 
     cmd = 'selene',
 
-    args = {
-        -- One JSON object per line; the default rich text is not parsed.
-        '--display-style',
-        'json',
-        -- Read the buffer from stdin.
-        '-',
-    },
+    args = args,
 
     append_fname = false,
 

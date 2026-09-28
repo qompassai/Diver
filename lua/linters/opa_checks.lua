@@ -322,9 +322,10 @@ local function parse_issue(context, record, group, issue)
     local query
 
     if issue.metadata ~= nil then
-        if type(issue.metadata) ~= 'table' then
-            malformed = true
-        elseif issue.metadata.query ~= nil and type(issue.metadata.query) ~= 'string' then
+        if
+            type(issue.metadata) ~= 'table'
+            or (issue.metadata.query ~= nil and type(issue.metadata.query) ~= 'string')
+        then
             malformed = true
         elseif type(issue.metadata.query) == 'string' then
             query = clean(issue.metadata.query)

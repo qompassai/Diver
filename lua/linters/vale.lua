@@ -152,8 +152,6 @@ local function extension(context)
 
     local ext = vim.fn.fnamemodify(context.filename, ':e')
     if ext == '' then
-        -- Vale requires an extension to pick a parser; plain text is the
-        -- honest fallback.
         return '.txt'
     end
 
@@ -181,18 +179,14 @@ local function parse(output, context)
     if not ok or type(decoded) ~= 'table' then
         return diagnostics
     end
-
-    -- Vale keys the findings by `stdin` plus the extension it was given.
     local findings = decoded['stdin' .. extension(context)]
     if not vim.islist(findings) then
         return diagnostics
     end
-
     for _, item in ipairs(findings) do
         if #diagnostics >= DIAGNOSTICS_MAX then
             break
         end
-
         local diagnostic_item = diagnostic_from_finding(item)
         if diagnostic_item ~= nil then
             diagnostics[#diagnostics + 1] = diagnostic_item
@@ -210,13 +204,9 @@ local function args(context)
     assert(context.filename ~= '')
 
     return {
-        -- Keep the exit code 0 even when findings exist; diagnostics come
-        -- from the JSON, not the exit code.
         '--no-exit',
-        -- Machine-readable output; the default line format is not parsed.
         '--output',
         'JSON',
-        -- Associates the stdin payload with a file type for parsing.
         '--ext',
         extension(context),
     }
@@ -232,26 +222,17 @@ end
 
 return ---@type Linter
 {
-    automatic = true,
-
+    automatic = false,
     cmd = 'vale',
-
     args = args,
-
     append_fname = false,
-
     cwd = cwd,
-
     parser = parse,
-
     root_markers = {
         '.vale.ini',
         '.git',
     },
-
     stdin = true,
-
     stream = 'stdout',
-
     timeout = TIMEOUT_MS,
 }

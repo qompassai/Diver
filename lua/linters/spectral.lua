@@ -33,6 +33,9 @@ local SEVERITIES = {
     [2] = severity.INFO,
     [3] = severity.HINT,
 }
+-- Bundled fallback ruleset, used only when the project provides none and
+-- NVIM_SPECTRAL_RULESET is unset. A discovered project ruleset always wins.
+local DEFAULT_RULESET = fs.joinpath(vim.fn.stdpath('config'), 'lua', 'linters', 'spectral-default-ruleset.yaml')
 
 local function nonempty(value)
     return type(value) == 'string' and value ~= '' and value or nil
@@ -58,12 +61,29 @@ local function absolute(path, cwd)
     return fs.normalize(path)
 end
 
+---Directory containing a Spectral ruleset for the document, or nil when the
+---document's tree provides none.
+---@param filename string absolute document path
+---@return string?
+local function find_ruleset(filename)
+    return fs.root(filename, RULESET_MARKERS)
+end
+
+---Absolute path of the bundled fallback ruleset, or nil when it is absent.
+---@return string?
+local function default_ruleset()
+    if vim.fn.filereadable(DEFAULT_RULESET) == 1 then
+        return DEFAULT_RULESET
+    end
+    return nil
+end
+
 local function root(context)
     local cwd = nonempty(context.cwd) or vim.fn.getcwd()
     local filename = nonempty(context.filename)
     if filename then
         filename = absolute(filename, cwd)
-        return fs.root(filename, RULESET_MARKERS)
+        return find_ruleset(filename)
             or nonempty(context.root)
             or fs.root(filename, ROOT_MARKERS)
             or fs.dirname(filename)
@@ -168,7 +188,7 @@ local function parse(output, context)
             context,
             'spectral-error',
             'Spectral did not return a JSON report. '
-                .. (text ~= '' and clean(text) or 'Check the executable and project ruleset.')
+            .. (text ~= '' and clean(text) or 'Check the executable and project ruleset.')
         )
         item.severity = severity.ERROR
         return { item }
@@ -246,7 +266,9 @@ end
 ---@param context LintContext
 ---@return string[]
 local function arguments(context)
+    local cwd = nonempty(context.cwd) or vim.fn.getcwd()
     local filename = assert(nonempty(context.filename), 'Spectral requires a named buffer')
+    local document = absolute(filename, cwd)
     local args = {
         'lint',
         '--format',
@@ -258,11 +280,18 @@ local function arguments(context)
         '--fail-severity',
         'error',
         '--stdin-filepath',
-        absolute(filename, nonempty(context.cwd) or vim.fn.getcwd()),
+        document,
     }
+    -- Precedence: explicit env override > discovered project ruleset
+    -- (Spectral auto-discovers it; no flag needed) > bundled fallback.
     local ruleset = nonempty(vim.env.NVIM_SPECTRAL_RULESET)
     if ruleset then
         args[#args + 1], args[#args + 2] = '--ruleset', absolute(ruleset, root(context))
+    elseif find_ruleset(document) == nil then
+        local fallback = default_ruleset()
+        if fallback then
+            args[#args + 1], args[#args + 2] = '--ruleset', fallback
+        end
     end
     return args
 end

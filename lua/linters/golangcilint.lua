@@ -8,7 +8,7 @@ return ---@type vim.lint.Config
     cmd = 'golangci-lint',
     stdin = false,
     append_fname = true,
-    args = { 'run', '--out-format', 'line-number', '--path-prefix', vim.loop.cwd() },
+    args = { 'run', '--out-format', 'line-number', '--path-prefix', vim.uv.cwd() },
     stream = 'stdout',
     ignore_exitcode = true,
     ---@param output string

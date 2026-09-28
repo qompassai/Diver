@@ -24,6 +24,10 @@
 --- `file:line:column - Unknown word (teh)`. `--no-color`, `--no-progress`,
 --- and `--no-summary` keep the output to just those lines. Misspellings are
 --- hints, not errors: the word in parentheses becomes the diagnostic code.
+--- When the project has no cspell configuration, the linter passes its
+--- bundled fallback config (`cspell-default.json`), so a fresh checkout
+--- lints clean without anyone writing cspell.json; a project's own config
+--- always wins and is never overridden.
 ---
 
 local diagnostic = vim.diagnostic
@@ -42,6 +46,22 @@ local max = math.max
 local type = type
 
 local SOURCE = 'cspell'
+
+-- Bundled fallback config: project vocabulary so a fresh checkout lints
+-- clean without anyone writing cspell.json. Only used when the project
+-- provides no cspell configuration of its own.
+local DEFAULT_CONFIG = fs.joinpath(vim.fn.stdpath('config'), 'lua', 'linters', 'cspell-default.json')
+
+-- Markers that mean "the project owns cspell configuration". package.json
+-- counts because cspell reads its own "cspell" key from it.
+local CONFIG_MARKERS = {
+    '.cspell.json',
+    'cspell.json',
+    'cspell.jsonc',
+    'cspell.yaml',
+    'cspell.yml',
+    'package.json',
+}
 
 -- file:line:col - message (the filename is a stdin:// URL, so the greedy
 -- `.+` backtracks to the LAST `:line:col - ` triple)
@@ -156,12 +176,37 @@ local function parse(output, _)
     return diagnostics
 end
 
+---@param path string
+---@param cwd string
+---@return string
+local function absolute(path, cwd)
+    if path:sub(1, 1) ~= '/' and not path:match('^%a:[/\\]') then
+        path = fs.joinpath(cwd, path)
+    end
+    return fs.normalize(path)
+end
+
+---@param filename string absolute path of the linted file
+---@return boolean true when the file's directory tree provides cspell configuration
+local function has_project_config(filename)
+    return fs.root(filename, CONFIG_MARKERS) ~= nil
+end
+
+---@return string? absolute path of the bundled fallback config, or nil when absent
+local function default_config()
+    if vim.fn.filereadable(DEFAULT_CONFIG) == 1 then
+        return DEFAULT_CONFIG
+    end
+    return nil
+end
+
 ---@param context LintContext
 ---@return string[]
 local function args(context)
     assert(context.filename ~= '')
+    assert(context.root ~= '')
 
-    return {
+    local argv = {
         'lint',
         -- Plain output: no colors, no progress bar, no summary trailer.
         '--no-color',
@@ -170,6 +215,25 @@ local function args(context)
         -- Names the stdin payload so dictionaries and file-type rules apply.
         'stdin://' .. context.filename,
     }
+
+    -- Precedence: explicit env override > project config (cspell
+    -- auto-discovers it; no flag needed) > bundled fallback.
+    local config = vim.env.NVIM_CSPELL_CONFIG
+    if type(config) == 'string' and config ~= '' then
+        argv[#argv + 1] = '--config'
+        argv[#argv + 1] = config
+    else
+        local document = absolute(context.filename, context.root)
+        if not has_project_config(document) then
+            local fallback = default_config()
+            if fallback then
+                argv[#argv + 1] = '--config'
+                argv[#argv + 1] = fallback
+            end
+        end
+    end
+
+    return argv
 end
 
 ---@param context LintContext
@@ -192,7 +256,6 @@ return ---@type Linter
 
     cwd = cwd,
 
-    -- CSpell exits 0 when clean and 1 when it found unknown words.
     exit_codes = { 0, 1 },
 
     parser = parse,

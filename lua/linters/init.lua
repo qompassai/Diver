@@ -1,8 +1,5 @@
 --- Native linter runner — the foreman that runs all your linters.
 ---
---- Plain-language version: the linter adapter files each know how to run one checker; this module is the foreman.
---- It decides which checkers apply to the current file, runs them (without blocking your typing), collects their
---- complaints, and shows them as diagnostics. It runs on lint triggers; each checker tool must be installed to
 --- produce results.
 ---@module 'linters'
 -- /qompassai/Diver/lua/linters/init.lua
@@ -498,7 +495,7 @@ M.linters_by_ft = {
         'markdownlint_cli2',
         'markdown_table_formatter',
         'panache',
-        'vale',
+        -- 'vale',
         'write_good',
         --	'rumdl',
     },
@@ -1343,9 +1340,7 @@ local function on_linter_result(state, finish, job, result)
     end
     local status
     local reason
-    if #parsed > 0 then
-        status = 'failed'
-    elseif not accepts_exit_code(definition, result.code) then
+    if #parsed > 0 or not accepts_exit_code(definition, result.code) then
         status = 'failed'
     elseif result.code == 0 then
         status = 'ok'
@@ -1443,7 +1438,9 @@ function M.run_linter(name, bufnr, opts)
                 if jobs[state.key] == job then
                     jobs[state.key] = nil
                 end
-                pcall(job.kill, job, SIGTERM)
+                if job ~= nil then
+                    pcall(job.kill, job, SIGTERM)
+                end
             end
             finish(status or 'stale', { reason = 'run cancelled by caller', changedtick = state.changedtick })
         end,
@@ -1556,9 +1553,9 @@ local known_definition_fields = {
     args = true,
     automatic = true,
     available_rules = true, -- adapter-local
-    cli_choices = true, -- adapter-local
+    cli_choices = true,   -- adapter-local
     cmd = true,
-    condition = true, -- adapter-local
+    condition = true,     -- adapter-local
     cwd = true,
     deprecated_rules = true, -- adapter-local
     env = true,
@@ -1574,7 +1571,7 @@ local known_definition_fields = {
     rule_aliases = true, -- adapter-local
     rule_levels = true, -- adapter-local
     schema = true,
-    setup = true, -- adapter-local
+    setup = true,     -- adapter-local
     stdin = true,
     stream = true,
     timeout = true,
@@ -1892,4 +1889,5 @@ function M.setup(opts)
         force = true,
     })
 end
+
 return M

@@ -41,8 +41,6 @@ return ---@type vim.lint.Config
                         local sev
                         if level == 'error' then
                             sev = vim.diagnostic.severity.ERROR
-                        elseif level == 'warning' then
-                            sev = vim.diagnostic.severity.WARN
                         elseif level == 'info' then
                             sev = vim.diagnostic.severity.INFO
                         else
