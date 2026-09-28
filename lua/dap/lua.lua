@@ -787,7 +787,13 @@ local function show_process()
         return
     end
 
-    notify(('%d  [%s]  %s'):format(selected_process.pid, selected_process.executable, selected_process.command))
+    notify(
+        ('%d  [%s]  %s'):format(
+            selected_process.pid,
+            selected_process.executable,
+            selected_process.command
+        )
+    )
 end
 
 local function check_adapter()
@@ -854,7 +860,9 @@ local function check_environment()
 end
 
 M.adapter = {
-    command = lua_debug_adapter() or 'lua-debug',
+    -- Declarative placeholder: M.setup() resolves the real path and warns
+    -- when the adapter is absent; no PATH probing happens at require time.
+    command = 'lua-debug',
     name = ADAPTER_NAME,
     type = 'executable',
 }
@@ -1000,4 +1008,5 @@ function M.teardown()
 
     selected_process = nil
 end
+
 return M

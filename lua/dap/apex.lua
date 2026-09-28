@@ -1,9 +1,10 @@
 --- Salesforce Apex debugger — debug Apex code from Neovim.
 ---
---- Plain-language version: DAP (Debug Adapter Protocol) is the agreed-upon language debuggers use to talk to
---- editors: set breakpoints, step through code, inspect variables. This module is the Apex (Salesforce's language)
---- side of that conversation. It runs when you start an Apex debug session; it needs the Apex debug adapter
---- installed.
+--- Plain-language version: DAP (Debug Adapter Protocol) is the agreed-upon
+--- language debuggers use to talk to editors: set breakpoints, step through
+--- code, inspect variables. This module is the Apex (Salesforce's language)
+--- side of that conversation. It runs when you start an Apex debug session;
+--- it needs the Apex debug adapter installed.
 ---@module 'dap.apex'
 -- #################################################################
 -- /qompassai/diver/lua/dap/apex.lua
@@ -36,6 +37,9 @@ local M = {}
 
 local SOURCE = 'apex-dap'
 
+--- Bound for Salesforce CLI invocations; a hung `sf` must not freeze the editor.
+local SF_TIMEOUT_MS = 30000
+
 ---@type string[]
 local ROOT_MARKERS = {
     'sfdx-project.json',
@@ -64,7 +68,15 @@ local VSCODE_EXTENSION_ROOTS = {
 
     fs.joinpath(fn.expand('~'), '.vscode-oss', 'extensions'),
 
-    fs.joinpath(fn.expand('~'), '.var', 'app', 'com.visualstudio.code', 'data', 'vscode', 'extensions'),
+    fs.joinpath(
+        fn.expand('~'),
+        '.var',
+        'app',
+        'com.visualstudio.code',
+        'data',
+        'vscode',
+        'extensions'
+    ),
 }
 
 ---@class ApexDapState
@@ -294,7 +306,10 @@ local function resolve_adapter(env_name, relative_paths, adapter_file)
             end
         end
 
-        notify(('%s does not resolve to a usable adapter: %s'):format(env_name, candidate), levels.WARN)
+        notify(
+            ('%s does not resolve to a usable adapter: %s'):format(env_name, candidate),
+            levels.WARN
+        )
     end
 
     local salesforce_root = vim.env.NVIM_SALESFORCE_DAP_ROOT
@@ -316,8 +331,11 @@ local function replay_adapter()
         return state.replay_adapter
     end
 
-    state.replay_adapter =
-        resolve_adapter('NVIM_APEX_REPLAY_ADAPTER', REPLAY_ADAPTER_RELATIVE_PATHS, 'apexReplayDebug.js')
+    state.replay_adapter = resolve_adapter(
+        'NVIM_APEX_REPLAY_ADAPTER',
+        REPLAY_ADAPTER_RELATIVE_PATHS,
+        'apexReplayDebug.js'
+    )
 
     return state.replay_adapter
 end
@@ -328,8 +346,11 @@ local function interactive_adapter()
         return state.interactive_adapter
     end
 
-    state.interactive_adapter =
-        resolve_adapter('NVIM_APEX_INTERACTIVE_ADAPTER', INTERACTIVE_ADAPTER_RELATIVE_PATHS, 'apexDebug.js')
+    state.interactive_adapter = resolve_adapter(
+        'NVIM_APEX_INTERACTIVE_ADAPTER',
+        INTERACTIVE_ADAPTER_RELATIVE_PATHS,
+        'apexDebug.js'
+    )
 
     return state.interactive_adapter
 end
@@ -339,17 +360,36 @@ local function node()
     return executable_path('node') or 'node'
 end
 
----@param path string?
+--- Builds a launch gate for an adapter kind: resolves the script at launch
+--- time (cached in module state), writes it into the already-registered
+--- adapter table, and aborts the session with an ERROR notify when the
+--- adapter is missing, instead of spawning node with no script.
+---@param kind 'replay'|'interactive'
+---@param adapter_key string
 ---@param description string
----@return string
-local function required_adapter(path, description)
-    if path ~= nil then
-        return path
+---@return fun(configuration: table, on_config: fun(config: table))
+local function make_launch_gate(kind, adapter_key, description)
+    return function(configuration, on_config)
+        local script = kind == 'replay' and replay_adapter() or interactive_adapter()
+
+        if script == nil then
+            notify(
+                ('%s adapter was not found; cannot start debug session'):format(description),
+                levels.ERROR
+            )
+
+            return
+        end
+
+        local adapter = M.adapters[adapter_key]
+
+        if adapter ~= nil then
+            adapter.command = node()
+            adapter.args = { script }
+        end
+
+        on_config(configuration)
     end
-
-    notify(('%s adapter was not found'):format(description), levels.ERROR)
-
-    return '/nonexistent/qompass-apex-dap-adapter.js'
 end
 
 ---@return string
@@ -518,7 +558,7 @@ local function run_sf(arguments)
         return vim.system(command, {
             cwd = project_root(),
             text = true,
-        }):wait()
+        }):wait(SF_TIMEOUT_MS)
     end)
 
     if not ok then
@@ -650,9 +690,9 @@ M.adapters = {
 
         command = node(),
 
-        args = {
-            required_adapter(replay_adapter(), 'Apex Replay'),
-        },
+        args = {},
+
+        enrich_config = make_launch_gate('replay', 'apex-replay', 'Apex Replay'),
 
         options = {
             source_filetype = 'apex',
@@ -666,9 +706,9 @@ M.adapters = {
 
         command = node(),
 
-        args = {
-            required_adapter(interactive_adapter(), 'Apex Interactive'),
-        },
+        args = {},
+
+        enrich_config = make_launch_gate('interactive', 'apex', 'Apex Interactive'),
 
         options = {
             source_filetype = 'apex',

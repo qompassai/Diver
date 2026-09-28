@@ -200,6 +200,40 @@ local function first_executable(paths)
     return nil
 end
 
+--- Extract the numeric components of an extension directory name so
+--- multi-digit versions compare numerically, not lexicographically
+--- (`bash-debug-10` must sort newer than `bash-debug-9`).
+---@param name string
+---@return integer[]
+local function version_parts(name)
+    local parts = {}
+
+    for digits in name:gmatch('%d+') do
+        parts[#parts + 1] = tonumber(digits) or 0
+    end
+
+    return parts
+end
+
+---@param left string
+---@param right string
+---@return boolean
+local function newer_version(left, right)
+    local left_parts = version_parts(left)
+    local right_parts = version_parts(right)
+
+    for index = 1, math.max(#left_parts, #right_parts) do
+        local left_num = left_parts[index] or 0
+        local right_num = right_parts[index] or 0
+
+        if left_num ~= right_num then
+            return left_num > right_num
+        end
+    end
+
+    return left > right
+end
+
 ---@param pattern string
 ---@return string?
 local function newest_file(pattern)
@@ -210,7 +244,7 @@ local function newest_file(pattern)
     end
 
     table.sort(matches, function(left, right)
-        return left > right
+        return newer_version(left, right)
     end)
 
     for index = 1, #matches do
@@ -290,8 +324,22 @@ local function adapter_javascript()
 
     local globs = {
         fs.joinpath(home, '.vscode', 'extensions', 'rogalmic.bash-debug-*', 'out', 'bashDebug.js'),
-        fs.joinpath(home, '.vscode-oss', 'extensions', 'rogalmic.bash-debug-*', 'out', 'bashDebug.js'),
-        fs.joinpath(home, '.vscode-server', 'extensions', 'rogalmic.bash-debug-*', 'out', 'bashDebug.js'),
+        fs.joinpath(
+            home,
+            '.vscode-oss',
+            'extensions',
+            'rogalmic.bash-debug-*',
+            'out',
+            'bashDebug.js'
+        ),
+        fs.joinpath(
+            home,
+            '.vscode-server',
+            'extensions',
+            'rogalmic.bash-debug-*',
+            'out',
+            'bashDebug.js'
+        ),
         fs.joinpath(
             home,
             '.local',
@@ -675,12 +723,12 @@ local function launch_defaults()
         args = program_arguments,
         cwd = root,
         env = environment,
-        pathBash = bash() or '/usr/bin/bash',
+        pathBash = bash(),
         pathBashdb = bashdb(),
         pathBashdbLib = bashdb_lib(),
-        pathCat = cat() or '/usr/bin/cat',
-        pathMkfifo = mkfifo() or '/usr/bin/mkfifo',
-        pathPkill = pkill() or '/usr/bin/pkill',
+        pathCat = cat(),
+        pathMkfifo = mkfifo(),
+        pathPkill = pkill(),
         request = 'launch',
         showDebugOutput = true,
         terminalKind = terminal_kind(),
@@ -725,11 +773,12 @@ local function dependency_status()
     }
 end
 
-local initial_adapter = adapter_spec()
-
+--- Adapter descriptor stays declarative at require time; the PATH/filesystem
+--- probe runs lazily in setup() so merely requiring the module has no
+--- filesystem side effects.
 M.adapter = {
-    args = initial_adapter ~= nil and initial_adapter.args or {},
-    command = initial_adapter ~= nil and initial_adapter.command or 'bash-debug-adapter',
+    args = {},
+    command = 'bash-debug-adapter',
     name = ADAPTER_NAME,
     type = 'executable',
 }
@@ -841,6 +890,10 @@ function M.setup()
     local adapter = adapter_spec()
 
     if adapter == nil then
+        vim.schedule(function()
+            notify('Bash DAP adapter is not available', levels.WARN)
+        end)
+
         return
     end
 

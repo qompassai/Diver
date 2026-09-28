@@ -423,10 +423,6 @@ M.adapter = {
     type = 'executable',
 }
 
-M.filetypes = {
-    'rust',
-}
-
 M.configurations = {
     rust = {
         {

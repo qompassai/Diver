@@ -30,6 +30,10 @@ local M = {}
 
 local SOURCE = 'nix-dap'
 
+--- Bound for `nix` CLI invocations (build, eval probes); a hung child must
+--- not freeze the editor.
+local NIX_COMMAND_TIMEOUT_MS = 300000
+
 ---@type string[]
 local ROOT_MARKERS = {
     'flake.nix',
@@ -160,7 +164,7 @@ local function system(command, cwd)
         return vim.system(command, {
             cwd = cwd,
             text = true,
-        }):wait()
+        }):wait(NIX_COMMAND_TIMEOUT_MS)
     end)
 
     if not ok then
@@ -409,7 +413,10 @@ local function run_nix(arguments, title)
 
         on_exit = function(_, code)
             vim.schedule(function()
-                notify(('%s exited with status %d'):format(title, code), code == 0 and levels.INFO or levels.WARN)
+                notify(
+                    ('%s exited with status %d'):format(title, code),
+                    code == 0 and levels.INFO or levels.WARN
+                )
             end)
         end,
     })

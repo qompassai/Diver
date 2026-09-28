@@ -31,6 +31,15 @@ local M = {}
 
 local SOURCE = 'sql-debug'
 
+--- Bound for `PRAGMA compile_options` and other child probes; a hung child
+--- must not freeze the editor.
+local SQL_COMMAND_TIMEOUT_MS = 30000
+
+--- Maximum bytes of buffer text the statement scanner will walk. Larger
+--- buffers fall back to the cursor line so a huge SQL file cannot freeze
+--- the editor.
+local STATEMENT_SCAN_MAX_BYTES = 65536
+
 ---@alias SqlDebugBackend
 ---| "auto"
 ---| "generic"
@@ -415,128 +424,211 @@ local function dollar_quote_at(text, position)
     local tail = text:sub(position)
     return tail:match('^%$%$') or tail:match('^%$[%a_][%w_]*%$')
 end
+---@class SqlScanState
+---@field index integer
+---@field state_name string
+---@field dollar_tag string?
+---@field block_depth integer
+---@field statement_start integer
+---@field statement_end integer
+
+---@param text string
+---@param state SqlScanState
+---@param cursor_offset integer
+---@return boolean -- true when the scan found the statement end
+local function scan_normal(text, state, cursor_offset)
+    local index = state.index
+    local char = text:sub(index, index)
+    local next_char = text:sub(index + 1, index + 1)
+
+    if char == '-' and next_char == '-' then
+        state.state_name = 'line-comment'
+        state.index = index + 2
+    elseif char == '/' and next_char == '*' then
+        state.state_name = 'block-comment'
+        state.block_depth = 1
+        state.index = index + 2
+    elseif char == "'" then
+        state.state_name = 'single-quote'
+        state.index = index + 1
+    elseif char == '"' then
+        state.state_name = 'double-quote'
+        state.index = index + 1
+    elseif char == '$' then
+        local tag = dollar_quote_at(text, index)
+
+        if tag ~= nil then
+            state.state_name = 'dollar-quote'
+            state.dollar_tag = tag
+            state.index = index + #tag
+        else
+            state.index = index + 1
+        end
+    elseif char == ';' then
+        if cursor_offset >= state.statement_start and cursor_offset <= index then
+            state.statement_end = index
+
+            return true
+        end
+
+        state.statement_start = index + 1
+        state.index = index + 1
+    else
+        state.index = index + 1
+    end
+
+    return false
+end
+
+---@param text string
+---@param state SqlScanState
+---@return boolean
+local function scan_line_comment(text, state)
+    local index = state.index
+
+    if text:sub(index, index) == '\n' then
+        state.state_name = 'normal'
+    end
+
+    state.index = index + 1
+
+    return false
+end
+
+---@param text string
+---@param state SqlScanState
+---@return boolean
+local function scan_block_comment(text, state)
+    local index = state.index
+    local char = text:sub(index, index)
+    local next_char = text:sub(index + 1, index + 1)
+
+    if char == '/' and next_char == '*' then
+        state.block_depth = state.block_depth + 1
+        state.index = index + 2
+    elseif char == '*' and next_char == '/' then
+        state.block_depth = state.block_depth - 1
+        state.index = index + 2
+
+        if state.block_depth == 0 then
+            state.state_name = 'normal'
+        end
+    else
+        state.index = index + 1
+    end
+
+    return false
+end
+
+---@param text string
+---@param state SqlScanState
+---@return boolean
+local function scan_single_quote(text, state)
+    local index = state.index
+    local char = text:sub(index, index)
+    local next_char = text:sub(index + 1, index + 1)
+
+    if char == "'" and next_char == "'" then
+        state.index = index + 2
+    elseif char == "'" then
+        state.state_name = 'normal'
+        state.index = index + 1
+    else
+        state.index = index + 1
+    end
+
+    return false
+end
+
+---@param text string
+---@param state SqlScanState
+---@return boolean
+local function scan_double_quote(text, state)
+    local index = state.index
+    local char = text:sub(index, index)
+    local next_char = text:sub(index + 1, index + 1)
+
+    if char == '"' and next_char == '"' then
+        state.index = index + 2
+    elseif char == '"' then
+        state.state_name = 'normal'
+        state.index = index + 1
+    else
+        state.index = index + 1
+    end
+
+    return false
+end
+
+---@param text string
+---@param state SqlScanState
+---@return boolean
+local function scan_dollar_quote(text, state)
+    local index = state.index
+    local tag = state.dollar_tag
+
+    if tag ~= nil and text:sub(index, index + #tag - 1) == tag then
+        state.index = index + #tag
+        state.dollar_tag = nil
+        state.state_name = 'normal'
+    else
+        state.index = index + 1
+    end
+
+    return false
+end
+
+--- Table-driven lexer states; each scanner advances `state.index` and
+--- returns true when the statement containing the cursor is complete.
+---@type table<string, fun(text: string, state: SqlScanState, cursor_offset: integer): boolean>
+local SCAN_STATES = {
+    ['normal'] = scan_normal,
+    ['line-comment'] = scan_line_comment,
+    ['block-comment'] = scan_block_comment,
+    ['single-quote'] = scan_single_quote,
+    ['double-quote'] = scan_double_quote,
+    ['dollar-quote'] = scan_dollar_quote,
+}
+
+--- Scan at most STATEMENT_SCAN_MAX_BYTES of text. If the cursor lies beyond
+--- the bound, the returned span starts at the last known statement boundary
+--- and may extend past the statement's true end; callers with huge buffers
+--- should use the cursor-line fallback instead.
 ---@param text string
 ---@param cursor_offset integer
 ---@return string
 local function statement_from_text(text, cursor_offset)
-    local start_offset = 1
-    local statement_start = 1
-    local statement_end = #text
+    ---@type SqlScanState
+    local state = {
+        index = 1,
+        state_name = 'normal',
+        dollar_tag = nil,
+        block_depth = 0,
+        statement_start = 1,
+        statement_end = #text,
+    }
 
-    local state_name = 'normal'
-    local dollar_tag
-    local block_depth = 0
-    local index = 1
+    local limit = math.min(#text, STATEMENT_SCAN_MAX_BYTES)
 
-    while index <= #text do
-        local char = text:sub(index, index)
+    while state.index <= limit do
+        local scanner = SCAN_STATES[state.state_name]
 
-        local next_char = text:sub(index + 1, index + 1)
+        if scanner == nil then
+            break
+        end
 
-        if state_name == 'normal' then
-            if char == '-' and next_char == '-' then
-                state_name = 'line-comment'
-                index = index + 2
-            elseif char == '/' and next_char == '*' then
-                state_name = 'block-comment'
-
-                block_depth = 1
-
-                index = index + 2
-            elseif char == "'" then
-                state_name = 'single-quote'
-
-                index = index + 1
-            elseif char == '"' then
-                state_name = 'double-quote'
-
-                index = index + 1
-            elseif char == '$' then
-                local tag = dollar_quote_at(text, index)
-
-                if tag ~= nil then
-                    state_name = 'dollar-quote'
-
-                    dollar_tag = tag
-
-                    index = index + #tag
-                else
-                    index = index + 1
-                end
-            elseif char == ';' then
-                if cursor_offset >= statement_start and cursor_offset <= index then
-                    statement_end = index
-
-                    break
-                end
-
-                statement_start = index + 1
-
-                index = index + 1
-            else
-                index = index + 1
-            end
-        elseif state_name == 'line-comment' then
-            if char == '\n' then
-                state_name = 'normal'
-            end
-
-            index = index + 1
-        elseif state_name == 'block-comment' then
-            if char == '/' and next_char == '*' then
-                block_depth = block_depth + 1
-
-                index = index + 2
-            elseif char == '*' and next_char == '/' then
-                block_depth = block_depth - 1
-
-                index = index + 2
-
-                if block_depth == 0 then
-                    state_name = 'normal'
-                end
-            else
-                index = index + 1
-            end
-        elseif state_name == 'single-quote' then
-            if char == "'" and next_char == "'" then
-                index = index + 2
-            elseif char == "'" then
-                state_name = 'normal'
-
-                index = index + 1
-            else
-                index = index + 1
-            end
-        elseif state_name == 'double-quote' then
-            if char == '"' and next_char == '"' then
-                index = index + 2
-            elseif char == '"' then
-                state_name = 'normal'
-
-                index = index + 1
-            else
-                index = index + 1
-            end
-        elseif state_name == 'dollar-quote' then
-            if dollar_tag ~= nil and text:sub(index, index + #dollar_tag - 1) == dollar_tag then
-                index = index + #dollar_tag
-
-                dollar_tag = nil
-                state_name = 'normal'
-            else
-                index = index + 1
-            end
+        if scanner(text, state, cursor_offset) then
+            break
         end
     end
 
+    local statement_start = state.statement_start
+
     if cursor_offset < statement_start then
-        statement_start = start_offset
+        statement_start = 1
     end
 
-    local statement = vim.trim(text:sub(statement_start, statement_end))
-
-    return statement
+    return vim.trim(text:sub(statement_start, state.statement_end))
 end
 
 ---@param bufnr? integer
@@ -558,6 +650,14 @@ local function current_statement(bufnr)
 
     local cursor_line = cursor[1]
 
+    local text = table.concat(lines, '\n')
+
+    if #text > STATEMENT_SCAN_MAX_BYTES then
+        -- A huge buffer would make the full scan unbounded; fall back to the
+        -- cursor line.
+        return vim.trim(lines[cursor_line] or '')
+    end
+
     local cursor_column = cursor[2]
 
     local offset = 1
@@ -567,8 +667,6 @@ local function current_statement(bufnr)
     end
 
     offset = offset + cursor_column
-
-    local text = table.concat(lines, '\n')
 
     return statement_from_text(text, offset)
 end
@@ -796,7 +894,11 @@ local function execute_statement()
     end
 
     if potentially_mutating(sql) then
-        local answer = fn.confirm('Execute a potentially mutating SQL statement?', '&Execute\n&Cancel', 2)
+        local answer = fn.confirm(
+            'Execute a potentially mutating SQL statement?',
+            '&Execute\n&Cancel',
+            2
+        )
 
         if answer ~= 1 then
             return
@@ -877,7 +979,11 @@ local function sqlite_full_trace()
         return
     end
 
-    local answer = fn.confirm('SQLite .eqp full executes the statement. Continue?', '&Execute\n&Cancel', 2)
+    local answer = fn.confirm(
+        'SQLite .eqp full executes the statement. Continue?',
+        '&Execute\n&Cancel',
+        2
+    )
 
     if answer ~= 1 then
         return
@@ -980,7 +1086,7 @@ local function sqlite_profile_available()
             stdin = 'PRAGMA compile_options;\n',
 
             text = true,
-        }):wait()
+        }):wait(SQL_COMMAND_TIMEOUT_MS)
     end)
 
     if not ok then
@@ -1022,7 +1128,11 @@ local function sqlite_profile()
         return
     end
 
-    local answer = fn.confirm('SQLite scan-status profiling executes the statement. Continue?', '&Profile\n&Cancel', 2)
+    local answer = fn.confirm(
+        'SQLite scan-status profiling executes the statement. Continue?',
+        '&Profile\n&Cancel',
+        2
+    )
 
     if answer ~= 1 then
         return
@@ -1225,7 +1335,10 @@ end
 
 local function start_postgres_dap()
     if detect_backend() ~= 'postgres' then
-        notify('true SQL DAP debugging is currently available only through the PostgreSQL backend', levels.WARN)
+        notify(
+            'true SQL DAP debugging is currently available only through the PostgreSQL backend',
+            levels.WARN
+        )
 
         return
     end
@@ -1264,6 +1377,8 @@ local function status()
 
     local sqlite_db = resolve_sqlite_database()
 
+    local statement = current_statement()
+
     notify(table.concat({
         'root: ' .. project_root(),
 
@@ -1272,7 +1387,7 @@ local function status()
         'resolved backend: ' .. backend,
 
         'current statement:',
-        current_statement() ~= '' and current_statement() or '(none)',
+        statement ~= '' and statement or '(none)',
 
         'psql: ' .. (resolve_psql() or 'not found'),
 
@@ -1282,10 +1397,15 @@ local function status()
 
         'SQLite database: ' .. (sqlite_db or 'not selected'),
 
-        'SQLite scanstatus profiling: '
-            .. (backend == 'sqlite' and sqlite_profile_available() and 'available' or 'unavailable/not selected'),
+        'SQLite scanstatus profiling: ' .. (
+            backend == 'sqlite'
+                and sqlite_profile_available()
+                and 'available'
+                or 'unavailable/not selected'
+        ),
 
-        'true DAP backend: ' .. (backend == 'postgres' and 'PostgreSQL via dap.postgres/pgdap' or 'none'),
+        'true DAP backend: '
+            .. (backend == 'postgres' and 'PostgreSQL via dap.postgres/pgdap' or 'none'),
     }, '\n'))
 end
 

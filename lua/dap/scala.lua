@@ -64,10 +64,8 @@ local ROOT_MARKERS = {
 ---@class ScalaDapState
 ---@field root string?
 ---@field endpoint ScalaDapEndpoint?
----@field endpoint_key string?
 local state = {
     endpoint = nil,
-    endpoint_key = nil,
     root = nil,
 }
 
@@ -162,7 +160,9 @@ end
 ---@param client vim.lsp.Client
 ---@return boolean
 local function is_metals(client)
-    return type(client) == 'table' and type(client.name) == 'string' and client.name:lower() == 'metals'
+    return type(client) == 'table'
+        and type(client.name) == 'string'
+        and client.name:lower() == 'metals'
 end
 
 ---@param bufnr? integer
@@ -192,7 +192,11 @@ local function metals_client(bufnr)
         if is_metals(client) then
             local client_root = client.root_dir
 
-            if client_root ~= nil and nonempty_string(client_root) and fs.normalize(client_root) == root then
+            if
+                client_root ~= nil
+                and nonempty_string(client_root)
+                and fs.normalize(client_root) == root
+            then
                 return client
             end
         end
@@ -463,6 +467,62 @@ local function parse_endpoint(uri)
     }
 end
 
+---@param client table
+---@param bufnr integer
+---@param params table
+---@return any
+local function request_metals_endpoint(client, bufnr, params)
+    local response = client:request_sync('workspace/executeCommand', {
+        command = METALS_COMMAND,
+
+        arguments = {
+            params,
+        },
+    }, METALS_TIMEOUT_MS, bufnr)
+
+    if response == nil then
+        notify('Metals did not respond to debug-adapter-start', levels.ERROR)
+
+        return nil
+    end
+
+    if response.err ~= nil then
+        notify(
+            ('Metals debug-adapter-start failed: %s'):format(vim.inspect(response.err)),
+            levels.ERROR
+        )
+
+        return nil
+    end
+
+    return response.result
+end
+
+---@param result any
+---@return ScalaDapEndpoint?
+local function validate_metals_endpoint(result)
+    local uri = endpoint_uri(result)
+
+    if uri == nil then
+        notify(
+            ('Metals returned an unexpected debug endpoint: %s'):format(vim.inspect(result)),
+            levels.ERROR
+        )
+
+        return nil
+    end
+
+    local endpoint = parse_endpoint(uri)
+
+    if endpoint == nil then
+        notify(('invalid Metals DAP endpoint: %s'):format(uri), levels.ERROR)
+
+        return nil
+    end
+
+    return endpoint
+end
+
 ---@param params table
 ---@return ScalaDapEndpoint?
 local function start_metals_session(params)
@@ -483,39 +543,15 @@ local function start_metals_session(params)
         return nil
     end
 
-    local response = client:request_sync('workspace/executeCommand', {
-        command = METALS_COMMAND,
+    local result = request_metals_endpoint(client, bufnr, params)
 
-        arguments = {
-            params,
-        },
-    }, METALS_TIMEOUT_MS, bufnr)
-
-    if response == nil then
-        notify('Metals did not respond to debug-adapter-start', levels.ERROR)
-
+    if result == nil then
         return nil
     end
 
-    if response.err ~= nil then
-        notify(('Metals debug-adapter-start failed: %s'):format(vim.inspect(response.err)), levels.ERROR)
-
-        return nil
-    end
-
-    local uri = endpoint_uri(response.result)
-
-    if uri == nil then
-        notify(('Metals returned an unexpected debug endpoint: %s'):format(vim.inspect(response.result)), levels.ERROR)
-
-        return nil
-    end
-
-    local endpoint = parse_endpoint(uri)
+    local endpoint = validate_metals_endpoint(result)
 
     if endpoint == nil then
-        notify(('invalid Metals DAP endpoint: %s'):format(uri), levels.ERROR)
-
         return nil
     end
 
@@ -526,19 +562,18 @@ end
 
 ---@param key string
 ---@param params fun(): table
----@return integer
+---@return integer?
 local function adapter_port(key, params)
     --
     -- Each call to `debug-adapter-start` creates a new debug server. Do not
     -- retain endpoints across different configurations.
     --
     state.endpoint = nil
-    state.endpoint_key = key
 
     local endpoint = start_metals_session(params())
 
     if endpoint == nil then
-        return 0
+        return nil
     end
 
     return endpoint.port
@@ -601,7 +636,9 @@ local function show_status()
         table.concat({
             'root: ' .. root,
 
-            'Metals LSP: ' .. (client ~= nil and ('%s [id=%d]'):format(client.name, client.id) or 'not attached'),
+            'Metals LSP: ' .. (
+                client ~= nil and ('%s [id=%d]'):format(client.name, client.id) or 'not attached'
+            ),
 
             '.bloop: ' .. (directory(bloop_directory) and 'present' or 'absent'),
 

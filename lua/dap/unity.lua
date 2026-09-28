@@ -1,7 +1,8 @@
 --- Unity game debugger — debug Unity games from Neovim.
 ---
---- Plain-language version: Unity is a game engine with its own way of running code. This module connects Neovim's
---- debugger to a running Unity editor or player: attach to it, launch DLLs, and browse the compiled scripts. It
+--- Plain-language version: Unity is a game engine with its own way of running
+--- code. This module connects Neovim's debugger to a running Unity editor or
+--- player: attach to it, launch DLLs, and browse the compiled scripts. It
 --- runs when you start a Unity debug session; it needs a Unity editor around.
 ---@module 'dap.unity'
 -- #################################################################
@@ -24,10 +25,17 @@
 -- ~/.config/nvim/lua/dap/unity.lua
 local api = vim.api
 local fn = vim.fn
-local uv = vim.uv or vim.uv
+local uv = vim.uv
 local debug = vim.debug
 local M = {}
 
+--- Bound for the `ps` probe; a hung child must not freeze the editor.
+local UNITY_COMMAND_TIMEOUT_MS = 15000
+
+--- Cap on Unity process candidates offered for attach.
+local UNITY_PROCESS_MATCHES_MAX = 50
+
+---@type table
 M.adapter = {
     name = 'coreclr',
     command = 'netcoredbg',
@@ -62,10 +70,6 @@ local function is_dir(path)
     return stat and stat.type == 'directory' or false
 end
 
-local function path_join(...)
-    return table.concat({ ... }, '/')
-end
-
 local function workspace_root()
     local file = current_file()
     local start = file ~= '' and file or cwd()
@@ -87,7 +91,9 @@ local function ensure_adapter()
     end
 
     notify(
-        ('Unity debugger not found: %sInstall Samsung/netcoredbg and put it in PATH.'):format(M.adapter.command),
+        ('Unity debugger not found: %s. Install Samsung/netcoredbg and put it in PATH.'):format(
+            M.adapter.command
+        ),
         vim.log.levels.ERROR
     )
     return false
@@ -129,19 +135,25 @@ end
 
 local function unity_root()
     local root = workspace_root()
-    if is_dir(path_join(root, 'Assets')) and is_dir(path_join(root, 'ProjectSettings')) then
+
+    local assets = vim.fs.joinpath(root, 'Assets')
+
+    local settings = vim.fs.joinpath(root, 'ProjectSettings')
+
+    if is_dir(assets) and is_dir(settings) then
         return root
     end
+
     return root
 end
 
 local function dll_candidates(root)
     local product = fn.fnamemodify(root, ':t')
     return {
-        path_join(root, 'Library', 'ScriptAssemblies', 'Assembly-CSharp.dll'),
-        path_join(root, 'Library', 'ScriptAssemblies', 'Assembly-CSharp-Editor.dll'),
-        path_join(root, 'Build', product .. '.dll'),
-        path_join(root, product .. '.dll'),
+        vim.fs.joinpath(root, 'Library', 'ScriptAssemblies', 'Assembly-CSharp.dll'),
+        vim.fs.joinpath(root, 'Library', 'ScriptAssemblies', 'Assembly-CSharp-Editor.dll'),
+        vim.fs.joinpath(root, 'Build', product .. '.dll'),
+        vim.fs.joinpath(root, product .. '.dll'),
     }
 end
 
@@ -152,7 +164,7 @@ local function guess_unity_dll()
             return dll
         end
     end
-    return path_join(root, 'Library', 'ScriptAssemblies', 'Assembly-CSharp.dll')
+    return vim.fs.joinpath(root, 'Library', 'ScriptAssemblies', 'Assembly-CSharp.dll')
 end
 
 local function prompt_program()
@@ -163,31 +175,54 @@ local function prompt_program()
     return dll
 end
 
+---@return integer?
 local function pick_pid_from_ps()
-    local cmd = [[ps -eo pid=,comm= | grep -Ei 'Unity|UnityHub|mono|dotnet' | head -n 50]]
-    local result = vim.system({ 'sh', '-c', cmd }, { text = true }):wait()
+    local result = vim.system({ 'ps', '-eo', 'pid=,comm=' }, { text = true }):wait(
+        UNITY_COMMAND_TIMEOUT_MS
+    )
 
     if result.code ~= 0 or not result.stdout or result.stdout == '' then
         return nil
     end
 
-    local lines = vim.split(vim.trim(result.stdout), '', { trimempty = true })
-    if #lines == 0 then
+    ---@type { pid: integer, comm: string }[]
+    local matches = {}
+
+    for line in result.stdout:gmatch('[^\r\n]+') do
+        if #matches >= UNITY_PROCESS_MATCHES_MAX then
+            break
+        end
+
+        local pid, comm = line:match('^%s*(%d+)%s+(%S+)')
+
+        if pid ~= nil and comm ~= nil then
+            local lower = comm:lower()
+
+            if
+                lower:find('unity', 1, true) ~= nil
+                or lower:find('mono', 1, true) ~= nil
+                or lower:find('dotnet', 1, true) ~= nil
+            then
+                matches[#matches + 1] = { pid = tonumber(pid), comm = comm }
+            end
+        end
+    end
+
+    if #matches == 0 then
         return nil
     end
 
     local choices = { 'Select Unity/.NET process:' }
-    for i, line in ipairs(lines) do
-        choices[#choices + 1] = string.format('%d. %s', i, vim.trim(line))
+    for i, match in ipairs(matches) do
+        choices[#choices + 1] = string.format('%d. %d %s', i, match.pid, match.comm)
     end
 
     local idx = fn.inputlist(choices)
-    if idx < 1 or idx > #lines then
+    if idx < 1 or idx > #matches then
         return nil
     end
 
-    local pid = tonumber(vim.trim(lines[idx]):match('^(%d+)'))
-    return pid
+    return matches[idx].pid
 end
 
 ---Launch a managed Unity DLL under the debugger.
@@ -254,7 +289,7 @@ end
 ---@return nil
 function M.open_script_assemblies()
     local root = unity_root()
-    local dir = path_join(root, 'Library', 'ScriptAssemblies')
+    local dir = vim.fs.joinpath(root, 'Library', 'ScriptAssemblies')
 
     if not is_dir(dir) then
         notify('Library/ScriptAssemblies not found', vim.log.levels.WARN)
@@ -291,9 +326,17 @@ function M.unity_info()
     vim.bo[buf].filetype = 'markdown'
 end
 
+local setup_done = false
+
 ---Register the Unity debug commands. Idempotent.
 ---@return nil
 function M.setup()
+    if setup_done then
+        return
+    end
+
+    setup_done = true
+
     api.nvim_create_user_command('UnityDapLaunch', M.launch_dll, {
         desc = 'Launch Unity managed DLL with netcoredbg',
     })

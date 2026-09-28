@@ -35,6 +35,10 @@ local M = {}
 
 local SOURCE = 'sqlite-dap'
 
+--- Bound for `sqlite3` probe invocations; a hung child must not freeze the
+--- editor.
+local SQLITE_COMMAND_TIMEOUT_MS = 30000
+
 ---@type string[]
 local ROOT_MARKERS = {
     'sqlite3.c',
@@ -185,7 +189,7 @@ local function system(command, cwd)
         return vim.system(command, {
             cwd = cwd,
             text = true,
-        }):wait()
+        }):wait(SQLITE_COMMAND_TIMEOUT_MS)
     end)
 
     if not ok then
@@ -228,7 +232,12 @@ local function collect_databases(root, depth, result)
         local path = fs.joinpath(root, name)
 
         if kind == 'directory' then
-            if name ~= '.git' and name ~= 'node_modules' and name ~= 'target' and name ~= 'build' then
+            if
+                name ~= '.git'
+                and name ~= 'node_modules'
+                and name ~= 'target'
+                and name ~= 'build'
+            then
                 collect_databases(path, depth + 1, result)
             end
         elseif kind == 'file' and is_database_filename(name) then
@@ -360,7 +369,7 @@ local function gdb_supports_dap()
     return result ~= nil and result.code == 0
 end
 
----@return string
+---@return string?
 local function active_adapter_type()
     if state.adapter == 'lldb' and resolve_lldb_dap() ~= nil then
         return 'sqlite-lldb'
@@ -382,7 +391,9 @@ local function active_adapter_type()
         return 'sqlite-gdb'
     end
 
-    return 'sqlite-lldb'
+    notify('no native debugger available (lldb-dap or GDB with DAP support)', levels.WARN)
+
+    return nil
 end
 
 ---@return string?
@@ -445,10 +456,11 @@ local function compile_options()
     return options
 end
 
+---@param options string[]
 ---@param option string
 ---@return boolean
-local function has_compile_option(option)
-    for _, value in ipairs(compile_options()) do
+local function has_compile_option(options, option)
+    for _, value in ipairs(options) do
         if value == option then
             return true
         end
@@ -459,17 +471,17 @@ end
 
 ---@return boolean
 local function has_scanstatus()
-    return has_compile_option('ENABLE_STMT_SCANSTATUS')
+    return has_compile_option(compile_options(), 'ENABLE_STMT_SCANSTATUS')
 end
 
 ---@return boolean
 local function has_sqlite_debug()
-    return has_compile_option('DEBUG')
+    return has_compile_option(compile_options(), 'DEBUG')
 end
 
 ---@return boolean
 local function has_bytecode_vtab()
-    return has_compile_option('ENABLE_BYTECODE_VTAB')
+    return has_compile_option(compile_options(), 'ENABLE_BYTECODE_VTAB')
 end
 
 ---@return string
@@ -516,7 +528,11 @@ end
 
 ---@return string
 local function prompt_executable()
-    local selected = fn.input('SQLite embedding executable: ', state.executable or project_root(), 'file')
+    local selected = fn.input(
+        'SQLite embedding executable: ',
+        state.executable or project_root(),
+        'file'
+    )
 
     if selected == '' then
         return ''
@@ -560,52 +576,17 @@ end
 ---@return string
 local function current_statement()
     --
-    -- Prefer the generic SQL layer when it is available because that module
-    -- contains the more complete SQL statement parser.
+    -- Delegate to the generic SQL layer, which contains the complete
+    -- statement parser (table-driven lexer with a bounded scan). No naive
+    -- fallback here: a `;`-splitting heuristic misparses quoted semicolons.
     --
     local ok, sql = pcall(require, 'dap.sql')
 
     if ok and type(sql) == 'table' and type(sql.statement) == 'function' then
-        local statement = sql.statement()
-
-        if type(statement) == 'string' and statement ~= '' then
-            return statement
-        end
+        return sql.statement()
     end
 
-    --
-    -- Conservative standalone fallback.
-    --
-    local lines = api.nvim_buf_get_lines(0, 0, -1, false)
-
-    local cursor = api.nvim_win_get_cursor(0)
-
-    local line_index = cursor[1]
-
-    local start_line = line_index
-    local end_line = line_index
-
-    while start_line > 1 do
-        if lines[start_line - 1]:find(';', 1, true) ~= nil then
-            break
-        end
-
-        start_line = start_line - 1
-    end
-
-    while end_line <= #lines do
-        if lines[end_line]:find(';', 1, true) ~= nil then
-            break
-        end
-
-        end_line = end_line + 1
-    end
-
-    if end_line > #lines then
-        end_line = #lines
-    end
-
-    return vim.trim(table.concat(vim.list_slice(lines, start_line, end_line), '\n'))
+    return ''
 end
 
 ---@param title string
@@ -823,7 +804,11 @@ local function scanstatus()
         return
     end
 
-    local answer = fn.confirm('Scan-status profiling executes the SQL statement. Continue?', '&Profile\n&Cancel', 2)
+    local answer = fn.confirm(
+        'Scan-status profiling executes the SQL statement. Continue?',
+        '&Profile\n&Cancel',
+        2
+    )
 
     if answer ~= 1 then
         return
@@ -865,7 +850,11 @@ local function execute_buffer()
         return
     end
 
-    local answer = fn.confirm('Execute the entire SQL buffer against the selected database?', '&Execute\n&Cancel', 2)
+    local answer = fn.confirm(
+        'Execute the entire SQL buffer against the selected database?',
+        '&Execute\n&Cancel',
+        2
+    )
 
     if answer ~= 1 then
         return
@@ -923,7 +912,11 @@ local function foreign_key_check()
 end
 
 local function optimize()
-    local answer = fn.confirm('Run PRAGMA optimize on the selected SQLite database?', '&Optimize\n&Cancel', 2)
+    local answer = fn.confirm(
+        'Run PRAGMA optimize on the selected SQLite database?',
+        '&Optimize\n&Cancel',
+        2
+    )
 
     if answer ~= 1 then
         return
@@ -1083,6 +1076,12 @@ end
 local function status()
     local options = compile_options()
 
+    local debug = has_compile_option(options, 'DEBUG')
+
+    local scanstatus = has_compile_option(options, 'ENABLE_STMT_SCANSTATUS')
+
+    local bytecode_vtab = has_compile_option(options, 'ENABLE_BYTECODE_VTAB')
+
     notify(table.concat({
         'root: ' .. project_root(),
 
@@ -1098,17 +1097,19 @@ local function status()
 
         'GDB DAP: ' .. (gdb_supports_dap() and 'available' or 'unavailable'),
 
-        'SQLITE_DEBUG: ' .. (has_sqlite_debug() and 'enabled' or 'disabled'),
+        'SQLITE_DEBUG: ' .. (debug and 'enabled' or 'disabled'),
 
-        'SQLITE_ENABLE_STMT_SCANSTATUS: ' .. (has_scanstatus() and 'enabled' or 'disabled'),
+        'SQLITE_ENABLE_STMT_SCANSTATUS: ' .. (scanstatus and 'enabled' or 'disabled'),
 
-        'SQLITE_ENABLE_BYTECODE_VTAB: ' .. (has_bytecode_vtab() and 'enabled' or 'disabled'),
+        'SQLITE_ENABLE_BYTECODE_VTAB: ' .. (bytecode_vtab and 'enabled' or 'disabled'),
 
         'compile options: ' .. (#options > 0 and tostring(#options) or 'unknown'),
 
         'SQL source-level DAP: none',
 
-        'native C/C++ DAP: ' .. (resolve_lldb_dap() ~= nil or gdb_supports_dap() and 'available' or 'unavailable'),
+        'native C/C++ DAP: ' .. (
+            resolve_lldb_dap() ~= nil or gdb_supports_dap() and 'available' or 'unavailable'
+        ),
     }, '\n'))
 end
 

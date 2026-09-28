@@ -40,6 +40,11 @@ local DEFAULT_JDWP_HOST = '127.0.0.1'
 
 local DEFAULT_JDWP_PORT = 5005
 
+--- Maximum `.tool-versions` lines scanned for a `java` entry. The file is
+--- normally a handful of lines; the cap keeps a hostile file from forcing an
+--- unbounded read into memory.
+local TOOL_VERSIONS_SCAN_MAX_LINES = 100
+
 local ROOT_MARKERS = {
     'pom.xml',
 
@@ -205,7 +210,11 @@ local function jdtls_client(bufnr)
         if is_jdtls(client) then
             local client_root = client.root_dir
 
-            if type(client_root) == 'string' and client_root ~= '' and fs.normalize(client_root) == root then
+            if
+                type(client_root) == 'string'
+                and client_root ~= ''
+                and fs.normalize(client_root) == root
+            then
                 return client
             end
         end
@@ -346,10 +355,10 @@ local function system(command, cwd)
     end)
 
     if not ok then
-        return nil
+        return nil, tostring(result)
     end
 
-    return result
+    return result, nil
 end
 
 local function java_version()
@@ -400,7 +409,7 @@ local function requested_java_version()
     local tool_versions = fs.joinpath(root, '.tool-versions')
 
     if is_file(tool_versions) then
-        local lines = fn.readfile(tool_versions)
+        local lines = fn.readfile(tool_versions, '', TOOL_VERSIONS_SCAN_MAX_LINES)
 
         for _, line in ipairs(lines) do
             local version = line:match('^java%s+(%S+)')
@@ -444,9 +453,9 @@ local function debug_port(result)
     return nil
 end
 
-local function start_debug_server()
-    local bufnr = api.nvim_get_current_buf()
-
+---@param bufnr integer
+---@return table?
+local function resolve_debug_client(bufnr)
     local client = jdtls_client(bufnr)
 
     if client == nil then
@@ -481,6 +490,13 @@ local function start_debug_server()
         return nil
     end
 
+    return client
+end
+
+---@param client table
+---@param bufnr integer
+---@return integer?
+local function request_debug_port(client, bufnr)
     local response = client:request_sync('workspace/executeCommand', {
         command = DEBUG_SESSION_COMMAND,
 
@@ -494,7 +510,10 @@ local function start_debug_server()
     end
 
     if response.err ~= nil then
-        notify(('Java debug server startup failed: %s'):format(vim.inspect(response.err)), levels.ERROR)
+        notify(
+            ('Java debug server startup failed: %s'):format(vim.inspect(response.err)),
+            levels.ERROR
+        )
 
         return nil
     end
@@ -502,29 +521,62 @@ local function start_debug_server()
     local port = debug_port(response.result)
 
     if port == nil then
-        notify(('JDTLS returned an invalid Java DAP port: %s'):format(vim.inspect(response.result)), levels.ERROR)
+        notify(
+            ('JDTLS returned an invalid Java DAP port: %s'):format(vim.inspect(response.result)),
+            levels.ERROR
+        )
 
         return nil
     end
 
-    local endpoint = {
+    return port
+end
+
+---@param port integer
+---@return { host: string, port: integer }
+local function make_debug_endpoint(port)
+    return {
         host = '127.0.0.1',
 
         port = port,
     }
+end
+
+---@return { host: string, port: integer }?
+local function start_debug_server()
+    local bufnr = api.nvim_get_current_buf()
+
+    local client = resolve_debug_client(bufnr)
+
+    if client == nil then
+        return nil
+    end
+
+    local port = request_debug_port(client, bufnr)
+
+    if port == nil then
+        return nil
+    end
+
+    local endpoint = make_debug_endpoint(port)
 
     state.endpoint = endpoint
 
     return endpoint
 end
 
+--- Port resolver for the `java` server adapter. The endpoint is cached for the
+--- session lifetime; `:JavaDebugClear` forces the next launch to re-handshake.
+---@return integer?
 local function adapter_port()
-    state.endpoint = nil
+    if state.endpoint ~= nil then
+        return state.endpoint.port
+    end
 
     local endpoint = start_debug_server()
 
     if endpoint == nil then
-        return 0
+        return nil
     end
 
     return endpoint.port
@@ -608,16 +660,90 @@ local function prompt_environment()
     return result
 end
 
+---@param value string
+---@return boolean
+local function valid_ipv4(value)
+    local octets = {}
+
+    for octet in value:gmatch('[^%.]+') do
+        octets[#octets + 1] = octet
+    end
+
+    if #octets ~= 4 then
+        return false
+    end
+
+    for _, octet in ipairs(octets) do
+        if not octet:match('^%d+$') then
+            return false
+        end
+
+        local number = tonumber(octet)
+
+        if number == nil or number > 255 then
+            return false
+        end
+    end
+
+    return true
+end
+
+---@param value string
+---@return boolean
+local function valid_ipv6(value)
+    if not value:match('^[%x:]+$') then
+        return false
+    end
+
+    local _, colons = value:gsub(':', '')
+
+    return colons >= 2
+end
+
+---@param value string
+---@return boolean
+local function valid_hostname(value)
+    if value == '' or #value > 253 then
+        return false
+    end
+
+    if not value:match('^[%a%d]([%a%d%.%-]*[%a%d])?$') then
+        return false
+    end
+
+    for label in value:gmatch('[^%.]+') do
+        if #label > 63 or label:match('^%-') or label:match('%-$') then
+            return false
+        end
+    end
+
+    return true
+end
+
+---@param value string
+---@return boolean
+local function valid_remote_host(value)
+    return valid_ipv4(value) or valid_ipv6(value) or valid_hostname(value)
+end
+
+---@return string?
 local function prompt_jdwp_host()
     local host = fn.input('JDWP host: ', DEFAULT_JDWP_HOST)
 
     if host == '' then
-        return DEFAULT_JDWP_HOST
+        host = DEFAULT_JDWP_HOST
+    end
+
+    if not valid_remote_host(host) then
+        notify(('invalid JDWP host: %s'):format(host), levels.ERROR)
+
+        return nil
     end
 
     return host
 end
 
+---@return integer?
 local function prompt_jdwp_port()
     local input = fn.input('JDWP port: ', tostring(DEFAULT_JDWP_PORT))
 
@@ -626,7 +752,7 @@ local function prompt_jdwp_port()
     if port == nil or port < 1 or port > 65535 then
         notify(('invalid JDWP port: %s'):format(input), levels.ERROR)
 
-        return DEFAULT_JDWP_PORT
+        return nil
     end
 
     return math.floor(port)
@@ -655,7 +781,11 @@ local function java_processes()
 
             local args = (arguments or ''):lower()
 
-            if executable_name == 'java' or executable_name == 'javaw' or args:find('/java ', 1, true) ~= nil then
+            local is_java = executable_name == 'java'
+                or executable_name == 'javaw'
+                or args:find('/java ', 1, true) ~= nil
+
+            if is_java then
                 processes[#processes + 1] = {
                     pid = tonumber(pid),
 
@@ -682,7 +812,11 @@ local function show_java_processes()
     local lines = {}
 
     for _, process in ipairs(processes) do
-        lines[#lines + 1] = ('PID %-7d %s %s'):format(process.pid, process.command, process.arguments)
+        lines[#lines + 1] = ('PID %-7d %s %s'):format(
+            process.pid,
+            process.command,
+            process.arguments
+        )
     end
 
     notify(table.concat(lines, '\n'))
@@ -797,7 +931,9 @@ local function status()
         table.concat({
             'root: ' .. project_root(),
 
-            'JDTLS: ' .. (client ~= nil and ('%s [id=%d]'):format(client.name, client.id) or 'not attached'),
+            'JDTLS: ' .. (
+                client ~= nil and ('%s [id=%d]'):format(client.name, client.id) or 'not attached'
+            ),
 
             'java-debug bundle: ' .. (debug_loaded and 'loaded' or 'not detected'),
 
@@ -811,13 +947,16 @@ local function status()
 
             'DAP broker command: ' .. DEBUG_SESSION_COMMAND,
 
-            'last DAP endpoint: '
-                .. (state.endpoint ~= nil and ('%s:%d'):format(state.endpoint.host, state.endpoint.port) or 'none'),
+            'last DAP endpoint: ' .. (
+                state.endpoint ~= nil and ('%s:%d'):format(state.endpoint.host, state.endpoint.port)
+                or 'none'
+            ),
         }, '\n'),
         debug_loaded and levels.INFO or levels.WARN
     )
 end
 
+---@type table
 M.adapter = {
     name = 'java',
 
@@ -1086,10 +1225,12 @@ local configurations = {
     },
 }
 
+---@type table<string, table[]>
 M.configurations = {
     java = configurations,
 }
 
+---@type table<string, DebugCommand>
 M.commands = {
     JavaDebugClear = {
         callback = function()
@@ -1136,6 +1277,7 @@ M.commands = {
     },
 }
 
+---@type table<string, DebugMapping>
 M.mappings = {
     java_debug_java = {
         lhs = '<leader>dJj',
@@ -1190,14 +1332,7 @@ M.mappings = {
     },
 }
 
-function M.setup(opts)
-    opts = opts or {}
-
-    local configured_root = opts.root
-
-    state.root = type(configured_root) == 'string' and configured_root ~= '' and fs.normalize(configured_root)
-        or project_root()
-
+local function check_java_runtime()
     if resolve_java() == nil then
         vim.schedule(function()
             notify(
@@ -1218,7 +1353,10 @@ function M.setup(opts)
             )
         end)
     end
+end
 
+---@return table?
+local function check_jdtls_client()
     local client = jdtls_client()
 
     if client == nil then
@@ -1236,9 +1374,14 @@ function M.setup(opts)
             )
         end)
 
-        return
+        return nil
     end
 
+    return client
+end
+
+---@param client table
+local function check_java_debug_bundle(client)
     if not supports_command(client, DEBUG_SESSION_COMMAND) then
         vim.schedule(function()
             notify(
@@ -1263,26 +1406,57 @@ function M.setup(opts)
     end
 end
 
+---@param opts table?
+function M.setup(opts)
+    opts = opts or {}
+
+    local configured_root = opts.root
+
+    local root = project_root()
+
+    if type(configured_root) == 'string' and configured_root ~= '' then
+        root = fs.normalize(configured_root)
+    end
+
+    state.root = root
+
+    check_java_runtime()
+
+    local client = check_jdtls_client()
+
+    if client == nil then
+        return
+    end
+
+    check_java_debug_bundle(client)
+end
+
+---@return string?
 function M.java()
     return resolve_java()
 end
 
+---@return string?
 function M.java_home()
     return resolve_java_home()
 end
 
+---@return string
 function M.root()
     return project_root()
 end
 
+---@return table?
 function M.jdtls()
     return jdtls_client()
 end
 
+---@return boolean
 function M.available()
     return resolve_java() ~= nil and java_debug_loaded()
 end
 
+---@return { host: string, port: integer }?
 function M.endpoint()
     return state.endpoint
 end

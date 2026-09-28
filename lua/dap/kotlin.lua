@@ -1,13 +1,14 @@
--- -- #################################################################
+-- #################################################################
 -- ~/.config/nvim/lua/dap/kotlin.lua
--- Native Kotlin Debug Adapter Configuration
+-- Qompass AI Diver Native Kotlin Debug Adapter Configuration
+-- Copyright (C) 2026 Qompass AI, All rights reserved
 -- SPDX-License-Identifier: Apache-2.0
--- Copyright (c) 2026
 --
 -- Licensed under the Apache License, Version 2.0 (the "License");
 -- you may not use this file except in compliance with the License.
 -- You may obtain a copy of the License at:
---   http://www.apache.org/licenses/LICENSE-2.0
+--
+--     http://www.apache.org/licenses/LICENSE-2.0
 --
 -- Unless required by applicable law or agreed to in writing, software
 -- distributed under the License is distributed on an "AS IS" BASIS,
@@ -28,6 +29,10 @@ local M = {}
 local ADAPTER_NAME = 'kotlin-jvm'
 
 local DEFAULT_DEBUG_PORT = 5005
+
+--- Bound for the Gradle classes build; a full build can take minutes, but it
+--- must not block the editor forever.
+local GRADLE_BUILD_TIMEOUT_MS = 300000
 
 local NOTIFY_PREFIX = '[kotlin-debug] '
 
@@ -92,7 +97,7 @@ local function root(bufnr)
     local current = filename(bufnr)
 
     if current == '' then
-        return fn.getcwd()
+        return normalize(fn.getcwd())
     end
 
     local detected = fs.root(current, ROOT_MARKERS)
@@ -106,13 +111,26 @@ end
 
 ---@param command string[]
 ---@param opts? vim.SystemOpts
----@return vim.SystemCompleted
+---@return vim.SystemCompleted?, string?
 local function system(command, opts)
     opts = vim.tbl_extend('force', {
         text = true,
     }, opts or {})
 
-    return vim.system(command, opts):wait()
+    -- `timeout_ms` is our own option: it bounds `:wait()`, it is not a
+    -- `vim.system` option.
+    local timeout_ms = opts.timeout_ms
+    opts.timeout_ms = nil
+
+    local ok, result = pcall(function()
+        return vim.system(command, opts):wait(timeout_ms)
+    end)
+
+    if not ok then
+        return nil, tostring(result)
+    end
+
+    return result, nil
 end
 
 ---@param result vim.SystemCompleted
@@ -248,12 +266,23 @@ local function gradle_build(workspace)
         return nil
     end
 
-    local result = system({
+    local result, spawn_err = system({
         command,
         'classes',
     }, {
         cwd = workspace,
+
+        timeout_ms = GRADLE_BUILD_TIMEOUT_MS,
     })
+
+    if result == nil then
+        notify(
+            ('Gradle classes build failed: %s'):format(spawn_err or 'timed out'),
+            levels.ERROR
+        )
+
+        return nil
+    end
 
     if not check_result(result, 'Gradle classes build') then
         return nil
@@ -367,21 +396,96 @@ local function debug_port()
     return DEFAULT_DEBUG_PORT
 end
 
----@return string
+---@param value string
+---@return boolean
+local function valid_ipv4(value)
+    local octets = {}
+
+    for octet in value:gmatch('[^%.]+') do
+        octets[#octets + 1] = octet
+    end
+
+    if #octets ~= 4 then
+        return false
+    end
+
+    for _, octet in ipairs(octets) do
+        if not octet:match('^%d+$') then
+            return false
+        end
+
+        local number = tonumber(octet)
+
+        if number == nil or number > 255 then
+            return false
+        end
+    end
+
+    return true
+end
+
+---@param value string
+---@return boolean
+local function valid_ipv6(value)
+    if not value:match('^[%x:]+$') then
+        return false
+    end
+
+    local _, colons = value:gsub(':', '')
+
+    return colons >= 2
+end
+
+---@param value string
+---@return boolean
+local function valid_hostname(value)
+    if value == '' or #value > 253 then
+        return false
+    end
+
+    if not value:match('^[%a%d]([%a%d%.%-]*[%a%d])?$') then
+        return false
+    end
+
+    for label in value:gmatch('[^%.]+') do
+        if #label > 63 or label:match('^%-') or label:match('%-$') then
+            return false
+        end
+    end
+
+    return true
+end
+
+---@param value string
+---@return boolean
+local function valid_remote_host(value)
+    return valid_ipv4(value) or valid_ipv6(value) or valid_hostname(value)
+end
+
+---@return string?
 local function debug_host()
     local value = env.KOTLIN_DEBUG_HOST
 
-    if type(value) == 'string' and value ~= '' then
-        return value
+    if type(value) ~= 'string' or value == '' then
+        return '127.0.0.1'
     end
 
-    return '127.0.0.1'
+    if not valid_remote_host(value) then
+        notify(('invalid KOTLIN_DEBUG_HOST: %s'):format(value), levels.ERROR)
+
+        return nil
+    end
+
+    return value
 end
 
 ---@param workspace string
 ---@return table<string, string>
 local function environment(workspace)
     local result = {
+        -- PWD is set explicitly (alongside cwd in the launch config) because
+        -- JVM tooling and wrapper scripts often read the PWD environment
+        -- variable instead of the process working directory.
         PWD = workspace,
     }
 
@@ -425,7 +529,9 @@ local function java_exec_args()
 end
 
 M.adapter = {
-    command = kotlin_debug_adapter() or 'kotlin-debug-adapter',
+    -- Declarative placeholder: M.setup() resolves the real path and warns
+    -- when the adapter is absent; no PATH probing happens at require time.
+    command = 'kotlin-debug-adapter',
 
     name = ADAPTER_NAME,
 

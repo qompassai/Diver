@@ -1,7 +1,8 @@
 --- VS Code launch.json loader — reuse VS Code debug configs.
 ---
---- Plain-language version: VS Code stores debugger settings in a file called launch.json. This module reads that
---- file so you do not have to rewrite your debug setups for Neovim. It runs when a debug session asks for it.
+--- Plain-language version: VS Code stores debugger settings in a file called
+--- launch.json. This module reads that file so you do not have to rewrite
+--- your debug setups for Neovim. It runs when a debug session asks for it.
 ---@module 'dap.ext.vscode'
 -- #################################################################
 -- /qompassai/lua/dap/ext/vscode.lua
@@ -63,7 +64,14 @@ local function create_input(input)
         ---Runs in the config-expansion coroutine via eval_option; may yield.
         ---@async
         return function()
-            local options = assert(input.options, 'input of type pickString must have an `options` property')
+            local options = input.options
+            if type(options) ~= 'table' or next(options) == nil then
+                notify(
+                    'input of type pickString must have an `options` property',
+                    vim.log.levels.WARN
+                )
+                return '${input:' .. input.id .. '}'
+            end
             local opts = {
                 prompt = input.description,
                 format_item = function(x)
@@ -89,30 +97,53 @@ local function create_input(input)
 end
 
 ---@param inputs dap.vscode.launch.Input[]
----@return table<string, function> inputs map from ${input:<id>} to function resolving the input value
+---@return table<string, function> map from ${input:<id>} to the input resolver
 local function create_inputs(inputs)
     local result = {}
     for _, input in ipairs(inputs) do
-        local id = assert(input.id, 'input must have a `id`')
-        local key = '${input:' .. id .. '}'
-        assert(input.type, 'input must have a `type`')
-        local fn = create_input(input)
-        if fn then
-            result[key] = fn
+        -- launch.json is workspace-controlled: validate instead of asserting,
+        -- and skip malformed entries with a notification.
+        local id = input.id
+        local input_type = input.type
+        if type(id) ~= 'string' or id == '' then
+            notify('Skipping launch.json input without a string `id`', vim.log.levels.WARN)
+        elseif type(input_type) ~= 'string' or input_type == '' then
+            notify('Skipping launch.json input without a string `type`', vim.log.levels.WARN)
+        else
+            local key = '${input:' .. id .. '}'
+            local fn = create_input(input)
+            if fn then
+                result[key] = fn
+            end
         end
     end
     return result
 end
 
+---Maximum nesting depth `apply_input` descends into launch.json values.
+---Guards against stack exhaustion from deeply nested workspace files.
+---@type integer
+local APPLY_INPUT_DEPTH_MAX = 100
+
 ---@param inputs table<string, function>
 ---@param value any
 ---@param cache table<string, any>
+---@param depth integer current recursion depth (internal)
 ---@return any value with ${input:…} placeholders substituted
-local function apply_input(inputs, value, cache)
+local function apply_input(inputs, value, cache, depth)
+    -- launch.json is workspace-controlled; bound the recursion so a deeply
+    -- nested file cannot exhaust the Lua stack.
+    if depth > APPLY_INPUT_DEPTH_MAX then
+        notify(
+            'Skipping launch.json value beyond max input-substitution depth',
+            vim.log.levels.WARN
+        )
+        return value
+    end
     if type(value) == 'table' then
         local new_value = {}
         for k, v in pairs(value) do
-            new_value[k] = apply_input(inputs, v, cache)
+            new_value[k] = apply_input(inputs, v, cache, depth + 1)
         end
         value = new_value
     end
@@ -135,7 +166,12 @@ local function apply_input(inputs, value, cache)
             end
         end
         if result then
-            value = value:gsub(input_key, result)
+            -- Function-form replacement: a user-typed `%` in the answer must
+            -- not be interpreted as a capture reference. The key is escaped
+            -- so the pattern matches it literally.
+            value = value:gsub(vim.pesc(input_key), function()
+                return result
+            end)
         end
     end
     return value
@@ -148,7 +184,7 @@ local function apply_inputs(config, inputs)
     local result = {}
     local cache = {}
     for key, value in pairs(config) do
-        result[key] = apply_input(inputs, value, cache)
+        result[key] = apply_input(inputs, value, cache, 0)
     end
     return result
 end
@@ -200,6 +236,56 @@ function M._load_json(jsonstr)
     return configs
 end
 
+---Strip `//` and `/* */` comments from JSONC text without touching comment
+---markers inside string literals. Used on Neovim < 0.12, where
+---`vim.json.decode` has no `skip_comments` option.
+---@param text string raw file contents
+---@return string text with comments removed
+local function strip_json_comments(text)
+    local out = {}
+    local i = 1
+    local n = #text
+    local in_string = false
+    while i <= n do
+        local c = text:sub(i, i)
+        if in_string then
+            out[#out + 1] = c
+            if c == '\\' and i < n then
+                i = i + 1
+                out[#out + 1] = text:sub(i, i)
+            elseif c == '"' then
+                in_string = false
+            end
+        elseif c == '"' then
+            in_string = true
+            out[#out + 1] = c
+        elseif c == '/' and text:sub(i + 1, i + 1) == '/' then
+            -- Line comment: skip to the end of the line, keeping the newline
+            -- so line numbers stay stable.
+            local eol = text:find('\n', i + 2, true)
+            if eol then
+                out[#out + 1] = '\n'
+                i = eol
+            else
+                break
+            end
+        elseif c == '/' and text:sub(i + 1, i + 1) == '*' then
+            -- Block comment: skip to the closing `*/`; drop the rest if
+            -- unterminated.
+            local close = text:find('*/', i + 2, true)
+            if close then
+                i = close + 1
+            else
+                break
+            end
+        else
+            out[#out + 1] = c
+        end
+        i = i + 1
+    end
+    return table.concat(out)
+end
+
 ---@param path string?
 ---@return dap.Configuration[]
 function M.getconfigs(path)
@@ -216,13 +302,13 @@ function M.getconfigs(path)
             return {}
         end
     else
-        local lines = {}
-        for line in io.lines(resolved_path) do
-            if not vim.startswith(vim.trim(line), '//') then
-                table.insert(lines, line)
-            end
+        local fp = io.open(resolved_path, 'r')
+        if fp then
+            contents = strip_json_comments(fp:read('*a') or '')
+            fp:close()
+        else
+            return {}
         end
-        contents = table.concat(lines, '\n')
     end
     return M._load_json(contents)
 end
@@ -247,8 +333,10 @@ function M.load_launchjs(path, type_to_filetypes)
         local filetypes = type_to_filetypes[config.type] or { config.type }
         for _, filetype in pairs(filetypes) do
             local dap_configurations = dap.configurations[filetype] or {}
-            for i, dap_config in pairs(dap_configurations) do
-                if dap_config.name == config.name then
+            -- Iterate in reverse: removing while iterating forward would
+            -- shift later elements down and skip entries.
+            for i = #dap_configurations, 1, -1 do
+                if dap_configurations[i].name == config.name then
                     -- remove old value
                     table.remove(dap_configurations, i)
                 end

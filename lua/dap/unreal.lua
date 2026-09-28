@@ -870,7 +870,12 @@ local function choose_unreal_process()
     for index = 1, #processes do
         local process = processes[index]
 
-        choices[#choices + 1] = ('%d. PID %-7d %s %s'):format(index, process.pid, process.command, process.arguments)
+        choices[#choices + 1] = ('%d. PID %-7d %s %s'):format(
+            index,
+            process.pid,
+            process.command,
+            process.arguments
+        )
     end
 
     local selected = fn.inputlist(choices)
@@ -960,7 +965,10 @@ local function build_project(configuration, target_kind)
     end
 
     if result.code ~= 0 then
-        local message = result_message(result, ('Unreal build exited with code %d'):format(result.code))
+        local message = result_message(
+            result,
+            ('Unreal build exited with code %d'):format(result.code)
+        )
 
         notify(notification_tail(message), levels.ERROR)
 
@@ -1458,51 +1466,70 @@ M.mappings = {
     },
 }
 
----@param opts? UnrealDapOptions
-function M.setup(opts)
-    opts = opts or {}
-
-    if opts.adapter ~= nil then
-        if opts.adapter == 'lldb' or opts.adapter == 'gdb' then
-            state.adapter = opts.adapter
-        else
-            notify(('invalid adapter: %s'):format(tostring(opts.adapter)), levels.WARN)
-        end
+---@param opts UnrealDapOptions
+local function apply_adapter_option(opts)
+    if opts.adapter == nil then
+        return
     end
 
-    if opts.root ~= nil then
-        local root = normalize(opts.root)
+    if opts.adapter == 'lldb' or opts.adapter == 'gdb' then
+        state.adapter = opts.adapter
+    else
+        notify(('invalid adapter: %s'):format(tostring(opts.adapter)), levels.WARN)
+    end
+end
 
-        if is_directory(root) then
-            state.project_root = root
-        else
-            notify(('invalid project root: %s'):format(root), levels.WARN)
-        end
+---@param opts UnrealDapOptions
+local function apply_root_option(opts)
+    if opts.root == nil then
+        return
     end
 
-    if opts.project ~= nil then
-        local project = resolve_project_candidate(opts.project)
+    local root = normalize(opts.root)
 
-        if project ~= nil then
-            state.uproject = project
-            state.project_root = fs.dirname(project)
-            state.executable = nil
-        else
-            notify(('invalid Unreal project: %s'):format(opts.project), levels.WARN)
-        end
+    if is_directory(root) then
+        state.project_root = root
+    else
+        notify(('invalid project root: %s'):format(root), levels.WARN)
+    end
+end
+
+---@param opts UnrealDapOptions
+local function apply_project_option(opts)
+    if opts.project == nil then
+        return
     end
 
-    if opts.engine_root ~= nil then
-        local root = normalize(opts.engine_root)
+    local project = resolve_project_candidate(opts.project)
 
-        if valid_engine_root(root) then
-            state.engine_root = root
-            state.editor = nil
-        else
-            notify(('invalid Unreal Engine root: %s'):format(root), levels.WARN)
-        end
+    if project ~= nil then
+        state.uproject = project
+        state.project_root = fs.dirname(project)
+        state.executable = nil
+    else
+        notify(('invalid Unreal project: %s'):format(opts.project), levels.WARN)
+    end
+end
+
+---@param opts UnrealDapOptions
+local function apply_engine_root_option(opts)
+    if opts.engine_root == nil then
+        return
     end
 
+    local root = normalize(opts.engine_root)
+
+    if valid_engine_root(root) then
+        state.engine_root = root
+        state.editor = nil
+    else
+        notify(('invalid Unreal Engine root: %s'):format(root), levels.WARN)
+    end
+end
+
+---@return string? lldb_dap_path
+---@return string? gdb_path
+local function resolve_debugger_commands()
     local lldb = lldb_dap()
 
     if lldb ~= nil then
@@ -1515,6 +1542,10 @@ function M.setup(opts)
         M.adapters['unreal-gdb'].command = gdb_path
     end
 
+    return lldb, gdb_path
+end
+
+local function warn_missing_roots()
     if resolve_uproject() == nil then
         vim.schedule(function()
             notify('current workspace is not an Unreal project', levels.DEBUG)
@@ -1537,7 +1568,11 @@ function M.setup(opts)
             )
         end)
     end
+end
 
+---@param lldb string?
+---@param gdb_path string?
+local function select_default_adapter(lldb, gdb_path)
     local gdb_dap_available = gdb_path ~= nil and gdb_supports_dap()
 
     if lldb == nil and not gdb_dap_available then
@@ -1549,6 +1584,25 @@ function M.setup(opts)
     elseif state.adapter == 'gdb' and not gdb_dap_available then
         state.adapter = 'lldb'
     end
+end
+
+---@param opts? UnrealDapOptions
+function M.setup(opts)
+    opts = opts or {}
+
+    apply_adapter_option(opts)
+
+    apply_root_option(opts)
+
+    apply_project_option(opts)
+
+    apply_engine_root_option(opts)
+
+    local lldb, gdb_path = resolve_debugger_commands()
+
+    warn_missing_roots()
+
+    select_default_adapter(lldb, gdb_path)
 end
 
 ---@return boolean

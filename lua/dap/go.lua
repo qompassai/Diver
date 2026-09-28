@@ -179,10 +179,10 @@ local function system(command, cwd)
     end)
 
     if not ok then
-        return nil
+        return nil, tostring(result)
     end
 
-    return result
+    return result, nil
 end
 
 ---@return string?
@@ -397,7 +397,7 @@ local function prompt_environment()
     return result
 end
 
----@return integer
+---@return integer?
 local function prompt_pid()
     local input = fn.input('Go process PID: ')
 
@@ -406,7 +406,7 @@ local function prompt_pid()
     if pid == nil or pid < 1 then
         notify(('invalid PID: %s'):format(input), levels.ERROR)
 
-        return 0
+        return nil
     end
 
     return math.floor(pid)
@@ -478,18 +478,90 @@ local function prompt_trace_directory()
     return selected
 end
 
----@return string
+---@param value string
+---@return boolean
+local function valid_ipv4(value)
+    local octets = {}
+
+    for octet in value:gmatch('[^%.]+') do
+        octets[#octets + 1] = octet
+    end
+
+    if #octets ~= 4 then
+        return false
+    end
+
+    for _, octet in ipairs(octets) do
+        if not octet:match('^%d+$') then
+            return false
+        end
+
+        local number = tonumber(octet)
+
+        if number == nil or number > 255 then
+            return false
+        end
+    end
+
+    return true
+end
+
+---@param value string
+---@return boolean
+local function valid_ipv6(value)
+    if not value:match('^[%x:]+$') then
+        return false
+    end
+
+    local _, colons = value:gsub(':', '')
+
+    return colons >= 2
+end
+
+---@param value string
+---@return boolean
+local function valid_hostname(value)
+    if value == '' or #value > 253 then
+        return false
+    end
+
+    if not value:match('^[%a%d]([%a%d%.%-]*[%a%d])?$') then
+        return false
+    end
+
+    for label in value:gmatch('[^%.]+') do
+        if #label > 63 or label:match('^%-') or label:match('%-$') then
+            return false
+        end
+    end
+
+    return true
+end
+
+---@param value string
+---@return boolean
+local function valid_remote_host(value)
+    return valid_ipv4(value) or valid_ipv6(value) or valid_hostname(value)
+end
+
+---@return string?
 local function prompt_remote_host()
     local value = fn.input('Remote Delve host: ', '127.0.0.1')
 
     if value == '' then
-        return '127.0.0.1'
+        value = '127.0.0.1'
+    end
+
+    if not valid_remote_host(value) then
+        notify(('invalid remote host: %s'):format(value), levels.ERROR)
+
+        return nil
     end
 
     return value
 end
 
----@return integer
+---@return integer?
 local function prompt_remote_port()
     local value = fn.input('Remote Delve port: ', '2345')
 
@@ -498,7 +570,7 @@ local function prompt_remote_port()
     if port == nil or port < 1 or port > 65535 then
         notify(('invalid Delve port: %s'):format(value), levels.ERROR)
 
-        return 2345
+        return nil
     end
 
     return math.floor(port)
@@ -525,11 +597,6 @@ local function prompt_substitute_path()
             to = to,
         },
     }
-end
-
----@return string
-local function dlv_command()
-    return resolve_dlv() or 'dlv'
 end
 
 local function select_dlv()
@@ -624,7 +691,9 @@ M.adapter = {
     port = '${port}',
 
     executable = {
-        command = dlv_command(),
+        -- Declarative placeholder: M.setup() resolves the real path via
+        -- resolve_dlv(); no PATH probing happens at require time.
+        command = 'dlv',
 
         args = {
             'dap',

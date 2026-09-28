@@ -87,10 +87,15 @@ CREATE INDEX IF NOT EXISTS dap_adapter_metrics_adapter_created_idx
   ON dap_adapter_metrics(adapter, created_at DESC);
 
 ALTER TABLE dap_projects ENABLE ROW LEVEL SECURITY;
+ALTER TABLE dap_projects FORCE ROW LEVEL SECURITY;
 ALTER TABLE dap_sessions ENABLE ROW LEVEL SECURITY;
+ALTER TABLE dap_sessions FORCE ROW LEVEL SECURITY;
 ALTER TABLE dap_events ENABLE ROW LEVEL SECURITY;
+ALTER TABLE dap_events FORCE ROW LEVEL SECURITY;
 ALTER TABLE dap_breakpoints ENABLE ROW LEVEL SECURITY;
+ALTER TABLE dap_breakpoints FORCE ROW LEVEL SECURITY;
 ALTER TABLE dap_adapter_metrics ENABLE ROW LEVEL SECURITY;
+ALTER TABLE dap_adapter_metrics FORCE ROW LEVEL SECURITY;
 
 DO $$
 BEGIN
@@ -152,12 +157,19 @@ END
 $$;
 ]=]
 
-M.sqlite = [=[
-PRAGMA foreign_keys = ON;
-PRAGMA journal_mode = WAL;
-PRAGMA synchronous = NORMAL;
-PRAGMA busy_timeout = 5000;
+---SQLite connection settings every sqlite3 process invocation must establish.
+---sqlite.lua launches a fresh process per query, so PRAGMAs in the schema
+---text (applied once at setup) do not reach later queries; the backend
+---passes these via `-cmd` on each invocation instead.
+---@type string[]
+M.sqlite_connection_pragmas = {
+    'PRAGMA foreign_keys = ON;',
+    'PRAGMA journal_mode = WAL;',
+    'PRAGMA synchronous = NORMAL;',
+    'PRAGMA busy_timeout = 5000;',
+}
 
+M.sqlite = table.concat(M.sqlite_connection_pragmas, '\n') .. '\n\n' .. [=[
 CREATE TABLE IF NOT EXISTS dap_projects (
   id          TEXT PRIMARY KEY,
   root        TEXT NOT NULL UNIQUE,

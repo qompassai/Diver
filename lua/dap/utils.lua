@@ -30,6 +30,18 @@ local M = {}
 ---@field executables? boolean
 ---@class dap.utils.PickFileOpts: dap.utils.GetFilesOpts
 ---@field path? string
+
+---Timeout in milliseconds for the `ps`/`tasklist` subprocess in `get_processes`.
+---@type integer
+local GET_PROCESSES_TIMEOUT_MS = 5000
+
+---Timeout in milliseconds for the `find` fallback subprocess in `get_files`.
+---@type integer
+local GET_FILES_TIMEOUT_MS = 5000
+
+---Maximum number of files `get_files` collects before truncating the list.
+---@type integer
+local FILE_COUNT_MAX = 10000
 ---@param err dap.ErrorResponse
 ---@return string?
 function M.fmt_error(err)
@@ -207,8 +219,12 @@ function M.get_processes(opts)
     local separator = is_windows and ',' or ' \\+'
     local result = vim.system(process_command(), {
         text = true,
-    }):wait()
+    }):wait(GET_PROCESSES_TIMEOUT_MS)
 
+    if not result then
+        M.notify('Timed out enumerating running processes', vim.log.levels.ERROR)
+        return {}
+    end
     if result.code ~= 0 then
         local message = result.stderr
         if type(message) ~= 'string' or message == '' then
@@ -367,6 +383,97 @@ local function file_filter(configured_filter)
     error('opts.filter must be a string or a function')
 end
 
+---@param path string directory to scan
+---@param filter fun(filepath: string): boolean
+---@return string[] files found, truncated to FILE_COUNT_MAX with a notification
+local function get_files_native(path, filter)
+    local files = {}
+    local truncated = false
+    for name, kind in
+        vim.fs.dir(path, {
+            depth = 50,
+        })
+    do
+        if #files >= FILE_COUNT_MAX then
+            truncated = true
+            break
+        end
+        if kind == 'file' then
+            local filepath = vim.fs.joinpath(path, name)
+            if filter(filepath) then
+                files[#files + 1] = filepath
+            end
+        end
+    end
+    if truncated then
+        M.notify(
+            string.format('File list truncated to %d entries under %s', FILE_COUNT_MAX, path),
+            vim.log.levels.WARN
+        )
+    end
+    table.sort(files)
+    return files
+end
+
+---@param path string directory to scan
+---@param opts dap.utils.GetFilesOpts
+---@param filter fun(filepath: string): boolean
+---@return string[] files found, truncated to FILE_COUNT_MAX with a notification
+local function get_files_find(path, opts, filter)
+    if vim.fn.executable('find') ~= 1 then
+        M.notify('File selection requires vim.fs.dir() or find(1)', vim.log.levels.ERROR)
+        return {}
+    end
+
+    local command = {
+        'find',
+        '-L',
+        path,
+        '-type',
+        'f',
+    }
+    if opts.executables then
+        command[#command + 1] = '-executable'
+    end
+
+    local result = vim.system(command, {
+        text = true,
+    }):wait(GET_FILES_TIMEOUT_MS)
+    if not result then
+        M.notify('Timed out enumerating files under ' .. path, vim.log.levels.ERROR)
+        return {}
+    end
+    if result.code ~= 0 then
+        local message = result.stderr
+        if type(message) ~= 'string' or message == '' then
+            message = 'Unable to enumerate files under ' .. path
+        end
+        M.notify(vim.trim(message), vim.log.levels.ERROR)
+        return {}
+    end
+
+    local files = vim.tbl_filter(
+        filter,
+        vim.split(result.stdout or '', '\n', {
+            plain = true,
+            trimempty = true,
+        })
+    )
+    table.sort(files)
+    if #files > FILE_COUNT_MAX then
+        M.notify(
+            string.format('File list truncated to %d entries under %s', FILE_COUNT_MAX, path),
+            vim.log.levels.WARN
+        )
+        local truncated = {}
+        for i = 1, FILE_COUNT_MAX do
+            truncated[i] = files[i]
+        end
+        files = truncated
+    end
+    return files
+end
+
 ---@param path string
 ---@param opts dap.utils.GetFilesOpts
 ---@return string[]
@@ -394,60 +501,10 @@ local function get_files(path, opts)
     end
 
     if vim.fs.dir then
-        local files = {}
-
-        for name, kind in
-            vim.fs.dir(path, {
-                depth = 50,
-            })
-        do
-            if kind == 'file' then
-                local filepath = vim.fs.joinpath(path, name)
-                if filter(filepath) then
-                    files[#files + 1] = filepath
-                end
-            end
-        end
-
-        table.sort(files)
-        return files
+        return get_files_native(path, filter)
     end
 
-    if vim.fn.executable('find') ~= 1 then
-        M.notify('File selection requires vim.fs.dir() or find(1)', vim.log.levels.ERROR)
-        return {}
-    end
-
-    local command = {
-        'find',
-        '-L',
-        path,
-        '-type',
-        'f',
-    }
-    if opts.executables then
-        command[#command + 1] = '-executable'
-    end
-
-    local result = vim.system(command, {
-        text = true,
-    }):wait()
-    if result.code ~= 0 then
-        local message = result.stderr
-        if type(message) ~= 'string' or message == '' then
-            message = 'Unable to enumerate files under ' .. path
-        end
-        M.notify(vim.trim(message), vim.log.levels.ERROR)
-        return {}
-    end
-
-    return vim.tbl_filter(
-        filter,
-        vim.split(result.stdout or '', '\n', {
-            plain = true,
-            trimempty = true,
-        })
-    )
+    return get_files_find(path, opts, filter)
 end
 ---@param opts? dap.utils.PickFileOpts
 ---@return thread|string|dap.Abort

@@ -67,7 +67,15 @@ local VSCODE_EXTENSION_ROOTS = {
 
     fs.joinpath(fn.expand('~'), '.vscode-oss', 'extensions'),
 
-    fs.joinpath(fn.expand('~'), '.var', 'app', 'com.visualstudio.code', 'data', 'vscode', 'extensions'),
+    fs.joinpath(
+        fn.expand('~'),
+        '.var',
+        'app',
+        'com.visualstudio.code',
+        'data',
+        'vscode',
+        'extensions'
+    ),
 }
 
 ---@type table<string, boolean>
@@ -240,7 +248,10 @@ local function adapter_from_extension_root(root)
 
         if
             entry_type == 'directory'
-            and (name:match('^ms%-vscode%.js%-debug%-') or name:match('^ms%-vscode%.js%-debug%-nightly%-'))
+            and (
+                name:match('^ms%-vscode%.js%-debug%-')
+                or name:match('^ms%-vscode%.js%-debug%-nightly%-')
+            )
         then
             matches[#matches + 1] = name
         end
@@ -317,15 +328,49 @@ local function resolve_adapter()
     return nil
 end
 
----@return string
-local function required_adapter()
-    local adapter = resolve_adapter()
+---
+--- Sentinel adapter path. Requiring this module must not scan the filesystem,
+--- so the executable args start with a path that cannot exist. The launch
+--- gate below replaces it with the real dapDebugServer.js resolved at launch
+--- time; if the gate never runs (or finds nothing) the spawn fails loudly on
+--- this impossible path instead of silently running node with no script.
+---
+local MISSING_ADAPTER_SENTINEL = '/nonexistent/qompass-js-debug/dapDebugServer.js'
 
-    if adapter ~= nil then
-        return adapter
+---@param adapter_key string
+---@return fun(configuration: table, on_config: fun(config: table))
+local function make_launch_gate(adapter_key)
+    return function(configuration, on_config)
+        local adapter = resolve_adapter()
+
+        if adapter == nil then
+            notify(
+                table.concat({
+                    'vscode-js-debug standalone DAP server was not found.',
+
+                    '',
+
+                    'Set either:',
+
+                    '  NVIM_JS_DEBUG_ADAPTER=/path/to/dapDebugServer.js',
+
+                    '  NVIM_JS_DEBUG_ROOT=/path/to/vscode-js-debug',
+                }, '\n'),
+                levels.WARN
+            )
+
+            return
+        end
+
+        local spec = M.adapters[adapter_key]
+
+        if spec ~= nil and type(spec.executable) == 'table' then
+            spec.executable.command = node()
+            spec.executable.args = { adapter, '${port}' }
+        end
+
+        on_config(configuration)
     end
-
-    return '/nonexistent/qompass-js-debug/dapDebugServer.js'
 end
 
 ---@return string
@@ -607,10 +652,12 @@ M.adapters = {
             command = node(),
 
             args = {
-                required_adapter(),
+                MISSING_ADAPTER_SENTINEL,
                 '${port}',
             },
         },
+
+        enrich_config = make_launch_gate('pwa-node'),
     },
 
     ['pwa-chrome'] = {
@@ -626,10 +673,12 @@ M.adapters = {
             command = node(),
 
             args = {
-                required_adapter(),
+                MISSING_ADAPTER_SENTINEL,
                 '${port}',
             },
         },
+
+        enrich_config = make_launch_gate('pwa-chrome'),
     },
 }
 

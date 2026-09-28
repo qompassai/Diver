@@ -96,6 +96,22 @@ local module_activations = {}
 ---@type table<string, boolean>
 local module_definitions_registered = {}
 
+---@class SpecDetectionCacheEntry
+---@field filename string buffer filename the cached detections were computed for
+---@field specs table<DebugModuleSpec, SpecDetection> per-spec detection results
+
+---@class SpecDetection
+---@field root string detected project root
+---@field enabled boolean whether the spec's condition passed
+
+---@type table<integer, SpecDetectionCacheEntry>
+local detection_cache = {}
+
+---@param bufnr integer
+local function invalidate_detection_cache(bufnr)
+    detection_cache[bufnr] = nil
+end
+
 local setup_complete = false
 
 ---@param message string
@@ -309,7 +325,10 @@ local function backend_call_any(names, ...)
         end
     end
 
-    notify(('native debug backend does not provide %s'):format(table.concat(names, ' or ')), levels.WARN)
+    notify(
+        ('native debug backend does not provide %s'):format(table.concat(names, ' or ')),
+        levels.WARN
+    )
 
     return false, nil
 end
@@ -729,6 +748,14 @@ local MODULES = {
 
     {
         filetypes = {
+            'cs',
+        },
+
+        module = 'unity',
+    },
+
+    {
+        filetypes = {
             'c',
             'cpp',
         },
@@ -740,6 +767,14 @@ local MODULES = {
         end,
 
         root = unreal_root,
+    },
+
+    {
+        filetypes = {
+            'zig',
+        },
+
+        module = 'zig',
     },
 }
 
@@ -768,7 +803,10 @@ local function spec_enabled(spec, bufnr, root)
     local ok, result = pcall(spec.condition, bufnr, root)
 
     if not ok then
-        notify(('module condition failed for %s: %s'):format(spec.module, tostring(result)), levels.WARN)
+        notify(
+            ('module condition failed for %s: %s'):format(spec.module, tostring(result)),
+            levels.WARN
+        )
 
         return false
     end
@@ -781,7 +819,7 @@ end
 ---@return string
 local function spec_root(spec, bufnr)
     if spec.root ~= nil then
-        local ok, result = pcall(spec.root, bufnr)
+        local ok, result = protected_call('module root', spec.root, bufnr)
 
         if ok and type(result) == 'string' and result ~= '' then
             return fs.normalize(result)
@@ -789,6 +827,46 @@ local function spec_root(spec, bufnr)
     end
 
     return M.root(bufnr)
+end
+
+---Detects the project root and condition for a spec, caching the result per
+---buffer. Filesystem walks (marker/suffix searches) run on every FileType
+---and BufEnter event without this; the cache makes repeat visits free.
+---
+---The entry is keyed on the buffer's filename so a `:saveas` to a new path
+---recomputes instead of going stale. Callers that depend on volatile
+---environment (e.g. sqlite's `NVIM_SQLITE_DATABASE`) pick up changes when
+---the buffer is wiped or renamed, not mid-session.
+---@param spec DebugModuleSpec
+---@param bufnr integer
+---@return SpecDetection
+local function detect_spec(spec, bufnr)
+    local filename = M.filename(bufnr)
+    local entry = detection_cache[bufnr]
+
+    if entry == nil or entry.filename ~= filename then
+        entry = {
+            filename = filename,
+            specs = {},
+        }
+        detection_cache[bufnr] = entry
+    end
+
+    local cached = entry.specs[spec]
+
+    if cached ~= nil then
+        return cached
+    end
+
+    local root = spec_root(spec, bufnr)
+    ---@type SpecDetection
+    cached = {
+        root = root,
+        enabled = spec_enabled(spec, bufnr, root),
+    }
+    entry.specs[spec] = cached
+
+    return cached
 end
 
 ---@return string[]
@@ -1174,7 +1252,10 @@ local function activate_module(module_name, module, bufnr, root)
     })
 
     if not ok then
-        notify(('%s setup failed for %s: %s'):format(module_name, root, tostring(setup_error)), levels.ERROR)
+        notify(
+            ('%s setup failed for %s: %s'):format(module_name, root, tostring(setup_error)),
+            levels.ERROR
+        )
 
         return
     end
@@ -1221,10 +1302,10 @@ function M.load_filetype(filetype, bufnr)
 
     for _, spec in ipairs(MODULES) do
         if spec_matches_filetype(spec, filetype) then
-            local root = spec_root(spec, bufnr)
+            local detection = detect_spec(spec, bufnr)
 
-            if spec_enabled(spec, bufnr, root) then
-                M.load(spec.module, bufnr, root)
+            if detection.enabled then
+                M.load(spec.module, bufnr, detection.root)
             end
         end
     end
@@ -1324,7 +1405,9 @@ function M.restart()
 
     local stop_callback = method(backend, 'stop') or method(backend, 'terminate')
 
-    local run_callback = method(backend, 'run_last') or method(backend, 'run') or method(backend, 'start')
+    local run_callback = method(backend, 'run_last')
+        or method(backend, 'run')
+        or method(backend, 'start')
 
     if stop_callback == nil or run_callback == nil then
         notify('native debug backend cannot restart sessions', levels.WARN)
@@ -1438,7 +1521,10 @@ function M.toggle_breakpoint()
         local success, breakpoint_error = pcall(breakpoints.toggle)
 
         if not success then
-            notify(('breakpoint toggle failed: %s'):format(tostring(breakpoint_error)), levels.ERROR)
+            notify(
+                ('breakpoint toggle failed: %s'):format(tostring(breakpoint_error)),
+                levels.ERROR
+            )
         end
 
         return
@@ -1463,7 +1549,7 @@ function M.clear_breakpoints()
     local ok, breakpoints = pcall(require, 'dap.breakpoints')
 
     if ok and type(breakpoints) == 'table' and callable(breakpoints.clear) then
-        pcall(breakpoints.clear)
+        protected_call('breakpoints.clear', breakpoints.clear)
 
         return
     end
@@ -1495,7 +1581,7 @@ function M.set_conditional_breakpoint()
     local ok, breakpoints = pcall(require, 'dap.breakpoints')
 
     if ok and type(breakpoints) == 'table' and callable(breakpoints.set) then
-        pcall(breakpoints.set, {
+        protected_call('breakpoints.set', breakpoints.set, {
             condition = condition,
         })
 
@@ -1530,7 +1616,7 @@ function M.set_logpoint()
     local ok, breakpoints = pcall(require, 'dap.breakpoints')
 
     if ok and type(breakpoints) == 'table' and callable(breakpoints.set) then
-        pcall(breakpoints.set, {
+        protected_call('breakpoints.set', breakpoints.set, {
             log_message = message,
             logMessage = message,
         })
@@ -1561,7 +1647,7 @@ function M.repl()
     local ok, widgets = pcall(require, 'dap.widgets')
 
     if ok and type(widgets) == 'table' and callable(widgets.repl) then
-        pcall(widgets.repl)
+        protected_call('widgets.repl', widgets.repl)
 
         return
     end
@@ -1585,7 +1671,7 @@ function M.hover()
     local ok, widgets = pcall(require, 'dap.widgets')
 
     if ok and type(widgets) == 'table' and callable(widgets.hover) then
-        pcall(widgets.hover)
+        protected_call('widgets.hover', widgets.hover)
 
         return
     end
@@ -1609,7 +1695,7 @@ function M.scopes()
     local ok, widgets = pcall(require, 'dap.widgets')
 
     if ok and type(widgets) == 'table' and callable(widgets.scopes) then
-        pcall(widgets.scopes)
+        protected_call('widgets.scopes', widgets.scopes)
 
         return
     end
@@ -1634,10 +1720,10 @@ function M.status()
 
     for _, spec in ipairs(MODULES) do
         if spec_matches_filetype(spec, filetype) then
-            local root = spec_root(spec, bufnr)
+            local detection = detect_spec(spec, bufnr)
 
-            if spec_enabled(spec, bufnr, root) then
-                applicable[#applicable + 1] = ('%s [%s]'):format(spec.module, root)
+            if detection.enabled then
+                applicable[#applicable + 1] = ('%s [%s]'):format(spec.module, detection.root)
             end
         end
     end
@@ -1876,7 +1962,12 @@ local function create_mappings()
 
     vim.keymap.set('n', '<F12>', ensure_setup(M.step_out), opts('Debug: Step out'))
 
-    vim.keymap.set('n', '<leader>dB', ensure_setup(M.set_conditional_breakpoint), opts('Debug: Conditional breakpoint'))
+    vim.keymap.set(
+        'n',
+        '<leader>dB',
+        ensure_setup(M.set_conditional_breakpoint),
+        opts('Debug: Conditional breakpoint')
+    )
 
     vim.keymap.set('n', '<leader>db', ensure_setup(M.toggle_breakpoint), opts('Debug: Breakpoint'))
 
@@ -1909,7 +2000,7 @@ local function persist_buffer_breakpoints(bufnr)
         return
     end
 
-    pcall(breakpoints.save, bufnr)
+    protected_call('breakpoints.save', breakpoints.save, bufnr)
 end
 
 local function persist_all_breakpoints()
@@ -1919,7 +2010,7 @@ local function persist_all_breakpoints()
         return
     end
 
-    pcall(breakpoints.save_all)
+    protected_call('breakpoints.save_all', breakpoints.save_all)
 end
 
 local function teardown_modules()
@@ -1928,7 +2019,10 @@ local function teardown_modules()
             local ok, teardown_error = pcall(module.teardown)
 
             if not ok then
-                notify(('%s teardown failed: %s'):format(module_name, tostring(teardown_error)), levels.WARN)
+                notify(
+                    ('%s teardown failed: %s'):format(module_name, tostring(teardown_error)),
+                    levels.WARN
+                )
             end
         end
     end
@@ -1971,6 +2065,7 @@ local function create_autocmds()
 
     api.nvim_create_autocmd('BufWipeout', {
         callback = function(args)
+            invalidate_detection_cache(args.buf)
             persist_buffer_breakpoints(args.buf)
         end,
 
@@ -2022,18 +2117,19 @@ function M.setup(opts)
 
     if not M.backend_available() then
         vim.schedule(function()
-            notify('vim.debug is unavailable; adapter definitions remain available in the local registry', levels.DEBUG)
+            notify(
+                'vim.debug is unavailable; adapter definitions remain available'
+                    .. ' in the local registry',
+                levels.DEBUG
+            )
         end)
     end
 end
 
--- Require-time surface is commands and mappings only. The first use of any
--- of them runs M.setup() (idempotent) via ensure_setup(), which installs
--- autocmds, loads the filetype adapter, and runs the backend check. Keeping
--- require() free of setup side effects means merely loading the module
--- (e.g. from another module's top level) never installs autocmds or emits
--- notifications; setup() is explicit and safe to call more than once.
-create_commands()
-create_mappings()
-
+-- Setup is explicit: call `require('dap').setup()` (typically from your
+-- Neovim config or plugin loader) to install autocmds, commands, and
+-- mappings. Merely requiring this module must not install anything: it
+-- would otherwise create global keymaps and user commands as a side effect
+-- of load order. (There is currently no in-repo plugin-loader call that
+-- performs this setup; see the audit report.)
 return M

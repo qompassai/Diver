@@ -84,7 +84,13 @@ function M.update(breakpoint)
                 bp.state.verified = breakpoint.verified
                 bp.state.message = breakpoint.message
                 if verified_changed then
-                    vim.fn.sign_place(sign_id, ns, get_sign_name(bp), bp.buf, { lnum = bp.line, priority = 21 })
+                    vim.fn.sign_place(
+                        sign_id,
+                        ns,
+                        get_sign_name(bp),
+                        bp.buf,
+                        { lnum = bp.line, priority = 21 }
+                    )
                 end
                 return
             end
@@ -139,7 +145,12 @@ function M.remove(bufnr, lnum)
     if signs and #signs > 0 then
         for _, sign in pairs(signs) do
             vim.fn.sign_unplace(ns, { buffer = bufnr, id = sign.id })
-            bp_by_sign_by_buf[bufnr][sign.id] = nil
+            -- Signs can exist without a registry entry (placed by another
+            -- plugin or a restored session); guard the per-buffer table.
+            local bp_by_sign = bp_by_sign_by_buf[bufnr]
+            if bp_by_sign then
+                bp_by_sign[sign.id] = nil
+            end
         end
         return true
     else
@@ -234,9 +245,12 @@ do
         for bufnr, buf_bps in pairs(breakpoints) do
             for _, bp in pairs(buf_bps) do
                 local state = bp.state or {}
+                local bp_line = api.nvim_buf_get_lines(bufnr, bp.line - 1, bp.line, false)
                 local text_parts = {
-                    unpack(api.nvim_buf_get_lines(bufnr, bp.line - 1, bp.line, false), 1),
-                    state.verified == false and (state.message and 'Rejected: ' .. state.message or 'Rejected') or nil,
+                    table.unpack(bp_line, 1),
+                    state.verified == false
+                            and (state.message and 'Rejected: ' .. state.message or 'Rejected')
+                        or nil,
                     non_empty(bp.logMessage) and 'Log message: ' .. bp.logMessage or nil,
                     non_empty(bp.condition) and 'Condition: ' .. bp.condition or nil,
                     non_empty(bp.hitCondition) and 'Hit condition: ' .. bp.hitCondition or nil,

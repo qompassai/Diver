@@ -28,6 +28,10 @@ local levels = vim.log.levels
 local M = {}
 
 local SOURCE = 'python-dap'
+
+--- Bound for interpreter/adapter probe invocations; a hung child must not
+--- freeze the editor.
+local PYTHON_COMMAND_TIMEOUT_MS = 30000
 local DEFAULT_ATTACH_HOST = '127.0.0.1'
 local DEFAULT_ATTACH_PORT = 5678
 
@@ -214,7 +218,10 @@ local function resolve_project_python(root)
             return expanded
         end
 
-        notify(('NVIM_PYTHON_DEBUG_INTERPRETER is not executable: %s'):format(expanded), levels.WARN)
+        notify(
+            ('NVIM_PYTHON_DEBUG_INTERPRETER is not executable: %s'):format(expanded),
+            levels.WARN
+        )
     end
 
     --
@@ -245,7 +252,7 @@ local function system(command)
     local ok, result = pcall(function()
         return vim.system(command, {
             text = true,
-        }):wait()
+        }):wait(PYTHON_COMMAND_TIMEOUT_MS)
     end)
 
     if not ok then

@@ -1,9 +1,9 @@
 --- DAP client core — the debugger's control room.
 ---
---- Plain-language version: this is the main debugger module: starting and stopping debug sessions, stepping
---- over/into/out of code, setting and clearing breakpoints, and showing variables and stack frames. It speaks the
---- Debug Adapter Protocol to whatever debug adapter your language uses. It runs only when you debug; each language
---- needs its own adapter installed.
+--- Plain-language version: this is the main debugger module: starting and stopping debug
+--- sessions, stepping over/into/out of code, setting and clearing breakpoints, and showing
+--- variables and stack frames. It speaks the Debug Adapter Protocol to whatever debug adapter
+--- your language uses. It runs only when you debug; each language needs its own adapter installed.
 ---@module 'dap.dap'
 --[[
 # #################################################################
@@ -27,7 +27,7 @@
 local api = vim.api
 local M = {}
 ---@diagnostic disable-next-line: deprecated
-local islist = vim.islist or vim.islist
+local islist = vim.islist or vim.tbl_islist
 ---@type table<number, dap.Session>
 local sessions = {}
 ---@type dap.Session|nil
@@ -50,7 +50,9 @@ local lazy = setmetatable({
 ---@return dap.log.Log
 local function log()
     if not _log then
-        _log = require('dap.log').create_logger('dap.log')
+        local log_mod = require('dap.log')
+        -- Logging is best-effort: a broken log path must not break debugging.
+        _log = log_mod.create_logger('dap.log') or log_mod.null_logger()
     end
     return _log
 end
@@ -76,7 +78,8 @@ M.repl = setmetatable({}, {
     end,
 })
 
----@alias dap.RequestListener<T, U> fun(s: dap.Session, err: dap.ErrorResponse?, res: T, args: U, seq: number):boolean?
+---@alias dap.RequestListener<T, U> fun(s: dap.Session, err: dap.ErrorResponse?, res: T, args: U,
+---  seq: number):boolean?
 
 ---@alias dap.EventListener<T> fun(session: dap.Session, body: T):boolean?
 
@@ -100,7 +103,8 @@ M.repl = setmetatable({}, {
 ---@field event_thread table<string, dap.EventListener<dap.ThreadEvent>>
 ---@field attach table<string, dap.RequestListener>
 ---@field breakpointLocations table<string, dap.RequestListener>
----@field completions table<string, dap.RequestListener<dap.CompletionsResponse, dap.CompletionsArguments>>
+---@field completions table<string,
+---  dap.RequestListener<dap.CompletionsResponse, dap.CompletionsArguments>>
 ---@field configurationDone table<string, dap.RequestListener>
 ---@field continue table<string, dap.RequestListener>
 ---@field dataBreakpointInfo table<string, dap.RequestListener>
@@ -110,7 +114,8 @@ M.repl = setmetatable({}, {
 ---@field exceptionInfo table<string, dap.RequestListener>
 ---@field goto table<string, dap.RequestListener>
 ---@field gotoTargets table<string, dap.RequestListener>
----@field initialize table<string, dap.RequestListener<dap.Capabilities?, dap.InitializeRequestArguments>>
+---@field initialize table<string,
+---  dap.RequestListener<dap.Capabilities?, dap.InitializeRequestArguments>>
 ---@field launch table<string, dap.RequestListener>
 ---@field loadedSources table<string, dap.RequestListener>
 ---@field modules table<string, dap.RequestListener>
@@ -242,7 +247,8 @@ local DAP_QUICKFIX_CONTEXT = DAP_QUICKFIX_TITLE
 ---@field options nil|ServerOptions
 
 ---@class dap.PipeAdapter.options
----@field timeout? integer wait in ms for the executable to spawn and create its pipe. Defaults to 5000
+---@field timeout? integer wait in ms for the executable to spawn and create its pipe.
+---  Defaults to 5000
 
 ---@class dap.PipeAdapter : dap.Adapter
 ---@field type "pipe"
@@ -256,7 +262,8 @@ local DAP_QUICKFIX_CONTEXT = DAP_QUICKFIX_TITLE
 ---@field cwd nil|string
 ---@field detached nil|boolean
 
----@alias dap.AdapterFactory fun(callback: fun(adapter: dap.Adapter), config: dap.Configuration, parent?: dap.Session)
+---@alias dap.AdapterFactory fun(callback: fun(adapter: dap.Adapter), config: dap.Configuration,
+---  parent?: dap.Session)
 
 --- Adapter definitions. See `:help dap-adapter` for more help
 ---
@@ -341,7 +348,10 @@ do
             option = option()
         end
         if type(option) == 'thread' then
-            assert(coroutine.status(option) == 'suspended', 'If option is a thread it must be suspended')
+            assert(
+                coroutine.status(option) == 'suspended',
+                'If option is a thread it must be suspended'
+            )
             local co = coroutine.running()
             -- Schedule ensures `coroutine.resume` happens _after_ coroutine.yield
             -- This is necessary in case the option coroutine is synchronous and
@@ -404,11 +414,24 @@ do
             return vim.fn.fnamemodify(vim.fn.getcwd(), ':t')
         end,
         ['${env:([%w_]+)}'] = function(match)
+            -- Deliberate: an unset variable expands to the empty string,
+            -- matching VS Code behavior, rather than leaving the
+            -- placeholder in place or raising an error.
             return os.getenv(match) or ''
         end,
     }
 
-    local function expand_config_variables(option)
+    -- Expansion recurses into nested tables; bound the depth so a
+    -- pathological or cyclic config cannot overflow the stack.
+    local EXPANSION_MAX_DEPTH = 32
+
+    ---@param option any
+    ---@param depth integer?
+    local function expand_config_variables(option, depth)
+        depth = depth or 0
+        if depth > EXPANSION_MAX_DEPTH then
+            error('config exceeds maximum expansion depth (' .. EXPANSION_MAX_DEPTH .. ')')
+        end
         option = eval_option(option)
         if option == M.ABORT then
             return option
@@ -417,7 +440,17 @@ do
             local mt = getmetatable(option)
             local result = {}
             for k, v in pairs(option) do
-                result[expand_config_variables(k)] = expand_config_variables(v)
+                local ek = expand_config_variables(k, depth + 1)
+                -- Propagate ABORT outward: a cancelled nested option must
+                -- abort the whole run, not linger silently in the config.
+                if ek == M.ABORT then
+                    return M.ABORT
+                end
+                local ev = expand_config_variables(v, depth + 1)
+                if ev == M.ABORT then
+                    return M.ABORT
+                end
+                result[ek] = ev
             end
             return setmetatable(result, mt)
         end
@@ -431,6 +464,12 @@ do
         for key, fn in pairs(var_placeholders_once) do
             if ret:find(key) then
                 local val = eval_option(fn)
+                -- A cancelled picker aborts the whole expansion: gsub
+                -- would otherwise treat ABORT as a lookup table and
+                -- silently leave the placeholder in place.
+                if val == M.ABORT then
+                    return M.ABORT
+                end
                 ret = ret:gsub(key, val)
             end
         end
@@ -493,7 +532,10 @@ local function run_adapter(adapter, config, opts)
     local name = config.name or '[no name]'
     local valid_type = adapter_types[adapter.type]
     if not valid_type then
-        local msg = string.format('Invalid adapter type %s, expected `executable`, `server` or `pipe`', adapter.type)
+        local msg = string.format(
+            'Invalid adapter type %s, expected `executable`, `server` or `pipe`',
+            adapter.type
+        )
         notify(msg, vim.log.levels.ERROR)
         return
     end
@@ -528,7 +570,9 @@ local function maybe_enrich_config_and_run(adapter, configuration, opts)
     assert(type(adapter) == 'table', 'adapter must be a table, not' .. vim.inspect(adapter))
     assert(
         adapter.type,
-        'Adapter for ' .. configuration.type .. ' must have the `type` property set to `executable` or `server`'
+        'Adapter for '
+            .. configuration.type
+            .. ' must have the `type` property set to `executable` or `server`'
     )
     if adapter.enrich_config then
         assert(
@@ -557,7 +601,8 @@ local function select_config_and_run(opts)
             if islist(configs) then
                 vim.list_extend(all_configs, configs)
             else
-                local msg = 'Configuration provider %s must return a list of configurations. Got: %s'
+                local msg =
+                    'Configuration provider %s must return a list of configurations. Got: %s'
                 notify(msg:format(provider, vim.inspect(configs)), vim.log.levels.WARN)
             end
         end
@@ -630,10 +675,16 @@ end
 ---@param opts dap.run.opts?
 ---@return nil
 function M.run(config, opts)
-    assert(type(config) == 'table', 'dap.run() must be called with a valid configuration, got ' .. vim.inspect(config))
+    assert(
+        type(config) == 'table',
+        'dap.run() must be called with a valid configuration, got ' .. vim.inspect(config)
+    )
 
     opts = opts or {}
-    if session and (opts.new == false or (opts.new == nil and session.config.name == config.name)) then
+    if
+        session
+        and (opts.new == false or (opts.new == nil and session.config.name == config.name))
+    then
         M.restart(config, opts)
         return
     end
@@ -700,7 +751,8 @@ end
 ---@class dap.step.opts step options forwarded to the debug adapter
 ---@field askForTargets? boolean ask the adapter for step-in targets before stepping
 ---@field steppingGranularity? dap.SteppingGranularity step size: statement, line, or instruction
----@field granularity? dap.SteppingGranularity DAP wire field for the step size, read by session:_step
+---@field granularity? dap.SteppingGranularity DAP wire field for the step size, read by
+---  session:_step
 ---@field targetId? integer chosen step-in target id
 
 --- Step over the current line
@@ -757,7 +809,10 @@ function M.step_into(opts)
 
     session:request('stepInTargets', { frameId = session.current_frame.id }, function(err, response)
         if err then
-            notify('Error on step_into: ' .. tostring(err) .. ' (while requesting stepInTargets)', vim.log.levels.ERROR)
+            notify(
+                'Error on step_into: ' .. tostring(err) .. ' (while requesting stepInTargets)',
+                vim.log.levels.ERROR
+            )
             return
         end
 
@@ -842,10 +897,12 @@ end
 
 ---@param lsession dap.Session?
 ---@param opts dap.terminate.Opts?
+-- Maximum `disconnect_timeout_sec` honored when terminating a session.
+local TERMINATE_TIMEOUT_MAX_SEC = 300
+
 local function terminate(lsession, opts)
     opts = opts or {}
-    local on_done = opts.on_done or function() end
-    if not lsession then
+    local on_done = opts.on_done or function() end    if not lsession then
         notify('No active session')
         on_done()
         return
@@ -862,7 +919,14 @@ local function terminate(lsession, opts)
     if capabilities.supportsTerminateRequest then
         capabilities.supportsTerminateRequest = false
         local args = opts.terminate_args or vim.empty_dict()
-        local timeout_sec = (lsession.adapter.options or {}).disconnect_timeout_sec or 3
+        -- nil preserves the 3s default; an explicit value is clamped to
+        -- [0, TERMINATE_TIMEOUT_MAX_SEC] so a typo cannot hang termination.
+        local timeout_sec = (lsession.adapter.options or {}).disconnect_timeout_sec
+        if timeout_sec == nil then
+            timeout_sec = 3
+        else
+            timeout_sec = math.max(0, math.min(timeout_sec, TERMINATE_TIMEOUT_MAX_SEC))
+        end
         local timeout_ms = timeout_sec * 1000
         lsession:request_with_timeout('terminate', args, timeout_ms, function(err)
             if err then
@@ -885,7 +949,8 @@ end
 ---@field disconnect_args dap.DisconnectArguments?
 ---@field on_done function?
 ---@field hierarchy boolean? terminate full hierarchy. Defaults to false
----@field all boolean? terminate all root sessions. Can be combined with hierarchy. Defaults to false
+---@field all boolean? terminate all root sessions. Can be combined with hierarchy.
+---  Defaults to false
 
 ---@param opts dap.terminate.Opts?
 ---@param disconnect_opts dap.DisconnectArguments? legacy positional disconnect arguments
@@ -1003,7 +1068,10 @@ function M.restart(config, opts)
             config = prepare_config(config)
             lsession:request('restart', { arguments = config }, function(err0, _)
                 if err0 then
-                    notify('Error restarting debug adapter: ' .. tostring(err0), vim.log.levels.ERROR)
+                    notify(
+                        'Error restarting debug adapter: ' .. tostring(err0),
+                        vim.log.levels.ERROR
+                    )
                 else
                     notify('Restarted debug adapter', vim.log.levels.INFO)
                 end
@@ -1181,6 +1249,82 @@ end
 
 ---@param opts? {new?: boolean}
 ---@return nil
+---@param lsession dap.Session
+---@param stopped_threads table<integer, dap.Thread>
+---@return string
+local function continue_prompt(lsession, stopped_threads)
+    if not lsession.initialized then
+        return 'Session still initializing> '
+    elseif next(stopped_threads) then
+        return 'Not focused on any stopped Thread> '
+    else
+        return 'Session active, but not stopped at breakpoint> '
+    end
+end
+
+---@param lsession dap.Session
+---@param stopped_threads table<integer, dap.Thread>
+---@return dap.ContinueChoice[]
+local function continue_choices(lsession, stopped_threads)
+    ---@class dap.ContinueChoice
+    ---@field label string
+    ---@field action fun()
+    local choices = {
+        {
+            label = 'Terminate session',
+            action = M.terminate,
+        },
+        {
+            label = 'Pause a thread',
+            action = M.pause,
+        },
+        {
+            label = 'Restart session',
+            action = M.restart,
+        },
+        {
+            label = 'Disconnect (terminate = true)',
+            action = function()
+                M.disconnect({ terminateDebuggee = true })
+            end,
+        },
+        {
+            label = 'Disconnect (terminate = false)',
+            action = function()
+                M.disconnect({ terminateDebuggee = false })
+            end,
+        },
+        {
+            label = 'Start additional session',
+            action = function()
+                M.continue({ new = true })
+            end,
+        },
+        {
+            label = 'Do nothing',
+            action = function() end,
+        },
+    }
+    if next(stopped_threads) then
+        table.insert(choices, 1, {
+            label = 'Resume stopped thread',
+            action = vim.schedule_wrap(function()
+                -- Pin `lsession`: the module-level `session` may have changed
+                -- while the user was choosing.
+                lazy.ui.pick_if_many(stopped_threads, 'Thread to resume> ', function(t)
+                    return t.name or t.id
+                end, function(choice)
+                    if choice then
+                        lsession.stopped_thread_id = choice.id
+                        lsession:_step('continue')
+                    end
+                end)
+            end),
+        })
+    end
+    return choices
+end
+
 function M.continue(opts)
     if not session then
         M.set_session(first_stopped_session())
@@ -1200,72 +1344,18 @@ function M.continue(opts)
         local stopped_threads = vim.tbl_filter(function(t)
             return t.stopped
         end, session.threads)
-        local prompt
-        if not session.initialized then
-            prompt = 'Session still initializing> '
-        elseif next(stopped_threads) then
-            prompt = 'Not focused on any stopped Thread> '
-        else
-            prompt = 'Session active, but not stopped at breakpoint> '
-        end
-        local choices = {
-            {
-                label = 'Terminate session',
-                action = M.terminate,
-            },
-            {
-                label = 'Pause a thread',
-                action = M.pause,
-            },
-            {
-                label = 'Restart session',
-                action = M.restart,
-            },
-            {
-                label = 'Disconnect (terminate = true)',
-                action = function()
-                    M.disconnect({ terminateDebuggee = true })
-                end,
-            },
-            {
-                label = 'Disconnect (terminate = false)',
-                action = function()
-                    M.disconnect({ terminateDebuggee = false })
-                end,
-            },
-            {
-                label = 'Start additional session',
-                action = function()
-                    M.continue({ new = true })
-                end,
-            },
-            {
-                label = 'Do nothing',
-                action = function() end,
-            },
-        }
-        if next(stopped_threads) then
-            table.insert(choices, 1, {
-                label = 'Resume stopped thread',
-                action = vim.schedule_wrap(function()
-                    lazy.ui.pick_if_many(stopped_threads, 'Thread to resume> ', function(t)
-                        return t.name or t.id
-                    end, function(choice)
-                        if choice then
-                            session.stopped_thread_id = choice.id
-                            session:_step('continue')
-                        end
-                    end)
-                end),
-            })
-        end
-        lazy.ui.pick_one(choices, prompt, function(x)
-            return x.label
-        end, function(choice)
-            if choice then
-                choice.action()
+        lazy.ui.pick_one(
+            continue_choices(session, stopped_threads),
+            continue_prompt(session, stopped_threads),
+            function(x)
+                return x.label
+            end,
+            function(choice)
+                if choice then
+                    choice.action()
+                end
             end
-        end)
+        )
     end
 end
 
@@ -1292,7 +1382,10 @@ end
 ---@return dap.Session|nil
 function M.attach(adapter, config, opts)
     if not config.request then
-        notify('Config needs the `request` property which must be one of `attach` or `launch`', vim.log.levels.ERROR)
+        notify(
+            'Config needs the `request` property which must be one of `attach` or `launch`',
+            vim.log.levels.ERROR
+        )
         return
     end
     assert(adapter.port, 'Adapter used with attach must have a port property')
@@ -1300,7 +1393,12 @@ function M.attach(adapter, config, opts)
     s = require('dap.session').connect(adapter, config, opts, function(err)
         if err then
             notify(
-                string.format("Couldn't connect to %s:%s: %s", adapter.host or '127.0.0.1', adapter.port, err),
+                string.format(
+                    "Couldn't connect to %s:%s: %s",
+                    adapter.host or '127.0.0.1',
+                    adapter.port,
+                    err
+                ),
                 vim.log.levels.ERROR
             )
         else
@@ -1333,7 +1431,10 @@ end
 ---@return nil
 function M.set_log_level(level)
     if level ~= nil then
-        require('dap.log').set_level(level)
+        local ok, err = require('dap.log').set_level(level)
+        if not ok then
+            notify('Invalid log level: ' .. tostring(err), vim.log.levels.ERROR)
+        end
     end
 end
 
@@ -1413,7 +1514,13 @@ function M._tagfunc(_, flags, _)
         err = e
         result = r
     end)
-    vim.wait(2000, function()
+    -- Synchronous by necessity: a tagfunc must return its matches
+    -- immediately, so there is no async option here. Bound the wait to a
+    -- small window so a slow adapter cannot freeze the editor for the old
+    -- 2000ms; if the response is not back in time, return no matches and
+    -- let the user retry. Local adapters answer in single-digit ms.
+    local TAGFUNC_WAIT_MS = 100
+    vim.wait(TAGFUNC_WAIT_MS, function()
         return err ~= nil or result ~= nil
     end)
     if result and result.source.path then

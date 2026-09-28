@@ -29,6 +29,10 @@ local M = {}
 
 local SOURCE = 'powershell-dap'
 
+--- Bound for process-listing invocations; a hung child must not freeze the
+--- editor.
+local POWERSHELL_COMMAND_TIMEOUT_MS = 15000
+
 ---@type string[]
 local ROOT_MARKERS = {
     '.psd1',
@@ -322,7 +326,10 @@ local function session_directory()
 
     fn.mkdir(base, 'p', '0700')
 
-    local directory = fs.joinpath(base, ('%d-%d'):format(uv.os_getpid(), math.floor(uv.hrtime() / 1000000)))
+    local directory = fs.joinpath(
+        base,
+        ('%d-%d'):format(uv.os_getpid(), math.floor(uv.hrtime() / 1000000))
+    )
 
     fn.mkdir(directory, 'p', '0700')
 
@@ -378,14 +385,14 @@ local function prompt_runspace_id()
 end
 
 ---@return table[]
-local function powershell_processes()
+local function powershell_processes_posix()
     local result = vim.system({
         'ps',
         '-eo',
         'pid=,comm=,args=',
     }, {
         text = true,
-    }):wait()
+    }):wait(POWERSHELL_COMMAND_TIMEOUT_MS)
 
     if result.code ~= 0 then
         return {}
@@ -422,6 +429,60 @@ local function powershell_processes()
     return processes
 end
 
+---@return table[]
+local function powershell_processes_windows()
+    local pwsh = executable_path('pwsh') or executable_path('powershell')
+
+    if pwsh == nil then
+        return {}
+    end
+
+    local result = vim.system({
+        pwsh,
+        '-NoProfile',
+        '-NonInteractive',
+        '-Command',
+        "Get-Process | Where-Object { $_.ProcessName -match 'pwsh|powershell' } | "
+            .. 'ForEach-Object { "$($_.Id)`t$($_.ProcessName)" }',
+    }, {
+        text = true,
+    }):wait(POWERSHELL_COMMAND_TIMEOUT_MS)
+
+    if result.code ~= 0 then
+        return {}
+    end
+
+    ---@type table[]
+    local processes = {}
+
+    for line in (result.stdout or ''):gmatch('[^\r\n]+') do
+        local pid, name = line:match('^(%d+)\t(.*)$')
+
+        if pid ~= nil and name ~= nil and name ~= '' then
+            processes[#processes + 1] = {
+                pid = tonumber(pid),
+
+                command = name,
+
+                arguments = '',
+            }
+        end
+    end
+
+    return processes
+end
+
+--- `ps` does not exist on Windows, so process listing is split by OS: native
+--- `Get-Process` on Windows, `ps` everywhere else.
+---@return table[]
+local function powershell_processes()
+    if uv.os_uname().sysname == 'Windows_NT' then
+        return powershell_processes_windows()
+    end
+
+    return powershell_processes_posix()
+end
+
 ---@return integer
 local function select_process()
     local processes = powershell_processes()
@@ -437,7 +498,12 @@ local function select_process()
     }
 
     for index, process in ipairs(processes) do
-        choices[#choices + 1] = ('%d. PID %-7d %s %s'):format(index, process.pid, process.command, process.arguments)
+        choices[#choices + 1] = ('%d. PID %-7d %s %s'):format(
+            index,
+            process.pid,
+            process.command,
+            process.arguments
+        )
     end
 
     local selected = fn.inputlist(choices)

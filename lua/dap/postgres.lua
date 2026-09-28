@@ -29,6 +29,10 @@ local M = {}
 
 local SOURCE = 'postgres-dap'
 
+--- Bound for `psql` and adapter probe invocations; a hung child must not
+--- freeze the editor.
+local PG_COMMAND_TIMEOUT_MS = 30000
+
 local ROOT_MARKERS = {
     'flyway.conf',
     'liquibase.properties',
@@ -120,7 +124,7 @@ local function system(command, cwd, env)
             env = env,
 
             text = true,
-        }):wait()
+        }):wait(PG_COMMAND_TIMEOUT_MS)
     end)
 
     if not ok then
@@ -594,6 +598,7 @@ local function status()
     )
 end
 
+---@type table
 M.adapter = {
     name = 'postgres',
 
@@ -754,6 +759,7 @@ local configurations = {
     },
 }
 
+---@type table<string, table[]>
 M.configurations = {
     sql = configurations,
 
@@ -762,6 +768,7 @@ M.configurations = {
     postgresql = configurations,
 }
 
+---@type table<string, DebugCommand>
 M.commands = {
     PostgresDebugAdapter = {
         callback = function()
@@ -890,13 +897,19 @@ M.mappings = {
     },
 }
 
+---@param opts table?
 function M.setup(opts)
     opts = opts or {}
 
     local configured_root = opts.root
 
-    state.root = type(configured_root) == 'string' and configured_root ~= '' and fs.normalize(configured_root)
-        or project_root()
+    local root = project_root()
+
+    if type(configured_root) == 'string' and configured_root ~= '' then
+        root = fs.normalize(configured_root)
+    end
+
+    state.root = root
 
     local adapter = resolve_adapter()
 
@@ -946,14 +959,17 @@ function M.setup(opts)
     end
 end
 
+---@return string?
 function M.adapter_path()
     return resolve_adapter()
 end
 
+---@return string?
 function M.psql()
     return resolve_psql()
 end
 
+---@return string
 function M.root()
     return project_root()
 end

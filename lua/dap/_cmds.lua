@@ -68,6 +68,9 @@ function M.new(args)
             for _, config in ipairs(configs) do
                 if vim.tbl_contains(fargs, config.name) then
                     dap.run(config)
+                    -- First match wins: duplicate names across providers must
+                    -- not launch multiple sessions.
+                    return
                 end
             end
         end
@@ -91,51 +94,51 @@ function M.source(buf)
         },
         sourceReference = source_ref,
     }
-    local response
+    -- Render in the request callback instead of blocking the main loop with
+    -- vim.wait: the buffer is populated when the adapter answers.
     session:request('source', params, function(err, result)
-        response = { err, result }
-    end)
-    vim.wait(5000, function()
-        return response ~= nil
-    end)
-    local err = response[1]
-    if err then
-        require('dap.utils').notify(tostring(err), vim.log.levels.WARN)
-        return
-    end
-    local result = response[2]
-    api.nvim_buf_set_lines(buf, 0, -1, true, vim.split(result.content, '\n', { plain = true }))
-    local adapter_options = session.adapter.options or {}
-    local ft = mime_to_filetype[response.mimeType] or adapter_options.source_filetype
-    if ft then
-        vim.bo[buf].filetype = ft
-    elseif source_path ~= '' and vim.filetype then
-        local ok
-        ok, ft = pcall(vim.filetype.match, { buf = buf, filename = source_path })
-        if ok and ft then
-            vim.bo[buf].filetype = ft
+        if err then
+            require('dap.utils').notify(tostring(err), vim.log.levels.WARN)
+            return
         end
-    end
+        if not api.nvim_buf_is_valid(buf) then
+            return
+        end
+        if not result or not result.content then
+            require('dap.utils').notify('Source response contained no content', vim.log.levels.WARN)
+            return
+        end
+        api.nvim_buf_set_lines(buf, 0, -1, true, vim.split(result.content, '\n', { plain = true }))
+        local adapter_options = session.adapter.options or {}
+        local ft = mime_to_filetype[result.mimeType] or adapter_options.source_filetype
+        if ft then
+            vim.bo[buf].filetype = ft
+        elseif source_path ~= '' and vim.filetype then
+            local ok
+            ok, ft = pcall(vim.filetype.match, { buf = buf, filename = source_path })
+            if ok and ft then
+                vim.bo[buf].filetype = ft
+            end
+        end
+    end)
 end
 
 function M.new_complete()
     local bufnr = api.nvim_get_current_buf()
     local dap = require('dap')
     local candidates = {}
-    local done = false
-    require('dap.async').run(function()
-        for _, get_configs in pairs(dap.providers.configs) do
-            local configs = get_configs(bufnr)
+    -- Providers return plain config lists; collect them synchronously instead
+    -- of blocking the main loop in vim.wait during completion. A provider
+    -- that errors (or would yield) is skipped rather than stalling completion.
+    for _, get_configs in pairs(dap.providers.configs) do
+        local ok, configs = pcall(get_configs, bufnr)
+        if ok and configs then
             for _, config in ipairs(configs) do
                 local name = config.name:gsub(' ', '\\ ')
                 table.insert(candidates, name)
             end
         end
-        done = true
-    end)
-    vim.wait(2000, function()
-        return done == true
-    end)
+    end
     return candidates
 end
 
@@ -149,8 +152,9 @@ function M.bufread_eval()
     if ft and ft ~= '' then
         vim.bo[bufnr].filetype = ft
     else
+        -- bufnr('#') returns -1 (truthy) when there is no alternate buffer.
         local altbuf = vim.fn.bufnr('#', false)
-        if altbuf then
+        if altbuf > 0 then
             vim.bo[bufnr].filetype = vim.bo[altbuf].filetype
         end
     end
@@ -170,7 +174,8 @@ end
 function M.newlaunchjson(args)
     if vim.snippet then
         local text = [[{
-    "\$schema": "https://raw.githubusercontent.com/mfussenegger/dapconfig-schema/master/dapconfig-schema.json",
+    "\$schema": "https://raw.githubusercontent.com/mfussenegger/]]
+            .. [[dapconfig-schema/master/dapconfig-schema.json",
     "version": "0.2.0",
     "configurations": [
         {

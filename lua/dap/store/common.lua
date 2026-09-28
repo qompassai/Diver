@@ -3,8 +3,12 @@ local uv = vim.uv
 
 local M = {}
 
+--- Escape a Lua value as a SQL literal. Accepts only nil, booleans, finite
+--- numbers, and strings; anything else is rejected with nil and an error so
+--- callers cannot silently serialize tables or functions into queries.
 ---@param value unknown
----@return string
+---@return string? literal SQL-safe representation
+---@return string? err rejection reason when the value is not literal-safe
 function M.literal(value)
     if value == nil then
         return 'NULL'
@@ -15,18 +19,30 @@ function M.literal(value)
     end
 
     if type(value) == 'number' then
-        assert(value == value and value ~= math.huge and value ~= -math.huge, 'non-finite SQL number')
+        if value ~= value or value == math.huge or value == -math.huge then
+            return nil, 'non-finite SQL number'
+        end
         return tostring(value)
     end
 
-    local text = tostring(value):gsub("'", "''")
-    return "'" .. text .. "'"
+    if type(value) == 'string' then
+        return "'" .. value:gsub("'", "''") .. "'"
+    end
+
+    return nil, 'cannot serialize value of type ' .. type(value)
 end
 
+--- Encode a value as JSON for storage in a TEXT column. Returns nil and an
+--- error on encode failure so callers can abort the query instead of
+--- persisting a corrupt payload.
 ---@param value unknown
----@return string
+---@return string? encoded JSON as a SQL literal
+---@return string? err encode or literal error
 function M.json(value)
-    local encoded = vim.json.encode(value or {})
+    local ok, encoded = pcall(vim.json.encode, value or {})
+    if not ok then
+        return nil, 'failed to encode JSON: ' .. tostring(encoded)
+    end
     return M.literal(encoded)
 end
 

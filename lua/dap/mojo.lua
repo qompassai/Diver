@@ -31,6 +31,10 @@ local M = {}
 
 local SOURCE = 'mojo-dap'
 
+--- Bound for `mojo` CLI invocations (build, version probes); a hung child
+--- must not freeze the editor.
+local MOJO_COMMAND_TIMEOUT_MS = 120000
+
 ---@type string[]
 local ROOT_MARKERS = {
     'pixi.toml',
@@ -164,7 +168,7 @@ local function system(command, cwd)
         return vim.system(command, {
             cwd = cwd,
             text = true,
-        }):wait()
+        }):wait(MOJO_COMMAND_TIMEOUT_MS)
     end)
 
     if not ok then
@@ -474,7 +478,10 @@ local function build_current(extra_flags)
     end
 
     if not executable(output) then
-        notify(('Mojo build completed but output is not executable: %s'):format(output), levels.ERROR)
+        notify(
+            ('Mojo build completed but output is not executable: %s'):format(output),
+            levels.ERROR
+        )
 
         return nil
     end
@@ -508,6 +515,67 @@ local function cli_compile_options()
     return fn.shellsplit(input)
 end
 
+---@param mojo string
+---@param cuda boolean
+---@param break_on_launch? boolean
+---@param source string
+---@return string[]
+local function mojo_debug_argv(mojo, cuda, break_on_launch, source)
+    ---@type string[]
+    local command = {
+        mojo,
+        'debug',
+    }
+
+    if cuda then
+        command[#command + 1] = '--cuda-gdb'
+
+        if break_on_launch then
+            command[#command + 1] = '--break-on-launch'
+        end
+    end
+
+    vim.list_extend(command, cli_compile_options())
+
+    command[#command + 1] = source
+
+    vim.list_extend(command, prompt_args())
+
+    return command
+end
+
+---@param command string[]
+local function spawn_mojo_debug_terminal(command)
+    vim.cmd('botright new')
+
+    local buffer = api.nvim_get_current_buf()
+
+    vim.bo[buffer].bufhidden = 'wipe'
+
+    local job = fn.jobstart(command, {
+        cwd = project_root(),
+
+        term = true,
+
+        on_exit = function(_, code)
+            vim.schedule(function()
+                notify(
+                    ('mojo debug exited with status %d'):format(code),
+                    code == 0 and levels.INFO or levels.WARN
+                )
+            end)
+        end,
+    })
+
+    if job <= 0 then
+        notify('failed to start mojo debug terminal', levels.ERROR)
+
+        return
+    end
+
+    vim.cmd('startinsert')
+end
+
 ---@param cuda boolean
 ---@param break_on_launch? boolean
 local function open_mojo_debug_terminal(cuda, break_on_launch)
@@ -533,53 +601,7 @@ local function open_mojo_debug_terminal(cuda, break_on_launch)
         return
     end
 
-    ---@type string[]
-    local command = {
-        mojo,
-        'debug',
-    }
-
-    if cuda then
-        command[#command + 1] = '--cuda-gdb'
-
-        if break_on_launch then
-            command[#command + 1] = '--break-on-launch'
-        end
-    end
-
-    vim.list_extend(command, cli_compile_options())
-
-    command[#command + 1] = source
-
-    local runtime_args = prompt_args()
-
-    vim.list_extend(command, runtime_args)
-
-    vim.cmd('botright new')
-
-    local buffer = api.nvim_get_current_buf()
-
-    vim.bo[buffer].bufhidden = 'wipe'
-
-    local job = fn.jobstart(command, {
-        cwd = project_root(),
-
-        term = true,
-
-        on_exit = function(_, code)
-            vim.schedule(function()
-                notify(('mojo debug exited with status %d'):format(code), code == 0 and levels.INFO or levels.WARN)
-            end)
-        end,
-    })
-
-    if job <= 0 then
-        notify('failed to start mojo debug terminal', levels.ERROR)
-
-        return
-    end
-
-    vim.cmd('startinsert')
+    spawn_mojo_debug_terminal(mojo_debug_argv(mojo, cuda, break_on_launch, source))
 end
 
 local function debug_cpu_cli()
@@ -668,7 +690,9 @@ local function status()
 
         'Mojo CPU CLI debugger: ' .. (mojo ~= nil and 'available' or 'unavailable'),
 
-        'Mojo NVIDIA GPU debugger: ' .. (mojo ~= nil and cuda_gdb ~= nil and 'available' or 'unavailable'),
+        'Mojo NVIDIA GPU debugger: ' .. (
+            mojo ~= nil and cuda_gdb ~= nil and 'available' or 'unavailable'
+        ),
 
         'cached debug executable: ' .. (state.executable or 'none'),
     }, '\n'))

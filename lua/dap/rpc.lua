@@ -17,6 +17,15 @@
 -- #################################################################
 local utils = require('dap.utils')
 local M = {}
+
+--- Maximum accepted `Content-Length` for a single DAP message.
+---
+--- Debug-adapter messages are JSON-RPC payloads; even large `variables`
+--- responses are kilobytes. A message claiming more than this is treated as
+--- a framing attack or a corrupt stream: the parser aborts and the session
+--- is expected to tear itself down via `on_error`.
+--- (16 MiB; deliberately generous so no legitimate adapter trips it.)
+local CONTENT_LENGTH_MAX = 16 * 1024 * 1024
 ---@param header string
 ---@return integer?
 local function get_content_length(header)
@@ -34,7 +43,7 @@ end
 local parse_chunk_loop
 local has_strbuffer, strbuffer = pcall(require, 'string.buffer')
 if has_strbuffer then
-    ---@async coroutine body: yields chunks via coroutine.yield, driven by coroutine.wrap
+    ---@async coroutine body: yields chunks via coroutine.yield, driven by resume_parse
     parse_chunk_loop = function()
         local buf = strbuffer.new()
         while true do
@@ -46,6 +55,15 @@ if has_strbuffer then
                 local content_length = get_content_length(header)
                 if not content_length then
                     error('Content-Length not found in headers: ' .. header)
+                end
+                if content_length > CONTENT_LENGTH_MAX then
+                    error(
+                        string.format(
+                            'Content-Length %d exceeds maximum %d; aborting message stream',
+                            content_length,
+                            CONTENT_LENGTH_MAX
+                        )
+                    )
                 end
                 while #buf < content_length do
                     local chunk = coroutine.yield()
@@ -60,7 +78,7 @@ if has_strbuffer then
         end
     end
 else
-    ---@async coroutine body: yields chunks via coroutine.yield, driven by coroutine.wrap
+    ---@async coroutine body: yields chunks via coroutine.yield, driven by resume_parse
     parse_chunk_loop = function()
         local buffer = ''
         while true do
@@ -70,6 +88,15 @@ else
                 local content_length = get_content_length(header)
                 if not content_length then
                     error('Content-Length not found in headers: ' .. header)
+                end
+                if content_length > CONTENT_LENGTH_MAX then
+                    error(
+                        string.format(
+                            'Content-Length %d exceeds maximum %d; aborting message stream',
+                            content_length,
+                            CONTENT_LENGTH_MAX
+                        )
+                    )
                 end
                 local body_chunks = { buffer:sub(body_start + 1) }
                 local body_length = #body_chunks[1]
@@ -87,20 +114,105 @@ else
                 end
                 local body = table.concat(body_chunks)
                 buffer = rest
-                    .. (coroutine.yield(body) or error('Expected more data for the body. The server may have died.'))
+                    .. (
+                        coroutine.yield(body)
+                        or error('Expected more data for the body. The server may have died.')
+                    )
             else
                 buffer = buffer
-                    .. (coroutine.yield() or error('Expected more data for the header. The server may have died.'))
+                    .. (
+                        coroutine.yield()
+                        or error('Expected more data for the header. The server may have died.')
+                    )
             end
         end
     end
 end
-function M.create_read_loop(handle_body, on_no_chunk)
-    local parse_chunk = coroutine.wrap(parse_chunk_loop)
-    parse_chunk()
+--- Parses a chunk of data into separate DAP message chunks
+---
+--- A DAP message looks like the following:
+--- ```
+---   Content-Length: 1234\r\n
+---   \r\n
+---   <1234 bytes of body>
+--- ```
+---
+--- Note that the headers of a DAP message are separated by `\r\n`. This
+--- means the chunk may end with `\r\n\r\n` or `\r\n` alone, depending on
+--- where it got split up.
+---
+---@param chunk string
+---@param resume_parse fun(chunk?: string): string? resumes the parser; nil once it died
+---@param handle_body fun(body: string)
+local function handle_chunk(chunk, resume_parse, handle_body)
+    while true do
+        local body = resume_parse(chunk)
+        if body then
+            handle_body(body)
+            chunk = ''
+        else
+            break
+        end
+    end
+end
+
+--- Creates a read loop for a debug adapter's stdout/stderr stream.
+---
+--- The parser runs in a coroutine created with `coroutine.create` (not
+--- `coroutine.wrap`) so framing errors -- a missing or absurd
+--- `Content-Length`, truncated headers -- surface as resume failures
+--- instead of propagating out of the libuv read callback. `on_error` fires
+--- once when the stream fails, whether from a framing error or a libuv read
+--- error; the parser is dead afterwards and further chunks are ignored.
+--- Callers are expected to tear the session down in `on_error`.
+---
+---@param handle_body fun(body: string) called with each complete message body
+---@param on_no_chunk? fun() called when the stream ends (EOF)
+---@param on_error? fun(err: string) called once when the stream fails
+---@return fun(err?: string, chunk?: string) read callback for `uv.read_start`
+function M.create_read_loop(handle_body, on_no_chunk, on_error)
+    local parse_chunk = coroutine.create(parse_chunk_loop)
+    local parse_failed = false
+    local error_fired = false
+
+    ---@param msg string
+    local function fire_on_error(msg)
+        if error_fired then
+            return
+        end
+        error_fired = true
+        if on_error then
+            on_error(msg)
+        else
+            utils.notify(msg, vim.log.levels.ERROR)
+        end
+    end
+
+    ---@param chunk? string
+    ---@return string? body
+    local function resume_parse(chunk)
+        if parse_failed then
+            return nil
+        end
+        local ok, body = coroutine.resume(parse_chunk, chunk)
+        if not ok then
+            parse_failed = true
+            fire_on_error('DAP message framing error: ' .. tostring(body))
+            return nil
+        end
+        return body
+    end
+
+    coroutine.resume(parse_chunk)
+    ---@param err? string
+    ---@param chunk? string
     return function(err, chunk)
         if err then
-            utils.notify(err, vim.log.levels.ERROR)
+            -- A libuv read failure (reset pipe, adapter crash) is fatal to
+            -- the stream: report it through the same one-shot on_error path
+            -- as framing failures so the session tears down exactly once.
+            parse_failed = true
+            fire_on_error('DAP stream read error: ' .. tostring(err))
             return
         end
         if not chunk then
@@ -109,17 +221,12 @@ function M.create_read_loop(handle_body, on_no_chunk)
             end
             return
         end
-        while true do
-            local body = parse_chunk(chunk)
-            if body then
-                handle_body(body)
-                chunk = ''
-            else
-                break
-            end
-        end
+        handle_chunk(chunk, resume_parse, handle_body)
     end
 end
+
+---@param msg string
+---@return string
 function M.msg_with_content_length(msg)
     return table.concat({
         'Content-Length: ',

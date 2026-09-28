@@ -31,6 +31,10 @@ local history = {
 
 local autoscroll = vim.fn.has('nvim-0.7') == 1
 
+---Maximum lines kept in the REPL buffer. Older lines are dropped after
+---each append so a chatty adapter cannot grow the buffer without bound.
+local REPL_MAX_LINES = 5000
+
 local function get_session()
     return require('dap').session()
 end
@@ -64,7 +68,13 @@ local function new_buf()
     if path and path ~= '' then
         vim.bo[buf].path = path
     end
-    api.nvim_buf_set_keymap(buf, 'n', '<CR>', "<Cmd>lua require('dap.ui').trigger_actions({ mode = 'first' })<CR>", {})
+    api.nvim_buf_set_keymap(
+        buf,
+        'n',
+        '<CR>',
+        "<Cmd>lua require('dap.ui').trigger_actions({ mode = 'first' })<CR>",
+        {}
+    )
     api.nvim_buf_set_keymap(buf, 'n', 'o', "<Cmd>lua require('dap.ui').trigger_actions()<CR>", {})
     api.nvim_buf_set_keymap(buf, 'i', '<up>', "<Cmd>lua require('dap.repl').on_up()<CR>", {})
     api.nvim_buf_set_keymap(buf, 'i', '<down>', "<Cmd>lua require('dap.repl').on_down()<CR>", {})
@@ -190,7 +200,10 @@ function M.print_stackframes(frames)
                     s:_frame_set(frame)
                     layer.render(frames, render_frame, context, start, start + #frames)
                 else
-                    utils.notify('Cannot navigate to frame without active session', vim.log.levels.INFO)
+                    utils.notify(
+                        'Cannot navigate to frame without active session',
+                        vim.log.levels.INFO
+                    )
                 end
             end,
         },
@@ -290,6 +303,76 @@ local function trystart(confname)
     return dap.session()
 end
 
+---Builtin REPL commands as alias -> handler. `require('dap')` stays inside
+---the handlers (not at table construction) to avoid a require cycle:
+---dap -> repl -> dap.
+---@type table<string, fun(session: dap.Session, words: string[])>
+local command_dispatch = {}
+
+---@param aliases string[]
+---@param handler fun(session: dap.Session, words: string[])
+local function register_command_aliases(aliases, handler)
+    for _, alias in ipairs(aliases) do
+        command_dispatch[alias] = handler
+    end
+end
+
+do
+    register_command_aliases(M.commands.continue, function()
+        require('dap').continue()
+    end)
+    register_command_aliases(M.commands.next_, function()
+        require('dap').step_over()
+    end)
+    register_command_aliases(M.commands.nexti, function()
+        require('dap').step_over({ granularity = 'instruction' })
+    end)
+    register_command_aliases(M.commands.capabilities, function(session)
+        M.append(vim.inspect(session.capabilities))
+    end)
+    register_command_aliases(M.commands.into, function()
+        require('dap').step_into()
+    end)
+    register_command_aliases(M.commands.intoi, function()
+        require('dap').step_into({ granularity = 'instruction' })
+    end)
+    register_command_aliases(M.commands.into_targets, function()
+        require('dap').step_into({ askForTargets = true })
+    end)
+    register_command_aliases(M.commands.out, function()
+        require('dap').step_out()
+    end)
+    register_command_aliases(M.commands.up, function(session)
+        session:_frame_delta(1)
+        M.print_stackframes()
+    end)
+    register_command_aliases(M.commands.step_back, function()
+        require('dap').step_back()
+    end)
+    register_command_aliases(M.commands.step_backi, function()
+        require('dap').step_back({ granularity = 'instruction' })
+    end)
+    register_command_aliases(M.commands.pause, function(session)
+        session:_pause()
+    end)
+    register_command_aliases(M.commands.reverse_continue, function()
+        require('dap').reverse_continue()
+    end)
+    register_command_aliases(M.commands.down, function(session)
+        session:_frame_delta(-1)
+        M.print_stackframes()
+    end)
+    register_command_aliases(M.commands.scopes, function(session)
+        print_scopes(session.current_frame)
+    end)
+    register_command_aliases(M.commands.threads, function(session)
+        print_threads(vim.tbl_values(session.threads))
+    end)
+    register_command_aliases(M.commands.frames, function()
+        M.print_stackframes()
+    end)
+end
+
 ---@param text string
 ---@param opts? dap.repl.execute.Opts
 local function coexecute(text, opts)
@@ -309,46 +392,15 @@ local function coexecute(text, opts)
         end
     end
     local words = vim.split(text, ' ', { plain = true })
-    if vim.tbl_contains(M.commands.continue, text) then
-        require('dap').continue()
-    elseif vim.tbl_contains(M.commands.next_, text) then
-        require('dap').step_over()
-    elseif vim.tbl_contains(M.commands.nexti, text) then
-        require('dap').step_over({ granularity = 'instruction' })
-    elseif vim.tbl_contains(M.commands.capabilities, text) then
-        M.append(vim.inspect(session.capabilities))
-    elseif vim.tbl_contains(M.commands.into, text) then
-        require('dap').step_into()
-    elseif vim.tbl_contains(M.commands.intoi, text) then
-        require('dap').step_into({ granularity = 'instruction' })
-    elseif vim.tbl_contains(M.commands.into_targets, text) then
-        require('dap').step_into({ askForTargets = true })
-    elseif vim.tbl_contains(M.commands.out, text) then
-        require('dap').step_out()
-    elseif vim.tbl_contains(M.commands.up, text) then
-        session:_frame_delta(1)
-        M.print_stackframes()
-    elseif vim.tbl_contains(M.commands.step_back, text) then
-        require('dap').step_back()
-    elseif vim.tbl_contains(M.commands.step_backi, text) then
-        require('dap').step_back({ granularity = 'instruction' })
-    elseif vim.tbl_contains(M.commands.pause, text) then
-        session:_pause()
-    elseif vim.tbl_contains(M.commands.reverse_continue, text) then
-        require('dap').reverse_continue()
-    elseif vim.tbl_contains(M.commands.down, text) then
-        session:_frame_delta(-1)
-        M.print_stackframes()
+    -- Builtins match the whole line, except `.goto`, which takes a frame
+    -- argument and matches on the first word only.
+    local handler = command_dispatch[text]
+    if handler then
+        handler(session, words)
     elseif vim.tbl_contains(M.commands.goto_, words[1]) then
         if words[2] then
             session:_goto(tonumber(words[2]))
         end
-    elseif vim.tbl_contains(M.commands.scopes, text) then
-        print_scopes(session.current_frame)
-    elseif vim.tbl_contains(M.commands.threads, text) then
-        print_threads(vim.tbl_values(session.threads))
-    elseif vim.tbl_contains(M.commands.frames, text) then
-        M.print_stackframes()
     elseif M.commands.custom_commands[words[1]] then
         local command = words[1]
         local args = string.sub(text, string.len(command) + 2)
@@ -412,7 +464,10 @@ function M.execute(text, opts)
     M.append(prompt .. text, '$', { newline = true })
     local numlines = line_count(repl.buf)
     if repl.win and api.nvim_win_is_valid(repl.win) then
-        pcall(api.nvim_win_set_cursor, repl.win, { numlines, 0 })
+        local ok, err = pcall(api.nvim_win_set_cursor, repl.win, { numlines, 0 })
+        if not ok then
+            utils.notify('REPL: failed to set cursor: ' .. tostring(err), vim.log.levels.DEBUG)
+        end
         api.nvim_win_call(repl.win, function()
             vim.cmd.normal({ 'zt', bang = true })
         end)
@@ -459,7 +514,11 @@ local function select_history(delta)
         local lines = vim.split(text, '\n', { plain = true })
         lines[1] = prompt .. lines[1]
         api.nvim_buf_set_lines(repl.buf, lnum - 1, -1, true, lines)
-        vim.fn.setcursorcharpos({ vim.fn.line('$'), vim.fn.col('$') }) -- move cursor to the end of line
+        -- move cursor to the end of line; best-effort, never break history
+        local ok, err = pcall(vim.fn.setcursorcharpos, { vim.fn.line('$'), vim.fn.col('$') })
+        if not ok then
+            utils.notify('REPL: failed to set cursor: ' .. tostring(err), vim.log.levels.DEBUG)
+        end
     end
 end
 
@@ -497,8 +556,19 @@ function M.append(line, lnum, opts)
     else
         error('Unsupported lnum argument: ' .. tostring(lnum))
     end
+    -- Bound the buffer: drop the oldest lines past the cap. The prompt line
+    -- is always last, so trimming from the top is safe.
+    local total = api.nvim_buf_line_count(buf)
+    if total > REPL_MAX_LINES then
+        local trimmed = total - REPL_MAX_LINES
+        api.nvim_buf_set_lines(buf, 0, trimmed, false, {})
+        lnum = math.max(0, lnum - trimmed)
+    end
     if autoscroll and repl.win and api.nvim_win_is_valid(repl.win) then
-        pcall(api.nvim_win_set_cursor, repl.win, { lnum + 2, 0 })
+        local ok, err = pcall(api.nvim_win_set_cursor, repl.win, { lnum + 2, 0 })
+        if not ok then
+            utils.notify('REPL: failed to set cursor: ' .. tostring(err), vim.log.levels.DEBUG)
+        end
     end
     return lnum
 end
@@ -582,7 +652,8 @@ do
 
             return completions
         end
-        local supportsCompletionsRequest = ((session or {}).capabilities or {}).supportsCompletionsRequest
+        local capabilities = (session or {}).capabilities or {}
+        local supportsCompletionsRequest = capabilities.supportsCompletionsRequest
         if not supportsCompletionsRequest then
             if findstart == 1 then
                 return -1
@@ -601,7 +672,10 @@ do
         ---@param response dap.CompletionsResponse?
         local function on_response(err, response)
             if err then
-                require('dap.utils').notify('completions request failed: ' .. err.message, vim.log.levels.WARN)
+                require('dap.utils').notify(
+                    'completions request failed: ' .. err.message,
+                    vim.log.levels.WARN
+                )
             elseif response then
                 local items = response.targets
                 local mixed, start = get_start(items, line_to_cursor)

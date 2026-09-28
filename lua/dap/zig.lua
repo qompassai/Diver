@@ -18,6 +18,22 @@ local FILE_PATTERNS = {
 }
 local CONFIGURED_FLAG = 'zig_dap_configured'
 local MASON_ROOT = vim.fs.joinpath(fn.stdpath('data'), 'mason')
+
+--- Bound for `zig build` / `zig test` invocations; compilation can be slow,
+--- but a hung child must not freeze the editor forever.
+local ZIG_COMMAND_TIMEOUT_MS = 600000
+
+---@param name string
+---@return string?
+local function env_override(name)
+    local value = os.getenv(name)
+
+    if type(value) == 'string' and value ~= '' then
+        return value
+    end
+
+    return nil
+end
 M.adapters = {
     primary = {
         name = 'lldb-dap',
@@ -79,7 +95,30 @@ end
 ---@param command string
 ---@param candidates? string[]
 ---@return string?
-local function resolve_executable(command, candidates)
+---@param command string
+---@param candidates? string[]
+---@param env_var? string
+---@return string?
+local function resolve_executable(command, candidates, env_var)
+    --
+    -- Environment overrides come first: an explicit path always wins over
+    -- PATH probing and hardcoded fallbacks.
+    --
+    if env_var ~= nil then
+        local override = env_override(env_var)
+
+        if override ~= nil then
+            if is_executable_file(override) then
+                return override
+            end
+
+            notify(
+                ('%s is not executable: %s'):format(env_var, override),
+                vim.log.levels.WARN
+            )
+        end
+    end
+
     local from_path = fn.exepath(command)
     if from_path ~= '' and is_executable_file(from_path) then
         return from_path
@@ -262,7 +301,7 @@ local function run_zig(bufnr, command)
     local zig = resolve_executable('zig', {
         '/usr/bin/zig',
         '/usr/local/bin/zig',
-    })
+    }, 'NVIM_ZIG_EXECUTABLE')
     if not zig then
         notify('zig was not found in PATH', vim.log.levels.ERROR)
         return nil
@@ -272,7 +311,7 @@ local function run_zig(bufnr, command)
     return vim.system(command, {
         cwd = workspace_root(bufnr),
         text = true,
-    }):wait()
+    }):wait(ZIG_COMMAND_TIMEOUT_MS)
 end
 
 ---@param raw string
@@ -483,45 +522,75 @@ local function resolve_program(bufnr)
     return program
 end
 
+---@class ZigCompileOptions
+---@field subcommand 'build-exe'|'test'
+---@field optimize 'Debug'|'ReleaseSafe'
+---@field suffix? string
+---@field extra_args? string[]
+---@field action string -- label for error messages, e.g. 'compilation'
+
 ---@param bufnr integer
----@param optimize 'Debug'|'ReleaseSafe'
----@param suffix? string
+---@param opts ZigCompileOptions
 ---@return string?
-local function compile_current_file(bufnr, optimize, suffix)
+local function compile_single_file(bufnr, opts)
     local file = buffer_file(bufnr)
+
     if not is_file(file) then
         notify('Current Zig file was not found', vim.log.levels.ERROR)
+
         return nil
     end
 
     local output_dir = dap_cache_dir(bufnr)
+
     if not ensure_dir(output_dir) then
         return nil
     end
 
     local basename = safe_filename(fn.fnamemodify(file, ':t:r'))
-    local program = vim.fs.joinpath(output_dir, basename .. (suffix or ''))
-    local result = run_zig(bufnr, {
-        'zig',
-        'build-exe',
-        file,
-        '-O',
-        optimize,
-        '-femit-bin=' .. program,
-    })
+
+    local program = vim.fs.joinpath(output_dir, basename .. (opts.suffix or ''))
+
+    local command = { 'zig', opts.subcommand, file, '-O', opts.optimize }
+
+    for _, arg in ipairs(opts.extra_args or {}) do
+        command[#command + 1] = arg
+    end
+
+    command[#command + 1] = '-femit-bin=' .. program
+
+    local result = run_zig(bufnr, command)
+
     if not result then
         return nil
     end
+
     if result.code ~= 0 then
-        notify(command_error(result, 'Zig compilation failed'), vim.log.levels.ERROR)
+        notify(command_error(result, 'Zig ' .. opts.action .. ' failed'), vim.log.levels.ERROR)
+
         return nil
     end
+
     if not is_executable_file(program) then
         notify('Compiled Zig executable was not created: ' .. program, vim.log.levels.ERROR)
+
         return nil
     end
 
     return program
+end
+
+---@param bufnr integer
+---@param optimize 'Debug'|'ReleaseSafe'
+---@param suffix? string
+---@return string?
+local function compile_current_file(bufnr, optimize, suffix)
+    return compile_single_file(bufnr, {
+        subcommand = 'build-exe',
+        optimize = optimize,
+        suffix = suffix,
+        action = 'compilation',
+    })
 end
 
 ---@param bufnr integer
@@ -551,7 +620,7 @@ local function resolve_adapter()
         '/usr/bin/lldb-dap',
         '/usr/local/bin/lldb-dap',
         vim.fs.joinpath(MASON_ROOT, 'bin', 'lldb-dap'),
-    })
+    }, 'NVIM_ZIG_LLDB_DAP')
     if primary then
         M.adapters.primary.command = primary
         return M.adapters.primary
@@ -562,13 +631,16 @@ local function resolve_adapter()
         vim.fs.joinpath(MASON_ROOT, 'packages', 'codelldb', 'extension', 'adapter', 'codelldb'),
         '/usr/bin/codelldb',
         '/usr/local/bin/codelldb',
-    })
+    }, 'NVIM_ZIG_CODELLDB')
     if fallback then
         M.adapters.fallback.command = fallback
         return M.adapters.fallback
     end
 
-    notify('No Zig-capable adapter was found. On Arch Linux, install lldb for lldb-dap.', vim.log.levels.ERROR)
+    notify(
+        'No Zig-capable adapter was found. On Arch Linux, install lldb for lldb-dap.',
+        vim.log.levels.ERROR
+    )
     return nil
 end
 
@@ -707,37 +779,15 @@ function M.test_current_file()
         return
     end
 
-    local file = buffer_file(bufnr)
-    if not is_file(file) then
-        notify('Current Zig file was not found', vim.log.levels.ERROR)
-        return
-    end
-
-    local output_dir = dap_cache_dir(bufnr)
-    if not ensure_dir(output_dir) then
-        return
-    end
-
-    local basename = safe_filename(fn.fnamemodify(file, ':t:r'))
-    local program = vim.fs.joinpath(output_dir, basename .. '-test')
-    local result = run_zig(bufnr, {
-        'zig',
-        'test',
-        file,
-        '-O',
-        'Debug',
-        '--test-no-exec',
-        '-femit-bin=' .. program,
+    local program = compile_single_file(bufnr, {
+        subcommand = 'test',
+        optimize = 'Debug',
+        suffix = '-test',
+        extra_args = { '--test-no-exec' },
+        action = 'test compilation',
     })
-    if not result then
-        return
-    end
-    if result.code ~= 0 then
-        notify(command_error(result, 'Zig test compilation failed'), vim.log.levels.ERROR)
-        return
-    end
-    if not is_executable_file(program) then
-        notify('Compiled Zig test executable was not created', vim.log.levels.ERROR)
+
+    if program == nil then
         return
     end
 

@@ -34,6 +34,30 @@ local ADAPTER_NAME = 'android-lldb'
 local DEFAULT_GDB_PORT = 5039
 local DEFAULT_JDWP_PORT = 8700
 
+--- Bounds for subprocess work: adb probes are quick, Gradle builds are not,
+--- and the app-pid poll needs a per-probe ceiling so a wedged adb cannot
+--- stretch one iteration indefinitely.
+local ADB_TIMEOUT_MS = 10000
+local HOST_COMMAND_TIMEOUT_MS = 10000
+local GRADLE_BUILD_TIMEOUT_MS = 600000
+local APP_PID_PROBE_TIMEOUT_MS = 2000
+
+--- The launch path resolves `program` synchronously (the DAP core evaluates
+--- configuration functions on the main thread), so the app-pid wait there
+--- stays a bounded poll with named constants. Command paths that can take a
+--- callback use poll_app_pid_async() instead and never block the UI.
+local APP_PID_ATTEMPTS_MAX = 30
+local APP_PID_POLL_INTERVAL_MS = 100
+
+--- Readiness probe for the lldb-server adb forward (replaces a blind sleep).
+--- Each attempt opens a real TCP connection through the forward; adb refuses
+--- the connection until lldb-server is actually listening on the device.
+local LLDB_READY_ATTEMPTS_MAX = 10
+local LLDB_READY_INTERVAL_MS = 100
+
+--- Bound for a single TCP readiness probe.
+local LLDB_READY_PROBE_TIMEOUT_MS = 500
+
 local NOTIFY_PREFIX = '[android-debug] '
 
 ---@class AndroidDebugState
@@ -136,17 +160,26 @@ local function read_file(path)
     return content
 end
 
+---@class AndroidSystemOpts : vim.SystemOpts
+---@field timeout_ms? integer maximum milliseconds to wait; nil waits unbounded (legacy callers)
+
 ---@param command string[]
----@param opts? vim.SystemOpts
+---@param opts? AndroidSystemOpts
 ---@return vim.SystemCompleted
 local function system(command, opts)
     assert(type(command) == 'table' and #command > 0, 'command must be a non-empty argv table')
 
-    opts = vim.tbl_extend('force', {
-        text = true,
-    }, opts or {})
+    opts = opts or {}
 
-    return vim.system(command, opts):wait()
+    local timeout_ms = opts.timeout_ms
+
+    local system_opts = vim.tbl_extend('force', {
+        text = true,
+    }, opts)
+
+    system_opts.timeout_ms = nil
+
+    return vim.system(command, system_opts):wait(timeout_ms)
 end
 
 ---@param result vim.SystemCompleted
@@ -192,6 +225,31 @@ local function project_root(start)
     return fs.root(start, PROJECT_ROOT_MARKERS)
 end
 
+--- Extra project-root subpaths, relative to each directory in the upward
+--- walk, supplied by the user via ANDROID_EXTRA_ROOTS (colon-separated,
+--- e.g. 'crates/ontrack-mobile/android'). The previously hardcoded personal
+--- layout is gone; set the variable to restore it for your own projects.
+---@return string[]
+local function extra_root_subdirs()
+    local raw = env.ANDROID_EXTRA_ROOTS
+
+    if type(raw) ~= 'string' or raw == '' then
+        return {}
+    end
+
+    local subdirs = {}
+
+    for subdir in raw:gmatch('[^:]+') do
+        local trimmed = vim.trim(subdir)
+
+        if trimmed ~= '' then
+            subdirs[#subdirs + 1] = trimmed
+        end
+    end
+
+    return subdirs
+end
+
 ---@param start? string
 ---@return string?
 local function find_android_root(start)
@@ -205,7 +263,11 @@ local function find_android_root(start)
         start = fn.getcwd()
     end
 
-    local current = is_directory(start) and normalize(start) or normalize(fs.dirname(start) or fn.getcwd())
+    local start_dir = fs.dirname(start) or fn.getcwd()
+
+    local current = is_directory(start) and normalize(start) or normalize(start_dir)
+
+    local extra_subdirs = extra_root_subdirs()
 
     while current ~= '' do
         local has_app = exists(fs.joinpath(current, 'app', 'build.gradle.kts'))
@@ -220,12 +282,17 @@ local function find_android_root(start)
             return current
         end
 
-        local ontrack_android = fs.joinpath(current, 'crates', 'ontrack-mobile', 'android')
+        for _, subdir in ipairs(extra_subdirs) do
+            local candidate = fs.joinpath(current, subdir)
 
-        if exists(fs.joinpath(ontrack_android, 'app', 'build.gradle.kts')) then
-            state.android_root = normalize(ontrack_android)
+            local candidate_has_app = exists(fs.joinpath(candidate, 'app', 'build.gradle.kts'))
+                or exists(fs.joinpath(candidate, 'app', 'build.gradle'))
 
-            return state.android_root
+            if candidate_has_app then
+                state.android_root = normalize(candidate)
+
+                return state.android_root
+            end
         end
 
         local parent = fs.dirname(current)
@@ -365,7 +432,8 @@ local function native_library_name(root)
         return nil
     end
 
-    return content:match('android:name%s*=%s*"android%.app%.lib_name".-android:value%s*=%s*"([^"]+)"')
+    return content:match('android:name%s*=%s*"android%.app%.lib_name".-'
+        .. 'android:value%s*=%s*"([^"]+)"')
 end
 
 ---@return string?
@@ -494,16 +562,18 @@ local function devices()
         return {}
     end
 
-    local result = system(argv)
+    local result = system(argv, { timeout_ms = ADB_TIMEOUT_MS })
 
     if result.code ~= 0 then
         return {}
     end
 
+    local devices_output = result.stdout or ''
+
     ---@type table[]
     local result_devices = {}
 
-    for line in (result.stdout or ''):gmatch('[^\r\n]+') do
+    for line in devices_output:gmatch('[^\r\n]+') do
         local serial, status = line:match('^(%S+)%s+(%S+)')
 
         if serial ~= nil and status == 'device' and serial ~= 'List' then
@@ -588,7 +658,7 @@ local function device_abi(serial)
         return nil
     end
 
-    local result = system(argv)
+    local result = system(argv, { timeout_ms = ADB_TIMEOUT_MS })
 
     if result.code ~= 0 then
         return nil
@@ -627,6 +697,7 @@ local function build_debug(root)
         task,
     }, {
         cwd = root,
+        timeout_ms = GRADLE_BUILD_TIMEOUT_MS,
     })
 
     return check_result(result, 'Android debug build')
@@ -679,7 +750,7 @@ local function install_apk(serial, apk)
         return false
     end
 
-    return check_result(system(argv), 'APK install')
+    return check_result(system(argv, { timeout_ms = ADB_TIMEOUT_MS }), 'APK install')
 end
 
 ---@param serial string
@@ -693,7 +764,7 @@ local function force_stop(serial, package)
     })
 
     if argv ~= nil then
-        system(argv)
+        system(argv, { timeout_ms = ADB_TIMEOUT_MS })
     end
 end
 
@@ -725,14 +796,97 @@ local function launch_app(serial, package, activity, wait_for_jdwp)
         return false
     end
 
-    return check_result(system(argv), 'Android app launch')
+    return check_result(system(argv, { timeout_ms = ADB_TIMEOUT_MS }), 'Android app launch')
 end
 
+--- Monotonic generation counter: async pid polls from an older request are
+--- dropped once a newer poll starts, so a late answer cannot clobber fresh state.
+local app_pid_generation = 0
+
+--- Async app-pid poll: one adb probe per interval via vim.system, retries
+--- scheduled with vim.defer_fn so the UI thread never blocks. The callback
+--- runs on the main loop with the pid or nil when attempts run out.
+---@param serial string
+---@param package string
+---@param on_done fun(pid: integer?)
+local function poll_app_pid_async(serial, package, on_done)
+    assert(type(on_done) == 'function', 'poll_app_pid_async requires an on_done callback')
+
+    app_pid_generation = app_pid_generation + 1
+
+    local generation = app_pid_generation
+
+    local attempts_left = APP_PID_ATTEMPTS_MAX
+
+    local function settled(pid)
+        if generation == app_pid_generation then
+            on_done(pid)
+        end
+    end
+
+    local function poll()
+        if generation ~= app_pid_generation then
+            return
+        end
+
+        local argv = adb_command(serial, {
+            'shell',
+            'pidof',
+            package,
+        })
+
+        if argv == nil then
+            settled(nil)
+
+            return
+        end
+
+        vim.system(argv, {
+            text = true,
+        }, function(result)
+            if generation ~= app_pid_generation then
+                return
+            end
+
+            local pid
+
+            if result.code == 0 then
+                local value = tonumber((result.stdout or ''):match('(%d+)'))
+
+                if value ~= nil and value > 0 then
+                    pid = math.floor(value)
+                end
+            end
+
+            if pid ~= nil then
+                settled(pid)
+
+                return
+            end
+
+            attempts_left = attempts_left - 1
+
+            if attempts_left <= 0 then
+                settled(nil)
+
+                return
+            end
+
+            vim.defer_fn(poll, APP_PID_POLL_INTERVAL_MS)
+        end)
+    end
+
+    poll()
+end
+
+--- Synchronous pid wait for the launch path. Configuration functions are
+--- evaluated synchronously by the DAP core, so the launch flow cannot await
+--- poll_app_pid_async(); each probe is individually bounded instead.
 ---@param serial string
 ---@param package string
 ---@return integer?
 local function app_pid(serial, package)
-    for _ = 1, 30 do
+    for _ = 1, APP_PID_ATTEMPTS_MAX do
         local argv = adb_command(serial, {
             'shell',
             'pidof',
@@ -740,7 +894,7 @@ local function app_pid(serial, package)
         })
 
         if argv ~= nil then
-            local result = system(argv)
+            local result = system(argv, { timeout_ms = APP_PID_PROBE_TIMEOUT_MS })
 
             if result.code == 0 then
                 local value = (result.stdout or ''):match('(%d+)')
@@ -753,7 +907,7 @@ local function app_pid(serial, package)
             end
         end
 
-        vim.wait(100)
+        vim.wait(APP_PID_POLL_INTERVAL_MS)
     end
 
     return nil
@@ -774,7 +928,7 @@ local function check_run_as(serial, package)
         return false
     end
 
-    local result = system(argv)
+    local result = system(argv, { timeout_ms = ADB_TIMEOUT_MS })
 
     if result.code ~= 0 then
         notify('run-as failed; make sure the installed APK is a debuggable build', levels.ERROR)
@@ -862,7 +1016,8 @@ local function lldb_server(abi)
     local sdk = env.ANDROID_SDK_ROOT or env.ANDROID_HOME
 
     if type(sdk) == 'string' and sdk ~= '' then
-        local sdk_matches = fn.glob(fs.joinpath(sdk, 'lldb', '*', 'android', '*', 'lldb-server'), false, true)
+        local sdk_matches =
+            fn.glob(fs.joinpath(sdk, 'lldb', '*', 'android', '*', 'lldb-server'), false, true)
 
         table.sort(sdk_matches, function(a, b)
             return a > b
@@ -964,7 +1119,10 @@ local function deploy_lldb_server(serial, package, local_server)
         remote_tmp,
     })
 
-    if push == nil or not check_result(system(push), 'lldb-server push') then
+    local push_ok = push ~= nil
+        and check_result(system(push, { timeout_ms = ADB_TIMEOUT_MS }), 'lldb-server push')
+
+    if not push_ok then
         return false
     end
 
@@ -977,7 +1135,10 @@ local function deploy_lldb_server(serial, package, local_server)
         './nvim-lldb-server',
     })
 
-    if copy == nil or not check_result(system(copy), 'lldb-server install') then
+    local copy_ok = copy ~= nil
+        and check_result(system(copy, { timeout_ms = ADB_TIMEOUT_MS }), 'lldb-server install')
+
+    if not copy_ok then
         return false
     end
 
@@ -994,14 +1155,18 @@ local function deploy_lldb_server(serial, package, local_server)
         return false
     end
 
-    return check_result(system(chmod), 'lldb-server chmod')
+    return check_result(system(chmod, { timeout_ms = ADB_TIMEOUT_MS }), 'lldb-server chmod')
 end
 
 ---@param serial string
 ---@param package string
 local function stop_lldb_server(serial, package)
     if state.lldb_server_job ~= nil then
-        pcall(state.lldb_server_job.kill, state.lldb_server_job, 15)
+        local ok, err = pcall(state.lldb_server_job.kill, state.lldb_server_job, 15)
+
+        if not ok then
+            notify(('failed to stop lldb-server job: %s'):format(tostring(err)), levels.WARN)
+        end
 
         state.lldb_server_job = nil
     end
@@ -1016,8 +1181,43 @@ local function stop_lldb_server(serial, package)
     })
 
     if argv ~= nil then
-        system(argv)
+        system(argv, { timeout_ms = ADB_TIMEOUT_MS })
     end
+end
+
+--- Actual socket readiness probe: connects through the adb forward to
+--- 127.0.0.1:port on the host. The connection only succeeds once lldb-server
+--- is listening on the device, unlike `adb forward --list` which merely
+--- shows the forwarding rule. Bounded; never blocks the UI thread longer
+--- than LLDB_READY_PROBE_TIMEOUT_MS.
+---@param port integer
+---@return boolean
+local function lldb_port_ready(port)
+    local client = uv.new_tcp()
+
+    if client == nil then
+        return false
+    end
+
+    local connected = false
+    local finished = false
+
+    client:connect('127.0.0.1', port, function(err)
+        connected = err == nil
+        finished = true
+    end)
+
+    -- vim.wait pumps the event loop, so the connect callback runs while we
+    -- wait for it.
+    vim.wait(LLDB_READY_PROBE_TIMEOUT_MS, function()
+        return finished
+    end, LLDB_READY_INTERVAL_MS)
+
+    pcall(function()
+        client:close()
+    end)
+
+    return connected
 end
 
 ---@param serial string
@@ -1033,7 +1233,13 @@ local function start_lldb_server(serial, package, port)
         ('tcp:%d'):format(port),
     })
 
-    if forward == nil or not check_result(system(forward), 'ADB LLDB port forwarding') then
+    if forward == nil then
+        return false
+    end
+
+    local forward_result = system(forward, { timeout_ms = ADB_TIMEOUT_MS })
+
+    if not check_result(forward_result, 'ADB LLDB port forwarding') then
         return false
     end
 
@@ -1044,7 +1250,7 @@ local function start_lldb_server(serial, package, port)
         './nvim-lldb-server',
         'platform',
         '--listen',
-        ('*:%d'):format(port),
+        ('localhost:%d'):format(port),
         '--server',
     })
 
@@ -1062,7 +1268,21 @@ local function start_lldb_server(serial, package, port)
         end
     end)
 
-    vim.wait(500)
+    local ready = false
+
+    for _ = 1, LLDB_READY_ATTEMPTS_MAX do
+        if lldb_port_ready(port) then
+            ready = true
+
+            break
+        end
+
+        vim.wait(LLDB_READY_INTERVAL_MS)
+    end
+
+    if not ready then
+        notify('lldb-server did not become ready; continuing anyway', levels.WARN)
+    end
 
     return true
 end
@@ -1077,7 +1297,7 @@ local function remove_forward(serial, port)
     })
 
     if argv ~= nil then
-        system(argv)
+        system(argv, { timeout_ms = ADB_TIMEOUT_MS })
     end
 end
 
@@ -1092,15 +1312,137 @@ local function native_port()
     return DEFAULT_GDB_PORT
 end
 
+---@class AndroidNativeProject
+---@field root string
+---@field package string
+
+--- Resolves the project root and application id. A nil error string means the
+--- failing step already emitted its own notification.
+---@return AndroidNativeProject?, string?
+local function prepare_project()
+    local root = find_android_root()
+
+    if root == nil then
+        return nil, 'Android project root not found'
+    end
+
+    local package = application_id(root)
+
+    if package == nil then
+        return nil, 'Android applicationId could not be determined'
+    end
+
+    return {
+        root = root,
+        package = package,
+    }, nil
+end
+
+--- Builds, installs and launches the app, then waits for its pid. A nil error
+--- string means the failing step already emitted its own notification.
+---@param project AndroidNativeProject
+---@param serial string
+---@param build boolean
+---@param install boolean
+---@param launch boolean
+---@return integer?, string?
+local function prepare_app(project, serial, build, install, launch)
+    if build and not build_debug(project.root) then
+        return nil, nil
+    end
+
+    if install then
+        local apk = debug_apk(project.root)
+
+        if apk == nil then
+            return nil, 'debug APK not found'
+        end
+
+        if not install_apk(serial, apk) then
+            return nil, nil
+        end
+    end
+
+    if not check_run_as(serial, project.package) then
+        return nil, nil
+    end
+
+    if launch and not launch_app(serial, project.package, activity_name(project.root), false) then
+        return nil, nil
+    end
+
+    local pid = app_pid(serial, project.package)
+
+    if pid == nil then
+        return nil, 'Android application process not found'
+    end
+
+    return pid, nil
+end
+
+---@class AndroidNativeTransport
+---@field abi string
+---@field library string
+---@field port integer
+
+--- Resolves the device ABI, deploys lldb-server and starts it with an adb
+--- forward. A nil error string means the failing step already emitted its own
+--- notification.
+---@param project AndroidNativeProject
+---@param serial string
+---@return AndroidNativeTransport?, string?
+local function prepare_transport(project, serial)
+    local abi = device_abi(serial)
+
+    if abi == nil then
+        return nil, 'Android device ABI could not be determined'
+    end
+
+    local server = lldb_server(abi)
+
+    if server == nil then
+        return nil, 'lldb-server was not found in the Android SDK/NDK'
+    end
+
+    local library = native_library(project.root, abi)
+
+    if library == nil then
+        return nil, 'local Android native library could not be found'
+    end
+
+    if not deploy_lldb_server(serial, project.package, server) then
+        return nil, nil
+    end
+
+    local port = native_port()
+
+    if not start_lldb_server(serial, project.package, port) then
+        return nil, nil
+    end
+
+    return {
+        abi = abi,
+        library = library,
+        port = port,
+    }, nil
+end
+
+---@param err? string
+local function notify_step_error(err)
+    if err ~= nil then
+        notify(err, levels.ERROR)
+    end
+end
+
 ---@param build boolean
 ---@param install boolean
 ---@param launch boolean
 ---@return table?
 local function prepare_native_session(build, install, launch)
-    local root = find_android_root()
+    local project, project_err = prepare_project()
 
-    if root == nil then
-        notify('Android project root not found', levels.ERROR)
+    if project == nil then
+        notify_step_error(project_err)
 
         return nil
     end
@@ -1111,95 +1453,33 @@ local function prepare_native_session(build, install, launch)
         return nil
     end
 
-    local package = application_id(root)
-
-    if package == nil then
-        notify('Android applicationId could not be determined', levels.ERROR)
-
-        return nil
-    end
-
-    if build and not build_debug(root) then
-        return nil
-    end
-
-    if install then
-        local apk = debug_apk(root)
-
-        if apk == nil then
-            notify('debug APK not found', levels.ERROR)
-
-            return nil
-        end
-
-        if not install_apk(serial, apk) then
-            return nil
-        end
-    end
-
-    if not check_run_as(serial, package) then
-        return nil
-    end
-
-    if launch then
-        if not launch_app(serial, package, activity_name(root), false) then
-            return nil
-        end
-    end
-
-    local pid = app_pid(serial, package)
+    local pid, app_err = prepare_app(project, serial, build, install, launch)
 
     if pid == nil then
-        notify('Android application process not found', levels.ERROR)
+        notify_step_error(app_err)
 
         return nil
     end
 
-    local abi = device_abi(serial)
+    local transport, transport_err = prepare_transport(project, serial)
 
-    if abi == nil then
-        notify('Android device ABI could not be determined', levels.ERROR)
+    if transport == nil then
+        notify_step_error(transport_err)
 
-        return nil
-    end
-
-    local server = lldb_server(abi)
-
-    if server == nil then
-        notify('lldb-server was not found in the Android SDK/NDK', levels.ERROR)
-
-        return nil
-    end
-
-    local library = native_library(root, abi)
-
-    if library == nil then
-        notify('local Android native library could not be found', levels.ERROR)
-
-        return nil
-    end
-
-    if not deploy_lldb_server(serial, package, server) then
-        return nil
-    end
-
-    local port = native_port()
-
-    if not start_lldb_server(serial, package, port) then
         return nil
     end
 
     state.pid = pid
 
-    state.remote_port = port
+    state.remote_port = transport.port
 
     return {
-        abi = abi,
-        library = library,
-        package = package,
+        abi = transport.abi,
+        library = transport.library,
+        package = project.package,
         pid = pid,
-        port = port,
-        root = root,
+        port = transport.port,
+        root = project.root,
         serial = serial,
     }
 end
@@ -1255,6 +1535,8 @@ local function rust_lldb_commands()
         'rustc',
         '--print',
         'sysroot',
+    }, {
+        timeout_ms = HOST_COMMAND_TIMEOUT_MS,
     })
 
     if result.code ~= 0 then
@@ -1355,7 +1637,10 @@ local function clear_app_data()
         package,
     })
 
-    if argv ~= nil and check_result(system(argv), 'clear application data') then
+    local clear_ok = argv ~= nil
+        and check_result(system(argv, { timeout_ms = ADB_TIMEOUT_MS }), 'clear application data')
+
+    if clear_ok then
         notify('application data cleared')
     end
 end
@@ -1375,25 +1660,27 @@ local function forward_jdwp()
         return
     end
 
-    local pid = app_pid(serial, package)
-    if pid == nil then
-        notify('application process not found', levels.ERROR)
+    local port = math.floor(tonumber(env.ANDROID_JDWP_PORT) or DEFAULT_JDWP_PORT)
 
-        return
-    end
-    local port = tonumber(env.ANDROID_JDWP_PORT) or DEFAULT_JDWP_PORT
+    poll_app_pid_async(serial, package, function(pid)
+        if pid == nil then
+            notify('application process not found', levels.ERROR)
 
-    port = math.floor(port)
+            return
+        end
 
-    local argv = adb_command(serial, {
-        'forward',
-        ('tcp:%d'):format(port),
-        ('jdwp:%d'):format(pid),
-    })
+        local argv = adb_command(serial, {
+            'forward',
+            ('tcp:%d'):format(port),
+            ('jdwp:%d'):format(pid),
+        })
 
-    if argv ~= nil and check_result(system(argv), 'JDWP forwarding') then
-        notify(('JDWP forwarded to localhost:%d'):format(port))
-    end
+        local forward_opts = { timeout_ms = ADB_TIMEOUT_MS }
+
+        if argv ~= nil and check_result(system(argv, forward_opts), 'JDWP forwarding') then
+            notify(('JDWP forwarded to localhost:%d'):format(port))
+        end
+    end)
 end
 
 local function launch_waiting_for_jdwp()
@@ -1442,25 +1729,10 @@ local function stop_debug_transport()
     notify('Android debug transport stopped')
 end
 
----@param name string
----@param callback function
----@param description string
-local function create_command(name, callback, description)
-    local commands = api.nvim_get_commands({
-        builtin = false,
-    })
-
-    if commands[name] ~= nil then
-        return
-    end
-
-    api.nvim_create_user_command(name, callback, {
-        desc = description,
-    })
-end
-
 M.adapter = {
-    command = lldb_dap() or 'lldb-dap',
+    -- Declarative placeholder: M.setup() resolves the real path and warns
+    -- when the adapter is absent; no PATH probing happens at require time.
+    command = 'lldb-dap',
 
     name = ADAPTER_NAME,
 
@@ -1509,6 +1781,45 @@ M.filetypes = {
     'rust',
 }
 
+---@type table<string, { callback: function, desc: string }>
+M.commands = {
+    AndroidBuildInstallLaunch = {
+        callback = build_install_launch,
+
+        desc = 'Build, install, and launch Android debug application',
+    },
+
+    AndroidClearAppData = {
+        callback = clear_app_data,
+
+        desc = 'Clear Android application data',
+    },
+
+    AndroidForwardJdwp = {
+        callback = forward_jdwp,
+
+        desc = 'Forward running Android process JDWP port',
+    },
+
+    AndroidLaunchJdwp = {
+        callback = launch_waiting_for_jdwp,
+
+        desc = 'Launch Android application waiting for JDWP',
+    },
+
+    AndroidSelectDevice = {
+        callback = select_device,
+
+        desc = 'Select Android debug device or emulator',
+    },
+
+    AndroidStopDebugTransport = {
+        callback = stop_debug_transport,
+
+        desc = 'Stop Android LLDB transport and port forwarding',
+    },
+}
+
 ---@param _opts? table
 function M.setup(_opts)
     if adb() == nil then
@@ -1522,19 +1833,6 @@ function M.setup(_opts)
     else
         M.adapter.command = adapter
     end
-
-    create_command(
-        'AndroidBuildInstallLaunch',
-        build_install_launch,
-        'Build, install, and launch Android debug application'
-    )
-
-    create_command('AndroidClearAppData', clear_app_data, 'Clear Android application data')
-
-    create_command('AndroidForwardJdwp', forward_jdwp, 'Forward running Android process JDWP port')
-    create_command('AndroidLaunchJdwp', launch_waiting_for_jdwp, 'Launch Android application waiting for JDWP')
-    create_command('AndroidSelectDevice', select_device, 'Select Android debug device or emulator')
-    create_command('AndroidStopDebugTransport', stop_debug_transport, 'Stop Android LLDB transport and port forwarding')
 end
 
 return M

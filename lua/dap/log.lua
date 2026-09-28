@@ -34,15 +34,29 @@ M.levels = {
 local default_level = M.levels.INFO
 local log_date_format = '!%F %H:%M:%S'
 ---@param level dap.log.Level|dap.log.Levels
----@return dap.log.Level
+---@return dap.log.Level? level
+---@return string? err
 local function tolevel(level)
     if type(level) == 'string' then
-        return assert(
-            M.levels[tostring(level):upper()],
-            string.format('Log level must be one of (trace, debug, info, warn, error), got: %q', level)
-        )
+        local nr = M.levels[tostring(level):upper()]
+        if not nr then
+            return nil,
+                string.format(
+                    'Log level must be one of (trace, debug, info, warn, error), got: %q',
+                    level
+                )
+        end
+        return nr
     end
-    return level
+    -- Numeric levels must name a real level; anything else is a caller bug.
+    if type(level) == 'number' and level >= 0 and level <= 4 and math.floor(level) == level then
+        return level
+    end
+    return nil,
+        string.format(
+            'Log level must be one of (trace, debug, info, warn, error), got: %s',
+            tostring(level)
+        )
 end
 
 ---@class dap.log.Log
@@ -50,29 +64,46 @@ end
 ---@field _path string
 ---@field _file file*?
 ---@field _level dap.log.Level
-
----@class dap.log.Log
 local Log = {}
 local log_mt = {
     __index = Log,
 }
 
+---@return boolean ok
+---@return string? err
 function Log:write(...)
-    self:open()
+    local ok, err = self:open()
+    if not ok then
+        return nil, err
+    end
     self._file:write(...)
     self._file:flush()
+    return true
 end
 
+---@return boolean ok
+---@return string? err
 function Log:open()
     if not self._file then
-        local f = assert(io.open(self._path, 'w+'))
+        local f, err = io.open(self._path, 'w+')
+        if not f then
+            return nil, err
+        end
         self._file = f
     end
+    return true
 end
 
 ---@param level dap.log.Level|string
+---@return boolean ok
+---@return string? err
 function Log:set_level(level)
-    self._level = tolevel(level)
+    local nr, err = tolevel(level)
+    if not nr then
+        return false, err
+    end
+    self._level = nr
+    return true
 end
 
 function Log:get_path()
@@ -106,9 +137,14 @@ function Log:_log(level, levelnr, ...)
         return true
     end
     local info = debug.getinfo(3, 'Sl')
-    local _, end_ = info.short_src:find('nvim-dap/lua', 1, true)
-    local src = end_ and info.short_src:sub(end_ + 2) or info.short_src
-    local fileinfo = string.format('%s:%s', src, info.currentline)
+    -- getinfo can return nil if _log is called directly at a shallow stack
+    -- depth; never let caller-location reporting crash the log call.
+    local fileinfo = '?'
+    if info then
+        local _, end_ = info.short_src:find('nvim-dap/lua', 1, true)
+        local src = end_ and info.short_src:sub(end_ + 2) or info.short_src
+        fileinfo = string.format('%s:%s', src, info.currentline)
+    end
     local parts = {
         table.concat({ '[', level, '] ', os.date(log_date_format), ' ', fileinfo }, ''),
     }
@@ -139,35 +175,67 @@ function Log:error(...)
     self:_log('ERROR', M.levels.ERROR, ...)
 end
 ---@param level dap.log.Level|dap.log.Levels
+---@return boolean ok
+---@return string? err
 function M.set_level(level)
-    for _, logger in pairs(loggers) do
-        logger:set_level(level)
+    local nr, err = tolevel(level)
+    if not nr then
+        return false, err
     end
-    default_level = tolevel(level)
+    for _, logger in pairs(loggers) do
+        logger._level = nr
+    end
+    default_level = nr
+    return true
 end
 ---@param fname string
----@return string path
----@return string log_dir
+---@return string? path
+---@return string? log_dir
+---@return string? err
 local function getpath(fname)
     local path_sep = vim.uv.os_uname().sysname == 'Windows' and '\\' or '/'
-    local joinpath = (vim.fs or {}).joinpath
-        or function(...)
-            ---@diagnostic disable-next-line: deprecated
-            return table.concat(vim.tbl_flatten({ ... }), path_sep)
+    -- Manual flatten: vim.tbl_flatten is deprecated.
+    local joinpath = (vim.fs or {}).joinpath or function(...)
+        local flat = {}
+        local function add(part)
+            if type(part) == 'table' then
+                for _, item in ipairs(part) do
+                    add(item)
+                end
+            else
+                flat[#flat + 1] = part
+            end
         end
+        for _, part in ipairs({ ... }) do
+            add(part)
+        end
+        return table.concat(flat, path_sep)
+    end
     local log_dir = vim.fn.stdpath('log')
-    assert(type(log_dir) == 'string')
+    if type(log_dir) ~= 'string' then
+        return nil,
+            nil,
+            'could not determine log directory: stdpath("log") returned ' .. type(log_dir)
+    end
     return joinpath(log_dir, fname), log_dir
 end
 ---@param filename string
----@return dap.log.Log
+---@return dap.log.Log? logger
+---@return string? err
 function M.create_logger(filename)
     local logger = loggers[filename]
     if logger then
-        logger:open()
+        local ok, err = logger:open()
+        if not ok then
+            return nil, err
+        end
         return logger
     end
-    local path, log_dir = getpath(filename)
+    local path, log_dir, err = getpath(filename)
+    if not path then
+        return nil, err
+    end
+    vim.fn.mkdir(log_dir, 'p')
     local log = {
         _fname = filename,
         _path = path,
@@ -175,8 +243,34 @@ function M.create_logger(filename)
     }
     logger = setmetatable(log, log_mt)
     loggers[filename] = logger
-    vim.fn.mkdir(log_dir, 'p')
-    logger:open()
+    local ok, open_err = logger:open()
+    if not ok then
+        loggers[filename] = nil
+        return nil, open_err
+    end
     return logger
+end
+
+--- A no-op logger with the same shape as `dap.log.Log`.
+---
+--- Safe fallback when `create_logger` fails: logging is best-effort
+--- infrastructure and must never break the debugger.
+---@return dap.log.Log
+function M.null_logger()
+    local noop = function()
+        return true
+    end
+    return setmetatable({
+        _fname = '',
+        _path = '',
+        _level = M.levels.ERROR,
+        get_path = function()
+            return ''
+        end,
+    }, {
+        __index = function()
+            return noop
+        end,
+    })
 end
 return M

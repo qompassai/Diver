@@ -39,12 +39,15 @@ function M.report(msg)
         idx_read = (idx_read + 1) % max_size
     end
 
+    -- nvim_exec_autocmds instead of `:doautocmd`: no command-line parsing,
+    -- so a hostile message can never inject Ex commands through this path.
+    local function fire()
+        vim.api.nvim_exec_autocmds('User', { pattern = 'DapProgressUpdate', modeline = false })
+    end
     if vim.in_fast_event() then
-        vim.schedule(function()
-            vim.cmd('doautocmd <nomodeline> User DapProgressUpdate')
-        end)
+        vim.schedule(fire)
     else
-        vim.cmd('doautocmd <nomodeline> User DapProgressUpdate')
+        fire()
     end
 end
 

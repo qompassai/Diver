@@ -1,26 +1,10 @@
 --- DAP protocol shapes — the dictionary the debugger modules share.
 ---
---- Plain-language version: this file writes down the exact shapes of the messages the Debug Adapter Protocol uses
---- (requests, responses, events), so every debugger module agrees on what a 'breakpoint' or a 'stack frame' looks
---- like. It is definitions only; nothing runs here.
+--- Plain-language version: this file writes down the exact shapes of the
+--- messages the Debug Adapter Protocol uses (requests, responses, events),
+--- so every debugger module agrees on what a 'breakpoint' or a 'stack
+--- frame' looks like. It is definitions only; nothing runs here.
 ---@module 'dap.protocol'
--- #################################################################
--- /qompassai/lua/dap/protocol.lua
--- Qompass AI Protocol
--- SPDX-License-Identifier: Apache-2.0
--- Copyright (c) 2026 Qompass AI
---
--- Licensed under the Apache License, Version 2.0 (the "License");
--- you may not use this file except in compliance with the License.
--- You may obtain a copy of the License at:
---   http://www.apache.org/licenses/LICENSE-2.0
---
--- Unless required by applicable law or agreed to in writing, software
--- distributed under the License is distributed on an "AS IS" BASIS,
--- WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
--- See the License for the specific language governing permissions and
--- limitations under the License.
--- #################################################################
 -- #################################################################
 -- /qompassai/lua/dap/protocol.lua
 -- Qompass AI Protocol
@@ -149,8 +133,10 @@
 ---@class dap.VariablesArguments
 ---@field variablesReference number variable for which to retrieve its children
 ---@field filter? "indexed"|"named" filter to limit child variables. Both are fetched if nil
----@field start? number index of the first variable to return (0-based if nil). Requires `supportsVariablePaging`
----@field count? number variables to return; all are returned if missing or 0. Requires `supportsVariablePaging`
+---@field start? number index of the first variable to return (0-based if nil).
+--- Requires `supportsVariablePaging`
+---@field count? number variables to return; all are returned if missing or 0.
+--- Requires `supportsVariablePaging`
 ---@field format? dap.ValueFormat
 
 ---@class dap.VariableResponse
@@ -168,7 +154,8 @@
 ---@field memoryReference? string
 ---@field declarationLocationReference? number
 ---@field valueLocationReference? number
----@field variables? dap.Variable[] resolved variablesReference. Not part of the spec; added by nvim-dap
+---@field variables? dap.Variable[] resolved variablesReference. Not part of the spec;
+--- added by nvim-dap
 ---@field parent? dap.Variable|dap.Scope injected by nvim-dap
 
 ---@class dap.EvaluateArguments
@@ -283,7 +270,7 @@
 ---@field attributeName string
 ---@field label string
 ---@field format string|nil
----@field type nil|"string"|"number"|"number"|"unixTimestampUTC"
+---@field type nil|"string"|"number"|"unixTimestampUTC"
 ---@field width number|nil
 ---@class dap.ChecksumAlgorithm
 ---@field algorithm "MD5"|"SHA1"|"SHA256"|"timestamp"
@@ -433,13 +420,18 @@
 ---@field line? integer
 
 ---@class dap.CompletionItem
----@field label string By default this is also the text that is inserted when selecting this completion
+---@field label string By default this is also the text that is inserted when selecting this
+--- completion
 ---@field text? string If present and not empty this is inserted instead of the label
----@field sortText? string Used to sort completion items if present and not empty. Otherwise label is used
----@field detail? string human-readable string with extra info about this item, like type or symbol info
+---@field sortText? string Used to sort completion items if present and not empty. Otherwise label
+--- is used
+---@field detail? string human-readable string with extra info about this item, like type or symbol
+--- info
 ---@field type? dap.CompletionItemType
----@field start? number UTF-16 start offset (0- or 1-based per `columnsStartAt1`); defaults to `column`.
----@field length? number characters overwritten by the completion text (UTF-16 code units); 0 if missing.
+---@field start? number UTF-16 start offset (0- or 1-based per `columnsStartAt1`); defaults to
+--- `column`.
+---@field length? number characters overwritten by the completion text (UTF-16 code units); 0 if
+--- missing.
 ---@field selectionStart? number
 ---@field selectionLength? number
 

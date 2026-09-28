@@ -1,8 +1,9 @@
 --- LLDB debugger configs — ready-made debug recipes for compiled languages.
 ---
---- Plain-language version: LLDB is the debugger for C, C++, Rust, and friends. This module holds ready-made
---- recipes: launch a program, attach to a running process, stop at the start, open a crash dump. It runs when you
---- pick one of its debug commands; it needs lldb-dap installed.
+--- Plain-language version: LLDB is the debugger for C, C++, Rust, and
+--- friends. This module holds ready-made recipes: launch a program, attach
+--- to a running process, stop at the start, open a crash dump. It runs when
+--- you pick one of its debug commands; it needs lldb-dap installed.
 ---@module 'dap.lldb-dap'
 -- #################################################################
 -- /qompassai/lua/dap/lldb-dap.lua
@@ -31,6 +32,9 @@ local ADAPTER_NAME = 'lldb-dap'
 local CONFIGURED_FLAG = 'lldb_dap_configured'
 local MAX_EXECUTABLES = 40
 local MAX_SCAN_DEPTH = 3
+
+--- Bound for `cargo metadata`; a cold target directory can make this slow.
+local CARGO_METADATA_TIMEOUT_MS = 60000
 local FILETYPES = {
     c = true,
     cpp = true,
@@ -121,19 +125,21 @@ local NON_EXECUTABLE_SUFFIXES = {
 
 ---@class LldbAdapterDefinition
 ---@field name string
+---@field type string
 ---@field command string
 ---@field args string[]
 
----@type { lldb: LldbAdapterDefinition }
-M.adapters = {
-    lldb = {
-        name = ADAPTER_NAME,
-        command = 'lldb-dap',
-        args = {},
-    },
+--- The single adapter registration for this module. The DAP core registers
+--- `M.adapter` once under `ADAPTER_NAME`; `M.resolve_adapter()` mutates this
+--- table in place so the registered entry always carries the resolved
+--- command.
+---@type LldbAdapterDefinition
+M.adapter = {
+    name = ADAPTER_NAME,
+    type = 'executable',
+    command = 'lldb-dap',
+    args = {},
 }
-
-M.adapter = M.adapters.lldb
 
 ---@type string?
 local cached_adapter_command
@@ -262,7 +268,8 @@ local function current_lldb_context(bufnr)
 
     if not is_lldb_buffer(bufnr) then
         notify(
-            'LLDB DAP is available only in C, C++, Objective-C, Objective-C++, or Rust source buffers',
+            'LLDB DAP is available only in C, C++, Objective-C, Objective-C++,'
+                .. ' or Rust source buffers',
             vim.log.levels.ERROR
         )
         return nil, nil, nil
@@ -432,7 +439,11 @@ end
 ---@return boolean
 local function is_debuggable_executable(path)
     local name = fn.fnamemodify(path, ':t'):lower()
-    if not file_exists(path) or NON_EXECUTABLE_SUFFIXES[final_suffix(path)] or name:match('%.so(%..+)?$') then
+    if
+        not file_exists(path)
+        or NON_EXECUTABLE_SUFFIXES[final_suffix(path)]
+        or name:match('%.so(%..+)?$')
+    then
         return false
     end
 
@@ -475,18 +486,31 @@ local function cargo_target_candidates(root)
         }, {
             cwd = root,
             text = true,
-        }):wait()
+        }):wait(CARGO_METADATA_TIMEOUT_MS)
 
         if result.code == 0 and type(result.stdout) == 'string' then
             local ok, metadata = pcall(vim.json.decode, result.stdout)
-            if ok and type(metadata) == 'table' and type(metadata.target_directory) == 'string' then
+
+            local valid_metadata = ok
+                and type(metadata) == 'table'
+                and type(metadata.target_directory) == 'string'
+
+            if valid_metadata then
                 local candidates = {}
                 local first_guess
 
-                for _, package in ipairs(type(metadata.packages) == 'table' and metadata.packages or {}) do
-                    for _, target in ipairs(type(package.targets) == 'table' and package.targets or {}) do
-                        if type(target.name) == 'string' and list_contains_string(target.kind, 'bin') then
-                            local candidate = vim.fs.joinpath(metadata.target_directory, 'debug', target.name)
+                local packages = type(metadata.packages) == 'table' and metadata.packages or {}
+
+                for _, package in ipairs(packages) do
+                    local targets = type(package.targets) == 'table' and package.targets or {}
+
+                    for _, target in ipairs(targets) do
+                        local is_bin = type(target.name) == 'string'
+                            and list_contains_string(target.kind, 'bin')
+
+                        if is_bin then
+                            local candidate =
+                                vim.fs.joinpath(metadata.target_directory, 'debug', target.name)
                             first_guess = first_guess or candidate
                             if is_debuggable_executable(candidate) then
                                 candidates[#candidates + 1] = candidate
@@ -544,7 +568,11 @@ local function scan_executables(directory, depth, results, seen)
         local path = vim.fs.joinpath(directory, name)
         if entry_type == 'directory' and not SKIP_DIRECTORIES[name] then
             scan_executables(path, depth + 1, results, seen)
-        elseif (entry_type == 'file' or entry_type == 'link') and not seen[path] and is_debuggable_executable(path) then
+        elseif
+            (entry_type == 'file' or entry_type == 'link')
+            and not seen[path]
+            and is_debuggable_executable(path)
+        then
             seen[path] = true
             results[#results + 1] = path
         end
@@ -700,12 +728,6 @@ local function adapter_candidates()
     }
 end
 
----@class LldbDapAdapter
----@field name string
----@field type string
----@field command string
----@field args string[]
-
 ---Ask the shared lldb foundation for a resolved adapter, or nil when the
 ---foundation is unavailable or finds no working lldb-dap. The foundation
 ---owns executable discovery (environment overrides, tilde expansion,
@@ -736,15 +758,12 @@ local function foundation_adapter()
     return adapter
 end
 
----@return LldbDapAdapter?
+---@return LldbAdapterDefinition?
 function M.resolve_adapter()
     if cached_adapter_command and executable(cached_adapter_command) then
-        return {
-            name = ADAPTER_NAME,
-            type = 'executable',
-            command = cached_adapter_command,
-            args = {},
-        }
+        M.adapter.command = cached_adapter_command
+
+        return M.adapter
     end
 
     local foundation = foundation_adapter()
@@ -771,58 +790,25 @@ function M.resolve_adapter()
         return nil
     end
 
-    M.adapters.lldb.command = cached_adapter_command
+    M.adapter.command = cached_adapter_command
 
-    return {
-        name = ADAPTER_NAME,
-        type = 'executable',
-        command = cached_adapter_command,
-        args = {},
-    }
+    return M.adapter
 end
 
----@param silent? boolean
----@return table?
-local function debug_client(silent)
-    local client = rawget(vim, 'debug')
-
-    if type(client) ~= 'table' or type(client.start) ~= 'function' then
-        if not silent then
-            notify(
-                'vim.debug is unavailable. Neovim 0.13 does not include a native '
-                    .. 'DAP client; load the same DAP core used by the other dap modules',
-                vim.log.levels.ERROR
-            )
-        end
-        return nil
-    end
-
-    return client
-end
-
+--- Launch a configuration through the DAP core so the single registered
+--- adapter (`M.adapter`, resolved above) is used. This replaces the old
+--- direct `vim.debug` bypass.
 ---@param configuration table
 local function start(configuration)
-    local client = debug_client()
-    if not client then
-        return
-    end
-
     local adapter = M.resolve_adapter()
+
     if not adapter then
         return
     end
 
     configuration.type = ADAPTER_NAME
-    configuration.adapter = {
-        type = adapter.type,
-        command = adapter.command,
-        args = adapter.args,
-    }
 
-    local ok, err = pcall(client.start, configuration, adapter)
-    if not ok then
-        notify('Unable to start LLDB DAP: ' .. tostring(err), vim.log.levels.ERROR)
-    end
+    require('dap').run(configuration)
 end
 
 ---@param root string
@@ -1236,6 +1222,10 @@ end
 
 ---Register the LLDB DAP debug commands. Idempotent.
 ---@return nil
+--- Buffer/process ownership: this module creates no buffers and spawns no
+--- processes of its own — debug sessions are owned by the DAP backend — so
+--- no BufWipeout cleanup is required. Re-running setup clears the `dap.lldb`
+--- augroup (`clear = true`) before re-creating its autocmds.
 function M.setup()
     local group = api.nvim_create_augroup('dap.lldb', {
         clear = true,
