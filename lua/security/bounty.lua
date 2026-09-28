@@ -24,7 +24,7 @@ function M.new_program()
     ensure_dir(prog_dir)
 
     local fname = prog_dir .. '/' .. platform .. '-' .. slugify(name) .. '.md'
-    if vim.loop.fs_stat(fname) then
+    if vim.uv.fs_stat(fname) then
         vim.cmd('edit ' .. vim.fn.fnameescape(fname))
         return
     end
@@ -80,7 +80,7 @@ function M.new_report()
     local slug = title:lower():gsub('[^a-z0-9]+', '-'):gsub('^-+', ''):gsub('-+$', '')
     local fname = ('%s/%s-%s-%s-%s.md'):format(report_dir, today(), platform, program, slug)
 
-    if vim.loop.fs_stat(fname) then
+    if vim.uv.fs_stat(fname) then
         vim.cmd('edit ' .. vim.fn.fnameescape(fname))
         return
     end
