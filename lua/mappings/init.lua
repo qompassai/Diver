@@ -4,6 +4,7 @@ local core = require('mappings._core')
 local M = {}
 local MODULES = {
     'aimap',
+    'bountymap',
     'cicdmap',
     'datamap',
     'ddxmap',

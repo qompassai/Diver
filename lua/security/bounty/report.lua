@@ -147,6 +147,10 @@ function M.new(platform, program, finding, title)
     assert(valid_platform(platform), "report.new: unknown platform '" .. tostring(platform) .. "'")
     assert(type(program) == 'string' and program ~= '', 'report.new: program must be nonempty')
     assert(
+        program:match('^[A-Za-z0-9_%.%-]+$'),
+        'report.new: program must be path-safe (letters, digits, _, ., -)'
+    )
+    assert(
         finding:match('^[A-Za-z0-9_%.%-]+$'),
         'report.new: finding must be path-safe (letters, digits, _, ., -)'
     )

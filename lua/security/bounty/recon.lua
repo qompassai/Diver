@@ -62,13 +62,15 @@ local function log(run, event, data)
             entry[k] = v
         end
     end
-    local parts = {}
-    for k, v in pairs(entry) do
-        parts[#parts + 1] = ('"%s":"%s"'):format(k, tostring(v):gsub('"', '\\"'))
-    end
     local fh = io.open(run.dir .. '/run.jsonl', 'a')
     if fh ~= nil then
-        fh:write('{' .. table.concat(parts, ',') .. '}\n')
+        -- vim.json.encode handles quoting, control characters, and nesting.
+        -- The hand-rolled builder this replaces silently corrupted any value
+        -- containing a newline, backslash, or quote beyond the first.
+        local ok, line = pcall(vim.json.encode, entry)
+        if ok then
+            fh:write(line .. '\n')
+        end
         fh:close()
     end
 end
