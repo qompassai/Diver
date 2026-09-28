@@ -1,5 +1,132 @@
 # Changelog — `test`-branch fix program
 
+## Agent harness core + Busted/lua-TestMore setup (2026-09-28, overnight)
+
+Protocol-neutral agent harness per `diver-agent-harness_2_fggq.md`, plus the
+two-framework test setup per `busted-testmore_3_t349.md`. Deliberately
+Phase 1: canonical contracts, in-memory supervision, honest capability
+probes — no SQLite, no UI commands, no graph DSL yet.
+
+### New: `lua/ai/harness/` (16 modules, Tiger Style Lua)
+
+- `types.lua` — canonical run states, explicit transition table (invalid
+  transitions become diagnostic events, never silent mutations), event
+  kinds, risk classes, capability keys, budget kinds, run-spec validation.
+- `events.lua` — append-only in-memory event sink; envelopes carry run_id,
+  sequence, monotonic timestamp, source adapter, schema version, redaction
+  flag. Prompt/completion content is never captured unless the caller opts in.
+- `supervisor.lua` — lifecycle, parent/child ownership (a parent cannot
+  finish with live children), cooperative cancellation, per-run deadlines,
+  concurrency bounds, bounded retry with exponential backoff + jitter and
+  an attempt ceiling, idempotent finish (exactly one terminal event per
+  attempt), generation tokens against stale callbacks. Driven by `tick()`;
+  no `vim.wait()` anywhere.
+- `adapter.lua` — adapter contract (`probe/start/[send_input]/cancel/close`)
+  and capability-driven negotiation; no `if protocol == 'acp'` conditionals.
+- `registry.lua` — explicit registration for adapters/tools/workflows,
+  sorted listings, duplicate rejection; `register_builtins()` loads the six
+  protocol adapters.
+- `adapters/{acp,a2a,mcp,phlow,rose,herd}.lua` — thin translators over the
+  existing modules. Every delegated call signature was verified against the
+  current source (acp `session.start/prompt/cancel`,
+  a2a `tasks.submit/cancel`, mcp `client.start/stop`, rose `agent.run`,
+  herd `spawn_agent`/`kill_agent`). Nothing in `ai/acp`, `ai/a2a`,
+  `ai/mcp`, `ai/phlow`, `ai/rose`, or `ai/herd` was modified.
+- `context.lua` — immutable budgeted snapshots from explicit providers;
+  deterministic priority ordering; seal blocks further attaches.
+- `policy.lua` — the single authorization decision point. Risk classes,
+  first-match-wins rules, workspace path scoping, default-deny. A nil
+  policy denies: absence of policy is never implicit authorization.
+- `approval.lua` — async approval queue; expiry means denied, never approved.
+- `budget.lua` — turns, tool calls, tokens, wall time, bytes, cost.
+  Exhaustion is a distinct terminal result, not a generic failure.
+- `store.lua` — in-memory runs, checkpoints, content-addressed artifacts
+  (sha256 via `vim.fn` when available, labeled FNV-1a fallback otherwise).
+  `mark_interrupted()` for orphaned runs; never replays mutating calls.
+  SQLite backing is Phase 5.
+- `telemetry.lua` — redacted logs/counters; secret-bearing keys scrubbed
+  before storage; cycle-safe, depth-bounded.
+- `sandbox.lua` — execution profiles (`none`/`readonly`/`restricted`/
+  `standard`); argv-array-only spawn validation, no shell strings. Profiles
+  constrain *how* things run; policy decides *whether*.
+- `verdict.lua` — deterministic acceptance checks (`command`,
+  `diagnostics`, `schema`, `custom`) with injected runners; the harness,
+  not the model, decides pass/fail.
+- `health.lua` — honest capability report: runtime, per-adapter probe
+  results, storage, sandbox profiles.
+- `init.lua` — narrow public API: `setup()` (idempotent, fail-closed
+  default policy), `run()`, `cancel()`, `resume()`, `version()`.
+
+### Decisions and deliberate limitations
+
+- Adapters are Phase-1 thin: `phlow.start()` declines with a clear error
+  (transport wiring is Phase 6) instead of inventing a transport call.
+  ACP permission prompts stay on the native `ai.acp.permissions` flow;
+  harness policy mediation for ACP tool calls is Phase 3.
+- Unclassified native adapter traffic (e.g. ACP `session/update`) is
+  bridged to `diagnostic.observed` with the raw payload preserved, rather
+  than mislabeled as model/tool events.
+- `resume()` re-queues a settled run for a fresh attempt (attempt+1,
+  new generation); true stateful resume needs an adapter with
+  `resume=true` (only `a2a` probes true today).
+- No `vim` scraping: context providers are pure-ish functions so snapshots
+  replay in tests.
+- `require('ai.harness').setup()` is opt-in; `lua/ai/init.lua` untouched.
+- Capability flags were set only where verified in source; everything
+  unverified is `false` with a `notes` field saying so.
+
+### Test infrastructure
+
+- `.busted` — full task configuration (was a 3-task stub): `tests`,
+  `unit`, `integration` (tag-filtered), `ci`, `tap`, `list`,
+  `order_check` tasks; `helper = 'tests.busted.helpers'`.
+- `tests/busted/helpers/init.lua` — minimal `_G.vim` stub (installed via
+  `_G`, per repo lesson); deliberately does NOT load Test.More.
+- `tests/busted/unit/`, `tests/busted/integration/` — specs, exactly 50%
+  validation / 50% adversarial per file (counts below).
+- `tests/testmore/` — standalone lua-TestMore TAP scripts run via `prove`.
+- `scripts/test-lua` — runs Busted then prove; either failure fails.
+- Existing `tests/lua/` scripts untouched.
+
+### Test inventory (244 cases, exactly 122 validation / 122 adversarial)
+
+| File | Validation | Adversarial |
+|---|---|---|
+| tests/busted/unit/types_spec.lua | 8 | 8 |
+| tests/busted/unit/events_spec.lua | 6 | 6 |
+| tests/busted/unit/budget_spec.lua | 6 | 6 |
+| tests/busted/unit/policy_spec.lua | 8 | 8 |
+| tests/busted/unit/approval_spec.lua | 6 | 6 |
+| tests/busted/unit/context_spec.lua | 6 | 6 |
+| tests/busted/unit/registry_spec.lua | 6 | 6 |
+| tests/busted/unit/adapter_spec.lua | 5 | 5 |
+| tests/busted/unit/supervisor_spec.lua | 10 | 10 |
+| tests/busted/unit/store_spec.lua | 6 | 6 |
+| tests/busted/unit/telemetry_spec.lua | 5 | 5 |
+| tests/busted/unit/sandbox_spec.lua | 6 | 6 |
+| tests/busted/unit/verdict_spec.lua | 6 | 6 |
+| tests/busted/unit/health_spec.lua | 4 | 4 |
+| tests/busted/unit/init_spec.lua | 6 | 6 |
+| tests/busted/integration/harness_run_spec.lua | 8 | 8 |
+| tests/busted/integration/adapters_native_spec.lua | 6 | 6 |
+| tests/testmore/harness-types.t | 5 | 5 |
+| tests/testmore/harness-policy.t | 5 | 5 |
+| tests/testmore/harness-events.t | 4 | 4 |
+
+### Gates (exact)
+
+- `luac -p` (Lua 5.4.8): clean on all 22 harness files + helper + `.busted`.
+- `stylua --check` (2.5.2, repo `.stylua.toml`): clean on all new Lua files.
+- `selene` (0.31.0, scratch config `std = "lua51+vim"` with `vim`/`jit`
+  declared — repo has no `selene.toml`): 0 errors; 1 warning
+  (`_G.vim` in the test helper, the sanctioned stub pattern).
+- `busted --run=tests` (2.3.0-1): 216 successes / 0 failures / 0 errors
+  (188 unit + 28 integration, incl. real-adapter probe/start contract tests).
+- `prove` lua-TestMore (3 TAP scripts): 28/28 pass.
+- `git diff --check`: clean.
+- Not run: LuaLS strict diagnostics (no LuaLS in this environment),
+  luacheck (not installed), in-Neovim execution.
+
 ## Overnight flush-out: make_header, DAP (ansible/ruby), Vulkan, Salesforce (2026-09-28)
 
 Matt's directive: iterate each area until fully flushed out; wire every

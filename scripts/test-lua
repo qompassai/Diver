@@ -1,0 +1,26 @@
+#!/usr/bin/env bash
+# scripts/test-lua — run both Lua test frameworks for Diver.
+#   1. Busted  (describe/it specs under tests/busted/)
+#   2. prove   (lua-TestMore TAP scripts under tests/testmore/*.t)
+# Either failure fails the script. Existing tests under tests/lua/ keep
+# their own plain-lua runners and are not moved.
+set -euo pipefail
+
+ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
+cd "$ROOT"
+
+LUA="$HOME/workspace/tools/lua-5.4.8/src/lua"
+BUSTED="$HOME/workspace/tools/luarocks-tree/bin/busted"
+LUAROCKS_LUA_PATH="$HOME/workspace/tools/luarocks-tree/share/lua/5.4/?.lua;$HOME/workspace/tools/luarocks-tree/share/lua/5.4/?/init.lua"
+
+export LUA_PATH="${LUAROCKS_LUA_PATH};;"
+
+echo "== busted (task: ${BUSTED_TASK:-tests}) =="
+"$BUSTED" --run="${BUSTED_TASK:-tests}"
+
+echo "== prove (lua-TestMore TAP) =="
+export LUA_PATH="./lua/?.lua;./lua/?/init.lua;${LUAROCKS_LUA_PATH};;"
+# shellcheck disable=SC2086
+prove --exec="$LUA" tests/testmore/*.t
+
+echo "ALL LUA SUITES GREEN"
