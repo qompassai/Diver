@@ -219,3 +219,109 @@ Optional exact-adapter additions despite existing language coverage:
   MIEngine.md`; well-typed/haskell-debugger README
   ("implements the Debug Adapter Protocol (DAP)");
   richterger/Perl-LanguageServer upstream. All fetched 2026-09-28.
+
+## Authoritative report reconciliation (2026-09-28)
+
+Source: `~/workspace/user/files/neovim-debuggers_0_z25f.md`
+("Maintained Debuggers and Adapters for Neovim", September 2026) —
+Matt's uploaded inventory. It **supersedes the wiki list** for
+confirm/deny purposes: where the report corrects the wiki, the
+report wins. The wiki rows above stand except as corrected here.
+
+### Report-sourced DENY additions
+
+Not debugger entries — do not add:
+
+- Legacy Node V8 debug protocol (unmaintained, undocumented;
+  Inspector/CDP via vscode-js-debug instead).
+- `lldb-vscode` as a new-work target (renamed to `lldb-dap` in
+  LLVM 18; prefer `lldb-dap`).
+- LLDB-MI for new work (legacy).
+- `pdb`, `jdb`, `phpdbg`, browser DevTools **as direct DAP
+  adapters** (valid debuggers/clients, not DAP — need bridges).
+- `mockdebug` (protocol test fixture), `java-test` (test
+  launcher), `vscode-java-decompiler` (decompiler) as debugger
+  entries.
+- Installing both Delve native DAP (`dlv dap`) and the old VS Code
+  Go proxy (Delve exposes DAP directly; don't double-install).
+
+### Report corrections to wiki rows
+
+- **Row 9 (Elixir)**: the report adds WhatsApp **EDB** — a modern
+  debugger covering both Erlang and Elixir over executable/stdio
+  DAP — alongside the real ElixirLS debugger. Plan: wire EDB for
+  both languages, keep the ElixirLS option.
+- **Row 15 (Haskell)**: the report validates phoityne's
+  `haskell-debug-adapter` (listed by the DAP project and the
+  Mason registry) — this supports *keeping* Diver's current
+  `haskell.lua` target. Well-Typed's official `hdb` (GHC 9.14+)
+  remains Matt's call (adopt / keep phoityne / wire both).
+- **Row 19 (Lua)**: the report's actionable set lists
+  `local-lua-debugger-vscode`, but Matt's standing choice is
+  **Moonwalk** (native, integrated into the config). No change;
+  Moonwalk remains the Lua debugger.
+- **Rows 5/21 (C#), 23 (PHP), 29 (Ruby)**: the report confirms
+  netcoredbg, Xdebug + vscode-php-debug, and rdbg respectively —
+  the existing `csharp.lua`, `php.lua`, `ruby.lua` choices are
+  correct; the wiki's packages stay denied.
+- **Row 1 (Arduino/OpenOCD)**: the report confirms the
+  GDB-concentrator route — OpenOCD needs no DAP in itself; MCU
+  workflows go through the GDB DAP remote-target template
+  (gdbserver / QEMU gdbstub / OpenOCD / `rr` / lldb-server).
+- **Row 4 (cpptools)**: report lists OpenDebugAD7 as the bridge
+  for GDB older than 14 — stays an optional exact-adapter
+  addition.
+- **Row 28 (BugStalker)**: not in the report's actionable set —
+  stays optional.
+
+### Report-sourced new candidates (not on the wiki list)
+
+From the report's actionable executable set, not yet covered by
+`lua/dap/`:
+
+- `probe-rs` (`probe-rs dap-server`, TCP) — embedded
+  ARM/RISC-V. Report priority (d).
+- `cortex-debug` — Cortex-M through OpenOCD/J-Link/pyOCD/ST-Link.
+  Report priority (d).
+- `firefox-debug-adapter` — Firefox remote debugging protocol
+  (web targets).
+- Erlang: `edb` (WhatsApp) and/or `els_dap` — fold into the
+  Elixir/EDB work above.
+- Opt-in only (validate latest release + standalone entry point
+  before adding): Julia `DebugAdapter.jl`, GraalVM `--dap`,
+  RobotCode, `bzl` (Bazel/Starlark), Wing, Puppet Editor
+  Services, ESP32 debug adapter.
+- `local-lua-debugger-vscode` — superseded by Moonwalk for Matt;
+  not adding.
+
+`buildg` (wiki row 8, CONFIRM) is not contradicted by the report —
+it simply isn't mentioned there; it stays a phase-2 candidate.
+
+### Registry model adoption (design target)
+
+New work follows the report's `DebugBackend` shape — debugger
+backend + transport + protocol, not "every entry is a DAP
+executable":
+
+```lua
+---@class DebugBackend
+---@field id string
+---@field languages string[]
+---@field debugger string  -- gdb, lldb, Xdebug, JDWP runtime, ...
+---@field adapter string|nil -- lldb-dap, vscode-js-debug, php-debug, ...
+---@field transport 'stdio'|'tcp'|'pipe'|'unix'
+---@field protocol 'dap'|'mi'|'jdwp'|'cdp'|'dbgp'|'rsp'
+---@field dap_native boolean
+---@field probe fun(): boolean
+---@field build_config fun(ctx: table): table
+```
+
+Concretely: a new `lua/dap/backend.lua` holds the registry plus
+the generic executable/stdio and server/TCP DAP transports
+(report priority a), and `probe()` health checks must distinguish
+Neovim-side / adapter-side / debugger-side / remote-target
+failures. GDB becomes the protocol concentrator: one `gdb.lua`
+DAP definition reused across C/C++/Rust/Zig/Fortran/Ada/D/asm,
+plus a reusable GDB Remote target template (report priority d).
+Language-specific adapters land only on filetype/toolchain
+detection (report priority e).
