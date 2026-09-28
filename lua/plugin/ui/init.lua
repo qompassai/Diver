@@ -32,7 +32,6 @@ local function add(mod)
     end
 end
 
---add('plugins.ui.css')
 add('plugin.ui.icons')
 add('plugin.ui.md')
 

@@ -50,6 +50,7 @@ function coxpcall(f, err, ...) end
 ---@param repo                                             string
 ---@param opts?                                            gh.Opts
 ---@return string|vim.pack.Spec
+-- selene: allow(global_usage)
 function _G.gh(repo, opts) end
 
 ---@class                    vim

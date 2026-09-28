@@ -909,11 +909,10 @@ local function tiger_autocmd_metrics(metrics, findings, thresholds)
 
         if tiger_hot_events[event] and not autocmd.buflocal and (pattern == '*' or pattern == '') then
             event_counts[event] = (event_counts[event] or 0) + 1
-            event_locations[event] = event_locations[event]
-                or {
-                    file = file,
-                    lnum = lnum,
-                }
+            event_locations[event] = event_locations[event] or {
+                file = file,
+                lnum = lnum,
+            }
         end
     end
 
@@ -1053,7 +1052,7 @@ local function tiger_static_scan(files, metrics, findings, thresholds)
                                     previous
                                 ),
                                 'Remove the duplicate or rename it; the later definition silently replaces the earlier'
-                                    .. ' one'
+                                .. ' one'
                             )
                         else
                             function_definitions[function_name] = file_lines
@@ -1140,12 +1139,11 @@ local function tiger_startup_metrics(startup_log, metrics, findings, thresholds)
         local clock, total_ms, self_ms, file =
             line:match('^%s*(%d+%.%d+)%s+(%d+%.%d+)%s+(%d+%.%d+):%s+sourcing%s+(.+)$')
         if file then
-            local source = sources[file]
-                or {
-                    count = 0,
-                    self_ms = 0,
-                    total_ms = 0,
-                }
+            local source = sources[file] or {
+                count = 0,
+                self_ms = 0,
+                total_ms = 0,
+            }
             source.count = source.count + 1
             source.self_ms = source.self_ms + (tonumber(self_ms) or 0)
             source.total_ms = source.total_ms + (tonumber(total_ms) or 0)
@@ -1193,7 +1191,7 @@ local function tiger_startup_metrics(startup_log, metrics, findings, thresholds)
                     source.count
                 ),
                 'Inspect eager requires and setup work in this file; move filetype-specific work behind activation'
-                    .. ' events'
+                .. ' events'
             )
         end
     end
@@ -1365,29 +1363,99 @@ local function finish_qf(qf_items)
     end
 end
 
+---Map a diagnostic severity to the quickfix item type.
+---@param severity integer?
+---@return string
+local function diagnostic_qf_type(severity)
+    if severity == vim.diagnostic.severity.WARN then
+        return 'W'
+    elseif severity == vim.diagnostic.severity.INFO then
+        return 'I'
+    elseif severity == vim.diagnostic.severity.HINT then
+        return 'N'
+    end
+    return 'E'
+end
+
+---Short "who produced this" label for a diagnostic, e.g. "spectral" or
+---"lua_ls/luacheck". The namespace name is the LSP client name for LSP
+---diagnostics; source is the server-reported origin within that client.
+---@param diagnostic vim.Diagnostic
+---@return string
+local function diagnostic_origin(diagnostic)
+    local parts = {}
+    if type(diagnostic.namespace) == 'number' then
+        local ok, ns = pcall(vim.diagnostic.get_namespace, diagnostic.namespace)
+        if ok and type(ns) == 'table' and is_nonempty_string(ns.name) then
+            parts[#parts + 1] = ns.name
+        end
+    end
+    if is_nonempty_string(diagnostic.source) and parts[#parts] ~= diagnostic.source then
+        parts[#parts + 1] = diagnostic.source
+    end
+    if #parts == 0 then
+        return 'unknown'
+    end
+    return table.concat(parts, '/')
+end
+
+---Convert one diagnostic to a quickfix item, prefixing the message with
+---its origin so the quickfix list shows what produced each entry.
+---Diagnostics use 0-based positions; quickfix items use 1-based.
+---@param diagnostic vim.Diagnostic
+---@return table
+local function diagnostic_qf_item(diagnostic)
+    return {
+        bufnr = diagnostic.bufnr,
+        lnum = (diagnostic.lnum or 0) + 1,
+        col = (diagnostic.col or 0) + 1,
+        end_lnum = diagnostic.end_lnum and (diagnostic.end_lnum + 1) or nil,
+        end_col = diagnostic.end_col and (diagnostic.end_col + 1) or nil,
+        text = ('[%s] %s'):format(diagnostic_origin(diagnostic), diagnostic.message or ''),
+        type = diagnostic_qf_type(diagnostic.severity),
+    }
+end
+
+---Collect diagnostics as attributed quickfix items. Pass nil for every
+---buffer (workspace scope) or a buffer number for one buffer.
+---@param bufnr? integer
+---@return table
+local function attributed_diagnostic_items(bufnr)
+    local items = {}
+    for _, diagnostic in ipairs(vim.diagnostic.get(bufnr)) do
+        items[#items + 1] = diagnostic_qf_item(diagnostic)
+    end
+    return items
+end
+
 ---Show diagnostics for the current buffer.
 ---@param _bufnr? integer
 ---@return nil
 function M.buffer_diagnostics(_bufnr)
-    vim.diagnostic.setloclist({
-        open = false,
+    local bufnr = _bufnr or api.nvim_get_current_buf()
+    fn.setloclist(0, {}, 'r', {
         title = 'Buffer Diagnostics',
+        items = attributed_diagnostic_items(bufnr),
     })
     vim.cmd('lopen')
 end
+
 ---Show diagnostics for the whole workspace.
 ---@return nil
 function M.workspace_diagnostics()
-    vim.diagnostic.setqflist({
-        open = true,
+    fn.setqflist({}, 'r', {
         title = 'Workspace Diagnostics',
+        items = attributed_diagnostic_items(nil),
     })
+    vim.cmd('copen')
 end
+
 ---Show document symbols.
 ---@return nil
 function M.document_symbols()
     vim.lsp.buf.document_symbol()
 end
+
 ---Show workspace symbols.
 ---@return nil
 function M.workspace_symbols()
@@ -1400,6 +1468,7 @@ function M.workspace_symbols()
         vim.lsp.buf.workspace_symbol(query)
     end)
 end
+
 ---Toggle the quickfix window.
 ---@return nil
 function M.toggle_quickfix()
@@ -1412,6 +1481,7 @@ function M.toggle_quickfix()
     end
     vim.cmd('copen')
 end
+
 ---Toggle the location list.
 ---@return nil
 function M.toggle_loclist()
@@ -1425,15 +1495,16 @@ function M.toggle_loclist()
     end
     vim.cmd('lopen')
 end
+
 ---Enable the workspace diagnostics handler.
 ---@return nil
 function M.enable_workspace_diagnostics_handler()
     vim.diagnostic.handlers.qf = {
         show = function(_, _, _, _)
             vim.schedule(function()
-                vim.diagnostic.setqflist({
-                    open = false,
+                fn.setqflist({}, 'r', {
                     title = 'Workspace Diagnostics',
+                    items = attributed_diagnostic_items(nil),
                 })
             end)
         end,
@@ -1448,12 +1519,14 @@ function M.enable_workspace_diagnostics_handler()
     }
     notify('Enabled native workspace diagnostics quickfix handler', levels.INFO)
 end
+
 ---Disable the workspace diagnostics handler.
 ---@return nil
 function M.disable_workspace_diagnostics_handler()
     vim.diagnostic.handlers.qf = nil
     notify('Disabled native workspace diagnostics quickfix handler', levels.INFO)
 end
+
 ---Run the self-check diagnostics.
 ---@return nil
 function M.selfcheck()
@@ -1489,6 +1562,7 @@ function M.selfcheck()
         fh:close()
     end
 end
+
 ---Run the syntax check.
 ---@return nil
 function M.syntaxcheck()
@@ -1512,6 +1586,7 @@ function M.syntaxcheck()
         fh:close()
     end
 end
+
 ---Run the tiger-style check.
 ---@param startup_log? string
 ---@return nil
@@ -1579,6 +1654,7 @@ function M.tigercheck(startup_log)
         )
     end
 end
+
 M.run = M.selfcheck
 api.nvim_create_user_command('ConfigSelfCheck', M.selfcheck, {
     desc = 'Syntax-check all Lua config files and run safe runtime probes',

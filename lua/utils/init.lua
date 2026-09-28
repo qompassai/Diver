@@ -3,16 +3,6 @@
 -- Copyright (C) 2025 Qompass AI, All rights reserved
 -- --------------------------------------------------
 --
--- Supporting modules only. The tool suites that used to live here have moved
--- to their own homes and are NOT required at startup anymore:
---
---   utils.red   -> security.red    (require on demand)
---   utils.blue  -> security.blue   (require on demand)
---   utils.dev   -> dev            (android/sf load lazily, see below)
---   utils.games -> games          (loads on first :Games)
---   utils.docs  -> research       (require on demand)
---   utils.media -> media          (require on demand)
---
 -- Requiring this module stays cheap: only codeactions (a few user commands)
 -- and ddx (one autocmd) are eager. Everything else below loads its suite on
 -- first use, so Unreal tooling is never active while doing Salesforce work.
@@ -80,7 +70,7 @@ end, {
 -- <leader>a* keymaps. The stubs below load it on first use; opening an
 -- Android project file does the same, so the per-action commands exist
 -- without invoking :Android first.
-local load_android = ensure('dev.android', function(a)
+local load_android = ensure('dev.apps.android', function(a)
     a.setup()
 end)
 
@@ -94,18 +84,18 @@ end, {
 --- Mirrors the keymaps from dev/android/commands.lua setup_keymaps(), which
 --- stays the source of truth for what each key does.
 local android_keymaps = {
-    { key = 'r', action = 'run_debug', desc = 'Android: Run debug' },
-    { key = 'c', action = 'clean', desc = 'Android: Clean project' },
-    { key = 'b', action = 'build_release', desc = 'Android: Build release' },
+    { key = 'r', action = 'run_debug',      desc = 'Android: Run debug' },
+    { key = 'c', action = 'clean',          desc = 'Android: Clean project' },
+    { key = 'b', action = 'build_release',  desc = 'Android: Build release' },
     { key = 'e', action = 'start_emulator', desc = 'Android: Start emulator' },
-    { key = 'x', action = 'stop_emulator', desc = 'Android: Stop emulator' },
+    { key = 'x', action = 'stop_emulator',  desc = 'Android: Stop emulator' },
     { key = 's', action = 'capture_screen', desc = 'Android: Capture screen' },
-    { key = 'd', action = 'doctor', desc = 'Android: Run doctor' },
+    { key = 'd', action = 'doctor',         desc = 'Android: Run doctor' },
 }
 for _, spec in ipairs(android_keymaps) do
     vim.keymap.set('n', '<leader>a' .. spec.key, function()
         load_android()
-        require('dev.android.actions').run_action_by_id(spec.action)
+        require('dev.apps.android.actions').run_action_by_id(spec.action)
     end, {
         desc = spec.desc,
     })
@@ -125,7 +115,7 @@ api.nvim_create_autocmd({ 'BufReadPost', 'BufNewFile' }, {
 -- requiring it is sufficient. Trigger on the distinctive Salesforce file
 -- types (mirrors the suite's own BufEnter patterns).
 api.nvim_create_autocmd({ 'BufReadPost', 'BufNewFile' }, {
-    pattern = { '*.apex', '*.cls', '*.trigger' },
+    pattern = { '*.apex', '*.cls', '*.trigger', '*/dev/sf/*.lua' },
     once = true,
     callback = function()
         require('dev.sf')

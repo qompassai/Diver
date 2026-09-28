@@ -29,7 +29,7 @@ local defaults = {
     highlight_changed_variables = true,
     highlight_new_as_changed = false,
     show_stop_reason = true,
-    virt_text_pos = vim.fn.has('nvim-0.10') == 1 and 'inline' or 'eol',
+    virt_text_pos = 'inline',
     virt_lines = false,
     virt_lines_above = true,
     virt_text_win_col = nil,
@@ -148,9 +148,7 @@ local function collect_nodes(_buf, parser, all_references)
         end
 
         local t = node:type()
-        if t == 'identifier' then
-            def_nodes[#def_nodes + 1] = node
-        elseif all_references and (t:find('identifier') or t:find('name')) then
+        if t == 'identifier' or (all_references and (t:find('identifier') or t:find('name'))) then
             def_nodes[#def_nodes + 1] = node
         end
 

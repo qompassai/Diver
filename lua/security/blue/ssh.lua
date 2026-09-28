@@ -176,22 +176,8 @@ function SSHConfigParser:_expand_path(path, parent_file)
     local cmd = { 'sh', '-c', ('echo %s'):format(path) }
     local cmd_output
 
-    if vim.fn.has('nvim-0.10') == 1 then
-        local res = vim.system(cmd, { text = true, cwd = parent_dir }):wait()
-        cmd_output = res.code == 0 and res.stdout or ''
-    else
-        local lines = {}
-        local job_id = vim.fn.jobstart(cmd, {
-            cwd = parent_dir,
-            on_stdout = function(_, data)
-                local str = table.concat(data, ''):gsub('\r\n', '\n'):gsub('\n', '')
-                table.insert(lines, str)
-            end,
-            stdout_buffered = true,
-        })
-        vim.fn.jobwait({ job_id })
-        cmd_output = table.concat(lines, ' ')
-    end
+    local res = vim.system(cmd, { text = true, cwd = parent_dir }):wait()
+    cmd_output = res.code == 0 and res.stdout or ''
 
     return vim.split(cmd_output, '%s+', { trimempty = true })
 end

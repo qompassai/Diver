@@ -1211,6 +1211,13 @@ M.ownership_runtime_allowlist = {
             .. 'formatter in lua/linters/npm_groovy_lint.lua, gated by '
             .. 'its own runtime.format_on_save.',
     },
+    {
+        desc = 'vim.lsp: textDocument/willSave',
+        rationale = 'Neovim core LSP willSave forwarding autocmd '
+            .. '(group nvim.lsp.b_<bufnr>_save): protocol plumbing, '
+            .. 'not a rogue formatter. Desc is buffer-stable; group '
+            .. 'name varies by buffer.',
+    },
 }
 
 ---Group id of the pipeline's BufWritePre, captured in M.setup. Compared

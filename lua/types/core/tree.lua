@@ -66,5 +66,6 @@
 ---@class vim
 ---@field treesitter vim.treesitter
 
+-- selene: allow(global_usage)
 local vim = _G.vim
 return vim

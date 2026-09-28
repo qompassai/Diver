@@ -13,7 +13,6 @@ local cb = function(x)
 end
 --]]
 local update = vim.pack.update
-local range = vim.version.range
 local M = {}
 vim.opt.packpath = vim.opt.runtimepath:get()
 local function github(repo)
@@ -26,11 +25,6 @@ local plugins = {
         version = 'main',
     },
     {
-        src = gh('vhyrro/luarocks.nvim'),
-        update = true,
-        version = 'main',
-    },
-    {
         src = gh('folke/which-key.nvim'),
         version = 'main',
     },
@@ -39,44 +33,17 @@ local plugins = {
         version = 'main',
     },
     {
-        src = gh('L3MON4D3/LuaSnip'),
-        version = range('2.*'),
-    },
-    {
-        src = gh('rafamadriz/friendly-snippets'),
-        version = 'main',
-    },
-    {
-        data = {
-            priority = 1000,
-        },
-        src = gh('olimorris/onedarkpro.nvim'),
-    },
-    {
-        src = gh('catppuccin/nvim'),
-    },
-    {
         src = gh('EdenEast/nightfox.nvim'),
     },
-    {
-        src = gh('folke/tokyonight.nvim'),
-        name = 'tokyonight.nvim',
-    },
-    {
-        src = gh('marko-cerovac/material.nvim'),
-    },
-    {
-        src = gh('Mofiqul/dracula.nvim'),
-    },
-    {
-        src = gh('navarasu/onedark.nvim'),
-    },
-    {
-        src = gh('projekt0n/github-nvim-theme'),
-    },
     -- { src = gh('sainnhe/gruvbox-material'), name = 'gruvbox-material' },
+}
+
+-- Lazy-loaded plugins: deferred until after startup to reduce init time.
+local lazy_plugins = {
     {
-        src = gh('shaunsingh/nord.nvim'),
+        src = gh('vhyrro/luarocks.nvim'),
+        update = true,
+        version = 'main',
     },
     {
         src = gh('vyfor/cord.nvim'),
@@ -204,6 +171,29 @@ function M.bootstrap()
     })
 
     M.setup_plugins()
+
+    -- Defer lazy plugins until after UI is ready (reduces startup time)
+    vim.api.nvim_create_autocmd('VimEnter', {
+        once = true,
+        callback = function()
+            vim.schedule(function()
+                add(lazy_plugins, {
+                    confirm = false,
+                    load = true,
+                })
+                for _, spec in ipairs(lazy_plugins) do
+                    local setup = plugin_setup[spec.src]
+                    if type(setup) == 'function' then
+                        pcall(setup)
+                    end
+                    if spec.data and type(spec.data.config) == 'function' then
+                        pcall(spec.data.config)
+                    end
+                end
+            end)
+        end,
+        desc = 'Load deferred plugins after startup',
+    })
 end
 
 api.nvim_create_user_command('PackUpdate', function()
@@ -267,10 +257,6 @@ end, {
     desc = 'Add a new plugin from GitHub',
 })
 M.bootstrap()
--- Cloud first: installs the shared `_G.gh` pack-spec helper that the other
--- plugin modules reuse (nav.lua falls back to a local copy without it).
-require('plugin.cloud')
-require('plugin.nav')
 require('plugin.edu')
 require('plugin.ui')
 return M

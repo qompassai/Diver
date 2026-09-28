@@ -58,7 +58,7 @@ function M.setup()
     wo.scrolloff = 20 -- custom
     wo.showbreak = '↪' -- custom
     wo.sidescrolloff = 20 -- custom
-    wo.signcolumn = 'number' -- custom
+    wo.signcolumn = 'yes:1' -- always show, prevents layout shift
     wo.smoothscroll = true -- custom
     wo.spell = true -- custom
     wo.statuscolumn = ''

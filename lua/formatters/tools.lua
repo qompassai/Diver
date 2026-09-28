@@ -215,6 +215,7 @@ function M.check(name, online, callback)
                 item.status = 'incompatible'
             elseif entry.pin then
                 item.status = 'pinned'
+            -- selene: allow(if_same_then_else)
             elseif not latest then
                 item.status = 'unknown'
             else

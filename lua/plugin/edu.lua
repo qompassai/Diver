@@ -9,13 +9,6 @@
 
 vim.pack.add({
     {
-        src = 'https://github.com/lukas-reineke/indent-blankline.nvim',
-        version = vim.version.range('3.*'),
-    },
-    {
-        src = 'https://github.com/nmac427/guess-indent.nvim',
-    },
-    {
         src = 'https://github.com/davidgranstrom/scnvim',
     },
     {
@@ -76,29 +69,10 @@ do
         })
     end
 
-    local ok_guess, guess_indent = pcall(require, 'guess-indent')
+    -- Native guess-indent (replaces guess-indent.nvim)
+    local ok_guess, guess_indent = pcall(require, 'utils.guess_indent')
     if ok_guess then
-        guess_indent.setup({
-            auto_cmd = true,
-            override_editorconfig = false,
-            filetype_exclude = {
-                'netrw',
-                'tutor',
-                'help',
-                'dashboard',
-                'neo-tree',
-                'terminal',
-                'nofile',
-                'lspinfo',
-            },
-            buftype_exclude = {
-                'help',
-                'nofile',
-                'terminal',
-                'prompt',
-                'quickfix',
-            },
-        })
+        guess_indent.setup()
     end
 
     local ok_twilight, twilight = pcall(require, 'twilight')

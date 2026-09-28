@@ -18,6 +18,7 @@ local rce = require('security.rce')
 local mitm = require('security.mitm')
 local zombie = require('security.zombie')
 local supplychain = require('security.supplychain')
+local ai_sec = require('security.ai')
 local bounty = require('security.bounty')
 
 local M = {}
@@ -133,5 +134,29 @@ function M.setup(opts)
     setup_done = true
     return M
 end
+
+-- AI security API (moved from ai.security): re-exported so AI modules
+-- and general callers share one security namespace.
+M.allowlist_load = ai_sec.allowlist_load
+M.allowlist_save = ai_sec.allowlist_save
+M.allowlist_check = ai_sec.allowlist_check
+M.allowlist_add = ai_sec.allowlist_add
+M.scan_text = ai_sec.scan_text
+M.scan_file = ai_sec.scan_file
+M.quarantine = ai_sec.quarantine
+M.confirm_tool_call = ai_sec.confirm_tool_call
+M.check_sampling_request = ai_sec.check_sampling_request
+
+-- Submodules (also available as require('security.<name>')).
+M.ai = ai_sec
+M.patterns = require('security.patterns')
+M.pqc = require('security.pqc')
+M.scanner = require('security.scanner')
+M.token = require('security.token')
+M.auditlog = require('security.auditlog')
+M.annotations = require('security.annotations')
+M.mcp_vet = require('security.mcp_vet')
+M.commands = require('security.commands')
+
 
 return M

@@ -3,7 +3,7 @@
 -- Copyright (C) 2026 Qompass AI, All rights reserved
 -- ----------------------------------------
 local M = {}
-local uv = vim.uv or vim.loop
+local uv = vim.uv or vim.uv
 ---@class red.DirFrame
 ---@field handle userdata scandir handle for this directory
 ---@field root string absolute path of this directory
@@ -116,7 +116,7 @@ local function check_static_patterns()
             pattern = 'vim%.loop%.spawn%(',
             severity = 'warn',
             code = 'UV_SPAWN',
-            message = 'vim.loop.spawn() used; ensure inputs are validated',
+            message = 'vim.uv.spawn() used; ensure inputs are validated',
         },
         {
             pattern = 'loadstring%(',
