@@ -18,6 +18,7 @@ local rce = require('security.rce')
 local mitm = require('security.mitm')
 local zombie = require('security.zombie')
 local supplychain = require('security.supplychain')
+local bounty = require('security.bounty')
 
 local M = {}
 
@@ -25,6 +26,7 @@ M.rce = rce
 M.mitm = mitm
 M.zombie = zombie
 M.supplychain = supplychain
+M.bounty = bounty
 
 local AUGROUP_NAME = 'diver_security'
 local COMMAND_NAME = 'SecurityAudit'
@@ -125,6 +127,9 @@ function M.setup(opts)
         end
         vim.notify(table.concat(lines, '\n'), vim.log.levels.INFO)
     end, { desc = 'Run the diver security audit (security.* checks)' })
+    -- Bug-bounty pipeline commands (:Bounty*). Idempotent; creates only
+    -- user commands and the ~/security/bugbounties working dirs.
+    bounty.setup()
     setup_done = true
     return M
 end
