@@ -39,7 +39,10 @@
 --- (`edb dap`; launch via `run`, attach via `config.node`). The nvim-dap
 --- adapter ids here are `elixir_ls` and `edb`; ElixirLS's VS Code-side type
 --- `mix_task` and EDB's `erlang-edb` are client-side routing names and are
---- not needed by the servers themselves.
+--- not needed by the servers themselves. `mix_task` is additionally
+--- registered as an alias of `elixir_ls`: it is the key every community
+--- nvim-dap snippet uses, so pasted `type = "mix_task"` configs resolve
+--- to the same adapter table.
 ---@module 'dap.elixir'
 
 local api = vim.api
@@ -221,9 +224,25 @@ local function find_binary(spec, well_known)
     return nil
 end
 
----@param which string 'elixir_ls' or 'edb'
+--- Adapter key aliases. `mix_task` is ElixirLS's VS Code debugger type
+--- name and the key every community nvim-dap snippet uses; it resolves to
+--- the same adapter table as `elixir_ls`.
+---@type table<string, string>
+local ADAPTER_ALIASES = {
+    mix_task = 'elixir_ls',
+}
+
+---@param which string
+---@return string canonical adapter key (`mix_task` resolves to `elixir_ls`)
+local function canonical_adapter(which)
+    return ADAPTER_ALIASES[which] or which
+end
+
+---@param which string 'elixir_ls' (or alias 'mix_task') or 'edb'
 ---@return string?
 local function find_adapter(which)
+    which = canonical_adapter(which)
+
     if state.paths[which] ~= nil then
         return state.paths[which]
     end
@@ -264,6 +283,8 @@ end
 ---@param which string
 ---@return boolean
 local function known_adapter(which)
+    which = canonical_adapter(which)
+
     return which == 'elixir_ls' or which == 'edb'
 end
 
@@ -291,12 +312,19 @@ M.adapters = {
     },
 }
 
----@param which string 'elixir_ls' or 'edb'
+-- `mix_task` is the community/VS Code key for the ElixirLS adapter;
+-- alias it to the same table so both keys stay in sync by construction.
+M.adapters.mix_task = M.adapters.elixir_ls
+
+---@param which string 'elixir_ls' (or alias 'mix_task') or 'edb'
 ---@return table?, string?
 function M.resolve_adapter(which)
     if not known_adapter(which) then
-        return nil, ("unknown Elixir debug adapter: '%s' (expected 'elixir_ls' or 'edb')"):format(tostring(which))
+        return nil,
+            ("unknown Elixir debug adapter: '%s' (expected 'elixir_ls', 'mix_task', or 'edb')"):format(tostring(which))
     end
+
+    which = canonical_adapter(which)
 
     local path = find_adapter(which)
 
