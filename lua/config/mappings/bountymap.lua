@@ -1,6 +1,6 @@
 -- Bug-bounty pipeline keymaps; leader accelerators for the :Bounty* commands.
 -- SPDX-License-Identifier: Apache-2.0
-local core = require('mappings._core')
+local core = require('config.mappings._core')
 
 local M = {}
 local OWNER = 'bountymap'

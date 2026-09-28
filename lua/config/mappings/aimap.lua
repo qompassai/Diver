@@ -1,6 +1,6 @@
 -- Native LSP completion; chat/provider plugins are not loaded by this module.
 -- SPDX-License-Identifier: Apache-2.0
-local core = require('mappings._core')
+local core = require('config.mappings._core')
 local M = {}
 local OWNER = 'aimap'
 

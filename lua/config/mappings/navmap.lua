@@ -2,7 +2,7 @@
 -- Navigation owns leader n*, quickfix q*, location lists l*; LSP actions are buffer-local.
 -- SPDX-License-Identifier: Apache-2.0
 local api = vim.api
-local core = require('mappings._core')
+local core = require('config.mappings._core')
 local qf = require('config.core.qf')
 local M = {}
 local OWNER = 'navmap'
@@ -197,7 +197,7 @@ function M.setup(opts)
     maps[#maps + 1] = {
         lhs = '<leader>nz',
         rhs = function()
-            require('scip').setup()
+            require('dev.scip').setup()
             core.command('ScipIndex')()
         end,
         desc = 'Generate SCIP index for project',

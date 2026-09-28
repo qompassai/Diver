@@ -1,6 +1,6 @@
 -- Native mapping loader; set Leader and LocalLeader before calling setup().
 -- SPDX-License-Identifier: Apache-2.0
-local core = require('mappings._core')
+local core = require('config.mappings._core')
 local M = {}
 local MODULES = {
     'aimap',
@@ -39,7 +39,7 @@ function M.setup(opts)
     local errors = {}
     for _, name in ipairs(MODULES) do
         if opts[name] ~= false then
-            local ok, module = pcall(require, 'mappings.' .. name)
+            local ok, module = pcall(require, 'config.mappings.' .. name)
             if ok and type(module) == 'table' and type(module.setup) == 'function' then
                 loaded[#loaded + 1] = { name = name, module = module }
                 ok, module = pcall(module.setup, opts[name])

@@ -1,7 +1,7 @@
 -- Filetype-aware debug actions; no nvim-dap, dap-python or dapui dependency.
 -- SPDX-License-Identifier: Apache-2.0
 local api = vim.api
-local core = require('mappings._core')
+local core = require('config.mappings._core')
 local M = {}
 local OWNER = 'ddxmap'
 local CONFIGURATION_COUNT_MAX = 128

@@ -124,7 +124,8 @@ function M.clear(owner, scope)
                     local opts = scope ~= 0 and {
                         buffer = scope,
                     } or {}
-                    vim.keymap.del(owned.mode, current.lhs, opts)
+                    -- Guard against E31 if mapping was already removed
+                    pcall(vim.keymap.del, owned.mode, current.lhs, opts)
                     break
                 end
             end

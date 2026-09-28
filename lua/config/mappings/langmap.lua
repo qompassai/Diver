@@ -9,7 +9,7 @@
 -- Profiles and task keys are alphabetical; setup has no automatic task execution.
 
 local M = {}
-local core = require('mappings._core')
+local core = require('config.mappings._core')
 local api = vim.api
 local fn = vim.fn
 local uv = vim.uv

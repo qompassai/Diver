@@ -1,7 +1,7 @@
 -- Reusable native terminals. Shells are interactive and user initiated.
 -- SPDX-License-Identifier: Apache-2.0
 local api = vim.api
-local core = require('mappings._core')
+local core = require('config.mappings._core')
 local M = {}
 local OWNER = 'cicdmap'
 local terminals = {}

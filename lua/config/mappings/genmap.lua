@@ -1,7 +1,7 @@
 -- General editing and native directory browsing, independent of LSP attachment.
 -- SPDX-License-Identifier: Apache-2.0
 local api = vim.api
-local core = require('mappings._core')
+local core = require('config.mappings._core')
 local M = {}
 local OWNER = 'genmap'
 
@@ -55,7 +55,7 @@ end
 ---window in that direction while outside tmux).
 ---@param direction string 'left'|'right'|'up'|'down'
 local function tmux_aware_navigate(direction)
-    local moved, note = require('tmux').navigate(direction)
+    local moved, note = require('utils.tmux').navigate(direction)
     if moved == nil then
         core.notify('tmux: navigation failed: ' .. tostring(note), vim.log.levels.ERROR)
     end

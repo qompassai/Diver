@@ -1,7 +1,7 @@
 -- Filetype-local math annotations and query templates; no preview plugins.
 -- SPDX-License-Identifier: Apache-2.0
 local api = vim.api
-local core = require('mappings._core')
+local core = require('config.mappings._core')
 local M = {}
 local OWNER = 'datamap'
 local LINE_COUNT_MAX = 10000
