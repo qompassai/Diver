@@ -101,7 +101,11 @@ function M.run(name, opts)
         return
     end
 
-    local bufnr = core.bufnr(opts.bufnr)
+    local bufnr, bufnr_err = core.bufnr(opts.bufnr)
+    if not bufnr then
+        core.notify(bufnr_err or 'invalid buffer', vim.log.levels.ERROR)
+        return
+    end
     if not has_code_action_client(bufnr) then
         core.notify('no attached LSP client supports textDocument/codeAction', vim.log.levels.WARN)
         return
@@ -125,7 +129,11 @@ end
 function M.rename(opts)
     opts = opts or {}
 
-    local bufnr = core.bufnr(opts.bufnr)
+    local bufnr, bufnr_err = core.bufnr(opts.bufnr)
+    if not bufnr then
+        core.notify(bufnr_err or 'invalid buffer', vim.log.levels.ERROR)
+        return
+    end
 
     -- SCIP pre-flight: warn when the whole-project index is fresher than
     -- LSP's open-buffer view, so a rename does not silently miss files.

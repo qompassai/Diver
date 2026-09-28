@@ -226,6 +226,25 @@ local function identifier_like(node)
         or kind:sub(-11) == '_identifier'
 end
 
+---@param range vim.Range
+---@param start_row integer
+---@param start_col integer
+---@param end_row integer
+---@param end_col integer
+---@return boolean
+local function range_contains(range, start_row, start_col, end_row, end_col)
+    if start_row < range.start_row or end_row > range.end_row then
+        return false
+    end
+    if start_row == range.start_row and start_col < range.start_col then
+        return false
+    end
+    if end_row == range.end_row and end_col > range.end_col then
+        return false
+    end
+    return true
+end
+
 ---@param bufnr integer
 ---@param range vim.Range
 ---@return string[]
@@ -245,9 +264,8 @@ local function identifiers_in_range(bufnr, range)
         visited = visited + 1
 
         local srow, scol, erow, ecol = node:range()
-        local node_range = vim.range(bufnr, srow, scol, erow, ecol)
 
-        if range:has(node_range) then
+        if range_contains(range, srow, scol, erow, ecol) then
             if identifier_like(node) then
                 local text = ts.get_node_text(node, bufnr)
 
@@ -276,7 +294,12 @@ end
 ---@return string?
 local function expression_at_range(bufnr, range)
     if not range:is_empty() then
-        local selected = vim.trim(core.range_text(range))
+        local selected, range_err = core.range_text(range)
+        if not selected then
+            core.notify(range_err or 'could not read selected text', vim.log.levels.ERROR)
+            return nil
+        end
+        selected = vim.trim(selected)
         if selected ~= '' then
             return selected
         end
@@ -365,7 +388,11 @@ end
 local function run(kind, opts)
     opts = opts or {}
 
-    local bufnr = core.bufnr(opts.bufnr)
+    local bufnr, bufnr_err = core.bufnr(opts.bufnr)
+    if not bufnr then
+        core.notify(bufnr_err or 'invalid buffer', vim.log.levels.ERROR)
+        return
+    end
     local range = target_range(bufnr, opts)
     local statement = core.statement_range(bufnr, range)
     local generator = generator_for(bufnr, statement)
@@ -451,7 +478,11 @@ end
 function M.cleanup(opts)
     opts = opts or {}
 
-    local bufnr = core.bufnr(opts.bufnr)
+    local bufnr, bufnr_err = core.bufnr(opts.bufnr)
+    if not bufnr then
+        core.notify(bufnr_err or 'invalid buffer', vim.log.levels.ERROR)
+        return
+    end
     local line_count = api.nvim_buf_line_count(bufnr)
 
     if line_count > config.cleanup_line_max then

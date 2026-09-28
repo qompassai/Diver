@@ -1,9 +1,11 @@
 --- BSP client — talks to build servers so Neovim knows how your project builds.
 ---
---- Plain-language version: a build server is a program that knows how to compile your project (which files, which
---- flags). BSP (Build Server Protocol) is the agreed-upon language for asking it questions. This module is Neovim's
---- side of that conversation: it starts the conversation, asks for build targets, compiles on request, and reports
---- back. It runs only when you invoke one of its commands; it needs a BSP-capable build server for your project.
+--- Plain-language version: a build server is a program that knows how to compile your
+--- project (which files, which flags). BSP (Build Server Protocol) is the agreed-upon
+--- language for asking it questions. This module is Neovim's side of that conversation:
+--- it starts the conversation, asks for build targets, compiles on request, and reports
+--- back. It runs only when you invoke one of its commands; it needs a BSP-capable build
+--- server for your project.
 ---@module 'bsp'
 -- #################################################################
 -- /qompassai/Diver/lua/bsp/init.lua
@@ -46,10 +48,10 @@ local M = {}
 ---@class QompassBspRpc
 ---@field is_closing fun(): boolean
 ---@field notify fun(method: string, params: table|nil): boolean
----@field request fun(method: string, params: table|nil, callback: QompassBspRequestCallback): boolean, integer|nil
+---@field request fun(string, table|nil, QompassBspRequestCallback): boolean, integer|nil
 ---@field terminate fun()
 
----@param client vim.lsp.rpc.Client
+---@param client vim.lsp.rpc.PublicClient
 ---@return QompassBspRpc
 local function wrap_rpc(client)
     ---@type table
@@ -60,10 +62,10 @@ local function wrap_rpc(client)
             return raw_client.is_closing()
         end,
         notify = function(method, params)
-            return raw_client:notify(method, params)
+            return raw_client.notify(method, params)
         end,
         request = function(method, params, callback)
-            return raw_client:request(method, params, callback)
+            return raw_client.request(method, params, callback)
         end,
         terminate = function()
             raw_client.terminate()
@@ -93,7 +95,12 @@ local neovim_version = vim.version()
 local defaults = {
     auto_start = true,
     client_name = 'Neovim',
-    client_version = string.format('%d.%d.%d', neovim_version.major, neovim_version.minor, neovim_version.patch),
+    client_version = string.format(
+        '%d.%d.%d',
+        neovim_version.major,
+        neovim_version.minor,
+        neovim_version.patch
+    ),
     notify = true,
     server_name = nil, -- nil = auto-detect from bsp.servers registry
     trace = false,
@@ -108,6 +115,15 @@ M.state = {
     ---@type table<string, integer>
     diagnostic_namespaces = {},
 }
+
+-- BSP StatusCode values, per the Build Server Protocol specification.
+local STATUS_OK = 1
+local STATUS_ERROR = 2
+local STATUS_CANCELLED = 3
+
+-- Time allowed for the build/initialize handshake before the session is
+-- terminated and cleaned up.
+local INITIALIZE_TIMEOUT_MS = 30000
 
 ---@param message string
 ---@param level? integer
@@ -310,7 +326,10 @@ local function dispatch_notification(method, params)
         end
     elseif method == 'build/taskFinish' then
         if type(params.message) == 'string' then
-            local level = params.status == 2 and vim.log.levels.ERROR or vim.log.levels.INFO
+            local level = vim.log.levels.INFO
+            if params.status == STATUS_ERROR then
+                level = vim.log.levels.ERROR
+            end
             notify(params.message, level)
         end
     elseif method == 'run/printStdout' or method == 'run/printStderr' then
@@ -348,9 +367,26 @@ local function request(root, method, params, callback)
     return sent
 end
 
+---@param targets any
+---@return QompassBspTarget[]
+local function validate_targets(targets)
+    local valid = {}
+
+    for _, target in ipairs(targets) do
+        local id = type(target) == 'table' and target.id or nil
+        if type(id) == 'table' and type(id.uri) == 'string' then
+            valid[#valid + 1] = target
+        end
+    end
+
+    return valid
+end
+
 ---@param root string
 ---@param callback? fun(targets: QompassBspTarget[])
 local function refresh_targets(root, callback)
+    local session = M.state.sessions[root]
+
     request(root, 'workspace/buildTargets', nil, function(err, result)
         if err then
             notify('Target discovery failed: ' .. error_message(err), vim.log.levels.ERROR)
@@ -361,16 +397,159 @@ local function refresh_targets(root, callback)
             return
         end
 
-        local session = M.state.sessions[root]
-        if not session then
+        -- Drop the response if the session was replaced (e.g. by a restart)
+        -- between the request and the response.
+        if not session or M.state.sessions[root] ~= session then
             return
         end
 
-        session.targets = result.targets
+        session.targets = validate_targets(result.targets)
         if callback then
             callback(session.targets)
         end
     end)
+end
+
+---@param root string
+---@param session QompassBspSession
+---@return QompassBspRpc|nil, string?
+local function spawn_rpc(root, session)
+    local dispatchers = {
+        notification = function(method, params)
+            dispatch_notification(method, params or {})
+        end,
+        on_error = function(code, err)
+            local message = string.format('RPC error %s: %s', tostring(code), tostring(err))
+            notify(message, vim.log.levels.ERROR)
+        end,
+        on_exit = function(code, signal)
+            vim.schedule(function()
+                if M.state.sessions[root] == session then
+                    M.state.sessions[root] = nil
+                end
+                if code ~= 0 then
+                    local message = string.format(
+                        'BSP server exited with code %s (signal %s)',
+                        tostring(code),
+                        tostring(signal)
+                    )
+                    notify(message, vim.log.levels.ERROR)
+                end
+            end)
+        end,
+        server_request = function(method)
+            return nil,
+                {
+                    code = -32601,
+                    message = 'Unsupported BSP client request: ' .. method,
+                }
+        end,
+    }
+
+    ---@type vim.lsp.rpc.PublicClient|nil
+    local rpc_client
+    local ok_start, start_error = pcall(function()
+        rpc_client = vim.lsp.rpc.start(session.connection.argv, dispatchers, {
+            cwd = root,
+            detached = false,
+        })
+    end)
+    if not ok_start then
+        return nil, 'Failed to start BSP server: ' .. tostring(start_error)
+    end
+    if not rpc_client then
+        return nil, 'Failed to start BSP server: no RPC client was returned'
+    end
+
+    return wrap_rpc(rpc_client)
+end
+
+---@param root string
+---@param session QompassBspSession
+---@param connection QompassBspConnection
+---@param err table|nil
+---@param result any
+---@return nil
+local function on_initialized(root, session, connection, err, result)
+    if M.state.sessions[root] ~= session then
+        return
+    end
+    if err then
+        notify('BSP initialization failed: ' .. error_message(err), vim.log.levels.ERROR)
+        session.rpc.terminate()
+        M.state.sessions[root] = nil
+        return
+    end
+    if type(result) ~= 'table' then
+        notify('BSP initialization returned no server information', vim.log.levels.ERROR)
+        session.rpc.terminate()
+        M.state.sessions[root] = nil
+        return
+    end
+
+    session.initialized = true
+    session.server_info = result
+    session.rpc.notify('build/initialized', {})
+    local name = result.displayName or connection.name
+    notify(string.format('Connected to %s %s', name, result.version or ''))
+    refresh_targets(root)
+end
+
+---@param root string
+---@param session QompassBspSession
+---@param connection QompassBspConnection
+---@return nil
+local function send_initialize(root, session, connection)
+    local timer = vim.uv.new_timer()
+
+    local function cancel_timer()
+        if timer and not timer:is_closing() then
+            timer:stop()
+            timer:close()
+        end
+        timer = nil
+    end
+
+    local sent = session.rpc.request('build/initialize', {
+        bspVersion = connection.bspVersion,
+        capabilities = {
+            languageIds = connection.languages,
+        },
+        displayName = M.config.client_name,
+        rootUri = vim.uri_from_fname(root),
+        version = M.config.client_version,
+    }, function(err, result)
+        vim.schedule(function()
+            cancel_timer()
+            on_initialized(root, session, connection, err, result)
+        end)
+    end)
+
+    if not sent then
+        cancel_timer()
+        session.rpc.terminate()
+        M.state.sessions[root] = nil
+        notify('Could not send build/initialize', vim.log.levels.ERROR)
+        return
+    end
+
+    -- A nil timer means the handshake runs without a timeout guard, as before.
+    if timer then
+        timer:start(INITIALIZE_TIMEOUT_MS, 0, function()
+            vim.schedule(function()
+                cancel_timer()
+                if M.state.sessions[root] ~= session or session.initialized then
+                    return
+                end
+                notify(
+                    ('BSP initialization timed out after %d ms'):format(INITIALIZE_TIMEOUT_MS),
+                    vim.log.levels.ERROR
+                )
+                session.rpc.terminate()
+                M.state.sessions[root] = nil
+            end)
+        end)
+    end
 end
 
 ---@param bufnr? integer
@@ -410,96 +589,17 @@ function M.start(bufnr)
         targets = {},
     }
 
-    local dispatchers = {
-        notification = function(method, params)
-            dispatch_notification(method, params or {})
-        end,
-        on_error = function(code, err)
-            notify(string.format('RPC error %s: %s', tostring(code), tostring(err)), vim.log.levels.ERROR)
-        end,
-        on_exit = function(code, signal)
-            vim.schedule(function()
-                if M.state.sessions[root] == session then
-                    M.state.sessions[root] = nil
-                end
-                if code ~= 0 then
-                    notify(
-                        string.format('BSP server exited with code %s (signal %s)', tostring(code), tostring(signal)),
-                        vim.log.levels.ERROR
-                    )
-                end
-            end)
-        end,
-        server_request = function(method)
-            return nil,
-                {
-                    code = -32601,
-                    message = 'Unsupported BSP client request: ' .. method,
-                }
-        end,
-    }
-
-    ---@type vim.lsp.rpc.Client|nil
-    local rpc_client
-    local ok_start, start_error = pcall(function()
-        rpc_client = vim.lsp.rpc.start(connection.argv, dispatchers, {
-            cwd = root,
-            detached = false,
-        })
-    end)
-    if not ok_start then
-        notify('Failed to start BSP server: ' .. tostring(start_error), vim.log.levels.ERROR)
-        return
-    end
-    if not rpc_client then
-        notify('Failed to start BSP server: no RPC client was returned', vim.log.levels.ERROR)
+    local rpc, rpc_error = spawn_rpc(root, session)
+    if not rpc then
+        notify(rpc_error or 'Failed to start BSP server', vim.log.levels.ERROR)
         return
     end
 
-    local rpc = wrap_rpc(rpc_client)
     session.rpc = rpc
     ---@cast session QompassBspSession
     M.state.sessions[root] = session
 
-    local sent = rpc.request('build/initialize', {
-        bspVersion = connection.bspVersion,
-        capabilities = {
-            languageIds = connection.languages,
-        },
-        displayName = M.config.client_name,
-        rootUri = vim.uri_from_fname(root),
-        version = M.config.client_version,
-    }, function(err, result)
-        vim.schedule(function()
-            if M.state.sessions[root] ~= session then
-                return
-            end
-            if err then
-                notify('BSP initialization failed: ' .. error_message(err), vim.log.levels.ERROR)
-                session.rpc.terminate()
-                M.state.sessions[root] = nil
-                return
-            end
-            if type(result) ~= 'table' then
-                notify('BSP initialization returned no server information', vim.log.levels.ERROR)
-                session.rpc.terminate()
-                M.state.sessions[root] = nil
-                return
-            end
-
-            session.initialized = true
-            session.server_info = result
-            session.rpc.notify('build/initialized', {})
-            notify(string.format('Connected to %s %s', result.displayName or connection.name, result.version or ''))
-            refresh_targets(root)
-        end)
-    end)
-
-    if not sent then
-        session.rpc.terminate()
-        M.state.sessions[root] = nil
-        notify('Could not send build/initialize', vim.log.levels.ERROR)
-    end
+    send_initialize(root, session, connection)
 end
 
 ---@param root? string
@@ -540,9 +640,9 @@ function M.compile(root)
             end
 
             local status = type(result) == 'table' and result.statusCode or nil
-            if status == 1 then
+            if status == STATUS_OK then
                 notify('BSP compilation completed successfully')
-            elseif status == 3 then
+            elseif status == STATUS_CANCELLED then
                 notify('BSP compilation was cancelled', vim.log.levels.WARN)
             else
                 notify('BSP compilation failed', vim.log.levels.ERROR)
@@ -690,13 +790,18 @@ function M.restart(bufnr)
     end
 
     if session.initialized then
-        session.rpc.request('build/shutdown', nil, function()
+        local sent = session.rpc.request('build/shutdown', nil, function()
             vim.schedule(function()
                 session.rpc.notify('build/exit', {})
                 M.state.sessions[root] = nil
                 M.start(bufnr)
             end)
         end)
+        if not sent then
+            session.rpc.terminate()
+            M.state.sessions[root] = nil
+            M.start(bufnr)
+        end
     else
         session.rpc.terminate()
         M.state.sessions[root] = nil
@@ -721,8 +826,11 @@ local function create_autocmds()
     api.nvim_create_autocmd('VimLeavePre', {
         callback = function()
             for _, session in pairs(M.state.sessions) do
-                if session.initialized and not session.rpc.is_closing() then
-                    session.rpc.notify('build/exit', {})
+                if not session.rpc.is_closing() then
+                    if session.initialized then
+                        session.rpc.notify('build/exit', {})
+                    end
+                    session.rpc.terminate()
                 end
             end
         end,

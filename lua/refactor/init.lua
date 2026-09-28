@@ -37,9 +37,10 @@ local function create_commands()
 
         if ranged then
             local last = vim.api.nvim_buf_get_lines(0, args.line2 - 1, args.line2, true)[1] or ''
+            -- args.line1/args.line2 are 1-based; LSP Range lines are 0-based.
             range = {
-                start = { args.line1, 0 },
-                ['end'] = { args.line2, #last },
+                start = { args.line1 - 1, 0 },
+                ['end'] = { args.line2 - 1, #last },
             }
         end
 
@@ -142,31 +143,37 @@ function M.extract_func(opts)
     refactor('extract_func', opts and opts.visual, true)
 end
 
+---@return nil
 function M.inline()
     ensure_setup()
     refactor('inline', false, false)
 end
 
+---@return nil
 function M.inline_var()
     ensure_setup()
     refactor('inline_var', false, true)
 end
 
+---@return nil
 function M.inline_func()
     ensure_setup()
     refactor('inline_func', false, true)
 end
 
+---@return nil
 function M.rewrite()
     ensure_setup()
     refactor('rewrite', false, false)
 end
 
+---@return nil
 function M.code_action()
     ensure_setup()
     refactor('refactor', false, false)
 end
 
+---@return nil
 function M.rename()
     ensure_setup()
     lsp.rename()

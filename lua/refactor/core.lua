@@ -35,11 +35,12 @@ function M.require_nvim_013()
 end
 
 ---@param bufnr? integer
----@return integer
+---@return integer?, string?
 function M.bufnr(bufnr)
     local buf = bufnr or api.nvim_get_current_buf()
-    assert(type(buf) == 'number')
-    assert(api.nvim_buf_is_valid(buf), 'invalid buffer')
+    if type(buf) ~= 'number' or not api.nvim_buf_is_valid(buf) then
+        return nil, 'invalid buffer'
+    end
     return buf
 end
 
@@ -53,9 +54,10 @@ function M.visual_lsp_range(bufnr)
         return nil
     end
 
+    -- nvim_buf_get_mark rows are 1-based; LSP Range lines are 0-based.
     return {
-        start = { start_mark[1], start_mark[2] },
-        ['end'] = { end_mark[1], end_mark[2] },
+        start = { start_mark[1] - 1, start_mark[2] },
+        ['end'] = { end_mark[1] - 1, end_mark[2] },
     }
 end
 
@@ -77,8 +79,20 @@ end
 ---@param line2 integer
 ---@return vim.Range
 function M.line_range(bufnr, line1, line2)
-    assert(line1 >= 1)
-    assert(line2 >= line1)
+    if type(line1) ~= 'number' or line1 < 1 then
+        M.notify(
+            ('invalid start line %s; clamping to 1'):format(vim.inspect(line1)),
+            vim.log.levels.WARN
+        )
+        line1 = 1
+    end
+    if type(line2) ~= 'number' or line2 < line1 then
+        M.notify(
+            ('invalid end line %s; clamping to %d'):format(vim.inspect(line2), line1),
+            vim.log.levels.WARN
+        )
+        line2 = line1
+    end
 
     local last = api.nvim_buf_get_lines(bufnr, line2 - 1, line2, true)[1] or ''
     return vim.range(bufnr, line1 - 1, 0, line2 - 1, #last)
@@ -94,14 +108,14 @@ function M.cursor_range(bufnr)
 end
 
 ---@param range vim.Range
----@return string
+---@return string?, string?
 function M.range_text(range)
     local srow, scol, erow, ecol = range:to_extmark()
     local lines = api.nvim_buf_get_text(range.buf, srow, scol, erow, ecol, {})
     local text = table.concat(lines, '\n')
 
     if #text > SELECTION_BYTES_MAX then
-        error(('selection exceeds %d bytes'):format(SELECTION_BYTES_MAX), 2)
+        return nil, ('selection exceeds %d bytes'):format(SELECTION_BYTES_MAX)
     end
 
     return text
