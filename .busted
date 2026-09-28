@@ -5,76 +5,81 @@
 -- assertion globals.
 
 return {
-    _all = {
-        ROOT = { 'tests/busted' },
-        pattern = { '_spec%.lua$' },
-        ['exclude-pattern'] = {},
+        _all = {
+                ROOT = { 'tests/busted' },
+                pattern = { '_spec%.lua$' },
+                ['exclude-pattern'] = {},
 
-        directory = './',
-        recursive = true,
-        loaders = 'lua',
-        helper = 'tests.busted.helpers',
+                directory = './',
+                recursive = true,
+                loaders = 'lua',
+                helper = 'tests.busted.helpers',
 
-        lpath = table.concat({
-            './?.lua',
-            './?/init.lua',
-            './lua/?.lua',
-            './lua/?/init.lua',
-            './tests/busted/?.lua',
-            './tests/busted/?/init.lua',
-        }, ';'),
+                lpath = table.concat({
+                        './?.lua',
+                        './?/init.lua',
+                        './lua/?.lua',
+                        './lua/?/init.lua',
+                        './tests/busted/?.lua',
+                        './tests/busted/?/init.lua',
+                }, ';'),
 
-        coverage = false,
-        verbose = true,
-        ['auto-insulate'] = true,
-        ['keep-going'] = true,
-        lazy = false,
+                coverage = false,
+                verbose = true,
+                ['auto-insulate'] = true,
+                ['keep-going'] = true,
+                lazy = false,
 
-        output = 'utfTerminal',
-        lang = 'en',
-        ['enable-sound'] = false,
-        ['suppress-pending'] = false,
-        ['defer-print'] = false,
-    },
+                output = 'utfTerminal',
+                lang = 'en',
+                ['enable-sound'] = false,
+                ['suppress-pending'] = false,
+                ['defer-print'] = false,
+        },
 
-    default = {
-        verbose = true,
-    },
+        default = {
+                verbose = true,
+        },
 
-    tests = {
-        ROOT = { 'tests/busted' },
-        verbose = true,
-    },
+        tests = {
+                ROOT = { 'tests/busted' },
+                verbose = true,
+        },
 
-    unit = {
-        ROOT = { 'tests/busted/unit' },
-    },
+        unit = {
+                ROOT = {
+                        'tests/busted/unit'
+                },
+        },
 
-    integration = {
-        ROOT = { 'tests/busted/integration' },
-        tags = { 'integration' },
-    },
+        integration = {
+                ROOT = {
+                        'tests/busted/integration'
+                },
+                tags = {
+                        'integration' },
+        },
 
-    ci = {
-        coverage = true,
-        ['coverage-config-file'] = '.luacov',
-        output = 'junit',
-        ['defer-print'] = true,
-        sort = true,
-    },
+        ci = {
+                coverage = true,
+                ['coverage-config-file'] = '.luacov',
+                output = 'junit',
+                ['defer-print'] = true,
+                sort = true,
+        },
 
-    tap = {
-        output = 'TAP',
-        verbose = false,
-        sort = true,
-    },
+        tap = {
+                output = 'TAP',
+                verbose = false,
+                sort = true,
+        },
 
-    list = {
-        list = true,
-    },
+        list = {
+                list = true,
+        },
 
-    order_check = {
-        shuffle = true,
-        ['repeat'] = 3,
-    },
+        order_check = {
+                shuffle = true,
+                ['repeat'] = 3,
+        },
 }
