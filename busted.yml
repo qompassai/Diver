@@ -1,0 +1,98 @@
+# #################################################################
+# busted.yml — selene standard-library addon: busted test globals
+# SPDX-License-Identifier: Apache-2.0
+# Copyright (c) 2026 Qompass AI
+# #################################################################
+#
+# ELI5: selene only knows the globals its standard library names. This
+# file teaches it busted's globals (describe, it, before_each, ...), so
+# spec files stop reporting "`describe` is not defined". It is a pure
+# addon: no `base:`, it only adds names, exactly like vim.yml.
+#
+# Chain it FIRST in selene.toml:
+#
+#     std = "busted+lua51+vim"
+#
+# Order matters: when chained names define the same global, the FIRST
+# file wins. This file re-models `assert` the way luassert (busted's
+# assertion engine) actually behaves — message argument optional —
+# which replaces lua51's two-required-arguments model. If busted came
+# after lua51, lua51's stricter `assert` would win and one-argument
+# `assert(x)` in specs would keep warning.
+#
+# Selene 0.31 notes (verified against the real binary, not just docs):
+# - Custom std files are YAML content with a `.yml` extension, resolved
+#   relative to the selene.toml that references them. (The docs'
+#   `special.toml` example is stale: a `.toml` name makes selene try to
+#   parse the file as TOML and fail.)
+# - A builtin std name (lua51, lua52) CANNOT be chained with a file std:
+#   `std = "lua51+busted"` errors with "some libraries could not be
+#   found". That is why lua51.yml is vendored here as a file.
+# - `base:` inside a std file CAN still name a builtin.
+
+---
+globals:
+  describe:
+    args:
+      - type: string
+      - type: function
+  it:
+    args:
+      - type: string
+      - type: function
+  setup:
+    args:
+      - type: function
+  teardown:
+    args:
+      - type: function
+  lazy_setup:
+    args:
+      - type: function
+  lazy_teardown:
+    args:
+      - type: function
+  strict_setup:
+    args:
+      - type: function
+  strict_teardown:
+    args:
+      - type: function
+  before_each:
+    args:
+      - type: function
+  after_each:
+    args:
+      - type: function
+  finally:
+    args:
+      - type: function
+  pending:
+    args:
+      - type: string
+        required: false
+      - type: function
+        required: false
+  insulate:
+    args:
+      - type: string
+      - type: function
+  expose:
+    args:
+      - type: string
+      - type: function
+  randomize:
+    args:
+      - type: bool
+        required: false
+  # luassert: the message argument is optional, unlike lua51's std model
+  # which demands two arguments (selene even attaches the note "A failed
+  # assertion without a message is unhelpful to users"). In busted specs
+  # one-argument assert(x) is idiomatic, so this override silences the
+  # incorrect_standard_library_use warnings precisely, instead of
+  # demoting the whole lint.
+  assert:
+    args:
+      - type: any
+      - type: any
+        required: false

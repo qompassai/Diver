@@ -1,0 +1,117 @@
+# #################################################################
+# Qompass AI Diver Native Selene Linter — bundled fallback config
+# SPDX-License-Identifier: Apache-2.0
+# Copyright (c) 2026 Qompass AI
+# #################################################################
+#
+# ELI5: selene reads this file for project-wide settings. Every option
+# selene documents lives here with its stock default, so all the knobs
+# are visible in one place. Copy it to a project root as `selene.toml`
+# and dial in — a project's own selene.toml always wins over this
+# fallback and is never overridden.
+#
+# Source: selene docs, "Configuration"
+# (github.com/Kampfkarren/selene, docs/src/usage/configuration.md)
+
+# Standard library for global and stdlib-usage checking. Builtins are
+# "lua51" (the default) and "lua52"; a filename names a custom standard
+# library file. Chain several with "+", e.g. "lua51+vim".
+std = "lua51"
+
+# Busted specs: selene only knows the globals its std names, so
+# describe/it/before_each read as undefined in *_spec.lua files. The fix
+# is a busted.yml std addon (YAML, .yml extension) placed next to the
+# project's selene.toml and chained FIRST: std = "busted+lua51".
+# First-wins on duplicate globals is load-bearing here: busted.yml
+# re-models assert() with an optional message (luassert behavior),
+# replacing lua51's two-required-arguments model, which is what silences
+# the "assert requires 2 parameters" warnings precisely.
+# Verified on selene 0.31 (binary behavior, not just docs):
+# - custom std files resolve relative to the selene.toml referencing them;
+# - a builtin std name cannot be chained with a file std
+#   (std = "lua51+busted" errors); vendor lua51 as a file to mix them.
+
+# Glob patterns for files selene will not lint.
+exclude = []
+
+# Per-lint severity: "allow" skips the lint, "warn" is a warning,
+# "deny" is an error. Each lint is named as on the lints list, e.g.:
+# unused_variable = "allow"
+#
+# Stock severities are not stated per-lint in the docs, with one exception:
+# high_cyclomatic_complexity is OFF by default (enable with "warn"/"deny").
+# It is stated here explicitly so the stock state stays visible.
+[lints]
+high_cyclomatic_complexity = "allow"
+
+# Per-lint special options — exhaustive inventory from the selene docs
+# (docs/src/lints/*.md, selene 0.31). 10 of the 30 lints document [config]
+# knobs; every knob is set below to its stock default. The other 20 lints
+# (almost_swapped, constant_table_comparison, divide_by_zero, duplicate_keys,
+# if_same_then_else, ifs_same_cond, incorrect_standard_library_use,
+# manual_table_clone, mismatched_arg_count, mixed_table, must_use,
+# parenthese_conditions, roblox_incorrect_color3_new_bounds,
+# roblox_incorrect_roact_usage, roblox_manual_fromscale_or_fromoffset,
+# roblox_suspicious_udim2_new, suspicious_reverse_loop, type_check_inside_call,
+# unbalanced_assignments, undefined_variable) document no knobs.
+[config]
+
+# deprecated: `allow` — list of string patterns (wildcards supported) exempt
+# from the deprecated lint, e.g. ["table.getn"] or ["table.*"]. The docs state
+# no default; stock behavior exempts nothing.
+[config.deprecated]
+allow = []
+
+# empty_if: `comments_count` (default false) — whether an if-statement whose
+# body is only comments counts as empty.
+[config.empty_if]
+comments_count = false
+
+# empty_loop: `comments_count` (default false) — same question for loops.
+[config.empty_loop]
+comments_count = false
+
+# global_usage: `ignore_pattern` — regex for globals allowed to stay global.
+# The docs state no default value ("the default disallows all global
+# variables regardless of their name"), and no string is a neutral "no
+# pattern", so the key is deliberately omitted rather than guessed.
+[config.global_usage]
+# ignore_pattern = ""
+
+# high_cyclomatic_complexity: `maximum_complexity` (default 40) — functions
+# more complex than this are reported. (The lint itself is off by default;
+# see [lints] above.)
+[config.high_cyclomatic_complexity]
+maximum_complexity = 40
+
+# multiple_statements: `one_line_if` (default "break-return-only") — whether
+# one-line if statements are allowed: "break-return-only" (only
+# `if x then return end` / `if x then break end`), "allow" (all of them),
+# "deny" (none of them).
+[config.multiple_statements]
+one_line_if = "break-return-only"
+
+# restricted_module_paths: `restricted_paths` — map of restricted module path
+# to its error message, e.g.
+#   [config.restricted_module_paths.restricted_paths]
+#   "Old.Utils.f" = "Old.Utils.f is deprecated. Use New.Utils.f instead."
+# Stock default: no paths restricted (empty map).
+[config.restricted_module_paths]
+[config.restricted_module_paths.restricted_paths]
+
+# shadowing: `ignore_pattern` (default "^_") — regex for names allowed to be
+# shadowed.
+[config.shadowing]
+ignore_pattern = "^_"
+
+# unscoped_variables: `ignore_pattern` (default "^_") — regex for variables
+# allowed to be unscoped.
+[config.unscoped_variables]
+ignore_pattern = "^_"
+
+# unused_variable: `allow_unused_self` (default true) — whether an unused
+# `self` in a method definition is allowed; `ignore_pattern` (default "^_")
+# — regex for variables allowed to be unused.
+[config.unused_variable]
+allow_unused_self = true
+ignore_pattern = "^_"

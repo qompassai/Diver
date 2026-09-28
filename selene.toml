@@ -1,0 +1,22 @@
+# busted FIRST: chained std files are first-wins on duplicate globals, and
+# busted.yml re-models assert() with an optional message (luassert behavior),
+# replacing lua51's two-required-args model. See busted.yml for the full
+# story, including why lua51 is a vendored file (selene 0.31 cannot chain a
+# builtin name with file stds).
+std = "busted+lua51+vim"
+
+[lints]
+undefined_variable = "deny"
+# mixed_table is idiomatic Neovim: plugin specs ({ "cmd", desc = "x" }),
+# vararg packs ({ n = select("#", ...), ... }), vim.cmd tables.
+# Deny would tax every spec; warn keeps genuinely confusing cases visible.
+mixed_table = "warn"
+# selene 0.31 models lua51, not LuaJIT: assert(v) with one arg is legal,
+# table.unpack exists on LuaJIT, io.stdout:write is legal. ~99.9% of
+# hits are std-modeling false positives; warn avoids alert fatigue.
+incorrect_standard_library_use = "warn"
+# _G is idiomatic in Neovim config: foldexpr globals (Vim API requirement),
+# cross-reload state (timers), intentional module exposure (_G.Icons),
+# portable vim detection via rawget(_G, "vim") for non-Neovim contexts,
+# and type stubs declaring globals. The lint assumes application code.
+global_usage = "deny"
