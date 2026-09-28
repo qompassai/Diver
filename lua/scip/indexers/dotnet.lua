@@ -15,9 +15,9 @@
 -- limitations under the License.
 -- #################################################################
 
----@type ScipIndexer
+local factory = require('scip.indexers.factory')
 
-local indexer = {
+return factory.new('dotnet', {
     args = {
         'index',
     },
@@ -34,6 +34,4 @@ local indexer = {
         'Directory.Packages.props',
         'global.json',
     },
-}
-
-return indexer
+})

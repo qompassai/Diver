@@ -20,6 +20,8 @@ local fs = vim.fs
 
 local utils = require('scip.utils')
 
+local factory = require('scip.indexers.factory')
+
 --- Return whether a project contains a TypeScript or JavaScript configuration.
 ---@param root string Project root.
 ---@return boolean
@@ -114,8 +116,7 @@ local function args(context)
     }
 end
 
----@type ScipIndexer
-local indexer = {
+return factory.new('typescript', {
     args = args,
 
     command = 'scip-typescript',
@@ -141,6 +142,4 @@ local indexer = {
         'tsconfig.json',
         'yarn.lock',
     },
-}
-
-return indexer
+})

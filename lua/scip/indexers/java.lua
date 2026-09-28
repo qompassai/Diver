@@ -20,6 +20,8 @@ local fs = vim.fs
 
 local utils = require('scip.utils')
 
+local factory = require('scip.indexers.factory')
+
 ---Return whether a project contains a path.
 ---@param root string Project root.
 ---@param name string Relative path.
@@ -80,8 +82,7 @@ local function args(context)
     return arguments
 end
 
----@type ScipIndexer
-local indexer = {
+return factory.new('java', {
     args = args,
 
     command = 'scip-java',
@@ -103,6 +104,4 @@ local indexer = {
         'settings.gradle',
         'settings.gradle.kts',
     },
-}
-
-return indexer
+})

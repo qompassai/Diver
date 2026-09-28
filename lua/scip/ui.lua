@@ -8,7 +8,6 @@ local api = vim.api
 local fn = vim.fn
 local config = require('scip.config')
 local registry = require('scip.registry')
-local root = require('scip.root')
 local utils = require('scip.utils')
 local M = {}
 
@@ -32,7 +31,10 @@ end
 function M.show_output(title, text, filetype)
     local bufnr = api.nvim_create_buf(false, true)
 
-    api.nvim_buf_set_name(bufnr, ('scip://%s/%d'):format(title:gsub('%s+', '-'):lower(), math.floor(vim.uv.hrtime())))
+    api.nvim_buf_set_name(
+        bufnr,
+        ('scip://%s/%d'):format(title:gsub('%s+', '-'):lower(), math.floor(vim.uv.hrtime()))
+    )
 
     api.nvim_set_option_value('bufhidden', 'wipe', {
         buf = bufnr,
@@ -86,19 +88,23 @@ function M.coverage()
         local indexer = registry.get(name)
 
         if indexer ~= nil then
-            local project_root = root.resolve(bufnr, indexer.markers)
+            local probe_result = registry.probe(name, bufnr)
 
-            local ctx = require('scip.context').new(name, bufnr, project_root)
+            local readiness
 
-            local command = utils.resolve_command(indexer.command, ctx)
-
-            local readiness = command ~= nil and utils.executable(command) and 'ready' or 'missing'
+            if probe_result.ready then
+                readiness = 'ready'
+            elseif probe_result.err == registry.NO_PROJECT_ROOT then
+                readiness = 'no root'
+            else
+                readiness = 'missing'
+            end
 
             lines[#lines + 1] = string.format(
                 '%-12s %-8s %-24s %s',
                 name,
                 readiness,
-                command or '<invalid command>',
+                probe_result.command or probe_result.err or '<invalid command>',
                 table.concat(registry.filetypes(indexer), ', ')
             )
 

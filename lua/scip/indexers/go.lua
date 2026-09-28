@@ -16,13 +16,14 @@
 -- limitations under the License.
 -- #################################################################
 
+local factory = require('scip.indexers.factory')
+
 ---scip-go discovers the Go module or workspace from its working directory,
 ---so no additional command-line arguments are required.
 ---@type string[]
 local args = {}
 
----@type ScipIndexer
-local indexer = {
+return factory.new('go', {
     args = args,
 
     command = 'scip-go',
@@ -39,6 +40,4 @@ local indexer = {
         'go.mod',
         'go.work',
     },
-}
-
-return indexer
+})

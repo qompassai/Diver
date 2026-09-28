@@ -1,5 +1,5 @@
 -- #################################################################
--- /qompassai/diver/lua/scip/config.lua
+-- /qompassai/lua/scip/config.lua
 -- Qompass AI Diver SCIP Config
 -- SPDX-License-Identifier: Apache-2.0
 -- Copyright (c) 2026 Qompass AI
@@ -39,7 +39,7 @@ local M = {}
 ---@field lint_after_index boolean
 ---@field notify boolean
 ---@field root_markers string[]
----@field timeout integer
+---@field timeout integer Subprocess timeout in milliseconds.
 
 ---@class ScipConfigOpts
 ---@field index_file? string
@@ -48,7 +48,7 @@ local M = {}
 ---@field lint_after_index? boolean
 ---@field notify? boolean
 ---@field root_markers? string[]
----@field timeout? integer
+---@field timeout? integer Subprocess timeout in milliseconds.
 
 ---Load the built-in SCIP indexers.
 ---
@@ -115,6 +115,12 @@ local defaults = {
 M.values = vim.deepcopy(defaults)
 
 ---Return the currently active SCIP configuration.
+---
+---This returns the live configuration table, not a copy. Mutating the
+---returned table mutates the active configuration (`registry.register`
+---relies on this); treat the result as read-only unless reconfiguration is
+---intended.
+---
 ---@return ScipConfig
 function M.get()
     return M.values
@@ -152,7 +158,9 @@ end
 ---Apply user configuration on top of the built-in defaults.
 ---
 ---`vim.tbl_deep_extend()` allows individual indexer settings to be overridden
----without replacing the entire default configuration.
+---without replacing the entire default configuration. `indexer_order` is the
+---exception: a user-supplied order replaces the default list wholesale, so the
+---configured priority is honored verbatim in insertion order (never sorted).
 ---
 ---@param opts? ScipConfigOpts User SCIP configuration.
 ---@return nil
@@ -163,7 +171,12 @@ function M.setup(opts)
 
     M.values = vim.tbl_deep_extend('force', vim.deepcopy(defaults), opts)
 
-    table.sort(M.values.indexer_order)
+    -- vim.tbl_deep_extend merges lists element-wise, so without this a short
+    -- user-supplied indexer_order would keep default entries past its length
+    -- instead of replacing the priority list.
+    if opts.indexer_order ~= nil then
+        M.values.indexer_order = vim.deepcopy(opts.indexer_order)
+    end
 end
 
 return M

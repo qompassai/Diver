@@ -1,91 +1,140 @@
-# Native SCIP runner for Neovim 0.13+
+# Native SCIP indexer runner for Neovim 0.13+
 
-Copy the contents of `lua/scip/` into your Neovim configuration's `lua/scip/`
-directory. Load the runner from your main configuration:
+The `lua/scip/` tree is a native Neovim SCIP integration: it detects the
+right SCIP indexer for the current buffer, runs it asynchronously, and
+offers health, coverage, and index-inspection commands. Everything runs on
+explicit request; requiring the modules registers nothing.
 
 ```lua
 require('scip').setup({
-    timeout_ms = 600000,
+    timeout = 300000, -- milliseconds; default 5 minutes
     notify = true,
+    lint_after_index = true,
 })
 ```
 
-The downloaded standalone `init.lua` belongs at `lua/scip/init.lua`, not at the
-root of your Neovim configuration. `clang`, `java`, and `php` also need the
-included `lua/scip/utils.lua`, or an existing compatible helper.
+`setup()` deep-merges your options over the built-in defaults and creates
+the `:Scip*` commands. `indexer_order`, when supplied, replaces the default
+priority list wholesale (insertion order is honored verbatim, never sorted).
+
+## Indexer definitions
+
+Each file in this directory defines one indexer and returns it through the
+shared factory, which validates the `ScipIndexer` shape once at require time:
+
+```lua
+local factory = require('scip.indexers.factory')
+
+return factory.new('go', {
+    args = {},
+    command = 'scip-go',
+    filetypes = { go = true },
+    markers = { '.git', 'go.mod', 'go.work' },
+})
+```
+
+A definition carries `command` (string or `fun(ctx: ScipContext): string`),
+`args` (string array or `fun(ctx: ScipContext): string[]`), a `filetypes`
+set, project-root `markers`, and an optional `enabled` flag. All 15
+definitions are enabled: only `latex`, `lua`, and `nix` set `enabled`
+explicitly (to `true`); none set it to `false`. Their doc comments note that
+no verified standard `scip-latex` / `scip-lua` / `scip-nix` executable is
+known — the definitions are registration points that degrade gracefully when
+the binary is absent.
+
+| Name | Command | Notes |
+| --- | --- | --- |
+| `apex` | `scip-apex` | Community Apex indexer (`index .`) |
+| `clang` | `scip-clang` | Adds `--compdb-path=` from compilation-database lookup |
+| `dart` | `dart` | `pub global run scip_dart .` |
+| `dotnet` | `scip-dotnet` | `index` |
+| `go` | `scip-go` | No extra args |
+| `java` | `scip-java` | `index [--build-tool=gradle\|maven\|sbt]` by project layout |
+| `latex` | `scip-latex` | `index .` |
+| `lua` | `scip-lua` | `index .` |
+| `nix` | `scip-nix` | `index .` |
+| `php` | `scip-php` | Prefers `vendor/bin/scip-php` when present |
+| `python` | `scip-python` | `index .` |
+| `ruby` | `scip-ruby` | `.` unless `sorbet/config` exists (then no args) |
+| `rust` | `rust-analyzer` | `scip .` |
+| `typescript` | `scip-typescript` | Args depend on detected package manager / config |
+| `zig` | `scip-zig` | `--pkg` / `--root-pkg` derived from the project |
+
+`command` and `args` may be functions of the indexing context
+(`{ name, bufnr, filename, root, index_file }`), which is how `php` finds its
+project-local binary and `clang` locates the compilation database.
+
+Custom indexers can be added at runtime; validation failures return
+`nil, err` rather than throwing:
+
+```lua
+local ok, err = require('scip').register('myindex', {
+    command = 'scip-myindex',
+    args = { 'index', '.' },
+    filetypes = { mylang = true },
+    markers = { '.git', 'myindex.config' },
+})
+```
+
+## Commands
 
 | Command | Action |
 | --- | --- |
-| `:ScipIndex` | Choose the first enabled indexer matching the buffer filetype. |
-| `:ScipIndex python` | Explicitly select a named enabled indexer. |
-| `:ScipCancel` | Send SIGKILL to the owned process and wait for its exit callback. |
-| `:ScipStatus` | Show the active or most recent report, including captured output. |
+| `:ScipIndex` | Index with the first enabled indexer matching the buffer (priority order). |
+| `:ScipIndex python` | Index with the named indexer (with completion). |
+| `:ScipCancel` | Send SIGTERM to the active indexer; state clears immediately. |
+| `:ScipStatus` | Show the active indexer, root, and elapsed time, or index-file presence. |
+| `:ScipHealth` | `:checkhealth`-style report: CLI, per-indexer readiness, project, state. |
+| `:ScipCoverage` | Scratch buffer with per-indexer readiness for the current buffer. |
+| `:ScipLint` | Run `scip lint` on the current project's index file. |
+| `:ScipPrint` | Open the index as JSON in a scratch buffer. |
+| `:ScipSnapshot` | Write a human-readable snapshot under the project root. |
+| `:ScipStats` | Show `scip stats` for the current project's index. |
 
-For an explicit root, including a project without a recognized marker:
-
-```lua
-local ok, err = require('scip').run({
-    indexer = 'go',
-    root = '/absolute/path/to/project',
-})
-if not ok then
-    vim.notify(err, vim.log.levels.ERROR)
-end
-```
-
-`run()` returns `true` after spawning, or `nil, error` on immediate failure.
-Completion is asynchronous; `status()` returns an independent report snapshot.
-The module supports the ten attached definitions in fixed order: clang, dart,
-dotnet, go, java, latex, lua, nix, php, python. Lua, LaTeX and Nix retain their
-supplied `enabled = false` settings. Explicit selection does not override this.
+The Lua entry points mirror the commands: `require('scip').index(name, opts)`
+with `opts = { bufnr = ..., root = ... }`. An explicit `root` bypasses marker
+search. Only one indexing process runs at a time; a second `:ScipIndex` while
+one is active is refused with a reminder to `:ScipCancel` first.
 
 ## Behavior and limits
 
-- Uses native `vim.system` with an argv array and an explicit canonical cwd.
-- Runs only on explicit request. Repeated `setup()` replaces owned commands and
-  the shutdown autocmd. Plain `require()` does not register commands or run tools.
-- Requires a saved, named normal file buffer. Indexers read files from disk;
-  save other modified project buffers yourself before indexing.
-- Checks executable availability without installing anything. Indexer CLI
-  arguments are preserved from the supplied definitions. Tool versions and
-  language-specific prerequisites still determine whether indexing succeeds.
-- Searches up to 128 parent directories, prioritizing language markers at each
-  directory and stopping at the first `.git` or `.hg` boundary. Markers are exact
-  paths, not globs. Supply an explicit root for unsupported layouts.
-- Owns at most one indexing process across all projects, with no pending queue.
-- Captures at most 64 KiB combined stdout and stderr. Further output is drained
-  and discarded; `truncated` records this. Streams are combined in arrival order.
-- Timeout defaults to 10 minutes and is configurable from 1 ms through 1 hour.
-- Cancellation and shutdown target the directly owned process, not its process
-  tree. Child build processes may survive. Cancellation can leave a partial index.
-- Accepts success only after exit code and signal are zero, no stream error was
-  reported, and a nonempty `index.scip` has new filesystem metadata. This is a
-  freshness check, not protobuf validation. An indexer that preserves all file
-  metadata can produce a conservative failure. Tools producing another output
-  filename need corresponding definition/runner changes.
-- Does not delete or rename existing indexes. Output replacement behavior belongs
-  to each external indexer. It does not add unsupported generic output flags.
-- Retains one completed report. Stale exit callbacks cannot release a newer job.
-- Project tools and build scripts execute with your user privileges. Use this
-  runner only for trusted projects; PHP may use `vendor/bin/scip-php`.
+- Indexing runs asynchronously through `vim.system` with an argv array and
+  the project root as cwd. `index()` returns `nil`; completion is reported
+  through notifications.
+- Project-root discovery uses `vim.fs.root()` with the indexer's markers,
+  searched upward from the buffer. Detection and health checks do **not**
+  fall back to the cwd: an indexer with no resolvable root is reported as
+  `no project root` instead of being probed against the wrong directory.
+  (An explicit `root` override, and `root.resolve()` used by the
+  inspect-the-existing-index commands, still fall back to the cwd.)
+- The index file defaults to `<root>/index.scip` (`index_file` config;
+  absolute values are used as-is).
+- Subprocess output is streamed with a 64 KiB budget **per stream**: stdout
+  and stderr each retain their first 64 KiB while the rest is drained and
+  discarded, so a pathological indexer cannot exhaust memory. Truncation is
+  surfaced in the UI (quickfix entries and scratch buffers carry the notice).
+- `timeout` is in milliseconds (default 300000). Cancellation sends SIGTERM
+  (signal 15) and clears state at once; a cancelled run's late exit callback
+  is ignored as stale.
+- When `lint_after_index` is enabled (default), a successful run validates
+  the index with `scip lint`. Validation captures the run's state generation
+  and reports only while that generation still owns the state, so a stale
+  lint cannot announce results for a run you already superseded.
+- Executable probes are memoized per configuration generation; changing the
+  configuration drops the cache.
+- Indexer CLIs execute with your user privileges. Index only projects you
+  trust.
 
-## Included repairs
+## Adding an indexer
 
-The supplied `dotnet.lua` and `python.lua` had their `local indexer = {`
-declarations inside annotation comments, causing syntax errors. These declarations
-are restored. In `clang.lua`, the unused `vim.fs` alias is removed and annotations
-use `ScipContext` and `ScipIndexer`, matching the runner. Other definitions retain
-their supplied behavior. The helper implements `path_exists()` and bounded
-compilation database lookup in the root, `build/`, `build/debug/`, or
-`build/release/` directories.
-
-## Verification
-
-All twelve Lua files were parsed with LuaJIT 2.1. Mock-host tests covered module
-loading, idempotent setup, disabled entries, sparse/NUL arguments, callback and
-spawn failures, missing executables, saved-buffer checks, output bounds, duplicate
-runs, stale callbacks, cancellation, timeout exit handling, freshness checks,
-stream errors, and independent status snapshots. Neovim 0.13 and external SCIP
-binaries were unavailable here, so real editor/indexer integration was not run.
+1. Copy the closest existing definition and adjust `command`, `args`,
+   `filetypes`, and `markers`.
+2. Return it via `factory.new('<name>', { ... })` — the factory asserts the
+   shape at require time with the indexer name in the error.
+3. Register the module in `config.lua`'s `default_indexers()` and add the
+   name to `indexer_order` where its priority belongs.
+4. If the command depends on the project (a `vendor/bin` binary, a build
+   tool), resolve it from the `ScipContext` and prefer
+   `utils.local_or_bin()` for the local-over-global pattern.
 
 Style reference: [Tiger Style for Lua](https://github.com/qompassai/Lua/blob/main/TIGER_STYLE_LUA.md).

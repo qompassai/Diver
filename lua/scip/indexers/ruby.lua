@@ -15,8 +15,12 @@
 -- See the License for the specific language governing permissions and
 -- limitations under the License.
 -- #################################################################
+
 local fs = vim.fs
 local utils = require('scip.utils')
+
+local factory = require('scip.indexers.factory')
+
 ---Build scip-ruby arguments for the current project.
 ---
 ---Projects containing `sorbet/config` already provide Sorbet's input paths and
@@ -39,8 +43,7 @@ local function args(context)
     }
 end
 
----@type ScipIndexer
-local indexer = {
+return factory.new('ruby', {
     args = args,
     command = 'scip-ruby',
 
@@ -55,6 +58,4 @@ local indexer = {
         'Rakefile',
         'sorbet',
     },
-}
-
-return indexer
+})

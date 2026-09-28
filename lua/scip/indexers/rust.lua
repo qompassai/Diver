@@ -1,6 +1,7 @@
 -- #################################################################
 -- /qompassai/lua/scip/indexers/rust.lua
--- Qompass AI SCIP Rust Indexer                                            -- SPDX-License-Identifier: Apache-2.0
+-- Qompass AI SCIP Rust Indexer
+-- SPDX-License-Identifier: Apache-2.0
 -- Copyright (c) 2026 Qompass AI
 --
 -- Licensed under the Apache License, Version 2.0 (the "License");
@@ -14,6 +15,8 @@
 -- See the License for the specific language governing permissions and
 -- limitations under the License.
 -- #################################################################
+
+local factory = require('scip.indexers.factory')
 
 ---Arguments passed to rust-analyzer.
 ---
@@ -29,8 +32,7 @@ local args = {
     '.',
 }
 
----@type ScipIndexer
-local indexer = {
+return factory.new('rust', {
     args = args,
 
     command = 'rust-analyzer',
@@ -46,6 +48,4 @@ local indexer = {
         'rust-toolchain',
         'rust-toolchain.toml',
     },
-}
-
-return indexer
+})

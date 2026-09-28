@@ -24,6 +24,8 @@
 -- registry skips it with an "is not executable" notice when the
 -- `scip-apex` binary is absent, so nothing errors on machines without it.
 
+local factory = require('scip.indexers.factory')
+
 --- Arguments passed to scip-apex.
 ---
 --- `index` selects SCIP indexing mode.
@@ -34,8 +36,7 @@ local args = {
     '.',
 }
 
----@type ScipIndexer
-local indexer = {
+return factory.new('apex', {
     args = args,
     command = 'scip-apex',
 
@@ -49,6 +50,4 @@ local indexer = {
         '.sfdx',
         'sfdx-project.json',
     },
-}
-
-return indexer
+})

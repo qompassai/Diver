@@ -15,13 +15,11 @@
 -- See the License for the specific language governing permissions and
 -- limitations under the License.
 -- #################################################################
--- #################################################################
 
 local api = vim.api
 local health = vim.health
 
 local config = require('scip.config')
-local context = require('scip.context')
 local registry = require('scip.registry')
 local root = require('scip.root')
 local state = require('scip.state')
@@ -46,9 +44,10 @@ end
 
 ---Check all enabled SCIP indexers.
 ---
----Each configured indexer is resolved against the current buffer and project.
----Dynamic commands, such as a project-local `scip-php`, are resolved before
----their executability is checked.
+---Each configured indexer is probed through the shared
+---`registry.probe()` pipeline (project root → context → command →
+---executability). Indexers with no resolvable project root are reported as
+---such instead of being probed against a cwd fallback.
 ---
 ---@param bufnr integer Buffer used to resolve project roots and indexers.
 ---@return nil
@@ -56,22 +55,16 @@ local function check_indexers(bufnr)
     health.start('Configured SCIP indexers')
 
     for _, name in ipairs(registry.names()) do
-        local indexer = registry.get(name)
+        local probe_result = registry.probe(name, bufnr)
 
-        if indexer ~= nil then
-            local project_root = root.resolve(bufnr, indexer.markers)
-
-            local ctx = context.new(name, bufnr, project_root)
-
-            local command, resolve_error = utils.resolve_command(indexer.command, ctx)
-
-            if command == nil then
-                health.error(('%s: %s'):format(name, resolve_error or 'invalid command'))
-            elseif utils.executable(command) then
-                health.ok(('%s: %s'):format(name, command))
-            else
-                health.warn(('%s: missing %s'):format(name, command))
-            end
+        if probe_result.ready then
+            health.ok(('%s: %s'):format(name, probe_result.command))
+        elseif probe_result.err == registry.NO_PROJECT_ROOT then
+            health.info(('%s: no project root'):format(name))
+        elseif probe_result.command ~= nil then
+            health.warn(('%s: missing %s'):format(name, probe_result.command))
+        else
+            health.error(('%s: %s'):format(name, probe_result.err or 'unresolvable'))
         end
     end
 end
@@ -131,9 +124,9 @@ local function check_state()
         return
     end
 
-    health.info('indexer: ' .. (state.current.indexer or '<unknown>'))
+    health.info('indexer: ' .. (state.indexer() or '<unknown>'))
 
-    health.info('root: ' .. (state.current.root or '<unknown>'))
+    health.info('root: ' .. (state.root() or '<unknown>'))
 
     health.info(('elapsed: %.1f seconds'):format(state.elapsed()))
 end

@@ -16,6 +16,8 @@
 -- limitations under the License.
 -- #################################################################
 
+local factory = require('scip.indexers.factory')
+
 ---Arguments used to invoke the globally installed scip_dart package.
 ---
 ---The final `.` instructs scip_dart to index the project represented by the
@@ -30,8 +32,7 @@ local args = {
     '.',
 }
 
----@type ScipIndexer
-local indexer = {
+return factory.new('dart', {
     args = args,
     command = 'dart',
     filetypes = {
@@ -42,6 +43,4 @@ local indexer = {
         'analysis_options.yaml',
         'pubspec.yaml',
     },
-}
-
-return indexer
+})

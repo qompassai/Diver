@@ -25,6 +25,7 @@ local M = {}
 ---@field job vim.SystemObj? Active asynchronous SCIP process.
 ---@field root string? Project root being indexed.
 ---@field started_at number High-resolution timestamp from vim.uv.hrtime().
+---@field generation integer Monotonic state generation; see M.owns().
 
 ---@type ScipState
 M.current = {
@@ -32,7 +33,15 @@ M.current = {
     job = nil,
     root = nil,
     started_at = 0,
+    generation = 0,
 }
+
+---Monotonic state generation counter.
+---
+---Incremented by M.start(). M.clear() and M.cancel() intentionally leave the
+---generation alone: a finished run's async callbacks (post-index lint) must
+---still prove ownership until a *new* run starts.
+local generation_counter = 0
 
 --- Return whether a SCIP indexer is currently running.
 ---
@@ -64,12 +73,16 @@ end
 ---@param indexer string Name of the SCIP indexer.
 ---@param root string Project root being indexed.
 ---@param started_at? number Optional vim.uv.hrtime() timestamp.
----@return nil
+---@return integer generation New state generation; async callbacks capture it and check M.owns().
 function M.start(job, indexer, root, started_at)
+    generation_counter = generation_counter + 1
+    M.current.generation = generation_counter
     M.current.job = job
     M.current.indexer = indexer
     M.current.root = vim.fs.normalize(root)
     M.current.started_at = started_at or uv.hrtime()
+
+    return M.current.generation
 end
 
 --- Clear all active SCIP process state.
@@ -124,6 +137,19 @@ end
 ---@return number
 function M.started_at()
     return M.current.started_at
+end
+
+--- Return whether a captured generation still owns the state.
+---
+--- An async callback (for example post-index lint) captures the generation
+--- returned by M.start() and checks it before reporting: when a newer
+--- indexing run has started, the generation differs and the stale callback
+--- stays silent. Clearing or cancelling does not change the generation, so a
+--- finished run's callbacks still own the state until superseded.
+---@param generation integer Generation captured from M.start().
+---@return boolean
+function M.owns(generation)
+    return M.current.generation == generation
 end
 
 return M

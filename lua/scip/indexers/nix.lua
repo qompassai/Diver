@@ -16,6 +16,8 @@
 -- limitations under the License.
 -- #################################################################
 
+local factory = require('scip.indexers.factory')
+
 ---Native SCIP indexer definition for the Nix language.
 ---
 ---No verified Nix-language SCIP generator is currently available as a
@@ -25,8 +27,7 @@
 ---
 ---This entry remains disabled until a compatible external `scip-nix`
 ---executable is installed or implemented.
----@type ScipIndexer
-local indexer = {
+return factory.new('nix', {
     args = {
         'index',
         '.',
@@ -46,6 +47,4 @@ local indexer = {
         'flake.nix',
         'shell.nix',
     },
-}
-
-return indexer
+})

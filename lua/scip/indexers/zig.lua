@@ -20,6 +20,8 @@ local fs = vim.fs
 
 local utils = require('scip.utils')
 
+local factory = require('scip.indexers.factory')
+
 ---@type string[]
 local source_candidates = {
     'src/main.zig',
@@ -64,7 +66,11 @@ local function root_source(context)
         end
     end
 
-    if context.filename ~= '' and context.filename:match('%.zig$') ~= nil and utils.path_exists(context.filename) then
+    if
+        context.filename ~= ''
+        and context.filename:match('%.zig$') ~= nil
+        and utils.path_exists(context.filename)
+    then
         return context.filename
     end
 
@@ -98,8 +104,7 @@ local function args(context)
     }
 end
 
----@type ScipIndexer
-local indexer = {
+return factory.new('zig', {
     args = args,
 
     command = 'scip-zig',
@@ -113,6 +118,4 @@ local indexer = {
         'build.zig',
         'build.zig.zon',
     },
-}
-
-return indexer
+})

@@ -1,4 +1,5 @@
--- #################################################################       -- /qompassai/lua/scip/indexers/latex.lua
+-- #################################################################
+-- /qompassai/lua/scip/indexers/latex.lua
 -- Qompass AI SCIP LaTeX Indexer
 -- SPDX-License-Identifier: Apache-2.0
 -- Copyright (c) 2026 Qompass AI
@@ -14,6 +15,9 @@
 -- See the License for the specific language governing permissions and
 -- limitations under the License.
 -- #################################################################
+
+local factory = require('scip.indexers.factory')
+
 ---Native SCIP indexer definition for LaTeX.
 ---
 ---No verified standard LaTeX-to-SCIP indexer is currently available.
@@ -22,8 +26,7 @@
 ---
 ---This definition is disabled until a compatible `scip-latex` executable is
 ---installed or implemented.
----@type ScipIndexer
-local indexer = {
+return factory.new('latex', {
     args = {
         'index',
         '.',
@@ -46,6 +49,4 @@ local indexer = {
         'latexmkrc',
         'texmf.cnf',
     },
-}
-
-return indexer
+})

@@ -16,6 +16,8 @@
 -- limitations under the License.
 -- #################################################################
 
+local factory = require('scip.indexers.factory')
+
 --- Arguments passed to scip-python.
 ---
 --- `index` selects SCIP indexing mode.
@@ -26,8 +28,7 @@ local args = {
     '.',
 }
 
----@type ScipIndexer
-local indexer = {
+return factory.new('python', {
     args = args,
     command = 'scip-python',
 
@@ -46,6 +47,4 @@ local indexer = {
         'setup.py',
         'uv.lock',
     },
-}
-
-return indexer
+})

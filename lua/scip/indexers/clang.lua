@@ -17,6 +17,7 @@
 -- #################################################################
 
 local utils = require('scip.utils')
+local factory = require('scip.indexers.factory')
 
 ---Locate the compilation database used by scip-clang.
 ---
@@ -31,8 +32,7 @@ local function args(context)
     }
 end
 
----@type ScipIndexer
-local indexer = {
+return factory.new('clang', {
     args = args,
 
     command = 'scip-clang',
@@ -51,6 +51,4 @@ local indexer = {
         'compile_commands.json',
         'meson.build',
     },
-}
-
-return indexer
+})

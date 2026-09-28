@@ -1,6 +1,6 @@
 -- #################################################################
 -- /qompassai/lua/scip/context.lua
--- -- Qompass AI SCIP Context
+-- Qompass AI SCIP Context
 -- SPDX-License-Identifier: Apache-2.0
 -- Copyright (c) 2026 Qompass AI
 --
@@ -23,15 +23,21 @@ local M = {}
 ---@param name string
 ---@param bufnr integer
 ---@param root string
----@return ScipContext
+---@return ScipContext? context Resolved context, or nil for an invalid buffer.
+---@return string? err 'invalid buffer' when bufnr is not a valid buffer.
 function M.new(name, bufnr, root)
+    if not api.nvim_buf_is_valid(bufnr) then
+        return nil, 'invalid buffer'
+    end
+
     root = vim.fs.normalize(root)
+
     return {
         bufnr = bufnr,
         filename = api.nvim_buf_get_name(bufnr),
         index_file = config.index_path(root),
         name = name,
         root = root,
-    }
+    }, nil
 end
 return M

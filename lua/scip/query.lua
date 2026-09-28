@@ -313,7 +313,12 @@ function M.ensure_sync(opts)
 
     local ctx_mod = require('scip.context')
     local bufnr = opts.bufnr or vim.api.nvim_get_current_buf()
-    local ctx = ctx_mod.new(match.indexer, bufnr, root)
+    local ctx, ctx_error = ctx_mod.new(match.indexer, bufnr, root)
+
+    if ctx == nil then
+        return nil, ctx_error
+    end
+
     local command, command_error = utils.resolve_command(indexer.command, ctx)
 
     if command == nil then

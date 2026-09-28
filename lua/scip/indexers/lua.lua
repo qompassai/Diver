@@ -12,8 +12,11 @@
 -- Unless required by applicable law or agreed to in writing, software
 -- distributed under the License is distributed on an "AS IS" BASIS,
 -- WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
--- See the License for the specific language governing permissions and     -- limitations under the License.
+-- See the License for the specific language governing permissions and
+-- limitations under the License.
 -- #################################################################
+
+local factory = require('scip.indexers.factory')
 
 ---Native SCIP indexer definition for Lua.
 ---
@@ -24,8 +27,7 @@
 ---
 ---Enable this indexer only after installing or implementing a command that
 ---writes a valid SCIP index.
----@type ScipIndexer
-local indexer = {
+return factory.new('lua', {
     args = {
         'index',
         '.',
@@ -45,6 +47,4 @@ local indexer = {
         'lua',
         'rockspec',
     },
-}
-
-return indexer
+})

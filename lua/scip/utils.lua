@@ -27,17 +27,12 @@ end
 
 ---Return whether a command is executable.
 ---
----Absolute/path-qualified commands are checked directly; ordinary command
----names are resolved through Neovim's executable() implementation.
+---Neovim's `executable()` checks the executable bit for path-qualified
+---commands and resolves plain command names through PATH, so one code path
+---covers both cases.
 ---@param command string
 ---@return boolean
 function M.executable(command)
-    if command:find('/', 1, true) ~= nil then
-        local stat = uv.fs_stat(command)
-
-        return stat ~= nil and stat.type == 'file'
-    end
-
     return vim.fn.executable(command) == 1
 end
 
@@ -146,8 +141,30 @@ function M.resolve_args(value, context)
         return nil, 'SCIP indexer args must resolve to a string array'
     end
 
+    -- Deep-copy the dynamic result exactly like the static branch: a future
+    -- in-place edit must never alias the indexer's cached table.
     ---@cast result string[]
-    return result, nil
+    return vim.deepcopy(result), nil
+end
+
+---Prefer a project-local executable over a global fallback command.
+---
+---Project-local tool installations (for example a Composer `vendor/bin`
+---binary) win over the global PATH entry so the tool version follows the
+---project's lockfile rather than an unrelated global version.
+---
+---@param root string Project root.
+---@param relpath string[] Path segments of the project-local executable.
+---@param fallback string Global command used when no local executable exists.
+---@return string command Project-local path when it exists, else fallback.
+function M.local_or_bin(root, relpath, fallback)
+    local local_command = fs.joinpath(root, table.unpack(relpath))
+
+    if M.path_exists(local_command) then
+        return local_command
+    end
+
+    return fallback
 end
 
 return M

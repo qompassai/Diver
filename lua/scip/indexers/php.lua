@@ -16,9 +16,10 @@
 -- limitations under the License.
 -- #################################################################
 
-local fs = vim.fs
 
 local utils = require('scip.utils')
+
+local factory = require('scip.indexers.factory')
 
 ---Resolve the scip-php executable for the current project.
 ---
@@ -32,13 +33,7 @@ local utils = require('scip.utils')
 ---@param context ScipContext SCIP indexing context.
 ---@return string command Resolved scip-php executable.
 local function command(context)
-    local local_command = fs.joinpath(context.root, 'vendor', 'bin', 'scip-php')
-
-    if utils.path_exists(local_command) then
-        return local_command
-    end
-
-    return 'scip-php'
+    return utils.local_or_bin(context.root, { 'vendor', 'bin', 'scip-php' }, 'scip-php')
 end
 
 ---Build command-line arguments for scip-php.
@@ -53,8 +48,7 @@ local function args(_context)
     return {}
 end
 
----@type ScipIndexer
-local indexer = {
+return factory.new('php', {
     args = args,
 
     command = command,
@@ -68,5 +62,4 @@ local indexer = {
         'composer.json',
         'composer.lock',
     },
-}
-return indexer
+})
