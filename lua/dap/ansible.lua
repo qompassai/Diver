@@ -23,9 +23,8 @@
 ---
 --- Plain-language version: this module finds the `ansibug` program (the
 --- Ansible debugger) and hands it to Neovim as a stdio debug adapter. It
---- offers recipes to launch a playbook, step into role tasks, or attach to
---- a playbook that is already running, and it can run the current playbook
---- with your chosen inventory before the debugger takes over.
+--- offers recipes to launch a playbook (optionally with `-i` inventory) or
+--- attach to a playbook that is already running.
 ---@module 'dap.ansible'
 
 local api = vim.api
@@ -294,8 +293,18 @@ M.configurations = {
             playbook = function()
                 return prompt_playbook(default_playbook(project_root() .. '/site.yml'))
             end,
-            inventory = function()
-                return prompt_inventory(project_root() .. '/inventory')
+            args = function()
+                --
+                -- ansibug has no `inventory` launch field; the inventory
+                -- reaches ansible-playbook through `args` (-i).
+                --
+                local inventory = prompt_inventory(project_root() .. '/inventory')
+
+                if inventory == nil then
+                    return {}
+                end
+
+                return { '-i', inventory }
             end,
             cwd = function()
                 return project_root()
@@ -308,19 +317,24 @@ M.configurations = {
             playbook = function()
                 return prompt_playbook(default_playbook(project_root() .. '/site.yml'))
             end,
-            inventory = function()
-                return prompt_inventory(project_root() .. '/inventory')
+            args = function()
+                local inventory = prompt_inventory(project_root() .. '/inventory')
+
+                if inventory == nil then
+                    return {}
+                end
+
+                return { '-i', inventory }
             end,
             cwd = function()
                 return project_root()
             end,
-            stepInto = true,
         },
         {
             name = 'Ansible: Attach to Running Playbook',
             type = SOURCE,
             request = 'attach',
-            pid = function()
+            processId = function()
                 local input = fn.input('Process ID: ')
 
                 if input == '' then
@@ -393,7 +407,7 @@ M.commands = {
                 type = template.type,
                 request = template.request,
                 playbook = playbook,
-                inventory = template.inventory(),
+                args = template.args(),
                 cwd = template.cwd(),
             })
         end,

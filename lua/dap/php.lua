@@ -248,6 +248,12 @@ local function adapter_args()
     return {}
 end
 
+---@param port unknown
+---@return boolean
+local function valid_port(port)
+    return type(port) == 'number' and port % 1 == 0 and port >= 1 and port <= 65535
+end
+
 ---@param opts table
 ---@return table?, string?
 function M.build_listen(opts)
@@ -255,8 +261,8 @@ function M.build_listen(opts)
 
     local port = opts.port or XDEBUG_PORT
 
-    if port < 1 or port > 65535 then
-        return nil, 'build_listen requires opts.port in 1..65535'
+    if not valid_port(port) then
+        return nil, 'build_listen requires opts.port to be an integer in 1..65535'
     end
 
     --
@@ -284,13 +290,19 @@ function M.build_launch_script(opts)
         return nil, 'build_launch_script requires opts.program'
     end
 
+    local port = opts.port or XDEBUG_PORT
+
+    if not valid_port(port) then
+        return nil, 'build_launch_script requires opts.port to be an integer in 1..65535'
+    end
+
     return {
         name = opts.name or 'PHP: Launch Current Script',
         type = SOURCE,
         request = 'launch',
         program = opts.program,
         cwd = opts.cwd or project_root(),
-        port = opts.port or XDEBUG_PORT,
+        port = port,
         hostname = LOOPBACK,
         runtimeExecutable = opts.runtime_executable or 'php',
         runtimeArgs = opts.runtime_args,

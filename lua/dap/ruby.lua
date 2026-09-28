@@ -204,6 +204,64 @@ local function uses_bundler(root)
     return root ~= '' and fn.filereadable(root .. '/Gemfile') == 1
 end
 
+---@param raw string
+---@return string[]?, string?
+local function parse_args(raw)
+    local args = {}
+    local current = {}
+    local quote = nil
+    local escaped = false
+    local started = false
+
+    local function finish()
+        if started then
+            args[#args + 1] = table.concat(current)
+            current = {}
+            started = false
+        end
+    end
+
+    for index = 1, #raw do
+        local character = raw:sub(index, index)
+
+        if escaped then
+            current[#current + 1] = character
+            escaped = false
+        elseif quote ~= nil then
+            if character == quote then
+                quote = nil
+            else
+                current[#current + 1] = character
+            end
+
+            started = true
+        elseif character == '\\' then
+            escaped = true
+            started = true
+        elseif character == "'" or character == '"' then
+            quote = character
+            started = true
+        elseif character:match('%s') then
+            finish()
+        else
+            current[#current + 1] = character
+            started = true
+        end
+    end
+
+    if escaped then
+        return nil, 'arguments end with an incomplete escape'
+    end
+
+    if quote ~= nil then
+        return nil, 'arguments contain an unterminated quote'
+    end
+
+    finish()
+
+    return args
+end
+
 ---@param root string
 ---@param extra string[]
 ---@return string[]
@@ -353,7 +411,19 @@ M.configurations = {
                     return {}
                 end
 
-                return fn.shellsplit(input)
+                --
+                -- vim.fn.shellsplit does not exist (E117); parse locally so
+                -- quoted arguments survive as single argv elements.
+                --
+                local parsed, err = parse_args(input)
+
+                if parsed == nil then
+                    notify(err or 'invalid program arguments', levels.ERROR)
+
+                    return {}
+                end
+
+                return parsed
             end,
             cwd = function()
                 return project_root()
