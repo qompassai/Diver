@@ -120,6 +120,9 @@ local function valid_allowlist(entries)
         if type(entry.server) ~= 'string' or type(entry.tool) ~= 'string' then
             return false
         end
+        if entry.identity ~= nil and type(entry.identity) ~= 'string' then
+            return false
+        end
     end
     return true
 end
@@ -256,10 +259,10 @@ function M.allowlist_save(entries)
     end
     local sorted = {}
     for _, entry in ipairs(entries) do
-        sorted[#sorted + 1] = { server = entry.server, tool = entry.tool }
+        sorted[#sorted + 1] = { server = entry.server, tool = entry.tool, identity = entry.identity or '' }
     end
     table.sort(sorted, function(a, b)
-        return (a.server .. '\0' .. a.tool) < (b.server .. '\0' .. b.tool)
+        return (a.server .. '\0' .. a.tool .. '\0' .. a.identity) < (b.server .. '\0' .. b.tool .. '\0' .. b.identity)
     end)
     local ok, encoded = pcall(vim.json.encode, sorted)
     if not ok then
@@ -278,9 +281,13 @@ end
 
 ---@param server string
 ---@param tool string
+---@param identity? string opaque server identity presented by the caller
 ---@return boolean approved
-function M.allowlist_check(server, tool)
+function M.allowlist_check(server, tool, identity)
     if type(server) ~= 'string' or type(tool) ~= 'string' then
+        return false
+    end
+    if identity ~= nil and type(identity) ~= 'string' then
         return false
     end
     local entries = M.allowlist_load()
@@ -289,7 +296,14 @@ function M.allowlist_check(server, tool)
     end
     for _, entry in ipairs(entries) do
         if entry.server == server and entry.tool == tool then
-            return true
+            -- An entry bound to an identity approves only that identity: a
+            -- changed server behind a reused name fails closed and
+            -- re-prompts. Entries stored without an identity keep the legacy
+            -- name-only match.
+            local stored = entry.identity or ''
+            if stored == '' or identity == stored then
+                return true
+            end
         end
     end
     return false
@@ -297,9 +311,11 @@ end
 
 ---@param server string
 ---@param tool string
+---@param identity? string opaque caller-supplied server identity to bind;
+---nil/'' stores a legacy name-only entry
 ---@return boolean ok
 ---@return string? err
-function M.allowlist_add(server, tool)
+function M.allowlist_add(server, tool, identity)
     local ok, err = check_string(server, 'server')
     if not ok then
         return false, err
@@ -308,16 +324,23 @@ function M.allowlist_add(server, tool)
     if not ok then
         return false, err
     end
+    if identity ~= nil then
+        ok, err = check_string(identity, 'identity')
+        if not ok then
+            return false, err
+        end
+    end
     local entries, load_err = M.allowlist_load()
     if entries == nil then
         return false, load_err
     end
+    local fingerprint = identity or ''
     for _, entry in ipairs(entries) do
-        if entry.server == server and entry.tool == tool then
+        if entry.server == server and entry.tool == tool and (entry.identity or '') == fingerprint then
             return true, nil
         end
     end
-    entries[#entries + 1] = { server = server, tool = tool }
+    entries[#entries + 1] = { server = server, tool = tool, identity = fingerprint }
     return M.allowlist_save(entries)
 end
 
@@ -441,7 +464,9 @@ end
 
 --- Ask the user to confirm a tool call. Default-deny: a dismissed or
 --- unavailable prompt denies. Allowlisted server/tool pairs skip the
---- prompt. The decision arrives via callback because vim.ui.select
+--- prompt; when the allowlist entry is bound to a server identity, the
+--- presented identity must match or the prompt re-appears (fail closed).
+--- The decision arrives via callback because vim.ui.select
 --- is asynchronous. When the tool arguments carry login-lure phrasing,
 --- the prompt carries an explicit "no credentials" warning line.
 ---
@@ -453,16 +478,18 @@ end
 ---@param tool string
 ---@param args table Tool arguments (previewed, truncated)
 ---@param callback fun(allowed: boolean, reason: string)
-function M.confirm_tool_call(server, tool, args, callback)
+---@param identity? string opaque server identity, bound at allowlist_add time
+function M.confirm_tool_call(server, tool, args, callback, identity)
     assert(type(server) == 'string', 'server must be a string')
     assert(type(tool) == 'string', 'tool must be a string')
     assert(type(args) == 'table', 'args must be a table')
     assert(type(callback) == 'function', 'callback must be a function')
+    assert(identity == nil or type(identity) == 'string', 'identity must be a string or nil')
     if server == '' or tool == '' then
         callback(false, 'denied: empty server or tool name')
         return
     end
-    if M.allowlist_check(server, tool) then
+    if M.allowlist_check(server, tool, identity) then
         callback(true, 'allowlisted')
         return
     end

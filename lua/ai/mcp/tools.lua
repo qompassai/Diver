@@ -198,6 +198,29 @@ end
 ---on_decision(allowed: boolean, reason: string). Falls back to an explicit
 ---vim.ui.select prompt when the module is absent or unusable.
 ---@param server_name string
+---@return string? identity launch identity (command + argv, NUL-joined),
+---or nil when the server is not in the registry
+local function server_identity(server_name)
+    local ok, registry = pcall(require, 'ai.mcp.registry')
+    if not ok or type(registry) ~= 'table' or type(registry.get) ~= 'function' then
+        return nil
+    end
+    local entry_ok, entry = pcall(registry.get, server_name)
+    if not entry_ok or type(entry) ~= 'table' or type(entry.command) ~= 'string' then
+        return nil
+    end
+    local parts = { entry.command }
+    if type(entry.args) == 'table' then
+        for _, arg in ipairs(entry.args) do
+            if type(arg) == 'string' then
+                parts[#parts + 1] = arg
+            end
+        end
+    end
+    return table.concat(parts, '\0')
+end
+
+---@param server_name string
 ---@param tool_name string
 ---@param args table
 ---@param on_decision fun(allowed: boolean, reason: string)
@@ -205,7 +228,7 @@ local function confirm_with_policy(server_name, tool_name, args, on_decision)
     local ok, security = pcall(require, 'ai.security')
     if ok and type(security) == 'table' and type(security.confirm_tool_call) == 'function' then
         local confirm = security.confirm_tool_call
-        local sok, call_err = pcall(confirm, server_name, tool_name, args, on_decision)
+        local sok, call_err = pcall(confirm, server_name, tool_name, args, on_decision, server_identity(server_name))
         if sok then
             return
         end
