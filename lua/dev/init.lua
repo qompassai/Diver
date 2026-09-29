@@ -19,11 +19,19 @@ local M = {}
 local android = require('dev.android')
 local apps = require('dev.apps')
 local sf = require('dev.sf')
-local vulkan = require('dev.vulkan')
+-- dev/vulkan.lua (leaf utilities) shadows dev/vulkan/init.lua (the suite)
+-- in the require search order, so name the suite explicitly.
+local vulkan = require('dev.vulkan.init')
 function M.setup()
+    require('dev.git').setup()
+    require('dev.jj').setup()
+    require('dev.bootdev').setup()
+    require('dev.bsp')
+    require('dev.scip')
     android.setup()
     apps.setup()
     sf.setup()
     vulkan.setup()
 end
+
 return M

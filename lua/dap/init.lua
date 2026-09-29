@@ -2114,16 +2114,6 @@ function M.setup(opts)
     if filetype ~= '' then
         M.load_filetype(filetype, bufnr)
     end
-
-    if not M.backend_available() then
-        vim.schedule(function()
-            notify(
-                'vim.debug is unavailable; adapter definitions remain available'
-                    .. ' in the local registry',
-                levels.DEBUG
-            )
-        end)
-    end
 end
 
 -- Setup is explicit: call `require('dap').setup()` (typically from your

@@ -722,12 +722,12 @@ end
 M.commands = {
     {
         name = 'SfTasksModules',
-        rhs = list_modules_buffer,
+        fn = list_modules_buffer,
         opts = { nargs = 0, desc = 'List async Salesforce agent task modules' },
     },
     {
         name = 'SfTasksDispatch',
-        rhs = function(cmd_opts)
+        fn = function(cmd_opts)
             local args = core.get_args(cmd_opts)
             local id, err = M.dispatch(args[1], { target_org = args[2] })
             if id == nil then
@@ -738,7 +738,7 @@ M.commands = {
     },
     {
         name = 'SfTasksDoc',
-        rhs = function(cmd_opts)
+        fn = function(cmd_opts)
             local args = core.get_args(cmd_opts)
             local path, err = M.doc_for(args[1])
             if path ~= nil then
@@ -751,7 +751,7 @@ M.commands = {
     },
     {
         name = 'SfTasksStatus',
-        rhs = function(cmd_opts)
+        fn = function(cmd_opts)
             local args = core.get_args(cmd_opts)
             trailhead.status({ args = args[1] or '' })
         end,

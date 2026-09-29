@@ -3,37 +3,34 @@
 -- Qompass AI Diver Rustana Ls
 -- SPDX-License-Identifier: Apache-2.0
 -- Copyright (c) 2026 Qompass AI
---
--- Licensed under the Apache License, Version 2.0 (the "License");
--- you may not use this file except in compliance with the License.
--- You may obtain a copy of the License at:
---   http://www.apache.org/licenses/LICENSE-2.0
---
--- Unless required by applicable law or agreed to in writing, software
--- distributed under the License is distributed on an "AS IS" BASIS,
--- WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
--- See the License for the specific language governing permissions and
--- limitations under the License.
 -- #################################################################
----@source https://rust-analyzer.github.io/book/index.html
---[[
----@param fname string
-local function is_library(fname) ---@return string|nil
-  local user_home = vim.fs.normalize(vim.env.HOME)
-  local cargo_home = os.getenv('CARGO_HOME') or (user_home .. '/.cargo')
-  local registry = cargo_home .. '/registry/src'
-  local git_registry = cargo_home .. '/git/checkouts'
-  local rustup_home = os.getenv('RUSTUP_HOME') or (user_home .. '/.rustup')
-  local toolchains = rustup_home .. '/toolchains'
+---@source https://rust-analyzer.github.io/book/configuration.html
 
-  for _, item in ipairs({ toolchains, registry, git_registry }) do
-    if vim.fs.relpath(item, fname) then
-      local clients = vim.lsp.get_clients({ name = 'rust_analyzer' }) ---@type vim.lsp.Client[]
-      return #clients > 0 and clients[#clients].config.root_dir or nil
+local function run_single(command)
+    local runnable = command.arguments and command.arguments[1]
+    if not runnable or not runnable.args then
+        return
     end
-  end
+    local cmd = {
+        'cargo',
+    }
+    vim.list_extend(cmd, runnable.args.cargoArgs or {})
+    if runnable.args.executableArgs and #runnable.args.executableArgs > 0 then
+        cmd[#cmd + 1] = '--'
+        vim.list_extend(cmd, runnable.args.executableArgs)
+    end
+
+    vim.system(cmd, { cwd = runnable.args.cwd, text = true }, function(result)
+        vim.schedule(function()
+            local output = result.code == 0 and result.stdout or result.stderr
+            vim.notify(
+                output ~= '' and output or ('cargo exited with code %d'):format(result.code),
+                result.code == 0 and vim.log.levels.INFO or vim.log.levels.ERROR
+            )
+        end)
+    end)
 end
---]]
+vim.lsp.commands['rust-analyzer.runSingle'] = run_single
 return ---@type vim.lsp.Config
 {
     cmd = {
@@ -47,15 +44,12 @@ return ---@type vim.lsp.Config
         'rust-project.json',
         '.git',
     },
-
     capabilities = {
         experimental = {
             serverStatusNotification = true,
             commands = {
                 commands = {
-                    'rust-analyzer.debugSingle',
                     'rust-analyzer.runSingle',
-                    'rust-analyzer.showReferences',
                 },
             },
         },
@@ -64,10 +58,9 @@ return ---@type vim.lsp.Config
         ['rust-analyzer'] = {
             assist = {
                 emitMustUse = true,
-                expressionFillDefault = false,
+                expressionFillDefault = 'todo',
                 preferSelf = false,
                 termSearch = {
-                    borrwcheck = true,
                     fuel = 1800,
                 },
             },
@@ -76,12 +69,12 @@ return ---@type vim.lsp.Config
                 numThreads = 'physical',
             },
             cargo = {
-                alltargets = true,
+                allTargets = true,
                 autoreload = true,
                 buildScripts = {
                     enable = true,
-                    nvocationStrategy = 'per_workspace',
-                    overrideCommand = nil,
+                    invocationStrategy = 'per_workspace',
+                    overrideCommand = vim.NIL,
                     rebuildOnSave = true,
                     useRustcWrapper = true,
                 },
@@ -89,38 +82,39 @@ return ---@type vim.lsp.Config
                     'debug_assertions',
                     'miri',
                 },
+                configPath = vim.NIL,
                 extraArgs = {},
-                extraEnv = {},
+                extraEnv = vim.empty_dict(),
                 features = 'all',
+                metadataExtraArgs = {},
                 noDefaultFeatures = false,
                 noDeps = false,
                 sysroot = 'discover',
-                sysrootSrc = {},
-                target = {},
-                targetDir = {},
+                sysrootSrc = vim.NIL,
+                target = vim.NIL,
+                targetDir = true,
             },
             cfg = {
                 setTest = true,
             },
+            checkOnSave = false,
             check = {
-                allTargets = nil,
+                allTargets = true,
                 command = 'clippy',
-                extraArgs = {
-                    '--all-targets',
-                },
+                extraArgs = {},
                 extraEnv = {
-                    '-C target-cpu=native -C debuginfo=2',
+                    RUSTFLAGS = '-C target-cpu=native -C debuginfo=2',
                 },
                 features = 'all',
                 ignore = {},
                 invocationStrategy = 'per_workspace',
-                noDefaultFeatures = {},
-                overrideCommand = {},
-                targets = {},
-                workspace = {},
+                noDefaultFeatures = false,
+                overrideCommand = vim.NIL,
+                targets = vim.NIL,
+                workspace = true,
             },
-            checkOnSave = false, ---handled by bacon-ls
             completion = {
+                addColonsToModule = true,
                 addSemicolonToUnit = true,
                 autoAwait = {
                     enable = true,
@@ -128,7 +122,7 @@ return ---@type vim.lsp.Config
                 autoIter = {
                     enable = true,
                 },
-                autoImport = {
+                autoimport = {
                     enable = true,
                     exclude = {
                         {
@@ -145,14 +139,14 @@ return ---@type vim.lsp.Config
                     enable = true,
                 },
                 callable = {
-                    snippts = 'fill_arguments',
+                    snippets = 'fill_arguments',
                 },
                 excludeTraits = {},
                 fullFunctionSignatures = {
                     enable = true,
                 },
                 hideDeprecated = false,
-                limit = 'None',
+                limit = vim.NIL,
                 postfix = {
                     enable = true,
                 },
@@ -161,46 +155,44 @@ return ---@type vim.lsp.Config
                 },
                 snippets = {
                     custom = {
-                        custom = {
-                            ['Ok'] = {
-                                postfix = 'ok',
-                                body = 'Ok(${receiver})',
-                                description = 'Wrap the expression in a `Result::Ok`',
-                                scope = 'expr',
-                            },
-                            ['Box::pin'] = {
-                                postfix = 'pinbox',
-                                body = 'Box::pin(${receiver})',
-                                requires = 'std::boxed::Box',
-                                description = 'Put the expression into a `Result::Ok`',
-                                scope = 'expr',
-                            },
-                            ['Arc::new'] = {
-                                postfix = 'arc',
-                                body = 'Arc::new(${receiver})',
-                                requires = 'std::sync::Arc',
-                                description = 'Put the expression into an `Arc`',
-                                scope = 'expr',
-                            },
-                            ['Some'] = {
-                                postfix = 'some',
-                                body = 'Some(${receiver})',
-                                description = 'Wrap the expression in an `Option::Some`',
-                                scope = 'expr',
-                            },
-                            ['Err'] = {
-                                postfix = 'err',
-                                body = 'Err(${receiver})',
-                                description = 'Wrap the expression in a `Result::Err`',
-                                scope = 'expr',
-                            },
-                            ['Rc::new'] = {
-                                postfix = 'rc',
-                                body = 'Rc::new(${receiver})',
-                                requires = 'std::rc::Rc',
-                                description = 'Put the expression into an `Rc`',
-                                scope = 'expr',
-                            },
+                        Ok = {
+                            postfix = 'ok',
+                            body = 'Ok(${receiver})',
+                            description = 'Wrap the expression in a `Result::Ok`',
+                            scope = 'expr',
+                        },
+                        ['Box::pin'] = {
+                            postfix = 'pinbox',
+                            body = 'Box::pin(${receiver})',
+                            requires = 'std::boxed::Box',
+                            description = 'Put the expression into a pinned `Box`',
+                            scope = 'expr',
+                        },
+                        ['Arc::new'] = {
+                            postfix = 'arc',
+                            body = 'Arc::new(${receiver})',
+                            requires = 'std::sync::Arc',
+                            description = 'Put the expression into an `Arc`',
+                            scope = 'expr',
+                        },
+                        Some = {
+                            postfix = 'some',
+                            body = 'Some(${receiver})',
+                            description = 'Wrap the expression in an `Option::Some`',
+                            scope = 'expr',
+                        },
+                        Err = {
+                            postfix = 'err',
+                            body = 'Err(${receiver})',
+                            description = 'Wrap the expression in a `Result::Err`',
+                            scope = 'expr',
+                        },
+                        ['Rc::new'] = {
+                            postfix = 'rc',
+                            body = 'Rc::new(${receiver})',
+                            requires = 'std::rc::Rc',
+                            description = 'Put the expression into an `Rc`',
+                            scope = 'expr',
                         },
                     },
                 },
@@ -211,17 +203,18 @@ return ---@type vim.lsp.Config
             },
             diagnostics = {
                 disabled = {},
-                enable = false, ---handled by bacon-ls
-                expertimental = {
+                enable = false,
+                experimental = {
                     enable = true,
                 },
-                remapPrefix = {},
+                remapPrefix = vim.empty_dict(),
                 styleLints = {
                     enable = true,
                 },
                 warningsAsHint = {},
                 warningsAsInfo = {},
             },
+            disableFixtureSupport = false,
             document = {
                 symbol = {
                     search = {
@@ -237,7 +230,7 @@ return ---@type vim.lsp.Config
                 filterAdjacentDerives = true,
             },
             highlightRelated = {
-                brachExitPoints = {
+                branchExitPoints = {
                     enable = true,
                 },
                 breakPoints = {
@@ -252,7 +245,7 @@ return ---@type vim.lsp.Config
                 references = {
                     enable = true,
                 },
-                yieldpoints = {
+                yieldPoints = {
                     enable = true,
                 },
             },
@@ -260,9 +253,6 @@ return ---@type vim.lsp.Config
                 actions = {
                     debug = {
                         enable = true,
-                        implementations = {
-                            enable = true,
-                        },
                     },
                     enable = true,
                     gotoTypeDef = {
@@ -277,6 +267,9 @@ return ---@type vim.lsp.Config
                     run = {
                         enable = true,
                     },
+                    updateTest = {
+                        enable = true,
+                    },
                 },
                 documentation = {
                     enable = true,
@@ -284,15 +277,25 @@ return ---@type vim.lsp.Config
                         enable = true,
                     },
                 },
+                dropGlue = {
+                    enable = true,
+                },
                 links = {
                     enable = true,
                 },
+                maxSubstitutionLength = 20,
                 memoryLayout = {
                     alignment = 'hexadecimal',
                     enable = true,
                     niches = true,
                     offset = 'hexadecimal',
+                    padding = vim.NIL,
                     size = 'both',
+                },
+                show = {
+                    enumVariants = 5,
+                    fields = 5,
+                    traitAssocItems = vim.NIL,
                 },
             },
             imports = {
@@ -300,7 +303,7 @@ return ---@type vim.lsp.Config
                     enforce = true,
                     group = 'crate',
                 },
-                groups = {
+                group = {
                     enable = true,
                 },
                 merge = {
@@ -309,6 +312,7 @@ return ---@type vim.lsp.Config
                 preferNoStd = false,
                 preferPrelude = false,
                 prefix = 'plain',
+                prefixExternPrelude = false,
             },
             inlayHints = {
                 bindingModeHints = {
@@ -318,40 +322,70 @@ return ---@type vim.lsp.Config
                     enable = true,
                 },
                 closingBraceHints = {
-                    minLines = 0,
                     enable = true,
+                    minLines = 0,
                 },
                 closureCaptureHints = {
                     enable = true,
                 },
                 closureReturnTypeHints = {
-                    enable = true,
+                    enable = 'always',
                 },
                 closureStyle = 'impl_fn',
                 discriminantHints = {
                     enable = 'always',
                 },
                 expressionAdjustmentHints = {
+                    disableReborrows = true,
                     enable = 'always',
                     hideOutsideUnsafe = false,
                     mode = 'prefix',
+                },
+                genericParameterHints = {
+                    const = {
+                        enable = true,
+                    },
+                    lifetime = {
+                        enable = false,
+                    },
+                    type = {
+                        enable = false,
+                    },
+                },
+                implicitDrops = {
+                    enable = false,
+                },
+                implicitSizedBoundHints = {
+                    enable = false,
+                },
+                impliedDynTraitHints = {
+                    enable = true,
                 },
                 lifetimeElisionHints = {
                     enable = 'always',
                     useParameterNames = true,
                 },
-                maxLength = nil,
+                maxLength = vim.NIL,
                 parameterHints = {
                     enable = true,
+                    missingArguments = {
+                        enable = false,
+                    },
+                },
+                rangeExclusiveHints = {
+                    enable = false,
                 },
                 reborrowHints = {
-                    enable = 'always',
+                    enable = 'never',
                 },
                 renderColons = true,
                 typeHints = {
                     enable = true,
                     hideClosureInitialization = false,
+                    hideClosureParameter = false,
+                    hideInferredTypes = false,
                     hideNamedConstructor = false,
+                    location = 'inline',
                 },
             },
             interpret = {
@@ -368,7 +402,6 @@ return ---@type vim.lsp.Config
                     enable = true,
                 },
                 enable = true,
-                forceCustomCommands = true,
                 implementations = {
                     enable = true,
                 },
@@ -383,49 +416,64 @@ return ---@type vim.lsp.Config
                     method = {
                         enable = true,
                     },
-                    references = {
-                        method = {
-                            enable = true,
-                        },
-                        trait = {
-                            enable = true,
-                        },
-                    },
-                    run = {
+                    trait = {
                         enable = true,
                     },
+                },
+                run = {
+                    enable = true,
+                },
+                updateTest = {
+                    enable = true,
                 },
             },
             linkedProjects = {},
             lru = {
-                capacity = nil,
+                capacity = vim.NIL,
                 query = {
-                    capacities = {},
+                    capacities = vim.empty_dict(),
                 },
             },
             notifications = {
                 cargoTomlNotFound = true,
             },
-            numThreads = nil,
+            numThreads = vim.NIL,
             procMacro = {
-                procMacro = {
-                    attributes = {
-                        enable = true,
-                    },
+                attributes = {
+                    enable = true,
                 },
                 enable = true,
-                ignored = {},
-                server = {},
+                ignored = vim.empty_dict(),
+                processes = 2,
+                server = vim.NIL,
+            },
+            profiling = {
+                memoryProfile = vim.NIL,
             },
             references = {
                 excludeImports = false,
+                excludeTests = false,
+            },
+            rename = {
+                showConflicts = true,
             },
             runnables = {
-                command = {},
+                bench = {
+                    command = 'bench',
+                    overrideCommand = vim.NIL,
+                },
+                command = vim.NIL,
+                doctest = {
+                    overrideCommand = vim.NIL,
+                },
                 extraArgs = {},
-            },
-            rust = {
-                analyzerTargetDir = {},
+                extraTestBinaryArgs = {
+                    '--nocapture',
+                },
+                test = {
+                    command = 'test',
+                    overrideCommand = vim.NIL,
+                },
             },
             rustc = {
                 source = 'discover',
@@ -436,12 +484,11 @@ return ---@type vim.lsp.Config
                     '2024',
                     '--style-edition',
                     '2024',
-                    '--unstable-features',
                     '--verbose',
                 },
-                overrideCommand = {},
+                overrideCommand = vim.NIL,
                 rangeFormatting = {
-                    enable = true,
+                    enable = false,
                 },
             },
             semanticHighlighting = {
@@ -479,45 +526,34 @@ return ---@type vim.lsp.Config
             },
             signatureInfo = {
                 detail = 'full',
-                enable = true,
-            },
-            typing = {
-                autoClosingAngleBrackets = {
+                documentation = {
                     enable = true,
                 },
             },
+            typing = {
+                triggerChars = '=.{(><',
+            },
+            vfs = {
+                extraIncludes = {},
+            },
             workspace = {
+                discoverConfig = vim.NIL,
                 symbol = {
                     search = {
-                        discoverConfig = nil,
                         excludeImports = false,
                         kind = 'only_types',
                         limit = 128,
+                        scope = 'workspace',
                     },
                 },
             },
         },
     },
     ---@param init_params lsp.InitializeParams
-    before_init = function(init_params, config) ---@param config vim.lsp.Config
+    ---@param config vim.lsp.Config
+    before_init = function(init_params, config)
         if config.settings and config.settings['rust-analyzer'] then
             init_params.initializationOptions = config.settings['rust-analyzer']
-        end
-        ---@type RaRunnableArgs
-        ---@param command table{ title: string, command: string, arguments: any[] }
-        vim.lsp.commands['rust-analyzer.runSingle'] = function(command)
-            local r = command.arguments[1] ---@type RaRunnable
-            local cmd = { 'cargo', unpack(r.args.cargoArgs) }
-            if r.args.executableArgs and #r.args.executableArgs > 0 then
-                vim.list_extend(cmd, { '--', unpack(r.args.executableArgs) })
-            end
-            local proc = vim.system(cmd, { cwd = r.args.cwd })
-            local result = proc:wait()
-            if result.code == 0 then
-                vim.notify(result.stdout, vim.log.levels.INFO)
-            else
-                vim.notify(result.stderr, vim.log.levels.ERROR)
-            end
         end
     end,
 }

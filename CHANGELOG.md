@@ -1,5 +1,105 @@
 # Changelog — `test`-branch fix program
 
+## Live-vs-repo reconciliation + init.lua subdir composition (2026-09-29)
+
+Fourteen files differed between the repo (`.GH/Qompass/Diver`) and the live
+config (`~/.config/nvim`). Reconciled one by one; repo and live are
+byte-identical again for every file below. Nothing committed or pushed.
+
+### Decisions
+
+- `init.lua`: repo wins (keeps `dev.bootdev` and `require('dap').setup()`),
+  then refactored — see below.
+- `lua/security/ai.lua`: repo wins. Restores MCP allowlist identity binding
+  on the registered server command plus argv: a changed server command
+  behind a reused name re-prompts instead of inheriting approval.
+- `lsp/README.md`: live wins (5,205-line collapsible-HTML version), corrected
+  in place — not replaced by the repo's slim 410-line variant.
+- `lua/linters/README.md`: replaced by a new collapsible-HTML README in the
+  same style (old one retired).
+- Seven trivial diffs (comments, blank lines, whitespace-only) synced
+  live → repo: `lsp/vshtml_ls.lua`, `lua/dev/init.lua`,
+  `lua/linters/selene-default.toml`, `lua/security/init.lua`,
+  `lua/security/blue/dap.lua`, `lua/security/bounty/gates.lua`,
+  `lua/security/bounty/init.lua`.
+
+### `init.lua`: subdir composition
+
+Root `init.lua` no longer enumerates leaf modules. Each `lua/` subdirectory
+owns its wiring behind `M.setup()` (or self-wires at require time); the root
+file only decides startup order:
+
+- `require('config.init').config({...})` kept as-is — `require('config')`
+  and `require('config.init')` are different `package.loaded` keys for the
+  same file, so renaming would double-load it.
+- `security.setup()` now also wires `security.pass` and `security.sshfs`.
+- `dev.setup()` now also wires `dev.git`, `dev.jj`, `dev.bootdev`,
+  `dev.bsp`, `dev.scip`.
+- `ai.setup()` now also wires `ai.herd.personas` (first; `ai.herd` itself
+  does not depend on it, verified).
+- `utils` gains `M.setup()` wiring `nav`, `calendar`, `sync`, `snippets`,
+  `tmux` (`{ keymaps_enabled = false }`), `notify`.
+- `formatters.setup()` called directly (was bare require + pcall loop);
+  `config.data` still optional via pcall.
+- Newly wired at startup: `comms.setup()` (mail, clients — command
+  registration only), `research` (self-wires at require time), `types`
+  (annotation modules).
+- Deliberately unchanged: `utils.options.setup_early()` first,
+  `setup_late()` near last, `ai.setup()` last; linters stay deferred on
+  `BufReadPre` (`DiverDeferLinters`, verbatim); games stay lazy behind the
+  `:Games` stub in `utils/init.lua`; `plugin` self-wires via
+  `setup_plugins()` at require time.
+
+### Two latent bugs exposed and fixed by the refactor
+
+Both were unreachable before — nothing ever required `dev/init.lua` — and
+both broke headless startup once it was wired:
+
+- `lua/dev/sf/tasks.lua`: four `M.commands` specs used `rhs` instead of
+  `fn`, tripping `core.register_commands`' assert (`Invalid Salesforce
+  command handler: SfTasksModules`) and aborting all Salesforce command
+  registration. Renamed to `fn`; `:SfTasksModules`, `:SfTasksDispatch`,
+  `:SfTasksDoc`, … now register.
+- `lua/dev/init.lua`: `require('dev.vulkan')` resolved to the leaf
+  `dev/vulkan.lua` (no `setup`) instead of the `dev/vulkan/` suite —
+  Lua's `?.lua` precedes `?/init.lua` in the search order. Now requires
+  `dev.vulkan.init` explicitly, with a comment. No other `dev/*`
+  file/dir collisions exist.
+
+### README program
+
+- `lsp/README.md`: audited all 135 `<details>` sections; 90 line-fixes —
+  `qompassai/Diver` → `qompassai/diver` link normalization, stray leading
+  spaces inside `href`s stripped, `vectorcode_ls.lua` link text corrected
+  (was labeled `ai_ls`), `agda-langauge-server` typo fixed. HTML structure
+  byte-identical otherwise.
+- New collapsible-HTML READMEs in the same style: `lua/linters/README.md`
+  (181 sections; 3 copy-pasted titles corrected — `editorconfig-checker`,
+  `htmlhint`, `markuplint-cli2`), `lua/formatters/README.md`
+  (135 sections), `lua/dap/README.md` (40 sections). Every linked config
+  file verified to exist; `<details>` tags balanced.
+- Known gaps (not invented, flagged for Matt): 5 README sections link to
+  configs that exist in neither tree (`expert_ls`, `prosemd_ls`,
+  `tblgen_ls`, `vala_ls`, `yamllint_ls`); ~150 `lsp/*.lua` configs have no
+  README section (`unreferenced.txt` in the working notes).
+
+### Validation (2026-09-29, primo)
+
+- `luac -p` on all touched files: clean.
+- Headless startup (`nvim --headless -c 'qa!'`, 0.13.0-dev): no errors.
+- Commands verified present: `:SfTasksModules`, `:Games`, `:MailConfig`,
+  `:SecurityAudit`.
+- Note: `BufReadPre` autocmds do not fire under `nvim --headless -c 'edit'`
+  in this build (verified with a bare autocmd in isolation) — a headless
+  harness quirk, identical for the old `init.lua`; the deferred-linter
+  design itself is preserved verbatim.
+
+### Correction to the 2026-09-28 entry
+
+The harness entry claims 16 modules in `lua/ai/harness/`; the tree has 15
+top-level `.lua` files (plus the `adapters/` subdirectory holding the six
+protocol adapters).
+
 ## Agent harness core + Busted/lua-TestMore setup (2026-09-28, overnight)
 
 Protocol-neutral agent harness per `diver-agent-harness_2_fggq.md`, plus the

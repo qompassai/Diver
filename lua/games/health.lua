@@ -209,8 +209,7 @@ local function probe_voidsprite()
         ok = bin ~= nil,
         warn = false,
         lines = {
-            'binary: '
-                .. (bin or 'not found (install aur/voidsprite-git or set NVIM_VOIDSPRITE_BIN)'),
+            'binary: ' .. (bin or 'not found (install aur/voidsprite-git or set NVIM_VOIDSPRITE_BIN)'),
         },
     }
 end
@@ -316,15 +315,12 @@ function M.check()
     if vim.fn.has('nvim-0.13') == 0 then
         health.warn(
             'Neovim < 0.13 detected -- vim.async is unavailable; '
-                .. 'GamesDoctor probes ran sequentially as a fallback would be required.'
+            .. 'GamesDoctor probes ran sequentially as a fallback would be required.'
         )
     end
 
     local rows = collect_rows()
-    assert(
-        #rows == EXPECTED_PROBE_COUNT,
-        'games.health.check: collect_rows must always return eight rows'
-    )
+    assert(#rows == EXPECTED_PROBE_COUNT, 'games.health.check: collect_rows must always return eight rows')
 
     for _, row in ipairs(rows) do
         health.start(row.name)

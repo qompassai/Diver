@@ -249,4 +249,15 @@ M.dictionary = {
     end,
 }
 
+---Wire the eager utils suites. Called once from the top-level init.lua;
+---kept here (rather than scattered leaf requires) so utils owns its children.
+function M.setup()
+    require('utils.nav').setup()
+    require('utils.calendar').setup()
+    require('utils.sync').setup()
+    require('utils.snippets').setup()
+    require('utils.tmux').setup({ keymaps_enabled = false })
+    require('utils.notify').setup()
+end
+
 return M

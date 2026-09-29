@@ -83,10 +83,10 @@ require('lazy').setup({
     {
       import = 'plugin.lang',
     },
-    --]]
         {
             import = 'plugin.ui',
         },
+        --]]
     },
     defaults = {
         lazy = true,

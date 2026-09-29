@@ -131,6 +131,8 @@ function M.setup(opts)
     -- Bug-bounty pipeline commands (:Bounty*). Idempotent; creates only
     -- user commands and the ~/security/bugbounties working dirs.
     bounty.setup()
+    require('security.pass').setup()
+    require('security.sshfs').setup()
     setup_done = true
     return M
 end
@@ -157,6 +159,5 @@ M.auditlog = require('security.auditlog')
 M.annotations = require('security.annotations')
 M.mcp_vet = require('security.mcp_vet')
 M.commands = require('security.commands')
-
 
 return M

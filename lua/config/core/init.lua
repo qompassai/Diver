@@ -4,8 +4,6 @@
 -- ----------------------------------------
 require('config.core.async')
 require('config.core.filetype')
---require('config.core.fixer')
---require('config.core.flash')
 -- Deferred: config.core.lint loads on BufReadPre via init.lua (saves ~8ms).
 -- require('config.core.lint')
 require('config.core.lsp')

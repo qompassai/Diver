@@ -21,9 +21,9 @@ local rce = require('security.rce')
 
 local M = {}
 
-local CURL_MAX_TIME_S = 120 -- hard ceiling on one curl invocation.
-local DOWNLOAD_TIMEOUT_MS = 150000 -- bound on the whole download step.
-local SHA256_HEX_LEN = 64 -- hex digits in a SHA-256 digest.
+local CURL_MAX_TIME_S = 120         -- hard ceiling on one curl invocation.
+local DOWNLOAD_TIMEOUT_MS = 150000  -- bound on the whole download step.
+local SHA256_HEX_LEN = 64           -- hex digits in a SHA-256 digest.
 local HEX_DIGEST_PATTERN = '^(%x+)' -- leading hex run of a checksum line.
 
 ---@class security.MitmDownloadOptions
@@ -53,10 +53,16 @@ end
 ---@return string[]|nil hasher_argv argv prefix, or nil when none is installed.
 local function find_hasher()
     if vim.fn.executable('sha256sum') == 1 then
-        return { 'sha256sum' }
+        return {
+            'sha256sum',
+        }
     end
     if vim.fn.executable('shasum') == 1 then
-        return { 'shasum', '-a', '256' }
+        return {
+            'shasum',
+            '-a',
+            '256',
+        }
     end
     return nil
 end
@@ -75,7 +81,9 @@ local function sha256_file(path)
         argv[index] = part
     end
     argv[#argv + 1] = path
-    local result, exec_err = rce.safe_exec(argv, { timeout_ms = 30000 })
+    local result, exec_err = rce.safe_exec(argv, {
+        timeout_ms = 30000,
+    })
     if exec_err ~= nil then
         return nil, 'checksum tool failed: ' .. exec_err
     end
@@ -130,7 +138,13 @@ function M.verify_download(url, expected_sha256, dest, opts)
     end
 
     -- argv form only: url and dest are never interpolated into a shell string.
-    local argv = { 'curl', '--fail', '--silent', '--show-error', '--location' }
+    local argv = {
+        'curl',
+        '--fail',
+        '--silent',
+        '--show-error',
+        '--location',
+    }
     if scheme == 'https' then
         -- Pin the connection to modern TLS and to the https protocol so a
         -- middleman cannot downgrade either.
@@ -152,7 +166,9 @@ function M.verify_download(url, expected_sha256, dest, opts)
     argv[#argv + 1] = url
 
     local timeout_ms = opts.timeout_ms or DOWNLOAD_TIMEOUT_MS
-    local dl_result, exec_err = rce.safe_exec(argv, { timeout_ms = timeout_ms })
+    local dl_result, exec_err = rce.safe_exec(argv, {
+        timeout_ms = timeout_ms,
+    })
     if exec_err ~= nil then
         -- curl -o truncates/creates dest before the transfer completes, so a
         -- failed download can leave a partial, unchecked file behind. Remove

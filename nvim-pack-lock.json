@@ -46,9 +46,19 @@
       "rev": "e3a22cb071eb9d6508a156306b102c45cd2d573d",
       "src": "https://github.com/hrsh7th/cmp-nvim-lua"
     },
+    "coq.artifacts": {
+      "rev": "d545035d06408f2d68cd03bc401425e42c298fc4",
+      "src": "https://github.com/ms-jpq/coq.artifacts",
+      "version": "'artifacts'"
+    },
     "coq.nvim": {
       "rev": "481c0534cd8ed757d941e8239e6e9987fb00e82a",
       "src": "https://github.com/ms-jpq/coq_nvim"
+    },
+    "coq.thirdparty": {
+      "rev": "a021e24f1ff538d339aece0de80d621b68862701",
+      "src": "https://github.com/ms-jpq/coq.thirdparty",
+      "version": "'3p'"
     },
     "coq_nvim": {
       "rev": "481c0534cd8ed757d941e8239e6e9987fb00e82a",
@@ -57,7 +67,8 @@
     },
     "cord.nvim": {
       "rev": "b08b9245d2973eda91437d2de5c8746b9f510d31",
-      "src": "https://github.com/vyfor/cord.nvim"
+      "src": "https://github.com/vyfor/cord.nvim",
+      "version": "'master'"
     },
     "diagram.nvim": {
       "rev": "a221810b17cdda2d5fdddba9bab3eba6fab8fabc",
@@ -156,7 +167,8 @@
     },
     "nightfox.nvim": {
       "rev": "4dacd3f0185a2227bdf3b6c0975a8f0bf87cac9a",
-      "src": "https://github.com/EdenEast/nightfox.nvim"
+      "src": "https://github.com/EdenEast/nightfox.nvim",
+      "version": "'main'"
     },
     "noice.nvim": {
       "rev": "7bfd942445fb63089b59f97ca487d605e715f155",
@@ -183,7 +195,8 @@
     },
     "nvim-treesitter": {
       "rev": "8b98b4470eb326f1c7b50dae79f8c963568e5720",
-      "src": "https://github.com/nvim-treesitter/nvim-treesitter"
+      "src": "https://github.com/nvim-treesitter/nvim-treesitter",
+      "version": "'main'"
     },
     "nvim-treesitter-textobjects": {
       "rev": "898ee307df58f854d11cd7edd06472574d48014e",
@@ -209,7 +222,8 @@
     },
     "plenary.nvim": {
       "rev": "b9fd5226c2f76c951fc8ed5923d85e4de065e509",
-      "src": "https://github.com/nvim-lua/plenary.nvim"
+      "src": "https://github.com/nvim-lua/plenary.nvim",
+      "version": "'master'"
     },
     "remote-nvim.nvim": {
       "rev": "9992c2fb8bf4f11aca2c8be8db286b506f92efcb",
@@ -282,7 +296,8 @@
     },
     "which-key.nvim": {
       "rev": "3aab2147e74890957785941f0c1ad87d0a44c15a",
-      "src": "https://github.com/folke/which-key.nvim"
+      "src": "https://github.com/folke/which-key.nvim",
+      "version": "'main'"
     }
   }
 }

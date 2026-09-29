@@ -115,3 +115,4 @@ ignore_pattern = "^_"
 [config.unused_variable]
 allow_unused_self = true
 ignore_pattern = "^_"
+

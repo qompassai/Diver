@@ -33,6 +33,13 @@ else
     env.MOJO_STDLIB_PATH = fn.expand('~/AppData/Local/mojo/.pixi/envs/default/lib/mojo')
 end
 l.enable()
+
+-- Startup is composed from the lua/ subdirectories: each one owns its
+-- wiring behind M.setup() (or self-wires at require time), so this file
+-- only decides ORDER, never enumerates leaf modules.
+--   early:    options, then config (everything reads it)
+--   deferred: linters (first buffer read), games (first :Games use)
+--   last:     ai (activates the agent stack), options late fixups
 require('config.init').config({
     core = true,
     cicd = true,
@@ -44,35 +51,24 @@ require('config.init').config({
     ui = true,
 })
 require('config.ui.render').setup()
-require('security').setup()
-require('dev.git').setup()
-require('ai.herd.personas').setup()
-require('utils.nav').setup()
-require('utils.calendar').setup()
-require('utils.sync').setup()
-require('dev.jj').setup()
-require('dev.bootdev').setup()
-require('security.pass').setup()
-require('dev.bsp')
+require('security').setup() -- also wires security.pass, security.sshfs
+require('dev').setup() -- also wires dev.git, dev.jj, dev.bootdev, dev.bsp, dev.scip
+require('utils').setup() -- also wires nav, calendar, sync, snippets, tmux, notify
 require('dap').setup()
-require('formatters')
-require('utils')
-require('utils.snippets').setup()
+require('formatters').setup()
 require('config.mappings')
-require('utils.tmux').setup({ keymaps_enabled = false })
-require('utils.notify').setup()
-require('plugin')
-require('dev.scip')
-require('security.sshfs').setup()
-for _, name in ipairs({
-    'formatters',
-    'config.data',
-}) do
-    local ok, mod = pcall(require, name)
-    if ok and type(mod) == 'table' and type(mod.setup) == 'function' then
-        mod.setup()
-    end
+require('plugin') -- self-wires via setup_plugins() at require time
+require('comms').setup() -- mail, clients
+require('research') -- self-wires at require time
+require('types') -- annotation modules only
+
+-- config.data is optional: wire it when present.
+local ok_data, config_data = pcall(require, 'config.data')
+if ok_data and type(config_data) == 'table' and type(config_data.setup) == 'function' then
+    config_data.setup()
 end
+
+-- Linters stay deferred until the first buffer read (startup performance).
 vim.api.nvim_create_autocmd('BufReadPre', {
     once = true,
     group = vim.api.nvim_create_augroup('DiverDeferLinters', { clear = true }),
@@ -88,4 +84,4 @@ vim.api.nvim_create_autocmd('BufReadPre', {
     end,
 })
 require('utils.options').setup_late()
-require('ai').setup()
+require('ai').setup() -- last; also wires ai.herd.personas

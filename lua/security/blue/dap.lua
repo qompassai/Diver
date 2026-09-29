@@ -107,7 +107,12 @@ local function set_message(frame, msg, hl, inline)
 
     pcall(vim.api.nvim_buf_set_extmark, buf, ns, frame.line - 1, 0, {
         hl_mode = 'combine',
-        virt_text = { { text, hl } },
+        virt_text = {
+            {
+                text,
+                hl,
+            },
+        },
         virt_text_pos = inline and 'eol' or state.opts.virt_text_pos,
     })
 end
@@ -501,7 +506,10 @@ function M.setup(opts)
         link = 'DiagnosticVirtualTextWarn',
         default = true,
     })
-    vim.api.nvim_set_hl(0, 'NvimDapVirtualTextError', { link = 'DiagnosticVirtualTextError', default = true })
+    vim.api.nvim_set_hl(0, 'NvimDapVirtualTextError', {
+        link = 'DiagnosticVirtualTextError',
+        default = true,
+    })
     vim.api.nvim_set_hl(0, 'NvimDapVirtualTextInfo', { link = 'DiagnosticVirtualTextInfo', default = true })
 
     register_dap_listeners()
@@ -522,6 +530,7 @@ function M.set_error(frame, msg)
         set_message(state.stopped_frame, msg, 'NvimDapVirtualTextError', state.opts.virt_text_pos == 'inline')
     end
 end
+
 function M.set_info(frame, msg)
     state.stopped_frame = frame or state.stopped_frame
     state.info_msg = msg

@@ -10,7 +10,6 @@
 -- it). Call require('security.bounty').setup() once to get the :Bounty*
 -- commands.
 ---@module 'security.bounty'
-
 local gates = require('security.bounty.gates')
 local scope = require('security.bounty.scope')
 local recon = require('security.bounty.recon')
@@ -56,7 +55,6 @@ local function show_lines(lines, filetype)
     vim.cmd('vsplit')
     vim.api.nvim_win_set_buf(0, buf)
 end
-
 function M.new_program()
     local platform = vim.fn.input('Platform (e.g. hackerone, bugcrowd): ')
     if platform == '' then
@@ -66,16 +64,13 @@ function M.new_program()
     if name == '' then
         return
     end
-
     local prog_dir = M.basedir() .. '/programs'
     ensure_dir(prog_dir)
-
     local fname = prog_dir .. '/' .. slugify(platform) .. '-' .. slugify(name) .. '.md'
     if vim.uv.fs_stat(fname) then
         vim.cmd('edit ' .. vim.fn.fnameescape(fname))
         return
     end
-
     local lines = {
         '# ' .. name .. ' (' .. platform .. ')',
         '',
@@ -122,7 +117,6 @@ function M.new_report()
     end
     local report_dir = M.basedir() .. '/reports'
     ensure_dir(report_dir)
-
     local slug = slugify(title)
     local fname = ('%s/%s-%s-%s-%s.md'):format(report_dir, today(), slugify(platform), slugify(program), slug)
 
@@ -169,7 +163,14 @@ end
 
 ---Scaffold the working directory tree. Idempotent.
 function M.scaffold()
-    for _, sub in ipairs({ 'programs', 'reports', 'scope', 'recon', 'gates', 'findings' }) do
+    for _, sub in ipairs({
+        'programs',
+        'reports',
+        'scope',
+        'recon',
+        'gates',
+        'findings',
+    }) do
         ensure_dir(M.basedir() .. '/' .. sub)
     end
 end
@@ -195,7 +196,10 @@ function M.setup()
         local entries = scope.poll(platform, { bbp_only = true })
         local path = scope.save(program, entries)
         vim.notify(('BountyScope: %d targets filed to %s'):format(#entries, path))
-    end, { nargs = '?', desc = 'Poll bbscope and file program scope (public, paid programs only)' })
+    end, {
+        nargs = '?',
+        desc = 'Poll bbscope and file program scope (public, paid programs only)',
+    })
 
     vim.api.nvim_create_user_command('BountyRecon', function(opts)
         local program = opts.args ~= '' and opts.args or vim.fn.input('Program slug: ')
@@ -204,8 +208,10 @@ function M.setup()
         end
         local id = recon.run(program)
         vim.notify('BountyRecon: run ' .. id .. ' started (see :BountyReconStatus)')
-    end, { nargs = '?', desc = 'Run the recon chain (REQUIRES open scope gate)' })
-
+    end, {
+        nargs = '?',
+        desc = 'Run the recon chain (REQUIRES open scope gate)',
+    })
     vim.api.nvim_create_user_command('BountyReconStatus', function()
         local lines = recon.status()
         if #lines == 0 then
@@ -217,8 +223,10 @@ function M.setup()
 
     vim.api.nvim_create_user_command('BountyReconCancel', function(opts)
         recon.cancel(opts.args)
-    end, { nargs = 1, desc = 'Cancel a recon run' })
-
+    end, {
+        nargs = 1,
+        desc = 'Cancel a recon run',
+    })
     vim.api.nvim_create_user_command('BountyReport', function(opts)
         local platform = vim.fn.input('Platform (hackerone/bugcrowd/intigriti/yeswehack/immunefi): ')
         if platform == '' then
@@ -237,7 +245,9 @@ function M.setup()
             return
         end
         report.new(platform, program, finding, title)
-    end, { desc = 'Generate a report from a validated finding (REQUIRES open finding gate)' })
+    end, {
+        desc = 'Generate a report from a validated finding (REQUIRES open finding gate)',
+    })
 
     vim.api.nvim_create_user_command('BountySubmit', function(opts)
         local path = opts.args ~= '' and opts.args or vim.fn.input('Report file: ', M.basedir() .. '/reports/', 'file')
@@ -250,7 +260,6 @@ function M.setup()
         complete = 'file',
         desc = 'Preview the exact submission payload (REQUIRES open submission gate; never auto-sends)',
     })
-
     vim.api.nvim_create_user_command('BountyApprove', function(opts)
         local kind, target = opts.args:match('^(%S+)%s+(%S+)$')
         if kind == nil then
@@ -283,8 +292,10 @@ function M.setup()
         local note = vim.fn.input('Approval note (optional): ')
         local path = gates.approve(kind, target, note ~= '' and note or nil)
         vim.notify(('Gate %s opened for %s (%s)'):format(kind, target, path))
-    end, { nargs = 1, desc = 'Operator approval: open a gate (scope|finding|submission)' })
-
+    end, {
+        nargs = 1,
+        desc = 'Operator approval: open a gate (scope|finding|submission)',
+    })
     vim.api.nvim_create_user_command('BountyIndex', function()
         local base = M.basedir()
         local programs = vim.fn.glob(base .. '/programs/*.md', false, true)
@@ -364,7 +375,8 @@ function M.setup()
                 return
             end
             vim.notify(
-                ("BountyProfile: '%s' is now the active profile. This is NOT an approval: no gate was opened and no scanning was started."):format(
+                ("BountyProfile: '%s' is now the active profile. This is NOT an approval: no gate was opened and no scanning was started.")
+                :format(
                     rest
                 )
             )
@@ -386,7 +398,8 @@ function M.setup()
                 return
             end
             vim.notify(
-                ("BountyProfile: operator confirmed '%s' for '%s' -- attested publicly accessible and DoD-owned/operated/controlled; not a vendor or non-DoD system."):format(
+                ("BountyProfile: operator confirmed '%s' for '%s' -- attested publicly accessible and DoD-owned/operated/controlled; not a vendor or non-DoD system.")
+                :format(
                     target,
                     program
                 )
@@ -397,8 +410,10 @@ function M.setup()
                 vim.log.levels.ERROR
             )
         end
-    end, { nargs = '*', desc = 'View/select program profiles (read-only; never opens gates)' })
-
+    end, {
+        nargs = '*',
+        desc = 'View/select program profiles (read-only; never opens gates)',
+    })
     setup_done = true
     return M
 end

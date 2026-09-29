@@ -16,7 +16,11 @@
 
 local M = {}
 
-local KINDS = { scope = true, finding = true, submission = true }
+local KINDS = {
+    scope = true,
+    finding = true,
+    submission = true,
+}
 
 ---Directory that holds all approval marker files.
 ---@return string
@@ -30,10 +34,7 @@ end
 local function check_args(kind, target)
     assert(KINDS[kind], "gates: unknown gate kind '" .. tostring(kind) .. "'")
     assert(type(target) == 'string' and target ~= '', 'gates: target must be a nonempty string')
-    assert(
-        target:match('^[A-Za-z0-9_%.%-]+$'),
-        'gates: target must be path-safe (letters, digits, _, ., -)'
-    )
+    assert(target:match('^[A-Za-z0-9_%.%-]+$'), 'gates: target must be path-safe (letters, digits, _, ., -)')
 end
 
 ---Full path of the marker file for one gate.
