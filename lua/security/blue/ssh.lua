@@ -81,6 +81,19 @@ local function process_line(line)
     return nil, nil
 end
 
+--- Split a conn-opts string into argv pieces. These strings originate from
+--- this module's own configuration (never from remote data or user input),
+--- so plain whitespace splitting is sufficient — the pieces are passed as
+--- argv and never re-parsed by a shell.
+---@param opts_str string conn opts, e.g. '-p 2222 -i ~/.ssh/key'
+---@return string[] argv pieces
+local function split_conn_opts(opts_str)
+    if opts_str == '' then
+        return {}
+    end
+    return vim.split(opts_str, '%s+', { trimempty = true })
+end
+
 local SSHConfigParser = create_class('SSHConfigParser')
 
 function SSHConfigParser:init()
@@ -236,17 +249,29 @@ function SSHExecutor:init(host, conn_opts, config)
     self._job_exit_code = nil
 end
 
+--- Build the ssh argv for a remote command. List form: `jobstart` runs it
+--- with no shell, so host/opt values can never inject commands. The remote
+--- command travels as a single argv element, exactly as the old
+--- shellescape-then-shell round-trip delivered it.
+---@param command string remote command
+---@param additional_opts? string extra conn opts (module config, not user input)
+---@return string[] argv
 function SSHExecutor:_build_run_command(command, additional_opts)
     local conn_opts = additional_opts and (self.ssh_conn_opts .. ' ' .. additional_opts) or self.ssh_conn_opts
-    local host_conn_opts = conn_opts == '' and self.host or conn_opts .. ' ' .. self.host
-    return ('%s %s %s'):format(self.ssh_binary, host_conn_opts, vim.fn.shellescape(command))
+    local argv = { self.ssh_binary }
+    for _, opt in ipairs(split_conn_opts(conn_opts)) do
+        argv[#argv + 1] = opt
+    end
+    argv[#argv + 1] = self.host
+    argv[#argv + 1] = command
+    return argv
 end
 
 function SSHExecutor:run_command(command, opts)
     opts = opts or {}
-    local full_cmd = self:_build_run_command(command, opts.additional_conn_opts)
+    local argv = self:_build_run_command(command, opts.additional_conn_opts)
     self._job_stdout = {}
-    self._job_id = vim.fn.jobstart(full_cmd, {
+    self._job_id = vim.fn.jobstart(argv, {
         on_stdout = function(_, data)
             vim.list_extend(self._job_stdout, data)
             if opts.on_stdout then
