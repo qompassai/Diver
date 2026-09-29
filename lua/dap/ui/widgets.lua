@@ -41,13 +41,8 @@ end
 ---@return integer win the configured window
 local function setup_float_win(buf, win)
     vim.bo[buf].bufhidden = 'wipe'
-    if vim.fn.has('nvim-0.11') == 1 then
-        vim.wo[win][0].scrolloff = 0
-        vim.wo[win][0].wrap = false
-    else
-        vim.wo[win].scrolloff = 0
-        vim.wo[win].wrap = false
-    end
+    vim.wo[win][0].scrolloff = 0
+    vim.wo[win][0].wrap = false
     vim.bo[buf].filetype = 'dap-float'
     return win
 end

@@ -306,25 +306,17 @@ do
             vim.bo[buf].path = vim.bo[prev_buf].path
         end
         if terminal_win then
-            if vim.fn.has('nvim-0.8') == 1 then
-                -- older versions don't support the `win` key
-                api.nvim_set_option_value('number', false, { scope = 'local', win = terminal_win })
-                api.nvim_set_option_value(
-                    'relativenumber',
-                    false,
-                    { scope = 'local', win = terminal_win }
-                )
-                api.nvim_set_option_value(
-                    'signcolumn',
-                    'no',
-                    { scope = 'local', win = terminal_win }
-                )
-            else
-                -- this is like `:set` so new windows will inherit the values :/
-                vim.wo[terminal_win].number = false
-                vim.wo[terminal_win].relativenumber = false
-                vim.wo[terminal_win].signcolumn = 'no'
-            end
+            api.nvim_set_option_value('number', false, { scope = 'local', win = terminal_win })
+            api.nvim_set_option_value(
+                'relativenumber',
+                false,
+                { scope = 'local', win = terminal_win }
+            )
+            api.nvim_set_option_value(
+                'signcolumn',
+                'no',
+                { scope = 'local', win = terminal_win }
+            )
         end
         vim.b[buf]['dap-type'] = config.type
         return buf, terminal_win

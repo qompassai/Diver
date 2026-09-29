@@ -236,56 +236,6 @@ function M._load_json(jsonstr)
     return configs
 end
 
----Strip `//` and `/* */` comments from JSONC text without touching comment
----markers inside string literals. Used on Neovim < 0.12, where
----`vim.json.decode` has no `skip_comments` option.
----@param text string raw file contents
----@return string text with comments removed
-local function strip_json_comments(text)
-    local out = {}
-    local i = 1
-    local n = #text
-    local in_string = false
-    while i <= n do
-        local c = text:sub(i, i)
-        if in_string then
-            out[#out + 1] = c
-            if c == '\\' and i < n then
-                i = i + 1
-                out[#out + 1] = text:sub(i, i)
-            elseif c == '"' then
-                in_string = false
-            end
-        elseif c == '"' then
-            in_string = true
-            out[#out + 1] = c
-        elseif c == '/' and text:sub(i + 1, i + 1) == '/' then
-            -- Line comment: skip to the end of the line, keeping the newline
-            -- so line numbers stay stable.
-            local eol = text:find('\n', i + 2, true)
-            if eol then
-                out[#out + 1] = '\n'
-                i = eol
-            else
-                break
-            end
-        elseif c == '/' and text:sub(i + 1, i + 1) == '*' then
-            -- Block comment: skip to the closing `*/`; drop the rest if
-            -- unterminated.
-            local close = text:find('*/', i + 2, true)
-            if close then
-                i = close + 1
-            else
-                break
-            end
-        else
-            out[#out + 1] = c
-        end
-        i = i + 1
-    end
-    return table.concat(out)
-end
-
 ---@param path string?
 ---@return dap.Configuration[]
 function M.getconfigs(path)
@@ -294,22 +244,12 @@ function M.getconfigs(path)
         return {}
     end
     local contents
-    if vim.fn.has('nvim-0.12') == 1 then
-        local fp = io.open(resolved_path, 'r')
-        if fp then
-            contents = fp:read('*a')
-            fp:close()
-        else
-            return {}
-        end
+    local fp = io.open(resolved_path, 'r')
+    if fp then
+        contents = fp:read('*a')
+        fp:close()
     else
-        local fp = io.open(resolved_path, 'r')
-        if fp then
-            contents = strip_json_comments(fp:read('*a') or '')
-            fp:close()
-        else
-            return {}
-        end
+        return {}
     end
     return M._load_json(contents)
 end

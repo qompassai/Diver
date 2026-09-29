@@ -36,11 +36,9 @@ local function line_count(buf)
     if vim.bo[buf].buftype ~= 'prompt' then
         return api.nvim_buf_line_count(buf)
     end
-    if vim.fn.has('nvim-0.12') == 1 then
-        local ok, mark = pcall(api.nvim_buf_get_mark, buf, ':')
-        if ok then
-            return mark[1] - 1
-        end
+    local ok, mark = pcall(api.nvim_buf_get_mark, buf, ':')
+    if ok then
+        return mark[1] - 1
     end
     return api.nvim_buf_line_count(buf) - 1
 end
