@@ -167,19 +167,24 @@ function SSHConfigParser:_post_process_all_configs()
     end
 end
 
+--- Expand an SSH `Include` value into concrete paths. Expands `~`,
+--- environment variables, and wildcards with `vim.fn.glob` — never a shell,
+--- so `$(...)`/backticks in the value cannot execute. Relative values resolve
+--- against the including file's directory.
+---@param path string raw Include value
+---@param parent_file? string file the Include directive was read from
+---@return string[] expanded paths
 function SSHConfigParser:_expand_path(path, parent_file)
     local parent_dir = parent_file and vim.fs.dirname(parent_file)
     if parent_dir then
         parent_dir = vim.fs.normalize(parent_dir)
     end
 
-    local cmd = { 'sh', '-c', ('echo %s'):format(path) }
-    local cmd_output
-
-    local res = vim.system(cmd, { text = true, cwd = parent_dir }):wait()
-    cmd_output = res.code == 0 and res.stdout or ''
-
-    return vim.split(cmd_output, '%s+', { trimempty = true })
+    local pattern = path
+    if parent_dir ~= nil and not vim.fs.isabs(path) and path:sub(1, 1) ~= '~' then
+        pattern = vim.fs.joinpath(parent_dir, path)
+    end
+    return vim.fn.glob(pattern, false, true)
 end
 
 function SSHConfigParser:parse_config_file(file_path, parent_file)
