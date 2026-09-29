@@ -288,14 +288,24 @@ function SSHExecutor:run_command(command, opts)
     return self._job_id
 end
 function SSHExecutor:upload(local_path, remote_path, _opts)
-    local remote_full = ('%s:%s'):format(self.host, remote_path)
-    local scp_command = ('%s %s %s %s'):format(self.scp_binary, self.scp_conn_opts, local_path, remote_full)
-    return vim.fn.system(scp_command)
+    local argv = { self.scp_binary }
+    for _, opt in ipairs(split_conn_opts(self.scp_conn_opts)) do
+        argv[#argv + 1] = opt
+    end
+    argv[#argv + 1] = local_path
+    argv[#argv + 1] = self.host .. ':' .. remote_path
+    -- List form: vim.fn.system spawns with no shell and still returns the
+    -- command's stdout string, preserving this function's contract.
+    return vim.fn.system(argv)
 end
 function SSHExecutor:download(remote_path, local_path, _opts)
-    local remote_full = ('%s:%s'):format(self.host, remote_path)
-    local scp_command = ('%s %s %s %s'):format(self.scp_binary, self.scp_conn_opts, remote_full, local_path)
-    return vim.fn.system(scp_command)
+    local argv = { self.scp_binary }
+    for _, opt in ipairs(split_conn_opts(self.scp_conn_opts)) do
+        argv[#argv + 1] = opt
+    end
+    argv[#argv + 1] = self.host .. ':' .. remote_path
+    argv[#argv + 1] = local_path
+    return vim.fn.system(argv)
 end
 M.SSHConfigParser = SSHConfigParser
 M.SSHExecutor = SSHExecutor
