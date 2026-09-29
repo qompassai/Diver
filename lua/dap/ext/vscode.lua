@@ -298,6 +298,7 @@ function M.getconfigs(path)
         local fp = io.open(resolved_path, 'r')
         if fp then
             contents = fp:read('*a')
+            fp:close()
         else
             return {}
         end
@@ -310,7 +311,6 @@ function M.getconfigs(path)
             return {}
         end
     end
-    local contents = fp:read('*a')
     return M._load_json(contents)
 end
 
