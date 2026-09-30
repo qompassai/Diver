@@ -27,8 +27,9 @@ local DEFAULT_TIMEOUT_MS = 600000
 ---@field id integer Local task id.
 ---@field agent string Directory name or card name.
 ---@field card A2aAgentCard
----@field state string One of the A2A task states.
+---@field state string A2A TaskState enum name, e.g. TASK_STATE_WORKING.
 ---@field remote_id? string Remote task id, once known.
+---@field context_id? string Remote context id, once known.
 ---@field message string The prompt text sent.
 ---@field events table[] Bounded ring of raw stream events.
 ---@field artifacts table[] Bounded list of produced artifacts.
@@ -43,28 +44,60 @@ local DEFAULT_TIMEOUT_MS = 600000
 ---@field on_done? fun(task: A2aTask)
 ---@field timeout_ms integer
 
-local TERMINAL = { completed = true, failed = true, canceled = true }
+local TERMINAL_STATES = {
+    TASK_STATE_COMPLETED = true,
+    TASK_STATE_FAILED = true,
+    TASK_STATE_CANCELED = true,
+    TASK_STATE_REJECTED = true,
+}
+-- Exported for modules (fanout, ui) that compare task states.
+M.states = {
+    submitted = 'TASK_STATE_SUBMITTED',
+    working = 'TASK_STATE_WORKING',
+    completed = 'TASK_STATE_COMPLETED',
+    failed = 'TASK_STATE_FAILED',
+    canceled = 'TASK_STATE_CANCELED',
+    input_required = 'TASK_STATE_INPUT_REQUIRED',
+    rejected = 'TASK_STATE_REJECTED',
+    auth_required = 'TASK_STATE_AUTH_REQUIRED',
+}
+
+local S = M.states
 
 local TRANSITIONS = {
-    submitted = {
-        working = true,
-        ['input-required'] = true,
-        completed = true,
-        failed = true,
-        canceled = true,
+    [S.submitted] = {
+        [S.working] = true,
+        [S.input_required] = true,
+        [S.auth_required] = true,
+        [S.completed] = true,
+        [S.failed] = true,
+        [S.canceled] = true,
+        [S.rejected] = true,
     },
-    working = {
-        working = true,
-        ['input-required'] = true,
-        completed = true,
-        failed = true,
-        canceled = true,
+    [S.working] = {
+        [S.working] = true,
+        [S.input_required] = true,
+        [S.auth_required] = true,
+        [S.completed] = true,
+        [S.failed] = true,
+        [S.canceled] = true,
+        [S.rejected] = true,
     },
-    ['input-required'] = {
-        working = true,
-        completed = true,
-        failed = true,
-        canceled = true,
+    [S.input_required] = {
+        [S.working] = true,
+        [S.auth_required] = true,
+        [S.completed] = true,
+        [S.failed] = true,
+        [S.canceled] = true,
+        [S.rejected] = true,
+    },
+    [S.auth_required] = {
+        [S.working] = true,
+        [S.input_required] = true,
+        [S.completed] = true,
+        [S.failed] = true,
+        [S.canceled] = true,
+        [S.rejected] = true,
     },
 }
 
@@ -181,32 +214,85 @@ local function on_stream_event(task, event)
     end
     task.events[#task.events + 1] = event
 
-    local node = event.status or (event.result and event.result.status)
-    if type(node) == 'table' and type(node.state) == 'string' then
-        set_state(task, node.state)
+    -- v1.0 SSE: each data line is a JSON-RPC response whose result is
+    -- a StreamResponse with exactly one of task / message /
+    -- statusUpdate / artifactUpdate. Legacy servers may send the
+    -- status or artifact node at the top level instead.
+    local result_node = (type(event.result) == 'table') and event.result or event
+    local payload_task = result_node.task
+    if type(payload_task) ~= 'table' then
+        payload_task = nil
+    end
+    local status_update = result_node.statusUpdate
+    if type(status_update) ~= 'table' then
+        status_update = nil
     end
 
-    local artifact = event.artifact or (event.result and event.result.artifact)
+    local status_node
+    if status_update then
+        status_node = status_update.status
+    elseif payload_task then
+        status_node = payload_task.status
+    else
+        status_node = event.status or result_node.status
+    end
+    if type(status_node) == 'table' and type(status_node.state) == 'string' then
+        set_state(task, status_node.state)
+    end
+
+    local artifact_update = result_node.artifactUpdate
+    if type(artifact_update) ~= 'table' then
+        artifact_update = nil
+    end
+    local artifact = artifact_update and artifact_update.artifact or (event.artifact or result_node.artifact)
     if type(artifact) == 'table' then
-        if #task.artifacts >= MAX_ARTIFACTS_PER_TASK then
-            table.remove(task.artifacts, 1)
+        -- v1.0 chunked artifacts: append=true extends the in-flight
+        -- artifact with the same artifactId instead of adding a row.
+        local merged = false
+        if artifact_update and artifact_update.append == true and type(artifact.artifactId) == 'string' then
+            local last = task.artifacts[#task.artifacts]
+            if type(last) == 'table' and last.artifactId == artifact.artifactId and type(last.parts) == 'table' then
+                for _, part in ipairs(type(artifact.parts) == 'table' and artifact.parts or {}) do
+                    last.parts[#last.parts + 1] = part
+                end
+                merged = true
+            end
         end
-        task.artifacts[#task.artifacts + 1] = artifact
+        if not merged then
+            if #task.artifacts >= MAX_ARTIFACTS_PER_TASK then
+                table.remove(task.artifacts, 1)
+            end
+            task.artifacts[#task.artifacts + 1] = artifact
+        end
     end
 
-    local result_node = event.result
-    local remote = event.taskId
-    if remote == nil and type(result_node) == 'table' then
-        remote = result_node.taskId or result_node.id
+    local remote = event.taskId or result_node.taskId
+    if remote == nil then
+        if payload_task then
+            remote = payload_task.id
+        elseif status_update then
+            remote = status_update.taskId
+        end
     end
     if type(remote) == 'string' and not task.remote_id then
         task.remote_id = remote
+    end
+    local context = result_node.contextId
+    if context == nil then
+        if payload_task then
+            context = payload_task.contextId
+        elseif status_update then
+            context = status_update.contextId
+        end
+    end
+    if type(context) == 'string' and not task.context_id then
+        task.context_id = context
     end
 
     if task.on_event then
         task.on_event(task, event)
     end
-    if TERMINAL[task.state] then
+    if TERMINAL_STATES[task.state] then
         finish_task(task, task.state, nil)
     end
 end
@@ -217,7 +303,7 @@ end
 local function dispatch_request(task, card, alive)
     local streaming = card.capabilities and card.capabilities.streaming
     if streaming == true then
-        local handle = client.message_stream(card, task.message, function(event)
+        local handle = client.message_stream(card, task.message, {}, function(event)
             if alive() then
                 on_stream_event(task, event)
             end
@@ -226,16 +312,16 @@ local function dispatch_request(task, card, alive)
                 if ok then
                     -- Stream closed without a terminal state: treat a
                     -- task that was making progress as done.
-                    finish_task(task, 'completed', nil)
+                    finish_task(task, S.completed, nil)
                 else
-                    finish_task(task, 'failed', err)
+                    finish_task(task, S.failed, err)
                 end
             end
         end)
         if handle then
             task.handle = handle
         else
-            finish_task(task, 'failed', 'stream failed to start')
+            finish_task(task, S.failed, 'stream failed to start')
         end
     else
         client.message_send(card, task.message, {}, function(ok, result, err)
@@ -243,28 +329,42 @@ local function dispatch_request(task, card, alive)
                 return
             end
             if not ok then
-                finish_task(task, 'failed', err)
+                finish_task(task, S.failed, err)
                 return
             end
+            -- v1.0 SendMessageResponse carries one of result.task /
+            -- result.message; legacy servers return the Task itself.
+            local response_task = nil
             if type(result) == 'table' then
-                local rid = result.taskId or result.id
+                if type(result.task) == 'table' then
+                    response_task = result.task
+                else
+                    response_task = result
+                end
+            end
+            if type(response_task) == 'table' then
+                local rid = response_task.id
                 if type(rid) == 'string' then
                     task.remote_id = rid
                 end
-                local status = result.status
+                local ctx = response_task.contextId
+                if type(ctx) == 'string' then
+                    task.context_id = ctx
+                end
+                local status = response_task.status
                 local state_ok = type(status) == 'table' and type(status.state) == 'string'
                 if state_ok then
                     set_state(task, status.state)
                 end
-                if type(result.artifacts) == 'table' then
-                    for _, artifact in ipairs(result.artifacts) do
+                if type(response_task.artifacts) == 'table' then
+                    for _, artifact in ipairs(response_task.artifacts) do
                         if #task.artifacts < MAX_ARTIFACTS_PER_TASK then
                             task.artifacts[#task.artifacts + 1] = artifact
                         end
                     end
                 end
             end
-            finish_task(task, 'completed', nil)
+            finish_task(task, S.completed, nil)
         end)
     end
 end
@@ -272,17 +372,17 @@ end
 start_task = function(task, card)
     task.started = true
     running = running + 1
-    set_state(task, 'working')
+    set_state(task, S.working)
     local gen = task.generation
 
     local function alive()
         local current = tasks[task.id]
-        return current ~= nil and current.generation == gen and not TERMINAL[current.state]
+        return current ~= nil and current.generation == gen and not TERMINAL_STATES[current.state]
     end
 
     local timer = uv.new_timer()
     if not timer then
-        finish_task(task, 'failed', 'uv timer unavailable')
+        finish_task(task, S.failed, 'uv timer unavailable')
         return
     end
     task.timer = timer
@@ -301,7 +401,7 @@ end
 evict_finished = function()
     local finished_ids = {}
     for id, task in pairs(tasks) do
-        if TERMINAL[task.state] then
+        if TERMINAL_STATES[task.state] then
             finished_ids[#finished_ids + 1] = id
         end
     end
@@ -334,7 +434,7 @@ function M.submit(opts)
         id = id,
         agent = card.name,
         card = card,
-        state = 'submitted',
+        state = S.submitted,
         message = opts.message,
         events = {},
         artifacts = {},
@@ -361,7 +461,7 @@ end
 ---@return boolean True when a live task was canceled.
 function M.cancel(id, reason)
     local task = tasks[id]
-    if not task or TERMINAL[task.state] then
+    if not task or TERMINAL_STATES[task.state] then
         return false
     end
     task.generation = task.generation + 1
@@ -373,16 +473,16 @@ function M.cancel(id, reason)
     end
     -- Best-effort remote cancel; the local state moves on regardless.
     if task.remote_id then
-        client.task_cancel(task.card, task.remote_id, function() end)
+        client.task_cancel(task.card, task.remote_id, {}, function() end)
     end
-    finish_task(task, 'canceled', reason or 'canceled')
+    finish_task(task, S.canceled, reason or 'canceled')
     return true
 end
 
 function M.cancel_all()
     local ids = {}
     for id, task in pairs(tasks) do
-        if not TERMINAL[task.state] then
+        if not TERMINAL_STATES[task.state] then
             ids[#ids + 1] = id
         end
     end

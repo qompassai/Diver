@@ -16,6 +16,8 @@ local tasks = require('ai.a2a.tasks')
 
 local M = {}
 
+local S = tasks.states
+
 local FANOUT_MAX_SPECS = 32
 local FANOUT_TIMEOUT_MS = 600000
 
@@ -85,7 +87,7 @@ function M.run(specs, opts, on_done)
                 settled = settled + 1
                 results[i] = {
                     agent = task.agent,
-                    ok = task.state == 'completed',
+                    ok = task.state == S.completed,
                     state = task.state,
                     artifacts = task.artifacts,
                     error = task.error,
@@ -100,7 +102,7 @@ function M.run(specs, opts, on_done)
             results[i] = {
                 agent = type(spec.agent) == 'string' and spec.agent or '?',
                 ok = false,
-                state = 'failed',
+                state = S.failed,
                 artifacts = {},
                 error = err,
             }

@@ -21,15 +21,25 @@ local FETCH_TIMEOUT_MS = 10000
 ---@field id string
 ---@field name string
 ---@field description? string
+---@field tags? string[]
+
+---@class A2aAgentInterface
+---@field url string Endpoint URL.
+---@field protocolBinding? string One of JSONRPC, GRPC, HTTP+JSON.
+---@field tenant? string Opaque routing id; echoed in request `tenant`.
+---@field protocolVersion? string e.g. '1.0'.
 
 ---@class A2aAgentCard
 ---@field name string
----@field url? string POST endpoint (v0.3 card)
----@field supportedInterfaces? table v1.0 interfaces; first JSONRPC entry preferred
+---@field description? string Required by the v1.0 spec.
+---@field url? string Legacy v0.3 POST endpoint.
+---@field supportedInterfaces? A2aAgentInterface[] v1.0 interfaces; first entry preferred.
 ---@field version string
----@field description? string
----@field capabilities? { streaming?: boolean, pushNotifications?: boolean }
+---@field capabilities? { streaming?: boolean, pushNotifications?: boolean, extensions?: table[] }
+---@field defaultInputModes? string[]
+---@field defaultOutputModes? string[]
 ---@field skills? A2aAgentSkill[]
+---@field signatures? table[] JWS signatures (RFC 7515); shape unchanged v0.3 -> v1.0.
 
 ---@type table<string, A2aAgentCard>
 local directory = {}
@@ -43,8 +53,10 @@ function M.validate(card)
     if type(card.name) ~= 'string' or card.name == '' then
         return false, 'card.name must be a nonempty string'
     end
-    -- v0.3 cards carry card.url; v1.0 cards carry
-    -- card.supportedInterfaces[]. card_endpoint accepts either.
+    -- Legacy v0.3 cards carry card.url; v1.0 cards carry
+    -- card.supportedInterfaces[]. client.interface picks the JSONRPC
+    -- entry (preferring protocolVersion '1.0'); card_endpoint resolves
+    -- either to a URL.
     local _, url_err = client.card_endpoint(card)
     if url_err then
         return false, 'card endpoint: ' .. tostring(url_err)
