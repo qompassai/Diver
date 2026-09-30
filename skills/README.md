@@ -463,50 +463,50 @@ reference resolves · bundled scripts pass syntax checks
 ### General skills
 
 <details>
-<summary style="font-size: 1.2em; font-weight: bold; padding: 12px; background: #667eea; color: white; border-radius: 8px; cursor: pointer; margin: 8px 0;"><strong>mcp-builder</strong> <em>(incoming — draft, not yet validated)</em></summary>
+<summary style="font-size: 1.2em; font-weight: bold; padding: 12px; background: #667eea; color: white; border-radius: 8px; cursor: pointer; margin: 8px 0;"><strong>mcp-builder</strong></summary>
 <blockquote style="font-size: 1em; line-height: 1.7; padding: 20px; background: #f8f9fa; border-left: 6px solid #667eea; border-radius: 8px; margin: 12px 0;">
-<ul><li><code>skills/mcp-builder/SKILL.md</code> (draft at <code>~/workspace/skill-drafts/mcp-builder/</code>)</li></ul>
+<ul><li><code>skills/mcp-builder/SKILL.md</code></li></ul>
 <p>Build and harden MCP servers and clients for the Neovim-first stack: phlow's MCP server (Python now, Rust nightly port), the rose.nvim Lua stdio client, new servers in Rust/TypeScript/Python. Protocol-first against the current spec; adversarial security review as a first-class phase (RCE via tool args, command injection, credential leakage, prompt injection in tool output, zombie processes, supply-chain poisoning). 50/50 validation/adversarial tests.</p>
 <p><strong>license:</strong> Apache-2.0 ·
 <strong>allowed-tools:</strong> Read Edit Bash ·
 <strong>metadata:</strong> spec_target=2025-11-25, primary_sdk=rmcp 3.x, test_split=50/50</p>
-<p>Status: draft under review — validation pending.</p>
+<p>Validated: skills-ref ✓ · skill-validator ✓ (0 errors)</p>
 </blockquote>
 </details>
 
 <details>
-<summary style="font-size: 1.2em; font-weight: bold; padding: 12px; background: #667eea; color: white; border-radius: 8px; cursor: pointer; margin: 8px 0;"><strong>skill-creator</strong> <em>(incoming — draft, not yet validated)</em></summary>
+<summary style="font-size: 1.2em; font-weight: bold; padding: 12px; background: #667eea; color: white; border-radius: 8px; cursor: pointer; margin: 8px 0;"><strong>skill-creator</strong></summary>
 <blockquote style="font-size: 1em; line-height: 1.7; padding: 20px; background: #f8f9fa; border-left: 6px solid #667eea; border-radius: 8px; margin: 12px 0;">
-<ul><li><code>skills/skill-creator/SKILL.md</code> (draft at <code>~/workspace/skill-drafts/skill-creator/</code>)</li></ul>
+<ul><li><code>skills/skill-creator/SKILL.md</code></li></ul>
 <p>The workflow for creating, modifying, and improving Agent Skills in this setup: capture intent → interview → draft against the spec → both validators (zero warnings) → adversarial testing → description tuning → live-first install → versioned mirror. This README's conventions live here in executable form.</p>
 <p><strong>license:</strong> Apache-2.0 ·
 <strong>allowed-tools:</strong> Read Edit Bash ·
 <strong>metadata:</strong> domain=agent-skills, spec=https://agentskills.io/specification</p>
-<p>Status: draft under review — validation pending.</p>
+<p>Validated: skills-ref ✓ · skill-validator ✓ (0 errors)</p>
 </blockquote>
 </details>
 
 <details>
-<summary style="font-size: 1.2em; font-weight: bold; padding: 12px; background: #667eea; color: white; border-radius: 8px; cursor: pointer; margin: 8px 0;"><strong>frontend-design</strong> <em>(incoming — draft, not yet validated)</em></summary>
+<summary style="font-size: 1.2em; font-weight: bold; padding: 12px; background: #667eea; color: white; border-radius: 8px; cursor: pointer; margin: 8px 0;"><strong>frontend-design</strong></summary>
 <blockquote style="font-size: 1em; line-height: 1.7; padding: 20px; background: #f8f9fa; border-left: 6px solid #667eea; border-radius: 8px; margin: 12px 0;">
-<ul><li><code>skills/frontend-design/SKILL.md</code> (draft at <code>~/workspace/skill-drafts/frontend-design/</code>)</li></ul>
+<ul><li><code>skills/frontend-design/SKILL.md</code></li></ul>
 <p>Distinctive visual design for HTML report briefs, review packs, and rose.nvim UI surfaces — the artifacts read on a phone. Replaces templated AI-slop defaults with deliberate, opinionated palette/typography/layout choices; phone-first, self-contained offline single-file HTML, dark-mode sensibility.</p>
 <p><strong>license:</strong> Apache-2.0 ·
 <strong>allowed-tools:</strong> Read Edit Bash ·
 <strong>metadata:</strong> domain=visual-design, surfaces=html-artifacts/rose-nvim-ui, audience=phone-review</p>
-<p>Status: draft under review — validation pending.</p>
+<p>Validated: skills-ref ✓ · skill-validator ✓ (0 errors)</p>
 </blockquote>
 </details>
 
 <details>
-<summary style="font-size: 1.2em; font-weight: bold; padding: 12px; background: #667eea; color: white; border-radius: 8px; cursor: pointer; margin: 8px 0;"><strong>internal-comms</strong> <em>(incoming — draft, not yet validated)</em></summary>
+<summary style="font-size: 1.2em; font-weight: bold; padding: 12px; background: #667eea; color: white; border-radius: 8px; cursor: pointer; margin: 8px 0;"><strong>internal-comms</strong></summary>
 <blockquote style="font-size: 1em; line-height: 1.7; padding: 20px; background: #f8f9fa; border-left: 6px solid #667eea; border-radius: 8px; margin: 12px 0;">
-<ul><li><code>skills/internal-comms/SKILL.md</code> (draft at <code>~/workspace/skill-drafts/internal-comms/</code>)</li></ul>
+<ul><li><code>skills/internal-comms/SKILL.md</code></li></ul>
 <p>Qompass AI communications in Matt's plain, evidence-based voice: 3P updates, project status reports, incident reports, program briefs, FAQs. Gathers evidence from Gmail, Calendar, repo state, and memory before drafting; every claim attributed, no invented numbers.</p>
 <p><strong>license:</strong> Apache-2.0 ·
 <strong>allowed-tools:</strong> Read Edit Bash ·
 <strong>metadata:</strong> domain=communications, org=Qompass AI, formats=3p-updates/status-report/incident-report/…</p>
-<p>Status: draft under review — validation pending.</p>
+<p>Validated: skills-ref ✓ · skill-validator ✓ (0 errors)</p>
 </blockquote>
 </details>
 
@@ -517,74 +517,142 @@ live tree at `~/.config/nvim/skills/<name>/`, mirrored to Diver under
 `skills/<name>/` and to `~/.local/share/nvim/skills/<name>/`.
 
 <details>
-<summary style="font-size: 1.2em; font-weight: bold; padding: 12px; background: #667eea; color: white; border-radius: 8px; cursor: pointer; margin: 8px 0;"><strong>diver-busted-spec</strong> <em>(incoming — draft, not yet validated)</em></summary>
+<summary style="font-size: 1.2em; font-weight: bold; padding: 12px; background: #667eea; color: white; border-radius: 8px; cursor: pointer; margin: 8px 0;"><strong>diver-busted-spec</strong></summary>
 <blockquote style="font-size: 1em; line-height: 1.7; padding: 20px; background: #f8f9fa; border-left: 6px solid #667eea; border-radius: 8px; margin: 12px 0;">
-<ul><li><code>skills/diver-busted-spec/SKILL.md</code> (draft at <code>~/workspace/skill-drafts/nvim-mined/diver-busted-spec/</code>)</li></ul>
+<ul><li><code>skills/diver-busted-spec/SKILL.md</code></li></ul>
 <p>Write headless busted unit specs for diver Lua modules with the mandated half-validation / half-adversarial split — spec headers stating coverage and the run command, the shared <code>_G.vim</code> stub helper (never a file-local vim global), and the <code>.busted</code> task set including order-dependence shuffling.</p>
 <p><strong>license:</strong> Apache-2.0 ·
 <strong>allowed-tools:</strong> Read Edit Bash ·
 <strong>metadata:</strong> domain=testing, area=tests/busted, runner=busted</p>
-<p>Status: draft under review — validation pending.</p>
+<p>Validated: skills-ref ✓ · skill-validator ✓ (0 errors)</p>
 </blockquote>
 </details>
 
 <details>
-<summary style="font-size: 1.2em; font-weight: bold; padding: 12px; background: #667eea; color: white; border-radius: 8px; cursor: pointer; margin: 8px 0;"><strong>diver-dap-adapter</strong> <em>(incoming — draft, not yet validated)</em></summary>
+<summary style="font-size: 1.2em; font-weight: bold; padding: 12px; background: #667eea; color: white; border-radius: 8px; cursor: pointer; margin: 8px 0;"><strong>diver-dap-adapter</strong></summary>
 <blockquote style="font-size: 1em; line-height: 1.7; padding: 20px; background: #f8f9fa; border-left: 6px solid #667eea; border-radius: 8px; margin: 12px 0;">
-<ul><li><code>skills/diver-dap-adapter/SKILL.md</code> (draft at <code>~/workspace/skill-drafts/nvim-mined/diver-dap-adapter/</code>)</li></ul>
+<ul><li><code>skills/diver-dap-adapter/SKILL.md</code></li></ul>
 <p>Wire a new native DAP debug adapter into diver: vet the candidate package against its own upstream source under the adapter-verdicts protocol, implement the DebugModule contract in <code>lua/dap/</code>, register it in the MODULES catalog, and promote it through the readiness registry from discovered to validated.</p>
 <p><strong>license:</strong> Apache-2.0 ·
 <strong>allowed-tools:</strong> Read Edit Bash ·
 <strong>metadata:</strong> domain=debugging, area=lua/dap, registry=lua/dap/init.lua</p>
-<p>Status: draft under review — validation pending.</p>
+<p>Validated: skills-ref ✓ · skill-validator ✓ (0 errors)</p>
 </blockquote>
 </details>
 
 <details>
-<summary style="font-size: 1.2em; font-weight: bold; padding: 12px; background: #667eea; color: white; border-radius: 8px; cursor: pointer; margin: 8px 0;"><strong>diver-formatter-adapter</strong> <em>(incoming — draft, not yet validated)</em></summary>
+<summary style="font-size: 1.2em; font-weight: bold; padding: 12px; background: #667eea; color: white; border-radius: 8px; cursor: pointer; margin: 8px 0;"><strong>diver-formatter-adapter</strong></summary>
 <blockquote style="font-size: 1em; line-height: 1.7; padding: 20px; background: #f8f9fa; border-left: 6px solid #667eea; border-radius: 8px; margin: 12px 0;">
-<ul><li><code>skills/diver-formatter-adapter/SKILL.md</code> (draft at <code>~/workspace/skill-drafts/nvim-mined/diver-formatter-adapter/</code>)</li></ul>
+<ul><li><code>skills/diver-formatter-adapter/SKILL.md</code></li></ul>
 <p>Teach a new external formatter to diver: verify its real CLI flags against upstream docs, choose the stdin-vs-tempfile I/O mode, write the adapter in <code>lua/formatters/</code> with an ELI5 header per flag, and register it — never a one-off BufWritePre autocmd.</p>
 <p><strong>license:</strong> Apache-2.0 ·
 <strong>allowed-tools:</strong> Read Edit Bash ·
 <strong>metadata:</strong> domain=formatters, area=lua/formatters, registry=lua/formatters/init.lua</p>
-<p>Status: draft under review — validation pending.</p>
+<p>Validated: skills-ref ✓ · skill-validator ✓ (0 errors)</p>
 </blockquote>
 </details>
 
 <details>
-<summary style="font-size: 1.2em; font-weight: bold; padding: 12px; background: #667eea; color: white; border-radius: 8px; cursor: pointer; margin: 8px 0;"><strong>diver-health-module</strong> <em>(incoming — draft, not yet validated)</em></summary>
+<summary style="font-size: 1.2em; font-weight: bold; padding: 12px; background: #667eea; color: white; border-radius: 8px; cursor: pointer; margin: 8px 0;"><strong>diver-health-module</strong></summary>
 <blockquote style="font-size: 1em; line-height: 1.7; padding: 20px; background: #f8f9fa; border-left: 6px solid #667eea; border-radius: 8px; margin: 12px 0;">
-<ul><li><code>skills/diver-health-module/SKILL.md</code> (draft at <code>~/workspace/skill-drafts/nvim-mined/diver-health-module/</code>)</li></ul>
+<ul><li><code>skills/diver-health-module/SKILL.md</code></li></ul>
 <p>Author a <code>:checkhealth</code> health module for a diver subsystem: probe its external executables, introspect its registry nil-safely, and report ok/warn/error through vim.health with the concrete consequence on every warning.</p>
 <p><strong>license:</strong> Apache-2.0 ·
 <strong>allowed-tools:</strong> Read Edit Bash ·
 <strong>metadata:</strong> domain=diagnostics, area=lua/&lt;domain&gt;/health.lua, interface=vim.health</p>
-<p>Status: draft under review — validation pending.</p>
+<p>Validated: skills-ref ✓ · skill-validator ✓ (0 errors)</p>
 </blockquote>
 </details>
 
 <details>
-<summary style="font-size: 1.2em; font-weight: bold; padding: 12px; background: #667eea; color: white; border-radius: 8px; cursor: pointer; margin: 8px 0;"><strong>diver-linter-adapter</strong> <em>(incoming — draft, not yet validated)</em></summary>
+<summary style="font-size: 1.2em; font-weight: bold; padding: 12px; background: #667eea; color: white; border-radius: 8px; cursor: pointer; margin: 8px 0;"><strong>diver-linter-adapter</strong></summary>
 <blockquote style="font-size: 1em; line-height: 1.7; padding: 20px; background: #f8f9fa; border-left: 6px solid #667eea; border-radius: 8px; margin: 12px 0;">
-<ul><li><code>skills/diver-linter-adapter/SKILL.md</code> (draft at <code>~/workspace/skill-drafts/nvim-mined/diver-linter-adapter/</code>)</li></ul>
+<ul><li><code>skills/diver-linter-adapter/SKILL.md</code></li></ul>
 <p>Wire a new native linter into diver (no nvim-lint): pick the tool's machine-parseable output mode from upstream docs, defensive line parsing with explicit bounds, source-stamped diagnostics for virtual-text attribution, the self-contained-config decision, registration with the orphan check, and the LintValidate gates.</p>
 <p><strong>license:</strong> Apache-2.0 ·
 <strong>allowed-tools:</strong> Read Edit Bash ·
 <strong>metadata:</strong> domain=linters, area=lua/linters, registry=lua/linters/init.lua</p>
-<p>Status: draft under review — validation pending.</p>
+<p>Validated: skills-ref ✓ · skill-validator ✓ (0 errors)</p>
 </blockquote>
 </details>
 
 <details>
-<summary style="font-size: 1.2em; font-weight: bold; padding: 12px; background: #667eea; color: white; border-radius: 8px; cursor: pointer; margin: 8px 0;"><strong>diver-scip-indexer</strong> <em>(incoming — draft, not yet validated)</em></summary>
+<summary style="font-size: 1.2em; font-weight: bold; padding: 12px; background: #667eea; color: white; border-radius: 8px; cursor: pointer; margin: 8px 0;"><strong>diver-scip-indexer</strong></summary>
 <blockquote style="font-size: 1em; line-height: 1.7; padding: 20px; background: #f8f9fa; border-left: 6px solid #667eea; border-radius: 8px; margin: 12px 0;">
-<ul><li><code>skills/diver-scip-indexer/SKILL.md</code> (draft at <code>~/workspace/skill-drafts/nvim-mined/diver-scip-indexer/</code>)</li></ul>
+<ul><li><code>skills/diver-scip-indexer/SKILL.md</code></li></ul>
 <p>Register a new SCIP code-intelligence indexer in diver: verify the install method against primary sources (sourcegraph→scip-code org move, npm-not-pip for scip-python), write the ScipIndexer module, register it in config and the README inventory, and prove it with ScipHealth plus a real index.scip on a fixture project.</p>
 <p><strong>license:</strong> Apache-2.0 ·
 <strong>allowed-tools:</strong> Read Edit Bash ·
 <strong>metadata:</strong> domain=code-intelligence, area=lua/dev/scip, registry=lua/dev/scip/config.lua</p>
-<p>Status: draft under review — validation pending.</p>
+<p>Validated: skills-ref ✓ · skill-validator ✓ (0 errors)</p>
+</blockquote>
+</details>
+
+### Dotfiles-mined skills
+
+Mined from Matt's dotfiles' recurring workflows (system administration,
+desktop session, incident response, PQC networking). Installed in the live
+tree at `~/.config/nvim/skills/<name>/`, mirrored to Diver under
+`skills/<name>/` and to `$XDG_DATA_HOME/skills/<name>/` (also tracked in the
+Dotfiles repo at `.local/share/skills/<name>/`).
+
+<details>
+<summary style="font-size: 1.2em; font-weight: bold; padding: 12px; background: #667eea; color: white; border-radius: 8px; cursor: pointer; margin: 8px 0;"><strong>arch-provision</strong></summary>
+<blockquote style="font-size: 1em; line-height: 1.7; padding: 20px; background: #f8f9fa; border-left: 6px solid #667eea; border-radius: 8px; margin: 12px 0;">
+<ul><li><code>skills/arch-provision/SKILL.md</code></li></ul>
+<p>Provisions a fresh Arch Linux machine end-to-end: full system update, bootstraps the AUR helper, configures snapper BTRFS snapshots, enables multilib, installs the display manager and KDE Plasma, installs the NVIDIA driver, applies the curated package list from packages.yml across pacman/yay/flatpak/npm, and finishes with a reboot prompt. Never run the update-ritual logic here — that is a separate skill.</p>
+<p><strong>license:</strong> Apache-2.0 ·
+<strong>allowed-tools:</strong> Read Edit Bash ·
+<strong>metadata:</strong> managers=pacman/yay/paru/flatpak/npm, package_list=packages.yml, prereq_fs=btrfs, source_repo=dotfiles/arch</p>
+<p>Validated: skills-ref ✓ · skill-validator ✓ (0 errors)</p>
+</blockquote>
+</details>
+
+<details>
+<summary style="font-size: 1.2em; font-weight: bold; padding: 12px; background: #667eea; color: white; border-radius: 8px; cursor: pointer; margin: 8px 0;"><strong>arch-system-update</strong></summary>
+<blockquote style="font-size: 1em; line-height: 1.7; padding: 20px; background: #f8f9fa; border-left: 6px solid #667eea; border-radius: 8px; margin: 12px 0;">
+<ul><li><code>skills/arch-system-update/SKILL.md</code></li></ul>
+<p>Matt's full Arch Linux system update ritual: snapper pre/post BTRFS snapshots (pre-snapshot failure is a hard stop), pacman repo refresh and system upgrade, AUR updates via paru, flatpak updates, conditional bun/dotnet/uv tool upgrades, orphan removal, snapshot pruning to the newest 100, and a reboot prompt when the kernel changed. Ordered and gated — never reorder or skip past a failed step.</p>
+<p><strong>license:</strong> Apache-2.0 ·
+<strong>allowed-tools:</strong> Read Edit Bash ·
+<strong>metadata:</strong> managers=pacman/paru/flatpak/bun/dotnet/uv, snapshot_tool=snapper, prune_keep=100, source=dotfiles/arch/scripts/update.sh</p>
+<p>Validated: skills-ref ✓ · skill-validator ✓ (0 errors)</p>
+</blockquote>
+</details>
+
+<details>
+<summary style="font-size: 1.2em; font-weight: bold; padding: 12px; background: #667eea; color: white; border-radius: 8px; cursor: pointer; margin: 8px 0;"><strong>aur-malware-scan</strong></summary>
+<blockquote style="font-size: 1em; line-height: 1.7; padding: 20px; background: #f8f9fa; border-left: 6px solid #667eea; border-radius: 8px; margin: 12px 0;">
+<ul><li><code>skills/aur-malware-scan/SKILL.md</code></li></ul>
+<p>Incident-response scan for the June 2026 atomic-lockfile AUR supply-chain attack (1600+ compromised packages shipping an infostealer + eBPF rootkit). Uses Matt's local copy of the lenucksi/aur-malware-check detection toolkit (aur_check-v2.sh or the Python 3.14+ stdlib port): quick-triage one-liner, date-windowed scan, bun/npm cache checks, cross-campaign --all-time sweep, and live list refresh from the Arch HedgeDoc. Infected verdict means rotating all credentials.</p>
+<p><strong>license:</strong> Apache-2.0 ·
+<strong>allowed-tools:</strong> Read Edit Bash ·
+<strong>metadata:</strong> campaign=atomic-lockfile-2026-06, tool_dir=~/.GH/aur-malware-check, payload=infostealer+ebpf-rootkit</p>
+<p>Validated: skills-ref ✓ · skill-validator ✓ (0 errors)</p>
+</blockquote>
+</details>
+
+<details>
+<summary style="font-size: 1.2em; font-weight: bold; padding: 12px; background: #667eea; color: white; border-radius: 8px; cursor: pointer; margin: 8px 0;"><strong>hyprland-session</strong></summary>
+<blockquote style="font-size: 1em; line-height: 1.7; padding: 20px; background: #f8f9fa; border-left: 6px solid #667eea; border-radius: 8px; margin: 12px 0;">
+<ul><li><code>skills/hyprland-session/SKILL.md</code></li></ul>
+<p>Hyprland session operations on Matt's workstation: wake monitors after sleep (DP-1 2560x1440@143.97, DP-2 1920x1080@59.94), reload Hyprland with the quickshell bar (reload without restarting the bar leaves it dead), toggle tile/free layout mode, and diagnose compositor state. monitors.conf is nwg-displays-generated — never hand-edit it.</p>
+<p><strong>license:</strong> Apache-2.0 ·
+<strong>allowed-tools:</strong> Read Edit Bash ·
+<strong>metadata:</strong> app=hyprland, compositor=/usr/bin/hyprctl, bar=quickshell/noctalia-shell, monitors=DP-1/DP-2</p>
+<p>Validated: skills-ref ✓ · skill-validator ✓ (0 errors)</p>
+</blockquote>
+</details>
+
+<details>
+<summary style="font-size: 1.2em; font-weight: bold; padding: 12px; background: #667eea; color: white; border-radius: 8px; cursor: pointer; margin: 8px 0;"><strong>rosenpass-pqc-vpn</strong></summary>
+<blockquote style="font-size: 1em; line-height: 1.7; padding: 20px; background: #f8f9fa; border-left: 6px solid #667eea; border-radius: 8px; margin: 12px 0;">
+<ul><li><code>skills/rosenpass-pqc-vpn/SKILL.md</code></li></ul>
+<p>Post-quantum-secure WireGuard tunnel setup with Rosenpass. Adds a post-quantum key exchange in front of WireGuard so a future quantum computer cannot retroactively break recorded handshakes (harvest-now-decrypt-later). Covers installing rosenpass and wireguard-tools, generating the keypair with <code>rosenpass gen-keys</code>, writing the TOML config with [[peers]] entries, feeding the exchanged PSK into <code>wg set</code>, and running the daemon with <code>rosenpass exchange-config</code>. Never commit secret keys.</p>
+<p><strong>license:</strong> Apache-2.0 ·
+<strong>allowed-tools:</strong> Read Edit Bash ·
+<strong>metadata:</strong> pqc_kex=rosenpass, vpn=wireguard, keygen=rosenpass gen-keys, daemon=rosenpass exchange-config</p>
+<p>Validated: skills-ref ✓ · skill-validator ✓ (0 errors)</p>
 </blockquote>
 </details>
 
