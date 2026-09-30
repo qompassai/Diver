@@ -656,6 +656,30 @@ Dotfiles repo at `.local/share/skills/<name>/`).
 </blockquote>
 </details>
 
+<details>
+<summary style="font-size: 1.2em; font-weight: bold; padding: 12px; background: #667eea; color: white; border-radius: 8px; cursor: pointer; margin: 8px 0;"><strong>apex-dev</strong></summary>
+<blockquote style="font-size: 1em; line-height: 1.7; padding: 20px; background: #f8f9fa; border-left: 6px solid #667eea; border-radius: 8px; margin: 12px 0;">
+<ul><li><code>skills/apex-dev/SKILL.md</code></li></ul>
+<p>Salesforce Apex development in Matt's Neovim using his Diver config's real toolchain: the Apex language server (java + apex-jorje-lsp.jar via lsp/apex_ls.lua, with embedded SOQL completion and in-LSP formatting disabled by design), the apexfmt BufWritePost hook, Salesforce Code Analyzer v5 + lightning-flow-scanner linters through the <code>sf</code> CLI, Apex DAP replay + interactive debug adapters (lua/dap/apex.lua), anonymous Apex execution and test runs through <code>sf apex</code>, SOQL via <code>sf data query</code>, and deploy/retrieve through <code>sf project</code>. Missing pieces (LSP jar, apexfmt, SOQL server, DAP JS adapters) are marked as setup steps, never as working tooling.</p>
+<p><strong>license:</strong> Apache-2.0 ·
+<strong>allowed-tools:</strong> Read Edit Bash ·
+<strong>metadata:</strong> app=salesforce-apex, lsp_config=lsp/apex_ls.lua, launcher=apex.jorje.lsp.ApexLanguageServerLauncher, dap=lua/dap/apex.lua (replay+interactive), cli=sf 2.150.6-1</p>
+<p>Validated: skills-ref ✓ · skill-validator ✓ (0 errors)</p>
+</blockquote>
+</details>
+
+<details>
+<summary style="font-size: 1.2em; font-weight: bold; padding: 12px; background: #667eea; color: white; border-radius: 8px; cursor: pointer; margin: 8px 0;"><strong>salesforce-trailblazer</strong></summary>
+<blockquote style="font-size: 1em; line-height: 1.7; padding: 20px; background: #f8f9fa; border-left: 6px solid #667eea; border-radius: 8px; margin: 12px 0;">
+<ul><li><code>skills/salesforce-trailblazer/SKILL.md</code></li></ul>
+<p>Work through Salesforce Trailblazer modules asynchronously with an AI agent, on top of Diver's bounded, disk-persisted Trailhead job queue (lua/dev/sf/trailhead.lua: 128 jobs max, 4 active, 256 steps/job, 15-min step timeout). Enqueue a module as a job (kinds: trailmix, quest, study, shell, note), break Trailhead units into steps, attach shell steps that run <code>sf</code> CLI commands against a scratch org for hands-on challenges, checkpoint progress, persist state across restarts, and report via :SfTrailheadDone/:SfTrailheadFail. Hard boundary: Trailhead exposes no public completion API, so browser-side completion is manual or delegated — the skill never promises automatic badge detection.</p>
+<p><strong>license:</strong> Apache-2.0 ·
+<strong>allowed-tools:</strong> Read Edit Bash ·
+<strong>metadata:</strong> app=trailhead, diver_module=lua/dev/sf/trailhead.lua, job_kinds=trailmix/quest/study/shell/note, cli=sf 2.150.6-1, no_completion_api=true</p>
+<p>Validated: skills-ref ✓ · skill-validator ✓ (0 errors)</p>
+</blockquote>
+</details>
+
 <!-- APPEND NEW SKILL DROPDOWNS BELOW THIS LINE -->
 
 ## Adding a new skill
