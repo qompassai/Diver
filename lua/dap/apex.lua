@@ -995,16 +995,20 @@ function M.setup(opts)
     local node_path = executable_path('node')
 
     if node_path == nil then
-        vim.schedule(function()
-            notify('Node.js is required to launch Salesforce Apex debug adapters', levels.ERROR)
-        end)
+        -- Defer the nag: surfaced by Session.spawn when a session starts.
+        -- Missing adapter scripts are reported per session by the launch gate.
+        local message = 'Node.js is required to launch Salesforce Apex debug adapters'
+        M.adapters['apex-replay'].missing_message = message
+        M.adapters.apex.missing_message = message
 
         return
     end
 
     M.adapters['apex-replay'].command = node_path
+    M.adapters['apex-replay'].missing_message = nil
 
     M.adapters.apex.command = node_path
+    M.adapters.apex.missing_message = nil
 
     local replay = replay_adapter()
 
@@ -1020,36 +1024,6 @@ function M.setup(opts)
         M.adapters.apex.args = {
             interactive,
         }
-    end
-
-    if replay == nil then
-        vim.schedule(function()
-            notify(
-                table.concat({
-                    'Apex Replay adapter was not found.',
-                    '',
-                    'Set one of:',
-                    '  NVIM_APEX_REPLAY_ADAPTER=/path/to/apexReplayDebug.js',
-                    '  NVIM_SALESFORCE_DAP_ROOT=/path/to/salesforcedx-vscode',
-                }, '\n'),
-                levels.WARN
-            )
-        end)
-    end
-
-    if interactive == nil then
-        vim.schedule(function()
-            notify(
-                table.concat({
-                    'Apex Interactive adapter was not found.',
-                    '',
-                    'Set one of:',
-                    '  NVIM_APEX_INTERACTIVE_ADAPTER=/path/to/apexDebug.js',
-                    '  NVIM_SALESFORCE_DAP_ROOT=/path/to/salesforcedx-vscode',
-                }, '\n'),
-                levels.WARN
-            )
-        end)
     end
 end
 

@@ -1545,40 +1545,20 @@ local function resolve_debugger_commands()
     return lldb, gdb_path
 end
 
-local function warn_missing_roots()
-    if resolve_uproject() == nil then
-        vim.schedule(function()
-            notify('current workspace is not an Unreal project', levels.DEBUG)
-        end)
-    end
-
-    if resolve_engine_root() == nil then
-        vim.schedule(function()
-            notify(
-                table.concat({
-                    'Unreal Engine installation was not found.',
-                    '',
-                    'Set one of:',
-                    '  NVIM_UNREAL_ENGINE_ROOT=/path/to/UnrealEngine',
-                    '  UNREAL_ENGINE_ROOT=/path/to/UnrealEngine',
-                    '  UE_ENGINE_ROOT=/path/to/UnrealEngine',
-                    '  UE_ROOT=/path/to/UnrealEngine',
-                }, '\n'),
-                levels.WARN
-            )
-        end)
-    end
-end
-
 ---@param lldb string?
 ---@param gdb_path string?
 local function select_default_adapter(lldb, gdb_path)
     local gdb_dap_available = gdb_path ~= nil and gdb_supports_dap()
 
+    M.adapters['unreal-lldb'].missing_message = nil
+    M.adapters['unreal-gdb'].missing_message = nil
+
     if lldb == nil and not gdb_dap_available then
-        vim.schedule(function()
-            notify('neither lldb-dap nor GDB DAP is available', levels.ERROR)
-        end)
+        -- Defer the nag: surfaced by Session.spawn when a session starts.
+        local message = 'neither lldb-dap nor GDB DAP is available'
+
+        M.adapters['unreal-lldb'].missing_message = message
+        M.adapters['unreal-gdb'].missing_message = message
     elseif lldb == nil then
         state.adapter = 'gdb'
     elseif state.adapter == 'gdb' and not gdb_dap_available then
@@ -1600,8 +1580,9 @@ function M.setup(opts)
 
     local lldb, gdb_path = resolve_debugger_commands()
 
-    warn_missing_roots()
-
+    -- Workspace diagnostics (not an Unreal project / engine root missing)
+    -- are reported at session start by editor_program and by the on-demand
+    -- commands, so no setup nag.
     select_default_adapter(lldb, gdb_path)
 end
 

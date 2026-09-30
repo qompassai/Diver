@@ -1360,20 +1360,8 @@ local function check_jdtls_client()
     local client = jdtls_client()
 
     if client == nil then
-        vim.schedule(function()
-            notify(
-                table.concat({
-                    'Eclipse JDT LS is not currently attached.',
-
-                    '',
-
-                    'Java DAP definitions were registered, but debugging',
-                    'requires the JDTLS client for this workspace.',
-                }, '\n'),
-                levels.DEBUG
-            )
-        end)
-
+        -- No setup nag: resolve_debug_client reports a missing JDTLS client
+        -- at session start, and the on-demand check command covers the rest.
         return nil
     end
 

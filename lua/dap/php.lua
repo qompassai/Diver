@@ -422,20 +422,18 @@ function M.setup(opts)
     local js = find_adapter_js()
 
     if node == nil or js == nil then
-        vim.schedule(function()
-            notify(
-                table.concat({
-                    'php-debug adapter is not fully configured.',
-                    '',
-                    'Need: node on PATH and the vscode-php-debug phpDebug.js.',
-                    'Set NVIM_PHP_DEBUG_JS=/path/to/phpDebug.js to point at it.',
-                }, '\n'),
-                levels.WARN
-            )
-        end)
+        -- Defer the nag: surfaced by Session.spawn when a session starts.
+        M.adapter.missing_message = table.concat({
+            'php-debug adapter is not fully configured.',
+            '',
+            'Need: node on PATH and the vscode-php-debug phpDebug.js.',
+            'Set NVIM_PHP_DEBUG_JS=/path/to/phpDebug.js to point at it.',
+        }, '\n')
 
         return
     end
+
+    M.adapter.missing_message = nil
 
     --
     -- Keep the adapter synchronized with discovery.

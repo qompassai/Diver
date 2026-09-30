@@ -1024,19 +1024,8 @@ function M.setup(opts)
         state_rdbg = normalize(fn.expand(opts.rdbg))
     end
 
-    if find_rdbg() == nil then
-        vim.schedule(function()
-            notify(
-                table.concat({
-                    'rdbg was not found.',
-                    '',
-                    'Install with: gem install debug',
-                    'Or set: NVIM_RDBG_PATH=/path/to/rdbg',
-                }, '\n'),
-                levels.WARN
-            )
-        end)
-    end
+    -- rdbg is resolved per session by enrich_config, which reports a
+    -- missing adapter then, so no setup nag.
 end
 
 ---@return string?

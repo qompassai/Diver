@@ -652,21 +652,9 @@ function M.setup(opts)
         end
     end
 
-    local adapter = M.gdb_adapter()
-
-    if adapter == nil then
-        vim.schedule(function()
-            notify(
-                table.concat({
-                    'dap.gdb foundation is unavailable.',
-                    '',
-                    'Cortex-Debug firmware configurations need the gdb',
-                    'foundation (GDB 14+ with native DAP).',
-                }, '\n'),
-                levels.WARN
-            )
-        end)
-    end
+    -- The dap.gdb foundation is resolved per session by the gdb module,
+    -- which reports a missing or unsuitable gdb at session start; on-demand
+    -- health (:CortexDebugCheck) covers the rest, so no setup nag.
 end
 
 ---@return string?

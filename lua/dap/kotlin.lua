@@ -529,8 +529,9 @@ local function java_exec_args()
 end
 
 M.adapter = {
-    -- Declarative placeholder: M.setup() resolves the real path and warns
-    -- when the adapter is absent; no PATH probing happens at require time.
+    -- Declarative placeholder: M.setup() resolves the real path and records
+    -- a deferred warning when the adapter is absent; no PATH probing happens
+    -- at require time, and nothing is notified until a session starts.
     command = 'kotlin-debug-adapter',
 
     name = ADAPTER_NAME,
@@ -675,13 +676,12 @@ function M.setup(_opts)
     local adapter = kotlin_debug_adapter()
 
     if adapter == nil then
-        notify('kotlin-debug-adapter is not available', levels.WARN)
+        -- Defer the nag: surfaced by Session.spawn when a session starts.
+        -- The java runtime is validated per session by the build steps.
+        M.adapter.missing_message = NOTIFY_PREFIX .. 'kotlin-debug-adapter is not available'
     else
         M.adapter.command = adapter
-    end
-
-    if java() == nil then
-        notify('java is not available', levels.WARN)
+        M.adapter.missing_message = nil
     end
 end
 

@@ -980,46 +980,24 @@ function M.setup(opts)
 
     state.root = nonempty_string(opts.root) and fs.normalize(opts.root) or project_root()
 
-    local mojo = resolve_mojo()
     local lldb = resolve_lldb_dap()
 
     if lldb ~= nil then
         M.adapter.command = lldb
-    end
-
-    if mojo == nil then
-        vim.schedule(function()
-            notify(
-                table.concat({
-                    'Mojo executable was not found.',
-                    '',
-                    'Resolution order:',
-                    '  NVIM_MOJO_EXECUTABLE',
-                    '  project .venv/bin/mojo',
-                    '  project .pixi/envs/*/bin/mojo',
-                    '  project venv/bin/mojo',
-                    '  PATH mojo',
-                }, '\n'),
-                levels.WARN
-            )
-        end)
-    end
-
-    if lldb == nil then
-        vim.schedule(function()
-            notify(
-                table.concat({
-                    'lldb-dap was not found.',
-                    '',
-                    'Native DAP debugging of precompiled Mojo binaries',
-                    'requires LLVM lldb-dap.',
-                    '',
-                    'Set:',
-                    '  NVIM_MOJO_LLDB_DAP=/path/to/lldb-dap',
-                }, '\n'),
-                levels.WARN
-            )
-        end)
+        M.adapter.missing_message = nil
+    else
+        -- Defer the nag: surfaced by Session.spawn when a session starts.
+        -- The mojo executable itself is resolved per session and reports
+        -- at session time, so it needs no eager check here.
+        M.adapter.missing_message = table.concat({
+            '[' .. SOURCE .. '] lldb-dap was not found.',
+            '',
+            'Native DAP debugging of precompiled Mojo binaries',
+            'requires LLVM lldb-dap.',
+            '',
+            'Set:',
+            '  NVIM_MOJO_LLDB_DAP=/path/to/lldb-dap',
+        }, '\n')
     end
 end
 

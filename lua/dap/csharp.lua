@@ -995,39 +995,20 @@ function M.setup(opts)
 
     local debugger = resolve_netcoredbg()
 
-    local dotnet = resolve_dotnet()
-
     if debugger ~= nil then
         M.adapter.command = debugger
+        M.adapter.missing_message = nil
+    else
+        -- Defer the nag: surfaced by Session.spawn when a session starts.
+        M.adapter.missing_message = table.concat({
+            'NetCoreDbg was not found.',
+            '',
+            'Install `netcoredbg` or set:',
+            '  NVIM_NETCOREDBG=/path/to/netcoredbg',
+        }, '\n')
     end
-
-    if debugger == nil then
-        vim.schedule(function()
-            notify(
-                table.concat({
-                    'NetCoreDbg was not found.',
-                    '',
-                    'Install `netcoredbg` or set:',
-                    '  NVIM_NETCOREDBG=/path/to/netcoredbg',
-                }, '\n'),
-                levels.ERROR
-            )
-        end)
-    end
-
-    if dotnet == nil then
-        vim.schedule(function()
-            notify(
-                table.concat({
-                    '.NET SDK/runtime was not found.',
-                    '',
-                    'Install `dotnet` or set:',
-                    '  NVIM_DOTNET_EXECUTABLE=/path/to/dotnet',
-                }, '\n'),
-                levels.WARN
-            )
-        end)
-    end
+    -- dotnet is resolved again by build_project for each session; the build
+    -- step reports a missing SDK then, so no setup nag.
 end
 
 ---@return string?

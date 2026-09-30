@@ -230,6 +230,9 @@ local DAP_QUICKFIX_CONTEXT = DAP_QUICKFIX_TITLE
 ---@field command string
 ---@field args string[]
 ---@field options nil|dap.ExecutableAdapter.options
+---@field missing_message? string message shown once when a session starts but
+---  the adapter command is not executable; recorded by the language module
+---  during setup() so startup and filetype activation stay silent.
 
 ---@class dap.ExecutableAdapter.options : dap.Adapter.options
 ---@field env nil|table<string, string>
@@ -258,6 +261,9 @@ local DAP_QUICKFIX_CONTEXT = DAP_QUICKFIX_TITLE
 
 ---@class dap.ServerAdapterExecutable
 ---@field command string
+---@field missing_message? string message shown once when a session starts but
+---  the server executable is not available; recorded by the language module
+---  during setup() so startup and filetype activation stay silent
 ---@field args nil|string[]
 ---@field cwd nil|string
 ---@field detached nil|boolean

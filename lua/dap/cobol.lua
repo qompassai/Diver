@@ -435,21 +435,19 @@ function M.setup(opts)
         state.cobc = normalize(fn.expand(opts.cobc))
     end
 
-    if find_cobc() == nil then
-        vim.schedule(function()
-            notify(
-                'cobc was not found; install GnuCOBOL or set NVIM_COBC_PATH',
-                levels.WARN
-            )
-        end)
-    end
-
+    -- cobc is resolved again when compiling for a debug session; the
+    -- compile step reports a missing compiler then, so no setup nag.
     local gdb = gdb_foundation()
 
     if gdb ~= nil and type(gdb.dap_supported) == 'function' and not gdb.dap_supported() then
-        vim.schedule(function()
-            notify('gdb 14+ is required for COBOL debugging via native DAP', levels.WARN)
-        end)
+        -- Defer the nag: surfaced by Session.spawn when a session starts.
+        -- The command is cleared so the precheck blocks the spawn with this
+        -- message instead of launching an unsuitable gdb.
+        M.adapter.missing_message = 'gdb 14+ is required for COBOL debugging via native DAP'
+        M.adapter.command = nil
+    else
+        M.adapter.command = 'gdb'
+        M.adapter.missing_message = nil
     end
 end
 

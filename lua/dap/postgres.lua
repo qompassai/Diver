@@ -915,48 +915,28 @@ function M.setup(opts)
 
     if adapter ~= nil then
         M.adapter.command = adapter
+        M.adapter.missing_message = nil
+    else
+        -- Defer the nag: surfaced by Session.spawn when a session starts.
+        M.adapter.missing_message = table.concat({
+            'No PostgreSQL DAP bridge was found.',
+
+            '',
+
+            'pldbgapi itself is not a DAP server.',
+
+            'For vim.debug sessions, install a compatible `pgdap`',
+            'bridge or set:',
+
+            '  NVIM_PGDAP_EXECUTABLE=/path/to/pgdap',
+
+            '',
+
+            'psql/pldbgapi health and discovery commands remain usable.',
+        }, '\n')
     end
-
-    if resolve_psql() == nil then
-        vim.schedule(function()
-            notify(
-                table.concat({
-                    'psql was not found.',
-
-                    '',
-
-                    'Install the PostgreSQL client or set:',
-
-                    '  NVIM_PSQL_EXECUTABLE=/path/to/psql',
-                }, '\n'),
-                levels.WARN
-            )
-        end)
-    end
-
-    if adapter == nil then
-        vim.schedule(function()
-            notify(
-                table.concat({
-                    'No PostgreSQL DAP bridge was found.',
-
-                    '',
-
-                    'pldbgapi itself is not a DAP server.',
-
-                    'For vim.debug sessions, install a compatible `pgdap`',
-                    'bridge or set:',
-
-                    '  NVIM_PGDAP_EXECUTABLE=/path/to/pgdap',
-
-                    '',
-
-                    'psql/pldbgapi health and discovery commands remain usable.',
-                }, '\n'),
-                levels.DEBUG
-            )
-        end)
-    end
+    -- psql is resolved again by every psql-backed command; those report a
+    -- missing client then, so no setup nag.
 end
 
 ---@return string?

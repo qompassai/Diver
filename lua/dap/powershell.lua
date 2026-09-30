@@ -923,35 +923,27 @@ function M.setup(opts)
     end
 
     if pwsh == nil then
-        vim.schedule(function()
-            notify(
-                table.concat({
-                    'PowerShell 7+ was not found.',
-                    '',
-                    'Install `pwsh` or set:',
-                    '  NVIM_PWSH_EXECUTABLE=/path/to/pwsh',
-                }, '\n'),
-                levels.ERROR
-            )
-        end)
-    end
-
-    if bundle == nil then
-        vim.schedule(function()
-            notify(
-                table.concat({
-                    'PowerShell Editor Services was not found.',
-                    '',
-                    'Set either:',
-                    '  NVIM_PSES_BUNDLE=/path/to/PSES',
-                    '  POWERSHELL_EDITOR_SERVICES_PATH=/path/to/PSES',
-                    '',
-                    'The directory must contain:',
-                    '  PowerShellEditorServices/Start-EditorServices.ps1',
-                }, '\n'),
-                levels.WARN
-            )
-        end)
+        -- Defer the nag: surfaced by Session.spawn when a session starts.
+        M.adapter.missing_message = table.concat({
+            'PowerShell 7+ was not found.',
+            '',
+            'Install `pwsh` or set:',
+            '  NVIM_PWSH_EXECUTABLE=/path/to/pwsh',
+        }, '\n')
+    elseif bundle == nil then
+        -- Defer the nag: the bundle path is baked into the session args.
+        M.adapter.missing_message = table.concat({
+            'PowerShell Editor Services was not found.',
+            '',
+            'Set either:',
+            '  NVIM_PSES_BUNDLE=/path/to/PSES',
+            '  POWERSHELL_EDITOR_SERVICES_PATH=/path/to/PSES',
+            '',
+            'The directory must contain:',
+            '  PowerShellEditorServices/Start-EditorServices.ps1',
+        }, '\n')
+    else
+        M.adapter.missing_message = nil
     end
 end
 

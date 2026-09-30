@@ -860,8 +860,9 @@ local function check_environment()
 end
 
 M.adapter = {
-    -- Declarative placeholder: M.setup() resolves the real path and warns
-    -- when the adapter is absent; no PATH probing happens at require time.
+    -- Declarative placeholder: M.setup() resolves the real path and records
+    -- a deferred warning when the adapter is absent; no PATH probing happens
+    -- at require time, and nothing is notified until a session starts.
     command = 'lua-debug',
     name = ADAPTER_NAME,
     type = 'executable',
@@ -990,17 +991,16 @@ function M.setup()
     if adapter == nil then
         local hint = moonwalk_build_hint()
 
+        -- Defer the nag: recorded on the adapter table, surfaced by
+        -- Session.spawn only when a debug session is actually started.
         if hint ~= nil then
-            notify('lua-debug is not available: ' .. hint, levels.WARN)
+            M.adapter.missing_message = NOTIFY_PREFIX .. 'lua-debug is not available: ' .. hint
         else
-            notify('lua-debug is not available', levels.WARN)
+            M.adapter.missing_message = NOTIFY_PREFIX .. 'lua-debug is not available'
         end
     else
         M.adapter.command = adapter
-    end
-
-    if lua_executable() == nil then
-        notify('Lua interpreter is not available', levels.WARN)
+        M.adapter.missing_message = nil
     end
 end
 function M.teardown()

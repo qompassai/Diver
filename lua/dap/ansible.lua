@@ -758,20 +758,18 @@ function M.setup(opts)
     local path = find_ansibug()
 
     if path == nil then
-        vim.schedule(function()
-            notify(
-                table.concat({
-                    'ansibug was not found.',
-                    '',
-                    'Install with: pipx install ansibug',
-                    'Or set: NVIM_ANSIBUG_PATH=/path/to/ansibug',
-                }, '\n'),
-                levels.WARN
-            )
-        end)
+        -- Defer the nag: surfaced by Session.spawn when a session starts.
+        M.adapter.missing_message = table.concat({
+            'ansibug was not found.',
+            '',
+            'Install with: pipx install ansibug',
+            'Or set: NVIM_ANSIBUG_PATH=/path/to/ansibug',
+        }, '\n')
 
         return
     end
+
+    M.adapter.missing_message = nil
 
     --
     -- Keep the adapter command synchronized with discovery.

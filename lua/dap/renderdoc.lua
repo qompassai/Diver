@@ -744,9 +744,8 @@ function M.setup(opts)
 
     setup_done = true
 
-    if not M.is_available() then
-        notify(RENDERDOCCMD .. ' not found in PATH; RenderDoc commands will report errors', levels.WARN)
-    end
+    -- RenderDoc commands report a missing binary themselves when used,
+    -- so no setup nag.
 end
 
 return M

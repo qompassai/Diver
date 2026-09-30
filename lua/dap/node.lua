@@ -341,6 +341,14 @@ local MISSING_ADAPTER_SENTINEL = '/nonexistent/qompass-js-debug/dapDebugServer.j
 ---@return fun(configuration: table, on_config: fun(config: table))
 local function make_launch_gate(adapter_key)
     return function(configuration, on_config)
+        -- Session-time check: node availability was previously nagged about
+        -- at setup; report it here instead, only when launching.
+        if executable_path('node') == nil then
+            notify('Node.js is required by vscode-js-debug', levels.ERROR)
+
+            return
+        end
+
         local adapter = resolve_adapter()
 
         if adapter == nil then
@@ -1072,29 +1080,12 @@ function M.setup(opts)
     local node_path = executable_path('node')
 
     if node_path == nil then
-        vim.schedule(function()
-            notify('Node.js is required by vscode-js-debug', levels.ERROR)
-        end)
-
         return
     end
 
     local adapter = resolve_adapter()
 
     if adapter == nil then
-        vim.schedule(function()
-            notify(
-                table.concat({
-                    'vscode-js-debug standalone DAP server was not found.',
-                    '',
-                    'Set either:',
-                    '  NVIM_JS_DEBUG_ADAPTER=/path/to/dapDebugServer.js',
-                    '  NVIM_JS_DEBUG_ROOT=/path/to/vscode-js-debug',
-                }, '\n'),
-                levels.WARN
-            )
-        end)
-
         return
     end
 

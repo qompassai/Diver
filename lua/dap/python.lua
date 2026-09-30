@@ -763,17 +763,13 @@ function M.setup(opts)
     local adapter = resolve_adapter_python()
 
     if adapter == nil then
-        vim.schedule(function()
-            notify(
-                table.concat({
-                    'debugpy was not found.',
-                    '',
-                    'Install debugpy into a Python interpreter or set:',
-                    'NVIM_DEBUGPY_PYTHON=/path/to/python',
-                }, '\n'),
-                levels.WARN
-            )
-        end)
+        -- Defer the nag: surfaced by Session.spawn when a session starts.
+        M.adapter.missing_message = table.concat({
+            '[' .. SOURCE .. '] debugpy was not found.',
+            '',
+            'Install debugpy into a Python interpreter or set:',
+            'NVIM_DEBUGPY_PYTHON=/path/to/python',
+        }, '\n')
 
         return
     end
@@ -783,6 +779,7 @@ function M.setup(opts)
     -- synchronized in case setup() discovered a more specific interpreter.
     --
     M.adapter.command = adapter
+    M.adapter.missing_message = nil
 
     local root
 

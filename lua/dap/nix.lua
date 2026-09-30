@@ -839,48 +839,28 @@ function M.setup(opts)
 
     if adapter ~= nil then
         M.adapter.command = adapter
+        M.adapter.missing_message = nil
+    else
+        -- Defer the nag: surfaced by Session.spawn when a session starts.
+        M.adapter.missing_message = table.concat({
+            'DAWN / nix-debug-adapter was not found.',
+
+            '',
+
+            'Set one of:',
+
+            '  NVIM_DAWN_EXECUTABLE=/path/to/nix-debug-adapter',
+
+            '  NVIM_NIX_DAP=/path/to/nix-debug-adapter',
+
+            '',
+
+            'DAWN is currently WIP, so Nix inspection commands',
+            'remain available even if the DAP adapter is absent.',
+        }, '\n')
     end
-
-    if resolve_nix() == nil then
-        vim.schedule(function()
-            notify(
-                table.concat({
-                    'Nix was not found.',
-
-                    '',
-
-                    'Install `nix` or set:',
-
-                    '  NVIM_NIX_EXECUTABLE=/path/to/nix',
-                }, '\n'),
-                levels.WARN
-            )
-        end)
-    end
-
-    if adapter == nil then
-        vim.schedule(function()
-            notify(
-                table.concat({
-                    'DAWN / nix-debug-adapter was not found.',
-
-                    '',
-
-                    'Set one of:',
-
-                    '  NVIM_DAWN_EXECUTABLE=/path/to/nix-debug-adapter',
-
-                    '  NVIM_NIX_DAP=/path/to/nix-debug-adapter',
-
-                    '',
-
-                    'DAWN is currently WIP, so Nix inspection commands',
-                    'remain available even if the DAP adapter is absent.',
-                }, '\n'),
-                levels.DEBUG
-            )
-        end)
-    end
+    -- nix is resolved again whenever a nix command runs; run_nix reports a
+    -- missing executable then, so no setup nag.
 end
 
 ---@return string?

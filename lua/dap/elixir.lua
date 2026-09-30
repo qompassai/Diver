@@ -686,38 +686,32 @@ function M.setup(opts)
 
     if elixir_ls ~= nil then
         M.adapters.elixir_ls.command = elixir_ls
+        M.adapters.elixir_ls.missing_message = nil
     else
-        vim.schedule(function()
-            notify(
-                table.concat({
-                    'ElixirLS debugger was not found.',
-                    '',
-                    'Unzip an ElixirLS release (debug_adapter.sh), install',
-                    'via asdf/mise (bin/elixir-ls-debugger), or set:',
-                    'NVIM_ELIXIR_LS_DEBUGGER_PATH=/path/to/debug_adapter.sh',
-                }, '\n'),
-                levels.WARN
-            )
-        end)
+        -- Defer the nag: surfaced by Session.spawn when a session starts.
+        M.adapters.elixir_ls.missing_message = table.concat({
+            'ElixirLS debugger was not found.',
+            '',
+            'Unzip an ElixirLS release (debug_adapter.sh), install',
+            'via asdf/mise (bin/elixir-ls-debugger), or set:',
+            'NVIM_ELIXIR_LS_DEBUGGER_PATH=/path/to/debug_adapter.sh',
+        }, '\n')
     end
 
     local edb = find_adapter('edb')
 
     if edb ~= nil then
         M.adapters.edb.command = edb
+        M.adapters.edb.missing_message = nil
     else
-        vim.schedule(function()
-            notify(
-                table.concat({
-                    'EDB was not found.',
-                    '',
-                    'Build from source: rebar3 escriptize',
-                    '(_build/default/bin/edb), or set:',
-                    'NVIM_EDB_PATH=/path/to/edb',
-                }, '\n'),
-                levels.WARN
-            )
-        end)
+        -- Defer the nag: surfaced by Session.spawn when a session starts.
+        M.adapters.edb.missing_message = table.concat({
+            'EDB was not found.',
+            '',
+            'Build from source: rebar3 escriptize',
+            '(_build/default/bin/edb), or set:',
+            'NVIM_EDB_PATH=/path/to/edb',
+        }, '\n')
     end
 end
 

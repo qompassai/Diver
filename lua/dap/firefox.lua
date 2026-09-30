@@ -611,28 +611,22 @@ function M.setup(opts)
     M.adapter.command = adapter_command()
 
     if find_adapter() == nil then
-        vim.schedule(function()
-            notify(
-                table.concat({
-                    'firefox-debug-adapter was not found.',
-                    '',
-                    'Install the Mason package:',
-                    '  :MasonInstall firefox-debug-adapter',
-                    'Or set:',
-                    '  NVIM_FIREFOX_DEBUG_ADAPTER_PATH=/path/to/firefox-debug-adapter',
-                }, '\n'),
-                levels.WARN
-            )
-        end)
+        -- Defer the nag: surfaced by Session.spawn when a session starts.
+        M.adapter.missing_message = table.concat({
+            'firefox-debug-adapter was not found.',
+            '',
+            'Install the Mason package:',
+            '  :MasonInstall firefox-debug-adapter',
+            'Or set:',
+            '  NVIM_FIREFOX_DEBUG_ADAPTER_PATH=/path/to/firefox-debug-adapter',
+        }, '\n')
 
         return
     end
 
-    if node_path() == nil then
-        vim.schedule(function()
-            notify('node was not found; firefox-debug-adapter runs on node', levels.WARN)
-        end)
-    end
+    M.adapter.missing_message = nil
+    -- node is resolved again when a session is built; a missing node fails
+    -- the spawn and is reported by :FirefoxDebugCheck, so no setup nag.
 end
 
 ---@return string?

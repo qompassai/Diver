@@ -412,18 +412,14 @@ function M.setup(opts)
     local path = find_ocamlearlybird()
 
     if path == nil then
-        vim.schedule(function()
-            notify(
-                table.concat({
-                    'ocamlearlybird was not found.',
-                    '',
-                    'Install with: opam install earlybird',
-                    'Or: :MasonInstall ocamlearlybird',
-                    'Or set: NVIM_OCAMLEARLYBIRD_PATH=/path/to/ocamlearlybird',
-                }, '\n'),
-                levels.WARN
-            )
-        end)
+        -- Defer the nag: surfaced by Session.spawn when a session starts.
+        M.adapter.missing_message = table.concat({
+            'ocamlearlybird was not found.',
+            '',
+            'Install with: opam install earlybird',
+            'Or: :MasonInstall ocamlearlybird',
+            'Or set: NVIM_OCAMLEARLYBIRD_PATH=/path/to/ocamlearlybird',
+        }, '\n')
 
         return
     end
@@ -432,6 +428,7 @@ function M.setup(opts)
     -- Keep the adapter command synchronized with discovery.
     --
     M.adapter.command = path
+    M.adapter.missing_message = nil
 end
 
 ---@return string?

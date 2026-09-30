@@ -802,19 +802,8 @@ function M.setup(opts)
 
     state.root = nonempty_string(opts.root) and fs.normalize(opts.root) or project_root()
 
-    if metals_client() == nil then
-        vim.schedule(function()
-            notify(
-                table.concat({
-                    'Metals is not currently attached.',
-                    '',
-                    'Scala DAP definitions were registered, but debugging',
-                    'requires the native Metals LSP client to be attached first.',
-                }, '\n'),
-                levels.DEBUG
-            )
-        end)
-    end
+    -- Metals attach state is reported when a Metals command runs
+    -- (metals_command notifies), so no setup nag.
 end
 
 ---@return string

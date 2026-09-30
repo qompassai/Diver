@@ -1894,12 +1894,44 @@ local function connect_with_retry(client, session, adapter, host, max_retries, o
     end
 end
 
+local function adapter_command_available(command, missing_message, adapter_name)
+    if type(command) == 'string' and command ~= '' and vim.fn.executable(command) == 1 then
+        return true
+    end
+
+    local message = missing_message
+
+    if message == nil then
+        message = 'Debug adapter is not available'
+
+        if type(adapter_name) == 'string' and adapter_name ~= '' then
+            message = message .. ' (' .. adapter_name .. ')'
+        end
+    end
+
+    utils.notify(message, vim.log.levels.WARN)
+
+    return false
+end
+
 ---@param adapter dap.ServerAdapter
 ---@param config dap.Configuration
 ---@param opts? table
 ---@param on_connect fun(err?: string)
----@return dap.Session
+---@return dap.Session|nil nil when the server executable is not available
 function Session.connect(adapter, config, opts, on_connect)
+    -- Defer the nag: language modules record a missing server executable
+    -- message during setup(); surface it here, exactly once, when a session
+    -- is actually started instead of at module activation.
+    if adapter.executable then
+        local executable = adapter.executable
+        local message = executable.missing_message or adapter.missing_message
+
+        if not adapter_command_available(executable.command, message, adapter.name) then
+            return nil
+        end
+    end
+
     local client = assert(uv.new_tcp(), 'Must be able to create TCP client')
     local session = new_session(adapter, config, opts or {}, client)
 
@@ -1993,12 +2025,27 @@ local function spawn_close(ctl, cb)
     end
 end
 
+--- Check that an executable adapter's command resolves before spawning.
+---
+--- Language modules defer their "adapter not available" message on the
+--- adapter table (`adapter.missing_message`) during setup(); this surfaces it
+--- exactly once, when a debug session is actually started, instead of nagging
+--- at module activation.
+---@param command string|nil
+---@param missing_message string|nil
+---@param adapter_name string|nil
+---@return boolean
+
 ---@param adapter dap.ExecutableAdapter
 ---@param config dap.Configuration
 ---@param opts table|nil
 ---@return dap.Session?
 function Session.spawn(adapter, config, opts)
     log:debug('Spawning debug adapter', adapter)
+
+    if not adapter_command_available(adapter.command, adapter.missing_message, adapter.name) then
+        return nil
+    end
 
     local pid_or_err
     ---@type dap.session.SpawnCtl

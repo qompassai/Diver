@@ -698,17 +698,13 @@ function M.setup(opts)
     local path = find_lldb_dap()
 
     if path == nil then
-        vim.schedule(function()
-            notify(
-                table.concat({
-                    'lldb-dap was not found.',
-                    '',
-                    'Install LLVM lldb (17+) or set:',
-                    'NVIM_LLDB_DAP=/path/to/lldb-dap',
-                }, '\n'),
-                levels.WARN
-            )
-        end)
+        -- Defer the nag: surfaced by Session.spawn when a session starts.
+        M.adapter.missing_message = table.concat({
+            'lldb-dap was not found.',
+            '',
+            'Install LLVM lldb (17+) or set:',
+            'NVIM_LLDB_DAP=/path/to/lldb-dap',
+        }, '\n')
 
         return
     end
@@ -717,6 +713,7 @@ function M.setup(opts)
     -- Keep the adapter command synchronized with discovery.
     --
     M.adapter.command = path
+    M.adapter.missing_message = nil
     M.adapter.options.env = adapter_env(path)
 end
 

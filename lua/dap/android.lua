@@ -1822,16 +1822,15 @@ M.commands = {
 
 ---@param _opts? table
 function M.setup(_opts)
-    if adb() == nil then
-        notify('adb is not available', levels.WARN)
-    end
-
     local adapter = lldb_dap()
 
     if adapter == nil then
-        notify('lldb-dap is not available', levels.WARN)
+        -- Defer the nag: surfaced by Session.spawn when a session starts.
+        -- adb and device state are validated per session by the transport steps.
+        M.adapter.missing_message = NOTIFY_PREFIX .. 'lldb-dap is not available'
     else
         M.adapter.command = adapter
+        M.adapter.missing_message = nil
     end
 end
 

@@ -719,23 +719,24 @@ function M.setup(opts)
     local dart = find_dart()
 
     if dart == nil then
-        vim.schedule(function()
-            notify(
-                table.concat({
-                    'dart was not found.',
-                    '',
-                    'Install the Dart SDK, or set:',
-                    'NVIM_DART_PATH=/path/to/dart',
-                }, '\n'),
-                levels.WARN
-            )
-        end)
+        -- Defer the nag: surfaced by Session.spawn when a session starts.
+        local message = table.concat({
+            'dart was not found.',
+            '',
+            'Install the Dart SDK, or set:',
+            'NVIM_DART_PATH=/path/to/dart',
+        }, '\n')
+
+        M.adapter.missing_message = message
+        M.adapters['dart-test'].missing_message = message
     else
         --
         -- Keep the adapter commands synchronized with discovery.
         --
         M.adapter.command = dart
+        M.adapter.missing_message = nil
         M.adapters['dart-test'].command = dart
+        M.adapters['dart-test'].missing_message = nil
     end
 
     local flutter = find_flutter()

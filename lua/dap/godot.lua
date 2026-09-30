@@ -622,20 +622,8 @@ function M.setup(opts)
         return state.dap_port or DEFAULT_DAP_PORT
     end
 
-    if find_godot() == nil then
-        vim.schedule(function()
-            notify(
-                table.concat({
-                    'godot binary was not found (only used for version reporting).',
-                    '',
-                    'Debugging still works while the Godot editor is open on',
-                    'this project with Network -> Debug Adapter enabled.',
-                    'Set NVIM_GODOT_PATH=/path/to/godot for version info.',
-                }, '\n'),
-                levels.WARN
-            )
-        end)
-    end
+    -- The godot binary is only used for version reporting; debugging works
+    -- without it, so no setup nag.
 end
 
 ---@return string?

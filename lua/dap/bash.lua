@@ -890,15 +890,15 @@ function M.setup()
     local adapter = adapter_spec()
 
     if adapter == nil then
-        vim.schedule(function()
-            notify('Bash DAP adapter is not available', levels.WARN)
-        end)
+        -- Defer the nag: surfaced by Session.spawn when a session starts.
+        M.adapter.missing_message = NOTIFY_PREFIX .. 'Bash DAP adapter is not available'
 
         return
     end
 
     M.adapter.command = adapter.command
     M.adapter.args = adapter.args
+    M.adapter.missing_message = nil
 end
 
 return M

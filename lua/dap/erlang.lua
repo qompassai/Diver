@@ -589,38 +589,32 @@ function M.setup(opts)
 
     if edb ~= nil then
         M.adapters.edb.command = edb
+        M.adapters.edb.missing_message = nil
     else
-        vim.schedule(function()
-            notify(
-                table.concat({
-                    'EDB was not found.',
-                    '',
-                    'Build from source: rebar3 escriptize',
-                    '(_build/default/bin/edb), or set:',
-                    'NVIM_EDB_PATH=/path/to/edb',
-                }, '\n'),
-                levels.WARN
-            )
-        end)
+        -- Defer the nag: surfaced by Session.spawn when a session starts.
+        M.adapters.edb.missing_message = table.concat({
+            'EDB was not found.',
+            '',
+            'Build from source: rebar3 escriptize',
+            '(_build/default/bin/edb), or set:',
+            'NVIM_EDB_PATH=/path/to/edb',
+        }, '\n')
     end
 
     local els_dap = find_adapter('els_dap')
 
     if els_dap ~= nil then
         M.adapters.els_dap.command = els_dap
+        M.adapters.els_dap.missing_message = nil
     else
-        vim.schedule(function()
-            notify(
-                table.concat({
-                    'els_dap was not found.',
-                    '',
-                    'Build ErlangLS with: rebar3 as dap escriptize',
-                    '(_build/dap/bin/els_dap), or set:',
-                    'NVIM_ELS_DAP_PATH=/path/to/els_dap',
-                }, '\n'),
-                levels.WARN
-            )
-        end)
+        -- Defer the nag: surfaced by Session.spawn when a session starts.
+        M.adapters.els_dap.missing_message = table.concat({
+            'els_dap was not found.',
+            '',
+            'Build ErlangLS with: rebar3 as dap escriptize',
+            '(_build/dap/bin/els_dap), or set:',
+            'NVIM_ELS_DAP_PATH=/path/to/els_dap',
+        }, '\n')
     end
 end
 

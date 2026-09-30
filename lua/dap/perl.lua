@@ -559,17 +559,13 @@ function M.setup(opts)
     end
 
     if find_adapter() == nil then
-        vim.schedule(function()
-            notify(
-                table.concat({
-                    'perl-debug-adapter was not found.',
-                    '',
-                    'Install with: :MasonInstall perl-debug-adapter',
-                    'Or set: NVIM_PERL_DEBUG_ADAPTER_PATH=/path/to/perl-debug-adapter',
-                }, '\n'),
-                levels.WARN
-            )
-        end)
+        -- Defer the nag: surfaced by Session.spawn when a session starts.
+        M.adapter.missing_message = table.concat({
+            'perl-debug-adapter was not found.',
+            '',
+            'Install with: :MasonInstall perl-debug-adapter',
+            'Or set: NVIM_PERL_DEBUG_ADAPTER_PATH=/path/to/perl-debug-adapter',
+        }, '\n')
 
         return
     end
@@ -578,6 +574,7 @@ function M.setup(opts)
     -- Keep the adapter command synchronized with discovery.
     --
     M.adapter.command = state.adapter_path
+    M.adapter.missing_message = nil
 end
 
 ---@return string?

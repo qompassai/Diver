@@ -518,17 +518,15 @@ function M.setup(opts)
     local path = find_probe_rs()
 
     if path == nil then
-        vim.schedule(function()
-            notify(
-                table.concat({
-                    'probe-rs was not found.',
-                    '',
-                    'Install probe-rs, or set:',
-                    'NVIM_PROBE_RS_PATH=/path/to/probe-rs',
-                }, '\n'),
-                levels.WARN
-            )
-        end)
+        -- Defer the nag: surfaced by Session.connect when a session starts.
+        M.adapter.executable.missing_message = table.concat({
+            'probe-rs was not found.',
+            '',
+            'Install probe-rs, or set:',
+            'NVIM_PROBE_RS_PATH=/path/to/probe-rs',
+        }, '\n')
+    else
+        M.adapter.executable.missing_message = nil
     end
 end
 

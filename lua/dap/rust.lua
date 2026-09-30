@@ -587,12 +587,14 @@ function M.setup()
     local adapter = lldb_dap()
 
     if adapter == nil then
-        vim.notify('[debug] lldb-dap is not installed', levels.WARN)
+        -- Defer the nag: surfaced by Session.spawn when a session starts.
+        M.adapter.missing_message = '[debug] lldb-dap is not installed'
 
         return
     end
 
     M.adapter.command = adapter
+    M.adapter.missing_message = nil
 end
 
 return M

@@ -590,28 +590,23 @@ function M.setup(opts)
     local path = find_gdb()
 
     if path == nil then
-        vim.schedule(function()
-            notify(
-                table.concat({
-                    'gdb was not found.',
-                    '',
-                    'Install GDB 14 or newer, or set:',
-                    'NVIM_GDB_PATH=/path/to/gdb',
-                }, '\n'),
-                levels.WARN
-            )
-        end)
+        -- Defer the nag: surfaced by Session.spawn when a session starts.
+        M.adapter.missing_message = table.concat({
+            'gdb was not found.',
+            '',
+            'Install GDB 14 or newer, or set:',
+            'NVIM_GDB_PATH=/path/to/gdb',
+        }, '\n')
 
         return
     end
 
     if not supports_dap(path) then
-        vim.schedule(function()
-            notify(
-                ('gdb at %s is too old for native DAP (need %d+)'):format(path, MIN_MAJOR),
-                levels.WARN
-            )
-        end)
+        -- Defer the nag: the gdb binary exists but is too old for native DAP.
+        -- The command is cleared so the Session.spawn precheck blocks the
+        -- spawn with this message instead of failing the handshake.
+        M.adapter.missing_message = ('gdb at %s is too old for native DAP (need %d+)'):format(path, MIN_MAJOR)
+        M.adapter.command = nil
 
         return
     end
@@ -620,6 +615,7 @@ function M.setup(opts)
     -- Keep the adapter command synchronized with discovery.
     --
     M.adapter.command = path
+    M.adapter.missing_message = nil
 end
 
 ---@return string?

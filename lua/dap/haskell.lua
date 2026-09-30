@@ -842,20 +842,17 @@ function M.setup(opts)
     if probe.adapter ~= nil then
         M.adapter = M.adapters[probe.adapter]
     else
-        vim.schedule(function()
-            notify(
-                table.concat({
-                    'No Haskell debug adapter was found.',
-                    '',
-                    'Install hdb (cabal install haskell-debugger) or',
-                    'haskell-debug-adapter (stack install haskell-debug-adapter),',
-                    'or set NVIM_HDB_PATH / NVIM_HASKELL_DEBUG_ADAPTER_PATH.',
-                    'phoityne also needs ghci-dap and haskell-dap on PATH;',
-                    'hdb needs GHC >= 9.14 on PATH.',
-                }, '\n'),
-                levels.WARN
-            )
-        end)
+        -- Defer the nag: surfaced by Session.spawn when a session starts.
+        -- M.adapter is still the default phoityne executable adapter here.
+        M.adapter.missing_message = table.concat({
+            'No Haskell debug adapter was found.',
+            '',
+            'Install hdb (cabal install haskell-debugger) or',
+            'haskell-debug-adapter (stack install haskell-debug-adapter),',
+            'or set NVIM_HDB_PATH / NVIM_HASKELL_DEBUG_ADAPTER_PATH.',
+            'phoityne also needs ghci-dap and haskell-dap on PATH;',
+            'hdb needs GHC >= 9.14 on PATH.',
+        }, '\n')
     end
 end
 

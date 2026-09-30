@@ -1517,38 +1517,6 @@ function M.setup(opts)
     opts = opts or {}
 
     state.root = nonempty_string(opts.root) and fs.normalize(opts.root) or project_root()
-
-    if resolve_sqlite3() == nil then
-        vim.schedule(function()
-            notify(
-                table.concat({
-                    'sqlite3 was not found.',
-                    '',
-                    'Install SQLite or set:',
-                    '  NVIM_SQLITE_EXECUTABLE=/path/to/sqlite3',
-                }, '\n'),
-                levels.WARN
-            )
-        end)
-    end
-
-    if resolve_lldb_dap() == nil and not gdb_supports_dap() then
-        vim.schedule(function()
-            notify(
-                table.concat({
-                    'No native SQLite debugger is available.',
-                    '',
-                    'SQL inspection remains fully usable.',
-                    'For native SQLite C debugging install either:',
-                    '  lldb-dap',
-                    '  gdb with DAP/Python support',
-                }, '\n'),
-                levels.DEBUG
-            )
-        end)
-    elseif resolve_lldb_dap() == nil then
-        state.adapter = 'gdb'
-    end
 end
 
 ---@return string?

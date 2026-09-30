@@ -1167,39 +1167,21 @@ function M.setup(opts)
     state.root = nonempty_string(opts.root) and fs.normalize(opts.root) or project_root()
 
     local dlv = resolve_dlv()
-    local go = resolve_go()
 
     if dlv ~= nil then
         M.adapter.executable.command = dlv
+        M.adapter.executable.missing_message = nil
+    else
+        -- Defer the nag: surfaced by Session.connect when a session starts.
+        M.adapter.executable.missing_message = table.concat({
+            'Delve was not found.',
+            '',
+            'Install `dlv` or set:',
+            '  NVIM_DLV_EXECUTABLE=/path/to/dlv',
+        }, '\n')
     end
-
-    if go == nil then
-        vim.schedule(function()
-            notify(
-                table.concat({
-                    'Go toolchain was not found.',
-                    '',
-                    'Install Go or set:',
-                    '  NVIM_GO_EXECUTABLE=/path/to/go',
-                }, '\n'),
-                levels.ERROR
-            )
-        end)
-    end
-
-    if dlv == nil then
-        vim.schedule(function()
-            notify(
-                table.concat({
-                    'Delve was not found.',
-                    '',
-                    'Install `dlv` or set:',
-                    '  NVIM_DLV_EXECUTABLE=/path/to/dlv',
-                }, '\n'),
-                levels.ERROR
-            )
-        end)
-    end
+    -- The Go toolchain is only used for version reporting; dlv handles
+    -- debugging on its own, so no setup nag.
 end
 
 ---@return string?
