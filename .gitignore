@@ -4,3 +4,6 @@ diverflake.nix
 # prettier cache
 node_modules/
 /.forge/
+
+# repomap codebase map (generated; never commit)
+.repomap.txt

@@ -1,19 +1,31 @@
 # /qompassai/Diver/flake.nix
 # Qompass AI Diver Flake
 # Copyright (C) 2025 Qompass AI, All rights reserved
-#####################################################
+#
+# Purpose: Reproducible dev shell for the Diver Neovim config.
+# Provides neovim-nightly (via overlay) plus the Lua/Nix tooling the
+# config's gates require: stylua, luacheck, lua-language-server, nil.
+#
+# Contracts:
+#   - Inputs are pinned via flake.lock; never float them here.
+#   - `nix develop` must succeed on x86_64-linux and aarch64-linux.
+#   - The shell does not mutate the repo; it only provides tools.
+#   - Plugin inputs (plugin-*) are non-flake source pins for reference;
+#     they are not built by this flake.
 {
   description = "Qompass AI Diver Flake";
+
   inputs = {
     flake-utils.url = "github:numtide/flake-utils";
     neovim-nightly-overlay.url = "github:nix-community/neovim-nightly-overlay";
     nixpkgs.url = "github:NixOS/nixpkgs/nixos-25.05";
-    rnix-lsp.url = "github:nix-community/rnix-lsp";
-    rnix-lsp.inputs.nixpkgs.follows = "flake-utils";
-    rnix-lsp.inputs.utils.follows = "flake-utils";
     nil.url = "github:oxalica/nil";
     nil.inputs.nixpkgs.follows = "nixpkgs";
     nil.inputs.flake-utils.follows = "flake-utils";
+    repomap.url = "github:qompassai/nix?dir=repomap";
+    rnix-lsp.url = "github:nix-community/rnix-lsp";
+    rnix-lsp.inputs.nixpkgs.follows = "flake-utils";
+    rnix-lsp.inputs.utils.follows = "flake-utils";
     tidalcycles.url = "github:mitchmindtree/tidalcycles.nix";
     tidalcycles.inputs.vim-tidal-src.url = "github:tidalcycles/vim-tidal";
     plugin-ansible-vim.url = "github:pearofducks/ansible-vim";
@@ -144,10 +156,55 @@
     plugin-which-key.flake = false;
   };
 
-  outputs = inputs @ {
-    self,
-    nixpkgs,
-    flake-utils,
-  }:
-    import ./nixos/flake-outputs.nix inputs;
+  outputs =
+    {
+      self,
+      nixpkgs,
+      flake-utils,
+      neovim-nightly-overlay,
+      nil,
+      repomap,
+      ...
+    }:
+    flake-utils.lib.eachDefaultSystem (
+      system:
+      let
+        # Overlay composition is explicit: nightly neovim first, then
+        # nixpkgs. No other overlays; keep the package set auditable.
+        pkgs = import nixpkgs {
+          inherit system;
+          overlays = [ neovim-nightly-overlay.overlays.default ];
+        };
+
+        # Dev tools for the Diver config's gates. Each is used by a
+        # documented check: stylua (format), luacheck (lint),
+        # lua-language-server (diagnostics), nil (Nix LSP).
+        devTools = [
+          pkgs.neovim
+          pkgs.stylua
+          pkgs.luacheck
+          pkgs.lua-language-server
+          nil.packages.${system}.default
+          repomap.packages.${system}.repomap
+        ];
+
+        # Invariant: devTools is non-empty. An empty shell is a
+        # configuration error, not a valid dev environment.
+        _assertTools = assert builtins.length devTools > 0; true;
+      in
+      {
+        devShells.default = pkgs.mkShell {
+          name = "diver-dev";
+          packages = devTools;
+          shellHook =
+            ''
+              echo "Diver dev shell: $(nvim --version | head -1)"
+              echo "Gates: stylua --check ., luacheck ., lua-language-server"
+            ''
+            + repomap.lib.refreshHook {
+              pkg = repomap.packages.${system}.repomap;
+            };
+        };
+      }
+    );
 }
