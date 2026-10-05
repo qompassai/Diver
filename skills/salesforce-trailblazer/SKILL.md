@@ -56,6 +56,15 @@ quiz answers. This skill never claims otherwise. The honest split:
   explicitly approves — which then reports back through
   `:SfTrailheadDone {id} {step} [result]` / `:SfTrailheadFail {id} {step}
   {error}`. The module is designed for exactly this handoff.
+- **Authorized browser agent (proven 2026-10-04):** with the user's
+  explicit authorization, a browser task CAN complete modules as the
+  user: sign in via the user's own takeover for SSO (never ask for or
+  handle their IdP password), work modules in trail order, skip badges
+  already earned (verify each on the page), spin up a Trailhead
+  Playground for hands-on challenges, and report progress every ~5
+  modules. Scope the authorization to the named trail only. This is
+  still not an API — it is a logged-in browser doing what the user
+  asked it to do, and it needs the user's sign-in.
 
 Anything promising automatic badge detection or Trailhead API reads is
 fiction. Scope every plan to the split above.
@@ -91,6 +100,36 @@ The command prints the job id — everything else references it.
 A good module plan mirrors the Trailhead unit list: one step per unit,
 study units as notes, hands-on units as shell steps against the org.
 
+### 2b. Trail-scale: one job for a whole trail (proven 2026-10-04)
+
+For a full trail (e.g. "Become an Agentblazer Champion 2026", 29 modules):
+enqueue ONE `trailmix` job, then add one step per module **in trail order**
+as an *external* step (name only — no argv, no note). External steps wait
+for `:SfTrailheadDone {id} {step} [result]` / `:SfTrailheadFail {id}
+{step} {error}`, which is the honest shape of Trailhead work: the browser
+side (user or authorized browser agent) reports back, the queue advances.
+
+Get the module list from the trail page's embedded JSON-LD: fetch the HTML
+and extract `"@type":"Course"` entries (each has `name`, `url`, and
+`learningResourceType`). Trailhead page text alone omits module titles —
+the JSON-LD is the reliable source.
+
+Pair each module step with a **teaching file**: fetch the module's unit
+pages, study the content, and write a mechanism-level Markdown file
+(plain-language opening → full depth, decision rules, exam gotchas,
+hands-on guidance; never brand it "ELI5") to a per-trail directory such as
+`~/workspace/salesforce-mcp/trailblazer/<trail-slug>/<module-slug>.md`.
+The teaching files are the durable value for certification prep; the queue
+tracks workflow progress, the files carry the knowledge.
+
+**Reconcile before repeating (no API exists):** Trailhead has no public
+completion API, so check the user's public Trailblazer profile
+(`https://www.salesforce.com/trailblazer/<id>`) via the browser — the
+badge grid lists every earned module. Cross-check the trail's module names
+against the badge list, then mark already-earned steps complete with a
+result like "badge already earned <date> (verified on Trailblazer
+profile)". Never redo earned badges.
+
 ### 3. Start and monitor
 
 ```vim
@@ -104,6 +143,9 @@ Steps run in order; a shell step's exit code decides pass/fail. The queue
 is bounded (4 active jobs, 256 steps/job, 15-minute step timeout) so a
 stuck org command can't hang the session forever. Job state is written
 to disk, so `:SfTrailheadResume {id}` picks up after a restart.
+(Durability fixes 2026-10-04: `step_done` now persists after advancing,
+and the load path preserves terminal step states — completed work
+survives restarts. Verified: 8/29 steps intact across a fresh nvim.)
 
 ### 4. Verify hands-on challenges
 
