@@ -90,6 +90,14 @@ local function render_servers()
     if #view.rows == 0 then
         lines[#lines + 1] = '(no servers registered; use :McpAdd or :McpInstall)'
     end
+    local problems = registry.declared_problems()
+    if #problems > 0 then
+        lines[#lines + 1] = ''
+        lines[#lines + 1] = 'Declaration problems (declared_servers.lua):'
+        for _, problem in ipairs(problems) do
+            lines[#lines + 1] = string.format('  [%d] %s', problem.index, problem.err)
+        end
+    end
     redraw(view.buf, lines)
 end
 
