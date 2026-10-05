@@ -11,6 +11,8 @@
 
 local M = {}
 
+local secrets = require('ai.mcp.secrets')
+
 local REGISTRY_SUBDIR = 'ai/mcp'
 local REGISTRY_FILENAME = 'servers.json'
 local FILE_SIZE_BYTES_MAX = 256 * 1024
@@ -28,6 +30,10 @@ local ENV_VALUE_LENGTH_MAX = 8192
 ---@field env table<string, string>? Extra environment variables for the server.
 ---@field cwd string? Working directory for the server process.
 ---@field enabled boolean Whether the server may be started.
+---@field secrets table<string, McpSecretRef>? Secret refs; values are resolved
+---at spawn time and never persisted as values.
+---@field declared boolean? In-memory only; true for entries loaded from
+---declared_servers.lua. Never persisted to servers.json.
 
 ---@class McpValidateOpts
 ---@field require_executable boolean? Default true. Load-time validation
@@ -77,6 +83,14 @@ function M.risk_flags(entry)
         if type(arg) == 'string' and arg:match('^https?://') then
             flags[#flags + 1] = 'argv contains a remote URL: ' .. arg:sub(1, 80)
             break
+        end
+    end
+    if type(entry.secrets) == 'table' then
+        for _, ref in pairs(entry.secrets) do
+            if type(ref) == 'table' and ref.provider == 'command' then
+                flags[#flags + 1] = 'a secret is resolved via subprocess; inspect the argv'
+                break
+            end
         end
     end
     return flags
@@ -149,6 +163,10 @@ function M.validate(entry, opts)
     if type(entry.enabled) ~= 'boolean' then
         return false, 'enabled must be a boolean'
     end
+    local secrets_ok, secrets_err = secrets.validate_refs(entry.secrets)
+    if not secrets_ok then
+        return false, secrets_err
+    end
     return true, nil
 end
 
@@ -175,6 +193,7 @@ local function entry_from_decoded(raw)
         env = raw.env ~= nil and vim.deepcopy(raw.env) or nil,
         cwd = raw.cwd,
         enabled = raw.enabled,
+        secrets = raw.secrets ~= nil and vim.deepcopy(raw.secrets) or nil,
     }
 end
 
@@ -287,6 +306,7 @@ function M.add(entry)
         env = entry.env ~= nil and vim.deepcopy(entry.env) or nil,
         cwd = entry.cwd,
         enabled = entry.enabled,
+        secrets = entry.secrets ~= nil and vim.deepcopy(entry.secrets) or nil,
     }
     return save()
 end
@@ -297,10 +317,27 @@ end
 function M.remove(name)
     load()
     if type(name) ~= 'string' or servers[name] == nil then
+        if type(name) == 'string' and declared_by_name(name) ~= nil then
+            return false, 'server is declared in declared_servers.lua; edit the file instead'
+        end
         return false, 'unknown server: ' .. tostring(name)
     end
     servers[name] = nil
     return save()
+end
+
+---@param name string
+---@return McpServerEntry? in-memory only, never persisted
+local function declared_by_name(name)
+    -- Lazy require: declared.lua requires this module at its top level.
+    local declared = require('ai.mcp.declared')
+    local active = declared.load()
+    for _, entry in ipairs(active) do
+        if entry.name == name then
+            return entry
+        end
+    end
+    return nil
 end
 
 ---@param name string
@@ -311,6 +348,9 @@ local function set_enabled(name, enabled)
     load()
     local entry = servers[name]
     if type(name) ~= 'string' or entry == nil then
+        if type(name) == 'string' and declared_by_name(name) ~= nil then
+            return false, 'server is declared in declared_servers.lua; edit the file instead'
+        end
         return false, 'unknown server: ' .. tostring(name)
     end
     entry.enabled = enabled
@@ -336,25 +376,51 @@ end
 function M.get(name)
     load()
     local entry = servers[name]
-    if entry == nil then
-        return nil
+    if entry ~= nil then
+        return vim.deepcopy(entry)
     end
-    return vim.deepcopy(entry)
+    -- Persisted entries win; declarations fill the gaps.
+    local declared_entry = declared_by_name(name)
+    if declared_entry ~= nil then
+        return vim.deepcopy(declared_entry)
+    end
+    return nil
 end
 
 ---@return McpServerEntry[] entries sorted by name
 function M.list()
     load()
+    local merged = {}
+    local seen = {}
+    -- Declared entries first; a persisted entry with the same name wins.
+    local declared = require('ai.mcp.declared')
+    for _, entry in ipairs(declared.load()) do
+        if servers[entry.name] == nil and not seen[entry.name] then
+            seen[entry.name] = true
+            merged[#merged + 1] = vim.deepcopy(entry)
+        end
+    end
     local names = {}
     for name in pairs(servers) do
         names[#names + 1] = name
     end
     table.sort(names)
-    local list = {}
     for _, name in ipairs(names) do
-        list[#list + 1] = vim.deepcopy(servers[name])
+        merged[#merged + 1] = vim.deepcopy(servers[name])
     end
-    return list
+    -- Deterministic order across both sources.
+    table.sort(merged, function(a, b)
+        return a.name < b.name
+    end)
+    return merged
+end
+
+---@return McpDeclaredProblem[] problems from the last declaration load
+---(corrupt file, invalid entries, duplicates). Empty when clean.
+function M.declared_problems()
+    local declared = require('ai.mcp.declared')
+    local _, problems = declared.load()
+    return problems
 end
 
 return M

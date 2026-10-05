@@ -17,6 +17,7 @@
 -- in this module either way.
 
 local registry = require('ai.mcp.registry')
+local secrets = require('ai.mcp.secrets')
 
 local M = {}
 
@@ -275,10 +276,28 @@ end
 local function spawn_native(session, name, argv, entry)
     local proc_holder = { proc = nil } ---@type { proc: vim.SystemObj? }
     session.backend = native_backend(session, proc_holder)
-    local env_list = nil ---@type string[]?
+    -- Merge static env with secrets resolved at spawn time. Resolved values
+    -- live only in this table and the child environment; they are never
+    -- persisted or logged.
+    local merged_env = {} ---@type table<string, string>
     if entry.env ~= nil then
-        env_list = {}
         for key, value in pairs(entry.env) do
+            merged_env[key] = value
+        end
+    end
+    if entry.secrets ~= nil then
+        local resolved, resolve_err = secrets.resolve(entry)
+        if resolved == nil then
+            return false, resolve_err
+        end
+        for key, value in pairs(resolved) do
+            merged_env[key] = value
+        end
+    end
+    local env_list = nil ---@type string[]?
+    if next(merged_env) ~= nil then
+        env_list = {}
+        for key, value in pairs(merged_env) do
             env_list[#env_list + 1] = key .. '=' .. value
         end
         table.sort(env_list)
