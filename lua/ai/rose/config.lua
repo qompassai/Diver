@@ -185,6 +185,37 @@ local function mcp_defaults(workspace)
                 'hover',
             },
         },
+        -- Salesforce DX, read-only: SOQL queries, org listing, username
+        -- resolution via the official @salesforce/mcp server (version
+        -- pinned; npx fetches it on first run). The org comes from
+        -- SALESFORCE_MCP_ORG so other machines can override it; the
+        -- fallback is the operator's own connected DE org. Write tools
+        -- (deploy_metadata, resume_tool_operation) are installed by the
+        -- toolsets but deliberately absent from allowtools, so Rose can
+        -- never call them. Vetted 2026-10-05: 6 tools listed, no
+        -- prompt-injection findings (4 cross-tool vocabulary correlations,
+        -- all benign shared domain words).
+        salesforce_dx = {
+            cmd = {
+                'npx',
+                '-y',
+                '@salesforce/mcp@0.30.15',
+                '-o',
+                vim.env.SALESFORCE_MCP_ORG or 'agentforce-de',
+                '--toolsets',
+                'core',
+                'data',
+                'orgs',
+            },
+            trusted = true,
+            readonly = true,
+            timeout = 60000,
+            allowtools = {
+                'get_username',
+                'list_all_orgs',
+                'run_soql_query',
+            },
+        },
     }
 end
 

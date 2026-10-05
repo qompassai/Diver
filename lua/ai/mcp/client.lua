@@ -332,7 +332,9 @@ end
 local function run_handshake(session, name, on_ready)
     local params = {
         protocolVersion = MCP_PROTOCOL_VERSION,
-        capabilities = {},
+        -- vim.empty_dict: an empty Lua table encodes as [], which strict
+        -- MCP servers reject for the required capabilities object.
+        capabilities = vim.empty_dict(),
         clientInfo = { name = 'diver-mcp', version = '0.1.0' },
     }
     local payload = { jsonrpc = '2.0', method = 'initialize', params = params }
@@ -348,7 +350,7 @@ local function run_handshake(session, name, on_ready)
         end
         local backend = session.backend
         assert(backend ~= nil, 'session lost its backend during handshake')
-        backend.notify({ jsonrpc = '2.0', method = 'notifications/initialized', params = {} })
+        backend.notify({ jsonrpc = '2.0', method = 'notifications/initialized', params = vim.empty_dict() })
         session.ready = true
         on_ready(nil)
     end)
@@ -435,6 +437,11 @@ function M.request(name, method, params, callback, timeout_ms)
     if session == nil or not session.ready then
         callback('server is not running: ' .. name, nil)
         return
+    end
+    -- An empty Lua table encodes as []; strict MCP servers require params
+    -- to be an object and silently drop the request otherwise.
+    if type(params) == 'table' and next(params) == nil then
+        params = vim.empty_dict()
     end
     send_request(session, {
         jsonrpc = '2.0',

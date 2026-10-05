@@ -4,7 +4,7 @@
 -- ----------------------------------------
 -- Third-party executable trust is distinct from workspace edit trust: a
 -- server is callable only when its config carries trusted=true AND
--- read_only=true, and only for tools named in its allow_tools list.
+-- readonly=true, and only for tools named in its allowtools list.
 
 local M = { clients = {} }
 
@@ -40,17 +40,19 @@ function M.call(server_name, tool_name, args, callback)
         end)
         return token
     end
-    if type(config) ~= 'table' or config.trusted ~= true or config.read_only ~= true then
-        return reject('MCP server requires explicit trusted=true and read_only=true configuration')
+    -- Field names match the validated schema in ai.rose.config (readonly,
+    -- allowtools): the gate must read what validate_mcp() enforces.
+    if type(config) ~= 'table' or config.trusted ~= true or config.readonly ~= true then
+        return reject('MCP server requires explicit trusted=true and readonly=true configuration')
     end
     local allowed = false
-    for _, name in ipairs(config.allow_tools or {}) do
+    for _, name in ipairs(config.allowtools or {}) do
         if name == tool_name then
             allowed = true
         end
     end
     if not allowed then
-        return reject('MCP tool is not in server allow_tools')
+        return reject('MCP tool is not in server allowtools')
     end
     local function invoke(err, client)
         if cancelled then
