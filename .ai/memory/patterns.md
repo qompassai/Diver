@@ -28,12 +28,10 @@ project dir first so the server picks up the project root.
 
 ## Repomap (codebase map for agents)
 
-One-shot generation (no flake wiring in this repo):
+One-shot generation with bloch (`~/.cargo/bin/bloch`):
 
 ```
-nix run github:qompassai/nix?dir=repomap -- /path/to/repo --budget 15000 --out .repomap.txt
+bloch /home/phaedrus/.GH/Qompass/Diver --budget 15000 --out .repomap.txt
 ```
 
 `.repomap.txt` is a derived artifact — gitignore it, never commit it.
-For automatic regeneration on `nix develop`, wire the flake input per
-github.com/qompassai/nix/tree/main/repomap/README.md.
