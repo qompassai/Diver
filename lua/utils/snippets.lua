@@ -18,10 +18,27 @@ M.snippets = {
         ["for"] = "for ${1:x} in ${2:items}:\n\t$0",
         ["class"] = "class ${1:Name}:\n\tdef __init__(self$2):\n\t\t$0",
     },
+    rust = {
+        ["rpcshim"] = "use std::io::Write;\nuse std::os::unix::net::UnixStream;\n\n// Minimal Neovim msgpack-RPC client. Cargo.toml: rmp = \"1\", rmpv = \"1\", anyhow = \"1\"\n// Connect: nvim --headless --listen /tmp/nvim.sock\n\nfn rpc_call(stream: &mut UnixStream, msgid: u32, method: &str, params: rmpv::Value) -> anyhow::Result<rmpv::Value> {\n    let mut buf = Vec::new();\n    // request = [0, msgid, method, params]\n    rmp::encode::write_array_len(&mut buf, 4)?;\n    rmp::encode::write_u32(&mut buf, 0)?;\n    rmp::encode::write_u32(&mut buf, msgid)?;\n    rmp::encode::write_str(&mut buf, method)?;\n    rmpv::encode::write_value(&mut buf, &params)?;\n    stream.write_all(&buf)?;\n    // response = [1, msgid, error, result]\n    Ok(rmpv::decode::read_value(&mut stream.try_clone()?)?)\n}\n\nfn main() -> anyhow::Result<()> {\n    let sock = std::env::args().nth(1).unwrap_or_else(|| \"/tmp/nvim.sock\".into());\n    let mut stream = UnixStream::connect(&sock)?;\n    let resp = rpc_call(&mut stream, 1, \"${1:nvim_get_api_info}\", rmpv::Value::Array(vec![]))?;\n    println!(\"{resp:?}\");\n    $0\n    Ok(())\n}",
+    },
     javascript = {
         ["func"] = "function ${1:name}(${2:args}) {\n\t$0\n}",
         ["if"] = "if ($1) {\n\t$0\n}",
         ["for"] = "for (let ${1:i} = 0; $1 < ${2:n}; $1++) {\n\t$0\n}",
+    },
+    wgsl = {
+        ["frag"] = "@fragment\nfn ${1:fragment}(in: ${2:VertexOutput}) -> @location(0) vec4<f32> {\n\t$0\n}",
+        ["vert"] = "@vertex\nfn ${1:vertex}(in: ${2:VertexInput}) -> ${3:VertexOutput} {\n\t$0\n}",
+        ["uniform"] = "struct ${1:Name}Uniforms {\n\tcolor: vec4<f32>,\n\ttime: f32,\n\t_pad0: f32,\n\t_pad1: f32,\n\t_pad2: f32,\n};\n\n@group(${2:2}) @binding(0) var<uniform> uniforms: ${1:Name}Uniforms;",
+        ["diag"] = "diagnostic(${1:off}, ${2:derivative_uniformity});",
+        ["diagattr"] = "@diagnostic(${1:off}, ${2:derivative_uniformity})",
+        ["enable"] = "enable ${1:f16};",
+        ["requires"] = "requires ${1:unrestricted_pointer_parameters};",
+    },
+    wgsl_bevy = {
+        ["frag"] = "#import bevy_sprite::mesh2d_vertex_output::VertexOutput\n\nstruct ${1:Name}Uniforms {\n\tcolor: vec4<f32>,\n\ttime: f32,\n\t_pad0: f32,\n\t_pad1: f32,\n\t_pad2: f32,\n};\n\n@group(2) @binding(0) var<uniform> uniforms: ${1:Name}Uniforms;\n\n@fragment\nfn fragment(mesh: VertexOutput) -> @location(0) vec4<f32> {\n\t$0\n}",
+        ["uifrag"] = "#import bevy_ui::ui_vertex_output::UiVertexOutput\n\nstruct ${1:Name}Uniforms {\n\tcolor: vec4<f32>,\n\tprogress: f32,\n\t_pad0: f32,\n\t_pad1: f32,\n\t_pad2: f32,\n};\n\n@group(1) @binding(0) var<uniform> uniforms: ${1:Name}Uniforms;\n\n@fragment\nfn fragment(in: UiVertexOutput) -> @location(0) vec4<f32> {\n\t$0\n}",
+        ["uniform"] = "struct ${1:Name}Uniforms {\n\tcolor: vec4<f32>,\n\ttime: f32,\n\t_pad0: f32,\n\t_pad1: f32,\n\t_pad2: f32,\n};",
     },
 }
 

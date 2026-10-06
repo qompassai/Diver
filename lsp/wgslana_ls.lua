@@ -26,6 +26,7 @@ return {
         'wgsl-analyzer',
     },
     filetypes = {
+        'wesl',
         'wgsl',
     },
     init_options = {
@@ -43,6 +44,7 @@ return {
     },
     root_markers = {
         '.git',
+        'wesl.toml',
     },
     settings = {
         diagnostics = {
@@ -51,6 +53,23 @@ return {
                 enable = true,
             },
             disabled = {},
+            external = {
+                naga = {
+                    parsing = true,
+                    validation = {
+                        errors = true,
+                    },
+                },
+            },
+        },
+        inlayHints = {
+            enabled = true,
+            parameterHints = true,
+            renderColons = true,
+            -- Struct field offsets: catches 16-byte uniform alignment
+            -- issues visually instead of via compiler errors.
+            structLayoutHints = true,
+            typeHints = true,
         },
     },
 }

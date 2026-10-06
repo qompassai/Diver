@@ -117,6 +117,7 @@ local definitions = {
         razor = 'razor',
         reST = 'rst',
         rockspec = 'lua',
+        ron = 'ron',
         rq = 'sparql',
         rst = 'rst',
         scala = 'scala',
@@ -152,6 +153,28 @@ local definitions = {
         vim = 'vim',
         verilog = 'verilog',
         vh = 'verilog',
+        wesl = 'wesl',
+        wgsl = function(path, _bufnr)
+            -- Bevy WGSL shaders use #import directives that wgsl-analyzer
+            -- does not understand (false-positive diagnostics). Route them
+            -- to wgsl_bevy so the analyzer stays quiet; naga CLI validates.
+            -- Bounded: first 20 lines only.
+            local f = io.open(path, 'r')
+            if f then
+                for _ = 1, 20 do
+                    local line = f:read('*l')
+                    if not line then
+                        break
+                    end
+                    if line:match('^%s*#import%s+bevy_') then
+                        f:close()
+                        return 'wgsl_bevy'
+                    end
+                end
+                f:close()
+            end
+            return 'wgsl'
+        end,
         x11basic = 'x11basic',
         xaml = 'xaml',
         xml = 'xml',
