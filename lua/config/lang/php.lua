@@ -6,6 +6,7 @@ local M = {}
 local api = vim.api
 local fn = vim.fn
 local formatters = require('formatters')
+local modernize = require('config.lang.modernize')
 local group = api.nvim_create_augroup('PHP', {
     clear = true,
 })
@@ -28,7 +29,23 @@ api.nvim_create_autocmd('BufNewFile', {
         vim.cmd('normal! G')
     end,
 })
-api.nvim_create_user_command('PhpStan', function()
+---Create a buffer-local user command when a PHP buffer opens.
+---Lang commands only exist in buffers of their own language: they never
+---pollute `:` completion elsewhere.
+---@param name string command name
+---@param fn function|string command implementation
+---@param opts? table nvim_create_user_command options
+local function buf_command(name, fn, opts)
+    vim.api.nvim_create_autocmd('FileType', {
+        pattern = 'php',
+        desc = ('Buffer-local command: %s'):format(name),
+        callback = function(args)
+            vim.api.nvim_buf_create_user_command(args.buf, name, fn, opts or {})
+        end,
+    })
+end
+
+buf_command('PhpStan', function()
     if fn.executable('phpstan') == 1 then
         vim.cmd('!phpstan analyse')
     else
@@ -37,7 +54,7 @@ api.nvim_create_user_command('PhpStan', function()
 end, {
     desc = 'Run PHPStan analysis',
 })
-api.nvim_create_user_command('Pint', function()
+buf_command('Pint', function()
     if fn.executable('pint') == 1 then
         vim.cmd('!pint')
     else
@@ -94,7 +111,7 @@ formatters.register_stage({
         })
     end,
 })
-api.nvim_create_user_command('PhpTest', function()
+buf_command('PhpTest', function()
     fn.jobstart({
         'phpunit',
         fn.expand('%:p'),
@@ -114,7 +131,7 @@ formatters.register_stage({
         })
     end,
 })
-vim.api.nvim_create_user_command('PhpQuickfix', function()
+buf_command('PhpQuickfix', function()
     local diagnostics = vim.diagnostic.get(0)
     vim.lsp.buf.code_action({
         context = {
@@ -188,7 +205,7 @@ vim.api.nvim_create_autocmd('BufWritePost', {
         })
     end,
 })
-vim.api.nvim_create_user_command('PhpCodeAction', function()
+buf_command('PhpCodeAction', function()
     local diagnostics = vim.diagnostic.get(0)
     vim.lsp.buf.code_action({
         context = {
@@ -207,7 +224,7 @@ vim.api.nvim_create_user_command('PhpCodeAction', function()
         apply = true,
     })
 end, { desc = 'PHP code actions (quickfix/refactor/imports)' })
-api.nvim_create_user_command('PhpRangeAction', function()
+buf_command('PhpRangeAction', function()
     local bufnr = 0
     local diagnostics = vim.diagnostic.get(bufnr)
     local start_pos = vim.api.nvim_buf_get_mark(bufnr, '<')
@@ -270,6 +287,18 @@ function M.php_dap()
             },
         },
     }
+end
+
+
+local REPLACEMENTS = {
+    { "\\$HTTP_GET_VARS\\b", "$_GET" },
+    { "\\$HTTP_POST_VARS\\b", "$_POST" },
+    { "\\bmoney_format\\s*\\(", "NumberFormatter::format(" },
+}
+
+---Modernize deprecated php syntax in the current buffer.
+function M.modernize()
+    modernize.buffer('php', REPLACEMENTS, 'php')
 end
 
 return M

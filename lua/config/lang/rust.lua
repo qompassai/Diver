@@ -9,6 +9,7 @@
 -- Copyright (C) 2025 Qompass AI, All rights reserved
 ------------------------------------------------------------
 local M = {}
+local modernize = require('config.lang.modernize')
 local api = vim.api
 local autocmd = vim.api.nvim_create_autocmd
 local code_action = vim.lsp.buf.code_action
@@ -19,7 +20,21 @@ local protocol = vim.lsp.protocol
 local group = api.nvim_create_augroup("Rust", {
 	clear = true,
 })
-local usercmd = vim.api.nvim_create_user_command
+---Create a buffer-local user command when a rust buffer opens.
+---Lang commands only exist in buffers of their own language: they never
+---pollute `:` completion elsewhere.
+---@param name string command name
+---@param fn function|string command implementation
+---@param opts? table nvim_create_user_command options
+local function usercmd(name, fn, opts)
+    vim.api.nvim_create_autocmd('FileType', {
+        pattern = 'rust',
+        desc = ('Buffer-local command: %s'):format(name),
+        callback = function(args)
+            vim.api.nvim_buf_create_user_command(args.buf, name, fn, opts or {})
+        end,
+    })
+end
 local WARN = vim.log.levels.WARN
 ---Register Rust autocmds (format, inlay hints) for rust_analyzer clients.
 ---The three save-time BufWritePre hooks are registered as format stages so
@@ -174,6 +189,20 @@ function M.rust_autocmds()
 			vim.notify("RustClippy: dev.cargo not available", WARN)
 		end
 	end, { desc = "cargo clippy via dev.cargo (float + quickfix)" })
+	usercmd("BevyLint", function()
+		-- bevy_lint links against the pinned nightly's private librustc_driver,
+		-- so it must run through `rustup run <nightly>`; update the toolchain
+		-- name here when reinstalling the linter for a new Bevy version.
+		local toolchain = "nightly-2026-04-16"
+		if fn.executable("bevy_lint") ~= 1 then
+			vim.notify(
+				"BevyLint: bevy_lint is not installed. Install it with its pinned nightly toolchain (see TheBevyFlock/bevy_cli) and re-run.",
+				WARN
+			)
+			return
+		end
+		vim.cmd("botright split | terminal rustup run " .. toolchain .. " bevy_lint --workspace --all-targets")
+	end, { desc = "Run bevy_lint on the workspace in a terminal split" })
 	if formatters.get_stage("rust_lsp_format_current") == nil then
 		formatters.register_stage({
 			name = "rust_lsp_format_current",
@@ -276,6 +305,71 @@ function M.rust_dap()
 	end
 end
 
+---RPC workbench for developing the phlow msgpack shim.
+---These are global (not buffer-local): RPC state is editor-wide.
+
+---Tail the Neovim log for RPC traffic. For the full frame log, restart with
+---NVIM_LOG_FILE=/tmp/nvim-rpc.log in the environment.
+api.nvim_create_user_command("RpcLog", function()
+	local logfile = vim.env.NVIM_LOG_FILE
+	if not logfile or logfile == "" then
+		vim.notify(
+			"NVIM_LOG_FILE not set. Restart with:\nNVIM_LOG_FILE=/tmp/nvim-rpc.log nvim",
+			vim.log.levels.WARN
+		)
+		return
+	end
+	vim.cmd("split | terminal tail -n 100 -F " .. fn.shellescape(logfile))
+end, { desc = "Tail the Neovim RPC log (shim development)" })
+
+---Show the RPC server address and API surface the shim can target.
+api.nvim_create_user_command("RpcInfo", function()
+	local info = vim.fn.api_info()
+	local n_fns = (info and info.functions and #info.functions) or 0
+	vim.notify(
+		("server: %s\napi functions: %d\nversion: %s"):format(
+			vim.v.servername or "(embedded)",
+			n_fns,
+			tostring(vim.version())
+		),
+	vim.log.levels.INFO
+	)
+end, { desc = "Show RPC server address and API surface (shim development)" })
+
+---Fuzzy-find a Neovim API function and show its exact signature, as the
+---shim must call it. Signatures come from nvim --api-info metadata.
+api.nvim_create_user_command("NvimApi", function()
+	local info = vim.fn.api_info()
+	if not info or not info.functions then
+		vim.notify("api_info unavailable", vim.log.levels.ERROR)
+		return
+	end
+	local by_name = {}
+	local names = {}
+	for _, f in ipairs(info.functions) do
+		by_name[f.name] = f
+		names[#names + 1] = f.name
+	end
+	table.sort(names)
+	vim.ui.select(names, { prompt = "Neovim API function:" }, function(choice)
+		if not choice then
+			return
+		end
+		local f = by_name[choice]
+		local params = {}
+		for _, p in ipairs(f.parameters or {}) do
+			params[#params + 1] = ("%s: %s"):format(p[2], p[1])
+		end
+		local ret = type(f.return_type) == "string" and f.return_type or "?"
+		local sig = ("%s(%s) -> %s"):format(f.name, table.concat(params, ", "), ret)
+		local buf = api.nvim_create_buf(false, true)
+		api.nvim_buf_set_lines(buf, 0, -1, false, vim.split(sig, "\n"))
+		vim.bo[buf].filetype = "lua"
+		vim.bo[buf].modifiable = false
+		api.nvim_open_win(buf, true, { split = "right" })
+	end)
+end, { desc = "Show a Neovim API function signature (shim development)" })
+
 ---Apply the Rust language configuration.
 ---@param _opts? table unused option overrides
 ---@return nil
@@ -283,6 +377,16 @@ function M.rust_cfg(_opts)
 	M.rust_autocmds()
 	M.rust_dap()
 	M.rust_crates()
+end
+
+
+local REPLACEMENTS = {
+    { "\\btry!\\s*\\(", "/* try! -> ? */ (" },
+}
+
+---Modernize deprecated rust syntax in the current buffer.
+function M.modernize()
+    modernize.buffer('rust', REPLACEMENTS, 'rust')
 end
 
 return M

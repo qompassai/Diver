@@ -258,6 +258,8 @@ Bound parser stacks explicitly. If malformed nesting can reach a procedure recur
 replace it with a bounded work stack under this policy. Include cycles in tests for graph
 inputs; a node count alone does not stop repeated traversal without a visitation policy.
 
+> **In plain terms:** Odin has no single global allocator you can take for granted -- instead, every running procedure carries a context that names the allocator currently in effect, and every helper you call silently uses that same one. This is wonderfully flexible and quietly dangerous: swap the allocator mid-call, spawn a thread, or hand memory to a foreign library, and the matching free can land on the wrong allocator. The fix is boring and effective: choose an allocator for each lifetime deliberately and write down who frees what. And never treat the context as something it isn't -- it is not a sandbox, an authorization token, or a lock.
+
 ## 8. Allocation and context
 
 Odin's context carries allocator state. Allocation helpers may use `context.allocator`, and
@@ -286,6 +288,8 @@ fully written before every possible read; inspect error paths and partial I/O ca
 Allocator failures are normal operational events where recovery is part of the contract.
 Match the exact return/error semantics of the pinned core API instead of copying an old
 allocation example whose signature has changed.
+
+> **In plain terms:** Copying an Odin slice or dynamic array gives you a second view of the same memory, not a second independent object -- there are no destructors waiting in the wings to clean up after you. Every resource needs an explicit release, and `defer` is the idiom for tying cleanup to the end of a scope. But `defer` only runs when the scope exits normally; a crashed process, a power cut, or a test-runner abort can all skip it. Durable correctness therefore can't rest on cleanup code alone -- anything that must survive a crash needs a transactional or recovery design, not just a `defer`.
 
 ## 9. Lifetimes, aliases, and cleanup
 
@@ -332,6 +336,8 @@ preserve the main failure and report the cleanup consequence without falsely rep
 success. Use a process-level health policy for invariant corruption; do not continue serving
 requests from state that has not been revalidated.
 
+> **In plain terms:** A cancelled operation is not a stopped operation -- the caller giving up doesn't magically free the memory or unwind the worker that was using it. Making cancellation real takes a strict order: stop admitting work, signal the active workers, watch them finish, and only then free the shared allocators and device handles. Timeouts must use monotonic clocks rather than wall-clock time, and atomics need an explicit memory-ordering argument -- declaring a variable atomic is not enough. And never assume x86's forgiving memory model will hide missing synchronization once your code meets ARM64.
+
 ## 11. Concurrency and cancellation
 
 Assign each mutable object one owner or a documented synchronization protocol. Keep the lock
@@ -356,6 +362,8 @@ Capture a valid Odin context at foreign/thread entry when required. Establish wh
 allocator can be used concurrently and whether the callback may outlive that context's
 resources. Shutdown stops admission, signals active work, observes completion, and only then
 releases shared allocators/device handles.
+
+> **In plain terms:** The moment your code talks to another language -- C, C++, Kotlin, Rust, Lua, Wasm -- every convenience Odin provides evaporates. Slices, strings, and maps are Odin-shaped ideas; a C caller needs plain pointers, explicit lengths, and a written contract for who frees what. Worse, the two sides can fail in incompatible ways: a Kotlin exception, a Rust panic, or a C++ exception must never pretend to be an ordinary return value across the boundary. The whole section reduces to one habit: define the narrowest possible C surface, version it, and test it with hostile inputs on every architecture you ship.
 
 ## 12. Foreign interfaces
 

@@ -200,6 +200,14 @@ An example repository split is:
 
 Directory names are architecture examples, not automatically generated Gradle source sets.
 
+> **In plain terms:** Kotlin's null safety is a wall with a few well-known gates: platform types
+> from Java carry no nullability information, and `!!` disables the compiler's protection entirely —
+> never aim it at network data, database rows, or saved state. `val` only freezes the reference, not
+> the object behind it, so a `List` can still change under your feet through another reference.
+> Sealed hierarchies replace interacting booleans with states the compiler can check exhaustively,
+> which is why "queued, running, cancelled, and committed" belongs in a type rather than four flags.
+
+
 ## 6. Types, nullability, and state
 
 Use nullable types for legitimate absence and explicit outcome types for expected failure.
@@ -306,6 +314,14 @@ state. Logical clearing is not guaranteed secret erasure on a managed runtime. M
 secret lifetimes and use reviewed platform credential storage rather than promising to wipe
 all copies of an immutable string.
 
+> **In plain terms:** Coroutines make async code look sequential, but suspension points are
+> invisible seams where the world changes — cancellation is cooperative, so a busy CPU loop must
+> check for cancellation itself or it will never stop. Structured concurrency ties child coroutines
+> to a parent scope so no work outlives its owner, and `runBlocking` belongs only at a reviewed
+> blocking boundary, never inside suspending or UI code. Stale completion is the other half of the
+> problem: a cancelled search is only truly cancelled when its late results are rejected on arrival.
+
+
 ## 10. Coroutines and cancellation
 
 Attach work to an explicit lifecycle: request, screen, worker, or application service. Avoid
@@ -398,6 +414,15 @@ Subprocess supervision must concurrently drain bounded stdout/stderr, enforce a 
 terminate according to policy, and wait for completion. Windows command-line quoting differs
 from POSIX argv; never hand-build a shell string from untrusted values. `ProcessBuilder`
 is JVM-specific, not an API you can put in commonMain and expect on iOS or the browser.
+
+> **In plain terms:** Every language boundary is a place where two worlds' assumptions collide:
+> Kotlin collections, C++ containers, and Rust trait objects share no binary layout, so in-process
+> interfaces must be reduced to a small C ABI with explicit lengths and opaque handles. Memory
+> pinning lets native code touch managed memory, but it does not authorize retaining that pointer
+> after the pin ends — ownership, allocation, and callback unregistration must be written down
+> explicitly. Exceptions, panics, and foreign unwinding each stay inside their own supported
+> boundary; only bounded errors cross the ABI.
+
 
 ## 14. Native and cross-language interfaces
 

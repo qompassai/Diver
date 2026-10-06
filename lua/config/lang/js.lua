@@ -3,6 +3,7 @@
 -- Copyright (C) 2025 Qompass AI, All rights reserved
 -----------------------------------------------------
 local M = {}
+local modernize = require('config.lang.modernize')
 -- A2A SDK: <LocalLeader>aa* maps (card/send/stream/get/cancel/install)
 -- are wired for this filetype by ai.a2a.sdks.setup().
 
@@ -64,7 +65,23 @@ function M.typescript_tools(opts)
     return config
 end
 
-vim.api.nvim_create_user_command('VitestFile', function()
+---Create a buffer-local user command when a JS/TS buffer opens.
+---Lang commands only exist in buffers of their own language: they never
+---pollute `:` completion elsewhere.
+---@param name string command name
+---@param fn function|string command implementation
+---@param opts? table nvim_create_user_command options
+local function buf_command(name, fn, opts)
+    vim.api.nvim_create_autocmd('FileType', {
+        pattern = {'javascript', 'javascriptreact', 'typescript', 'typescriptreact'},
+        desc = ('Buffer-local command: %s'):format(name),
+        callback = function(args)
+            vim.api.nvim_buf_create_user_command(args.buf, name, fn, opts or {})
+        end,
+    })
+end
+
+buf_command('VitestFile', function()
     local file = vim.fn.expand('%:p')
     vim.fn.jobstart({
         'vitest',
@@ -201,6 +218,15 @@ function M.setup_typescript(opts)
         dap = M.typescript_dap(opts),
         neotest = M.js_neotest and M.js_neotest(opts) or nil,
     }
+end
+
+
+local REPLACEMENTS = {
+}
+
+---Modernize deprecated js syntax in the current buffer.
+function M.modernize()
+    modernize.buffer('js', REPLACEMENTS, 'js')
 end
 
 return M

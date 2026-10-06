@@ -10,6 +10,7 @@ local client_by_id = vim.lsp.get_client_by_id
 local code_action = vim.lsp.buf.code_action
 local findfile = vim.fn.findfile
 local formatters = require('formatters')
+local modernize = require('config.lang.modernize')
 local ERROR = vim.log.levels.ERROR
 local get = vim.diagnostic.get
 local INFO = vim.log.levels.INFO
@@ -22,7 +23,21 @@ local header = require('research.docs')
 local group = augroup('C', {
     clear = true,
 })
-local usercmd = vim.api.nvim_create_user_command
+---Create a buffer-local user command when a c buffer opens.
+---Lang commands only exist in buffers of their own language: they never
+---pollute `:` completion elsewhere.
+---@param name string command name
+---@param fn function|string command implementation
+---@param opts? table nvim_create_user_command options
+local function usercmd(name, fn, opts)
+    vim.api.nvim_create_autocmd('FileType', {
+        pattern = 'c',
+        desc = ('Buffer-local command: %s'):format(name),
+        callback = function(args)
+            vim.api.nvim_buf_create_user_command(args.buf, name, fn, opts or {})
+        end,
+    })
+end
 autocmd('BufNewFile', {
     group = group,
     pattern = {
@@ -284,5 +299,15 @@ usercmd('CDebug', function()
         notify('Executable not found. Compile first with :CCompile', ERROR)
     end
 end, {})
+
+
+local REPLACEMENTS = {
+    { "\\bgets\\s*\\(", "fgets(" },
+}
+
+---Modernize deprecated c syntax in the current buffer.
+function M.modernize()
+    modernize.buffer('c', REPLACEMENTS, 'c')
+end
 
 return M

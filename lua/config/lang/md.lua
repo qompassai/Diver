@@ -3,7 +3,24 @@
 -- Copyright (C) 2025 Qompass AI, All rights reserved
 -----------------------------------------------------
 local M = {}
+local modernize = require('config.lang.modernize')
 local api = vim.api
+---Create a buffer-local user command when a Markdown buffer opens.
+---Lang commands only exist in buffers of their own language: they never
+---pollute command-line completion elsewhere.
+---@param name string command name
+---@param fn function|string command implementation
+---@param opts? table nvim_create_user_command options
+local function buf_command(name, fn, opts)
+    vim.api.nvim_create_autocmd('FileType', {
+        pattern = 'markdown',
+        desc = ('Buffer-local command: %s'):format(name),
+        callback = function(args)
+            vim.api.nvim_buf_create_user_command(args.buf, name, fn, opts or {})
+        end,
+    })
+end
+
 function M.md_anchor(link, opts)
     opts = opts or {}
     local prefix = opts.prefix or '#'
@@ -88,7 +105,7 @@ function M.md_diagram(opts)
                     },
                 },
             },
-            api.nvim_create_user_command('DiagramRender', function()
+            buf_command('DiagramRender', function()
                 require('diagram').render_buffer()
             end, { desc = 'Render diagrams in current buffer' })
         )
@@ -264,6 +281,15 @@ function M.md_config(opts)
     require('config.ui.render').setup(opts)
     M.md_pdf(opts)
     M.md_table_mode()
+end
+
+
+local REPLACEMENTS = {
+}
+
+---Modernize deprecated md syntax in the current buffer.
+function M.modernize()
+    modernize.buffer('md', REPLACEMENTS, 'md')
 end
 
 return M

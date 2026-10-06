@@ -11,6 +11,7 @@ local autocmd = vim.api.nvim_create_autocmd
 local client_by_id = vim.lsp.get_client_by_id
 local code_action = vim.lsp.buf.code_action
 local formatters = require('formatters')
+local modernize = require('config.lang.modernize')
 local get = vim.diagnostic.get
 local fn = vim.fn
 local INFO = vim.log.levels.INFO
@@ -59,7 +60,21 @@ local header = require('research.docs')
 local group = augroup('Go', {
     clear = true,
 })
-local usercmd = vim.api.nvim_create_user_command
+---Create a buffer-local user command when a go buffer opens.
+---Lang commands only exist in buffers of their own language: they never
+---pollute `:` completion elsewhere.
+---@param name string command name
+---@param fn function|string command implementation
+---@param opts? table nvim_create_user_command options
+local function usercmd(name, fn, opts)
+    vim.api.nvim_create_autocmd('FileType', {
+        pattern = 'go',
+        desc = ('Buffer-local command: %s'):format(name),
+        callback = function(args)
+            vim.api.nvim_buf_create_user_command(args.buf, name, fn, opts or {})
+        end,
+    })
+end
 autocmd('BufNewFile', {
     group = group,
     pattern = { '*.go' },
@@ -314,7 +329,51 @@ usercmd('GoStaticcheck', function()
         end,
     })
 end, {})
+usercmd('GoModTidy', function()
+    local go_bin = get_go_bin()
+    local cwd = fn.expand('%:p:h')
+    notify('go mod tidy: running...', INFO)
+    local result = vim.system({ go_bin, 'mod', 'tidy' }, { text = true, cwd = cwd, timeout = 60000 }):wait()
+    if result.code == 0 then
+        notify('go mod tidy: clean', INFO)
+    else
+        notify(('go mod tidy failed:\n%s'):format(result.stderr or ''), vim.log.levels.ERROR)
+    end
+end, { desc = 'Run go mod tidy in the current module' })
+usercmd('GoDoc', function()
+    local go_bin = get_go_bin()
+    local word = fn.expand('<cword>')
+    if word == '' then
+        notify('GoDoc: no symbol under cursor', vim.log.levels.WARN)
+        return
+    end
+    local result =
+        vim.system({ go_bin, 'doc', word }, { text = true, cwd = fn.expand('%:p:h'), timeout = 15000 }):wait()
+    if result.code ~= 0 or (result.stdout or '') == '' then
+        notify(('go doc: nothing found for %s'):format(word), INFO)
+        return
+    end
+    local buf = api.nvim_create_buf(false, true)
+    api.nvim_buf_set_lines(buf, 0, -1, false, vim.split(vim.trim(result.stdout), '\n'))
+    vim.bo[buf].filetype = 'godoc'
+    vim.bo[buf].modifiable = false
+    api.nvim_open_win(buf, true, { split = 'right' })
+end, { desc = 'Show go doc for the symbol under cursor' })
 ---@param _opts table|nil
 function M.go_cfg(_opts) end
+
+
+local REPLACEMENTS = {
+    { "\\binterface\\{\\}", "any" },
+    { "\\bioutil\\.ReadFile\\b", "os.ReadFile" },
+    { "\\bioutil\\.TempDir\\b", "os.MkdirTemp" },
+    { "\\bioutil\\.TempFile\\b", "os.CreateTemp" },
+    { "\\bioutil\\.WriteFile\\b", "os.WriteFile" },
+}
+
+---Modernize deprecated go syntax in the current buffer.
+function M.modernize()
+    modernize.buffer('go', REPLACEMENTS, 'go')
+end
 
 return M

@@ -152,6 +152,8 @@ Treat compiler and Clippy warnings as actionable. Suppress a particular lint onl
 smallest applicable scope, with a reason. Do not enable every pedantic lint indiscriminately
 and then silence the resulting noise globally.
 
+> **In plain terms:** Rust's type system is a machine for making illegal states unrepresentable: if a bad configuration can't be constructed, it can't happen. That's why the section pushes distinct types for distinct concepts (a byte offset is not an element count), enums instead of contradictory booleans, and `Option`/`Result` instead of magic `-1` sentinels. State changes follow a strict rhythm -- validate, then prepare, then commit exactly once -- so a failed operation leaves the published state untouched. The mermaid diagram in the section is that rhythm drawn as a picture; the rule is that nothing reaches "committed" without surviving preparation.
+
 ## 4. Types and state
 
 Represent distinct concepts with distinct types when confusing them could violate a
@@ -272,6 +274,8 @@ $$
 This is a budget model, not an allocator measurement. Include queue storage, allocator
 rounding, thread stacks, duplicated buffers, and subprocesses in the deployed budget.
 
+> **In plain terms:** Rust's borrow checker is a compile-time accountant: every value has exactly one owner, and references are loans that must be returned before the owner moves on. Borrowing for inspection is free; cloning is a deliberate expense -- and cloning an `Arc` (a shared pointer) is a different expense than cloning a megabyte buffer, so name the cost. The section's less obvious rules are about the fine print: a `Vec`'s capacity is reserved storage, not a limit, so pair `try_reserve` with your own logical cap; and dropped or cleared memory is not erased memory, which matters the moment secrets are involved. Choose lifetimes that describe how your program actually owns things, not lifetimes that merely placate the compiler.
+
 ## 7. Ownership and memory
 
 Borrow for inspection; take ownership when retaining or transferring a resource is part of
@@ -299,6 +303,8 @@ process exit to close long-lived resources during normal operation.
 Keep allocation outside tight loops when practical. Reuse buffers with explicit reset
 semantics. Clearing a buffer does not promise secure erasure of its previous contents; secret
 handling requires a separately reviewed memory and lifetime policy.
+
+> **In plain terms:** In async Rust, dropping a future is like hanging up the phone -- it says nothing about whether the work on the other end stopped. Cancellation, shutdown, and retries are therefore explicit designs, not defaults: own your task handles, drain or abort per a written policy, and give every retry a retryable error class, bounded attempts, a total deadline, and an idempotency argument. Locks have their own discipline -- document what each lock protects, keep a global lock order, and never hold a blocking mutex across an `.await`, where the executor can't see the thread is parked. The generation-token pattern in this section is the antidote to stale results: check that the answer still matches the question before publishing it.
 
 ## 8. Control flow and concurrency
 
@@ -329,6 +335,8 @@ object's validity. Cancellation saves resources; a freshness check protects corr
 
 Retries require a retryable error class, bounded attempts, a total deadline, and an
 idempotency argument. Retries after a possibly successful write can duplicate effects.
+
+> **In plain terms:** `unsafe` doesn't turn off the rules -- it transfers them to you. An `unsafe` block is a signed statement that you have personally verified every obligation the compiler normally checks: valid memory, correct alignment, initialized data, no aliasing violations, lifetimes that hold. That's why the section demands a written safety explanation at every unsafe operation and forbids safe-looking wrappers that accept raw pointers without proving the invariants inside. Across language boundaries the contract gets stricter: define the ABI, ownership transfer, and error translation explicitly, and never let a panic unwind through a foreign frame. Miri can exercise your assumptions on the paths it runs -- but a passing Miri run is evidence, not proof.
 
 ## 9. Unsafe code and foreign interfaces
 

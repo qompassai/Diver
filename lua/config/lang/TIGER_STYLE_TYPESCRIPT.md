@@ -158,6 +158,8 @@ not stop an enormous input from allocating an enormous result.
 
 ---
 
+> **In plain terms:** TypeScript code can throw literally anything — a string, a number, a Tuesday — not just `Error` objects, so catching `unknown` keeps you honest. For failures you expect, prefer a `Result` value that carries either the error or the answer, handled at one clear boundary, rather than try/catch sprinkled like confetti.
+
 ## 7. Error Handling
 
 Choose a discriminated `Result<T, E>` for expected failures or typed thrown errors
@@ -190,6 +192,8 @@ not UTF-8 bytes or grapheme clusters.
 
 ---
 
+> **In plain terms:** TypeScript's types evaporate at compile time — `readonly` does not freeze anything at runtime, and a union type cannot reject a malformed object that arrives over the wire. Treat everything crossing a trust boundary as `unknown` until you validate its shape, and remember that plain objects carry `__proto__` landmines that a careless merge can detonate.
+
 ## 10. Collections and Data Shapes
 
 Use `unknown` at untrusted boundaries and validate a bounded record/array shape.
@@ -210,6 +214,8 @@ not object mutation. Copy or transfer ownership of mutable data when workers or
 callbacks can outlive the caller.
 
 ---
+
+> **In plain terms:** A branded type is a primitive wearing a disguise: a validated string with a tag the compiler checks, so a raw string cannot sneak into a function that demands one. Generics with deep conditional types are a power tool that easily becomes a puzzle — if the type is harder to audit than the code it types, simplify. One unchecked cast at the border undoes all the branding inside.
 
 ## 12. Function Design
 
@@ -239,6 +245,8 @@ Clear owned timers, remove listeners, abort owned I/O, and await shutdown.
 document how it is reported without silently losing the original error.
 
 ---
+
+> **In plain terms:** `Promise.all` fires every task the instant the array is built — a semaphore inside each task limits parallelism but still allocates all the work up front, like opening every lane of a highway and then metering the toll booth. Use a bounded queue that admits work gradually, and remember that a small slice of an `ArrayBuffer` keeps the entire buffer alive.
 
 ## 15. Memory and Allocation
 
@@ -326,6 +334,8 @@ files have distinct execution behavior: do not claim POSIX rules cover them. [T2
 
 ---
 
+> **In plain terms:** Racing a promise against a timeout does not cancel anything — the loser keeps running, silently consuming resources, long after the race is over. True cancellation needs an `AbortSignal` plumbed through every layer that actually honors it, plus an owner that waits for its tasks to settle before tearing down. Cancel first, then clean up, then let go.
+
 ## 21. Concurrency and Async Work
 
 Pass an AbortSignal to APIs that actually support it, and distinguish an
@@ -392,6 +402,8 @@ Do not run project package managers as root or download a formatter implicitly
 from an editor mapping.
 
 ---
+
+> **In plain terms:** TypeScript's type system and JavaScript's runtime are two different employees who occasionally disagree — `readonly`, branding, `satisfies`, and unions only advise the compiler, while only real checks at runtime can vouch for incoming data. This matters most at the border: hostile code can hand you a `Proxy` object that lies to every property read. Validate plain decoded values, and test that both the types and the runtime say no.
 
 ## 26. Language-Specific Engineering
 

@@ -6,6 +6,7 @@ local M = {}
 local api = vim.api
 local fn = vim.fn
 local header = require('research.docs')
+local modernize = require('config.lang.modernize')
 local group = api.nvim_create_augroup('Odin', {
     clear = true,
 })
@@ -27,4 +28,13 @@ api.nvim_create_autocmd('BufNewFile', {
         vim.cmd('normal! G')
     end,
 })
+
+local REPLACEMENTS = {
+}
+
+---Modernize deprecated odin syntax in the current buffer.
+function M.modernize()
+    modernize.buffer('odin', REPLACEMENTS, 'odin')
+end
+
 return M

@@ -124,6 +124,8 @@ known at compile time. `var` does not mean a variable should be reassigned gratu
 mutation narrow. See [variables](https://mojolang.org/docs/manual/variables/) and
 [compile-time evaluation](https://mojolang.org/docs/manual/metaprogramming/comptime-evaluation/).
 
+> **In plain terms:** Mojo tracks who owns every value at compile time, in the same spirit as Rust's borrow checker. Each argument convention (`value`, `mut`, `var`, `out`, `ref`) answers one question: does this function merely inspect the data, borrow it for mutation, or take it over entirely? Picking the wrong one compiles a lie into the API -- the caller and the compiler disagree about who may do what. When in doubt, let the function inspect immutably, and put any mutation where the caller can see it: the signature.
+
 ## 4. Functions and ownership
 
 Current Mojo functions use `def`. Make the return type explicit for a value-returning public
@@ -170,6 +172,8 @@ def consume_budget(mut remaining: Int, amount: Int) raises:
 
 The only mutation follows every rejection check. Rejected calls preserve `remaining`.
 The nonnegative bounds prove that subtraction cannot underflow for a valid `Int` input.
+
+> **In plain terms:** Mojo watches how long references live so a view can never outlive the storage it points at. The compiler models these relationships as origins (roughly Rust's lifetimes), and it re-checks them every time a value is tucked into a closure, a container, or a foreign call. The discipline is simple: for every allocation, file, or device buffer, be able to name its owner. If you can't, neither can the compiler -- and that is exactly when use-after-free bugs appear.
 
 ## 5. Lifetimes and resource cleanup
 
@@ -319,6 +323,8 @@ stateDiagram-v2
 Text equivalent: only a completed, still-current request publishes a result. Rejection,
 failure, cancellation, and obsolescence remain distinguishable terminal outcomes.
 
+> **In plain terms:** Raw pointers (`Pointer`, `OwnedPointer`, `ArcPointer`) are the trapdoor out of Mojo's safety net: past that point, the compiler stops checking and you are the checker. Every unsafe boundary must therefore carry a written contract -- who allocated the memory, who frees it, how it is aligned, how much of it is initialized, and how long it lives. Never reach for an unchecked pointer just to silence a type or ownership error; that is the compiler telling you something you don't yet understand. Treat every suppression as a confession that needs evidence.
+
 ## 9. Memory and unsafe boundaries
 
 Prefer ordinary owned values and safe container operations. A memory-safe operation can
@@ -348,6 +354,8 @@ Do not claim a buffer is erased because its logical length is reset or its owner
 Secret handling needs an explicit storage, copying, lifetime, and erasure policy appropriate
 to the runtime and platform.
 
+> **In plain terms:** `comptime` lets Mojo compute during compilation and generate one specialized version of your code for each allowed combination of element type, vector width, and layout. That power compounds fast -- five dtype choices times four widths times three layouts is sixty kernels, each costing compile time and binary size. Specialize only on things truly fixed when the compiler runs; keep request data and user-sized inputs at runtime. And never confuse the two kinds of checks: compile-time checks know types, runtime checks know data, and they guard different worlds.
+
 ## 10. Compile-time programming
 
 Use compile-time parameters for properties genuinely fixed at specialization: element type,
@@ -369,6 +377,8 @@ file sizes, user-provided offsets, or permissions. Preserve those runtime checks
 Keep metaprogramming readable. A direct implementation is preferable when a generated one
 adds no measurable performance or correctness benefit. Document generated variants and
 include them in the supported test matrix.
+
+> **In plain terms:** This section is about writing one logical operation two or three times: once as a plain scalar reference, then again as a vectorized CPU kernel or GPU kernel that must behave identically. SIMD asks you to think in lanes -- a fixed number of values processed at once -- and to handle the ragged tail where the data length isn't a multiple of the lane width. GPU work adds a second clock: the device runs asynchronously, so you must synchronize before the host touches the results. Compare the fast version against the scalar reference on numbers and on speed; performance you can't verify is just a faster way to be wrong.
 
 ## 11. SIMD and GPU work
 

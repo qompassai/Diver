@@ -12,6 +12,7 @@ local ERROR = vim.log.levels.ERROR
 local expand = vim.fn.expand --[[@as fun(path: string): string]]
 local filereadable = vim.fn.filereadable
 local formatters = require('formatters')
+local modernize = require('config.lang.modernize')
 local get = vim.diagnostic.get
 local INFO = vim.log.levels.INFO
 local jobstart = vim.fn.jobstart
@@ -22,7 +23,21 @@ local header = require('research.docs')
 local group = augroup('Mojo', {
     clear = true,
 })
-local usercmd = vim.api.nvim_create_user_command
+---Create a buffer-local user command when a mojo buffer opens.
+---Lang commands only exist in buffers of their own language: they never
+---pollute `:` completion elsewhere.
+---@param name string command name
+---@param fn function|string command implementation
+---@param opts? table nvim_create_user_command options
+local function usercmd(name, fn, opts)
+    vim.api.nvim_create_autocmd('FileType', {
+        pattern = 'mojo',
+        desc = ('Buffer-local command: %s'):format(name),
+        callback = function(args)
+            vim.api.nvim_buf_create_user_command(args.buf, name, fn, opts or {})
+        end,
+    })
+end
 ---@return string?
 local function safe_expand(path) ---@param path string
     local result = expand(path)
@@ -352,4 +367,13 @@ usercmd('MojoDebug', function()
     end
     dap.continue()
 end, {})
+
+local REPLACEMENTS = {
+}
+
+---Modernize deprecated mojo syntax in the current buffer.
+function M.modernize()
+    modernize.buffer('mojo', REPLACEMENTS, 'mojo')
+end
+
 return M

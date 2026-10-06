@@ -117,6 +117,13 @@ enough; pointer provenance and object lifetime remain caller contracts. [C1]
 
 ---
 
+> **In plain terms:** Every unbounded input or loop is an open invitation for a resource to be
+> exhausted at the worst possible moment. Bounding is deciding up front how much memory, time, and
+> retry effort any single operation may spend — and exactly what happens when it runs out. Think of
+> it as a budget: counts, sizes, nesting depths, deadlines, and retries each get their own line
+> item, because a limit on items alone does nothing when each item can be arbitrarily large.
+
+
 ## 5. Bound Everything
 
 A count bound alone is not a complete resource budget. Bound item count,
@@ -240,6 +247,14 @@ state; “free then leave dangling” is not idempotent teardown.
 
 ---
 
+> **In plain terms:** In C, freeing memory does not erase it — the bytes often sit there looking
+> perfectly valid, which is exactly why use-after-free bugs are so hard to spot. Clearing one
+> pointer leaves every other pointer to that block still pointing at it, so a freed object remains
+> reachable through its aliases until they are all handled. The discipline is simple but
+> unforgiving: check every allocation, keep the old pointer until realloc succeeds, and treat a
+> freed pointer as radioactive rather than empty.
+
+
 ## 15. Memory and Allocation
 
 Check every allocation result and overflow-prone size calculation. Keep the old
@@ -325,6 +340,14 @@ or logging there. Establish descriptor and signal inheritance intentionally.
 
 ---
 
+> **In plain terms:** `volatile` tells the compiler not to optimize away a read, but it says nothing
+> to other threads — it is not synchronization and never was. Threads coordinate through a
+> documented protocol of locks and atomics, where "happens-before" is the precise argument that one
+> thread's writes are actually visible to another. Signal handlers run in an even more constrained
+> world with only a handful of safe functions available, so they should do the absolute minimum and
+> let ordinary code handle the rest.
+
+
 ## 21. Concurrency and Async Work
 
 Use a documented pthread/C11-atomic synchronization protocol. `volatile` is not
@@ -384,6 +407,15 @@ reviewed libraries for crypto, parsers, and other subtle domains instead of
 reimplementing them to reduce the apparent dependency count.
 
 ---
+
+> **In plain terms:** C's undefined behavior is the standard's way of saying "anything can happen
+> here" — the compiler may assume it never occurs and optimize accordingly, which makes UB bugs
+> spectacularly non-local. Strict aliasing means the compiler assumes two pointers of different
+> types never touch the same memory (with narrow exceptions like character pointers), integer
+> promotion silently changes arithmetic types inside expressions, and the "abstract machine" the
+> standard describes is not your hardware. That is why sanitizers and static analysis earn their
+> keep as complementary evidence.
+
 
 ## 26. Language-Specific Engineering
 

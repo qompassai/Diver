@@ -7,6 +7,7 @@ local api = vim.api
 local fn = vim.fn
 local formatters = require('formatters')
 local header = require('research.docs')
+local modernize = require('config.lang.modernize')
 local group = api.nvim_create_augroup('Bash', {
     clear = true,
 })
@@ -46,4 +47,15 @@ formatters.register_stage({
         })
     end,
 })
+
+local REPLACEMENTS = {
+    { "\\$\\[([^\\]]+)\\]", "$((\\1))" },
+    { "`([^`]+)`", "$(\\1)" },
+}
+
+---Modernize deprecated bash syntax in the current buffer.
+function M.modernize()
+    modernize.buffer('bash', REPLACEMENTS, 'bash')
+end
+
 return M

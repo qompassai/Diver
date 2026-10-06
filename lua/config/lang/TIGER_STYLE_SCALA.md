@@ -155,6 +155,8 @@ budgets; laziness can defer failure instead of eliminating it.
 
 ---
 
+> **In plain terms:** In Scala you can turn a failure into an ordinary value that flows through your code instead of exploding mid-flight. `Option` means "might not be there", `Either` means "either a real error or a real result", and `Try` is the airlock for code that still throws exceptions. Never call `.get` on these — it throws the very explosion you were avoiding.
+
 ## 7. Error Handling
 
 Use `Either[DomainError, A]` for expected rejection, `Option[A]` for absence,
@@ -208,6 +210,8 @@ looks immutable. Define generation checks for asynchronous refreshes.
 
 ---
 
+> **In plain terms:** Scala lets you pass things implicitly — a "given" value sits in scope and the compiler quietly hands it to functions that declare a "using" parameter. That is convenient until the same function runs in a different part of the repo with a different clock, logger, or execution context. Keep these implicit dependencies local and obvious, so a reviewer can tell what powers a call without a scavenger hunt.
+
 ## 12. Function Design
 
 Give public methods explicit result types and use named parameters for policy.
@@ -217,6 +221,8 @@ A reviewer should be able to discover which execution context, clock, logger,
 or effect runtime an operation uses without searching the whole repository.
 
 ---
+
+> **In plain terms:** Scopes in Scala are not just about which names are visible — they decide what your program still depends on. A closure can pin an entire request in memory when it only needed an ID, and a `Future` created inside a block keeps running after the block exits. Assume nothing is released until ownership — not just visibility — has ended.
 
 ## 13. Scope
 
@@ -237,6 +243,8 @@ stay within that runtime's cancellation model. Executor ownership must identify
 who stops admission, cancels work, awaits termination, and handles failure.
 
 ---
+
+> **In plain terms:** The garbage collector only takes out the memory trash; it does not close files, shut down executors, or bound your queues. And Scala's immutability is shallower than it looks: appending to an immutable list inside a hot loop quietly allocates a fresh copy every iteration. A bounded local builder and an eye on captured closures keep the steady-state fast.
 
 ## 15. Memory and Allocation
 
@@ -322,6 +330,8 @@ but can race and is not a security sandbox for a hostile process tree.
 
 ---
 
+> **In plain terms:** A Scala `Future` starts running the moment you create it — there is no lazy, no pause, and no cancel button. `Await` with a timeout only stops you from waiting; the computation carries on in the background, unbothered. If you need real cancellation, you need a different tool (an effect library with structured lifecycles), chosen deliberately — not the global execution context shared by everything.
+
 ## 21. Concurrency and Async Work
 
 Standard `Future` is eager and lacks built-in structured cancellation. Timing
@@ -375,6 +385,8 @@ versions and unreviewed snapshot repositories for reproducible applications.
 Use dependency auditing without treating its output as a complete security proof.
 
 ---
+
+> **In plain terms:** Scala rewards making illegal states impossible to write down: enums and sealed types list every alternative the compiler will check, and opaque types let you pass around a `Meters` that is a `Double` underneath but refuses to mix with a `Seconds` at the API surface. `asInstanceOf` is a cast, not validation — validate at the constructor, and pick one effect model per subsystem so exceptions, futures, and typed errors never mingle uninvited.
 
 ## 26. Language-Specific Engineering
 

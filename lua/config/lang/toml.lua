@@ -10,6 +10,7 @@ local group = api.nvim_create_augroup('TOML', {
     clear = true,
 })
 local header = require('research.docs')
+local modernize = require('config.lang.modernize')
 api.nvim_create_autocmd('BufNewFile', {
     group = group,
     pattern = { '*.toml' },
@@ -23,4 +24,13 @@ api.nvim_create_autocmd('BufNewFile', {
         vim.cmd('normal! G')
     end,
 })
+
+local REPLACEMENTS = {
+}
+
+---Modernize deprecated toml syntax in the current buffer.
+function M.modernize()
+    modernize.buffer('toml', REPLACEMENTS, 'toml')
+end
+
 return M

@@ -223,6 +223,13 @@ When goals conflict:
 
 ---
 
+> **In plain terms:** "Lua" is not one language runtime but a family — 5.1, 5.2, 5.3, 5.4, LuaJIT,
+> and Neovim's embedded environment each differ in integers, bit operations, UTF-8 support, garbage
+> collection, and available APIs. A module that silently assumes one of them will fail on another in
+> ways that are difficult to diagnose. The fix is architectural: detect the runtime once, and keep
+> every runtime-specific behavior behind a small, explicit boundary.
+
+
 ## 2. Lua Runtime Assumptions
 
 Lua implementations differ.
@@ -679,6 +686,14 @@ len
 
 ---
 
+> **In plain terms:** A Lua table is simultaneously an array, a map, a record, a set, an object, and
+> a namespace — enormous flexibility that punishes undisciplined use. The three classic traps: the
+> length operator `#` is meaningless for sparse arrays, `pairs()` iterates in unspecified order, and
+> metatables turn simple field access into arbitrary code. Discipline means never mixing array and
+> map semantics in one table, documenting invariants, and reaching for metatables only when the
+> semantic gain is genuinely worth the surprise.
+
+
 ## 10. Tables
 
 Lua tables are arrays, maps, records, sets, objects, and namespaces.
@@ -801,6 +816,14 @@ copy_range({
 ```
 
 ---
+
+> **In plain terms:** Closures capture variables, not values — a function defined inside a loop sees
+> the upvalue, the shared variable itself, which is why loop captures surprise newcomers. Lua's
+> `local` is what gives a variable its narrow, visible lifetime, so declaring locals near first use
+> keeps lifetimes obvious during review. The async warning is the practical consequence: a mutable
+> derived value carried across a yield or callback may have changed under you, so minimize what
+> closures capture and never carry mutable state across those boundaries.
+
 
 ## 13. Scope
 
@@ -1115,6 +1138,14 @@ vim.system({
 - machine-readable output is preferred.
 
 ---
+
+> **In plain terms:** A coroutine's `yield` is a pause point where the program may resume much later
+> — and everything asserted before the yield may be false by the time it resumes. Generation tokens
+> solve this elegantly: each request bumps a counter, captures it, and discards the result if the
+> counter moved on, which is how you reject stale async completions. The broader rule is to treat
+> every async delay as a trust boundary: revalidate buffers, windows, and files after the delay, and
+> cancel owned work during teardown.
+
 
 ## 21. Coroutines and Async Work
 

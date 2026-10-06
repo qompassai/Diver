@@ -9,6 +9,7 @@ local api = vim.api
 local cmd = vim.cmd
 local fn = vim.fn
 local formatters = require('formatters')
+local modernize = require('config.lang.modernize')
 local group = api.nvim_create_augroup('Python', {
     clear = true,
 })
@@ -87,7 +88,23 @@ api.nvim_create_autocmd('LspAttach', {
         end
     end,
 })
-api.nvim_create_user_command('PyHostPing', function()
+---Create a buffer-local user command when a Python buffer opens.
+---Lang commands only exist in buffers of their own language: they never
+---pollute `:` completion elsewhere.
+---@param name string command name
+---@param fn function|string command implementation
+---@param opts? table nvim_create_user_command options
+local function buf_command(name, fn, opts)
+    vim.api.nvim_create_autocmd('FileType', {
+        pattern = 'python',
+        desc = ('Buffer-local command: %s'):format(name),
+        callback = function(args)
+            vim.api.nvim_buf_create_user_command(args.buf, name, fn, opts or {})
+        end,
+    })
+end
+
+buf_command('PyHostPing', function()
     local chan = M.start()
     if not chan then
         return
@@ -99,9 +116,62 @@ api.nvim_create_user_command('PyHostPing', function()
         notify('Python host ping failed: ' .. tostring(res), log.levels.ERROR)
     end
 end, { desc = 'Ping the Python host process' })
+---Resolve the Python interpreter for a buffer, reusing dap.python's
+---resolver so DAP and LSP agree. Falls back to python3.
+---@param bufnr integer
+---@return string
+local function resolve_python(bufnr)
+    local ok, dap_py = pcall(require, 'dap.python')
+    if ok and dap_py and dap_py.interpreter then
+        local interp = dap_py.interpreter()
+        if interp and interp ~= '' then
+            return interp
+        end
+    end
+    return 'python3'
+end
+
+buf_command('PyVenv', function()
+    local bufnr = api.nvim_get_current_buf()
+    local py = resolve_python(bufnr)
+    vim.b[bufnr].python_path = py
+    notify(('Python interpreter: %s'):format(py), log.levels.INFO)
+end, { desc = 'Show the resolved Python interpreter for this buffer' })
+
+---Point basedpyright at the resolved interpreter on attach, so it never
+---silently type-checks against the wrong environment.
+api.nvim_create_autocmd('LspAttach', {
+    group = group,
+    desc = 'Set basedpyright pythonPath from the resolved interpreter',
+    callback = function(args)
+        local client = lsp.get_client_by_id(args.data.client_id)
+        if not client or client.name ~= 'basedpyright' then
+            return
+        end
+        local py = resolve_python(args.buf)
+        client.settings = vim.tbl_deep_extend('force', client.settings or {}, {
+            python = { pythonPath = py },
+        })
+        client.notify('workspace/didChangeConfiguration', { settings = client.settings })
+    end,
+})
+
 function M.start()
     if M.chan and fn.chanclose then
-        return M.chan
+        
+local REPLACEMENTS = {
+    { "\\basyncio\\.coroutine\\b", "async def" },
+    { "\\bcollections\\.Mapping\\b", "collections.abc.Mapping" },
+    { "\\bcollections\\.Sequence\\b", "collections.abc.Sequence" },
+    { "\\btime\\.clock\\s*\\(", "time.perf_counter(" },
+}
+
+---Modernize deprecated python syntax in the current buffer.
+function M.modernize()
+    modernize.buffer('python', REPLACEMENTS, 'python')
+end
+
+return M.chan
     end
     local script = fn.stdpath('config') .. '/scripts/host.py'
     if fn.filereadable(script) == 0 then

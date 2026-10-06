@@ -230,6 +230,8 @@ code, re-check state after every await that permits another task to mutate it.
 
 ---
 
+> **In plain terms:** Python's garbage collector decides when memory is reclaimed, not when your file gets closed or your lock gets released -- so resources with side effects need deterministic cleanup via context managers (`with` blocks), not hope. `__del__` is the classic hope-shaped trap: the interpreter makes no promise about when, or even whether, it runs. Two rules cover most of the trouble: register cleanup as soon as each acquisition succeeds, and make sure `__exit__` never accidentally swallows an exception by returning a truthy value. If both the work and the cleanup fail, the main failure is the one the caller needs to hear about.
+
 ## 14. Resource Lifetime
 
 Use context managers for files, locks, and transactions; `ExitStack` or
@@ -240,6 +242,8 @@ A context manager must not suppress failure accidentally by returning truthy
 from `__exit__`.
 
 ---
+
+> **In plain terms:** Python objects are cheap to create and expensive to forget about: unbounded caches, logs, retained tracebacks, and queued tasks are where memory quietly goes to die. Generators look like the fix, but they only stay lazy while the consumer is lazy -- `list(generator)` materializes the whole thing, discarding the benefit in one call. `deque(maxlen=...)` is another quiet trap: it drops old items silently, which is exactly what you don't want in a work queue unless dropping is the documented policy. When something is retained, reach for `tracemalloc` to find the holder before reaching for forced garbage collection.
 
 ## 15. Memory and Allocation
 
@@ -329,6 +333,8 @@ reap on cancellation. [P4]
 
 ---
 
+> **In plain terms:** Python's concurrency has two hard truths. First, the Global Interpreter Lock (GIL) means threads take turns running Python bytecode -- threads help while you wait on I/O, but CPU-bound work needs processes or native extensions to actually parallelize. Second, asyncio cancellation is cooperative, not a kill switch: `asyncio.timeout` asks a task to stop politely, and a thread parked in a blocking call will finish that call regardless of your wishes. The practical shape is `asyncio.TaskGroup` for tasks that share one lifetime, bounded admission before you create tasks, cleanup in `finally`, and processes -- not threads -- for work that must be forcibly killable.
+
 ## 21. Concurrency and Async Work
 
 Use `asyncio.TaskGroup` for related tasks with one lifetime, and bound admission
@@ -388,6 +394,8 @@ lock that includes them. Build backends and source-distribution hooks execute
 code. A resolver and vulnerability scan are useful checks, not a trust proof.
 
 ---
+
+> **In plain terms:** Python is full of features that look like one thing and are another: `bool` is secretly an `int`, default argument values are created once and shared across calls, generators don't run any code until you start consuming them, and properties can execute arbitrary code on what looks like a plain attribute read. The deepest trap is that type annotations are commentary, not enforcement -- nothing at runtime stops the wrong type from arriving. The section's answer is narrow contracts: validate what crosses your boundary, accept only the exact shapes you need, and put limits on before you decode hostile bytes.
 
 ## 26. Language-Specific Engineering
 

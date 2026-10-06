@@ -18,7 +18,21 @@ local levels = vim.log.levels
 local set_keymap = vim.keymap.set
 local create_autocmd = api.nvim_create_autocmd
 local create_augroup = api.nvim_create_augroup
-local create_user_command = api.nvim_create_user_command
+---Create a buffer-local user command when a lua buffer opens.
+---Lang commands only exist in buffers of their own language: they never
+---pollute `:` completion elsewhere.
+---@param name string command name
+---@param fn function|string command implementation
+---@param opts? table nvim_create_user_command options
+local function create_user_command(name, fn, opts)
+    api.nvim_create_autocmd('FileType', {
+        pattern = 'lua',
+        desc = ('Buffer-local command: %s'):format(name),
+        callback = function(args)
+            api.nvim_buf_create_user_command(args.buf, name, fn, opts or {})
+        end,
+    })
+end
 local group = create_augroup('lua_config', {
     clear = true,
 })

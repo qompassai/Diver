@@ -161,6 +161,8 @@ an accidentally exponential metaprogram.
 
 ---
 
+> **In plain terms:** Zig errors are values, not exceptions — a function returns `ValidationError!u64`, meaning "either this error set or a u64", and the caller must deal with both. `defer` always runs at scope exit; `errdefer` runs only when unwinding from an error, so it is the cleanup crew that stands down when ownership was successfully handed off. Registering both to free the same allocation is a double-free with extra steps.
+
 ## 7. Error Handling
 
 Return a documented error union such as `ValidationError!u64` for expected
@@ -195,6 +197,8 @@ Bytes are not UTF-8 code points; encode endianness explicitly in protocols.
 
 ---
 
+> **In plain terms:** A Zig slice is a borrowed view — a pointer and a length — that owns nothing and extends nobody's lifetime, so holding one past its owner's death is a dangling reference with plausible deniability. Zig 0.16's containers are "unmanaged": they do not keep their own allocator, so you hand the allocator to every operation that needs it. Transplanting an old allocator-owning pattern onto the new API compiles but leaks.
+
 ## 10. Collections and Data Shapes
 
 Prefer slices with lengths over raw many-item pointers at ordinary boundaries.
@@ -215,6 +219,8 @@ Document iterator and pointer invalidation on resize, removal, or arena reset.
 Do not publish pointers into growable storage before its lifetime is stable.
 
 ---
+
+> **In plain terms:** In Zig, memory strategy is an argument, not a global — the allocator (and the I/O interface) travels with the call so every function is honest about what it allocates and who cleans up. A generic helper is only worth it when its compile-time constraints make the call site clearer than copy-paste; cleverness that obscures the runtime story is a net loss.
 
 ## 12. Function Design
 
@@ -246,6 +252,8 @@ A repeated teardown operation must either be idempotent or reject the second
 call through a documented state check.
 
 ---
+
+> **In plain terms:** An arena allocator is a "throw everything away at once" strategy — it simplifies lifetimes but remembers every allocation until reset, which is a memory spike wearing a friendly face. And before you multiply a count by an element size to request bytes, check the math: integer overflow there hands you a too-small buffer with a too-big promise. Never mix allocators between allocate and free.
 
 ## 15. Memory and Allocation
 
@@ -330,6 +338,8 @@ Never hide a shell in a helper that claims to accept a safe argv list. [Z2]
 
 ---
 
+> **In plain terms:** Zig 0.16 replaced language-level async with an explicit I/O interface — the old `async`/`await` examples littering the internet describe a machine that no longer exists. You now pass the I/O dependency in, follow its ownership rules, and treat cancellation as a real error path, not a polite suggestion. And a thread-safe allocator does not make the things it allocates thread-safe — sharing is still on you.
+
 ## 21. Concurrency and Async Work
 
 Zig 0.16 introduces I/O as an interface with futures/groups and cancellation;
@@ -381,6 +391,8 @@ standard-library facilities or small internal code when they meet the contract;
 use a mature reviewed dependency when reimplementation would be riskier.
 
 ---
+
+> **In plain terms:** Zig's safety comes from five boundaries you audit deliberately: who owns the allocation, who outlives whom, which build mode guards you still have, what `comptime` actually costs, and which C ABI assumptions you are importing. `extern` and `packed` describe memory layouts, not parsing strategies — decode wire bytes field by field instead of casting the packet and hoping. Pin the standard library to your compiler and keep a migration checklist, because the API moves.
 
 ## 26. Language-Specific Engineering
 

@@ -155,6 +155,14 @@ or defer work; review the lifetime and evaluation contract of each stage.
 
 ---
 
+> **In plain terms:** Exception safety is a contract about what state survives when a throw
+> interrupts an operation: unchanged (the strong guarantee), valid but changed (the basic
+> guarantee), or explicitly documented partial effects. `std::expected` is excellent for
+> representing routine failure, but it does not make anything nonthrowing — the machinery producing
+> the value can still throw. And exceptions must never cross a C ABI boundary, where no catch exists
+> to receive them; translate them into status codes at the boundary.
+
+
 ## 7. Error Handling
 
 Choose an exception policy and typed expected-error policy per subsystem.
@@ -228,6 +236,14 @@ blanket fix for lifetime errors; define whether callbacks hold a strong owner,
 a weak observer, or a joined lexical task.
 
 ---
+
+> **In plain terms:** RAII ties a resource's lifetime to an object's lifetime, so cleanup happens
+> automatically when the object goes out of scope — the destructor is the cleanup path you cannot
+> forget. The Rule of Zero says a well-designed type needs no custom destructor, copy, or move
+> operations because its members already manage themselves. Two caveats carry this section:
+> `shared_ptr` cycles keep each other alive forever, and a destructor must never let an exception
+> escape, because throwing during stack unwinding is fatal.
+
 
 ## 14. Resource Lifetime
 
@@ -328,6 +344,14 @@ and do not confuse a C++ string builder with safe shell quoting.
 
 ---
 
+> **In plain terms:** `std::jthread`'s stop token is cooperative — it politely asks the task to
+> stop, and a task that ignores it or blocks on uninterruptible I/O will hold the joining destructor
+> hostage. Coroutines are subtler still: the coroutine frame lives on the heap and can easily
+> outlive the objects it references, so every coroutine needs a clear owner and a cancellation
+> story. Neither `std::async` futures nor coroutines give you structured cancellation for free;
+> design the wakeup, join, and cancellation behavior before spawning the work.
+
+
 ## 21. Concurrency and Async Work
 
 Prefer owned threads such as `std::jthread` when its lifecycle fits, with an
@@ -389,6 +413,14 @@ standard library selection, exception/RTTI compatibility, and native transitive
 dependencies. Use established libraries for subtle parsers and cryptography.
 
 ---
+
+> **In plain terms:** Making ownership visible in types is how C++ prevents lifetime bugs at compile
+> time, but types are a model, not a proof — borrowed views, iterator invalidation, and captured
+> references still slip through. Iterators can be silently invalidated by container mutation, a
+> moved-from object is valid but unspecified, and allocators tie memory to a resource whose lifetime
+> every allocated value must respect. Prefer Rule of Zero designs and keep experimental language
+> features out until the toolchain is pinned and tested.
+
 
 ## 26. Language-Specific Engineering
 
