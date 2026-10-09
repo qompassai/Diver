@@ -11,7 +11,7 @@ return ---@type vim.lsp.Config
         '--search-parent-directories',
         '--sort-requires',
         '--respect-ignores',
-        '--syntax=LuaJIT',
+        '--syntax=All',
     },
     filetypes = {
         'lua',
@@ -29,8 +29,8 @@ return ---@type vim.lsp.Config
     end,
     root_markers = {
         '.editorconfig',
-        '.stylua.toml',
-        'stylua.toml',
+        '.git',
+        '.luarc.json',
     },
     settings = {
         stylua = {
@@ -46,7 +46,7 @@ return ---@type vim.lsp.Config
             sort_requires = {
                 enabled = true,
             },
-            syntax = 'LuaJIT',
+            syntax = 'All',
         },
     },
 }
