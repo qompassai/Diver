@@ -14,36 +14,52 @@ local autocmd = vim.api.nvim_create_autocmd
 local client_by_id = vim.lsp.get_client_by_id
 local cmd = vim.cmd
 local code_action = vim.lsp.buf.code_action
-local findfile = vim.fn.findfile
-local formatters = require('formatters')
-local modernize = require('config.lang.modernize')
 local ERROR = vim.log.levels.ERROR
-local get = vim.diagnostic.get
-local INFO = vim.log.levels.INFO
-local jobstart = vim.fn.jobstart
-local lsp = vim.lsp
-local notify = vim.notify
-local schedule = vim.schedule
+local findfile = vim.fn.findfile
 local fn = vim.fn
-local header = require('research.docs')
+local formatters = require('formatters')
+local get = vim.diagnostic.get
 local group = augroup('Nix', {
     clear = true,
 })
+local header = require('research.docs')
+local INFO = vim.log.levels.INFO
+local jobstart = vim.fn.jobstart
+local lsp = vim.lsp
+local modernize = require('config.lang.modernize')
+local notify = vim.notify
+local schedule = vim.schedule
+
+---Language-specific MCP server, declared in the ai.mcp declared_servers
+---entry shape. Declarative and inert: not auto-started; enabling belongs
+---to the ai.mcp layer. mcp-nixos (utensils/mcp-nixos, distributed on PyPI
+---as mcp-nixos) provides live NixOS/Home Manager package and option
+---search. Verified against the project's repo and PyPI page 2026-10-09.
+M.mcp_servers = {
+    {
+        args = { 'mcp-nixos' },
+        command = 'uvx',
+        enabled = false,
+        name = 'nixos',
+    },
+}
+
 ---Create a buffer-local user command when a nix buffer opens.
 ---Lang commands only exist in buffers of their own language: they never
 ---pollute `:` completion elsewhere.
 ---@param name string command name
----@param fn function|string command implementation
+---@param callback function|string command implementation
 ---@param opts? table nvim_create_user_command options
-local function usercmd(name, fn, opts)
+local function usercmd(name, callback, opts)
     vim.api.nvim_create_autocmd('FileType', {
         pattern = 'nix',
         desc = ('Buffer-local command: %s'):format(name),
         callback = function(args)
-            vim.api.nvim_buf_create_user_command(args.buf, name, fn, opts or {})
+            vim.api.nvim_buf_create_user_command(args.buf, name, callback, opts or {})
         end,
     })
 end
+
 autocmd('BufNewFile', {
     group = group,
     pattern = {
@@ -103,39 +119,7 @@ autocmd('BufNewFile', {
         end
     end,
 })
-autocmd('FileType', {
-    group = group,
-    pattern = 'nix',
-    callback = function(args)
-        local bufnr = args.buf
-        vim.bo[bufnr].tabstop = 2
-        vim.bo[bufnr].shiftwidth = 2
-        vim.bo[bufnr].softtabstop = 2
-        vim.bo[bufnr].expandtab = true
-        vim.bo[bufnr].commentstring = '# %s'
-    end,
-})
-formatters.register_stage({
-    name = 'nix_organize_imports',
-    priority = 425,
-    patterns = { '*.nix', 'flake.nix', 'default.nix', 'shell.nix' },
-    desc = 'Organize imports in Nix sources before save',
-    run = function(bufnr)
-        local diagnostics = get(bufnr)
-        code_action({
-            context = {
-                diagnostics = diagnostics,
-                only = { 'source.organizeImports', 'source.fixAll' },
-                triggerKind = lsp.protocol.CodeActionTriggerKind.Automatic,
-            },
-            apply = true,
-            filter = function(_, client_id)
-                local client = client_by_id(client_id)
-                return client ~= nil and (client.name == 'nixd' or client.name == 'nil_ls' or client.name == 'statix')
-            end,
-        })
-    end,
-})
+
 autocmd('BufWritePost', {
     group = group,
     pattern = { '*.nix', 'flake.nix', 'default.nix', 'shell.nix' },
@@ -158,6 +142,42 @@ autocmd('BufWritePost', {
         end
     end,
 })
+
+autocmd('FileType', {
+    group = group,
+    pattern = 'nix',
+    callback = function(args)
+        local bufnr = args.buf
+        vim.bo[bufnr].tabstop = 2
+        vim.bo[bufnr].shiftwidth = 2
+        vim.bo[bufnr].softtabstop = 2
+        vim.bo[bufnr].expandtab = true
+        vim.bo[bufnr].commentstring = '# %s'
+    end,
+})
+
+formatters.register_stage({
+    name = 'nix_organize_imports',
+    priority = 425,
+    patterns = { '*.nix', 'flake.nix', 'default.nix', 'shell.nix' },
+    desc = 'Organize imports in Nix sources before save',
+    run = function(bufnr)
+        local diagnostics = get(bufnr)
+        code_action({
+            context = {
+                diagnostics = diagnostics,
+                only = { 'source.organizeImports', 'source.fixAll' },
+                triggerKind = lsp.protocol.CodeActionTriggerKind.Automatic,
+            },
+            apply = true,
+            filter = function(_, client_id)
+                local client = client_by_id(client_id)
+                return client ~= nil and (client.name == 'nixd' or client.name == 'nil_ls' or client.name == 'statix')
+            end,
+        })
+    end,
+})
+
 usercmd('NixBuild', function()
     local flake = findfile('flake.nix', '.;')
     if flake ~= '' then
@@ -187,6 +207,45 @@ usercmd('NixBuild', function()
         })
     end
 end, {})
+
+usercmd('NixCodeAction', function()
+    local diagnostics = get(0)
+    code_action({
+        context = {
+            diagnostics = diagnostics,
+            only = { 'quickfix', 'refactor', 'source.organizeImports', 'source.fixAll' },
+        },
+        filter = function(_, client_id)
+            local client = client_by_id(client_id)
+            return client ~= nil and (client.name == 'nixd' or client.name == 'nil_ls' or client.name == 'statix')
+        end,
+        apply = true,
+    })
+end, {})
+
+usercmd('NixEval', function()
+    local current_file = fn.expand('%:p')
+    jobstart({ 'nix-instantiate', '--eval', '--strict', current_file }, {
+        stdout_buffered = true,
+        on_stdout = function(_, data, _)
+            if not data then
+                return
+            end
+            local out = table.concat(data, '\n')
+            schedule(function()
+                notify('Nix eval:\n' .. out, INFO)
+            end)
+        end,
+        on_exit = function(_, code, _)
+            if code ~= 0 then
+                schedule(function()
+                    notify('Nix eval failed', ERROR)
+                end)
+            end
+        end,
+    })
+end, {})
+
 usercmd('NixFlakeCheck', function()
     jobstart({ 'nix', 'flake', 'check' }, {
         on_exit = function(_, code, _)
@@ -200,6 +259,7 @@ usercmd('NixFlakeCheck', function()
         end,
     })
 end, {})
+
 usercmd('NixFlakeUpdate', function()
     jobstart({ 'nix', 'flake', 'update' }, {
         on_exit = function(_, code, _)
@@ -214,6 +274,7 @@ usercmd('NixFlakeUpdate', function()
         end,
     })
 end, {})
+
 usercmd('NixFormat', function()
     local current_file = fn.expand('%:p')
     local formatter = 'nixfmt'
@@ -241,66 +302,15 @@ usercmd('NixFormat', function()
         end,
     })
 end, {})
-usercmd('NixStatix', function()
-    local current_file = fn.expand('%:p')
-    if fn.executable('statix') ~= 1 then
-        notify('statix not found', ERROR)
-        return
-    end
-    jobstart({ 'statix', 'fix', current_file }, {
-        on_exit = function(_, code, _)
-            schedule(function()
-                if code == 0 then
-                    notify('statix fix successful', INFO)
-                    cmd('e!')
-                else
-                    notify('statix fix failed', ERROR)
-                end
-            end)
-        end,
-    })
-end, {})
-usercmd('NixRepl', function()
-    local flake = findfile('flake.nix', '.;')
-    if flake ~= '' then
-        cmd('terminal nix repl')
-        vim.defer_fn(function()
-            api.nvim_feedkeys(':load-flake .\n', 't', false)
-        end, 100)
-    else
-        cmd('terminal nix repl')
-    end
-end, {})
-usercmd('NixShell', function()
-    local shell_nix = findfile('shell.nix', '.;')
-    if shell_nix ~= '' then
-        cmd('terminal nix-shell')
-    else
-        cmd('terminal nix shell')
-    end
-end, {})
-usercmd('NixEval', function()
-    local current_file = fn.expand('%:p')
-    jobstart({ 'nix-instantiate', '--eval', '--strict', current_file }, {
-        stdout_buffered = true,
-        on_stdout = function(_, data, _)
-            if not data then
-                return
-            end
-            local out = table.concat(data, '\n')
-            schedule(function()
-                notify('Nix eval:\n' .. out, INFO)
-            end)
-        end,
-        on_exit = function(_, code, _)
-            if code ~= 0 then
-                schedule(function()
-                    notify('Nix eval failed', ERROR)
-                end)
-            end
-        end,
-    })
-end, {})
+
+usercmd('NixPublish', function()
+    notify(
+        'nix: there is no package upload. Nix expressions ship as source: publish the flake/project '
+            .. 'via VCS (flake URLs resolve from git), or upstream packages through a nixpkgs pull request',
+        INFO
+    )
+end, { desc = 'Explain Nix distribution (VCS flakes / nixpkgs PR; no upload step exists)' })
+
 usercmd('NixQuickfix', function()
     local diagnostics = get(0)
     code_action({
@@ -312,20 +322,7 @@ usercmd('NixQuickfix', function()
         apply = true,
     })
 end, {})
-usercmd('NixCodeAction', function()
-    local diagnostics = get(0)
-    code_action({
-        context = {
-            diagnostics = diagnostics,
-            only = { 'quickfix', 'refactor', 'source.organizeImports', 'source.fixAll' },
-        },
-        filter = function(_, client_id)
-            local client = client_by_id(client_id)
-            return client ~= nil and (client.name == 'nixd' or client.name == 'nil_ls' or client.name == 'statix')
-        end,
-        apply = true,
-    })
-end, {})
+
 usercmd('NixRangeAction', function()
     local bufnr = 0
     local diagnostics = get(bufnr)
@@ -350,8 +347,48 @@ end, {
     range = true,
 })
 
-local REPLACEMENTS = {
-}
+usercmd('NixRepl', function()
+    local flake = findfile('flake.nix', '.;')
+    if flake ~= '' then
+        cmd('terminal nix repl')
+        vim.defer_fn(function()
+            api.nvim_feedkeys(':load-flake .\n', 't', false)
+        end, 100)
+    else
+        cmd('terminal nix repl')
+    end
+end, {})
+
+usercmd('NixShell', function()
+    local shell_nix = findfile('shell.nix', '.;')
+    if shell_nix ~= '' then
+        cmd('terminal nix-shell')
+    else
+        cmd('terminal nix shell')
+    end
+end, {})
+
+usercmd('NixStatix', function()
+    local current_file = fn.expand('%:p')
+    if fn.executable('statix') ~= 1 then
+        notify('statix not found', ERROR)
+        return
+    end
+    jobstart({ 'statix', 'fix', current_file }, {
+        on_exit = function(_, code, _)
+            schedule(function()
+                if code == 0 then
+                    notify('statix fix successful', INFO)
+                    cmd('e!')
+                else
+                    notify('statix fix failed', ERROR)
+                end
+            end)
+        end,
+    })
+end, {})
+
+local REPLACEMENTS = {}
 
 ---Modernize deprecated nix syntax in the current buffer.
 function M.modernize()

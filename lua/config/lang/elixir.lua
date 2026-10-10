@@ -9,36 +9,89 @@ local autocmd = vim.api.nvim_create_autocmd
 local client_by_id = vim.lsp.get_client_by_id
 local cmd = vim.cmd
 local code_action = vim.lsp.buf.code_action
-local findfile = vim.fn.findfile
-local formatters = require('formatters')
-local modernize = require('config.lang.modernize')
 local ERROR = vim.log.levels.ERROR
-local get = vim.diagnostic.get
-local INFO = vim.log.levels.INFO
-local jobstart = vim.fn.jobstart
-local lsp = vim.lsp
-local notify = vim.notify
-local schedule = vim.schedule
+local findfile = vim.fn.findfile
 local fn = vim.fn
-local header = require('research.docs')
+local formatters = require('formatters')
+local get = vim.diagnostic.get
 local group = augroup('Elixir', {
     clear = true,
 })
+local header = require('research.docs')
+local INFO = vim.log.levels.INFO
+local jobstart = vim.fn.jobstart
+local lsp = vim.lsp
+local modernize = require('config.lang.modernize')
+local notify = vim.notify
+local schedule = vim.schedule
+
+---Language-specific MCP server, declared in the ai.mcp declared_servers
+---entry shape. Declarative and inert: not auto-started; enabling belongs
+---to the ai.mcp layer. hexdocs-mcp (bradleygolden/hexdocs-mcp, npm
+---package hexdocs-mcp) provides semantic search over Hex package
+---documentation. Verified against the project's repo 2026-10-09.
+M.mcp_servers = {
+    {
+        args = { '-y', 'hexdocs-mcp' },
+        command = 'npx',
+        enabled = false,
+        name = 'hexdocs',
+    },
+}
+
+---Publish the current package to hex.pm with Mix. Dry-run by default:
+---`mix hex.build` only builds the package tarball; nothing is uploaded.
+---Use the bang form (:ElixirPublish!) to run `mix hex.publish` for real.
+---Credentials stay in Hex's own chain (~/.hex, HEX_API_KEY); this hook
+---never reads, stores, or logs them.
+---@param bang boolean true to publish for real
+local function publish_package(bang)
+    local argv = { 'mix', 'hex.build' }
+    if bang then
+        argv = { 'mix', 'hex.publish', '--yes' }
+    end
+    notify('publish: ' .. table.concat(argv, ' '), INFO)
+    jobstart(argv, {
+        cwd = fn.expand('%:p:h'),
+        stdout_buffered = true,
+        on_stdout = function(_, data, _)
+            if data then
+                vim.schedule(function()
+                    notify(table.concat(data, '\n'), INFO)
+                end)
+            end
+        end,
+        on_stderr = function(_, data, _)
+            if data then
+                vim.schedule(function()
+                    notify(table.concat(data, '\n'), ERROR)
+                end)
+            end
+        end,
+        on_exit = function(_, code, _)
+            vim.schedule(function()
+                notify(('publish exited with code %d'):format(code), code == 0 and INFO or ERROR)
+            end)
+        end,
+    })
+end
+
 ---Create a buffer-local user command when a elixir buffer opens.
 ---Lang commands only exist in buffers of their own language: they never
 ---pollute `:` completion elsewhere.
 ---@param name string command name
----@param fn function|string command implementation
+---@param callback function|string command implementation
 ---@param opts? table nvim_create_user_command options
-local function usercmd(name, fn, opts)
+local function usercmd(name, callback, opts)
     vim.api.nvim_create_autocmd('FileType', {
         pattern = 'elixir',
         desc = ('Buffer-local command: %s'):format(name),
         callback = function(args)
-            vim.api.nvim_buf_create_user_command(args.buf, name, fn, opts or {})
+            vim.api.nvim_buf_create_user_command(args.buf, name, callback, opts or {})
         end,
     })
 end
+
 autocmd('BufNewFile', {
     group = group,
     pattern = {
@@ -59,6 +112,50 @@ autocmd('BufNewFile', {
         cmd('normal! G')
     end,
 })
+
+autocmd('BufWritePost', {
+    group = group,
+    pattern = {
+        '*.ex',
+        '*.exs',
+    },
+    callback = function(args)
+        local mix_file = findfile('mix.exs', '.;')
+        if mix_file ~= '' then
+            jobstart({
+                'mix',
+                'credo',
+                'suggest',
+                '--format=oneline',
+                api.nvim_buf_get_name(args.buf),
+            }, {
+                stdout_buffered = true,
+                on_stdout = function(_, data, _)
+                    if not data then
+                        return
+                    end
+                    local out = table.concat(data, '')
+                    if out ~= '' and not out:match('^%s*$') then
+                        schedule(function()
+                            notify('credo: ' .. out, INFO)
+                        end)
+                    end
+                end,
+            })
+        end
+    end,
+})
+
+autocmd('LspAttach', {
+    group = group,
+    callback = function(args)
+        local client = client_by_id(args.data.client_id)
+        if client and client.name == 'elixirls' then
+            vim.bo[args.buf].omnifunc = 'v:lua.vim.lsp.omnifunc'
+        end
+    end,
+})
+
 formatters.register_stage({
     name = 'elixir_lsp_format',
     priority = 410,
@@ -77,6 +174,7 @@ formatters.register_stage({
         })
     end,
 })
+
 formatters.register_stage({
     name = 'elixir_fixall',
     priority = 411,
@@ -97,6 +195,55 @@ formatters.register_stage({
         })
     end,
 })
+
+formatters.register_stage({
+    name = 'elixir_organize_imports',
+    priority = 412,
+    patterns = {
+        '*.ex',
+        '*.exs',
+    },
+    desc = 'Organize imports in Elixir sources before save',
+    run = function(bufnr)
+        local diagnostics = get(bufnr)
+        code_action({
+            context = {
+                diagnostics = diagnostics,
+                only = {
+                    'source.organizeImports',
+                    'source.fixAll',
+                },
+                triggerKind = lsp.protocol.CodeActionTriggerKind.Source,
+            },
+            apply = true,
+            filter = function(_, client_id)
+                local client = client_by_id(client_id)
+                return client ~= nil and client.name == 'elixirls'
+            end,
+        })
+    end,
+})
+
+usercmd('ElixirCodeAction', function()
+    local diagnostics = get(0)
+    code_action({
+        context = {
+            diagnostics = diagnostics,
+            only = {
+                'quickfix',
+                'refactor',
+                'source.organizeImports',
+                'source.fixAll',
+            },
+        },
+        filter = function(_, client_id)
+            local client = client_by_id(client_id)
+            return client ~= nil and client.name == 'elixirls'
+        end,
+        apply = true,
+    })
+end, {})
+
 usercmd('ElixirCompile', function()
     local mix_file = findfile('mix.exs', '.;')
     if mix_file ~= '' then
@@ -132,42 +279,41 @@ usercmd('ElixirCompile', function()
     end
 end, {})
 
-usercmd('ElixirTest', function()
-    local mix_file = findfile('mix.exs', '.;')
-    if mix_file ~= '' then
-        local current_file = fn.expand('%:p')
-        if current_file:match('_test%.exs$') then
-            jobstart({
-                'mix',
-                'test',
-                current_file,
-            }, {
-                detach = false,
-            })
-        else
-            jobstart({
-                'mix',
-                'test',
-            }, {
-                detach = false,
-            })
-        end
-    else
-        notify('No mix.exs found', ERROR)
-    end
+usercmd('ElixirDeps', function()
+    jobstart({ 'mix', 'deps.get' }, {
+        on_exit = function(_, code, _)
+            schedule(function()
+                if code == 0 then
+                    notify('Dependencies fetched', INFO)
+                else
+                    notify('Failed to fetch dependencies', ERROR)
+                end
+            end)
+        end,
+    })
 end, {})
-usercmd('ElixirRun', function()
+
+usercmd('ElixirFormat', function()
     local mix_file = findfile('mix.exs', '.;')
     if mix_file ~= '' then
         jobstart({
             'mix',
-            'run',
-        }, { detach = true })
-    else
-        jobstart({
-            'elixir',
+            'format',
             fn.expand('%:p'),
-        }, { detach = true })
+        }, {
+            on_exit = function(_, code, _)
+                schedule(function()
+                    if code == 0 then
+                        notify('Formatted successfully', INFO)
+                        cmd('e!')
+                    else
+                        notify('Format failed', ERROR)
+                    end
+                end)
+            end,
+        })
+    else
+        notify('No mix.exs found', ERROR)
     end
 end, {})
 
@@ -179,6 +325,11 @@ usercmd('ElixirIex', function()
         cmd('terminal iex')
     end
 end, {})
+
+usercmd('ElixirPublish', function(args)
+    publish_package(args.bang)
+end, { bang = true, desc = 'Build the hex package (dry-run); :ElixirPublish! publishes to hex.pm' })
+
 usercmd('ElixirQuickfix', function()
     local diagnostics = get(0)
     code_action({
@@ -192,84 +343,7 @@ usercmd('ElixirQuickfix', function()
         apply = true,
     })
 end, {})
-formatters.register_stage({
-    name = 'elixir_organize_imports',
-    priority = 412,
-    patterns = {
-        '*.ex',
-        '*.exs',
-    },
-    desc = 'Organize imports in Elixir sources before save',
-    run = function(bufnr)
-        local diagnostics = get(bufnr)
-        code_action({
-            context = {
-                diagnostics = diagnostics,
-                only = {
-                    'source.organizeImports',
-                    'source.fixAll',
-                },
-                triggerKind = lsp.protocol.CodeActionTriggerKind.Source,
-            },
-            apply = true,
-            filter = function(_, client_id)
-                local client = client_by_id(client_id)
-                return client ~= nil and client.name == 'elixirls'
-            end,
-        })
-    end,
-})
-autocmd('BufWritePost', {
-    group = group,
-    pattern = {
-        '*.ex',
-        '*.exs',
-    },
-    callback = function(args)
-        local mix_file = findfile('mix.exs', '.;')
-        if mix_file ~= '' then
-            jobstart({
-                'mix',
-                'credo',
-                'suggest',
-                '--format=oneline',
-                api.nvim_buf_get_name(args.buf),
-            }, {
-                stdout_buffered = true,
-                on_stdout = function(_, data, _)
-                    if not data then
-                        return
-                    end
-                    local out = table.concat(data, '')
-                    if out ~= '' and not out:match('^%s*$') then
-                        schedule(function()
-                            notify('credo: ' .. out, INFO)
-                        end)
-                    end
-                end,
-            })
-        end
-    end,
-})
-usercmd('ElixirCodeAction', function()
-    local diagnostics = get(0)
-    code_action({
-        context = {
-            diagnostics = diagnostics,
-            only = {
-                'quickfix',
-                'refactor',
-                'source.organizeImports',
-                'source.fixAll',
-            },
-        },
-        filter = function(_, client_id)
-            local client = client_by_id(client_id)
-            return client ~= nil and client.name == 'elixirls'
-        end,
-        apply = true,
-    })
-end, {})
+
 usercmd('ElixirRangeAction', function()
     local bufnr = 0
     local diagnostics = get(bufnr)
@@ -302,54 +376,48 @@ usercmd('ElixirRangeAction', function()
 end, {
     range = true,
 })
-autocmd('LspAttach', {
-    group = group,
-    callback = function(args)
-        local client = client_by_id(args.data.client_id)
-        if client and client.name == 'elixirls' then
-            vim.bo[args.buf].omnifunc = 'v:lua.vim.lsp.omnifunc'
-        end
-    end,
-})
-usercmd('ElixirFormat', function()
+
+usercmd('ElixirRun', function()
     local mix_file = findfile('mix.exs', '.;')
     if mix_file ~= '' then
         jobstart({
             'mix',
-            'format',
+            'run',
+        }, { detach = true })
+    else
+        jobstart({
+            'elixir',
             fn.expand('%:p'),
-        }, {
-            on_exit = function(_, code, _)
-                schedule(function()
-                    if code == 0 then
-                        notify('Formatted successfully', INFO)
-                        cmd('e!')
-                    else
-                        notify('Format failed', ERROR)
-                    end
-                end)
-            end,
-        })
+        }, { detach = true })
+    end
+end, {})
+
+usercmd('ElixirTest', function()
+    local mix_file = findfile('mix.exs', '.;')
+    if mix_file ~= '' then
+        local current_file = fn.expand('%:p')
+        if current_file:match('_test%.exs$') then
+            jobstart({
+                'mix',
+                'test',
+                current_file,
+            }, {
+                detach = false,
+            })
+        else
+            jobstart({
+                'mix',
+                'test',
+            }, {
+                detach = false,
+            })
+        end
     else
         notify('No mix.exs found', ERROR)
     end
 end, {})
-usercmd('ElixirDeps', function()
-    jobstart({ 'mix', 'deps.get' }, {
-        on_exit = function(_, code, _)
-            schedule(function()
-                if code == 0 then
-                    notify('Dependencies fetched', INFO)
-                else
-                    notify('Failed to fetch dependencies', ERROR)
-                end
-            end)
-        end,
-    })
-end, {})
 
-local REPLACEMENTS = {
-}
+local REPLACEMENTS = {}
 
 ---Modernize deprecated elixir syntax in the current buffer.
 function M.modernize()

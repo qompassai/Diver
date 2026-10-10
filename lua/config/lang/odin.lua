@@ -5,14 +5,16 @@
 local M = {}
 local api = vim.api
 local fn = vim.fn
-local header = require('research.docs')
-local modernize = require('config.lang.modernize')
 local group = api.nvim_create_augroup('Odin', {
     clear = true,
 })
+local header = require('research.docs')
+local modernize = require('config.lang.modernize')
+
 local function buf_is_empty()
     return api.nvim_buf_get_lines(0, 0, 1, false)[1] == ''
 end
+
 api.nvim_create_autocmd('BufNewFile', {
     group = group,
     pattern = {
@@ -29,8 +31,7 @@ api.nvim_create_autocmd('BufNewFile', {
     end,
 })
 
-local REPLACEMENTS = {
-}
+local REPLACEMENTS = {}
 
 ---Modernize deprecated odin syntax in the current buffer.
 function M.modernize()

@@ -1,10 +1,11 @@
--- /qompassai/Diver/lua/config/ui/md.lua
+-- /qompassai/Diver/lua/config/lang/md.lua
 -- Qompass AI Diver Markdown Config
 -- Copyright (C) 2025 Qompass AI, All rights reserved
 -----------------------------------------------------
 local M = {}
-local modernize = require('config.lang.modernize')
 local api = vim.api
+local modernize = require('config.lang.modernize')
+
 ---Create a buffer-local user command when a Markdown buffer opens.
 ---Lang commands only exist in buffers of their own language: they never
 ---pollute command-line completion elsewhere.
@@ -20,6 +21,8 @@ local function buf_command(name, fn, opts)
         end,
     })
 end
+
+local REPLACEMENTS = {}
 
 function M.md_anchor(link, opts)
     opts = opts or {}
@@ -56,6 +59,20 @@ function M.md_autocmds()
             }
         end,
     })
+end
+
+function M.md_config(opts)
+    opts = opts or {}
+    M.md_anchor(opts)
+    M.md_autocmds()
+    M.md_image(opts)
+    M.md_livepreview(opts)
+    M.md_preview(opts)
+    -- Native renderer (replaces render-markdown.nvim): extmarks +
+    -- conceallevel only, no plugin. setup() is idempotent.
+    require('config.ui.render').setup(opts)
+    M.md_pdf(opts)
+    M.md_table_mode()
 end
 
 function M.md_diagram(opts)
@@ -113,7 +130,7 @@ function M.md_diagram(opts)
     if not ok then
         vim.notify(
             'diagram.nvim is unavailable (it requires image.nvim, which was removed); diagram rendering disabled: '
-            .. tostring(err),
+                .. tostring(err),
             vim.log.levels.WARN
         )
     end
@@ -268,24 +285,6 @@ function M.md_table_mode()
         end,
     })
 end
-
-function M.md_config(opts)
-    opts = opts or {}
-    M.md_anchor(opts)
-    M.md_autocmds()
-    M.md_image(opts)
-    M.md_livepreview(opts)
-    M.md_preview(opts)
-    -- Native renderer (replaces render-markdown.nvim): extmarks +
-    -- conceallevel only, no plugin. setup() is idempotent.
-    require('config.ui.render').setup(opts)
-    M.md_pdf(opts)
-    M.md_table_mode()
-end
-
-
-local REPLACEMENTS = {
-}
 
 ---Modernize deprecated md syntax in the current buffer.
 function M.modernize()

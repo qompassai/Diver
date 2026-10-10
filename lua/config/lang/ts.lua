@@ -3,7 +3,7 @@
 --- Plain-language version: when you open a TypeScript or JavaScript file, this module applies the project's
 --- TypeScript settings. It runs on TS/JS filetypes.
 ---@module 'config.lang.ts'
--- qompassai/Diver/lua/config/lang/ts.lua
+-- /qompassai/Diver/lua/config/lang/ts.lua
 -- Qompass AI Diver Typescript Lang Config
 -- Copyright (C) 2025 Qompass AI, All rights reserved
 -----------------------------------------------------

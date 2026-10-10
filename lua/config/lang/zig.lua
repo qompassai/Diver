@@ -2,37 +2,41 @@
 -- Qompass AI Diver Zig Config
 -- Copyright (C) 2026 Qompass AI, All rights reserved
 -- ----------------------------------------
-local M = {} ---@version  JIT
+local M = {} ---@version 5.1, JIT
 local api = vim.api
 local augroup = vim.api.nvim_create_augroup
 local autocmd = vim.api.nvim_create_autocmd
 local code_action = vim.lsp.buf.code_action
-local formatters = require('formatters')
-local modernize = require('config.lang.modernize')
-local get = vim.diagnostic.get
-local jobstart = vim.fn.jobstart
-local lsp = vim.lsp
 local fn = vim.fn
-local header = require('research.docs')
+local formatters = require('formatters')
+local get = vim.diagnostic.get
 local group = augroup('Zig', {
     clear = true,
 })
+local header = require('research.docs')
+local INFO = vim.log.levels.INFO
+local jobstart = vim.fn.jobstart
+local lsp = vim.lsp
+local modernize = require('config.lang.modernize')
+local notify = vim.notify
 local uv = vim.uv
+
 ---Create a buffer-local user command when a zig buffer opens.
 ---Lang commands only exist in buffers of their own language: they never
 ---pollute `:` completion elsewhere.
 ---@param name string command name
----@param fn function|string command implementation
+---@param callback function|string command implementation
 ---@param opts? table nvim_create_user_command options
-local function usercmd(name, fn, opts)
+local function usercmd(name, callback, opts)
     vim.api.nvim_create_autocmd('FileType', {
         pattern = 'zig',
         desc = ('Buffer-local command: %s'):format(name),
         callback = function(args)
-            vim.api.nvim_buf_create_user_command(args.buf, name, fn, opts or {})
+            vim.api.nvim_buf_create_user_command(args.buf, name, callback, opts or {})
         end,
     })
 end
+
 autocmd('BufNewFile', {
     group = group,
     pattern = { '*.zig' },
@@ -47,6 +51,47 @@ autocmd('BufNewFile', {
         vim.cmd('normal! G')
     end,
 })
+
+autocmd('BufWritePost', {
+    group = group,
+    pattern = '*.zig',
+    callback = function(args)
+        jobstart({
+            'zlint',
+            api.nvim_buf_get_name(args.buf),
+        }, {
+            stdout_buffered = true,
+            on_stdout = function(_, data, _)
+                if not data then
+                    return
+                end
+                local out = table.concat(data, '')
+                if out ~= '' then
+                    vim.schedule(function()
+                        vim.notify('zlint: ' .. out, vim.log.levels.INFO)
+                    end)
+                end
+            end,
+        })
+    end,
+})
+
+autocmd('FileType', {
+    group = augroup('ziggy_schema', { clear = true }),
+    pattern = 'ziggy_schema',
+    callback = function()
+        local cwd = uv and uv.cwd() or fn.getcwd()
+        if not cwd then
+            return
+        end
+        lsp.start({
+            name = 'Ziggy LSP',
+            cmd = { 'ziggy', 'lsp', '--schema' },
+            root_dir = cwd,
+        })
+    end,
+})
+
 formatters.register_stage({
     name = 'zig_organize_imports',
     priority = 433,
@@ -71,43 +116,7 @@ formatters.register_stage({
         })
     end,
 })
-autocmd('BufWritePost', {
-    group = group,
-    pattern = '*.zig',
-    callback = function(args)
-        jobstart({
-            'zlint',
-            api.nvim_buf_get_name(args.buf),
-        }, {
-            stdout_buffered = true,
-            on_stdout = function(_, data, _)
-                if not data then
-                    return
-                end
-                local out = table.concat(data, '')
-                if out ~= '' then
-                    vim.schedule(function()
-                        vim.notify('zlint: ' .. out, vim.log.levels.INFO)
-                    end)
-                end
-            end,
-        })
-    end,
-})
-usercmd('ZigTest', function()
-    jobstart({ 'zig', 'test', fn.expand('%:p') }, { detach = true })
-end, {})
-usercmd('ZigQuickfix', function()
-    local diagnostics = get(0)
-    code_action({
-        context = {
-            diagnostics = diagnostics,
-            only = { 'quickfix' },
-            triggerKind = lsp.protocol.CodeActionTriggerKind.Invoked,
-        },
-        apply = true,
-    })
-end, {})
+
 usercmd('ZigCodeAction', function()
     local diagnostics = get(0)
     code_action({
@@ -127,6 +136,28 @@ usercmd('ZigCodeAction', function()
         apply = true,
     })
 end, {})
+
+usercmd('ZigPublish', function()
+    notify(
+        'zig: there is no central registry upload. Zig packages are distributed as source archives '
+            .. 'addressed by URL + hash in build.zig.zon; publish by tagging the project in VCS '
+            .. 'and sharing the tarball URL',
+        INFO
+    )
+end, { desc = 'Explain Zig package distribution (VCS tarball URLs; no registry upload exists)' })
+
+usercmd('ZigQuickfix', function()
+    local diagnostics = get(0)
+    code_action({
+        context = {
+            diagnostics = diagnostics,
+            only = { 'quickfix' },
+            triggerKind = lsp.protocol.CodeActionTriggerKind.Invoked,
+        },
+        apply = true,
+    })
+end, {})
+
 usercmd('ZigRangeAction', function()
     local bufnr = 0
     local diagnostics = get(bufnr)
@@ -151,24 +182,12 @@ usercmd('ZigRangeAction', function()
         apply = false,
     })
 end, { range = true })
-autocmd('FileType', {
-    group = augroup('ziggy_schema', { clear = true }),
-    pattern = 'ziggy_schema',
-    callback = function()
-        local cwd = uv and uv.cwd() or fn.getcwd()
-        if not cwd then
-            return
-        end
-        lsp.start({
-            name = 'Ziggy LSP',
-            cmd = { 'ziggy', 'lsp', '--schema' },
-            root_dir = cwd,
-        })
-    end,
-})
 
-local REPLACEMENTS = {
-}
+usercmd('ZigTest', function()
+    jobstart({ 'zig', 'test', fn.expand('%:p') }, { detach = true })
+end, {})
+
+local REPLACEMENTS = {}
 
 ---Modernize deprecated zig syntax in the current buffer.
 function M.modernize()

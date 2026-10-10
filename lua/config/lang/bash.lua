@@ -6,11 +6,12 @@ local M = {}
 local api = vim.api
 local fn = vim.fn
 local formatters = require('formatters')
-local header = require('research.docs')
-local modernize = require('config.lang.modernize')
 local group = api.nvim_create_augroup('Bash', {
     clear = true,
 })
+local header = require('research.docs')
+local modernize = require('config.lang.modernize')
+
 vim.api.nvim_create_autocmd({ 'BufNewFile', 'BufReadPost' }, {
     group = group,
     pattern = {
@@ -32,6 +33,7 @@ vim.api.nvim_create_autocmd({ 'BufNewFile', 'BufReadPost' }, {
         vim.cmd('normal! G')
     end,
 })
+
 -- Migrated from after/ftplugin/bash.lua: a buffer-local BufWritePre there
 -- was re-registered for every shell buffer; as a pipeline stage it is
 -- registered once here. filetypes = { 'sh' } matches the ftplugin trigger.
@@ -49,8 +51,8 @@ formatters.register_stage({
 })
 
 local REPLACEMENTS = {
-    { "\\$\\[([^\\]]+)\\]", "$((\\1))" },
-    { "`([^`]+)`", "$(\\1)" },
+    { '\\$\\[([^\\]]+)\\]', '$((\\1))' },
+    { '`([^`]+)`', '$(\\1)' },
 }
 
 ---Modernize deprecated bash syntax in the current buffer.

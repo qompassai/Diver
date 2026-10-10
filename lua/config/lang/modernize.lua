@@ -29,19 +29,6 @@ local function set_buffer_text(bufnr, text)
     fn.winrestview(view)
 end
 
----Apply a replacements table to text.
----@param text string
----@param replacements table list of { pattern, replacement }
----@return string updated, boolean changed
-function M.apply_text(text, replacements)
-    local original = text
-    for i = 1, #replacements do
-        local item = replacements[i]
-        text = text:gsub(item[1], item[2])
-    end
-    return text, text ~= original
-end
-
 ---Apply replacements to a buffer's text.
 ---@param bufnr integer
 ---@param replacements table
@@ -53,6 +40,19 @@ function M.apply(bufnr, replacements)
         set_buffer_text(bufnr, updated)
     end
     return changed
+end
+
+---Apply a replacements table to text.
+---@param text string
+---@param replacements table list of { pattern, replacement }
+---@return string updated, boolean changed
+function M.apply_text(text, replacements)
+    local original = text
+    for i = 1, #replacements do
+        local item = replacements[i]
+        text = text:gsub(item[1], item[2])
+    end
+    return text, text ~= original
 end
 
 ---Modernize the current buffer if it matches the filetype.

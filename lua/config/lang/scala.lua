@@ -4,48 +4,51 @@
 -- ---------------------------------------------------
 local M = {} ---@version 5.1, JIT
 local api = vim.api
-local bo = vim.bo
 local augroup = vim.api.nvim_create_augroup
 local autocmd = vim.api.nvim_create_autocmd
+local bo = vim.bo
 local bufgm = vim.api.nvim_buf_get_mark
 local bufsl = vim.api.nvim_buf_set_lines
 local client_by_id = vim.lsp.get_client_by_id
 local cmd = vim.cmd
 local code_action = vim.lsp.buf.code_action
+local ERROR = vim.log.levels.ERROR
 local extend = vim.list_extend
 local findfile = vim.fn.findfile
-local formatters = require('formatters')
-local modernize = require('config.lang.modernize')
-local ERROR = vim.log.levels.ERROR
-local get = vim.diagnostic.get
-local INFO = vim.log.levels.INFO
-local jobstart = vim.fn.jobstart
-local lsp = vim.lsp
-local notify = vim.notify
-local schedule = vim.schedule
 local fn = vim.fn
-local header = require('research.docs')
+local formatters = require('formatters')
+local get = vim.diagnostic.get
 local group = augroup('Scala', {
     clear = true,
 })
+local header = require('research.docs')
+local INFO = vim.log.levels.INFO
+local jobstart = vim.fn.jobstart
+local lsp = vim.lsp
+local modernize = require('config.lang.modernize')
+local notify = vim.notify
+local schedule = vim.schedule
+
+local function buf_is_empty()
+    return api.nvim_buf_get_lines(0, 0, 1, false)[1] == ''
+end
+
 ---Create a buffer-local user command when a scala buffer opens.
 ---Lang commands only exist in buffers of their own language: they never
 ---pollute `:` completion elsewhere.
 ---@param name string command name
----@param fn function|string command implementation
+---@param callback function|string command implementation
 ---@param opts? table nvim_create_user_command options
-local function usercmd(name, fn, opts)
+local function usercmd(name, callback, opts)
     vim.api.nvim_create_autocmd('FileType', {
         pattern = 'scala',
         desc = ('Buffer-local command: %s'):format(name),
         callback = function(args)
-            vim.api.nvim_buf_create_user_command(args.buf, name, fn, opts or {})
+            vim.api.nvim_buf_create_user_command(args.buf, name, callback, opts or {})
         end,
     })
 end
-local function buf_is_empty()
-    return api.nvim_buf_get_lines(0, 0, 1, false)[1] == ''
-end
+
 autocmd('BufNewFile', {
     group = group,
     pattern = {
@@ -61,6 +64,7 @@ autocmd('BufNewFile', {
         cmd('normal! G')
     end,
 })
+
 autocmd('BufNewFile', {
     group = group,
     pattern = {
@@ -79,6 +83,7 @@ autocmd('BufNewFile', {
         vim.cmd('normal! G')
     end,
 })
+
 autocmd('BufNewFile', {
     group = group,
     pattern = {
@@ -128,6 +133,31 @@ autocmd('BufNewFile', {
         fn.search('  $')
     end,
 })
+
+autocmd('BufWritePost', {
+    group = group,
+    pattern = { '*.scala', '*.sc', '*.sbt' },
+    callback = function(args)
+        local scalafmt_conf = findfile('.scalafmt.conf', '.;')
+        if scalafmt_conf ~= '' and fn.executable('scalafmt') == 1 then
+            jobstart({
+                'scalafmt',
+                '--non-interactive',
+                '--quiet',
+                api.nvim_buf_get_name(args.buf),
+            }, {
+                on_exit = function(_, code, _)
+                    if code == 0 then
+                        schedule(function()
+                            cmd('e!')
+                        end)
+                    end
+                end,
+            })
+        end
+    end,
+})
+
 autocmd('FileType', {
     group = group,
     pattern = 'scala',
@@ -140,6 +170,7 @@ autocmd('FileType', {
         bo[bufnr].commentstring = '// %s'
     end,
 })
+
 formatters.register_stage({
     name = 'scala_organize_imports',
     priority = 432,
@@ -164,29 +195,54 @@ formatters.register_stage({
         })
     end,
 })
-autocmd('BufWritePost', {
-    group = group,
-    pattern = { '*.scala', '*.sc', '*.sbt' },
-    callback = function(args)
-        local scalafmt_conf = findfile('.scalafmt.conf', '.;')
-        if scalafmt_conf ~= '' and fn.executable('scalafmt') == 1 then
-            jobstart({
-                'scalafmt',
-                '--non-interactive',
-                '--quiet',
-                api.nvim_buf_get_name(args.buf),
-            }, {
-                on_exit = function(_, code, _)
+
+usercmd('ScalaClean', function()
+    local build_sbt = findfile('build.sbt', '.;')
+    local build_sc = findfile('build.sc', '.;')
+    if build_sbt ~= '' then
+        jobstart({ 'sbt', 'clean' }, {
+            on_exit = function(_, code, _)
+                schedule(function()
                     if code == 0 then
-                        schedule(function()
-                            cmd('e!')
-                        end)
+                        notify('sbt clean successful', INFO)
+                    else
+                        notify('sbt clean failed', ERROR)
                     end
-                end,
-            })
-        end
-    end,
-})
+                end)
+            end,
+        })
+    elseif build_sc ~= '' then
+        jobstart({ 'mill', 'clean' }, {
+            on_exit = function(_, code, _)
+                schedule(function()
+                    if code == 0 then
+                        notify('mill clean successful', INFO)
+                    else
+                        notify('mill clean failed', ERROR)
+                    end
+                end)
+            end,
+        })
+    else
+        notify('No build tool found (sbt/mill)', ERROR)
+    end
+end, {})
+
+usercmd('ScalaCodeAction', function()
+    local diagnostics = get(0)
+    code_action({
+        context = {
+            diagnostics = diagnostics,
+            only = { 'quickfix', 'refactor', 'source.organizeImports', 'source.fixAll' },
+        },
+        filter = function(_, client_id)
+            local client = client_by_id(client_id)
+            return client ~= nil and client.name == 'metals'
+        end,
+        apply = true,
+    })
+end, {})
+
 usercmd('ScalaCompile', function()
     local build_sbt = findfile('build.sbt', '.;')
     local build_sc = findfile('build.sc', '.;')
@@ -229,6 +285,139 @@ usercmd('ScalaCompile', function()
         })
     end
 end, {})
+
+usercmd('ScalaConsole', function()
+    local build_sbt = findfile('build.sbt', '.;')
+    local build_sc = findfile('build.sc', '.;')
+    if build_sbt ~= '' then
+        cmd('terminal sbt console')
+    elseif build_sc ~= '' then
+        cmd('terminal mill -i __.console')
+    else
+        cmd('terminal scala')
+    end
+end, {})
+
+usercmd('ScalaFormat', function()
+    local current_file = fn.expand('%:p')
+    local scalafmt_conf = findfile('.scalafmt.conf', '.;')
+    if scalafmt_conf == '' then
+        notify('.scalafmt.conf not found', ERROR)
+        return
+    end
+    if fn.executable('scalafmt') ~= 1 then
+        notify('scalafmt not found', ERROR)
+        return
+    end
+    jobstart({
+        'scalafmt',
+        current_file,
+    }, {
+        on_exit = function(_, code, _)
+            schedule(function()
+                if code == 0 then
+                    notify('Scalafmt successful', INFO)
+                    cmd('e!')
+                else
+                    notify('Scalafmt failed', ERROR)
+                end
+            end)
+        end,
+    })
+end, {})
+
+usercmd('ScalaMetalsBuild', function()
+    local clients = vim.lsp.get_clients({ name = 'metals', bufnr = 0 })
+    if clients[1] then
+        clients[1]:exec_cmd({ title = 'Build import', command = 'metals.build-import' })
+    else
+        notify('Metals client not found', ERROR)
+    end
+end, {})
+
+usercmd('ScalaMetalsConnect', function()
+    local clients = vim.lsp.get_clients({ name = 'metals', bufnr = 0 })
+    if clients[1] then
+        clients[1]:exec_cmd({ title = 'Build connect', command = 'metals.build-connect' })
+    else
+        notify('Metals client not found', ERROR)
+    end
+end, {})
+
+usercmd('ScalaPackage', function()
+    local build_sbt = findfile('build.sbt', '.;')
+    local build_sc = findfile('build.sc', '.;')
+    if build_sbt ~= '' then
+        jobstart({ 'sbt', 'package' }, {
+            on_exit = function(_, code, _)
+                schedule(function()
+                    if code == 0 then
+                        notify('sbt package successful', INFO)
+                    else
+                        notify('sbt package failed', ERROR)
+                    end
+                end)
+            end,
+        })
+    elseif build_sc ~= '' then
+        jobstart({ 'mill', '__.jar' }, {
+            on_exit = function(_, code, _)
+                schedule(function()
+                    if code == 0 then
+                        notify('mill jar successful', INFO)
+                    else
+                        notify('mill jar failed', ERROR)
+                    end
+                end)
+            end,
+        })
+    else
+        notify('No build tool found (sbt/mill)', ERROR)
+    end
+end, {})
+
+usercmd('ScalaQuickfix', function()
+    local diagnostics = get(0)
+    code_action({
+        context = {
+            diagnostics = diagnostics,
+            only = {
+                'quickfix',
+            },
+            triggerKind = lsp.protocol.CodeActionTriggerKind.Invoked,
+        },
+        apply = true,
+    })
+end, {})
+
+usercmd('ScalaRangeAction', function()
+    local bufnr = 0
+    local diagnostics = get(bufnr)
+    local start_pos = bufgm(bufnr, '<')
+    local end_pos = bufgm(bufnr, '>')
+    code_action({
+        context = {
+            diagnostics = diagnostics,
+            only = { 'quickfix', 'refactor.extract' },
+        },
+        range = {
+            start = { start_pos[1], start_pos[2] },
+            ['end'] = { end_pos[1], end_pos[2] },
+        },
+        filter = function(_, client_id)
+            local client = client_by_id(client_id)
+            return client ~= nil and client.name == 'metals'
+        end,
+        apply = false,
+    })
+end, {
+    range = true,
+})
+
+usercmd('ScalaRepl', function()
+    cmd('terminal scala')
+end, {})
+
 usercmd('ScalaRun', function()
     local build_sbt = findfile('build.sbt', '.;')
     local build_sc = findfile('build.sc', '.;')
@@ -241,6 +430,7 @@ usercmd('ScalaRun', function()
         cmd('terminal scala ' .. fn.shellescape(current_file))
     end
 end, {})
+
 usercmd('ScalaTest', function(opts)
     local build_sbt = findfile('build.sbt', '.;')
     local build_sc = findfile('build.sc', '.;')
@@ -276,6 +466,7 @@ usercmd('ScalaTest', function(opts)
 end, {
     nargs = '?',
 })
+
 usercmd('ScalaTestQuick', function()
     local build_sbt = findfile('build.sbt', '.;')
     if build_sbt ~= '' then
@@ -284,109 +475,7 @@ usercmd('ScalaTestQuick', function()
         notify('testQuick requires sbt', ERROR)
     end
 end, {})
-usercmd('ScalaConsole', function()
-    local build_sbt = findfile('build.sbt', '.;')
-    local build_sc = findfile('build.sc', '.;')
-    if build_sbt ~= '' then
-        cmd('terminal sbt console')
-    elseif build_sc ~= '' then
-        cmd('terminal mill -i __.console')
-    else
-        cmd('terminal scala')
-    end
-end, {})
-usercmd('ScalaRepl', function()
-    cmd('terminal scala')
-end, {})
-usercmd('ScalaFormat', function()
-    local current_file = fn.expand('%:p')
-    local scalafmt_conf = findfile('.scalafmt.conf', '.;')
-    if scalafmt_conf == '' then
-        notify('.scalafmt.conf not found', ERROR)
-        return
-    end
-    if fn.executable('scalafmt') ~= 1 then
-        notify('scalafmt not found', ERROR)
-        return
-    end
-    jobstart({
-        'scalafmt',
-        current_file,
-    }, {
-        on_exit = function(_, code, _)
-            schedule(function()
-                if code == 0 then
-                    notify('Scalafmt successful', INFO)
-                    cmd('e!')
-                else
-                    notify('Scalafmt failed', ERROR)
-                end
-            end)
-        end,
-    })
-end, {})
-usercmd('ScalaClean', function()
-    local build_sbt = findfile('build.sbt', '.;')
-    local build_sc = findfile('build.sc', '.;')
-    if build_sbt ~= '' then
-        jobstart({ 'sbt', 'clean' }, {
-            on_exit = function(_, code, _)
-                schedule(function()
-                    if code == 0 then
-                        notify('sbt clean successful', INFO)
-                    else
-                        notify('sbt clean failed', ERROR)
-                    end
-                end)
-            end,
-        })
-    elseif build_sc ~= '' then
-        jobstart({ 'mill', 'clean' }, {
-            on_exit = function(_, code, _)
-                schedule(function()
-                    if code == 0 then
-                        notify('mill clean successful', INFO)
-                    else
-                        notify('mill clean failed', ERROR)
-                    end
-                end)
-            end,
-        })
-    else
-        notify('No build tool found (sbt/mill)', ERROR)
-    end
-end, {})
-usercmd('ScalaPackage', function()
-    local build_sbt = findfile('build.sbt', '.;')
-    local build_sc = findfile('build.sc', '.;')
-    if build_sbt ~= '' then
-        jobstart({ 'sbt', 'package' }, {
-            on_exit = function(_, code, _)
-                schedule(function()
-                    if code == 0 then
-                        notify('sbt package successful', INFO)
-                    else
-                        notify('sbt package failed', ERROR)
-                    end
-                end)
-            end,
-        })
-    elseif build_sc ~= '' then
-        jobstart({ 'mill', '__.jar' }, {
-            on_exit = function(_, code, _)
-                schedule(function()
-                    if code == 0 then
-                        notify('mill jar successful', INFO)
-                    else
-                        notify('mill jar failed', ERROR)
-                    end
-                end)
-            end,
-        })
-    else
-        notify('No build tool found (sbt/mill)', ERROR)
-    end
-end, {})
+
 usercmd('ScalaUpdate', function()
     local build_sbt = findfile('build.sbt', '.;')
     if build_sbt ~= '' then
@@ -405,76 +494,8 @@ usercmd('ScalaUpdate', function()
         notify('sbt not found', ERROR)
     end
 end, {})
-usercmd('ScalaMetalsBuild', function()
-    local clients = vim.lsp.get_clients({ name = 'metals', bufnr = 0 })
-    if clients[1] then
-        clients[1]:exec_cmd({ title = 'Build import', command = 'metals.build-import' })
-    else
-        notify('Metals client not found', ERROR)
-    end
-end, {})
-usercmd('ScalaMetalsConnect', function()
-    local clients = vim.lsp.get_clients({ name = 'metals', bufnr = 0 })
-    if clients[1] then
-        clients[1]:exec_cmd({ title = 'Build connect', command = 'metals.build-connect' })
-    else
-        notify('Metals client not found', ERROR)
-    end
-end, {})
-usercmd('ScalaQuickfix', function()
-    local diagnostics = get(0)
-    code_action({
-        context = {
-            diagnostics = diagnostics,
-            only = {
-                'quickfix',
-            },
-            triggerKind = lsp.protocol.CodeActionTriggerKind.Invoked,
-        },
-        apply = true,
-    })
-end, {})
-usercmd('ScalaCodeAction', function()
-    local diagnostics = get(0)
-    code_action({
-        context = {
-            diagnostics = diagnostics,
-            only = { 'quickfix', 'refactor', 'source.organizeImports', 'source.fixAll' },
-        },
-        filter = function(_, client_id)
-            local client = client_by_id(client_id)
-            return client ~= nil and client.name == 'metals'
-        end,
-        apply = true,
-    })
-end, {})
-usercmd('ScalaRangeAction', function()
-    local bufnr = 0
-    local diagnostics = get(bufnr)
-    local start_pos = bufgm(bufnr, '<')
-    local end_pos = bufgm(bufnr, '>')
-    code_action({
-        context = {
-            diagnostics = diagnostics,
-            only = { 'quickfix', 'refactor.extract' },
-        },
-        range = {
-            start = { start_pos[1], start_pos[2] },
-            ['end'] = { end_pos[1], end_pos[2] },
-        },
-        filter = function(_, client_id)
-            local client = client_by_id(client_id)
-            return client ~= nil and client.name == 'metals'
-        end,
-        apply = false,
-    })
-end, {
-    range = true,
-})
 
-
-local REPLACEMENTS = {
-}
+local REPLACEMENTS = {}
 
 ---Modernize deprecated scala syntax in the current buffer.
 function M.modernize()

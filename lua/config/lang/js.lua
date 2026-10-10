@@ -4,118 +4,6 @@
 -----------------------------------------------------
 local M = {}
 local modernize = require('config.lang.modernize')
--- A2A SDK: <LocalLeader>aa* maps (card/send/stream/get/cancel/install)
--- are wired for this filetype by ai.a2a.sdks.setup().
-
----@return table
-local function base_tools_config(opts) ---@param opts table|nil
-    opts = opts or {}
-    return {
-        settings = {
-            typescript = {
-                inlayHints = {
-                    includeInlayParameterNameHints = 'all',
-                    includeInlayParameterNameHintsWhenArgumentMatchesName = true,
-                    includeInlayFunctionParameterTypeHints = true,
-                    includeInlayVariableTypeHints = true,
-                    includeInlayPropertyDeclarationTypeHints = true,
-                    includeInlayFunctionLikeReturnTypeHints = true,
-                    includeInlayEnumMemberValueHints = true,
-                },
-                update_in_insert = opts.update_in_insert ~= false,
-                expose_as_code_action = opts.expose_as_code_action or 'all',
-            },
-            tailwindCSS = {
-                experimental = {
-                    classRegex = {
-                        'tw`([^`]*)',
-                        'tw\\\\.[^`]+`([^`]*)',
-                        'tw\\\\(.*?\\\\).*?`([^`]*)',
-                        'className="([^"]*)',
-                        'class="([^"]*)',
-                    },
-                },
-            },
-            code_lens = opts.code_lens or 'all',
-            document_formatting = opts.document_formatting ~= false,
-            complete_function_calls = opts.complete_function_calls ~= false,
-            jsx_close_tag = { enable = opts.jsx_close_tag ~= false },
-        },
-    }
-end
----@param opts table|nil
----@return table
-function M.javascript_tools(opts)
-    local config = base_tools_config(opts)
-    local ok, ts_tools = pcall(require, 'typescript-tools')
-    if ok then
-        ts_tools.setup(config)
-    end
-    return config
-end
-
----@param opts table|nil
----@return table
-function M.typescript_tools(opts)
-    local config = base_tools_config(opts)
-    local ok, ts_tools = pcall(require, 'typescript-tools')
-    if ok then
-        ts_tools.setup(config)
-    end
-    return config
-end
-
----Create a buffer-local user command when a JS/TS buffer opens.
----Lang commands only exist in buffers of their own language: they never
----pollute `:` completion elsewhere.
----@param name string command name
----@param fn function|string command implementation
----@param opts? table nvim_create_user_command options
-local function buf_command(name, fn, opts)
-    vim.api.nvim_create_autocmd('FileType', {
-        pattern = {'javascript', 'javascriptreact', 'typescript', 'typescriptreact'},
-        desc = ('Buffer-local command: %s'):format(name),
-        callback = function(args)
-            vim.api.nvim_buf_create_user_command(args.buf, name, fn, opts or {})
-        end,
-    })
-end
-
-buf_command('VitestFile', function()
-    local file = vim.fn.expand('%:p')
-    vim.fn.jobstart({
-        'vitest',
-        'run',
-        file,
-    }, {
-        detach = true,
-    })
-end, { desc = 'Run Vitest for current file' })
----@param opts table|nil
----@return any|nil
-local function base_dap_setup(opts)
-    opts = opts or {}
-    local dap_ok, dap = pcall(require, 'dap')
-    if not dap_ok then
-        return nil
-    end
-    local dap_js_ok, dap_js = pcall(require, 'dap-vscode-js')
-    if not dap_js_ok then
-        return nil
-    end
-    dap_js.setup({
-        debugger_path = opts.debugger_path or (vim.fn.stdpath('data') .. '/lazy/vscode-js-debug'),
-        adapters = {
-            'pwa-node',
-            'pwa-chrome',
-            'pwa-msedge',
-            'node-terminal',
-            'pwa-extensionHost',
-        },
-    })
-
-    return dap
-end
 
 ---@param dap any
 ---@param languages string[]
@@ -168,6 +56,146 @@ local function apply_default_dap_configs(dap, languages)
         }
     end
 end
+
+---@param opts table|nil
+---@return any|nil
+local function base_dap_setup(opts)
+    opts = opts or {}
+    local dap_ok, dap = pcall(require, 'dap')
+    if not dap_ok then
+        return nil
+    end
+    local dap_js_ok, dap_js = pcall(require, 'dap-vscode-js')
+    if not dap_js_ok then
+        return nil
+    end
+    dap_js.setup({
+        debugger_path = opts.debugger_path or (vim.fn.stdpath('data') .. '/lazy/vscode-js-debug'),
+        adapters = {
+            'pwa-node',
+            'pwa-chrome',
+            'pwa-msedge',
+            'node-terminal',
+            'pwa-extensionHost',
+        },
+    })
+
+    return dap
+end
+
+-- A2A SDK: <LocalLeader>aa* maps (card/send/stream/get/cancel/install)
+-- are wired for this filetype by ai.a2a.sdks.setup().
+
+---@return table
+local function base_tools_config(opts) ---@param opts table|nil
+    opts = opts or {}
+    return {
+        settings = {
+            typescript = {
+                inlayHints = {
+                    includeInlayParameterNameHints = 'all',
+                    includeInlayParameterNameHintsWhenArgumentMatchesName = true,
+                    includeInlayFunctionParameterTypeHints = true,
+                    includeInlayVariableTypeHints = true,
+                    includeInlayPropertyDeclarationTypeHints = true,
+                    includeInlayFunctionLikeReturnTypeHints = true,
+                    includeInlayEnumMemberValueHints = true,
+                },
+                update_in_insert = opts.update_in_insert ~= false,
+                expose_as_code_action = opts.expose_as_code_action or 'all',
+            },
+            tailwindCSS = {
+                experimental = {
+                    classRegex = {
+                        'tw`([^`]*)',
+                        'tw\\\\.[^`]+`([^`]*)',
+                        'tw\\\\(.*?\\\\).*?`([^`]*)',
+                        'className="([^"]*)',
+                        'class="([^"]*)',
+                    },
+                },
+            },
+            code_lens = opts.code_lens or 'all',
+            document_formatting = opts.document_formatting ~= false,
+            complete_function_calls = opts.complete_function_calls ~= false,
+            jsx_close_tag = { enable = opts.jsx_close_tag ~= false },
+        },
+    }
+end
+
+---Create a buffer-local user command when a JS/TS buffer opens.
+---Lang commands only exist in buffers of their own language: they never
+---pollute `:` completion elsewhere.
+---@param name string command name
+---@param fn function|string command implementation
+---@param opts? table nvim_create_user_command options
+local function buf_command(name, fn, opts)
+    vim.api.nvim_create_autocmd('FileType', {
+        pattern = { 'javascript', 'javascriptreact', 'typescript', 'typescriptreact' },
+        desc = ('Buffer-local command: %s'):format(name),
+        callback = function(args)
+            vim.api.nvim_buf_create_user_command(args.buf, name, fn, opts or {})
+        end,
+    })
+end
+
+---Publish the current package to the npm registry. Dry-run by default:
+---`npm publish --dry-run` packs and reports without uploading. Use the
+---bang form (:JsPublish!) to publish for real. Credentials stay in npm's
+---own chain (~/.npmrc, NPM_TOKEN); this hook never reads, stores, or
+---logs them.
+---@param bang boolean true to publish for real
+local function publish_package(bang)
+    local cmd = { 'npm', 'publish' }
+    if not bang then
+        cmd[#cmd + 1] = '--dry-run'
+    end
+    vim.notify('publish: ' .. table.concat(cmd, ' '), vim.log.levels.INFO)
+    vim.fn.jobstart(cmd, {
+        cwd = vim.fn.expand('%:p:h'),
+        stdout_buffered = true,
+        on_stdout = function(_, data, _)
+            if data then
+                vim.schedule(function()
+                    vim.notify(table.concat(data, '\n'), vim.log.levels.INFO)
+                end)
+            end
+        end,
+        on_stderr = function(_, data, _)
+            if data then
+                vim.schedule(function()
+                    vim.notify(table.concat(data, '\n'), vim.log.levels.ERROR)
+                end)
+            end
+        end,
+        on_exit = function(_, code, _)
+            vim.schedule(function()
+                vim.notify(
+                    ('publish exited with code %d'):format(code),
+                    code == 0 and vim.log.levels.INFO or vim.log.levels.ERROR
+                )
+            end)
+        end,
+    })
+end
+
+buf_command('JsPublish', function(args)
+    publish_package(args.bang)
+end, { bang = true, desc = 'npm publish --dry-run; :JsPublish! publishes to the npm registry' })
+
+buf_command('VitestFile', function()
+    local file = vim.fn.expand('%:p')
+    vim.fn.jobstart({
+        'vitest',
+        'run',
+        file,
+    }, {
+        detach = true,
+    })
+end, { desc = 'Run Vitest for current file' })
+
+local REPLACEMENTS = {}
+
 ---@param opts table|nil
 ---@return table
 function M.javascript_dap(opts)
@@ -185,17 +213,18 @@ end
 
 ---@param opts table|nil
 ---@return table
-function M.typescript_dap(opts)
-    local dap = base_dap_setup(opts)
-    if not dap then
-        return {}
+function M.javascript_tools(opts)
+    local config = base_tools_config(opts)
+    local ok, ts_tools = pcall(require, 'typescript-tools')
+    if ok then
+        ts_tools.setup(config)
     end
+    return config
+end
 
-    apply_default_dap_configs(dap, {
-        'typescript',
-        'typescriptreact',
-    })
-    return { dap = dap.configurations }
+---Modernize deprecated js syntax in the current buffer.
+function M.modernize()
+    modernize.buffer('js', REPLACEMENTS, 'js')
 end
 
 ---@param opts table|nil
@@ -220,13 +249,30 @@ function M.setup_typescript(opts)
     }
 end
 
+---@param opts table|nil
+---@return table
+function M.typescript_dap(opts)
+    local dap = base_dap_setup(opts)
+    if not dap then
+        return {}
+    end
 
-local REPLACEMENTS = {
-}
+    apply_default_dap_configs(dap, {
+        'typescript',
+        'typescriptreact',
+    })
+    return { dap = dap.configurations }
+end
 
----Modernize deprecated js syntax in the current buffer.
-function M.modernize()
-    modernize.buffer('js', REPLACEMENTS, 'js')
+---@param opts table|nil
+---@return table
+function M.typescript_tools(opts)
+    local config = base_tools_config(opts)
+    local ok, ts_tools = pcall(require, 'typescript-tools')
+    if ok then
+        ts_tools.setup(config)
+    end
+    return config
 end
 
 return M

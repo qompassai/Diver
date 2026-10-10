@@ -1,6 +1,6 @@
 # Lang File TODO Tracker
 
-Generated 2026-10-06. 188 languages have LSPs, 21 covered, **167 missing**.
+Generated 2026-10-06; updated 2026-10-10 (glsl, opencl, shader, wgsl, xml, yara completed). 188 languages have LSPs, 27 covered, **161 missing**.
 
 ## Missing lang files (alphabetical)
 
@@ -58,7 +58,6 @@ Generated 2026-10-06. 188 languages have LSPs, 21 covered, **167 missing**.
 | `gdscript` | gdscript | |
 | `gdshader` | gdshader | |
 | `gleam` | gleam | |
-| `glsl` | glslana | |
 | `gn` | gn | |
 | `goplus` | gop | |
 | `grain` | grain | |
@@ -106,7 +105,6 @@ Generated 2026-10-06. 188 languages have LSPs, 21 covered, **167 missing**.
 | `nushell` | nu | |
 | `ocaml` | ocaml | |
 | `openapi` | vacuum | |
-| `opencl` | opencl | |
 | `openscad` | openscad | |
 | `opentofu` | tofu | |
 | `pact` | pact | |
@@ -137,7 +135,6 @@ Generated 2026-10-06. 188 languages have LSPs, 21 covered, **167 missing**.
 | `rune` | rune | |
 | `scheme` | scheme | |
 | `scss` | somesass | |
-| `shader` | shader | |
 | `slang` | slangd | |
 | `slint` | slint | |
 | `smarty` | smarty | |
@@ -168,11 +165,8 @@ Generated 2026-10-06. 188 languages have LSPs, 21 covered, **167 missing**.
 | `vimdoc` | vimdoc | |
 | `visualforce` | visualforce | |
 | `vue` | vue | |
-| `wgsl` | wgslana | |
-| `xml` | lemminx | |
 | `yaml` | yaml | |
 | `yang` | yang | |
-| `yara` | yara | |
 
 ## Covered
 
@@ -189,11 +183,16 @@ Generated 2026-10-06. 188 languages have LSPs, 21 covered, **167 missing**.
 - `markdown` -> `md.lua`
 - `mojo` -> `mojo.lua`
 - `nix` -> `nix.lua`
+- `opencl` -> `opencl.lua`
 - `php` -> `php.lua`
 - `python` -> `python.lua`
 - `ruby` -> `ruby.lua`
 - `rust` -> `rust.lua`
 - `scala` -> `scala.lua`
+- `shader` -> `shader.lua`
 - `toml` -> `toml.lua`
 - `typescript` -> `js.lua`
+- `wgsl` -> `shader.lua`
+- `xml` -> `xml.lua`
+- `yara` -> `yara.lua`
 - `zig` -> `zig.lua`

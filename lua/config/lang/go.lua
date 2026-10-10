@@ -10,16 +10,41 @@ local augroup = vim.api.nvim_create_augroup
 local autocmd = vim.api.nvim_create_autocmd
 local client_by_id = vim.lsp.get_client_by_id
 local code_action = vim.lsp.buf.code_action
-local formatters = require('formatters')
-local modernize = require('config.lang.modernize')
-local get = vim.diagnostic.get
 local fn = vim.fn
+local formatters = require('formatters')
+local get = vim.diagnostic.get
+local group = augroup('Go', {
+    clear = true,
+})
+local GVM_TIMEOUT_MS = 15000
+local header = require('research.docs')
 local INFO = vim.log.levels.INFO
 local jobstart = vim.fn.jobstart
 local lsp = vim.lsp
+local modernize = require('config.lang.modernize')
 local notify = vim.notify
-local GVM_TIMEOUT_MS = 15000
+
 local gvm_cache = {} ---@type table<string, string|false>
+
+---Language-specific MCP server, declared in the ai.mcp declared_servers
+---entry shape. Declarative and inert: not auto-started; enabling belongs
+---to the ai.mcp layer. gopls is the Go team's official language server;
+---its built-in MCP mode (`gopls mcp`, stdio) is upstream-experimental and
+---provides workspace symbol search, diagnostics, and package docs.
+---Verified against golang/tools (gopls/doc/features/mcp.md) 2026-10-09.
+M.mcp_servers = {
+    {
+        args = { 'mcp' },
+        command = 'gopls',
+        enabled = false,
+        name = 'gopls',
+    },
+}
+
+local function go_dap()
+    return require('dap')
+end
+
 ---@param argv string[] command and arguments to run with gvm on PATH
 ---@return string|nil trimmed stdout, or nil when the command fails
 local function run_cached_gvm(argv)
@@ -47,34 +72,35 @@ local function run_cached_gvm(argv)
     gvm_cache[cache_key] = trimmed or false
     return trimmed
 end
-local function get_go_bin()
-    return run_cached_gvm({ 'which', 'go' }) or 'go'
-end
-local function get_gopath()
-    return run_cached_gvm({ 'go', 'env', 'GOPATH' }) or os.getenv('GOPATH') or ''
-end
-local function get_go_version()
-    return run_cached_gvm({ 'go', 'version' }) or ''
-end
-local header = require('research.docs')
-local group = augroup('Go', {
-    clear = true,
-})
+
 ---Create a buffer-local user command when a go buffer opens.
 ---Lang commands only exist in buffers of their own language: they never
 ---pollute `:` completion elsewhere.
 ---@param name string command name
----@param fn function|string command implementation
+---@param callback function|string command implementation
 ---@param opts? table nvim_create_user_command options
-local function usercmd(name, fn, opts)
+local function usercmd(name, callback, opts)
     vim.api.nvim_create_autocmd('FileType', {
         pattern = 'go',
         desc = ('Buffer-local command: %s'):format(name),
         callback = function(args)
-            vim.api.nvim_buf_create_user_command(args.buf, name, fn, opts or {})
+            vim.api.nvim_buf_create_user_command(args.buf, name, callback, opts or {})
         end,
     })
 end
+
+local function get_go_bin()
+    return run_cached_gvm({ 'which', 'go' }) or 'go'
+end
+
+local function get_go_version()
+    return run_cached_gvm({ 'go', 'version' }) or ''
+end
+
+local function get_gopath()
+    return run_cached_gvm({ 'go', 'env', 'GOPATH' }) or os.getenv('GOPATH') or ''
+end
+
 autocmd('BufNewFile', {
     group = group,
     pattern = { '*.go' },
@@ -89,6 +115,34 @@ autocmd('BufNewFile', {
         vim.cmd('normal! G')
     end,
 })
+
+autocmd('BufWritePost', {
+    group = group,
+    pattern = '*.go',
+    callback = function(args)
+        jobstart({
+            'golangci-lint',
+            'run',
+            '--fast',
+            '--out-format=line-number',
+            api.nvim_buf_get_name(args.buf),
+        }, {
+            stdout_buffered = true,
+            on_stdout = function(_, data, _)
+                if not data then
+                    return
+                end
+                local out = table.concat(data, '')
+                if out ~= '' then
+                    vim.schedule(function()
+                        notify('golangci-lint: ' .. out, INFO)
+                    end)
+                end
+            end,
+        })
+    end,
+})
+
 formatters.register_stage({
     name = 'go_lsp_format',
     priority = 413,
@@ -101,42 +155,51 @@ formatters.register_stage({
         })
     end,
 })
-usercmd('GoTest', function()
+
+formatters.register_stage({
+    name = 'go_organize_imports',
+    priority = 414,
+    patterns = { '*.go' },
+    desc = 'Organize imports in Go sources before save',
+    run = function(bufnr)
+        local diagnostics = get(bufnr)
+        code_action({
+            context = {
+                diagnostics = diagnostics,
+                only = {
+                    'source.organizeImports',
+                    'source.fixAll',
+                },
+                triggerKind = vim.lsp.protocol.CodeActionTriggerKind.Source,
+            },
+            apply = true,
+            filter = function(_, client_id)
+                local client = client_by_id(client_id)
+                return client ~= nil and client.name == 'gopls'
+            end,
+        })
+    end,
+})
+
+usercmd('GoBuild', function()
     local go_bin = get_go_bin()
     jobstart({
         go_bin,
-        'test',
-        '-v',
+        'build',
         fn.expand('%:p:h'),
     }, {
-        detach = false,
-        stdout_buffered = true,
-        on_stdout = function(_, data, _)
-            if data then
-                vim.schedule(function()
-                    notify(table.concat(data, '\n'), INFO)
-                end)
-            end
+        on_exit = function(_, code, _)
+            vim.schedule(function()
+                if code == 0 then
+                    notify('Build successful', INFO)
+                else
+                    notify('Build failed', vim.log.levels.ERROR)
+                end
+            end)
         end,
     })
 end, {})
-usercmd('GoQuickfix', function()
-    local diagnostics = get(0)
-    code_action({
-        context = {
-            diagnostics = diagnostics,
-            only = {
-                'quickfix',
-            },
-            triggerKind = vim.lsp.protocol.CodeActionTriggerKind.Invoked,
-        },
-        apply = true,
-        filter = function(_, client_id)
-            local client = client_by_id(client_id)
-            return client ~= nil and client.name == 'gopls'
-        end,
-    })
-end, {})
+
 usercmd('GoCodeAction', function()
     local diagnostics = get(0)
     code_action({
@@ -156,6 +219,65 @@ usercmd('GoCodeAction', function()
         apply = true,
     })
 end, {})
+
+usercmd('GoDoc', function()
+    local go_bin = get_go_bin()
+    local word = fn.expand('<cword>')
+    if word == '' then
+        notify('GoDoc: no symbol under cursor', vim.log.levels.WARN)
+        return
+    end
+    local result = vim.system({ go_bin, 'doc', word }, { text = true, cwd = fn.expand('%:p:h'), timeout = 15000 })
+        :wait()
+    if result.code ~= 0 or (result.stdout or '') == '' then
+        notify(('go doc: nothing found for %s'):format(word), INFO)
+        return
+    end
+    local buf = api.nvim_create_buf(false, true)
+    api.nvim_buf_set_lines(buf, 0, -1, false, vim.split(vim.trim(result.stdout), '\n'))
+    vim.bo[buf].filetype = 'godoc'
+    vim.bo[buf].modifiable = false
+    api.nvim_open_win(buf, true, { split = 'right' })
+end, { desc = 'Show go doc for the symbol under cursor' })
+
+usercmd('GoModTidy', function()
+    local go_bin = get_go_bin()
+    local cwd = fn.expand('%:p:h')
+    notify('go mod tidy: running...', INFO)
+    local result = vim.system({ go_bin, 'mod', 'tidy' }, { text = true, cwd = cwd, timeout = 60000 }):wait()
+    if result.code == 0 then
+        notify('go mod tidy: clean', INFO)
+    else
+        notify(('go mod tidy failed:\n%s'):format(result.stderr or ''), vim.log.levels.ERROR)
+    end
+end, { desc = 'Run go mod tidy in the current module' })
+
+usercmd('GoPublish', function()
+    notify(
+        'go: modules are not uploaded to a registry. Publish by tagging the module version in VCS '
+            .. 'and pushing the tag (the module proxy fetches from source): git tag vX.Y.Z && git push origin vX.Y.Z',
+        INFO
+    )
+end, { desc = 'Explain Go module publishing (VCS tag flow; no upload step exists)' })
+
+usercmd('GoQuickfix', function()
+    local diagnostics = get(0)
+    code_action({
+        context = {
+            diagnostics = diagnostics,
+            only = {
+                'quickfix',
+            },
+            triggerKind = vim.lsp.protocol.CodeActionTriggerKind.Invoked,
+        },
+        apply = true,
+        filter = function(_, client_id)
+            local client = client_by_id(client_id)
+            return client ~= nil and client.name == 'gopls'
+        end,
+    })
+end, {})
+
 usercmd('GoRangeAction', function()
     local bufnr = 0
     local diagnostics = get(bufnr)
@@ -188,56 +310,61 @@ usercmd('GoRangeAction', function()
 end, {
     range = true,
 })
-formatters.register_stage({
-    name = 'go_organize_imports',
-    priority = 414,
-    patterns = { '*.go' },
-    desc = 'Organize imports in Go sources before save',
-    run = function(bufnr)
-        local diagnostics = get(bufnr)
-        code_action({
-            context = {
-                diagnostics = diagnostics,
-                only = {
-                    'source.organizeImports',
-                    'source.fixAll',
-                },
-                triggerKind = vim.lsp.protocol.CodeActionTriggerKind.Source,
-            },
-            apply = true,
-            filter = function(_, client_id)
-                local client = client_by_id(client_id)
-                return client ~= nil and client.name == 'gopls'
-            end,
-        })
-    end,
-})
-autocmd('BufWritePost', {
-    group = group,
-    pattern = '*.go',
-    callback = function(args)
-        jobstart({
-            'golangci-lint',
-            'run',
-            '--fast',
-            '--out-format=line-number',
-            api.nvim_buf_get_name(args.buf),
-        }, {
-            stdout_buffered = true,
-            on_stdout = function(_, data, _)
-                if not data then
-                    return
-                end
-                local out = table.concat(data, '')
-                if out ~= '' then
-                    vim.schedule(function()
-                        notify('golangci-lint: ' .. out, INFO)
-                    end)
-                end
-            end,
-        })
-    end,
-})
+
+usercmd('GoRun', function()
+    local go_bin = get_go_bin()
+    jobstart({
+        go_bin,
+        'run',
+        fn.expand('%:p'),
+    }, { detach = true })
+end, {})
+
+usercmd('GoStaticcheck', function()
+    fn.jobstart({
+        'staticcheck',
+        './...',
+    }, {
+        cwd = fn.expand('%:p:h'),
+        stdout_buffered = true,
+        on_stdout = function(_, data, _)
+            if data then
+                vim.schedule(function()
+                    notify('staticcheck: ' .. table.concat(data, '\n'), INFO)
+                end)
+            end
+        end,
+    })
+end, {})
+
+usercmd('GoTest', function()
+    local go_bin = get_go_bin()
+    jobstart({
+        go_bin,
+        'test',
+        '-v',
+        fn.expand('%:p:h'),
+    }, {
+        detach = false,
+        stdout_buffered = true,
+        on_stdout = function(_, data, _)
+            if data then
+                vim.schedule(function()
+                    notify(table.concat(data, '\n'), INFO)
+                end)
+            end
+        end,
+    })
+end, {})
+
+local REPLACEMENTS = {
+    { '\\binterface\\{\\}', 'any' },
+    { '\\bioutil\\.ReadFile\\b', 'os.ReadFile' },
+    { '\\bioutil\\.TempDir\\b', 'os.MkdirTemp' },
+    { '\\bioutil\\.TempFile\\b', 'os.CreateTemp' },
+    { '\\bioutil\\.WriteFile\\b', 'os.WriteFile' },
+}
+
 function M.go_autocmds()
     usercmd('GoEnvInfo', function()
         for label, value in pairs({
@@ -250,9 +377,9 @@ function M.go_autocmds()
     end, {})
 end
 
-local function go_dap()
-    return require('dap')
-end
+---@param _opts table|nil
+function M.go_cfg(_opts) end
+
 function M.go_dap()
     -- uses the module-level cached run_cached_gvm; the old nested copy
     -- was a global _G assignment shadowing nothing (outer callers hold
@@ -286,90 +413,6 @@ function M.go_dap()
         end
     end
 end
-
-usercmd('GoRun', function()
-    local go_bin = get_go_bin()
-    jobstart({
-        go_bin,
-        'run',
-        fn.expand('%:p'),
-    }, { detach = true })
-end, {})
-usercmd('GoBuild', function()
-    local go_bin = get_go_bin()
-    jobstart({
-        go_bin,
-        'build',
-        fn.expand('%:p:h'),
-    }, {
-        on_exit = function(_, code, _)
-            vim.schedule(function()
-                if code == 0 then
-                    notify('Build successful', INFO)
-                else
-                    notify('Build failed', vim.log.levels.ERROR)
-                end
-            end)
-        end,
-    })
-end, {})
-usercmd('GoStaticcheck', function()
-    fn.jobstart({
-        'staticcheck',
-        './...',
-    }, {
-        cwd = fn.expand('%:p:h'),
-        stdout_buffered = true,
-        on_stdout = function(_, data, _)
-            if data then
-                vim.schedule(function()
-                    notify('staticcheck: ' .. table.concat(data, '\n'), INFO)
-                end)
-            end
-        end,
-    })
-end, {})
-usercmd('GoModTidy', function()
-    local go_bin = get_go_bin()
-    local cwd = fn.expand('%:p:h')
-    notify('go mod tidy: running...', INFO)
-    local result = vim.system({ go_bin, 'mod', 'tidy' }, { text = true, cwd = cwd, timeout = 60000 }):wait()
-    if result.code == 0 then
-        notify('go mod tidy: clean', INFO)
-    else
-        notify(('go mod tidy failed:\n%s'):format(result.stderr or ''), vim.log.levels.ERROR)
-    end
-end, { desc = 'Run go mod tidy in the current module' })
-usercmd('GoDoc', function()
-    local go_bin = get_go_bin()
-    local word = fn.expand('<cword>')
-    if word == '' then
-        notify('GoDoc: no symbol under cursor', vim.log.levels.WARN)
-        return
-    end
-    local result =
-        vim.system({ go_bin, 'doc', word }, { text = true, cwd = fn.expand('%:p:h'), timeout = 15000 }):wait()
-    if result.code ~= 0 or (result.stdout or '') == '' then
-        notify(('go doc: nothing found for %s'):format(word), INFO)
-        return
-    end
-    local buf = api.nvim_create_buf(false, true)
-    api.nvim_buf_set_lines(buf, 0, -1, false, vim.split(vim.trim(result.stdout), '\n'))
-    vim.bo[buf].filetype = 'godoc'
-    vim.bo[buf].modifiable = false
-    api.nvim_open_win(buf, true, { split = 'right' })
-end, { desc = 'Show go doc for the symbol under cursor' })
----@param _opts table|nil
-function M.go_cfg(_opts) end
-
-
-local REPLACEMENTS = {
-    { "\\binterface\\{\\}", "any" },
-    { "\\bioutil\\.ReadFile\\b", "os.ReadFile" },
-    { "\\bioutil\\.TempDir\\b", "os.MkdirTemp" },
-    { "\\bioutil\\.TempFile\\b", "os.CreateTemp" },
-    { "\\bioutil\\.WriteFile\\b", "os.WriteFile" },
-}
 
 ---Modernize deprecated go syntax in the current buffer.
 function M.modernize()

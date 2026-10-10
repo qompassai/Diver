@@ -1,4 +1,5 @@
 #!/usr/bin/env lua
+
 -- /qompassai/Diver/lua/config/lang/toml.lua
 -- Qompass AI Diver TOML Lang Config
 -- Copyright (C) 2025 Qompass AI, All rights reserved
@@ -11,6 +12,7 @@ local group = api.nvim_create_augroup('TOML', {
 })
 local header = require('research.docs')
 local modernize = require('config.lang.modernize')
+
 api.nvim_create_autocmd('BufNewFile', {
     group = group,
     pattern = { '*.toml' },
@@ -25,8 +27,7 @@ api.nvim_create_autocmd('BufNewFile', {
     end,
 })
 
-local REPLACEMENTS = {
-}
+local REPLACEMENTS = {}
 
 ---Modernize deprecated toml syntax in the current buffer.
 function M.modernize()

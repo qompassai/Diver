@@ -11,32 +11,21 @@
 local M = {}
 local api = vim.api
 local bo = vim.bo
+local create_augroup = api.nvim_create_augroup
+local create_autocmd = api.nvim_create_autocmd
 local fn = vim.fn
 local formatters = require('formatters')
-local notify = vim.notify
-local levels = vim.log.levels
-local set_keymap = vim.keymap.set
-local create_autocmd = api.nvim_create_autocmd
-local create_augroup = api.nvim_create_augroup
----Create a buffer-local user command when a lua buffer opens.
----Lang commands only exist in buffers of their own language: they never
----pollute `:` completion elsewhere.
----@param name string command name
----@param fn function|string command implementation
----@param opts? table nvim_create_user_command options
-local function create_user_command(name, fn, opts)
-    api.nvim_create_autocmd('FileType', {
-        pattern = 'lua',
-        desc = ('Buffer-local command: %s'):format(name),
-        callback = function(args)
-            api.nvim_buf_create_user_command(args.buf, name, fn, opts or {})
-        end,
-    })
-end
 local group = create_augroup('lua_config', {
     clear = true,
 })
 local header = require('research.docs')
+local levels = vim.log.levels
+local notify = vim.notify
+local set_keymap = vim.keymap.set
+---Set up Lua language tooling (formatter, linters, luarocks).
+---@return nil
+local setup_done = false
+
 M.luarocks = {
     'bit32',
     'busted',
@@ -81,26 +70,74 @@ M.luarocks = {
     'rapidjson',
     'typecheck',
 }
+
+---Create a buffer-local user command when a lua buffer opens.
+---Lang commands only exist in buffers of their own language: they never
+---pollute `:` completion elsewhere.
+---@param name string command name
+---@param callback function|string command implementation
+---@param opts? table nvim_create_user_command options
+local function create_user_command(name, callback, opts)
+    api.nvim_create_autocmd('FileType', {
+        pattern = 'lua',
+        desc = ('Buffer-local command: %s'):format(name),
+        callback = function(args)
+            api.nvim_buf_create_user_command(args.buf, name, callback, opts or {})
+        end,
+    })
+end
+
 local function get_buffer_text(bufnr)
     return table.concat(api.nvim_buf_get_lines(bufnr, 0, -1, false), '\n')
 end
-local function set_buffer_text(bufnr, text)
-    api.nvim_buf_set_lines(
-        bufnr,
-        0,
-        -1,
-        false,
-        vim.split(text, '\n', {
-            plain = true,
-        })
-    )
+
+local function insert_lua_header()
+    local first_line = api.nvim_buf_get_lines(0, 0, 1, false)[1]
+    if first_line ~= '' then
+        return
+    end
+    local filepath = fn.expand('%:p')
+    local shebang = '#!/usr/bin/env lua'
+    local generated_header = header.make_header(filepath, '--')
+    local lines = { shebang, '' }
+
+    vim.list_extend(lines, generated_header)
+    api.nvim_buf_set_lines(0, 0, 0, false, lines)
+    vim.cmd('normal! G')
 end
+
 local function is_lua_buffer(bufnr)
     return bo[bufnr].filetype == 'lua'
 end
-local function stylua_available()
-    return fn.executable('stylua') == 1
+
+local function lua_range_action()
+    local bufnr = 0
+    local diagnostics = vim.diagnostic.get(bufnr)
+    local start_pos = api.nvim_buf_get_mark(bufnr, '<')
+    local end_pos = api.nvim_buf_get_mark(bufnr, '>')
+    vim.lsp.buf.code_action({
+        context = {
+            diagnostics = diagnostics,
+            only = {
+                'quickfix',
+                'refactor.extract',
+            },
+        },
+        range = {
+            start = {
+                start_pos[1],
+                start_pos[2],
+            },
+            ['end'] = { end_pos[1], end_pos[2] },
+        },
+        filter = function(_, client_id)
+            local client = vim.lsp.get_client_by_id(client_id)
+            return client ~= nil and client.name == 'lua_ls'
+        end,
+        apply = false,
+    })
 end
+
 local function modernize_deprecated_highlights(text)
     local changed = false
     text = text:gsub(
@@ -248,23 +285,23 @@ local function modernize_lua_text(text)
 
     return text, (text ~= original) or highlight_changed or exec_changed
 end
-local function modernize_current_buffer()
-    local bufnr = api.nvim_get_current_buf()
-    if not is_lua_buffer(bufnr) then
-        notify('Current buffer is not a Lua file', levels.WARN)
-        return
-    end
-    local text = get_buffer_text(bufnr)
-    local updated, changed = modernize_lua_text(text)
-    if not changed then
-        notify('No deprecated Lua or Neovim API patterns found', levels.INFO)
-        return
-    end
-    local view = fn.winsaveview()
-    set_buffer_text(bufnr, updated)
-    fn.winrestview(view)
-    notify('Modernized deprecated Lua and Neovim API patterns', levels.INFO)
+
+local function set_buffer_text(bufnr, text)
+    api.nvim_buf_set_lines(
+        bufnr,
+        0,
+        -1,
+        false,
+        vim.split(text, '\n', {
+            plain = true,
+        })
+    )
 end
+
+local function stylua_available()
+    return fn.executable('stylua') == 1
+end
+
 local function format_with_stylua(bufnr)
     if not stylua_available() then
         notify('stylua not found in PATH', levels.WARN)
@@ -305,48 +342,64 @@ local function format_with_stylua(bufnr)
 
     return true
 end
-local function insert_lua_header()
-    local first_line = api.nvim_buf_get_lines(0, 0, 1, false)[1]
-    if first_line ~= '' then
+
+local function modernize_current_buffer()
+    local bufnr = api.nvim_get_current_buf()
+    if not is_lua_buffer(bufnr) then
+        notify('Current buffer is not a Lua file', levels.WARN)
         return
     end
-    local filepath = fn.expand('%:p')
-    local shebang = '#!/usr/bin/env lua'
-    local generated_header = header.make_header(filepath, '--')
-    local lines = { shebang, '' }
-
-    vim.list_extend(lines, generated_header)
-    api.nvim_buf_set_lines(0, 0, 0, false, lines)
-    vim.cmd('normal! G')
+    local text = get_buffer_text(bufnr)
+    local updated, changed = modernize_lua_text(text)
+    if not changed then
+        notify('No deprecated Lua or Neovim API patterns found', levels.INFO)
+        return
+    end
+    local view = fn.winsaveview()
+    set_buffer_text(bufnr, updated)
+    fn.winrestview(view)
+    notify('Modernized deprecated Lua and Neovim API patterns', levels.INFO)
 end
 
-local function lua_range_action()
-    local bufnr = 0
-    local diagnostics = vim.diagnostic.get(bufnr)
-    local start_pos = api.nvim_buf_get_mark(bufnr, '<')
-    local end_pos = api.nvim_buf_get_mark(bufnr, '>')
-    vim.lsp.buf.code_action({
-        context = {
-            diagnostics = diagnostics,
-            only = {
-                'quickfix',
-                'refactor.extract',
-            },
-        },
-        range = {
-            start = {
-                start_pos[1],
-                start_pos[2],
-            },
-            ['end'] = { end_pos[1], end_pos[2] },
-        },
-        filter = function(_, client_id)
-            local client = vim.lsp.get_client_by_id(client_id)
-            return client ~= nil and client.name == 'lua_ls'
+---Publish a rock with the native LuaRocks CLI (the flow in Matt's
+---luarocks skill). Dry-run by default: `luarocks pack <rockspec>` builds
+---the .src.rock and uploads nothing. Use the bang form
+---(:LuaPublish! <rockspec>) to run `luarocks upload` for real. The API
+---key stays in LuaRocks' own credential chain; this hook never reads,
+---stores, or logs it.
+---@param spec string path to the rockspec
+---@param bang boolean true to upload for real
+local function publish_package(spec, bang)
+    local cmd = { 'luarocks', 'pack', spec }
+    if bang then
+        cmd = { 'luarocks', 'upload', spec }
+    end
+    notify('publish: ' .. table.concat(cmd, ' '), levels.INFO)
+    fn.jobstart(cmd, {
+        cwd = fn.expand('%:p:h'),
+        stdout_buffered = true,
+        on_stdout = function(_, data, _)
+            if data then
+                vim.schedule(function()
+                    notify(table.concat(data, '\n'), levels.INFO)
+                end)
+            end
         end,
-        apply = false,
+        on_stderr = function(_, data, _)
+            if data then
+                vim.schedule(function()
+                    notify(table.concat(data, '\n'), levels.ERROR)
+                end)
+            end
+        end,
+        on_exit = function(_, code, _)
+            vim.schedule(function()
+                notify(('publish exited with code %d'):format(code), code == 0 and levels.INFO or levels.ERROR)
+            end)
+        end,
     })
 end
+
 ---Build the luarocks-aware Lua config by merging user options over defaults.
 ---@param opts? table option overrides
 ---@return table cfg the merged Lua config table
@@ -355,9 +408,7 @@ function M.lua_luarocks(opts)
         rocks = M.luarocks,
     }, opts or {})
 end
----Set up Lua language tooling (formatter, linters, luarocks).
----@return nil
-local setup_done = false
+
 function M.setup()
     if setup_done then
         return
@@ -391,6 +442,13 @@ function M.setup()
     })
     create_user_command('LuaModernize', modernize_current_buffer, {
         desc = 'Modernize deprecated Lua and Neovim API usage in current buffer',
+    })
+    create_user_command('LuaPublish', function(args)
+        publish_package(args.args, args.bang)
+    end, {
+        bang = true,
+        nargs = 1,
+        desc = 'luarocks pack <rockspec> (dry-run); :LuaPublish! uploads to luarocks.org',
     })
     set_keymap('n', '<leader>md', modernize_current_buffer, {
         desc = 'Modernize deprecated Neovim APIs',

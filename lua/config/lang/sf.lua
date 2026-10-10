@@ -1,9 +1,27 @@
 #!/usr/bin/env lua
 
--- sf.lua
+-- /qompassai/Diver/lua/config/lang/sf.lua
 -- Qompass AI Salesforce Lang Config
 -- Copyright (C) 2026 Qompass AI, All rights reserved
 -- ----------------------------------------
+local M = {}
+
+---Language-specific MCP server, declared in the ai.mcp declared_servers
+---entry shape. Declarative and inert: not auto-started; enabling belongs
+---to the ai.mcp layer. @salesforce/mcp is Salesforce's official DX MCP
+---server (repo salesforcecli/mcp, Apache-2.0): ~60 tools across org,
+---metadata, data, and testing toolsets over stdio. Auth stays in the sf
+---CLI's own store; this entry carries no credentials, and org/toolset
+---selection is an enable-time choice. Verified 2026-10-09.
+M.mcp_servers = {
+    {
+        args = { '-y', '@salesforce/mcp' },
+        command = 'npx',
+        enabled = false,
+        name = 'salesforce_dx',
+    },
+}
+
 vim.api.nvim_create_autocmd('FileType', {
     pattern = {
         'apex',
@@ -27,3 +45,5 @@ _G.apex_foldexpr = function(lnum)
         return '='
     end
 end
+
+return M

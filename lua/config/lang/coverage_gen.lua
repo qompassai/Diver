@@ -16,6 +16,8 @@
 ---@module 'config.lang.coverage_gen'
 
 local M = {}
+-- Generated lines stay inside the repo stylua column_width (120).
+local RENDER_COLS_MAX = 112
 
 ---@class LangCoverageRaw
 ---@field formatters table<string, (string|string[])[]> filetype -> formatter pipeline stages
@@ -53,8 +55,42 @@ local BROWSER_FILETYPES = {
     'typescriptreact',
 }
 
--- Generated lines stay inside the repo stylua column_width (120).
-local RENDER_COLS_MAX = 112
+---@param s string filetype or tool name
+---@return string # single-quoted, unless it holds a quote
+local function qstr(s)
+    assert(type(s) == 'string' and #s > 0, 'quoted names must be non-empty strings')
+    if s:find("'", 1, true) ~= nil then
+        return string.format('%q', s)
+    end
+    return "'" .. s .. "'"
+end
+
+---@param name string field name
+---@param items string[] sorted items
+---@param indent string
+---@return string rendered field, one line when it fits
+local function render_field(name, items, indent)
+    assert(type(items) == 'table', name .. ' must render a list')
+    if #items == 0 then
+        return indent .. name .. ' = {},'
+    end
+    ---@type string[]
+    local quoted = {}
+    for _, item in ipairs(items) do
+        quoted[#quoted + 1] = qstr(item)
+    end
+    local single = indent .. name .. ' = { ' .. table.concat(quoted, ', ') .. ' },'
+    if #single <= RENDER_COLS_MAX then
+        return single
+    end
+    ---@type string[]
+    local lines = { indent .. name .. ' = {' }
+    for _, q in ipairs(quoted) do
+        lines[#lines + 1] = indent .. '    ' .. q .. ','
+    end
+    lines[#lines + 1] = indent .. '},'
+    return table.concat(lines, '\n')
+end
 
 ---Derive the repo root from this module's own path; never trust the cwd.
 ---@return string root absolute path of the diver checkout
@@ -165,6 +201,63 @@ local function parse_dap_modules(path)
     return by_ft, entry_count
 end
 
+---@param ft string
+---@param entry LangCoverageEntry
+---@return string rendered manifest entry
+local function render_entry(ft, entry)
+    ---@type string[]
+    local lines = { '    [' .. qstr(ft) .. '] = {' }
+    for _, field in ipairs({ 'formatters', 'linters', 'lsp', 'dap' }) do
+        lines[#lines + 1] = render_field(field, entry[field], '        ')
+    end
+    lines[#lines + 1] = '        bsp = ' .. tostring(entry.bsp) .. ','
+    lines[#lines + 1] = '        browser = ' .. tostring(entry.browser) .. ','
+    lines[#lines + 1] = '    },'
+    return table.concat(lines, '\n')
+end
+
+---Merge raw registry data into the manifest. Pure: safe to call with fixtures.
+---@param raw LangCoverageRaw
+---@return table<string, LangCoverageEntry> manifest
+function M.build(raw)
+    assert(type(raw) == 'table', 'raw coverage data must be a table')
+    ---@type table<string, LangCoverageEntry>
+    local manifest = {}
+    local function ensure(ft)
+        assert(type(ft) == 'string' and #ft > 0, 'filetype keys must be non-empty strings')
+        if manifest[ft] == nil then
+            manifest[ft] = {
+                formatters = {},
+                linters = {},
+                lsp = {},
+                dap = {},
+                bsp = false,
+                browser = false,
+            }
+        end
+        return manifest[ft]
+    end
+    for ft, stages in pairs(raw.formatters or {}) do
+        ensure(ft).formatters = flatten_stages(stages)
+    end
+    for ft, names in pairs(raw.linters or {}) do
+        ensure(ft).linters = uniq_sorted(names)
+    end
+    for ft, stems in pairs(raw.lsp or {}) do
+        ensure(ft).lsp = uniq_sorted(stems)
+    end
+    for ft, mods in pairs(raw.dap or {}) do
+        ensure(ft).dap = uniq_sorted(mods)
+    end
+    for ft in pairs(raw.bsp or {}) do
+        ensure(ft).bsp = true
+    end
+    for ft in pairs(raw.browser or {}) do
+        ensure(ft).browser = true
+    end
+    return manifest
+end
+
 ---Read every real registry. Expensive but honest: this is the loader-based
 ---measurement the manifest derives from.
 ---@return LangCoverageRaw raw
@@ -249,133 +342,6 @@ function M.collect()
         dap_entries = dap_entries,
     }
     return raw, stats
-end
-
----Merge raw registry data into the manifest. Pure: safe to call with fixtures.
----@param raw LangCoverageRaw
----@return table<string, LangCoverageEntry> manifest
-function M.build(raw)
-    assert(type(raw) == 'table', 'raw coverage data must be a table')
-    ---@type table<string, LangCoverageEntry>
-    local manifest = {}
-    local function ensure(ft)
-        assert(type(ft) == 'string' and #ft > 0, 'filetype keys must be non-empty strings')
-        if manifest[ft] == nil then
-            manifest[ft] = {
-                formatters = {},
-                linters = {},
-                lsp = {},
-                dap = {},
-                bsp = false,
-                browser = false,
-            }
-        end
-        return manifest[ft]
-    end
-    for ft, stages in pairs(raw.formatters or {}) do
-        ensure(ft).formatters = flatten_stages(stages)
-    end
-    for ft, names in pairs(raw.linters or {}) do
-        ensure(ft).linters = uniq_sorted(names)
-    end
-    for ft, stems in pairs(raw.lsp or {}) do
-        ensure(ft).lsp = uniq_sorted(stems)
-    end
-    for ft, mods in pairs(raw.dap or {}) do
-        ensure(ft).dap = uniq_sorted(mods)
-    end
-    for ft in pairs(raw.bsp or {}) do
-        ensure(ft).bsp = true
-    end
-    for ft in pairs(raw.browser or {}) do
-        ensure(ft).browser = true
-    end
-    return manifest
-end
-
----Guard: every filetype the registries know must appear in the manifest.
----Returns false + the missing list (loud) instead of silently dropping one.
----@param manifest table<string, LangCoverageEntry>
----@param raw LangCoverageRaw
----@return boolean ok
----@return string[]|nil missing filetypes with their source registry
-function M.verify(manifest, raw)
-    assert(type(manifest) == 'table', 'manifest must be a table')
-    assert(type(raw) == 'table', 'raw coverage data must be a table')
-    ---@type string[]
-    local missing = {}
-    local seen = {}
-    local function check_source(map, source_name)
-        for ft in pairs(map or {}) do
-            if manifest[ft] == nil and not seen[ft] then
-                seen[ft] = true
-                missing[#missing + 1] = ft .. ' (' .. source_name .. ')'
-            end
-        end
-    end
-    check_source(raw.formatters, 'formatters')
-    check_source(raw.linters, 'linters')
-    check_source(raw.lsp, 'lsp')
-    check_source(raw.dap, 'dap')
-    check_source(raw.bsp, 'bsp')
-    check_source(raw.browser, 'browser')
-    table.sort(missing)
-    if #missing > 0 then
-        return false, missing
-    end
-    return true, nil
-end
-
----@param s string filetype or tool name
----@return string # single-quoted, unless it holds a quote
-local function qstr(s)
-    assert(type(s) == 'string' and #s > 0, 'quoted names must be non-empty strings')
-    if s:find("'", 1, true) ~= nil then
-        return string.format('%q', s)
-    end
-    return "'" .. s .. "'"
-end
-
----@param name string field name
----@param items string[] sorted items
----@param indent string
----@return string rendered field, one line when it fits
-local function render_field(name, items, indent)
-    assert(type(items) == 'table', name .. ' must render a list')
-    if #items == 0 then
-        return indent .. name .. ' = {},'
-    end
-    ---@type string[]
-    local quoted = {}
-    for _, item in ipairs(items) do
-        quoted[#quoted + 1] = qstr(item)
-    end
-    local single = indent .. name .. ' = { ' .. table.concat(quoted, ', ') .. ' },'
-    if #single <= RENDER_COLS_MAX then
-        return single
-    end
-    ---@type string[]
-    local lines = { indent .. name .. ' = {' }
-    for _, q in ipairs(quoted) do
-        lines[#lines + 1] = indent .. '    ' .. q .. ','
-    end
-    lines[#lines + 1] = indent .. '},'
-    return table.concat(lines, '\n')
-end
-
----@param ft string
----@param entry LangCoverageEntry
----@return string rendered manifest entry
-local function render_entry(ft, entry)
-    ---@type string[]
-    local lines = { '    [' .. qstr(ft) .. '] = {' }
-    for _, field in ipairs({ 'formatters', 'linters', 'lsp', 'dap' }) do
-        lines[#lines + 1] = render_field(field, entry[field], '        ')
-    end
-    lines[#lines + 1] = '        bsp = ' .. tostring(entry.bsp) .. ','
-    lines[#lines + 1] = '        browser = ' .. tostring(entry.browser) .. ','
-    lines[#lines + 1] = '    },'
-    return table.concat(lines, '\n')
 end
 
 ---Render the manifest as deterministic Lua source. Sorted keys, sorted lists:
@@ -480,6 +446,39 @@ function M.setup()
             vim.notify('LangCoverage failed: ' .. tostring(rerr or stats), vim.log.levels.ERROR)
         end
     end, { desc = 'Regenerate lua/config/lang/coverage.lua from the live tooling registries' })
+end
+
+---Guard: every filetype the registries know must appear in the manifest.
+---Returns false + the missing list (loud) instead of silently dropping one.
+---@param manifest table<string, LangCoverageEntry>
+---@param raw LangCoverageRaw
+---@return boolean ok
+---@return string[]|nil missing filetypes with their source registry
+function M.verify(manifest, raw)
+    assert(type(manifest) == 'table', 'manifest must be a table')
+    assert(type(raw) == 'table', 'raw coverage data must be a table')
+    ---@type string[]
+    local missing = {}
+    local seen = {}
+    local function check_source(map, source_name)
+        for ft in pairs(map or {}) do
+            if manifest[ft] == nil and not seen[ft] then
+                seen[ft] = true
+                missing[#missing + 1] = ft .. ' (' .. source_name .. ')'
+            end
+        end
+    end
+    check_source(raw.formatters, 'formatters')
+    check_source(raw.linters, 'linters')
+    check_source(raw.lsp, 'lsp')
+    check_source(raw.dap, 'dap')
+    check_source(raw.bsp, 'bsp')
+    check_source(raw.browser, 'browser')
+    table.sort(missing)
+    if #missing > 0 then
+        return false, missing
+    end
+    return true, nil
 end
 
 return M

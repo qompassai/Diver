@@ -92,14 +92,14 @@ api.nvim_create_autocmd('LspAttach', {
 ---Lang commands only exist in buffers of their own language: they never
 ---pollute `:` completion elsewhere.
 ---@param name string command name
----@param fn function|string command implementation
+---@param callback function|string command implementation
 ---@param opts? table nvim_create_user_command options
-local function buf_command(name, fn, opts)
+local function buf_command(name, callback, opts)
     vim.api.nvim_create_autocmd('FileType', {
         pattern = 'python',
         desc = ('Buffer-local command: %s'):format(name),
         callback = function(args)
-            vim.api.nvim_buf_create_user_command(args.buf, name, fn, opts or {})
+            vim.api.nvim_buf_create_user_command(args.buf, name, callback, opts or {})
         end,
     })
 end
@@ -116,6 +116,47 @@ buf_command('PyHostPing', function()
         notify('Python host ping failed: ' .. tostring(res), log.levels.ERROR)
     end
 end, { desc = 'Ping the Python host process' })
+
+---Publish the current package to PyPI with uv. Dry-run by default:
+---`uv publish --dry-run` builds and validates without uploading. Use the
+---bang form (:PyPublish!) to publish for real. Credentials stay in uv's
+---own chain (UV_PUBLISH_TOKEN, keyring, ~/.pypirc); this hook never
+---reads, stores, or logs them.
+---@param bang boolean true to publish for real
+local function publish_package(bang)
+    local argv = { 'uv', 'publish' }
+    if not bang then
+        argv[#argv + 1] = '--dry-run'
+    end
+    notify('publish: ' .. table.concat(argv, ' '), log.levels.INFO)
+    fn.jobstart(argv, {
+        cwd = fn.expand('%:p:h'),
+        stdout_buffered = true,
+        on_stdout = function(_, data, _)
+            if data then
+                vim.schedule(function()
+                    notify(table.concat(data, '\n'), log.levels.INFO)
+                end)
+            end
+        end,
+        on_stderr = function(_, data, _)
+            if data then
+                vim.schedule(function()
+                    notify(table.concat(data, '\n'), log.levels.ERROR)
+                end)
+            end
+        end,
+        on_exit = function(_, code, _)
+            vim.schedule(function()
+                notify(('publish exited with code %d'):format(code), code == 0 and log.levels.INFO or log.levels.ERROR)
+            end)
+        end,
+    })
+end
+
+buf_command('PyPublish', function(args)
+    publish_package(args.bang)
+end, { bang = true, desc = 'uv publish --dry-run; :PyPublish! publishes to PyPI' })
 ---Resolve the Python interpreter for a buffer, reusing dap.python's
 ---resolver so DAP and LSP agree. Falls back to python3.
 ---@param bufnr integer
@@ -158,20 +199,19 @@ api.nvim_create_autocmd('LspAttach', {
 
 function M.start()
     if M.chan and fn.chanclose then
-        
-local REPLACEMENTS = {
-    { "\\basyncio\\.coroutine\\b", "async def" },
-    { "\\bcollections\\.Mapping\\b", "collections.abc.Mapping" },
-    { "\\bcollections\\.Sequence\\b", "collections.abc.Sequence" },
-    { "\\btime\\.clock\\s*\\(", "time.perf_counter(" },
-}
+        local REPLACEMENTS = {
+            { '\\basyncio\\.coroutine\\b', 'async def' },
+            { '\\bcollections\\.Mapping\\b', 'collections.abc.Mapping' },
+            { '\\bcollections\\.Sequence\\b', 'collections.abc.Sequence' },
+            { '\\btime\\.clock\\s*\\(', 'time.perf_counter(' },
+        }
 
----Modernize deprecated python syntax in the current buffer.
-function M.modernize()
-    modernize.buffer('python', REPLACEMENTS, 'python')
-end
+        ---Modernize deprecated python syntax in the current buffer.
+        function M.modernize()
+            modernize.buffer('python', REPLACEMENTS, 'python')
+        end
 
-return M.chan
+        return M.chan
     end
     local script = fn.stdpath('config') .. '/scripts/host.py'
     if fn.filereadable(script) == 0 then

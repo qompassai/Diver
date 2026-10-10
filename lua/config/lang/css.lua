@@ -8,36 +8,22 @@ local augroup = vim.api.nvim_create_augroup
 local autocmd = vim.api.nvim_create_autocmd
 local client_by_id = vim.lsp.get_client_by_id
 local code_action = vim.lsp.buf.code_action
-local findfile = vim.fn.findfile
-local formatters = require('formatters')
-local modernize = require('config.lang.modernize')
 local ERROR = vim.log.levels.ERROR
-local get = vim.diagnostic.get
-local INFO = vim.log.levels.INFO
-local jobstart = vim.fn.jobstart
-local lsp = vim.lsp
-local notify = vim.notify
-local schedule = vim.schedule
+local findfile = vim.fn.findfile
 local fn = vim.fn
-local header = require('research.docs')
+local formatters = require('formatters')
+local get = vim.diagnostic.get
 local group = augroup('CSS', {
     clear = true,
 })
----Create a buffer-local user command when a css buffer opens.
----Lang commands only exist in buffers of their own language: they never
----pollute `:` completion elsewhere.
----@param name string command name
----@param fn function|string command implementation
----@param opts? table nvim_create_user_command options
-local function usercmd(name, fn, opts)
-    vim.api.nvim_create_autocmd('FileType', {
-        pattern = 'css',
-        desc = ('Buffer-local command: %s'):format(name),
-        callback = function(args)
-            vim.api.nvim_buf_create_user_command(args.buf, name, fn, opts or {})
-        end,
-    })
-end
+local header = require('research.docs')
+local INFO = vim.log.levels.INFO
+local jobstart = vim.fn.jobstart
+local lsp = vim.lsp
+local modernize = require('config.lang.modernize')
+local notify = vim.notify
+local schedule = vim.schedule
+
 local CSS_LSP_NAMES = {
     'cssls',
     'css-lsp',
@@ -52,57 +38,7 @@ local CSS_LSP_NAMES = {
     'biome',
     'emmet_ls',
 }
-local function is_css_lsp(client)
-    if not client then
-        return false
-    end
-    for _, name in ipairs(CSS_LSP_NAMES) do
-        if client.name == name then
-            return true
-        end
-    end
-    return false
-end
-local gtk_selectors = {
-    ['backdrop'] = {
-        documentation = 'GTK-specific pseudo-class for backdrop/unfocused window state',
-        function_selector = false,
-    },
-    ['drop'] = {
-        args = 'active',
-        documentation = 'GTK-specific pseudo-class for drag-and-drop states',
-        function_selector = true,
-    },
-}
-local gtk_properties = {
-    ['-gtk-dpi'] = {
-        documentation = 'Controls DPI scaling for GTK applications',
-    },
-    ['-gtk-icon-filter'] = {
-        documentation = 'Applies filter effects to icons',
-    },
-    ['-gtk-icon-palette'] = {
-        documentation = 'Defines color palette for symbolic icons',
-    },
-    ['-gtk-secondary-caret-color'] = {
-        documentation = 'Sets the color of the secondary caret in bidirectional text',
-    },
-    ['-gtk-icon-shadow'] = {
-        documentation = 'Applies shadow effects to icons',
-    },
-    ['-gtk-icon-size'] = {
-        documentation = 'Sets the size of icons',
-    },
-    ['-gtk-icon-source'] = {
-        documentation = 'Specifies the source image for icons',
-    },
-    ['-gtk-icon-style'] = {
-        documentation = 'Controls icon rendering style',
-    },
-    ['-gtk-icon-transform'] = {
-        documentation = 'Applies CSS transforms to icons',
-    },
-}
+
 local gtk_colors = {
     ['@accent_color'] = 'Accent color used across widgets for important/interactive elements',
     ['@accent_bg_color'] = 'Accent background color',
@@ -176,6 +112,61 @@ local gtk_functions = {
         snippet = '-gtk-scaled(${1:normal-url}, ${2:hidpi-url})',
     },
 }
+
+local gtk_properties = {
+    ['-gtk-dpi'] = {
+        documentation = 'Controls DPI scaling for GTK applications',
+    },
+    ['-gtk-icon-filter'] = {
+        documentation = 'Applies filter effects to icons',
+    },
+    ['-gtk-icon-palette'] = {
+        documentation = 'Defines color palette for symbolic icons',
+    },
+    ['-gtk-secondary-caret-color'] = {
+        documentation = 'Sets the color of the secondary caret in bidirectional text',
+    },
+    ['-gtk-icon-shadow'] = {
+        documentation = 'Applies shadow effects to icons',
+    },
+    ['-gtk-icon-size'] = {
+        documentation = 'Sets the size of icons',
+    },
+    ['-gtk-icon-source'] = {
+        documentation = 'Specifies the source image for icons',
+    },
+    ['-gtk-icon-style'] = {
+        documentation = 'Controls icon rendering style',
+    },
+    ['-gtk-icon-transform'] = {
+        documentation = 'Applies CSS transforms to icons',
+    },
+}
+
+local gtk_selectors = {
+    ['backdrop'] = {
+        documentation = 'GTK-specific pseudo-class for backdrop/unfocused window state',
+        function_selector = false,
+    },
+    ['drop'] = {
+        args = 'active',
+        documentation = 'GTK-specific pseudo-class for drag-and-drop states',
+        function_selector = true,
+    },
+}
+
+local function is_css_lsp(client)
+    if not client then
+        return false
+    end
+    for _, name in ipairs(CSS_LSP_NAMES) do
+        if client.name == name then
+            return true
+        end
+    end
+    return false
+end
+
 local function setup_gtk_completions()
     local original_handler = vim.lsp.handlers['textDocument/completion']
     vim.lsp.handlers['textDocument/completion'] = function(err, result, ctx, config)
@@ -250,6 +241,25 @@ local function setup_gtk_completions()
         return original_handler(err, result, ctx, config)
     end
 end
+
+---Create a buffer-local user command when a css buffer opens.
+---Lang commands only exist in buffers of their own language: they never
+---pollute `:` completion elsewhere.
+---@param name string command name
+---@param callback function|string command implementation
+---@param opts? table nvim_create_user_command options
+local function usercmd(name, callback, opts)
+    vim.api.nvim_create_autocmd('FileType', {
+        pattern = 'css',
+        desc = ('Buffer-local command: %s'):format(name),
+        callback = function(args)
+            vim.api.nvim_buf_create_user_command(args.buf, name, callback, opts or {})
+        end,
+    })
+end
+
+setup_gtk_completions()
+
 autocmd('BufNewFile', {
     group = group,
     pattern = {
@@ -270,198 +280,7 @@ autocmd('BufNewFile', {
         vim.cmd('normal! G')
     end,
 })
-formatters.register_stage({
-    name = 'css_lsp_format',
-    priority = 407,
-    patterns = {
-        '*.css',
-        '*.scss',
-        '*.sass',
-        '*.less',
-        '*.postcss',
-    },
-    desc = 'Format stylesheets with the attached LSP client before save',
-    run = function(bufnr) ---@param bufnr integer
-        lsp.buf.format({
-            bufnr = bufnr,
-            async = false,
-        })
-    end,
-})
-formatters.register_stage({
-    name = 'css_fixall',
-    priority = 408,
-    patterns = {
-        '*.css',
-        '*.scss',
-        '*.sass',
-        '*.less',
-        '*.postcss',
-    },
-    desc = 'Apply source.fixAll code actions to stylesheets before save',
-    run = function()
-        code_action({
-            context = {
-                diagnostics = {},
-                only = {
-                    'source.fixAll',
-                },
-            },
-            apply = true,
-        })
-    end,
-})
-autocmd('FileType', {
-    group = group,
-    pattern = {
-        'css',
-        'scss',
-        'sass',
-        'less',
-        'postcss',
-    },
-    callback = function()
-        vim.opt_local.tabstop = 2
-        vim.opt_local.shiftwidth = 2
-        vim.opt_local.expandtab = true
-    end,
-})
-usercmd('CssFormat', function()
-    ---@type string
-    local prettier = findfile('node_modules/.bin/prettier', '.;') --[[@as string]]
-    ---@type string
-    local biome = findfile('node_modules/.bin/biome', '.;') --[[@as string]]
-    if biome ~= '' then
-        jobstart({
-            biome,
-            'format',
-            '--write',
-            fn.expand('%:p'),
-        }, {
-            on_exit = function(_, code, _)
-                schedule(function()
-                    if code == 0 then
-                        notify('Formatted with Biome', INFO)
-                        vim.cmd('e!')
-                    else
-                        notify('Biome formatting failed', ERROR)
-                    end
-                end)
-            end,
-        })
-    elseif prettier ~= '' then
-        jobstart({
-            prettier,
-            '--write',
-            fn.expand('%:p'),
-        }, {
-            on_exit = function(_, code, _)
-                schedule(function()
-                    if code == 0 then
-                        notify('Formatted with Prettier', INFO)
-                        vim.cmd('e!')
-                    else
-                        notify('Prettier formatting failed', ERROR)
-                    end
-                end)
-            end,
-        })
-    else
-        lsp.buf.format({
-            async = false,
-        })
-        notify('Formatted with LSP', INFO)
-    end
-end, {})
-usercmd('CssLint', function()
-    ---@type string
-    local stylelint = findfile('node_modules/.bin/stylelint', '.;') --[[@as string]]
-    ---@type string
-    local biome = findfile('node_modules/.bin/biome', '.;') --[[@as string]]
-    if biome ~= '' then
-        jobstart({
-            biome,
-            'lint',
-            fn.expand('%:p'),
-        }, {
-            stdout_buffered = true,
-            on_stdout = function(_, data, _)
-                if not data then
-                    return
-                end
-                local out = table.concat(data, '')
-                if out ~= '' then
-                    schedule(function()
-                        notify('biome: ' .. out, INFO)
-                    end)
-                end
-            end,
-        })
-    elseif stylelint ~= '' then
-        jobstart({
-            stylelint,
-            fn.expand('%:p'),
-        }, {
-            stdout_buffered = true,
-            on_stdout = function(_, data, _)
-                if not data then
-                    return
-                end
-                local out = table.concat(data, '')
-                if out ~= '' then
-                    schedule(function()
-                        notify('stylelint: ' .. out, INFO)
-                    end)
-                end
-            end,
-        })
-    else
-        notify('No linter found (stylelint or biome)', ERROR)
-    end
-end, {})
-usercmd('CssQuickfix', function()
-    local diagnostics = get(0)
-    code_action({
-        context = {
-            diagnostics = diagnostics,
-            only = {
-                'quickfix',
-            },
-            triggerKind = lsp.protocol.CodeActionTriggerKind.Invoked,
-        },
-        apply = true,
-    })
-end, {})
-formatters.register_stage({
-    name = 'css_organize_imports',
-    priority = 409,
-    patterns = {
-        '*.css',
-        '*.scss',
-        '*.sass',
-        '*.less',
-        '*.postcss',
-    },
-    desc = 'Organize imports in stylesheets before save',
-    run = function(bufnr)
-        local diagnostics = get(bufnr)
-        code_action({
-            context = {
-                diagnostics = diagnostics,
-                only = {
-                    'source.organizeImports',
-                    'source.fixAll',
-                },
-                triggerKind = lsp.protocol.CodeActionTriggerKind.Source,
-            },
-            apply = true,
-            filter = function(_, client_id)
-                local client = client_by_id(client_id)
-                return is_css_lsp(client)
-            end,
-        })
-    end,
-})
+
 autocmd('BufWritePost', {
     group = group,
     pattern = {
@@ -519,6 +338,107 @@ autocmd('BufWritePost', {
         end
     end,
 })
+
+autocmd('FileType', {
+    group = group,
+    pattern = {
+        'css',
+        'scss',
+        'sass',
+        'less',
+        'postcss',
+    },
+    callback = function()
+        vim.opt_local.tabstop = 2
+        vim.opt_local.shiftwidth = 2
+        vim.opt_local.expandtab = true
+    end,
+})
+
+autocmd('LspAttach', {
+    group = group,
+    callback = function(args)
+        local client = client_by_id(args.data.client_id)
+        if is_css_lsp(client) then
+            vim.bo[args.buf].omnifunc = 'v:lua.vim.lsp.omnifunc'
+        end
+    end,
+})
+
+formatters.register_stage({
+    name = 'css_lsp_format',
+    priority = 407,
+    patterns = {
+        '*.css',
+        '*.scss',
+        '*.sass',
+        '*.less',
+        '*.postcss',
+    },
+    desc = 'Format stylesheets with the attached LSP client before save',
+    run = function(bufnr) ---@param bufnr integer
+        lsp.buf.format({
+            bufnr = bufnr,
+            async = false,
+        })
+    end,
+})
+
+formatters.register_stage({
+    name = 'css_fixall',
+    priority = 408,
+    patterns = {
+        '*.css',
+        '*.scss',
+        '*.sass',
+        '*.less',
+        '*.postcss',
+    },
+    desc = 'Apply source.fixAll code actions to stylesheets before save',
+    run = function()
+        code_action({
+            context = {
+                diagnostics = {},
+                only = {
+                    'source.fixAll',
+                },
+            },
+            apply = true,
+        })
+    end,
+})
+
+formatters.register_stage({
+    name = 'css_organize_imports',
+    priority = 409,
+    patterns = {
+        '*.css',
+        '*.scss',
+        '*.sass',
+        '*.less',
+        '*.postcss',
+    },
+    desc = 'Organize imports in stylesheets before save',
+    run = function(bufnr)
+        local diagnostics = get(bufnr)
+        code_action({
+            context = {
+                diagnostics = diagnostics,
+                only = {
+                    'source.organizeImports',
+                    'source.fixAll',
+                },
+                triggerKind = lsp.protocol.CodeActionTriggerKind.Source,
+            },
+            apply = true,
+            filter = function(_, client_id)
+                local client = client_by_id(client_id)
+                return is_css_lsp(client)
+            end,
+        })
+    end,
+})
+
 usercmd('CssCodeAction', function()
     local diagnostics = get(0)
     code_action({
@@ -535,6 +455,115 @@ usercmd('CssCodeAction', function()
             local client = client_by_id(client_id)
             return is_css_lsp(client)
         end,
+        apply = true,
+    })
+end, {})
+
+usercmd('CssFormat', function()
+    ---@type string
+    local prettier = findfile('node_modules/.bin/prettier', '.;') --[[@as string]]
+    ---@type string
+    local biome = findfile('node_modules/.bin/biome', '.;') --[[@as string]]
+    if biome ~= '' then
+        jobstart({
+            biome,
+            'format',
+            '--write',
+            fn.expand('%:p'),
+        }, {
+            on_exit = function(_, code, _)
+                schedule(function()
+                    if code == 0 then
+                        notify('Formatted with Biome', INFO)
+                        vim.cmd('e!')
+                    else
+                        notify('Biome formatting failed', ERROR)
+                    end
+                end)
+            end,
+        })
+    elseif prettier ~= '' then
+        jobstart({
+            prettier,
+            '--write',
+            fn.expand('%:p'),
+        }, {
+            on_exit = function(_, code, _)
+                schedule(function()
+                    if code == 0 then
+                        notify('Formatted with Prettier', INFO)
+                        vim.cmd('e!')
+                    else
+                        notify('Prettier formatting failed', ERROR)
+                    end
+                end)
+            end,
+        })
+    else
+        lsp.buf.format({
+            async = false,
+        })
+        notify('Formatted with LSP', INFO)
+    end
+end, {})
+
+usercmd('CssLint', function()
+    ---@type string
+    local stylelint = findfile('node_modules/.bin/stylelint', '.;') --[[@as string]]
+    ---@type string
+    local biome = findfile('node_modules/.bin/biome', '.;') --[[@as string]]
+    if biome ~= '' then
+        jobstart({
+            biome,
+            'lint',
+            fn.expand('%:p'),
+        }, {
+            stdout_buffered = true,
+            on_stdout = function(_, data, _)
+                if not data then
+                    return
+                end
+                local out = table.concat(data, '')
+                if out ~= '' then
+                    schedule(function()
+                        notify('biome: ' .. out, INFO)
+                    end)
+                end
+            end,
+        })
+    elseif stylelint ~= '' then
+        jobstart({
+            stylelint,
+            fn.expand('%:p'),
+        }, {
+            stdout_buffered = true,
+            on_stdout = function(_, data, _)
+                if not data then
+                    return
+                end
+                local out = table.concat(data, '')
+                if out ~= '' then
+                    schedule(function()
+                        notify('stylelint: ' .. out, INFO)
+                    end)
+                end
+            end,
+        })
+    else
+        notify('No linter found (stylelint or biome)', ERROR)
+    end
+end, {})
+
+usercmd('CssQuickfix', function()
+    local diagnostics = get(0)
+    code_action({
+        context = {
+            diagnostics = diagnostics,
+            only = {
+                'quickfix',
+            },
+            triggerKind = lsp.protocol.CodeActionTriggerKind.Invoked,
+        },
         apply = true,
     })
 end, {})
@@ -571,19 +600,8 @@ usercmd('CssRangeAction', function()
 end, {
     range = true,
 })
-autocmd('LspAttach', {
-    group = group,
-    callback = function(args)
-        local client = client_by_id(args.data.client_id)
-        if is_css_lsp(client) then
-            vim.bo[args.buf].omnifunc = 'v:lua.vim.lsp.omnifunc'
-        end
-    end,
-})
-setup_gtk_completions()
 
-local REPLACEMENTS = {
-}
+local REPLACEMENTS = {}
 
 ---Modernize deprecated css syntax in the current buffer.
 function M.modernize()

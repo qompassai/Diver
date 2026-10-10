@@ -4,13 +4,75 @@
 -- -----------------------------------------
 local M = {}
 local api = vim.api
+local ERROR = vim.log.levels.ERROR
 local fn = vim.fn
 local formatters = require('formatters')
-local modernize = require('config.lang.modernize')
 local group = api.nvim_create_augroup('PHP', {
     clear = true,
 })
 local header = require('research.docs')
+local INFO = vim.log.levels.INFO
+local jobstart = vim.fn.jobstart
+local modernize = require('config.lang.modernize')
+local notify = vim.notify
+
+---Publish the current package with Composer. Packagist has no upload
+---endpoint: packages are read from VCS tags. The check step runs
+---`composer validate`; the bang form (:PhpPublish!) only restates the
+---release step (tag + push, then Packagist picks the tag up). No
+---credentials pass through this hook.
+---@param bang boolean true to show the live release step
+local function publish_package(bang)
+    local cmd = { 'composer', 'validate' }
+    notify('publish: ' .. table.concat(cmd, ' '), INFO)
+    jobstart(cmd, {
+        cwd = fn.expand('%:p:h'),
+        stdout_buffered = true,
+        on_stdout = function(_, data, _)
+            if data then
+                vim.schedule(function()
+                    notify(table.concat(data, '\n'), INFO)
+                end)
+            end
+        end,
+        on_stderr = function(_, data, _)
+            if data then
+                vim.schedule(function()
+                    notify(table.concat(data, '\n'), ERROR)
+                end)
+            end
+        end,
+        on_exit = function(_, code, _)
+            vim.schedule(function()
+                notify(('publish check exited with code %d'):format(code), code == 0 and INFO or ERROR)
+                if bang then
+                    notify(
+                        'php: release = tag the version in VCS and push the tag; '
+                            .. 'Packagist reads the tag (no upload command exists)',
+                        INFO
+                    )
+                end
+            end)
+        end,
+    })
+end
+
+---Create a buffer-local user command when a PHP buffer opens.
+---Lang commands only exist in buffers of their own language: they never
+---pollute `:` completion elsewhere.
+---@param name string command name
+---@param callback function|string command implementation
+---@param opts? table nvim_create_user_command options
+local function buf_command(name, callback, opts)
+    vim.api.nvim_create_autocmd('FileType', {
+        pattern = 'php',
+        desc = ('Buffer-local command: %s'):format(name),
+        callback = function(args)
+            vim.api.nvim_buf_create_user_command(args.buf, name, callback, opts or {})
+        end,
+    })
+end
+
 api.nvim_create_autocmd('BufNewFile', {
     group = group,
     pattern = {
@@ -29,146 +91,7 @@ api.nvim_create_autocmd('BufNewFile', {
         vim.cmd('normal! G')
     end,
 })
----Create a buffer-local user command when a PHP buffer opens.
----Lang commands only exist in buffers of their own language: they never
----pollute `:` completion elsewhere.
----@param name string command name
----@param fn function|string command implementation
----@param opts? table nvim_create_user_command options
-local function buf_command(name, fn, opts)
-    vim.api.nvim_create_autocmd('FileType', {
-        pattern = 'php',
-        desc = ('Buffer-local command: %s'):format(name),
-        callback = function(args)
-            vim.api.nvim_buf_create_user_command(args.buf, name, fn, opts or {})
-        end,
-    })
-end
 
-buf_command('PhpStan', function()
-    if fn.executable('phpstan') == 1 then
-        vim.cmd('!phpstan analyse')
-    else
-        vim.echo('phpstan not found in PATH', vim.log.levels.ERROR)
-    end
-end, {
-    desc = 'Run PHPStan analysis',
-})
-buf_command('Pint', function()
-    if fn.executable('pint') == 1 then
-        vim.cmd('!pint')
-    else
-        vim.echo('pint not found in PATH', vim.log.levels.ERROR)
-    end
-end, {
-    desc = 'Run Laravel Pint formatter',
-})
-api.nvim_create_autocmd('LspAttach', {
-    callback = function(args)
-        local client_id = args.data and args.data.client_id
-        if not client_id then
-            return
-        end
-        local client = vim.lsp.get_client_by_id(client_id)
-        if not client then
-            return
-        end
-        if client:supports_method('textDocument/foldingRange') then
-            local win = vim.api.nvim_get_current_win()
-            vim.wo[win][0].foldexpr = 'v:lua.vim.lsp.foldexpr()'
-        end
-    end,
-})
-formatters.register_stage({
-    name = 'php_lsp_format_current',
-    priority = 426,
-    patterns = {
-        '*.php',
-        '*.phtml',
-    },
-    desc = 'Format PHP sources with the attached LSP client before save',
-    run = function()
-        vim.lsp.buf.format()
-    end,
-})
-formatters.register_stage({
-    name = 'php_fixall',
-    priority = 427,
-    patterns = {
-        '*.php',
-        '*.phtml',
-    },
-    desc = 'Apply source.fixAll code actions to PHP sources before save',
-    run = function()
-        vim.lsp.buf.code_action({
-            context = {
-                diagnostics = {},
-                only = {
-                    'source.fixAll',
-                },
-            },
-            apply = true,
-        })
-    end,
-})
-buf_command('PhpTest', function()
-    fn.jobstart({
-        'phpunit',
-        fn.expand('%:p'),
-    }, {
-        detach = true,
-    })
-end, { desc = 'Run PHPUnit for current file' })
-formatters.register_stage({
-    name = 'php_lsp_format_sync',
-    priority = 428,
-    patterns = { '*.php' },
-    desc = 'Synchronous LSP format pass for PHP sources before save',
-    run = function(bufnr)
-        vim.lsp.buf.format({
-            bufnr = bufnr,
-            async = false,
-        })
-    end,
-})
-buf_command('PhpQuickfix', function()
-    local diagnostics = vim.diagnostic.get(0)
-    vim.lsp.buf.code_action({
-        context = {
-            diagnostics = diagnostics,
-            only = { 'quickfix' },
-            triggerKind = vim.lsp.protocol.CodeActionTriggerKind.Invoked,
-        },
-        apply = true,
-    })
-end, { desc = 'Apply PHP quickfix code actions' })
-formatters.register_stage({
-    name = 'php_organize_imports',
-    priority = 429,
-    patterns = {
-        '*.php',
-        '*.phtml',
-    },
-    desc = 'Organize imports in PHP sources before save',
-    run = function(bufnr)
-        local diagnostics = vim.diagnostic.get(bufnr)
-        vim.lsp.buf.code_action({
-            context = {
-                diagnostics = diagnostics,
-                only = {
-                    'source.organizeImports',
-                    'source.fixAll',
-                },
-                triggerKind = vim.lsp.protocol.CodeActionTriggerKind.Source,
-            },
-            apply = true,
-            filter = function(_, client_id)
-                local client = vim.lsp.get_client_by_id(client_id)
-                return client ~= nil and (client.name == 'intelephense' or client.name == 'phpactor')
-            end,
-        })
-    end,
-})
 vim.api.nvim_create_autocmd('BufWritePost', {
     group = group,
     pattern = '*.php',
@@ -205,6 +128,109 @@ vim.api.nvim_create_autocmd('BufWritePost', {
         })
     end,
 })
+
+api.nvim_create_autocmd('LspAttach', {
+    callback = function(args)
+        local client_id = args.data and args.data.client_id
+        if not client_id then
+            return
+        end
+        local client = vim.lsp.get_client_by_id(client_id)
+        if not client then
+            return
+        end
+        if client:supports_method('textDocument/foldingRange') then
+            local win = vim.api.nvim_get_current_win()
+            vim.wo[win][0].foldexpr = 'v:lua.vim.lsp.foldexpr()'
+        end
+    end,
+})
+
+api.nvim_create_autocmd('LspAttach', {
+    group = group,
+    callback = function(args)
+        local client = vim.lsp.get_client_by_id(args.data.client_id)
+        if client and (client.name == 'intelephense' or client.name == 'phpactor') then
+            vim.bo[args.buf].omnifunc = 'v:lua.vim.lsp.omnifunc'
+        end
+    end,
+})
+
+formatters.register_stage({
+    name = 'php_lsp_format_current',
+    priority = 426,
+    patterns = {
+        '*.php',
+        '*.phtml',
+    },
+    desc = 'Format PHP sources with the attached LSP client before save',
+    run = function()
+        vim.lsp.buf.format()
+    end,
+})
+
+formatters.register_stage({
+    name = 'php_fixall',
+    priority = 427,
+    patterns = {
+        '*.php',
+        '*.phtml',
+    },
+    desc = 'Apply source.fixAll code actions to PHP sources before save',
+    run = function()
+        vim.lsp.buf.code_action({
+            context = {
+                diagnostics = {},
+                only = {
+                    'source.fixAll',
+                },
+            },
+            apply = true,
+        })
+    end,
+})
+
+formatters.register_stage({
+    name = 'php_lsp_format_sync',
+    priority = 428,
+    patterns = { '*.php' },
+    desc = 'Synchronous LSP format pass for PHP sources before save',
+    run = function(bufnr)
+        vim.lsp.buf.format({
+            bufnr = bufnr,
+            async = false,
+        })
+    end,
+})
+
+formatters.register_stage({
+    name = 'php_organize_imports',
+    priority = 429,
+    patterns = {
+        '*.php',
+        '*.phtml',
+    },
+    desc = 'Organize imports in PHP sources before save',
+    run = function(bufnr)
+        local diagnostics = vim.diagnostic.get(bufnr)
+        vim.lsp.buf.code_action({
+            context = {
+                diagnostics = diagnostics,
+                only = {
+                    'source.organizeImports',
+                    'source.fixAll',
+                },
+                triggerKind = vim.lsp.protocol.CodeActionTriggerKind.Source,
+            },
+            apply = true,
+            filter = function(_, client_id)
+                local client = vim.lsp.get_client_by_id(client_id)
+                return client ~= nil and (client.name == 'intelephense' or client.name == 'phpactor')
+            end,
+        })
+    end,
+})
+
 buf_command('PhpCodeAction', function()
     local diagnostics = vim.diagnostic.get(0)
     vim.lsp.buf.code_action({
@@ -224,6 +250,23 @@ buf_command('PhpCodeAction', function()
         apply = true,
     })
 end, { desc = 'PHP code actions (quickfix/refactor/imports)' })
+
+buf_command('PhpPublish', function(args)
+    publish_package(args.bang)
+end, { bang = true, desc = 'composer validate; :PhpPublish! restates the Packagist tag flow' })
+
+buf_command('PhpQuickfix', function()
+    local diagnostics = vim.diagnostic.get(0)
+    vim.lsp.buf.code_action({
+        context = {
+            diagnostics = diagnostics,
+            only = { 'quickfix' },
+            triggerKind = vim.lsp.protocol.CodeActionTriggerKind.Invoked,
+        },
+        apply = true,
+    })
+end, { desc = 'Apply PHP quickfix code actions' })
+
 buf_command('PhpRangeAction', function()
     local bufnr = 0
     local diagnostics = vim.diagnostic.get(bufnr)
@@ -257,15 +300,46 @@ end, {
     desc = 'PHP range code actions',
     range = true,
 })
-api.nvim_create_autocmd('LspAttach', {
-    group = group,
-    callback = function(args)
-        local client = vim.lsp.get_client_by_id(args.data.client_id)
-        if client and (client.name == 'intelephense' or client.name == 'phpactor') then
-            vim.bo[args.buf].omnifunc = 'v:lua.vim.lsp.omnifunc'
-        end
-    end,
+
+buf_command('PhpStan', function()
+    if fn.executable('phpstan') == 1 then
+        vim.cmd('!phpstan analyse')
+    else
+        vim.echo('phpstan not found in PATH', vim.log.levels.ERROR)
+    end
+end, {
+    desc = 'Run PHPStan analysis',
 })
+
+buf_command('PhpTest', function()
+    fn.jobstart({
+        'phpunit',
+        fn.expand('%:p'),
+    }, {
+        detach = true,
+    })
+end, { desc = 'Run PHPUnit for current file' })
+
+buf_command('Pint', function()
+    if fn.executable('pint') == 1 then
+        vim.cmd('!pint')
+    else
+        vim.echo('pint not found in PATH', vim.log.levels.ERROR)
+    end
+end, {
+    desc = 'Run Laravel Pint formatter',
+})
+
+local REPLACEMENTS = {
+    { '\\$HTTP_GET_VARS\\b', '$_GET' },
+    { '\\$HTTP_POST_VARS\\b', '$_POST' },
+    { '\\bmoney_format\\s*\\(', 'NumberFormatter::format(' },
+}
+
+---Modernize deprecated php syntax in the current buffer.
+function M.modernize()
+    modernize.buffer('php', REPLACEMENTS, 'php')
+end
 
 function M.php_dap()
     local dap = require('dap')
@@ -287,18 +361,6 @@ function M.php_dap()
             },
         },
     }
-end
-
-
-local REPLACEMENTS = {
-    { "\\$HTTP_GET_VARS\\b", "$_GET" },
-    { "\\$HTTP_POST_VARS\\b", "$_POST" },
-    { "\\bmoney_format\\s*\\(", "NumberFormatter::format(" },
-}
-
----Modernize deprecated php syntax in the current buffer.
-function M.modernize()
-    modernize.buffer('php', REPLACEMENTS, 'php')
 end
 
 return M

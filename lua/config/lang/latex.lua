@@ -2,12 +2,14 @@
 -- Qompass AI Diver LaTeX Config
 -- Copyright (C) 2025 Qompass AI, All rights reserved
 -- ---------------------------------------------------
-local latex = {}
 local autocmd = vim.api.nvim_create_autocmd
 local code_action = vim.lsp.buf.code_action
 local fmt = vim.lsp.buf.format
 local formatters = require('formatters')
 local modernize = require('config.lang.modernize')
+
+local latex = {}
+
 ---@return string
 local function get_relative_path(filepath) ---@param filepath string
     local idx = filepath:find('/qompassai/')
@@ -17,21 +19,7 @@ local function get_relative_path(filepath) ---@param filepath string
         return vim.fn.fnamemodify(filepath, ':~:.')
     end
 end
----Create a buffer-local user command when a tex buffer opens.
----Lang commands only exist in buffers of their own language: they never
----pollute `:` completion elsewhere.
----@param name string command name
----@param fn function|string command implementation
----@param opts? table nvim_create_user_command options
-local function usercmd(name, fn, opts)
-    vim.api.nvim_create_autocmd('FileType', {
-        pattern = 'tex',
-        desc = ('Buffer-local command: %s'):format(name),
-        callback = function(args)
-            vim.api.nvim_buf_create_user_command(args.buf, name, fn, opts or {})
-        end,
-    })
-end
+
 ---@param filepath string
 ---@param comment string
 ---@return string[] header
@@ -66,6 +54,23 @@ local function make_header(filepath, comment)
         }
     end
 end
+
+---Create a buffer-local user command when a tex buffer opens.
+---Lang commands only exist in buffers of their own language: they never
+---pollute `:` completion elsewhere.
+---@param name string command name
+---@param fn function|string command implementation
+---@param opts? table nvim_create_user_command options
+local function usercmd(name, fn, opts)
+    vim.api.nvim_create_autocmd('FileType', {
+        pattern = 'tex',
+        desc = ('Buffer-local command: %s'):format(name),
+        callback = function(args)
+            vim.api.nvim_buf_create_user_command(args.buf, name, fn, opts or {})
+        end,
+    })
+end
+
 autocmd('BufNewFile', {
     pattern = { '*.tex' },
     group = vim.api.nvim_create_augroup('qompass_latex_header', {
@@ -82,6 +87,35 @@ autocmd('BufNewFile', {
         end
     end,
 })
+
+autocmd('BufWritePost', {
+    pattern = '*.tex',
+    callback = function(args)
+        if vim.fn.executable('chktex') == 0 then
+            return
+        end
+        vim.fn.jobstart({
+            'chktex',
+            '-q',
+            vim.api.nvim_buf_get_name(args.buf),
+        }, {
+            stdout_buffered = true,
+            stderr_buffered = true,
+            on_stdout = function(_, data, _)
+                if not data then
+                    return
+                end
+                local out = table.concat(data, '')
+                if out ~= '' then
+                    vim.schedule(function()
+                        vim.notify('chktex: ' .. out, vim.log.levels.INFO)
+                    end)
+                end
+            end,
+        })
+    end,
+})
+
 formatters.register_stage({
     name = 'latex_lsp_format',
     priority = 418,
@@ -119,6 +153,7 @@ formatters.register_stage({
         end
     end,
 })
+
 formatters.register_stage({
     name = 'latex_fixall',
     priority = 419,
@@ -139,15 +174,7 @@ formatters.register_stage({
         })
     end,
 })
-usercmd('TexBuild', function() ---@command TexBuild
-    vim.fn.jobstart({
-        'latexmk',
-        '-pdf',
-        vim.fn.expand('%:p'),
-    }, {
-        detach = true,
-    })
-end, {})
+
 formatters.register_stage({
     name = 'latex_lsp_format_async',
     priority = 420,
@@ -160,19 +187,7 @@ formatters.register_stage({
         })
     end,
 })
-usercmd('TexQuickfix', function() ---@command TexQuickfix
-    local diagnostics = vim.diagnostic.get(0)
-    code_action({
-        context = {
-            diagnostics = diagnostics,
-            only = {
-                'quickfix',
-            },
-            triggerKind = vim.lsp.protocol.CodeActionTriggerKind.Invoked,
-        },
-        apply = true,
-    })
-end, {})
+
 formatters.register_stage({
     name = 'latex_organize_imports',
     priority = 421,
@@ -200,33 +215,17 @@ formatters.register_stage({
         })
     end,
 })
-autocmd('BufWritePost', {
-    pattern = '*.tex',
-    callback = function(args)
-        if vim.fn.executable('chktex') == 0 then
-            return
-        end
-        vim.fn.jobstart({
-            'chktex',
-            '-q',
-            vim.api.nvim_buf_get_name(args.buf),
-        }, {
-            stdout_buffered = true,
-            stderr_buffered = true,
-            on_stdout = function(_, data, _)
-                if not data then
-                    return
-                end
-                local out = table.concat(data, '')
-                if out ~= '' then
-                    vim.schedule(function()
-                        vim.notify('chktex: ' .. out, vim.log.levels.INFO)
-                    end)
-                end
-            end,
-        })
-    end,
-})
+
+usercmd('TexBuild', function() ---@command TexBuild
+    vim.fn.jobstart({
+        'latexmk',
+        '-pdf',
+        vim.fn.expand('%:p'),
+    }, {
+        detach = true,
+    })
+end, {})
+
 usercmd('TexCodeAction', function() ---@command TexCodeAction
     local diagnostics = vim.diagnostic.get(0)
     code_action({
@@ -246,6 +245,21 @@ usercmd('TexCodeAction', function() ---@command TexCodeAction
         apply = true,
     })
 end, {})
+
+usercmd('TexQuickfix', function() ---@command TexQuickfix
+    local diagnostics = vim.diagnostic.get(0)
+    code_action({
+        context = {
+            diagnostics = diagnostics,
+            only = {
+                'quickfix',
+            },
+            triggerKind = vim.lsp.protocol.CodeActionTriggerKind.Invoked,
+        },
+        apply = true,
+    })
+end, {})
+
 usercmd('TexRangeAction', function() ---@command TexRangeAction
     local bufnr = 0
     local diagnostics = vim.diagnostic.get(bufnr)
@@ -278,4 +292,5 @@ usercmd('TexRangeAction', function() ---@command TexRangeAction
 end, {
     range = true,
 })
+
 return latex

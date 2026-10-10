@@ -1,4 +1,5 @@
 #!/usr/bin/env lua
+
 -- /qompassai/Diver/lua/config/lang/cpp.lua
 -- Qompass AI Diver C++ Config
 ---@copyright 2026 Qompass AI, All rights reserved
@@ -14,36 +15,38 @@ local augroup = vim.api.nvim_create_augroup
 local autocmd = vim.api.nvim_create_autocmd
 local client_by_id = vim.lsp.get_client_by_id
 local code_action = vim.lsp.buf.code_action
-local findfile = vim.fn.findfile
-local formatters = require('formatters')
-local modernize = require('config.lang.modernize')
 local ERROR = vim.log.levels.ERROR
-local get = vim.diagnostic.get
-local INFO = vim.log.levels.INFO
-local jobstart = vim.fn.jobstart
-local lsp = vim.lsp
-local notify = vim.notify
-local schedule = vim.schedule
+local findfile = vim.fn.findfile
 local fn = vim.fn
-local header = require('research.docs')
+local formatters = require('formatters')
+local get = vim.diagnostic.get
 local group = augroup('Cpp', {
     clear = true,
 })
+local header = require('research.docs')
+local INFO = vim.log.levels.INFO
+local jobstart = vim.fn.jobstart
+local lsp = vim.lsp
+local modernize = require('config.lang.modernize')
+local notify = vim.notify
+local schedule = vim.schedule
+
 ---Create a buffer-local user command when a cpp buffer opens.
 ---Lang commands only exist in buffers of their own language: they never
 ---pollute `:` completion elsewhere.
 ---@param name string command name
----@param fn function|string command implementation
+---@param callback function|string command implementation
 ---@param opts? table nvim_create_user_command options
-local function usercmd(name, fn, opts)
+local function usercmd(name, callback, opts)
     vim.api.nvim_create_autocmd('FileType', {
         pattern = 'cpp',
         desc = ('Buffer-local command: %s'):format(name),
         callback = function(args)
-            vim.api.nvim_buf_create_user_command(args.buf, name, fn, opts or {})
+            vim.api.nvim_buf_create_user_command(args.buf, name, callback, opts or {})
         end,
     })
 end
+
 autocmd('BufNewFile', {
     group = group,
     pattern = {
@@ -65,6 +68,52 @@ autocmd('BufNewFile', {
         vim.cmd('normal! G')
     end,
 })
+
+autocmd('BufWritePost', {
+    group = group,
+    pattern = {
+        '*.cpp',
+        '*.hpp',
+        '*.cc',
+        '*.hh',
+        '*.cxx',
+        '*.hxx',
+    },
+    callback = function(args)
+        jobstart({
+            'clang-tidy',
+            api.nvim_buf_get_name(args.buf),
+            '--',
+            '-std=c++20',
+            '-Wall',
+            '-Wextra',
+        }, {
+            stdout_buffered = true,
+            on_stdout = function(_, data, _)
+                if not data then
+                    return
+                end
+                local out = table.concat(data, '')
+                if out ~= '' then
+                    schedule(function()
+                        notify('clang-tidy: ' .. out, INFO)
+                    end)
+                end
+            end,
+        })
+    end,
+})
+
+autocmd('LspAttach', {
+    group = group,
+    callback = function(args)
+        local client = client_by_id(args.data.client_id)
+        if client and client.name == 'clangd' then
+            vim.bo[args.buf].omnifunc = 'v:lua.vim.lsp.omnifunc'
+        end
+    end,
+})
+
 formatters.register_stage({
     name = 'cpp_lsp_format',
     priority = 404,
@@ -84,6 +133,7 @@ formatters.register_stage({
         })
     end,
 })
+
 formatters.register_stage({
     name = 'cpp_fixall',
     priority = 405,
@@ -101,6 +151,59 @@ formatters.register_stage({
         })
     end,
 })
+
+formatters.register_stage({
+    name = 'cpp_organize_imports',
+    priority = 406,
+    patterns = {
+        '*.cpp',
+        '*.hpp',
+        '*.cc',
+        '*.hh',
+        '*.cxx',
+        '*.hxx',
+    },
+    desc = 'Organize imports in C++ sources before save',
+    run = function(bufnr)
+        local diagnostics = get(bufnr)
+        code_action({
+            context = {
+                diagnostics = diagnostics,
+                only = {
+                    'source.organizeImports',
+                    'source.fixAll',
+                },
+                triggerKind = lsp.protocol.CodeActionTriggerKind.Source,
+            },
+            apply = true,
+            filter = function(_, client_id)
+                local client = client_by_id(client_id)
+                return client ~= nil and client.name == 'clangd'
+            end,
+        })
+    end,
+})
+
+usercmd('CppCodeAction', function()
+    local diagnostics = get(0)
+    code_action({
+        context = {
+            diagnostics = diagnostics,
+            only = {
+                'quickfix',
+                'refactor',
+                'source.organizeImports',
+                'source.fixAll',
+            },
+        },
+        filter = function(_, client_id)
+            local client = client_by_id(client_id)
+            return client ~= nil and client.name == 'clangd'
+        end,
+        apply = true,
+    })
+end, {})
+
 usercmd('CppCompile', function()
     local makefile = findfile('Makefile', '.;')
     local cmake = findfile('CMakeLists.txt', '.;')
@@ -151,10 +254,24 @@ usercmd('CppCompile', function()
         })
     end
 end, {})
-usercmd('CppRun', function()
+
+usercmd('CppDebug', function()
     local executable = fn.expand('%:p:r')
     if fn.filereadable(executable) == 1 then
-        jobstart({ executable }, { detach = true })
+        -- Assumes you have nvim-dap configured
+        local dap_ok, dap = pcall(require, 'dap')
+        if dap_ok then
+            dap.run({
+                type = 'cppdbg',
+                request = 'launch',
+                name = 'Debug C++ Program',
+                program = executable,
+                cwd = '${workspaceFolder}',
+                stopAtEntry = false,
+            })
+        else
+            notify('nvim-dap not available', ERROR)
+        end
     else
         notify('Executable not found. Compile first with :CppCompile', ERROR)
     end
@@ -174,91 +291,6 @@ usercmd('CppQuickfix', function()
     })
 end, {})
 
-formatters.register_stage({
-    name = 'cpp_organize_imports',
-    priority = 406,
-    patterns = {
-        '*.cpp',
-        '*.hpp',
-        '*.cc',
-        '*.hh',
-        '*.cxx',
-        '*.hxx',
-    },
-    desc = 'Organize imports in C++ sources before save',
-    run = function(bufnr)
-        local diagnostics = get(bufnr)
-        code_action({
-            context = {
-                diagnostics = diagnostics,
-                only = {
-                    'source.organizeImports',
-                    'source.fixAll',
-                },
-                triggerKind = lsp.protocol.CodeActionTriggerKind.Source,
-            },
-            apply = true,
-            filter = function(_, client_id)
-                local client = client_by_id(client_id)
-                return client ~= nil and client.name == 'clangd'
-            end,
-        })
-    end,
-})
-
-autocmd('BufWritePost', {
-    group = group,
-    pattern = {
-        '*.cpp',
-        '*.hpp',
-        '*.cc',
-        '*.hh',
-        '*.cxx',
-        '*.hxx',
-    },
-    callback = function(args)
-        jobstart({
-            'clang-tidy',
-            api.nvim_buf_get_name(args.buf),
-            '--',
-            '-std=c++20',
-            '-Wall',
-            '-Wextra',
-        }, {
-            stdout_buffered = true,
-            on_stdout = function(_, data, _)
-                if not data then
-                    return
-                end
-                local out = table.concat(data, '')
-                if out ~= '' then
-                    schedule(function()
-                        notify('clang-tidy: ' .. out, INFO)
-                    end)
-                end
-            end,
-        })
-    end,
-})
-usercmd('CppCodeAction', function()
-    local diagnostics = get(0)
-    code_action({
-        context = {
-            diagnostics = diagnostics,
-            only = {
-                'quickfix',
-                'refactor',
-                'source.organizeImports',
-                'source.fixAll',
-            },
-        },
-        filter = function(_, client_id)
-            local client = client_by_id(client_id)
-            return client ~= nil and client.name == 'clangd'
-        end,
-        apply = true,
-    })
-end, {})
 usercmd('CppRangeAction', function()
     local bufnr = 0
     local diagnostics = get(bufnr)
@@ -292,43 +324,19 @@ end, {
     range = true,
 })
 
-autocmd('LspAttach', {
-    group = group,
-    callback = function(args)
-        local client = client_by_id(args.data.client_id)
-        if client and client.name == 'clangd' then
-            vim.bo[args.buf].omnifunc = 'v:lua.vim.lsp.omnifunc'
-        end
-    end,
-})
-
-usercmd('CppDebug', function()
+usercmd('CppRun', function()
     local executable = fn.expand('%:p:r')
     if fn.filereadable(executable) == 1 then
-        -- Assumes you have nvim-dap configured
-        local dap_ok, dap = pcall(require, 'dap')
-        if dap_ok then
-            dap.run({
-                type = 'cppdbg',
-                request = 'launch',
-                name = 'Debug C++ Program',
-                program = executable,
-                cwd = '${workspaceFolder}',
-                stopAtEntry = false,
-            })
-        else
-            notify('nvim-dap not available', ERROR)
-        end
+        jobstart({ executable }, { detach = true })
     else
         notify('Executable not found. Compile first with :CppCompile', ERROR)
     end
 end, {})
 
-
 local REPLACEMENTS = {
-    { "\\bthrow\\s*\\(\\s*\\)", "noexcept" },
-    { "std::auto_ptr", "std::unique_ptr" },
-    { "std::random_shuffle\\s*\\(", "std::shuffle(" },
+    { '\\bthrow\\s*\\(\\s*\\)', 'noexcept' },
+    { 'std::auto_ptr', 'std::unique_ptr' },
+    { 'std::random_shuffle\\s*\\(', 'std::shuffle(' },
 }
 
 ---Modernize deprecated cpp syntax in the current buffer.

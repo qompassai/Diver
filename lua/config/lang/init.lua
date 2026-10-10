@@ -19,6 +19,7 @@ local filetype_modules = {
     css = 'css',
     elixir = 'elixir',
     go = 'go',
+    glsl = 'shader',
     javascript = 'js',
     javascriptreact = 'js',
     kotlin = 'kotlin',
@@ -28,6 +29,7 @@ local filetype_modules = {
     mojo = 'mojo',
     nix = 'nix',
     odin = 'odin',
+    opencl = 'opencl',
     php = 'php',
     python = 'python',
     ruby = 'ruby',
@@ -38,6 +40,10 @@ local filetype_modules = {
     toml = 'toml',
     typescript = 'ts',
     typescriptreact = 'js',
+    wgsl = 'shader',
+    wgsl_bevy = 'shader',
+    xml = 'xml',
+    yara = 'yara',
     zig = 'zig',
 }
 

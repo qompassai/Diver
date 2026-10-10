@@ -13,15 +13,15 @@ local M = {}
 
 local secrets = require('ai.mcp.secrets')
 
-local REGISTRY_SUBDIR = 'ai/mcp'
-local REGISTRY_FILENAME = 'servers.json'
-local FILE_SIZE_BYTES_MAX = 256 * 1024
-local ENTRY_COUNT_MAX = 128
-local NAME_LENGTH_MAX = 64
 local ARG_COUNT_MAX = 32
 local ARG_LENGTH_MAX = 4096
+local ENTRY_COUNT_MAX = 128
 local ENV_COUNT_MAX = 64
 local ENV_VALUE_LENGTH_MAX = 8192
+local FILE_SIZE_BYTES_MAX = 256 * 1024
+local NAME_LENGTH_MAX = 64
+local REGISTRY_FILENAME = 'servers.json'
+local REGISTRY_SUBDIR = 'ai/mcp'
 
 ---@class McpServerEntry
 ---@field name string Registry key; letters, digits, dot, dash, underscore only.
@@ -33,7 +33,8 @@ local ENV_VALUE_LENGTH_MAX = 8192
 ---@field secrets table<string, McpSecretRef>? Secret refs; values are resolved
 ---at spawn time and never persisted as values.
 ---@field declared boolean? In-memory only; true for entries loaded from
----declared_servers.lua. Never persisted to servers.json.
+---declarations (declared_servers.lua or a config.lang mcp_servers table).
+---Never persisted to servers.json.
 
 ---@class McpValidateOpts
 ---@field require_executable boolean? Default true. Load-time validation
@@ -314,18 +315,6 @@ end
 ---@param name string
 ---@return boolean ok
 ---@return string? err
-function M.remove(name)
-    load()
-    if type(name) ~= 'string' or servers[name] == nil then
-        if type(name) == 'string' and declared_by_name(name) ~= nil then
-            return false, 'server is declared in declared_servers.lua; edit the file instead'
-        end
-        return false, 'unknown server: ' .. tostring(name)
-    end
-    servers[name] = nil
-    return save()
-end
-
 ---@param name string
 ---@return McpServerEntry? in-memory only, never persisted
 local function declared_by_name(name)
@@ -338,6 +327,18 @@ local function declared_by_name(name)
         end
     end
     return nil
+end
+
+function M.remove(name)
+    load()
+    if type(name) ~= 'string' or servers[name] == nil then
+        if type(name) == 'string' and declared_by_name(name) ~= nil then
+            return false, 'server is declared in declared_servers.lua; edit the file instead'
+        end
+        return false, 'unknown server: ' .. tostring(name)
+    end
+    servers[name] = nil
+    return save()
 end
 
 ---@param name string
@@ -394,7 +395,8 @@ function M.list()
     local seen = {}
     -- Declared entries first; a persisted entry with the same name wins.
     local declared = require('ai.mcp.declared')
-    for _, entry in ipairs(declared.load()) do
+    local _, _, declared_all = declared.load()
+    for _, entry in ipairs(declared_all) do
         if servers[entry.name] == nil and not seen[entry.name] then
             seen[entry.name] = true
             merged[#merged + 1] = vim.deepcopy(entry)
