@@ -7,7 +7,8 @@ Do not source the user's entire configuration just to validate a small change.
 ## Lua implementation or nil-safety fix
 
 1. Inspect the affected module, caller, scoped instructions and existing diagnostics.
-   Read `lsp/lua_ls.lua`, `lsp/stylua_ls.lua`, `.luarc.json` and `.stylua.toml`.
+   Read `lsp/lua_ls.lua`, `lsp/stylua_ls.lua` (the single source of truth for StyLua
+   options, syntax `All`) and `.luarc.json`.
 2. Define the successful and failure contracts. Reproduce the bug with an isolated test.
 3. Fix the boundary with precise types and guards; preserve public behavior and style.
 4. Run the parser/formatter, completed LuaLS diagnostics and relevant runtime tests.
@@ -16,7 +17,10 @@ Do not source the user's entire configuration just to validate a small change.
 For a selected Lua file, set `FILE` to its actual repository-relative path:
 
 ```sh
-stylua --check --config-path .stylua.toml --syntax LuaJIT "$FILE"
+stylua --check --syntax All --column-width 120 --line-endings Unix \
+  --indent-type Spaces --indent-width 4 --quote-style AutoPreferSingle \
+  --call-parentheses Always --collapse-simple-statement Never \
+  --space-after-function-names Never --sort-requires "$FILE"
 git diff --check
 ```
 

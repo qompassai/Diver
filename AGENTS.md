@@ -31,7 +31,7 @@ tool installation, network access or changes outside the requested task.
 - Own timers, processes, handles and buffers explicitly. Clean up exactly once and recheck
   validity/freshness after asynchronous callbacks. Do not block editor callbacks on slow I/O.
 - Target changed functions at most 70 physical lines, with exceptions explained rather
-  than disguised by minification. Preserve `.stylua.toml` and existing file conventions.
+  than disguised by minification. Preserve the StyLua options in `lsp/stylua_ls.lua` and existing file conventions.
 - Avoid unnecessary copies, dependencies and scans. Bound managed-runtime growth rather
   than claiming allocation-free Lua. Benchmark before claiming performance gains.
 - Use targeted reads/checks and disjoint file ownership. After two failed attempts at one

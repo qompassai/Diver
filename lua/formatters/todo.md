@@ -70,7 +70,7 @@ configuration and are modern, canonical, or very actively maintained.
   - Upstream: <https://github.com/JohnnyMorganz/StyLua>
   - Actively maintained; 2.5.x releases shipped in 2026.
   - Support stdin/stdout and explicit config discovery.
-  - Prefer repository `.stylua.toml` / `stylua.toml`.
+  - For this repository, use the StyLua options in `lsp/stylua_ls.lua` (single source of truth).
   - Keep `lua-format` only as a repository-specific alternative, not a default.
   - Do not chain StyLua and LuaFormatter.
 
