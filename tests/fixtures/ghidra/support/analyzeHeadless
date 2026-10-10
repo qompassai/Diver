@@ -1,0 +1,85 @@
+#!/bin/sh
+# Fake analyzeHeadless for diver's security.ghidra tests.
+#
+# Mimics the real binary's contract with lua/security/ghidra.lua: argv
+# carries '-postScript <script> <export_dir>' and the three export files
+# land in <export_dir>. Behavior is selected by FAKE_GHIDRA_MODE:
+#   normal   three functions, two strings, small decompile
+#   flood    9000 function rows (module must cap at 5000)
+#   longline one oversized TSV row (module must skip it) plus two rows
+#   fail     stderr text, exit code 3
+#   sleep    sleeps 5s (module timeout must fire first)
+
+mode=${FAKE_GHIDRA_MODE:-normal}
+
+# Locate the export directory: the argument after the -postScript script.
+export_dir=''
+state=0
+for arg in "$@"; do
+    case $state in
+        0) if [ "$arg" = '-postScript' ]; then state=1; fi ;;
+        1) state=2 ;;
+        2) export_dir=$arg; break ;;
+    esac
+done
+
+case $mode in
+    fail)
+        echo 'fake ghidra failure' >&2
+        exit 3
+        ;;
+    sleep)
+        sleep 5
+        exit 0
+        ;;
+esac
+
+if [ -z "$export_dir" ]; then
+    echo 'fake analyzeHeadless: no export dir in argv' >&2
+    exit 2
+fi
+mkdir -p "$export_dir"
+
+# Record argv verbatim, one element per line, so tests can prove a binary
+# path arrived as exactly one element (no shell splitting, no injection).
+: >"$export_dir/argv.txt"
+for arg in "$@"; do
+    printf '%s\n' "$arg" >>"$export_dir/argv.txt"
+done
+
+case $mode in
+    normal)
+        printf '00401000\tmain\tint main(void)\n' >"$export_dir/functions.tsv"
+        printf '00401120\thelper\tvoid helper(int x)\n' >>"$export_dir/functions.tsv"
+        printf '00401230\t_start\tvoid _start(void)\n' >>"$export_dir/functions.tsv"
+        printf '00402000\thello world\n' >"$export_dir/strings.tsv"
+        printf '00402020\tusage: prog [options]\n' >>"$export_dir/strings.tsv"
+        printf 'int main(void) { return 0; }\n' >"$export_dir/decompile.c"
+        ;;
+    flood)
+        : >"$export_dir/functions.tsv"
+        i=1
+        while [ "$i" -le 9000 ]; do
+            printf '0040%04d\tfn%d\tvoid fn%d(void)\n' "$i" "$i" "$i" >>"$export_dir/functions.tsv"
+            i=$((i + 1))
+        done
+        : >"$export_dir/strings.tsv"
+        printf 'int main(void) { return 0; }\n' >"$export_dir/decompile.c"
+        ;;
+    longline)
+        {
+            printf '00401000\tbig\t'
+            i=1
+            while [ "$i" -le 9000 ]; do
+                printf 'x'
+                i=$((i + 1))
+            done
+            printf '\n'
+            printf '00401120\thelper\tvoid helper(int x)\n'
+            printf '00401230\t_start\tvoid _start(void)\n'
+        } >"$export_dir/functions.tsv"
+        : >"$export_dir/strings.tsv"
+        printf 'int main(void) { return 0; }\n' >"$export_dir/decompile.c"
+        ;;
+esac
+exit 0

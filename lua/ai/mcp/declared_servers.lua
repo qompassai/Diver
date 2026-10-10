@@ -32,21 +32,46 @@ return {
         enabled = true,
     },
     {
-        -- Docker-based; stays off until the token exists in pass and docker
-        -- is wanted on the machine. Enable by flipping enabled to true.
+        -- GUI-bridge mode (bethington/ghidra-mcp, installed): the bridge
+        -- is a stdio MCP server that multiplexes to the GhidraMCP plugin
+        -- inside a RUNNING Ghidra GUI (plugin HTTP on 127.0.0.1:8089 by
+        -- default; GHIDRA_MCP_URL overrides). Bridge and plugin zip
+        -- (/opt/ghidra/Extensions/Ghidra/GhidraMCP-6.0.0.zip) are already
+        -- installed, and the bridge answers initialize/tools-list without
+        -- the GUI -- but the 200+ proxied analysis tools need the plugin
+        -- enabled in Ghidra with a program open. Headless analysis
+        -- without the GUI is a different mode and lives in
+        -- security.ghidra (:GhidraAnalyze).
+        name = 'ghidra',
+        command = '/usr/bin/bridge-mcp-ghidra',
+        args = { '--transport', 'stdio' },
+        enabled = true,
+    },
+    {
+        -- Local binary (no docker): /usr/bin/github-mcp-server over stdio.
+        -- The token is Matt's fine-grained PAT in pass at 'gh/pat', resolved
+        -- at spawn time and never stored here. Full default toolsets: no
+        -- --read-only flag and no toolset restriction args.
         name = 'github',
-        command = '/usr/bin/docker',
-        args = {
-            'run',
-            '-i',
-            '--rm',
-            '-e',
-            'GITHUB_PERSONAL_ACCESS_TOKEN',
-            'ghcr.io/github/github-mcp-server',
-        },
+        command = '/usr/bin/github-mcp-server',
+        args = { 'stdio' },
         secrets = {
-            GITHUB_PERSONAL_ACCESS_TOKEN = { provider = 'pass', path = 'github/mcp-token' },
+            GITHUB_PERSONAL_ACCESS_TOKEN = { provider = 'pass', path = 'gh/pat' },
         },
-        enabled = false,
+        enabled = true,
+    },
+    {
+        -- REA (Reverse Engineer Anything, morluto/rea; Matt's fork
+        -- qompassai/rea) v6.3.0, pinned: installed in user space with
+        -- npm --prefix ~/.local, never @latest; `rea mcp` serves stdio.
+        -- The 139-tool catalog spans native analysis (Ghidra/IDA/Hopper
+        -- providers), JavaScript/Electron, managed code, and web
+        -- observation, and sits behind the harness policy gate like
+        -- every other declared server. No credentials required.
+        name = 'rea',
+        command = '/home/phaedrus/.local/bin/rea',
+        args = { 'mcp' },
+        env = { GHIDRA_INSTALL_DIR = '/opt/ghidra' },
+        enabled = true,
     },
 }
