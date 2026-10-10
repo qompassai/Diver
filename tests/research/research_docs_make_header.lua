@@ -12,7 +12,7 @@ if here:sub(1, 1) ~= '/' then
     here = cwd .. '/' .. here
 end
 local dir = here:match('^(.*)/[^/]*$')
-local root = dir:match('^(.*)/tests/lua$')
+local root = dir:match('^(.*)/tests/[^/]*$')
 assert(root ~= nil, 'cannot locate repo root from ' .. dir)
 package.path = root .. '/lua/?.lua;' .. root .. '/lua/?/init.lua;' .. package.path
 
