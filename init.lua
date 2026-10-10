@@ -60,6 +60,7 @@ require('config.mappings')
 require('plugin') -- self-wires via setup_plugins() at require time
 require('comms').setup() -- mail, clients
 require('research') -- self-wires at require time
+require('tools').setup() -- also wires tools.video (:VideoTokens)
 require('types') -- annotation modules only
 
 -- config.data is optional: wire it when present.

@@ -81,16 +81,16 @@ end, {
     desc = 'Open Android action menu',
 })
 
---- Mirrors the keymaps from dev/android/commands.lua setup_keymaps(), which
+--- Mirrors the keymaps from dev/apps/android/commands.lua setup_keymaps(), which
 --- stays the source of truth for what each key does.
 local android_keymaps = {
-    { key = 'r', action = 'run_debug',      desc = 'Android: Run debug' },
-    { key = 'c', action = 'clean',          desc = 'Android: Clean project' },
     { key = 'b', action = 'build_release',  desc = 'Android: Build release' },
-    { key = 'e', action = 'start_emulator', desc = 'Android: Start emulator' },
-    { key = 'x', action = 'stop_emulator',  desc = 'Android: Stop emulator' },
-    { key = 's', action = 'capture_screen', desc = 'Android: Capture screen' },
+    { key = 'c', action = 'clean',          desc = 'Android: Clean project' },
     { key = 'd', action = 'doctor',         desc = 'Android: Run doctor' },
+    { key = 'e', action = 'start_emulator', desc = 'Android: Start emulator' },
+    { key = 'r', action = 'run_debug',      desc = 'Android: Run debug' },
+    { key = 's', action = 'capture_screen', desc = 'Android: Capture screen' },
+    { key = 'x', action = 'stop_emulator',  desc = 'Android: Stop emulator' },
 }
 for _, spec in ipairs(android_keymaps) do
     vim.keymap.set('n', '<leader>a' .. spec.key, function()
@@ -101,8 +101,8 @@ for _, spec in ipairs(android_keymaps) do
     })
 end
 
-api.nvim_create_autocmd({ 'BufReadPost', 'BufNewFile' }, {
-    pattern = { 'AndroidManifest.xml', '*.gradle', '*.gradle.kts' },
+api.nvim_create_autocmd({ 'BufNewFile', 'BufReadPost' }, {
+    pattern = { '*.gradle', '*.gradle.kts', 'AndroidManifest.xml' },
     once = true,
     callback = function()
         load_android()
@@ -114,7 +114,7 @@ api.nvim_create_autocmd({ 'BufReadPost', 'BufNewFile' }, {
 -- dev/sf/init.lua registers its commands and autocmds at require time, so
 -- requiring it is sufficient. Trigger on the distinctive Salesforce file
 -- types (mirrors the suite's own BufEnter patterns).
-api.nvim_create_autocmd({ 'BufReadPost', 'BufNewFile' }, {
+api.nvim_create_autocmd({ 'BufNewFile', 'BufReadPost' }, {
     pattern = { '*.apex', '*.cls', '*.trigger', '*/dev/sf/*.lua' },
     once = true,
     callback = function()
@@ -150,7 +150,7 @@ end, {
     desc = 'Load the Salesforce tool suite and show project status',
 })
 
-api.nvim_create_autocmd({ 'BufReadPost', 'BufNewFile' }, {
+api.nvim_create_autocmd({ 'BufNewFile', 'BufReadPost' }, {
     pattern = { '*' },
     callback = function(event)
         if package.loaded['dev.sf'] then
@@ -200,13 +200,6 @@ end, {
     desc = 'Open the Cargo Book (loads dev.cargo)',
 })
 
-api.nvim_create_user_command('CargoValidate', function(cmd_opts)
-    vim.cmd('delcommand CargoValidate')
-    load_cargo().cmd_validate(cmd_opts)
-end, {
-    desc = 'Cargo per-tool validation report (loads dev.cargo)',
-})
-
 api.nvim_create_user_command('CargoUpdateCheck', function(cmd_opts)
     vim.cmd('delcommand CargoUpdateCheck')
     load_cargo().cmd_update_check(cmd_opts)
@@ -214,8 +207,15 @@ end, {
     desc = 'Rust toolchain update check (loads dev.cargo)',
 })
 
-api.nvim_create_autocmd({ 'BufReadPost', 'BufNewFile' }, {
-    pattern = { 'Cargo.toml', 'Cargo.lock' },
+api.nvim_create_user_command('CargoValidate', function(cmd_opts)
+    vim.cmd('delcommand CargoValidate')
+    load_cargo().cmd_validate(cmd_opts)
+end, {
+    desc = 'Cargo per-tool validation report (loads dev.cargo)',
+})
+
+api.nvim_create_autocmd({ 'BufNewFile', 'BufReadPost' }, {
+    pattern = { 'Cargo.lock', 'Cargo.toml' },
     once = true,
     callback = function()
         load_cargo()
@@ -248,16 +248,20 @@ M.dictionary = {
         return t
     end,
 }
+M.encoder = require('utils.encoder')
+M.hledger = require('utils.hledger')
+M.json = require('utils.json')
+M.rpc = require('utils.rpc')
+M.shell = require('utils.shell')
 
 ---Wire the eager utils suites. Called once from the top-level init.lua;
 ---kept here (rather than scattered leaf requires) so utils owns its children.
 function M.setup()
-    require('utils.nav').setup()
     require('utils.calendar').setup()
-    require('utils.sync').setup()
-    require('utils.snippets').setup()
-    require('utils.tmux').setup({ keymaps_enabled = false })
     require('utils.notify').setup()
+    require('utils.snippets').setup()
+    require('utils.sync').setup()
+    require('utils.tmux').setup({ keymaps_enabled = false })
 end
 
 return M

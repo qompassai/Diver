@@ -13,6 +13,8 @@ local api = vim.api
 
 local M = {}
 
+M.health = require('ai.acp.health')
+
 local group
 
 ---@param opts? table Reserved for future options; currently unused.

@@ -32,6 +32,7 @@ local startup_modules = {
     'padding',
     'startup_profile',
     'themes',
+    'w3m',
 }
 
 local image_options = {
@@ -105,8 +106,12 @@ end
 ---@field image table config.ui.image: inline PNG preview rendering
 ---@field line table config.ui.line: statusline setup (native default; plugin removed)
 ---@field nerd table config.ui.nerd: nerd-font glyph data table
+---@field nb table config.ui.nb: notebook cell execution
 ---@field padding table config.ui.padding: window padding controls
 ---@field themes table config.ui.themes: colorscheme management
+---@field transparency table config.ui.transparency: transparent background controls
+---@field ui table config.ui.ui: combined virtual-text and transparency facade
+---@field vt table config.ui.vt: virtual-text helpers (hints, code lens)
 
 ---@type table<string, boolean>
 local facade_names = {
@@ -119,8 +124,12 @@ local facade_names = {
     image = true,
     line = true,
     nerd = true,
+    nb = true, -- notebook cells; loads on first access, no setup
     padding = true,
     themes = true,
+    transparency = true, -- setup() stays explicit: no startup display change
+    ui = true, -- combined facade over vt and transparency
+    vt = true, -- virtual-text helpers; setup() stays explicit (opt-in len hints)
 }
 
 -- Lazy facade: submodules load on first access and are cached, so

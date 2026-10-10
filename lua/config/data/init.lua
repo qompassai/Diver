@@ -26,9 +26,9 @@
 --
 -- Commands:
 --   :DB[!] [url] [query]   Attach (bang = readonly) and run or connect.
---   :DBUrl {url}            Set b:db for the current buffer.
 --   :DBDetach                Detach whichever backend owns this buffer.
 --   :DBInfo                  Show which backend/url owns this buffer.
+--   :DBUrl {url}            Set b:db for the current buffer.
 --
 -- Named connections: if ~/.config/nvim/dbx.lua exists and returns a table
 -- of { name = "scheme://...", ... }, the first :DB argument is checked
@@ -41,25 +41,46 @@
 
 local api = vim.api
 
-local sqlite = require('config.data.sqlite')
+local adapter = require('config.data.adapter')
+local common = require('config.data.common')
 local duckdb = require('config.data.duckdb')
 local mysql = require('config.data.mysql')
 local psql = require('config.data.psql')
+local sqlite = require('config.data.sqlite')
 
 local M = {}
 
-local RESULT_LINE_COUNT_MAX = 5000
-
 local BACKENDS = {
-    sqlite = sqlite,
     duckdb = duckdb,
     mysql = mysql,
     psql = psql,
+    sqlite = sqlite,
 }
+
+-- The adapter registry and shared helpers are exposed for callers that
+-- want them; the :DB flow above keeps dispatching through BACKENDS.
+M.adapter = adapter
+M.common = common
+
+local defaults = {
+    connections_file = '~/.config/nvim/dbx.lua',
+    notify = true,
+}
+
 local FILE_BACKENDS = {
-    sqlite = true,
     duckdb = true,
+    sqlite = true,
 }
+
+local FILE_EXTENSION_BACKENDS = {
+    db = 'sqlite',
+    ddb = 'duckdb',
+    duckdb = 'duckdb',
+    sqlite = 'sqlite',
+    sqlite3 = 'sqlite',
+}
+
+local RESULT_LINE_COUNT_MAX = 5000
 
 local SCHEME_ALIASES = {
     db = 'sqlite',
@@ -75,23 +96,9 @@ local SCHEME_ALIASES = {
     sqlite3 = 'sqlite',
 }
 
-local FILE_EXTENSION_BACKENDS = {
-    db = 'sqlite',
-    ddb = 'duckdb',
-    duckdb = 'duckdb',
-    sqlite = 'sqlite',
-    sqlite3 = 'sqlite',
-}
-
-local defaults = {
-    connections_file = '~/.config/nvim/dbx.lua',
-    notify = true,
-}
-
 ---@class DbConfigOpts
 ---@field connections_file? string
 ---@field notify? boolean
-
 ---@type DbConfigOpts
 M.config = vim.deepcopy(defaults)
 
@@ -106,16 +113,32 @@ M.state = {
     last_url = nil,
 }
 
----@param message string
----@param level? integer
-local function notify(message, level)
-    if not M.config.notify then
-        return
+---@param bufnr integer
+---@param line1 integer
+---@param line2 integer
+---@return string
+local function buffer_sql(bufnr, line1, line2)
+    local lines = api.nvim_buf_get_lines(bufnr, line1 - 1, line2, false)
+    return table.concat(lines, '\n')
+end
+
+---@param rows table[]
+---@return string[]
+local function collect_columns(rows)
+    local seen = {}
+    local columns = {}
+
+    for _, row in ipairs(rows) do
+        for key in pairs(row) do
+            if not seen[key] then
+                seen[key] = true
+                columns[#columns + 1] = key
+            end
+        end
     end
 
-    vim.notify(message, level or vim.log.levels.INFO, {
-        title = 'db',
-    })
+    table.sort(columns)
+    return columns
 end
 
 ---@param text string
@@ -126,24 +149,54 @@ local function decode_percent(text)
     end))
 end
 
----@param query string
----@return table<string, string>
-local function parse_query_string(query)
-    local params = {}
+---@param bufnr integer
+---@param backend_key string
+---@param attach_args string|table
+---@param readonly boolean
+---@return boolean
+---@return string|nil
+local function ensure_attached(bufnr, backend_key, attach_args, readonly)
+    local previous = M.state.buffer_backend[bufnr]
 
-    if query == '' then
-        return params
+    if previous ~= nil and previous ~= backend_key then
+        BACKENDS[previous].detach(bufnr)
     end
 
-    for pair in query:gmatch('[^&]+') do
-        local key, value = pair:match('^([^=]+)=?(.*)$')
+    local module = BACKENDS[backend_key]
+    local session, err = module.attach(bufnr, attach_args, readonly)
 
-        if key ~= nil then
-            params[key] = decode_percent(value or '')
-        end
+    if session == nil then
+        return false, err
     end
 
-    return params
+    M.state.buffer_backend[bufnr] = backend_key
+    M.state.buffer_readonly[bufnr] = readonly == true
+
+    return true, nil
+end
+
+---@param path string
+---@return string|nil
+local function infer_backend_from_path(path)
+    local extension = path:match('%.([%w]+)$')
+
+    if extension == nil then
+        return nil
+    end
+
+    return FILE_EXTENSION_BACKENDS[extension:lower()]
+end
+
+---@param message string
+---@param level? integer
+local function notify(message, level)
+    if not M.config.notify then
+        return
+    end
+
+    vim.notify(message, level or vim.log.levels.INFO, {
+        title = 'db',
+    })
 end
 
 ---@return table<string, string>
@@ -173,23 +226,37 @@ local function load_connections()
     return M.state.connections
 end
 
----@param path string
----@return string|nil
-local function infer_backend_from_path(path)
-    local extension = path:match('%.([%w]+)$')
+---@param text string
+---@param width integer
+---@return string
+local function pad(text, width)
+    return text .. string.rep(' ', width - #text)
+end
 
-    if extension == nil then
-        return nil
+---@param query string
+---@return table<string, string>
+local function parse_query_string(query)
+    local params = {}
+
+    if query == '' then
+        return params
     end
 
-    return FILE_EXTENSION_BACKENDS[extension:lower()]
+    for pair in query:gmatch('[^&]+') do
+        local key, value = pair:match('^([^=]+)=?(.*)$')
+
+        if key ~= nil then
+            params[key] = decode_percent(value or '')
+        end
+    end
+
+    return params
 end
 
 ---@class DbParsedUrl
 ---@field backend string
----@field path? string
 ---@field conn? table
-
+---@field path? string
 ---@param url string
 ---@return DbParsedUrl|nil
 ---@return string|nil
@@ -252,120 +319,13 @@ local function parse_url(url)
         user = userinfo,
     }
 
-    for _, key in ipairs({ 'service', 'passfile', 'defaults_file', 'socket' }) do
+    for _, key in ipairs({ 'defaults_file', 'passfile', 'service', 'socket' }) do
         if params[key] ~= nil then
             conn[key] = params[key]
         end
     end
 
     return { backend = backend, conn = conn }
-end
-
----@param token string|nil
----@return string|nil
----@return string|nil
-local function resolve_url(token)
-    if token ~= nil and token ~= '' then
-        local named = load_connections()[token]
-        return named or token, nil
-    end
-
-    local buffer_url = vim.b.db
-
-    if type(buffer_url) == 'string' and buffer_url ~= '' then
-        return buffer_url, nil
-    end
-
-    local global_url = vim.g.db
-
-    if type(global_url) == 'string' and global_url ~= '' then
-        return global_url, nil
-    end
-
-    local env_url = vim.env.DATABASE_URL
-
-    if env_url ~= nil and env_url ~= '' then
-        return env_url, nil
-    end
-
-    if M.state.last_url ~= nil then
-        return M.state.last_url, nil
-    end
-
-    return nil, 'no database URL given, and none found in b:db, g:db, or $DATABASE_URL'
-end
-
----@param args string
----@return string|nil url_token
----@return string remainder
-local function split_leading_url(args)
-    local first, rest = args:match('^(%S+)%s*(.*)$')
-
-    if first == nil then
-        return nil, args
-    end
-
-    local looks_like_url = first:match('^[%w+.-]+:') ~= nil
-        or first:match('^[./~]') ~= nil
-        or load_connections()[first] ~= nil
-
-    if looks_like_url then
-        return first, rest
-    end
-
-    return nil, args
-end
-
----@param bufnr integer
----@param backend_key string
----@param attach_args string|table
----@param readonly boolean
----@return boolean
----@return string|nil
-local function ensure_attached(bufnr, backend_key, attach_args, readonly)
-    local previous = M.state.buffer_backend[bufnr]
-
-    if previous ~= nil and previous ~= backend_key then
-        BACKENDS[previous].detach(bufnr)
-    end
-
-    local module = BACKENDS[backend_key]
-    local session, err = module.attach(bufnr, attach_args, readonly)
-
-    if session == nil then
-        return false, err
-    end
-
-    M.state.buffer_backend[bufnr] = backend_key
-    M.state.buffer_readonly[bufnr] = readonly == true
-
-    return true, nil
-end
-
----@param rows table[]
----@return string[]
-local function collect_columns(rows)
-    local seen = {}
-    local columns = {}
-
-    for _, row in ipairs(rows) do
-        for key in pairs(row) do
-            if not seen[key] then
-                seen[key] = true
-                columns[#columns + 1] = key
-            end
-        end
-    end
-
-    table.sort(columns)
-    return columns
-end
-
----@param text string
----@param width integer
----@return string
-local function pad(text, width)
-    return text .. string.rep(' ', width - #text)
 end
 
 ---@param rows table[]
@@ -422,6 +382,40 @@ local function render_rows(rows)
     end
 
     return lines
+end
+
+---@param token string|nil
+---@return string|nil
+---@return string|nil
+local function resolve_url(token)
+    if token ~= nil and token ~= '' then
+        local named = load_connections()[token]
+        return named or token, nil
+    end
+
+    local buffer_url = vim.b.db
+
+    if type(buffer_url) == 'string' and buffer_url ~= '' then
+        return buffer_url, nil
+    end
+
+    local global_url = vim.g.db
+
+    if type(global_url) == 'string' and global_url ~= '' then
+        return global_url, nil
+    end
+
+    local env_url = vim.env.DATABASE_URL
+
+    if env_url ~= nil and env_url ~= '' then
+        return env_url, nil
+    end
+
+    if M.state.last_url ~= nil then
+        return M.state.last_url, nil
+    end
+
+    return nil, 'no database URL given, and none found in b:db, g:db, or $DATABASE_URL'
 end
 
 ---@param lines string[]
@@ -482,13 +476,25 @@ local function run_query_and_show(backend_key, bufnr, sql, title)
     end, { readonly = readonly })
 end
 
----@param bufnr integer
----@param line1 integer
----@param line2 integer
----@return string
-local function buffer_sql(bufnr, line1, line2)
-    local lines = api.nvim_buf_get_lines(bufnr, line1 - 1, line2, false)
-    return table.concat(lines, '\n')
+---@param args string
+---@return string|nil url_token
+---@return string remainder
+local function split_leading_url(args)
+    local first, rest = args:match('^(%S+)%s*(.*)$')
+
+    if first == nil then
+        return nil, args
+    end
+
+    local looks_like_url = first:match('^[%w+.-]+:') ~= nil
+        or first:match('^[./~]') ~= nil
+        or load_connections()[first] ~= nil
+
+    if looks_like_url then
+        return first, rest
+    end
+
+    return nil, args
 end
 
 ---@param bufnr? integer
@@ -539,6 +545,20 @@ function M.operator_execute(_motion_type)
     local range = "'[,']"
 
     vim.cmd(range .. 'DB')
+end
+
+local function create_autocmds()
+    local group = api.nvim_create_augroup('NativeDb', {
+        clear = true,
+    })
+
+    api.nvim_create_autocmd('BufDelete', {
+        callback = function(args)
+            M.state.buffer_backend[args.buf] = nil
+            M.state.buffer_readonly[args.buf] = nil
+        end,
+        group = group,
+    })
 end
 
 local function create_commands()
@@ -592,6 +612,18 @@ local function create_commands()
         range = true,
     })
 
+    api.nvim_create_user_command('DBDetach', function()
+        M.detach(api.nvim_get_current_buf())
+    end, {
+        desc = 'Detach whichever backend owns this buffer',
+    })
+
+    api.nvim_create_user_command('DBInfo', function()
+        M.info(api.nvim_get_current_buf())
+    end, {
+        desc = 'Show which backend/url owns this buffer',
+    })
+
     api.nvim_create_user_command('DBUrl', function(opts)
         if opts.args == '' then
             notify('Usage: :DBUrl scheme://...', vim.log.levels.ERROR)
@@ -605,31 +637,6 @@ local function create_commands()
         nargs = 1,
     })
 
-    api.nvim_create_user_command('DBDetach', function()
-        M.detach(api.nvim_get_current_buf())
-    end, {
-        desc = 'Detach whichever backend owns this buffer',
-    })
-
-    api.nvim_create_user_command('DBInfo', function()
-        M.info(api.nvim_get_current_buf())
-    end, {
-        desc = 'Show which backend/url owns this buffer',
-    })
-end
-
-local function create_autocmds()
-    local group = api.nvim_create_augroup('NativeDb', {
-        clear = true,
-    })
-
-    api.nvim_create_autocmd('BufDelete', {
-        callback = function(args)
-            M.state.buffer_backend[args.buf] = nil
-            M.state.buffer_readonly[args.buf] = nil
-        end,
-        group = group,
-    })
 end
 
 ---@param opts? DbConfigOpts
@@ -637,13 +644,13 @@ end
 function M.setup(opts)
     M.config = vim.tbl_deep_extend('force', vim.deepcopy(defaults), opts or {})
 
-    sqlite.setup()
     duckdb.setup()
     mysql.setup()
     psql.setup()
+    sqlite.setup()
 
-    create_commands()
     create_autocmds()
+    create_commands()
 
     return M
 end

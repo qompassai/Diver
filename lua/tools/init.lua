@@ -1,0 +1,14 @@
+-- /qompassai/Diver/lua/tools/init.lua
+-- Qompass AI Diver Tools Init
+-- Copyright (C) 2026 Qompass AI, All rights reserved
+-- --------------------------------------------------
+local M = {}
+
+M.video = require('tools.video')
+
+---Wire the tools suites. Called once from the top-level init.lua.
+function M.setup()
+    M.video.setup()
+end
+
+return M

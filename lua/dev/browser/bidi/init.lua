@@ -5,17 +5,35 @@
 -- reap, ephemeral profile removal, VimLeavePre guarantee). Reconnect is
 -- never attempted: a dropped socket invalidates the session.
 
-local wire = require('dev.browser.bidi.wire')
-local transport_mod = require('dev.browser.bidi.transport')
-local driver = require('dev.browser.bidi.driver')
-local bsession = require('dev.browser.bidi.session')
+local actions = require('dev.browser.bidi.actions')
 local bctx = require('dev.browser.bidi.browsing_context')
-local bscript = require('dev.browser.bidi.script')
-local bnetwork = require('dev.browser.bidi.network')
 local blog = require('dev.browser.bidi.log')
+local bnetwork = require('dev.browser.bidi.network')
+local bscript = require('dev.browser.bidi.script')
+local bsession = require('dev.browser.bidi.session')
 local config = require('dev.browser.bidi.config')
+local driver = require('dev.browser.bidi.driver')
+local transport_mod = require('dev.browser.bidi.transport')
+local wire = require('dev.browser.bidi.wire')
 
 local M = {}
+
+M.actions = actions
+M.run_action_by_id = actions.run_action_by_id
+
+---@class BidiSessionState
+---@field kind string 'chrome' | 'firefox'
+---@field profile_dir string ephemeral user-data dir
+---@field proc table? driver proc from driver.spawn
+---@field session_id string?
+---@field wire_state table
+---@field transport table? BidiTransport
+---@field context_id string?
+---@field torn_down boolean
+---@field last_screenshot string? base64 PNG of the last capture
+
+---@type BidiSessionState? the live session, if any
+local current = nil
 
 ---Run fn now, or deferred via vim.schedule when inside a fast event
 ---context (transport/socket callbacks run on the uv read thread).
@@ -30,111 +48,6 @@ local function defer(fn)
     else
         fn()
     end
-end
-
----@class BidiSessionState
----@field kind string 'chrome' | 'firefox'
----@field profile_dir string ephemeral user-data dir
----@field proc table? driver proc from driver.spawn
----@field session_id string?
----@field wire_state table
----@field transport table? BidiTransport
----@field context_id string?
----@field torn_down boolean
----@field last_screenshot string? base64 PNG of the last capture
-
----Fresh session state. Exposed for unit tests of teardown.
----@return BidiSessionState
-function M._new_state()
-    return {
-        kind = '',
-        profile_dir = '',
-        proc = nil,
-        session_id = nil,
-        wire_state = wire.new_state(),
-        transport = nil,
-        context_id = nil,
-        torn_down = false,
-        last_screenshot = nil,
-    }
-end
-
----@type BidiSessionState? the live session, if any
-local current = nil
-
----Idempotent module setup: JSON codec for the wire, one VimLeavePre
----autocmd guaranteeing teardown.
-function M.setup()
-    if M._setup_done then
-        return
-    end
-    M._setup_done = true
-    wire.set_json(vim.json.encode, vim.json.decode, vim.empty_dict)
-    vim.api.nvim_create_autocmd('VimLeavePre', {
-        desc = 'BiDi: tear down browser session exactly once',
-        callback = function()
-            M.close()
-        end,
-    })
-end
-
----Build the conn facade the protocol modules program against.
----@param state BidiSessionState
----@return table conn
-function M._make_conn(state)
-    local conn = {
-        _state = state,
-        wire_state = state.wire_state,
-        subscribed = {},
-    }
-    function conn:send(method, params, callback)
-        local st = self._state
-        if st.torn_down then
-            return nil, 'bidi session is closed'
-        end
-        if st.transport == nil then
-            return nil, 'bidi transport is not connected'
-        end
-        local id, text, err = wire.next_command(st.wire_state, method, params, callback)
-        if id == nil then
-            return nil, err
-        end
-        if #text > config.command_bytes_max then
-            st.wire_state.pending[id] = nil
-            return nil, 'command exceeds command_bytes_max'
-        end
-        return st.transport:send_text(text)
-    end
-    return conn
-end
-
----Exactly-once teardown over injected deps. Each step is best-effort;
----a failing step never blocks the rest. Returns true on the first call,
----false when already torn down.
----@param state BidiSessionState
----@param deps table {session_finish?, close_transport?, kill_driver?, remove_profile?}
----@return boolean first_call
-function M._teardown_state(state, deps)
-    assert(type(state) == 'table', 'state must be a table')
-    assert(type(deps) == 'table', 'deps must be a table')
-    if state.torn_down then
-        return false
-    end
-    state.torn_down = true
-    wire.fail_all(state.wire_state, 'bidi session closed')
-    if deps.session_finish ~= nil then
-        pcall(deps.session_finish)
-    end
-    if deps.close_transport ~= nil then
-        pcall(deps.close_transport)
-    end
-    if deps.kill_driver ~= nil then
-        pcall(deps.kill_driver)
-    end
-    if deps.remove_profile ~= nil then
-        pcall(deps.remove_profile)
-    end
-    return true
 end
 
 ---Real teardown deps for a live state.
@@ -164,31 +77,6 @@ local function real_deps(state)
             end
         end,
     }
-end
-
----Close the current session: browser.close, socket teardown, driver
----reaped, ephemeral profile removed. Idempotent.
----@param callback? fun()
-function M.close(callback)
-    local state = current
-    current = nil
-    if state == nil then
-        if callback ~= nil then
-            callback()
-        end
-        return
-    end
-    bctx.reset()
-    M._teardown_state(state, real_deps(state))
-    if callback ~= nil then
-        callback()
-    end
-end
-
----True when a live, non-torn-down session exists.
----@return boolean
-function M.is_open()
-    return current ~= nil and not current.torn_down
 end
 
 ---Second half of M.open: spawn driver, wait, New Session, connect the
@@ -282,6 +170,207 @@ local function continue_open(state, abort, callback)
     end)
 end
 
+---@param state BidiSessionState
+---@return table? conn
+---@return string? err
+local function live_conn(state)
+    if state == nil or state.torn_down then
+        return nil, 'no BiDi session open (:BidiOpen first)'
+    end
+    if state.context_id == nil then
+        return nil, 'BiDi session has no browsing context'
+    end
+    return M._make_conn(state), nil
+end
+
+---Build the conn facade the protocol modules program against.
+---@param state BidiSessionState
+---@return table conn
+function M._make_conn(state)
+    local conn = {
+        _state = state,
+        wire_state = state.wire_state,
+        subscribed = {},
+    }
+    function conn:send(method, params, callback)
+        local st = self._state
+        if st.torn_down then
+            return nil, 'bidi session is closed'
+        end
+        if st.transport == nil then
+            return nil, 'bidi transport is not connected'
+        end
+        local id, text, err = wire.next_command(st.wire_state, method, params, callback)
+        if id == nil then
+            return nil, err
+        end
+        if #text > config.command_bytes_max then
+            st.wire_state.pending[id] = nil
+            return nil, 'command exceeds command_bytes_max'
+        end
+        return st.transport:send_text(text)
+    end
+    return conn
+end
+
+---Normalize one network event into a quickfix line. Exposed for tests.
+---@param method string
+---@param params table
+function M._network_sink(method, params)
+    -- Event handlers run in fast event context: setqflist needs the
+    -- main loop, so defer it.
+    defer(function()
+        local event, nerr = bnetwork._normalize(method, params)
+        if event == nil then
+            vim.fn.setqflist({}, 'a', {
+                title = 'BiDi network',
+                items = { { text = 'unparseable network event: ' .. nerr, type = 'E' } },
+            })
+            return
+        end
+        local text = (event.method or '?') .. ' ' .. (event.url or '?')
+        if event.status ~= nil then
+            text = text .. ' -> ' .. tostring(event.status)
+        end
+        vim.fn.setqflist({}, 'a', {
+            title = 'BiDi network',
+            items = { { text = '[' .. event.kind .. '] ' .. text, type = 'I' } },
+        })
+    end)
+end
+
+---Fresh session state. Exposed for unit tests of teardown.
+---@return BidiSessionState
+function M._new_state()
+    return {
+        kind = '',
+        profile_dir = '',
+        proc = nil,
+        session_id = nil,
+        wire_state = wire.new_state(),
+        transport = nil,
+        context_id = nil,
+        torn_down = false,
+        last_screenshot = nil,
+    }
+end
+
+---Exactly-once teardown over injected deps. Each step is best-effort;
+---a failing step never blocks the rest. Returns true on the first call,
+---false when already torn down.
+---@param state BidiSessionState
+---@param deps table {session_finish?, close_transport?, kill_driver?, remove_profile?}
+---@return boolean first_call
+function M._teardown_state(state, deps)
+    assert(type(state) == 'table', 'state must be a table')
+    assert(type(deps) == 'table', 'deps must be a table')
+    if state.torn_down then
+        return false
+    end
+    state.torn_down = true
+    wire.fail_all(state.wire_state, 'bidi session closed')
+    if deps.session_finish ~= nil then
+        pcall(deps.session_finish)
+    end
+    if deps.close_transport ~= nil then
+        pcall(deps.close_transport)
+    end
+    if deps.kill_driver ~= nil then
+        pcall(deps.kill_driver)
+    end
+    if deps.remove_profile ~= nil then
+        pcall(deps.remove_profile)
+    end
+    return true
+end
+
+---Close the current session: browser.close, socket teardown, driver
+---reaped, ephemeral profile removed. Idempotent.
+---@param callback? fun()
+function M.close(callback)
+    local state = current
+    current = nil
+    if state == nil then
+        if callback ~= nil then
+            callback()
+        end
+        return
+    end
+    bctx.reset()
+    M._teardown_state(state, real_deps(state))
+    if callback ~= nil then
+        callback()
+    end
+end
+
+---Stream console entries to the quickfix list. callback(err).
+---@param callback fun(err: string?)
+function M.console(callback)
+    assert(type(callback) == 'function', 'callback must be a function')
+    local conn, cerr = live_conn(current)
+    if conn == nil then
+        callback(cerr)
+        return
+    end
+    vim.fn.setqflist({}, 'r', { title = 'BiDi console' })
+    blog.stream(conn, { current.context_id }, blog.append_qf, callback)
+end
+
+---Evaluate JS in the session tab. Confirmation is the caller's job.
+---callback(err, value) with value converted to Lua.
+---@param expression string
+---@param callback fun(err: string?, value: any)
+function M.evaluate(expression, callback)
+    assert(type(callback) == 'function', 'callback must be a function')
+    local conn, cerr = live_conn(current)
+    if conn == nil then
+        callback(cerr, nil)
+        return
+    end
+    bscript.evaluate(conn, { context = current.context_id }, expression, callback)
+end
+
+---True when a live, non-torn-down session exists.
+---@return boolean
+function M.is_open()
+    return current ~= nil and not current.torn_down
+end
+
+---Navigate the session tab. callback(err, result).
+---@param url string
+---@param callback fun(err: string?, result: table?)
+function M.navigate(url, callback)
+    assert(type(callback) == 'function', 'callback must be a function')
+    local conn, cerr = live_conn(current)
+    if conn == nil then
+        callback(cerr, nil)
+        return
+    end
+    bctx.navigate(conn, current.context_id, url, callback)
+end
+
+---Observe network traffic into the quickfix list. callback(err).
+---@param callback fun(err: string?)
+function M.network_log(callback)
+    assert(type(callback) == 'function', 'callback must be a function')
+    local conn, cerr = live_conn(current)
+    if conn == nil then
+        callback(cerr)
+        return
+    end
+    local wire_mod = wire
+    wire_mod.on_event(current.wire_state, 'network.beforeRequestSent', function(params)
+        M._network_sink('network.beforeRequestSent', params)
+    end)
+    wire_mod.on_event(current.wire_state, 'network.responseStarted', function(params)
+        M._network_sink('network.responseStarted', params)
+    end)
+    wire_mod.on_event(current.wire_state, 'network.responseCompleted', function(params)
+        M._network_sink('network.responseCompleted', params)
+    end)
+    bnetwork.observe(conn, { current.context_id }, callback)
+end
+
 ---Open a browser: verify + spawn driver, New Session, connect BiDi,
 ---session.status, create a tab. callback(err, info).
 ---@param kind string 'chrome' | 'firefox'
@@ -307,46 +396,6 @@ function M.open(kind, callback)
         callback(err, nil)
     end
     continue_open(state, abort, callback)
-end
-
----@param state BidiSessionState
----@return table? conn
----@return string? err
-local function live_conn(state)
-    if state == nil or state.torn_down then
-        return nil, 'no BiDi session open (:BidiOpen first)'
-    end
-    if state.context_id == nil then
-        return nil, 'BiDi session has no browsing context'
-    end
-    return M._make_conn(state), nil
-end
-
----Navigate the session tab. callback(err, result).
----@param url string
----@param callback fun(err: string?, result: table?)
-function M.navigate(url, callback)
-    assert(type(callback) == 'function', 'callback must be a function')
-    local conn, cerr = live_conn(current)
-    if conn == nil then
-        callback(cerr, nil)
-        return
-    end
-    bctx.navigate(conn, current.context_id, url, callback)
-end
-
----Evaluate JS in the session tab. Confirmation is the caller's job.
----callback(err, value) with value converted to Lua.
----@param expression string
----@param callback fun(err: string?, value: any)
-function M.evaluate(expression, callback)
-    assert(type(callback) == 'function', 'callback must be a function')
-    local conn, cerr = live_conn(current)
-    if conn == nil then
-        callback(cerr, nil)
-        return
-    end
-    bscript.evaluate(conn, { context = current.context_id }, expression, callback)
 end
 
 ---Capture a screenshot into a scratch buffer as base64 (line-safe, never
@@ -383,65 +432,20 @@ function M.screenshot(callback)
     end)
 end
 
----Stream console entries to the quickfix list. callback(err).
----@param callback fun(err: string?)
-function M.console(callback)
-    assert(type(callback) == 'function', 'callback must be a function')
-    local conn, cerr = live_conn(current)
-    if conn == nil then
-        callback(cerr)
+---Idempotent module setup: JSON codec for the wire, one VimLeavePre
+---autocmd guaranteeing teardown.
+function M.setup()
+    if M._setup_done then
         return
     end
-    vim.fn.setqflist({}, 'r', { title = 'BiDi console' })
-    blog.stream(conn, { current.context_id }, blog.append_qf, callback)
-end
-
----Observe network traffic into the quickfix list. callback(err).
----@param callback fun(err: string?)
-function M.network_log(callback)
-    assert(type(callback) == 'function', 'callback must be a function')
-    local conn, cerr = live_conn(current)
-    if conn == nil then
-        callback(cerr)
-        return
-    end
-    local wire_mod = wire
-    wire_mod.on_event(current.wire_state, 'network.beforeRequestSent', function(params)
-        M._network_sink('network.beforeRequestSent', params)
-    end)
-    wire_mod.on_event(current.wire_state, 'network.responseStarted', function(params)
-        M._network_sink('network.responseStarted', params)
-    end)
-    wire_mod.on_event(current.wire_state, 'network.responseCompleted', function(params)
-        M._network_sink('network.responseCompleted', params)
-    end)
-    bnetwork.observe(conn, { current.context_id }, callback)
-end
-
----Normalize one network event into a quickfix line. Exposed for tests.
----@param method string
----@param params table
-function M._network_sink(method, params)
-    -- Event handlers run in fast event context: setqflist needs the
-    -- main loop, so defer it.
-    defer(function()
-        local event, nerr = bnetwork._normalize(method, params)
-        if event == nil then
-            vim.fn.setqflist({}, 'a', {
-                title = 'BiDi network',
-                items = { { text = 'unparseable network event: ' .. nerr, type = 'E' } },
-            })
-            return
-        end
-        local text = (event.method or '?') .. ' ' .. (event.url or '?')
-        if event.status ~= nil then
-            text = text .. ' -> ' .. tostring(event.status)
-        end
-        vim.fn.setqflist({}, 'a', {
-            title = 'BiDi network',
-            items = { { text = '[' .. event.kind .. '] ' .. text, type = 'I' } },
-        })
-    end)
+    M._setup_done = true
+    wire.set_json(vim.json.encode, vim.json.decode, vim.empty_dict)
+    vim.api.nvim_create_autocmd('VimLeavePre', {
+        desc = 'BiDi: tear down browser session exactly once',
+        callback = function()
+            M.close()
+        end,
+    })
 end
 
 return M

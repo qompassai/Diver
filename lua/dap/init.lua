@@ -2116,6 +2116,37 @@ function M.setup(opts)
     end
 end
 
+-- Non-catalog submodules, loaded on first access so requiring dap stays
+-- cheap: the moonwalk/phlow session integrations, the session lifecycle
+-- state machine, and the ext helpers. Reachable as require('dap').integrations,
+-- require('dap').lifecycle, and require('dap').ext.
+local lazy_submodules = {
+    ext = function()
+        return { autocompl = require('dap.ext.autocompl') }
+    end,
+    integrations = function()
+        return {
+            moonwalk = require('dap.integrations.moonwalk'),
+            phlow = require('dap.integrations.phlow'),
+        }
+    end,
+    lifecycle = function()
+        return require('dap.lifecycle')
+    end,
+}
+
+setmetatable(M, {
+    __index = function(self, key)
+        local loader = lazy_submodules[key]
+        if loader ~= nil then
+            local mod = loader()
+            rawset(self, key, mod)
+            return mod
+        end
+        return nil
+    end,
+})
+
 -- Setup is explicit: call `require('dap').setup()` (typically from your
 -- Neovim config or plugin loader) to install autocmds, commands, and
 -- mappings. Merely requiring this module must not install anything: it

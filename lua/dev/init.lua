@@ -16,18 +16,22 @@
 -- limitations under the License.
 -- #################################################################
 local M = {}
-local android = require('dev.android')
+local android = require('dev.apps.android')
 local apps = require('dev.apps')
 local sf = require('dev.sf')
 -- dev/vulkan.lua (leaf utilities) shadows dev/vulkan/init.lua (the suite)
 -- in the require search order, so name the suite explicitly.
 local vulkan = require('dev.vulkan.init')
 function M.setup()
-    require('dev.git').setup()
-    require('dev.jj').setup()
+    require('dev.ansible').setup()
+    require('dev.audio')
     require('dev.bootdev').setup()
     require('dev.bsp')
+    require('dev.docs').setup()
+    require('dev.git').setup()
+    require('dev.jj').setup()
     require('dev.scip')
+    require('dev.test').setup()
     android.setup()
     apps.setup()
     sf.setup()
