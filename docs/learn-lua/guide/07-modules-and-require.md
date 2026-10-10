@@ -33,18 +33,32 @@ Three rules cover 95% of what you need:
 ### The `init.lua` aggregator pattern
 
 A folder's `init.lua` typically just requires its siblings, acting as a single
-entry point:
+entry point — one `require` per file in the folder, and `require('the.folder')`
+pulls in the whole directory in the right order. `diver` uses this pattern at
+every level.
+
+The core subsystem is the deliberate exception: `lua/config/init.lua` loads
+the `config.core.*` leaves directly, in the old aggregator's order, wrapped in
+one `pcall` so the first failing leaf stops the rest and is reported instead
+of thrown:
 
 ```lua
--- lua/config/core/init.lua
-require('config.core.filetype')
-require('config.core.fixer')
-require('config.core.lsp')
--- ...one line per file in the folder...
+-- lua/config/init.lua
+local function load_core()
+    require('config.core.async')
+    require('config.core.filetype')
+    -- Deferred: config.core.lint loads on BufReadPre via init.lua.
+    require('config.core.lsp')
+    require('config.core.parser')
+    require('config.core.qf')
+    require('config.core.refactor')
+    require('config.core.tree')
+    require('config.core.whichkey')
+end
 ```
 
-Now `require('config.core')` pulls in the whole `core/` directory in the right
-order. `diver` uses this pattern at every level.
+Same net effect as an aggregator `init.lua`, one less hop — and the leaves
+stay ordinary modules you can `require('config.core.lsp')` one by one.
 
 ## In Diver
 
@@ -65,7 +79,8 @@ Start at the top and trace the chain — this is the spine of the whole config:
 
    ```lua
    if opts.core ~= false then
-       safe_require('config.core', verbose)
+       local ok, err = pcall(load_core)
+       -- ...on failure, notify when verbose; never throw...
    end
    ```
 
@@ -73,9 +88,10 @@ Start at the top and trace the chain — this is the spine of the whole config:
    Omitting the flag (so it is `nil`) still loads it, because `nil ~= false` is
    true. That is a deliberate, learner-trap-aware design choice.
 
-3. **`lua/config/core/init.lua`** is the aggregator that requires
-   `filetype`, `fixer`, `lsp`, `parser`, `qf`, `schema`, `tree`, `whichkey`,
-   and so on.
+3. **`load_core()` in `lua/config/init.lua`** requires the core leaves
+   directly: `async`, `filetype`, `lsp`, `parser`, `qf`, `refactor`,
+   `tree`, `whichkey`. (`lint` is the exception — it is deferred and
+   loads on `BufReadPre` from the root `init.lua`.)
 
 4. Each leaf file (e.g. `lua/config/core/lsp.lua`) is a `local M = {} ...
    return M` module.

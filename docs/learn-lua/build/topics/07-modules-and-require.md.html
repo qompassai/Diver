@@ -111,20 +111,35 @@ lsp.<span class="function-name">on_attach</span>(client, bufnr)
 <h3>The <code>init.lua</code> aggregator pattern</h3>
 
 <p>A folder's <code>init.lua</code> typically just requires its siblings, acting as a single
-entry point:</p>
+entry point — one <code>require</code> per file in the folder, and <code>require(&apos;the.folder&apos;)</code>
+pulls in the whole directory in the right order. <code>diver</code> uses this pattern at
+every level.</p>
+
+
+<p>The core subsystem is the deliberate exception: <code>lua/config/init.lua</code> loads
+the <code>config.core.*</code> leaves directly, in the old aggregator's order, wrapped in
+one <code>pcall</code> so the first failing leaf stops the rest and is reported instead
+of thrown:</p>
 
 
 <pre>
-<span class="comment">-- lua/config/core/init.lua
-</span><span class="global">require</span>(<span class="string">'config.core.filetype'</span>)
-<span class="global">require</span>(<span class="string">'config.core.fixer'</span>)
-<span class="global">require</span>(<span class="string">'config.core.lsp'</span>)
-<span class="comment">-- ...one line per file in the folder...</span>
+<span class="comment">-- lua/config/init.lua
+</span><span class="keyword">local</span> <span class="keyword">function</span> <span class="function-name">load_core</span>()
+    <span class="global">require</span>(<span class="string">'config.core.async'</span>)
+    <span class="global">require</span>(<span class="string">'config.core.filetype'</span>)
+    <span class="comment">-- Deferred: config.core.lint loads on BufReadPre via init.lua.</span>
+    <span class="global">require</span>(<span class="string">'config.core.lsp'</span>)
+    <span class="global">require</span>(<span class="string">'config.core.parser'</span>)
+    <span class="global">require</span>(<span class="string">'config.core.qf'</span>)
+    <span class="global">require</span>(<span class="string">'config.core.refactor'</span>)
+    <span class="global">require</span>(<span class="string">'config.core.tree'</span>)
+    <span class="global">require</span>(<span class="string">'config.core.whichkey'</span>)
+<span class="keyword">end</span>
 </pre>
 
 
-<p>Now <code>require(&apos;config.core&apos;)</code> pulls in the whole <code>core/</code> directory in the right
-order. <code>diver</code> uses this pattern at every level.</p>
+<p>Same net effect as an aggregator <code>init.lua</code>, one less hop — and the leaves
+stay ordinary modules you can <code>require(&apos;config.core.lsp&apos;)</code> one by one.</p>
 
 <p><a name="In_Diver"></a></p>
 <h2>In Diver</h2>
@@ -149,13 +164,10 @@ order. <code>diver</code> uses this pattern at every level.</p>
 </ol>
 
 <p>   ```lua
-   if opts.core ~= false then</p>
-
-<pre>
-<span class="function-name">safe_require</span>(<span class="string">'config.core'</span>, verbose)
-</pre>
-
-<p>   end
+   if opts.core ~= false then
+       local ok, err = pcall(load_core)
+       -- ...on failure, notify when verbose; never throw...
+   end
    ```</p>
 
 <p>   Note <code>~= false</code>: the subsystem loads unless you <em>explicitly</em> pass <code>false</code>.
@@ -163,9 +175,10 @@ order. <code>diver</code> uses this pattern at every level.</p>
    true. That is a deliberate, learner-trap-aware design choice.</p>
 
 <ol>
-    <li><p>**<code>lua/config/core/init.lua</code>** is the aggregator that requires
-    <code>filetype</code>, <code>fixer</code>, <code>lsp</code>, <code>parser</code>, <code>qf</code>, <code>schema</code>, <code>tree</code>, <code>whichkey</code>,
-    and so on.</p></li>
+    <li><p>**<code>load_core()</code> in <code>lua/config/init.lua</code>** requires the core leaves
+    directly: <code>async</code>, <code>filetype</code>, <code>lsp</code>, <code>parser</code>, <code>qf</code>, <code>refactor</code>,
+    <code>tree</code>, <code>whichkey</code>. (<code>lint</code> is the exception — it is deferred and
+    loads on <code>BufReadPre</code> from the root <code>init.lua</code>.)</p></li>
     <li><p>Each leaf file (e.g. <code>lua/config/core/lsp.lua</code>) is a `local M = {} ...
     return M` module.</p></li>
 </ol>
