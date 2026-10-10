@@ -10,8 +10,8 @@
 local M = {}
 
 M.names = {
-    'RoseAsk',
     'RoseAgent',
+    'RoseAsk',
     'RoseCheck',
     'RoseFlow',
     'RoseStop',
@@ -22,8 +22,8 @@ M.names = {
 function M.register(rose)
     assert(type(rose) == 'table', 'commands.register: rose module must be a table')
     for _, item in ipairs({
-        { 'RoseAsk', rose.ask, 'Ask the configured model (local Ollama by default)' },
         { 'RoseAgent', rose.agent, 'Run planner, coder, validation and reviewer' },
+        { 'RoseAsk', rose.ask, 'Ask the configured model (local rose by default)' },
         { 'RoseFlow', rose.flow, 'Run the explicit Flow MCP workflow' },
     }) do
         vim.api.nvim_create_user_command(item[1], function(args)

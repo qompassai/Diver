@@ -19,7 +19,7 @@
 --               debugger for Claude Code / Codex / Gemini session files
 --               in a terminal split. Trace inspection only, not DAP.
 --   ai/rose/    rose.nvim fold-in (native, no plugins): chat, agent loop,
---               Ollama, MCP helpers, validation, and all 10 cloud
+--               rose backend, MCP helpers, validation, and all 10 cloud
 --               providers. Optional generation backend for ai/builder.
 --   ai/mcp/     MCP server manager (mcphub-like, no plugins): registry,
 --               stdio client, tool inspection, menu UI, and server
@@ -67,6 +67,7 @@ function M.setup(opts)
     require('ai.dataaccess').setup()
     require('ai.recon').setup()
     require('ai.huggingface').setup()
+    require('salesforce.mcp').setup()
 end
 
 return M

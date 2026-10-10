@@ -3,18 +3,20 @@
 -- Copyright (C) 2025 Qompass AI, All rights reserved
 -- ----------------------------------------
 -- Port of rose.nvim's config resolver, trimmed to what the folded-in
--- modules consume: trusted, workspace, ollama, providers, agent, flow,
+-- modules consume: trusted, workspace, rose, providers, agent, flow,
 -- mcp and checks. The speech/hub/webui/debug/diver/scip sections are
 -- deliberately absent because those rose.nvim modules were not folded in.
 
 local M = {}
 
----@class AiRoseOllamaConfig
+---@class AiRoseBackendConfig
 ---@field base_url string
 ---@field model string
 ---@field timeout integer
 ---@field allow_remote boolean
 ---@field transport string
+
+---@alias AiRoseOllamaConfig AiRoseBackendConfig
 
 ---@class AiRoseProvidersConfig
 ---@field enabled boolean
@@ -46,7 +48,8 @@ local M = {}
 ---@class AiRoseConfig
 ---@field trusted boolean
 ---@field workspace string
----@field ollama AiRoseOllamaConfig
+---@field rose AiRoseBackendConfig
+---@field ollama AiRoseBackendConfig legacy alias of rose; the same table
 ---@field providers AiRoseProvidersConfig
 ---@field speculative AiRoseSpeculativeConfig
 ---@field agent AiRoseAgentConfig
@@ -58,7 +61,7 @@ local M = {}
 -- so this table is intentionally not annotated as AiRoseConfig.
 M.defaults = {
     trusted = false,
-    ollama = {
+    rose = {
         base_url = 'http://127.0.0.1:11434',
         model = 'qwen2.5-coder:7b',
         timeout = 120000,
@@ -68,7 +71,7 @@ M.defaults = {
     providers = {
         enabled = false,
         allow_cloud = false,
-        provider = 'ollama',
+        provider = 'rose',
     },
     speculative = {
         enabled = false,
@@ -91,8 +94,8 @@ M.defaults = {
     checks = {},
 }
 
-local CHECKS_COUNT_MAX = 256
 local ARGV_ARGS_MAX = 64
+local CHECKS_COUNT_MAX = 256
 
 ---@param value any
 ---@param lo integer
@@ -280,7 +283,29 @@ function M.resolve(opts)
     opts = opts or {}
     assert(type(opts) == 'table', 'Rose setup options must be a table')
 
+    -- Legacy compat (2026-10 rename): the backend section was named `ollama`
+    -- before the provider took the rose name. A user-supplied `ollama`
+    -- section is read as the `rose` section; explicit `rose` fields win
+    -- over legacy ones. The resolved config aliases `ollama` to the same
+    -- table (see the assembly below), so readers of the old key keep
+    -- seeing live values.
+    if opts.ollama ~= nil then
+        assert(type(opts.ollama) == 'table', 'ollama must be a configuration table')
+        local normalized = {}
+        for key, value in pairs(opts) do
+            normalized[key] = value
+        end
+        normalized.rose = vim.tbl_deep_extend('force', vim.deepcopy(opts.ollama), opts.rose or {})
+        normalized.ollama = nil
+        opts = normalized
+    end
+
     local config = vim.tbl_deep_extend('force', vim.deepcopy(M.defaults), opts)
+    -- A saved config may still select the provider by its legacy id
+    -- 'ollama'; that id names this backend, so normalize it to 'rose'.
+    if type(config.providers) == 'table' and config.providers.provider == 'ollama' then
+        config.providers.provider = 'rose'
+    end
     if opts.agent and opts.agent.max_cycles ~= nil then
         integer(opts.agent.max_cycles, 1, 4, 'agent.max_cycles')
         if opts.agent.max_repair_rounds == nil then
@@ -292,7 +317,7 @@ function M.resolve(opts)
     config.workspace = resolve_workspace(config.workspace)
     config.mcp.servers = vim.tbl_deep_extend('keep', config.mcp.servers or {}, mcp_defaults(config.workspace))
 
-    integer(config.ollama.timeout, 1, 3600000, 'ollama.timeout')
+    integer(config.rose.timeout, 1, 3600000, 'rose.timeout')
     integer(config.agent.max_iterations, 1, 30, 'agent.max_iterations')
     integer(config.agent.max_repair_rounds, 0, 3, 'agent.max_repair_rounds')
     config.agent.max_cycles = config.agent.max_repair_rounds + 1
@@ -302,9 +327,9 @@ function M.resolve(opts)
     integer(config.flow.timeout, 1, 3600000, 'flow.timeout')
     validate_mcp(config.mcp)
 
-    assert(type(config.ollama.model) == 'string', 'ollama.model is required')
-    assert(config.ollama.model ~= '', 'ollama.model is required')
-    assert(type(config.ollama.base_url) == 'string', 'ollama.base_url must be a string')
+    assert(type(config.rose.model) == 'string', 'rose.model is required')
+    assert(config.rose.model ~= '', 'rose.model is required')
+    assert(type(config.rose.base_url) == 'string', 'rose.base_url must be a string')
     assert(type(config.providers) == 'table', 'providers must be a configuration table')
     assert(type(config.speculative) == 'table', 'speculative must be a configuration table')
     assert(type(config.speculative.enabled) == 'boolean', 'speculative.enabled must be a boolean')
@@ -345,7 +370,8 @@ function M.resolve(opts)
     local resolved = {
         trusted = config.trusted,
         workspace = config.workspace,
-        ollama = config.ollama,
+        rose = config.rose,
+        ollama = config.rose, -- legacy alias: the same table, so config.ollama readers see live values
         providers = config.providers,
         speculative = config.speculative,
         agent = agent,

@@ -1,6 +1,6 @@
-# rose.nvim MCP Client — The Wire You Must Not Break
+# rose MCP Client — The Wire You Must Not Break
 
-The client is `lua/rose/native/mcp.lua` (336 lines, native mode, no plugins).
+The client is `lua/ai/rose/mcp.lua` (393 lines, native mode, no plugins).
 It is a Lua **stdio** MCP client. Everything below is read from that file —
 not from memory, not from the spec. If the file changes, this reference is
 stale: re-read the file.
@@ -22,7 +22,7 @@ stale: re-read the file.
 ## The handshake (2025-11-25 era)
 
 1. Client sends `initialize` with `protocolVersion: "2025-11-25"`,
-   `capabilities: {}`, `clientInfo: { name = "rose.nvim", version = "0.2.0" }`.
+   `capabilities: {}`, `clientInfo: { name = "diver", version = "0.2.0" }`.
 2. The server MUST answer with an `InitializeResult` whose `protocolVersion`
    is one of `2025-11-25`, `2025-06-18`, `2025-03-26`, `2024-11-05` —
    anything else and the client closes with "unsupported MCP protocol
@@ -45,7 +45,7 @@ server MUST NOT depend on server→client requests.** Anything needing a human
 decision is a refusal-with-reason plus an explicit flag on the retry. (The
 2026-07-28 revision formalises this as MRTR; the client got there first.)
 
-## What your server must satisfy to work with rose.nvim
+## What your server must satisfy to work with rose
 
 1. stdio framing exactly: newline-delimited JSON-RPC, no embedded newlines,
    nothing but MCP messages on stdout, logs on stderr.
@@ -57,7 +57,7 @@ decision is a refusal-with-reason plus an explicit flag on the retry. (The
 
 ## The hard rule
 
-**rose.nvim ↔ phlow wire formats stay stable across changes.** That means
+**rose ↔ phlow wire formats stay stable across changes.** That means
 framing, the handshake, method names, tool names, schemas, annotations, and
 error semantics. Changing any of them is a **two-sided migration**:
 

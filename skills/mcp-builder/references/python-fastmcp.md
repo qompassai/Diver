@@ -55,4 +55,4 @@ def read_file(input: ReadFileInput) -> ReadFileOutput:
 - Parity rule for phlow: any tool added or changed in the Python server must
   have its contract (name, schemas, annotations, error behavior) mirrored in
   the Rust port, or explicitly marked as Python-only with a reason. The
-  rose.nvim client must never see the two disagree.
+  rose client must never see the two disagree.

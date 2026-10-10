@@ -22,9 +22,10 @@ templates, each a builder function over a small context table:
 
 `lua/dev/vulkan/init.lua` registers the three `:VulkanRose*` commands,
 which build the prompt and hand it to `require('ai.rose').ask()`.
-rose.nvim itself is a **separate repo** (`~/workspace/repos/rose.nvim`)
-and was not touched — diver's conventions put the integration here,
-reaching Rose through its public `ask()` entry point.
+Rose is diver's own module (`lua/ai/rose/`), folded in from the
+former standalone `rose.nvim` repo (now archived) — the integration
+lives here alongside it, reaching Rose through its public `ask()`
+entry point.
 
 ### Safety
 
@@ -47,4 +48,4 @@ silently dropped or blowing up the chat context window.
   instruction: models happily invent VUID numbers. Telling it to say
   "I don't know the exact VUID" instead produces better answers.
 - Keeping the module pure made it the easiest of the five to test —
-  `tests/lua/vulkan_prompts.lua` needs no vim stub at all.
+  `tests/vulkan/vulkan_prompts.lua` needs no vim stub at all.

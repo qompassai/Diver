@@ -2,7 +2,7 @@
 -- Authenticated cloud transport over curl with a stdin config (Tiger Style)
 -- Copyright (C) 2025 Qompass AI, All rights reserved
 -- ----------------------------------------
--- Intentionally separate from the native Ollama HTTP client. Credentials
+-- Intentionally separate from the native rose HTTP client. Credentials
 -- AND request JSON travel only through an anonymous stdin pipe: no shell,
 -- temporary request files, curlrc, proxy, redirects, or inherited secrets.
 
@@ -230,17 +230,17 @@ local function open_sink(path, max_output_bytes)
 end
 
 -- Named limits and defaults for one request. Callers may lower the byte limits per request.
-local request_methods = { GET = true, POST = true, PUT = true, PATCH = true, DELETE = true }
-local RESPONSE_BYTES_MAX_DEFAULT = 8 * 1024 * 1024
-local REQUEST_BYTES_MAX_DEFAULT = 4 * 1024 * 1024
-local UPLOAD_BYTES_MAX_DEFAULT = 25 * 1024 * 1024
-local TIMEOUT_MS_DEFAULT = 120000
+local request_methods = { DELETE = true, GET = true, PATCH = true, POST = true, PUT = true }
 local CONNECT_TIMEOUT_SECONDS_MAX = 15
 local HEADER_BLOCK_BYTES_MAX = 65536
 local HEADER_VALUE_BYTES_MAX = 16384
 local HEADERS_MAX = 64
 -- Servers may send 1xx interim responses before the final status; bound how many we skip.
 local INTERIM_RESPONSES_MAX = 8
+local REQUEST_BYTES_MAX_DEFAULT = 4 * 1024 * 1024
+local RESPONSE_BYTES_MAX_DEFAULT = 8 * 1024 * 1024
+local TIMEOUT_MS_DEFAULT = 120000
+local UPLOAD_BYTES_MAX_DEFAULT = 25 * 1024 * 1024
 
 -- Validate the request shape before any process starts. Programmer errors (wrong types for
 -- opts/callback) assert; every wire-facing problem is returned so the caller sees a reason.

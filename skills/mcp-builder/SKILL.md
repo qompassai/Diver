@@ -1,15 +1,15 @@
 ---
 name: mcp-builder
 description: >-
-  Build and harden MCP (Model Context Protocol) servers and clients for a Neovim-first stack: the phlow agent runtime's MCP server (Python now, Rust nightly port), the rose.nvim Lua stdio client, and new servers in Rust (rmcp), TypeScript (MCP SDK v2), or Python (FastMCP). Protocol-first: verify claims against the current spec, target 2025-11-25 while designing for 2026-07-28, and never break the rose/phlow wire format. Covers tool design (naming, inputSchema, outputSchema with structuredContent, annotations as untrusted hints), stdio vs Streamable HTTP transports, and adversarial security review as a first-class phase — RCE via tool arguments, command injection, credential leakage, prompt injection smuggled in tool output, zombie processes from bad teardown, supply-chain poisoning via third-party servers. Testing splits evenly between validation and adversarial cases.
+  Build and harden MCP (Model Context Protocol) servers and clients for a Neovim-first stack: the phlow agent runtime's MCP server (Python now, Rust nightly port), the rose Lua stdio client, and new servers in Rust (rmcp), TypeScript (MCP SDK v2), or Python (FastMCP). Protocol-first: verify claims against the current spec, target 2025-11-25 while designing for 2026-07-28, and never break the rose/phlow wire format. Covers tool design (naming, inputSchema, outputSchema with structuredContent, annotations as untrusted hints), stdio vs Streamable HTTP transports, and adversarial security review as a first-class phase — RCE via tool arguments, command injection, credential leakage, prompt injection smuggled in tool output, zombie processes from bad teardown, supply-chain poisoning via third-party servers. Testing splits evenly between validation and adversarial cases.
 license: Apache-2.0
-compatibility: Rust nightly toolchain (cargo, rustc) for the phlow Rust path; Node 18+ with npm for the TypeScript path; Python 3.10+ with uv for the Python path; network access to crates.io, npm, and PyPI to verify SDK versions against the registry; MCP Inspector via npx for manual testing; Neovim 0.10+ with the rose.nvim tree for client-side work.
+compatibility: Rust nightly toolchain (cargo, rustc) for the phlow Rust path; Node 18+ with npm for the TypeScript path; Python 3.10+ with uv for the Python path; network access to crates.io, npm, and PyPI to verify SDK versions against the registry; MCP Inspector via npx for manual testing; Neovim 0.10+ with the rose tree (lua/ai/rose) for client-side work.
 metadata:
   spec_target: "2025-11-25 (design forward-compatible with 2026-07-28)"
   primary_sdk: "rmcp 3.x (modelcontextprotocol/rust-sdk)"
   ts_sdk: "@modelcontextprotocol/server 2.x (split packages)"
   python_sdk: "mcp 2.x (FastMCP)"
-  client: "rose.nvim lua/rose/native/mcp.lua (Lua stdio client)"
+  client: "rose lua/ai/rose/mcp.lua (Lua stdio client)"
   test_split: "50% validation / 50% adversarial"
 allowed-tools: Read Edit Bash
 ---
@@ -18,7 +18,7 @@ allowed-tools: Read Edit Bash
 
 ELI5: MCP is LSP for tools. Where LSP lets any editor talk to any language
 server with one protocol, MCP lets any AI client talk to any tool server
-with one protocol. Your client is rose.nvim (Lua, speaks MCP over stdio);
+with one protocol. Your client is rose (Lua, speaks MCP over stdio);
 your server is phlow (Python today, Rust nightly tomorrow). This skill is how
 you build, change, and attack-review anything on that link — and any new MCP
 server you write.
@@ -33,7 +33,7 @@ in mind.
 1. **Verify the protocol** — read `references/protocol-versions.md`, check
    the revision you are targeting against the spec and the registry. Never
    assert protocol behavior from memory.
-2. **Check the wire rule** — if the change touches rose.nvim ↔ phlow, read
+2. **Check the wire rule** — if the change touches rose ↔ phlow, read
    `references/rose-client.md`. The wire format stays stable; changes are
    two-sided migrations with contract tests on both sides.
 3. **Design the tools** — names, schemas, annotations. On paper first.

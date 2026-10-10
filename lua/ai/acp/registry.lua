@@ -15,10 +15,10 @@ local uv = vim.uv
 
 local M = {}
 
-local REGISTRY_URL = 'https://cdn.agentclientprotocol.com/registry/v1/latest/registry.json'
+local CACHE_MAX_BYTES = 4 * 1024 * 1024
 local CACHE_PATH = fs.joinpath(vim.fn.stdpath('cache'), 'acp', 'registry.json')
 local FETCH_TIMEOUT_MS = 8000
-local CACHE_MAX_BYTES = 4 * 1024 * 1024
+local REGISTRY_URL = 'https://cdn.agentclientprotocol.com/registry/v1/latest/registry.json'
 
 ---@class AcpAgentSpec
 ---@field cmd string[] Ordered argv; first element must be an executable.
@@ -34,6 +34,14 @@ local CACHE_MAX_BYTES = 4 * 1024 * 1024
 -- invented.
 ---@type table<string, AcpAgentSpec>
 M.manual = {
+    huggingface = {
+        cmd = { 'uvx', 'hf-inference-acp' },
+        kind = 'native',
+        verified = true,
+        notes = 'Confirmed real: PyPI package hf-inference-acp, speaks ACP '
+            .. 'directly against the HF Inference API. Requires HF_TOKEN in env; '
+            .. 'first run drops into a setup mode with /login if unset.',
+    },
     ollama = {
         cmd = { 'acp-bridge', '--backend', 'ollama' },
         kind = 'bridge',
@@ -46,16 +54,8 @@ M.manual = {
         cmd = { 'acp-bridge', '--backend', 'ollama', '--host', 'http://127.0.0.1:11434' },
         kind = 'bridge',
         verified = false,
-        notes = 'Your Ollama fork, bridged the same way as `ollama` above. '
+        notes = 'Your rose server, bridged the same way as `ollama` above. '
             .. 'Update --host/--port to match wherever Rose actually listens.',
-    },
-    huggingface = {
-        cmd = { 'uvx', 'hf-inference-acp' },
-        kind = 'native',
-        verified = true,
-        notes = 'Confirmed real: PyPI package hf-inference-acp, speaks ACP '
-            .. 'directly against the HF Inference API. Requires HF_TOKEN in env; '
-            .. 'first run drops into a setup mode with /login if unset.',
     },
 }
 

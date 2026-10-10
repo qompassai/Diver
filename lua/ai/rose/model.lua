@@ -1,14 +1,20 @@
 -- /qompassai/Diver/lua/ai/rose/model.lua
--- Full-config model router: Ollama default, cloud strictly opt-in (Tiger Style)
+-- Full-config model router: rose default, cloud strictly opt-in (Tiger Style)
 -- Copyright (C) 2025 Qompass AI, All rights reserved
 -- ----------------------------------------
 
 local M = {}
 
 ---@param config table resolved Rose config
----@return string name  -- selected provider name, 'ollama' when unconfigured
+---@return string name  -- selected provider name, 'rose' when unconfigured
 local function name(config)
-    return type(config.providers) == 'table' and config.providers.provider or 'ollama'
+    local selected = type(config.providers) == 'table' and config.providers.provider or 'rose'
+    -- Legacy compat: 'ollama' was this backend's provider id before the
+    -- rename; config.resolve normalizes it, hand-built tables may not be.
+    if selected == 'ollama' then
+        return 'rose'
+    end
+    return selected
 end
 
 ---@param config table
@@ -18,7 +24,7 @@ function M.validate(config)
     if type(config) ~= 'table' then
         return nil, 'model configuration must be a table'
     end
-    if name(config) == 'ollama' then
+    if name(config) == 'rose' then
         return true
     end
     local ok, result = pcall(require('ai.rose.providers').resolve, config)
@@ -33,20 +39,21 @@ end
 ---@return table info  -- { provider, model, cloud }
 function M.describe(config)
     local provider = name(config)
-    local selected = provider == 'ollama' and config.ollama or (config.providers and config.providers[provider])
+    local section = config.rose or config.ollama
+    local selected = provider == 'rose' and section or (config.providers and config.providers[provider])
     return {
         provider = provider,
         model = type(selected) == 'table' and selected.model or nil,
-        cloud = provider ~= 'ollama',
+        cloud = provider ~= 'rose',
     }
 end
 
 ---@param config table
 ---@return table capabilities
 function M.capabilities(config)
-    if name(config) == 'ollama' then
+    if name(config) == 'rose' then
         return {
-            provider = 'ollama',
+            provider = 'rose',
             cloud = false,
             tools = true,
             chat = true,
@@ -84,8 +91,8 @@ end
 function M.chat(config, messages, tools, callback)
     -- PHLOW: legacy request shape; provider and model names live in config.
     -- Map a neutral ai.model_request onto these arguments with to_legacy().
-    if name(config) == 'ollama' then
-        return require('ai.rose.ollama').chat(config.ollama, messages, tools, callback)
+    if name(config) == 'rose' then
+        return require('ai.rose.backend').chat(config.rose or config.ollama, messages, tools, callback)
     end
     return require('ai.rose.providers').chat(config, messages, tools, callback)
 end
@@ -110,7 +117,7 @@ function M.request(config, spec, callback)
         stream = spec.stream,
         on_event = spec.on_event,
     }
-    if name(config) == 'ollama' then
+    if name(config) == 'rose' then
         vim.schedule(function()
             callback('raw JSON requests need an explicitly selected cloud provider')
         end)

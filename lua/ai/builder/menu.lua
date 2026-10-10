@@ -52,7 +52,7 @@ M.FEATURES = {
     'dockerfile',
 }
 
--- Used only when no local Ollama models are found. These are plain menu
+-- Used only when no local rose models are found. These are plain menu
 -- labels, not verified provider endpoints.
 M.PROVIDER_FALLBACK_MODELS = {
     'openai/gpt-5',
@@ -61,12 +61,12 @@ M.PROVIDER_FALLBACK_MODELS = {
     'xai/grok-4',
 }
 
-local NAME_LEN_MAX = 64
 local DETAIL_LEN_MAX = 256
-local WRITEIN_LEN_MAX = 2000
 local DIR_LEN_MAX = 512
 local MODEL_COUNT_MAX = 32
+local NAME_LEN_MAX = 64
 local PROBE_TIMEOUT_MS = 5000
+local WRITEIN_LEN_MAX = 2000
 
 ---@param list string[]
 ---@param value string?
@@ -81,30 +81,55 @@ local function contains(list, value)
     return false
 end
 
----@param output string Raw stdout of `ollama list`.
----@return string[] models Model names, header skipped, bounded.
-local function parse_ollama_list(output)
-    assert(type(output) == 'string', 'parse_ollama_list expects a string')
+---@param body string Raw JSON body of GET /api/tags.
+---@return string[] models Model names, bounded.
+local function parse_tags(body)
+    assert(type(body) == 'string', 'parse_tags expects a string')
+    local decoded_ok, decoded = pcall(vim.json.decode, body)
+    if not decoded_ok or type(decoded) ~= 'table' or type(decoded.models) ~= 'table' then
+        return {}
+    end
     local models = {}
-    for line in output:gmatch('[^\n]+') do
-        local name = line:match('^%s*(%S+)')
-        if name ~= nil and name ~= 'NAME' and #models < MODEL_COUNT_MAX then
-            models[#models + 1] = name
+    for _, entry in ipairs(decoded.models) do
+        if
+            type(entry) == 'table'
+            and type(entry.name) == 'string'
+            and entry.name ~= ''
+            and #models < MODEL_COUNT_MAX
+        then
+            models[#models + 1] = entry.name
         end
     end
     return models
 end
 
----List candidate models: local Ollama models when the `ollama` binary is
----present and answers, otherwise the provider fallback labels.
+-- The local backend is rose: its model list comes from the tags endpoint
+-- of its Ollama-compatible HTTP API at the configured base URL. A stock
+-- `ollama` binary is never consulted: it would enumerate whatever store
+-- it is pointed at (on primo, the guest store), not rose's own view.
+---@return string url  -- base URL of the configured rose server
+local function rose_base_url()
+    local loaded = package.loaded['ai.rose.config']
+    if type(loaded) == 'table' and type(loaded.options) == 'table' then
+        local section = loaded.options.rose or loaded.options.ollama
+        if type(section) == 'table' and type(section.base_url) == 'string' and section.base_url ~= '' then
+            return section.base_url:gsub('/+$', '')
+        end
+    end
+    return 'http://127.0.0.1:11434'
+end
+
+---List candidate models: the local rose server's models when it answers
+---on its configured endpoint, otherwise the provider fallback labels.
 ---@return string[] models Never empty.
 function M.probe_models()
-    if vim.fn.executable('ollama') == 1 then
+    if vim.fn.executable('curl') == 1 then
         local ok, result = pcall(function()
-            return vim.system({ 'ollama', 'list' }, { text = true }):wait(PROBE_TIMEOUT_MS)
+            return vim.system({ 'curl', '-fsS', '--max-time', '4', rose_base_url() .. '/api/tags' }, { text = true })
+                :wait(PROBE_TIMEOUT_MS)
         end)
         if ok and type(result) == 'table' and result.code == 0 then
-            local models = parse_ollama_list(result.stdout or '')
+            local models = parse_tags(result.stdout or '')
             if #models > 0 then
                 return models
             end

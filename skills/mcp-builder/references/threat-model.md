@@ -48,7 +48,7 @@ server's data attacks the model.
 - When you must return unstructured text from untrusted sources, wrap it in
   explicit delimiters and label it as untrusted data, never as instructions.
   Document this in the tool description so the client knows.
-- On the client side (rose.nvim): treat tool results as data. Never let tool
+- On the client side (rose): treat tool results as data. Never let tool
   output change the agent's plan without the operator seeing it.
 - Red-team test: plant a prompt-injection payload in every untrusted data
   source your tests use, and verify the agent does not follow it.
@@ -75,7 +75,7 @@ model because the tool description told it to.
 
 ## 4. Compromised / malicious MCP server (supply-chain poisoning)
 
-**Mechanism.** The client (rose.nvim, or you during development) connects to
+**Mechanism.** The client (rose, or you during development) connects to
 a third-party MCP server — from npm, crates.io, a GitHub repo, a
 marketplace. The server's tool descriptions are attacker-controlled prose
 that the model reads. A malicious `read_file` tool can lie about its

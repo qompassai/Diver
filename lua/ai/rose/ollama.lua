@@ -1,63 +1,9 @@
 -- /qompassai/Diver/lua/ai/rose/ollama.lua
--- Ollama chat backend over the bounded native HTTP client (Tiger Style)
+-- Legacy module path for the rose chat backend (Tiger Style)
 -- Copyright (C) 2025 Qompass AI, All rights reserved
 -- ----------------------------------------
+-- The backend moved to ai.rose.backend when the provider took the rose
+-- name (2026-10). This shim keeps existing requires of 'ai.rose.ollama'
+-- working; new code should require 'ai.rose.backend' directly.
 
-local M = {}
-
----@param config table ollama section of the resolved config
----@param messages table[] normalized chat messages
----@param tools table[]? tool schemas
----@param callback fun(err: string?, message: table?)
----@return table token  -- token.cancel() aborts the request
-function M.chat(config, messages, tools, callback)
-    assert(type(config) == 'table', 'ollama.chat: config must be a table')
-    assert(type(messages) == 'table', 'ollama.chat: messages must be a table')
-    assert(type(callback) == 'function', 'ollama.chat: callback must be a function')
-    local payload = { model = config.model, messages = messages, stream = false }
-    if tools and #tools > 0 then
-        payload.tools = tools
-    end
-    -- PHLOW: config.options is vendor-only behavior passed verbatim into the
-    -- Ollama payload; a neutral budget/preferences map is future work, not here.
-    if config.options then
-        payload.options = config.options
-    end
-    local ok, body = pcall(vim.json.encode, payload)
-    if not ok then
-        vim.schedule(function()
-            callback('cannot encode model request: ' .. tostring(body))
-        end)
-        return { cancel = function() end }
-    end
-    return require('ai.rose.http').request({
-        url = config.base_url:gsub('/+$', '') .. '/api/chat',
-        body = body,
-        timeout = config.timeout,
-        allow_remote = config.allow_remote,
-        transport = config.transport,
-    }, function(err, data)
-        if err then
-            callback(err)
-            return
-        end
-        local decoded, response = pcall(vim.json.decode, data)
-        if not decoded or type(response) ~= 'table' then
-            callback('invalid Ollama JSON response')
-            return
-        end
-        if response.error then
-            callback('Ollama: ' .. tostring(response.error))
-            return
-        end
-        local message = response.message
-        if type(message) ~= 'table' or (type(message.content) ~= 'string' and type(message.tool_calls) ~= 'table') then
-            callback('Ollama response is missing an assistant message')
-            return
-        end
-        message.role = 'assistant'
-        callback(nil, message)
-    end)
-end
-
-return M
+return require('ai.rose.backend')

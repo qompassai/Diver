@@ -17,14 +17,16 @@
 --   provenance_policy    table?                replay/audit/migrate requirements
 --
 -- Legacy (unchanged behavior, ai.rose.model.chat(config, messages, tools, cb)):
---   * provider chosen by NAME in config.providers.provider ('ollama', 'openai',
---     'anthropic', ...); model chosen by vendor MODEL STRING in config.ollama.model
---     or config.providers[<name>].model. to_legacy() keeps those in the config.
+--   * provider chosen by NAME in config.providers.provider ('rose', 'openai',
+--     'anthropic', ...); model chosen by vendor MODEL STRING in config.rose.model
+--     (the legacy config.ollama key reads the same table) or in
+--     config.providers[<name>].model. to_legacy() keeps those in the config.
 --   * messages/tools map 1:1 onto the legacy chat arguments; objective,
 --     context, output_schema, budget, privacy, preferences and provenance_policy
 --     have no legacy slot and are retained (not forwarded) so behavior is unchanged.
 --   * Legacy vendor-only params pass through untouched (documented with PHLOW):
---     - rose/ollama.lua merges config.options verbatim into the Ollama payload.
+--     - rose/backend.lua merges config.options verbatim into the chat payload
+--       (rose speaks the Ollama API dialect).
 --     - rose/providers/common.lua merges config.options into chat/messages/
 --       responses payloads (reserved keys model/messages/input/tools/stream excluded).
 --     - rose/providers/common.lua pins _provider history to the same endpoint,
@@ -40,12 +42,12 @@ local FIELD_BYTES_MAX = 1024
 
 -- Capability strings Phlow routing understands; vendor/model names are rejected.
 local KNOWN_CAPABILITIES = {
+    citations = true,
+    long_context = true,
     streaming = true,
+    structured_output = true,
     tools = true,
     vision = true,
-    long_context = true,
-    structured_output = true,
-    citations = true,
 }
 
 ---@class AiModelRequest
@@ -59,19 +61,6 @@ local KNOWN_CAPABILITIES = {
 ---@field budget table?
 ---@field preferences table?
 ---@field provenance_policy table?
-
----@param value any
----@param name string
----@return string? err
-local function check_string(value, name)
-    if value == nil then
-        return nil
-    end
-    if type(value) ~= 'string' or #value > FIELD_BYTES_MAX then
-        return name .. ' must be a string of at most ' .. FIELD_BYTES_MAX .. ' bytes'
-    end
-    return nil
-end
 
 -- Normalize required_capabilities (accept a set or an array of capability
 -- strings) and reject anything that is not a known capability string.
@@ -98,6 +87,19 @@ local function capability_set(given)
         set[capability] = true
     end
     return set, nil
+end
+
+---@param value any
+---@param name string
+---@return string? err
+local function check_string(value, name)
+    if value == nil then
+        return nil
+    end
+    if type(value) ~= 'string' or #value > FIELD_BYTES_MAX then
+        return name .. ' must be a string of at most ' .. FIELD_BYTES_MAX .. ' bytes'
+    end
+    return nil
 end
 
 -- Build or normalize a provider-neutral ModelRequest. Idempotent: a request

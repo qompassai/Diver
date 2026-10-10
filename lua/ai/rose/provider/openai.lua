@@ -5,8 +5,176 @@
 -- Historical provider-class interface kept for compatibility. The modern
 -- ai.rose.providers registry is the preferred native interface.
 
-local logger = require('ai.rose.logger')
-local utils = require('ai.rose.utils')
+-- Inlined logger (formerly ai.rose.logger, whose only consumer was
+-- this file). Minimal port of rose.nvim's logger: error/warning/info/
+-- debug with a bounded on-disk log for errors and debug lines. Debug
+-- output is gated on the DEBUG_ROSE environment variable. This never
+-- overrides vim.notify with a plugin; native notification stays.
+
+local logger = {
+    _plugin_name = 'diver.rose',
+    _logfile = vim.fn.stdpath('state') .. '/diver-rose.log',
+    _max_log_lines = 10000,
+    _debug_enabled = vim.env.DEBUG_ROSE ~= nil,
+}
+
+---@param path string
+---@return string content  -- '' when the file cannot be read
+local function read_file(path)
+    local file = io.open(path, 'r')
+    if not file then
+        return ''
+    end
+    local content = file:read('*a')
+    file:close()
+    return content or ''
+end
+
+---@param path string
+---@param content string
+---@return boolean ok
+local function write_file(path, content)
+    local file = io.open(path, 'w')
+    if not file then
+        return false
+    end
+    local written = file:write(content)
+    local closed = file:close()
+    return written ~= nil and closed ~= nil
+end
+
+-- Keep only the newest _max_log_lines lines so the log cannot grow without bound.
+---@return string limited
+local function limit_logfile_lines()
+    local lines = vim.split(read_file(logger._logfile), '\n')
+    while #lines > logger._max_log_lines do
+        table.remove(lines, 1)
+    end
+    return table.concat(lines, '\n')
+end
+
+---@param msg string
+---@param kind string
+local function write_to_logfile(msg, kind)
+    local entry = string.format('[%s] %s: [%s] %s\n', os.date('%Y-%m-%d %H:%M:%S'), logger._plugin_name, kind, msg)
+    write_file(logger._logfile, limit_logfile_lines() .. entry)
+end
+
+---@param msg string
+---@param kind string
+---@param level integer vim.log.levels value
+local function log(msg, kind, level)
+    assert(type(msg) == 'string', 'logger: msg must be a string')
+    if kind == 'ErrorMsg' or kind == 'Debug' then
+        write_to_logfile(msg, kind)
+    end
+    if kind ~= 'Debug' then
+        vim.schedule(function()
+            vim.notify(msg, level, { title = logger._plugin_name .. ' ' .. kind })
+        end)
+    end
+end
+
+---@param msg string
+function logger.error(msg)
+    log(msg, 'ErrorMsg', vim.log.levels.ERROR)
+end
+
+---@param msg string
+function logger.warning(msg)
+    log(msg, 'WarningMsg', vim.log.levels.WARN)
+end
+
+---@param msg string
+function logger.info(msg)
+    log(msg, 'Normal', vim.log.levels.INFO)
+end
+
+---@param msg string
+function logger.debug(msg)
+    if logger._debug_enabled then
+        log(msg, 'Debug', vim.log.levels.DEBUG)
+    end
+end
+
+-- Inlined provider utils (formerly ai.rose.utils, whose only consumer
+-- was this file). Ports only what the provider classes need from
+-- rose.nvim's utils (filter_payload_parameters, parse_raw_response);
+-- key_from_command runs a key-retrieval argv command through
+-- vim.system instead of the original io.popen shell string.
+
+local KEY_BYTES_MAX = 16384
+local KEY_COMMAND_ARGS_MAX = 32
+
+-- Keep only the provider's documented parameters in the outgoing payload.
+-- Nested parameter tables copy the payload's own same-named keys, matching
+-- the historical rose.nvim behavior exactly.
+---@param valid_parameters table<string, boolean|table>
+---@param payload table
+---@return table filtered
+local function filter_payload_parameters(valid_parameters, payload)
+    assert(type(valid_parameters) == 'table', 'valid_parameters must be a table')
+    assert(type(payload) == 'table', 'payload must be a table')
+    local new_payload = {}
+    for key, value in pairs(valid_parameters) do
+        if type(value) == 'table' then
+            if new_payload[key] == nil then
+                new_payload[key] = {}
+            end
+            for nested_key, _ in pairs(value) do
+                new_payload[key][nested_key] = payload[nested_key]
+            end
+        else
+            new_payload[key] = payload[key]
+        end
+    end
+    return new_payload
+end
+
+-- Join raw subprocess output lines into one response string.
+---@param response string|string[]|nil
+---@return string|nil joined
+local function parse_raw_response(response)
+    if response == nil then
+        return nil
+    end
+    if type(response) == 'table' then
+        return table.concat(response, ' ')
+    end
+    return response
+end
+
+-- Run a key-retrieval command (the api_key table form) as an explicit argv
+-- array via vim.system. Never builds a shell string from the command.
+---@param argv string[] key-retrieval argv array
+---@return string? key  -- whitespace-stripped key, nil on failure
+---@return string? err
+local function key_from_command(argv)
+    if type(argv) ~= 'table' or #argv == 0 or #argv > KEY_COMMAND_ARGS_MAX then
+        return nil, 'key command must be a non-empty argv array'
+    end
+    for _, arg in ipairs(argv) do
+        if type(arg) ~= 'string' or arg == '' or arg:find('\0', 1, true) then
+            return nil, 'key command argv must be non-empty strings without NUL'
+        end
+    end
+    local ok, result = pcall(vim.system, argv, { text = true })
+    if not ok then
+        return nil, 'key command failed to start: ' .. tostring(result)
+    end
+    local completed = result:wait()
+    if completed.code ~= 0 then
+        return nil, 'key command exited ' .. tostring(completed.code)
+    end
+    local key = (completed.stdout or ''):gsub('%s+', '')
+    if key == '' then
+        return nil, 'key command returned an empty key'
+    end
+    if #key > KEY_BYTES_MAX then
+        return nil, 'key command returned an overlong key'
+    end
+    return key, nil
+end
 
 ---@class AiRoseProviderOpenAI
 ---@field endpoint string
@@ -75,7 +243,7 @@ function OpenAI:preprocess_payload(payload)
         payload.presence_penalty = 0
         payload.frequency_penalty = 0
     end
-    return utils.filter_payload_parameters(AVAILABLE_API_PARAMETERS, payload)
+    return filter_payload_parameters(AVAILABLE_API_PARAMETERS, payload)
 end
 
 -- Returns the curl parameters for the API request
@@ -93,7 +261,7 @@ end
 function OpenAI:verify()
     local current_key = self.api_key
     if type(current_key) == 'table' then
-        local key, err = utils.key_from_command(current_key)
+        local key, err = key_from_command(current_key)
         if not key then
             logger.error('Error reading API key of ' .. self.name .. ': ' .. tostring(err))
             return false
@@ -213,7 +381,7 @@ function OpenAI:get_available_models(online)
             return ids
         end
         local stdout = curl_get('https://api.openai.com/v1/models', key)
-        local parsed_response = utils.parse_raw_response(stdout)
+        local parsed_response = parse_raw_response(stdout)
         ids = {}
         if not parsed_response then
             logger.error('OpenAI - No model response received')

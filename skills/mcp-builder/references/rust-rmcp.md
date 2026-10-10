@@ -107,7 +107,7 @@ Notes:
 
 ## Transports
 
-- **stdio** (local, single client — the rose.nvim ↔ phlow link): the client
+- **stdio** (local, single client — the rose ↔ phlow link): the client
   spawns your binary; you read JSON-RPC from stdin, write to stdout, log to
   stderr. Nothing else touches stdout. Handle EOF-on-stdin as shutdown.
 - **Streamable HTTP** (remote): bind `127.0.0.1` by default, validate

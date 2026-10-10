@@ -2,7 +2,7 @@
 -- Bounded asynchronous HTTP for local model endpoints (Tiger Style)
 -- Copyright (C) 2025 Qompass AI, All rights reserved
 -- ----------------------------------------
--- Used for Ollama chat requests. Never invokes a shell and never reads
+-- Used for rose chat requests. Never invokes a shell and never reads
 -- credentials; the curl argv is fixed and the URL is validated before any
 -- process starts. Remote hosts require explicit allow_remote consent.
 
@@ -44,7 +44,7 @@ local function validate_url(url, allow_remote)
         return 'invalid HTTP host'
     end
     if not allow_remote and host ~= 'localhost' and host ~= '127.0.0.1' and host ~= '::1' then
-        return 'remote Ollama requires ollama.allow_remote=true; no implicit cloud requests'
+        return 'remote rose requires rose.allow_remote=true; no implicit cloud requests'
     end
 end
 

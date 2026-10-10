@@ -1,11 +1,11 @@
 ---
 name: frontend-design
-description: Distinctive visual design for Matt's HTML report briefs, review packs, and rose.nvim UI surfaces — the artifacts he reads on his phone. Replaces templated AI-slop defaults (purple gradients, stock Inter, identical rounded cards, centered-everything layouts) with deliberate, opinionated choices in palette, typography, and layout grounded in the subject matter. Covers typefaces with personality, phone-first readability, self-contained offline single-file HTML, dark-mode sensibility, and a restraint-and-self-critique pass. Reach for it whenever an HTML artifact or UI surface needs aesthetic direction, a generated page looks generic, or type and layout choices need a second opinion.
+description: Distinctive visual design for Matt's HTML report briefs, review packs, and rose UI surfaces — the artifacts he reads on his phone. Replaces templated AI-slop defaults (purple gradients, stock Inter, identical rounded cards, centered-everything layouts) with deliberate, opinionated choices in palette, typography, and layout grounded in the subject matter. Covers typefaces with personality, phone-first readability, self-contained offline single-file HTML, dark-mode sensibility, and a restraint-and-self-critique pass. Reach for it whenever an HTML artifact or UI surface needs aesthetic direction, a generated page looks generic, or type and layout choices need a second opinion.
 license: Apache-2.0
 compatibility: No toolchain required. Review the result in any browser or on a phone — a screenshot is enough to critique it. If the artifact must open offline (email attachment, zip, phone), keep it fully self-contained.
 metadata:
   domain: visual-design
-  surfaces: html-artifacts, rose-nvim-ui
+  surfaces: html-artifacts, rose-ui
   audience: phone-review
 allowed-tools: Read Edit Bash
 ---
@@ -13,7 +13,7 @@ allowed-tools: Read Edit Bash
 # Frontend Design
 
 Matt's visual surface is small but real: single-file HTML report briefs and
-review packs generated as files and reviewed on his phone, plus rose.nvim
+review packs generated as files and reviewed on his phone, plus rose
 in-editor UI surfaces, plus possible future web interfaces. He is usually his
 own reviewer, so the bar is simple: **distinctive, not templated.** These
 artifacts represent Qompass AI work; they should never read as generated.
@@ -67,7 +67,7 @@ around it quiet and disciplined.
   what the user understands, not how the system is built. Errors explain what
   went wrong and how to fix it, in the interface's voice.
 
-## TUI transfer (rose.nvim)
+## TUI transfer (rose)
 
 The same principles apply in the terminal with a smaller palette. One
 memorable element, quiet surroundings. "Typography" becomes discipline in

@@ -214,13 +214,13 @@ end
 -- fails inside operation() and the callback receives the error -- output
 -- is never invented.
 
-local PLAN_TIMEOUT_MS = 300000
-local GENERATE_TIMEOUT_MS = 600000
-local PROMPT_SPEC_LEN_MAX = 4000
-local PLAN_TEXT_LEN_MAX = 32768
+local BLOCK_PATH_LEN_MAX = 256
 local FILE_BLOCK_COUNT_MAX = 64
 local FILE_CONTENT_BYTES_MAX = 262144
-local BLOCK_PATH_LEN_MAX = 256
+local GENERATE_TIMEOUT_MS = 600000
+local PLAN_TEXT_LEN_MAX = 32768
+local PLAN_TIMEOUT_MS = 300000
+local PROMPT_SPEC_LEN_MAX = 4000
 
 ---@class AiRosePlanOpts
 ---@field spec table Builder spec; spec.name must be a non-empty string.
@@ -753,7 +753,7 @@ function M.setup(opts)
             notify_error(why)
             return nil, why
         end
-    elseif config.providers.provider ~= 'ollama' then
+    elseif config.providers.provider ~= 'rose' and config.providers.provider ~= 'ollama' then
         local why = 'cloud provider router unavailable'
         notify_error(why)
         return nil, why

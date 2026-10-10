@@ -70,7 +70,7 @@ Known landscape as of 2026-09-29 (secondary sources, re-verify):
 5. Never use a feature marked deprecated in the current revision, even if the
    SDK you are on still accepts it.
 
-The rose.nvim ↔ phlow link is pinned to whatever revision both sides
+The rose ↔ phlow link is pinned to whatever revision both sides
 negotiate today. Changing the negotiated revision is a two-sided migration:
 client and server move together, with a conformance test proving the
 handshake, or not at all. See `references/rose-client.md`.

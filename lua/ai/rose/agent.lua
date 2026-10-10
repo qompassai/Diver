@@ -10,19 +10,19 @@
 local M = {}
 
 local readonly = {
-    file_read = true,
-    file_list = true,
     editor_context = true,
     editor_diagnostics = true,
-    editor_symbols = true,
     editor_references = true,
     editor_scip = true,
+    editor_symbols = true,
+    file_list = true,
+    file_read = true,
 }
 local coder_tools = vim.tbl_extend('force', readonly, {
-    file_write = true,
-    editor_lint = true,
     editor_check = true,
     editor_debug = true,
+    editor_lint = true,
+    file_write = true,
 })
 local prompts = {
     planner = 'You are the planner. Inspect relevant workspace context with read-only tools and '
@@ -184,13 +184,14 @@ end
 ---@return table model_info
 ---@return table? tools
 local function resolve_runtime(config, opts)
-    -- Keep injected test backends' historical first argument (config.ollama).
+    -- Keep injected test backends' historical first argument: the backend
+    -- section (config.rose; the same table legacy code read as config.ollama).
     -- Production routing receives the full, explicitly consented configuration.
     local backend = opts.backend
         or function(_, messages, schemas, done)
             return require('ai.rose.model').chat(config, messages, schemas, done)
         end
-    local model_info = { provider = 'ollama', model = config.ollama.model, cloud = false }
+    local model_info = { provider = 'rose', model = (config.rose or config.ollama).model, cloud = false }
     local router_ok, router = pcall(require, 'ai.rose.model')
     if router_ok then
         model_info = router.describe(config)
@@ -360,7 +361,7 @@ function M.run(config, task, callback, opts)
             end
             rounds = rounds + 1
             local callback_used = false
-            local ok, request = pcall(backend, config.ollama, messages, schemas, function(err, message)
+            local ok, request = pcall(backend, config.rose or config.ollama, messages, schemas, function(err, message)
                 if callback_used then
                     return
                 end
