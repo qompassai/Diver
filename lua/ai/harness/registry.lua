@@ -12,9 +12,15 @@ local M = {}
 
 local ENTRIES_MAX = 256
 local NAME_PATTERN = '^[a-z][a-z0-9_]*$'
+-- Harness-native builtin tools, in registration order. Each name is a
+-- module ai.harness.tools.<name> returning one tool def table. Empty by
+-- design: tools join the harness by producer registration (see
+-- ai.harness.register_tool); this list covers only tools the harness
+-- itself owns, and it owns none yet.
+local BUILTIN_TOOLS = {}
 
 ---@param name string
----@return boolean ok
+---@return boolean|nil ok
 ---@return string? err
 local function validate_name(name)
     if type(name) ~= 'string' or name == '' then
@@ -35,7 +41,7 @@ end
 ---@param registry table
 ---@param name string
 ---@param adapter table
----@return boolean ok
+---@return boolean|nil ok
 ---@return string? err
 function M.register_adapter(registry, name, adapter)
     assert(registry ~= nil, 'registry required')
@@ -86,10 +92,16 @@ function M.list_adapters(registry)
     return names
 end
 
+---Register a tool. A tool def must be runnable at registration time:
+---description (non-empty string), run (function), and input_schema
+---(table mapping field names to { type = ..., required = ... }) are all
+---required, so a registered-but-unrunnable tool can never exist. An
+---optional risk field names the policy risk class dispatch decides
+---under; dispatch defaults it to 'process' when absent.
 ---@param registry table
 ---@param name string
 ---@param def table
----@return boolean ok
+---@return boolean|nil ok
 ---@return string? err
 function M.register_tool(registry, name, def)
     assert(registry ~= nil, 'registry required')
@@ -103,8 +115,21 @@ function M.register_tool(registry, name, def)
     if type(def.description) ~= 'string' or def.description == '' then
         return nil, 'tool.description must be a non-empty string'
     end
+    if type(def.run) ~= 'function' then
+        return nil, 'tool.run must be a function'
+    end
+    if type(def.input_schema) ~= 'table' then
+        return nil, 'tool.input_schema must be a table'
+    end
     if registry.tools[name] ~= nil then
         return nil, 'tool already registered: ' .. name
+    end
+    local count = 0
+    for _ in pairs(registry.tools) do
+        count = count + 1
+    end
+    if count >= ENTRIES_MAX then
+        return nil, 'tool registry is full'
     end
     registry.tools[name] = def
     return true
@@ -134,7 +159,7 @@ end
 ---@param registry table
 ---@param name string
 ---@param def table
----@return boolean ok
+---@return boolean|nil ok
 ---@return string? err
 function M.register_workflow(registry, name, def)
     assert(registry ~= nil, 'registry required')
@@ -151,6 +176,13 @@ function M.register_workflow(registry, name, def)
     if registry.workflows[name] ~= nil then
         return nil, 'workflow already registered: ' .. name
     end
+    local count = 0
+    for _ in pairs(registry.workflows) do
+        count = count + 1
+    end
+    if count >= ENTRIES_MAX then
+        return nil, 'workflow registry is full'
+    end
     registry.workflows[name] = def
     return true
 end
@@ -163,11 +195,24 @@ function M.get_workflow(registry, name)
     return registry.workflows[name]
 end
 
+---Workflow names in sorted order.
+---@param registry table
+---@return string[]
+function M.list_workflows(registry)
+    assert(registry ~= nil, 'registry required')
+    local names = {}
+    for name in pairs(registry.workflows) do
+        names[#names + 1] = name
+    end
+    table.sort(names)
+    return names
+end
+
 ---Register the six built-in protocol adapters. Each is a thin translator
 ---over its existing module; nothing in ai/acp, ai/a2a, ai/mcp, ai/phlow,
 ---ai/rose, or ai/herd is modified.
 ---@param registry table
----@return boolean ok
+---@return boolean|nil ok
 ---@return string? err
 function M.register_builtins(registry)
     assert(registry ~= nil, 'registry required')
@@ -178,6 +223,32 @@ function M.register_builtins(registry)
             return nil, 'builtin adapter failed to load: ' .. name .. ': ' .. tostring(adapter)
         end
         local ok, err = M.register_adapter(registry, name, adapter)
+        if not ok then
+            return nil, err
+        end
+    end
+    return true
+end
+
+---Register the harness-native builtin tools. Each name loads the module
+---ai.harness.tools.<name>, which returns one tool def table validated by
+---register_tool, so a builtin that cannot run fails registration and
+---with it harness setup (fail-closed, mirroring register_builtins). The
+---optional names argument overrides the builtin list; production
+---callers omit it and get BUILTIN_TOOLS.
+---@param registry table
+---@param names? string[]
+---@return boolean|nil ok
+---@return string? err
+function M.register_builtin_tools(registry, names)
+    assert(registry ~= nil, 'registry required')
+    names = names or BUILTIN_TOOLS
+    for _, name in ipairs(names) do
+        local found, def = pcall(require, 'ai.harness.tools.' .. name)
+        if not found then
+            return nil, 'builtin tool failed to load: ' .. name .. ': ' .. tostring(def)
+        end
+        local ok, err = M.register_tool(registry, name, def)
         if not ok then
             return nil, err
         end

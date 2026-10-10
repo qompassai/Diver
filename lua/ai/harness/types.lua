@@ -141,7 +141,7 @@ end
 ---@return integer
 function M.now_ns()
     if vim ~= nil and vim.uv ~= nil and vim.uv.hrtime ~= nil then
-        return vim.uv.hrtime()
+        return vim.uv.hrtime() --[[@as integer]]
     end
     return math.floor(os.clock() * 1000000000)
 end
@@ -217,7 +217,7 @@ end
 
 ---Validate a harness.run() spec before any state is created.
 ---@param spec table
----@return boolean ok
+---@return boolean|nil ok
 ---@return string? err
 function M.validate_run_spec(spec)
     if type(spec) ~= 'table' then

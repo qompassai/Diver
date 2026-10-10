@@ -1,6 +1,6 @@
 -- tests/busted/unit/supervisor_spec.lua
 -- Busted unit specs for ai.harness.supervisor (Tiger Style).
--- 10 validation + 10 adversarial. Deterministic, no network.
+-- 15 validation + 15 adversarial. Deterministic, no network.
 
 local events = require('ai.harness.events')
 local registry = require('ai.harness.registry')
@@ -53,13 +53,14 @@ local function new_sup(opts)
     local sink = events.new_sink()
     local reg = registry.new()
     assert(registry.register_adapter(reg, 'stub', stub_adapter('stub', test_caps())))
+    assert(registry.register_workflow(reg, 'code_change', { adapter = 'stub' }))
     local sup, err = supervisor.new({ registry = reg, sink = sink, runs_max = opts.runs_max })
     assert(sup ~= nil, err)
     return sup, sink, reg
 end
 
 local function run_spec(overrides)
-    local spec = { workflow = 'code.change', goal = 'do the thing', workspace = '/tmp/ws' }
+    local spec = { workflow = 'code_change', goal = 'do the thing', workspace = '/tmp/ws' }
     if overrides then
         for k, v in pairs(overrides) do
             spec[k] = v
@@ -326,5 +327,104 @@ describe('supervisor adversarial', function()
         local ok2, err2 = supervisor.consume(sup, run.id, 'bogus_kind', 1)
         assert(ok2 == nil)
         assert(err2:find('unknown budget kind', 1, true) ~= nil)
+    end)
+end)
+
+describe('supervisor workflow resolution', function()
+    it('creates a run whose workflow is registered', function()
+        local sup = new_sup()
+        local run = assert(supervisor.create(sup, run_spec()))
+        assert(run.workflow == 'code_change')
+        assert(sup.run_count == 1)
+    end)
+
+    it('creates runs for a second registered workflow', function()
+        local sup, _, reg = new_sup()
+        assert(registry.register_workflow(reg, 'review_flow', { adapter = 'stub' }))
+        local run = assert(supervisor.create(sup, run_spec({ workflow = 'review_flow' })))
+        assert(run.workflow == 'review_flow')
+    end)
+
+    it('creates a child run whose workflow is registered', function()
+        local sup = new_sup()
+        local parent = create_started(sup)
+        local child = assert(supervisor.spawn_child(sup, parent.id, run_spec()))
+        assert(child.workflow == 'code_change')
+        assert(child.parent_id == parent.id)
+    end)
+
+    it('records the resolved workflow on the run.created event', function()
+        local sup, sink = new_sup()
+        local run = assert(supervisor.create(sup, run_spec()))
+        local found = false
+        for _, event in ipairs(sink:events(run.id)) do
+            if event.kind == 'run.created' and event.payload.workflow == 'code_change' then
+                found = true
+            end
+        end
+        assert(found, 'run.created event must carry the resolved workflow name')
+    end)
+
+    it('keeps the spec adapter even when the workflow names another', function()
+        local sup, _, reg = new_sup()
+        assert(registry.register_workflow(reg, 'acp_flow', { adapter = 'acp' }))
+        local run = assert(supervisor.create(sup, run_spec({ workflow = 'acp_flow', adapter = 'stub' })))
+        assert(run.adapter == 'stub')
+    end)
+
+    it('rejects an unknown workflow and creates no run', function()
+        local sup = new_sup()
+        local run, err = supervisor.create(sup, run_spec({ workflow = 'bogus_flow' }))
+        assert(run == nil)
+        assert(err:find('unknown workflow: bogus_flow', 1, true) ~= nil)
+        assert(sup.run_count == 0)
+    end)
+
+    it('rejects an empty or missing workflow and creates no run', function()
+        local sup = new_sup()
+        local run, err = supervisor.create(sup, run_spec({ workflow = '' }))
+        assert(run == nil)
+        assert(err:find('run spec.workflow', 1, true) ~= nil)
+        local run2, err2 = supervisor.create(sup, { goal = 'g', workspace = '/tmp/ws' })
+        assert(run2 == nil)
+        assert(err2:find('run spec.workflow', 1, true) ~= nil)
+        assert(sup.run_count == 0)
+    end)
+
+    it('rejects a wrong-case workflow name and creates no run', function()
+        local sup = new_sup()
+        local run, err = supervisor.create(sup, run_spec({ workflow = 'Code_Change' }))
+        assert(run == nil)
+        assert(err:find('unknown workflow: Code_Change', 1, true) ~= nil)
+        assert(sup.run_count == 0)
+    end)
+
+    it('rejects injection-shaped workflow names and creates no run', function()
+        local sup = new_sup()
+        local run, err = supervisor.create(sup, run_spec({ workflow = "code_change'; DROP TABLE runs; --" }))
+        assert(run == nil)
+        assert(err:find('unknown workflow', 1, true) ~= nil)
+        local run2, err2 = supervisor.create(sup, run_spec({ workflow = 'code_change\nmalicious' }))
+        assert(run2 == nil)
+        assert(err2:find('unknown workflow', 1, true) ~= nil)
+        assert(sup.run_count == 0)
+    end)
+
+    it('rejects tool and adapter names passed as workflows', function()
+        local sup, _, reg = new_sup()
+        assert(registry.register_tool(reg, 'helper_tool', {
+            description = 'a helper tool',
+            input_schema = {},
+            run = function()
+                return true
+            end,
+        }))
+        local run, err = supervisor.create(sup, run_spec({ workflow = 'helper_tool' }))
+        assert(run == nil)
+        assert(err:find('unknown workflow: helper_tool', 1, true) ~= nil)
+        local run2, err2 = supervisor.create(sup, run_spec({ workflow = 'stub' }))
+        assert(run2 == nil)
+        assert(err2:find('unknown workflow: stub', 1, true) ~= nil)
+        assert(sup.run_count == 0)
     end)
 end)

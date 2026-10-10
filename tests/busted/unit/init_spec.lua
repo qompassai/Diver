@@ -1,6 +1,6 @@
 -- tests/busted/unit/init_spec.lua
 -- Busted unit specs for the ai.harness public API (Tiger Style).
--- 6 validation + 6 adversarial. Deterministic, no network.
+-- 7 validation + 7 adversarial. Deterministic, no network.
 -- The stub adapter is registered into harness state via the module-local
 -- M._state test seam; real builtin adapters stay registered but unused.
 
@@ -50,7 +50,7 @@ local function test_caps(extra)
 end
 
 local function spec(overrides)
-    local s = { workflow = 'code.change', goal = 'do the thing', workspace = '/tmp/ws' }
+    local s = { workflow = 'code_change', goal = 'do the thing', workspace = '/tmp/ws' }
     if overrides then
         for k, v in pairs(overrides) do
             s[k] = v
@@ -67,6 +67,9 @@ local function ensure_harness()
     local reg = harness._state.registry
     if registry.get_adapter(reg, 'stub') == nil then
         assert(registry.register_adapter(reg, 'stub', stub_adapter('stub', test_caps())))
+    end
+    if registry.get_workflow(reg, 'code_change') == nil then
+        assert(registry.register_workflow(reg, 'code_change', { adapter = 'stub' }))
     end
     return harness._state
 end
@@ -123,6 +126,16 @@ describe('harness run lifecycle', function()
         assert(run.state == 'running')
         assert(run.attempt == 2)
     end)
+
+    it('run accepts a newly registered workflow', function()
+        local st = ensure_harness()
+        if registry.get_workflow(st.registry, 'review_flow') == nil then
+            assert(registry.register_workflow(st.registry, 'review_flow', { adapter = 'stub' }))
+        end
+        local id, err = harness.run(spec({ adapter = 'stub', workflow = 'review_flow' }))
+        assert(id ~= nil, err)
+        assert(supervisor.get(st.supervisor, id).workflow == 'review_flow')
+    end)
 end)
 
 describe('harness adversarial', function()
@@ -170,5 +183,14 @@ describe('harness adversarial', function()
         local id, err = harness.run(spec({ adapter = 'nope' }))
         assert(id == nil)
         assert(err:find('unknown adapter', 1, true) ~= nil)
+    end)
+
+    it('run with an unknown workflow is rejected and creates no run', function()
+        local st = ensure_harness()
+        local before = st.supervisor.run_count
+        local id, err = harness.run(spec({ adapter = 'stub', workflow = 'bogus_flow' }))
+        assert(id == nil)
+        assert(err:find('unknown workflow: bogus_flow', 1, true) ~= nil)
+        assert(st.supervisor.run_count == before)
     end)
 end)

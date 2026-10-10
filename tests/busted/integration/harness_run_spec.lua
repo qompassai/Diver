@@ -59,12 +59,15 @@ local function state()
     if registry.get_adapter(reg, 'istub') == nil then
         assert(registry.register_adapter(reg, 'istub', stub_adapter('istub', test_caps())))
     end
+    if registry.get_workflow(reg, 'code_change') == nil then
+        assert(registry.register_workflow(reg, 'code_change', { adapter = 'istub' }))
+    end
     return harness._state
 end
 
 local function spec(overrides)
     local s = {
-        workflow = 'code.change',
+        workflow = 'code_change',
         goal = 'do the thing',
         workspace = '/tmp/ws',
         adapter = 'istub',

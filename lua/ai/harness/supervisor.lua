@@ -6,27 +6,29 @@
 -- cooperative cancellation, per-run deadlines, concurrency limits, bounded
 -- retry with backoff, idempotent finish, and generation tokens that discard
 -- stale callbacks. No vim.wait() anywhere; progress is driven by tick(),
--- which Neovim calls from a timer or which tests call directly.
+-- which Neovim calls from a timer or which tests call directly. Also owns
+-- the tool dispatch path: the only route from a registered tool name to
+-- its run function, gated by policy on every call.
 
-local types = require('ai.harness.types')
-local budget = require('ai.harness.budget')
 local adapter = require('ai.harness.adapter')
 local approval = require('ai.harness.approval')
+local budget = require('ai.harness.budget')
+local types = require('ai.harness.types')
 
 local M = {}
 
-local RUNS_MAX = 256
+local DEFAULT_BUDGET_LIMITS = {
+    byte = 10000000,
+    time_ms = 600000,
+    token = 200000,
+    tool_call = 200,
+    turn = 50,
+}
 local DEFAULT_TIMEOUT_MS = 600000
 local RETRY_ATTEMPTS_MAX = 4
 local RETRY_BASE_MS = 1000
 local RETRY_MAX_MS = 60000
-local DEFAULT_BUDGET_LIMITS = {
-    turn = 50,
-    tool_call = 200,
-    token = 200000,
-    time_ms = 600000,
-    byte = 10000000,
-}
+local RUNS_MAX = 256
 
 ---@class AiHarnessRun
 ---@field id string
@@ -41,6 +43,12 @@ local DEFAULT_BUDGET_LIMITS = {
 ---@field deadline_ns? integer
 ---@field budget AiHarnessBudget
 ---@field extensions table
+---@field _terminal_emitted boolean
+---@field acceptance? table
+---@field children string[]
+---@field generation integer
+---@field handle? table
+---@field retry_at_ns? integer
 
 ---Create a supervisor. `opts.registry` and `opts.sink` are required;
 ---policy/approvals/store/telemetry are optional collaborators.
@@ -58,18 +66,18 @@ function M.new(opts)
         return nil, 'supervisor opts.sink is required'
     end
     return {
-        registry = opts.registry,
-        sink = opts.sink,
-        policy = opts.policy,
         approvals = opts.approvals or approval.new(),
-        store = opts.store,
-        telemetry = opts.telemetry,
-        runs = {},
-        run_count = 0,
+        default_timeout_ms = opts.default_timeout_ms or DEFAULT_TIMEOUT_MS,
         last_seq = 0,
         last_tick_ns = types.now_ns(),
-        default_timeout_ms = opts.default_timeout_ms or DEFAULT_TIMEOUT_MS,
+        policy = opts.policy,
+        registry = opts.registry,
+        run_count = 0,
+        runs = {},
         runs_max = opts.runs_max or RUNS_MAX,
+        sink = opts.sink,
+        store = opts.store,
+        telemetry = opts.telemetry,
     }
 end
 
@@ -80,7 +88,7 @@ end
 ---@param run AiHarnessRun
 ---@param to string
 ---@param payload? table
----@return boolean ok
+---@return boolean|nil ok
 ---@return string? err
 local function transition(sup, run, to, payload)
     if not types.can_transition(run.state, to) then
@@ -109,6 +117,10 @@ local function transition(sup, run, to, payload)
     return true
 end
 
+---Create a run. The spec's workflow must resolve in the registry: an
+---unknown workflow name fails closed and no run is created. Resolution
+---is an existence check only; adapter selection is unchanged (the
+---spec's adapter, never the workflow definition's, launches the run).
 ---@param sup table
 ---@param spec table
 ---@return AiHarnessRun? run
@@ -118,6 +130,10 @@ function M.create(sup, spec)
     local valid, err = types.validate_run_spec(spec)
     if not valid then
         return nil, err
+    end
+    local registry = require('ai.harness.registry')
+    if registry.get_workflow(sup.registry, spec.workflow) == nil then
+        return nil, 'unknown workflow: ' .. spec.workflow
     end
     if sup.run_count >= sup.runs_max then
         return nil, 'supervisor run bound exceeded'
@@ -169,6 +185,7 @@ function M.create(sup, spec)
         parent_id = run.parent_id,
         workspace = run.workspace,
     }, { source = 'supervisor' })
+    ---@cast run AiHarnessRun
     return run
 end
 
@@ -177,7 +194,7 @@ end
 ---@param sup table
 ---@param run AiHarnessRun
 ---@param adapter_name? string
----@return boolean ok
+---@return boolean|nil ok
 ---@return string? err
 local function launch(sup, run, adapter_name)
     local registry = require('ai.harness.registry')
@@ -221,7 +238,7 @@ end
 ---@param sup table
 ---@param run_id string
 ---@param adapter_name? string
----@return boolean ok
+---@return boolean|nil ok
 ---@return string? err
 function M.start_run(sup, run_id, adapter_name)
     assert(sup ~= nil, 'supervisor required')
@@ -237,7 +254,7 @@ function M.start_run(sup, run_id, adapter_name)
 end
 
 ---@param sup table
----@param run_id string
+---@param run AiHarnessRun
 ---@return boolean live
 local function has_live_children(sup, run)
     for _, child_id in ipairs(run.children) do
@@ -255,7 +272,7 @@ end
 ---@param run_id string
 ---@param outcome 'completed'|'failed'|'cancelled'|'timed_out'
 ---@param reason? string
----@return boolean ok
+---@return boolean|nil ok
 ---@return string? err
 function M.finish(sup, run_id, outcome, reason)
     assert(sup ~= nil, 'supervisor required')
@@ -283,7 +300,7 @@ end
 ---@param sup table
 ---@param run_id string
 ---@param reason? string
----@return boolean ok
+---@return boolean|nil ok
 ---@return string? err
 function M.cancel(sup, run_id, reason)
     assert(sup ~= nil, 'supervisor required')
@@ -308,7 +325,7 @@ end
 ---generation advance; terminal-event guard resets for the new attempt.
 ---@param sup table
 ---@param run_id string
----@return boolean ok
+---@return boolean|nil ok
 ---@return string? err
 function M.resume(sup, run_id)
     assert(sup ~= nil, 'supervisor required')
@@ -335,7 +352,7 @@ end
 ---@param sup table
 ---@param run_id string
 ---@param reason? string
----@return boolean ok
+---@return boolean|nil ok
 ---@return string? err
 function M.retry_run(sup, run_id, reason)
     assert(sup ~= nil, 'supervisor required')
@@ -377,7 +394,7 @@ end
 ---@param run_id string
 ---@param kind string
 ---@param amount number
----@return boolean ok
+---@return boolean|nil ok
 ---@return string? err
 function M.consume(sup, run_id, kind, amount)
     assert(sup ~= nil, 'supervisor required')
@@ -428,6 +445,115 @@ function M.list(sup)
         return a.created_ns < b.created_ns
     end)
     return out
+end
+
+---@param t table
+---@return string[] keys Keys in sorted order for deterministic iteration.
+local function sorted_keys(t)
+    local keys = {}
+    for key in pairs(t) do
+        keys[#keys + 1] = key
+    end
+    table.sort(keys, function(a, b)
+        return tostring(a) < tostring(b)
+    end)
+    return keys
+end
+
+---Validate dispatch args against a tool's input_schema. The schema maps
+---field names to { type = ..., required = ... }; types are the Lua type
+---names plus 'integer'. Unknown arguments are rejected: a misspelled
+---field must fail here, never be silently dropped.
+---@param name string
+---@param def table
+---@param args table
+---@return boolean|nil ok
+---@return string? err
+local function validate_tool_args(name, def, args)
+    local schema = def.input_schema
+    for _, field in ipairs(sorted_keys(schema)) do
+        local spec = schema[field]
+        if type(spec) ~= 'table' or type(spec.type) ~= 'string' then
+            return nil, 'tool ' .. name .. ' has a malformed input_schema at field: ' .. field
+        end
+        local value = args[field]
+        if value == nil then
+            if spec.required then
+                return nil, 'missing required argument: ' .. field
+            end
+        elseif spec.type == 'integer' then
+            if type(value) ~= 'number' or value % 1 ~= 0 then
+                return nil, 'argument ' .. field .. ' must be an integer'
+            end
+        elseif type(value) ~= spec.type then
+            return nil, 'argument ' .. field .. ' must be a ' .. spec.type
+        end
+    end
+    for _, field in ipairs(sorted_keys(args)) do
+        if schema[field] == nil then
+            return nil, 'unknown argument: ' .. tostring(field)
+        end
+    end
+    return true
+end
+
+---Names of all registered tools, in sorted order.
+---@param sup table
+---@return string[]
+function M.list_tools(sup)
+    assert(sup ~= nil, 'supervisor required')
+    local registry = require('ai.harness.registry')
+    return registry.list_tools(sup.registry)
+end
+
+---Dispatch one registered tool by name: the only path from a tool name
+---to a side effect. Registry lookup, input_schema validation, then the
+---policy gate; fail-closed at every step. An unknown tool, malformed
+---args, a missing policy, a deny, or an approval decision all return a
+---structured error and the tool's run is never invoked (approval routing
+---belongs to run-scoped callers, not this synchronous path). A tool
+---without a declared risk class is decided as 'process'.
+---@param sup table
+---@param name string
+---@param args? table
+---@return any result
+---@return string? err
+function M.dispatch_tool(sup, name, args)
+    assert(sup ~= nil, 'supervisor required')
+    if type(name) ~= 'string' or name == '' then
+        return nil, 'tool name must be a non-empty string'
+    end
+    if args ~= nil and type(args) ~= 'table' then
+        return nil, 'tool args must be a table when given'
+    end
+    args = args or {}
+    local policy = require('ai.harness.policy')
+    local registry = require('ai.harness.registry')
+    local def = registry.get_tool(sup.registry, name)
+    if def == nil then
+        return nil, 'unknown tool: ' .. name
+    end
+    local valid, validation_err = validate_tool_args(name, def, args)
+    if not valid then
+        return nil, validation_err
+    end
+    local risk = type(def.risk) == 'string' and def.risk or 'process'
+    local paths = nil
+    if type(args.path) == 'string' then
+        paths = { args.path }
+    end
+    local decision = policy.decide(sup.policy, { paths = paths, risk = risk, tool = name })
+    if decision.decision == 'deny' then
+        return nil, 'tool request denied by policy: ' .. decision.reason
+    end
+    if decision.decision ~= 'allow' then
+        return nil, 'tool request requires approval: ' .. decision.reason
+    end
+    local ok, result, run_err = pcall(def.run, args)
+    if not ok then
+        return nil, 'tool run failed: ' .. tostring(result)
+    end
+    return result, run_err
 end
 
 ---Drain new sink events: adapter completion reports finish their runs.
@@ -484,16 +610,12 @@ function M.tick(sup, now_ns)
                     acted = acted + 1
                 end
             elseif run.state == 'retry_wait' and run.retry_at_ns ~= nil and now_ns >= run.retry_at_ns then
-                local ok, trans_err = transition(sup, run, 'queued')
+                local ok, _ = transition(sup, run, 'queued')
                 if ok then
-                    local launched, launch_err = launch(sup, run, run.adapter)
+                    local launched, _ = launch(sup, run, run.adapter)
                     if launched then
                         acted = acted + 1
-                    else
-                        _ = launch_err
                     end
-                else
-                    _ = trans_err
                 end
             end
         end
