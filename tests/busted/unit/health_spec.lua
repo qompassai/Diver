@@ -1,6 +1,6 @@
 -- tests/busted/unit/health_spec.lua
 -- Busted unit specs for ai.harness.health (Tiger Style).
--- 4 validation + 4 adversarial. Deterministic, no network.
+-- 6 validation + 6 adversarial. Deterministic, no network.
 
 local health = require('ai.harness.health')
 local registry = require('ai.harness.registry')
@@ -94,6 +94,31 @@ describe('health', function()
         assert(profiles[3] == 'restricted')
         assert(profiles[4] == 'standard')
     end)
+
+    it('reports the registry inventory with counts and sorted names', function()
+        local ctx, reg = ctx_with_stub()
+        local tool_def = {
+            description = 'inventory tool',
+            input_schema = {},
+            run = function()
+                return {}
+            end,
+        }
+        assert(registry.register_tool(reg, 'zeta_tool', tool_def))
+        assert(registry.register_tool(reg, 'alpha_tool', tool_def))
+        assert(registry.register_workflow(reg, 'review', { adapter = 'acp' }))
+        local report = health.check(ctx)
+        assert.are.same({ count = 1, names = { 'stub' } }, report.registry.adapters)
+        assert.are.same({ count = 2, names = { 'alpha_tool', 'zeta_tool' } }, report.registry.tools)
+        assert.are.same({ count = 1, names = { 'review' } }, report.registry.workflows)
+    end)
+
+    it('reports an all-zero inventory for an empty registry', function()
+        local report = health.check({ registry = registry.new(), store = store.new() })
+        assert.are.same({ count = 0, names = {} }, report.registry.adapters)
+        assert.are.same({ count = 0, names = {} }, report.registry.tools)
+        assert.are.same({ count = 0, names = {} }, report.registry.workflows)
+    end)
 end)
 
 describe('health adversarial', function()
@@ -133,5 +158,27 @@ describe('health adversarial', function()
     it('reports an empty registry with no adapter entries', function()
         local report = health.check({ registry = registry.new(), store = store.new() })
         assert(next(report.adapters) == nil)
+    end)
+
+    it('reports a zeroed registry inventory when no registry is supplied', function()
+        local report = health.check(nil)
+        assert.are.same({ count = 0, names = {} }, report.registry.adapters)
+        assert.are.same({ count = 0, names = {} }, report.registry.tools)
+        assert.are.same({ count = 0, names = {} }, report.registry.workflows)
+    end)
+
+    it('counts same-named tools and workflows in their own tables only', function()
+        local ctx, reg = ctx_with_stub()
+        assert(registry.register_tool(reg, 'dual', {
+            description = 'dual tool',
+            input_schema = {},
+            run = function()
+                return {}
+            end,
+        }))
+        assert(registry.register_workflow(reg, 'dual', { adapter = 'acp' }))
+        local report = health.check(ctx)
+        assert.are.same({ count = 1, names = { 'dual' } }, report.registry.tools)
+        assert.are.same({ count = 1, names = { 'dual' } }, report.registry.workflows)
     end)
 end)

@@ -193,4 +193,13 @@ describe('harness adversarial', function()
         assert(err:find('unknown workflow: bogus_flow', 1, true) ~= nil)
         assert(st.supervisor.run_count == before)
     end)
+
+    it('run with a misspelled workflow is rejected and creates no run', function()
+        local st = ensure_harness()
+        local before = st.supervisor.run_count
+        local id, err = harness.run(spec({ adapter = 'stub', workflow = 'code_chang' }))
+        assert(id == nil)
+        assert(err:find('unknown workflow: code_chang', 1, true) ~= nil)
+        assert(st.supervisor.run_count == before)
+    end)
 end)

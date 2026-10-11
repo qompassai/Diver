@@ -1,6 +1,6 @@
 -- tests/busted/unit/supervisor_spec.lua
 -- Busted unit specs for ai.harness.supervisor (Tiger Style).
--- 15 validation + 15 adversarial. Deterministic, no network.
+-- 16 validation + 16 adversarial. Deterministic, no network.
 
 local events = require('ai.harness.events')
 local registry = require('ai.harness.registry')
@@ -372,12 +372,32 @@ describe('supervisor workflow resolution', function()
         assert(run.adapter == 'stub')
     end)
 
+    it('resolves a workflow registered after the supervisor was created', function()
+        local sup, _, reg = new_sup()
+        assert(registry.register_workflow(reg, 'deploy_flow', { adapter = 'stub' }))
+        local run = assert(supervisor.create(sup, run_spec({ workflow = 'deploy_flow' })))
+        assert(run.workflow == 'deploy_flow')
+        assert(sup.run_count == 1)
+    end)
+
     it('rejects an unknown workflow and creates no run', function()
         local sup = new_sup()
         local run, err = supervisor.create(sup, run_spec({ workflow = 'bogus_flow' }))
         assert(run == nil)
         assert(err:find('unknown workflow: bogus_flow', 1, true) ~= nil)
         assert(sup.run_count == 0)
+    end)
+
+    it('rejects a misspelled workflow name and creates no run', function()
+        local sup = new_sup()
+        local run, err = supervisor.create(sup, run_spec({ workflow = 'code_chang' }))
+        assert(run == nil)
+        assert(err:find('unknown workflow: code_chang', 1, true) ~= nil)
+        local run2, err2 = supervisor.create(sup, run_spec({ workflow = 'codechange' }))
+        assert(run2 == nil)
+        assert(err2:find('unknown workflow: codechange', 1, true) ~= nil)
+        assert(sup.run_count == 0)
+        assert(#supervisor.list(sup) == 0)
     end)
 
     it('rejects an empty or missing workflow and creates no run', function()
