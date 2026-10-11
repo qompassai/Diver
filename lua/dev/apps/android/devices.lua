@@ -1,5 +1,5 @@
 -- #################################################################
--- /qompassai/lua/dev/android/devices.lua
+-- /qompassai/lua/dev/apps/android/devices.lua
 -- Qompass AI Devices
 -- SPDX-License-Identifier: Apache-2.0
 -- Copyright (c) 2026 Qompass AI
@@ -19,49 +19,6 @@ local M = {}
 
 local util = require('dev.apps.android.util')
 
-function M.with_adb(callback)
-    local sdk = util.get_android_sdk()
-    if sdk == nil then
-        vim.notify('Android SDK is not defined.', vim.log.levels.ERROR, {})
-        return
-    end
-
-    callback(sdk .. '/platform-tools/adb')
-end
-
----List attached devices that are authorized and online.
----
---- Only rows whose state is exactly 'device' are returned; 'unauthorized',
---- 'offline', and 'no permissions' rows are excluded because no adb
---- command can run against them.
----@param adb string Path to the adb binary.
----@return string[] ids Device serials.
-function M.get_adb_devices(adb)
-    vim.validate('adb', adb, 'string')
-
-    local ids = {}
-    local ok, obj = pcall(vim.system, { adb, 'devices' }, { text = true })
-    if not ok then
-        return ids
-    end
-
-    local done = obj:wait()
-    local read = done.stdout or ''
-
-    for row in read:gmatch('[^\r\n]+') do
-        local items = {}
-        for item in row:gmatch('%S+') do
-            items[#items + 1] = item
-        end
-
-        if items[1] ~= nil and items[1] ~= 'List' and items[2] == 'device' then
-            ids[#ids + 1] = items[1]
-        end
-    end
-
-    return ids
-end
-
 ---Look up a display name for one device, falling back to its serial.
 ---@param adb string Path to the adb binary.
 ---@param id string Device serial.
@@ -79,6 +36,7 @@ local function device_display_name(adb, id)
     if not ok then
         return id
     end
+    ---@cast obj vim.SystemObj
 
     local done = obj:wait()
     if done.code ~= 0 then
@@ -91,6 +49,71 @@ local function device_display_name(adb, id)
     end
 
     return name
+end
+
+function M.find_main_activity(adb, device_id, application_id)
+    local sysobj = vim.system({
+        adb,
+        '-s',
+        device_id,
+        'shell',
+        'cmd',
+        'package',
+        'resolve-activity',
+        '--brief',
+        application_id,
+    }, {})
+    ---@cast sysobj vim.SystemObj
+    local obj = sysobj:wait()
+
+    if obj.code ~= 0 then
+        return nil
+    end
+
+    local result = nil
+    for line in (obj.stdout or ''):gmatch('[^\r\n]+') do
+        result = line
+    end
+
+    if result == nil then
+        return nil
+    end
+
+    return util.trim(result)
+end
+
+---List attached devices that are authorized and online.
+---
+--- Only rows whose state is exactly 'device' are returned; 'unauthorized',
+--- 'offline', and 'no permissions' rows are excluded because no adb
+--- command can run against them.
+---@param adb string Path to the adb binary.
+---@return string[] ids Device serials.
+function M.get_adb_devices(adb)
+    vim.validate('adb', adb, 'string')
+
+    local ids = {}
+    local ok, obj = pcall(vim.system, { adb, 'devices' }, { text = true })
+    if not ok then
+        return ids
+    end
+    ---@cast obj vim.SystemObj
+
+    local done = obj:wait()
+    local read = done.stdout or ''
+
+    for row in read:gmatch('[^\r\n]+') do
+        local items = {}
+        for item in row:gmatch('%S+') do
+            items[#items + 1] = item
+        end
+
+        if items[1] ~= nil and items[1] ~= 'List' and items[2] == 'device' then
+            ids[#ids + 1] = items[1]
+        end
+    end
+
+    return ids
 end
 
 ---Look up display names for device serials. The result always aligns with
@@ -149,13 +172,14 @@ function M.list_avds()
     if vim.fn.executable(emulator) == 1 then
         local ok, obj = pcall(vim.system, { emulator, '-list-avds' }, { text = true })
         if ok then
+            ---@cast obj vim.SystemObj
             local done = obj:wait()
             if done.code == 0 then
                 local avds = {}
-                for line in (done.stdout or ''):gmatch('[^\r\n]+') do
-                    local trimmed = util.trim(line)
-                    if trimmed ~= '' then
-                        avds[#avds + 1] = trimmed
+                for raw_line in (done.stdout or ''):gmatch('[^\r\n]+') do
+                    local line = util.trim(raw_line)
+                    if line ~= '' then
+                        avds[#avds + 1] = line
                     end
                 end
 
@@ -168,6 +192,7 @@ function M.list_avds()
     if vim.fn.executable(avdmanager) == 1 then
         local ok, obj = pcall(vim.system, { avdmanager, 'list', 'avd' }, { text = true })
         if ok then
+            ---@cast obj vim.SystemObj
             local done = obj:wait()
             if done.code == 0 then
                 local avds = {}
@@ -186,33 +211,13 @@ function M.list_avds()
     return nil, 'Could not list AVDs: emulator and avdmanager are unavailable.'
 end
 
-function M.find_main_activity(adb, device_id, application_id)
-    local obj = vim.system({
-        adb,
-        '-s',
-        device_id,
-        'shell',
-        'cmd',
-        'package',
-        'resolve-activity',
-        '--brief',
-        application_id,
-    }, {}):wait()
-
-    if obj.code ~= 0 then
-        return nil
+function M.with_adb(callback)
+    local sdk = util.get_android_sdk()
+    if sdk == nil then
+        vim.notify('Android SDK is not defined.', vim.log.levels.ERROR, {})
+        return
     end
 
-    local result = nil
-    for line in (obj.stdout or ''):gmatch('[^\r\n]+') do
-        result = line
-    end
-
-    if result == nil then
-        return nil
-    end
-
-    return util.trim(result)
+    callback(sdk .. '/platform-tools/adb')
 end
-
 return M

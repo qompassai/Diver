@@ -7,6 +7,23 @@ local config = require('dev.browser.bidi.config')
 
 local M = {}
 
+---@param conn table BidiConn facade
+---@param target table e.g. { context = 'ctx-id' }
+---@param callback fun(err: string?, result: table?)
+---@return boolean?, string?
+local function check_eval_args(conn, target, callback)
+    if conn == nil or type(conn.send) ~= 'function' then
+        return nil, 'conn.send must be a function'
+    end
+    if type(target) ~= 'table' then
+        return nil, 'target must be a table like { context = id }'
+    end
+    if type(callback) ~= 'function' then
+        return nil, 'callback must be a function'
+    end
+    return true, nil
+end
+
 ---Convert an array RemoteValue's items. Leaf helper for _from_remote.
 ---@param items table
 ---@param depth integer
@@ -105,20 +122,41 @@ function M._from_remote(rv, depth)
     return nil
 end
 
+---script.callFunction on a RemoteValue handle or declaration.
 ---@param conn table BidiConn facade
----@param target table e.g. { context = 'ctx-id' }
----@param callback fun(err: string?, result: table?)
-local function check_eval_args(conn, target, callback)
-    if conn == nil or type(conn.send) ~= 'function' then
-        return nil, 'conn.send must be a function'
+---@param target table { context = 'ctx-id' }
+---@param function_declaration string JS function source
+---@param args table[] RemoteValues
+---@param callback fun(err: string?, value: any)
+function M.call_function(conn, target, function_declaration, args, callback)
+    local ok, cerr = check_eval_args(conn, target, callback)
+    if not ok then
+        error(cerr, 2)
     end
-    if type(target) ~= 'table' then
-        return nil, 'target must be a table like { context = id }'
+    if type(function_declaration) ~= 'string' or function_declaration == '' then
+        callback('function_declaration must be a non-empty string', nil)
+        return
     end
-    if type(callback) ~= 'function' then
-        return nil, 'callback must be a function'
+    if type(args) ~= 'table' then
+        callback('args must be an array of RemoteValues', nil)
+        return
     end
-    return true, nil
+    local sok, serr = conn:send('script.callFunction', {
+        functionDeclaration = function_declaration,
+        target = target,
+        arguments = args,
+        awaitPromise = true,
+    }, function(err, result)
+        if err ~= nil then
+            callback(err, nil)
+            return
+        end
+        local rv = type(result) == 'table' and result.result or nil
+        callback(nil, M._from_remote(rv, 0))
+    end)
+    if not sok then
+        callback(serr, nil)
+    end
 end
 
 ---script.evaluate with awaitPromise. The result RemoteValue is converted
@@ -156,43 +194,6 @@ function M.evaluate(conn, target, expression, callback)
             callback('JS exception: ' .. tostring(text), nil)
             return
         end
-        callback(nil, M._from_remote(rv, 0))
-    end)
-    if not sok then
-        callback(serr, nil)
-    end
-end
-
----script.callFunction on a RemoteValue handle or declaration.
----@param conn table BidiConn facade
----@param target table { context = 'ctx-id' }
----@param function_declaration string JS function source
----@param args table[] RemoteValues
----@param callback fun(err: string?, value: any)
-function M.call_function(conn, target, function_declaration, args, callback)
-    local ok, cerr = check_eval_args(conn, target, callback)
-    if not ok then
-        error(cerr, 2)
-    end
-    if type(function_declaration) ~= 'string' or function_declaration == '' then
-        callback('function_declaration must be a non-empty string', nil)
-        return
-    end
-    if type(args) ~= 'table' then
-        callback('args must be an array of RemoteValues', nil)
-        return
-    end
-    local sok, serr = conn:send('script.callFunction', {
-        functionDeclaration = function_declaration,
-        target = target,
-        arguments = args,
-        awaitPromise = true,
-    }, function(err, result)
-        if err ~= nil then
-            callback(err, nil)
-            return
-        end
-        local rv = type(result) == 'table' and result.result or nil
         callback(nil, M._from_remote(rv, 0))
     end)
     if not sok then

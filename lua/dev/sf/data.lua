@@ -15,6 +15,15 @@ local core = require('dev.sf.core')
 
 local M = {}
 
+---@param argv string[]
+---@param org? string
+local function append_org(argv, org)
+    if type(org) == 'string' and org ~= '' then
+        argv[#argv + 1] = '--target-org'
+        argv[#argv + 1] = org
+    end
+end
+
 ---@param path string
 ---@return boolean
 local function file_exists(path)
@@ -22,22 +31,43 @@ local function file_exists(path)
     return stat ~= nil and stat.type == 'file'
 end
 
----@param value string
----@return string
-local function trim(value)
-    return (value:gsub('^%s+', ''):gsub('%s+$', ''))
+---@param headers string[]
+---@return string?
+local function infer_external_id(headers)
+    for _, header in ipairs(headers) do
+        local lower = header:lower()
+        if lower == 'id' or lower:match('external_?id') then
+            return header
+        end
+    end
+    return nil
 end
 
----@param output? string
+---@param object_name string
+---@param headers string[]
+---@param source_path string
+---@param sheet_name? string
 ---@return string[]
-local function output_lines(output)
-    if type(output) ~= 'string' or output == '' then
-        return {}
+local function build_soql_from_headers(object_name, headers, source_path, sheet_name)
+    local lines = {
+        ('-- source: %s'):format(source_path),
+    }
+    if type(sheet_name) == 'string' and sheet_name ~= '' then
+        lines[#lines + 1] = ('-- sheet: %s'):format(sheet_name)
     end
-    return vim.split(output, '\n', {
-        plain = true,
-        trimempty = true,
-    })
+    lines[#lines + 1] = ('SELECT\n  %s\nFROM %s\nLIMIT 200'):format(table.concat(headers, ',\n  '), object_name)
+    lines[#lines + 1] = ''
+    lines[#lines + 1] = '-- Data Loader / Bulk API upsert notes'
+    lines[#lines + 1] = '-- The input needs an Id or configured External ID column for upsert.'
+    local external_id = infer_external_id(headers)
+    lines[#lines + 1] = external_id and ('-- Possible match field: ' .. external_id)
+        or '-- Match field: <set an Id or External ID column>'
+    lines[#lines + 1] = ''
+    lines[#lines + 1] = '-- Field mapping template'
+    for _, header in ipairs(headers) do
+        lines[#lines + 1] = ('%s=%s'):format(header, header)
+    end
+    return lines
 end
 
 ---@param name string
@@ -68,6 +98,23 @@ local function open_scratch(name, lines, filetype)
     })
     api.nvim_set_current_buf(bufnr)
     return bufnr
+end
+
+---@param output? string
+---@return string[]
+local function output_lines(output)
+    if type(output) ~= 'string' or output == '' then
+        return {}
+    end
+    return vim.split(output, '\n', {
+        plain = true,
+        trimempty = true,
+    })
+end
+
+---@return string
+local function prompt_org()
+    return fn.input('Target org alias (blank = default)> ')
 end
 
 ---@param result vim.SystemCompleted
@@ -107,18 +154,19 @@ local function run_and_show(argv, name, filetype)
     end)
 end
 
+---@param value string
 ---@return string
-local function prompt_org()
-    return fn.input('Target org alias (blank = default)> ')
+local function trim(value)
+    return (value:gsub('^%s+', ''):gsub('%s+$', ''))
 end
 
----@param argv string[]
----@param org? string
-local function append_org(argv, org)
-    if type(org) == 'string' and org ~= '' then
-        argv[#argv + 1] = '--target-org'
-        argv[#argv + 1] = org
-    end
+---@param name any
+---@return string
+local function sanitize_field_name(name)
+    local value = trim(tostring(name or ''))
+    value = value:gsub('^"(.*)"$', '%1')
+    value = value:gsub('%s+', '_')
+    return (value:gsub('[^%w_.]', ''))
 end
 
 ---@param line string
@@ -162,15 +210,6 @@ local function unique(values)
         end
     end
     return result
-end
-
----@param name any
----@return string
-local function sanitize_field_name(name)
-    local value = trim(tostring(name or ''))
-    value = value:gsub('^"(.*)"$', '%1')
-    value = value:gsub('%s+', '_')
-    return (value:gsub('[^%w_.]', ''))
 end
 
 ---@param path string
@@ -218,7 +257,9 @@ local function xlsx_headers(path, sheet)
     if type(sheet) == 'string' and sheet ~= '' then
         argv[#argv + 1] = sheet
     end
-    local result = vim.system(argv, { text = true }):wait()
+    local sheet_obj = vim.system(argv, { text = true })
+    ---@cast sheet_obj vim.SystemObj
+    local result = sheet_obj:wait()
     if result.code ~= 0 then
         return nil, 'Failed reading XLSX: ' .. result_error(result)
     end
@@ -235,45 +276,6 @@ local function xlsx_headers(path, sheet)
         return nil, 'No XLSX headers found'
     end
     return headers, type(decoded.sheet) == 'string' and decoded.sheet or nil
-end
-
----@param headers string[]
----@return string?
-local function infer_external_id(headers)
-    for _, header in ipairs(headers) do
-        local lower = header:lower()
-        if lower == 'id' or lower:match('external_?id') then
-            return header
-        end
-    end
-    return nil
-end
-
----@param object_name string
----@param headers string[]
----@param source_path string
----@param sheet_name? string
----@return string[]
-local function build_soql_from_headers(object_name, headers, source_path, sheet_name)
-    local lines = {
-        ('-- source: %s'):format(source_path),
-    }
-    if type(sheet_name) == 'string' and sheet_name ~= '' then
-        lines[#lines + 1] = ('-- sheet: %s'):format(sheet_name)
-    end
-    lines[#lines + 1] = ('SELECT\n  %s\nFROM %s\nLIMIT 200'):format(table.concat(headers, ',\n  '), object_name)
-    lines[#lines + 1] = ''
-    lines[#lines + 1] = '-- Data Loader / Bulk API upsert notes'
-    lines[#lines + 1] = '-- The input needs an Id or configured External ID column for upsert.'
-    local external_id = infer_external_id(headers)
-    lines[#lines + 1] = external_id and ('-- Possible match field: ' .. external_id)
-        or '-- Match field: <set an Id or External ID column>'
-    lines[#lines + 1] = ''
-    lines[#lines + 1] = '-- Field mapping template'
-    for _, header in ipairs(headers) do
-        lines[#lines + 1] = ('%s=%s'):format(header, header)
-    end
-    return lines
 end
 
 ---@param path string
@@ -554,6 +556,17 @@ function M.search(opts)
     run_and_show(argv, 'sf://data-search', 'json')
 end
 
+---Run the SOQL in the current file.
+---@return nil
+function M.soql_from_current_file()
+    local path = fn.expand('%:p')
+    if path == '' then
+        core.notify('Current buffer is not a file', vim.log.levels.WARN)
+        return
+    end
+    M.soql_from_file({ fargs = { path } })
+end
+
 ---@param opts? SfCommandArgs
 ---@return nil
 function M.soql_from_file(opts)
@@ -584,17 +597,6 @@ function M.soql_from_file(opts)
         'sql'
     )
     core.notify(('Generated SOQL starter from %s (%d fields)'):format(fn.fnamemodify(path, ':t'), #headers))
-end
-
----Run the SOQL in the current file.
----@return nil
-function M.soql_from_current_file()
-    local path = fn.expand('%:p')
-    if path == '' then
-        core.notify('Current buffer is not a file', vim.log.levels.WARN)
-        return
-    end
-    M.soql_from_file({ fargs = { path } })
 end
 
 ---@param opts? SfCommandArgs
@@ -779,19 +781,19 @@ M.commands = {
         nargs = '*',
     } },
     {
-        name = 'SfDataSoqlFromFile',
-        fn = M.soql_from_file,
-        opts = {
-            desc = 'Generate SOQL from CSV/XLSX headers',
-            nargs = '*',
-        },
-    },
-    {
         name = 'SfDataSoqlFromCurrentFile',
         fn = M.soql_from_current_file,
         opts = {
             desc = 'Generate SOQL from the current CSV/XLSX file',
             nargs = 0,
+        },
+    },
+    {
+        name = 'SfDataSoqlFromFile',
+        fn = M.soql_from_file,
+        opts = {
+            desc = 'Generate SOQL from CSV/XLSX headers',
+            nargs = '*',
         },
     },
     {

@@ -29,20 +29,6 @@ local function need_conn()
     return M._conn
 end
 
-local function cmd_open(opts)
-    local url = opts.args ~= '' and opts.args or nil
-    actions.open(url, {}, function(err, conn)
-        if err ~= nil then
-            vim.notify(tostring(err), vim.log.levels.ERROR)
-            return
-        end
-        M._conn = conn
-        M._console_ring = nil
-        M._network_log = nil
-        vim.notify('Browser opened and attached: ' .. tostring(conn.target_url or conn.target_id))
-    end)
-end
-
 local function cmd_attach()
     actions.list_targets(DEFAULT_HOST, DEFAULT_PORT, {}, function(err, pages)
         if err ~= nil then
@@ -80,10 +66,7 @@ local function cmd_attach()
                 end
                 local attach_opts = { confirmed = true }
                 local host, port, target_id = DEFAULT_HOST, DEFAULT_PORT, picked.id
-                actions.attach(host, port, target_id, attach_opts, function(
-                    attach_err,
-                    conn
-                )
+                actions.attach(host, port, target_id, attach_opts, function(attach_err, conn)
                     if attach_err ~= nil then
                         vim.notify(tostring(attach_err), vim.log.levels.ERROR)
                         return
@@ -98,22 +81,21 @@ local function cmd_attach()
     end)
 end
 
-local function cmd_navigate(opts)
+local function cmd_console()
     local conn = need_conn()
     if conn == nil then
         return
     end
-    actions.navigate(conn, opts.args, function(err, result)
-        if err ~= nil then
-            vim.notify(tostring(err), vim.log.levels.ERROR)
+    if M._console_ring == nil then
+        M._console_ring = actions.new_ring()
+        local ok, tap_err = actions.enable_console_tap(conn, M._console_ring)
+        if not ok then
+            vim.notify(tostring(tap_err), vim.log.levels.ERROR)
+            M._console_ring = nil
             return
         end
-        local suffix = ''
-        if result and result.loaderId then
-            suffix = ': ' .. tostring(result.loaderId)
-        end
-        vim.notify('Navigated' .. suffix)
-    end)
+    end
+    actions.show_console(M._console_ring)
 end
 
 local function cmd_eval(opts)
@@ -138,36 +120,22 @@ local function cmd_eval(opts)
     end)
 end
 
-local function cmd_screenshot(opts)
+local function cmd_navigate(opts)
     local conn = need_conn()
     if conn == nil then
         return
     end
-    local path = opts.args ~= '' and opts.args or nil
-    actions.screenshot(conn, path, function(err, saved)
+    actions.navigate(conn, opts.args, function(err, result)
         if err ~= nil then
             vim.notify(tostring(err), vim.log.levels.ERROR)
             return
         end
-        vim.notify('Screenshot saved: ' .. tostring(saved))
-    end)
-end
-
-local function cmd_console()
-    local conn = need_conn()
-    if conn == nil then
-        return
-    end
-    if M._console_ring == nil then
-        M._console_ring = actions.new_ring()
-        local ok, tap_err = actions.enable_console_tap(conn, M._console_ring)
-        if not ok then
-            vim.notify(tostring(tap_err), vim.log.levels.ERROR)
-            M._console_ring = nil
-            return
+        local suffix = ''
+        if result and result.loaderId then
+            suffix = ': ' .. tostring(result.loaderId)
         end
-    end
-    actions.show_console(M._console_ring)
+        vim.notify('Navigated' .. suffix)
+    end)
 end
 
 local function cmd_network()
@@ -187,36 +155,41 @@ local function cmd_network()
     actions.show_network(M._network_log)
 end
 
+local function cmd_open(opts)
+    local url = opts.args ~= '' and opts.args or nil
+    actions.open(url, {}, function(err, conn)
+        if err ~= nil then
+            vim.notify(tostring(err), vim.log.levels.ERROR)
+            return
+        end
+        M._conn = conn
+        M._console_ring = nil
+        M._network_log = nil
+        vim.notify('Browser opened and attached: ' .. tostring(conn.target_url or conn.target_id))
+    end)
+end
+
+local function cmd_screenshot(opts)
+    local conn = need_conn()
+    if conn == nil then
+        return
+    end
+    local path = opts.args ~= '' and opts.args or nil
+    actions.screenshot(conn, path, function(err, saved)
+        if err ~= nil then
+            vim.notify(tostring(err), vim.log.levels.ERROR)
+            return
+        end
+        vim.notify('Screenshot saved: ' .. tostring(saved))
+    end)
+end
+
 local COMMANDS = {
-    {
-        name = 'BrowserOpen',
-        nargs = '?',
-        desc = 'Launch isolated headless Chrome and attach (optional start URL)',
-        handler = cmd_open,
-    },
     {
         name = 'BrowserAttach',
         nargs = 0,
         desc = 'Pick a page target of a running browser and attach (confirms)',
         handler = cmd_attach,
-    },
-    {
-        name = 'BrowserNavigate',
-        nargs = 1,
-        desc = 'Navigate the attached page',
-        handler = cmd_navigate,
-    },
-    {
-        name = 'BrowserEval',
-        nargs = '+',
-        desc = 'Evaluate JavaScript in the page (confirms every time)',
-        handler = cmd_eval,
-    },
-    {
-        name = 'BrowserScreenshot',
-        nargs = '?',
-        desc = 'Screenshot the page to a PNG file',
-        handler = cmd_screenshot,
     },
     {
         name = 'BrowserConsole',
@@ -225,12 +198,44 @@ local COMMANDS = {
         handler = cmd_console,
     },
     {
+        name = 'BrowserEval',
+        nargs = '+',
+        desc = 'Evaluate JavaScript in the page (confirms every time)',
+        handler = cmd_eval,
+    },
+    {
+        name = 'BrowserNavigate',
+        nargs = 1,
+        desc = 'Navigate the attached page',
+        handler = cmd_navigate,
+    },
+    {
         name = 'BrowserNetwork',
         nargs = 0,
         desc = 'Show the bounded network request log',
         handler = cmd_network,
     },
+    {
+        name = 'BrowserOpen',
+        nargs = '?',
+        desc = 'Launch isolated headless Chrome and attach (optional start URL)',
+        handler = cmd_open,
+    },
+    {
+        name = 'BrowserScreenshot',
+        nargs = '?',
+        desc = 'Screenshot the page to a PNG file',
+        handler = cmd_screenshot,
+    },
 }
+
+---Test seam: replace the live connection.
+---@param conn table|nil
+function M._set_connection(conn)
+    M._conn = conn
+    M._console_ring = nil
+    M._network_log = nil
+end
 
 ---Register the :Browser* commands. Idempotent.
 ---@return boolean
@@ -245,14 +250,6 @@ function M.setup()
         vim.api.nvim_create_user_command(cmd.name, cmd.handler, user_opts)
     end
     return true
-end
-
----Test seam: replace the live connection.
----@param conn table|nil
-function M._set_connection(conn)
-    M._conn = conn
-    M._console_ring = nil
-    M._network_log = nil
 end
 
 return M

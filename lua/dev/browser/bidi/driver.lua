@@ -7,42 +7,15 @@
 -- the BiDi webSocketUrl -- refusing any non-loopback URL. Teardown kills
 -- the driver process exactly once; there are no zombies.
 
-local http = require('dev.browser.http')
 local config = require('dev.browser.bidi.config')
+local http = require('dev.browser.http')
 
 local M = {}
 
 ---@class BidiDriverProc
 ---@field kind string 'chrome' | 'firefox'
----@field handle userdata? uv process handle, nil after kill
+---@field handle uv.uv_process_t? uv process handle, nil after kill
 ---@field pid integer?
-
----Look up the driver pin for kind. Pure.
----@param kind string
----@return table? pin
----@return string? err
-function M._pin(kind)
-    local pin = config.drivers[kind]
-    if pin == nil then
-        return nil, "unknown driver kind: " .. tostring(kind) .. " (expected 'chrome' or 'firefox')"
-    end
-    return pin, nil
-end
-
----Parse `sha256sum` stdout ('<64 hex>  <path>'). Pure.
----@param out string
----@return string? hex
----@return string? err
-function M._parse_sha256sum_output(out)
-    if type(out) ~= 'string' then
-        return nil, 'sha256sum produced no output'
-    end
-    local hex = out:match('^(%x+)')
-    if hex == nil or #hex ~= 64 then
-        return nil, 'sha256sum output unparseable'
-    end
-    return hex:lower(), nil
-end
 
 ---Build the spawn argv (argv form -- never a shell string). Pure.
 ---@param pin table driver pin from config
@@ -60,6 +33,21 @@ function M._build_spawn_argv(pin, profile_dir)
         argv[#argv + 1] = '--marionette-port=0'
     end
     return argv
+end
+
+---Refuse a webSocketUrl whose host is not loopback. Pure.
+---@param url string
+---@return boolean? ok
+---@return string? err
+function M._check_ws_url(url)
+    local host = url:match('^ws://([^:/%[%]]+):') or url:match('^ws://%[([^%]]+)%]:')
+    if host == nil then
+        return nil, 'unparseable webSocketUrl'
+    end
+    if host ~= '127.0.0.1' and host ~= '::1' and host ~= 'localhost' then
+        return nil, 'bidi: non-loopback webSocketUrl refused (policy: localhost-only): ' .. host
+    end
+    return true, nil
 end
 
 ---Extract {session_id, websocket_url} from a decoded /session body. Pure.
@@ -87,172 +75,47 @@ function M._extract_session(decoded)
     return { session_id = value.sessionId, websocket_url = caps.webSocketUrl }, nil
 end
 
----Refuse a webSocketUrl whose host is not loopback. Pure.
----@param url string
----@return boolean? ok
+---Parse `sha256sum` stdout ('<64 hex>  <path>'). Pure.
+---@param out string
+---@return string? hex
 ---@return string? err
-function M._check_ws_url(url)
-    local host = url:match('^ws://([^:/%[%]]+):')
-        or url:match('^ws://%[([^%]]+)%]:')
-    if host == nil then
-        return nil, 'unparseable webSocketUrl'
+function M._parse_sha256sum_output(out)
+    if type(out) ~= 'string' then
+        return nil, 'sha256sum produced no output'
     end
-    if host ~= '127.0.0.1' and host ~= '::1' and host ~= 'localhost' then
-        return nil, 'bidi: non-loopback webSocketUrl refused (policy: localhost-only): ' .. host
+    local hex = out:match('^(%x+)')
+    if hex == nil or #hex ~= 64 then
+        return nil, 'sha256sum output unparseable'
     end
-    return true, nil
+    return hex:lower(), nil
 end
 
----Find the driver binary: config search dirs first, then PATH.
----@param kind string 'chrome' | 'firefox'
----@return string? path
----@return string? err
-function M.resolve(kind)
-    local pin, perr = M._pin(kind)
-    if pin == nil then
-        return nil, perr
-    end
-    local names = pin.binary_names
-    for _, dir in ipairs(config.driver_search_dirs) do
-        for _, name in ipairs(names) do
-            local candidate = dir .. '/' .. name
-            if vim.fn.executable(candidate) == 1 then
-                return candidate, nil
-            end
-        end
-    end
-    for _, name in ipairs(names) do
-        if vim.fn.executable(name) == 1 then
-            return vim.fn.exepath(name), nil
-        end
-    end
-    return nil,
-        'bidi: ' .. names[1] .. ' not found. Download ' .. pin.version .. ' from ' .. pin.url
-            .. ' and set config.lua sha256 to '
-            .. (pin.sha256 ~= '' and pin.sha256 or '<fill in from the release page>')
-end
-
----SHA256-verify the binary against the pinned checksum. Never spawns on
----mismatch; never downloads.
----@param path string
----@param expected_sha256 string
----@return boolean? ok
----@return string? err
-function M.verify(path, expected_sha256)
-    assert(type(path) == 'string' and path ~= '', 'path must be non-empty')
-    if type(expected_sha256) ~= 'string' or expected_sha256 == '' then
-        return nil,
-            'bidi: no SHA256 pinned for this driver version -- refusing to spawn. '
-                .. 'Fill in config.lua sha256 from the vendor release page.'
-    end
-    if not expected_sha256:match('^%x%x%x%x%x%x%x%x') or #expected_sha256 ~= 64 then
-        return nil, 'bidi: pinned sha256 is not 64 hex chars -- refusing to spawn'
-    end
-    local res = vim.system({ 'sha256sum', '--', path }, { text = true }):wait()
-    if res.code ~= 0 then
-        return nil, 'bidi: sha256sum failed (is coreutils installed?): ' .. (res.stderr or '')
-    end
-    local actual, perr = M._parse_sha256sum_output(res.stdout)
-    if actual == nil then
-        return nil, 'bidi: ' .. perr
-    end
-    if actual ~= expected_sha256:lower() then
-        return nil,
-            'bidi: driver checksum MISMATCH for ' .. path .. ' -- refusing to spawn. '
-                .. 'Expected ' .. expected_sha256:lower() .. ', got ' .. actual
-    end
-    return true, nil
-end
-
----Spawn the verified driver on 127.0.0.1. Returns the owned proc handle.
----@param kind string 'chrome' | 'firefox'
----@param profile_dir string ephemeral profile directory (argv form, no shell)
----@return BidiDriverProc? proc
----@return string? err
-function M.spawn(kind, profile_dir)
-    local pin, perr = M._pin(kind)
-    if pin == nil then
-        return nil, perr
-    end
-    if type(profile_dir) ~= 'string' or profile_dir == '' then
-        return nil, 'profile_dir must be a non-empty string'
-    end
-    local path, rerr = M.resolve(kind)
-    if path == nil then
-        return nil, rerr
-    end
-    local ok, verr = M.verify(path, pin.sha256)
-    if not ok then
-        return nil, verr
-    end
-    local uv = vim.uv
-    local stdout = uv.new_pipe(false)
-    local stderr = uv.new_pipe(false)
-    if stdout == nil or stderr == nil then
-        return nil, 'cannot allocate stdio pipes'
-    end
-    local argv = M._build_spawn_argv(pin, profile_dir)
-    local proc = { kind = kind, handle = nil, pid = nil }
-    local handle, pid = uv.spawn(path, {
-        args = argv,
-        stdio = { nil, stdout, stderr },
-    }, function()
-        -- on_exit: release pipes; the handle is closed by M.kill.
-        if not stdout:is_closing() then
-            stdout:close()
-        end
-        if not stderr:is_closing() then
-            stderr:close()
-        end
-    end)
-    if handle == nil then
-        if not stdout:is_closing() then
-            stdout:close()
-        end
-        if not stderr:is_closing() then
-            stderr:close()
-        end
-        return nil, 'failed to spawn driver: ' .. tostring(pid)
-    end
-    -- Discard driver chatter; pipes must be drained or the child blocks.
-    stdout:read_start(function() end)
-    stderr:read_start(function() end)
-    proc.handle = handle
-    proc.pid = pid
-    return proc, nil
-end
-
----Poll GET /status until the driver reports ready, bounded.
+---Look up the driver pin for kind. Pure.
 ---@param kind string
----@return boolean? ok
+---@return table? pin
 ---@return string? err
-function M.wait_ready(kind)
-    local pin, perr = M._pin(kind)
+function M._pin(kind)
+    local pin = config.drivers[kind]
     if pin == nil then
-        return nil, perr
+        return nil, 'unknown driver kind: ' .. tostring(kind) .. " (expected 'chrome' or 'firefox')"
     end
-    for _ = 1, config.ready_attempts_max do
-        local resp, rerr = http.request({
-            host = config.host,
-            port = pin.port,
-            method = 'GET',
-            path = '/status',
-            timeout_ms = 1000,
-        })
-        if resp ~= nil and resp.status == 200 then
-            local ok, decoded = pcall(vim.json.decode, resp.body)
-            if ok and type(decoded) == 'table' and type(decoded.value) == 'table' then
-                if decoded.value.ready then
-                    return true, nil
-                end
-            end
-        end
-        _ = rerr
-        vim.wait(config.ready_poll_interval_ms, function()
-            return false
-        end, 50)
+    return pin, nil
+end
+
+---Kill the driver process. Idempotent: safe to call twice, on a dead
+---process, or after the handle was already released.
+---@param proc BidiDriverProc?
+function M.kill(proc)
+    if proc == nil then
+        return
     end
-    return nil, 'driver /status never became ready'
+    local handle = proc.handle
+    proc.handle = nil
+    proc.pid = nil
+    if handle ~= nil and not handle:is_closing() then
+        pcall(handle.kill, handle, 'sigterm')
+        handle:close()
+    end
 end
 
 ---POST /session (classic New Session) asking for a BiDi webSocketUrl.
@@ -305,20 +168,175 @@ function M.new_session(kind, profile_dir)
     return session, nil
 end
 
----Kill the driver process. Idempotent: safe to call twice, on a dead
----process, or after the handle was already released.
----@param proc BidiDriverProc?
-function M.kill(proc)
-    if proc == nil then
-        return
+---Find the driver binary: config search dirs first, then PATH.
+---@param kind string 'chrome' | 'firefox'
+---@return string? path
+---@return string? err
+function M.resolve(kind)
+    local pin, perr = M._pin(kind)
+    if pin == nil then
+        return nil, perr
     end
-    local handle = proc.handle
-    proc.handle = nil
-    proc.pid = nil
-    if handle ~= nil and not handle:is_closing() then
-        pcall(handle.kill, handle, 'sigterm')
-        handle:close()
+    local names = pin.binary_names
+    for _, dir in ipairs(config.driver_search_dirs) do
+        for _, name in ipairs(names) do
+            local candidate = dir .. '/' .. name
+            if vim.fn.executable(candidate) == 1 then
+                return candidate, nil
+            end
+        end
     end
+    for _, name in ipairs(names) do
+        if vim.fn.executable(name) == 1 then
+            return vim.fn.exepath(name), nil
+        end
+    end
+    return nil,
+        'bidi: '
+            .. names[1]
+            .. ' not found. Download '
+            .. pin.version
+            .. ' from '
+            .. pin.url
+            .. ' and set config.lua sha256 to '
+            .. (pin.sha256 ~= '' and pin.sha256 or '<fill in from the release page>')
+end
+
+---Spawn the verified driver on 127.0.0.1. Returns the owned proc handle.
+---@param kind string 'chrome' | 'firefox'
+---@param profile_dir string ephemeral profile directory (argv form, no shell)
+---@return BidiDriverProc? proc
+---@return string? err
+function M.spawn(kind, profile_dir)
+    local pin, perr = M._pin(kind)
+    if pin == nil then
+        return nil, perr
+    end
+    if type(profile_dir) ~= 'string' or profile_dir == '' then
+        return nil, 'profile_dir must be a non-empty string'
+    end
+    local path, rerr = M.resolve(kind)
+    if path == nil then
+        return nil, rerr
+    end
+    local ok, verr = M.verify(path, pin.sha256)
+    if not ok then
+        return nil, verr
+    end
+    local uv = vim.uv
+    local stdout = uv.new_pipe(false)
+    local stderr = uv.new_pipe(false)
+    if stdout == nil or stderr == nil then
+        return nil, 'cannot allocate stdio pipes'
+    end
+    local argv = M._build_spawn_argv(pin, profile_dir)
+    ---@type BidiDriverProc
+    local proc = { kind = kind, handle = nil, pid = nil }
+    local handle, pid = uv.spawn(path, {
+        args = argv,
+        cwd = nil,
+        detached = nil,
+        env = nil,
+        gid = nil,
+        hide = nil,
+        stdio = { nil, stdout, stderr },
+        uid = nil,
+        verbatim = nil,
+    }, function()
+        -- on_exit: release pipes; the handle is closed by M.kill.
+        if not stdout:is_closing() then
+            stdout:close()
+        end
+        if not stderr:is_closing() then
+            stderr:close()
+        end
+    end)
+    if handle == nil then
+        if not stdout:is_closing() then
+            stdout:close()
+        end
+        if not stderr:is_closing() then
+            stderr:close()
+        end
+        return nil, 'failed to spawn driver: ' .. tostring(pid)
+    end
+    -- Discard driver chatter; pipes must be drained or the child blocks.
+    stdout:read_start(function() end)
+    stderr:read_start(function() end)
+    proc.handle = handle
+    proc.pid = type(pid) == 'number' and math.floor(pid) or nil
+    return proc, nil
+end
+
+---SHA256-verify the binary against the pinned checksum. Never spawns on
+---mismatch; never downloads.
+---@param path string
+---@param expected_sha256 string
+---@return boolean? ok
+---@return string? err
+function M.verify(path, expected_sha256)
+    assert(type(path) == 'string' and path ~= '', 'path must be non-empty')
+    if type(expected_sha256) ~= 'string' or expected_sha256 == '' then
+        return nil,
+            'bidi: no SHA256 pinned for this driver version -- refusing to spawn. '
+                .. 'Fill in config.lua sha256 from the vendor release page.'
+    end
+    if not expected_sha256:match('^%x%x%x%x%x%x%x%x') or #expected_sha256 ~= 64 then
+        return nil, 'bidi: pinned sha256 is not 64 hex chars -- refusing to spawn'
+    end
+    local sha_obj = vim.system({ 'sha256sum', '--', path }, { text = true })
+    ---@cast sha_obj vim.SystemObj
+    local res = sha_obj:wait()
+    if res.code ~= 0 then
+        return nil, 'bidi: sha256sum failed (is coreutils installed?): ' .. (res.stderr or '')
+    end
+    local actual, perr = M._parse_sha256sum_output(res.stdout)
+    if actual == nil then
+        return nil, 'bidi: ' .. perr
+    end
+    if actual ~= expected_sha256:lower() then
+        return nil,
+            'bidi: driver checksum MISMATCH for '
+                .. path
+                .. ' -- refusing to spawn. '
+                .. 'Expected '
+                .. expected_sha256:lower()
+                .. ', got '
+                .. actual
+    end
+    return true, nil
+end
+
+---Poll GET /status until the driver reports ready, bounded.
+---@param kind string
+---@return boolean? ok
+---@return string? err
+function M.wait_ready(kind)
+    local pin, perr = M._pin(kind)
+    if pin == nil then
+        return nil, perr
+    end
+    for _ = 1, config.ready_attempts_max do
+        local resp = http.request({
+            host = config.host,
+            port = pin.port,
+            method = 'GET',
+            path = '/status',
+            timeout_ms = 1000,
+        })
+        if resp ~= nil and resp.status == 200 then
+            local ok, decoded = pcall(vim.json.decode, resp.body)
+            if ok and type(decoded) == 'table' and type(decoded.value) == 'table' then
+                if decoded.value.ready then
+                    return true, nil
+                end
+            end
+        end
+        vim.wait(config.ready_poll_interval_ms, function()
+            return false
+        end, 50)
+    end
+    return nil, 'driver /status never became ready'
 end
 
 return M

@@ -35,8 +35,8 @@ local M = {}
 ---@field bspVersion string
 ---@field languages string[]
 ---@field name string
----@field version string
 ---@field path string
+---@field version string
 
 ---@param path string
 ---@return table|nil, string|nil
@@ -106,26 +106,10 @@ local function validate_connection(path)
     return connection, nil
 end
 
----@param bufnr? integer
----@return string|nil
 local ROOT_MARKERS = {
     '.bsp',
     'Cargo.toml',
 }
-
----@return string[]
-function M.markers()
-    return vim.deepcopy(ROOT_MARKERS)
-end
-
----@param bufnr? integer
----@return string|nil
-function M.root(bufnr)
-    bufnr = bufnr or vim.api.nvim_get_current_buf()
-    local root = vim.fs.root(bufnr, ROOT_MARKERS)
-
-    return root and vim.fs.normalize(root) or nil
-end
 
 ---@param root string
 ---@param preferred_name? string
@@ -187,6 +171,20 @@ function M.executable(connection)
     end
 
     return true, nil
+end
+
+---@return string[]
+function M.markers()
+    return vim.deepcopy(ROOT_MARKERS)
+end
+
+---@param bufnr? integer
+---@return string|nil
+function M.root(bufnr)
+    bufnr = bufnr or vim.api.nvim_get_current_buf()
+    local root = vim.fs.root(bufnr, ROOT_MARKERS)
+
+    return root and vim.fs.normalize(root) or nil
 end
 
 return M

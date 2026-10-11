@@ -12,7 +12,7 @@
 -- What this module does NOT do: drive Trailhead in a browser. Trailhead
 -- exposes no public completion API, so completing modules or units in the
 -- browser is an explicit integration point for whoever owns the browser
--- automation (a browser task, an MCP tool, a rose.nvim bridge). That
+-- automation (a browser task, an MCP tool, a rose bridge). That
 -- automation reports finished units back through complete_step() and
 -- fail_step(), or a step carries an `argv` list that runs locally -- for
 -- example `sf` CLI commands backing a hands-on playground challenge.
@@ -39,23 +39,23 @@ local core = require('dev.sf.core')
 
 local M = {}
 
-local JOB_COUNT_MAX = 128
 local ACTIVE_JOB_COUNT_MAX = 4
-local STEPS_PER_JOB_MAX = 256
-local LOG_LINE_COUNT_MAX = 500
-local LOG_LINE_BYTES_MAX = 1024
-local PERSIST_LOG_LINES_MAX = 50
-local STEP_LOG_LINES_MAX = 100
-local TITLE_BYTES_MAX = 200
-local STEP_NAME_BYTES_MAX = 200
-local NOTE_BYTES_MAX = 4096
-local RESULT_BYTES_MAX = 4096
-local STEP_ARGV_COUNT_MAX = 32
-local STEP_ARGV_BYTES_MAX = 2048
-local SUBSCRIBER_COUNT_MAX = 16
+local JOB_COUNT_MAX = 128
 local JOB_ID_BYTES_MAX = 128
+local LOG_LINE_BYTES_MAX = 1024
+local LOG_LINE_COUNT_MAX = 500
+local NOTE_BYTES_MAX = 4096
+local PERSIST_LOG_LINES_MAX = 50
+local RESULT_BYTES_MAX = 4096
 local STATE_READ_BYTES_MAX = 16777216
+local STEPS_PER_JOB_MAX = 256
+local STEP_ARGV_BYTES_MAX = 2048
+local STEP_ARGV_COUNT_MAX = 32
+local STEP_LOG_LINES_MAX = 100
+local STEP_NAME_BYTES_MAX = 200
 local STEP_TIMEOUT_MS = 15 * 60 * 1000
+local SUBSCRIBER_COUNT_MAX = 16
+local TITLE_BYTES_MAX = 200
 
 ---@class TrailheadStep
 ---@field name string
@@ -101,11 +101,11 @@ local STEP_TIMEOUT_MS = 15 * 60 * 1000
 ---@field source string
 
 local JOB_KINDS = {
-    trailmix = true,
-    quest = true,
-    study = true,
-    shell = true,
     note = true,
+    quest = true,
+    shell = true,
+    study = true,
+    trailmix = true,
 }
 
 ---@type TrailheadVoucherSource[]
@@ -167,12 +167,12 @@ local VOUCHER_SOURCES = {
 }
 
 local state = {
-    jobs = {},
     by_id = {},
+    jobs = {},
+    loaded = false,
     running_count = 0,
     sequence = 0,
     subscribers = {},
-    loaded = false,
 }
 
 -- Forward declarations: finish_job -> pump -> run_job -> advance ->
@@ -362,8 +362,10 @@ local function coerce_job(raw)
                 argv = coerce_argv(item.argv),
                 note = type(item.note) == 'string' and truncate(item.note, NOTE_BYTES_MAX) or nil,
                 -- A stale 'running' step never resumes mid-flight; it goes
-                -- back to pending so resume() retries it cleanly.
-                status = 'pending',
+                -- back to pending so resume() retries it cleanly. Terminal
+                -- step states ('done', 'failed') survive the restart, or
+                -- completed work is silently forgotten.
+                status = (item.status == 'done' or item.status == 'failed') and item.status or 'pending',
                 detail = type(item.detail) == 'string' and truncate(item.detail, RESULT_BYTES_MAX) or nil,
             }
         end
@@ -508,9 +510,13 @@ local function step_done(job, step, generation, ok, detail)
         return
     end
     advance(job, generation)
+    -- Persist step completion: without this, a restart between steps loses
+    -- completed work (the in-memory advance never reached disk).
+    save_state()
 end
 
 ---@param job TrailheadJob
+---@param step TrailheadStep
 ---@param generation integer
 ---@param result vim.SystemCompleted
 local function on_shell_exit(job, step, generation, result)
@@ -561,6 +567,7 @@ local function run_shell_step(job, step, generation)
         step_done(job, step, generation, false, 'failed to spawn: ' .. tostring(sysobj))
         return
     end
+    ---@cast sysobj vim.SystemObj
     job.handle = sysobj
 end
 
@@ -1261,8 +1268,8 @@ M.commands = {
         fn = cmd_add_step,
         opts = { desc = 'Add a step to a Trailhead job', nargs = '+' },
     },
-    { name = 'SfTrailheadStart',   fn = cmd_start,   opts = { desc = 'Start a Trailhead job', nargs = '?' } },
-    { name = 'SfTrailheadCancel',  fn = cmd_cancel,  opts = { desc = 'Cancel a Trailhead job', nargs = '?' } },
+    { name = 'SfTrailheadStart', fn = cmd_start, opts = { desc = 'Start a Trailhead job', nargs = '?' } },
+    { name = 'SfTrailheadCancel', fn = cmd_cancel, opts = { desc = 'Cancel a Trailhead job', nargs = '?' } },
     {
         name = 'SfTrailheadCancelAll',
         fn = cmd_cancel_all,
@@ -1280,8 +1287,8 @@ M.commands = {
         opts = { desc = 'Report a Trailhead step failed (external agent)', nargs = '+' },
     },
     { name = 'SfTrailheadStatus', fn = cmd_status, opts = { desc = 'Show Trailhead job status', nargs = '?' } },
-    { name = 'SfTrailheadJobs',   fn = cmd_jobs,   opts = { desc = 'List Trailhead jobs', nargs = 0 } },
-    { name = 'SfTrailheadLog',    fn = cmd_log,    opts = { desc = 'Show a Trailhead job log', nargs = '?' } },
+    { name = 'SfTrailheadJobs', fn = cmd_jobs, opts = { desc = 'List Trailhead jobs', nargs = 0 } },
+    { name = 'SfTrailheadLog', fn = cmd_log, opts = { desc = 'Show a Trailhead job log', nargs = '?' } },
     {
         name = 'SfTrailheadQuests',
         fn = cmd_quests,

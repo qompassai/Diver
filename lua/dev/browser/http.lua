@@ -21,15 +21,15 @@ local M = {}
 ---@field headers table<string,string>
 ---@field body string bounded by BODY_BYTES_MAX = 1048576
 
----Default per-request timeout, milliseconds.
-M.TIMEOUT_MS_DEFAULT = 5000
 ---Hard cap on response body bytes. Over it -> (nil, err).
 M.BODY_BYTES_MAX = 1048576
+---Default per-request timeout, milliseconds.
+M.TIMEOUT_MS_DEFAULT = 5000
 
-local PORT_MIN = 1
-local PORT_MAX = 65535
 local HEADER_BYTES_MAX = 16384 -- status line + headers, before body
 local POLL_INTERVAL_MS = 25 -- vim.wait pump granularity
+local PORT_MAX = 65535
+local PORT_MIN = 1
 
 local LOOPBACK_HOSTS = {
     ['127.0.0.1'] = true,
@@ -38,11 +38,173 @@ local LOOPBACK_HOSTS = {
 }
 local METHODS = { GET = true, POST = true, PUT = true }
 
+---Feed one received chunk into the response parser. Leaf for run_exchange.
+---@param state DevHttpRequestState request state
+---@param chunk string? nil on EOF
+---@param finish fun(resp: table?, rerr: string?)
+local function on_chunk(state, chunk, finish)
+    if chunk == nil then
+        local resp, perr = M._parse_response(state.buf, true)
+        if resp ~= nil then
+            finish(resp, nil)
+        else
+            finish(nil, perr or 'truncated response')
+        end
+        return
+    end
+    state.buf = state.buf .. chunk
+    if #state.buf > HEADER_BYTES_MAX + M.BODY_BYTES_MAX then
+        finish(nil, 'response exceeds BODY_BYTES_MAX')
+        return
+    end
+    local resp, perr, incomplete = M._parse_response(state.buf, false)
+    if resp ~= nil then
+        finish(resp, nil)
+    elseif perr ~= nil then
+        finish(nil, perr)
+    elseif not incomplete then
+        finish(nil, 'response parse stalled')
+    end
+    -- incomplete: keep reading until EOF or timeout.
+end
+
+---@param block string raw header block (no trailing blank line)
+---@return table<string,string> lowercased header names
+local function parse_headers(block)
+    local headers = {}
+    for line in block:gmatch('[^\r\n]+') do
+        local name, value = line:match('^([^:]+):%s*(.-)%s*$')
+        if name ~= nil then
+            headers[name:lower()] = value
+        end
+    end
+    return headers
+end
+
+---@param line string status line, e.g. 'HTTP/1.1 200 OK'
+---@return integer? status
+---@return string? err
+local function parse_status_line(line)
+    local status = line:match('^HTTP/%d%.%d%s+(%d%d%d)%s') or line:match('^HTTP/%d%.%d%s+(%d%d%d)$')
+    if status == nil then
+        return nil, 'malformed status line: ' .. line:sub(1, 64)
+    end
+    return math.floor(tonumber(status) or 0), nil
+end
+
+---Open the TCP connection and run the HTTP exchange. Leaf for M.request.
+---@param state DevHttpRequestState request state
+---@param norm table normalized opts
+---@param finish fun(resp: table?, rerr: string?)
+---@return string? err
+local function run_exchange(state, norm, finish)
+    local uv = vim.uv
+    -- 'localhost' always resolves to 127.0.0.1 here; no DNS is attempted.
+    local host = norm.host == 'localhost' and '127.0.0.1' or norm.host
+    local sock = uv.new_tcp()
+    if sock == nil then
+        return 'cannot allocate TCP handle'
+    end
+    state.sock = sock
+    sock:connect(host, norm.port, function(connect_err)
+        if connect_err ~= nil then
+            finish(nil, 'connect failed: ' .. connect_err)
+            return
+        end
+        sock:write(M._build_request(norm))
+        sock:read_start(function(read_err, chunk)
+            if read_err ~= nil then
+                finish(nil, 'read error: ' .. read_err)
+                return
+            end
+            on_chunk(state, chunk, finish)
+        end)
+    end)
+    return nil
+end
+
+---Build the raw HTTP/1.1 request text. Pure; no I/O.
+---@param norm table normalized opts from _validate_opts
+---@return string
+function M._build_request(norm)
+    local names = {}
+    for name in pairs(norm.headers) do
+        names[#names + 1] = name
+    end
+    table.sort(names) -- deterministic serialization
+    local lines = {
+        norm.method .. ' ' .. norm.path .. ' HTTP/1.1',
+        'Host: ' .. norm.host .. ':' .. norm.port,
+        'Connection: close',
+    }
+    if #norm.body > 0 then
+        lines[#lines + 1] = 'Content-Length: ' .. #norm.body
+    end
+    for i = 1, #names do
+        lines[#lines + 1] = names[i] .. ': ' .. norm.headers[names[i]]
+    end
+    return table.concat(lines, '\r\n') .. '\r\n\r\n' .. norm.body
+end
+
 ---True when host is one of the loopback names this client allows.
 ---@param host string
 ---@return boolean
 function M._is_loopback(host)
     return LOOPBACK_HOSTS[host] == true
+end
+
+---Parse a response buffer. Returns response, or (nil, nil, true) when more
+---bytes are needed, or (nil, err) on malformed/oversize input. When eof is
+---true, an incomplete body is a truncation error, not a wait.
+---@param buf string bytes received so far
+---@param eof boolean remote closed the connection
+---@return BrowserHttpResponse? resp
+---@return string? err
+---@return boolean? incomplete
+function M._parse_response(buf, eof)
+    local eoh = buf:find('\r\n\r\n', 1, true)
+    if eoh == nil then
+        if #buf > HEADER_BYTES_MAX then
+            return nil, 'response header too large', false
+        end
+        return nil, nil, true
+    end
+    local head = buf:sub(1, eoh - 1)
+    local rest = buf:sub(eoh + 4)
+    local first_nl = head:find('\r\n', 1, true)
+    local status_line = first_nl and head:sub(1, first_nl - 1) or head
+    local status, serr = parse_status_line(status_line)
+    if status == nil then
+        return nil, serr, false
+    end
+    local headers = parse_headers(first_nl and head:sub(first_nl + 2) or '')
+    local content_length = tonumber(headers['content-length'])
+    local body
+    if content_length ~= nil then
+        if content_length < 0 then
+            return nil, 'negative content-length', false
+        end
+        if content_length > M.BODY_BYTES_MAX then
+            return nil, 'response body exceeds BODY_BYTES_MAX', false
+        end
+        if #rest < content_length then
+            if eof then
+                return nil, 'truncated body: expected ' .. content_length .. ', got ' .. #rest, false
+            end
+            return nil, nil, true
+        end
+        body = rest:sub(1, math.floor(content_length))
+    else
+        -- No length framing: body runs to connection close.
+        if #rest > M.BODY_BYTES_MAX then
+            return nil, 'response body exceeds BODY_BYTES_MAX', false
+        end
+        if not eof then
+            return nil, nil, true
+        end
+        body = rest
+    end
+    return { status = status, headers = headers, body = body }, nil, nil
 end
 
 ---Validate opts into a normalized table. Pure; no I/O.
@@ -106,173 +268,17 @@ function M._validate_opts(opts)
         body = body,
         headers = headers,
         timeout_ms = timeout_ms,
-    }, nil
+    },
+        nil
 end
 
----Build the raw HTTP/1.1 request text. Pure; no I/O.
----@param norm table normalized opts from _validate_opts
----@return string
-function M._build_request(norm)
-    local names = {}
-    for name in pairs(norm.headers) do
-        names[#names + 1] = name
-    end
-    table.sort(names) -- deterministic serialization
-    local lines = {
-        norm.method .. ' ' .. norm.path .. ' HTTP/1.1',
-        'Host: ' .. norm.host .. ':' .. norm.port,
-        'Connection: close',
-    }
-    if #norm.body > 0 then
-        lines[#lines + 1] = 'Content-Length: ' .. #norm.body
-    end
-    for i = 1, #names do
-        lines[#lines + 1] = names[i] .. ': ' .. norm.headers[names[i]]
-    end
-    return table.concat(lines, '\r\n') .. '\r\n\r\n' .. norm.body
-end
-
----@param line string status line, e.g. 'HTTP/1.1 200 OK'
----@return integer? status
----@return string? err
-local function parse_status_line(line)
-    local status = line:match('^HTTP/%d%.%d%s+(%d%d%d)%s')
-        or line:match('^HTTP/%d%.%d%s+(%d%d%d)$')
-    if status == nil then
-        return nil, 'malformed status line: ' .. line:sub(1, 64)
-    end
-    return tonumber(status), nil
-end
-
----@param block string raw header block (no trailing blank line)
----@return table<string,string> lowercased header names
-local function parse_headers(block)
-    local headers = {}
-    for line in block:gmatch('[^\r\n]+') do
-        local name, value = line:match('^([^:]+):%s*(.-)%s*$')
-        if name ~= nil then
-            headers[name:lower()] = value
-        end
-    end
-    return headers
-end
-
----Parse a response buffer. Returns response, or (nil, nil, true) when more
----bytes are needed, or (nil, err) on malformed/oversize input. When eof is
----true, an incomplete body is a truncation error, not a wait.
----@param buf string bytes received so far
----@param eof boolean remote closed the connection
----@return BrowserHttpResponse? resp
----@return string? err
----@return boolean? incomplete
-function M._parse_response(buf, eof)
-    local eoh = buf:find('\r\n\r\n', 1, true)
-    if eoh == nil then
-        if #buf > HEADER_BYTES_MAX then
-            return nil, 'response header too large', false
-        end
-        return nil, nil, true
-    end
-    local head = buf:sub(1, eoh - 1)
-    local rest = buf:sub(eoh + 4)
-    local first_nl = head:find('\r\n', 1, true)
-    local status_line = first_nl and head:sub(1, first_nl - 1) or head
-    local status, serr = parse_status_line(status_line)
-    if status == nil then
-        return nil, serr, false
-    end
-    local headers = parse_headers(first_nl and head:sub(first_nl + 2) or '')
-    local content_length = tonumber(headers['content-length'])
-    local body
-    if content_length ~= nil then
-        if content_length < 0 then
-            return nil, 'negative content-length', false
-        end
-        if content_length > M.BODY_BYTES_MAX then
-            return nil, 'response body exceeds BODY_BYTES_MAX', false
-        end
-        if #rest < content_length then
-            if eof then
-                return nil,
-                    'truncated body: expected ' .. content_length .. ', got ' .. #rest,
-                    false
-            end
-            return nil, nil, true
-        end
-        body = rest:sub(1, content_length)
-    else
-        -- No length framing: body runs to connection close.
-        if #rest > M.BODY_BYTES_MAX then
-            return nil, 'response body exceeds BODY_BYTES_MAX', false
-        end
-        if not eof then
-            return nil, nil, true
-        end
-        body = rest
-    end
-    return { status = status, headers = headers, body = body }, nil, nil
-end
-
----Feed one received chunk into the response parser. Leaf for run_exchange.
----@param state table request state
----@param chunk string? nil on EOF
----@param finish fun(resp: table?, rerr: string?)
-local function on_chunk(state, chunk, finish)
-    if chunk == nil then
-        local resp, perr = M._parse_response(state.buf, true)
-        if resp ~= nil then
-            finish(resp, nil)
-        else
-            finish(nil, perr or 'truncated response')
-        end
-        return
-    end
-    state.buf = state.buf .. chunk
-    if #state.buf > HEADER_BYTES_MAX + M.BODY_BYTES_MAX then
-        finish(nil, 'response exceeds BODY_BYTES_MAX')
-        return
-    end
-    local resp, perr, incomplete = M._parse_response(state.buf, false)
-    if resp ~= nil then
-        finish(resp, nil)
-    elseif perr ~= nil then
-        finish(nil, perr)
-    elseif not incomplete then
-        finish(nil, 'response parse stalled')
-    end
-    -- incomplete: keep reading until EOF or timeout.
-end
-
----Open the TCP connection and run the HTTP exchange. Leaf for M.request.
----@param state table request state
----@param norm table normalized opts
----@param finish fun(resp: table?, rerr: string?)
----@return string? err
-local function run_exchange(state, norm, finish)
-    local uv = vim.uv
-    -- 'localhost' always resolves to 127.0.0.1 here; no DNS is attempted.
-    local host = norm.host == 'localhost' and '127.0.0.1' or norm.host
-    local sock = uv.new_tcp()
-    if sock == nil then
-        return 'cannot allocate TCP handle'
-    end
-    state.sock = sock
-    sock:connect(host, norm.port, function(connect_err)
-        if connect_err ~= nil then
-            finish(nil, 'connect failed: ' .. connect_err)
-            return
-        end
-        sock:write(M._build_request(norm))
-        sock:read_start(function(read_err, chunk)
-            if read_err ~= nil then
-                finish(nil, 'read error: ' .. read_err)
-                return
-            end
-            on_chunk(state, chunk, finish)
-        end)
-    end)
-    return nil
-end
+---@class DevHttpRequestState
+---@field buf string
+---@field done boolean
+---@field rerr string?
+---@field resp BrowserHttpResponse?
+---@field sock uv.uv_tcp_t?
+---@field timer uv.uv_timer_t?
 
 ---Perform one HTTP/1.1 request over a fresh TCP connection
 ---(`Connection: close`, no keep-alive). Synchronous: pumps the event loop
@@ -284,6 +290,7 @@ function M.request(opts)
     if norm == nil then
         return nil, verr
     end
+    ---@type DevHttpRequestState
     local state = {
         done = false,
         resp = nil,
@@ -299,20 +306,16 @@ function M.request(opts)
         state.done = true
         state.resp = resp
         state.rerr = rerr
-        if state.timer ~= nil then
-            local timer = state.timer
-            state.timer = nil
-            if not timer:is_closing() then
-                timer:stop()
-                timer:close()
-            end
+        local timer = state.timer
+        state.timer = nil
+        if timer ~= nil and not timer:is_closing() then
+            timer:stop()
+            timer:close()
         end
-        if state.sock ~= nil then
-            local sock = state.sock
-            state.sock = nil
-            if not sock:is_closing() then
-                sock:close()
-            end
+        local sock = state.sock
+        state.sock = nil
+        if sock ~= nil and not sock:is_closing() then
+            sock:close()
         end
     end
     local xerr = run_exchange(state, norm, finish)

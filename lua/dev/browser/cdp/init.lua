@@ -9,16 +9,16 @@
 -- SPDX-License-Identifier: Apache-2.0
 ---@module 'dev.browser.cdp'
 
-local session = require('dev.browser.cdp.session')
 local domains = require('dev.browser.cdp.domains')
 local security = require('dev.browser.cdp.security')
+local session = require('dev.browser.cdp.session')
 
 local M = {}
 
 local DISCOVERY_TIMEOUT_MS = 5000
-local PUMP_INTERVAL_MS = 1000 -- timeout sweep cadence for pending requests
-local PORT_MIN = 1
 local PORT_MAX = 65535
+local PORT_MIN = 1
+local PUMP_INTERVAL_MS = 1000 -- timeout sweep cadence for pending requests
 
 ---@class CdpDiscoverOpts
 ---@field host? string default '127.0.0.1'
@@ -45,30 +45,25 @@ local PORT_MAX = 65535
 ---@field on_error? fun(err: string)
 
 ---@class CdpConnection
+---@field _child? vim.SystemObj spawned browser process, when launched locally
+---@field _json_decode fun(text: string): table|nil
+---@field _json_encode fun(value: table): string
+---@field _on_error fun(err: string)
+---@field _profile? string throwaway profile directory, when launched locally
+---@field _timer? uv.uv_timer_t
+---@field _transport? table
+---@field _ws_dead? boolean
+---@field browser_session table|nil browser-level session (no sessionId)
+---@field browser_ws_url string
+---@field closed boolean
+---@field discovery CdpDiscovery
 ---@field host string
 ---@field port integer
----@field browser_ws_url string
----@field discovery CdpDiscovery
----@field browser_session table browser-level session (no sessionId)
+---@field target_id string|nil
 ---@field target_session table|nil attached page session
 ---@field target_session_id string|nil
----@field target_id string|nil
 ---@field target_url string|nil page URL, for confirmation prompts
----@field closed boolean
-
----Lazy require of the shared HTTP helper (sibling track owns it).
----@return table|nil http
----@return string|nil err
-local function get_http()
-    local ok, mod = pcall(require, 'dev.browser.http')
-    if not ok then
-        return nil, 'shared HTTP helper unavailable (dev.browser.http): ' .. tostring(mod)
-    end
-    if type(mod) ~= 'table' or type(mod.request) ~= 'function' then
-        return nil, 'shared HTTP helper has no request() function'
-    end
-    return mod
-end
+---@field ws? table websocket client
 
 ---@param text string
 ---@param json_decode fun(text: string): table|nil
@@ -83,106 +78,6 @@ local function decode_json(text, json_decode)
         return nil, 'invalid JSON: ' .. tostring(value)
     end
     return value
-end
-
----@param opts CdpDiscoverOpts
----@return fun(text: string): table|nil decoder
-local function pick_decoder(opts)
-    if opts.json_decode ~= nil then
-        return opts.json_decode
-    end
-    return function(text)
-        -- selene: allow(global_usage)
-        return rawget(_G, 'vim').json.decode(text)
-    end
-end
-
----@param opts CdpDiscoverOpts
----@param path string
----@return table|nil res
----@return string|nil err
-local function discovery_get(opts, path, http, timeout_ms)
-    local res, err = http.request({
-        host = opts.host or '127.0.0.1',
-        port = opts.port or 9222,
-        method = 'GET',
-        path = path,
-        timeout_ms = timeout_ms,
-    })
-    if res == nil then
-        return nil, 'discovery ' .. path .. ' failed: ' .. tostring(err)
-    end
-    return res
-end
-
----Probe /json/version and /json/list. A 404 or a non-JSON body means
----"not a CDP endpoint", not a retryable error.
----@param opts CdpDiscoverOpts
----@return CdpDiscovery|nil
----@return string|nil err
-function M.discover(opts)
-    assert(type(opts) == 'table', 'opts must be a table')
-    local host = opts.host or '127.0.0.1'
-    local port = opts.port or 9222
-    local ok, herr = security.check_host(host)
-    if not ok then
-        return nil, herr
-    end
-    if type(port) ~= 'number' or port ~= math.floor(port) or port < PORT_MIN or port > PORT_MAX then
-        return nil, 'port must be an integer 1..65535'
-    end
-    local http = opts.http
-    if http == nil then
-        local h, herr2 = get_http()
-        if h == nil then
-            return nil, herr2
-        end
-        http = h
-    end
-    local timeout_ms = opts.timeout_ms or DISCOVERY_TIMEOUT_MS
-    local decode = pick_decoder(opts)
-    local res, err = discovery_get({ host = host, port = port }, '/json/version', http, timeout_ms)
-    if res == nil then
-        return nil, err
-    end
-    if res.status ~= 200 then
-        return nil, 'not a CDP endpoint: /json/version -> HTTP ' .. tostring(res.status)
-    end
-    local version, derr = decode_json(res.body, decode)
-    if version == nil or type(version) ~= 'table' then
-        return nil, 'not a CDP endpoint: /json/version is not JSON (' .. tostring(derr) .. ')'
-    end
-    local ws_url = version.webSocketDebuggerUrl
-    if type(ws_url) ~= 'string' or ws_url == '' then
-        return nil, 'not a CDP endpoint: /json/version missing webSocketDebuggerUrl'
-    end
-    local lres, lerr = discovery_get({ host = host, port = port }, '/json/list', http, timeout_ms)
-    if lres == nil then
-        return nil, lerr
-    end
-    if lres.status ~= 200 then
-        return nil, 'discovery /json/list -> HTTP ' .. tostring(lres.status)
-    end
-    local targets, terr = decode_json(lres.body, decode)
-    if type(targets) ~= 'table' then
-        return nil, 'discovery /json/list is not a JSON array (' .. tostring(terr) .. ')'
-    end
-    local pages = {}
-    for _, target_info in ipairs(targets) do
-        local is_page = type(target_info) == 'table' and target_info.type == 'page'
-        if is_page and type(target_info.id) == 'string' then
-            pages[#pages + 1] = target_info
-        end
-    end
-    return {
-        host = host,
-        port = port,
-        browser_ws_url = ws_url, -- verbatim from discovery; never reconstructed
-        browser_name = version.Browser,
-        protocol_version = version['Protocol-Version'],
-        targets = targets,
-        pages = pages,
-    }
 end
 
 ---Default websocket factory over ai.websocket.client (reconnect off:
@@ -216,17 +111,49 @@ local function default_ws_new(ws_opts)
     return client
 end
 
----Sweep both sessions' pending requests for timeouts.
----@param conn CdpConnection
----@param now_ms integer
-function M.pump(conn, now_ms)
-    assert(type(conn) == 'table', 'conn must be a table')
-    assert(type(now_ms) == 'number', 'now_ms must be a number')
-    if conn.browser_session ~= nil then
-        conn.browser_session:check_timeouts(now_ms)
+---@param opts CdpDiscoverOpts
+---@param path string
+---@param http table HTTP transport (dev.browser.http)
+---@param timeout_ms integer
+---@return table|nil res
+---@return string|nil err
+local function discovery_get(opts, path, http, timeout_ms)
+    local res, err = http.request({
+        host = opts.host or '127.0.0.1',
+        port = opts.port or 9222,
+        method = 'GET',
+        path = path,
+        timeout_ms = timeout_ms,
+    })
+    if res == nil then
+        return nil, 'discovery ' .. path .. ' failed: ' .. tostring(err)
     end
-    if conn.target_session ~= nil then
-        conn.target_session:check_timeouts(now_ms)
+    return res
+end
+
+---Lazy require of the shared HTTP helper (sibling track owns it).
+---@return table|nil http
+---@return string|nil err
+local function get_http()
+    local ok, mod = pcall(require, 'dev.browser.http')
+    if not ok then
+        return nil, 'shared HTTP helper unavailable (dev.browser.http): ' .. tostring(mod)
+    end
+    if type(mod) ~= 'table' or type(mod.request) ~= 'function' then
+        return nil, 'shared HTTP helper has no request() function'
+    end
+    return mod
+end
+
+---@param opts CdpDiscoverOpts
+---@return fun(text: string): table|nil decoder
+local function pick_decoder(opts)
+    if opts.json_decode ~= nil then
+        return opts.json_decode
+    end
+    return function(text)
+        -- selene: allow(global_usage)
+        return rawget(_G, 'vim').json.decode(text)
     end
 end
 
@@ -248,32 +175,6 @@ local function start_pump(conn)
         end
         M.pump(conn, v.uv.now())
     end)
-end
-
----Route one incoming text frame to the right session by sessionId.
----@param conn CdpConnection
----@param text string
-function M._on_ws_message(conn, text)
-    if conn.closed then
-        return
-    end
-    local decode = conn._json_decode
-    local ok, msg = pcall(decode, text)
-    if not ok or type(msg) ~= 'table' then
-        conn._on_error('ignoring malformed frame: ' .. tostring(msg))
-        return
-    end
-    local target_session = conn.browser_session
-    local session_id = msg.sessionId
-    if session_id ~= nil then
-        if conn.target_session ~= nil and session_id == conn.target_session_id then
-            target_session = conn.target_session
-        else
-            conn._on_error('ignoring frame for unknown sessionId')
-            return
-        end
-    end
-    target_session:handle_message(msg)
 end
 
 ---Pick the page target and attach in flat mode.
@@ -370,6 +271,78 @@ function M._on_ws_disconnect(conn)
     conn._on_error(err)
 end
 
+---Route one incoming text frame to the right session by sessionId.
+---@param conn CdpConnection
+---@param text string
+function M._on_ws_message(conn, text)
+    if conn.closed then
+        return
+    end
+    local decode = conn._json_decode
+    local ok, msg = pcall(decode, text)
+    if not ok or type(msg) ~= 'table' then
+        conn._on_error('ignoring malformed frame: ' .. tostring(msg))
+        return
+    end
+    local target_session = conn.browser_session
+    local session_id = msg.sessionId
+    if session_id ~= nil then
+        if conn.target_session ~= nil and session_id == conn.target_session_id then
+            target_session = conn.target_session
+        else
+            conn._on_error('ignoring frame for unknown sessionId')
+            return
+        end
+    end
+    target_session:handle_message(msg)
+end
+
+---Idempotent teardown: stop the timeout pump, fail pending requests,
+---close the socket exactly once, kill a launched child browser if any.
+---@param conn CdpConnection
+function M.close(conn)
+    assert(type(conn) == 'table', 'conn must be a table')
+    if conn.closed then
+        return
+    end
+    conn.closed = true
+    if conn._timer ~= nil then
+        local timer = conn._timer
+        conn._timer = nil
+        pcall(function()
+            timer:stop()
+            timer:close()
+        end)
+    end
+    if conn.browser_session ~= nil then
+        conn.browser_session:close()
+    end
+    if conn.target_session ~= nil then
+        conn.target_session:close()
+    end
+    if conn.ws ~= nil then
+        local ws = conn.ws
+        conn.ws = nil
+        if not conn._ws_dead then
+            pcall(function()
+                ws:try_disconnect()
+            end)
+        end
+    end
+    if conn._child ~= nil then
+        local child = conn._child
+        conn._child = nil
+        pcall(function()
+            child:kill('sigterm')
+        end)
+    end
+    if conn._profile ~= nil then
+        local profile = conn._profile
+        conn._profile = nil
+        pcall(security.remove_temp_profile, profile)
+    end
+end
+
 ---Connect: discover, open one websocket to the verbatim debugger URL,
 ---confirm CDP via Browser.getVersion, attach to a page target in flat
 ---mode. Async: on_connected fires with the ready connection, on_error
@@ -379,10 +352,7 @@ end
 ---@return string|nil err
 function M.connect(opts)
     assert(type(opts) == 'table', 'opts must be a table')
-    assert(
-        opts.on_connected == nil or type(opts.on_connected) == 'function',
-        'on_connected must be a function'
-    )
+    assert(opts.on_connected == nil or type(opts.on_connected) == 'function', 'on_connected must be a function')
     assert(opts.on_error == nil or type(opts.on_error) == 'function', 'on_error must be a function')
     assert(opts.ws_new == nil or type(opts.ws_new) == 'function', 'ws_new must be a function')
     if opts.target_id ~= nil and (type(opts.target_id) ~= 'string' or opts.target_id == '') then
@@ -393,6 +363,7 @@ function M.connect(opts)
     if discovery == nil then
         return nil, derr
     end
+    ---@type CdpConnection
     local conn = {
         host = discovery.host,
         port = discovery.port,
@@ -447,49 +418,87 @@ function M.connect(opts)
     return conn
 end
 
----Idempotent teardown: stop the timeout pump, fail pending requests,
----close the socket exactly once, kill a launched child browser if any.
----@param conn CdpConnection
-function M.close(conn)
-    assert(type(conn) == 'table', 'conn must be a table')
-    if conn.closed then
-        return
+---Probe /json/version and /json/list. A 404 or a non-JSON body means
+---"not a CDP endpoint", not a retryable error.
+---@param opts CdpDiscoverOpts
+---@return CdpDiscovery|nil
+---@return string|nil err
+function M.discover(opts)
+    assert(type(opts) == 'table', 'opts must be a table')
+    local host = opts.host or '127.0.0.1'
+    local port = opts.port or 9222
+    local ok, herr = security.check_host(host)
+    if not ok then
+        return nil, herr
     end
-    conn.closed = true
-    if conn._timer ~= nil then
-        local timer = conn._timer
-        conn._timer = nil
-        pcall(function()
-            timer:stop()
-            timer:close()
-        end)
+    if type(port) ~= 'number' or port ~= math.floor(port) or port < PORT_MIN or port > PORT_MAX then
+        return nil, 'port must be an integer 1..65535'
     end
-    if conn.browser_session ~= nil then
-        conn.browser_session:close()
+    local http = opts.http
+    if http == nil then
+        local h, herr2 = get_http()
+        if h == nil then
+            return nil, herr2
+        end
+        http = h
     end
-    if conn.target_session ~= nil then
-        conn.target_session:close()
+    local timeout_ms = opts.timeout_ms or DISCOVERY_TIMEOUT_MS
+    local decode = pick_decoder(opts)
+    local res, err = discovery_get({ host = host, port = port }, '/json/version', http, timeout_ms)
+    if res == nil then
+        return nil, err
     end
-    if conn.ws ~= nil then
-        local ws = conn.ws
-        conn.ws = nil
-        if not conn._ws_dead then
-            pcall(function()
-                ws:try_disconnect()
-            end)
+    if res.status ~= 200 then
+        return nil, 'not a CDP endpoint: /json/version -> HTTP ' .. tostring(res.status)
+    end
+    local version, derr = decode_json(res.body, decode)
+    if version == nil or type(version) ~= 'table' then
+        return nil, 'not a CDP endpoint: /json/version is not JSON (' .. tostring(derr) .. ')'
+    end
+    local ws_url = version.webSocketDebuggerUrl
+    if type(ws_url) ~= 'string' or ws_url == '' then
+        return nil, 'not a CDP endpoint: /json/version missing webSocketDebuggerUrl'
+    end
+    local lres, lerr = discovery_get({ host = host, port = port }, '/json/list', http, timeout_ms)
+    if lres == nil then
+        return nil, lerr
+    end
+    if lres.status ~= 200 then
+        return nil, 'discovery /json/list -> HTTP ' .. tostring(lres.status)
+    end
+    local targets, terr = decode_json(lres.body, decode)
+    if type(targets) ~= 'table' then
+        return nil, 'discovery /json/list is not a JSON array (' .. tostring(terr) .. ')'
+    end
+    local pages = {}
+    for _, target_info in ipairs(targets) do
+        local is_page = type(target_info) == 'table' and target_info.type == 'page'
+        if is_page and type(target_info.id) == 'string' then
+            pages[#pages + 1] = target_info
         end
     end
-    if conn._child ~= nil then
-        local child = conn._child
-        conn._child = nil
-        pcall(function()
-            child:kill('sigterm')
-        end)
+    return {
+        host = host,
+        port = port,
+        browser_ws_url = ws_url, -- verbatim from discovery; never reconstructed
+        browser_name = version.Browser,
+        protocol_version = version['Protocol-Version'],
+        targets = targets,
+        pages = pages,
+    }
+end
+
+---Sweep both sessions' pending requests for timeouts.
+---@param conn CdpConnection
+---@param now_ms integer
+function M.pump(conn, now_ms)
+    assert(type(conn) == 'table', 'conn must be a table')
+    assert(type(now_ms) == 'number', 'now_ms must be a number')
+    if conn.browser_session ~= nil then
+        conn.browser_session:check_timeouts(now_ms)
     end
-    if conn._profile ~= nil then
-        local profile = conn._profile
-        conn._profile = nil
-        pcall(security.remove_temp_profile, profile)
+    if conn.target_session ~= nil then
+        conn.target_session:check_timeouts(now_ms)
     end
 end
 

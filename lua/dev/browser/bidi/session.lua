@@ -13,15 +13,27 @@ local M = {}
 ---@field send BidiSend
 
 ---@param conn BidiConn
----@param callback fun(err: string?, result: table?)
+---@param method string
+---@param params table?
+---@param callback? fun(err: string?, result: table?)
+---@return any passthrough of conn:send
 local function send(conn, method, params, callback)
     assert(conn ~= nil and type(conn.send) == 'function', 'conn.send must be a function')
     return conn:send(method, params, callback)
 end
 
+---session.end: ends the BiDi session on the browser side.
+---@param conn BidiConn
+---@param callback? fun(err: string?, result: table?)
+---@return any passthrough of conn:send
+function M.finish(conn, callback)
+    return send(conn, 'session.end', {}, callback)
+end
+
 ---session.status: driver/browser readiness and versions.
 ---@param conn BidiConn
 ---@param callback fun(err: string?, result: table?)
+---@return any passthrough of conn:send
 function M.status(conn, callback)
     assert(type(callback) == 'function', 'callback must be a function')
     return send(conn, 'session.status', {}, callback)
@@ -91,13 +103,6 @@ function M.unsubscribe(conn, events, callback)
         return nil, serr
     end
     return true, nil
-end
-
----session.end: ends the BiDi session on the browser side.
----@param conn BidiConn
----@param callback? fun(err: string?, result: table?)
-function M.finish(conn, callback)
-    return send(conn, 'session.end', {}, callback)
 end
 
 return M

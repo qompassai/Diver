@@ -10,21 +10,6 @@ local M = {}
 ---@type table<string, boolean> known browsing context ids
 local registry = {}
 
----All context ids this module has seen. Order is unspecified.
----@return string[]
-function M.contexts()
-    local out = {}
-    for id in pairs(registry) do
-        out[#out + 1] = id
-    end
-    return out
-end
-
----Forget every known context (session teardown).
-function M.reset()
-    registry = {}
-end
-
 ---@param conn table BidiConn facade
 ---@param context string
 ---@return boolean? ok
@@ -39,64 +24,6 @@ local function check_context(conn, context)
     return true, nil
 end
 
----browsingContext.create. Registers the new id.
----@param conn table BidiConn facade
----@param context_type? string 'tab' (default) or 'window'
----@param callback fun(err: string?, context_id: string?)
-function M.create(conn, context_type, callback)
-    assert(type(callback) == 'function', 'callback must be a function')
-    context_type = context_type or 'tab'
-    if context_type ~= 'tab' and context_type ~= 'window' then
-        callback("context_type must be 'tab' or 'window'", nil)
-        return
-    end
-    local create_params = { type = context_type }
-    local ok, serr = conn:send('browsingContext.create', create_params, function(err, result)
-        if err ~= nil then
-            callback(err, nil)
-            return
-        end
-        local id = type(result) == 'table' and result.context or nil
-        if type(id) ~= 'string' or id == '' then
-            callback('browsingContext.create returned no context id', nil)
-            return
-        end
-        registry[id] = true
-        callback(nil, id)
-    end)
-    if not ok then
-        callback(serr, nil)
-    end
-end
-
----browsingContext.navigate with wait:'complete'.
----@param conn table BidiConn facade
----@param context string
----@param url string
----@param callback fun(err: string?, navigation: table?)
-function M.navigate(conn, context, url, callback)
-    assert(type(callback) == 'function', 'callback must be a function')
-    local ok, cerr = check_context(conn, context)
-    if not ok then
-        callback(cerr, nil)
-        return
-    end
-    if type(url) ~= 'string' or url == '' then
-        callback('url must be a non-empty string', nil)
-        return
-    end
-    local sok, serr = conn:send('browsingContext.navigate', {
-        context = context,
-        url = url,
-        wait = 'complete',
-    }, function(err, result)
-        callback(err, err == nil and result or nil)
-    end)
-    if not sok then
-        callback(serr, nil)
-    end
-end
-
 ---Pure size gate for decoded screenshot bytes. The 50MB adversarial case
 ---must be rejected here, before anything is kept or displayed.
 ---@param byte_len integer
@@ -108,8 +35,7 @@ function M._check_image_bytes(byte_len)
     end
     if byte_len > config.screenshot_bytes_max then
         return nil,
-            'screenshot rejected: ' .. byte_len .. ' bytes exceeds '
-                .. config.screenshot_bytes_max .. ' byte bound'
+            'screenshot rejected: ' .. byte_len .. ' bytes exceeds ' .. config.screenshot_bytes_max .. ' byte bound'
     end
     return true, nil
 end
@@ -156,6 +82,46 @@ function M.capture_screenshot(conn, context, callback)
     end
 end
 
+---All context ids this module has seen. Order is unspecified.
+---@return string[]
+function M.contexts()
+    local out = {}
+    for id in pairs(registry) do
+        out[#out + 1] = id
+    end
+    return out
+end
+
+---browsingContext.create. Registers the new id.
+---@param conn table BidiConn facade
+---@param context_type? string 'tab' (default) or 'window'
+---@param callback fun(err: string?, context_id: string?)
+function M.create(conn, context_type, callback)
+    assert(type(callback) == 'function', 'callback must be a function')
+    context_type = context_type or 'tab'
+    if context_type ~= 'tab' and context_type ~= 'window' then
+        callback("context_type must be 'tab' or 'window'", nil)
+        return
+    end
+    local create_params = { type = context_type }
+    local ok, serr = conn:send('browsingContext.create', create_params, function(err, result)
+        if err ~= nil then
+            callback(err, nil)
+            return
+        end
+        local id = type(result) == 'table' and result.context or nil
+        if type(id) ~= 'string' or id == '' then
+            callback('browsingContext.create returned no context id', nil)
+            return
+        end
+        registry[id] = true
+        callback(nil, id)
+    end)
+    if not ok then
+        callback(serr, nil)
+    end
+end
+
 ---browsingContext.getTree. Returns the raw tree; callers bound depth.
 ---@param conn table BidiConn facade
 ---@param context string
@@ -174,6 +140,39 @@ function M.get_tree(conn, context, callback)
     if not sok then
         callback(serr, nil)
     end
+end
+
+---browsingContext.navigate with wait:'complete'.
+---@param conn table BidiConn facade
+---@param context string
+---@param url string
+---@param callback fun(err: string?, navigation: table?)
+function M.navigate(conn, context, url, callback)
+    assert(type(callback) == 'function', 'callback must be a function')
+    local ok, cerr = check_context(conn, context)
+    if not ok then
+        callback(cerr, nil)
+        return
+    end
+    if type(url) ~= 'string' or url == '' then
+        callback('url must be a non-empty string', nil)
+        return
+    end
+    local sok, serr = conn:send('browsingContext.navigate', {
+        context = context,
+        url = url,
+        wait = 'complete',
+    }, function(err, result)
+        callback(err, err == nil and result or nil)
+    end)
+    if not sok then
+        callback(serr, nil)
+    end
+end
+
+---Forget every known context (session teardown).
+function M.reset()
+    registry = {}
 end
 
 return M

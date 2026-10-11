@@ -20,7 +20,7 @@
 --     and the teach-doc says so plainly.
 --
 -- The "agent" here is the task runner itself: a deterministic, bounded,
--- cancellable sequence of sf invocations. A planner (rose.nvim, an A2A
+-- cancellable sequence of sf invocations. A planner (rose, an A2A
 -- orchestrator) can compose plans through dispatch(); every transition
 -- is broadcast on trailhead.on_event() for those supervisors
 -- (see lua/dev/sf/trailhead.lua).
@@ -31,21 +31,23 @@ local trailhead = require('dev.sf.trailhead')
 
 local fn = vim.fn
 
+---Log lines kept in a teach-doc; the full log stays in the job record.
+local DOC_LOG_TAIL = 40
+
 ---Canonical Salesforce CLI Command Reference. Opened 2026-09-28
 ---(reference version 2.152.14). Every flag used in the catalog below
 ---is verified against this page; see docs/salesforce/FLAGS.md.
 local FLAGS_DOC = 'https://developer.salesforce.com/docs/platform/salesforce-cli-reference/guide/cli_reference.html'
 
+local SLUG_MAX_BYTES = 64
+
 ---Slugs are teach-doc filenames too, so only safe filename characters.
 local SLUG_PATTERN = '^[a-z0-9][a-z0-9_%-]*$'
-local SLUG_MAX_BYTES = 64
+
+local TARGET_ORG_MAX_BYTES = 128
 
 ---Target-org aliases/usernames: no shell metacharacters, bounded length.
 local TARGET_ORG_PATTERN = '^[%w@._%-]+$'
-local TARGET_ORG_MAX_BYTES = 128
-
----Log lines kept in a teach-doc; the full log stays in the job record.
-local DOC_LOG_TAIL = 40
 
 ---@class SfTaskFlag
 ---@field flag string The CLI flag, exactly as typed on the command line.
@@ -80,15 +82,15 @@ local DOC_LOG_TAIL = 40
 ---@field mode? string 'live' (default) or 'hermetic' (stubbed dry run).
 
 ---@class SfDispatchedJob
----@field slug string
----@field target_org? string
+---@field dispatched_at string UTC timestamp.
+---@field learn string[]
 ---@field mode string 'live' | 'hermetic'
+---@field slug string
+---@field steps SfTaskStep[]
+---@field summary string
+---@field target_org? string
 ---@field title string
 ---@field trailhead_url string
----@field summary string
----@field learn string[]
----@field steps SfTaskStep[]
----@field dispatched_at string UTC timestamp.
 
 ---A step every module starts with: ask the CLI who it can talk to.
 ---If this step fails, nothing later in the plan can run for real.
@@ -119,9 +121,12 @@ local CATALOG = {
             .. 'orgs it has credentials for and which one is the default target.',
         project_hint = 'Any directory; no Salesforce project needed.',
         learn = {
-            'sf org list --json shows every org the CLI holds credentials for, and checks whether each connection is still alive.',
-            'An empty org list means nothing else in this workstream can run for real -- authenticate first (see docs/salesforce/auth.md).',
-            'sf config get target-org --json shows the default org that later steps use when you do not pass --target-org.',
+            'sf org list --json shows every org the CLI holds credentials for, and checks whether each '
+                .. 'connection is still alive.',
+            'An empty org list means nothing else in this workstream can run for real -- authenticate '
+                .. 'first (see docs/salesforce/auth.md).',
+            'sf config get target-org --json shows the default org that later steps use when you do not '
+                .. 'pass --target-org.',
         },
         steps = {
             org_probe_step(),
@@ -149,8 +154,10 @@ local CATALOG = {
         project_hint = 'Run from a Salesforce DX project checkout (for example '
             .. 'qompassai/salesforce trailhead/apex) so the relative paths below exist.',
         learn = {
-            'sf project deploy start --source-dir <path> --json pushes one file or folder of metadata to the org; scoping to one file keeps the blast radius small.',
-            'sf apex run --file <script> --json runs anonymous Apex, the CLI twin of the Developer Console Execute Anonymous window.',
+            'sf project deploy start --source-dir <path> --json pushes one file or folder of metadata to '
+                .. 'the org; scoping to one file keeps the blast radius small.',
+            'sf apex run --file <script> --json runs anonymous Apex, the CLI twin of the Developer '
+                .. 'Console Execute Anonymous window.',
             'Both commands take --target-org; without it they use the default from sf config.',
         },
         steps = {
@@ -194,7 +201,8 @@ local CATALOG = {
         project_hint = 'Run from a Salesforce DX project checkout (for example '
             .. 'qompassai/salesforce trailhead/soql) so the relative paths below exist.',
         learn = {
-            'sf data query --query "<SOQL>" --json runs SOQL from the terminal, the CLI twin of the Developer Console Query Editor.',
+            'sf data query --query "<SOQL>" --json runs SOQL from the terminal, the CLI twin of the '
+                .. 'Developer Console Query Editor.',
             'SOQL always needs SELECT and FROM; field names are API names, not labels.',
             'The AccountUtility class from the module deploys with sf project deploy start --source-dir.',
         },
@@ -229,82 +237,16 @@ local CATALOG = {
         },
     },
 }
-
 ---@class SfTasksState
+
 ---@field registry table<string, SfDispatchedJob> Jobs dispatched by this module, by job id.
 ---@field doc_root_override? string Test seam / user config for teach-doc output.
----@field subscribed boolean True once the trailhead event subscriber is installed.
 local state = {
+    ---@field subscribed boolean True once the trailhead event subscriber is installed.
     registry = {},
     doc_root_override = nil,
     subscribed = false,
 }
-
----@param slug any
----@return boolean
-local function is_slug(slug)
-    return type(slug) == 'string' and #slug > 0 and #slug <= SLUG_MAX_BYTES and slug:match(SLUG_PATTERN) ~= nil
-end
-
----@param value any
----@return boolean
-local function is_target_org(value)
-    return type(value) == 'string'
-        and #value > 0
-        and #value <= TARGET_ORG_MAX_BYTES
-        and value:match(TARGET_ORG_PATTERN) ~= nil
-end
-
----@param slug string
----@return SfTaskModule?
-local function get_module(slug)
-    if not is_slug(slug) then
-        return nil
-    end
-    return CATALOG[slug]
-end
-
----Path of this file, so the default teach-doc root resolves to the
----diver repo's docs/salesforce/ no matter the Neovim cwd.
----@return string
-local function module_file()
-    local src = debug.getinfo(1, 'S').source
-    if src:sub(1, 1) == '@' then
-        src = src:sub(2)
-    end
-    return src
-end
-
----diver repo root docs/salesforce/, four levels above this file.
----@return string
-local function default_doc_root()
-    local dir = fn.fnamemodify(module_file(), ':h')
-    for _ = 1, 3 do
-        dir = fn.fnamemodify(dir, ':h')
-    end
-    return dir .. '/docs/salesforce'
-end
-
----@return string
-local function doc_root()
-    return state.doc_root_override or default_doc_root()
-end
-
----Render argv as a shell command line for the teach-doc. Display only;
----execution always uses the argv table, never this string.
----@param argv string[]
----@return string
-local function shell_quote(argv)
-    local parts = {}
-    for _, part in ipairs(argv) do
-        if part:match('^[%w%-%._:/=+@,]+$') then
-            parts[#parts + 1] = part
-        else
-            parts[#parts + 1] = "'" .. part:gsub("'", "'\"'\"'") .. "'"
-        end
-    end
-    return table.concat(parts, ' ')
-end
 
 ---@param mod SfTaskModule
 ---@param target_org? string
@@ -336,34 +278,6 @@ local function build_steps(mod, target_org)
     return steps
 end
 
----@param slug any
----@param opts any
----@return SfTaskModule? module
----@return string? target_org
----@return string? mode
----@return string? err
-local function validate_dispatch(slug, opts)
-    local mod = get_module(slug)
-    if mod == nil then
-        return nil, nil, nil, 'unknown task module: ' .. tostring(slug)
-    end
-    if opts == nil then
-        opts = {}
-    end
-    if type(opts) ~= 'table' then
-        return nil, nil, nil, 'opts must be a table'
-    end
-    local target_org = opts.target_org
-    if target_org ~= nil and not is_target_org(target_org) then
-        return nil, nil, nil, 'invalid target org alias'
-    end
-    local mode = opts.mode or 'live'
-    if mode ~= 'live' and mode ~= 'hermetic' then
-        return nil, nil, nil, 'mode must be "live" or "hermetic"'
-    end
-    return mod, target_org, mode, nil
-end
-
 ---@param path string
 ---@return boolean
 local function ensure_dir(path)
@@ -371,6 +285,67 @@ local function ensure_dir(path)
         return true
     end
     return pcall(fn.mkdir, path, 'p')
+end
+
+---@param job table trailhead job snapshot.
+---@return integer? index, table? step
+local function failed_step(job)
+    for i, step in ipairs(job.steps or {}) do
+        if step.status == 'failed' then
+            return i, step
+        end
+    end
+    return nil, nil
+end
+
+---@param slug any
+---@return boolean
+local function is_slug(slug)
+    return type(slug) == 'string' and #slug > 0 and #slug <= SLUG_MAX_BYTES and slug:match(SLUG_PATTERN) ~= nil
+end
+
+---@param slug string
+---@return SfTaskModule?
+local function get_module(slug)
+    if not is_slug(slug) then
+        return nil
+    end
+    return CATALOG[slug]
+end
+
+---@param value any
+---@return boolean
+local function is_target_org(value)
+    return type(value) == 'string'
+        and #value > 0
+        and #value <= TARGET_ORG_MAX_BYTES
+        and value:match(TARGET_ORG_PATTERN) ~= nil
+end
+
+---Path of this file, so the default teach-doc root resolves to the
+---diver repo's docs/salesforce/ no matter the Neovim cwd.
+---@return string
+local function module_file()
+    local src = debug.getinfo(1, 'S').source
+    if src:sub(1, 1) == '@' then
+        src = src:sub(2)
+    end
+    return src
+end
+
+---diver repo root docs/salesforce/, four levels above this file.
+---@return string
+local function default_doc_root()
+    local dir = fn.fnamemodify(module_file(), ':h')
+    for _ = 1, 3 do
+        dir = fn.fnamemodify(dir, ':h')
+    end
+    return dir .. '/docs/salesforce'
+end
+
+---@return string
+local function doc_root()
+    return state.doc_root_override or default_doc_root()
 end
 
 ---@param info SfDispatchedJob
@@ -382,7 +357,8 @@ local function render_header(info, job)
     return {
         '# ' .. info.title,
         '',
-        '> Async agent task teach-doc. Generated by `lua/dev/sf/tasks.lua`; do not edit by hand -- regenerate with `:SfTasksDoc '
+        '> Async agent task teach-doc. Generated by `lua/dev/sf/tasks.lua`; do not edit by hand -- '
+            .. 'regenerate with `:SfTasksDoc '
             .. job.id
             .. '`.',
         '',
@@ -405,6 +381,56 @@ local function render_header(info, job)
 end
 
 ---@param info SfDispatchedJob
+---@param job table trailhead job snapshot.
+---@return string[]
+local function render_learn(info, job)
+    local lines = { '## What I learned', '' }
+    for _, bullet in ipairs(info.learn) do
+        lines[#lines + 1] = '- ' .. bullet
+    end
+    lines[#lines + 1] = ''
+    lines[#lines + 1] = 'Outcome notes:'
+    lines[#lines + 1] = ''
+    if info.mode == 'hermetic' then
+        lines[#lines + 1] =
+            '- This doc came from a hermetic dry run (stubbed `sf` output). It proves the wiring, not a live org.'
+    end
+    if job.status == 'done' then
+        lines[#lines + 1] = '- A green run means the CLI accepted every command against the target org.'
+    elseif job.status == 'cancelled' then
+        lines[#lines + 1] = '- Cancelled runs are honest partial runs: dispatch again to start over.'
+    else
+        lines[#lines + 1] =
+            '- Do not retry blindly: read the log above, fix auth or the project path, then dispatch again.'
+        lines[#lines + 1] =
+            '- If the org probe step failed, no org is authorized; work through docs/salesforce/auth.md first.'
+    end
+    lines[#lines + 1] = ''
+    lines[#lines + 1] = '## Auth you need before a live run'
+    lines[#lines + 1] = ''
+    lines[#lines + 1] = 'See `docs/salesforce/auth.md`. In short: run `sf org login web --alias <alias> --set-default` '
+        .. 'yourself (interactive browser login), then verify with `:SfTasksDispatch org-auth`.'
+    lines[#lines + 1] = ''
+    return lines
+end
+
+---Render argv as a shell command line for the teach-doc. Display only;
+---execution always uses the argv table, never this string.
+---@param argv string[]
+---@return string
+local function shell_quote(argv)
+    local parts = {}
+    for _, part in ipairs(argv) do
+        if part:match('^[%w%-%._:/=+@,]+$') then
+            parts[#parts + 1] = part
+        else
+            parts[#parts + 1] = "'" .. part:gsub("'", "'\"'\"'") .. "'"
+        end
+    end
+    return table.concat(parts, ' ')
+end
+
+---@param info SfDispatchedJob
 ---@return string[]
 local function render_commands(info)
     local lines = { '## Exact commands run', '' }
@@ -423,17 +449,6 @@ local function render_commands(info)
     return lines
 end
 
----@param job table trailhead job snapshot.
----@return integer? index, table? step
-local function failed_step(job)
-    for i, step in ipairs(job.steps or {}) do
-        if step.status == 'failed' then
-            return i, step
-        end
-    end
-    return nil, nil
-end
-
 ---@param info SfDispatchedJob
 ---@param job table trailhead job snapshot.
 ---@return string[]
@@ -448,7 +463,8 @@ local function render_outcome(info, job)
     if job.status == 'done' then
         lines[#lines + 1] = 'All '
             .. #info.steps
-            .. ' steps exited 0. Nothing was faked: every line below came from the real (or stubbed, in hermetic mode) `sf` process.'
+            .. ' steps exited 0. Nothing was faked: every line below came from the real (or stubbed, in '
+            .. 'hermetic mode) `sf` process.'
     elseif job.status == 'cancelled' then
         lines[#lines + 1] = 'Cancelled by the user after '
             .. done_count
@@ -483,40 +499,6 @@ end
 
 ---@param info SfDispatchedJob
 ---@param job table trailhead job snapshot.
----@return string[]
-local function render_learn(info, job)
-    local lines = { '## What I learned', '' }
-    for _, bullet in ipairs(info.learn) do
-        lines[#lines + 1] = '- ' .. bullet
-    end
-    lines[#lines + 1] = ''
-    lines[#lines + 1] = 'Outcome notes:'
-    lines[#lines + 1] = ''
-    if info.mode == 'hermetic' then
-        lines[#lines + 1] =
-            '- This doc came from a hermetic dry run (stubbed `sf` output). It proves the wiring, not a live org.'
-    end
-    if job.status == 'done' then
-        lines[#lines + 1] = '- A green run means the CLI accepted every command against the target org.'
-    elseif job.status == 'cancelled' then
-        lines[#lines + 1] = '- Cancelled runs are honest partial runs: dispatch again to start over.'
-    else
-        lines[#lines + 1] =
-            '- Do not retry blindly: read the log above, fix auth or the project path, then dispatch again.'
-        lines[#lines + 1] =
-            '- If the org probe step failed, no org is authorized; work through docs/salesforce/auth.md first.'
-    end
-    lines[#lines + 1] = ''
-    lines[#lines + 1] = '## Auth you need before a live run'
-    lines[#lines + 1] = ''
-    lines[#lines + 1] =
-        'See `docs/salesforce/auth.md`. In short: run `sf org login web --alias <alias> --set-default` yourself (interactive browser login), then verify with `:SfTasksDispatch org-auth`.'
-    lines[#lines + 1] = ''
-    return lines
-end
-
----@param info SfDispatchedJob
----@param job table trailhead job snapshot.
 ---@return string
 local function render_doc(info, job)
     local lines = {}
@@ -530,6 +512,34 @@ local function render_doc(info, job)
     append(render_outcome(info, job))
     append(render_learn(info, job))
     return table.concat(lines, '\n')
+end
+
+---@param slug any
+---@param opts any
+---@return SfTaskModule? module
+---@return string? target_org
+---@return string? mode
+---@return string? err
+local function validate_dispatch(slug, opts)
+    local mod = get_module(slug)
+    if mod == nil then
+        return nil, nil, nil, 'unknown task module: ' .. tostring(slug)
+    end
+    if opts == nil then
+        opts = {}
+    end
+    if type(opts) ~= 'table' then
+        return nil, nil, nil, 'opts must be a table'
+    end
+    local target_org = opts.target_org
+    if target_org ~= nil and not is_target_org(target_org) then
+        return nil, nil, nil, 'invalid target org alias'
+    end
+    local mode = opts.mode or 'live'
+    if mode ~= 'live' and mode ~= 'hermetic' then
+        return nil, nil, nil, 'mode must be "live" or "hermetic"'
+    end
+    return mod, target_org, mode, nil
 end
 
 ---@param path string
@@ -589,37 +599,13 @@ end
 
 local M = {}
 
----Install the trailhead event subscriber (idempotent). Called
----automatically on first dispatch; also safe to call from setup code.
-function M.setup()
-    if state.subscribed then
-        return
-    end
-    trailhead.on_event(on_trailhead_event)
-    state.subscribed = true
-end
-
----Override where teach-docs are written (tests and user config).
----@param path string
-function M.set_doc_root(path)
-    assert(type(path) == 'string' and #path > 0, 'doc root must be a non-empty string')
-    state.doc_root_override = path
-end
-
----@return string[] slugs, sorted.
-function M.list_modules()
-    local slugs = {}
-    for slug, _ in pairs(CATALOG) do
-        slugs[#slugs + 1] = slug
-    end
-    table.sort(slugs)
-    return slugs
-end
-
----@param slug string
----@return SfTaskModule?
-function M.get_module(slug)
-    return get_module(slug)
+---Cancel a dispatched task. Delegates to the trailhead queue, which
+---kills the running `sf` process (SIGTERM) and marks later steps
+---cancelled. The teach-doc still records the partial run.
+---@param id string trailhead job id.
+---@return boolean ok, string? err
+function M.cancel(id)
+    return trailhead.cancel(id)
 end
 
 ---Dispatch an async agent task: validate the module and options, check
@@ -654,36 +640,20 @@ function M.dispatch(slug, opts)
     -- stubbed tests complete synchronously), and the teach-doc
     -- subscriber must see the entry when the terminal event fires.
     state.registry[id] = {
-        slug = mod.slug,
-        target_org = target_org,
+        dispatched_at = os.date('!%Y-%m-%dT%H:%M:%SZ'),
+        learn = mod.learn,
         mode = mode,
+        project_hint = mod.project_hint,
+        slug = mod.slug,
+        steps = steps,
+        summary = mod.summary,
+        target_org = target_org,
         title = mod.title,
         trailhead_url = mod.trailhead_url,
-        summary = mod.summary,
-        project_hint = mod.project_hint,
-        learn = mod.learn,
-        steps = steps,
-        dispatched_at = os.date('!%Y-%m-%dT%H:%M:%SZ'),
     }
     trailhead.start(id)
     core.notify('agent task dispatched: ' .. mod.slug .. ' (' .. id .. ')', vim.log.levels.INFO)
     return id, nil
-end
-
----Cancel a dispatched task. Delegates to the trailhead queue, which
----kills the running `sf` process (SIGTERM) and marks later steps
----cancelled. The teach-doc still records the partial run.
----@param id string trailhead job id.
----@return boolean ok, string? err
-function M.cancel(id)
-    return trailhead.cancel(id)
-end
-
----Snapshot of a dispatched task's job (steps, log, status).
----@param id string trailhead job id.
----@return table?
-function M.job(id)
-    return trailhead.get(id)
 end
 
 ---(Re)generate the teach-doc for a finished task job.
@@ -704,6 +674,46 @@ function M.doc_for(job_id)
     return write_teach_doc(job_id)
 end
 
+---@param slug string
+---@return SfTaskModule?
+function M.get_module(slug)
+    return get_module(slug)
+end
+
+---Snapshot of a dispatched task's job (steps, log, status).
+---@param id string trailhead job id.
+---@return table?
+function M.job(id)
+    return trailhead.get(id)
+end
+
+---@return string[] slugs, sorted.
+function M.list_modules()
+    local slugs = {}
+    for slug, _ in pairs(CATALOG) do
+        slugs[#slugs + 1] = slug
+    end
+    table.sort(slugs)
+    return slugs
+end
+
+---Override where teach-docs are written (tests and user config).
+---@param path string
+function M.set_doc_root(path)
+    assert(type(path) == 'string' and #path > 0, 'doc root must be a non-empty string')
+    state.doc_root_override = path
+end
+
+---Install the trailhead event subscriber (idempotent). Called
+---automatically on first dispatch; also safe to call from setup code.
+function M.setup()
+    if state.subscribed then
+        return
+    end
+    trailhead.on_event(on_trailhead_event)
+    state.subscribed = true
+end
+
 ---@param _ any unused buffer number.
 local function list_modules_buffer(_)
     local lines = {
@@ -721,11 +731,6 @@ end
 
 M.commands = {
     {
-        name = 'SfTasksModules',
-        fn = list_modules_buffer,
-        opts = { nargs = 0, desc = 'List async Salesforce agent task modules' },
-    },
-    {
         name = 'SfTasksDispatch',
         fn = function(cmd_opts)
             local args = core.get_args(cmd_opts)
@@ -734,7 +739,7 @@ M.commands = {
                 core.notify('dispatch failed: ' .. tostring(err), vim.log.levels.ERROR)
             end
         end,
-        opts = { nargs = '+', desc = 'Dispatch async agent task: SfTasksDispatch <module> [target-org]' },
+        opts = { desc = 'Dispatch async agent task: SfTasksDispatch <module> [target-org]', nargs = '+' },
     },
     {
         name = 'SfTasksDoc',
@@ -747,7 +752,12 @@ M.commands = {
                 core.notify('doc failed: ' .. tostring(err), vim.log.levels.ERROR)
             end
         end,
-        opts = { nargs = 1, desc = 'Regenerate teach-doc for a finished agent task job' },
+        opts = { desc = 'Regenerate teach-doc for a finished agent task job', nargs = 1 },
+    },
+    {
+        name = 'SfTasksModules',
+        fn = list_modules_buffer,
+        opts = { desc = 'List async Salesforce agent task modules', nargs = 0 },
     },
     {
         name = 'SfTasksStatus',
@@ -755,7 +765,7 @@ M.commands = {
             local args = core.get_args(cmd_opts)
             trailhead.status({ args = args[1] or '' })
         end,
-        opts = { nargs = '?', desc = 'Show agent task job status' },
+        opts = { desc = 'Show agent task job status', nargs = '?' },
     },
 }
 

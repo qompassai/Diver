@@ -19,38 +19,6 @@ local LOOPBACK_HOSTS = {
 ---@field url string
 ---@field closed boolean
 
----Validate a BiDi WebSocket URL. Pure; no I/O. Returns the normalized
----ws:// URL or (nil, err).
----@param url string
----@return string? ok_url
----@return string? err
-function M._validate_url(url)
-    if type(url) ~= 'string' then
-        return nil, 'websocket url must be a string'
-    end
-    local host, port, path = url:match('^ws://([^:/%[%]]+):(%d+)(/?.*)$')
-    if host == nil then
-        -- bracketed IPv6 literal, e.g. ws://[::1]:9515/session
-        host, port, path = url:match('^ws://%[([^%]]+)%]:(%d+)(/?.*)$')
-    end
-    if host == nil then
-        return nil, 'websocket url must look like ws://host:port/path: ' .. url:sub(1, 80)
-    end
-    if LOOPBACK_HOSTS[host] ~= true then
-        return nil, 'bidi: non-loopback webSocketUrl refused (policy: localhost-only): ' .. host
-    end
-    if path == '' then
-        path = '/'
-    end
-    return 'ws://' .. host .. ':' .. port .. path, nil
-end
-
----@class BidiTransportOpts
----@field on_text fun(text: string) wire.on_text entry point
----@field on_connect? fun()
----@field on_disconnect? fun() session is dead; fail pending commands
----@field on_error? fun(err: string)
-
 ---Connect. on_disconnect means the session is invalid; the caller must
 ---fail_all its wire state. Never reconnects.
 ---@param url string webSocketUrl from the driver
@@ -95,6 +63,38 @@ function M._connect_raw(url, opts)
     return transport, nil
 end
 
+---Validate a BiDi WebSocket URL. Pure; no I/O. Returns the normalized
+---ws:// URL or (nil, err).
+---@param url string
+---@return string? ok_url
+---@return string? err
+function M._validate_url(url)
+    if type(url) ~= 'string' then
+        return nil, 'websocket url must be a string'
+    end
+    local host, port, path = url:match('^ws://([^:/%[%]]+):(%d+)(/?.*)$')
+    if host == nil then
+        -- bracketed IPv6 literal, e.g. ws://[::1]:9515/session
+        host, port, path = url:match('^ws://%[([^%]]+)%]:(%d+)(/?.*)$')
+    end
+    if host == nil then
+        return nil, 'websocket url must look like ws://host:port/path: ' .. url:sub(1, 80)
+    end
+    if LOOPBACK_HOSTS[host] ~= true then
+        return nil, 'bidi: non-loopback webSocketUrl refused (policy: localhost-only): ' .. host
+    end
+    if path == '' then
+        path = '/'
+    end
+    return 'ws://' .. host .. ':' .. port .. path, nil
+end
+
+---@class BidiTransportOpts
+---@field on_text fun(text: string) wire.on_text entry point
+---@field on_connect? fun()
+---@field on_disconnect? fun() session is dead; fail pending commands
+---@field on_error? fun(err: string)
+
 ---Wrapped connect kept under the public name.
 ---@param url string
 ---@param opts BidiTransportOpts
@@ -102,6 +102,23 @@ end
 ---@return string?
 function M.connect(url, opts)
     return M._connect_raw(url, opts)
+end
+
+---Close the socket. Idempotent; never reconnects afterwards.
+---@param self BidiTransport
+local function close(self)
+    if self.closed then
+        return
+    end
+    self.closed = true
+    self._client:try_disconnect()
+end
+
+---True once the handshake completed and the socket is open.
+---@param self BidiTransport
+---@return boolean
+local function is_active(self)
+    return not self.closed and self._client:is_active()
 end
 
 ---Send one text frame. Returns (nil, err) when closed or not connected.
@@ -117,30 +134,13 @@ local function send_text(self, text)
     return self._client:try_send_data(text)
 end
 
----True once the handshake completed and the socket is open.
----@param self BidiTransport
----@return boolean
-local function is_active(self)
-    return not self.closed and self._client:is_active()
-end
-
----Close the socket. Idempotent; never reconnects afterwards.
----@param self BidiTransport
-local function close(self)
-    if self.closed then
-        return
-    end
-    self.closed = true
-    self._client:try_disconnect()
-end
-
 ---Attach methods. Kept as a constructor helper so tests can build a
 ---transport-shaped table without a socket.
 ---@param transport BidiTransport
 function M._attach(transport)
-    transport.send_text = send_text
-    transport.is_active = is_active
     transport.close = close
+    transport.is_active = is_active
+    transport.send_text = send_text
 end
 
 return M

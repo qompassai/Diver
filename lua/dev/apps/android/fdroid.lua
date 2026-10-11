@@ -1,5 +1,5 @@
 -- #################################################################
--- /qompassai/lua/dev/android/fdroid.lua
+-- /qompassai/lua/dev/apps/android/fdroid.lua
 -- Qompass AI F-Droid readiness checks
 -- SPDX-License-Identifier: Apache-2.0
 -- Copyright (c) 2026 Qompass AI
@@ -38,15 +38,6 @@ local M = {}
 ---@field ok boolean Whether the check passed.
 ---@field detail string What was found.
 
----Read a build file (bounded), trying .kts then .groovy.
----@param root_dir string Project root.
----@param module string Module directory, e.g. 'app'.
----@return string? content
-local function read_module_build_file(root_dir, module)
-    return util.read_file(root_dir .. '/' .. module .. '/build.gradle.kts')
-        or util.read_file(root_dir .. '/' .. module .. '/build.gradle')
-end
-
 ---Check that a path exists under the project root.
 ---@param root_dir string
 ---@param relpath string Relative path.
@@ -81,6 +72,83 @@ local function check_fastlane(root_dir)
         label = 'Fastlane store metadata',
         ok = false,
         detail = 'Missing: ' .. table.concat(missing, ', '),
+    }
+end
+
+---Read a build file (bounded), trying .kts then .groovy.
+---@param root_dir string Project root.
+---@param module string Module directory, e.g. 'app'.
+---@return string? content
+local function read_module_build_file(root_dir, module)
+    return util.read_file(root_dir .. '/' .. module .. '/build.gradle.kts')
+        or util.read_file(root_dir .. '/' .. module .. '/build.gradle')
+end
+
+---Check that the fdroid build flavor's assemble task has a matching config.
+---@param root_dir string Project root.
+---@param module string Module directory.
+---@return AndroidFdroidCheck
+local function check_flavor(root_dir, module)
+    local content = read_module_build_file(root_dir, module)
+    if content == nil then
+        return { id = 'flavor', label = 'fdroid build flavor', ok = false, detail = 'No build file found.' }
+    end
+
+    if content:find('fdroid', 1, true) ~= nil then
+        return {
+            id = 'flavor',
+            label = 'fdroid build flavor',
+            ok = true,
+            detail = 'A "fdroid" product flavor is declared.',
+        }
+    end
+
+    return {
+        id = 'flavor',
+        label = 'fdroid build flavor',
+        ok = false,
+        detail = 'No "fdroid" product flavor; F-Droid can still build the release variant, '
+            .. 'but a flavor keeps proprietary bits out.',
+    }
+end
+
+---Scan for known proprietary dependency patterns.
+---@param root_dir string Project root.
+---@param module string Module directory.
+---@return AndroidFdroidCheck
+local function check_proprietary(root_dir, module)
+    local content = read_module_build_file(root_dir, module)
+    if content == nil then
+        return {
+            id = 'proprietary',
+            label = 'No proprietary dependencies',
+            ok = false,
+            detail = 'No build file found for module ' .. module .. '.',
+        }
+    end
+
+    local hits = {}
+    for i = 1, #matrix.fdroid.forbidden_patterns do
+        local pattern = matrix.fdroid.forbidden_patterns[i]
+        if content:find(pattern, 1, true) ~= nil then
+            hits[#hits + 1] = pattern
+        end
+    end
+
+    if #hits == 0 then
+        return {
+            id = 'proprietary',
+            label = 'No proprietary dependencies',
+            ok = true,
+            detail = 'No known proprietary markers found.',
+        }
+    end
+
+    return {
+        id = 'proprietary',
+        label = 'No proprietary dependencies',
+        ok = false,
+        detail = 'Found: ' .. table.concat(hits, ', ') .. ' — F-Droid rejects non-free SDKs.',
     }
 end
 
@@ -128,74 +196,6 @@ local function check_reproducible(root_dir, module)
     }
 end
 
----Scan for known proprietary dependency patterns.
----@param root_dir string Project root.
----@param module string Module directory.
----@return AndroidFdroidCheck
-local function check_proprietary(root_dir, module)
-    local content = read_module_build_file(root_dir, module)
-    if content == nil then
-        return {
-            id = 'proprietary',
-            label = 'No proprietary dependencies',
-            ok = false,
-            detail = 'No build file found for module ' .. module .. '.',
-        }
-    end
-
-    local hits = {}
-    for i = 1, #matrix.fdroid.forbidden_patterns do
-        local pattern = matrix.fdroid.forbidden_patterns[i]
-        if content:find(pattern, 1, true) ~= nil then
-            hits[#hits + 1] = pattern
-        end
-    end
-
-    if #hits == 0 then
-        return {
-            id = 'proprietary',
-            label = 'No proprietary dependencies',
-            ok = true,
-            detail = 'No known proprietary markers found.',
-        }
-    end
-
-    return {
-        id = 'proprietary',
-        label = 'No proprietary dependencies',
-        ok = false,
-        detail = 'Found: ' .. table.concat(hits, ', ') .. ' — F-Droid rejects non-free SDKs.',
-    }
-end
-
----Check that the fdroid build flavor's assemble task has a matching config.
----@param root_dir string Project root.
----@param module string Module directory.
----@return AndroidFdroidCheck
-local function check_flavor(root_dir, module)
-    local content = read_module_build_file(root_dir, module)
-    if content == nil then
-        return { id = 'flavor', label = 'fdroid build flavor', ok = false, detail = 'No build file found.' }
-    end
-
-    if content:find('fdroid', 1, true) ~= nil then
-        return {
-            id = 'flavor',
-            label = 'fdroid build flavor',
-            ok = true,
-            detail = 'A "fdroid" product flavor is declared.',
-        }
-    end
-
-    return {
-        id = 'flavor',
-        label = 'fdroid build flavor',
-        ok = false,
-        detail = 'No "fdroid" product flavor; F-Droid can still build the release variant, '
-            .. 'but a flavor keeps proprietary bits out.',
-    }
-end
-
 ---Run all F-Droid readiness checks for a project.
 ---@param root_dir string Project root.
 ---@param module? string Module directory (default 'app').
@@ -225,5 +225,4 @@ function M.summarize(checks)
 
     return ok_count .. '/' .. #checks .. ' F-Droid checks pass'
 end
-
 return M

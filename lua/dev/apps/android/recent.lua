@@ -1,5 +1,5 @@
 -- #################################################################
--- /qompassai/lua/dev/android/recent.lua
+-- /qompassai/lua/dev/apps/android/recent.lua
 -- Qompass AI Recent
 -- SPDX-License-Identifier: Apache-2.0
 -- Copyright (c) 2026 Qompass AI

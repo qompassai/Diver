@@ -1,5 +1,5 @@
 -- #################################################################
--- /qompassai/lua/dev/android/actions.lua
+-- /qompassai/lua/dev/apps/android/actions.lua
 -- Qompass AI Actions
 -- SPDX-License-Identifier: Apache-2.0
 -- Copyright (c) 2026 Qompass AI
@@ -16,7 +16,7 @@
 -- limitations under the License.
 -- #################################################################
 -- #################################################################
--- /qompassai/utils/dev/android/actions.lua
+-- /qompassai/utils/dev/apps/android/actions.lua
 -- Qompass AI Android Actions
 -- SPDX-License-Identifier: Apache-2.0
 -- Copyright (c) 2026 Qompass AI
@@ -24,8 +24,8 @@
 
 local M = {}
 
-local notify = vim.notify
 local levels = vim.log.levels
+local notify = vim.notify
 
 local bsp = require('dev.apps.android.bsp')
 local devices = require('dev.apps.android.devices')
@@ -71,34 +71,6 @@ local function run_cli_with_progress(title, message, args, opts)
     )
 end
 
-function M.refresh_dependencies()
-    local gradlew = util.find_gradlew()
-    if gradlew == nil then
-        notify('Refresh failed: gradlew is not found.', levels.ERROR, {})
-        return
-    end
-
-    local progress = output.create_task_progress('AndroidRefreshDependencies')
-    local timer = output.start_progress_timer(progress, 'Refreshing dependencies')
-    local buf = output.create_build_window()
-
-    vim.system(
-        util.gradle_argv(gradlew.gradlew, { '--refresh-dependencies' }),
-        output.create_gradle_system_opts(buf),
-        vim.schedule_wrap(function(obj)
-            timer:stop()
-
-            if obj.code == 0 then
-                progress.done(true, 'Dependencies refreshed.')
-                notify('Dependencies refreshed.', levels.INFO, {})
-            else
-                progress.done(false, 'Refresh failed.')
-                notify('Refresh failed: ' .. (obj.stderr or ''), levels.ERROR, {})
-            end
-        end)
-    )
-end
-
 ---Build the release through the Gradle CLI (the BSP path is tried first in M.build_release).
 ---@param gradlew { gradlew: string, cwd: string }
 local function build_release_cli(gradlew)
@@ -123,48 +95,68 @@ local function build_release_cli(gradlew)
     )
 end
 
-function M.build_release()
-    local gradlew = util.find_gradlew()
-    if gradlew == nil then
-        notify('Build failed: gradlew is not found.', levels.ERROR, {})
-        return
-    end
+function M.android_run_cli()
+    devices.with_adb(function(adb)
+        local running_devices = devices.get_running_devices(adb)
+        if #running_devices == 0 then
+            notify('No devices are running.', levels.WARN, {})
+            return
+        end
 
-    -- Prefer an active BSP session; fall back to ./gradlew when BSP is
-    -- unavailable (BSP compile is generic project compilation — assembleRelease
-    -- still needs the CLI path for signed APK/AAB artifacts when the server
-    -- cannot produce them).
-    bsp.compile_or_fallback(gradlew.cwd, function()
-        build_release_cli(gradlew)
+        ui.select_modal(running_devices, {
+            prompt = 'Select device to run on',
+            format_item = function(device)
+                return device.name .. ' (' .. device.id .. ')'
+            end,
+        }, function(choice)
+            if not choice then
+                return
+            end
+
+            run_cli_with_progress('AndroidRun', 'Running app', {
+                'run',
+                '--debug',
+                '--device=' .. choice.id,
+            }, {
+                show_output = true,
+                success = 'App deployed.',
+            })
+        end)
     end)
 end
 
-function M.clean()
+function M.bsp_status()
     local gradlew = util.find_gradlew()
-    if gradlew == nil then
-        notify('Clean failed: gradlew is not found.', levels.ERROR, {})
+    local status = gradle.bsp_status(gradlew and gradlew.cwd or nil)
+
+    if status.ok then
+        notify(
+            string.format(
+                'BSP ready via %s at %s. Run :BspStart to connect.',
+                status.connection or 'gradle',
+                status.root or '?'
+            ),
+            levels.INFO
+        )
         return
     end
 
-    local progress = output.create_task_progress('AndroidClean')
-    local timer = output.start_progress_timer(progress, 'Cleaning')
-    local buf = output.create_build_window()
+    local message = 'BSP: ' .. (status.reason or 'not available')
+    if status.hint then
+        message = message .. '. ' .. status.hint
+    end
+    notify(message, levels.WARN)
+end
 
-    vim.system(
-        util.gradle_argv(gradlew.gradlew, { 'clean' }),
-        output.create_gradle_system_opts(buf),
-        vim.schedule_wrap(function(obj)
-            timer:stop()
+function M.build_action_map(actions)
+    local out = {}
 
-            if obj.code == 0 then
-                progress.done(true, 'Clean successful.')
-                notify('Clean successful.', levels.INFO, {})
-            else
-                progress.done(false, 'Clean failed.')
-                notify('Clean failed: ' .. (obj.stderr or ''), levels.ERROR, {})
-            end
-        end)
-    )
+    for i = 1, #actions do
+        local action = actions[i]
+        out[action.id] = action
+    end
+
+    return out
 end
 
 function M.build_and_install(root_dir, gradle_bin, adb, device, module)
@@ -202,7 +194,9 @@ function M.build_and_install(root_dir, gradle_bin, adb, device, module)
             local apk_name = vim.fn.fnamemodify(apk_path, ':t')
             progress.tick(75, 'Installing ' .. apk_name .. '...')
 
-            local install_obj = vim.system({ adb, '-s', device.id, 'install', '-r', apk_path }, {}):wait()
+            local install_obj_sys = vim.system({ adb, '-s', device.id, 'install', '-r', apk_path }, {})
+            ---@cast install_obj_sys vim.SystemObj
+            local install_obj = install_obj_sys:wait()
             if install_obj.code ~= 0 then
                 progress.done(false, 'Installation failed.')
                 notify('Installation failed: ' .. (install_obj.stderr or ''), levels.ERROR, {})
@@ -218,7 +212,7 @@ function M.build_and_install(root_dir, gradle_bin, adb, device, module)
                 return
             end
 
-            local launch_obj = vim.system({
+            local launch_obj_sys = vim.system({
                 adb,
                 '-s',
                 device.id,
@@ -231,7 +225,9 @@ function M.build_and_install(root_dir, gradle_bin, adb, device, module)
                 'android.intent.category.LAUNCHER',
                 '-n',
                 main_activity,
-            }, {}):wait()
+            }, {})
+            ---@cast launch_obj_sys vim.SystemObj
+            local launch_obj = launch_obj_sys:wait()
 
             if launch_obj.code ~= 0 then
                 progress.done(false, 'Launch failed.')
@@ -317,159 +313,20 @@ function M.build_and_run()
     end)
 end
 
-function M.uninstall()
+function M.build_release()
     local gradlew = util.find_gradlew()
     if gradlew == nil then
-        notify('Uninstall failed: gradlew is not found.', levels.ERROR, {})
+        notify('Build failed: gradlew is not found.', levels.ERROR, {})
         return
     end
 
-    local application_modules = gradle.find_application_modules(gradlew.cwd)
-    local application_id = application_modules[1] and gradle.find_application_id(gradlew.cwd, application_modules[1])
-
-    if application_id == nil then
-        notify('Uninstall failed: could not find application id.', levels.ERROR, {})
-        return
-    end
-
-    local sdk = util.get_android_sdk()
-    if sdk == nil or #sdk == 0 then
-        notify('Android SDK is not defined.', levels.ERROR, {})
-        return
-    end
-
-    local adb = sdk .. '/platform-tools/adb'
-    local running_devices = devices.get_running_devices(adb)
-    if #running_devices == 0 then
-        notify('Uninstall failed: no devices are running.', levels.WARN, {})
-        return
-    end
-
-    ui.select_modal(running_devices, {
-        prompt = 'Select device to uninstall from',
-        format_item = function(item)
-            return item.name
-        end,
-    }, function(choice)
-        if choice then
-            local progress = output.create_task_progress('AndroidUninstall')
-            local timer = output.start_progress_timer(progress, 'Uninstalling ' .. application_id)
-            local uninstall_obj = vim.system({ adb, '-s', choice.id, 'uninstall', application_id }, {}):wait()
-
-            timer:stop()
-
-            if uninstall_obj.code == 0 then
-                progress.done(true, 'Uninstall successful.')
-                notify('Uninstall successful.', levels.INFO, {})
-            else
-                progress.done(false, 'Uninstall failed.')
-                notify('Uninstall failed: ' .. (uninstall_obj.stderr or ''), levels.ERROR, {})
-            end
-        else
-            notify('Uninstall cancelled.', levels.WARN, {})
-        end
+    -- Prefer an active BSP session; fall back to ./gradlew when BSP is
+    -- unavailable (BSP compile is generic project compilation — assembleRelease
+    -- still needs the CLI path for signed APK/AAB artifacts when the server
+    -- cannot produce them).
+    bsp.compile_or_fallback(gradlew.cwd, function()
+        build_release_cli(gradlew)
     end)
-end
-
-function M.start_emulator_picker()
-    local avds, err = devices.list_avds()
-    if avds == nil then
-        notify(err or 'Failed to list emulators.', levels.ERROR, {})
-        return
-    end
-
-    if #avds == 0 then
-        notify('No emulators found.', levels.WARN, {})
-        return
-    end
-
-    ui.select_modal(avds, {
-        prompt = 'AVD to start',
-    }, function(choice)
-        if choice then
-            run_cli_with_progress('LaunchAvd', 'Launching ' .. choice, {
-                'emulator',
-                'start',
-                choice,
-            }, {
-                success = 'Launched ' .. choice .. '.',
-            })
-        end
-    end)
-end
-
-function M.stop_avd()
-    devices.with_adb(function(adb)
-        local emulators = {}
-
-        for _, device in ipairs(devices.get_running_devices(adb)) do
-            if device.id:match('^emulator') then
-                emulators[#emulators + 1] = device
-            end
-        end
-
-        if #emulators == 0 then
-            notify('No running emulators found.', levels.WARN, {})
-            return
-        end
-
-        local function stop_device(device)
-            run_cli_with_progress('StopAvd', 'Stopping ' .. device.name, {
-                'emulator',
-                'stop',
-                device.id,
-            }, {
-                success = 'Stopped ' .. device.name .. '.',
-            })
-        end
-
-        if #emulators == 1 then
-            stop_device(emulators[1])
-            return
-        end
-
-        ui.select_modal(emulators, {
-            prompt = 'Emulator to stop',
-            format_item = function(device)
-                return device.name .. ' (' .. device.id .. ')'
-            end,
-        }, function(choice)
-            if choice then
-                stop_device(choice)
-            end
-        end)
-    end)
-end
-
-function M.open_in_android_studio()
-    local file = vim.api.nvim_buf_get_name(0)
-    if file == '' or vim.bo[0].buftype ~= '' then
-        notify('Open a file buffer first.', levels.WARN, {})
-        return
-    end
-
-    file = vim.fn.fnamemodify(file, ':p')
-
-    local gradlew = util.find_gradlew()
-    local args = { 'studio', 'open-file', file }
-
-    if gradlew then
-        args[#args + 1] = '--project=' .. gradlew.cwd
-    end
-
-    run_cli_with_progress('AndroidStudio', 'Opening in Android Studio', args, {
-        success = 'Opened in Android Studio.',
-    })
-end
-
-function M.studio_check()
-    run_cli_with_progress('AndroidStudio', 'Checking Android Studio', {
-        'studio',
-        'check',
-    }, {
-        show_output = true,
-        success = 'Studio check complete.',
-    })
 end
 
 function M.capture_screen()
@@ -508,6 +365,55 @@ function M.capture_screen()
     end)
 end
 
+function M.clean()
+    local gradlew = util.find_gradlew()
+    if gradlew == nil then
+        notify('Clean failed: gradlew is not found.', levels.ERROR, {})
+        return
+    end
+
+    local progress = output.create_task_progress('AndroidClean')
+    local timer = output.start_progress_timer(progress, 'Cleaning')
+    local buf = output.create_build_window()
+
+    vim.system(
+        util.gradle_argv(gradlew.gradlew, { 'clean' }),
+        output.create_gradle_system_opts(buf),
+        vim.schedule_wrap(function(obj)
+            timer:stop()
+
+            if obj.code == 0 then
+                progress.done(true, 'Clean successful.')
+                notify('Clean successful.', levels.INFO, {})
+            else
+                progress.done(false, 'Clean failed.')
+                notify('Clean failed: ' .. (obj.stderr or ''), levels.ERROR, {})
+            end
+        end)
+    )
+end
+
+function M.describe_project()
+    local gradlew = util.find_gradlew()
+    if gradlew == nil then
+        notify('gradlew is not found.', levels.ERROR, {})
+        return
+    end
+
+    run_cli_with_progress('AndroidDescribe', 'Describing project', {
+        'describe',
+        '--project_dir=' .. gradlew.cwd,
+    }, {
+        show_output = true,
+        success = 'Project describe complete.',
+    })
+end
+
+---Run the Android doctor health check.
+function M.doctor()
+    require('dev.apps.android.doctor').run()
+end
+
 function M.dump_layout()
     devices.with_adb(function(adb)
         local running_devices = devices.get_running_devices(adb)
@@ -538,87 +444,19 @@ function M.dump_layout()
     end)
 end
 
-function M.describe_project()
-    local gradlew = util.find_gradlew()
-    if gradlew == nil then
-        notify('gradlew is not found.', levels.ERROR, {})
-        return
-    end
+function M.get_action_ids(actions, arg_lead)
+    local ids = {}
 
-    run_cli_with_progress('AndroidDescribe', 'Describing project', {
-        'describe',
-        '--project_dir=' .. gradlew.cwd,
-    }, {
-        show_output = true,
-        success = 'Project describe complete.',
-    })
-end
-function M.show_android_info()
-    run_cli_with_progress('AndroidInfo', 'Fetching Android info', {
-        'info',
-    }, {
-        show_output = true,
-        success = 'Environment info loaded.',
-    })
-end
-
-function M.bsp_status()
-    local gradlew = util.find_gradlew()
-    local status = gradle.bsp_status(gradlew and gradlew.cwd or nil)
-
-    if status.ok then
-        notify(
-            string.format(
-                'BSP ready via %s at %s. Run :BspStart to connect.',
-                status.connection or 'gradle',
-                status.root or '?'
-            ),
-            levels.INFO
-        )
-        return
-    end
-
-    local message = 'BSP: ' .. (status.reason or 'not available')
-    if status.hint then
-        message = message .. '. ' .. status.hint
-    end
-    notify(message, levels.WARN)
-end
-
----Run the Android doctor health check.
-function M.doctor()
-    require('dev.apps.android.doctor').run()
-end
-
-function M.android_run_cli()
-    devices.with_adb(function(adb)
-        local running_devices = devices.get_running_devices(adb)
-        if #running_devices == 0 then
-            notify('No devices are running.', levels.WARN, {})
-            return
+    for i = 1, #actions do
+        local id = actions[i].id
+        if arg_lead == '' or vim.startswith(id, arg_lead) then
+            ids[#ids + 1] = id
         end
+    end
 
-        ui.select_modal(running_devices, {
-            prompt = 'Select device to run on',
-            format_item = function(device)
-                return device.name .. ' (' .. device.id .. ')'
-            end,
-        }, function(choice)
-            if not choice then
-                return
-            end
-
-            run_cli_with_progress('AndroidRun', 'Running app', {
-                'run',
-                '--debug',
-                '--device=' .. choice.id,
-            }, {
-                show_output = true,
-                success = 'App deployed.',
-            })
-        end)
-    end)
+    return ids
 end
+
 function M.get_actions()
     return {
         {
@@ -736,34 +574,53 @@ function M.get_actions()
     }
 end
 
-function M.build_action_map(actions)
-    local out = {}
-
-    for i = 1, #actions do
-        local action = actions[i]
-        out[action.id] = action
+function M.open_in_android_studio()
+    local file = vim.api.nvim_buf_get_name(0)
+    if file == '' or vim.bo[0].buftype ~= '' then
+        notify('Open a file buffer first.', levels.WARN, {})
+        return
     end
 
-    return out
-end
+    file = vim.fn.fnamemodify(file, ':p')
 
-function M.snake_to_pascal(str)
-    return (str:gsub('(^%l)', string.upper):gsub('_(%l)', function(c)
-        return c:upper()
-    end))
-end
+    local gradlew = util.find_gradlew()
+    local args = { 'studio', 'open-file', file }
 
-function M.get_action_ids(actions, arg_lead)
-    local ids = {}
-
-    for i = 1, #actions do
-        local id = actions[i].id
-        if arg_lead == '' or vim.startswith(id, arg_lead) then
-            ids[#ids + 1] = id
-        end
+    if gradlew then
+        args[#args + 1] = '--project=' .. gradlew.cwd
     end
 
-    return ids
+    run_cli_with_progress('AndroidStudio', 'Opening in Android Studio', args, {
+        success = 'Opened in Android Studio.',
+    })
+end
+
+function M.refresh_dependencies()
+    local gradlew = util.find_gradlew()
+    if gradlew == nil then
+        notify('Refresh failed: gradlew is not found.', levels.ERROR, {})
+        return
+    end
+
+    local progress = output.create_task_progress('AndroidRefreshDependencies')
+    local timer = output.start_progress_timer(progress, 'Refreshing dependencies')
+    local buf = output.create_build_window()
+
+    vim.system(
+        util.gradle_argv(gradlew.gradlew, { '--refresh-dependencies' }),
+        output.create_gradle_system_opts(buf),
+        vim.schedule_wrap(function(obj)
+            timer:stop()
+
+            if obj.code == 0 then
+                progress.done(true, 'Dependencies refreshed.')
+                notify('Dependencies refreshed.', levels.INFO, {})
+            else
+                progress.done(false, 'Refresh failed.')
+                notify('Refresh failed: ' .. (obj.stderr or ''), levels.ERROR, {})
+            end
+        end)
+    )
 end
 
 function M.run_action(action)
@@ -784,8 +641,158 @@ function M.run_action_by_id(id)
     M.run_action(action)
 end
 
+function M.show_android_info()
+    run_cli_with_progress('AndroidInfo', 'Fetching Android info', {
+        'info',
+    }, {
+        show_output = true,
+        success = 'Environment info loaded.',
+    })
+end
+
 function M.show_menu()
     ui.select_root_menu(M.get_actions(), M.run_action)
 end
 
+function M.snake_to_pascal(str)
+    return (str:gsub('(^%l)', string.upper):gsub('_(%l)', function(c)
+        return c:upper()
+    end))
+end
+
+function M.start_emulator_picker()
+    local avds, err = devices.list_avds()
+    if avds == nil then
+        notify(err or 'Failed to list emulators.', levels.ERROR, {})
+        return
+    end
+
+    if #avds == 0 then
+        notify('No emulators found.', levels.WARN, {})
+        return
+    end
+
+    ui.select_modal(avds, {
+        prompt = 'AVD to start',
+    }, function(choice)
+        if choice then
+            run_cli_with_progress('LaunchAvd', 'Launching ' .. choice, {
+                'emulator',
+                'start',
+                choice,
+            }, {
+                success = 'Launched ' .. choice .. '.',
+            })
+        end
+    end)
+end
+
+function M.stop_avd()
+    devices.with_adb(function(adb)
+        local emulators = {}
+
+        for _, device in ipairs(devices.get_running_devices(adb)) do
+            if device.id:match('^emulator') then
+                emulators[#emulators + 1] = device
+            end
+        end
+
+        if #emulators == 0 then
+            notify('No running emulators found.', levels.WARN, {})
+            return
+        end
+
+        local function stop_device(device)
+            run_cli_with_progress('StopAvd', 'Stopping ' .. device.name, {
+                'emulator',
+                'stop',
+                device.id,
+            }, {
+                success = 'Stopped ' .. device.name .. '.',
+            })
+        end
+
+        if #emulators == 1 then
+            stop_device(emulators[1])
+            return
+        end
+
+        ui.select_modal(emulators, {
+            prompt = 'Emulator to stop',
+            format_item = function(device)
+                return device.name .. ' (' .. device.id .. ')'
+            end,
+        }, function(choice)
+            if choice then
+                stop_device(choice)
+            end
+        end)
+    end)
+end
+
+function M.studio_check()
+    run_cli_with_progress('AndroidStudio', 'Checking Android Studio', {
+        'studio',
+        'check',
+    }, {
+        show_output = true,
+        success = 'Studio check complete.',
+    })
+end
+
+function M.uninstall()
+    local gradlew = util.find_gradlew()
+    if gradlew == nil then
+        notify('Uninstall failed: gradlew is not found.', levels.ERROR, {})
+        return
+    end
+
+    local application_modules = gradle.find_application_modules(gradlew.cwd)
+    local application_id = application_modules[1] and gradle.find_application_id(gradlew.cwd, application_modules[1])
+
+    if application_id == nil then
+        notify('Uninstall failed: could not find application id.', levels.ERROR, {})
+        return
+    end
+
+    local sdk = util.get_android_sdk()
+    if sdk == nil or #sdk == 0 then
+        notify('Android SDK is not defined.', levels.ERROR, {})
+        return
+    end
+
+    local adb = sdk .. '/platform-tools/adb'
+    local running_devices = devices.get_running_devices(adb)
+    if #running_devices == 0 then
+        notify('Uninstall failed: no devices are running.', levels.WARN, {})
+        return
+    end
+
+    ui.select_modal(running_devices, {
+        prompt = 'Select device to uninstall from',
+        format_item = function(item)
+            return item.name
+        end,
+    }, function(choice)
+        if choice then
+            local progress = output.create_task_progress('AndroidUninstall')
+            local timer = output.start_progress_timer(progress, 'Uninstalling ' .. application_id)
+            local uninstall_obj_sys = vim.system({ adb, '-s', choice.id, 'uninstall', application_id }, {})
+            ---@cast uninstall_obj_sys vim.SystemObj
+            local uninstall_obj = uninstall_obj_sys:wait()
+
+            timer:stop()
+
+            if uninstall_obj.code == 0 then
+                progress.done(true, 'Uninstall successful.')
+                notify('Uninstall successful.', levels.INFO, {})
+            else
+                progress.done(false, 'Uninstall failed.')
+                notify('Uninstall failed: ' .. (uninstall_obj.stderr or ''), levels.ERROR, {})
+            end
+        else
+            notify('Uninstall cancelled.', levels.WARN, {})
+        end
+    end)
+end
 return M

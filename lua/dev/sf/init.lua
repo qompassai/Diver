@@ -6,13 +6,14 @@ local api = vim.api
 
 local M = {}
 
-M.core = require('dev.sf.core')
 M.agent = require('dev.sf.agent')
 M.analyzer = require('dev.sf.analyzer')
 M.apex = require('dev.sf.apex')
+M.core = require('dev.sf.core')
 M.data = require('dev.sf.data')
 M.org = require('dev.sf.org')
 M.project = require('dev.sf.project')
+M.secreview = require('dev.sf.secreview')
 M.tasks = require('dev.sf.tasks')
 M.trailhead = require('dev.sf.trailhead')
 
@@ -23,6 +24,7 @@ local DOMAIN_MODULES = {
     M.data,
     M.org,
     M.project,
+    M.secreview,
     M.tasks,
     M.trailhead,
 }
@@ -92,6 +94,19 @@ local LEGACY_MODULES = {
         },
     },
     {
+        name = 'dev.sf.query',
+        commands = {
+            { name = 'SfSoql', key = 'soql', opts = { desc = 'Run a SOQL query', nargs = '?' } },
+            {
+                name = 'SfSoqlBuffer',
+                key = 'current_buffer',
+                opts = { desc = 'Run SOQL from the current buffer', nargs = 0 },
+            },
+            { name = 'SfSoqlExplain', key = 'explain', opts = { desc = 'Explain a SOQL query plan', nargs = '?' } },
+            { name = 'SfSoqlFile', key = 'current_file', opts = { desc = 'Run SOQL from a file', nargs = '?' } },
+        },
+    },
+    {
         name = 'dev.sf.schema',
         commands = {
             {
@@ -119,20 +134,11 @@ local LEGACY_MODULES = {
                 key = 'sobject_describe',
                 opts = { desc = 'Describe a Salesforce sObject', nargs = '?' },
             },
-            { name = 'SfSobjectList', key = 'sobject_list', opts = { desc = 'List Salesforce sObjects', nargs = 0 } },
-        },
-    },
-    {
-        name = 'dev.sf.query',
-        commands = {
-            { name = 'SfSoql', key = 'soql', opts = { desc = 'Run a SOQL query', nargs = '?' } },
             {
-                name = 'SfSoqlBuffer',
-                key = 'current_buffer',
-                opts = { desc = 'Run SOQL from the current buffer', nargs = 0 },
+                name = 'SfSobjectList',
+                key = 'sobject_list',
+                opts = { desc = 'List Salesforce sObjects', nargs = 0 },
             },
-            { name = 'SfSoqlExplain', key = 'explain', opts = { desc = 'Explain a SOQL query plan', nargs = '?' } },
-            { name = 'SfSoqlFile', key = 'current_file', opts = { desc = 'Run SOQL from a file', nargs = '?' } },
         },
     },
     {

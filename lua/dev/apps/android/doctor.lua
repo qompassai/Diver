@@ -1,5 +1,5 @@
 -- #################################################################
--- /qompassai/lua/dev/android/doctor.lua
+-- /qompassai/lua/dev/apps/android/doctor.lua
 -- Qompass AI Android doctor
 -- SPDX-License-Identifier: Apache-2.0
 -- Copyright (c) 2026 Qompass AI
@@ -29,10 +29,10 @@ local M = {}
 local bsp = require('dev.apps.android.bsp')
 local fdroid = require('dev.apps.android.fdroid')
 local matrix = require('dev.apps.android.matrix')
+local output = require('dev.apps.android.output')
 local subsystems = require('dev.apps.android.subsystems')
 local tools = require('dev.apps.android.tools')
 local util = require('dev.apps.android.util')
-local output = require('dev.apps.android.output')
 
 local levels = vim.log.levels
 local notify = vim.notify
@@ -53,34 +53,6 @@ local function add(checks, id, label, status, detail)
 end
 
 ---@param checks AndroidDoctorCheck[]
-local function check_host(checks)
-    local host = matrix.host()
-    if matrix.host_supported(host) then
-        add(checks, 'host', 'Host OS', 'ok', host .. ' is in the supported matrix.')
-    else
-        add(checks, 'host', 'Host OS', 'warn', host .. ' is not in the supported matrix (windows/linux).')
-    end
-end
-
----@param checks AndroidDoctorCheck[]
----@return string? sdk_root
-local function check_sdk(checks)
-    local sdk = util.get_android_sdk()
-    if sdk == nil then
-        add(checks, 'sdk', 'Android SDK', 'fail', 'ANDROID_HOME/ANDROID_SDK_ROOT (or g:android_sdk) is not set.')
-        return nil
-    end
-
-    if vim.uv.fs_stat(sdk) == nil then
-        add(checks, 'sdk', 'Android SDK', 'fail', 'SDK directory does not exist: ' .. sdk)
-        return nil
-    end
-
-    add(checks, 'sdk', 'Android SDK', 'ok', 'SDK root: ' .. sdk)
-    return sdk
-end
-
----@param checks AndroidDoctorCheck[]
 ---@param sdk string SDK root.
 local function check_adb(checks, sdk)
     local adb = sdk .. '/platform-tools/adb'
@@ -92,6 +64,54 @@ local function check_adb(checks, sdk)
     local probe = tools.probe(adb, { adb, 'version' })
     local expected = tools.manifest['platform-tools'].version
     add(checks, 'adb', 'adb', 'ok', (probe.version or 'present') .. ' — manifest expects platform-tools ' .. expected)
+end
+
+---@param checks AndroidDoctorCheck[]
+---@param sdk string SDK root.
+local function check_avds(checks, sdk)
+    local emulator = sdk .. '/emulator/emulator'
+    if vim.fn.executable(emulator) ~= 1 then
+        add(checks, 'avds', 'AVDs', 'skip', 'emulator binary not installed.')
+        return
+    end
+
+    local ok, obj = pcall(vim.system, { emulator, '-list-avds' }, { text = true })
+    if not ok then
+        add(checks, 'avds', 'AVDs', 'skip', 'Could not query the emulator.')
+        return
+    end
+    ---@cast obj vim.SystemObj
+
+    local done = obj:wait()
+    local avds = {}
+    for raw_line in (done.stdout or ''):gmatch('[^\r\n]+') do
+        local line = util.trim(raw_line)
+        if line ~= '' then
+            avds[#avds + 1] = line
+        end
+    end
+
+    if #avds == 0 then
+        add(checks, 'avds', 'AVDs', 'warn', 'No AVDs defined; create one with avdmanager.')
+    else
+        add(checks, 'avds', 'AVDs', 'ok', #avds .. ' AVD(s): ' .. table.concat(avds, ', '))
+    end
+end
+
+---@param checks AndroidDoctorCheck[]
+---@param root_dir? string
+local function check_bsp(checks, root_dir)
+    local status = bsp.status(root_dir)
+    if status.ok then
+        local detail = 'Connection "' .. (status.connection or 'gradle') .. '" at ' .. (status.root or '?') .. '.'
+        add(checks, 'bsp', 'BSP (Gradle)', 'ok', detail)
+    else
+        local detail = status.reason or 'Not configured.'
+        if status.hint then
+            detail = detail .. ' ' .. status.hint
+        end
+        add(checks, 'bsp', 'BSP (Gradle)', 'warn', detail)
+    end
 end
 
 ---@param checks AndroidDoctorCheck[]
@@ -118,34 +138,16 @@ local function check_devices(checks, sdk)
 end
 
 ---@param checks AndroidDoctorCheck[]
----@param sdk string SDK root.
-local function check_avds(checks, sdk)
-    local emulator = sdk .. '/emulator/emulator'
-    if vim.fn.executable(emulator) ~= 1 then
-        add(checks, 'avds', 'AVDs', 'skip', 'emulator binary not installed.')
+---@param root_dir? string
+local function check_fdroid(checks, root_dir)
+    if root_dir == nil then
+        add(checks, 'fdroid', 'F-Droid readiness', 'skip', 'No project root.')
         return
     end
 
-    local ok, obj = pcall(vim.system, { emulator, '-list-avds' }, { text = true })
-    if not ok then
-        add(checks, 'avds', 'AVDs', 'skip', 'Could not query the emulator.')
-        return
-    end
-
-    local done = obj:wait()
-    local avds = {}
-    for line in (done.stdout or ''):gmatch('[^\r\n]+') do
-        local trimmed = util.trim(line)
-        if trimmed ~= '' then
-            avds[#avds + 1] = trimmed
-        end
-    end
-
-    if #avds == 0 then
-        add(checks, 'avds', 'AVDs', 'warn', 'No AVDs defined; create one with avdmanager.')
-    else
-        add(checks, 'avds', 'AVDs', 'ok', #avds .. ' AVD(s): ' .. table.concat(avds, ', '))
-    end
+    local summary = fdroid.summarize(fdroid.check(root_dir))
+    local all_ok = summary:sub(1, 1) ~= '0'
+    add(checks, 'fdroid', 'F-Droid readiness', all_ok and 'ok' or 'warn', summary)
 end
 
 ---@param checks AndroidDoctorCheck[]
@@ -180,6 +182,16 @@ local function check_gradlew(checks)
 end
 
 ---@param checks AndroidDoctorCheck[]
+local function check_host(checks)
+    local host = matrix.host()
+    if matrix.host_supported(host) then
+        add(checks, 'host', 'Host OS', 'ok', host .. ' is in the supported matrix.')
+    else
+        add(checks, 'host', 'Host OS', 'warn', host .. ' is not in the supported matrix (windows/linux).')
+    end
+end
+
+---@param checks AndroidDoctorCheck[]
 local function check_java(checks)
     local probe = tools.probe_java()
     if not probe.present then
@@ -188,22 +200,6 @@ local function check_java(checks)
     end
 
     add(checks, 'java', 'JDK', 'ok', probe.version or 'java present (version unreadable).')
-end
-
----@param checks AndroidDoctorCheck[]
----@param root_dir? string
-local function check_bsp(checks, root_dir)
-    local status = bsp.status(root_dir)
-    if status.ok then
-        local detail = 'Connection "' .. (status.connection or 'gradle') .. '" at ' .. (status.root or '?') .. '.'
-        add(checks, 'bsp', 'BSP (Gradle)', 'ok', detail)
-    else
-        local detail = status.reason or 'Not configured.'
-        if status.hint then
-            detail = detail .. ' ' .. status.hint
-        end
-        add(checks, 'bsp', 'BSP (Gradle)', 'warn', detail)
-    end
 end
 
 ---@param checks AndroidDoctorCheck[]
@@ -220,16 +216,21 @@ local function check_matrix(checks, root_dir)
 end
 
 ---@param checks AndroidDoctorCheck[]
----@param root_dir? string
-local function check_fdroid(checks, root_dir)
-    if root_dir == nil then
-        add(checks, 'fdroid', 'F-Droid readiness', 'skip', 'No project root.')
-        return
+---@return string? sdk_root
+local function check_sdk(checks)
+    local sdk = util.get_android_sdk()
+    if sdk == nil then
+        add(checks, 'sdk', 'Android SDK', 'fail', 'ANDROID_HOME/ANDROID_SDK_ROOT (or g:android_sdk) is not set.')
+        return nil
     end
 
-    local summary = fdroid.summarize(fdroid.check(root_dir))
-    local all_ok = summary:sub(1, 1) ~= '0'
-    add(checks, 'fdroid', 'F-Droid readiness', all_ok and 'ok' or 'warn', summary)
+    if vim.uv.fs_stat(sdk) == nil then
+        add(checks, 'sdk', 'Android SDK', 'fail', 'SDK directory does not exist: ' .. sdk)
+        return nil
+    end
+
+    add(checks, 'sdk', 'Android SDK', 'ok', 'SDK root: ' .. sdk)
+    return sdk
 end
 
 ---@param checks AndroidDoctorCheck[]
@@ -290,5 +291,4 @@ function M.run()
 
     return checks
 end
-
 return M

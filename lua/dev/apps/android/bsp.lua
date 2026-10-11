@@ -1,5 +1,5 @@
 -- #################################################################
--- /qompassai/lua/dev/android/bsp.lua
+-- /qompassai/lua/dev/apps/android/bsp.lua
 -- Qompass AI Android BSP integration
 -- SPDX-License-Identifier: Apache-2.0
 -- Copyright (c) 2026 Qompass AI
@@ -51,31 +51,33 @@ local function load_client()
     return client
 end
 
----Check the Gradle BSP connection card for a project.
----@param root_dir? string Project root (defaults to the resolver's root).
----@return AndroidBspStatus
-function M.status(root_dir)
-    local ok, gradle = pcall(require, 'dev.apps.android.gradle')
-    if not ok or type(gradle) ~= 'table' or type(gradle.bsp_status) ~= 'function' then
-        return { ok = false, reason = 'dev.apps.android.gradle is unavailable' }
-    end
-
-    return gradle.bsp_status(root_dir)
-end
-
----Is a BSP session currently running for this root?
+---Run a build through BSP when active, otherwise through the Gradle CLI.
 ---@param root string Project root.
----@return boolean active
-function M.session_active(root)
+---@param fallback fun() The CLI build to run when BSP is unavailable.
+---@return boolean used_bsp True when the BSP path was taken.
+function M.compile_or_fallback(root, fallback)
     assert(type(root) == 'string' and root ~= '', 'root must be non-empty')
+    vim.validate('fallback', fallback, 'function')
 
-    local client = load_client()
-    if client == nil or type(client.state) ~= 'table' or type(client.state.sessions) ~= 'table' then
+    if not M.session_active(root) then
+        fallback()
         return false
     end
 
-    local session = client.state.sessions[root]
-    return session ~= nil
+    local client = load_client()
+    if client == nil or type(client.compile) ~= 'function' then
+        fallback()
+        return false
+    end
+
+    local ok, err = pcall(client.compile, root)
+    if not ok then
+        notify('BSP compile failed: ' .. tostring(err) .. ' — falling back to ./gradlew', levels.WARN, {})
+        fallback()
+        return false
+    end
+
+    return true
 end
 
 ---Offer to start the BSP server, then call back with the chosen path.
@@ -107,7 +109,9 @@ function M.ensure(root, callback)
             return
         end
 
-        local ok, err = pcall(vim.cmd, 'BspStart')
+        local ok, err = pcall(function()
+            vim.cmd('BspStart')
+        end)
         if not ok then
             notify('Could not start BSP: ' .. tostring(err), levels.WARN, {})
             callback('gradle-cli')
@@ -118,33 +122,30 @@ function M.ensure(root, callback)
     end)
 end
 
----Run a build through BSP when active, otherwise through the Gradle CLI.
+---Is a BSP session currently running for this root?
 ---@param root string Project root.
----@param fallback fun() The CLI build to run when BSP is unavailable.
----@return boolean used_bsp True when the BSP path was taken.
-function M.compile_or_fallback(root, fallback)
+---@return boolean active
+function M.session_active(root)
     assert(type(root) == 'string' and root ~= '', 'root must be non-empty')
-    vim.validate('fallback', fallback, 'function')
-
-    if not M.session_active(root) then
-        fallback()
-        return false
-    end
 
     local client = load_client()
-    if client == nil or type(client.compile) ~= 'function' then
-        fallback()
+    if client == nil or type(client.state) ~= 'table' or type(client.state.sessions) ~= 'table' then
         return false
     end
 
-    local ok, err = pcall(client.compile, root)
-    if not ok then
-        notify('BSP compile failed: ' .. tostring(err) .. ' — falling back to ./gradlew', levels.WARN, {})
-        fallback()
-        return false
-    end
-
-    return true
+    local session = client.state.sessions[root]
+    return session ~= nil
 end
 
+---Check the Gradle BSP connection card for a project.
+---@param root_dir? string Project root (defaults to the resolver's root).
+---@return AndroidBspStatus
+function M.status(root_dir)
+    local ok, gradle = pcall(require, 'dev.apps.android.gradle')
+    if not ok or type(gradle) ~= 'table' or type(gradle.bsp_status) ~= 'function' then
+        return { ok = false, reason = 'dev.apps.android.gradle is unavailable' }
+    end
+
+    return gradle.bsp_status(root_dir)
+end
 return M

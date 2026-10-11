@@ -18,7 +18,7 @@
 ---the caller never hardcodes those groupings.
 ---@module 'dev.refactor.scip'
 
-local core = require("dev.refactor.core")
+local core = require('dev.refactor.core')
 
 local M = {}
 
@@ -36,86 +36,24 @@ local CLIENT_COUNT_MAX = 32
 ---@param bufnr integer
 ---@return integer count
 local function lsp_visible_files(bufnr)
-	local clients = vim.lsp.get_clients({ bufnr = bufnr })
-	local seen = {}
-	local count = 0
+    local clients = vim.lsp.get_clients({ bufnr = bufnr })
+    local seen = {}
+    local count = 0
 
-	for i = 1, math.min(#clients, CLIENT_COUNT_MAX) do
-		local client = clients[i]
+    for i = 1, math.min(#clients, CLIENT_COUNT_MAX) do
+        local client = clients[i]
 
-		if client:supports_method("textDocument/rename", bufnr) then
-			local buffers = vim.lsp.get_buffers_by_client_id(client.id)
+        if client:supports_method('textDocument/rename', bufnr) then
+            for buf in pairs(client.attached_buffers) do
+                if not seen[buf] then
+                    seen[buf] = true
+                    count = count + 1
+                end
+            end
+        end
+    end
 
-			for _, buf in ipairs(buffers) do
-				if not seen[buf] then
-					seen[buf] = true
-					count = count + 1
-				end
-			end
-		end
-
-	end
-
-	return count
-end
-
----Run the SCIP pre-flight before a rename or cross-file refactor.
----Returns a record; `warning` is non-nil when the operator should think
----twice. Never raises: SCIP is advisory, LSP remains authoritative.
----@param bufnr? integer Defaults to the current buffer.
----@return RefactorScipPreflight
-function M.preflight(bufnr)
-	bufnr = core.bufnr(bufnr)
-
-	---@type RefactorScipPreflight
-	local result = {
-		language = vim.bo[bufnr].filetype,
-		indexer = "",
-		index_fresh = false,
-		lsp_files = lsp_visible_files(bufnr),
-		warning = nil,
-	}
-
-	local ok_lang, scip_lang = pcall(require, "scip.lang")
-
-	if not ok_lang then
-		return result
-	end
-
-	local match = scip_lang.for_buffer(bufnr)
-
-	if match == nil then
-		return result
-	end
-
-	result.language = match.language
-	result.indexer = match.indexer
-
-	local ok_query, scip_query = pcall(require, "scip.query")
-
-	if not ok_query then
-		return result
-	end
-
-	local status, status_error = scip_query.status({ bufnr = bufnr })
-
-	if status == nil then
-		local reason = status_error or "unknown"
-		core.notify("SCIP pre-flight skipped: " .. reason, vim.log.levels.DEBUG)
-		return result
-	end
-
-	result.index_fresh = status.exists and status.fresh
-
-	if result.index_fresh and result.lsp_files <= 1 then
-		result.warning = (
-			"A fresh SCIP index covers the whole %s project, but LSP only sees %d open file(s). "
-			.. "A rename may miss uses in unopened files; "
-			.. "consider :ScipIndex %s first, or open the affected files."
-		):format(match.language, result.lsp_files, match.indexer)
-	end
-
-	return result
+    return count
 end
 
 ---Warn when the pre-flight found a narrower LSP view than the SCIP index.
@@ -124,13 +62,72 @@ end
 ---@param preflight RefactorScipPreflight
 ---@return boolean proceed
 function M.confirm(preflight)
-	if preflight.warning == nil then
-		return true
-	end
+    if preflight.warning == nil then
+        return true
+    end
 
-	core.notify(preflight.warning, vim.log.levels.WARN)
+    core.notify(preflight.warning, vim.log.levels.WARN)
 
-	return true
+    return true
+end
+
+---Run the SCIP pre-flight before a rename or cross-file refactor.
+---Returns a record; `warning` is non-nil when the operator should think
+---twice. Never raises: SCIP is advisory, LSP remains authoritative.
+---@param bufnr? integer Defaults to the current buffer.
+---@return RefactorScipPreflight
+function M.preflight(bufnr)
+    bufnr = core.bufnr(bufnr)
+
+    ---@type RefactorScipPreflight
+    local result = {
+        index_fresh = false,
+        indexer = '',
+        language = vim.bo[bufnr].filetype,
+        lsp_files = lsp_visible_files(bufnr),
+        warning = nil,
+    }
+
+    local ok_lang, scip_lang = pcall(require, 'scip.lang')
+
+    if not ok_lang then
+        return result
+    end
+
+    local match = scip_lang.for_buffer(bufnr)
+
+    if match == nil then
+        return result
+    end
+
+    result.language = match.language
+    result.indexer = match.indexer
+
+    local ok_query, scip_query = pcall(require, 'scip.query')
+
+    if not ok_query then
+        return result
+    end
+
+    local status, status_error = scip_query.status({ bufnr = bufnr })
+
+    if status == nil then
+        local reason = status_error or 'unknown'
+        core.notify('SCIP pre-flight skipped: ' .. reason, vim.log.levels.DEBUG)
+        return result
+    end
+
+    result.index_fresh = status.exists and status.fresh
+
+    if result.index_fresh and result.lsp_files <= 1 then
+        result.warning = (
+            'A fresh SCIP index covers the whole %s project, but LSP only sees %d open file(s). '
+            .. 'A rename may miss uses in unopened files; '
+            .. 'consider :ScipIndex %s first, or open the affected files.'
+        ):format(match.language, result.lsp_files, match.indexer)
+    end
+
+    return result
 end
 
 return M
