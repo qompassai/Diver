@@ -21,7 +21,9 @@ local function run(cmd, opts, callback)
         end)
         return
     end
-    return vim.system(cmd, opts)
+    local sysobj = vim.system(cmd, opts)
+    ---@cast sysobj vim.SystemObj
+    return sysobj
 end
 
 ---@param path? string
@@ -32,6 +34,26 @@ function M.current(path)
         return nil
     end
     return fs.normalize(path)
+end
+
+---@param path string
+---@param opts? { layout?: boolean, first_page?: integer, last_page?: integer, output?: string }
+---@param callback? fun(ok: boolean, output?: string, error?: string)
+function M.extract(path, opts, callback)
+    opts = opts or {}
+    local output = opts.output or path:gsub('%.pdf$', '') .. '.txt'
+    M.text(path, opts, function(text, err)
+        if not text then
+            if callback then
+                callback(false, nil, err)
+            end
+            return
+        end
+        fn.writefile(vim.split(text, '\n', { plain = true }), output)
+        if callback then
+            callback(true, output)
+        end
+    end)
 end
 
 ---@param path string
@@ -55,6 +77,32 @@ function M.info(path, callback)
         end
         callback(info)
     end)
+end
+
+---@param path string
+---@param page integer
+function M.open_page(path, page)
+    page = math.max(1, page)
+    if fn.executable('zathura') == 1 then
+        vim.system({ 'zathura', '--page', tostring(page), path }, { detach = true })
+        return
+    end
+    if fn.executable('okular') == 1 then
+        vim.system({ 'okular', ('%s#page=%d'):format(path, page) }, { detach = true })
+        return
+    end
+    if fn.executable('xdg-open') == 1 then
+        vim.system({ 'xdg-open', path }, { detach = true })
+        return
+    end
+    vim.notify('No supported PDF viewer found', vim.log.levels.WARN)
+end
+
+---@param path string
+---@param callback? fun(ok: boolean, output?: string, error?: string)
+function M.review_text(path, callback)
+    local output = path:gsub('%.pdf$', '') .. '.review.txt'
+    M.extract(path, { layout = true, output = output }, callback)
 end
 
 ---@param path string
@@ -86,52 +134,6 @@ function M.text(path, opts, callback)
     end)
 end
 
----@param path string
----@param opts? { layout?: boolean, first_page?: integer, last_page?: integer, output?: string }
----@param callback? fun(ok: boolean, output?: string, error?: string)
-function M.extract(path, opts, callback)
-    opts = opts or {}
-    local output = opts.output or path:gsub('%.pdf$', '') .. '.txt'
-    M.text(path, opts, function(text, err)
-        if not text then
-            if callback then
-                callback(false, nil, err)
-            end
-            return
-        end
-        fn.writefile(vim.split(text, '\n', { plain = true }), output)
-        if callback then
-            callback(true, output)
-        end
-    end)
-end
-
----@param path string
----@param page integer
-function M.open_page(path, page)
-    page = math.max(1, page)
-    if fn.executable('zathura') == 1 then
-        vim.system({ 'zathura', '--page', tostring(page), path }, { detach = true })
-        return
-    end
-    if fn.executable('okular') == 1 then
-        vim.system({ 'okular', ('%s#page=%d'):format(path, page) }, { detach = true })
-        return
-    end
-    if fn.executable('xdg-open') == 1 then
-        vim.system({ 'xdg-open', path }, { detach = true })
-        return
-    end
-    vim.notify('No supported PDF viewer found', vim.log.levels.WARN)
-end
-
----@param path string
----@param callback? fun(ok: boolean, output?: string, error?: string)
-function M.review_text(path, callback)
-    local output = path:gsub('%.pdf$', '') .. '.review.txt'
-    M.extract(path, { layout = true, output = output }, callback)
-end
-
 function M.setup()
     api.nvim_create_user_command('PdfInfo', function(opts)
         local path = opts.args ~= '' and opts.args or M.current()
@@ -151,6 +153,16 @@ function M.setup()
         desc = 'Show PDF metadata',
     })
 
+    api.nvim_create_user_command('PdfPage', function(opts)
+        local path = M.current()
+        if path and path:match('%.pdf$') then
+            M.open_page(path, math.floor(tonumber(opts.args) or 1))
+        end
+    end, {
+        nargs = 1,
+        desc = 'Open current PDF at page',
+    })
+
     api.nvim_create_user_command('PdfText', function(opts)
         local path = opts.args ~= '' and opts.args or M.current()
         if not path then
@@ -167,16 +179,6 @@ function M.setup()
         nargs = '?',
         complete = 'file',
         desc = 'Extract layout-preserving PDF text for review',
-    })
-
-    api.nvim_create_user_command('PdfPage', function(opts)
-        local path = M.current()
-        if path and path:match('%.pdf$') then
-            M.open_page(path, math.floor(tonumber(opts.args) or 1))
-        end
-    end, {
-        nargs = 1,
-        desc = 'Open current PDF at page',
     })
 end
 

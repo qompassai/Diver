@@ -13,16 +13,16 @@
 -- external authority, so pass the abbreviated name in the journal field.
 local M = {}
 
----Maximum BibTeX text parsed in one call (bytes).
-local MAX_INPUT_BYTES = 200000
----Maximum entries parsed from one BibTeX blob.
-local MAX_ENTRIES = 500
----Maximum characters kept per field value.
-local MAX_FIELD_CHARS = 4000
 ---Maximum authors rendered before et al. logic applies.
 local MAX_AUTHORS_LISTED = 6
 ---Maximum authors parsed per entry.
 local MAX_AUTHORS_PARSED = 200
+---Maximum entries parsed from one BibTeX blob.
+local MAX_ENTRIES = 500
+---Maximum characters kept per field value.
+local MAX_FIELD_CHARS = 4000
+---Maximum BibTeX text parsed in one call (bytes).
+local MAX_INPUT_BYTES = 200000
 
 ---@param s string
 ---@return string
@@ -182,12 +182,12 @@ end
 local function split_names(s)
     local names = {}
     local count = 0
-    for part in (s .. ' and '):gmatch('(.-)%s+and%s+') do
+    for raw_part in (s .. ' and '):gmatch('(.-)%s+and%s+') do
         count = count + 1
         if count > MAX_AUTHORS_PARSED then
             break
         end
-        part = trim(part)
+        local part = trim(raw_part)
         if part ~= '' then
             names[#names + 1] = part
         end
@@ -315,7 +315,7 @@ end
 ---@return string
 local function pages_of(fields)
     local pages = fields.pages or fields.page or ''
-    return pages:gsub('%-%-+', '-'):gsub('%s+', '')
+    return (pages:gsub('%-%-+', '-'):gsub('%s+', ''))
 end
 
 ---@param fields table<string,string>
@@ -518,26 +518,14 @@ end
 local function show_scratch(title, lines)
     local bufnr = vim.api.nvim_create_buf(false, true)
     vim.api.nvim_buf_set_lines(bufnr, 0, -1, false, lines)
-    vim.api.nvim_buf_set_option(bufnr, 'modifiable', false)
-    vim.api.nvim_buf_set_option(bufnr, 'filetype', 'markdown')
+    vim.api.nvim_set_option_value('modifiable', false, { buf = bufnr })
+    vim.api.nvim_set_option_value('filetype', 'markdown', { buf = bufnr })
     vim.cmd('botright split')
     vim.api.nvim_win_set_buf(0, bufnr)
     vim.api.nvim_buf_set_name(bufnr, title)
 end
 
 function M.setup()
-    vim.api.nvim_create_user_command('AmaFormat', function()
-        local bufnr = vim.api.nvim_get_current_buf()
-        local text = table.concat(vim.api.nvim_buf_get_lines(bufnr, 0, -1, false), '\n')
-        local lines = M.parse_and_format(text)
-        if #lines == 0 then
-            vim.notify('AmaFormat: no BibTeX entries found in buffer', vim.log.levels.WARN)
-            return
-        end
-        show_scratch('AMA References', lines)
-        vim.notify(('AmaFormat: %d reference(s) formatted'):format(#lines), vim.log.levels.INFO)
-    end, { desc = 'Format BibTeX entries in buffer as AMA 11th references' })
-
     vim.api.nvim_create_user_command('AmaCite', function(opts)
         local from, to = opts.args:match('^(%d+)%s*%-?%s*(%d*)$')
         if not from then
@@ -559,6 +547,18 @@ function M.setup()
         vim.api.nvim_set_current_line(line:sub(1, col) .. cite .. line:sub(col + 1))
         vim.api.nvim_win_set_cursor(0, { row, col + #cite })
     end, { nargs = 1, desc = 'Insert AMA superscript citation number(s)' })
+
+    vim.api.nvim_create_user_command('AmaFormat', function()
+        local bufnr = vim.api.nvim_get_current_buf()
+        local text = table.concat(vim.api.nvim_buf_get_lines(bufnr, 0, -1, false), '\n')
+        local lines = M.parse_and_format(text)
+        if #lines == 0 then
+            vim.notify('AmaFormat: no BibTeX entries found in buffer', vim.log.levels.WARN)
+            return
+        end
+        show_scratch('AMA References', lines)
+        vim.notify(('AmaFormat: %d reference(s) formatted'):format(#lines), vim.log.levels.INFO)
+    end, { desc = 'Format BibTeX entries in buffer as AMA 11th references' })
 end
 
 return M

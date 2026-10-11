@@ -17,20 +17,20 @@ local M = {}
 
 ---arXiv API endpoint.
 local ARXIV_API = 'https://export.arxiv.org/api/query'
----Default results per search.
-local DEFAULT_MAX_RESULTS = 10
----Hard cap on results per search (the API is a shared resource).
-local MAX_RESULTS_CAP = 50
----curl timeout for API searches (seconds).
-local SEARCH_TIMEOUT = 25
 ---curl timeout for BibTeX fetches (seconds).
 local BIB_TIMEOUT = 30
 ---Timeout for local packaging/cleaning runs (seconds).
 local BUILD_TIMEOUT = 120
+---Default results per search.
+local DEFAULT_MAX_RESULTS = 10
 ---Maximum feed XML parsed in one call (bytes).
 local MAX_FEED_BYTES = 2000000
 ---Maximum entries taken from one feed.
 local MAX_FEED_ENTRIES = 50
+---Hard cap on results per search (the API is a shared resource).
+local MAX_RESULTS_CAP = 50
+---curl timeout for API searches (seconds).
+local SEARCH_TIMEOUT = 25
 
 ---CLI tools this module wraps. `flag_note` records the verified
 ---invocation shape; `broken` marks tools observed to crash.
@@ -76,6 +76,15 @@ local function clean_text(text)
     return (text:gsub('%s+', ' '):gsub('^%s*(.-)%s*$', '%1'))
 end
 
+---@param url string
+local function open(url)
+    if vim.fn.executable('xdg-open') == 1 then
+        vim.system({ 'xdg-open', url }, { detach = true })
+    else
+        vim.notify(url, vim.log.levels.INFO)
+    end
+end
+
 ---Extract one <tag>value</tag> pair from an entry chunk (narrow on purpose).
 ---@param chunk string
 ---@param tag string
@@ -107,14 +116,114 @@ local function parse_entry(chunk)
     local published = tag_value(chunk, 'published') or ''
     local summary = tag_value(chunk, 'summary') or ''
     return {
-        id = id,
-        title = title and clean_text(title) or '(no title)',
+        abs_url = 'https://arxiv.org/abs/' .. id,
         authors = authors,
+        id = id,
+        pdf_url = 'https://arxiv.org/pdf/' .. id,
         published = clean_text(published):sub(1, 10),
         summary = clean_text(summary):sub(1, 600),
-        abs_url = 'https://arxiv.org/abs/' .. id,
-        pdf_url = 'https://arxiv.org/pdf/' .. id,
+        title = title and clean_text(title) or '(no title)',
     }
+end
+
+---Fetch BibTeX for arXiv IDs via arxiv2bib and show it in a scratch buffer.
+---@param ids string[]
+function M.arxiv_to_bib(ids)
+    assert(type(ids) == 'table' and #ids > 0, 'arxiv_to_bib: ids must be a non-empty table')
+    if not available('arxiv2bib') then
+        vim.notify('arxiv2bib is not installed', vim.log.levels.WARN)
+        return
+    end
+    local argv = { 'arxiv2bib', '-q' }
+    for _, id in ipairs(ids) do
+        argv[#argv + 1] = id
+    end
+    vim.system(argv, { text = true, timeout = BIB_TIMEOUT * 1000 }, function(result)
+        vim.schedule(function()
+            if result.code ~= 0 and (result.stdout or '') == '' then
+                vim.notify(clean_text(result.stderr or 'arxiv2bib failed'), vim.log.levels.ERROR)
+                return
+            end
+            local bufnr = vim.api.nvim_create_buf(false, true)
+            vim.api.nvim_buf_set_lines(bufnr, 0, -1, false, vim.split(result.stdout or '', '\n'))
+            vim.api.nvim_set_option_value('filetype', 'bib', { buf = bufnr })
+            vim.cmd('botright split')
+            vim.api.nvim_win_set_buf(0, bufnr)
+            vim.api.nvim_buf_set_name(bufnr, 'BibTeX: ' .. table.concat(ids, ', '))
+        end)
+    end)
+end
+
+---Clean a LaTeX project folder for arXiv submission.
+---@param folder string input folder
+---@param extra string[] extra verified flags to pass through
+function M.clean(folder, extra)
+    assert(type(folder) == 'string' and folder ~= '', 'clean: folder must be a non-empty string')
+    if not available('arxiv_latex_cleaner') then
+        vim.notify('arxiv_latex_cleaner is not installed', vim.log.levels.WARN)
+        return
+    end
+    local argv = { 'arxiv_latex_cleaner', folder }
+    for _, flag in ipairs(extra or {}) do
+        argv[#argv + 1] = flag
+    end
+    vim.system(argv, { text = true, timeout = BUILD_TIMEOUT * 1000 }, function(result)
+        vim.schedule(function()
+            if result.code == 0 then
+                vim.notify('arxiv_latex_cleaner finished', vim.log.levels.INFO)
+            else
+                vim.notify(clean_text(result.stderr or 'arxiv_latex_cleaner failed'), vim.log.levels.ERROR)
+            end
+        end)
+    end)
+end
+
+---Bundle the current file's LaTeX project for arXiv submission.
+---@param dest string output tarball name
+function M.collect(dest)
+    assert(type(dest) == 'string' and dest ~= '', 'collect: dest must be a non-empty string')
+    if not available('arxiv-collector') then
+        vim.notify('arxiv-collector is not installed', vim.log.levels.WARN)
+        return
+    end
+    local dir = vim.fn.expand('%:p:h')
+    vim.system(
+        { 'arxiv-collector', '--dest', dest },
+        { text = true, timeout = BUILD_TIMEOUT * 1000, cwd = dir },
+        function(result)
+            vim.schedule(function()
+                if result.code == 0 then
+                    vim.notify('arxiv-collector wrote ' .. dest, vim.log.levels.INFO)
+                else
+                    vim.notify(clean_text(result.stderr or 'arxiv-collector failed'), vim.log.levels.ERROR)
+                end
+            end)
+        end
+    )
+end
+
+---Fetch BibTeX for one DOI via doi2bib (positional single-DOI form).
+---@param doi string
+function M.doi_to_bib(doi)
+    assert(type(doi) == 'string' and doi ~= '', 'doi_to_bib: doi must be a non-empty string')
+    if not available('doi2bib') then
+        vim.notify('doi2bib is not installed', vim.log.levels.WARN)
+        return
+    end
+    vim.system({ 'doi2bib', doi }, { text = true, timeout = BIB_TIMEOUT * 1000 }, function(result)
+        vim.schedule(function()
+            if result.code ~= 0 and (result.stdout or '') == '' then
+                vim.notify(clean_text(result.stderr or 'doi2bib failed'), vim.log.levels.ERROR)
+                return
+            end
+            local bufnr = vim.api.nvim_create_buf(false, true)
+            vim.api.nvim_buf_set_lines(bufnr, 0, -1, false, vim.split(result.stdout or '', '\n'))
+            vim.api.nvim_set_option_value('filetype', 'bib', { buf = bufnr })
+            vim.cmd('botright split')
+            vim.api.nvim_win_set_buf(0, bufnr)
+            vim.api.nvim_buf_set_name(bufnr, 'BibTeX: ' .. doi)
+        end)
+    end)
 end
 
 ---Parse arXiv Atom XML into a bounded list of results. Malformed entries
@@ -195,26 +304,13 @@ end
 local function result_lines(result, index)
     local lines = {
         ('%d. %s'):format(index, result.title),
-        ('   %s  |  %s  |  %s'):format(
-            table.concat(result.authors, ', '),
-            result.published,
-            result.id
-        ),
+        ('   %s  |  %s  |  %s'):format(table.concat(result.authors, ', '), result.published, result.id),
     }
     if result.summary ~= '' then
         lines[#lines + 1] = '   ' .. result.summary
     end
     lines[#lines + 1] = ''
     return lines
-end
-
----@param url string
-local function open(url)
-    if vim.fn.executable('xdg-open') == 1 then
-        vim.system({ 'xdg-open', url }, { detach = true })
-    else
-        vim.notify(url, vim.log.levels.INFO)
-    end
 end
 
 ---Show search results in a scratch buffer with discovery keymaps.
@@ -229,8 +325,8 @@ function M.show(results, query)
     end
     local bufnr = vim.api.nvim_create_buf(false, true)
     vim.api.nvim_buf_set_lines(bufnr, 0, -1, false, lines)
-    vim.api.nvim_buf_set_option(bufnr, 'modifiable', false)
-    vim.api.nvim_buf_set_option(bufnr, 'filetype', 'markdown')
+    vim.api.nvim_set_option_value('modifiable', false, { buf = bufnr })
+    vim.api.nvim_set_option_value('filetype', 'markdown', { buf = bufnr })
     vim.cmd('botright split')
     vim.api.nvim_win_set_buf(0, bufnr)
     vim.api.nvim_buf_set_name(bufnr, 'arXiv: ' .. query)
@@ -265,110 +361,6 @@ function M.show(results, query)
     end)
 end
 
----Fetch BibTeX for arXiv IDs via arxiv2bib and show it in a scratch buffer.
----@param ids string[]
-function M.arxiv_to_bib(ids)
-    assert(type(ids) == 'table' and #ids > 0, 'arxiv_to_bib: ids must be a non-empty table')
-    if not available('arxiv2bib') then
-        vim.notify('arxiv2bib is not installed', vim.log.levels.WARN)
-        return
-    end
-    local argv = { 'arxiv2bib', '-q' }
-    for _, id in ipairs(ids) do
-        argv[#argv + 1] = id
-    end
-    vim.system(argv, { text = true, timeout = BIB_TIMEOUT * 1000 }, function(result)
-        vim.schedule(function()
-            if result.code ~= 0 and (result.stdout or '') == '' then
-                vim.notify(clean_text(result.stderr or 'arxiv2bib failed'), vim.log.levels.ERROR)
-                return
-            end
-            local bufnr = vim.api.nvim_create_buf(false, true)
-            vim.api.nvim_buf_set_lines(bufnr, 0, -1, false, vim.split(result.stdout or '', '\n'))
-            vim.api.nvim_buf_set_option(bufnr, 'filetype', 'bib')
-            vim.cmd('botright split')
-            vim.api.nvim_win_set_buf(0, bufnr)
-            vim.api.nvim_buf_set_name(bufnr, 'BibTeX: ' .. table.concat(ids, ', '))
-        end)
-    end)
-end
-
----Fetch BibTeX for one DOI via doi2bib (positional single-DOI form).
----@param doi string
-function M.doi_to_bib(doi)
-    assert(type(doi) == 'string' and doi ~= '', 'doi_to_bib: doi must be a non-empty string')
-    if not available('doi2bib') then
-        vim.notify('doi2bib is not installed', vim.log.levels.WARN)
-        return
-    end
-    vim.system(
-        { 'doi2bib', doi },
-        { text = true, timeout = BIB_TIMEOUT * 1000 },
-        function(result)
-            vim.schedule(function()
-                if result.code ~= 0 and (result.stdout or '') == '' then
-                    vim.notify(clean_text(result.stderr or 'doi2bib failed'), vim.log.levels.ERROR)
-                    return
-                end
-                local bufnr = vim.api.nvim_create_buf(false, true)
-                vim.api.nvim_buf_set_lines(bufnr, 0, -1, false, vim.split(result.stdout or '', '\n'))
-                vim.api.nvim_buf_set_option(bufnr, 'filetype', 'bib')
-                vim.cmd('botright split')
-                vim.api.nvim_win_set_buf(0, bufnr)
-                vim.api.nvim_buf_set_name(bufnr, 'BibTeX: ' .. doi)
-            end)
-        end
-    )
-end
-
----Bundle the current file's LaTeX project for arXiv submission.
----@param dest string output tarball name
-function M.collect(dest)
-    assert(type(dest) == 'string' and dest ~= '', 'collect: dest must be a non-empty string')
-    if not available('arxiv-collector') then
-        vim.notify('arxiv-collector is not installed', vim.log.levels.WARN)
-        return
-    end
-    local dir = vim.fn.expand('%:p:h')
-    vim.system(
-        { 'arxiv-collector', '--dest', dest },
-        { text = true, timeout = BUILD_TIMEOUT * 1000, cwd = dir },
-        function(result)
-            vim.schedule(function()
-                if result.code == 0 then
-                    vim.notify('arxiv-collector wrote ' .. dest, vim.log.levels.INFO)
-                else
-                    vim.notify(clean_text(result.stderr or 'arxiv-collector failed'), vim.log.levels.ERROR)
-                end
-            end)
-        end
-    )
-end
-
----Clean a LaTeX project folder for arXiv submission.
----@param folder string input folder
----@param extra string[] extra verified flags to pass through
-function M.clean(folder, extra)
-    assert(type(folder) == 'string' and folder ~= '', 'clean: folder must be a non-empty string')
-    if not available('arxiv_latex_cleaner') then
-        vim.notify('arxiv_latex_cleaner is not installed', vim.log.levels.WARN)
-        return
-    end
-    local argv = { 'arxiv_latex_cleaner', folder }
-    for _, flag in ipairs(extra or {}) do
-        argv[#argv + 1] = flag
-    end
-    vim.system(argv, { text = true, timeout = BUILD_TIMEOUT * 1000 }, function(result)
-        vim.schedule(function()
-            if result.code == 0 then
-                vim.notify('arxiv_latex_cleaner finished', vim.log.levels.INFO)
-            else
-                vim.notify(clean_text(result.stderr or 'arxiv_latex_cleaner failed'), vim.log.levels.ERROR)
-            end
-        end)
-    end)
-end
-
 ---One-line availability report for every known tool.
 ---@return string[]
 function M.tools_status()
@@ -389,6 +381,39 @@ function M.tools_status()
 end
 
 function M.setup()
+    vim.api.nvim_create_user_command('ArxivBib', function(opts)
+        local ids = {}
+        for id in opts.args:gmatch('%S+') do
+            ids[#ids + 1] = id
+        end
+        if #ids == 0 then
+            vim.notify('Usage: ArxivBib {id} [{id} ...]', vim.log.levels.ERROR)
+            return
+        end
+        M.arxiv_to_bib(ids)
+    end, { nargs = '+', desc = 'Fetch BibTeX for arXiv IDs via arxiv2bib' })
+
+    vim.api.nvim_create_user_command('ArxivClean', function(opts)
+        local args = {}
+        for word in opts.args:gmatch('%S+') do
+            args[#args + 1] = word
+        end
+        local folder = args[1] or vim.fn.expand('%:p:h')
+        local extra = {}
+        for i = 2, #args do
+            extra[#extra + 1] = args[i]
+        end
+        M.clean(folder, extra)
+    end, { nargs = '*', desc = 'Clean LaTeX sources with arxiv_latex_cleaner' })
+
+    vim.api.nvim_create_user_command('ArxivCollect', function(opts)
+        local dest = opts.args ~= '' and opts.args or 'arxiv.tar.gz'
+        M.collect(dest)
+    end, {
+        nargs = '?',
+        desc = 'Bundle the LaTeX project for arXiv submission',
+    })
+
     vim.api.nvim_create_user_command('ArxivFind', function(opts)
         local query = opts.args ~= '' and opts.args or nil
         if not query then
@@ -413,23 +438,11 @@ function M.setup()
     vim.api.nvim_create_user_command('ArxivTools', function()
         local bufnr = vim.api.nvim_create_buf(false, true)
         vim.api.nvim_buf_set_lines(bufnr, 0, -1, false, M.tools_status())
-        vim.api.nvim_buf_set_option(bufnr, 'modifiable', false)
+        vim.api.nvim_set_option_value('modifiable', false, { buf = bufnr })
         vim.cmd('botright split')
         vim.api.nvim_win_set_buf(0, bufnr)
         vim.api.nvim_buf_set_name(bufnr, 'arXiv CLI tools')
     end, { desc = 'Show arXiv CLI tool availability' })
-
-    vim.api.nvim_create_user_command('ArxivBib', function(opts)
-        local ids = {}
-        for id in opts.args:gmatch('%S+') do
-            ids[#ids + 1] = id
-        end
-        if #ids == 0 then
-            vim.notify('Usage: ArxivBib {id} [{id} ...]', vim.log.levels.ERROR)
-            return
-        end
-        M.arxiv_to_bib(ids)
-    end, { nargs = '+', desc = 'Fetch BibTeX for arXiv IDs via arxiv2bib' })
 
     vim.api.nvim_create_user_command('DoiBib', function(opts)
         local doi = opts.args ~= '' and opts.args or nil
@@ -445,27 +458,6 @@ function M.setup()
         end
         M.doi_to_bib(doi)
     end, { nargs = '*', desc = 'Fetch BibTeX for a DOI via doi2bib' })
-
-    vim.api.nvim_create_user_command('ArxivCollect', function(opts)
-        local dest = opts.args ~= '' and opts.args or 'arxiv.tar.gz'
-        M.collect(dest)
-    end, {
-        nargs = '?',
-        desc = 'Bundle the LaTeX project for arXiv submission',
-    })
-
-    vim.api.nvim_create_user_command('ArxivClean', function(opts)
-        local args = {}
-        for word in opts.args:gmatch('%S+') do
-            args[#args + 1] = word
-        end
-        local folder = args[1] or vim.fn.expand('%:p:h')
-        local extra = {}
-        for i = 2, #args do
-            extra[#extra + 1] = args[i]
-        end
-        M.clean(folder, extra)
-    end, { nargs = '*', desc = 'Clean LaTeX sources with arxiv_latex_cleaner' })
 end
 
 return M
