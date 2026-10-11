@@ -4,12 +4,12 @@
 --
 local fs = vim.fs
 local severity = vim.diagnostic.severity
-local SOURCE = 'spectral'
-local MAX_OUTPUT = 16 * 1024 * 1024
 local MAX_DIAGNOSTICS = 512
+local MAX_LINE = 1024 * 1024
+local MAX_OUTPUT = 16 * 1024 * 1024
 local MAX_RECORDS = 10000
 local MAX_TEXT = 4096
-local MAX_LINE = 1024 * 1024
+local SOURCE = 'spectral'
 local RULESET_MARKERS = {
     '.spectral.yaml',
     '.spectral.yml',
@@ -188,7 +188,7 @@ local function parse(output, context)
             context,
             'spectral-error',
             'Spectral did not return a JSON report. '
-            .. (text ~= '' and clean(text) or 'Check the executable and project ruleset.')
+                .. (text ~= '' and clean(text) or 'Check the executable and project ruleset.')
         )
         item.severity = severity.ERROR
         return { item }
@@ -298,10 +298,10 @@ end
 
 ---@type Linter
 return {
-    cmd = 'spectral',
-    args = arguments,
     append_fname = false,
+    args = arguments,
     automatic = true,
+    cmd = 'spectral',
     cwd = root,
     ignore_exitcode = true,
     parser = parse,

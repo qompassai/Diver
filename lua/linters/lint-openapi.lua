@@ -2,31 +2,32 @@
 -- Qompass AI OpenAPI Linter Spec
 -- Copyright (C) 2025 Qompass AI, All rights reserved
 -- ----------------------------------------
-local severities = { ---@type { [string]: vim.diagnostic.Severity }
+local severities = {
+    ---@type { [string]: vim.diagnostic.Severity }
     error = vim.diagnostic.severity.ERROR,
-    warning = vim.diagnostic.severity.WARN,
-    info = vim.diagnostic.severity.INFO,
     hint = vim.diagnostic.severity.HINT,
+    info = vim.diagnostic.severity.INFO,
+    warning = vim.diagnostic.severity.WARN,
 }
 local function insert_diagnostics(diagnostics, output, level)
     local results = output[level].results ---@type table[]
     for _, result in pairs(results or {}) do
         table.insert(diagnostics, {
-            lnum = result.line - 1, ---@type integer
             col = 0,
-            severity = severities[level],
+            lnum = result.line - 1, ---@type integer
             message = result.message, ---@type string
+            severity = severities[level],
             source = 'lint-openapi',
         })
     end
 end
 ---@type vim.lint.Config
 return {
-    name = 'lint-openapi',
-    cmd = 'lint-openapi',
-    args = { '--json' },
     append_fname = true,
+    args = { '--json' },
+    cmd = 'lint-openapi',
     ignore_exitcode = true,
+    name = 'lint-openapi',
     parser = function(output)
         if vim.trim(output) == '' then
             return {}

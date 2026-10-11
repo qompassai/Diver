@@ -34,21 +34,21 @@
 local fs = vim.fs
 local json = vim.json
 
----@type integer Hard cap on decoded report bytes.
-local OUTPUT_LENGTH_MAX = 10 * 1024 * 1024
 ---@type integer Hard cap on diagnostics from one lint run.
 local DIAGNOSTICS_MAX = 1000
----@type integer Lint is slow; allow five minutes before giving up.
-local TIMEOUT_MS = 300000
+---@type integer Hard cap on decoded report bytes.
+local OUTPUT_LENGTH_MAX = 10 * 1024 * 1024
 ---@type integer Max SARIF reports to scan (multi-module builds).
 local REPORTS_MAX = 16
+---@type integer Lint is slow; allow five minutes before giving up.
+local TIMEOUT_MS = 300000
 
----@type table<string, vim.Diagnostic.Severity> Maps SARIF levels to Neovim severities.
+---@type table<string, vim.diagnostic.Severity> Maps SARIF levels to Neovim severities.
 local SEVERITY = {
+    error = vim.diagnostic.severity.ERROR,
     none = vim.diagnostic.severity.HINT,
     note = vim.diagnostic.severity.INFO,
     warning = vim.diagnostic.severity.WARN,
-    error = vim.diagnostic.severity.ERROR,
 }
 
 ---@class AndroidLintSarifRegion
@@ -75,6 +75,25 @@ local SEVERITY = {
 
 ---@class AndroidLintSarifReport
 ---@field runs? AndroidLintSarifRun[]
+
+---@param _context LintContext
+---@return string[]
+local function args(_context)
+    return { 'lintDebug' }
+end
+
+---@param context LintContext
+---@return string
+local function cmd(context)
+    assert(context.root ~= '', 'android_lint requires a project root')
+
+    local bat = fs.joinpath(context.root, 'gradlew.bat')
+    if vim.fn.executable(bat) == 1 then
+        return bat
+    end
+
+    return fs.joinpath(context.root, 'gradlew')
+end
 
 ---Build a diagnostic from one SARIF result, or nil when unusable.
 ---@param result AndroidLintSarifResult
@@ -119,12 +138,12 @@ local function diagnostic_from_result(result, module_dir, bufnr, want_path)
 
     return {
         bufnr = bufnr,
-        lnum = lnum,
-        end_lnum = end_lnum,
         col = col,
         end_col = end_col,
-        severity = SEVERITY[result.level or ''] or vim.diagnostic.severity.WARN,
+        end_lnum = end_lnum,
+        lnum = lnum,
         message = message,
+        severity = SEVERITY[result.level or ''] or vim.diagnostic.severity.WARN,
         source = 'android_lint',
     }
 end
@@ -225,46 +244,29 @@ local function parse(_output, context)
     return diagnostics
 end
 
----@param context LintContext
----@return string
-local function cmd(context)
-    assert(context.root ~= '', 'android_lint requires a project root')
+---@class AndroidLintDefinition:Linter
 
-    local bat = fs.joinpath(context.root, 'gradlew.bat')
-    if vim.fn.executable(bat) == 1 then
-        return bat
-    end
-
-    return fs.joinpath(context.root, 'gradlew')
-end
-
----@param _context LintContext
----@return string[]
-local function args(_context)
-    return { 'lintDebug' }
-end
-
----@type LinterDefinition
+---@type AndroidLintDefinition
 local linter = {
-    ---@diagnostic disable-next-line: unused-local
-    schema = 1,
-    name = 'android_lint',
-    meta = {
-        url = 'https://developer.android.com/studio/write/lint',
-        description = 'Android Lint via ./gradlew lintDebug; parses SARIF reports.',
-    },
+    append_fname = false,
+    args = args,
+    automatic = false,
     ---@diagnostic disable-next-line: unused-local
     cmd = cmd,
-    args = args,
-    stdin = false,
-    append_fname = false,
-    stream = 'stdout',
     ignore_exitcode = true,
-    timeout = TIMEOUT_MS,
-    automatic = false,
-    root_markers = { 'settings.gradle', 'settings.gradle.kts', 'gradlew' },
+    meta = {
+        description = 'Android Lint via ./gradlew lintDebug; parses SARIF reports.',
+        url = 'https://developer.android.com/studio/write/lint',
+    },
+    name = 'android_lint',
     ---@diagnostic disable-next-line: unused-local
     parser = parse,
+    root_markers = { 'settings.gradle', 'settings.gradle.kts', 'gradlew' },
+    ---@diagnostic disable-next-line: unused-local
+    schema = 1,
+    stdin = false,
+    stream = 'stdout',
+    timeout = TIMEOUT_MS,
 }
 
 return linter

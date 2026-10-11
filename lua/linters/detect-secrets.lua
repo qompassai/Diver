@@ -54,39 +54,6 @@ end
 
 ---@param path string
 ---@return boolean
-local function is_file(path)
-    assert(path ~= '')
-
-    local stat = uv.fs_stat(path)
-
-    return stat ~= nil and stat.type == 'file'
-end
-
----@param root string
----@return string?
-local function baseline(root)
-    assert(root ~= '')
-
-    local cached = baseline_cache[root]
-
-    if cached ~= nil then
-        return cached ~= false and cached or nil
-    end
-
-    local path = fs.joinpath(root, '.secrets.baseline')
-
-    if is_file(path) then
-        baseline_cache[root] = path
-        return path
-    end
-
-    baseline_cache[root] = false
-
-    return nil
-end
-
----@param path string
----@return boolean
 local function is_absolute(path)
     assert(type(path) == 'string')
     assert(path ~= '')
@@ -134,14 +101,14 @@ local function diagnostic_from_finding(finding, filename, root)
     local row = math.max(integer(finding.line_number, 1) - 1, 0)
 
     return {
-        lnum = row,
-        end_lnum = row,
+        code = secret_type,
         col = 0,
         end_col = 1,
+        end_lnum = row,
+        lnum = row,
         message = secret_type,
         severity = ERROR,
         source = 'detect-secrets',
-        code = secret_type,
         user_data = {
             is_verified = finding.is_verified,
         },
@@ -183,6 +150,39 @@ local function append_findings(value, filename, root, diagnostics, diagnostics_c
     end
 
     return diagnostics_count
+end
+
+---@param path string
+---@return boolean
+local function is_file(path)
+    assert(path ~= '')
+
+    local stat = uv.fs_stat(path)
+
+    return stat ~= nil and stat.type == 'file'
+end
+
+---@param root string
+---@return string?
+local function baseline(root)
+    assert(root ~= '')
+
+    local cached = baseline_cache[root]
+
+    if cached ~= nil then
+        return cached ~= false and cached or nil
+    end
+
+    local path = fs.joinpath(root, '.secrets.baseline')
+
+    if is_file(path) then
+        baseline_cache[root] = path
+        return path
+    end
+
+    baseline_cache[root] = false
+
+    return nil
 end
 
 ---@param output string
@@ -244,10 +244,7 @@ end
 
 return ---@type Linter
 {
-    automatic = false,
-
-    cmd = 'detect-secrets-hook',
-
+    append_fname = false,
     args = function(context)
         assert(context.filename ~= '')
         assert(context.root ~= '')
@@ -268,24 +265,19 @@ return ---@type Linter
 
         return args
     end,
-
-    append_fname = false,
-
+    automatic = false,
+    cmd = 'detect-secrets-hook',
     cwd = function(context)
         assert(context.root ~= '')
 
         return context.root
     end,
-
     ignore_exitcode = true,
-
     parser = parse,
-
     root_markers = {
         '.secrets.baseline',
         '.git',
     },
-
     stdin = false,
     stream = 'stdout',
     timeout = 30000,

@@ -5,8 +5,8 @@
 ---@source https://github.com/nvuillam/npm-groovy-lint/tree/2080dffcddb215d409b149ccc7f595cb242a6209
 local api = vim.api
 local diagnostic = vim.diagnostic
-local fs = vim.fs
 local fn = vim.fn
+local fs = vim.fs
 local uv = vim.uv
 
 local TOOLING = {
@@ -1078,8 +1078,8 @@ function M.setup(options)
     create_commands()
 end
 
-M.args = lint_arguments
 M.append_fname = false
+M.args = lint_arguments
 M.automatic = true
 M.cwd = root
 M.env = {

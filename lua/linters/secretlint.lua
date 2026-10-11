@@ -60,8 +60,8 @@ local severities = {
     hint = diagnostic.severity.HINT,
     info = diagnostic.severity.INFO,
     information = diagnostic.severity.INFO,
-    warning = diagnostic.severity.WARN,
     warn = diagnostic.severity.WARN,
+    warning = diagnostic.severity.WARN,
 }
 
 ---@type string[]

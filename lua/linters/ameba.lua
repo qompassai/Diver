@@ -10,8 +10,6 @@
 -- ----------------------------------------
 return ---@type vim.lint.Config
 {
-    cmd = 'ameba',
-    stdin = false,
     append_fname = false,
     args = {
         '--all',
@@ -19,9 +17,9 @@ return ---@type vim.lint.Config
         -- "--except", "Performance",
         -- "--format", "text",
     },
-    stream = nil,
-    ignore_exitcode = true,
+    cmd = 'ameba',
     env = nil,
+    ignore_exitcode = true,
     ---@type LintBufferParser
     ---@param output string
     ---@param bufnr integer
@@ -58,11 +56,12 @@ return ---@type vim.lint.Config
                         if rule and rule ~= '' then
                             message = string.format('[%s] %s', rule, msg)
                         end
-                        table.insert(diagnostics, { ---@type vim.lint.Diagnostic[]
-                            lnum = lnum,
-                            end_lnum = lnum,
+                        table.insert(diagnostics, {
                             col = col,
                             end_col = col + 1,
+                            end_lnum = lnum,
+                            ---@type vim.lint.Diagnostic[]
+                            lnum = lnum,
                             message = message,
                             severity = severity,
                             source = 'ameba',
@@ -75,4 +74,6 @@ return ---@type vim.lint.Config
 
         return diagnostics
     end,
+    stdin = false,
+    stream = nil,
 }

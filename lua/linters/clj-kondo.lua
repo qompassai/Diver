@@ -2,11 +2,8 @@
 -- Qompass AI CLJ-Kondo Linter Spec
 -- Copyright (C) 2025 Qompass AI, All rights reserved
 -- ----------------------------------------
-return { ---@type vim.lint.Config
-    cmd = 'clj-kondo',
-    stdin = true,
-    stream = 'stdout',
-    ignore_exitcode = true,
+return ---@type vim.lint.Config
+{
     args = function(context)
         return {
             '--config',
@@ -17,6 +14,8 @@ return { ---@type vim.lint.Config
             '-',
         }
     end,
+    cmd = 'clj-kondo',
+    ignore_exitcode = true,
     parser = function(output)
         if output == '' then
             return {}
@@ -29,15 +28,18 @@ return { ---@type vim.lint.Config
             warning = vim.diagnostic.severity.WARN,
         }
         for _, finding in ipairs(findings) do
-            diagnostics[#diagnostics + 1] = { ---@type vim.lint.Diagnostic
-                lnum = finding.row - 1,
+            diagnostics[#diagnostics + 1] = {
                 col = finding.col - 1,
-                end_lnum = (finding['end-row'] or finding.row) - 1,
                 end_col = (finding['end-col'] or finding.col) - 1,
-                severity = severity_map[finding.level] or vim.diagnostic.severity.WARN,
+                end_lnum = (finding['end-row'] or finding.row) - 1,
+                ---@type vim.lint.Diagnostic
+                lnum = finding.row - 1,
                 message = finding.message,
+                severity = severity_map[finding.level] or vim.diagnostic.severity.WARN,
             }
         end
         return diagnostics
     end,
+    stdin = true,
+    stream = 'stdout',
 }
