@@ -24,15 +24,14 @@ local biome_filetypes = {
     'typescript.tsx',
     'vue',
 }
-pcall(vim.api.nvim_del_augroup_by_name, 'BiomeWriteActions')
 local formatters = require('formatters')
 ---@param bufnr integer
 ---@return vim.lsp.Client?
 local function biome_client(bufnr)
     for _, client in
-    ipairs(vim.lsp.get_clients({
-        bufnr = bufnr,
-    }))
+        ipairs(vim.lsp.get_clients({
+            bufnr = bufnr,
+        }))
     do
         if client.name == 'biome' or client.name == 'biome_ls' then
             return client
@@ -115,11 +114,13 @@ return ---@type vim.lsp.Config
             return
         end
 
-        if vim.fs.root(fname, {
+        if
+            vim.fs.root(fname, {
                 'deno.json',
                 'deno.jsonc',
                 'deno.lock',
-            }) then
+            })
+        then
             return
         end
 
