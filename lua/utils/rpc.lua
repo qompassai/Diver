@@ -8,103 +8,60 @@
 -- Qompass AI Media RPC Util
 -- Copyright (C) 2026 Qompass AI, All rights reserved
 -- --------------------------------------------------
-local uv = vim.uv
 local mpack = vim.mpack
-local StdioStream = {} ---@class media.rpc.StdioStream : media.rpc.Stream
-StdioStream.__index = StdioStream
-function StdioStream.open()
-    local self = setmetatable({
-        _in = assert(uv.new_pipe(false)),
-        _out = assert(uv.new_pipe(false)),
-    }, StdioStream)
-    self._in:open(0)
-    self._out:open(1)
-    return self
-end
-function StdioStream:write(data)
-    self._out:write(data)
-end
-
-function StdioStream:read_start(cb)
-    self._in:read_start(function(err, chunk)
-        if err then
-            error(err)
-        end
-        cb(chunk)
-    end)
-end
-
-function StdioStream:read_stop()
-    self._in:read_stop()
-end
-
-function StdioStream:close()
-    self._in:close()
-    self._out:close()
-end
-
-local SocketStream = {} ---@class media.rpc.SocketStream : media.rpc.Stream
-SocketStream.__index = SocketStream
-function SocketStream.open(file)
-    local socket = assert(uv.new_pipe(false))
-    local self = setmetatable({
-        _socket = socket,
-        _stream_error = nil,
-    }, SocketStream)
-    uv.pipe_connect(socket, file, function(err)
-        self._stream_error = self._stream_error or err
-    end)
-    return self
-end
-
-function SocketStream.connect(host, port)
-    local socket = assert(uv.new_tcp())
-    local self = setmetatable({
-        _socket = socket,
-        _stream_error = nil,
-    }, SocketStream)
-    uv.tcp_connect(socket, host, port, function(err)
-        self._stream_error = self._stream_error or err
-    end)
-    return self
-end
-
-function SocketStream:write(data)
-    if self._stream_error then
-        error(self._stream_error)
-    end
-    uv.write(self._socket, data, function(err)
-        if err then
-            error(self._stream_error or err)
-        end
-    end)
-end
-
-function SocketStream:read_start(cb)
-    if self._stream_error then
-        error(self._stream_error)
-    end
-    uv.read_start(self._socket, function(err, chunk)
-        if err then
-            error(err)
-        end
-        cb(chunk)
-    end)
-end
-
-function SocketStream:read_stop()
-    if self._stream_error then
-        error(self._stream_error)
-    end
-    uv.read_stop(self._socket)
-end
-
-function SocketStream:close()
-    uv.close(self._socket)
-end
-
+local uv = vim.uv
 local ProcStream = {} ---@class media.rpc.ProcStream : media.rpc.Stream
 ProcStream.__index = ProcStream
+function ProcStream:close(signal, noblock)
+    if self._closed then
+        return
+    end
+    self._closed = uv.now()
+    self:read_stop()
+    self._child_stdin:close()
+    self._child_stdout:close()
+    self._child_stderr:close()
+    if type(signal) == 'string' then
+        self._proc:kill('sig' .. signal)
+    end
+    if not noblock then
+        while self.status == nil do
+            uv.run('once')
+        end
+        return self.status, self.signal
+    end
+end
+
+function ProcStream:on_read(stream, cb, err, chunk)
+    if err then
+        error(err)
+    elseif chunk then
+        if stream == 'stderr' then
+            self.stderr = self.stderr .. chunk
+        elseif stream == 'stdout' and self.collect_text then
+            self.stdout = (self.stdout .. chunk):gsub('\r\n', '\n')
+        end
+    else
+        self[stream .. '_eof'] = true
+    end
+    if cb then
+        cb(chunk)
+    end
+end
+
+function ProcStream:read_start(on_stdout, on_stderr)
+    self._child_stdout:read_start(function(err, chunk)
+        self:on_read('stdout', on_stdout, err, chunk)
+    end)
+    self._child_stderr:read_start(function(err, chunk)
+        self:on_read('stderr', on_stderr, err, chunk)
+    end)
+end
+function ProcStream:read_stop()
+    self._child_stdout:read_stop()
+    self._child_stderr:read_stop()
+end
+
 function ProcStream.spawn(argv, env, io_extra, on_exit)
     local self = setmetatable({
         collect_text = false,
@@ -149,64 +106,14 @@ function ProcStream.spawn(argv, env, io_extra, on_exit)
     return self
 end
 
-function ProcStream:write(data)
-    self._child_stdin:write(data)
-end
-
-function ProcStream:on_read(stream, cb, err, chunk)
-    if err then
-        error(err)
-    elseif chunk then
-        if stream == 'stderr' then
-            self.stderr = self.stderr .. chunk
-        elseif stream == 'stdout' and self.collect_text then
-            self.stdout = (self.stdout .. chunk):gsub('\r\n', '\n')
-        end
-    else
-        self[stream .. '_eof'] = true
-    end
-    if cb then
-        cb(chunk)
-    end
-end
-
 function ProcStream:wait()
     while not (self.stdout_eof and self.stderr_eof and (self.status or self.signal)) do
         uv.run('once')
     end
 end
 
-function ProcStream:read_start(on_stdout, on_stderr)
-    self._child_stdout:read_start(function(err, chunk)
-        self:on_read('stdout', on_stdout, err, chunk)
-    end)
-    self._child_stderr:read_start(function(err, chunk)
-        self:on_read('stderr', on_stderr, err, chunk)
-    end)
-end
-function ProcStream:read_stop()
-    self._child_stdout:read_stop()
-    self._child_stderr:read_stop()
-end
-
-function ProcStream:close(signal, noblock)
-    if self._closed then
-        return
-    end
-    self._closed = uv.now()
-    self:read_stop()
-    self._child_stdin:close()
-    self._child_stdout:close()
-    self._child_stderr:close()
-    if type(signal) == 'string' then
-        self._proc:kill('sig' .. signal)
-    end
-    if not noblock then
-        while self.status == nil do
-            uv.run('once')
-        end
-        return self.status, self.signal
-    end
+function ProcStream:write(data)
+    self._child_stdin:write(data)
 end
 
 local Response = {} ---@class media.rpc.Response
@@ -231,6 +138,10 @@ end
 
 local RpcStream = {} ---@class media.rpc.RpcStream
 RpcStream.__index = RpcStream
+function RpcStream:close(signal, noblock)
+    self._stream:close(signal, noblock)
+end
+
 function RpcStream.new(stream)
     return setmetatable({
         _stream = stream,
@@ -251,18 +162,6 @@ function RpcStream.new(stream)
             }),
         }),
     }, RpcStream)
-end
-
-function RpcStream:write(method, args, response_cb)
-    local data
-    if response_cb then
-        assert(type(response_cb) == 'function')
-        data = self._session:request(response_cb)
-    else
-        data = self._session:notify()
-    end
-    data = data .. self._pack(method) .. self._pack(args)
-    self._stream:write(data)
 end
 
 function RpcStream:read_start(on_request, on_notification, on_eof)
@@ -296,8 +195,16 @@ function RpcStream:read_stop()
     self._stream:read_stop()
 end
 
-function RpcStream:close(signal, noblock)
-    self._stream:close(signal, noblock)
+function RpcStream:write(method, args, response_cb)
+    local data
+    if response_cb then
+        assert(type(response_cb) == 'function')
+        data = self._session:request(response_cb)
+    else
+        data = self._session:notify()
+    end
+    data = data .. self._pack(method) .. self._pack(args)
+    self._stream:write(data)
 end
 
 local Session = {} ---@class media.rpc.Session
@@ -334,6 +241,79 @@ local function coroutine_exec(func, ...)
         end
     end))
 end
+function Session:_blocking_request(method, args)
+    local err, result
+    local on_request = function(method_, args_, response)
+        table.insert(self._pending_messages, {
+            'request',
+            method_,
+            args_,
+            response,
+        })
+    end
+    local on_notification = function(method_, args_)
+        table.insert(self._pending_messages, {
+            'notification',
+            method_,
+            args_,
+        })
+    end
+    self._rpc_stream:write(method, args, function(e, r)
+        err = e
+        result = r
+        uv.stop()
+    end)
+    self:_run(on_request, on_notification)
+    return (err or self.eof_err), result
+end
+function Session:_run(request_cb, notification_cb, timeout)
+    if type(timeout) == 'number' then
+        self._prepare:start(function()
+            self._timer:start(timeout, 0, function()
+                uv.stop()
+            end)
+            self._prepare:stop()
+        end)
+    end
+    self._rpc_stream:read_start(request_cb, notification_cb, function()
+        uv.stop()
+        --- @diagnostic disable-next-line: invisible
+        local stderr = self._rpc_stream._stream.stderr --[[@as string?]]
+        stderr = '' ~= ((stderr or ''):match('^%s*(.*%S)') or '') and ' stderr:\n' .. stderr or ''
+        self.eof_err = {
+            1,
+            'EOF was received from Nvim. Likely the Nvim process crashed.' .. stderr,
+        }
+    end)
+    local ret, err, _ = uv.run()
+    if ret == nil then
+        error(err)
+    end
+    self._prepare:stop()
+    self._timer:stop()
+    self._rpc_stream:read_stop()
+end
+
+---@async
+function Session:_yielding_request(method, args)
+    return coroutine.yield(function(co)
+        self._rpc_stream:write(method, args, function(err, result)
+            resume_co(co, err, result)
+        end)
+    end)
+end
+
+function Session:close(signal, noblock)
+    if not self._timer:is_closing() then
+        self._timer:close()
+    end
+    if not self._prepare:is_closing() then
+        self._prepare:close()
+    end
+    self._rpc_stream:close(signal, noblock)
+    self.closed = true
+end
+
 function Session.new(stream)
     return setmetatable({
         _rpc_stream = RpcStream.new(stream),
@@ -427,81 +407,101 @@ function Session:run(request_cb, notification_cb, setup_cb, timeout)
     self._is_running = false
 end
 
-function Session:stop()
+function Session.stop(_)
     uv.stop()
 end
 
-function Session:close(signal, noblock)
-    if not self._timer:is_closing() then
-        self._timer:close()
-    end
-    if not self._prepare:is_closing() then
-        self._prepare:close()
-    end
-    self._rpc_stream:close(signal, noblock)
-    self.closed = true
+local SocketStream = {} ---@class media.rpc.SocketStream : media.rpc.Stream
+SocketStream.__index = SocketStream
+function SocketStream:close()
+    uv.close(self._socket)
 end
 
----@async
-function Session:_yielding_request(method, args)
-    return coroutine.yield(function(co)
-        self._rpc_stream:write(method, args, function(err, result)
-            resume_co(co, err, result)
-        end)
+function SocketStream.connect(host, port)
+    local socket = assert(uv.new_tcp())
+    local self = setmetatable({
+        _socket = socket,
+        _stream_error = nil,
+    }, SocketStream)
+    uv.tcp_connect(socket, host, port, function(err)
+        self._stream_error = self._stream_error or err
+    end)
+    return self
+end
+
+function SocketStream.open(file)
+    local socket = assert(uv.new_pipe(false))
+    local self = setmetatable({
+        _socket = socket,
+        _stream_error = nil,
+    }, SocketStream)
+    uv.pipe_connect(socket, file, function(err)
+        self._stream_error = self._stream_error or err
+    end)
+    return self
+end
+
+function SocketStream:read_start(cb)
+    if self._stream_error then
+        error(self._stream_error)
+    end
+    uv.read_start(self._socket, function(err, chunk)
+        if err then
+            error(err)
+        end
+        cb(chunk)
     end)
 end
 
-function Session:_blocking_request(method, args)
-    local err, result
-    local on_request = function(method_, args_, response)
-        table.insert(self._pending_messages, {
-            'request',
-            method_,
-            args_,
-            response,
-        })
+function SocketStream:read_stop()
+    if self._stream_error then
+        error(self._stream_error)
     end
-    local on_notification = function(method_, args_)
-        table.insert(self._pending_messages, {
-            'notification',
-            method_,
-            args_,
-        })
-    end
-    self._rpc_stream:write(method, args, function(e, r)
-        err = e
-        result = r
-        uv.stop()
-    end)
-    self:_run(on_request, on_notification)
-    return (err or self.eof_err), result
+    uv.read_stop(self._socket)
 end
-function Session:_run(request_cb, notification_cb, timeout)
-    if type(timeout) == 'number' then
-        self._prepare:start(function()
-            self._timer:start(timeout, 0, function()
-                uv.stop()
-            end)
-            self._prepare:stop()
-        end)
+
+function SocketStream:write(data)
+    if self._stream_error then
+        error(self._stream_error)
     end
-    self._rpc_stream:read_start(request_cb, notification_cb, function()
-        uv.stop()
-        --- @diagnostic disable-next-line: invisible
-        local stderr = self._rpc_stream._stream.stderr --[[@as string?]]
-        stderr = '' ~= ((stderr or ''):match('^%s*(.*%S)') or '') and ' stderr:\n' .. stderr or ''
-        self.eof_err = {
-            1,
-            'EOF was received from Nvim. Likely the Nvim process crashed.' .. stderr,
-        }
+    uv.write(self._socket, data, function(err)
+        if err then
+            error(self._stream_error or err)
+        end
     end)
-    local ret, err, _ = uv.run()
-    if ret == nil then
-        error(err)
-    end
-    self._prepare:stop()
-    self._timer:stop()
-    self._rpc_stream:read_stop()
+end
+
+local StdioStream = {} ---@class media.rpc.StdioStream : media.rpc.Stream
+StdioStream.__index = StdioStream
+function StdioStream:close()
+    self._in:close()
+    self._out:close()
+end
+
+function StdioStream.open()
+    local self = setmetatable({
+        _in = assert(uv.new_pipe(false)),
+        _out = assert(uv.new_pipe(false)),
+    }, StdioStream)
+    self._in:open(0)
+    self._out:open(1)
+    return self
+end
+function StdioStream:read_start(cb)
+    self._in:read_start(function(err, chunk)
+        if err then
+            error(err)
+        end
+        cb(chunk)
+    end)
+end
+
+function StdioStream:read_stop()
+    self._in:read_stop()
+end
+
+function StdioStream:write(data)
+    self._out:write(data)
 end
 
 local Client = {} ---@class media.rpc.Client
@@ -517,6 +517,9 @@ local function create_callindex(call_func)
         end,
     })
 end
+function Client:close()
+    self._session:close()
+end
 function Client.new(stream)
     local session = Session.new(stream)
     local self = setmetatable({
@@ -531,14 +534,11 @@ function Client.new(stream)
 
     return self
 end
-function Client:request(method, ...)
-    return self._session:request(method, ...)
-end
 function Client:notify(method, ...)
     self._session:notify(method, ...)
 end
-function Client:close()
-    self._session:close()
+function Client:request(method, ...)
+    return self._session:request(method, ...)
 end
 local rpc = {} ---@type media.rpc.Module
 function rpc.connect(file_or_address)
@@ -547,9 +547,9 @@ function rpc.connect(file_or_address)
     return Client.new(stream)
 end
 rpc.Client = Client
-rpc.Session = Session
-rpc.RpcStream = RpcStream
-rpc.StdioStream = StdioStream
-rpc.SocketStream = SocketStream
 rpc.ProcStream = ProcStream
+rpc.RpcStream = RpcStream
+rpc.Session = Session
+rpc.SocketStream = SocketStream
+rpc.StdioStream = StdioStream
 return rpc

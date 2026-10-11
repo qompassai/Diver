@@ -18,11 +18,11 @@
 
 local diagnostic = vim.diagnostic
 
-local SOURCE = 'hledger'
 local MAX_DIAGNOSTICS = 8
 local MAX_LINE_BYTES = 16 * 1024
 local MAX_MESSAGE_BYTES = 2048
 local MAX_OUTPUT_BYTES = 1 * 1024 * 1024
+local SOURCE = 'hledger'
 
 ---@class HledgerJournalConfig
 ---@field env_executable string Binary name, resolved through PATH by the linter runner.
@@ -35,6 +35,22 @@ local MAX_OUTPUT_BYTES = 1 * 1024 * 1024
 ---@field cwd LintCwd Working directory resolver for the linter process.
 ---@field parse LintContextParser hledger error output parser.
 
+---@param value string
+---@return string
+local function compact(value)
+    return vim.trim(value:gsub('%s+', ' '))
+end
+
+---@param context LintContext
+---@return string
+local function cwd_for(context)
+    assert(type(context) == 'table', 'hledger cwd requires LintContext')
+    assert(type(context.root) == 'string', 'hledger cwd requires context.root')
+    assert(context.root ~= '', 'hledger cwd requires a non-empty context.root')
+
+    return context.root
+end
+
 ---@param value any
 ---@param fallback integer
 ---@return integer
@@ -46,40 +62,41 @@ local function integer(value, fallback)
     return math.floor(parsed)
 end
 
----@param value any
----@return integer
-local function zero_based(value)
-    return math.max(integer(value, 1) - 1, 0)
-end
-
----@param value string
----@return string
-local function compact(value)
-    return vim.trim(value:gsub('%s+', ' '))
-end
-
----@param value string
----@param limit integer
----@return string
-local function truncate(value, limit)
-    assert(type(limit) == 'number', 'truncate requires a numeric limit')
-    assert(limit > 0, 'truncate requires a positive limit')
-
-    if #value <= limit then
-        return value
+---@param file string
+---@param context LintContext
+---@return boolean
+local function is_buffer_file(file, context)
+    -- With `-f -` hledger names the input `-`; accept stdin placeholders.
+    if file == '' or file == '-' or file == 'stdin' or file == '<stdin>' then
+        return true
     end
 
-    if limit <= 3 then
-        return value:sub(1, limit)
+    local buffer_name = context.filename
+    if type(buffer_name) ~= 'string' or buffer_name == '' then
+        return false
     end
 
-    return value:sub(1, limit - 3) .. '...'
+    local candidate = vim.fs.normalize(file) or file
+    local expected = vim.fs.normalize(buffer_name) or buffer_name
+    return candidate == expected
 end
 
----@param value string
----@return string
-local function strip_ansi(value)
-    return value:gsub('\27%[[%d;?]*[ -/]*[@-~]', '')
+---@param context LintContext
+---@return vim.Diagnostic[]
+local function oversized_output(context)
+    return {
+        {
+            bufnr = context.bufnr,
+            code = 'output-limit',
+            col = 0,
+            end_col = 0,
+            end_lnum = 0,
+            lnum = 0,
+            message = ('hledger output exceeded the %d-byte parser limit'):format(MAX_OUTPUT_BYTES),
+            severity = diagnostic.severity.WARN,
+            source = SOURCE,
+        },
+    }
 end
 
 ---@class HledgerErrorLocation
@@ -144,23 +161,55 @@ local function split_blocks(text)
     return blocks
 end
 
----@param file string
+---@param value string
+---@return string
+local function strip_ansi(value)
+    return (value:gsub('\27%[[%d;?]*[ -/]*[@-~]', ''))
+end
+
+---@param value string
+---@param limit integer
+---@return string
+local function truncate(value, limit)
+    assert(type(limit) == 'number', 'truncate requires a numeric limit')
+    assert(limit > 0, 'truncate requires a positive limit')
+
+    if #value <= limit then
+        return value
+    end
+
+    if limit <= 3 then
+        return value:sub(1, limit)
+    end
+
+    return value:sub(1, limit - 3) .. '...'
+end
+
+---@param text string
 ---@param context LintContext
----@return boolean
-local function is_buffer_file(file, context)
-    -- With `-f -` hledger names the input `-`; accept stdin placeholders.
-    if file == '' or file == '-' or file == 'stdin' or file == '<stdin>' then
-        return true
-    end
+---@return vim.Diagnostic[]
+local function unrecognized_output(text, context)
+    -- `hledger check` is silent when the journal is valid, so any output we
+    -- cannot parse is still worth surfacing instead of dropping.
+    return {
+        {
+            bufnr = context.bufnr,
+            code = 'unrecognized-output',
+            col = 0,
+            end_col = 0,
+            end_lnum = 0,
+            lnum = 0,
+            message = truncate(compact(text), MAX_MESSAGE_BYTES),
+            severity = diagnostic.severity.ERROR,
+            source = SOURCE,
+        },
+    }
+end
 
-    local buffer_name = context.filename
-    if type(buffer_name) ~= 'string' or buffer_name == '' then
-        return false
-    end
-
-    local candidate = vim.fs.normalize(file) or file
-    local expected = vim.fs.normalize(buffer_name) or buffer_name
-    return candidate == expected
+---@param value any
+---@return integer
+local function zero_based(value)
+    return math.max(integer(value, 1) - 1, 0)
 end
 
 ---@param block HledgerErrorBlock
@@ -201,46 +250,6 @@ local function block_diagnostic(block, context)
         source = SOURCE,
     }
 end
-
----@param context LintContext
----@return vim.Diagnostic[]
-local function oversized_output(context)
-    return {
-        {
-            bufnr = context.bufnr,
-            code = 'output-limit',
-            col = 0,
-            end_col = 0,
-            end_lnum = 0,
-            lnum = 0,
-            message = ('hledger output exceeded the %d-byte parser limit'):format(MAX_OUTPUT_BYTES),
-            severity = diagnostic.severity.WARN,
-            source = SOURCE,
-        },
-    }
-end
-
----@param text string
----@param context LintContext
----@return vim.Diagnostic[]
-local function unrecognized_output(text, context)
-    -- `hledger check` is silent when the journal is valid, so any output we
-    -- cannot parse is still worth surfacing instead of dropping.
-    return {
-        {
-            bufnr = context.bufnr,
-            code = 'unrecognized-output',
-            col = 0,
-            end_col = 0,
-            end_lnum = 0,
-            lnum = 0,
-            message = truncate(compact(text), MAX_MESSAGE_BYTES),
-            severity = diagnostic.severity.ERROR,
-            source = SOURCE,
-        },
-    }
-end
-
 ---@param output string
 ---@param context LintContext
 ---@return vim.Diagnostic[]
@@ -275,31 +284,20 @@ local function parse(output, context)
 
     return diagnostics
 end
-
----@param context LintContext
----@return string
-local function cwd_for(context)
-    assert(type(context) == 'table', 'hledger cwd requires LintContext')
-    assert(type(context.root) == 'string', 'hledger cwd requires context.root')
-    assert(context.root ~= '', 'hledger cwd requires a non-empty context.root')
-
-    return context.root
-end
-
 -- `-f -` reads the journal from standard input (the adapter sets stdin);
 -- the general option precedes the command, matching the documented form.
 ---@type HledgerJournal
 local journal = {
+    arguments = { '-f', '-', 'check' },
     config = {
-        -- Binary name resolved through PATH; the runner reports a clean
-        -- "Linter executable not found" when hledger is not installed.
-        env_executable = 'hledger',
         -- `check` is fast and pure, so buffer-event runs give instant
         -- feedback while editing, like flycheck-hledger.
         automatic_lint = true,
+        -- Binary name resolved through PATH; the runner reports a clean
+        -- "Linter executable not found" when hledger is not installed.
+        env_executable = 'hledger',
         timeout_ms = 30000,
     },
-    arguments = { '-f', '-', 'check' },
     cwd = cwd_for,
     parse = parse,
 }

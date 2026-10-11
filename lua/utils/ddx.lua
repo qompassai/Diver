@@ -17,9 +17,9 @@ local notify = vim.notify
 local uv = vim.uv
 
 local M = {}
-local SERVER_COUNT_MAX = 512
-local INIT_TIMEOUT_MS = 2500
 local INIT_POLL_MS = 50
+local INIT_TIMEOUT_MS = 2500
+local SERVER_COUNT_MAX = 512
 local STOP_TIMEOUT_MS = 1000
 
 ---@class TigerAuditResult
@@ -178,34 +178,6 @@ local function open_report_buffer(lines)
     vim.cmd('split')
     api.nvim_win_set_buf(0, bufnr)
 end
-
----Run the diagnostics probe and open the report buffer.
----@param opts? table
----@return table
-function M.run(opts)
-    opts = opts or {}
-    assert(type(opts) == 'table')
-
-    local names = opts.names or discover_configured_servers()
-    assert(type(names) == 'table')
-    assert(#names <= SERVER_COUNT_MAX)
-
-    local results = {}
-    for index = 1, #names do
-        results[index] = probe_server(names[index])
-    end
-
-    local lines = render_report(results)
-    open_report_buffer(lines)
-
-    return results
-end
-
-api.nvim_create_user_command('LspCodeActionAudit', function()
-    M.run()
-end, {
-    desc = 'Probe every configured LSP for textDocument/codeAction support',
-})
 
 local ddx_group = api.nvim_create_augroup('DDX', {
     clear = true,
@@ -521,27 +493,6 @@ local function syntaxcheck_all(lua_root, files, qf_items, fh)
     return ok_count, err_count
 end
 
-local function check_modules_in_root(root, prefix, qf_items, fh, expect_table)
-    if fn.isdirectory(root) == 0 then
-        write_log(fh, ('[probe:%s] root missing: %s'):format(prefix, root))
-        return
-    end
-
-    local files = collect_lua_files(root)
-    for _, file in ipairs(files) do
-        local mod = to_module(root, file)
-        local full_mod = prefix .. '.' .. mod
-        local ok, result = safe_require(full_mod)
-        write_log(fh, ("[probe:%s] require('%s') = %s"):format(prefix, full_mod, tostring(ok)))
-        if not ok then
-            qf_items[#qf_items + 1] =
-                make_qf_item(file, ('[%s] failed to require %s: %s'):format(prefix, full_mod, tostring(result)))
-        elseif expect_table and type(result) ~= 'table' then
-            qf_items[#qf_items + 1] = make_qf_item(file, ('[%s] %s did not return a table'):format(prefix, full_mod))
-        end
-    end
-end
-
 local function parse_luacheck_line(line)
     local file, lnum, col, code, msg = line:match('^([^:]+):(%d+):(%d+): %(([%w%d]+)%) (.+)$')
     if file then
@@ -575,7 +526,9 @@ local function run_luacheck(paths, qf_items, fh)
         '--codes',
     }, paths)
 
-    local result = vim.system(cmd, { text = true }):wait()
+    local result_obj = vim.system(cmd, { text = true })
+    ---@cast result_obj vim.SystemObj
+    local result = result_obj:wait()
 
     write_log(fh, ('[probe:luacheck] exit_code=%s'):format(tostring(result.code)))
 
@@ -909,10 +862,11 @@ local function tiger_autocmd_metrics(metrics, findings, thresholds)
 
         if tiger_hot_events[event] and not autocmd.buflocal and (pattern == '*' or pattern == '') then
             event_counts[event] = (event_counts[event] or 0) + 1
-            event_locations[event] = event_locations[event] or {
-                file = file,
-                lnum = lnum,
-            }
+            event_locations[event] = event_locations[event]
+                or {
+                    file = file,
+                    lnum = lnum,
+                }
         end
     end
 
@@ -1052,7 +1006,7 @@ local function tiger_static_scan(files, metrics, findings, thresholds)
                                     previous
                                 ),
                                 'Remove the duplicate or rename it; the later definition silently replaces the earlier'
-                                .. ' one'
+                                    .. ' one'
                             )
                         else
                             function_definitions[function_name] = file_lines
@@ -1139,11 +1093,12 @@ local function tiger_startup_metrics(startup_log, metrics, findings, thresholds)
         local clock, total_ms, self_ms, file =
             line:match('^%s*(%d+%.%d+)%s+(%d+%.%d+)%s+(%d+%.%d+):%s+sourcing%s+(.+)$')
         if file then
-            local source = sources[file] or {
-                count = 0,
-                self_ms = 0,
-                total_ms = 0,
-            }
+            local source = sources[file]
+                or {
+                    count = 0,
+                    self_ms = 0,
+                    total_ms = 0,
+                }
             source.count = source.count + 1
             source.self_ms = source.self_ms + (tonumber(self_ms) or 0)
             source.total_ms = source.total_ms + (tonumber(total_ms) or 0)
@@ -1191,7 +1146,7 @@ local function tiger_startup_metrics(startup_log, metrics, findings, thresholds)
                     source.count
                 ),
                 'Inspect eager requires and setup work in this file; move filetype-specific work behind activation'
-                .. ' events'
+                    .. ' events'
             )
         end
     end
@@ -1341,7 +1296,9 @@ local function runtimecheck(qf_items, fh)
     check_lsp_state(qf_items, fh)
     check_mapping_modules(qf_items, fh)
     check_plugin_specs(qf_items, fh)
-    check_modules_in_root(fn.stdpath('config') .. '/lsp', 'lsp', qf_items, fh, true)
+    -- NOTE: lsp/ configs are NOT requireable Lua modules in Neovim 0.11+.
+    -- They are loaded via vim.lsp.config(), not require('lsp.xxx').
+    -- Probing them as modules produces false "module not found" errors.
     run_luacheck({
         fn.stdpath('config') .. '/lua',
         fn.stdpath('config') .. '/lsp',
@@ -1429,10 +1386,10 @@ local function attributed_diagnostic_items(bufnr)
 end
 
 ---Show diagnostics for the current buffer.
----@param _bufnr? integer
+---@param bufnr? integer
 ---@return nil
-function M.buffer_diagnostics(_bufnr)
-    local bufnr = _bufnr or api.nvim_get_current_buf()
+function M.buffer_diagnostics(bufnr)
+    bufnr = bufnr or api.nvim_get_current_buf()
     fn.setloclist(0, {}, 'r', {
         title = 'Buffer Diagnostics',
         items = attributed_diagnostic_items(bufnr),
@@ -1440,60 +1397,17 @@ function M.buffer_diagnostics(_bufnr)
     vim.cmd('lopen')
 end
 
----Show diagnostics for the whole workspace.
+---Disable the workspace diagnostics handler.
 ---@return nil
-function M.workspace_diagnostics()
-    fn.setqflist({}, 'r', {
-        title = 'Workspace Diagnostics',
-        items = attributed_diagnostic_items(nil),
-    })
-    vim.cmd('copen')
+function M.disable_workspace_diagnostics_handler()
+    vim.diagnostic.handlers.qf = nil
+    notify('Disabled native workspace diagnostics quickfix handler', levels.INFO)
 end
 
 ---Show document symbols.
 ---@return nil
 function M.document_symbols()
     vim.lsp.buf.document_symbol()
-end
-
----Show workspace symbols.
----@return nil
-function M.workspace_symbols()
-    vim.ui.input({
-        prompt = 'Workspace symbols query: ',
-    }, function(query)
-        if not query or query == '' then
-            return
-        end
-        vim.lsp.buf.workspace_symbol(query)
-    end)
-end
-
----Toggle the quickfix window.
----@return nil
-function M.toggle_quickfix()
-    for _, win in ipairs(api.nvim_list_wins()) do
-        local info = fn.getwininfo(api.nvim_win_get_number(win))[1]
-        if info and info.quickfix == 1 and info.loclist == 0 then
-            vim.cmd('cclose')
-            return
-        end
-    end
-    vim.cmd('copen')
-end
-
----Toggle the location list.
----@return nil
-function M.toggle_loclist()
-    local wins = fn.getwininfo()
-    local current = api.nvim_get_current_win()
-    for _, win in ipairs(wins) do
-        if win.winid == current and win.loclist == 1 then
-            vim.cmd('lclose')
-            return
-        end
-    end
-    vim.cmd('lopen')
 end
 
 ---Enable the workspace diagnostics handler.
@@ -1520,11 +1434,26 @@ function M.enable_workspace_diagnostics_handler()
     notify('Enabled native workspace diagnostics quickfix handler', levels.INFO)
 end
 
----Disable the workspace diagnostics handler.
----@return nil
-function M.disable_workspace_diagnostics_handler()
-    vim.diagnostic.handlers.qf = nil
-    notify('Disabled native workspace diagnostics quickfix handler', levels.INFO)
+---Run the diagnostics probe and open the report buffer.
+---@param opts? table
+---@return table
+function M.run(opts)
+    opts = opts or {}
+    assert(type(opts) == 'table')
+
+    local names = opts.names or discover_configured_servers()
+    assert(type(names) == 'table')
+    assert(#names <= SERVER_COUNT_MAX)
+
+    local results = {}
+    for index = 1, #names do
+        results[index] = probe_server(names[index])
+    end
+
+    local lines = render_report(results)
+    open_report_buffer(lines)
+
+    return results
 end
 
 ---Run the self-check diagnostics.
@@ -1655,17 +1584,67 @@ function M.tigercheck(startup_log)
     end
 end
 
+---Toggle the location list.
+---@return nil
+function M.toggle_loclist()
+    local wins = fn.getwininfo()
+    local current = api.nvim_get_current_win()
+    for _, win in ipairs(wins) do
+        if win.winid == current and win.loclist == 1 then
+            vim.cmd('lclose')
+            return
+        end
+    end
+    vim.cmd('lopen')
+end
+
+---Toggle the quickfix window.
+---@return nil
+function M.toggle_quickfix()
+    for _, win in ipairs(api.nvim_list_wins()) do
+        local info = fn.getwininfo(api.nvim_win_get_number(win))[1]
+        if info and info.quickfix == 1 and info.loclist == 0 then
+            vim.cmd('cclose')
+            return
+        end
+    end
+    vim.cmd('copen')
+end
+
+---Show diagnostics for the whole workspace.
+---@return nil
+function M.workspace_diagnostics()
+    fn.setqflist({}, 'r', {
+        title = 'Workspace Diagnostics',
+        items = attributed_diagnostic_items(nil),
+    })
+    vim.cmd('copen')
+end
+
+---Show workspace symbols.
+---@return nil
+function M.workspace_symbols()
+    vim.ui.input({
+        prompt = 'Workspace symbols query: ',
+    }, function(query)
+        if not query or query == '' then
+            return
+        end
+        vim.lsp.buf.workspace_symbol(query)
+    end)
+end
+
 M.run = M.selfcheck
 api.nvim_create_user_command('ConfigSelfCheck', M.selfcheck, {
     desc = 'Syntax-check all Lua config files and run safe runtime probes',
-})
-api.nvim_create_user_command('ConfigSyntaxCheck', M.syntaxcheck, {
-    desc = 'Syntax-check all Lua config files without requiring modules',
 })
 api.nvim_create_user_command('ConfigSelfCheckLog', function()
     vim.cmd(('edit %s'):format(fn.fnameescape(fn.stdpath('state') .. '/selfcheck.log')))
 end, {
     desc = 'Open the ConfigSelfCheck log file',
+})
+api.nvim_create_user_command('ConfigSyntaxCheck', M.syntaxcheck, {
+    desc = 'Syntax-check all Lua config files without requiring modules',
 })
 -- Interactive: :ConfigTigerCheck[ startup-log]
 -- Complete CLI startup audit:
@@ -1685,34 +1664,40 @@ api.nvim_create_user_command('ConfigTigerCheckLog', function()
 end, {
     desc = 'Open the ConfigTigerCheck human-readable report',
 })
-api.nvim_create_user_command('DiagnosticsWorkspace', M.workspace_diagnostics, {
-    desc = 'Populate quickfix with workspace diagnostics',
-})
 api.nvim_create_user_command('DiagnosticsBuffer', function()
     M.buffer_diagnostics(api.nvim_get_current_buf())
 end, {
     desc = 'Populate location list with current-buffer diagnostics',
 })
-api.nvim_create_user_command('DiagnosticsToggleQuickfix', M.toggle_quickfix, {
-    desc = 'Toggle quickfix window',
-})
-api.nvim_create_user_command('DiagnosticsToggleLoclist', M.toggle_loclist, {
-    desc = 'Toggle location list window',
-})
-api.nvim_create_user_command('LspDocumentSymbols', M.document_symbols, {
-    desc = 'Show document symbols with native LSP',
-})
-
-api.nvim_create_user_command('LspWorkspaceSymbols', M.workspace_symbols, {
-    desc = 'Search workspace symbols with native LSP',
+api.nvim_create_user_command('DiagnosticsDisableWorkspaceHandler', M.disable_workspace_diagnostics_handler, {
+    desc = 'Disable native quickfix sync for workspace diagnostics',
 })
 
 api.nvim_create_user_command('DiagnosticsEnableWorkspaceHandler', M.enable_workspace_diagnostics_handler, {
     desc = 'Enable native quickfix sync for workspace diagnostics',
 })
 
-api.nvim_create_user_command('DiagnosticsDisableWorkspaceHandler', M.disable_workspace_diagnostics_handler, {
-    desc = 'Disable native quickfix sync for workspace diagnostics',
+api.nvim_create_user_command('DiagnosticsToggleLoclist', M.toggle_loclist, {
+    desc = 'Toggle location list window',
+})
+api.nvim_create_user_command('DiagnosticsToggleQuickfix', M.toggle_quickfix, {
+    desc = 'Toggle quickfix window',
+})
+api.nvim_create_user_command('DiagnosticsWorkspace', M.workspace_diagnostics, {
+    desc = 'Populate quickfix with workspace diagnostics',
+})
+api.nvim_create_user_command('LspCodeActionAudit', function()
+    M.run()
+end, {
+    desc = 'Probe every configured LSP for textDocument/codeAction support',
+})
+
+api.nvim_create_user_command('LspDocumentSymbols', M.document_symbols, {
+    desc = 'Show document symbols with native LSP',
+})
+
+api.nvim_create_user_command('LspWorkspaceSymbols', M.workspace_symbols, {
+    desc = 'Search workspace symbols with native LSP',
 })
 
 api.nvim_create_autocmd('BufReadPost', {

@@ -180,102 +180,46 @@ local function check_type(name, value, expected)
     end
 end
 
---- Build the live config: factory defaults deep-copied, overrides merged,
---- every key type-checked. Never mutates M.default_config.
----@param config table|nil Overrides; nil restores factory defaults.
----@return table merged Live config table.
-function M.setup_config(config)
-    if config ~= nil and type(config) ~= 'table' then
-        error(('sync: setup expects a table or nil, got %s'):format(type(config)), 2)
-    end
-    local merged = vim.tbl_deep_extend('force', vim.deepcopy(M.default_config), config or {})
-    check_type('api_key_header', merged.api_key_header, 'string')
-    check_type('completion_endpoint', merged.completion_endpoint, 'string')
-    check_type('confirm_push', merged.confirm_push, 'boolean')
-    check_type('curl_max_bytes', merged.curl_max_bytes, 'number')
-    check_type('curl_timeout_s', merged.curl_timeout_s, 'number')
-    check_type('docs_url', merged.docs_url, 'string')
-    check_type('float_height', merged.float_height, 'number')
-    check_type('float_width', merged.float_width, 'number')
-    check_type('folders_endpoint', merged.folders_endpoint, 'string')
-    check_type('gui_address_default', merged.gui_address_default, 'string')
-    check_type('known_upstream_version_syncthing', merged.known_upstream_version_syncthing, 'string')
-    check_type('known_upstream_version_tailscale', merged.known_upstream_version_tailscale, 'string')
-    check_type('last_scan_endpoint', merged.last_scan_endpoint, 'string')
-    check_type('parse_line_max', merged.parse_line_max, 'number')
-    check_type('status_endpoint', merged.status_endpoint, 'string')
-    check_type('sync_dir', merged.sync_dir, 'string')
-    check_type('syncthing_bin', merged.syncthing_bin, 'string')
-    check_type('syncthing_config_path', merged.syncthing_config_path, 'string')
-    check_type('syncthing_version_min', merged.syncthing_version_min, 'string')
-    check_type('tailscale_bin', merged.tailscale_bin, 'string')
-    check_type('tailscale_docs_url', merged.tailscale_docs_url, 'string')
-    check_type('tailscale_version_min', merged.tailscale_version_min, 'string')
-    check_type('timeout_ms', merged.timeout_ms, 'number')
-    check_type('update_package_syncthing', merged.update_package_syncthing, 'string')
-    check_type('update_package_tailscale', merged.update_package_tailscale, 'string')
-    check_type('update_repo_syncthing', merged.update_repo_syncthing, 'string')
-    check_type('update_repo_tailscale', merged.update_repo_tailscale, 'string')
-    check_type('version_endpoint', merged.version_endpoint, 'string')
-    if merged.select_impl ~= nil and type(merged.select_impl) ~= 'function' then
-        error('sync: option select_impl must be a function or nil', 2)
-    end
-    if merged.sync_dir:match('^%s*$') then
-        error('sync: sync_dir must be a non-empty path', 2)
-    end
-    return merged
+--- Open a centered, minimal, read-only float. `q` closes it (mirrors the
+--- calendar/git float idiom).
+---@param title string Float title.
+---@param lines string[] Buffer content.
+---@return integer buf
+---@return integer win
+local function open_float(title, lines)
+    local buf = api.nvim_create_buf(false, true)
+    api.nvim_buf_set_lines(buf, 0, -1, false, lines)
+    vim.bo[buf].modifiable = false
+    api.nvim_buf_set_name(buf, 'syncthing://' .. title)
+    local win_width = math.min(M.config.float_width, vim.o.columns - 4)
+    local win_height = math.min(M.config.float_height, vim.o.lines - 4)
+    local win = api.nvim_open_win(buf, true, {
+        relative = 'editor',
+        width = win_width,
+        height = win_height,
+        row = math.floor((vim.o.lines - win_height) / 2),
+        col = math.floor((vim.o.columns - win_width) / 2),
+        style = 'minimal',
+        border = 'rounded',
+        title = ' ' .. title .. ' ',
+        title_pos = 'center',
+    })
+    vim.keymap.set('n', 'q', '<cmd>close<cr>', { buffer = buf, silent = true, desc = 'Close sync float' })
+    return buf, win
 end
 
---- Read the GUI address + API key from the user's live syncthing
---- config.xml. Never throws; every expected failure returns nil+err, and no
---- error string ever carries the key.
----@return sync.GuiSettings|nil settings
----@return string|nil err
-function M.read_gui_settings()
-    local path = fn.expand(M.config.syncthing_config_path)
-    local stat = uv.fs_stat(path)
-    if stat == nil or stat.type ~= 'file' or (stat.size or 0) > CONFIG_FILE_BYTES_MAX then
-        return nil, 'syncthing config not readable: ' .. path
+--- Map a toolmgr binary report onto the check status vocabulary.
+--- Mirrors cargo/git/calendar: missing tools are 'unavailable', never an error.
+---@param report utils.toolmgr.BinaryReport
+---@return sync.Check
+local function to_check(report)
+    local status = 'unavailable'
+    if report.present and report.meets_minimum then
+        status = 'ok'
+    elseif report.present then
+        status = 'below minimum'
     end
-    local fh, open_err = io.open(path, 'r')
-    if fh == nil then
-        return nil, 'syncthing config not readable: ' .. path .. ' (' .. tostring(open_err) .. ')'
-    end
-    local text = fh:read('*a') or ''
-    fh:close()
-    local gui_block = text:match('<gui[^>]*>(.-)</gui>')
-    if gui_block == nil then
-        return nil, 'no <gui> block in ' .. path
-    end
-    local address = gui_block:match('<address>([^<]*)</address>')
-    local api_key = gui_block:match('<apikey>([^<]*)</apikey>')
-    if address == nil or address:match('^%s*$') then
-        return nil, 'no GUI <address> in ' .. path
-    end
-    if api_key == nil or #api_key == 0 or #api_key > API_KEY_ELEMENT_MAX then
-        return nil, 'no GUI API key in ' .. path .. ' (presence reported, value never shown)'
-    end
-    return { address = address, api_key = api_key }, nil
-end
-
---- Map a config.xml GUI address to a local probe base URL. A wildcard or
---- empty host becomes 127.0.0.1 (we always probe locally); the port is
---- kept. Pure; unparseable input returns nil.
----@param address string|nil e.g. '0.0.0.0:8080'; nil/'' falls back to gui_address_default.
----@return string|nil url e.g. 'http://127.0.0.1:8080'.
-function M.gui_base_url(address)
-    local raw = address
-    if raw == nil or raw:match('^%s*$') then
-        raw = M.config.gui_address_default
-    end
-    local host, port = raw:match('^%s*([^:]+):(%d+)%s*$')
-    if host == nil or port == nil then
-        return nil
-    end
-    if host == '0.0.0.0' or host == '' then
-        host = '127.0.0.1'
-    end
-    return 'http://' .. host .. ':' .. port
+    return { name = report.name, status = status, detail = report.detail }
 end
 
 --- Percent-encode a folder id for a query string. Bounded by the id length.
@@ -328,6 +272,217 @@ function M.api_get(settings, path)
     return (result.stdout or ''):sub(1, M.config.curl_max_bytes), nil
 end
 
+--- Per-check validation. Never throws and never errors: missing pieces say
+--- "unavailable". The API key's presence is reported; its value never
+--- appears in any check detail.
+---@return sync.Check[] checks
+function M.checks()
+    local cfg = M.config
+    local checks = {}
+    checks[#checks + 1] =
+        to_check(toolmgr.check_binary({ name = cfg.syncthing_bin, min_version = cfg.syncthing_version_min }))
+    local settings, settings_err = M.read_gui_settings()
+    if settings ~= nil then
+        checks[#checks + 1] = {
+            name = 'gui config',
+            status = 'ok',
+            detail = 'readable, API key present: ' .. fn.expand(cfg.syncthing_config_path),
+        }
+    else
+        checks[#checks + 1] = { name = 'gui config', status = 'unavailable', detail = tostring(settings_err) }
+    end
+    if settings ~= nil then
+        local body, probe_err = M.api_get(settings, cfg.version_endpoint)
+        if body ~= nil then
+            local ok, decoded = pcall(vim.json.decode, body)
+            local version = ok and type(decoded) == 'table' and decoded.version or nil
+            checks[#checks + 1] = {
+                name = 'gui',
+                status = 'ok',
+                detail = ('reachable at %s (syncthing %s)'):format(
+                    M.gui_base_url(settings.address) or '?',
+                    type(version) == 'string' and version or '?'
+                ),
+            }
+        else
+            checks[#checks + 1] =
+                { name = 'gui', status = 'unavailable', detail = 'not reachable: ' .. tostring(probe_err) }
+        end
+    else
+        checks[#checks + 1] = { name = 'gui', status = 'unavailable', detail = 'skipped: no GUI settings' }
+    end
+    local sync_dir = fn.expand(cfg.sync_dir)
+    local dir_stat = uv.fs_stat(sync_dir)
+    if dir_stat ~= nil and dir_stat.type == 'directory' and uv.fs_access(sync_dir, 'W') then
+        checks[#checks + 1] = { name = 'sync_dir', status = 'ok', detail = 'writable: ' .. sync_dir }
+    else
+        checks[#checks + 1] =
+            { name = 'sync_dir', status = 'unavailable', detail = 'not a writable directory: ' .. sync_dir }
+    end
+    checks[#checks + 1] =
+        to_check(toolmgr.check_binary({ name = cfg.tailscale_bin, min_version = cfg.tailscale_version_min }))
+    return checks
+end
+
+--- :SyncDocs -- open the verified Syncthing REST + Tailscale CLI docs.
+---@param _cmd_opts table nvim_create_user_command callback options.
+function M.cmd_docs(_cmd_opts)
+    if vim.ui.open ~= nil then
+        pcall(vim.ui.open, M.config.docs_url)
+    end
+    vim.notify(
+        'syncthing REST docs: ' .. M.config.docs_url .. '\ntailscale CLI docs: ' .. M.config.tailscale_docs_url,
+        vim.log.levels.INFO
+    )
+end
+
+--- :PushToPhone -- copy the current buffer's file into sync_dir. Confirms
+--- first (unless confirm_push is false), :writes when modified, copies with
+--- vim.uv.fs_copyfile, and reports the bytes copied.
+---@param _cmd_opts table nvim_create_user_command callback options.
+function M.cmd_push(_cmd_opts)
+    M.push_current_buffer(function(info, err)
+        if err ~= nil then
+            vim.notify('PushToPhone: ' .. err, vim.log.levels.ERROR)
+        elseif info == nil then
+            vim.notify('PushToPhone: cancelled', vim.log.levels.INFO)
+        else
+            vim.notify(('PushToPhone: %d bytes -> %s'):format(info.bytes, info.dest), vim.log.levels.INFO)
+        end
+    end)
+end
+
+--- :SyncStatus -- float window with syncthing reachability, per-folder
+--- completion %, last scan time, and errors/folder state. Read-only.
+---@param _cmd_opts table nvim_create_user_command callback options.
+function M.cmd_status(_cmd_opts)
+    local settings, settings_err = M.read_gui_settings()
+    if settings == nil then
+        vim.notify('SyncStatus: ' .. tostring(settings_err), vim.log.levels.WARN)
+        return
+    end
+    local lines, lines_err = M.status_lines(settings)
+    if lines_err ~= nil then
+        vim.notify('SyncStatus: ' .. lines_err, vim.log.levels.WARN)
+        return
+    end
+    assert(lines ~= nil, 'status_lines returned no error but no lines')
+    M.show_status(lines)
+end
+
+--- :TailscaleStatus -- read-only `tailscale status` rendered in a float;
+--- degrades to a warning when tailscale is absent.
+---@param _cmd_opts table nvim_create_user_command callback options.
+function M.cmd_tailscale(_cmd_opts)
+    local output, err = M.tailscale_status()
+    if err ~= nil then
+        vim.notify('TailscaleStatus unavailable: ' .. err, vim.log.levels.WARN)
+        return
+    end
+    assert(output ~= nil, 'tailscale_status returned no error but no output')
+    local lines = {}
+    for line in (output .. '\n'):gmatch('([^\n]*)\n') do
+        if #lines < OUTPUT_LINES_MAX then
+            lines[#lines + 1] = line
+        end
+    end
+    if #lines == 0 then
+        lines[1] = '(tailscale status returned no output)'
+    end
+    open_float('tailscale status', lines)
+end
+
+--- :SyncUpdateCheck -- toolmgr update dialogs for syncthing
+--- (syncthing/syncthing) and tailscale (tailscale/tailscale).
+---@param _cmd_opts table nvim_create_user_command callback options.
+function M.cmd_update_check(_cmd_opts)
+    local current_syncthing = toolmgr.command_version({ M.config.syncthing_bin, '--version' })
+    toolmgr.check_update({
+        tool_label = 'syncthing',
+        repo = M.config.update_repo_syncthing,
+        package = M.config.update_package_syncthing,
+        current_version = current_syncthing,
+        known_upstream_version = M.config.known_upstream_version_syncthing,
+        migrations = MIGRATIONS,
+        select_impl = M.config.select_impl,
+    })
+    local current_tailscale = toolmgr.command_version({ M.config.tailscale_bin, 'version' })
+    toolmgr.check_update({
+        tool_label = 'tailscale',
+        repo = M.config.update_repo_tailscale,
+        package = M.config.update_package_tailscale,
+        current_version = current_tailscale,
+        known_upstream_version = M.config.known_upstream_version_tailscale,
+        migrations = MIGRATIONS,
+        select_impl = M.config.select_impl,
+    })
+end
+
+--- :SyncValidate -- one vim.notify per check; missing pieces say
+--- "unavailable", never an error. The API key never appears.
+---@param _cmd_opts table nvim_create_user_command callback options.
+function M.cmd_validate(_cmd_opts)
+    for _, check in ipairs(M.checks()) do
+        local level = check.status == 'ok' and vim.log.levels.INFO or vim.log.levels.WARN
+        vim.notify(('sync %-10s %-13s %s'):format(check.name, check.status, check.detail), level)
+    end
+end
+
+--- Fetch the folder list from /rest/config/folders. Never throws; failures
+--- degrade to nil+err.
+---@param settings sync.GuiSettings
+---@return sync.Folder[]|nil folders
+---@return string|nil err
+function M.folders(settings)
+    local body, get_err = M.api_get(settings, M.config.folders_endpoint)
+    if get_err ~= nil then
+        return nil, get_err
+    end
+    assert(body ~= nil, 'api_get returned no error but no body')
+    return M.parse_folders(body)
+end
+
+--- Human byte count, e.g. 9789241 -> '9.34 MB'. Pure; non-numbers and
+--- negatives degrade to '0 B' rather than throwing.
+---@param n number
+---@return string text
+function M.format_bytes(n)
+    local units = { 'B', 'KB', 'MB', 'GB', 'TB' }
+    if type(n) ~= 'number' or n < 0 then
+        return '0 B'
+    end
+    local value = n
+    local unit = 1
+    while value >= 1024 and unit < #units do
+        value = value / 1024
+        unit = unit + 1
+    end
+    if unit == 1 then
+        return ('%d B'):format(math.floor(value))
+    end
+    return ('%.2f %s'):format(value, units[unit])
+end
+
+--- Map a config.xml GUI address to a local probe base URL. A wildcard or
+--- empty host becomes 127.0.0.1 (we always probe locally); the port is
+--- kept. Pure; unparseable input returns nil.
+---@param address string|nil e.g. '0.0.0.0:8080'; nil/'' falls back to gui_address_default.
+---@return string|nil url e.g. 'http://127.0.0.1:8080'.
+function M.gui_base_url(address)
+    local raw = address
+    if raw == nil or raw:match('^%s*$') then
+        raw = M.config.gui_address_default
+    end
+    local host, port = raw:match('^%s*([^:]+):(%d+)%s*$')
+    if host == nil or port == nil then
+        return nil
+    end
+    if host == '0.0.0.0' or host == '' then
+        host = '127.0.0.1'
+    end
+    return 'http://' .. host .. ':' .. port
+end
+
 --- Parse /rest/db/completion JSON into { completion_pct, need_bytes,
 --- state }. Pure and bounded: input past parse_line_max is refused, and
 --- every failure mode returns nil+err instead of throwing. `state` is the
@@ -360,6 +515,38 @@ function M.parse_completion(text)
         state = 'unknown'
     end
     return { completion_pct = completion, need_bytes = math.floor(need_bytes), state = state }, nil
+end
+
+--- Parse /rest/db/status JSON into { state, state_changed, pull_errors,
+--- need_bytes }. Pure and bounded; absent fields degrade to ''/0, a missing
+--- state refuses with nil+err.
+---@param text string Raw endpoint body.
+---@return sync.FolderStatus|nil status
+---@return string|nil err
+function M.parse_folder_status(text)
+    if type(text) ~= 'string' then
+        return nil, 'parse_folder_status expects a string, got ' .. type(text)
+    end
+    if #text > M.config.parse_line_max then
+        return nil, ('input %d bytes exceeds parse_line_max %d'):format(#text, M.config.parse_line_max)
+    end
+    local ok, decoded = pcall(vim.json.decode, text)
+    if not ok or type(decoded) ~= 'table' then
+        return nil, 'parse_folder_status: not JSON (' .. text:sub(1, 80) .. ')'
+    end
+    if type(decoded.state) ~= 'string' or decoded.state == '' then
+        return nil, 'parse_folder_status: missing state string'
+    end
+    local state_changed = decoded.stateChanged
+    local pull_errors = decoded.pullErrors
+    local need_bytes = decoded.needBytes
+    return {
+        state = decoded.state,
+        state_changed = type(state_changed) == 'string' and state_changed or '',
+        pull_errors = type(pull_errors) == 'number' and math.floor(pull_errors) or 0,
+        need_bytes = type(need_bytes) == 'number' and math.floor(need_bytes) or 0,
+    },
+        nil
 end
 
 --- Parse /rest/config/folders JSON into folder records. Pure and bounded:
@@ -398,38 +585,6 @@ function M.parse_folders(text)
     return folders, nil
 end
 
---- Parse /rest/db/status JSON into { state, state_changed, pull_errors,
---- need_bytes }. Pure and bounded; absent fields degrade to ''/0, a missing
---- state refuses with nil+err.
----@param text string Raw endpoint body.
----@return sync.FolderStatus|nil status
----@return string|nil err
-function M.parse_folder_status(text)
-    if type(text) ~= 'string' then
-        return nil, 'parse_folder_status expects a string, got ' .. type(text)
-    end
-    if #text > M.config.parse_line_max then
-        return nil, ('input %d bytes exceeds parse_line_max %d'):format(#text, M.config.parse_line_max)
-    end
-    local ok, decoded = pcall(vim.json.decode, text)
-    if not ok or type(decoded) ~= 'table' then
-        return nil, 'parse_folder_status: not JSON (' .. text:sub(1, 80) .. ')'
-    end
-    if type(decoded.state) ~= 'string' or decoded.state == '' then
-        return nil, 'parse_folder_status: missing state string'
-    end
-    local state_changed = decoded.stateChanged
-    local pull_errors = decoded.pullErrors
-    local need_bytes = decoded.needBytes
-    return {
-        state = decoded.state,
-        state_changed = type(state_changed) == 'string' and state_changed or '',
-        pull_errors = type(pull_errors) == 'number' and math.floor(pull_errors) or 0,
-        need_bytes = type(need_bytes) == 'number' and math.floor(need_bytes) or 0,
-    },
-        nil
-end
-
 --- Parse /rest/stats/folder JSON into a folder-id -> lastScan map. Pure and
 --- bounded; entries without a lastScan string are skipped.
 ---@param text string Raw endpoint body.
@@ -456,39 +611,150 @@ function M.parse_last_scans(text)
     return scans, nil
 end
 
---- Human byte count, e.g. 9789241 -> '9.34 MB'. Pure; non-numbers and
---- negatives degrade to '0 B' rather than throwing.
----@param n number
----@return string text
-function M.format_bytes(n)
-    local units = { 'B', 'KB', 'MB', 'GB', 'TB' }
-    if type(n) ~= 'number' or n < 0 then
-        return '0 B'
+--- Copy the current buffer's file into sync_dir. The only write op in the
+--- module. Steps: confirm via vim.ui.select when confirm_push is true
+--- (default), :write the buffer if modified, then vim.uv.fs_copyfile (no
+--- shell). on_done fires with (info, nil) on success, (nil, nil) when the
+--- user cancels, (nil, err) on failure; M.push_current_buffer never throws.
+---@param on_done fun(info: { bytes: integer, dest: string }|nil, err: string|nil)
+function M.push_current_buffer(on_done)
+    if type(on_done) ~= 'function' then
+        error('sync: push_current_buffer requires an on_done callback', 2)
     end
-    local value = n
-    local unit = 1
-    while value >= 1024 and unit < #units do
-        value = value / 1024
-        unit = unit + 1
+    local src = api.nvim_buf_get_name(0)
+    if src == '' then
+        on_done(nil, 'PushToPhone needs a file-backed buffer')
+        return
     end
-    if unit == 1 then
-        return ('%d B'):format(math.floor(value))
+    local sync_dir = fn.expand(M.config.sync_dir)
+    local dir_stat = uv.fs_stat(sync_dir)
+    if dir_stat == nil or dir_stat.type ~= 'directory' then
+        on_done(nil, 'sync_dir is not a directory: ' .. sync_dir)
+        return
     end
-    return ('%.2f %s'):format(value, units[unit])
+    local function run_copy()
+        if vim.bo[0].modified then
+            --- Save first so the phone never receives a stale copy. `silent!`
+            --- keeps the success path quiet (the module reports its own
+            --- result) and still raises catchable errors through pcall.
+            local write_ok, write_err = pcall(function()
+                vim.cmd('silent! write')
+            end)
+            if not write_ok then
+                on_done(nil, 'cannot :write buffer: ' .. tostring(write_err))
+                return
+            end
+        end
+        local stat = uv.fs_stat(src)
+        if stat == nil or stat.type ~= 'file' or stat.size == nil then
+            on_done(nil, 'cannot stat source file: ' .. src)
+            return
+        end
+        local dest = sync_dir .. '/' .. vim.fs.basename(src)
+        local copy_ok, copy_err = uv.fs_copyfile(src, dest)
+        if not copy_ok then
+            on_done(nil, 'copy failed: ' .. tostring(copy_err))
+            return
+        end
+        on_done({ bytes = stat.size, dest = dest }, nil)
+    end
+    if M.config.confirm_push then
+        local select_impl = M.config.select_impl or vim.ui.select
+        local prompt = 'Push ' .. vim.fs.basename(src) .. ' to ' .. sync_dir .. '?'
+        select_impl({ 'Push to phone', 'Cancel' }, { prompt = prompt }, function(choice)
+            if choice ~= 1 then
+                on_done(nil, nil)
+                return
+            end
+            run_copy()
+        end)
+    else
+        run_copy()
+    end
 end
 
---- Fetch the folder list from /rest/config/folders. Never throws; failures
---- degrade to nil+err.
----@param settings sync.GuiSettings
----@return sync.Folder[]|nil folders
+--- Read the GUI address + API key from the user's live syncthing
+--- config.xml. Never throws; every expected failure returns nil+err, and no
+--- error string ever carries the key.
+---@return sync.GuiSettings|nil settings
 ---@return string|nil err
-function M.folders(settings)
-    local body, get_err = M.api_get(settings, M.config.folders_endpoint)
-    if get_err ~= nil then
-        return nil, get_err
+function M.read_gui_settings()
+    local path = fn.expand(M.config.syncthing_config_path)
+    local stat = uv.fs_stat(path)
+    if stat == nil or stat.type ~= 'file' or (stat.size or 0) > CONFIG_FILE_BYTES_MAX then
+        return nil, 'syncthing config not readable: ' .. path
     end
-    assert(body ~= nil, 'api_get returned no error but no body')
-    return M.parse_folders(body)
+    local fh, open_err = io.open(path, 'r')
+    if fh == nil then
+        return nil, 'syncthing config not readable: ' .. path .. ' (' .. tostring(open_err) .. ')'
+    end
+    local text = fh:read('*a') or ''
+    fh:close()
+    local gui_block = text:match('<gui[^>]*>(.-)</gui>')
+    if gui_block == nil then
+        return nil, 'no <gui> block in ' .. path
+    end
+    local address = gui_block:match('<address>([^<]*)</address>')
+    local api_key = gui_block:match('<apikey>([^<]*)</apikey>')
+    if address == nil or address:match('^%s*$') then
+        return nil, 'no GUI <address> in ' .. path
+    end
+    if api_key == nil or #api_key == 0 or #api_key > API_KEY_ELEMENT_MAX then
+        return nil, 'no GUI API key in ' .. path .. ' (presence reported, value never shown)'
+    end
+    return { address = address, api_key = api_key }, nil
+end
+
+--- Build the live config: factory defaults deep-copied, overrides merged,
+--- every key type-checked. Never mutates M.default_config.
+---@param config table|nil Overrides; nil restores factory defaults.
+---@return table merged Live config table.
+function M.setup_config(config)
+    if config ~= nil and type(config) ~= 'table' then
+        error(('sync: setup expects a table or nil, got %s'):format(type(config)), 2)
+    end
+    local merged = vim.tbl_deep_extend('force', vim.deepcopy(M.default_config), config or {})
+    check_type('api_key_header', merged.api_key_header, 'string')
+    check_type('completion_endpoint', merged.completion_endpoint, 'string')
+    check_type('confirm_push', merged.confirm_push, 'boolean')
+    check_type('curl_max_bytes', merged.curl_max_bytes, 'number')
+    check_type('curl_timeout_s', merged.curl_timeout_s, 'number')
+    check_type('docs_url', merged.docs_url, 'string')
+    check_type('float_height', merged.float_height, 'number')
+    check_type('float_width', merged.float_width, 'number')
+    check_type('folders_endpoint', merged.folders_endpoint, 'string')
+    check_type('gui_address_default', merged.gui_address_default, 'string')
+    check_type('known_upstream_version_syncthing', merged.known_upstream_version_syncthing, 'string')
+    check_type('known_upstream_version_tailscale', merged.known_upstream_version_tailscale, 'string')
+    check_type('last_scan_endpoint', merged.last_scan_endpoint, 'string')
+    check_type('parse_line_max', merged.parse_line_max, 'number')
+    check_type('status_endpoint', merged.status_endpoint, 'string')
+    check_type('sync_dir', merged.sync_dir, 'string')
+    check_type('syncthing_bin', merged.syncthing_bin, 'string')
+    check_type('syncthing_config_path', merged.syncthing_config_path, 'string')
+    check_type('syncthing_version_min', merged.syncthing_version_min, 'string')
+    check_type('tailscale_bin', merged.tailscale_bin, 'string')
+    check_type('tailscale_docs_url', merged.tailscale_docs_url, 'string')
+    check_type('tailscale_version_min', merged.tailscale_version_min, 'string')
+    check_type('timeout_ms', merged.timeout_ms, 'number')
+    check_type('update_package_syncthing', merged.update_package_syncthing, 'string')
+    check_type('update_package_tailscale', merged.update_package_tailscale, 'string')
+    check_type('update_repo_syncthing', merged.update_repo_syncthing, 'string')
+    check_type('update_repo_tailscale', merged.update_repo_tailscale, 'string')
+    check_type('version_endpoint', merged.version_endpoint, 'string')
+    if merged.select_impl ~= nil and type(merged.select_impl) ~= 'function' then
+        error('sync: option select_impl must be a function or nil', 2)
+    end
+    if merged.sync_dir:match('^%s*$') then
+        error('sync: sync_dir must be a non-empty path', 2)
+    end
+    return merged
+end
+
+--- Show the :SyncStatus float.
+---@param lines string[] Prebuilt by M.status_lines.
+function M.show_status(lines)
+    open_float('sync status', lines)
 end
 
 --- Build the :SyncStatus float lines: reachability header, then one line
@@ -556,40 +822,6 @@ function M.status_lines(settings)
     return lines, nil
 end
 
---- Open a centered, minimal, read-only float. `q` closes it (mirrors the
---- calendar/git float idiom).
----@param title string Float title.
----@param lines string[] Buffer content.
----@return integer buf
----@return integer win
-local function open_float(title, lines)
-    local buf = api.nvim_create_buf(false, true)
-    api.nvim_buf_set_lines(buf, 0, -1, false, lines)
-    vim.bo[buf].modifiable = false
-    api.nvim_buf_set_name(buf, 'syncthing://' .. title)
-    local win_width = math.min(M.config.float_width, vim.o.columns - 4)
-    local win_height = math.min(M.config.float_height, vim.o.lines - 4)
-    local win = api.nvim_open_win(buf, true, {
-        relative = 'editor',
-        width = win_width,
-        height = win_height,
-        row = math.floor((vim.o.lines - win_height) / 2),
-        col = math.floor((vim.o.columns - win_width) / 2),
-        style = 'minimal',
-        border = 'rounded',
-        title = ' ' .. title .. ' ',
-        title_pos = 'center',
-    })
-    vim.keymap.set('n', 'q', '<cmd>close<cr>', { buffer = buf, silent = true, desc = 'Close sync float' })
-    return buf, win
-end
-
---- Show the :SyncStatus float.
----@param lines string[] Prebuilt by M.status_lines.
-function M.show_status(lines)
-    open_float('sync status', lines)
-end
-
 --- Read-only `tailscale status` probe. Never throws: a missing binary or a
 --- failing probe degrades to nil + an 'unavailable' message.
 ---@return string|nil output
@@ -609,236 +841,6 @@ function M.tailscale_status()
     return (result.stdout or ''):sub(1, STATUS_BYTES_MAX), nil
 end
 
---- Copy the current buffer's file into sync_dir. The only write op in the
---- module. Steps: confirm via vim.ui.select when confirm_push is true
---- (default), :write the buffer if modified, then vim.uv.fs_copyfile (no
---- shell). on_done fires with (info, nil) on success, (nil, nil) when the
---- user cancels, (nil, err) on failure; M.push_current_buffer never throws.
----@param on_done fun(info: { bytes: integer, dest: string }|nil, err: string|nil)
-function M.push_current_buffer(on_done)
-    if type(on_done) ~= 'function' then
-        error('sync: push_current_buffer requires an on_done callback', 2)
-    end
-    local src = api.nvim_buf_get_name(0)
-    if src == '' then
-        on_done(nil, 'PushToPhone needs a file-backed buffer')
-        return
-    end
-    local sync_dir = fn.expand(M.config.sync_dir)
-    local dir_stat = uv.fs_stat(sync_dir)
-    if dir_stat == nil or dir_stat.type ~= 'directory' then
-        on_done(nil, 'sync_dir is not a directory: ' .. sync_dir)
-        return
-    end
-    local function run_copy()
-        if vim.bo[0].modified then
-            --- Save first so the phone never receives a stale copy. `silent!`
-            --- keeps the success path quiet (the module reports its own
-            --- result) and still raises catchable errors through pcall.
-            local write_ok, write_err = pcall(vim.cmd, 'silent! write')
-            if not write_ok then
-                on_done(nil, 'cannot :write buffer: ' .. tostring(write_err))
-                return
-            end
-        end
-        local stat = uv.fs_stat(src)
-        if stat == nil or stat.type ~= 'file' or stat.size == nil then
-            on_done(nil, 'cannot stat source file: ' .. src)
-            return
-        end
-        local dest = sync_dir .. '/' .. vim.fs.basename(src)
-        local copy_ok, copy_err = uv.fs_copyfile(src, dest)
-        if not copy_ok then
-            on_done(nil, 'copy failed: ' .. tostring(copy_err))
-            return
-        end
-        on_done({ bytes = stat.size, dest = dest }, nil)
-    end
-    if M.config.confirm_push then
-        local select_impl = M.config.select_impl or vim.ui.select
-        local prompt = 'Push ' .. vim.fs.basename(src) .. ' to ' .. sync_dir .. '?'
-        select_impl({ 'Push to phone', 'Cancel' }, { prompt = prompt }, function(choice)
-            if choice ~= 1 then
-                on_done(nil, nil)
-                return
-            end
-            run_copy()
-        end)
-    else
-        run_copy()
-    end
-end
-
---- Map a toolmgr binary report onto the check status vocabulary.
---- Mirrors cargo/git/calendar: missing tools are 'unavailable', never an error.
----@param report utils.toolmgr.BinaryReport
----@return sync.Check
-local function to_check(report)
-    local status = 'unavailable'
-    if report.present and report.meets_minimum then
-        status = 'ok'
-    elseif report.present then
-        status = 'below minimum'
-    end
-    return { name = report.name, status = status, detail = report.detail }
-end
-
---- Per-check validation. Never throws and never errors: missing pieces say
---- "unavailable". The API key's presence is reported; its value never
---- appears in any check detail.
----@return sync.Check[] checks
-function M.checks()
-    local cfg = M.config
-    local checks = {}
-    checks[#checks + 1] =
-        to_check(toolmgr.check_binary({ name = cfg.syncthing_bin, min_version = cfg.syncthing_version_min }))
-    local settings, settings_err = M.read_gui_settings()
-    if settings ~= nil then
-        checks[#checks + 1] = {
-            name = 'gui config',
-            status = 'ok',
-            detail = 'readable, API key present: ' .. fn.expand(cfg.syncthing_config_path),
-        }
-    else
-        checks[#checks + 1] = { name = 'gui config', status = 'unavailable', detail = tostring(settings_err) }
-    end
-    if settings ~= nil then
-        local body, probe_err = M.api_get(settings, cfg.version_endpoint)
-        if body ~= nil then
-            local ok, decoded = pcall(vim.json.decode, body)
-            local version = ok and type(decoded) == 'table' and decoded.version or nil
-            checks[#checks + 1] = {
-                name = 'gui',
-                status = 'ok',
-                detail = ('reachable at %s (syncthing %s)'):format(
-                    M.gui_base_url(settings.address) or '?',
-                    type(version) == 'string' and version or '?'
-                ),
-            }
-        else
-            checks[#checks + 1] =
-                { name = 'gui', status = 'unavailable', detail = 'not reachable: ' .. tostring(probe_err) }
-        end
-    else
-        checks[#checks + 1] = { name = 'gui', status = 'unavailable', detail = 'skipped: no GUI settings' }
-    end
-    local sync_dir = fn.expand(cfg.sync_dir)
-    local dir_stat = uv.fs_stat(sync_dir)
-    if dir_stat ~= nil and dir_stat.type == 'directory' and uv.fs_access(sync_dir, 'W') then
-        checks[#checks + 1] = { name = 'sync_dir', status = 'ok', detail = 'writable: ' .. sync_dir }
-    else
-        checks[#checks + 1] =
-            { name = 'sync_dir', status = 'unavailable', detail = 'not a writable directory: ' .. sync_dir }
-    end
-    checks[#checks + 1] =
-        to_check(toolmgr.check_binary({ name = cfg.tailscale_bin, min_version = cfg.tailscale_version_min }))
-    return checks
-end
-
---- :SyncStatus -- float window with syncthing reachability, per-folder
---- completion %, last scan time, and errors/folder state. Read-only.
----@param _cmd_opts table nvim_create_user_command callback options.
-function M.cmd_status(_cmd_opts)
-    local settings, settings_err = M.read_gui_settings()
-    if settings == nil then
-        vim.notify('SyncStatus: ' .. tostring(settings_err), vim.log.levels.WARN)
-        return
-    end
-    local lines, lines_err = M.status_lines(settings)
-    if lines_err ~= nil then
-        vim.notify('SyncStatus: ' .. lines_err, vim.log.levels.WARN)
-        return
-    end
-    assert(lines ~= nil, 'status_lines returned no error but no lines')
-    M.show_status(lines)
-end
-
---- :PushToPhone -- copy the current buffer's file into sync_dir. Confirms
---- first (unless confirm_push is false), :writes when modified, copies with
---- vim.uv.fs_copyfile, and reports the bytes copied.
----@param _cmd_opts table nvim_create_user_command callback options.
-function M.cmd_push(_cmd_opts)
-    M.push_current_buffer(function(info, err)
-        if err ~= nil then
-            vim.notify('PushToPhone: ' .. err, vim.log.levels.ERROR)
-        elseif info == nil then
-            vim.notify('PushToPhone: cancelled', vim.log.levels.INFO)
-        else
-            vim.notify(('PushToPhone: %d bytes -> %s'):format(info.bytes, info.dest), vim.log.levels.INFO)
-        end
-    end)
-end
-
---- :TailscaleStatus -- read-only `tailscale status` rendered in a float;
---- degrades to a warning when tailscale is absent.
----@param _cmd_opts table nvim_create_user_command callback options.
-function M.cmd_tailscale(_cmd_opts)
-    local output, err = M.tailscale_status()
-    if err ~= nil then
-        vim.notify('TailscaleStatus unavailable: ' .. err, vim.log.levels.WARN)
-        return
-    end
-    assert(output ~= nil, 'tailscale_status returned no error but no output')
-    local lines = {}
-    for line in (output .. '\n'):gmatch('([^\n]*)\n') do
-        if #lines < OUTPUT_LINES_MAX then
-            lines[#lines + 1] = line
-        end
-    end
-    if #lines == 0 then
-        lines[1] = '(tailscale status returned no output)'
-    end
-    open_float('tailscale status', lines)
-end
-
---- :SyncDocs -- open the verified Syncthing REST + Tailscale CLI docs.
----@param _cmd_opts table nvim_create_user_command callback options.
-function M.cmd_docs(_cmd_opts)
-    if vim.ui.open ~= nil then
-        pcall(vim.ui.open, M.config.docs_url)
-    end
-    vim.notify(
-        'syncthing REST docs: ' .. M.config.docs_url .. '\ntailscale CLI docs: ' .. M.config.tailscale_docs_url,
-        vim.log.levels.INFO
-    )
-end
-
---- :SyncValidate -- one vim.notify per check; missing pieces say
---- "unavailable", never an error. The API key never appears.
----@param _cmd_opts table nvim_create_user_command callback options.
-function M.cmd_validate(_cmd_opts)
-    for _, check in ipairs(M.checks()) do
-        local level = check.status == 'ok' and vim.log.levels.INFO or vim.log.levels.WARN
-        vim.notify(('sync %-10s %-13s %s'):format(check.name, check.status, check.detail), level)
-    end
-end
-
---- :SyncUpdateCheck -- toolmgr update dialogs for syncthing
---- (syncthing/syncthing) and tailscale (tailscale/tailscale).
----@param _cmd_opts table nvim_create_user_command callback options.
-function M.cmd_update_check(_cmd_opts)
-    local current_syncthing = toolmgr.command_version({ M.config.syncthing_bin, '--version' })
-    toolmgr.check_update({
-        tool_label = 'syncthing',
-        repo = M.config.update_repo_syncthing,
-        package = M.config.update_package_syncthing,
-        current_version = current_syncthing,
-        known_upstream_version = M.config.known_upstream_version_syncthing,
-        migrations = MIGRATIONS,
-        select_impl = M.config.select_impl,
-    })
-    local current_tailscale = toolmgr.command_version({ M.config.tailscale_bin, 'version' })
-    toolmgr.check_update({
-        tool_label = 'tailscale',
-        repo = M.config.update_repo_tailscale,
-        package = M.config.update_package_tailscale,
-        current_version = current_tailscale,
-        known_upstream_version = M.config.known_upstream_version_tailscale,
-        migrations = MIGRATIONS,
-        select_impl = M.config.select_impl,
-    })
-end
-
 local setup_done = false
 
 --- Register the :Sync* commands. Idempotent: commands are created once;
@@ -850,23 +852,23 @@ function M.setup(config)
         return
     end
     setup_done = true
-    api.nvim_create_user_command('SyncStatus', M.cmd_status, {
-        desc = 'Floating syncthing status: reachability, per-folder completion, state',
-    })
     api.nvim_create_user_command('PushToPhone', M.cmd_push, {
         desc = 'Copy the current buffer file into the Sync dir (confirms first)',
-    })
-    api.nvim_create_user_command('TailscaleStatus', M.cmd_tailscale, {
-        desc = 'Floating read-only `tailscale status` view',
     })
     api.nvim_create_user_command('SyncDocs', M.cmd_docs, {
         desc = 'Open the Syncthing REST + Tailscale CLI documentation',
     })
-    api.nvim_create_user_command('SyncValidate', M.cmd_validate, {
-        desc = 'Sync per-check validation report',
+    api.nvim_create_user_command('SyncStatus', M.cmd_status, {
+        desc = 'Floating syncthing status: reachability, per-folder completion, state',
     })
     api.nvim_create_user_command('SyncUpdateCheck', M.cmd_update_check, {
         desc = 'Syncthing + tailscale update check',
+    })
+    api.nvim_create_user_command('SyncValidate', M.cmd_validate, {
+        desc = 'Sync per-check validation report',
+    })
+    api.nvim_create_user_command('TailscaleStatus', M.cmd_tailscale, {
+        desc = 'Floating read-only `tailscale status` view',
     })
 end
 
