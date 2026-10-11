@@ -4,16 +4,16 @@
 -------------------------------------------------------------------
 ---@meta
 ---@class                       cmp
----@field mapping?                                         cmp.mapping
----@field config?                                          cmp.config
 ---@field ConfirmBehavior?                                 cmp.ConfirmBehavior
----@field visible?                                         fun(): boolean
+---@field config?                                          cmp.config
+---@field mapping?                                         cmp.mapping
 ---@field select_next_item?                                fun(delta: number)
 ---@field select_prev_item?                                fun(delta:number)
+---@field visible?                                         fun(): boolean
 ---@class                   cmp.mapping
----@field scroll_docs                                      fun(delta: number)
 ---@field complete                                         fun(delta: number)
 ---@field confirm                                          fun(opts: { behavior: any, select: boolean })
+---@field scroll_docs                                      fun(delta: number)
 ---@class                   cmp.config
 ---@field sources?                                         fun(sources: any): any
 ---@class                   cmp.ConfirmBehavior
@@ -21,24 +21,24 @@
 ---@field Replace?                                         string
 ---@alias vim.lsp.protocol.MarkupKind                      'plaintext'|'markdown'
 ---@class             vim.lsp.protocol.CompletionItem
----@field label?                                           string
----@field kind?                                            integer
 ---@field documentation?                                   string | { kind: vim.lsp.protocol.MarkupKind, value: string }
+---@field kind?                                            integer
+---@field label?                                           string
 ---@class                     BlinkCmp
 ---@alias blink.cmp.CompletionDocumentationDrawOpts        any
----@alias blink.cmp.Mode                                   'cmdline' | 'cmdwin' | 'term' | 'default'
 ---@class               blink.cmp.CompletionItem           :         vim.lsp.protocol.CompletionItem
+--- @field client_id?                                      number
+--- @field client_name?                                    string
+--- @field cursor_column?                                  number
+--- @field exact?                                          boolean
+--- @field kind_hl?                                        string
+--- @field kind_icon?                                      string
+--- @field kind_name?                                      string
+--- @field score?                                          number
 --- @field score_offset?                                   number
 --- @field source_id?                                      string
 --- @field source_name?                                    string
---- @field cursor_column?                                  number
---- @field client_id?                                      number
---- @field client_name?                                    string
---- @field kind_name?                                      string
---- @field kind_icon?                                      string
---- @field kind_hl?                                        string
---- @field exact?                                          boolean
---- @field score?                                          number
+---@alias blink.cmp.Mode                                   'cmdline' | 'cmdwin' | 'term' | 'default'
 
 return {
     CompletionItemKind = {

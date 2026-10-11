@@ -13,23 +13,23 @@
 ---@field nvidia_watch                                     fun(interval?: number): nil
 ---@field dashboard                                        fun(): nil
 local M = {}
----@param cmd                                              string
----@return string[]?                                       lines
----@return string?                                         error
-function run_cmd(cmd) end
-
 ---@param title                                            string
 ---@param lines                                            string[]
 ---@param ft?                                              string
 function create_scratch(title, lines, ft) end
 
----@param lines?                                           string[]
----@return string[]                                        layers
-function parse_layers_from_vulkaninfo(lines) end
-
 ---@param fields                                           string[]
 ---@return string[]?                                       lines
 ---@return string?                                         error
 function nvidia_smi_query(fields) end
+
+---@param lines?                                           string[]
+---@return string[]                                        layers
+function parse_layers_from_vulkaninfo(lines) end
+
+---@param cmd                                              string
+---@return string[]?                                       lines
+---@return string?                                         error
+function run_cmd(cmd) end
 
 return M

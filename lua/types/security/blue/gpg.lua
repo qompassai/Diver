@@ -40,28 +40,28 @@
 local M = {}
 ---@param bufread boolean True if called from BufReadCmd, false from FileReadCmd
 ---@return nil
-function M.init(bufread) end
-
----@param bufread boolean True if called from BufReadCmd, false from FileReadCmd
----@return nil
 function M.decrypt(bufread) end
-
----@return nil
-function M.encrypt() end
-
----@return nil
-function M.view_recipients() end
-
----@return nil
-function M.edit_recipients() end
-
----@return nil
-function M.view_options() end
 
 ---Opens an interface to modify GPG options for the current buffer.
 ---Full implementation would create an editable scratch buffer.
 ---
 ---@return nil
 function M.edit_options() end
+
+---@return nil
+function M.edit_recipients() end
+
+---@return nil
+function M.encrypt() end
+
+---@param bufread boolean True if called from BufReadCmd, false from FileReadCmd
+---@return nil
+function M.init(bufread) end
+
+---@return nil
+function M.view_options() end
+
+---@return nil
+function M.view_recipients() end
 
 return M

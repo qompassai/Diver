@@ -27,17 +27,17 @@
 ---@class                 LazyVimCmp
 ---@field expand                                    fun(opts: any): any
 ---@field map                                       fun(mappings: string[]): any
----@class                 LazyVimConfigIconsKinds
----@field                                           [string] string
----@class                 LazyVimConfigIcons
----@field kinds                                     LazyVimConfigIconsKinds
 ---@class                 LazyVimConfig
 ---@field icons                                     LazyVimConfigIcons
+---@class                 LazyVimConfigIcons
+---@field kinds                                     LazyVimConfigIconsKinds
+---@class                 LazyVimConfigIconsKinds
+---@field                                           [string] string
+---@class                 LazyVimDocs
+---@field blink_main                                boolean?
 ---@class                 LazyVimGlobal
 ---@field cmp                                       LazyVimCmp
 ---@field config                                    LazyVimConfig
----@class                 LazyVimDocs
----@field blink_main                                boolean?
 ---@type                  LazyVimDocs
 lazyvim_docs = lazyvim_docs
 ---@type LazyVimGlobal
