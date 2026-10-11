@@ -75,18 +75,18 @@
 --                                 Keys: host, port, user, database,
 --                                 password, tls.
 --   :RedisDetach                   Detach the current buffer's connection.
---   :RedisRun                      Run the buffer, or a visual range, as
---                                   one Redis command per line.
---   :RedisKeys [pattern]           Scan keys matching pattern (default *)
---                                   using --scan, not the blocking KEYS.
---   :RedisServerInfo [section]     Run the Redis INFO command.
---   :RedisTerminal                 Open an interactive redis-cli REPL.
 --   :RedisInfo                     Show the current buffer's connection
 --                                   info. (Session info, not server INFO —
 --                                   named to match the other three
 --                                   siblings' M.info(bufnr) convention;
 --                                   use :RedisServerInfo for the Redis
 --                                   INFO command.)
+--   :RedisKeys [pattern]           Scan keys matching pattern (default *)
+--                                   using --scan, not the blocking KEYS.
+--   :RedisRun                      Run the buffer, or a visual range, as
+--                                   one Redis command per line.
+--   :RedisServerInfo [section]     Run the Redis INFO command.
+--   :RedisTerminal                 Open an interactive redis-cli REPL.
 --
 -- Agent API:
 --   require('config.data.redis').query(conn, command, on_result, opts)
@@ -110,9 +110,6 @@ local fs = vim.fs
 
 local M = {}
 
-local KEY_COUNT_MAX = 8
-local QUERY_TIMEOUT_MS = 15000
-local RESULT_LINE_COUNT_MAX = 5000
 local COMMAND_BYTES_MAX = 1048576
 
 local CONNECTION_KEYS = {
@@ -123,6 +120,14 @@ local CONNECTION_KEYS = {
     tls = true,
     user = true,
 }
+
+local defaults = {
+    notify = true,
+}
+
+local KEY_COUNT_MAX = 8
+local QUERY_TIMEOUT_MS = 15000
+local RESULT_LINE_COUNT_MAX = 5000
 
 -- Best-effort, non-exhaustive typo guard for opts.readonly. Not a security
 -- boundary: EVAL/FUNCTION/MULTI can still write, and this list will never
@@ -174,11 +179,11 @@ local WRITE_COMMAND_NAMES = {
     RPUSH = true,
     RPUSHX = true,
     SADD = true,
+    SDIFFSTORE = true,
     SET = true,
     SETEX = true,
     SETNX = true,
     SETRANGE = true,
-    SDIFFSTORE = true,
     SINTERSTORE = true,
     SMOVE = true,
     SPOP = true,
@@ -193,18 +198,13 @@ local WRITE_COMMAND_NAMES = {
     ZPOPMAX = true,
     ZPOPMIN = true,
     ZREM = true,
+    ZREMRANGEBYLEX = true,
     ZREMRANGEBYRANK = true,
     ZREMRANGEBYSCORE = true,
-    ZREMRANGEBYLEX = true,
-}
-
-local defaults = {
-    notify = true,
 }
 
 ---@class RedisConfigOpts
 ---@field notify? boolean
-
 ---@type RedisConfigOpts
 M.config = vim.deepcopy(defaults)
 
@@ -215,55 +215,17 @@ M.config = vim.deepcopy(defaults)
 ---@field port? integer
 ---@field tls? boolean
 ---@field user? string
-
 ---@class RedisSession
 ---@field bufnr integer
 ---@field conn RedisConnection
 ---@field readonly boolean
 ---@field root string
-
 ---@class RedisQueryOpts
 ---@field readonly? boolean
-
 M.state = {
     ---@type table<integer, RedisSession>
     sessions = {},
 }
-
----@param message string
----@param level? integer
-local function notify(message, level)
-    if not M.config.notify then
-        return
-    end
-
-    vim.notify(message, level or vim.log.levels.INFO, {
-        title = 'redis',
-    })
-end
-
----@return boolean
-local function has_redis_cli()
-    return vim.fn.executable('redis-cli') == 1
-end
-
----@param value string
----@return boolean
-local function string_is_safe(value)
-    if type(value) ~= 'string' then
-        return false
-    end
-
-    if value == '' then
-        return false
-    end
-
-    if value:find('%z') ~= nil then
-        return false
-    end
-
-    return true
-end
 
 ---@param bufnr integer
 ---@return boolean
@@ -277,110 +239,6 @@ local function buffer_is_usable(bufnr)
     end
 
     return api.nvim_buf_is_valid(bufnr)
-end
-
----@param bufnr integer
----@return string
-local function resolve_root(bufnr)
-    local root = fs.root(bufnr, { '.git' })
-
-    if root ~= nil then
-        return root
-    end
-
-    return vim.fn.getcwd()
-end
-
----@param conn RedisConnection
----@return boolean
----@return string|nil
-local function validate_connection(conn)
-    if type(conn) ~= 'table' then
-        return false, 'connection must be a table'
-    end
-
-    if conn.host ~= nil and not string_is_safe(conn.host) then
-        return false, 'host must be a non-empty string'
-    end
-
-    if conn.user ~= nil and not string_is_safe(conn.user) then
-        return false, 'user must be a non-empty string'
-    end
-
-    if conn.password ~= nil and type(conn.password) ~= 'string' then
-        return false, 'password must be a string'
-    end
-
-    if conn.port ~= nil then
-        if type(conn.port) ~= 'number' or conn.port % 1 ~= 0 then
-            return false, 'port must be an integer'
-        end
-
-        if conn.port < 1 or conn.port > 65535 then
-            return false, 'port must be between 1 and 65535'
-        end
-    end
-
-    if conn.database ~= nil then
-        if type(conn.database) ~= 'number' or conn.database % 1 ~= 0 then
-            return false, 'database must be an integer'
-        end
-
-        if conn.database < 0 then
-            return false, 'database must be zero or greater'
-        end
-    end
-
-    if conn.tls ~= nil and type(conn.tls) ~= 'boolean' then
-        return false, 'tls must be a boolean'
-    end
-
-    return true, nil
-end
-
----@param bufnr integer
----@return RedisSession|nil
-local function get_session(bufnr)
-    if not buffer_is_usable(bufnr) then
-        return nil
-    end
-
-    return M.state.sessions[bufnr]
-end
-
----@param opts RedisQueryOpts|nil
----@return boolean
-local function resolve_query_readonly(opts)
-    if type(opts) ~= 'table' then
-        return true
-    end
-
-    if opts.readonly == nil then
-        return true
-    end
-
-    return opts.readonly == true
-end
-
----@param command string
----@return boolean
----@return string|nil
-local function check_readonly_command(command)
-    local name = command:match('^%s*(%a+)')
-
-    if name == nil then
-        return true, nil
-    end
-
-    if WRITE_COMMAND_NAMES[name:upper()] then
-        return false,
-            string.format(
-                '%s looks like a write command; refusing under readonly (pass { readonly = false } to override)',
-                name:upper()
-            )
-    end
-
-    return true, nil
 end
 
 ---@param conn RedisConnection
@@ -428,6 +286,145 @@ local function build_env(conn)
     end
 
     return { REDISCLI_AUTH = conn.password }
+end
+
+---@param command string
+---@return boolean
+---@return string|nil
+local function check_readonly_command(command)
+    local name = command:match('^%s*(%a+)')
+
+    if name == nil then
+        return true, nil
+    end
+
+    if WRITE_COMMAND_NAMES[name:upper()] then
+        return false,
+            string.format(
+                '%s looks like a write command; refusing under readonly (pass { readonly = false } to override)',
+                name:upper()
+            )
+    end
+
+    return true, nil
+end
+
+---@param bufnr integer
+---@return RedisSession|nil
+local function get_session(bufnr)
+    if not buffer_is_usable(bufnr) then
+        return nil
+    end
+
+    return M.state.sessions[bufnr]
+end
+
+---@return boolean
+local function has_redis_cli()
+    return vim.fn.executable('redis-cli') == 1
+end
+
+---@param message string
+---@param level? integer
+local function notify(message, level)
+    if not M.config.notify then
+        return
+    end
+
+    vim.notify(message, level or vim.log.levels.INFO, {
+        title = 'redis',
+    })
+end
+
+---@param opts RedisQueryOpts|nil
+---@return boolean
+local function resolve_query_readonly(opts)
+    if type(opts) ~= 'table' then
+        return true
+    end
+
+    if opts.readonly == nil then
+        return true
+    end
+
+    return opts.readonly == true
+end
+
+---@param bufnr integer
+---@return string
+local function resolve_root(bufnr)
+    local root = fs.root(bufnr, { '.git' })
+
+    if root ~= nil then
+        return root
+    end
+
+    return vim.fn.getcwd()
+end
+
+---@param value string
+---@return boolean
+local function string_is_safe(value)
+    if type(value) ~= 'string' then
+        return false
+    end
+
+    if value == '' then
+        return false
+    end
+
+    if value:find('%z') ~= nil then
+        return false
+    end
+
+    return true
+end
+
+---@param conn RedisConnection
+---@return boolean
+---@return string|nil
+local function validate_connection(conn)
+    if type(conn) ~= 'table' then
+        return false, 'connection must be a table'
+    end
+
+    if conn.host ~= nil and not string_is_safe(conn.host) then
+        return false, 'host must be a non-empty string'
+    end
+
+    if conn.user ~= nil and not string_is_safe(conn.user) then
+        return false, 'user must be a non-empty string'
+    end
+
+    if conn.password ~= nil and type(conn.password) ~= 'string' then
+        return false, 'password must be a string'
+    end
+
+    if conn.port ~= nil then
+        if type(conn.port) ~= 'number' or conn.port % 1 ~= 0 then
+            return false, 'port must be an integer'
+        end
+
+        if conn.port < 1 or conn.port > 65535 then
+            return false, 'port must be between 1 and 65535'
+        end
+    end
+
+    if conn.database ~= nil then
+        if type(conn.database) ~= 'number' or conn.database % 1 ~= 0 then
+            return false, 'database must be an integer'
+        end
+
+        if conn.database < 0 then
+            return false, 'database must be zero or greater'
+        end
+    end
+
+    if conn.tls ~= nil and type(conn.tls) ~= 'boolean' then
+        return false, 'tls must be a boolean'
+    end
+
+    return true, nil
 end
 
 ---@param bufnr integer
@@ -510,6 +507,26 @@ function M.info(bufnr)
     }))
 end
 
+---@param conn RedisConnection
+---@param input string
+---@param mode_flags string[]
+---@param on_done fun(result: vim.SystemCompleted)
+local function run_process(conn, input, mode_flags, on_done)
+    assert(type(input) == 'string')
+    assert(#input <= COMMAND_BYTES_MAX, 'command exceeds size bound')
+
+    vim.system(build_argv(conn, mode_flags), {
+        env = build_env(conn),
+        stdin = input,
+        text = true,
+        timeout = QUERY_TIMEOUT_MS,
+    }, function(result)
+        vim.schedule(function()
+            on_done(result)
+        end)
+    end)
+end
+
 ---@param lines string[]
 ---@param title string
 local function show_result_buffer(lines, title)
@@ -547,26 +564,6 @@ local function show_result_buffer(lines, title)
     vim.cmd('botright split')
     api.nvim_win_set_buf(api.nvim_get_current_win(), bufnr)
     api.nvim_win_resize(api.nvim_get_current_win(), -1, math.min(20, #lines + 1))
-end
-
----@param conn RedisConnection
----@param input string
----@param mode_flags string[]
----@param on_done fun(result: vim.SystemCompleted)
-local function run_process(conn, input, mode_flags, on_done)
-    assert(type(input) == 'string')
-    assert(#input <= COMMAND_BYTES_MAX, 'command exceeds size bound')
-
-    vim.system(build_argv(conn, mode_flags), {
-        env = build_env(conn),
-        stdin = input,
-        text = true,
-        timeout = QUERY_TIMEOUT_MS,
-    }, function(result)
-        vim.schedule(function()
-            on_done(result)
-        end)
-    end)
 end
 
 ---@param session RedisSession
@@ -663,64 +660,6 @@ function M.query(conn, command, on_result, opts)
     end)
 end
 
----Blocking variant of M.query for scripted/headless callers.
----
----opts.readonly defaults to true, matching M.query.
----
----@param conn RedisConnection
----@param command string Redis command to run.
----@param opts? RedisQueryOpts
----@return any value
----@return string|nil err
-function M.query_sync(conn, command, opts)
-    if not has_redis_cli() then
-        return nil, 'redis-cli executable was not found on PATH'
-    end
-
-    local valid, validation_error = validate_connection(conn)
-
-    if not valid then
-        return nil, validation_error
-    end
-
-    if type(command) ~= 'string' or command:match('^%s*$') then
-        return nil, 'command must be a non-empty string'
-    end
-
-    if resolve_query_readonly(opts) then
-        local allowed, guard_error = check_readonly_command(command)
-
-        if not allowed then
-            return nil, guard_error
-        end
-    end
-
-    local result = vim.system(build_argv(conn, { '-3', '--json' }), {
-        env = build_env(conn),
-        stdin = command,
-        text = true,
-        timeout = QUERY_TIMEOUT_MS,
-    }):wait()
-
-    if result.code ~= 0 then
-        return nil, result.stderr ~= '' and result.stderr or 'redis-cli exited with code ' .. result.code
-    end
-
-    local output = (result.stdout or ''):match('^%s*(.-)%s*$')
-
-    if output == '' then
-        return nil, nil
-    end
-
-    local ok, decoded = pcall(vim.json.decode, output)
-
-    if not ok then
-        return nil, 'failed to decode redis-cli JSON output: ' .. tostring(decoded)
-    end
-
-    return decoded, nil
-end
-
 ---Non-blocking variant of M.query_sync for the dataaccess bulk lane:
 ---the redis-cli wait happens in libuv and cb fires on the main loop
 ---with (value, nil) or (nil, err).
@@ -811,6 +750,66 @@ function M.query_buffer(bufnr, command, on_result, opts)
     M.query(session.conn, command, on_result, opts)
 end
 
+---Blocking variant of M.query for scripted/headless callers.
+---
+---opts.readonly defaults to true, matching M.query.
+---
+---@param conn RedisConnection
+---@param command string Redis command to run.
+---@param opts? RedisQueryOpts
+---@return any value
+---@return string|nil err
+function M.query_sync(conn, command, opts)
+    if not has_redis_cli() then
+        return nil, 'redis-cli executable was not found on PATH'
+    end
+
+    local valid, validation_error = validate_connection(conn)
+
+    if not valid then
+        return nil, validation_error
+    end
+
+    if type(command) ~= 'string' or command:match('^%s*$') then
+        return nil, 'command must be a non-empty string'
+    end
+
+    if resolve_query_readonly(opts) then
+        local allowed, guard_error = check_readonly_command(command)
+
+        if not allowed then
+            return nil, guard_error
+        end
+    end
+
+    local sysobj = vim.system(build_argv(conn, { '-3', '--json' }), {
+        env = build_env(conn),
+        stdin = command,
+        text = true,
+        timeout = QUERY_TIMEOUT_MS,
+    })
+    ---@cast sysobj vim.SystemObj
+    local result = sysobj:wait()
+
+    if result.code ~= 0 then
+        return nil, result.stderr ~= '' and result.stderr or 'redis-cli exited with code ' .. result.code
+    end
+
+    local output = (result.stdout or ''):match('^%s*(.-)%s*$')
+
+    if output == '' then
+        return nil, nil
+    end
+
+    local ok, decoded = pcall(vim.json.decode, output)
+
+    if not ok then
+        return nil, 'failed to decode redis-cli JSON output: ' .. tostring(decoded)
+    end
+
+    return decoded, nil
+end
+
 ---@param bufnr integer
 ---@param line1 integer
 ---@param line2 integer
@@ -818,26 +817,6 @@ end
 local function buffer_commands(bufnr, line1, line2)
     local lines = api.nvim_buf_get_lines(bufnr, line1 - 1, line2, false)
     return table.concat(lines, '\n')
-end
-
----@param opts vim.api.keyset.create_user_command.command_args
-function M.run(opts)
-    local bufnr = api.nvim_get_current_buf()
-    local session = get_session(bufnr)
-
-    if session == nil then
-        notify('No connection is attached to this buffer. Use :RedisAttach first', vim.log.levels.ERROR)
-        return
-    end
-
-    local input = buffer_commands(bufnr, opts.line1, opts.line2)
-
-    if input:match('^%s*$') then
-        notify('No commands to run', vim.log.levels.WARN)
-        return
-    end
-
-    run_and_show(session, input, 'redis://' .. (session.conn.host or '127.0.0.1') .. ' [result]')
 end
 
 ---@param pattern? string
@@ -885,6 +864,26 @@ function M.keys(pattern)
     end)
 end
 
+---@param opts vim.api.keyset.create_user_command.command_args
+function M.run(opts)
+    local bufnr = api.nvim_get_current_buf()
+    local session = get_session(bufnr)
+
+    if session == nil then
+        notify('No connection is attached to this buffer. Use :RedisAttach first', vim.log.levels.ERROR)
+        return
+    end
+
+    local input = buffer_commands(bufnr, opts.line1, opts.line2)
+
+    if input:match('^%s*$') then
+        notify('No commands to run', vim.log.levels.WARN)
+        return
+    end
+
+    run_and_show(session, input, 'redis://' .. (session.conn.host or '127.0.0.1') .. ' [result]')
+end
+
 ---@param section? string
 function M.server_info(section)
     local bufnr = api.nvim_get_current_buf()
@@ -922,6 +921,19 @@ function M.terminal()
         term = true,
     })
     vim.cmd('startinsert')
+end
+
+local function create_autocmds()
+    local group = api.nvim_create_augroup('NativeRedis', {
+        clear = true,
+    })
+
+    api.nvim_create_autocmd('BufDelete', {
+        callback = function(args)
+            M.state.sessions[args.buf] = nil
+        end,
+        group = group,
+    })
 end
 
 ---@param args string
@@ -997,11 +1009,10 @@ local function create_commands()
         desc = 'Detach the Redis connection from the current buffer',
     })
 
-    api.nvim_create_user_command('RedisRun', function(opts)
-        M.run(opts)
+    api.nvim_create_user_command('RedisInfo', function()
+        M.info(api.nvim_get_current_buf())
     end, {
-        desc = 'Run the buffer, or a visual range, as Redis commands (one per line)',
-        range = '%',
+        desc = "Show the current buffer's Redis connection info",
     })
 
     api.nvim_create_user_command('RedisKeys', function(opts)
@@ -1009,6 +1020,13 @@ local function create_commands()
     end, {
         desc = 'Scan keys matching a pattern (default *) using --scan, not KEYS',
         nargs = '?',
+    })
+
+    api.nvim_create_user_command('RedisRun', function(opts)
+        M.run(opts)
+    end, {
+        desc = 'Run the buffer, or a visual range, as Redis commands (one per line)',
+        range = '%',
     })
 
     api.nvim_create_user_command('RedisServerInfo', function(opts)
@@ -1022,25 +1040,6 @@ local function create_commands()
         M.terminal()
     end, {
         desc = 'Open an interactive redis-cli REPL for the attached connection',
-    })
-
-    api.nvim_create_user_command('RedisInfo', function()
-        M.info(api.nvim_get_current_buf())
-    end, {
-        desc = "Show the current buffer's Redis connection info",
-    })
-end
-
-local function create_autocmds()
-    local group = api.nvim_create_augroup('NativeRedis', {
-        clear = true,
-    })
-
-    api.nvim_create_autocmd('BufDelete', {
-        callback = function(args)
-            M.state.sessions[args.buf] = nil
-        end,
-        group = group,
     })
 end
 
@@ -1065,9 +1064,9 @@ function M.setup(opts)
         )
     end
 
-    M.redis_ftd()
-    create_commands()
     create_autocmds()
+    create_commands()
+    M.redis_ftd()
 
     return M
 end

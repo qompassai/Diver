@@ -25,11 +25,11 @@
 -- Commands:
 --   :SqliteAttach[!] [path]  Attach a database file (bang = readonly).
 --   :SqliteDetach            Detach the current buffer's database.
---   :SqliteRun               Run the buffer, or a visual range, as SQL.
---   :SqliteTables            List tables in the attached database.
---   :SqliteSchema [table]    Show schema for the database or one table.
---   :SqliteTerminal          Open an interactive sqlite3 REPL in a split.
 --   :SqliteInfo              Show the current buffer's attachment info.
+--   :SqliteRun               Run the buffer, or a visual range, as SQL.
+--   :SqliteSchema [table]    Show schema for the database or one table.
+--   :SqliteTables            List tables in the attached database.
+--   :SqliteTerminal          Open an interactive sqlite3 REPL in a split.
 --
 -- Agent API:
 --   require('config.data.sqlite').query(path, sql, on_result, opts)
@@ -49,18 +49,11 @@ local uv = vim.uv
 
 local M = {}
 
-local DIRECTORY_ENTRY_COUNT_MAX = 256
-local QUERY_TIMEOUT_MS = 15000
-local RESULT_LINE_COUNT_MAX = 5000
-local SQL_BYTES_MAX = 1048576
-
 local DB_EXTENSIONS = {
     db = true,
     sqlite = true,
     sqlite3 = true,
 }
-
-local MEMORY_PATH = ':memory:'
 
 local defaults = {
     auto_attach = true,
@@ -72,11 +65,17 @@ local defaults = {
     notify = true,
 }
 
+local DIRECTORY_ENTRY_COUNT_MAX = 256
+
+local MEMORY_PATH = ':memory:'
+local QUERY_TIMEOUT_MS = 15000
+local RESULT_LINE_COUNT_MAX = 5000
+local SQL_BYTES_MAX = 1048576
+
 ---@class SqliteConfigOpts
 ---@field auto_attach? boolean
 ---@field command_flags? string[]
 ---@field notify? boolean
-
 ---@type SqliteConfigOpts
 M.config = vim.deepcopy(defaults)
 
@@ -85,14 +84,81 @@ M.config = vim.deepcopy(defaults)
 ---@field path string
 ---@field readonly boolean
 ---@field root string
-
 ---@class SqliteQueryOpts
 ---@field readonly? boolean
-
 M.state = {
     ---@type table<integer, SqliteSession>
     sessions = {},
 }
+
+---@param bufnr integer
+---@return boolean
+local function buffer_is_usable(bufnr)
+    if type(bufnr) ~= 'number' then
+        return false
+    end
+
+    if bufnr < 0 then
+        return false
+    end
+
+    return api.nvim_buf_is_valid(bufnr)
+end
+
+---@param path string
+---@param readonly boolean
+---@param extra_flags string[]
+---@return string[]
+local function build_argv(path, readonly, extra_flags)
+    local argv = { 'sqlite3' }
+
+    for _, flag in ipairs(M.config.command_flags) do
+        argv[#argv + 1] = flag
+    end
+
+    if readonly then
+        argv[#argv + 1] = '-readonly'
+    end
+
+    for _, flag in ipairs(extra_flags or {}) do
+        argv[#argv + 1] = flag
+    end
+
+    argv[#argv + 1] = path
+
+    return argv
+end
+
+---@param bufnr integer
+---@return SqliteSession|nil
+local function get_session(bufnr)
+    if not buffer_is_usable(bufnr) then
+        return nil
+    end
+
+    return M.state.sessions[bufnr]
+end
+
+---@return boolean
+local function has_sqlite3()
+    return vim.fn.executable('sqlite3') == 1
+end
+
+---@param name string
+---@return boolean
+local function is_db_filename(name)
+    if type(name) ~= 'string' then
+        return false
+    end
+
+    local extension = name:match('%.([%w]+)$')
+
+    if extension == nil then
+        return false
+    end
+
+    return DB_EXTENSIONS[extension:lower()] == true
+end
 
 ---@param message string
 ---@param level? integer
@@ -104,11 +170,6 @@ local function notify(message, level)
     vim.notify(message, level or vim.log.levels.INFO, {
         title = 'sqlite',
     })
-end
-
----@return boolean
-local function has_sqlite3()
-    return vim.fn.executable('sqlite3') == 1
 end
 
 ---@param path string
@@ -127,48 +188,6 @@ local function path_is_safe(path)
     end
 
     return true
-end
-
----@param bufnr integer
----@return boolean
-local function buffer_is_usable(bufnr)
-    if type(bufnr) ~= 'number' then
-        return false
-    end
-
-    if bufnr < 0 then
-        return false
-    end
-
-    return api.nvim_buf_is_valid(bufnr)
-end
-
----@param bufnr integer
----@return string
-local function resolve_root(bufnr)
-    local root = fs.root(bufnr, { '.git' })
-
-    if root ~= nil then
-        return root
-    end
-
-    return vim.fn.getcwd()
-end
-
----@param name string
----@return boolean
-local function is_db_filename(name)
-    if type(name) ~= 'string' then
-        return false
-    end
-
-    local extension = name:match('%.([%w]+)$')
-
-    if extension == nil then
-        return false
-    end
-
-    return DB_EXTENSIONS[extension:lower()] == true
 end
 
 ---@param directory string
@@ -204,16 +223,6 @@ local function list_db_candidates(directory)
     return candidates
 end
 
----@param bufnr integer
----@return SqliteSession|nil
-local function get_session(bufnr)
-    if not buffer_is_usable(bufnr) then
-        return nil
-    end
-
-    return M.state.sessions[bufnr]
-end
-
 ---@param opts SqliteQueryOpts|nil
 ---@return boolean
 local function resolve_query_readonly(opts)
@@ -228,28 +237,16 @@ local function resolve_query_readonly(opts)
     return opts.readonly == true
 end
 
----@param path string
----@param readonly boolean
----@param extra_flags string[]
----@return string[]
-local function build_argv(path, readonly, extra_flags)
-    local argv = { 'sqlite3' }
+---@param bufnr integer
+---@return string
+local function resolve_root(bufnr)
+    local root = fs.root(bufnr, { '.git' })
 
-    for _, flag in ipairs(M.config.command_flags) do
-        argv[#argv + 1] = flag
+    if root ~= nil then
+        return root
     end
 
-    if readonly then
-        argv[#argv + 1] = '-readonly'
-    end
-
-    for _, flag in ipairs(extra_flags or {}) do
-        argv[#argv + 1] = flag
-    end
-
-    argv[#argv + 1] = path
-
-    return argv
+    return vim.fn.getcwd()
 end
 
 ---@param bufnr integer
@@ -336,6 +333,27 @@ function M.info(bufnr)
     }))
 end
 
+---@param path string
+---@param readonly boolean
+---@param sql string
+---@param extra_flags string[]
+---@param on_done fun(result: vim.SystemCompleted)
+local function run_process(path, readonly, sql, extra_flags, on_done)
+    assert(path_is_safe(path))
+    assert(type(sql) == 'string')
+    assert(#sql <= SQL_BYTES_MAX, 'query exceeds size bound')
+
+    vim.system(build_argv(path, readonly, extra_flags), {
+        stdin = sql,
+        text = true,
+        timeout = QUERY_TIMEOUT_MS,
+    }, function(result)
+        vim.schedule(function()
+            on_done(result)
+        end)
+    end)
+end
+
 ---@param lines string[]
 ---@param title string
 local function show_result_buffer(lines, title)
@@ -373,27 +391,6 @@ local function show_result_buffer(lines, title)
     vim.cmd('botright split')
     api.nvim_win_set_buf(api.nvim_get_current_win(), bufnr)
     api.nvim_win_resize(api.nvim_get_current_win(), -1, math.min(20, #lines + 1))
-end
-
----@param path string
----@param readonly boolean
----@param sql string
----@param extra_flags string[]
----@param on_done fun(result: vim.SystemCompleted)
-local function run_process(path, readonly, sql, extra_flags, on_done)
-    assert(path_is_safe(path))
-    assert(type(sql) == 'string')
-    assert(#sql <= SQL_BYTES_MAX, 'query exceeds size bound')
-
-    vim.system(build_argv(path, readonly, extra_flags), {
-        stdin = sql,
-        text = true,
-        timeout = QUERY_TIMEOUT_MS,
-    }, function(result)
-        vim.schedule(function()
-            on_done(result)
-        end)
-    end)
 end
 
 ---@param session SqliteSession
@@ -482,59 +479,6 @@ function M.query(path, sql, on_result, opts)
     end)
 end
 
----Blocking variant of M.query for scripted/headless callers.
----
----opts.readonly defaults to true, matching M.query.
----
----@param path string Database file path, or ':memory:'.
----@param sql string SQL text to run.
----@param opts? SqliteQueryOpts
----@return table[]|nil rows
----@return string|nil err
-function M.query_sync(path, sql, opts)
-    if not has_sqlite3() then
-        return nil, 'sqlite3 executable was not found on PATH'
-    end
-
-    if not path_is_safe(path) then
-        return nil, 'path must be a non-empty string'
-    end
-
-    if type(sql) ~= 'string' or sql:match('^%s*$') then
-        return nil, 'sql must be a non-empty string'
-    end
-
-    local readonly = resolve_query_readonly(opts)
-
-    local result = vim.system(build_argv(path, readonly, { '-json' }), {
-        stdin = sql,
-        text = true,
-        timeout = QUERY_TIMEOUT_MS,
-    }):wait()
-
-    if result.code ~= 0 then
-        return nil, result.stderr ~= '' and result.stderr or 'sqlite3 exited with code ' .. result.code
-    end
-
-    local output = (result.stdout or ''):match('^%s*(.-)%s*$')
-
-    if output == '' then
-        return {}, nil
-    end
-
-    local ok, decoded = pcall(vim.json.decode, output)
-
-    if not ok then
-        return nil, 'failed to decode sqlite3 JSON output: ' .. tostring(decoded)
-    end
-
-    if type(decoded) ~= 'table' then
-        return nil, 'sqlite3 JSON output was not an array'
-    end
-
-    return decoded, nil
-end
-
 ---Non-blocking variant of M.query_sync for the dataaccess bulk lane:
 ---the sqlite3 wait happens in libuv and cb fires on the main loop
 ---with (rows, nil) or (nil, err).
@@ -620,6 +564,61 @@ function M.query_buffer(bufnr, sql, on_result, opts)
     M.query(session.path, sql, on_result, opts)
 end
 
+---Blocking variant of M.query for scripted/headless callers.
+---
+---opts.readonly defaults to true, matching M.query.
+---
+---@param path string Database file path, or ':memory:'.
+---@param sql string SQL text to run.
+---@param opts? SqliteQueryOpts
+---@return table[]|nil rows
+---@return string|nil err
+function M.query_sync(path, sql, opts)
+    if not has_sqlite3() then
+        return nil, 'sqlite3 executable was not found on PATH'
+    end
+
+    if not path_is_safe(path) then
+        return nil, 'path must be a non-empty string'
+    end
+
+    if type(sql) ~= 'string' or sql:match('^%s*$') then
+        return nil, 'sql must be a non-empty string'
+    end
+
+    local readonly = resolve_query_readonly(opts)
+
+    local sysobj = vim.system(build_argv(path, readonly, { '-json' }), {
+        stdin = sql,
+        text = true,
+        timeout = QUERY_TIMEOUT_MS,
+    })
+    ---@cast sysobj vim.SystemObj
+    local result = sysobj:wait()
+
+    if result.code ~= 0 then
+        return nil, result.stderr ~= '' and result.stderr or 'sqlite3 exited with code ' .. result.code
+    end
+
+    local output = (result.stdout or ''):match('^%s*(.-)%s*$')
+
+    if output == '' then
+        return {}, nil
+    end
+
+    local ok, decoded = pcall(vim.json.decode, output)
+
+    if not ok then
+        return nil, 'failed to decode sqlite3 JSON output: ' .. tostring(decoded)
+    end
+
+    if type(decoded) ~= 'table' then
+        return nil, 'sqlite3 JSON output was not an array'
+    end
+
+    return decoded, nil
+end
+
 ---@param bufnr integer
 ---@param line1 integer
 ---@param line2 integer
@@ -649,18 +648,6 @@ function M.run(opts)
     run_and_show(session, sql, 'sqlite://' .. session.path .. ' [result]')
 end
 
-function M.tables()
-    local bufnr = api.nvim_get_current_buf()
-    local session = get_session(bufnr)
-
-    if session == nil then
-        notify('No database is attached to this buffer. Use :SqliteAttach first', vim.log.levels.ERROR)
-        return
-    end
-
-    run_and_show(session, '.tables\n', 'sqlite://' .. session.path .. ' [tables]')
-end
-
 ---@param table_name? string
 function M.schema(table_name)
     local bufnr = api.nvim_get_current_buf()
@@ -674,6 +661,18 @@ function M.schema(table_name)
     local sql = table_name and table_name ~= '' and string.format('.schema %s\n', table_name) or '.schema\n'
 
     run_and_show(session, sql, 'sqlite://' .. session.path .. ' [schema]')
+end
+
+function M.tables()
+    local bufnr = api.nvim_get_current_buf()
+    local session = get_session(bufnr)
+
+    if session == nil then
+        notify('No database is attached to this buffer. Use :SqliteAttach first', vim.log.levels.ERROR)
+        return
+    end
+
+    run_and_show(session, '.tables\n', 'sqlite://' .. session.path .. ' [tables]')
 end
 
 function M.terminal()
@@ -701,6 +700,66 @@ function M.terminal()
     vim.cmd('botright split')
     vim.fn.jobstart(argv, { term = true })
     vim.cmd('startinsert')
+end
+
+local function create_commands()
+    api.nvim_create_user_command('SqliteAttach', function(opts)
+        local path = opts.args
+
+        if path == '' then
+            notify('Usage: :SqliteAttach[!] path/to/database.sqlite3', vim.log.levels.ERROR)
+            return
+        end
+
+        local session, err = M.attach(api.nvim_get_current_buf(), path, opts.bang)
+
+        if session == nil then
+            notify(err or 'failed to attach database', vim.log.levels.ERROR)
+        end
+    end, {
+        bang = true,
+        complete = 'file',
+        desc = 'Attach a SQLite database file to the current buffer (bang = readonly)',
+        nargs = 1,
+    })
+
+    api.nvim_create_user_command('SqliteDetach', function()
+        M.detach(api.nvim_get_current_buf())
+    end, {
+        desc = 'Detach the SQLite database from the current buffer',
+    })
+
+    api.nvim_create_user_command('SqliteInfo', function()
+        M.info(api.nvim_get_current_buf())
+    end, {
+        desc = "Show the current buffer's SQLite attachment info",
+    })
+
+    api.nvim_create_user_command('SqliteRun', function(opts)
+        M.run(opts)
+    end, {
+        desc = 'Run the buffer, or a visual range, as SQL against the attached database',
+        range = '%',
+    })
+
+    api.nvim_create_user_command('SqliteSchema', function(opts)
+        M.schema(opts.args ~= '' and opts.args or nil)
+    end, {
+        desc = 'Show schema for the attached database or one table',
+        nargs = '?',
+    })
+
+    api.nvim_create_user_command('SqliteTables', function()
+        M.tables()
+    end, {
+        desc = 'List tables in the attached SQLite database',
+    })
+
+    api.nvim_create_user_command('SqliteTerminal', function()
+        M.terminal()
+    end, {
+        desc = 'Open an interactive sqlite3 REPL for the attached database',
+    })
 end
 
 ---@param bufnr integer
@@ -741,77 +800,9 @@ local function try_auto_attach(bufnr)
     M.attach(bufnr, candidates[1])
 end
 
-local function create_commands()
-    api.nvim_create_user_command('SqliteAttach', function(opts)
-        local path = opts.args
-
-        if path == '' then
-            notify('Usage: :SqliteAttach[!] path/to/database.sqlite3', vim.log.levels.ERROR)
-            return
-        end
-
-        local session, err = M.attach(api.nvim_get_current_buf(), path, opts.bang)
-
-        if session == nil then
-            notify(err or 'failed to attach database', vim.log.levels.ERROR)
-        end
-    end, {
-        bang = true,
-        complete = 'file',
-        desc = 'Attach a SQLite database file to the current buffer (bang = readonly)',
-        nargs = 1,
-    })
-
-    api.nvim_create_user_command('SqliteDetach', function()
-        M.detach(api.nvim_get_current_buf())
-    end, {
-        desc = 'Detach the SQLite database from the current buffer',
-    })
-
-    api.nvim_create_user_command('SqliteRun', function(opts)
-        M.run(opts)
-    end, {
-        desc = 'Run the buffer, or a visual range, as SQL against the attached database',
-        range = '%',
-    })
-
-    api.nvim_create_user_command('SqliteTables', function()
-        M.tables()
-    end, {
-        desc = 'List tables in the attached SQLite database',
-    })
-
-    api.nvim_create_user_command('SqliteSchema', function(opts)
-        M.schema(opts.args ~= '' and opts.args or nil)
-    end, {
-        desc = 'Show schema for the attached database or one table',
-        nargs = '?',
-    })
-
-    api.nvim_create_user_command('SqliteTerminal', function()
-        M.terminal()
-    end, {
-        desc = 'Open an interactive sqlite3 REPL for the attached database',
-    })
-
-    api.nvim_create_user_command('SqliteInfo', function()
-        M.info(api.nvim_get_current_buf())
-    end, {
-        desc = "Show the current buffer's SQLite attachment info",
-    })
-end
-
 local function create_autocmds()
     local group = api.nvim_create_augroup('NativeSqlite', {
         clear = true,
-    })
-
-    api.nvim_create_autocmd({ 'BufReadPost', 'BufNewFile' }, {
-        callback = function(args)
-            try_auto_attach(args.buf)
-        end,
-        group = group,
-        pattern = '*.sql',
     })
 
     api.nvim_create_autocmd('BufDelete', {
@@ -820,18 +811,13 @@ local function create_autocmds()
         end,
         group = group,
     })
-end
 
-function M.sqlite_ftd()
-    vim.filetype.add({
-        extension = {
-            db = 'sql',
-            sqlite = 'sql',
-            sqlite3 = 'sql',
-        },
-        pattern = {
-            ['%.lite%.sql$'] = 'sql',
-        },
+    api.nvim_create_autocmd({ 'BufNewFile', 'BufReadPost' }, {
+        callback = function(args)
+            try_auto_attach(args.buf)
+        end,
+        group = group,
+        pattern = '*.sql',
     })
 end
 
@@ -848,11 +834,24 @@ function M.setup(opts)
         )
     end
 
-    M.sqlite_ftd()
-    create_commands()
     create_autocmds()
+    create_commands()
+    M.sqlite_ftd()
 
     return M
+end
+
+function M.sqlite_ftd()
+    vim.filetype.add({
+        extension = {
+            db = 'sql',
+            sqlite = 'sql',
+            sqlite3 = 'sql',
+        },
+        pattern = {
+            ['%.lite%.sql$'] = 'sql',
+        },
+    })
 end
 
 return M

@@ -18,11 +18,11 @@ local M = {}
 
 -- Bounded constants.
 local AUTO_DISMISS_MS = 2000
-local FLOAT_WIDTH_COLS = 52
 local FLOAT_HEIGHT_MAX = 25
 local FLOAT_HEIGHT_MIN = 5
-local MAX_CLIENTS_SHOWN = 50
+local FLOAT_WIDTH_COLS = 52
 local MAX_BUFFERS_PER_CLIENT = 5
+local MAX_CLIENTS_SHOWN = 50
 
 ---@class LspHealthClientInfo
 ---@field client_id integer LSP client ID
@@ -36,15 +36,40 @@ local MAX_BUFFERS_PER_CLIENT = 5
 -- Keyed by client ID for active clients; restart counts persist by name.
 ---@type table<integer, LspHealthClientInfo>
 local active_clients = {}
----@type table<string, integer>
-local restart_counts = {}
+local augroup_id = nil
+
+local dashboard_buf = nil
+local dashboard_win = nil
+local dismiss_timer = nil
 ---@type table<string, number>
 local first_attach_times = {}
 
-local dashboard_win = nil
-local dashboard_buf = nil
-local dismiss_timer = nil
-local augroup_id = nil
+---@type table<string, integer>
+local restart_counts = {}
+---Get short display name for a buffer.
+---@param bufnr integer Buffer number
+---@return string name Shortened file name or '[No Name]'
+local function buffer_display_name(bufnr)
+    assert(type(bufnr) == 'number', 'bufnr must be a number')
+    local name = vim.api.nvim_buf_get_name(bufnr)
+    if name == '' then
+        return '[No Name]'
+    end
+    return vim.fn.fnamemodify(name, ':t')
+end
+
+---Close the dashboard and clean up resources. Idempotent.
+local function close_dashboard()
+    if dismiss_timer ~= nil then
+        pcall(vim.fn.timer_stop, dismiss_timer)
+        dismiss_timer = nil
+    end
+    if dashboard_win ~= nil and vim.api.nvim_win_is_valid(dashboard_win) then
+        pcall(vim.api.nvim_win_close, dashboard_win, true)
+    end
+    dashboard_win = nil
+    dashboard_buf = nil
+end
 
 ---Format nanosecond duration as human-readable uptime.
 ---@param start_ns number Start time from vim.uv.hrtime()
@@ -65,18 +90,6 @@ local function format_uptime(start_ns)
     else
         return string.format('%ds', seconds)
     end
-end
-
----Get short display name for a buffer.
----@param bufnr integer Buffer number
----@return string name Shortened file name or '[No Name]'
-local function buffer_display_name(bufnr)
-    assert(type(bufnr) == 'number', 'bufnr must be a number')
-    local name = vim.api.nvim_buf_get_name(bufnr)
-    if name == '' then
-        return '[No Name]'
-    end
-    return vim.fn.fnamemodify(name, ':t')
 end
 
 ---Build dashboard lines from current LSP state.
@@ -161,107 +174,6 @@ local function build_dashboard_lines()
     return lines
 end
 
----Refresh dashboard buffer content.
-local function refresh_dashboard()
-    if dashboard_buf == nil or not vim.api.nvim_buf_is_valid(dashboard_buf) then
-        return
-    end
-    local lines = build_dashboard_lines()
-    vim.api.nvim_buf_set_option(dashboard_buf, 'modifiable', true)
-    vim.api.nvim_buf_set_lines(dashboard_buf, 0, -1, false, lines)
-    vim.api.nvim_buf_set_option(dashboard_buf, 'modifiable', false)
-end
-
----Close the dashboard and clean up resources. Idempotent.
-local function close_dashboard()
-    if dismiss_timer ~= nil then
-        pcall(vim.fn.timer_stop, dismiss_timer)
-        dismiss_timer = nil
-    end
-    if dashboard_win ~= nil and vim.api.nvim_win_is_valid(dashboard_win) then
-        pcall(vim.api.nvim_win_close, dashboard_win, true)
-    end
-    dashboard_win = nil
-    dashboard_buf = nil
-end
-
----Open the LSP health dashboard in a centered floating window.
-function M.open()
-    -- Close existing dashboard if open.
-    close_dashboard()
-
-    dashboard_buf = vim.api.nvim_create_buf(false, true)
-    assert(dashboard_buf ~= 0, 'failed to create dashboard buffer')
-
-    -- Size to content: header + clients + buffer sub-lines.
-    -- Estimate: each client has 1 line + up to MAX_BUFFERS_PER_CLIENT sub-lines.
-    local client_count = #vim.lsp.get_clients()
-    local shown_clients = math.min(client_count, MAX_CLIENTS_SHOWN)
-    local content_lines = 1 + shown_clients * (1 + MAX_BUFFERS_PER_CLIENT)
-    if client_count == 0 then
-        content_lines = 1
-    end
-    local height = math.max(
-        FLOAT_HEIGHT_MIN,
-        math.min(FLOAT_HEIGHT_MAX, content_lines)
-    )
-    local width = FLOAT_WIDTH_COLS
-
-    local ui = vim.api.nvim_list_uis()[1]
-    local row = math.floor((ui.height - height) / 2)
-    local col = math.floor((ui.width - width) / 2)
-
-    dashboard_win = vim.api.nvim_open_win(dashboard_buf, true, {
-        relative = 'editor',
-        width = width,
-        height = height,
-        row = row,
-        col = col,
-        style = 'minimal',
-        border = 'rounded',
-        title = ' LSP Health ',
-        title_pos = 'center',
-    })
-    assert(dashboard_win ~= 0, 'failed to open dashboard window')
-
-    -- Buffer options.
-    vim.api.nvim_buf_set_option(dashboard_buf, 'filetype', 'lsphealth')
-    vim.api.nvim_buf_set_option(dashboard_buf, 'modifiable', false)
-
-    -- Keymaps: q or Escape to close.
-    vim.api.nvim_buf_set_keymap(
-        dashboard_buf,
-        'n',
-        'q',
-        '<cmd>lua require("config.ui.lsp_health").close()<CR>',
-        { noremap = true, silent = true }
-    )
-    vim.api.nvim_buf_set_keymap(
-        dashboard_buf,
-        'n',
-        '<Esc>',
-        '<cmd>lua require("config.ui.lsp_health").close()<CR>',
-        { noremap = true, silent = true }
-    )
-
-    refresh_dashboard()
-
-    -- Auto-dismiss after 2 seconds.
-    dismiss_timer = vim.fn.timer_start(AUTO_DISMISS_MS, function()
-        close_dashboard()
-    end)
-end
-
----Close the dashboard. Exposed for keymap.
-function M.close()
-    close_dashboard()
-end
-
----Manually refresh the dashboard. Exposed for keymap.
-function M.refresh()
-    refresh_dashboard()
-end
-
 ---Handle LSP client attach: record timestamp and restart count.
 ---@param client vim.lsp.Client LSP client object
 local function on_lsp_attach(client)
@@ -292,6 +204,91 @@ end
 local function on_lsp_detach(client_id)
     assert(type(client_id) == 'number', 'client_id must be a number')
     active_clients[client_id] = nil
+end
+
+---Refresh dashboard buffer content.
+local function refresh_dashboard()
+    if dashboard_buf == nil or not vim.api.nvim_buf_is_valid(dashboard_buf) then
+        return
+    end
+    local lines = build_dashboard_lines()
+    vim.api.nvim_set_option_value('modifiable', true, { buf = dashboard_buf })
+    vim.api.nvim_buf_set_lines(dashboard_buf, 0, -1, false, lines)
+    vim.api.nvim_set_option_value('modifiable', false, { buf = dashboard_buf })
+end
+
+---Close the dashboard. Exposed for keymap.
+function M.close()
+    close_dashboard()
+end
+
+---Open the LSP health dashboard in a centered floating window.
+function M.open()
+    -- Close existing dashboard if open.
+    close_dashboard()
+
+    dashboard_buf = vim.api.nvim_create_buf(false, true)
+    assert(dashboard_buf ~= 0, 'failed to create dashboard buffer')
+
+    -- Size to content: header + clients + buffer sub-lines.
+    -- Estimate: each client has 1 line + up to MAX_BUFFERS_PER_CLIENT sub-lines.
+    local client_count = #vim.lsp.get_clients()
+    local shown_clients = math.min(client_count, MAX_CLIENTS_SHOWN)
+    local content_lines = 1 + shown_clients * (1 + MAX_BUFFERS_PER_CLIENT)
+    if client_count == 0 then
+        content_lines = 1
+    end
+    local height = math.max(FLOAT_HEIGHT_MIN, math.min(FLOAT_HEIGHT_MAX, content_lines))
+    local width = FLOAT_WIDTH_COLS
+
+    local ui = vim.api.nvim_list_uis()[1]
+    local row = math.floor((ui.height - height) / 2)
+    local col = math.floor((ui.width - width) / 2)
+
+    dashboard_win = vim.api.nvim_open_win(dashboard_buf, true, {
+        relative = 'editor',
+        width = width,
+        height = height,
+        row = row,
+        col = col,
+        style = 'minimal',
+        border = 'rounded',
+        title = ' LSP Health ',
+        title_pos = 'center',
+    })
+    assert(dashboard_win ~= 0, 'failed to open dashboard window')
+
+    -- Buffer options.
+    vim.api.nvim_set_option_value('filetype', 'lsphealth', { buf = dashboard_buf })
+    vim.api.nvim_set_option_value('modifiable', false, { buf = dashboard_buf })
+
+    -- Keymaps: q or Escape to close.
+    vim.api.nvim_buf_set_keymap(
+        dashboard_buf,
+        'n',
+        '<Esc>',
+        '<cmd>lua require("config.ui.lsp_health").close()<CR>',
+        { noremap = true, silent = true }
+    )
+    vim.api.nvim_buf_set_keymap(
+        dashboard_buf,
+        'n',
+        'q',
+        '<cmd>lua require("config.ui.lsp_health").close()<CR>',
+        { noremap = true, silent = true }
+    )
+
+    refresh_dashboard()
+
+    -- Auto-dismiss after 2 seconds.
+    dismiss_timer = vim.fn.timer_start(AUTO_DISMISS_MS, function()
+        close_dashboard()
+    end)
+end
+
+---Manually refresh the dashboard. Exposed for keymap.
+function M.refresh()
+    refresh_dashboard()
 end
 
 ---Setup the LSP health dashboard: autocmds and user command.

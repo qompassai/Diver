@@ -47,11 +47,11 @@
 --                                 Keys: host, port, user, database,
 --                                 service, passfile.
 --   :PsqlDetach                   Detach the current buffer's connection.
---   :PsqlRun                      Run the buffer, or a visual range, as SQL.
---   :PsqlTables                   List tables in the attached database.
---   :PsqlSchema [table]           Describe one table, or list tables.
---   :PsqlTerminal                 Open an interactive psql REPL in a split.
 --   :PsqlInfo                     Show the current buffer's connection info.
+--   :PsqlRun                      Run the buffer, or a visual range, as SQL.
+--   :PsqlSchema [table]           Describe one table, or list tables.
+--   :PsqlTables                   List tables in the attached database.
+--   :PsqlTerminal                 Open an interactive psql REPL in a split.
 --
 -- Agent API:
 --   require('config.data.psql').query(conn, sql, on_result, opts)
@@ -61,18 +61,12 @@
 --   -- { readonly = false } to allow the query to write.
 --   -- conn has the same shape as :PsqlAttach's keys, as a table.
 --
+
 local api = vim.api
 local fs = vim.fs
+
 --local uv = vim.uv
-
 local M = {}
-
-local KEY_COUNT_MAX = 8
-local QUERY_TIMEOUT_MS = 15000
-local RESULT_LINE_COUNT_MAX = 5000
-local SQL_BYTES_MAX = 1048576
-
-local READONLY_OPTIONS_VALUE = '-c default_transaction_read_only=on'
 
 local CONNECTION_KEYS = {
     database = true,
@@ -87,9 +81,15 @@ local defaults = {
     notify = true,
 }
 
+local KEY_COUNT_MAX = 8
+local QUERY_TIMEOUT_MS = 15000
+
+local READONLY_OPTIONS_VALUE = '-c default_transaction_read_only=on'
+local RESULT_LINE_COUNT_MAX = 5000
+local SQL_BYTES_MAX = 1048576
+
 ---@class PsqlConfigOpts
 ---@field notify? boolean
-
 ---@type PsqlConfigOpts
 M.config = vim.deepcopy(defaults)
 
@@ -101,55 +101,17 @@ M.config = vim.deepcopy(defaults)
 ---@field port? integer
 ---@field service? string
 ---@field user? string
-
 ---@class PsqlSession
 ---@field bufnr integer
 ---@field conn PsqlConnection
 ---@field readonly boolean
 ---@field root string
-
 ---@class PsqlQueryOpts
 ---@field readonly? boolean
-
 M.state = {
     ---@type table<integer, PsqlSession>
     sessions = {},
 }
-
----@param message string
----@param level? integer
-local function notify(message, level)
-    if not M.config.notify then
-        return
-    end
-
-    vim.notify(message, level or vim.log.levels.INFO, {
-        title = 'psql',
-    })
-end
-
----@return boolean
-local function has_psql()
-    return vim.fn.executable('psql') == 1
-end
-
----@param value string
----@return boolean
-local function string_is_safe(value)
-    if type(value) ~= 'string' then
-        return false
-    end
-
-    if value == '' then
-        return false
-    end
-
-    if value:find('%z') ~= nil then
-        return false
-    end
-
-    return true
-end
 
 ---@param bufnr integer
 ---@return boolean
@@ -166,63 +128,6 @@ local function buffer_is_usable(bufnr)
 end
 
 ---@param bufnr integer
----@return string
-local function resolve_root(bufnr)
-    local root = fs.root(bufnr, { '.git' })
-
-    if root ~= nil then
-        return root
-    end
-
-    return vim.fn.getcwd()
-end
-
----@param conn PsqlConnection
----@return boolean
----@return string|nil
-local function validate_connection(conn)
-    if type(conn) ~= 'table' then
-        return false, 'connection must be a table'
-    end
-
-    if conn.password ~= nil then
-        return false, 'password is not accepted directly; use passfile or service instead'
-    end
-
-    if conn.host ~= nil and not string_is_safe(conn.host) then
-        return false, 'host must be a non-empty string'
-    end
-
-    if conn.user ~= nil and not string_is_safe(conn.user) then
-        return false, 'user must be a non-empty string'
-    end
-
-    if conn.database ~= nil and not string_is_safe(conn.database) then
-        return false, 'database must be a non-empty string'
-    end
-
-    if conn.service ~= nil and not string_is_safe(conn.service) then
-        return false, 'service must be a non-empty string'
-    end
-
-    if conn.passfile ~= nil and not string_is_safe(conn.passfile) then
-        return false, 'passfile must be a non-empty string'
-    end
-
-    if conn.port ~= nil then
-        if type(conn.port) ~= 'number' or conn.port % 1 ~= 0 then
-            return false, 'port must be an integer'
-        end
-
-        if conn.port < 1 or conn.port > 65535 then
-            return false, 'port must be between 1 and 65535'
-        end
-    end
-
-    return true, nil
-end
-
----@param bufnr integer
 ---@return PsqlSession|nil
 local function get_session(bufnr)
     if not buffer_is_usable(bufnr) then
@@ -232,18 +137,21 @@ local function get_session(bufnr)
     return M.state.sessions[bufnr]
 end
 
----@param opts PsqlQueryOpts|nil
 ---@return boolean
-local function resolve_query_readonly(opts)
-    if type(opts) ~= 'table' then
-        return true
+local function has_psql()
+    return vim.fn.executable('psql') == 1
+end
+
+---@param message string
+---@param level? integer
+local function notify(message, level)
+    if not M.config.notify then
+        return
     end
 
-    if opts.readonly == nil then
-        return true
-    end
-
-    return opts.readonly == true
+    vim.notify(message, level or vim.log.levels.INFO, {
+        title = 'psql',
+    })
 end
 
 ---@param value string|integer
@@ -310,6 +218,95 @@ local function build_argv(conn, readonly, mode_flags)
     end
 
     return argv
+end
+
+---@param opts PsqlQueryOpts|nil
+---@return boolean
+local function resolve_query_readonly(opts)
+    if type(opts) ~= 'table' then
+        return true
+    end
+
+    if opts.readonly == nil then
+        return true
+    end
+
+    return opts.readonly == true
+end
+
+---@param bufnr integer
+---@return string
+local function resolve_root(bufnr)
+    local root = fs.root(bufnr, { '.git' })
+
+    if root ~= nil then
+        return root
+    end
+
+    return vim.fn.getcwd()
+end
+
+---@param value string
+---@return boolean
+local function string_is_safe(value)
+    if type(value) ~= 'string' then
+        return false
+    end
+
+    if value == '' then
+        return false
+    end
+
+    if value:find('%z') ~= nil then
+        return false
+    end
+
+    return true
+end
+
+---@param conn PsqlConnection
+---@return boolean
+---@return string|nil
+local function validate_connection(conn)
+    if type(conn) ~= 'table' then
+        return false, 'connection must be a table'
+    end
+
+    if conn.password ~= nil then
+        return false, 'password is not accepted directly; use passfile or service instead'
+    end
+
+    if conn.host ~= nil and not string_is_safe(conn.host) then
+        return false, 'host must be a non-empty string'
+    end
+
+    if conn.user ~= nil and not string_is_safe(conn.user) then
+        return false, 'user must be a non-empty string'
+    end
+
+    if conn.database ~= nil and not string_is_safe(conn.database) then
+        return false, 'database must be a non-empty string'
+    end
+
+    if conn.service ~= nil and not string_is_safe(conn.service) then
+        return false, 'service must be a non-empty string'
+    end
+
+    if conn.passfile ~= nil and not string_is_safe(conn.passfile) then
+        return false, 'passfile must be a non-empty string'
+    end
+
+    if conn.port ~= nil then
+        if type(conn.port) ~= 'number' or conn.port % 1 ~= 0 then
+            return false, 'port must be an integer'
+        end
+
+        if conn.port < 1 or conn.port > 65535 then
+            return false, 'port must be between 1 and 65535'
+        end
+    end
+
+    return true, nil
 end
 
 ---@param bufnr integer
@@ -389,90 +386,6 @@ function M.info(bufnr)
         readonly = session.readonly,
         root = session.root,
     }))
-end
-
----@param lines string[]
----@param title string
-local function show_result_buffer(lines, title)
-    assert(type(lines) == 'table')
-    assert(type(title) == 'string')
-
-    local truncated = false
-
-    if #lines > RESULT_LINE_COUNT_MAX then
-        truncated = true
-        local bounded = {}
-
-        for index = 1, RESULT_LINE_COUNT_MAX do
-            bounded[index] = lines[index]
-        end
-
-        lines = bounded
-    end
-
-    if truncated then
-        lines[#lines + 1] = ''
-        lines[#lines + 1] = string.format('-- output truncated at %d lines --', RESULT_LINE_COUNT_MAX)
-    end
-
-    local bufnr = api.nvim_create_buf(false, true)
-    api.nvim_buf_set_lines(bufnr, 0, -1, false, lines)
-    api.nvim_buf_set_name(bufnr, title)
-
-    vim.bo[bufnr].buftype = 'nofile'
-    vim.bo[bufnr].bufhidden = 'wipe'
-    vim.bo[bufnr].swapfile = false
-    vim.bo[bufnr].modifiable = false
-    vim.bo[bufnr].filetype = 'psqlresult'
-
-    vim.cmd('botright split')
-    api.nvim_win_set_buf(api.nvim_get_current_win(), bufnr)
-    api.nvim_win_resize(api.nvim_get_current_win(), -1, math.min(20, #lines + 1))
-end
-
----@param conn PsqlConnection
----@param readonly boolean
----@param sql string
----@param mode_flags string[]
----@param on_done fun(result: vim.SystemCompleted)
-local function run_process(conn, readonly, sql, mode_flags, on_done)
-    assert(type(sql) == 'string')
-    assert(#sql <= SQL_BYTES_MAX, 'query exceeds size bound')
-
-    vim.system(build_argv(conn, readonly, mode_flags), {
-        stdin = sql,
-        text = true,
-        timeout = QUERY_TIMEOUT_MS,
-    }, function(result)
-        vim.schedule(function()
-            on_done(result)
-        end)
-    end)
-end
-
----@param session PsqlSession
----@param sql string
----@param title string
-local function run_and_show(session, sql, title)
-    run_process(session.conn, session.readonly, sql, {}, function(result)
-        if result.code ~= 0 then
-            local message = result.stderr ~= '' and result.stderr or 'psql exited with code ' .. result.code
-            notify(message, vim.log.levels.ERROR)
-            return
-        end
-
-        local output = result.stdout or ''
-        local lines = vim.split(output, '\n', {
-            plain = true,
-            trimempty = true,
-        })
-
-        if #lines == 0 then
-            lines = { '-- no rows --' }
-        end
-
-        show_result_buffer(lines, title)
-    end)
 end
 
 ---Parse RFC4180-style CSV text into rows of fields.
@@ -585,6 +498,90 @@ local function parse_csv_rows(output)
     return results
 end
 
+---@param conn PsqlConnection
+---@param readonly boolean
+---@param sql string
+---@param mode_flags string[]
+---@param on_done fun(result: vim.SystemCompleted)
+local function run_process(conn, readonly, sql, mode_flags, on_done)
+    assert(type(sql) == 'string')
+    assert(#sql <= SQL_BYTES_MAX, 'query exceeds size bound')
+
+    vim.system(build_argv(conn, readonly, mode_flags), {
+        stdin = sql,
+        text = true,
+        timeout = QUERY_TIMEOUT_MS,
+    }, function(result)
+        vim.schedule(function()
+            on_done(result)
+        end)
+    end)
+end
+
+---@param lines string[]
+---@param title string
+local function show_result_buffer(lines, title)
+    assert(type(lines) == 'table')
+    assert(type(title) == 'string')
+
+    local truncated = false
+
+    if #lines > RESULT_LINE_COUNT_MAX then
+        truncated = true
+        local bounded = {}
+
+        for index = 1, RESULT_LINE_COUNT_MAX do
+            bounded[index] = lines[index]
+        end
+
+        lines = bounded
+    end
+
+    if truncated then
+        lines[#lines + 1] = ''
+        lines[#lines + 1] = string.format('-- output truncated at %d lines --', RESULT_LINE_COUNT_MAX)
+    end
+
+    local bufnr = api.nvim_create_buf(false, true)
+    api.nvim_buf_set_lines(bufnr, 0, -1, false, lines)
+    api.nvim_buf_set_name(bufnr, title)
+
+    vim.bo[bufnr].buftype = 'nofile'
+    vim.bo[bufnr].bufhidden = 'wipe'
+    vim.bo[bufnr].swapfile = false
+    vim.bo[bufnr].modifiable = false
+    vim.bo[bufnr].filetype = 'psqlresult'
+
+    vim.cmd('botright split')
+    api.nvim_win_set_buf(api.nvim_get_current_win(), bufnr)
+    api.nvim_win_resize(api.nvim_get_current_win(), -1, math.min(20, #lines + 1))
+end
+
+---@param session PsqlSession
+---@param sql string
+---@param title string
+local function run_and_show(session, sql, title)
+    run_process(session.conn, session.readonly, sql, {}, function(result)
+        if result.code ~= 0 then
+            local message = result.stderr ~= '' and result.stderr or 'psql exited with code ' .. result.code
+            notify(message, vim.log.levels.ERROR)
+            return
+        end
+
+        local output = result.stdout or ''
+        local lines = vim.split(output, '\n', {
+            plain = true,
+            trimempty = true,
+        })
+
+        if #lines == 0 then
+            lines = { '-- no rows --' }
+        end
+
+        show_result_buffer(lines, title)
+    end)
+end
+
 ---Run SQL against a connection and return decoded rows.
 ---
 ---This is the agent-facing entry point: it takes an explicit connection
@@ -631,50 +628,6 @@ function M.query(conn, sql, on_result, opts)
 
         on_result(parse_csv_rows(result.stdout or ''), nil)
     end)
-end
-
----Blocking variant of M.query for scripted/headless callers.
----
----opts.readonly defaults to true, matching M.query.
----
----@param conn PsqlConnection
----@param sql string SQL text to run.
----@param opts? PsqlQueryOpts
----@return table[]|nil rows
----@return string|nil err
-function M.query_sync(conn, sql, opts)
-    if not has_psql() then
-        return nil, 'psql executable was not found on PATH'
-    end
-
-    local valid, validation_error = validate_connection(conn)
-
-    if not valid then
-        return nil, validation_error
-    end
-
-    if type(sql) ~= 'string' or sql:match('^%s*$') then
-        return nil, 'sql must be a non-empty string'
-    end
-
-    local readonly = resolve_query_readonly(opts)
-
-    local result = vim.system(
-        build_argv(conn, readonly, {
-            '--csv',
-        }),
-        {
-            stdin = sql,
-            text = true,
-            timeout = QUERY_TIMEOUT_MS,
-        }
-    ):wait()
-
-    if result.code ~= 0 then
-        return nil, result.stderr ~= '' and result.stderr or 'psql exited with code ' .. result.code
-    end
-
-    return parse_csv_rows(result.stdout or ''), nil
 end
 
 ---Non-blocking variant of M.query_sync for the dataaccess bulk lane:
@@ -749,6 +702,52 @@ function M.query_buffer(bufnr, sql, on_result, opts)
     M.query(session.conn, sql, on_result, opts)
 end
 
+---Blocking variant of M.query for scripted/headless callers.
+---
+---opts.readonly defaults to true, matching M.query.
+---
+---@param conn PsqlConnection
+---@param sql string SQL text to run.
+---@param opts? PsqlQueryOpts
+---@return table[]|nil rows
+---@return string|nil err
+function M.query_sync(conn, sql, opts)
+    if not has_psql() then
+        return nil, 'psql executable was not found on PATH'
+    end
+
+    local valid, validation_error = validate_connection(conn)
+
+    if not valid then
+        return nil, validation_error
+    end
+
+    if type(sql) ~= 'string' or sql:match('^%s*$') then
+        return nil, 'sql must be a non-empty string'
+    end
+
+    local readonly = resolve_query_readonly(opts)
+
+    local sysobj = vim.system(
+        build_argv(conn, readonly, {
+            '--csv',
+        }),
+        {
+            stdin = sql,
+            text = true,
+            timeout = QUERY_TIMEOUT_MS,
+        }
+    )
+    ---@cast sysobj vim.SystemObj
+    local result = sysobj:wait()
+
+    if result.code ~= 0 then
+        return nil, result.stderr ~= '' and result.stderr or 'psql exited with code ' .. result.code
+    end
+
+    return parse_csv_rows(result.stdout or ''), nil
+end
+
 ---@param bufnr integer
 ---@param line1 integer
 ---@param line2 integer
@@ -778,6 +777,21 @@ function M.run(opts)
     run_and_show(session, sql, 'psql://' .. (session.conn.database or session.conn.service or 'default') .. ' [result]')
 end
 
+---@param table_name? string
+function M.schema(table_name)
+    local bufnr = api.nvim_get_current_buf()
+    local session = get_session(bufnr)
+
+    if session == nil then
+        notify('No connection is attached to this buffer. Use :PsqlAttach first', vim.log.levels.ERROR)
+        return
+    end
+
+    local sql = table_name and table_name ~= '' and string.format('\\d %s\n', table_name) or '\\dt\n'
+
+    run_and_show(session, sql, 'psql://' .. (session.conn.database or session.conn.service or 'default') .. ' [schema]')
+end
+
 function M.tables()
     local bufnr = api.nvim_get_current_buf()
     local session = get_session(bufnr)
@@ -792,21 +806,6 @@ function M.tables()
         '\\dt\n',
         'psql://' .. (session.conn.database or session.conn.service or 'default') .. ' [tables]'
     )
-end
-
----@param table_name? string
-function M.schema(table_name)
-    local bufnr = api.nvim_get_current_buf()
-    local session = get_session(bufnr)
-
-    if session == nil then
-        notify('No connection is attached to this buffer. Use :PsqlAttach first', vim.log.levels.ERROR)
-        return
-    end
-
-    local sql = table_name and table_name ~= '' and string.format('\\d %s\n', table_name) or '\\dt\n'
-
-    run_and_show(session, sql, 'psql://' .. (session.conn.database or session.conn.service or 'default') .. ' [schema]')
 end
 
 function M.terminal()
@@ -828,6 +827,19 @@ function M.terminal()
     vim.cmd('botright split')
     vim.fn.jobstart(argv, { term = true })
     vim.cmd('startinsert')
+end
+
+local function create_autocmds()
+    local group = api.nvim_create_augroup('NativePsql', {
+        clear = true,
+    })
+
+    api.nvim_create_autocmd('BufDelete', {
+        callback = function(args)
+            M.state.sessions[args.buf] = nil
+        end,
+        group = group,
+    })
 end
 
 ---@param args string
@@ -900,17 +912,17 @@ local function create_commands()
         desc = 'Detach the PostgreSQL connection from the current buffer',
     })
 
+    api.nvim_create_user_command('PsqlInfo', function()
+        M.info(api.nvim_get_current_buf())
+    end, {
+        desc = "Show the current buffer's PostgreSQL connection info",
+    })
+
     api.nvim_create_user_command('PsqlRun', function(opts)
         M.run(opts)
     end, {
         desc = 'Run the buffer, or a visual range, as SQL against the attached connection',
         range = '%',
-    })
-
-    api.nvim_create_user_command('PsqlTables', function()
-        M.tables()
-    end, {
-        desc = 'List tables in the attached PostgreSQL database',
     })
 
     api.nvim_create_user_command('PsqlSchema', function(opts)
@@ -920,29 +932,16 @@ local function create_commands()
         nargs = '?',
     })
 
+    api.nvim_create_user_command('PsqlTables', function()
+        M.tables()
+    end, {
+        desc = 'List tables in the attached PostgreSQL database',
+    })
+
     api.nvim_create_user_command('PsqlTerminal', function()
         M.terminal()
     end, {
         desc = 'Open an interactive psql REPL for the attached connection',
-    })
-
-    api.nvim_create_user_command('PsqlInfo', function()
-        M.info(api.nvim_get_current_buf())
-    end, {
-        desc = "Show the current buffer's PostgreSQL connection info",
-    })
-end
-
-local function create_autocmds()
-    local group = api.nvim_create_augroup('NativePsql', {
-        clear = true,
-    })
-
-    api.nvim_create_autocmd('BufDelete', {
-        callback = function(args)
-            M.state.sessions[args.buf] = nil
-        end,
-        group = group,
     })
 end
 
@@ -959,8 +958,8 @@ function M.setup(opts)
         )
     end
 
-    create_commands()
     create_autocmds()
+    create_commands()
 
     return M
 end

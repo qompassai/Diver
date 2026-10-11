@@ -77,15 +77,15 @@
 --   :MariadbAttach[!] key=val ... Attach a connection (bang = readonly).
 --                                 Keys: host, port, socket, user,
 --                                 database, defaults_file, extra.
---   :MariadbDetach                 Detach the current buffer's connection.
---   :MariadbRun                    Run the buffer, or a visual range, as
---                                   SQL.
---   :MariadbTables                 List tables in the attached database.
 --   :MariadbDatabases               List all databases on the server.
---   :MariadbSchema [table]          SHOW CREATE TABLE, or SHOW TABLES.
---   :MariadbTerminal                Open an interactive mariadb REPL.
+--   :MariadbDetach                 Detach the current buffer's connection.
 --   :MariadbInfo                    Show the current buffer's connection
 --                                   info.
+--   :MariadbRun                    Run the buffer, or a visual range, as
+--                                   SQL.
+--   :MariadbSchema [table]          SHOW CREATE TABLE, or SHOW TABLES.
+--   :MariadbTables                 List tables in the attached database.
+--   :MariadbTerminal                Open an interactive mariadb REPL.
 --
 -- Agent API:
 --   require('config.data.mariadb').query(conn, sql, on_result, opts)
@@ -115,17 +115,9 @@
 
 local api = vim.api
 local fs = vim.fs
+
 --local uv = vim.uv
-
 local M = {}
-
-local EXTRA_KEY_COUNT_MAX = 16
-local KEY_COUNT_MAX = 8
-local QUERY_TIMEOUT_MS = 15000
-local RESULT_LINE_COUNT_MAX = 5000
-local SQL_BYTES_MAX = 1048576
-
-local READONLY_INIT_COMMAND = 'SET SESSION TRANSACTION READ ONLY'
 
 local CONNECTION_KEYS = {
     database = true,
@@ -140,9 +132,16 @@ local defaults = {
     notify = true,
 }
 
+local EXTRA_KEY_COUNT_MAX = 16
+local KEY_COUNT_MAX = 8
+local QUERY_TIMEOUT_MS = 15000
+
+local READONLY_INIT_COMMAND = 'SET SESSION TRANSACTION READ ONLY'
+local RESULT_LINE_COUNT_MAX = 5000
+local SQL_BYTES_MAX = 1048576
+
 ---@class MariadbConfigOpts
 ---@field notify? boolean
-
 ---@type MariadbConfigOpts
 M.config = vim.deepcopy(defaults)
 
@@ -155,20 +154,114 @@ M.config = vim.deepcopy(defaults)
 ---@field port? integer
 ---@field socket? string
 ---@field user? string
-
 ---@class MariadbSession
 ---@field bufnr integer
 ---@field conn MariadbConnection
 ---@field readonly boolean
 ---@field root string
-
 ---@class MariadbQueryOpts
 ---@field readonly? boolean
-
 M.state = {
     ---@type table<integer, MariadbSession>
     sessions = {},
 }
+
+---@param bufnr integer
+---@return boolean
+local function buffer_is_usable(bufnr)
+    if type(bufnr) ~= 'number' then
+        return false
+    end
+
+    if bufnr < 0 then
+        return false
+    end
+
+    return api.nvim_buf_is_valid(bufnr)
+end
+
+---@param conn MariadbConnection
+---@param readonly boolean
+---@param mode_flags string[]
+---@return string[]
+local function build_argv(conn, readonly, mode_flags)
+    local argv = { 'mariadb' }
+
+    -- --defaults-extra-file must be the first option on the command
+    -- line, before any other flag, or the client rejects it. Same
+    -- constraint as mysql.lua; the mariadb client shares the option
+    -- parser.
+    if conn.defaults_file ~= nil then
+        argv[#argv + 1] = '--defaults-extra-file=' .. conn.defaults_file
+    end
+
+    if conn.host ~= nil then
+        argv[#argv + 1] = '--host=' .. conn.host
+    end
+
+    if conn.port ~= nil then
+        argv[#argv + 1] = '--port=' .. tostring(conn.port)
+    end
+
+    if conn.socket ~= nil then
+        argv[#argv + 1] = '--socket=' .. conn.socket
+    end
+
+    if conn.user ~= nil then
+        argv[#argv + 1] = '--user=' .. conn.user
+    end
+
+    if conn.extra ~= nil then
+        local keys = {}
+
+        for key in pairs(conn.extra) do
+            keys[#keys + 1] = key
+        end
+
+        table.sort(keys)
+
+        for _, key in ipairs(keys) do
+            argv[#argv + 1] = '--' .. key .. '=' .. conn.extra[key]
+        end
+    end
+
+    if readonly then
+        argv[#argv + 1] = '--init-command=' .. READONLY_INIT_COMMAND
+    end
+
+    argv[#argv + 1] = '--binary-as-hex'
+
+    for _, flag in ipairs(mode_flags or {}) do
+        argv[#argv + 1] = flag
+    end
+
+    if conn.database ~= nil then
+        argv[#argv + 1] = conn.database
+    end
+
+    return argv
+end
+
+---@param key string
+---@return boolean
+local function extra_key_is_safe(key)
+    return type(key) == 'string' and key:match('^[%w][%w_-]*$') ~= nil
+end
+
+---@param bufnr integer
+---@return MariadbSession|nil
+local function get_session(bufnr)
+    if not buffer_is_usable(bufnr) then
+        return nil
+    end
+
+    return M.state.sessions[bufnr]
+end
+
+---@return boolean
+local function has_mariadb()
+    return vim.fn.executable('mariadb') == 1
+end
 
 ---@param message string
 ---@param level? integer
@@ -182,9 +275,30 @@ local function notify(message, level)
     })
 end
 
+---@param opts MariadbQueryOpts|nil
 ---@return boolean
-local function has_mariadb()
-    return vim.fn.executable('mariadb') == 1
+local function resolve_query_readonly(opts)
+    if type(opts) ~= 'table' then
+        return true
+    end
+
+    if opts.readonly == nil then
+        return true
+    end
+
+    return opts.readonly == true
+end
+
+---@param bufnr integer
+---@return string
+local function resolve_root(bufnr)
+    local root = fs.root(bufnr, { '.git' })
+
+    if root ~= nil then
+        return root
+    end
+
+    return vim.fn.getcwd()
 end
 
 ---@param value string
@@ -203,38 +317,6 @@ local function string_is_safe(value)
     end
 
     return true
-end
-
----@param key string
----@return boolean
-local function extra_key_is_safe(key)
-    return type(key) == 'string' and key:match('^[%w][%w_-]*$') ~= nil
-end
-
----@param bufnr integer
----@return boolean
-local function buffer_is_usable(bufnr)
-    if type(bufnr) ~= 'number' then
-        return false
-    end
-
-    if bufnr < 0 then
-        return false
-    end
-
-    return api.nvim_buf_is_valid(bufnr)
-end
-
----@param bufnr integer
----@return string
-local function resolve_root(bufnr)
-    local root = fs.root(bufnr, { '.git' })
-
-    if root ~= nil then
-        return root
-    end
-
-    return vim.fn.getcwd()
 end
 
 ---@param conn MariadbConnection
@@ -315,92 +397,6 @@ local function validate_connection(conn)
 end
 
 ---@param bufnr integer
----@return MariadbSession|nil
-local function get_session(bufnr)
-    if not buffer_is_usable(bufnr) then
-        return nil
-    end
-
-    return M.state.sessions[bufnr]
-end
-
----@param opts MariadbQueryOpts|nil
----@return boolean
-local function resolve_query_readonly(opts)
-    if type(opts) ~= 'table' then
-        return true
-    end
-
-    if opts.readonly == nil then
-        return true
-    end
-
-    return opts.readonly == true
-end
-
----@param conn MariadbConnection
----@param readonly boolean
----@param mode_flags string[]
----@return string[]
-local function build_argv(conn, readonly, mode_flags)
-    local argv = { 'mariadb' }
-
-    -- --defaults-extra-file must be the first option on the command
-    -- line, before any other flag, or the client rejects it. Same
-    -- constraint as mysql.lua; the mariadb client shares the option
-    -- parser.
-    if conn.defaults_file ~= nil then
-        argv[#argv + 1] = '--defaults-extra-file=' .. conn.defaults_file
-    end
-
-    if conn.host ~= nil then
-        argv[#argv + 1] = '--host=' .. conn.host
-    end
-
-    if conn.port ~= nil then
-        argv[#argv + 1] = '--port=' .. tostring(conn.port)
-    end
-
-    if conn.socket ~= nil then
-        argv[#argv + 1] = '--socket=' .. conn.socket
-    end
-
-    if conn.user ~= nil then
-        argv[#argv + 1] = '--user=' .. conn.user
-    end
-
-    if conn.extra ~= nil then
-        local keys = {}
-
-        for key in pairs(conn.extra) do
-            keys[#keys + 1] = key
-        end
-
-        table.sort(keys)
-
-        for _, key in ipairs(keys) do
-            argv[#argv + 1] = '--' .. key .. '=' .. conn.extra[key]
-        end
-    end
-
-    if readonly then
-        argv[#argv + 1] = '--init-command=' .. READONLY_INIT_COMMAND
-    end
-
-    argv[#argv + 1] = '--binary-as-hex'
-
-    for _, flag in ipairs(mode_flags or {}) do
-        argv[#argv + 1] = flag
-    end
-
-    if conn.database ~= nil then
-        argv[#argv + 1] = conn.database
-    end
-
-    return argv
-end
-
----@param bufnr integer
 ---@param conn MariadbConnection
 ---@param readonly? boolean
 ---@return MariadbSession|nil
@@ -478,6 +474,59 @@ function M.info(bufnr)
     }))
 end
 
+---@param output string
+---@return table[]
+local function parse_tsv_rows(output)
+    local lines = vim.split(output, '\n', {
+        plain = true,
+        trimempty = true,
+    })
+
+    if #lines == 0 then
+        return {}
+    end
+
+    local headers = vim.split(lines[1], '\t', { plain = true })
+    local rows = {}
+
+    for line_index = 2, #lines do
+        local cells = vim.split(lines[line_index], '\t', { plain = true })
+        local row = {}
+
+        for column_index, header in ipairs(headers) do
+            local cell = cells[column_index]
+
+            if cell ~= nil and cell ~= 'NULL' then
+                row[header] = cell
+            end
+        end
+
+        rows[#rows + 1] = row
+    end
+
+    return rows
+end
+
+---@param conn MariadbConnection
+---@param readonly boolean
+---@param sql string
+---@param mode_flags string[]
+---@param on_done fun(result: vim.SystemCompleted)
+local function run_process(conn, readonly, sql, mode_flags, on_done)
+    assert(type(sql) == 'string')
+    assert(#sql <= SQL_BYTES_MAX, 'query exceeds size bound')
+
+    vim.system(build_argv(conn, readonly, mode_flags), {
+        stdin = sql,
+        text = true,
+        timeout = QUERY_TIMEOUT_MS,
+    }, function(result)
+        vim.schedule(function()
+            on_done(result)
+        end)
+    end)
+end
+
 ---@param lines string[]
 ---@param title string
 local function show_result_buffer(lines, title)
@@ -517,26 +566,6 @@ local function show_result_buffer(lines, title)
     api.nvim_win_resize(api.nvim_get_current_win(), -1, math.min(20, #lines + 1))
 end
 
----@param conn MariadbConnection
----@param readonly boolean
----@param sql string
----@param mode_flags string[]
----@param on_done fun(result: vim.SystemCompleted)
-local function run_process(conn, readonly, sql, mode_flags, on_done)
-    assert(type(sql) == 'string')
-    assert(#sql <= SQL_BYTES_MAX, 'query exceeds size bound')
-
-    vim.system(build_argv(conn, readonly, mode_flags), {
-        stdin = sql,
-        text = true,
-        timeout = QUERY_TIMEOUT_MS,
-    }, function(result)
-        vim.schedule(function()
-            on_done(result)
-        end)
-    end)
-end
-
 ---@param session MariadbSession
 ---@param sql string
 ---@param title string
@@ -560,39 +589,6 @@ local function run_and_show(session, sql, title)
 
         show_result_buffer(lines, title)
     end)
-end
-
----@param output string
----@return table[]
-local function parse_tsv_rows(output)
-    local lines = vim.split(output, '\n', {
-        plain = true,
-        trimempty = true,
-    })
-
-    if #lines == 0 then
-        return {}
-    end
-
-    local headers = vim.split(lines[1], '\t', { plain = true })
-    local rows = {}
-
-    for line_index = 2, #lines do
-        local cells = vim.split(lines[line_index], '\t', { plain = true })
-        local row = {}
-
-        for column_index, header in ipairs(headers) do
-            local cell = cells[column_index]
-
-            if cell ~= nil and cell ~= 'NULL' then
-                row[header] = cell
-            end
-        end
-
-        rows[#rows + 1] = row
-    end
-
-    return rows
 end
 
 ---@param conn MariadbConnection
@@ -628,45 +624,6 @@ function M.query(conn, sql, on_result, opts)
 
         on_result(parse_tsv_rows(result.stdout or ''), nil)
     end)
-end
-
----Blocking variant of M.query for scripted/headless callers.
----
----opts.readonly defaults to true, matching M.query.
----
----@param conn MariadbConnection
----@param sql string SQL text to run.
----@param opts? MariadbQueryOpts
----@return table[]|nil rows
----@return string|nil err
-function M.query_sync(conn, sql, opts)
-    if not has_mariadb() then
-        return nil, 'mariadb executable was not found on PATH'
-    end
-
-    local valid, validation_error = validate_connection(conn)
-
-    if not valid then
-        return nil, validation_error
-    end
-
-    if type(sql) ~= 'string' or sql:match('^%s*$') then
-        return nil, 'sql must be a non-empty string'
-    end
-
-    local readonly = resolve_query_readonly(opts)
-
-    local result = vim.system(build_argv(conn, readonly, { '--batch', '--raw' }), {
-        stdin = sql,
-        text = true,
-        timeout = QUERY_TIMEOUT_MS,
-    }):wait()
-
-    if result.code ~= 0 then
-        return nil, result.stderr ~= '' and result.stderr or 'mariadb exited with code ' .. result.code
-    end
-
-    return parse_tsv_rows(result.stdout or ''), nil
 end
 
 ---Non-blocking variant of M.query_sync for the dataaccess bulk lane:
@@ -742,6 +699,47 @@ function M.query_buffer(bufnr, sql, on_result, opts)
     M.query(session.conn, sql, on_result, opts)
 end
 
+---Blocking variant of M.query for scripted/headless callers.
+---
+---opts.readonly defaults to true, matching M.query.
+---
+---@param conn MariadbConnection
+---@param sql string SQL text to run.
+---@param opts? MariadbQueryOpts
+---@return table[]|nil rows
+---@return string|nil err
+function M.query_sync(conn, sql, opts)
+    if not has_mariadb() then
+        return nil, 'mariadb executable was not found on PATH'
+    end
+
+    local valid, validation_error = validate_connection(conn)
+
+    if not valid then
+        return nil, validation_error
+    end
+
+    if type(sql) ~= 'string' or sql:match('^%s*$') then
+        return nil, 'sql must be a non-empty string'
+    end
+
+    local readonly = resolve_query_readonly(opts)
+
+    local sysobj = vim.system(build_argv(conn, readonly, { '--batch', '--raw' }), {
+        stdin = sql,
+        text = true,
+        timeout = QUERY_TIMEOUT_MS,
+    })
+    ---@cast sysobj vim.SystemObj
+    local result = sysobj:wait()
+
+    if result.code ~= 0 then
+        return nil, result.stderr ~= '' and result.stderr or 'mariadb exited with code ' .. result.code
+    end
+
+    return parse_tsv_rows(result.stdout or ''), nil
+end
+
 ---@param bufnr integer
 ---@param line1 integer
 ---@param line2 integer
@@ -749,6 +747,19 @@ end
 local function buffer_sql(bufnr, line1, line2)
     local lines = api.nvim_buf_get_lines(bufnr, line1 - 1, line2, false)
     return table.concat(lines, '\n')
+end
+
+---@return nil
+function M.databases()
+    local bufnr = api.nvim_get_current_buf()
+    local session = get_session(bufnr)
+
+    if session == nil then
+        notify('No connection is attached to this buffer. Use :MariadbAttach first', vim.log.levels.ERROR)
+        return
+    end
+
+    run_and_show(session, 'SHOW DATABASES;', 'mariadb://' .. (session.conn.host or 'default') .. ' [databases]')
 end
 
 ---@param opts vim.api.keyset.create_user_command.command_args
@@ -783,19 +794,6 @@ function M.tables()
     end
 
     run_and_show(session, 'SHOW TABLES;', 'mariadb://' .. (session.conn.database or 'default') .. ' [tables]')
-end
-
----@return nil
-function M.databases()
-    local bufnr = api.nvim_get_current_buf()
-    local session = get_session(bufnr)
-
-    if session == nil then
-        notify('No connection is attached to this buffer. Use :MariadbAttach first', vim.log.levels.ERROR)
-        return
-    end
-
-    run_and_show(session, 'SHOW DATABASES;', 'mariadb://' .. (session.conn.host or 'default') .. ' [databases]')
 end
 
 ---@param identifier string
@@ -843,6 +841,19 @@ function M.terminal()
         term = true,
     })
     vim.cmd('startinsert')
+end
+
+local function create_autocmds()
+    local group = api.nvim_create_augroup('NativeMariadb', {
+        clear = true,
+    })
+
+    api.nvim_create_autocmd('BufDelete', {
+        callback = function(args)
+            M.state.sessions[args.buf] = nil
+        end,
+        group = group,
+    })
 end
 
 ---@param args string
@@ -913,10 +924,22 @@ local function create_commands()
         nargs = 1,
     })
 
+    api.nvim_create_user_command('MariadbDatabases', function()
+        M.databases()
+    end, {
+        desc = 'List all databases on the server',
+    })
+
     api.nvim_create_user_command('MariadbDetach', function()
         M.detach(api.nvim_get_current_buf())
     end, {
         desc = 'Detach the MariaDB connection from the current buffer',
+    })
+
+    api.nvim_create_user_command('MariadbInfo', function()
+        M.info(api.nvim_get_current_buf())
+    end, {
+        desc = "Show the current buffer's MariaDB connection info",
     })
 
     api.nvim_create_user_command('MariadbRun', function(opts)
@@ -926,18 +949,6 @@ local function create_commands()
         range = '%',
     })
 
-    api.nvim_create_user_command('MariadbTables', function()
-        M.tables()
-    end, {
-        desc = 'List tables in the attached MariaDB database',
-    })
-
-    api.nvim_create_user_command('MariadbDatabases', function()
-        M.databases()
-    end, {
-        desc = 'List all databases on the server',
-    })
-
     api.nvim_create_user_command('MariadbSchema', function(opts)
         M.schema(opts.args ~= '' and opts.args or nil)
     end, {
@@ -945,29 +956,16 @@ local function create_commands()
         nargs = '?',
     })
 
+    api.nvim_create_user_command('MariadbTables', function()
+        M.tables()
+    end, {
+        desc = 'List tables in the attached MariaDB database',
+    })
+
     api.nvim_create_user_command('MariadbTerminal', function()
         M.terminal()
     end, {
         desc = 'Open an interactive mariadb REPL for the attached connection',
-    })
-
-    api.nvim_create_user_command('MariadbInfo', function()
-        M.info(api.nvim_get_current_buf())
-    end, {
-        desc = "Show the current buffer's MariaDB connection info",
-    })
-end
-
-local function create_autocmds()
-    local group = api.nvim_create_augroup('NativeMariadb', {
-        clear = true,
-    })
-
-    api.nvim_create_autocmd('BufDelete', {
-        callback = function(args)
-            M.state.sessions[args.buf] = nil
-        end,
-        group = group,
     })
 end
 
@@ -984,8 +982,8 @@ function M.setup(opts)
         )
     end
 
-    create_commands()
     create_autocmds()
+    create_commands()
 
     return M
 end

@@ -4,16 +4,16 @@
 -- ----------------------------------------
 local M = {} ---@version JIT
 local api = vim.api
-local set_hl = api.nvim_set_hl
 local autocmd = api.nvim_create_autocmd
+local set_hl = api.nvim_set_hl
 local colors = {
     comment = '#7f9bb3',
     comment_doc = '#a0c4ff',
     error = '#ff5f5f',
     hint = '#5fd7af',
     info = '#5fafff',
-    warn = '#ffaf00',
     ok = '#5fd75f',
+    warn = '#ffaf00',
 }
 
 function M.setup_highlights()

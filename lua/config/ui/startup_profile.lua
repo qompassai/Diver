@@ -15,24 +15,37 @@ local M = {}
 
 -- Bounded constants.
 local AUTO_DISMISS_MS = 5000
-local FLOAT_WIDTH_COLS = 72
+local DEFAULT_LOG_PATH = vim.fn.stdpath('cache') .. '/startuptime.log'
 local FLOAT_HEIGHT_MAX = 25
 local FLOAT_HEIGHT_MIN = 5
+local FLOAT_WIDTH_COLS = 72
 local MAX_ENTRIES_SHOWN = 30
-local DEFAULT_LOG_PATH = vim.fn.stdpath('cache') .. '/startuptime.log'
 
 ---@class StartupEntry
 ---@field time_ms number Self+sourced time in milliseconds
 ---@field path string Script path or event description
 ---@field absolute_ms number Absolute time since startup in milliseconds
 
-local dashboard_win = nil
-local dashboard_buf = nil
-local dismiss_timer = nil
 local augroup_id = nil
+local dashboard_buf = nil
+local dashboard_win = nil
+local dismiss_timer = nil
 
 -- Marker file: signals that a fresh profile was captured and should auto-open.
 local PENDING_MARKER = vim.fn.stdpath('cache') .. '/startup_profile_pending'
+
+---Close the dashboard and clean up. Idempotent.
+local function close_dashboard()
+    if dismiss_timer ~= nil then
+        pcall(vim.fn.timer_stop, dismiss_timer)
+        dismiss_timer = nil
+    end
+    if dashboard_win ~= nil and vim.api.nvim_win_is_valid(dashboard_win) then
+        pcall(vim.api.nvim_win_close, dashboard_win, true)
+    end
+    dashboard_win = nil
+    dashboard_buf = nil
+end
 
 ---Parse a --startuptime log file into sorted entries.
 ---@param log_path string Path to the startuptime log
@@ -75,9 +88,7 @@ local function parse_startup_log(log_path)
         end
         -- Format: "123.456  012.345  001.234:  /path/to/file"
         -- We want column 2 (self+sourced) and the path after colon.
-        local abs_ms, self_sourced_ms, path = line:match(
-            '^(%d+%.%d+)%s+(%d+%.%d+)%s+%d+%.%d+:%s*(.+)$'
-        )
+        local abs_ms, self_sourced_ms, path = line:match('^(%d+%.%d+)%s+(%d+%.%d+)%s+%d+%.%d+:%s*(.+)$')
         if abs_ms ~= nil and self_sourced_ms ~= nil and path ~= nil then
             local time_num = tonumber(self_sourced_ms)
             local abs_num = tonumber(abs_ms)
@@ -156,131 +167,6 @@ local function build_dashboard_lines(entries)
     return lines
 end
 
----Close the dashboard and clean up. Idempotent.
-local function close_dashboard()
-    if dismiss_timer ~= nil then
-        pcall(vim.fn.timer_stop, dismiss_timer)
-        dismiss_timer = nil
-    end
-    if dashboard_win ~= nil and vim.api.nvim_win_is_valid(dashboard_win) then
-        pcall(vim.api.nvim_win_close, dashboard_win, true)
-    end
-    dashboard_win = nil
-    dashboard_buf = nil
-end
-
-
-function M.open(log_path)
-    close_dashboard()
-
-    local path = log_path
-    if path == nil or path == '' then
-        path = DEFAULT_LOG_PATH
-    end
-    local entries, err = parse_startup_log(path)
-    if entries == nil then
-        vim.notify('StartupProfile: ' .. (err or 'parse failed'), vim.log.levels.WARN)
-        return
-    end
-    local lines = build_dashboard_lines(entries)
-
-    dashboard_buf = vim.api.nvim_create_buf(false, true)
-    assert(dashboard_buf ~= 0, 'failed to create buffer')
-
-    local content_height = math.max(
-        FLOAT_HEIGHT_MIN,
-        math.min(FLOAT_HEIGHT_MAX, #lines)
-    )
-    local ui = vim.api.nvim_list_uis()[1]
-    local row = math.floor((ui.height - content_height) / 2)
-    local col = math.floor((ui.width - FLOAT_WIDTH_COLS) / 2)
-
-    dashboard_win = vim.api.nvim_open_win(dashboard_buf, true, {
-        relative = 'editor',
-        width = FLOAT_WIDTH_COLS,
-        height = content_height,
-        row = row,
-        col = col,
-        style = 'minimal',
-        border = 'rounded',
-        title = ' Startup Profile ',
-        title_pos = 'center',
-    })
-    assert(dashboard_win ~= 0, 'failed to open window')
-
-    vim.api.nvim_buf_set_option(dashboard_buf, 'filetype', 'startupprofile')
-    vim.api.nvim_buf_set_option(dashboard_buf, 'modifiable', true)
-    vim.api.nvim_buf_set_lines(dashboard_buf, 0, -1, false, lines)
-    vim.api.nvim_buf_set_option(dashboard_buf, 'modifiable', false)
-
-    vim.api.nvim_buf_set_keymap(
-        dashboard_buf,
-        'n',
-        'q',
-        '<cmd>lua require("config.ui.startup_profile").close()<CR>',
-        { noremap = true, silent = true }
-    )
-    vim.api.nvim_buf_set_keymap(
-        dashboard_buf,
-        'n',
-        '<Esc>',
-        '<cmd>lua require("config.ui.startup_profile").close()<CR>',
-        { noremap = true, silent = true }
-    )
-
-    -- Auto-dismiss after 5 seconds (longer than LSP dashboard: more to read).
-    dismiss_timer = vim.fn.timer_start(AUTO_DISMISS_MS, function()
-        close_dashboard()
-    end)
-end
-
----Close the dashboard. Exposed for keymap.
-function M.close()
-    close_dashboard()
-end
-
----Setup: create user commands. Idempotent.
-function M.setup()
-    if augroup_id ~= nil then
-        return
-    end
-    augroup_id = vim.api.nvim_create_augroup('DiverStartupProfile', { clear = true })
-
-    vim.api.nvim_create_user_command('StartupProfile', function(opts)
-        M.open(opts.args ~= '' and opts.args or nil)
-    end, {
-        nargs = '?',
-        complete = 'file',
-        desc = 'Show startup profile from --startuptime log',
-    })
-
-    vim.api.nvim_create_user_command('StartupProfileCapture', function()
-        M.capture()
-    end, { desc = 'Restart nvim and capture a fresh startup profile' })
-
-    -- Auto-open profile after a capture restart.
-    vim.api.nvim_create_autocmd('VimEnter', {
-        group = augroup_id,
-        once = true,
-        callback = function()
-            if vim.fn.filereadable(PENDING_MARKER) == 1 then
-                vim.fn.delete(PENDING_MARKER)
-                -- Defer to let startup settle before opening the float.
-                vim.defer_fn(function()
-                    M.open(nil)
-                end, 500)
-            end
-        end,
-    })
-end
-
----Capture is now automatic via the require() wrapper in init.lua.
----This just opens the current profile.
-function M.capture()
-    M.open(nil)
-    return
-end
-
 function M._old_capture_unused()
     -- Clear old log.
     pcall(vim.fn.delete, DEFAULT_LOG_PATH)
@@ -323,6 +209,113 @@ function M._old_capture_unused()
     -- Give the new process a moment to spawn before quitting.
     vim.wait(500)
     vim.cmd('qa!')
+end
+
+---Capture is now automatic via the require() wrapper in init.lua.
+---This just opens the current profile.
+function M.capture()
+    M.open(nil)
+end
+
+---Close the dashboard. Exposed for keymap.
+function M.close()
+    close_dashboard()
+end
+
+function M.open(log_path)
+    close_dashboard()
+
+    local path = log_path
+    if path == nil or path == '' then
+        path = DEFAULT_LOG_PATH
+    end
+    local entries, err = parse_startup_log(path)
+    if entries == nil then
+        vim.notify('StartupProfile: ' .. (err or 'parse failed'), vim.log.levels.WARN)
+        return
+    end
+    local lines = build_dashboard_lines(entries)
+
+    dashboard_buf = vim.api.nvim_create_buf(false, true)
+    assert(dashboard_buf ~= 0, 'failed to create buffer')
+
+    local content_height = math.max(FLOAT_HEIGHT_MIN, math.min(FLOAT_HEIGHT_MAX, #lines))
+    local ui = vim.api.nvim_list_uis()[1]
+    local row = math.floor((ui.height - content_height) / 2)
+    local col = math.floor((ui.width - FLOAT_WIDTH_COLS) / 2)
+
+    dashboard_win = vim.api.nvim_open_win(dashboard_buf, true, {
+        relative = 'editor',
+        width = FLOAT_WIDTH_COLS,
+        height = content_height,
+        row = row,
+        col = col,
+        style = 'minimal',
+        border = 'rounded',
+        title = ' Startup Profile ',
+        title_pos = 'center',
+    })
+    assert(dashboard_win ~= 0, 'failed to open window')
+
+    vim.api.nvim_set_option_value('filetype', 'startupprofile', { buf = dashboard_buf })
+    vim.api.nvim_set_option_value('modifiable', true, { buf = dashboard_buf })
+    vim.api.nvim_buf_set_lines(dashboard_buf, 0, -1, false, lines)
+    vim.api.nvim_set_option_value('modifiable', false, { buf = dashboard_buf })
+
+    vim.api.nvim_buf_set_keymap(
+        dashboard_buf,
+        'n',
+        '<Esc>',
+        '<cmd>lua require("config.ui.startup_profile").close()<CR>',
+        { noremap = true, silent = true }
+    )
+    vim.api.nvim_buf_set_keymap(
+        dashboard_buf,
+        'n',
+        'q',
+        '<cmd>lua require("config.ui.startup_profile").close()<CR>',
+        { noremap = true, silent = true }
+    )
+
+    -- Auto-dismiss after 5 seconds (longer than LSP dashboard: more to read).
+    dismiss_timer = vim.fn.timer_start(AUTO_DISMISS_MS, function()
+        close_dashboard()
+    end)
+end
+
+---Setup: create user commands. Idempotent.
+function M.setup()
+    if augroup_id ~= nil then
+        return
+    end
+    augroup_id = vim.api.nvim_create_augroup('DiverStartupProfile', { clear = true })
+
+    vim.api.nvim_create_user_command('StartupProfile', function(opts)
+        M.open(opts.args ~= '' and opts.args or nil)
+    end, {
+        nargs = '?',
+        complete = 'file',
+        desc = 'Show startup profile from --startuptime log',
+    })
+
+    vim.api.nvim_create_user_command('StartupProfileCapture', function()
+        M.capture()
+    end, { desc = 'Restart nvim and capture a fresh startup profile' })
+
+    -- Auto-open profile after a capture restart.
+    vim.api.nvim_create_autocmd('VimEnter', {
+        group = augroup_id,
+        once = true,
+        callback = function()
+            if vim.fn.filereadable(PENDING_MARKER) == 1 then
+                vim.fn.delete(PENDING_MARKER)
+                -- Defer to let startup settle before opening the float.
+                vim.defer_fn(function()
+                    M.open(nil)
+                end, 500)
+            end
+        end,
+    })
 end
 
 return M

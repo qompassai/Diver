@@ -9,11 +9,23 @@ local diagnostic = vim.diagnostic
 local g = vim.g
 local levels = vim.log.levels
 local lsp = vim.lsp
-local uv = vim.uv
-local traceback = debug.traceback
 local lspmap = require('config.mappings.lspmap')
 assert(type(lspmap.on_attach) == 'function', 'mappings.lspmap.on_attach must be a function')
-local MODULE_NAME = 'config.core.lsp'
+local traceback = debug.traceback
+local uv = vim.uv
+local DIAGNOSTIC_ICONS = {
+    [diagnostic.severity.ERROR] = ' ',
+    [diagnostic.severity.HINT] = ' ',
+    [diagnostic.severity.INFO] = ' ',
+    [diagnostic.severity.WARN] = ' ',
+}
+
+local GROUP = {
+    core = api.nvim_create_augroup('LspCore', {
+        clear = true,
+    }),
+}
+
 local METHOD = {
     completion = 'textDocument/completion',
     document_color = 'textDocument/documentColor',
@@ -22,18 +34,7 @@ local METHOD = {
     inline_completion = 'textDocument/inlineCompletion',
     will_save_wait_until = 'textDocument/willSaveWaitUntil',
 }
-local GROUP = {
-    core = api.nvim_create_augroup('LspCore', {
-        clear = true,
-    }),
-}
 
-local DIAGNOSTIC_ICONS = {
-    [diagnostic.severity.ERROR] = ' ',
-    [diagnostic.severity.HINT] = ' ',
-    [diagnostic.severity.INFO] = ' ',
-    [diagnostic.severity.WARN] = ' ',
-}
 local state = {
     attached = {},
     lsp_format_stage_registered = false,
@@ -42,14 +43,26 @@ local state = {
     setup = false,
 }
 
-local function feature_enabled(name, default)
-    local value = g[name]
+local function attached_client_from_event(event)
+    local data = event.data
 
-    if value == nil then
-        return default
+    if type(data) ~= 'table' then
+        return nil
     end
 
-    return value == true or value == 1
+    local event_client_id = data.client_id
+
+    local clients = lsp.get_clients({
+        bufnr = event.buf,
+    })
+
+    for _, client in ipairs(clients) do
+        if client.id == event_client_id then
+            return client
+        end
+    end
+
+    return nil
 end
 
 local function bounded_integer(value, default, minimum, maximum)
@@ -72,26 +85,61 @@ local function bounded_integer(value, default, minimum, maximum)
     return result
 end
 
-local function valid_buffer(bufnr)
-    return api.nvim_buf_is_valid(bufnr) and api.nvim_buf_is_loaded(bufnr)
-end
-
 local function buffer_scope(bufnr)
     return {
         bufnr = bufnr,
     }
 end
 
----Check whether a client supports an LSP method for a buffer.
----
----Plain-language version: ask the language client "can you do this here?";
----features are only turned on when the server says yes.
-local function supports(client, method, bufnr)
-    if client:is_stopped() then
-        return false
+local function clear_format_preference(bufnr)
+    pcall(api.nvim_buf_del_var, bufnr, 'lsp_format_client')
+end
+
+local function feature_enabled(name, default)
+    local value = g[name]
+
+    if value == nil then
+        return default
     end
 
-    return client:supports_method(method, bufnr)
+    return value == true or value == 1
+end
+
+local function configure_semantic_tokens(client, bufnr)
+    if client.server_capabilities.semanticTokensProvider == nil then
+        return
+    end
+
+    lsp.semantic_tokens.enable(feature_enabled('semantic_tokens_enabled', true), buffer_scope(bufnr))
+end
+
+local function get_format_preference(bufnr)
+    local ok, value = pcall(api.nvim_buf_get_var, bufnr, 'lsp_format_client')
+
+    if not ok then
+        return nil
+    end
+
+    if type(value) == 'string' then
+        return value
+    end
+
+    if type(value) == 'number' then
+        return tostring(value)
+    end
+
+    return nil
+end
+
+local function load_enabled_lsp_configs()
+    -- DEPRECATED 2026-10-04: LSP bootstrap moved to config/lsp.lua which is
+    -- loaded via config/init.lua. The runtime('lsp/init.lua') approach was
+    -- fragile (lsp/ is for configs, not modules). This is now a no-op.
+    if state.lsp_init_loaded then
+        return true
+    end
+    state.lsp_init_loaded = true
+    return true
 end
 
 local function mark_attached(bufnr, client_id)
@@ -112,18 +160,44 @@ local function mark_attached(bufnr, client_id)
     return true
 end
 
-local function unmark_attached(bufnr, client_id)
-    local clients = state.attached[bufnr]
-
-    if clients == nil then
-        return
+local function progress_key(data)
+    if type(data) ~= 'table' then
+        return '0'
     end
 
-    clients[client_id] = nil
+    local client_id = data.client_id
 
-    if next(clients) == nil then
-        state.attached[bufnr] = nil
+    if type(client_id) ~= 'number' and type(client_id) ~= 'string' then
+        return '0'
     end
+
+    return tostring(client_id)
+end
+
+local function semantic_client_from_event(event)
+    local data = event.data
+
+    if type(data) ~= 'table' then
+        return nil
+    end
+
+    local event_client_id = data.client_id
+
+    local clients = lsp.get_clients({
+        bufnr = event.buf,
+    })
+
+    for _, client in ipairs(clients) do
+        if client.id == event_client_id then
+            return client
+        end
+    end
+
+    return nil
+end
+
+local function set_format_preference(bufnr, value)
+    api.nvim_buf_set_var(bufnr, 'lsp_format_client', value)
 end
 
 local function set_global_option(name, value)
@@ -139,15 +213,15 @@ local function setup_completion_options()
 
     set_global_option('autocompletetimeout', 80)
 
-    set_global_option('completetimeout', 150)
+    set_global_option('complete', '.^20,b^10,w^10')
 
     set_global_option('completeitemalign', 'abbr,kind,menu')
 
     set_global_option('completeopt', 'menu,menuone,noselect,fuzzy')
 
-    set_global_option('pumheight', 15)
+    set_global_option('completetimeout', 150)
 
-    set_global_option('complete', '.^20,b^10,w^10')
+    set_global_option('pumheight', 15)
 end
 
 local function setup_diagnostics()
@@ -192,7 +266,6 @@ local function setup_diagnostics()
             },
         },
 
-
         underline = {
             severity = {
                 min = diagnostic.severity.WARN,
@@ -216,51 +289,22 @@ local function setup_diagnostics()
             source = true,
             spacing = 2,
         },
-
     })
 
     diagnostic.enable(true)
 end
 
-M.capabilities = vim.tbl_deep_extend('force', lsp.protocol.make_client_capabilities(), {
-    textDocument = {
-        completion = {
-            completionItem = {
-                commitCharactersSupport = true,
+---Check whether a client supports an LSP method for a buffer.
+---
+---Plain-language version: ask the language client "can you do this here?";
+---features are only turned on when the server says yes.
+local function supports(client, method, bufnr)
+    if client:is_stopped() then
+        return false
+    end
 
-                deprecatedSupport = true,
-
-                documentationFormat = {
-                    'markdown',
-                    'plaintext',
-                },
-
-                insertReplaceSupport = true,
-
-                labelDetailsSupport = true,
-
-                preselectSupport = true,
-
-                resolveSupport = {
-                    properties = {
-                        'additionalTextEdits',
-                        'command',
-                        'detail',
-                        'documentation',
-                    },
-                },
-
-                snippetSupport = true,
-            },
-
-            contextSupport = true,
-        },
-
-        semanticTokens = {
-            multilineTokenSupport = true,
-        },
-    },
-})
+    return client:supports_method(method, bufnr)
+end
 
 local function configure_completion(client, bufnr)
     if not supports(client, METHOD.completion, bufnr) then
@@ -314,14 +358,6 @@ local function configure_inline_completion(client, bufnr)
     lsp.inline_completion.enable(feature_enabled('lsp_inline_completion', false), buffer_scope(bufnr))
 end
 
-local function configure_semantic_tokens(client, bufnr)
-    if client.server_capabilities.semanticTokensProvider == nil then
-        return
-    end
-
-    lsp.semantic_tokens.enable(feature_enabled('semantic_tokens_enabled', true), buffer_scope(bufnr))
-end
-
 local function formatting_clients(bufnr, include_will_save)
     local clients = lsp.get_clients({
         bufnr = bufnr,
@@ -345,32 +381,6 @@ local function formatting_clients(bufnr, include_will_save)
     return result
 end
 
-local function get_format_preference(bufnr)
-    local ok, value = pcall(api.nvim_buf_get_var, bufnr, 'lsp_format_client')
-
-    if not ok then
-        return nil
-    end
-
-    if type(value) == 'string' then
-        return value
-    end
-
-    if type(value) == 'number' then
-        return tostring(value)
-    end
-
-    return nil
-end
-
-local function clear_format_preference(bufnr)
-    pcall(api.nvim_buf_del_var, bufnr, 'lsp_format_client')
-end
-
-local function set_format_preference(bufnr, value)
-    api.nvim_buf_set_var(bufnr, 'lsp_format_client', value)
-end
-
 local function select_format_client(bufnr, include_will_save)
     local clients = formatting_clients(bufnr, include_will_save)
 
@@ -389,6 +399,110 @@ local function select_format_client(bufnr, include_will_save)
     end
 
     return clients[1]
+end
+
+local function unmark_attached(bufnr, client_id)
+    local clients = state.attached[bufnr]
+
+    if clients == nil then
+        return
+    end
+
+    clients[client_id] = nil
+
+    if next(clients) == nil then
+        state.attached[bufnr] = nil
+    end
+end
+
+local function detach_missing_clients(bufnr)
+    local tracked = state.attached[bufnr]
+
+    if tracked == nil then
+        return
+    end
+
+    local active = {}
+
+    local clients = lsp.get_clients({
+        bufnr = bufnr,
+    })
+
+    for _, client in ipairs(clients) do
+        active[client.id] = true
+    end
+
+    for client_id in pairs(tracked) do
+        if not active[client_id] then
+            unmark_attached(bufnr, client_id)
+        end
+    end
+end
+
+local function update_terminal_progress(event)
+    if not feature_enabled('lsp_terminal_progress', false) then
+        return
+    end
+
+    local data = event.data
+
+    if type(data) ~= 'table' then
+        return
+    end
+
+    local params = data.params
+
+    if type(params) ~= 'table' then
+        return
+    end
+
+    local value = params.value
+
+    if type(value) ~= 'table' then
+        return
+    end
+
+    local key = progress_key(data)
+
+    if value.kind == 'begin' then
+        state.progress_at[key] = 0
+
+        api.nvim_ui_send('\027]9;4;1;0\027\\')
+
+        return
+    end
+
+    if value.kind == 'end' then
+        state.progress_at[key] = nil
+
+        api.nvim_ui_send('\027]9;4;0\027\\')
+
+        return
+    end
+
+    if value.kind ~= 'report' then
+        return
+    end
+
+    local now = uv.hrtime()
+
+    local interval_ms = bounded_integer(g.lsp_progress_interval_ms, 100, 50, 1000)
+
+    local last = state.progress_at[key] or 0
+
+    if now - last < interval_ms * 1000000 then
+        return
+    end
+
+    state.progress_at[key] = now
+
+    local percentage = bounded_integer(value.percentage, 0, 0, 100)
+
+    api.nvim_ui_send(string.format('\027]9;4;1;%d\027\\', percentage))
+end
+
+local function valid_buffer(bufnr)
+    return api.nvim_buf_is_valid(bufnr) and api.nvim_buf_is_loaded(bufnr)
 end
 
 local function format_buffer(bufnr, include_will_save)
@@ -448,48 +562,106 @@ local function ensure_lsp_format_stage()
     })
 end
 
-function M.on_attach(client, bufnr)
-    if not valid_buffer(bufnr) then
+local function highlight_mutable_token(event)
+    if not feature_enabled('lsp_mutable_variable_highlight', false) then
         return
     end
 
-    if not mark_attached(bufnr, client.id) then
+    if not valid_buffer(event.buf) then
         return
     end
 
-    local ok, err = xpcall(function()
-        configure_completion(client, bufnr)
+    local data = event.data
 
-        configure_document_colors(client, bufnr)
-
-        configure_inlay_hints(client, bufnr)
-
-        configure_inline_completion(client, bufnr)
-
-        configure_semantic_tokens(client, bufnr)
-
-        if supports(client, METHOD.formatting, bufnr) and not supports(client, METHOD.will_save_wait_until, bufnr) then
-            ensure_lsp_format_stage()
-        end
-
-        lspmap.on_attach({
-            buf = bufnr,
-
-            data = {
-                client_id = client.id,
-            },
-        })
-    end, traceback)
-
-    if ok then
+    if type(data) ~= 'table' then
         return
     end
 
-    unmark_attached(bufnr, client.id)
+    local token = data.token
 
-    vim.schedule(function()
-        vim.notify(string.format('LSP attach failed for %s: %s', client.name, tostring(err)), levels.ERROR)
-    end)
+    if type(token) ~= 'table' then
+        return
+    end
+
+    if token.type ~= 'variable' then
+        return
+    end
+
+    if type(token.modifiers) == 'table' and token.modifiers.readonly then
+        return
+    end
+
+    local client = semantic_client_from_event(event)
+
+    if client == nil then
+        return
+    end
+
+    if client.server_capabilities.semanticTokensProvider == nil then
+        return
+    end
+
+    lsp.semantic_tokens.highlight_token(token, event.buf, client.id, 'MyMutableVariableHighlight')
+end
+
+local function setup_autocmds()
+    api.nvim_create_autocmd('BufWipeout', {
+        callback = function(event)
+            state.attached[event.buf] = nil
+        end,
+
+        desc = 'Release native LSP buffer state',
+
+        group = GROUP.core,
+    })
+
+    api.nvim_create_autocmd('LspAttach', {
+        callback = function(event)
+            local client = attached_client_from_event(event)
+
+            if client == nil then
+                return
+            end
+
+            M.on_attach(client, event.buf)
+        end,
+
+        desc = 'Configure native LSP features once per client and buffer',
+
+        group = GROUP.core,
+    })
+
+    api.nvim_create_autocmd('LspDetach', {
+        callback = function(event)
+            local bufnr = event.buf
+
+            vim.schedule(function()
+                if api.nvim_buf_is_valid(bufnr) then
+                    detach_missing_clients(bufnr)
+                end
+            end)
+        end,
+
+        desc = 'Release native LSP client-buffer state',
+
+        group = GROUP.core,
+    })
+
+    api.nvim_create_autocmd('LspProgress', {
+        callback = update_terminal_progress,
+
+        desc = 'Forward throttled LSP progress to supported terminals',
+
+        group = GROUP.core,
+    })
+
+    api.nvim_create_autocmd('LspTokenUpdate', {
+        callback = highlight_mutable_token,
+
+        desc = 'Optionally highlight mutable variables from semantic tokens',
+
+        group = GROUP.core,
+    })
 end
 
 local function setup_commands()
@@ -654,270 +826,88 @@ local function setup_commands()
     })
 end
 
-local function progress_key(data)
-    if type(data) ~= 'table' then
-        return '0'
-    end
+M.capabilities = vim.tbl_deep_extend('force', lsp.protocol.make_client_capabilities(), {
+    textDocument = {
+        completion = {
+            completionItem = {
+                commitCharactersSupport = true,
 
-    local client_id = data.client_id
+                deprecatedSupport = true,
 
-    if type(client_id) ~= 'number' and type(client_id) ~= 'string' then
-        return '0'
-    end
+                documentationFormat = {
+                    'markdown',
+                    'plaintext',
+                },
 
-    return tostring(client_id)
-end
+                insertReplaceSupport = true,
 
-local function update_terminal_progress(event)
-    if not feature_enabled('lsp_terminal_progress', false) then
+                labelDetailsSupport = true,
+
+                preselectSupport = true,
+
+                resolveSupport = {
+                    properties = {
+                        'additionalTextEdits',
+                        'command',
+                        'detail',
+                        'documentation',
+                    },
+                },
+
+                snippetSupport = true,
+            },
+
+            contextSupport = true,
+        },
+
+        semanticTokens = {
+            multilineTokenSupport = true,
+        },
+    },
+})
+
+function M.on_attach(client, bufnr)
+    if not valid_buffer(bufnr) then
         return
     end
 
-    local data = event.data
-
-    if type(data) ~= 'table' then
+    if not mark_attached(bufnr, client.id) then
         return
     end
 
-    local params = data.params
+    local ok, err = xpcall(function()
+        configure_completion(client, bufnr)
 
-    if type(params) ~= 'table' then
-        return
-    end
+        configure_document_colors(client, bufnr)
 
-    local value = params.value
+        configure_inlay_hints(client, bufnr)
 
-    if type(value) ~= 'table' then
-        return
-    end
+        configure_inline_completion(client, bufnr)
 
-    local key = progress_key(data)
+        configure_semantic_tokens(client, bufnr)
 
-    if value.kind == 'begin' then
-        state.progress_at[key] = 0
-
-        api.nvim_ui_send('\027]9;4;1;0\027\\')
-
-        return
-    end
-
-    if value.kind == 'end' then
-        state.progress_at[key] = nil
-
-        api.nvim_ui_send('\027]9;4;0\027\\')
-
-        return
-    end
-
-    if value.kind ~= 'report' then
-        return
-    end
-
-    local now = uv.hrtime()
-
-    local interval_ms = bounded_integer(g.lsp_progress_interval_ms, 100, 50, 1000)
-
-    local last = state.progress_at[key] or 0
-
-    if now - last < interval_ms * 1000000 then
-        return
-    end
-
-    state.progress_at[key] = now
-
-    local percentage = bounded_integer(value.percentage, 0, 0, 100)
-
-    api.nvim_ui_send(string.format('\027]9;4;1;%d\027\\', percentage))
-end
-
-local function attached_client_from_event(event)
-    local data = event.data
-
-    if type(data) ~= 'table' then
-        return nil
-    end
-
-    local event_client_id = data.client_id
-
-    local clients = lsp.get_clients({
-        bufnr = event.buf,
-    })
-
-    for _, client in ipairs(clients) do
-        if client.id == event_client_id then
-            return client
+        if supports(client, METHOD.formatting, bufnr) and not supports(client, METHOD.will_save_wait_until, bufnr) then
+            ensure_lsp_format_stage()
         end
-    end
 
-    return nil
-end
+        lspmap.on_attach({
+            buf = bufnr,
 
-local function detach_missing_clients(bufnr)
-    local tracked = state.attached[bufnr]
+            data = {
+                client_id = client.id,
+            },
+        })
+    end, traceback)
 
-    if tracked == nil then
+    if ok then
         return
     end
 
-    local active = {}
+    unmark_attached(bufnr, client.id)
 
-    local clients = lsp.get_clients({
-        bufnr = bufnr,
-    })
-
-    for _, client in ipairs(clients) do
-        active[client.id] = true
-    end
-
-    for client_id in pairs(tracked) do
-        if not active[client_id] then
-            unmark_attached(bufnr, client_id)
-        end
-    end
-end
-
-local function semantic_client_from_event(event)
-    local data = event.data
-
-    if type(data) ~= 'table' then
-        return nil
-    end
-
-    local event_client_id = data.client_id
-
-    local clients = lsp.get_clients({
-        bufnr = event.buf,
-    })
-
-    for _, client in ipairs(clients) do
-        if client.id == event_client_id then
-            return client
-        end
-    end
-
-    return nil
-end
-
-local function highlight_mutable_token(event)
-    if not feature_enabled('lsp_mutable_variable_highlight', false) then
-        return
-    end
-
-    if not valid_buffer(event.buf) then
-        return
-    end
-
-    local data = event.data
-
-    if type(data) ~= 'table' then
-        return
-    end
-
-    local token = data.token
-
-    if type(token) ~= 'table' then
-        return
-    end
-
-    if token.type ~= 'variable' then
-        return
-    end
-
-    if type(token.modifiers) == 'table' and token.modifiers.readonly then
-        return
-    end
-
-    local client = semantic_client_from_event(event)
-
-    if client == nil then
-        return
-    end
-
-    if client.server_capabilities.semanticTokensProvider == nil then
-        return
-    end
-
-    lsp.semantic_tokens.highlight_token(token, event.buf, client.id, 'MyMutableVariableHighlight')
-end
-
-local function setup_autocmds()
-    api.nvim_create_autocmd('BufWipeout', {
-        callback = function(event)
-            state.attached[event.buf] = nil
-        end,
-
-        desc = 'Release native LSP buffer state',
-
-        group = GROUP.core,
-    })
-
-    api.nvim_create_autocmd('LspAttach', {
-        callback = function(event)
-            local client = attached_client_from_event(event)
-
-            if client == nil then
-                return
-            end
-
-            M.on_attach(client, event.buf)
-        end,
-
-        desc = 'Configure native LSP features once per client and buffer',
-
-        group = GROUP.core,
-    })
-
-    api.nvim_create_autocmd('LspDetach', {
-        callback = function(event)
-            local bufnr = event.buf
-
-            vim.schedule(function()
-                if api.nvim_buf_is_valid(bufnr) then
-                    detach_missing_clients(bufnr)
-                end
-            end)
-        end,
-
-        desc = 'Release native LSP client-buffer state',
-
-        group = GROUP.core,
-    })
-
-    api.nvim_create_autocmd('LspProgress', {
-        callback = update_terminal_progress,
-
-        desc = 'Forward throttled LSP progress to supported terminals',
-
-        group = GROUP.core,
-    })
-
-    api.nvim_create_autocmd('LspTokenUpdate', {
-        callback = highlight_mutable_token,
-
-        desc = 'Optionally highlight mutable variables from semantic tokens',
-
-        group = GROUP.core,
-    })
-end
-
-local function load_enabled_lsp_configs()
-    if state.lsp_init_loaded then
-        return true
-    end
-
-    package.loaded[MODULE_NAME] = M
-
-    local ok, err = pcall(vim.cmd.runtime, 'lsp/init.lua')
-
-    if not ok then
-        vim.notify(string.format('Failed to load lsp/init.lua: %s', tostring(err)), levels.ERROR)
-
-        return false
-    end
-
-    state.lsp_init_loaded = true
-
-    return true
+    vim.schedule(function()
+        vim.notify(string.format('LSP attach failed for %s: %s', client.name, tostring(err)), levels.ERROR)
+    end)
 end
 
 function M.setup()

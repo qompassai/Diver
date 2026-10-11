@@ -8,14 +8,14 @@
 -- Cancellation kills the direct child, not an arbitrary descendant process tree.
 -- Profiles and task keys are alphabetical; setup has no automatic task execution.
 
-local M = {}
-local core = require('config.mappings._core')
 local api = vim.api
+local core = require('config.mappings._core')
 local fn = vim.fn
+local M = {}
 local uv = vim.uv
 
-local ARGV_MAX = 64
 local ARG_BYTES_MAX = 8192
+local ARGV_MAX = 64
 local JOBS_MAX = 4
 local OUTPUT_BYTES_MAX = 1024 * 1024
 local OUTPUT_CHUNKS_MAX = 4096
@@ -64,6 +64,32 @@ local TIMEOUT_MS_MAX = 600000
 local function task(label, argv, project)
     return { argv = argv, label = label, project = project }
 end
+
+---@type table<string, string>
+local ALIASES = {
+    astro = 'typescript',
+    cpp = 'c',
+    cuda = 'c',
+    javascriptreact = 'typescript',
+    objc = 'c',
+    objcpp = 'c',
+    ocamlinterface = 'ocaml',
+    plaintex = 'tex',
+    svelte = 'typescript',
+    typescriptreact = 'typescript',
+    vue = 'typescript',
+}
+
+local COMMAND_TASKS = {
+    soql = {
+        c = { command = 'SfQueryLint', label = 'Check SOQL query' },
+        r = { command = 'SfSoqlRun', label = 'Run SOQL query' },
+    },
+    sosl = {
+        c = { command = 'SfQueryLint', label = 'Check SOSL query' },
+        r = { command = 'SfSoslRun', label = 'Run SOSL query' },
+    },
+}
 
 ---@type table<string, LanguageProfile>
 local PROFILES = {
@@ -495,60 +521,40 @@ local PROFILES = {
     },
 }
 
----@type table<string, string>
-local ALIASES = {
-    astro = 'typescript',
-    cpp = 'c',
-    cuda = 'c',
-    javascriptreact = 'typescript',
-    objc = 'c',
-    objcpp = 'c',
-    ocamlinterface = 'ocaml',
-    plaintex = 'tex',
-    svelte = 'typescript',
-    typescriptreact = 'typescript',
-    vue = 'typescript',
-}
-
-local COMMAND_TASKS = {
-    soql = {
-        c = { command = 'SfQueryLint', label = 'Check SOQL query' },
-        r = { command = 'SfSoqlRun', label = 'Run SOQL query' },
-    },
-    sosl = {
-        c = { command = 'SfQueryLint', label = 'Check SOSL query' },
-        r = { command = 'SfSoslRun', label = 'Run SOSL query' },
-    },
-}
-
----@type table<string, LanguageProfile>
-local profiles = {}
----@type table<integer, LanguageJob>
-local jobs = {}
----@type table<integer, integer>
-local pending = {}
----@type LanguageMappingsOptions
-local options = {}
----@type string[]
-local last_output = { 'No language task has completed yet.' }
 local generation = 0
 local group = 0
+---@type table<integer, LanguageJob>
+local jobs = {}
+---@type string[]
+local last_output = { 'No language task has completed yet.' }
+---@type LanguageMappingsOptions
+local options = {}
+---@type table<integer, integer>
+local pending = {}
 local prefix = ''
+---@type table<string, LanguageProfile>
+local profiles = {}
 
----@param message string
----@param level? integer
-local function notify(message, level)
-    vim.notify(message, level or vim.log.levels.INFO, { title = 'Language mappings' })
+---@param selected LanguageTask
+---@return boolean
+local function available_task(selected)
+    local executable = selected.argv[1]
+    -- Relative executables are resolved against the project at invocation time.
+    return executable:find('[/\\]') ~= nil or fn.executable(executable) == 1
 end
 
----@param bufnr integer
----@return boolean
-local function usable(bufnr)
-    return api.nvim_buf_is_valid(bufnr)
-        and api.nvim_buf_is_loaded(bufnr)
-        and vim.b[bufnr].nvim_dir == nil
-        and vim.bo[bufnr].buftype == ''
-        and vim.bo[bufnr].filetype ~= ''
+local function clear_maps(bufnr)
+    core.clear('langmap', bufnr)
+end
+
+---@param job LanguageJob
+local function close_timer(job)
+    local timer = job.timer
+    job.timer = nil
+    if timer and not timer:is_closing() then
+        timer:stop()
+        timer:close()
+    end
 end
 
 ---@param keys string
@@ -563,129 +569,10 @@ local function keycodes(keys)
     return api.nvim_replace_termcodes(expanded, true, true, true)
 end
 
-local function clear_maps(bufnr)
-    core.clear('langmap', bufnr)
-end
-
----@param lines string[]
-local function show_lines(lines)
-    local bufnr = api.nvim_create_buf(false, true)
-    vim.bo[bufnr].bufhidden = 'wipe'
-    vim.bo[bufnr].swapfile = false
-    api.nvim_buf_set_lines(bufnr, 0, -1, false, lines)
-    vim.bo[bufnr].modifiable = false
-    vim.cmd.split()
-    api.nvim_win_set_buf(0, bufnr)
-end
-
----@param bufnr? integer
-function M.status(bufnr)
-    bufnr = bufnr or api.nvim_get_current_buf()
-    if not usable(bufnr) then
-        return
-    end
-    local filetype = vim.bo[bufnr].filetype
-    local lines = { 'Filetype: ' .. filetype, 'Prefix: ' .. vim.fn.keytrans(prefix) }
-    for _, client in ipairs(vim.lsp.get_clients({ bufnr = bufnr })) do
-        lines[#lines + 1] = 'Attached server: ' .. client.name
-    end
-    local profile = profiles[filetype]
-    if profile then
-        for _, key in ipairs(vim.tbl_keys(profile.tasks)) do
-            lines[#lines + 1] = key .. ': ' .. profile.tasks[key].label
-        end
-    else
-        lines[#lines + 1] = 'No default task profile; add options.profiles.'
-    end
-    table.sort(lines)
-    show_lines(lines)
-end
-
-function M.output()
-    show_lines(last_output)
-end
-
----@param invocation LanguageInvocation
----@return boolean
-local function unchanged(invocation)
-    local bufnr = invocation.bufnr
-    return usable(bufnr)
-        and api.nvim_get_current_buf() == bufnr
-        and api.nvim_buf_get_changedtick(bufnr) == invocation.tick
-        and api.nvim_buf_get_name(bufnr) == invocation.file
-        and vim.bo[bufnr].filetype == invocation.filetype
-        and uv.fs_realpath(invocation.file) == invocation.real_file
-        and uv.fs_realpath(invocation.cwd) == invocation.cwd
-        and not vim.bo[bufnr].modified
-end
-
----@param job LanguageJob
-local function close_timer(job)
-    local timer = job.timer
-    job.timer = nil
-    if timer and not timer:is_closing() then
-        timer:stop()
-        timer:close()
-    end
-end
-
----@param process vim.SystemObj
----@param signal_number integer
-local function signal_process(process, signal_number)
-    local ok, err = pcall(process.kill, process, signal_number)
-    if not ok then
-        vim.schedule(function()
-            notify('Could not signal task process: ' .. tostring(err), vim.log.levels.WARN)
-        end)
-    end
-end
-
----@param job LanguageJob
-local function stop_job(job)
-    if job.stopped then
-        return
-    end
-    job.stopped = true
-    close_timer(job)
-    local process = job.process
-    if process then
-        signal_process(process, 15)
-        job.timer = vim.defer_fn(function()
-            job.timer = nil
-            if jobs[job.invocation.bufnr] == job then
-                signal_process(process, 9)
-            end
-        end, 1000)
-    end
-end
-
----@param bufnr? integer
-function M.cancel(bufnr)
-    bufnr = bufnr or api.nvim_get_current_buf()
-    pending[bufnr] = nil
-    local job = jobs[bufnr]
-    if job then
-        stop_job(job)
-    end
-end
-
----@param job LanguageJob
----@param data string
-local function collect(job, data)
-    local available = OUTPUT_BYTES_MAX - job.bytes
-    if available > 0 and #data > 0 and #job.chunks < OUTPUT_CHUNKS_MAX then
-        local chunk = data:sub(1, available)
-        job.chunks[#job.chunks + 1] = chunk
-        job.bytes = job.bytes + #chunk
-    end
-    if (#data > available or #job.chunks >= OUTPUT_CHUNKS_MAX) and not job.truncated then
-        job.truncated = true
-        vim.schedule(function()
-            if jobs[job.invocation.bufnr] == job then
-                stop_job(job)
-            end
-        end)
-    end
+---@param message string
+---@param level? integer
+local function notify(message, level)
+    vim.notify(message, level or vim.log.levels.INFO, { title = 'Language mappings' })
 end
 
 ---@param job LanguageJob
@@ -718,61 +605,6 @@ local function finish(job, result)
     end
 end
 
----@param invocation LanguageInvocation
-local function launch(invocation)
-    local bufnr = invocation.bufnr
-    if not unchanged(invocation) then
-        notify('Buffer changed during selection; invoke the action again.', vim.log.levels.WARN)
-        return
-    end
-    if jobs[bufnr] or vim.tbl_count(jobs) >= JOBS_MAX then
-        notify('Task limit reached; cancel or wait for an active task.', vim.log.levels.WARN)
-        return
-    end
-    ---@type LanguageJob
-    local job = {
-        bytes = 0,
-        chunks = {},
-        invocation = invocation,
-        stopped = false,
-        truncated = false,
-    }
-    jobs[bufnr] = job
-    local function on_output(err, data)
-        if err then
-            collect(job, tostring(err) .. '\n')
-        end
-        if data then
-            collect(job, data)
-        end
-    end
-    local ok, process = pcall(vim.system, invocation.argv, {
-        cwd = invocation.cwd,
-        env = { NO_COLOR = '1', PAGER = 'cat' },
-        stderr = on_output,
-        stdout = on_output,
-        text = true,
-        timeout = invocation.timeout_ms,
-    }, function(result)
-        vim.schedule(function()
-            finish(job, result)
-        end)
-    end)
-    if not ok then
-        jobs[bufnr] = nil
-        notify('Cannot start task: ' .. tostring(process), vim.log.levels.ERROR)
-        return
-    end
-    job.process = process
-    -- vim.system's async timeout sends TERM; enforce a hard upper bound as well.
-    job.timer = vim.defer_fn(function()
-        job.timer = nil
-        if jobs[bufnr] == job then
-            signal_process(process, 9)
-        end
-    end, invocation.timeout_ms + 1000)
-end
-
 ---@param executable string
 ---@param cwd string
 ---@return string
@@ -786,6 +618,27 @@ local function resolve_executable(executable, cwd)
         executable = vim.fs.joinpath(cwd, executable)
     end
     return executable
+end
+
+---@param lines string[]
+local function show_lines(lines)
+    local bufnr = api.nvim_create_buf(false, true)
+    vim.bo[bufnr].bufhidden = 'wipe'
+    vim.bo[bufnr].swapfile = false
+    api.nvim_buf_set_lines(bufnr, 0, -1, false, lines)
+    vim.bo[bufnr].modifiable = false
+    vim.cmd.split()
+    api.nvim_win_set_buf(0, bufnr)
+end
+
+---@param bufnr integer
+---@return boolean
+local function usable(bufnr)
+    return api.nvim_buf_is_valid(bufnr)
+        and api.nvim_buf_is_loaded(bufnr)
+        and vim.b[bufnr].nvim_dir == nil
+        and vim.bo[bufnr].buftype == ''
+        and vim.bo[bufnr].filetype ~= ''
 end
 
 ---@param bufnr integer
@@ -862,6 +715,125 @@ local function prepare(bufnr, selected, profile)
 end
 
 ---@param invocation LanguageInvocation
+---@return boolean
+local function unchanged(invocation)
+    local bufnr = invocation.bufnr
+    return usable(bufnr)
+        and api.nvim_get_current_buf() == bufnr
+        and api.nvim_buf_get_changedtick(bufnr) == invocation.tick
+        and api.nvim_buf_get_name(bufnr) == invocation.file
+        and vim.bo[bufnr].filetype == invocation.filetype
+        and uv.fs_realpath(invocation.file) == invocation.real_file
+        and uv.fs_realpath(invocation.cwd) == invocation.cwd
+        and not vim.bo[bufnr].modified
+end
+
+---@param process vim.SystemObj
+---@param signal_number integer
+local function signal_process(process, signal_number)
+    local ok, err = pcall(process.kill, process, signal_number)
+    if not ok then
+        vim.schedule(function()
+            notify('Could not signal task process: ' .. tostring(err), vim.log.levels.WARN)
+        end)
+    end
+end
+
+---@param job LanguageJob
+local function stop_job(job)
+    if job.stopped then
+        return
+    end
+    job.stopped = true
+    close_timer(job)
+    local process = job.process
+    if process then
+        signal_process(process, 15)
+        job.timer = vim.defer_fn(function()
+            job.timer = nil
+            if jobs[job.invocation.bufnr] == job then
+                signal_process(process, 9)
+            end
+        end, 1000)
+    end
+end
+
+---@param job LanguageJob
+---@param data string
+local function collect(job, data)
+    local available = OUTPUT_BYTES_MAX - job.bytes
+    if available > 0 and #data > 0 and #job.chunks < OUTPUT_CHUNKS_MAX then
+        local chunk = data:sub(1, available)
+        job.chunks[#job.chunks + 1] = chunk
+        job.bytes = job.bytes + #chunk
+    end
+    if (#data > available or #job.chunks >= OUTPUT_CHUNKS_MAX) and not job.truncated then
+        job.truncated = true
+        vim.schedule(function()
+            if jobs[job.invocation.bufnr] == job then
+                stop_job(job)
+            end
+        end)
+    end
+end
+
+---@param invocation LanguageInvocation
+local function launch(invocation)
+    local bufnr = invocation.bufnr
+    if not unchanged(invocation) then
+        notify('Buffer changed during selection; invoke the action again.', vim.log.levels.WARN)
+        return
+    end
+    if jobs[bufnr] or vim.tbl_count(jobs) >= JOBS_MAX then
+        notify('Task limit reached; cancel or wait for an active task.', vim.log.levels.WARN)
+        return
+    end
+    ---@type LanguageJob
+    local job = {
+        bytes = 0,
+        chunks = {},
+        invocation = invocation,
+        stopped = false,
+        truncated = false,
+    }
+    jobs[bufnr] = job
+    local function on_output(err, data)
+        if err then
+            collect(job, tostring(err) .. '\n')
+        end
+        if data then
+            collect(job, data)
+        end
+    end
+    local ok, process = pcall(vim.system, invocation.argv, {
+        cwd = invocation.cwd,
+        env = { NO_COLOR = '1', PAGER = 'cat' },
+        stderr = on_output,
+        stdout = on_output,
+        text = true,
+        timeout = invocation.timeout_ms,
+    }, function(result)
+        vim.schedule(function()
+            finish(job, result)
+        end)
+    end)
+    if not ok then
+        jobs[bufnr] = nil
+        notify('Cannot start task: ' .. tostring(process), vim.log.levels.ERROR)
+        return
+    end
+    ---@cast process vim.SystemObj
+    job.process = process
+    -- vim.system's async timeout sends TERM; enforce a hard upper bound as well.
+    job.timer = vim.defer_fn(function()
+        job.timer = nil
+        if jobs[bufnr] == job then
+            signal_process(process, 9)
+        end
+    end, invocation.timeout_ms + 1000)
+end
+
+---@param invocation LanguageInvocation
 local function authorize(invocation)
     local bufnr = invocation.bufnr
     generation = generation + 1
@@ -893,36 +865,28 @@ local function authorize(invocation)
     end)
 end
 
----@param selected LanguageTask
----@return boolean
-local function available_task(selected)
-    local executable = selected.argv[1]
-    -- Relative executables are resolved against the project at invocation time.
-    return executable:find('[/\\]') ~= nil or fn.executable(executable) == 1
-end
-
----@param key string Action suffix: b, c, r or t.
----@param bufnr? integer
-function M.run(key, bufnr)
-    bufnr = bufnr or api.nvim_get_current_buf()
-    if not usable(bufnr) then
-        return
+---@param profile LanguageProfile
+local function validate_profile(profile)
+    assert(type(profile) == 'table', 'profile must be a table')
+    assert(type(profile.markers) == 'table' and vim.islist(profile.markers), 'profile.markers must be a list')
+    assert(#profile.markers <= 32, 'too many project markers')
+    assert(type(profile.tasks) == 'table', 'profile.tasks must be a table')
+    for _, marker in ipairs(profile.markers) do
+        assert(type(marker) == 'string' and marker ~= '', 'invalid project marker')
     end
-    local profile = profiles[vim.bo[bufnr].filetype]
-    local selected = profile and profile.tasks[key]
-    local commands = COMMAND_TASKS[vim.bo[bufnr].filetype]
-    local command = commands and commands[key]
-    if command and fn.exists(':' .. command.command) == 2 then
-        core.command(command.command)()
-        return
-    end
-    if not profile or not selected then
-        notify('This filetype has no task for key: ' .. key)
-        return
-    end
-    local invocation = prepare(bufnr, selected, profile)
-    if invocation then
-        authorize(invocation)
+    for key, selected in pairs(profile.tasks) do
+        assert(key == 'b' or key == 'c' or key == 'r' or key == 't', 'invalid task key')
+        assert(type(selected.label) == 'string' and selected.label ~= '', 'missing task label')
+        assert(type(selected.argv) == 'table' and vim.islist(selected.argv), 'task.argv must be a list')
+        assert(#selected.argv > 0 and #selected.argv <= ARGV_MAX, 'invalid argv size')
+        for _, argument in ipairs(selected.argv) do
+            assert(type(argument) == 'string', 'argv entries must be strings')
+            assert(#argument <= ARG_BYTES_MAX and not argument:find('%z'), 'invalid argument')
+        end
+        assert(selected.argv[1] ~= '', 'missing executable')
+        local timeout = selected.timeout_ms or TIMEOUT_MS
+        assert(type(timeout) == 'number', 'timeout_ms must be numeric')
+        assert(timeout % 1 == 0 and timeout >= 1 and timeout <= TIMEOUT_MS_MAX, 'invalid timeout')
     end
 end
 
@@ -1059,6 +1023,20 @@ function M.attach(bufnr)
     core.install('langmap', bufnr, definitions)
 end
 
+---@param bufnr? integer
+function M.cancel(bufnr)
+    bufnr = bufnr or api.nvim_get_current_buf()
+    pending[bufnr] = nil
+    local job = jobs[bufnr]
+    if job then
+        stop_job(job)
+    end
+end
+
+function M.output()
+    show_lines(last_output)
+end
+
 -- Refresh loaded buffers after tools or task profiles change.
 function M.refresh()
     for _, bufnr in ipairs(api.nvim_list_bufs()) do
@@ -1066,46 +1044,29 @@ function M.refresh()
     end
 end
 
----@param profile LanguageProfile
-local function validate_profile(profile)
-    assert(type(profile) == 'table', 'profile must be a table')
-    assert(type(profile.markers) == 'table' and vim.islist(profile.markers), 'profile.markers must be a list')
-    assert(#profile.markers <= 32, 'too many project markers')
-    assert(type(profile.tasks) == 'table', 'profile.tasks must be a table')
-    for _, marker in ipairs(profile.markers) do
-        assert(type(marker) == 'string' and marker ~= '', 'invalid project marker')
+---@param key string Action suffix: b, c, r or t.
+---@param bufnr? integer
+function M.run(key, bufnr)
+    bufnr = bufnr or api.nvim_get_current_buf()
+    if not usable(bufnr) then
+        return
     end
-    for key, selected in pairs(profile.tasks) do
-        assert(key == 'b' or key == 'c' or key == 'r' or key == 't', 'invalid task key')
-        assert(type(selected.label) == 'string' and selected.label ~= '', 'missing task label')
-        assert(type(selected.argv) == 'table' and vim.islist(selected.argv), 'task.argv must be a list')
-        assert(#selected.argv > 0 and #selected.argv <= ARGV_MAX, 'invalid argv size')
-        for _, argument in ipairs(selected.argv) do
-            assert(type(argument) == 'string', 'argv entries must be strings')
-            assert(#argument <= ARG_BYTES_MAX and not argument:find('%z'), 'invalid argument')
-        end
-        assert(selected.argv[1] ~= '', 'missing executable')
-        local timeout = selected.timeout_ms or TIMEOUT_MS
-        assert(type(timeout) == 'number', 'timeout_ms must be numeric')
-        assert(timeout % 1 == 0 and timeout >= 1 and timeout <= TIMEOUT_MS_MAX, 'invalid timeout')
+    local profile = profiles[vim.bo[bufnr].filetype]
+    local selected = profile and profile.tasks[key]
+    local commands = COMMAND_TASKS[vim.bo[bufnr].filetype]
+    local command = commands and commands[key]
+    if command and fn.exists(':' .. command.command) == 2 then
+        core.command(command.command)()
+        return
     end
-end
-
-function M.teardown()
-    core.teardown('langmap')
-    if group ~= 0 then
-        api.nvim_del_augroup_by_id(group)
-        group = 0
+    if not profile or not selected then
+        notify('This filetype has no task for key: ' .. key)
+        return
     end
-    pending = {}
-    for _, job in pairs(jobs) do
-        job.stopped = true
-        close_timer(job)
-        if job.process then
-            signal_process(job.process, 9)
-        end
+    local invocation = prepare(bufnr, selected, profile)
+    if invocation then
+        authorize(invocation)
     end
-    jobs = {}
 end
 
 ---@param opts? LanguageMappingsOptions
@@ -1157,6 +1118,46 @@ function M.setup(opts)
         group = group,
     })
     M.refresh()
+end
+
+---@param bufnr? integer
+function M.status(bufnr)
+    bufnr = bufnr or api.nvim_get_current_buf()
+    if not usable(bufnr) then
+        return
+    end
+    local filetype = vim.bo[bufnr].filetype
+    local lines = { 'Filetype: ' .. filetype, 'Prefix: ' .. vim.fn.keytrans(prefix) }
+    for _, client in ipairs(vim.lsp.get_clients({ bufnr = bufnr })) do
+        lines[#lines + 1] = 'Attached server: ' .. client.name
+    end
+    local profile = profiles[filetype]
+    if profile then
+        for _, key in ipairs(vim.tbl_keys(profile.tasks)) do
+            lines[#lines + 1] = key .. ': ' .. profile.tasks[key].label
+        end
+    else
+        lines[#lines + 1] = 'No default task profile; add options.profiles.'
+    end
+    table.sort(lines)
+    show_lines(lines)
+end
+
+function M.teardown()
+    core.teardown('langmap')
+    if group ~= 0 then
+        api.nvim_del_augroup_by_id(group)
+        group = 0
+    end
+    pending = {}
+    for _, job in pairs(jobs) do
+        job.stopped = true
+        close_timer(job)
+        if job.process then
+            signal_process(job.process, 9)
+        end
+    end
+    jobs = {}
 end
 
 -- Compatible with the supplied mapping loader's setup_<filename> convention.

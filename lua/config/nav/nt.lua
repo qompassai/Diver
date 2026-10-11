@@ -27,6 +27,11 @@ local function absolute(path)
     return path:sub(1, 1) == '/'
 end
 
+---@return string
+local function default_root()
+    return WINDOWS and vim.fn.getcwd() or '/'
+end
+
 ---@param path string
 ---@return string
 local function path_key(path)
@@ -35,11 +40,6 @@ local function path_key(path)
         result = result:lower()
     end
     return (result:gsub('/+$', ''))
-end
-
----@return string
-local function default_root()
-    return WINDOWS and vim.fn.getcwd() or '/'
 end
 
 local PS_ACTIONS = {
@@ -129,6 +129,28 @@ local function encoded_script(source)
     end)))
 end
 
+---@param module_name string
+---@param items {label: string, value: any}[]
+---@param sink fun(value: any)
+---@param options {prompt: string}
+local function pick_items(module_name, items, sink, options)
+    local ok, picker = pcall(require, module_name)
+    if ok and type(picker) == 'table' and type(picker.fzf_pick) == 'function' then
+        picker.fzf_pick(items, sink, options)
+        return
+    end
+    vim.ui.select(items, {
+        prompt = options.prompt,
+        format_item = function(item)
+            return item.label
+        end,
+    }, function(item)
+        if item then
+            sink(item.value)
+        end
+    end)
+end
+
 ---@param argv string[]
 ---@param elevated boolean?
 ---@return string[]?, string?
@@ -174,28 +196,6 @@ local function windows_command(argv, elevated)
         return { executable, '-NoLogo', '-NoProfile', '-Command', launch }
     end
     return { executable, '-NoLogo', '-NoProfile', '-EncodedCommand', encoded }
-end
-
----@param module_name string
----@param items {label: string, value: any}[]
----@param sink fun(value: any)
----@param options {prompt: string}
-local function pick_items(module_name, items, sink, options)
-    local ok, picker = pcall(require, module_name)
-    if ok and type(picker) == 'table' and type(picker.fzf_pick) == 'function' then
-        picker.fzf_pick(items, sink, options)
-        return
-    end
-    vim.ui.select(items, {
-        prompt = options.prompt,
-        format_item = function(item)
-            return item.label
-        end,
-    }, function(item)
-        if item then
-            sink(item.value)
-        end
-    end)
 end
 
 local operations = {}
@@ -750,12 +750,12 @@ local TIMEOUT_MS = 5000
 
 ---@type ExplorerOptions
 M.config = { fzf_module = 'config.nav.fzf', position = 'left', show_hidden = false, width = 40 }
----@type table<integer, ExplorerPane>
-local panes = {}
----@type table<integer, integer>
-local generations = {}
 ---@type table<string, string>
 local commands = {}
+---@type table<integer, integer>
+local generations = {}
+---@type table<integer, ExplorerPane>
+local panes = {}
 ---@type ExplorerScan?
 local scan
 local generation = 0
@@ -1322,6 +1322,7 @@ function M.find_files()
         notify('File search failed: ' .. tostring(process), vim.log.levels.ERROR)
         return
     end
+    ---@cast process vim.SystemObj
     running.process = process
     running.timer = vim.defer_fn(function()
         running.timer = nil
@@ -1901,12 +1902,11 @@ function M.setup(opts)
     }
     operations.fzf_module = M.config.fzf_module
     group = api.nvim_create_augroup('NativeExplorerConfig', { clear = true })
-    api.nvim_create_autocmd('User', {
+    api.nvim_create_autocmd('BufWipeout', {
         callback = function(args)
-            render(args.buf)
+            generations[args.buf] = nil
         end,
         group = group,
-        pattern = 'DirReadPost',
     })
     api.nvim_create_autocmd('FileType', {
         callback = function(args)
@@ -1915,11 +1915,12 @@ function M.setup(opts)
         group = group,
         pattern = 'directory',
     })
-    api.nvim_create_autocmd('BufWipeout', {
+    api.nvim_create_autocmd('User', {
         callback = function(args)
-            generations[args.buf] = nil
+            render(args.buf)
         end,
         group = group,
+        pattern = 'DirReadPost',
     })
     api.nvim_create_autocmd('VimLeavePre', { callback = M.cancel_operations, group = group })
     M.create_commands()

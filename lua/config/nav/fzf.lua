@@ -10,15 +10,13 @@ local lsp = vim.lsp
 local uv = vim.uv
 local M = {}
 
+local CLIENT_COUNT_MAX = 32
+local ERROR_SIZE_BYTES_MAX = 65536
 local ITEM_COUNT_MAX = 20000
 local LABEL_SIZE_BYTES_MAX = 2048
-local OUTPUT_SIZE_BYTES_MAX = 8 * 1024 * 1024
-local ERROR_SIZE_BYTES_MAX = 65536
-local PROCESS_TIMEOUT_MS = 10000
 local LSP_TIMEOUT_MS = 5000
-local SYMBOL_DEPTH_MAX = 32
-local SYMBOL_COUNT_MAX = 40000
-local CLIENT_COUNT_MAX = 32
+local OUTPUT_SIZE_BYTES_MAX = 8 * 1024 * 1024
+local PROCESS_TIMEOUT_MS = 10000
 local ROOT_MARKERS = {
     '.git',
     'Cargo.toml',
@@ -27,6 +25,8 @@ local ROOT_MARKERS = {
     'package.json',
     'pyproject.toml',
 }
+local SYMBOL_COUNT_MAX = 40000
+local SYMBOL_DEPTH_MAX = 32
 
 ---@class NativeFzfItem
 ---@field label string
@@ -68,10 +68,26 @@ local active_session
 ---@type NativeFzfOptions
 M.options = {
     binaries = { 'fzf', 'sk' },
+    picker = 'native',
     projects_directory = fn.expand('~/projects'),
     prompt = '❯ ',
-    picker = 'native',
 }
+
+---@param value number
+---@return integer
+local function integer_floor(value)
+    assert(type(value) == 'number')
+    assert(value == value and value ~= math.huge and value ~= -math.huge)
+    local result = math.floor(value)
+    ---@cast result integer
+    return result
+end
+
+---@param value any
+---@return boolean
+local function is_integer(value)
+    return type(value) == 'number' and value == value and value ~= math.huge and value ~= -math.huge and value % 1 == 0
+end
 
 ---@param message string
 ---@param level? integer
@@ -88,24 +104,8 @@ end
 
 ---@param value any
 ---@return boolean
-local function is_integer(value)
-    return type(value) == 'number' and value == value and value ~= math.huge and value ~= -math.huge and value % 1 == 0
-end
-
----@param value any
----@return boolean
 local function valid_string(value)
     return type(value) == 'string' and value ~= '' and not value:find('\0', 1, true)
-end
-
----@param value number
----@return integer
-local function integer_floor(value)
-    assert(type(value) == 'number')
-    assert(value == value and value ~= math.huge and value ~= -math.huge)
-    local result = math.floor(value)
-    ---@cast result integer
-    return result
 end
 
 ---@param command string
@@ -137,17 +137,6 @@ local function picker_binary()
     notify('Install fzf or skim, or set NVIM_FZF_BIN.', vim.log.levels.ERROR)
 end
 
----@param bufnr integer
----@return string
-local function project_root(bufnr)
-    local name = api.nvim_buf_get_name(bufnr)
-    local start = fn.getcwd()
-    if name ~= '' and vim.bo[bufnr].buftype == '' then
-        start = fs.dirname(name) or start
-    end
-    return fs.root(start, ROOT_MARKERS) or fn.getcwd()
-end
-
 ---@param session NativeFzfSession
 ---@return boolean
 local function is_current(session)
@@ -160,6 +149,17 @@ local function origin_valid(session)
     return api.nvim_buf_is_valid(session.origin_buffer)
         and api.nvim_win_is_valid(session.origin_window)
         and api.nvim_win_get_buf(session.origin_window) == session.origin_buffer
+end
+
+---@param bufnr integer
+---@return string
+local function project_root(bufnr)
+    local name = api.nvim_buf_get_name(bufnr)
+    local start = fn.getcwd()
+    if name ~= '' and vim.bo[bufnr].buftype == '' then
+        start = fs.dirname(name) or start
+    end
+    return fs.root(start, ROOT_MARKERS) or fn.getcwd()
 end
 
 ---@param operation string
@@ -642,6 +642,7 @@ local function run(session, command, cwd, callback, allow_no_match)
         fail(session, 'Start process: ' .. tostring(process))
         return
     end
+    ---@cast process vim.SystemObj
     session.process = process
 end
 

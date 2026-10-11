@@ -40,11 +40,11 @@
 --                                 Keys: host, port, socket, user,
 --                                 database, defaults_file.
 --   :MysqlDetach                  Detach the current buffer's connection.
---   :MysqlRun                     Run the buffer, or a visual range, as SQL.
---   :MysqlTables                  List tables in the attached database.
---   :MysqlSchema [table]          Show schema for one table, or SHOW TABLES.
---   :MysqlTerminal                Open an interactive mysql REPL in a split.
 --   :MysqlInfo                    Show the current buffer's connection info.
+--   :MysqlRun                     Run the buffer, or a visual range, as SQL.
+--   :MysqlSchema [table]          Show schema for one table, or SHOW TABLES.
+--   :MysqlTables                  List tables in the attached database.
+--   :MysqlTerminal                Open an interactive mysql REPL in a split.
 --
 -- Agent API:
 --   require('config.data.mysql').query(conn, sql, on_result, opts)
@@ -61,16 +61,9 @@
 
 local api = vim.api
 local fs = vim.fs
+
 --local uv = vim.uv
-
 local M = {}
-
-local KEY_COUNT_MAX = 8
-local QUERY_TIMEOUT_MS = 15000
-local RESULT_LINE_COUNT_MAX = 5000
-local SQL_BYTES_MAX = 1048576
-
-local READONLY_INIT_COMMAND = 'SET SESSION TRANSACTION READ ONLY'
 
 local CONNECTION_KEYS = {
     database = true,
@@ -85,9 +78,15 @@ local defaults = {
     notify = true,
 }
 
+local KEY_COUNT_MAX = 8
+local QUERY_TIMEOUT_MS = 15000
+
+local READONLY_INIT_COMMAND = 'SET SESSION TRANSACTION READ ONLY'
+local RESULT_LINE_COUNT_MAX = 5000
+local SQL_BYTES_MAX = 1048576
+
 ---@class MysqlConfigOpts
 ---@field notify? boolean
-
 ---@type MysqlConfigOpts
 M.config = vim.deepcopy(defaults)
 
@@ -99,20 +98,88 @@ M.config = vim.deepcopy(defaults)
 ---@field port? integer
 ---@field socket? string
 ---@field user? string
-
 ---@class MysqlSession
 ---@field bufnr integer
 ---@field conn MysqlConnection
 ---@field readonly boolean
 ---@field root string
-
 ---@class MysqlQueryOpts
 ---@field readonly? boolean
-
 M.state = {
     ---@type table<integer, MysqlSession>
     sessions = {},
 }
+
+---@param bufnr integer
+---@return boolean
+local function buffer_is_usable(bufnr)
+    if type(bufnr) ~= 'number' then
+        return false
+    end
+
+    if bufnr < 0 then
+        return false
+    end
+
+    return api.nvim_buf_is_valid(bufnr)
+end
+
+---@param conn MysqlConnection
+---@param readonly boolean
+---@param mode_flags string[]
+---@return string[]
+local function build_argv(conn, readonly, mode_flags)
+    local argv = { 'mysql' }
+
+    if conn.defaults_file ~= nil then
+        argv[#argv + 1] = '--defaults-extra-file=' .. conn.defaults_file
+    end
+
+    if conn.host ~= nil then
+        argv[#argv + 1] = '--host=' .. conn.host
+    end
+
+    if conn.port ~= nil then
+        argv[#argv + 1] = '--port=' .. tostring(conn.port)
+    end
+
+    if conn.socket ~= nil then
+        argv[#argv + 1] = '--socket=' .. conn.socket
+    end
+
+    if conn.user ~= nil then
+        argv[#argv + 1] = '--user=' .. conn.user
+    end
+
+    if readonly then
+        argv[#argv + 1] = '--init-command=' .. READONLY_INIT_COMMAND
+    end
+
+    for _, flag in ipairs(mode_flags or {}) do
+        argv[#argv + 1] = flag
+    end
+
+    if conn.database ~= nil then
+        argv[#argv + 1] = conn.database
+    end
+
+    return argv
+end
+
+---@param bufnr integer
+---@return MysqlSession|nil
+local function get_session(bufnr)
+    if not buffer_is_usable(bufnr) then
+        return nil
+    end
+
+    return M.state.sessions[bufnr]
+end
+
+---@return boolean
+local function has_mysql()
+    return vim.fn.executable('mysql') == 1
+end
 
 ---@param message string
 ---@param level? integer
@@ -126,9 +193,30 @@ local function notify(message, level)
     })
 end
 
+---@param opts MysqlQueryOpts|nil
 ---@return boolean
-local function has_mysql()
-    return vim.fn.executable('mysql') == 1
+local function resolve_query_readonly(opts)
+    if type(opts) ~= 'table' then
+        return true
+    end
+
+    if opts.readonly == nil then
+        return true
+    end
+
+    return opts.readonly == true
+end
+
+---@param bufnr integer
+---@return string
+local function resolve_root(bufnr)
+    local root = fs.root(bufnr, { '.git' })
+
+    if root ~= nil then
+        return root
+    end
+
+    return vim.fn.getcwd()
 end
 
 ---@param value string
@@ -147,32 +235,6 @@ local function string_is_safe(value)
     end
 
     return true
-end
-
----@param bufnr integer
----@return boolean
-local function buffer_is_usable(bufnr)
-    if type(bufnr) ~= 'number' then
-        return false
-    end
-
-    if bufnr < 0 then
-        return false
-    end
-
-    return api.nvim_buf_is_valid(bufnr)
-end
-
----@param bufnr integer
----@return string
-local function resolve_root(bufnr)
-    local root = fs.root(bufnr, { '.git' })
-
-    if root ~= nil then
-        return root
-    end
-
-    return vim.fn.getcwd()
 end
 
 ---@param conn MysqlConnection
@@ -222,72 +284,6 @@ local function validate_connection(conn)
     end
 
     return true, nil
-end
-
----@param bufnr integer
----@return MysqlSession|nil
-local function get_session(bufnr)
-    if not buffer_is_usable(bufnr) then
-        return nil
-    end
-
-    return M.state.sessions[bufnr]
-end
-
----@param opts MysqlQueryOpts|nil
----@return boolean
-local function resolve_query_readonly(opts)
-    if type(opts) ~= 'table' then
-        return true
-    end
-
-    if opts.readonly == nil then
-        return true
-    end
-
-    return opts.readonly == true
-end
-
----@param conn MysqlConnection
----@param readonly boolean
----@param mode_flags string[]
----@return string[]
-local function build_argv(conn, readonly, mode_flags)
-    local argv = { 'mysql' }
-
-    if conn.defaults_file ~= nil then
-        argv[#argv + 1] = '--defaults-extra-file=' .. conn.defaults_file
-    end
-
-    if conn.host ~= nil then
-        argv[#argv + 1] = '--host=' .. conn.host
-    end
-
-    if conn.port ~= nil then
-        argv[#argv + 1] = '--port=' .. tostring(conn.port)
-    end
-
-    if conn.socket ~= nil then
-        argv[#argv + 1] = '--socket=' .. conn.socket
-    end
-
-    if conn.user ~= nil then
-        argv[#argv + 1] = '--user=' .. conn.user
-    end
-
-    if readonly then
-        argv[#argv + 1] = '--init-command=' .. READONLY_INIT_COMMAND
-    end
-
-    for _, flag in ipairs(mode_flags or {}) do
-        argv[#argv + 1] = flag
-    end
-
-    if conn.database ~= nil then
-        argv[#argv + 1] = conn.database
-    end
-
-    return argv
 end
 
 ---@param bufnr integer
@@ -365,6 +361,59 @@ function M.info(bufnr)
     }))
 end
 
+---@param output string
+---@return table[]
+local function parse_tsv_rows(output)
+    local lines = vim.split(output, '\n', {
+        plain = true,
+        trimempty = true,
+    })
+
+    if #lines == 0 then
+        return {}
+    end
+
+    local headers = vim.split(lines[1], '\t', { plain = true })
+    local rows = {}
+
+    for line_index = 2, #lines do
+        local cells = vim.split(lines[line_index], '\t', { plain = true })
+        local row = {}
+
+        for column_index, header in ipairs(headers) do
+            local cell = cells[column_index]
+
+            if cell ~= nil and cell ~= 'NULL' then
+                row[header] = cell
+            end
+        end
+
+        rows[#rows + 1] = row
+    end
+
+    return rows
+end
+
+---@param conn MysqlConnection
+---@param readonly boolean
+---@param sql string
+---@param mode_flags string[]
+---@param on_done fun(result: vim.SystemCompleted)
+local function run_process(conn, readonly, sql, mode_flags, on_done)
+    assert(type(sql) == 'string')
+    assert(#sql <= SQL_BYTES_MAX, 'query exceeds size bound')
+
+    vim.system(build_argv(conn, readonly, mode_flags), {
+        stdin = sql,
+        text = true,
+        timeout = QUERY_TIMEOUT_MS,
+    }, function(result)
+        vim.schedule(function()
+            on_done(result)
+        end)
+    end)
+end
+
 ---@param lines string[]
 ---@param title string
 local function show_result_buffer(lines, title)
@@ -404,26 +453,6 @@ local function show_result_buffer(lines, title)
     api.nvim_win_resize(api.nvim_get_current_win(), -1, math.min(20, #lines + 1))
 end
 
----@param conn MysqlConnection
----@param readonly boolean
----@param sql string
----@param mode_flags string[]
----@param on_done fun(result: vim.SystemCompleted)
-local function run_process(conn, readonly, sql, mode_flags, on_done)
-    assert(type(sql) == 'string')
-    assert(#sql <= SQL_BYTES_MAX, 'query exceeds size bound')
-
-    vim.system(build_argv(conn, readonly, mode_flags), {
-        stdin = sql,
-        text = true,
-        timeout = QUERY_TIMEOUT_MS,
-    }, function(result)
-        vim.schedule(function()
-            on_done(result)
-        end)
-    end)
-end
-
 ---@param session MysqlSession
 ---@param sql string
 ---@param title string
@@ -447,39 +476,6 @@ local function run_and_show(session, sql, title)
 
         show_result_buffer(lines, title)
     end)
-end
-
----@param output string
----@return table[]
-local function parse_tsv_rows(output)
-    local lines = vim.split(output, '\n', {
-        plain = true,
-        trimempty = true,
-    })
-
-    if #lines == 0 then
-        return {}
-    end
-
-    local headers = vim.split(lines[1], '\t', { plain = true })
-    local rows = {}
-
-    for line_index = 2, #lines do
-        local cells = vim.split(lines[line_index], '\t', { plain = true })
-        local row = {}
-
-        for column_index, header in ipairs(headers) do
-            local cell = cells[column_index]
-
-            if cell ~= nil and cell ~= 'NULL' then
-                row[header] = cell
-            end
-        end
-
-        rows[#rows + 1] = row
-    end
-
-    return rows
 end
 
 ---Run SQL against a connection and return decoded rows.
@@ -528,45 +524,6 @@ function M.query(conn, sql, on_result, opts)
 
         on_result(parse_tsv_rows(result.stdout or ''), nil)
     end)
-end
-
----Blocking variant of M.query for scripted/headless callers.
----
----opts.readonly defaults to true, matching M.query.
----
----@param conn MysqlConnection
----@param sql string SQL text to run.
----@param opts? MysqlQueryOpts
----@return table[]|nil rows
----@return string|nil err
-function M.query_sync(conn, sql, opts)
-    if not has_mysql() then
-        return nil, 'mysql executable was not found on PATH'
-    end
-
-    local valid, validation_error = validate_connection(conn)
-
-    if not valid then
-        return nil, validation_error
-    end
-
-    if type(sql) ~= 'string' or sql:match('^%s*$') then
-        return nil, 'sql must be a non-empty string'
-    end
-
-    local readonly = resolve_query_readonly(opts)
-
-    local result = vim.system(build_argv(conn, readonly, { '--batch', '--raw' }), {
-        stdin = sql,
-        text = true,
-        timeout = QUERY_TIMEOUT_MS,
-    }):wait()
-
-    if result.code ~= 0 then
-        return nil, result.stderr ~= '' and result.stderr or 'mysql exited with code ' .. result.code
-    end
-
-    return parse_tsv_rows(result.stdout or ''), nil
 end
 
 ---Non-blocking variant of M.query_sync for the dataaccess bulk lane:
@@ -639,6 +596,47 @@ function M.query_buffer(bufnr, sql, on_result, opts)
     end
 
     M.query(session.conn, sql, on_result, opts)
+end
+
+---Blocking variant of M.query for scripted/headless callers.
+---
+---opts.readonly defaults to true, matching M.query.
+---
+---@param conn MysqlConnection
+---@param sql string SQL text to run.
+---@param opts? MysqlQueryOpts
+---@return table[]|nil rows
+---@return string|nil err
+function M.query_sync(conn, sql, opts)
+    if not has_mysql() then
+        return nil, 'mysql executable was not found on PATH'
+    end
+
+    local valid, validation_error = validate_connection(conn)
+
+    if not valid then
+        return nil, validation_error
+    end
+
+    if type(sql) ~= 'string' or sql:match('^%s*$') then
+        return nil, 'sql must be a non-empty string'
+    end
+
+    local readonly = resolve_query_readonly(opts)
+
+    local sysobj = vim.system(build_argv(conn, readonly, { '--batch', '--raw' }), {
+        stdin = sql,
+        text = true,
+        timeout = QUERY_TIMEOUT_MS,
+    })
+    ---@cast sysobj vim.SystemObj
+    local result = sysobj:wait()
+
+    if result.code ~= 0 then
+        return nil, result.stderr ~= '' and result.stderr or 'mysql exited with code ' .. result.code
+    end
+
+    return parse_tsv_rows(result.stdout or ''), nil
 end
 
 ---@param bufnr integer
@@ -727,6 +725,19 @@ function M.terminal()
     vim.cmd('startinsert')
 end
 
+local function create_autocmds()
+    local group = api.nvim_create_augroup('NativeMysql', {
+        clear = true,
+    })
+
+    api.nvim_create_autocmd('BufDelete', {
+        callback = function(args)
+            M.state.sessions[args.buf] = nil
+        end,
+        group = group,
+    })
+end
+
 ---@param args string
 ---@return MysqlConnection|nil
 ---@return string|nil
@@ -798,17 +809,17 @@ local function create_commands()
         desc = 'Detach the MySQL connection from the current buffer',
     })
 
+    api.nvim_create_user_command('MysqlInfo', function()
+        M.info(api.nvim_get_current_buf())
+    end, {
+        desc = "Show the current buffer's MySQL connection info",
+    })
+
     api.nvim_create_user_command('MysqlRun', function(opts)
         M.run(opts)
     end, {
         desc = 'Run the buffer, or a visual range, as SQL against the attached connection',
         range = '%',
-    })
-
-    api.nvim_create_user_command('MysqlTables', function()
-        M.tables()
-    end, {
-        desc = 'List tables in the attached MySQL database',
     })
 
     api.nvim_create_user_command('MysqlSchema', function(opts)
@@ -818,29 +829,16 @@ local function create_commands()
         nargs = '?',
     })
 
+    api.nvim_create_user_command('MysqlTables', function()
+        M.tables()
+    end, {
+        desc = 'List tables in the attached MySQL database',
+    })
+
     api.nvim_create_user_command('MysqlTerminal', function()
         M.terminal()
     end, {
         desc = 'Open an interactive mysql REPL for the attached connection',
-    })
-
-    api.nvim_create_user_command('MysqlInfo', function()
-        M.info(api.nvim_get_current_buf())
-    end, {
-        desc = "Show the current buffer's MySQL connection info",
-    })
-end
-
-local function create_autocmds()
-    local group = api.nvim_create_augroup('NativeMysql', {
-        clear = true,
-    })
-
-    api.nvim_create_autocmd('BufDelete', {
-        callback = function(args)
-            M.state.sessions[args.buf] = nil
-        end,
-        group = group,
     })
 end
 
@@ -857,8 +855,8 @@ function M.setup(opts)
         )
     end
 
-    create_commands()
     create_autocmds()
+    create_commands()
 
     return M
 end

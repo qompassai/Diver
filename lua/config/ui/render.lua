@@ -34,52 +34,55 @@ local api = vim.api
 local M = {}
 
 -- Named bounds: every loop, table and width below is capped by one of these.
-local DEBOUNCE_MS = 100
-local MAX_FILE_SIZE_MB = 100
-local MAX_LINE_COUNT_FALLBACK = 200000
-local MAX_TABLE_ROWS = 2000
-local MAX_TABLE_COLS = 16
-local MAX_TABLE_COL_WIDTH = 48
-local INDENT_PER_LEVEL = 2
-local INDENT_SKIP_LEVEL = 1
 local BORDER_WIDTH_FALLBACK = 80
 local BORDER_WIDTH_MAX = 200
 
-local NAMESPACE = 'diver_markdown_render'
+local DEBOUNCE_MS = 100
+local INDENT_PER_LEVEL = 2
+local INDENT_SKIP_LEVEL = 1
+local MAX_FILE_SIZE_MB = 100
+local MAX_LINE_COUNT_FALLBACK = 200000
+local MAX_TABLE_COLS = 16
+local MAX_TABLE_COL_WIDTH = 48
+local MAX_TABLE_ROWS = 2000
 local AUGROUP = 'DiverMarkdownRender'
 
+local NAMESPACE = 'diver_markdown_render'
 -- Plain-ASCII icons; nerd-font glyphs arrive via @@PLACEHOLDERS@@ replaced
 -- from the old config so the exact codepoints survive transcription.
 local BULLET_ICONS = { '●', '○', '◆', '◇' }
-local QUOTE_ICON = '▋'
-local INDENT_ICON = '▎'
-local DASH_ICON = '─'
-local TABLE_V = '│'
-local TABLE_H = '─'
-local TABLE_ALIGN = '━'
-local CODE_BORDER_TOP = '▄'
 local CODE_BORDER_BOTTOM = '▀'
+
+local CODE_BORDER_TOP = '▄'
+local DASH_ICON = '─'
+local INDENT_ICON = '▎'
+local QUOTE_ICON = '▋'
+local TABLE_ALIGN = '━'
+local TABLE_H = '─'
+local TABLE_V = '│'
 
 ---@class DiverMarkdownOptions
 ---@field enabled? boolean
 ---@field debounce_ms? integer
 ---@field max_file_size_mb? number
 ---@field filetypes? string[]
-
 local defaults = {
-    enabled = true,
     debounce_ms = DEBOUNCE_MS,
-    max_file_size_mb = MAX_FILE_SIZE_MB,
+    enabled = true,
     filetypes = { 'markdown', 'mdx', 'markdown.mdx' },
+    max_file_size_mb = MAX_FILE_SIZE_MB,
 }
 
 ---@type DiverMarkdownOptions
 local config = vim.deepcopy(defaults)
 
+---@type table<string, { icon: string, name: string }>?
+local devicons_override = nil
+
 local state = {
+    pending = {},
     setup_done = false,
     timer = nil,
-    pending = {},
     win_defaults = {},
 }
 
@@ -88,36 +91,36 @@ local ns = api.nvim_create_namespace(NAMESPACE)
 -- Highlight groups this module owns. `default = true` so a colorscheme (or
 -- the user) can override any of them without a fight.
 local HL_DEFS = {
+    { 'DiverMarkdownBullet', 'Delimiter' },
+    { 'DiverMarkdownChecked', 'DiagnosticOk' },
     { 'DiverMarkdownCode', 'CursorLine' },
     { 'DiverMarkdownCodeBorder', 'FloatBorder' },
     { 'DiverMarkdownCodeInfo', 'Title' },
     { 'DiverMarkdownCodeInline', 'String' },
     { 'DiverMarkdownDash', 'Comment' },
-    { 'DiverMarkdownBullet', 'Delimiter' },
-    { 'DiverMarkdownUnchecked', 'Comment' },
-    { 'DiverMarkdownChecked', 'DiagnosticOk' },
-    { 'DiverMarkdownTodo', 'DiagnosticWarn' },
+    { 'DiverMarkdownError', 'DiagnosticError' },
+    { 'DiverMarkdownHint', 'DiagnosticHint' },
+    { 'DiverMarkdownHtmlComment', 'Comment' },
+    { 'DiverMarkdownIndent', 'Whitespace' },
+    { 'DiverMarkdownInfo', 'DiagnosticInfo' },
+    { 'DiverMarkdownInlineHighlight', 'Search' },
+    { 'DiverMarkdownLink', 'Underlined' },
     { 'DiverMarkdownQuote1', 'Comment' },
     { 'DiverMarkdownQuote2', 'String' },
     { 'DiverMarkdownQuote3', 'Function' },
     { 'DiverMarkdownQuote4', 'Keyword' },
     { 'DiverMarkdownQuote5', 'Type' },
     { 'DiverMarkdownQuote6', 'Number' },
+    { 'DiverMarkdownQuoteCallout', 'Comment' },
+    { 'DiverMarkdownSign', 'SignColumn' },
+    { 'DiverMarkdownSuccess', 'DiagnosticOk' },
+    { 'DiverMarkdownTableBorder', 'FloatBorder' },
     { 'DiverMarkdownTableHead', 'Title' },
     { 'DiverMarkdownTableRow', 'Normal' },
-    { 'DiverMarkdownTableBorder', 'FloatBorder' },
-    { 'DiverMarkdownInfo', 'DiagnosticInfo' },
-    { 'DiverMarkdownSuccess', 'DiagnosticOk' },
-    { 'DiverMarkdownHint', 'DiagnosticHint' },
+    { 'DiverMarkdownTodo', 'DiagnosticWarn' },
+    { 'DiverMarkdownUnchecked', 'Comment' },
     { 'DiverMarkdownWarn', 'DiagnosticWarn' },
-    { 'DiverMarkdownError', 'DiagnosticError' },
-    { 'DiverMarkdownQuoteCallout', 'Comment' },
-    { 'DiverMarkdownLink', 'Underlined' },
     { 'DiverMarkdownWikiLink', 'Underlined' },
-    { 'DiverMarkdownInlineHighlight', 'Search' },
-    { 'DiverMarkdownIndent', 'Whitespace' },
-    { 'DiverMarkdownHtmlComment', 'Comment' },
-    { 'DiverMarkdownSign', 'SignColumn' },
 }
 
 -- Callouts replicate the old config's github + obsidian sets verbatim
@@ -169,14 +172,14 @@ local LINK_DOMAINS = {
     { pattern = '^http', icon = '󰖟 ' },
 }
 
-local ICON_IMAGE = '󰥶 '
+local ICON_CHECKED = '󰄱 '
 local ICON_EMAIL = '󰀓 '
 local ICON_HYPERLINK = '󰌹 '
-local ICON_WIKI = '󱗖 '
-local ICON_UNCHECKED = '󰄱 '
-local ICON_CHECKED = '󰄱 '
+local ICON_IMAGE = '󰥶 '
 local ICON_TODO = '󰥔 '
 
+local ICON_UNCHECKED = '󰄱 '
+local ICON_WIKI = '󱗖 '
 local SUPERSCRIPT = {
     ['0'] = '⁰',
     ['1'] = '¹',
@@ -190,158 +193,17 @@ local SUPERSCRIPT = {
     ['9'] = '⁹',
 }
 
-local function define_highlights()
-    for _, def in ipairs(HL_DEFS) do
-        api.nvim_set_hl(0, def[1], { link = def[2], default = true })
-    end
-end
-
----@param value any
----@return boolean
-local function positive_integer(value)
-    return type(value) == 'number' and value == math.floor(value) and value > 0
-end
-
----@param options table?
----@return DiverMarkdownOptions
-local function validate_options(options)
-    if options == nil then
-        return vim.deepcopy(defaults)
-    end
-    assert(type(options) == 'table', 'markdown render options must be a table')
-
-    if options.enabled ~= nil then
-        assert(type(options.enabled) == 'boolean', 'markdown render enabled must be a boolean')
-    end
-    if options.debounce_ms ~= nil then
-        assert(positive_integer(options.debounce_ms), 'markdown render debounce_ms must be a positive integer')
-    end
-    if options.max_file_size_mb ~= nil then
-        assert(
-            type(options.max_file_size_mb) == 'number' and options.max_file_size_mb > 0,
-            'markdown render max_file_size_mb must be a positive number'
-        )
-    end
-    if options.filetypes ~= nil then
-        assert(type(options.filetypes) == 'table', 'markdown render filetypes must be a list')
-        for _, ft in ipairs(options.filetypes) do
-            assert(type(ft) == 'string' and ft ~= '', 'markdown render filetypes must be non-empty strings')
+-- Width for full-width borders: the first window showing the buffer wins,
+-- clamped; headless or hidden buffers fall back to 80.
+---@param bufnr integer
+---@return integer
+local function border_width(bufnr)
+    for _, win in ipairs(api.nvim_list_wins()) do
+        if api.nvim_win_is_valid(win) and api.nvim_win_get_buf(win) == bufnr then
+            return math.min(BORDER_WIDTH_MAX, math.max(1, api.nvim_win_get_width(win)))
         end
     end
-
-    return vim.tbl_deep_extend('force', vim.deepcopy(defaults), options)
-end
-
----@param bufnr integer
----@param row integer 0-based
----@param col integer 0-based
----@param opts table extmark options
----@return integer extmark id
-local function mark(bufnr, row, col, opts)
-    assert(api.nvim_buf_is_valid(bufnr), 'mark requires a valid buffer')
-    return api.nvim_buf_set_extmark(bufnr, ns, row, col, opts)
-end
-
--- Hide [col_s, col_e) on the line.
----@param bufnr integer
----@param row integer 0-based
----@param col_s integer 0-based inclusive
----@param col_e integer 0-based exclusive
-local function conceal_span(bufnr, row, col_s, col_e)
-    if col_e > col_s then
-        mark(bufnr, row, col_s, { end_col = col_e, conceal = '' })
-    end
-end
-
--- Hide [col_s, col_e) and draw `text` over it.
----@param bufnr integer
----@param row integer 0-based
----@param col_s integer 0-based inclusive
----@param col_e integer 0-based exclusive
----@param text string
----@param hl string
-local function overlay(bufnr, row, col_s, col_e, text, hl)
-    mark(bufnr, row, col_s, {
-        end_col = col_e,
-        conceal = '',
-        virt_text = { { text, hl } },
-        virt_text_pos = 'overlay',
-    })
-end
-
--- Draw `text` inline at (row, col) without hiding anything.
----@param bufnr integer
----@param row integer 0-based
----@param col integer 0-based
----@param text string
----@param hl string
-local function inline_icon(bufnr, row, col, text, hl)
-    mark(bufnr, row, col, {
-        virt_text = { { text, hl } },
-        virt_text_pos = 'inline',
-    })
-end
-
----@param bufnr integer
----@param row integer 0-based
----@param hl string
-local function place_sign(bufnr, row, hl)
-    mark(bufnr, row, 0, { sign_text = ' ', sign_hl_group = hl })
-end
-
--- Window options: conceallevel 3 everywhere, anti-conceal on the cursor
--- line via concealcursor (the old plugin's anti_conceal equivalent).
-local function set_window_options()
-    local win = api.nvim_get_current_win()
-    if not api.nvim_win_is_valid(win) then
-        return
-    end
-    if state.win_defaults[win] == nil then
-        state.win_defaults[win] = {
-            conceallevel = vim.wo[win].conceallevel,
-            concealcursor = vim.wo[win].concealcursor,
-        }
-    end
-    vim.wo[win].conceallevel = 3
-    vim.wo[win].concealcursor = 'nvic'
-end
-
-local function restore_window_options()
-    local win = api.nvim_get_current_win()
-    local saved = state.win_defaults[win]
-    if saved == nil or not api.nvim_win_is_valid(win) then
-        return
-    end
-    vim.wo[win].conceallevel = saved.conceallevel
-    vim.wo[win].concealcursor = saved.concealcursor
-    state.win_defaults[win] = nil
-end
-
--- Language icon + display name from the repo's own devicons table
--- (config.ui.icons); no plugin dependency, plain table lookup.
----@type table<string, { icon: string, name: string }>?
-local devicons_override = nil
-
----@param lang string
----@return string icon, string name
-local function language_icon(lang)
-    if devicons_override == nil then
-        devicons_override = {}
-        local ok, icons = pcall(require, 'config.ui.icons')
-        if ok and type(icons) == 'table' and type(icons.devicons) == 'table' then
-            local override = icons.devicons.override
-            if type(override) == 'table' then
-                devicons_override = override
-            end
-        end
-    end
-    assert(devicons_override ~= nil, 'devicons table must be initialized')
-    local entry = devicons_override[lang:lower()]
-    if type(entry) == 'table' and type(entry.icon) == 'string' then
-        local name = type(entry.name) == 'string' and entry.name or lang
-        return vim.trim(entry.icon), name
-    end
-    return '', lang
+    return BORDER_WIDTH_FALLBACK
 end
 
 -- Find `code` spans: { s, e } 1-based inclusive bounds of the whole span
@@ -379,25 +241,10 @@ local function code_spans(seg)
     return spans
 end
 
----@param spans { s: integer, e: integer }[]
----@param s integer 1-based inclusive
----@param e integer 1-based inclusive
----@return boolean
-local function overlaps(spans, s, e)
-    for _, span in ipairs(spans) do
-        if s <= span.e and e >= span.s then
-            return true
-        end
+local function define_highlights()
+    for _, def in ipairs(HL_DEFS) do
+        api.nvim_set_hl(0, def[1], { link = def[2], default = true })
     end
-    return false
-end
-
----@param text string
----@return string
-local function superscript(text)
-    return (text:gsub('.', function(char)
-        return SUPERSCRIPT[char] or char
-    end))
 end
 
 ---@param url string
@@ -411,19 +258,6 @@ local function domain_icon(url)
     return ICON_HYPERLINK
 end
 
--- Width for full-width borders: the first window showing the buffer wins,
--- clamped; headless or hidden buffers fall back to 80.
----@param bufnr integer
----@return integer
-local function border_width(bufnr)
-    for _, win in ipairs(api.nvim_list_wins()) do
-        if api.nvim_win_is_valid(win) and api.nvim_win_get_buf(win) == bufnr then
-            return math.min(BORDER_WIDTH_MAX, math.max(1, api.nvim_win_get_width(win)))
-        end
-    end
-    return BORDER_WIDTH_FALLBACK
-end
-
 ---@param bufnr integer
 ---@return boolean too_big
 local function file_too_big(bufnr)
@@ -435,6 +269,199 @@ local function file_too_big(bufnr)
         end
     end
     return api.nvim_buf_line_count(bufnr) > MAX_LINE_COUNT_FALLBACK
+end
+
+-- Language icon + display name from the repo's own devicons table
+-- (config.ui.icons); no plugin dependency, plain table lookup.
+---@param lang string
+---@return string icon, string name
+local function language_icon(lang)
+    if devicons_override == nil then
+        devicons_override = {}
+        local ok, icons = pcall(require, 'config.ui.icons')
+        if ok and type(icons) == 'table' and type(icons.devicons) == 'table' then
+            local override = icons.devicons.override
+            if type(override) == 'table' then
+                devicons_override = override
+            end
+        end
+    end
+    assert(devicons_override ~= nil, 'devicons table must be initialized')
+    local entry = devicons_override[lang:lower()]
+    if type(entry) == 'table' and type(entry.icon) == 'string' then
+        local name = type(entry.name) == 'string' and entry.name or lang
+        return vim.trim(entry.icon), name
+    end
+    return '', lang
+end
+
+---@param bufnr integer
+---@param row integer 0-based
+---@param col integer 0-based
+---@param opts table extmark options
+---@return integer extmark id
+local function mark(bufnr, row, col, opts)
+    assert(api.nvim_buf_is_valid(bufnr), 'mark requires a valid buffer')
+    return api.nvim_buf_set_extmark(bufnr, ns, row, col, opts)
+end
+
+-- Hide [col_s, col_e) on the line.
+---@param bufnr integer
+---@param row integer 0-based
+---@param col_s integer 0-based inclusive
+---@param col_e integer 0-based exclusive
+local function conceal_span(bufnr, row, col_s, col_e)
+    if col_e > col_s then
+        mark(bufnr, row, col_s, { end_col = col_e, conceal = '' })
+    end
+end
+
+-- Draw `text` inline at (row, col) without hiding anything.
+---@param bufnr integer
+---@param row integer 0-based
+---@param col integer 0-based
+---@param text string
+---@param hl string
+local function inline_icon(bufnr, row, col, text, hl)
+    mark(bufnr, row, col, {
+        virt_text = { { text, hl } },
+        virt_text_pos = 'inline',
+    })
+end
+
+---@param spans { s: integer, e: integer }[]
+---@param s integer 1-based inclusive
+---@param e integer 1-based inclusive
+---@return boolean
+local function overlaps(spans, s, e)
+    for _, span in ipairs(spans) do
+        if s <= span.e and e >= span.s then
+            return true
+        end
+    end
+    return false
+end
+
+-- Hide [col_s, col_e) and draw `text` over it.
+---@param bufnr integer
+---@param row integer 0-based
+---@param col_s integer 0-based inclusive
+---@param col_e integer 0-based exclusive
+---@param text string
+---@param hl string
+local function overlay(bufnr, row, col_s, col_e, text, hl)
+    mark(bufnr, row, col_s, {
+        end_col = col_e,
+        conceal = '',
+        virt_text = { { text, hl } },
+        virt_text_pos = 'overlay',
+    })
+end
+
+-- Split a quote line into leading indent, the `>` marker run (with its
+-- trailing spaces), the nesting level and the remaining text. Parsed by
+-- hand because Lua patterns cannot quantify a capture group.
+---@param line string
+---@return string? indent, string? markers, integer? level, string? rest
+local function parse_quote(line)
+    local indent = line:match('^%s*') or ''
+    local pos = #indent + 1
+    local level = 0
+    while line:sub(pos, pos) == '>' do
+        level = level + 1
+        pos = pos + 1
+        local spaces = line:match('^%s*', pos) or ''
+        pos = pos + #spaces
+    end
+    if level == 0 then
+        return nil, nil, nil, nil
+    end
+    local markers = line:sub(#indent + 1, pos - 1)
+    return indent, markers, level, line:sub(pos)
+end
+
+---@param bufnr integer
+---@param row integer 0-based
+---@param hl string
+local function place_sign(bufnr, row, hl)
+    mark(bufnr, row, 0, { sign_text = ' ', sign_hl_group = hl })
+end
+
+---@param value any
+---@return boolean
+local function positive_integer(value)
+    return type(value) == 'number' and value == math.floor(value) and value > 0
+end
+
+---@param bufnr integer
+---@param row integer 0-based
+---@param indent string
+---@param markers string
+---@param rest string
+---@return integer|nil end_col one past the callout marker, or nil when not a callout
+local function render_callout(bufnr, row, indent, markers, rest)
+    local word = rest:match('^%[!([%w]+)%]')
+    if word == nil then
+        return nil
+    end
+    local callout = CALLOUTS[word:upper()]
+    if callout == nil then
+        return nil
+    end
+    local raw = '[!' .. word .. ']'
+    local col_s = #indent + #markers
+    conceal_span(bufnr, row, col_s, col_s + #raw)
+    mark(bufnr, row, col_s, {
+        virt_text = { { callout.rendered, callout.hl } },
+        virt_text_pos = 'overlay',
+    })
+    return col_s + #raw
+end
+
+---@param bufnr integer
+---@param row integer 0-based
+---@param col_s integer 0-based
+---@param marker string ' ', 'x', 'X' or '-'
+local function render_checkbox(bufnr, row, col_s, marker)
+    local icon, hl = ICON_UNCHECKED, 'DiverMarkdownUnchecked'
+    if marker == 'x' or marker == 'X' then
+        icon, hl = ICON_CHECKED, 'DiverMarkdownChecked'
+    elseif marker == '-' then
+        icon, hl = ICON_TODO, 'DiverMarkdownTodo'
+    end
+    -- right_pad = 1 from the old config: trailing space after the icon.
+    overlay(bufnr, row, col_s, col_s + 3, icon .. ' ', hl)
+end
+
+---@param bufnr integer
+---@param row integer 0-based
+local function render_code_line(bufnr, row)
+    mark(bufnr, row, 0, {
+        line_hl_group = 'DiverMarkdownCode',
+        sign_text = ' ',
+        sign_hl_group = 'DiverMarkdownSign',
+    })
+end
+
+---@param bufnr integer
+---@param row integer 0-based
+---@param line string
+---@param width integer
+local function render_dash(bufnr, row, line, width)
+    overlay(bufnr, row, 0, #line, string.rep(DASH_ICON, width), 'DiverMarkdownDash')
+    place_sign(bufnr, row, 'DiverMarkdownSign')
+end
+
+---@param bufnr integer
+---@param row integer 0-based
+---@param line string
+---@param width integer
+local function render_fence_close(bufnr, row, line, width)
+    conceal_span(bufnr, row, 0, #line)
+    mark(bufnr, row, 0, {
+        virt_lines = { { { string.rep(CODE_BORDER_BOTTOM, width), 'DiverMarkdownCodeBorder' } } },
+    })
+    place_sign(bufnr, row, 'DiverMarkdownSign')
 end
 
 -- Fenced code blocks: conceal the ``` line, draw the language label over
@@ -470,114 +497,6 @@ local function render_fence_open(bufnr, row, line, width)
     place_sign(bufnr, row, 'DiverMarkdownSign')
 end
 
----@param bufnr integer
----@param row integer 0-based
----@param line string
----@param width integer
-local function render_fence_close(bufnr, row, line, width)
-    conceal_span(bufnr, row, 0, #line)
-    mark(bufnr, row, 0, {
-        virt_lines = { { { string.rep(CODE_BORDER_BOTTOM, width), 'DiverMarkdownCodeBorder' } } },
-    })
-    place_sign(bufnr, row, 'DiverMarkdownSign')
-end
-
----@param bufnr integer
----@param row integer 0-based
-local function render_code_line(bufnr, row)
-    mark(bufnr, row, 0, {
-        line_hl_group = 'DiverMarkdownCode',
-        sign_text = ' ',
-        sign_hl_group = 'DiverMarkdownSign',
-    })
-end
-
----@param bufnr integer
----@param row integer 0-based
----@param line string
----@param width integer
-local function render_dash(bufnr, row, line, width)
-    overlay(bufnr, row, 0, #line, string.rep(DASH_ICON, width), 'DiverMarkdownDash')
-    place_sign(bufnr, row, 'DiverMarkdownSign')
-end
-
----@param bufnr integer
----@param row integer 0-based
----@param indent string
----@param markers string
----@param rest string
-local function render_callout(bufnr, row, indent, markers, rest)
-    local word = rest:match('^%[!([%w]+)%]')
-    if word == nil then
-        return nil
-    end
-    local callout = CALLOUTS[word:upper()]
-    if callout == nil then
-        return nil
-    end
-    local raw = '[!' .. word .. ']'
-    local col_s = #indent + #markers
-    conceal_span(bufnr, row, col_s, col_s + #raw)
-    mark(bufnr, row, col_s, {
-        virt_text = { { callout.rendered, callout.hl } },
-        virt_text_pos = 'overlay',
-    })
-    return col_s + #raw
-end
-
--- Split a quote line into leading indent, the `>` marker run (with its
--- trailing spaces), the nesting level and the remaining text. Parsed by
--- hand because Lua patterns cannot quantify a capture group.
----@param line string
----@return string? indent, string? markers, integer? level, string? rest
-local function parse_quote(line)
-    local indent = line:match('^%s*') or ''
-    local pos = #indent + 1
-    local level = 0
-    while line:sub(pos, pos) == '>' do
-        level = level + 1
-        pos = pos + 1
-        local spaces = line:match('^%s*', pos) or ''
-        pos = pos + #spaces
-    end
-    if level == 0 then
-        return nil, nil, nil, nil
-    end
-    local markers = line:sub(#indent + 1, pos - 1)
-    return indent, markers, level, line:sub(pos)
-end
-
--- Blockquotes: conceal the `>` run, overlay one ▋ per nesting level with
--- cycling per-level colors; a leading [!CALLOUT] gets its icon + label.
----@param bufnr integer
----@param row integer 0-based
----@param line string
----@return integer content_col 0-based column where inline content starts
-local function render_quote(bufnr, row, line)
-    local indent, markers, level, rest = parse_quote(line)
-    assert(indent ~= nil and markers ~= nil and level ~= nil and rest ~= nil, 'quote must parse its own markers')
-    assert(level >= 1, 'quote needs at least one > marker')
-
-    local chunks = {}
-    for depth = 1, level do
-        chunks[#chunks + 1] = { QUOTE_ICON, 'DiverMarkdownQuote' .. ((depth - 1) % 6 + 1) }
-    end
-    local col_s = #indent
-    local col_e = col_s + #markers
-    mark(bufnr, row, col_s, {
-        end_col = col_e,
-        conceal = '',
-        virt_text = chunks,
-        virt_text_pos = 'overlay',
-    })
-
-    local after = render_callout(bufnr, row, indent, markers, rest)
-    if after ~= nil then
-        return after
-    end
-    return col_e
-end
-
 -- Indent guides (▎) in the leading whitespace, skipping the first level.
 ---@param bufnr integer
 ---@param row integer 0-based
@@ -592,21 +511,6 @@ local function render_indent_guides(bufnr, row, indent_width)
         })
         level = level + 1
     end
-end
-
----@param bufnr integer
----@param row integer 0-based
----@param col_s integer 0-based
----@param marker string ' ', 'x', 'X' or '-'
-local function render_checkbox(bufnr, row, col_s, marker)
-    local icon, hl = ICON_UNCHECKED, 'DiverMarkdownUnchecked'
-    if marker == 'x' or marker == 'X' then
-        icon, hl = ICON_CHECKED, 'DiverMarkdownChecked'
-    elseif marker == '-' then
-        icon, hl = ICON_TODO, 'DiverMarkdownTodo'
-    end
-    -- right_pad = 1 from the old config: trailing space after the icon.
-    overlay(bufnr, row, col_s, col_s + 3, icon .. ' ', hl)
 end
 
 ---@param bufnr integer
@@ -648,6 +552,103 @@ local function render_list_item(bufnr, row, indent, marker, ws, content, st)
     return col_e
 end
 
+-- Blockquotes: conceal the `>` run, overlay one ▋ per nesting level with
+-- cycling per-level colors; a leading [!CALLOUT] gets its icon + label.
+---@param bufnr integer
+---@param row integer 0-based
+---@param line string
+---@return integer content_col 0-based column where inline content starts
+local function render_quote(bufnr, row, line)
+    local indent, markers, level, rest = parse_quote(line)
+    assert(indent ~= nil and markers ~= nil and level ~= nil and rest ~= nil, 'quote must parse its own markers')
+    assert(level >= 1, 'quote needs at least one > marker')
+
+    local chunks = {}
+    for depth = 1, level do
+        chunks[#chunks + 1] = { QUOTE_ICON, 'DiverMarkdownQuote' .. ((depth - 1) % 6 + 1) }
+    end
+    local col_s = #indent
+    local col_e = col_s + #markers
+    mark(bufnr, row, col_s, {
+        end_col = col_e,
+        conceal = '',
+        virt_text = chunks,
+        virt_text_pos = 'overlay',
+    })
+
+    local after = render_callout(bufnr, row, indent, markers, rest)
+    if after ~= nil then
+        return after
+    end
+    return col_e
+end
+
+local function restore_window_options()
+    local win = api.nvim_get_current_win()
+    local saved = state.win_defaults[win]
+    if saved == nil or not api.nvim_win_is_valid(win) then
+        return
+    end
+    vim.wo[win].conceallevel = saved.conceallevel
+    vim.wo[win].concealcursor = saved.concealcursor
+    state.win_defaults[win] = nil
+end
+
+-- Window options: conceallevel 3 everywhere, anti-conceal on the cursor
+-- line via concealcursor (the old plugin's anti_conceal equivalent).
+local function set_window_options()
+    local win = api.nvim_get_current_win()
+    if not api.nvim_win_is_valid(win) then
+        return
+    end
+    if state.win_defaults[win] == nil then
+        state.win_defaults[win] = {
+            conceallevel = vim.wo[win].conceallevel,
+            concealcursor = vim.wo[win].concealcursor,
+        }
+    end
+    vim.wo[win].conceallevel = 3
+    vim.wo[win].concealcursor = 'nvic'
+end
+
+---@param text string
+---@return string
+local function superscript(text)
+    return (text:gsub('.', function(char)
+        return SUPERSCRIPT[char] or char
+    end))
+end
+
+---@param options table?
+---@return DiverMarkdownOptions
+local function validate_options(options)
+    if options == nil then
+        return vim.deepcopy(defaults)
+    end
+    assert(type(options) == 'table', 'markdown render options must be a table')
+
+    if options.enabled ~= nil then
+        assert(type(options.enabled) == 'boolean', 'markdown render enabled must be a boolean')
+    end
+    if options.debounce_ms ~= nil then
+        assert(positive_integer(options.debounce_ms), 'markdown render debounce_ms must be a positive integer')
+    end
+    if options.max_file_size_mb ~= nil then
+        assert(
+            type(options.max_file_size_mb) == 'number' and options.max_file_size_mb > 0,
+            'markdown render max_file_size_mb must be a positive number'
+        )
+    end
+    if options.filetypes ~= nil then
+        assert(type(options.filetypes) == 'table', 'markdown render filetypes must be a list')
+        for _, ft in ipairs(options.filetypes) do
+            assert(type(ft) == 'string' and ft ~= '', 'markdown render filetypes must be non-empty strings')
+        end
+    end
+
+    return vim.tbl_deep_extend('force', vim.deepcopy(defaults), options)
+end
+
 -- Pipe tables ----------------------------------------------------------
 
 -- A delimiter row looks like `| --- | :---: | ---: |`. Returns the column
@@ -677,6 +678,25 @@ local function delimiter_col_count(line)
     return count
 end
 
+-- Overlay │ on every unescaped `|` in the line.
+---@param bufnr integer
+---@param row integer 0-based
+---@param line string
+local function render_pipes(bufnr, row, line)
+    local i, n = 1, #line
+    while i <= n do
+        local char = line:sub(i, i)
+        if char == '\\' then
+            i = i + 2
+        elseif char == '|' then
+            overlay(bufnr, row, i - 1, i, TABLE_V, 'DiverMarkdownTableBorder')
+            i = i + 1
+        else
+            i = i + 1
+        end
+    end
+end
+
 -- Split a table row into trimmed cells; `\|` stays inside a cell.
 ---@param line string
 ---@return string[]
@@ -701,25 +721,6 @@ local function split_cells(line)
     end
     cells[#cells + 1] = vim.trim(table.concat(cur))
     return cells
-end
-
--- Overlay │ on every unescaped `|` in the line.
----@param bufnr integer
----@param row integer 0-based
----@param line string
-local function render_pipes(bufnr, row, line)
-    local i, n = 1, #line
-    while i <= n do
-        local char = line:sub(i, i)
-        if char == '\\' then
-            i = i + 2
-        elseif char == '|' then
-            overlay(bufnr, row, i - 1, i, TABLE_V, 'DiverMarkdownTableBorder')
-            i = i + 1
-        else
-            i = i + 1
-        end
-    end
 end
 
 ---@param bufnr integer
@@ -1064,6 +1065,19 @@ local function render_buffer(bufnr)
     end
 end
 
+---@param bufnr integer
+local function detach(bufnr)
+    -- Drop any pending debounced render first: without this, a timer armed
+    -- before disable() would fire afterwards and re-decorate the buffer.
+    state.pending[bufnr] = nil
+    if api.nvim_buf_is_valid(bufnr) then
+        api.nvim_buf_clear_namespace(bufnr, ns, 0, -1)
+        vim.b[bufnr].diver_markdown_render = false
+    end
+    pcall(api.nvim_clear_autocmds, { group = AUGROUP, buffer = bufnr })
+    restore_window_options()
+end
+
 -- Debounce: TextChanged/InsertLeave/BufWinEnter only schedule; one uv timer
 -- flushes every pending buffer. The timer has a single owner (this module).
 local function flush()
@@ -1112,15 +1126,6 @@ local function attach(bufnr)
         return false
     end
     local group = api.nvim_create_augroup(AUGROUP, { clear = false })
-    api.nvim_create_autocmd({ 'TextChanged', 'InsertLeave', 'BufWinEnter' }, {
-        group = group,
-        buffer = bufnr,
-        callback = function(args)
-            set_window_options()
-            schedule(args.buf)
-        end,
-        desc = 'Schedule native Markdown render',
-    })
     api.nvim_create_autocmd('BufLeave', {
         group = group,
         buffer = bufnr,
@@ -1136,23 +1141,23 @@ local function attach(bufnr)
         end,
         desc = 'Clear native Markdown render state',
     })
+    api.nvim_create_autocmd({ 'BufWinEnter', 'InsertLeave', 'TextChanged' }, {
+        group = group,
+        buffer = bufnr,
+        callback = function(args)
+            set_window_options()
+            schedule(args.buf)
+        end,
+        desc = 'Schedule native Markdown render',
+    })
     vim.b[bufnr].diver_markdown_render = true
     set_window_options()
     render_buffer(bufnr)
     return true
 end
 
----@param bufnr integer
-local function detach(bufnr)
-    -- Drop any pending debounced render first: without this, a timer armed
-    -- before disable() would fire afterwards and re-decorate the buffer.
-    state.pending[bufnr] = nil
-    if api.nvim_buf_is_valid(bufnr) then
-        api.nvim_buf_clear_namespace(bufnr, ns, 0, -1)
-        vim.b[bufnr].diver_markdown_render = false
-    end
-    pcall(api.nvim_clear_autocmds, { group = AUGROUP, buffer = bufnr })
-    restore_window_options()
+function M.disable()
+    detach(api.nvim_get_current_buf())
 end
 
 ---Enable rendering for a buffer. Accepts nothing (current buffer), a
@@ -1169,19 +1174,6 @@ function M.enable(arg)
         bufnr = api.nvim_get_current_buf()
     end
     return attach(bufnr)
-end
-
-function M.disable()
-    detach(api.nvim_get_current_buf())
-end
-
-function M.toggle()
-    local bufnr = api.nvim_get_current_buf()
-    if vim.b[bufnr].diver_markdown_render then
-        M.disable()
-    else
-        M.enable(bufnr)
-    end
 end
 
 ---Render one buffer synchronously (debounce bypassed). Used by tests and
@@ -1218,6 +1210,15 @@ function M.setup(options)
 
     if config.enabled then
         attach(api.nvim_get_current_buf())
+    end
+end
+
+function M.toggle()
+    local bufnr = api.nvim_get_current_buf()
+    if vim.b[bufnr].diver_markdown_render then
+        M.disable()
+    else
+        M.enable(bufnr)
     end
 end
 

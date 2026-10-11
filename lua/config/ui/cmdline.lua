@@ -10,15 +10,28 @@
 
 local M = {}
 
-local win = nil
+local attached = false
 local buf = nil
 local ns_id = nil
-local attached = false
+local win = nil
 
 -- Popupmenu state
-local pum_win = nil
 local pum_buf = nil
 local pum_selected = -1
+local pum_win = nil
+
+--- Convert cmdline_show content to text
+local function content_to_text(content, firstc)
+    local parts = { firstc or '' }
+    if content ~= nil then
+        for _, chunk in ipairs(content) do
+            if type(chunk) == 'table' and chunk[2] ~= nil then
+                parts[#parts + 1] = chunk[2]
+            end
+        end
+    end
+    return table.concat(parts, '')
+end
 
 --- Hide the floating cmdline window
 local function hide()
@@ -42,91 +55,53 @@ local function hide()
     pum_selected = -1
 end
 
---- Show the floating cmdline window with the given text
----@param text string The cmdline text to display
-local function show(text)
-    hide()
-
-    -- Create buffer (like nui.nvim does)
-    buf = vim.api.nvim_create_buf(false, true)
-    vim.bo[buf].bufhidden = 'wipe'
-    vim.bo[buf].buftype = 'nofile'
-
-    -- Get editor dimensions
-    local ui = vim.api.nvim_list_uis()[1]
-    local editor_width = ui and ui.width or vim.o.columns
-    local editor_height = ui and ui.height or vim.o.lines
-
-    -- Centered position (matches noice's 52x1 at 13,17 in 87x27)
-    local width = math.min(math.floor(editor_width * 0.6), 80)
-    local height = 1
-    local row = math.floor((editor_height - height) / 2)
-    local col = math.floor((editor_width - width) / 2)
-
-    -- Create window with noice's exact parameters (no zindex!)
-    local ok, result = pcall(vim.api.nvim_open_win, buf, false, {
-        relative = 'editor',
-        width = width,
-        height = height,
-        row = row,
-        col = col,
-        style = 'minimal',
-        border = 'rounded',
-        noautocmd = true,
-    })
-    if not ok then
-        vim.notify('Native cmdline float failed: ' .. tostring(result), vim.log.levels.ERROR)
+--- Trigger command-line completion popup as-you-type (native, no plugin).
+local function maybe_trigger_completion()
+    if vim.fn.getcmdtype() ~= ':' then
         return
     end
-    win = result
-
-    -- Set window options (like nui.nvim does)
-    vim.wo[win].wrap = false
-    vim.wo[win].foldenable = false
-    vim.wo[win].cursorline = false
-    vim.wo[win].scrolloff = 0
-    vim.wo[win].sidescrolloff = 0
-
-    if text ~= nil and text ~= '' then
-        vim.api.nvim_buf_set_lines(buf, 0, -1, false, { text })
+    if vim.fn.pumvisible() == 1 then
+        return
     end
-
-    -- Force UI redraw (like noice does) - critical for Foot terminal
-    -- Without this, the window is created but not visible
-    if vim.api.nvim__redraw ~= nil then
-        pcall(vim.api.nvim__redraw, { win = win, flush = true })
+    if #vim.fn.getcmdline() >= 1 then
+        vim.fn.wildtrigger()
     end
 end
 
---- Update the floating cmdline content
----@param text string
-local function update(text)
-    if buf == nil or not vim.api.nvim_buf_is_valid(buf) then
-        return
+--- Hide the completion popupmenu
+local function pum_hide()
+    if pum_win ~= nil and vim.api.nvim_win_is_valid(pum_win) then
+        vim.api.nvim_win_close(pum_win, true)
     end
-    vim.api.nvim_buf_set_lines(buf, 0, -1, false, { text or '' })
-    -- Force redraw on content update (like noice does)
-    if win ~= nil and vim.api.nvim_win_is_valid(win) and vim.api.nvim__redraw ~= nil then
-        pcall(vim.api.nvim__redraw, { win = win, flush = true })
+    pum_win = nil
+    if pum_buf ~= nil and vim.api.nvim_buf_is_valid(pum_buf) then
+        vim.api.nvim_buf_delete(pum_buf, { force = true })
     end
+    pum_buf = nil
+    pum_selected = -1
 end
 
---- Convert cmdline_show content to text
-local function content_to_text(content, firstc)
-    local parts = { firstc or '' }
-    if content ~= nil then
-        for _, chunk in ipairs(content) do
-            if type(chunk) == 'table' and chunk[2] ~= nil then
-                parts[#parts + 1] = chunk[2]
-            end
-        end
+--- Update popupmenu selection highlight
+---@param selected integer Index of selected item (0-based, -1 for none)
+local function pum_select(selected)
+    if pum_buf == nil or not vim.api.nvim_buf_is_valid(pum_buf) then
+        return
     end
-    return table.concat(parts, '')
+    pum_selected = selected or -1
+    -- Clear existing highlights
+    vim.api.nvim_buf_clear_namespace(pum_buf, -1, 0, -1)
+    -- Highlight selected
+    if pum_selected >= 0 then
+        vim.hl.range(pum_buf, -1, 'PmenuSel', { pum_selected, 0 }, { pum_selected, -1 })
+    end
+    if pum_win ~= nil and vim.api.nvim_win_is_valid(pum_win) and vim.api.nvim__redraw ~= nil then
+        pcall(vim.api.nvim__redraw, { win = pum_win, flush = true })
+    end
 end
 
 --- Show the completion popupmenu below the cmdline float
 ---@param items table List of [word, kind, menu, info] tuples
----@param selected number Index of selected item (0-based, -1 for none)
+---@param selected integer Index of selected item (0-based, -1 for none)
 local function pum_show(items, selected)
     -- Hide existing popupmenu
     if pum_win ~= nil and vim.api.nvim_win_is_valid(pum_win) then
@@ -207,7 +182,7 @@ local function pum_show(items, selected)
 
     -- Highlight selected item
     if pum_selected >= 0 and pum_selected < #lines then
-        vim.api.nvim_buf_add_highlight(pum_buf, -1, 'PmenuSel', pum_selected, 0, -1)
+        vim.hl.range(pum_buf, -1, 'PmenuSel', { pum_selected, 0 }, { pum_selected, -1 })
     end
 
     if vim.api.nvim__redraw ~= nil then
@@ -215,34 +190,72 @@ local function pum_show(items, selected)
     end
 end
 
---- Hide the completion popupmenu
-local function pum_hide()
-    if pum_win ~= nil and vim.api.nvim_win_is_valid(pum_win) then
-        vim.api.nvim_win_close(pum_win, true)
-    end
-    pum_win = nil
-    if pum_buf ~= nil and vim.api.nvim_buf_is_valid(pum_buf) then
-        vim.api.nvim_buf_delete(pum_buf, { force = true })
-    end
-    pum_buf = nil
-    pum_selected = -1
-end
+--- Show the floating cmdline window with the given text
+---@param text string The cmdline text to display
+local function show(text)
+    hide()
 
---- Update popupmenu selection highlight
----@param selected number Index of selected item (0-based, -1 for none)
-local function pum_select(selected)
-    if pum_buf == nil or not vim.api.nvim_buf_is_valid(pum_buf) then
+    -- Create buffer (like nui.nvim does)
+    buf = vim.api.nvim_create_buf(false, true)
+    vim.bo[buf].bufhidden = 'wipe'
+    vim.bo[buf].buftype = 'nofile'
+
+    -- Get editor dimensions
+    local ui = vim.api.nvim_list_uis()[1]
+    local editor_width = ui and ui.width or vim.o.columns
+    local editor_height = ui and ui.height or vim.o.lines
+
+    -- Centered position (matches noice's 52x1 at 13,17 in 87x27)
+    local width = math.min(math.floor(editor_width * 0.6), 80)
+    local height = 1
+    local row = math.floor((editor_height - height) / 2)
+    local col = math.floor((editor_width - width) / 2)
+
+    -- Create window with noice's exact parameters (no zindex!)
+    local ok, result = pcall(vim.api.nvim_open_win, buf, false, {
+        relative = 'editor',
+        width = width,
+        height = height,
+        row = row,
+        col = col,
+        style = 'minimal',
+        border = 'rounded',
+        noautocmd = true,
+    })
+    if not ok then
+        vim.notify('Native cmdline float failed: ' .. tostring(result), vim.log.levels.ERROR)
         return
     end
-    pum_selected = selected or -1
-    -- Clear existing highlights
-    vim.api.nvim_buf_clear_namespace(pum_buf, -1, 0, -1)
-    -- Highlight selected
-    if pum_selected >= 0 then
-        vim.api.nvim_buf_add_highlight(pum_buf, -1, 'PmenuSel', pum_selected, 0, -1)
+    win = result
+
+    -- Set window options (like nui.nvim does)
+    vim.wo[win].wrap = false
+    vim.wo[win].foldenable = false
+    vim.wo[win].cursorline = false
+    vim.wo[win].scrolloff = 0
+    vim.wo[win].sidescrolloff = 0
+
+    if text ~= nil and text ~= '' then
+        vim.api.nvim_buf_set_lines(buf, 0, -1, false, { text })
     end
-    if pum_win ~= nil and vim.api.nvim_win_is_valid(pum_win) and vim.api.nvim__redraw ~= nil then
-        pcall(vim.api.nvim__redraw, { win = pum_win, flush = true })
+
+    -- Force UI redraw (like noice does) - critical for Foot terminal
+    -- Without this, the window is created but not visible
+    if vim.api.nvim__redraw ~= nil then
+        pcall(vim.api.nvim__redraw, { win = win, flush = true })
+    end
+end
+
+--- Update the floating cmdline content
+---@param text string
+local function update(text)
+    if buf == nil or not vim.api.nvim_buf_is_valid(buf) then
+        return
+    end
+    vim.api.nvim_buf_set_lines(buf, 0, -1, false, { text or '' })
+    -- Force redraw on content update (like noice does)
+    if win ~= nil and vim.api.nvim_win_is_valid(win) and vim.api.nvim__redraw ~= nil then
+        pcall(vim.api.nvim__redraw, { win = win, flush = true })
     end
 end
 
@@ -276,19 +289,6 @@ local function on_event(event, ...)
         return true
     end
     return nil
-end
-
---- Trigger command-line completion popup as-you-type (native, no plugin).
-local function maybe_trigger_completion()
-    if vim.fn.getcmdtype() ~= ':' then
-        return
-    end
-    if vim.fn.pumvisible() == 1 then
-        return
-    end
-    if #vim.fn.getcmdline() >= 1 then
-        vim.fn.wildtrigger()
-    end
 end
 
 --- Perform the actual vim.ui_attach (deferred to avoid startup flicker).
