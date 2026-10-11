@@ -20,12 +20,12 @@ end
 
 ---@type FormatterSpec
 return {
-    cmd = 'muon',
+    allow_empty = false,
     args = build_args,
+    automatic = true,
+    cmd = 'muon',
+    exit_codes = { 0 },
+    extension = 'meson',
     mode = 'tempfile',
     output = 'stdout',
-    exit_codes = { 0 },
-    automatic = true,
-    allow_empty = false,
-    extension = 'meson',
 }

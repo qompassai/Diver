@@ -4,9 +4,6 @@
 -- SPDX-License-Identifier: Apache-2.0
 -- #################################################################
 return {
-    name = 'mdl',
-    cmd = 'mdl',
-    stdin = false,
     append_fname = true,
     args = function()
         return {
@@ -14,11 +11,14 @@ return {
             'all',
         }
     end,
-    stream = 'stdout',
-    ignore_exitcode = true,
+    cmd = 'mdl',
     errorformat = {
         '%f:%l: %m',
         '%f:%l:%c: %m',
         '%-G%.%#',
     },
+    ignore_exitcode = true,
+    name = 'mdl',
+    stdin = false,
+    stream = 'stdout',
 } --[[@as vim.lint.Config]]

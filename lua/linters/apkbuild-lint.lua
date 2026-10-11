@@ -8,13 +8,11 @@
 -- ----------------------------------------
 return ---@type vim.lint.Config
 {
-    cmd = 'apkbuild-lint',
-    stdin = false,
     append_fname = true,
     args = {},
-    stream = nil,
-    ignore_exitcode = true,
+    cmd = 'apkbuild-lint',
     env = nil,
+    ignore_exitcode = true,
     ---@param output string
     ---@param bufnr integer
     ---@return vim.Diagnostic.Set[]
@@ -45,10 +43,10 @@ return ---@type vim.lint.Config
                         message = string.format('[%s] %s', tag, msg)
                     end
                     table.insert(diagnostics, {
-                        lnum = lnum,
-                        end_lnum = lnum,
                         col = col,
                         end_col = col + 1,
+                        end_lnum = lnum,
+                        lnum = lnum,
                         message = message,
                         severity = severity,
                         source = 'apkbuild-lint',
@@ -58,4 +56,6 @@ return ---@type vim.lint.Config
         end
         return diagnostics
     end,
+    stdin = false,
+    stream = nil,
 }

@@ -157,12 +157,12 @@ end
 
 return ---@type Linter
 {
-    automatic = true,
-
-    cmd = 'write-good',
 
     -- Machine-readable `file:line:column:` output instead of pretty text.
     args = { '--parse' },
+    automatic = true,
+
+    cmd = 'write-good',
 
     cwd = cwd,
 

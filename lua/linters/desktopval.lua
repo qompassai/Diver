@@ -4,17 +4,15 @@
 -- ----------------------------------------
 return ---@type vim.lint.Config
 {
-    name = 'desktop-file-validate',
-    cmd = 'desktop-file-validate',
-    stdin = false,
     append_fname = true,
     args = {
         --'--no-hints',
         '--warn-kde',
     },
-    stream = 'stderr',
-    ignore_exitcode = false,
+    cmd = 'desktop-file-validate',
     env = nil,
+    ignore_exitcode = false,
+    name = 'desktop-file-validate',
     ---@param output string
     ---@param bufnr integer
     ---@return vim.lint.Diagnostic[]
@@ -33,13 +31,13 @@ return ---@type vim.lint.Config
                 local base = vim.fs.basename(path)
                 if base == filename or path == bufname then
                     diagnostics[#diagnostics + 1] = {
-                        lnum = lnum, ---@type number
-                        end_lnum = lnum, ---@type number
                         col = 0,
                         end_col = 1,
+                        end_lnum = lnum, ---@type number
+                        lnum = lnum, ---@type number
+                        message = msg,
                         severity = vim.diagnostic.severity.ERROR,
                         source = 'desktop-file-validate',
-                        message = msg,
                     }
                 end
             end
@@ -47,4 +45,6 @@ return ---@type vim.lint.Config
 
         return diagnostics
     end,
+    stdin = false,
+    stream = 'stderr',
 }

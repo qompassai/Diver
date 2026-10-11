@@ -338,10 +338,10 @@ end
 
 return ---@type Linter
 {
+    append_fname = false,
+    args = args,
     automatic = true,
     cmd = 'solhint',
-    args = args,
-    append_fname = false,
     cwd = cwd,
     ignore_exitcode = true,
     parser = parse,

@@ -16,12 +16,12 @@
 
 ---@type FormatterSpec
 return {
-    cmd = 'psfmt',
+    allow_empty = false,
     args = {},
+    automatic = true,
+    cmd = 'psfmt',
+    exit_codes = { 0, 4 },
+    extension = 'ps1',
     mode = 'stdin',
     output = 'stdout',
-    exit_codes = { 0, 4 },
-    automatic = true,
-    allow_empty = false,
-    extension = 'ps1',
 }

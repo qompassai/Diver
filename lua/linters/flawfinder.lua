@@ -442,8 +442,8 @@ end
 
 ---@type Linter
 return {
-    args = arguments,
     append_fname = false,
+    args = arguments,
     automatic = false,
     cmd = 'flawfinder',
     cwd = project_root,

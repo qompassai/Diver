@@ -18,18 +18,6 @@
 
 -- Requires your native formatters/init.lua (FormatterSpec/FormatterContext).
 ---@param context FormatterContext
----@return string
-local function working_directory(context)
-    if context.filename ~= '' then
-        local directory = vim.fs.dirname(context.filename)
-        if directory then
-            return directory
-        end
-    end
-    return context.root
-end
-
----@param context FormatterContext
 ---@return string[]
 local function args(context)
     return {
@@ -55,17 +43,26 @@ local function args(context)
     }
 end
 
+---@param context FormatterContext
+---@return string
+local function working_directory(context)
+    if context.filename ~= '' then
+        local directory = vim.fs.dirname(context.filename)
+        if directory then
+            return directory
+        end
+    end
+    return context.root
+end
+
 ---@type FormatterSpec
 return {
-    cmd = 'shfmt',
+    allow_empty = false,
     args = args,
-    mode = 'stdin',
-    output = 'stdout',
+    automatic = true,
+    cmd = 'shfmt',
     cwd = working_directory,
-    root_markers = {
-        '.editorconfig',
-        '.git',
-    },
+    decode = nil,
     env = {
         NO_COLOR = '1',
         TERM = 'dumb',
@@ -73,9 +70,12 @@ return {
     exit_codes = {
         0,
     },
-    automatic = true,
-    allow_empty = false,
     extension = 'sh',
-    decode = nil,
+    mode = 'stdin',
+    output = 'stdout',
     pre_transform = nil,
+    root_markers = {
+        '.editorconfig',
+        '.git',
+    },
 }

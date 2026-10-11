@@ -23,12 +23,12 @@ end
 
 ---@type FormatterSpec
 return {
-    cmd = 'prettier',
+    allow_empty = false,
     args = build_args,
+    automatic = true,
+    cmd = 'prettier',
+    exit_codes = { 0 },
+    extension = 'js',
     mode = 'stdin',
     output = 'stdout',
-    exit_codes = { 0 },
-    automatic = true,
-    allow_empty = false,
-    extension = 'js',
 }

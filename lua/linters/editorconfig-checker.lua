@@ -26,8 +26,8 @@
 ---@source https://editorconfig.org/
 
 local diagnostic = vim.diagnostic
-local fs = vim.fs
 local fn = vim.fn
+local fs = vim.fs
 
 local ERROR = diagnostic.severity.ERROR
 local INFO = diagnostic.severity.INFO
@@ -38,9 +38,9 @@ local LINE_LENGTH_MAX = 16384
 
 ---@type table<string, integer>
 local severities = {
+    CHECK = INFO,
     ERROR = ERROR,
     WARNING = WARN,
-    CHECK = INFO,
 }
 
 ---@type table<string, string>
@@ -112,6 +112,37 @@ local function belongs_to_buffer(path, filename, root)
 end
 
 ---@param line string
+---@return integer?, string?, string?
+local function parse_header(line)
+    assert(#line <= LINE_LENGTH_MAX)
+
+    --
+    -- checkpatch diagnostic header:
+    --
+    --   ERROR:CODE_INDENT: code indent should use tabs where possible
+    --   WARNING:LONG_LINE: line length of 105 exceeds 100 columns
+    --   CHECK:PARENTHESIS_ALIGNMENT: Alignment should match open parenthesis
+    --
+    local level
+    local code
+    local message
+
+    level, code, message = line:match('^(ERROR|WARNING|CHECK):([^:]+):%s*(.+)$')
+
+    if level == nil then
+        return nil
+    end
+
+    local severity = severities[level]
+
+    if severity == nil then
+        return nil
+    end
+
+    return severity, code, message
+end
+
+---@param line string
 ---@return string?, string?, string?, integer?, integer?
 local function parse_location(line)
     assert(#line <= LINE_LENGTH_MAX)
@@ -146,37 +177,6 @@ local function parse_location(line)
     end
 
     return nil
-end
-
----@param line string
----@return integer?, string?, string?
-local function parse_header(line)
-    assert(#line <= LINE_LENGTH_MAX)
-
-    --
-    -- checkpatch diagnostic header:
-    --
-    --   ERROR:CODE_INDENT: code indent should use tabs where possible
-    --   WARNING:LONG_LINE: line length of 105 exceeds 100 columns
-    --   CHECK:PARENTHESIS_ALIGNMENT: Alignment should match open parenthesis
-    --
-    local level
-    local code
-    local message
-
-    level, code, message = line:match('^(ERROR|WARNING|CHECK):([^:]+):%s*(.+)$')
-
-    if level == nil then
-        return nil
-    end
-
-    local severity = severities[level]
-
-    if severity == nil then
-        return nil
-    end
-
-    return severity, code, message
 end
 
 ---@param output string
@@ -242,14 +242,14 @@ local function parse(output, context)
                     diagnostics_count = diagnostics_count + 1
 
                     diagnostics[diagnostics_count] = {
-                        lnum = row,
-                        end_lnum = row,
+                        code = pending_code,
                         col = column,
                         end_col = column + 1,
+                        end_lnum = row,
+                        lnum = row,
                         message = pending_message,
                         severity = pending_severity,
                         source = 'checkpatch',
-                        code = pending_code,
                     }
 
                     pending_severity = nil
@@ -268,14 +268,7 @@ end
 
 return ---@type Linter
 {
-    automatic = false,
-
-    cmd = function(context)
-        assert(context.root ~= '')
-
-        return command(context.root)
-    end,
-
+    append_fname = false,
     args = function(context)
         assert(context.filename ~= '')
 
@@ -287,19 +280,19 @@ return ---@type Linter
             context.filename,
         }
     end,
+    automatic = false,
+    cmd = function(context)
+        assert(context.root ~= '')
 
-    append_fname = false,
-
+        return command(context.root)
+    end,
     cwd = function(context)
         assert(context.root ~= '')
 
         return context.root
     end,
-
     ignore_exitcode = true,
-
     parser = parse,
-
     root_markers = {
         'Kbuild',
         'Kconfig',
@@ -307,7 +300,6 @@ return ---@type Linter
         'MAINTAINERS',
         '.git',
     },
-
     stdin = false,
     stream = 'stdout',
     timeout = 30000,

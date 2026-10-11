@@ -13,8 +13,9 @@
 --- tex-fmt handles .tex, .bib, .cls and .sty; the runner selects it for
 --- the tex, latex and plaintex filetypes.
 
-local TEX_FMT_WIDTH = 100
+local TEX_FILETYPES = { tex = true, latex = true, plaintex = true }
 local TEX_FMT_INDENT = 4
+local TEX_FMT_WIDTH = 100
 
 ---@class TexFmtConfig
 ---@field width integer Line length for wrapping (tiger-style: 100).
@@ -30,8 +31,6 @@ local CONFIG = {
 
 assert(CONFIG.width > 0 and CONFIG.width <= 1000, 'tex_fmt: width must be within 1..1000 columns')
 assert(CONFIG.indent > 0 and CONFIG.indent <= 16, 'tex_fmt: indent must be within 1..16 spaces')
-
-local TEX_FILETYPES = { tex = true, latex = true, plaintex = true }
 
 ---@param context FormatterContext
 ---@return string[]
@@ -57,17 +56,17 @@ end
 
 ---@type FormatterSpec
 return {
-    cmd = 'tex-fmt',
+    allow_empty = false,
     args = build_args,
+    automatic = true,
+    cmd = 'tex-fmt',
+    cwd = nil,
+    decode = nil,
+    env = {},
+    exit_codes = { 0 },
+    extension = nil,
     mode = 'stdin',
     output = 'stdout',
-    cwd = nil,
-    env = {},
-    root_markers = { '.git' },
-    exit_codes = { 0 },
-    allow_empty = false,
-    automatic = true,
-    extension = nil,
-    decode = nil,
     pre_transform = nil,
+    root_markers = { '.git' },
 }

@@ -36,8 +36,8 @@ local max = math.max
 local tonumber = tonumber
 local type = type
 
-local SOURCE_DIALYZER = 'dialyzer'
 local SOURCE_DIALYXIR = 'dialyxir'
+local SOURCE_DIALYZER = 'dialyzer'
 
 ---@type string[]
 local DIRECT_PLT_CANDIDATES = {
@@ -71,25 +71,83 @@ local TIGER_WARNING_FLAGS = {
 ---@field column integer
 ---@field message string
 
----@param value integer|number|string|nil
----@param fallback integer
----@return integer
-local function integer(value, fallback)
-    assert(fallback >= 0)
+---@param argv string[]
+---@param flags string[]
+local function append_flags(argv, flags)
+    assert(type(argv) == 'table')
+    assert(type(flags) == 'table')
 
-    local parsed = tonumber(value)
+    for index = 1, #flags do
+        local flag = flags[index]
 
-    if parsed == nil then
-        return fallback
+        if type(flag) == 'string' and flag ~= '' then
+            argv[#argv + 1] = flag
+        end
+    end
+end
+
+---@param context LintContext
+---@return string
+local function cwd(context)
+    assert(type(context) == 'table')
+    assert(type(context.root) == 'string')
+    assert(context.root ~= '')
+
+    return fs.normalize(context.root)
+end
+
+---@param message string
+---@return string
+local function diagnostic_code(message)
+    assert(type(message) == 'string')
+
+    local lower = message:lower()
+
+    if lower:find('contract', 1, true) then
+        return 'contract'
     end
 
-    parsed = floor(parsed)
-
-    if parsed < 0 then
-        return fallback
+    if lower:find('will never return', 1, true) or lower:find('has no local return', 1, true) then
+        return 'no-return'
     end
 
-    return parsed
+    if lower:find('will fail', 1, true) then
+        return 'failing-call'
+    end
+
+    if lower:find('pattern', 1, true) and lower:find('never match', 1, true) then
+        return 'no-match'
+    end
+
+    if lower:find('opaque', 1, true) then
+        return 'opaque'
+    end
+
+    if lower:find('unused', 1, true) then
+        return 'unused'
+    end
+
+    if lower:find('callback', 1, true) then
+        return 'callback'
+    end
+
+    if lower:find('return', 1, true) then
+        return 'return'
+    end
+
+    return 'success-typing'
+end
+
+---@return string[]
+local function dialyxir_args()
+    return {
+        'mix',
+        'dialyzer',
+        '--no-compile',
+        '--no-check',
+        '--format',
+        'dialyzer',
+    }
 end
 
 ---@param path string
@@ -99,50 +157,6 @@ local function exists(path)
     assert(path ~= '')
 
     return uv.fs_stat(path) ~= nil
-end
-
----@param path string
----@return boolean
-local function is_directory(path)
-    assert(type(path) == 'string')
-    assert(path ~= '')
-
-    local stat = uv.fs_stat(path)
-
-    return stat ~= nil and stat.type == 'directory'
-end
-
----@param value string
----@return string
-local function trim(value)
-    assert(type(value) == 'string')
-
-    return (value:gsub('^%s*(.-)%s*$', '%1'))
-end
-
----@param value string
----@return string
-local function strip_ansi(value)
-    assert(type(value) == 'string')
-
-    return (value:gsub('\27%[[%d;?]*[ -/]*[@-~]', ''))
-end
-
----@param value string
----@return string
-local function normalize_message(value)
-    assert(type(value) == 'string')
-
-    value = strip_ansi(value)
-    value = value:gsub('\r\n', '\n')
-    value = value:gsub('\r', '\n')
-    value = trim(value)
-
-    if #value > MESSAGE_LENGTH_MAX then
-        value = value:sub(1, MESSAGE_LENGTH_MAX) .. '\n[message truncated]'
-    end
-
-    return value
 end
 
 ---@param root string
@@ -183,6 +197,38 @@ local function direct_plt_file(root)
     return find_candidate(root, DIRECT_PLT_CANDIDATES)
 end
 
+---@param value integer|number|string|nil
+---@param fallback integer
+---@return integer
+local function integer(value, fallback)
+    assert(fallback >= 0)
+
+    local parsed = tonumber(value)
+
+    if parsed == nil then
+        return fallback
+    end
+
+    parsed = floor(parsed)
+
+    if parsed < 0 then
+        return fallback
+    end
+
+    return parsed
+end
+
+---@param path string
+---@return boolean
+local function is_directory(path)
+    assert(type(path) == 'string')
+    assert(path ~= '')
+
+    local stat = uv.fs_stat(path)
+
+    return stat ~= nil and stat.type == 'directory'
+end
+
 ---@param root string
 ---@return string[]
 local function include_directories(root)
@@ -213,13 +259,51 @@ local function include_directories(root)
     return directories
 end
 
----@param root string
----@return boolean
-local function is_mix_project(root)
-    assert(type(root) == 'string')
-    assert(root ~= '')
+---@param context LintContext
+---@return string[]
+local function direct_dialyzer_args(context)
+    assert(type(context) == 'table')
+    assert(type(context.filename) == 'string')
+    assert(context.filename ~= '')
+    assert(type(context.root) == 'string')
+    assert(context.root ~= '')
 
-    return exists(fs.joinpath(root, 'mix.exs'))
+    local root = fs.normalize(context.root)
+
+    ---@type string[]
+    local argv = {
+        'dialyzer',
+        '--src',
+        '--fullpath',
+        '--error_location',
+        'column',
+        '--no_indentation',
+        '--quiet',
+    }
+
+    append_flags(argv, TIGER_WARNING_FLAGS)
+
+    local plt = direct_plt_file(root)
+
+    if plt ~= nil then
+        argv[#argv + 1] = '--plt'
+        argv[#argv + 1] = plt
+    end
+
+    local includes = include_directories(root)
+
+    for index = 1, #includes do
+        local include = includes[index]
+
+        if type(include) == 'string' and include ~= '' then
+            argv[#argv + 1] = '-I'
+            argv[#argv + 1] = include
+        end
+    end
+
+    argv[#argv + 1] = context.filename
+
+    return argv
 end
 
 ---@param filename string
@@ -231,16 +315,13 @@ local function is_elixir_source(filename)
     return filename:sub(-3) == '.ex' or filename:sub(-4) == '.exs'
 end
 
----@param context LintContext
+---@param root string
 ---@return boolean
-local function use_dialyxir(context)
-    assert(type(context) == 'table')
-    assert(type(context.filename) == 'string')
-    assert(context.filename ~= '')
-    assert(type(context.root) == 'string')
-    assert(context.root ~= '')
+local function is_mix_project(root)
+    assert(type(root) == 'string')
+    assert(root ~= '')
 
-    return is_mix_project(context.root) and is_elixir_source(context.filename)
+    return exists(fs.joinpath(root, 'mix.exs'))
 end
 
 ---@param path string
@@ -286,6 +367,78 @@ local function belongs_to_buffer(candidate, filename, root)
     return normalize_path(candidate, root) == filename
 end
 
+---@param entry DialyzerParsedDiagnostic
+---@param filename string
+---@param root string
+---@param source string
+---@param analyzer string
+---@return vim.Diagnostic.Set?
+local function diagnostic_from_entry(entry, filename, root, source, analyzer)
+    assert(type(entry) == 'table')
+    assert(type(filename) == 'string')
+    assert(filename ~= '')
+    assert(type(root) == 'string')
+    assert(root ~= '')
+    assert(type(source) == 'string')
+    assert(source ~= '')
+    assert(type(analyzer) == 'string')
+    assert(analyzer ~= '')
+
+    if not belongs_to_buffer(entry.filename, filename, root) then
+        return nil
+    end
+
+    local lnum = max(entry.line - 1, 0)
+    local col = max(entry.column - 1, 0)
+
+    return {
+        code = diagnostic_code(entry.message),
+        col = col,
+        end_col = col + 1,
+        end_lnum = lnum,
+        lnum = lnum,
+        message = entry.message,
+        severity = WARN,
+        source = source,
+        user_data = {
+            analyzer = analyzer,
+        },
+    }
+end
+
+---@param value string
+---@return string
+local function strip_ansi(value)
+    assert(type(value) == 'string')
+
+    return (value:gsub('\27%[[%d;?]*[ -/]*[@-~]', ''))
+end
+
+---@param value string
+---@return string
+local function trim(value)
+    assert(type(value) == 'string')
+
+    return (value:gsub('^%s*(.-)%s*$', '%1'))
+end
+
+---@param value string
+---@return string
+local function normalize_message(value)
+    assert(type(value) == 'string')
+
+    value = strip_ansi(value)
+    value = value:gsub('\r\n', '\n')
+    value = value:gsub('\r', '\n')
+    value = trim(value)
+
+    if #value > MESSAGE_LENGTH_MAX then
+        value = value:sub(1, MESSAGE_LENGTH_MAX) .. '\n[message truncated]'
+    end
+
+    return value
+end
+
 ---@param line string
 ---@return DialyzerParsedDiagnostic?
 local function parse_line(line)
@@ -314,9 +467,9 @@ local function parse_line(line)
         end
 
         return {
+            column = parsed_column,
             filename = filename,
             line = parsed_line,
-            column = parsed_column,
             message = message,
         }
     end
@@ -340,98 +493,39 @@ local function parse_line(line)
     end
 
     return {
+        column = 1,
         filename = filename,
         line = parsed_line,
-        column = 1,
         message = message,
     }
 end
 
----@param message string
----@return string
-local function diagnostic_code(message)
-    assert(type(message) == 'string')
+---@param context LintContext
+---@return boolean
+local function use_dialyxir(context)
+    assert(type(context) == 'table')
+    assert(type(context.filename) == 'string')
+    assert(context.filename ~= '')
+    assert(type(context.root) == 'string')
+    assert(context.root ~= '')
 
-    local lower = message:lower()
-
-    if lower:find('contract', 1, true) then
-        return 'contract'
-    end
-
-    if lower:find('will never return', 1, true) or lower:find('has no local return', 1, true) then
-        return 'no-return'
-    end
-
-    if lower:find('will fail', 1, true) then
-        return 'failing-call'
-    end
-
-    if lower:find('pattern', 1, true) and lower:find('never match', 1, true) then
-        return 'no-match'
-    end
-
-    if lower:find('opaque', 1, true) then
-        return 'opaque'
-    end
-
-    if lower:find('unused', 1, true) then
-        return 'unused'
-    end
-
-    if lower:find('callback', 1, true) then
-        return 'callback'
-    end
-
-    if lower:find('return', 1, true) then
-        return 'return'
-    end
-
-    return 'success-typing'
+    return is_mix_project(context.root) and is_elixir_source(context.filename)
 end
 
----@param entry DialyzerParsedDiagnostic
----@param filename string
----@param root string
----@param source string
----@param analyzer string
----@return vim.Diagnostic.Set?
-local function diagnostic_from_entry(entry, filename, root, source, analyzer)
-    assert(type(entry) == 'table')
-    assert(type(filename) == 'string')
-    assert(filename ~= '')
-    assert(type(root) == 'string')
-    assert(root ~= '')
-    assert(type(source) == 'string')
-    assert(source ~= '')
-    assert(type(analyzer) == 'string')
-    assert(analyzer ~= '')
+---@param context LintContext
+---@return string[]
+local function args(context)
+    assert(type(context) == 'table')
+    assert(type(context.filename) == 'string')
+    assert(context.filename ~= '')
+    assert(type(context.root) == 'string')
+    assert(context.root ~= '')
 
-    if not belongs_to_buffer(entry.filename, filename, root) then
-        return nil
+    if use_dialyxir(context) then
+        return dialyxir_args()
     end
 
-    local lnum = max(entry.line - 1, 0)
-    local col = max(entry.column - 1, 0)
-
-    return {
-        lnum = lnum,
-        end_lnum = lnum,
-
-        col = col,
-        end_col = col + 1,
-
-        message = entry.message,
-
-        severity = WARN,
-
-        source = source,
-
-        code = diagnostic_code(entry.message),
-
-        user_data = {
-            analyzer = analyzer,
-        },
-    }
+    return direct_dialyzer_args(context)
 end
 
 ---@param output string
@@ -484,122 +578,15 @@ local function parse(output, context)
     return diagnostics
 end
 
----@param argv string[]
----@param flags string[]
-local function append_flags(argv, flags)
-    assert(type(argv) == 'table')
-    assert(type(flags) == 'table')
-
-    for index = 1, #flags do
-        local flag = flags[index]
-
-        if type(flag) == 'string' and flag ~= '' then
-            argv[#argv + 1] = flag
-        end
-    end
-end
-
----@param context LintContext
----@return string[]
-local function direct_dialyzer_args(context)
-    assert(type(context) == 'table')
-    assert(type(context.filename) == 'string')
-    assert(context.filename ~= '')
-    assert(type(context.root) == 'string')
-    assert(context.root ~= '')
-
-    local root = fs.normalize(context.root)
-
-    ---@type string[]
-    local argv = {
-        'dialyzer',
-        '--src',
-        '--fullpath',
-        '--error_location',
-        'column',
-        '--no_indentation',
-        '--quiet',
-    }
-
-    append_flags(argv, TIGER_WARNING_FLAGS)
-
-    local plt = direct_plt_file(root)
-
-    if plt ~= nil then
-        argv[#argv + 1] = '--plt'
-        argv[#argv + 1] = plt
-    end
-
-    local includes = include_directories(root)
-
-    for index = 1, #includes do
-        local include = includes[index]
-
-        if type(include) == 'string' and include ~= '' then
-            argv[#argv + 1] = '-I'
-            argv[#argv + 1] = include
-        end
-    end
-
-    argv[#argv + 1] = context.filename
-
-    return argv
-end
-
----@return string[]
-local function dialyxir_args()
-    return {
-        'mix',
-        'dialyzer',
-        '--no-compile',
-        '--no-check',
-        '--format',
-        'dialyzer',
-    }
-end
-
----@param context LintContext
----@return string[]
-local function args(context)
-    assert(type(context) == 'table')
-    assert(type(context.filename) == 'string')
-    assert(context.filename ~= '')
-    assert(type(context.root) == 'string')
-    assert(context.root ~= '')
-
-    if use_dialyxir(context) then
-        return dialyxir_args()
-    end
-
-    return direct_dialyzer_args(context)
-end
-
----@param context LintContext
----@return string
-local function cwd(context)
-    assert(type(context) == 'table')
-    assert(type(context.root) == 'string')
-    assert(context.root ~= '')
-
-    return fs.normalize(context.root)
-end
-
 ---@type Linter
 return {
-    automatic = false,
-
-    cmd = 'env',
-
-    args = args,
-
     append_fname = false,
-
+    args = args,
+    automatic = false,
+    cmd = 'env',
     cwd = cwd,
-
     ignore_exitcode = true,
-
     parser = parse,
-
     root_markers = {
         --
         -- Rebar3.
@@ -620,7 +607,6 @@ return {
 
         '.git',
     },
-
     stdin = false,
     stream = 'stdout',
     timeout = TIMEOUT_MS,

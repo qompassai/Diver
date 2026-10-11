@@ -13,13 +13,13 @@
 -- Runner owns cancellation, stale-job suppression, stderr and process failures.
 local fs = vim.fs
 local uv = vim.uv
-local SOURCE = 'phpstan'
 local PHP = '/usr/bin/php'
+local SOURCE = 'phpstan'
 local VENDOR_BINARY = 'vendor/bin/phpstan'
 local CACHE = fs.joinpath(vim.fn.stdpath('cache'), 'phpstan')
-local MAX_OUTPUT = 16 * 1024 * 1024
 local MAX_DIAGNOSTICS = 512
 local MAX_FILES = 1024
+local MAX_OUTPUT = 16 * 1024 * 1024
 local MAX_RECORDS = 10000
 local CONFIG_NAMES = {
     '.phpstan.neon',
@@ -254,10 +254,10 @@ end
 
 ---@type Linter
 return {
-    cmd = PHP,
-    args = arguments,
     append_fname = false,
+    args = arguments,
     automatic = true,
+    cmd = PHP,
     cwd = root,
     env = { PHPSTAN_TMP_DIR = CACHE, NO_COLOR = '1' },
     exit_codes = { 0, 1 },

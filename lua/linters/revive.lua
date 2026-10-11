@@ -4,17 +4,15 @@
 -- --------------------------------------------------
 return ---@type vim.lint.Config
 {
-    cmd = 'revive',
-    stdin = false,
     append_fname = true,
     args = {
         '-formatter',
         'unix',
         -- '-config', 'revive.toml',
     },
-    stream = nil,
-    ignore_exitcode = true,
+    cmd = 'revive',
     env = nil,
+    ignore_exitcode = true,
     ---@type LintBufferParser
     ---@param output string
     ---@param bufnr integer
@@ -54,4 +52,6 @@ return ---@type vim.lint.Config
         end
         return diagnostics
     end,
+    stdin = false,
+    stream = nil,
 }

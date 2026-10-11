@@ -11,12 +11,12 @@
 
 ---@type FormatterSpec
 return {
-    cmd = 'perltidy',
+    allow_empty = false,
     args = {},
+    automatic = true,
+    cmd = 'perltidy',
+    exit_codes = { 0 },
+    extension = 'pl',
     mode = 'stdin',
     output = 'stdout',
-    exit_codes = { 0 },
-    automatic = true,
-    allow_empty = false,
-    extension = 'pl',
 }

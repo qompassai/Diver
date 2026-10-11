@@ -17,12 +17,12 @@ end
 
 ---@type FormatterSpec
 return {
-    cmd = 'nickel',
+    allow_empty = false,
     args = build_args,
+    automatic = true,
+    cmd = 'nickel',
+    exit_codes = { 0 },
+    extension = 'ncl',
     mode = 'tempfile',
     output = 'file',
-    exit_codes = { 0 },
-    automatic = true,
-    allow_empty = false,
-    extension = 'ncl',
 }

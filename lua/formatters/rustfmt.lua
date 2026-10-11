@@ -13,17 +13,17 @@
 
 ---@type FormatterSpec
 return {
-    cmd = 'rustfmt',
+    allow_empty = false,
     args = { '--emit=stdout' },
+    automatic = true,
+    cmd = 'rustfmt',
+    cwd = nil,
+    decode = nil,
+    env = {},
+    exit_codes = { 0 },
+    extension = 'rs',
     mode = 'stdin',
     output = 'stdout',
-    cwd = nil,
-    env = {},
-    root_markers = { 'rustfmt.toml', '.rustfmt.toml', 'Cargo.toml', '.git' },
-    exit_codes = { 0 },
-    allow_empty = false,
-    automatic = true,
-    extension = 'rs',
-    decode = nil,
     pre_transform = nil,
+    root_markers = { 'rustfmt.toml', '.rustfmt.toml', 'Cargo.toml', '.git' },
 }

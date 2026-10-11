@@ -194,13 +194,13 @@ end
 
 return ---@type Linter
 {
+
+    append_fname = false,
+
+    args = args,
     automatic = true,
 
     cmd = 'quick-lint-js',
-
-    args = args,
-
-    append_fname = false,
 
     cwd = cwd,
 

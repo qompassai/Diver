@@ -322,13 +322,13 @@ end
 
 return ---@type Linter
 {
+
+    append_fname = false,
+
+    args = args,
     automatic = false,
 
     cmd = 'regal',
-
-    args = args,
-
-    append_fname = false,
 
     cwd = cwd,
 

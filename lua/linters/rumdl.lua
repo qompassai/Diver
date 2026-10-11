@@ -100,7 +100,7 @@ end
 
 return ---@type Linter
 {
-    cmd = 'rumdl',
+    append_fname = false,
     args = function(context)
         return {
             'check',
@@ -113,7 +113,7 @@ return ---@type Linter
             context.filename,
         }
     end,
-    append_fname = false,
+    cmd = 'rumdl',
     cwd = function(context)
         return vim.fs.dirname(context.filename) or context.cwd
     end,

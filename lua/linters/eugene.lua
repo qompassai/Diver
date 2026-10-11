@@ -37,100 +37,30 @@ local ROOT_MARKERS = {
 }
 
 ---@param value any
----@return string?
-local function string_value(value)
-    if type(value) ~= 'string' or value == '' then
-        return nil
+---@param reports table[]
+---@param depth integer
+local function collect_reports(value, reports, depth)
+    if depth > 6 or type(value) ~= 'table' then
+        return
     end
 
-    return value
+    if type(value.statements) == 'table' then
+        reports[#reports + 1] = value
+
+        return
+    end
+
+    for _, child in pairs(value) do
+        if type(child) == 'table' then
+            collect_reports(child, reports, depth + 1)
+        end
+    end
 end
 
 ---@param value string
 ---@return string
 local function compact(value)
     return vim.trim(value:gsub('%s+', ' '))
-end
-
----@param value string
----@param limit integer
----@return string
-local function truncate(value, limit)
-    if #value <= limit then
-        return value
-    end
-
-    return value:sub(1, limit - 3) .. '...'
-end
-
----@param value any
----@return integer
-local function zero_based_line(value)
-    local number = tonumber(value)
-
-    if number == nil then
-        return 0
-    end
-
-    local line = math.floor(number)
-
-    if line <= 1 then
-        return 0
-    end
-
-    return line - 1
-end
-
----@param code string?
----@return integer
-local function severity(code)
-    if code == nil then
-        return diagnostic.severity.WARN
-    end
-
-    local prefix = code:sub(1, 1):upper()
-
-    if prefix == 'E' then
-        return diagnostic.severity.ERROR
-    end
-
-    if prefix == 'W' then
-        return diagnostic.severity.WARN
-    end
-
-    if prefix == 'I' then
-        return diagnostic.severity.INFO
-    end
-
-    return diagnostic.severity.WARN
-end
-
----@param context LintContext
----@return string
-local function project_root(context)
-    local context_root = string_value(context.root)
-
-    if context_root ~= nil then
-        return fs.normalize(context_root)
-    end
-
-    local filename = string_value(context.filename)
-
-    if filename ~= nil then
-        local detected = fs.root(filename, ROOT_MARKERS)
-
-        if type(detected) == 'string' and detected ~= '' then
-            return fs.normalize(detected)
-        end
-    end
-
-    local cwd = string_value(context.cwd)
-
-    if cwd ~= nil then
-        return fs.normalize(cwd)
-    end
-
-    return fs.normalize(vim.fn.getcwd())
 end
 
 ---@param text string
@@ -205,31 +135,143 @@ local function decode_output(output)
     return decode_slice(text, '[', ']')
 end
 
+---@param context LintContext
+---@return vim.Diagnostic[]
+local function oversized_output(context)
+    return {
+        {
+            bufnr = context.bufnr,
+
+            code = 'output-limit',
+
+            col = 0,
+
+            end_col = 0,
+
+            end_lnum = 0,
+
+            lnum = 0,
+
+            message = string.format('Eugene output exceeded the %d-byte parser limit', MAX_OUTPUT_BYTES),
+
+            severity = diagnostic.severity.WARN,
+
+            source = SOURCE,
+        },
+    }
+end
+
+---@param code string?
+---@return integer
+local function severity(code)
+    if code == nil then
+        return diagnostic.severity.WARN
+    end
+
+    local prefix = code:sub(1, 1):upper()
+
+    if prefix == 'E' then
+        return diagnostic.severity.ERROR
+    end
+
+    if prefix == 'W' then
+        return diagnostic.severity.WARN
+    end
+
+    if prefix == 'I' then
+        return diagnostic.severity.INFO
+    end
+
+    return diagnostic.severity.WARN
+end
+
 ---@param value any
----@param reports table[]
----@param depth integer
-local function collect_reports(value, reports, depth)
-    if depth > 6 or type(value) ~= 'table' then
-        return
+---@return string?
+local function string_value(value)
+    if type(value) ~= 'string' or value == '' then
+        return nil
     end
 
-    if type(value.statements) == 'table' then
-        reports[#reports + 1] = value
+    return value
+end
 
-        return
+---@param context LintContext
+---@return string
+local function project_root(context)
+    local context_root = string_value(context.root)
+
+    if context_root ~= nil then
+        return fs.normalize(context_root)
     end
 
-    for _, child in pairs(value) do
-        if type(child) == 'table' then
-            collect_reports(child, reports, depth + 1)
+    local filename = string_value(context.filename)
+
+    if filename ~= nil then
+        local detected = fs.root(filename, ROOT_MARKERS)
+
+        if type(detected) == 'string' and detected ~= '' then
+            return fs.normalize(detected)
         end
     end
+
+    local cwd = string_value(context.cwd)
+
+    if cwd ~= nil then
+        return fs.normalize(cwd)
+    end
+
+    return fs.normalize(vim.fn.getcwd())
 end
 
 ---@param rule table
 ---@return string?
 local function rule_code(rule)
     return string_value(rule.id) or string_value(rule.code) or string_value(rule.rule_id)
+end
+
+---@param output string
+---@return string
+local function strip_ansi(output)
+    local cleaned = output:gsub('\27%[[%d;]*m', '')
+    return cleaned
+end
+
+---@param value string
+---@param limit integer
+---@return string
+local function truncate(value, limit)
+    if #value <= limit then
+        return value
+    end
+
+    return value:sub(1, limit - 3) .. '...'
+end
+
+---@param output string
+---@return string?
+local function error_message(output)
+    local text = strip_ansi(vim.trim(output))
+
+    if text == '' then
+        return nil
+    end
+
+    for line in text:gmatch('[^\r\n]+') do
+        local normalized = compact(line)
+        local lower = normalized:lower()
+
+        if lower:find('error', 1, true) ~= nil or lower:find('syntax', 1, true) ~= nil then
+            return truncate(normalized, MAX_MESSAGE_BYTES)
+        end
+    end
+
+    local first = text:match('([^\r\n]+)')
+
+    if first == nil then
+        return nil
+    end
+
+    return truncate(compact(first), MAX_MESSAGE_BYTES)
 end
 
 ---@param rule table
@@ -249,6 +291,61 @@ local function rule_message(rule)
     end
 
     return truncate(name, MAX_MESSAGE_BYTES)
+end
+
+---@param value any
+---@return integer
+local function zero_based_line(value)
+    local number = tonumber(value)
+
+    if number == nil then
+        return 0
+    end
+
+    local line = math.floor(number)
+
+    if line <= 1 then
+        return 0
+    end
+
+    return line - 1
+end
+
+---@param output string
+---@param context LintContext
+---@return vim.Diagnostic[]
+local function parse_failure(output, context)
+    local message = error_message(output)
+
+    if message == nil then
+        return {}
+    end
+
+    local line_number = output:match('[Ll][Ii][Nn][Ee]%s+(%d+)') or output:match('line%s+(%d+)')
+
+    local lnum = zero_based_line(line_number)
+
+    return {
+        {
+            bufnr = context.bufnr,
+
+            code = 'parse',
+
+            col = 0,
+
+            end_col = 0,
+
+            end_lnum = lnum,
+
+            lnum = lnum,
+
+            message = message,
+
+            severity = diagnostic.severity.ERROR,
+
+            source = SOURCE,
+        },
+    }
 end
 
 ---@param statement table
@@ -324,103 +421,6 @@ local function parse_report(report, context, diagnostics)
 end
 
 ---@param output string
----@return string
-local function strip_ansi(output)
-    local cleaned = output:gsub('\27%[[%d;]*m', '')
-    return cleaned
-end
-
----@param output string
----@return string?
-local function error_message(output)
-    local text = strip_ansi(vim.trim(output))
-
-    if text == '' then
-        return nil
-    end
-
-    for line in text:gmatch('[^\r\n]+') do
-        local normalized = compact(line)
-        local lower = normalized:lower()
-
-        if lower:find('error', 1, true) ~= nil or lower:find('syntax', 1, true) ~= nil then
-            return truncate(normalized, MAX_MESSAGE_BYTES)
-        end
-    end
-
-    local first = text:match('([^\r\n]+)')
-
-    if first == nil then
-        return nil
-    end
-
-    return truncate(compact(first), MAX_MESSAGE_BYTES)
-end
-
----@param output string
----@param context LintContext
----@return vim.Diagnostic[]
-local function parse_failure(output, context)
-    local message = error_message(output)
-
-    if message == nil then
-        return {}
-    end
-
-    local line_number = output:match('[Ll][Ii][Nn][Ee]%s+(%d+)') or output:match('line%s+(%d+)')
-
-    local lnum = zero_based_line(line_number)
-
-    return {
-        {
-            bufnr = context.bufnr,
-
-            code = 'parse',
-
-            col = 0,
-
-            end_col = 0,
-
-            end_lnum = lnum,
-
-            lnum = lnum,
-
-            message = message,
-
-            severity = diagnostic.severity.ERROR,
-
-            source = SOURCE,
-        },
-    }
-end
-
----@param context LintContext
----@return vim.Diagnostic[]
-local function oversized_output(context)
-    return {
-        {
-            bufnr = context.bufnr,
-
-            code = 'output-limit',
-
-            col = 0,
-
-            end_col = 0,
-
-            end_lnum = 0,
-
-            lnum = 0,
-
-            message = string.format('Eugene output exceeded the %d-byte parser limit', MAX_OUTPUT_BYTES),
-
-            severity = diagnostic.severity.WARN,
-
-            source = SOURCE,
-        },
-    }
-end
-
----@param output string
 ---@param context LintContext
 ---@return vim.Diagnostic[]
 local function parse(output, context)
@@ -466,6 +466,7 @@ end
 
 ---@type Linter
 return {
+    append_fname = false,
     args = {
         'lint',
         '--format',
@@ -475,8 +476,6 @@ return {
         'none',
         '-',
     },
-
-    append_fname = false,
     automatic = false,
     cmd = 'eugene',
     cwd = project_root,

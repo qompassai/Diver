@@ -20,12 +20,6 @@
 -- CLI reference: Laravel Pint v1.24.0 (https://github.com/laravel/pint).
 --
 ---@param context FormatterContext
----@return string
-local function working_directory(context)
-    return context.root
-end
-
----@param context FormatterContext
 ---@return string[]
 local function arguments(context)
     local tempfile = context.tempfile
@@ -39,25 +33,31 @@ local function arguments(context)
     return args
 end
 
+---@param context FormatterContext
+---@return string
+local function working_directory(context)
+    return context.root
+end
+
 ---@type FormatterSpec
 return {
-    cmd = 'pint',
+    allow_empty = false,
     args = arguments,
+    automatic = true,
+    cmd = 'pint',
+    cwd = working_directory,
+    decode = nil,
+    env = {
+        NO_COLOR = '1',
+    },
+    exit_codes = { 0 },
+    extension = 'php',
     mode = 'tempfile',
     output = 'file',
-    cwd = working_directory,
+    pre_transform = nil,
     root_markers = {
         'pint.json',
         'composer.json',
         '.git',
     },
-    env = {
-        NO_COLOR = '1',
-    },
-    exit_codes = { 0 },
-    automatic = true,
-    allow_empty = false,
-    extension = 'php',
-    decode = nil,
-    pre_transform = nil,
 }

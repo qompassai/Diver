@@ -54,6 +54,32 @@ local SEVERITIES = {
 local LINE_PATTERN = '^.-:(%d+):(%d+)%s+(%w+)%s+([%w%-/]+)%s+(.+)$'
 
 ---@param value string
+---@return string?
+local function clean_message(value)
+    assert(type(value) == 'string')
+
+    local message = vim.trim(value:gsub('[%z\1-\8\11-\31\127]', ' '))
+
+    if message == '' then
+        return nil
+    end
+
+    if #message > MESSAGE_LENGTH_MAX then
+        message = message:sub(1, MESSAGE_LENGTH_MAX) .. '…'
+    end
+
+    return message
+end
+
+---@param context LintContext
+---@return string
+local function cwd(context)
+    assert(context.root ~= '')
+
+    return fs.normalize(context.root)
+end
+
+---@param value string
 ---@param minimum integer
 ---@param maximum integer
 ---@return integer?
@@ -73,24 +99,6 @@ local function integer_in_range(value, minimum, maximum)
 
     ---@cast parsed integer
     return parsed
-end
-
----@param value string
----@return string?
-local function clean_message(value)
-    assert(type(value) == 'string')
-
-    local message = vim.trim(value:gsub('[%z\1-\8\11-\31\127]', ' '))
-
-    if message == '' then
-        return nil
-    end
-
-    if #message > MESSAGE_LENGTH_MAX then
-        message = message:sub(1, MESSAGE_LENGTH_MAX) .. '…'
-    end
-
-    return message
 end
 
 ---@param line string
@@ -118,14 +126,14 @@ local function parse_line(line)
     end
 
     return {
-        lnum = parsed_row - 1,
-        end_lnum = parsed_row - 1,
+        code = rule,
         col = max(parsed_column - 1, 0),
         end_col = parsed_column,
+        end_lnum = parsed_row - 1,
+        lnum = parsed_row - 1,
+        message = cleaned,
         severity = severity,
         source = SOURCE,
-        code = rule,
-        message = cleaned,
     }
 end
 
@@ -158,34 +166,19 @@ local function parse(output, _)
     return diagnostics
 end
 
----@param context LintContext
----@return string
-local function cwd(context)
-    assert(context.root ~= '')
-
-    return fs.normalize(context.root)
-end
-
 return ---@type Linter
 {
-    automatic = true,
-
-    cmd = 'markdownlint-cli2',
-
+    append_fname = false,
     args = {
         -- Read the buffer from stdin.
         '-',
     },
-
-    append_fname = false,
-
+    automatic = true,
+    cmd = 'markdownlint-cli2',
     cwd = cwd,
-
     -- Exits 1 when it found problems; that is the normal diagnostic path.
     ignore_exitcode = true,
-
     parser = parse,
-
     root_markers = {
         '.markdownlint-cli2.jsonc',
         '.markdownlint-cli2.yaml',
@@ -193,10 +186,7 @@ return ---@type Linter
         '.markdownlint.yaml',
         '.git',
     },
-
     stdin = true,
-
     stream = 'stdout',
-
     timeout = TIMEOUT_MS,
 }

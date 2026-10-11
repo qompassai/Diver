@@ -17,18 +17,6 @@
 ---@module 'formatters.goimports'
 
 ---@param context FormatterContext
----@return string
-local function working_directory(context)
-    if context.filename ~= '' then
-        local directory = vim.fs.dirname(context.filename)
-        if directory then
-            return directory
-        end
-    end
-    return context.root
-end
-
----@param context FormatterContext
 ---@return string[]
 local function arguments(context)
     local filename = context.filename
@@ -49,6 +37,18 @@ local function arguments(context)
         '-memrate=0',
         '-trace=', -- gc-build trace flag; disabled.
     }
+end
+
+---@param context FormatterContext
+---@return string
+local function working_directory(context)
+    if context.filename ~= '' then
+        local directory = vim.fs.dirname(context.filename)
+        if directory then
+            return directory
+        end
+    end
+    return context.root
 end
 
 ---@type FormatterSpec

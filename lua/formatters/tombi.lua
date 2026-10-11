@@ -14,7 +14,7 @@
 -- the file name) lets tombi match path-specific configuration.
 ---@type FormatterSpec
 return {
-    cmd = 'tombi',
+    allow_empty = false,
     args = function(context)
         local args = { 'format' }
         if context.filename ~= '' then
@@ -24,17 +24,17 @@ return {
         args[#args + 1] = '-'
         return args
     end,
+    automatic = true,
+    cmd = 'tombi',
+    cwd = nil,
+    decode = nil,
+    description = 'TOML formatter; `format -` reads stdin and prints formatted stdout',
+    env = {},
+    exit_codes = { 0 },
+    extension = nil,
+    filetypes = { 'toml' },
     mode = 'stdin',
     output = 'stdout',
-    cwd = nil,
-    env = {},
-    root_markers = {},
-    exit_codes = { 0 },
-    allow_empty = false,
-    automatic = true,
-    extension = nil,
-    decode = nil,
     pre_transform = nil,
-    filetypes = { 'toml' },
-    description = 'TOML formatter; `format -` reads stdin and prints formatted stdout',
+    root_markers = {},
 }

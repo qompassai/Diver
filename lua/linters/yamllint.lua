@@ -503,10 +503,10 @@ end
 
 ---@type Linter
 return {
+    append_fname = false,
+    args = args,
     automatic = true,
     cmd = 'yamllint',
-    args = args,
-    append_fname = false,
     cwd = cwd,
 
     ignore_exitcode = true,

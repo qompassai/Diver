@@ -31,14 +31,14 @@
 -- See herb-setup.md for installation, registration and validation details.
 local diagnostic = vim.diagnostic
 local fs = vim.fs
-local uv = vim.uv
 local json = vim.json
-local SOURCE = 'herb'
+local uv = vim.uv
 local MAX_DIAGNOSTICS = 512
-local MAX_OUTPUT_BYTES = 16 * 1024 * 1024
-local MAX_MESSAGE_BYTES = 4096
-local MAX_RESULTS = 10000
 local MAX_LINE_BYTES = 1024 * 1024
+local MAX_MESSAGE_BYTES = 4096
+local MAX_OUTPUT_BYTES = 16 * 1024 * 1024
+local MAX_RESULTS = 10000
+local SOURCE = 'herb'
 local CONFIG_MARKERS = { '.herb.yml' }
 -- Match @herb-tools/config's project indicators, including literal *.gemspec.
 local ROOT_MARKERS = {
@@ -54,20 +54,10 @@ local ROOT_MARKERS = {
 }
 local SEVERITIES = {
     error = diagnostic.severity.ERROR,
-    warning = diagnostic.severity.WARN,
-    info = diagnostic.severity.INFO,
     hint = diagnostic.severity.HINT,
+    info = diagnostic.severity.INFO,
+    warning = diagnostic.severity.WARN,
 }
----@param value any
----@return string?
-local function string_value(value)
-    if type(value) == 'string' and value ~= '' then
-        return value
-    end
-
-    return nil
-end
-
 ---@param path string
 ---@param cwd string
 ---@return string
@@ -113,20 +103,27 @@ local function clean_message(value)
     return text
 end
 
----@param context LintContext
----@param code string
----@param message string
----@return vim.Diagnostic.Set
-local function status_diagnostic(context, code, message)
-    return {
-        bufnr = context.bufnr,
-        code = code,
-        col = 0,
-        lnum = 0,
-        message = message,
-        severity = diagnostic.severity.WARN,
-        source = SOURCE,
-    }
+local function integer(value)
+    return type(value) == 'number' and value >= 0 and value < 2147483647 and value == math.floor(value)
+end
+
+local function position(value, context)
+    if type(value) ~= 'table' or not integer(value.line) or value.line < 1 or not integer(value.column) then
+        return nil
+    end
+    local count = vim.api.nvim_buf_line_count(context.bufnr)
+    if value.line > count then
+        return count - 1, 0, false
+    end
+    local row = value.line - 1
+    local line = vim.api.nvim_buf_get_lines(context.bufnr, row, row + 1, false)[1] or ''
+    if #line > MAX_LINE_BYTES or line:find('[\128-\255]') then
+        return row, 0, false
+    end
+    if value.column > #line then
+        return row, #line, false
+    end
+    return row, value.column, true
 end
 
 ---@param path string
@@ -156,6 +153,32 @@ local function relative_path(path, cwd)
 end
 
 ---@param context LintContext
+---@param code string
+---@param message string
+---@return vim.Diagnostic.Set
+local function status_diagnostic(context, code, message)
+    return {
+        bufnr = context.bufnr,
+        code = code,
+        col = 0,
+        lnum = 0,
+        message = message,
+        severity = diagnostic.severity.WARN,
+        source = SOURCE,
+    }
+end
+
+---@param value any
+---@return string?
+local function string_value(value)
+    if type(value) == 'string' and value ~= '' then
+        return value
+    end
+
+    return nil
+end
+
+---@param context LintContext
 ---@return string
 local function project_root(context)
     local cwd = fs.normalize(string_value(context.cwd) or vim.fn.getcwd())
@@ -168,27 +191,29 @@ local function project_root(context)
     return cwd
 end
 
-local function integer(value)
-    return type(value) == 'number' and value >= 0 and value < 2147483647 and value == math.floor(value)
-end
-
-local function position(value, context)
-    if type(value) ~= 'table' or not integer(value.line) or value.line < 1 or not integer(value.column) then
-        return nil
-    end
-    local count = vim.api.nvim_buf_line_count(context.bufnr)
-    if value.line > count then
-        return count - 1, 0, false
-    end
-    local row = value.line - 1
-    local line = vim.api.nvim_buf_get_lines(context.bufnr, row, row + 1, false)[1] or ''
-    if #line > MAX_LINE_BYTES or line:find('[\128-\255]') then
-        return row, 0, false
-    end
-    if value.column > #line then
-        return row, #line, false
-    end
-    return row, value.column, true
+---@param context LintContext
+---@return string[]
+local function arguments(context)
+    assert(type(context) == 'table', 'herb arguments require LintContext')
+    local filename = string_value(context.filename)
+    assert(filename, 'herb requires a saved filename')
+    local cwd = project_root(context)
+    local path = relative_path(absolute_path(filename, string_value(context.cwd) or cwd), cwd)
+    local backslash = string.char(92)
+    -- tinyglobby treats positionals as patterns, even with shell-free argv.
+    local pattern = path:gsub('[*?%[%]{}()!+@' .. backslash .. ']', function(character)
+        return backslash .. character
+    end)
+    return {
+        '--format',
+        'json',
+        '--no-color',
+        '--no-github',
+        '--no-timing',
+        '--jobs',
+        '1',
+        './' .. pattern,
+    }
 end
 
 ---@param output string
@@ -255,12 +280,12 @@ local function parse(output, context)
             end
             local item = {
                 bufnr = context.bufnr,
-                lnum = row or 0,
-                col = col or 0,
-                source = SOURCE,
-                severity = level or diagnostic.severity.WARN,
                 code = string_value(issue.code) and clean_message(issue.code) or nil,
+                col = col or 0,
+                lnum = row or 0,
                 message = clean_message(issue.message),
+                severity = level or diagnostic.severity.WARN,
+                source = SOURCE,
                 user_data = {
                     filename = clean_message(issue.filename),
                     position_exact = exact == true,
@@ -306,35 +331,10 @@ local function parse(output, context)
     return result
 end
 
----@param context LintContext
----@return string[]
-local function arguments(context)
-    assert(type(context) == 'table', 'herb arguments require LintContext')
-    local filename = string_value(context.filename)
-    assert(filename, 'herb requires a saved filename')
-    local cwd = project_root(context)
-    local path = relative_path(absolute_path(filename, string_value(context.cwd) or cwd), cwd)
-    local backslash = string.char(92)
-    -- tinyglobby treats positionals as patterns, even with shell-free argv.
-    local pattern = path:gsub('[*?%[%]{}()!+@' .. backslash .. ']', function(character)
-        return backslash .. character
-    end)
-    return {
-        '--format',
-        'json',
-        '--no-color',
-        '--no-github',
-        '--no-timing',
-        '--jobs',
-        '1',
-        './' .. pattern,
-    }
-end
-
 ---@type Linter
 return {
-    args = arguments,
     append_fname = false,
+    args = arguments,
     automatic = true,
     cmd = 'herb-lint',
     cwd = project_root,

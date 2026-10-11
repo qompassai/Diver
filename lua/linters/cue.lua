@@ -58,6 +58,28 @@ local SOURCE = 'cue'
 ---@field code string
 ---@field user_data table<string, string>
 
+---@param context LintContext
+---@return string[]
+local function args(context)
+    assert(context.filename ~= '')
+    assert(context.root ~= '')
+
+    return {
+        'vet',
+        '--all-errors',
+        '--concrete=false',
+        context.filename,
+    }
+end
+
+---@param context LintContext
+---@return string
+local function cwd(context)
+    assert(context.root ~= '')
+
+    return fs.normalize(context.root)
+end
+
 ---@param value integer|number|string|nil
 ---@param fallback integer
 ---@return integer
@@ -72,39 +94,6 @@ local function integer(value, fallback)
     return floor(parsed)
 end
 
----@param value string
----@return string
-local function trim(value)
-    assert(type(value) == 'string')
-
-    return (value:gsub('^%s*(.-)%s*$', '%1'))
-end
-
----@param value string
----@return string
-local function strip_ansi(value)
-    assert(type(value) == 'string')
-
-    return (value:gsub('\27%[[%d;?]*[ -/]*[@-~]', ''))
-end
-
----@param value string
----@return string
-local function normalize_message(value)
-    assert(type(value) == 'string')
-
-    value = strip_ansi(value)
-    value = value:gsub('\r\n', '\n')
-    value = value:gsub('\r', '\n')
-    value = trim(value)
-
-    if #value > MESSAGE_LENGTH_MAX then
-        value = value:sub(1, MESSAGE_LENGTH_MAX) .. '\n[message truncated]'
-    end
-
-    return value
-end
-
 ---@param path string
 ---@return boolean
 local function is_absolute(path)
@@ -112,6 +101,14 @@ local function is_absolute(path)
     assert(path ~= '')
 
     return vim.fn.isabsolutepath(path) == 1
+end
+
+---@param line string
+---@return boolean
+local function is_continuation(line)
+    assert(type(line) == 'string')
+
+    return line:match('^%s+') ~= nil
 end
 
 ---@param path string
@@ -148,49 +145,6 @@ local function belongs_to_buffer(candidate, filename, root)
     return normalize_path(candidate, root) == filename
 end
 
----@param value string
----@return CueLocation?
-local function parse_location(value)
-    assert(type(value) == 'string')
-
-    value = trim(strip_ansi(value))
-
-    local filename, line, column = value:match('^(.+):(%d+):(%d+)%s*$')
-
-    if filename == nil or line == nil or column == nil then
-        return nil
-    end
-
-    local parsed_line = integer(line, 0)
-    local parsed_column = integer(column, 0)
-
-    if parsed_line < 1 or parsed_column < 1 then
-        return nil
-    end
-
-    return {
-        filename = filename,
-        line = parsed_line,
-        column = parsed_column,
-    }
-end
-
----@param line string
----@return boolean
-local function is_location_line(line)
-    assert(type(line) == 'string')
-
-    return parse_location(line) ~= nil
-end
-
----@param line string
----@return boolean
-local function is_continuation(line)
-    assert(type(line) == 'string')
-
-    return line:match('^%s+') ~= nil
-end
-
 ---@param pending CuePendingDiagnostic
 ---@param location CueLocation
 ---@param filename string
@@ -205,14 +159,14 @@ local function make_diagnostic(pending, location, filename, root)
     local col = max(location.column - 1, 0)
 
     return {
-        lnum = lnum,
-        end_lnum = lnum,
+        code = 'validation',
         col = col,
         end_col = col + 1,
+        end_lnum = lnum,
+        lnum = lnum,
         message = pending.message,
         severity = ERROR,
         source = SOURCE,
-        code = 'validation',
         user_data = {
             cue_location = location.filename,
         },
@@ -240,6 +194,74 @@ local function flush_pending(pending, diagnostics, filename, root)
             diagnostics[#diagnostics + 1] = entry
         end
     end
+end
+
+---@param value string
+---@return string
+local function strip_ansi(value)
+    assert(type(value) == 'string')
+
+    return (value:gsub('\27%[[%d;?]*[ -/]*[@-~]', ''))
+end
+
+---@param value string
+---@return string
+local function trim(value)
+    assert(type(value) == 'string')
+
+    return (value:gsub('^%s*(.-)%s*$', '%1'))
+end
+
+---@param value string
+---@return string
+local function normalize_message(value)
+    assert(type(value) == 'string')
+
+    value = strip_ansi(value)
+    value = value:gsub('\r\n', '\n')
+    value = value:gsub('\r', '\n')
+    value = trim(value)
+
+    if #value > MESSAGE_LENGTH_MAX then
+        value = value:sub(1, MESSAGE_LENGTH_MAX) .. '\n[message truncated]'
+    end
+
+    return value
+end
+
+---@param value string
+---@return CueLocation?
+local function parse_location(value)
+    assert(type(value) == 'string')
+
+    value = trim(strip_ansi(value))
+
+    local filename, line, column = value:match('^(.+):(%d+):(%d+)%s*$')
+
+    if filename == nil or line == nil or column == nil then
+        return nil
+    end
+
+    local parsed_line = integer(line, 0)
+    local parsed_column = integer(column, 0)
+
+    if parsed_line < 1 or parsed_column < 1 then
+        return nil
+    end
+
+    return {
+        column = parsed_column,
+        filename = filename,
+        line = parsed_line,
+    }
+end
+
+---@param line string
+---@return boolean
+local function is_location_line(line)
+    assert(type(line) == 'string')
+
+    return parse_location(line) ~= nil
 end
 
 ---@param output string
@@ -299,8 +321,8 @@ local function parse(output, context)
 
                 if message ~= '' then
                     pending = {
-                        message = message,
                         locations = {},
+                        message = message,
                     }
                 else
                     pending = nil
@@ -316,40 +338,15 @@ local function parse(output, context)
     return diagnostics
 end
 
----@param context LintContext
----@return string[]
-local function args(context)
-    assert(context.filename ~= '')
-    assert(context.root ~= '')
-
-    return {
-        'vet',
-        '--all-errors',
-        '--concrete=false',
-        context.filename,
-    }
-end
-
----@param context LintContext
----@return string
-local function cwd(context)
-    assert(context.root ~= '')
-
-    return fs.normalize(context.root)
-end
-
 ---@type Linter
 return {
+    append_fname = false,
+    args = args,
     automatic = true,
     cmd = 'cue',
-    args = args,
-    append_fname = false,
     cwd = cwd,
-
     ignore_exitcode = true,
-
     parser = parse,
-
     root_markers = {
         'cue.mod/module.cue',
         'cue.mod',
@@ -357,7 +354,6 @@ return {
         'go.work',
         '.git',
     },
-
     stdin = false,
     stream = 'stderr',
     timeout = 60000,

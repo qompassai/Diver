@@ -12,12 +12,12 @@
 
 ---@type FormatterSpec
 return {
-    cmd = 'panache',
+    allow_empty = false,
     args = { 'format' },
+    automatic = true,
+    cmd = 'panache',
+    exit_codes = { 0 },
+    extension = 'md',
     mode = 'stdin',
     output = 'stdout',
-    exit_codes = { 0 },
-    automatic = true,
-    allow_empty = false,
-    extension = 'md',
 }

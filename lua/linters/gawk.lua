@@ -13,23 +13,28 @@
 
 local SOURCE = 'gawk'
 local severity = vim.diagnostic.severity
-local MAX_OUTPUT = 4 * 1024 * 1024
 local MAX_DIAGNOSTICS = 256
 local MAX_MESSAGE = 4096
+local MAX_OUTPUT = 4 * 1024 * 1024
 local ROOT_MARKERS = { '.git' }
 
----@param context LintContext
----@return string
-local function cwd(context)
-    local base = context.cwd or vim.fn.getcwd()
-    if context.filename and context.filename ~= '' then
-        local name = context.filename
-        if name:sub(1, 1) ~= '/' then
-            name = vim.fs.joinpath(base, name)
-        end
-        return vim.fs.dirname(vim.fs.normalize(name)) or base
-    end
-    return context.root or base
+---@param _context LintContext
+---@return string[]
+local function arguments(_context)
+    return {
+        '-i',
+        'LC_ALL=C',
+        'PATH=/usr/bin:/bin',
+        'AWKPATH=.',
+        'AWKLIBPATH=/nonexistent',
+        '/usr/bin/gawk',
+        '--lint', -- All compile-time lint warnings, including GNU extensions.
+        '--sandbox', -- Prohibit dynamic extensions if a loading path is reached.
+        '--no-optimize', -- Preserve checks that optimization could eliminate.
+        '--pretty-print=/dev/null', -- Compile only; discard formatted output.
+        '--file=-', -- Program text is the unsaved current buffer, not input data.
+        '--', -- No runtime data files or variable assignments.
+    }
 end
 
 ---@param text string
@@ -51,6 +56,20 @@ local function clean(text)
 end
 
 ---@param context LintContext
+---@return string
+local function cwd(context)
+    local base = context.cwd or vim.fn.getcwd()
+    if context.filename and context.filename ~= '' then
+        local name = context.filename
+        if name:sub(1, 1) ~= '/' then
+            name = vim.fs.joinpath(base, name)
+        end
+        return vim.fs.dirname(vim.fs.normalize(name)) or base
+    end
+    return context.root or base
+end
+
+---@param context LintContext
 ---@param message string
 ---@param row integer?
 ---@param level integer?
@@ -59,13 +78,14 @@ local function finding(context, message, row, level)
     local count = vim.api.nvim_buf_line_count(context.bufnr)
     return {
         bufnr = context.bufnr,
-        lnum = math.max(0, math.min((row or 1) - 1, count - 1)),
         col = 0, -- Neither adapter claims a reliable byte column.
+        lnum = math.max(0, math.min((row or 1) - 1, count - 1)),
         message = clean(message),
         severity = level or severity.ERROR,
         source = SOURCE,
     }
 end
+
 ---@param output string
 ---@param context LintContext
 ---@return vim.Diagnostic.Set[]
@@ -128,29 +148,10 @@ local function parse(output, context)
     return result
 end
 
----@param _context LintContext
----@return string[]
-local function arguments(_context)
-    return {
-        '-i',
-        'LC_ALL=C',
-        'PATH=/usr/bin:/bin',
-        'AWKPATH=.',
-        'AWKLIBPATH=/nonexistent',
-        '/usr/bin/gawk',
-        '--lint', -- All compile-time lint warnings, including GNU extensions.
-        '--sandbox', -- Prohibit dynamic extensions if a loading path is reached.
-        '--no-optimize', -- Preserve checks that optimization could eliminate.
-        '--pretty-print=/dev/null', -- Compile only; discard formatted output.
-        '--file=-', -- Program text is the unsaved current buffer, not input data.
-        '--', -- No runtime data files or variable assignments.
-    }
-end
-
 ---@type Linter
 return {
-    args = arguments,
     append_fname = false,
+    args = arguments,
     automatic = true,
     cmd = '/usr/bin/env',
     cwd = cwd,

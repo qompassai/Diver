@@ -16,12 +16,8 @@
 local api = vim.api
 local fs = vim.fs
 
-local INPUT_BYTES_MAX = 2 * 1024 * 1024
-local OUTPUT_BYTES_MAX = 4 * 1024 * 1024
-local PATH_BYTES_MAX = 4096
-local TAB_SIZE_MAX = 32
 local COMMAND = '/usr/bin/uncrustify'
-
+local INPUT_BYTES_MAX = 2 * 1024 * 1024
 ---@type table<string, string>
 local LANGUAGES = {
     c = 'C',
@@ -35,7 +31,8 @@ local LANGUAGES = {
     pawn = 'PAWN',
     vala = 'VALA',
 }
-
+local OUTPUT_BYTES_MAX = 4 * 1024 * 1024
+local PATH_BYTES_MAX = 4096
 ---@type string[]
 local ROOT_MARKERS = {
     '.git',
@@ -51,6 +48,7 @@ local ROOT_MARKERS = {
     'dub.json',
     'dub.sdl',
 }
+local TAB_SIZE_MAX = 32
 
 ---@param options string[][]
 ---@param text string
@@ -431,13 +429,6 @@ local function absolute_path(value, label)
     return fs.normalize(value)
 end
 
----@param context FormatterContext
----@return string
-local function working_directory(context)
-    assert(type(context) == 'table', 'uncrustify requires FormatterContext')
-    return absolute_path(context.root, 'working directory')
-end
-
 ---@param args string[]
 ---@param name string
 ---@param value string
@@ -521,24 +512,31 @@ local function decode(output, context)
     return output
 end
 
+---@param context FormatterContext
+---@return string
+local function working_directory(context)
+    assert(type(context) == 'table', 'uncrustify requires FormatterContext')
+    return absolute_path(context.root, 'working directory')
+end
+
 ---@type FormatterSpec
 return {
-    cmd = COMMAND,
+    allow_empty = false,
     args = arguments,
-    mode = 'stdin',
+    automatic = true,
+    cmd = COMMAND,
     cwd = working_directory,
+    decode = decode,
     env = {
         LANG = 'C',
         LC_ALL = 'C',
         TZ = 'UTC',
     },
-    root_markers = ROOT_MARKERS,
     exit_codes = {
         0,
     },
-    output = 'stdout',
-    decode = decode,
-    allow_empty = false,
-    automatic = true,
     extension = nil,
+    mode = 'stdin',
+    output = 'stdout',
+    root_markers = ROOT_MARKERS,
 }

@@ -22,9 +22,9 @@ local fs = vim.fs
 local HINT = diagnostic.severity.HINT
 
 local DIAGNOSTICS_MAX = 4096
+local DIAGNOSTICS_PER_PACKAGE_MAX = 4096
 local OUTPUT_LENGTH_MAX = 16 * 1024 * 1024
 local PACKAGES_MAX = 4096
-local DIAGNOSTICS_PER_PACKAGE_MAX = 4096
 
 ---@class FieldalignmentPosition
 ---@field Filename? string
@@ -165,14 +165,14 @@ local function diagnostic_from_entry(entry, filename, root)
     local column = math.max(column_number - 1, 0)
 
     return {
-        lnum = row,
-        end_lnum = row,
+        code = 'fieldalignment',
         col = column,
         end_col = column + 1,
+        end_lnum = row,
+        lnum = row,
         message = message,
         severity = HINT,
         source = 'fieldalignment',
-        code = 'fieldalignment',
         user_data = {
             suggested_fixes = entry.suggested_fixes,
         },
@@ -262,10 +262,7 @@ end
 
 return ---@type Linter
 {
-    automatic = false,
-
-    cmd = 'fieldalignment',
-
+    append_fname = false,
     args = function(context)
         assert(context.filename ~= '')
         assert(context.root ~= '')
@@ -275,9 +272,8 @@ return ---@type Linter
             package_pattern(context.filename, context.root),
         }
     end,
-
-    append_fname = false,
-
+    automatic = false,
+    cmd = 'fieldalignment',
     cwd = function(context)
         assert(context.filename ~= '')
         assert(context.root ~= '')
@@ -288,17 +284,13 @@ return ---@type Linter
         --
         return fs.dirname(fs.normalize(context.filename))
     end,
-
     ignore_exitcode = true,
-
     parser = parse,
-
     root_markers = {
         'go.work',
         'go.mod',
         '.git',
     },
-
     stdin = false,
     stream = 'stdout',
     timeout = 60000,

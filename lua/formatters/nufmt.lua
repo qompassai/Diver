@@ -12,12 +12,12 @@
 
 ---@type FormatterSpec
 return {
-    cmd = 'nufmt',
+    allow_empty = false,
     args = { '--stdin' },
+    automatic = true,
+    cmd = 'nufmt',
+    exit_codes = { 0 },
+    extension = 'nu',
     mode = 'stdin',
     output = 'stdout',
-    exit_codes = { 0 },
-    automatic = true,
-    allow_empty = false,
-    extension = 'nu',
 }

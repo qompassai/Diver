@@ -32,13 +32,46 @@ local max = math.max
 local tonumber = tonumber
 local type = type
 
-local SOURCE = 'bash'
 local CODE = 'syntax'
+local SOURCE = 'bash'
 
 ---@class BashParsedDiagnostic
 ---@field filename string
 ---@field line integer
 ---@field message string
+
+---@param context LintContext
+---@return string[]
+local function args(context)
+    assert(context.filename ~= '')
+    assert(context.root ~= '')
+
+    return {
+        --
+        -- noexec:
+        --
+        -- Read and parse the complete script but execute no commands.
+        --
+        '-n',
+
+        --
+        -- Prevent environment-specific startup behavior from influencing the
+        -- syntax-check process.
+        --
+        '--noprofile',
+        '--norc',
+
+        context.filename,
+    }
+end
+
+---@param context LintContext
+---@return string
+local function cwd(context)
+    assert(context.root ~= '')
+
+    return fs.normalize(context.root)
+end
 
 ---@param value integer|number|string|nil
 ---@param fallback integer
@@ -53,31 +86,6 @@ local function integer(value, fallback)
     end
 
     return floor(parsed)
-end
-
----@param value string
----@return string
-local function trim(value)
-    assert(type(value) == 'string')
-
-    return (value:gsub('^%s*(.-)%s*$', '%1'))
-end
-
----@param value string
----@return string
-local function normalize_message(value)
-    assert(type(value) == 'string')
-
-    value = value:gsub('\r\n', '\n')
-    value = value:gsub('\r', '\n')
-
-    value = trim(value)
-
-    if #value > MESSAGE_LENGTH_MAX then
-        value = value:sub(1, MESSAGE_LENGTH_MAX) .. '\n[message truncated]'
-    end
-
-    return value
 end
 
 ---@param path string
@@ -118,6 +126,63 @@ local function belongs_to_buffer(candidate, filename, root)
     assert(root ~= '')
 
     return normalize_path(candidate, root) == filename
+end
+
+---@param entry BashParsedDiagnostic
+---@param filename string
+---@param root string
+---@return vim.Diagnostic.Set?
+local function diagnostic_from_entry(entry, filename, root)
+    if not belongs_to_buffer(entry.filename, filename, root) then
+        return nil
+    end
+
+    --
+    -- Bash lines are one-based.
+    -- vim.Diagnostic lines are zero-based.
+    --
+    local lnum = max(entry.line - 1, 0)
+
+    return {
+        code = CODE,
+        --
+        -- Bash's parser error stream normally reports a line but not a reliable
+        -- source column. Do not invent semantic precision that Bash didn't give
+        -- us.
+        --
+        col = 0,
+        end_col = 1,
+        end_lnum = lnum,
+        lnum = lnum,
+        message = entry.message,
+        severity = ERROR,
+        source = SOURCE,
+    }
+end
+
+---@param value string
+---@return string
+local function trim(value)
+    assert(type(value) == 'string')
+
+    return (value:gsub('^%s*(.-)%s*$', '%1'))
+end
+
+---@param value string
+---@return string
+local function normalize_message(value)
+    assert(type(value) == 'string')
+
+    value = value:gsub('\r\n', '\n')
+    value = value:gsub('\r', '\n')
+
+    value = trim(value)
+
+    if #value > MESSAGE_LENGTH_MAX then
+        value = value:sub(1, MESSAGE_LENGTH_MAX) .. '\n[message truncated]'
+    end
+
+    return value
 end
 
 ---@param line string
@@ -173,42 +238,6 @@ local function parse_line(line)
     }
 end
 
----@param entry BashParsedDiagnostic
----@param filename string
----@param root string
----@return vim.Diagnostic.Set?
-local function diagnostic_from_entry(entry, filename, root)
-    if not belongs_to_buffer(entry.filename, filename, root) then
-        return nil
-    end
-
-    --
-    -- Bash lines are one-based.
-    -- vim.Diagnostic lines are zero-based.
-    --
-    local lnum = max(entry.line - 1, 0)
-
-    return {
-        lnum = lnum,
-        end_lnum = lnum,
-
-        --
-        -- Bash's parser error stream normally reports a line but not a reliable
-        -- source column. Do not invent semantic precision that Bash didn't give
-        -- us.
-        --
-        col = 0,
-        end_col = 1,
-
-        message = entry.message,
-
-        severity = ERROR,
-
-        source = SOURCE,
-        code = CODE,
-    }
-end
-
 ---@param output string
 ---@param context LintContext|integer
 ---@return vim.Diagnostic.Set[]
@@ -254,59 +283,19 @@ local function parse(output, context)
     return diagnostics
 end
 
----@param context LintContext
----@return string[]
-local function args(context)
-    assert(context.filename ~= '')
-    assert(context.root ~= '')
-
-    return {
-        --
-        -- noexec:
-        --
-        -- Read and parse the complete script but execute no commands.
-        --
-        '-n',
-
-        --
-        -- Prevent environment-specific startup behavior from influencing the
-        -- syntax-check process.
-        --
-        '--noprofile',
-        '--norc',
-
-        context.filename,
-    }
-end
-
----@param context LintContext
----@return string
-local function cwd(context)
-    assert(context.root ~= '')
-
-    return fs.normalize(context.root)
-end
-
 return ---@type Linter
 {
-    automatic = true,
-
-    cmd = 'bash',
-
-    args = args,
-
     append_fname = false,
-
+    args = args,
+    automatic = true,
+    cmd = 'bash',
     cwd = cwd,
-
     --
     -- A Bash parser error results in a nonzero process exit. That is normal
     -- diagnostic-producing behavior for this adapter.
     --
     ignore_exitcode = true,
-
     parser = parse,
-
     root_markers = {
         '.bashrc',
         '.bash_profile',
@@ -318,13 +307,10 @@ return ---@type Linter
 
         '.git',
     },
-
     stdin = false,
-
     --
     -- Bash parser diagnostics are written to stderr.
     --
     stream = 'stderr',
-
     timeout = 15000,
 }

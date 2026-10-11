@@ -98,7 +98,7 @@ end
 
 return ---@type Linter
 {
-    cmd = 'scalafix',
+    append_fname = false,
     args = function(context)
         return {
             '--check',
@@ -106,8 +106,8 @@ return ---@type Linter
             context.filename,
         }
     end,
-    append_fname = false,
     automatic = false,
+    cmd = 'scalafix',
     cwd = function(context)
         return context.root
     end,

@@ -41,33 +41,21 @@ local ROOT_MARKERS = {
 
 ---@type table<string, string>
 local SHADER_STAGES = {
-    ['.vert'] = 'vertex',
-    ['.tesc'] = 'tesscontrol',
-    ['.tese'] = 'tesseval',
-    ['.geom'] = 'geometry',
-    ['.frag'] = 'fragment',
     ['.comp'] = 'compute',
-
+    ['.frag'] = 'fragment',
+    ['.geom'] = 'geometry',
+    ['.mesh'] = 'mesh',
+    ['.rahit'] = 'anyhit',
+    ['.rcall'] = 'callable',
+    ['.rchit'] = 'closesthit',
     ['.rgen'] = 'raygen',
     ['.rint'] = 'intersection',
-    ['.rahit'] = 'anyhit',
-    ['.rchit'] = 'closesthit',
     ['.rmiss'] = 'miss',
-    ['.rcall'] = 'callable',
-
     ['.task'] = 'task',
-    ['.mesh'] = 'mesh',
+    ['.tesc'] = 'tesscontrol',
+    ['.tese'] = 'tesseval',
+    ['.vert'] = 'vertex',
 }
-
----@param value any
----@return string?
-local function string_value(value)
-    if type(value) ~= 'string' or value == '' then
-        return nil
-    end
-
-    return value
-end
 
 ---@param value string
 ---@return string
@@ -75,62 +63,42 @@ local function compact(value)
     return vim.trim(value:gsub('%s+', ' '))
 end
 
----@param value string
----@param limit integer
----@return string
-local function truncate(value, limit)
-    if #value <= limit then
-        return value
+---@param message string
+---@return string?
+local function diagnostic_code(message)
+    local code = message:match('%[([%w_.%-]+)%]%s*$')
+
+    if code ~= nil and code ~= '' then
+        return code
     end
 
-    if limit <= 3 then
-        return value:sub(1, limit)
-    end
-
-    return value:sub(1, limit - 3) .. '...'
+    return nil
 end
 
----@param output string
----@return string
-local function strip_ansi(output)
-    local cleaned = output:gsub('\27%[[%d;]*m', '')
-    return cleaned
-end
+---@param context LintContext
+---@return vim.Diagnostic[]
+local function oversized_output(context)
+    return {
+        {
+            bufnr = context.bufnr,
 
----@param value any
----@return integer
-local function zero_based(value)
-    local number = tonumber(value)
+            code = 'output-limit',
 
-    if number == nil then
-        return 0
-    end
+            col = 0,
 
-    local result = math.floor(number)
+            end_col = 0,
 
-    if result <= 1 then
-        return 0
-    end
+            end_lnum = 0,
 
-    return result - 1
-end
+            lnum = 0,
 
----@param value any
----@return integer
-local function zero_based_column(value)
-    local number = tonumber(value)
+            message = string.format('glslc output exceeded the %d-byte parser limit', MAX_OUTPUT_BYTES),
 
-    if number == nil then
-        return 0
-    end
+            severity = diagnostic.severity.WARN,
 
-    local result = math.floor(number)
-
-    if result <= 1 then
-        return 0
-    end
-
-    return result - 1
+            source = SOURCE,
+        },
+    }
 end
 
 ---@param level string?
@@ -161,40 +129,6 @@ local function severity(level)
     return diagnostic.severity.ERROR
 end
 
----@param context LintContext
----@return string
-local function project_root(context)
-    local context_root = string_value(context.root)
-
-    if context_root ~= nil then
-        return fs.normalize(context_root)
-    end
-
-    local filename = string_value(context.filename)
-
-    if filename ~= nil then
-        local detected = fs.root(filename, ROOT_MARKERS)
-
-        if type(detected) == 'string' and detected ~= '' then
-            return fs.normalize(detected)
-        end
-
-        local parent = fs.dirname(filename)
-
-        if type(parent) == 'string' and parent ~= '' then
-            return fs.normalize(parent)
-        end
-    end
-
-    local cwd = string_value(context.cwd)
-
-    if cwd ~= nil then
-        return fs.normalize(cwd)
-    end
-
-    return fs.normalize(vim.fn.getcwd())
-end
-
 ---@param filename string
 ---@return string?
 local function shader_stage(filename)
@@ -207,6 +141,16 @@ local function shader_stage(filename)
     end
 
     return nil
+end
+
+---@param value any
+---@return string?
+local function string_value(value)
+    if type(value) ~= 'string' or value == '' then
+        return nil
+    end
+
+    return value
 end
 
 ---@param context LintContext
@@ -264,16 +208,60 @@ local function diagnostic_belongs_to_buffer(filename, context)
     return fs.basename(candidate) == fs.basename(target)
 end
 
----@param message string
----@return string?
-local function diagnostic_code(message)
-    local code = message:match('%[([%w_.%-]+)%]%s*$')
+---@param context LintContext
+---@return string
+local function project_root(context)
+    local context_root = string_value(context.root)
 
-    if code ~= nil and code ~= '' then
-        return code
+    if context_root ~= nil then
+        return fs.normalize(context_root)
     end
 
-    return nil
+    local filename = string_value(context.filename)
+
+    if filename ~= nil then
+        local detected = fs.root(filename, ROOT_MARKERS)
+
+        if type(detected) == 'string' and detected ~= '' then
+            return fs.normalize(detected)
+        end
+
+        local parent = fs.dirname(filename)
+
+        if type(parent) == 'string' and parent ~= '' then
+            return fs.normalize(parent)
+        end
+    end
+
+    local cwd = string_value(context.cwd)
+
+    if cwd ~= nil then
+        return fs.normalize(cwd)
+    end
+
+    return fs.normalize(vim.fn.getcwd())
+end
+
+---@param output string
+---@return string
+local function strip_ansi(output)
+    local cleaned = output:gsub('\27%[[%d;]*m', '')
+    return cleaned
+end
+
+---@param value string
+---@param limit integer
+---@return string
+local function truncate(value, limit)
+    if #value <= limit then
+        return value
+    end
+
+    if limit <= 3 then
+        return value:sub(1, limit)
+    end
+
+    return value:sub(1, limit - 3) .. '...'
 end
 
 ---@param message string
@@ -284,6 +272,42 @@ local function clean_message(message)
     normalized = normalized:gsub('%s*%[[%w_.%-]+%]%s*$', '')
 
     return truncate(normalized, MAX_MESSAGE_BYTES)
+end
+
+---@param value any
+---@return integer
+local function zero_based(value)
+    local number = tonumber(value)
+
+    if number == nil then
+        return 0
+    end
+
+    local result = math.floor(number)
+
+    if result <= 1 then
+        return 0
+    end
+
+    return result - 1
+end
+
+---@param value any
+---@return integer
+local function zero_based_column(value)
+    local number = tonumber(value)
+
+    if number == nil then
+        return 0
+    end
+
+    local result = math.floor(number)
+
+    if result <= 1 then
+        return 0
+    end
+
+    return result - 1
 end
 
 ---@param filename string?
@@ -399,32 +423,6 @@ local function parse_diagnostic_line(line, context)
     return nil
 end
 
----@param context LintContext
----@return vim.Diagnostic[]
-local function oversized_output(context)
-    return {
-        {
-            bufnr = context.bufnr,
-
-            code = 'output-limit',
-
-            col = 0,
-
-            end_col = 0,
-
-            end_lnum = 0,
-
-            lnum = 0,
-
-            message = string.format('glslc output exceeded the %d-byte parser limit', MAX_OUTPUT_BYTES),
-
-            severity = diagnostic.severity.WARN,
-
-            source = SOURCE,
-        },
-    }
-end
-
 ---@param output string
 ---@param context LintContext
 ---@return vim.Diagnostic[]
@@ -493,8 +491,8 @@ end
 
 ---@type Linter
 return {
-    args = args,
     append_fname = false,
+    args = args,
     automatic = false,
     cmd = 'glslc',
     cwd = project_root,

@@ -48,6 +48,50 @@ local SOURCE = 'flake8'
 -- path:row:col:CODE:text (the path part is skipped; stdin names it)
 local LINE_PATTERN = '^.-:(%d+):(%d+):(%w+):(.+)$'
 
+---@param context LintContext
+---@return string[]
+local function args(context)
+    assert(context.filename ~= '')
+
+    return {
+        -- Pin the machine-readable layout; the default is human-oriented.
+        '--format=%(path)s:%(row)d:%(col)d:%(code)s:%(text)s',
+        -- Do not echo the offending source line after each finding.
+        '--no-show-source',
+        -- Filename to report for the stdin payload.
+        '--stdin-display-name',
+        context.filename,
+        -- Read the buffer from stdin.
+        '-',
+    }
+end
+
+---@param value string
+---@return string?
+local function clean_message(value)
+    assert(type(value) == 'string')
+
+    local message = vim.trim(value:gsub('[%z\1-\8\11-\31\127]', ' '))
+
+    if message == '' then
+        return nil
+    end
+
+    if #message > MESSAGE_LENGTH_MAX then
+        message = message:sub(1, MESSAGE_LENGTH_MAX) .. '…'
+    end
+
+    return message
+end
+
+---@param context LintContext
+---@return string
+local function cwd(context)
+    assert(context.root ~= '')
+
+    return fs.normalize(context.root)
+end
+
 ---@param value string
 ---@param minimum integer
 ---@param maximum integer
@@ -68,24 +112,6 @@ local function integer_in_range(value, minimum, maximum)
 
     ---@cast parsed integer
     return parsed
-end
-
----@param value string
----@return string?
-local function clean_message(value)
-    assert(type(value) == 'string')
-
-    local message = vim.trim(value:gsub('[%z\1-\8\11-\31\127]', ' '))
-
-    if message == '' then
-        return nil
-    end
-
-    if #message > MESSAGE_LENGTH_MAX then
-        message = message:sub(1, MESSAGE_LENGTH_MAX) .. '…'
-    end
-
-    return message
 end
 
 ---@param line string
@@ -112,14 +138,14 @@ local function parse_line(line)
     end
 
     return {
-        lnum = parsed_row - 1,
-        end_lnum = parsed_row - 1,
+        code = code ~= '' and code or nil,
         col = max(parsed_column - 1, 0),
         end_col = parsed_column,
+        end_lnum = parsed_row - 1,
+        lnum = parsed_row - 1,
+        message = cleaned,
         severity = WARN,
         source = SOURCE,
-        code = code ~= '' and code or nil,
-        message = cleaned,
     }
 end
 
@@ -152,49 +178,16 @@ local function parse(output, _)
     return diagnostics
 end
 
----@param context LintContext
----@return string[]
-local function args(context)
-    assert(context.filename ~= '')
-
-    return {
-        -- Pin the machine-readable layout; the default is human-oriented.
-        '--format=%(path)s:%(row)d:%(col)d:%(code)s:%(text)s',
-        -- Do not echo the offending source line after each finding.
-        '--no-show-source',
-        -- Filename to report for the stdin payload.
-        '--stdin-display-name',
-        context.filename,
-        -- Read the buffer from stdin.
-        '-',
-    }
-end
-
----@param context LintContext
----@return string
-local function cwd(context)
-    assert(context.root ~= '')
-
-    return fs.normalize(context.root)
-end
-
 return ---@type Linter
 {
-    automatic = true,
-
-    cmd = 'flake8',
-
-    args = args,
-
     append_fname = false,
-
+    args = args,
+    automatic = true,
+    cmd = 'flake8',
     cwd = cwd,
-
     -- Flake8 exits 0 when clean and 1 when it found violations.
     exit_codes = { 0, 1 },
-
     parser = parse,
-
     root_markers = {
         '.flake8',
         'setup.cfg',
@@ -202,10 +195,7 @@ return ---@type Linter
         'pyproject.toml',
         '.git',
     },
-
     stdin = true,
-
     stream = 'stdout',
-
     timeout = TIMEOUT_MS,
 }

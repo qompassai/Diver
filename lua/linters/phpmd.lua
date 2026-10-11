@@ -51,16 +51,16 @@
 
 local fs = vim.fs
 local uv = vim.uv
-local SOURCE = 'phpmd'
 local PHP = '/usr/bin/php'
+local SOURCE = 'phpmd'
 local VENDOR_BINARY = 'vendor/bin/phpmd'
 local CACHE = fs.joinpath(vim.fn.stdpath('cache'), 'phpmd')
 
 -- Explicit bounds. No unbounded loop or unbounded buffer anywhere
 -- in this module; every collection this file walks has a ceiling.
-local MAX_OUTPUT = 16 * 1024 * 1024
 local MAX_DIAGNOSTICS = 512
 local MAX_FILES = 1024
+local MAX_OUTPUT = 16 * 1024 * 1024
 local MAX_RECORDS = 10000
 
 local CONFIG_NAMES = {
@@ -202,15 +202,15 @@ end
 
 ---@type Linter
 local M = {
-    cmd = { PHP, VENDOR_BINARY },
     args = args,
-    stdin = false,
+    cmd = { PHP, VENDOR_BINARY },
     -- 0 = clean, 2 = violations found; both carry valid JSON on stdout.
     -- 1 (crash) and 3 (unprocessable file) are real failures and are
     -- deliberately left out so the runner's normal error path handles them.
     exit_codes = { 0, 2 },
-    root_markers = { 'composer.json' },
     parser = parser,
+    root_markers = { 'composer.json' },
+    stdin = false,
 }
 
 return M

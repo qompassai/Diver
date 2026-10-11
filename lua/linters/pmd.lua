@@ -712,8 +712,8 @@ end
 
 ---@type Linter
 return {
-    args = args,
     append_fname = true,
+    args = args,
     automatic = false,
     cmd = 'pmd',
     cwd = project_root,

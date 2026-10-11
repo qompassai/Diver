@@ -4,12 +4,10 @@
 -- ----------------------------------------
 return {
     append_fname = true,
-    cmd = 'naga',
-    stdin = false,
     args = {},
-    stream = nil,
-    ignore_exitcode = false,
+    cmd = 'naga',
     env = nil,
+    ignore_exitcode = false,
     parser = function(output, bufnr)
         local diagnostics = {}
         if output == '' then
@@ -44,4 +42,6 @@ return {
         end
         return diagnostics
     end,
+    stdin = false,
+    stream = nil,
 }

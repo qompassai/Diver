@@ -4,8 +4,6 @@
 -- ----------------------------------------
 return ---@type vim.lint.Config
 {
-    cmd = 'llvm-mc',
-    stdin = false,
     append_fname = true,
     args = {
         '--arch=x86_64',
@@ -18,9 +16,9 @@ return ---@type vim.lint.Config
         -- "--triple=x86_64-unknown-linux-gnu",
         -- "-g", "--preserve-comments", "--print-imm-hex",
     },
-    stream = nil,
-    ignore_exitcode = true,
+    cmd = 'llvm-mc',
     env = nil,
+    ignore_exitcode = true,
     ---@param output string
     ---@param bufnr integer
     ---@return vim.Diagnostic.Set[]
@@ -46,10 +44,10 @@ return ---@type vim.lint.Config
                         sev = vim.diagnostic.severity.INFO
                     end
                     table.insert(diagnostics, {
-                        lnum = lnum,
-                        end_lnum = lnum,
                         col = col,
                         end_col = col + 1,
+                        end_lnum = lnum,
+                        lnum = lnum,
                         message = msg,
                         severity = sev,
                         source = 'llvm-mc',
@@ -59,4 +57,6 @@ return ---@type vim.lint.Config
         end
         return diagnostics
     end,
+    stdin = false,
+    stream = nil,
 }

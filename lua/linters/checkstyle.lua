@@ -100,29 +100,14 @@ local properties_candidates = {
     '.checkstyle/checkstyle.properties',
 }
 
----@param value integer|number|string|nil
----@param fallback integer
----@return integer
-local function integer(value, fallback)
-    assert(fallback >= 0)
+---@param candidate string
+---@param filename string
+---@return boolean
+local function belongs_to_buffer(candidate, filename)
+    assert(candidate ~= '')
+    assert(filename ~= '')
 
-    local parsed = tonumber(value)
-
-    if parsed == nil then
-        return fallback
-    end
-
-    return floor(parsed)
-end
-
----@param level string|nil
----@return integer
-local function severity(level)
-    if level == nil then
-        return WARN
-    end
-
-    return severities[level:lower()] or WARN
+    return fs.normalize(candidate) == filename
 end
 
 ---@param path string
@@ -163,10 +148,19 @@ local function config_file(root)
     return config or 'google_checks.xml'
 end
 
----@param root string
----@return string?
-local function properties_file(root)
-    return find_candidate(root, properties_candidates)
+---@param value integer|number|string|nil
+---@param fallback integer
+---@return integer
+local function integer(value, fallback)
+    assert(fallback >= 0)
+
+    local parsed = tonumber(value)
+
+    if parsed == nil then
+        return fallback
+    end
+
+    return floor(parsed)
 end
 
 ---@param path string
@@ -241,14 +235,48 @@ local function artifact_path(location, artifacts, root)
     return path_from_uri(uri, root)
 end
 
----@param candidate string
----@param filename string
----@return boolean
-local function belongs_to_buffer(candidate, filename)
-    assert(candidate ~= '')
-    assert(filename ~= '')
+---@param root string
+---@return string?
+local function properties_file(root)
+    return find_candidate(root, properties_candidates)
+end
 
-    return fs.normalize(candidate) == filename
+---@param context LintContext
+---@return string[]
+local function args(context)
+    assert(context.filename ~= '')
+    assert(context.root ~= '')
+
+    local root = fs.normalize(context.root)
+
+    local argv = {
+        '-c',
+        config_file(root),
+
+        '-f',
+        'sarif',
+    }
+
+    local properties = properties_file(root)
+
+    if properties ~= nil then
+        argv[#argv + 1] = '-p'
+        argv[#argv + 1] = properties
+    end
+
+    argv[#argv + 1] = context.filename
+
+    return argv
+end
+
+---@param level string|nil
+---@return integer
+local function severity(level)
+    if level == nil then
+        return WARN
+    end
+
+    return severities[level:lower()] or WARN
 end
 
 ---@param result CheckstyleSarifResult
@@ -328,14 +356,14 @@ local function diagnostic_from_result(result, artifacts, filename, root, bufnr)
 
     return {
         bufnr = bufnr,
-        lnum = start_line,
-        end_lnum = end_line,
+        code = code,
         col = start_column,
         end_col = end_column,
+        end_lnum = end_line,
+        lnum = start_line,
         message = message,
         severity = severity(result.level),
         source = 'checkstyle',
-        code = code,
         user_data = {
             rule_index = result.ruleIndex,
         },
@@ -419,54 +447,19 @@ local function parse(output, context)
     return diagnostics
 end
 
----@param context LintContext
----@return string[]
-local function args(context)
-    assert(context.filename ~= '')
-    assert(context.root ~= '')
-
-    local root = fs.normalize(context.root)
-
-    local argv = {
-        '-c',
-        config_file(root),
-
-        '-f',
-        'sarif',
-    }
-
-    local properties = properties_file(root)
-
-    if properties ~= nil then
-        argv[#argv + 1] = '-p'
-        argv[#argv + 1] = properties
-    end
-
-    argv[#argv + 1] = context.filename
-
-    return argv
-end
-
 return ---@type Linter
 {
-    automatic = false,
-
-    cmd = 'checkstyle',
-
-    args = args,
-
     append_fname = false,
-
+    args = args,
+    automatic = false,
+    cmd = 'checkstyle',
     cwd = function(context)
         assert(context.root ~= '')
 
         return context.root
     end,
-
     ignore_exitcode = true,
-
     parser = parse,
-
     root_markers = {
         'checkstyle.xml',
         'checkstyle-checks.xml',
@@ -489,7 +482,6 @@ return ---@type Linter
 
         '.git',
     },
-
     stdin = false,
     stream = 'stdout',
     timeout = 60000,

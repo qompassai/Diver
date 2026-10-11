@@ -4,9 +4,6 @@
 -- SPDX-License-Identifier: Apache-2.0
 -- #################################################################
 return {
-    name = 'vint',
-    cmd = 'vint',
-    stdin = true,
     append_fname = false,
     args = function(context)
         return {
@@ -16,11 +13,14 @@ return {
             '-',
         }
     end,
-    stream = 'stdout',
-    ignore_exitcode = true,
+    cmd = 'vint',
     errorformat = {
         '%f:%l:%c: %t%*[^ ] %m',
         '%f:%l:%c: %m',
         '%-G%.%#',
     },
+    ignore_exitcode = true,
+    name = 'vint',
+    stdin = true,
+    stream = 'stdout',
 } --[[@as vim.lint.Config]]

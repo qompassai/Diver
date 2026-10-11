@@ -22,6 +22,33 @@ local ANCESTOR_COUNT_MAX = 128
 local CONFIG_FILENAME = '.scalafmt.conf'
 
 ---@param context FormatterContext
+---@return string[]
+local function arguments(context)
+    assert(type(context.filename) == 'string', 'Scalafmt requires a filename string')
+    assert(type(context.cwd) == 'string', 'Scalafmt requires a working directory')
+
+    local filename = context.filename
+    if filename == '' then
+        local basename = context.filetype == 'sbt' and 'build.sbt' or 'Main.scala'
+        filename = fs.joinpath(context.cwd, basename)
+    end
+    assert(not filename:find('%z'), 'Scalafmt filename contains NUL')
+
+    -- Keep .sbt/.sc extensions and the original path for dialect/file overrides.
+    -- No positional source paths: only stdin is formatted, with output on stdout.
+    return {
+        '--stdin',
+        '--stdout',
+        '--non-interactive',
+        '--no-progress-bar',
+        '--config',
+        fs.joinpath(context.cwd, CONFIG_FILENAME),
+        '--assume-filename',
+        filename,
+    }
+end
+
+---@param context FormatterContext
 ---@return string
 local function working_directory(context)
     assert(type(context) == 'table', 'Scalafmt requires a formatter context')
@@ -64,47 +91,20 @@ local function working_directory(context)
     error('Scalafmt requires a readable .scalafmt.conf in the project ancestry (max 128)', 0)
 end
 
----@param context FormatterContext
----@return string[]
-local function arguments(context)
-    assert(type(context.filename) == 'string', 'Scalafmt requires a filename string')
-    assert(type(context.cwd) == 'string', 'Scalafmt requires a working directory')
-
-    local filename = context.filename
-    if filename == '' then
-        local basename = context.filetype == 'sbt' and 'build.sbt' or 'Main.scala'
-        filename = fs.joinpath(context.cwd, basename)
-    end
-    assert(not filename:find('%z'), 'Scalafmt filename contains NUL')
-
-    -- Keep .sbt/.sc extensions and the original path for dialect/file overrides.
-    -- No positional source paths: only stdin is formatted, with output on stdout.
-    return {
-        '--stdin',
-        '--stdout',
-        '--non-interactive',
-        '--no-progress-bar',
-        '--config',
-        fs.joinpath(context.cwd, CONFIG_FILENAME),
-        '--assume-filename',
-        filename,
-    }
-end
-
 ---@type FormatterSpec
 local specification = {
-    cmd = 'scalafmt',
+    allow_empty = false,
     args = arguments,
+    automatic = true,
+    cmd = 'scalafmt',
+    cwd = working_directory,
+    decode = nil,
+    env = {},
+    exit_codes = { 0 },
     mode = 'stdin',
     output = 'stdout',
-    cwd = working_directory,
-    root_markers = { '.scalafmt.conf', '.git' },
-    exit_codes = { 0 },
-    allow_empty = false,
-    automatic = true,
-    env = {},
-    decode = nil,
     pre_transform = nil,
+    root_markers = { '.scalafmt.conf', '.git' },
 }
 
 return specification

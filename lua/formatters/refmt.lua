@@ -13,17 +13,17 @@
 
 ---@type FormatterSpec
 return {
-    cmd = 'refmt',
+    allow_empty = false,
     args = { '--parse=re', '--print=re', '--print-width=100' },
+    automatic = true,
+    cmd = 'refmt',
+    cwd = nil,
+    decode = nil,
+    env = {},
+    exit_codes = { 0 },
+    extension = 're',
     mode = 'stdin',
     output = 'stdout',
-    cwd = nil,
-    env = {},
-    root_markers = { 'bsconfig.json', '.git' },
-    exit_codes = { 0 },
-    allow_empty = false,
-    automatic = true,
-    extension = 're',
-    decode = nil,
     pre_transform = nil,
+    root_markers = { 'bsconfig.json', '.git' },
 }

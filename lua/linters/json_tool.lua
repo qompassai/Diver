@@ -46,6 +46,32 @@ local SOURCE = 'json_tool'
 local POSITION_PATTERN = '[Ll]ine (%d+)%s+[Cc]olumn (%d+)'
 
 ---@param value string
+---@return string?
+local function clean_message(value)
+    assert(type(value) == 'string')
+
+    local message = vim.trim(value:gsub('[%z\1-\8\11-\31\127]', ' '))
+
+    if message == '' then
+        return nil
+    end
+
+    if #message > MESSAGE_LENGTH_MAX then
+        message = message:sub(1, MESSAGE_LENGTH_MAX) .. '…'
+    end
+
+    return message
+end
+
+---@param context LintContext
+---@return string
+local function cwd(context)
+    assert(context.root ~= '')
+
+    return fs.normalize(context.root)
+end
+
+---@param value string
 ---@param minimum integer
 ---@param maximum integer
 ---@return integer?
@@ -65,24 +91,6 @@ local function integer_in_range(value, minimum, maximum)
 
     ---@cast parsed integer
     return parsed
-end
-
----@param value string
----@return string?
-local function clean_message(value)
-    assert(type(value) == 'string')
-
-    local message = vim.trim(value:gsub('[%z\1-\8\11-\31\127]', ' '))
-
-    if message == '' then
-        return nil
-    end
-
-    if #message > MESSAGE_LENGTH_MAX then
-        message = message:sub(1, MESSAGE_LENGTH_MAX) .. '…'
-    end
-
-    return message
 end
 
 ---@param output string
@@ -111,14 +119,14 @@ local function parse(output, _)
 
                 if parsed_row ~= nil and parsed_column ~= nil and cleaned ~= nil then
                     diagnostics[#diagnostics + 1] = {
-                        lnum = parsed_row - 1,
-                        end_lnum = parsed_row - 1,
+                        code = 'syntax',
                         col = parsed_column - 1,
                         end_col = parsed_column,
+                        end_lnum = parsed_row - 1,
+                        lnum = parsed_row - 1,
+                        message = cleaned,
                         severity = ERROR,
                         source = SOURCE,
-                        code = 'syntax',
-                        message = cleaned,
                     }
                     break
                 end
@@ -129,44 +137,26 @@ local function parse(output, _)
     return diagnostics
 end
 
----@param context LintContext
----@return string
-local function cwd(context)
-    assert(context.root ~= '')
-
-    return fs.normalize(context.root)
-end
-
 return ---@type Linter
 {
-    automatic = true,
-
-    cmd = 'python3',
-
+    append_fname = false,
     args = {
         '-m',
         'json.tool',
         -- Read the buffer from stdin.
         '/dev/stdin',
     },
-
-    append_fname = false,
-
+    automatic = true,
+    cmd = 'python3',
     cwd = cwd,
-
     -- Invalid JSON exits nonzero; that is the normal diagnostic path.
     ignore_exitcode = true,
-
     parser = parse,
-
     root_markers = {
         '.git',
     },
-
     stdin = true,
-
     -- json.tool writes decode errors to stderr.
     stream = 'stderr',
-
     timeout = TIMEOUT_MS,
 }

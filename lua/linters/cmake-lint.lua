@@ -4,13 +4,11 @@
 -- ----------------------------------------
 return ---@type vim.lint.Config
 {
-    cmd = 'cmakelint',
-    stdin = false,
     append_fname = true,
     args = {},
-    stream = nil,
-    ignore_exitcode = true,
+    cmd = 'cmakelint',
     env = nil,
+    ignore_exitcode = true,
     ---@param output string
     ---@param bufnr integer
     ---@return vim.Diagnostic.Set[]
@@ -33,10 +31,10 @@ return ---@type vim.lint.Config
                 local col = 0
                 if vim.fs.basename(path) == filename or path == bufname then
                     table.insert(diagnostics, {
-                        lnum = lnum,
-                        end_lnum = lnum,
                         col = col,
                         end_col = col + 1,
+                        end_lnum = lnum,
+                        lnum = lnum,
                         message = msg,
                         severity = vim.diagnostic.severity.WARN,
                         source = 'cmake-lint',
@@ -46,4 +44,6 @@ return ---@type vim.lint.Config
         end
         return diagnostics
     end,
+    stdin = false,
+    stream = nil,
 }

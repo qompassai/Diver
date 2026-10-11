@@ -13,7 +13,7 @@
 -- `--no-cache` keeps repeated runs deterministic.
 ---@type FormatterSpec
 return {
-    cmd = 'twig-cs-fixer',
+    allow_empty = false,
     args = function(context)
         return {
             'fix',
@@ -21,17 +21,17 @@ return {
             assert(context.tempfile),
         }
     end,
+    automatic = true,
+    cmd = 'twig-cs-fixer',
+    cwd = nil,
+    decode = nil,
+    description = 'Twig fixer; rewrites a private tempfile in place, runner reads it back',
+    env = {},
+    exit_codes = { 0 },
+    extension = 'twig',
+    filetypes = { 'twig' },
     mode = 'tempfile',
     output = 'file',
-    cwd = nil,
-    env = {},
-    root_markers = {},
-    exit_codes = { 0 },
-    allow_empty = false,
-    automatic = true,
-    extension = 'twig',
-    decode = nil,
     pre_transform = nil,
-    filetypes = { 'twig' },
-    description = 'Twig fixer; rewrites a private tempfile in place, runner reads it back',
+    root_markers = {},
 }

@@ -42,12 +42,12 @@ local SOURCE = 'alex'
 local SEVERITIES = {
     error = ERROR,
     fatal = ERROR,
-    warning = WARN,
-    warn = WARN,
+    hint = HINT,
     info = INFO,
     information = INFO,
     note = HINT,
-    hint = HINT,
+    warn = WARN,
+    warning = WARN,
 }
 
 ---@type table<string, boolean>
@@ -75,6 +75,48 @@ local TEXT_FILETYPES = {
 ---@field code? string
 ---@field origin? string
 
+---@param context LintContext
+---@return string[]
+local function args(context)
+    assert(context.filename ~= '')
+    assert(context.root ~= '')
+
+    local argv = {}
+
+    local filetype = context.filetype:lower()
+
+    --
+    -- Alex defaults to Markdown parsing.
+    --
+    -- Explicitly select only the alternate parsers where the Neovim filetype
+    -- proves that another input grammar is required.
+    --
+    if HTML_FILETYPES[filetype] then
+        argv[#argv + 1] = '--html'
+    elseif MDX_FILETYPES[filetype] then
+        argv[#argv + 1] = '--mdx'
+    elseif TEXT_FILETYPES[filetype] then
+        argv[#argv + 1] = '--text'
+    end
+
+    --
+    -- Supply exactly one file. When Alex receives no explicit input, it searches
+    -- the current directory plus doc/ and docs/, which is undesirable during an
+    -- interactive editor lint operation.
+    --
+    argv[#argv + 1] = context.filename
+
+    return argv
+end
+
+---@param context LintContext
+---@return string
+local function cwd(context)
+    assert(context.root ~= '')
+
+    return fs.normalize(context.root)
+end
+
 ---@param value integer|number|string|nil
 ---@param fallback integer
 ---@return integer
@@ -90,6 +132,16 @@ local function integer(value, fallback)
     return floor(parsed)
 end
 
+---@param value string
+---@return boolean
+local function looks_like_rule(value)
+    if value == '' then
+        return false
+    end
+
+    return value:match('^[%w][%w_%-%.:/]*$') ~= nil
+end
+
 ---@param value string|nil
 ---@return integer
 local function severity(value)
@@ -100,12 +152,42 @@ local function severity(value)
     return SEVERITIES[value:lower()] or WARN
 end
 
----@param value string
----@return string
-local function trim(value)
-    assert(type(value) == 'string')
+---@param entry AlexParsedDiagnostic
+---@return vim.Diagnostic.Set
+local function diagnostic_from_entry(entry)
+    --
+    -- VFile source positions are one-based.
+    -- Neovim diagnostic positions are zero-based.
+    --
+    local lnum = max(entry.start_line - 1, 0)
 
-    return (value:gsub('^%s*(.-)%s*$', '%1'))
+    local col = max(entry.start_column - 1, 0)
+
+    local end_lnum = max(entry.end_line - 1, lnum)
+
+    --
+    -- VFile end positions are exclusive. Converting the one-based VFile column
+    -- to Neovim's zero-based exclusive column therefore requires -1.
+    --
+    local minimum_end_col = end_lnum == lnum and col + 1 or 0
+
+    local end_col = max(entry.end_column - 1, minimum_end_col)
+
+    return {
+        code = entry.code,
+        col = col,
+        end_col = end_col,
+        end_lnum = end_lnum,
+        lnum = lnum,
+        message = entry.message,
+        severity = severity(entry.severity),
+        source = SOURCE,
+        user_data = {
+            alex_severity = entry.severity,
+            origin = entry.origin,
+            rule = entry.code,
+        },
+    }
 end
 
 ---@param value string
@@ -118,22 +200,10 @@ end
 
 ---@param value string
 ---@return string
-local function normalize_message(value)
+local function trim(value)
     assert(type(value) == 'string')
 
-    value = strip_ansi(value)
-
-    value = value:gsub('\r\n', '\n')
-
-    value = value:gsub('\r', '\n')
-
-    value = trim(value)
-
-    if #value > MESSAGE_LENGTH_MAX then
-        value = value:sub(1, MESSAGE_LENGTH_MAX) .. '\n[message truncated]'
-    end
-
-    return value
+    return (value:gsub('^%s*(.-)%s*$', '%1'))
 end
 
 ---@param value string
@@ -165,13 +235,23 @@ local function is_summary(value)
 end
 
 ---@param value string
----@return boolean
-local function looks_like_rule(value)
-    if value == '' then
-        return false
+---@return string
+local function normalize_message(value)
+    assert(type(value) == 'string')
+
+    value = strip_ansi(value)
+
+    value = value:gsub('\r\n', '\n')
+
+    value = value:gsub('\r', '\n')
+
+    value = trim(value)
+
+    if #value > MESSAGE_LENGTH_MAX then
+        value = value:sub(1, MESSAGE_LENGTH_MAX) .. '\n[message truncated]'
     end
 
-    return value:match('^[%w][%w_%-%.:/]*$') ~= nil
+    return value
 end
 
 ---@param line string
@@ -264,61 +344,14 @@ local function parse_line(line)
     end
 
     return {
-        start_line = parsed_start_line,
-        start_column = parsed_start_column,
-
-        end_line = parsed_end_line,
-        end_column = parsed_end_column,
-
-        severity = level,
-
-        message = message,
-
         code = code,
+        end_column = parsed_end_column,
+        end_line = parsed_end_line,
+        message = message,
         origin = origin,
-    }
-end
-
----@param entry AlexParsedDiagnostic
----@return vim.Diagnostic.Set
-local function diagnostic_from_entry(entry)
-    --
-    -- VFile source positions are one-based.
-    -- Neovim diagnostic positions are zero-based.
-    --
-    local lnum = max(entry.start_line - 1, 0)
-
-    local col = max(entry.start_column - 1, 0)
-
-    local end_lnum = max(entry.end_line - 1, lnum)
-
-    --
-    -- VFile end positions are exclusive. Converting the one-based VFile column
-    -- to Neovim's zero-based exclusive column therefore requires -1.
-    --
-    local minimum_end_col = end_lnum == lnum and col + 1 or 0
-
-    local end_col = max(entry.end_column - 1, minimum_end_col)
-
-    return {
-        lnum = lnum,
-        end_lnum = end_lnum,
-
-        col = col,
-        end_col = end_col,
-
-        message = entry.message,
-
-        severity = severity(entry.severity),
-
-        source = SOURCE,
-        code = entry.code,
-
-        user_data = {
-            rule = entry.code,
-            origin = entry.origin,
-            alex_severity = entry.severity,
-        },
+        severity = level,
+        start_column = parsed_start_column,
+        start_line = parsed_start_line,
     }
 end
 
@@ -359,68 +392,19 @@ local function parse(output, context)
     return diagnostics
 end
 
----@param context LintContext
----@return string[]
-local function args(context)
-    assert(context.filename ~= '')
-    assert(context.root ~= '')
-
-    local argv = {}
-
-    local filetype = context.filetype:lower()
-
-    --
-    -- Alex defaults to Markdown parsing.
-    --
-    -- Explicitly select only the alternate parsers where the Neovim filetype
-    -- proves that another input grammar is required.
-    --
-    if HTML_FILETYPES[filetype] then
-        argv[#argv + 1] = '--html'
-    elseif MDX_FILETYPES[filetype] then
-        argv[#argv + 1] = '--mdx'
-    elseif TEXT_FILETYPES[filetype] then
-        argv[#argv + 1] = '--text'
-    end
-
-    --
-    -- Supply exactly one file. When Alex receives no explicit input, it searches
-    -- the current directory plus doc/ and docs/, which is undesirable during an
-    -- interactive editor lint operation.
-    --
-    argv[#argv + 1] = context.filename
-
-    return argv
-end
-
----@param context LintContext
----@return string
-local function cwd(context)
-    assert(context.root ~= '')
-
-    return fs.normalize(context.root)
-end
-
 return ---@type Linter
 {
-    automatic = false,
-
-    cmd = 'alex',
-
-    args = args,
-
     append_fname = false,
-
+    args = args,
+    automatic = false,
+    cmd = 'alex',
     cwd = cwd,
-
     --
     -- Alex invokes unified-engine with frail=true, so warnings legitimately
     -- cause a nonzero process exit. The diagnostic output remains valid.
     --
     ignore_exitcode = true,
-
     parser = parse,
-
     root_markers = {
         '.alexrc',
         '.alexrc.json',
@@ -435,13 +419,10 @@ return ---@type Linter
 
         '.git',
     },
-
     stdin = false,
-
     --
     -- Alex's vfile reporter is emitted through the engine's diagnostic stream.
     --
     stream = 'stderr',
-
     timeout = 30000,
 }

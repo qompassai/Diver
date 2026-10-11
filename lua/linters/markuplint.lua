@@ -5,12 +5,12 @@
 
 local fs = vim.fs
 local severity = vim.diagnostic.severity
-local SOURCE = 'markuplint'
-local MAX_OUTPUT = 16 * 1024 * 1024
 local MAX_DIAGNOSTICS = 512
+local MAX_LINE = 1024 * 1024
+local MAX_OUTPUT = 16 * 1024 * 1024
 local MAX_RECORDS = 10000
 local MAX_TEXT = 4096
-local MAX_LINE = 1024 * 1024
+local SOURCE = 'markuplint'
 local ROOT_MARKERS = {
     '.markuplintrc',
     '.markuplintrc.json',
@@ -24,63 +24,11 @@ local ROOT_MARKERS = {
     '.git',
 }
 
-local function nonempty(value)
-    return type(value) == 'string' and value ~= '' and value or nil
-end
-
-local function clean(value)
-    value = type(value) == 'string' and value or ''
-    value = vim.trim(value:gsub('\27%[[%d;]*[mK]', ''):gsub('%c', ' '):gsub('%s+', ' '))
-    if #value <= MAX_TEXT then
-        return value
-    end
-    local stop = MAX_TEXT - 3
-    while stop > 0 and (value:byte(stop + 1) or 0) >= 128 and (value:byte(stop + 1) or 0) < 192 do
-        stop = stop - 1
-    end
-    return value:sub(1, stop) .. '...'
-end
-
 local function absolute(path, cwd)
     if path:sub(1, 1) ~= '/' and not path:match('^%a:[/\\]') then
         path = fs.joinpath(cwd, path)
     end
     return fs.normalize(path)
-end
-
-local function root(context)
-    local cwd = nonempty(context.cwd) or vim.fn.getcwd()
-    local filename = nonempty(context.filename)
-    if filename then
-        filename = absolute(filename, cwd)
-        return fs.root(filename, ROOT_MARKERS) or nonempty(context.root) or fs.dirname(filename) or cwd
-    end
-    return nonempty(context.root) or cwd
-end
-
-local function canonical(path, cwd)
-    path = absolute(path, cwd)
-    return vim.uv.fs_realpath(path) or path
-end
-
-local function status(context, code, message)
-    return {
-        bufnr = context.bufnr,
-        lnum = 0,
-        col = 0,
-        severity = severity.WARN,
-        source = SOURCE,
-        code = code,
-        message = clean(message),
-    }
-end
-
-local function integer(value)
-    return type(value) == 'number'
-        and value == value
-        and value >= 1
-        and value < 2147483647
-        and value == math.floor(value)
 end
 
 -- Markuplint columns count JavaScript UTF-16 code units, starting at one.
@@ -102,6 +50,65 @@ local function byte_column(line, units)
         return nil
     end
     return offset
+end
+
+local function canonical(path, cwd)
+    path = absolute(path, cwd)
+    return vim.uv.fs_realpath(path) or path
+end
+
+local function clean(value)
+    value = type(value) == 'string' and value or ''
+    value = vim.trim(value:gsub('\27%[[%d;]*[mK]', ''):gsub('%c', ' '):gsub('%s+', ' '))
+    if #value <= MAX_TEXT then
+        return value
+    end
+    local stop = MAX_TEXT - 3
+    while stop > 0 and (value:byte(stop + 1) or 0) >= 128 and (value:byte(stop + 1) or 0) < 192 do
+        stop = stop - 1
+    end
+    return value:sub(1, stop) .. '...'
+end
+
+local function integer(value)
+    return type(value) == 'number'
+        and value == value
+        and value >= 1
+        and value < 2147483647
+        and value == math.floor(value)
+end
+
+local function nonempty(value)
+    return type(value) == 'string' and value ~= '' and value or nil
+end
+
+local function arguments(context)
+    local filename = assert(nonempty(context.filename), 'markuplint requires a named, saved file')
+    filename = absolute(filename, nonempty(context.cwd) or vim.fn.getcwd())
+    filename = filename:gsub('([\\*?%[%]{}()!+@])', '\\%1')
+    return { '--format', 'JSON', '--no-color', '--no-allow-empty-input', filename }
+end
+
+local function root(context)
+    local cwd = nonempty(context.cwd) or vim.fn.getcwd()
+    local filename = nonempty(context.filename)
+    if filename then
+        filename = absolute(filename, cwd)
+        return fs.root(filename, ROOT_MARKERS) or nonempty(context.root) or fs.dirname(filename) or cwd
+    end
+    return nonempty(context.root) or cwd
+end
+
+local function status(context, code, message)
+    return {
+        bufnr = context.bufnr,
+        code = code,
+        col = 0,
+        lnum = 0,
+        message = clean(message),
+        severity = severity.WARN,
+        source = SOURCE,
+    }
 end
 
 local function parse(output, context)
@@ -163,16 +170,16 @@ local function parse(output, context)
             local col = line and integer(finding.col) and byte_column(line, finding.col - 1) or nil
             local item = {
                 bufnr = context.bufnr,
-                lnum = lnum,
+                code = nonempty(finding.ruleId),
                 col = col or 0,
+                lnum = lnum,
+                message = clean(finding.message),
                 severity = finding.severity == 'error' and severity.ERROR or severity.WARN,
                 source = SOURCE,
-                code = nonempty(finding.ruleId),
-                message = clean(finding.message),
                 user_data = {
                     filename = finding.filePath,
-                    rule = nonempty(finding.ruleId),
                     reason = nonempty(finding.reason) and clean(finding.reason) or nil,
+                    rule = nonempty(finding.ruleId),
                 },
             }
             local raw = nonempty(finding.raw)
@@ -208,17 +215,10 @@ local function parse(output, context)
     return diagnostics
 end
 
-local function arguments(context)
-    local filename = assert(nonempty(context.filename), 'markuplint requires a named, saved file')
-    filename = absolute(filename, nonempty(context.cwd) or vim.fn.getcwd())
-    filename = filename:gsub('([\\*?%[%]{}()!+@])', '\\%1')
-    return { '--format', 'JSON', '--no-color', '--no-allow-empty-input', filename }
-end
-
 ---@type Linter
 return {
-    args = arguments,
     append_fname = false,
+    args = arguments,
     automatic = true,
     cmd = 'markuplint',
     cwd = root,

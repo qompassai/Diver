@@ -4,9 +4,6 @@
 -- SPDX-License-Identifier: Apache-2.0
 -- #################################################################
 return {
-    name = 'cargo-clippy-fix',
-    cmd = 'cargo',
-    stdin = false,
     append_fname = false,
     args = function()
         return {
@@ -27,8 +24,7 @@ return {
             'clippy::nursery',
         }
     end,
-    stream = 'stderr',
-    ignore_exitcode = true,
+    cmd = 'cargo',
     errorformat = {
         '%f:%l:%c: %trror: %m',
         '%f:%l:%c: %tarning: %m',
@@ -36,4 +32,8 @@ return {
         '%f:%l: %m',
         '%-G%.%#',
     },
+    ignore_exitcode = true,
+    name = 'cargo-clippy-fix',
+    stdin = false,
+    stream = 'stderr',
 } --[[@as vim.lint.Config]]

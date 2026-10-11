@@ -5,8 +5,6 @@
 --local core_parser = require('config.core.parser')
 return ---@type vim.lint.Config
 {
-    cmd = 'deadnix',
-    stdin = false,
     append_fname = true,
     args = {
         '--output-format',
@@ -14,7 +12,7 @@ return ---@type vim.lint.Config
         '--warn-used-underscore',
         '--fail',
     },
-    stream = 'stdout',
+    cmd = 'deadnix',
     ignore_exitcode = true,
     ---@param bufnr integer
     ---@return vim.Diagnostic.Set[]
@@ -35,18 +33,20 @@ return ---@type vim.lint.Config
                     local lnum = (item.line or 1) - 1
                     local col = (item.column or 1) - 1
                     diagnostics[#diagnostics + 1] = {
-                        lnum = lnum,
-                        end_lnum = lnum,
+                        code = item.kind,
                         col = col,
                         end_col = col + 1,
+                        end_lnum = lnum,
+                        lnum = lnum,
+                        message = item.message or 'dead code detected',
                         severity = vim.diagnostic.severity.WARN,
                         source = 'deadnix',
-                        message = item.message or 'dead code detected',
-                        code = item.kind,
                     }
                 end
             end
         end
         return diagnostics
     end,
+    stdin = false,
+    stream = 'stdout',
 }

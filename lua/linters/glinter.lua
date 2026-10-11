@@ -279,10 +279,8 @@ local function finding_diagnostic(finding, context)
 
         user_data = {
             file = path,
-
-            rule = rule,
-
             glinter_severity = string_value(finding.severity),
+            rule = rule,
         },
     }
 end
@@ -481,25 +479,15 @@ end
 
 ---@type Linter
 return {
-    args = arguments,
-
     append_fname = false,
-
+    args = arguments,
     automatic = false,
-
     cmd = 'gleam',
-
     cwd = project_root,
-
     ignore_exitcode = true,
-
     parser = parse,
-
     root_markers = ROOT_MARKERS,
-
     stdin = false,
-
     stream = 'both',
-
     timeout = 60000,
 }

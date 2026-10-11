@@ -12,17 +12,17 @@
 
 ---@type FormatterSpec
 return {
-    cmd = 'sqruff',
+    allow_empty = false,
     args = { 'fix', '-' },
+    automatic = true,
+    cmd = 'sqruff',
+    cwd = nil,
+    decode = nil,
+    env = {},
+    exit_codes = { 0 },
+    extension = 'sql',
     mode = 'stdin',
     output = 'stdout',
-    cwd = nil,
-    env = {},
-    root_markers = { 'sqruff.toml', '.sqruff', '.git' },
-    exit_codes = { 0 },
-    allow_empty = false,
-    automatic = true,
-    extension = 'sql',
-    decode = nil,
     pre_transform = nil,
+    root_markers = { 'sqruff.toml', '.sqruff', '.git' },
 }

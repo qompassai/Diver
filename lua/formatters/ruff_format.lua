@@ -27,17 +27,17 @@ end
 
 ---@type FormatterSpec
 return {
-    cmd = 'ruff',
+    allow_empty = false,
     args = build_args,
+    automatic = true,
+    cmd = 'ruff',
+    cwd = nil,
+    decode = nil,
+    env = {},
+    exit_codes = { 0 },
+    extension = 'py',
     mode = 'stdin',
     output = 'stdout',
-    cwd = nil,
-    env = {},
-    root_markers = { 'pyproject.toml', 'ruff.toml', '.ruff.toml', '.git' },
-    exit_codes = { 0 },
-    allow_empty = false,
-    automatic = true,
-    extension = 'py',
-    decode = nil,
     pre_transform = nil,
+    root_markers = { 'pyproject.toml', 'ruff.toml', '.ruff.toml', '.git' },
 }

@@ -155,7 +155,7 @@ end
 
 return ---@type Linter
 {
-    cmd = 'tflint',
+    append_fname = false,
     args = function(context)
         return {
             '--format=json',
@@ -163,8 +163,8 @@ return ---@type Linter
             '--filter=' .. vim.fs.basename(context.filename),
         }
     end,
-    append_fname = false,
     automatic = false,
+    cmd = 'tflint',
     cwd = function(context)
         return vim.fs.dirname(context.filename) or context.cwd
     end,

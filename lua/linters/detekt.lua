@@ -41,6 +41,84 @@ local severities = {
     warning = WARN,
 }
 
+---@param root string
+---@param candidates string[]
+---@return string?
+local function find_file(root, candidates)
+    assert(root ~= '')
+
+    for index = 1, #candidates do
+        local candidate = fs.joinpath(root, candidates[index])
+
+        if vim.uv.fs_stat(candidate) ~= nil then
+            return candidate
+        end
+    end
+
+    return nil
+end
+
+---@param root string
+---@return string?
+local function baseline_file(root)
+    return find_file(root, {
+        'detekt-baseline.xml',
+        'baseline.xml',
+        'config/detekt/baseline.xml',
+        'config/detekt/detekt-baseline.xml',
+    })
+end
+
+---@param root string
+---@return string?
+local function config_file(root)
+    return find_file(root, {
+        'detekt.yml',
+        'detekt.yaml',
+        'config/detekt/detekt.yml',
+        'config/detekt/detekt.yaml',
+        'config/detekt/config.yml',
+        'config/detekt/config.yaml',
+    })
+end
+
+---@param context LintContext
+---@return string[]
+local function args(context)
+    assert(context.filename ~= '')
+    assert(context.root ~= '')
+
+    local root = fs.normalize(context.root)
+
+    local argv = {
+        '--build-upon-default-config',
+        '--input',
+        context.filename,
+
+        '--fail-on-severity',
+        'Info',
+
+        '--base-path',
+        root,
+    }
+
+    local config = config_file(root)
+
+    if config ~= nil then
+        argv[#argv + 1] = '--config'
+        argv[#argv + 1] = config
+    end
+
+    local baseline = baseline_file(root)
+
+    if baseline ~= nil then
+        argv[#argv + 1] = '--baseline'
+        argv[#argv + 1] = baseline
+    end
+
+    return argv
+end
+
 ---@param value integer|number|string|nil
 ---@param fallback integer
 ---@return integer
@@ -54,16 +132,6 @@ local function integer(value, fallback)
     end
 
     return math.floor(parsed)
-end
-
----@param level string|nil
----@return integer
-local function severity(level)
-    if level == nil then
-        return WARN
-    end
-
-    return severities[level:lower()] or WARN
 end
 
 ---@param path string
@@ -89,47 +157,6 @@ local function belongs_to_buffer(path, filename, root)
     end
 
     return candidate == filename
-end
-
----@param root string
----@param candidates string[]
----@return string?
-local function find_file(root, candidates)
-    assert(root ~= '')
-
-    for index = 1, #candidates do
-        local candidate = fs.joinpath(root, candidates[index])
-
-        if vim.uv.fs_stat(candidate) ~= nil then
-            return candidate
-        end
-    end
-
-    return nil
-end
-
----@param root string
----@return string?
-local function config_file(root)
-    return find_file(root, {
-        'detekt.yml',
-        'detekt.yaml',
-        'config/detekt/detekt.yml',
-        'config/detekt/detekt.yaml',
-        'config/detekt/config.yml',
-        'config/detekt/config.yaml',
-    })
-end
-
----@param root string
----@return string?
-local function baseline_file(root)
-    return find_file(root, {
-        'detekt-baseline.xml',
-        'baseline.xml',
-        'config/detekt/baseline.xml',
-        'config/detekt/detekt-baseline.xml',
-    })
 end
 
 ---@param line string
@@ -158,6 +185,16 @@ local function parse_line(line)
         message = message,
         severity = 'warning',
     }
+end
+
+---@param level string|nil
+---@return integer
+local function severity(level)
+    if level == nil then
+        return WARN
+    end
+
+    return severities[level:lower()] or WARN
 end
 
 ---@param violation DetektViolation
@@ -192,14 +229,14 @@ local function diagnostic_from_violation(violation, filename, root)
     end
 
     return {
-        lnum = start_line,
-        end_lnum = start_line,
+        code = code,
         col = start_column,
         end_col = start_column + 1,
+        end_lnum = start_line,
+        lnum = start_line,
         message = message,
         severity = severity(violation.severity),
         source = 'detekt',
-        code = code,
         user_data = {
             analyzer = 'detekt',
         },
@@ -253,63 +290,19 @@ local function parse(output, context)
     return diagnostics
 end
 
----@param context LintContext
----@return string[]
-local function args(context)
-    assert(context.filename ~= '')
-    assert(context.root ~= '')
-
-    local root = fs.normalize(context.root)
-
-    local argv = {
-        '--build-upon-default-config',
-        '--input',
-        context.filename,
-
-        '--fail-on-severity',
-        'Info',
-
-        '--base-path',
-        root,
-    }
-
-    local config = config_file(root)
-
-    if config ~= nil then
-        argv[#argv + 1] = '--config'
-        argv[#argv + 1] = config
-    end
-
-    local baseline = baseline_file(root)
-
-    if baseline ~= nil then
-        argv[#argv + 1] = '--baseline'
-        argv[#argv + 1] = baseline
-    end
-
-    return argv
-end
-
 return ---@type Linter
 {
-    automatic = false,
-
-    cmd = 'detekt',
-
-    args = args,
-
     append_fname = false,
-
+    args = args,
+    automatic = false,
+    cmd = 'detekt',
     cwd = function(context)
         assert(context.root ~= '')
 
         return context.root
     end,
-
     ignore_exitcode = true,
-
     parser = parse,
-
     root_markers = {
         'detekt.yml',
         'detekt.yaml',
@@ -327,7 +320,6 @@ return ---@type Linter
 
         '.git',
     },
-
     stdin = false,
     stream = 'stdout',
     timeout = 60000,

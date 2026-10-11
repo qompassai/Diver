@@ -453,8 +453,8 @@ end
 
 ---@type Linter
 return {
-    args = arguments,
     append_fname = false,
+    args = arguments,
     automatic = false,
     cmd = 'snakemake',
     cwd = project_root,

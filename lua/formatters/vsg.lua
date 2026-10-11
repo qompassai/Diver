@@ -14,7 +14,7 @@
 -- so both 0 and 1 are accepted; anything else is a real error.
 ---@type FormatterSpec
 return {
-    cmd = 'vsg',
+    allow_empty = false,
     args = function(context)
         return {
             '--fix',
@@ -22,17 +22,17 @@ return {
             assert(context.tempfile),
         }
     end,
+    automatic = true,
+    cmd = 'vsg',
+    cwd = nil,
+    decode = nil,
+    description = 'VHDL style fixer; `--fix -f` rewrites a private tempfile in place',
+    env = {},
+    exit_codes = { 0, 1 },
+    extension = 'vhd',
+    filetypes = { 'vhdl' },
     mode = 'tempfile',
     output = 'file',
-    cwd = nil,
-    env = {},
-    root_markers = {},
-    exit_codes = { 0, 1 },
-    allow_empty = false,
-    automatic = true,
-    extension = 'vhd',
-    decode = nil,
     pre_transform = nil,
-    filetypes = { 'vhdl' },
-    description = 'VHDL style fixer; `--fix -f` rewrites a private tempfile in place',
+    root_markers = {},
 }

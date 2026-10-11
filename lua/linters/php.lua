@@ -167,9 +167,8 @@ end
 
 return ---@type Linter
 {
-    automatic = true,
 
-    cmd = 'php',
+    append_fname = false,
 
     args = {
         -- Lint only; never execute the code.
@@ -183,8 +182,9 @@ return ---@type Linter
         -- Read the buffer from stdin.
         '-',
     },
+    automatic = true,
 
-    append_fname = false,
+    cmd = 'php',
 
     cwd = cwd,
 

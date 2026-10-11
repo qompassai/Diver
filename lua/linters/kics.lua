@@ -15,21 +15,21 @@
 
 local diagnostic = vim.diagnostic
 local fs = vim.fs
-local uv = vim.uv
 local json = vim.json
-local SOURCE = 'kics'
-local MAX_OUTPUT_BYTES = 16 * 1024 * 1024
-local MAX_MESSAGE_BYTES = 4096
+local uv = vim.uv
 local MAX_DIAGNOSTICS = 512
-local MAX_QUERIES = 8192
 local MAX_FINDINGS = 32768
+local MAX_MESSAGE_BYTES = 4096
+local MAX_OUTPUT_BYTES = 16 * 1024 * 1024
+local MAX_QUERIES = 8192
+local SOURCE = 'kics'
 local ROOT_MARKERS = { 'kics.config', '.git' }
 local SEVERITIES = {
     CRITICAL = diagnostic.severity.ERROR,
     HIGH = diagnostic.severity.ERROR,
-    MEDIUM = diagnostic.severity.WARN,
-    LOW = diagnostic.severity.INFO,
     INFO = diagnostic.severity.HINT,
+    LOW = diagnostic.severity.INFO,
+    MEDIUM = diagnostic.severity.WARN,
     TRACE = diagnostic.severity.HINT,
 }
 
@@ -102,6 +102,75 @@ except (OSError, ValueError, KeyError, TypeError):
     fail("bridge-failure")
 ]=]
 
+---@param path string
+---@param cwd string
+---@return string
+local function absolute_path(path, cwd)
+    if path:sub(1, 1) ~= '/' then
+        path = fs.joinpath(cwd, path)
+    end
+
+    return fs.normalize(path)
+end
+
+---@param path string
+---@param cwd string
+---@return string
+local function canonical_path(path, cwd)
+    local absolute = absolute_path(path, cwd)
+
+    return uv.fs_realpath(absolute) or absolute
+end
+
+---@param value string
+---@return string
+local function clean_message(value)
+    local text = vim.trim(value:gsub('[%z\1-\31\127]', ' '):gsub('%s+', ' '))
+
+    if #text > MAX_MESSAGE_BYTES then
+        local finish = MAX_MESSAGE_BYTES - 3
+
+        -- Do not split a UTF-8 codepoint when truncating.
+        while finish > 0 do
+            local byte = text:byte(finish + 1)
+
+            if byte == nil or byte < 128 or byte >= 192 then
+                break
+            end
+
+            finish = finish - 1
+        end
+
+        text = text:sub(1, finish) .. '...'
+    end
+
+    return text
+end
+
+---@param value any
+---@return boolean
+local function positive(value)
+    return type(value) == 'number' and value > 0
+end
+
+---@param context LintContext
+---@param code string
+---@param message string
+---@return vim.Diagnostic
+local function status_diagnostic(context, code, message)
+    return {
+        bufnr = context.bufnr,
+        code = code,
+        col = 0,
+        end_col = 0,
+        end_lnum = 0,
+        lnum = 0,
+        message = message,
+        severity = diagnostic.severity.WARN,
+        source = SOURCE,
+    }
+end
+
 ---@param value any
 ---@return string?
 local function string_value(value)
@@ -149,73 +218,33 @@ local function project_root(context)
     return fs.normalize(string_value(context.cwd) or vim.fn.getcwd())
 end
 
----@param path string
----@param cwd string
----@return string
-local function absolute_path(path, cwd)
-    if path:sub(1, 1) ~= '/' then
-        path = fs.joinpath(cwd, path)
-    end
-
-    return fs.normalize(path)
-end
-
----@param path string
----@param cwd string
----@return string
-local function canonical_path(path, cwd)
-    local absolute = absolute_path(path, cwd)
-
-    return uv.fs_realpath(absolute) or absolute
-end
-
----@param value string
----@return string
-local function clean_message(value)
-    local text = vim.trim(value:gsub('[%z\1-\31\127]', ' '):gsub('%s+', ' '))
-
-    if #text > MAX_MESSAGE_BYTES then
-        local finish = MAX_MESSAGE_BYTES - 3
-
-        -- Do not split a UTF-8 codepoint when truncating.
-        while finish > 0 do
-            local byte = text:byte(finish + 1)
-
-            if byte == nil or byte < 128 or byte >= 192 then
-                break
-            end
-
-            finish = finish - 1
-        end
-
-        text = text:sub(1, finish) .. '...'
-    end
-
-    return text
-end
-
 ---@param context LintContext
----@param code string
----@param message string
----@return vim.Diagnostic
-local function status_diagnostic(context, code, message)
+---@return string[]
+local function arguments(context)
+    assert(type(context) == 'table', 'kics arguments require LintContext')
+    local filename = string_value(context.filename)
+    assert(filename ~= nil, 'KICS requires a saved filename')
+    local root = project_root(context)
+    local config = string_value(vim.env.NVIM_KICS_CONFIG)
+    if config == nil and string_value(vim.env.KICS_CONFIG) == nil then
+        local candidate = fs.joinpath(root, 'kics.config')
+        local stat = uv.fs_stat(candidate)
+        if stat ~= nil and stat.type == 'file' then
+            config = candidate
+        end
+    end
     return {
-        bufnr = context.bufnr,
-        code = code,
-        col = 0,
-        end_col = 0,
-        end_lnum = 0,
-        lnum = 0,
-        message = message,
-        severity = diagnostic.severity.WARN,
-        source = SOURCE,
+        '-I',
+        '-c',
+        BRIDGE,
+        json.encode({
+            config = config,
+            filename = absolute_path(filename, string_value(context.cwd) or root),
+            libraries = string_value(vim.env.NVIM_KICS_LIBRARIES_PATH),
+            modified = context.modified == true,
+            queries = string_value(vim.env.NVIM_KICS_QUERIES_PATH),
+        }),
     }
-end
-
----@param value any
----@return boolean
-local function positive(value)
-    return type(value) == 'number' and value > 0
 end
 
 ---@param output string
@@ -303,10 +332,10 @@ local function parse(output, context)
                         severity = SEVERITIES[level] or diagnostic.severity.WARN,
                         source = SOURCE,
                         user_data = {
-                            severity = level,
                             cwe = type(query.cwe) == 'string' and clean_message(query.cwe) or nil,
                             platform = type(query.platform) == 'string' and clean_message(query.platform) or nil,
                             query_url = type(query.query_url) == 'string' and clean_message(query.query_url) or nil,
+                            severity = level,
                         },
                     }
                 end
@@ -353,39 +382,10 @@ local function parse(output, context)
     return diagnostics
 end
 
----@param context LintContext
----@return string[]
-local function arguments(context)
-    assert(type(context) == 'table', 'kics arguments require LintContext')
-    local filename = string_value(context.filename)
-    assert(filename ~= nil, 'KICS requires a saved filename')
-    local root = project_root(context)
-    local config = string_value(vim.env.NVIM_KICS_CONFIG)
-    if config == nil and string_value(vim.env.KICS_CONFIG) == nil then
-        local candidate = fs.joinpath(root, 'kics.config')
-        local stat = uv.fs_stat(candidate)
-        if stat ~= nil and stat.type == 'file' then
-            config = candidate
-        end
-    end
-    return {
-        '-I',
-        '-c',
-        BRIDGE,
-        json.encode({
-            filename = absolute_path(filename, string_value(context.cwd) or root),
-            modified = context.modified == true,
-            config = config,
-            queries = string_value(vim.env.NVIM_KICS_QUERIES_PATH),
-            libraries = string_value(vim.env.NVIM_KICS_LIBRARIES_PATH),
-        }),
-    }
-end
-
 ---@type Linter
 return {
-    args = arguments,
     append_fname = false,
+    args = arguments,
     automatic = true,
     cmd = 'python3',
     cwd = project_root,

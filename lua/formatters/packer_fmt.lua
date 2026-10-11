@@ -11,12 +11,12 @@
 
 ---@type FormatterSpec
 return {
-    cmd = 'packer',
+    allow_empty = false,
     args = { 'fmt', '-' },
+    automatic = true,
+    cmd = 'packer',
+    exit_codes = { 0 },
+    extension = 'pkr.hcl',
     mode = 'stdin',
     output = 'stdout',
-    exit_codes = { 0 },
-    automatic = true,
-    allow_empty = false,
-    extension = 'pkr.hcl',
 }

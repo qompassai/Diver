@@ -34,6 +34,21 @@ local LINE_LENGTH_MAX = 16384
 ---@field type? string
 ---@field message? string
 
+---@param line string
+---@return BufLintViolation?
+local function decode_line(line)
+    assert(#line <= LINE_LENGTH_MAX)
+
+    local ok, decoded = pcall(vim.json.decode, line)
+
+    if not ok or type(decoded) ~= 'table' then
+        return nil
+    end
+
+    ---@cast decoded BufLintViolation
+    return decoded
+end
+
 ---@param value string|number|nil
 ---@param fallback integer
 ---@return integer
@@ -73,43 +88,6 @@ local function belongs_to_buffer(path, filename, root)
     return candidate == filename
 end
 
----@param filename string
----@param root string
----@return string
-local function relative_path(filename, root)
-    assert(filename ~= '')
-    assert(root ~= '')
-
-    local normalized_filename = fs.normalize(filename)
-    local normalized_root = fs.normalize(root)
-
-    if normalized_filename:sub(1, #normalized_root) == normalized_root then
-        local offset = #normalized_root + 2
-        local relative = normalized_filename:sub(offset)
-
-        if relative ~= '' then
-            return relative
-        end
-    end
-
-    return normalized_filename
-end
-
----@param line string
----@return BufLintViolation?
-local function decode_line(line)
-    assert(#line <= LINE_LENGTH_MAX)
-
-    local ok, decoded = pcall(vim.json.decode, line)
-
-    if not ok or type(decoded) ~= 'table' then
-        return nil
-    end
-
-    ---@cast decoded BufLintViolation
-    return decoded
-end
-
 ---@param violation BufLintViolation
 ---@param filename string
 ---@param root string
@@ -141,14 +119,14 @@ local function diagnostic_from_violation(violation, filename, root)
     local end_column = math.max(integer(violation.end_column, minimum_end_column + 1) - 1, minimum_end_column)
 
     return {
-        lnum = start_line,
-        end_lnum = end_line,
+        code = violation.type,
         col = start_column,
         end_col = end_column,
+        end_lnum = end_line,
+        lnum = start_line,
         message = message,
         severity = ERROR,
         source = 'buf',
-        code = violation.type,
     }
 end
 
@@ -203,12 +181,31 @@ local function parse(output, context)
     return diagnostics
 end
 
+---@param filename string
+---@param root string
+---@return string
+local function relative_path(filename, root)
+    assert(filename ~= '')
+    assert(root ~= '')
+
+    local normalized_filename = fs.normalize(filename)
+    local normalized_root = fs.normalize(root)
+
+    if normalized_filename:sub(1, #normalized_root) == normalized_root then
+        local offset = #normalized_root + 2
+        local relative = normalized_filename:sub(offset)
+
+        if relative ~= '' then
+            return relative
+        end
+    end
+
+    return normalized_filename
+end
+
 return ---@type Linter
 {
-    automatic = false,
-
-    cmd = 'buf',
-
+    append_fname = false,
     args = function(context)
         assert(context.filename ~= '')
         assert(context.root ~= '')
@@ -221,25 +218,20 @@ return ---@type Linter
             relative_path(context.filename, context.root),
         }
     end,
-
-    append_fname = false,
-
+    automatic = false,
+    cmd = 'buf',
     cwd = function(context)
         assert(context.root ~= '')
         return context.root
     end,
-
     ignore_exitcode = true,
-
     parser = parse,
-
     root_markers = {
         'buf.yaml',
         'buf.work.yaml',
         'buf.lock',
         '.git',
     },
-
     stdin = false,
     stream = 'stdout',
     timeout = 30000,

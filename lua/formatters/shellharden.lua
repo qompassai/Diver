@@ -14,17 +14,17 @@
 
 ---@type FormatterSpec
 return {
-    cmd = 'shellharden',
+    allow_empty = false,
     args = { '--transform', '' },
+    automatic = false,
+    cmd = 'shellharden',
+    cwd = nil,
+    decode = nil,
+    env = {},
+    exit_codes = { 0 },
+    extension = 'sh',
     mode = 'stdin',
     output = 'stdout',
-    cwd = nil,
-    env = {},
-    root_markers = { '.git' },
-    exit_codes = { 0 },
-    allow_empty = false,
-    automatic = false,
-    extension = 'sh',
-    decode = nil,
     pre_transform = nil,
+    root_markers = { '.git' },
 }

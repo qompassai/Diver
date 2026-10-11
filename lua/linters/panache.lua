@@ -268,7 +268,6 @@ end
 return ---@type Linter
 {
     append_fname = false,
-    automatic = false,
 
     args = function(context)
         assert(type(context.filename) == 'string' and context.filename ~= '')
@@ -282,6 +281,7 @@ return ---@type Linter
             context.filename,
         }
     end,
+    automatic = false,
 
     cmd = 'panache',
 

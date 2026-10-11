@@ -22,12 +22,12 @@
 -- The native runner must cancel/discard stale results and enforce the timeout.
 local fs = vim.fs
 local severity = vim.diagnostic.severity
-local SOURCE = 'markdownlint-cli2'
-local MAX_OUTPUT_BYTES = 16 * 1024 * 1024
-local MAX_MESSAGE_BYTES = 4096
 local MAX_DIAGNOSTICS = 512
-local MAX_RECORDS = 10000
 local MAX_LINE_BYTES = 1024 * 1024
+local MAX_MESSAGE_BYTES = 4096
+local MAX_OUTPUT_BYTES = 16 * 1024 * 1024
+local MAX_RECORDS = 10000
+local SOURCE = 'markdownlint-cli2'
 local CONFIG_MARKERS = {
     '.markdownlint-cli2.jsonc',
     '.markdownlint-cli2.yaml',
@@ -36,60 +36,11 @@ local CONFIG_MARKERS = {
 }
 local ROOT_MARKERS = { CONFIG_MARKERS, 'package.json', '.git' }
 
-local function nonempty(value)
-    return type(value) == 'string' and value ~= '' and value or nil
-end
-
-local function root(context)
-    local cwd = nonempty(context.cwd) or vim.fn.getcwd()
-    local file = nonempty(context.filename)
-    if file then
-        if file:sub(1, 1) ~= '/' then
-            file = fs.joinpath(cwd, file)
-        end
-        return fs.root(file, CONFIG_MARKERS)
-            or nonempty(context.root)
-            or fs.root(file, ROOT_MARKERS)
-            or fs.dirname(file)
-            or cwd
-    end
-    return nonempty(context.root) or cwd
-end
-
-local function clean(text)
-    text = vim.trim(text:gsub('[%z\1-\31\127]', ' '):gsub('%s+', ' '))
-    if #text <= MAX_MESSAGE_BYTES then
-        return text
-    end
-    local stop = MAX_MESSAGE_BYTES - 3
-    while stop > 0 do
-        local byte = text:byte(stop + 1)
-        if not byte or byte < 128 or byte >= 192 then
-            break
-        end
-        stop = stop - 1
-    end
-    return text:sub(1, stop) .. '...'
-end
-
 ---@param context LintContext
----@param code string
----@param message string
----@return vim.Diagnostic.Set
-local function status(context, code, message)
-    return {
-        bufnr = context.bufnr,
-        lnum = 0,
-        col = 0,
-        severity = severity.WARN,
-        source = SOURCE,
-        code = code,
-        message = clean(message),
-    }
-end
-
-local function integer(value)
-    return type(value) == 'number' and value >= 0 and value < 2147483647 and value == math.floor(value)
+---@return string[]
+local function arguments(context)
+    assert(vim.api.nvim_buf_is_loaded(context.bufnr), 'markdownlint-cli2 requires a loaded buffer')
+    return { '--no-globs', '-' }
 end
 
 -- markdownlint's JavaScript string offsets are UTF-16, not byte offsets.
@@ -111,6 +62,62 @@ local function byte_column(line, units)
         return nil
     end
     return offset
+end
+
+local function clean(text)
+    text = vim.trim(text:gsub('[%z\1-\31\127]', ' '):gsub('%s+', ' '))
+    if #text <= MAX_MESSAGE_BYTES then
+        return text
+    end
+    local stop = MAX_MESSAGE_BYTES - 3
+    while stop > 0 do
+        local byte = text:byte(stop + 1)
+        if not byte or byte < 128 or byte >= 192 then
+            break
+        end
+        stop = stop - 1
+    end
+    return text:sub(1, stop) .. '...'
+end
+
+local function integer(value)
+    return type(value) == 'number' and value >= 0 and value < 2147483647 and value == math.floor(value)
+end
+
+local function nonempty(value)
+    return type(value) == 'string' and value ~= '' and value or nil
+end
+
+local function root(context)
+    local cwd = nonempty(context.cwd) or vim.fn.getcwd()
+    local file = nonempty(context.filename)
+    if file then
+        if file:sub(1, 1) ~= '/' then
+            file = fs.joinpath(cwd, file)
+        end
+        return fs.root(file, CONFIG_MARKERS)
+            or nonempty(context.root)
+            or fs.root(file, ROOT_MARKERS)
+            or fs.dirname(file)
+            or cwd
+    end
+    return nonempty(context.root) or cwd
+end
+
+---@param context LintContext
+---@param code string
+---@param message string
+---@return vim.Diagnostic.Set
+local function status(context, code, message)
+    return {
+        bufnr = context.bufnr,
+        code = code,
+        col = 0,
+        lnum = 0,
+        message = clean(message),
+        severity = severity.WARN,
+        source = SOURCE,
+    }
 end
 
 ---@param output string
@@ -171,17 +178,17 @@ local function parse(output, context)
             local level = item.severity == 'warning' and severity.WARN or severity.ERROR
             local finding = {
                 bufnr = context.bufnr,
-                lnum = row,
-                col = col,
-                source = SOURCE,
                 code = code and clean(code) or nil,
+                col = col,
+                lnum = row,
                 message = clean(message),
                 severity = level,
+                source = SOURCE,
                 user_data = {
+                    fix_available = type(item.fixInfo) == 'table',
+                    reported_line = integer(item.lineNumber) and item.lineNumber or nil,
                     rule_name = nonempty(names[2]) and clean(names[2]) or nil,
                     url = nonempty(item.ruleInformation) and clean(item.ruleInformation) or nil,
-                    reported_line = integer(item.lineNumber) and item.lineNumber or nil,
-                    fix_available = type(item.fixInfo) == 'table',
                 },
             }
             if finish then
@@ -203,19 +210,12 @@ local function parse(output, context)
     return diagnostics
 end
 
----@param context LintContext
----@return string[]
-local function arguments(context)
-    assert(vim.api.nvim_buf_is_loaded(context.bufnr), 'markdownlint-cli2 requires a loaded buffer')
-    return { '--no-globs', '-' }
-end
-
 ---@type Linter
 return {
-    cmd = 'markdownlint-cli2',
-    args = arguments,
     append_fname = false,
+    args = arguments,
     automatic = true,
+    cmd = 'markdownlint-cli2',
     cwd = root,
     env = { NO_COLOR = '1' },
     exit_codes = { 0, 1 },

@@ -927,8 +927,8 @@ local SEVERITIES = {
     [4] = vim.diagnostic.severity.ERROR,
     [5] = vim.diagnostic.severity.ERROR,
 }
-local uv = vim.uv
 local fs = vim.fs
+local uv = vim.uv
 ---@type string?
 local directory
 ---@type string?
@@ -1165,10 +1165,10 @@ end
 
 ---@type Linter
 return {
-    cmd = 'perlcritic',
-    args = arguments,
     append_fname = false,
+    args = arguments,
     automatic = true,
+    cmd = 'perlcritic',
     cwd = root,
     env = {
         NO_COLOR = '1',

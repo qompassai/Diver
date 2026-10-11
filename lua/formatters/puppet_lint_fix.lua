@@ -19,12 +19,12 @@ end
 
 ---@type FormatterSpec
 return {
-    cmd = 'puppet-lint',
+    allow_empty = false,
     args = build_args,
+    automatic = true,
+    cmd = 'puppet-lint',
+    exit_codes = { 0 },
+    extension = 'pp',
     mode = 'tempfile',
     output = 'file',
-    exit_codes = { 0 },
-    automatic = true,
-    allow_empty = false,
-    extension = 'pp',
 }

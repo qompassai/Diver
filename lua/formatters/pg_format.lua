@@ -15,8 +15,8 @@
 --- Upstream case defaults are kept deliberately: keywords uppercase,
 --- type names lowercase, identifiers and functions unchanged.
 
-local PG_FORMAT_WIDTH = 100
 local PG_FORMAT_INDENT = 4
+local PG_FORMAT_WIDTH = 100
 
 ---@class PgFormatConfig
 ---@field width integer Wrap queries at this column count (tiger-style: 100).
@@ -59,17 +59,17 @@ end
 
 ---@type FormatterSpec
 return {
-    cmd = 'pg_format',
+    allow_empty = false,
     args = build_args,
+    automatic = true,
+    cmd = 'pg_format',
+    cwd = nil,
+    decode = nil,
+    env = {},
+    exit_codes = { 0 },
+    extension = nil,
     mode = 'stdin',
     output = 'stdout',
-    cwd = nil,
-    env = {},
-    root_markers = { '.git' },
-    exit_codes = { 0 },
-    allow_empty = false,
-    automatic = true,
-    extension = nil,
-    decode = nil,
     pre_transform = nil,
+    root_markers = { '.git' },
 }

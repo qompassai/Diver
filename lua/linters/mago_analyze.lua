@@ -64,6 +64,23 @@ local severities = {
     warning = WARN,
 }
 
+---@param context LintContext
+---@return string[]
+local function args(context)
+    assert(context.filename ~= '')
+
+    return {
+        'analyze',
+
+        '--stdin-input',
+
+        '--reporting-format',
+        'json',
+
+        context.filename,
+    }
+end
+
 ---@param value integer|number|string|nil
 ---@param fallback integer
 ---@return integer
@@ -76,29 +93,6 @@ local function integer(value, fallback)
     end
 
     return floor(parsed)
-end
-
----@param level string|nil
----@return integer
-local function severity(level)
-    if type(level) ~= 'string' then
-        return WARN
-    end
-
-    return severities[level:lower()] or WARN
-end
-
----@param message string
----@return string
-local function normalize_message(message)
-    message = message:gsub('\r\n', '\n')
-    message = message:gsub('\r', '\n')
-
-    if #message > MESSAGE_LENGTH_MAX then
-        return message:sub(1, MESSAGE_LENGTH_MAX) .. '\n[message truncated]'
-    end
-
-    return message
 end
 
 ---@param path string
@@ -116,6 +110,19 @@ local function is_absolute_path(path)
 
     local separator = path:sub(3, 3)
     return first:match('%a') ~= nil and path:sub(2, 2) == ':' and (separator == '/' or separator == '\\')
+end
+
+---@param message string
+---@return string
+local function normalize_message(message)
+    message = message:gsub('\r\n', '\n')
+    message = message:gsub('\r', '\n')
+
+    if #message > MESSAGE_LENGTH_MAX then
+        return message:sub(1, MESSAGE_LENGTH_MAX) .. '\n[message truncated]'
+    end
+
+    return message
 end
 
 ---@param path string
@@ -143,6 +150,33 @@ local function belongs_to_buffer(path, filename, root)
     end
 
     return normalize_path(path, root) == filename
+end
+
+---@param message string
+---@return vim.Diagnostic.Set[]
+local function parser_diagnostic(message)
+    return {
+        {
+            code = 'parser',
+            col = 0,
+            end_col = 1,
+            end_lnum = 0,
+            lnum = 0,
+            message = normalize_message(message),
+            severity = ERROR,
+            source = 'mago_analyze',
+        },
+    }
+end
+
+---@param level string|nil
+---@return integer
+local function severity(level)
+    if type(level) ~= 'string' then
+        return WARN
+    end
+
+    return severities[level:lower()] or WARN
 end
 
 ---@param violation MagoAnalyzeViolation
@@ -197,14 +231,14 @@ local function diagnostic_from_violation(violation, filename, root)
     end
 
     return {
-        lnum = start_line,
-        end_lnum = end_line,
+        code = code,
         col = start_column,
         end_col = end_column,
+        end_lnum = end_line,
+        lnum = start_line,
         message = message,
         severity = severity(violation.severity or violation.level),
         source = 'mago_analyze',
-        code = code,
         user_data = {
             analyzer = 'mago',
         },
@@ -254,23 +288,6 @@ local function violations_from_json(decoded)
     return {}
 end
 
----@param message string
----@return vim.Diagnostic.Set[]
-local function parser_diagnostic(message)
-    return {
-        {
-            lnum = 0,
-            end_lnum = 0,
-            col = 0,
-            end_col = 1,
-            message = normalize_message(message),
-            severity = ERROR,
-            source = 'mago_analyze',
-            code = 'parser',
-        },
-    }
-end
-
 ---@param output string
 ---@param context LintContext|integer
 ---@return vim.Diagnostic.Set[]
@@ -316,38 +333,18 @@ local function parse(output, context)
     return diagnostics
 end
 
----@param context LintContext
----@return string[]
-local function args(context)
-    assert(context.filename ~= '')
-
-    return {
-        'analyze',
-
-        '--stdin-input',
-
-        '--reporting-format',
-        'json',
-
-        context.filename,
-    }
-end
-
 return ---@type Linter
 {
+    append_fname = false,
+    args = args,
     automatic = false,
     cmd = 'mago',
-    args = args,
-    append_fname = false,
-
     cwd = function(context)
         assert(context.root ~= '')
         return context.root
     end,
-
     ignore_exitcode = true,
     parser = parse,
-
     root_markers = {
         'mago.toml',
         'mago.yaml',
@@ -363,7 +360,6 @@ return ---@type Linter
         'phpunit.xml.dist',
         '.git',
     },
-
     stdin = true,
     stream = 'stdout',
     timeout = 30000,

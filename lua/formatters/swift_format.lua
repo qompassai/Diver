@@ -13,24 +13,24 @@
 -- for the buffer, the same way it would for a real file.
 ---@type FormatterSpec
 return {
-    cmd = 'swift-format',
+    allow_empty = false,
     args = function(context)
         return {
             '--assume-filename',
             context.filename ~= '' and context.filename or 'buffer.swift',
         }
     end,
+    automatic = true,
+    cmd = 'swift-format',
+    cwd = nil,
+    decode = nil,
+    description = 'Apple Swift formatter; no paths means stdin in, formatted stdout out',
+    env = {},
+    exit_codes = { 0 },
+    extension = nil,
+    filetypes = { 'swift' },
     mode = 'stdin',
     output = 'stdout',
-    cwd = nil,
-    env = {},
-    root_markers = {},
-    exit_codes = { 0 },
-    allow_empty = false,
-    automatic = true,
-    extension = nil,
-    decode = nil,
     pre_transform = nil,
-    filetypes = { 'swift' },
-    description = 'Apple Swift formatter; no paths means stdin in, formatted stdout out',
+    root_markers = {},
 }

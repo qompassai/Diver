@@ -783,10 +783,10 @@ end
 
 ---@type Linter
 return {
-    cmd = TOOLING.php,
-    args = arguments,
     append_fname = false,
+    args = arguments,
     automatic = true,
+    cmd = TOOLING.php,
     cwd = root,
     env = {
         NO_COLOR = '1',

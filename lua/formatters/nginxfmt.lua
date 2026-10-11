@@ -10,12 +10,12 @@
 
 ---@type FormatterSpec
 return {
-    cmd = 'nginxfmt',
+    allow_empty = false,
     args = { '-' },
+    automatic = true,
+    cmd = 'nginxfmt',
+    exit_codes = { 0 },
+    extension = 'conf',
     mode = 'stdin',
     output = 'stdout',
-    exit_codes = { 0 },
-    automatic = true,
-    allow_empty = false,
-    extension = 'conf',
 }

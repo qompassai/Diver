@@ -8,10 +8,10 @@ if not ok then
 end
 ---@type Linter
 return {
-    cmd = journal.config.env_executable,
-    args = journal.arguments,
     append_fname = false,
+    args = journal.arguments,
     automatic = journal.config.automatic_lint,
+    cmd = journal.config.env_executable,
     cwd = journal.cwd,
     env = {}, -- env -i in argv defines the complete child environment.
     exit_codes = { 0, 1 }, -- hledger check returns 1 for data errors.

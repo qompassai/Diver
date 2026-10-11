@@ -24,17 +24,17 @@ end
 
 ---@type FormatterSpec
 return {
-    cmd = 'mix',
+    allow_empty = false,
     args = { 'format', '-' },
+    automatic = true,
+    cmd = 'mix',
+    cwd = working_directory,
+    decode = nil,
+    env = {},
+    exit_codes = { 0 },
+    extension = 'ex',
     mode = 'stdin',
     output = 'stdout',
-    cwd = working_directory,
-    env = {},
-    root_markers = { 'mix.exs', '.git' },
-    exit_codes = { 0 },
-    allow_empty = false,
-    automatic = true,
-    extension = 'ex',
-    decode = nil,
     pre_transform = nil,
+    root_markers = { 'mix.exs', '.git' },
 }

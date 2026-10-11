@@ -481,8 +481,8 @@ local function parse(output, context)
     return diagnostics
 end
 
-M.args = arguments
 M.append_fname = false
+M.args = arguments
 M.automatic = false
 M.cwd = root
 M.env = {

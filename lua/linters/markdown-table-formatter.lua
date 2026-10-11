@@ -45,26 +45,26 @@ local function parse(output, context)
     local lnum, col = first_table(context)
     return {
         {
-            lnum = lnum,
-            end_lnum = lnum,
+            code = 'table-format',
             col = col,
             end_col = col + 1,
+            end_lnum = lnum,
+            lnum = lnum,
             message = 'Markdown table formatting differs from markdown-table-formatter output',
             severity = vim.diagnostic.severity.WARN,
             source = 'markdown-table-formatter',
-            code = 'table-format',
         },
     }
 end
 
 return ---@type Linter
 {
-    cmd = 'markdown-table-formatter',
+    append_fname = true,
     args = {
         '--check',
     },
-    append_fname = true,
     automatic = false,
+    cmd = 'markdown-table-formatter',
     cwd = function(context)
         return vim.fs.dirname(context.filename) or context.cwd
     end,

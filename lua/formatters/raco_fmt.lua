@@ -13,17 +13,17 @@
 
 ---@type FormatterSpec
 return {
-    cmd = 'raco',
+    allow_empty = false,
     args = { 'fmt', '--width', '100' },
+    automatic = true,
+    cmd = 'raco',
+    cwd = nil,
+    decode = nil,
+    env = {},
+    exit_codes = { 0 },
+    extension = 'rkt',
     mode = 'stdin',
     output = 'stdout',
-    cwd = nil,
-    env = {},
-    root_markers = { 'info.rkt', '.git' },
-    exit_codes = { 0 },
-    allow_empty = false,
-    automatic = true,
-    extension = 'rkt',
-    decode = nil,
     pre_transform = nil,
+    root_markers = { 'info.rkt', '.git' },
 }

@@ -4,9 +4,6 @@
 -- SPDX-License-Identifier: Apache-2.0
 -- #################################################################
 return {
-    name = 'djlint',
-    cmd = 'djlint',
-    stdin = true,
     append_fname = false,
     args = function(context)
         return {
@@ -17,11 +14,14 @@ return {
             '-',
         }
     end,
-    stream = 'stderr',
-    ignore_exitcode = true,
+    cmd = 'djlint',
     errorformat = {
         '%f:%l:%c: %m',
         '%f:%l: %m',
         '%-G%.%#',
     },
+    ignore_exitcode = true,
+    name = 'djlint',
+    stdin = true,
+    stream = 'stderr',
 } --[[@as vim.lint.Config]]

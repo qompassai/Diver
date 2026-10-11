@@ -12,6 +12,17 @@
 --- came from (so .editorconfig rules still apply).
 
 ---@param context FormatterContext
+---@return string[]
+local function build_args(context)
+    local name = context.filename ~= '' and context.filename or 'file.kt'
+    return {
+        '-F',
+        '--stdin',
+        '--stdin-path=' .. name,
+    }
+end
+
+---@param context FormatterContext
 ---@return string
 local function working_directory(context)
     if context.filename ~= '' then
@@ -21,17 +32,6 @@ local function working_directory(context)
         end
     end
     return context.root
-end
-
----@param context FormatterContext
----@return string[]
-local function build_args(context)
-    local name = context.filename ~= '' and context.filename or 'file.kt'
-    return {
-        '-F',
-        '--stdin',
-        '--stdin-path=' .. name,
-    }
 end
 
 ---@type FormatterSpec

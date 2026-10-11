@@ -17,13 +17,13 @@
 --
 
 local diagnostic = vim.diagnostic
-local ERROR = diagnostic.severity.ERROR
-local WARN = diagnostic.severity.WARN
 local DIAGNOSTICS_MAX = 256
+local ERROR = diagnostic.severity.ERROR
 local LINE_BYTES_MAX = 8192
 local MESSAGE_BYTES_MAX = 2048
 local OUTPUT_BYTES_MAX = 8 * 1024 * 1024
 local SOURCE = 'commitlint'
+local WARN = diagnostic.severity.WARN
 
 local ROOTMARKERS = {
     '.commitlintrc',
@@ -231,10 +231,10 @@ end
 
 ---@type Linter
 return {
+    append_fname = false,
     args = {
         '--color=false',
     },
-    append_fname = false,
     automatic = false,
     cmd = 'commitlint',
     cwd = project_root,

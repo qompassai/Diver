@@ -3,9 +3,6 @@
 -- Copyright (C) 2025 Qompass AI, All rights reserved
 -- ----------------------------------------
 return {
-    cmd = 'nvcc',
-    stdin = false,
-    stream = 'stderr',
     args = {
         '-c',
         '-lineinfo',
@@ -14,6 +11,7 @@ return {
         '-o',
         (vim.fn.has('win32') == 1) and 'NUL' or '/dev/null',
     },
+    cmd = 'nvcc',
     ignore_exitcode = true,
     parser = function(output, bufnr)
         local diagnostics = {}
@@ -49,4 +47,6 @@ return {
         end
         return diagnostics
     end,
+    stdin = false,
+    stream = 'stderr',
 }

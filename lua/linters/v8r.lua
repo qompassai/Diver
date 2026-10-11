@@ -14,14 +14,14 @@
 --
 local diagnostic = vim.diagnostic
 local fs = vim.fs
-local uv = vim.uv
 local json = vim.json
+local uv = vim.uv
 
-local SOURCE = 'v8r'
 local MAX_DIAGNOSTICS = 512
-local MAX_OUTPUT_BYTES = 16 * 1024 * 1024
 local MAX_MESSAGE_BYTES = 4096
+local MAX_OUTPUT_BYTES = 16 * 1024 * 1024
 local MAX_RESULTS = 1024
+local SOURCE = 'v8r'
 local CONFIG_MARKERS = {
     '.v8rrc',
     '.v8rrc.json',
@@ -363,8 +363,8 @@ end
 
 ---@type Linter
 return {
-    args = arguments,
     append_fname = false,
+    args = arguments,
     automatic = true,
     cmd = 'v8r',
     cwd = project_root,

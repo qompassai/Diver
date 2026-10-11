@@ -202,11 +202,11 @@ end
 
 return ---@type Linter
 {
-    cmd = 'pylint',
-
-    args = args,
 
     append_fname = false,
+
+    args = args,
+    cmd = 'pylint',
 
     cwd = cwd,
 

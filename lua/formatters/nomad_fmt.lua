@@ -14,12 +14,12 @@
 
 ---@type FormatterSpec
 return {
-    cmd = 'nomad',
+    allow_empty = false,
     args = { 'fmt', '-' },
+    automatic = true,
+    cmd = 'nomad',
+    exit_codes = { 0 },
+    extension = 'nomad',
     mode = 'stdin',
     output = 'stdout',
-    exit_codes = { 0 },
-    automatic = true,
-    allow_empty = false,
-    extension = 'nomad',
 }

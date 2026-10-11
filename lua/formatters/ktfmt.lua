@@ -19,6 +19,17 @@
 
 local fs = vim.fs
 
+local CONFIG = {
+    max_width = 100,
+    block_indent = 4,
+    continuation_indent = 4,
+    trailing_comma_strategy = 'COMPLETE', -- 'NONE' | 'ONLY_ADD' | 'COMPLETE'
+    remove_unused_imports = false,
+    preserve_lambda_breaks = true,
+    debugging_print_ops = false, -- Must remain false: stdout is source only.
+    enable_editorconfig = true,
+}
+
 local KTFMT_DIR = fs.joinpath(vim.fn.stdpath('data'), 'formatters', 'ktfmt')
 
 local TOOLING = {
@@ -30,17 +41,6 @@ local TOOLING = {
     initial_heap_mib = 32,
     maximum_heap_mib = 512, -- JVM heap cap, not a total-process memory limit.
     active_processors = 2,
-}
-
-local CONFIG = {
-    max_width = 100,
-    block_indent = 4,
-    continuation_indent = 4,
-    trailing_comma_strategy = 'COMPLETE', -- 'NONE' | 'ONLY_ADD' | 'COMPLETE'
-    remove_unused_imports = false,
-    preserve_lambda_breaks = true,
-    debugging_print_ops = false, -- Must remain false: stdout is source only.
-    enable_editorconfig = true,
 }
 
 ---@param context FormatterContext

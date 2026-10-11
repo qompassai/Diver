@@ -45,21 +45,17 @@ local state_file = fs.joinpath(state_dir, 'linter-updates.json')
 ---@field parser? fun(stdout: string, stderr: string): string?
 
 ---@class LinterUpdateSpec
----@field manager LinterPackageManager
----@field package string
----@field executable? string
----@field module? string
----@field enabled? boolean
----@field locked? boolean
 ---@field current? LinterUpdateCommand
----@field latest? LinterUpdateCommand
+---@field enabled? boolean
+---@field executable? string
 ---@field install? string[]
----@field update? string[]
+---@field latest? LinterUpdateCommand
+---@field locked? boolean
+---@field manager LinterPackageManager
+---@field module? string
+---@field package string
 ---@field remove? string[]
-
----@class ManagedLinter
----@field cmd? string|string[]
----@field update? LinterUpdateSpec
+---@field update? string[]
 
 ---@class LinterUpdateState
 ---@field available boolean
@@ -69,6 +65,10 @@ local state_file = fs.joinpath(state_dir, 'linter-updates.json')
 ---@field latest? string
 ---@field manager LinterPackageManager
 ---@field package string
+
+---@class ManagedLinter
+---@field cmd? string|string[]
+---@field update? LinterUpdateSpec
 
 ---@class SystemResult
 ---@field code integer
@@ -86,132 +86,6 @@ local state = {}
 ---@type table<string, ManagedLinter>
 local linters = {}
 
----@param value string
----@return string
-local function trim(value)
-    return (value:gsub('^%s+', ''):gsub('%s+$', ''))
-end
-
----@param value string
----@return string?
-local function first_version(value)
-    if value == '' then
-        return nil
-    end
-    local found = value:match('[vV]?([0-9]+%.[0-9]+%.[0-9]+[%w%.%+%-]*)')
-    if found ~= nil and found ~= '' then
-        return found
-    end
-    found = value:match('[vV]?([0-9]+%.[0-9]+[%w%.%+%-]*)')
-    if found ~= nil and found ~= '' then
-        return found
-    end
-    return nil
-end
----@param value string
----@return string
-local function normalize_version(value)
-    local normalized = trim(value)
-    normalized = normalized:gsub('^[vV]', '')
-    return normalized
-end
----@param current string
----@param latest string
----@return boolean
-local function newer(current, latest)
-    local normalized_current = normalize_version(current)
-    local normalized_latest = normalize_version(latest)
-    if normalized_current == '' or normalized_latest == '' then
-        return false
-    end
-    local current_version = version.parse(normalized_current, {
-        strict = false,
-    })
-    local latest_version = version.parse(normalized_latest, {
-        strict = false,
-    })
-    if current_version == nil or latest_version == nil then
-        return normalized_current ~= normalized_latest
-    end
-    return version.gt(latest_version, current_version)
-end
----@param path string
----@return string?
-local function read_file(path)
-    local handle = io.open(path, 'rb')
-
-    if handle == nil then
-        return nil
-    end
-    local data = handle:read('*a')
-    handle:close()
-    if type(data) ~= 'string' then
-        return nil
-    end
-    if #data > OUTPUT_LENGTH_MAX then
-        return nil
-    end
-    return data
-end
----@param path string
----@param data string
----@return boolean
-local function write_file(path, data)
-    assert(path ~= '')
-    if #data > OUTPUT_LENGTH_MAX then
-        return false
-    end
-    local directory = fs.dirname(path)
-    if type(directory) ~= 'string' or directory == '' then
-        return false
-    end
-    fn.mkdir(directory, 'p')
-
-    local temporary = path .. '.tmp'
-
-    local handle = io.open(temporary, 'wb')
-    if handle == nil then
-        return false
-    end
-    local result = handle:write(data)
-    handle:close()
-    if result == nil then
-        os.remove(temporary)
-
-        return false
-    end
-    local renamed = os.rename(temporary, path)
-    if renamed == nil then
-        os.remove(temporary)
-
-        return false
-    end
-    return true
-end
-local function load_state()
-    local contents = read_file(state_file)
-
-    if contents == nil or contents == '' then
-        return
-    end
-
-    local ok, decoded = pcall(json.decode, contents)
-
-    if not ok or type(decoded) ~= 'table' then
-        return
-    end
-
-    ---@cast decoded table<string, LinterUpdateState>
-
-    state = decoded
-end
-local function save_state()
-    local ok, encoded = pcall(json.encode, state)
-    if not ok or type(encoded) ~= 'string' then
-        return
-    end
-    write_file(state_file, encoded)
-end
 ---@param command string[]
 ---@param timeout integer
 ---@param callback fun(result: SystemResult)
@@ -262,6 +136,7 @@ local function execute(command, timeout, callback)
         })
     end)
 end
+
 ---@param spec LinterUpdateSpec
 ---@return string
 local function executable(spec)
@@ -271,6 +146,7 @@ local function executable(spec)
     end
     return spec.package
 end
+
 ---@param spec LinterUpdateSpec
 ---@return string[]
 local function current_command(spec)
@@ -283,27 +159,99 @@ local function current_command(spec)
         '--version',
     }
 end
----@param spec LinterUpdateSpec
----@param stdout string
----@param stderr string
+
+---@param value string
 ---@return string?
-local function parse_current(spec, stdout, stderr)
-    local current = spec.current
-    if current ~= nil and current.parser ~= nil then
-        local parsed = current.parser(stdout, stderr)
-        if type(parsed) == 'string' and parsed ~= '' then
-            return parsed
-        end
+local function first_version(value)
+    if value == '' then
         return nil
     end
-    local source
-    if stdout ~= '' then
-        source = stdout
-    else
-        source = stderr
+    local found = value:match('[vV]?([0-9]+%.[0-9]+%.[0-9]+[%w%.%+%-]*)')
+    if found ~= nil and found ~= '' then
+        return found
     end
-    return first_version(source)
+    found = value:match('[vV]?([0-9]+%.[0-9]+[%w%.%+%-]*)')
+    if found ~= nil and found ~= '' then
+        return found
+    end
+    return nil
 end
+
+---@param name string
+---@return ManagedLinter?
+local function get_linter(name)
+    return linters[name]
+end
+
+---@param name string
+---@return LinterUpdateSpec?
+local function get_spec(name)
+    local linter = get_linter(name)
+
+    if linter == nil then
+        return nil
+    end
+
+    return linter.update
+end
+
+---@param spec LinterUpdateSpec
+---@return string[]
+local function install_command(spec)
+    if spec.install ~= nil then
+        return spec.install
+    end
+
+    if spec.manager == 'cargo' then
+        local command = {
+            'cargo',
+            'install',
+            spec.package,
+        }
+
+        if spec.locked ~= false then
+            command[#command + 1] = '--locked'
+        end
+
+        return command
+    end
+
+    if spec.manager == 'gem' then
+        return {
+            'gem',
+            'install',
+            spec.package,
+        }
+    end
+
+    if spec.manager == 'go' then
+        return {
+            'go',
+            'install',
+            spec.package .. '@latest',
+        }
+    end
+
+    if spec.manager == 'npm' then
+        return {
+            'npm',
+            'install',
+            '--global',
+            spec.package .. '@latest',
+        }
+    end
+
+    if spec.manager == 'pipx' then
+        return {
+            'pipx',
+            'install',
+            spec.package,
+        }
+    end
+
+    error('Custom package requires `install` command')
+end
+
 ---@param spec LinterUpdateSpec
 ---@return string[]
 local function latest_command(spec)
@@ -312,6 +260,7 @@ local function latest_command(spec)
     if latest ~= nil then
         return latest.cmd
     end
+
     if spec.manager == 'cargo' then
         return {
             'cargo',
@@ -319,26 +268,6 @@ local function latest_command(spec)
             spec.package,
             '--color',
             'never',
-        }
-    end
-    if spec.manager == 'npm' then
-        return {
-            'npm',
-            'view',
-            spec.package,
-            'version',
-            '--json',
-        }
-    end
-
-    if spec.manager == 'pipx' then
-        return {
-            'python',
-            '-m',
-            'pip',
-            'index',
-            'versions',
-            spec.package,
         }
     end
 
@@ -366,7 +295,214 @@ local function latest_command(spec)
         }
     end
 
+    if spec.manager == 'npm' then
+        return {
+            'npm',
+            'view',
+            spec.package,
+            'version',
+            '--json',
+        }
+    end
+
+    if spec.manager == 'pipx' then
+        return {
+            'python',
+            '-m',
+            'pip',
+            'index',
+            'versions',
+            spec.package,
+        }
+    end
+
     error('Custom update spec requires `latest.cmd`')
+end
+
+---@return string[]
+local function managed_names()
+    local names = {}
+
+    for name, linter in pairs(linters) do
+        if linter.update ~= nil then
+            names[#names + 1] = name
+        end
+    end
+
+    sort(names)
+
+    return names
+end
+
+---@return string[]
+local function missing_names()
+    local names = {}
+
+    for name, entry in pairs(state) do
+        if entry.error == 'not installed' then
+            names[#names + 1] = name
+        end
+    end
+
+    sort(names)
+
+    return names
+end
+
+---@return string[]
+local function outdated_names()
+    local names = {}
+
+    for name, entry in pairs(state) do
+        if entry.available then
+            names[#names + 1] = name
+        end
+    end
+
+    sort(names)
+
+    return names
+end
+
+---@param spec LinterUpdateSpec
+---@param stdout string
+---@param stderr string
+---@return string?
+local function parse_current(spec, stdout, stderr)
+    local current = spec.current
+    if current ~= nil and current.parser ~= nil then
+        local parsed = current.parser(stdout, stderr)
+        if type(parsed) == 'string' and parsed ~= '' then
+            return parsed
+        end
+        return nil
+    end
+    local source
+    if stdout ~= '' then
+        source = stdout
+    else
+        source = stderr
+    end
+    return first_version(source)
+end
+
+---@param path string
+---@return string?
+local function read_file(path)
+    local handle = io.open(path, 'rb')
+
+    if handle == nil then
+        return nil
+    end
+    local data = handle:read('*a')
+    handle:close()
+    if type(data) ~= 'string' then
+        return nil
+    end
+    if #data > OUTPUT_LENGTH_MAX then
+        return nil
+    end
+    return data
+end
+
+local function load_state()
+    local contents = read_file(state_file)
+
+    if contents == nil or contents == '' then
+        return
+    end
+
+    local ok, decoded = pcall(json.decode, contents)
+
+    if not ok or type(decoded) ~= 'table' then
+        return
+    end
+
+    ---@cast decoded table<string, LinterUpdateState>
+
+    state = decoded
+end
+
+---@param spec LinterUpdateSpec
+---@return string[]?
+local function remove_command(spec)
+    if spec.remove ~= nil then
+        return spec.remove
+    end
+
+    if spec.manager == 'cargo' then
+        return {
+            'cargo',
+            'uninstall',
+            spec.package,
+        }
+    end
+
+    if spec.manager == 'gem' then
+        return {
+            'gem',
+            'uninstall',
+            spec.package,
+        }
+    end
+
+    if spec.manager == 'go' then
+        return nil
+    end
+
+    if spec.manager == 'npm' then
+        return {
+            'npm',
+            'uninstall',
+            '--global',
+            spec.package,
+        }
+    end
+
+    if spec.manager == 'pipx' then
+        return {
+            'pipx',
+            'uninstall',
+            spec.package,
+        }
+    end
+
+    return nil
+end
+
+---@param value string
+---@return string
+local function trim(value)
+    return (value:gsub('^%s+', ''):gsub('%s+$', ''))
+end
+
+---@param value string
+---@return string
+local function normalize_version(value)
+    local normalized = trim(value)
+    normalized = normalized:gsub('^[vV]', '')
+    return normalized
+end
+
+---@param current string
+---@param latest string
+---@return boolean
+local function newer(current, latest)
+    local normalized_current = normalize_version(current)
+    local normalized_latest = normalize_version(latest)
+    if normalized_current == '' or normalized_latest == '' then
+        return false
+    end
+    local current_version = version.parse(normalized_current, {
+        strict = false,
+    })
+    local latest_version = version.parse(normalized_latest, {
+        strict = false,
+    })
+    if current_version == nil or latest_version == nil then
+        return normalized_current ~= normalized_latest
+    end
+    return version.gt(latest_version, current_version)
 end
 
 ---@param spec LinterUpdateSpec
@@ -398,26 +534,6 @@ local function parse_latest(spec, stdout, stderr)
         end
 
         return nil
-    end
-
-    if spec.manager == 'npm' then
-        local ok, decoded = pcall(json.decode, stdout)
-
-        if ok and type(decoded) == 'string' and decoded ~= '' then
-            return decoded
-        end
-
-        return first_version(stdout)
-    end
-
-    if spec.manager == 'pipx' then
-        local found = stdout:match('Available versions:%s*([%w%.%+%-]+)')
-
-        if type(found) == 'string' and found ~= '' then
-            return found
-        end
-
-        return first_version(stdout)
     end
 
     if spec.manager == 'gem' then
@@ -452,6 +568,26 @@ local function parse_latest(spec, stdout, stderr)
         return normalize_version(value)
     end
 
+    if spec.manager == 'npm' then
+        local ok, decoded = pcall(json.decode, stdout)
+
+        if ok and type(decoded) == 'string' and decoded ~= '' then
+            return decoded
+        end
+
+        return first_version(stdout)
+    end
+
+    if spec.manager == 'pipx' then
+        local found = stdout:match('Available versions:%s*([%w%.%+%-]+)')
+
+        if type(found) == 'string' and found ~= '' then
+            return found
+        end
+
+        return first_version(stdout)
+    end
+
     local source
 
     if stdout ~= '' then
@@ -461,175 +597,6 @@ local function parse_latest(spec, stdout, stderr)
     end
 
     return first_version(source)
-end
-
----@param spec LinterUpdateSpec
----@return string[]
-local function install_command(spec)
-    if spec.install ~= nil then
-        return spec.install
-    end
-
-    if spec.manager == 'cargo' then
-        local command = {
-            'cargo',
-            'install',
-            spec.package,
-        }
-
-        if spec.locked ~= false then
-            command[#command + 1] = '--locked'
-        end
-
-        return command
-    end
-
-    if spec.manager == 'npm' then
-        return {
-            'npm',
-            'install',
-            '--global',
-            spec.package .. '@latest',
-        }
-    end
-
-    if spec.manager == 'pipx' then
-        return {
-            'pipx',
-            'install',
-            spec.package,
-        }
-    end
-    if spec.manager == 'gem' then
-        return {
-            'gem',
-            'install',
-            spec.package,
-        }
-    end
-    if spec.manager == 'go' then
-        return {
-            'go',
-            'install',
-            spec.package .. '@latest',
-        }
-    end
-
-    error('Custom package requires `install` command')
-end
-
----@param spec LinterUpdateSpec
----@return string[]
-local function update_command(spec)
-    if spec.update ~= nil then
-        return spec.update
-    end
-
-    if spec.manager == 'cargo' then
-        local command = {
-            'cargo',
-            'install',
-            spec.package,
-        }
-
-        if spec.locked ~= false then
-            command[#command + 1] = '--locked'
-        end
-
-        return command
-    end
-
-    if spec.manager == 'npm' then
-        return {
-            'npm',
-            'install',
-            '--global',
-            spec.package .. '@latest',
-        }
-    end
-    if spec.manager == 'pipx' then
-        return {
-            'pipx',
-            'upgrade',
-            spec.package,
-        }
-    end
-    if spec.manager == 'gem' then
-        return {
-            'gem',
-            'update',
-            spec.package,
-        }
-    end
-    if spec.manager == 'go' then
-        return {
-            'go',
-            'install',
-            spec.package .. '@latest',
-        }
-    end
-
-    error('Custom package requires `update` command')
-end
-
----@param spec LinterUpdateSpec
----@return string[]?
-local function remove_command(spec)
-    if spec.remove ~= nil then
-        return spec.remove
-    end
-
-    if spec.manager == 'cargo' then
-        return {
-            'cargo',
-            'uninstall',
-            spec.package,
-        }
-    end
-    if spec.manager == 'npm' then
-        return {
-            'npm',
-            'uninstall',
-            '--global',
-            spec.package,
-        }
-    end
-    if spec.manager == 'pipx' then
-        return {
-            'pipx',
-            'uninstall',
-            spec.package,
-        }
-    end
-    if spec.manager == 'gem' then
-        return {
-            'gem',
-            'uninstall',
-            spec.package,
-        }
-    end
-    if spec.manager == 'go' then
-        return nil
-    end
-
-    return nil
-end
----@param name string
----@return ManagedLinter?
-local function get_linter(name)
-    return linters[name]
-end
-
----@param name string
----@return LinterUpdateSpec?
-local function get_spec(name)
-    local linter = get_linter(name)
-
-    if linter == nil then
-        return nil
-    end
-
-    return linter.update
 end
 
 ---@param name string
@@ -753,340 +720,105 @@ local function check_one(name, spec, callback)
     end)
 end
 
+---@param spec LinterUpdateSpec
 ---@return string[]
-local function managed_names()
-    local names = {}
-
-    for name, linter in pairs(linters) do
-        if linter.update ~= nil then
-            names[#names + 1] = name
-        end
+local function update_command(spec)
+    if spec.update ~= nil then
+        return spec.update
     end
 
-    sort(names)
+    if spec.manager == 'cargo' then
+        local command = {
+            'cargo',
+            'install',
+            spec.package,
+        }
 
-    return names
+        if spec.locked ~= false then
+            command[#command + 1] = '--locked'
+        end
+
+        return command
+    end
+
+    if spec.manager == 'gem' then
+        return {
+            'gem',
+            'update',
+            spec.package,
+        }
+    end
+
+    if spec.manager == 'go' then
+        return {
+            'go',
+            'install',
+            spec.package .. '@latest',
+        }
+    end
+
+    if spec.manager == 'npm' then
+        return {
+            'npm',
+            'install',
+            '--global',
+            spec.package .. '@latest',
+        }
+    end
+
+    if spec.manager == 'pipx' then
+        return {
+            'pipx',
+            'upgrade',
+            spec.package,
+        }
+    end
+
+    error('Custom package requires `update` command')
 end
 
----@return string[]
-local function outdated_names()
-    local names = {}
-
-    for name, entry in pairs(state) do
-        if entry.available then
-            names[#names + 1] = name
-        end
+---@param path string
+---@param data string
+---@return boolean
+local function write_file(path, data)
+    assert(path ~= '')
+    if #data > OUTPUT_LENGTH_MAX then
+        return false
     end
+    local directory = fs.dirname(path)
+    if type(directory) ~= 'string' or directory == '' then
+        return false
+    end
+    fn.mkdir(directory, 'p')
 
-    sort(names)
+    local temporary = path .. '.tmp'
 
-    return names
+    local handle = io.open(temporary, 'wb')
+    if handle == nil then
+        return false
+    end
+    local result = handle:write(data)
+    handle:close()
+    if result == nil then
+        os.remove(temporary)
+
+        return false
+    end
+    local renamed = os.rename(temporary, path)
+    if renamed == nil then
+        os.remove(temporary)
+
+        return false
+    end
+    return true
 end
 
----@return string[]
-local function missing_names()
-    local names = {}
-
-    for name, entry in pairs(state) do
-        if entry.error == 'not installed' then
-            names[#names + 1] = name
-        end
-    end
-
-    sort(names)
-
-    return names
-end
-
----@return integer
-function M.count()
-    return #outdated_names()
-end
-
----@return integer
-function M.missing_count()
-    return #missing_names()
-end
-
----@return string
-function M.statusline()
-    local outdated = M.count()
-    local missing = M.missing_count()
-
-    if outdated == 0 and missing == 0 then
-        return ''
-    end
-
-    if outdated > 0 and missing > 0 then
-        return ('L↑%d L!%d'):format(outdated, missing)
-    end
-
-    if outdated > 0 then
-        return ('L↑%d'):format(outdated)
-    end
-
-    return ('L!%d'):format(missing)
-end
-
----@param name string
-function M.install(name)
-    local spec = get_spec(name)
-
-    if spec == nil then
-        vim.notify('No package metadata for linter: ' .. name, vim.log.levels.WARN)
-
+local function save_state()
+    local ok, encoded = pcall(json.encode, state)
+    if not ok or type(encoded) ~= 'string' then
         return
     end
-
-    if fn.executable(executable(spec)) == 1 then
-        vim.notify(name .. ' is already installed', vim.log.levels.INFO)
-
-        return
-    end
-
-    local ok, command = pcall(install_command, spec)
-
-    if not ok or type(command) ~= 'table' then
-        vim.notify(tostring(command), vim.log.levels.ERROR)
-
-        return
-    end
-
-    ---@cast command string[]
-
-    vim.ui.select({
-        'Install',
-        'Cancel',
-    }, {
-        prompt = ('Install %s using %s?'):format(name, spec.manager),
-    }, function(choice)
-        if choice ~= 'Install' then
-            return
-        end
-
-        execute(command, INSTALL_TIMEOUT_MS, function(result)
-            if result.code ~= 0 then
-                local message = result.stderr ~= '' and result.stderr or ('Failed to install ' .. name)
-
-                vim.notify(message, vim.log.levels.ERROR)
-
-                return
-            end
-
-            vim.notify(name .. ' installed', vim.log.levels.INFO)
-
-            M.check_one(name)
-        end)
-    end)
-end
-
----@param name string
-function M.update(name)
-    local spec = get_spec(name)
-
-    if spec == nil then
-        vim.notify('No package metadata for linter: ' .. name, vim.log.levels.WARN)
-
-        return
-    end
-
-    if fn.executable(executable(spec)) ~= 1 then
-        M.install(name)
-
-        return
-    end
-
-    local ok, command = pcall(update_command, spec)
-
-    if not ok or type(command) ~= 'table' then
-        vim.notify(tostring(command), vim.log.levels.ERROR)
-
-        return
-    end
-
-    ---@cast command string[]
-
-    local entry = state[name]
-
-    local current = '?'
-    local latest = '?'
-
-    if entry ~= nil then
-        if type(entry.current) == 'string' and entry.current ~= '' then
-            current = entry.current
-        end
-
-        if type(entry.latest) == 'string' and entry.latest ~= '' then
-            latest = entry.latest
-        end
-    end
-
-    vim.ui.select({
-        'Update',
-        'Cancel',
-    }, {
-        prompt = ('%s %s → %s using %s?'):format(name, current, latest, spec.manager),
-    }, function(choice)
-        if choice ~= 'Update' then
-            return
-        end
-
-        execute(command, INSTALL_TIMEOUT_MS, function(result)
-            if result.code ~= 0 then
-                local message = result.stderr ~= '' and result.stderr or ('Failed to update ' .. name)
-
-                vim.notify(message, vim.log.levels.ERROR)
-
-                return
-            end
-
-            vim.notify(name .. ' updated', vim.log.levels.INFO)
-
-            M.check_one(name)
-        end)
-    end)
-end
-
----@param name string
-function M.remove(name)
-    local spec = get_spec(name)
-
-    if spec == nil then
-        vim.notify('No package metadata for linter: ' .. name, vim.log.levels.WARN)
-
-        return
-    end
-
-    if fn.executable(executable(spec)) ~= 1 then
-        vim.notify(name .. ' is not installed', vim.log.levels.INFO)
-
-        return
-    end
-
-    local command = remove_command(spec)
-
-    if command == nil then
-        vim.notify(
-            ('%s does not provide a safe ' .. 'package-aware remove operation ' .. 'for %s'):format(spec.manager, name),
-            vim.log.levels.WARN
-        )
-
-        return
-    end
-
-    vim.ui.select({
-        'Remove',
-        'Cancel',
-    }, {
-        prompt = ('Remove %s using %s?'):format(name, spec.manager),
-    }, function(choice)
-        if choice ~= 'Remove' then
-            return
-        end
-
-        execute(command, INSTALL_TIMEOUT_MS, function(result)
-            if result.code ~= 0 then
-                local message = result.stderr ~= '' and result.stderr or ('Failed to remove ' .. name)
-
-                vim.notify(message, vim.log.levels.ERROR)
-
-                return
-            end
-
-            state[name] = {
-                available = false,
-                checked_at = os.time(),
-                manager = spec.manager,
-                package = spec.package,
-                error = 'not installed',
-            }
-
-            save_state()
-
-            vim.notify(name .. ' removed', vim.log.levels.INFO)
-        end)
-    end)
-end
-
----@param name string
-function M.manage(name)
-    local spec = get_spec(name)
-
-    if spec == nil then
-        vim.notify('No package metadata for linter: ' .. name, vim.log.levels.WARN)
-
-        return
-    end
-
-    local installed = fn.executable(executable(spec)) == 1
-
-    if not installed then
-        M.install(name)
-
-        return
-    end
-
-    local choices = {
-        'Check',
-        'Update',
-    }
-
-    if remove_command(spec) ~= nil then
-        choices[#choices + 1] = 'Remove'
-    end
-
-    choices[#choices + 1] = 'Cancel'
-
-    vim.ui.select(choices, {
-        prompt = ('%s [%s]'):format(name, spec.manager),
-    }, function(choice)
-        if choice == 'Check' then
-            M.check_one(name)
-        elseif choice == 'Update' then
-            M.update(name)
-        elseif choice == 'Remove' then
-            M.remove(name)
-        end
-    end)
-end
-
----@param name string
-function M.check_one(name)
-    local spec = get_spec(name)
-
-    if spec == nil then
-        vim.notify('No update metadata for linter: ' .. name, vim.log.levels.WARN)
-
-        return
-    end
-
-    check_one(name, spec, function()
-        save_state()
-
-        local entry = state[name]
-
-        if entry == nil then
-            return
-        end
-
-        if entry.error ~= nil then
-            vim.notify(('%s: %s'):format(name, entry.error), vim.log.levels.WARN)
-
-            return
-        end
-
-        if entry.available then
-            local current = entry.current or '?'
-
-            local latest = entry.latest or '?'
-
-            vim.notify(('%s update available: ' .. '%s → %s'):format(name, current, latest), vim.log.levels.INFO)
-
-            return
-        end
-
-        vim.notify(('%s is current (%s)'):format(name, entry.current or '?'), vim.log.levels.INFO)
-    end)
+    write_file(state_file, encoded)
 end
 
 ---@param force? boolean
@@ -1171,6 +903,210 @@ function M.check(force)
     start_next()
 end
 
+---@param name string
+function M.check_one(name)
+    local spec = get_spec(name)
+
+    if spec == nil then
+        vim.notify('No update metadata for linter: ' .. name, vim.log.levels.WARN)
+
+        return
+    end
+
+    check_one(name, spec, function()
+        save_state()
+
+        local entry = state[name]
+
+        if entry == nil then
+            return
+        end
+
+        if entry.error ~= nil then
+            vim.notify(('%s: %s'):format(name, entry.error), vim.log.levels.WARN)
+
+            return
+        end
+
+        if entry.available then
+            local current = entry.current or '?'
+
+            local latest = entry.latest or '?'
+
+            vim.notify(('%s update available: ' .. '%s → %s'):format(name, current, latest), vim.log.levels.INFO)
+
+            return
+        end
+
+        vim.notify(('%s is current (%s)'):format(name, entry.current or '?'), vim.log.levels.INFO)
+    end)
+end
+
+---@return integer
+function M.count()
+    return #outdated_names()
+end
+
+---@param name string
+function M.install(name)
+    local spec = get_spec(name)
+
+    if spec == nil then
+        vim.notify('No package metadata for linter: ' .. name, vim.log.levels.WARN)
+
+        return
+    end
+
+    if fn.executable(executable(spec)) == 1 then
+        vim.notify(name .. ' is already installed', vim.log.levels.INFO)
+
+        return
+    end
+
+    local ok, command = pcall(install_command, spec)
+
+    if not ok or type(command) ~= 'table' then
+        vim.notify(tostring(command), vim.log.levels.ERROR)
+
+        return
+    end
+
+    ---@cast command string[]
+
+    vim.ui.select({
+        'Install',
+        'Cancel',
+    }, {
+        prompt = ('Install %s using %s?'):format(name, spec.manager),
+    }, function(choice)
+        if choice ~= 'Install' then
+            return
+        end
+
+        execute(command, INSTALL_TIMEOUT_MS, function(result)
+            if result.code ~= 0 then
+                local message = result.stderr ~= '' and result.stderr or ('Failed to install ' .. name)
+
+                vim.notify(message, vim.log.levels.ERROR)
+
+                return
+            end
+
+            vim.notify(name .. ' installed', vim.log.levels.INFO)
+
+            M.check_one(name)
+        end)
+    end)
+end
+
+---@param name string
+function M.manage(name)
+    local spec = get_spec(name)
+
+    if spec == nil then
+        vim.notify('No package metadata for linter: ' .. name, vim.log.levels.WARN)
+
+        return
+    end
+
+    local installed = fn.executable(executable(spec)) == 1
+
+    if not installed then
+        M.install(name)
+
+        return
+    end
+
+    local choices = {
+        'Check',
+        'Update',
+    }
+
+    if remove_command(spec) ~= nil then
+        choices[#choices + 1] = 'Remove'
+    end
+
+    choices[#choices + 1] = 'Cancel'
+
+    vim.ui.select(choices, {
+        prompt = ('%s [%s]'):format(name, spec.manager),
+    }, function(choice)
+        if choice == 'Check' then
+            M.check_one(name)
+        elseif choice == 'Update' then
+            M.update(name)
+        elseif choice == 'Remove' then
+            M.remove(name)
+        end
+    end)
+end
+
+---@return integer
+function M.missing_count()
+    return #missing_names()
+end
+
+---@param name string
+function M.remove(name)
+    local spec = get_spec(name)
+
+    if spec == nil then
+        vim.notify('No package metadata for linter: ' .. name, vim.log.levels.WARN)
+
+        return
+    end
+
+    if fn.executable(executable(spec)) ~= 1 then
+        vim.notify(name .. ' is not installed', vim.log.levels.INFO)
+
+        return
+    end
+
+    local command = remove_command(spec)
+
+    if command == nil then
+        vim.notify(
+            ('%s does not provide a safe ' .. 'package-aware remove operation ' .. 'for %s'):format(spec.manager, name),
+            vim.log.levels.WARN
+        )
+
+        return
+    end
+
+    vim.ui.select({
+        'Remove',
+        'Cancel',
+    }, {
+        prompt = ('Remove %s using %s?'):format(name, spec.manager),
+    }, function(choice)
+        if choice ~= 'Remove' then
+            return
+        end
+
+        execute(command, INSTALL_TIMEOUT_MS, function(result)
+            if result.code ~= 0 then
+                local message = result.stderr ~= '' and result.stderr or ('Failed to remove ' .. name)
+
+                vim.notify(message, vim.log.levels.ERROR)
+
+                return
+            end
+
+            state[name] = {
+                available = false,
+                checked_at = os.time(),
+                manager = spec.manager,
+                package = spec.package,
+                error = 'not installed',
+            }
+
+            save_state()
+
+            vim.notify(name .. ' removed', vim.log.levels.INFO)
+        end)
+    end)
+end
+
 function M.select()
     local names = managed_names()
 
@@ -1220,6 +1156,16 @@ function M.setup(registered)
 
     load_state()
 
+    api.nvim_create_user_command('LinterInstall', function(opts)
+        M.install(opts.args)
+    end, {
+        complete = function()
+            return managed_names()
+        end,
+        desc = 'Install a linter',
+        nargs = 1,
+    })
+
     api.nvim_create_user_command('LinterManage', function(opts)
         if opts.args == '' then
             M.select()
@@ -1229,41 +1175,31 @@ function M.setup(registered)
 
         M.manage(opts.args)
     end, {
-        nargs = '?',
         complete = function()
             return managed_names()
         end,
         desc = 'Manage linter packages',
-    })
-
-    api.nvim_create_user_command('LinterInstall', function(opts)
-        M.install(opts.args)
-    end, {
-        nargs = 1,
-        complete = function()
-            return managed_names()
-        end,
-        desc = 'Install a linter',
-    })
-
-    api.nvim_create_user_command('LinterUpdate', function(opts)
-        M.update(opts.args)
-    end, {
-        nargs = 1,
-        complete = function()
-            return managed_names()
-        end,
-        desc = 'Update a linter',
+        nargs = '?',
     })
 
     api.nvim_create_user_command('LinterRemove', function(opts)
         M.remove(opts.args)
     end, {
-        nargs = 1,
         complete = function()
             return managed_names()
         end,
         desc = 'Remove a linter',
+        nargs = 1,
+    })
+
+    api.nvim_create_user_command('LinterUpdate', function(opts)
+        M.update(opts.args)
+    end, {
+        complete = function()
+            return managed_names()
+        end,
+        desc = 'Update a linter',
+        nargs = 1,
     })
 
     api.nvim_create_user_command('LinterUpdateCheck', function(opts)
@@ -1275,16 +1211,103 @@ function M.setup(registered)
 
         M.check(true)
     end, {
-        nargs = '?',
         complete = function()
             return managed_names()
         end,
         desc = 'Check linter versions',
+        nargs = '?',
     })
 
     vim.defer_fn(function()
         M.check(false)
     end, 2000)
+end
+
+---@return string
+function M.statusline()
+    local outdated = M.count()
+    local missing = M.missing_count()
+
+    if outdated == 0 and missing == 0 then
+        return ''
+    end
+
+    if outdated > 0 and missing > 0 then
+        return ('L↑%d L!%d'):format(outdated, missing)
+    end
+
+    if outdated > 0 then
+        return ('L↑%d'):format(outdated)
+    end
+
+    return ('L!%d'):format(missing)
+end
+
+---@param name string
+function M.update(name)
+    local spec = get_spec(name)
+
+    if spec == nil then
+        vim.notify('No package metadata for linter: ' .. name, vim.log.levels.WARN)
+
+        return
+    end
+
+    if fn.executable(executable(spec)) ~= 1 then
+        M.install(name)
+
+        return
+    end
+
+    local ok, command = pcall(update_command, spec)
+
+    if not ok or type(command) ~= 'table' then
+        vim.notify(tostring(command), vim.log.levels.ERROR)
+
+        return
+    end
+
+    ---@cast command string[]
+
+    local entry = state[name]
+
+    local current = '?'
+    local latest = '?'
+
+    if entry ~= nil then
+        if type(entry.current) == 'string' and entry.current ~= '' then
+            current = entry.current
+        end
+
+        if type(entry.latest) == 'string' and entry.latest ~= '' then
+            latest = entry.latest
+        end
+    end
+
+    vim.ui.select({
+        'Update',
+        'Cancel',
+    }, {
+        prompt = ('%s %s → %s using %s?'):format(name, current, latest, spec.manager),
+    }, function(choice)
+        if choice ~= 'Update' then
+            return
+        end
+
+        execute(command, INSTALL_TIMEOUT_MS, function(result)
+            if result.code ~= 0 then
+                local message = result.stderr ~= '' and result.stderr or ('Failed to update ' .. name)
+
+                vim.notify(message, vim.log.levels.ERROR)
+
+                return
+            end
+
+            vim.notify(name .. ' updated', vim.log.levels.INFO)
+
+            M.check_one(name)
+        end)
+    end)
 end
 
 return M

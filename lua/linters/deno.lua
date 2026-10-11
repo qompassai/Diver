@@ -55,26 +55,6 @@ local SOURCE = 'deno'
 ---@field range? { start?: DenoPosition, end?: DenoPosition }
 
 ---@param value any
----@param minimum integer
----@param maximum integer
----@return integer?
-local function integer_in_range(value, minimum, maximum)
-    assert(minimum >= 0)
-    assert(maximum >= minimum)
-
-    if type(value) ~= 'number' or value ~= floor(value) then
-        return nil
-    end
-
-    if value < minimum or value > maximum then
-        return nil
-    end
-
-    ---@cast value integer
-    return value
-end
-
----@param value any
 ---@return string?
 local function clean_message(value)
     if type(value) ~= 'string' or value == '' then
@@ -92,6 +72,34 @@ local function clean_message(value)
     end
 
     return message
+end
+
+---@param context LintContext
+---@return string
+local function cwd(context)
+    assert(context.root ~= '')
+
+    return fs.normalize(context.root)
+end
+
+---@param value any
+---@param minimum integer
+---@param maximum integer
+---@return integer?
+local function integer_in_range(value, minimum, maximum)
+    assert(minimum >= 0)
+    assert(maximum >= minimum)
+
+    if type(value) ~= 'number' or value ~= floor(value) then
+        return nil
+    end
+
+    if value < minimum or value > maximum then
+        return nil
+    end
+
+    ---@cast value integer
+    return value
 end
 
 ---@param position any
@@ -141,14 +149,14 @@ local function diagnostic_from_item(item, severity)
     local code = type(item.code) == 'string' and item.code ~= '' and item.code or nil
 
     return {
-        lnum = start_row,
-        end_lnum = end_row,
+        code = code,
         col = start_column,
         end_col = max(end_column, start_column),
+        end_lnum = end_row,
+        lnum = start_row,
+        message = message,
         severity = severity,
         source = SOURCE,
-        code = code,
-        message = message,
     }
 end
 
@@ -200,39 +208,22 @@ local function parse(output, _)
     return diagnostics
 end
 
----@param context LintContext
----@return string
-local function cwd(context)
-    assert(context.root ~= '')
-
-    return fs.normalize(context.root)
-end
-
 return ---@type Linter
 {
-    automatic = true,
-
-    cmd = 'deno',
-
     -- Machine-readable output; the default human format is not parsed.
     args = { 'lint', '--json' },
-
+    automatic = true,
+    cmd = 'deno',
     cwd = cwd,
-
     ignore_exitcode = true,
-
     parser = parse,
-
     root_markers = {
         'deno.json',
         'deno.jsonc',
         '.git',
     },
-
     -- Reads the file from disk, so the runner refuses unsaved buffers.
     stdin = false,
-
     stream = 'stdout',
-
     timeout = TIMEOUT_MS,
 }

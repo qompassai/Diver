@@ -1,11 +1,11 @@
 -- ~/.config/nvim/lua/linters/typos.lua
 local fs = vim.fs
 local severity = vim.diagnostic.severity
-local SOURCE = 'typos'
-local MAX_OUTPUT = 16 * 1024 * 1024
 local MAX_DIAGNOSTICS = 512
+local MAX_OUTPUT = 16 * 1024 * 1024
 local MAX_RECORDS = 10000
 local MAX_TEXT = 4096
+local SOURCE = 'typos'
 local ROOT_MARKERS = {
     'typos.toml',
     '_typos.toml',
@@ -177,10 +177,10 @@ end
 
 ---@type Linter
 return {
-    cmd = 'typos',
-    args = arguments,
     append_fname = false,
+    args = arguments,
     automatic = true,
+    cmd = 'typos',
     cwd = root,
     ignore_exitcode = true, -- 0: clean; 2: typos; operational errors are parsed.
     parser = parse,

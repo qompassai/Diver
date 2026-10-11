@@ -160,9 +160,8 @@ end
 
 return ---@type Linter
 {
-    automatic = true,
 
-    cmd = 'pycodestyle',
+    append_fname = false,
 
     -- Pin the machine-readable layout; the default is human-oriented.
     -- The trailing `-` reads the buffer from stdin.
@@ -170,8 +169,9 @@ return ---@type Linter
         '--format=%(path)s:%(row)d:%(col)d:%(code)s:%(text)s',
         '-',
     },
+    automatic = true,
 
-    append_fname = false,
+    cmd = 'pycodestyle',
 
     cwd = cwd,
 

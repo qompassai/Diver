@@ -1,7 +1,7 @@
 -- Linux Bubblewrap policy for native linters. No shell and no direct fallback.
 -- SPDX-License-Identifier: Apache-2.0
-local uv = vim.uv
 local fs = vim.fs
+local uv = vim.uv
 local M = {}
 local MOUNTS_MAX = 32
 
@@ -12,6 +12,31 @@ function M.contains(path, root)
     return path == root or path:sub(1, #root + 1) == root .. '/'
 end
 
+---@param argv string[]
+---@param environment table<string, string>
+---@param executable string
+local function environment_flags(argv, environment, executable)
+    local environment_copy = vim.tbl_extend('force', environment, {
+        HOME = '/lint-home',
+        LANG = 'C.UTF-8',
+        NO_COLOR = '1',
+        PATH = (fs.dirname(executable) or '/usr/bin') .. ':/usr/local/bin:/usr/bin:/bin',
+        TMPDIR = '/tmp',
+        XDG_CACHE_HOME = '/lint-home/.cache',
+        XDG_CONFIG_HOME = '/lint-home/.config',
+        XDG_DATA_HOME = '/lint-home/.local/share',
+        XDG_STATE_HOME = '/lint-home/.local/state',
+    })
+    local keys = vim.tbl_keys(environment_copy)
+    table.sort(keys)
+    for _, key in ipairs(keys) do
+        local value = environment_copy[key]
+        assert(key:match('^[%a_][%w_]*$'), 'invalid environment key')
+        assert(type(value) == 'string' and not value:find('%z'), 'invalid environment value')
+        vim.list_extend(argv, { '--setenv', key, value })
+    end
+end
+
 ---@param value string
 ---@return string
 local function realpath(value)
@@ -20,6 +45,24 @@ local function realpath(value)
     local path, problem = uv.fs_realpath(value)
     assert(path, 'cannot resolve path: ' .. value .. ': ' .. tostring(problem))
     return path
+end
+
+---@param argv string[]
+---@param paths string[]
+---@param root string
+local function extra_mounts(argv, paths, root)
+    assert(vim.islist(paths) and #paths <= MOUNTS_MAX, 'invalid read_only mount list')
+    for _, path in ipairs(paths) do
+        local resolved = realpath(path)
+        assert(resolved == fs.normalize(path), 'read_only mounts must use canonical paths')
+        assert(resolved ~= '/' and resolved ~= '/home', 'mount is too broad')
+        assert(resolved ~= uv.os_homedir(), 'mount a tool directory, not your entire home')
+        assert(not M.contains(root, resolved), 'extra mount must not contain the project')
+        for _, reserved in ipairs({ '/dev', '/lint-home', '/proc', '/run', '/tmp' }) do
+            assert(not M.contains(resolved, reserved), 'reserved sandbox mount: ' .. resolved)
+        end
+        vim.list_extend(argv, { '--ro-bind', resolved, resolved })
+    end
 end
 
 ---@param argv string[]
@@ -35,49 +78,6 @@ local function system_mount(argv, path)
         vim.list_extend(argv, { '--symlink', target, path })
     else
         vim.list_extend(argv, { '--ro-bind', path, path })
-    end
-end
-
----@param argv string[]
----@param paths string[]
----@param root string
-local function extra_mounts(argv, paths, root)
-    assert(vim.islist(paths) and #paths <= MOUNTS_MAX, 'invalid read_only mount list')
-    for _, path in ipairs(paths) do
-        local resolved = realpath(path)
-        assert(resolved == fs.normalize(path), 'read_only mounts must use canonical paths')
-        assert(resolved ~= '/' and resolved ~= '/home', 'mount is too broad')
-        assert(resolved ~= uv.os_homedir(), 'mount a tool directory, not your entire home')
-        assert(not M.contains(root, resolved), 'extra mount must not contain the project')
-        for _, reserved in ipairs({ '/proc', '/dev', '/run', '/tmp', '/lint-home' }) do
-            assert(not M.contains(resolved, reserved), 'reserved sandbox mount: ' .. resolved)
-        end
-        vim.list_extend(argv, { '--ro-bind', resolved, resolved })
-    end
-end
-
----@param argv string[]
----@param environment table<string, string>
----@param executable string
-local function environment_flags(argv, environment, executable)
-    local environment_copy = vim.tbl_extend('force', environment, {
-        HOME = '/lint-home',
-        XDG_CACHE_HOME = '/lint-home/.cache',
-        XDG_CONFIG_HOME = '/lint-home/.config',
-        XDG_DATA_HOME = '/lint-home/.local/share',
-        XDG_STATE_HOME = '/lint-home/.local/state',
-        TMPDIR = '/tmp',
-        PATH = (fs.dirname(executable) or '/usr/bin') .. ':/usr/local/bin:/usr/bin:/bin',
-        NO_COLOR = '1',
-        LANG = 'C.UTF-8',
-    })
-    local keys = vim.tbl_keys(environment_copy)
-    table.sort(keys)
-    for _, key in ipairs(keys) do
-        local value = environment_copy[key]
-        assert(key:match('^[%a_][%w_]*$'), 'invalid environment key')
-        assert(type(value) == 'string' and not value:find('%z'), 'invalid environment value')
-        vim.list_extend(argv, { '--setenv', key, value })
     end
 end
 
@@ -104,7 +104,7 @@ function M.wrap(command, cwd, context, options, environment)
     assert(M.contains(filename, root), 'buffer symlink escapes the project root')
     -- Same-path mounts preserve diagnostics and absolute paths embedded in configs.
     assert(root == fs.normalize(context.root), 'sandbox requires a canonical project root')
-    for _, reserved in ipairs({ '/usr', '/etc', '/proc', '/dev', '/run', '/lint-home' }) do
+    for _, reserved in ipairs({ '/dev', '/etc', '/lint-home', '/proc', '/run', '/usr' }) do
         assert(not M.contains(root, reserved), 'project overlaps a sandbox system mount')
     end
     local argv = {

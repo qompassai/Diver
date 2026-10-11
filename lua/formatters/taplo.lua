@@ -12,7 +12,7 @@
 -- the same way it would for a real file on disk.
 ---@type FormatterSpec
 return {
-    cmd = 'taplo',
+    allow_empty = false,
     args = function(context)
         local args = { 'fmt' }
         if context.filename ~= '' then
@@ -22,17 +22,17 @@ return {
         args[#args + 1] = '-'
         return args
     end,
+    automatic = true,
+    cmd = 'taplo',
+    cwd = nil,
+    decode = nil,
+    description = 'TOML toolkit; `fmt -` reads stdin and prints formatted stdout',
+    env = {},
+    exit_codes = { 0 },
+    extension = nil,
+    filetypes = { 'toml' },
     mode = 'stdin',
     output = 'stdout',
-    cwd = nil,
-    env = {},
-    root_markers = {},
-    exit_codes = { 0 },
-    allow_empty = false,
-    automatic = true,
-    extension = nil,
-    decode = nil,
     pre_transform = nil,
-    filetypes = { 'toml' },
-    description = 'TOML toolkit; `fmt -` reads stdin and prints formatted stdout',
+    root_markers = {},
 }

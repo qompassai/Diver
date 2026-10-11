@@ -185,10 +185,8 @@ end
 
 return ---@type Linter
 {
-    -- Security analysis is slow and project-wide; it runs on demand.
-    automatic = false,
 
-    cmd = 'zizmor',
+    append_fname = false,
 
     args = {
         -- GitHub workflow-annotation output; easy to parse line by line.
@@ -201,8 +199,10 @@ return ---@type Linter
         -- Read the buffer from stdin.
         '-',
     },
+    -- Security analysis is slow and project-wide; it runs on demand.
+    automatic = false,
 
-    append_fname = false,
+    cmd = 'zizmor',
 
     cwd = cwd,
 

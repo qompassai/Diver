@@ -18,12 +18,6 @@
 --- your own computer (127.0.0.1) is allowed, with short timeouts, so a hung
 --- server can never freeze the editor.
 
----@param value any
----@return string
-local function message(value)
-    return tostring(value):gsub('[%z\1-\31\127]', ' '):sub(1, 4096)
-end
-
 ---@return string[]
 local function build_args()
     local runner = require('formatters')
@@ -58,6 +52,12 @@ local function build_args()
         '\\nNVIM_FORMAT_HTTP:%{http_code}',
         url,
     }
+end
+
+---@param value any
+---@return string
+local function message(value)
+    return tostring(value):gsub('[%z\1-\31\127]', ' '):sub(1, 4096)
 end
 
 ---@param output string

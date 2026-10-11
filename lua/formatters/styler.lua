@@ -19,17 +19,17 @@ local r_expression = "con <- file('stdin'); "
 
 ---@type FormatterSpec
 return {
-    cmd = 'Rscript',
+    allow_empty = false,
     args = { '--vanilla', '-e', r_expression },
+    automatic = true,
+    cmd = 'Rscript',
+    cwd = nil,
+    decode = nil,
+    env = {},
+    exit_codes = { 0 },
+    extension = 'R',
     mode = 'stdin',
     output = 'stdout',
-    cwd = nil,
-    env = {},
-    root_markers = { 'DESCRIPTION', '.git' },
-    exit_codes = { 0 },
-    allow_empty = false,
-    automatic = true,
-    extension = 'R',
-    decode = nil,
     pre_transform = nil,
+    root_markers = { 'DESCRIPTION', '.git' },
 }

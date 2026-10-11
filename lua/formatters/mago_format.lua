@@ -12,18 +12,6 @@
 --- diagnostics can name the right file (it is never written to).
 
 ---@param context FormatterContext
----@return string
-local function working_directory(context)
-    if context.filename ~= '' then
-        local directory = vim.fs.dirname(context.filename)
-        if directory then
-            return directory
-        end
-    end
-    return context.root
-end
-
----@param context FormatterContext
 ---@return string[]
 local function build_args(context)
     local name = context.filename ~= '' and context.filename or 'file.php'
@@ -33,6 +21,18 @@ local function build_args(context)
         '--stdin-filepath',
         name,
     }
+end
+
+---@param context FormatterContext
+---@return string
+local function working_directory(context)
+    if context.filename ~= '' then
+        local directory = vim.fs.dirname(context.filename)
+        if directory then
+            return directory
+        end
+    end
+    return context.root
 end
 
 ---@type FormatterSpec

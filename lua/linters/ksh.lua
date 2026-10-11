@@ -33,6 +33,29 @@ local SOURCE = 'ksh'
 ---@field code string
 ---@field message string
 
+---@param context LintContext
+---@return string[]
+local function args(context)
+    assert(type(context.filename) == 'string')
+    assert(context.filename ~= '')
+    assert(type(context.root) == 'string')
+    assert(context.root ~= '')
+
+    return {
+        '-n',
+        '--',
+        context.filename,
+    }
+end
+
+---@param context LintContext
+---@return string
+local function cwd(context)
+    assert(type(context.root) == 'string')
+    assert(context.root ~= '')
+    return fs.normalize(context.root)
+end
+
 ---@param value integer|number|string|nil
 ---@param fallback integer
 ---@return integer
@@ -54,16 +77,16 @@ end
 
 ---@param value string
 ---@return string
-local function trim(value)
+local function strip_ansi(value)
     assert(type(value) == 'string')
-    return (value:gsub('^%s*(.-)%s*$', '%1'))
+    return (value:gsub('\27%[[%d;?]*[ -/]*[@-~]', ''))
 end
 
 ---@param value string
 ---@return string
-local function strip_ansi(value)
+local function trim(value)
     assert(type(value) == 'string')
-    return (value:gsub('\27%[[%d;?]*[ -/]*[@-~]', ''))
+    return (value:gsub('^%s*(.-)%s*$', '%1'))
 end
 
 ---@param value string
@@ -112,11 +135,11 @@ local function parse_line(line)
         end
 
         return {
-            line = parsed_line,
-            column = 1,
-            severity = ERROR,
             code = 'syntax',
+            column = 1,
+            line = parsed_line,
             message = message,
+            severity = ERROR,
         }
     end
 
@@ -130,11 +153,11 @@ local function parse_line(line)
         end
 
         return {
-            line = parsed_line,
-            column = 1,
-            severity = ERROR,
             code = 'syntax',
+            column = 1,
+            line = parsed_line,
             message = message,
+            severity = ERROR,
         }
     end
 
@@ -148,11 +171,11 @@ local function parse_line(line)
         end
 
         return {
-            line = parsed_line,
-            column = 1,
-            severity = WARN,
             code = 'warning',
+            column = 1,
+            line = parsed_line,
             message = message,
+            severity = WARN,
         }
     end
 
@@ -191,14 +214,14 @@ local function parse(output, context)
             local col = max(entry.column - 1, 0)
 
             diagnostics[#diagnostics + 1] = {
-                lnum = lnum,
-                end_lnum = lnum,
+                code = entry.code,
                 col = col,
                 end_col = col + 1,
+                end_lnum = lnum,
+                lnum = lnum,
+                message = entry.message,
                 severity = entry.severity,
                 source = SOURCE,
-                code = entry.code,
-                message = entry.message,
                 user_data = {
                     analyzer = 'ksh93-noexec',
                 },
@@ -210,14 +233,14 @@ local function parse(output, context)
         local message = normalize_message(output)
         if message ~= '' then
             diagnostics[1] = {
-                lnum = 0,
-                end_lnum = 0,
+                code = 'syntax',
                 col = 0,
                 end_col = 1,
+                end_lnum = 0,
+                lnum = 0,
+                message = message,
                 severity = ERROR,
                 source = SOURCE,
-                code = 'syntax',
-                message = message,
                 user_data = {
                     analyzer = 'ksh93-noexec',
                     location = 'unparsed',
@@ -230,35 +253,12 @@ local function parse(output, context)
     return diagnostics
 end
 
----@param context LintContext
----@return string[]
-local function args(context)
-    assert(type(context.filename) == 'string')
-    assert(context.filename ~= '')
-    assert(type(context.root) == 'string')
-    assert(context.root ~= '')
-
-    return {
-        '-n',
-        '--',
-        context.filename,
-    }
-end
-
----@param context LintContext
----@return string
-local function cwd(context)
-    assert(type(context.root) == 'string')
-    assert(context.root ~= '')
-    return fs.normalize(context.root)
-end
-
 return ---@type Linter
 {
+    append_fname = false,
+    args = args,
     automatic = true,
     cmd = 'ksh',
-    args = args,
-    append_fname = false,
     cwd = cwd,
     ignore_exitcode = true,
     parser = parse,

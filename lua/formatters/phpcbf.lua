@@ -28,12 +28,12 @@ end
 
 ---@type FormatterSpec
 return {
-    cmd = 'phpcbf',
+    allow_empty = false,
     args = build_args,
+    automatic = true,
+    cmd = 'phpcbf',
+    exit_codes = { 0, 1 },
+    extension = 'php',
     mode = 'stdin',
     output = 'stdout',
-    exit_codes = { 0, 1 },
-    automatic = true,
-    allow_empty = false,
-    extension = 'php',
 }

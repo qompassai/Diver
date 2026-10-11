@@ -4,8 +4,6 @@
 -- ----------------------------------------
 return ---@type vim.lint.Config
 {
-    cmd = 'shellcheck',
-    stdin = false,
     append_fname = true,
     args = {
         '--format=gcc',
@@ -18,9 +16,9 @@ return ---@type vim.lint.Config
         '-s',
         'bash',
     },
-    stream = nil,
-    ignore_exitcode = true,
+    cmd = 'shellcheck',
     env = nil,
+    ignore_exitcode = true,
     ---@param output string
     ---@param bufnr integer
     ---@return vim.Diagnostic.Set[]
@@ -59,4 +57,6 @@ return ---@type vim.lint.Config
         end
         return diagnostics
     end,
+    stdin = false,
+    stream = nil,
 }

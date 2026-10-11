@@ -45,14 +45,14 @@ local diagnostic = vim.diagnostic
 local fs = vim.fs
 local uv = vim.uv
 
-local SOURCE = 'oelint-adv'
 local MAX_DIAGNOSTICS = 512
-local MAX_OUTPUT_BYTES = 16 * 1024 * 1024
 local MAX_LINE_BYTES = 64 * 1024
 local MAX_MESSAGE_BYTES = 4096
+local MAX_OUTPUT_BYTES = 16 * 1024 * 1024
 local MAX_OUTPUT_LINES = 65536
 local MAX_POSITION = 2147483647
 local MESSAGE_FORMAT = '{path}\t{line}\t{severity}\t{id}\t{msg}'
+local SOURCE = 'oelint-adv'
 
 local ROOT_MARKERS = {
     '.oelint.cfg',
@@ -359,8 +359,8 @@ end
 
 ---@type Linter
 return {
-    args = arguments,
     append_fname = false,
+    args = arguments,
     automatic = true,
     cmd = 'oelint-adv',
     cwd = project_root,

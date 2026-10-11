@@ -30,9 +30,9 @@ local DIAGNOSTICS_MAX = 4096
 local MESSAGE_LENGTH_MAX = 16 * 1024
 local OUTPUT_LENGTH_MAX = 16 * 1024 * 1024
 
+local char = string.char
 local floor = math.floor
 local max = math.max
-local char = string.char
 local tonumber = tonumber
 local type = type
 
@@ -445,13 +445,13 @@ end
 
 return ---@type Linter
 {
+
+    append_fname = false,
+
+    args = args,
     automatic = false,
 
     cmd = 'redocly',
-
-    args = args,
-
-    append_fname = false,
 
     cwd = function(context)
         assert(context.root ~= '')

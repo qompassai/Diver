@@ -4,8 +4,6 @@
 -- ----------------------------------------
 return ---@type vim.lint.Config
 {
-    cmd = 'bashate',
-    stdin = false,
     append_fname = true,
     args = {
         '--error',
@@ -16,9 +14,9 @@ return ---@type vim.lint.Config
         'E006',
         '--verbose',
     },
-    stream = nil,
-    ignore_exitcode = true,
+    cmd = 'bashate',
     env = nil,
+    ignore_exitcode = true,
     ---@param output string
     ---@param bufnr integer
     ---@return vim.Diagnostic.Set[]
@@ -38,10 +36,10 @@ return ---@type vim.lint.Config
                     local severity = code:sub(1, 1) == 'E' and vim.diagnostic.severity.ERROR
                         or vim.diagnostic.severity.WARN
                     table.insert(diagnostics, {
-                        lnum = lnum,
-                        end_lnum = lnum,
                         col = col,
                         end_col = col + 1,
+                        end_lnum = lnum,
+                        lnum = lnum,
                         message = string.format('[%s] %s', code, msg),
                         severity = severity,
                         source = 'bashate',
@@ -51,4 +49,6 @@ return ---@type vim.lint.Config
         end
         return diagnostics
     end,
+    stdin = false,
+    stream = nil,
 }

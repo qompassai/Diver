@@ -24,12 +24,12 @@ local fs = vim.fs
 local json = vim.json
 local uv = vim.uv
 
-local SOURCE = 'textlint'
 local MAX_DIAGNOSTICS = 512
+local MAX_MESSAGES = 8192
 local MAX_MESSAGE_BYTES = 4096
 local MAX_OUTPUT_BYTES = 8 * 1024 * 1024
 local MAX_RESULTS = 1024
-local MAX_MESSAGES = 8192
+local SOURCE = 'textlint'
 
 ---@type string[]
 local ROOT_MARKERS = {
@@ -380,8 +380,8 @@ end
 
 ---@type Linter
 return {
-    args = arguments,
     append_fname = false,
+    args = arguments,
     automatic = true,
     cmd = 'textlint',
     cwd = project_root,

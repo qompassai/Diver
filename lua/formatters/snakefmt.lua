@@ -13,17 +13,17 @@
 
 ---@type FormatterSpec
 return {
-    cmd = 'snakefmt',
+    allow_empty = false,
     args = { '-' },
+    automatic = true,
+    cmd = 'snakefmt',
+    cwd = nil,
+    decode = nil,
+    env = {},
+    exit_codes = { 0 },
+    extension = 'smk',
     mode = 'stdin',
     output = 'stdout',
-    cwd = nil,
-    env = {},
-    root_markers = { 'Snakefile', 'pyproject.toml', '.git' },
-    exit_codes = { 0 },
-    allow_empty = false,
-    automatic = true,
-    extension = 'smk',
-    decode = nil,
     pre_transform = nil,
+    root_markers = { 'Snakefile', 'pyproject.toml', '.git' },
 }

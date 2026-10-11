@@ -22,18 +22,18 @@
 --   NVIM_MH_LINT_ENCODING=cp1252  -- must match the saved file's encoding
 --   NVIM_MH_LINT_ENTRY_POINT=my_entry
 
+local api = vim.api
 local diagnostic = vim.diagnostic
 local fs = vim.fs
 local uv = vim.uv
-local api = vim.api
 
-local SOURCE = 'mh_lint'
 local MAX_DIAGNOSTICS = 512
-local MAX_OUTPUT_BYTES = 16 * 1024 * 1024
 local MAX_LINE_BYTES = 64 * 1024
 local MAX_MESSAGE_BYTES = 4096
+local MAX_OUTPUT_BYTES = 16 * 1024 * 1024
 local MAX_OUTPUT_LINES = 65536
 local MAX_POSITION = 2147483647
+local SOURCE = 'mh_lint'
 
 local ROOT_MARKERS = {
     { 'miss_hit.cfg', '.miss_hit' },
@@ -41,14 +41,145 @@ local ROOT_MARKERS = {
 }
 
 local SEVERITIES = {
+    ['check (high)'] = diagnostic.severity.ERROR,
     ['check (low)'] = diagnostic.severity.INFO,
     ['check (medium)'] = diagnostic.severity.WARN,
-    ['check (high)'] = diagnostic.severity.ERROR,
     ['lex error'] = diagnostic.severity.ERROR,
     error = diagnostic.severity.ERROR,
-    warning = diagnostic.severity.WARN,
     info = diagnostic.severity.INFO,
+    warning = diagnostic.severity.WARN,
 }
+
+---@param path string
+---@param cwd string
+---@return string
+local function absolute_path(path, cwd)
+    if path:sub(1, 1) ~= '/' then
+        path = fs.joinpath(cwd, path)
+    end
+
+    return fs.normalize(path)
+end
+
+---@param bufnr integer
+---@param lnum integer
+---@param column integer
+---@return integer
+local function byte_column(bufnr, lnum, column)
+    if column == 0 or not api.nvim_buf_is_loaded(bufnr) then
+        return 0
+    end
+
+    if lnum >= api.nvim_buf_line_count(bufnr) then
+        return 0
+    end
+
+    local line = api.nvim_buf_get_lines(bufnr, lnum, lnum + 1, false)[1] or ''
+
+    if #line > MAX_LINE_BYTES then
+        return 0
+    end
+
+    local offset = 1
+    local characters = 0
+
+    while offset <= #line and characters < column do
+        offset = offset + 1
+
+        while offset <= #line do
+            local byte = line:byte(offset)
+
+            if byte < 128 or byte >= 192 then
+                break
+            end
+
+            offset = offset + 1
+        end
+
+        characters = characters + 1
+    end
+
+    return offset - 1
+end
+
+---@param path string
+---@param cwd string
+---@return string
+local function canonical_path(path, cwd)
+    local absolute = absolute_path(path, cwd)
+
+    return uv.fs_realpath(absolute) or absolute
+end
+
+---@param value string
+---@return string
+local function clean_message(value)
+    local text = vim.trim(value:gsub('[%z\1-\31\127]', ' '):gsub('%s+', ' '))
+
+    if #text > MAX_MESSAGE_BYTES then
+        local finish = MAX_MESSAGE_BYTES - 3
+
+        while finish > 0 do
+            local byte = text:byte(finish + 1)
+
+            if byte == nil or byte < 128 or byte >= 192 then
+                break
+            end
+
+            finish = finish - 1
+        end
+
+        text = text:sub(1, finish) .. '...'
+    end
+
+    return text
+end
+
+---@param line string
+---@return string?, string?, string?
+local function message_parts(line)
+    local location, kind, message = line:match('^(.-): (check %(%a+%)): (.*)$')
+
+    if location == nil then
+        location, kind, message = line:match('^(.-): (lex error): (.*)$')
+    end
+
+    if location == nil then
+        location, kind, message = line:match('^(.-): (%a+): (.*)$')
+    end
+
+    return location, kind, message
+end
+
+---@param value string?
+---@return integer?
+local function position(value)
+    local number = value and tonumber(value) or nil
+
+    if number == nil or number < 0 or number > MAX_POSITION then
+        return nil
+    end
+
+    return math.floor(number)
+end
+
+---@param context LintContext
+---@param code string
+---@param message string
+---@return vim.Diagnostic
+local function status_diagnostic(context, code, message)
+    return {
+        bufnr = context.bufnr,
+        code = code,
+        col = 0,
+        end_col = 0,
+        end_lnum = 0,
+        lnum = 0,
+        message = message,
+        severity = diagnostic.severity.WARN,
+        source = SOURCE,
+    }
+end
 
 ---@param value any
 ---@return string?
@@ -97,135 +228,44 @@ local function project_root(context)
     return fs.normalize(string_value(context.cwd) or vim.fn.getcwd())
 end
 
----@param path string
----@param cwd string
----@return string
-local function absolute_path(path, cwd)
-    if path:sub(1, 1) ~= '/' then
-        path = fs.joinpath(cwd, path)
-    end
-
-    return fs.normalize(path)
-end
-
----@param path string
----@param cwd string
----@return string
-local function canonical_path(path, cwd)
-    local absolute = absolute_path(path, cwd)
-
-    return uv.fs_realpath(absolute) or absolute
-end
-
----@param value string
----@return string
-local function clean_message(value)
-    local text = vim.trim(value:gsub('[%z\1-\31\127]', ' '):gsub('%s+', ' '))
-
-    if #text > MAX_MESSAGE_BYTES then
-        local finish = MAX_MESSAGE_BYTES - 3
-
-        while finish > 0 do
-            local byte = text:byte(finish + 1)
-
-            if byte == nil or byte < 128 or byte >= 192 then
-                break
-            end
-
-            finish = finish - 1
-        end
-
-        text = text:sub(1, finish) .. '...'
-    end
-
-    return text
-end
-
 ---@param context LintContext
----@param code string
----@param message string
----@return vim.Diagnostic
-local function status_diagnostic(context, code, message)
-    return {
-        bufnr = context.bufnr,
-        code = code,
-        col = 0,
-        end_col = 0,
-        end_lnum = 0,
-        lnum = 0,
-        message = message,
-        severity = diagnostic.severity.WARN,
-        source = SOURCE,
+---@return string[]
+local function arguments(context)
+    assert(type(context) == 'table', 'mh_lint arguments require LintContext')
+    local filename = string_value(context.filename)
+    assert(filename ~= nil and filename:sub(-2) == '.m', 'mh_lint requires a saved .m filename')
+
+    local matlab = string_value(vim.env.NVIM_MH_LINT_MATLAB)
+    local octave = string_value(vim.env.NVIM_MH_LINT_OCTAVE)
+    assert(matlab == nil or octave == nil, 'Set only one of NVIM_MH_LINT_MATLAB and NVIM_MH_LINT_OCTAVE')
+
+    ---@type string[]
+    local args = {
+        '--brief',
+        '--single',
+        '--input-encoding',
+        string_value(vim.env.NVIM_MH_LINT_ENCODING) or 'utf-8',
     }
-end
 
----@param value string?
----@return integer?
-local function position(value)
-    local number = value and tonumber(value) or nil
-
-    if number == nil or number < 0 or number > MAX_POSITION then
-        return nil
+    if matlab ~= nil then
+        args[#args + 1] = '--matlab'
+        args[#args + 1] = matlab
+    elseif octave ~= nil then
+        args[#args + 1] = '--octave'
+        args[#args + 1] = octave
     end
 
-    return math.floor(number)
-end
+    local entry_point = string_value(vim.env.NVIM_MH_LINT_ENTRY_POINT)
 
----@param bufnr integer
----@param lnum integer
----@param column integer
----@return integer
-local function byte_column(bufnr, lnum, column)
-    if column == 0 or not api.nvim_buf_is_loaded(bufnr) then
-        return 0
+    if entry_point ~= nil then
+        args[#args + 1] = '--entry-point'
+        args[#args + 1] = entry_point
     end
 
-    if lnum >= api.nvim_buf_line_count(bufnr) then
-        return 0
-    end
+    args[#args + 1] = '--'
+    args[#args + 1] = absolute_path(filename, string_value(context.cwd) or project_root(context))
 
-    local line = api.nvim_buf_get_lines(bufnr, lnum, lnum + 1, false)[1] or ''
-
-    if #line > MAX_LINE_BYTES then
-        return 0
-    end
-
-    local offset = 1
-    local characters = 0
-
-    while offset <= #line and characters < column do
-        offset = offset + 1
-
-        while offset <= #line do
-            local byte = line:byte(offset)
-
-            if byte < 128 or byte >= 192 then
-                break
-            end
-
-            offset = offset + 1
-        end
-
-        characters = characters + 1
-    end
-
-    return offset - 1
-end
-
----@param line string
----@return string?, string?, string?
-local function message_parts(line)
-    local location, kind, message = line:match('^(.-): (check %(%a+%)): (.*)$')
-
-    if location == nil then
-        location, kind, message = line:match('^(.-): (lex error): (.*)$')
-    end
-
-    if location == nil then
-        location, kind, message = line:match('^(.-): (%a+): (.*)$')
-    end
-
-    return location, kind, message
+    return args
 end
 
 ---@param output string
@@ -351,10 +391,10 @@ local function parse(output, context)
                             severity = severity,
                             source = SOURCE,
                             user_data = {
-                                kind = kind,
-                                filename = path,
-                                line = row_number,
                                 character_column = column_number,
+                                filename = path,
+                                kind = kind,
+                                line = row_number,
                             },
                         }
                     end
@@ -393,50 +433,10 @@ local function parse(output, context)
     return diagnostics
 end
 
----@param context LintContext
----@return string[]
-local function arguments(context)
-    assert(type(context) == 'table', 'mh_lint arguments require LintContext')
-    local filename = string_value(context.filename)
-    assert(filename ~= nil and filename:sub(-2) == '.m', 'mh_lint requires a saved .m filename')
-
-    local matlab = string_value(vim.env.NVIM_MH_LINT_MATLAB)
-    local octave = string_value(vim.env.NVIM_MH_LINT_OCTAVE)
-    assert(matlab == nil or octave == nil, 'Set only one of NVIM_MH_LINT_MATLAB and NVIM_MH_LINT_OCTAVE')
-
-    ---@type string[]
-    local args = {
-        '--brief',
-        '--single',
-        '--input-encoding',
-        string_value(vim.env.NVIM_MH_LINT_ENCODING) or 'utf-8',
-    }
-
-    if matlab ~= nil then
-        args[#args + 1] = '--matlab'
-        args[#args + 1] = matlab
-    elseif octave ~= nil then
-        args[#args + 1] = '--octave'
-        args[#args + 1] = octave
-    end
-
-    local entry_point = string_value(vim.env.NVIM_MH_LINT_ENTRY_POINT)
-
-    if entry_point ~= nil then
-        args[#args + 1] = '--entry-point'
-        args[#args + 1] = entry_point
-    end
-
-    args[#args + 1] = '--'
-    args[#args + 1] = absolute_path(filename, string_value(context.cwd) or project_root(context))
-
-    return args
-end
-
 ---@type Linter
 return {
-    args = arguments,
     append_fname = false,
+    args = arguments,
     automatic = true,
     cmd = 'mh_lint',
     cwd = project_root,

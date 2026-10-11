@@ -44,15 +44,15 @@
 
 local fs = vim.fs
 local uv = vim.uv
-local SOURCE = 'phpinsights'
 local PHP = '/usr/bin/php'
+local SOURCE = 'phpinsights'
 local VENDOR_BINARY = 'vendor/bin/phpinsights'
 
 -- Explicit bounds. No unbounded loop or unbounded buffer anywhere
 -- in this module; every collection this file walks has a ceiling.
-local MAX_OUTPUT = 16 * 1024 * 1024
 local MAX_DIAGNOSTICS = 512
 local MAX_FILES = 1024
+local MAX_OUTPUT = 16 * 1024 * 1024
 local MAX_RECORDS = 10000
 
 local CONFIG_NAMES = {
@@ -191,12 +191,12 @@ end
 
 ---@type Linter
 local M = {
-    cmd = { PHP, VENDOR_BINARY },
     args = args,
-    stdin = false,
+    cmd = { PHP, VENDOR_BINARY },
     ignore_exitcode = true, -- phpinsights exits non-zero whenever issues are found
-    root_markers = { 'composer.json' },
     parser = parser,
+    root_markers = { 'composer.json' },
+    stdin = false,
 }
 
 return M

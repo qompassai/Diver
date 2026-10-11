@@ -18,8 +18,8 @@
 ---@source https://jqlang.org/manual/
 local diagnostic = vim.diagnostic
 local fs = vim.fs
-local ERROR = diagnostic.severity.ERROR
 local DIAGNOSTICS_MAX = 128
+local ERROR = diagnostic.severity.ERROR
 local LINE_LENGTH_MAX = 64 * 1024
 local MESSAGE_LENGTH_MAX = 16 * 1024
 local OUTPUT_LENGTH_MAX = 4 * 1024 * 1024
@@ -27,8 +27,51 @@ local floor = math.floor
 local max = math.max
 local tonumber = tonumber
 local type = type
-local SOURCE = 'jq'
 local CODE = 'parse-error'
+local SOURCE = 'jq'
+---@param context LintContext
+---@return string[]
+local function args(context)
+    assert(type(context.filename) == 'string' and context.filename ~= '', 'context.filename must be a non-empty string')
+    return {
+        '--exit-status',
+        '--monochrome-output',
+        '.',
+    }
+end
+
+---@param context LintContext
+---@return string
+local function cwd(context)
+    assert(type(context.root) == 'string' and context.root ~= '', 'context.root must be a non-empty string')
+
+    return fs.normalize(context.root)
+end
+
+---@param entry JqParsedDiagnostic
+---@param bufnr integer
+---@return vim.Diagnostic
+local function diagnostic_from_entry(entry, bufnr)
+    assert(bufnr >= 0, 'bufnr must be non-negative')
+
+    local lnum = max(entry.line - 1, 0)
+    local col = max(entry.column - 1, 0)
+    return {
+        bufnr = bufnr,
+        code = CODE,
+        col = col,
+        end_col = col + 1,
+        end_lnum = lnum,
+        lnum = lnum,
+        message = entry.message,
+        severity = ERROR,
+        source = SOURCE,
+        user_data = {
+            parser = 'jq',
+        },
+    }
+end
+
 ---@class JqParsedDiagnostic
 ---@field line integer
 ---@field column integer
@@ -47,18 +90,18 @@ end
 
 ---@param value string
 ---@return string
-local function trim(value)
-    assert(type(value) == 'string', 'value must be a string')
-
-    return (value:gsub('^%s*(.-)%s*$', '%1'))
-end
-
----@param value string
----@return string
 local function strip_ansi(value)
     assert(type(value) == 'string', 'value must be a string')
 
     return (value:gsub('\27%[[%d;?]*[ -/]*[@-~]', ''))
+end
+
+---@param value string
+---@return string
+local function trim(value)
+    assert(type(value) == 'string', 'value must be a string')
+
+    return (value:gsub('^%s*(.-)%s*$', '%1'))
 end
 
 ---@param value string
@@ -106,33 +149,9 @@ local function parse_line(line)
     end
 
     return {
-        line = line_number,
         column = column,
+        line = line_number,
         message = message,
-    }
-end
-
----@param entry JqParsedDiagnostic
----@param bufnr integer
----@return vim.Diagnostic
-local function diagnostic_from_entry(entry, bufnr)
-    assert(bufnr >= 0, 'bufnr must be non-negative')
-
-    local lnum = max(entry.line - 1, 0)
-    local col = max(entry.column - 1, 0)
-    return {
-        bufnr = bufnr,
-        lnum = lnum,
-        end_lnum = lnum,
-        col = col,
-        end_col = col + 1,
-        message = entry.message,
-        severity = ERROR,
-        source = SOURCE,
-        code = CODE,
-        user_data = {
-            parser = 'jq',
-        },
     }
 end
 
@@ -170,30 +189,12 @@ local function parse(output, context)
     return diagnostics
 end
 
----@param context LintContext
----@return string[]
-local function args(context)
-    assert(type(context.filename) == 'string' and context.filename ~= '', 'context.filename must be a non-empty string')
-    return {
-        '--exit-status',
-        '--monochrome-output',
-        '.',
-    }
-end
----@param context LintContext
----@return string
-local function cwd(context)
-    assert(type(context.root) == 'string' and context.root ~= '', 'context.root must be a non-empty string')
-
-    return fs.normalize(context.root)
-end
-
 return ---@type Linter
 {
+    append_fname = false,
+    args = args,
     automatic = true,
     cmd = 'jq',
-    args = args,
-    append_fname = false,
     cwd = cwd,
     ignore_exitcode = true,
     parser = parse,

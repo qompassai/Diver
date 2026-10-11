@@ -160,9 +160,8 @@ end
 
 return ---@type Linter
 {
-    automatic = true,
 
-    cmd = 'zsh',
+    append_fname = false,
 
     args = {
         -- Parse the script but execute nothing.
@@ -174,8 +173,9 @@ return ---@type Linter
         -- Read the buffer from stdin (non-Windows; matches upstream).
         '/dev/stdin',
     },
+    automatic = true,
 
-    append_fname = false,
+    cmd = 'zsh',
 
     cwd = cwd,
 

@@ -19,8 +19,8 @@
 ---@source https://github.com/open-policy-agent/conftest/blob/master/docs/output.md
 local api = vim.api
 local diagnostic = vim.diagnostic
-local fs = vim.fs
 local fn = vim.fn
+local fs = vim.fs
 local uv = vim.uv
 
 local TOOLING = {
@@ -536,10 +536,10 @@ end
 
 ---@type Linter
 return {
-    cmd = TOOLING.executable,
-    args = arguments,
     append_fname = false,
+    args = arguments,
     automatic = false,
+    cmd = TOOLING.executable,
     cwd = root,
     env = {
         NO_COLOR = '1',

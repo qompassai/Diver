@@ -23,38 +23,14 @@
 -- #################################################################
 local diagnostic = vim.diagnostic
 local fs = vim.fs
-local WARN = diagnostic.severity.WARN
+local CODE = 'possible-bashism'
 local MAX_DIAGNOSTICS = 1024
 local MAX_LINES = 4096
 local MAX_OUTPUT_BYTES = 256 * 1024
 local MIN_INPUT_POSITION = 1
-local SOURCE = 'checkbashisms'
-local CODE = 'possible-bashism'
 local OUTPUT_LINE_PATTERN = '^(.-):(%d+):(%d+):%s*warning:%s*possible bashism;%s*(.+)$'
----@param value unknown
----@return integer?
-local function parse_positive_integer(value)
-    local parsed = tonumber(value)
-
-    if parsed == nil then
-        return nil
-    end
-
-    parsed = math.floor(parsed)
-
-    if parsed < MIN_INPUT_POSITION then
-        return nil
-    end
-
-    return parsed
-end
----@param value string
----@return string
-local function trim(value)
-    assert(type(value) == 'string', 'value must be a string')
-
-    return (value:gsub('^%s*(.-)%s*$', '%1'))
-end
+local SOURCE = 'checkbashisms'
+local WARN = diagnostic.severity.WARN
 ---@param output string
 ---@return string
 local function bounded_output(output)
@@ -65,6 +41,7 @@ local function bounded_output(output)
     end
     return output:sub(1, MAX_OUTPUT_BYTES)
 end
+
 ---@param bufnr integer
 ---@param line_number integer
 ---@param start_column integer
@@ -89,20 +66,59 @@ local function make_diagnostic(bufnr, line_number, start_column, message)
 
     return {
         bufnr = bufnr,
-
-        lnum = lnum,
-        end_lnum = lnum,
-
+        code = CODE,
         col = col,
         end_col = col + 1,
-
+        end_lnum = lnum,
+        lnum = lnum,
         message = message,
-
         severity = WARN,
-
         source = SOURCE,
-        code = CODE,
     }
+end
+
+---@param value unknown
+---@return integer?
+local function parse_positive_integer(value)
+    local parsed = tonumber(value)
+
+    if parsed == nil then
+        return nil
+    end
+
+    parsed = math.floor(parsed)
+
+    if parsed < MIN_INPUT_POSITION then
+        return nil
+    end
+
+    return parsed
+end
+
+---@param context LintContext
+---@return string
+local function resolve_cwd(context)
+    assert(type(context) == 'table', 'context must be a table')
+
+    assert(type(context.filename) == 'string' and context.filename ~= '', 'context.filename must be a non-empty string')
+
+    assert(type(context.cwd) == 'string' and context.cwd ~= '', 'context.cwd must be a non-empty string')
+
+    local dirname = fs.dirname(context.filename)
+
+    if dirname == nil or dirname == '' then
+        return context.cwd
+    end
+
+    return fs.normalize(dirname)
+end
+
+---@param value string
+---@return string
+local function trim(value)
+    assert(type(value) == 'string', 'value must be a string')
+
+    return (value:gsub('^%s*(.-)%s*$', '%1'))
 end
 
 ---@param output string
@@ -158,49 +174,24 @@ local function parse(output, context)
     return diagnostics
 end
 
----@param context LintContext
----@return string
-local function resolve_cwd(context)
-    assert(type(context) == 'table', 'context must be a table')
-
-    assert(type(context.filename) == 'string' and context.filename ~= '', 'context.filename must be a non-empty string')
-
-    assert(type(context.cwd) == 'string' and context.cwd ~= '', 'context.cwd must be a non-empty string')
-
-    local dirname = fs.dirname(context.filename)
-
-    if dirname == nil or dirname == '' then
-        return context.cwd
-    end
-
-    return fs.normalize(dirname)
-end
-
 return ---@type Linter
 {
+    append_fname = true,
+    args = {
+        '--lint',
+    },
     automatic = false,
-
     cmd = {
         'checkbashisms',
         'checkbashisms.pl',
     },
-
-    args = {
-        '--lint',
-    },
-
-    append_fname = true,
-
     cwd = resolve_cwd,
-
     --
     -- checkbashisms returns nonzero when portability problems are found.
     -- Those are normal diagnostic-producing results.
     --
     ignore_exitcode = true,
-
     parser = parse,
-
     root_markers = {
         'Makefile',
 
@@ -209,7 +200,6 @@ return ---@type Linter
 
         '.git',
     },
-
     stdin = false,
     stream = 'stdout',
     timeout = 30000,

@@ -9,35 +9,6 @@ local diagnostic = vim.diagnostic
 local fs = vim.fs
 local uv = vim.uv
 
-local TOOLING = {
-    executable = 'bandit',
-    timeout_ms = 30000,
-}
-local ROOT_MARKERS = {
-    '.bandit',
-    'bandit.yaml',
-    'bandit.yml',
-    'pyproject.toml',
-    'setup.cfg',
-    'tox.ini',
-    'setup.py',
-    'requirements.txt',
-    '.git',
-}
-local LIMITS = {
-    diagnostics = 4096,
-    errors = 64,
-    issues = 4029,
-    message_bytes = 4096,
-    output_bytes = 16 * 1024 * 1024,
-    range_lines = 65536,
-}
-local SEVERITIES = {
-    HIGH = diagnostic.severity.ERROR,
-    LOW = diagnostic.severity.INFO,
-    MEDIUM = diagnostic.severity.WARN,
-    UNDEFINED = diagnostic.severity.HINT,
-}
 local CONFIDENCES = {
     HIGH = true,
     LOW = true,
@@ -55,6 +26,35 @@ local DEFAULT_EXCLUDED_PATHS = {
     '.eggs',
     '*.egg',
 }
+local LIMITS = {
+    diagnostics = 4096,
+    errors = 64,
+    issues = 4029,
+    message_bytes = 4096,
+    output_bytes = 16 * 1024 * 1024,
+    range_lines = 65536,
+}
+local ROOT_MARKERS = {
+    '.bandit',
+    'bandit.yaml',
+    'bandit.yml',
+    'pyproject.toml',
+    'setup.cfg',
+    'tox.ini',
+    'setup.py',
+    'requirements.txt',
+    '.git',
+}
+local SEVERITIES = {
+    HIGH = diagnostic.severity.ERROR,
+    LOW = diagnostic.severity.INFO,
+    MEDIUM = diagnostic.severity.WARN,
+    UNDEFINED = diagnostic.severity.HINT,
+}
+local TOOLING = {
+    executable = 'bandit',
+    timeout_ms = 30000,
+}
 
 local ARGUMENTS = {
     '--format=json',
@@ -69,8 +69,8 @@ local ARGUMENTS = {
 local CLI_CHOICES = {
     aggregate = 'file',
     baseline = false,
-    config_file = false,
     confidence_level = 'all',
+    config_file = false,
     context_lines = 0,
     debug = false,
     excluded_paths = DEFAULT_EXCLUDED_PATHS,
@@ -162,20 +162,12 @@ end
 
 validate_configuration()
 
----@param filename string
----@return string
-local function root_for_path(filename)
-    if filename == '' then
-        return uv.cwd() or '.'
+---@param diagnostics vim.Diagnostic[]
+---@param item vim.Diagnostic?
+local function append(diagnostics, item)
+    if item ~= nil and #diagnostics < LIMITS.diagnostics then
+        diagnostics[#diagnostics + 1] = item
     end
-
-    return fs.root(filename, ROOT_MARKERS) or fs.dirname(filename) or uv.cwd() or '.'
-end
-
----@param context LintContext
----@return string
-local function root(context)
-    return root_for_path(context.filename)
 end
 
 ---@param value string
@@ -202,6 +194,21 @@ local function clean(value)
     return message:sub(1, last) .. '...'
 end
 
+---@param issue any
+---@return boolean
+local function has_issue_fields(issue)
+    return type(issue) == 'table'
+        and type(issue.filename) == 'string'
+        and type(issue.issue_confidence) == 'string'
+        and type(issue.issue_severity) == 'string'
+        and type(issue.issue_text) == 'string'
+        and issue.issue_text ~= ''
+        and type(issue.test_id) == 'string'
+        and issue.test_id ~= ''
+        and type(issue.test_name) == 'string'
+        and issue.test_name ~= ''
+end
+
 ---@param value any
 ---@param minimum integer
 ---@param maximum integer
@@ -220,21 +227,47 @@ local function integer(value, minimum, maximum)
 end
 
 ---@param context LintContext
----@param code string
----@param message string
----@return vim.Diagnostic
-local function status(context, code, message)
-    return {
-        bufnr = context.bufnr,
-        lnum = 0,
-        end_lnum = 0,
-        col = 0,
-        end_col = 0,
-        severity = diagnostic.severity.ERROR,
-        source = 'bandit',
-        code = code,
-        message = clean(message),
-    }
+---@param path any
+---@return boolean
+local function is_target(context, path)
+    assert(type(context.bufnr) == 'number')
+
+    return path == '<stdin>' or path == '-'
+end
+
+---@param issue BanditIssue
+---@return integer? end_line
+---@return boolean malformed
+local function issue_end_line(issue)
+    if not vim.islist(issue.line_range) or #issue.line_range == 0 then
+        return nil, true
+    end
+
+    if #issue.line_range > LIMITS.range_lines then
+        return nil, true
+    end
+
+    local last_line = 0
+
+    for index = 1, #issue.line_range do
+        local line = integer(issue.line_range[index], 1, 2147483646)
+
+        if line == nil or line < last_line then
+            return nil, true
+        end
+
+        last_line = line
+    end
+
+    return last_line, false
+end
+
+---@param issue BanditIssue
+---@return string
+local function issue_message(issue)
+    local confidence = issue.issue_confidence:lower()
+
+    return clean(('%s (%s confidence)'):format(issue.issue_text, confidence))
 end
 
 ---@param bufnr integer
@@ -278,65 +311,6 @@ local function position(bufnr, row, column)
 end
 
 ---@param context LintContext
----@param path any
----@return boolean
-local function is_target(context, path)
-    assert(type(context.bufnr) == 'number')
-
-    return path == '<stdin>' or path == '-'
-end
-
----@param issue BanditIssue
----@return string
-local function issue_message(issue)
-    local confidence = issue.issue_confidence:lower()
-
-    return clean(('%s (%s confidence)'):format(issue.issue_text, confidence))
-end
-
----@param issue BanditIssue
----@return integer? end_line
----@return boolean malformed
-local function issue_end_line(issue)
-    if not vim.islist(issue.line_range) or #issue.line_range == 0 then
-        return nil, true
-    end
-
-    if #issue.line_range > LIMITS.range_lines then
-        return nil, true
-    end
-
-    local last_line = 0
-
-    for index = 1, #issue.line_range do
-        local line = integer(issue.line_range[index], 1, 2147483646)
-
-        if line == nil or line < last_line then
-            return nil, true
-        end
-
-        last_line = line
-    end
-
-    return last_line, false
-end
-
----@param issue any
----@return boolean
-local function has_issue_fields(issue)
-    return type(issue) == 'table'
-        and type(issue.filename) == 'string'
-        and type(issue.issue_confidence) == 'string'
-        and type(issue.issue_severity) == 'string'
-        and type(issue.issue_text) == 'string'
-        and issue.issue_text ~= ''
-        and type(issue.test_id) == 'string'
-        and issue.test_id ~= ''
-        and type(issue.test_name) == 'string'
-        and issue.test_name ~= ''
-end
-
----@param context LintContext
 ---@param line integer
 ---@param end_line integer
 ---@param column integer
@@ -368,6 +342,109 @@ local function issue_position(context, line, end_line, column, end_column)
     end
 
     return row, bounded_column, end_row, bounded_end_column, malformed
+end
+
+---@param filename string
+---@return string
+local function root_for_path(filename)
+    if filename == '' then
+        return uv.cwd() or '.'
+    end
+
+    return fs.root(filename, ROOT_MARKERS) or fs.dirname(filename) or uv.cwd() or '.'
+end
+
+---@param context LintContext
+---@return string
+local function root(context)
+    return root_for_path(context.filename)
+end
+
+---@param context LintContext
+---@param code string
+---@param message string
+---@return vim.Diagnostic
+local function status(context, code, message)
+    return {
+        bufnr = context.bufnr,
+        code = code,
+        col = 0,
+        end_col = 0,
+        end_lnum = 0,
+        lnum = 0,
+        message = clean(message),
+        severity = diagnostic.severity.ERROR,
+        source = 'bandit',
+    }
+end
+
+---@param diagnostics vim.Diagnostic[]
+---@param context LintContext
+---@param malformed boolean
+---@param foreign boolean
+---@param limited boolean
+local function append_statuses(diagnostics, context, malformed, foreign, limited)
+    if foreign then
+        append(diagnostics, status(context, 'other-file', 'Bandit returned another file.'))
+    end
+
+    if malformed then
+        append(diagnostics, status(context, 'malformed-result', 'Some Bandit results were malformed.'))
+    end
+
+    if limited then
+        append(diagnostics, status(context, 'result-limit', 'The result limit was reached; run Bandit directly.'))
+    end
+end
+
+---@param output string
+---@param context LintContext
+---@return BanditReport? report
+---@return vim.Diagnostic? problem
+local function decode_report(output, context)
+    if #output > LIMITS.output_bytes then
+        return nil, status(context, 'output-limit', 'Bandit output exceeded 16 MiB.')
+    end
+
+    if output == '' then
+        return nil, status(context, 'empty-report', 'Bandit returned an empty report.')
+    end
+
+    local decoded, report = pcall(vim.json.decode, output)
+
+    if not decoded or type(report) ~= 'table' or not vim.islist(report.errors) or not vim.islist(report.results) then
+        return nil,
+            status(
+                context,
+                'invalid-report',
+                'Bandit returned no valid JSON report; run the CLI to inspect the failure.'
+            )
+    end
+
+    ---@cast report BanditReport
+    return report, nil
+end
+
+---@param context LintContext
+---@param record any
+---@return vim.Diagnostic? item
+---@return boolean malformed
+---@return boolean foreign
+local function parse_error(context, record)
+    if
+        type(record) ~= 'table'
+        or type(record.filename) ~= 'string'
+        or type(record.reason) ~= 'string'
+        or record.reason == ''
+    then
+        return nil, true, false
+    end
+
+    if not is_target(context, record.filename) then
+        return nil, false, true
+    end
+
+    return status(context, 'bandit-input', record.reason), false, false
 end
 
 ---@param context LintContext
@@ -426,83 +503,6 @@ local function parse_issue(context, issue)
     }
 
     return item, malformed, false
-end
-
----@param context LintContext
----@param record any
----@return vim.Diagnostic? item
----@return boolean malformed
----@return boolean foreign
-local function parse_error(context, record)
-    if
-        type(record) ~= 'table'
-        or type(record.filename) ~= 'string'
-        or type(record.reason) ~= 'string'
-        or record.reason == ''
-    then
-        return nil, true, false
-    end
-
-    if not is_target(context, record.filename) then
-        return nil, false, true
-    end
-
-    return status(context, 'bandit-input', record.reason), false, false
-end
-
----@param output string
----@param context LintContext
----@return BanditReport? report
----@return vim.Diagnostic? problem
-local function decode_report(output, context)
-    if #output > LIMITS.output_bytes then
-        return nil, status(context, 'output-limit', 'Bandit output exceeded 16 MiB.')
-    end
-
-    if output == '' then
-        return nil, status(context, 'empty-report', 'Bandit returned an empty report.')
-    end
-
-    local decoded, report = pcall(vim.json.decode, output)
-
-    if not decoded or type(report) ~= 'table' or not vim.islist(report.errors) or not vim.islist(report.results) then
-        return nil,
-            status(
-                context,
-                'invalid-report',
-                'Bandit returned no valid JSON report; run the CLI to inspect the failure.'
-            )
-    end
-
-    ---@cast report BanditReport
-    return report, nil
-end
-
----@param diagnostics vim.Diagnostic[]
----@param item vim.Diagnostic?
-local function append(diagnostics, item)
-    if item ~= nil and #diagnostics < LIMITS.diagnostics then
-        diagnostics[#diagnostics + 1] = item
-    end
-end
-
----@param diagnostics vim.Diagnostic[]
----@param context LintContext
----@param malformed boolean
----@param foreign boolean
----@param limited boolean
-local function append_statuses(diagnostics, context, malformed, foreign, limited)
-    if foreign then
-        append(diagnostics, status(context, 'other-file', 'Bandit returned another file.'))
-    end
-
-    if malformed then
-        append(diagnostics, status(context, 'malformed-result', 'Some Bandit results were malformed.'))
-    end
-
-    if limited then
-        append(diagnostics, status(context, 'result-limit', 'The result limit was reached; run Bandit directly.'))
-    end
 end
 
 ---@param output string

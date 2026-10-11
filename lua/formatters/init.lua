@@ -46,19 +46,19 @@ local M = {}
 ---@field automatic? boolean Internal/on-save use; respects automatic=false.
 
 M.options = {
+    blackd_url = 'http://127.0.0.1:45484/',
     enabled = true,
     format_on_save = false,
-    timeout_ms = 3000,
-    save_timeout_ms = 1500,
+    lsp = 'fallback',
+    lsp_preference = { 'stylua_ls', 'biome_ls', 'ruff_ls', 'clangd_ls', 'gop_ls', 'rustana_ls' },
     max_input_bytes = 2 * 1024 * 1024,
+    max_lsp_edits = 10000,
     max_output_bytes = 4 * 1024 * 1024,
     max_stderr_bytes = 128 * 1024,
-    max_lsp_edits = 10000,
-    lsp = 'fallback',
     preserve_eol = true,
-    blackd_url = 'http://127.0.0.1:45484/',
+    save_timeout_ms = 1500,
     sql_language = 'sql',
-    lsp_preference = { 'stylua_ls', 'biome_ls', 'ruff_ls', 'clangd_ls', 'gop_ls', 'rustana_ls' },
+    timeout_ms = 3000,
 }
 
 ---@type table<string, FormatterSpec>
@@ -236,8 +236,8 @@ M.formatters_by_ft = {
     ['d'] = { 'dfmt' },
     ['dart'] = { 'dart_format' },
     ['dhall'] = { 'dhall_format' },
-    ['dockerfile'] = { 'dprint' },
     ['dlang'] = { 'dfmt' },
+    ['dockerfile'] = { 'dprint' },
     ['eelixir'] = { 'mix_format' },
     ['elixir'] = { 'mix_format' },
     ['elm'] = { 'elm_format' },
@@ -250,7 +250,7 @@ M.formatters_by_ft = {
     ['gdscript'] = { 'gdformat' },
     ['gleam'] = { 'gleam_format' },
     ['glsl'] = { 'clang_format' },
-    ['go'] = { 'goimports', 'gofumpt', 'gofmt' },
+    ['go'] = { 'goimports', { 'gofumpt', 'gofmt' } },
     ['grain'] = { 'grain_format' },
     ['graphql'] = { 'prettierd', 'prettier' },
     ['haskell'] = { 'fourmolu', 'ormolu', 'brittany' },
@@ -263,8 +263,8 @@ M.formatters_by_ft = {
     ['htmldjango'] = { 'djlint' },
     ['htmljinja'] = { 'djlint' },
     ['http'] = { 'kulala_fmt' },
-    ['java'] = { 'google_java_format', 'clang_format' },
     ['janet'] = { 'janet_format' },
+    ['java'] = { 'google_java_format', 'clang_format' },
     ['javascript'] = { 'biome', 'prettierd', 'prettier', 'deno_fmt' },
     ['javascriptreact'] = { 'biome', 'prettierd', 'prettier', 'deno_fmt' },
     ['jinja'] = { 'djlint' },
@@ -287,8 +287,8 @@ M.formatters_by_ft = {
     ['matlab'] = { 'mh_style' },
     ['mdx'] = { 'prettierd', 'prettier' },
     ['meson'] = { 'muon_fmt' },
-    ['nomad'] = { 'nomad_fmt' },
     ['nginx'] = { 'nginxfmt' },
+    ['nomad'] = { 'nomad_fmt' },
     ['nickel'] = { 'nickel_format' },
     ['nim'] = { 'nimpretty' },
     ['nix'] = { 'alejandra', 'nixfmt', 'nixpkgs_fmt' },
@@ -353,28 +353,11 @@ M.manual_formatters = {
     shellharden = true,
 }
 
-local function positive(value)
-    return type(value) == 'number' and value > 0 and value == math.floor(value)
-end
-
-local function message(value)
-    return tostring(value):gsub('[%z\1-\31\127]', ' '):sub(1, 4096)
-end
-
-local function notify(text, level)
-    vim.notify(text, level or vim.log.levels.INFO, { title = 'Native formatters' })
-end
-
 local function current(bufnr)
     if not bufnr or bufnr == 0 then
         return api.nvim_get_current_buf()
     end
     return bufnr
-end
-
-local function readable(path)
-    local stat = uv.fs_stat(path)
-    return stat and stat.type == 'file'
 end
 
 local function executable(candidates)
@@ -388,8 +371,25 @@ local function executable(candidates)
     end
 end
 
+local function message(value)
+    return tostring(value):gsub('[%z\1-\31\127]', ' '):sub(1, 4096)
+end
+
 local function name_valid(name)
     return type(name) == 'string' and name:match('^[%w_-]+$') ~= nil
+end
+
+local function notify(text, level)
+    vim.notify(text, level or vim.log.levels.INFO, { title = 'Native formatters' })
+end
+
+local function positive(value)
+    return type(value) == 'number' and value > 0 and value == math.floor(value)
+end
+
+local function readable(path)
+    local stat = uv.fs_stat(path)
+    return stat and stat.type == 'file'
 end
 
 ---@param name string
@@ -466,31 +466,6 @@ local function available(name, automatic)
     end
 end
 
-local function select_steps(bufnr, names, automatic)
-    local steps = {}
-    if names then
-        assert(type(names) == 'table' and #names > 0, 'Explicit formatter list must not be empty')
-        for _, name in ipairs(names) do
-            local step = available(name, automatic)
-            assert(step, M.load_errors[name] or ('Formatter unavailable: ' .. tostring(name)))
-            steps[#steps + 1] = step
-        end
-    else
-        for _, entry in ipairs(M.formatters_by_ft[vim.bo[bufnr].filetype] or {}) do
-            ---@type string[] entry is a name or a fallback chain of names
-            local chain = type(entry) == 'table' and entry or { entry }
-            for _, name in ipairs(chain) do
-                local step = available(name, true)
-                if step then
-                    steps[#steps + 1] = step
-                    break
-                end
-            end
-        end
-    end
-    return steps
-end
-
 local function context_for(bufnr, definition, input)
     local filename = api.nvim_buf_get_name(bufnr)
     local cwd = vim.fn.getcwd()
@@ -518,6 +493,31 @@ local function context_for(bufnr, definition, input)
     return context
 end
 
+local function select_steps(bufnr, names, automatic)
+    local steps = {}
+    if names then
+        assert(type(names) == 'table' and #names > 0, 'Explicit formatter list must not be empty')
+        for _, name in ipairs(names) do
+            local step = available(name, automatic)
+            assert(step, M.load_errors[name] or ('Formatter unavailable: ' .. tostring(name)))
+            steps[#steps + 1] = step
+        end
+    else
+        for _, entry in ipairs(M.formatters_by_ft[vim.bo[bufnr].filetype] or {}) do
+            ---@type string[] entry is a name or a fallback chain of names
+            local chain = type(entry) == 'table' and entry or { entry }
+            for _, name in ipairs(chain) do
+                local step = available(name, true)
+                if step then
+                    steps[#steps + 1] = step
+                    break
+                end
+            end
+        end
+    end
+    return steps
+end
+
 local function snapshot(bufnr)
     assert(api.nvim_buf_is_valid(bufnr) and api.nvim_buf_is_loaded(bufnr), 'Buffer is not loaded')
     local bo = vim.bo[bufnr]
@@ -536,35 +536,20 @@ local function snapshot(bufnr)
     local text = table.concat(lines, '\n') .. (bo.endofline and '\n' or '')
     assert(#text <= M.options.max_input_bytes, 'Buffer exceeds formatter input limit')
     return {
+        bomb = bo.bomb,
+        encoding = bo.fileencoding,
+        eol = bo.endofline,
+        fileformat = bo.fileformat,
+        filename = api.nvim_buf_get_name(bufnr),
+        filetype = bo.filetype,
         lines = lines,
         text = text,
         tick = api.nvim_buf_get_changedtick(bufnr),
-        filename = api.nvim_buf_get_name(bufnr),
-        filetype = bo.filetype,
-        eol = bo.endofline,
-        fileformat = bo.fileformat,
-        encoding = bo.fileencoding,
-        bomb = bo.bomb,
     }
 end
 
 local jobs = {}
 local sequence = 0
-local function fresh(job)
-    local b, s = job.bufnr, job.snapshot
-    return api.nvim_buf_is_valid(b)
-        and api.nvim_buf_is_loaded(b)
-        and api.nvim_buf_get_changedtick(b) == s.tick
-        and api.nvim_buf_get_name(b) == s.filename
-        and vim.bo[b].filetype == s.filetype
-        and vim.bo[b].endofline == s.eol
-        and vim.bo[b].fileformat == s.fileformat
-        and vim.bo[b].fileencoding == s.encoding
-        and vim.bo[b].bomb == s.bomb
-        and vim.bo[b].modifiable
-        and not vim.bo[b].readonly
-end
-
 local function cleanup_temp(job)
     if job.tempfile then
         uv.fs_unlink(job.tempfile)
@@ -617,6 +602,21 @@ local function cancel(job, reason)
         reason == 'timeout' and 'timeout' or 'cancelled',
         reason == 'timeout' and 'Formatting deadline exceeded' or nil
     )
+end
+
+local function fresh(job)
+    local b, s = job.bufnr, job.snapshot
+    return api.nvim_buf_is_valid(b)
+        and api.nvim_buf_is_loaded(b)
+        and api.nvim_buf_get_changedtick(b) == s.tick
+        and api.nvim_buf_get_name(b) == s.filename
+        and vim.bo[b].filetype == s.filetype
+        and vim.bo[b].endofline == s.eol
+        and vim.bo[b].fileformat == s.fileformat
+        and vim.bo[b].fileencoding == s.encoding
+        and vim.bo[b].bomb == s.bomb
+        and vim.bo[b].modifiable
+        and not vim.bo[b].readonly
 end
 
 function M.stop(bufnr)
@@ -681,6 +681,19 @@ local function apply(job)
     finish(job, ok and 'ok' or 'error', not ok and message(detail) or nil)
 end
 
+local function read_temp(path)
+    local stat = uv.fs_lstat(path)
+    assert(
+        stat and stat.type == 'file' and stat.size <= M.options.max_output_bytes,
+        'Invalid/oversized formatter tempfile'
+    )
+    local fd = assert(uv.fs_open(path, 'r', 0))
+    local text, err = uv.fs_read(fd, stat.size, 0)
+    uv.fs_close(fd)
+    assert(text, err)
+    return text
+end
+
 local function write_temp(job, context, definition)
     job.tempdir = assert(uv.fs_mkdtemp(vim.fn.tempname() .. '-format-XXXXXX'))
     local basename = context.filename ~= '' and fs.basename(context.filename)
@@ -698,19 +711,6 @@ local function write_temp(job, context, definition)
         offset = offset + count
     end
     assert(uv.fs_close(fd))
-end
-
-local function read_temp(path)
-    local stat = uv.fs_lstat(path)
-    assert(
-        stat and stat.type == 'file' and stat.size <= M.options.max_output_bytes,
-        'Invalid/oversized formatter tempfile'
-    )
-    local fd = assert(uv.fs_open(path, 'r', 0))
-    local text, err = uv.fs_read(fd, stat.size, 0)
-    uv.fs_close(fd)
-    assert(text, err)
-    return text
 end
 
 local run_step
@@ -952,12 +952,12 @@ function M.format(opts, callback)
     M.stop(bufnr)
     sequence = sequence + 1
     local job = {
-        id = sequence,
         bufnr = bufnr,
-        opts = opts,
         callback = callback,
-        done = false,
         changed = false,
+        done = false,
+        id = sequence,
+        opts = opts,
         status = 'running',
     }
     if not M.options.enabled or vim.b[bufnr].format_disabled then
@@ -971,8 +971,8 @@ function M.format(opts, callback)
         assert(not (opts.names and mode == 'only'), 'Explicit formatter names conflict with lsp=only')
         local steps = mode == 'only' and {} or select_steps(bufnr, opts.names, opts.automatic == true)
         return {
-            snapshot = state,
             mode = mode,
+            snapshot = state,
             steps = steps,
         }
     end)
@@ -1001,16 +1001,6 @@ function M.format(opts, callback)
         end
     end
     return job
-end
-
-function M.run(bufnr, opts, names)
-    opts = vim.tbl_extend('force', opts or {}, {
-        bufnr = bufnr or 0,
-    })
-    if names then
-        opts.names = names
-    end
-    return M.format(opts)
 end
 
 function M.info(bufnr, all)
@@ -1050,6 +1040,16 @@ function M.info(bufnr, all)
     local client = lsp_client(bufnr)
     lines[#lines + 1] = 'LSP fallback: ' .. (client and client.name or 'none')
     return table.concat(lines, '\n')
+end
+
+function M.run(bufnr, opts, names)
+    opts = vim.tbl_extend('force', opts or {}, {
+        bufnr = bufnr or 0,
+    })
+    if names then
+        opts.names = names
+    end
+    return M.format(opts)
 end
 
 function M.validate()
@@ -1131,11 +1131,11 @@ end
 ---raised errors are caught by the runner, notified once, and never break
 ---the save or the stages after them.
 
----@type table<string, FormatStageSpec>
-local save_stages = {}
-
 ---Upper bound on registered stages; keeps the per-save scan bounded.
 local SAVE_STAGE_MAX = 64
+
+---@type table<string, FormatStageSpec>
+local save_stages = {}
 
 ---Validate a stage spec. Programmer errors raise loudly: this runs at
 ---config load, where a silent mis-registration would be worse than a
@@ -1218,22 +1218,42 @@ M.ownership_runtime_allowlist = {
             .. 'not a rogue formatter. Desc is buffer-stable; group '
             .. 'name varies by buffer.',
     },
+    {
+        group_name = 'BiomeWriteActions',
+        rationale = 'Biome LSP on_attach in lsp/biome_ls.lua: buffer-local '
+            .. 'BufWritePre for code actions (quickfix, source.fixAll, '
+            .. 'source.organizeImports) and formatting. Legitimate LSP '
+            .. 'feature, not a rogue formatter.',
+    },
+    {
+        group_name = 'rust.vim.PreWrite',
+        rationale = 'Rust save hook (pattern *.rs): transient Neovim LSP '
+            .. 'PreWrite integration for Rust files. Observed during '
+            .. 'FileType setup; not a rogue third-party formatter.',
+    },
+    {
+        group_name = 'nvim.editorconfig',
+        rationale = 'Neovim core editorconfig save hooks '
+            .. '(trim_trailing_whitespace / insert_final_newline from the '
+            .. 'project .editorconfig): buffer-local BufWritePre owned by '
+            .. 'the runtime, not a rogue formatter.',
+    },
 }
 
 ---Group id of the pipeline's BufWritePre, captured in M.setup. Compared
 ---by id as well as by name so the tripwire also works before setup runs.
----@type integer?
-local save_pipeline_group_id = nil
-
----@type table<string, boolean> Offender keys already reported, loudly once.
-local ownership_offenders_reported = {}
+---Upper bound on distinct offenders reported per session.
+local OWNERSHIP_OFFENDERS_MAX = 16
 
 ---Distinct offenders reported this session; the map stays tiny by design.
 ---@type integer
 local ownership_offenders_count = 0
 
----Upper bound on distinct offenders reported per session.
-local OWNERSHIP_OFFENDERS_MAX = 16
+---@type table<string, boolean> Offender keys already reported, loudly once.
+local ownership_offenders_reported = {}
+
+---@type integer?
+local save_pipeline_group_id = nil
 
 ---Whether one allowlist entry matches a live autocmd. An absent key means
 ---"don't care"; no_group/no_desc explicitly require the field to be nil.
@@ -1312,6 +1332,26 @@ local function trip_save_ownership()
     end
 end
 
+---Fetch a registered stage spec by name (a copy). Intended for tests and
+---for operators inspecting the pipeline; nil when not registered.
+---@param name string
+---@return FormatStageSpec? spec
+function M.get_stage(name)
+    assert(type(name) == 'string' and name ~= '', 'stage name must be a non-empty string')
+    local stage = save_stages[name]
+    if stage == nil then
+        return nil
+    end
+    return {
+        name = stage.name,
+        priority = stage.priority,
+        patterns = stage.patterns and vim.deepcopy(stage.patterns) or nil,
+        filetypes = stage.filetypes and vim.deepcopy(stage.filetypes) or nil,
+        desc = stage.desc,
+        run = stage.run,
+    }
+end
+
 ---Register a save pipeline stage. Duplicate names are rejected loudly so a
 ---copy-paste collision can never silently shadow a stage.
 ---@param spec FormatStageSpec
@@ -1341,26 +1381,6 @@ function M.unregister_stage(name)
     end
     save_stages[name] = nil
     return true
-end
-
----Fetch a registered stage spec by name (a copy). Intended for tests and
----for operators inspecting the pipeline; nil when not registered.
----@param name string
----@return FormatStageSpec? spec
-function M.get_stage(name)
-    assert(type(name) == 'string' and name ~= '', 'stage name must be a non-empty string')
-    local stage = save_stages[name]
-    if stage == nil then
-        return nil
-    end
-    return {
-        name = stage.name,
-        priority = stage.priority,
-        patterns = stage.patterns and vim.deepcopy(stage.patterns) or nil,
-        filetypes = stage.filetypes and vim.deepcopy(stage.filetypes) or nil,
-        desc = stage.desc,
-        run = stage.run,
-    }
 end
 
 ---Convert an autocmd-style glob to a Vim regex. We roll our own instead of
@@ -1517,109 +1537,6 @@ end
 ---owns any save-time autocmd.
 M.ownership_allowlist = {}
 
----Blank every comment, keeping newlines and every string verbatim, so
----later analysis sees real code with original line numbers intact.
----@param source string
----@return string code
-local function strip_comments(source)
-    local out = {}
-    local i, n = 1, #source
-    while i <= n do
-        local c = source:sub(i, i)
-        if c == '-' and source:sub(i + 1, i + 1) == '-' then
-            local eq = source:match('^%-%-%[(=*)%[', i)
-            if eq ~= nil then
-                local closer = ']' .. eq .. ']'
-                local stop = source:find(closer, i + 4 + #eq, true)
-                stop = stop and (stop + #closer - 1) or n
-                out[#out + 1] = source:sub(i, stop):gsub('[^\n]', ' ')
-                i = stop + 1
-            else
-                local nl = source:find('\n', i + 2, true)
-                local stop = nl and (nl - 1) or n
-                out[#out + 1] = (' '):rep(stop - i + 1)
-                i = stop + 1
-            end
-        elseif c == "'" or c == '"' then
-            local j = i + 1
-            while j <= n do
-                local d = source:sub(j, j)
-                if d == '\\' then
-                    j = j + 2
-                elseif d == c or d == '\n' then
-                    break
-                else
-                    j = j + 1
-                end
-            end
-            local str_end = (j <= n and source:sub(j, j) == c) and j or (j - 1)
-            out[#out + 1] = source:sub(i, str_end)
-            i = str_end + 1
-        elseif c == '[' then
-            local eq = source:match('^%[(=*)%[', i)
-            if eq ~= nil then
-                local closer = ']' .. eq .. ']'
-                local stop = source:find(closer, i + 2 + #eq, true)
-                stop = stop and (stop + #closer - 1) or n
-                out[#out + 1] = source:sub(i, stop)
-                i = stop + 1
-            else
-                out[#out + 1] = c
-                i = i + 1
-            end
-        else
-            out[#out + 1] = c
-            i = i + 1
-        end
-    end
-    return table.concat(out)
-end
-
----@class StringSpan
----@field start integer First character of the literal, inclusive.
----@field finish integer Last character of the literal, inclusive.
-
----Spans of every string literal (short and long) in comment-free code.
----@param code string
----@return StringSpan[]
-local function string_spans(code)
-    local spans = {}
-    local i, n = 1, #code
-    while i <= n do
-        local c = code:sub(i, i)
-        if c == "'" or c == '"' then
-            local j = i + 1
-            while j <= n do
-                local d = code:sub(j, j)
-                if d == '\\' then
-                    j = j + 2
-                elseif d == c or d == '\n' then
-                    break
-                else
-                    j = j + 1
-                end
-            end
-            local str_end = (j <= n and code:sub(j, j) == c) and j or (j - 1)
-            spans[#spans + 1] = { start = i, finish = str_end }
-            i = str_end + 1
-        elseif c == '[' then
-            local eq = code:match('^%[(=*)%[', i)
-            if eq ~= nil then
-                local closer = ']' .. eq .. ']'
-                local stop = code:find(closer, i + 2 + #eq, true)
-                stop = stop and (stop + #closer - 1) or n
-                spans[#spans + 1] = { start = i, finish = stop }
-                i = stop + 1
-            else
-                i = i + 1
-            end
-        else
-            i = i + 1
-        end
-    end
-    return spans
-end
-
 ---Replace every span with spaces, preserving positions and newlines.
 ---@param code string
 ---@param spans StringSpan[]
@@ -1693,30 +1610,125 @@ local function first_arg(code, paren_pos)
     return nil
 end
 
----Identifiers assigned the literal 'BufWritePre' (local or not), so an
----event passed by variable is still recognized. Comparisons (==, ~=) are
----excluded by requiring a bare '=' before the literal.
----@param code string Comment-free source.
----@param spans StringSpan[]
----@return table<string, boolean> vars
-local function save_event_vars(code, spans)
-    local vars = {}
-    local bare = blank_spans(code, spans)
-    for _, span in ipairs(spans) do
-        local text = code:sub(span.start, span.finish)
-        local inner = text:match('^"(.-)"$') or text:match("^'(.-)'$") or text:match('^%[=*%[(.-)%]=*%]$')
-        if inner == 'BufWritePre' then
-            local before = bare:sub(1, span.start - 1)
-            local name_start, _, name = before:find('([%w_]+)%s*=%s*$')
-            if name ~= nil then
-                local prev = name_start > 1 and before:sub(name_start - 1, name_start - 1) or ' '
-                if not prev:find('[=~<>%w_]') then
-                    vars[name] = true
+---@class StringSpan
+---@field start integer First character of the literal, inclusive.
+---@field finish integer Last character of the literal, inclusive.
+
+---Spans of every string literal (short and long) in comment-free code.
+---@param code string
+---@return StringSpan[]
+local function string_spans(code)
+    local spans = {}
+    local i, n = 1, #code
+    while i <= n do
+        local c = code:sub(i, i)
+        if c == "'" or c == '"' then
+            local j = i + 1
+            while j <= n do
+                local d = code:sub(j, j)
+                if d == '\\' then
+                    j = j + 2
+                elseif d == c or d == '\n' then
+                    break
+                else
+                    j = j + 1
                 end
+            end
+            local str_end = (j <= n and code:sub(j, j) == c) and j or (j - 1)
+            spans[#spans + 1] = { start = i, finish = str_end }
+            i = str_end + 1
+        elseif c == '[' then
+            local eq = code:match('^%[(=*)%[', i)
+            if eq ~= nil then
+                local closer = ']' .. eq .. ']'
+                local stop = code:find(closer, i + 2 + #eq, true)
+                stop = stop and (stop + #closer - 1) or n
+                spans[#spans + 1] = { start = i, finish = stop }
+                i = stop + 1
+            else
+                i = i + 1
+            end
+        else
+            i = i + 1
+        end
+    end
+    return spans
+end
+
+---Blank every comment, keeping newlines and every string verbatim, so
+---later analysis sees real code with original line numbers intact.
+---@param source string
+---@return string code
+local function strip_comments(source)
+    local out = {}
+    local i, n = 1, #source
+    while i <= n do
+        local c = source:sub(i, i)
+        if c == '-' and source:sub(i + 1, i + 1) == '-' then
+            local eq = source:match('^%-%-%[(=*)%[', i)
+            if eq ~= nil then
+                local closer = ']' .. eq .. ']'
+                local stop = source:find(closer, i + 4 + #eq, true)
+                stop = stop and (stop + #closer - 1) or n
+                out[#out + 1] = source:sub(i, stop):gsub('[^\n]', ' ')
+                i = stop + 1
+            else
+                local nl = source:find('\n', i + 2, true)
+                local stop = nl and (nl - 1) or n
+                out[#out + 1] = (' '):rep(stop - i + 1)
+                i = stop + 1
+            end
+        elseif c == "'" or c == '"' then
+            local j = i + 1
+            while j <= n do
+                local d = source:sub(j, j)
+                if d == '\\' then
+                    j = j + 2
+                elseif d == c or d == '\n' then
+                    break
+                else
+                    j = j + 1
+                end
+            end
+            local str_end = (j <= n and source:sub(j, j) == c) and j or (j - 1)
+            out[#out + 1] = source:sub(i, str_end)
+            i = str_end + 1
+        elseif c == '[' then
+            local eq = source:match('^%[(=*)%[', i)
+            if eq ~= nil then
+                local closer = ']' .. eq .. ']'
+                local stop = source:find(closer, i + 2 + #eq, true)
+                stop = stop and (stop + #closer - 1) or n
+                out[#out + 1] = source:sub(i, stop)
+                i = stop + 1
+            else
+                out[#out + 1] = c
+                i = i + 1
+            end
+        else
+            out[#out + 1] = c
+            i = i + 1
+        end
+    end
+    return table.concat(out)
+end
+
+---Whether a vim.cmd first argument issues an autocmd for BufWritePre. A
+---documented heuristic: the string must name BufWritePre and read as an
+---autocmd command (the 'au' abbreviation counts).
+---@param arg1 string First argument text.
+---@return boolean
+local function cmd_arg_is_save(arg1)
+    for _, span in ipairs(string_spans(arg1)) do
+        local text = arg1:sub(span.start, span.finish)
+        if text:find('BufWritePre', 1, true) then
+            local lower = text:lower()
+            if lower:find('autocmd', 1, true) or lower:find('%f[%a]au%f[%A]') then
+                return true
             end
         end
     end
-    return vars
+    return false
 end
 
 ---Local names bound to nvim_create_autocmd
@@ -1765,22 +1777,30 @@ local function event_arg_is_save(arg1, vars)
     return false
 end
 
----Whether a vim.cmd first argument issues an autocmd for BufWritePre. A
----documented heuristic: the string must name BufWritePre and read as an
----autocmd command (the 'au' abbreviation counts).
----@param arg1 string First argument text.
----@return boolean
-local function cmd_arg_is_save(arg1)
-    for _, span in ipairs(string_spans(arg1)) do
-        local text = arg1:sub(span.start, span.finish)
-        if text:find('BufWritePre', 1, true) then
-            local lower = text:lower()
-            if lower:find('autocmd', 1, true) or lower:find('%f[%a]au%f[%A]') then
-                return true
+---Identifiers assigned the literal 'BufWritePre' (local or not), so an
+---event passed by variable is still recognized. Comparisons (==, ~=) are
+---excluded by requiring a bare '=' before the literal.
+---@param code string Comment-free source.
+---@param spans StringSpan[]
+---@return table<string, boolean> vars
+local function save_event_vars(code, spans)
+    local vars = {}
+    local bare = blank_spans(code, spans)
+    for _, span in ipairs(spans) do
+        local text = code:sub(span.start, span.finish)
+        local inner = text:match('^"(.-)"$') or text:match("^'(.-)'$") or text:match('^%[=*%[(.-)%]=*%]$')
+        if inner == 'BufWritePre' then
+            local before = bare:sub(1, span.start - 1)
+            local name_start, _, name = before:find('([%w_]+)%s*=%s*$')
+            if name ~= nil then
+                local prev = name_start > 1 and before:sub(name_start - 1, name_start - 1) or ' '
+                if not prev:find('[=~<>%w_]') then
+                    vars[name] = true
+                end
             end
         end
     end
-    return false
+    return vars
 end
 
 ---Scan one file for live BufWritePre creations. Comments never match
@@ -1901,15 +1921,28 @@ local function violation_allowlisted(violation, allowlist)
     return false
 end
 
----Repository root, derived from this module's own source path so the
----guard works regardless of the caller's working directory.
----@return string root
-function M.ownership_repo_root()
-    local source = debug.getinfo(M.check_save_ownership, 'S').source
-    assert(source:sub(1, 1) == '@', 'ownership guard: unexpected module source')
-    local root = source:sub(2):match('^(.*)/lua/formatters/init%.lua$')
-    assert(root ~= nil, 'ownership guard: cannot derive repo root')
-    return root
+---Run the guard and raise loudly naming every offending file and line.
+---Intended for tests; the runtime path uses the tripwire instead, because
+---naming a file is impossible from a live autocmd.
+---@param opts? OwnershipCheckOptions
+---@return nil
+function M.assert_save_ownership(opts)
+    local violations = M.check_save_ownership(opts)
+    if #violations == 0 then
+        return
+    end
+    local lines = {
+        (
+            'Save-ownership guard: %d rogue BufWritePre hook(s) outside the '
+            .. 'format pipeline. Lang files must register stages via '
+            .. 'formatters.register_stage(); a legitimate non-formatting '
+            .. 'BufWritePre belongs on M.ownership_allowlist with a rationale.'
+        ):format(#violations),
+    }
+    for _, violation in ipairs(violations) do
+        lines[#lines + 1] = ('  %s:%d: %s'):format(violation.file, violation.line, violation.snippet)
+    end
+    error(table.concat(lines, '\n'))
 end
 
 ---@class OwnershipCheckOptions
@@ -1957,28 +1990,15 @@ function M.check_save_ownership(opts)
     return violations
 end
 
----Run the guard and raise loudly naming every offending file and line.
----Intended for tests; the runtime path uses the tripwire instead, because
----naming a file is impossible from a live autocmd.
----@param opts? OwnershipCheckOptions
----@return nil
-function M.assert_save_ownership(opts)
-    local violations = M.check_save_ownership(opts)
-    if #violations == 0 then
-        return
-    end
-    local lines = {
-        (
-            'Save-ownership guard: %d rogue BufWritePre hook(s) outside the '
-            .. 'format pipeline. Lang files must register stages via '
-            .. 'formatters.register_stage(); a legitimate non-formatting '
-            .. 'BufWritePre belongs on M.ownership_allowlist with a rationale.'
-        ):format(#violations),
-    }
-    for _, violation in ipairs(violations) do
-        lines[#lines + 1] = ('  %s:%d: %s'):format(violation.file, violation.line, violation.snippet)
-    end
-    error(table.concat(lines, '\n'))
+---Repository root, derived from this module's own source path so the
+---guard works regardless of the caller's working directory.
+---@return string root
+function M.ownership_repo_root()
+    local source = debug.getinfo(M.check_save_ownership, 'S').source
+    assert(source:sub(1, 1) == '@', 'ownership guard: unexpected module source')
+    local root = source:sub(2):match('^(.*)/lua/formatters/init%.lua$')
+    assert(root ~= nil, 'ownership guard: cannot derive repo root')
+    return root
 end
 
 -- The native external formatter pipeline as the final save stage, keeping
@@ -2020,12 +2040,12 @@ function M.setup(opts)
         end
     end
     for _, key in ipairs({
-        'timeout_ms',
-        'save_timeout_ms',
         'max_input_bytes',
+        'max_lsp_edits',
         'max_output_bytes',
         'max_stderr_bytes',
-        'max_lsp_edits',
+        'save_timeout_ms',
+        'timeout_ms',
     }) do
         assert(positive(M.options[key]), 'Invalid formatter option: ' .. key)
     end
@@ -2035,59 +2055,59 @@ function M.setup(opts)
     -- The tripwire compares live BufWritePre owners against this id.
     save_pipeline_group_id = group
     api.nvim_create_autocmd({
-        'BufWipeout',
         'BufUnload',
+        'BufWipeout',
     }, {
-        group = group,
         callback = function(event)
             M.stop(event.buf)
         end,
         desc = 'Cancel pending formatting',
+        group = group,
+    })
+    api.nvim_create_autocmd('BufWritePre', {
+        callback = function(event)
+            M.run_save_stages(event.buf)
+        end,
+        desc = 'Single owner: run the ordered save-format stage pipeline',
+        group = group,
     })
     api.nvim_create_autocmd('VimLeavePre', {
-        group = group,
         callback = function()
             for _, job in pairs(jobs) do
                 cancel(job, 'cancelled')
             end
         end,
         desc = 'Stop native formatter processes',
-    })
-    api.nvim_create_autocmd('BufWritePre', {
         group = group,
-        desc = 'Single owner: run the ordered save-format stage pipeline',
-        callback = function(event)
-            M.run_save_stages(event.buf)
-        end,
     })
     api.nvim_create_user_command('Format', function(command)
-        M.format({ names = #command.fargs > 0 and command.fargs or nil, async = not command.bang })
+        M.format({ async = not command.bang, names = #command.fargs > 0 and command.fargs or nil })
     end, {
-        nargs = '*',
         bang = true,
         complete = completions,
-        force = true,
         desc = 'Format buffer; bang waits synchronously',
-    })
-    api.nvim_create_user_command('FormatLsp', function()
-        M.format({ lsp = 'only' })
-    end, {
         force = true,
-        desc = 'Format with one native LSP client',
+        nargs = '*',
     })
-    api.nvim_create_user_command('FormatStop', function()
-        M.stop(0)
-    end, { force = true, desc = 'Cancel formatting' })
     api.nvim_create_user_command('FormatDisable', function()
         vim.b.format_disabled = true
         M.stop(0)
-    end, { force = true, desc = 'Disable formatting for this buffer' })
+    end, { desc = 'Disable formatting for this buffer', force = true })
     api.nvim_create_user_command('FormatEnable', function()
         vim.b.format_disabled = false
-    end, { force = true, desc = 'Enable formatting for this buffer' })
+    end, { desc = 'Enable formatting for this buffer', force = true })
     api.nvim_create_user_command('FormatInfo', function(command)
         notify(M.info(0, command.bang))
-    end, { bang = true, force = true, desc = 'Show formatter availability; bang lists the full catalog' })
+    end, { bang = true, desc = 'Show formatter availability; bang lists the full catalog', force = true })
+    api.nvim_create_user_command('FormatLsp', function()
+        M.format({ lsp = 'only' })
+    end, {
+        desc = 'Format with one native LSP client',
+        force = true,
+    })
+    api.nvim_create_user_command('FormatStop', function()
+        M.stop(0)
+    end, { desc = 'Cancel formatting', force = true })
     api.nvim_create_user_command('FormatValidate', function()
         local errors = M.validate()
         notify(
@@ -2095,8 +2115,8 @@ function M.setup(opts)
             #errors == 0 and vim.log.levels.INFO or vim.log.levels.ERROR
         )
     end, {
-        force = true,
         desc = 'Validate formatter registry',
+        force = true,
     })
     return M
 end

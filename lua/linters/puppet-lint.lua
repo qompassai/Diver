@@ -4,9 +4,6 @@
 -- SPDX-License-Identifier: Apache-2.0
 -- #################################################################
 return {
-    name = 'puppet-lint',
-    cmd = 'puppet-lint',
-    stdin = false,
     append_fname = true,
     args = function()
         return {
@@ -14,11 +11,14 @@ return {
             '%{fullpath}:%{line}:%{column}:%{kind}:%{check}:%{message}',
         }
     end,
-    stream = 'stdout',
-    ignore_exitcode = true,
+    cmd = 'puppet-lint',
     errorformat = {
         '%f:%l:%c:%t:%*[a-zA-Z0-9_ -]:%m',
         '%f:%l:%c:%*[a-z]:%*[a-zA-Z0-9_ -]:%m',
         '%-G%.%#',
     },
+    ignore_exitcode = true,
+    name = 'puppet-lint',
+    stdin = false,
+    stream = 'stdout',
 } --[[@as vim.lint.Config]]

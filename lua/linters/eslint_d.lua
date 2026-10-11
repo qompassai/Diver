@@ -21,11 +21,11 @@
 local diagnostic = vim.diagnostic
 local fs = vim.fs
 local json = vim.json
-local ERROR = diagnostic.severity.ERROR
-local WARN = diagnostic.severity.WARN
 local DIAGNOSTICS_MAX = 4096
+local ERROR = diagnostic.severity.ERROR
 local MESSAGE_LENGTH_MAX = 16 * 1024
 local OUTPUT_LENGTH_MAX = 16 * 1024 * 1024
+local WARN = diagnostic.severity.WARN
 local floor = math.floor
 local max = math.max
 local min = math.min
@@ -68,6 +68,55 @@ local SEVERITIES = {
 ---@field fixableErrorCount? integer
 ---@field fixableWarningCount? integer
 
+---@param context LintContext
+---@return string[]
+local function args(context)
+    assert(type(context.filename) == 'string' and context.filename ~= '', 'context.filename must be a non-empty string')
+
+    return {
+        '--stdin',
+
+        '--stdin-filename',
+        context.filename,
+        '--format',
+        'json',
+        '--no-color',
+        '--report-unused-disable-directives-severity',
+        'error',
+        '--report-unused-inline-configs',
+        'error',
+        '--no-warn-ignored',
+        '--max-warnings',
+        '0',
+    }
+end
+
+---@param context LintContext
+---@return string
+local function cwd(context)
+    assert(type(context.root) == 'string' and context.root ~= '', 'context.root must be a non-empty string')
+
+    return fs.normalize(context.root)
+end
+
+---@param entry EslintDMessage
+---@return string?
+local function diagnostic_code(entry)
+    if type(entry.ruleId) == 'string' and entry.ruleId ~= '' then
+        return entry.ruleId
+    end
+
+    if entry.fatal == true then
+        return 'fatal'
+    end
+
+    if type(entry.messageId) == 'string' and entry.messageId ~= '' then
+        return entry.messageId
+    end
+
+    return nil
+end
+
 ---@param value integer|number|string|nil
 ---@param fallback integer
 ---@return integer
@@ -80,32 +129,6 @@ local function integer(value, fallback)
     end
 
     return floor(parsed)
-end
-
----@param value string
----@return string
-local function trim(value)
-    assert(type(value) == 'string', 'value must be a string')
-
-    return (value:gsub('^%s*(.-)%s*$', '%1'))
-end
-
----@param value string
----@return string
-local function normalize_message(value)
-    assert(type(value) == 'string', 'value must be a string')
-
-    value = value:gsub('\r\n', '\n')
-
-    value = value:gsub('\r', '\n')
-
-    value = trim(value)
-
-    if #value > MESSAGE_LENGTH_MAX then
-        value = value:sub(1, MESSAGE_LENGTH_MAX) .. '\n[message truncated]'
-    end
-
-    return value
 end
 
 ---@param path string
@@ -158,22 +181,30 @@ local function severity(value, fatal)
     return SEVERITIES[floor(value)] or ERROR
 end
 
----@param entry EslintDMessage
----@return string?
-local function diagnostic_code(entry)
-    if type(entry.ruleId) == 'string' and entry.ruleId ~= '' then
-        return entry.ruleId
+---@param value string
+---@return string
+local function trim(value)
+    assert(type(value) == 'string', 'value must be a string')
+
+    return (value:gsub('^%s*(.-)%s*$', '%1'))
+end
+
+---@param value string
+---@return string
+local function normalize_message(value)
+    assert(type(value) == 'string', 'value must be a string')
+
+    value = value:gsub('\r\n', '\n')
+
+    value = value:gsub('\r', '\n')
+
+    value = trim(value)
+
+    if #value > MESSAGE_LENGTH_MAX then
+        value = value:sub(1, MESSAGE_LENGTH_MAX) .. '\n[message truncated]'
     end
 
-    if entry.fatal == true then
-        return 'fatal'
-    end
-
-    if type(entry.messageId) == 'string' and entry.messageId ~= '' then
-        return entry.messageId
-    end
-
-    return nil
+    return value
 end
 
 ---@param entry EslintDMessage
@@ -220,20 +251,14 @@ local function diagnostic_from_message(entry, bufnr)
 
     return {
         bufnr = bufnr,
-
-        lnum = lnum,
-        end_lnum = end_lnum,
-
+        code = code,
         col = col,
         end_col = end_col,
-
+        end_lnum = end_lnum,
+        lnum = lnum,
         message = message,
-
         severity = severity(entry.severity, entry.fatal),
-
         source = SOURCE,
-        code = code,
-
         user_data = {
             fatal = entry.fatal == true,
             fixable = type(entry.fix) == 'table',
@@ -334,42 +359,12 @@ local function parse(output, context)
     return diagnostics
 end
 
----@param context LintContext
----@return string[]
-local function args(context)
-    assert(type(context.filename) == 'string' and context.filename ~= '', 'context.filename must be a non-empty string')
-
-    return {
-        '--stdin',
-
-        '--stdin-filename',
-        context.filename,
-        '--format',
-        'json',
-        '--no-color',
-        '--report-unused-disable-directives-severity',
-        'error',
-        '--report-unused-inline-configs',
-        'error',
-        '--no-warn-ignored',
-        '--max-warnings',
-        '0',
-    }
-end
----@param context LintContext
----@return string
-local function cwd(context)
-    assert(type(context.root) == 'string' and context.root ~= '', 'context.root must be a non-empty string')
-
-    return fs.normalize(context.root)
-end
-
 return ---@type Linter
 {
+    append_fname = false,
+    args = args,
     automatic = false,
     cmd = 'eslint_d',
-    args = args,
-    append_fname = false,
     cwd = cwd,
     ignore_exitcode = true,
     parser = parse,

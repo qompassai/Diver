@@ -41,10 +41,10 @@ local SOURCE = 'dmypy'
 ---@type table<string, integer>
 local SEVERITIES = {
     error = ERROR,
-    warning = WARN,
-    warn = WARN,
-    note = INFO,
     info = INFO,
+    note = INFO,
+    warn = WARN,
+    warning = WARN,
 }
 
 ---@type string[]
@@ -65,68 +65,30 @@ local CONFIG_CANDIDATES = {
 ---@field message string
 ---@field code? string
 
----@param value integer|number|string|nil
----@param fallback integer
----@return integer
-local function integer(value, fallback)
-    assert(fallback >= 0)
+---@param context LintContext
+---@return string
+local function cwd(context)
+    assert(context.root ~= '')
 
-    local parsed = tonumber(value)
-
-    if parsed == nil then
-        return fallback
-    end
-
-    return floor(parsed)
+    return fs.normalize(context.root)
 end
 
----@param value string|nil
----@return integer
-local function severity(value)
-    if type(value) ~= 'string' then
-        return ERROR
+---@param message string
+---@return string?
+local function diagnostic_code(message)
+    local code = message:match('%s+%[([%w_%-]+)%]%s*$')
+
+    if type(code) ~= 'string' or code == '' then
+        return nil
     end
 
-    return SEVERITIES[value:lower()] or ERROR
+    return code
 end
 
 ---@param path string
 ---@return boolean
 local function exists(path)
     return uv.fs_stat(path) ~= nil
-end
-
----@param value string
----@return string
-local function trim(value)
-    assert(type(value) == 'string')
-
-    return (value:gsub('^%s*(.-)%s*$', '%1'))
-end
-
----@param value string
----@return string
-local function strip_ansi(value)
-    assert(type(value) == 'string')
-
-    return (value:gsub('\27%[[%d;?]*[ -/]*[@-~]', ''))
-end
-
----@param value string
----@return string
-local function normalize_message(value)
-    assert(type(value) == 'string')
-
-    value = strip_ansi(value)
-    value = value:gsub('\r\n', '\n')
-    value = value:gsub('\r', '\n')
-    value = trim(value)
-
-    if #value > MESSAGE_LENGTH_MAX then
-        value = value:sub(1, MESSAGE_LENGTH_MAX) .. '\n[message truncated]'
-    end
-
-    return value
 end
 
 ---@param root string
@@ -143,248 +105,6 @@ local function config_file(root)
     end
 
     return nil
-end
-
----@param path string
----@return boolean
-local function is_absolute(path)
-    assert(type(path) == 'string')
-    assert(path ~= '')
-
-    return vim.fn.isabsolutepath(path) == 1
-end
-
-local function normalize_path(path, root)
-    assert(path ~= '')
-    assert(root ~= '')
-
-    if path:sub(1, 7) == 'file://' then
-        local ok, filename = pcall(vim.uri_to_fname, path)
-
-        if ok and type(filename) == 'string' and filename ~= '' then
-            return fs.normalize(filename)
-        end
-    end
-
-    if is_absolute(path) then
-        return fs.normalize(path)
-    end
-
-    return fs.normalize(fs.joinpath(root, path))
-end
-
----@param candidate string
----@param filename string
----@param root string
----@return boolean
-local function belongs_to_buffer(candidate, filename, root)
-    assert(candidate ~= '')
-    assert(filename ~= '')
-    assert(root ~= '')
-
-    return normalize_path(candidate, root) == filename
-end
-
----@param message string
----@return string?
-local function diagnostic_code(message)
-    local code = message:match('%s+%[([%w_%-]+)%]%s*$')
-
-    if type(code) ~= 'string' or code == '' then
-        return nil
-    end
-
-    return code
-end
-
----@param message string
----@param code string|nil
----@return string
-local function remove_code_suffix(message, code)
-    if code == nil then
-        return message
-    end
-
-    return trim(message:gsub('%s+%[' .. vim.pesc(code) .. '%]%s*$', ''))
-end
-
----@param line string
----@return DmypyParsedDiagnostic?
-local function parse_line(line)
-    assert(type(line) == 'string')
-
-    if line == '' or #line > LINE_LENGTH_MAX then
-        return nil
-    end
-
-    line = strip_ansi(line)
-
-    --
-    -- With --show-error-end:
-    --
-    --   file.py:12:4:12:9: error: message [assignment]
-    --
-    local filename, start_line, start_column, end_line, end_column, level, message =
-        line:match('^(.+):(%d+):(%d+):(%d+):(%d+):%s*' .. '([%a]+):%s*(.+)$')
-
-    if
-        filename ~= nil
-        and start_line ~= nil
-        and start_column ~= nil
-        and end_line ~= nil
-        and end_column ~= nil
-        and level ~= nil
-        and message ~= nil
-    then
-        local code = diagnostic_code(message)
-
-        message = remove_code_suffix(normalize_message(message), code)
-
-        return {
-            filename = filename,
-
-            line = max(integer(start_line, 1), 1),
-
-            --
-            -- Mypy columns are already zero-based.
-            --
-            column = max(integer(start_column, 0), 0),
-
-            end_line = max(integer(end_line, 1), 1),
-
-            end_column = max(integer(end_column, 0), 0),
-
-            severity = level,
-            message = message,
-            code = code,
-        }
-    end
-
-    --
-    -- Fallback form without end coordinates:
-    --
-    --   file.py:12:4: error: message [assignment]
-    --
-    filename, start_line, start_column, level, message = line:match('^(.+):(%d+):(%d+):%s*' .. '([%a]+):%s*(.+)$')
-
-    if filename == nil or start_line == nil or start_column == nil or level == nil or message == nil then
-        return nil
-    end
-
-    local code = diagnostic_code(message)
-
-    message = remove_code_suffix(normalize_message(message), code)
-
-    if message == '' then
-        return nil
-    end
-
-    return {
-        filename = filename,
-
-        line = max(integer(start_line, 1), 1),
-
-        column = max(integer(start_column, 0), 0),
-
-        severity = level,
-        message = message,
-        code = code,
-    }
-end
-
----@param entry DmypyParsedDiagnostic
----@param filename string
----@param root string
----@return vim.Diagnostic.Set?
-local function diagnostic_from_entry(entry, filename, root)
-    if not belongs_to_buffer(entry.filename, filename, root) then
-        return nil
-    end
-
-    --
-    -- Mypy line numbers are one-based.
-    -- Mypy columns are zero-based.
-    --
-    local lnum = max(entry.line - 1, 0)
-
-    local col = max(entry.column, 0)
-
-    local end_lnum = lnum
-    local end_col = col + 1
-
-    if entry.end_line ~= nil then
-        end_lnum = max(entry.end_line - 1, lnum)
-    end
-
-    local end_column = entry.end_column
-    if end_column ~= nil then
-        end_col = max(end_column, end_lnum == lnum and col + 1 or 0)
-    end
-
-    return {
-        lnum = lnum,
-        end_lnum = end_lnum,
-
-        col = col,
-        end_col = end_col,
-
-        message = entry.message,
-
-        severity = severity(entry.severity),
-
-        source = SOURCE,
-        code = entry.code,
-
-        user_data = {
-            error_code = entry.code,
-            mypy_severity = entry.severity,
-        },
-    }
-end
-
----@param output string
----@param context LintContext|integer
----@return vim.Diagnostic.Set[]
-local function parse(output, context)
-    if output == '' then
-        return {}
-    end
-
-    assert(type(context) == 'table', 'dmypy parser requires a LintContext')
-
-    ---@cast context LintContext
-
-    assert(context.filename ~= '')
-    assert(context.root ~= '')
-
-    assert(#output <= OUTPUT_LENGTH_MAX, 'dmypy output exceeded maximum size')
-
-    local filename = fs.normalize(context.filename)
-
-    local root = fs.normalize(context.root)
-
-    ---@type vim.Diagnostic.Set[]
-    local diagnostics = {}
-
-    for line in output:gmatch('[^\r\n]+') do
-        if #diagnostics >= DIAGNOSTICS_MAX then
-            break
-        end
-
-        local raw = parse_line(line)
-
-        if raw ~= nil then
-            local entry = diagnostic_from_entry(raw, filename, root)
-
-            if entry ~= nil then
-                diagnostics[#diagnostics + 1] = entry
-            end
-        end
-    end
-
-    assert(#diagnostics <= DIAGNOSTICS_MAX)
-
-    return diagnostics
 end
 
 ---@param context LintContext
@@ -469,34 +189,294 @@ local function args(context)
     return argv
 end
 
----@param context LintContext
+---@param value integer|number|string|nil
+---@param fallback integer
+---@return integer
+local function integer(value, fallback)
+    assert(fallback >= 0)
+
+    local parsed = tonumber(value)
+
+    if parsed == nil then
+        return fallback
+    end
+
+    return floor(parsed)
+end
+
+---@param path string
+---@return boolean
+local function is_absolute(path)
+    assert(type(path) == 'string')
+    assert(path ~= '')
+
+    return vim.fn.isabsolutepath(path) == 1
+end
+
+local function normalize_path(path, root)
+    assert(path ~= '')
+    assert(root ~= '')
+
+    if path:sub(1, 7) == 'file://' then
+        local ok, filename = pcall(vim.uri_to_fname, path)
+
+        if ok and type(filename) == 'string' and filename ~= '' then
+            return fs.normalize(filename)
+        end
+    end
+
+    if is_absolute(path) then
+        return fs.normalize(path)
+    end
+
+    return fs.normalize(fs.joinpath(root, path))
+end
+
+---@param candidate string
+---@param filename string
+---@param root string
+---@return boolean
+local function belongs_to_buffer(candidate, filename, root)
+    assert(candidate ~= '')
+    assert(filename ~= '')
+    assert(root ~= '')
+
+    return normalize_path(candidate, root) == filename
+end
+
+---@param value string|nil
+---@return integer
+local function severity(value)
+    if type(value) ~= 'string' then
+        return ERROR
+    end
+
+    return SEVERITIES[value:lower()] or ERROR
+end
+
+---@param entry DmypyParsedDiagnostic
+---@param filename string
+---@param root string
+---@return vim.Diagnostic.Set?
+local function diagnostic_from_entry(entry, filename, root)
+    if not belongs_to_buffer(entry.filename, filename, root) then
+        return nil
+    end
+
+    --
+    -- Mypy line numbers are one-based.
+    -- Mypy columns are zero-based.
+    --
+    local lnum = max(entry.line - 1, 0)
+
+    local col = max(entry.column, 0)
+
+    local end_lnum = lnum
+    local end_col = col + 1
+
+    if entry.end_line ~= nil then
+        end_lnum = max(entry.end_line - 1, lnum)
+    end
+
+    local end_column = entry.end_column
+    if end_column ~= nil then
+        end_col = max(end_column, end_lnum == lnum and col + 1 or 0)
+    end
+
+    return {
+        code = entry.code,
+        col = col,
+        end_col = end_col,
+        end_lnum = end_lnum,
+        lnum = lnum,
+        message = entry.message,
+        severity = severity(entry.severity),
+        source = SOURCE,
+        user_data = {
+            error_code = entry.code,
+            mypy_severity = entry.severity,
+        },
+    }
+end
+
+---@param value string
 ---@return string
-local function cwd(context)
+local function strip_ansi(value)
+    assert(type(value) == 'string')
+
+    return (value:gsub('\27%[[%d;?]*[ -/]*[@-~]', ''))
+end
+
+---@param value string
+---@return string
+local function trim(value)
+    assert(type(value) == 'string')
+
+    return (value:gsub('^%s*(.-)%s*$', '%1'))
+end
+
+---@param value string
+---@return string
+local function normalize_message(value)
+    assert(type(value) == 'string')
+
+    value = strip_ansi(value)
+    value = value:gsub('\r\n', '\n')
+    value = value:gsub('\r', '\n')
+    value = trim(value)
+
+    if #value > MESSAGE_LENGTH_MAX then
+        value = value:sub(1, MESSAGE_LENGTH_MAX) .. '\n[message truncated]'
+    end
+
+    return value
+end
+
+---@param message string
+---@param code string|nil
+---@return string
+local function remove_code_suffix(message, code)
+    if code == nil then
+        return message
+    end
+
+    return trim(message:gsub('%s+%[' .. vim.pesc(code) .. '%]%s*$', ''))
+end
+
+---@param line string
+---@return DmypyParsedDiagnostic?
+local function parse_line(line)
+    assert(type(line) == 'string')
+
+    if line == '' or #line > LINE_LENGTH_MAX then
+        return nil
+    end
+
+    line = strip_ansi(line)
+
+    --
+    -- With --show-error-end:
+    --
+    --   file.py:12:4:12:9: error: message [assignment]
+    --
+    local filename, start_line, start_column, end_line, end_column, level, message =
+        line:match('^(.+):(%d+):(%d+):(%d+):(%d+):%s*' .. '([%a]+):%s*(.+)$')
+
+    if
+        filename ~= nil
+        and start_line ~= nil
+        and start_column ~= nil
+        and end_line ~= nil
+        and end_column ~= nil
+        and level ~= nil
+        and message ~= nil
+    then
+        local code = diagnostic_code(message)
+
+        message = remove_code_suffix(normalize_message(message), code)
+
+        return {
+            code = code,
+            --
+            -- Mypy columns are already zero-based.
+            --
+            column = max(integer(start_column, 0), 0),
+            end_column = max(integer(end_column, 0), 0),
+            end_line = max(integer(end_line, 1), 1),
+            filename = filename,
+            line = max(integer(start_line, 1), 1),
+            message = message,
+            severity = level,
+        }
+    end
+
+    --
+    -- Fallback form without end coordinates:
+    --
+    --   file.py:12:4: error: message [assignment]
+    --
+    filename, start_line, start_column, level, message = line:match('^(.+):(%d+):(%d+):%s*' .. '([%a]+):%s*(.+)$')
+
+    if filename == nil or start_line == nil or start_column == nil or level == nil or message == nil then
+        return nil
+    end
+
+    local code = diagnostic_code(message)
+
+    message = remove_code_suffix(normalize_message(message), code)
+
+    if message == '' then
+        return nil
+    end
+
+    return {
+        code = code,
+        column = max(integer(start_column, 0), 0),
+        filename = filename,
+        line = max(integer(start_line, 1), 1),
+        message = message,
+        severity = level,
+    }
+end
+
+---@param output string
+---@param context LintContext|integer
+---@return vim.Diagnostic.Set[]
+local function parse(output, context)
+    if output == '' then
+        return {}
+    end
+
+    assert(type(context) == 'table', 'dmypy parser requires a LintContext')
+
+    ---@cast context LintContext
+
+    assert(context.filename ~= '')
     assert(context.root ~= '')
 
-    return fs.normalize(context.root)
+    assert(#output <= OUTPUT_LENGTH_MAX, 'dmypy output exceeded maximum size')
+
+    local filename = fs.normalize(context.filename)
+
+    local root = fs.normalize(context.root)
+
+    ---@type vim.Diagnostic.Set[]
+    local diagnostics = {}
+
+    for line in output:gmatch('[^\r\n]+') do
+        if #diagnostics >= DIAGNOSTICS_MAX then
+            break
+        end
+
+        local raw = parse_line(line)
+
+        if raw ~= nil then
+            local entry = diagnostic_from_entry(raw, filename, root)
+
+            if entry ~= nil then
+                diagnostics[#diagnostics + 1] = entry
+            end
+        end
+    end
+
+    assert(#diagnostics <= DIAGNOSTICS_MAX)
+
+    return diagnostics
 end
 
 return ---@type Linter
 {
-    automatic = false,
-
-    cmd = 'dmypy',
-
-    args = args,
-
     append_fname = false,
-
+    args = args,
+    automatic = false,
+    cmd = 'dmypy',
     cwd = cwd,
-
     --
     -- Mypy returns a nonzero status when type errors exist. Those errors are
     -- valid linter output.
     --
     ignore_exitcode = true,
-
     parser = parse,
-
     root_markers = {
         'mypy.ini',
         '.mypy.ini',
@@ -512,14 +492,11 @@ return ---@type Linter
 
         '.git',
     },
-
     stdin = false,
-
     --
     -- Normal mypy diagnostic reports are returned on stdout. Operational daemon
     -- failures use stderr.
     --
     stream = 'stdout',
-
     timeout = 60000,
 }

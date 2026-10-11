@@ -23,17 +23,17 @@ end
 
 ---@type FormatterSpec
 return {
-    cmd = 'zig',
+    allow_empty = false,
     args = build_args,
+    automatic = true,
+    cmd = 'zig',
+    cwd = nil,
+    decode = nil,
+    env = {},
+    exit_codes = { 0 },
+    extension = nil,
     mode = 'stdin',
     output = 'stdout',
-    cwd = nil,
-    env = {},
-    root_markers = { 'build.zig', 'build.zig.zon', '.git' },
-    exit_codes = { 0 },
-    allow_empty = false,
-    automatic = true,
-    extension = nil,
-    decode = nil,
     pre_transform = nil,
+    root_markers = { 'build.zig', 'build.zig.zon', '.git' },
 }

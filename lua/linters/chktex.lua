@@ -276,8 +276,8 @@ end
 
 ---@type Linter
 return {
-    args = ARGS,
     append_fname = false,
+    args = ARGS,
     cmd = 'chktex',
     ignore_exitcode = true,
     parser = parse,

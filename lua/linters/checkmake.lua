@@ -100,14 +100,14 @@ local function diagnostic_from_violation(violation, filename, root)
     end
 
     return {
-        lnum = line,
-        end_lnum = line,
+        code = rule,
         col = 0,
         end_col = 1,
+        end_lnum = line,
+        lnum = line,
         message = message,
         severity = WARN,
         source = 'checkmake',
-        code = rule,
     }
 end
 
@@ -166,10 +166,7 @@ end
 
 return ---@type Linter
 {
-    automatic = false,
-
-    cmd = 'checkmake',
-
+    append_fname = false,
     args = function(context)
         assert(context.filename ~= '')
 
@@ -179,19 +176,15 @@ return ---@type Linter
             context.filename,
         }
     end,
-
-    append_fname = false,
-
+    automatic = false,
+    cmd = 'checkmake',
     cwd = function(context)
         assert(context.root ~= '')
 
         return context.root
     end,
-
     ignore_exitcode = true,
-
     parser = parse,
-
     root_markers = {
         'checkmake.ini',
         'GNUmakefile',
@@ -199,7 +192,6 @@ return ---@type Linter
         'makefile',
         '.git',
     },
-
     stdin = false,
     stream = 'stdout',
     timeout = 30000,

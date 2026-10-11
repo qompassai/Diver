@@ -65,6 +65,14 @@ local function clean_message(value)
     return message
 end
 
+---@param context LintContext
+---@return string
+local function cwd(context)
+    assert(context.root ~= '')
+
+    return fs.normalize(context.root)
+end
+
 ---@param output string
 ---@param _ LintContext|integer
 ---@return vim.Diagnostic.Set[]
@@ -113,16 +121,16 @@ local function parse(output, _)
                 end
 
                 diagnostics[#diagnostics + 1] = {
+                    code = 'syntax',
+                    col = column,
+                    end_col = end_column,
+                    end_lnum = 0,
                     -- fish does not report a line number with `--no-execute`
                     -- on stdin; do not invent one.
                     lnum = 0,
-                    end_lnum = 0,
-                    col = column,
-                    end_col = end_column,
+                    message = cleaned,
                     severity = ERROR,
                     source = SOURCE,
-                    code = 'syntax',
-                    message = cleaned,
                 }
             end
         end
@@ -135,44 +143,26 @@ local function parse(output, _)
     return diagnostics
 end
 
----@param context LintContext
----@return string
-local function cwd(context)
-    assert(context.root ~= '')
-
-    return fs.normalize(context.root)
-end
-
 return ---@type Linter
 {
-    automatic = true,
-
-    cmd = 'fish',
-
+    append_fname = false,
     args = {
         -- Parse the script but execute nothing.
         '--no-execute',
         -- Read the buffer from stdin.
         '-',
     },
-
-    append_fname = false,
-
+    automatic = true,
+    cmd = 'fish',
     cwd = cwd,
-
     -- A syntax error exits nonzero; that is the normal diagnostic path.
     ignore_exitcode = true,
-
     parser = parse,
-
     root_markers = {
         '.git',
     },
-
     stdin = true,
-
     -- fish writes syntax errors to stderr.
     stream = 'stderr',
-
     timeout = TIMEOUT_MS,
 }

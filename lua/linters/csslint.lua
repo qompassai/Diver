@@ -4,9 +4,6 @@
 -- SPDX-License-Identifier: Apache-2.0
 -- #################################################################
 return {
-    name = 'csslint',
-    cmd = 'csslint',
-    stdin = true,
     append_fname = false,
     args = function(context)
         return {
@@ -16,10 +13,13 @@ return {
             context.filename,
         }
     end,
-    stream = 'stdout',
-    ignore_exitcode = true,
+    cmd = 'csslint',
     errorformat = {
         '%f: line %l, col %c, %m',
         '%-G%.%#',
     },
+    ignore_exitcode = true,
+    name = 'csslint',
+    stdin = true,
+    stream = 'stdout',
 } --[[@as vim.lint.Config]]

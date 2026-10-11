@@ -35,15 +35,6 @@ local OUTPUT_LENGTH_MAX = 16 * 1024 * 1024
 ---@class CheckcodeOutput
 ---@field issues? CheckcodeIssue[]
 
----@param value string
----@return string
-local function matlab_string(value)
-    assert(value ~= '')
-
-    local cleaned = value:gsub("'", "''")
-    return cleaned
-end
-
 ---@param value integer|number|string|nil
 ---@param fallback integer
 ---@return integer
@@ -116,15 +107,24 @@ local function diagnostic_from_issue(issue)
     local end_column = math.max(last_integer(issue.column, start_column + 2) - 1, start_column + 1)
 
     return {
-        lnum = start_line,
-        end_lnum = start_line,
+        code = issue.id,
         col = start_column,
         end_col = end_column,
+        end_lnum = start_line,
+        lnum = start_line,
         message = message,
         severity = WARN,
         source = 'checkcode',
-        code = issue.id,
     }
+end
+
+---@param value string
+---@return string
+local function matlab_string(value)
+    assert(value ~= '')
+
+    local cleaned = value:gsub("'", "''")
+    return cleaned
 end
 
 ---@param output string
@@ -185,10 +185,7 @@ end
 
 return ---@type Linter
 {
-    automatic = false,
-
-    cmd = 'matlab',
-
+    append_fname = false,
     args = function(context)
         assert(context.filename ~= '')
         assert(context.root ~= '')
@@ -218,25 +215,20 @@ return ---@type Linter
             expression,
         }
     end,
-
-    append_fname = false,
-
+    automatic = false,
+    cmd = 'matlab',
     cwd = function(context)
         assert(context.root ~= '')
         return context.root
     end,
-
     ignore_exitcode = true,
-
     parser = parse,
-
     root_markers = {
         'startup.m',
         'setup.m',
         'slprj',
         '.git',
     },
-
     stdin = false,
     stream = 'stdout',
     timeout = 120000,

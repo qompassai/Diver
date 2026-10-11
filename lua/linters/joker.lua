@@ -60,6 +60,53 @@ local DIALECTS = {
 ---@field kind string
 ---@field message string
 
+---@param context LintContext
+---@return string
+local function cwd(context)
+    assert(type(context.root) == 'string' and context.root ~= '', 'context.root must be a non-empty string')
+
+    return fs.normalize(context.root)
+end
+
+---@param context LintContext
+---@return string?
+local function dialect(context)
+    local filetype = context.filetype
+
+    if type(filetype) ~= 'string' then
+        return nil
+    end
+
+    return DIALECTS[filetype]
+end
+
+---@param context LintContext
+---@return string[]
+local function args(context)
+    assert(type(context.filename) == 'string' and context.filename ~= '', 'context.filename must be a non-empty string')
+
+    assert(type(context.root) == 'string' and context.root ~= '', 'context.root must be a non-empty string')
+
+    local argv = {
+        '--lint',
+
+        '--working-dir',
+        context.root,
+    }
+
+    local selected_dialect = dialect(context)
+
+    if selected_dialect ~= nil then
+        argv[#argv + 1] = '--dialect'
+
+        argv[#argv + 1] = selected_dialect
+    end
+
+    argv[#argv + 1] = context.filename
+
+    return argv
+end
+
 ---@param value integer|number|string|nil
 ---@param fallback integer
 ---@return integer
@@ -73,42 +120,6 @@ local function integer(value, fallback)
     end
 
     return floor(parsed)
-end
-
----@param value string
----@return string
-local function trim(value)
-    assert(type(value) == 'string', 'value must be a string')
-
-    return (value:gsub('^%s*(.-)%s*$', '%1'))
-end
-
----@param value string
----@return string
-local function strip_ansi(value)
-    assert(type(value) == 'string', 'value must be a string')
-
-    return (value:gsub('\27%[[%d;?]*[ -/]*[@-~]', ''))
-end
-
----@param value string
----@return string
-local function normalize_message(value)
-    assert(type(value) == 'string', 'value must be a string')
-
-    value = strip_ansi(value)
-
-    value = value:gsub('\r\n', '\n')
-
-    value = value:gsub('\r', '\n')
-
-    value = trim(value)
-
-    if #value > MESSAGE_LENGTH_MAX then
-        value = value:sub(1, MESSAGE_LENGTH_MAX) .. '\n[message truncated]'
-    end
-
-    return value
 end
 
 ---@param path string
@@ -156,6 +167,72 @@ local function severity(kind)
     return INFO
 end
 
+---@param entry JokerParsedDiagnostic
+---@param bufnr integer
+---@param filename string
+---@param root string
+---@return vim.Diagnostic?
+local function diagnostic_from_entry(entry, bufnr, filename, root)
+    if not belongs_to_buffer(entry.filename, filename, root) then
+        return nil
+    end
+
+    local lnum = max(entry.line - 1, 0)
+
+    local col = max(entry.column - 1, 0)
+
+    return {
+        bufnr = bufnr,
+        code = entry.kind,
+        col = col,
+        end_col = col + 1,
+        end_lnum = lnum,
+        lnum = lnum,
+        message = entry.message,
+        severity = severity(entry.kind),
+        source = SOURCE,
+        user_data = {
+            issue_type = entry.kind,
+        },
+    }
+end
+
+---@param value string
+---@return string
+local function strip_ansi(value)
+    assert(type(value) == 'string', 'value must be a string')
+
+    return (value:gsub('\27%[[%d;?]*[ -/]*[@-~]', ''))
+end
+
+---@param value string
+---@return string
+local function trim(value)
+    assert(type(value) == 'string', 'value must be a string')
+
+    return (value:gsub('^%s*(.-)%s*$', '%1'))
+end
+
+---@param value string
+---@return string
+local function normalize_message(value)
+    assert(type(value) == 'string', 'value must be a string')
+
+    value = strip_ansi(value)
+
+    value = value:gsub('\r\n', '\n')
+
+    value = value:gsub('\r', '\n')
+
+    value = trim(value)
+
+    if #value > MESSAGE_LENGTH_MAX then
+        value = value:sub(1, MESSAGE_LENGTH_MAX) .. '\n[message truncated]'
+    end
+
+    return value
+end
+
 ---@param line string
 ---@return JokerParsedDiagnostic?
 local function parse_line(line)
@@ -193,47 +270,11 @@ local function parse_line(line)
     end
 
     return {
-        filename = filename,
-        line = line_number,
         column = column,
+        filename = filename,
         kind = kind,
+        line = line_number,
         message = message,
-    }
-end
-
----@param entry JokerParsedDiagnostic
----@param bufnr integer
----@param filename string
----@param root string
----@return vim.Diagnostic?
-local function diagnostic_from_entry(entry, bufnr, filename, root)
-    if not belongs_to_buffer(entry.filename, filename, root) then
-        return nil
-    end
-
-    local lnum = max(entry.line - 1, 0)
-
-    local col = max(entry.column - 1, 0)
-
-    return {
-        bufnr = bufnr,
-
-        lnum = lnum,
-        end_lnum = lnum,
-
-        col = col,
-        end_col = col + 1,
-
-        message = entry.message,
-
-        severity = severity(entry.kind),
-
-        source = SOURCE,
-        code = entry.kind,
-
-        user_data = {
-            issue_type = entry.kind,
-        },
     }
 end
 
@@ -285,69 +326,15 @@ local function parse(output, context)
     return diagnostics
 end
 
----@param context LintContext
----@return string?
-local function dialect(context)
-    local filetype = context.filetype
-
-    if type(filetype) ~= 'string' then
-        return nil
-    end
-
-    return DIALECTS[filetype]
-end
-
----@param context LintContext
----@return string[]
-local function args(context)
-    assert(type(context.filename) == 'string' and context.filename ~= '', 'context.filename must be a non-empty string')
-
-    assert(type(context.root) == 'string' and context.root ~= '', 'context.root must be a non-empty string')
-
-    local argv = {
-        '--lint',
-
-        '--working-dir',
-        context.root,
-    }
-
-    local selected_dialect = dialect(context)
-
-    if selected_dialect ~= nil then
-        argv[#argv + 1] = '--dialect'
-
-        argv[#argv + 1] = selected_dialect
-    end
-
-    argv[#argv + 1] = context.filename
-
-    return argv
-end
-
----@param context LintContext
----@return string
-local function cwd(context)
-    assert(type(context.root) == 'string' and context.root ~= '', 'context.root must be a non-empty string')
-
-    return fs.normalize(context.root)
-end
-
 return ---@type Linter
 {
-    automatic = false,
-
-    cmd = 'joker',
-
-    args = args,
-
     append_fname = false,
-
+    args = args,
+    automatic = false,
+    cmd = 'joker',
     cwd = cwd,
-
     ignore_exitcode = true,
-
     parser = parse,
-
     root_markers = {
         '.joker',
         'bb.edn',
@@ -357,10 +344,7 @@ return ---@type Linter
 
         '.git',
     },
-
     stdin = false,
-
     stream = 'stdout',
-
     timeout = 30000,
 }

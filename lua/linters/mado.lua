@@ -4,8 +4,6 @@
 -- --------------------------------------------------
 ---@type vim.lint.Config
 return {
-    cmd = 'mado',
-    stdin = false,
     append_fname = true,
     args = {
         'lint',
@@ -14,7 +12,7 @@ return {
         -- '--config',
         -- 'mado.toml',
     },
-    stream = 'stdout',
+    cmd = 'mado',
     ignore_exitcode = true,
     ---@param bufnr integer
     ---@return vim.lint.Diagnostic[]
@@ -36,17 +34,19 @@ return {
                     lnum = tonumber(lnum) - 1
                     col = tonumber(col or 1) - 1
                     diagnostics[#diagnostics + 1] = {
-                        lnum = lnum,
-                        end_lnum = lnum,
                         col = col,
                         end_col = col + 1,
+                        end_lnum = lnum,
+                        lnum = lnum,
+                        message = msg,
                         severity = vim.diagnostic.severity.WARN,
                         source = 'mado',
-                        message = msg,
                     }
                 end
             end
         end
         return diagnostics
     end,
+    stdin = false,
+    stream = 'stdout',
 }

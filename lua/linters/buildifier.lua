@@ -28,8 +28,6 @@ local function get_cur_file_type(bufnr)
 end
 return ---@type vim.lint.Config
 {
-    cmd = 'buildifier',
-    stdin = true,
     append_fname = false,
     args = {
         '-lint',
@@ -43,9 +41,9 @@ return ---@type vim.lint.Config
         '-type',
         get_cur_file_type,
     },
-    stream = 'both',
-    ignore_exitcode = true,
+    cmd = 'buildifier',
     env = nil,
+    ignore_exitcode = true,
     parser = function(output, bufnr)
         local diagnostics = {}
         if output == '' then
@@ -66,14 +64,14 @@ return ---@type vim.lint.Config
             if f.formatted == false then
                 table.insert(diagnostics, {
                     bufnr = bufnr,
-                    lnum = 0,
+                    code = 'reformat',
                     col = 0,
-                    end_lnum = 0,
                     end_col = 0,
+                    end_lnum = 0,
+                    lnum = 0,
+                    message = 'Please run buildifier to reformat this file.',
                     severity = vim.diagnostic.severity.HINT,
                     source = 'buildifier',
-                    message = 'Please run buildifier to reformat this file.',
-                    code = 'reformat',
                 })
             end
             if not f.warnings then
@@ -86,14 +84,14 @@ return ---@type vim.lint.Config
                 end
                 table.insert(diagnostics, {
                     bufnr = bufnr,
-                    lnum = (item.start and item.start.line or 1) - 1,
+                    code = item.category, ---@type string
                     col = (item.start and item.start.column or 1) - 1,
-                    end_lnum = (item['end'] and item['end'].line or item.start.line or 1) - 1,
                     end_col = (item['end'] and item['end'].column or item.start.column or 1) - 1,
+                    end_lnum = (item['end'] and item['end'].line or item.start.line or 1) - 1,
+                    lnum = (item.start and item.start.line or 1) - 1,
+                    message = (item.message or '') .. (item.url and ('\n\n' .. item.url) or ''),
                     severity = sev,
                     source = 'buildifier',
-                    message = (item.message or '') .. (item.url and ('\n\n' .. item.url) or ''),
-                    code = item.category, ---@type string
                 })
             end
         end
@@ -115,14 +113,14 @@ return ---@type vim.lint.Config
             if message ~= '' then
                 table.insert(diagnostics, {
                     bufnr = bufnr,
-                    lnum = lnum - 1,
+                    code = 'syntax',
                     col = col - 1,
-                    end_lnum = lnum - 1,
                     end_col = col,
+                    end_lnum = lnum - 1,
+                    lnum = lnum - 1,
+                    message = message:gsub('^%s+', ''),
                     severity = vim.diagnostic.severity.ERROR,
                     source = 'buildifier',
-                    message = message:gsub('^%s+', ''),
-                    code = 'syntax',
                 })
             end
         end
@@ -140,4 +138,6 @@ return ---@type vim.lint.Config
         end
         return diagnostics
     end,
+    stdin = true,
+    stream = 'both',
 }

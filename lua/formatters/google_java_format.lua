@@ -9,21 +9,6 @@ local fs = vim.fs
 
 local VERSION = '1.36.1'
 
-local TOOLING = {
-    java = 'java',
-    jar = fs.joinpath(
-        vim.fn.stdpath('data'),
-        'formatters',
-        'google-java-format',
-        'google-java-format-' .. VERSION .. '-all-deps.jar'
-    ),
-    max_input_bytes = 2 * 1024 * 1024,
-    max_output_bytes = 4 * 1024 * 1024,
-    initial_heap_mib = 64,
-    maximum_heap_mib = 512, -- JVM heap cap, not a total-process memory limit.
-    active_processors = 2,
-}
-
 -- The formatter parses with internal javac APIs, which JEP 396 hides on
 -- JDK 16+. Upstream documents these flags as mandatory there, and the tool
 -- itself now requires JDK 21+, so they are unconditional.
@@ -42,6 +27,21 @@ local CONFIG = {
     remove_unused_imports = true,
     reflow_long_strings = true,
     format_javadoc = true,
+}
+
+local TOOLING = {
+    java = 'java',
+    jar = fs.joinpath(
+        vim.fn.stdpath('data'),
+        'formatters',
+        'google-java-format',
+        'google-java-format-' .. VERSION .. '-all-deps.jar'
+    ),
+    max_input_bytes = 2 * 1024 * 1024,
+    max_output_bytes = 4 * 1024 * 1024,
+    initial_heap_mib = 64,
+    maximum_heap_mib = 512, -- JVM heap cap, not a total-process memory limit.
+    active_processors = 2,
 }
 
 ---@param context FormatterContext

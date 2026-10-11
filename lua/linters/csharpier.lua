@@ -39,10 +39,10 @@ local uv = vim.uv
 ---@type table<string, integer>
 local severities = {
     error = diagnostic.severity.ERROR,
-    information = diagnostic.severity.INFO,
     info = diagnostic.severity.INFO,
-    warning = diagnostic.severity.WARN,
+    information = diagnostic.severity.INFO,
     warn = diagnostic.severity.WARN,
+    warning = diagnostic.severity.WARN,
 }
 
 ---@type string[]
@@ -57,11 +57,106 @@ local root_markers = {
     'global.json',
 }
 
+---Strip surrounding whitespace and ANSI terminal escape sequences.
+---
+---CSharpier normally emits plain text when used non-interactively, but
+---removing ANSI sequences here keeps diagnostics stable if terminal coloring
+---is enabled by the environment.
+---@param value string
+---@return string
+local function clean(value)
+    value = value:gsub('\27%[[%d;]*m', '')
+
+    return vim.trim(value)
+end
+
+---Run CSharpier from the detected project root.
+---
+---This allows normal discovery of `.csharpierrc`, `.editorconfig`, local
+---dotnet tool manifests, `.gitignore`, and project configuration.
+---@param context LintContext
+---@return string
+local function cwd(context)
+    return context.root
+end
+
 ---Return whether a path exists.
 ---@param path string
 ---@return boolean
 local function exists(path)
     return uv.fs_stat(path) ~= nil
+end
+
+---Determine whether the project uses a local dotnet tool manifest.
+---
+---When `.config/dotnet-tools.json` exists, invoking CSharpier through `dotnet
+---tool run csharpier` ensures the project-pinned version is used instead of a
+---potentially different global CSharpier installation.
+---
+---@param root string
+---@return boolean
+local function has_tool_manifest(root)
+    return exists(fs.joinpath(root, '.config', 'dotnet-tools.json'))
+end
+
+---Build CSharpier arguments for the current file.
+---
+---`check`
+---    Performs a read-only formatting verification.
+---
+---`--use-cache`
+---    Allows current CSharpier releases to reuse their formatting cache during
+---    checks. This option was added to the check command in CSharpier 1.3.
+---
+---When a dotnet tool manifest exists, the command becomes:
+---
+---    dotnet tool run csharpier -- check --use-cache <file>
+---
+---Otherwise:
+---
+---    csharpier check --use-cache <file>
+---
+---@param context LintContext
+---@return string[]
+local function args(context)
+    local arguments = {}
+
+    if has_tool_manifest(context.root) then
+        vim.list_extend(arguments, {
+            'tool',
+            'run',
+            'csharpier',
+            '--',
+        })
+    end
+
+    vim.list_extend(arguments, {
+        'check',
+        '--use-cache',
+        context.filename,
+    })
+
+    return arguments
+end
+
+---Resolve the CSharpier command.
+---
+---Preference:
+---
+---1. Project-local dotnet tool manifest:
+---       dotnet tool run csharpier ...
+---
+---2. Globally installed CSharpier:
+---       csharpier ...
+---
+---@param context LintContext
+---@return string
+local function command(context)
+    if has_tool_manifest(context.root) then
+        return 'dotnet'
+    end
+
+    return 'csharpier'
 end
 
 ---Normalize a path for comparison.
@@ -81,19 +176,6 @@ local function absolute(path, root)
     end
 
     return normalize(fs.joinpath(root, path))
-end
-
----Strip surrounding whitespace and ANSI terminal escape sequences.
----
----CSharpier normally emits plain text when used non-interactively, but
----removing ANSI sequences here keeps diagnostics stable if terminal coloring
----is enabled by the environment.
----@param value string
----@return string
-local function clean(value)
-    value = value:gsub('\27%[[%d;]*m', '')
-
-    return vim.trim(value)
 end
 
 ---Parse one CSharpier status line.
@@ -186,88 +268,6 @@ local function parse(output, context)
     end
 
     return diagnostics
-end
-
----Determine whether the project uses a local dotnet tool manifest.
----
----When `.config/dotnet-tools.json` exists, invoking CSharpier through `dotnet
----tool run csharpier` ensures the project-pinned version is used instead of a
----potentially different global CSharpier installation.
----
----@param root string
----@return boolean
-local function has_tool_manifest(root)
-    return exists(fs.joinpath(root, '.config', 'dotnet-tools.json'))
-end
-
----Resolve the CSharpier command.
----
----Preference:
----
----1. Project-local dotnet tool manifest:
----       dotnet tool run csharpier ...
----
----2. Globally installed CSharpier:
----       csharpier ...
----
----@param context LintContext
----@return string
-local function command(context)
-    if has_tool_manifest(context.root) then
-        return 'dotnet'
-    end
-
-    return 'csharpier'
-end
-
----Build CSharpier arguments for the current file.
----
----`check`
----    Performs a read-only formatting verification.
----
----`--use-cache`
----    Allows current CSharpier releases to reuse their formatting cache during
----    checks. This option was added to the check command in CSharpier 1.3.
----
----When a dotnet tool manifest exists, the command becomes:
----
----    dotnet tool run csharpier -- check --use-cache <file>
----
----Otherwise:
----
----    csharpier check --use-cache <file>
----
----@param context LintContext
----@return string[]
-local function args(context)
-    local arguments = {}
-
-    if has_tool_manifest(context.root) then
-        vim.list_extend(arguments, {
-            'tool',
-            'run',
-            'csharpier',
-            '--',
-        })
-    end
-
-    vim.list_extend(arguments, {
-        'check',
-        '--use-cache',
-        context.filename,
-    })
-
-    return arguments
-end
-
----Run CSharpier from the detected project root.
----
----This allows normal discovery of `.csharpierrc`, `.editorconfig`, local
----dotnet tool manifests, `.gitignore`, and project configuration.
----@param context LintContext
----@return string
-local function cwd(context)
-    return context.root
 end
 
 return ---@type Linter

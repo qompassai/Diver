@@ -222,10 +222,10 @@ end
 
 return ---@type Linter
 {
+    append_fname = false,
+    args = args,
     automatic = false,
     cmd = 'vale',
-    args = args,
-    append_fname = false,
     cwd = cwd,
     parser = parse,
     root_markers = {

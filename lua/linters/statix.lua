@@ -4,8 +4,6 @@
 -- ----------------------------------------
 return ---@type vim.lint.Config
 {
-    cmd = 'statix',
-    stdin = false,
     append_fname = false,
     args = {
         'check',
@@ -16,9 +14,9 @@ return ---@type vim.lint.Config
         '-o',
         'errfmt',
     },
-    stream = nil,
-    ignore_exitcode = true,
+    cmd = 'statix',
     env = nil,
+    ignore_exitcode = true,
     ---@param output string
     ---@param bufnr integer
     ---@return vim.Diagnostic.Set[]
@@ -52,4 +50,6 @@ return ---@type vim.lint.Config
         end
         return diagnostics
     end,
+    stdin = false,
+    stream = nil,
 }

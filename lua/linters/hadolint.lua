@@ -39,10 +39,10 @@ local OUTPUT_LENGTH_MAX = 16 * 1024 * 1024
 ---@type table<string, integer>
 local severities = {
     error = ERROR,
-    warning = WARN,
+    ignore = HINT,
     info = INFO,
     style = HINT,
-    ignore = HINT,
+    warning = WARN,
 }
 
 ---@type string[]
@@ -147,6 +147,50 @@ local trusted_registries = {
     'registry.gitlab.com',
 }
 
+---@param args string[]
+---@param flag string
+---@param values string[]
+local function append_repeated(args, flag, values)
+    assert(flag ~= '')
+
+    for index = 1, #values do
+        local value = values[index]
+
+        assert(value ~= '')
+
+        args[#args + 1] = flag
+        args[#args + 1] = value
+    end
+end
+
+---@param context LintContext
+---@return string[]
+local function args(context)
+    assert(context.filename ~= '')
+
+    local argv = {
+        '--disable-ignore-pragma',
+        '--failure-threshold',
+        'style',
+        '--format',
+        'json',
+        '--no-color',
+        '--strict-labels',
+    }
+
+    append_repeated(argv, '--error', error_rules)
+
+    append_repeated(argv, '--warning', warning_rules)
+
+    append_repeated(argv, '--require-label', required_labels)
+
+    append_repeated(argv, '--trusted-registry', trusted_registries)
+
+    argv[#argv + 1] = context.filename
+
+    return argv
+end
+
 ---@param value integer|number|string|nil
 ---@param fallback integer
 ---@return integer
@@ -160,16 +204,6 @@ local function integer(value, fallback)
     end
 
     return math.floor(parsed)
-end
-
----@param level string|nil
----@return integer
-local function severity(level)
-    if level == nil then
-        return WARN
-    end
-
-    return severities[level:lower()] or WARN
 end
 
 ---@param path string
@@ -200,6 +234,17 @@ local function belongs_to_buffer(path, filename, root)
 
     return candidate == filename
 end
+
+---@param level string|nil
+---@return integer
+local function severity(level)
+    if level == nil then
+        return WARN
+    end
+
+    return severities[level:lower()] or WARN
+end
+
 ---@param violation HadolintViolation
 ---@param filename string
 ---@param root string
@@ -232,14 +277,14 @@ local function diagnostic_from_violation(violation, filename, root)
     end
 
     return {
-        lnum = start_line,
-        end_lnum = start_line,
+        code = code,
         col = start_column,
         end_col = start_column + 1,
+        end_lnum = start_line,
+        lnum = start_line,
         message = message,
         severity = severity(violation.level),
         source = 'hadolint',
-        code = code,
     }
 end
 
@@ -296,70 +341,19 @@ local function parse(output, context)
     return diagnostics
 end
 
----@param args string[]
----@param flag string
----@param values string[]
-local function append_repeated(args, flag, values)
-    assert(flag ~= '')
-
-    for index = 1, #values do
-        local value = values[index]
-
-        assert(value ~= '')
-
-        args[#args + 1] = flag
-        args[#args + 1] = value
-    end
-end
-
----@param context LintContext
----@return string[]
-local function args(context)
-    assert(context.filename ~= '')
-
-    local argv = {
-        '--disable-ignore-pragma',
-        '--failure-threshold',
-        'style',
-        '--format',
-        'json',
-        '--no-color',
-        '--strict-labels',
-    }
-
-    append_repeated(argv, '--error', error_rules)
-
-    append_repeated(argv, '--warning', warning_rules)
-
-    append_repeated(argv, '--require-label', required_labels)
-
-    append_repeated(argv, '--trusted-registry', trusted_registries)
-
-    argv[#argv + 1] = context.filename
-
-    return argv
-end
-
 return ---@type Linter
 {
-    automatic = false,
-
-    cmd = 'hadolint',
-
-    args = args,
-
     append_fname = false,
-
+    args = args,
+    automatic = false,
+    cmd = 'hadolint',
     cwd = function(context)
         assert(context.root ~= '')
 
         return context.root
     end,
-
     ignore_exitcode = true,
-
     parser = parse,
-
     root_markers = {
         '.hadolint.yaml',
         '.hadolint.yml',
@@ -370,7 +364,6 @@ return ---@type Linter
         'Dockerfile',
         '.git',
     },
-
     stdin = false,
     stream = 'stdout',
     timeout = 30000,

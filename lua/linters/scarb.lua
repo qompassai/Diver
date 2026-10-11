@@ -4,16 +4,14 @@
 -- ----------------------------------------
 return ---@type vim.lint.Config
 {
-    cmd = 'scarb',
-    stdin = false,
     append_fname = false,
     args = {
         'lint',
         '--json',
     },
-    stream = nil,
-    ignore_exitcode = true,
+    cmd = 'scarb',
     env = nil,
+    ignore_exitcode = true,
     ---@type LintBufferParser
     ---@param output string
     ---@param bufnr integer
@@ -61,4 +59,6 @@ return ---@type vim.lint.Config
         end
         return diagnostics
     end,
+    stdin = false,
+    stream = nil,
 }

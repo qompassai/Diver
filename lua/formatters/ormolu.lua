@@ -22,12 +22,12 @@ end
 
 ---@type FormatterSpec
 return {
-    cmd = 'ormolu',
+    allow_empty = false,
     args = build_args,
+    automatic = true,
+    cmd = 'ormolu',
+    exit_codes = { 0 },
+    extension = 'hs',
     mode = 'stdin',
     output = 'stdout',
-    exit_codes = { 0 },
-    automatic = true,
-    allow_empty = false,
-    extension = 'hs',
 }

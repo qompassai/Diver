@@ -267,13 +267,13 @@ end
 
 return ---@type Linter
 {
+
+    append_fname = false,
+
+    args = args,
     automatic = false,
 
     cmd = 'rubocop',
-
-    args = args,
-
-    append_fname = false,
 
     cwd = function(context)
         assert(context.root ~= '')

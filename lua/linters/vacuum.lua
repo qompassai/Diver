@@ -17,18 +17,18 @@
 --   NVIM_VACUUM_RULESET=/path/to/spectral.yaml
 --   NVIM_VACUUM_IGNORE_FILE=/path/to/ignore.yaml
 --   NVIM_VACUUM_BASE=/path/to/specs       (or a base URL)
+local api = vim.api
 local diagnostic = vim.diagnostic
 local fs = vim.fs
-local uv = vim.uv
-local api = vim.api
 local json = vim.json
+local uv = vim.uv
 
-local SOURCE = 'vacuum'
 local MAX_DIAGNOSTICS = 512
-local MAX_OUTPUT_BYTES = 16 * 1024 * 1024
 local MAX_LINE_BYTES = 64 * 1024
 local MAX_MESSAGE_BYTES = 4096
+local MAX_OUTPUT_BYTES = 16 * 1024 * 1024
 local MAX_PATH_PARTS = 128
+local SOURCE = 'vacuum'
 local ROOT_MARKERS = { 'vacuum.conf.yaml', '.git' }
 local SEVERITIES = {
     [0] = diagnostic.severity.ERROR,
@@ -359,8 +359,8 @@ end
 
 ---@type Linter
 return {
-    args = arguments,
     append_fname = false,
+    args = arguments,
     automatic = true,
     cmd = 'vacuum',
     cwd = project_root,

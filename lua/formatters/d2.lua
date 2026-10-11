@@ -48,6 +48,20 @@ local function stringvalue(value)
 end
 
 ---@param context FormatterContext
+---@return string[]
+local function arguments(context)
+    assert(type(context) == 'table', 'd2 arguments require FormatterContext')
+    local tempfile = stringvalue(context.tempfile)
+    assert(tempfile, 'd2 fmt requires the runner tempfile')
+    return {
+        'fmt',
+        '--check=false',
+        '--',
+        tempfile,
+    }
+end
+
+---@param context FormatterContext
 ---@return string
 local function projectroot(context)
     assert(type(context) == 'table', 'd2 cwd requires FormatterContext')
@@ -71,20 +85,6 @@ local function projectroot(context)
         return fs.normalize(cwd)
     end
     return fs.normalize(vim.fn.getcwd())
-end
-
----@param context FormatterContext
----@return string[]
-local function arguments(context)
-    assert(type(context) == 'table', 'd2 arguments require FormatterContext')
-    local tempfile = stringvalue(context.tempfile)
-    assert(tempfile, 'd2 fmt requires the runner tempfile')
-    return {
-        'fmt',
-        '--check=false',
-        '--',
-        tempfile,
-    }
 end
 
 ---@type FormatterSpec

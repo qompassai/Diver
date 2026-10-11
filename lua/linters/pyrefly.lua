@@ -126,8 +126,7 @@ end
 
 return ---@type Linter
 {
-    automatic = false,
-    cmd = 'pyrefly',
+    append_fname = false,
     args = function(context)
         return {
             'check',
@@ -136,7 +135,8 @@ return ---@type Linter
             context.filename,
         }
     end,
-    append_fname = false,
+    automatic = false,
+    cmd = 'pyrefly',
     cwd = function(context)
         return context.root
     end,

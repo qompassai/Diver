@@ -32,17 +32,17 @@ end
 
 ---@type FormatterSpec
 return {
-    cmd = 'rubocop',
+    allow_empty = false,
     args = build_args,
+    automatic = true,
+    cmd = 'rubocop',
+    cwd = nil,
+    decode = nil,
+    env = {},
+    exit_codes = { 0, 1 },
+    extension = 'rb',
     mode = 'stdin',
     output = 'stdout',
-    cwd = nil,
-    env = {},
-    root_markers = { '.rubocop.yml', '.rubocop.yaml', 'Gemfile', '.git' },
-    exit_codes = { 0, 1 },
-    allow_empty = false,
-    automatic = true,
-    extension = 'rb',
-    decode = nil,
     pre_transform = nil,
+    root_markers = { '.rubocop.yml', '.rubocop.yaml', 'Gemfile', '.git' },
 }

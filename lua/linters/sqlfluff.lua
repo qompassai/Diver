@@ -443,9 +443,9 @@ end
 
 ---@type Linter
 return {
-    args = args,
 
     append_fname = false,
+    args = args,
 
     automatic = false,
 

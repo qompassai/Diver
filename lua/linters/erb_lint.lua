@@ -18,8 +18,8 @@
 ---@source https://github.com/Shopify/erb_lint
 local diagnostic = vim.diagnostic
 local fs = vim.fs
-local ERROR = diagnostic.severity.ERROR
 local DIAGNOSTICS_MAX = 4096
+local ERROR = diagnostic.severity.ERROR
 local LINE_LENGTH_MAX = 64 * 1024
 local MESSAGE_LENGTH_MAX = 16 * 1024
 local OUTPUT_LENGTH_MAX = 16 * 1024 * 1024
@@ -27,8 +27,38 @@ local floor = math.floor
 local max = math.max
 local tonumber = tonumber
 local type = type
-local SOURCE = 'erb_lint'
 local CODE = 'erb-lint'
+local SOURCE = 'erb_lint'
+---@param context LintContext
+---@return string[]
+local function args(context)
+    assert(type(context.filename) == 'string' and context.filename ~= '', 'context.filename must be a non-empty string')
+
+    return {
+        --
+        -- Compact provides deterministic single-line diagnostics:
+        --
+        --   filename:line:column: message
+        --
+        '--format',
+        'compact',
+
+        --
+        -- Analyze exactly the active ERB file rather than recursively traversing
+        -- the repository.
+        --
+        context.filename,
+    }
+end
+
+---@param context LintContext
+---@return string
+local function cwd(context)
+    assert(type(context.root) == 'string' and context.root ~= '', 'context.root must be a non-empty string')
+
+    return fs.normalize(fs.abspath(context.root))
+end
+
 ---@class ErbLintParsedDiagnostic
 ---@field filename string
 ---@field line integer
@@ -46,42 +76,6 @@ local function integer(value, fallback)
     end
 
     return floor(parsed)
-end
-
----@param value string
----@return string
-local function trim(value)
-    assert(type(value) == 'string', 'value must be a string')
-
-    return (value:gsub('^%s*(.-)%s*$', '%1'))
-end
-
----@param value string
----@return string
-local function strip_ansi(value)
-    assert(type(value) == 'string', 'value must be a string')
-
-    return (value:gsub('\27%[[%d;?]*[ -/]*[@-~]', ''))
-end
-
----@param value string
----@return string
-local function normalize_message(value)
-    assert(type(value) == 'string', 'value must be a string')
-
-    value = strip_ansi(value)
-
-    value = value:gsub('\r\n', '\n')
-
-    value = value:gsub('\r', '\n')
-
-    value = trim(value)
-
-    if #value > MESSAGE_LENGTH_MAX then
-        value = value:sub(1, MESSAGE_LENGTH_MAX) .. '\n[message truncated]'
-    end
-
-    return value
 end
 
 ---@param path string
@@ -131,6 +125,77 @@ local function belongs_to_buffer(candidate, filename, root)
     return candidate_path == buffer_path
 end
 
+---@param entry ErbLintParsedDiagnostic
+---@param bufnr integer
+---@param filename string
+---@param root string
+---@return vim.Diagnostic?
+local function diagnostic_from_entry(entry, bufnr, filename, root)
+    if not belongs_to_buffer(entry.filename, filename, root) then
+        return nil
+    end
+
+    --
+    -- ERB Lint compact output uses one-based lines but can legitimately emit
+    -- column zero. Preserve the reported column while converting the line to
+    -- Neovim's zero-based coordinate system.
+    --
+    local lnum = max(entry.line - 1, 0)
+
+    local col = max(entry.column, 0)
+
+    return {
+        bufnr = bufnr,
+        code = CODE,
+        col = col,
+        end_col = col + 1,
+        end_lnum = lnum,
+        lnum = lnum,
+        message = entry.message,
+        severity = ERROR,
+        source = SOURCE,
+        user_data = {
+            formatter = 'compact',
+        },
+    }
+end
+
+---@param value string
+---@return string
+local function strip_ansi(value)
+    assert(type(value) == 'string', 'value must be a string')
+
+    return (value:gsub('\27%[[%d;?]*[ -/]*[@-~]', ''))
+end
+
+---@param value string
+---@return string
+local function trim(value)
+    assert(type(value) == 'string', 'value must be a string')
+
+    return (value:gsub('^%s*(.-)%s*$', '%1'))
+end
+
+---@param value string
+---@return string
+local function normalize_message(value)
+    assert(type(value) == 'string', 'value must be a string')
+
+    value = strip_ansi(value)
+
+    value = value:gsub('\r\n', '\n')
+
+    value = value:gsub('\r', '\n')
+
+    value = trim(value)
+
+    if #value > MESSAGE_LENGTH_MAX then
+        value = value:sub(1, MESSAGE_LENGTH_MAX) .. '\n[message truncated]'
+    end
+
+    return value
+end
+
 ---@param line string
 ---@return ErbLintParsedDiagnostic?
 local function parse_line(line)
@@ -174,51 +239,10 @@ local function parse_line(line)
     end
 
     return {
+        column = column,
         filename = filename,
         line = line_number,
-        column = column,
         message = message,
-    }
-end
-
----@param entry ErbLintParsedDiagnostic
----@param bufnr integer
----@param filename string
----@param root string
----@return vim.Diagnostic?
-local function diagnostic_from_entry(entry, bufnr, filename, root)
-    if not belongs_to_buffer(entry.filename, filename, root) then
-        return nil
-    end
-
-    --
-    -- ERB Lint compact output uses one-based lines but can legitimately emit
-    -- column zero. Preserve the reported column while converting the line to
-    -- Neovim's zero-based coordinate system.
-    --
-    local lnum = max(entry.line - 1, 0)
-
-    local col = max(entry.column, 0)
-
-    return {
-        bufnr = bufnr,
-
-        lnum = lnum,
-        end_lnum = lnum,
-
-        col = col,
-        end_col = col + 1,
-
-        message = entry.message,
-
-        severity = ERROR,
-
-        source = SOURCE,
-        code = CODE,
-
-        user_data = {
-            formatter = 'compact',
-        },
     }
 end
 
@@ -270,59 +294,22 @@ local function parse(output, context)
     return diagnostics
 end
 
----@param context LintContext
----@return string[]
-local function args(context)
-    assert(type(context.filename) == 'string' and context.filename ~= '', 'context.filename must be a non-empty string')
-
-    return {
-        --
-        -- Compact provides deterministic single-line diagnostics:
-        --
-        --   filename:line:column: message
-        --
-        '--format',
-        'compact',
-
-        --
-        -- Analyze exactly the active ERB file rather than recursively traversing
-        -- the repository.
-        --
-        context.filename,
-    }
-end
-
----@param context LintContext
----@return string
-local function cwd(context)
-    assert(type(context.root) == 'string' and context.root ~= '', 'context.root must be a non-empty string')
-
-    return fs.normalize(fs.abspath(context.root))
-end
-
 return ---@type Linter
 {
+    append_fname = false,
+    args = args,
     automatic = false,
-
     cmd = {
         'erb_lint',
         'erblint',
         'erb-lint',
     },
-
-    args = args,
-
-    append_fname = false,
-
     cwd = cwd,
-
     --
     -- ERB Lint returns a nonzero status when lint violations are present.
     --
     ignore_exitcode = true,
-
     parser = parse,
-
     root_markers = {
         --
         -- Current ERB Lint configuration.
@@ -349,10 +336,7 @@ return ---@type Linter
 
         '.git',
     },
-
     stdin = false,
-
     stream = 'stdout',
-
     timeout = 60000,
 }

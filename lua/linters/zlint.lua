@@ -385,10 +385,10 @@ end
 
 return ---@type Linter
 {
+    append_fname = false,
+    args = args,
     automatic = false,
     cmd = 'zlint',
-    args = args,
-    append_fname = false,
     cwd = cwd,
     ignore_exitcode = true,
     parser = parse,

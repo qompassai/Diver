@@ -471,16 +471,11 @@ end
 
 ---@type Linter
 return {
-    args = arguments,
-
     append_fname = false,
-
+    args = arguments,
     automatic = true,
-
     cmd = 'tidy',
-
     cwd = project_root,
-
     --
     -- Tidy documents:
     --
@@ -491,18 +486,13 @@ return {
     -- Both 1 and 2 contain valid diagnostics.
     --
     ignore_exitcode = true,
-
     parser = parse,
-
     root_markers = ROOT_MARKERS,
-
     stdin = true,
-
     --
     -- Diagnostic output is normally written to stderr. `both` also protects
     -- against wrappers/distributions that redirect it to stdout.
     --
     stream = 'both',
-
     timeout = 30000,
 }

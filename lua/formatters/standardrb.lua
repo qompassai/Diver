@@ -32,17 +32,17 @@ end
 
 ---@type FormatterSpec
 return {
-    cmd = 'standardrb',
+    allow_empty = false,
     args = build_args,
+    automatic = true,
+    cmd = 'standardrb',
+    cwd = nil,
+    decode = nil,
+    env = {},
+    exit_codes = { 0, 1 },
+    extension = 'rb',
     mode = 'stdin',
     output = 'stdout',
-    cwd = nil,
-    env = {},
-    root_markers = { '.standard.yml', '.standard_todo.yml', 'Gemfile', '.git' },
-    exit_codes = { 0, 1 },
-    allow_empty = false,
-    automatic = true,
-    extension = 'rb',
-    decode = nil,
     pre_transform = nil,
+    root_markers = { '.standard.yml', '.standard_todo.yml', 'Gemfile', '.git' },
 }

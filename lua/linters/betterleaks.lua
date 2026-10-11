@@ -24,8 +24,8 @@ local WARN = diagnostic.severity.WARN
 
 local DIAGNOSTICS_MAX = 4096
 local OUTPUT_LENGTH_MAX = 16 * 1024 * 1024
-local RUNS_MAX = 64
 local RESULTS_MAX = 4096
+local RUNS_MAX = 64
 
 ---@class BetterleaksSarifMessage
 ---@field text? string
@@ -72,16 +72,6 @@ local function integer(value, fallback)
     return math.floor(parsed)
 end
 
----@param value string|nil
----@return integer
-local function severity(value)
-    if value == 'error' then
-        return ERROR
-    end
-
-    return WARN
-end
-
 ---@param path string
 ---@return boolean
 local function is_absolute(path)
@@ -105,6 +95,16 @@ local function belongs_to_buffer(path, filename, root)
     end
 
     return candidate == filename
+end
+
+---@param value string|nil
+---@return integer
+local function severity(value)
+    if value == 'error' then
+        return ERROR
+    end
+
+    return WARN
 end
 
 ---@param result BetterleaksSarifResult
@@ -154,14 +154,14 @@ local function diagnostic_from_result(result, filename, root)
         math.max(integer(region.endColumn, start_column + 2) - 1, end_line == start_line and start_column + 1 or 0)
 
     return {
-        lnum = start_line,
-        end_lnum = end_line,
+        code = result.ruleId,
         col = start_column,
         end_col = end_column,
+        end_lnum = end_line,
+        lnum = start_line,
         message = message,
         severity = severity(result.level),
         source = 'betterleaks',
-        code = result.ruleId,
     }
 end
 
@@ -235,10 +235,7 @@ end
 
 return ---@type Linter
 {
-    automatic = false,
-
-    cmd = 'betterleaks',
-
+    append_fname = false,
     args = function(context)
         assert(context.filename ~= '')
 
@@ -251,25 +248,20 @@ return ---@type Linter
             '--report-path=-',
         }
     end,
-
-    append_fname = false,
-
+    automatic = false,
+    cmd = 'betterleaks',
     cwd = function(context)
         assert(context.root ~= '')
         return context.root
     end,
-
     ignore_exitcode = true,
-
     parser = parse,
-
     root_markers = {
         '.betterleaks.toml',
         'betterleaks.toml',
         '.betterleaksignore',
         '.git',
     },
-
     stdin = false,
     stream = 'stdout',
     timeout = 30000,

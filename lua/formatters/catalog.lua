@@ -22,8 +22,8 @@ local M = {
 
 local function github(repository)
     return {
-        url = 'https://api.github.com/repos/' .. repository .. '/releases/latest',
         field = 'tag_name',
+        url = 'https://api.github.com/repos/' .. repository .. '/releases/latest',
     }
 end
 
@@ -48,152 +48,6 @@ local function cargo(name, crate, repository)
                     '--root',
                     fs.joinpath(root, 'cargo'),
                     crate,
-                },
-            }
-        end,
-    }
-end
-
-local function go_tool(name, module, package_path, version_args)
-    M.entries[name] = {
-        source = {
-            url = 'https://proxy.golang.org/' .. module .. '/@latest',
-            field = 'Version',
-        },
-        probe = function(command)
-            if version_args then
-                local argv = { command }
-                vim.list_extend(argv, version_args)
-                return argv
-            end
-            return { 'go', 'version', '-m', command }
-        end,
-        build_info = version_args == nil,
-        url = 'https://pkg.go.dev/' .. package_path,
-        install = function(version)
-            return {
-                argv = { 'go', 'install', package_path .. '@v' .. version },
-                env = {
-                    GOBIN = fs.joinpath(root, 'bin'),
-                    GOTOOLCHAIN = 'local',
-                },
-            }
-        end,
-    }
-end
-
-local function npm_api(name, package_name, directory_name, pin)
-    local prefix = fs.joinpath(vim.fn.stdpath('data'), 'formatters', directory_name)
-    M.entries[name] = {
-        private = true,
-        pin = pin,
-        manifest = fs.joinpath(prefix, 'node_modules', package_name, 'package.json'),
-        source = {
-            url = 'https://registry.npmjs.org/' .. package_name .. '/latest',
-            field = 'version',
-        },
-        url = 'https://www.npmjs.com/package/' .. package_name,
-        install = function(version)
-            return {
-                argv = {
-                    'npm',
-                    'install',
-                    '--prefix',
-                    prefix,
-                    '--ignore-scripts',
-                    '--no-audit',
-                    '--no-fund',
-                    '--save-exact',
-                    package_name .. '@' .. version,
-                },
-            }
-        end,
-    }
-end
-
-cargo('alejandra', 'alejandra', 'kamadorueda/alejandra')
-cargo('dioxus', 'dioxus-cli', 'DioxusLabs/dioxus')
-cargo('stylua', 'stylua', 'JohnnyMorganz/StyLua')
-cargo('shellharden', 'shellharden', 'anordal/shellharden')
-cargo('efmt', 'efmt', 'sile/efmt')
-cargo('hledger_fmt', 'hledger-fmt', 'mondeja/hledger-fmt')
-cargo('nickel_format', 'nickel-lang-cli', 'tweag/nickel')
-cargo('panache', 'panache', 'jolars/panache')
-cargo('rumdl_fmt', 'rumdl', 'rvben/rumdl')
-cargo('schemat', 'schemat', 'raviqqe/schemat')
-cargo('sqruff', 'sqruff', 'quarylabs/sqruff')
-cargo('taplo', 'taplo-cli', 'tamasfe/taplo')
-cargo('tex_fmt', 'tex-fmt', 'wgunderwood/tex-fmt')
-cargo('tombi', 'tombi', 'tombi-toml/tombi')
-cargo('typstfmt', 'typstfmt', 'astrale-sharp/typstfmt')
-cargo('typstyle', 'typstyle', 'Enter-tainer/typstyle')
-
-go_tool('goimports', 'golang.org/x/tools', 'golang.org/x/tools/cmd/goimports')
-go_tool('gofumpt', 'mvdan.cc/gofumpt', 'mvdan.cc/gofumpt', { '--version' })
-go_tool('shfmt', 'mvdan.cc/sh/v3', 'mvdan.cc/sh/v3/cmd/shfmt', { '--version' })
-go_tool('buildifier', 'github.com/bazelbuild/buildtools', 'github.com/bazelbuild/buildtools/buildifier')
-go_tool('cue_fmt', 'cuelang.org/go', 'cuelang.org/go/cmd/cue')
-go_tool('hclfmt', 'github.com/hashicorp/hcl', 'github.com/hashicorp/hcl/cmd/hclfmt')
-go_tool('jsonnetfmt', 'github.com/google/go-jsonnet', 'github.com/google/go-jsonnet/cmd/jsonnetfmt')
-go_tool('templ_fmt', 'github.com/a-h/templ', 'github.com/a-h/templ/cmd/templ')
-go_tool('yamlfmt', 'github.com/google/yamlfmt', 'github.com/google/yamlfmt/cmd/yamlfmt')
-
-npm_api('wgslfmt', '@wasm-fmt/wgslfmt', 'wgslfmt', '0.1.0')
-npm_api('bibtex_tidy', 'bibtex-tidy', 'bibtex-tidy', '1.15.1')
-
---- Install a Python formatter with pip into the catalog-local prefix.
----@param name string module_sources key
----@param package string PyPI distribution name
-local function pip(name, package)
-    M.entries[name] = {
-        source = {
-            url = 'https://pypi.org/pypi/' .. package .. '/json',
-            field = 'info.version',
-        },
-        probe = function(command)
-            return { command, '--version' }
-        end,
-        url = 'https://pypi.org/project/' .. package .. '/',
-        install = function(version)
-            return {
-                argv = {
-                    'python3',
-                    '-m',
-                    'pip',
-                    'install',
-                    '--prefix',
-                    fs.joinpath(root, 'python'),
-                    package .. '==' .. version,
-                },
-            }
-        end,
-    }
-end
-
---- Install a Ruby formatter with gem into the catalog-local gem home.
----@param name string module_sources key
----@param gem_name string RubyGems gem name
-local function gem(name, gem_name)
-    M.entries[name] = {
-        source = {
-            url = 'https://rubygems.org/api/v1/gems/' .. gem_name .. '.json',
-            field = 'version',
-        },
-        probe = function(command)
-            return { command, '--version' }
-        end,
-        url = 'https://rubygems.org/gems/' .. gem_name,
-        install = function(version)
-            return {
-                argv = {
-                    'gem',
-                    'install',
-                    '--install-dir',
-                    fs.joinpath(root, 'gems'),
-                    '--no-document',
-                    gem_name,
-                    '--version',
-                    version,
                 },
             }
         end,
@@ -259,6 +113,93 @@ local function dotnet_tool(name, package, repository)
     }
 end
 
+--- Install a Ruby formatter with gem into the catalog-local gem home.
+---@param name string module_sources key
+---@param gem_name string RubyGems gem name
+local function gem(name, gem_name)
+    M.entries[name] = {
+        source = {
+            url = 'https://rubygems.org/api/v1/gems/' .. gem_name .. '.json',
+            field = 'version',
+        },
+        probe = function(command)
+            return { command, '--version' }
+        end,
+        url = 'https://rubygems.org/gems/' .. gem_name,
+        install = function(version)
+            return {
+                argv = {
+                    'gem',
+                    'install',
+                    '--install-dir',
+                    fs.joinpath(root, 'gems'),
+                    '--no-document',
+                    gem_name,
+                    '--version',
+                    version,
+                },
+            }
+        end,
+    }
+end
+
+local function go_tool(name, module, package_path, version_args)
+    M.entries[name] = {
+        source = {
+            url = 'https://proxy.golang.org/' .. module .. '/@latest',
+            field = 'Version',
+        },
+        probe = function(command)
+            if version_args then
+                local argv = { command }
+                vim.list_extend(argv, version_args)
+                return argv
+            end
+            return { 'go', 'version', '-m', command }
+        end,
+        build_info = version_args == nil,
+        url = 'https://pkg.go.dev/' .. package_path,
+        install = function(version)
+            return {
+                argv = { 'go', 'install', package_path .. '@v' .. version },
+                env = {
+                    GOBIN = fs.joinpath(root, 'bin'),
+                    GOTOOLCHAIN = 'local',
+                },
+            }
+        end,
+    }
+end
+
+local function npm_api(name, package_name, directory_name, pin)
+    local prefix = fs.joinpath(vim.fn.stdpath('data'), 'formatters', directory_name)
+    M.entries[name] = {
+        private = true,
+        pin = pin,
+        manifest = fs.joinpath(prefix, 'node_modules', package_name, 'package.json'),
+        source = {
+            url = 'https://registry.npmjs.org/' .. package_name .. '/latest',
+            field = 'version',
+        },
+        url = 'https://www.npmjs.com/package/' .. package_name,
+        install = function(version)
+            return {
+                argv = {
+                    'npm',
+                    'install',
+                    '--prefix',
+                    prefix,
+                    '--ignore-scripts',
+                    '--no-audit',
+                    '--no-fund',
+                    '--save-exact',
+                    package_name .. '@' .. version,
+                },
+            }
+        end,
+    }
+end
+
 --- Install an npm package into the shared catalog prefix.
 --- Unlike npm_api, the binary is probed directly from PATH instead of
 --- through node, so this only fits packages with a real bin entry.
@@ -293,6 +234,91 @@ local function npm_bin(name, package_name)
     }
 end
 
+--- Install a Python formatter with pip into the catalog-local prefix.
+---@param name string module_sources key
+---@param package string PyPI distribution name
+local function pip(name, package)
+    M.entries[name] = {
+        source = {
+            url = 'https://pypi.org/pypi/' .. package .. '/json',
+            field = 'info.version',
+        },
+        probe = function(command)
+            return { command, '--version' }
+        end,
+        url = 'https://pypi.org/project/' .. package .. '/',
+        install = function(version)
+            return {
+                argv = {
+                    'python3',
+                    '-m',
+                    'pip',
+                    'install',
+                    '--prefix',
+                    fs.joinpath(root, 'python'),
+                    package .. '==' .. version,
+                },
+            }
+        end,
+    }
+end
+
+cargo('alejandra', 'alejandra', 'kamadorueda/alejandra')
+cargo('dioxus', 'dioxus-cli', 'DioxusLabs/dioxus')
+cargo('efmt', 'efmt', 'sile/efmt')
+cargo('hledger_fmt', 'hledger-fmt', 'mondeja/hledger-fmt')
+cargo('nickel_format', 'nickel-lang-cli', 'tweag/nickel')
+cargo('panache', 'panache', 'jolars/panache')
+cargo('rumdl_fmt', 'rumdl', 'rvben/rumdl')
+cargo('schemat', 'schemat', 'raviqqe/schemat')
+cargo('shellharden', 'shellharden', 'anordal/shellharden')
+cargo('sqruff', 'sqruff', 'quarylabs/sqruff')
+cargo('stylua', 'stylua', 'JohnnyMorganz/StyLua')
+cargo('taplo', 'taplo-cli', 'tamasfe/taplo')
+cargo('tex_fmt', 'tex-fmt', 'wgunderwood/tex-fmt')
+cargo('tombi', 'tombi', 'tombi-toml/tombi')
+cargo('typstfmt', 'typstfmt', 'astrale-sharp/typstfmt')
+cargo('typstyle', 'typstyle', 'Enter-tainer/typstyle')
+
+composer_pkg('phpcbf', 'squizlabs/php_codesniffer', 'squizlabs/php_codesniffer')
+composer_pkg('pint', 'laravel/pint', 'laravel/pint')
+composer_pkg('twig_cs_fixer', 'vincentlanglet/twig-cs-fixer', 'vincentlanglet/twig-cs-fixer')
+
+dotnet_tool('csharpier', 'csharpier', 'belav/csharpier')
+dotnet_tool('fantomas', 'fantomas', 'fsprojects/fantomas')
+
+gem('cookstyle', 'cookstyle')
+gem('erb_formatter', 'erb-formatter')
+gem('htmlbeautify', 'htmlbeautifier')
+gem('puppet_lint_fix', 'puppet-lint')
+gem('rubocop', 'rubocop')
+gem('standardrb', 'standard')
+
+go_tool('buildifier', 'github.com/bazelbuild/buildtools', 'github.com/bazelbuild/buildtools/buildifier')
+go_tool('cue_fmt', 'cuelang.org/go', 'cuelang.org/go/cmd/cue')
+go_tool('gofumpt', 'mvdan.cc/gofumpt', 'mvdan.cc/gofumpt', { '--version' })
+go_tool('goimports', 'golang.org/x/tools', 'golang.org/x/tools/cmd/goimports')
+go_tool('hclfmt', 'github.com/hashicorp/hcl', 'github.com/hashicorp/hcl/cmd/hclfmt')
+go_tool('jsonnetfmt', 'github.com/google/go-jsonnet', 'github.com/google/go-jsonnet/cmd/jsonnetfmt')
+go_tool('shfmt', 'mvdan.cc/sh/v3', 'mvdan.cc/sh/v3/cmd/shfmt', { '--version' })
+go_tool('templ_fmt', 'github.com/a-h/templ', 'github.com/a-h/templ/cmd/templ')
+go_tool('yamlfmt', 'github.com/google/yamlfmt', 'github.com/google/yamlfmt/cmd/yamlfmt')
+
+npm_api('bibtex_tidy', 'bibtex-tidy', 'bibtex-tidy', '1.15.1')
+npm_api('wgslfmt', '@wasm-fmt/wgslfmt', 'wgslfmt', '0.1.0')
+
+-- dprint and elm-format ship their binaries through npm install scripts,
+-- which this catalog disables; both are covered by bespoke entries below.
+npm_bin('biome', '@biomejs/biome')
+npm_bin('css-beautify', 'js-beautify')
+npm_bin('kulala_fmt', '@mistweaverco/kulala-fmt')
+npm_bin('prettier', 'prettier')
+npm_bin('prettierd', '@fsouza/prettierd')
+npm_bin('purs_tidy', 'purs-tidy')
+npm_bin('refmt', 'rescript')
+npm_bin('rescript_format', 'rescript')
+npm_bin('sql-formatter', 'sql-formatter')
+
 pip('autopep8', 'autopep8')
 pip('bean_format', 'beancount')
 pip('black', 'black')
@@ -313,86 +339,6 @@ pip('sqlfluff', 'sqlfluff')
 pip('vsg', 'vsg')
 pip('xmlformat', 'xmlformatter')
 pip('yapf', 'yapf')
-
-gem('cookstyle', 'cookstyle')
-gem('erb_formatter', 'erb-formatter')
-gem('htmlbeautify', 'htmlbeautifier')
-gem('puppet_lint_fix', 'puppet-lint')
-gem('rubocop', 'rubocop')
-gem('standardrb', 'standard')
-
-composer_pkg('phpcbf', 'squizlabs/php_codesniffer', 'squizlabs/php_codesniffer')
-composer_pkg('pint', 'laravel/pint', 'laravel/pint')
-composer_pkg('twig_cs_fixer', 'vincentlanglet/twig-cs-fixer', 'vincentlanglet/twig-cs-fixer')
-
-dotnet_tool('csharpier', 'csharpier', 'belav/csharpier')
-dotnet_tool('fantomas', 'fantomas', 'fsprojects/fantomas')
-
--- dprint and elm-format ship their binaries through npm install scripts,
--- which this catalog disables; both are covered by bespoke entries below.
-npm_bin('biome', '@biomejs/biome')
-npm_bin('css-beautify', 'js-beautify')
-npm_bin('kulala_fmt', '@mistweaverco/kulala-fmt')
-npm_bin('prettier', 'prettier')
-npm_bin('prettierd', '@fsouza/prettierd')
-npm_bin('purs_tidy', 'purs-tidy')
-npm_bin('refmt', 'rescript')
-npm_bin('rescript_format', 'rescript')
-npm_bin('sql-formatter', 'sql-formatter')
-
-M.entries.clang_format = {
-    source = github('llvm/llvm-project'),
-    probe = function(command)
-        return { command, '--version' }
-    end,
-    arch_package = 'clang',
-    url = 'https://clang.llvm.org/docs/ClangFormat.html',
-    instructions = 'Install clang-format through your LLVM package manager.',
-}
-
-M.entries.phpcsfixer = {
-    source = github('PHP-CS-Fixer/PHP-CS-Fixer'),
-    probe = function(command)
-        return { command, '--version' }
-    end,
-    url = 'https://github.com/PHP-CS-Fixer/PHP-CS-Fixer',
-    install = function(version)
-        return {
-            argv = {
-                'composer',
-                'global',
-                'require',
-                '--no-interaction',
-                '--no-scripts',
-                '--no-plugins',
-                'friendsofphp/php-cs-fixer:' .. version,
-            },
-            env = {
-                COMPOSER_HOME = fs.joinpath(root, 'composer'),
-            },
-        }
-    end,
-}
-
-local ktfmt_root = fs.joinpath(vim.fn.stdpath('data'), 'formatters', 'ktfmt')
-local ktfmt_jar = fs.joinpath(ktfmt_root, 'ktfmt-0.64-with-dependencies.jar')
-
-M.entries.ktfmt = {
-    private = true,
-    pin = '0.64',
-    files = {
-        ktfmt_jar,
-        fs.joinpath(ktfmt_root, 'KtfmtStdin.java'),
-    },
-    source = github('Kotlin/ktfmt'),
-    probe = function(command)
-        return { command, '-jar', ktfmt_jar, '--version' }
-    end,
-    url = 'https://github.com/Kotlin/ktfmt/releases/tag/v0.64',
-    instructions = 'Use the pinned ktfmt installation instructions supplied '
-        .. 'with your adapter. Both the JAR and KtfmtStdin.java are required. '
-        .. 'Updating the JAR alone may break the adapter.',
-}
 
 M.entries.aiken_fmt = {
     source = github('aiken-lang/aiken'),
@@ -446,6 +392,16 @@ M.entries.cabal_fmt = {
     end,
     url = 'https://github.com/phadej/cabal-fmt',
     instructions = 'Install cabal-fmt with cabal install cabal-fmt.',
+}
+
+M.entries.clang_format = {
+    source = github('llvm/llvm-project'),
+    probe = function(command)
+        return { command, '--version' }
+    end,
+    arch_package = 'clang',
+    url = 'https://clang.llvm.org/docs/ClangFormat.html',
+    instructions = 'Install clang-format through your LLVM package manager.',
 }
 
 M.entries.crystal_format = {
@@ -634,6 +590,26 @@ M.entries.kcl_fmt = {
     instructions = 'Install the KCL CLI from GitHub releases; kcl fmt is included.',
 }
 
+local ktfmt_root = fs.joinpath(vim.fn.stdpath('data'), 'formatters', 'ktfmt')
+local ktfmt_jar = fs.joinpath(ktfmt_root, 'ktfmt-0.64-with-dependencies.jar')
+
+M.entries.ktfmt = {
+    private = true,
+    pin = '0.64',
+    files = {
+        ktfmt_jar,
+        fs.joinpath(ktfmt_root, 'KtfmtStdin.java'),
+    },
+    source = github('Kotlin/ktfmt'),
+    probe = function(command)
+        return { command, '-jar', ktfmt_jar, '--version' }
+    end,
+    url = 'https://github.com/Kotlin/ktfmt/releases/tag/v0.64',
+    instructions = 'Use the pinned ktfmt installation instructions supplied '
+        .. 'with your adapter. Both the JAR and KtfmtStdin.java are required. '
+        .. 'Updating the JAR alone may break the adapter.',
+}
+
 M.entries.ktlint = {
     source = github('pinterest/ktlint'),
     probe = function(command)
@@ -766,6 +742,30 @@ M.entries.pg_format = {
     end,
     url = 'https://github.com/darold/pgFormatter',
     instructions = 'Install pgFormatter from GitHub releases.',
+}
+
+M.entries.phpcsfixer = {
+    source = github('PHP-CS-Fixer/PHP-CS-Fixer'),
+    probe = function(command)
+        return { command, '--version' }
+    end,
+    url = 'https://github.com/PHP-CS-Fixer/PHP-CS-Fixer',
+    install = function(version)
+        return {
+            argv = {
+                'composer',
+                'global',
+                'require',
+                '--no-interaction',
+                '--no-scripts',
+                '--no-plugins',
+                'friendsofphp/php-cs-fixer:' .. version,
+            },
+            env = {
+                COMPOSER_HOME = fs.joinpath(root, 'composer'),
+            },
+        }
+    end,
 }
 
 M.entries.ptop = {

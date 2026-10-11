@@ -22,17 +22,17 @@ end
 
 ---@type FormatterSpec
 return {
-    cmd = 'v',
+    allow_empty = false,
     args = build_args,
+    automatic = true,
+    cmd = 'v',
+    cwd = nil,
+    decode = nil,
+    env = {},
+    exit_codes = { 0 },
+    extension = nil,
     mode = 'stdin',
     output = 'stdout',
-    cwd = nil,
-    env = {},
-    root_markers = { 'v.mod', '.git' },
-    exit_codes = { 0 },
-    allow_empty = false,
-    automatic = true,
-    extension = nil,
-    decode = nil,
     pre_transform = nil,
+    root_markers = { 'v.mod', '.git' },
 }

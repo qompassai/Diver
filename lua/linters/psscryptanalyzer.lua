@@ -117,7 +117,7 @@ end
 
 return ---@type Linter
 {
-    cmd = 'pwsh',
+    append_fname = false,
     args = {
         '-NoLogo',
         '-NoProfile',
@@ -125,7 +125,7 @@ return ---@type Linter
         '-Command',
         analyzer_command,
     },
-    append_fname = false,
+    cmd = 'pwsh',
     cwd = function(context)
         return vim.fs.dirname(context.filename) or context.cwd
     end,

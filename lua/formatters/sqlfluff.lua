@@ -32,17 +32,17 @@ end
 
 ---@type FormatterSpec
 return {
-    cmd = 'sqlfluff',
+    allow_empty = false,
     args = build_args,
+    automatic = false,
+    cmd = 'sqlfluff',
+    cwd = nil,
+    decode = nil,
+    env = {},
+    exit_codes = { 0, 1 },
+    extension = 'sql',
     mode = 'stdin',
     output = 'stdout',
-    cwd = nil,
-    env = {},
-    root_markers = { '.sqlfluff', 'pyproject.toml', 'tox.ini', 'setup.cfg', '.git' },
-    exit_codes = { 0, 1 },
-    allow_empty = false,
-    automatic = false,
-    extension = 'sql',
-    decode = nil,
     pre_transform = nil,
+    root_markers = { '.sqlfluff', 'pyproject.toml', 'tox.ini', 'setup.cfg', '.git' },
 }

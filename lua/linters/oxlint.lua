@@ -165,13 +165,13 @@ end
 
 return ---@type Linter
 {
-    cmd = 'oxlint',
+    append_fname = true,
     args = {
         '--format',
         'json',
         '--no-error-on-unmatched-pattern',
     },
-    append_fname = true,
+    cmd = 'oxlint',
     cwd = function(context)
         return context.root
     end,

@@ -163,9 +163,8 @@ end
 
 return ---@type Linter
 {
-    automatic = true,
 
-    cmd = 'ruby',
+    append_fname = false,
 
     args = {
         -- Check syntax only; never execute the code.
@@ -173,8 +172,9 @@ return ---@type Linter
         -- Read the buffer from stdin.
         '-',
     },
+    automatic = true,
 
-    append_fname = false,
+    cmd = 'ruby',
 
     cwd = cwd,
 

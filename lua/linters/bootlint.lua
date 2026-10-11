@@ -4,9 +4,6 @@
 -- SPDX-License-Identifier: Apache-2.0
 -- #################################################################
 return {
-    name = 'bootlint',
-    cmd = 'bootlint',
-    stdin = false,
     append_fname = true,
     args = function()
         return {
@@ -14,12 +11,15 @@ return {
             'W001',
         }
     end,
-    stream = 'stdout',
-    ignore_exitcode = true,
+    cmd = 'bootlint',
     errorformat = {
         '%f:%l:%c %t%n %m',
         '%f:%l:%c %m',
         '%f:%l %m',
         '%-G%.%#',
     },
+    ignore_exitcode = true,
+    name = 'bootlint',
+    stdin = false,
+    stream = 'stdout',
 } --[[@as vim.lint.Config]]

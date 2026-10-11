@@ -4,8 +4,6 @@
 -- ----------------------------------------
 return ---@type vim.lint.Config
 {
-    cmd = 'cookstyle',
-    stdin = false,
     append_fname = true,
     args = {
         '--display-cop-names',
@@ -14,9 +12,9 @@ return ---@type vim.lint.Config
         'clang',
         '--no-color',
     },
-    stream = nil,
-    ignore_exitcode = true,
+    cmd = 'cookstyle',
     env = nil,
+    ignore_exitcode = true,
     ---@param output string
     ---@param bufnr integer
     ---@return vim.Diagnostic.Set[]
@@ -42,10 +40,10 @@ return ---@type vim.lint.Config
                         severity = vim.diagnostic.severity.INFO
                     end
                     table.insert(diagnostics, {
-                        lnum = lnum,
-                        end_lnum = lnum,
                         col = col,
                         end_col = col + 1,
+                        end_lnum = lnum,
+                        lnum = lnum,
                         message = rest,
                         severity = severity,
                         source = 'cookstyle',
@@ -55,4 +53,6 @@ return ---@type vim.lint.Config
         end
         return diagnostics
     end,
+    stdin = false,
+    stream = nil,
 }

@@ -12,8 +12,8 @@
 --- expression, not on how the input happened to be laid out.
 --- nixfmt reads no config files; these flags ARE the pinned profile.
 
-local NIXFMT_WIDTH = 100
 local NIXFMT_INDENT = 2
+local NIXFMT_WIDTH = 100
 
 ---@class NixfmtConfig
 ---@field width integer Maximum line width in characters (tiger-style: 100).
@@ -58,17 +58,17 @@ end
 
 ---@type FormatterSpec
 return {
-    cmd = 'nixfmt',
+    allow_empty = false,
     args = build_args,
+    automatic = true,
+    cmd = 'nixfmt',
+    cwd = nil,
+    decode = nil,
+    env = {},
+    exit_codes = { 0 },
+    extension = nil,
     mode = 'stdin',
     output = 'stdout',
-    cwd = nil,
-    env = {},
-    root_markers = { 'flake.nix', 'default.nix', 'shell.nix', '.git' },
-    exit_codes = { 0 },
-    allow_empty = false,
-    automatic = true,
-    extension = nil,
-    decode = nil,
     pre_transform = nil,
+    root_markers = { 'flake.nix', 'default.nix', 'shell.nix', '.git' },
 }

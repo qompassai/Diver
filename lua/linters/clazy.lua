@@ -20,14 +20,14 @@
 local diagnostic = vim.diagnostic
 local fs = vim.fs
 local uv = vim.uv
+local DIAGNOSTICS_MAX = 4096
 local ERROR = diagnostic.severity.ERROR
 local HINT = diagnostic.severity.HINT
 local INFO = diagnostic.severity.INFO
-local WARN = diagnostic.severity.WARN
-local DIAGNOSTICS_MAX = 4096
 local LINE_LENGTH_MAX = 64 * 1024
 local MESSAGE_LENGTH_MAX = 16 * 1024
 local OUTPUT_LENGTH_MAX = 16 * 1024 * 1024
+local WARN = diagnostic.severity.WARN
 
 local floor = math.floor
 local max = math.max
@@ -38,16 +38,13 @@ local type = type
 local severities = {
     error = ERROR,
     fatal = ERROR,
-
-    warning = WARN,
-    warn = WARN,
-
+    hint = HINT,
+    ignored = HINT,
+    info = INFO,
     note = INFO,
     remark = INFO,
-    info = INFO,
-
-    ignored = HINT,
-    hint = HINT,
+    warn = WARN,
+    warning = WARN,
 }
 
 ---@type string[]
@@ -73,66 +70,26 @@ local compilation_database_candidates = {
 ---@field message string
 ---@field code? string
 
----@param value integer|number|string|nil
----@param fallback integer
----@return integer
-local function integer(value, fallback)
-    assert(fallback >= 0)
+---@param message string
+---@return string?
+local function diagnostic_code(message)
+    --
+    -- Keep only a trailing clazy identifier. Compiler warning groups such as
+    -- [-Wunused-variable] are not falsely attributed to Clazy.
+    --
+    local code = message:match('%[(clazy%-[%w_%-]+)%]%s*$')
 
-    local parsed = tonumber(value)
-
-    if parsed == nil then
-        return fallback
+    if type(code) ~= 'string' or code == '' then
+        return nil
     end
 
-    return floor(parsed)
-end
-
----@param value string|nil
----@return integer
-local function severity(value)
-    if type(value) ~= 'string' then
-        return WARN
-    end
-
-    return severities[value:lower()] or WARN
+    return code
 end
 
 ---@param path string
 ---@return boolean
 local function exists(path)
     return uv.fs_stat(path) ~= nil
-end
-
----@param value string
----@return string
-local function trim(value)
-    return (value:gsub('^%s*(.-)%s*$', '%1'))
-end
-
----@param value string
----@return string
-local function strip_ansi(value)
-    value = value:gsub('\27%[[%d;?]*[ -/]*[@-~]', '')
-
-    return value
-end
-
----@param value string
----@return string
-local function normalize_message(value)
-    value = strip_ansi(value)
-
-    value = value:gsub('\r\n', '\n')
-    value = value:gsub('\r', '\n')
-
-    value = trim(value)
-
-    if #value > MESSAGE_LENGTH_MAX then
-        value = value:sub(1, MESSAGE_LENGTH_MAX) .. '\n[message truncated]'
-    end
-
-    return value
 end
 
 ---@param root string
@@ -156,6 +113,56 @@ end
 ---@return string?
 local function compilation_database(root)
     return find_candidate(root, compilation_database_candidates)
+end
+
+---@param context LintContext
+---@return string[]
+local function args(context)
+    assert(context.filename ~= '')
+    assert(context.root ~= '')
+
+    local root = fs.normalize(context.root)
+
+    local argv = {
+        --
+        -- Tiger profile:
+        --
+        -- Level 2 is Clazy's strictest predefined level. Upstream describes its
+        -- checks as still having very few false positives, although some are
+        -- intentionally noisier or more opinionated than level 0 / level 1.
+        --
+        '-checks=level2',
+    }
+
+    local database = compilation_database(root)
+
+    if database ~= nil then
+        argv[#argv + 1] = '-p'
+        argv[#argv + 1] = database
+    end
+
+    --
+    -- Analyze only the current translation unit. Do not recursively invoke
+    -- Clazy across every entry in compile_commands.json during editor linting.
+    --
+    argv[#argv + 1] = context.filename
+
+    return argv
+end
+
+---@param value integer|number|string|nil
+---@param fallback integer
+---@return integer
+local function integer(value, fallback)
+    assert(fallback >= 0)
+
+    local parsed = tonumber(value)
+
+    if parsed == nil then
+        return fallback
+    end
+
+    return floor(parsed)
 end
 
 ---@param path string
@@ -198,20 +205,78 @@ local function belongs_to_buffer(candidate, filename, root)
     return normalize_path(candidate, root) == filename
 end
 
----@param message string
----@return string?
-local function diagnostic_code(message)
-    --
-    -- Keep only a trailing clazy identifier. Compiler warning groups such as
-    -- [-Wunused-variable] are not falsely attributed to Clazy.
-    --
-    local code = message:match('%[(clazy%-[%w_%-]+)%]%s*$')
+---@param value string|nil
+---@return integer
+local function severity(value)
+    if type(value) ~= 'string' then
+        return WARN
+    end
 
-    if type(code) ~= 'string' or code == '' then
+    return severities[value:lower()] or WARN
+end
+
+---@param entry ClazyParsedDiagnostic
+---@param filename string
+---@param root string
+---@return vim.Diagnostic.Set?
+local function diagnostic_from_entry(entry, filename, root)
+    if not belongs_to_buffer(entry.filename, filename, root) then
         return nil
     end
 
-    return code
+    --
+    -- Clang source coordinates are one-based.
+    -- Neovim diagnostic coordinates are zero-based.
+    --
+    local lnum = max(entry.line - 1, 0)
+
+    local col = max(entry.column - 1, 0)
+
+    return {
+        code = entry.code,
+        col = col,
+        end_col = col + 1,
+        end_lnum = lnum,
+        lnum = lnum,
+        message = entry.message,
+        severity = severity(entry.severity),
+        source = 'clazy',
+        user_data = {
+            check = entry.code,
+            clang_severity = entry.severity,
+        },
+    }
+end
+
+---@param value string
+---@return string
+local function strip_ansi(value)
+    value = value:gsub('\27%[[%d;?]*[ -/]*[@-~]', '')
+
+    return value
+end
+
+---@param value string
+---@return string
+local function trim(value)
+    return (value:gsub('^%s*(.-)%s*$', '%1'))
+end
+
+---@param value string
+---@return string
+local function normalize_message(value)
+    value = strip_ansi(value)
+
+    value = value:gsub('\r\n', '\n')
+    value = value:gsub('\r', '\n')
+
+    value = trim(value)
+
+    if #value > MESSAGE_LENGTH_MAX then
+        value = value:sub(1, MESSAGE_LENGTH_MAX) .. '\n[message truncated]'
+    end
+
+    return value
 end
 
 ---@param message string
@@ -260,54 +325,12 @@ local function parse_line(line)
     message = remove_code_suffix(message, code)
 
     return {
-        filename = filename,
-
-        line = max(integer(source_line, 1), 1),
-
-        column = max(integer(column, 1), 1),
-
-        severity = level,
-        message = message,
         code = code,
-    }
-end
-
----@param entry ClazyParsedDiagnostic
----@param filename string
----@param root string
----@return vim.Diagnostic.Set?
-local function diagnostic_from_entry(entry, filename, root)
-    if not belongs_to_buffer(entry.filename, filename, root) then
-        return nil
-    end
-
-    --
-    -- Clang source coordinates are one-based.
-    -- Neovim diagnostic coordinates are zero-based.
-    --
-    local lnum = max(entry.line - 1, 0)
-
-    local col = max(entry.column - 1, 0)
-
-    return {
-        lnum = lnum,
-        end_lnum = lnum,
-
-        col = col,
-
-        end_col = col + 1,
-
-        message = entry.message,
-
-        severity = severity(entry.severity),
-
-        source = 'clazy',
-        code = entry.code,
-
-        user_data = {
-            check = entry.code,
-            clang_severity = entry.severity,
-        },
+        column = max(integer(column, 1), 1),
+        filename = filename,
+        line = max(integer(source_line, 1), 1),
+        message = message,
+        severity = level,
     }
 end
 
@@ -356,61 +379,19 @@ local function parse(output, context)
     return diagnostics
 end
 
----@param context LintContext
----@return string[]
-local function args(context)
-    assert(context.filename ~= '')
-    assert(context.root ~= '')
-
-    local root = fs.normalize(context.root)
-
-    local argv = {
-        --
-        -- Tiger profile:
-        --
-        -- Level 2 is Clazy's strictest predefined level. Upstream describes its
-        -- checks as still having very few false positives, although some are
-        -- intentionally noisier or more opinionated than level 0 / level 1.
-        --
-        '-checks=level2',
-    }
-
-    local database = compilation_database(root)
-
-    if database ~= nil then
-        argv[#argv + 1] = '-p'
-        argv[#argv + 1] = database
-    end
-
-    --
-    -- Analyze only the current translation unit. Do not recursively invoke
-    -- Clazy across every entry in compile_commands.json during editor linting.
-    --
-    argv[#argv + 1] = context.filename
-
-    return argv
-end
-
 return ---@type Linter
 {
-    automatic = false,
-
-    cmd = 'clazy-standalone',
-
-    args = args,
-
     append_fname = false,
-
+    args = args,
+    automatic = false,
+    cmd = 'clazy-standalone',
     cwd = function(context)
         assert(context.root ~= '')
 
         return fs.normalize(context.root)
     end,
-
     ignore_exitcode = true,
-
     parser = parse,
-
     root_markers = {
         'compile_commands.json',
 
@@ -445,9 +426,7 @@ return ---@type Linter
 
         '.git',
     },
-
     stdin = false,
-
     stream = 'stderr',
     timeout = 120000,
 }

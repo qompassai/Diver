@@ -5,14 +5,12 @@
 local core_parser = require('config.core.parser')
 return ---@type vim.lint.Config
 {
-    cmd = 'luac',
-    stdin = true,
     append_fname = false,
     args = {
         '-p',
         '-',
     },
-    stream = 'stderr',
+    cmd = 'luac',
     ignore_exitcode = true,
     ---@type LintBufferParser
     ---@param output string
@@ -20,9 +18,11 @@ return ---@type vim.lint.Config
     ---@return vim.Diagnostic.Set[]
     parser = function(output, bufnr)
         return core_parser.simple_colon_parser(output, bufnr, {
+            pattern = '^(.-):(%d+):(%d+):%s*(.+)$',
             severity = vim.diagnostic.severity.WARN,
             source = 'luac',
-            pattern = '^(.-):(%d+):(%d+):%s*(.+)$',
         })
     end,
+    stdin = true,
+    stream = 'stderr',
 }

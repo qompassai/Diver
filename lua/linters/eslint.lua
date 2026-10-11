@@ -58,24 +58,21 @@ local SOURCE = 'eslint'
 ---@field filePath? string
 ---@field messages? EslintMessage[]
 
----@param value any
----@param minimum integer
----@param maximum integer
----@return integer?
-local function integer_in_range(value, minimum, maximum)
-    assert(minimum >= 0)
-    assert(maximum >= minimum)
+---@param context LintContext
+---@return string[]
+local function args(context)
+    assert(context.filename ~= '')
 
-    if type(value) ~= 'number' or value ~= floor(value) then
-        return nil
-    end
-
-    if value < minimum or value > maximum then
-        return nil
-    end
-
-    ---@cast value integer
-    return value
+    return {
+        -- Machine-readable output; the default `stylish` format is not parsed.
+        '--format',
+        'json',
+        -- Read the buffer from stdin.
+        '--stdin',
+        -- Lets ESLint resolve config as if it read this file.
+        '--stdin-filename',
+        context.filename,
+    }
 end
 
 ---@param value any
@@ -96,6 +93,34 @@ local function clean_message(value)
     end
 
     return message
+end
+
+---@param context LintContext
+---@return string
+local function cwd(context)
+    assert(context.root ~= '')
+
+    return fs.normalize(context.root)
+end
+
+---@param value any
+---@param minimum integer
+---@param maximum integer
+---@return integer?
+local function integer_in_range(value, minimum, maximum)
+    assert(minimum >= 0)
+    assert(maximum >= minimum)
+
+    if type(value) ~= 'number' or value ~= floor(value) then
+        return nil
+    end
+
+    if value < minimum or value > maximum then
+        return nil
+    end
+
+    ---@cast value integer
+    return value
 end
 
 ---@param message EslintMessage
@@ -125,14 +150,14 @@ local function append_message(message, diagnostics)
     end
 
     diagnostics[#diagnostics + 1] = {
-        lnum = row - 1,
-        end_lnum = end_row ~= nil and (end_row - 1) or (row - 1),
+        code = rule,
         col = max(column - 1, 0),
         end_col = end_column ~= nil and max(end_column - 1, 0) or nil,
+        end_lnum = end_row ~= nil and (end_row - 1) or (row - 1),
+        lnum = row - 1,
+        message = text,
         severity = severity,
         source = SOURCE,
-        code = rule,
-        message = text,
     }
 end
 
@@ -180,49 +205,17 @@ local function parse(output, _)
     return diagnostics
 end
 
----@param context LintContext
----@return string[]
-local function args(context)
-    assert(context.filename ~= '')
-
-    return {
-        -- Machine-readable output; the default `stylish` format is not parsed.
-        '--format',
-        'json',
-        -- Read the buffer from stdin.
-        '--stdin',
-        -- Lets ESLint resolve config as if it read this file.
-        '--stdin-filename',
-        context.filename,
-    }
-end
-
----@param context LintContext
----@return string
-local function cwd(context)
-    assert(context.root ~= '')
-
-    return fs.normalize(context.root)
-end
-
 return ---@type Linter
 {
-    automatic = true,
-
-    cmd = 'eslint',
-
-    args = args,
-
     append_fname = false,
-
+    args = args,
+    automatic = true,
+    cmd = 'eslint',
     cwd = cwd,
-
     -- ESLint exits 0 when clean, 1 when it found problems, 2 on config
     -- errors. A config error must stay visible, so only 0 and 1 pass.
     exit_codes = { 0, 1 },
-
     parser = parse,
-
     root_markers = {
         'eslint.config.js',
         'eslint.config.mjs',
@@ -234,10 +227,7 @@ return ---@type Linter
         'package.json',
         '.git',
     },
-
     stdin = true,
-
     stream = 'stdout',
-
     timeout = TIMEOUT_MS,
 }

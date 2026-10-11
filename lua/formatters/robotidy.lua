@@ -13,17 +13,17 @@
 
 ---@type FormatterSpec
 return {
-    cmd = 'robotidy',
+    allow_empty = false,
     args = { '-' },
+    automatic = true,
+    cmd = 'robotidy',
+    cwd = nil,
+    decode = nil,
+    env = {},
+    exit_codes = { 0 },
+    extension = 'robot',
     mode = 'stdin',
     output = 'stdout',
-    cwd = nil,
-    env = {},
-    root_markers = { 'pyproject.toml', '.git' },
-    exit_codes = { 0 },
-    allow_empty = false,
-    automatic = true,
-    extension = 'robot',
-    decode = nil,
     pre_transform = nil,
+    root_markers = { 'pyproject.toml', '.git' },
 }

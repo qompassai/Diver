@@ -353,12 +353,12 @@ local function parse_clickable(line)
 
     if path ~= nil and line_number ~= nil and column ~= nil and level ~= nil and code ~= nil and message ~= nil then
         return {
-            path = path,
-            line = tonumber(line_number) or 1,
-            column = tonumber(column) or 1,
-            severity = level,
             code = normalize_code(code),
+            column = tonumber(column) or 1,
+            line = tonumber(line_number) or 1,
             message = message,
+            path = path,
+            severity = level,
         }
     end
 
@@ -366,12 +366,12 @@ local function parse_clickable(line)
 
     if path ~= nil and line_number ~= nil and level ~= nil and code ~= nil and message ~= nil then
         return {
-            path = path,
-            line = tonumber(line_number) or 1,
-            column = 1,
-            severity = level,
             code = normalize_code(code),
+            column = 1,
+            line = tonumber(line_number) or 1,
             message = message,
+            path = path,
+            severity = level,
         }
     end
 
@@ -379,11 +379,11 @@ local function parse_clickable(line)
 
     if path ~= nil and line_number ~= nil and column ~= nil and level ~= nil and message ~= nil then
         return {
-            path = path,
-            line = tonumber(line_number) or 1,
             column = tonumber(column) or 1,
-            severity = level,
+            line = tonumber(line_number) or 1,
             message = message,
+            path = path,
+            severity = level,
         }
     end
 
@@ -391,11 +391,11 @@ local function parse_clickable(line)
 
     if path ~= nil and line_number ~= nil and level ~= nil and message ~= nil then
         return {
-            path = path,
-            line = tonumber(line_number) or 1,
             column = 1,
-            severity = level,
+            line = tonumber(line_number) or 1,
             message = message,
+            path = path,
+            severity = level,
         }
     end
 
@@ -611,8 +611,8 @@ local CMD = godot_executable() or 'godot'
 
 ---@type Linter
 return {
-    args = arguments,
     append_fname = false,
+    args = arguments,
     automatic = false,
     cmd = CMD,
     cwd = project_root,

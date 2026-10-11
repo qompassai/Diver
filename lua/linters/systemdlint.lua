@@ -363,13 +363,15 @@ end
 
 ---@type Linter
 return {
-    args = arguments,
 
     append_fname = false,
+    args = arguments,
 
     automatic = true,
 
     cmd = 'systemdlint',
+
+    condition = applicable,
 
     cwd = project_root,
     ignore_exitcode = true,
@@ -383,6 +385,4 @@ return {
     stream = 'both',
 
     timeout = 30000,
-
-    condition = applicable,
 }

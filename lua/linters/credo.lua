@@ -20,9 +20,9 @@ local diagnostic = vim.diagnostic
 local fs = vim.fs
 
 local ERROR = diagnostic.severity.ERROR
-local WARN = diagnostic.severity.WARN
-local INFO = diagnostic.severity.INFO
 local HINT = diagnostic.severity.HINT
+local INFO = diagnostic.severity.INFO
+local WARN = diagnostic.severity.WARN
 
 local DIAGNOSTICS_MAX = 4096
 local LINE_LENGTH_MAX = 16384
@@ -30,10 +30,10 @@ local LINE_LENGTH_MAX = 16384
 ---@type table<string, integer>
 local severities = {
     ['↑'] = ERROR,
-    ['↗'] = WARN,
     ['→'] = INFO,
-    ['↘'] = HINT,
     ['↓'] = HINT,
+    ['↗'] = WARN,
+    ['↘'] = HINT,
 }
 
 ---@param value string|number|nil
@@ -161,10 +161,10 @@ local function parse(output, context)
                 diagnostics_count = diagnostics_count + 1
 
                 diagnostics[diagnostics_count] = {
-                    lnum = row,
-                    end_lnum = row,
                     col = column,
                     end_col = column + 1,
+                    end_lnum = row,
+                    lnum = row,
                     message = message,
                     severity = level,
                     source = 'credo',
@@ -181,10 +181,7 @@ end
 
 return ---@type Linter
 {
-    automatic = false,
-
-    cmd = 'mix',
-
+    append_fname = false,
     args = function(context)
         assert(context.filename ~= '')
 
@@ -197,24 +194,19 @@ return ---@type Linter
             '--format=oneline',
         }
     end,
-
-    append_fname = false,
-
+    automatic = false,
+    cmd = 'mix',
     cwd = function(context)
         assert(context.root ~= '')
         return context.root
     end,
-
     ignore_exitcode = true,
-
     parser = parse,
-
     root_markers = {
         '.credo.exs',
         'mix.exs',
         '.git',
     },
-
     stdin = true,
     stream = 'stdout',
     timeout = 30000,

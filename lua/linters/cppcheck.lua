@@ -57,14 +57,14 @@ local function parse(output, _context)
             code = vim.trim(code or '')
             message = vim.trim(message)
             diagnostics[#diagnostics + 1] = {
-                lnum = line_number,
-                end_lnum = line_number,
+                code = code ~= '' and code or nil,
                 col = start_column,
                 end_col = start_column + 1,
+                end_lnum = line_number,
+                lnum = line_number,
                 message = code ~= '' and ('[%s] %s'):format(code, message) or message,
                 severity = severities[level] or diagnostic.severity.WARN,
                 source = 'cppcheck',
-                code = code ~= '' and code or nil,
             }
         end
     end
@@ -73,14 +73,14 @@ end
 
 return ---@type Linter
 {
-    cmd = 'cppcheck',
+    append_fname = true,
     args = {
         '--enable=warning,style,performance,portability',
         '--inline-suppr',
         '--quiet',
         '--template={file}:{line}:{column}:{severity}:{id}:{message}',
     },
-    append_fname = true,
+    cmd = 'cppcheck',
     cwd = function(context)
         return context.root
     end,

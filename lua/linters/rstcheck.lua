@@ -171,9 +171,8 @@ end
 
 return ---@type Linter
 {
-    automatic = false,
 
-    cmd = 'rstcheck',
+    append_fname = false,
 
     args = function(context)
         assert(context.filename ~= '')
@@ -182,8 +181,9 @@ return ---@type Linter
             context.filename,
         }
     end,
+    automatic = false,
 
-    append_fname = false,
+    cmd = 'rstcheck',
 
     cwd = function(context)
         assert(context.root ~= '')

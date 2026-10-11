@@ -70,11 +70,11 @@ local ROOT_MARKERS = {
 
 ---@type table<string, boolean>
 local TARGET_STANDARDS = {
-    f95 = true,
     f2003 = true,
     f2008 = true,
     f2018 = true,
     f2023 = true,
+    f95 = true,
 }
 
 ---@class FortitudeLocation
@@ -107,257 +107,10 @@ local TARGET_STANDARDS = {
 ---@field edit_count integer
 ---@field message? string
 
----@param value any
----@return string?
-local function string_value(value)
-    if type(value) ~= 'string' or value == '' then
-        return nil
-    end
-
-    return value
-end
-
 ---@param value string
 ---@return string
 local function compact(value)
     return vim.trim(value:gsub('%s+', ' '))
-end
-
----@param value string
----@param limit integer
----@return string
-local function truncate(value, limit)
-    if #value <= limit then
-        return value
-    end
-
-    if limit <= 3 then
-        return value:sub(1, limit)
-    end
-
-    return value:sub(1, limit - 3) .. '...'
-end
-
----@param output string
----@return string
-local function strip_ansi(output)
-    local cleaned = output:gsub('\27%[[%d;]*[mK]', '')
-    return cleaned
-end
-
----@param value string?
----@return boolean
-local function truthy(value)
-    if value == nil then
-        return false
-    end
-
-    local normalized = value:lower()
-
-    return normalized == '1' or normalized == 'true' or normalized == 'yes' or normalized == 'on'
-end
-
----@param value string?
----@return string[]
-local function split_csv(value)
-    ---@type string[]
-    local result = {}
-
-    if value == nil or value == '' then
-        return result
-    end
-
-    for item in value:gmatch('[^,]+') do
-        local normalized = vim.trim(item)
-
-        if normalized ~= '' then
-            result[#result + 1] = normalized
-        end
-    end
-
-    return result
-end
-
----@param value any
----@return integer
-local function zero_based(value)
-    ---@type number?
-    local number = tonumber(value)
-
-    if number == nil or number ~= number or number == math.huge or number == -math.huge then
-        return 0
-    end
-
-    local integer = math.floor(number)
-
-    if integer <= 1 then
-        return 0
-    end
-
-    return integer - 1
-end
-
----@param context LintContext
----@return string
-local function project_root(context)
-    local context_root = string_value(context.root)
-
-    if context_root ~= nil then
-        return fs.normalize(context_root)
-    end
-
-    local filename = string_value(context.filename)
-
-    if filename ~= nil then
-        local detected = fs.root(filename, ROOT_MARKERS)
-
-        if type(detected) == 'string' and detected ~= '' then
-            return fs.normalize(detected)
-        end
-
-        local parent = fs.dirname(filename)
-
-        if type(parent) == 'string' and parent ~= '' then
-            return fs.normalize(parent)
-        end
-    end
-
-    local cwd = string_value(context.cwd)
-
-    if cwd ~= nil then
-        return fs.normalize(cwd)
-    end
-
-    return fs.normalize(vim.fn.getcwd())
-end
-
----@param level string?
----@return integer
-local function severity(level)
-    if level == nil then
-        return diagnostic.severity.WARN
-    end
-
-    local normalized = level:lower()
-
-    if normalized == 'error' then
-        return diagnostic.severity.ERROR
-    end
-
-    if normalized == 'warning' or normalized == 'warn' then
-        return diagnostic.severity.WARN
-    end
-
-    if normalized == 'information' or normalized == 'info' then
-        return diagnostic.severity.INFO
-    end
-
-    if normalized == 'hint' then
-        return diagnostic.severity.HINT
-    end
-
-    return diagnostic.severity.WARN
-end
-
----@param location FortitudeLocation?
----@return integer, integer
-local function position(location)
-    if type(location) ~= 'table' then
-        return 0, 0
-    end
-
-    return zero_based(location.row), zero_based(location.column)
-end
-
----@param start_location FortitudeLocation?
----@param finish_location FortitudeLocation?
----@return integer, integer, integer, integer
-local function diagnostic_range(start_location, finish_location)
-    local lnum, col = position(start_location)
-    local end_lnum = lnum
-    local end_col = col
-
-    if type(finish_location) == 'table' then
-        end_lnum, end_col = position(finish_location)
-    end
-
-    if end_lnum < lnum or (end_lnum == lnum and end_col < col) then
-        end_lnum = lnum
-        end_col = col
-    end
-
-    return lnum, col, end_lnum, end_col
-end
-
----@param fix FortitudeFix?
----@return FortitudeFixSummary?
-local function fix_summary(fix)
-    if type(fix) ~= 'table' then
-        return nil
-    end
-
-    local edit_count = 0
-
-    if type(fix.edits) == 'table' then
-        edit_count = #fix.edits
-    end
-
-    local message = string_value(fix.message)
-
-    if message ~= nil then
-        message = truncate(compact(message), MAX_MESSAGE_BYTES)
-    end
-
-    return {
-        applicability = string_value(fix.applicability),
-        edit_count = edit_count,
-        message = message,
-    }
-end
-
----@param finding FortitudeFinding
----@param context LintContext
----@return vim.Diagnostic?
-local function finding_diagnostic(finding, context)
-    local message = string_value(finding.message)
-
-    if message == nil then
-        return nil
-    end
-
-    local name = string_value(finding.name)
-    local code = string_value(finding.code) or name
-    local lnum, col, end_lnum, end_col = diagnostic_range(finding.location, finding.end_location)
-
-    return {
-        bufnr = context.bufnr,
-
-        code = code,
-
-        col = col,
-
-        end_col = end_col,
-
-        end_lnum = end_lnum,
-
-        lnum = lnum,
-
-        message = truncate(compact(message), MAX_MESSAGE_BYTES),
-
-        severity = severity(string_value(finding.severity)),
-
-        source = SOURCE,
-
-        user_data = {
-            filename = string_value(finding.filename),
-
-            fix = fix_summary(finding.fix),
-
-            name = name,
-
-            url = string_value(finding.url),
-        },
-    }
 end
 
 ---@param output string
@@ -394,6 +147,185 @@ local function decode_findings(output)
     end
 
     return findings
+end
+
+---@param context LintContext
+---@return vim.Diagnostic[]
+local function oversized_output(context)
+    return {
+        {
+            bufnr = context.bufnr,
+
+            code = 'output-limit',
+
+            col = 0,
+
+            end_col = 0,
+
+            end_lnum = 0,
+
+            lnum = 0,
+
+            message = string.format('Fortitude output exceeded the %d-byte parser limit', MAX_OUTPUT_BYTES),
+
+            severity = diagnostic.severity.WARN,
+
+            source = SOURCE,
+        },
+    }
+end
+
+---@param level string?
+---@return integer
+local function severity(level)
+    if level == nil then
+        return diagnostic.severity.WARN
+    end
+
+    local normalized = level:lower()
+
+    if normalized == 'error' then
+        return diagnostic.severity.ERROR
+    end
+
+    if normalized == 'warning' or normalized == 'warn' then
+        return diagnostic.severity.WARN
+    end
+
+    if normalized == 'information' or normalized == 'info' then
+        return diagnostic.severity.INFO
+    end
+
+    if normalized == 'hint' then
+        return diagnostic.severity.HINT
+    end
+
+    return diagnostic.severity.WARN
+end
+
+---@param value string?
+---@return string[]
+local function split_csv(value)
+    ---@type string[]
+    local result = {}
+
+    if value == nil or value == '' then
+        return result
+    end
+
+    for item in value:gmatch('[^,]+') do
+        local normalized = vim.trim(item)
+
+        if normalized ~= '' then
+            result[#result + 1] = normalized
+        end
+    end
+
+    return result
+end
+
+---@param value any
+---@return string?
+local function string_value(value)
+    if type(value) ~= 'string' or value == '' then
+        return nil
+    end
+
+    return value
+end
+
+---@param context LintContext
+---@return string
+local function input_filename(context)
+    local filename = string_value(context.filename)
+
+    if filename ~= nil then
+        return fs.normalize(filename)
+    end
+
+    return STDIN_FILENAME
+end
+
+---@param context LintContext
+---@return string
+local function project_root(context)
+    local context_root = string_value(context.root)
+
+    if context_root ~= nil then
+        return fs.normalize(context_root)
+    end
+
+    local filename = string_value(context.filename)
+
+    if filename ~= nil then
+        local detected = fs.root(filename, ROOT_MARKERS)
+
+        if type(detected) == 'string' and detected ~= '' then
+            return fs.normalize(detected)
+        end
+
+        local parent = fs.dirname(filename)
+
+        if type(parent) == 'string' and parent ~= '' then
+            return fs.normalize(parent)
+        end
+    end
+
+    local cwd = string_value(context.cwd)
+
+    if cwd ~= nil then
+        return fs.normalize(cwd)
+    end
+
+    return fs.normalize(vim.fn.getcwd())
+end
+
+---@param output string
+---@return string
+local function strip_ansi(output)
+    local cleaned = output:gsub('\27%[[%d;]*[mK]', '')
+    return cleaned
+end
+
+---@param value string
+---@param limit integer
+---@return string
+local function truncate(value, limit)
+    if #value <= limit then
+        return value
+    end
+
+    if limit <= 3 then
+        return value:sub(1, limit)
+    end
+
+    return value:sub(1, limit - 3) .. '...'
+end
+
+---@param fix FortitudeFix?
+---@return FortitudeFixSummary?
+local function fix_summary(fix)
+    if type(fix) ~= 'table' then
+        return nil
+    end
+
+    local edit_count = 0
+
+    if type(fix.edits) == 'table' then
+        edit_count = #fix.edits
+    end
+
+    local message = string_value(fix.message)
+
+    if message ~= nil then
+        message = truncate(compact(message), MAX_MESSAGE_BYTES)
+    end
+
+    return {
+        applicability = string_value(fix.applicability),
+        edit_count = edit_count,
+        message = message,
+    }
 end
 
 ---@param output string
@@ -478,84 +410,16 @@ local function parse_failure(output, context)
     }
 end
 
----@param context LintContext
----@return vim.Diagnostic[]
-local function oversized_output(context)
-    return {
-        {
-            bufnr = context.bufnr,
-
-            code = 'output-limit',
-
-            col = 0,
-
-            end_col = 0,
-
-            end_lnum = 0,
-
-            lnum = 0,
-
-            message = string.format('Fortitude output exceeded the %d-byte parser limit', MAX_OUTPUT_BYTES),
-
-            severity = diagnostic.severity.WARN,
-
-            source = SOURCE,
-        },
-    }
-end
-
----@param output string
----@param context LintContext
----@return vim.Diagnostic[]
-local function parse(output, context)
-    assert(type(context) == 'table', 'Fortitude parser requires LintContext')
-
-    assert(type(context.bufnr) == 'number', 'Fortitude parser requires context.bufnr')
-
-    if output == '' then
-        return {}
+---@param value string?
+---@return boolean
+local function truthy(value)
+    if value == nil then
+        return false
     end
 
-    if #output > MAX_OUTPUT_BYTES then
-        return oversized_output(context)
-    end
+    local normalized = value:lower()
 
-    local findings = decode_findings(output)
-
-    if findings == nil then
-        return parse_failure(output, context)
-    end
-
-    local finding_count = #findings
-
-    if finding_count > MAX_DIAGNOSTICS then
-        finding_count = MAX_DIAGNOSTICS
-    end
-
-    ---@type vim.Diagnostic[]
-    local diagnostics = {}
-
-    for index = 1, finding_count do
-        local item = finding_diagnostic(findings[index], context)
-
-        if item ~= nil then
-            diagnostics[#diagnostics + 1] = item
-        end
-    end
-
-    return diagnostics
-end
-
----@param context LintContext
----@return string
-local function input_filename(context)
-    local filename = string_value(context.filename)
-
-    if filename ~= nil then
-        return fs.normalize(filename)
-    end
-
-    return STDIN_FILENAME
+    return normalized == '1' or normalized == 'true' or normalized == 'yes' or normalized == 'on'
 end
 
 ---@param context LintContext
@@ -605,27 +469,153 @@ local function arguments(context)
     return args
 end
 
+---@param value any
+---@return integer
+local function zero_based(value)
+    ---@type number?
+    local number = tonumber(value)
+
+    if number == nil or number ~= number or number == math.huge or number == -math.huge then
+        return 0
+    end
+
+    local integer = math.floor(number)
+
+    if integer <= 1 then
+        return 0
+    end
+
+    return integer - 1
+end
+
+---@param location FortitudeLocation?
+---@return integer, integer
+local function position(location)
+    if type(location) ~= 'table' then
+        return 0, 0
+    end
+
+    return zero_based(location.row), zero_based(location.column)
+end
+
+---@param start_location FortitudeLocation?
+---@param finish_location FortitudeLocation?
+---@return integer, integer, integer, integer
+local function diagnostic_range(start_location, finish_location)
+    local lnum, col = position(start_location)
+    local end_lnum = lnum
+    local end_col = col
+
+    if type(finish_location) == 'table' then
+        end_lnum, end_col = position(finish_location)
+    end
+
+    if end_lnum < lnum or (end_lnum == lnum and end_col < col) then
+        end_lnum = lnum
+        end_col = col
+    end
+
+    return lnum, col, end_lnum, end_col
+end
+
+---@param finding FortitudeFinding
+---@param context LintContext
+---@return vim.Diagnostic?
+local function finding_diagnostic(finding, context)
+    local message = string_value(finding.message)
+
+    if message == nil then
+        return nil
+    end
+
+    local name = string_value(finding.name)
+    local code = string_value(finding.code) or name
+    local lnum, col, end_lnum, end_col = diagnostic_range(finding.location, finding.end_location)
+
+    return {
+        bufnr = context.bufnr,
+
+        code = code,
+
+        col = col,
+
+        end_col = end_col,
+
+        end_lnum = end_lnum,
+
+        lnum = lnum,
+
+        message = truncate(compact(message), MAX_MESSAGE_BYTES),
+
+        severity = severity(string_value(finding.severity)),
+
+        source = SOURCE,
+
+        user_data = {
+            filename = string_value(finding.filename),
+
+            fix = fix_summary(finding.fix),
+
+            name = name,
+
+            url = string_value(finding.url),
+        },
+    }
+end
+
+---@param output string
+---@param context LintContext
+---@return vim.Diagnostic[]
+local function parse(output, context)
+    assert(type(context) == 'table', 'Fortitude parser requires LintContext')
+
+    assert(type(context.bufnr) == 'number', 'Fortitude parser requires context.bufnr')
+
+    if output == '' then
+        return {}
+    end
+
+    if #output > MAX_OUTPUT_BYTES then
+        return oversized_output(context)
+    end
+
+    local findings = decode_findings(output)
+
+    if findings == nil then
+        return parse_failure(output, context)
+    end
+
+    local finding_count = #findings
+
+    if finding_count > MAX_DIAGNOSTICS then
+        finding_count = MAX_DIAGNOSTICS
+    end
+
+    ---@type vim.Diagnostic[]
+    local diagnostics = {}
+
+    for index = 1, finding_count do
+        local item = finding_diagnostic(findings[index], context)
+
+        if item ~= nil then
+            diagnostics[#diagnostics + 1] = item
+        end
+    end
+
+    return diagnostics
+end
+
 ---@type Linter
 return {
-    args = arguments,
-
     append_fname = false,
-
+    args = arguments,
     automatic = true,
-
     cmd = 'fortitude',
-
     cwd = project_root,
-
     ignore_exitcode = true,
-
     parser = parse,
-
     root_markers = ROOT_MARKERS,
-
     stdin = true,
-
     stream = 'both',
-
     timeout = 60000,
 }

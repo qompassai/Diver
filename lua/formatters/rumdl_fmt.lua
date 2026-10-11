@@ -13,17 +13,17 @@
 
 ---@type FormatterSpec
 return {
-    cmd = 'rumdl',
+    allow_empty = false,
     args = { 'fmt', '--silent', '-' },
+    automatic = true,
+    cmd = 'rumdl',
+    cwd = nil,
+    decode = nil,
+    env = {},
+    exit_codes = { 0 },
+    extension = 'md',
     mode = 'stdin',
     output = 'stdout',
-    cwd = nil,
-    env = {},
-    root_markers = { 'rumdl.toml', '.rumdl.toml', 'pyproject.toml', '.git' },
-    exit_codes = { 0 },
-    allow_empty = false,
-    automatic = true,
-    extension = 'md',
-    decode = nil,
     pre_transform = nil,
+    root_markers = { 'rumdl.toml', '.rumdl.toml', 'pyproject.toml', '.git' },
 }

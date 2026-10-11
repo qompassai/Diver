@@ -180,9 +180,8 @@ end
 
 return ---@type Linter
 {
-    automatic = true,
 
-    cmd = 'sqruff',
+    append_fname = false,
 
     args = {
         'lint',
@@ -194,8 +193,9 @@ return ---@type Linter
         -- Read the buffer from stdin.
         '-',
     },
+    automatic = true,
 
-    append_fname = false,
+    cmd = 'sqruff',
 
     cwd = cwd,
 

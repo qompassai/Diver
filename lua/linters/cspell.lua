@@ -67,26 +67,14 @@ local CONFIG_MARKERS = {
 -- `.+` backtracks to the LAST `:line:col - ` triple)
 local LINE_PATTERN = '^(.+):(%d+):(%d+)%s*%-%s*(.+)$'
 
----@param value string
----@param minimum integer
----@param maximum integer
----@return integer?
-local function integer_in_range(value, minimum, maximum)
-    assert(minimum >= 0)
-    assert(maximum >= minimum)
-
-    local parsed = tonumber(value)
-
-    if parsed == nil or parsed ~= floor(parsed) then
-        return nil
+---@param path string
+---@param cwd string
+---@return string
+local function absolute(path, cwd)
+    if path:sub(1, 1) ~= '/' and not path:match('^%a:[/\\]') then
+        path = fs.joinpath(cwd, path)
     end
-
-    if parsed < minimum or parsed > maximum then
-        return nil
-    end
-
-    ---@cast parsed integer
-    return parsed
+    return fs.normalize(path)
 end
 
 ---@param value string
@@ -107,89 +95,12 @@ local function clean_message(value)
     return message
 end
 
----@param line string
----@return vim.Diagnostic.Set?
-local function parse_line(line)
-    assert(type(line) == 'string')
-
-    if line == '' or #line > LINE_LENGTH_MAX then
-        return nil
-    end
-
-    local _, row, column, message = line:match(LINE_PATTERN)
-
-    if row == nil then
-        return nil
-    end
-
-    local parsed_row = integer_in_range(row, 1, 2147483647)
-    local parsed_column = integer_in_range(column, 1, 2147483647)
-    local cleaned = clean_message(message)
-
-    if parsed_row == nil or parsed_column == nil or cleaned == nil then
-        return nil
-    end
-
-    -- The message names the word in parentheses: `Unknown word (teh)`.
-    local word = cleaned:match('%(([^)]+)%)%s*$')
-
-    return {
-        lnum = parsed_row - 1,
-        end_lnum = parsed_row - 1,
-        col = max(parsed_column - 1, 0),
-        -- CSpell reports the column where the word starts; extend the range
-        -- over the word itself when it is known.
-        end_col = word ~= nil and (parsed_column - 1 + #word) or parsed_column,
-        severity = HINT,
-        source = SOURCE,
-        code = word,
-        message = cleaned,
-    }
-end
-
----@param output string
----@param _ LintContext|integer
----@return vim.Diagnostic.Set[]
-local function parse(output, _)
-    ---@type vim.Diagnostic.Set[]
-    local diagnostics = {}
-
-    if output == '' then
-        return diagnostics
-    end
-
-    assert(#output <= OUTPUT_BYTES_MAX, 'cspell output exceeded maximum size')
-
-    for line in output:gmatch('[^\r\n]+') do
-        if #diagnostics >= DIAGNOSTICS_MAX then
-            break
-        end
-
-        local item = parse_line(line)
-        if item ~= nil then
-            diagnostics[#diagnostics + 1] = item
-        end
-    end
-
-    assert(#diagnostics <= DIAGNOSTICS_MAX)
-
-    return diagnostics
-end
-
----@param path string
----@param cwd string
+---@param context LintContext
 ---@return string
-local function absolute(path, cwd)
-    if path:sub(1, 1) ~= '/' and not path:match('^%a:[/\\]') then
-        path = fs.joinpath(cwd, path)
-    end
-    return fs.normalize(path)
-end
+local function cwd(context)
+    assert(context.root ~= '')
 
----@param filename string absolute path of the linted file
----@return boolean true when the file's directory tree provides cspell configuration
-local function has_project_config(filename)
-    return fs.root(filename, CONFIG_MARKERS) ~= nil
+    return fs.normalize(context.root)
 end
 
 ---@return string? absolute path of the bundled fallback config, or nil when absent
@@ -198,6 +109,12 @@ local function default_config()
         return DEFAULT_CONFIG
     end
     return nil
+end
+
+---@param filename string absolute path of the linted file
+---@return boolean true when the file's directory tree provides cspell configuration
+local function has_project_config(filename)
+    return fs.root(filename, CONFIG_MARKERS) ~= nil
 end
 
 ---@param context LintContext
@@ -236,30 +153,106 @@ local function args(context)
     return argv
 end
 
----@param context LintContext
----@return string
-local function cwd(context)
-    assert(context.root ~= '')
+---@param value string
+---@param minimum integer
+---@param maximum integer
+---@return integer?
+local function integer_in_range(value, minimum, maximum)
+    assert(minimum >= 0)
+    assert(maximum >= minimum)
 
-    return fs.normalize(context.root)
+    local parsed = tonumber(value)
+
+    if parsed == nil or parsed ~= floor(parsed) then
+        return nil
+    end
+
+    if parsed < minimum or parsed > maximum then
+        return nil
+    end
+
+    ---@cast parsed integer
+    return parsed
+end
+
+---@param line string
+---@return vim.Diagnostic.Set?
+local function parse_line(line)
+    assert(type(line) == 'string')
+
+    if line == '' or #line > LINE_LENGTH_MAX then
+        return nil
+    end
+
+    local _, row, column, message = line:match(LINE_PATTERN)
+
+    if row == nil then
+        return nil
+    end
+
+    local parsed_row = integer_in_range(row, 1, 2147483647)
+    local parsed_column = integer_in_range(column, 1, 2147483647)
+    local cleaned = clean_message(message)
+
+    if parsed_row == nil or parsed_column == nil or cleaned == nil then
+        return nil
+    end
+
+    -- The message names the word in parentheses: `Unknown word (teh)`.
+    local word = cleaned:match('%(([^)]+)%)%s*$')
+
+    return {
+        code = word,
+        col = max(parsed_column - 1, 0),
+        -- CSpell reports the column where the word starts; extend the range
+        -- over the word itself when it is known.
+        end_col = word ~= nil and (parsed_column - 1 + #word) or parsed_column,
+        end_lnum = parsed_row - 1,
+        lnum = parsed_row - 1,
+        message = cleaned,
+        severity = HINT,
+        source = SOURCE,
+    }
+end
+
+---@param output string
+---@param _ LintContext|integer
+---@return vim.Diagnostic.Set[]
+local function parse(output, _)
+    ---@type vim.Diagnostic.Set[]
+    local diagnostics = {}
+
+    if output == '' then
+        return diagnostics
+    end
+
+    assert(#output <= OUTPUT_BYTES_MAX, 'cspell output exceeded maximum size')
+
+    for line in output:gmatch('[^\r\n]+') do
+        if #diagnostics >= DIAGNOSTICS_MAX then
+            break
+        end
+
+        local item = parse_line(line)
+        if item ~= nil then
+            diagnostics[#diagnostics + 1] = item
+        end
+    end
+
+    assert(#diagnostics <= DIAGNOSTICS_MAX)
+
+    return diagnostics
 end
 
 return ---@type Linter
 {
-    automatic = true,
-
-    cmd = 'cspell',
-
-    args = args,
-
     append_fname = false,
-
+    args = args,
+    automatic = true,
+    cmd = 'cspell',
     cwd = cwd,
-
     exit_codes = { 0, 1 },
-
     parser = parse,
-
     root_markers = {
         'cspell.json',
         'cspell.jsonc',
@@ -269,10 +262,7 @@ return ---@type Linter
         'package.json',
         '.git',
     },
-
     stdin = true,
-
     stream = 'stdout',
-
     timeout = TIMEOUT_MS,
 }

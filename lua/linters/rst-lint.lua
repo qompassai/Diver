@@ -344,6 +344,10 @@ end
 
 return ---@type Linter
 {
+
+    append_fname = false,
+
+    args = args,
     automatic = false,
 
     --
@@ -355,10 +359,6 @@ return ---@type Linter
         'rst-lint',
         'restructuredtext-lint',
     },
-
-    args = args,
-
-    append_fname = false,
 
     cwd = function(context)
         assert(context.root ~= '')

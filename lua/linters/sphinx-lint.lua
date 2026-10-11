@@ -4,13 +4,11 @@
 -- ----------------------------------------
 return ---@type vim.lint.Config
 {
-    cmd = 'sphinx-lint',
-    stdin = false,
     append_fname = true,
     args = {},
-    stream = nil,
-    ignore_exitcode = false,
+    cmd = 'sphinx-lint',
     env = nil,
+    ignore_exitcode = false,
     ---@param output string
     ---@param bufnr integer
     ---@return vim.Diagnostic.Set[]
@@ -48,4 +46,6 @@ return ---@type vim.lint.Config
         end
         return diagnostics
     end,
+    stdin = false,
+    stream = nil,
 }

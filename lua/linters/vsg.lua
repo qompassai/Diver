@@ -531,9 +531,9 @@ end
 
 ---@type Linter
 return {
-    args = arguments,
 
     append_fname = false,
+    args = arguments,
 
     --
     -- VSG is multi-phase AST/style analysis. It is appropriate on save or

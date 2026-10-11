@@ -12,7 +12,7 @@
 -- so it can find the right `.swiftformat` configuration file.
 ---@type FormatterSpec
 return {
-    cmd = 'swiftformat',
+    allow_empty = false,
     args = function(context)
         return {
             'stdin',
@@ -20,17 +20,17 @@ return {
             context.filename ~= '' and context.filename or 'buffer.swift',
         }
     end,
+    automatic = true,
+    cmd = 'swiftformat',
+    cwd = nil,
+    decode = nil,
+    description = 'Nick Lockwood Swift formatter; `stdin --stdinpath` reads stdin, prints stdout',
+    env = {},
+    exit_codes = { 0 },
+    extension = nil,
+    filetypes = { 'swift' },
     mode = 'stdin',
     output = 'stdout',
-    cwd = nil,
-    env = {},
-    root_markers = {},
-    exit_codes = { 0 },
-    allow_empty = false,
-    automatic = true,
-    extension = nil,
-    decode = nil,
     pre_transform = nil,
-    filetypes = { 'swift' },
-    description = 'Nick Lockwood Swift formatter; `stdin --stdinpath` reads stdin, prints stdout',
+    root_markers = {},
 }

@@ -41,14 +41,13 @@ local SOURCE = 'compose-tiger'
 ---@type table<string, integer>
 local DCLINT_SEVERITIES = {
     ERROR = ERROR,
-    WARNING = WARN,
-    INFO = INFO,
     HINT = HINT,
-
+    INFO = INFO,
+    WARNING = WARN,
     error = ERROR,
-    warning = WARN,
-    info = INFO,
     hint = HINT,
+    info = INFO,
+    warning = WARN,
 }
 
 --
@@ -236,6 +235,80 @@ print(
 ---@class RdjsonResult
 ---@field diagnostics? RdjsonDiagnostic[]
 
+---@param context LintContext
+---@return string[]
+local function args(context)
+    assert(context.filename ~= '')
+    assert(context.root ~= '')
+
+    return {
+        '-I',
+        '-c',
+        COORDINATOR,
+        context.filename,
+    }
+end
+
+---@param context LintContext
+---@return string
+local function cwd(context)
+    assert(context.root ~= '')
+
+    return fs.normalize(context.root)
+end
+
+---@param entry RdjsonDiagnostic
+---@return string?
+local function dclint_code(entry)
+    local code = entry.code
+
+    if type(code) == 'string' then
+        if code ~= '' then
+            return code
+        end
+
+        return nil
+    end
+
+    if type(code) ~= 'table' then
+        return nil
+    end
+
+    local value = code.value
+
+    if type(value) ~= 'string' or value == '' then
+        return nil
+    end
+
+    return value
+end
+
+---@param value string|nil
+---@return integer
+local function dclint_severity(value)
+    if type(value) ~= 'string' then
+        return WARN
+    end
+
+    return DCLINT_SEVERITIES[value] or DCLINT_SEVERITIES[value:upper()] or WARN
+end
+
+---@param value string
+---@return boolean
+local function docker_overlap_warning(value)
+    local lower = value:lower()
+
+    --
+    -- DCLint has a dedicated no-version-field rule. Modern Docker Compose also
+    -- warns that the legacy top-level version field is obsolete.
+    --
+    -- Prefer DCLint's precise source location and rule identifier rather than
+    -- displaying both diagnostics.
+    --
+    return lower:find('version', 1, true) ~= nil
+        and (lower:find('obsolete', 1, true) ~= nil or lower:find('ignored', 1, true) ~= nil)
+end
+
 ---@param value integer|number|string|nil
 ---@param fallback integer
 ---@return integer
@@ -251,28 +324,16 @@ local function integer(value, fallback)
     return floor(parsed)
 end
 
----@param value string
----@return string
-local function trim(value)
-    return (value:gsub('^%s*(.-)%s*$', '%1'))
-end
+---@param line string
+---@return integer
+local function docker_line_number(line)
+    local value = line:match('[Ll]ine%s+(%d+)') or line:match(':(%d+):%d+:')
 
----@param value string
----@return string
-local function normalize_message(value)
-    value = value:gsub('\27%[[%d;?]*[ -/]*[@-~]', '')
-
-    value = value:gsub('\r\n', '\n')
-
-    value = value:gsub('\r', '\n')
-
-    value = trim(value)
-
-    if #value > MESSAGE_LENGTH_MAX then
-        value = value:sub(1, MESSAGE_LENGTH_MAX) .. '\n[message truncated]'
+    if value == nil then
+        return 1
     end
 
-    return value
+    return max(integer(value, 1), 1)
 end
 
 ---@param path string
@@ -315,37 +376,25 @@ local function belongs_to_buffer(candidate, filename, root)
     return normalize_path(candidate, root) == filename
 end
 
----@param value string|nil
----@return integer
-local function dclint_severity(value)
-    if type(value) ~= 'string' then
-        return WARN
-    end
-
-    return DCLINT_SEVERITIES[value] or DCLINT_SEVERITIES[value:upper()] or WARN
+---@param value string
+---@return string
+local function trim(value)
+    return (value:gsub('^%s*(.-)%s*$', '%1'))
 end
 
----@param entry RdjsonDiagnostic
----@return string?
-local function dclint_code(entry)
-    local code = entry.code
+---@param value string
+---@return string
+local function normalize_message(value)
+    value = value:gsub('\27%[[%d;?]*[ -/]*[@-~]', '')
 
-    if type(code) == 'string' then
-        if code ~= '' then
-            return code
-        end
+    value = value:gsub('\r\n', '\n')
 
-        return nil
-    end
+    value = value:gsub('\r', '\n')
 
-    if type(code) ~= 'table' then
-        return nil
-    end
+    value = trim(value)
 
-    local value = code.value
-
-    if type(value) ~= 'string' or value == '' then
-        return nil
+    if #value > MESSAGE_LENGTH_MAX then
+        value = value:sub(1, MESSAGE_LENGTH_MAX) .. '\n[message truncated]'
     end
 
     return value
@@ -420,22 +469,47 @@ local function diagnostic_from_dclint(entry, filename, root)
     local code = dclint_code(entry)
 
     return {
-        lnum = lnum,
-        end_lnum = end_lnum,
-
+        code = code,
         col = col,
         end_col = neovim_end_col,
-
+        end_lnum = end_lnum,
+        lnum = lnum,
         message = message,
-
         severity = dclint_severity(entry.severity),
-
         source = 'dclint',
-        code = code,
-
         user_data = {
             engine = 'dclint',
             rule = code,
+        },
+    }
+end
+
+---@param entry ComposeInfrastructureError
+---@return vim.Diagnostic.Set?
+local function infrastructure_diagnostic(entry)
+    local message = entry.message
+
+    if type(message) ~= 'string' or message == '' then
+        return nil
+    end
+
+    local tool = entry.tool
+
+    if type(tool) ~= 'string' or tool == '' then
+        tool = 'unknown'
+    end
+
+    return {
+        code = 'tool-missing',
+        col = 0,
+        end_col = 1,
+        end_lnum = 0,
+        lnum = 0,
+        message = normalize_message(message),
+        severity = WARN,
+        source = SOURCE,
+        user_data = {
+            tool = tool,
         },
     }
 end
@@ -480,34 +554,6 @@ local function parse_dclint(output, diagnostics, filename, root)
     end
 end
 
----@param value string
----@return boolean
-local function docker_overlap_warning(value)
-    local lower = value:lower()
-
-    --
-    -- DCLint has a dedicated no-version-field rule. Modern Docker Compose also
-    -- warns that the legacy top-level version field is obsolete.
-    --
-    -- Prefer DCLint's precise source location and rule identifier rather than
-    -- displaying both diagnostics.
-    --
-    return lower:find('version', 1, true) ~= nil
-        and (lower:find('obsolete', 1, true) ~= nil or lower:find('ignored', 1, true) ~= nil)
-end
-
----@param line string
----@return integer
-local function docker_line_number(line)
-    local value = line:match('[Ll]ine%s+(%d+)') or line:match(':(%d+):%d+:')
-
-    if value == nil then
-        return 1
-    end
-
-    return max(integer(value, 1), 1)
-end
-
 ---@param output string
 ---@param diagnostics vim.Diagnostic.Set[]
 ---@param severity integer
@@ -528,62 +574,21 @@ local function parse_docker(output, diagnostics, severity, failed)
             local line = docker_line_number(message)
 
             diagnostics[#diagnostics + 1] = {
-                lnum = line - 1,
-                end_lnum = line - 1,
-
+                code = failed and 'config' or 'warning',
                 col = 0,
                 end_col = 1,
-
+                end_lnum = line - 1,
+                lnum = line - 1,
                 message = message,
-
                 severity = severity,
-
                 source = 'docker-compose',
-
-                code = failed and 'config' or 'warning',
-
                 user_data = {
-                    engine = 'docker-compose',
                     authoritative = true,
+                    engine = 'docker-compose',
                 },
             }
         end
     end
-end
-
----@param entry ComposeInfrastructureError
----@return vim.Diagnostic.Set?
-local function infrastructure_diagnostic(entry)
-    local message = entry.message
-
-    if type(message) ~= 'string' or message == '' then
-        return nil
-    end
-
-    local tool = entry.tool
-
-    if type(tool) ~= 'string' or tool == '' then
-        tool = 'unknown'
-    end
-
-    return {
-        lnum = 0,
-        end_lnum = 0,
-
-        col = 0,
-        end_col = 1,
-
-        message = normalize_message(message),
-
-        severity = WARN,
-
-        source = SOURCE,
-        code = 'tool-missing',
-
-        user_data = {
-            tool = tool,
-        },
-    }
 end
 
 ---@param output string
@@ -643,14 +648,14 @@ local function parse(output, context)
     if type(docker) == 'table' then
         if docker.timeout then
             diagnostics[#diagnostics + 1] = {
-                lnum = 0,
-                end_lnum = 0,
+                code = 'timeout',
                 col = 0,
                 end_col = 1,
+                end_lnum = 0,
+                lnum = 0,
                 message = 'docker compose config timed out',
                 severity = ERROR,
                 source = 'docker-compose',
-                code = 'timeout',
             }
 
             return diagnostics
@@ -693,17 +698,14 @@ local function parse(output, context)
         if dclint.timeout then
             if #diagnostics < DIAGNOSTICS_MAX then
                 diagnostics[#diagnostics + 1] = {
-                    lnum = 0,
-                    end_lnum = 0,
+                    code = 'timeout',
                     col = 0,
                     end_col = 1,
-
+                    end_lnum = 0,
+                    lnum = 0,
                     message = 'DCLint timed out',
-
                     severity = WARN,
-
                     source = 'dclint',
-                    code = 'timeout',
                 }
             end
 
@@ -720,48 +722,19 @@ local function parse(output, context)
     return diagnostics
 end
 
----@param context LintContext
----@return string[]
-local function args(context)
-    assert(context.filename ~= '')
-    assert(context.root ~= '')
-
-    return {
-        '-I',
-        '-c',
-        COORDINATOR,
-        context.filename,
-    }
-end
-
----@param context LintContext
----@return string
-local function cwd(context)
-    assert(context.root ~= '')
-
-    return fs.normalize(context.root)
-end
-
 return ---@type Linter
 {
+    append_fname = false,
+    args = args,
     automatic = false,
-
     --
     -- Python is only the process coordinator. It invokes Docker and DCLint with
     -- argument arrays and never invokes a shell.
     --
     cmd = 'python3',
-
-    args = args,
-
-    append_fname = false,
-
     cwd = cwd,
-
     ignore_exitcode = true,
-
     parser = parse,
-
     root_markers = {
         --
         -- DCLint configuration.
@@ -795,13 +768,10 @@ return ---@type Linter
 
         '.git',
     },
-
     stdin = false,
-
     --
     -- The coordinator emits exactly one JSON envelope to stdout.
     --
     stream = 'stdout',
-
     timeout = 120000,
 }

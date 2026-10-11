@@ -4,8 +4,6 @@
 -- ----------------------------------------
 return ---@type vim.lint.Config
 {
-    cmd = 'bibclean',
-    stdin = false,
     append_fname = true,
     args = {
         '-no-prettyprint',
@@ -17,9 +15,9 @@ return ---@type vim.lint.Config
         -- "-max-width", "80",
         -- "-scribe",
     },
-    stream = 'stderr',
-    ignore_exitcode = true,
+    cmd = 'bibclean',
     env = nil,
+    ignore_exitcode = true,
     ---@type LintBufferParser
     ---@param output string
     ---@param bufnr integer
@@ -40,10 +38,10 @@ return ---@type vim.lint.Config
                     local severity = msg:match('^[Ee]rror') and vim.diagnostic.severity.ERROR
                         or vim.diagnostic.severity.WARN
                     table.insert(diagnostics, {
-                        lnum = lnum,
-                        end_lnum = lnum,
                         col = col,
                         end_col = col + 1,
+                        end_lnum = lnum,
+                        lnum = lnum,
                         message = msg,
                         severity = severity,
                         source = 'bibclean',
@@ -53,4 +51,6 @@ return ---@type vim.lint.Config
         end
         return diagnostics
     end,
+    stdin = false,
+    stream = 'stderr',
 }

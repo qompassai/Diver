@@ -4,13 +4,11 @@
 -- ----------------------------------------
 return ---@type vim.lint.Config
 {
-    cmd = 'secfixes-check',
-    stdin = false,
     append_fname = true,
     args = {},
-    stream = nil,
-    ignore_exitcode = true,
+    cmd = 'secfixes-check',
     env = nil,
+    ignore_exitcode = true,
     ---@param output string
     ---@param bufnr integer
     ---@return vim.Diagnostic.Set[]
@@ -54,4 +52,6 @@ return ---@type vim.lint.Config
         end
         return diagnostics
     end,
+    stdin = false,
+    stream = nil,
 }

@@ -5,8 +5,8 @@ local api = vim.api
 local fs = vim.fs
 local uv = vim.uv
 local DIAGNOSTICS_MAX = 4096
-local OUTPUT_BYTES_MAX = 1024 * 1024
 local MESSAGE_BYTES_MAX = 8192
+local OUTPUT_BYTES_MAX = 1024 * 1024
 local severity = {
     blocker = vim.diagnostic.severity.ERROR,
     critical = vim.diagnostic.severity.ERROR,
@@ -75,16 +75,16 @@ end
 
 ---@type Linter
 return {
-    cmd = { './vendor/bin/twig-cs-fixer', 'twig-cs-fixer' },
-    args = { 'lint', '--report=gitlab', '--no-cache', '--no-interaction', '--no-ansi', '--' },
     append_fname = true,
+    args = { 'lint', '--report=gitlab', '--no-cache', '--no-interaction', '--no-ansi', '--' },
     automatic = true,
-    stdin = false,
-    stream = 'stdout',
-    ignore_exitcode = false,
+    cmd = { './vendor/bin/twig-cs-fixer', 'twig-cs-fixer' },
     exit_codes = { 0, 1 },
-    root_markers = { '.twig-cs-fixer.php', 'composer.json', '.git' },
+    ignore_exitcode = false,
     parser = parse,
     parser_mode = 'context',
+    root_markers = { '.twig-cs-fixer.php', 'composer.json', '.git' },
+    stdin = false,
+    stream = 'stdout',
     timeout = 30000,
 }

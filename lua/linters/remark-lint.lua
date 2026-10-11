@@ -4,9 +4,6 @@
 -- SPDX-License-Identifier: Apache-2.0
 -- #################################################################
 return {
-    name = 'remark-lint',
-    cmd = 'remark',
-    stdin = false,
     append_fname = true,
     args = function()
         return {
@@ -17,11 +14,14 @@ return {
             'remark-preset-lint-recommended',
         }
     end,
-    stream = 'stderr',
-    ignore_exitcode = true,
+    cmd = 'remark',
     errorformat = {
         '%f:%l:%c: %m',
         '%f:%l: %m',
         '%-G%.%#',
     },
+    ignore_exitcode = true,
+    name = 'remark-lint',
+    stdin = false,
+    stream = 'stderr',
 } --[[@as vim.lint.Config]]

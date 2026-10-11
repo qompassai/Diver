@@ -4,9 +4,6 @@
 -- SPDX-License-Identifier: Apache-2.0
 -- #################################################################
 return {
-    name = 'scalastyle',
-    cmd = 'scalastyle',
-    stdin = true,
     append_fname = false,
     args = function(context)
         return {
@@ -16,11 +13,14 @@ return {
             context.filename,
         }
     end,
-    stream = 'stdout',
-    ignore_exitcode = true,
+    cmd = 'scalastyle',
     errorformat = {
         '%f:%l: %m',
         '%f:%l:%c: %m',
         '%-G%.%#',
     },
+    ignore_exitcode = true,
+    name = 'scalastyle',
+    stdin = true,
+    stream = 'stdout',
 } --[[@as vim.lint.Config]]

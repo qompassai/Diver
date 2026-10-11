@@ -4,9 +4,6 @@
 -- ----------------------------------------
 ---@type vim.lint.Config
 local actionlint = {
-    name = 'actionlint',
-    cmd = 'actionlint',
-    stdin = true,
     append_fname = false,
     args = function(context)
         return {
@@ -17,8 +14,9 @@ local actionlint = {
             '-',
         }
     end,
-    stream = 'stdout',
+    cmd = 'actionlint',
     ignore_exitcode = true,
+    name = 'actionlint',
     parser = function(output, _)
         ---@type vim.Diagnostic.Set[]
         local diagnostics = {}
@@ -31,16 +29,18 @@ local actionlint = {
         end
         for _, item in ipairs(decoded) do
             diagnostics[#diagnostics + 1] = {
-                lnum = math.max(item.line - 1, 0),
-                end_lnum = math.max(item.line - 1, 0),
                 col = math.max(item.column - 1, 0),
                 end_col = item.end_column or item.column,
+                end_lnum = math.max(item.line - 1, 0),
+                lnum = math.max(item.line - 1, 0),
+                message = item.message,
                 severity = vim.diagnostic.severity.WARN,
                 source = 'actionlint: ' .. item.kind,
-                message = item.message,
             }
         end
         return diagnostics
     end,
+    stdin = true,
+    stream = 'stdout',
 }
 return actionlint

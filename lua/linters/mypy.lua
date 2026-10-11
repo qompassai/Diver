@@ -58,6 +58,32 @@ local SEVERITIES = {
 local LINE_PATTERN = '^(.-):(%d+):(%d+):(%d+):(%d+):%s*(%a+):%s*(.-)%s*%[([%w%-]+)%]%s*$'
 
 ---@param value string
+---@return string?
+local function clean_message(value)
+    assert(type(value) == 'string')
+
+    local message = vim.trim(value:gsub('[%z\1-\8\11-\31\127]', ' '))
+
+    if message == '' then
+        return nil
+    end
+
+    if #message > MESSAGE_LENGTH_MAX then
+        message = message:sub(1, MESSAGE_LENGTH_MAX) .. '…'
+    end
+
+    return message
+end
+
+---@param context LintContext
+---@return string
+local function cwd(context)
+    assert(context.root ~= '')
+
+    return fs.normalize(context.root)
+end
+
+---@param value string
 ---@param minimum integer
 ---@param maximum integer
 ---@return integer?
@@ -77,24 +103,6 @@ local function integer_in_range(value, minimum, maximum)
 
     ---@cast parsed integer
     return parsed
-end
-
----@param value string
----@return string?
-local function clean_message(value)
-    assert(type(value) == 'string')
-
-    local message = vim.trim(value:gsub('[%z\1-\8\11-\31\127]', ' '))
-
-    if message == '' then
-        return nil
-    end
-
-    if #message > MESSAGE_LENGTH_MAX then
-        message = message:sub(1, MESSAGE_LENGTH_MAX) .. '…'
-    end
-
-    return message
 end
 
 ---@param line string
@@ -131,14 +139,14 @@ local function parse_line(line)
     end
 
     return {
-        lnum = parsed_row - 1,
-        end_lnum = parsed_end_row - 1,
+        code = code,
         col = max(parsed_column - 1, 0),
         end_col = max(parsed_end_column - 1, 0),
+        end_lnum = parsed_end_row - 1,
+        lnum = parsed_row - 1,
+        message = cleaned,
         severity = severity,
         source = SOURCE,
-        code = code,
-        message = cleaned,
     }
 end
 
@@ -171,20 +179,8 @@ local function parse(output, _)
     return diagnostics
 end
 
----@param context LintContext
----@return string
-local function cwd(context)
-    assert(context.root ~= '')
-
-    return fs.normalize(context.root)
-end
-
 return ---@type Linter
 {
-    automatic = true,
-
-    cmd = 'mypy',
-
     -- Mypy has no stdin mode; every flag below pins one output detail so the
     -- parser never depends on a human-friendly default.
     args = {
@@ -195,15 +191,13 @@ return ---@type Linter
         '--no-error-summary',
         '--no-pretty',
     },
-
+    automatic = true,
+    cmd = 'mypy',
     cwd = cwd,
-
     -- Mypy exits 0 when clean, 1 when it found issues, and 2 on crashes.
     -- A crash must stay visible, so only 0 and 1 are accepted.
     exit_codes = { 0, 1 },
-
     parser = parse,
-
     root_markers = {
         'mypy.ini',
         '.mypy.ini',
@@ -211,11 +205,8 @@ return ---@type Linter
         'setup.cfg',
         '.git',
     },
-
     -- Reads the file from disk, so the runner refuses unsaved buffers.
     stdin = false,
-
     stream = 'both',
-
     timeout = TIMEOUT_MS,
 }

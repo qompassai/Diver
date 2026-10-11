@@ -19,8 +19,8 @@
 
 local api = vim.api
 local diagnostic = vim.diagnostic
-local fs = vim.fs
 local fn = vim.fn
+local fs = vim.fs
 
 local ERROR = diagnostic.severity.ERROR
 local INFO = diagnostic.severity.INFO
@@ -35,31 +35,10 @@ local executable_cache = {}
 
 ---@type table<string, integer>
 local severities = {
-    ['×'] = ERROR,
     ['!'] = WARN,
     ['i'] = INFO,
+    ['×'] = ERROR,
 }
-
----@param root string
----@return string
-local function executable(root)
-    assert(root ~= '')
-
-    local cached = executable_cache[root]
-    if cached ~= nil then
-        return cached
-    end
-
-    local local_cmd = fs.joinpath(root, 'node_modules', '.bin', 'biome')
-
-    if fn.executable(local_cmd) == 1 then
-        executable_cache[root] = local_cmd
-        return local_cmd
-    end
-
-    executable_cache[root] = 'biome'
-    return 'biome'
-end
 
 ---@param filename string
 ---@return integer?
@@ -93,6 +72,42 @@ local function biome_lsp_attached(filename)
     return #clients > 0
 end
 
+---@param root string
+---@return string
+local function executable(root)
+    assert(root ~= '')
+
+    local cached = executable_cache[root]
+    if cached ~= nil then
+        return cached
+    end
+
+    local local_cmd = fs.joinpath(root, 'node_modules', '.bin', 'biome')
+
+    if fn.executable(local_cmd) == 1 then
+        executable_cache[root] = local_cmd
+        return local_cmd
+    end
+
+    executable_cache[root] = 'biome'
+    return 'biome'
+end
+
+---@param value string|number|nil
+---@param fallback integer
+---@return integer
+local function integer(value, fallback)
+    assert(fallback >= 0)
+
+    local parsed = tonumber(value)
+
+    if parsed == nil then
+        return fallback
+    end
+
+    return math.floor(parsed)
+end
+
 ---@param path string
 ---@return boolean
 local function is_absolute(path)
@@ -116,21 +131,6 @@ local function belongs_to_buffer(path, filename, root)
     end
 
     return candidate == filename
-end
-
----@param value string|number|nil
----@param fallback integer
----@return integer
-local function integer(value, fallback)
-    assert(fallback >= 0)
-
-    local parsed = tonumber(value)
-
-    if parsed == nil then
-        return fallback
-    end
-
-    return math.floor(parsed)
 end
 
 ---@param line string
@@ -239,14 +239,14 @@ local function parse(output, context)
                 diagnostics_count = diagnostics_count + 1
 
                 diagnostics[diagnostics_count] = {
-                    lnum = row,
-                    end_lnum = row,
+                    code = code,
                     col = column,
                     end_col = column + 1,
+                    end_lnum = row,
+                    lnum = row,
                     message = message,
                     severity = level,
                     source = 'biome',
-                    code = code,
                 }
             end
         end
@@ -260,14 +260,7 @@ end
 
 return ---@type Linter
 {
-    automatic = false,
-
-    cmd = function(context)
-        assert(context.root ~= '')
-
-        return executable(context.root)
-    end,
-
+    append_fname = false,
     args = function(context)
         assert(context.filename ~= '')
 
@@ -279,19 +272,19 @@ return ---@type Linter
             context.filename,
         }
     end,
+    automatic = false,
+    cmd = function(context)
+        assert(context.root ~= '')
 
-    append_fname = false,
-
+        return executable(context.root)
+    end,
     cwd = function(context)
         assert(context.root ~= '')
 
         return context.root
     end,
-
     ignore_exitcode = true,
-
     parser = parse,
-
     root_markers = {
         'biome.json',
         'biome.jsonc',
@@ -302,7 +295,6 @@ return ---@type Linter
         'yarn.lock',
         '.git',
     },
-
     stdin = false,
     stream = 'stdout',
     timeout = 30000,

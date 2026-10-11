@@ -10,10 +10,55 @@ local fs = vim.fs
 local json = vim.json
 local uv = vim.uv
 
-local TOOLING = {
-    executable = 'prisma-lint',
-    timeout_ms = 30000,
+local AVAILABLE_RULES = {
+    'ban-unbounded-string-type',
+    'enum-name-pascal-case',
+    'enum-value-case',
+    'enum-value-snake-case',
+    'field-name-camel-case',
+    'field-name-grammatical-number',
+    'field-name-mapping-snake-case',
+    'field-order',
+    'forbid-field',
+    'forbid-required-ignored-field',
+    'model-name-grammatical-number',
+    'model-name-mapping-snake-case',
+    'model-name-pascal-case',
+    'model-name-prefix',
+    'require-default-empty-arrays',
+    'require-field',
+    'require-field-index',
+    'require-field-type',
 }
+
+-- Complete prisma-lint 0.13.1 CLI choice inventory. The linter passes an
+-- explicit current-file path, so Prisma's default/configured schema path is
+-- deliberately bypassed while cosmiconfig rule discovery remains enabled.
+local CLI_CHOICES = {
+    color = false,
+    config = false,
+    config_discovery = 'cosmiconfig',
+    default_schema_path = false,
+    help = false,
+    output_format = 'json',
+    output_formats = {
+        contextual = false,
+        filepath = false,
+        json = true,
+        none = false,
+        simple = false,
+    },
+    paths = {
+        'current-buffer-filename',
+    },
+    quiet = true,
+    version = false,
+}
+
+local DEPRECATED_RULES = {
+    ['enum-value-snake-case'] = 'enum-value-case',
+}
+
 local LIMITS = {
     diagnostics = 512,
     message_bytes = 4096,
@@ -50,52 +95,9 @@ local ROOT_MARKERS = {
     '.git',
 }
 
-local AVAILABLE_RULES = {
-    'ban-unbounded-string-type',
-    'enum-name-pascal-case',
-    'enum-value-case',
-    'enum-value-snake-case',
-    'field-name-camel-case',
-    'field-name-grammatical-number',
-    'field-name-mapping-snake-case',
-    'field-order',
-    'forbid-field',
-    'forbid-required-ignored-field',
-    'model-name-grammatical-number',
-    'model-name-mapping-snake-case',
-    'model-name-pascal-case',
-    'model-name-prefix',
-    'require-default-empty-arrays',
-    'require-field',
-    'require-field-index',
-    'require-field-type',
-}
-local DEPRECATED_RULES = {
-    ['enum-value-snake-case'] = 'enum-value-case',
-}
-
--- Complete prisma-lint 0.13.1 CLI choice inventory. The linter passes an
--- explicit current-file path, so Prisma's default/configured schema path is
--- deliberately bypassed while cosmiconfig rule discovery remains enabled.
-local CLI_CHOICES = {
-    color = false,
-    config = false,
-    config_discovery = 'cosmiconfig',
-    default_schema_path = false,
-    help = false,
-    output_format = 'json',
-    output_formats = {
-        contextual = false,
-        filepath = false,
-        json = true,
-        none = false,
-        simple = false,
-    },
-    paths = {
-        'current-buffer-filename',
-    },
-    quiet = true,
-    version = false,
+local TOOLING = {
+    executable = 'prisma-lint',
+    timeout_ms = 30000,
 }
 
 ---@class PrismaLintLocation

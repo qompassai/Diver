@@ -383,8 +383,8 @@ local function parse(output, context)
     return diagnostics
 end
 
-M.args = vim.deepcopy(ARGUMENTS)
 M.append_fname = false
+M.args = vim.deepcopy(ARGUMENTS)
 M.automatic = true
 M.cwd = working_directory
 M.env = {

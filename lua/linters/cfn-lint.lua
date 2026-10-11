@@ -665,25 +665,15 @@ end
 
 ---@type Linter
 return {
-    args = arguments,
-
     append_fname = false,
-
+    args = arguments,
     automatic = true,
-
     cmd = 'cfn-lint',
-
     cwd = project_root,
-
     ignore_exitcode = true,
-
     parser = parse,
-
     root_markers = ROOT_MARKERS,
-
     stdin = true,
-
     stream = 'both',
-
     timeout = 60000,
 }

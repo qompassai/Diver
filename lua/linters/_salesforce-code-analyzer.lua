@@ -33,18 +33,18 @@
 
 local diagnostic = vim.diagnostic
 
+local FIND_DEPTH_MAX = 6
 local MAX_DIAGNOSTICS = 512
+local MAX_ERROR_EXCERPT_BYTES = 300
 local MAX_MESSAGE_BYTES = 2048
 local MAX_OUTPUT_BYTES = 8 * 1024 * 1024
-local MAX_ERROR_EXCERPT_BYTES = 300
-local FIND_DEPTH_MAX = 6
 
 ---@class SalesforceAnalyzerLocation
----@field file? string
----@field startLine? integer
----@field startColumn? integer
----@field endLine? integer
 ---@field endColumn? integer
+---@field endLine? integer
+---@field file? string
+---@field startColumn? integer
+---@field startLine? integer
 
 ---@class SalesforceAnalyzerViolation
 ---@field engine? string
@@ -61,6 +61,27 @@ local FIND_DEPTH_MAX = 6
 
 local M = {}
 
+---@param context LintContext
+---@return boolean
+local function buffer_basename_is_ambiguous(context)
+    assert(type(context) == 'table', 'buffer_basename_is_ambiguous requires a LintContext')
+
+    local target = vim.fs.basename(vim.fs.normalize(context.filename) or context.filename)
+    local matches = 0
+    for _, bufnr in ipairs(vim.api.nvim_list_bufs()) do
+        if vim.api.nvim_buf_is_loaded(bufnr) then
+            local name = vim.api.nvim_buf_get_name(bufnr)
+            if name ~= '' and vim.fs.basename(name) == target then
+                matches = matches + 1
+                if matches > 1 then
+                    return true
+                end
+            end
+        end
+    end
+    return false
+end
+
 ---@param value any
 ---@param fallback integer
 ---@return integer
@@ -72,20 +93,50 @@ local function integer(value, fallback)
     return math.floor(parsed)
 end
 
----@param value any
----@return integer
-local function severity(value)
-    local number = integer(value, 3)
-    if number <= 2 then
-        return diagnostic.severity.ERROR
+---@param path string
+---@return boolean
+local function is_absolute(path)
+    assert(type(path) == 'string', 'is_absolute requires a string path')
+    assert(path ~= '', 'is_absolute requires a non-empty path')
+
+    return vim.fn.isabsolutepath(path) == 1
+end
+
+---@param filename? string
+---@param context LintContext
+---@param basename_ambiguous boolean precomputed by buffer_basename_is_ambiguous
+---@return boolean
+local function belongs_to_buffer(filename, context, basename_ambiguous)
+    if filename == nil or filename == '' then
+        return true
     end
-    if number == 3 then
-        return diagnostic.severity.WARN
+    filename = filename:gsub('^file://', '')
+    if filename == '' then
+        -- Stripping the scheme left nothing (e.g. "file://"): no usable
+        -- location info, so attribute to the buffer like a missing file.
+        return true
     end
-    if number == 4 then
-        return diagnostic.severity.INFO
+    ---@type string
+    local buffer_filename = vim.fs.normalize(context.filename) or context.filename
+    ---@type string
+    local candidate
+    if is_absolute(filename) then
+        candidate = vim.fs.normalize(filename) or filename
+    else
+        local joined = vim.fs.joinpath(context.root, filename)
+        candidate = vim.fs.normalize(joined) or joined
     end
-    return diagnostic.severity.HINT
+    local normalized = vim.fs.normalize(candidate) or candidate
+    if normalized == buffer_filename then
+        return true
+    end
+    if vim.fs.basename(normalized) ~= vim.fs.basename(buffer_filename) then
+        return false
+    end
+    -- Basename-only match: attribute it only when no other open buffer
+    -- shares the basename. When ambiguous, drop the diagnostic instead of
+    -- risking attribution to the wrong buffer.
+    return not basename_ambiguous
 end
 
 ---@param value any
@@ -140,71 +191,37 @@ local function find_violations(value, depth)
     return nil
 end
 
----@param path string
----@return boolean
-local function is_absolute(path)
-    assert(type(path) == 'string', 'is_absolute requires a string path')
-    assert(path ~= '', 'is_absolute requires a non-empty path')
-
-    return vim.fn.isabsolutepath(path) == 1
+---@param context LintContext
+---@return vim.Diagnostic[]
+local function oversized_output(context)
+    return {
+        {
+            bufnr = context.bufnr,
+            col = 0,
+            end_col = 0,
+            end_lnum = 0,
+            lnum = 0,
+            message = ('Salesforce Code Analyzer output exceeded the %d-byte parser limit'):format(MAX_OUTPUT_BYTES),
+            severity = diagnostic.severity.WARN,
+            source = 'salesforce-code-analyzer',
+        },
+    }
 end
 
----@param context LintContext
----@return boolean
-local function buffer_basename_is_ambiguous(context)
-    assert(type(context) == 'table', 'buffer_basename_is_ambiguous requires a LintContext')
-
-    local target = vim.fs.basename(vim.fs.normalize(context.filename) or context.filename)
-    local matches = 0
-    for _, bufnr in ipairs(vim.api.nvim_list_bufs()) do
-        if vim.api.nvim_buf_is_loaded(bufnr) then
-            local name = vim.api.nvim_buf_get_name(bufnr)
-            if name ~= '' and vim.fs.basename(name) == target then
-                matches = matches + 1
-                if matches > 1 then
-                    return true
-                end
-            end
-        end
+---@param value any
+---@return integer
+local function severity(value)
+    local number = integer(value, 3)
+    if number <= 2 then
+        return diagnostic.severity.ERROR
     end
-    return false
-end
-
----@param filename? string
----@param context LintContext
----@param basename_ambiguous boolean precomputed by buffer_basename_is_ambiguous
----@return boolean
-local function belongs_to_buffer(filename, context, basename_ambiguous)
-    if filename == nil or filename == '' then
-        return true
+    if number == 3 then
+        return diagnostic.severity.WARN
     end
-    filename = filename:gsub('^file://', '')
-    if filename == '' then
-        -- Stripping the scheme left nothing (e.g. "file://"): no usable
-        -- location info, so attribute to the buffer like a missing file.
-        return true
+    if number == 4 then
+        return diagnostic.severity.INFO
     end
-    ---@type string
-    local buffer_filename = vim.fs.normalize(context.filename) or context.filename
-    ---@type string
-    local candidate
-    if is_absolute(filename) then
-        candidate = vim.fs.normalize(filename) or filename
-    else
-        local joined = vim.fs.joinpath(context.root, filename)
-        candidate = vim.fs.normalize(joined) or joined
-    end
-    local normalized = vim.fs.normalize(candidate) or candidate
-    if normalized == buffer_filename then
-        return true
-    end
-    if vim.fs.basename(normalized) ~= vim.fs.basename(buffer_filename) then
-        return false
-    end
-    -- Basename-only match: attribute it only when no other open buffer
-    -- shares the basename. When ambiguous, drop the diagnostic instead of
-    -- risking attribution to the wrong buffer.
-    return not basename_ambiguous
+    return diagnostic.severity.HINT
 end
 
 ---@param record SalesforceAnalyzerViolation
@@ -239,31 +256,14 @@ local function diagnostic_from(record, context, source, basename_ambiguous)
 
     return {
         bufnr = context.bufnr,
-        lnum = start_line,
-        end_lnum = end_line,
+        code = code ~= '' and code or nil,
         col = start_column,
         end_col = end_column,
+        end_lnum = end_line,
+        lnum = start_line,
         message = message,
         severity = severity(record.severity),
         source = source,
-        code = code ~= '' and code or nil,
-    }
-end
-
----@param context LintContext
----@return vim.Diagnostic[]
-local function oversized_output(context)
-    return {
-        {
-            bufnr = context.bufnr,
-            col = 0,
-            end_col = 0,
-            end_lnum = 0,
-            lnum = 0,
-            message = ('Salesforce Code Analyzer output exceeded the %d-byte parser limit'):format(MAX_OUTPUT_BYTES),
-            severity = diagnostic.severity.WARN,
-            source = 'salesforce-code-analyzer',
-        },
     }
 end
 

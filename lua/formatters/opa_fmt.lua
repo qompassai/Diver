@@ -11,12 +11,12 @@
 
 ---@type FormatterSpec
 return {
-    cmd = 'opa',
+    allow_empty = false,
     args = { 'fmt' },
+    automatic = true,
+    cmd = 'opa',
+    exit_codes = { 0 },
+    extension = 'rego',
     mode = 'stdin',
     output = 'stdout',
-    exit_codes = { 0 },
-    automatic = true,
-    allow_empty = false,
-    extension = 'rego',
 }

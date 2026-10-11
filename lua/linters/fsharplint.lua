@@ -20,71 +20,19 @@
 -- are unwanted. No LSP settings are changed by this module.
 local fs = vim.fs
 local severity = vim.diagnostic.severity
-local SOURCE = 'fsharplint'
-local MAX_OUTPUT = 16 * 1024 * 1024
 local MAX_DIAGNOSTICS = 512
+local MAX_LINE = 1024 * 1024
+local MAX_OUTPUT = 16 * 1024 * 1024
 local MAX_RECORDS = 10000
 local MAX_TEXT = 4096
-local MAX_LINE = 1024 * 1024
+local SOURCE = 'fsharplint'
 local ROOT_MARKERS = { 'fsharplint.json', 'global.json', '.config/dotnet-tools.json', '.git' }
-
-local function nonempty(value)
-    return type(value) == 'string' and value ~= '' and value or nil
-end
-
-local function clean(value)
-    value = type(value) == 'string' and value or ''
-    value = vim.trim(value:gsub('\27%[[%d;]*[mK]', ''):gsub('%c', ' '):gsub('%s+', ' '))
-    if #value <= MAX_TEXT then
-        return value
-    end
-    local stop = MAX_TEXT - 3
-    while stop > 0 and (value:byte(stop + 1) or 0) >= 128 and (value:byte(stop + 1) or 0) < 192 do
-        stop = stop - 1
-    end
-    return value:sub(1, stop) .. '...'
-end
 
 local function absolute(path, cwd)
     if path:sub(1, 1) ~= '/' and not path:match('^%a:[/\\]') then
         path = fs.joinpath(cwd, path)
     end
     return fs.normalize(path)
-end
-
-local function root(context)
-    local cwd = nonempty(context.cwd) or vim.fn.getcwd()
-    local filename = nonempty(context.filename)
-    if filename then
-        filename = absolute(filename, cwd)
-        return fs.root(filename, ROOT_MARKERS) or nonempty(context.root) or fs.dirname(filename) or cwd
-    end
-    return nonempty(context.root) or cwd
-end
-
-local function canonical(path, cwd)
-    path = absolute(path, cwd)
-    return vim.uv.fs_realpath(path) or path
-end
-
-local function status(context, code, message)
-    return {
-        bufnr = context.bufnr,
-        lnum = 0,
-        col = 0,
-        severity = severity.WARN,
-        source = SOURCE,
-        code = code,
-        message = clean(message),
-    }
-end
-
-local function integer(value)
-    return type(value) == 'number'
-        and value == value
-        and value >= 1
-        and value < 2147483647
-        and value == math.floor(value)
 end
 
 -- FSharpLint passes through F# compiler columns: zero-based UTF-16 units.
@@ -108,6 +56,46 @@ local function byte_column(line, units)
     return offset
 end
 
+local function canonical(path, cwd)
+    path = absolute(path, cwd)
+    return vim.uv.fs_realpath(path) or path
+end
+
+local function clean(value)
+    value = type(value) == 'string' and value or ''
+    value = vim.trim(value:gsub('\27%[[%d;]*[mK]', ''):gsub('%c', ' '):gsub('%s+', ' '))
+    if #value <= MAX_TEXT then
+        return value
+    end
+    local stop = MAX_TEXT - 3
+    while stop > 0 and (value:byte(stop + 1) or 0) >= 128 and (value:byte(stop + 1) or 0) < 192 do
+        stop = stop - 1
+    end
+    return value:sub(1, stop) .. '...'
+end
+
+local function integer(value)
+    return type(value) == 'number'
+        and value == value
+        and value >= 1
+        and value < 2147483647
+        and value == math.floor(value)
+end
+
+local function nonempty(value)
+    return type(value) == 'string' and value ~= '' and value or nil
+end
+
+local function root(context)
+    local cwd = nonempty(context.cwd) or vim.fn.getcwd()
+    local filename = nonempty(context.filename)
+    if filename then
+        filename = absolute(filename, cwd)
+        return fs.root(filename, ROOT_MARKERS) or nonempty(context.root) or fs.dirname(filename) or cwd
+    end
+    return nonempty(context.root) or cwd
+end
+
 local function config_file(context)
     local override = nonempty(vim.env.NVIM_FSHARPLINT_CONFIG)
     if override then
@@ -115,6 +103,33 @@ local function config_file(context)
     end
     local directory = fs.root(absolute(context.filename, context.cwd), { 'fsharplint.json' })
     return directory and fs.joinpath(directory, 'fsharplint.json') or nil
+end
+
+---@param context LintContext
+---@return string[]
+local function arguments(context)
+    local filename = assert(nonempty(context.filename), 'FSharpLint requires a named, saved file')
+    local project = nonempty(vim.env.NVIM_FSHARPLINT_PROJECT)
+    local target = project and absolute(project, root(context)) or absolute(filename, context.cwd)
+    local args = { 'fsharplint', '--format', 'MSBuild', 'lint', '--file-type', project and 'Project' or 'File' }
+    local config = config_file(context)
+    if config then
+        args[#args + 1], args[#args + 2] = '--lint-config', config
+    end
+    args[#args + 1] = target
+    return args
+end
+
+local function status(context, code, message)
+    return {
+        bufnr = context.bufnr,
+        code = code,
+        col = 0,
+        lnum = 0,
+        message = clean(message),
+        severity = severity.WARN,
+        source = SOURCE,
+    }
 end
 
 ---@param output string
@@ -172,12 +187,12 @@ local function parse(output, context)
                 local end_lnum, end_col = position(el, ec)
                 local item = {
                     bufnr = context.bufnr,
-                    lnum = lnum or 0,
+                    code = rule,
                     col = col or 0,
+                    lnum = lnum or 0,
+                    message = clean(message),
                     severity = severity.WARN,
                     source = SOURCE,
-                    code = rule,
-                    message = clean(message),
                     user_data = {
                         filename = path,
                         rule = rule,
@@ -223,27 +238,12 @@ local function parse(output, context)
     return diagnostics
 end
 
----@param context LintContext
----@return string[]
-local function arguments(context)
-    local filename = assert(nonempty(context.filename), 'FSharpLint requires a named, saved file')
-    local project = nonempty(vim.env.NVIM_FSHARPLINT_PROJECT)
-    local target = project and absolute(project, root(context)) or absolute(filename, context.cwd)
-    local args = { 'fsharplint', '--format', 'MSBuild', 'lint', '--file-type', project and 'Project' or 'File' }
-    local config = config_file(context)
-    if config then
-        args[#args + 1], args[#args + 2] = '--lint-config', config
-    end
-    args[#args + 1] = target
-    return args
-end
-
 ---@type Linter
 return {
-    cmd = 'dotnet',
-    args = arguments,
     append_fname = false,
+    args = arguments,
     automatic = true,
+    cmd = 'dotnet',
     cwd = root,
     ignore_exitcode = true,
     parser = parse,

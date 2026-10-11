@@ -44,9 +44,23 @@ local STRING_LENGTH_MAX = 16384
 ---@type table<string, integer>
 local severities = {
     Error = ERROR,
-    Warning = WARN,
     Suggestion = HINT,
+    Warning = WARN,
 }
+
+---@param value string|nil
+---@return string?
+local function bounded_string(value)
+    if type(value) ~= 'string' or value == '' then
+        return nil
+    end
+
+    if #value > STRING_LENGTH_MAX then
+        return value:sub(1, STRING_LENGTH_MAX)
+    end
+
+    return value
+end
 
 ---@param value string|number|nil
 ---@param fallback integer
@@ -61,30 +75,6 @@ local function integer(value, fallback)
     end
 
     return math.floor(parsed)
-end
-
----@param value string|nil
----@return integer
-local function severity(value)
-    if value == nil then
-        return WARN
-    end
-
-    return severities[value] or WARN
-end
-
----@param value string|nil
----@return string?
-local function bounded_string(value)
-    if type(value) ~= 'string' or value == '' then
-        return nil
-    end
-
-    if #value > STRING_LENGTH_MAX then
-        return value:sub(1, STRING_LENGTH_MAX)
-    end
-
-    return value
 end
 
 ---@param path string
@@ -172,6 +162,16 @@ local function notes_from_hint(hint)
     return notes
 end
 
+---@param value string|nil
+---@return integer
+local function severity(value)
+    if value == nil then
+        return WARN
+    end
+
+    return severities[value] or WARN
+end
+
 ---@param hint HLintHint
 ---@param filename string
 ---@param root string
@@ -198,18 +198,18 @@ local function diagnostic_from_hint(hint, filename, root)
     local end_column = math.max(integer(hint.endColumn, minimum_end_column + 1) - 1, minimum_end_column)
 
     return {
-        lnum = start_line,
-        end_lnum = end_line,
+        code = hint.hint,
         col = start_column,
         end_col = end_column,
+        end_lnum = end_line,
+        lnum = start_line,
         message = message_from_hint(hint),
         severity = severity(hint.severity),
         source = 'hlint',
-        code = hint.hint,
         user_data = {
             from = hint.from,
-            to = hint.to,
             note = notes_from_hint(hint),
+            to = hint.to,
         },
     }
 end
@@ -271,10 +271,7 @@ end
 
 return ---@type Linter
 {
-    automatic = false,
-
-    cmd = 'hlint',
-
+    append_fname = false,
     args = function(context)
         assert(context.filename ~= '')
 
@@ -284,19 +281,15 @@ return ---@type Linter
             context.filename,
         }
     end,
-
-    append_fname = false,
-
+    automatic = false,
+    cmd = 'hlint',
     cwd = function(context)
         assert(context.root ~= '')
 
         return context.root
     end,
-
     ignore_exitcode = true,
-
     parser = parse,
-
     root_markers = {
         '.hlint.yaml',
         'cabal.project',
@@ -306,7 +299,6 @@ return ---@type Linter
         '*.cabal',
         '.git',
     },
-
     stdin = false,
     stream = 'stdout',
     timeout = 30000,

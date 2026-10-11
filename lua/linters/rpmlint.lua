@@ -408,6 +408,10 @@ end
 
 return ---@type Linter
 {
+
+    append_fname = false,
+
+    args = args,
     --
     -- rpmlint reads the saved specfile and can perform filesystem/network/
     -- packaging-oriented checks. It is better suited to save/manual linting
@@ -416,10 +420,6 @@ return ---@type Linter
     automatic = false,
 
     cmd = 'rpmlint',
-
-    args = args,
-
-    append_fname = false,
 
     cwd = cwd,
 

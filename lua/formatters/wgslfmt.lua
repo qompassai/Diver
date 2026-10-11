@@ -158,24 +158,24 @@ end
 
 ---@type FormatterSpec
 return {
-    cmd = TOOLING.node,
+    allow_empty = false,
     args = arguments,
-    mode = 'stdin',
-    output = 'stdout',
-    root_markers = {
-        'Cargo.toml',
-        'package.json',
-        '.git',
-    },
+    automatic = true,
+    cmd = TOOLING.node,
+    cwd = nil,
+    decode = nil,
     env = {
         NODE_OPTIONS = '',
         NODE_PATH = '',
         NO_COLOR = '1',
     },
     exit_codes = { 0 },
-    automatic = true,
-    allow_empty = false,
-    cwd = nil,
-    decode = nil,
+    mode = 'stdin',
+    output = 'stdout',
     pre_transform = nil,
+    root_markers = {
+        'Cargo.toml',
+        'package.json',
+        '.git',
+    },
 }

@@ -109,10 +109,10 @@ local function parse(output, context)
             local column = math.max(integer(col, 1) - 1, 0)
 
             diagnostics[#diagnostics + 1] = {
-                lnum = row,
-                end_lnum = row,
                 col = column,
                 end_col = column + 1,
+                end_lnum = row,
+                lnum = row,
                 message = message,
                 severity = level,
                 source = 'janet',
@@ -125,33 +125,25 @@ end
 
 return ---@type Linter
 {
-    automatic = false,
-
-    cmd = 'janet',
-
+    append_fname = false,
     args = {
         '-k',
     },
-
-    append_fname = false,
-
+    automatic = false,
+    cmd = 'janet',
     cwd = function(context)
         return context.root
     end,
-
     exit_codes = {
         [0] = true,
         [1] = true,
     },
-
     parser = parse,
-
     root_markers = {
         'project.janet',
         'jpm_tree',
         '.git',
     },
-
     stdin = true,
     stream = 'stderr',
     timeout = 30000,

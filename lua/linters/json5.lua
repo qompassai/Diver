@@ -3,10 +3,7 @@ local diagnostic = vim.diagnostic
 local fs = vim.fs
 
 return {
-    automatic = true,
-
-    cmd = 'npx',
-
+    append_fname = false,
     args = function(context)
         return {
             '--no-install',
@@ -16,19 +13,12 @@ return {
             context.filename,
         }
     end,
-
-    append_fname = false,
-
+    automatic = true,
+    cmd = 'npx',
     cwd = function(context)
         return fs.normalize(context.root)
     end,
-
     ignore_exitcode = true,
-
-    stdin = false,
-
-    stream = 'stdout',
-
     parser = function(output)
         if output == '' then
             return {}
@@ -39,14 +29,14 @@ return {
         if not ok or type(reports) ~= 'table' then
             return {
                 {
-                    lnum = 0,
+                    code = 'invalid-eslint-output',
                     col = 0,
-                    end_lnum = 0,
                     end_col = 1,
+                    end_lnum = 0,
+                    lnum = 0,
+                    message = output:gsub('%s+$', ''),
                     severity = diagnostic.severity.ERROR,
                     source = 'eslint-json5',
-                    code = 'invalid-eslint-output',
-                    message = output:gsub('%s+$', ''),
                 },
             }
         end
@@ -66,20 +56,19 @@ return {
             local end_column = math.max((tonumber(item.endColumn) or item.column or 1) - 1, column + 1)
 
             diagnostics[#diagnostics + 1] = {
-                lnum = line,
+                code = item.ruleId or 'parse',
                 col = column,
-                end_lnum = end_line,
                 end_col = end_column,
+                end_lnum = end_line,
+                lnum = line,
+                message = item.message or 'ESLint JSON5 diagnostic',
                 severity = item.severity == 2 and diagnostic.severity.ERROR or diagnostic.severity.WARN,
                 source = 'eslint-json5',
-                code = item.ruleId or 'parse',
-                message = item.message or 'ESLint JSON5 diagnostic',
             }
         end
 
         return diagnostics
     end,
-
     root_markers = {
         'eslint.config.js',
         'eslint.config.mjs',
@@ -87,4 +76,6 @@ return {
         'package.json',
         '.git',
     },
+    stdin = false,
+    stream = 'stdout',
 }

@@ -641,25 +641,15 @@ end
 
 ---@type Linter
 return {
-    args = arguments,
-
     append_fname = false,
-
+    args = arguments,
     automatic = false,
-
     cmd = 'dxc',
-
     cwd = project_root,
-
     ignore_exitcode = true,
-
     parser = parse,
-
     root_markers = ROOT_MARKERS,
-
     stdin = false,
-
     stream = 'both',
-
     timeout = 30000,
 }

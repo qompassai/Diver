@@ -219,13 +219,13 @@ end
 
 return ---@type Linter
 {
+
+    append_fname = false,
+
+    args = args,
     automatic = true,
 
     cmd = 'ruff',
-
-    args = args,
-
-    append_fname = false,
 
     cwd = cwd,
 
