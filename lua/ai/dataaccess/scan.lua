@@ -24,9 +24,9 @@
 
 local M = {}
 
-local TEXT_BYTES_MAX = 1048576 -- 1 MiB: matches the adapters' own SQL cap.
 local ROW_BYTES_MAX = 65536
 local ROW_SCAN_COUNT_MAX = 5000 -- Matches the adapters' result line cap.
+local TEXT_BYTES_MAX = 1048576 -- 1 MiB: matches the adapters' own SQL cap.
 
 -- Test hook: when true, available() reports the security module as
 -- missing so the fail-closed path can be exercised headless.
@@ -116,6 +116,7 @@ function M.check_request(text)
     return check_text(security, text, 'request')
 end
 
+---@param security table ai.security module.
 ---@param row_text string JSON-encoded row.
 ---@return 'allow'|'notify'|'refuse' verdict
 ---@return table findings

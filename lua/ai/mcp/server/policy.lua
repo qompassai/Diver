@@ -19,32 +19,32 @@
 
 local M = {}
 
-local PATH_LENGTH_MAX = 4096
-local ARG_LENGTH_MAX = 4096
 local ARG_COUNT_MAX = 32
+local ARG_LENGTH_MAX = 4096
+local PATH_LENGTH_MAX = 4096
 
 ---Bounds for the run_command timeout_ms argument. Exported so the tool
 ---schema shares one source of truth with the policy module.
-M.COMMAND_TIMEOUT_MS_MIN = 1000
 M.COMMAND_TIMEOUT_MS_MAX = 120000
+M.COMMAND_TIMEOUT_MS_MIN = 1000
 
 local INVALID_PARAMS_CODE = -32602
 local POLICY_DENIED_CODE = -32000
 
-local SECRET_DIR_PARTS = {
-    ['.ssh'] = true,
-    ['.aws'] = true,
-    ['.gnupg'] = true,
-    ['.pki'] = true,
-}
 local SECRET_BASENAMES = {
     ['.env'] = true,
-    ['id_rsa'] = true,
     ['id_dsa'] = true,
     ['id_ecdsa'] = true,
     ['id_ed25519'] = true,
+    ['id_rsa'] = true,
 }
-local SECRET_SUFFIXES = { '.pem', '.key' }
+local SECRET_DIR_PARTS = {
+    ['.aws'] = true,
+    ['.gnupg'] = true,
+    ['.pki'] = true,
+    ['.ssh'] = true,
+}
+local SECRET_SUFFIXES = { '.key', '.pem' }
 
 local APPROVAL_AUTO = 'auto'
 local APPROVAL_CONFIRM = 'confirm'
@@ -53,13 +53,13 @@ local APPROVAL_DENY = 'deny'
 -- Reads are auto-approved; everything that mutates or reaches the outside
 -- world needs an explicit grant. Unknown tools are denied, never defaulted.
 local TOOL_CLASS = {
-    read_file = APPROVAL_AUTO,
-    list_files = APPROVAL_AUTO,
-    search_text = APPROVAL_AUTO,
-    get_diagnostics = APPROVAL_AUTO,
-    write_file = APPROVAL_CONFIRM,
     edit_file = APPROVAL_CONFIRM,
+    get_diagnostics = APPROVAL_AUTO,
+    list_files = APPROVAL_AUTO,
+    read_file = APPROVAL_AUTO,
     run_command = APPROVAL_CONFIRM,
+    search_text = APPROVAL_AUTO,
+    write_file = APPROVAL_CONFIRM,
 }
 
 ---@class McpPolicyError
@@ -71,7 +71,7 @@ local TOOL_CLASS = {
 ---@field confirm_grants table<string, boolean>? Static per-tool write approval.
 ---@field grant_token string? Token compared against tools/call `_meta.grant`.
 ---@field run_allowlist string[]? Bare argv[0] names; default is deny-all.
----@field realpath fun(path: string): string?? Symlink resolver; nil disables.
+---@field realpath (fun(path: string): string?)? Symlink resolver; nil disables.
 
 ---@param code integer
 ---@param message string
@@ -117,7 +117,7 @@ local function collapse(path)
     return out == '' and '.' or out
 end
 
----@return fun(path: string): string? realpath or nil when unavailable
+---@return (fun(path: string): string?)? realpath or nil when unavailable
 local function default_realpath()
     if vim ~= nil and vim.uv ~= nil and vim.uv.fs_realpath ~= nil then
         return function(path)
@@ -251,6 +251,7 @@ function M.scope_path(path)
     local abs = path:sub(1, 1) == '/' and collapse(path) or collapse(config.roots[1] .. '/' .. path)
     local ok, code, message = check_scoped(abs)
     if not ok then
+        assert(code ~= nil and message ~= nil, 'check_scoped returned no code/message on failure')
         return nil, policy_error(code, message)
     end
     if config.realpath ~= nil then
@@ -258,6 +259,7 @@ function M.scope_path(path)
         if resolved ~= nil and resolved ~= abs then
             local ok2, code2, message2 = check_scoped(collapse(resolved))
             if not ok2 then
+                assert(code2 ~= nil and message2 ~= nil, 'check_scoped returned no code/message on failure')
                 return nil, policy_error(code2, 'symlink target denied: ' .. message2)
             end
             return collapse(resolved)

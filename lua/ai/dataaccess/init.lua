@@ -39,19 +39,19 @@
 
 local M = {}
 
-local paths = require('ai.dataaccess.paths')
-local secrets = require('ai.dataaccess.secrets')
-local sessions = require('ai.dataaccess.sessions')
-local scan = require('ai.dataaccess.scan')
+local api = require('ai.dataaccess.api')
 local confirm = require('ai.dataaccess.confirm')
 local dalog = require('ai.dataaccess.log')
-local api = require('ai.dataaccess.api')
+local paths = require('ai.dataaccess.paths')
+local scan = require('ai.dataaccess.scan')
+local secrets = require('ai.dataaccess.secrets')
+local sessions = require('ai.dataaccess.sessions')
 
-local TEXT_BYTES_MAX = 65536
+local PORT_MAX = 65535
+local PORT_MIN = 1
 local PREVIEW_BYTES_MAX = 512
 local TARGET_FIELD_MAX = 1024
-local PORT_MIN = 1
-local PORT_MAX = 65535
+local TEXT_BYTES_MAX = 65536
 
 ---@class DataAdapterSpec
 ---@field module string config.data module name.
@@ -59,12 +59,12 @@ local PORT_MAX = 65535
 ---@field allow_password boolean Whether a password field may pass through (redis only).
 
 local ADAPTERS = {
-    sqlite = { module = 'config.data.sqlite', kind = 'file', allow_password = false },
-    duckdb = { module = 'config.data.duckdb', kind = 'file', allow_password = false },
-    mysql = { module = 'config.data.mysql', kind = 'connection', allow_password = false },
-    mariadb = { module = 'config.data.mariadb', kind = 'connection', allow_password = false },
-    psql = { module = 'config.data.psql', kind = 'connection', allow_password = false },
-    redis = { module = 'config.data.redis', kind = 'connection', allow_password = true },
+    duckdb = { allow_password = false, kind = 'file', module = 'config.data.duckdb' },
+    mariadb = { allow_password = false, kind = 'connection', module = 'config.data.mariadb' },
+    mysql = { allow_password = false, kind = 'connection', module = 'config.data.mysql' },
+    psql = { allow_password = false, kind = 'connection', module = 'config.data.psql' },
+    redis = { allow_password = true, kind = 'connection', module = 'config.data.redis' },
+    sqlite = { allow_password = false, kind = 'file', module = 'config.data.sqlite' },
 }
 
 local setup_done = false
@@ -162,6 +162,7 @@ end
 ---table for connection adapters. Never returns secrets in errors.
 ---@param spec DataAdapterSpec
 ---@param dsn any
+---@param adapter_name string
 ---@return string|table? target
 ---@return string? err
 ---@return string? identity Secret-free session identity.
@@ -218,12 +219,6 @@ end
 ---Returns (true, rows) on success, (false, err) on failure, or
 ---(false, { confirmation_required = true, ... }) when a write needs
 ---the operator's approval first.
----@param adapter_name string
----@param dsn any Path string or connection table.
----@param text string SQL or command text.
----@param confirm_token string?
----@return boolean ok
----@return any result
 ---The managed query pipeline. The sync prelude (validation, request
 ---scan, confirmation gate, session acquire) runs inline; the adapter
 ---query waits in libuv via adapter.query_async and the postlude
@@ -590,11 +585,11 @@ function M.setup(opts)
     end
     setup_done = true
     api.set_backend({
-        query = backend_query,
-        confirm = backend_confirm,
-        status = backend_status,
         close = backend_close,
+        confirm = backend_confirm,
         list = backend_list,
+        query = backend_query,
+        status = backend_status,
     })
     local ok, err = api.start()
     if not ok then

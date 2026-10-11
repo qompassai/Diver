@@ -28,10 +28,10 @@ local PENDING_COUNT_MAX = 256
 ---@field line string
 
 ---@class AiSched
----@field classify fun(line: string): string
----@field handle fun(client: uv.uv_pipe_t, state: table, line: string)
----@field control AiSchedItem[]
 ---@field bulk AiSchedItem[]
+---@field classify fun(line: string): string
+---@field control AiSchedItem[]
+---@field handle fun(client: uv.uv_pipe_t, state: table, line: string)
 ---@field scheduled boolean
 
 local AiSched = {}
@@ -88,10 +88,10 @@ function M.new(classify, handle)
     assert(type(classify) == 'function', 'classify must be a function')
     assert(type(handle) == 'function', 'handle must be a function')
     return setmetatable({
-        classify = classify,
-        handle = handle,
-        control = {},
         bulk = {},
+        classify = classify,
+        control = {},
+        handle = handle,
         scheduled = false,
     }, AiSched)
 end

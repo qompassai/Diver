@@ -18,16 +18,16 @@ function M.probe()
     local ok_herd = pcall(require, 'ai.herd')
     local ok_api = pcall(require, 'ai.herd.api')
     return {
-        available = ok_herd and ok_api,
-        streaming = false,
-        cancellation = true,
-        resume = false,
-        permissions = false,
         artifacts = false,
+        available = ok_herd and ok_api,
+        cancellation = true,
+        notes = 'run maps to one herd worker; remote topology via ai.herd.remotes',
+        permissions = false,
         remote = true,
+        resume = false,
+        streaming = false,
         tools = false,
         wired_start = true,
-        notes = 'run maps to one herd worker; remote topology via ai.herd.remotes',
     }
 end
 
@@ -57,10 +57,10 @@ function M.start(run, sink)
     end
     local handle = {
         adapter = 'herd',
+        closed = false,
         generation = generation_counter,
         run_id = run.id,
         worker = worker_name,
-        closed = false,
     }
     sink:append(run.id, 'diagnostic.observed', {
         adapter = 'herd',
@@ -71,7 +71,7 @@ function M.start(run, sink)
 end
 
 ---@param handle table
----@param reason string
+---@param _reason string
 ---@return boolean
 function M.cancel(handle, _reason)
     assert(handle ~= nil, 'handle required')

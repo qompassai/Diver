@@ -18,10 +18,10 @@
 
 local M = {}
 
-local TEXT_CHARS_MAX = 4096
 local GENERATE_TIMEOUT_MS = 120000
-local WAV_HEADER_BYTES = 44
 local MODEL_GLOB_MAX = 32
+local TEXT_CHARS_MAX = 4096
+local WAV_HEADER_BYTES = 44
 
 local function executable(name)
     return vim.fn.executable(name) == 1
@@ -253,6 +253,7 @@ local function generate(opts, cb)
         finish('could not start ' .. engine.id)
         return
     end
+    ---@cast proc vim.SystemObj
     handle = proc
     timer:start(GENERATE_TIMEOUT_MS, 0, function()
         if handle then

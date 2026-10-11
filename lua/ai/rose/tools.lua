@@ -12,9 +12,9 @@ local M = {}
 
 local uv = vim.uv or vim.uv
 
+local CHECK_OUTPUT_MAX = 65536
 local FILE_BYTES_MAX = 1024 * 1024
 local LIST_LIMIT_MAX = 1000
-local CHECK_OUTPUT_MAX = 65536
 local LSP_TIMEOUT_DEFAULT = 5000
 local LSP_TIMEOUT_MAX = 30000
 

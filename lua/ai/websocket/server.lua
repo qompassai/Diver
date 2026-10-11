@@ -14,48 +14,32 @@ local frame = require('ai.websocket.frame')
 local M = {}
 
 ---@class WebsocketServerOpts
+---@field extra_response_headers? table<string, string>
 ---@field host string bind address, e.g. '127.0.0.1'
----@field port integer bind port
----@field on_message fun(self: WebsocketServer, client_id: string, message: string)
 ---@field on_client_connect? fun(self: WebsocketServer, client_id: string)
 ---@field on_client_disconnect? fun(self: WebsocketServer, client_id: string)
 ---@field on_error? fun(self: WebsocketServer, err: string)
----@field extra_response_headers? table<string, string>
+---@field on_message fun(self: WebsocketServer, client_id: string, message: string)
+---@field port integer bind port
 
 ---@class WebsocketServer
+---@field client_seq integer
+---@field clients table<string, table>
+---@field closed boolean
+---@field extra_response_headers table<string, string>
+---@field host string
+---@field listen_sock uv.uv_tcp_t?
+---@field on_client_connect? fun(self: WebsocketServer, client_id: string)
+---@field on_client_disconnect? fun(self: WebsocketServer, client_id: string)
+---@field on_error? fun(self: WebsocketServer, err: string)
+---@field on_message fun(self: WebsocketServer, client_id: string, message: string)
+---@field port integer
 local WebsocketServer = {}
 WebsocketServer.__index = WebsocketServer
 M.WebsocketServer = WebsocketServer
 
 ---@type table<WebsocketServer, boolean>
 local ActiveServers = {}
-
----Create a server. Does not bind yet; call try_start().
----@param opts WebsocketServerOpts
----@return WebsocketServer
-function WebsocketServer.new(opts)
-    assert(type(opts) == 'table', 'opts must be a table')
-    assert(type(opts.port) == 'number', 'port must be a number')
-    assert(type(opts.on_message) == 'function', 'on_message must be a function')
-    local host = opts.host or '127.0.0.1'
-    if host == 'localhost' then
-        host = '127.0.0.1'
-    end
-    return setmetatable({
-        host = host,
-        port = opts.port,
-        extra_response_headers = opts.extra_response_headers or {},
-        on_message = opts.on_message,
-        on_client_connect = opts.on_client_connect,
-        on_client_disconnect = opts.on_client_disconnect,
-        on_error = opts.on_error,
-        listen_sock = nil,
-        ---@type table<string, table> client_id -> { sock, handshake_done, http_buf, decoder }
-        clients = {},
-        client_seq = 0,
-        closed = false,
-    }, WebsocketServer)
-end
 
 ---All currently listening servers.
 ---@return table<WebsocketServer, boolean>
@@ -67,12 +51,37 @@ function WebsocketServer.get_servers()
     return out
 end
 
----Report a server-level error.
----@param err string
-function WebsocketServer:_fail(err)
-    if self.on_error ~= nil then
-        self.on_error(self, err)
+---Accept one inbound TCP connection.
+function WebsocketServer:_accept()
+    local sock = vim.uv.new_tcp()
+    if sock == nil then
+        return
     end
+    local ok = self.listen_sock:accept(sock)
+    if not ok then
+        sock:close()
+        return
+    end
+    self.client_seq = self.client_seq + 1
+    local client_id = 'peer-' .. self.client_seq
+    self.clients[client_id] = {
+        decoder = frame.Decoder.new(),
+        handshake_done = false,
+        http_buf = '',
+        sock = sock,
+    }
+    local self_ref = self
+    sock:read_start(function(err, chunk)
+        if err ~= nil then
+            self_ref:_drop_client(client_id)
+            return
+        end
+        if chunk == nil then
+            self_ref:_drop_client(client_id)
+            return
+        end
+        self_ref:_on_bytes(client_id, chunk)
+    end)
 end
 
 ---Drop one client: close its socket and notify.
@@ -90,6 +99,14 @@ function WebsocketServer:_drop_client(client_id)
     end
     if self.on_client_disconnect ~= nil then
         self.on_client_disconnect(self, client_id)
+    end
+end
+
+---Report a server-level error.
+---@param err string
+function WebsocketServer:_fail(err)
+    if self.on_error ~= nil then
+        self.on_error(self, err)
     end
 end
 
@@ -119,23 +136,6 @@ function WebsocketServer:_finish_handshake(client_id, header)
         self.on_client_connect(self, client_id)
     end
     return true
-end
-
----Handle one decoded frame event from a client.
----@param client_id string
----@param event { opcode: integer, payload: string }
-function WebsocketServer:_on_event(client_id, event)
-    local client = self.clients[client_id]
-    if client == nil then
-        return
-    end
-    if event.opcode == frame.OPCODE_CLOSE then
-        self:_drop_client(client_id)
-    elseif event.opcode == frame.OPCODE_PING then
-        client.sock:write(frame.encode(event.payload, frame.OPCODE_PONG, false))
-    elseif event.opcode == frame.OPCODE_TEXT or event.opcode == frame.OPCODE_BINARY then
-        self.on_message(self, client_id, event.payload)
-    end
 end
 
 ---Feed received bytes through the handshake or the frame decoder.
@@ -179,57 +179,21 @@ function WebsocketServer:_on_bytes(client_id, chunk)
     end
 end
 
----Accept one inbound TCP connection.
-function WebsocketServer:_accept()
-    local sock = vim.uv.new_tcp()
-    local ok = self.listen_sock:accept(sock)
-    if not ok then
-        sock:close()
+---Handle one decoded frame event from a client.
+---@param client_id string
+---@param event { opcode: integer, payload: string }
+function WebsocketServer:_on_event(client_id, event)
+    local client = self.clients[client_id]
+    if client == nil then
         return
     end
-    self.client_seq = self.client_seq + 1
-    local client_id = 'peer-' .. self.client_seq
-    self.clients[client_id] = {
-        sock = sock,
-        handshake_done = false,
-        http_buf = '',
-        decoder = frame.Decoder.new(),
-    }
-    local self_ref = self
-    sock:read_start(function(err, chunk)
-        if err ~= nil then
-            self_ref:_drop_client(client_id)
-            return
-        end
-        if chunk == nil then
-            self_ref:_drop_client(client_id)
-            return
-        end
-        self_ref:_on_bytes(client_id, chunk)
-    end)
-end
-
----Bind and start listening. Reports failures through on_error.
-function WebsocketServer:try_start()
-    assert(not self.closed, 'server is closed')
-    assert(self.listen_sock == nil, 'server already started')
-    local sock = vim.uv.new_tcp()
-    local ok, err = sock:bind(self.host, self.port)
-    if not ok then
-        sock:close()
-        self:_fail('bind failed: ' .. tostring(err))
-        return
+    if event.opcode == frame.OPCODE_CLOSE then
+        self:_drop_client(client_id)
+    elseif event.opcode == frame.OPCODE_PING then
+        client.sock:write(frame.encode(event.payload, frame.OPCODE_PONG, false))
+    elseif event.opcode == frame.OPCODE_TEXT or event.opcode == frame.OPCODE_BINARY then
+        self.on_message(self, client_id, event.payload)
     end
-    local self_ref = self
-    sock:listen(128, function(listen_err)
-        if listen_err ~= nil then
-            self_ref:_fail('accept failed: ' .. listen_err)
-            return
-        end
-        self_ref:_accept()
-    end)
-    self.listen_sock = sock
-    ActiveServers[self] = true
 end
 
 ---True while the server is listening.
@@ -238,19 +202,31 @@ function WebsocketServer:is_active()
     return self.listen_sock ~= nil and not self.closed
 end
 
----Send a text message to one client. Returns nil plus error when unknown.
----@param client_id string
----@param data string
----@return boolean? ok
----@return string? err
-function WebsocketServer:try_send_data_to_client(client_id, data)
-    assert(type(data) == 'string', 'data must be a string')
-    local client = self.clients[client_id]
-    if client == nil or not client.handshake_done then
-        return nil, 'unknown or unready client'
+---Create a server. Does not bind yet; call try_start().
+---@param opts WebsocketServerOpts
+---@return WebsocketServer
+function WebsocketServer.new(opts)
+    assert(type(opts) == 'table', 'opts must be a table')
+    assert(type(opts.port) == 'number', 'port must be a number')
+    assert(type(opts.on_message) == 'function', 'on_message must be a function')
+    local host = opts.host or '127.0.0.1'
+    if host == 'localhost' then
+        host = '127.0.0.1'
     end
-    client.sock:write(frame.encode_text(data, false))
-    return true, nil
+    return setmetatable({
+        client_seq = 0,
+        ---@type table<string, table> client_id -> { sock, handshake_done, http_buf, decoder }
+        clients = {},
+        closed = false,
+        extra_response_headers = opts.extra_response_headers or {},
+        host = host,
+        listen_sock = nil,
+        on_client_connect = opts.on_client_connect,
+        on_client_disconnect = opts.on_client_disconnect,
+        on_error = opts.on_error,
+        on_message = opts.on_message,
+        port = opts.port,
+    }, WebsocketServer)
 end
 
 ---Send a text message to every connected client.
@@ -272,6 +248,48 @@ function WebsocketServer:try_disconnect_client(client_id)
     self:_drop_client(client_id)
 end
 
+---Send a text message to one client. Returns nil plus error when unknown.
+---@param client_id string
+---@param data string
+---@return boolean? ok
+---@return string? err
+function WebsocketServer:try_send_data_to_client(client_id, data)
+    assert(type(data) == 'string', 'data must be a string')
+    local client = self.clients[client_id]
+    if client == nil or not client.handshake_done then
+        return nil, 'unknown or unready client'
+    end
+    client.sock:write(frame.encode_text(data, false))
+    return true, nil
+end
+
+---Bind and start listening. Reports failures through on_error.
+function WebsocketServer:try_start()
+    assert(not self.closed, 'server is closed')
+    assert(self.listen_sock == nil, 'server already started')
+    local sock = vim.uv.new_tcp()
+    if sock == nil then
+        self:_fail('cannot create listen socket')
+        return
+    end
+    local ok, err = sock:bind(self.host, self.port)
+    if not ok then
+        sock:close()
+        self:_fail('bind failed: ' .. tostring(err))
+        return
+    end
+    local self_ref = self
+    sock:listen(128, function(listen_err)
+        if listen_err ~= nil then
+            self_ref:_fail('accept failed: ' .. listen_err)
+            return
+        end
+        self_ref:_accept()
+    end)
+    self.listen_sock = sock
+    ActiveServers[self] = true
+end
+
 ---Stop listening and drop all clients.
 function WebsocketServer:try_stop()
     if self.closed then
@@ -282,10 +300,10 @@ function WebsocketServer:try_stop()
     for client_id in pairs(self.clients) do
         self:_drop_client(client_id)
     end
-    if self.listen_sock ~= nil then
-        local sock = self.listen_sock
+    local listen_sock = self.listen_sock
+    if listen_sock ~= nil then
         self.listen_sock = nil
-        sock:close()
+        listen_sock:close()
     end
 end
 

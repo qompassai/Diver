@@ -22,12 +22,12 @@
 
 local M = {}
 
-local LINE_NUMBER_MIN = 1
-local PATH_DISPLAY_MAX = 80
 -- Largest file set_breakpoint will load into a buffer: a 100 MB log
 -- froze the editor for 4+ seconds on bufload. Breakpoints belong in
 -- source files, not multi-gigabyte dumps.
 local BREAKPOINT_FILE_BYTES_MAX = 1048576
+local LINE_NUMBER_MIN = 1
+local PATH_DISPLAY_MAX = 80
 
 ---Verdicts that let a launch proceed; anything else refuses.
 local GATE_PASS_VERDICTS = { clean = true, suspicious = true }
@@ -195,17 +195,17 @@ local function launch_scanned(lang, adapter_name, target)
         return
     end
     local config = {
-        type = adapter_name,
-        request = 'launch',
         name = 'debugbridge: ' .. target,
         program = target,
+        request = 'launch',
+        type = adapter_name,
     }
     local acquire_opts = {
-        lang = lang,
         adapter = adapter,
         config = config,
-        target = target,
+        lang = lang,
         project_root = root,
+        target = target,
     }
     -- sessions.acquire spawns the adapter itself; there is no separate
     -- launch call. The stop hook installs on the live session below.
@@ -225,7 +225,7 @@ local function launch_scanned(lang, adapter_name, target)
             scanbreak.install_stop_hook,
             key,
             flagged,
-            { sessions_module = sessions, quarantine_fn = quarantine_artifact }
+            { quarantine_fn = quarantine_artifact, sessions_module = sessions }
         )
         if not hook_ok then
             vim.notify('DbgLaunch: install_stop_hook raised: ' .. tostring(hooked), vim.log.levels.WARN)
@@ -241,15 +241,15 @@ end
 ---@param adapter string?
 ---@param target string?
 local function launch_interactive(lang, adapter, target)
-    vim.ui.input({ prompt = 'Language: ', default = lang or '' }, function(got_lang)
+    vim.ui.input({ default = lang or '', prompt = 'Language: ' }, function(got_lang)
         if got_lang == nil or got_lang == '' then
             return
         end
-        vim.ui.input({ prompt = 'Adapter: ', default = adapter or '' }, function(got_adapter)
+        vim.ui.input({ default = adapter or '', prompt = 'Adapter: ' }, function(got_adapter)
             if got_adapter == nil or got_adapter == '' then
                 return
             end
-            vim.ui.input({ prompt = 'Target (absolute path): ', default = target or '' }, function(got_target)
+            vim.ui.input({ default = target or '', prompt = 'Target (absolute path): ' }, function(got_target)
                 if got_target == nil or got_target == '' then
                     return
                 end
@@ -484,6 +484,60 @@ end
 function M.register()
     local api = vim.api
 
+    api.nvim_create_user_command('BspBuild', function(command)
+        local root = command.args
+        if root == '' then
+            root = vim.fn.getcwd()
+        end
+        bsp_command(root, 'build')
+    end, {
+        desc = 'BSP build: :BspBuild [root]',
+        nargs = '?',
+    })
+
+    api.nvim_create_user_command('DbgBreak', function(command)
+        local fargs = command.fargs
+        local file = fargs[1]
+        if file == nil or file == '' then
+            file = vim.api.nvim_buf_get_name(0)
+        end
+        local line = tonumber(fargs[2])
+        if line == nil then
+            line = vim.api.nvim_win_get_cursor(0)[1]
+        end
+        line = math.floor(line)
+        set_breakpoint(file, line)
+    end, {
+        desc = 'Set a DAP breakpoint: :DbgBreak [file] [line]',
+        nargs = '*',
+    })
+
+    -- Named DbgBspTargets (not BspTargets): lua/bsp/commands.lua
+    -- already defines BspTargets, and silently shadowing it would make
+    -- :BspTargets load-order-dependent.
+    api.nvim_create_user_command('DbgBspTargets', function(command)
+        local root = command.args
+        if root == '' then
+            root = vim.fn.getcwd()
+        end
+        bsp_command(root, 'targets')
+    end, {
+        desc = 'List BSP targets: :DbgBspTargets [root]',
+        nargs = '?',
+    })
+
+    api.nvim_create_user_command('DbgKill', function(command)
+        local key = command.args
+        if key ~= '' then
+            kill_session(key)
+            return
+        end
+        kill_interactive()
+    end, {
+        desc = 'Kill a debug session: :DbgKill [key]',
+        nargs = '?',
+    })
+
     api.nvim_create_user_command('DbgLaunch', function(command)
         local fargs = command.fargs
         if #fargs >= 3 then
@@ -492,8 +546,15 @@ function M.register()
         end
         launch_interactive(fargs[1], fargs[2], fargs[3])
     end, {
-        nargs = '*',
         desc = 'Security-scanned debug launch: :DbgLaunch <lang> <adapter> <target>',
+        nargs = '*',
+    })
+
+    api.nvim_create_user_command('DbgQuarantine', function(command)
+        quarantine_path(command.args)
+    end, {
+        desc = 'Quarantine a suspicious file: :DbgQuarantine <absolute-path>',
+        nargs = 1,
     })
 
     api.nvim_create_user_command('DbgSessions', function()
@@ -508,66 +569,6 @@ function M.register()
         end
         ui.open()
     end, { desc = 'Open the debug bridge dashboard' })
-
-    api.nvim_create_user_command('DbgBreak', function(command)
-        local fargs = command.fargs
-        local file = fargs[1]
-        if file == nil or file == '' then
-            file = vim.api.nvim_buf_get_name(0)
-        end
-        local line = tonumber(fargs[2])
-        if line == nil then
-            line = vim.api.nvim_win_get_cursor(0)[1]
-        end
-        set_breakpoint(file, line)
-    end, {
-        nargs = '*',
-        desc = 'Set a DAP breakpoint: :DbgBreak [file] [line]',
-    })
-
-    api.nvim_create_user_command('DbgKill', function(command)
-        local key = command.args
-        if key ~= '' then
-            kill_session(key)
-            return
-        end
-        kill_interactive()
-    end, {
-        nargs = '?',
-        desc = 'Kill a debug session: :DbgKill [key]',
-    })
-
-    api.nvim_create_user_command('DbgQuarantine', function(command)
-        quarantine_path(command.args)
-    end, {
-        nargs = 1,
-        desc = 'Quarantine a suspicious file: :DbgQuarantine <absolute-path>',
-    })
-
-    api.nvim_create_user_command('BspBuild', function(command)
-        local root = command.args
-        if root == '' then
-            root = vim.fn.getcwd()
-        end
-        bsp_command(root, 'build')
-    end, {
-        nargs = '?',
-        desc = 'BSP build: :BspBuild [root]',
-    })
-
-    -- Named DbgBspTargets (not BspTargets): lua/bsp/commands.lua
-    -- already defines BspTargets, and silently shadowing it would make
-    -- :BspTargets load-order-dependent.
-    api.nvim_create_user_command('DbgBspTargets', function(command)
-        local root = command.args
-        if root == '' then
-            root = vim.fn.getcwd()
-        end
-        bsp_command(root, 'targets')
-    end, {
-        nargs = '?',
-        desc = 'List BSP targets: :DbgBspTargets [root]',
-    })
 
     return true
 end

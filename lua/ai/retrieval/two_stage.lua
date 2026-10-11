@@ -28,11 +28,11 @@ local TOP_K_DEFAULT = 10
 
 ---@class AiTwoStageOpts
 ---@field block_size? integer candidates per coarse block
----@field pool_size? integer max blocks admitted to the candidate pool
----@field top_k? integer max final hits returned
----@field text_of? fun(item: any): string extract searchable text
 ---@field coarse_fn? fun(block_text: string, query: string): number block scorer
 ---@field fine_fn fun(items: any[], query: string): AiFineHit[] required expensive scorer
+---@field pool_size? integer max blocks admitted to the candidate pool
+---@field text_of? fun(item: any): string extract searchable text
+---@field top_k? integer max final hits returned
 
 ---@class AiFineHit
 ---@field item any must be identical to a pool member
@@ -121,11 +121,11 @@ local function normalize_opts(opts)
     end
     local out = {
         block_size = opts.block_size,
-        pool_size = opts.pool_size,
-        top_k = opts.top_k,
-        fine_fn = opts.fine_fn,
         coarse_fn = opts.coarse_fn,
+        fine_fn = opts.fine_fn,
+        pool_size = opts.pool_size,
         text_of = opts.text_of,
+        top_k = opts.top_k,
     }
     if out.block_size == nil then
         out.block_size = BLOCK_SIZE_DEFAULT
@@ -229,7 +229,7 @@ end
 ---@param candidates any[] array of items (strings or tables)
 ---@param query string non-empty query text
 ---@param opts AiTwoStageOpts
----@return AiRankedHit[]? hits, sorted by score desc, ties by input order
+---@return AiRankedHit[]? hits sorted by score desc, ties by input order
 ---@return string? err
 function M.rank(candidates, query, opts)
     if type(candidates) ~= 'table' then
@@ -305,7 +305,7 @@ function M.rank(candidates, query, opts)
     local out = {}
     local keep = math.min(cfg.top_k, #hits)
     for rank = 1, keep do
-        out[rank] = { item = hits[rank].item, score = hits[rank].score, rank = rank }
+        out[rank] = { item = hits[rank].item, rank = rank, score = hits[rank].score }
     end
     return out, nil
 end

@@ -17,16 +17,16 @@ function M.probe()
     local ok_transports = pcall(require, 'ai.phlow.transports')
     local ok_schemas = pcall(require, 'ai.phlow.schemas')
     return {
-        available = ok_client and ok_transports and ok_schemas,
-        streaming = false,
-        cancellation = false,
-        resume = false,
-        permissions = false,
         artifacts = false,
+        available = ok_client and ok_transports and ok_schemas,
+        cancellation = false,
+        notes = 'transport wiring is Phase 6; use native ai.phlow API directly',
+        permissions = false,
         remote = true,
+        resume = false,
+        streaming = false,
         tools = false,
         wired_start = false,
-        notes = 'transport wiring is Phase 6; use native ai.phlow API directly',
     }
 end
 
@@ -41,7 +41,7 @@ function M.start(run, sink)
 end
 
 ---@param handle table
----@param reason string
+---@param _reason string
 ---@return boolean
 function M.cancel(handle, _reason)
     assert(handle ~= nil, 'handle required')

@@ -45,39 +45,40 @@
 
 local M = {}
 
-local sched = require('ai.sched')
 local bulk = require('ai.bulk')
+local sched = require('ai.sched')
 
 -- Forward declarations: the pump needs handle_line, and the bulk
 -- handlers need bulk_lane, but both are built after the handlers are
 -- defined. All uses happen after module load.
-local pump ---@type AiSched
-local bulk_lane ---@type AiBulkLane
+---@type AiSched
+local pump
+---@type AiBulkLane
+local bulk_lane
 
-local SOCKET_FILENAME = 'ai-debugbridge.sock'
-local SOCKET_DIR_MODE = '0700'
-local LISTEN_BACKLOG = 128
-local MESSAGE_BYTES_MAX = 65536
+local ADAPTER_NAME_MAX = 128
+local CMD_LABEL_MAX = 64
 -- Simultaneous client connections. Each connection holds a bounded
 -- read buffer, but the count itself was unbounded: a hostile local
 -- client could exhaust memory by opening thousands of connections.
 local CONNECTION_COUNT_MAX = 64
-local CMD_LABEL_MAX = 64
 local FALLBACK_REPLY = '{"ok":false,"error":"reply encode failed"}'
-
-local SESSION_KEY_MAX = 128
-local LANG_MAX = 64
-local ADAPTER_NAME_MAX = 128
-local TARGET_MAX = 4096
-local PROJECT_ROOT_MAX = 4096
 local FILE_PATH_MAX = 4096
-local ROOT_MAX = 4096
-local TARGET_NAME_MAX = 256
-local STRING_LIST_MAX = 256
+local LANG_MAX = 64
 local LINE_NUMBER_MAX = 2147483647
+local LISTEN_BACKLOG = 128
 local LOG_TAIL_DEFAULT = 50
-local LOG_TAIL_MIN = 1
 local LOG_TAIL_MAX = 200
+local LOG_TAIL_MIN = 1
+local MESSAGE_BYTES_MAX = 65536
+local PROJECT_ROOT_MAX = 4096
+local ROOT_MAX = 4096
+local SESSION_KEY_MAX = 128
+local SOCKET_DIR_MODE = '0700'
+local SOCKET_FILENAME = 'ai-debugbridge.sock'
+local STRING_LIST_MAX = 256
+local TARGET_MAX = 4096
+local TARGET_NAME_MAX = 256
 
 ---@class DebugBridgeBackend
 ---@field session_acquire fun(params: table<string, any>): boolean, any
@@ -354,19 +355,19 @@ local LAUNCH_SCANNED_FIELDS = {
     { name = 'project_root', required = true, limit = PROJECT_ROOT_MAX },
 }
 local LAUNCH_FILES_SPEC = {
-    name = 'files',
-    required = false,
     count_max = STRING_LIST_MAX,
     item_max = FILE_PATH_MAX,
+    name = 'files',
+    required = false,
 }
 local BSP_ROOT_FIELDS = {
     { name = 'root', required = true, limit = ROOT_MAX },
 }
 local BSP_TARGETS_SPEC = {
-    name = 'targets',
-    required = false,
     count_max = STRING_LIST_MAX,
     item_max = TARGET_NAME_MAX,
+    name = 'targets',
+    required = false,
 }
 local QUARANTINE_FIELDS = {
     { name = 'path', required = true, limit = FILE_PATH_MAX },
@@ -375,6 +376,7 @@ local NO_FIELDS = {}
 
 ---@param client uv.uv_pipe_t
 ---@param state DebugBridgeConnState
+---@param line string framed request, for the bulk lane's fair requeue
 ---@param req table<string, any>
 local function handle_session_acquire(client, state, line, req)
     local params, err = validate_fields(req, SESSION_ACQUIRE_FIELDS)
@@ -390,6 +392,7 @@ end
 
 ---@param client uv.uv_pipe_t
 ---@param state DebugBridgeConnState
+---@param _line string framed request, unused (uniform handler signature)
 ---@param req table<string, any>
 local function handle_session_release(client, state, _line, req)
     local params, err = validate_fields(req, SESSION_KEY_FIELDS)
@@ -404,6 +407,7 @@ end
 
 ---@param client uv.uv_pipe_t
 ---@param state DebugBridgeConnState
+---@param _line string framed request, unused (uniform handler signature)
 ---@param req table<string, any>
 local function handle_session_kill(client, state, _line, req)
     local params, err = validate_fields(req, SESSION_KEY_FIELDS)
@@ -419,6 +423,7 @@ end
 
 ---@param client uv.uv_pipe_t
 ---@param state DebugBridgeConnState
+---@param _line string framed request, unused (uniform handler signature)
 ---@param req table<string, any>
 local function handle_set_breakpoint(client, state, _line, req)
     local params, err = validate_fields(req, SET_BREAKPOINT_FIELDS)
@@ -441,6 +446,7 @@ end
 
 ---@param client uv.uv_pipe_t
 ---@param state DebugBridgeConnState
+---@param line string framed request, for the bulk lane's fair requeue
 ---@param req table<string, any>
 local function handle_launch_scanned(client, state, line, req)
     local params, err = validate_fields(req, LAUNCH_SCANNED_FIELDS)
@@ -462,6 +468,7 @@ end
 
 ---@param client uv.uv_pipe_t
 ---@param state DebugBridgeConnState
+---@param line string framed request, for the bulk lane's fair requeue
 ---@param req table<string, any>
 local function handle_bsp_build(client, state, line, req)
     local params, err = validate_fields(req, BSP_ROOT_FIELDS)
@@ -481,6 +488,7 @@ end
 
 ---@param client uv.uv_pipe_t
 ---@param state DebugBridgeConnState
+---@param line string framed request, for the bulk lane's fair requeue
 ---@param req table<string, any>
 local function handle_bsp_targets(client, state, line, req)
     local params, err = validate_fields(req, BSP_ROOT_FIELDS)
@@ -496,6 +504,7 @@ end
 
 ---@param client uv.uv_pipe_t
 ---@param state DebugBridgeConnState
+---@param _line string framed request, unused (uniform handler signature)
 ---@param req table<string, any>
 local function handle_quarantine(client, state, _line, req)
     local params, err = validate_fields(req, QUARANTINE_FIELDS)
@@ -513,6 +522,7 @@ end
 
 ---@param client uv.uv_pipe_t
 ---@param state DebugBridgeConnState
+---@param _line string framed request, unused (uniform handler signature)
 ---@param req table<string, any>
 local function handle_status(client, state, _line, req)
     local params, err = validate_fields(req, NO_FIELDS)
@@ -528,6 +538,7 @@ end
 ---log_tail is served from the audit log directly, not the backend.
 ---@param client uv.uv_pipe_t
 ---@param state DebugBridgeConnState
+---@param _line string framed request, unused (uniform handler signature)
 ---@param req table<string, any>
 local function handle_log_tail(client, state, _line, req)
     local count, count_err = log_tail_param(req)
@@ -552,16 +563,16 @@ local function handle_log_tail(client, state, _line, req)
 end
 
 local DISPATCH = {
-    session_acquire = handle_session_acquire,
-    session_release = handle_session_release,
-    session_kill = handle_session_kill,
-    set_breakpoint = handle_set_breakpoint,
-    launch_scanned = handle_launch_scanned,
     bsp_build = handle_bsp_build,
     bsp_targets = handle_bsp_targets,
-    quarantine = handle_quarantine,
-    status = handle_status,
+    launch_scanned = handle_launch_scanned,
     log_tail = handle_log_tail,
+    quarantine = handle_quarantine,
+    session_acquire = handle_session_acquire,
+    session_kill = handle_session_kill,
+    session_release = handle_session_release,
+    set_breakpoint = handle_set_breakpoint,
+    status = handle_status,
 }
 
 ---@param client uv.uv_pipe_t
@@ -590,12 +601,12 @@ end
 ---pump. session_acquire, launch_scanned, bsp_build and bsp_targets
 ---can spawn processes or block and wait their turn.
 local CONTROL_COMMANDS = {
-    status = true,
     log_tail = true,
-    session_release = true,
-    session_kill = true,
-    set_breakpoint = true,
     quarantine = true,
+    session_kill = true,
+    session_release = true,
+    set_breakpoint = true,
+    status = true,
 }
 
 ---Classify one framed request line for the pump. Best-effort scan
@@ -624,9 +635,9 @@ local BULK_INFLIGHT_MAX = 8
 local BULK_WATCHDOG_MS = 180000
 
 bulk_lane = bulk.new({
-    send_reply = send_reply,
-    send_backend_result = send_backend_result,
     max_inflight = BULK_INFLIGHT_MAX,
+    send_backend_result = send_backend_result,
+    send_reply = send_reply,
     watchdog_ms = BULK_WATCHDOG_MS,
 })
 
@@ -741,6 +752,7 @@ end
 ---@return string? path
 ---@return string? err
 function M.socket_path()
+    ---@type string?
     local dir = vim.fn.stdpath('run')
     if dir == nil or dir == '' then
         dir = os.getenv('XDG_RUNTIME_DIR')
@@ -779,7 +791,7 @@ end
 ---Start the unix-domain socket listener. Idempotent: a second call
 ---while running is a no-op success. Refuses when no backend was wired
 ---in.
----@return boolean ok
+---@return boolean? ok
 ---@return string? err
 function M.start()
     if server ~= nil then

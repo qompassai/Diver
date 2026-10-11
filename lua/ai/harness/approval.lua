@@ -11,8 +11,8 @@ local types = require('ai.harness.types')
 
 local M = {}
 
-local PENDING_MAX = 128
 local DEFAULT_TIMEOUT_MS = 300000
+local PENDING_MAX = 128
 
 ---@class AiHarnessApproval
 ---@field id string
@@ -28,7 +28,7 @@ local DEFAULT_TIMEOUT_MS = 300000
 ---Create an approval queue.
 ---@return table
 function M.new()
-    return { pending = {}, by_id = {} }
+    return { by_id = {}, pending = {} }
 end
 
 ---@param queue table
@@ -83,7 +83,7 @@ end
 ---@param id string
 ---@param decision 'approved'|'denied'
 ---@param by? string
----@return boolean ok
+---@return boolean? ok
 ---@return string? err
 function M.decide(queue, id, decision, by)
     assert(queue ~= nil, 'approval queue required')

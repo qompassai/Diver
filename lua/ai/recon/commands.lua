@@ -19,17 +19,14 @@ local function notify(msg, level)
     vim.notify('[recon] ' .. msg, level or vim.log.levels.INFO)
 end
 
----@return string[]
-local function complete_skill_names()
-    local ok, skills = pcall(require, 'ai.mcp.skills')
-    if not ok then
-        return {}
+local function cmd_auditlog()
+    local auditlog = require('security.auditlog')
+    local path = auditlog.path()
+    if vim.fn.filereadable(path) ~= 1 then
+        notify('audit log is empty (no tool calls recorded yet)')
+        return
     end
-    local names = {}
-    for _, skill in ipairs(skills.list()) do
-        names[#names + 1] = skill.name
-    end
-    return names
+    vim.cmd('edit ' .. vim.fn.fnameescape(path))
 end
 
 local function cmd_bridge(opts)
@@ -114,80 +111,25 @@ local function cmd_keys()
     vim.bo.modifiable = false
 end
 
-local function cmd_token(opts)
-    local token = require('security.token')
-    local action = opts.fargs[1] or 'show'
-    if action == 'mint' then
-        local ttl = tonumber(opts.fargs[2]) or token.DEFAULT_TTL
-        if ttl <= 0 or ttl > 2592000 then
-            notify('ttl must be 1..2592000 seconds (30 days)', vim.log.levels.WARN)
-            return
+local function cmd_rocks()
+    local rocks = require('ai.recon.rocks')
+    local lines = { '# Recommended LuaRocks (triaged from awesome-lua)', '' }
+    for _, r in ipairs(rocks.report()) do
+        lines[#lines + 1] = ('- %-10s [%s] %s'):format(r.rock, r.installed and 'installed' or 'missing', r.why)
+        if not r.installed then
+            lines[#lines + 1] = '  install: ' .. r.install
         end
-        local t, err = token.mint('bridge', ttl)
-        if t == nil then
-            notify('mint failed: ' .. tostring(err), vim.log.levels.ERROR)
-            return
-        end
-        vim.fn.setreg('+', t)
-        notify('token minted (copied to + register, paste into dashboard)')
-    elseif action == 'show' then
-        local t, err = token.mint('bridge')
-        if t == nil then
-            notify('mint failed: ' .. tostring(err), vim.log.levels.ERROR)
-            return
-        end
-        vim.fn.setreg('+', t)
-        notify('fresh token minted and copied to + register')
-    elseif action == 'revoke' then
-        local target = opts.fargs[2]
-        if target == nil or target == '' then
-            notify('usage: ReconToken revoke {token|jti}', vim.log.levels.WARN)
-            return
-        end
-        local ok, err = token.revoke(target)
-        if not ok then
-            notify('revoke failed: ' .. tostring(err), vim.log.levels.ERROR)
-        else
-            notify('token revoked')
-        end
-    elseif action == 'list' then
-        cmd_keys()
-    else
-        notify('usage: ReconToken [mint [ttl]|show|revoke {token|jti}|list]', vim.log.levels.WARN)
     end
-end
-
-local function cmd_skills()
-    local ok, skills = pcall(require, 'ai.mcp.skills')
-    if not ok then
-        notify('skills loader unavailable', vim.log.levels.ERROR)
-        return
+    lines[#lines + 1] = ''
+    lines[#lines + 1] = '## Skipped (Neovim covers natively)'
+    for _, s in ipairs(rocks.SKIPPED) do
+        lines[#lines + 1] = ('- %-12s covered by %s'):format(s.rock, s.covered_by)
     end
-    local list = skills.list()
-    if #list == 0 then
-        notify('no skills loaded; check :ReconSkills path (skills_dir)', vim.log.levels.WARN)
-        return
-    end
-    local items = {}
-    for _, skill in ipairs(list) do
-        items[#items + 1] = ('%-32s %-10s %s'):format(skill.name, skill.category, skill.description:sub(1, 60))
-    end
-    vim.ui.select(items, { prompt = 'Recon skill (shows procedure):' }, function(choice)
-        if choice == nil then
-            return
-        end
-        local name = choice:match('^(%S+)')
-        local skill = skills.get(name)
-        if skill == nil then
-            return
-        end
-        local lines = vim.split(skill.body, '\n', { plain = true })
-        vim.cmd('new')
-        vim.api.nvim_buf_set_lines(0, 0, -1, false, lines)
-        vim.bo.filetype = 'markdown'
-        vim.bo.readonly = true
-        vim.bo.modifiable = false
-    end)
+    vim.cmd('new')
+    vim.api.nvim_buf_set_lines(0, 0, -1, false, lines)
+    vim.bo.filetype = 'markdown'
+    vim.bo.readonly = true
+    vim.bo.modifiable = false
 end
 
 local function cmd_skill(opts)
@@ -244,6 +186,82 @@ local function cmd_skill(opts)
     end)
 end
 
+local function cmd_skills()
+    local ok, skills = pcall(require, 'ai.mcp.skills')
+    if not ok then
+        notify('skills loader unavailable', vim.log.levels.ERROR)
+        return
+    end
+    local list = skills.list()
+    if #list == 0 then
+        notify('no skills loaded; check :ReconSkills path (skills_dir)', vim.log.levels.WARN)
+        return
+    end
+    local items = {}
+    for _, skill in ipairs(list) do
+        items[#items + 1] = ('%-32s %-10s %s'):format(skill.name, skill.category, skill.description:sub(1, 60))
+    end
+    vim.ui.select(items, { prompt = 'Recon skill (shows procedure):' }, function(choice)
+        if choice == nil then
+            return
+        end
+        local name = choice:match('^(%S+)')
+        local skill = skills.get(name)
+        if skill == nil then
+            return
+        end
+        local lines = vim.split(skill.body, '\n', { plain = true })
+        vim.cmd('new')
+        vim.api.nvim_buf_set_lines(0, 0, -1, false, lines)
+        vim.bo.filetype = 'markdown'
+        vim.bo.readonly = true
+        vim.bo.modifiable = false
+    end)
+end
+
+local function cmd_token(opts)
+    local token = require('security.token')
+    local action = opts.fargs[1] or 'show'
+    if action == 'mint' then
+        local ttl = math.floor(tonumber(opts.fargs[2]) or token.DEFAULT_TTL)
+        if ttl <= 0 or ttl > 2592000 then
+            notify('ttl must be 1..2592000 seconds (30 days)', vim.log.levels.WARN)
+            return
+        end
+        local t, err = token.mint('bridge', ttl)
+        if t == nil then
+            notify('mint failed: ' .. tostring(err), vim.log.levels.ERROR)
+            return
+        end
+        vim.fn.setreg('+', t)
+        notify('token minted (copied to + register, paste into dashboard)')
+    elseif action == 'show' then
+        local t, err = token.mint('bridge')
+        if t == nil then
+            notify('mint failed: ' .. tostring(err), vim.log.levels.ERROR)
+            return
+        end
+        vim.fn.setreg('+', t)
+        notify('fresh token minted and copied to + register')
+    elseif action == 'revoke' then
+        local target = opts.fargs[2]
+        if target == nil or target == '' then
+            notify('usage: ReconToken revoke {token|jti}', vim.log.levels.WARN)
+            return
+        end
+        local ok, err = token.revoke(target)
+        if not ok then
+            notify('revoke failed: ' .. tostring(err), vim.log.levels.ERROR)
+        else
+            notify('token revoked')
+        end
+    elseif action == 'list' then
+        cmd_keys()
+    else
+        notify('usage: ReconToken [mint [ttl]|show|revoke {token|jti}|list]', vim.log.levels.WARN)
+    end
+end
+
 local function cmd_tools()
     local tools = require('ai.recon.tools')
     local lines = { '# Recon CLI tools', '' }
@@ -262,78 +280,60 @@ local function cmd_tools()
     vim.bo.modifiable = false
 end
 
-local function cmd_auditlog()
-    local auditlog = require('security.auditlog')
-    local path = auditlog.path()
-    if vim.fn.filereadable(path) ~= 1 then
-        notify('audit log is empty (no tool calls recorded yet)')
-        return
+---@return string[]
+local function complete_skill_names()
+    local ok, skills = pcall(require, 'ai.mcp.skills')
+    if not ok then
+        return {}
     end
-    vim.cmd('edit ' .. vim.fn.fnameescape(path))
-end
-
-local function cmd_rocks()
-    local rocks = require('ai.recon.rocks')
-    local lines = { '# Recommended LuaRocks (triaged from awesome-lua)', '' }
-    for _, r in ipairs(rocks.report()) do
-        lines[#lines + 1] = ('- %-10s [%s] %s'):format(r.rock, r.installed and 'installed' or 'missing', r.why)
-        if not r.installed then
-            lines[#lines + 1] = '  install: ' .. r.install
-        end
+    local names = {}
+    for _, skill in ipairs(skills.list()) do
+        names[#names + 1] = skill.name
     end
-    lines[#lines + 1] = ''
-    lines[#lines + 1] = '## Skipped (Neovim covers natively)'
-    for _, s in ipairs(rocks.SKIPPED) do
-        lines[#lines + 1] = ('- %-12s covered by %s'):format(s.rock, s.covered_by)
-    end
-    vim.cmd('new')
-    vim.api.nvim_buf_set_lines(0, 0, -1, false, lines)
-    vim.bo.filetype = 'markdown'
-    vim.bo.readonly = true
-    vim.bo.modifiable = false
+    return names
 end
 
 ---Register all :Recon* commands. Idempotent.
 function M.register()
-    vim.api.nvim_create_user_command('ReconBridge', cmd_bridge, {
-        nargs = '*',
-        desc = 'Control the WebMCP bridge (start|stop|status)',
-    })
-    vim.api.nvim_create_user_command('ReconSkills', cmd_skills, {
-        nargs = 0,
-        desc = 'Browse loaded recon skills',
-    })
-    vim.api.nvim_create_user_command('ReconSkill', cmd_skill, {
-        nargs = '+',
-        complete = complete_skill_names,
-        desc = 'Run a recon skill against a target',
-    })
-    vim.api.nvim_create_user_command('ReconTools', cmd_tools, {
-        nargs = 0,
-        desc = 'List recon CLI tools and availability',
-    })
     vim.api.nvim_create_user_command('ReconAuditLog', cmd_auditlog, {
-        nargs = 0,
         desc = 'Open the tool-call audit log',
-    })
-    vim.api.nvim_create_user_command('ReconRocks', cmd_rocks, {
         nargs = 0,
-        desc = 'Recommended LuaRocks triaged from awesome-lua',
+    })
+    vim.api.nvim_create_user_command('ReconBridge', cmd_bridge, {
+        desc = 'Control the WebMCP bridge (start|stop|status)',
+        nargs = '*',
     })
     vim.api.nvim_create_user_command('ReconKeygen', cmd_keygen, {
-        nargs = '?',
         complete = function()
             return { 'classic', 'hybrid', 'quantum' }
         end,
         desc = 'Generate a token-signing key (classic|hybrid|quantum)',
+        nargs = '?',
     })
     vim.api.nvim_create_user_command('ReconKeys', cmd_keys, {
-        nargs = 0,
         desc = 'List token-signing keys',
+        nargs = 0,
+    })
+    vim.api.nvim_create_user_command('ReconRocks', cmd_rocks, {
+        desc = 'Recommended LuaRocks triaged from awesome-lua',
+        nargs = 0,
+    })
+    vim.api.nvim_create_user_command('ReconSkill', cmd_skill, {
+        complete = complete_skill_names,
+        desc = 'Run a recon skill against a target',
+        nargs = '+',
+    })
+    vim.api.nvim_create_user_command('ReconSkills', cmd_skills, {
+        desc = 'Browse loaded recon skills',
+        nargs = 0,
     })
     vim.api.nvim_create_user_command('ReconToken', cmd_token, {
-        nargs = '*',
         desc = 'Manage bridge capability tokens (mint|show|revoke|list)',
+        nargs = '*',
+    })
+    vim.api.nvim_create_user_command('ReconTools', cmd_tools, {
+        desc = 'List recon CLI tools and availability',
+        nargs = 0,
     })
 end
 

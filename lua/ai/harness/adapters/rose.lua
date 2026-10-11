@@ -16,16 +16,16 @@ local generation_counter = 0
 function M.probe()
     local ok_agent = pcall(require, 'ai.rose.agent')
     return {
-        available = ok_agent,
-        streaming = false,
-        cancellation = true,
-        resume = false,
-        permissions = false,
         artifacts = false,
+        available = ok_agent,
+        cancellation = true,
+        notes = 'streaming unwired: delta streaming not verified in ai.rose.agent',
+        permissions = false,
         remote = false,
+        resume = false,
+        streaming = false,
         tools = true,
         wired_start = true,
-        notes = 'streaming unwired: delta streaming not verified in ai.rose.agent',
     }
 end
 
@@ -49,9 +49,9 @@ function M.start(run, sink)
     generation_counter = generation_counter + 1
     local handle = {
         adapter = 'rose',
+        closed = false,
         generation = generation_counter,
         run_id = run.id,
-        closed = false,
     }
     local my_generation = handle.generation
     local ok, err = pcall(agent.run, ext.config, run.goal, function(report)
@@ -77,7 +77,7 @@ function M.start(run, sink)
 end
 
 ---@param handle table
----@param reason string
+---@param _reason string
 ---@return boolean
 function M.cancel(handle, _reason)
     assert(handle ~= nil, 'handle required')

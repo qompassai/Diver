@@ -51,12 +51,12 @@ local M = {}
 
 local STAGE_ORDER = { 'plan', 'generate', 'validate', 'review' }
 
-local REVISION_COUNT_MAX = 5
-local SUMMARY_LINES_MAX = 20
 local MESSAGE_LEN_MAX = 500
+local REVISION_COUNT_MAX = 5
 local SESSION_SIZE_BYTES_MAX = 262144
-local VALIDATE_TIMEOUT_MS = 15000
+local SUMMARY_LINES_MAX = 20
 local VALIDATE_FILE_SIZE_BYTES_MAX = 1048576
+local VALIDATE_TIMEOUT_MS = 15000
 
 ---@type BuilderUi
 local default_ui = {
@@ -241,7 +241,9 @@ local function check_with_tmp(exe, args, ext, content)
     end
     argv[#argv + 1] = tmp
     local ok, result = pcall(function()
-        return vim.system(argv, { text = true }):wait(VALIDATE_TIMEOUT_MS)
+        local obj = vim.system(argv, { text = true })
+        ---@cast obj vim.SystemObj
+        return obj:wait(VALIDATE_TIMEOUT_MS)
     end)
     vim.fn.delete(tmp)
     if not ok or type(result) ~= 'table' then

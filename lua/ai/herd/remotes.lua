@@ -19,24 +19,8 @@
 
 local M = {}
 
-local REGISTRY_SUBDIR = 'herd'
-local REGISTRY_FILENAME = 'remotes.json'
 local DATA_DIR_MODE = '0700'
-local FILE_SIZE_BYTES_MAX = 65536
-local MACHINE_COUNT_MAX = 32
-local TARGET_LENGTH_MAX = 256
 local DIVER_PATH_LENGTH_MAX = 4096
-local JSON_BYTES_MAX = 65536
-local SSH_TIMEOUT_MS = 30000
-local SSH_ERROR_TEXT_MAX = 500
-
--- 'host' or 'user@host'. Anchored with no spaces or shell
--- metacharacters, so a validated target is safe to hand to ssh as one
--- argv element. Note: written with an optional literal '@' between two
--- required runs because Lua patterns cannot quantify a capture group --
--- a '(...)?' shape would silently never match.
-local TARGET_PATTERN = '^[A-Za-z0-9._-]+@?[A-Za-z0-9._-]+$'
-
 -- Absolute remote checkout paths. OpenSSH joins the post-host ssh
 -- argv into one string the REMOTE login shell interprets, so a
 -- registry path with quotes, semicolons, whitespace, or other shell
@@ -45,6 +29,22 @@ local TARGET_PATTERN = '^[A-Za-z0-9._-]+@?[A-Za-z0-9._-]+$'
 -- plus dot, dash, underscore, and slash survive; '..' segments are
 -- rejected separately.
 local DIVER_PATH_PATTERN = '^[A-Za-z0-9%._/-]+$'
+local FILE_SIZE_BYTES_MAX = 65536
+local JSON_BYTES_MAX = 65536
+local MACHINE_COUNT_MAX = 32
+local REGISTRY_FILENAME = 'remotes.json'
+local REGISTRY_SUBDIR = 'herd'
+local SSH_ERROR_TEXT_MAX = 500
+local SSH_TIMEOUT_MS = 30000
+
+local TARGET_LENGTH_MAX = 256
+
+-- 'host' or 'user@host'. Anchored with no spaces or shell
+-- metacharacters, so a validated target is safe to hand to ssh as one
+-- argv element. Note: written with an optional literal '@' between two
+-- required runs because Lua patterns cannot quantify a capture group --
+-- a '(...)?' shape would silently never match.
+local TARGET_PATTERN = '^[A-Za-z0-9._-]+@?[A-Za-z0-9._-]+$'
 
 ---@class HerdRemoteEntry
 ---@field target string SSH target: 'host' or 'user@host'.
@@ -387,6 +387,7 @@ function M.query(target, request)
         local detail = tostring(sysobj):sub(1, SSH_ERROR_TEXT_MAX)
         return nil, 'ssh query failed: ' .. detail
     end
+    ---@cast sysobj vim.SystemObj
     local completed = sysobj:wait()
     if completed.code ~= 0 or completed.signal ~= 0 then
         local detail = 'exit ' .. completed.code

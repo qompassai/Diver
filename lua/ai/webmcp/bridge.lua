@@ -21,18 +21,18 @@
 
 local M = {}
 
-local DEFAULT_PORT = 17871
 local DEFAULT_HOST = '127.0.0.1'
+local DEFAULT_PORT = 17871
 local PARAMS_MAX = 16384 ---@type integer Max encoded params bytes accepted
 
-local server = nil ---@type table?
-local active_port = nil ---@type integer?
 local active_host = nil ---@type string?
-local require_token = true ---@type boolean auth required for non-public endpoints
+local active_port = nil ---@type integer?
 local authed = {} ---@type table<string, boolean> client_id -> true after bridge.auth
+local require_token = true ---@type boolean auth required for non-public endpoints
+local server = nil ---@type table?
 
 ---Endpoints callable before authentication: health check and auth itself.
-local PUBLIC_METHODS = { ['bridge.ping'] = true, ['bridge.auth'] = true }
+local PUBLIC_METHODS = { ['bridge.auth'] = true, ['bridge.ping'] = true }
 
 ---@param kind string 'read' | 'write' | 'execute'
 ---@return table
@@ -45,26 +45,9 @@ end
 ---@type table<string, table>
 local endpoints = {}
 
-endpoints['bridge.ping'] = {
-    kind = 'read',
-    desc = 'Health check. Returns { pong = true }.',
-    inputSchema = { type = 'object', properties = {} },
-    handler = function(_, respond)
-        respond(true, { pong = true })
-    end,
-}
-
 endpoints['bridge.auth'] = {
-    kind = 'write',
     desc = 'Authenticate this connection with a capability token from :ReconToken. '
         .. 'Required before any other endpoint when the bridge runs with require_token.',
-    inputSchema = {
-        type = 'object',
-        properties = {
-            token = { type = 'string', description = 'v1.<payload>.<signature> token' },
-        },
-        required = { 'token' },
-    },
     handler = function(params, respond, ctx)
         if type(params.token) ~= 'string' or params.token == '' then
             respond(false, 'params.token must be a non-empty string')
@@ -81,22 +64,37 @@ endpoints['bridge.auth'] = {
             return
         end
         authed[ctx.client_id] = true
-        respond(true, { authed = true, scope = claims.scope, exp = claims.exp })
+        respond(true, { authed = true, exp = claims.exp, scope = claims.scope })
     end,
+    inputSchema = {
+        properties = {
+            token = { description = 'v1.<payload>.<signature> token', type = 'string' },
+        },
+        required = { 'token' },
+        type = 'object',
+    },
+    kind = 'write',
+}
+
+endpoints['bridge.ping'] = {
+    desc = 'Health check. Returns { pong = true }.',
+    handler = function(_, respond)
+        respond(true, { pong = true })
+    end,
+    inputSchema = { properties = {}, type = 'object' },
+    kind = 'read',
 }
 
 endpoints['bridge.tools'] = {
-    kind = 'read',
     desc = 'List every endpoint with its WebMCP annotations.',
-    inputSchema = { type = 'object', properties = {} },
     handler = function(_, respond)
         local out = {}
         for name, ep in pairs(endpoints) do
             out[#out + 1] = {
-                name = name,
+                annotations = ann_for(ep.kind),
                 description = ep.desc,
                 inputSchema = ep.inputSchema,
-                annotations = ann_for(ep.kind),
+                name = name,
             }
         end
         table.sort(out, function(a, b)
@@ -104,92 +102,44 @@ endpoints['bridge.tools'] = {
         end)
         respond(true, { tools = out })
     end,
+    inputSchema = { properties = {}, type = 'object' },
+    kind = 'read',
 }
 
-endpoints['scip.status'] = {
-    kind = 'read',
-    desc = 'SCIP index status for a project root.',
-    inputSchema = {
-        type = 'object',
-        properties = {
-            root = { type = 'string', description = 'Project root (default: cwd)' },
-        },
-    },
+endpoints['recon.skill'] = {
+    desc = 'Run a recon skill against a target. Gated and audit-logged.',
     handler = function(params, respond)
-        local ok, query = pcall(require, 'scip.query')
-        if not ok then
-            respond(false, 'scip.query unavailable')
+        if type(params.name) ~= 'string' or params.name == '' then
+            respond(false, 'params.name must be a non-empty string')
             return
         end
-        local ok2, status = pcall(query.status, { root = params.root })
-        if not ok2 then
-            respond(false, 'scip status failed')
+        if type(params.target) ~= 'string' or params.target == '' then
+            respond(false, 'params.target must be a non-empty string')
             return
         end
-        respond(true, { status = status })
-    end,
-}
-
-endpoints['scip.languages'] = {
-    kind = 'read',
-    desc = 'Languages with SCIP indexer support.',
-    inputSchema = { type = 'object', properties = {} },
-    handler = function(_, respond)
-        local ok, lang = pcall(require, 'scip.lang')
-        if not ok then
-            respond(false, 'scip.lang unavailable')
-            return
-        end
-        local ok2, langs = pcall(lang.languages)
-        if not ok2 then
-            respond(false, 'scip languages failed')
-            return
-        end
-        respond(true, { languages = langs })
-    end,
-}
-
-endpoints['recon.skills'] = {
-    kind = 'read',
-    desc = 'List loaded recon skills with safety annotations.',
-    inputSchema = { type = 'object', properties = {} },
-    handler = function(_, respond)
         local ok, skills = pcall(require, 'ai.mcp.skills')
         if not ok then
             respond(false, 'skills loader unavailable')
             return
         end
-        local ok2, defs = pcall(skills.tool_defs)
-        if not ok2 then
-            respond(false, 'skill listing failed')
-            return
-        end
-        -- Strip procedure bodies from the listing; fetch one skill at
-        -- a time through recon.skill.describe if needed.
-        local out = {}
-        for _, def in ipairs(defs) do
-            out[#out + 1] = {
-                name = def.name,
-                title = def.title,
-                description = def.description,
-                inputSchema = def.inputSchema,
-                annotations = def.annotations,
-            }
-        end
-        respond(true, { skills = out })
+        skills.execute(params.name, { args = params.args, target = params.target }, 'bridge', function(ok2, result)
+            respond(ok2, result)
+        end)
     end,
+    inputSchema = {
+        properties = {
+            args = { items = { type = 'string' }, type = 'array' },
+            name = { description = 'Skill name without the recon. prefix', type = 'string' },
+            target = { description = 'Target host, domain, or URL', type = 'string' },
+        },
+        required = { 'name', 'target' },
+        type = 'object',
+    },
+    kind = 'execute',
 }
 
 endpoints['recon.skill.describe'] = {
-    kind = 'read',
     desc = 'Full procedure text of one recon skill.',
-    inputSchema = {
-        type = 'object',
-        properties = {
-            name = { type = 'string', description = 'Skill name without the recon. prefix' },
-        },
-        required = { 'name' },
-    },
     handler = function(params, respond)
         if type(params.name) ~= 'string' or params.name == '' then
             respond(false, 'params.name must be a non-empty string')
@@ -209,66 +159,49 @@ endpoints['recon.skill.describe'] = {
         def.procedure = skill.body
         respond(true, { skill = def })
     end,
+    inputSchema = {
+        properties = {
+            name = { description = 'Skill name without the recon. prefix', type = 'string' },
+        },
+        required = { 'name' },
+        type = 'object',
+    },
+    kind = 'read',
 }
 
-endpoints['recon.skill'] = {
-    kind = 'execute',
-    desc = 'Run a recon skill against a target. Gated and audit-logged.',
-    inputSchema = {
-        type = 'object',
-        properties = {
-            name = { type = 'string', description = 'Skill name without the recon. prefix' },
-            target = { type = 'string', description = 'Target host, domain, or URL' },
-            args = { type = 'array', items = { type = 'string' } },
-        },
-        required = { 'name', 'target' },
-    },
-    handler = function(params, respond)
-        if type(params.name) ~= 'string' or params.name == '' then
-            respond(false, 'params.name must be a non-empty string')
-            return
-        end
-        if type(params.target) ~= 'string' or params.target == '' then
-            respond(false, 'params.target must be a non-empty string')
-            return
-        end
+endpoints['recon.skills'] = {
+    desc = 'List loaded recon skills with safety annotations.',
+    handler = function(_, respond)
         local ok, skills = pcall(require, 'ai.mcp.skills')
         if not ok then
             respond(false, 'skills loader unavailable')
             return
         end
-        skills.execute(params.name, { target = params.target, args = params.args }, 'bridge', function(ok2, result)
-            respond(ok2, result)
-        end)
-    end,
-}
-
-endpoints['recon.tools'] = {
-    kind = 'read',
-    desc = 'List recon CLI tools and whether each is installed.',
-    inputSchema = { type = 'object', properties = {} },
-    handler = function(_, respond)
-        local ok, tools = pcall(require, 'ai.recon.tools')
-        if not ok then
-            respond(false, 'recon tools unavailable')
+        local ok2, defs = pcall(skills.tool_defs)
+        if not ok2 then
+            respond(false, 'skill listing failed')
             return
         end
-        respond(true, { tools = tools.list() })
+        -- Strip procedure bodies from the listing; fetch one skill at
+        -- a time through recon.skill.describe if needed.
+        local out = {}
+        for _, def in ipairs(defs) do
+            out[#out + 1] = {
+                annotations = def.annotations,
+                description = def.description,
+                inputSchema = def.inputSchema,
+                name = def.name,
+                title = def.title,
+            }
+        end
+        respond(true, { skills = out })
     end,
+    inputSchema = { properties = {}, type = 'object' },
+    kind = 'read',
 }
 
 endpoints['recon.tool'] = {
-    kind = 'execute',
     desc = 'Run one recon CLI tool directly. Gated and audit-logged.',
-    inputSchema = {
-        type = 'object',
-        properties = {
-            tool = { type = 'string', description = 'Tool key from recon.tools' },
-            target = { type = 'string', description = 'Target host, domain, or URL' },
-            args = { type = 'array', items = { type = 'string' } },
-        },
-        required = { 'tool', 'target' },
-    },
     handler = function(params, respond)
         if type(params.tool) ~= 'string' or params.tool == '' then
             respond(false, 'params.tool must be a non-empty string')
@@ -314,6 +247,73 @@ endpoints['recon.tool'] = {
             end)
         end)
     end,
+    inputSchema = {
+        properties = {
+            args = { items = { type = 'string' }, type = 'array' },
+            target = { description = 'Target host, domain, or URL', type = 'string' },
+            tool = { description = 'Tool key from recon.tools', type = 'string' },
+        },
+        required = { 'tool', 'target' },
+        type = 'object',
+    },
+    kind = 'execute',
+}
+
+endpoints['recon.tools'] = {
+    desc = 'List recon CLI tools and whether each is installed.',
+    handler = function(_, respond)
+        local ok, tools = pcall(require, 'ai.recon.tools')
+        if not ok then
+            respond(false, 'recon tools unavailable')
+            return
+        end
+        respond(true, { tools = tools.list() })
+    end,
+    inputSchema = { properties = {}, type = 'object' },
+    kind = 'read',
+}
+
+endpoints['scip.languages'] = {
+    desc = 'Languages with SCIP indexer support.',
+    handler = function(_, respond)
+        local ok, lang = pcall(require, 'scip.lang')
+        if not ok then
+            respond(false, 'scip.lang unavailable')
+            return
+        end
+        local ok2, langs = pcall(lang.languages)
+        if not ok2 then
+            respond(false, 'scip languages failed')
+            return
+        end
+        respond(true, { languages = langs })
+    end,
+    inputSchema = { properties = {}, type = 'object' },
+    kind = 'read',
+}
+
+endpoints['scip.status'] = {
+    desc = 'SCIP index status for a project root.',
+    handler = function(params, respond)
+        local ok, query = pcall(require, 'scip.query')
+        if not ok then
+            respond(false, 'scip.query unavailable')
+            return
+        end
+        local ok2, status = pcall(query.status, { root = params.root })
+        if not ok2 then
+            respond(false, 'scip status failed')
+            return
+        end
+        respond(true, { status = status })
+    end,
+    inputSchema = {
+        properties = {
+            root = { description = 'Project root (default: cwd)', type = 'string' },
+        },
+        type = 'object',
+    },
+    kind = 'read',
 }
 
 ---@param id any
@@ -396,6 +396,17 @@ local function on_message(_, client_id, raw)
     end)
 end
 
+---Endpoint names, for commands and completion.
+---@return string[]
+function M.methods()
+    local out = {}
+    for name in pairs(endpoints) do
+        out[#out + 1] = name
+    end
+    table.sort(out)
+    return out
+end
+
 ---Start the bridge WebSocket server. Safe to call twice: the second
 ---call returns the existing server's status.
 ---@param opts? table { host: string?, port: integer?, require_token: boolean? }
@@ -409,16 +420,17 @@ function M.start(opts)
     local port = opts.port or DEFAULT_PORT
     assert(type(host) == 'string', 'host must be a string')
     assert(type(port) == 'number', 'port must be a number')
+    port = math.floor(port)
     require_token = opts.require_token ~= false
     authed = {}
     local ws = require('ai.websocket.server')
     local srv = ws.WebsocketServer.new({
         host = host,
-        port = port,
-        on_message = on_message,
         on_client_disconnect = function(_, client_id)
             authed[client_id] = nil
         end,
+        on_message = on_message,
+        port = port,
     })
     srv:try_start()
     if not srv:is_active() then
@@ -428,17 +440,6 @@ function M.start(opts)
     active_host = host
     active_port = port
     return M.status()
-end
-
----Stop the bridge server. Idempotent.
-function M.stop()
-    if server ~= nil then
-        server:try_stop()
-        server = nil
-        active_host = nil
-        active_port = nil
-        authed = {}
-    end
 end
 
 ---@return table status
@@ -454,24 +455,24 @@ function M.status()
         authed_clients = authed_clients + 1
     end
     return {
-        running = server ~= nil,
+        authed_clients = authed_clients,
+        clients = clients,
         host = active_host,
         port = active_port,
-        clients = clients,
-        authed_clients = authed_clients,
         require_token = require_token,
+        running = server ~= nil,
     }
 end
 
----Endpoint names, for commands and completion.
----@return string[]
-function M.methods()
-    local out = {}
-    for name in pairs(endpoints) do
-        out[#out + 1] = name
+---Stop the bridge server. Idempotent.
+function M.stop()
+    if server ~= nil then
+        server:try_stop()
+        server = nil
+        active_host = nil
+        active_port = nil
+        authed = {}
     end
-    table.sort(out)
-    return out
 end
 
 return M

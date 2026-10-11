@@ -24,9 +24,9 @@ M.CONNECT_TIMEOUT_MS = 2000
 ---@field url? string websocket url (ws:// only; wss:// needs TLS)
 
 ---@class PhlowTransportHandle
----@field send fun(self: PhlowTransportHandle, data: string): boolean?, string?
----@field on_data fun(self: PhlowTransportHandle, fn: fun(chunk: string))
 ---@field close fun(self: PhlowTransportHandle)
+---@field on_data fun(self: PhlowTransportHandle, fn: fun(chunk: string))
+---@field send fun(self: PhlowTransportHandle, data: string): boolean?, string?
 
 ---Run an async uv connect to completion, bounded by CONNECT_TIMEOUT_MS.
 ---@param start fun(done: fun(err: string?)) begins the connect; calls done once
@@ -52,11 +52,22 @@ local function await_connect(start)
 end
 
 ---Wrap a connected uv stream (pipe or tcp) in the common handle shape.
----@param stream userdata uv stream with read_start/write/close
+---@param stream uv.uv_stream_t uv stream with read_start/write/close
 ---@return PhlowTransportHandle
 local function wrap_stream(stream)
-    ---@type PhlowTransportHandle
     local handle = { _closed = false, _on_data = nil }
+    function handle:close()
+        if self._closed then
+            return
+        end
+        self._closed = true
+        self._on_data = nil
+        pcall(stream.close, stream)
+    end
+    function handle:on_data(fn)
+        assert(type(fn) == 'function', 'fn must be a function')
+        self._on_data = fn
+    end
     function handle:send(data)
         assert(type(data) == 'string', 'data must be a string')
         if self._closed then
@@ -68,18 +79,6 @@ local function wrap_stream(stream)
         end
         return true, nil
     end
-    function handle:on_data(fn)
-        assert(type(fn) == 'function', 'fn must be a function')
-        self._on_data = fn
-    end
-    function handle:close()
-        if self._closed then
-            return
-        end
-        self._closed = true
-        self._on_data = nil
-        pcall(stream.close, stream)
-    end
     stream:read_start(function(read_err, chunk)
         local fn = handle._on_data
         if handle._closed or fn == nil then
@@ -90,6 +89,7 @@ local function wrap_stream(stream)
         end
         fn(chunk)
     end)
+    ---@cast handle PhlowTransportHandle
     return handle
 end
 
@@ -197,22 +197,21 @@ function M.websocket.connect(opts)
     if not ok_client then
         return nil, 'ai.websocket.client unavailable: ' .. tostring(client_mod)
     end
-    ---@type PhlowTransportHandle
     local handle = { _closed = false, _on_data = nil }
     local connected = false
     local ws_client = client_mod.WebsocketClient.new({
         connect_addr = url,
-        on_message = function(_, message)
-            local fn = handle._on_data
-            if not handle._closed and fn ~= nil then
-                fn(message .. '\n') -- one frame per message; keep NDJSON framing
-            end
-        end,
         on_connect = function()
             connected = true
         end,
         on_disconnect = function()
             connected = false
+        end,
+        on_message = function(_, message)
+            local fn = handle._on_data
+            if not handle._closed and fn ~= nil then
+                fn(message .. '\n') -- one frame per message; keep NDJSON framing
+            end
         end,
     })
     ws_client:try_connect()
@@ -223,17 +222,6 @@ function M.websocket.connect(opts)
         ws_client:try_disconnect()
         return nil, 'websocket ' .. url .. ': handshake did not complete'
     end
-    function handle:send(data)
-        assert(type(data) == 'string', 'data must be a string')
-        if self._closed then
-            return nil, 'transport is closed'
-        end
-        return ws_client:try_send_data(data)
-    end
-    function handle:on_data(fn)
-        assert(type(fn) == 'function', 'fn must be a function')
-        self._on_data = fn
-    end
     function handle:close()
         if self._closed then
             return
@@ -242,6 +230,18 @@ function M.websocket.connect(opts)
         self._on_data = nil
         ws_client:try_disconnect()
     end
+    function handle:on_data(fn)
+        assert(type(fn) == 'function', 'fn must be a function')
+        self._on_data = fn
+    end
+    function handle:send(data)
+        assert(type(data) == 'string', 'data must be a string')
+        if self._closed then
+            return nil, 'transport is closed'
+        end
+        return ws_client:try_send_data(data)
+    end
+    ---@cast handle PhlowTransportHandle
     return handle, nil
 end
 

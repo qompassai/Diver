@@ -18,16 +18,16 @@ function M.probe()
     local ok_client = pcall(require, 'ai.mcp.client')
     local ok_tools = pcall(require, 'ai.mcp.tools')
     return {
-        available = ok_client and ok_tools,
-        streaming = false,
-        cancellation = true,
-        resume = false,
-        permissions = false,
         artifacts = false,
+        available = ok_client and ok_tools,
+        cancellation = true,
+        notes = 'run = server session lifecycle; tool calls stay on ai.mcp.tools',
+        permissions = false,
         remote = false,
+        resume = false,
+        streaming = false,
         tools = true,
         wired_start = true,
-        notes = 'run = server session lifecycle; tool calls stay on ai.mcp.tools',
     }
 end
 
@@ -51,11 +51,11 @@ function M.start(run, sink)
     generation_counter = generation_counter + 1
     local handle = {
         adapter = 'mcp',
+        closed = false,
         generation = generation_counter,
+        ready = false,
         run_id = run.id,
         server = ext.server,
-        ready = false,
-        closed = false,
     }
     local my_generation = handle.generation
     local ok, err = pcall(client.start, ext.server, function(start_err)
@@ -77,7 +77,7 @@ function M.start(run, sink)
 end
 
 ---@param handle table
----@param reason string
+---@param _reason string
 ---@return boolean
 function M.cancel(handle, _reason)
     assert(handle ~= nil, 'handle required')

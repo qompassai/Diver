@@ -4,12 +4,12 @@
 -- ----------------------------------------
 
 local api = vim.api
+local context = require('ai.context')
+local permissions = require('ai.acp.permissions')
 local registry = require('ai.acp.registry')
 local session = require('ai.acp.session')
-local permissions = require('ai.acp.permissions')
 local store = require('ai.acp.store')
 local ui = require('ai.acp.ui')
-local context = require('ai.context')
 
 local M = {}
 
@@ -58,26 +58,20 @@ api.nvim_create_user_command('AcpAgents', function()
     end)
 end, { desc = 'Pick and start an ACP agent session' })
 
-api.nvim_create_user_command('AcpStart', function(command)
-    local name = command.args ~= '' and command.args or nil
-    if name then
-        start_agent(name)
-    else
-        pick_agent(function(picked)
-            if picked then
-                start_agent(picked)
-            end
-        end)
+api.nvim_create_user_command('AcpCancel', function()
+    if active_session then
+        session.cancel(active_session)
     end
-end, {
-    nargs = '?',
-    complete = function(lead)
-        return vim.tbl_filter(function(name)
-            return name:sub(1, #lead) == lead
-        end, registry.list())
-    end,
-    desc = 'Start a named ACP agent session',
-})
+end, { desc = 'Cancel the active ACP session turn' })
+
+api.nvim_create_user_command('AcpContextBrowse', function()
+    context.browse()
+end, { desc = "Browse this project's agent/ context files" })
+
+api.nvim_create_user_command('AcpContextScaffold', function()
+    local created = context.scaffold()
+    vim.notify(created .. ' agent/ context file(s) created')
+end, { desc = "Scaffold this project's agent/ context directory" })
 
 api.nvim_create_user_command('AcpPrompt', function(command)
     if not active_session then
@@ -102,20 +96,6 @@ api.nvim_create_user_command('AcpPrompt', function(command)
     session.prompt(active_session, text)
 end, { nargs = '*', desc = 'Send a prompt to the active ACP session' })
 
-api.nvim_create_user_command('AcpCancel', function()
-    if active_session then
-        session.cancel(active_session)
-    end
-end, { desc = 'Cancel the active ACP session turn' })
-
-api.nvim_create_user_command('AcpStop', function()
-    if active_session then
-        session.stop(active_session)
-        ui.close(active_session)
-        active_session = nil
-    end
-end, { desc = 'Stop the active ACP session' })
-
 api.nvim_create_user_command('AcpRegistryRefresh', function()
     registry.refresh(function(ok, _, err)
         if ok then
@@ -126,13 +106,33 @@ api.nvim_create_user_command('AcpRegistryRefresh', function()
     end)
 end, { desc = 'Refresh the cached official ACP agent registry' })
 
-api.nvim_create_user_command('AcpContextScaffold', function()
-    local created = context.scaffold()
-    vim.notify(created .. ' agent/ context file(s) created')
-end, { desc = "Scaffold this project's agent/ context directory" })
+api.nvim_create_user_command('AcpStart', function(command)
+    local name = command.args ~= '' and command.args or nil
+    if name then
+        start_agent(name)
+    else
+        pick_agent(function(picked)
+            if picked then
+                start_agent(picked)
+            end
+        end)
+    end
+end, {
+    nargs = '?',
+    complete = function(lead)
+        return vim.tbl_filter(function(name)
+            return name:sub(1, #lead) == lead
+        end, registry.list())
+    end,
+    desc = 'Start a named ACP agent session',
+})
 
-api.nvim_create_user_command('AcpContextBrowse', function()
-    context.browse()
-end, { desc = "Browse this project's agent/ context files" })
+api.nvim_create_user_command('AcpStop', function()
+    if active_session then
+        session.stop(active_session)
+        ui.close(active_session)
+        active_session = nil
+    end
+end, { desc = 'Stop the active ACP session' })
 
 return M

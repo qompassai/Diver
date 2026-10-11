@@ -205,7 +205,9 @@ local function parse_text(text, path, delimiter)
             if line_err ~= nil then
                 return nil, nil, nil, path .. ': ' .. line_err
             end
-            frontmatter[key] = value
+            if key ~= nil and value ~= nil then
+                frontmatter[key] = value
+            end
         end
     end
     if end_lnum == nil then
@@ -278,6 +280,8 @@ function M.load_personas(dir)
                 local name, frontmatter, body, parse_err = parse_text(text, path, M.config.frontmatter_delimiter)
                 if parse_err ~= nil then
                     errors[#errors + 1] = parse_err
+                elseif name == nil then
+                    errors[#errors + 1] = path .. ': persona frontmatter has no name'
                 elseif seen[name] ~= nil then
                     local msg = '%s: duplicate persona name %q (kept %s)'
                     errors[#errors + 1] = msg:format(path, name, seen[name])
@@ -637,15 +641,15 @@ function M.setup(config)
         return
     end
     setup_done = true
-    api.nvim_create_user_command('PersonasList', cmd_list, { desc = 'List agent-ctrl personas in a float' })
     api.nvim_create_user_command('PersonasDocs', cmd_docs, {
         desc = 'Open the local agent-ctrl schema doc (no upstream exists)',
     })
-    api.nvim_create_user_command('PersonasValidate', cmd_validate, {
-        desc = 'Validate the agents dir and every persona',
-    })
+    api.nvim_create_user_command('PersonasList', cmd_list, { desc = 'List agent-ctrl personas in a float' })
     api.nvim_create_user_command('PersonasUpdateCheck', cmd_update_check, {
         desc = 'Rescan the agents dir and diff against the cached index',
+    })
+    api.nvim_create_user_command('PersonasValidate', cmd_validate, {
+        desc = 'Validate the agents dir and every persona',
     })
 end
 

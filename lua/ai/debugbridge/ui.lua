@@ -16,17 +16,17 @@
 
 local M = {}
 
+local FINDINGS_DISPLAY_MAX = 8
 local KEY_WIDTH_MAX = 20
 local LANG_WIDTH_MAX = 10
-local TARGET_DISPLAY_MAX = 40
-local STATE_WIDTH_MAX = 6
 local ROWS_DISPLAY_MAX = 200
-local FINDINGS_DISPLAY_MAX = 8
+local STATE_WIDTH_MAX = 6
 local TAIL_SCAN_MAX = 200
+local TARGET_DISPLAY_MAX = 40
+local WINDOW_HEIGHT_MIN = 6
+local WINDOW_HEIGHT_RATIO = 0.8
 local WINDOW_WIDTH_MAX = 100
 local WINDOW_WIDTH_RATIO = 0.9
-local WINDOW_HEIGHT_RATIO = 0.8
-local WINDOW_HEIGHT_MIN = 6
 
 -- Marker a security breakpoint carries in its condition or log message.
 -- Convention ai.debugbridge.scanbreak must honor when it plants one.
@@ -34,7 +34,7 @@ local SECURITY_BP_MARKER = 'debugbridge:security'
 
 -- Log kinds shown under RECENT FINDINGS: the contract names plus the
 -- kinds ai.debugbridge.scanbreak actually writes.
-local FINDING_KINDS = { 'scan_gate', 'scan_findings', 'stop_hook_hit', 'quarantine' }
+local FINDING_KINDS = { 'quarantine', 'scan_findings', 'scan_gate', 'stop_hook_hit' }
 local QUARANTINE_KINDS = { 'quarantine' }
 
 ---@class DebugbridgeSessionRow
@@ -57,8 +57,8 @@ local QUARANTINE_KINDS = { 'quarantine' }
 ---@field path string? Quarantined path, when kind is quarantine.
 
 local STATE_ORDER = {
-    live = 1,
     closed = 2,
+    live = 1,
     unknown = 3,
 }
 
@@ -279,6 +279,7 @@ local function read_breakpoints()
     for _, name in ipairs(names) do
         local bufnr = tonumber(name)
         assert(bufnr ~= nil, 'sorted bufnr key must convert back to a number')
+        bufnr = math.floor(bufnr)
         local buf_name = vim.api.nvim_buf_get_name(bufnr)
         local file = shorten(buf_name ~= '' and buf_name or ('[buf ' .. name .. ']'), 60)
         local bps = by_buf[bufnr]
@@ -589,7 +590,7 @@ end
 ---@param target integer Buffer handle.
 local function set_keymaps(target)
     local function map(lhs, rhs, desc_text)
-        local opts = { buffer = target, silent = true, desc = desc_text }
+        local opts = { buffer = target, desc = desc_text, silent = true }
         vim.keymap.set('n', lhs, rhs, opts)
     end
     map('k', kill_row, 'Kill debug session')
@@ -630,14 +631,14 @@ function M.open()
     local max_height = math.floor(vim.o.lines * WINDOW_HEIGHT_RATIO)
     local height = math.max(WINDOW_HEIGHT_MIN, max_height)
     win = vim.api.nvim_open_win(buf, true, {
-        relative = 'editor',
-        width = width,
-        height = height,
-        row = math.floor((vim.o.lines - height) / 2),
-        col = math.floor((vim.o.columns - width) / 2),
-        style = 'minimal',
         border = 'rounded',
+        col = math.floor((vim.o.columns - width) / 2),
+        height = height,
+        relative = 'editor',
+        row = math.floor((vim.o.lines - height) / 2),
+        style = 'minimal',
         title = ' Debug Bridge ',
+        width = width,
     })
     M.refresh()
 end

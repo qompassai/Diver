@@ -18,18 +18,18 @@
 
 local M = {}
 
-local NAME_WIDTH_MAX = 24
 local CLI_WIDTH_MAX = 16
+local HEADER_LINE_COUNT = 3
 local MACHINE_WIDTH_MAX = 16
+local NAME_WIDTH_MAX = 24
+local ROWS_DISPLAY_MAX = 200
 local STATUS_WIDTH_MAX = 8
 local TASK_DISPLAY_MAX = 40
-local ROWS_DISPLAY_MAX = 200
-local HEADER_LINE_COUNT = 3
+local TMUX_TIMEOUT_MS = 5000
+local WINDOW_HEIGHT_MIN = 6
+local WINDOW_HEIGHT_RATIO = 0.8
 local WINDOW_WIDTH_MAX = 112
 local WINDOW_WIDTH_RATIO = 0.9
-local WINDOW_HEIGHT_RATIO = 0.8
-local WINDOW_HEIGHT_MIN = 6
-local TMUX_TIMEOUT_MS = 5000
 
 ---@class HerdAgent
 ---@field name string Agent identity; also its tmux session name.
@@ -308,10 +308,10 @@ local function set_keymaps(target)
             M.jump(row.name)
         end
     end, 'Jump to agent pane')
-    map('p', prompt_row, 'Prompt agent')
     map('k', kill_row, 'Kill agent')
-    map('r', M.refresh, 'Refresh herd')
+    map('p', prompt_row, 'Prompt agent')
     map('q', M.close, 'Close herd')
+    map('r', M.refresh, 'Refresh herd')
 end
 
 ---Open the herd dashboard, or focus it when it is already open.
@@ -425,7 +425,10 @@ function M.jump(name)
         notify_clean('tmux not available: ' .. tostring(job), vim.log.levels.WARN)
         return true
     end
-    local _, completed = pcall(job.wait, job, TMUX_TIMEOUT_MS)
+    ---@cast job vim.SystemObj
+    local _, completed = pcall(function()
+        return job:wait(TMUX_TIMEOUT_MS)
+    end)
     if completed ~= nil and completed.code ~= 0 then
         vim.notify('tmux switch-client failed', vim.log.levels.WARN)
     end

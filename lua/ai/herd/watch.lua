@@ -11,17 +11,17 @@
 
 local M = {}
 
----@alias HerdStatus 'working'|'blocked'|'idle'|'dead'
+---@alias HerdStatus 'blocked'|'dead'|'idle'|'unknown'|'working'
 
-local TRACKED_MAX = 64
 local CAPTURE_LINE_COUNT = 120
-local INTERVAL_MS_DEFAULT = 5000
-local INTERVAL_MS_MIN = 1000
-local INTERVAL_MS_MAX = 60000
-local STALL_TICKS = 2
-local TAIL_LINE_COUNT = 30
 local HASH_HEAD_CHARS = 64
 local HASH_TAIL_CHARS = 64
+local INTERVAL_MS_DEFAULT = 5000
+local INTERVAL_MS_MAX = 60000
+local INTERVAL_MS_MIN = 1000
+local STALL_TICKS = 2
+local TAIL_LINE_COUNT = 30
+local TRACKED_MAX = 64
 
 ---@class HerdCliPatterns
 ---@field blocked string[] Lua patterns marking an input/approval prompt.
@@ -64,25 +64,25 @@ local CLI_PATTERNS = {
 -- Fallback blocked patterns for unknown clis: the generic question and
 -- approval phrasings every agent CLI converges on.
 local GENERIC_BLOCKED = {
-    'Do you want to proceed%?',
-    'Proceed%?',
     '%(y/n%)',
+    'Allow this action%?',
+    'Do you want to proceed%?',
+    'Please confirm',
+    'Proceed%?',
+    'esc to approve',
+    'needs your approval',
     '❯ 1%.',
     '❯ 2%.',
-    'needs your approval',
-    'Allow this action%?',
-    'Please confirm',
-    'esc to approve',
 }
 
-local GENERIC_IDLE_PROMPT = { '^❯%s*$', '^›%s*$' }
+local GENERIC_IDLE_PROMPT = { '^›%s*$', '^❯%s*$' }
 
 -- Markers that mean the pane's session is gone, not just quiet.
 local DEAD_MARKERS = {
-    'session not found',
+    "can't find session",
     'failed to connect to server',
     'no server running',
-    "can't find session",
+    'session not found',
 }
 
 -- Activity markers that prove the agent is doing work right now:
@@ -321,7 +321,7 @@ end
 ---@param target string Non-empty tmux target for capture_pane.
 ---@param cli string Non-empty CLI name, selects the pattern table.
 ---@param task string? Optional human-readable task label.
----@return boolean ok
+---@return boolean? ok
 ---@return string? err
 function M.track(name, target, cli, task)
     assert(is_nonempty_string(name), 'name must be a non-empty string')
@@ -355,7 +355,7 @@ end
 ---Start the poll timer. interval_ms defaults to 5000 and is clamped to
 ---[1000, 60000].
 ---@param interval_ms integer?
----@return boolean ok
+---@return boolean? ok
 ---@return string? err
 function M.start(interval_ms)
     if interval_ms == nil then

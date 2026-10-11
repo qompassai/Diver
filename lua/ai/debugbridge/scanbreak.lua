@@ -41,11 +41,11 @@
 local M = {}
 
 -- Named bounds.
-local FILE_COUNT_MAX = 32 -- max files per gate() call
 local FILE_BYTES_MAX = 1048576 -- max bytes per file (1 MiB)
+local FILE_COUNT_MAX = 32 -- max files per gate() call
 local FINDINGS_PER_FILE_MAX = 4096 -- max findings iterated per file
-local LINES_PER_FILE_MAX = 1024 -- max flagged lines armed per file
 local HOOK_PATHS_MAX = 32 -- max flagged paths per installed hook
+local LINES_PER_FILE_MAX = 1024 -- max flagged lines armed per file
 
 --- Lines scanbreak armed as security breakpoints in this Neovim
 --- session: path -> set of 1-based lines. The UI reads this because
@@ -148,7 +148,7 @@ function M.resolve_stop_location(session, body)
     if type(line) ~= 'number' or line < 1 or line ~= math.floor(line) then
         return nil, 'frame has no valid line'
     end
-    return { path = path, line = line }, nil
+    return { line = line, path = path }, nil
 end
 
 ---@param root string
@@ -348,7 +348,7 @@ end
 ---@param incoming 'clean'|'suspicious'|'malicious'
 ---@return 'clean'|'suspicious'|'malicious'
 local function worse_verdict(current, incoming)
-    local rank = { clean = 1, suspicious = 2, malicious = 3 }
+    local rank = { clean = 1, malicious = 3, suspicious = 2 }
     if rank[incoming] > rank[current] then
         return incoming
     end
@@ -386,7 +386,7 @@ local function scan_and_arm(security, breakpoints, path)
         end
     end
     ---@type ScanbreakFlaggedFile
-    local flagged = { lines = {}, findings = high }
+    local flagged = { findings = high, lines = {} }
     if #high == 0 then
         return flagged, verdict, nil
     end
@@ -462,7 +462,7 @@ function M.gate(files, opts)
         return nil, 'dap.breakpoints unavailable: cannot arm scan breakpoints'
     end
     ---@type ScanbreakGateResult
-    local result = { verdict = 'clean', flagged = {} }
+    local result = { flagged = {}, verdict = 'clean' }
     local seen = {}
     local scanned_count = 0
     local flagged_count = 0
@@ -481,6 +481,7 @@ function M.gate(files, opts)
             if flagged == nil then
                 return nil, scan_err
             end
+            assert(verdict ~= nil, 'scan_and_arm returned no verdict without error')
             scanned_count = scanned_count + 1
             if #flagged.findings > 0 then
                 result.flagged[path] = flagged

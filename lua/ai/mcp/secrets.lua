@@ -25,11 +25,11 @@
 
 local M = {}
 
-local SECRET_COUNT_MAX = 16
-local SECRET_VALUE_MAX = 8192
-local SECRET_PATH_MAX = 512
 local ARG_LENGTH_MAX = 4096
 local RESOLVE_TIMEOUT_MS = 10000
+local SECRET_COUNT_MAX = 16
+local SECRET_PATH_MAX = 512
+local SECRET_VALUE_MAX = 8192
 
 ---@class McpSecretRef
 ---@field provider string 'pass' | 'env' | 'command'
@@ -43,6 +43,25 @@ local VALID_PROVIDERS = { pass = true, env = true, command = true }
 ---@return boolean
 local function is_bounded_string(value, limit)
     return type(value) == 'string' and #value >= 1 and #value <= limit and value:find('%z') == nil
+end
+
+---@param argv string[]
+---@return string? value first stdout line, trimmed
+---@return string? err never includes command output
+local function run_capture(argv)
+    local completed = vim.system(argv, { text = true, timeout = RESOLVE_TIMEOUT_MS, stderr = false }):wait()
+    if completed.code ~= 0 then
+        return nil, 'exited with code ' .. tostring(completed.code)
+    end
+    local first = (completed.stdout or ''):match('([^\r\n]*)') or ''
+    first = first:gsub('^%s+', ''):gsub('%s+$', '')
+    if first == '' then
+        return nil, 'produced no output'
+    end
+    if #first > SECRET_VALUE_MAX then
+        return nil, 'secret exceeds max length'
+    end
+    return first, nil
 end
 
 ---@param ref any
@@ -103,25 +122,6 @@ function M.validate_refs(secrets)
         end
     end
     return true, nil
-end
-
----@param argv string[]
----@return string? value first stdout line, trimmed
----@return string? err never includes command output
-local function run_capture(argv)
-    local completed = vim.system(argv, { text = true, timeout = RESOLVE_TIMEOUT_MS, stderr = false }):wait()
-    if completed.code ~= 0 then
-        return nil, 'exited with code ' .. tostring(completed.code)
-    end
-    local first = (completed.stdout or ''):match('([^\r\n]*)') or ''
-    first = first:gsub('^%s+', ''):gsub('%s+$', '')
-    if first == '' then
-        return nil, 'produced no output'
-    end
-    if #first > SECRET_VALUE_MAX then
-        return nil, 'secret exceeds max length'
-    end
-    return first, nil
 end
 
 ---@param entry table MCP server entry with optional secrets refs

@@ -25,6 +25,7 @@ local M = {}
 ---@field tools boolean
 ---@field max_input_bytes? integer
 ---@field wired_start boolean start() delegates to a verified native call
+---@field notes? string human-readable wiring note
 
 ---@class AiHarnessAdapter
 ---@field name string
@@ -35,8 +36,8 @@ local M = {}
 ---@field close fun(handle: table)
 
 ---Validate that a table honors the adapter contract.
----@param adapter table
----@return boolean ok
+---@param adapter table?
+---@return boolean? ok
 ---@return string? err
 function M.validate(adapter)
     if type(adapter) ~= 'table' then
@@ -58,12 +59,12 @@ end
 
 ---Probe an adapter's capabilities without side effects. Probe failures
 ---become unavailable capabilities, never exceptions.
----@param adapter table
+---@param adapter table?
 ---@return AiHarnessCapabilities? caps
 ---@return string? err
 function M.probe(adapter)
     local valid, err = M.validate(adapter)
-    if not valid then
+    if not valid or adapter == nil then
         return nil, err
     end
     local ok, caps = pcall(adapter.probe)
@@ -99,7 +100,7 @@ function M.negotiate(adapters, needs)
     end
     table.sort(names)
     for _, name in ipairs(names) do
-        local caps, err = M.probe(adapters[name])
+        local caps, _ = M.probe(adapters[name])
         if caps ~= nil then
             local satisfied = true
             for _, key in ipairs(types.CAPABILITY_KEYS) do
@@ -111,8 +112,6 @@ function M.negotiate(adapters, needs)
             if satisfied then
                 return adapters[name]
             end
-        else
-            _ = err
         end
     end
     return nil, 'no adapter satisfies the requested capabilities'

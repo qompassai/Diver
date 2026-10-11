@@ -21,21 +21,21 @@ local M = {}
 
 local catalog = require('ai.herd.catalog')
 
-local NAME_PATTERN = '^[A-Za-z0-9._-]+$'
-local NAME_LENGTH_MAX = 64
 local AGENT_COUNT_MAX = 32
-local TEXT_SIZE_BYTES_MAX = 256 * 1024
-local READY_TIMEOUT_MS = 15000
-local READY_POLL_MS = 500
-local READY_CAPTURE_LINES = 20
-local LAYOUT_FILENAME = 'layout.json'
-local LAYOUT_FILE_SIZE_BYTES_MAX = 256 * 1024
 local LAYOUT_ENTRY_COUNT_MAX = 64
-local WATCH_INTERVAL_MS_DEFAULT = 5000
-local WAIT_BLOCKED_TIMEOUT_MS_DEFAULT = 60000
-local WAIT_BLOCKED_TIMEOUT_MS_MIN = 1000
-local WAIT_BLOCKED_TIMEOUT_MS_MAX = 300000
+local LAYOUT_FILE_SIZE_BYTES_MAX = 256 * 1024
+local LAYOUT_FILENAME = 'layout.json'
+local NAME_LENGTH_MAX = 64
+local NAME_PATTERN = '^[A-Za-z0-9._-]+$'
+local READY_CAPTURE_LINES = 20
+local READY_POLL_MS = 500
+local READY_TIMEOUT_MS = 15000
+local TEXT_SIZE_BYTES_MAX = 256 * 1024
 local WAIT_BLOCKED_POLL_MS = 200
+local WAIT_BLOCKED_TIMEOUT_MS_DEFAULT = 60000
+local WAIT_BLOCKED_TIMEOUT_MS_MAX = 300000
+local WAIT_BLOCKED_TIMEOUT_MS_MIN = 1000
+local WATCH_INTERVAL_MS_DEFAULT = 5000
 
 ---@class HerdAgentRecord
 ---@field name string Agent and tmux session name.
@@ -154,6 +154,7 @@ local function revive_entry(raw, index, live)
     if not entry_ok then
         return false, 'entry #' .. index .. ' invalid; skipped'
     end
+    assert(name ~= nil and cli_name ~= nil, 'parse_layout_entry returned no name/cli on success')
     if agents[name] ~= nil then
         return false, nil
     end
@@ -202,7 +203,7 @@ local function layout_path()
 end
 
 ---Atomically persist the local agent layout, sorted by name.
----@return boolean ok
+---@return boolean? ok
 ---@return string? err
 local function persist_layout()
     local names = {}
@@ -252,7 +253,7 @@ end
 ---@param cli_name string catalog entry name (e.g. 'claude')
 ---@param task string? first prompt; sent only when non-blank
 ---@param cwd string? working directory for the session
----@return boolean ok
+---@return boolean? ok
 ---@return string? err
 function M.spawn_agent(name, cli_name, task, cwd)
     if type(name) ~= 'string' or #name < 1 or #name > NAME_LENGTH_MAX then
@@ -323,7 +324,7 @@ end
 ---Send text to a local agent's tmux pane (pasted verbatim + Enter).
 ---@param name string
 ---@param text string non-empty, at most 256KB
----@return boolean ok
+---@return boolean? ok
 ---@return string? err
 function M.prompt_agent(name, text)
     local agent = type(name) == 'string' and agents[name] or nil
@@ -343,7 +344,7 @@ end
 ---Stop a local agent: untrack, kill its tmux session (already-dead is
 ---fine), drop it from the registry and persist the layout.
 ---@param name string
----@return boolean ok
+---@return boolean? ok
 ---@return string? err
 function M.kill_agent(name)
     if type(name) ~= 'string' or agents[name] == nil then
@@ -393,7 +394,9 @@ end
 function M.restore_layout()
     local path, path_err = layout_path()
     if path == nil then
-        return 0, { path_err or 'cannot resolve layout path' }
+        return 0, {
+            path_err or 'cannot resolve layout path',
+        }
     end
     local file = io.open(path, 'r')
     if file == nil then
@@ -644,7 +647,7 @@ local function backend_prompt(params, cb)
 end
 
 ---@param params table socket request params
----@return boolean ok
+---@return boolean? ok
 ---@return HerdAgentInfo|HerdAgentInfo[]|string result_or_err
 local function backend_status(params)
     if type(params) ~= 'table' then
@@ -731,7 +734,7 @@ local function backend_wait_blocked(params, cb)
 end
 
 ---@param params table socket request params
----@return boolean ok
+---@return boolean? ok
 ---@return string? err
 local function backend_kill(params)
     if type(params) ~= 'table' then
@@ -753,7 +756,7 @@ end
 ---then the :Herd* commands are registered. Socket and watch startup are
 ---best-effort: failures notify at WARN and setup continues.
 ---@param opts HerdSetupOpts?
----@return boolean ok
+---@return boolean? ok
 ---@return string? err
 function M.setup(opts)
     if setup_done then

@@ -12,9 +12,9 @@ local types = require('ai.harness.types')
 
 local M = {}
 
-local RUNS_MAX = 1024
-local ARTIFACTS_MAX = 4096
 local ARTIFACT_BYTES_MAX = 10000000
+local ARTIFACTS_MAX = 4096
+local RUNS_MAX = 1024
 local XOR_BITS_MAX = 32
 
 ---Deep copy with a bound on depth. Iterative to avoid recursion over
@@ -37,9 +37,6 @@ end
 ---Portable 32-bit xor without bitwise operators or the bit library.
 ---No LuaJIT bitop, no Lua 5.3+ operators: valid everywhere.
 ---Forward-declared: content_hash (below) runs before the definition.
----@param a integer
----@param b integer
----@return integer
 local bxor32
 
 ---Content hash: sha256 when vim.fn is available, FNV-1a otherwise.
@@ -77,8 +74,8 @@ function bxor32(a, b)
         if abit ~= bbit then
             result = result + place
         end
-        a = (a - abit) / 2
-        b = (b - bbit) / 2
+        a = math.floor((a - abit) / 2)
+        b = math.floor((b - bbit) / 2)
         place = place * 2
     end
     return result
@@ -87,12 +84,12 @@ end
 ---Create a store.
 ---@return table
 function M.new()
-    return { runs = {}, checkpoints = {}, artifacts = {}, artifact_count = 0 }
+    return { artifact_count = 0, artifacts = {}, checkpoints = {}, runs = {} }
 end
 
 ---@param store table
 ---@param run table
----@return boolean ok
+---@return boolean? ok
 ---@return string? err
 function M.save_run(store, run)
     assert(store ~= nil, 'store required')
@@ -142,7 +139,7 @@ end
 ---@param store table
 ---@param run_id string
 ---@param label string
----@return boolean ok
+---@return boolean? ok
 ---@return string? err
 function M.checkpoint(store, run_id, label)
     assert(store ~= nil, 'store required')
@@ -155,8 +152,8 @@ function M.checkpoint(store, run_id, label)
     end
     store.checkpoints[run_id] = store.checkpoints[run_id] or {}
     store.checkpoints[run_id][label] = {
-        label = label,
         at_ns = types.now_ns(),
+        label = label,
         state = deep_copy(run),
     }
     return true

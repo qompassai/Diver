@@ -9,14 +9,14 @@
 -- schema, `c` calls the tool (JSON args prompt, then the confirmed flow
 -- in ai.mcp.tools -- never auto-executed).
 
-local registry = require('ai.mcp.registry')
 local client = require('ai.mcp.client')
+local registry = require('ai.mcp.registry')
 local tools = require('ai.mcp.tools')
 
 local M = {}
 
-local SCHEMA_PREVIEW_BYTES_MAX = 4096
 local CALL_RESULT_BYTES_MAX = 8192
+local SCHEMA_PREVIEW_BYTES_MAX = 4096
 
 local view = nil ---@type { buf: integer, rows: table[] }?
 
@@ -68,6 +68,7 @@ local function row_at(rows, index)
     return nil
 end
 
+---@param title string
 ---@param text string
 local function show_text(title, text)
     local lines = vim.split(text:sub(1, CALL_RESULT_BYTES_MAX), '\n', { plain = true })

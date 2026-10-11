@@ -23,20 +23,20 @@ local policy = require('ai.mcp.server.policy')
 
 local M = {}
 
-local READ_LINES_MAX = 2000
-local READ_LINE_BYTES_MAX = 8192
-local LIST_ENTRIES_MAX = 500
-local SEARCH_HITS_MAX = 100
-local OUTPUT_BYTES_MAX = 256 * 1024
-local CONTENT_BYTES_MAX = 512 * 1024
-local STRING_ARG_BYTES_MAX = 1024 * 1024
-local SEARCH_TIMEOUT_MS = 15000
-local DIAG_TIMEOUT_MS = 15000
 local COMMAND_TIMEOUT_MS_DEFAULT = 30000
+local CONTENT_BYTES_MAX = 512 * 1024
+local DIAG_TIMEOUT_MS = 15000
+local LIST_ENTRIES_MAX = 500
+local OUTPUT_BYTES_MAX = 256 * 1024
+local READ_LINE_BYTES_MAX = 8192
+local READ_LINES_MAX = 2000
+local SEARCH_HITS_MAX = 100
+local SEARCH_TIMEOUT_MS = 15000
+local STRING_ARG_BYTES_MAX = 1024 * 1024
 
+local ERR_INTERNAL = -32603
 local ERR_INVALID_PARAMS = -32602
 local ERR_POLICY_DENIED = -32000
-local ERR_INTERNAL = -32603
 
 local by_name = {}
 local registered = false
@@ -89,6 +89,7 @@ local function system_sync(argv, opts)
         end
         return result, nil
     end
+    ---@cast handle table
     return handle, nil
 end
 
@@ -154,7 +155,7 @@ local function fs_stat(path)
 end
 
 ---@param path string
----@return fun(): string?, string? iterator or nil when unavailable
+---@return (fun(): string?, string?)? iterator or nil when unavailable
 local function fs_dir(path)
     if vim ~= nil and vim.fs ~= nil and vim.fs.dir ~= nil then
         local ok, iter = pcall(vim.fs.dir, path)
@@ -354,13 +355,14 @@ local function handle_read_file(args)
     local index = 0
     local bytes = 0
     local truncated = false
-    for line in file:lines() do
+    for raw_line in file:lines() do
         index = index + 1
         if index >= offset then
             if #lines >= limit or bytes > CONTENT_BYTES_MAX then
                 truncated = true
                 break
             end
+            local line = raw_line
             if #line > READ_LINE_BYTES_MAX then
                 line = line:sub(1, READ_LINE_BYTES_MAX) .. ' [line truncated]'
             end
@@ -473,10 +475,11 @@ local function handle_search_text(args)
         return tool_text(detail .. truncate(result.stderr or '', 2048), true)
     end
     local hits = {}
-    for line in (result.stdout or ''):gmatch('[^\n]+') do
+    for raw_line in (result.stdout or ''):gmatch('[^\n]+') do
         if #hits >= SEARCH_HITS_MAX then
             break
         end
+        local line = raw_line
         if #line > READ_LINE_BYTES_MAX then
             line = line:sub(1, READ_LINE_BYTES_MAX) .. ' [line truncated]'
         end
@@ -589,11 +592,7 @@ local function handle_edit_file(args)
     end
     file:write(updated)
     file:close()
-    local summary = 'replaced 1 occurrence ('
-            .. #args.old_text
-            .. ' -> '
-            .. #args.new_text
-            .. ' bytes)'
+    local summary = 'replaced 1 occurrence (' .. #args.old_text .. ' -> ' .. #args.new_text .. ' bytes)'
     return tool_text(summary)
 end
 
@@ -649,77 +648,29 @@ local function register(def)
     by_name[def.name] = def
 end
 
-local function def_read_file()
+local function def_edit_file()
     return {
-        name = 'read_file',
-        title = 'Read file',
-        description = 'Read a text file inside the workspace roots. Returns a bounded line window '
-            .. '(offset is 1-based, at most 2000 lines per call).',
+        name = 'edit_file',
+        title = 'Edit file',
+        description = 'Replace one exact occurrence of old_text with new_text (plain string '
+            .. 'match, no fuzzy matching). Fails when old_text is absent or ambiguous. '
+            .. 'Needs a confirmation grant.',
         inputSchema = {
-        type = 'object',
-        properties = {
-            path = { type = 'string', maxLength = 4096 },
-            offset = { type = 'integer', minimum = 1 },
-            limit = { type = 'integer', minimum = 1 },
-        },
-        required = { 'path' },
+            type = 'object',
+            properties = {
+                path = { type = 'string', maxLength = 4096 },
+                old_text = { type = 'string', minLength = 1, maxLength = STRING_ARG_BYTES_MAX },
+                new_text = { type = 'string', maxLength = STRING_ARG_BYTES_MAX },
+            },
+            required = { 'path', 'old_text', 'new_text' },
         },
         annotations = {
-        readOnlyHint = true,
-        destructiveHint = false,
-        idempotentHint = true,
-        openWorldHint = false,
+            readOnlyHint = false,
+            destructiveHint = true,
+            idempotentHint = false,
+            openWorldHint = false,
         },
-        handler = handle_read_file,
-    }
-end
-
-local function def_list_files()
-    return {
-        name = 'list_files',
-        title = 'List files',
-        description = 'List directory entries inside the workspace roots, newest of at most 500 '
-            .. 'entries sorted by name. Directories end with `/`.',
-        inputSchema = {
-        type = 'object',
-        properties = {
-            dir = { type = 'string', maxLength = 4096 },
-            glob = { type = 'string', maxLength = 256 },
-        },
-        required = {},
-        },
-        annotations = {
-        readOnlyHint = true,
-        destructiveHint = false,
-        idempotentHint = true,
-        openWorldHint = false,
-        },
-        handler = handle_list_files,
-    }
-end
-
-local function def_search_text()
-    return {
-        name = 'search_text',
-        title = 'Search text',
-        description = 'Search file contents with ripgrep (argv form, never a shell). '
-            .. 'At most 100 hits per call.',
-        inputSchema = {
-        type = 'object',
-        properties = {
-            pattern = { type = 'string', maxLength = 4096 },
-            dir = { type = 'string', maxLength = 4096 },
-            glob = { type = 'string', maxLength = 256 },
-        },
-        required = { 'pattern' },
-        },
-        annotations = {
-        readOnlyHint = true,
-        destructiveHint = false,
-        idempotentHint = true,
-        openWorldHint = false,
-        },
-        handler = handle_search_text,
+        handler = handle_edit_file,
     }
 end
 
@@ -730,71 +681,68 @@ local function def_get_diagnostics()
         description = 'Phase-1 diagnostics via repo CLI linters (luacheck, ruff, shellcheck) '
             .. 'when installed. Honest when no linter applies.',
         inputSchema = {
-        type = 'object',
-        properties = {
-            path = { type = 'string', maxLength = 4096 },
-        },
-        required = {},
+            type = 'object',
+            properties = {
+                path = { type = 'string', maxLength = 4096 },
+            },
+            required = {},
         },
         annotations = {
-        readOnlyHint = true,
-        destructiveHint = false,
-        idempotentHint = true,
-        openWorldHint = false,
+            readOnlyHint = true,
+            destructiveHint = false,
+            idempotentHint = true,
+            openWorldHint = false,
         },
         handler = handle_get_diagnostics,
     }
 end
 
-local function def_write_file()
+local function def_list_files()
     return {
-        name = 'write_file',
-        title = 'Write file',
-        description = 'Write content to a file inside the workspace roots. mode=create refuses '
-            .. 'when the file exists; mode=overwrite must be chosen explicitly. Needs a '
-            .. 'confirmation grant.',
+        name = 'list_files',
+        title = 'List files',
+        description = 'List directory entries inside the workspace roots, newest of at most 500 '
+            .. 'entries sorted by name. Directories end with `/`.',
         inputSchema = {
-        type = 'object',
-        properties = {
-            path = { type = 'string', maxLength = 4096 },
-            content = { type = 'string', maxLength = STRING_ARG_BYTES_MAX },
-            mode = { type = 'string', enum = { 'create', 'overwrite' } },
-        },
-        required = { 'path', 'content', 'mode' },
+            type = 'object',
+            properties = {
+                dir = { type = 'string', maxLength = 4096 },
+                glob = { type = 'string', maxLength = 256 },
+            },
+            required = {},
         },
         annotations = {
-        readOnlyHint = false,
-        destructiveHint = true,
-        idempotentHint = false,
-        openWorldHint = false,
+            readOnlyHint = true,
+            destructiveHint = false,
+            idempotentHint = true,
+            openWorldHint = false,
         },
-        handler = handle_write_file,
+        handler = handle_list_files,
     }
 end
 
-local function def_edit_file()
+local function def_read_file()
     return {
-        name = 'edit_file',
-        title = 'Edit file',
-        description = 'Replace one exact occurrence of old_text with new_text (plain string '
-            .. 'match, no fuzzy matching). Fails when old_text is absent or ambiguous. '
-            .. 'Needs a confirmation grant.',
+        name = 'read_file',
+        title = 'Read file',
+        description = 'Read a text file inside the workspace roots. Returns a bounded line window '
+            .. '(offset is 1-based, at most 2000 lines per call).',
         inputSchema = {
-        type = 'object',
-        properties = {
-            path = { type = 'string', maxLength = 4096 },
-            old_text = { type = 'string', minLength = 1, maxLength = STRING_ARG_BYTES_MAX },
-            new_text = { type = 'string', maxLength = STRING_ARG_BYTES_MAX },
-        },
-        required = { 'path', 'old_text', 'new_text' },
+            type = 'object',
+            properties = {
+                path = { type = 'string', maxLength = 4096 },
+                offset = { type = 'integer', minimum = 1 },
+                limit = { type = 'integer', minimum = 1 },
+            },
+            required = { 'path' },
         },
         annotations = {
-        readOnlyHint = false,
-        destructiveHint = true,
-        idempotentHint = false,
-        openWorldHint = false,
+            readOnlyHint = true,
+            destructiveHint = false,
+            idempotentHint = true,
+            openWorldHint = false,
         },
-        handler = handle_edit_file,
+        handler = handle_read_file,
     }
 end
 
@@ -806,30 +754,80 @@ local function def_run_command()
             .. 'a bare name from the allowlist, which defaults to empty (deny-all). '
             .. 'Needs a confirmation grant.',
         inputSchema = {
-        type = 'object',
-        properties = {
-            cmd = {
-                type = 'array',
-                items = { type = 'string', maxLength = 4096 },
-                minItems = 1,
-                maxItems = 32,
+            type = 'object',
+            properties = {
+                cmd = {
+                    type = 'array',
+                    items = { type = 'string', maxLength = 4096 },
+                    minItems = 1,
+                    maxItems = 32,
+                },
+                cwd = { type = 'string', maxLength = 4096 },
+                timeout_ms = {
+                    type = 'integer',
+                    minimum = policy.COMMAND_TIMEOUT_MS_MIN,
+                    maximum = policy.COMMAND_TIMEOUT_MS_MAX,
+                },
             },
-            cwd = { type = 'string', maxLength = 4096 },
-            timeout_ms = {
-                type = 'integer',
-                minimum = policy.COMMAND_TIMEOUT_MS_MIN,
-                maximum = policy.COMMAND_TIMEOUT_MS_MAX,
-            },
-        },
-        required = { 'cmd' },
+            required = { 'cmd' },
         },
         annotations = {
-        readOnlyHint = false,
-        destructiveHint = true,
-        idempotentHint = false,
-        openWorldHint = true,
+            readOnlyHint = false,
+            destructiveHint = true,
+            idempotentHint = false,
+            openWorldHint = true,
         },
         handler = handle_run_command,
+    }
+end
+
+local function def_search_text()
+    return {
+        name = 'search_text',
+        title = 'Search text',
+        description = 'Search file contents with ripgrep (argv form, never a shell). ' .. 'At most 100 hits per call.',
+        inputSchema = {
+            type = 'object',
+            properties = {
+                pattern = { type = 'string', maxLength = 4096 },
+                dir = { type = 'string', maxLength = 4096 },
+                glob = { type = 'string', maxLength = 256 },
+            },
+            required = { 'pattern' },
+        },
+        annotations = {
+            readOnlyHint = true,
+            destructiveHint = false,
+            idempotentHint = true,
+            openWorldHint = false,
+        },
+        handler = handle_search_text,
+    }
+end
+
+local function def_write_file()
+    return {
+        name = 'write_file',
+        title = 'Write file',
+        description = 'Write content to a file inside the workspace roots. mode=create refuses '
+            .. 'when the file exists; mode=overwrite must be chosen explicitly. Needs a '
+            .. 'confirmation grant.',
+        inputSchema = {
+            type = 'object',
+            properties = {
+                path = { type = 'string', maxLength = 4096 },
+                content = { type = 'string', maxLength = STRING_ARG_BYTES_MAX },
+                mode = { type = 'string', enum = { 'create', 'overwrite' } },
+            },
+            required = { 'path', 'content', 'mode' },
+        },
+        annotations = {
+            readOnlyHint = false,
+            destructiveHint = true,
+            idempotentHint = false,
+            openWorldHint = false,
+        },
+        handler = handle_write_file,
     }
 end
 local function register_all()

@@ -21,14 +21,14 @@
 
 local M = {}
 
-local TMUX_TIMEOUT_MS = 10000
 local CAPTURE_LINES_DEFAULT = 200
 local CAPTURE_LINES_MAX = 2000
-local TEXT_BYTES_MAX = 256 * 1024
 local ERROR_MESSAGE_MAX = 500
 local PROMPT_BUFFER_NAME = 'herd_prompt'
 local SESSION_NAME_PATTERN = '^[A-Za-z0-9._-]+$'
 local TARGET_PATTERN = '^[A-Za-z0-9._:-]+$'
+local TEXT_BYTES_MAX = 256 * 1024
+local TMUX_TIMEOUT_MS = 10000
 
 ---@param value string
 ---@return string
@@ -98,7 +98,9 @@ local function run_tmux(argv, op)
         return nil, 'tmux ' .. op .. ' failed to start: ' .. tostring(sysobj)
     end
     -- vim.system is async: the completed result only exists after wait().
-    local wok, result = pcall(sysobj.wait, sysobj, TMUX_TIMEOUT_MS)
+    local wok, result = pcall(function()
+        return sysobj:wait(TMUX_TIMEOUT_MS)
+    end)
     if not wok then
         return nil, 'tmux ' .. op .. ' wait failed: ' .. tostring(result)
     end
@@ -153,6 +155,142 @@ end
 ---@return boolean
 function M.available()
     return vim.fn.executable('tmux') == 1
+end
+
+---@param target string tmux target-pane (session:window.pane or pane id)
+---@param lines integer? scrollback lines to capture; default 200, max 2000
+---@return string? text pane text; may be empty
+---@return string? err
+function M.capture_pane(target, lines)
+    if not M.available() then
+        return nil, 'tmux not available'
+    end
+    if not matches_pattern(target, TARGET_PATTERN) then
+        return nil, 'target must match ' .. TARGET_PATTERN
+    end
+    local count = CAPTURE_LINES_DEFAULT
+    if lines ~= nil then
+        if type(lines) ~= 'number' then
+            return nil, 'lines must be a number'
+        end
+        count = math.floor(lines)
+    end
+    count = math.max(1, math.min(count, CAPTURE_LINES_MAX))
+    local argv = {
+        'tmux',
+        'capture-pane',
+        '-t',
+        target,
+        '-p',
+        '-S',
+        '-' .. tostring(count),
+    }
+    local result, run_err = run_tmux(argv, 'capture-pane')
+    if result == nil then
+        return nil, run_err
+    end
+    return result.stdout
+end
+
+---Non-blocking twin of capture_pane: cb fires on the main loop with
+---(text, nil); text may be empty. (nil, err) on failure.
+---@param target string tmux target-pane (session:window.pane or pane id)
+---@param lines integer? scrollback lines to capture; default 200, max 2000
+---@param cb fun(text: string?, err: string?)
+function M.capture_pane_async(target, lines, cb)
+    assert(type(cb) == 'function', 'cb must be a function')
+    if not M.available() then
+        cb(nil, 'tmux not available')
+        return
+    end
+    if not matches_pattern(target, TARGET_PATTERN) then
+        cb(nil, 'target must match ' .. TARGET_PATTERN)
+        return
+    end
+    local count = CAPTURE_LINES_DEFAULT
+    if lines ~= nil then
+        if type(lines) ~= 'number' then
+            cb(nil, 'lines must be a number')
+            return
+        end
+        count = math.floor(lines)
+    end
+    count = math.max(1, math.min(count, CAPTURE_LINES_MAX))
+    local argv = {
+        'tmux',
+        'capture-pane',
+        '-t',
+        target,
+        '-p',
+        '-S',
+        '-' .. tostring(count),
+    }
+    run_tmux_async(argv, 'capture-pane', function(result, run_err)
+        if result == nil then
+            cb(nil, run_err)
+            return
+        end
+        cb(result.stdout)
+    end)
+end
+
+---@param name string tmux session name
+---@return boolean|nil ok
+---@return string? err
+function M.kill_session(name)
+    if not M.available() then
+        return nil, 'tmux not available'
+    end
+    if not matches_pattern(name, SESSION_NAME_PATTERN) then
+        return nil, 'name must match ' .. SESSION_NAME_PATTERN
+    end
+    local argv = { 'tmux', 'kill-session', '-t', name }
+    local _, run_err = run_tmux(argv, 'kill-session')
+    if run_err ~= nil then
+        return nil, run_err
+    end
+    return true
+end
+
+---Non-blocking twin of kill_session, for async failure cleanup.
+---@param name string
+---@param cb fun(ok: boolean?, err: string?)
+function M.kill_session_async(name, cb)
+    assert(type(cb) == 'function', 'cb must be a function')
+    if not M.available() then
+        cb(nil, 'tmux not available')
+        return
+    end
+    if not matches_pattern(name, SESSION_NAME_PATTERN) then
+        cb(nil, 'name must match ' .. SESSION_NAME_PATTERN)
+        return
+    end
+    local argv = { 'tmux', 'kill-session', '-t', name }
+    run_tmux_async(argv, 'kill-session', function(_, run_err)
+        if run_err ~= nil then
+            cb(nil, run_err)
+            return
+        end
+        cb(true)
+    end)
+end
+
+---@return string[]? names session names, empty when tmux has none
+---@return string? err
+function M.list_sessions()
+    if not M.available() then
+        return nil, 'tmux not available'
+    end
+    local argv = { 'tmux', 'list-sessions', '-F', '#{session_name}' }
+    local result, run_err = run_tmux(argv, 'list-sessions')
+    if result == nil then
+        return nil, run_err
+    end
+    local names = {}
+    for line in result.stdout:gmatch('[^\r\n]+') do
+        names[#names + 1] = line
+    end
+    return names
 end
 
 ---@param name string session name; letters, digits, dot, dash, underscore
@@ -348,142 +486,6 @@ function M.send_keys_pane_async(target, text, cb)
         end)
     end
     run_step(1)
-end
-
----@param target string tmux target-pane (session:window.pane or pane id)
----@param lines integer? scrollback lines to capture; default 200, max 2000
----@return string? text pane text; may be empty
----@return string? err
-function M.capture_pane(target, lines)
-    if not M.available() then
-        return nil, 'tmux not available'
-    end
-    if not matches_pattern(target, TARGET_PATTERN) then
-        return nil, 'target must match ' .. TARGET_PATTERN
-    end
-    local count = CAPTURE_LINES_DEFAULT
-    if lines ~= nil then
-        if type(lines) ~= 'number' then
-            return nil, 'lines must be a number'
-        end
-        count = math.floor(lines)
-    end
-    count = math.max(1, math.min(count, CAPTURE_LINES_MAX))
-    local argv = {
-        'tmux',
-        'capture-pane',
-        '-t',
-        target,
-        '-p',
-        '-S',
-        '-' .. tostring(count),
-    }
-    local result, run_err = run_tmux(argv, 'capture-pane')
-    if result == nil then
-        return nil, run_err
-    end
-    return result.stdout
-end
-
----Non-blocking twin of capture_pane: cb fires on the main loop with
----(text, nil); text may be empty. (nil, err) on failure.
----@param target string tmux target-pane (session:window.pane or pane id)
----@param lines integer? scrollback lines to capture; default 200, max 2000
----@param cb fun(text: string?, err: string?)
-function M.capture_pane_async(target, lines, cb)
-    assert(type(cb) == 'function', 'cb must be a function')
-    if not M.available() then
-        cb(nil, 'tmux not available')
-        return
-    end
-    if not matches_pattern(target, TARGET_PATTERN) then
-        cb(nil, 'target must match ' .. TARGET_PATTERN)
-        return
-    end
-    local count = CAPTURE_LINES_DEFAULT
-    if lines ~= nil then
-        if type(lines) ~= 'number' then
-            cb(nil, 'lines must be a number')
-            return
-        end
-        count = math.floor(lines)
-    end
-    count = math.max(1, math.min(count, CAPTURE_LINES_MAX))
-    local argv = {
-        'tmux',
-        'capture-pane',
-        '-t',
-        target,
-        '-p',
-        '-S',
-        '-' .. tostring(count),
-    }
-    run_tmux_async(argv, 'capture-pane', function(result, run_err)
-        if result == nil then
-            cb(nil, run_err)
-            return
-        end
-        cb(result.stdout)
-    end)
-end
-
----@param name string tmux session name
----@return boolean|nil ok
----@return string? err
-function M.kill_session(name)
-    if not M.available() then
-        return nil, 'tmux not available'
-    end
-    if not matches_pattern(name, SESSION_NAME_PATTERN) then
-        return nil, 'name must match ' .. SESSION_NAME_PATTERN
-    end
-    local argv = { 'tmux', 'kill-session', '-t', name }
-    local _, run_err = run_tmux(argv, 'kill-session')
-    if run_err ~= nil then
-        return nil, run_err
-    end
-    return true
-end
-
----Non-blocking twin of kill_session, for async failure cleanup.
----@param name string
----@param cb fun(ok: boolean?, err: string?)
-function M.kill_session_async(name, cb)
-    assert(type(cb) == 'function', 'cb must be a function')
-    if not M.available() then
-        cb(nil, 'tmux not available')
-        return
-    end
-    if not matches_pattern(name, SESSION_NAME_PATTERN) then
-        cb(nil, 'name must match ' .. SESSION_NAME_PATTERN)
-        return
-    end
-    local argv = { 'tmux', 'kill-session', '-t', name }
-    run_tmux_async(argv, 'kill-session', function(_, run_err)
-        if run_err ~= nil then
-            cb(nil, run_err)
-            return
-        end
-        cb(true)
-    end)
-end
-
----@return string[]? names session names, empty when tmux has none
----@return string? err
-function M.list_sessions()
-    if not M.available() then
-        return nil, 'tmux not available'
-    end
-    local argv = { 'tmux', 'list-sessions', '-F', '#{session_name}' }
-    local result, run_err = run_tmux(argv, 'list-sessions')
-    if result == nil then
-        return nil, run_err
-    end
-    local names = {}
-    for line in result.stdout:gmatch('[^\r\n]+') do
-        names[#names + 1] = line
-    end
-    return names
 end
 
 return M

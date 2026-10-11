@@ -19,7 +19,7 @@ local RULES_MAX = 256
 ---@field argv? string[] exact argv, never a shell string
 ---@field paths? string[] filesystem paths touched
 ---@field endpoints? string[] network endpoints touched
----@field workspace string run workspace root
+---@field workspace? string run workspace root (falls back to the policy's)
 
 ---@class AiHarnessDecision
 ---@field decision 'allow'|'deny'|'approval'
@@ -63,7 +63,7 @@ end
 ---Validate one rule: risk + decision required, optional tool/path/endpoint
 ---scopes as allowlists.
 ---@param rule table
----@return boolean ok
+---@return boolean? ok
 ---@return string? err
 function M.validate_rule(rule)
     if type(rule) ~= 'table' then

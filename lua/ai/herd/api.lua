@@ -38,30 +38,32 @@
 
 local M = {}
 
-local sched = require('ai.sched')
 local bulk = require('ai.bulk')
+local sched = require('ai.sched')
 
 -- Forward declarations: the pump needs handle_line, and the bulk
 -- lane needs the pump, so both are assigned after the handlers are
 -- defined below. Every use happens after module load.
-local pump ---@type AiSched
-local bulk_lane ---@type AiBulkLane
+---@type AiSched
+local pump
+---@type AiBulkLane
+local bulk_lane
 
-local SOCKET_FILENAME = 'herd.sock'
-local SOCKET_DIR_MODE = '0700'
-local LISTEN_BACKLOG = 128
-local MESSAGE_BYTES_MAX = 65536
+local CLI_LENGTH_MAX = 8192
+local CMD_LABEL_MAX = 64
 -- Simultaneous client connections. Each connection holds a bounded
 -- read buffer, but the count itself was unbounded: a hostile local
 -- client could exhaust memory by opening thousands of connections.
 local CONNECTION_COUNT_MAX = 64
-local NAME_LENGTH_MAX = 128
-local CLI_LENGTH_MAX = 8192
-local TEXT_LENGTH_MAX = 16384
-local CMD_LABEL_MAX = 64
-local TIMEOUT_MS_MIN = 1000
-local TIMEOUT_MS_MAX = 300000
 local FALLBACK_REPLY = '{"ok":false,"error":"reply encode failed"}'
+local LISTEN_BACKLOG = 128
+local MESSAGE_BYTES_MAX = 65536
+local NAME_LENGTH_MAX = 128
+local SOCKET_DIR_MODE = '0700'
+local SOCKET_FILENAME = 'herd.sock'
+local TEXT_LENGTH_MAX = 16384
+local TIMEOUT_MS_MAX = 300000
+local TIMEOUT_MS_MIN = 1000
 
 ---@class HerdBackend
 ---@field spawn fun(params: table<string, any>): boolean, any
@@ -87,7 +89,7 @@ local FALLBACK_REPLY = '{"ok":false,"error":"reply encode failed"}'
 ---@field limit integer Maximum byte length of the field value.
 
 local backend = nil ---@type HerdBackend?
-local server = nil ---@type uv_pipe_t?
+local server = nil ---@type uv.uv_pipe_t?
 local bound_path = nil ---@type string?
 local active_connections = 0
 -- Every accepted client until close_client runs: M.stop() closes them
@@ -159,7 +161,7 @@ local function timeout_param(req)
     return ms, nil
 end
 
----@param client uv_pipe_t
+---@param client uv.uv_pipe_t
 ---@param state HerdConnState
 local function close_client(client, state)
     if state.closed then
@@ -178,7 +180,7 @@ end
 
 ---Encode and write one reply line. Falls back to a static payload if
 ---the backend's result is not JSON-encodable.
----@param client uv_pipe_t
+---@param client uv.uv_pipe_t
 ---@param state HerdConnState
 ---@param payload table<string, any>
 ---@param close_after boolean
@@ -201,7 +203,7 @@ local function send_reply(client, state, payload, close_after)
 end
 
 ---Translate one backend call outcome into a protocol reply.
----@param client uv_pipe_t
+---@param client uv.uv_pipe_t
 ---@param state HerdConnState
 ---@param pcall_ok boolean False when the backend function raised.
 ---@param backend_ok boolean The backend's own ok flag.
@@ -220,30 +222,30 @@ local function send_backend_result(client, state, pcall_ok, backend_ok, result)
     end
 end
 
+local AGENT_OPTIONAL_FIELDS = {
+    { name = 'agent', required = false, limit = NAME_LENGTH_MAX },
+}
+local AGENT_REQUIRED_FIELDS = {
+    { name = 'agent', required = true, limit = NAME_LENGTH_MAX },
+}
+local NO_FIELDS = {}
+local PROMPT_FIELDS = {
+    { name = 'agent', required = true, limit = NAME_LENGTH_MAX },
+    { name = 'text', required = true, limit = TEXT_LENGTH_MAX },
+}
 local SPAWN_FIELDS = {
     { name = 'name', required = false, limit = NAME_LENGTH_MAX },
     { name = 'cli', required = true, limit = CLI_LENGTH_MAX },
     { name = 'task', required = false, limit = TEXT_LENGTH_MAX },
     { name = 'cwd', required = false, limit = CLI_LENGTH_MAX },
 }
-local PROMPT_FIELDS = {
-    { name = 'agent', required = true, limit = NAME_LENGTH_MAX },
-    { name = 'text', required = true, limit = TEXT_LENGTH_MAX },
-}
-local AGENT_REQUIRED_FIELDS = {
-    { name = 'agent', required = true, limit = NAME_LENGTH_MAX },
-}
-local AGENT_OPTIONAL_FIELDS = {
-    { name = 'agent', required = false, limit = NAME_LENGTH_MAX },
-}
-local NO_FIELDS = {}
 
----@param client uv_pipe_t
----@param client uv_pipe_t
+---@param client uv.uv_pipe_t
 ---@param state HerdConnState
 ---@param line string framed request, for the bulk lane's fair requeue
 ---@param req table<string, any>
 local function handle_spawn(client, state, line, req)
+    assert(backend ~= nil, 'backend not set: call set_backend first')
     local params, err = validate_fields(req, SPAWN_FIELDS)
     if err ~= nil then
         send_reply(client, state, { ok = false, error = err }, false)
@@ -255,11 +257,12 @@ local function handle_spawn(client, state, line, req)
     bulk_lane:run(client, state, line, params, backend.spawn)
 end
 
----@param client uv_pipe_t
+---@param client uv.uv_pipe_t
 ---@param state HerdConnState
 ---@param line string framed request, for the bulk lane's fair requeue
 ---@param req table<string, any>
 local function handle_prompt(client, state, line, req)
+    assert(backend ~= nil, 'backend not set: call set_backend first')
     local params, err = validate_fields(req, PROMPT_FIELDS)
     if err ~= nil then
         send_reply(client, state, { ok = false, error = err }, false)
@@ -270,11 +273,12 @@ local function handle_prompt(client, state, line, req)
     bulk_lane:run(client, state, line, params, backend.prompt)
 end
 
----@param client uv_pipe_t
+---@param client uv.uv_pipe_t
 ---@param state HerdConnState
 ---@param _line string unused
 ---@param req table<string, any>
 local function handle_status(client, state, _line, req)
+    assert(backend ~= nil, 'backend not set: call set_backend first')
     local params, err = validate_fields(req, AGENT_OPTIONAL_FIELDS)
     if err ~= nil then
         send_reply(client, state, { ok = false, error = err }, false)
@@ -287,11 +291,12 @@ end
 
 ---Bulk: the wait runs on a uv timer in the backend, so control
 ---traffic keeps flowing while this waits for the agent to settle.
----@param client uv_pipe_t
+---@param client uv.uv_pipe_t
 ---@param state HerdConnState
 ---@param line string framed request, for the bulk lane's fair requeue
 ---@param req table<string, any>
 local function handle_wait_blocked(client, state, line, req)
+    assert(backend ~= nil, 'backend not set: call set_backend first')
     local params, err = validate_fields(req, AGENT_REQUIRED_FIELDS)
     if err ~= nil then
         send_reply(client, state, { ok = false, error = err }, false)
@@ -307,11 +312,12 @@ local function handle_wait_blocked(client, state, line, req)
     bulk_lane:run(client, state, line, params, backend.wait_blocked)
 end
 
----@param client uv_pipe_t
+---@param client uv.uv_pipe_t
 ---@param state HerdConnState
 ---@param _line string unused
 ---@param req table<string, any>
 local function handle_kill(client, state, _line, req)
+    assert(backend ~= nil, 'backend not set: call set_backend first')
     local params, err = validate_fields(req, AGENT_REQUIRED_FIELDS)
     if err ~= nil then
         send_reply(client, state, { ok = false, error = err }, false)
@@ -322,11 +328,12 @@ local function handle_kill(client, state, _line, req)
     send_backend_result(client, state, ok, backend_ok, result_or_err)
 end
 
----@param client uv_pipe_t
+---@param client uv.uv_pipe_t
 ---@param state HerdConnState
 ---@param _line string unused
 ---@param req table<string, any>
 local function handle_list(client, state, _line, req)
+    assert(backend ~= nil, 'backend not set: call set_backend first')
     local params, err = validate_fields(req, NO_FIELDS)
     if err ~= nil then
         send_reply(client, state, { ok = false, error = err }, false)
@@ -338,15 +345,15 @@ local function handle_list(client, state, _line, req)
 end
 
 local DISPATCH = {
-    spawn = handle_spawn,
-    prompt = handle_prompt,
-    status = handle_status,
-    wait_blocked = handle_wait_blocked,
     kill = handle_kill,
     list = handle_list,
+    prompt = handle_prompt,
+    spawn = handle_spawn,
+    status = handle_status,
+    wait_blocked = handle_wait_blocked,
 }
 
----@param client uv_pipe_t
+---@param client uv.uv_pipe_t
 ---@param state HerdConnState
 ---@param line string One newline-delimited JSON request.
 local function handle_line(client, state, line)
@@ -371,9 +378,9 @@ end
 ---bulk commands in the pump. Everything else (spawn, prompt,
 ---wait_blocked) can take a while and waits its turn.
 local CONTROL_COMMANDS = {
-    status = true,
-    list = true,
     kill = true,
+    list = true,
+    status = true,
 }
 
 ---Classify one framed request line for the pump. Best-effort scan
@@ -410,7 +417,7 @@ bulk_lane = bulk.new({
 
 ---Frame bytes into newline-delimited messages, enforcing
 ---MESSAGE_BYTES_MAX on each single message.
----@param client uv_pipe_t
+---@param client uv.uv_pipe_t
 ---@param state HerdConnState
 ---@param err string?
 ---@param chunk string?
@@ -514,25 +521,6 @@ local function ensure_private_dir(dir)
     return true, nil
 end
 
----Resolve the socket path, ensuring the runtime dir exists with mode
----0700. Prefers vim.fn.stdpath('run'), then $XDG_RUNTIME_DIR.
----@return string? path
----@return string? err
-function M.socket_path()
-    local dir = vim.fn.stdpath('run')
-    if dir == nil or dir == '' then
-        dir = os.getenv('XDG_RUNTIME_DIR')
-    end
-    if dir == nil or dir == '' then
-        return nil, 'no runtime dir'
-    end
-    local dir_ok, dir_err = ensure_private_dir(dir)
-    if not dir_ok then
-        return nil, dir_err
-    end
-    return dir .. '/' .. SOCKET_FILENAME, nil
-end
-
 ---Wire in the agent backend (provided by ai.herd at setup time). This
 ---module never requires ai.herd itself, so there is no load cycle.
 ---@param b HerdBackend
@@ -549,9 +537,29 @@ function M.set_backend(b)
     backend = b
 end
 
+---Resolve the socket path, ensuring the runtime dir exists with mode
+---0700. Prefers vim.fn.stdpath('run'), then $XDG_RUNTIME_DIR.
+---@return string? path
+---@return string? err
+function M.socket_path()
+    ---@type string?
+    local dir = vim.fn.stdpath('run')
+    if dir == nil or dir == '' then
+        dir = os.getenv('XDG_RUNTIME_DIR')
+    end
+    if dir == nil or dir == '' then
+        return nil, 'no runtime dir'
+    end
+    local dir_ok, dir_err = ensure_private_dir(dir)
+    if not dir_ok then
+        return nil, dir_err
+    end
+    return dir .. '/' .. SOCKET_FILENAME, nil
+end
+
 ---Start the unix-domain socket listener. Refuses when already running
 ---or when no backend was wired in.
----@return boolean ok
+---@return boolean? ok
 ---@return string? err
 function M.start()
     if server ~= nil then

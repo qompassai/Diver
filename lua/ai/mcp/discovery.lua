@@ -27,11 +27,11 @@ local registry = require('ai.mcp.registry')
 
 local M = {}
 
-local SEARCH_RESULTS_MAX = 20
-local QUERY_LENGTH_MAX = 200
-local CURL_TIMEOUT_MS = 25000
 local BRAVE_ENDPOINT = 'https://api.search.brave.com/res/v1/web/search'
+local CURL_TIMEOUT_MS = 25000
 local DISCOVERY_CACHE_TTL_S = 3600 -- search results go stale; 1h, not 72h
+local QUERY_LENGTH_MAX = 200
+local SEARCH_RESULTS_MAX = 20
 
 ---@class McpSearchResult
 ---@field title string
@@ -52,248 +52,6 @@ local function copy_results(results)
         out[#out + 1] = { title = item.title, url = item.url, content = item.content }
     end
     return out
-end
-
----@param value any
----@return boolean the value is a well-shaped cached result list
-local function valid_cached(value)
-    if type(value) ~= 'table' then
-        return false
-    end
-    for _, item in ipairs(value) do
-        if type(item) ~= 'table' then
-            return false
-        end
-        if type(item.title) ~= 'string' or type(item.url) ~= 'string' then
-            return false
-        end
-        if type(item.content) ~= 'string' then
-            return false
-        end
-    end
-    return true
-end
-
----@type table? cached tiered instance; nil when unavailable
-local tiered_cache = nil
-
----@return table? cache with put_global/get_global/put_local/get_local, or nil
-local function discovery_cache()
-    if tiered_cache ~= nil then
-        return tiered_cache
-    end
-    local ok, tiered = pcall(require, 'ai.cache.tiered')
-    if not ok or type(tiered) ~= 'table' or type(tiered.new) ~= 'function' then
-        return nil
-    end
-    -- new() never raises; a nil return just means "run uncached".
-    local cache = tiered.new({ global_ttl_s = DISCOVERY_CACHE_TTL_S })
-    if cache ~= nil then
-        tiered_cache = cache
-    end
-    return cache
-end
-
----@param query any
----@return boolean
----@return string?
-local function validate_query(query)
-    if type(query) ~= 'string' or query == '' then
-        return false, 'query must be a non-empty string'
-    end
-    if #query > QUERY_LENGTH_MAX then
-        return false, 'query exceeds ' .. QUERY_LENGTH_MAX .. ' characters'
-    end
-    if query:find('%z') ~= nil then
-        return false, 'query contains NUL'
-    end
-    return true, nil
-end
-
----@return string? base URL, or nil when SearXNG is not configured
-local function searxng_base()
-    local url = vim.env.SEARXNG_URL
-    if type(url) ~= 'string' or url == '' then
-        return nil
-    end
-    if url:match('^https?://[^/]+$') == nil and url:match('^https?://[^/]+/') == nil then
-        return nil
-    end
-    if url:find('[%c%s]') ~= nil then
-        return nil
-    end
-    return url:gsub('/+$', '')
-end
-
----@param stdout string
----@param callback fun(err: string?, results: McpSearchResult[]?)
-local function parse_searxng(stdout, callback)
-    local ok, searxng = pcall(require, 'config.nav.searxng')
-    if not ok or type(searxng) ~= 'table' or type(searxng.parse) ~= 'function' then
-        callback('config.nav.searxng is unavailable', nil)
-        return
-    end
-    local results, parse_err = searxng.parse(stdout)
-    if results == nil then
-        callback('SearXNG parse failed: ' .. tostring(parse_err), nil)
-        return
-    end
-    local trimmed = {}
-    for index, item in ipairs(results) do
-        if index > SEARCH_RESULTS_MAX then
-            break
-        end
-        trimmed[#trimmed + 1] = { title = item.title, url = item.url, content = item.content }
-    end
-    callback(nil, trimmed)
-end
-
----@param base string
----@param query string
----@param callback fun(err: string?, results: McpSearchResult[]?)
-local function search_searxng(base, query, callback)
-    -- Mirrors config.nav.searxng's argv: -q first to ignore curlrc, POST
-    -- keeps the query out of the URL, bounded time and response size.
-    local argv = {
-        'curl',
-        '-q',
-        '--silent',
-        '--show-error',
-        '--fail',
-        '--proto',
-        '=http,https',
-        '--connect-timeout',
-        '5',
-        '--max-time',
-        '20',
-        '--max-filesize',
-        '2097152',
-        '--data-urlencode',
-        'format=json',
-        '--data-urlencode',
-        'q=' .. query .. ' MCP server',
-        '--data-urlencode',
-        'pageno=1',
-        '--url',
-        base .. '/search',
-    }
-    local result = vim.system(argv, { text = true, timeout = CURL_TIMEOUT_MS }):wait()
-    if result.code ~= 0 then
-        callback('SearXNG request failed: ' .. (result.stderr or ''):sub(1, 200), nil)
-        return
-    end
-    parse_searxng(result.stdout or '', callback)
-end
-
----@param key string
----@param query string
----@param callback fun(err: string?, results: McpSearchResult[]?)
-local function search_brave(key, query, callback)
-    local argv = {
-        'curl',
-        '-q',
-        '--silent',
-        '--show-error',
-        '--fail',
-        '--proto',
-        '=https',
-        '--connect-timeout',
-        '5',
-        '--max-time',
-        '20',
-        '--max-filesize',
-        '2097152',
-        '--get',
-        '--data-urlencode',
-        'q=' .. query .. ' MCP server',
-        '--data-urlencode',
-        'count=' .. SEARCH_RESULTS_MAX,
-        '--header',
-        'X-Subscription-Token: ' .. key,
-        '--url',
-        BRAVE_ENDPOINT,
-    }
-    local result = vim.system(argv, { text = true, timeout = CURL_TIMEOUT_MS }):wait()
-    if result.code ~= 0 then
-        callback('Brave request failed: ' .. (result.stderr or ''):sub(1, 200), nil)
-        return
-    end
-    local ok, decoded = pcall(vim.json.decode, result.stdout or '')
-    if not ok or type(decoded) ~= 'table' then
-        callback('Brave returned invalid JSON', nil)
-        return
-    end
-    local web = decoded.web
-    if type(web) ~= 'table' or type(web.results) ~= 'table' then
-        callback('Brave returned no web results', nil)
-        return
-    end
-    local results = {}
-    for index, item in ipairs(web.results) do
-        if index > SEARCH_RESULTS_MAX then
-            break
-        end
-        if type(item) == 'table' and type(item.url) == 'string' and item.url ~= '' then
-            results[#results + 1] = {
-                title = type(item.title) == 'string' and item.title:sub(1, 200) or '',
-                url = item.url,
-                content = type(item.description) == 'string' and item.description:sub(1, 500) or '',
-            }
-        end
-    end
-    callback(nil, results)
-end
-
----@param query string
----@param callback fun(err: string?, results: McpSearchResult[]?)
-function M.search(query, callback)
-    assert(type(callback) == 'function', 'callback must be a function')
-    local valid, validation_err = validate_query(query)
-    if not valid then
-        callback(validation_err, nil)
-        return
-    end
-    assert(validation_err == nil, 'validate_query returned false with no error')
-    if vim.fn.executable('curl') ~= 1 then
-        callback('curl is not installed', nil)
-        return
-    end
-    -- Two-tier result cache (best-effort): the 5-minute local tier
-    -- absorbs repeated queries inside one session; the 1-hour
-    -- global tier survives restarts. Any cache failure -- corrupt
-    -- disk, bad shape, missing module -- falls through to a live
-    -- search, so cached staleness can never break this function.
-    local cache = discovery_cache()
-    local cache_key = 'mcp_discovery:' .. query
-    if cache ~= nil then
-        local cached = cache.get_local(cache_key)
-        if not valid_cached(cached) then
-            cached = cache.get_global(cache_key)
-        end
-        if valid_cached(cached) then
-            callback(nil, copy_results(cached))
-            return
-        end
-    end
-    local function caching_callback(err, results)
-        if err == nil and valid_cached(results) and cache ~= nil then
-            local snapshot = copy_results(results)
-            cache.put_local(cache_key, snapshot)
-            cache.put_global(cache_key, snapshot)
-        end
-        callback(err, results)
-    end
-    local base = searxng_base()
-    if base ~= nil then
-        search_searxng(base, query, caching_callback)
-        return
-    end
-    local key = vim.env.BRAVE_API_KEY
-    if type(key) == 'string' and key ~= '' then
-        search_brave(key, query, caching_callback)
-        return
-    end
-    callback('no search backend: set SEARXNG_URL or BRAVE_API_KEY', nil)
 end
 
 ---Count non-overlapping plain-text occurrences; query terms are
@@ -317,6 +75,49 @@ local function count_occurrences(haystack, needle)
         from = found_end + 1
     end
     return count
+end
+
+---@type table? cached tiered instance; nil when unavailable
+local tiered_cache = nil
+
+---@return table? cache with put_global/get_global/put_local/get_local, or nil
+local function discovery_cache()
+    if tiered_cache ~= nil then
+        return tiered_cache
+    end
+    local ok, tiered = pcall(require, 'ai.cache.tiered')
+    if not ok or type(tiered) ~= 'table' or type(tiered.new) ~= 'function' then
+        return nil
+    end
+    -- new() never raises; a nil return just means "run uncached".
+    local cache = tiered.new({ global_ttl_s = DISCOVERY_CACHE_TTL_S })
+    if cache ~= nil then
+        tiered_cache = cache
+    end
+    return cache
+end
+
+---@param stdout string
+---@param callback fun(err: string?, results: McpSearchResult[]?)
+local function parse_searxng(stdout, callback)
+    local ok, searxng = pcall(require, 'config.nav.searxng')
+    if not ok or type(searxng) ~= 'table' or type(searxng.parse) ~= 'function' then
+        callback('config.nav.searxng is unavailable', nil)
+        return
+    end
+    local results, parse_err = searxng.parse(stdout)
+    if results == nil then
+        callback('SearXNG parse failed: ' .. tostring(parse_err), nil)
+        return
+    end
+    local trimmed = {}
+    for index, item in ipairs(results) do
+        if index > SEARCH_RESULTS_MAX then
+            break
+        end
+        trimmed[#trimmed + 1] = { title = item.title, url = item.url, content = item.content }
+    end
+    callback(nil, trimmed)
 end
 
 ---Weighted token-overlap relevance used as the fine stage by
@@ -351,50 +152,155 @@ local function relevance_fine(items, query)
     return hits
 end
 
----Optional coarse-to-fine ranked search. Runs the normal M.search
----(including its cache), then narrows with ai.retrieval.two_stage:
----a cheap block pass over all results, then the fine scorer only
----on the candidate pool. M.search itself is unchanged; ranking
----failures fall back to unranked results rather than erroring.
+---@return string? base URL, or nil when SearXNG is not configured
+local function searxng_base()
+    local url = vim.env.SEARXNG_URL
+    if type(url) ~= 'string' or url == '' then
+        return nil
+    end
+    if url:match('^https?://[^/]+$') == nil and url:match('^https?://[^/]+/') == nil then
+        return nil
+    end
+    if url:find('[%c%s]') ~= nil then
+        return nil
+    end
+    return (url:gsub('/+$', ''))
+end
+
+---@param key string
 ---@param query string
 ---@param callback fun(err: string?, results: McpSearchResult[]?)
----@param opts? McpRankOpts
-function M.search_ranked(query, callback, opts)
-    assert(type(callback) == 'function', 'callback must be a function')
-    M.search(query, function(err, results)
-        if err ~= nil or results == nil then
-            callback(err, results)
-            return
+local function search_brave(key, query, callback)
+    local argv = {
+        'curl',
+        '-q',
+        '--silent',
+        '--show-error',
+        '--fail',
+        '--proto',
+        '=https',
+        '--connect-timeout',
+        '5',
+        '--max-time',
+        '20',
+        '--max-filesize',
+        '2097152',
+        '--get',
+        '--data-urlencode',
+        'q=' .. query .. ' MCP server',
+        '--data-urlencode',
+        'count=' .. SEARCH_RESULTS_MAX,
+        '--header',
+        'X-Subscription-Token: ' .. key,
+        '--url',
+        BRAVE_ENDPOINT,
+    }
+    local brave_obj = vim.system(argv, { text = true, timeout = CURL_TIMEOUT_MS })
+    ---@cast brave_obj vim.SystemObj
+    local result = brave_obj:wait()
+    if result.code ~= 0 then
+        callback('Brave request failed: ' .. (result.stderr or ''):sub(1, 200), nil)
+        return
+    end
+    local ok, decoded = pcall(vim.json.decode, result.stdout or '')
+    if not ok or type(decoded) ~= 'table' then
+        callback('Brave returned invalid JSON', nil)
+        return
+    end
+    local web = decoded.web
+    if type(web) ~= 'table' or type(web.results) ~= 'table' then
+        callback('Brave returned no web results', nil)
+        return
+    end
+    local results = {}
+    for index, item in ipairs(web.results) do
+        if index > SEARCH_RESULTS_MAX then
+            break
         end
-        local rank_opts = opts or {}
-        local ok, two_stage = pcall(require, 'ai.retrieval.two_stage')
-        if not ok or type(two_stage) ~= 'table' or type(two_stage.rank) ~= 'function' then
-            callback(nil, results)
-            return
+        if type(item) == 'table' and type(item.url) == 'string' and item.url ~= '' then
+            results[#results + 1] = {
+                title = type(item.title) == 'string' and item.title:sub(1, 200) or '',
+                url = item.url,
+                content = type(item.description) == 'string' and item.description:sub(1, 500) or '',
+            }
         end
-        local fine_fn = rank_opts.fine_fn
-        if fine_fn == nil then
-            fine_fn = relevance_fine
+    end
+    callback(nil, results)
+end
+
+---@param base string
+---@param query string
+---@param callback fun(err: string?, results: McpSearchResult[]?)
+local function search_searxng(base, query, callback)
+    -- Mirrors config.nav.searxng's argv: -q first to ignore curlrc, POST
+    -- keeps the query out of the URL, bounded time and response size.
+    local argv = {
+        'curl',
+        '-q',
+        '--silent',
+        '--show-error',
+        '--fail',
+        '--proto',
+        '=http,https',
+        '--connect-timeout',
+        '5',
+        '--max-time',
+        '20',
+        '--max-filesize',
+        '2097152',
+        '--data-urlencode',
+        'format=json',
+        '--data-urlencode',
+        'q=' .. query .. ' MCP server',
+        '--data-urlencode',
+        'pageno=1',
+        '--url',
+        base .. '/search',
+    }
+    local searx_obj = vim.system(argv, { text = true, timeout = CURL_TIMEOUT_MS })
+    ---@cast searx_obj vim.SystemObj
+    local result = searx_obj:wait()
+    if result.code ~= 0 then
+        callback('SearXNG request failed: ' .. (result.stderr or ''):sub(1, 200), nil)
+        return
+    end
+    parse_searxng(result.stdout or '', callback)
+end
+
+---@param value any
+---@return boolean the value is a well-shaped cached result list
+local function valid_cached(value)
+    if type(value) ~= 'table' then
+        return false
+    end
+    for _, item in ipairs(value) do
+        if type(item) ~= 'table' then
+            return false
         end
-        local ranked = two_stage.rank(results, query, {
-            block_size = rank_opts.block_size,
-            pool_size = rank_opts.pool_size,
-            top_k = rank_opts.top_k,
-            text_of = function(item)
-                return (item.title or '') .. '\n' .. (item.url or '') .. '\n' .. (item.content or '')
-            end,
-            fine_fn = fine_fn,
-        })
-        if ranked == nil then
-            callback(nil, results)
-            return
+        if type(item.title) ~= 'string' or type(item.url) ~= 'string' then
+            return false
         end
-        local out = {}
-        for _, hit in ipairs(ranked) do
-            out[#out + 1] = hit.item
+        if type(item.content) ~= 'string' then
+            return false
         end
-        callback(nil, out)
-    end)
+    end
+    return true
+end
+
+---@param query any
+---@return boolean
+---@return string?
+local function validate_query(query)
+    if type(query) ~= 'string' or query == '' then
+        return false, 'query must be a non-empty string'
+    end
+    if #query > QUERY_LENGTH_MAX then
+        return false, 'query exceeds ' .. QUERY_LENGTH_MAX .. ' characters'
+    end
+    if query:find('%z') ~= nil then
+        return false, 'query contains NUL'
+    end
+    return true, nil
 end
 
 ---@param result McpSearchResult
@@ -487,6 +393,58 @@ function M.install_menu(query)
 end
 
 ---@param query string
+---@param callback fun(err: string?, results: McpSearchResult[]?)
+function M.search(query, callback)
+    assert(type(callback) == 'function', 'callback must be a function')
+    local valid, validation_err = validate_query(query)
+    if not valid then
+        callback(validation_err, nil)
+        return
+    end
+    assert(validation_err == nil, 'validate_query returned false with no error')
+    if vim.fn.executable('curl') ~= 1 then
+        callback('curl is not installed', nil)
+        return
+    end
+    -- Two-tier result cache (best-effort): the 5-minute local tier
+    -- absorbs repeated queries inside one session; the 1-hour
+    -- global tier survives restarts. Any cache failure -- corrupt
+    -- disk, bad shape, missing module -- falls through to a live
+    -- search, so cached staleness can never break this function.
+    local cache = discovery_cache()
+    local cache_key = 'mcp_discovery:' .. query
+    if cache ~= nil then
+        local cached = cache.get_local(cache_key)
+        if not valid_cached(cached) then
+            cached = cache.get_global(cache_key)
+        end
+        if valid_cached(cached) then
+            callback(nil, copy_results(cached))
+            return
+        end
+    end
+    local function caching_callback(err, results)
+        if err == nil and valid_cached(results) and cache ~= nil then
+            local snapshot = copy_results(results)
+            cache.put_local(cache_key, snapshot)
+            cache.put_global(cache_key, snapshot)
+        end
+        callback(err, results)
+    end
+    local base = searxng_base()
+    if base ~= nil then
+        search_searxng(base, query, caching_callback)
+        return
+    end
+    local key = vim.env.BRAVE_API_KEY
+    if type(key) == 'string' and key ~= '' then
+        search_brave(key, query, caching_callback)
+        return
+    end
+    callback('no search backend: set SEARXNG_URL or BRAVE_API_KEY', nil)
+end
+
+---@param query string
 function M.search_menu(query)
     M.search(query, function(err, results)
         vim.schedule(function()
@@ -522,6 +480,52 @@ function M.search_menu(query)
                 end)
             end)
         end)
+    end)
+end
+
+---Optional coarse-to-fine ranked search. Runs the normal M.search
+---(including its cache), then narrows with ai.retrieval.two_stage:
+---a cheap block pass over all results, then the fine scorer only
+---on the candidate pool. M.search itself is unchanged; ranking
+---failures fall back to unranked results rather than erroring.
+---@param query string
+---@param callback fun(err: string?, results: McpSearchResult[]?)
+---@param opts? McpRankOpts
+function M.search_ranked(query, callback, opts)
+    assert(type(callback) == 'function', 'callback must be a function')
+    M.search(query, function(err, results)
+        if err ~= nil or results == nil then
+            callback(err, results)
+            return
+        end
+        local rank_opts = opts or {}
+        local ok, two_stage = pcall(require, 'ai.retrieval.two_stage')
+        if not ok or type(two_stage) ~= 'table' or type(two_stage.rank) ~= 'function' then
+            callback(nil, results)
+            return
+        end
+        local fine_fn = rank_opts.fine_fn
+        if fine_fn == nil then
+            fine_fn = relevance_fine
+        end
+        local ranked = two_stage.rank(results, query, {
+            block_size = rank_opts.block_size,
+            pool_size = rank_opts.pool_size,
+            top_k = rank_opts.top_k,
+            text_of = function(item)
+                return (item.title or '') .. '\n' .. (item.url or '') .. '\n' .. (item.content or '')
+            end,
+            fine_fn = fine_fn,
+        })
+        if ranked == nil then
+            callback(nil, results)
+            return
+        end
+        local out = {}
+        for _, hit in ipairs(ranked) do
+            out[#out + 1] = hit.item
+        end
+        callback(nil, out)
     end)
 end
 

@@ -10,8 +10,8 @@
 
 local M = {}
 
-local ARGV_MAX = 128
 local ARG_BYTES_MAX = 4096
+local ARGV_MAX = 128
 
 ---@class AiHarnessSandboxProfile
 ---@field name string
@@ -32,9 +32,9 @@ M.PROFILES = {
         env_allowlist = { 'PATH', 'HOME', 'LANG', 'LC_ALL', 'TERM' },
         limits = {
             cpu_ms = 30000,
+            file_bytes = 10485760,
             memory_bytes = 268435456,
             procs = 16,
-            file_bytes = 10485760,
             wall_ms = 60000,
         },
         tmp_separate = true,
@@ -47,9 +47,9 @@ M.PROFILES = {
         env_allowlist = { 'PATH', 'HOME', 'LANG', 'LC_ALL', 'TERM' },
         limits = {
             cpu_ms = 60000,
+            file_bytes = 104857600,
             memory_bytes = 536870912,
             procs = 32,
-            file_bytes = 104857600,
             wall_ms = 120000,
         },
         tmp_separate = true,
@@ -62,9 +62,9 @@ M.PROFILES = {
         env_allowlist = { 'PATH', 'HOME', 'LANG', 'LC_ALL', 'TERM' },
         limits = {
             cpu_ms = 120000,
+            file_bytes = 1073741824,
             memory_bytes = 1073741824,
             procs = 64,
-            file_bytes = 1073741824,
             wall_ms = 300000,
         },
         tmp_separate = true,
@@ -77,9 +77,9 @@ M.PROFILES = {
         env_allowlist = { 'PATH', 'HOME', 'LANG', 'LC_ALL', 'TERM' },
         limits = {
             cpu_ms = 300000,
+            file_bytes = 10737418240,
             memory_bytes = 2147483648,
             procs = 128,
-            file_bytes = 10737418240,
             wall_ms = 600000,
         },
         tmp_separate = true,
@@ -105,7 +105,7 @@ end
 ---strings, no interpolation. Returns ok without executing anything.
 ---@param profile AiHarnessSandboxProfile
 ---@param spec table
----@return boolean ok
+---@return boolean? ok
 ---@return string? err
 function M.check_spawn(profile, spec)
     if type(profile) ~= 'table' or type(profile.name) ~= 'string' then

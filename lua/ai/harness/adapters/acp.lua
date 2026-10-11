@@ -21,16 +21,16 @@ function M.probe()
     local ok_permissions = pcall(require, 'ai.acp.permissions')
     local available = ok_session and ok_permissions
     return {
-        available = available,
-        streaming = true,
-        cancellation = true,
-        resume = false,
-        permissions = true,
         artifacts = false,
+        available = available,
+        cancellation = true,
+        notes = 'resume unwired: ACP session resumption not verified in ai.acp',
+        permissions = true,
         remote = false,
+        resume = false,
+        streaming = true,
         tools = true,
         wired_start = true,
-        notes = 'resume unwired: ACP session resumption not verified in ai.acp',
     }
 end
 
@@ -56,10 +56,10 @@ function M.start(run, sink)
     generation_counter = generation_counter + 1
     local handle = {
         adapter = 'acp',
+        closed = false,
         generation = generation_counter,
         run_id = run.id,
         session_key = nil,
-        closed = false,
     }
     local my_generation = handle.generation
     local opts = {
@@ -133,14 +133,14 @@ function M.send_input(handle, input)
 end
 
 ---@param handle table
----@param reason string
+---@param _reason string
 ---@return boolean
-function M.cancel(handle, reason)
+function M.cancel(handle, _reason)
     assert(handle ~= nil, 'handle required')
     handle.generation = handle.generation + 1
     if handle.session_key ~= nil then
         pcall(function()
-            require('ai.acp.session').cancel(handle.session_key, reason)
+            require('ai.acp.session').cancel(handle.session_key)
         end)
     end
     return true

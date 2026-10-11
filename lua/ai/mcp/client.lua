@@ -21,15 +21,15 @@ local secrets = require('ai.mcp.secrets')
 
 local M = {}
 
-local MCP_PROTOCOL_VERSION = '2024-11-05'
+local INITIALIZE_TIMEOUT_MS = 15000
 local LINE_BYTES_MAX = 8 * 1024 * 1024
+local MCP_PROTOCOL_VERSION = '2024-11-05'
 local PENDING_REQUESTS_MAX = 64
 local REQUEST_TIMEOUT_MS_DEFAULT = 30000
-local INITIALIZE_TIMEOUT_MS = 15000
 
 ---@class McpPending
 ---@field callback fun(err: string?, result: table?)
----@field timer userdata?
+---@field timer uv.uv_timer_t?
 
 ---@class McpBackend
 ---@field send fun(payload: table, on_response: (fun(response: table))?)
@@ -78,6 +78,12 @@ end
 local function rose_backend(transport)
     ---@type McpBackend
     return {
+        close = function()
+            pcall(transport.stop)
+        end,
+        notify = function(payload)
+            transport.notify(payload.method, payload.params or {})
+        end,
         send = function(payload, on_response)
             if on_response ~= nil then
                 local id = payload.id
@@ -87,12 +93,6 @@ local function rose_backend(transport)
             else
                 transport.notify(payload.method, payload.params or {})
             end
-        end,
-        notify = function(payload)
-            transport.notify(payload.method, payload.params or {})
-        end,
-        close = function()
-            pcall(transport.stop)
         end,
     }
 end
@@ -191,18 +191,18 @@ local function native_backend(_session, proc_holder)
     end
     ---@type McpBackend
     return {
-        send = function(payload, _on_response)
-            write_line(payload)
-        end,
-        notify = function(payload)
-            write_line(payload)
-        end,
         close = function()
             local proc = proc_holder.proc
             proc_holder.proc = nil
             if proc ~= nil then
                 pcall(proc.kill, proc, 15)
             end
+        end,
+        notify = function(payload)
+            write_line(payload)
+        end,
+        send = function(payload, _on_response)
+            write_line(payload)
         end,
     }
 end
@@ -322,6 +322,7 @@ local function spawn_native(session, name, argv, entry)
     if not spawned then
         return false, 'failed to spawn ' .. entry.command .. ': ' .. tostring(process)
     end
+    ---@cast process vim.SystemObj
     proc_holder.proc = process
     return true, nil
 end
@@ -367,13 +368,13 @@ local function spawn(name, entry, on_ready)
 
     ---@type McpSession
     local session = {
-        name = name,
         backend = nil,
         buffer = '',
+        generation = 1,
+        name = name,
         next_id = 1,
         pending = {},
         ready = false,
-        generation = 1,
     }
     sessions[name] = session
 
@@ -390,6 +391,56 @@ local function spawn(name, entry, on_ready)
     end
 
     run_handshake(session, name, on_ready)
+end
+
+---@param name string
+---@return boolean
+function M.is_ready(name)
+    local session = sessions[name]
+    return session ~= nil and session.ready
+end
+
+---@param name string
+---@return boolean
+function M.is_running(name)
+    return sessions[name] ~= nil
+end
+
+---@param name string
+---@param method string
+---@param params table
+function M.notify(name, method, params)
+    local session = sessions[name]
+    if session == nil or not session.ready or session.backend == nil then
+        return
+    end
+    session.backend.notify({ jsonrpc = '2.0', method = method, params = params })
+end
+
+---@param name string
+---@param method string
+---@param params table
+---@param callback fun(err: string?, result: table?)
+---@param timeout_ms? integer
+function M.request(name, method, params, callback, timeout_ms)
+    assert(type(name) == 'string' and name ~= '', 'name must be a non-empty string')
+    assert(type(method) == 'string' and method ~= '', 'method must be a non-empty string')
+    assert(type(callback) == 'function', 'callback must be a function')
+    local session = sessions[name]
+    if session == nil or not session.ready then
+        callback('server is not running: ' .. name, nil)
+        return
+    end
+    -- An empty Lua table encodes as []; strict MCP servers require params
+    -- to be an object and silently drop the request otherwise.
+    if type(params) == 'table' and next(params) == nil then
+        params = vim.empty_dict()
+    end
+    send_request(session, {
+        jsonrpc = '2.0',
+        method = method,
+        params = params,
+    }, timeout_ms or REQUEST_TIMEOUT_MS_DEFAULT, callback)
 end
 
 ---@param name string
@@ -425,43 +476,6 @@ function M.start(name, on_ready)
 end
 
 ---@param name string
----@param method string
----@param params table
----@param callback fun(err: string?, result: table?)
----@param timeout_ms? integer
-function M.request(name, method, params, callback, timeout_ms)
-    assert(type(name) == 'string' and name ~= '', 'name must be a non-empty string')
-    assert(type(method) == 'string' and method ~= '', 'method must be a non-empty string')
-    assert(type(callback) == 'function', 'callback must be a function')
-    local session = sessions[name]
-    if session == nil or not session.ready then
-        callback('server is not running: ' .. name, nil)
-        return
-    end
-    -- An empty Lua table encodes as []; strict MCP servers require params
-    -- to be an object and silently drop the request otherwise.
-    if type(params) == 'table' and next(params) == nil then
-        params = vim.empty_dict()
-    end
-    send_request(session, {
-        jsonrpc = '2.0',
-        method = method,
-        params = params,
-    }, timeout_ms or REQUEST_TIMEOUT_MS_DEFAULT, callback)
-end
-
----@param name string
----@param method string
----@param params table
-function M.notify(name, method, params)
-    local session = sessions[name]
-    if session == nil or not session.ready or session.backend == nil then
-        return
-    end
-    session.backend.notify({ jsonrpc = '2.0', method = method, params = params })
-end
-
----@param name string
 function M.stop(name)
     local session = sessions[name]
     if session == nil then
@@ -478,19 +492,6 @@ function M.stop_all()
     for _, name in ipairs(names) do
         M.stop(name)
     end
-end
-
----@param name string
----@return boolean
-function M.is_running(name)
-    return sessions[name] ~= nil
-end
-
----@param name string
----@return boolean
-function M.is_ready(name)
-    local session = sessions[name]
-    return session ~= nil and session.ready
 end
 
 return M

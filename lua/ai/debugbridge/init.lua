@@ -71,12 +71,6 @@ local function validate_abs_path(path)
     return path, nil
 end
 
----Run a callback-style op to completion with a bound. The callback
----fires on the main loop, which vim.wait pumps.
----@param label string Op name for timeout errors
----@param starter fun(cb: fun(err: string?, result: any?))
----@return boolean ok
----@return any result_or_err
 ---Lift a fast sync backend fn into the (params, cb) bulk contract.
 ---A raise inside fn propagates to the lane's pcall, which turns it
 ---into an error reply.
@@ -170,61 +164,27 @@ local function build_backend(sessions, scanbreak, bsp)
         return dest, nil
     end
     return {
-        session_acquire = as_async(function(params)
-            local adapter, aerr = resolve_adapter(params.adapter_name)
-            if adapter == nil then
-                return false, aerr
-            end
-            local key, _, err = sessions.acquire({
-                lang = params.lang,
-                adapter = adapter,
-                config = {
-                    type = params.adapter_name,
-                    request = 'launch',
-                    name = 'debugbridge: ' .. params.target,
-                    program = params.target,
-                },
-                target = params.target,
-                project_root = params.project_root,
-            })
-            if key == nil then
-                return false, err
-            end
-            return true, { key = key }
-        end),
-        session_release = function(params)
-            local ok, err = sessions.release(params.key)
-            if not ok then
-                return false, err
-            end
-            return true, { released = true }
+        bsp_build = function(params, cb)
+            await_callback_op_async('bsp_build', function(cb2)
+                bsp.ensure(params.root, function(ensure_err)
+                    if ensure_err ~= nil then
+                        cb2(ensure_err)
+                        return
+                    end
+                    bsp.build_targets(params.root, params.targets, cb2)
+                end)
+            end, cb)
         end,
-        session_kill = function(params)
-            local ok, err = sessions.kill(params.key)
-            pcall(scanbreak.remove_stop_hook, params.key)
-            if not ok then
-                return false, err
-            end
-            return true, { killed = true }
-        end,
-        set_breakpoint = function(params)
-            local path, perr = validate_abs_path(params.file)
-            if path == nil then
-                return false, perr
-            end
-            local ok, bp = pcall(require, 'dap.breakpoints')
-            if not ok or type(bp) ~= 'table' or type(bp.set) ~= 'function' then
-                return false, 'dap.breakpoints unavailable'
-            end
-            local bufnr_ok, bufnr = pcall(vim.fn.bufadd, path)
-            if not bufnr_ok or type(bufnr) ~= 'number' then
-                return false, 'bufadd failed: ' .. tostring(bufnr)
-            end
-            local set_ok, set_err = pcall(bp.set, {}, bufnr, params.line)
-            if not set_ok then
-                return false, 'breakpoints.set failed: ' .. tostring(set_err)
-            end
-            return true, { file = path, line = params.line }
+        bsp_targets = function(params, cb)
+            await_callback_op_async('bsp_targets', function(cb2)
+                bsp.ensure(params.root, function(ensure_err)
+                    if ensure_err ~= nil then
+                        cb2(ensure_err)
+                        return
+                    end
+                    bsp.list_targets(params.root, cb2)
+                end)
+            end, cb)
         end,
         launch_scanned = as_async(function(params)
             local target, terr = validate_abs_path(params.target)
@@ -251,16 +211,16 @@ local function build_backend(sessions, scanbreak, bsp)
                 return false, 'refused: scanbreak verdict ' .. tostring(verdict)
             end
             local key, _, acquire_err = sessions.acquire({
-                lang = params.lang,
                 adapter = adapter,
                 config = {
-                    type = params.adapter_name,
-                    request = 'launch',
                     name = 'debugbridge: ' .. target,
                     program = target,
+                    request = 'launch',
+                    type = params.adapter_name,
                 },
-                target = target,
+                lang = params.lang,
                 project_root = params.project_root,
+                target = target,
             })
             if key == nil then
                 return false, acquire_err
@@ -270,38 +230,16 @@ local function build_backend(sessions, scanbreak, bsp)
                 scanbreak.install_stop_hook,
                 key,
                 flagged,
-                { sessions_module = sessions, quarantine_fn = quarantine_artifact }
+                { quarantine_fn = quarantine_artifact, sessions_module = sessions }
             )
             return true,
                 {
-                    key = key,
-                    verdict = verdict,
-                    stop_hook = hook_ok and hooked == true,
                     hook_error = (not hook_ok or not hooked) and tostring(hook_err or hooked) or nil,
+                    key = key,
+                    stop_hook = hook_ok and hooked == true,
+                    verdict = verdict,
                 }
         end),
-        bsp_build = function(params, cb)
-            await_callback_op_async('bsp_build', function(cb2)
-                bsp.ensure(params.root, function(ensure_err)
-                    if ensure_err ~= nil then
-                        cb2(ensure_err)
-                        return
-                    end
-                    bsp.build_targets(params.root, params.targets, cb2)
-                end)
-            end, cb)
-        end,
-        bsp_targets = function(params, cb)
-            await_callback_op_async('bsp_targets', function(cb2)
-                bsp.ensure(params.root, function(ensure_err)
-                    if ensure_err ~= nil then
-                        cb2(ensure_err)
-                        return
-                    end
-                    bsp.list_targets(params.root, cb2)
-                end)
-            end, cb)
-        end,
         quarantine = function(params)
             local path, perr = validate_abs_path(params.path)
             if path == nil then
@@ -319,6 +257,62 @@ local function build_backend(sessions, scanbreak, bsp)
                 return false, qerr
             end
             return true, { quarantined_to = dest }
+        end,
+        session_acquire = as_async(function(params)
+            local adapter, aerr = resolve_adapter(params.adapter_name)
+            if adapter == nil then
+                return false, aerr
+            end
+            local key, _, err = sessions.acquire({
+                adapter = adapter,
+                config = {
+                    name = 'debugbridge: ' .. params.target,
+                    program = params.target,
+                    request = 'launch',
+                    type = params.adapter_name,
+                },
+                lang = params.lang,
+                project_root = params.project_root,
+                target = params.target,
+            })
+            if key == nil then
+                return false, err
+            end
+            return true, { key = key }
+        end),
+        session_kill = function(params)
+            local ok, err = sessions.kill(params.key)
+            pcall(scanbreak.remove_stop_hook, params.key)
+            if not ok then
+                return false, err
+            end
+            return true, { killed = true }
+        end,
+        session_release = function(params)
+            local ok, err = sessions.release(params.key)
+            if not ok then
+                return false, err
+            end
+            return true, { released = true }
+        end,
+        set_breakpoint = function(params)
+            local path, perr = validate_abs_path(params.file)
+            if path == nil then
+                return false, perr
+            end
+            local ok, bp = pcall(require, 'dap.breakpoints')
+            if not ok or type(bp) ~= 'table' or type(bp.set) ~= 'function' then
+                return false, 'dap.breakpoints unavailable'
+            end
+            local bufnr_ok, bufnr = pcall(vim.fn.bufadd, path)
+            if not bufnr_ok or type(bufnr) ~= 'number' then
+                return false, 'bufadd failed: ' .. tostring(bufnr)
+            end
+            local set_ok, set_err = pcall(bp.set, {}, bufnr, params.line)
+            if not set_ok then
+                return false, 'breakpoints.set failed: ' .. tostring(set_err)
+            end
+            return true, { file = path, line = params.line }
         end,
         status = function(_params)
             local entry = {}
@@ -351,10 +345,10 @@ function M.setup(opts)
     end
     assert(opts == nil or type(opts) == 'table', 'debugbridge.setup expects a table or nil')
 
-    local sessions = require('ai.debugbridge.sessions')
-    local scanbreak = require('ai.debugbridge.scanbreak')
-    local bsp = require('ai.debugbridge.bsp')
     local api = require('ai.debugbridge.api')
+    local bsp = require('ai.debugbridge.bsp')
+    local scanbreak = require('ai.debugbridge.scanbreak')
+    local sessions = require('ai.debugbridge.sessions')
     assert(type(api.set_backend) == 'function', 'ai.debugbridge.api has no set_backend()')
     api.set_backend(build_backend(sessions, scanbreak, bsp))
 

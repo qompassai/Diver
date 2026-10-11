@@ -36,33 +36,35 @@
 
 local M = {}
 
-local sched = require('ai.sched')
 local bulk = require('ai.bulk')
+local sched = require('ai.sched')
 
 -- Forward declarations: the pump needs handle_line, and the bulk
 -- lane needs the pump, so both are assigned after the handlers are
 -- defined below. Every use happens after module load.
-local pump ---@type AiSched
-local bulk_lane ---@type AiBulkLane
+---@type AiSched
+local pump
+---@type AiBulkLane
+local bulk_lane
 
 ---@alias DataPipe uv.uv_pipe_t
 
-local SOCKET_FILENAME = 'ai-dataaccess.sock'
-local SOCKET_DIR_MODE = '0700'
-local LISTEN_BACKLOG = 128
-local MESSAGE_BYTES_MAX = 65536
+local ADAPTER_LENGTH_MAX = 32
+local CMD_LABEL_MAX = 64
 -- Simultaneous client connections. Each connection holds a bounded
 -- read buffer, but the count itself was unbounded: a hostile local
 -- client could exhaust memory by opening thousands of connections.
 local CONNECTION_COUNT_MAX = 64
-local ADAPTER_LENGTH_MAX = 32
-local DSN_TEXT_MAX = 4096
 local DSN_TABLE_JSON_MAX = 16384
+local DSN_TEXT_MAX = 4096
+local FALLBACK_REPLY = '{"ok":false,"error":"reply encode failed"}'
+local KEY_LENGTH_MAX = 2048
+local LISTEN_BACKLOG = 128
+local MESSAGE_BYTES_MAX = 65536
+local SOCKET_DIR_MODE = '0700'
+local SOCKET_FILENAME = 'ai-dataaccess.sock'
 local TEXT_LENGTH_MAX = 65536
 local TOKEN_LENGTH_MAX = 128
-local KEY_LENGTH_MAX = 2048
-local CMD_LABEL_MAX = 64
-local FALLBACK_REPLY = '{"ok":false,"error":"reply encode failed"}'
 
 ---@class DataBackend
 ---@field query fun(params: table<string, any>): boolean, any
@@ -191,12 +193,6 @@ local function send_reply(client, state, payload, close_after)
     end
 end
 
----Translate one backend call outcome into a protocol reply.
----@param client DataPipe
----@param state DataConnState
----@param pcall_ok boolean False when the backend function raised.
----@param backend_ok boolean The backend's own ok flag.
----@param result any The backend's result value or error.
 ---Scrub secrets from backend crash/error text before it crosses
 ---the socket. The backend redacts its own errors, but a raised panic
 ---bypasses that path, and tostring() of an error value can carry a
@@ -214,6 +210,12 @@ local function redact_error(text)
     return text
 end
 
+---Translate one backend call outcome into a protocol reply.
+---@param client DataPipe
+---@param state DataConnState
+---@param pcall_ok boolean False when the backend function raised.
+---@param backend_ok boolean The backend's own ok flag.
+---@param result any The backend's result value or error.
 local function send_backend_result(client, state, pcall_ok, backend_ok, result)
     if not pcall_ok then
         local detail = redact_error(tostring(backend_ok))
@@ -292,11 +294,11 @@ local function handle_list(client, state, _line, req)
 end
 
 local DISPATCH = {
-    query = handle_query,
-    confirm = handle_confirm,
-    status = handle_status,
     close = handle_close,
+    confirm = handle_confirm,
     list = handle_list,
+    query = handle_query,
+    status = handle_status,
 }
 
 ---@param client DataPipe
@@ -325,10 +327,10 @@ end
 ---'query' with it), so it is control. query alone does the heavy
 ---subprocess work and waits its turn.
 local CONTROL_COMMANDS = {
-    status = true,
-    list = true,
     close = true,
     confirm = true,
+    list = true,
+    status = true,
 }
 
 ---Classify one framed request line for the pump. Best-effort scan
@@ -357,9 +359,9 @@ local BULK_INFLIGHT_MAX = 16
 local BULK_WATCHDOG_MS = 60000
 
 bulk_lane = bulk.new({
-    send_reply = send_reply,
-    send_backend_result = send_backend_result,
     max_inflight = BULK_INFLIGHT_MAX,
+    send_backend_result = send_backend_result,
+    send_reply = send_reply,
     watchdog_ms = BULK_WATCHDOG_MS,
 })
 

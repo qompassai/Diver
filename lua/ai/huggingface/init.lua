@@ -36,8 +36,8 @@ local M = {}
 
 local api = vim.api
 
-local rce = require('security.rce')
 local hfapi = require('ai.huggingface.api')
+local rce = require('security.rce')
 
 local setup_done = false
 
@@ -45,12 +45,12 @@ local setup_done = false
 ---PyPI huggingface_hub 2.0.0 on 2026-09-27; the GitHub releases of
 ---huggingface/huggingface_hub track the same version line).
 local HF_VERSION_KNOWN = '2.0.0'
+local OUTPUT_TAIL_MAX = 40 -- output lines kept for transfer-stat floats.
+local PIP_TIMEOUT_MS = 15000 -- wall-clock cap for `pip show` probes.
+local REPO_PATTERN = '^[A-Za-z0-9_.-]+/[A-Za-z0-9_.-]+$' -- owner/name shape.
+local WALK_FILES_MAX = 500 -- files listed in an upload dry-run preview.
 ---Oldest git-xet this module reports on (verified tag: git-xet-v0.2.0).
 local XET_VERSION_KNOWN = '0.2.0'
-local REPO_PATTERN = '^[A-Za-z0-9_.-]+/[A-Za-z0-9_.-]+$' -- owner/name shape.
-local OUTPUT_TAIL_MAX = 40 -- output lines kept for transfer-stat floats.
-local WALK_FILES_MAX = 500 -- files listed in an upload dry-run preview.
-local PIP_TIMEOUT_MS = 15000 -- wall-clock cap for `pip show` probes.
 
 ---@class ai.huggingface.Check
 ---@field name string Tool or aspect probed, e.g. 'hf'.
@@ -320,7 +320,7 @@ local function maybe_ensure_hf_xet(select_impl)
         if choice == 1 then
             vim.cmd('botright 15split')
             local buf = api.nvim_get_current_buf()
-            vim.fn.termopen({ M.config.python_bin, '-m', 'pip', 'install', M.config.hf_xet_package })
+            vim.fn.jobstart({ M.config.python_bin, '-m', 'pip', 'install', M.config.hf_xet_package }, { term = true })
             api.nvim_buf_set_name(buf, 'huggingface://install/hf-xet')
             vim.notify(
                 'huggingface: installing hf-xet in the terminal below; re-run the command when it finishes',
@@ -754,7 +754,10 @@ local function cmd_update_check()
             update = function()
                 vim.cmd('botright 15split')
                 local buf = api.nvim_get_current_buf()
-                vim.fn.termopen({ M.config.python_bin, '-m', 'pip', 'install', '-U', 'huggingface_hub' })
+                vim.fn.jobstart(
+                    { M.config.python_bin, '-m', 'pip', 'install', '-U', 'huggingface_hub' },
+                    { term = true }
+                )
                 api.nvim_buf_set_name(buf, 'huggingface://install/huggingface_hub')
             end,
             migrations = MIGRATIONS_HUB,
@@ -936,35 +939,35 @@ function M.setup(config)
         return
     end
     setup_done = true
-    api.nvim_create_user_command('HfModels', function(cmd_opts)
-        cmd_search('models', cmd_opts.args)
-    end, { nargs = '?', desc = 'Search Hugging Face models' })
     api.nvim_create_user_command('HfDatasets', function(cmd_opts)
         cmd_search('datasets', cmd_opts.args)
     end, { nargs = '?', desc = 'Search Hugging Face datasets' })
-    api.nvim_create_user_command('HfPapers', function(cmd_opts)
-        cmd_search('papers', cmd_opts.args)
-    end, { nargs = '?', desc = 'Search Hugging Face papers' })
+    api.nvim_create_user_command('HfDocs', cmd_docs, { desc = 'Open the Hub API reference' })
     api.nvim_create_user_command('HfDownload', cmd_download, {
         nargs = '+',
         desc = 'Download a Hub repo via the hf CLI (optional revision)',
     })
-    api.nvim_create_user_command('HfUpload', cmd_upload, {
-        nargs = '+',
-        complete = 'file',
-        desc = 'Upload a path to a Hub repo (dry-run preview + confirm)',
-    })
-    api.nvim_create_user_command('HfXetStatus', cmd_xet_status, {
-        nargs = '?',
-        desc = 'git-xet registration, hf-xet availability, Hub xet probe',
-    })
-    api.nvim_create_user_command('HfValidate', cmd_validate, { desc = 'Per-tool validation report' })
+    api.nvim_create_user_command('HfModels', function(cmd_opts)
+        cmd_search('models', cmd_opts.args)
+    end, { nargs = '?', desc = 'Search Hugging Face models' })
+    api.nvim_create_user_command('HfPapers', function(cmd_opts)
+        cmd_search('papers', cmd_opts.args)
+    end, { nargs = '?', desc = 'Search Hugging Face papers' })
     api.nvim_create_user_command(
         'HfUpdateCheck',
         cmd_update_check,
         { desc = 'Update check for hf, huggingface_hub, git-xet' }
     )
-    api.nvim_create_user_command('HfDocs', cmd_docs, { desc = 'Open the Hub API reference' })
+    api.nvim_create_user_command('HfUpload', cmd_upload, {
+        nargs = '+',
+        complete = 'file',
+        desc = 'Upload a path to a Hub repo (dry-run preview + confirm)',
+    })
+    api.nvim_create_user_command('HfValidate', cmd_validate, { desc = 'Per-tool validation report' })
+    api.nvim_create_user_command('HfXetStatus', cmd_xet_status, {
+        nargs = '?',
+        desc = 'git-xet registration, hf-xet availability, Hub xet probe',
+    })
 end
 
 return M

@@ -10,8 +10,8 @@
 
 local M = {}
 
-local PROVIDERS_MAX = 64
 local ITEMS_MAX = 4096
+local PROVIDERS_MAX = 64
 
 ---@class AiHarnessContextItem
 ---@field provider string
@@ -24,10 +24,10 @@ local ITEMS_MAX = 4096
 
 ---Deterministic budget priority: lower wins.
 M.PRIORITY = {
-    required = 1,
-    task_local = 2,
     diagnostics = 3,
+    required = 1,
     retrieved = 4,
+    task_local = 2,
 }
 
 ---Create a snapshot for a workspace. Seal it after assembly.
@@ -38,7 +38,7 @@ function M.new_snapshot(workspace)
     if type(workspace) ~= 'string' or workspace == '' then
         return nil, 'context workspace must be a non-empty string'
     end
-    return { workspace = workspace, items = {}, sealed = false }
+    return { items = {}, sealed = false, workspace = workspace }
 end
 
 ---Register a provider: pure-ish `produce(snapshot) -> items|nil, err`.
@@ -68,7 +68,7 @@ function M.new_provider(name, priority, produce)
 end
 
 ---@param item table
----@return boolean ok
+---@return boolean? ok
 ---@return string? err
 local function validate_item(item)
     if type(item) ~= 'table' then
@@ -92,7 +92,7 @@ end
 ---Run a provider and attach its items to the snapshot.
 ---@param snapshot table
 ---@param provider table
----@return boolean ok
+---@return boolean? ok
 ---@return string? err
 function M.attach(snapshot, provider)
     assert(snapshot ~= nil, 'snapshot required')
@@ -178,16 +178,16 @@ function M.manifest(snapshot)
     local total_bytes = 0
     for _, item in ipairs(snapshot.items) do
         items[#items + 1] = {
-            provider = item.provider,
-            kind = item.kind,
-            path = item.path,
             bytes = item.bytes,
             hash = item.hash,
+            kind = item.kind,
+            path = item.path,
+            provider = item.provider,
             trust = item.trust,
         }
         total_bytes = total_bytes + item.bytes
     end
-    return { workspace = snapshot.workspace, total_bytes = total_bytes, items = items }
+    return { items = items, total_bytes = total_bytes, workspace = snapshot.workspace }
 end
 
 M.PROVIDERS_MAX = PROVIDERS_MAX

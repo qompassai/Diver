@@ -20,17 +20,17 @@
 
 local M = {}
 
-local SERVER_NAME = 'diver-mcp-server'
-local SERVER_VERSION = '0.1.0'
-local PROTOCOL_VERSION_DEFAULT = '2025-11-25'
-local SUPPORTED_VERSIONS = { ['2025-11-25'] = true, ['2024-11-05'] = true }
 -- Mirrors ai.mcp.client's framing bound so both sides agree on line size.
 local LINE_BYTES_MAX = 8 * 1024 * 1024
+local PROTOCOL_VERSION_DEFAULT = '2025-11-25'
+local SERVER_NAME = 'diver-mcp-server'
+local SERVER_VERSION = '0.1.0'
+local SUPPORTED_VERSIONS = { ['2024-11-05'] = true, ['2025-11-25'] = true }
 
+local ERR_INTERNAL = -32603
+local ERR_INVALID_PARAMS = -32602
 local ERR_INVALID_REQUEST = -32600
 local ERR_METHOD_NOT_FOUND = -32601
-local ERR_INVALID_PARAMS = -32602
-local ERR_INTERNAL = -32603
 local ERR_PARSE = -32700
 
 ---@class McpJsonCodec
@@ -54,7 +54,7 @@ local ERR_PARSE = -32700
 ---@return McpJsonCodec?
 local function default_json()
     if vim ~= nil and vim.json ~= nil and vim.json.encode ~= nil and vim.json.decode ~= nil then
-        return vim.json
+        return { decode = vim.json.decode, encode = vim.json.encode }
     end
     return nil
 end
@@ -96,8 +96,7 @@ end
 -- The payload is a fixed string on purpose: the codec just failed on this
 -- input, so the error path does not depend on the codec to format itself.
 -- (Built with concatenation over ERR_PARSE, still fixed at module load.)
-local PARSE_ERROR_LINE =
-    '{"jsonrpc":"2.0","id":null,"error":{"code":' .. ERR_PARSE .. ',"message":"Parse error"}}'
+local PARSE_ERROR_LINE = '{"jsonrpc":"2.0","id":null,"error":{"code":' .. ERR_PARSE .. ',"message":"Parse error"}}'
 
 ---@param server table
 local function send_parse_error(server)
@@ -140,6 +139,8 @@ end
 
 ---@param server table
 ---@param params table
+---@return table? result
+---@return McpServerError? error
 local function handle_tools_list(server, params)
     local cursor = params.cursor
     if cursor ~= nil and type(cursor) ~= 'string' then
@@ -151,6 +152,8 @@ end
 -- Note: params._meta carries the optional confirmation grant token.
 ---@param server table
 ---@param params table
+---@return table? result
+---@return McpServerError? error
 local function handle_tools_call(server, params)
     local name = params.name
     if type(name) ~= 'string' or name == '' then
@@ -304,13 +307,13 @@ function M.new(opts)
     assert(type(on_log) == 'function', 'opts.on_log must be a function')
 
     local server = {
+        handlers = {},
+        initialized = false,
         json = json,
-        write = opts.write,
+        notif_handlers = {},
         on_log = on_log,
         tools = opts.tools,
-        handlers = {},
-        notif_handlers = {},
-        initialized = false,
+        write = opts.write,
     }
 
     ---@param method string
@@ -318,7 +321,7 @@ function M.new(opts)
     function server:register(method, fn)
         assert(type(method) == 'string' and method ~= '', 'method must be a non-empty string')
         assert(type(fn) == 'function', 'handler must be a function')
-        server.handlers[method] = fn
+        self.handlers[method] = fn
     end
 
     ---@param method string
@@ -326,12 +329,12 @@ function M.new(opts)
     function server:on_notification(method, fn)
         assert(type(method) == 'string' and method ~= '', 'method must be a non-empty string')
         assert(type(fn) == 'function', 'handler must be a function')
-        server.notif_handlers[method] = fn
+        self.notif_handlers[method] = fn
     end
 
     ---@return boolean
     function server:is_initialized()
-        return server.initialized
+        return self.initialized
     end
 
     -- Feed one newline-stripped line from the transport. Never raises.
@@ -344,17 +347,17 @@ function M.new(opts)
             return
         end
         if #line > LINE_BYTES_MAX then
-            server.on_log('warn', 'dropped oversized line of ' .. #line .. ' bytes')
+            self.on_log('warn', 'dropped oversized line of ' .. #line .. ' bytes')
             return
         end
-        local ok, msg = pcall(server.json.decode, line)
+        local ok, msg = pcall(self.json.decode, line)
         if not ok then
-            server.on_log('warn', 'unparsable line, sent -32700')
+            self.on_log('warn', 'unparsable line, sent -32700')
             send_parse_error(server)
             return
         end
         if type(msg) ~= 'table' then
-            server.on_log('warn', 'dropped non-object line')
+            self.on_log('warn', 'dropped non-object line')
             return
         end
         dispatch(server, msg)
