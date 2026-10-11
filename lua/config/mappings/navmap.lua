@@ -125,18 +125,6 @@ local function attach(bufnr)
     core.install(OWNER, bufnr, maps)
 end
 
-function M.teardown()
-    core.teardown(OWNER)
-    for _, name in ipairs({ 'fzf', 'ripgrep', 'searxng' }) do
-        if modules[name] then
-            modules[name].cancel()
-        end
-    end
-    if modules.nt then
-        modules.nt.cancel_operations()
-    end
-end
-
 function M.setup(opts)
     opts = opts or {}
     assert(type(opts) == 'table')
@@ -203,6 +191,18 @@ function M.setup(opts)
         desc = 'Generate SCIP index for project',
     }
     core.install(OWNER, 0, maps)
+end
+
+function M.teardown()
+    core.teardown(OWNER)
+    for _, name in ipairs({ 'fzf', 'ripgrep', 'searxng' }) do
+        if modules[name] then
+            modules[name].cancel()
+        end
+    end
+    if modules.nt then
+        modules.nt.cancel_operations()
+    end
 end
 M.setup_navmap = M.setup
 return M
