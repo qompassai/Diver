@@ -27,23 +27,9 @@ local uv = vim.uv
 
 local M = {}
 
-local SOURCE = 'powershell-dap'
-
 --- Bound for process-listing invocations; a hung child must not freeze the
 --- editor.
 local POWERSHELL_COMMAND_TIMEOUT_MS = 15000
-
----@type string[]
-local ROOT_MARKERS = {
-    '.psd1',
-    '.psm1',
-    'PSScriptAnalyzerSettings.psd1',
-    'psakefile.ps1',
-    'build.ps1',
-    'build.psd1',
-    'module.psd1',
-    '.git',
-}
 
 ---@type string[]
 local PSES_ROOTS = {
@@ -63,6 +49,20 @@ local PSES_ROOTS = {
 
     '/opt/PowerShellEditorServices',
 }
+
+---@type string[]
+local ROOT_MARKERS = {
+    '.psd1',
+    '.psm1',
+    'PSScriptAnalyzerSettings.psd1',
+    'psakefile.ps1',
+    'build.ps1',
+    'build.psd1',
+    'module.psd1',
+    '.git',
+}
+
+local SOURCE = 'powershell-dap'
 
 ---@type string[]
 local VSCODE_EXTENSION_ROOTS = {
@@ -326,10 +326,7 @@ local function session_directory()
 
     fn.mkdir(base, 'p', '0700')
 
-    local directory = fs.joinpath(
-        base,
-        ('%d-%d'):format(uv.os_getpid(), math.floor(uv.hrtime() / 1000000))
-    )
+    local directory = fs.joinpath(base, ('%d-%d'):format(uv.os_getpid(), math.floor(uv.hrtime() / 1000000)))
 
     fn.mkdir(directory, 'p', '0700')
 
@@ -386,13 +383,15 @@ end
 
 ---@return table[]
 local function powershell_processes_posix()
-    local result = vim.system({
+    local ps_obj = vim.system({
         'ps',
         '-eo',
         'pid=,comm=,args=',
     }, {
         text = true,
-    }):wait(POWERSHELL_COMMAND_TIMEOUT_MS)
+    })
+    ---@cast ps_obj vim.SystemObj
+    local result = ps_obj:wait(POWERSHELL_COMMAND_TIMEOUT_MS)
 
     if result.code ~= 0 then
         return {}
@@ -437,7 +436,7 @@ local function powershell_processes_windows()
         return {}
     end
 
-    local result = vim.system({
+    local pwsh_obj = vim.system({
         pwsh,
         '-NoProfile',
         '-NonInteractive',
@@ -446,7 +445,9 @@ local function powershell_processes_windows()
             .. 'ForEach-Object { "$($_.Id)`t$($_.ProcessName)" }',
     }, {
         text = true,
-    }):wait(POWERSHELL_COMMAND_TIMEOUT_MS)
+    })
+    ---@cast pwsh_obj vim.SystemObj
+    local result = pwsh_obj:wait(POWERSHELL_COMMAND_TIMEOUT_MS)
 
     if result.code ~= 0 then
         return {}
@@ -498,12 +499,7 @@ local function select_process()
     }
 
     for index, process in ipairs(processes) do
-        choices[#choices + 1] = ('%d. PID %-7d %s %s'):format(
-            index,
-            process.pid,
-            process.command,
-            process.arguments
-        )
+        choices[#choices + 1] = ('%d. PID %-7d %s %s'):format(index, process.pid, process.command, process.arguments)
     end
 
     local selected = fn.inputlist(choices)

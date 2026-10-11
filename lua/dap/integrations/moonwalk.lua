@@ -26,13 +26,11 @@ local fn = vim.fn
 
 local M = {}
 
-local SOURCE = 'dap-moonwalk'
+---@type integer
+local DEFAULT_ATTACH_PORT = 9966
 
 ---@type string
 local LOOPBACK = '127.0.0.1'
-
----@type integer
-local DEFAULT_ATTACH_PORT = 9966
 
 ---@type string[]
 ---Conservative inherited-environment allowlist used only when the
@@ -54,34 +52,18 @@ local SAFE_ENV_KEYS = {
 ---Key-name fragments that mark a value as secret for redaction. Lua patterns
 ---have no alternation, so fragments are matched one at a time.
 local SECRET_KEY_FRAGMENTS = {
-    'TOKEN',
-    'SECRET',
-    'PASSWORD',
-    'PASSWD',
-    'API_KEY',
     'API-KEY',
+    'API_KEY',
     'AUTH',
     'CREDENTIAL',
+    'PASSWD',
+    'PASSWORD',
     'PRIVATE',
+    'SECRET',
+    'TOKEN',
 }
 
----@param message string
----@param level? integer
-local function notify(message, level)
-    vim.notify(('[%s] %s'):format(SOURCE, message), level or vim.log.levels.INFO)
-end
-
----@param value unknown
----@return boolean
-local function nonempty_string(value)
-    return type(value) == 'string' and value ~= ''
-end
-
----@param path string
----@return boolean
-local function executable(path)
-    return nonempty_string(path) and fn.executable(path) == 1
-end
+local SOURCE = 'dap-moonwalk'
 
 ---@return table?
 ---The optional `security.adapter_policy` module, or nil when it is not
@@ -96,43 +78,22 @@ local function adapter_policy()
     return nil
 end
 
----@param key string
+---@param value unknown
 ---@return boolean
----True when the key name marks its value as secret.
-local function secret_key(key)
-    local upper = key:upper()
-
-    for index = 1, #SECRET_KEY_FRAGMENTS do
-        if upper:find(SECRET_KEY_FRAGMENTS[index], 1, true) ~= nil then
-            return true
-        end
-    end
-
-    return false
+local function nonempty_string(value)
+    return type(value) == 'string' and value ~= ''
 end
 
----@param key string
----@param value string
----@return string
----Render one `KEY=value` pair with secret-looking values redacted. Prefers
----`security.adapter_policy.redact`, which understands `KEY=value` shapes;
----falls back to the builtin fragment list when the module is unavailable.
-local function redact_kv(key, value)
-    local policy = adapter_policy()
+---@param path string
+---@return boolean
+local function executable(path)
+    return nonempty_string(path) and fn.executable(path) == 1
+end
 
-    if policy ~= nil and type(policy.redact) == 'function' then
-        local ok, cleaned = pcall(policy.redact, key .. '=' .. value)
-
-        if ok and type(cleaned) == 'string' then
-            return cleaned
-        end
-    end
-
-    if secret_key(key) then
-        return key .. '=[REDACTED]'
-    end
-
-    return key .. '=' .. value
+---@param message string
+---@param level? integer
+local function notify(message, level)
+    vim.notify(('[%s] %s'):format(SOURCE, message), level or vim.log.levels.INFO)
 end
 
 ---@param env table<string,string>
@@ -175,6 +136,45 @@ local function filter_env(env)
     return out
 end
 
+---True when the key name marks its value as secret.
+---@param key string
+---@return boolean
+local function secret_key(key)
+    local upper = key:upper()
+
+    for index = 1, #SECRET_KEY_FRAGMENTS do
+        if upper:find(SECRET_KEY_FRAGMENTS[index], 1, true) ~= nil then
+            return true
+        end
+    end
+
+    return false
+end
+
+---@param key string
+---@param value string
+---@return string
+---Render one `KEY=value` pair with secret-looking values redacted. Prefers
+---`security.adapter_policy.redact`, which understands `KEY=value` shapes;
+---falls back to the builtin fragment list when the module is unavailable.
+local function redact_kv(key, value)
+    local policy = adapter_policy()
+
+    if policy ~= nil and type(policy.redact) == 'function' then
+        local ok, cleaned = pcall(policy.redact, key .. '=' .. value)
+
+        if ok and type(cleaned) == 'string' then
+            return cleaned
+        end
+    end
+
+    if secret_key(key) then
+        return key .. '=[REDACTED]'
+    end
+
+    return key .. '=' .. value
+end
+
 ---@param env table<string,string>
 ---@return string
 ---One-line, secret-redacted summary of an environment table for logging.
@@ -186,6 +186,27 @@ local function describe_env(env)
     end
 
     table.sort(parts)
+    return table.concat(parts, ' ')
+end
+
+---@param config table
+---@return string
+---Redacted one-line summary of a DAP configuration, safe to log.
+function M.describe(config)
+    local parts = {
+        ('type=%s'):format(tostring(config.type)),
+        ('request=%s'):format(tostring(config.request)),
+        ('name=%s'):format(tostring(config.name)),
+    }
+
+    if config.program ~= nil then
+        parts[#parts + 1] = ('program=%s'):format(tostring(config.program))
+    end
+
+    if config.env ~= nil and type(config.env) == 'table' then
+        parts[#parts + 1] = ('env={%s}'):format(describe_env(config.env))
+    end
+
     return table.concat(parts, ' ')
 end
 
@@ -217,69 +238,10 @@ function M.resolve_executable(opts)
     return nil, 'no moonwalk executable: set vim.g.moonwalk_path or install moonwalk/lua-debug'
 end
 
----@param config table
----@return string
----Redacted one-line summary of a DAP configuration, safe to log.
-function M.describe(config)
-    local parts = {
-        ('type=%s'):format(tostring(config.type)),
-        ('request=%s'):format(tostring(config.request)),
-        ('name=%s'):format(tostring(config.name)),
-    }
-
-    if config.program ~= nil then
-        parts[#parts + 1] = ('program=%s'):format(tostring(config.program))
-    end
-
-    if config.env ~= nil and type(config.env) == 'table' then
-        parts[#parts + 1] = ('env={%s}'):format(describe_env(config.env))
-    end
-
-    return table.concat(parts, ' ')
-end
-
----@param opts? table
----@return table?, string?
----Build a plain nvim-dap-compatible launch configuration. Loopback-only by
----construction; the child environment is filtered through the adapter
----security policy.
-function M.launch_config(opts)
-    opts = opts or {}
-
-    local adapter, resolve_err = M.resolve_executable(opts)
-
-    if adapter == nil then
-        return nil, resolve_err
-    end
-
-    local program = opts.program
-
-    if not nonempty_string(program) then
-        return nil, 'launch requires opts.program'
-    end
-
-    local env = filter_env(opts.env or {})
-
-    ---@type table
-    local config = {
-        type = 'moonwalk',
-        request = 'launch',
-        name = opts.name or 'Moonwalk: Launch',
-        program = program,
-        cwd = opts.cwd or fn.getcwd(),
-        args = opts.args or {},
-        env = env,
-        adapter_command = adapter,
-    }
-
-    notify(M.describe(config), vim.log.levels.DEBUG)
-    return config, nil
-end
-
----@param opts? table
----@return table?, string?
 ---Build a plain nvim-dap-compatible attach configuration. The adapter
 ---endpoint is loopback-only (`127.0.0.1`); `opts.port` selects the port.
+---@param opts? table
+---@return table?, string?
 function M.attach_config(opts)
     opts = opts or {}
 
@@ -299,13 +261,50 @@ function M.attach_config(opts)
 
     ---@type table
     local config = {
-        type = 'moonwalk',
-        request = 'attach',
-        name = opts.name or 'Moonwalk: Attach',
-        host = LOOPBACK,
-        port = port,
-        env = env,
         adapter_command = adapter,
+        env = env,
+        host = LOOPBACK,
+        name = opts.name or 'Moonwalk: Attach',
+        port = port,
+        request = 'attach',
+        type = 'moonwalk',
+    }
+
+    notify(M.describe(config), vim.log.levels.DEBUG)
+    return config, nil
+end
+---Build a plain nvim-dap-compatible launch configuration. Loopback-only by
+---construction; the child environment is filtered through the adapter
+---security policy.
+---@param opts? table
+---@return table?, string?
+function M.launch_config(opts)
+    opts = opts or {}
+
+    local adapter, resolve_err = M.resolve_executable(opts)
+
+    if adapter == nil then
+        return nil, resolve_err
+    end
+
+    local program = opts.program
+
+    if not nonempty_string(program) then
+        return nil, 'launch requires opts.program'
+    end
+
+    local env = filter_env(opts.env or {})
+
+    ---@type table
+    local config = {
+        adapter_command = adapter,
+        args = opts.args or {},
+        cwd = opts.cwd or fn.getcwd(),
+        env = env,
+        name = opts.name or 'Moonwalk: Launch',
+        program = program,
+        request = 'launch',
+        type = 'moonwalk',
     }
 
     notify(M.describe(config), vim.log.levels.DEBUG)

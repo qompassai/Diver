@@ -7,67 +7,11 @@ local M = {}
 ---@class DapSqliteStoreOptions
 ---@field path? string
 
----@class DapStoreProjectRecord
----@field id string
----@field root string
-
----@class DapStoreSessionRecord
----@field id string
----@field project_id string
----@field host_name string
----@field adapter string
----@field configuration? string
----@field request? string
----@field executable? string
----@field cwd? string
----@field git_commit? string
----@field git_branch? string
----@field metadata? table
-
----@class DapStoreOutcomeRecord
----@field exit_code? integer
----@field result? string
-
----@class DapStoreEventRecord
----@field session_id string
----@field event_type string
----@field payload? table
-
----@class DapStoreBreakpointRecord
----@field id string
----@field project_id string
----@field path string
----@field line integer
----@field column_number? integer
----@field condition? string
----@field hit_condition? string
----@field log_message? string
----@field enabled? boolean
-
----@class DapStoreMetricRecord
----@field session_id string
----@field adapter string
----@field metric_name string
----@field metric_value number
----@field unit? string
----@field metadata? table
-
----@type DapSqliteStoreOptions
-local options = {}
-
 ---@type boolean?
 local available_cache
 
----@return string
-local function database_path()
-    local configured = options.path or vim.env.DIVER_DAP_SQLITE_DATABASE
-
-    if configured and configured ~= '' then
-        return vim.fs.normalize(configured)
-    end
-
-    return vim.fs.joinpath(vim.fn.stdpath('state'), 'dap', 'dap.sqlite3')
-end
+---@type DapSqliteStoreOptions
+local options = {}
 
 ---Encode positional values for a SQL template: plain values via
 ---common.literal, values at `json_indexes` via common.json. Aborts with
@@ -91,7 +35,18 @@ local function build_sql(template, values, json_indexes)
         end
         literals[i] = encoded
     end
-    return template:format(table.unpack(literals))
+    return template:format(unpack(literals))
+end
+
+---@return string
+local function database_path()
+    local configured = options.path or vim.env.DIVER_DAP_SQLITE_DATABASE
+
+    if configured and configured ~= '' then
+        return vim.fs.normalize(configured)
+    end
+
+    return vim.fs.joinpath(vim.fn.stdpath('state'), 'dap', 'dap.sqlite3')
 end
 
 ---@param callback? fun(ok: boolean, result: vim.SystemCompleted)
@@ -102,11 +57,96 @@ local function fail_async(callback, err)
             callback(false, {
                 code = 1,
                 signal = 0,
-                stdout = '',
                 stderr = err,
+                stdout = '',
             })
         end)
     end
+end
+
+---@return boolean
+function M.available()
+    if available_cache == nil then
+        available_cache = vim.fn.executable('sqlite3') == 1
+    end
+    return available_cache
+end
+
+---@param breakpoint DapStoreBreakpointRecord
+---@param callback? fun(ok: boolean, result?: vim.SystemCompleted)
+function M.breakpoint_put(breakpoint, callback)
+    local sql, err = build_sql(
+        [[
+INSERT INTO dap_breakpoints (
+  id, project_id, path, line, column_number,
+  condition, hit_condition, log_message, enabled
+)
+VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s)
+ON CONFLICT(project_id, path, line, column_number)
+DO UPDATE SET
+  condition = excluded.condition,
+  hit_condition = excluded.hit_condition,
+  log_message = excluded.log_message,
+  enabled = excluded.enabled,
+  updated_at = CURRENT_TIMESTAMP;
+]],
+        {
+            breakpoint.id,
+            breakpoint.project_id,
+            breakpoint.path,
+            breakpoint.line,
+            breakpoint.column_number,
+            breakpoint.condition,
+            breakpoint.hit_condition,
+            breakpoint.log_message,
+            breakpoint.enabled ~= false and 1 or 0,
+        }
+    )
+    if not sql then
+        fail_async(callback, err or 'failed to build query')
+        return
+    end
+
+    M.exec(sql, callback)
+end
+
+---@param project DapStoreProjectRecord
+---@param callback? fun(ok: boolean, result?: vim.SystemCompleted)
+function M.ensure_project(project, callback)
+    local sql, err = build_sql(
+        [[
+INSERT INTO dap_projects (id, root)
+VALUES (%s, %s)
+ON CONFLICT(root)
+DO UPDATE SET updated_at = CURRENT_TIMESTAMP;
+]],
+        { project.id, project.root }
+    )
+    if not sql then
+        fail_async(callback, err or 'failed to build query')
+        return
+    end
+
+    M.exec(sql, callback)
+end
+
+---@param event DapStoreEventRecord
+---@param callback? fun(ok: boolean, result?: vim.SystemCompleted)
+function M.event_append(event, callback)
+    local sql, err = build_sql(
+        [[
+INSERT INTO dap_events (session_id, event_type, payload)
+VALUES (%s, %s, %s);
+]],
+        { event.session_id, event.event_type, event.payload },
+        { [3] = true }
+    )
+    if not sql then
+        fail_async(callback, err or 'failed to build query')
+        return
+    end
+
+    M.exec(sql, callback)
 end
 
 ---@param sql string
@@ -146,40 +186,6 @@ function M.exec(sql, callback)
     end)
 end
 
----@return boolean
-function M.available()
-    if available_cache == nil then
-        available_cache = vim.fn.executable('sqlite3') == 1
-    end
-    return available_cache
-end
-
----@param opts? DapSqliteStoreOptions
----@param callback? fun(ok: boolean, error?: string)
-function M.setup(opts, callback)
-    -- Fresh defaults on every setup: a previous setup's path must not leak
-    -- into a later one.
-    options = vim.tbl_deep_extend('force', {}, opts or {})
-    available_cache = nil
-
-    if not M.available() then
-        if callback then
-            callback(false, 'sqlite3 is not executable')
-        end
-        return
-    end
-
-    -- Create the database directory once here; M.exec assumes setup ran.
-    vim.fn.mkdir(vim.fs.dirname(database_path()), 'p')
-
-    M.exec(schema.sqlite, function(ok, result)
-        local err = ok and nil or vim.trim(result.stderr or 'SQLite schema initialization failed')
-        if callback then
-            callback(ok, err)
-        end
-    end)
-end
-
 ---@param callback fun(ok: boolean, error?: string)
 function M.health(callback)
     M.exec('SELECT 1;', function(ok, result)
@@ -187,17 +193,46 @@ function M.health(callback)
     end)
 end
 
----@param project DapStoreProjectRecord
+---@param metric DapStoreMetricRecord
 ---@param callback? fun(ok: boolean, result?: vim.SystemCompleted)
-function M.ensure_project(project, callback)
+function M.metric_put(metric, callback)
     local sql, err = build_sql(
         [[
-INSERT INTO dap_projects (id, root)
-VALUES (%s, %s)
-ON CONFLICT(root)
-DO UPDATE SET updated_at = CURRENT_TIMESTAMP;
+INSERT INTO dap_adapter_metrics (
+  session_id, adapter, metric_name, metric_value, unit, metadata
+)
+VALUES (%s, %s, %s, %s, %s, %s);
 ]],
-        { project.id, project.root }
+        {
+            metric.session_id,
+            metric.adapter,
+            metric.metric_name,
+            metric.metric_value,
+            metric.unit,
+            metric.metadata,
+        },
+        { [6] = true }
+    )
+    if not sql then
+        fail_async(callback, err or 'failed to build query')
+        return
+    end
+
+    M.exec(sql, callback)
+end
+---@param session_id string
+---@param outcome DapStoreOutcomeRecord
+---@param callback? fun(ok: boolean, result?: vim.SystemCompleted)
+function M.session_finish(session_id, outcome, callback)
+    local sql, err = build_sql(
+        [[
+UPDATE dap_sessions
+SET ended_at = CURRENT_TIMESTAMP,
+    exit_code = %s,
+    result = %s
+WHERE id = %s;
+]],
+        { outcome.exit_code, outcome.result, session_id }
     )
     if not sql then
         fail_async(callback, err or 'failed to build query')
@@ -244,111 +279,30 @@ VALUES (
     M.exec(sql, callback)
 end
 
----@param session_id string
----@param outcome DapStoreOutcomeRecord
----@param callback? fun(ok: boolean, result?: vim.SystemCompleted)
-function M.session_finish(session_id, outcome, callback)
-    local sql, err = build_sql(
-        [[
-UPDATE dap_sessions
-SET ended_at = CURRENT_TIMESTAMP,
-    exit_code = %s,
-    result = %s
-WHERE id = %s;
-]],
-        { outcome.exit_code, outcome.result, session_id }
-    )
-    if not sql then
-        fail_async(callback, err or 'failed to build query')
+---@param opts? DapSqliteStoreOptions
+---@param callback? fun(ok: boolean, error?: string)
+function M.setup(opts, callback)
+    -- Fresh defaults on every setup: a previous setup's path must not leak
+    -- into a later one.
+    options = vim.tbl_deep_extend('force', {}, opts or {})
+    available_cache = nil
+
+    if not M.available() then
+        if callback then
+            callback(false, 'sqlite3 is not executable')
+        end
         return
     end
 
-    M.exec(sql, callback)
-end
+    -- Create the database directory once here; M.exec assumes setup ran.
+    vim.fn.mkdir(vim.fs.dirname(database_path()), 'p')
 
----@param event DapStoreEventRecord
----@param callback? fun(ok: boolean, result?: vim.SystemCompleted)
-function M.event_append(event, callback)
-    local sql, err = build_sql(
-        [[
-INSERT INTO dap_events (session_id, event_type, payload)
-VALUES (%s, %s, %s);
-]],
-        { event.session_id, event.event_type, event.payload },
-        { [3] = true }
-    )
-    if not sql then
-        fail_async(callback, err or 'failed to build query')
-        return
-    end
-
-    M.exec(sql, callback)
-end
-
----@param breakpoint DapStoreBreakpointRecord
----@param callback? fun(ok: boolean, result?: vim.SystemCompleted)
-function M.breakpoint_put(breakpoint, callback)
-    local sql, err = build_sql(
-        [[
-INSERT INTO dap_breakpoints (
-  id, project_id, path, line, column_number,
-  condition, hit_condition, log_message, enabled
-)
-VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s)
-ON CONFLICT(project_id, path, line, column_number)
-DO UPDATE SET
-  condition = excluded.condition,
-  hit_condition = excluded.hit_condition,
-  log_message = excluded.log_message,
-  enabled = excluded.enabled,
-  updated_at = CURRENT_TIMESTAMP;
-]],
-        {
-            breakpoint.id,
-            breakpoint.project_id,
-            breakpoint.path,
-            breakpoint.line,
-            breakpoint.column_number,
-            breakpoint.condition,
-            breakpoint.hit_condition,
-            breakpoint.log_message,
-            breakpoint.enabled ~= false and 1 or 0,
-        }
-    )
-    if not sql then
-        fail_async(callback, err or 'failed to build query')
-        return
-    end
-
-    M.exec(sql, callback)
-end
-
----@param metric DapStoreMetricRecord
----@param callback? fun(ok: boolean, result?: vim.SystemCompleted)
-function M.metric_put(metric, callback)
-    local sql, err = build_sql(
-        [[
-INSERT INTO dap_adapter_metrics (
-  session_id, adapter, metric_name, metric_value, unit, metadata
-)
-VALUES (%s, %s, %s, %s, %s, %s);
-]],
-        {
-            metric.session_id,
-            metric.adapter,
-            metric.metric_name,
-            metric.metric_value,
-            metric.unit,
-            metric.metadata,
-        },
-        { [6] = true }
-    )
-    if not sql then
-        fail_async(callback, err or 'failed to build query')
-        return
-    end
-
-    M.exec(sql, callback)
+    M.exec(schema.sqlite, function(ok, result)
+        local err = ok and nil or vim.trim(result.stderr or 'SQLite schema initialization failed')
+        if callback then
+            callback(ok, err)
+        end
+    end)
 end
 
 return M

@@ -32,19 +32,19 @@
 local api = vim.api
 local fn = vim.fn
 local fs = vim.fs
-local uv = vim.uv
 local levels = vim.log.levels
+local uv = vim.uv
 
 local M = {}
-
-local SOURCE = 'cobol'
-local PROBE_TIMEOUT_MS = 30000
 local MAX_OUTPUT_BYTES = 65536
+local PROBE_TIMEOUT_MS = 30000
 
 ---@type string[]
 local ROOT_MARKERS = {
     '.git',
 }
+
+local SOURCE = 'cobol'
 
 ---@class CobolState
 ---@field cobc string?
@@ -132,9 +132,11 @@ end
 ---@return vim.SystemCompleted?
 local function system(command)
     local ok, result = pcall(function()
-        return vim.system(command, {
+        local sysobj = vim.system(command, {
             text = true,
-        }):wait(PROBE_TIMEOUT_MS)
+        })
+        ---@cast sysobj vim.SystemObj
+        return sysobj:wait(PROBE_TIMEOUT_MS)
     end)
 
     if not ok then
@@ -373,6 +375,26 @@ local function check_health()
     notify(table.concat(messages, '\n'), (cobc ~= nil and gdb_ok) and levels.INFO or levels.WARN)
 end
 
+--- Build the command_args a bare :Command invocation would receive.
+---@param name string
+---@return vim.api.keyset.create_user_command.command_args
+local function bare_args(name)
+    return {
+        args = '',
+        bang = false,
+        count = -1,
+        fargs = {},
+        line1 = 1,
+        line2 = 1,
+        mods = '',
+        name = name,
+        nargs = '0',
+        range = 0,
+        reg = '',
+        smods = {},
+    }
+end
+
 ---@type table<string, DebugCommand>
 M.commands = {
     CobolCheck = {
@@ -420,7 +442,7 @@ M.mappings = {
             local cmd = M.commands.CobolCompile
 
             if cmd ~= nil and type(cmd.callback) == 'function' then
-                cmd.callback()
+                cmd.callback(bare_args('CobolCompile'))
             end
         end,
         desc = 'COBOL DAP: Compile with debug symbols',

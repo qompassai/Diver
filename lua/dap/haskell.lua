@@ -63,13 +63,23 @@ local levels = vim.log.levels
 
 local M = {}
 
-local SOURCE = 'haskell'
-
 --- nvim-dap adapter name for the hdb adapter (matches the nvim-dap wiki).
 local HDB_ADAPTER_NAME = 'haskell-debugger'
 
+---@type string[]
+local HDB_WELL_KNOWN = {
+    '~/.cabal/bin/hdb',
+    '~/.local/bin/hdb',
+}
+
 --- nvim-dap adapter name for the phoityne adapter (legacy value).
 local PHOITYNE_ADAPTER_NAME = 'haskell'
+
+---@type string[]
+local PHOITYNE_WELL_KNOWN = {
+    '~/.cabal/bin/haskell-debug-adapter',
+    '~/.local/bin/haskell-debug-adapter',
+}
 
 ---@type string[]
 local ROOT_MARKERS = {
@@ -79,17 +89,7 @@ local ROOT_MARKERS = {
     '.git',
 }
 
----@type string[]
-local HDB_WELL_KNOWN = {
-    '~/.cabal/bin/hdb',
-    '~/.local/bin/hdb',
-}
-
----@type string[]
-local PHOITYNE_WELL_KNOWN = {
-    '~/.cabal/bin/haskell-debug-adapter',
-    '~/.local/bin/haskell-debug-adapter',
-}
+local SOURCE = 'haskell'
 
 ---@class HaskellBuildTool
 ---@field kind 'stack'|'cabal'|'none'
@@ -371,10 +371,7 @@ local function detect_build_tool(root)
         return { kind = 'stack', root = root }
     end
 
-    if
-        vim.fn.filereadable(root .. '/cabal.project') == 1
-        or vim.fn.filereadable(root .. '/package.yaml') == 1
-    then
+    if vim.fn.filereadable(root .. '/cabal.project') == 1 or vim.fn.filereadable(root .. '/package.yaml') == 1 then
         return { kind = 'cabal', root = root }
     end
 
@@ -618,8 +615,7 @@ function M.build_launch(opts)
         return M.build_launch_phoityne(opts)
     end
 
-    return nil,
-        ("unknown Haskell debug adapter '%s' (expected 'hdb' or 'phoityne')"):format(tostring(which))
+    return nil, ("unknown Haskell debug adapter '%s' (expected 'hdb' or 'phoityne')"):format(tostring(which))
 end
 
 ---@type table<string, table>

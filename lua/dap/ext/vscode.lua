@@ -33,93 +33,6 @@ M.type_to_filetypes = {}
 ---@field default? string
 ---@field options string[]|{label: string, value: string}[]
 
----@param input dap.vscode.launch.Input
----@return function
-local function create_input(input)
-    if input.type == 'promptString' then
-        ---Runs in the config-expansion coroutine via eval_option; may yield.
-        ---@async
-        return function()
-            local description = input.description or 'Input'
-            if not vim.endswith(description, ': ') then
-                description = description .. ': '
-            end
-            if vim.ui.input then
-                local co = coroutine.running()
-                local opts = {
-                    prompt = description,
-                    default = input.default or '',
-                }
-                vim.ui.input(opts, function(result)
-                    vim.schedule(function()
-                        coroutine.resume(co, result)
-                    end)
-                end)
-                return coroutine.yield()
-            else
-                return vim.fn.input(description, input.default or '')
-            end
-        end
-    elseif input.type == 'pickString' then
-        ---Runs in the config-expansion coroutine via eval_option; may yield.
-        ---@async
-        return function()
-            local options = input.options
-            if type(options) ~= 'table' or next(options) == nil then
-                notify(
-                    'input of type pickString must have an `options` property',
-                    vim.log.levels.WARN
-                )
-                return '${input:' .. input.id .. '}'
-            end
-            local opts = {
-                prompt = input.description,
-                format_item = function(x)
-                    return x.label and x.label or x
-                end,
-            }
-            local co = coroutine.running()
-            vim.ui.select(options, opts, function(option)
-                vim.schedule(function()
-                    local value = option and option.value or option
-                    coroutine.resume(co, value or (input.default or ''))
-                end)
-            end)
-            return coroutine.yield()
-        end
-    else
-        local msg = 'Unsupported input type in vscode launch.json: ' .. input.type
-        notify(msg, vim.log.levels.WARN)
-        return function()
-            return '${input:' .. input.id .. '}'
-        end
-    end
-end
-
----@param inputs dap.vscode.launch.Input[]
----@return table<string, function> map from ${input:<id>} to the input resolver
-local function create_inputs(inputs)
-    local result = {}
-    for _, input in ipairs(inputs) do
-        -- launch.json is workspace-controlled: validate instead of asserting,
-        -- and skip malformed entries with a notification.
-        local id = input.id
-        local input_type = input.type
-        if type(id) ~= 'string' or id == '' then
-            notify('Skipping launch.json input without a string `id`', vim.log.levels.WARN)
-        elseif type(input_type) ~= 'string' or input_type == '' then
-            notify('Skipping launch.json input without a string `type`', vim.log.levels.WARN)
-        else
-            local key = '${input:' .. id .. '}'
-            local fn = create_input(input)
-            if fn then
-                result[key] = fn
-            end
-        end
-    end
-    return result
-end
-
 ---Maximum nesting depth `apply_input` descends into launch.json values.
 ---Guards against stack exhaustion from deeply nested workspace files.
 ---@type integer
@@ -134,10 +47,7 @@ local function apply_input(inputs, value, cache, depth)
     -- launch.json is workspace-controlled; bound the recursion so a deeply
     -- nested file cannot exhaust the Lua stack.
     if depth > APPLY_INPUT_DEPTH_MAX then
-        notify(
-            'Skipping launch.json value beyond max input-substitution depth',
-            vim.log.levels.WARN
-        )
+        notify('Skipping launch.json value beyond max input-substitution depth', vim.log.levels.WARN)
         return value
     end
     if type(value) == 'table' then
@@ -185,6 +95,89 @@ local function apply_inputs(config, inputs)
     local cache = {}
     for key, value in pairs(config) do
         result[key] = apply_input(inputs, value, cache, 0)
+    end
+    return result
+end
+---@param input dap.vscode.launch.Input
+---@return function
+local function create_input(input)
+    if input.type == 'promptString' then
+        ---Runs in the config-expansion coroutine via eval_option; may yield.
+        ---@async
+        return function()
+            local description = input.description or 'Input'
+            if not vim.endswith(description, ': ') then
+                description = description .. ': '
+            end
+            if vim.ui.input then
+                local co = coroutine.running()
+                local opts = {
+                    default = input.default or '',
+                    prompt = description,
+                }
+                vim.ui.input(opts, function(result)
+                    vim.schedule(function()
+                        coroutine.resume(co, result)
+                    end)
+                end)
+                return coroutine.yield()
+            else
+                return vim.fn.input(description, input.default or '')
+            end
+        end
+    elseif input.type == 'pickString' then
+        ---Runs in the config-expansion coroutine via eval_option; may yield.
+        ---@async
+        return function()
+            local options = input.options
+            if type(options) ~= 'table' or next(options) == nil then
+                notify('input of type pickString must have an `options` property', vim.log.levels.WARN)
+                return '${input:' .. input.id .. '}'
+            end
+            local opts = {
+                format_item = function(x)
+                    return x.label and x.label or x
+                end,
+                prompt = input.description,
+            }
+            local co = coroutine.running()
+            vim.ui.select(options, opts, function(option)
+                vim.schedule(function()
+                    local value = option and option.value or option
+                    coroutine.resume(co, value or (input.default or ''))
+                end)
+            end)
+            return coroutine.yield()
+        end
+    else
+        local msg = 'Unsupported input type in vscode launch.json: ' .. input.type
+        notify(msg, vim.log.levels.WARN)
+        return function()
+            return '${input:' .. input.id .. '}'
+        end
+    end
+end
+
+---@param inputs dap.vscode.launch.Input[]
+---@return table<string, function> map from ${input:<id>} to the input resolver
+local function create_inputs(inputs)
+    local result = {}
+    for _, input in ipairs(inputs) do
+        -- launch.json is workspace-controlled: validate instead of asserting,
+        -- and skip malformed entries with a notification.
+        local id = input.id
+        local input_type = input.type
+        if type(id) ~= 'string' or id == '' then
+            notify('Skipping launch.json input without a string `id`', vim.log.levels.WARN)
+        elseif type(input_type) ~= 'string' or input_type == '' then
+            notify('Skipping launch.json input without a string `type`', vim.log.levels.WARN)
+        else
+            local key = '${input:' .. id .. '}'
+            local fn = create_input(input)
+            if fn then
+                result[key] = fn
+            end
+        end
     end
     return result
 end

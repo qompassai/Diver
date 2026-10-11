@@ -52,16 +52,6 @@ local levels = vim.log.levels
 
 local M = {}
 
-local SOURCE = 'elixir'
-
----@type string[]
-local ROOT_MARKERS = {
-    'mix.exs',
-    'mix.lock',
-    '.formatter.exs',
-    '.git',
-}
-
 ---@class ElixirAdapterSpec
 ---@field env_var string environment variable holding an explicit path
 ---@field g_var string vim.g variable holding an explicit path
@@ -91,6 +81,16 @@ local ADAPTER_SPECS = {
 local EDB_WELL_KNOWN_PATHS = {
     '/usr/local/bin/edb',
 }
+
+---@type string[]
+local ROOT_MARKERS = {
+    'mix.exs',
+    'mix.lock',
+    '.formatter.exs',
+    '.git',
+}
+
+local SOURCE = 'elixir'
 
 ---@class ElixirState
 ---@field paths table<string, string?> discovered adapter paths, cached on hit
@@ -387,7 +387,8 @@ local function build_elixir_ls_launch(opts)
         startApps = opts.start_apps == true,
         projectDir = opts.cwd or project_root(),
         requireFiles = opts.require_files or { opts.program },
-    }, nil
+    },
+        nil
 end
 
 ---@param opts table
@@ -427,7 +428,8 @@ local function build_edb_launch(opts)
             nameDomain = name_domain,
             timeout = opts.timeout_s or 60,
         },
-    }, nil
+    },
+        nil
 end
 
 ---@param opts table
@@ -489,7 +491,8 @@ function M.build_attach(opts)
         type = 'edb',
         request = 'attach',
         config = inner,
-    }, nil
+    },
+        nil
 end
 
 ---@return string[]

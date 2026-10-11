@@ -46,13 +46,16 @@
 local api = vim.api
 local fn = vim.fn
 local fs = vim.fs
-local uv = vim.uv
 local levels = vim.log.levels
+local uv = vim.uv
 
 local M = {}
+local LIST_SOCKS_MAX = 64
+local PORT_WAIT_MS = 10000
 
-local SOURCE = 'ruby'
-local TCP_HOST_DEFAULT = 'localhost'
+-- rdbg prints this on stderr once it is listening for the DAP client.
+local READY_MARKER = 'wait for debugger connection'
+local READY_WAIT_MS = 10000
 
 local ROOT_MARKERS = {
     'Gemfile',
@@ -64,20 +67,11 @@ local ROOT_MARKERS = {
 -- Bounds: all waits and captured output are capped so a wedged rdbg can
 -- never hang session startup forever.
 local SOCK_WAIT_MS = 10000
-local PORT_WAIT_MS = 10000
-local READY_WAIT_MS = 10000
+
+local SOURCE = 'ruby'
 local STDERR_MAX_BYTES = 65536
 local STDERR_TAIL_BYTES = 2048
-local LIST_SOCKS_MAX = 64
-
--- rdbg prints this on stderr once it is listening for the DAP client.
-local READY_MARKER = 'wait for debugger connection'
-
----@class RdbgPortTarget
----@field mode 'tcp'|'unix'
----@field host string? loopback host for mode 'tcp'
----@field port integer? 0 means ephemeral (port-file rendezvous), for mode 'tcp'
----@field sock_path string? for mode 'unix'
+local TCP_HOST_DEFAULT = 'localhost'
 
 ---@class RdbgLaunchPlan
 ---@field argv string[] full rdbg command line to spawn
@@ -295,18 +289,20 @@ end
 --- unix-domain socket path. Port 0 means "ephemeral" (rdbg picks a free
 --- port and reports it through a port file; needs debug.gem >= 1.7.2).
 ---@param value unknown
----@return RdbgPortTarget?, string?
+---@return RdbgDescriptor?, string?
 function M.parse_debug_port(value)
     if not nonempty_string(value) then
         return nil, 'debug_port must be a non-empty string'
     end
 
+    ---@param port number?
+    ---@return integer?, string?
     local function check_port(port)
-        if port < 0 or port > 65535 then
+        if port == nil or port < 0 or port > 65535 then
             return nil, ('debug_port port out of range: %s'):format(value)
         end
 
-        return port
+        return math.floor(port)
     end
 
     local digits = value:match('^%d+$')
@@ -318,7 +314,10 @@ function M.parse_debug_port(value)
             return nil, err
         end
 
-        return { mode = 'tcp', host = TCP_HOST_DEFAULT, port = port }
+        ---@type RdbgDescriptor
+        local digits_target = { mode = 'tcp', host = TCP_HOST_DEFAULT, port = port }
+
+        return digits_target
     end
 
     local host, port_text = value:match('^(.+):(%d+)$')
@@ -330,7 +329,10 @@ function M.parse_debug_port(value)
             return nil, err
         end
 
-        return { mode = 'tcp', host = host, port = port }
+        ---@type RdbgDescriptor
+        local host_target = { mode = 'tcp', host = host, port = port }
+
+        return host_target
     end
 
     return { mode = 'unix', sock_path = value }
@@ -407,10 +409,12 @@ end
 ---@param util string
 ---@return string?, string?
 local function rdbg_util(rdbg, util)
-    local result = vim.system({ rdbg, '--util=' .. util }, { text = true }):wait()
+    local util_obj = vim.system({ rdbg, '--util=' .. util }, { text = true })
+    ---@cast util_obj vim.SystemObj
+    local result = util_obj:wait()
 
     if result.code ~= 0 then
-        return nil, (('rdbg --util=%s failed: %s'):format(util, result.stderr or '')):gsub('%s+$', '')
+        return nil, ((('rdbg --util=%s failed: %s'):format(util, result.stderr or '')):gsub('%s+$', ''))
     end
 
     local out = (result.stdout or ''):match('^%s*(.-)%s*$')
@@ -439,10 +443,12 @@ end
 ---@param cwd string
 ---@return string[]?, string?
 local function list_socks(rdbg, cwd)
-    local result = vim.system({ rdbg, '--util=list-socks' }, { text = true, cwd = cwd }):wait()
+    local socks_obj = vim.system({ rdbg, '--util=list-socks' }, { text = true, cwd = cwd })
+    ---@cast socks_obj vim.SystemObj
+    local result = socks_obj:wait()
 
     if result.code ~= 0 then
-        return nil, (('rdbg --util=list-socks failed: %s'):format(result.stderr or '')):gsub('%s+$', '')
+        return nil, ((('rdbg --util=list-socks failed: %s'):format(result.stderr or '')):gsub('%s+$', ''))
     end
 
     local socks = {}
@@ -585,7 +591,7 @@ local function read_port_file(path)
     local port = tonumber(line and line:match('%d+') or '')
 
     if port ~= nil and port >= 1 and port <= 65535 then
-        return port
+        return math.floor(port)
     end
 
     return nil
@@ -601,7 +607,7 @@ local function stderr_tail(chunks)
         start = 1
     end
 
-    return (text:sub(start)):gsub('%s+$', '')
+    return ((text:sub(start)):gsub('%s+$', ''))
 end
 
 --- Spawn rdbg for a launch plan and wait (bounded) until it is listening:
@@ -651,6 +657,7 @@ local function spawn_and_wait(plan, cwd, env)
     if not ok or job == nil then
         return nil, 'could not spawn rdbg'
     end
+    ---@cast job vim.SystemObj
 
     local function failed()
         return drain.exited and drain.code ~= 0
@@ -788,7 +795,10 @@ local function resolve_attach(configuration)
             return nil, 'attach requires port to be an integer in 1-65535'
         end
 
-        return { mode = 'tcp', host = configuration.host, port = port }
+        ---@type RdbgDescriptor
+        local host_descriptor = { mode = 'tcp', host = configuration.host, port = math.floor(port) }
+
+        return host_descriptor
     end
 
     -- Upstream discovery: `rdbg --util=list-socks` lists Ruby processes

@@ -27,26 +27,20 @@
 
 local M = {}
 
-local SOURCE = 'dap-phlow'
+---@type string
+---Canonical event name, per `ai.phlow.schemas` (mirrors the Phlow
+---`schemas/events` contract).
+local DEBUG_EVENT_NAME = 'debug.event'
 
 ---@type string
 ---Canonical command name, per `ai.phlow.schemas` (mirrors the Phlow
 ---`schemas/commands` contract). Do not invent variants.
 local DEBUG_SESSION_CMD = 'debug.start'
 
----@type string
----Canonical event name, per `ai.phlow.schemas` (mirrors the Phlow
----`schemas/events` contract).
-local DEBUG_EVENT_NAME = 'debug.event'
+local SOURCE = 'dap-phlow'
 
 ---@type table?
 local client = nil
-
----@param message string
----@param level? integer
-local function notify(message, level)
-    vim.notify(('[%s] %s'):format(SOURCE, message), level or vim.log.levels.INFO)
-end
 
 ---@param value unknown
 ---@return boolean
@@ -76,8 +70,12 @@ local function load_phlow()
     return phlow, nil
 end
 
----@param opts? table
----@return table?, string?
+---@param message string
+---@param level? integer
+local function notify(message, level)
+    vim.notify(('[%s] %s'):format(SOURCE, message), level or vim.log.levels.INFO)
+end
+
 ---Connect to Phlow. Lazy: nothing connects at require time. Replaces any
 ---previously connected client after closing it exactly once.
 function M.connect(opts)
@@ -102,8 +100,45 @@ function M.connect(opts)
     return client, nil
 end
 
----@param opts? table
----@return table?, string?
+---Close the Phlow connection exactly once and forget the client.
+function M.disconnect()
+    if client == nil then
+        return
+    end
+
+    if type(client.close) == 'function' then
+        pcall(client.close, client)
+    end
+
+    client = nil
+    notify('disconnected')
+end
+---Subscribe to Phlow's debug event stream. The handler receives each decoded
+---debug event table; handler errors are reported, never swallowed silently.
+---@param fn fun(event: table)
+---@return boolean, string?
+function M.on_debug_event(fn)
+    if type(fn) ~= 'function' then
+        return false, 'handler must be a function'
+    end
+
+    if client == nil then
+        return false, 'not connected: call connect() first'
+    end
+
+    if type(client.on_event) ~= 'function' then
+        return false, 'connected client does not support on_event'
+    end
+
+    local ok, subscribe_err = pcall(client.on_event, client, DEBUG_EVENT_NAME, fn)
+
+    if not ok then
+        return false, ('event subscription failed: %s'):format(tostring(subscribe_err))
+    end
+
+    return true, nil
+end
+
 ---Ask Phlow to broker a debug session and return the session info Phlow
 ---provides. Presentation only: no orchestration state is kept here.
 function M.request_debug_session(opts)
@@ -127,46 +162,6 @@ function M.request_debug_session(opts)
     end
 
     return result, nil
-end
-
----@param fn fun(event: table)
----@return boolean, string?
----Subscribe to Phlow's debug event stream. The handler receives each decoded
----debug event table; handler errors are reported, never swallowed silently.
-function M.on_debug_event(fn)
-    if type(fn) ~= 'function' then
-        return false, 'handler must be a function'
-    end
-
-    if client == nil then
-        return false, 'not connected: call connect() first'
-    end
-
-    if type(client.on_event) ~= 'function' then
-        return false, 'connected client does not support on_event'
-    end
-
-    local ok, subscribe_err = pcall(client.on_event, client, DEBUG_EVENT_NAME, fn)
-
-    if not ok then
-        return false, ('event subscription failed: %s'):format(tostring(subscribe_err))
-    end
-
-    return true, nil
-end
-
----Close the Phlow connection exactly once and forget the client.
-function M.disconnect()
-    if client == nil then
-        return
-    end
-
-    if type(client.close) == 'function' then
-        pcall(client.close, client)
-    end
-
-    client = nil
-    notify('disconnected')
 end
 
 return M

@@ -28,7 +28,11 @@ local uv = vim.uv
 
 local M = {}
 
-local SOURCE = 'nix-dap'
+---@type string[]
+local ADAPTER_EXECUTABLES = {
+    'nix-debug-adapter',
+    'dawn',
+}
 
 --- Bound for `nix` CLI invocations (build, eval probes); a hung child must
 --- not freeze the editor.
@@ -46,11 +50,7 @@ local ROOT_MARKERS = {
     '.git',
 }
 
----@type string[]
-local ADAPTER_EXECUTABLES = {
-    'nix-debug-adapter',
-    'dawn',
-}
+local SOURCE = 'nix-dap'
 
 ---@class NixDapState
 ---@field adapter string?
@@ -161,10 +161,12 @@ end
 ---@return vim.SystemCompleted?
 local function system(command, cwd)
     local ok, result = pcall(function()
-        return vim.system(command, {
+        local sysobj = vim.system(command, {
             cwd = cwd,
             text = true,
-        }):wait(NIX_COMMAND_TIMEOUT_MS)
+        })
+        ---@cast sysobj vim.SystemObj
+        return sysobj:wait(NIX_COMMAND_TIMEOUT_MS)
     end)
 
     if not ok then
@@ -413,10 +415,7 @@ local function run_nix(arguments, title)
 
         on_exit = function(_, code)
             vim.schedule(function()
-                notify(
-                    ('%s exited with status %d'):format(title, code),
-                    code == 0 and levels.INFO or levels.WARN
-                )
+                notify(('%s exited with status %d'):format(title, code), code == 0 and levels.INFO or levels.WARN)
             end)
         end,
     })

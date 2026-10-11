@@ -33,14 +33,11 @@ local fs = vim.fs
 local levels = vim.log.levels
 
 local M = {}
-
-local SOURCE = 'ansibug'
 local PROBE_TIMEOUT_MS = 5000
 
 -- Bounds for the role-entry breakpoint seeding scan: playbooks and role
 -- task files are user-authored YAML; cap how much we read.
 local ROLE_SCAN_MAX_LINES = 2000
-local TASK_SCAN_MAX_LINES = 2000
 
 ---@type string[]
 local ROOT_MARKERS = {
@@ -50,6 +47,9 @@ local ROOT_MARKERS = {
     'site.yml',
     '.git',
 }
+
+local SOURCE = 'ansibug'
+local TASK_SCAN_MAX_LINES = 2000
 
 ---@type string[]
 local WELL_KNOWN_PATHS = {
@@ -144,9 +144,11 @@ end
 ---@return vim.SystemCompleted?
 local function system(command)
     local ok, result = pcall(function()
-        return vim.system(command, {
+        local sysobj = vim.system(command, {
             text = true,
-        }):wait(PROBE_TIMEOUT_MS)
+        })
+        ---@cast sysobj vim.SystemObj
+        return sysobj:wait(PROBE_TIMEOUT_MS)
     end)
 
     if not ok then
@@ -627,6 +629,26 @@ local function check_health()
     notify(table.concat(messages, '\n'), path ~= nil and levels.INFO or levels.WARN)
 end
 
+--- Build the command_args a bare :Command invocation would receive.
+---@param name string
+---@return vim.api.keyset.create_user_command.command_args
+local function bare_args(name)
+    return {
+        args = '',
+        bang = false,
+        count = -1,
+        fargs = {},
+        line1 = 1,
+        line2 = 1,
+        mods = '',
+        name = name,
+        nargs = '0',
+        range = 0,
+        reg = '',
+        smods = {},
+    }
+end
+
 ---@type table<string, DebugCommand>
 M.commands = {
     AnsibleCheck = {
@@ -727,7 +749,7 @@ M.mappings = {
             local cmd = M.commands.AnsibleDebugPlaybook
 
             if cmd ~= nil and type(cmd.callback) == 'function' then
-                cmd.callback()
+                cmd.callback(bare_args('AnsibleDebugPlaybook'))
             end
         end,
         desc = 'Ansible DAP: Debug playbook',
@@ -740,7 +762,7 @@ M.mappings = {
             local cmd = M.commands.AnsibleDebugPlaybookRoles
 
             if cmd ~= nil and type(cmd.callback) == 'function' then
-                cmd.callback()
+                cmd.callback(bare_args('AnsibleDebugPlaybookRoles'))
             end
         end,
         desc = 'Ansible DAP: Debug playbook with role-entry breakpoints',

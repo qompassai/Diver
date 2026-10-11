@@ -30,8 +30,6 @@ local uv = vim.uv
 
 local M = {}
 
-local SOURCE = 'java-dap'
-
 local DEBUG_SESSION_COMMAND = 'vscode.java.startDebugSession'
 
 local DEBUG_SESSION_TIMEOUT_MS = 30000
@@ -39,11 +37,6 @@ local DEBUG_SESSION_TIMEOUT_MS = 30000
 local DEFAULT_JDWP_HOST = '127.0.0.1'
 
 local DEFAULT_JDWP_PORT = 5005
-
---- Maximum `.tool-versions` lines scanned for a `java` entry. The file is
---- normally a handful of lines; the cap keeps a hostile file from forcing an
---- unbounded read into memory.
-local TOOL_VERSIONS_SCAN_MAX_LINES = 100
 
 local ROOT_MARKERS = {
     'pom.xml',
@@ -79,6 +72,8 @@ local ROOT_MARKERS = {
     '.git',
 }
 
+local SOURCE = 'java-dap'
+
 local STEP_SKIP_CLASSES = {
     '$JDK',
 
@@ -94,6 +89,11 @@ local STEP_SKIP_CLASSES = {
 
     'com.sun.*',
 }
+
+--- Maximum `.tool-versions` lines scanned for a `java` entry. The file is
+--- normally a handful of lines; the cap keeps a hostile file from forcing an
+--- unbounded read into memory.
+local TOOL_VERSIONS_SCAN_MAX_LINES = 100
 
 local state = {
     endpoint = nil,
@@ -210,11 +210,7 @@ local function jdtls_client(bufnr)
         if is_jdtls(client) then
             local client_root = client.root_dir
 
-            if
-                type(client_root) == 'string'
-                and client_root ~= ''
-                and fs.normalize(client_root) == root
-            then
+            if type(client_root) == 'string' and client_root ~= '' and fs.normalize(client_root) == root then
                 return client
             end
         end
@@ -347,11 +343,13 @@ end
 
 local function system(command, cwd)
     local ok, result = pcall(function()
-        return vim.system(command, {
+        local sysobj = vim.system(command, {
             cwd = cwd,
 
             text = true,
-        }):wait()
+        })
+        ---@cast sysobj vim.SystemObj
+        return sysobj:wait()
     end)
 
     if not ok then
@@ -510,10 +508,7 @@ local function request_debug_port(client, bufnr)
     end
 
     if response.err ~= nil then
-        notify(
-            ('Java debug server startup failed: %s'):format(vim.inspect(response.err)),
-            levels.ERROR
-        )
+        notify(('Java debug server startup failed: %s'):format(vim.inspect(response.err)), levels.ERROR)
 
         return nil
     end
@@ -521,10 +516,7 @@ local function request_debug_port(client, bufnr)
     local port = debug_port(response.result)
 
     if port == nil then
-        notify(
-            ('JDTLS returned an invalid Java DAP port: %s'):format(vim.inspect(response.result)),
-            levels.ERROR
-        )
+        notify(('JDTLS returned an invalid Java DAP port: %s'):format(vim.inspect(response.result)), levels.ERROR)
 
         return nil
     end
@@ -812,11 +804,7 @@ local function show_java_processes()
     local lines = {}
 
     for _, process in ipairs(processes) do
-        lines[#lines + 1] = ('PID %-7d %s %s'):format(
-            process.pid,
-            process.command,
-            process.arguments
-        )
+        lines[#lines + 1] = ('PID %-7d %s %s'):format(process.pid, process.command, process.arguments)
     end
 
     notify(table.concat(lines, '\n'))
@@ -931,9 +919,7 @@ local function status()
         table.concat({
             'root: ' .. project_root(),
 
-            'JDTLS: ' .. (
-                client ~= nil and ('%s [id=%d]'):format(client.name, client.id) or 'not attached'
-            ),
+            'JDTLS: ' .. (client ~= nil and ('%s [id=%d]'):format(client.name, client.id) or 'not attached'),
 
             'java-debug bundle: ' .. (debug_loaded and 'loaded' or 'not detected'),
 
@@ -947,10 +933,8 @@ local function status()
 
             'DAP broker command: ' .. DEBUG_SESSION_COMMAND,
 
-            'last DAP endpoint: ' .. (
-                state.endpoint ~= nil and ('%s:%d'):format(state.endpoint.host, state.endpoint.port)
-                or 'none'
-            ),
+            'last DAP endpoint: '
+                .. (state.endpoint ~= nil and ('%s:%d'):format(state.endpoint.host, state.endpoint.port) or 'none'),
         }, '\n'),
         debug_loaded and levels.INFO or levels.WARN
     )

@@ -17,6 +17,14 @@
 # #################################################################
 --]]
 local M = {}
+
+---Maximum number of files `get_files` collects before truncating the list.
+---@type integer
+local FILE_COUNT_MAX = 10000
+
+---Timeout in milliseconds for the `find` fallback subprocess in `get_files`.
+---@type integer
+local GET_FILES_TIMEOUT_MS = 5000
 ---@class dap.utils.Proc
 ---@field pid integer
 ---@field name string
@@ -34,14 +42,6 @@ local M = {}
 ---Timeout in milliseconds for the `ps`/`tasklist` subprocess in `get_processes`.
 ---@type integer
 local GET_PROCESSES_TIMEOUT_MS = 5000
-
----Timeout in milliseconds for the `find` fallback subprocess in `get_files`.
----@type integer
-local GET_FILES_TIMEOUT_MS = 5000
-
----Maximum number of files `get_files` collects before truncating the list.
----@type integer
-local FILE_COUNT_MAX = 10000
 ---@param err dap.ErrorResponse
 ---@return string?
 function M.fmt_error(err)
@@ -217,9 +217,11 @@ function M.get_processes(opts)
 
     local is_windows = vim.fn.has('win32') == 1
     local separator = is_windows and ',' or ' \\+'
-    local result = vim.system(process_command(), {
+    local proc_obj = vim.system(process_command(), {
         text = true,
-    }):wait(GET_PROCESSES_TIMEOUT_MS)
+    })
+    ---@cast proc_obj vim.SystemObj
+    local result = proc_obj:wait(GET_PROCESSES_TIMEOUT_MS)
 
     if not result then
         M.notify('Timed out enumerating running processes', vim.log.levels.ERROR)
@@ -322,15 +324,11 @@ function M.pick_process(opts)
     local wordlimit = math.max(10, math.floor(columns / 3))
 
     ---@type fun(proc: dap.utils.Proc): string
-    local label
-    if opts.label then
-        label = opts.label
-    else
-        label = function(process)
+    local label = opts.label
+        or function(process)
             local name = trim_procname(process.name, columns, wordlimit)
             return string.format('id=%d name=%s', process.pid, name)
         end
-    end
 
     local processes = M.get_processes({
         filter = opts.filter,
@@ -406,10 +404,7 @@ local function get_files_native(path, filter)
         end
     end
     if truncated then
-        M.notify(
-            string.format('File list truncated to %d entries under %s', FILE_COUNT_MAX, path),
-            vim.log.levels.WARN
-        )
+        M.notify(string.format('File list truncated to %d entries under %s', FILE_COUNT_MAX, path), vim.log.levels.WARN)
     end
     table.sort(files)
     return files
@@ -436,9 +431,11 @@ local function get_files_find(path, opts, filter)
         command[#command + 1] = '-executable'
     end
 
-    local result = vim.system(command, {
+    local files_obj = vim.system(command, {
         text = true,
-    }):wait(GET_FILES_TIMEOUT_MS)
+    })
+    ---@cast files_obj vim.SystemObj
+    local result = files_obj:wait(GET_FILES_TIMEOUT_MS)
     if not result then
         M.notify('Timed out enumerating files under ' .. path, vim.log.levels.ERROR)
         return {}
@@ -461,10 +458,7 @@ local function get_files_find(path, opts, filter)
     )
     table.sort(files)
     if #files > FILE_COUNT_MAX then
-        M.notify(
-            string.format('File list truncated to %d entries under %s', FILE_COUNT_MAX, path),
-            vim.log.levels.WARN
-        )
+        M.notify(string.format('File list truncated to %d entries under %s', FILE_COUNT_MAX, path), vim.log.levels.WARN)
         local truncated = {}
         for i = 1, FILE_COUNT_MAX do
             truncated[i] = files[i]

@@ -63,37 +63,6 @@ local levels = vim.log.levels
 
 local M = {}
 
-local SOURCE = 'godot'
-local LOOPBACK = '127.0.0.1'
-local DEFAULT_DAP_PORT = 6006
-local PROBE_TIMEOUT_MS = 5000
-
----@type string[]
-local ROOT_MARKERS = {
-    'project.godot',
-    '.git',
-}
-
----@type string[]
-local WELL_KNOWN_PATHS = {
-    '/usr/bin/godot',
-    '/usr/local/bin/godot',
-    '/opt/homebrew/bin/godot',
-}
-
----@type table<string, boolean>
-local SCENES = {
-    main = true,
-    current = true,
-}
-
----@type table<string, boolean>
-local PLATFORMS = {
-    host = true,
-    android = true,
-    web = true,
-}
-
 ---@type table<string, boolean>
 local BUILD_ATTACH_FIELDS = {
     host = true,
@@ -104,6 +73,37 @@ local BUILD_ATTACH_FIELDS = {
     platform = true,
     play_args = true,
     device = true,
+}
+local DEFAULT_DAP_PORT = 6006
+local LOOPBACK = '127.0.0.1'
+
+---@type table<string, boolean>
+local PLATFORMS = {
+    host = true,
+    android = true,
+    web = true,
+}
+local PROBE_TIMEOUT_MS = 5000
+
+---@type string[]
+local ROOT_MARKERS = {
+    'project.godot',
+    '.git',
+}
+
+---@type table<string, boolean>
+local SCENES = {
+    main = true,
+    current = true,
+}
+
+local SOURCE = 'godot'
+
+---@type string[]
+local WELL_KNOWN_PATHS = {
+    '/usr/bin/godot',
+    '/usr/local/bin/godot',
+    '/opt/homebrew/bin/godot',
 }
 
 ---@class GodotState
@@ -194,9 +194,11 @@ end
 ---@return vim.SystemCompleted?
 local function system(command)
     local ok, result = pcall(function()
-        return vim.system(command, {
+        local sysobj = vim.system(command, {
             text = true,
-        }):wait(PROBE_TIMEOUT_MS)
+        })
+        ---@cast sysobj vim.SystemObj
+        return sysobj:wait(PROBE_TIMEOUT_MS)
     end)
 
     if not ok then

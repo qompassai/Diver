@@ -44,15 +44,13 @@
 local api = vim.api
 local fn = vim.fn
 local fs = vim.fs
-local uv = vim.uv
 local levels = vim.log.levels
+local uv = vim.uv
 
 local M = {}
-
-local SOURCE = 'probe-rs'
 local DEFAULT_HOST = '127.0.0.1'
-local PORT_MIN = 1
 local PORT_MAX = 65535
+local PORT_MIN = 1
 local PROBE_TIMEOUT_MS = 5000
 
 ---@type string[]
@@ -61,6 +59,8 @@ local ROOT_MARKERS = {
     'Cargo.lock',
     '.git',
 }
+
+local SOURCE = 'probe-rs'
 
 ---@type string[]
 local WELL_KNOWN_PATHS = {
@@ -148,9 +148,11 @@ end
 ---@return vim.SystemCompleted?
 local function system(command)
     local ok, result = pcall(function()
-        return vim.system(command, {
+        local sysobj = vim.system(command, {
             text = true,
-        }):wait(PROBE_TIMEOUT_MS)
+        })
+        ---@cast sysobj vim.SystemObj
+        return sysobj:wait(PROBE_TIMEOUT_MS)
     end)
 
     if not ok then

@@ -31,12 +31,20 @@
 local api = vim.api
 local fn = vim.fn
 local fs = vim.fs
-local uv = vim.uv
 local levels = vim.log.levels
+local uv = vim.uv
 
 local M = {}
 
-local SOURCE = 'lldb-dap'
+---@type string[]
+local FILETYPES = {
+    'c',
+    'cpp',
+    'objc',
+    'objcpp',
+    'asm',
+    'crystal',
+}
 local PROBE_TIMEOUT_MS = 5000
 
 ---@type string[]
@@ -51,15 +59,7 @@ local ROOT_MARKERS = {
     '.git',
 }
 
----@type string[]
-local FILETYPES = {
-    'c',
-    'cpp',
-    'objc',
-    'objcpp',
-    'asm',
-    'crystal',
-}
+local SOURCE = 'lldb-dap'
 
 ---@type string[]
 local WELL_KNOWN_PATHS = {
@@ -155,10 +155,12 @@ end
 ---@return vim.SystemCompleted?
 local function system(command, env)
     local ok, result = pcall(function()
-        return vim.system(command, {
+        local sysobj = vim.system(command, {
             text = true,
             env = env,
-        }):wait(PROBE_TIMEOUT_MS)
+        })
+        ---@cast sysobj vim.SystemObj
+        return sysobj:wait(PROBE_TIMEOUT_MS)
     end)
 
     if not ok then

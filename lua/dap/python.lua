@@ -26,14 +26,18 @@ local fs = vim.fs
 local levels = vim.log.levels
 
 local M = {}
-
-local SOURCE = 'python-dap'
+local DEFAULT_ATTACH_HOST = '127.0.0.1'
+local DEFAULT_ATTACH_PORT = 5678
 
 --- Bound for interpreter/adapter probe invocations; a hung child must not
 --- freeze the editor.
 local PYTHON_COMMAND_TIMEOUT_MS = 30000
-local DEFAULT_ATTACH_HOST = '127.0.0.1'
-local DEFAULT_ATTACH_PORT = 5678
+
+---@type string[]
+local PYTHON_EXECUTABLES = {
+    'python3',
+    'python',
+}
 
 ---@type string[]
 local ROOT_MARKERS = {
@@ -49,18 +53,14 @@ local ROOT_MARKERS = {
     '.git',
 }
 
+local SOURCE = 'python-dap'
+
 ---@type string[]
 local VENV_DIRECTORIES = {
     '.venv',
     'venv',
     '.env',
     'env',
-}
-
----@type string[]
-local PYTHON_EXECUTABLES = {
-    'python3',
-    'python',
 }
 
 ---@class PythonDapState
@@ -218,10 +218,7 @@ local function resolve_project_python(root)
             return expanded
         end
 
-        notify(
-            ('NVIM_PYTHON_DEBUG_INTERPRETER is not executable: %s'):format(expanded),
-            levels.WARN
-        )
+        notify(('NVIM_PYTHON_DEBUG_INTERPRETER is not executable: %s'):format(expanded), levels.WARN)
     end
 
     --
@@ -250,9 +247,11 @@ end
 ---@return vim.SystemCompleted?
 local function system(command)
     local ok, result = pcall(function()
-        return vim.system(command, {
+        local sysobj = vim.system(command, {
             text = true,
-        }):wait(PYTHON_COMMAND_TIMEOUT_MS)
+        })
+        ---@cast sysobj vim.SystemObj
+        return sysobj:wait(PYTHON_COMMAND_TIMEOUT_MS)
     end)
 
     if not ok then

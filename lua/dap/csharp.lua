@@ -27,7 +27,11 @@ local uv = vim.uv
 
 local M = {}
 
-local SOURCE = 'csharp-dap'
+---@type string[]
+local BUILD_CONFIGURATIONS = {
+    'Debug',
+    'Release',
+}
 
 ---@type string[]
 local ROOT_MARKERS = {
@@ -40,11 +44,7 @@ local ROOT_MARKERS = {
     '.git',
 }
 
----@type string[]
-local BUILD_CONFIGURATIONS = {
-    'Debug',
-    'Release',
-}
+local SOURCE = 'csharp-dap'
 
 ---@class CSharpDapState
 ---@field dll string?
@@ -275,10 +275,12 @@ end
 ---@return vim.SystemCompleted?
 local function system(command, cwd)
     local ok, result = pcall(function()
-        return vim.system(command, {
+        local sysobj = vim.system(command, {
             cwd = cwd,
             text = true,
-        }):wait()
+        })
+        ---@cast sysobj vim.SystemObj
+        return sysobj:wait()
     end)
 
     if not ok then

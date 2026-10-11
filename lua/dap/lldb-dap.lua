@@ -29,27 +29,10 @@ local fn = vim.fn
 local uv = vim.uv
 local M = {}
 local ADAPTER_NAME = 'lldb-dap'
-local CONFIGURED_FLAG = 'lldb_dap_configured'
-local MAX_EXECUTABLES = 40
-local MAX_SCAN_DEPTH = 3
 
 --- Bound for `cargo metadata`; a cold target directory can make this slow.
 local CARGO_METADATA_TIMEOUT_MS = 60000
-local FILETYPES = {
-    c = true,
-    cpp = true,
-    objc = true,
-    objcpp = true,
-    rust = true,
-}
-
-local FILETYPE_PATTERNS = {
-    'c',
-    'cpp',
-    'objc',
-    'objcpp',
-    'rust',
-}
+local CONFIGURED_FLAG = 'lldb_dap_configured'
 
 local FILE_PATTERNS = {
     '*.c',
@@ -65,18 +48,39 @@ local FILE_PATTERNS = {
     '*.rs',
 }
 
-local SOURCE_SUFFIXES = {
-    ['.c'] = true,
+local FILETYPE_PATTERNS = {
+    'c',
+    'cpp',
+    'objc',
+    'objcpp',
+    'rust',
+}
+local FILETYPES = {
+    c = true,
+    cpp = true,
+    objc = true,
+    objcpp = true,
+    rust = true,
+}
+local MAX_EXECUTABLES = 40
+local MAX_SCAN_DEPTH = 3
+
+local NON_EXECUTABLE_SUFFIXES = {
+    ['.a'] = true,
+    ['.bc'] = true,
+    ['.d'] = true,
+    ['.dll'] = true,
+    ['.dylib'] = true,
     ['.h'] = true,
-    ['.cc'] = true,
-    ['.cpp'] = true,
-    ['.cxx'] = true,
     ['.hh'] = true,
     ['.hpp'] = true,
     ['.hxx'] = true,
-    ['.m'] = true,
-    ['.mm'] = true,
-    ['.rs'] = true,
+    ['.lo'] = true,
+    ['.o'] = true,
+    ['.obj'] = true,
+    ['.pdb'] = true,
+    ['.rlib'] = true,
+    ['.so'] = true,
 }
 
 local ROOT_MARKERS = {
@@ -105,22 +109,18 @@ local SKIP_DIRECTORIES = {
     ['node_modules'] = true,
 }
 
-local NON_EXECUTABLE_SUFFIXES = {
-    ['.a'] = true,
-    ['.bc'] = true,
-    ['.d'] = true,
-    ['.dll'] = true,
-    ['.dylib'] = true,
+local SOURCE_SUFFIXES = {
+    ['.c'] = true,
     ['.h'] = true,
+    ['.cc'] = true,
+    ['.cpp'] = true,
+    ['.cxx'] = true,
     ['.hh'] = true,
     ['.hpp'] = true,
     ['.hxx'] = true,
-    ['.lo'] = true,
-    ['.o'] = true,
-    ['.obj'] = true,
-    ['.pdb'] = true,
-    ['.rlib'] = true,
-    ['.so'] = true,
+    ['.m'] = true,
+    ['.mm'] = true,
+    ['.rs'] = true,
 }
 
 ---@class LldbAdapterDefinition
@@ -268,8 +268,7 @@ local function current_lldb_context(bufnr)
 
     if not is_lldb_buffer(bufnr) then
         notify(
-            'LLDB DAP is available only in C, C++, Objective-C, Objective-C++,'
-                .. ' or Rust source buffers',
+            'LLDB DAP is available only in C, C++, Objective-C, Objective-C++,' .. ' or Rust source buffers',
             vim.log.levels.ERROR
         )
         return nil, nil, nil
@@ -422,14 +421,14 @@ local function native_binary(path)
     end
 
     local signatures = {
-        ['\xfe\xed\xfa\xce'] = true,
-        ['\xce\xfa\xed\xfe'] = true,
-        ['\xfe\xed\xfa\xcf'] = true,
-        ['\xcf\xfa\xed\xfe'] = true,
-        ['\xca\xfe\xba\xbe'] = true,
-        ['\xbe\xba\xfe\xca'] = true,
-        ['\xca\xfe\xba\xbf'] = true,
-        ['\xbf\xba\xfe\xca'] = true,
+        [string.char(0xfe, 0xed, 0xfa, 0xce)] = true,
+        [string.char(0xce, 0xfa, 0xed, 0xfe)] = true,
+        [string.char(0xfe, 0xed, 0xfa, 0xcf)] = true,
+        [string.char(0xcf, 0xfa, 0xed, 0xfe)] = true,
+        [string.char(0xca, 0xfe, 0xba, 0xbe)] = true,
+        [string.char(0xbe, 0xba, 0xfe, 0xca)] = true,
+        [string.char(0xca, 0xfe, 0xba, 0xbf)] = true,
+        [string.char(0xbf, 0xba, 0xfe, 0xca)] = true,
     }
 
     return signatures[magic] == true
@@ -439,11 +438,7 @@ end
 ---@return boolean
 local function is_debuggable_executable(path)
     local name = fn.fnamemodify(path, ':t'):lower()
-    if
-        not file_exists(path)
-        or NON_EXECUTABLE_SUFFIXES[final_suffix(path)]
-        or name:match('%.so(%..+)?$')
-    then
+    if not file_exists(path) or NON_EXECUTABLE_SUFFIXES[final_suffix(path)] or name:match('%.so(%..+)?$') then
         return false
     end
 
@@ -477,7 +472,7 @@ local function cargo_target_candidates(root)
 
     local cargo = executable_path('cargo')
     if cargo then
-        local result = vim.system({
+        local metadata_obj = vim.system({
             cargo,
             'metadata',
             '--format-version',
@@ -486,14 +481,14 @@ local function cargo_target_candidates(root)
         }, {
             cwd = root,
             text = true,
-        }):wait(CARGO_METADATA_TIMEOUT_MS)
+        })
+        ---@cast metadata_obj vim.SystemObj
+        local result = metadata_obj:wait(CARGO_METADATA_TIMEOUT_MS)
 
         if result.code == 0 and type(result.stdout) == 'string' then
             local ok, metadata = pcall(vim.json.decode, result.stdout)
 
-            local valid_metadata = ok
-                and type(metadata) == 'table'
-                and type(metadata.target_directory) == 'string'
+            local valid_metadata = ok and type(metadata) == 'table' and type(metadata.target_directory) == 'string'
 
             if valid_metadata then
                 local candidates = {}
@@ -505,12 +500,10 @@ local function cargo_target_candidates(root)
                     local targets = type(package.targets) == 'table' and package.targets or {}
 
                     for _, target in ipairs(targets) do
-                        local is_bin = type(target.name) == 'string'
-                            and list_contains_string(target.kind, 'bin')
+                        local is_bin = type(target.name) == 'string' and list_contains_string(target.kind, 'bin')
 
                         if is_bin then
-                            local candidate =
-                                vim.fs.joinpath(metadata.target_directory, 'debug', target.name)
+                            local candidate = vim.fs.joinpath(metadata.target_directory, 'debug', target.name)
                             first_guess = first_guess or candidate
                             if is_debuggable_executable(candidate) then
                                 candidates[#candidates + 1] = candidate
@@ -568,11 +561,7 @@ local function scan_executables(directory, depth, results, seen)
         local path = vim.fs.joinpath(directory, name)
         if entry_type == 'directory' and not SKIP_DIRECTORIES[name] then
             scan_executables(path, depth + 1, results, seen)
-        elseif
-            (entry_type == 'file' or entry_type == 'link')
-            and not seen[path]
-            and is_debuggable_executable(path)
-        then
+        elseif (entry_type == 'file' or entry_type == 'link') and not seen[path] and is_debuggable_executable(path) then
             seen[path] = true
             results[#results + 1] = path
         end
@@ -697,13 +686,15 @@ local function xcrun_lldb_dap()
         return nil
     end
 
-    local result = vim.system({
+    local xcrun_obj = vim.system({
         'xcrun',
         '-f',
         'lldb-dap',
     }, {
         text = true,
-    }):wait()
+    })
+    ---@cast xcrun_obj vim.SystemObj
+    local result = xcrun_obj:wait()
 
     if result.code ~= 0 then
         return nil
@@ -808,6 +799,7 @@ local function start(configuration)
 
     configuration.type = ADAPTER_NAME
 
+    ---@cast configuration dap.Configuration
     require('dap').run(configuration)
 end
 
@@ -915,9 +907,11 @@ local function processes()
         '-o',
         'pid=,comm=',
     }
-    local result = vim.system(command, {
+    local proc_obj = vim.system(command, {
         text = true,
-    }):wait()
+    })
+    ---@cast proc_obj vim.SystemObj
+    local result = proc_obj:wait()
 
     if result.code ~= 0 or type(result.stdout) ~= 'string' then
         return {}
@@ -1100,10 +1094,7 @@ function M.attach_remote()
         -- Remote attach opens a debugger session against another machine.
         -- Non-loopback targets need an explicit SSH tunnel; refuse to guess
         -- one silently.
-        notify(
-            'refusing non-loopback remote host without an SSH tunnel: ' .. host,
-            vim.log.levels.ERROR
-        )
+        notify('refusing non-loopback remote host without an SSH tunnel: ' .. host, vim.log.levels.ERROR)
         return
     end
 

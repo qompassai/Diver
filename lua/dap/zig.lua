@@ -7,16 +7,16 @@ local debug = vim.debug
 local fn = vim.fn
 local uv = vim.uv
 local M = {}
-local FILETYPES = {
-    zig = true,
+local CONFIGURED_FLAG = 'zig_dap_configured'
+local FILE_PATTERNS = {
+    '*.zig',
 }
 local FILETYPE_PATTERNS = {
     'zig',
 }
-local FILE_PATTERNS = {
-    '*.zig',
+local FILETYPES = {
+    zig = true,
 }
-local CONFIGURED_FLAG = 'zig_dap_configured'
 local MASON_ROOT = vim.fs.joinpath(fn.stdpath('data'), 'mason')
 
 --- Bound for `zig build` / `zig test` invocations; compilation can be slow,
@@ -94,9 +94,6 @@ end
 
 ---@param command string
 ---@param candidates? string[]
----@return string?
----@param command string
----@param candidates? string[]
 ---@param env_var? string
 ---@return string?
 local function resolve_executable(command, candidates, env_var)
@@ -112,10 +109,7 @@ local function resolve_executable(command, candidates, env_var)
                 return override
             end
 
-            notify(
-                ('%s is not executable: %s'):format(env_var, override),
-                vim.log.levels.WARN
-            )
+            notify(('%s is not executable: %s'):format(env_var, override), vim.log.levels.WARN)
         end
     end
 
@@ -308,10 +302,12 @@ local function run_zig(bufnr, command)
     end
 
     command[1] = zig
-    return vim.system(command, {
+    local sysobj = vim.system(command, {
         cwd = workspace_root(bufnr),
         text = true,
-    }):wait(ZIG_COMMAND_TIMEOUT_MS)
+    })
+    ---@cast sysobj vim.SystemObj
+    return sysobj:wait(ZIG_COMMAND_TIMEOUT_MS)
 end
 
 ---@param raw string
@@ -637,10 +633,7 @@ local function resolve_adapter()
         return M.adapters.fallback
     end
 
-    notify(
-        'No Zig-capable adapter was found. On Arch Linux, install lldb for lldb-dap.',
-        vim.log.levels.ERROR
-    )
+    notify('No Zig-capable adapter was found. On Arch Linux, install lldb for lldb-dap.', vim.log.levels.ERROR)
     return nil
 end
 
@@ -862,12 +855,12 @@ local function configure_buffer(bufnr)
         }
     end
 
-    vim.keymap.set('n', '<leader>dzb', M.build, map_options('Zig DAP build'))
-    vim.keymap.set('n', '<leader>dzB', M.build_release, map_options('Zig DAP ReleaseSafe build'))
-    vim.keymap.set('n', '<leader>dzr', M.launch, map_options('Zig DAP launch'))
-    vim.keymap.set('n', '<leader>dze', M.launch_current_binary, map_options('Zig DAP executable'))
-    vim.keymap.set('n', '<leader>dzt', M.test_current_file, map_options('Zig DAP test'))
     vim.keymap.set('n', '<leader>dza', M.attach_pid, map_options('Zig DAP attach'))
+    vim.keymap.set('n', '<leader>dzB', M.build_release, map_options('Zig DAP ReleaseSafe build'))
+    vim.keymap.set('n', '<leader>dzb', M.build, map_options('Zig DAP build'))
+    vim.keymap.set('n', '<leader>dze', M.launch_current_binary, map_options('Zig DAP executable'))
+    vim.keymap.set('n', '<leader>dzr', M.launch, map_options('Zig DAP launch'))
+    vim.keymap.set('n', '<leader>dzt', M.test_current_file, map_options('Zig DAP test'))
 end
 
 local setup_done = false
@@ -882,19 +875,19 @@ function M.setup()
         clear = true,
     })
 
-    api.nvim_create_autocmd('FileType', {
+    api.nvim_create_autocmd({ 'BufReadPost', 'BufNewFile' }, {
         group = group,
-        pattern = FILETYPE_PATTERNS,
-        desc = 'Enable Zig DAP for Zig filetypes',
+        pattern = FILE_PATTERNS,
+        desc = 'Enable Zig DAP for Zig files',
         callback = function(event)
             configure_buffer(event.buf)
         end,
     })
 
-    api.nvim_create_autocmd({ 'BufReadPost', 'BufNewFile' }, {
+    api.nvim_create_autocmd('FileType', {
         group = group,
-        pattern = FILE_PATTERNS,
-        desc = 'Enable Zig DAP for Zig files',
+        pattern = FILETYPE_PATTERNS,
+        desc = 'Enable Zig DAP for Zig filetypes',
         callback = function(event)
             configure_buffer(event.buf)
         end,

@@ -24,9 +24,9 @@
 -- #################################################################
 -- ~/.config/nvim/lua/dap/unity.lua
 local api = vim.api
+local debug = vim.debug
 local fn = vim.fn
 local uv = vim.uv
-local debug = vim.debug
 local M = {}
 
 --- Bound for the `ps` probe; a hung child must not freeze the editor.
@@ -91,9 +91,7 @@ local function ensure_adapter()
     end
 
     notify(
-        ('Unity debugger not found: %s. Install Samsung/netcoredbg and put it in PATH.'):format(
-            M.adapter.command
-        ),
+        ('Unity debugger not found: %s. Install Samsung/netcoredbg and put it in PATH.'):format(M.adapter.command),
         vim.log.levels.ERROR
     )
     return false
@@ -177,9 +175,9 @@ end
 
 ---@return integer?
 local function pick_pid_from_ps()
-    local result = vim.system({ 'ps', '-eo', 'pid=,comm=' }, { text = true }):wait(
-        UNITY_COMMAND_TIMEOUT_MS
-    )
+    local ps_obj = vim.system({ 'ps', '-eo', 'pid=,comm=' }, { text = true })
+    ---@cast ps_obj vim.SystemObj
+    local result = ps_obj:wait(UNITY_COMMAND_TIMEOUT_MS)
 
     if result.code ~= 0 or not result.stdout or result.stdout == '' then
         return nil
@@ -203,7 +201,7 @@ local function pick_pid_from_ps()
                 or lower:find('mono', 1, true) ~= nil
                 or lower:find('dotnet', 1, true) ~= nil
             then
-                matches[#matches + 1] = { pid = tonumber(pid), comm = comm }
+                matches[#matches + 1] = { pid = math.floor(tonumber(pid) or 0), comm = comm }
             end
         end
     end
@@ -251,7 +249,11 @@ end
 function M.attach_pid()
     local pid = pick_pid_from_ps()
     if not pid then
-        pid = tonumber(input('PID: ', ''))
+        local entered = tonumber(input('PID: ', ''))
+
+        if entered ~= nil then
+            pid = math.floor(entered)
+        end
     end
 
     if not pid then
@@ -337,12 +339,16 @@ function M.setup()
 
     setup_done = true
 
-    api.nvim_create_user_command('UnityDapLaunch', M.launch_dll, {
-        desc = 'Launch Unity managed DLL with netcoredbg',
-    })
-
     api.nvim_create_user_command('UnityDapAttach', M.attach_pid, {
         desc = 'Attach to running Unity/.NET process',
+    })
+
+    api.nvim_create_user_command('UnityDapInfo', M.unity_info, {
+        desc = 'Show Unity DAP info',
+    })
+
+    api.nvim_create_user_command('UnityDapLaunch', M.launch_dll, {
+        desc = 'Launch Unity managed DLL with netcoredbg',
     })
 
     api.nvim_create_user_command('UnityDapServer', M.attach_server, {
@@ -353,14 +359,10 @@ function M.setup()
         desc = 'Open Unity Library/ScriptAssemblies directory',
     })
 
-    api.nvim_create_user_command('UnityDapInfo', M.unity_info, {
-        desc = 'Show Unity DAP info',
-    })
-
-    vim.keymap.set('n', '<leader>ul', M.launch_dll, { desc = 'Unity DAP launch' })
     vim.keymap.set('n', '<leader>ua', M.attach_pid, { desc = 'Unity DAP attach' })
-    vim.keymap.set('n', '<leader>us', M.attach_server, { desc = 'Unity DAP server' })
     vim.keymap.set('n', '<leader>ui', M.unity_info, { desc = 'Unity DAP info' })
+    vim.keymap.set('n', '<leader>ul', M.launch_dll, { desc = 'Unity DAP launch' })
+    vim.keymap.set('n', '<leader>us', M.attach_server, { desc = 'Unity DAP server' })
 end
 
 return M

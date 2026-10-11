@@ -29,11 +29,17 @@ local uv = vim.uv
 
 local M = {}
 
-local SOURCE = 'mojo-dap'
-
 --- Bound for `mojo` CLI invocations (build, version probes); a hung child
 --- must not freeze the editor.
 local MOJO_COMMAND_TIMEOUT_MS = 120000
+
+---@type string[]
+local MOJO_LOCAL_CANDIDATES = {
+    '.venv/bin/mojo',
+    '.pixi/envs/default/bin/mojo',
+    '.pixi/envs/dev/bin/mojo',
+    'venv/bin/mojo',
+}
 
 ---@type string[]
 local ROOT_MARKERS = {
@@ -46,13 +52,7 @@ local ROOT_MARKERS = {
     '.git',
 }
 
----@type string[]
-local MOJO_LOCAL_CANDIDATES = {
-    '.venv/bin/mojo',
-    '.pixi/envs/default/bin/mojo',
-    '.pixi/envs/dev/bin/mojo',
-    'venv/bin/mojo',
-}
+local SOURCE = 'mojo-dap'
 
 ---@class MojoDapState
 ---@field mojo string?
@@ -165,10 +165,12 @@ end
 ---@return vim.SystemCompleted?
 local function system(command, cwd)
     local ok, result = pcall(function()
-        return vim.system(command, {
+        local sysobj = vim.system(command, {
             cwd = cwd,
             text = true,
-        }):wait(MOJO_COMMAND_TIMEOUT_MS)
+        })
+        ---@cast sysobj vim.SystemObj
+        return sysobj:wait(MOJO_COMMAND_TIMEOUT_MS)
     end)
 
     if not ok then
@@ -478,10 +480,7 @@ local function build_current(extra_flags)
     end
 
     if not executable(output) then
-        notify(
-            ('Mojo build completed but output is not executable: %s'):format(output),
-            levels.ERROR
-        )
+        notify(('Mojo build completed but output is not executable: %s'):format(output), levels.ERROR)
 
         return nil
     end
@@ -559,10 +558,7 @@ local function spawn_mojo_debug_terminal(command)
 
         on_exit = function(_, code)
             vim.schedule(function()
-                notify(
-                    ('mojo debug exited with status %d'):format(code),
-                    code == 0 and levels.INFO or levels.WARN
-                )
+                notify(('mojo debug exited with status %d'):format(code), code == 0 and levels.INFO or levels.WARN)
             end)
         end,
     })
@@ -690,9 +686,7 @@ local function status()
 
         'Mojo CPU CLI debugger: ' .. (mojo ~= nil and 'available' or 'unavailable'),
 
-        'Mojo NVIDIA GPU debugger: ' .. (
-            mojo ~= nil and cuda_gdb ~= nil and 'available' or 'unavailable'
-        ),
+        'Mojo NVIDIA GPU debugger: ' .. (mojo ~= nil and cuda_gdb ~= nil and 'available' or 'unavailable'),
 
         'cached debug executable: ' .. (state.executable or 'none'),
     }, '\n'))

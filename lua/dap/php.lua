@@ -34,11 +34,8 @@ local fs = vim.fs
 local levels = vim.log.levels
 
 local M = {}
-
-local SOURCE = 'php'
-local PROBE_TIMEOUT_MS = 5000
-local XDEBUG_PORT = 9003
 local LOOPBACK = '127.0.0.1'
+local PROBE_TIMEOUT_MS = 5000
 
 ---@type string[]
 local ROOT_MARKERS = {
@@ -47,6 +44,9 @@ local ROOT_MARKERS = {
     'index.php',
     '.git',
 }
+
+local SOURCE = 'php'
+local XDEBUG_PORT = 9003
 
 ---@class PhpState
 ---@field adapter_js string?
@@ -136,9 +136,11 @@ end
 ---@return vim.SystemCompleted?
 local function system(command)
     local ok, result = pcall(function()
-        return vim.system(command, {
+        local sysobj = vim.system(command, {
             text = true,
-        }):wait(PROBE_TIMEOUT_MS)
+        })
+        ---@cast sysobj vim.SystemObj
+        return sysobj:wait(PROBE_TIMEOUT_MS)
     end)
 
     if not ok then
@@ -193,9 +195,8 @@ local function find_adapter_js()
     -- Common install locations for the vscode-php-debug extension.
     --
     candidates[#candidates + 1] = fn.expand('~/.vscode/extensions/xdebug.php-debug/out/phpDebug.js')
-    candidates[#candidates + 1] = fn.expand(
-        '~/.local/share/nvim/mason/packages/php-debug-adapter/extension/out/phpDebug.js'
-    )
+    candidates[#candidates + 1] =
+        fn.expand('~/.local/share/nvim/mason/packages/php-debug-adapter/extension/out/phpDebug.js')
     candidates[#candidates + 1] = '/usr/local/lib/node_modules/php-debug/out/phpDebug.js'
 
     for _, candidate in ipairs(candidates) do

@@ -30,10 +30,36 @@ local registry = require('dap.registry')
 
 local M = {}
 
---- Hard bound on subprocess probes, in milliseconds.
-local PROBE_TIMEOUT_MS = 3000
 --- Hard bound on candidate executable names tried per adapter.
 local MAX_CANDIDATES = 8
+
+--- Hard bound on subprocess probes, in milliseconds.
+local PROBE_TIMEOUT_MS = 3000
+--- Compare dotted version strings. Returns -1, 0, 1 like a comparator.
+---@param a string
+---@param b string
+---@return integer
+local function compare_versions(a, b)
+    local function parts(version)
+        local nums = {}
+        for piece in tostring(version):gmatch('[^.]+') do
+            local n = tonumber(piece:match('^%d+'))
+            if #nums >= 4 then
+                break
+            end
+            nums[#nums + 1] = n or 0
+        end
+        return nums
+    end
+    local pa, pb = parts(a), parts(b)
+    for i = 1, math.max(#pa, #pb) do
+        local x, y = pa[i] or 0, pb[i] or 0
+        if x ~= y then
+            return x < y and -1 or 1
+        end
+    end
+    return 0
+end
 
 --- Resolve the executable path for a descriptor without spawning anything.
 ---@param descriptor dap.RegistryDescriptor
@@ -53,8 +79,12 @@ local function resolve_executable(descriptor)
     elseif type(exe) == 'table' then
         if type(exe.command) == 'string' then
             names = { exe.command }
-        elseif type(exe.names) == 'table' then
-            names = exe.names
+        else
+            local exe_names = exe.names
+
+            if type(exe_names) == 'table' then
+                names = exe_names
+            end
         end
     end
     local limit = math.min(#names, MAX_CANDIDATES)
@@ -85,37 +115,16 @@ function M.discover()
         if path and registry.state(entry.id) == 'known' then
             registry.advance(entry.id, 'discovered')
         end
-        results[entry.id] = { state = registry.state(entry.id), path = path }
+        results[entry.id] = { path = path, state = registry.state(entry.id) }
     end
     return results
 end
 
---- Compare dotted version strings. Returns -1, 0, 1 like a comparator.
----@param a string
----@param b string
----@return integer
-local function compare_versions(a, b)
-    local function parts(version)
-        local nums = {}
-        for piece in tostring(version):gmatch('[^.]+') do
-            local n = tonumber(piece:match('^%d+'))
-            if #nums >= 4 then
-                break
-            end
-            nums[#nums + 1] = n or 0
-        end
-        return nums
-    end
-    local pa, pb = parts(a), parts(b)
-    for i = 1, math.max(#pa, #pb) do
-        local x, y = pa[i] or 0, pb[i] or 0
-        if x ~= y then
-            return x < y and -1 or 1
-        end
-    end
-    return 0
+--- Probe timeout shared by descriptors that shell out.
+---@return integer milliseconds
+function M.probe_timeout_ms()
+    return PROBE_TIMEOUT_MS
 end
-
 --- Run a descriptor's version_probe against its resolved executable.
 --- On success (probe ran and policy satisfied) promotes to 'compatible'.
 ---@param id string adapter id
@@ -184,13 +193,7 @@ function M.run_health_checks(id)
         checks[name] = check_ok
         all_ok = all_ok and check_ok
     end
-    return all_ok, { ok = all_ok, checks = checks }
-end
-
---- Probe timeout shared by descriptors that shell out.
----@return integer milliseconds
-function M.probe_timeout_ms()
-    return PROBE_TIMEOUT_MS
+    return all_ok, { checks = checks, ok = all_ok }
 end
 
 return M

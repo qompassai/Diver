@@ -163,13 +163,15 @@ $$;
 ---passes these via `-cmd` on each invocation instead.
 ---@type string[]
 M.sqlite_connection_pragmas = {
+    'PRAGMA busy_timeout = 5000;',
     'PRAGMA foreign_keys = ON;',
     'PRAGMA journal_mode = WAL;',
     'PRAGMA synchronous = NORMAL;',
-    'PRAGMA busy_timeout = 5000;',
 }
 
-M.sqlite = table.concat(M.sqlite_connection_pragmas, '\n') .. '\n\n' .. [=[
+M.sqlite = table.concat(M.sqlite_connection_pragmas, '\n')
+    .. '\n\n'
+    .. [=[
 CREATE TABLE IF NOT EXISTS dap_projects (
   id          TEXT PRIMARY KEY,
   root        TEXT NOT NULL UNIQUE,

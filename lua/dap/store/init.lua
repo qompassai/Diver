@@ -43,29 +43,13 @@ local M = {}
 ---@field unit? string
 ---@field metadata? table
 
----@type DapStoreOptions
-local options = {
-    backend = 'postgresql',
-    fallback = 'sqlite',
-    postgresql = {},
-    sqlite = {},
-}
-
-local active_backend = nil
-local active_name = nil
-
 ---Maximum queued writes per session. Bounds memory when events arrive
 ---faster than the session row is inserted; overflow fails the write.
 ---@type integer
 local SESSION_QUEUE_MAX = 100
 
----@class DapSessionWriteState
----@field started boolean true once the session row insert completed
----@field finished boolean true once session_finish was requested
----@field queue fun(backend: table)[] writes waiting for the session row
-
----@type table<string, DapSessionWriteState>
-local session_writes = {}
+local active_backend = nil
+local active_name = nil
 
 ---@class DapGitCacheEntry
 ---@field pending boolean
@@ -75,6 +59,22 @@ local session_writes = {}
 
 ---@type table<string, DapGitCacheEntry>
 local git_cache = {}
+
+---@type DapStoreOptions
+local options = {
+    backend = 'postgresql',
+    fallback = 'sqlite',
+    postgresql = {},
+    sqlite = {},
+}
+
+---@class DapSessionWriteState
+---@field started boolean true once the session row insert completed
+---@field finished boolean true once session_finish was requested
+---@field queue fun(backend: table)[] writes waiting for the session row
+
+---@type table<string, DapSessionWriteState>
+local session_writes = {}
 
 ---@param name DapStoreBackend
 ---@return table
@@ -98,92 +98,25 @@ local function activate(name, callback)
     end)
 end
 
----@param opts? DapStoreOptions
----@param callback? fun(ok: boolean, backend?: DapStoreBackend, error?: string)
-function M.setup(opts, callback)
-    -- Fresh defaults on every setup: a previous setup's backend, fallback,
-    -- and per-backend options must not leak into a later one.
-    options = vim.tbl_deep_extend('force', {
-        backend = 'postgresql',
-        fallback = 'sqlite',
-        postgresql = {},
-        sqlite = {},
-    }, opts or {})
-
-    -- A re-setup starts clean: the previous backend must not serve writes
-    -- while the new one initializes.
-    active_backend = nil
-    active_name = nil
-
-    local env_backend = vim.env.DIVER_DAP_STORE
-    if env_backend == 'postgresql' or env_backend == 'sqlite' then
-        options.backend = env_backend
+---Queue a session-dependent write behind the session row insert. Returns
+---true when the write was queued (or dropped on overflow); the caller must
+---then do nothing further. Returns false when no ordering is needed and the
+---caller should write directly.
+---@param session_id string
+---@param write fun(backend: table) performs the backend write
+---@param on_drop fun() called when the queue is full and the write is dropped
+---@return boolean queued
+local function enqueue_session_write(session_id, write, on_drop)
+    local state = session_writes[session_id]
+    if not state or state.started then
+        return false
     end
-
-    local preferred = options.backend or 'postgresql'
-
-    activate(preferred, function(ok, err)
-        if ok then
-            if callback then
-                callback(true, preferred)
-            end
-            return
-        end
-
-        local fallback = options.fallback
-        if fallback == nil or fallback == false or fallback == preferred then
-            if callback then
-                callback(false, nil, err)
-            end
-            return
-        end
-
-        activate(fallback, function(fallback_ok, fallback_err)
-            if callback then
-                local backend_arg = fallback_ok and fallback or nil
-                local err_arg = fallback_ok and err or fallback_err
-                callback(fallback_ok, backend_arg, err_arg)
-            end
-        end)
-    end)
-end
-
----@return DapStoreBackend?
-function M.backend_name()
-    return active_name
-end
-
----@return boolean
-function M.ready()
-    return active_backend ~= nil
-end
-
----@param callback fun(ok: boolean, error?: string)
-function M.health(callback)
-    if not active_backend then
-        callback(false, 'DAP store is not initialized')
-        return
+    if #state.queue >= SESSION_QUEUE_MAX then
+        on_drop()
+        return true
     end
-
-    active_backend.health(callback)
-end
-
----@param root string
----@param callback? fun(ok: boolean, result?: vim.SystemCompleted)
-function M.ensure_project(root, callback)
-    assert(type(root) == 'string' and root ~= '', 'root must be a non-empty string')
-
-    if not active_backend then
-        if callback then
-            callback(false)
-        end
-        return
-    end
-
-    active_backend.ensure_project({
-        id = common.project_id(root),
-        root = vim.fs.normalize(root),
-    }, callback)
+    state.queue[#state.queue + 1] = write
+    return true
 end
 
 ---Resolve git metadata for a project root without blocking the main loop.
@@ -256,25 +189,165 @@ local function mark_session_started(session_id, ok)
     end
 end
 
----Queue a session-dependent write behind the session row insert. Returns
----true when the write was queued (or dropped on overflow); the caller must
----then do nothing further. Returns false when no ordering is needed and the
----caller should write directly.
+---@return DapStoreBackend?
+function M.backend_name()
+    return active_name
+end
+
+---@param root string
+---@param breakpoint DapStoreBreakpointSpec
+---@param callback? fun(ok: boolean, result?: vim.SystemCompleted)
+function M.breakpoint(root, breakpoint, callback)
+    if not active_backend then
+        if callback then
+            callback(false)
+        end
+        return
+    end
+
+    local project_id = common.project_id(root)
+    local id_seed = table.concat({
+        project_id,
+        tostring(breakpoint.path or ''),
+        tostring(breakpoint.line or 0),
+        tostring(breakpoint.column_number or 0),
+    }, '\0')
+
+    active_backend.ensure_project({
+        id = project_id,
+        root = vim.fs.normalize(root),
+    }, function(project_ok)
+        if not project_ok then
+            if callback then
+                callback(false)
+            end
+            return
+        end
+
+        active_backend.breakpoint_put({
+            id = vim.fn.sha256(id_seed):sub(1, 32),
+            project_id = project_id,
+            path = breakpoint.path,
+            line = breakpoint.line,
+            column_number = breakpoint.column_number,
+            condition = breakpoint.condition,
+            hit_condition = breakpoint.hit_condition,
+            log_message = breakpoint.log_message,
+            enabled = breakpoint.enabled,
+        }, callback)
+    end)
+end
+
+---@param root string
+---@param callback? fun(ok: boolean, result?: vim.SystemCompleted)
+function M.ensure_project(root, callback)
+    assert(type(root) == 'string' and root ~= '', 'root must be a non-empty string')
+
+    if not active_backend then
+        if callback then
+            callback(false)
+        end
+        return
+    end
+
+    active_backend.ensure_project({
+        id = common.project_id(root),
+        root = vim.fs.normalize(root),
+    }, callback)
+end
+
 ---@param session_id string
----@param write fun(backend: table) performs the backend write
----@param on_drop fun() called when the queue is full and the write is dropped
----@return boolean queued
-local function enqueue_session_write(session_id, write, on_drop)
+---@param event_type string
+---@param payload? table
+---@param callback? fun(ok: boolean, result?: vim.SystemCompleted)
+function M.event(session_id, event_type, payload, callback)
+    if not active_backend then
+        if callback then
+            callback(false)
+        end
+        return
+    end
+
+    local function write(backend)
+        backend.event_append({
+            session_id = session_id,
+            event_type = event_type,
+            payload = payload or {},
+        }, callback)
+    end
+
+    local queued = enqueue_session_write(session_id, write, function()
+        if callback then
+            callback(false)
+        end
+    end)
+    if queued then
+        return
+    end
+    write(active_backend)
+end
+
+---@param callback fun(ok: boolean, error?: string)
+function M.health(callback)
+    if not active_backend then
+        callback(false, 'DAP store is not initialized')
+        return
+    end
+
+    active_backend.health(callback)
+end
+
+---@param metric DapStoreMetricSpec
+---@param callback? fun(ok: boolean, result?: vim.SystemCompleted)
+function M.metric(metric, callback)
+    if not active_backend then
+        if callback then
+            callback(false)
+        end
+        return
+    end
+
+    active_backend.metric_put(metric, callback)
+end
+---@return boolean
+function M.ready()
+    return active_backend ~= nil
+end
+
+---@param session_id string
+---@param outcome? DapStoreOutcome
+---@param callback? fun(ok: boolean, result?: vim.SystemCompleted)
+function M.session_finish(session_id, outcome, callback)
+    if not active_backend then
+        if callback then
+            callback(false)
+        end
+        return
+    end
+
+    local record = outcome or {}
+    local function write(backend)
+        backend.session_finish(session_id, record, function(ok, result)
+            session_writes[session_id] = nil
+            if callback then
+                callback(ok, result)
+            end
+        end)
+    end
+
     local state = session_writes[session_id]
-    if not state or state.started then
-        return false
+    if state and not state.started then
+        state.finished = true
+        local queued = enqueue_session_write(session_id, write, function()
+            if callback then
+                callback(false)
+            end
+        end)
+        if queued then
+            return
+        end
     end
-    if #state.queue >= SESSION_QUEUE_MAX then
-        on_drop()
-        return true
-    end
-    state.queue[#state.queue + 1] = write
-    return true
+    write(active_backend)
 end
 
 ---@param spec DapStoreSessionSpec
@@ -343,128 +416,54 @@ function M.session_start(spec, callback)
     return session_id
 end
 
----@param session_id string
----@param outcome? DapStoreOutcome
----@param callback? fun(ok: boolean, result?: vim.SystemCompleted)
-function M.session_finish(session_id, outcome, callback)
-    if not active_backend then
-        if callback then
-            callback(false)
-        end
-        return
+---@param opts? DapStoreOptions
+---@param callback? fun(ok: boolean, backend?: DapStoreBackend, error?: string)
+function M.setup(opts, callback)
+    -- Fresh defaults on every setup: a previous setup's backend, fallback,
+    -- and per-backend options must not leak into a later one.
+    options = vim.tbl_deep_extend('force', {
+        backend = 'postgresql',
+        fallback = 'sqlite',
+        postgresql = {},
+        sqlite = {},
+    }, opts or {})
+
+    -- A re-setup starts clean: the previous backend must not serve writes
+    -- while the new one initializes.
+    active_backend = nil
+    active_name = nil
+
+    local env_backend = vim.env.DIVER_DAP_STORE
+    if env_backend == 'postgresql' or env_backend == 'sqlite' then
+        options.backend = env_backend
     end
 
-    local record = outcome or {}
-    local function write(backend)
-        backend.session_finish(session_id, record, function(ok, result)
-            session_writes[session_id] = nil
+    local preferred = options.backend or 'postgresql'
+
+    activate(preferred, function(ok, err)
+        if ok then
             if callback then
-                callback(ok, result)
-            end
-        end)
-    end
-
-    local state = session_writes[session_id]
-    if state and not state.started then
-        state.finished = true
-        local queued = enqueue_session_write(session_id, write, function()
-            if callback then
-                callback(false)
-            end
-        end)
-        if queued then
-            return
-        end
-    end
-    write(active_backend)
-end
-
----@param session_id string
----@param event_type string
----@param payload? table
----@param callback? fun(ok: boolean, result?: vim.SystemCompleted)
-function M.event(session_id, event_type, payload, callback)
-    if not active_backend then
-        if callback then
-            callback(false)
-        end
-        return
-    end
-
-    local function write(backend)
-        backend.event_append({
-            session_id = session_id,
-            event_type = event_type,
-            payload = payload or {},
-        }, callback)
-    end
-
-    local queued = enqueue_session_write(session_id, write, function()
-        if callback then
-            callback(false)
-        end
-    end)
-    if queued then
-        return
-    end
-    write(active_backend)
-end
-
----@param root string
----@param breakpoint DapStoreBreakpointSpec
----@param callback? fun(ok: boolean, result?: vim.SystemCompleted)
-function M.breakpoint(root, breakpoint, callback)
-    if not active_backend then
-        if callback then
-            callback(false)
-        end
-        return
-    end
-
-    local project_id = common.project_id(root)
-    local id_seed = table.concat({
-        project_id,
-        tostring(breakpoint.path or ''),
-        tostring(breakpoint.line or 0),
-        tostring(breakpoint.column_number or 0),
-    }, '\0')
-
-    active_backend.ensure_project({
-        id = project_id,
-        root = vim.fs.normalize(root),
-    }, function(project_ok)
-        if not project_ok then
-            if callback then
-                callback(false)
+                callback(true, preferred)
             end
             return
         end
 
-        active_backend.breakpoint_put({
-            id = vim.fn.sha256(id_seed):sub(1, 32),
-            project_id = project_id,
-            path = breakpoint.path,
-            line = breakpoint.line,
-            column_number = breakpoint.column_number,
-            condition = breakpoint.condition,
-            hit_condition = breakpoint.hit_condition,
-            log_message = breakpoint.log_message,
-            enabled = breakpoint.enabled,
-        }, callback)
-    end)
-end
-
----@param metric DapStoreMetricSpec
----@param callback? fun(ok: boolean, result?: vim.SystemCompleted)
-function M.metric(metric, callback)
-    if not active_backend then
-        if callback then
-            callback(false)
+        local fallback = options.fallback
+        if fallback == nil or fallback == false or fallback == preferred then
+            if callback then
+                callback(false, nil, err)
+            end
+            return
         end
-        return
-    end
 
-    active_backend.metric_put(metric, callback)
+        activate(fallback, function(fallback_ok, fallback_err)
+            if callback then
+                local backend_arg = fallback_ok and fallback or nil
+                local err_arg = fallback_ok and err or fallback_err
+                callback(fallback_ok, backend_arg, err_arg)
+            end
+        end)
+    end)
 end
 
 return M

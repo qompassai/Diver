@@ -52,17 +52,17 @@ local levels = vim.log.levels
 local uv = vim.uv
 
 local M = {}
-
-local SOURCE = 'renderdoc'
-local RENDERDOCCMD = 'renderdoccmd'
-local QRENDERDOC = 'qrenderdoc'
 local CAPTURE_SUFFIX = '.rdc'
+local INT_OPTION_MAX = 10000
+local MAX_CAPTURE_ARGS = 128
 
 -- Bounds. INT_OPTION_MAX mirrors the CLI: "Must be within [0, 10000]".
 local MAX_CAPTURES = 512
-local MAX_CAPTURE_ARGS = 128
 local MAX_PATH_BYTES = 4096
-local INT_OPTION_MAX = 10000
+local QRENDERDOC = 'qrenderdoc'
+local RENDERDOCCMD = 'renderdoccmd'
+
+local SOURCE = 'renderdoc'
 
 ---@class RenderdocCaptureOpts
 ---@field executable string target binary to launch under capture (required)
@@ -486,6 +486,26 @@ function M.open_ui()
     }, QRENDERDOC)
 end
 
+--- Build the command_args a bare :Command invocation would receive.
+---@param name string
+---@return vim.api.keyset.create_user_command.command_args
+local function bare_args(name)
+    return {
+        args = '',
+        bang = false,
+        count = -1,
+        fargs = {},
+        line1 = 1,
+        line2 = 1,
+        mods = '',
+        name = name,
+        nargs = '0',
+        range = 0,
+        reg = '',
+        smods = {},
+    }
+end
+
 ---@type table<string, DebugCommand>
 M.commands = {
     VulkanCapture = {
@@ -711,7 +731,7 @@ M.mappings = {
         mode = 'n',
 
         rhs = function()
-            M.commands.RenderdocCaptures.callback({})
+            M.commands.RenderdocCaptures.callback(bare_args('RenderdocCaptures'))
         end,
 
         desc = 'RenderDoc: List captures',
@@ -734,10 +754,8 @@ M.mappings = {
     },
 }
 
----@param opts? table reserved for future use; currently unused
-function M.setup(opts)
-    opts = opts or {}
-
+---@param _opts? table reserved for future use; currently unused
+function M.setup(_opts)
     if setup_done then
         return
     end

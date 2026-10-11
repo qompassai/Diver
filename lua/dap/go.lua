@@ -28,7 +28,15 @@ local uv = vim.uv
 
 local M = {}
 
-local SOURCE = 'go-dap'
+---@type string[]
+local DELVE_EXECUTABLES = {
+    'dlv',
+}
+
+---@type string[]
+local GO_EXECUTABLES = {
+    'go',
+}
 
 ---@type string[]
 local ROOT_MARKERS = {
@@ -39,15 +47,7 @@ local ROOT_MARKERS = {
     '.git',
 }
 
----@type string[]
-local GO_EXECUTABLES = {
-    'go',
-}
-
----@type string[]
-local DELVE_EXECUTABLES = {
-    'dlv',
-}
+local SOURCE = 'go-dap'
 
 ---@class GoDapState
 ---@field dlv string?
@@ -169,13 +169,15 @@ end
 
 ---@param command string[]
 ---@param cwd? string
----@return vim.SystemCompleted?
+---@return vim.SystemCompleted?, string?
 local function system(command, cwd)
     local ok, result = pcall(function()
-        return vim.system(command, {
+        local sysobj = vim.system(command, {
             cwd = cwd,
             text = true,
-        }):wait()
+        })
+        ---@cast sysobj vim.SystemObj
+        return sysobj:wait()
     end)
 
     if not ok then

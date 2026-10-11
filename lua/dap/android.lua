@@ -31,16 +31,10 @@ local M = {}
 
 local ADAPTER_NAME = 'android-lldb'
 
-local DEFAULT_GDB_PORT = 5039
-local DEFAULT_JDWP_PORT = 8700
-
 --- Bounds for subprocess work: adb probes are quick, Gradle builds are not,
 --- and the app-pid poll needs a per-probe ceiling so a wedged adb cannot
 --- stretch one iteration indefinitely.
 local ADB_TIMEOUT_MS = 10000
-local HOST_COMMAND_TIMEOUT_MS = 10000
-local GRADLE_BUILD_TIMEOUT_MS = 600000
-local APP_PID_PROBE_TIMEOUT_MS = 2000
 
 --- The launch path resolves `program` synchronously (the DAP core evaluates
 --- configuration functions on the main thread), so the app-pid wait there
@@ -48,6 +42,12 @@ local APP_PID_PROBE_TIMEOUT_MS = 2000
 --- callback use poll_app_pid_async() instead and never block the UI.
 local APP_PID_ATTEMPTS_MAX = 30
 local APP_PID_POLL_INTERVAL_MS = 100
+local APP_PID_PROBE_TIMEOUT_MS = 2000
+
+local DEFAULT_GDB_PORT = 5039
+local DEFAULT_JDWP_PORT = 8700
+local GRADLE_BUILD_TIMEOUT_MS = 600000
+local HOST_COMMAND_TIMEOUT_MS = 10000
 
 --- Readiness probe for the lldb-server adb forward (replaces a blind sleep).
 --- Each attempt opens a real TCP connection through the forward; adb refuses
@@ -72,16 +72,6 @@ local NOTIFY_PREFIX = '[android-debug] '
 ---@type AndroidDebugState
 local state = {}
 
----@type string[]
-local PROJECT_ROOT_MARKERS = {
-    'Cargo.toml',
-    'build.gradle.kts',
-    'build.gradle',
-    'settings.gradle.kts',
-    'settings.gradle',
-    '.git',
-}
-
 ---@type table<string, string[]>
 local ABI_PATTERNS = {
     ['arm64-v8a'] = {
@@ -102,6 +92,16 @@ local ABI_PATTERNS = {
     ['x86_64'] = {
         'x86_64',
     },
+}
+
+---@type string[]
+local PROJECT_ROOT_MARKERS = {
+    'Cargo.toml',
+    'build.gradle.kts',
+    'build.gradle',
+    'settings.gradle.kts',
+    'settings.gradle',
+    '.git',
 }
 
 ---@param message string
@@ -179,7 +179,9 @@ local function system(command, opts)
 
     system_opts.timeout_ms = nil
 
-    return vim.system(command, system_opts):wait(timeout_ms)
+    local sysobj = vim.system(command, system_opts)
+    ---@cast sysobj vim.SystemObj
+    return sysobj:wait(timeout_ms)
 end
 
 ---@param result vim.SystemCompleted
@@ -432,8 +434,7 @@ local function native_library_name(root)
         return nil
     end
 
-    return content:match('android:name%s*=%s*"android%.app%.lib_name".-'
-        .. 'android:value%s*=%s*"([^"]+)"')
+    return content:match('android:name%s*=%s*"android%.app%.lib_name".-' .. 'android:value%s*=%s*"([^"]+)"')
 end
 
 ---@return string?
@@ -1016,8 +1017,7 @@ local function lldb_server(abi)
     local sdk = env.ANDROID_SDK_ROOT or env.ANDROID_HOME
 
     if type(sdk) == 'string' and sdk ~= '' then
-        local sdk_matches =
-            fn.glob(fs.joinpath(sdk, 'lldb', '*', 'android', '*', 'lldb-server'), false, true)
+        local sdk_matches = fn.glob(fs.joinpath(sdk, 'lldb', '*', 'android', '*', 'lldb-server'), false, true)
 
         table.sort(sdk_matches, function(a, b)
             return a > b
@@ -1119,8 +1119,7 @@ local function deploy_lldb_server(serial, package, local_server)
         remote_tmp,
     })
 
-    local push_ok = push ~= nil
-        and check_result(system(push, { timeout_ms = ADB_TIMEOUT_MS }), 'lldb-server push')
+    local push_ok = push ~= nil and check_result(system(push, { timeout_ms = ADB_TIMEOUT_MS }), 'lldb-server push')
 
     if not push_ok then
         return false
@@ -1135,8 +1134,7 @@ local function deploy_lldb_server(serial, package, local_server)
         './nvim-lldb-server',
     })
 
-    local copy_ok = copy ~= nil
-        and check_result(system(copy, { timeout_ms = ADB_TIMEOUT_MS }), 'lldb-server install')
+    local copy_ok = copy ~= nil and check_result(system(copy, { timeout_ms = ADB_TIMEOUT_MS }), 'lldb-server install')
 
     if not copy_ok then
         return false
@@ -1258,7 +1256,7 @@ local function start_lldb_server(serial, package, port)
         return false
     end
 
-    state.lldb_server_job = vim.system(argv, {
+    local lldb_job = vim.system(argv, {
         text = true,
     }, function(result)
         if result.code ~= 0 and result.code ~= 143 then
@@ -1267,6 +1265,8 @@ local function start_lldb_server(serial, package, port)
             end)
         end
     end)
+    ---@cast lldb_job vim.SystemObj
+    state.lldb_server_job = lldb_job
 
     local ready = false
 

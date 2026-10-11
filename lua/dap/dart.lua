@@ -55,39 +55,16 @@
 local api = vim.api
 local fn = vim.fn
 local fs = vim.fs
-local uv = vim.uv
 local levels = vim.log.levels
+local uv = vim.uv
 
 local M = {}
-
-local SOURCE = 'dart'
-local FLUTTER_SOURCE = 'flutter'
-local PROBE_TIMEOUT_MS = 5000
-
----@type string[]
-local ROOT_MARKERS = {
-    'pubspec.yaml',
-    '.git',
-}
-
----@type string[]
-local FILETYPES = {
-    'dart',
-}
 
 ---@type string[]
 local DART_WELL_KNOWN_PATHS = {
     '/usr/lib/dart/bin/dart',
     '/opt/dart-sdk/bin/dart',
     '/usr/local/bin/dart',
-}
-
----@type string[]
-local FLUTTER_WELL_KNOWN_PATHS = {
-    '/opt/flutter/bin/flutter',
-    '/usr/local/bin/flutter',
-    '~/flutter/bin/flutter',
-    '~/sdk/flutter/bin/flutter',
 }
 
 --
@@ -99,6 +76,29 @@ local FLUTTER_WELL_KNOWN_PATHS = {
 local DEBUG_ADAPTER_ARGS = {
     'debug_adapter',
 }
+
+---@type string[]
+local FILETYPES = {
+    'dart',
+}
+local FLUTTER_SOURCE = 'flutter'
+
+---@type string[]
+local FLUTTER_WELL_KNOWN_PATHS = {
+    '/opt/flutter/bin/flutter',
+    '/usr/local/bin/flutter',
+    '~/flutter/bin/flutter',
+    '~/sdk/flutter/bin/flutter',
+}
+local PROBE_TIMEOUT_MS = 5000
+
+---@type string[]
+local ROOT_MARKERS = {
+    'pubspec.yaml',
+    '.git',
+}
+
+local SOURCE = 'dart'
 
 local TEST_ARG = '--test'
 
@@ -190,9 +190,11 @@ end
 ---@return vim.SystemCompleted?
 local function system(command)
     local ok, result = pcall(function()
-        return vim.system(command, {
+        local sysobj = vim.system(command, {
             text = true,
-        }):wait(PROBE_TIMEOUT_MS)
+        })
+        ---@cast sysobj vim.SystemObj
+        return sysobj:wait(PROBE_TIMEOUT_MS)
     end)
 
     if not ok then

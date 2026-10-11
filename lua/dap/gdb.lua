@@ -31,14 +31,24 @@
 local api = vim.api
 local fn = vim.fn
 local fs = vim.fs
-local uv = vim.uv
 local levels = vim.log.levels
+local uv = vim.uv
 
 local M = {}
 
-local SOURCE = 'gdb'
-local PROBE_TIMEOUT_MS = 5000
+---@type string[]
+local FILETYPES = {
+    'c',
+    'cpp',
+    'objc',
+    'objcpp',
+    'asm',
+    'd',
+    'fortran',
+    'rust',
+}
 local MIN_MAJOR = 14
+local PROBE_TIMEOUT_MS = 5000
 
 ---@type string[]
 local ROOT_MARKERS = {
@@ -52,17 +62,7 @@ local ROOT_MARKERS = {
     '.git',
 }
 
----@type string[]
-local FILETYPES = {
-    'c',
-    'cpp',
-    'objc',
-    'objcpp',
-    'asm',
-    'd',
-    'fortran',
-    'rust',
-}
+local SOURCE = 'gdb'
 
 ---@type string[]
 local WELL_KNOWN_PATHS = {
@@ -157,9 +157,11 @@ end
 ---@return vim.SystemCompleted?
 local function system(command)
     local ok, result = pcall(function()
-        return vim.system(command, {
+        local sysobj = vim.system(command, {
             text = true,
-        }):wait(PROBE_TIMEOUT_MS)
+        })
+        ---@cast sysobj vim.SystemObj
+        return sysobj:wait(PROBE_TIMEOUT_MS)
     end)
 
     if not ok then
@@ -233,7 +235,7 @@ local function gdb_major_version(path)
         return nil
     end
 
-    return tonumber(major)
+    return math.floor(tonumber(major) or 0)
 end
 
 ---@param path string
@@ -248,6 +250,7 @@ local function gdb_version_line(path)
     return trim(result.stdout:match('[^\r\n]*') or '')
 end
 
+---@param path string
 ---@return boolean
 local function supports_dap(path)
     local major = gdb_major_version(path)
@@ -746,8 +749,7 @@ function M.build_remote_target(opts)
     -- loudly instead of silently dropping them.
     --
     if opts.sysroot ~= nil then
-        return nil,
-            'build_remote_target: sysroot has no GDB-DAP attach expression; use `set sysroot` via evaluate/repl'
+        return nil, 'build_remote_target: sysroot has no GDB-DAP attach expression; use `set sysroot` via evaluate/repl'
     end
 
     if opts.solib_search_path ~= nil then
@@ -757,8 +759,7 @@ function M.build_remote_target(opts)
     end
 
     if opts.stop_at_entry ~= nil then
-        return nil,
-            'build_remote_target: stop_at_entry is launch-only in GDB DAP; remote attach has no such field'
+        return nil, 'build_remote_target: stop_at_entry is launch-only in GDB DAP; remote attach has no such field'
     end
 
     local host = DEFAULT_HOST
@@ -777,17 +778,12 @@ function M.build_remote_target(opts)
         port = entry.default_port
 
         if port == nil then
-            return nil,
-                ('build_remote_target: %s defines no default port; pass opts.port'):format(opts.target)
+            return nil, ('build_remote_target: %s defines no default port; pass opts.port'):format(opts.target)
         end
     end
 
     if type(port) ~= 'number' or port % 1 ~= 0 or port < PORT_MIN or port > PORT_MAX then
-        return nil,
-            ('build_remote_target requires opts.port to be an integer in %d-%d'):format(
-                PORT_MIN,
-                PORT_MAX
-            )
+        return nil, ('build_remote_target requires opts.port to be an integer in %d-%d'):format(PORT_MIN, PORT_MAX)
     end
 
     port = math.floor(port)

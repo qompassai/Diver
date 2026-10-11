@@ -27,8 +27,6 @@ local levels = vim.log.levels
 
 local M = {}
 
-local SOURCE = 'postgres-dap'
-
 --- Bound for `psql` and adapter probe invocations; a hung child must not
 --- freeze the editor.
 local PG_COMMAND_TIMEOUT_MS = 30000
@@ -44,6 +42,8 @@ local ROOT_MARKERS = {
     '.pg_service.conf',
     '.git',
 }
+
+local SOURCE = 'postgres-dap'
 
 local state = {
     adapter = nil,
@@ -118,13 +118,15 @@ end
 
 local function system(command, cwd, env)
     local ok, result = pcall(function()
-        return vim.system(command, {
+        local sysobj = vim.system(command, {
             cwd = cwd,
 
             env = env,
 
             text = true,
-        }):wait(PG_COMMAND_TIMEOUT_MS)
+        })
+        ---@cast sysobj vim.SystemObj
+        return sysobj:wait(PG_COMMAND_TIMEOUT_MS)
     end)
 
     if not ok then

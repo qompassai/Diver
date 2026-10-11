@@ -29,12 +29,10 @@ local lsp = vim.lsp
 local uv = vim.uv
 
 local M = {}
-
-local SOURCE = 'scala-dap'
-local METALS_COMMAND = 'debug-adapter-start'
-local METALS_TIMEOUT_MS = 30000
 local DEFAULT_ATTACH_HOST = '127.0.0.1'
 local DEFAULT_ATTACH_PORT = 5005
+local METALS_COMMAND = 'debug-adapter-start'
+local METALS_TIMEOUT_MS = 30000
 
 ---@type string[]
 local ROOT_MARKERS = {
@@ -55,6 +53,8 @@ local ROOT_MARKERS = {
     'scala-cli.conf',
     '.git',
 }
+
+local SOURCE = 'scala-dap'
 
 ---@class ScalaDapEndpoint
 ---@field host string
@@ -160,9 +160,7 @@ end
 ---@param client vim.lsp.Client
 ---@return boolean
 local function is_metals(client)
-    return type(client) == 'table'
-        and type(client.name) == 'string'
-        and client.name:lower() == 'metals'
+    return type(client) == 'table' and type(client.name) == 'string' and client.name:lower() == 'metals'
 end
 
 ---@param bufnr? integer
@@ -192,11 +190,7 @@ local function metals_client(bufnr)
         if is_metals(client) then
             local client_root = client.root_dir
 
-            if
-                client_root ~= nil
-                and nonempty_string(client_root)
-                and fs.normalize(client_root) == root
-            then
+            if client_root ~= nil and nonempty_string(client_root) and fs.normalize(client_root) == root then
                 return client
             end
         end
@@ -487,10 +481,7 @@ local function request_metals_endpoint(client, bufnr, params)
     end
 
     if response.err ~= nil then
-        notify(
-            ('Metals debug-adapter-start failed: %s'):format(vim.inspect(response.err)),
-            levels.ERROR
-        )
+        notify(('Metals debug-adapter-start failed: %s'):format(vim.inspect(response.err)), levels.ERROR)
 
         return nil
     end
@@ -504,10 +495,7 @@ local function validate_metals_endpoint(result)
     local uri = endpoint_uri(result)
 
     if uri == nil then
-        notify(
-            ('Metals returned an unexpected debug endpoint: %s'):format(vim.inspect(result)),
-            levels.ERROR
-        )
+        notify(('Metals returned an unexpected debug endpoint: %s'):format(vim.inspect(result)), levels.ERROR)
 
         return nil
     end
@@ -560,10 +548,10 @@ local function start_metals_session(params)
     return endpoint
 end
 
----@param key string
+---@param _key string
 ---@param params fun(): table
 ---@return integer?
-local function adapter_port(key, params)
+local function adapter_port(_key, params)
     --
     -- Each call to `debug-adapter-start` creates a new debug server. Do not
     -- retain endpoints across different configurations.
@@ -636,9 +624,7 @@ local function show_status()
         table.concat({
             'root: ' .. root,
 
-            'Metals LSP: ' .. (
-                client ~= nil and ('%s [id=%d]'):format(client.name, client.id) or 'not attached'
-            ),
+            'Metals LSP: ' .. (client ~= nil and ('%s [id=%d]'):format(client.name, client.id) or 'not attached'),
 
             '.bloop: ' .. (directory(bloop_directory) and 'present' or 'absent'),
 

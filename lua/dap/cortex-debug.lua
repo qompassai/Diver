@@ -63,11 +63,9 @@ local fs = vim.fs
 local levels = vim.log.levels
 
 local M = {}
-
-local SOURCE = 'cortex-debug'
 local DEFAULT_HOST = '127.0.0.1'
-local PORT_MIN = 1
 local PORT_MAX = 65535
+local PORT_MIN = 1
 
 ---@type string[]
 local ROOT_MARKERS = {
@@ -77,6 +75,8 @@ local ROOT_MARKERS = {
     'Cargo.toml',
     '.git',
 }
+
+local SOURCE = 'cortex-debug'
 
 ---@class CortexDebugServer
 ---@field label string human-readable name
@@ -245,20 +245,6 @@ function M.gdb_adapter()
     return adapter
 end
 
----Build the exact argv needed to start one matrix GDB server.
----
----Per-server required options (all other fields optional):
----  openocd: `interface_cfg`, `target_cfg` (e.g. `stlink.cfg`, `stm32f4x.cfg`)
----  jlink:   `device` (or `device_or_config`), e.g. `STM32F427VI`
----  pyocd:   `target` (or `device_or_config`), e.g. `stm32f401xc`
----  stlink:  none (`device_or_config` is ignored; st-util takes no device)
----
----opts: `{ interface_cfg?: string, target_cfg?: string, device?: string,
----  device_or_config?: string, interface?: string, target?: string,
----  speed?: integer, port?: integer }`
----@param server string one of: openocd, jlink, pyocd, stlink
----@param opts table
----@return string[]?, string?
 ---@param opts table
 ---@return integer?, string?
 local function resolve_speed(opts)
@@ -389,6 +375,20 @@ local function stlink_argv(binary, opts)
     return argv
 end
 
+---Build the exact argv needed to start one matrix GDB server.
+---
+---Per-server required options (all other fields optional):
+---  openocd: `interface_cfg`, `target_cfg` (e.g. `stlink.cfg`, `stm32f4x.cfg`)
+---  jlink:   `device` (or `device_or_config`), e.g. `STM32F427VI`
+---  pyocd:   `target` (or `device_or_config`), e.g. `stm32f401xc`
+---  stlink:  none (`device_or_config` is ignored; st-util takes no device)
+---
+---opts: `{ interface_cfg?: string, target_cfg?: string, device?: string,
+---  device_or_config?: string, interface?: string, target?: string,
+---  speed?: integer, port?: integer }`
+---@param server string one of: openocd, jlink, pyocd, stlink
+---@param opts table
+---@return string[]?, string?
 function M.build_server_argv(server, opts)
     opts = opts or {}
 

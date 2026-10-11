@@ -66,11 +66,11 @@ end
 ---@field source_mapping? table<string, any>
 ---@field health_checks? table<string, fun(exe: string): boolean>
 
+local descriptor_count = 0
 ---@type table<string, dap.RegistryDescriptor>
 local descriptors = {}
 ---@type table<string, dap.ReadinessState>
 local states = {}
-local descriptor_count = 0
 
 ---@param descriptor any
 ---@return boolean, string?
@@ -90,39 +90,6 @@ local function valid_descriptor(descriptor)
         return false, 'descriptor needs discovery() or executable'
     end
     return true
-end
-
---- Register (or re-register) an adapter descriptor. Starts at 'known'.
----@param descriptor dap.RegistryDescriptor
----@return boolean ok, string? err
-function M.register(descriptor)
-    local ok, err = valid_descriptor(descriptor)
-    if not ok then
-        return false, err
-    end
-    if descriptors[descriptor.id] == nil then
-        if descriptor_count >= MAX_DESCRIPTORS then
-            return false, 'adapter registry is full'
-        end
-        descriptor_count = descriptor_count + 1
-    end
-    descriptors[descriptor.id] = descriptor
-    states[descriptor.id] = 'known'
-    return true
-end
-
---- Fetch a registered descriptor, or nil for an unknown id.
----@param id string
----@return dap.RegistryDescriptor?
-function M.get(id)
-    return descriptors[id]
-end
-
---- Current readiness state for an adapter id, or nil when unknown.
----@param id string
----@return dap.ReadinessState?
-function M.state(id)
-    return states[id]
 end
 
 --- Move an adapter exactly one readiness step forward. Skipping steps,
@@ -151,6 +118,13 @@ end
 ---@field id string
 ---@field state dap.ReadinessState
 
+--- Fetch a registered descriptor, or nil for an unknown id.
+---@param id string
+---@return dap.RegistryDescriptor?
+function M.get(id)
+    return descriptors[id]
+end
+
 --- Sorted snapshot of registered adapters and their readiness states.
 ---@return dap.RegistryEntry[]
 function M.list()
@@ -162,6 +136,31 @@ function M.list()
         return a.id < b.id
     end)
     return entries
+end
+--- Register (or re-register) an adapter descriptor. Starts at 'known'.
+---@param descriptor dap.RegistryDescriptor
+---@return boolean ok, string? err
+function M.register(descriptor)
+    local ok, err = valid_descriptor(descriptor)
+    if not ok then
+        return false, err
+    end
+    if descriptors[descriptor.id] == nil then
+        if descriptor_count >= MAX_DESCRIPTORS then
+            return false, 'adapter registry is full'
+        end
+        descriptor_count = descriptor_count + 1
+    end
+    descriptors[descriptor.id] = descriptor
+    states[descriptor.id] = 'known'
+    return true
+end
+
+--- Current readiness state for an adapter id, or nil when unknown.
+---@param id string
+---@return dap.ReadinessState?
+function M.state(id)
+    return states[id]
 end
 
 return M

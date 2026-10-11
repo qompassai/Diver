@@ -48,6 +48,27 @@ local uv = vim.uv
 
 local M = {}
 
+--
+-- Never seed or accept these: deprecated protocols, misleading bridges,
+-- editor-internal harnesses, and Moonwalk-superseded Lua.
+--
+---@type table<string, boolean>
+local DENIED = {
+    ['lldb-vscode'] = true,
+    ['lldb-mi'] = true,
+    ['local-lua-debugger-vscode'] = true,
+    ['mockdebug'] = true,
+    ['java-test'] = true,
+    ['vscode-java-decompiler'] = true,
+    ['pdb'] = true,
+    ['jdb'] = true,
+    ['phpdbg'] = true,
+    ['node-legacy-v8'] = true,
+}
+local LOOPBACK = '127.0.0.1'
+local MASON_BIN = '~/.local/share/nvim/mason/bin/'
+local PROBE_TCP_TIMEOUT_MS = 3000
+
 ---@alias ProbeStage 'neovim'|'adapter'|'debugger'|'target' chain stage reached or failed at
 
 ---@class ProbeResult
@@ -79,18 +100,6 @@ local M = {}
 ---@field tcp { host: string, port: integer }? default target for the reachability stage
 
 local PROBE_TIMEOUT_MS = 5000
-local PROBE_TCP_TIMEOUT_MS = 3000
-local REGISTRY_MAX = 128
-local LOOPBACK = '127.0.0.1'
-local MASON_BIN = '~/.local/share/nvim/mason/bin/'
-
----@type table<string, boolean>
-local TRANSPORTS = {
-    stdio = true,
-    tcp = true,
-    pipe = true,
-    unix = true,
-}
 
 ---@type table<string, boolean>
 local PROTOCOLS = {
@@ -101,23 +110,14 @@ local PROTOCOLS = {
     dbgp = true,
     rsp = true,
 }
+local REGISTRY_MAX = 128
 
---
--- Never seed or accept these: deprecated protocols, misleading bridges,
--- editor-internal harnesses, and Moonwalk-superseded Lua.
---
 ---@type table<string, boolean>
-local DENIED = {
-    ['lldb-vscode'] = true,
-    ['lldb-mi'] = true,
-    ['local-lua-debugger-vscode'] = true,
-    ['mockdebug'] = true,
-    ['java-test'] = true,
-    ['vscode-java-decompiler'] = true,
-    ['pdb'] = true,
-    ['jdb'] = true,
-    ['phpdbg'] = true,
-    ['node-legacy-v8'] = true,
+local TRANSPORTS = {
+    stdio = true,
+    tcp = true,
+    pipe = true,
+    unix = true,
 }
 
 ---@type table<string, DebugBackend>
@@ -172,9 +172,11 @@ end
 ---@return vim.SystemCompleted?
 local function system(argv)
     local ok, result = pcall(function()
-        return vim.system(argv, {
+        local sysobj = vim.system(argv, {
             text = true,
-        }):wait(PROBE_TIMEOUT_MS)
+        })
+        ---@cast sysobj vim.SystemObj
+        return sysobj:wait(PROBE_TIMEOUT_MS)
     end)
 
     if not ok then
@@ -649,7 +651,18 @@ local function assemble_build_config(id, ctx)
     return config
 end
 
----@param ctx { backend_id: string, mode: 'launch'|'attach', name?: string, program?: string, args?: string[], cwd?: string, host?: string, port?: integer, pid?: integer }
+---@class DapBuildConfigCtx
+---@field args? string[]
+---@field backend_id string
+---@field cwd? string
+---@field host? string
+---@field mode 'launch'|'attach'
+---@field name? string
+---@field pid? integer
+---@field port? integer
+---@field program? string
+
+---@param ctx DapBuildConfigCtx
 ---@return table?, string? generic launch/attach configuration
 function M.build_config(ctx)
     if type(ctx) ~= 'table' then
@@ -763,7 +776,7 @@ local function stage_version(spec, state)
         return nil
     end
 
-    local result = system({ state.path, table.unpack(spec.version.argv) })
+    local result = system({ state.path, unpack(spec.version.argv) })
     local major = parse_major(result ~= nil and result.stdout or nil)
 
     if major == nil then
@@ -884,6 +897,7 @@ local function seed_builder(id)
 
         copy.backend_id = id
 
+        ---@cast copy DapBuildConfigCtx
         return M.build_config(copy)
     end
 end

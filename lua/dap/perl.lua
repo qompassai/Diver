@@ -42,12 +42,15 @@
 local api = vim.api
 local fn = vim.fn
 local fs = vim.fs
-local uv = vim.uv
 local levels = vim.log.levels
+local uv = vim.uv
 
 local M = {}
 
-local SOURCE = 'perl'
+---@type string[]
+local FILETYPES = {
+    'perl',
+}
 local PROBE_TIMEOUT_MS = 5000
 
 ---@type string[]
@@ -59,10 +62,7 @@ local ROOT_MARKERS = {
     '.git',
 }
 
----@type string[]
-local FILETYPES = {
-    'perl',
-}
+local SOURCE = 'perl'
 
 ---@type string[]
 local WELL_KNOWN_PATHS = {
@@ -156,9 +156,11 @@ end
 ---@return vim.SystemCompleted?
 local function system(command)
     local ok, result = pcall(function()
-        return vim.system(command, {
+        local sysobj = vim.system(command, {
             text = true,
-        }):wait(PROBE_TIMEOUT_MS)
+        })
+        ---@cast sysobj vim.SystemObj
+        return sysobj:wait(PROBE_TIMEOUT_MS)
     end)
 
     if not ok then

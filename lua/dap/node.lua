@@ -28,7 +28,8 @@ local uv = vim.uv
 
 local M = {}
 
-local SOURCE = 'js-debug'
+-- Forward declaration (used before definition below)
+local node
 local DEFAULT_BROWSER_PORT = 9222
 local DEFAULT_NODE_PORT = 9229
 local DEFAULT_URL = 'http://localhost:3000'
@@ -61,28 +62,22 @@ local SERVER_RELATIVE_PATHS = {
     'dapDebugServer.js',
 }
 
----@type string[]
-local VSCODE_EXTENSION_ROOTS = {
-    fs.joinpath(fn.expand('~'), '.vscode', 'extensions'),
-
-    fs.joinpath(fn.expand('~'), '.vscode-oss', 'extensions'),
-
-    fs.joinpath(
-        fn.expand('~'),
-        '.var',
-        'app',
-        'com.visualstudio.code',
-        'data',
-        'vscode',
-        'extensions'
-    ),
-}
+local SOURCE = 'js-debug'
 
 ---@type table<string, boolean>
 local TYPESCRIPT_FILETYPES = {
     typescript = true,
     typescriptreact = true,
     ['typescript.glimmer'] = true,
+}
+
+---@type string[]
+local VSCODE_EXTENSION_ROOTS = {
+    fs.joinpath(fn.expand('~'), '.vscode', 'extensions'),
+
+    fs.joinpath(fn.expand('~'), '.vscode-oss', 'extensions'),
+
+    fs.joinpath(fn.expand('~'), '.var', 'app', 'com.visualstudio.code', 'data', 'vscode', 'extensions'),
 }
 
 ---@class JsDebugState
@@ -248,10 +243,7 @@ local function adapter_from_extension_root(root)
 
         if
             entry_type == 'directory'
-            and (
-                name:match('^ms%-vscode%.js%-debug%-')
-                or name:match('^ms%-vscode%.js%-debug%-nightly%-')
-            )
+            and (name:match('^ms%-vscode%.js%-debug%-') or name:match('^ms%-vscode%.js%-debug%-nightly%-'))
         then
             matches[#matches + 1] = name
         end
@@ -382,7 +374,7 @@ local function make_launch_gate(adapter_key)
 end
 
 ---@return string
-local function node()
+node = function()
     return executable_path('node') or 'node'
 end
 

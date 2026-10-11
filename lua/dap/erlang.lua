@@ -44,17 +44,6 @@ local levels = vim.log.levels
 
 local M = {}
 
-local SOURCE = 'erlang'
-
----@type string[]
-local ROOT_MARKERS = {
-    'rebar.config',
-    'rebar.config.script',
-    'rebar.lock',
-    'Makefile',
-    '.git',
-}
-
 ---@class ErlangAdapterSpec
 ---@field env_var string environment variable holding an explicit path
 ---@field g_var string vim.g variable holding an explicit path
@@ -77,6 +66,17 @@ local ADAPTER_SPECS = {
         },
     },
 }
+
+---@type string[]
+local ROOT_MARKERS = {
+    'rebar.config',
+    'rebar.config.script',
+    'rebar.lock',
+    'Makefile',
+    '.git',
+}
+
+local SOURCE = 'erlang'
 
 ---@type table<string, string[]>
 local WELL_KNOWN_PATHS = {
@@ -367,7 +367,8 @@ local function build_edb_launch(opts)
             nameDomain = name_domain,
             timeout = opts.timeout_s or 60,
         },
-    }, nil
+    },
+        nil
 end
 
 ---@param opts table
@@ -390,7 +391,8 @@ local function build_els_dap_launch(opts)
         program = opts.program,
         args = args,
         cwd = opts.cwd or project_root(),
-    }, nil
+    },
+        nil
 end
 
 ---@param opts table
@@ -452,7 +454,8 @@ function M.build_attach(opts)
         type = 'edb',
         request = 'attach',
         config = inner,
-    }, nil
+    },
+        nil
 end
 
 ---@return string?

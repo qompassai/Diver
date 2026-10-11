@@ -35,17 +35,11 @@ local uv = vim.uv
 
 local M = {}
 
-local SOURCE = 'apex-dap'
-
---- Bound for Salesforce CLI invocations; a hung `sf` must not freeze the editor.
-local SF_TIMEOUT_MS = 30000
-
 ---@type string[]
-local ROOT_MARKERS = {
-    'sfdx-project.json',
-    '.sf',
-    '.sfdx',
-    '.git',
+local INTERACTIVE_ADAPTER_RELATIVE_PATHS = {
+    'packages/salesforcedx-vscode-apex-debugger/dist/apexDebug.js',
+    'salesforcedx-vscode-apex-debugger/dist/apexDebug.js',
+    'dist/apexDebug.js',
 }
 
 ---@type string[]
@@ -56,11 +50,17 @@ local REPLAY_ADAPTER_RELATIVE_PATHS = {
 }
 
 ---@type string[]
-local INTERACTIVE_ADAPTER_RELATIVE_PATHS = {
-    'packages/salesforcedx-vscode-apex-debugger/dist/apexDebug.js',
-    'salesforcedx-vscode-apex-debugger/dist/apexDebug.js',
-    'dist/apexDebug.js',
+local ROOT_MARKERS = {
+    'sfdx-project.json',
+    '.sf',
+    '.sfdx',
+    '.git',
 }
+
+--- Bound for Salesforce CLI invocations; a hung `sf` must not freeze the editor.
+local SF_TIMEOUT_MS = 30000
+
+local SOURCE = 'apex-dap'
 
 ---@type string[]
 local VSCODE_EXTENSION_ROOTS = {
@@ -68,15 +68,7 @@ local VSCODE_EXTENSION_ROOTS = {
 
     fs.joinpath(fn.expand('~'), '.vscode-oss', 'extensions'),
 
-    fs.joinpath(
-        fn.expand('~'),
-        '.var',
-        'app',
-        'com.visualstudio.code',
-        'data',
-        'vscode',
-        'extensions'
-    ),
+    fs.joinpath(fn.expand('~'), '.var', 'app', 'com.visualstudio.code', 'data', 'vscode', 'extensions'),
 }
 
 ---@class ApexDapState
@@ -306,10 +298,7 @@ local function resolve_adapter(env_name, relative_paths, adapter_file)
             end
         end
 
-        notify(
-            ('%s does not resolve to a usable adapter: %s'):format(env_name, candidate),
-            levels.WARN
-        )
+        notify(('%s does not resolve to a usable adapter: %s'):format(env_name, candidate), levels.WARN)
     end
 
     local salesforce_root = vim.env.NVIM_SALESFORCE_DAP_ROOT
@@ -331,11 +320,8 @@ local function replay_adapter()
         return state.replay_adapter
     end
 
-    state.replay_adapter = resolve_adapter(
-        'NVIM_APEX_REPLAY_ADAPTER',
-        REPLAY_ADAPTER_RELATIVE_PATHS,
-        'apexReplayDebug.js'
-    )
+    state.replay_adapter =
+        resolve_adapter('NVIM_APEX_REPLAY_ADAPTER', REPLAY_ADAPTER_RELATIVE_PATHS, 'apexReplayDebug.js')
 
     return state.replay_adapter
 end
@@ -346,11 +332,8 @@ local function interactive_adapter()
         return state.interactive_adapter
     end
 
-    state.interactive_adapter = resolve_adapter(
-        'NVIM_APEX_INTERACTIVE_ADAPTER',
-        INTERACTIVE_ADAPTER_RELATIVE_PATHS,
-        'apexDebug.js'
-    )
+    state.interactive_adapter =
+        resolve_adapter('NVIM_APEX_INTERACTIVE_ADAPTER', INTERACTIVE_ADAPTER_RELATIVE_PATHS, 'apexDebug.js')
 
     return state.interactive_adapter
 end
@@ -373,10 +356,7 @@ local function make_launch_gate(kind, adapter_key, description)
         local script = kind == 'replay' and replay_adapter() or interactive_adapter()
 
         if script == nil then
-            notify(
-                ('%s adapter was not found; cannot start debug session'):format(description),
-                levels.ERROR
-            )
+            notify(('%s adapter was not found; cannot start debug session'):format(description), levels.ERROR)
 
             return
         end
@@ -555,10 +535,12 @@ local function run_sf(arguments)
     vim.list_extend(command, arguments)
 
     local ok, result = pcall(function()
-        return vim.system(command, {
+        local sysobj = vim.system(command, {
             cwd = project_root(),
             text = true,
-        }):wait(SF_TIMEOUT_MS)
+        })
+        ---@cast sysobj vim.SystemObj
+        return sysobj:wait(SF_TIMEOUT_MS)
     end)
 
     if not ok then
