@@ -22,13 +22,13 @@ return {
     {
         name = 'git',
         command = '/usr/bin/uvx',
-        args = { 'mcp-server-git' },
+        args = { 'mcp-server-git@2026.10.10' },
         enabled = true,
     },
     {
         name = 'fetch',
         command = '/usr/bin/uvx',
-        args = { 'mcp-server-fetch' },
+        args = { 'mcp-server-fetch@2026.10.10' },
         enabled = true,
     },
     {

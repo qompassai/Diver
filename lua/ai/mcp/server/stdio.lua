@@ -30,6 +30,45 @@ local LINE_BYTES_MAX = 8 * 1024 * 1024
 ---@class McpStdioHandle
 ---@field stop fun() Idempotent teardown.
 
+-- Headless entry: parse `--root DIR` repeats, wire policy + tools +
+-- protocol, and pump stdio until the client closes stdin.
+---@param argv string[]?
+---@return McpStdioHandle
+function M.main(argv)
+    assert(vim ~= nil, 'mcp-server headless entry requires Neovim')
+    argv = argv or {}
+    local roots = {}
+    local i = 1
+    while i <= #argv do
+        if argv[i] == '--root' and type(argv[i + 1]) == 'string' then
+            roots[#roots + 1] = argv[i + 1]
+            i = i + 2
+        else
+            i = i + 1
+        end
+    end
+    local policy = require('ai.mcp.server.policy')
+    local tools = require('ai.mcp.server.tools')
+    local protocol = require('ai.mcp.server.protocol')
+    policy.setup({ roots = roots })
+    tools.setup()
+    local deps = M.real_deps()
+    local server = protocol.new({
+        json = vim.json,
+        write = function(line)
+            deps.write_stdout(line)
+        end,
+        tools = tools,
+        on_log = function(level, message)
+            deps.log_stderr('mcp-server [' .. level .. ']: ' .. message)
+        end,
+    })
+    -- NOTE (unverified in this environment): whether `nvim --headless -l`
+    -- keeps the uv loop alive for the stdin pipe, and how a closed stdin
+    -- surfaces there, needs a runtime probe on real hardware.
+    return M.start(server, deps)
+end
+
 -- Real vim.uv-backed deps. Asserts Neovim; never called from tests.
 ---@return McpStdioDeps
 function M.real_deps()
@@ -152,45 +191,6 @@ function M.start(server, deps)
         stdin_handle = nil
     end
     return handle
-end
-
--- Headless entry: parse `--root DIR` repeats, wire policy + tools +
--- protocol, and pump stdio until the client closes stdin.
----@param argv string[]?
----@return McpStdioHandle
-function M.main(argv)
-    assert(vim ~= nil, 'mcp-server headless entry requires Neovim')
-    argv = argv or {}
-    local roots = {}
-    local i = 1
-    while i <= #argv do
-        if argv[i] == '--root' and type(argv[i + 1]) == 'string' then
-            roots[#roots + 1] = argv[i + 1]
-            i = i + 2
-        else
-            i = i + 1
-        end
-    end
-    local policy = require('ai.mcp.server.policy')
-    local tools = require('ai.mcp.server.tools')
-    local protocol = require('ai.mcp.server.protocol')
-    policy.setup({ roots = roots })
-    tools.setup()
-    local deps = M.real_deps()
-    local server = protocol.new({
-        json = vim.json,
-        write = function(line)
-            deps.write_stdout(line)
-        end,
-        tools = tools,
-        on_log = function(level, message)
-            deps.log_stderr('mcp-server [' .. level .. ']: ' .. message)
-        end,
-    })
-    -- NOTE (unverified in this environment): whether `nvim --headless -l`
-    -- keeps the uv loop alive for the stdin pipe, and how a closed stdin
-    -- surfaces there, needs a runtime probe on real hardware.
-    return M.start(server, deps)
 end
 
 -- Entry guard: `nvim --headless -l <this file> --serve [--root DIR]`.

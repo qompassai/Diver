@@ -4,7 +4,10 @@
 -- ----------------------------------------
 -- Honest capability reporting: every field says what was actually probed.
 -- Unavailable adapters, missing storage, and absent sandbox profiles are
--- reported as facts, never papered over.
+-- reported as facts, never papered over. The registry inventory reports
+-- what is registered in the ctx registry (adapter/tool/workflow counts
+-- and sorted names), live at call time; with no registry in ctx it
+-- reports zeroes rather than guessing.
 
 local adapter = require('ai.harness.adapter')
 local registry = require('ai.harness.registry')
@@ -25,6 +28,11 @@ function M.check(ctx)
             has_uv = vim ~= nil and vim.uv ~= nil,
         },
         adapters = {},
+        registry = {
+            adapters = { count = 0, names = {} },
+            tools = { count = 0, names = {} },
+            workflows = { count = 0, names = {} },
+        },
         storage = { runs_stored = 0 },
         sandbox = { profiles = {} },
     }
@@ -43,6 +51,12 @@ function M.check(ctx)
                 report.adapters[name] = { available = false, error = tostring(err) }
             end
         end
+        report.registry.adapters.names = registry.list_adapters(reg)
+        report.registry.adapters.count = #report.registry.adapters.names
+        report.registry.tools.names = registry.list_tools(reg)
+        report.registry.tools.count = #report.registry.tools.names
+        report.registry.workflows.names = registry.list_workflows(reg)
+        report.registry.workflows.count = #report.registry.workflows.names
     end
     if ctx.store ~= nil and type(ctx.store.runs) == 'table' then
         local count = 0

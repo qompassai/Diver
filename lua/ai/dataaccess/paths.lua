@@ -18,18 +18,19 @@
 
 local M = {}
 
-local PATH_BYTES_MAX = 4096
 local EXTENSION_BYTES_MAX = 16
+
+local FILE_EXTENSIONS = {
+    duckdb = { db = true, ddb = true, duckdb = true },
+    sqlite = { db = true, sqlite = true, sqlite3 = true },
+}
 
 -- Characters that are meaningless in a legitimate database path but
 -- meaningful to a shell: rejecting them keeps a path that ever leaks
 -- into a log line or an error message inert.
 local META_PATTERN = '[;|&$`"\'\\\n\r\t*?~#%[%]{}()<>!^]'
 
-local FILE_EXTENSIONS = {
-    sqlite = { db = true, sqlite = true, sqlite3 = true },
-    duckdb = { db = true, ddb = true, duckdb = true },
-}
+local PATH_BYTES_MAX = 4096
 
 ---@param value any
 ---@return boolean
