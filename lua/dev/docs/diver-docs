@@ -1,0 +1,116 @@
+#!/usr/bin/env python3
+"""diver-docs: query versioned language-reference metadata.
+
+Usage: diver-docs <lang> [version] <query>
+  version defaults to the newest cached. Query matches dotted paths
+  (os.path.join), keywords, and construct names.
+  Prints the JSON fragment; exit 0 on hit, 1 on miss.
+
+Data lives in $DIVER_DOCS_META or ~/.local/share/diver/docs-meta.
+"""
+import json
+import os
+import sys
+
+STORE = os.environ.get(
+    "DIVER_DOCS_META",
+    os.path.expanduser("~/.local/share/diver/docs-meta"),
+)
+
+
+def load_manifest():
+    p = os.path.join(STORE, "manifest.json")
+    if os.path.exists(p):
+        with open(p) as f:
+            return json.load(f)
+    # Fallback: scan directories.
+    m = {}
+    if os.path.isdir(STORE):
+        for lang in os.listdir(STORE):
+            d = os.path.join(STORE, lang)
+            if os.path.isdir(d):
+                vers = sorted(
+                    (f[:-5] for f in os.listdir(d) if f.endswith(".json")),
+                    reverse=True,
+                )
+                if vers:
+                    m[lang] = vers
+    return m
+
+
+def load_lang(lang, version):
+    p = os.path.join(STORE, lang, f"{version}.json")
+    with open(p) as f:
+        return json.load(f)
+
+
+def search(data, query):
+    """Return (rank, path, fragment) hits. Rank: 0=exact, 1=prefix, 2=substr."""
+    hits = []
+    q = query.lower()
+
+    def consider(path, fragment):
+        pl = path.lower()
+        if pl == q:
+            hits.append((0, path, fragment))
+        elif pl.startswith(q):
+            hits.append((1, path, fragment))
+        elif q in pl:
+            hits.append((2, path, fragment))
+
+    for kw in data.get("keywords", []):
+        consider(kw, {"kind": "keyword"})
+    for name, frag in data.get("builtins", {}).items():
+        consider(name, frag)
+    for mod, entry in data.get("stdlib", {}).items():
+        consider(mod, {"kind": "module", "doc": entry.get("doc", "")})
+        for mname, frag in entry.get("members", {}).items():
+            consider(f"{mod}.{mname}", frag)
+            consider(mname, frag)
+    for syn in data.get("syntax", []):
+        consider(syn.get("construct", ""), syn)
+    hits.sort(key=lambda h: (h[0], h[1]))
+    return hits
+
+
+def main():
+    args = sys.argv[1:]
+    if len(args) < 2:
+        print("usage: diver-docs <lang> [version] <query>", file=sys.stderr)
+        sys.exit(2)
+    manifest = load_manifest()
+    lang = args[0]
+    if lang not in manifest:
+        print(f"no metadata for '{lang}'", file=sys.stderr)
+        print(f"available: {sorted(manifest)}", file=sys.stderr)
+        sys.exit(1)
+    versions = manifest[lang]
+    if len(args) >= 3 and args[1] in versions:
+        version, query = args[1], " ".join(args[2:])
+    else:
+        version, query = versions[0], " ".join(args[1:])
+    if not query:
+        print("empty query", file=sys.stderr)
+        sys.exit(2)
+    data = load_lang(lang, version)
+    hits = search(data, query)[:10]
+    if not hits:
+        print(f"no match for '{query}' in {lang} {version}", file=sys.stderr)
+        print(f"cached versions: {versions}", file=sys.stderr)
+        sys.exit(1)
+    hits_out = []
+    for _, p, f in hits:
+        h = {"path": p}
+        h.update(f)
+        hits_out.append(h)
+    out = {
+        "lang": lang,
+        "version": version,
+        "query": query,
+        "hits": hits_out,
+    }
+    print(json.dumps(out, indent=1))
+
+
+if __name__ == "__main__":
+    main()

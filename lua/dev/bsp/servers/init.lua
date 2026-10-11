@@ -26,107 +26,68 @@
 local M = {}
 
 ---@class QompassBspServerEntry
----@field name string Short server name, also matched against connection `name`.
----@field module string Lua module path implementing the server contract.
 ---@field filetypes string[] Vim filetypes that may belong to this server.
+---@field module string Lua module path implementing the server contract.
+---@field name string Short server name, also matched against connection `name`.
 ---@field summary string One-line plain-language description.
 
 ---@type QompassBspServerEntry[]
 local registry = {
     {
+        filetypes = { 'groovy', 'java', 'kotlin' },
+        module = 'dev.bsp.servers.gradle',
         name = 'gradle',
-        module = 'bsp.servers.gradle',
-        filetypes = { 'java', 'kotlin', 'groovy' },
         summary = 'Gradle builds (Java/Kotlin, incl. Android apps) via build-server-for-gradle',
     },
     {
-        name = 'cargo-bsp',
-        module = 'bsp.servers.cargo',
         filetypes = { 'rust' },
+        module = 'dev.bsp.servers.cargo',
+        name = 'cargo-bsp',
         summary = 'Cargo builds (Rust, incl. the phlow agent runtime) via cargo-bsp',
     },
     {
+        filetypes = { 'bzl', 'cpp', 'java', 'kotlin', 'python', 'scala' },
+        module = 'dev.bsp.servers.bazel',
         name = 'bazelbsp',
-        module = 'bsp.servers.bazel',
-        filetypes = { 'java', 'kotlin', 'scala', 'python', 'cpp', 'bzl' },
         summary = 'Bazel workspaces (multi-language) via JetBrains Hirschgarten',
     },
     {
+        filetypes = { 'java', 'scala' },
+        module = 'dev.bsp.servers.sbt',
         name = 'sbt',
-        module = 'bsp.servers.sbt',
-        filetypes = { 'scala', 'java' },
         summary = 'sbt builds (Scala/Java); BSP is built into sbt itself since 1.4.0',
     },
     {
+        filetypes = { 'java', 'kotlin', 'scala' },
+        module = 'dev.bsp.servers.mill',
         name = 'mill',
-        module = 'bsp.servers.mill',
-        filetypes = { 'scala', 'java', 'kotlin' },
         summary = 'Mill builds (Scala/Java/Kotlin); BSP built in since Mill 0.9.3',
     },
     {
+        filetypes = { 'java', 'scala' },
+        module = 'dev.bsp.servers.bloop',
         name = 'bloop',
-        module = 'bsp.servers.bloop',
-        filetypes = { 'scala', 'java' },
         summary = 'Bloop compile server (backs sbt/Gradle/Maven/Mill exports)',
     },
     {
-        name = 'scala-cli',
-        module = 'bsp.servers.scalacli',
         filetypes = { 'scala' },
+        module = 'dev.bsp.servers.scalacli',
+        name = 'scala-cli',
         summary = 'scala-cli (Scala/Java scripts and small projects)',
     },
     {
+        filetypes = { 'go', 'java', 'python', 'scala', 'sh' },
+        module = 'dev.bsp.servers.pants',
         name = 'pants',
-        module = 'bsp.servers.pants',
-        filetypes = { 'python', 'java', 'scala', 'go', 'sh' },
         summary = 'Pants monorepo builds (experimental-bsp goal)',
     },
     {
-        name = 'swift-bsp',
-        module = 'bsp.servers.swift',
         filetypes = { 'swift' },
+        module = 'dev.bsp.servers.swift',
+        name = 'swift-bsp',
         summary = 'SwiftPM/Xcode projects via the community swift-bsp server',
     },
 }
-
----@return QompassBspServerEntry[]
-function M.list()
-    return registry
-end
-
----@param name string
----@return QompassBspServerEntry|nil
-function M.get(name)
-    if type(name) ~= 'string' or name == '' then
-        return nil
-    end
-
-    for _, entry in ipairs(registry) do
-        if entry.name == name then
-            return entry
-        end
-    end
-
-    return nil
-end
-
----@return string[]
-function M.filetypes()
-    local seen = {}
-    local filetypes = {}
-
-    for _, entry in ipairs(registry) do
-        for _, filetype in ipairs(entry.filetypes) do
-            if not seen[filetype] then
-                seen[filetype] = true
-                filetypes[#filetypes + 1] = filetype
-            end
-        end
-    end
-
-    table.sort(filetypes)
-    return filetypes
-end
 
 ---@param entry QompassBspServerEntry
 ---@return table|nil
@@ -169,6 +130,24 @@ local function match_markers(entry, root)
     return strong_hit, bsp_hit
 end
 
+---@param bufnr? integer
+---@return QompassBspServerEntry|nil, string|nil
+function M.detect(bufnr)
+    for _, entry in ipairs(registry) do
+        local server = load_server(entry)
+        if server and type(server.root) == 'function' then
+            local ok_root, root = pcall(server.root, bufnr)
+            if ok_root and type(root) == 'string' and root ~= '' then
+                -- Disambiguate: the best server for this root wins over
+                -- whichever module happened to match first.
+                return M.detect_root(root) or entry, root
+            end
+        end
+    end
+
+    return nil, nil
+end
+
 ---@param root string
 ---@return QompassBspServerEntry|nil
 function M.detect_root(root)
@@ -190,7 +169,7 @@ function M.detect_root(root)
     end
 
     -- Only a bare `.bsp/` matched: the cards inside are the best signal.
-    local util_ok, util = pcall(require, 'bsp.servers.util')
+    local util_ok, util = pcall(require, 'dev.bsp.servers.util')
     local connections = {}
     if util_ok and type(util) == 'table' and type(util.list_connections) == 'function' then
         local ok_list, listed = pcall(util.list_connections, root)
@@ -222,22 +201,43 @@ function M.detect_root(root)
     return nil
 end
 
----@param bufnr? integer
----@return QompassBspServerEntry|nil, string|nil
-function M.detect(bufnr)
+---@return string[]
+function M.filetypes()
+    local seen = {}
+    local filetypes = {}
+
     for _, entry in ipairs(registry) do
-        local server = load_server(entry)
-        if server and type(server.root) == 'function' then
-            local ok_root, root = pcall(server.root, bufnr)
-            if ok_root and type(root) == 'string' and root ~= '' then
-                -- Disambiguate: the best server for this root wins over
-                -- whichever module happened to match first.
-                return M.detect_root(root) or entry, root
+        for _, filetype in ipairs(entry.filetypes) do
+            if not seen[filetype] then
+                seen[filetype] = true
+                filetypes[#filetypes + 1] = filetype
             end
         end
     end
 
-    return nil, nil
+    table.sort(filetypes)
+    return filetypes
+end
+
+---@param name string
+---@return QompassBspServerEntry|nil
+function M.get(name)
+    if type(name) ~= 'string' or name == '' then
+        return nil
+    end
+
+    for _, entry in ipairs(registry) do
+        if entry.name == name then
+            return entry
+        end
+    end
+
+    return nil
+end
+
+---@return QompassBspServerEntry[]
+function M.list()
+    return registry
 end
 
 return M

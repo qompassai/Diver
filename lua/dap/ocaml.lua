@@ -52,12 +52,10 @@
 local api = vim.api
 local fn = vim.fn
 local fs = vim.fs
-local uv = vim.uv
 local levels = vim.log.levels
+local uv = vim.uv
 
 local M = {}
-
-local SOURCE = 'ocaml'
 local ADAPTER_ARGS = { 'debug' }
 
 ---@type string[]
@@ -67,6 +65,8 @@ local ROOT_MARKERS = {
     '.opam',
     '.git',
 }
+
+local SOURCE = 'ocaml'
 
 ---@type string[]
 local WELL_KNOWN_PATHS = {

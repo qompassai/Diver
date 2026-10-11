@@ -28,18 +28,7 @@ local MANIFEST_ASSETS_MAX = 256
 
 -- File kinds the interchange manifest accepts. LÖVE-native raster and
 -- audio only: nothing here implies a Godot scene or script format.
-local MANIFEST_KINDS = { png = true, json = true, ogg = true, wav = true }
-
-M.engine_key = 'godot'
-M.label = 'Godot 4'
-M.love_version_requirement = '11.5'
-
--- anim8: sprite strips exported from Godot as PNG, played as
--- frame-grid animations.
--- bump: AABB collision shapes converted from Godot TileMap/physics
--- data into bump.lua worlds. Audio needs no catalog library:
--- love.audio plays wav/ogg natively.
-M.libraries = { 'anim8', 'bump' }
+local MANIFEST_KINDS = { json = true, ogg = true, png = true, wav = true }
 
 M.asset_interchange = {
     capabilities = {
@@ -56,18 +45,44 @@ M.asset_interchange = {
     runtime_interop = false,
 }
 
----Recommended conf.lua values for LÖVE projects consuming Godot
----assets. Convention only; nothing reads or enforces these.
-M.run_config = {
-    identity = 'diver-godot-love',
-    window = { width = 1280, height = 720, resizable = true, vsync = 1 },
-}
+M.engine_key = 'godot'
+M.label = 'Godot 4'
+
+-- anim8: sprite strips exported from Godot as PNG, played as
+-- frame-grid animations.
+-- bump: AABB collision shapes converted from Godot TileMap/physics
+-- data into bump.lua worlds. Audio needs no catalog library:
+-- love.audio plays wav/ogg natively.
+M.libraries = { 'anim8', 'bump' }
+M.love_version_requirement = '11.5'
 
 ---Recommended packaging conventions for Godot-sourced assets.
 M.package_config = {
     asset_dirs = { 'assets', 'sprites', 'audio' },
     include_exts = { '.png', '.json', '.ogg', '.wav' },
 }
+
+---Recommended conf.lua values for LÖVE projects consuming Godot
+---assets. Convention only; nothing reads or enforces these.
+M.run_config = {
+    identity = 'diver-godot-love',
+    window = { height = 720, resizable = true, vsync = 1, width = 1280 },
+}
+
+---Locate a Godot 4 binary (godot4 preferred, godot accepted). Returns
+---nil when absent: the adapter fails closed rather than assuming an
+---editor is installed.
+---@return string? path
+---@return string? err
+function M.detect_tooling()
+    if vim.fn.executable('godot4') == 1 then
+        return 'godot4', nil
+    end
+    if vim.fn.executable('godot') == 1 then
+        return 'godot', nil
+    end
+    return nil, 'godot binary not found on PATH'
+end
 
 ---@class GodotInterchangeAsset
 ---@field path string relative path of the asset file
@@ -123,21 +138,6 @@ function M.validate_interchange_manifest(manifest)
         end
     end
     return true, nil
-end
-
----Locate a Godot 4 binary (godot4 preferred, godot accepted). Returns
----nil when absent: the adapter fails closed rather than assuming an
----editor is installed.
----@return string? path
----@return string? err
-function M.detect_tooling()
-    if vim.fn.executable('godot4') == 1 then
-        return 'godot4', nil
-    end
-    if vim.fn.executable('godot') == 1 then
-        return 'godot', nil
-    end
-    return nil, 'godot binary not found on PATH'
 end
 
 return M

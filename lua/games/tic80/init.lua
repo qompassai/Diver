@@ -34,17 +34,17 @@
 --- in-game hotkeys; TIC-80 exposes no CLI capture flags.
 ---@module 'games.tic80'
 
-local config = require('games.tic80.config')
-local util = require('games.tic80.util')
 local actions = require('games.tic80.actions')
 local commands = require('games.tic80.commands')
+local config = require('games.tic80.config')
+local util = require('games.tic80.util')
 
 local M = {}
+M.actions = actions
+M.commands = commands
 
 M.config = config
 M.util = util
-M.actions = actions
-M.commands = commands
 
 ---@type integer?
 local watch_group = nil
@@ -59,16 +59,6 @@ end
 ---@return boolean ok False when the path is empty or no binary is available.
 function M.run(file)
     return actions.run_cart(file)
-end
-
----Stop the running cart, if any.
-function M.stop()
-    actions.stop_cart()
-end
-
----@return boolean enabled The watch state after toggling.
-function M.toggle_watch()
-    return actions.toggle_watch()
 end
 
 ---@param opts games.tic80.Options?
@@ -112,7 +102,17 @@ function M.setup(opts)
     commands.setup()
 end
 
-M.show_menu = actions.show_menu
+---Stop the running cart, if any.
+function M.stop()
+    actions.stop_cart()
+end
+
+---@return boolean enabled The watch state after toggling.
+function M.toggle_watch()
+    return actions.toggle_watch()
+end
 M.run_action_by_id = actions.run_action_by_id
+
+M.show_menu = actions.show_menu
 
 return M

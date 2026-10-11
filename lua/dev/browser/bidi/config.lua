@@ -6,6 +6,16 @@
 
 local M = {}
 
+---Cap on a single BiDi command payload handed to the transport.
+M.command_bytes_max = 1048576
+
+---Extra directories searched for driver binaries before PATH.
+---@type string[]
+M.driver_search_dirs = {
+    '/usr/local/bin',
+    '/opt/homebrew/bin',
+}
+
 ---Driver pins. PROVISIONAL versions: re-verify against the vendor release
 ---pages on Matt's machine, then fill in the sha256 fields. An empty
 ---sha256 means driver.lua refuses to spawn and tells the user the exact
@@ -49,6 +59,14 @@ M.drivers = {
     },
 }
 
+---Exact-match allowlist of pre-approved JS expressions. The only bypass
+---for the per-invocation :BidiEval confirmation; empty by default.
+---@type string[]
+M.eval_allowlist = {}
+
+---Max characters of a :BidiEval expression shown in the confirm prompt.
+M.eval_preview_chars_max = 200
+
 ---Loopback host the driver HTTP endpoints are contacted on.
 M.host = '127.0.0.1'
 
@@ -62,31 +80,13 @@ M.ready_attempts_max = 50
 ---Pause between /status polls, milliseconds.
 M.ready_poll_interval_ms = 200
 
----Cap on a single BiDi command payload handed to the transport.
-M.command_bytes_max = 1048576
-
----Cap on a decoded screenshot PNG. A 4K PNG is a few MB; anything at or
----above this is treated as hostile or corrupt and rejected, never kept.
-M.screenshot_bytes_max = 16777216 -- 16 MiB
-
 ---Depth bound for RemoteValue -> Lua conversion in script.lua.
 M.remote_value_depth_max = 8
 ---Item bound for RemoteValue array/object conversion.
 M.remote_value_items_max = 4096
 
----Max characters of a :BidiEval expression shown in the confirm prompt.
-M.eval_preview_chars_max = 200
-
----Exact-match allowlist of pre-approved JS expressions. The only bypass
----for the per-invocation :BidiEval confirmation; empty by default.
----@type string[]
-M.eval_allowlist = {}
-
----Extra directories searched for driver binaries before PATH.
----@type string[]
-M.driver_search_dirs = {
-    '/usr/local/bin',
-    '/opt/homebrew/bin',
-}
+---Cap on a decoded screenshot PNG. A 4K PNG is a few MB; anything at or
+---above this is treated as hostile or corrupt and rejected, never kept.
+M.screenshot_bytes_max = 16777216 -- 16 MiB
 
 return M

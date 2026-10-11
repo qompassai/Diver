@@ -1,5 +1,5 @@
 -- #################################################################
--- /qompassai/lua/dev/android/subsystems.lua
+-- /qompassai/lua/dev/apps/android/subsystems.lua
 -- Qompass AI Android subsystem wiring
 -- SPDX-License-Identifier: Apache-2.0
 -- Copyright (c) 2026 Qompass AI
@@ -48,43 +48,21 @@ local M = {}
 ---@field present boolean Whether the subsystem integration is available.
 ---@field detail string What was found.
 
----Check whether an executable is on PATH.
----@param name string Executable name.
----@return boolean
-local function has_executable(name)
-    return vim.fn.executable(name) == 1
-end
-
----Check whether a runtime file exists (no require side effects).
----@param relpath string Path under a runtimepath entry, e.g. 'lua/scip/indexers/java.lua'.
----@return boolean
-local function has_runtime_file(relpath)
-    local found = vim.api.nvim_get_runtime_file(relpath, false)
-    return #found > 0
-end
-
 ---@return AndroidSubsystemCheck
-local function check_kotlin_lsp()
-    local present = has_executable('kotlin-language-server')
-    return {
-        id = 'lsp-kotlin',
-        name = 'Kotlin LSP',
-        present = present,
-        detail = present
-                and 'kotlin-language-server on PATH (fwcd server; upstream deprecated, see kotlin/kotlin-lsp).'
-            or 'kotlin-language-server not on PATH; lsp/kotlin_ls.lua cannot attach.',
-    }
-end
+local function check_android_lint()
+    local ok, linters = pcall(require, 'linters')
+    local present = false
+    if ok and type(linters) == 'table' and type(linters.get_definition) == 'function' then
+        local definition = linters.get_definition('android_lint')
+        present = type(definition) == 'table'
+    end
 
----@return AndroidSubsystemCheck
-local function check_java_lsp()
-    local present = has_executable('java-language-server')
     return {
-        id = 'lsp-java',
-        name = 'Java LSP',
+        id = 'linter-android-lint',
+        name = 'Android Lint adapter',
         present = present,
-        detail = present and 'java-language-server on PATH.'
-            or 'java-language-server not on PATH; lsp/java_ls.lua cannot attach.',
+        detail = present and 'linters/android_lint.lua registered (runs :app:lintDebug, parses SARIF).'
+            or 'linters/android_lint.lua not registered.',
     }
 end
 
@@ -102,20 +80,34 @@ local function check_dap()
 end
 
 ---@return AndroidSubsystemCheck
-local function check_android_lint()
-    local ok, linters = pcall(require, 'linters')
-    local present = false
-    if ok and type(linters) == 'table' and type(linters.get_definition) == 'function' then
-        local definition = linters.get_definition('android_lint')
-        present = type(definition) == 'table'
-    end
+---Check whether an executable is on PATH.
+---@param name string Executable name.
+---@return boolean
+local function has_executable(name)
+    return vim.fn.executable(name) == 1
+end
 
+local function check_java_lsp()
+    local present = has_executable('java-language-server')
     return {
-        id = 'linter-android-lint',
-        name = 'Android Lint adapter',
+        id = 'lsp-java',
+        name = 'Java LSP',
         present = present,
-        detail = present and 'linters/android_lint.lua registered (runs :app:lintDebug, parses SARIF).'
-            or 'linters/android_lint.lua not registered.',
+        detail = present and 'java-language-server on PATH.'
+            or 'java-language-server not on PATH; lsp/java_ls.lua cannot attach.',
+    }
+end
+
+---@return AndroidSubsystemCheck
+local function check_kotlin_lsp()
+    local present = has_executable('kotlin-language-server')
+    return {
+        id = 'lsp-kotlin',
+        name = 'Kotlin LSP',
+        present = present,
+        detail = present
+                and 'kotlin-language-server on PATH (fwcd server; upstream deprecated, see kotlin/kotlin-lsp).'
+            or 'kotlin-language-server not on PATH; lsp/kotlin_ls.lua cannot attach.',
     }
 end
 
@@ -137,18 +129,14 @@ local function check_ktlint_formatter()
 end
 
 ---@return AndroidSubsystemCheck
-local function check_scip()
-    local present = has_runtime_file('lua/scip/indexers/java.lua')
-    return {
-        id = 'scip-java',
-        name = 'SCIP indexer (java/kotlin)',
-        present = present,
-        detail = present and 'scip/indexers/java.lua present: indexes Gradle projects (incl. Kotlin) via scip-java.'
-            or 'scip/indexers/java.lua missing from runtimepath.',
-    }
+---Check whether a runtime file exists (no require side effects).
+---@param relpath string Path under a runtimepath entry, e.g. 'lua/scip/indexers/java.lua'.
+---@return boolean
+local function has_runtime_file(relpath)
+    local found = vim.api.nvim_get_runtime_file(relpath, false)
+    return #found > 0
 end
 
----@return AndroidSubsystemCheck
 local function check_refactor()
     local present = has_runtime_file('lua/refactor/lsp.lua')
     return {
@@ -157,6 +145,18 @@ local function check_refactor()
         present = present,
         detail = present and 'refactor/lsp.lua present: rename/code-action flow through the Kotlin/Java LSP servers.'
             or 'refactor/lsp.lua missing from runtimepath.',
+    }
+end
+
+---@return AndroidSubsystemCheck
+local function check_scip()
+    local present = has_runtime_file('lua/scip/indexers/java.lua')
+    return {
+        id = 'scip-java',
+        name = 'SCIP indexer (java/kotlin)',
+        present = present,
+        detail = present and 'scip/indexers/java.lua present: indexes Gradle projects (incl. Kotlin) via scip-java.'
+            or 'scip/indexers/java.lua missing from runtimepath.',
     }
 end
 
@@ -173,5 +173,4 @@ function M.check_all()
         check_refactor(),
     }
 end
-
 return M

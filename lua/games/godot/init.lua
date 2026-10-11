@@ -21,11 +21,11 @@
 local factory = require('games.shared.godot_engine')
 
 return factory.new({
-    name = 'Godot',
-    command_prefix = 'Godot',
-    leader = '<leader>gg',
     binaries = { 'godot4', 'godot', 'Godot', 'Godot_v4' },
+    command_prefix = 'Godot',
     env_names = { 'NVIM_GODOT_BIN', 'GODOT_BIN', 'GODOT4_BIN' },
-    root_markers = { 'project.godot' },
+    leader = '<leader>gg',
+    name = 'Godot',
     output_filetype = 'godot-output',
+    root_markers = { 'project.godot' },
 })

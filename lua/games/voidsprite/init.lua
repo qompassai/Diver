@@ -26,25 +26,25 @@
 --- `voidsprite <file>`, so this module stays small on purpose.
 ---@module 'games.voidsprite'
 
-local config = require('games.voidsprite.config')
-local util = require('games.voidsprite.util')
 local actions = require('games.voidsprite.actions')
 local commands = require('games.voidsprite.commands')
+local config = require('games.voidsprite.config')
+local util = require('games.voidsprite.util')
 
 local M = {}
+M.actions = actions
+M.commands = commands
 
 M.config = config
 M.util = util
-M.actions = actions
-M.commands = commands
 
 ---@param opts games.voidsprite.Options?
 function M.setup(opts)
     util.configure(opts)
     commands.setup()
 end
+M.run_action_by_id = actions.run_action_by_id
 
 M.show_menu = actions.show_menu
-M.run_action_by_id = actions.run_action_by_id
 
 return M

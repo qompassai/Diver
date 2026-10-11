@@ -15,6 +15,141 @@ local function append_value(argv, flag, value)
     end
 end
 
+function M.auth_accesstoken_store()
+    if not core.ensure() then
+        return
+    end
+    local instance_url = core.input_required('Instance URL> ')
+    if not instance_url then
+        return
+    end
+    local alias = fn.input('Org alias (optional)> ')
+    local argv = {
+        'sf',
+        'org',
+        'login',
+        'access-token',
+        '--instance-url',
+        instance_url,
+    }
+    append_value(argv, '--alias', alias)
+    core.open_term_cmd(argv, 20)
+end
+
+function M.auth_jwt_grant()
+    if not core.ensure() then
+        return
+    end
+    local username = core.input_required('Username> ')
+    if not username then
+        return
+    end
+    local client_id = core.input_required('Connected App Client ID> ')
+    if not client_id then
+        return
+    end
+    local key_file = core.input_required('Private key file> ', 'file')
+    if not key_file then
+        return
+    end
+    local alias = fn.input('Org alias (optional)> ')
+    local argv = {
+        'sf',
+        'org',
+        'login',
+        'jwt',
+        '--username',
+        username,
+        '--client-id',
+        client_id,
+        '--jwt-key-file',
+        key_file,
+    }
+    append_value(argv, '--alias', alias)
+    core.open_term_cmd(argv, 20)
+end
+
+function M.auth_list()
+    if core.ensure() then
+        core.open_term_cmd({
+            'sf',
+            'org',
+            'list',
+            'auth',
+        }, 20)
+    end
+end
+
+function M.auth_logout_all()
+    if not core.ensure() then
+        return
+    end
+    if fn.input('Logout ALL orgs? Type yes to continue> ') ~= 'yes' then
+        core.notify('Logout cancelled', vim.log.levels.INFO)
+        return
+    end
+    core.open_term_cmd({
+        'sf',
+        'org',
+        'logout',
+        '--all',
+        '--no-prompt',
+    }, 20)
+end
+
+function M.community_create()
+    if not core.ensure({ org = true }) then
+        return
+    end
+    local name = core.input_required('Experience Cloud site name> ')
+    if not name then
+        return
+    end
+    local template = core.input_required('Template name> ')
+    if not template then
+        return
+    end
+    local url_path = core.input_required('URL path prefix> ')
+    if not url_path then
+        return
+    end
+    core.open_term_cmd({
+        'sf',
+        'community',
+        'create',
+        '--name',
+        name,
+        '--template-name',
+        template,
+        '--url-path-prefix',
+        url_path,
+    }, 20)
+end
+
+function M.community_list()
+    if core.ensure({ org = true }) then
+        core.open_term_cmd({
+            'sf',
+            'community',
+            'list',
+            'template',
+        }, 20)
+    end
+end
+
+M.community_list_templates = M.community_list
+
+function M.community_publish()
+    if not core.ensure({ org = true }) then
+        return
+    end
+    local name = core.input_required('Experience Cloud site name> ')
+    if not name then
+        return
+    end
+    core.open_term_cmd({ 'sf', 'community', 'publish', '--name', name }, 20)
+end
+
 function M.current()
     if core.ensure() then
         core.open_term_cmd({
@@ -109,140 +244,6 @@ function M.set_default(opts)
         'set',
         'target-org=' .. org,
     }, 12)
-end
-
-function M.auth_jwt_grant()
-    if not core.ensure() then
-        return
-    end
-    local username = core.input_required('Username> ')
-    if not username then
-        return
-    end
-    local client_id = core.input_required('Connected App Client ID> ')
-    if not client_id then
-        return
-    end
-    local key_file = core.input_required('Private key file> ', 'file')
-    if not key_file then
-        return
-    end
-    local alias = fn.input('Org alias (optional)> ')
-    local argv = {
-        'sf',
-        'org',
-        'login',
-        'jwt',
-        '--username',
-        username,
-        '--client-id',
-        client_id,
-        '--jwt-key-file',
-        key_file,
-    }
-    append_value(argv, '--alias', alias)
-    core.open_term_cmd(argv, 20)
-end
-
-function M.auth_list()
-    if core.ensure() then
-        core.open_term_cmd({
-            'sf',
-            'org',
-            'list',
-            'auth',
-        }, 20)
-    end
-end
-
-function M.auth_logout_all()
-    if not core.ensure() then
-        return
-    end
-    if fn.input('Logout ALL orgs? Type yes to continue> ') ~= 'yes' then
-        core.notify('Logout cancelled', vim.log.levels.INFO)
-        return
-    end
-    core.open_term_cmd({
-        'sf',
-        'org',
-        'logout',
-        '--all',
-        '--no-prompt',
-    }, 20)
-end
-function M.auth_accesstoken_store()
-    if not core.ensure() then
-        return
-    end
-    local instance_url = core.input_required('Instance URL> ')
-    if not instance_url then
-        return
-    end
-    local alias = fn.input('Org alias (optional)> ')
-    local argv = {
-        'sf',
-        'org',
-        'login',
-        'access-token',
-        '--instance-url',
-        instance_url,
-    }
-    append_value(argv, '--alias', alias)
-    core.open_term_cmd(argv, 20)
-end
-
-function M.community_create()
-    if not core.ensure({ org = true }) then
-        return
-    end
-    local name = core.input_required('Experience Cloud site name> ')
-    if not name then
-        return
-    end
-    local template = core.input_required('Template name> ')
-    if not template then
-        return
-    end
-    local url_path = core.input_required('URL path prefix> ')
-    if not url_path then
-        return
-    end
-    core.open_term_cmd({
-        'sf',
-        'community',
-        'create',
-        '--name',
-        name,
-        '--template-name',
-        template,
-        '--url-path-prefix',
-        url_path,
-    }, 20)
-end
-
-function M.community_list()
-    if core.ensure({ org = true }) then
-        core.open_term_cmd({
-            'sf',
-            'community',
-            'list',
-            'template',
-        }, 20)
-    end
-end
-
-M.community_list_templates = M.community_list
-
-function M.community_publish()
-    if not core.ensure({ org = true }) then
-        return
-    end
-    local name = core.input_required('Experience Cloud site name> ')
-    if not name then
-        return
-    end
-    core.open_term_cmd({ 'sf', 'community', 'publish', '--name', name }, 20)
 end
 
 M.commands = {

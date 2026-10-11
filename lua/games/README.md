@@ -18,7 +18,7 @@
 # `utils.games` -- native game-engine tooling
 
 Native, plugin-free Neovim tooling for Aseprite, Godot, Redot, Unity,
-and Unreal, following the same shape as `utils.dev.android` and
+and Unreal, following the same shape as `dev.apps.android` and
 `utils.dev.sf`: each engine is driven straight through its own CLI
 via `vim.system`/`vim.fn.jobstart`, with no third-party plugin
 dependency.

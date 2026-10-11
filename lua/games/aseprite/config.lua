@@ -596,6 +596,15 @@
 ---@type AsepriteConfig
 local M = {}
 
+M.ai_import = {
+    auto_open_in_editor = true,
+    bg_fuzz_percent = 8,
+    bg_key = 'black',
+    frame_size_px = 128,
+    quantize_colors = 64,
+    scale_via_cli = true,
+}
+
 M.binaries = {
     'aseprite',
     'Aseprite',
@@ -614,55 +623,7 @@ M.group_order = {
     'AI Art',
 }
 
-M.ai_import = {
-    frame_size_px = 128,
-    bg_key = 'black',
-    bg_fuzz_percent = 8,
-    quantize_colors = 64,
-    auto_open_in_editor = true,
-    scale_via_cli = true,
-}
-
-M.sprite_prompt = {
-    default_style = 'detailed 16-bit pixel art game sprite, clean cel-shaded pixels, strong readable silhouette',
-    forbidden_tokens = {
-        'final fantasy',
-        'cloud strife',
-        'barret wallace',
-        'tifa lockhart',
-        'aerith gainsborough',
-        'red xiii',
-        'yuffie kisaragi',
-        'cait sith',
-        'cid highwind',
-        'vincent valentine',
-        'sephiroth',
-        'barret',
-        'tifa',
-        'aerith',
-        'yuffie',
-    },
-}
-
 M.output_filetype = 'aseprite-output'
-
-M.sheet_types = {
-    'packed',
-    'rows',
-    'columns',
-    'horizontal',
-    'vertical',
-}
-
-M.sprite_extensions = {
-    '.ase',
-    '.aseprite',
-}
-M.user_palette_dir_by_os = {
-    linux = (vim.fn.expand('$HOME') or '') .. '/.config/aseprite/palettes',
-    mac = (vim.fn.expand('$HOME') or '') .. '/Library/Application Support/Aseprite/palettes',
-    windows = (vim.fn.expand('$APPDATA') or '') .. '/Aseprite/palettes',
-}
 ---@type AsepritePreferences
 M.preferences = {
     advanced_mode = {
@@ -1040,5 +1001,44 @@ M.runtime = {
 
     recent_files_enabled = true,
     recent_paths_enabled = true,
+}
+
+M.sheet_types = {
+    'packed',
+    'rows',
+    'columns',
+    'horizontal',
+    'vertical',
+}
+
+M.sprite_extensions = {
+    '.ase',
+    '.aseprite',
+}
+
+M.sprite_prompt = {
+    default_style = 'detailed 16-bit pixel art game sprite, clean cel-shaded pixels, strong readable silhouette',
+    forbidden_tokens = {
+        'final fantasy',
+        'cloud strife',
+        'barret wallace',
+        'tifa lockhart',
+        'aerith gainsborough',
+        'red xiii',
+        'yuffie kisaragi',
+        'cait sith',
+        'cid highwind',
+        'vincent valentine',
+        'sephiroth',
+        'barret',
+        'tifa',
+        'aerith',
+        'yuffie',
+    },
+}
+M.user_palette_dir_by_os = {
+    linux = (vim.fn.expand('$HOME') or '') .. '/.config/aseprite/palettes',
+    mac = (vim.fn.expand('$HOME') or '') .. '/Library/Application Support/Aseprite/palettes',
+    windows = (vim.fn.expand('$APPDATA') or '') .. '/Aseprite/palettes',
 }
 return M

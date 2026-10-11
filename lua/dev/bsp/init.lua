@@ -49,35 +49,13 @@ local M = {}
 ---@field request fun(method: string, params: table|nil, callback: QompassBspRequestCallback): boolean, integer|nil
 ---@field terminate fun()
 
----@param client vim.lsp.rpc.Client
----@return QompassBspRpc
-local function wrap_rpc(client)
-    ---@type table
-    local raw_client = client
-
-    return {
-        is_closing = function()
-            return raw_client.is_closing()
-        end,
-        notify = function(method, params)
-            return raw_client:notify(method, params)
-        end,
-        request = function(method, params, callback)
-            return raw_client:request(method, params, callback)
-        end,
-        terminate = function()
-            raw_client.terminate()
-        end,
-    }
-end
-
 ---@class QompassBspTargetIdentifier
 ---@field uri string
 
 ---@class QompassBspTarget
----@field id QompassBspTargetIdentifier
----@field displayName? string
 ---@field capabilities? table
+---@field displayName? string
+---@field id QompassBspTargetIdentifier
 ---@field languageIds? string[]
 
 ---@class QompassBspSession
@@ -103,98 +81,18 @@ local defaults = {
 M.config = vim.deepcopy(defaults)
 
 M.state = {
-    ---@type table<string, QompassBspSession>
-    sessions = {},
     ---@type table<string, integer>
     diagnostic_namespaces = {},
+    ---@type table<string, QompassBspSession>
+    sessions = {},
 }
 
----@param message string
----@param level? integer
-local function notify(message, level)
-    if not M.config.notify then
-        return
-    end
-
-    vim.notify(message, level or vim.log.levels.INFO, {
-        title = 'BSP',
-    })
-end
-
----@param bufnr? integer
----@return table|nil, string|nil, string|nil server module, root, error message
-local function detect_server(bufnr)
-    bufnr = bufnr or api.nvim_get_current_buf()
-
-    local entry
-    if M.config.server_name then
-        entry = servers.get(M.config.server_name)
-        if not entry then
-            return nil, nil, 'Unknown BSP server: ' .. M.config.server_name
-        end
-    else
-        entry = servers.detect(bufnr)
-        if not entry then
-            return nil, nil, 'No BSP project root was found'
-        end
-    end
-
-    local ok, server = pcall(require, entry.module)
-    if not ok or type(server) ~= 'table' or type(server.root) ~= 'function' then
-        return nil, nil, 'Cannot load BSP server module: ' .. entry.module
-    end
-
-    local ok_root, root = pcall(server.root, bufnr)
-    if not ok_root or type(root) ~= 'string' or root == '' then
-        return nil, nil, 'No ' .. entry.name .. ' project root was found'
-    end
-
-    return server, root, entry.name
-end
-
----@param root? string
----@return string|nil
-local function resolve_root(root)
-    if root and root ~= '' then
-        return vim.fs.normalize(root)
-    end
-
-    local _, detected = servers.detect()
-    return detected
-end
-
----@param root? string
----@return QompassBspSession|nil
-local function get_session(root)
-    root = resolve_root(root)
-    return root and M.state.sessions[root] or nil
-end
-
----@param err table|string|nil
----@return string
-local function error_message(err)
-    if type(err) == 'table' then
-        if type(err.message) == 'string' then
-            return err.message
-        end
-        return vim.inspect(err)
-    end
-
-    return tostring(err or 'unknown BSP error')
-end
-
----@param target_uri string
----@return integer
-local function diagnostic_namespace(target_uri)
-    local namespace = M.state.diagnostic_namespaces[target_uri]
-    if namespace then
-        return namespace
-    end
-
-    namespace = api.nvim_create_namespace('qompass.bsp.' .. target_uri)
-    M.state.diagnostic_namespaces[target_uri] = namespace
-    return namespace
-end
+local message_levels = {
+    [1] = vim.log.levels.ERROR,
+    [2] = vim.log.levels.WARN,
+    [3] = vim.log.levels.INFO,
+    [4] = vim.log.levels.DEBUG,
+}
 
 local severity = {
     [1] = vim.diagnostic.severity.ERROR,
@@ -244,6 +142,90 @@ local function convert_diagnostic(bufnr, item)
     return diagnostic
 end
 
+local function create_autocmds()
+    local group = api.nvim_create_augroup('QompassNativeBsp', {
+        clear = true,
+    })
+
+    api.nvim_create_autocmd('FileType', {
+        callback = function(args)
+            if M.config.auto_start then
+                M.start(args.buf)
+            end
+        end,
+        group = group,
+        pattern = servers.filetypes(),
+    })
+    api.nvim_create_autocmd('VimLeavePre', {
+        callback = function()
+            for _, session in pairs(M.state.sessions) do
+                if session.initialized and not session.rpc.is_closing() then
+                    session.rpc.notify('build/exit', {})
+                end
+            end
+        end,
+        group = group,
+    })
+end
+
+---@param bufnr? integer
+---@return table|nil, string|nil, string|nil server module, root, error message
+local function detect_server(bufnr)
+    bufnr = bufnr or api.nvim_get_current_buf()
+
+    local entry
+    if M.config.server_name then
+        entry = servers.get(M.config.server_name)
+        if not entry then
+            return nil, nil, 'Unknown BSP server: ' .. M.config.server_name
+        end
+    else
+        entry = servers.detect(bufnr)
+        if not entry then
+            return nil, nil, 'No BSP project root was found'
+        end
+    end
+
+    local ok, server = pcall(require, entry.module)
+    if not ok or type(server) ~= 'table' or type(server.root) ~= 'function' then
+        return nil, nil, 'Cannot load BSP server module: ' .. entry.module
+    end
+
+    local ok_root, root = pcall(server.root, bufnr)
+    if not ok_root or type(root) ~= 'string' or root == '' then
+        return nil, nil, 'No ' .. entry.name .. ' project root was found'
+    end
+
+    return server, root, entry.name
+end
+
+---@param target_uri string
+---@return integer
+local function diagnostic_namespace(target_uri)
+    local namespace = M.state.diagnostic_namespaces[target_uri]
+    if namespace then
+        return namespace
+    end
+
+    namespace = api.nvim_create_namespace('qompass.bsp.' .. target_uri)
+    M.state.diagnostic_namespaces[target_uri] = namespace
+    return namespace
+end
+
+---@param method string
+---@param params table
+---@param message string
+---@param level? integer
+local function notify(message, level)
+    if not M.config.notify then
+        return
+    end
+
+    vim.notify(message, level or vim.log.levels.INFO, {
+        title = 'BSP',
+    })
+end
+
 ---@param params table
 local function publish_diagnostics(params)
     local document = params.textDocument
@@ -284,15 +266,6 @@ local function publish_diagnostics(params)
     })
 end
 
-local message_levels = {
-    [1] = vim.log.levels.ERROR,
-    [2] = vim.log.levels.WARN,
-    [3] = vim.log.levels.INFO,
-    [4] = vim.log.levels.DEBUG,
-}
-
----@param method string
----@param params table
 local function dispatch_notification(method, params)
     if M.config.trace then
         notify(method .. ': ' .. vim.inspect(params), vim.log.levels.DEBUG)
@@ -324,6 +297,21 @@ local function dispatch_notification(method, params)
     end
 end
 
+---@param err table|string|nil
+---@return string
+local function error_message(err)
+    if type(err) == 'table' then
+        if type(err.message) == 'string' then
+            return err.message
+        end
+        return vim.inspect(err)
+    end
+
+    return tostring(err or 'unknown BSP error')
+end
+
+---@param root string
+---@param callback? fun(targets: QompassBspTarget[])
 ---@param root string
 ---@param method string
 ---@param params table|nil
@@ -348,8 +336,6 @@ local function request(root, method, params, callback)
     return sent
 end
 
----@param root string
----@param callback? fun(targets: QompassBspTarget[])
 local function refresh_targets(root, callback)
     request(root, 'workspace/buildTargets', nil, function(err, result)
         if err then
@@ -371,6 +357,211 @@ local function refresh_targets(root, callback)
             callback(session.targets)
         end
     end)
+end
+
+-- Kept before get_session: get_session calls it, so definition order is
+-- a real Lua dependency here, not just a convention.
+---@param root? string
+---@return string|nil
+local function resolve_root(root)
+    if root and root ~= '' then
+        return vim.fs.normalize(root)
+    end
+
+    local _, detected = servers.detect()
+    return detected
+end
+
+---@param root? string
+---@return QompassBspSession|nil
+local function get_session(root)
+    root = resolve_root(root)
+    return root and M.state.sessions[root] or nil
+end
+
+---@param client vim.lsp.rpc.Client
+---@return QompassBspRpc
+local function wrap_rpc(client)
+    ---@type table
+    local raw_client = client
+
+    return {
+        is_closing = function()
+            return raw_client.is_closing()
+        end,
+        notify = function(method, params)
+            return raw_client:notify(method, params)
+        end,
+        request = function(method, params, callback)
+            return raw_client:request(method, params, callback)
+        end,
+        terminate = function()
+            raw_client.terminate()
+        end,
+    }
+end
+
+---@param root? string
+---@return nil
+function M.compile(root)
+    root = resolve_root(root)
+    if not root then
+        notify('No Cargo/BSP project root was found', vim.log.levels.ERROR)
+        return
+    end
+
+    local session = M.state.sessions[root]
+    if not session or not session.initialized then
+        notify('Start BSP first with :BspStart', vim.log.levels.ERROR)
+        return
+    end
+
+    ---@param targets QompassBspTarget[]
+    local function compile_targets(targets)
+        local identifiers = {}
+        for _, target in ipairs(targets) do
+            if target.id and type(target.id.uri) == 'string' then
+                identifiers[#identifiers + 1] = target.id
+            end
+        end
+        if #identifiers == 0 then
+            notify('The BSP server reported no compilable targets', vim.log.levels.WARN)
+            return
+        end
+
+        request(root, 'buildTarget/compile', {
+            originId = 'neovim-' .. tostring(vim.uv.hrtime()),
+            targets = identifiers,
+        }, function(err, result)
+            if err then
+                notify('BSP compilation failed: ' .. error_message(err), vim.log.levels.ERROR)
+                return
+            end
+
+            local status = type(result) == 'table' and result.statusCode or nil
+            if status == 1 then
+                notify('BSP compilation completed successfully')
+            elseif status == 3 then
+                notify('BSP compilation was cancelled', vim.log.levels.WARN)
+            else
+                notify('BSP compilation failed', vim.log.levels.ERROR)
+            end
+        end)
+    end
+
+    if #session.targets == 0 then
+        refresh_targets(root, compile_targets)
+    else
+        compile_targets(session.targets)
+    end
+end
+
+---@param root? string
+---@return nil
+function M.info(root)
+    local session = get_session(root)
+    if not session then
+        notify('No BSP session is running')
+        return
+    end
+
+    notify(vim.inspect({
+        connection = {
+            argv = session.connection.argv,
+            bspVersion = session.connection.bspVersion,
+            languages = session.connection.languages,
+            name = session.connection.name,
+            path = session.connection.path,
+            version = session.connection.version,
+        },
+        initialized = session.initialized,
+        root = session.root,
+        server = session.server_info,
+        server_name = session.server_name,
+        target_count = #session.targets,
+    }))
+end
+
+---@param root? string
+---@return nil
+function M.reload(root)
+    root = resolve_root(root)
+    if not root then
+        notify('No Cargo/BSP project root was found', vim.log.levels.ERROR)
+        return
+    end
+
+    request(root, 'workspace/reload', nil, function(err)
+        if err then
+            notify('BSP reload failed: ' .. error_message(err), vim.log.levels.ERROR)
+            return
+        end
+        refresh_targets(root, function()
+            notify('BSP workspace reloaded')
+        end)
+    end)
+end
+
+---@param bufnr? integer
+---@return nil
+function M.restart(bufnr)
+    bufnr = bufnr or api.nvim_get_current_buf()
+    local _, root, err = detect_server(bufnr)
+    if not root then
+        notify(err or 'No BSP project root was found', vim.log.levels.ERROR)
+        return
+    end
+
+    local session = M.state.sessions[root]
+    if not session then
+        M.start(bufnr)
+        return
+    end
+
+    if session.initialized then
+        session.rpc.request('build/shutdown', nil, function()
+            vim.schedule(function()
+                session.rpc.notify('build/exit', {})
+                M.state.sessions[root] = nil
+                M.start(bufnr)
+            end)
+        end)
+    else
+        session.rpc.terminate()
+        M.state.sessions[root] = nil
+        M.start(bufnr)
+    end
+end
+
+---@param opts? QompassBspConfigOpts
+---@return table
+function M.setup(opts)
+    M.config = vim.tbl_deep_extend('force', vim.deepcopy(defaults), opts or {})
+    require('dev.bsp.commands').setup({
+        compile = function(root)
+            M.compile(root)
+        end,
+        info = function(root)
+            M.info(root)
+        end,
+        reload = function(root)
+            M.reload(root)
+        end,
+        restart = function(bufnr)
+            M.restart(bufnr)
+        end,
+        start = function(bufnr)
+            M.start(bufnr)
+        end,
+        stop = function(root)
+            M.stop(root)
+        end,
+        targets = function(root)
+            M.targets(root)
+        end,
+    })
+    create_autocmds()
+    return M
 end
 
 ---@param bufnr? integer
@@ -504,77 +695,37 @@ end
 
 ---@param root? string
 ---@return nil
-function M.compile(root)
+function M.stop(root)
     root = resolve_root(root)
     if not root then
-        notify('No Cargo/BSP project root was found', vim.log.levels.ERROR)
+        notify('No BSP project root was found', vim.log.levels.ERROR)
         return
     end
 
     local session = M.state.sessions[root]
-    if not session or not session.initialized then
-        notify('Start BSP first with :BspStart', vim.log.levels.ERROR)
+    if not session then
+        notify('No BSP session is running for ' .. root)
         return
     end
 
-    ---@param targets QompassBspTarget[]
-    local function compile_targets(targets)
-        local identifiers = {}
-        for _, target in ipairs(targets) do
-            if target.id and type(target.id.uri) == 'string' then
-                identifiers[#identifiers + 1] = target.id
-            end
-        end
-        if #identifiers == 0 then
-            notify('The BSP server reported no compilable targets', vim.log.levels.WARN)
-            return
-        end
-
-        request(root, 'buildTarget/compile', {
-            originId = 'neovim-' .. tostring(vim.uv.hrtime()),
-            targets = identifiers,
-        }, function(err, result)
-            if err then
-                notify('BSP compilation failed: ' .. error_message(err), vim.log.levels.ERROR)
-                return
-            end
-
-            local status = type(result) == 'table' and result.statusCode or nil
-            if status == 1 then
-                notify('BSP compilation completed successfully')
-            elseif status == 3 then
-                notify('BSP compilation was cancelled', vim.log.levels.WARN)
-            else
-                notify('BSP compilation failed', vim.log.levels.ERROR)
-            end
-        end)
-    end
-
-    if #session.targets == 0 then
-        refresh_targets(root, compile_targets)
-    else
-        compile_targets(session.targets)
-    end
-end
-
----@param root? string
----@return nil
-function M.reload(root)
-    root = resolve_root(root)
-    if not root then
-        notify('No Cargo/BSP project root was found', vim.log.levels.ERROR)
+    if not session.initialized then
+        session.rpc.terminate()
+        M.state.sessions[root] = nil
         return
     end
 
-    request(root, 'workspace/reload', nil, function(err)
-        if err then
-            notify('BSP reload failed: ' .. error_message(err), vim.log.levels.ERROR)
-            return
-        end
-        refresh_targets(root, function()
-            notify('BSP workspace reloaded')
+    local sent = session.rpc.request('build/shutdown', nil, function()
+        vim.schedule(function()
+            if not session.rpc.is_closing() then
+                session.rpc.notify('build/exit', {})
+            end
+            M.state.sessions[root] = nil
         end)
     end)
+    if not sent then
+        session.rpc.terminate()
+        M.state.sessions[root] = nil
+    end
 end
 
 ---@param root? string
@@ -610,155 +761,6 @@ function M.targets(root)
     else
         show()
     end
-end
-
----@param root? string
----@return nil
-function M.info(root)
-    local session = get_session(root)
-    if not session then
-        notify('No BSP session is running')
-        return
-    end
-
-    notify(vim.inspect({
-        connection = {
-            argv = session.connection.argv,
-            bspVersion = session.connection.bspVersion,
-            languages = session.connection.languages,
-            name = session.connection.name,
-            path = session.connection.path,
-            version = session.connection.version,
-        },
-        initialized = session.initialized,
-        root = session.root,
-        server = session.server_info,
-        server_name = session.server_name,
-        target_count = #session.targets,
-    }))
-end
-
----@param root? string
----@return nil
-function M.stop(root)
-    root = resolve_root(root)
-    if not root then
-        notify('No BSP project root was found', vim.log.levels.ERROR)
-        return
-    end
-
-    local session = M.state.sessions[root]
-    if not session then
-        notify('No BSP session is running for ' .. root)
-        return
-    end
-
-    if not session.initialized then
-        session.rpc.terminate()
-        M.state.sessions[root] = nil
-        return
-    end
-
-    local sent = session.rpc.request('build/shutdown', nil, function()
-        vim.schedule(function()
-            if not session.rpc.is_closing() then
-                session.rpc.notify('build/exit', {})
-            end
-            M.state.sessions[root] = nil
-        end)
-    end)
-    if not sent then
-        session.rpc.terminate()
-        M.state.sessions[root] = nil
-    end
-end
-
----@param bufnr? integer
----@return nil
-function M.restart(bufnr)
-    bufnr = bufnr or api.nvim_get_current_buf()
-    local _, root, err = detect_server(bufnr)
-    if not root then
-        notify(err or 'No BSP project root was found', vim.log.levels.ERROR)
-        return
-    end
-
-    local session = M.state.sessions[root]
-    if not session then
-        M.start(bufnr)
-        return
-    end
-
-    if session.initialized then
-        session.rpc.request('build/shutdown', nil, function()
-            vim.schedule(function()
-                session.rpc.notify('build/exit', {})
-                M.state.sessions[root] = nil
-                M.start(bufnr)
-            end)
-        end)
-    else
-        session.rpc.terminate()
-        M.state.sessions[root] = nil
-        M.start(bufnr)
-    end
-end
-
-local function create_autocmds()
-    local group = api.nvim_create_augroup('QompassNativeBsp', {
-        clear = true,
-    })
-
-    api.nvim_create_autocmd('FileType', {
-        callback = function(args)
-            if M.config.auto_start then
-                M.start(args.buf)
-            end
-        end,
-        group = group,
-        pattern = servers.filetypes(),
-    })
-    api.nvim_create_autocmd('VimLeavePre', {
-        callback = function()
-            for _, session in pairs(M.state.sessions) do
-                if session.initialized and not session.rpc.is_closing() then
-                    session.rpc.notify('build/exit', {})
-                end
-            end
-        end,
-        group = group,
-    })
-end
-
----@param opts? QompassBspConfigOpts
----@return table
-function M.setup(opts)
-    M.config = vim.tbl_deep_extend('force', vim.deepcopy(defaults), opts or {})
-    require('dev.bsp.commands').setup({
-        compile = function(root)
-            M.compile(root)
-        end,
-        info = function(root)
-            M.info(root)
-        end,
-        reload = function(root)
-            M.reload(root)
-        end,
-        restart = function(bufnr)
-            M.restart(bufnr)
-        end,
-        start = function(bufnr)
-            M.start(bufnr)
-        end,
-        stop = function(root)
-            M.stop(root)
-        end,
-        targets = function(root)
-            M.targets(root)
-        end,
-    })
-    create_autocmds()
-    return M
 end
 
 return M

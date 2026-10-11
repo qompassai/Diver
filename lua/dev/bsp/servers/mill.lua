@@ -34,17 +34,6 @@ local ROOT_MARKERS = {
     'build.sc',
 }
 
----@return string[]
-function M.markers()
-    return vim.deepcopy(ROOT_MARKERS)
-end
-
----@param bufnr? integer
----@return string|nil
-function M.root(bufnr)
-    return util.root_from_markers(bufnr, ROOT_MARKERS)
-end
-
 ---@param root string
 ---@param preferred_name? string
 ---@return QompassBspConnection|nil, string|nil
@@ -60,6 +49,17 @@ function M.executable(connection)
     end
 
     return util.executable_from_argv(connection.argv)
+end
+
+---@return string[]
+function M.markers()
+    return vim.deepcopy(ROOT_MARKERS)
+end
+
+---@param bufnr? integer
+---@return string|nil
+function M.root(bufnr)
+    return util.root_from_markers(bufnr, ROOT_MARKERS)
 end
 
 return M

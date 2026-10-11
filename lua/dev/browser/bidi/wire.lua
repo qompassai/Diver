@@ -30,21 +30,87 @@ local new_empty_dict = function()
     return {}
 end
 
----Provide the JSON codec. In Neovim call
----`wire.set_json(vim.json.encode, vim.json.decode, vim.empty_dict)`
----once from setup().
----@param encode_fn fun(value: any): string
----@param decode_fn fun(text: string): any
----@param empty_dict_fn? fun(): table
-function M.set_json(encode_fn, decode_fn, empty_dict_fn)
-    assert(type(encode_fn) == 'function', 'encode_fn must be a function')
-    assert(type(decode_fn) == 'function', 'decode_fn must be a function')
-    if empty_dict_fn ~= nil then
-        assert(type(empty_dict_fn) == 'function', 'empty_dict_fn must be a function')
-        new_empty_dict = empty_dict_fn
+---@param state BidiWireState
+---@param frame table decoded frame
+local function dispatch_event(state, frame)
+    local method = frame.method
+    local params = frame.params
+    if type(method) ~= 'string' or type(params) ~= 'table' then
+        state.counters.bad_shape = state.counters.bad_shape + 1
+        return
     end
-    json_encode = encode_fn
-    json_decode = decode_fn
+    local handler = state.handlers[method]
+    if handler == nil then
+        state.counters.unknown_event = state.counters.unknown_event + 1
+        if state.on_unknown_event ~= nil then
+            pcall(state.on_unknown_event, method, params)
+        end
+        return
+    end
+    pcall(handler, params)
+end
+
+---@param state BidiWireState
+---@param frame table decoded frame
+local function dispatch_response(state, frame)
+    local id = frame.id
+    if type(id) ~= 'number' then
+        state.counters.bad_shape = state.counters.bad_shape + 1
+        return
+    end
+    local callback = state.pending[id]
+    if callback == nil then
+        state.counters.stale = state.counters.stale + 1
+        return
+    end
+    state.pending[id] = nil
+    if frame.type == 'success' then
+        local result = frame.result
+        if type(result) ~= 'table' then
+            result = {}
+        end
+        pcall(callback, nil, result)
+    else
+        local name = frame.error
+        if type(name) ~= 'string' then
+            name = 'unknown error'
+        end
+        local message = frame.message
+        if type(message) == 'string' and message ~= '' then
+            name = name .. ': ' .. message
+        end
+        pcall(callback, name, nil)
+    end
+end
+
+---Next command id, wrapping at ID_MAX back to 1 (0 is never issued).
+---@param state BidiWireState
+---@return integer
+function M._next_id(state)
+    local id = state.seq + 1
+    if id > M.ID_MAX then
+        id = 1
+    end
+    state.seq = id
+    return id
+end
+
+---Fail every pending command with err and clear the table. Used when the
+---socket drops: a dead socket invalidates the whole BiDi session, so no
+---command may hang.
+---@param state BidiWireState
+---@param err string
+function M.fail_all(state, err)
+    assert(type(state) == 'table', 'state must be a table')
+    assert(type(err) == 'string', 'err must be a string')
+    local pending = state.pending
+    state.pending = {}
+    for _, callback in pairs(pending) do
+        local ok, _ = pcall(callback, err, nil)
+        if not ok then
+            state.counters.bad_shape = state.counters.bad_shape + 1
+        end
+    end
 end
 
 ---Fresh wire state. Tests use one per case; sessions own one each.
@@ -62,29 +128,6 @@ function M.new_state()
             unknown_event = 0, -- event with no registered handler
         },
     }
-end
-
----Next command id, wrapping at ID_MAX back to 1 (0 is never issued).
----@param state BidiWireState
----@return integer
-function M._next_id(state)
-    local id = state.seq + 1
-    if id > M.ID_MAX then
-        id = 1
-    end
-    state.seq = id
-    return id
-end
-
----Count pending commands.
----@param state BidiWireState
----@return integer
-function M.pending_count(state)
-    local n = 0
-    for _ in pairs(state.pending) do
-        n = n + 1
-    end
-    return n
 end
 
 ---Build a command frame and register its callback. Returns the id and
@@ -125,6 +168,14 @@ function M.next_command(state, method, params, callback)
     return id, text, nil
 end
 
+---Remove an event handler.
+---@param state BidiWireState
+---@param method string
+function M.off_event(state, method)
+    assert(type(state) == 'table', 'state must be a table')
+    state.handlers[method] = nil
+end
+
 ---Register an event handler for a BiDi event method, e.g. 'log.entryAdded'.
 ---@param state BidiWireState
 ---@param method string
@@ -134,85 +185,6 @@ function M.on_event(state, method, handler)
     assert(type(method) == 'string' and method ~= '', 'method must be non-empty')
     assert(type(handler) == 'function', 'handler must be a function')
     state.handlers[method] = handler
-end
-
----Remove an event handler.
----@param state BidiWireState
----@param method string
-function M.off_event(state, method)
-    assert(type(state) == 'table', 'state must be a table')
-    state.handlers[method] = nil
-end
-
----Fail every pending command with err and clear the table. Used when the
----socket drops: a dead socket invalidates the whole BiDi session, so no
----command may hang.
----@param state BidiWireState
----@param err string
-function M.fail_all(state, err)
-    assert(type(state) == 'table', 'state must be a table')
-    assert(type(err) == 'string', 'err must be a string')
-    local pending = state.pending
-    state.pending = {}
-    for _, callback in pairs(pending) do
-        local ok, _ = pcall(callback, err, nil)
-        if not ok then
-            state.counters.bad_shape = state.counters.bad_shape + 1
-        end
-    end
-end
-
----@param state BidiWireState
----@param frame table decoded frame
-local function dispatch_response(state, frame)
-    local id = frame.id
-    if type(id) ~= 'number' then
-        state.counters.bad_shape = state.counters.bad_shape + 1
-        return
-    end
-    local callback = state.pending[id]
-    if callback == nil then
-        state.counters.stale = state.counters.stale + 1
-        return
-    end
-    state.pending[id] = nil
-    if frame.type == 'success' then
-        local result = frame.result
-        if type(result) ~= 'table' then
-            result = {}
-        end
-        pcall(callback, nil, result)
-    else
-        local name = frame.error
-        if type(name) ~= 'string' then
-            name = 'unknown error'
-        end
-        local message = frame.message
-        if type(message) == 'string' and message ~= '' then
-            name = name .. ': ' .. message
-        end
-        pcall(callback, name, nil)
-    end
-end
-
----@param state BidiWireState
----@param frame table decoded frame
-local function dispatch_event(state, frame)
-    local method = frame.method
-    local params = frame.params
-    if type(method) ~= 'string' or type(params) ~= 'table' then
-        state.counters.bad_shape = state.counters.bad_shape + 1
-        return
-    end
-    local handler = state.handlers[method]
-    if handler == nil then
-        state.counters.unknown_event = state.counters.unknown_event + 1
-        if state.on_unknown_event ~= nil then
-            pcall(state.on_unknown_event, method, params)
-        end
-        return
-    end
-    pcall(handler, params)
 end
 
 ---Handle one text message from the transport. Malformed JSON and
@@ -239,6 +211,34 @@ function M.on_text(state, text)
     else
         state.counters.bad_shape = state.counters.bad_shape + 1
     end
+end
+
+---Count pending commands.
+---@param state BidiWireState
+---@return integer
+function M.pending_count(state)
+    local n = 0
+    for _ in pairs(state.pending) do
+        n = n + 1
+    end
+    return n
+end
+
+---Provide the JSON codec. In Neovim call
+---`wire.set_json(vim.json.encode, vim.json.decode, vim.empty_dict)`
+---once from setup().
+---@param encode_fn fun(value: any): string
+---@param decode_fn fun(text: string): any
+---@param empty_dict_fn? fun(): table
+function M.set_json(encode_fn, decode_fn, empty_dict_fn)
+    assert(type(encode_fn) == 'function', 'encode_fn must be a function')
+    assert(type(decode_fn) == 'function', 'decode_fn must be a function')
+    if empty_dict_fn ~= nil then
+        assert(type(empty_dict_fn) == 'function', 'empty_dict_fn must be a function')
+        new_empty_dict = empty_dict_fn
+    end
+    json_encode = encode_fn
+    json_decode = decode_fn
 end
 
 return M

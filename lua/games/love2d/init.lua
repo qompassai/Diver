@@ -23,23 +23,23 @@
 -- Engine wiring into games/init.lua happens in a later integration pass;
 -- see the track report for the snippet.
 local M = {}
+M.actions = require('games.love2d.actions')
+M.adapters = require('games.love2d.adapters')
+M.commands = require('games.love2d.commands')
 
 M.config = require('games.love2d.config')
-M.versions = require('games.love2d.versions')
+M.dev = require('games.love2d.dev')
+M.health = require('games.love2d.health')
+M.libs = require('games.love2d.libs')
 M.package = require('games.love2d.package')
 M.release = require('games.love2d.release')
-M.libs = require('games.love2d.libs')
-M.dev = require('games.love2d.dev')
-M.adapters = require('games.love2d.adapters')
-M.actions = require('games.love2d.actions')
-M.commands = require('games.love2d.commands')
-M.health = require('games.love2d.health')
+M.versions = require('games.love2d.versions')
 
 function M.setup()
     M.commands.setup()
 end
+M.run_action_by_id = M.actions.run_action_by_id
 
 M.show_menu = M.actions.show_menu
-M.run_action_by_id = M.actions.run_action_by_id
 
 return M

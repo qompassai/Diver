@@ -29,8 +29,8 @@
 --- This module is pure Lua (no vim.* calls): building a prompt is just
 --- string work, which also makes it unit-testable. Wiring to Rose
 --- lives in dev/vulkan/init.lua, which passes the built prompt to
---- require('ai.rose').ask(). rose.nvim itself (a separate repo) is not
---- touched.
+--- require('ai.rose').ask(). The rose module itself (lua/ai/rose/,
+--- folded in from the archived rose.nvim repo) is not touched.
 ---
 --- Safety note: user content is concatenated, never passed through
 --- string.format, so a shader containing '%' cannot break template
@@ -63,14 +63,35 @@ local function bounded(text)
     return text
 end
 
----@param context VulkanPromptContext?
----@return VulkanPromptContext
-local function normalize_context(context)
-    if type(context) ~= 'table' then
-        return {}
-    end
+---@param context VulkanPromptContext
+---@return string
+local function build_pipeline_debug(context)
+    local parts = {
+        "You are a Vulkan pipeline debugging assistant. The user's pipeline misbehaves",
+        '(black screen, wrong output, or validation errors). Work through the checklist below',
+        'against their description and shader, and narrow it to the most likely causes.',
+        '',
+        'User description of the setup:',
+        bounded(context.pipeline_desc),
+        '',
+        'Related shader source (if provided):',
+        '```',
+        bounded(context.source_text),
+        '```',
+        '',
+        'Checklist, in the order you should suspect them:',
+        '1. Render pass attachments: load/store ops, initial/final layouts, clear values.',
+        '2. Subpass dependencies: missing or wrong srcStageMask/dstStageMask and access masks.',
+        '3. Descriptor sets actually bound at draw time vs. what the layout declares.',
+        '4. Dynamic state (viewport, scissor) set before drawing when declared dynamic.',
+        '5. Vertex input bindings and attribute descriptions matching the mesh data.',
+        '6. Synchronization: is the image/layout transition the shader needs actually there?',
+        '',
+        'Reply with the top 3 suspects ranked, what evidence would confirm each, and the',
+        'single cheapest experiment to run first (e.g. a RenderDoc capture of one frame).',
+    }
 
-    return context
+    return table.concat(parts, '\n')
 end
 
 ---@param context VulkanPromptContext
@@ -127,53 +148,32 @@ local function build_validation_error(context)
     return table.concat(parts, '\n')
 end
 
----@param context VulkanPromptContext
----@return string
-local function build_pipeline_debug(context)
-    local parts = {
-        "You are a Vulkan pipeline debugging assistant. The user's pipeline misbehaves",
-        '(black screen, wrong output, or validation errors). Work through the checklist below',
-        'against their description and shader, and narrow it to the most likely causes.',
-        '',
-        'User description of the setup:',
-        bounded(context.pipeline_desc),
-        '',
-        'Related shader source (if provided):',
-        '```',
-        bounded(context.source_text),
-        '```',
-        '',
-        'Checklist, in the order you should suspect them:',
-        '1. Render pass attachments: load/store ops, initial/final layouts, clear values.',
-        '2. Subpass dependencies: missing or wrong srcStageMask/dstStageMask and access masks.',
-        '3. Descriptor sets actually bound at draw time vs. what the layout declares.',
-        '4. Dynamic state (viewport, scissor) set before drawing when declared dynamic.',
-        '5. Vertex input bindings and attribute descriptions matching the mesh data.',
-        '6. Synchronization: is the image/layout transition the shader needs actually there?',
-        '',
-        'Reply with the top 3 suspects ranked, what evidence would confirm each, and the',
-        'single cheapest experiment to run first (e.g. a RenderDoc capture of one frame).',
-    }
+---@param context VulkanPromptContext?
+---@return VulkanPromptContext
+local function normalize_context(context)
+    if type(context) ~= 'table' then
+        return {}
+    end
 
-    return table.concat(parts, '\n')
+    return context
 end
 
 ---@type table<string, { title: string, description: string, build: fun(context: VulkanPromptContext): string }>
 local TEMPLATES = {
+    pipeline_debug = {
+        build = build_pipeline_debug,
+        description = 'Narrow down a misbehaving pipeline with a ranked suspect list.',
+        title = 'Pipeline debugging',
+    },
     shader_review = {
-        title = 'Shader review',
-        description = 'Review a shader for correctness, UB, and Vulkan pitfalls.',
         build = build_shader_review,
+        description = 'Review a shader for correctness, UB, and Vulkan pitfalls.',
+        title = 'Shader review',
     },
     validation_error = {
-        title = 'Validation-layer error explanation',
-        description = 'Explain a validation-layer error in plain language with a fix.',
         build = build_validation_error,
-    },
-    pipeline_debug = {
-        title = 'Pipeline debugging',
-        description = 'Narrow down a misbehaving pipeline with a ranked suspect list.',
-        build = build_pipeline_debug,
+        description = 'Explain a validation-layer error in plain language with a fix.',
+        title = 'Validation-layer error explanation',
     },
 }
 
@@ -198,20 +198,6 @@ function M.build(name, context)
     return template.build(normalized)
 end
 
----@return string[]
-function M.names()
-    ---@type string[]
-    local names = {}
-
-    for name in pairs(TEMPLATES) do
-        names[#names + 1] = name
-    end
-
-    table.sort(names)
-
-    return names
-end
-
 ---@param name string
 ---@return string?, string?
 function M.describe(name)
@@ -226,6 +212,20 @@ function M.describe(name)
     end
 
     return template.title .. ': ' .. template.description
+end
+
+---@return string[]
+function M.names()
+    ---@type string[]
+    local names = {}
+
+    for name in pairs(TEMPLATES) do
+        names[#names + 1] = name
+    end
+
+    table.sort(names)
+
+    return names
 end
 
 return M

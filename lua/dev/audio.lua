@@ -2,8 +2,11 @@
 -- Qompass AI Diver Media CSound Utils
 -- Copyright (C) 2026 Qompass AI, All rights reserved
 -- ----------------------------------------
+
 local M = {}
-local WARN = vim.log.levels.WARN
+
+local os_name = vim.uv.os_uname().sysname
+
 local template = [[
 <CsoundSynthesizer>
 <CsOptions>
@@ -29,14 +32,8 @@ e
 </CsScore>
 </CsoundSynthesizer>
 ]]
-function M.write_basic_csd(path)
-    path = path or vim.fn.expand('%:p:h') .. '/example.csd'
-    local fd = assert(io.open(path, 'w'))
-    fd:write(template)
-    fd:close()
-    print('Wrote Csound file: ' .. path)
-    vim.cmd('edit ' .. path)
-end
+
+local WARN = vim.log.levels.WARN
 
 function M.get_manual_dir()
     if vim.g.csound_manual == nil then
@@ -46,7 +43,21 @@ function M.get_manual_dir()
     end
 end
 
-local os_name = vim.uv.os_uname().sysname
+function M.open_example()
+    if vim.g.csound_manual == nil then
+        vim.notify('g:csound_manual is not set; point it to the HTML csound manual directory', WARN)
+        return
+    end
+    local opcode = vim.fn.expand('<cword>')
+    local examplecsd = string.format('%s/examples/%s.csd', vim.fn.resolve(vim.fn.expand(vim.g.csound_manual)), opcode)
+    if vim.fn.filereadable(examplecsd) == 1 then
+        vim.cmd.tabnew()
+        vim.cmd(('silent view %s'):format(vim.fn.fnameescape(examplecsd)))
+    else
+        vim.notify(examplecsd .. ' does not exist', WARN)
+    end
+end
+
 function M.open_manual()
     local manual_dir = M.get_manual_dir()
     local opcode = vim.fn.expand('<cword>')
@@ -76,19 +87,14 @@ function M.open_manual()
         vim.notify('Cannot detect OS. Set g:os to one of "Linux", "OSX", "Windows", "Mingw", "Haiku".', WARN)
     end
 end
-function M.open_example()
-    if vim.g.csound_manual == nil then
-        vim.notify('g:csound_manual is not set; point it to the HTML csound manual directory', WARN)
-        return
-    end
-    local opcode = vim.fn.expand('<cword>')
-    local examplecsd = string.format('%s/examples/%s.csd', vim.fn.resolve(vim.fn.expand(vim.g.csound_manual)), opcode)
-    if vim.fn.filereadable(examplecsd) == 1 then
-        vim.cmd.tabnew()
-        vim.cmd(('silent view %s'):format(vim.fn.fnameescape(examplecsd)))
-    else
-        vim.notify(examplecsd .. ' does not exist', WARN)
-    end
+
+function M.write_basic_csd(path)
+    path = path or vim.fn.expand('%:p:h') .. '/example.csd'
+    local fd = assert(io.open(path, 'w'))
+    fd:write(template)
+    fd:close()
+    print('Wrote Csound file: ' .. path)
+    vim.cmd('edit ' .. path)
 end
 if vim.g.csound_enable_manual_keys == nil then
     vim.g.csound_enable_manual_keys = 1

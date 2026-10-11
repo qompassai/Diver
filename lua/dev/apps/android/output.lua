@@ -1,5 +1,5 @@
 -- #################################################################
--- /qompassai/lua/dev/android/output.lua
+-- /qompassai/lua/dev/apps/android/output.lua
 -- Qompass AI Output
 -- SPDX-License-Identifier: Apache-2.0
 -- Copyright (c) 2026 Qompass AI
@@ -16,32 +16,15 @@
 -- limitations under the License.
 -- #################################################################
 -- #################################################################
--- /qompassai/utils/dev/android/output.lua
+-- /qompassai/utils/dev/apps/android/output.lua
 -- Qompass AI Android Output
 -- SPDX-License-Identifier: Apache-2.0
 -- Copyright (c) 2026 Qompass AI
 -- #################################################################
 local M = {}
-local api = vim.api
 local config = require('dev.apps.android.config')
+local api = vim.api
 local window = nil
-function M.get_window()
-    return window
-end
-
-function M.has_window()
-    return window ~= nil and api.nvim_win_is_valid(window)
-end
-
-function M.close_build_window()
-    local win = window
-    if win ~= nil and api.nvim_win_is_valid(win) then
-        api.nvim_win_close(win, true)
-    end
-
-    window = nil
-end
-
 function M.apply_to_window(buf, data)
     if window == nil or data == nil then
         return 0, 0
@@ -69,78 +52,13 @@ function M.apply_to_window(buf, data)
     return buffer_lines, (buffer_lines + #result - 1)
 end
 
-function M.create_task_progress(title)
-    local progress = {
-        kind = 'progress',
-        source = 'android-nvim',
-        title = title,
-    }
-
-    local function update(status, percent, message, replace)
-        progress.status = status
-        progress.percent = percent
-        api.nvim_echo({ { message } }, replace, progress)
-        vim.cmd.redraw({ bang = true })
+function M.close_build_window()
+    local win = window
+    if win ~= nil and api.nvim_win_is_valid(win) then
+        api.nvim_win_close(win, true)
     end
 
-    return {
-        start = function(message)
-            update('running', 0, message, true)
-        end,
-
-        tick = function(percent, message)
-            update('running', percent, message, false)
-        end,
-
-        done = function(success, message)
-            update(success and 'success' or 'failed', 100, message, true)
-        end,
-    }
-end
-
-function M.start_progress_timer(progress, message)
-    progress.start(message)
-
-    local time_passed = 0
-    local base_message = message:gsub('%.%.$', '')
-    local timer = assert(vim.uv.new_timer(), 'uv timer creation failed')
-
-    timer:start(
-        1000,
-        1000,
-        vim.schedule_wrap(function()
-            time_passed = time_passed + 1
-            local percent = math.min(90, time_passed * 5)
-            progress.tick(percent, ('%s... %ds'):format(base_message, time_passed))
-        end)
-    )
-
-    return timer
-end
-
-function M.create_gradle_system_opts(buf)
-    return {
-        text = true,
-
-        stdout = vim.schedule_wrap(function(_, data)
-            M.apply_to_window(buf, data)
-        end),
-        stderr = vim.schedule_wrap(function(_, data)
-            local start_line, end_line = M.apply_to_window(buf, data)
-            if end_line < start_line then
-                return
-            end
-            for line = start_line, end_line do
-                local text = api.nvim_buf_get_lines(buf, line, line + 1, false)[1] or ''
-                api.nvim_buf_set_extmark(buf, config.stderr_ns, line, 0, {
-                    -- end_col is a byte offset into the line; -1 is rejected
-                    -- as out of range, so clamp to the line's byte length.
-                    end_col = #text,
-                    hl_group = 'Error',
-                })
-            end
-        end),
-    }
+    window = nil
 end
 
 function M.create_build_window()
@@ -187,4 +105,85 @@ function M.create_build_window()
     return buf
 end
 
+function M.create_gradle_system_opts(buf)
+    return {
+        text = true,
+
+        stdout = vim.schedule_wrap(function(_, data)
+            M.apply_to_window(buf, data)
+        end),
+        stderr = vim.schedule_wrap(function(_, data)
+            local start_line, end_line = M.apply_to_window(buf, data)
+            if end_line < start_line then
+                return
+            end
+            for line = start_line, end_line do
+                local text = api.nvim_buf_get_lines(buf, line, line + 1, false)[1] or ''
+                api.nvim_buf_set_extmark(buf, config.stderr_ns, line, 0, {
+                    -- end_col is a byte offset into the line; -1 is rejected
+                    -- as out of range, so clamp to the line's byte length.
+                    end_col = #text,
+                    hl_group = 'Error',
+                })
+            end
+        end),
+    }
+end
+
+function M.create_task_progress(title)
+    local progress = {
+        kind = 'progress',
+        source = 'android-nvim',
+        title = title,
+    }
+
+    local function update(status, percent, message, replace)
+        progress.status = status
+        progress.percent = percent
+        api.nvim_echo({ { message } }, replace, progress)
+        vim.cmd.redraw({ bang = true })
+    end
+
+    return {
+        start = function(message)
+            update('running', 0, message, true)
+        end,
+
+        tick = function(percent, message)
+            update('running', percent, message, false)
+        end,
+
+        done = function(success, message)
+            update(success and 'success' or 'failed', 100, message, true)
+        end,
+    }
+end
+
+function M.get_window()
+    return window
+end
+
+function M.has_window()
+    return window ~= nil and api.nvim_win_is_valid(window)
+end
+
+function M.start_progress_timer(progress, message)
+    progress.start(message)
+
+    local time_passed = 0
+    local base_message = message:gsub('%.%.$', '')
+    local timer = assert(vim.uv.new_timer(), 'uv timer creation failed')
+
+    timer:start(
+        1000,
+        1000,
+        vim.schedule_wrap(function()
+            time_passed = time_passed + 1
+            local percent = math.min(90, time_passed * 5)
+            progress.tick(percent, ('%s... %ds'):format(base_message, time_passed))
+        end)
+    )
+
+    return timer
+end
 return M

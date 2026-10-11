@@ -1,5 +1,5 @@
 -- #################################################################
--- /qompassai/lua/dev/android/matrix.lua
+-- /qompassai/lua/dev/apps/android/matrix.lua
 -- Qompass AI Android build matrices
 -- SPDX-License-Identifier: Apache-2.0
 -- Copyright (c) 2026 Qompass AI
@@ -42,16 +42,7 @@ local M = {}
 ---@field notes string Why the combo is supported (or its caveat).
 
 ---@type string[]
-M.hosts = { 'windows', 'linux' }
-
----@type string[]
-M.targets = { 'x86_64', 'aarch64' }
-
----@type string[]
 M.app_kinds = { 'android-app', 'fdroid-app' }
-
----@type string[]
-M.flavors = { 'debug', 'release', 'fdroid' }
 
 --- Supported combos: every row is one claim the doctor can verify.
 ---@type AndroidMatrixCombo[]
@@ -134,6 +125,49 @@ M.fdroid = {
     metadata_recipe = 'metadata/<applicationId>.yml (in the fdroiddata repository)',
 }
 
+---@type string[]
+M.flavors = { 'debug', 'release', 'fdroid' }
+
+---@type string[]
+M.hosts = { 'windows', 'linux' }
+
+---@type string[]
+M.targets = { 'x86_64', 'aarch64' }
+---Check whether a concrete build request is inside the supported matrix.
+---@param app_kind string 'android-app' | 'fdroid-app'
+---@param target string 'x86_64' | 'aarch64'
+---@param host string 'windows' | 'linux'
+---@return boolean ok
+---@return string note Human-readable reason (caveat or 'outside the supported matrix').
+function M.check_combo(app_kind, target, host)
+    for i = 1, #M.combos do
+        local combo = M.combos[i]
+        if combo.app_kind == app_kind and combo.target == target and combo.host == host then
+            return true, combo.notes
+        end
+    end
+
+    return false, 'Outside the supported matrix: ' .. app_kind .. ' / ' .. target .. ' / ' .. host
+end
+
+---Return every supported combo for an app kind (or all kinds).
+---@param app_kind? string 'android-app' | 'fdroid-app' | nil
+---@return AndroidMatrixCombo[]
+function M.combos_for(app_kind)
+    if app_kind == nil then
+        return M.combos
+    end
+
+    local out = {}
+    for i = 1, #M.combos do
+        if M.combos[i].app_kind == app_kind then
+            out[#out + 1] = M.combos[i]
+        end
+    end
+
+    return out
+end
+
 ---Detect the host Neovim runs on. Never errors: unknown maps to 'other'.
 ---@return string id 'windows' | 'linux' | 'macos' | 'other'
 function M.host()
@@ -170,41 +204,6 @@ function M.host_supported(host)
     return false
 end
 
----Return every supported combo for an app kind (or all kinds).
----@param app_kind? string 'android-app' | 'fdroid-app' | nil
----@return AndroidMatrixCombo[]
-function M.combos_for(app_kind)
-    if app_kind == nil then
-        return M.combos
-    end
-
-    local out = {}
-    for i = 1, #M.combos do
-        if M.combos[i].app_kind == app_kind then
-            out[#out + 1] = M.combos[i]
-        end
-    end
-
-    return out
-end
-
----Check whether a concrete build request is inside the supported matrix.
----@param app_kind string 'android-app' | 'fdroid-app'
----@param target string 'x86_64' | 'aarch64'
----@param host string 'windows' | 'linux'
----@return boolean ok
----@return string note Human-readable reason (caveat or 'outside the supported matrix').
-function M.check_combo(app_kind, target, host)
-    for i = 1, #M.combos do
-        local combo = M.combos[i]
-        if combo.app_kind == app_kind and combo.target == target and combo.host == host then
-            return true, combo.notes
-        end
-    end
-
-    return false, 'Outside the supported matrix: ' .. app_kind .. ' / ' .. target .. ' / ' .. host
-end
-
 ---Which Gradle tasks build each flavor? Keep in sync with fdroid.lua.
 ---@param flavor string 'debug' | 'release' | 'fdroid'
 ---@return string task Gradle task name.
@@ -218,5 +217,4 @@ function M.task_for_flavor(flavor)
 
     return 'assembleDebug'
 end
-
 return M

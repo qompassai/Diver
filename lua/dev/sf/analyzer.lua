@@ -10,30 +10,6 @@ local core = require('dev.sf.core')
 local M = {}
 local namespace = api.nvim_create_namespace('sf_code_analyzer')
 
----@param value any
----@return integer
-local function severity_from(value)
-    local numeric = tonumber(value)
-    if numeric == 1 or numeric == 2 then
-        return diagnostic.severity.ERROR
-    elseif numeric == 3 then
-        return diagnostic.severity.WARN
-    elseif numeric == 4 then
-        return diagnostic.severity.INFO
-    elseif numeric == 5 then
-        return diagnostic.severity.HINT
-    end
-    local label = tostring(value or ''):lower()
-    if label == 'critical' or label == 'high' or label == 'error' then
-        return diagnostic.severity.ERROR
-    elseif label == 'moderate' or label == 'warning' or label == 'warn' then
-        return diagnostic.severity.WARN
-    elseif label == 'low' or label == 'info' then
-        return diagnostic.severity.INFO
-    end
-    return diagnostic.severity.HINT
-end
-
 ---@param path string
 ---@return boolean
 local function is_absolute(path)
@@ -59,6 +35,27 @@ local function current_buffer_path(bufnr)
     return normalize_path(api.nvim_buf_get_name(bufnr))
 end
 
+---@param value any
+---@param fallback integer
+---@return integer
+local function position(value, fallback)
+    local numeric = tonumber(value)
+    if not numeric then
+        return fallback
+    end
+    return math.max(math.floor(numeric), 1)
+end
+
+---@param violation table
+---@return table
+local function primary_location(violation)
+    if type(violation.locations) == 'table' and #violation.locations > 0 then
+        local primary = math.floor(tonumber(violation.primaryLocationIndex) or 0)
+        return violation.locations[primary + 1] or violation.locations[primary] or violation.locations[1]
+    end
+    return violation
+end
+
 ---@param path string
 ---@return string?
 ---@return string?
@@ -73,89 +70,6 @@ local function read_file(path)
         return nil, read_error
     end
     return content
-end
-
----@param violation table
----@return table
-local function primary_location(violation)
-    if type(violation.locations) == 'table' and #violation.locations > 0 then
-        local primary = math.floor(tonumber(violation.primaryLocationIndex) or 0)
-        return violation.locations[primary + 1] or violation.locations[primary] or violation.locations[1]
-    end
-    return violation
-end
-
----@param value any
----@param fallback integer
----@return integer
-local function position(value, fallback)
-    local numeric = tonumber(value)
-    if not numeric then
-        return fallback
-    end
-    return math.max(math.floor(numeric), 1)
-end
-
----@param violation table
----@param location table
----@return vim.Diagnostic.Set
-local function violation_to_diagnostic(violation, location)
-    local start_line = position(location.startLine, 1) - 1
-    local start_column = position(location.startColumn, 1) - 1
-    local end_line = math.max(position(location.endLine, start_line + 1) - 1, start_line)
-    local end_column = math.max(position(location.endColumn, start_column + 1), start_column + 1)
-    local rule = violation.rule or violation.ruleName or violation.engine or 'code-analyzer'
-    local message = violation.message or violation.primaryMessage or 'Salesforce Code Analyzer violation'
-    if type(location.comment) == 'string' and location.comment ~= '' then
-        message = tostring(message) .. ' — ' .. location.comment
-    end
-    local resources = violation.resources
-    if type(resources) == 'table' and type(resources[1]) == 'string' then
-        message = tostring(message) .. ' [' .. resources[1] .. ']'
-    elseif type(violation.help) == 'string' and violation.help ~= '' then
-        message = tostring(message) .. ' [' .. violation.help .. ']'
-    end
-    return {
-        lnum = start_line,
-        col = start_column,
-        end_lnum = end_line,
-        end_col = end_column,
-        severity = severity_from(violation.severity),
-        source = 'sf-code-analyzer',
-        code = tostring(rule),
-        message = tostring(message),
-        user_data = {
-            engine = violation.engine,
-            resources = violation.resources,
-            tags = violation.tags,
-        },
-    }
-end
-
----@param decoded table
----@param target string
----@return vim.Diagnostic.Set[]
-local function collect_file_diagnostics(decoded, target)
-    local diagnostics = {}
-    local violations = type(decoded.violations) == 'table' and decoded.violations or {}
-    local run_dir = normalize_path(decoded.runDir) or core.root()
-    for _, violation in ipairs(violations) do
-        if type(violation) == 'table' then
-            local location = primary_location(violation)
-            local location_path = location.file or location.fileName or location.filePath or location.path
-            local path = normalize_path(location_path, run_dir)
-            if path == nil or path == target then
-                diagnostics[#diagnostics + 1] = violation_to_diagnostic(violation, location)
-            end
-        end
-    end
-    table.sort(diagnostics, function(left, right)
-        if left.lnum == right.lnum then
-            return left.col < right.col
-        end
-        return left.lnum < right.lnum
-    end)
-    return diagnostics
 end
 
 ---@param result vim.SystemCompleted
@@ -209,6 +123,113 @@ local function run_json_command(target, callback)
             callback(decoded)
         end)
     end)
+end
+
+---@param value any
+---@return integer
+local function severity_from(value)
+    local numeric = tonumber(value)
+    if numeric == 1 or numeric == 2 then
+        return diagnostic.severity.ERROR
+    elseif numeric == 3 then
+        return diagnostic.severity.WARN
+    elseif numeric == 4 then
+        return diagnostic.severity.INFO
+    elseif numeric == 5 then
+        return diagnostic.severity.HINT
+    end
+    local label = tostring(value or ''):lower()
+    if label == 'critical' or label == 'high' or label == 'error' then
+        return diagnostic.severity.ERROR
+    elseif label == 'moderate' or label == 'warning' or label == 'warn' then
+        return diagnostic.severity.WARN
+    elseif label == 'low' or label == 'info' then
+        return diagnostic.severity.INFO
+    end
+    return diagnostic.severity.HINT
+end
+
+---@param value string
+---@return string?
+local function severity_threshold(value)
+    local normalized = value:lower()
+    local thresholds = {
+        critical = '1',
+        high = '2',
+        info = '5',
+        low = '4',
+        moderate = '3',
+    }
+    if thresholds[normalized] then
+        return thresholds[normalized]
+    end
+    local numeric = tonumber(value)
+    if numeric and numeric >= 1 and numeric <= 5 then
+        return tostring(math.floor(numeric))
+    end
+    return nil
+end
+
+---@param violation table
+---@param location table
+---@return vim.Diagnostic.Set
+local function violation_to_diagnostic(violation, location)
+    local start_line = position(location.startLine, 1) - 1
+    local start_column = position(location.startColumn, 1) - 1
+    local end_line = math.max(position(location.endLine, start_line + 1) - 1, start_line)
+    local end_column = math.max(position(location.endColumn, start_column + 1), start_column + 1)
+    local rule = violation.rule or violation.ruleName or violation.engine or 'code-analyzer'
+    local message = violation.message or violation.primaryMessage or 'Salesforce Code Analyzer violation'
+    if type(location.comment) == 'string' and location.comment ~= '' then
+        message = tostring(message) .. ' — ' .. location.comment
+    end
+    local resources = violation.resources
+    if type(resources) == 'table' and type(resources[1]) == 'string' then
+        message = tostring(message) .. ' [' .. resources[1] .. ']'
+    elseif type(violation.help) == 'string' and violation.help ~= '' then
+        message = tostring(message) .. ' [' .. violation.help .. ']'
+    end
+    return {
+        code = tostring(rule),
+        col = start_column,
+        end_col = end_column,
+        end_lnum = end_line,
+        lnum = start_line,
+        message = tostring(message),
+        severity = severity_from(violation.severity),
+        source = 'sf-code-analyzer',
+        user_data = {
+            engine = violation.engine,
+            resources = violation.resources,
+            tags = violation.tags,
+        },
+    }
+end
+
+---@param decoded table
+---@param target string
+---@return vim.Diagnostic.Set[]
+local function collect_file_diagnostics(decoded, target)
+    local diagnostics = {}
+    local violations = type(decoded.violations) == 'table' and decoded.violations or {}
+    local run_dir = normalize_path(decoded.runDir) or core.root()
+    for _, violation in ipairs(violations) do
+        if type(violation) == 'table' then
+            local location = primary_location(violation)
+            local location_path = location.file or location.fileName or location.filePath or location.path
+            local path = normalize_path(location_path, run_dir)
+            if path == nil or path == target then
+                diagnostics[#diagnostics + 1] = violation_to_diagnostic(violation, location)
+            end
+        end
+    end
+    table.sort(diagnostics, function(left, right)
+        if left.lnum == right.lnum then
+            return left.col < right.col
+        end
+        return left.lnum < right.lnum
+    end)
+    return diagnostics
 end
 
 ---@param bufnr? integer|table
@@ -330,27 +351,6 @@ function M.run_project_json_to_file(opts)
         '--view',
         'table',
     }, 20)
-end
-
----@param value string
----@return string?
-local function severity_threshold(value)
-    local normalized = value:lower()
-    local thresholds = {
-        critical = '1',
-        high = '2',
-        moderate = '3',
-        low = '4',
-        info = '5',
-    }
-    if thresholds[normalized] then
-        return thresholds[normalized]
-    end
-    local numeric = tonumber(value)
-    if numeric and numeric >= 1 and numeric <= 5 then
-        return tostring(math.floor(numeric))
-    end
-    return nil
 end
 
 ---@param opts? SfCommandArgs

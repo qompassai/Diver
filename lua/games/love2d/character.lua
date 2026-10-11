@@ -33,45 +33,64 @@ local M = {}
 
 M.FRAMES_MAX = 4096
 M.PROJECT_NAME_LEN_MAX = 48
-M.WINDOW_DIM_MAX = 4096
 M.SERIALIZE_DEPTH_MAX = 16
+M.WINDOW_DIM_MAX = 4096
 
----@class Love2dCharacterOpts
----@field name? string project name override (sanitized)
----@field width? integer window width (default 800)
----@field height? integer window height (default 600)
----@field sprite_dir? string runtime sprite directory (default 'assets')
-
----@class Love2dProjectFile
----@field path string relative path inside the project
----@field content string file text
-
----@class Love2dProject
----@field project_name string sanitized project name
----@field files Love2dProjectFile[] conf.lua, main.lua, data.lua
----@field anims string[] animation names baked, sorted
-
----Keep only word chars, dash and underscore; collapse the rest to '_'.
----Guarantees the result is a safe single path segment, never empty.
----@param name string
----@return string safe
-local function sanitize_name(name)
-    local safe = tostring(name):gsub('[%c%z]', ''):gsub('[^%w%-_]', '_')
-    safe = safe:sub(1, M.PROJECT_NAME_LEN_MAX)
-    if safe == '' then
-        return 'character'
+---@param ch table validated character
+---@param anim_name string
+---@param fps number
+---@return table[]|nil frames {t, parts={name->{pos,rot_deg,scale,visible}}}
+---@return string|nil err
+local function bake_anim_frames(ch, anim_name, fps)
+    local tl = ch.timelines[anim_name]
+    local duration = tl.duration_sec
+    local count = math.floor(duration * fps + 1e-9) + 1
+    if count > M.FRAMES_MAX then
+        return nil, 'love2d: animation frame count exceeds cap'
     end
-    return safe
+    local frames = {}
+    for i = 1, count do
+        local t = math.min((i - 1) / fps, duration)
+        local pose, perr = kit.sample_pose(ch, anim_name, t)
+        if pose == nil then
+            return nil, 'love2d: sample_pose failed: ' .. tostring(perr)
+        end
+        local baked_parts = {}
+        for _, part in ipairs(ch.parts) do
+            local s = pose[part.name]
+            baked_parts[part.name] = {
+                pos = { x = s.pos.x, y = s.pos.y },
+                rot_deg = s.rot_deg,
+                scale = { x = s.scale.x, y = s.scale.y },
+                visible = s.visible,
+            }
+        end
+        frames[i] = { t = t, parts = baked_parts }
+    end
+    return frames, nil
 end
 
----Escape a string for single-quoted Lua embedding. Rejects NUL.
----@param s string
----@return string|nil escaped
-local function lua_quote(s)
-    if type(s) ~= 'string' or s:find('%z') ~= nil then
-        return nil
+---Bake one timeline to frames via shared.character.sample_pose.
+---Public so tests and other tooling can reuse the bake step.
+---@param ch table character definition (validated first)
+---@param anim_name string timeline name
+---@param opts? { fps?: number }
+---@return table[]|nil frames
+---@return string|nil err
+function M.bake_frames(ch, anim_name, opts)
+    opts = opts or {}
+    local ok, verr = kit.validate_character(ch)
+    if not ok then
+        return nil, 'love2d: invalid character: ' .. tostring(verr[1])
     end
-    return "'" .. s:gsub('\\', '\\\\'):gsub("'", "\\'"):gsub('\n', '\\n'):gsub('\r', '\\r') .. "'"
+    if type(anim_name) ~= 'string' or ch.timelines[anim_name] == nil then
+        return nil, 'love2d: unknown animation ' .. tostring(anim_name)
+    end
+    local fps = opts.fps or ch.timelines[anim_name].fps
+    if type(fps) ~= 'number' or fps <= 0 or fps > kit.FPS_MAX then
+        return nil, 'love2d: fps out of range'
+    end
+    return bake_anim_frames(ch, anim_name, fps)
 end
 
 ---Reject sprite paths that escape the sprite directory: absolute
@@ -90,6 +109,55 @@ local function check_sprite_path(sprite)
         return nil, "love2d: unsafe sprite path '" .. sprite .. "'"
     end
     return sprite, nil
+end
+
+---@param ch table validated character
+---@return table|nil data serializable data table
+---@return string|nil err
+local function build_data_table(ch)
+    local anim_names = {}
+    for name in pairs(ch.timelines) do
+        anim_names[#anim_names + 1] = name
+    end
+    table.sort(anim_names)
+    local parts = {}
+    for _, part in ipairs(ch.parts) do
+        local sprite, serr = check_sprite_path(part.sprite)
+        if serr ~= nil then
+            return nil, serr
+        end
+        parts[#parts + 1] = {
+            name = part.name,
+            anchor = { x = part.anchor.x, y = part.anchor.y },
+            zindex = part.zindex,
+            sprite = sprite,
+        }
+    end
+    local anims = {}
+    for _, name in ipairs(anim_names) do
+        local frames, ferr = bake_anim_frames(ch, name, ch.timelines[name].fps)
+        if frames == nil then
+            return nil, ferr
+        end
+        anims[name] = { fps = ch.timelines[name].fps, loop = ch.timelines[name].loop, frames = frames }
+    end
+    return {
+        name = ch.name,
+        default_anim = anim_names[1],
+        parts = parts,
+        anims = anims,
+    },
+        nil
+end
+
+---Escape a string for single-quoted Lua embedding. Rejects NUL.
+---@param s string
+---@return string|nil escaped
+local function lua_quote(s)
+    if type(s) ~= 'string' or s:find('%z') ~= nil then
+        return nil
+    end
+    return "'" .. s:gsub('\\', '\\\\'):gsub("'", "\\'"):gsub('\n', '\\n'):gsub('\r', '\\r') .. "'"
 end
 
 ---@param v number
@@ -160,100 +228,32 @@ local function encode_value(v, depth)
     return '{ ' .. table.concat(parts, ', ') .. ' }'
 end
 
----@param ch table validated character
----@param anim_name string
----@param fps number
----@return table[]|nil frames {t, parts={name->{pos,rot_deg,scale,visible}}}
----@return string|nil err
-local function bake_anim_frames(ch, anim_name, fps)
-    local tl = ch.timelines[anim_name]
-    local duration = tl.duration_sec
-    local count = math.floor(duration * fps + 1e-9) + 1
-    if count > M.FRAMES_MAX then
-        return nil, 'love2d: animation frame count exceeds cap'
-    end
-    local frames = {}
-    for i = 1, count do
-        local t = math.min((i - 1) / fps, duration)
-        local pose, perr = kit.sample_pose(ch, anim_name, t)
-        if pose == nil then
-            return nil, 'love2d: sample_pose failed: ' .. tostring(perr)
-        end
-        local baked_parts = {}
-        for _, part in ipairs(ch.parts) do
-            local s = pose[part.name]
-            baked_parts[part.name] = {
-                pos = { x = s.pos.x, y = s.pos.y },
-                rot_deg = s.rot_deg,
-                scale = { x = s.scale.x, y = s.scale.y },
-                visible = s.visible,
-            }
-        end
-        frames[i] = { t = t, parts = baked_parts }
-    end
-    return frames, nil
-end
+---@class Love2dCharacterOpts
+---@field name? string project name override (sanitized)
+---@field width? integer window width (default 800)
+---@field height? integer window height (default 600)
+---@field sprite_dir? string runtime sprite directory (default 'assets')
 
----Bake one timeline to frames via shared.character.sample_pose.
----Public so tests and other tooling can reuse the bake step.
----@param ch table character definition (validated first)
----@param anim_name string timeline name
----@param opts? { fps?: number }
----@return table[]|nil frames
----@return string|nil err
-function M.bake_frames(ch, anim_name, opts)
-    opts = opts or {}
-    local ok, verr = kit.validate_character(ch)
-    if not ok then
-        return nil, 'love2d: invalid character: ' .. tostring(verr[1])
-    end
-    if type(anim_name) ~= 'string' or ch.timelines[anim_name] == nil then
-        return nil, 'love2d: unknown animation ' .. tostring(anim_name)
-    end
-    local fps = opts.fps or ch.timelines[anim_name].fps
-    if type(fps) ~= 'number' or fps <= 0 or fps > kit.FPS_MAX then
-        return nil, 'love2d: fps out of range'
-    end
-    return bake_anim_frames(ch, anim_name, fps)
-end
+---@class Love2dProjectFile
+---@field path string relative path inside the project
+---@field content string file text
 
----@param ch table validated character
----@return table|nil data serializable data table
----@return string|nil err
-local function build_data_table(ch)
-    local anim_names = {}
-    for name in pairs(ch.timelines) do
-        anim_names[#anim_names + 1] = name
+---@class Love2dProject
+---@field project_name string sanitized project name
+---@field files Love2dProjectFile[] conf.lua, main.lua, data.lua
+---@field anims string[] animation names baked, sorted
+
+---Keep only word chars, dash and underscore; collapse the rest to '_'.
+---Guarantees the result is a safe single path segment, never empty.
+---@param name string
+---@return string safe
+local function sanitize_name(name)
+    local safe = tostring(name):gsub('[%c%z]', ''):gsub('[^%w%-_]', '_')
+    safe = safe:sub(1, M.PROJECT_NAME_LEN_MAX)
+    if safe == '' then
+        return 'character'
     end
-    table.sort(anim_names)
-    local parts = {}
-    for _, part in ipairs(ch.parts) do
-        local sprite, serr = check_sprite_path(part.sprite)
-        if serr ~= nil then
-            return nil, serr
-        end
-        parts[#parts + 1] = {
-            name = part.name,
-            anchor = { x = part.anchor.x, y = part.anchor.y },
-            zindex = part.zindex,
-            sprite = sprite,
-        }
-    end
-    local anims = {}
-    for _, name in ipairs(anim_names) do
-        local frames, ferr = bake_anim_frames(ch, name, ch.timelines[name].fps)
-        if frames == nil then
-            return nil, ferr
-        end
-        anims[name] = { fps = ch.timelines[name].fps, loop = ch.timelines[name].loop, frames = frames }
-    end
-    return {
-        name = ch.name,
-        default_anim = anim_names[1],
-        parts = parts,
-        anims = anims,
-    },
-        nil
+    return safe
 end
 
 local MAIN_TEMPLATE = [==[
@@ -330,18 +330,6 @@ end
 ]==]
 
 ---@param project_name string sanitized
----@param sprite_dir string sanitized
----@param default_anim string|nil
----@return string main.lua text
-local function build_main(project_name, sprite_dir, default_anim)
-    local text = MAIN_TEMPLATE
-    text = text:gsub('@@PROJECT@@', project_name)
-    text = text:gsub('@@SPRITE_DIR@@', sprite_dir)
-    text = text:gsub('@@DEFAULT_ANIM@@', default_anim or '')
-    return text
-end
-
----@param project_name string sanitized
 ---@param width integer
 ---@param height integer
 ---@return string conf.lua text
@@ -358,6 +346,18 @@ local function build_conf(project_name, width, height)
         'end',
         '',
     }, '\n')
+end
+
+---@param project_name string sanitized
+---@param sprite_dir string sanitized
+---@param default_anim string|nil
+---@return string main.lua text
+local function build_main(project_name, sprite_dir, default_anim)
+    local text = MAIN_TEMPLATE
+    text = text:gsub('@@PROJECT@@', project_name)
+    text = text:gsub('@@SPRITE_DIR@@', sprite_dir)
+    text = text:gsub('@@DEFAULT_ANIM@@', default_anim or '')
+    return text
 end
 
 ---Generate a runnable LÖVE 11.5 project skeleton from a character.

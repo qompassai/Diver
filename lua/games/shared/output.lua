@@ -22,10 +22,28 @@ local uv = vim.uv or vim.uv
 local M = {}
 
 local OUTPUT_HEIGHT = 12
-local TIMER_DELAY_MS = 1000
-local TIMER_INTERVAL_MS = 1000
 local PROGRESS_MAX_PERCENT = 90
 local PROGRESS_PERCENT_PER_SECOND = 5
+local TIMER_DELAY_MS = 1000
+local TIMER_INTERVAL_MS = 1000
+
+---@param value number
+---@param minimum integer
+---@param maximum integer
+---@return integer
+local function clamp_integer(value, minimum, maximum)
+    assert(type(value) == 'number')
+    assert(type(minimum) == 'number')
+    assert(type(maximum) == 'number')
+    assert(minimum <= maximum)
+
+    local clamped = math.max(minimum, math.min(maximum, value))
+    local result = math.floor(clamped)
+
+    ---@cast result integer
+
+    return result
+end
 
 ---@class GamesOutputState
 ---@field window integer?
@@ -58,22 +76,18 @@ local function error_message(message)
     return trimmed
 end
 
----@param value number
----@param minimum integer
----@param maximum integer
----@return integer
-local function clamp_integer(value, minimum, maximum)
-    assert(type(value) == 'number')
-    assert(type(minimum) == 'number')
-    assert(type(maximum) == 'number')
-    assert(minimum <= maximum)
+---@param timer uv.uv_timer_t?
+local function stop_timer(timer)
+    if timer == nil then
+        return
+    end
 
-    local clamped = math.max(minimum, math.min(maximum, value))
-    local result = math.floor(clamped)
+    if timer:is_closing() then
+        return
+    end
 
-    ---@cast result integer
-
-    return result
+    timer:stop()
+    timer:close()
 end
 
 ---@param buffer integer
@@ -100,20 +114,6 @@ local function valid_command(command)
     end
 
     return true
-end
-
----@param timer uv.uv_timer_t?
-local function stop_timer(timer)
-    if timer == nil then
-        return
-    end
-
-    if timer:is_closing() then
-        return
-    end
-
-    timer:stop()
-    timer:close()
 end
 
 ---@param filetype string

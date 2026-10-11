@@ -12,6 +12,49 @@ local M = {}
 ---@field keywords string
 ---@field run fun()
 
+---Observation actions: screenshot, console, network, close.
+---@return BidiAction[]
+local function observe_actions()
+    return {
+        {
+            id = 'bidi_screenshot',
+            label = 'BiDi: screenshot to buffer',
+            group = 'Browser',
+            keywords = 'bidi screenshot png capture browser',
+            run = function()
+                vim.cmd('BidiScreenshot')
+            end,
+        },
+        {
+            id = 'bidi_console',
+            label = 'BiDi: stream console to quickfix',
+            group = 'Browser',
+            keywords = 'bidi console log quickfix browser',
+            run = function()
+                vim.cmd('BidiConsole')
+            end,
+        },
+        {
+            id = 'bidi_network',
+            label = 'BiDi: observe network to quickfix',
+            group = 'Browser',
+            keywords = 'bidi network traffic requests quickfix browser',
+            run = function()
+                vim.cmd('BidiNetwork')
+            end,
+        },
+        {
+            id = 'bidi_close',
+            label = 'BiDi: close session',
+            group = 'Browser',
+            keywords = 'bidi close quit teardown browser',
+            run = function()
+                vim.cmd('BidiClose')
+            end,
+        },
+    }
+end
+
 ---Session-lifecycle actions: open, navigate, eval.
 ---@return BidiAction[]
 local function session_actions()
@@ -56,49 +99,6 @@ local function session_actions()
                 if js ~= '' then
                     vim.cmd('BidiEval ' .. js)
                 end
-            end,
-        },
-    }
-end
-
----Observation actions: screenshot, console, network, close.
----@return BidiAction[]
-local function observe_actions()
-    return {
-        {
-            id = 'bidi_screenshot',
-            label = 'BiDi: screenshot to buffer',
-            group = 'Browser',
-            keywords = 'bidi screenshot png capture browser',
-            run = function()
-                vim.cmd('BidiScreenshot')
-            end,
-        },
-        {
-            id = 'bidi_console',
-            label = 'BiDi: stream console to quickfix',
-            group = 'Browser',
-            keywords = 'bidi console log quickfix browser',
-            run = function()
-                vim.cmd('BidiConsole')
-            end,
-        },
-        {
-            id = 'bidi_network',
-            label = 'BiDi: observe network to quickfix',
-            group = 'Browser',
-            keywords = 'bidi network traffic requests quickfix browser',
-            run = function()
-                vim.cmd('BidiNetwork')
-            end,
-        },
-        {
-            id = 'bidi_close',
-            label = 'BiDi: close session',
-            group = 'Browser',
-            keywords = 'bidi close quit teardown browser',
-            run = function()
-                vim.cmd('BidiClose')
             end,
         },
     }

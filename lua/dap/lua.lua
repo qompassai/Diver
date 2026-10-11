@@ -27,36 +27,6 @@ local uv = vim.uv
 local M = {}
 
 local ADAPTER_NAME = 'lua-debug'
-local NOTIFY_PREFIX = '[lua-debug] '
-local PROCESS_TIMEOUT = 5000
-local VALIDATION_TIMEOUT = 5000
-
----@type string[]
-local ROOT_MARKERS = {
-    '.git',
-    '.luacheckrc',
-    '.luarc.json',
-    '.luarc.jsonc',
-    '.stylua.toml',
-    'selene.toml',
-    'stylua.toml',
-}
-
----@type string[]
-local LUA_EXECUTABLES = {
-    'lua5.4',
-    'lua5.3',
-    'lua5.2',
-    'lua5.1',
-    'lua',
-    'luajit',
-}
-
----@type string[]
-local LUA_DEBUG_ADAPTERS = {
-    'lua-debug',
-    'lua-debug-adapter',
-}
 
 ---@type table<string, boolean>
 local DEBUGGABLE_PROCESS_NAMES = {
@@ -68,6 +38,36 @@ local DEBUGGABLE_PROCESS_NAMES = {
     luajit = true,
     nvim = true,
 }
+
+---@type string[]
+local LUA_DEBUG_ADAPTERS = {
+    'lua-debug',
+    'lua-debug-adapter',
+}
+
+---@type string[]
+local LUA_EXECUTABLES = {
+    'lua5.4',
+    'lua5.3',
+    'lua5.2',
+    'lua5.1',
+    'lua',
+    'luajit',
+}
+local NOTIFY_PREFIX = '[lua-debug] '
+local PROCESS_TIMEOUT = 5000
+
+---@type string[]
+local ROOT_MARKERS = {
+    '.git',
+    '.luacheckrc',
+    '.luarc.json',
+    '.luarc.jsonc',
+    '.stylua.toml',
+    'selene.toml',
+    'stylua.toml',
+}
+local VALIDATION_TIMEOUT = 5000
 
 ---@class LuaDebugProcess
 ---@field command string
@@ -787,13 +787,7 @@ local function show_process()
         return
     end
 
-    notify(
-        ('%d  [%s]  %s'):format(
-            selected_process.pid,
-            selected_process.executable,
-            selected_process.command
-        )
-    )
+    notify(('%d  [%s]  %s'):format(selected_process.pid, selected_process.executable, selected_process.command))
 end
 
 local function check_adapter()

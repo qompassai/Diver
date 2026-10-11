@@ -19,17 +19,17 @@
 -- matching ProjectSettings/ProjectVersion.txt, then launches, builds
 -- (-batchmode -executeMethod), tests, and reimports without a plugin.
 local M = {}
+M.actions = require('games.unity.actions')
+M.commands = require('games.unity.commands')
 
 M.config = require('games.unity.config')
 M.util = require('games.unity.util')
-M.actions = require('games.unity.actions')
-M.commands = require('games.unity.commands')
 
 function M.setup()
     M.commands.setup()
 end
+M.run_action_by_id = M.actions.run_action_by_id
 
 M.show_menu = M.actions.show_menu
-M.run_action_by_id = M.actions.run_action_by_id
 
 return M

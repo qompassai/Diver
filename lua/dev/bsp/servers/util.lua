@@ -24,10 +24,10 @@
 
 local M = {}
 
-local CONNECTION_SIZE_BYTES_MAX = 65536
-local CONNECTION_FILE_COUNT_MAX = 64
 local ARGV_COUNT_MAX = 64
 local ARGV_ITEM_LENGTH_MAX = 4096
+local CONNECTION_FILE_COUNT_MAX = 64
+local CONNECTION_SIZE_BYTES_MAX = 65536
 
 ---@param values unknown
 ---@return boolean
@@ -43,6 +43,78 @@ local function is_string_list(values)
     end
 
     return true
+end
+
+---@param argv string[]
+---@return boolean, string|nil
+function M.executable_from_argv(argv)
+    local command = type(argv) == 'table' and argv[1] or nil
+    if not command or command == '' then
+        return false, 'The BSP connection has an empty command'
+    end
+    if vim.fn.executable(command) ~= 1 then
+        return false, 'BSP server is not executable: ' .. command
+    end
+
+    return true, nil
+end
+
+---@param root string Project root containing a `.bsp` directory.
+---@param preferred_name? string
+---@return QompassBspConnection|nil, string|nil
+function M.find_connection(root, preferred_name)
+    local directory = vim.fs.joinpath(root, '.bsp')
+    local connections, errors = M.list_connections(root)
+
+    if #connections == 0 then
+        local detail = #errors > 0 and ': ' .. table.concat(errors, '; ') or ''
+        return nil, 'No valid BSP connection file was found in ' .. directory .. detail
+    end
+
+    if preferred_name and preferred_name ~= '' then
+        for _, connection in ipairs(connections) do
+            if connection.name == preferred_name then
+                return connection, nil
+            end
+        end
+
+        return nil, string.format('BSP server %q was not found in %s', preferred_name, directory)
+    end
+
+    return connections[1], nil
+end
+
+---@param root string Project root containing a `.bsp` directory.
+---@return QompassBspConnection[] connections
+---@return string[] errors
+function M.list_connections(root)
+    local directory = vim.fs.joinpath(root, '.bsp')
+    local stat = vim.uv.fs_stat(directory)
+    if not stat or stat.type ~= 'directory' then
+        return {}, { 'No .bsp directory exists at ' .. root }
+    end
+
+    local paths = vim.fs.find(function(name)
+        return name:sub(-5) == '.json'
+    end, {
+        limit = CONNECTION_FILE_COUNT_MAX,
+        path = directory,
+        type = 'file',
+    })
+    table.sort(paths)
+
+    local connections = {}
+    local errors = {}
+    for _, path in ipairs(paths) do
+        local connection, connection_error = M.read_connection_file(path)
+        if connection then
+            connections[#connections + 1] = connection
+        elseif connection_error then
+            errors[#errors + 1] = connection_error
+        end
+    end
+
+    return connections, errors
 end
 
 ---@param path string
@@ -87,64 +159,6 @@ function M.read_connection_file(path)
     return connection, nil
 end
 
----@param root string Project root containing a `.bsp` directory.
----@return QompassBspConnection[] connections
----@return string[] errors
-function M.list_connections(root)
-    local directory = vim.fs.joinpath(root, '.bsp')
-    local stat = vim.uv.fs_stat(directory)
-    if not stat or stat.type ~= 'directory' then
-        return {}, { 'No .bsp directory exists at ' .. root }
-    end
-
-    local paths = vim.fs.find(function(name)
-        return name:sub(-5) == '.json'
-    end, {
-        limit = CONNECTION_FILE_COUNT_MAX,
-        path = directory,
-        type = 'file',
-    })
-    table.sort(paths)
-
-    local connections = {}
-    local errors = {}
-    for _, path in ipairs(paths) do
-        local connection, connection_error = M.read_connection_file(path)
-        if connection then
-            connections[#connections + 1] = connection
-        elseif connection_error then
-            errors[#errors + 1] = connection_error
-        end
-    end
-
-    return connections, errors
-end
-
----@param root string Project root containing a `.bsp` directory.
----@param preferred_name? string
----@return QompassBspConnection|nil, string|nil
-function M.find_connection(root, preferred_name)
-    local directory = vim.fs.joinpath(root, '.bsp')
-    local connections, errors = M.list_connections(root)
-
-    if #connections == 0 then
-        local detail = #errors > 0 and ': ' .. table.concat(errors, '; ') or ''
-        return nil, 'No valid BSP connection file was found in ' .. directory .. detail
-    end
-
-    if preferred_name and preferred_name ~= '' then
-        for _, connection in ipairs(connections) do
-            if connection.name == preferred_name then
-                return connection, nil
-            end
-        end
-
-        return nil, string.format('BSP server %q was not found in %s', preferred_name, directory)
-    end
-
-    return connections[1], nil
-end
-
 ---@param bufnr? integer
 ---@param markers string[]
 ---@return string|nil
@@ -152,20 +166,6 @@ function M.root_from_markers(bufnr, markers)
     bufnr = bufnr or vim.api.nvim_get_current_buf()
     local root = vim.fs.root(bufnr, markers)
     return root and vim.fs.normalize(root) or nil
-end
-
----@param argv string[]
----@return boolean, string|nil
-function M.executable_from_argv(argv)
-    local command = type(argv) == 'table' and argv[1] or nil
-    if not command or command == '' then
-        return false, 'The BSP connection has an empty command'
-    end
-    if vim.fn.executable(command) ~= 1 then
-        return false, 'BSP server is not executable: ' .. command
-    end
-
-    return true, nil
 end
 
 return M

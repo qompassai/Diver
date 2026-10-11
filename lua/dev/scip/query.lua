@@ -40,12 +40,12 @@ local utils = require('dev.scip.utils')
 
 local M = {}
 
----Maximum source files scanned when deciding index freshness.
-local FRESHNESS_SCAN_MAX = 20000
----Maximum path depth descended during the freshness scan.
-local FRESHNESS_DEPTH_MAX = 32
 ---Default timeout for a synchronous ensure, in milliseconds.
 local ENSURE_SYNC_TIMEOUT_MS = 120000
+---Maximum path depth descended during the freshness scan.
+local FRESHNESS_DEPTH_MAX = 32
+---Maximum source files scanned when deciding index freshness.
+local FRESHNESS_SCAN_MAX = 20000
 
 ---@class ScipIndexStatus
 ---@field exists boolean Whether index.scip exists under the root.
@@ -61,57 +61,6 @@ local ENSURE_SYNC_TIMEOUT_MS = 120000
 ---@field language? string Explicit language (overrides buffer detection).
 ---@field root? string Explicit project root override.
 ---@field timeout_ms? integer Sync-only wait budget.
-
----Resolve the project root and indexer for a query.
----@param opts ScipEnsureOpts
----@return string? root
----@return ScipLanguageMatch? match
----@return string? err
-local function resolve_target(opts)
-    local match, match_error
-
-    if opts.language ~= nil and opts.language ~= '' then
-        match, match_error = lang.for_language(opts.language)
-    else
-        match, match_error = lang.for_buffer(opts.bufnr)
-    end
-
-    if match == nil then
-        return nil, nil, match_error
-    end
-
-    local root = opts.root
-
-    if root == nil or root == '' then
-        local ok, scip_root = pcall(require, 'scip.root')
-
-        if not ok then
-            return nil, nil, 'scip.root unavailable'
-        end
-
-        local bufnr = opts.bufnr or vim.api.nvim_get_current_buf()
-        local indexer = require('dev.scip.registry').get(match.indexer)
-
-        if indexer == nil then
-            return nil, nil, 'indexer went missing: ' .. match.indexer
-        end
-
-        root = scip_root.find(bufnr, indexer.markers)
-    end
-
-    if root == nil or root == '' then
-        return nil, nil, 'no project root found for language: ' .. match.language
-    end
-
-    return vim.fs.normalize(root), match, nil
-end
-
----Absolute path of the index file for a project root.
----@param root string
----@return string
-function M.index_path(root)
-    return vim.fs.joinpath(vim.fs.normalize(root), config.get().index_file)
-end
 
 ---Decide whether the index is newer than the sources (bounded scan).
 ---@param root string Project root.
@@ -169,46 +118,48 @@ local function is_fresh(root, index_mtime)
     return newest <= index_mtime
 end
 
----Report index presence and freshness for a project/language.
+---Resolve the project root and indexer for a query.
 ---@param opts ScipEnsureOpts
----@return ScipIndexStatus?, string?
-function M.status(opts)
-    opts = opts or {}
+---@return string? root
+---@return ScipLanguageMatch? match
+---@return string? err
+local function resolve_target(opts)
+    local match, match_error
 
-    local root, match, resolve_error = resolve_target(opts)
-
-    if root == nil then
-        return nil, resolve_error
+    if opts.language ~= nil and opts.language ~= '' then
+        match, match_error = lang.for_language(opts.language)
+    else
+        match, match_error = lang.for_buffer(opts.bufnr)
     end
 
-    ---@type ScipLanguageMatch
-    local resolved = match
-    local path = M.index_path(root)
-    local stat = vim.uv.fs_stat(path)
-
-    if stat == nil then
-        return {
-            exists = false,
-            fresh = false,
-            index_path = path,
-            indexer = resolved.indexer,
-            language = resolved.language,
-        },
-            nil
+    if match == nil then
+        return nil, nil, match_error
     end
 
-    local mtime_sec = math.floor(stat.mtime.sec)
+    local root = opts.root
 
-    return {
-        exists = true,
-        fresh = is_fresh(root, mtime_sec),
-        index_path = path,
-        indexer = resolved.indexer,
-        language = resolved.language,
-        mtime = mtime_sec,
-        size_bytes = stat.size,
-    },
-        nil
+    if root == nil or root == '' then
+        local ok, scip_root = pcall(require, 'scip.root')
+
+        if not ok then
+            return nil, nil, 'scip.root unavailable'
+        end
+
+        local bufnr = opts.bufnr or vim.api.nvim_get_current_buf()
+        local indexer = require('dev.scip.registry').get(match.indexer)
+
+        if indexer == nil then
+            return nil, nil, 'indexer went missing: ' .. match.indexer
+        end
+
+        root = scip_root.find(bufnr, indexer.markers)
+    end
+
+    if root == nil or root == '' then
+        return nil, nil, 'no project root found for language: ' .. match.language
+    end
+
+    return vim.fs.normalize(root), match, nil
 end
 
 ---Ensure a fresh index exists, asynchronously. The callback fires on the
@@ -340,6 +291,55 @@ function M.ensure_sync(opts)
     end
 
     return M.status(opts)
+end
+
+---Absolute path of the index file for a project root.
+---@param root string
+---@return string
+function M.index_path(root)
+    return vim.fs.joinpath(vim.fs.normalize(root), config.get().index_file)
+end
+
+---Report index presence and freshness for a project/language.
+---@param opts ScipEnsureOpts
+---@return ScipIndexStatus?, string?
+function M.status(opts)
+    opts = opts or {}
+
+    local root, match, resolve_error = resolve_target(opts)
+
+    if root == nil then
+        return nil, resolve_error
+    end
+
+    ---@type ScipLanguageMatch
+    local resolved = match
+    local path = M.index_path(root)
+    local stat = vim.uv.fs_stat(path)
+
+    if stat == nil then
+        return {
+            exists = false,
+            fresh = false,
+            index_path = path,
+            indexer = resolved.indexer,
+            language = resolved.language,
+        },
+            nil
+    end
+
+    local mtime_sec = math.floor(stat.mtime.sec)
+
+    return {
+        exists = true,
+        fresh = is_fresh(root, mtime_sec),
+        index_path = path,
+        indexer = resolved.indexer,
+        language = resolved.language,
+        mtime = mtime_sec,
+        size_bytes = stat.size,
+    },
+        nil
 end
 
 return M

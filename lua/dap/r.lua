@@ -71,12 +71,10 @@ local fs = vim.fs
 local levels = vim.log.levels
 
 local M = {}
-
-local SOURCE = 'r'
 local DEFAULT_HOST = '127.0.0.1'
 local DEFAULT_PORT = 18721
-local MIN_PORT = 1
 local MAX_PORT = 65535
+local MIN_PORT = 1
 
 ---@type string[]
 local ROOT_MARKERS = {
@@ -84,6 +82,8 @@ local ROOT_MARKERS = {
     '.Rprofile',
     '.git',
 }
+
+local SOURCE = 'r'
 
 ---@class RState
 ---@field host string?

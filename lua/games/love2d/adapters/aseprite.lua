@@ -33,17 +33,7 @@ local MANIFEST_ASSETS_MAX = 256
 
 -- File kinds the interchange manifest accepts. LÖVE-native raster and
 -- audio only: nothing here implies a foreign scene or model format.
-local MANIFEST_KINDS = { png = true, json = true, ogg = true, wav = true }
-
-M.engine_key = 'aseprite'
-M.label = 'Aseprite'
-M.love_version_requirement = '11.5'
-
--- peachy: consumes Aseprite's sheet + JSON export with tags intact as
--- ready-to-play LÖVE animations (catalog category 'aseprite').
--- anim8: covers sheets exported WITHOUT the JSON sidecar, where the
--- frames form a plain grid and no tag metadata exists to consume.
-M.libraries = { 'peachy', 'anim8' }
+local MANIFEST_KINDS = { json = true, ogg = true, png = true, wav = true }
 
 M.asset_interchange = {
     capabilities = {
@@ -60,18 +50,39 @@ M.asset_interchange = {
     runtime_interop = false,
 }
 
----Recommended conf.lua values for LÖVE projects consuming Aseprite
----assets. Convention only; nothing reads or enforces these.
-M.run_config = {
-    identity = 'diver-aseprite-love',
-    window = { width = 1280, height = 720, resizable = true, vsync = 1 },
-}
+M.engine_key = 'aseprite'
+M.label = 'Aseprite'
+
+-- peachy: consumes Aseprite's sheet + JSON export with tags intact as
+-- ready-to-play LÖVE animations (catalog category 'aseprite').
+-- anim8: covers sheets exported WITHOUT the JSON sidecar, where the
+-- frames form a plain grid and no tag metadata exists to consume.
+M.libraries = { 'peachy', 'anim8' }
+M.love_version_requirement = '11.5'
 
 ---Recommended packaging conventions for Aseprite-sourced assets.
 M.package_config = {
     asset_dirs = { 'assets', 'sprites' },
     include_exts = { '.png', '.json', '.ogg', '.wav' },
 }
+
+---Recommended conf.lua values for LÖVE projects consuming Aseprite
+---assets. Convention only; nothing reads or enforces these.
+M.run_config = {
+    identity = 'diver-aseprite-love',
+    window = { height = 720, resizable = true, vsync = 1, width = 1280 },
+}
+
+---Locate the Aseprite binary. Returns nil when absent: the adapter
+---fails closed rather than assuming an editor is installed.
+---@return string? path
+---@return string? err
+function M.detect_tooling()
+    if vim.fn.executable('aseprite') == 1 then
+        return 'aseprite', nil
+    end
+    return nil, 'aseprite binary not found on PATH'
+end
 
 ---@class AsepriteInterchangeAsset
 ---@field path string relative path of the asset file
@@ -127,17 +138,6 @@ function M.validate_interchange_manifest(manifest)
         end
     end
     return true, nil
-end
-
----Locate the Aseprite binary. Returns nil when absent: the adapter
----fails closed rather than assuming an editor is installed.
----@return string? path
----@return string? err
-function M.detect_tooling()
-    if vim.fn.executable('aseprite') == 1 then
-        return 'aseprite', nil
-    end
-    return nil, 'aseprite binary not found on PATH'
 end
 
 return M

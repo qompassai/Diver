@@ -21,22 +21,22 @@
 -- no plugin. (Engine wiring into games/init.lua happens in a later
 -- integration pass; see the track report for the snippet.)
 local M = {}
+M.actions = require('games.blender.actions')
+M.batch = require('games.blender.batch')
+M.commands = require('games.blender.commands')
 
 M.config = require('games.blender.config')
-M.versions = require('games.blender.versions')
-M.render = require('games.blender.render')
 M.export = require('games.blender.export')
-M.sprites = require('games.blender.sprites')
-M.batch = require('games.blender.batch')
-M.actions = require('games.blender.actions')
-M.commands = require('games.blender.commands')
 M.health = require('games.blender.health')
+M.render = require('games.blender.render')
+M.sprites = require('games.blender.sprites')
+M.versions = require('games.blender.versions')
 
 function M.setup()
     M.commands.setup()
 end
+M.run_action_by_id = M.actions.run_action_by_id
 
 M.show_menu = M.actions.show_menu
-M.run_action_by_id = M.actions.run_action_by_id
 
 return M

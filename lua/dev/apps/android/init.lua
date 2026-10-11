@@ -1,5 +1,5 @@
 -- #################################################################
--- /qompassai/lua/dev/android/init.lua
+-- /qompassai/lua/dev/apps/android/init.lua
 -- Qompass AI Init
 -- SPDX-License-Identifier: Apache-2.0
 -- Copyright (c) 2026 Qompass AI
@@ -30,9 +30,11 @@ M.recent = require('dev.apps.android.recent')
 M.subsystems = require('dev.apps.android.subsystems')
 M.ui = require('dev.apps.android.ui')
 M.util = require('dev.apps.android.util')
+M.run_action_by_id = M.actions.run_action_by_id
+
 function M.setup()
     M.commands.setup()
 end
+
 M.show_menu = M.actions.show_menu
-M.run_action_by_id = M.actions.run_action_by_id
 return M

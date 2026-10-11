@@ -5,26 +5,21 @@
 local core = require('dev.sf.core')
 local fn = vim.fn
 local M = {}
-local TERM_HEIGHT = 20
 local LONG_TERM_HEIGHT = 30
+local TERM_HEIGHT = 20
 local SOURCE_TYPES = {
     knowledge = true,
     retriever = true,
     sfdrive = true,
 }
 ---@param argv string[]
----@param height? integer
-local function run(argv, height)
-    core.open_term_cmd(argv, height or TERM_HEIGHT)
-end
-
----@param require_project? boolean
----@return boolean
-local function ready(require_project)
-    return core.ensure({
-        org = true,
-        project = require_project == true,
-    })
+---@param flag string?
+---@param value string?
+local function append_pair(argv, flag, value)
+    if type(flag) == 'string' and flag ~= '' and type(value) == 'string' and value ~= '' then
+        argv[#argv + 1] = flag
+        argv[#argv + 1] = value
+    end
 end
 
 ---@param value string
@@ -52,14 +47,19 @@ local function prompt_selector(prompt)
     return mode == 'api' and '--api-name' or '--authoring-bundle', value
 end
 
+---@param require_project? boolean
+---@return boolean
+local function ready(require_project)
+    return core.ensure({
+        org = true,
+        project = require_project == true,
+    })
+end
+
 ---@param argv string[]
----@param flag string?
----@param value string?
-local function append_pair(argv, flag, value)
-    if type(flag) == 'string' and flag ~= '' and type(value) == 'string' and value ~= '' then
-        argv[#argv + 1] = flag
-        argv[#argv + 1] = value
-    end
+---@param height? integer
+local function run(argv, height)
+    core.open_term_cmd(argv, height or TERM_HEIGHT)
 end
 
 ---@param opts? SfCommandArgs

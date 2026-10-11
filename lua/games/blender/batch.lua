@@ -20,10 +20,10 @@
 -- report. The file list is capped (config.batch.blend_max) and
 -- sorted so runs are deterministic.
 local config = require('games.blender.config')
-local versions = require('games.blender.versions')
-local render = require('games.blender.render')
 local export = require('games.blender.export')
+local render = require('games.blender.render')
 local sprites = require('games.blender.sprites')
+local versions = require('games.blender.versions')
 
 local M = {}
 
@@ -50,10 +50,10 @@ local M = {}
 ---@field frames? integer Sprite/turntable frame count
 
 M.operations = {
-    'render_still',
-    'export_glb',
-    'export_fbx',
     'bake_sprites',
+    'export_fbx',
+    'export_glb',
+    'render_still',
 }
 
 ---@param dir string
@@ -85,6 +85,45 @@ function M.collect_blends(dir, max_count)
     end
 
     return blends, nil
+end
+
+---Check whether a batch operation name is one of the supported operations.
+---@param operation string Batch operation name
+---@return boolean known
+local function is_known_operation(operation)
+    for _, candidate in ipairs(M.operations) do
+        if candidate == operation then
+            return true
+        end
+    end
+
+    return false
+end
+
+---@param o table Raw batch options
+---@return table? normalized
+---@return string? err
+local function normalize_run_opts(o)
+    if type(o.output_dir) ~= 'string' or o.output_dir == '' then
+        return nil, 'blender: opts.output_dir must be a non-empty path'
+    end
+
+    local timeout_ms = o.timeout_ms or config.batch.timeout_ms_default
+
+    if type(timeout_ms) ~= 'number' or timeout_ms < 1000 or timeout_ms > config.batch.timeout_ms_max then
+        return nil, 'blender: timeout_ms out of range'
+    end
+
+    return {
+        output_dir = o.output_dir,
+        timeout_ms = timeout_ms,
+        width = o.width,
+        height = o.height,
+        samples = o.samples,
+        engine = o.engine,
+        frames = o.frames,
+    },
+        nil
 end
 
 ---@param blend string
@@ -151,45 +190,6 @@ local function run_one(blend, operation, opts)
     end
 
     return { png_out, json_out }, nil
-end
-
----Check whether a batch operation name is one of the supported operations.
----@param operation string Batch operation name
----@return boolean known
-local function is_known_operation(operation)
-    for _, candidate in ipairs(M.operations) do
-        if candidate == operation then
-            return true
-        end
-    end
-
-    return false
-end
-
----@param o table Raw batch options
----@return table? normalized
----@return string? err
-local function normalize_run_opts(o)
-    if type(o.output_dir) ~= 'string' or o.output_dir == '' then
-        return nil, 'blender: opts.output_dir must be a non-empty path'
-    end
-
-    local timeout_ms = o.timeout_ms or config.batch.timeout_ms_default
-
-    if type(timeout_ms) ~= 'number' or timeout_ms < 1000 or timeout_ms > config.batch.timeout_ms_max then
-        return nil, 'blender: timeout_ms out of range'
-    end
-
-    return {
-        output_dir = o.output_dir,
-        timeout_ms = timeout_ms,
-        width = o.width,
-        height = o.height,
-        samples = o.samples,
-        engine = o.engine,
-        frames = o.frames,
-    },
-        nil
 end
 
 ---@param blends string[] Sorted .blend paths

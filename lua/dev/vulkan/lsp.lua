@@ -48,15 +48,15 @@ local VERSION_BYTES_MAX = 128
 
 ---@type table<string, { bin: string, version_arg: string, config: string }>
 local SERVERS = {
-    glsl_analyzer = {
-        bin = 'glsl_analyzer',
-        version_arg = '--version',
-        config = 'lsp/glslana_ls.lua',
-    },
     clangd = {
         bin = 'clangd',
-        version_arg = '--version',
         config = 'lsp/clangd_ls.lua',
+        version_arg = '--version',
+    },
+    glsl_analyzer = {
+        bin = 'glsl_analyzer',
+        config = 'lsp/glslana_ls.lua',
+        version_arg = '--version',
     },
 }
 
@@ -105,6 +105,22 @@ end
 ---@field path string? absolute path when found
 ---@field version string? nil when the version flag failed
 
+---@return table<string, VulkanLspServerStatus>
+function M.check()
+    ---@type table<string, VulkanLspServerStatus>
+    local report = {}
+
+    for _, name in ipairs(M.server_names()) do
+        local status = M.check_server(name)
+
+        if status ~= nil then
+            report[name] = status
+        end
+    end
+
+    return report
+end
+
 --- Check one language server. `found` is authoritative; `version`
 --- is best-effort and honestly nil when the server won't report it.
 ---@param name string "glsl_analyzer" or "clangd"
@@ -129,36 +145,6 @@ function M.check_server(name)
         path = (type(path) == 'string' and path ~= '') and path or nil,
         version = server_version(spec.bin, spec.version_arg),
     }
-end
-
----@return string[]
-function M.server_names()
-    ---@type string[]
-    local names = {}
-
-    for name in pairs(SERVERS) do
-        names[#names + 1] = name
-    end
-
-    table.sort(names)
-
-    return names
-end
-
----@return table<string, VulkanLspServerStatus>
-function M.check()
-    ---@type table<string, VulkanLspServerStatus>
-    local report = {}
-
-    for _, name in ipairs(M.server_names()) do
-        local status = M.check_server(name)
-
-        if status ~= nil then
-            report[name] = status
-        end
-    end
-
-    return report
 end
 
 --- Render a check report as human-readable lines.
@@ -193,6 +179,20 @@ function M.format_report(report)
     lines[#lines + 1] = 'Note: no verified Slang LSP is wired; HLSL uses the dxc native linter.'
 
     return lines
+end
+
+---@return string[]
+function M.server_names()
+    ---@type string[]
+    local names = {}
+
+    for name in pairs(SERVERS) do
+        names[#names + 1] = name
+    end
+
+    table.sort(names)
+
+    return names
 end
 
 return M

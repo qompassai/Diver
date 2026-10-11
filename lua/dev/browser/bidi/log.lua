@@ -5,10 +5,10 @@
 local M = {}
 
 local LEVEL_TO_QFTYPE = {
-    error = 'E',
-    warning = 'W',
-    info = 'I',
     debug = 'I',
+    error = 'E',
+    info = 'I',
+    warning = 'W',
 }
 
 ---Turn a log.entryAdded params table into a quickfix item. Pure: unknown

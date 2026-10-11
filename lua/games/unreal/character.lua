@@ -33,6 +33,80 @@ M.FRAMES_MAX = 4096
 M.JSON_DEPTH_MAX = 16
 M.NAME_LEN_MAX = 48
 
+---@param sprite string|nil
+---@param part_name string
+---@return string|nil safe
+---@return string|nil err
+local function check_sprite_path(sprite, part_name)
+    if sprite == nil then
+        return nil, nil
+    end
+    if sprite:sub(1, 1) == '/' or sprite:find('%.%.') ~= nil or sprite:find('%z') ~= nil then
+        return nil, "unreal: unsafe sprite path for part '" .. part_name .. "'"
+    end
+    return sprite, nil
+end
+
+---@param ch table validated character
+---@param opts? UnrealCharacterOpts
+---@return table|nil manifest
+---@return string|nil err
+local function build_manifest(ch, opts)
+    opts = opts or {}
+    local parts = {}
+    for _, part in ipairs(ch.parts) do
+        local sprite, serr = check_sprite_path(part.sprite, part.name)
+        if serr ~= nil then
+            return nil, serr
+        end
+        parts[#parts + 1] = {
+            name = part.name,
+            anchor = { part.anchor.x, part.anchor.y },
+            zindex = part.zindex,
+            sprite = sprite,
+        }
+    end
+    local anims = {}
+    for anim_name, tl in pairs(ch.timelines) do
+        local fps = opts.fps or tl.fps
+        if type(fps) ~= 'number' or fps <= 0 or fps > kit.FPS_MAX then
+            return nil, 'unreal: fps out of range'
+        end
+        local count = math.floor(tl.duration_sec * fps + 1e-9) + 1
+        if count > M.FRAMES_MAX then
+            return nil, 'unreal: frame count exceeds cap'
+        end
+        local frames = {}
+        for i = 1, count do
+            local t = math.min((i - 1) / fps, tl.duration_sec)
+            local pose, perr = kit.sample_pose(ch, anim_name, t)
+            if pose == nil then
+                return nil, 'unreal: sample_pose failed: ' .. tostring(perr)
+            end
+            local baked = {}
+            for _, part in ipairs(ch.parts) do
+                local s = pose[part.name]
+                baked[part.name] = {
+                    pos = { s.pos.x, s.pos.y },
+                    rot = s.rot_deg,
+                    scale = { s.scale.x, s.scale.y },
+                    visible = s.visible,
+                }
+            end
+            frames[i] = { t = t, parts = baked }
+        end
+        anims[anim_name] = { fps = fps, loop = tl.loop, frames = frames }
+    end
+    return {
+        format = 'diver-character-unreal',
+        version = 1,
+        character = ch.name,
+        parts = parts,
+        anims = anims,
+    },
+        nil
+end
+
 ---@class UnrealCharacterOpts
 ---@field name? string character name override (sanitized)
 ---@field fps? number bake fps override
@@ -118,80 +192,6 @@ local function sanitize_name(name)
         return 'character'
     end
     return safe
-end
-
----@param sprite string|nil
----@param part_name string
----@return string|nil safe
----@return string|nil err
-local function check_sprite_path(sprite, part_name)
-    if sprite == nil then
-        return nil, nil
-    end
-    if sprite:sub(1, 1) == '/' or sprite:find('%.%.') ~= nil or sprite:find('%z') ~= nil then
-        return nil, "unreal: unsafe sprite path for part '" .. part_name .. "'"
-    end
-    return sprite, nil
-end
-
----@param ch table validated character
----@param opts? UnrealCharacterOpts
----@return table|nil manifest
----@return string|nil err
-local function build_manifest(ch, opts)
-    opts = opts or {}
-    local parts = {}
-    for _, part in ipairs(ch.parts) do
-        local sprite, serr = check_sprite_path(part.sprite, part.name)
-        if serr ~= nil then
-            return nil, serr
-        end
-        parts[#parts + 1] = {
-            name = part.name,
-            anchor = { part.anchor.x, part.anchor.y },
-            zindex = part.zindex,
-            sprite = sprite,
-        }
-    end
-    local anims = {}
-    for anim_name, tl in pairs(ch.timelines) do
-        local fps = opts.fps or tl.fps
-        if type(fps) ~= 'number' or fps <= 0 or fps > kit.FPS_MAX then
-            return nil, 'unreal: fps out of range'
-        end
-        local count = math.floor(tl.duration_sec * fps + 1e-9) + 1
-        if count > M.FRAMES_MAX then
-            return nil, 'unreal: frame count exceeds cap'
-        end
-        local frames = {}
-        for i = 1, count do
-            local t = math.min((i - 1) / fps, tl.duration_sec)
-            local pose, perr = kit.sample_pose(ch, anim_name, t)
-            if pose == nil then
-                return nil, 'unreal: sample_pose failed: ' .. tostring(perr)
-            end
-            local baked = {}
-            for _, part in ipairs(ch.parts) do
-                local s = pose[part.name]
-                baked[part.name] = {
-                    pos = { s.pos.x, s.pos.y },
-                    rot = s.rot_deg,
-                    scale = { s.scale.x, s.scale.y },
-                    visible = s.visible,
-                }
-            end
-            frames[i] = { t = t, parts = baked }
-        end
-        anims[anim_name] = { fps = fps, loop = tl.loop, frames = frames }
-    end
-    return {
-        format = 'diver-character-unreal',
-        version = 1,
-        character = ch.name,
-        parts = parts,
-        anims = anims,
-    },
-        nil
 end
 
 local PYTHON_TEMPLATE = [==[
@@ -281,6 +281,23 @@ function M.build_interchange(ch, opts)
         nil
 end
 
+---Honest capability report. Import-pipeline hooks only: interchange
+---files plus editor stubs as text. 3D is via-interchange, not native.
+---@return { dims_2d: boolean, dims_3d: string, notes: string[] }
+function M.capabilities()
+    return {
+        dims_2d = true,
+        dims_3d = 'via-interchange',
+        notes = {
+            'Import-pipeline hooks ONLY: manifest.json + Python editor stub as text artifacts.',
+            '2D sprite-sheet PNGs bake via games.blender.character export_sprite_sheet (Blender required).',
+            '3D models travel via the Blender interchange pipeline (FBX/glTF); the skeleton is set up in Unreal.',
+            'No runtime bridge. Headless Unreal editor scripting cannot be validated in this sandbox;',
+            'stubs are starting points, not working integrations.',
+        },
+    }
+end
+
 ---Export a 3D model for Unreal via the Blender interchange pipeline
 ---(build_blend kind 'armature3d', then FBX/glTF export). Delegates to
 ---games.blender.character and fails closed when Blender or Neovim is
@@ -339,23 +356,6 @@ function M.export_sprite_sheet(ch, out_dir, opts)
         return nil, 'unreal: games.blender.character unavailable: ' .. tostring(blender_character)
     end
     return blender_character.export_sprite_sheet(ch, out_dir, opts)
-end
-
----Honest capability report. Import-pipeline hooks only: interchange
----files plus editor stubs as text. 3D is via-interchange, not native.
----@return { dims_2d: boolean, dims_3d: string, notes: string[] }
-function M.capabilities()
-    return {
-        dims_2d = true,
-        dims_3d = 'via-interchange',
-        notes = {
-            'Import-pipeline hooks ONLY: manifest.json + Python editor stub as text artifacts.',
-            '2D sprite-sheet PNGs bake via games.blender.character export_sprite_sheet (Blender required).',
-            '3D models travel via the Blender interchange pipeline (FBX/glTF); the skeleton is set up in Unreal.',
-            'No runtime bridge. Headless Unreal editor scripting cannot be validated in this sandbox;',
-            'stubs are starting points, not working integrations.',
-        },
-    }
 end
 
 return M

@@ -42,6 +42,8 @@ M.group_order = {
     'TIC-80',
 }
 
+M.output_filetype = 'voidsprite-output'
+
 ---Native session formats (.voidsnv3 documented upstream) plus the PNG
 ---interchange format used for the TIC-80 sprite-sheet pipeline.
 ---@type string[]
@@ -50,8 +52,6 @@ M.sprite_extensions = {
     '.voidsnv3',
     '.png',
 }
-
-M.output_filetype = 'voidsprite-output'
 
 ---@param opts games.voidsprite.Options?
 ---@return string bin Resolved binary name or path (unvalidated).

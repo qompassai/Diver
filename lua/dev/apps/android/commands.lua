@@ -1,5 +1,5 @@
 -- #################################################################
--- /qompassai/lua/dev/android/commands.lua
+-- /qompassai/lua/dev/apps/android/commands.lua
 -- Qompass AI Commands
 -- SPDX-License-Identifier: Apache-2.0
 -- Copyright (c) 2026 Qompass AI
@@ -16,9 +16,14 @@
 -- limitations under the License.
 -- #################################################################
 local M = {}
+local actions = require('dev.apps.android.actions')
 local api = vim.api
 local map = vim.keymap.set
-local actions = require('dev.apps.android.actions')
+function M.setup()
+    M.setup_commands()
+    M.setup_keymaps()
+end
+
 function M.setup_commands()
     local action_list = actions.get_actions()
 
@@ -48,31 +53,36 @@ function M.setup_commands()
         })
     end
 end
+
 function M.setup_keymaps()
-    map('n', '<leader>ar', function()
-        actions.run_action_by_id('run_debug')
-    end, {
-        desc = 'Android: Run debug',
-    })
-    map('n', '<leader>ac', function()
-        actions.run_action_by_id('clean')
-    end, {
-        desc = 'Android: Clean project',
-    })
     map('n', '<leader>ab', function()
         actions.run_action_by_id('build_release')
     end, {
         desc = 'Android: Build release',
     })
+
+    map('n', '<leader>ac', function()
+        actions.run_action_by_id('clean')
+    end, {
+        desc = 'Android: Clean project',
+    })
+
+    map('n', '<leader>ad', function()
+        actions.run_action_by_id('doctor')
+    end, {
+        desc = 'Android: Run doctor',
+    })
+
     map('n', '<leader>ae', function()
         actions.run_action_by_id('start_emulator')
     end, {
         desc = 'Android: Start emulator',
     })
-    map('n', '<leader>ax', function()
-        actions.run_action_by_id('stop_emulator')
+
+    map('n', '<leader>ar', function()
+        actions.run_action_by_id('run_debug')
     end, {
-        desc = 'Android: Stop emulator',
+        desc = 'Android: Run debug',
     })
 
     map('n', '<leader>as', function()
@@ -81,16 +91,10 @@ function M.setup_keymaps()
         desc = 'Android: Capture screen',
     })
 
-    map('n', '<leader>ad', function()
-        actions.run_action_by_id('doctor')
+    map('n', '<leader>ax', function()
+        actions.run_action_by_id('stop_emulator')
     end, {
-        desc = 'Android: Run doctor',
+        desc = 'Android: Stop emulator',
     })
 end
-
-function M.setup()
-    M.setup_commands()
-    M.setup_keymaps()
-end
-
 return M

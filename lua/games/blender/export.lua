@@ -23,35 +23,9 @@
 local versions = require('games.blender.versions')
 
 local M = {}
-
-local EXPORT_TIMEOUT_MS = 600000
 local EXPORT_SCRIPT_TIMEOUT_MS = 15000
 
----@alias BlenderExportKind 'glb'|'fbx'
-
----@param kind BlenderExportKind
----@return string? script Static exporter script, or nil for an unknown kind
-function M.build_script(kind)
-    if kind == 'glb' then
-        return table.concat({
-            'import bpy, os',
-            'out = os.environ["BLENDER_EXPORT_OUTPUT"]',
-            'bpy.ops.export_scene.gltf(filepath=out, export_format="GLB")',
-            'print("DIVER_EXPORT_OK " + out)',
-        }, '\n') .. '\n'
-    end
-
-    if kind == 'fbx' then
-        return table.concat({
-            'import bpy, os',
-            'out = os.environ["BLENDER_EXPORT_OUTPUT"]',
-            'bpy.ops.export_scene.fbx(filepath=out)',
-            'print("DIVER_EXPORT_OK " + out)',
-        }, '\n') .. '\n'
-    end
-
-    return nil
-end
+local EXPORT_TIMEOUT_MS = 600000
 
 ---Build the export argv. Pure: no binary needed.
 ---@param bin string Blender binary path
@@ -79,6 +53,96 @@ function M.build_argv(bin, blend, script_path)
         '--python',
         script_path,
     }, nil
+end
+
+---@alias BlenderExportKind 'glb'|'fbx'
+
+---@param kind BlenderExportKind
+---@return string? script Static exporter script, or nil for an unknown kind
+function M.build_script(kind)
+    if kind == 'glb' then
+        return table.concat({
+            'import bpy, os',
+            'out = os.environ["BLENDER_EXPORT_OUTPUT"]',
+            'bpy.ops.export_scene.gltf(filepath=out, export_format="GLB")',
+            'print("DIVER_EXPORT_OK " + out)',
+        }, '\n') .. '\n'
+    end
+
+    if kind == 'fbx' then
+        return table.concat({
+            'import bpy, os',
+            'out = os.environ["BLENDER_EXPORT_OUTPUT"]',
+            'bpy.ops.export_scene.fbx(filepath=out)',
+            'print("DIVER_EXPORT_OK " + out)',
+        }, '\n') .. '\n'
+    end
+
+    return nil
+end
+
+---Export a .blend to FBX (.fbx).
+---@param blend string .blend file path
+---@param output string Destination .fbx path
+---@return string? path
+---@return string? err
+function M.export_fbx(blend, output)
+    return M.export_blend(blend, output, 'fbx')
+end
+
+---Export a .blend to glTF binary (.glb).
+---@param blend string .blend file path
+---@param output string Destination .glb path
+---@return string? path
+---@return string? err
+function M.export_glb(blend, output)
+    return M.export_blend(blend, output, 'glb')
+end
+
+---@return BlenderExportKind[] kinds
+function M.kinds()
+    return { 'glb', 'fbx' }
+end
+
+---@param argv string[]
+---@param script_path string Scratch exporter script to delete after the run
+---@param output string Expected output file
+---@return string? output
+---@return string? err
+local function run_export(argv, script_path, output)
+    local result, spawn_err = versions.system_wait(
+        argv,
+        { text = true, timeout = EXPORT_TIMEOUT_MS, env = { BLENDER_EXPORT_OUTPUT = output } }
+    )
+    vim.fn.delete(script_path)
+
+    if result == nil then
+        return nil, spawn_err
+    end
+
+    if result.code ~= 0 then
+        local detail = (result.stderr or ''):match('^([^\r\n]*)') or ''
+        return nil, ('blender export failed (exit %d): %s'):format(result.code, detail)
+    end
+
+    local marker = 'DIVER_EXPORT_OK'
+
+    if not ((result.stdout or ''):find(marker, 1, true) or (result.stderr or ''):find(marker, 1, true)) then
+        return nil, 'blender: exporter script did not report success'
+    end
+
+    local valid, valid_err = M.validate_output(output)
+
+    if not valid then
+        return nil, valid_err
+    end
+
+    return output, nil
+end
+
+---@return integer timeout_ms Exporter script self-check timeout
+function M.script_check_timeout_ms()
+    return EXPORT_SCRIPT_TIMEOUT_MS
 end
 
 ---Confirm the export landed: file exists and is nonzero.
@@ -121,42 +185,6 @@ local function write_export_script(kind)
     end
 
     return script_path, nil
-end
-
----@param argv string[]
----@param script_path string Scratch exporter script to delete after the run
----@param output string Expected output file
----@return string? output
----@return string? err
-local function run_export(argv, script_path, output)
-    local result, spawn_err = versions.system_wait(
-        argv,
-        { text = true, timeout = EXPORT_TIMEOUT_MS, env = { BLENDER_EXPORT_OUTPUT = output } }
-    )
-    vim.fn.delete(script_path)
-
-    if result == nil then
-        return nil, spawn_err
-    end
-
-    if result.code ~= 0 then
-        local detail = (result.stderr or ''):match('^([^\r\n]*)') or ''
-        return nil, ('blender export failed (exit %d): %s'):format(result.code, detail)
-    end
-
-    local marker = 'DIVER_EXPORT_OK'
-
-    if not ((result.stdout or ''):find(marker, 1, true) or (result.stderr or ''):find(marker, 1, true)) then
-        return nil, 'blender: exporter script did not report success'
-    end
-
-    local valid, valid_err = M.validate_output(output)
-
-    if not valid then
-        return nil, valid_err
-    end
-
-    return output, nil
 end
 
 ---Export one .blend to glTF (.glb) or FBX (.fbx).
@@ -202,34 +230,6 @@ function M.export_blend(blend, output, kind)
     end
 
     return run_export(argv, script_path, output)
-end
-
----Export a .blend to glTF binary (.glb).
----@param blend string .blend file path
----@param output string Destination .glb path
----@return string? path
----@return string? err
-function M.export_glb(blend, output)
-    return M.export_blend(blend, output, 'glb')
-end
-
----Export a .blend to FBX (.fbx).
----@param blend string .blend file path
----@param output string Destination .fbx path
----@return string? path
----@return string? err
-function M.export_fbx(blend, output)
-    return M.export_blend(blend, output, 'fbx')
-end
-
----@return integer timeout_ms Exporter script self-check timeout
-function M.script_check_timeout_ms()
-    return EXPORT_SCRIPT_TIMEOUT_MS
-end
-
----@return BlenderExportKind[] kinds
-function M.kinds()
-    return { 'glb', 'fbx' }
 end
 
 return M

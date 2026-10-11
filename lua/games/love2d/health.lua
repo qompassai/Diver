@@ -19,8 +19,8 @@
 -- the pinned 11.5 release, API definition presence, library catalog
 -- integrity, and the optional Butler hook.
 local config = require('games.love2d.config')
-local versions = require('games.love2d.versions')
 local libs = require('games.love2d.libs')
+local versions = require('games.love2d.versions')
 
 local M = {}
 

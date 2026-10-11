@@ -18,64 +18,6 @@
 local fs = vim.fs
 local uv = vim.uv
 local M = {}
----Return whether a filesystem path exists.
----@param path string
----@return boolean
-function M.path_exists(path)
-    return uv.fs_stat(path) ~= nil
-end
-
----Return whether a command is executable.
----
----Absolute/path-qualified commands are checked directly; ordinary command
----names are resolved through Neovim's executable() implementation.
----@param command string
----@return boolean
-function M.executable(command)
-    if command:find('/', 1, true) ~= nil then
-        local stat = uv.fs_stat(command)
-
-        return stat ~= nil and stat.type == 'file'
-    end
-
-    return vim.fn.executable(command) == 1
-end
-
----Convert command output into display-buffer or quickfix lines.
----@param text string
----@return string[]
-function M.text_lines(text)
-    if text == '' then
-        return {
-            'No output.',
-        }
-    end
-
-    return vim.split(text:gsub('\r\n', '\n'), '\n', {
-        plain = true,
-        trimempty = true,
-    })
-end
-
----Choose useful output from a completed system process.
----@param result vim.SystemCompleted
----@param prefer_stderr? boolean
----@return string
-function M.system_output(result, prefer_stderr)
-    local stderr = result.stderr or ''
-    local stdout = result.stdout or ''
-
-    if prefer_stderr and stderr ~= '' then
-        return stderr
-    end
-
-    if stdout ~= '' then
-        return stdout
-    end
-
-    return stderr
-end
-
 ---Find a C/C++ compilation database commonly produced by CMake.
 ---@param root string
 ---@return string
@@ -99,6 +41,52 @@ function M.compilation_database(root)
             .. '. Configure CMake with '
             .. '-DCMAKE_EXPORT_COMPILE_COMMANDS=ON.'
     )
+end
+
+---Return whether a command is executable.
+---
+---Absolute/path-qualified commands are checked directly; ordinary command
+---names are resolved through Neovim's executable() implementation.
+---@param command string
+---@return boolean
+function M.executable(command)
+    if command:find('/', 1, true) ~= nil then
+        local stat = uv.fs_stat(command)
+
+        return stat ~= nil and stat.type == 'file'
+    end
+
+    return vim.fn.executable(command) == 1
+end
+
+---Return whether a filesystem path exists.
+---@param path string
+---@return boolean
+function M.path_exists(path)
+    return uv.fs_stat(path) ~= nil
+end
+
+---Resolve an indexer's dynamic/static argument list.
+---@param value string[]|fun(context: ScipContext): string[]
+---@param context ScipContext
+---@return string[]?, string?
+function M.resolve_args(value, context)
+    if type(value) == 'table' then
+        return vim.deepcopy(value), nil
+    end
+
+    local ok, result = pcall(value, context)
+
+    if not ok then
+        return nil, tostring(result)
+    end
+
+    if type(result) ~= 'table' then
+        return nil, 'SCIP indexer args must resolve to a string array'
+    end
+
+    ---@cast result string[]
+    return result, nil
 end
 
 ---Resolve an indexer's dynamic/static command.
@@ -127,27 +115,39 @@ function M.resolve_command(value, context)
     return result, nil
 end
 
----Resolve an indexer's dynamic/static argument list.
----@param value string[]|fun(context: ScipContext): string[]
----@param context ScipContext
----@return string[]?, string?
-function M.resolve_args(value, context)
-    if type(value) == 'table' then
-        return vim.deepcopy(value), nil
+---Choose useful output from a completed system process.
+---@param result vim.SystemCompleted
+---@param prefer_stderr? boolean
+---@return string
+function M.system_output(result, prefer_stderr)
+    local stderr = result.stderr or ''
+    local stdout = result.stdout or ''
+
+    if prefer_stderr and stderr ~= '' then
+        return stderr
     end
 
-    local ok, result = pcall(value, context)
-
-    if not ok then
-        return nil, tostring(result)
+    if stdout ~= '' then
+        return stdout
     end
 
-    if type(result) ~= 'table' then
-        return nil, 'SCIP indexer args must resolve to a string array'
+    return stderr
+end
+
+---Convert command output into display-buffer or quickfix lines.
+---@param text string
+---@return string[]
+function M.text_lines(text)
+    if text == '' then
+        return {
+            'No output.',
+        }
     end
 
-    ---@cast result string[]
-    return result, nil
+    return vim.split(text:gsub('\r\n', '\n'), '\n', {
+        plain = true,
+        trimempty = true,
+    })
 end
 
 return M

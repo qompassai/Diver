@@ -21,27 +21,6 @@ local M = {}
 M.DEFAULT_PROBE_TIMEOUT_MS = 4000
 M.MAX_CONCURRENT_TASKS = 8
 
----@type fun(...): any
-local function wrapped_system()
-    assert(
-        vim.async ~= nil and vim.async.wrap ~= nil,
-        'games.shared.async_util: vim.async is unavailable -- requires Neovim 0.13+'
-    )
-
-    return vim.async.wrap(3, vim.system)
-end
-
----@param cmd string[]
----@param opts table?
----@return vim.async.Task<vim.SystemCompleted> awaitable Pass directly to vim.async.await() or M.pawait_task().
-function M.system_task(cmd, opts)
-    assert(type(cmd) == 'table' and #cmd > 0, 'games.shared.async_util.system_task: cmd must be a non-empty argv list')
-
-    local run_system = wrapped_system()
-
-    return run_system(cmd, opts or { text = true })
-end
-
 ---Typed pcall-style await for a task.
 ---
 ---Plain-language version: waits for one background task and tells you whether
@@ -140,6 +119,27 @@ function M.run_concurrent(jobs, timeout_ms)
     end
 
     return results
+end
+
+---@type fun(...): any
+local function wrapped_system()
+    assert(
+        vim.async ~= nil and vim.async.wrap ~= nil,
+        'games.shared.async_util: vim.async is unavailable -- requires Neovim 0.13+'
+    )
+
+    return vim.async.wrap(3, vim.system)
+end
+
+---@param cmd string[]
+---@param opts table?
+---@return vim.async.Task<vim.SystemCompleted> awaitable Pass directly to vim.async.await() or M.pawait_task().
+function M.system_task(cmd, opts)
+    assert(type(cmd) == 'table' and #cmd > 0, 'games.shared.async_util.system_task: cmd must be a non-empty argv list')
+
+    local run_system = wrapped_system()
+
+    return run_system(cmd, opts or { text = true })
 end
 
 return M

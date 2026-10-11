@@ -27,7 +27,7 @@ Maintenance status verified 2026-09-27 via GitHub `pushed_at`.
       Source: [microsoft/build-server-for-gradle](https://github.com/microsoft/build-server-for-gradle)
       (active, pushed 2026-09-23; needs JDK 17+ to launch). Root markers:
       `settings.gradle(.kts)`, `build.gradle(.kts)`. Wired into the Android
-      dev flow: `dev.android.gradle.bsp_status()` and the `:Android`
+      dev flow: `dev.apps.android.gradle.bsp_status()` and the `:Android`
       `bsp_status` action.
 - [x] **Cargo** (Rust) — `lua/bsp/servers/cargo.lua`.
       Source: [cargo-bsp/cargo-bsp](https://github.com/cargo-bsp/cargo-bsp)

@@ -24,6 +24,30 @@ local function complete_names(apps, arglead)
     return matches
 end
 
+--- Fuzzy-pick an app when :Apps gets no argument.
+---@param apps table dev.apps module
+local function pick_app(apps)
+    local items = {}
+    for _, name in ipairs(apps.list()) do
+        local info = apps.info(name)
+        items[#items + 1] = { name = name, desc = info.desc }
+    end
+    vim.ui.select(items, {
+        prompt = 'Open app:',
+        format_item = function(item)
+            return string.format('%-12s %s', item.name, item.desc)
+        end,
+    }, function(choice)
+        if choice == nil then
+            return
+        end
+        local bufnr, err = apps.open(choice.name)
+        if bufnr == nil then
+            vim.notify(err or 'failed to open app', vim.log.levels.ERROR)
+        end
+    end)
+end
+
 --- Scratch float showing an app's resolved configuration (:AppsInfo).
 ---@param info table result of apps.info()
 local function show_info(info)
@@ -68,32 +92,8 @@ local function show_info(info)
         title = ' devapps ',
         title_pos = 'center',
     })
-    api.nvim_buf_set_keymap(bufnr, 'n', 'q', '<cmd>close<cr>', { silent = true, nowait = true })
     api.nvim_buf_set_keymap(bufnr, 'n', '<esc>', '<cmd>close<cr>', { silent = true, nowait = true })
-end
-
---- Fuzzy-pick an app when :Apps gets no argument.
----@param apps table dev.apps module
-local function pick_app(apps)
-    local items = {}
-    for _, name in ipairs(apps.list()) do
-        local info = apps.info(name)
-        items[#items + 1] = { name = name, desc = info.desc }
-    end
-    vim.ui.select(items, {
-        prompt = 'Open app:',
-        format_item = function(item)
-            return string.format('%-12s %s', item.name, item.desc)
-        end,
-    }, function(choice)
-        if choice == nil then
-            return
-        end
-        local bufnr, err = apps.open(choice.name)
-        if bufnr == nil then
-            vim.notify(err or 'failed to open app', vim.log.levels.ERROR)
-        end
-    end)
+    api.nvim_buf_set_keymap(bufnr, 'n', 'q', '<cmd>close<cr>', { silent = true, nowait = true })
 end
 
 ---@param apps table dev.apps module
@@ -146,5 +146,4 @@ function M.register(apps)
         desc = 'Close app terminals (no args: close all)',
     })
 end
-
 return M

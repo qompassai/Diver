@@ -44,7 +44,7 @@ local M = {}
 
 -- Adapter labels that imply a foreign engine thin integration. These may
 -- only describe asset interchange, never runtime interop.
-local THIN_INTEGRATION_HINTS = { 'unity', 'unreal', 'godot' }
+local THIN_INTEGRATION_HINTS = { 'godot', 'unity', 'unreal' }
 
 ---@param value any
 ---@return boolean

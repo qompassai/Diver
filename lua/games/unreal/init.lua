@@ -16,16 +16,16 @@
 -- limitations under the License.
 -- #################################################################
 local M = {}
+M.actions = require('games.unreal.actions')
+M.commands = require('games.unreal.commands')
 
 M.config = require('games.unreal.config')
 M.util = require('games.unreal.util')
-M.actions = require('games.unreal.actions')
-M.commands = require('games.unreal.commands')
 function M.setup()
     M.commands.setup()
 end
+M.run_action_by_id = M.actions.run_action_by_id
 
 M.show_menu = M.actions.show_menu
-M.run_action_by_id = M.actions.run_action_by_id
 
 return M

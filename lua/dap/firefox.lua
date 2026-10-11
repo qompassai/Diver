@@ -60,22 +60,16 @@ local fs = vim.fs
 local levels = vim.log.levels
 
 local M = {}
-
-local SOURCE = 'firefox'
 local ADAPTER_BIN = 'firefox-debug-adapter'
-local LOOPBACK = '127.0.0.1'
-local DEFAULT_REMOTE_PORT = 6000
-local DEFAULT_URL = 'http://localhost:3000'
 
----@type string[]
-local ROOT_MARKERS = {
-    'package.json',
-    'vite.config.js',
-    'vite.config.ts',
-    'webpack.config.js',
-    'webpack.config.ts',
-    'index.html',
-    '.git',
+---@type table<string, boolean>
+local BUILD_ATTACH_FIELDS = {
+    name = true,
+    host = true,
+    port = true,
+    url = true,
+    web_root = true,
+    path_mappings = true,
 }
 
 ---@type table<string, boolean>
@@ -88,16 +82,22 @@ local BUILD_LAUNCH_FIELDS = {
     re_attach = true,
     firefox_executable = true,
 }
+local DEFAULT_REMOTE_PORT = 6000
+local DEFAULT_URL = 'http://localhost:3000'
+local LOOPBACK = '127.0.0.1'
 
----@type table<string, boolean>
-local BUILD_ATTACH_FIELDS = {
-    name = true,
-    host = true,
-    port = true,
-    url = true,
-    web_root = true,
-    path_mappings = true,
+---@type string[]
+local ROOT_MARKERS = {
+    'package.json',
+    'vite.config.js',
+    'vite.config.ts',
+    'webpack.config.js',
+    'webpack.config.ts',
+    'index.html',
+    '.git',
 }
+
+local SOURCE = 'firefox'
 
 ---@class FirefoxState
 ---@field adapter string?

@@ -33,87 +33,11 @@
 local shared_util = require('games.shared.util')
 
 local M = {}
-
-M.config = require('games.robocode.config')
 M.actions = require('games.robocode.actions')
 M.commands = require('games.robocode.commands')
+
+M.config = require('games.robocode.config')
 M.health = require('games.robocode.health')
-
----@return string? 'java' when executable on PATH, nil otherwise.
-function M.find_java()
-    if vim.fn.executable('java') == 1 then
-        return 'java'
-    end
-    return nil
-end
-
----@return string? 'javac' when executable on PATH, nil otherwise.
-function M.find_javac()
-    if vim.fn.executable('javac') == 1 then
-        return 'javac'
-    end
-    return nil
-end
-
----Resolve the Robocode install root: $ROBOCODE_HOME (or
----$NVIM_ROBOCODE_HOME) first, then the packaged defaults. A candidate
----only counts when libs/robocode.jar exists under it.
----@return string? install root, nil when no candidate holds the jar.
-function M.find_install_root()
-    ---@type string[]
-    local candidates = {}
-    local from_env = shared_util.env_first(M.config.env_names)
-    if from_env ~= nil then
-        candidates[#candidates + 1] = from_env
-    end
-    for _, root in ipairs(M.config.install_roots) do
-        candidates[#candidates + 1] = root
-    end
-    for _, candidate in ipairs(candidates) do
-        local expanded = vim.fn.expand(candidate)
-        if vim.fn.filereadable(expanded .. '/libs/robocode.jar') == 1 then
-            return expanded
-        end
-    end
-    return nil
-end
-
----Return the `robocode` launcher wrapper name when it is usable.
----A zero-size executable is the known-broken AUR 1.11.1 stub (see
----config.lua) and is treated as unavailable rather than success.
----@return string? wrapper name, nil when missing or a zero-byte stub.
-function M.find_binary()
-    for _, name in ipairs(M.config.binaries) do
-        if vim.fn.executable(name) == 1 then
-            local size = vim.fn.getfsize(vim.fn.exepath(name))
-            if size > 0 then
-                return name
-            end
-        end
-    end
-    return nil
-end
-
----Resolved user-owned robot development directory (expanded, normalized).
----@return string
-function M.dev_robots_dir()
-    return vim.fs.normalize(vim.fn.expand(M.config.dev_robots_dir))
-end
-
----Resolved user-writable Robocode config directory:
----$XDG_CONFIG_HOME/robocode, falling back to ~/.config/robocode.
----Robocode writes its settings, robot database, and screenshots under
----its working directory, so pointing the working directory here keeps
----the (often root-owned) install dir out of the write path.
----@return string
-function M.config_dir()
-    local xdg = vim.env.XDG_CONFIG_HOME
-    local base = vim.fn.expand('~/.config')
-    if xdg ~= nil and xdg ~= '' then
-        base = xdg
-    end
-    return vim.fs.normalize(base .. '/robocode')
-end
 
 ---Resolved directory for generated .battle specs (expanded, normalized).
 ---@return string
@@ -187,11 +111,87 @@ function M.build_launch(opts)
     return { argv = argv, cwd = root }
 end
 
+---Resolved user-writable Robocode config directory:
+---$XDG_CONFIG_HOME/robocode, falling back to ~/.config/robocode.
+---Robocode writes its settings, robot database, and screenshots under
+---its working directory, so pointing the working directory here keeps
+---the (often root-owned) install dir out of the write path.
+---@return string
+function M.config_dir()
+    local xdg = vim.env.XDG_CONFIG_HOME
+    local base = vim.fn.expand('~/.config')
+    if xdg ~= nil and xdg ~= '' then
+        base = xdg
+    end
+    return vim.fs.normalize(base .. '/robocode')
+end
+
+---Resolved user-owned robot development directory (expanded, normalized).
+---@return string
+function M.dev_robots_dir()
+    return vim.fs.normalize(vim.fn.expand(M.config.dev_robots_dir))
+end
+
+---Return the `robocode` launcher wrapper name when it is usable.
+---A zero-size executable is the known-broken AUR 1.11.1 stub (see
+---config.lua) and is treated as unavailable rather than success.
+---@return string? wrapper name, nil when missing or a zero-byte stub.
+function M.find_binary()
+    for _, name in ipairs(M.config.binaries) do
+        if vim.fn.executable(name) == 1 then
+            local size = vim.fn.getfsize(vim.fn.exepath(name))
+            if size > 0 then
+                return name
+            end
+        end
+    end
+    return nil
+end
+
+---Resolve the Robocode install root: $ROBOCODE_HOME (or
+---$NVIM_ROBOCODE_HOME) first, then the packaged defaults. A candidate
+---only counts when libs/robocode.jar exists under it.
+---@return string? install root, nil when no candidate holds the jar.
+function M.find_install_root()
+    ---@type string[]
+    local candidates = {}
+    local from_env = shared_util.env_first(M.config.env_names)
+    if from_env ~= nil then
+        candidates[#candidates + 1] = from_env
+    end
+    for _, root in ipairs(M.config.install_roots) do
+        candidates[#candidates + 1] = root
+    end
+    for _, candidate in ipairs(candidates) do
+        local expanded = vim.fn.expand(candidate)
+        if vim.fn.filereadable(expanded .. '/libs/robocode.jar') == 1 then
+            return expanded
+        end
+    end
+    return nil
+end
+
+---@return string? 'java' when executable on PATH, nil otherwise.
+function M.find_java()
+    if vim.fn.executable('java') == 1 then
+        return 'java'
+    end
+    return nil
+end
+
+---@return string? 'javac' when executable on PATH, nil otherwise.
+function M.find_javac()
+    if vim.fn.executable('javac') == 1 then
+        return 'javac'
+    end
+    return nil
+end
+
 function M.setup()
     M.commands.setup()
 end
+M.run_action_by_id = M.actions.run_action_by_id
 
 M.show_menu = M.actions.show_menu
-M.run_action_by_id = M.actions.run_action_by_id
 
 return M

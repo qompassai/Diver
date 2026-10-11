@@ -45,9 +45,9 @@ local ROOT_MARKERS = {
 
 local WORKSPACE_FILES = {
     'MODULE.bazel',
-    'WORKSPACE.bazel',
-    'WORKSPACE',
     'REPO.bazel',
+    'WORKSPACE',
+    'WORKSPACE.bazel',
 }
 
 -- Prefer Hirschgarten's connection name, then other Bazel BSP filenames.
@@ -58,15 +58,15 @@ local CONNECTION_FILES = {
 }
 
 ---@class BspConnection
----@field name string
----@field version string|nil
+---@field argv string[]
 ---@field bspVersion string
 ---@field languages string[]
----@field argv string[]
+---@field name string
+---@field version string|nil
 
 ---@class BspBazelConfig
----@field notify boolean|nil
 ---@field connection_name string|nil
+---@field notify boolean|nil
 
 local function is_integer(value)
     if type(value) ~= 'number' then
@@ -151,58 +151,6 @@ local function buffer_is_usable(bufnr)
     end
 
     return api.nvim_buf_is_valid(bufnr)
-end
-
----@return string[]
-function M.markers()
-    return vim.deepcopy(ROOT_MARKERS)
-end
-
----@param root string
----@return boolean
-function M.is_bazel_project(root)
-    if not path_is_safe(root) then
-        return false
-    end
-
-    if dir_exists(join_root(root, '.bazelbsp')) then
-        return true
-    end
-
-    for index = 1, #WORKSPACE_FILES do
-        local name = WORKSPACE_FILES[index]
-        assert(type(name) == 'string')
-
-        if file_exists(join_root(root, name)) then
-            return true
-        end
-    end
-
-    return false
-end
-
----@param bufnr? integer
----@return string|nil
-function M.root(bufnr)
-    bufnr = bufnr or api.nvim_get_current_buf()
-
-    if not buffer_is_usable(bufnr) then
-        return nil
-    end
-
-    assert(#ROOT_MARKERS <= ROOT_MARKER_COUNT_MAX)
-
-    local root = fs.root(bufnr, ROOT_MARKERS)
-
-    if root == nil then
-        return nil
-    end
-
-    if not M.is_bazel_project(root) then
-        return nil
-    end
-
-    return root
 end
 
 ---@param name string
@@ -443,17 +391,27 @@ local function validate_connection(decoded)
 
     ---@type BspConnection
     local connection = {
-        name = name,
-        version = version,
+        argv = argv,
         bspVersion = decoded.bspVersion,
         languages = validate_languages(decoded.languages),
-        argv = argv,
+        name = name,
+        version = version,
     }
 
     assert(type(connection.argv) == 'table')
     assert(#connection.argv >= 1)
 
     return connection, nil
+end
+
+---@param connection BspConnection
+---@return string[]
+function M.argv(connection)
+    assert(type(connection) == 'table')
+    assert(type(connection.argv) == 'table')
+    assert(#connection.argv >= 1)
+
+    return connection.argv
 end
 
 ---@param root string
@@ -512,14 +470,24 @@ function M.connection(root, preferred_name)
     return nil, last_error
 end
 
----@param connection BspConnection
----@return string[]
-function M.argv(connection)
-    assert(type(connection) == 'table')
-    assert(type(connection.argv) == 'table')
-    assert(#connection.argv >= 1)
+---@param bufnr? integer
+---@return string|nil
+---@return BspConnection|nil
+---@return string|nil
+function M.detect(bufnr)
+    local root = M.root(bufnr)
 
-    return connection.argv
+    if root == nil then
+        return nil, nil, 'no Bazel workspace root'
+    end
+
+    local connection, connection_error = M.connection(root)
+
+    if connection == nil then
+        return root, nil, connection_error
+    end
+
+    return root, connection, nil
 end
 
 ---@param connection BspConnection
@@ -540,24 +508,56 @@ function M.executable(connection)
     return true, nil
 end
 
+---@param root string
+---@return boolean
+function M.is_bazel_project(root)
+    if not path_is_safe(root) then
+        return false
+    end
+
+    if dir_exists(join_root(root, '.bazelbsp')) then
+        return true
+    end
+
+    for index = 1, #WORKSPACE_FILES do
+        local name = WORKSPACE_FILES[index]
+        assert(type(name) == 'string')
+
+        if file_exists(join_root(root, name)) then
+            return true
+        end
+    end
+
+    return false
+end
+
+---@return string[]
+function M.markers()
+    return vim.deepcopy(ROOT_MARKERS)
+end
+
 ---@param bufnr? integer
 ---@return string|nil
----@return BspConnection|nil
----@return string|nil
-function M.detect(bufnr)
-    local root = M.root(bufnr)
+function M.root(bufnr)
+    bufnr = bufnr or api.nvim_get_current_buf()
+
+    if not buffer_is_usable(bufnr) then
+        return nil
+    end
+
+    assert(#ROOT_MARKERS <= ROOT_MARKER_COUNT_MAX)
+
+    local root = fs.root(bufnr, ROOT_MARKERS)
 
     if root == nil then
-        return nil, nil, 'no Bazel workspace root'
+        return nil
     end
 
-    local connection, connection_error = M.connection(root)
-
-    if connection == nil then
-        return root, nil, connection_error
+    if not M.is_bazel_project(root) then
+        return nil
     end
 
-    return root, connection, nil
+    return root
 end
 
 ---@param config? BspBazelConfig

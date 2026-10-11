@@ -35,38 +35,30 @@ local registry = require('dev.scip.registry')
 
 local M = {}
 
----Maximum languages reported by `M.languages()`. Bounds the inverted map.
-local LANGUAGE_COUNT_MAX = 128
-
 ---Human aliases normalized to canonical filetype strings before lookup.
 ---@type table<string, string>
 local LANGUAGE_ALIASES = {
-    ['c++'] = 'cpp',
     ['c#'] = 'cs',
+    ['c++'] = 'cpp',
     ['csharp'] = 'cs',
     ['f#'] = 'fsharp',
     ['golang'] = 'go',
     ['js'] = 'javascript',
-    ['ts'] = 'typescript',
     ['py'] = 'python',
     ['rb'] = 'ruby',
     ['rs'] = 'rust',
+    ['ts'] = 'typescript',
     ['vb.net'] = 'vb',
     ['visual basic'] = 'vb',
 }
+
+---Maximum languages reported by `M.languages()`. Bounds the inverted map.
+local LANGUAGE_COUNT_MAX = 128
 
 ---@class ScipLanguageMatch
 ---@field indexer string Owning indexer name.
 ---@field language string Canonical language (filetype).
 ---@field filetypes string[] Every filetype the owning indexer covers.
-
----Normalize a human language name to the canonical filetype string.
----@param language string
----@return string canonical
-local function normalize(language)
-    local lowered = language:lower():gsub('^%s+', ''):gsub('%s+$', '')
-    return LANGUAGE_ALIASES[lowered] or lowered
-end
 
 ---Build the inverted filetype → indexer map from the live registry.
 ---@return table<string, string> map filetype to indexer name
@@ -105,10 +97,41 @@ local function get_map()
     return language_map
 end
 
----Forget the cached map. Called when indexers are registered at runtime.
----@return nil
-function M.invalidate()
-    language_map = nil
+---Normalize a human language name to the canonical filetype string.
+---@param language string
+---@return string canonical
+local function normalize(language)
+    local lowered = language:lower():gsub('^%s+', ''):gsub('%s+$', '')
+    return LANGUAGE_ALIASES[lowered] or lowered
+end
+
+---Resolve the owning indexer for a buffer via registry auto-detection.
+---Unlike `for_filetype`, this also verifies the project root markers match,
+---so the indexer is actually usable for this buffer — not just nominally
+---covering its filetype.
+---@param bufnr? integer Defaults to the current buffer.
+---@return ScipLanguageMatch?, string?
+function M.for_buffer(bufnr)
+    bufnr = bufnr or vim.api.nvim_get_current_buf()
+
+    if type(bufnr) ~= 'number' or bufnr < 1 then
+        return nil, 'bufnr must be a positive integer'
+    end
+
+    local match, detect_error = registry.detect(bufnr)
+
+    if match == nil then
+        return nil, detect_error or 'no SCIP indexer matches this buffer'
+    end
+
+    local filetype = vim.bo[bufnr].filetype
+
+    return {
+        indexer = match.name,
+        language = normalize(filetype),
+        filetypes = registry.filetypes(match.indexer),
+    },
+        nil
 end
 
 ---Resolve the owning indexer for a filetype or language name.
@@ -147,33 +170,10 @@ function M.for_language(language)
     return M.for_filetype(language)
 end
 
----Resolve the owning indexer for a buffer via registry auto-detection.
----Unlike `for_filetype`, this also verifies the project root markers match,
----so the indexer is actually usable for this buffer — not just nominally
----covering its filetype.
----@param bufnr? integer Defaults to the current buffer.
----@return ScipLanguageMatch?, string?
-function M.for_buffer(bufnr)
-    bufnr = bufnr or vim.api.nvim_get_current_buf()
-
-    if type(bufnr) ~= 'number' or bufnr < 1 then
-        return nil, 'bufnr must be a positive integer'
-    end
-
-    local match, detect_error = registry.detect(bufnr)
-
-    if match == nil then
-        return nil, detect_error or 'no SCIP indexer matches this buffer'
-    end
-
-    local filetype = vim.bo[bufnr].filetype
-
-    return {
-        indexer = match.name,
-        language = normalize(filetype),
-        filetypes = registry.filetypes(match.indexer),
-    },
-        nil
+---Forget the cached map. Called when indexers are registered at runtime.
+---@return nil
+function M.invalidate()
+    language_map = nil
 end
 
 ---List every covered language and its owning indexer, sorted by language.

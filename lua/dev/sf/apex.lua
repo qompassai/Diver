@@ -14,8 +14,8 @@ local uv = vim.uv
 local M = {}
 ---@param path string
 ---@return boolean
-function M.is_apex_script(path)
-    return path:lower():match('%.apex$') ~= nil
+function M.is_apex_any(path)
+    return M.is_apex_script(path) or M.is_apex_metadata(path)
 end
 
 ---@param path string
@@ -27,9 +27,62 @@ end
 
 ---@param path string
 ---@return boolean
-function M.is_apex_any(path)
-    return M.is_apex_script(path) or M.is_apex_metadata(path)
+function M.is_apex_script(path)
+    return path:lower():match('%.apex$') ~= nil
 end
+
+---@param opts? SfCommandArgs
+---@return nil
+function M.log_get(opts)
+    if not core.ensure() then
+        return
+    end
+    local log_id = core.get_arg(opts) or fn.input('Log ID> ')
+    if type(log_id) ~= 'string' or log_id == '' then
+        return
+    end
+    core.open_term_cmd({
+        'sf',
+        'apex',
+        'get',
+        'log',
+        '--log-id',
+        log_id,
+    }, 20)
+end
+
+M.get_log = M.log_get
+
+---List available debug logs.
+---@return nil
+function M.log_list()
+    if core.ensure() then
+        core.open_term_cmd({
+            'sf',
+            'apex',
+            'list',
+            'log',
+        }, 14)
+    end
+end
+
+M.list_logs = M.log_list
+
+---Tail the debug log stream.
+---@return nil
+function M.log_tail()
+    if core.ensure() then
+        core.open_term_cmd({
+            'sf',
+            'apex',
+            'tail',
+            'log',
+            '--color',
+        }, 16)
+    end
+end
+
+M.tail_logs = M.log_tail
 
 ---Run the Apex code in the current buffer via the CLI.
 ---@return nil
@@ -74,6 +127,16 @@ function M.run_file(opts)
     }, 16)
 end
 
+---Open an interactive Apex REPL session.
+---@return nil
+function M.run_interactive()
+    if core.ensure() then
+        core.open_term_cmd({ 'sf', 'apex', 'run' }, 16)
+    end
+end
+
+M.run_selection_interactive = M.run_interactive
+
 ---Run the visually selected Apex code.
 ---@return nil
 function M.run_selection()
@@ -117,69 +180,6 @@ function M.run_selection()
         pcall(uv.fs_unlink, path)
     end
 end
-
----Open an interactive Apex REPL session.
----@return nil
-function M.run_interactive()
-    if core.ensure() then
-        core.open_term_cmd({ 'sf', 'apex', 'run' }, 16)
-    end
-end
-
-M.run_selection_interactive = M.run_interactive
-
----Tail the debug log stream.
----@return nil
-function M.log_tail()
-    if core.ensure() then
-        core.open_term_cmd({
-            'sf',
-            'apex',
-            'tail',
-            'log',
-            '--color',
-        }, 16)
-    end
-end
-
-M.tail_logs = M.log_tail
-
----List available debug logs.
----@return nil
-function M.log_list()
-    if core.ensure() then
-        core.open_term_cmd({
-            'sf',
-            'apex',
-            'list',
-            'log',
-        }, 14)
-    end
-end
-
-M.list_logs = M.log_list
-
----@param opts? SfCommandArgs
----@return nil
-function M.log_get(opts)
-    if not core.ensure() then
-        return
-    end
-    local log_id = core.get_arg(opts) or fn.input('Log ID> ')
-    if type(log_id) ~= 'string' or log_id == '' then
-        return
-    end
-    core.open_term_cmd({
-        'sf',
-        'apex',
-        'get',
-        'log',
-        '--log-id',
-        log_id,
-    }, 20)
-end
-
-M.get_log = M.log_get
 
 ---@param opts? SfCommandArgs
 ---@return nil

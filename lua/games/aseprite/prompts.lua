@@ -29,79 +29,6 @@ local M = {}
 
 M.FORBIDDEN_TOKENS_MAX = 64
 
----@class AsepriteSpritePromptOpts
----@field concept string Original character concept, 1-3 sentences
----@field palette string Comma-separated palette description
----@field pose string Pose description
----@field style string Pixel-art style descriptor
----@field background string Background instruction
----@field extra string Optional extra directives (may be empty)
-
----Default prompt options. Pure: no vim access.
----@return AsepriteSpritePromptOpts
-function M.default_opts()
-    local prompt_cfg = config.sprite_prompt or {}
-    return {
-        concept = '',
-        palette = '',
-        pose = 'dynamic fighting stance, full body',
-        style = prompt_cfg.default_style or 'detailed 16-bit pixel art game sprite, clean cel-shaded pixels',
-        background = 'solid black background',
-        extra = '',
-    }
-end
-
----Screen text against the forbidden-token list (existing franchises /
----characters the designs must not copy). Pure: no vim access.
----
----Returns nil when clean, or the first offending token found.
----@param text string
----@return string|nil offending token, or nil when clean
-function M.screen_forbidden(text)
-    if type(text) ~= 'string' or text == '' then
-        return nil
-    end
-    local tokens = (config.sprite_prompt or {}).forbidden_tokens or {}
-    local lowered = text:lower()
-    local checked = 0
-    for _, token in ipairs(tokens) do
-        checked = checked + 1
-        if checked > M.FORBIDDEN_TOKENS_MAX then
-            break
-        end
-        if type(token) == 'string' and token ~= '' and lowered:find(token:lower(), 1, true) then
-            return token
-        end
-    end
-    return nil
-end
-
----Validate prompt options. Pure: no vim access.
----@param opts AsepriteSpritePromptOpts
----@return boolean ok
----@return string|nil err
-function M.validate_opts(opts)
-    if type(opts) ~= 'table' then
-        return false, 'opts must be a table'
-    end
-    if type(opts.concept) ~= 'string' or opts.concept:match('^%s*$') then
-        return false, 'concept is required (describe your ORIGINAL character)'
-    end
-    if #opts.concept > 2000 then
-        return false, 'concept exceeds 2000 characters'
-    end
-    for _, field in ipairs({ 'palette', 'pose', 'style', 'background', 'extra' }) do
-        local value = opts[field]
-        if value ~= nil and type(value) ~= 'string' then
-            return false, field .. ' must be a string'
-        end
-        if type(value) == 'string' and #value > 2000 then
-            return false, field .. ' exceeds 2000 characters'
-        end
-    end
-    return true, nil
-end
-
 ---Build a copyright-safe sprite prompt. Pure: no vim access.
 ---
 ---Returns nil + error when opts are invalid or any field trips the
@@ -155,6 +82,28 @@ local function copy_to_clipboard(text)
     return true, nil
 end
 
+---@class AsepriteSpritePromptOpts
+---@field concept string Original character concept, 1-3 sentences
+---@field palette string Comma-separated palette description
+---@field pose string Pose description
+---@field style string Pixel-art style descriptor
+---@field background string Background instruction
+---@field extra string Optional extra directives (may be empty)
+
+---Default prompt options. Pure: no vim access.
+---@return AsepriteSpritePromptOpts
+function M.default_opts()
+    local prompt_cfg = config.sprite_prompt or {}
+    return {
+        concept = '',
+        palette = '',
+        pose = 'dynamic fighting stance, full body',
+        style = prompt_cfg.default_style or 'detailed 16-bit pixel art game sprite, clean cel-shaded pixels',
+        background = 'solid black background',
+        extra = '',
+    }
+end
+
 ---Open text in a scratch buffer for review / manual copy.
 ---@param title string
 ---@param text string
@@ -196,6 +145,57 @@ function M.interactive_builder()
             or 'Aseprite: prompt ready (clipboard unavailable — yank from scratch buffer)',
         prompt
     )
+end
+
+---Screen text against the forbidden-token list (existing franchises /
+---characters the designs must not copy). Pure: no vim access.
+---
+---Returns nil when clean, or the first offending token found.
+---@param text string
+---@return string|nil offending token, or nil when clean
+function M.screen_forbidden(text)
+    if type(text) ~= 'string' or text == '' then
+        return nil
+    end
+    local tokens = (config.sprite_prompt or {}).forbidden_tokens or {}
+    local lowered = text:lower()
+    local checked = 0
+    for _, token in ipairs(tokens) do
+        checked = checked + 1
+        if checked > M.FORBIDDEN_TOKENS_MAX then
+            break
+        end
+        if type(token) == 'string' and token ~= '' and lowered:find(token:lower(), 1, true) then
+            return token
+        end
+    end
+    return nil
+end
+
+---Validate prompt options. Pure: no vim access.
+---@param opts AsepriteSpritePromptOpts
+---@return boolean ok
+---@return string|nil err
+function M.validate_opts(opts)
+    if type(opts) ~= 'table' then
+        return false, 'opts must be a table'
+    end
+    if type(opts.concept) ~= 'string' or opts.concept:match('^%s*$') then
+        return false, 'concept is required (describe your ORIGINAL character)'
+    end
+    if #opts.concept > 2000 then
+        return false, 'concept exceeds 2000 characters'
+    end
+    for _, field in ipairs({ 'palette', 'pose', 'style', 'background', 'extra' }) do
+        local value = opts[field]
+        if value ~= nil and type(value) ~= 'string' then
+            return false, field .. ' must be a string'
+        end
+        if type(value) == 'string' and #value > 2000 then
+            return false, field .. ' exceeds 2000 characters'
+        end
+    end
+    return true, nil
 end
 
 return M

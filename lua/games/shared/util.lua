@@ -16,14 +16,35 @@
 -- limitations under the License.
 -- #################################################################
 local M = {}
-function M.trim(s)
-    return (s or ''):gsub('^%s*(.-)%s*$', '%1')
+
+function M.build_action_map(actions)
+    local out = {}
+    for i = 1, #actions do
+        out[actions[i].id] = actions[i]
+    end
+    return out
 end
-function M.is_windows()
-    return vim.fn.has('win32') == 1 or vim.fn.has('win64') == 1
+
+function M.env_first(names)
+    for i = 1, #names do
+        local value = vim.env[names[i]]
+        if value ~= nil and value ~= '' then
+            return value
+        end
+    end
+    return nil
 end
-function M.is_mac()
-    return vim.fn.has('mac') == 1 or vim.fn.has('macunix') == 1
+
+function M.find_root(markers, start_dir)
+    local dir = start_dir or vim.fn.getcwd()
+    local found = vim.fs.find(markers, {
+        upward = true,
+        path = dir,
+    })[1]
+    if not found then
+        return nil
+    end
+    return vim.fs.dirname(found)
 end
 function M.first_executable(candidates)
     for i = 1, #candidates do
@@ -53,6 +74,22 @@ function M.first_existing_path(candidates)
     end
     return nil
 end
+function M.get_action_ids(actions, arg_lead)
+    local ids = {}
+    for i = 1, #actions do
+        local id = actions[i].id
+        if arg_lead == '' or vim.startswith(id, arg_lead) then
+            ids[#ids + 1] = id
+        end
+    end
+    return ids
+end
+function M.is_mac()
+    return vim.fn.has('mac') == 1 or vim.fn.has('macunix') == 1
+end
+function M.is_windows()
+    return vim.fn.has('win32') == 1 or vim.fn.has('win64') == 1
+end
 function M.read_file(path)
     local file = io.open(path, 'r')
     if not file then
@@ -63,50 +100,13 @@ function M.read_file(path)
     return content
 end
 
-function M.find_root(markers, start_dir)
-    local dir = start_dir or vim.fn.getcwd()
-    local found = vim.fs.find(markers, {
-        upward = true,
-        path = dir,
-    })[1]
-    if not found then
-        return nil
-    end
-    return vim.fs.dirname(found)
-end
-
-function M.env_first(names)
-    for i = 1, #names do
-        local value = vim.env[names[i]]
-        if value ~= nil and value ~= '' then
-            return value
-        end
-    end
-    return nil
-end
-
 function M.snake_to_pascal(str)
     return (str:gsub('(^%l)', string.upper):gsub('_(%l)', function(c)
         return c:upper()
     end))
 end
-
-function M.build_action_map(actions)
-    local out = {}
-    for i = 1, #actions do
-        out[actions[i].id] = actions[i]
-    end
-    return out
-end
-function M.get_action_ids(actions, arg_lead)
-    local ids = {}
-    for i = 1, #actions do
-        local id = actions[i].id
-        if arg_lead == '' or vim.startswith(id, arg_lead) then
-            ids[#ids + 1] = id
-        end
-    end
-    return ids
+function M.trim(s)
+    return (s or ''):gsub('^%s*(.-)%s*$', '%1')
 end
 
 return M

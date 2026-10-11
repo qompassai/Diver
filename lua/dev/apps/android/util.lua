@@ -1,5 +1,5 @@
 -- #################################################################
--- /qompassai/lua/dev/android/util.lua
+-- /qompassai/lua/dev/apps/android/util.lua
 -- Qompass AI Util
 -- SPDX-License-Identifier: Apache-2.0
 -- Copyright (c) 2026 Qompass AI
@@ -20,22 +20,19 @@ local M = {}
 ---Maximum directories to ascend when searching for the Gradle wrapper.
 local FIND_GRADLEW_MAX_DEPTH = 32
 
-function M.trim(s)
-    return (s or ''):gsub('^%s*(.-)%s*$', '%1')
-end
+---Find the Gradle wrapper script in a directory, preferring gradlew over gradlew.bat.
+---@param dir string Directory to inspect (no recursion).
+---@return string? path Wrapper script path, or nil.
+local function wrapper_in(dir)
+    local candidates = { dir .. '/gradlew', dir .. '/gradlew.bat' }
 
----True when Neovim runs on Windows.
----@return boolean
-function M.is_windows()
-    return vim.fn.has('win32') == 1
-end
-
-function M.get_android_sdk()
-    local sdk = vim.fn.expand(vim.env.ANDROID_HOME or vim.env.ANDROID_SDK_ROOT or vim.g.android_sdk or '')
-    if sdk == '' then
-        return nil
+    for i = 1, #candidates do
+        if vim.uv.fs_stat(candidates[i]) ~= nil then
+            return candidates[i]
+        end
     end
-    return sdk
+
+    return nil
 end
 
 function M.android_cli_cmd(args)
@@ -51,32 +48,6 @@ function M.android_cli_cmd(args)
     end
 
     return cmd
-end
-
-function M.read_file(path)
-    local file = io.open(path, 'r')
-    if not file then
-        return nil
-    end
-
-    local content = file:read('*all')
-    file:close()
-    return content
-end
-
----Find the Gradle wrapper script in a directory, preferring gradlew over gradlew.bat.
----@param dir string Directory to inspect (no recursion).
----@return string? path Wrapper script path, or nil.
-local function wrapper_in(dir)
-    local candidates = { dir .. '/gradlew', dir .. '/gradlew.bat' }
-
-    for i = 1, #candidates do
-        if vim.uv.fs_stat(candidates[i]) ~= nil then
-            return candidates[i]
-        end
-    end
-
-    return nil
 end
 
 ---Find the Gradle wrapper by ascending from a directory (bounded).
@@ -107,6 +78,14 @@ function M.find_gradlew(directory)
     return nil
 end
 
+function M.get_android_sdk()
+    local sdk = vim.fn.expand(vim.env.ANDROID_HOME or vim.env.ANDROID_SDK_ROOT or vim.g.android_sdk or '')
+    if sdk == '' then
+        return nil
+    end
+    return sdk
+end
+
 ---Build an argv for the Gradle wrapper that also runs on Windows.
 ---
 --- uv-spawned processes cannot execute .bat files directly, so on Windows
@@ -134,4 +113,24 @@ function M.gradle_argv(gradlew, args)
     return argv
 end
 
+---True when Neovim runs on Windows.
+---@return boolean
+function M.is_windows()
+    return vim.fn.has('win32') == 1
+end
+
+function M.read_file(path)
+    local file = io.open(path, 'r')
+    if not file then
+        return nil
+    end
+
+    local content = file:read('*all')
+    file:close()
+    return content
+end
+
+function M.trim(s)
+    return (s or ''):gsub('^%s*(.-)%s*$', '%1')
+end
 return M

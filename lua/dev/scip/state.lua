@@ -34,56 +34,6 @@ M.current = {
     started_at = 0,
 }
 
---- Return whether a SCIP indexer is currently running.
----
---- The active `vim.SystemObj` is the authoritative indicator of whether an
---- indexing operation is in progress.
----@return boolean
-function M.running()
-    return M.current.job ~= nil
-end
-
---- Return the elapsed runtime of the active SCIP indexer in seconds.
----
---- If no valid start timestamp has been recorded, zero is returned.
----@return number
-function M.elapsed()
-    if M.current.started_at == 0 then
-        return 0
-    end
-
-    return (uv.hrtime() - M.current.started_at) / 1e9
-end
-
---- Record a newly started SCIP indexing process.
----
---- This should be called immediately after `vim.system()` returns its
---- `vim.SystemObj`, allowing the rest of the SCIP subsystem to inspect,
---- cancel, or report on the active job.
----@param job vim.SystemObj Active SCIP process.
----@param indexer string Name of the SCIP indexer.
----@param root string Project root being indexed.
----@param started_at? number Optional vim.uv.hrtime() timestamp.
----@return nil
-function M.start(job, indexer, root, started_at)
-    M.current.job = job
-    M.current.indexer = indexer
-    M.current.root = vim.fs.normalize(root)
-    M.current.started_at = started_at or uv.hrtime()
-end
-
---- Clear all active SCIP process state.
----
---- This does not terminate the running process itself. Call `M.cancel()` when
---- the process should also be stopped.
----@return nil
-function M.clear()
-    M.current.indexer = nil
-    M.current.job = nil
-    M.current.root = nil
-    M.current.started_at = 0
-end
-
 --- Cancel the active SCIP indexing process.
 ---
 --- SIGTERM is used on Unix-like systems so the indexer has an opportunity to
@@ -102,6 +52,30 @@ function M.cancel()
     return true
 end
 
+--- Clear all active SCIP process state.
+---
+--- This does not terminate the running process itself. Call `M.cancel()` when
+--- the process should also be stopped.
+---@return nil
+function M.clear()
+    M.current.indexer = nil
+    M.current.job = nil
+    M.current.root = nil
+    M.current.started_at = 0
+end
+
+--- Return the elapsed runtime of the active SCIP indexer in seconds.
+---
+--- If no valid start timestamp has been recorded, zero is returned.
+---@return number
+function M.elapsed()
+    if M.current.started_at == 0 then
+        return 0
+    end
+
+    return (uv.hrtime() - M.current.started_at) / 1e9
+end
+
 --- Return the name of the currently active SCIP indexer.
 ---@return string?
 function M.indexer()
@@ -118,6 +92,32 @@ end
 ---@return string?
 function M.root()
     return M.current.root
+end
+
+--- Return whether a SCIP indexer is currently running.
+---
+--- The active `vim.SystemObj` is the authoritative indicator of whether an
+--- indexing operation is in progress.
+---@return boolean
+function M.running()
+    return M.current.job ~= nil
+end
+
+--- Record a newly started SCIP indexing process.
+---
+--- This should be called immediately after `vim.system()` returns its
+--- `vim.SystemObj`, allowing the rest of the SCIP subsystem to inspect,
+--- cancel, or report on the active job.
+---@param job vim.SystemObj Active SCIP process.
+---@param indexer string Name of the SCIP indexer.
+---@param root string Project root being indexed.
+---@param started_at? number Optional vim.uv.hrtime() timestamp.
+---@return nil
+function M.start(job, indexer, root, started_at)
+    M.current.job = job
+    M.current.indexer = indexer
+    M.current.root = vim.fs.normalize(root)
+    M.current.started_at = started_at or uv.hrtime()
 end
 
 --- Return the recorded high-resolution start timestamp.

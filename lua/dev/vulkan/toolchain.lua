@@ -44,11 +44,11 @@ local fn = vim.fn
 
 local M = {}
 
+local DEFAULT_ENTRY = 'main'
+local DEFAULT_TARGET_ENV = 'vulkan1.3'
+local PATH_BYTES_MAX = 4096
 local SYSTEM_TIMEOUT_MS = 10000
 local VERSION_BYTES_MAX = 128
-local PATH_BYTES_MAX = 4096
-local DEFAULT_TARGET_ENV = 'vulkan1.3'
-local DEFAULT_ENTRY = 'main'
 
 ---@class VulkanToolSpec
 ---@field bin string executable name
@@ -59,28 +59,28 @@ local DEFAULT_ENTRY = 'main'
 --- `slangc --version` errors with E00017).
 ---@type table<string, VulkanToolSpec>
 local TOOLS = {
+    dxc = { bin = 'dxc', version_arg = '--version' },
     glslangValidator = { bin = 'glslangValidator', version_arg = '--version' },
     glslc = { bin = 'glslc', version_arg = '--version' },
-    dxc = { bin = 'dxc', version_arg = '--version' },
     slangc = { bin = 'slangc', version_arg = '-v' },
 }
 
 ---@type table<string, string>
 local STAGE_FOR_EXT = {
-    ['.vert'] = 'vert',
-    ['.tesc'] = 'tesc',
-    ['.tese'] = 'tese',
-    ['.geom'] = 'geom',
-    ['.frag'] = 'frag',
     ['.comp'] = 'comp',
+    ['.frag'] = 'frag',
+    ['.geom'] = 'geom',
     ['.mesh'] = 'mesh',
-    ['.task'] = 'task',
+    ['.rahit'] = 'rahit',
+    ['.rcall'] = 'rcall',
+    ['.rchit'] = 'rchit',
     ['.rgen'] = 'rgen',
     ['.rint'] = 'rint',
-    ['.rahit'] = 'rahit',
-    ['.rchit'] = 'rchit',
     ['.rmiss'] = 'rmiss',
-    ['.rcall'] = 'rcall',
+    ['.task'] = 'task',
+    ['.tesc'] = 'tesc',
+    ['.tese'] = 'tese',
+    ['.vert'] = 'vert',
 }
 
 ---@param value unknown
@@ -102,123 +102,6 @@ local function nonempty_text(value, what)
     return value
 end
 
----@param name string
----@return VulkanToolSpec?, string?
-local function tool_spec(name)
-    local spec = TOOLS[name]
-
-    if spec == nil then
-        return nil, 'unknown shader tool: ' .. tostring(name)
-    end
-
-    return spec
-end
-
---- Map a shader file extension to its pipeline stage. `.glsl` and
---- `.hlsl` are ambiguous on their own (they need an explicit stage or
---- a compound suffix like `.vert.glsl`), so they return nil + error
---- instead of a guess.
----@param ext string file extension including the dot, e.g. ".vert"
----@return string?, string?
-function M.stage_for_ext(ext)
-    if type(ext) ~= 'string' or ext == '' then
-        return nil, 'extension must be a non-empty string'
-    end
-
-    local stage = STAGE_FOR_EXT[ext:lower()]
-
-    if stage ~= nil then
-        return stage
-    end
-
-    if ext:lower() == '.glsl' or ext:lower() == '.hlsl' then
-        return nil, ext .. ' is ambiguous without an explicit stage'
-    end
-
-    return nil, 'unknown shader extension: ' .. ext
-end
-
----@param spec VulkanToolSpec
----@return string?
-local function tool_version(spec)
-    if fn.executable(spec.bin) ~= 1 then
-        return nil
-    end
-
-    local ok, result = pcall(vim.system, { spec.bin, spec.version_arg }, {
-        text = true,
-        timeout = SYSTEM_TIMEOUT_MS,
-    }, nil)
-
-    if not ok or type(result) ~= 'table' or result.code ~= 0 then
-        return nil
-    end
-
-    local stdout = result.stdout
-
-    if type(stdout) ~= 'string' then
-        return nil
-    end
-
-    local first = vim.trim(stdout):match('^([^\r\n]+)')
-
-    if first == nil or first == '' then
-        return nil
-    end
-
-    if #first > VERSION_BYTES_MAX then
-        first = first:sub(1, VERSION_BYTES_MAX) .. '...'
-    end
-
-    return first
-end
-
----@class VulkanToolProbe
----@field name string
----@field found boolean
----@field path string? absolute path when found
----@field version string? first line of the version output, nil when it could not be read
-
---- Probe one shader compiler. `found` is authoritative; `version`
---- is best-effort and honestly nil when the version flag fails.
----@param name string one of: glslangValidator, glslc, dxc, slangc
----@return VulkanToolProbe?, string?
-function M.probe(name)
-    local spec, spec_err = tool_spec(name)
-
-    if spec == nil then
-        return nil, spec_err
-    end
-
-    ---@cast spec VulkanToolSpec
-    if fn.executable(spec.bin) ~= 1 then
-        return { name = name, found = false }
-    end
-
-    local path = fn.exepath(spec.bin)
-
-    return {
-        name = name,
-        found = true,
-        path = (type(path) == 'string' and path ~= '') and path or nil,
-        version = tool_version(spec),
-    }
-end
-
----@return string[]
-function M.tool_names()
-    ---@type string[]
-    local names = {}
-
-    for name in pairs(TOOLS) do
-        names[#names + 1] = name
-    end
-
-    table.sort(names)
-
-    return names
-end
-
 ---@class VulkanCompileArgs
 ---@field stage? string pipeline stage, e.g. "vert" (glslangValidator, glslc, slangc)
 ---@field source string shader source file
@@ -228,6 +111,51 @@ end
 ---@field target_env? string e.g. "vulkan1.3" (glslangValidator, glslc)
 ---@field target? string slangc codegen target, default "spirv"
 ---@field spirv? boolean dxc emits SPIR-V when true (default), DXIL when false
+
+---@param opts VulkanCompileArgs
+---@return string[]?, string?
+local function dxc_argv(opts)
+    local profile, profile_err = nonempty_text(opts.profile, 'profile')
+
+    if profile == nil then
+        return nil, profile_err
+    end
+
+    local source, source_err = nonempty_text(opts.source, 'source')
+
+    if source == nil then
+        return nil, source_err
+    end
+
+    local output, output_err = nonempty_text(opts.output, 'output')
+
+    if output == nil then
+        return nil, output_err
+    end
+
+    local entry = opts.entry
+
+    if type(entry) ~= 'string' or entry == '' then
+        entry = DEFAULT_ENTRY
+    end
+
+    ---@type string[]
+    local argv = { 'dxc' }
+
+    if opts.spirv ~= false then
+        argv[#argv + 1] = '-spirv'
+    end
+
+    argv[#argv + 1] = '-T'
+    argv[#argv + 1] = profile
+    argv[#argv + 1] = '-E'
+    argv[#argv + 1] = entry
+    argv[#argv + 1] = '-Fo'
+    argv[#argv + 1] = output
+    argv[#argv + 1] = source
+
+    return argv
+end
 
 ---@param tool string
 ---@param opts VulkanCompileArgs
@@ -283,51 +211,6 @@ end
 
 ---@param opts VulkanCompileArgs
 ---@return string[]?, string?
-local function dxc_argv(opts)
-    local profile, profile_err = nonempty_text(opts.profile, 'profile')
-
-    if profile == nil then
-        return nil, profile_err
-    end
-
-    local source, source_err = nonempty_text(opts.source, 'source')
-
-    if source == nil then
-        return nil, source_err
-    end
-
-    local output, output_err = nonempty_text(opts.output, 'output')
-
-    if output == nil then
-        return nil, output_err
-    end
-
-    local entry = opts.entry
-
-    if type(entry) ~= 'string' or entry == '' then
-        entry = DEFAULT_ENTRY
-    end
-
-    ---@type string[]
-    local argv = { 'dxc' }
-
-    if opts.spirv ~= false then
-        argv[#argv + 1] = '-spirv'
-    end
-
-    argv[#argv + 1] = '-T'
-    argv[#argv + 1] = profile
-    argv[#argv + 1] = '-E'
-    argv[#argv + 1] = entry
-    argv[#argv + 1] = '-Fo'
-    argv[#argv + 1] = output
-    argv[#argv + 1] = source
-
-    return argv
-end
-
----@param opts VulkanCompileArgs
----@return string[]?, string?
 local function slangc_argv(opts)
     local stage, stage_err = nonempty_text(opts.stage, 'stage')
 
@@ -373,6 +256,53 @@ local function slangc_argv(opts)
     }
 end
 
+---@param name string
+---@return VulkanToolSpec?, string?
+local function tool_spec(name)
+    local spec = TOOLS[name]
+
+    if spec == nil then
+        return nil, 'unknown shader tool: ' .. tostring(name)
+    end
+
+    return spec
+end
+
+---@param spec VulkanToolSpec
+---@return string?
+local function tool_version(spec)
+    if fn.executable(spec.bin) ~= 1 then
+        return nil
+    end
+
+    local ok, result = pcall(vim.system, { spec.bin, spec.version_arg }, {
+        text = true,
+        timeout = SYSTEM_TIMEOUT_MS,
+    }, nil)
+
+    if not ok or type(result) ~= 'table' or result.code ~= 0 then
+        return nil
+    end
+
+    local stdout = result.stdout
+
+    if type(stdout) ~= 'string' then
+        return nil
+    end
+
+    local first = vim.trim(stdout):match('^([^\r\n]+)')
+
+    if first == nil or first == '' then
+        return nil
+    end
+
+    if #first > VERSION_BYTES_MAX then
+        first = first:sub(1, VERSION_BYTES_MAX) .. '...'
+    end
+
+    return first
+end
+
 --- Build the compile argv for a shader tool. Pure: no process is
 --- spawned, so tests can verify every flag. `opts.target` is only
 --- read for slangc (the other tools always emit SPIR-V here).
@@ -406,6 +336,76 @@ end
 function M.describe_argv(argv)
     assert(type(argv) == 'table', 'describe_argv requires an argv table')
     return table.concat(argv, ' ')
+end
+
+---@class VulkanToolProbe
+---@field name string
+---@field found boolean
+---@field path string? absolute path when found
+---@field version string? first line of the version output, nil when it could not be read
+
+--- Probe one shader compiler. `found` is authoritative; `version`
+--- is best-effort and honestly nil when the version flag fails.
+---@param name string one of: glslangValidator, glslc, dxc, slangc
+---@return VulkanToolProbe?, string?
+function M.probe(name)
+    local spec, spec_err = tool_spec(name)
+
+    if spec == nil then
+        return nil, spec_err
+    end
+
+    ---@cast spec VulkanToolSpec
+    if fn.executable(spec.bin) ~= 1 then
+        return { name = name, found = false }
+    end
+
+    local path = fn.exepath(spec.bin)
+
+    return {
+        name = name,
+        found = true,
+        path = (type(path) == 'string' and path ~= '') and path or nil,
+        version = tool_version(spec),
+    }
+end
+
+--- Map a shader file extension to its pipeline stage. `.glsl` and
+--- `.hlsl` are ambiguous on their own (they need an explicit stage or
+--- a compound suffix like `.vert.glsl`), so they return nil + error
+--- instead of a guess.
+---@param ext string file extension including the dot, e.g. ".vert"
+---@return string?, string?
+function M.stage_for_ext(ext)
+    if type(ext) ~= 'string' or ext == '' then
+        return nil, 'extension must be a non-empty string'
+    end
+
+    local stage = STAGE_FOR_EXT[ext:lower()]
+
+    if stage ~= nil then
+        return stage
+    end
+
+    if ext:lower() == '.glsl' or ext:lower() == '.hlsl' then
+        return nil, ext .. ' is ambiguous without an explicit stage'
+    end
+
+    return nil, 'unknown shader extension: ' .. ext
+end
+
+---@return string[]
+function M.tool_names()
+    ---@type string[]
+    local names = {}
+
+    for name in pairs(TOOLS) do
+        names[#names + 1] = name
+    end
+
+    table.sort(names)
+
+    return names
 end
 
 return M

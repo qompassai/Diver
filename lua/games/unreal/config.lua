@@ -16,20 +16,6 @@
 -- limitations under the License.
 -- #################################################################
 local M = {}
-M.engine_env_names = {
-    'NVIM_UNREAL_ENGINE_ROOT',
-    'UNREAL_ENGINE_ROOT',
-    'UE_ENGINE_ROOT',
-    'UE_ROOT',
-}
-M.project_env_name = 'NVIM_UNREAL_PROJECT'
-M.output_filetype = 'unreal-output'
-M.group_order = {
-    'Editor',
-    'Build',
-    'Package',
-    'Project',
-}
 M.build_configurations = {
     'DebugGame',
     'Development',
@@ -37,12 +23,36 @@ M.build_configurations = {
     'Shipping',
     'Test',
 }
+M.engine_env_names = {
+    'NVIM_UNREAL_ENGINE_ROOT',
+    'UNREAL_ENGINE_ROOT',
+    'UE_ENGINE_ROOT',
+    'UE_ROOT',
+}
+M.group_order = {
+    'Editor',
+    'Build',
+    'Package',
+    'Project',
+}
+M.output_filetype = 'unreal-output'
+M.project_env_name = 'NVIM_UNREAL_PROJECT'
 M.target_kinds = {
     'Editor',
     'Game',
     'Client',
     'Server',
 }
+
+function M.build_script(engine_root)
+    if vim.fn.has('win32') == 1 or vim.fn.has('win64') == 1 then
+        return engine_root .. '/Engine/Build/BatchFiles/Build.bat'
+    end
+    if vim.fn.has('mac') == 1 or vim.fn.has('macunix') == 1 then
+        return engine_root .. '/Engine/Build/BatchFiles/Mac/Build.sh'
+    end
+    return engine_root .. '/Engine/Build/BatchFiles/Linux/Build.sh'
+end
 function M.default_platform()
     if vim.fn.has('win32') == 1 or vim.fn.has('win64') == 1 then
         return 'Win64'
@@ -51,16 +61,6 @@ function M.default_platform()
         return 'Mac'
     end
     return 'Linux'
-end
-function M.engine_root_candidates()
-    local home = vim.fn.expand('~')
-    return {
-        home .. '/UnrealEngine',
-        home .. '/UnrealEngine-5',
-        home .. '/.local/share/UnrealEngine',
-        '/opt/UnrealEngine',
-        '/opt/unreal-engine',
-    }
 end
 
 function M.editor_binary(engine_root)
@@ -72,24 +72,24 @@ function M.editor_binary(engine_root)
     end
     return engine_root .. '/Engine/Binaries/Linux/UnrealEditor'
 end
-
-function M.build_script(engine_root)
+function M.engine_generate_project_files_script(engine_root)
     if vim.fn.has('win32') == 1 or vim.fn.has('win64') == 1 then
-        return engine_root .. '/Engine/Build/BatchFiles/Build.bat'
+        return engine_root .. '/GenerateProjectFiles.bat'
     end
     if vim.fn.has('mac') == 1 or vim.fn.has('macunix') == 1 then
-        return engine_root .. '/Engine/Build/BatchFiles/Mac/Build.sh'
+        return engine_root .. '/GenerateProjectFiles.command'
     end
-    return engine_root .. '/Engine/Build/BatchFiles/Linux/Build.sh'
+    return engine_root .. '/GenerateProjectFiles.sh'
 end
-function M.generate_project_files_script(engine_root)
-    if vim.fn.has('win32') == 1 or vim.fn.has('win64') == 1 then
-        return engine_root .. '/Engine/Build/BatchFiles/GenerateProjectFiles.bat'
-    end
-    if vim.fn.has('mac') == 1 or vim.fn.has('macunix') == 1 then
-        return engine_root .. '/Engine/Build/BatchFiles/Mac/GenerateProjectFiles.sh'
-    end
-    return engine_root .. '/Engine/Build/BatchFiles/Linux/GenerateProjectFiles.sh'
+function M.engine_root_candidates()
+    local home = vim.fn.expand('~')
+    return {
+        home .. '/UnrealEngine',
+        home .. '/UnrealEngine-5',
+        home .. '/.local/share/UnrealEngine',
+        '/opt/UnrealEngine',
+        '/opt/unreal-engine',
+    }
 end
 function M.engine_setup_script(engine_root)
     if vim.fn.has('win32') == 1 or vim.fn.has('win64') == 1 then
@@ -100,14 +100,14 @@ function M.engine_setup_script(engine_root)
     end
     return engine_root .. '/Setup.sh'
 end
-function M.engine_generate_project_files_script(engine_root)
+function M.generate_project_files_script(engine_root)
     if vim.fn.has('win32') == 1 or vim.fn.has('win64') == 1 then
-        return engine_root .. '/GenerateProjectFiles.bat'
+        return engine_root .. '/Engine/Build/BatchFiles/GenerateProjectFiles.bat'
     end
     if vim.fn.has('mac') == 1 or vim.fn.has('macunix') == 1 then
-        return engine_root .. '/GenerateProjectFiles.command'
+        return engine_root .. '/Engine/Build/BatchFiles/Mac/GenerateProjectFiles.sh'
     end
-    return engine_root .. '/GenerateProjectFiles.sh'
+    return engine_root .. '/Engine/Build/BatchFiles/Linux/GenerateProjectFiles.sh'
 end
 function M.run_uat_script(engine_root)
     if vim.fn.has('win32') == 1 or vim.fn.has('win64') == 1 then

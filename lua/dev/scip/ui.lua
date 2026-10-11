@@ -12,62 +12,6 @@ local root = require('dev.scip.root')
 local utils = require('dev.scip.utils')
 local M = {}
 
----Emit a SCIP notification when notifications are enabled.
----@param message string
----@param level? integer
-function M.notify(message, level)
-    if not config.get().notify then
-        return
-    end
-
-    vim.notify(message, level or vim.log.levels.INFO, {
-        title = 'SCIP',
-    })
-end
-
----Display successful command output in a scratch split.
----@param title string
----@param text string
----@param filetype? string
-function M.show_output(title, text, filetype)
-    local bufnr = api.nvim_create_buf(false, true)
-
-    api.nvim_buf_set_name(bufnr, ('scip://%s/%d'):format(title:gsub('%s+', '-'):lower(), math.floor(vim.uv.hrtime())))
-
-    api.nvim_set_option_value('bufhidden', 'wipe', {
-        buf = bufnr,
-    })
-
-    api.nvim_set_option_value('swapfile', false, {
-        buf = bufnr,
-    })
-
-    api.nvim_buf_set_lines(bufnr, 0, -1, false, utils.text_lines(text))
-
-    api.nvim_set_option_value('filetype', filetype or 'text', {
-        buf = bufnr,
-    })
-
-    api.nvim_set_option_value('modifiable', false, {
-        buf = bufnr,
-    })
-
-    vim.cmd('botright new')
-    api.nvim_win_set_buf(0, bufnr)
-end
-
----Display failed subprocess output using the quickfix list.
----@param title string
----@param result vim.SystemCompleted
-function M.show_failure(title, result)
-    fn.setqflist({}, 'r', {
-        lines = utils.text_lines(utils.system_output(result, true)),
-        title = title,
-    })
-
-    vim.cmd('botright copen')
-end
-
 ---Show indexer support/readiness for the current buffer.
 function M.coverage()
     local bufnr = api.nvim_get_current_buf()
@@ -117,6 +61,19 @@ function M.coverage()
     end
 
     M.show_output('SCIP coverage', table.concat(lines, '\n'))
+end
+
+---Emit a SCIP notification when notifications are enabled.
+---@param message string
+---@param level? integer
+function M.notify(message, level)
+    if not config.get().notify then
+        return
+    end
+
+    vim.notify(message, level or vim.log.levels.INFO, {
+        title = 'SCIP',
+    })
 end
 
 ---Create native :Scip* commands.
@@ -189,6 +146,49 @@ function M.setup_commands()
         desc = 'Show SCIP index/indexer status',
         force = true,
     })
+end
+
+---Display failed subprocess output using the quickfix list.
+---@param title string
+---@param result vim.SystemCompleted
+function M.show_failure(title, result)
+    fn.setqflist({}, 'r', {
+        lines = utils.text_lines(utils.system_output(result, true)),
+        title = title,
+    })
+
+    vim.cmd('botright copen')
+end
+
+---Display successful command output in a scratch split.
+---@param title string
+---@param text string
+---@param filetype? string
+function M.show_output(title, text, filetype)
+    local bufnr = api.nvim_create_buf(false, true)
+
+    api.nvim_buf_set_name(bufnr, ('scip://%s/%d'):format(title:gsub('%s+', '-'):lower(), math.floor(vim.uv.hrtime())))
+
+    api.nvim_set_option_value('bufhidden', 'wipe', {
+        buf = bufnr,
+    })
+
+    api.nvim_set_option_value('swapfile', false, {
+        buf = bufnr,
+    })
+
+    api.nvim_buf_set_lines(bufnr, 0, -1, false, utils.text_lines(text))
+
+    api.nvim_set_option_value('filetype', filetype or 'text', {
+        buf = bufnr,
+    })
+
+    api.nvim_set_option_value('modifiable', false, {
+        buf = bufnr,
+    })
+
+    vim.cmd('botright new')
+    api.nvim_win_set_buf(0, bufnr)
 end
 
 return M

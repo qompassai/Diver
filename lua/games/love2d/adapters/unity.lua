@@ -36,21 +36,7 @@ local MANIFEST_ASSETS_MAX = 256
 -- File kinds the interchange manifest accepts. LÖVE-native raster and
 -- audio only: Unity's .fbx/.prefab/.unity formats are NOT accepted --
 -- meshes cross over only via Blender as the conversion step.
-local MANIFEST_KINDS = { png = true, json = true, ogg = true, wav = true }
-
-M.engine_key = 'unity'
-M.label = 'Unity'
--- The LÖVE side is pinned to the managed 11.5. No Unity-version
--- requirement is stated here: there is no LÖVE runtime interop with
--- the Unity engine, so the Unity runtime version is not this
--- adapter's business.
-M.love_version_requirement = '11.5'
-
--- anim8: sprite strips exported from Unity (PNG), played as
--- frame-grid animations. Audio needs no catalog library: love.audio
--- plays wav/ogg natively. FBX is deliberately absent: LÖVE has no
--- FBX loader, so meshes cross over via Blender baking instead.
-M.libraries = { 'anim8' }
+local MANIFEST_KINDS = { json = true, ogg = true, png = true, wav = true }
 
 M.asset_interchange = {
     capabilities = {
@@ -68,19 +54,44 @@ M.asset_interchange = {
     runtime_interop = false,
 }
 
----Recommended conf.lua values for LÖVE projects consuming
----Unity-exported assets. Convention only; nothing reads or enforces
----these.
-M.run_config = {
-    identity = 'diver-unity-love',
-    window = { width = 1280, height = 720, resizable = true, vsync = 1 },
-}
+M.engine_key = 'unity'
+M.label = 'Unity'
+
+-- anim8: sprite strips exported from Unity (PNG), played as
+-- frame-grid animations. Audio needs no catalog library: love.audio
+-- plays wav/ogg natively. FBX is deliberately absent: LÖVE has no
+-- FBX loader, so meshes cross over via Blender baking instead.
+M.libraries = { 'anim8' }
+-- The LÖVE side is pinned to the managed 11.5. No Unity-version
+-- requirement is stated here: there is no LÖVE runtime interop with
+-- the Unity engine, so the Unity runtime version is not this
+-- adapter's business.
+M.love_version_requirement = '11.5'
 
 ---Recommended packaging conventions for Unity-sourced assets.
 M.package_config = {
     asset_dirs = { 'assets', 'sprites' },
     include_exts = { '.png', '.json', '.ogg', '.wav' },
 }
+
+---Recommended conf.lua values for LÖVE projects consuming
+---Unity-exported assets. Convention only; nothing reads or enforces
+---these.
+M.run_config = {
+    identity = 'diver-unity-love',
+    window = { height = 720, resizable = true, vsync = 1, width = 1280 },
+}
+
+---Unity editor detection is project-bound (no canonical PATH binary:
+---the editor launches through Unity Hub against a project), so this
+---environment cannot resolve one. Fails closed by design; a
+---project-aware probe belongs in games/unity/util, not in this
+---adapter. Never returns a guessed path.
+---@return nil path
+---@return string err
+function M.detect_tooling()
+    return nil, 'unity editor not detectable without a Unity project on disk'
+end
 
 ---@class UnityInterchangeAsset
 ---@field path string relative path of the asset file
@@ -136,17 +147,6 @@ function M.validate_interchange_manifest(manifest)
         end
     end
     return true, nil
-end
-
----Unity editor detection is project-bound (no canonical PATH binary:
----the editor launches through Unity Hub against a project), so this
----environment cannot resolve one. Fails closed by design; a
----project-aware probe belongs in games/unity/util, not in this
----adapter. Never returns a guessed path.
----@return nil path
----@return string err
-function M.detect_tooling()
-    return nil, 'unity editor not detectable without a Unity project on disk'
 end
 
 return M

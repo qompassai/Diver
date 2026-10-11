@@ -42,37 +42,37 @@ local toolchain = require('dev.vulkan.toolchain')
 
 local M = {}
 
-local SOURCE = 'vulkan-compile'
-local NAMESPACE = api.nvim_create_namespace('diver_vulkan')
 local AUGROUP = 'diver-vulkan-compile'
+local NAMESPACE = api.nvim_create_namespace('diver_vulkan')
+local SOURCE = 'vulkan-compile'
 
 -- Bounds: one compile per save, 30s cap; compiler output is small
 -- text, capped well above any real diagnostic dump.
 local COMPILE_TIMEOUT_MS = 30000
-local OUTPUT_BYTES_MAX = 1024 * 1024
 local FINDINGS_MAX = 512
-local MESSAGE_BYTES_MAX = 2048
 local LINE_BYTES_MAX = 16 * 1024
+local MESSAGE_BYTES_MAX = 2048
+local OUTPUT_BYTES_MAX = 1024 * 1024
 
 ---@type string[]
 local SHADER_PATTERNS = {
-    '*.vert',
-    '*.frag',
-    '*.tesc',
-    '*.tese',
-    '*.geom',
     '*.comp',
-    '*.mesh',
-    '*.task',
-    '*.rgen',
-    '*.rint',
-    '*.rahit',
-    '*.rchit',
-    '*.rmiss',
-    '*.rcall',
+    '*.frag',
+    '*.geom',
     '*.glsl',
     '*.hlsl',
+    '*.mesh',
+    '*.rahit',
+    '*.rcall',
+    '*.rchit',
+    '*.rgen',
+    '*.rint',
+    '*.rmiss',
     '*.slang',
+    '*.task',
+    '*.tesc',
+    '*.tese',
+    '*.vert',
 }
 
 ---@type table<string, string>
@@ -81,39 +81,38 @@ local TOOL_FOR_EXT = {
     ['.slang'] = 'slangc',
 }
 
----@return string[]
-function M.shader_patterns()
-    local copy = {}
-
-    for _, pattern in ipairs(SHADER_PATTERNS) do
-        copy[#copy + 1] = pattern
+---@param severity string
+---@return integer
+local function diagnostic_severity(severity)
+    if severity == 'error' then
+        return diagnostic.severity.ERROR
     end
 
-    return copy
+    if severity == 'warning' then
+        return diagnostic.severity.WARN
+    end
+
+    return diagnostic.severity.INFO
 end
 
---- Pick the default compiler for a file extension. Returns nil for
---- extensions this module does not compile.
----@param ext string file extension including the dot
----@return string?
-function M.tool_for_ext(ext)
-    if type(ext) ~= 'string' or ext == '' then
-        return nil
-    end
+---@param ext string
+---@return string?, string?
+local function dxc_profile_for_ext(ext)
+    -- Reuse the same suffix table the native dxc linter uses; a bare
+    -- .hlsl falls back to a library profile.
+    local suffix_map = {
+        ['.comp.hlsl'] = 'cs_6_8',
+        ['.frag.hlsl'] = 'ps_6_8',
+        ['.vert.hlsl'] = 'vs_6_8',
+    }
 
-    local forced = TOOL_FOR_EXT[ext:lower()]
+    return suffix_map[ext:lower()], 'cannot infer an HLSL profile for ' .. ext
+end
 
-    if forced ~= nil then
-        return forced
-    end
-
-    local stage, _ = toolchain.stage_for_ext(ext)
-
-    if stage ~= nil then
-        return 'glslangValidator'
-    end
-
-    return nil
+---@param message string
+---@param level? integer
+local function notify(message, level)
+    vim.notify(('[%s] %s'):format(SOURCE, message), level or levels.INFO)
 end
 
 ---@class VulkanFinding
@@ -157,105 +156,15 @@ local function parse_finding(line)
     end
 
     return {
+        col = math.max(1, math.floor(tonumber(column) or 1)),
         file = vim.trim(file),
         line = math.max(1, math.floor(tonumber(line_number) or 1)),
-        col = math.max(1, math.floor(tonumber(column) or 1)),
-        severity = severity,
         message = vim.trim(message),
+        severity = severity,
     }
 end
 
---- Parse compiler stderr/stdout into findings. Pure: no vim calls
---- beyond vim.trim, so it is unit-testable.
----@param text string combined compiler output
----@return VulkanFinding[]
-function M.parse_findings(text)
-    ---@type VulkanFinding[]
-    local findings = {}
-
-    if type(text) ~= 'string' or text == '' then
-        return findings
-    end
-
-    if #text > OUTPUT_BYTES_MAX then
-        text = text:sub(1, OUTPUT_BYTES_MAX)
-    end
-
-    for raw_line in text:gmatch('[^\r\n]+') do
-        if #findings >= FINDINGS_MAX then
-            break
-        end
-
-        local finding = parse_finding(vim.trim(raw_line))
-
-        if finding ~= nil then
-            findings[#findings + 1] = finding
-        end
-    end
-
-    return findings
-end
-
----@param severity string
----@return integer
-local function diagnostic_severity(severity)
-    if severity == 'error' then
-        return diagnostic.severity.ERROR
-    end
-
-    if severity == 'warning' then
-        return diagnostic.severity.WARN
-    end
-
-    return diagnostic.severity.INFO
-end
-
---- Convert findings to vim.Diagnostic entries for a buffer. A finding
---- that names a different file becomes a line-1 diagnostic whose
---- message is prefixed with that file, so cross-file errors stay
---- visible instead of vanishing.
----@param findings VulkanFinding[]
----@param bufnr integer
----@param source_file string normalized path of the compiled file
----@return vim.Diagnostic[]
-function M.to_diagnostics(findings, bufnr, source_file)
-    assert(type(findings) == 'table', 'findings must be a table')
-    assert(type(bufnr) == 'number', 'bufnr must be a number')
-
-    ---@type vim.Diagnostic[]
-    local diagnostics = {}
-
-    for _, finding in ipairs(findings) do
-        local lnum = finding.line - 1
-        local col = finding.col - 1
-        local message = finding.message
-
-        if finding.file ~= '' and fs.normalize(finding.file) ~= fs.normalize(source_file) then
-            message = finding.file .. ': ' .. message
-            lnum = 0
-            col = 0
-        end
-
-        diagnostics[#diagnostics + 1] = {
-            bufnr = bufnr,
-            col = col,
-            end_col = col,
-            end_lnum = lnum,
-            lnum = lnum,
-            message = message,
-            severity = diagnostic_severity(finding.severity),
-            source = SOURCE,
-        }
-    end
-
-    return diagnostics
-end
-
----@param message string
----@param level? integer
-local function notify(message, level)
-    vim.notify(('[%s] %s'):format(SOURCE, message), level or levels.INFO)
-end
+local setup_done = false
 
 ---@class VulkanCompileOptions
 ---@field tool? string override the default compiler for the extension
@@ -263,20 +172,6 @@ end
 ---@field stage? string pipeline stage override (needed for bare .glsl)
 ---@field entry? string entry point override (dxc/slangc, default "main")
 ---@field profile? string HLSL profile override (dxc; inferred from the filename otherwise)
-
----@param ext string
----@return string?, string?
-local function dxc_profile_for_ext(ext)
-    -- Reuse the same suffix table the native dxc linter uses; a bare
-    -- .hlsl falls back to a library profile.
-    local suffix_map = {
-        ['.vert.hlsl'] = 'vs_6_8',
-        ['.frag.hlsl'] = 'ps_6_8',
-        ['.comp.hlsl'] = 'cs_6_8',
-    }
-
-    return suffix_map[ext:lower()], 'cannot infer an HLSL profile for ' .. ext
-end
 
 ---@param bufnr integer
 ---@param opts VulkanCompileOptions?
@@ -337,10 +232,10 @@ function M.compile_buffer(bufnr, opts)
 
     ---@type VulkanCompileArgs
     local compile_opts = {
-        stage = stage,
-        source = file,
-        output = output,
         entry = opts.entry,
+        output = output,
+        source = file,
+        stage = stage,
     }
 
     if tool == 'dxc' then
@@ -419,7 +314,36 @@ function M.compile_buffer(bufnr, opts)
     return true
 end
 
-local setup_done = false
+--- Parse compiler stderr/stdout into findings. Pure: no vim calls
+--- beyond vim.trim, so it is unit-testable.
+---@param text string combined compiler output
+---@return VulkanFinding[]
+function M.parse_findings(text)
+    ---@type VulkanFinding[]
+    local findings = {}
+
+    if type(text) ~= 'string' or text == '' then
+        return findings
+    end
+
+    if #text > OUTPUT_BYTES_MAX then
+        text = text:sub(1, OUTPUT_BYTES_MAX)
+    end
+
+    for raw_line in text:gmatch('[^\r\n]+') do
+        if #findings >= FINDINGS_MAX then
+            break
+        end
+
+        local finding = parse_finding(vim.trim(raw_line))
+
+        if finding ~= nil then
+            findings[#findings + 1] = finding
+        end
+    end
+
+    return findings
+end
 
 ---@param opts? VulkanCompileOptions options applied to every save-compile
 function M.setup(opts)
@@ -434,9 +358,6 @@ function M.setup(opts)
     local group = api.nvim_create_augroup(AUGROUP, { clear = true })
 
     api.nvim_create_autocmd('BufWritePost', {
-        group = group,
-        pattern = SHADER_PATTERNS,
-        desc = 'Compile shader to SPIR-V on save and surface diagnostics',
         callback = function(event)
             local ok, compile_err = M.compile_buffer(event.buf, opts)
 
@@ -444,7 +365,86 @@ function M.setup(opts)
                 notify(compile_err or 'compile failed', levels.WARN)
             end
         end,
+        desc = 'Compile shader to SPIR-V on save and surface diagnostics',
+        group = group,
+        pattern = SHADER_PATTERNS,
     })
+end
+
+---@return string[]
+function M.shader_patterns()
+    local copy = {}
+
+    for _, pattern in ipairs(SHADER_PATTERNS) do
+        copy[#copy + 1] = pattern
+    end
+
+    return copy
+end
+
+--- Convert findings to vim.Diagnostic entries for a buffer. A finding
+--- that names a different file becomes a line-1 diagnostic whose
+--- message is prefixed with that file, so cross-file errors stay
+--- visible instead of vanishing.
+---@param findings VulkanFinding[]
+---@param bufnr integer
+---@param source_file string normalized path of the compiled file
+---@return vim.Diagnostic[]
+function M.to_diagnostics(findings, bufnr, source_file)
+    assert(type(findings) == 'table', 'findings must be a table')
+    assert(type(bufnr) == 'number', 'bufnr must be a number')
+
+    ---@type vim.Diagnostic[]
+    local diagnostics = {}
+
+    for _, finding in ipairs(findings) do
+        local lnum = finding.line - 1
+        local col = finding.col - 1
+        local message = finding.message
+
+        if finding.file ~= '' and fs.normalize(finding.file) ~= fs.normalize(source_file) then
+            message = finding.file .. ': ' .. message
+            lnum = 0
+            col = 0
+        end
+
+        diagnostics[#diagnostics + 1] = {
+            bufnr = bufnr,
+            col = col,
+            end_col = col,
+            end_lnum = lnum,
+            lnum = lnum,
+            message = message,
+            severity = diagnostic_severity(finding.severity),
+            source = SOURCE,
+        }
+    end
+
+    return diagnostics
+end
+
+--- Pick the default compiler for a file extension. Returns nil for
+--- extensions this module does not compile.
+---@param ext string file extension including the dot
+---@return string?
+function M.tool_for_ext(ext)
+    if type(ext) ~= 'string' or ext == '' then
+        return nil
+    end
+
+    local forced = TOOL_FOR_EXT[ext:lower()]
+
+    if forced ~= nil then
+        return forced
+    end
+
+    local stage, _ = toolchain.stage_for_ext(ext)
+
+    if stage ~= nil then
+        return 'glslangValidator'
+    end
+
+    return nil
 end
 
 return M

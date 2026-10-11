@@ -37,6 +37,23 @@ local ROOT_MARKERS = {
 }
 
 ---@param root string
+---@param preferred_name? string
+---@return QompassBspConnection|nil, string|nil
+function M.connection(root, preferred_name)
+    return util.find_connection(root, preferred_name)
+end
+
+---@param connection QompassBspConnection
+---@return boolean, string|nil
+function M.executable(connection)
+    if type(connection) ~= 'table' or type(connection.argv) ~= 'table' then
+        return false, 'The BSP connection is malformed'
+    end
+
+    return util.executable_from_argv(connection.argv)
+end
+
+---@param root string
 ---@return boolean
 function M.is_bloop_project(root)
     if type(root) ~= 'string' or root == '' then
@@ -56,23 +73,6 @@ end
 ---@return string|nil
 function M.root(bufnr)
     return util.root_from_markers(bufnr, ROOT_MARKERS)
-end
-
----@param root string
----@param preferred_name? string
----@return QompassBspConnection|nil, string|nil
-function M.connection(root, preferred_name)
-    return util.find_connection(root, preferred_name)
-end
-
----@param connection QompassBspConnection
----@return boolean, string|nil
-function M.executable(connection)
-    if type(connection) ~= 'table' or type(connection.argv) ~= 'table' then
-        return false, 'The BSP connection is malformed'
-    end
-
-    return util.executable_from_argv(connection.argv)
 end
 
 return M

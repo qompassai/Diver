@@ -1,5 +1,5 @@
 -- #################################################################
--- /qompassai/lua/dev/android/ui.lua
+-- /qompassai/lua/dev/apps/android/ui.lua
 -- Qompass AI Ui
 -- SPDX-License-Identifier: Apache-2.0
 -- Copyright (c) 2026 Qompass AI
@@ -16,11 +16,56 @@
 -- limitations under the License.
 -- #################################################################
 local M = {}
-local api = vim.api
-local map = vim.keymap.set
 local config = require('dev.apps.android.config')
 local recent = require('dev.apps.android.recent')
 local util = require('dev.apps.android.util')
+local api = vim.api
+local map = vim.keymap.set
+function M.action_matches(action, search_query)
+    if search_query == '' then
+        return true
+    end
+    local haystack = (action.label .. ' ' .. action.group .. ' ' .. (action.keywords or '')):lower()
+    return haystack:find(search_query, 1, true) ~= nil
+end
+
+function M.actions_for_group(actions, group)
+    local grouped = {}
+    for i = 1, #actions do
+        local action = actions[i]
+        if action.group == group then
+            grouped[#grouped + 1] = action
+        end
+    end
+    return grouped
+end
+
+function M.ensure_menu_highlights()
+    local ok, normal = pcall(api.nvim_get_hl, 0, {
+        name = 'Normal',
+        link = false,
+    })
+
+    local bg = ok and normal.bg or 'NONE'
+
+    api.nvim_set_hl(0, 'AndroidNvimMenuHeader', {
+        fg = '#888899',
+        bg = bg,
+        bold = true,
+    })
+
+    api.nvim_set_hl(0, 'AndroidNvimMenuRecent', {
+        fg = '#b0b0c0',
+        bg = bg,
+        blend = 25,
+    })
+
+    api.nvim_set_hl(0, 'AndroidNvimMenuGroup', {
+        fg = '#d0d0e0',
+        bg = bg,
+    })
+end
+
 function M.select_modal(items, opts, on_choice)
     vim.validate('items', items, 'table')
     vim.validate('on_choice', on_choice, 'function')
@@ -104,70 +149,6 @@ function M.select_modal(items, opts, on_choice)
             end
         end,
     })
-end
-function M.actions_for_group(actions, group)
-    local grouped = {}
-    for i = 1, #actions do
-        local action = actions[i]
-        if action.group == group then
-            grouped[#grouped + 1] = action
-        end
-    end
-    return grouped
-end
-function M.action_matches(action, search_query)
-    if search_query == '' then
-        return true
-    end
-    local haystack = (action.label .. ' ' .. action.group .. ' ' .. (action.keywords or '')):lower()
-    return haystack:find(search_query, 1, true) ~= nil
-end
-
-function M.ensure_menu_highlights()
-    local ok, normal = pcall(api.nvim_get_hl, 0, {
-        name = 'Normal',
-        link = false,
-    })
-
-    local bg = ok and normal.bg or 'NONE'
-
-    api.nvim_set_hl(0, 'AndroidNvimMenuHeader', {
-        fg = '#888899',
-        bg = bg,
-        bold = true,
-    })
-
-    api.nvim_set_hl(0, 'AndroidNvimMenuRecent', {
-        fg = '#b0b0c0',
-        bg = bg,
-        blend = 25,
-    })
-
-    api.nvim_set_hl(0, 'AndroidNvimMenuGroup', {
-        fg = '#d0d0e0',
-        bg = bg,
-    })
-end
-
-function M.show_group_menu(group, actions, run_action, show_root)
-    local group_actions = M.actions_for_group(actions, group)
-    if #group_actions == 0 then
-        vim.notify('No actions in ' .. group .. '.', vim.log.levels.WARN, {})
-        show_root()
-        return
-    end
-
-    M.select_modal(group_actions, {
-        prompt = group,
-        format_item = function(action)
-            return action.label
-        end,
-        on_back = show_root,
-    }, function(choice)
-        if choice then
-            run_action(choice)
-        end
-    end)
 end
 
 function M.select_root_menu(actions, run_action)
@@ -388,9 +369,19 @@ function M.select_root_menu(actions, run_action)
         silent = true,
     }
 
-    map('i', '<Esc>', close_picker, keymap_opts)
-    map('n', '<Esc>', close_picker, keymap_opts)
-    map('n', 'q', close_picker, keymap_opts)
+    map('n', '<CR>', function()
+        local row = api.nvim_win_get_cursor(win)[1]
+        if row < list_start_row then
+            go_to_search()
+            return
+        end
+
+        local index = row_to_index[row]
+        if index then
+            choose_entry(index)
+        end
+    end, keymap_opts)
+
     map('i', '<Down>', go_to_first_entry, keymap_opts)
 
     local function move_cursor(delta)
@@ -406,6 +397,10 @@ function M.select_root_menu(actions, run_action)
             target = target + delta
         end
     end
+
+    map('i', '<Esc>', close_picker, keymap_opts)
+
+    map('n', '<Esc>', close_picker, keymap_opts)
 
     map('n', 'j', function()
         local row = api.nvim_win_get_cursor(win)[1]
@@ -425,18 +420,7 @@ function M.select_root_menu(actions, run_action)
         end
     end, keymap_opts)
 
-    map('n', '<CR>', function()
-        local row = api.nvim_win_get_cursor(win)[1]
-        if row < list_start_row then
-            go_to_search()
-            return
-        end
-
-        local index = row_to_index[row]
-        if index then
-            choose_entry(index)
-        end
-    end, keymap_opts)
+    map('n', 'q', close_picker, keymap_opts)
 
     api.nvim_create_autocmd({ 'TextChangedI', 'TextChanged' }, {
         buffer = buf,
@@ -458,4 +442,24 @@ function M.select_root_menu(actions, run_action)
     vim.cmd.startinsert()
 end
 
+function M.show_group_menu(group, actions, run_action, show_root)
+    local group_actions = M.actions_for_group(actions, group)
+    if #group_actions == 0 then
+        vim.notify('No actions in ' .. group .. '.', vim.log.levels.WARN, {})
+        show_root()
+        return
+    end
+
+    M.select_modal(group_actions, {
+        prompt = group,
+        format_item = function(action)
+            return action.label
+        end,
+        on_back = show_root,
+    }, function(choice)
+        if choice then
+            run_action(choice)
+        end
+    end)
+end
 return M

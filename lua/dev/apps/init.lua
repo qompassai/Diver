@@ -13,11 +13,14 @@ local M = {}
 local api = vim.api
 local fn = vim.fn
 
-local FLOAT_WIDTH_RATIO = 0.85
-local FLOAT_HEIGHT_RATIO = 0.8
-local FLOAT_ROW_RATIO = 0.1
 local FLOAT_COL_RATIO = 0.075
-local SPLIT_HEIGHT_LINES = 15
+
+local FLOAT_HEIGHT_RATIO = 0.8
+
+local FLOAT_ROW_RATIO = 0.1
+
+local FLOAT_WIDTH_RATIO = 0.85
+
 local ROOT_MARKERS = {
     '.git',
     '.jj',
@@ -27,6 +30,7 @@ local ROOT_MARKERS = {
     'pyproject.toml',
 }
 
+local SPLIT_HEIGHT_LINES = 15
 local catalog = require('dev.apps.catalog')
 local commands = require('dev.apps.commands')
 
@@ -38,6 +42,61 @@ local commands = require('dev.apps.commands')
 local open_instances = {}
 local autocmds_registered = false
 local commands_registered = false
+
+--- Open a centered floating window holding a fresh scratch buffer.
+---@return integer winid, integer bufnr
+local function open_float()
+    local width = math.floor(vim.o.columns * FLOAT_WIDTH_RATIO)
+    local height = math.floor(vim.o.lines * FLOAT_HEIGHT_RATIO)
+    local row = math.floor(vim.o.lines * FLOAT_ROW_RATIO)
+    local col = math.floor(vim.o.columns * FLOAT_COL_RATIO)
+    local bufnr = api.nvim_create_buf(false, true)
+    local winid = api.nvim_open_win(bufnr, true, {
+        relative = 'editor',
+        width = width,
+        height = height,
+        row = row,
+        col = col,
+        style = 'minimal',
+        border = 'rounded',
+    })
+    return winid, bufnr
+end
+
+--- Open a horizontal split holding a fresh scratch buffer.
+---@return integer winid, integer bufnr
+local function open_split()
+    vim.cmd('belowright ' .. SPLIT_HEIGHT_LINES .. 'new')
+    return api.nvim_get_current_win(), api.nvim_get_current_buf()
+end
+
+--- Open a new tab holding a fresh scratch buffer.
+---@return integer winid, integer bufnr
+local function open_tab()
+    vim.cmd('tabnew')
+    return api.nvim_get_current_win(), api.nvim_get_current_buf()
+end
+
+--- Resolve the working directory for a ctx value.
+---@param ctx string 'none'|'file'|'root'
+---@return string cwd
+local function resolve_cwd(ctx)
+    if ctx == 'file' then
+        local name = api.nvim_buf_get_name(0)
+        if name ~= '' then
+            return fn.fnamemodify(name, ':p:h')
+        end
+        return fn.getcwd()
+    end
+    if ctx == 'root' then
+        local found = vim.fs.find(ROOT_MARKERS, { upward = true })
+        if #found > 0 then
+            return fn.fnamemodify(found[1], ':p:h')
+        end
+        return fn.getcwd()
+    end
+    return fn.getcwd()
+end
 
 --- Validate one catalog entry. User-supplied entries return (false, err);
 --- the seeded catalog is asserted in setup().
@@ -82,59 +141,66 @@ local function valid_spec(spec)
     return true
 end
 
---- Resolve the working directory for a ctx value.
----@param ctx string 'none'|'file'|'root'
----@return string cwd
-local function resolve_cwd(ctx)
-    if ctx == 'file' then
-        local name = api.nvim_buf_get_name(0)
-        if name ~= '' then
-            return fn.fnamemodify(name, ':p:h')
-        end
-        return fn.getcwd()
+--- Close tracked terminals for one app. Returns the count closed.
+---@param name string catalog key
+---@return integer closed, string? err
+function M.close(name)
+    if type(name) ~= 'string' or name == '' then
+        return 0, 'app name must be a non-empty string'
     end
-    if ctx == 'root' then
-        local found = vim.fs.find(ROOT_MARKERS, { upward = true })
-        if #found > 0 then
-            return fn.fnamemodify(found[1], ':p:h')
+    local closed = 0
+    for bufnr, inst in pairs(open_instances) do
+        if inst.name == name and api.nvim_buf_is_valid(bufnr) then
+            api.nvim_buf_delete(bufnr, { force = true })
+            open_instances[bufnr] = nil
+            closed = closed + 1
         end
-        return fn.getcwd()
     end
-    return fn.getcwd()
+    return closed
 end
 
---- Open a centered floating window holding a fresh scratch buffer.
----@return integer winid, integer bufnr
-local function open_float()
-    local width = math.floor(vim.o.columns * FLOAT_WIDTH_RATIO)
-    local height = math.floor(vim.o.lines * FLOAT_HEIGHT_RATIO)
-    local row = math.floor(vim.o.lines * FLOAT_ROW_RATIO)
-    local col = math.floor(vim.o.columns * FLOAT_COL_RATIO)
-    local bufnr = api.nvim_create_buf(false, true)
-    local winid = api.nvim_open_win(bufnr, true, {
-        relative = 'editor',
-        width = width,
-        height = height,
-        row = row,
-        col = col,
-        style = 'minimal',
-        border = 'rounded',
-    })
-    return winid, bufnr
+--- Resolved, deep-copied view of one app for :AppsInfo and the picker.
+---@param name string catalog key
+---@return table?
+function M.info(name)
+    local spec = catalog[name]
+    if spec == nil then
+        return nil
+    end
+    local ctx = spec.ctx or 'none'
+    return {
+        name = name,
+        desc = spec.desc,
+        cmd = vim.deepcopy(spec.cmd),
+        kind = spec.kind or 'float',
+        ctx = ctx,
+        cwd = resolve_cwd(ctx),
+        env = spec.env and vim.deepcopy(spec.env) or nil,
+        open = M.is_open(name),
+    }
 end
 
---- Open a horizontal split holding a fresh scratch buffer.
----@return integer winid, integer bufnr
-local function open_split()
-    vim.cmd('belowright ' .. SPLIT_HEIGHT_LINES .. 'new')
-    return api.nvim_get_current_win(), api.nvim_get_current_buf()
+--- Is at least one terminal for this app currently tracked?
+---@param name string catalog key
+---@return boolean
+function M.is_open(name)
+    for _, inst in pairs(open_instances) do
+        if inst.name == name then
+            return true
+        end
+    end
+    return false
 end
 
---- Open a new tab holding a fresh scratch buffer.
----@return integer winid, integer bufnr
-local function open_tab()
-    vim.cmd('tabnew')
-    return api.nvim_get_current_win(), api.nvim_get_current_buf()
+--- Sorted catalog keys. Deterministic: never pairs() order.
+---@return string[]
+function M.list()
+    local names = {}
+    for name in pairs(catalog) do
+        names[#names + 1] = name
+    end
+    table.sort(names)
+    return names
 end
 
 --- Launch a catalog app in a terminal. Argv form only, never a shell string.
@@ -192,68 +258,6 @@ function M.open(name, overrides)
     return bufnr
 end
 
---- Close tracked terminals for one app. Returns the count closed.
----@param name string catalog key
----@return integer closed, string? err
-function M.close(name)
-    if type(name) ~= 'string' or name == '' then
-        return 0, 'app name must be a non-empty string'
-    end
-    local closed = 0
-    for bufnr, inst in pairs(open_instances) do
-        if inst.name == name and api.nvim_buf_is_valid(bufnr) then
-            api.nvim_buf_delete(bufnr, { force = true })
-            open_instances[bufnr] = nil
-            closed = closed + 1
-        end
-    end
-    return closed
-end
-
---- Is at least one terminal for this app currently tracked?
----@param name string catalog key
----@return boolean
-function M.is_open(name)
-    for _, inst in pairs(open_instances) do
-        if inst.name == name then
-            return true
-        end
-    end
-    return false
-end
-
---- Sorted catalog keys. Deterministic: never pairs() order.
----@return string[]
-function M.list()
-    local names = {}
-    for name in pairs(catalog) do
-        names[#names + 1] = name
-    end
-    table.sort(names)
-    return names
-end
-
---- Resolved, deep-copied view of one app for :AppsInfo and the picker.
----@param name string catalog key
----@return table?
-function M.info(name)
-    local spec = catalog[name]
-    if spec == nil then
-        return nil
-    end
-    local ctx = spec.ctx or 'none'
-    return {
-        name = name,
-        desc = spec.desc,
-        cmd = vim.deepcopy(spec.cmd),
-        kind = spec.kind or 'float',
-        ctx = ctx,
-        cwd = resolve_cwd(ctx),
-        env = spec.env and vim.deepcopy(spec.env) or nil,
-        open = M.is_open(name),
-    }
-end
-
 --- Merge user apps, assert the seeded catalog, register commands. Idempotent.
 ---@param opts { apps: table<string, DevAppSpec>? }?
 ---@return table self
@@ -277,7 +281,7 @@ function M.setup(opts)
     end
     if not autocmds_registered then
         local group = api.nvim_create_augroup('DevApps', { clear = true })
-        api.nvim_create_autocmd({ 'TermClose', 'BufWipeout' }, {
+        api.nvim_create_autocmd({ 'BufWipeout', 'TermClose' }, {
             group = group,
             desc = 'Forget closed dev-app terminals',
             callback = function(args)
@@ -292,5 +296,4 @@ function M.setup(opts)
     end
     return M
 end
-
 return M

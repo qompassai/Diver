@@ -27,10 +27,12 @@ local setup_done = false
 ---Oldest jj this module supports. Verified: v0.44.0 released 2026-08-05.
 M.JJ_VERSION_MIN = '0.44.0'
 
-local OUTPUT_LINES_MAX = 4000 -- output lines kept for any float view.
+local LOG_LINES_CAP = 1000 -- hard cap on :Jj log revisions.
 local MESSAGE_BYTES_MAX = 65536 -- cap on a commit message scanned for width.
 local MESSAGE_LINE_COLS = 72 -- his config.toml commit.message-line-length.
-local LOG_LINES_CAP = 1000 -- hard cap on :Jj log revisions.
+local OUTPUT_LINES_MAX = 4000 -- output lines kept for any float view.
+---Subcommands offered by :Jj, in completion order.
+local SUBCOMMANDS = { 'st', 'log', 'diff', 'new', 'squash' }
 
 ---@class jj.Check
 ---@field name string Tool or aspect probed, e.g. 'signing'.
@@ -103,229 +105,37 @@ local function check_type(name, value, expected, optional)
     end
 end
 
----Build the live config: factory defaults deep-copied, overrides merged,
----every key type-checked. Never mutates M.default_config.
----@param config table|nil Overrides; nil restores factory defaults.
----@return table merged Live config table.
-function M.setup_config(config)
-    check_type('config', config, 'table', true)
-    local merged = vim.tbl_deep_extend('force', vim.deepcopy(M.default_config), config or {})
-    check_type('confirm_writes', merged.confirm_writes, 'boolean')
-    check_type('docs_url', merged.docs_url, 'string')
-    check_type('float_height', merged.float_height, 'number')
-    check_type('float_width', merged.float_width, 'number')
-    check_type('jj_bin', merged.jj_bin, 'string')
-    check_type('jj_version_min', merged.jj_version_min, 'string')
-    check_type('known_upstream_version', merged.known_upstream_version, 'string')
-    check_type('log_limit', merged.log_limit, 'number')
-    check_type('select_impl', merged.select_impl, 'function', true)
-    check_type('timeout_ms', merged.timeout_ms, 'number')
-    check_type('update_repo', merged.update_repo, 'string')
-    if vim.trim(merged.jj_bin) == '' then
-        error('jj: option jj_bin must not be blank', 2)
+---:JjDocs -- open the verified upstream jj documentation.
+local function cmd_docs()
+    local url = M.config.docs_url
+    local opened = vim.ui.open ~= nil and pcall(vim.ui.open, url)
+    if not opened then
+        vim.notify('jj docs: ' .. url, vim.log.levels.INFO)
     end
-    if vim.trim(merged.update_repo) == '' then
-        error('jj: option update_repo must not be blank', 2)
-    end
-    return merged
 end
 
----Map a toolmgr binary report onto the jj.Check status vocabulary.
----@param report utils.toolmgr.BinaryReport
----@return jj.Check
-local function to_check(report)
-    local status = 'unavailable'
-    if report.present and report.meets_minimum then
-        status = 'ok'
-    elseif report.present then
-        status = 'below minimum'
-    end
-    return { name = report.name, status = status, detail = report.detail }
-end
-
----Run jj with an argv tail, prefixing the global non-interactive flags so
----piped output never invokes a pager or emits color escapes. Refuses
----before spawning when the binary is absent.
----@param argv_tail string[] argv words after 'jj'.
----@param opts? { cwd?: string, timeout_ms?: integer }
----@return vim.SystemCompleted|nil result
----@return string|nil err
-function M.run_jj(argv_tail, opts)
-    local bin = M.config.jj_bin
+---:JjUpdateCheck -- toolmgr update dialog for jj.
+local function cmd_update_check()
     local toolmgr = require('utils.toolmgr')
-    if not toolmgr.binary_present(bin) then
-        return nil, bin .. ' is unavailable on PATH'
+    for _, spec in ipairs(M.update_specs()) do
+        toolmgr.check_update(spec)
     end
-    local argv = { bin, '--color=never', '--no-pager' }
-    for _, word in ipairs(argv_tail) do
-        argv[#argv + 1] = word
-    end
-    local exec_opts = { timeout_ms = M.config.timeout_ms }
-    if opts ~= nil then
-        exec_opts.cwd = opts.cwd
-        if opts.timeout_ms ~= nil then
-            exec_opts.timeout_ms = opts.timeout_ms
-        end
-    end
-    return rce.safe_exec(argv, exec_opts)
 end
 
----jj repo root for cwd, probed with the read-only `jj root` (never with
----git state; the two VCSs can coexist).
----@param cwd? string Directory to probe (default: current).
----@return string|nil root
----@return string|nil err
-function M.repo_root(cwd)
-    local result, exec_err = M.run_jj({ 'root' }, { cwd = cwd or vim.fn.getcwd() })
-    if exec_err ~= nil then
-        return nil, exec_err
+---:JjValidate -- one vim.notify per check; missing tools say
+---"unavailable", never an error.
+local function cmd_validate()
+    for _, check in ipairs(M.checks()) do
+        local level = check.status == 'ok' and vim.log.levels.INFO or vim.log.levels.WARN
+        vim.notify(('jj %-8s %-13s %s'):format(check.name, check.status, check.detail), level)
     end
-    assert(result ~= nil, 'safe_exec returned no error but no result')
-    if result.code ~= 0 then
-        return nil, 'not inside a jj repo'
-    end
-    local root = vim.trim(result.stdout or '')
-    if root == '' then
-        return nil, 'jj root returned an empty path'
-    end
-    return root, nil
 end
 
----Whether cwd sits inside a jj repo.
----@param cwd? string Directory to probe (default: current).
----@return boolean
-function M.in_repo(cwd)
-    return M.repo_root(cwd) ~= nil
-end
-
----Trim command output to the float bound. Pure: non-table input yields an
----empty list, never an error.
----@param lines any
----@return string[] kept
-function M.trim_output(lines)
-    if type(lines) ~= 'table' then
-        return {}
-    end
-    local kept = {}
-    for index = 1, math.min(#lines, OUTPUT_LINES_MAX) do
-        kept[#kept + 1] = lines[index]
-    end
-    return kept
-end
-
----Lint a commit message against his config.toml message-line-length = 72.
----Pure: returns every line over the limit; non-strings and oversized
----input return nil + err, never throw.
----@param message string Commit message to scan.
----@return { lnum: integer, len: integer }[]|nil exceed
----@return string|nil err
-function M.check_message_lines(message)
-    if type(message) ~= 'string' then
-        return nil, 'message must be a string'
-    end
-    if #message > MESSAGE_BYTES_MAX then
-        return nil, ('message exceeds MESSAGE_BYTES_MAX=%d bytes'):format(MESSAGE_BYTES_MAX)
-    end
-    local exceed = {}
-    local lnum = 0
-    for _, line in ipairs(vim.split(message, '\n', { plain = true })) do
-        lnum = lnum + 1
-        if #line > MESSAGE_LINE_COLS then
-            exceed[#exceed + 1] = { lnum = lnum, len = #line }
-        end
-    end
-    return exceed, nil
-end
-
----GPG signing configuration, reported never enforced. Probes the same
----keys his config.toml sets ([signing] behavior="own", backend="gpg").
----Never throws; nil when unset or when jj is absent.
----@return jj.SigningInfo|nil info
-function M.signing_info()
-    local function config_get(key)
-        local result, exec_err = M.run_jj({ 'config', 'get', key }, {})
-        if exec_err ~= nil or result == nil or result.code ~= 0 then
-            return nil
-        end
-        local value = vim.trim(result.stdout or '')
-        if value == '' then
-            return nil
-        end
-        return value
-    end
-    local backend = config_get('signing.backend')
-    if backend == nil then
-        return nil
-    end
-    return { backend = backend, behavior = config_get('signing.behavior') }
-end
-
----Per-tool validation. Never throws: missing pieces are 'unavailable',
----never errors.
----@return jj.Check[] checks
-function M.checks()
-    local toolmgr = require('utils.toolmgr')
-    local cfg = M.config
-    local checks = {}
-    checks[#checks + 1] = to_check(toolmgr.check_binary({
-        name = cfg.jj_bin,
-        version_argv = { cfg.jj_bin, '--version' },
-        min_version = cfg.jj_version_min,
-    }))
-    local root = M.repo_root(vim.fn.getcwd())
-    checks[#checks + 1] = {
-        name = 'repo',
-        status = root ~= nil and 'ok' or 'unavailable',
-        detail = root ~= nil and ('jj repo root: ' .. root) or 'cwd is not inside a jj repo',
-    }
-    local signing = M.signing_info()
-    if signing ~= nil then
-        local behavior = signing.behavior ~= nil and (', behavior=' .. signing.behavior) or ''
-        checks[#checks + 1] = {
-            name = 'signing',
-            status = 'ok',
-            detail = ('signing.backend=%s%s (his config.toml sets backend=gpg)'):format(signing.backend, behavior),
-        }
-    else
-        checks[#checks + 1] = {
-            name = 'signing',
-            status = 'unavailable',
-            detail = 'signing not configured in jj config (his config.toml sets backend=gpg)',
-        }
-    end
-    return checks
-end
-
----Package name as this box's manager knows it. Arch extra/Fedora/nixpkgs
----and Debian 13+/Ubuntu 24.10+ ship `jujutsu`; the Homebrew formula is
----`jj` (verified against the jj install docs 2026-09-27).
----@param manager string|nil From utils.toolmgr.detect_package_manager().
----@return string package
-function M.package_for_manager(manager)
-    if manager == 'brew' then
-        return 'jj'
-    end
-    return 'jujutsu'
-end
-
----The toolmgr update spec for jj. Pure data; current_version is nil when
----the tool is absent, which check_update treats as "not installed".
----@return utils.toolmgr.UpdateSpec[]
-function M.update_specs()
-    local toolmgr = require('utils.toolmgr')
-    local cfg = M.config
-    local current = toolmgr.command_version({ cfg.jj_bin, '--version' })
-    return {
-        {
-            tool_label = 'jj',
-            repo = cfg.update_repo,
-            package = M.package_for_manager(toolmgr.detect_package_manager()),
-            current_version = current,
-            known_upstream_version = cfg.known_upstream_version,
-            migrations = MIGRATIONS_JJ,
-            select_impl = cfg.select_impl,
-        },
-    }
+---Notify a command failure in one canonical shape.
+---@param what string Command name for the message.
+---@param err any Failure reason.
+local function notify_failed(what, err)
+    vim.notify(what .. ' failed: ' .. tostring(err), vim.log.levels.ERROR)
 end
 
 ---Open a centered, minimal float for command output. `q` closes it.
@@ -356,13 +166,6 @@ local function open_float(lines, title, buf_name, width, height)
     vim.keymap.set('n', 'q', '<cmd>close<cr>', { buffer = buf, silent = true, desc = 'Close jj float' })
 end
 
----Notify a command failure in one canonical shape.
----@param what string Command name for the message.
----@param err any Failure reason.
-local function notify_failed(what, err)
-    vim.notify(what .. ' failed: ' .. tostring(err), vim.log.levels.ERROR)
-end
-
 ---Repo root for the current directory, or nil after notifying.
 ---@return string|nil root
 local function require_repo()
@@ -372,42 +175,6 @@ local function require_repo()
         return nil
     end
     return root
-end
-
----Show a read-only jj view (st/log/diff) in a float.
----@param sub 'st'|'log'|'diff'
-local function show_readonly(sub)
-    local root = require_repo()
-    if root == nil then
-        return
-    end
-    local argv
-    if sub == 'st' then
-        -- `st` is his config.toml alias for status; canonical verb runs it
-        -- even without his aliases loaded.
-        argv = { 'status' }
-    elseif sub == 'log' then
-        local count = math.min(math.max(M.config.log_limit, 1), LOG_LINES_CAP)
-        argv = { 'log', '--limit', tostring(count) }
-    else
-        argv = { 'diff' }
-    end
-    local result, exec_err = M.run_jj(argv, { cwd = root })
-    if exec_err ~= nil then
-        notify_failed('Jj ' .. sub, exec_err)
-        return
-    end
-    assert(result ~= nil, 'safe_exec returned no error but no result')
-    if result.code ~= 0 then
-        notify_failed('Jj ' .. sub, vim.trim(result.stderr or ''))
-        return
-    end
-    local lines = vim.split(result.stdout or '', '\n', { plain = true })
-    if #lines == 0 or (#lines == 1 and lines[1] == '') then
-        vim.notify('Jj ' .. sub .. ': no output', vim.log.levels.INFO)
-        return
-    end
-    open_float(lines, ' jj ' .. sub .. ' ', 'jj://' .. sub, M.config.float_width, M.config.float_height)
 end
 
 ---Run a write op (new/squash) behind an explicit vim.ui.select
@@ -451,21 +218,113 @@ local function request_write(sub, extra)
     end)
 end
 
----Subcommands offered by :Jj, in completion order.
-local SUBCOMMANDS = { 'st', 'log', 'diff', 'new', 'squash' }
+---Show a read-only jj view (st/log/diff) in a float.
+---@param sub 'st'|'log'|'diff'
+local function show_readonly(sub)
+    local root = require_repo()
+    if root == nil then
+        return
+    end
+    local argv
+    if sub == 'st' then
+        -- `st` is his config.toml alias for status; canonical verb runs it
+        -- even without his aliases loaded.
+        argv = { 'status' }
+    elseif sub == 'log' then
+        local count = math.min(math.max(M.config.log_limit, 1), LOG_LINES_CAP)
+        argv = { 'log', '--limit', tostring(count) }
+    else
+        argv = { 'diff' }
+    end
+    local result, exec_err = M.run_jj(argv, { cwd = root })
+    if exec_err ~= nil then
+        notify_failed('Jj ' .. sub, exec_err)
+        return
+    end
+    assert(result ~= nil, 'safe_exec returned no error but no result')
+    if result.code ~= 0 then
+        notify_failed('Jj ' .. sub, vim.trim(result.stderr or ''))
+        return
+    end
+    local lines = vim.split(result.stdout or '', '\n', { plain = true })
+    if #lines == 0 or (#lines == 1 and lines[1] == '') then
+        vim.notify('Jj ' .. sub .. ': no output', vim.log.levels.INFO)
+        return
+    end
+    open_float(lines, ' jj ' .. sub .. ' ', 'jj://' .. sub, M.config.float_width, M.config.float_height)
+end
 
----Completion callback for :Jj: filters the five subcommands by prefix.
----@param arg_lead string Text being completed.
----@return string[] matches
-function M.complete_subcommand(arg_lead)
-    local matches = {}
-    local lead = arg_lead or ''
-    for _, name in ipairs(SUBCOMMANDS) do
-        if name:sub(1, #lead) == lead then
-            matches[#matches + 1] = name
+---Map a toolmgr binary report onto the jj.Check status vocabulary.
+---@param report utils.toolmgr.BinaryReport
+---@return jj.Check
+local function to_check(report)
+    local status = 'unavailable'
+    if report.present and report.meets_minimum then
+        status = 'ok'
+    elseif report.present then
+        status = 'below minimum'
+    end
+    return { name = report.name, status = status, detail = report.detail }
+end
+
+---Lint a commit message against his config.toml message-line-length = 72.
+---Pure: returns every line over the limit; non-strings and oversized
+---input return nil + err, never throw.
+---@param message string Commit message to scan.
+---@return { lnum: integer, len: integer }[]|nil exceed
+---@return string|nil err
+function M.check_message_lines(message)
+    if type(message) ~= 'string' then
+        return nil, 'message must be a string'
+    end
+    if #message > MESSAGE_BYTES_MAX then
+        return nil, ('message exceeds MESSAGE_BYTES_MAX=%d bytes'):format(MESSAGE_BYTES_MAX)
+    end
+    local exceed = {}
+    local lnum = 0
+    for _, line in ipairs(vim.split(message, '\n', { plain = true })) do
+        lnum = lnum + 1
+        if #line > MESSAGE_LINE_COLS then
+            exceed[#exceed + 1] = { lnum = lnum, len = #line }
         end
     end
-    return matches
+    return exceed, nil
+end
+
+---Per-tool validation. Never throws: missing pieces are 'unavailable',
+---never errors.
+---@return jj.Check[] checks
+function M.checks()
+    local toolmgr = require('utils.toolmgr')
+    local cfg = M.config
+    local checks = {}
+    checks[#checks + 1] = to_check(toolmgr.check_binary({
+        name = cfg.jj_bin,
+        version_argv = { cfg.jj_bin, '--version' },
+        min_version = cfg.jj_version_min,
+    }))
+    local root = M.repo_root(vim.fn.getcwd())
+    checks[#checks + 1] = {
+        name = 'repo',
+        status = root ~= nil and 'ok' or 'unavailable',
+        detail = root ~= nil and ('jj repo root: ' .. root) or 'cwd is not inside a jj repo',
+    }
+    local signing = M.signing_info()
+    if signing ~= nil then
+        local behavior = signing.behavior ~= nil and (', behavior=' .. signing.behavior) or ''
+        checks[#checks + 1] = {
+            name = 'signing',
+            status = 'ok',
+            detail = ('signing.backend=%s%s (his config.toml sets backend=gpg)'):format(signing.backend, behavior),
+        }
+    else
+        checks[#checks + 1] = {
+            name = 'signing',
+            status = 'unavailable',
+            detail = 'signing not configured in jj config (his config.toml sets backend=gpg)',
+        }
+    end
+    return checks
 end
 
 ---:Jj dispatcher. Read-only views first; writes confirm first; unknown
@@ -497,30 +356,85 @@ function M.cmd_jj(cmd_opts)
     )
 end
 
----:JjDocs -- open the verified upstream jj documentation.
-local function cmd_docs()
-    local url = M.config.docs_url
-    local opened = vim.ui.open ~= nil and pcall(vim.ui.open, url)
-    if not opened then
-        vim.notify('jj docs: ' .. url, vim.log.levels.INFO)
+---Completion callback for :Jj: filters the five subcommands by prefix.
+---@param arg_lead string Text being completed.
+---@return string[] matches
+function M.complete_subcommand(arg_lead)
+    local matches = {}
+    local lead = arg_lead or ''
+    for _, name in ipairs(SUBCOMMANDS) do
+        if name:sub(1, #lead) == lead then
+            matches[#matches + 1] = name
+        end
     end
+    return matches
 end
 
----:JjValidate -- one vim.notify per check; missing tools say
----"unavailable", never an error.
-local function cmd_validate()
-    for _, check in ipairs(M.checks()) do
-        local level = check.status == 'ok' and vim.log.levels.INFO or vim.log.levels.WARN
-        vim.notify(('jj %-8s %-13s %s'):format(check.name, check.status, check.detail), level)
-    end
+---Whether cwd sits inside a jj repo.
+---@param cwd? string Directory to probe (default: current).
+---@return boolean
+function M.in_repo(cwd)
+    return M.repo_root(cwd) ~= nil
 end
 
----:JjUpdateCheck -- toolmgr update dialog for jj.
-local function cmd_update_check()
+---Package name as this box's manager knows it. Arch extra/Fedora/nixpkgs
+---and Debian 13+/Ubuntu 24.10+ ship `jujutsu`; the Homebrew formula is
+---`jj` (verified against the jj install docs 2026-09-27).
+---@param manager string|nil From utils.toolmgr.detect_package_manager().
+---@return string package
+function M.package_for_manager(manager)
+    if manager == 'brew' then
+        return 'jj'
+    end
+    return 'jujutsu'
+end
+
+---jj repo root for cwd, probed with the read-only `jj root` (never with
+---git state; the two VCSs can coexist).
+---@param cwd? string Directory to probe (default: current).
+---@return string|nil root
+---@return string|nil err
+function M.repo_root(cwd)
+    local result, exec_err = M.run_jj({ 'root' }, { cwd = cwd or vim.fn.getcwd() })
+    if exec_err ~= nil then
+        return nil, exec_err
+    end
+    assert(result ~= nil, 'safe_exec returned no error but no result')
+    if result.code ~= 0 then
+        return nil, 'not inside a jj repo'
+    end
+    local root = vim.trim(result.stdout or '')
+    if root == '' then
+        return nil, 'jj root returned an empty path'
+    end
+    return root, nil
+end
+
+---Run jj with an argv tail, prefixing the global non-interactive flags so
+---piped output never invokes a pager or emits color escapes. Refuses
+---before spawning when the binary is absent.
+---@param argv_tail string[] argv words after 'jj'.
+---@param opts? { cwd?: string, timeout_ms?: integer }
+---@return vim.SystemCompleted|nil result
+---@return string|nil err
+function M.run_jj(argv_tail, opts)
+    local bin = M.config.jj_bin
     local toolmgr = require('utils.toolmgr')
-    for _, spec in ipairs(M.update_specs()) do
-        toolmgr.check_update(spec)
+    if not toolmgr.binary_present(bin) then
+        return nil, bin .. ' is unavailable on PATH'
     end
+    local argv = { bin, '--color=never', '--no-pager' }
+    for _, word in ipairs(argv_tail) do
+        argv[#argv + 1] = word
+    end
+    local exec_opts = { timeout_ms = M.config.timeout_ms }
+    if opts ~= nil then
+        exec_opts.cwd = opts.cwd
+        if opts.timeout_ms ~= nil then
+            exec_opts.timeout_ms = opts.timeout_ms
+        end
+    end
+    return rce.safe_exec(argv, exec_opts)
 end
 
 ---Register the :Jj dispatcher and the :Jj* checks. Idempotent: commands
@@ -545,6 +459,91 @@ function M.setup(config)
     api.nvim_create_user_command('JjDocs', cmd_docs, { desc = 'Open the upstream jj documentation' })
     api.nvim_create_user_command('JjValidate', cmd_validate, { desc = 'Per-tool validation report' })
     api.nvim_create_user_command('JjUpdateCheck', cmd_update_check, { desc = 'Update check for jj' })
+end
+
+---Build the live config: factory defaults deep-copied, overrides merged,
+---every key type-checked. Never mutates M.default_config.
+---@param config table|nil Overrides; nil restores factory defaults.
+---@return table merged Live config table.
+function M.setup_config(config)
+    check_type('config', config, 'table', true)
+    local merged = vim.tbl_deep_extend('force', vim.deepcopy(M.default_config), config or {})
+    check_type('confirm_writes', merged.confirm_writes, 'boolean')
+    check_type('docs_url', merged.docs_url, 'string')
+    check_type('float_height', merged.float_height, 'number')
+    check_type('float_width', merged.float_width, 'number')
+    check_type('jj_bin', merged.jj_bin, 'string')
+    check_type('jj_version_min', merged.jj_version_min, 'string')
+    check_type('known_upstream_version', merged.known_upstream_version, 'string')
+    check_type('log_limit', merged.log_limit, 'number')
+    check_type('select_impl', merged.select_impl, 'function', true)
+    check_type('timeout_ms', merged.timeout_ms, 'number')
+    check_type('update_repo', merged.update_repo, 'string')
+    if vim.trim(merged.jj_bin) == '' then
+        error('jj: option jj_bin must not be blank', 2)
+    end
+    if vim.trim(merged.update_repo) == '' then
+        error('jj: option update_repo must not be blank', 2)
+    end
+    return merged
+end
+
+---GPG signing configuration, reported never enforced. Probes the same
+---keys his config.toml sets ([signing] behavior="own", backend="gpg").
+---Never throws; nil when unset or when jj is absent.
+---@return jj.SigningInfo|nil info
+function M.signing_info()
+    local function config_get(key)
+        local result, exec_err = M.run_jj({ 'config', 'get', key }, {})
+        if exec_err ~= nil or result == nil or result.code ~= 0 then
+            return nil
+        end
+        local value = vim.trim(result.stdout or '')
+        if value == '' then
+            return nil
+        end
+        return value
+    end
+    local backend = config_get('signing.backend')
+    if backend == nil then
+        return nil
+    end
+    return { backend = backend, behavior = config_get('signing.behavior') }
+end
+
+---Trim command output to the float bound. Pure: non-table input yields an
+---empty list, never an error.
+---@param lines any
+---@return string[] kept
+function M.trim_output(lines)
+    if type(lines) ~= 'table' then
+        return {}
+    end
+    local kept = {}
+    for index = 1, math.min(#lines, OUTPUT_LINES_MAX) do
+        kept[#kept + 1] = lines[index]
+    end
+    return kept
+end
+
+---The toolmgr update spec for jj. Pure data; current_version is nil when
+---the tool is absent, which check_update treats as "not installed".
+---@return utils.toolmgr.UpdateSpec[]
+function M.update_specs()
+    local toolmgr = require('utils.toolmgr')
+    local cfg = M.config
+    local current = toolmgr.command_version({ cfg.jj_bin, '--version' })
+    return {
+        {
+            tool_label = 'jj',
+            repo = cfg.update_repo,
+            package = M.package_for_manager(toolmgr.detect_package_manager()),
+            current_version = current,
+            known_upstream_version = cfg.known_upstream_version,
+            migrations = MIGRATIONS_JJ,
+            select_impl = cfg.select_impl,
+        },
+    }
 end
 
 return M

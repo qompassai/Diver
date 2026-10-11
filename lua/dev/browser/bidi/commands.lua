@@ -8,22 +8,6 @@ local config = require('dev.browser.bidi.config')
 
 local M = {}
 
----@return table bidi session API (lazy so setup order never matters)
-local function bidi()
-    return require('dev.browser.bidi')
-end
-
----Build the confirmation prompt for a JS expression. Pure.
----@param expression string
----@return string prompt
-function M._eval_prompt(expression)
-    local preview = expression
-    if #preview > config.eval_preview_chars_max then
-        preview = preview:sub(1, config.eval_preview_chars_max) .. '... (truncated)'
-    end
-    return 'Run JavaScript in the automated browser? ' .. preview
-end
-
 ---True when the expression is exactly allowlisted in config.
 ---@param expression string
 ---@return boolean
@@ -71,6 +55,22 @@ function M._confirm_eval(expression, on_decision)
     end
 end
 
+---Build the confirmation prompt for a JS expression. Pure.
+---@param expression string
+---@return string prompt
+function M._eval_prompt(expression)
+    local preview = expression
+    if #preview > config.eval_preview_chars_max then
+        preview = preview:sub(1, config.eval_preview_chars_max) .. '... (truncated)'
+    end
+    return 'Run JavaScript in the automated browser? ' .. preview
+end
+
+---@return table bidi session API (lazy so setup order never matters)
+local function bidi()
+    return require('dev.browser.bidi')
+end
+
 ---@param name string
 ---@param rhs fun(opts: table)
 ---@param opts table
@@ -78,8 +78,50 @@ local function command(name, rhs, opts)
     vim.api.nvim_create_user_command(name, rhs, opts)
 end
 
+---:BidiEval with its per-invocation confirmation.
+local function reg_eval()
+    command('BidiEval', function(opts)
+        if opts.args == '' then
+            vim.notify('bidi: :BidiEval needs a JS expression', vim.log.levels.WARN)
+            return
+        end
+        local expression = opts.args
+        M._confirm_eval(expression, function(allowed, reason)
+            if not allowed then
+                vim.notify('bidi: eval denied: ' .. reason, vim.log.levels.WARN)
+                return
+            end
+            bidi().evaluate(expression, function(err, value)
+                if err ~= nil then
+                    vim.notify('bidi: eval failed: ' .. err, vim.log.levels.ERROR)
+                    return
+                end
+                vim.notify('bidi: => ' .. vim.inspect(value), vim.log.levels.INFO)
+            end)
+        end)
+    end, { nargs = 1, desc = 'BiDi: evaluate JS (asks for confirmation)' })
+end
 
+---:BidiNetwork and :BidiClose.
+local function reg_network_close()
+    command('BidiNetwork', function()
+        bidi().network_log(function(err)
+            if err ~= nil then
+                vim.notify('bidi: network observe failed: ' .. err, vim.log.levels.ERROR)
+                return
+            end
+            vim.cmd('copen')
+        end)
+    end, { nargs = 0, desc = 'BiDi: observe network events to quickfix' })
 
+    command('BidiClose', function()
+        bidi().close(function()
+            vim.notify('bidi: session closed', vim.log.levels.INFO)
+        end)
+    end, { nargs = 0, desc = 'BiDi: close session and reap driver' })
+end
+
+---:BidiOpen and :BidiNavigate.
 local function reg_open_navigate()
     command('BidiOpen', function(opts)
         local kind = opts.args ~= '' and opts.args or 'chrome'
@@ -116,30 +158,6 @@ local function reg_open_navigate()
     end, { nargs = 1, desc = 'BiDi: navigate the tab (wait complete)' })
 end
 
----:BidiEval with its per-invocation confirmation.
-local function reg_eval()
-    command('BidiEval', function(opts)
-        if opts.args == '' then
-            vim.notify('bidi: :BidiEval needs a JS expression', vim.log.levels.WARN)
-            return
-        end
-        local expression = opts.args
-        M._confirm_eval(expression, function(allowed, reason)
-            if not allowed then
-                vim.notify('bidi: eval denied: ' .. reason, vim.log.levels.WARN)
-                return
-            end
-            bidi().evaluate(expression, function(err, value)
-                if err ~= nil then
-                    vim.notify('bidi: eval failed: ' .. err, vim.log.levels.ERROR)
-                    return
-                end
-                vim.notify('bidi: => ' .. vim.inspect(value), vim.log.levels.INFO)
-            end)
-        end)
-    end, { nargs = 1, desc = 'BiDi: evaluate JS (asks for confirmation)' })
-end
-
 ---:BidiScreenshot and :BidiConsole.
 local function reg_screenshot_console()
     command('BidiScreenshot', function()
@@ -164,33 +182,13 @@ local function reg_screenshot_console()
     end, { nargs = 0, desc = 'BiDi: stream console entries to quickfix' })
 end
 
----:BidiNetwork and :BidiClose.
-local function reg_network_close()
-    command('BidiNetwork', function()
-        bidi().network_log(function(err)
-            if err ~= nil then
-                vim.notify('bidi: network observe failed: ' .. err, vim.log.levels.ERROR)
-                return
-            end
-            vim.cmd('copen')
-        end)
-    end, { nargs = 0, desc = 'BiDi: observe network events to quickfix' })
-
-    command('BidiClose', function()
-        bidi().close(function()
-            vim.notify('bidi: session closed', vim.log.levels.INFO)
-        end)
-    end, { nargs = 0, desc = 'BiDi: close session and reap driver' })
-end
-
----:BidiOpen and :BidiNavigate.
 ---Register all :Bidi* commands. Idempotent via nvim_create_user_command
 ---replace semantics on re-setup.
 function M.register()
-    reg_open_navigate()
     reg_eval()
-    reg_screenshot_console()
     reg_network_close()
+    reg_open_navigate()
+    reg_screenshot_console()
 end
 
 return M
