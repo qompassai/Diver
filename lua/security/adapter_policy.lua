@@ -14,8 +14,8 @@
 
 local M = {}
 
-local REDACTED = '[REDACTED]' -- replacement marker for scrubbed values.
 local MODE_WORLD_WRITABLE = 2 -- S_IWOTH bit in a uv fs_stat mode field.
+local REDACTED = '[REDACTED]' -- replacement marker for scrubbed values.
 
 ---Whole secret-bearing key names (checked case-insensitively), plus the
 ---*_SUFFIX forms handled in is_secret_key: *_TOKEN, *_SECRET, *_KEY,
@@ -23,11 +23,11 @@ local MODE_WORLD_WRITABLE = 2 -- S_IWOTH bit in a uv fs_stat mode field.
 ---env entry literally named KEY is never passed through.
 ---@type table<string, boolean>
 local SECRET_WORDS = {
-    token = true,
-    secret = true,
     key = true,
-    password = true,
     passwd = true,
+    password = true,
+    secret = true,
+    token = true,
 }
 
 ---@param name string Key name to inspect.
@@ -57,6 +57,33 @@ end
 ---@param allowlist string[] Variable names permitted through.
 ---@return table<string,string>|nil filtered Fresh table, or nil on bad input.
 ---@return string|nil err Human-readable reason on expected failure.
+---Conservative default environment allowlist for debug adapters. Rationale:
+---  HOME — adapters read their own per-user settings from ~/.config.
+---  LANG / LC_* — locale only affects message language and collation.
+---  PATH — adapters resolve their helper binaries through PATH; the caller
+---    is expected to supply a sane one.
+---  TERM — subprocesses use TERM to pick output formatting; harmless.
+---Explicitly EXCLUDED (dynamic-linker injection risk): LD_PRELOAD and
+---LD_LIBRARY_PATH are read by the dynamic linker before main() runs, so a
+---poisoned value silently loads attacker code into the adapter process;
+---DYLD_* are the macOS equivalents (DYLD_INSERT_LIBRARIES and friends).
+---Returns a fresh table on every call so callers cannot poison a shared one.
+---@return string[]
+function M.default_allowlist()
+    return {
+        'HOME',
+        'LANG',
+        'LC_ALL',
+        'LC_COLLATE',
+        'LC_CTYPE',
+        'LC_MESSAGES',
+        'LC_NUMERIC',
+        'LC_TIME',
+        'PATH',
+        'TERM',
+    }
+end
+
 function M.filter_env(env, allowlist)
     if type(env) ~= 'table' then
         return nil, 'filter_env expects env to be a table, got ' .. type(env)
@@ -152,33 +179,6 @@ function M.trust_workspace(dir)
         return false, 'workspace .vscode/launch.json is world-writable'
     end
     return true, 'workspace is under $HOME, not world-writable, launch.json check passed'
-end
-
----Conservative default environment allowlist for debug adapters. Rationale:
----  PATH — adapters resolve their helper binaries through PATH; the caller
----    is expected to supply a sane one.
----  HOME — adapters read their own per-user settings from ~/.config.
----  TERM — subprocesses use TERM to pick output formatting; harmless.
----  LANG / LC_* — locale only affects message language and collation.
----Explicitly EXCLUDED (dynamic-linker injection risk): LD_PRELOAD and
----LD_LIBRARY_PATH are read by the dynamic linker before main() runs, so a
----poisoned value silently loads attacker code into the adapter process;
----DYLD_* are the macOS equivalents (DYLD_INSERT_LIBRARIES and friends).
----Returns a fresh table on every call so callers cannot poison a shared one.
----@return string[]
-function M.default_allowlist()
-    return {
-        'PATH',
-        'HOME',
-        'TERM',
-        'LANG',
-        'LC_ALL',
-        'LC_CTYPE',
-        'LC_MESSAGES',
-        'LC_NUMERIC',
-        'LC_TIME',
-        'LC_COLLATE',
-    }
 end
 
 return M

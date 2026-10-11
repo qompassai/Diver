@@ -17,27 +17,11 @@
 -- #################################################################
 
 local M = {}
-local ns = vim.api.nvim_create_namespace('dap-virtual-text-util')
-local plugin_id = 'dap-virtual-text-util'
 local defaults = {
-    enabled = true,
     all_frames = false,
+    all_references = false,
     clear_on_continue = false,
     commented = false,
-    only_first_definition = true,
-    all_references = false,
-    highlight_changed_variables = true,
-    highlight_new_as_changed = false,
-    show_stop_reason = true,
-    virt_text_pos = 'inline',
-    virt_lines = false,
-    virt_lines_above = true,
-    virt_text_win_col = nil,
-    text_prefix = '',
-    separator = ', ',
-    error_prefix = ' ',
-    info_prefix = ' ',
-    filter_references_pattern = nil,
     ---@type DapDisplayCallback
     display_callback = function(variable)
         if not variable then
@@ -49,16 +33,94 @@ local defaults = {
         end
         return tostring(value)
     end,
+    enabled = true,
+    error_prefix = ' ',
+    filter_references_pattern = nil,
+    highlight_changed_variables = true,
+    highlight_new_as_changed = false,
+    info_prefix = ' ',
+    only_first_definition = true,
+    separator = ', ',
+    show_stop_reason = true,
+    text_prefix = '',
+    virt_lines = false,
+    virt_lines_above = true,
+    virt_text_pos = 'inline',
+    virt_text_win_col = nil,
 }
 
+local ns = vim.api.nvim_create_namespace('dap-virtual-text-util')
+local plugin_id = 'dap-virtual-text-util'
 local state = {
-    opts = vim.deepcopy(defaults),
-    last_frames = {},
-    stopped_frame = nil,
     error_msg = nil,
     info_msg = nil,
+    last_frames = {},
+    opts = vim.deepcopy(defaults),
     registered = false,
+    stopped_frame = nil,
 }
+
+local function collect_nodes(_buf, parser, all_references)
+    if not parser then
+        return {}, {}
+    end
+
+    local ok, trees = pcall(parser.parse, parser)
+    if not ok or not trees or not trees[1] then
+        return {}, {}
+    end
+
+    local root = trees[1]:root()
+    if not root then
+        return {}, {}
+    end
+
+    local scope_nodes = { root }
+    local def_nodes = {}
+
+    local function walk(node)
+        if not node then
+            return
+        end
+
+        local t = node:type()
+        if t == 'identifier' or (all_references and (t:find('identifier') or t:find('name'))) then
+            def_nodes[#def_nodes + 1] = node
+        end
+
+        for child in node:iter_children() do
+            walk(child)
+        end
+    end
+
+    walk(root)
+    return scope_nodes, def_nodes
+end
+
+local function extmark_for_content(buf, line, chunks, inline)
+    local line_text = vim.api.nvim_buf_get_lines(buf, line, line + 1, true)[1] or ''
+    local win_col = math.max(state.opts.virt_text_win_col or 0, #line_text + 1)
+
+    for i, item in ipairs(chunks) do
+        local text, hl, node = item[1], item[2], item.node
+        local sr, sc, er, ec = node:range()
+
+        if i < #chunks and not inline then
+            text = text .. state.opts.separator
+        end
+
+        vim.api.nvim_buf_set_extmark(buf, ns, inline and er or sr, inline and ec or sc, {
+            end_line = er,
+            end_col = ec,
+            hl_mode = 'combine',
+            virt_text = { { text, hl } },
+            virt_text_pos = state.opts.virt_text_pos,
+            virt_text_win_col = state.opts.virt_text_win_col and win_col or nil,
+        })
+
+        win_col = win_col + #text + 1
+    end
+end
 
 local function get_dap()
     local ok, dap = pcall(require, 'dap')
@@ -87,6 +149,131 @@ local function get_parser(buf, ft)
     end
 
     return parser, lang
+end
+
+local function in_scope(scope_nodes, node, frame_line)
+    if not node or not frame_line then
+        return false
+    end
+
+    local row = node:start()
+    if row == nil then
+        return false
+    end
+
+    if row > (frame_line - 1) then
+        return false
+    end
+
+    if not scope_nodes or #scope_nodes == 0 then
+        return true
+    end
+
+    for _, scope in ipairs(scope_nodes) do
+        local sr, _, er, _ = scope:range()
+        local stop_row = frame_line - 1
+        local inside_scope = (stop_row >= sr) and (stop_row <= er)
+        local inside_var = (row >= sr) and (row <= er)
+        if inside_scope and inside_var then
+            return true
+        end
+    end
+
+    return false
+end
+
+local function register_dap_listeners()
+    local dap = get_dap()
+    if not dap or state.registered then
+        return false
+    end
+
+    dap.listeners.after.event_terminated[plugin_id] = function()
+        M.clear()
+        state.last_frames = {}
+        state.stopped_frame = nil
+        state.error_msg = nil
+        state.info_msg = nil
+    end
+
+    dap.listeners.after.event_exited[plugin_id] = dap.listeners.after.event_terminated[plugin_id]
+
+    local on_continue = function()
+        state.error_msg = nil
+        state.info_msg = nil
+        state.stopped_frame = nil
+        if state.opts.clear_on_continue then
+            M.clear()
+        end
+    end
+
+    dap.listeners.before.event_continued[plugin_id] = on_continue
+    dap.listeners.before.continue[plugin_id] = on_continue
+
+    dap.listeners.before.event_stopped[plugin_id] = function(session)
+        for _, thread in pairs(session.threads or {}) do
+            for _, frame in pairs(thread.frames or {}) do
+                if frame and frame.id then
+                    state.last_frames[frame.id] = frame
+                end
+            end
+        end
+    end
+
+    dap.listeners.after.event_stopped[plugin_id] = function(_, event)
+        if not state.opts.show_stop_reason then
+            return
+        end
+        if event and event.reason == 'exception' then
+            state.error_msg = state.opts.error_prefix .. 'Stopped due to exception'
+        elseif event and event.reason == 'data breakpoint' then
+            state.info_msg = state.opts.info_prefix .. 'Stopped due to data breakpoint'
+        end
+    end
+
+    dap.listeners.after.variables[plugin_id] = function(session)
+        M.refresh(session)
+    end
+
+    dap.listeners.after.stackTrace[plugin_id] = function(session, body)
+        if not state.opts.enabled then
+            return
+        end
+
+        local thread = session.stopped_thread_id and session.threads[session.stopped_thread_id] or nil
+        local frames = thread and thread.frames or {}
+        local with_source = vim.tbl_filter(function(f)
+            return f.source and f.source.path
+        end, frames)
+        state.stopped_frame = with_source[1]
+
+        if state.opts.all_frames and body then
+            local requested = {}
+            for _, f in pairs(body.stackFrames or {}) do
+                if not requested[f.name] then
+                    if not f.scopes or #f.scopes == 0 then
+                        pcall(session._request_scopes, session, f)
+                    end
+                    requested[f.name] = true
+                end
+            end
+        end
+    end
+
+    dap.listeners.after.exceptionInfo[plugin_id] = function(_, _, response)
+        if not state.opts.enabled or not response then
+            return
+        end
+        local typename = response.details and response.details.typeName or ''
+        local desc = response.description or ''
+        state.error_msg = state.opts.error_prefix
+            .. typename
+            .. ((typename ~= '' and desc ~= '') and ': ' or '')
+            .. desc
+    end
+
+    state.registered = true
+    return true
 end
 
 local function set_message(frame, msg, hl, inline)
@@ -127,99 +314,6 @@ local function variables_from_scopes(scopes, _lang)
         end
     end
     return vars
-end
-
-local function collect_nodes(_buf, parser, all_references)
-    if not parser then
-        return {}, {}
-    end
-
-    local ok, trees = pcall(parser.parse, parser)
-    if not ok or not trees or not trees[1] then
-        return {}, {}
-    end
-
-    local root = trees[1]:root()
-    if not root then
-        return {}, {}
-    end
-
-    local scope_nodes = { root }
-    local def_nodes = {}
-
-    local function walk(node)
-        if not node then
-            return
-        end
-
-        local t = node:type()
-        if t == 'identifier' or (all_references and (t:find('identifier') or t:find('name'))) then
-            def_nodes[#def_nodes + 1] = node
-        end
-
-        for child in node:iter_children() do
-            walk(child)
-        end
-    end
-
-    walk(root)
-    return scope_nodes, def_nodes
-end
-
-local function in_scope(scope_nodes, node, frame_line)
-    if not node or not frame_line then
-        return false
-    end
-
-    local row = node:start()
-    if row == nil then
-        return false
-    end
-
-    if row > (frame_line - 1) then
-        return false
-    end
-
-    if not scope_nodes or #scope_nodes == 0 then
-        return true
-    end
-
-    for _, scope in ipairs(scope_nodes) do
-        local sr, _, er, _ = scope:range()
-        local stop_row = frame_line - 1
-        local inside_scope = (stop_row >= sr) and (stop_row <= er)
-        local inside_var = (row >= sr) and (row <= er)
-        if inside_scope and inside_var then
-            return true
-        end
-    end
-
-    return false
-end
-
-local function extmark_for_content(buf, line, chunks, inline)
-    local line_text = vim.api.nvim_buf_get_lines(buf, line, line + 1, true)[1] or ''
-    local win_col = math.max(state.opts.virt_text_win_col or 0, #line_text + 1)
-
-    for i, item in ipairs(chunks) do
-        local text, hl, node = item[1], item[2], item.node
-        local sr, sc, er, ec = node:range()
-
-        if i < #chunks and not inline then
-            text = text .. state.opts.separator
-        end
-
-        vim.api.nvim_buf_set_extmark(buf, ns, inline and er or sr, inline and ec or sc, {
-            end_line = er,
-            end_col = ec,
-            hl_mode = 'combine',
-            virt_text = { { text, hl } },
-            virt_text_pos = state.opts.virt_text_pos,
-            virt_text_win_col = state.opts.virt_text_win_col and win_col or nil,
-        })
-
-        win_col = win_col + #text + 1
-    end
 end
 
 local function render_frame(frame)
@@ -328,106 +422,22 @@ local function render_frame(frame)
     end
 end
 
-local function register_dap_listeners()
-    local dap = get_dap()
-    if not dap or state.registered then
-        return false
-    end
-
-    dap.listeners.after.event_terminated[plugin_id] = function()
-        M.clear()
-        state.last_frames = {}
-        state.stopped_frame = nil
-        state.error_msg = nil
-        state.info_msg = nil
-    end
-
-    dap.listeners.after.event_exited[plugin_id] = dap.listeners.after.event_terminated[plugin_id]
-
-    local on_continue = function()
-        state.error_msg = nil
-        state.info_msg = nil
-        state.stopped_frame = nil
-        if state.opts.clear_on_continue then
-            M.clear()
-        end
-    end
-
-    dap.listeners.before.event_continued[plugin_id] = on_continue
-    dap.listeners.before.continue[plugin_id] = on_continue
-
-    dap.listeners.before.event_stopped[plugin_id] = function(session)
-        for _, thread in pairs(session.threads or {}) do
-            for _, frame in pairs(thread.frames or {}) do
-                if frame and frame.id then
-                    state.last_frames[frame.id] = frame
-                end
-            end
-        end
-    end
-
-    dap.listeners.after.event_stopped[plugin_id] = function(_, event)
-        if not state.opts.show_stop_reason then
-            return
-        end
-        if event and event.reason == 'exception' then
-            state.error_msg = state.opts.error_prefix .. 'Stopped due to exception'
-        elseif event and event.reason == 'data breakpoint' then
-            state.info_msg = state.opts.info_prefix .. 'Stopped due to data breakpoint'
-        end
-    end
-
-    dap.listeners.after.variables[plugin_id] = function(session)
-        M.refresh(session)
-    end
-
-    dap.listeners.after.stackTrace[plugin_id] = function(session, body)
-        if not state.opts.enabled then
-            return
-        end
-
-        local thread = session.stopped_thread_id and session.threads[session.stopped_thread_id] or nil
-        local frames = thread and thread.frames or {}
-        local with_source = vim.tbl_filter(function(f)
-            return f.source and f.source.path
-        end, frames)
-        state.stopped_frame = with_source[1]
-
-        if state.opts.all_frames and body then
-            local requested = {}
-            for _, f in pairs(body.stackFrames or {}) do
-                if not requested[f.name] then
-                    if not f.scopes or #f.scopes == 0 then
-                        pcall(session._request_scopes, session, f)
-                    end
-                    requested[f.name] = true
-                end
-            end
-        end
-    end
-
-    dap.listeners.after.exceptionInfo[plugin_id] = function(_, _, response)
-        if not state.opts.enabled or not response then
-            return
-        end
-        local typename = response.details and response.details.typeName or ''
-        local desc = response.description or ''
-        state.error_msg = state.opts.error_prefix
-            .. typename
-            .. ((typename ~= '' and desc ~= '') and ': ' or '')
-            .. desc
-    end
-
-    state.registered = true
-    return true
-end
-
 function M.clear()
     pcall(vim.api.nvim_buf_clear_namespace, 0, ns, 0, -1)
 
     for _, buf in ipairs(vim.api.nvim_list_bufs()) do
         pcall(vim.api.nvim_buf_clear_namespace, buf, ns, 0, -1)
     end
+end
+
+function M.disable()
+    state.opts.enabled = false
+    M.clear()
+end
+
+function M.enable()
+    state.opts.enabled = true
+    M.refresh()
 end
 
 function M.refresh(session)
@@ -479,23 +489,35 @@ function M.refresh(session)
     end
 end
 
-function M.enable()
-    state.opts.enabled = true
-    M.refresh()
-end
-
-function M.disable()
-    state.opts.enabled = false
-    M.clear()
-end
-
-function M.toggle()
-    state.opts.enabled = not state.opts.enabled
-    if state.opts.enabled then
-        M.refresh()
-    else
-        M.clear()
+function M.render(frame)
+    if not state.opts.enabled then
+        return
     end
+    render_frame(frame)
+end
+
+function M.set_error(frame, msg)
+    state.stopped_frame = frame or state.stopped_frame
+    state.error_msg = msg
+    if state.stopped_frame and msg then
+        set_message(state.stopped_frame, msg, 'NvimDapVirtualTextError', state.opts.virt_text_pos == 'inline')
+    end
+end
+
+function M.set_frame(frame)
+    state.stopped_frame = frame
+end
+
+function M.set_info(frame, msg)
+    state.stopped_frame = frame or state.stopped_frame
+    state.info_msg = msg
+    if state.stopped_frame and msg then
+        set_message(state.stopped_frame, msg, 'NvimDapVirtualTextInfo', state.opts.virt_text_pos == 'inline')
+    end
+end
+
+function M.set_last_frames(frames)
+    state.last_frames = frames or {}
 end
 
 function M.setup(opts)
@@ -516,35 +538,13 @@ function M.setup(opts)
     return M
 end
 
-function M.render(frame)
-    if not state.opts.enabled then
-        return
+function M.toggle()
+    state.opts.enabled = not state.opts.enabled
+    if state.opts.enabled then
+        M.refresh()
+    else
+        M.clear()
     end
-    render_frame(frame)
-end
-
-function M.set_error(frame, msg)
-    state.stopped_frame = frame or state.stopped_frame
-    state.error_msg = msg
-    if state.stopped_frame and msg then
-        set_message(state.stopped_frame, msg, 'NvimDapVirtualTextError', state.opts.virt_text_pos == 'inline')
-    end
-end
-
-function M.set_info(frame, msg)
-    state.stopped_frame = frame or state.stopped_frame
-    state.info_msg = msg
-    if state.stopped_frame and msg then
-        set_message(state.stopped_frame, msg, 'NvimDapVirtualTextInfo', state.opts.virt_text_pos == 'inline')
-    end
-end
-
-function M.set_frame(frame)
-    state.stopped_frame = frame
-end
-
-function M.set_last_frames(frames)
-    state.last_frames = frames or {}
 end
 
 return M
