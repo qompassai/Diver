@@ -1,0 +1,143 @@
+--- WebSocket self-test — proves the websocket helpers work.
+---
+--- Plain-language version: this is a test script, not a feature. It exercises the websocket helpers and reports
+--- pass or fail. It runs headless via `nvim -l`; it is not loaded at startup.
+---@module 'tests.websocket'
+-- #################################################################
+-- /qompassai/diver/tests/proto/websocket.lua
+-- Qompass AI Diver Lua WebSocket Test
+-- SPDX-License-Identifier: Apache-2.0
+-- Copyright (c) 2026 Qompass AI
+--
+-- Licensed under the Apache License, Version 2.0 (the "License");
+-- you may not use this file except in compliance with the License.
+-- You may obtain a copy of the License at:
+--   http://www.apache.org/licenses/LICENSE-2.0
+--
+-- Unless required by applicable law or agreed to in writing, software
+-- distributed under the License is distributed on an "AS IS" BASIS,
+-- WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+-- See the License for the specific language governing permissions and
+-- limitations under the License.
+-- #################################################################
+local T = {}
+function T.assert(value, message)
+    assert(value, message)
+end
+function T.assert_eq(a, b, message)
+    assert(a == b, message or ('expected ' .. vim.inspect(a) .. ' == ' .. vim.inspect(b)))
+end
+function T.assert_deep_eq(a, b, message)
+    assert(vim.deep_equal(a, b), message or 'tables not deeply equal')
+end
+
+local here = debug.getinfo(1, 'S').source:sub(2)
+local root = vim.fn.fnamemodify(here, ':h:h:h')
+package.path = root .. '/lua/?.lua;' .. root .. '/lua/?/init.lua;' .. package.path
+
+require('websocket').setup({})
+local WebsocketClient = require('websocket.client').WebsocketClient
+local WebsocketServer = require('websocket.server').WebsocketServer
+local PORT = 12001
+local client_1_info = {
+    connected = false,
+    last_message = nil,
+    last_error = nil,
+}
+local client_2_info = {
+    connected = false,
+    last_message = nil,
+    last_error = nil,
+}
+local client_1 = WebsocketClient.new({
+    connect_addr = ('ws://localhost:%d'):format(PORT),
+    on_message = function(_self, message)
+        print('Client 1 received message: ' .. message)
+        client_1_info.last_message = message
+    end,
+    on_connect = function(_self)
+        print('Client 1 connected')
+        client_1_info.connected = true
+    end,
+    on_disconnect = function(_self)
+        print('Client 1 disconnected')
+        client_1_info.connected = false
+    end,
+    on_error = function(_self, err)
+        print('Client 1 encountered error', vim.inspect(err))
+        client_1_info.last_error = err
+    end,
+    extra_headers = {
+        ['Extra-test-header'] = 'test-value',
+    },
+})
+local client_2 = WebsocketClient.new({
+    connect_addr = ('ws://localhost:%d'):format(PORT),
+    on_message = function(_self, message)
+        print('Client 2 received message: ' .. message)
+        client_2_info.last_message = message
+    end,
+    on_connect = function(_self)
+        print('Client 2 connected')
+        client_2_info.connected = true
+    end,
+    on_disconnect = function(_self)
+        print('Client 2 disconnected')
+        client_2_info.connected = false
+    end,
+    on_error = function(_self, err)
+        print('Client 2 encountered error', vim.inspect(err))
+        client_2_info.last_error = err
+    end,
+    extra_headers = {
+        ['Extra-test-header'] = 'test-value',
+    },
+})
+T.assert(not client_1:is_active())
+T.assert(not client_2:is_active())
+T.assert_deep_eq(WebsocketClient.get_clients(), {})
+local server_info = {
+    host = 'localhost',
+    port = PORT,
+}
+local server = WebsocketServer.new({
+    host = server_info.host,
+    port = server_info.port,
+    extra_response_headers = {
+        ['Extra-test-header'] = 'test-value',
+    },
+    on_message = function(self, client_id, message)
+        print('Server received message from client ' .. client_id .. ': ' .. message)
+        self:try_send_data_to_client(client_id, 'Reply from server')
+    end,
+    on_client_connect = function(_self, client_id)
+        print('Client ' .. client_id .. ' connected')
+    end,
+    on_client_disconnect = function(_self, client_id)
+        print('Client ' .. client_id .. ' disconnected')
+    end,
+    on_error = function(_self, err)
+        print('Server encountered error', vim.inspect(err))
+    end,
+})
+T.assert_deep_eq(WebsocketServer.get_servers(), {})
+server:try_start()
+vim.cmd('sleep 1')
+T.assert(server:is_active())
+client_1:try_connect()
+client_2:try_connect()
+vim.cmd('sleep 1')
+T.assert(client_1:is_active())
+T.assert(client_2:is_active())
+client_1:try_send_data('Hi from client 1')
+client_2:try_send_data('Hi from client 2')
+vim.cmd('sleep 1')
+T.assert_eq(client_1_info.last_message, 'Reply from server')
+T.assert_eq(client_2_info.last_message, 'Reply from server')
+client_1:try_disconnect()
+client_2:try_disconnect()
+server:try_stop()
+T.assert(not client_1:is_active())
+T.assert(not client_2:is_active())
+T.assert(not server:is_active())
+return T
