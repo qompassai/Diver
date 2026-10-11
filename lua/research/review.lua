@@ -24,23 +24,6 @@ function M.comment_block(number, anchor)
     }
 end
 
----@param bufnr? integer
----@return integer
-function M.next_comment_number(bufnr)
-    bufnr = bufnr or api.nvim_get_current_buf()
-    local highest = 0
-    for _, line in ipairs(api.nvim_buf_get_lines(bufnr, 0, -1, false)) do
-        local digits = line:match('^##%s+Comment%s+(%d+)')
-        -- %d+ guarantees an integral string; math.tointeger does not exist on
-        -- LuaJIT, so the cast recovers the integer type the pattern guarantees.
-        local number = digits and tonumber(digits) --[[@as integer?]]
-        if number and number > highest then
-            highest = number
-        end
-    end
-    return highest + 1
-end
-
 ---@param page integer
 ---@param lines string
 ---@param title? string
@@ -60,6 +43,80 @@ function M.insert_comment(page, lines, title)
         })
     )
     api.nvim_win_set_cursor(0, { row + 2, 0 })
+end
+
+---@param path string
+function M.new(path)
+    local journal = fn.input('Journal: ')
+    if journal == '' then
+        return
+    end
+    local manuscript_number = fn.input('Manuscript number: ')
+    local title = fn.input('Title: ')
+    fn.mkdir(fs.dirname(path), 'p')
+    fn.writefile(
+        M.template({
+            journal = journal,
+            manuscript_number = manuscript_number,
+            title = title,
+        }),
+        path
+    )
+    vim.cmd.edit(fn.fnameescape(path))
+end
+
+---@param bufnr? integer
+---@return integer
+function M.next_comment_number(bufnr)
+    bufnr = bufnr or api.nvim_get_current_buf()
+    local highest = 0
+    for _, line in ipairs(api.nvim_buf_get_lines(bufnr, 0, -1, false)) do
+        local digits = line:match('^##%s+Comment%s+(%d+)')
+        -- %d+ guarantees an integral string; math.tointeger does not exist on
+        -- LuaJIT, so the cast recovers the integer type the pattern guarantees.
+        local number = digits and tonumber(digits) --[[@as integer?]]
+        if number and number > highest then
+            highest = number
+        end
+    end
+    return highest + 1
+end
+
+---@param bufnr? integer
+---@return table
+function M.summary(bufnr)
+    bufnr = bufnr or api.nvim_get_current_buf()
+    local out = {
+        comments = 0,
+        minor_comments = 0,
+        rating = nil,
+        recommendation = nil,
+        sources = 0,
+    }
+    local in_minor = false
+    local in_sources = false
+    for _, line in ipairs(api.nvim_buf_get_lines(bufnr, 0, -1, false)) do
+        out.recommendation = out.recommendation or line:match('|%s*Reviewer Recommendation%s*|%s*%*%*([^*]+)%*%*%s*|')
+        out.rating = out.rating or tonumber(line:match('|%s*Overall Manuscript Rating%s*|%s*%*%*(%d+)/100%*%*%s*|'))
+        if line:match('^##%s+Comment%s+%d+') then
+            out.comments = out.comments + 1
+        end
+        if line:match('^##%s+Minor Comments') then
+            in_minor = true
+            in_sources = false
+        elseif line:match('^##%s+Key External Sources') then
+            in_minor = false
+            in_sources = true
+        elseif line:match('^##%s+') then
+            in_minor = false
+            in_sources = false
+        elseif in_minor and line:match('^%d+%.%s+') then
+            out.minor_comments = out.minor_comments + 1
+        elseif in_sources and line:match('^%-%s+') then
+            out.sources = out.sources + 1
+        end
+    end
+    return out
 end
 
 ---@param metadata table
@@ -122,73 +179,7 @@ function M.template(metadata)
     }
 end
 
----@param path string
-function M.new(path)
-    local journal = fn.input('Journal: ')
-    if journal == '' then
-        return
-    end
-    local manuscript_number = fn.input('Manuscript number: ')
-    local title = fn.input('Title: ')
-    fn.mkdir(fs.dirname(path), 'p')
-    fn.writefile(
-        M.template({
-            journal = journal,
-            manuscript_number = manuscript_number,
-            title = title,
-        }),
-        path
-    )
-    vim.cmd.edit(fn.fnameescape(path))
-end
-
----@param bufnr? integer
----@return table
-function M.summary(bufnr)
-    bufnr = bufnr or api.nvim_get_current_buf()
-    local out = {
-        recommendation = nil,
-        rating = nil,
-        comments = 0,
-        minor_comments = 0,
-        sources = 0,
-    }
-    local in_minor = false
-    local in_sources = false
-    for _, line in ipairs(api.nvim_buf_get_lines(bufnr, 0, -1, false)) do
-        out.recommendation = out.recommendation or line:match('|%s*Reviewer Recommendation%s*|%s*%*%*([^*]+)%*%*%s*|')
-        out.rating = out.rating or tonumber(line:match('|%s*Overall Manuscript Rating%s*|%s*%*%*(%d+)/100%*%*%s*|'))
-        if line:match('^##%s+Comment%s+%d+') then
-            out.comments = out.comments + 1
-        end
-        if line:match('^##%s+Minor Comments') then
-            in_minor = true
-            in_sources = false
-        elseif line:match('^##%s+Key External Sources') then
-            in_minor = false
-            in_sources = true
-        elseif line:match('^##%s+') then
-            in_minor = false
-            in_sources = false
-        elseif in_minor and line:match('^%d+%.%s+') then
-            out.minor_comments = out.minor_comments + 1
-        elseif in_sources and line:match('^%-%s+') then
-            out.sources = out.sources + 1
-        end
-    end
-    return out
-end
-
 function M.setup()
-    api.nvim_create_user_command('ReviewNew', function(opts)
-        local path = opts.args ~= '' and opts.args or 'review.md'
-        M.new(fs.normalize(path))
-    end, {
-        nargs = '?',
-        complete = 'file',
-        desc = 'Create a structured journal peer review',
-    })
-
     api.nvim_create_user_command('ReviewComment', function(opts)
         local page, lines, title = opts.args:match('^(%d+)%s+(%S+)%s*(.*)$')
         if not page or not lines then
@@ -207,6 +198,15 @@ function M.setup()
     end, {
         nargs = '+',
         desc = 'Insert numbered review comment anchored to manuscript page/lines',
+    })
+
+    api.nvim_create_user_command('ReviewNew', function(opts)
+        local path = opts.args ~= '' and opts.args or 'review.md'
+        M.new(fs.normalize(path))
+    end, {
+        nargs = '?',
+        complete = 'file',
+        desc = 'Create a structured journal peer review',
     })
 
     api.nvim_create_user_command('ReviewSummary', function()

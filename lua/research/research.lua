@@ -6,6 +6,15 @@ local api = vim.api
 local fn = vim.fn
 local M = {}
 
+---@param url string
+local function open(url)
+    if fn.executable('xdg-open') == 1 then
+        vim.system({ 'xdg-open', url }, { detach = true })
+    else
+        vim.notify(url, vim.log.levels.INFO)
+    end
+end
+
 ---@param text string
 ---@return string
 local function urlencode(text)
@@ -18,18 +27,9 @@ local function urlencode(text)
     )
 end
 
----@param url string
-local function open(url)
-    if fn.executable('xdg-open') == 1 then
-        vim.system({ 'xdg-open', url }, { detach = true })
-    else
-        vim.notify(url, vim.log.levels.INFO)
-    end
-end
-
 ---@param query string
-function M.pubmed(query)
-    open('https://pubmed.ncbi.nlm.nih.gov/?term=' .. urlencode(query))
+function M.arxiv(query)
+    open('https://arxiv.org/search/?query=' .. urlencode(query) .. '&searchtype=all')
 end
 
 ---@param query string
@@ -38,18 +38,18 @@ function M.crossref(query)
 end
 
 ---@param query string
-function M.scholar(query)
-    open('https://scholar.google.com/scholar?q=' .. urlencode(query))
-end
-
----@param query string
 function M.medrxiv(query)
     open('https://www.medrxiv.org/search/' .. urlencode(query))
 end
 
 ---@param query string
-function M.arxiv(query)
-    open('https://arxiv.org/search/?query=' .. urlencode(query) .. '&searchtype=all')
+function M.pubmed(query)
+    open('https://pubmed.ncbi.nlm.nih.gov/?term=' .. urlencode(query))
+end
+
+---@param query string
+function M.scholar(query)
+    open('https://scholar.google.com/scholar?q=' .. urlencode(query))
 end
 
 ---@return string
@@ -65,25 +65,25 @@ function M.selection_or_word()
 end
 
 function M.setup()
-    api.nvim_create_user_command('PubMed', function(opts)
-        M.pubmed(opts.args ~= '' and opts.args or M.selection_or_word())
-    end, { nargs = '*', desc = 'Search PubMed' })
+    api.nvim_create_user_command('ArxivSearch', function(opts)
+        M.arxiv(opts.args ~= '' and opts.args or M.selection_or_word())
+    end, { nargs = '*', desc = 'Search arXiv' })
 
     api.nvim_create_user_command('Crossref', function(opts)
         M.crossref(opts.args ~= '' and opts.args or M.selection_or_word())
     end, { nargs = '*', desc = 'Search Crossref' })
 
-    api.nvim_create_user_command('Scholar', function(opts)
-        M.scholar(opts.args ~= '' and opts.args or M.selection_or_word())
-    end, { nargs = '*', desc = 'Search Google Scholar' })
-
     api.nvim_create_user_command('MedRxiv', function(opts)
         M.medrxiv(opts.args ~= '' and opts.args or M.selection_or_word())
     end, { nargs = '*', desc = 'Search medRxiv' })
 
-    api.nvim_create_user_command('ArxivSearch', function(opts)
-        M.arxiv(opts.args ~= '' and opts.args or M.selection_or_word())
-    end, { nargs = '*', desc = 'Search arXiv' })
+    api.nvim_create_user_command('PubMed', function(opts)
+        M.pubmed(opts.args ~= '' and opts.args or M.selection_or_word())
+    end, { nargs = '*', desc = 'Search PubMed' })
+
+    api.nvim_create_user_command('Scholar', function(opts)
+        M.scholar(opts.args ~= '' and opts.args or M.selection_or_word())
+    end, { nargs = '*', desc = 'Search Google Scholar' })
 end
 
 return M

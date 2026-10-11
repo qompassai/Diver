@@ -23,9 +23,9 @@ local map = vim.keymap.set
 -- Shape ports the local helper in lua/config/lang/latex.lua, except the
 -- relative path keeps its leading slash so generated headers match the
 -- repo's own (`-- /qompassai/Diver/...`, not `-- qompassai/Diver/...`).
-local HEADER_RULE_WIDTH = 40
-local HEADER_DESCRIPTION = 'Qompass AI - [ ]'
 local HEADER_COPYRIGHT = 'Copyright (C) 2026 Qompass AI, All rights reserved'
+local HEADER_DESCRIPTION = 'Qompass AI - [ ]'
+local HEADER_RULE_WIDTH = 40
 local QOMPASSAI_MARKER = '/qompassai/'
 ---@param bufnr integer?
 ---@return integer
@@ -46,6 +46,27 @@ local function header_relpath(filepath)
         return filepath:sub(idx)
     end
     return fn.fnamemodify(filepath, ':~:.')
+end
+---@return string
+function M.foldexpr()
+    local buf = api.nvim_get_current_buf()
+    if b[buf].ts_folds == nil then
+        local ft = filetype(buf)
+        if ft == '' then
+            return '0'
+        end
+        if ft:find('dashboard', 1, true) then
+            b[buf].ts_folds = false
+        else
+            b[buf].ts_folds = pcall(treesitter.get_parser, buf)
+        end
+    end
+    return b[buf].ts_folds and treesitter.foldexpr() or '0'
+end
+---@return string
+function M.foldtext()
+    local lines = api.nvim_buf_get_lines(0, v.lnum - 1, v.lnum, false)
+    return lines[1] or ''
 end
 ---Build the four-line comment header stamped into new files.
 ---
@@ -90,27 +111,6 @@ function M.make_header(filepath, comment)
         comment .. ' ' .. HEADER_COPYRIGHT,
         solid,
     }
-end
----@return string
-function M.foldexpr()
-    local buf = api.nvim_get_current_buf()
-    if b[buf].ts_folds == nil then
-        local ft = filetype(buf)
-        if ft == '' then
-            return '0'
-        end
-        if ft:find('dashboard', 1, true) then
-            b[buf].ts_folds = false
-        else
-            b[buf].ts_folds = pcall(treesitter.get_parser, buf)
-        end
-    end
-    return b[buf].ts_folds and treesitter.foldexpr() or '0'
-end
----@return string
-function M.foldtext()
-    local lines = api.nvim_buf_get_lines(0, v.lnum - 1, v.lnum, false)
-    return lines[1] or ''
 end
 
 local function json_to_lua()
@@ -185,23 +185,11 @@ function M.setup()
         clear = true,
     })
 
-    api.nvim_create_autocmd('CmdlineChanged', {
-        group = group,
-        pattern = {
-            ':',
-            '/',
-            '?',
-        },
-        callback = function()
-            fn.wildtrigger()
-        end,
-    })
-
     api.nvim_create_autocmd({
-        'FocusGained',
         'BufEnter',
         'CursorHold',
         'CursorHoldI',
+        'FocusGained',
     }, {
         group = group,
         callback = function(args)
@@ -213,6 +201,18 @@ function M.setup()
             if ft ~= '' and ft ~= 'vim' and fn.mode() ~= 'c' then
                 cmd('checktime')
             end
+        end,
+    })
+
+    api.nvim_create_autocmd('CmdlineChanged', {
+        group = group,
+        pattern = {
+            '/',
+            ':',
+            '?',
+        },
+        callback = function()
+            fn.wildtrigger()
         end,
     })
     api.nvim_create_user_command('Align', function(opts)

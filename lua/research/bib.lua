@@ -6,25 +6,28 @@ local api = vim.api
 local fn = vim.fn
 local M = {}
 
----@param line string
----@return string?
-function M.key(line)
-    return line:match('^%s*@[%w]+%s*{%s*([^,%s]+)')
-end
-
----@param bufnr? integer
----@return table<string, integer[]>
-function M.keys(bufnr)
-    bufnr = bufnr or api.nvim_get_current_buf()
-    local out = {}
-    for lnum, line in ipairs(api.nvim_buf_get_lines(bufnr, 0, -1, false)) do
-        local key = M.key(line)
-        if key then
-            out[key] = out[key] or {}
-            out[key][#out[key] + 1] = lnum
-        end
+---@param path string
+function M.check(path)
+    if fn.executable('biber') == 1 then
+        vim.system({ 'biber', '--tool', '--validate-datamodel', path }, { text = true }, function(result)
+            vim.schedule(function()
+                if result.code == 0 then
+                    vim.notify('Bibliography validation completed', vim.log.levels.INFO)
+                else
+                    vim.notify(
+                        vim.trim(result.stderr or result.stdout or 'biber validation failed'),
+                        vim.log.levels.WARN
+                    )
+                end
+            end)
+        end)
+        return
     end
-    return out
+    if fn.executable('bibtool') == 1 then
+        vim.system({ 'bibtool', '-r', 'check.rsc', path }, { text = true })
+        return
+    end
+    vim.notify('Neither biber nor bibtool is executable', vim.log.levels.WARN)
 end
 
 ---@param bufnr? integer
@@ -51,31 +54,39 @@ function M.duplicates(bufnr)
     return items
 end
 
----@param path string
-function M.check(path)
-    if fn.executable('biber') == 1 then
-        vim.system({ 'biber', '--tool', '--validate-datamodel', path }, { text = true }, function(result)
-            vim.schedule(function()
-                if result.code == 0 then
-                    vim.notify('Bibliography validation completed', vim.log.levels.INFO)
-                else
-                    vim.notify(
-                        vim.trim(result.stderr or result.stdout or 'biber validation failed'),
-                        vim.log.levels.WARN
-                    )
-                end
-            end)
-        end)
-        return
+---@param line string
+---@return string?
+function M.key(line)
+    return line:match('^%s*@[%w]+%s*{%s*([^,%s]+)')
+end
+
+---@param bufnr? integer
+---@return table<string, integer[]>
+function M.keys(bufnr)
+    bufnr = bufnr or api.nvim_get_current_buf()
+    local out = {}
+    for lnum, line in ipairs(api.nvim_buf_get_lines(bufnr, 0, -1, false)) do
+        local key = M.key(line)
+        if key then
+            out[key] = out[key] or {}
+            out[key][#out[key] + 1] = lnum
+        end
     end
-    if fn.executable('bibtool') == 1 then
-        vim.system({ 'bibtool', '-r', 'check.rsc', path }, { text = true })
-        return
-    end
-    vim.notify('Neither biber nor bibtool is executable', vim.log.levels.WARN)
+    return out
 end
 
 function M.setup()
+    api.nvim_create_user_command('BibCheck', function(opts)
+        local path = opts.args ~= '' and opts.args or api.nvim_buf_get_name(0)
+        if path ~= '' then
+            M.check(path)
+        end
+    end, {
+        nargs = '?',
+        complete = 'file',
+        desc = 'Validate bibliography with biber or bibtool',
+    })
+
     api.nvim_create_user_command('BibDuplicates', function()
         local items = M.duplicates()
         fn.setqflist({}, ' ', {
@@ -89,17 +100,6 @@ function M.setup()
         end
     end, {
         desc = 'Find duplicate BibTeX keys',
-    })
-
-    api.nvim_create_user_command('BibCheck', function(opts)
-        local path = opts.args ~= '' and opts.args or api.nvim_buf_get_name(0)
-        if path ~= '' then
-            M.check(path)
-        end
-    end, {
-        nargs = '?',
-        complete = 'file',
-        desc = 'Validate bibliography with biber or bibtool',
     })
 end
 

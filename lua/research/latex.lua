@@ -19,11 +19,16 @@ local function root(path)
     return found[1] and fs.dirname(found[1]) or fs.dirname(path)
 end
 
----@param path? string
----@return string?
-function M.current(path)
-    path = path or api.nvim_buf_get_name(0)
-    return path ~= '' and fs.normalize(path) or nil
+---@param path string
+function M.clean(path)
+    if fn.executable('latexmk') ~= 1 then
+        vim.notify('latexmk is not executable', vim.log.levels.WARN)
+        return
+    end
+    vim.system({ 'latexmk', '-c', path }, {
+        cwd = root(path),
+        text = true,
+    })
 end
 
 ---@param path string
@@ -60,35 +65,11 @@ function M.compile(path, callback)
     end)
 end
 
----@param path string
-function M.clean(path)
-    if fn.executable('latexmk') ~= 1 then
-        vim.notify('latexmk is not executable', vim.log.levels.WARN)
-        return
-    end
-    vim.system({ 'latexmk', '-c', path }, {
-        cwd = root(path),
-        text = true,
-    })
-end
-
----@param path string
----@param callback fun(count: integer?, output?: string)
-function M.word_count(path, callback)
-    if fn.executable('texcount') ~= 1 then
-        callback(nil, 'texcount is not executable')
-        return
-    end
-    vim.system({ 'texcount', '-sum', '-1', path }, { text = true }, function(result)
-        vim.schedule(function()
-            if result.code ~= 0 then
-                callback(nil, vim.trim(result.stderr or 'texcount failed'))
-                return
-            end
-            local word_count = tonumber(vim.trim(result.stdout or ''))
-            callback(word_count ~= nil and math.floor(word_count) or nil, result.stdout)
-        end)
-    end)
+---@param path? string
+---@return string?
+function M.current(path)
+    path = path or api.nvim_buf_get_name(0)
+    return path ~= '' and fs.normalize(path) or nil
 end
 
 ---@param path string
@@ -132,6 +113,25 @@ function M.lint(path, callback)
     end)
 end
 
+---@param path string
+---@param callback fun(count: integer?, output?: string)
+function M.word_count(path, callback)
+    if fn.executable('texcount') ~= 1 then
+        callback(nil, 'texcount is not executable')
+        return
+    end
+    vim.system({ 'texcount', '-sum', '-1', path }, { text = true }, function(result)
+        vim.schedule(function()
+            if result.code ~= 0 then
+                callback(nil, vim.trim(result.stderr or 'texcount failed'))
+                return
+            end
+            local word_count = tonumber(vim.trim(result.stdout or ''))
+            callback(word_count ~= nil and math.floor(word_count) or nil, result.stdout)
+        end)
+    end)
+end
+
 function M.setup()
     api.nvim_create_user_command('LatexBuild', function(opts)
         local path = opts.args ~= '' and opts.args or M.current()
@@ -151,6 +151,13 @@ function M.setup()
         end
     end, { desc = 'Clean LaTeX build artifacts' })
 
+    api.nvim_create_user_command('LatexLint', function()
+        local path = M.current()
+        if path then
+            M.lint(path)
+        end
+    end, { desc = 'Lint current LaTeX manuscript' })
+
     api.nvim_create_user_command('LatexWords', function()
         local path = M.current()
         if path then
@@ -163,13 +170,6 @@ function M.setup()
             end)
         end
     end, { desc = 'Count manuscript words with texcount' })
-
-    api.nvim_create_user_command('LatexLint', function()
-        local path = M.current()
-        if path then
-            M.lint(path)
-        end
-    end, { desc = 'Lint current LaTeX manuscript' })
 end
 
 return M

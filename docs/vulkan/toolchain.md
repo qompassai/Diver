@@ -23,7 +23,7 @@ producing the SPIR-V artifact your renderer loads.
   version flag fails. One subtlety, verified on primo: `slangc` does
   **not** accept `--version` (it errors `E00017`); its flag is `-v`.
 - **`M.build_argv(tool, opts)`** — pure function returning the exact
-  command line. No process is spawned, so `tests/lua/vulkan_toolchain.lua`
+  command line. No process is spawned, so `tests/vulkan/vulkan_toolchain.lua`
   verifies every flag without needing the tools installed.
 
 ### Flags, and where each was verified

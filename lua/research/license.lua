@@ -29,10 +29,75 @@ M.config = {
     spdx = 'Apache-2.0',
     title_prefix = 'Qompass AI',
 }
----@param s string
+---@param prefix string
 ---@return string
-local function trim(s)
-    return (s:gsub('^%s+', ''):gsub('%s+$', ''))
+local function comment_suffix(prefix)
+    ---@type table<string, string>
+    local map = {
+        ['/*'] = '*/',
+        ['<!--'] = '-->',
+        ['<%#'] = '%>',
+        ['@*'] = '*@',
+        ['{#'] = '#}',
+        ['{/*'] = '*/}',
+        ['{{!'] = '}}',
+        ['{{!--'] = '--}}',
+        ['{{/*'] = '*/}}',
+    }
+
+    return map[prefix] or ''
+end
+
+---@param lines string[]
+---@return integer?
+local function find_header_end(lines)
+    local limit = math.min(#lines, 40)
+
+    for idx = 1, limit do
+        local line = lines[idx]
+        if line and line:find('limitations under the License%.', 1, false) then
+            return idx
+        end
+    end
+
+    return nil
+end
+
+---@param lines string[]
+---@return boolean
+local function is_managed(lines)
+    local text = table.concat(lines, '\n')
+
+    return text:find('SPDX%-License%-Identifier:', 1, false) ~= nil
+        or text:find('Licensed under the Apache License, Version 2.0', 1, true) ~= nil
+end
+
+---@param bufnr integer
+---@return string
+local function qompass_path(bufnr)
+    local full = vim.api.nvim_buf_get_name(bufnr)
+    local home = vim.env.HOME or ''
+    local xdg = vim.env.XDG_CONFIG_HOME or ((home ~= '') and (home .. '/.config') or '')
+    local nvim_cfg = (xdg ~= '') and (xdg .. '/nvim') or ''
+    local path = full
+
+    if nvim_cfg ~= '' and path:sub(1, #nvim_cfg) == nvim_cfg then
+        path = path:sub(#nvim_cfg + 1)
+    elseif home ~= '' and path:sub(1, #home) == home then
+        path = path:sub(#home + 1)
+    end
+
+    if path == '' then
+        path = '/' .. vim.fn.expand('%:t')
+    elseif path:sub(1, 1) ~= '/' then
+        path = '/' .. path
+    end
+
+    if not path:match('^/qompassai') then
+        path = '/qompassai' .. path
+    end
+
+    return path
 end
 
 ---@param s string
@@ -57,21 +122,10 @@ local function title_case_word(word)
     return word:sub(1, 1):upper() .. word:sub(2):lower()
 end
 
----@param name string
+---@param s string
 ---@return string
-local function derive_title(name)
-    local base = name:gsub('%..+$', ''):gsub('[_%-.]+', ' ')
-    local words = split_words(trim(base))
-
-    if #words == 0 then
-        return M.config.title_prefix .. ' Config'
-    end
-
-    for idx = 1, #words do
-        words[idx] = title_case_word(words[idx])
-    end
-
-    return M.config.title_prefix .. ' ' .. table.concat(words, ' ')
+local function trim(s)
+    return (s:gsub('^%s+', ''):gsub('%s+$', ''))
 end
 
 ---@param bufnr integer
@@ -208,43 +262,34 @@ local function comment_prefix(bufnr)
     return map[ft] or '#'
 end
 
----@param bufnr integer
+---@param name string
 ---@return string
-local function qompass_path(bufnr)
-    local full = vim.api.nvim_buf_get_name(bufnr)
-    local home = vim.env.HOME or ''
-    local xdg = vim.env.XDG_CONFIG_HOME or ((home ~= '') and (home .. '/.config') or '')
-    local nvim_cfg = (xdg ~= '') and (xdg .. '/nvim') or ''
-    local path = full
+local function derive_title(name)
+    local base = name:gsub('%..+$', ''):gsub('[_%-.]+', ' ')
+    local words = split_words(trim(base))
 
-    if nvim_cfg ~= '' and path:sub(1, #nvim_cfg) == nvim_cfg then
-        path = path:sub(#nvim_cfg + 1)
-    elseif home ~= '' and path:sub(1, #home) == home then
-        path = path:sub(#home + 1)
+    if #words == 0 then
+        return M.config.title_prefix .. ' Config'
     end
 
-    if path == '' then
-        path = '/' .. vim.fn.expand('%:t')
-    elseif path:sub(1, 1) ~= '/' then
-        path = '/' .. path
+    for idx = 1, #words do
+        words[idx] = title_case_word(words[idx])
     end
 
-    if not path:match('^/qompassai') then
-        path = '/qompassai' .. path
-    end
-
-    return path
+    return M.config.title_prefix .. ' ' .. table.concat(words, ' ')
 end
 
 ---@param bufnr integer
 ---@return string[]
 local function make_header(bufnr)
     local prefix = comment_prefix(bufnr)
+    local suffix = comment_suffix(prefix)
     local path = qompass_path(bufnr)
     local name = vim.fn.fnamemodify(vim.api.nvim_buf_get_name(bufnr), ':t')
     local year = tostring(os.date('%Y'))
     local title
     local bar
+    local last_bar
 
     if name == '' then
         name = 'config'
@@ -252,6 +297,10 @@ local function make_header(bufnr)
 
     title = derive_title(name)
     bar = prefix .. ' ' .. string.rep('#', 65)
+    last_bar = bar
+    if suffix ~= '' then
+        last_bar = bar .. ' ' .. suffix
+    end
 
     return {
         bar,
@@ -270,33 +319,9 @@ local function make_header(bufnr)
         prefix .. ' WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.',
         prefix .. ' See the License for the specific language governing permissions and',
         prefix .. ' limitations under the License.',
-        bar,
+        last_bar,
         '',
     }
-end
-
----@param lines string[]
----@return boolean
-local function is_managed(lines)
-    local text = table.concat(lines, '\n')
-
-    return text:find('SPDX%-License%-Identifier:', 1, false) ~= nil
-        or text:find('Licensed under the Apache License, Version 2.0', 1, true) ~= nil
-end
-
----@param lines string[]
----@return integer?
-local function find_header_end(lines)
-    local limit = math.min(#lines, 40)
-
-    for idx = 1, limit do
-        local line = lines[idx]
-        if line and line:find('limitations under the License%.', 1, false) then
-            return idx
-        end
-    end
-
-    return nil
 end
 
 ---@param bufnr? integer
@@ -344,6 +369,9 @@ function M.setup(opts)
     local group
 
     if type(opts) == 'table' then
+        if type(opts.auto) == 'boolean' then
+            M.config.auto = opts.auto
+        end
         if type(opts.org) == 'string' then
             M.config.org = opts.org
         end
@@ -352,9 +380,6 @@ function M.setup(opts)
         end
         if type(opts.title_prefix) == 'string' then
             M.config.title_prefix = opts.title_prefix
-        end
-        if type(opts.auto) == 'boolean' then
-            M.config.auto = opts.auto
         end
     end
 
@@ -384,14 +409,15 @@ function M.setup(opts)
         desc = 'Insert or normalize license header',
     })
 
-    vim.api.nvim_create_user_command('LicenseTitle', function(cmdopts)
-        if cmdopts.args ~= '' then
-            M.config.title_prefix = cmdopts.args
-            M.apply(0)
-        end
+    vim.api.nvim_create_user_command('LicenseAuto', function(cmdopts)
+        local arg = trim(cmdopts.args):lower()
+        M.config.auto = (arg == 'on' or arg == 'true' or arg == '1')
     end, {
         nargs = 1,
-        desc = 'Set license title prefix and reapply',
+        complete = function()
+            return { 'on', 'off' }
+        end,
+        desc = 'Enable or disable auto header update',
     })
 
     vim.api.nvim_create_user_command('LicenseOrg', function(cmdopts)
@@ -414,6 +440,16 @@ function M.setup(opts)
         desc = 'Set SPDX identifier and reapply',
     })
 
+    vim.api.nvim_create_user_command('LicenseTitle', function(cmdopts)
+        if cmdopts.args ~= '' then
+            M.config.title_prefix = cmdopts.args
+            M.apply(0)
+        end
+    end, {
+        nargs = 1,
+        desc = 'Set license title prefix and reapply',
+    })
+
     vim.api.nvim_create_user_command('LicenseYear', function(cmdopts)
         local year = trim(cmdopts.args)
         local lines
@@ -434,17 +470,6 @@ function M.setup(opts)
     end, {
         nargs = 1,
         desc = 'Replace current year in header',
-    })
-
-    vim.api.nvim_create_user_command('LicenseAuto', function(cmdopts)
-        local arg = trim(cmdopts.args):lower()
-        M.config.auto = (arg == 'on' or arg == 'true' or arg == '1')
-    end, {
-        nargs = 1,
-        complete = function()
-            return { 'on', 'off' }
-        end,
-        desc = 'Enable or disable auto header update',
     })
 end
 

@@ -7,10 +7,22 @@ local fn = vim.fn
 local M = {}
 
 local patterns = {
+    arxiv = '[Aa][Rr][Xx][Ii][Vv]%s*[:=]?%s*([%w%.%-/]+)',
     doi = '10%.%d%d%d%d+/%S+',
     pmid = '[Pp][Mm][Ii][Dd]%s*[:=]?%s*(%d+)',
-    arxiv = '[Aa][Rr][Xx][Ii][Vv]%s*[:=]?%s*([%w%.%-/]+)',
 }
+
+---@param text string
+---@return string?
+function M.arxiv(text)
+    return text:match(patterns.arxiv)
+end
+
+---@param id string
+---@return string
+function M.arxiv_url(id)
+    return 'https://arxiv.org/abs/' .. id
+end
 
 ---@param text string
 ---@return string?
@@ -22,34 +34,10 @@ function M.doi(text)
     return doi:gsub('[%]%[%)%}>,;%.]+$', '')
 end
 
----@param text string
----@return string?
-function M.pmid(text)
-    return text:match(patterns.pmid)
-end
-
----@param text string
----@return string?
-function M.arxiv(text)
-    return text:match(patterns.arxiv)
-end
-
 ---@param doi string
 ---@return string
 function M.doi_url(doi)
     return 'https://doi.org/' .. doi
-end
-
----@param pmid string
----@return string
-function M.pubmed_url(pmid)
-    return 'https://pubmed.ncbi.nlm.nih.gov/' .. pmid .. '/'
-end
-
----@param id string
----@return string
-function M.arxiv_url(id)
-    return 'https://arxiv.org/abs/' .. id
 end
 
 ---@param url string
@@ -80,6 +68,18 @@ function M.open_under_cursor(text)
         return
     end
     vim.notify('No DOI, PMID, or arXiv identifier found', vim.log.levels.WARN)
+end
+
+---@param text string
+---@return string?
+function M.pmid(text)
+    return text:match(patterns.pmid)
+end
+
+---@param pmid string
+---@return string
+function M.pubmed_url(pmid)
+    return 'https://pubmed.ncbi.nlm.nih.gov/' .. pmid .. '/'
 end
 
 ---@param bufnr? integer

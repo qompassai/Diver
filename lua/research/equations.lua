@@ -5,19 +5,19 @@
 local M = {}
 local api, uv = vim.api, vim.uv
 local defaults = {
+    cell_aspect = 2.0, -- terminal cell height / width; adjust for your font
     debounce_ms = 500,
+    dpi = 160,
+    max_height = 20,
+    preamble = '', -- explicit macros only; no automatic project preamble imports
     timeout_ms = 15000,
     width = 60,
-    max_height = 20,
-    dpi = 160,
-    cell_aspect = 2.0, -- terminal cell height / width; adjust for your font
-    preamble = '', -- explicit macros only; no automatic project preamble imports
 }
 local opts = vim.deepcopy(defaults)
 local MAX_BUFFER = 256 * 1024
 local MAX_EQUATION = 16 * 1024
-local MAX_PNG = 8 * 1024 * 1024
 local MAX_LOG = 8192
+local MAX_PNG = 8 * 1024 * 1024
 local environments = {
     equation = true,
     ['equation*'] = true,
@@ -31,20 +31,31 @@ local environments = {
     math = true,
 }
 local state = {
-    generation = 0,
     buf = nil,
-    timer = nil,
-    job = nil,
+    error = nil,
+    generation = 0,
     image = nil,
-    win = nil,
-    preview_buf = nil,
+    job = nil,
     key = nil,
     png = nil,
-    error = nil,
+    preview_buf = nil,
+    timer = nil,
+    win = nil,
 }
-local group
 local directories = {}
+local group
 local img
+
+local function cancel()
+    state.generation = state.generation + 1
+    if state.timer then
+        state.timer:stop()
+    end
+    if state.job then
+        pcall(state.job.kill, state.job, 9)
+        state.job = nil
+    end
+end
 
 local function escaped(text, index)
     local slashes = 0
@@ -53,150 +64,6 @@ local function escaped(text, index)
         slashes, index = slashes + 1, index - 1
     end
     return slashes % 2 == 1
-end
-
----Extract the math span containing a 1-based row and zero-based byte column.
----Fenced Markdown code, inline code, escaped dollars and TeX comments are skipped.
----@param lines string[]
----@param row integer
----@param col integer
----@param filetype string
----@return string? equation
----@return string? error
-function M.extract(lines, row, col, filetype)
-    local size, cursor, masked, fence = 0, nil, {}, nil
-    local markdown = filetype == 'markdown' or filetype == 'quarto' or filetype == 'rmd'
-    for number, line in ipairs(lines) do
-        if number == row then
-            cursor = size + math.min(col, #line) + 1
-        end
-        size = size + #line + 1
-        if size > MAX_BUFFER then
-            return nil, 'Buffer exceeds the 256 KiB preview limit.'
-        end
-        local clean = line
-        if markdown then
-            local marker = line:match('^%s*(```+)') or line:match('^%s*(~~~+)')
-            if fence then
-                clean = string.rep(' ', #line)
-                if marker and marker:sub(1, 1) == fence:sub(1, 1) and #marker >= #fence then
-                    fence = nil
-                end
-            elseif marker then
-                fence, clean = marker, string.rep(' ', #line)
-            else
-                -- Mask paired inline backtick runs, preserving byte positions.
-                local start = 1
-                while start <= #clean do
-                    local first, last = clean:find('`+', start)
-                    if not first then
-                        break
-                    end
-                    local ending = clean:find(clean:sub(first, last), last + 1, true)
-                    if not ending then
-                        break
-                    end
-                    local finish = ending + last - first
-                    clean = clean:sub(1, first - 1) .. string.rep(' ', finish - first + 1) .. clean:sub(finish + 1)
-                    start = finish + 1
-                end
-            end
-        else
-            local start = 1
-            while true do
-                local at = clean:find('%%', start)
-                if not at then
-                    break
-                end
-                if not escaped(clean, at) then
-                    clean = clean:sub(1, at - 1) .. string.rep(' ', #clean - at + 1)
-                    break
-                end
-                start = at + 1
-            end
-        end
-        masked[#masked + 1] = clean
-    end
-    if not cursor then
-        return nil
-    end
-    local text, original = table.concat(masked, '\n'), table.concat(lines, '\n')
-    local index = 1
-    while index <= #text do
-        local char, pair = text:sub(index, index), text:sub(index, index + 1)
-        local closing, open_length, is_environment
-        if not escaped(text, index) then
-            if pair == '$$' then
-                closing, open_length = '$$', 2
-            elseif char == '$' then
-                closing, open_length = '$', 1
-            elseif pair == '\\(' then
-                closing, open_length = '\\)', 2
-            elseif pair == '\\[' then
-                closing, open_length = '\\]', 2
-            elseif text:sub(index, index + 6) == '\\begin{' then
-                local env = text:sub(index):match('^\\begin{([%a*]+)}')
-                if env and environments[env] then
-                    closing, open_length, is_environment = '\\end{' .. env .. '}', #env + 8, true
-                end
-            end
-        end
-        if closing then
-            local search, finish = index + open_length, nil
-            while search <= #text do
-                local at = text:find(closing, search, true)
-                if not at then
-                    break
-                end
-                if not escaped(text, at) then
-                    finish = at + #closing - 1
-                    break
-                end
-                search = at + #closing
-            end
-            if not finish then
-                return nil
-            end
-            if cursor >= index and cursor <= finish then
-                if finish - index + 1 > MAX_EQUATION then
-                    return nil, 'Equation exceeds 16 KiB.'
-                end
-                local equation = original:sub(index, finish)
-                if is_environment then
-                    return equation
-                end
-                local body = original:sub(index + open_length, finish - #closing)
-                return '\\[\n' .. body .. '\n\\]'
-            end
-            index = finish + 1
-        else
-            index = index + 1
-        end
-    end
-    return nil
-end
-
----Construct an isolated document. Project files are never imported implicitly.
----@param equation string
----@return string
-function M.document(equation)
-    return table.concat({
-        '\\documentclass[12pt]{article}',
-        '\\usepackage{amsmath,amssymb,varwidth}',
-        '\\pagestyle{empty}',
-        opts.preamble,
-        '\\newsavebox{\\equationbox}',
-        '\\begin{document}',
-        '\\begin{lrbox}{\\equationbox}\\begin{varwidth}{30cm}',
-        equation,
-        '\\end{varwidth}\\end{lrbox}',
-        '\\pagewidth=\\dimexpr\\wd\\equationbox+8pt\\relax',
-        '\\pageheight=\\dimexpr\\ht\\equationbox+\\dp\\equationbox+8pt\\relax',
-        '\\hoffset=-1in\\voffset=-1in',
-        '\\shipout\\vbox{\\kern4pt\\hbox{\\kern4pt\\usebox{\\equationbox}\\kern4pt}\\kern4pt}',
-        '\\end{document}',
-        '',
-    }, '\n')
 end
 
 local function hide()
@@ -214,37 +81,9 @@ local function hide()
     state.preview_buf = nil
 end
 
-local function cancel()
-    state.generation = state.generation + 1
-    if state.timer then
-        state.timer:stop()
-    end
-    if state.job then
-        pcall(state.job.kill, state.job, 9)
-        state.job = nil
-    end
-end
-
 local function failure(message)
     state.error = message:sub(1, MAX_LOG)
     hide() -- never leave a stale equation displayed as if it were current
-end
-
-local function read_file(path, maximum)
-    local stat = uv.fs_stat(path)
-    if not stat or stat.type ~= 'file' or stat.size > maximum then
-        return nil
-    end
-    local fd = uv.fs_open(path, 'r', 384)
-    if not fd then
-        return nil
-    end
-    local bytes = uv.fs_read(fd, stat.size, 0)
-    uv.fs_close(fd)
-    if not bytes then
-        return nil
-    end
-    return bytes
 end
 
 ---@param bytes string
@@ -262,6 +101,23 @@ local function png_size(bytes)
         return nil
     end
     return width, height
+end
+
+local function read_file(path, maximum)
+    local stat = uv.fs_stat(path)
+    if not stat or stat.type ~= 'file' or stat.size > maximum then
+        return nil
+    end
+    local fd = uv.fs_open(path, 'r', 384)
+    if not fd then
+        return nil
+    end
+    local bytes = uv.fs_read(fd, stat.size, 0)
+    uv.fs_close(fd)
+    if not bytes then
+        return nil
+    end
+    return bytes
 end
 
 ---@param bytes string
@@ -286,18 +142,18 @@ local function display(bytes)
     local row, col = 1, math.max(0, vim.o.columns - width - 3)
     state.preview_buf = api.nvim_create_buf(false, true)
     state.win = api.nvim_open_win(state.preview_buf, false, {
+        border = 'single',
+        col = col,
+        focusable = false,
+        height = height,
+        noautocmd = true,
         relative = 'editor',
         row = row,
-        col = col,
-        width = width,
-        height = height,
         style = 'minimal',
-        focusable = false,
-        border = 'single',
-        zindex = 60,
         title = ' Equation ',
         title_pos = 'center',
-        noautocmd = true,
+        width = width,
+        zindex = 60,
     })
     local ok, id = pcall(img.set, bytes, { row = row + 2, col = col + 2, width = width, height = height, zindex = 61 })
     if not ok then
@@ -511,15 +367,234 @@ local function queue()
     state.timer:start(opts.debounce_ms, 0, vim.schedule_wrap(update))
 end
 
----Stop previewing and release only this module's images/processes.
-function M.stop()
-    cancel()
-    hide()
-    state.buf, state.key, state.png, state.error = nil, nil, nil, nil
-    if state.timer then
-        state.timer:close()
-        state.timer = nil
+---Construct an isolated document. Project files are never imported implicitly.
+---@param equation string
+---@return string
+function M.document(equation)
+    return table.concat({
+        '\\documentclass[12pt]{article}',
+        '\\usepackage{amsmath,amssymb,varwidth}',
+        '\\pagestyle{empty}',
+        opts.preamble,
+        '\\newsavebox{\\equationbox}',
+        '\\begin{document}',
+        '\\begin{lrbox}{\\equationbox}\\begin{varwidth}{30cm}',
+        equation,
+        '\\end{varwidth}\\end{lrbox}',
+        '\\pagewidth=\\dimexpr\\wd\\equationbox+8pt\\relax',
+        '\\pageheight=\\dimexpr\\ht\\equationbox+\\dp\\equationbox+8pt\\relax',
+        '\\hoffset=-1in\\voffset=-1in',
+        '\\shipout\\vbox{\\kern4pt\\hbox{\\kern4pt\\usebox{\\equationbox}\\kern4pt}\\kern4pt}',
+        '\\end{document}',
+        '',
+    }, '\n')
+end
+
+---Extract the math span containing a 1-based row and zero-based byte column.
+---Fenced Markdown code, inline code, escaped dollars and TeX comments are skipped.
+---@param lines string[]
+---@param row integer
+---@param col integer
+---@param filetype string
+---@return string? equation
+---@return string? error
+function M.extract(lines, row, col, filetype)
+    local size, cursor, masked, fence = 0, nil, {}, nil
+    local markdown = filetype == 'markdown' or filetype == 'quarto' or filetype == 'rmd'
+    for number, line in ipairs(lines) do
+        if number == row then
+            cursor = size + math.min(col, #line) + 1
+        end
+        size = size + #line + 1
+        if size > MAX_BUFFER then
+            return nil, 'Buffer exceeds the 256 KiB preview limit.'
+        end
+        local clean = line
+        if markdown then
+            local marker = line:match('^%s*(```+)') or line:match('^%s*(~~~+)')
+            if fence then
+                clean = string.rep(' ', #line)
+                if marker and marker:sub(1, 1) == fence:sub(1, 1) and #marker >= #fence then
+                    fence = nil
+                end
+            elseif marker then
+                fence, clean = marker, string.rep(' ', #line)
+            else
+                -- Mask paired inline backtick runs, preserving byte positions.
+                local start = 1
+                while start <= #clean do
+                    local first, last = clean:find('`+', start)
+                    if not first then
+                        break
+                    end
+                    local ending = clean:find(clean:sub(first, last), last + 1, true)
+                    if not ending then
+                        break
+                    end
+                    local finish = ending + last - first
+                    clean = clean:sub(1, first - 1) .. string.rep(' ', finish - first + 1) .. clean:sub(finish + 1)
+                    start = finish + 1
+                end
+            end
+        else
+            local start = 1
+            while true do
+                local at = clean:find('%%', start)
+                if not at then
+                    break
+                end
+                if not escaped(clean, at) then
+                    clean = clean:sub(1, at - 1) .. string.rep(' ', #clean - at + 1)
+                    break
+                end
+                start = at + 1
+            end
+        end
+        masked[#masked + 1] = clean
     end
+    if not cursor then
+        return nil
+    end
+    local text, original = table.concat(masked, '\n'), table.concat(lines, '\n')
+    local index = 1
+    while index <= #text do
+        local char, pair = text:sub(index, index), text:sub(index, index + 1)
+        local closing, open_length, is_environment
+        if not escaped(text, index) then
+            if pair == '$$' then
+                closing, open_length = '$$', 2
+            elseif char == '$' then
+                closing, open_length = '$', 1
+            elseif pair == '\\(' then
+                closing, open_length = '\\)', 2
+            elseif pair == '\\[' then
+                closing, open_length = '\\]', 2
+            elseif text:sub(index, index + 6) == '\\begin{' then
+                local env = text:sub(index):match('^\\begin{([%a*]+)}')
+                if env and environments[env] then
+                    closing, open_length, is_environment = '\\end{' .. env .. '}', #env + 8, true
+                end
+            end
+        end
+        if closing then
+            local search, finish = index + open_length, nil
+            while search <= #text do
+                local at = text:find(closing, search, true)
+                if not at then
+                    break
+                end
+                if not escaped(text, at) then
+                    finish = at + #closing - 1
+                    break
+                end
+                search = at + #closing
+            end
+            if not finish then
+                return nil
+            end
+            if cursor >= index and cursor <= finish then
+                if finish - index + 1 > MAX_EQUATION then
+                    return nil, 'Equation exceeds 16 KiB.'
+                end
+                local equation = original:sub(index, finish)
+                if is_environment then
+                    return equation
+                end
+                local body = original:sub(index + open_length, finish - #closing)
+                return '\\[\n' .. body .. '\n\\]'
+            end
+            index = finish + 1
+        else
+            index = index + 1
+        end
+    end
+    return nil
+end
+
+---Register commands/autocommands; safe to call repeatedly.
+---@param options? table
+function M.setup(options)
+    M.stop()
+    opts = vim.tbl_extend('force', defaults, options or {})
+    for name, range in pairs({
+        debounce_ms = { 100, 5000 },
+        dpi = { 72, 300 },
+        max_height = { 2, 80 },
+        timeout_ms = { 1000, 60000 },
+        width = { 5, 200 },
+    }) do
+        local value = opts[name]
+        assert(
+            type(value) == 'number' and value == math.floor(value) and value >= range[1] and value <= range[2],
+            'Invalid latex_preview option: ' .. name
+        )
+    end
+    assert(
+        type(opts.cell_aspect) == 'number' and opts.cell_aspect >= 0.5 and opts.cell_aspect <= 4,
+        'Invalid cell_aspect'
+    )
+    assert(type(opts.preamble) == 'string' and #opts.preamble <= MAX_EQUATION, 'Invalid preamble')
+    group = api.nvim_create_augroup('NativeLatexPreview', {
+        clear = true,
+    })
+    api.nvim_create_autocmd('BufEnter', { group = group, callback = queue })
+    api.nvim_create_autocmd('BufLeave', {
+        group = group,
+        callback = function()
+            cancel()
+            hide()
+        end,
+    })
+    api.nvim_create_autocmd('BufWipeout', {
+        group = group,
+        callback = function(event)
+            if event.buf == state.buf then
+                M.stop()
+            end
+        end,
+    })
+    api.nvim_create_autocmd(
+        { 'CursorMoved', 'CursorMovedI', 'TextChanged', 'TextChangedI' },
+        { group = group, callback = queue }
+    )
+    api.nvim_create_autocmd('VimLeavePre', {
+        group = group,
+        callback = function()
+            M.stop()
+            for directory in pairs(directories) do
+                vim.fn.delete(directory, 'rf')
+            end
+        end,
+    })
+    api.nvim_create_autocmd('VimResized', { group = group, callback = queue })
+    api.nvim_create_user_command(
+        'LatexPreview',
+        M.start,
+        { force = true, desc = 'Start live native equation preview in this buffer' }
+    )
+    api.nvim_create_user_command('LatexPreviewLog', function()
+        vim.notify(
+            state.error or 'No rendering error. Place the cursor inside a complete equation.',
+            vim.log.levels.INFO
+        )
+    end, {
+        force = true,
+        desc = 'Show the latest equation render error',
+    })
+    api.nvim_create_user_command('LatexPreviewStop', M.stop, {
+        force = true,
+        desc = 'Stop native equation preview',
+    })
+    api.nvim_create_user_command('LatexPreviewToggle', function()
+        if state.buf == api.nvim_get_current_buf() then
+            M.stop()
+        else
+            M.start()
+        end
+    end, {
+        force = true,
+        desc = 'Toggle live equation preview',
+    })
 end
 
 ---Enable live rendering for the current buffer. Nothing executes at setup time.
@@ -549,90 +624,15 @@ function M.start()
     update()
 end
 
----Register commands/autocommands; safe to call repeatedly.
----@param options? table
-function M.setup(options)
-    M.stop()
-    opts = vim.tbl_extend('force', defaults, options or {})
-    for name, range in pairs({
-        debounce_ms = { 100, 5000 },
-        timeout_ms = { 1000, 60000 },
-        width = { 5, 200 },
-        max_height = { 2, 80 },
-        dpi = { 72, 300 },
-    }) do
-        local value = opts[name]
-        assert(
-            type(value) == 'number' and value == math.floor(value) and value >= range[1] and value <= range[2],
-            'Invalid latex_preview option: ' .. name
-        )
+---Stop previewing and release only this module's images/processes.
+function M.stop()
+    cancel()
+    hide()
+    state.buf, state.key, state.png, state.error = nil, nil, nil, nil
+    if state.timer then
+        state.timer:close()
+        state.timer = nil
     end
-    assert(
-        type(opts.cell_aspect) == 'number' and opts.cell_aspect >= 0.5 and opts.cell_aspect <= 4,
-        'Invalid cell_aspect'
-    )
-    assert(type(opts.preamble) == 'string' and #opts.preamble <= MAX_EQUATION, 'Invalid preamble')
-    group = api.nvim_create_augroup('NativeLatexPreview', {
-        clear = true,
-    })
-    api.nvim_create_autocmd(
-        { 'TextChanged', 'TextChangedI', 'CursorMoved', 'CursorMovedI' },
-        { group = group, callback = queue }
-    )
-    api.nvim_create_autocmd('BufEnter', { group = group, callback = queue })
-    api.nvim_create_autocmd('BufLeave', {
-        group = group,
-        callback = function()
-            cancel()
-            hide()
-        end,
-    })
-    api.nvim_create_autocmd('VimResized', { group = group, callback = queue })
-    api.nvim_create_autocmd('BufWipeout', {
-        group = group,
-        callback = function(event)
-            if event.buf == state.buf then
-                M.stop()
-            end
-        end,
-    })
-    api.nvim_create_autocmd('VimLeavePre', {
-        group = group,
-        callback = function()
-            M.stop()
-            for directory in pairs(directories) do
-                vim.fn.delete(directory, 'rf')
-            end
-        end,
-    })
-    api.nvim_create_user_command(
-        'LatexPreview',
-        M.start,
-        { force = true, desc = 'Start live native equation preview in this buffer' }
-    )
-    api.nvim_create_user_command('LatexPreviewStop', M.stop, {
-        force = true,
-        desc = 'Stop native equation preview',
-    })
-    api.nvim_create_user_command('LatexPreviewToggle', function()
-        if state.buf == api.nvim_get_current_buf() then
-            M.stop()
-        else
-            M.start()
-        end
-    end, {
-        force = true,
-        desc = 'Toggle live equation preview',
-    })
-    api.nvim_create_user_command('LatexPreviewLog', function()
-        vim.notify(
-            state.error or 'No rendering error. Place the cursor inside a complete equation.',
-            vim.log.levels.INFO
-        )
-    end, {
-        force = true,
-        desc = 'Show the latest equation render error',
-    })
 end
 
 return M

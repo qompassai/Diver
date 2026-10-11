@@ -60,7 +60,7 @@ installed one specific way or it's invisible to the module under test.
 
 - `tests/testmore/` runs via `prove` (lua-TestMore) — **never share
   assertion globals** between the busted and testmore suites.
-- `tests/lua/` holds non-busted specs (e.g. `tests/lua/mcp_server/*`) —
+- `tests/<subject>/` holds non-busted specs (e.g. `tests/mcp/*`) —
   a different harness. Don't mix conventions.
 - Known repo gap (flag, don't fix unasked): `.busted` comments and the
   CHANGELOG reference `scripts/test-lua` (Busted-then-prove runner), but no

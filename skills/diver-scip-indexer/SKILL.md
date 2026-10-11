@@ -52,7 +52,7 @@ writing one module, registering it, and indexing a fixture project.
   (`registry.register` validates command/args/filetypes/markers).
 - `:ScipIndex` on a fixture project produces `index.scip` and `scip lint`
   passes (`lint_after_index`).
-- `tests/lua/scip_wiring.lua` assertions updated and passing.
+- `tests/scip/scip_wiring.lua` assertions updated and passing.
 - `luac -p`, luacheck 0/0, stylua clean on new files.
 
 ## SCIP-gated rename pre-flight

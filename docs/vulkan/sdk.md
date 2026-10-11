@@ -60,4 +60,4 @@ required.
 `M.layers()`, `M.vkconfig_available()`, `M.validation_layer_available(layers)`,
 `M.status()` (one report table), `M.format_status(report)` (display lines).
 Parsers (`parse_instance_version`, `parse_layers`) are pure and covered
-by `tests/lua/vulkan_sdk.lua`.
+by `tests/vulkan/vulkan_sdk.lua`.

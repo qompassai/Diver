@@ -14,27 +14,21 @@ function M.current(path)
     return path ~= '' and fs.normalize(path) or nil
 end
 
----@param text string
----@return integer
-function M.word_count_text(text)
-    local count = 0
-    for _ in text:gmatch('%S+') do
-        count = count + 1
+---@param line string
+---@return string?
+function M.heading_slug(line)
+    local heading = line:match('^%s*#+%s+(.+)$')
+    if not heading then
+        return nil
     end
-    return count
-end
-
----@param bufnr? integer
----@return integer
-function M.word_count(bufnr)
-    bufnr = bufnr or api.nvim_get_current_buf()
-    local text = table.concat(api.nvim_buf_get_lines(bufnr, 0, -1, false), '\n')
-    text = text:gsub('```.-```', ' ')
-    text = text:gsub('`[^`]+`', ' ')
-    text = text:gsub('<[^>]+>', ' ')
-    text = text:gsub('%[[^%]]+%]%([^%)]+%)', ' ')
-    text = text:gsub('[#>*_~%-]', ' ')
-    return M.word_count_text(text)
+    return heading
+        :lower()
+        :gsub('`', '')
+        :gsub('[^%w%s%-]', '')
+        :gsub('%s+', '-')
+        :gsub('%-+', '-')
+        :gsub('^%-', '')
+        :gsub('%-$', '')
 end
 
 ---@param path string
@@ -97,28 +91,30 @@ function M.to_tex(path, output)
     end)
 end
 
----@param line string
----@return string?
-function M.heading_slug(line)
-    local heading = line:match('^%s*#+%s+(.+)$')
-    if not heading then
-        return nil
+---@param bufnr? integer
+---@return integer
+function M.word_count(bufnr)
+    bufnr = bufnr or api.nvim_get_current_buf()
+    local text = table.concat(api.nvim_buf_get_lines(bufnr, 0, -1, false), '\n')
+    text = text:gsub('```.-```', ' ')
+    text = text:gsub('`[^`]+`', ' ')
+    text = text:gsub('<[^>]+>', ' ')
+    text = text:gsub('%[[^%]]+%]%([^%)]+%)', ' ')
+    text = text:gsub('[#>*_~%-]', ' ')
+    return M.word_count_text(text)
+end
+
+---@param text string
+---@return integer
+function M.word_count_text(text)
+    local count = 0
+    for _ in text:gmatch('%S+') do
+        count = count + 1
     end
-    return heading
-        :lower()
-        :gsub('`', '')
-        :gsub('[^%w%s%-]', '')
-        :gsub('%s+', '-')
-        :gsub('%-+', '-')
-        :gsub('^%-', '')
-        :gsub('%-$', '')
+    return count
 end
 
 function M.setup()
-    api.nvim_create_user_command('MarkdownWords', function()
-        vim.notify(('Markdown word count: %d'):format(M.word_count()), vim.log.levels.INFO)
-    end, { desc = 'Count Markdown manuscript words' })
-
     api.nvim_create_user_command('MarkdownPdf', function(opts)
         local path = opts.args ~= '' and opts.args or M.current()
         if path then
@@ -140,6 +136,10 @@ function M.setup()
         complete = 'file',
         desc = 'Convert Markdown manuscript to LaTeX with Pandoc',
     })
+
+    api.nvim_create_user_command('MarkdownWords', function()
+        vim.notify(('Markdown word count: %d'):format(M.word_count()), vim.log.levels.INFO)
+    end, { desc = 'Count Markdown manuscript words' })
 end
 
 return M

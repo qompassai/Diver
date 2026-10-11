@@ -55,19 +55,6 @@ function M.word(old_path, new_path)
 end
 
 function M.setup()
-    api.nvim_create_user_command('ManuscriptDiff', function(opts)
-        local args = vim.split(opts.args, '%s+', { trimempty = true })
-        if #args ~= 2 then
-            vim.notify('Usage: ManuscriptDiff {old} {new}', vim.log.levels.ERROR)
-            return
-        end
-        M.word(args[1], args[2])
-    end, {
-        nargs = '+',
-        complete = 'file',
-        desc = 'Show word-level manuscript diff',
-    })
-
     api.nvim_create_user_command('LatexDiff', function(opts)
         local args = vim.split(opts.args, '%s+', { trimempty = true })
         if #args ~= 2 then
@@ -79,6 +66,19 @@ function M.setup()
         nargs = '+',
         complete = 'file',
         desc = 'Create latexdiff manuscript',
+    })
+
+    api.nvim_create_user_command('ManuscriptDiff', function(opts)
+        local args = vim.split(opts.args, '%s+', { trimempty = true })
+        if #args ~= 2 then
+            vim.notify('Usage: ManuscriptDiff {old} {new}', vim.log.levels.ERROR)
+            return
+        end
+        M.word(args[1], args[2])
+    end, {
+        nargs = '+',
+        complete = 'file',
+        desc = 'Show word-level manuscript diff',
     })
 end
 

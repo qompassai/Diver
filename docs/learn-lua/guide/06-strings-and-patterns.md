@@ -11,7 +11,7 @@ local c = [[ long string
 that spans multiple lines ]]       -- "long bracket" form, no escaping needed
 ```
 
-`diver`'s StyLua profile in `lsp/stylua_ls.lua` sets `quote_style = "AutoPreferSingle"`, which is why
+`diver`'s `.stylua.toml` sets `quote_style = "AutoPreferSingle"`, which is why
 the config overwhelmingly uses `'single'` quotes. The `[[ ... ]]` form is used
 for license headers and multi-line templates (see `schema.lua`'s
 `copyright_notice`).
