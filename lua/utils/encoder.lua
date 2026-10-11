@@ -9,8 +9,8 @@
 -- Copyright (C) 2026 Qompass AI, All rights reserved
 -- ----------------------------------------
 local ffi = require('ffi')
-local uv = vim.uv
 local fn = vim.fn
+local uv = vim.uv
 local function define_cdefs()
     ffi.cdef([[
     typedef unsigned char uint8_t;
@@ -76,144 +76,6 @@ local function new_safe(type_name, size)
     ffi.fill(buf, size)
     return ffi.cast(type_name .. '*', buf), buf
 end
----@class media.encoder.X264 : media.Encoder
----@field lib       any
----@field pts       integer
----@field handle    any
----@field pic_in    any
----@field pic_in_buf any
----@field param     any
----@field param_buf any
----@field file      integer
-local X264 = {}
-X264.__index = X264
----@param width integer
----@param height integer
----@param fps integer
----@param output string
----@return media.encoder.X264|nil
-function X264.create(width, height, fps, output)
-    local x264 = load_x264()
-    if not x264 then
-        return
-    end
-    local self = setmetatable({
-        lib = x264,
-        width = width,
-        height = height,
-        fps = fps,
-        output = output,
-        pts = 0,
-        handle = nil,
-        pic_in = nil,
-        pic_in_buf = nil,
-        param = nil,
-        param_buf = nil,
-        frame_count = 0,
-    }, X264)
-    self.file = assert(uv.fs_open(self.output, 'w', 438))
-    self.param, self.param_buf = new_safe('x264_param_t')
-    if x264.x264_param_default_preset(self.param, 'veryfast', 'zerolatency') < 0 then
-        return
-    end
-    x264.x264_param_parse(self.param, 'width', tostring(width))
-    x264.x264_param_parse(self.param, 'height', tostring(height))
-    x264.x264_param_parse(self.param, 'fps', tostring(fps) .. '/1')
-    x264.x264_param_parse(self.param, 'vfr', '0')
-    x264.x264_param_parse(self.param, 'repeat_headers', '1')
-    local p_raw = ffi.cast('uint8_t*', self.param)
-    ffi.cast('int*', p_raw + 28)[0] = width
-    ffi.cast('int*', p_raw + 32)[0] = height
-    ffi.cast('int*', p_raw + 36)[0] = 2 -- I420
-    x264.x264_param_apply_profile(self.param, 'high')
-    self.handle = x264.x264_encoder_open_165(self.param)
-    if not self.handle then
-        return
-    end
-    self.pic_in, self.pic_in_buf = new_safe('x264_picture_t')
-    x264.x264_picture_init(self.pic_in)
-    x264.x264_picture_alloc(self.pic_in, 2, width, height)
-    self:write_headers()
-    return self
-end
-
-function X264:write_headers()
-    local pp_nal = ffi.new('x264_nal_t*[1]')
-    local pi_nal = ffi.new('int[1]')
-    local ret = self.lib.x264_encoder_headers(self.handle, pp_nal, pi_nal)
-    if ret > 0 then
-        ffi.C.write(self.file, pp_nal[0].p_payload, ret)
-    end
-end
-
----@param rgb_data any
----@return integer
-function X264:write_frame(rgb_data)
-    local pp_nal = ffi.new('x264_nal_t*[1]')
-    local pi_nal = ffi.new('int[1]')
-    local pic_out, _ = new_safe('x264_picture_t')
-    local rshift = bit.rshift
-    local arshift = bit.arshift
-    local rgb = ffi.cast('uint8_t*', rgb_data)
-    local pic = self.pic_in
-    local y_plane, u_plane, v_plane = pic.img.plane[0], pic.img.plane[1], pic.img.plane[2]
-    local y_stride, u_stride = pic.img.i_stride[0], pic.img.i_stride[1]
-    for y = 0, self.height - 1 do
-        local row_rgb = rgb + y * self.width * 3
-        local row_y = y_plane + y * y_stride
-        for x = 0, self.width - 1 do
-            local r, g, b = row_rgb[0], row_rgb[1], row_rgb[2]
-            row_rgb = row_rgb + 3
-            local yval = rshift(19595 * r + 38469 * g + 7471 * b, 16)
-            row_y[x] = yval > 255 and 255 or yval
-            if y % 2 == 0 and x % 2 == 0 then
-                local uval = arshift(-9633 * r - 18940 * g + 28573 * b, 16) + 128
-                local vval = arshift(40304 * r - 33750 * g - 6554 * b, 16) + 128
-                local uv_idx = (y / 2) * u_stride + (x / 2)
-                u_plane[uv_idx] = uval < 0 and 0 or (uval > 255 and 255 or uval)
-                v_plane[uv_idx] = vval < 0 and 0 or (vval > 255 and 255 or vval)
-            end
-        end
-    end
-    pic.i_pts = self.pts
-    self.pts = self.pts + 1
-    local ret = self.lib.x264_encoder_encode(self.handle, pp_nal, pi_nal, pic, pic_out)
-    if ret > 0 then
-        ffi.C.write(self.file, pp_nal[0].p_payload, ret)
-        self.frame_count = self.frame_count + 1
-    end
-    return ret
-end
-
----@return nil
-function X264:flush()
-    local pp_nal = ffi.new('x264_nal_t*[1]')
-    local pi_nal = ffi.new('int[1]')
-    local pic_out, _ = new_safe('x264_picture_t')
-    while self.lib.x264_encoder_delayed_frames(self.handle) > 0 do
-        local ret = self.lib.x264_encoder_encode(self.handle, pp_nal, pi_nal, nil, pic_out)
-        if ret > 0 then
-            ffi.C.write(self.file, pp_nal[0].p_payload, ret)
-        end
-    end
-end
-
----@return nil
-function X264:close()
-    if self.handle then
-        self:flush()
-        if self.pic_in then
-            self.lib.x264_picture_clean(self.pic_in)
-        end
-        self.lib.x264_encoder_close(self.handle)
-        self.handle = nil
-    end
-    if self.file then
-        uv.fs_close(self.file)
-        self.file = nil
-    end
-end
-
 ---@class media.encoder.FFmpeg : media.Encoder
 ---@field handle? uv.uv_process_t
 ---@field stdin? uv.uv_pipe_t
@@ -224,6 +86,15 @@ FFmpeg.__index = FFmpeg
 ---@param fps integer
 ---@param output string
 ---@return media.encoder.FFmpeg
+---@return nil
+function FFmpeg:close()
+    if self.stdin and not self.stdin:is_closing() then
+        self.stdin:close()
+    end
+    self.stdin = nil
+    self.handle = nil
+end
+
 function FFmpeg.create(width, height, fps, output)
     local self = setmetatable({}, FFmpeg)
     self.width = width
@@ -286,13 +157,142 @@ function FFmpeg:write_frame(rgb_data) ---@param rgb_data string|any
     return true
 end
 
+---@class media.encoder.X264 : media.Encoder
+---@field lib       any
+---@field pts       integer
+---@field handle    any
+---@field pic_in    any
+---@field pic_in_buf any
+---@field param     any
+---@field param_buf any
+---@field file      integer
+local X264 = {}
+X264.__index = X264
+---@param width integer
+---@param height integer
+---@param fps integer
+---@param output string
+---@return media.encoder.X264|nil
 ---@return nil
-function FFmpeg:close()
-    if self.stdin and not self.stdin:is_closing() then
-        self.stdin:close()
+function X264:close()
+    if self.handle then
+        self:flush()
+        if self.pic_in then
+            self.lib.x264_picture_clean(self.pic_in)
+        end
+        self.lib.x264_encoder_close(self.handle)
+        self.handle = nil
     end
-    self.stdin = nil
-    self.handle = nil
+    if self.file then
+        uv.fs_close(self.file)
+        self.file = nil
+    end
+end
+
+function X264.create(width, height, fps, output)
+    local x264 = load_x264()
+    if not x264 then
+        return
+    end
+    local self = setmetatable({
+        fps = fps,
+        frame_count = 0,
+        handle = nil,
+        height = height,
+        lib = x264,
+        output = output,
+        param = nil,
+        param_buf = nil,
+        pic_in = nil,
+        pic_in_buf = nil,
+        pts = 0,
+        width = width,
+    }, X264)
+    self.file = assert(uv.fs_open(self.output, 'w', 438))
+    self.param, self.param_buf = new_safe('x264_param_t')
+    if x264.x264_param_default_preset(self.param, 'veryfast', 'zerolatency') < 0 then
+        return
+    end
+    x264.x264_param_parse(self.param, 'width', tostring(width))
+    x264.x264_param_parse(self.param, 'height', tostring(height))
+    x264.x264_param_parse(self.param, 'fps', tostring(fps) .. '/1')
+    x264.x264_param_parse(self.param, 'vfr', '0')
+    x264.x264_param_parse(self.param, 'repeat_headers', '1')
+    local p_raw = ffi.cast('uint8_t*', self.param)
+    ffi.cast('int*', p_raw + 28)[0] = width
+    ffi.cast('int*', p_raw + 32)[0] = height
+    ffi.cast('int*', p_raw + 36)[0] = 2 -- I420
+    x264.x264_param_apply_profile(self.param, 'high')
+    self.handle = x264.x264_encoder_open_165(self.param)
+    if not self.handle then
+        return
+    end
+    self.pic_in, self.pic_in_buf = new_safe('x264_picture_t')
+    x264.x264_picture_init(self.pic_in)
+    x264.x264_picture_alloc(self.pic_in, 2, width, height)
+    self:write_headers()
+    return self
+end
+
+---@return nil
+function X264:flush()
+    local pp_nal = ffi.new('x264_nal_t*[1]')
+    local pi_nal = ffi.new('int[1]')
+    local pic_out, _ = new_safe('x264_picture_t')
+    while self.lib.x264_encoder_delayed_frames(self.handle) > 0 do
+        local ret = self.lib.x264_encoder_encode(self.handle, pp_nal, pi_nal, nil, pic_out)
+        if ret > 0 then
+            ffi.C.write(self.file, pp_nal[0].p_payload, ret)
+        end
+    end
+end
+
+---@param rgb_data any
+---@return integer
+function X264:write_frame(rgb_data)
+    local pp_nal = ffi.new('x264_nal_t*[1]')
+    local pi_nal = ffi.new('int[1]')
+    local pic_out, _ = new_safe('x264_picture_t')
+    local rshift = bit.rshift
+    local arshift = bit.arshift
+    local rgb = ffi.cast('uint8_t*', rgb_data)
+    local pic = self.pic_in
+    local y_plane, u_plane, v_plane = pic.img.plane[0], pic.img.plane[1], pic.img.plane[2]
+    local y_stride, u_stride = pic.img.i_stride[0], pic.img.i_stride[1]
+    for y = 0, self.height - 1 do
+        local row_rgb = rgb + y * self.width * 3
+        local row_y = y_plane + y * y_stride
+        for x = 0, self.width - 1 do
+            local r, g, b = row_rgb[0], row_rgb[1], row_rgb[2]
+            row_rgb = row_rgb + 3
+            local yval = rshift(19595 * r + 38469 * g + 7471 * b, 16)
+            row_y[x] = yval > 255 and 255 or yval
+            if y % 2 == 0 and x % 2 == 0 then
+                local uval = arshift(-9633 * r - 18940 * g + 28573 * b, 16) + 128
+                local vval = arshift(40304 * r - 33750 * g - 6554 * b, 16) + 128
+                local uv_idx = (y / 2) * u_stride + (x / 2)
+                u_plane[uv_idx] = uval < 0 and 0 or (uval > 255 and 255 or uval)
+                v_plane[uv_idx] = vval < 0 and 0 or (vval > 255 and 255 or vval)
+            end
+        end
+    end
+    pic.i_pts = self.pts
+    self.pts = self.pts + 1
+    local ret = self.lib.x264_encoder_encode(self.handle, pp_nal, pi_nal, pic, pic_out)
+    if ret > 0 then
+        ffi.C.write(self.file, pp_nal[0].p_payload, ret)
+        self.frame_count = self.frame_count + 1
+    end
+    return ret
+end
+
+function X264:write_headers()
+    local pp_nal = ffi.new('x264_nal_t*[1]')
+    local pi_nal = ffi.new('int[1]')
+    local ret = self.lib.x264_encoder_headers(self.handle, pp_nal, pi_nal)
+    if ret > 0 then
+        ffi.C.write(self.file, pp_nal[0].p_payload, ret)
+    end
 end
 
 ---@alias EncKind "x264"|"ffmpeg"
