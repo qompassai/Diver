@@ -49,11 +49,7 @@
 local fs = vim.fs
 
 ---@param context FormatterContext
----@return string
-local function working_directory(context)
-    return context.root
-end
-
+---@return string[]
 ---@param context FormatterContext
 ---@return string?
 local function project_config(context)
@@ -81,8 +77,6 @@ local function project_config(context)
     return nil
 end
 
----@param context FormatterContext
----@return string[]
 local function arguments(context)
     local tempfile = context.tempfile
     if not tempfile or tempfile == '' then
@@ -111,19 +105,25 @@ local function arguments(context)
     return args
 end
 
+---@param context FormatterContext
+---@return string
+local function working_directory(context)
+    return context.root
+end
+
 ---@type FormatterSpec
 return {
-    cmd = 'php-cs-fixer',
+    allow_empty = false,
     args = arguments,
-    mode = 'tempfile',
-    output = 'file',
+    automatic = true,
+    cmd = 'php-cs-fixer',
     cwd = working_directory,
-    root_markers = { '.php-cs-fixer.php', '.php-cs-fixer.dist.php', 'composer.json', '.git' },
+    decode = nil,
     env = { NO_COLOR = '1', PHP_CS_FIXER_FUTURE_MODE = '0', PHP_CS_FIXER_IGNORE_ENV = '0' },
     exit_codes = { 0 },
-    automatic = true,
-    allow_empty = false,
     extension = 'php',
-    decode = nil,
+    mode = 'tempfile',
+    output = 'file',
     pre_transform = nil,
+    root_markers = { '.php-cs-fixer.php', '.php-cs-fixer.dist.php', 'composer.json', '.git' },
 }

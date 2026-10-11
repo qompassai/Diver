@@ -17,8 +17,8 @@
 -- #################################################################
 ---@source https://github.com/qompassai/diver
 local M = {}
-local queue = {}
 local active = 0
+local queue = {}
 local stopped = false
 
 local CONCURRENCY = 2
