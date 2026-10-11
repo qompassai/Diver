@@ -43,12 +43,19 @@
 ---@field output_lines_max integer max result-file lines shown after a battle
 ---@field jvm_heap string -Xmx value for the Robocode JVM
 
----@type RobocodeConfig
 local M = {}
+M.battle_dir = '~/robocode/battles'
+
+M.battle_rounds = 10
+M.battle_timeout_ms = 300000
+M.battle_tps = 30
 
 M.binaries = {
     'robocode',
 }
+M.compile_timeout_ms = 60000
+
+M.dev_robots_dir = '~/robocode/robots'
 
 M.env_names = {
     'ROBOCODE_HOME',
@@ -58,17 +65,12 @@ M.env_names = {
 M.install_roots = {
     '/opt/robocode',
 }
-
-M.dev_robots_dir = '~/robocode/robots'
-M.battle_dir = '~/robocode/battles'
-
-M.battle_rounds = 10
-M.battle_tps = 30
-M.battle_timeout_ms = 300000
-M.compile_timeout_ms = 60000
+M.jvm_heap = '512m'
+M.output_lines_max = 40
 M.robots_max = 16
 M.scan_entries_max = 500
-M.output_lines_max = 40
-M.jvm_heap = '512m'
 
-return M
+---@type RobocodeConfig
+local config = M
+
+return config

@@ -38,12 +38,13 @@
 ---@field binary string butler executable name on PATH
 ---@field default_channel string itch channel used when none is given
 
----@type Love2dConfig
 local M = {}
 
 M.binaries = {
     'love',
 }
+
+M.download_timeout_ms = 120000
 
 M.env_names = {
     'LOVE_BIN',
@@ -59,11 +60,11 @@ M.group_order = {
     'Setup',
 }
 
-M.output_filetype = 'love2d-output'
-
 -- Pinned engine release. Bumped deliberately by editing versions.lua's
 -- ARTIFACTS table; this string must stay in sync with it.
 M.love_version = '11.5'
+
+M.output_filetype = 'love2d-output'
 
 -- Packager bounds: a .love is a zip, and zips are a classic decompression-
 -- bomb vector. Everything the packager touches is capped.
@@ -74,8 +75,6 @@ M.package_total_size_max_bytes = 500 * 1024 * 1024
 -- Fixed timestamp (UTC, ISO-8601) stamped on every staged file before
 -- zipping, so identical trees produce byte-identical .love files.
 M.package_zip_epoch = '2000-01-01T00:00:00Z'
-
-M.download_timeout_ms = 120000
 
 -- Directory holding the generated LuaCATS stubs (apidefs/love.lua),
 -- derived from this file's location so health checks work regardless of
@@ -91,4 +90,7 @@ M.butler = {
     default_channel = 'linux',
 }
 
-return M
+---@type Love2dConfig
+local config = M
+
+return config

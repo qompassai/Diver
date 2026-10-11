@@ -32,55 +32,6 @@ local M = {}
 
 local VERSION_TIMEOUT_MS = 15000
 
----Parse a strict 'major.minor.patch' version string. Anything else
----(wrong shape, wrong type) yields nil.
----@param text string|nil
----@return integer[]? parts Exactly { major, minor, patch }, or nil when malformed
-function M.parse_version(text)
-    if type(text) ~= 'string' then
-        return nil
-    end
-
-    local major, minor, patch = text:match('^(%d+)%.(%d+)%.(%d+)$')
-
-    if major == nil or minor == nil or patch == nil then
-        return nil
-    end
-
-    local parts = {
-        tonumber(major),
-        tonumber(minor),
-        tonumber(patch),
-    }
-
-    for index = 1, 3 do
-        if parts[index] == nil then
-            return nil
-        end
-    end
-
-    ---@cast parts integer[]
-
-    return parts
-end
-
----Compare two parsed versions.
----@param installed integer[] { major, minor, patch }
----@param minimum integer[] { major, minor, patch }
----@return boolean at_least True when installed >= minimum
-function M.version_at_least(installed, minimum)
-    assert(type(installed) == 'table' and #installed == 3)
-    assert(type(minimum) == 'table' and #minimum == 3)
-
-    for index = 1, 3 do
-        if installed[index] ~= minimum[index] then
-            return installed[index] > minimum[index]
-        end
-    end
-
-    return true
-end
-
 ---Locate the blender binary. Explicit env override first, then the
 ---managed install under tools_dir, then PATH.
 ---@param search_dirs? string[] Override install roots (tests use a bogus dir here)
@@ -128,77 +79,6 @@ function M.binary_path(search_dirs)
     end
 
     return nil
-end
-
----Result shape of M.system_wait. Defined locally because this
----LuaLS's bundled vim runtime does not name vim.SystemCompleted,
----and every CLI wrapper reads code/stdout/stderr off it.
----@class BlenderSystemResult
----@field code integer Process exit code (nonzero when killed by timeout)
----@field stdout? string Captured standard output (text mode only)
----@field stderr? string Captured standard error (text mode only)
----@field signal? integer Signal number when the process was killed
-
----Spawn a subprocess and wait, converting spawn failures (missing
----binary, ENOENT, ...) into a (nil, err) return instead of a throw.
----Every CLI wrapper goes through here so nothing escapes as an
----uncaught error.
----@param argv string[]
----@param opts table vim.system options
----@return BlenderSystemResult? result
----@return string? err
-function M.system_wait(argv, opts)
-    assert(type(argv) == 'table' and #argv > 0)
-    assert(type(opts) == 'table')
-
-    local ok, completed = pcall(function()
-        return vim.system(argv, opts):wait()
-    end)
-
-    if not ok then
-        return nil, 'blender: failed to spawn ' .. tostring(argv[1]) .. ': ' .. tostring(completed)
-    end
-
-    -- Copy into the local result shape so callers never depend on
-    -- which vim runtime library the installed LuaLS happens to ship.
-    return {
-        code = completed.code,
-        stdout = completed.stdout,
-        stderr = completed.stderr,
-        signal = completed.signal,
-    },
-        nil
-end
-
----Query `blender --version` and parse the release triple.
----@param bin? string Explicit binary path (defaults to discovery)
----@return string? version 'major.minor.patch', or nil with an error message
----@return string? err
-function M.installed_version(bin)
-    local binary = bin or M.binary_path()
-
-    if binary == nil or binary == '' then
-        return nil, 'blender binary not found'
-    end
-
-    local result, spawn_err = M.system_wait({ binary, '--version' }, { text = true, timeout = VERSION_TIMEOUT_MS })
-
-    if result == nil then
-        return nil, spawn_err
-    end
-
-    if result.code ~= 0 then
-        return nil, 'blender --version failed with exit code ' .. tostring(result.code)
-    end
-
-    local first_line = (result.stdout or ''):match('^([^\r\n]*)')
-    local triple = first_line and first_line:match('Blender (%d+%.%d+%.%d+)')
-
-    if triple == nil then
-        return nil, 'could not parse blender version from: ' .. tostring(first_line)
-    end
-
-    return triple, nil
 end
 
 ---Fail closed unless the discovered binary meets the minimum release.
@@ -250,6 +130,128 @@ function M.ensure_installed()
             'Blender is not installed. Install the %s Linux x86_64 tarball from https://www.blender.org/download/ '
             .. 'under %s/<version>/, or set BLENDER_BIN to an explicit binary path.'
         ):format(config.pinned_version, config.tools_dir)
+end
+
+---Query `blender --version` and parse the release triple.
+---@param bin? string Explicit binary path (defaults to discovery)
+---@return string? version 'major.minor.patch', or nil with an error message
+---@return string? err
+function M.installed_version(bin)
+    local binary = bin or M.binary_path()
+
+    if binary == nil or binary == '' then
+        return nil, 'blender binary not found'
+    end
+
+    local result, spawn_err = M.system_wait({ binary, '--version' }, { text = true, timeout = VERSION_TIMEOUT_MS })
+
+    if result == nil then
+        return nil, spawn_err
+    end
+
+    if result.code ~= 0 then
+        return nil, 'blender --version failed with exit code ' .. tostring(result.code)
+    end
+
+    local first_line = (result.stdout or ''):match('^([^\r\n]*)')
+    local triple = first_line and first_line:match('Blender (%d+%.%d+%.%d+)')
+
+    if triple == nil then
+        return nil, 'could not parse blender version from: ' .. tostring(first_line)
+    end
+
+    return triple, nil
+end
+
+---Parse a strict 'major.minor.patch' version string. Anything else
+---(wrong shape, wrong type) yields nil.
+---@param text string|nil
+---@return integer[]? parts Exactly { major, minor, patch }, or nil when malformed
+function M.parse_version(text)
+    if type(text) ~= 'string' then
+        return nil
+    end
+
+    local major, minor, patch = text:match('^(%d+)%.(%d+)%.(%d+)$')
+
+    if major == nil or minor == nil or patch == nil then
+        return nil
+    end
+
+    local parts = {
+        tonumber(major),
+        tonumber(minor),
+        tonumber(patch),
+    }
+
+    for index = 1, 3 do
+        if parts[index] == nil then
+            return nil
+        end
+    end
+
+    ---@cast parts integer[]
+
+    return parts
+end
+
+---Result shape of M.system_wait. Defined locally because this
+---LuaLS's bundled vim runtime does not name vim.SystemCompleted,
+---and every CLI wrapper reads code/stdout/stderr off it.
+---@class BlenderSystemResult
+---@field code integer Process exit code (nonzero when killed by timeout)
+---@field stdout? string Captured standard output (text mode only)
+---@field stderr? string Captured standard error (text mode only)
+---@field signal? integer Signal number when the process was killed
+
+---Spawn a subprocess and wait, converting spawn failures (missing
+---binary, ENOENT, ...) into a (nil, err) return instead of a throw.
+---Every CLI wrapper goes through here so nothing escapes as an
+---uncaught error.
+---@param argv string[]
+---@param opts table vim.system options
+---@return BlenderSystemResult? result
+---@return string? err
+function M.system_wait(argv, opts)
+    assert(type(argv) == 'table' and #argv > 0)
+    assert(type(opts) == 'table')
+
+    local ok, completed = pcall(function()
+        local sysobj = vim.system(argv, opts)
+        ---@cast sysobj vim.SystemObj
+        return sysobj:wait()
+    end)
+
+    if not ok then
+        return nil, 'blender: failed to spawn ' .. tostring(argv[1]) .. ': ' .. tostring(completed)
+    end
+
+    -- Copy into the local result shape so callers never depend on
+    -- which vim runtime library the installed LuaLS happens to ship.
+    return {
+        code = completed.code,
+        stdout = completed.stdout,
+        stderr = completed.stderr,
+        signal = completed.signal,
+    },
+        nil
+end
+
+---Compare two parsed versions.
+---@param installed integer[] { major, minor, patch }
+---@param minimum integer[] { major, minor, patch }
+---@return boolean at_least True when installed >= minimum
+function M.version_at_least(installed, minimum)
+    assert(type(installed) == 'table' and #installed == 3)
+    assert(type(minimum) == 'table' and #minimum == 3)
+
+    for index = 1, 3 do
+        if installed[index] ~= minimum[index] then
+            return installed[index] > minimum[index]
+        end
+    end
+
+    return true
 end
 
 return M

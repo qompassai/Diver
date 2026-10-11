@@ -25,12 +25,16 @@ local shared_util = require('games.shared.util')
 
 local M = {}
 
-function M.setup_commands()
-    local action_list = actions.get_actions()
+function M.setup()
+    M.setup_commands()
+    M.setup_keymaps()
+end
 
+function M.setup_commands()
     vim.api.nvim_create_user_command('Tic80', function()
         actions.show_menu()
     end, { desc = 'Open TIC-80 action menu' })
+    local action_list = actions.get_actions()
 
     vim.api.nvim_create_user_command('Tic80Action', function(cmd_opts)
         actions.run_action_by_id(cmd_opts.args)
@@ -74,10 +78,7 @@ function M.setup_commands()
 
     vim.api.nvim_create_user_command('Tic80Watch', function()
         local enabled = actions.toggle_watch()
-        vim.notify(
-            'games.tic80: auto-restart on save ' .. (enabled and 'enabled' or 'disabled'),
-            vim.log.levels.INFO
-        )
+        vim.notify('games.tic80: auto-restart on save ' .. (enabled and 'enabled' or 'disabled'), vim.log.levels.INFO)
     end, {
         force = true,
         desc = 'TIC-80: toggle auto-restart on save',
@@ -86,23 +87,18 @@ end
 
 function M.setup_keymaps()
     local map = vim.keymap.set
-    map('n', '<leader>gtm', actions.show_menu, {
-        desc = 'TIC-80: Action menu',
-    })
     map('n', '<leader>gte', actions.open_editors, {
         desc = 'TIC-80: Open built-in editors',
     })
     map('n', '<leader>gti', actions.import_spritesheet, {
         desc = 'TIC-80: Import PNG sprite sheet',
     })
+    map('n', '<leader>gtm', actions.show_menu, {
+        desc = 'TIC-80: Action menu',
+    })
     map('n', '<leader>gtx', actions.export_build, {
         desc = 'TIC-80: Export build',
     })
-end
-
-function M.setup()
-    M.setup_commands()
-    M.setup_keymaps()
 end
 
 return M

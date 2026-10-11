@@ -20,30 +20,19 @@ local shared_util = require('games.shared.util')
 
 local M = {}
 
-function M.setup_commands()
-    local action_list = actions.get_actions()
+function M.setup()
+    M.setup_commands()
+    M.setup_keymaps()
+end
 
+function M.setup_commands()
     vim.api.nvim_create_user_command('Blender', function()
         actions.show_menu()
     end, { desc = 'Open Blender action menu' })
 
-    vim.api.nvim_create_user_command('BlenderAction', function(opts)
-        actions.run_action_by_id(opts.args)
-    end, {
-        nargs = 1,
-        complete = function(arg_lead)
-            return shared_util.get_action_ids(action_list, arg_lead)
-        end,
-        desc = 'Run a Blender action by id',
-    })
-
-    vim.api.nvim_create_user_command('BlenderRender', function()
-        actions.render_still()
-    end, { desc = 'Blender: render a still frame headless' })
-
-    vim.api.nvim_create_user_command('BlenderTurntable', function()
-        actions.render_turntable()
-    end, { desc = 'Blender: render a camera turntable' })
+    vim.api.nvim_create_user_command('BlenderBatch', function()
+        actions.batch_render()
+    end, { desc = 'Blender: batch an operation over a .blend directory' })
 
     vim.api.nvim_create_user_command('BlenderExport', function(opts)
         if opts.args == 'fbx' then
@@ -59,13 +48,28 @@ function M.setup_commands()
         desc = 'Blender: export glTF (.glb) or FBX (.fbx)',
     })
 
+    vim.api.nvim_create_user_command('BlenderRender', function()
+        actions.render_still()
+    end, { desc = 'Blender: render a still frame headless' })
+
     vim.api.nvim_create_user_command('BlenderSprites', function()
         actions.bake_sprites()
     end, { desc = 'Blender: bake a sprite sheet + JSON manifest' })
 
-    vim.api.nvim_create_user_command('BlenderBatch', function()
-        actions.batch_render()
-    end, { desc = 'Blender: batch an operation over a .blend directory' })
+    vim.api.nvim_create_user_command('BlenderTurntable', function()
+        actions.render_turntable()
+    end, { desc = 'Blender: render a camera turntable' })
+    local action_list = actions.get_actions()
+
+    vim.api.nvim_create_user_command('BlenderAction', function(opts)
+        actions.run_action_by_id(opts.args)
+    end, {
+        nargs = 1,
+        complete = function(arg_lead)
+            return shared_util.get_action_ids(action_list, arg_lead)
+        end,
+        desc = 'Run a Blender action by id',
+    })
 
     for i = 1, #action_list do
         local action = action_list[i]
@@ -81,30 +85,25 @@ end
 
 function M.setup_keymaps()
     local map = vim.keymap.set
-
-    map('n', '<leader>gbr', actions.render_still, {
-        desc = 'Blender: Render still',
-    })
-    map('n', '<leader>gbt', actions.render_turntable, {
-        desc = 'Blender: Render turntable',
-    })
-    map('n', '<leader>gbg', actions.export_glb, {
-        desc = 'Blender: Export glTF (.glb)',
+    map('n', '<leader>gbb', actions.batch_render, {
+        desc = 'Blender: Batch over .blend directory',
     })
     map('n', '<leader>gbf', actions.export_fbx, {
         desc = 'Blender: Export FBX (.fbx)',
     })
+    map('n', '<leader>gbg', actions.export_glb, {
+        desc = 'Blender: Export glTF (.glb)',
+    })
+
+    map('n', '<leader>gbr', actions.render_still, {
+        desc = 'Blender: Render still',
+    })
     map('n', '<leader>gbs', actions.bake_sprites, {
         desc = 'Blender: Bake sprite sheet',
     })
-    map('n', '<leader>gbb', actions.batch_render, {
-        desc = 'Blender: Batch over .blend directory',
+    map('n', '<leader>gbt', actions.render_turntable, {
+        desc = 'Blender: Render turntable',
     })
-end
-
-function M.setup()
-    M.setup_commands()
-    M.setup_keymaps()
 end
 
 return M

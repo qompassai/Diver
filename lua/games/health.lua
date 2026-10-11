@@ -32,41 +32,13 @@ local function fetch_version(bin)
     if bin == nil then
         return nil
     end
-    local completed = vim.system({ bin, '--version' }, { text = true }):wait()
+    local completed_obj = vim.system({ bin, '--version' }, { text = true })
+    ---@cast completed_obj vim.SystemObj
+    local completed = completed_obj:wait()
     if completed.code ~= 0 then
         return nil
     end
     return shared_util.trim(completed.stdout or '')
-end
-
----@class GamesDoctorRow
----@field name string
----@field ok boolean
----@field warn boolean
----@field lines string[]
-
----@return GamesDoctorRow
-local function probe_aseprite()
-    local ok, aseprite = pcall(require, 'games.aseprite')
-    if not ok then
-        return {
-            name = 'Aseprite',
-            ok = false,
-            warn = false,
-            lines = {
-                'module failed to load: ' .. tostring(aseprite),
-            },
-        }
-    end
-    local bin = aseprite.util.find_binary()
-    return {
-        name = 'Aseprite',
-        ok = bin ~= nil,
-        warn = false,
-        lines = {
-            'binary: ' .. (bin or 'not found (set NVIM_ASEPRITE_BIN or add aseprite to $PATH)'),
-        },
-    }
 end
 
 ---@param module_name 'godot'|'redot'
@@ -106,6 +78,86 @@ local function godot_family_probe(module_name)
             lines = lines,
         }
     end
+end
+
+---@class GamesDoctorRow
+---@field name string
+---@field ok boolean
+---@field warn boolean
+---@field lines string[]
+
+---@return GamesDoctorRow
+local function probe_aseprite()
+    local ok, aseprite = pcall(require, 'games.aseprite')
+    if not ok then
+        return {
+            name = 'Aseprite',
+            ok = false,
+            warn = false,
+            lines = {
+                'module failed to load: ' .. tostring(aseprite),
+            },
+        }
+    end
+    local bin = aseprite.util.find_binary()
+    return {
+        name = 'Aseprite',
+        ok = bin ~= nil,
+        warn = false,
+        lines = {
+            'binary: ' .. (bin or 'not found (set NVIM_ASEPRITE_BIN or add aseprite to $PATH)'),
+        },
+    }
+end
+
+---@return GamesDoctorRow
+local function probe_robocode()
+    local ok, robocode = pcall(require, 'games.robocode')
+    if not ok then
+        return {
+            name = 'Robocode',
+            ok = false,
+            warn = false,
+            lines = {
+                'module failed to load: ' .. tostring(robocode),
+            },
+        }
+    end
+    local java = robocode.find_java()
+    local root = robocode.find_install_root()
+    return {
+        name = 'Robocode',
+        ok = java ~= nil and root ~= nil,
+        warn = false,
+        lines = {
+            'java: ' .. (java or 'not found (install a JDK)'),
+            'install root: ' .. (root or 'not found (install robocode or set ROBOCODE_HOME)'),
+        },
+    }
+end
+
+---@return GamesDoctorRow
+local function probe_tic80()
+    local ok, tic80 = pcall(require, 'games.tic80')
+    if not ok then
+        return {
+            name = 'TIC-80',
+            ok = false,
+            warn = false,
+            lines = {
+                'module failed to load: ' .. tostring(tic80),
+            },
+        }
+    end
+    local bin = tic80.find_binary()
+    return {
+        name = 'TIC-80',
+        ok = bin ~= nil,
+        warn = false,
+        lines = {
+            'binary: ' .. (bin or 'not found (install tic80 / tic-80-bin from AUR)'),
+        },
+    }
 end
 
 ---@return GamesDoctorRow
@@ -167,30 +219,6 @@ local function probe_unreal()
 end
 
 ---@return GamesDoctorRow
-local function probe_tic80()
-    local ok, tic80 = pcall(require, 'games.tic80')
-    if not ok then
-        return {
-            name = 'TIC-80',
-            ok = false,
-            warn = false,
-            lines = {
-                'module failed to load: ' .. tostring(tic80),
-            },
-        }
-    end
-    local bin = tic80.find_binary()
-    return {
-        name = 'TIC-80',
-        ok = bin ~= nil,
-        warn = false,
-        lines = {
-            'binary: ' .. (bin or 'not found (install tic80 / tic-80-bin from AUR)'),
-        },
-    }
-end
-
----@return GamesDoctorRow
 local function probe_voidsprite()
     local ok, voidsprite = pcall(require, 'games.voidsprite')
     if not ok then
@@ -210,32 +238,6 @@ local function probe_voidsprite()
         warn = false,
         lines = {
             'binary: ' .. (bin or 'not found (install aur/voidsprite-git or set NVIM_VOIDSPRITE_BIN)'),
-        },
-    }
-end
-
----@return GamesDoctorRow
-local function probe_robocode()
-    local ok, robocode = pcall(require, 'games.robocode')
-    if not ok then
-        return {
-            name = 'Robocode',
-            ok = false,
-            warn = false,
-            lines = {
-                'module failed to load: ' .. tostring(robocode),
-            },
-        }
-    end
-    local java = robocode.find_java()
-    local root = robocode.find_install_root()
-    return {
-        name = 'Robocode',
-        ok = java ~= nil and root ~= nil,
-        warn = false,
-        lines = {
-            'java: ' .. (java or 'not found (install a JDK)'),
-            'install root: ' .. (root or 'not found (install robocode or set ROBOCODE_HOME)'),
         },
     }
 end
@@ -315,7 +317,7 @@ function M.check()
     if vim.fn.has('nvim-0.13') == 0 then
         health.warn(
             'Neovim < 0.13 detected -- vim.async is unavailable; '
-            .. 'GamesDoctor probes ran sequentially as a fallback would be required.'
+                .. 'GamesDoctor probes ran sequentially as a fallback would be required.'
         )
     end
 

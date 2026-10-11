@@ -15,41 +15,16 @@
 -- See the License for the specific language governing permissions and
 -- limitations under the License.
 -- #################################################################
-local util = require('games.aseprite.util')
 local config = require('games.aseprite.config')
-local shared_util = require('games.shared.util')
-local output_factory = require('games.shared.output')
 local import_pipeline = require('games.aseprite.import')
+local output_factory = require('games.shared.output')
 local prompt_builder = require('games.aseprite.prompts')
-local notify = vim.notify
+local shared_util = require('games.shared.util')
+local util = require('games.aseprite.util')
 local levels = vim.log.levels
+local notify = vim.notify
 local output = output_factory.new(config.output_filetype)
 local M = {}
-function M.open_in_editor()
-    local bin = util.require_binary()
-    if not bin then
-        return
-    end
-    local sprite = vim.api.nvim_buf_get_name(0)
-    local cmd = { bin }
-    if util.is_sprite_file(sprite) then
-        cmd[#cmd + 1] = sprite
-    end
-    vim.fn.jobstart(cmd, {
-        detach = true,
-    })
-    notify('Aseprite: editor launching', levels.INFO)
-end
-function M.new_sprite()
-    local bin = util.require_binary()
-    if not bin then
-        return
-    end
-    vim.fn.jobstart({ bin }, {
-        detach = true,
-    })
-    notify('Aseprite: new empty sprite session launching', levels.INFO)
-end
 local function batch_export(sheet_flag, extra_args, label)
     local bin = util.require_binary()
     if not bin then
@@ -76,27 +51,24 @@ local function batch_export(sheet_flag, extra_args, label)
         failure = 'Export failed.',
     })
 end
-function M.export_sprite_sheet()
-    batch_export('.png', function(out)
-        local data = vim.fn.fnamemodify(out, ':r') .. '.json'
-        return {
-            '--sheet',
-            out,
-            '--data',
-            data,
-            '--format',
-            'json-array',
-        }
-    end, 'sprite sheet')
+
+function M.batch_import()
+    import_pipeline.batch_import()
 end
 
-function M.export_png_sequence()
-    batch_export('.png', function(out)
-        return {
-            '--save-as',
-            out,
-        }
-    end, 'PNG sequence')
+function M.build_sprite_prompt()
+    prompt_builder.interactive_builder()
+end
+
+function M.describe_environment()
+    notify(
+        table.concat({
+            'Aseprite binary: ' .. (util.find_binary() or 'not found'),
+            'ImageMagick: ' .. (import_pipeline.detect_processors().magick or 'not found'),
+            'Current buffer sprite: ' .. tostring(util.is_sprite_file(vim.api.nvim_buf_get_name(0))),
+        }, '\n'),
+        levels.INFO
+    )
 end
 
 function M.export_gif()
@@ -132,25 +104,13 @@ function M.export_palette()
     )
 end
 
-function M.sync_palette_to_user_config()
-    local source = shared_util.trim(vim.fn.input('Palette (.gpl) to sync: ', '', 'file'))
-    if source == '' then
-        return
-    end
-    assert(source:sub(-4) == '.gpl', 'Aseprite: sync_palette_to_user_config expects a .gpl file, got: ' .. source)
-    local dest_dir = util.user_palette_dir()
-    vim.fn.mkdir(dest_dir, 'p')
-    local dest = dest_dir .. '/' .. vim.fs.basename(source)
-
-    local ok, err = pcall(vim.uv.fs_copyfile, vim.fn.expand(source), dest)
-    if not ok then
-        notify('Aseprite: failed to sync palette: ' .. tostring(err), levels.ERROR)
-        return
-    end
-    notify(
-        'Aseprite: palette synced to ' .. dest .. ' (restart Aseprite, or reload via Edit > Palette > Load Palette).',
-        levels.INFO
-    )
+function M.export_png_sequence()
+    batch_export('.png', function(out)
+        return {
+            '--save-as',
+            out,
+        }
+    end, 'PNG sequence')
 end
 function M.export_sheet_type_preset()
     vim.ui.select(config.sheet_types, {
@@ -178,54 +138,18 @@ function M.export_sheet_type_preset()
         end, 'tileset (' .. sheet_type .. ')')
     end)
 end
-
-function M.run_script()
-    local bin = util.require_binary()
-    if not bin then
-        return
-    end
-    local script = shared_util.trim(vim.fn.input('Aseprite Lua script: ', '', 'file'))
-    if script == '' then
-        return
-    end
-
-    local cmd = { bin, '-b' }
-    local sprite = vim.api.nvim_buf_get_name(0)
-    if util.is_sprite_file(sprite) then
-        cmd[#cmd + 1] = sprite
-    end
-    vim.list_extend(cmd, {
-        '--script',
-        script,
-    })
-    output.run_with_progress('AsepriteScript', 'Running script ' .. vim.fs.basename(script), cmd, {
-        show_output = true,
-        success = 'Script finished.',
-        failure = 'Script failed.',
-    })
-end
-
-function M.describe_environment()
-    notify(
-        table.concat({
-            'Aseprite binary: ' .. (util.find_binary() or 'not found'),
-            'ImageMagick: ' .. (import_pipeline.detect_processors().magick or 'not found'),
-            'Current buffer sprite: ' .. tostring(util.is_sprite_file(vim.api.nvim_buf_get_name(0))),
-        }, '\n'),
-        levels.INFO
-    )
-end
-
-function M.import_art()
-    import_pipeline.import_art()
-end
-
-function M.batch_import()
-    import_pipeline.batch_import()
-end
-
-function M.build_sprite_prompt()
-    prompt_builder.interactive_builder()
+function M.export_sprite_sheet()
+    batch_export('.png', function(out)
+        local data = vim.fn.fnamemodify(out, ':r') .. '.json'
+        return {
+            '--sheet',
+            out,
+            '--data',
+            data,
+            '--format',
+            'json-array',
+        }
+    end, 'sprite sheet')
 end
 
 function M.get_actions()
@@ -310,6 +234,35 @@ function M.get_actions()
         },
     }
 end
+
+function M.import_art()
+    import_pipeline.import_art()
+end
+function M.new_sprite()
+    local bin = util.require_binary()
+    if not bin then
+        return
+    end
+    vim.fn.jobstart({ bin }, {
+        detach = true,
+    })
+    notify('Aseprite: new empty sprite session launching', levels.INFO)
+end
+function M.open_in_editor()
+    local bin = util.require_binary()
+    if not bin then
+        return
+    end
+    local sprite = vim.api.nvim_buf_get_name(0)
+    local cmd = { bin }
+    if util.is_sprite_file(sprite) then
+        cmd[#cmd + 1] = sprite
+    end
+    vim.fn.jobstart(cmd, {
+        detach = true,
+    })
+    notify('Aseprite: editor launching', levels.INFO)
+end
 function M.run_action(action)
     action.run()
 end
@@ -324,10 +277,57 @@ function M.run_action_by_id(id)
     end
     M.run_action(action)
 end
+
+function M.run_script()
+    local bin = util.require_binary()
+    if not bin then
+        return
+    end
+    local script = shared_util.trim(vim.fn.input('Aseprite Lua script: ', '', 'file'))
+    if script == '' then
+        return
+    end
+
+    local cmd = { bin, '-b' }
+    local sprite = vim.api.nvim_buf_get_name(0)
+    if util.is_sprite_file(sprite) then
+        cmd[#cmd + 1] = sprite
+    end
+    vim.list_extend(cmd, {
+        '--script',
+        script,
+    })
+    output.run_with_progress('AsepriteScript', 'Running script ' .. vim.fs.basename(script), cmd, {
+        show_output = true,
+        success = 'Script finished.',
+        failure = 'Script failed.',
+    })
+end
 function M.show_menu()
     require('games.shared.ui').select_root_menu(M.get_actions(), M.run_action, {
         group_order = config.group_order,
         prompt = 'Select Aseprite action:',
     })
+end
+
+function M.sync_palette_to_user_config()
+    local source = shared_util.trim(vim.fn.input('Palette (.gpl) to sync: ', '', 'file'))
+    if source == '' then
+        return
+    end
+    assert(source:sub(-4) == '.gpl', 'Aseprite: sync_palette_to_user_config expects a .gpl file, got: ' .. source)
+    local dest_dir = util.user_palette_dir()
+    vim.fn.mkdir(dest_dir, 'p')
+    local dest = dest_dir .. '/' .. vim.fs.basename(source)
+
+    local ok, err = pcall(vim.uv.fs_copyfile, vim.fn.expand(source), dest)
+    if not ok then
+        notify('Aseprite: failed to sync palette: ' .. tostring(err), levels.ERROR)
+        return
+    end
+    notify(
+        'Aseprite: palette synced to ' .. dest .. ' (restart Aseprite, or reload via Edit > Palette > Load Palette).',
+        levels.INFO
+    )
 end
 return M

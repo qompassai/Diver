@@ -24,56 +24,23 @@
 ---@module 'games.voidsprite.actions'
 
 local config = require('games.voidsprite.config')
-local util = require('games.voidsprite.util')
 local shared_util = require('games.shared.util')
+local util = require('games.voidsprite.util')
+local levels = vim.log.levels
 
 local notify = vim.notify
-local levels = vim.log.levels
 
 local M = {}
 
----Launch voidsprite on the current sprite buffer, or bare for a new session.
-function M.open_in_editor()
-    local bin = util.require_binary()
-    if bin == nil then
-        return
-    end
-    local sprite = vim.api.nvim_buf_get_name(0)
-    local cmd = { bin }
-    if util.is_sprite_file(sprite) then
-        cmd[#cmd + 1] = sprite
-    end
-    vim.fn.jobstart(cmd, { detach = true })
-    notify('Voidsprite: editor launching', levels.INFO)
-end
-
----Launch a fresh voidsprite session (no file).
-function M.new_session()
-    local bin = util.require_binary()
-    if bin == nil then
-        return
-    end
-    vim.fn.jobstart({ bin }, { detach = true })
-    notify('Voidsprite: new session launching', levels.INFO)
-end
-
----Bridge into TIC-80: import a PNG sprite sheet (saved from voidsprite)
----into the current cart's sprite memory.
-function M.import_into_tic80()
-    local ok, tic80_actions = pcall(require, 'games.tic80.actions')
-    if not ok then
-        notify('Voidsprite: games.tic80.actions is unavailable.', levels.ERROR)
-        return
-    end
-    tic80_actions.import_spritesheet()
-end
-
 function M.describe_environment()
-    notify(table.concat({
-        'Voidsprite binary: ' .. (util.find_binary() or 'not found'),
-        'Current buffer sprite: ' .. tostring(util.is_sprite_file(vim.api.nvim_buf_get_name(0))),
-        'TIC-80 bridge: draw here, save as PNG, then import into the cart sprite memory.',
-    }, '\n'), levels.INFO)
+    notify(
+        table.concat({
+            'Voidsprite binary: ' .. (util.find_binary() or 'not found'),
+            'Current buffer sprite: ' .. tostring(util.is_sprite_file(vim.api.nvim_buf_get_name(0))),
+            'TIC-80 bridge: draw here, save as PNG, then import into the cart sprite memory.',
+        }, '\n'),
+        levels.INFO
+    )
 end
 
 ---@return table[] Action descriptors for the menu/command surface.
@@ -104,6 +71,42 @@ function M.get_actions()
             run = M.import_into_tic80,
         },
     }
+end
+
+---Bridge into TIC-80: import a PNG sprite sheet (saved from voidsprite)
+---into the current cart's sprite memory.
+function M.import_into_tic80()
+    local ok, tic80_actions = pcall(require, 'games.tic80.actions')
+    if not ok then
+        notify('Voidsprite: games.tic80.actions is unavailable.', levels.ERROR)
+        return
+    end
+    tic80_actions.import_spritesheet()
+end
+
+---Launch a fresh voidsprite session (no file).
+function M.new_session()
+    local bin = util.require_binary()
+    if bin == nil then
+        return
+    end
+    vim.fn.jobstart({ bin }, { detach = true })
+    notify('Voidsprite: new session launching', levels.INFO)
+end
+
+---Launch voidsprite on the current sprite buffer, or bare for a new session.
+function M.open_in_editor()
+    local bin = util.require_binary()
+    if bin == nil then
+        return
+    end
+    local sprite = vim.api.nvim_buf_get_name(0)
+    local cmd = { bin }
+    if util.is_sprite_file(sprite) then
+        cmd[#cmd + 1] = sprite
+    end
+    vim.fn.jobstart(cmd, { detach = true })
+    notify('Voidsprite: editor launching', levels.INFO)
 end
 
 ---@param action table Action descriptor from get_actions().

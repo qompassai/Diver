@@ -25,9 +25,9 @@
 -- top) because init.lua requires this module -- a top-level require
 -- would capture a half-initialized table.
 local shared_util = require('games.shared.util')
+local levels = vim.log.levels
 
 local notify = vim.notify
-local levels = vim.log.levels
 local M = {}
 
 ---@type vim.SystemObj?
@@ -103,20 +103,6 @@ public class $CLASSNAME extends Robot
 }
 ]]
 
----@param path string
----@param content string
----@return boolean ok
----@return string? err
-local function write_file(path, content)
-    local handle, open_err = io.open(path, 'w')
-    if handle == nil then
-        return false, tostring(open_err)
-    end
-    handle:write(content)
-    handle:close()
-    return true
-end
-
 ---Compile one robot source against the Robocode API jar.
 ---@param file string absolute .java path
 local function compile_robot(file)
@@ -172,6 +158,147 @@ local function discover(robots_dir, extension)
     return names
 end
 
+function M.doctor()
+    vim.cmd('checkhealth games.robocode')
+end
+
+---@return table[] action list { id, label, run }
+function M.get_actions()
+    return {
+        { id = 'new_robot', label = 'New robot (scaffold + compile)', run = M.new_robot },
+        { id = 'run_battle', label = 'Run headless battle', run = M.run_battle },
+        { id = 'stop_battle', label = 'Stop battle', run = M.stop_battle },
+        { id = 'open_robot_source', label = 'Open robot source', run = M.open_robot_source },
+        { id = 'open_gui', label = 'Open Robocode GUI', run = M.open_gui },
+        { id = 'doctor', label = 'Doctor (:checkhealth)', run = M.doctor },
+    }
+end
+
+---Launch the Robocode GUI (no -nodisplay): sample robots and the
+---built-in source editor live here.
+function M.open_gui()
+    local robocode = require('games.robocode')
+    local launch, err = robocode.build_launch({ headless = false })
+    if launch == nil then
+        notify('Robocode: ' .. tostring(err), levels.ERROR)
+        return
+    end
+    stop_current()
+    local spawned = vim.system(launch.argv, { cwd = launch.cwd, text = true })
+    ---@cast spawned vim.SystemObj
+    battle_job = spawned
+    notify('Robocode: GUI launched', levels.INFO)
+end
+
+---Open a developed robot's source file.
+function M.open_robot_source()
+    local robocode = require('games.robocode')
+    local sources = discover(robocode.dev_robots_dir(), '.java')
+    if #sources == 0 then
+        notify('Robocode: no robot sources in ' .. robocode.dev_robots_dir(), levels.WARN)
+        return
+    end
+    vim.ui.select(sources, { prompt = 'Open robot source:' }, function(choice)
+        if choice == nil then
+            return
+        end
+        local path = robocode.dev_robots_dir() .. '/' .. choice:gsub('%.', '/') .. '.java'
+        vim.cmd.edit(vim.fn.fnameescape(path))
+    end)
+end
+
+---Let the user accumulate combatants, then start the battle.
+---@param robots string[] candidates
+---@param done fun(selected: string[]?)
+local function pick_robots(robots, done)
+    local robocode = require('games.robocode')
+    ---@type string[]
+    local selected = {}
+    ---@type string[]
+    local remaining = {}
+    for _, name in ipairs(robots) do
+        remaining[#remaining + 1] = name
+    end
+    local function step()
+        if #selected >= robocode.config.robots_max then
+            done(selected)
+            return
+        end
+        ---@type string[]
+        local items = { '[start battle]' }
+        for _, name in ipairs(remaining) do
+            items[#items + 1] = name
+        end
+        local prompt = 'Add robot (' .. #selected .. ' selected):'
+        vim.ui.select(items, { prompt = prompt }, function(choice)
+            if choice == nil or choice == '[start battle]' then
+                done(#selected > 0 and selected or nil)
+                return
+            end
+            selected[#selected + 1] = choice
+            for i, name in ipairs(remaining) do
+                if name == choice then
+                    table.remove(remaining, i)
+                    break
+                end
+            end
+            step()
+        end)
+    end
+    step()
+end
+
+---@param action table
+function M.run_action(action)
+    local ok, err = pcall(action.run)
+    if not ok then
+        notify('Robocode action failed: ' .. tostring(err), levels.ERROR)
+    end
+end
+
+---@param id string
+function M.run_action_by_id(id)
+    for _, action in ipairs(M.get_actions()) do
+        if action.id == id then
+            M.run_action(action)
+            return
+        end
+    end
+    notify('Robocode: unknown action: ' .. tostring(id), levels.ERROR)
+end
+
+function M.show_menu()
+    require('games.shared.ui').select_root_menu(M.get_actions(), M.run_action, {
+        prompt = 'Robocode',
+    })
+end
+
+---@param results_file string
+local function show_results(results_file)
+    local robocode = require('games.robocode')
+    local handle = io.open(results_file, 'r')
+    if handle == nil then
+        notify('Robocode: battle finished, no results file written', levels.WARN)
+        return
+    end
+    ---@type string[]
+    local shown = {}
+    for line in handle:lines() do
+        if #shown >= robocode.config.output_lines_max then
+            break
+        end
+        shown[#shown + 1] = line
+    end
+    handle:close()
+    notify('Robocode results:\n' .. table.concat(shown, '\n'), levels.INFO)
+end
+
+---Stop the running battle or GUI, if any.
+function M.stop_battle()
+    stop_current()
+    notify('Robocode: stopped', levels.INFO)
+end
+
 ---@param pkg string
 ---@return boolean valid Java package name (dot-separated lowercase identifiers)
 local function valid_package(pkg)
@@ -188,6 +315,20 @@ local function valid_package(pkg)
             return false
         end
     end
+    return true
+end
+
+---@param path string
+---@param content string
+---@return boolean ok
+---@return string? err
+local function write_file(path, content)
+    local handle, open_err = io.open(path, 'w')
+    if handle == nil then
+        return false, tostring(open_err)
+    end
+    handle:write(content)
+    handle:close()
     return true
 end
 
@@ -234,67 +375,6 @@ function M.new_robot()
     compile_robot(file)
 end
 
----Let the user accumulate combatants, then start the battle.
----@param robots string[] candidates
----@param done fun(selected: string[]?)
-local function pick_robots(robots, done)
-    local robocode = require('games.robocode')
-    ---@type string[]
-    local selected = {}
-    ---@type string[]
-    local remaining = {}
-    for _, name in ipairs(robots) do
-        remaining[#remaining + 1] = name
-    end
-    local function step()
-        if #selected >= robocode.config.robots_max then
-            done(selected)
-            return
-        end
-        ---@type string[]
-        local items = { '[start battle]' }
-        for _, name in ipairs(remaining) do
-            items[#items + 1] = name
-        end
-        local prompt = 'Add robot (' .. #selected .. ' selected):'
-        vim.ui.select(items, { prompt = prompt }, function(choice)
-            if choice == nil or choice == '[start battle]' then
-                done(#selected > 0 and selected or nil)
-                return
-            end
-            selected[#selected + 1] = choice
-            for i, name in ipairs(remaining) do
-                if name == choice then
-                    table.remove(remaining, i)
-                    break
-                end
-            end
-            step()
-        end)
-    end
-    step()
-end
-
----@param results_file string
-local function show_results(results_file)
-    local robocode = require('games.robocode')
-    local handle = io.open(results_file, 'r')
-    if handle == nil then
-        notify('Robocode: battle finished, no results file written', levels.WARN)
-        return
-    end
-    ---@type string[]
-    local shown = {}
-    for line in handle:lines() do
-        if #shown >= robocode.config.output_lines_max then
-            break
-        end
-        shown[#shown + 1] = line
-    end
-    handle:close()
-    notify('Robocode results:\n' .. table.concat(shown, '\n'), levels.INFO)
-end
-
 ---@param selected string[] robot names for robocode.battle.selectedRobots
 local function start_battle(selected)
     local robocode = require('games.robocode')
@@ -337,7 +417,7 @@ local function start_battle(selected)
         return
     end
     stop_current()
-    battle_job = vim.system(
+    local spawned = vim.system(
         launch.argv,
         { cwd = launch.cwd, text = true, timeout = config.battle_timeout_ms },
         vim.schedule_wrap(function(completed)
@@ -348,6 +428,8 @@ local function start_battle(selected)
             show_results(results_file)
         end)
     )
+    ---@cast spawned vim.SystemObj
+    battle_job = spawned
     notify('Robocode: battle started (' .. #selected .. ' robots)', levels.INFO)
 end
 
@@ -365,84 +447,6 @@ function M.run_battle()
             start_battle(selected)
         end
     end)
-end
-
----Stop the running battle or GUI, if any.
-function M.stop_battle()
-    stop_current()
-    notify('Robocode: stopped', levels.INFO)
-end
-
----Open a developed robot's source file.
-function M.open_robot_source()
-    local robocode = require('games.robocode')
-    local sources = discover(robocode.dev_robots_dir(), '.java')
-    if #sources == 0 then
-        notify('Robocode: no robot sources in ' .. robocode.dev_robots_dir(), levels.WARN)
-        return
-    end
-    vim.ui.select(sources, { prompt = 'Open robot source:' }, function(choice)
-        if choice == nil then
-            return
-        end
-        local path = robocode.dev_robots_dir() .. '/' .. choice:gsub('%.', '/') .. '.java'
-        vim.cmd.edit(vim.fn.fnameescape(path))
-    end)
-end
-
----Launch the Robocode GUI (no -nodisplay): sample robots and the
----built-in source editor live here.
-function M.open_gui()
-    local robocode = require('games.robocode')
-    local launch, err = robocode.build_launch({ headless = false })
-    if launch == nil then
-        notify('Robocode: ' .. tostring(err), levels.ERROR)
-        return
-    end
-    stop_current()
-    battle_job = vim.system(launch.argv, { cwd = launch.cwd, text = true })
-    notify('Robocode: GUI launched', levels.INFO)
-end
-
-function M.doctor()
-    vim.cmd('checkhealth games.robocode')
-end
-
----@return table[] action list { id, label, run }
-function M.get_actions()
-    return {
-        { id = 'new_robot', label = 'New robot (scaffold + compile)', run = M.new_robot },
-        { id = 'run_battle', label = 'Run headless battle', run = M.run_battle },
-        { id = 'stop_battle', label = 'Stop battle', run = M.stop_battle },
-        { id = 'open_robot_source', label = 'Open robot source', run = M.open_robot_source },
-        { id = 'open_gui', label = 'Open Robocode GUI', run = M.open_gui },
-        { id = 'doctor', label = 'Doctor (:checkhealth)', run = M.doctor },
-    }
-end
-
----@param action table
-function M.run_action(action)
-    local ok, err = pcall(action.run)
-    if not ok then
-        notify('Robocode action failed: ' .. tostring(err), levels.ERROR)
-    end
-end
-
----@param id string
-function M.run_action_by_id(id)
-    for _, action in ipairs(M.get_actions()) do
-        if action.id == id then
-            M.run_action(action)
-            return
-        end
-    end
-    notify('Robocode: unknown action: ' .. tostring(id), levels.ERROR)
-end
-
-function M.show_menu()
-    require('games.shared.ui').select_root_menu(M.get_actions(), M.run_action, {
-        prompt = 'Robocode',
-    })
 end
 
 return M

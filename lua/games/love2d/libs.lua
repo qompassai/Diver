@@ -29,9 +29,6 @@ local shared_util = require('games.shared.util')
 
 local M = {}
 
--- Largest single library tarball vendor() will accept.
-local TARBALL_SIZE_MAX_BYTES = 50 * 1024 * 1024
-
 ---@class Love2dLibEntry
 ---@field key string catalog key
 ---@field name string human-readable name
@@ -49,42 +46,6 @@ local TARBALL_SIZE_MAX_BYTES = 50 * 1024 * 1024
 ---@type Love2dLibEntry[]
 M.CATALOG = {
     {
-        key = 'hump',
-        name = 'hump',
-        category = 'helpers',
-        repo = 'vrld/hump',
-        pin = '08937cc0ecf72d1a964a8de6cd552c5e136bf0d4',
-        url = 'https://codeload.github.com/vrld/hump/tar.gz/08937cc0ecf72d1a964a8de6cd552c5e136bf0d4',
-        sha256 = '442a7167eb9b33908e880b6c35cedce0eab22b86bf474f162312c867bc6eef25',
-        license = 'MIT',
-        provenance = 'self-computed 2026-09-27; upstream publishes no checksum',
-        files = {
-            'camera.lua',
-            'class.lua',
-            'gamestate.lua',
-            'signal.lua',
-            'timer.lua',
-            'vector.lua',
-            'vector-light.lua',
-        },
-        dest_subdir = 'hump',
-        require_hint = "require('hump.gamestate')",
-    },
-    {
-        key = 'bump',
-        name = 'bump.lua',
-        category = 'physics',
-        repo = 'kikito/bump.lua',
-        pin = '95d9e40b8aee295fc9d9b78ca214a829d6c21555',
-        url = 'https://codeload.github.com/kikito/bump.lua/tar.gz/95d9e40b8aee295fc9d9b78ca214a829d6c21555',
-        sha256 = 'e02519e41d3591a4b5dd2eaaf300c0bf55fcd6fb43467af7b01032e2bf5850a7',
-        license = 'MIT',
-        provenance = 'self-computed 2026-09-27; upstream publishes no checksum',
-        files = { 'bump.lua' },
-        dest_subdir = '',
-        require_hint = "require('bump')",
-    },
-    {
         key = 'anim8',
         name = 'anim8',
         category = 'animation',
@@ -99,46 +60,32 @@ M.CATALOG = {
         require_hint = "require('anim8')",
     },
     {
-        key = 'lurker',
-        name = 'lurker',
-        category = 'dev',
-        repo = 'rxi/lurker',
-        pin = '03d1373911f586c1c6d5d557527b5d510190fd94',
-        url = 'https://codeload.github.com/rxi/lurker/tar.gz/03d1373911f586c1c6d5d557527b5d510190fd94',
-        sha256 = '608c014856f723f90354bd2e0be5f76e01ad10e9fdb6680acee705cb88d0c8db',
+        key = 'baton',
+        name = 'baton',
+        category = 'input',
+        repo = 'tesselode/baton',
+        pin = '6723dd9f99ce8a20e553a7b818a1ebcd32cacbaf',
+        url = 'https://codeload.github.com/tesselode/baton/tar.gz/6723dd9f99ce8a20e553a7b818a1ebcd32cacbaf',
+        sha256 = 'cc05e327ce3f983f9ac546f8f42e4f1c427d379c8e9dcc188825e019d54d5afa',
         license = 'MIT',
         provenance = 'self-computed 2026-09-27; upstream publishes no checksum',
-        files = { 'lurker.lua' },
+        files = { 'baton.lua' },
         dest_subdir = '',
-        require_hint = "require('lurker')",
+        require_hint = "require('baton')",
     },
     {
-        key = 'lovebird',
-        name = 'lovebird',
-        category = 'debug',
-        repo = 'rxi/lovebird',
-        pin = 'e84abe7b56a65ccb3ec6288e1955b6d772d41431',
-        url = 'https://codeload.github.com/rxi/lovebird/tar.gz/e84abe7b56a65ccb3ec6288e1955b6d772d41431',
-        sha256 = '5e3e4f25a461b4f9bd1b4c4e83b9f08dfd9eef8db1b96e3d4ac628b9fff44ea4',
+        key = 'bump',
+        name = 'bump.lua',
+        category = 'physics',
+        repo = 'kikito/bump.lua',
+        pin = '95d9e40b8aee295fc9d9b78ca214a829d6c21555',
+        url = 'https://codeload.github.com/kikito/bump.lua/tar.gz/95d9e40b8aee295fc9d9b78ca214a829d6c21555',
+        sha256 = 'e02519e41d3591a4b5dd2eaaf300c0bf55fcd6fb43467af7b01032e2bf5850a7',
         license = 'MIT',
         provenance = 'self-computed 2026-09-27; upstream publishes no checksum',
-        files = { 'lovebird.lua' },
+        files = { 'bump.lua' },
         dest_subdir = '',
-        require_hint = "require('lovebird')",
-    },
-    {
-        key = 'peachy',
-        name = 'peachy',
-        category = 'aseprite',
-        repo = 'josh-perry/peachy',
-        pin = '80b109833285520f0d259f37ef130d3fe022579d',
-        url = 'https://codeload.github.com/josh-perry/peachy/tar.gz/80b109833285520f0d259f37ef130d3fe022579d',
-        sha256 = 'a9726a05ffd12e010383a3d3147d1de390f510b6bff26165da0e65d8b0e8d475',
-        license = 'MIT',
-        provenance = 'self-computed 2026-09-27; upstream publishes no checksum',
-        files = { 'peachy/init.lua', 'peachy/lib/json.lua' },
-        dest_subdir = 'peachy',
-        require_hint = "require('peachy')",
+        require_hint = "require('bump')",
     },
     {
         key = 'g3d',
@@ -163,51 +110,26 @@ M.CATALOG = {
         require_hint = "require('g3d')",
     },
     {
-        key = 'baton',
-        name = 'baton',
-        category = 'input',
-        repo = 'tesselode/baton',
-        pin = '6723dd9f99ce8a20e553a7b818a1ebcd32cacbaf',
-        url = 'https://codeload.github.com/tesselode/baton/tar.gz/6723dd9f99ce8a20e553a7b818a1ebcd32cacbaf',
-        sha256 = 'cc05e327ce3f983f9ac546f8f42e4f1c427d379c8e9dcc188825e019d54d5afa',
-        license = 'MIT',
-        provenance = 'self-computed 2026-09-27; upstream publishes no checksum',
-        files = { 'baton.lua' },
-        dest_subdir = '',
-        require_hint = "require('baton')",
-    },
-    {
-        key = 'lume',
-        name = 'lume',
+        key = 'hump',
+        name = 'hump',
         category = 'helpers',
-        repo = 'rxi/lume',
-        pin = '98847e7812cf28d3d64b289b03fad71dc704547d',
-        url = 'https://codeload.github.com/rxi/lume/tar.gz/98847e7812cf28d3d64b289b03fad71dc704547d',
-        sha256 = '10e354ba98a7ed9ae016be15aafbca3c719b02e42822bc9e1f100c497259d90e',
-        license = 'MIT',
-        provenance = 'self-computed 2026-09-27; upstream publishes no checksum',
-        files = { 'lume.lua' },
-        dest_subdir = '',
-        require_hint = "require('lume')",
-    },
-    {
-        key = 'loveprofiler',
-        name = 'loveprofiler',
-        category = 'profiling',
-        repo = 'dknight/loveprofiler',
-        pin = 'e79c71c65772e8c41a0787416ba5980cfdcb19c1',
-        url = 'https://codeload.github.com/dknight/loveprofiler/tar.gz/e79c71c65772e8c41a0787416ba5980cfdcb19c1',
-        sha256 = '8a167114651960b7b91983b823ff792cf391d8be88f0b02f3771ceb7215e2daa',
+        repo = 'vrld/hump',
+        pin = '08937cc0ecf72d1a964a8de6cd552c5e136bf0d4',
+        url = 'https://codeload.github.com/vrld/hump/tar.gz/08937cc0ecf72d1a964a8de6cd552c5e136bf0d4',
+        sha256 = '442a7167eb9b33908e880b6c35cedce0eab22b86bf474f162312c867bc6eef25',
         license = 'MIT',
         provenance = 'self-computed 2026-09-27; upstream publishes no checksum',
         files = {
-            'init.lua',
-            'defaults.lua',
-            'drivers/canvas.lua',
-            'drivers/console.lua',
+            'camera.lua',
+            'class.lua',
+            'gamestate.lua',
+            'signal.lua',
+            'timer.lua',
+            'vector.lua',
+            'vector-light.lua',
         },
-        dest_subdir = 'loveprofiler',
-        require_hint = "require('loveprofiler')",
+        dest_subdir = 'hump',
+        require_hint = "require('hump.gamestate')",
     },
     {
         key = 'knife',
@@ -236,28 +158,85 @@ M.CATALOG = {
         dest_subdir = 'knife',
         require_hint = "require('knife.timer')",
     },
+    {
+        key = 'lovebird',
+        name = 'lovebird',
+        category = 'debug',
+        repo = 'rxi/lovebird',
+        pin = 'e84abe7b56a65ccb3ec6288e1955b6d772d41431',
+        url = 'https://codeload.github.com/rxi/lovebird/tar.gz/e84abe7b56a65ccb3ec6288e1955b6d772d41431',
+        sha256 = '5e3e4f25a461b4f9bd1b4c4e83b9f08dfd9eef8db1b96e3d4ac628b9fff44ea4',
+        license = 'MIT',
+        provenance = 'self-computed 2026-09-27; upstream publishes no checksum',
+        files = { 'lovebird.lua' },
+        dest_subdir = '',
+        require_hint = "require('lovebird')",
+    },
+    {
+        key = 'loveprofiler',
+        name = 'loveprofiler',
+        category = 'profiling',
+        repo = 'dknight/loveprofiler',
+        pin = 'e79c71c65772e8c41a0787416ba5980cfdcb19c1',
+        url = 'https://codeload.github.com/dknight/loveprofiler/tar.gz/e79c71c65772e8c41a0787416ba5980cfdcb19c1',
+        sha256 = '8a167114651960b7b91983b823ff792cf391d8be88f0b02f3771ceb7215e2daa',
+        license = 'MIT',
+        provenance = 'self-computed 2026-09-27; upstream publishes no checksum',
+        files = {
+            'init.lua',
+            'defaults.lua',
+            'drivers/canvas.lua',
+            'drivers/console.lua',
+        },
+        dest_subdir = 'loveprofiler',
+        require_hint = "require('loveprofiler')",
+    },
+    {
+        key = 'lume',
+        name = 'lume',
+        category = 'helpers',
+        repo = 'rxi/lume',
+        pin = '98847e7812cf28d3d64b289b03fad71dc704547d',
+        url = 'https://codeload.github.com/rxi/lume/tar.gz/98847e7812cf28d3d64b289b03fad71dc704547d',
+        sha256 = '10e354ba98a7ed9ae016be15aafbca3c719b02e42822bc9e1f100c497259d90e',
+        license = 'MIT',
+        provenance = 'self-computed 2026-09-27; upstream publishes no checksum',
+        files = { 'lume.lua' },
+        dest_subdir = '',
+        require_hint = "require('lume')",
+    },
+    {
+        key = 'lurker',
+        name = 'lurker',
+        category = 'dev',
+        repo = 'rxi/lurker',
+        pin = '03d1373911f586c1c6d5d557527b5d510190fd94',
+        url = 'https://codeload.github.com/rxi/lurker/tar.gz/03d1373911f586c1c6d5d557527b5d510190fd94',
+        sha256 = '608c014856f723f90354bd2e0be5f76e01ad10e9fdb6680acee705cb88d0c8db',
+        license = 'MIT',
+        provenance = 'self-computed 2026-09-27; upstream publishes no checksum',
+        files = { 'lurker.lua' },
+        dest_subdir = '',
+        require_hint = "require('lurker')",
+    },
+    {
+        key = 'peachy',
+        name = 'peachy',
+        category = 'aseprite',
+        repo = 'josh-perry/peachy',
+        pin = '80b109833285520f0d259f37ef130d3fe022579d',
+        url = 'https://codeload.github.com/josh-perry/peachy/tar.gz/80b109833285520f0d259f37ef130d3fe022579d',
+        sha256 = 'a9726a05ffd12e010383a3d3147d1de390f510b6bff26165da0e65d8b0e8d475',
+        license = 'MIT',
+        provenance = 'self-computed 2026-09-27; upstream publishes no checksum',
+        files = { 'peachy/init.lua', 'peachy/lib/json.lua' },
+        dest_subdir = 'peachy',
+        require_hint = "require('peachy')",
+    },
 }
 
----@param key string catalog key
----@return Love2dLibEntry? entry or nil
-function M.get(key)
-    assert(type(key) == 'string')
-    for _, entry in ipairs(M.CATALOG) do
-        if entry.key == key then
-            return entry
-        end
-    end
-    return nil
-end
-
----@return string[] catalog keys in order
-function M.keys()
-    local out = {}
-    for _, entry in ipairs(M.CATALOG) do
-        out[#out + 1] = entry.key
-    end
-    return out
-end
+-- Largest single library tarball vendor() will accept.
+local TARBALL_SIZE_MAX_BYTES = 50 * 1024 * 1024
 
 -- Structural audit of the catalog: every entry must carry a name, a
 -- 40-hex pin, a source URL containing that pin, a 64-hex digest, and a
@@ -295,54 +274,6 @@ function M.catalog_integrity()
     return #problems == 0, problems
 end
 
----@param path string file to hash
----@param expected_sha string 64-hex digest
----@return boolean ok
----@return string? err
-function M.verify_artifact(path, expected_sha)
-    assert(type(path) == 'string' and path ~= '')
-    assert(type(expected_sha) == 'string' and expected_sha:match('^%x+$') ~= nil)
-    if vim.fn.filereadable(path) ~= 1 then
-        return false, 'not a readable file: ' .. path
-    end
-    local stat = vim.uv.fs_stat(path)
-    if stat ~= nil and stat.size > TARBALL_SIZE_MAX_BYTES then
-        return false, 'tarball exceeds size cap'
-    end
-    local completed = vim.system({ 'sha256sum', path }, { text = true }):wait()
-    if completed.code ~= 0 then
-        return false, 'sha256sum failed for ' .. path
-    end
-    local actual = (completed.stdout or ''):match('^%x+')
-    if actual == nil or actual:lower() ~= expected_sha:lower() then
-        return false, 'checksum mismatch for ' .. path
-    end
-    return true, nil
-end
-
----@param entry Love2dLibEntry
----@param dest string tarball destination path
----@return boolean ok
----@return string? err
-local function download_entry(entry, dest)
-    vim.fn.mkdir(vim.fs.dirname(dest), 'p')
-    local completed = vim.system({
-        'curl',
-        '-sSL',
-        '--retry',
-        '3',
-        '--max-time',
-        tostring(math.floor(config.download_timeout_ms / 1000)),
-        '-o',
-        dest,
-        entry.url,
-    }, { text = true }):wait()
-    if completed.code ~= 0 then
-        return false, ('download failed (%s): %s'):format(entry.url, shared_util.trim(completed.stderr or ''))
-    end
-    return M.verify_artifact(dest, entry.sha256)
-end
-
 -- Copy the entry's listed files out of the unpacked tarball.
 ---@param entry Love2dLibEntry
 ---@param unpacked_root string tarball top dir
@@ -363,13 +294,61 @@ local function copy_entry_files(entry, unpacked_root, dest_dir)
         local dest_sub = entry.dest_subdir ~= '' and (entry.dest_subdir .. '/') or ''
         local dest = dest_dir .. '/' .. dest_sub .. rel
         vim.fn.mkdir(vim.fs.dirname(dest), 'p')
-        local copied = vim.system({ 'cp', src, dest }, { text = true }):wait()
+        local copied_obj = vim.system({ 'cp', src, dest }, { text = true })
+        ---@cast copied_obj vim.SystemObj
+        local copied = copied_obj:wait()
         if copied.code ~= 0 then
             return nil, 'copy failed: ' .. rel
         end
         vendored[#vendored + 1] = dest_sub .. rel
     end
     return vendored, nil
+end
+
+---@param entry Love2dLibEntry
+---@param dest string tarball destination path
+---@return boolean ok
+---@return string? err
+local function download_entry(entry, dest)
+    vim.fn.mkdir(vim.fs.dirname(dest), 'p')
+    local completed_obj = vim.system({
+        'curl',
+        '-sSL',
+        '--retry',
+        '3',
+        '--max-time',
+        tostring(math.floor(config.download_timeout_ms / 1000)),
+        '-o',
+        dest,
+        entry.url,
+    }, { text = true })
+    ---@cast completed_obj vim.SystemObj
+    local completed = completed_obj:wait()
+    if completed.code ~= 0 then
+        return false, ('download failed (%s): %s'):format(entry.url, shared_util.trim(completed.stderr or ''))
+    end
+    return M.verify_artifact(dest, entry.sha256)
+end
+
+---@param key string catalog key
+---@return Love2dLibEntry? entry or nil
+function M.get(key)
+    assert(type(key) == 'string')
+    for _, entry in ipairs(M.CATALOG) do
+        if entry.key == key then
+            return entry
+        end
+    end
+    return nil
+end
+
+---@return string[] catalog keys in order
+function M.keys()
+    local out = {}
+    for _, entry in ipairs(M.CATALOG) do
+        out[#out + 1] = entry.key
+    end
+    return out
 end
 
 -- Download (unless opts.artifact_path is given), verify the digest, unpack,
@@ -406,7 +385,9 @@ function M.vendor(key, dest_dir, opts)
     end
     local tmp_unpack = vim.fn.tempname() .. '-' .. key .. '-unpacked'
     vim.fn.mkdir(tmp_unpack, 'p')
-    local unpacked = vim.system({ 'tar', '-xzf', tarball, '-C', tmp_unpack }, { text = true }):wait()
+    local unpacked_obj = vim.system({ 'tar', '-xzf', tarball, '-C', tmp_unpack }, { text = true })
+    ---@cast unpacked_obj vim.SystemObj
+    local unpacked = unpacked_obj:wait()
     if tmp_tarball ~= nil then
         vim.fn.delete(tmp_tarball)
     end
@@ -427,6 +408,33 @@ function M.vendor(key, dest_dir, opts)
         return nil, cerr
     end
     return vendored, nil
+end
+
+---@param path string file to hash
+---@param expected_sha string 64-hex digest
+---@return boolean ok
+---@return string? err
+function M.verify_artifact(path, expected_sha)
+    assert(type(path) == 'string' and path ~= '')
+    assert(type(expected_sha) == 'string' and expected_sha:match('^%x+$') ~= nil)
+    if vim.fn.filereadable(path) ~= 1 then
+        return false, 'not a readable file: ' .. path
+    end
+    local stat = vim.uv.fs_stat(path)
+    if stat ~= nil and stat.size > TARBALL_SIZE_MAX_BYTES then
+        return false, 'tarball exceeds size cap'
+    end
+    local completed_obj = vim.system({ 'sha256sum', path }, { text = true })
+    ---@cast completed_obj vim.SystemObj
+    local completed = completed_obj:wait()
+    if completed.code ~= 0 then
+        return false, 'sha256sum failed for ' .. path
+    end
+    local actual = (completed.stdout or ''):match('^%x+')
+    if actual == nil or actual:lower() ~= expected_sha:lower() then
+        return false, 'checksum mismatch for ' .. path
+    end
+    return true, nil
 end
 
 return M

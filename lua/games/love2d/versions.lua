@@ -35,16 +35,6 @@ local shared_util = require('games.shared.util')
 
 local M = {}
 
-M.VERSION = '11.5'
-M.CODENAME = 'Mysterious Mysteries'
-M.RELEASE_PAGE_URL = 'https://github.com/love2d/love/releases/tag/11.5'
-M.VERIFIED_ON = '2026-09-27'
-
--- Download retry budget: one initial try plus this many retries.
-local DOWNLOAD_RETRIES = 3
--- Longest we wait for `love --version` before giving up.
-local VERSION_PROBE_TIMEOUT_MS = 15000
-
 ---@class Love2dArtifact
 ---@field file string artifact file name
 ---@field url string exact download URL (probed 200 on VERIFIED_ON)
@@ -54,19 +44,19 @@ local VERSION_PROBE_TIMEOUT_MS = 15000
 
 ---@type table<string, Love2dArtifact>
 M.ARTIFACTS = {
+    android = {
+        file = 'love-11.5-android.apk',
+        url = 'https://github.com/love2d/love/releases/download/11.5/love-11.5-android.apk',
+        sha256 = nil,
+        provenance = 'existence probed 2026-09-27; digest not recorded',
+        purpose = 'Android runtime (sideload / store pipeline out of scope)',
+    },
     linux = {
         file = 'love-11.5-x86_64.AppImage',
         url = 'https://github.com/love2d/love/releases/download/11.5/love-11.5-x86_64.AppImage',
         sha256 = '65a673406431eff7167a15a032bf7a2e4ba50108e091eb7b176465831f9b5e00',
         provenance = 'self-computed 2026-09-27; no upstream checksum published',
         purpose = 'Linux x86_64 runtime (AppImage; extract for a plain binary)',
-    },
-    win64 = {
-        file = 'love-11.5-win64.zip',
-        url = 'https://github.com/love2d/love/releases/download/11.5/love-11.5-win64.zip',
-        sha256 = 'ba6e56be2685e53c817749c4a5007f51137136fe5a3ab64920508babc2e74369',
-        provenance = 'self-computed 2026-09-27; no upstream checksum published',
-        purpose = 'Windows 64-bit runtime for fused releases',
     },
     macos = {
         file = 'love-11.5-macos.zip',
@@ -75,30 +65,28 @@ M.ARTIFACTS = {
         provenance = 'self-computed 2026-09-27; no upstream checksum published',
         purpose = 'macOS runtime (love.app) for fused releases',
     },
-    android = {
-        file = 'love-11.5-android.apk',
-        url = 'https://github.com/love2d/love/releases/download/11.5/love-11.5-android.apk',
-        sha256 = nil,
-        provenance = 'existence probed 2026-09-27; digest not recorded',
-        purpose = 'Android runtime (sideload / store pipeline out of scope)',
+    win64 = {
+        file = 'love-11.5-win64.zip',
+        url = 'https://github.com/love2d/love/releases/download/11.5/love-11.5-win64.zip',
+        sha256 = 'ba6e56be2685e53c817749c4a5007f51137136fe5a3ab64920508babc2e74369',
+        provenance = 'self-computed 2026-09-27; no upstream checksum published',
+        purpose = 'Windows 64-bit runtime for fused releases',
     },
 }
+M.CODENAME = 'Mysterious Mysteries'
+
+-- Download retry budget: one initial try plus this many retries.
+local DOWNLOAD_RETRIES = 3
+M.RELEASE_PAGE_URL = 'https://github.com/love2d/love/releases/tag/11.5'
+M.VERIFIED_ON = '2026-09-27'
+
+M.VERSION = '11.5'
+-- Longest we wait for `love --version` before giving up.
+local VERSION_PROBE_TIMEOUT_MS = 15000
 
 assert(M.VERSION == config.love_version, 'love2d: config.love_version must match versions.VERSION')
 
 ---@return string tools root (env LOVE2D_TOOLS_ROOT wins, for tests)
-function M.tools_root()
-    local override = vim.env.LOVE2D_TOOLS_ROOT
-    if override ~= nil and override ~= '' then
-        return override
-    end
-    return vim.fn.expand('~/workspace/tools/love2d')
-end
-
----@return string install dir for the pinned release
-function M.install_dir()
-    return M.tools_root() .. '/' .. M.VERSION
-end
 
 ---@param key string artifact key from ARTIFACTS
 ---@return string? path, nil when the artifact is not on disk
@@ -127,51 +115,6 @@ function M.binary_path()
     return nil
 end
 
----@return string? e.g. '11.5', nil when the binary is missing/unparseable
-function M.installed_version()
-    local bin = M.binary_path()
-    if bin == nil then
-        return nil
-    end
-    local completed = vim.system({ bin, '--version' }, {
-        text = true,
-        timeout = VERSION_PROBE_TIMEOUT_MS,
-    }):wait()
-    if completed.code ~= 0 then
-        return nil
-    end
-    -- 'LOVE 11.5 (Mysterious Mysteries)' -> '11.5'
-    local version = (completed.stdout or ''):match('LOVE%s+([%d%.]+)')
-    if version == nil or version == '' then
-        return nil
-    end
-    return version
-end
-
----@param path string file to hash
----@param expected_sha string lowercase hex digest
----@return boolean ok
----@return string? err
-function M.verify_artifact(path, expected_sha)
-    assert(type(path) == 'string' and path ~= '')
-    assert(type(expected_sha) == 'string' and expected_sha:match('^%x+$') ~= nil)
-    if vim.fn.filereadable(path) ~= 1 then
-        return false, 'not a readable file: ' .. path
-    end
-    local completed = vim.system({ 'sha256sum', path }, { text = true }):wait()
-    if completed.code ~= 0 then
-        return false, 'sha256sum failed for ' .. path
-    end
-    local actual = (completed.stdout or ''):match('^%x+')
-    if actual == nil then
-        return false, 'could not parse sha256sum output for ' .. path
-    end
-    if actual:lower() ~= expected_sha:lower() then
-        return false, ('checksum mismatch for %s'):format(path)
-    end
-    return true, nil
-end
-
 ---@param artifact Love2dArtifact
 ---@param dest string destination path
 ---@return boolean ok
@@ -180,7 +123,7 @@ function M.download(artifact, dest)
     assert(type(artifact) == 'table' and type(artifact.url) == 'string')
     assert(type(dest) == 'string' and dest ~= '')
     vim.fn.mkdir(vim.fs.dirname(dest), 'p')
-    local completed = vim.system({
+    local completed_obj = vim.system({
         'curl',
         '-sSL',
         '--retry',
@@ -190,7 +133,9 @@ function M.download(artifact, dest)
         '-o',
         dest,
         artifact.url,
-    }, { text = true }):wait()
+    }, { text = true })
+    ---@cast completed_obj vim.SystemObj
+    local completed = completed_obj:wait()
     if completed.code ~= 0 then
         return false, ('download failed (%s): %s'):format(artifact.url, shared_util.trim(completed.stderr or ''))
     end
@@ -220,14 +165,18 @@ function M.ensure_installed(opts)
     -- place on success.
     local tmp = vim.fn.tempname() .. '-love-extract'
     vim.fn.mkdir(tmp, 'p')
-    local extracted = vim.system({ dest, '--appimage-extract' }, { cwd = tmp, text = true }):wait()
+    local extracted_obj = vim.system({ dest, '--appimage-extract' }, { cwd = tmp, text = true })
+    ---@cast extracted_obj vim.SystemObj
+    local extracted = extracted_obj:wait()
     if extracted.code ~= 0 then
         vim.fn.delete(tmp, 'rf')
         return nil, 'AppImage extraction failed'
     end
     local app_dir = M.install_dir() .. '/app'
     vim.fn.delete(app_dir, 'rf')
-    local moved = vim.system({ 'mv', tmp .. '/squashfs-root', app_dir }):wait()
+    local moved_obj = vim.system({ 'mv', tmp .. '/squashfs-root', app_dir })
+    ---@cast moved_obj vim.SystemObj
+    local moved = moved_obj:wait()
     vim.fn.delete(tmp, 'rf')
     if moved.code ~= 0 then
         return nil, 'could not move extracted AppImage into place'
@@ -267,6 +216,34 @@ function M.find_binary()
     return M.binary_path()
 end
 
+---@return string install dir for the pinned release
+function M.install_dir()
+    return M.tools_root() .. '/' .. M.VERSION
+end
+
+---@return string? e.g. '11.5', nil when the binary is missing/unparseable
+function M.installed_version()
+    local bin = M.binary_path()
+    if bin == nil then
+        return nil
+    end
+    local completed_obj = vim.system({ bin, '--version' }, {
+        text = true,
+        timeout = VERSION_PROBE_TIMEOUT_MS,
+    })
+    ---@cast completed_obj vim.SystemObj
+    local completed = completed_obj:wait()
+    if completed.code ~= 0 then
+        return nil
+    end
+    -- 'LOVE 11.5 (Mysterious Mysteries)' -> '11.5'
+    local version = (completed.stdout or ''):match('LOVE%s+([%d%.]+)')
+    if version == nil or version == '' then
+        return nil
+    end
+    return version
+end
+
 ---@return string? binary path, nil after notifying when nothing is found
 function M.require_binary()
     local bin = M.find_binary()
@@ -277,6 +254,39 @@ function M.require_binary()
         )
     end
     return bin
+end
+function M.tools_root()
+    local override = vim.env.LOVE2D_TOOLS_ROOT
+    if override ~= nil and override ~= '' then
+        return override
+    end
+    return vim.fn.expand('~/workspace/tools/love2d')
+end
+
+---@param path string file to hash
+---@param expected_sha string lowercase hex digest
+---@return boolean ok
+---@return string? err
+function M.verify_artifact(path, expected_sha)
+    assert(type(path) == 'string' and path ~= '')
+    assert(type(expected_sha) == 'string' and expected_sha:match('^%x+$') ~= nil)
+    if vim.fn.filereadable(path) ~= 1 then
+        return false, 'not a readable file: ' .. path
+    end
+    local completed_obj = vim.system({ 'sha256sum', path }, { text = true })
+    ---@cast completed_obj vim.SystemObj
+    local completed = completed_obj:wait()
+    if completed.code ~= 0 then
+        return false, 'sha256sum failed for ' .. path
+    end
+    local actual = (completed.stdout or ''):match('^%x+')
+    if actual == nil then
+        return false, 'could not parse sha256sum output for ' .. path
+    end
+    if actual:lower() ~= expected_sha:lower() then
+        return false, ('checksum mismatch for %s'):format(path)
+    end
+    return true, nil
 end
 
 return M

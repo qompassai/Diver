@@ -37,16 +37,6 @@ local M = {}
 -- Track C surface guard: pcall so an in-flight reshape fails closed.
 local sprites_ok, sprites = pcall(require, 'games.blender.sprites')
 
-M.engine_key = 'blender'
-M.label = 'Blender'
-M.love_version_requirement = '11.5'
-
--- anim8: plays the baked single-row strips (pack_strip output) as
--- frame-grid animations in LÖVE.
--- g3d: loads Blender-exported .obj models via g3d's objloader only;
--- the adapter's bake-first limits explain why glTF/GLB is excluded.
-M.libraries = { 'anim8', 'g3d' }
-
 M.asset_interchange = {
     capabilities = {
         'sprite-sheet baking from .blend scenes via games/blender/sprites.lua '
@@ -63,19 +53,39 @@ M.asset_interchange = {
     },
     runtime_interop = false,
 }
+M.engine_key = 'blender'
+M.label = 'Blender'
 
----Recommended conf.lua values for LÖVE projects consuming baked
----Blender assets. Convention only; nothing reads or enforces these.
-M.run_config = {
-    identity = 'diver-blender-love',
-    window = { width = 1280, height = 720, resizable = true, vsync = 1 },
-}
+-- anim8: plays the baked single-row strips (pack_strip output) as
+-- frame-grid animations in LÖVE.
+-- g3d: loads Blender-exported .obj models via g3d's objloader only;
+-- the adapter's bake-first limits explain why glTF/GLB is excluded.
+M.libraries = { 'anim8', 'g3d' }
+M.love_version_requirement = '11.5'
 
 ---Recommended packaging conventions for Blender-baked assets.
 M.package_config = {
     asset_dirs = { 'assets', 'renders', 'sprites' },
     include_exts = { '.png', '.json', '.ogg', '.wav' },
 }
+
+---Recommended conf.lua values for LÖVE projects consuming baked
+---Blender assets. Convention only; nothing reads or enforces these.
+M.run_config = {
+    identity = 'diver-blender-love',
+    window = { height = 720, resizable = true, vsync = 1, width = 1280 },
+}
+
+---Locate the Blender binary. Returns nil when absent: the adapter
+---fails closed rather than assuming Blender is installed.
+---@return string? path
+---@return string? err
+function M.detect_tooling()
+    if vim.fn.executable('blender') == 1 then
+        return 'blender', nil
+    end
+    return nil, 'blender binary not found on PATH'
+end
 
 ---Validate a baked-sprite manifest against the real Blender sprite
 ---pipeline schema (format diver-blender-sprites). Fails closed when
@@ -89,17 +99,6 @@ function M.validate_interchange_manifest(manifest)
         return false, 'blender sprite pipeline unavailable (games.blender.sprites not loaded)'
     end
     return sprites.validate_manifest(manifest)
-end
-
----Locate the Blender binary. Returns nil when absent: the adapter
----fails closed rather than assuming Blender is installed.
----@return string? path
----@return string? err
-function M.detect_tooling()
-    if vim.fn.executable('blender') == 1 then
-        return 'blender', nil
-    end
-    return nil, 'blender binary not found on PATH'
 end
 
 return M

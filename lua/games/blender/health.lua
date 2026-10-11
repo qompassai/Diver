@@ -22,10 +22,11 @@ local config = require('games.blender.config')
 local versions = require('games.blender.versions')
 
 local M = {}
-
-local PYTHON_PROBE_TIMEOUT_MS = 60000
 local PYTHON_PROBE_MARKER = 'DIVER_BLENDER_PYTHON_OK'
 
+local PYTHON_PROBE_TIMEOUT_MS = 60000
+
+---@param bin string
 ---@return boolean ok
 local function probe_blender_python(bin)
     local result, spawn_err = versions.system_wait({

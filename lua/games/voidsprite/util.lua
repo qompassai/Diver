@@ -31,6 +31,19 @@ function M.configure(opts)
     configured_bin = config.resolve(opts)
 end
 
+---@return string? Current buffer sprite path, else a prompted path, else nil.
+function M.current_sprite_or_prompt()
+    local current = vim.api.nvim_buf_get_name(0)
+    if M.is_sprite_file(current) then
+        return current
+    end
+    local input = shared_util.trim(vim.fn.input('Voidsprite sprite file: ', '', 'file'))
+    if input == '' then
+        return nil
+    end
+    return vim.fn.expand(input)
+end
+
 ---@return string? Binary path when executable, nil otherwise.
 function M.find_binary()
     local override = shared_util.env_first(config.env_names)
@@ -39,10 +52,7 @@ function M.find_binary()
         if resolved ~= nil then
             return resolved
         end
-        vim.notify(
-            'Voidsprite: configured binary is not executable: ' .. override,
-            vim.log.levels.WARN
-        )
+        vim.notify('Voidsprite: configured binary is not executable: ' .. override, vim.log.levels.WARN)
     end
     local candidates = {}
     local seen = {}
@@ -59,18 +69,6 @@ function M.find_binary()
     return shared_util.first_executable(candidates)
 end
 
----@return string? Binary path, notifying on ERROR when missing.
-function M.require_binary()
-    local bin = M.find_binary()
-    if bin == nil then
-        vim.notify(
-            'Voidsprite executable not found. Set NVIM_VOIDSPRITE_BIN or add voidsprite to $PATH.',
-            vim.log.levels.ERROR
-        )
-    end
-    return bin
-end
-
 ---@param path string?
 ---@return boolean
 function M.is_sprite_file(path)
@@ -85,17 +83,16 @@ function M.is_sprite_file(path)
     return false
 end
 
----@return string? Current buffer sprite path, else a prompted path, else nil.
-function M.current_sprite_or_prompt()
-    local current = vim.api.nvim_buf_get_name(0)
-    if M.is_sprite_file(current) then
-        return current
+---@return string? Binary path, notifying on ERROR when missing.
+function M.require_binary()
+    local bin = M.find_binary()
+    if bin == nil then
+        vim.notify(
+            'Voidsprite executable not found. Set NVIM_VOIDSPRITE_BIN or add voidsprite to $PATH.',
+            vim.log.levels.ERROR
+        )
     end
-    local input = shared_util.trim(vim.fn.input('Voidsprite sprite file: ', '', 'file'))
-    if input == '' then
-        return nil
-    end
-    return vim.fn.expand(input)
+    return bin
 end
 
 return M

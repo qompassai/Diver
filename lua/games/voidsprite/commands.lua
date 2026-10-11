@@ -24,12 +24,16 @@ local shared_util = require('games.shared.util')
 
 local M = {}
 
-function M.setup_commands()
-    local action_list = actions.get_actions()
+function M.setup()
+    M.setup_commands()
+    M.setup_keymaps()
+end
 
+function M.setup_commands()
     vim.api.nvim_create_user_command('Voidsprite', function()
         actions.show_menu()
     end, { desc = 'Open Voidsprite action menu' })
+    local action_list = actions.get_actions()
 
     vim.api.nvim_create_user_command('VoidspriteAction', function(cmd_opts)
         actions.run_action_by_id(cmd_opts.args)
@@ -52,20 +56,15 @@ end
 
 function M.setup_keymaps()
     local map = vim.keymap.set
-    map('n', '<leader>gvm', actions.show_menu, {
-        desc = 'Voidsprite: Action menu',
-    })
     map('n', '<leader>gve', actions.open_in_editor, {
         desc = 'Voidsprite: Open in editor',
     })
     map('n', '<leader>gvi', actions.import_into_tic80, {
         desc = 'Voidsprite: Import PNG sprite sheet into TIC-80 cart',
     })
-end
-
-function M.setup()
-    M.setup_commands()
-    M.setup_keymaps()
+    map('n', '<leader>gvm', actions.show_menu, {
+        desc = 'Voidsprite: Action menu',
+    })
 end
 
 return M

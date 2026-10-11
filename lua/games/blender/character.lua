@@ -36,12 +36,235 @@
 local kit = require('games.shared.character')
 
 local M = {}
+M.BINARIES = { 'blender' }
+M.BUILD_TIMEOUT_MS = 600000
+M.ENV_NAMES = { 'BLENDER_BIN', 'NVIM_BLENDER_BIN' }
 
 M.FRAMES_MAX = 4096
 M.JSON_DEPTH_MAX = 16
-M.BINARIES = { 'blender' }
-M.ENV_NAMES = { 'BLENDER_BIN', 'NVIM_BLENDER_BIN' }
-M.BUILD_TIMEOUT_MS = 600000
+
+---Bake every timeline to per-frame part poses with
+---shared.character.sample_pose(). Pure.
+---@param ch table validated character
+---@param opts? { fps?: number }
+---@return table|nil manifest { anims = { name = { fps, frames } } }
+---@return string|nil err
+function M.bake_pose_manifest(ch, opts)
+    opts = opts or {}
+    local ok, verr = kit.validate_character(ch)
+    if not ok then
+        return nil, 'blender: invalid character: ' .. tostring(verr[1])
+    end
+    local anims = {}
+    for anim_name, tl in pairs(ch.timelines) do
+        local fps = opts.fps or tl.fps
+        if type(fps) ~= 'number' or fps <= 0 or fps > kit.FPS_MAX then
+            return nil, 'blender: fps out of range'
+        end
+        local count = math.floor(tl.duration_sec * fps + 1e-9) + 1
+        if count > M.FRAMES_MAX then
+            return nil, 'blender: frame count exceeds cap'
+        end
+        local frames = {}
+        for i = 1, count do
+            local t = math.min((i - 1) / fps, tl.duration_sec)
+            local pose, perr = kit.sample_pose(ch, anim_name, t)
+            if pose == nil then
+                return nil, 'blender: sample_pose failed: ' .. tostring(perr)
+            end
+            local baked = {}
+            for _, part in ipairs(ch.parts) do
+                local s = pose[part.name]
+                baked[part.name] = {
+                    pos = { x = s.pos.x, y = s.pos.y },
+                    rot_deg = s.rot_deg,
+                    scale = { x = s.scale.x, y = s.scale.y },
+                    visible = s.visible,
+                }
+            end
+            frames[i] = { t = t, parts = baked }
+        end
+        anims[anim_name] = { fps = fps, frames = frames }
+    end
+    return { format = 'diver-blender-character', version = 1, anims = anims }, nil
+end
+
+---Static 2D scene-builder script. Reads the JSON spec from
+---DIVER_CHAR_JSON and writes the .blend to DIVER_CHAR_OUT. One
+---textured plane per part, keyframed from the baked poses, with a
+---fixed orthographic camera matching the sprites-bake preset.
+---@return string script
+function M.build_2d_script()
+    return table.concat({
+        'import bpy, json, math, os',
+        "spec = json.load(open(os.environ['DIVER_CHAR_JSON']))",
+        "out = os.environ['DIVER_CHAR_OUT']",
+        'unit = float(os.environ.get("DIVER_CHAR_UNIT", "0.01"))',
+        'plane = float(os.environ.get("DIVER_CHAR_PLANE", "2.0"))',
+        'ortho = float(os.environ.get("DIVER_CHAR_ORTHO", "6.0"))',
+        "bpy.ops.object.select_all(action='SELECT')",
+        'bpy.ops.object.delete(use_global=False)',
+        "cam_data = bpy.data.cameras.new('DiverCharCam')",
+        "cam_data.type = 'ORTHO'",
+        'cam_data.ortho_scale = ortho',
+        "cam = bpy.data.objects.new('DiverCharCam', cam_data)",
+        'bpy.context.scene.collection.objects.link(cam)',
+        'cam.location = (0.0, -10.0, 0.0)',
+        'cam.rotation_euler = (math.radians(90.0), 0.0, 0.0)',
+        'bpy.context.scene.camera = cam',
+        'scene = bpy.context.scene',
+        'def textured_plane(name, sprite):',
+        '    bpy.ops.mesh.primitive_plane_add(size=plane)',
+        '    ob = bpy.context.active_object',
+        "    ob.name = 'CHAR_' + name",
+        "    mat = bpy.data.materials.new('MAT_' + name)",
+        '    mat.use_nodes = True',
+        "    bsdf = mat.node_tree.nodes['Principled BSDF']",
+        "    tex = mat.node_tree.nodes.new('ShaderNodeTexImage')",
+        '    tex.image = bpy.data.images.load(sprite)',
+        "    mat.node_tree.links.new(bsdf.inputs['Base Color'], tex.outputs['Color'])",
+        "    mat.node_tree.links.new(bsdf.inputs['Alpha'], tex.outputs['Alpha'])",
+        '    mat.blend_method = "BLEND"',
+        '    ob.data.materials.append(mat)',
+        '    return ob',
+        "for part in spec['parts']:",
+        "    ob = textured_plane(part['name'], part['sprite'])",
+        "    ob.location = (0.0, 0.0, part['zindex'] * 0.001)",
+        "frames = spec['frames']",
+        'scene.frame_start = 1',
+        'scene.frame_end = len(frames)',
+        'for i, frame in enumerate(frames):',
+        '    f = i + 1',
+        "    for part in spec['parts']:",
+        "        ob = bpy.data.objects['CHAR_' + part['name']]",
+        "        pose = frame['parts'][part['name']]",
+        "        ob.location = (pose['pos']['x'] * unit, -pose['pos']['y'] * unit, part['zindex'] * 0.001)",
+        "        ob.rotation_euler = (0.0, 0.0, math.radians(-pose['rot_deg']))",
+        "        ob.scale = (pose['scale']['x'], pose['scale']['y'], 1.0)",
+        "        ob.hide_viewport = not pose['visible']",
+        "        ob.hide_render = not pose['visible']",
+        "        ob.keyframe_insert(data_path='location', frame=f)",
+        "        ob.keyframe_insert(data_path='rotation_euler', frame=f)",
+        "        ob.keyframe_insert(data_path='scale', frame=f)",
+        "        ob.keyframe_insert(data_path='hide_viewport', frame=f)",
+        "        ob.keyframe_insert(data_path='hide_render', frame=f)",
+        'bpy.ops.wm.save_as_mainfile(filepath=out)',
+        "print('DIVER_CHAR_OK ' + out)",
+    }, '\n') .. '\n'
+end
+
+---@param ch table validated character
+---@return table|nil spec { parts, frames } for the 2D script
+---@return string|nil err
+local function build_2d_spec(ch)
+    local manifest, merr = M.bake_pose_manifest(ch)
+    if manifest == nil then
+        return nil, merr
+    end
+    local anim_names = {}
+    for name in pairs(manifest.anims) do
+        anim_names[#anim_names + 1] = name
+    end
+    table.sort(anim_names)
+    local anim = manifest.anims[anim_names[1]]
+    local parts = {}
+    for _, part in ipairs(ch.parts) do
+        if type(part.sprite) ~= 'string' or part.sprite == '' then
+            return nil, "blender: 2D bake needs a sprite for part '" .. part.name .. "'"
+        end
+        if part.sprite:sub(1, 1) == '/' or part.sprite:find('%.%.') ~= nil then
+            return nil, "blender: unsafe sprite path for part '" .. part.name .. "'"
+        end
+        parts[#parts + 1] = { name = part.name, zindex = part.zindex, sprite = part.sprite }
+    end
+    return { parts = parts, frames = anim.frames }, nil
+end
+
+---Static 3D armature-builder script. Reads joints (+ optional
+---joints_3d limits, exported for downstream tooling) and baked bone
+---rotations from DIVER_CHAR_JSON; writes the .blend to DIVER_CHAR_OUT.
+---Bones arrive parent-first in the spec, so parenting never dangles.
+---@return string script
+function M.build_3d_script()
+    return table.concat({
+        'import bpy, json, math, os',
+        "spec = json.load(open(os.environ['DIVER_CHAR_JSON']))",
+        "out = os.environ['DIVER_CHAR_OUT']",
+        'unit = float(os.environ.get("DIVER_CHAR_UNIT", "0.01"))',
+        "bpy.ops.object.select_all(action='SELECT')",
+        'bpy.ops.object.delete(use_global=False)',
+        "arm_data = bpy.data.armatures.new('DiverCharArmature')",
+        "arm = bpy.data.objects.new('DiverCharArmature', arm_data)",
+        'bpy.context.scene.collection.objects.link(arm)',
+        'bpy.context.view_layer.objects.active = arm',
+        "bpy.ops.object.mode_set(mode='EDIT')",
+        'bones = {}',
+        "for joint in spec['joints']:",
+        "    bone = arm_data.edit_bones.new(joint['name'])",
+        "    px, py = joint['pivot']['x'] * unit, joint['pivot']['y'] * unit",
+        '    bone.head = (px, 0.0, py)',
+        "    length = max(joint['length_px'] * unit, 0.001)",
+        '    bone.tail = (px, 0.0, py + length)',
+        "    if joint.get('parent'):",
+        "        bone.parent = bones[joint['parent']]",
+        "    bones[joint['name']] = bone",
+        "bpy.ops.object.mode_set(mode='POSE')",
+        "frames = spec['bone_frames']",
+        'bpy.context.scene.frame_start = 1',
+        'bpy.context.scene.frame_end = len(frames)',
+        'for i, frame in enumerate(frames):',
+        '    f = i + 1',
+        "    for name, rot in frame['bones'].items():",
+        '        pbone = arm.pose.bones[name]',
+        "        pbone.rotation_mode = 'XYZ'",
+        '        pbone.rotation_euler = (0.0, 0.0, math.radians(rot))',
+        "        pbone.keyframe_insert(data_path='rotation_euler', frame=f)",
+        'bpy.ops.wm.save_as_mainfile(filepath=out)',
+        "print('DIVER_CHAR_OK ' + out)",
+    }, '\n') .. '\n'
+end
+
+---Build the argv for `blender -b --python`. Pure: no binary needed.
+---Paths travel as argv entries, never interpolated into code.
+---@param bin string blender binary path
+---@param script_path string generated builder script
+---@param blend string|nil .blend to open; nil starts from the default scene
+---@return string[]|nil argv
+---@return string|nil err
+function M.build_argv(bin, script_path, blend)
+    if type(bin) ~= 'string' or bin == '' or bin:find('%z') ~= nil then
+        return nil, 'blender: bin must be a non-empty path'
+    end
+    if type(script_path) ~= 'string' or script_path == '' or script_path:find('%z') ~= nil then
+        return nil, 'blender: script_path must be a non-empty path'
+    end
+    if blend ~= nil and (type(blend) ~= 'string' or blend == '' or blend:find('%z') ~= nil) then
+        return nil, 'blender: blend must be nil or a non-empty path'
+    end
+    local argv = { bin, '-b' }
+    if blend ~= nil then
+        argv[#argv + 1] = blend
+    end
+    argv[#argv + 1] = '--python'
+    argv[#argv + 1] = script_path
+    return argv, nil
+end
+
+---Honest capability report. Both dimensions are native Blender:
+---2D via the sprites-bake pipeline, 3D via a real armature.
+---@return { dims_2d: boolean, dims_3d: boolean, notes: string[] }
+function M.capabilities()
+    return {
+        dims_2d = true,
+        dims_3d = true,
+        notes = {
+            '2D: keyframed textured planes + orthographic camera; rendered via games.blender.sprites bake.',
+            '3D: native armature built from skeleton.joints + joints_3d, keyframed from joint-named tracks.',
+            'Builder scripts are static text; paths travel via env/JSON, never interpolated into code.',
+            'glTF/FBX export goes through games.blender.export.',
+        },
+    }
+end
 
 ---@class BlenderCharacterOpts
 ---@field bin? string explicit blender binary override
@@ -167,211 +390,77 @@ local function find_binary(override)
     return nil
 end
 
----Bake every timeline to per-frame part poses with
----shared.character.sample_pose(). Pure.
----@param ch table validated character
----@param opts? { fps?: number }
----@return table|nil manifest { anims = { name = { fps, frames } } }
+---Export a built .blend to an interchange file via
+---games.blender.export (glb/fbx). Fails closed when the export
+---module or the blender binary is unavailable.
+---@param blend_path string source .blend
+---@param out_path string destination file
+---@param kind string 'glb' | 'fbx'
+---@param opts? BlenderCharacterOpts
+---@return string|nil out_path
 ---@return string|nil err
-function M.bake_pose_manifest(ch, opts)
+function M.export_interchange(blend_path, out_path, kind, opts)
     opts = opts or {}
-    local ok, verr = kit.validate_character(ch)
-    if not ok then
-        return nil, 'blender: invalid character: ' .. tostring(verr[1])
+    if kind ~= 'glb' and kind ~= 'fbx' then
+        return nil, "blender: kind must be 'glb' or 'fbx'"
     end
-    local anims = {}
-    for anim_name, tl in pairs(ch.timelines) do
-        local fps = opts.fps or tl.fps
-        if type(fps) ~= 'number' or fps <= 0 or fps > kit.FPS_MAX then
-            return nil, 'blender: fps out of range'
-        end
-        local count = math.floor(tl.duration_sec * fps + 1e-9) + 1
-        if count > M.FRAMES_MAX then
-            return nil, 'blender: frame count exceeds cap'
-        end
-        local frames = {}
-        for i = 1, count do
-            local t = math.min((i - 1) / fps, tl.duration_sec)
-            local pose, perr = kit.sample_pose(ch, anim_name, t)
-            if pose == nil then
-                return nil, 'blender: sample_pose failed: ' .. tostring(perr)
-            end
-            local baked = {}
-            for _, part in ipairs(ch.parts) do
-                local s = pose[part.name]
-                baked[part.name] = {
-                    pos = { x = s.pos.x, y = s.pos.y },
-                    rot_deg = s.rot_deg,
-                    scale = { x = s.scale.x, y = s.scale.y },
-                    visible = s.visible,
-                }
-            end
-            frames[i] = { t = t, parts = baked }
-        end
-        anims[anim_name] = { fps = fps, frames = frames }
+    if type(blend_path) ~= 'string' or blend_path == '' then
+        return nil, 'blender: blend_path required'
     end
-    return { format = 'diver-blender-character', version = 1, anims = anims }, nil
+    if type(out_path) ~= 'string' or out_path == '' then
+        return nil, 'blender: out_path required'
+    end
+    if find_binary(opts.bin) == nil then
+        return nil, 'blender: binary not found; cannot export interchange files'
+    end
+    local has_mod, exporter = pcall(require, 'games.blender.export')
+    if not has_mod then
+        return nil, 'blender: games.blender.export unavailable: ' .. tostring(exporter)
+    end
+    if kind == 'glb' then
+        return exporter.export_glb(blend_path, out_path)
+    end
+    return exporter.export_fbx(blend_path, out_path)
 end
 
----Static 2D scene-builder script. Reads the JSON spec from
----DIVER_CHAR_JSON and writes the .blend to DIVER_CHAR_OUT. One
----textured plane per part, keyframed from the baked poses, with a
----fixed orthographic camera matching the sprites-bake preset.
----@return string script
-function M.build_2d_script()
-    return table.concat({
-        'import bpy, json, math, os',
-        "spec = json.load(open(os.environ['DIVER_CHAR_JSON']))",
-        "out = os.environ['DIVER_CHAR_OUT']",
-        'unit = float(os.environ.get("DIVER_CHAR_UNIT", "0.01"))',
-        'plane = float(os.environ.get("DIVER_CHAR_PLANE", "2.0"))',
-        'ortho = float(os.environ.get("DIVER_CHAR_ORTHO", "6.0"))',
-        "bpy.ops.object.select_all(action='SELECT')",
-        'bpy.ops.object.delete(use_global=False)',
-        "cam_data = bpy.data.cameras.new('DiverCharCam')",
-        "cam_data.type = 'ORTHO'",
-        'cam_data.ortho_scale = ortho',
-        "cam = bpy.data.objects.new('DiverCharCam', cam_data)",
-        'bpy.context.scene.collection.objects.link(cam)',
-        'cam.location = (0.0, -10.0, 0.0)',
-        'cam.rotation_euler = (math.radians(90.0), 0.0, 0.0)',
-        'bpy.context.scene.camera = cam',
-        'scene = bpy.context.scene',
-        'def textured_plane(name, sprite):',
-        '    bpy.ops.mesh.primitive_plane_add(size=plane)',
-        '    ob = bpy.context.active_object',
-        "    ob.name = 'CHAR_' + name",
-        "    mat = bpy.data.materials.new('MAT_' + name)",
-        '    mat.use_nodes = True',
-        "    bsdf = mat.node_tree.nodes['Principled BSDF']",
-        "    tex = mat.node_tree.nodes.new('ShaderNodeTexImage')",
-        '    tex.image = bpy.data.images.load(sprite)',
-        "    mat.node_tree.links.new(bsdf.inputs['Base Color'], tex.outputs['Color'])",
-        "    mat.node_tree.links.new(bsdf.inputs['Alpha'], tex.outputs['Alpha'])",
-        '    mat.blend_method = "BLEND"',
-        '    ob.data.materials.append(mat)',
-        '    return ob',
-        "for part in spec['parts']:",
-        "    ob = textured_plane(part['name'], part['sprite'])",
-        "    ob.location = (0.0, 0.0, part['zindex'] * 0.001)",
-        "frames = spec['frames']",
-        'scene.frame_start = 1',
-        'scene.frame_end = len(frames)',
-        'for i, frame in enumerate(frames):',
-        '    f = i + 1',
-        "    for part in spec['parts']:",
-        "        ob = bpy.data.objects['CHAR_' + part['name']]",
-        "        pose = frame['parts'][part['name']]",
-        "        ob.location = (pose['pos']['x'] * unit, -pose['pos']['y'] * unit, part['zindex'] * 0.001)",
-        "        ob.rotation_euler = (0.0, 0.0, math.radians(-pose['rot_deg']))",
-        "        ob.scale = (pose['scale']['x'], pose['scale']['y'], 1.0)",
-        "        ob.hide_viewport = not pose['visible']",
-        "        ob.hide_render = not pose['visible']",
-        "        ob.keyframe_insert(data_path='location', frame=f)",
-        "        ob.keyframe_insert(data_path='rotation_euler', frame=f)",
-        "        ob.keyframe_insert(data_path='scale', frame=f)",
-        "        ob.keyframe_insert(data_path='hide_viewport', frame=f)",
-        "        ob.keyframe_insert(data_path='hide_render', frame=f)",
-        'bpy.ops.wm.save_as_mainfile(filepath=out)',
-        "print('DIVER_CHAR_OK ' + out)",
-    }, '\n') .. '\n'
-end
-
----Static 3D armature-builder script. Reads joints (+ optional
----joints_3d limits, exported for downstream tooling) and baked bone
----rotations from DIVER_CHAR_JSON; writes the .blend to DIVER_CHAR_OUT.
----Bones arrive parent-first in the spec, so parenting never dangles.
----@return string script
-function M.build_3d_script()
-    return table.concat({
-        'import bpy, json, math, os',
-        "spec = json.load(open(os.environ['DIVER_CHAR_JSON']))",
-        "out = os.environ['DIVER_CHAR_OUT']",
-        'unit = float(os.environ.get("DIVER_CHAR_UNIT", "0.01"))',
-        "bpy.ops.object.select_all(action='SELECT')",
-        'bpy.ops.object.delete(use_global=False)',
-        "arm_data = bpy.data.armatures.new('DiverCharArmature')",
-        "arm = bpy.data.objects.new('DiverCharArmature', arm_data)",
-        'bpy.context.scene.collection.objects.link(arm)',
-        'bpy.context.view_layer.objects.active = arm',
-        "bpy.ops.object.mode_set(mode='EDIT')",
-        'bones = {}',
-        "for joint in spec['joints']:",
-        "    bone = arm_data.edit_bones.new(joint['name'])",
-        "    px, py = joint['pivot']['x'] * unit, joint['pivot']['y'] * unit",
-        '    bone.head = (px, 0.0, py)',
-        "    length = max(joint['length_px'] * unit, 0.001)",
-        '    bone.tail = (px, 0.0, py + length)',
-        "    if joint.get('parent'):",
-        "        bone.parent = bones[joint['parent']]",
-        "    bones[joint['name']] = bone",
-        "bpy.ops.object.mode_set(mode='POSE')",
-        "frames = spec['bone_frames']",
-        'bpy.context.scene.frame_start = 1',
-        'bpy.context.scene.frame_end = len(frames)',
-        'for i, frame in enumerate(frames):',
-        '    f = i + 1',
-        "    for name, rot in frame['bones'].items():",
-        '        pbone = arm.pose.bones[name]',
-        "        pbone.rotation_mode = 'XYZ'",
-        '        pbone.rotation_euler = (0.0, 0.0, math.radians(rot))',
-        "        pbone.keyframe_insert(data_path='rotation_euler', frame=f)",
-        'bpy.ops.wm.save_as_mainfile(filepath=out)',
-        "print('DIVER_CHAR_OK ' + out)",
-    }, '\n') .. '\n'
-end
-
----Build the argv for `blender -b --python`. Pure: no binary needed.
----Paths travel as argv entries, never interpolated into code.
----@param bin string blender binary path
----@param script_path string generated builder script
----@param blend string|nil .blend to open; nil starts from the default scene
----@return string[]|nil argv
+---Bake a 2D sprite strip PNG + JSON frame manifest for a character:
+---build the pose2d .blend, then render it through the
+---games.blender.sprites bake pipeline. Fails closed when the sprites
+---module, Neovim, or the blender binary is unavailable.
+---@param ch table character definition
+---@param out_dir string destination directory
+---@param opts? BlenderSheetOpts
+---@return { png: string, manifest: string }|nil paths
 ---@return string|nil err
-function M.build_argv(bin, script_path, blend)
-    if type(bin) ~= 'string' or bin == '' or bin:find('%z') ~= nil then
-        return nil, 'blender: bin must be a non-empty path'
+function M.export_sprite_sheet(ch, out_dir, opts)
+    opts = opts or {}
+    if type(out_dir) ~= 'string' or out_dir == '' or out_dir:find('%z') ~= nil then
+        return nil, 'blender: out_dir must be a non-empty path'
     end
-    if type(script_path) ~= 'string' or script_path == '' or script_path:find('%z') ~= nil then
-        return nil, 'blender: script_path must be a non-empty path'
+    if find_binary(opts.bin) == nil then
+        return nil, 'blender: binary not found (tried BLENDER_BIN/NVIM_BLENDER_BIN and PATH); cannot bake sprite sheet'
     end
-    if blend ~= nil and (type(blend) ~= 'string' or blend == '' or blend:find('%z') ~= nil) then
-        return nil, 'blender: blend must be nil or a non-empty path'
+    local has_mod, sprites = pcall(require, 'games.blender.sprites')
+    if not has_mod then
+        return nil, 'blender: games.blender.sprites unavailable: ' .. tostring(sprites)
     end
-    local argv = { bin, '-b' }
-    if blend ~= nil then
-        argv[#argv + 1] = blend
+    local blend_path = out_dir .. '/character.blend'
+    local built, berr = M.build_blend(ch, 'pose2d', blend_path, {
+        bin = opts.bin,
+        fps = opts.fps,
+        ortho_scale = opts.ortho_scale,
+        plane_size = opts.plane_size,
+    })
+    if built == nil then
+        return nil, berr
     end
-    argv[#argv + 1] = '--python'
-    argv[#argv + 1] = script_path
-    return argv, nil
-end
-
----@param ch table validated character
----@return table|nil spec { parts, frames } for the 2D script
----@return string|nil err
-local function build_2d_spec(ch)
-    local manifest, merr = M.bake_pose_manifest(ch)
-    if manifest == nil then
-        return nil, merr
+    local png = out_dir .. '/sheet.png'
+    local manifest = out_dir .. '/sheet.json'
+    local baked, bake_err = sprites.bake(built, png, manifest, opts)
+    if baked == nil then
+        return nil, bake_err
     end
-    local anim_names = {}
-    for name in pairs(manifest.anims) do
-        anim_names[#anim_names + 1] = name
-    end
-    table.sort(anim_names)
-    local anim = manifest.anims[anim_names[1]]
-    local parts = {}
-    for _, part in ipairs(ch.parts) do
-        if type(part.sprite) ~= 'string' or part.sprite == '' then
-            return nil, "blender: 2D bake needs a sprite for part '" .. part.name .. "'"
-        end
-        if part.sprite:sub(1, 1) == '/' or part.sprite:find('%.%.') ~= nil then
-            return nil, "blender: unsafe sprite path for part '" .. part.name .. "'"
-        end
-        parts[#parts + 1] = { name = part.name, zindex = part.zindex, sprite = part.sprite }
-    end
-    return { parts = parts, frames = anim.frames }, nil
+    return { png = png, manifest = manifest }, nil
 end
 
 ---Order joints parent-first (bounded multi-pass; the validator already
@@ -550,7 +639,7 @@ function M.build_blend(ch, kind, blend_path, opts)
     end
     local ortho = opts.ortho_scale or 6.0
     local plane = opts.plane_size or 2.0
-    local completed = vim.system(argv, {
+    local completed_obj = vim.system(argv, {
         text = true,
         timeout = M.BUILD_TIMEOUT_MS,
         env = {
@@ -559,7 +648,9 @@ function M.build_blend(ch, kind, blend_path, opts)
             DIVER_CHAR_ORTHO = tostring(ortho),
             DIVER_CHAR_PLANE = tostring(plane),
         },
-    }):wait()
+    })
+    ---@cast completed_obj vim.SystemObj
+    local completed = completed_obj:wait()
     vim.fn.delete(workdir, 'rf')
     if completed.code ~= 0 then
         local detail = (completed.stderr or ''):match('^([^\r\n]*)') or ''
@@ -570,95 +661,6 @@ function M.build_blend(ch, kind, blend_path, opts)
         return nil, 'blender: builder did not report success'
     end
     return blend_path, nil
-end
-
----Export a built .blend to an interchange file via
----games.blender.export (glb/fbx). Fails closed when the export
----module or the blender binary is unavailable.
----@param blend_path string source .blend
----@param out_path string destination file
----@param kind string 'glb' | 'fbx'
----@param opts? BlenderCharacterOpts
----@return string|nil out_path
----@return string|nil err
-function M.export_interchange(blend_path, out_path, kind, opts)
-    opts = opts or {}
-    if kind ~= 'glb' and kind ~= 'fbx' then
-        return nil, "blender: kind must be 'glb' or 'fbx'"
-    end
-    if type(blend_path) ~= 'string' or blend_path == '' then
-        return nil, 'blender: blend_path required'
-    end
-    if type(out_path) ~= 'string' or out_path == '' then
-        return nil, 'blender: out_path required'
-    end
-    if find_binary(opts.bin) == nil then
-        return nil, 'blender: binary not found; cannot export interchange files'
-    end
-    local has_mod, exporter = pcall(require, 'games.blender.export')
-    if not has_mod then
-        return nil, 'blender: games.blender.export unavailable: ' .. tostring(exporter)
-    end
-    if kind == 'glb' then
-        return exporter.export_glb(blend_path, out_path)
-    end
-    return exporter.export_fbx(blend_path, out_path)
-end
-
----Bake a 2D sprite strip PNG + JSON frame manifest for a character:
----build the pose2d .blend, then render it through the
----games.blender.sprites bake pipeline. Fails closed when the sprites
----module, Neovim, or the blender binary is unavailable.
----@param ch table character definition
----@param out_dir string destination directory
----@param opts? BlenderSheetOpts
----@return { png: string, manifest: string }|nil paths
----@return string|nil err
-function M.export_sprite_sheet(ch, out_dir, opts)
-    opts = opts or {}
-    if type(out_dir) ~= 'string' or out_dir == '' or out_dir:find('%z') ~= nil then
-        return nil, 'blender: out_dir must be a non-empty path'
-    end
-    if find_binary(opts.bin) == nil then
-        return nil, 'blender: binary not found (tried BLENDER_BIN/NVIM_BLENDER_BIN and PATH); cannot bake sprite sheet'
-    end
-    local has_mod, sprites = pcall(require, 'games.blender.sprites')
-    if not has_mod then
-        return nil, 'blender: games.blender.sprites unavailable: ' .. tostring(sprites)
-    end
-    local blend_path = out_dir .. '/character.blend'
-    local built, berr = M.build_blend(ch, 'pose2d', blend_path, {
-        bin = opts.bin,
-        fps = opts.fps,
-        ortho_scale = opts.ortho_scale,
-        plane_size = opts.plane_size,
-    })
-    if built == nil then
-        return nil, berr
-    end
-    local png = out_dir .. '/sheet.png'
-    local manifest = out_dir .. '/sheet.json'
-    local baked, bake_err = sprites.bake(built, png, manifest, opts)
-    if baked == nil then
-        return nil, bake_err
-    end
-    return { png = png, manifest = manifest }, nil
-end
-
----Honest capability report. Both dimensions are native Blender:
----2D via the sprites-bake pipeline, 3D via a real armature.
----@return { dims_2d: boolean, dims_3d: boolean, notes: string[] }
-function M.capabilities()
-    return {
-        dims_2d = true,
-        dims_3d = true,
-        notes = {
-            '2D: keyframed textured planes + orthographic camera; rendered via games.blender.sprites bake.',
-            '3D: native armature built from skeleton.joints + joints_3d, keyframed from joint-named tracks.',
-            'Builder scripts are static text; paths travel via env/JSON, never interpolated into code.',
-            'glTF/FBX export goes through games.blender.export.',
-        },
-    }
 end
 
 return M

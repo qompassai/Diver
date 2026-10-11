@@ -26,39 +26,6 @@ local shared_util = require('games.shared.util')
 
 local M = {}
 
----Find the Unity project root by walking up from a starting directory.
----@param start_dir? string directory to start from (default: cwd)
----@return string|nil root the project root path, or nil when not found
-function M.find_root(start_dir)
-    return shared_util.find_root(config.root_markers, start_dir)
-end
-
----Find the Unity project root, returning nil when none is found.
----@return string|nil root the project root path, or nil when not found
-function M.require_root()
-    local root = M.find_root()
-    if not root then
-        vim.notify('Unity: no ProjectSettings/ProjectVersion.txt found upward from cwd.', vim.log.levels.ERROR)
-    end
-    return root
-end
-
--- Reads `m_EditorVersion: 2022.3.10f1` out of ProjectVersion.txt.
----Read the Unity editor version from the project's version file.
----@param root string project root path
----@return string|nil version the editor version, or nil when unreadable
-function M.project_editor_version(root)
-    root = root or M.find_root()
-    if not root then
-        return nil
-    end
-    local content = shared_util.read_file(root .. '/ProjectSettings/ProjectVersion.txt')
-    if not content then
-        return nil
-    end
-    return content:match('m_EditorVersion:%s*(%S+)')
-end
-
 -- Locates the Hub-installed Editor binary matching the project's
 -- recorded version, falling back to any editor on $PATH.
 ---Locate a Unity editor binary for the project.
@@ -88,6 +55,29 @@ function M.find_editor(root)
     return shared_util.first_executable(config.fallback_binaries)
 end
 
+---Find the Unity project root by walking up from a starting directory.
+---@param start_dir? string directory to start from (default: cwd)
+---@return string|nil root the project root path, or nil when not found
+function M.find_root(start_dir)
+    return shared_util.find_root(config.root_markers, start_dir)
+end
+
+-- Reads `m_EditorVersion: 2022.3.10f1` out of ProjectVersion.txt.
+---Read the Unity editor version from the project's version file.
+---@param root string project root path
+---@return string|nil version the editor version, or nil when unreadable
+function M.project_editor_version(root)
+    root = root or M.find_root()
+    if not root then
+        return nil
+    end
+    local content = shared_util.read_file(root .. '/ProjectSettings/ProjectVersion.txt')
+    if not content then
+        return nil
+    end
+    return content:match('m_EditorVersion:%s*(%S+)')
+end
+
 ---Locate a Unity editor binary, returning nil when none is found.
 ---@param root string project root path
 ---@return string|nil editor path to the editor binary, or nil when not found
@@ -101,6 +91,16 @@ function M.require_editor(root)
         )
     end
     return editor
+end
+
+---Find the Unity project root, returning nil when none is found.
+---@return string|nil root the project root path, or nil when not found
+function M.require_root()
+    local root = M.find_root()
+    if not root then
+        vim.notify('Unity: no ProjectSettings/ProjectVersion.txt found upward from cwd.', vim.log.levels.ERROR)
+    end
+    return root
 end
 
 return M

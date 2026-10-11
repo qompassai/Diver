@@ -15,10 +15,10 @@
 -- See the License for the specific language governing permissions and
 -- limitations under the License.
 -- #################################################################
-local shared_util = require('games.shared.util')
-local shared_ui = require('games.shared.ui')
-local output_factory = require('games.shared.output')
 local events = require('games.shared.events')
+local output_factory = require('games.shared.output')
+local shared_ui = require('games.shared.ui')
+local shared_util = require('games.shared.util')
 local api = vim.api
 local fn = vim.fn
 local fs = vim.fs
@@ -30,14 +30,14 @@ local uv = vim.uv or vim.uv
 local M = {}
 local DEFAULT_REMOTE_DEBUG_HOST = '127.0.0.1'
 local DEFAULT_REMOTE_DEBUG_PORT = 6007
-local EXPORT_SCAN_MAX_DEPTH = 16
-local EXPORT_SCAN_MAX_ENTRIES = 20000
 local EXPORT_SCAN_IGNORED_DIRS = {
     ['.git'] = true,
     ['.godot'] = true,
     ['.import'] = true,
     ['.mono'] = true,
 }
+local EXPORT_SCAN_MAX_DEPTH = 16
+local EXPORT_SCAN_MAX_ENTRIES = 20000
 
 local EXPORT_SCAN_RELEVANT_EXTENSIONS = {
     gd = true,
@@ -64,18 +64,6 @@ local function game_notify(message, level)
     assert(type(message) == 'string' and message ~= '')
 
     notify(message, level or levels.INFO)
-end
-
----@param path string
----@return string
-local function normalize(path)
-    assert(type(path) == 'string')
-
-    if path == '' then
-        return ''
-    end
-
-    return fs.normalize(fn.fnamemodify(fn.expand(path), ':p'))
 end
 
 ---@param path string
@@ -106,6 +94,56 @@ local function nonempty_string(value)
     end
 
     return trimmed
+end
+
+---@param path string
+---@return string
+local function normalize(path)
+    assert(type(path) == 'string')
+
+    if path == '' then
+        return ''
+    end
+
+    return fs.normalize(fn.fnamemodify(fn.expand(path), ':p'))
+end
+
+---@param engine_name string
+---@return string
+local function export_manifest_path(engine_name)
+    assert(type(engine_name) == 'string' and engine_name ~= '')
+
+    local state_directory = normalize(fn.stdpath('state') .. '/games-nvim')
+
+    assert(state_directory ~= '')
+
+    fn.mkdir(state_directory, 'p')
+
+    return state_directory .. '/' .. engine_name:lower() .. '-export-state.json'
+end
+
+---@param path string
+---@param root string
+---@return string?
+local function project_relative_path(path, root)
+    assert(type(path) == 'string' and path ~= '')
+    assert(type(root) == 'string' and root ~= '')
+
+    local normalized_path = normalize(path)
+    local normalized_root = normalize(root)
+    local prefix = normalized_root .. '/'
+
+    if normalized_path:sub(1, #prefix) ~= prefix then
+        return nil
+    end
+
+    local relative = normalized_path:sub(#prefix + 1)
+
+    if relative == '' then
+        return nil
+    end
+
+    return relative
 end
 
 ---@param prompt string
@@ -158,23 +196,30 @@ local function prompt_integer_in_range(prompt, default, minimum, maximum)
     return number
 end
 
----@param command string[]
----@param label string
----@return boolean
-local function start_detached(command, label)
-    assert(type(command) == 'table' and #command > 0)
-    assert(type(label) == 'string' and label ~= '')
+---@param path string
+---@return GamesExportManifest
+local function read_export_manifest(path)
+    assert(type(path) == 'string' and path ~= '')
 
-    local job_id = fn.jobstart(command, {
-        detach = true,
-    })
+    local ok, contents = pcall(shared_util.read_file, path)
 
-    if type(job_id) ~= 'number' or job_id <= 0 then
-        game_notify(label .. ': failed to start process.', levels.ERROR)
-        return false
+    if not ok or type(contents) ~= 'string' or contents == '' then
+        return {
+            files = {},
+        }
     end
 
-    return true
+    local decode_ok, decoded = pcall(json.decode, contents)
+
+    if not decode_ok or type(decoded) ~= 'table' or type(decoded.files) ~= 'table' then
+        return {
+            files = {},
+        }
+    end
+
+    ---@cast decoded GamesExportManifest
+
+    return decoded
 end
 
 ---@param root string
@@ -226,6 +271,25 @@ local function scan_export_relevant_files(root, out_files, entry_counter, depth)
     end
 end
 
+---@param command string[]
+---@param label string
+---@return boolean
+local function start_detached(command, label)
+    assert(type(command) == 'table' and #command > 0)
+    assert(type(label) == 'string' and label ~= '')
+
+    local job_id = fn.jobstart(command, {
+        detach = true,
+    })
+
+    if type(job_id) ~= 'number' or job_id <= 0 then
+        game_notify(label .. ': failed to start process.', levels.ERROR)
+        return false
+    end
+
+    return true
+end
+
 ---@param stat table
 ---@return string?
 local function stat_mtime_key(stat)
@@ -242,79 +306,6 @@ local function stat_mtime_key(stat)
     end
 
     return tostring(mtime.sec) .. ':' .. tostring(mtime.nsec)
-end
-
----@param engine_name string
----@return string
-local function export_manifest_path(engine_name)
-    assert(type(engine_name) == 'string' and engine_name ~= '')
-
-    local state_directory = normalize(fn.stdpath('state') .. '/games-nvim')
-
-    assert(state_directory ~= '')
-
-    fn.mkdir(state_directory, 'p')
-
-    return state_directory .. '/' .. engine_name:lower() .. '-export-state.json'
-end
-
----@param path string
----@return GamesExportManifest
-local function read_export_manifest(path)
-    assert(type(path) == 'string' and path ~= '')
-
-    local ok, contents = pcall(shared_util.read_file, path)
-
-    if not ok or type(contents) ~= 'string' or contents == '' then
-        return {
-            files = {},
-        }
-    end
-
-    local decode_ok, decoded = pcall(json.decode, contents)
-
-    if not decode_ok or type(decoded) ~= 'table' or type(decoded.files) ~= 'table' then
-        return {
-            files = {},
-        }
-    end
-
-    ---@cast decoded GamesExportManifest
-
-    return decoded
-end
-
----@param path string
----@param manifest GamesExportManifest
-local function write_export_manifest(path, manifest)
-    assert(type(path) == 'string' and path ~= '')
-    assert(type(manifest) == 'table')
-    assert(type(manifest.files) == 'table')
-
-    local encoded = json.encode(manifest)
-    local file, open_error = io.open(path, 'w')
-
-    if file == nil then
-        error(
-            'games.shared.godot_engine: could not open export manifest for write: '
-                .. path
-                .. ': '
-                .. tostring(open_error)
-        )
-    end
-
-    local write_ok, write_error = file:write(encoded)
-
-    if not write_ok then
-        file:close()
-        error('games.shared.godot_engine: could not write export manifest: ' .. path .. ': ' .. tostring(write_error))
-    end
-
-    local close_ok, close_error = file:close()
-
-    if not close_ok then
-        error('games.shared.godot_engine: could not close export manifest: ' .. path .. ': ' .. tostring(close_error))
-    end
 end
 
 ---@param root string
@@ -348,27 +339,36 @@ local function collect_export_mtimes(root)
 end
 
 ---@param path string
----@param root string
----@return string?
-local function project_relative_path(path, root)
+---@param manifest GamesExportManifest
+local function write_export_manifest(path, manifest)
     assert(type(path) == 'string' and path ~= '')
-    assert(type(root) == 'string' and root ~= '')
+    assert(type(manifest) == 'table')
+    assert(type(manifest.files) == 'table')
 
-    local normalized_path = normalize(path)
-    local normalized_root = normalize(root)
-    local prefix = normalized_root .. '/'
+    local encoded = json.encode(manifest)
+    local file, open_error = io.open(path, 'w')
 
-    if normalized_path:sub(1, #prefix) ~= prefix then
-        return nil
+    if file == nil then
+        error(
+            'games.shared.godot_engine: could not open export manifest for write: '
+                .. path
+                .. ': '
+                .. tostring(open_error)
+        )
     end
 
-    local relative = normalized_path:sub(#prefix + 1)
+    local write_ok, write_error = file:write(encoded)
 
-    if relative == '' then
-        return nil
+    if not write_ok then
+        file:close()
+        error('games.shared.godot_engine: could not write export manifest: ' .. path .. ': ' .. tostring(write_error))
     end
 
-    return relative
+    local close_ok, close_error = file:close()
+
+    if not close_ok then
+        error('games.shared.godot_engine: could not close export manifest: ' .. path .. ': ' .. tostring(close_error))
+    end
 end
 
 ---@param opts GamesGodotEngineOptions
@@ -934,6 +934,17 @@ function M.new(opts)
             return leader .. suffix
         end
 
+        vim.keymap.set('n', key('b'), actions.remote_debug_launch, {
+            desc = name .. ': Launch native remote-debug target',
+        })
+        vim.keymap.set('n', key('c'), actions.check_current_script, {
+            desc = name .. ': Check current script',
+        })
+
+        vim.keymap.set('n', key('d'), actions.export_debug, {
+            desc = name .. ': Export debug',
+        })
+
         vim.keymap.set('n', key('e'), actions.open_editor, {
             desc = name .. ': Open editor',
         })
@@ -950,24 +961,12 @@ function M.new(opts)
             desc = name .. ': Run current scene',
         })
 
-        vim.keymap.set('n', key('c'), actions.check_current_script, {
-            desc = name .. ': Check current script',
-        })
-
         vim.keymap.set('n', key('x'), actions.export_release, {
             desc = name .. ': Export release',
         })
 
-        vim.keymap.set('n', key('d'), actions.export_debug, {
-            desc = name .. ': Export debug',
-        })
-
         vim.keymap.set('n', key('y'), actions.export_dry_run, {
             desc = name .. ': Export dry-run (changed files)',
-        })
-
-        vim.keymap.set('n', key('b'), actions.remote_debug_launch, {
-            desc = name .. ': Launch native remote-debug target',
         })
     end
 

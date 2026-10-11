@@ -45,6 +45,27 @@ local M = {}
 
 M.binaries = { 'tic80' }
 
+---Native/HTML build targets accepted by `export <fmt> <outfile>`.
+---Source: wiki/export. `alone=1` is PRO-only and is never passed.
+---@type string[]
+M.build_formats = {
+    'html',
+    'binary',
+    'win',
+    'winxp',
+    'linux',
+    'rpi',
+    'mac',
+}
+
+---@type games.tic80.ResolvedOptions
+M.current = {
+    auto_restart = true,
+    bin = 'tic80',
+    dirs = {},
+    extra_args = { '--skip' },
+}
+
 M.env_names = {
     'NVIM_TIC80_BIN',
     'TIC80_BIN',
@@ -59,17 +80,17 @@ M.group_order = {
     'Music',
 }
 
----Native/HTML build targets accepted by `export <fmt> <outfile>`.
----Source: wiki/export. `alone=1` is PRO-only and is never passed.
+---Targets accepted by `import <kind> <file>`.
+---Source: wiki/import. PNG is the verified image format for tiles/sprites;
+---imported colors are quantized to the nearest palette color. There is no
+---sfx/music import target: music only moves cart-to-cart via `load`.
 ---@type string[]
-M.build_formats = {
-    'html',
-    'binary',
-    'win',
-    'winxp',
-    'linux',
-    'rpi',
-    'mac',
+M.import_kinds = {
+    'sprites',
+    'tiles',
+    'map',
+    'code',
+    'screen',
 }
 
 ---@class games.tic80.MediaTarget
@@ -92,28 +113,7 @@ M.media_targets = {
     { kind = 'help', extension = '.md', needs_id = false },
 }
 
----Targets accepted by `import <kind> <file>`.
----Source: wiki/import. PNG is the verified image format for tiles/sprites;
----imported colors are quantized to the nearest palette color. There is no
----sfx/music import target: music only moves cart-to-cart via `load`.
----@type string[]
-M.import_kinds = {
-    'sprites',
-    'tiles',
-    'map',
-    'code',
-    'screen',
-}
-
 M.output_filetype = 'tic80-output'
-
----@type games.tic80.ResolvedOptions
-M.current = {
-    bin = 'tic80',
-    dirs = {},
-    extra_args = { '--skip' },
-    auto_restart = true,
-}
 
 ---@param opts games.tic80.Options?
 ---@return games.tic80.ResolvedOptions
@@ -133,15 +133,16 @@ function M.resolve(opts)
     end
 
     local auto_restart = true
-    if opts.auto_restart ~= nil then
-        auto_restart = opts.auto_restart
+    local auto_restart_opt = opts.auto_restart
+    if auto_restart_opt ~= nil then
+        auto_restart = auto_restart_opt
     end
 
     M.current = {
+        auto_restart = auto_restart,
         bin = opts.bin or 'tic80',
         dirs = dirs,
         extra_args = extra_args,
-        auto_restart = auto_restart,
     }
     return M.current
 end

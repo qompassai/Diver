@@ -15,15 +15,20 @@
 -- See the License for the specific language governing permissions and
 -- limitations under the License.
 -- #################################################################
-local actions = require('games.unreal.actions')
 local shared_util = require('games.shared.util')
+local actions = require('games.unreal.actions')
 local M = {}
+
+function M.setup()
+    M.setup_commands()
+    M.setup_keymaps()
+end
 function M.setup_commands()
-    local action_list = actions.get_actions()
 
     vim.api.nvim_create_user_command('Unreal', function()
         actions.show_menu()
     end, { desc = 'Open Unreal action menu' })
+    local action_list = actions.get_actions()
 
     vim.api.nvim_create_user_command('UnrealAction', function(opts)
         actions.run_action_by_id(opts.args)
@@ -45,23 +50,17 @@ function M.setup_commands()
 end
 function M.setup_keymaps()
     local map = vim.keymap.set
+    map('n', '<leader>geb', actions.build_project, {
+        desc = 'Unreal: Build',
+    })
+    map('n', '<leader>gec', actions.cook_only, {
+        desc = 'Unreal: Cook only',
+    })
     map('n', '<leader>gee', actions.open_editor, {
         desc = 'Unreal: Open editor',
     })
     map('n', '<leader>geg', actions.generate_project_files, {
         desc = 'Unreal: Generate project files',
-    })
-    map('n', '<leader>geb', actions.build_project, {
-        desc = 'Unreal: Build',
-    })
-    map('n', '<leader>gep', actions.package_project, {
-        desc = 'Unreal: Package',
-    })
-    map('n', '<leader>gec', actions.cook_only, {
-        desc = 'Unreal: Cook only',
-    })
-    map('n', '<leader>ges', actions.bootstrap_engine_checkout, {
-        desc = 'Unreal: Bootstrap fresh engine checkout',
     })
     map('n', '<leader>gek', actions.package_plugin, {
         desc = 'Unreal: Package editor plugin',
@@ -69,11 +68,12 @@ function M.setup_keymaps()
     map('n', '<leader>gel', actions.open_logs, {
         desc = 'Unreal: Open logs',
     })
-end
-
-function M.setup()
-    M.setup_commands()
-    M.setup_keymaps()
+    map('n', '<leader>gep', actions.package_project, {
+        desc = 'Unreal: Package',
+    })
+    map('n', '<leader>ges', actions.bootstrap_engine_checkout, {
+        desc = 'Unreal: Bootstrap fresh engine checkout',
+    })
 end
 
 return M
