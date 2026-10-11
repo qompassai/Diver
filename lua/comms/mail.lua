@@ -25,18 +25,18 @@ function JobQueue:run_job(cmd, args, callback, stdin)
     local handle
     handle = uv.spawn(cmd, {
         args = args,
+        cwd = nil,
+        detached = nil,
+        env = nil,
+        gid = nil,
+        hide = nil,
         stdio = {
             stdin_pipe,
             stdout,
             stderr,
         },
-        env = nil,
-        cwd = nil,
         uid = nil,
-        gid = nil,
         verbatim = nil,
-        detached = nil,
-        hide = nil,
     }, function(code, signal)
         if handle then
             uv.read_stop(stdout)
@@ -51,8 +51,8 @@ function JobQueue:run_job(cmd, args, callback, stdin)
         local result = {
             code = code,
             signal = signal,
-            stdout = table.concat(stdout_data),
             stderr = table.concat(stderr_data),
+            stdout = table.concat(stdout_data),
         }
         if code ~= 0 then
             M.message(string.format('Job failed: %s (code %d, signal %d)', cmd, code, signal), 'ERROR')
@@ -100,9 +100,9 @@ end
 
 function JobQueue:add(cmd, args, callback, stdin)
     table.insert(self.queue, {
-        cmd = cmd,
         args = args,
         callback = callback,
+        cmd = cmd,
         stdin = stdin,
     })
     self:start_next()
@@ -165,31 +165,38 @@ function CSV.content(file_path)
 end
 
 local config = {
-    csv = nil,
-    subject = nil,
     attachment = nil,
+    csv = nil,
     options = {},
+    subject = nil,
 }
+function M.add_attachment()
+    vim.ui.input({
+        completion = 'file',
+        prompt = '[Mail] Attachment? ',
+    }, function(input)
+        config.attachment = input or nil
+    end)
+end
 function M.defaults()
     return {
         mappings = {
             attachment = '<leader>a',
             config = '<leader>c',
             preview = '<leader>p',
-            send_text = '<leader>st',
             send_html = '<leader>sh',
+            send_text = '<leader>st',
         },
         options = {
-            mail_client = {
-                text = 'neomutt',
-                html = 'neomutt',
-            },
             auto_break_md = true,
-            neomutt_config = '$HOME/.neomuttrc',
-            mailx_account = nil,
-            save_log = true,
-            log_file = './nvmm.log',
             date_format = '%Y-%m-%d',
+            log_file = './nvmm.log',
+            mail_client = {
+                html = 'neomutt',
+                text = 'neomutt',
+            },
+            mailx_account = nil,
+            neomutt_config = '$HOME/.neomuttrc',
             pandoc_metadatas = {
                 'title= ',
                 'margin-top=0',
@@ -198,42 +205,65 @@ function M.defaults()
                 'margin-bottom=0',
                 'mainfont: sans-serif',
             },
+            save_log = true,
         },
     }
 end
-function M.message(msg, level)
-    local levels = {
-        INFO = vim.log.levels.INFO,
-        WARN = vim.log.levels.WARN,
-        ERROR = vim.log.levels.ERROR,
-    }
-    notify('[Mail] ' .. msg, levels[level] or vim.log.levels.INFO)
+local function direct_send(type, mail, recipients)
+    vim.ui.input({ prompt = '[Mail] Subject? ' }, function(subject)
+        subject = subject or ' '
+        for _, recipient in ipairs(recipients) do
+            M.send(type, subject, mail, recipient, 0)
+        end
+    end)
 end
-function M.write_log(type, subject, message)
-    if not config.options.save_log then
-        return
+local function exit_handler(to, subject, type, n)
+    return function(result)
+        vim.schedule(function()
+            if result.code == 0 then
+                if config.options.save_log then
+                    M.write_log(type, subject, to)
+                end
+                M.write_to_quickfix('i', 'Mail "' .. subject .. '" sent successfully to ' .. to, n)
+            else
+                M.write_to_quickfix('e', 'Mail not sent to ' .. to, n)
+            end
+        end)
     end
-    local log_file = io.open(config.options.log_file, 'a')
-    if not log_file then
-        return
-    end
-    local timestamp = os.date(config.options.date_format)
-    log_file:write(string.format('[%s] %s | %s | %s\n', timestamp, type, subject, message))
-    log_file:close()
-end
-function M.write_to_quickfix(type, message, line_num)
-    local qf_type = type == 'i' and 'I' or 'E'
-    local qf_entry = {
-        bufnr = api.nvim_get_current_buf(),
-        lnum = line_num or 1,
-        text = message,
-        type = qf_type,
-    }
-    fn.setqflist({
-        qf_entry,
-    }, 'a')
 end
 
+function M.markdown_to_html(md_path)
+    local tmp_md_path = fn.tempname()
+    local tmp_md_file = io.open(tmp_md_path, 'w')
+    if not tmp_md_file then
+        M.message('Failed to create temp file', 'ERROR')
+        return nil
+    end
+    local line_end = config.options.auto_break_md and '  \n' or '\n'
+    for line in io.lines(md_path) do
+        tmp_md_file:write((line:gsub('%$', '_esc_dollar_')) .. line_end)
+    end
+    tmp_md_file:close()
+    -- argv form: pandoc_metadatas comes from user config and tmp paths
+    -- must never be interpolated into a shell string. Each metadata
+    -- becomes its own --metadata argument, preserving the old command's
+    -- semantics without a shell.
+    local pandoc_argv = { 'pandoc', tmp_md_path, '-s', '-f', 'markdown', '-t', 'html5' }
+    for _, metadata in ipairs(config.options.pandoc_metadatas or {}) do
+        assert(type(metadata) == 'string', 'pandoc metadata must be a string')
+        pandoc_argv[#pandoc_argv + 1] = '--metadata'
+        pandoc_argv[#pandoc_argv + 1] = metadata
+    end
+    local pandoc_obj = vim.system(pandoc_argv, { text = true })
+    ---@cast pandoc_obj vim.SystemObj
+    local pandoc_result = pandoc_obj:wait()
+    local output = pandoc_result.code == 0 and pandoc_result.stdout or ''
+    if not output or output == '' then
+        M.message('Pandoc conversion failed', 'ERROR')
+        return nil
+    end
+    return output:gsub('_esc_dollar_', '%$')
+end
 function M.merge(input, csv_content, line)
     local csv_headers = CSV.headers(csv_content)
     local output = input
@@ -254,19 +284,14 @@ function M.merge(input, csv_content, line)
     end
     return output
 end
-local function exit_handler(to, subject, type, n)
-    return function(result)
-        vim.schedule(function()
-            if result.code == 0 then
-                if config.options.save_log then
-                    M.write_log(type, subject, to)
-                end
-                M.write_to_quickfix('i', 'Mail "' .. subject .. '" sent successfully to ' .. to, n)
-            else
-                M.write_to_quickfix('e', 'Mail not sent to ' .. to, n)
-            end
-        end)
-    end
+
+function M.message(msg, level)
+    local levels = {
+        ERROR = vim.log.levels.ERROR,
+        INFO = vim.log.levels.INFO,
+        WARN = vim.log.levels.WARN,
+    }
+    notify('[Mail] ' .. msg, levels[level] or vim.log.levels.INFO)
 end
 
 function M.send(type, subject, content, to, n)
@@ -322,90 +347,6 @@ function M.send(type, subject, content, to, n)
     end
 end
 
-function M.markdown_to_html(md_path)
-    local tmp_md_path = fn.tempname()
-    local tmp_md_file = io.open(tmp_md_path, 'w')
-    if not tmp_md_file then
-        M.message('Failed to create temp file', 'ERROR')
-        return nil
-    end
-    local line_end = config.options.auto_break_md and '  \n' or '\n'
-    for line in io.lines(md_path) do
-        tmp_md_file:write((line:gsub('%$', '_esc_dollar_')) .. line_end)
-    end
-    tmp_md_file:close()
-    -- argv form: pandoc_metadatas comes from user config and tmp paths
-    -- must never be interpolated into a shell string. Each metadata
-    -- becomes its own --metadata argument, preserving the old command's
-    -- semantics without a shell.
-    local pandoc_argv = { 'pandoc', tmp_md_path, '-s', '-f', 'markdown', '-t', 'html5' }
-    for _, metadata in ipairs(config.options.pandoc_metadatas or {}) do
-        assert(type(metadata) == 'string', 'pandoc metadata must be a string')
-        pandoc_argv[#pandoc_argv + 1] = '--metadata'
-        pandoc_argv[#pandoc_argv + 1] = metadata
-    end
-    local pandoc_result = vim.system(pandoc_argv, { text = true }):wait()
-    local output = pandoc_result.code == 0 and pandoc_result.stdout or ''
-    if not output or output == '' then
-        M.message('Pandoc conversion failed', 'ERROR')
-        return nil
-    end
-    return output:gsub('_esc_dollar_', '%$')
-end
-
-function M.set_config()
-    vim.cmd('silent! write')
-    vim.ui.input({
-        prompt = '[Mail] CSV file? ',
-        completion = 'file',
-    }, function(input)
-        if not input or input == '' then
-            M.message('No CSV file entered', 'ERROR')
-            return
-        end
-        local file = io.open(input, 'r')
-        if not file then
-            M.message('The file ' .. input .. ' does not exist', 'ERROR')
-            return
-        end
-        -- argv form: `input` comes from vim.ui.input and must never be
-        -- interpolated into a shell string (a path like `x; rm -rf ~`
-        -- would execute). vim.system with a list bypasses the shell.
-        assert(type(input) == 'string', 'mail csv path must be a string')
-        local mime_result = vim.system({ 'file', '--mime-type', '-b', input }, { text = true }):wait()
-        local mime_check = mime_result.code == 0 and mime_result.stdout or ''
-        if not mime_check:match('text/csv') then
-            M.message('The file ' .. input .. ' is not a valid CSV file', 'ERROR')
-            io.close(file)
-            return
-        end
-        config.csv = file:read('*all')
-        io.close(file)
-        vim.ui.input({
-            prompt = '[Mail] Subject? ',
-        }, function(subj_input)
-            config.subject = subj_input or ' '
-        end)
-    end)
-end
-
-function M.add_attachment()
-    vim.ui.input({
-        prompt = '[Mail] Attachment? ',
-        completion = 'file',
-    }, function(input)
-        config.attachment = input or nil
-    end)
-end
-
-local function direct_send(type, mail, recipients)
-    vim.ui.input({ prompt = '[Mail] Subject? ' }, function(subject)
-        subject = subject or ' '
-        for _, recipient in ipairs(recipients) do
-            M.send(type, subject, mail, recipient, 0)
-        end
-    end)
-end
 local function send_command(type)
     return function(args)
         fn.execute('write')
@@ -450,10 +391,52 @@ local function send_command(type)
         end
     end
 end
+
+function M.set_config()
+    vim.cmd('silent! write')
+    vim.ui.input({
+        completion = 'file',
+        prompt = '[Mail] CSV file? ',
+    }, function(input)
+        if not input or input == '' then
+            M.message('No CSV file entered', 'ERROR')
+            return
+        end
+        local file = io.open(input, 'r')
+        if not file then
+            M.message('The file ' .. input .. ' does not exist', 'ERROR')
+            return
+        end
+        -- argv form: `input` comes from vim.ui.input and must never be
+        -- interpolated into a shell string (a path like `x; rm -rf ~`
+        -- would execute). vim.system with a list bypasses the shell.
+        assert(type(input) == 'string', 'mail csv path must be a string')
+        local mime_obj = vim.system({ 'file', '--mime-type', '-b', input }, { text = true })
+        ---@cast mime_obj vim.SystemObj
+        local mime_result = mime_obj:wait()
+        local mime_check = mime_result.code == 0 and mime_result.stdout or ''
+        if not mime_check:match('text/csv') then
+            M.message('The file ' .. input .. ' is not a valid CSV file', 'ERROR')
+            io.close(file)
+            return
+        end
+        config.csv = file:read('*all')
+        io.close(file)
+        vim.ui.input({
+            prompt = '[Mail] Subject? ',
+        }, function(subj_input)
+            config.subject = subj_input or ' '
+        end)
+    end)
+end
+
 function M.setup(opts)
     opts = opts or {}
     config.options = vim.tbl_deep_extend('force', {}, M.defaults().options, opts.options or {})
     local mappings = vim.tbl_deep_extend('force', {}, M.defaults().mappings, opts.mappings or {})
+    api.nvim_create_user_command('MailAttachment', M.add_attachment, {
+        desc = 'Add attachment to mail',
+    })
     api.nvim_create_user_command('MailConfig', function()
         M.set_config()
         if config.csv then
@@ -464,17 +447,6 @@ function M.setup(opts)
         end
     end, {
         desc = 'Configure mail merge with CSV file and subject',
-    })
-    api.nvim_create_user_command('MailAttachment', M.add_attachment, {
-        desc = 'Add attachment to mail',
-    })
-    api.nvim_create_user_command('MailSendText', send_command('text'), {
-        nargs = '*',
-        desc = 'Send email as plain text',
-    })
-    api.nvim_create_user_command('MailSendHtml', send_command('html'), {
-        nargs = '*',
-        desc = 'Convert markdown to HTML and send email',
     })
     api.nvim_create_user_command('MailPreview', function()
         fn.execute('write')
@@ -493,11 +465,43 @@ function M.setup(opts)
     end, {
         desc = 'Preview merged email',
     })
+    api.nvim_create_user_command('MailSendHtml', send_command('html'), {
+        desc = 'Convert markdown to HTML and send email',
+        nargs = '*',
+    })
+    api.nvim_create_user_command('MailSendText', send_command('text'), {
+        desc = 'Send email as plain text',
+        nargs = '*',
+    })
+    vim.keymap.set('n', mappings.attachment, '<cmd>MailAttachment<cr>', {})
     vim.keymap.set('n', mappings.config, '<cmd>MailConfig<cr>', {})
     vim.keymap.set('n', mappings.preview, '<cmd>MailPreview<cr>', {})
-    vim.keymap.set('n', mappings.attachment, '<cmd>MailAttachment<cr>', {})
-    vim.keymap.set('n', mappings.send_text, '<cmd>MailSendText<cr>', {})
     vim.keymap.set('n', mappings.send_html, '<cmd>MailSendHtml<cr>', {})
+    vim.keymap.set('n', mappings.send_text, '<cmd>MailSendText<cr>', {})
+end
+function M.write_log(type, subject, message)
+    if not config.options.save_log then
+        return
+    end
+    local log_file = io.open(config.options.log_file, 'a')
+    if not log_file then
+        return
+    end
+    local timestamp = os.date(config.options.date_format)
+    log_file:write(string.format('[%s] %s | %s | %s\n', timestamp, type, subject, message))
+    log_file:close()
+end
+function M.write_to_quickfix(type, message, line_num)
+    local qf_type = type == 'i' and 'I' or 'E'
+    local qf_entry = {
+        bufnr = api.nvim_get_current_buf(),
+        lnum = line_num or 1,
+        text = message,
+        type = qf_type,
+    }
+    fn.setqflist({
+        qf_entry,
+    }, 'a')
 end
 
 return M

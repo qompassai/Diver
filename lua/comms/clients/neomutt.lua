@@ -32,39 +32,39 @@ local PARSE_LINES_MAX = 20000 -- line cap on rc/account files parsed.
 local SEARCH_RESULTS_MAX = 200 -- hard cap on notmuch search float lines.
 
 ---@class email.neomutt.Bind
----@field menu string Menu the binding applies to, e.g. 'index'.
----@field key string Key sequence, e.g. '\\ct'.
 ---@field func string Neomutt function, e.g. 'tag-prefix'.
+---@field key string Key sequence, e.g. '\\ct'.
+---@field menu string Menu the binding applies to, e.g. 'index'.
 
 ---@class email.neomutt.Macro
----@field menu string Menu the macro applies to.
----@field key string Key sequence.
 ---@field action string Macro body.
+---@field key string Key sequence.
+---@field menu string Menu the macro applies to.
 
 ---@class email.neomutt.FolderHook
----@field pattern string Folder pattern; '' means every folder.
 ---@field command string Hook command.
+---@field pattern string Folder pattern; '' means every folder.
 
 ---@class email.neomutt.RcParse
----@field sets table<string, string|boolean> `set' variables.
----@field sources string[] `source' paths.
 ---@field binds email.neomutt.Bind[] `bind' entries.
+---@field folder_hooks email.neomutt.FolderHook[] `folder-hook' entries.
 ---@field macros email.neomutt.Macro[] `macro' entries.
 ---@field mailboxes string[] `mailboxes' entries (literal tokens).
+---@field sets table<string, string|boolean> `set' variables.
+---@field sources string[] `source' paths.
 ---@field virtual_mailboxes string[] Backtick commands feeding mailboxes.
----@field folder_hooks email.neomutt.FolderHook[] `folder-hook' entries.
 ---@field warnings string[] Lines skipped during parsing.
 
 ---@class email.neomutt.Account
+---@field err string|nil Reason when ok is false.
 ---@field name string Account file basename, e.g. 'account.qompassai'.
 ---@field ok boolean True when the file existed and parsed.
----@field err string|nil Reason when ok is false.
 ---@field sets table<string, string|boolean> Parsed `set' variables.
 
 ---@class email.neomutt.Check
+---@field detail string One-line human summary (credentials masked).
 ---@field name string Tool or aspect probed.
 ---@field status 'ok'|'unavailable'|'below minimum'
----@field detail string One-line human summary (credentials masked).
 
 M.default_config = {
     -- Directory holding neomuttrc + account files; overridable for tests.
@@ -132,38 +132,335 @@ local function check_type(name, value, expected, optional)
     end
 end
 
----Build the live config: factory defaults deep-copied, overrides merged,
----every key type-checked. Never mutates M.default_config.
----@param config table|nil Overrides; nil restores factory defaults.
----@return table merged Live config table.
-function M.setup_config(config)
-    check_type('config', config, 'table', true)
-    local merged = vim.tbl_deep_extend('force', vim.deepcopy(M.default_config), config or {})
-    check_type('account_dir', merged.account_dir, 'string')
-    check_type('account_files', merged.account_files, 'table')
-    check_type('docs_url', merged.docs_url, 'string')
-    check_type('float_height', merged.float_height, 'number')
-    check_type('float_width', merged.float_width, 'number')
-    check_type('input_impl', merged.input_impl, 'function', true)
-    check_type('known_upstream_version', merged.known_upstream_version, 'string')
-    check_type('msmtp_bin', merged.msmtp_bin, 'string')
-    check_type('msmtp_config', merged.msmtp_config, 'string')
-    check_type('neomutt_bin', merged.neomutt_bin, 'string')
-    check_type('neomuttrc', merged.neomuttrc, 'string')
-    check_type('notmuch_bin', merged.notmuch_bin, 'string')
-    check_type('search_limit', merged.search_limit, 'number')
-    check_type('select_impl', merged.select_impl, 'function', true)
-    check_type('sidebar_width', merged.sidebar_width, 'number')
-    check_type('timeout_ms', merged.timeout_ms, 'number')
-    check_type('update_repo_msmtp', merged.update_repo_msmtp, 'string')
-    check_type('update_repo_neomutt', merged.update_repo_neomutt, 'string')
-    if vim.trim(merged.neomutt_bin) == '' then
-        error('neomutt: option neomutt_bin must not be blank', 2)
+---Per-tool validation. Never throws: missing pieces are 'unavailable',
+---never errors. Credential values are masked.
+---@return email.neomutt.Check[] checks
+---Map a toolmgr binary report onto the Check status vocabulary.
+---@param report table toolmgr BinaryReport.
+---@return email.neomutt.Check check
+local function to_check(report)
+    local status = 'unavailable'
+    if report.present and report.meets_minimum then
+        status = 'ok'
+    elseif report.present then
+        status = 'below minimum'
     end
-    if merged.search_limit < 1 then
-        error('neomutt: option search_limit must be >= 1', 2)
+    return { detail = report.detail, name = report.name, status = status }
+end
+
+function M.checks()
+    local toolmgr = require('utils.toolmgr')
+    local cfg = M.config
+    local checks = {}
+    local version, version_err = M.neomutt_version()
+    if version ~= nil then
+        local cmp = M.compare_date_versions(version, M.NEOMUTT_VERSION_MIN)
+        local status = 'ok'
+        local detail = ('neomutt: %s'):format(version)
+        if cmp == nil then
+            status = 'unavailable'
+            detail = detail .. ' (unparseable date version)'
+        elseif cmp < 0 then
+            status = 'below minimum'
+            detail = detail .. (' below minimum %s'):format(M.NEOMUTT_VERSION_MIN)
+        else
+            detail = detail .. (' meets minimum %s'):format(M.NEOMUTT_VERSION_MIN)
+        end
+        checks[#checks + 1] = { detail = detail, name = cfg.neomutt_bin, status = status }
+    else
+        checks[#checks + 1] = { detail = tostring(version_err), name = cfg.neomutt_bin, status = 'unavailable' }
     end
-    return merged
+    checks[#checks + 1] = to_check(toolmgr.check_binary({
+        name = cfg.notmuch_bin,
+        version_argv = { cfg.notmuch_bin, '--version' },
+    }))
+    checks[#checks + 1] = to_check(toolmgr.check_binary({
+        name = cfg.msmtp_bin,
+        version_argv = { cfg.msmtp_bin, '--version' },
+    }))
+    local parse, parse_err = M.load_neomuttrc()
+    if parse ~= nil then
+        local set_count = 0
+        for _ in pairs(parse.sets) do
+            set_count = set_count + 1
+        end
+        checks[#checks + 1] = {
+            detail = ('%s parses: %d sets, %d folder-hooks, %d warnings'):format(
+                cfg.neomuttrc,
+                set_count,
+                #parse.folder_hooks,
+                #parse.warnings
+            ),
+            name = 'neomuttrc',
+            status = 'ok',
+        }
+    else
+        checks[#checks + 1] = { detail = tostring(parse_err), name = 'neomuttrc', status = 'unavailable' }
+    end
+    local accounts = M.load_accounts()
+    local ok_count = 0
+    for _, account in ipairs(accounts) do
+        if account.ok then
+            ok_count = ok_count + 1
+        end
+    end
+    checks[#checks + 1] = {
+        detail = ('%d/%d account files parse'):format(ok_count, #accounts),
+        name = 'accounts',
+        status = ok_count == #accounts and 'ok' or 'unavailable',
+    }
+    if toolmgr.binary_present(cfg.notmuch_bin) then
+        local result, exec_err = rce.safe_exec({ cfg.notmuch_bin, 'count' }, { timeout_ms = cfg.timeout_ms })
+        if exec_err == nil and result ~= nil and result.code == 0 then
+            checks[#checks + 1] = {
+                detail = ('notmuch database present (%s messages counted)'):format(vim.trim(result.stdout or '')),
+                name = 'notmuch-db',
+                status = 'ok',
+            }
+        else
+            checks[#checks + 1] = {
+                detail = 'no readable notmuch database (run `notmuch new`)',
+                name = 'notmuch-db',
+                status = 'unavailable',
+            }
+        end
+    else
+        checks[#checks + 1] = { detail = 'notmuch binary absent', name = 'notmuch-db', status = 'unavailable' }
+    end
+    if vim.fn.filereadable(cfg.msmtp_config) == 1 then
+        checks[#checks + 1] = { detail = cfg.msmtp_config .. ' exists', name = 'msmtp-config', status = 'ok' }
+    else
+        checks[#checks + 1] = {
+            detail = cfg.msmtp_config .. ' missing',
+            name = 'msmtp-config',
+            status = 'unavailable',
+        }
+    end
+    return checks
+end
+
+---:NeomuttDocs -- summary of his setup, the verified upstream locations,
+---and the notmuch flags this module uses.
+---Open a centered, minimal float for command output. `q` closes it.
+---@param lines string[] Body lines.
+---@param title string Float title.
+---@param buf_name string Scheme name so tests can find the buffer.
+local function open_float(lines, title, buf_name)
+    local buf = api.nvim_create_buf(false, true)
+    api.nvim_buf_set_lines(buf, 0, -1, false, M.trim_output(lines))
+    vim.bo[buf].modifiable = false
+    vim.bo[buf].filetype = 'diver-email'
+    pcall(api.nvim_buf_set_name, buf, buf_name)
+    local width = math.min(M.config.float_width, vim.o.columns - 4)
+    local height = math.min(M.config.float_height, vim.o.lines - 4)
+    api.nvim_open_win(buf, true, {
+        border = 'rounded',
+        col = math.floor((vim.o.columns - width) / 2),
+        height = height,
+        relative = 'editor',
+        row = math.floor((vim.o.lines - height) / 2),
+        style = 'minimal',
+        title = title,
+        title_pos = 'center',
+        width = width,
+    })
+    vim.keymap.set('n', 'q', '<cmd>close<cr>', { buffer = buf, desc = 'Close email float', silent = true })
+end
+
+local function cmd_docs()
+    local lines = {
+        'neomutt backend (email.clients.neomutt)',
+        '',
+        'Docs: ' .. M.config.docs_url,
+        'Source: https://github.com/neomutt/neomutt (verified 2026-09-27)',
+        '',
+        'His setup (parsed from ~/.config/neomutt/neomuttrc + 5 account files):',
+        '  accounts: aflabs, foamedgmail, map26gmail, qompassai, wsu',
+        '  folder-hooks switch accounts per folder; sidebar width 30',
+        '  bind index <C-t> tag-prefix; macro index S runs a notmuch query',
+        '  sending via msmtp (/usr/bin/msmtp; per-account -a flags)',
+        '',
+        'notmuch flags used here (verified: notmuch-search(1) man page):',
+        '  notmuch search --output=files --limit=N <query>',
+        '  notmuch count   (database presence probe)',
+        '',
+        'Credential values (imap_pass, smtp_pass, passwordeval) are parsed',
+        'for structure but masked as <redacted> in every report.',
+    }
+    open_float(lines, ' neomutt docs ', 'neomutt://docs')
+end
+
+---Prompt for a search query when :NeomuttSearch gets no argument.
+---@param query string|nil Query from the command line.
+---Notify a command failure in one canonical shape.
+---@param what string Command name for the message.
+---@param err any Failure reason.
+local function notify_failed(what, err)
+    vim.notify(what .. ' failed: ' .. tostring(err), vim.log.levels.ERROR)
+end
+
+local function cmd_search(query)
+    if query ~= nil and query ~= '' then
+        local ok, err = M.search(query)
+        if not ok then
+            notify_failed('NeomuttSearch', err)
+        end
+        return
+    end
+    local impl = M.config.input_impl or vim.ui.input
+    impl({ prompt = 'notmuch query: ' }, function(input)
+        if input == nil or input == '' then
+            vim.notify('NeomuttSearch: cancelled', vim.log.levels.INFO)
+            return
+        end
+        local ok, err = M.search(input)
+        if not ok then
+            notify_failed('NeomuttSearch', err)
+        end
+    end)
+end
+
+---:NeomuttUpdateCheck -- neomutt (date-aware), msmtp (toolmgr), and an
+---informational notmuch entry: notmuch's canonical repo is
+---https://git.notmuchmail.org/git/notmuch, which has no GitHub releases
+---endpoint, so no live tag lookup is performed for it.
+---Compare installed + known versions against the latest GitHub release
+---and offer update / skip. neomutt uses 8-digit date versions, which the
+---shared toolmgr dotted-version compare cannot parse, so this dialog is
+---date-aware. Never installs without the explicit vim.ui.select choice.
+local function cmd_update_check_neomutt()
+    local toolmgr = require('utils.toolmgr')
+    local current, current_err = M.neomutt_version()
+    if current_err ~= nil then
+        vim.notify('neomutt: not installed; nothing to update', vim.log.levels.WARN)
+        return
+    end
+    assert(current ~= nil, 'neomutt_version returned no error but no version')
+    local tag, tag_err = toolmgr.github_latest_tag(M.config.update_repo_neomutt)
+    if tag == nil then
+        vim.notify('neomutt: release check failed: ' .. tostring(tag_err), vim.log.levels.WARN)
+        return
+    end
+    local cmp = M.compare_date_versions(tag, current)
+    if cmp == nil then
+        vim.notify('neomutt: unparseable version in comparison', vim.log.levels.WARN)
+        return
+    end
+    if cmp <= 0 then
+        vim.notify(('neomutt: up to date (%s; latest %s)'):format(current, tag), vim.log.levels.INFO)
+        return
+    end
+    local impl = M.config.select_impl or vim.ui.select
+    impl(
+        { 'Update package via system package manager', 'Skip' },
+        { prompt = ('neomutt %s -> %s:'):format(current, tag) },
+        function(choice)
+            if choice == 1 then
+                toolmgr.install_package('neomutt', 'neomutt')
+            end
+        end
+    )
+end
+
+local function cmd_update_check()
+    cmd_update_check_neomutt()
+    local toolmgr = require('utils.toolmgr')
+    local current = toolmgr.command_version({ M.config.msmtp_bin, '--version' })
+    toolmgr.check_update({
+        tool_label = 'msmtp',
+        repo = M.config.update_repo_msmtp,
+        package = 'msmtp',
+        current_version = current,
+        -- Verified: msmtp-1.8.34 released 2026-07-31 (marlam.de/msmtp).
+        known_upstream_version = '1.8.34',
+        migrations = {},
+        select_impl = M.config.select_impl,
+    })
+    local nm_current = toolmgr.command_version({ M.config.notmuch_bin, '--version' })
+    vim.notify(
+        (
+            'notmuch: %s; canonical repo https://git.notmuchmail.org/git/notmuch '
+            .. '(no GitHub releases endpoint; check the canonical repo for releases)'
+        ):format(nm_current ~= nil and nm_current or 'not installed'),
+        vim.log.levels.INFO
+    )
+end
+
+---:NeomuttValidate -- one vim.notify per check; missing tools say
+---"unavailable", never an error.
+local function cmd_validate()
+    for _, check in ipairs(M.checks()) do
+        local level = check.status == 'ok' and vim.log.levels.INFO or vim.log.levels.WARN
+        vim.notify(('neomutt %-13s %-13s %s'):format(check.name, check.status, check.detail), level)
+    end
+end
+
+---Compare 8-digit YYYYMMDD versions. Returns -1/0/1, or nil when either
+---side is not a date version (never fabricates an ordering).
+---@param left string First version.
+---@param right string Second version.
+---@return integer|nil cmp
+function M.compare_date_versions(left, right)
+    if type(left) ~= 'string' or type(right) ~= 'string' then
+        return nil
+    end
+    if #left ~= 8 or #right ~= 8 or not left:match('^%d+$') or not right:match('^%d+$') then
+        return nil
+    end
+    if left < right then
+        return -1
+    end
+    if left > right then
+        return 1
+    end
+    return 0
+end
+
+---Compose a message in a float terminal. `neomutt <address>` enters the
+---compose view addressed to that recipient (standard mutt CLI behavior).
+---@param address? string Optional recipient.
+---@return boolean ok
+---@return string|nil err
+---Open a float terminal running argv. Returns false + err when the
+---binary is missing or the terminal fails to start.
+---@param argv string[] argv for termopen.
+---@param title string Float title.
+---@param buf_name string Scheme name.
+---@return boolean ok
+---@return string|nil err
+local function open_term_float(argv, title, buf_name)
+    if vim.fn.executable(argv[1]) ~= 1 then
+        return false, argv[1] .. ' is unavailable on PATH'
+    end
+    local buf = api.nvim_create_buf(false, true)
+    local width = math.min(M.config.float_width, vim.o.columns - 4)
+    local height = math.min(M.config.float_height, vim.o.lines - 4)
+    api.nvim_open_win(buf, true, {
+        border = 'rounded',
+        col = math.floor((vim.o.columns - width) / 2),
+        height = height,
+        relative = 'editor',
+        row = math.floor((vim.o.lines - height) / 2),
+        style = 'minimal',
+        title = title,
+        title_pos = 'center',
+        width = width,
+    })
+    pcall(api.nvim_buf_set_name, buf, buf_name)
+    local job = vim.fn.termopen(argv)
+    if job == 0 or job == -1 then
+        return false, 'termopen failed for ' .. table.concat(argv, ' ')
+    end
+    vim.cmd('startinsert')
+    return true, nil
+end
+
+function M.compose(address)
+    local argv = { M.config.neomutt_bin, '-F', M.config.neomuttrc }
+    if address ~= nil and address ~= '' then
+        argv[#argv + 1] = address
+    end
+    return open_term_float(argv, ' neomutt compose ', 'neomutt://compose')
 end
 
 ---Whether a `set' key holds a credential. Credential values are parsed
@@ -172,17 +469,6 @@ end
 ---@return boolean credential
 function M.is_credential_key(key)
     return type(key) == 'string' and key:lower():find('pass', 1, true) ~= nil
-end
-
----Mask a credential value for display. Non-credentials pass through.
----@param key string Variable name.
----@param value string|boolean Value to display.
----@return string display
-function M.mask_value(key, value)
-    if M.is_credential_key(key) then
-        return '<redacted>'
-    end
-    return tostring(value)
 end
 
 ---Join backslash continuations. Pure; bounded by PARSE_LINES_MAX.
@@ -216,6 +502,105 @@ local function join_continuations(lines)
     return joined
 end
 
+---Parse one account file. Never throws; missing files report ok=false.
+---@param name string Account file basename.
+---@return email.neomutt.Account account
+---Read a file, bounded. Returns nil + err on missing/unreadable input.
+---@param path string File path.
+---@return string|nil text
+---@return string|nil err
+local function read_file(path)
+    local file, file_err = io.open(path, 'r')
+    if file == nil then
+        return nil, ('cannot read %s: %s'):format(path, tostring(file_err))
+    end
+    local text = file:read('*a') or ''
+    file:close()
+    if #text > PARSE_BYTES_MAX then
+        return nil, ('%s exceeds PARSE_BYTES_MAX=%d bytes'):format(path, PARSE_BYTES_MAX)
+    end
+    return text, nil
+end
+
+function M.load_account(name)
+    local path = vim.fs.joinpath(M.config.account_dir, name)
+    local text, read_err = read_file(path)
+    if read_err ~= nil then
+        return { err = read_err, name = name, ok = false, sets = {} }
+    end
+    local parse, parse_err = M.parse_neomuttrc(text)
+    if parse_err ~= nil then
+        return { err = parse_err, name = name, ok = false, sets = {} }
+    end
+    assert(parse ~= nil, 'parse_neomuttrc returned no error but no parse')
+    return { err = nil, name = name, ok = true, sets = parse.sets }
+end
+
+---Load every configured account file. Never throws.
+---@return email.neomutt.Account[] accounts In config order.
+function M.load_accounts()
+    local accounts = {}
+    for _, name in ipairs(M.config.account_files) do
+        accounts[#accounts + 1] = M.load_account(name)
+    end
+    return accounts
+end
+
+---Parse his main neomuttrc. Returns nil + err when the file is missing
+---or unparsable; the module still works (graceful fallback).
+---@return email.neomutt.RcParse|nil parse
+---@return string|nil err
+function M.load_neomuttrc()
+    local text, read_err = read_file(M.config.neomuttrc)
+    if read_err ~= nil then
+        return nil, read_err
+    end
+    return M.parse_neomuttrc(text)
+end
+
+---Mask a credential value for display. Non-credentials pass through.
+---@param key string Variable name.
+---@param value string|boolean Value to display.
+---@return string display
+function M.mask_value(key, value)
+    if M.is_credential_key(key) then
+        return '<redacted>'
+    end
+    return tostring(value)
+end
+
+---Neomutt version from `neomutt -v` ("NeoMutt 20260616 ..."). Returns
+---nil + err when the binary is absent or the output is unparseable.
+---@return string|nil version 8-digit YYYYMMDD version.
+---@return string|nil err
+function M.neomutt_version()
+    local bin = M.config.neomutt_bin
+    if vim.fn.executable(bin) ~= 1 then
+        return nil, bin .. ' is unavailable on PATH'
+    end
+    local result, exec_err = rce.safe_exec({ bin, '-v' }, { timeout_ms = M.config.timeout_ms })
+    if exec_err ~= nil then
+        return nil, exec_err
+    end
+    assert(result ~= nil, 'safe_exec returned no error but no result')
+    local version = (result.stdout or ''):match('^NeoMutt (%d%d%d%d%d%d%d%d)')
+    if version == nil then
+        return nil, 'could not parse neomutt version from -v output'
+    end
+    return version, nil
+end
+
+---Open neomutt in a float terminal with his neomuttrc (-F).
+---@return boolean ok
+---@return string|nil err
+function M.open()
+    return open_term_float({ M.config.neomutt_bin, '-F', M.config.neomuttrc }, ' neomutt ', 'neomutt://interactive')
+end
+
+---Parse one logical line into the accumulator. Unknown or malformed
+---lines become warnings, never errors.
+---@param parse email.neomutt.RcParse Accumulator.
+---@param line string Logical line.
 ---Unquote a neomutt value: strips one layer of matching quotes.
 ---@param raw string Raw value text.
 ---@return string value
@@ -229,10 +614,6 @@ local function unquote(raw)
     return trimmed
 end
 
----Parse one logical line into the accumulator. Unknown or malformed
----lines become warnings, never errors.
----@param parse email.neomutt.RcParse Accumulator.
----@param line string Logical line.
 local function parse_line(parse, line)
     if line == '' or line:sub(1, 1) == '#' then
         return
@@ -259,12 +640,12 @@ local function parse_line(parse, line)
     end
     local menu, key, func = line:match('^bind%s+(%S+)%s+(%S+)%s+(%S+)%s*$')
     if menu ~= nil then
-        parse.binds[#parse.binds + 1] = { menu = menu, key = key, func = func }
+        parse.binds[#parse.binds + 1] = { func = func, key = key, menu = menu }
         return
     end
     local m_menu, m_key, action = line:match('^macro%s+(%S+)%s+(%S+)%s+(.+)$')
     if m_menu ~= nil then
-        parse.macros[#parse.macros + 1] = { menu = m_menu, key = m_key, action = action }
+        parse.macros[#parse.macros + 1] = { action = action, key = m_key, menu = m_menu }
         return
     end
     local mailboxes = line:match('^mailboxes%s+(.+)$')
@@ -290,9 +671,9 @@ local function parse_line(parse, line)
         if command == '' then
             -- `folder-hook "set sort=threads"`: his rc applies the command
             -- to every folder (pattern doubles as the command here).
-            parse.folder_hooks[#parse.folder_hooks + 1] = { pattern = '', command = pattern }
+            parse.folder_hooks[#parse.folder_hooks + 1] = { command = pattern, pattern = '' }
         else
-            parse.folder_hooks[#parse.folder_hooks + 1] = { pattern = pattern, command = command }
+            parse.folder_hooks[#parse.folder_hooks + 1] = { command = command, pattern = pattern }
         end
         return
     end
@@ -313,13 +694,13 @@ function M.parse_neomuttrc(text)
     end
     ---@type email.neomutt.RcParse
     local parse = {
-        sets = {},
-        sources = {},
         binds = {},
+        folder_hooks = {},
         macros = {},
         mailboxes = {},
+        sets = {},
+        sources = {},
         virtual_mailboxes = {},
-        folder_hooks = {},
         warnings = {},
     }
     local lines = vim.split(text, '\n', { plain = true })
@@ -327,312 +708,6 @@ function M.parse_neomuttrc(text)
         parse_line(parse, line)
     end
     return parse, nil
-end
-
----Read a file, bounded. Returns nil + err on missing/unreadable input.
----@param path string File path.
----@return string|nil text
----@return string|nil err
-local function read_file(path)
-    local file, file_err = io.open(path, 'r')
-    if file == nil then
-        return nil, ('cannot read %s: %s'):format(path, tostring(file_err))
-    end
-    local text = file:read('*a') or ''
-    file:close()
-    if #text > PARSE_BYTES_MAX then
-        return nil, ('%s exceeds PARSE_BYTES_MAX=%d bytes'):format(path, PARSE_BYTES_MAX)
-    end
-    return text, nil
-end
-
----Parse one account file. Never throws; missing files report ok=false.
----@param name string Account file basename.
----@return email.neomutt.Account account
-function M.load_account(name)
-    local path = vim.fs.joinpath(M.config.account_dir, name)
-    local text, read_err = read_file(path)
-    if read_err ~= nil then
-        return { name = name, ok = false, err = read_err, sets = {} }
-    end
-    local parse, parse_err = M.parse_neomuttrc(text)
-    if parse_err ~= nil then
-        return { name = name, ok = false, err = parse_err, sets = {} }
-    end
-    assert(parse ~= nil, 'parse_neomuttrc returned no error but no parse')
-    return { name = name, ok = true, err = nil, sets = parse.sets }
-end
-
----Load every configured account file. Never throws.
----@return email.neomutt.Account[] accounts In config order.
-function M.load_accounts()
-    local accounts = {}
-    for _, name in ipairs(M.config.account_files) do
-        accounts[#accounts + 1] = M.load_account(name)
-    end
-    return accounts
-end
-
----Parse his main neomuttrc. Returns nil + err when the file is missing
----or unparsable; the module still works (graceful fallback).
----@return email.neomutt.RcParse|nil parse
----@return string|nil err
-function M.load_neomuttrc()
-    local text, read_err = read_file(M.config.neomuttrc)
-    if read_err ~= nil then
-        return nil, read_err
-    end
-    return M.parse_neomuttrc(text)
-end
-
----Neomutt version from `neomutt -v` ("NeoMutt 20260616 ..."). Returns
----nil + err when the binary is absent or the output is unparseable.
----@return string|nil version 8-digit YYYYMMDD version.
----@return string|nil err
-function M.neomutt_version()
-    local bin = M.config.neomutt_bin
-    if vim.fn.executable(bin) ~= 1 then
-        return nil, bin .. ' is unavailable on PATH'
-    end
-    local result, exec_err = rce.safe_exec({ bin, '-v' }, { timeout_ms = M.config.timeout_ms })
-    if exec_err ~= nil then
-        return nil, exec_err
-    end
-    assert(result ~= nil, 'safe_exec returned no error but no result')
-    local version = (result.stdout or ''):match('^NeoMutt (%d%d%d%d%d%d%d%d)')
-    if version == nil then
-        return nil, 'could not parse neomutt version from -v output'
-    end
-    return version, nil
-end
-
----Compare 8-digit YYYYMMDD versions. Returns -1/0/1, or nil when either
----side is not a date version (never fabricates an ordering).
----@param left string First version.
----@param right string Second version.
----@return integer|nil cmp
-function M.compare_date_versions(left, right)
-    if type(left) ~= 'string' or type(right) ~= 'string' then
-        return nil
-    end
-    if #left ~= 8 or #right ~= 8 or not left:match('^%d+$') or not right:match('^%d+$') then
-        return nil
-    end
-    if left < right then
-        return -1
-    end
-    if left > right then
-        return 1
-    end
-    return 0
-end
-
----Map a toolmgr binary report onto the Check status vocabulary.
----@param report table toolmgr BinaryReport.
----@return email.neomutt.Check check
-local function to_check(report)
-    local status = 'unavailable'
-    if report.present and report.meets_minimum then
-        status = 'ok'
-    elseif report.present then
-        status = 'below minimum'
-    end
-    return { name = report.name, status = status, detail = report.detail }
-end
-
----Per-tool validation. Never throws: missing pieces are 'unavailable',
----never errors. Credential values are masked.
----@return email.neomutt.Check[] checks
-function M.checks()
-    local toolmgr = require('utils.toolmgr')
-    local cfg = M.config
-    local checks = {}
-    local version, version_err = M.neomutt_version()
-    if version ~= nil then
-        local cmp = M.compare_date_versions(version, M.NEOMUTT_VERSION_MIN)
-        local status = 'ok'
-        local detail = ('neomutt: %s'):format(version)
-        if cmp == nil then
-            status = 'unavailable'
-            detail = detail .. ' (unparseable date version)'
-        elseif cmp < 0 then
-            status = 'below minimum'
-            detail = detail .. (' below minimum %s'):format(M.NEOMUTT_VERSION_MIN)
-        else
-            detail = detail .. (' meets minimum %s'):format(M.NEOMUTT_VERSION_MIN)
-        end
-        checks[#checks + 1] = { name = cfg.neomutt_bin, status = status, detail = detail }
-    else
-        checks[#checks + 1] = { name = cfg.neomutt_bin, status = 'unavailable', detail = tostring(version_err) }
-    end
-    checks[#checks + 1] = to_check(toolmgr.check_binary({
-        name = cfg.notmuch_bin,
-        version_argv = { cfg.notmuch_bin, '--version' },
-    }))
-    checks[#checks + 1] = to_check(toolmgr.check_binary({
-        name = cfg.msmtp_bin,
-        version_argv = { cfg.msmtp_bin, '--version' },
-    }))
-    local parse, parse_err = M.load_neomuttrc()
-    if parse ~= nil then
-        local set_count = 0
-        for _ in pairs(parse.sets) do
-            set_count = set_count + 1
-        end
-        checks[#checks + 1] = {
-            name = 'neomuttrc',
-            status = 'ok',
-            detail = ('%s parses: %d sets, %d folder-hooks, %d warnings'):format(
-                cfg.neomuttrc,
-                set_count,
-                #parse.folder_hooks,
-                #parse.warnings
-            ),
-        }
-    else
-        checks[#checks + 1] = { name = 'neomuttrc', status = 'unavailable', detail = tostring(parse_err) }
-    end
-    local accounts = M.load_accounts()
-    local ok_count = 0
-    for _, account in ipairs(accounts) do
-        if account.ok then
-            ok_count = ok_count + 1
-        end
-    end
-    checks[#checks + 1] = {
-        name = 'accounts',
-        status = ok_count == #accounts and 'ok' or 'unavailable',
-        detail = ('%d/%d account files parse'):format(ok_count, #accounts),
-    }
-    if toolmgr.binary_present(cfg.notmuch_bin) then
-        local result, exec_err = rce.safe_exec({ cfg.notmuch_bin, 'count' }, { timeout_ms = cfg.timeout_ms })
-        if exec_err == nil and result ~= nil and result.code == 0 then
-            checks[#checks + 1] = {
-                name = 'notmuch-db',
-                status = 'ok',
-                detail = ('notmuch database present (%s messages counted)'):format(vim.trim(result.stdout or '')),
-            }
-        else
-            checks[#checks + 1] = {
-                name = 'notmuch-db',
-                status = 'unavailable',
-                detail = 'no readable notmuch database (run `notmuch new`)',
-            }
-        end
-    else
-        checks[#checks + 1] = { name = 'notmuch-db', status = 'unavailable', detail = 'notmuch binary absent' }
-    end
-    if vim.fn.filereadable(cfg.msmtp_config) == 1 then
-        checks[#checks + 1] = { name = 'msmtp-config', status = 'ok', detail = cfg.msmtp_config .. ' exists' }
-    else
-        checks[#checks + 1] = {
-            name = 'msmtp-config',
-            status = 'unavailable',
-            detail = cfg.msmtp_config .. ' missing',
-        }
-    end
-    return checks
-end
-
----Trim command output to the float bound. Pure.
----@param lines string[]|nil
----@return string[] kept
-function M.trim_output(lines)
-    if type(lines) ~= 'table' then
-        return {}
-    end
-    local kept = {}
-    for index = 1, math.min(#lines, OUTPUT_LINES_MAX) do
-        kept[#kept + 1] = lines[index]
-    end
-    return kept
-end
-
----Open a centered, minimal float for command output. `q` closes it.
----@param lines string[] Body lines.
----@param title string Float title.
----@param buf_name string Scheme name so tests can find the buffer.
-local function open_float(lines, title, buf_name)
-    local buf = api.nvim_create_buf(false, true)
-    api.nvim_buf_set_lines(buf, 0, -1, false, M.trim_output(lines))
-    vim.bo[buf].modifiable = false
-    vim.bo[buf].filetype = 'diver-email'
-    pcall(api.nvim_buf_set_name, buf, buf_name)
-    local width = math.min(M.config.float_width, vim.o.columns - 4)
-    local height = math.min(M.config.float_height, vim.o.lines - 4)
-    api.nvim_open_win(buf, true, {
-        relative = 'editor',
-        width = width,
-        height = height,
-        row = math.floor((vim.o.lines - height) / 2),
-        col = math.floor((vim.o.columns - width) / 2),
-        style = 'minimal',
-        border = 'rounded',
-        title = title,
-        title_pos = 'center',
-    })
-    vim.keymap.set('n', 'q', '<cmd>close<cr>', { buffer = buf, silent = true, desc = 'Close email float' })
-end
-
----Open a float terminal running argv. Returns false + err when the
----binary is missing or the terminal fails to start.
----@param argv string[] argv for termopen.
----@param title string Float title.
----@param buf_name string Scheme name.
----@return boolean ok
----@return string|nil err
-local function open_term_float(argv, title, buf_name)
-    if vim.fn.executable(argv[1]) ~= 1 then
-        return false, argv[1] .. ' is unavailable on PATH'
-    end
-    local buf = api.nvim_create_buf(false, true)
-    local width = math.min(M.config.float_width, vim.o.columns - 4)
-    local height = math.min(M.config.float_height, vim.o.lines - 4)
-    api.nvim_open_win(buf, true, {
-        relative = 'editor',
-        width = width,
-        height = height,
-        row = math.floor((vim.o.lines - height) / 2),
-        col = math.floor((vim.o.columns - width) / 2),
-        style = 'minimal',
-        border = 'rounded',
-        title = title,
-        title_pos = 'center',
-    })
-    pcall(api.nvim_buf_set_name, buf, buf_name)
-    local job = vim.fn.termopen(argv)
-    if job == 0 or job == -1 then
-        return false, 'termopen failed for ' .. table.concat(argv, ' ')
-    end
-    vim.cmd('startinsert')
-    return true, nil
-end
-
----Notify a command failure in one canonical shape.
----@param what string Command name for the message.
----@param err any Failure reason.
-local function notify_failed(what, err)
-    vim.notify(what .. ' failed: ' .. tostring(err), vim.log.levels.ERROR)
-end
-
----Open neomutt in a float terminal with his neomuttrc (-F).
----@return boolean ok
----@return string|nil err
-function M.open()
-    return open_term_float({ M.config.neomutt_bin, '-F', M.config.neomuttrc }, ' neomutt ', 'neomutt://interactive')
-end
-
----Compose a message in a float terminal. `neomutt <address>` enters the
----compose view addressed to that recipient (standard mutt CLI behavior).
----@param address? string Optional recipient.
----@return boolean ok
----@return string|nil err
-function M.compose(address)
-    local argv = { M.config.neomutt_bin, '-F', M.config.neomuttrc }
-    if address ~= nil and address ~= '' then
-        argv[#argv + 1] = address
-    end
-    return open_term_float(argv, ' neomutt compose ', 'neomutt://compose')
 end
 
 ---Run a notmuch search and show matching files in a float. Flags verified
@@ -678,129 +753,6 @@ function M.search(query)
     return true, nil
 end
 
----:NeomuttDocs -- summary of his setup, the verified upstream locations,
----and the notmuch flags this module uses.
-local function cmd_docs()
-    local lines = {
-        'neomutt backend (email.clients.neomutt)',
-        '',
-        'Docs: ' .. M.config.docs_url,
-        'Source: https://github.com/neomutt/neomutt (verified 2026-09-27)',
-        '',
-        'His setup (parsed from ~/.config/neomutt/neomuttrc + 5 account files):',
-        '  accounts: aflabs, foamedgmail, map26gmail, qompassai, wsu',
-        '  folder-hooks switch accounts per folder; sidebar width 30',
-        '  bind index <C-t> tag-prefix; macro index S runs a notmuch query',
-        '  sending via msmtp (/usr/bin/msmtp; per-account -a flags)',
-        '',
-        'notmuch flags used here (verified: notmuch-search(1) man page):',
-        '  notmuch search --output=files --limit=N <query>',
-        '  notmuch count   (database presence probe)',
-        '',
-        'Credential values (imap_pass, smtp_pass, passwordeval) are parsed',
-        'for structure but masked as <redacted> in every report.',
-    }
-    open_float(lines, ' neomutt docs ', 'neomutt://docs')
-end
-
----:NeomuttValidate -- one vim.notify per check; missing tools say
----"unavailable", never an error.
-local function cmd_validate()
-    for _, check in ipairs(M.checks()) do
-        local level = check.status == 'ok' and vim.log.levels.INFO or vim.log.levels.WARN
-        vim.notify(('neomutt %-13s %-13s %s'):format(check.name, check.status, check.detail), level)
-    end
-end
-
----Compare installed + known versions against the latest GitHub release
----and offer update / skip. neomutt uses 8-digit date versions, which the
----shared toolmgr dotted-version compare cannot parse, so this dialog is
----date-aware. Never installs without the explicit vim.ui.select choice.
-local function cmd_update_check_neomutt()
-    local toolmgr = require('utils.toolmgr')
-    local current, current_err = M.neomutt_version()
-    if current_err ~= nil then
-        vim.notify('neomutt: not installed; nothing to update', vim.log.levels.WARN)
-        return
-    end
-    assert(current ~= nil, 'neomutt_version returned no error but no version')
-    local tag, tag_err = toolmgr.github_latest_tag(M.config.update_repo_neomutt)
-    if tag == nil then
-        vim.notify('neomutt: release check failed: ' .. tostring(tag_err), vim.log.levels.WARN)
-        return
-    end
-    local cmp = M.compare_date_versions(tag, current)
-    if cmp == nil then
-        vim.notify('neomutt: unparseable version in comparison', vim.log.levels.WARN)
-        return
-    end
-    if cmp <= 0 then
-        vim.notify(('neomutt: up to date (%s; latest %s)'):format(current, tag), vim.log.levels.INFO)
-        return
-    end
-    local impl = M.config.select_impl or vim.ui.select
-    impl(
-        { 'Update package via system package manager', 'Skip' },
-        { prompt = ('neomutt %s -> %s:'):format(current, tag) },
-        function(choice)
-            if choice == 1 then
-                toolmgr.install_package('neomutt', 'neomutt')
-            end
-        end
-    )
-end
-
----:NeomuttUpdateCheck -- neomutt (date-aware), msmtp (toolmgr), and an
----informational notmuch entry: notmuch's canonical repo is
----https://git.notmuchmail.org/git/notmuch, which has no GitHub releases
----endpoint, so no live tag lookup is performed for it.
-local function cmd_update_check()
-    cmd_update_check_neomutt()
-    local toolmgr = require('utils.toolmgr')
-    local current = toolmgr.command_version({ M.config.msmtp_bin, '--version' })
-    toolmgr.check_update({
-        tool_label = 'msmtp',
-        repo = M.config.update_repo_msmtp,
-        package = 'msmtp',
-        current_version = current,
-        -- Verified: msmtp-1.8.34 released 2026-07-31 (marlam.de/msmtp).
-        known_upstream_version = '1.8.34',
-        migrations = {},
-        select_impl = M.config.select_impl,
-    })
-    local nm_current = toolmgr.command_version({ M.config.notmuch_bin, '--version' })
-    vim.notify(
-        (
-            'notmuch: %s; canonical repo https://git.notmuchmail.org/git/notmuch '
-            .. '(no GitHub releases endpoint; check the canonical repo for releases)'
-        ):format(nm_current ~= nil and nm_current or 'not installed'),
-        vim.log.levels.INFO
-    )
-end
-
----Prompt for a search query when :NeomuttSearch gets no argument.
----@param query string|nil Query from the command line.
-local function cmd_search(query)
-    if query ~= nil and query ~= '' then
-        local ok, err = M.search(query)
-        if not ok then
-            notify_failed('NeomuttSearch', err)
-        end
-        return
-    end
-    local impl = M.config.input_impl or vim.ui.input
-    impl({ prompt = 'notmuch query: ' }, function(input)
-        if input == nil or input == '' then
-            vim.notify('NeomuttSearch: cancelled', vim.log.levels.INFO)
-            return
-        end
-        local ok, err = M.search(input)
-        if not ok then
-            notify_failed('NeomuttSearch', err)
-        end
-    end)
-end
-
 ---Register the :Neomutt* commands. Idempotent: commands are created once;
 ---the config is rebuilt on every call. Performs no subprocess I/O itself.
 ---@param config? table Overrides merged over M.default_config.
@@ -821,25 +773,73 @@ function M.setup(config)
         if not ok then
             notify_failed('NeomuttCompose', err)
         end
-    end, { nargs = '?', desc = 'Compose a message in neomutt (optional recipient)' })
-    api.nvim_create_user_command('NeomuttSearch', function(cmd_opts)
-        cmd_search(cmd_opts.args ~= '' and cmd_opts.args or nil)
-    end, { nargs = '?', desc = 'notmuch search (--output=files) shown in a float' })
+    end, { desc = 'Compose a message in neomutt (optional recipient)', nargs = '?' })
     api.nvim_create_user_command(
         'NeomuttDocs',
         cmd_docs,
         { desc = 'neomutt backend docs: his setup + verified upstream locations' }
+    )
+    api.nvim_create_user_command('NeomuttSearch', function(cmd_opts)
+        cmd_search(cmd_opts.args ~= '' and cmd_opts.args or nil)
+    end, { desc = 'notmuch search (--output=files) shown in a float', nargs = '?' })
+    api.nvim_create_user_command(
+        'NeomuttUpdateCheck',
+        cmd_update_check,
+        { desc = 'Update check for neomutt, msmtp, and notmuch' }
     )
     api.nvim_create_user_command(
         'NeomuttValidate',
         cmd_validate,
         { desc = 'Per-tool validation report (binaries, rc, accounts, notmuch db, msmtp)' }
     )
-    api.nvim_create_user_command(
-        'NeomuttUpdateCheck',
-        cmd_update_check,
-        { desc = 'Update check for neomutt, msmtp, and notmuch' }
-    )
+end
+
+---Build the live config: factory defaults deep-copied, overrides merged,
+---every key type-checked. Never mutates M.default_config.
+---@param config table|nil Overrides; nil restores factory defaults.
+---@return table merged Live config table.
+function M.setup_config(config)
+    check_type('config', config, 'table', true)
+    local merged = vim.tbl_deep_extend('force', vim.deepcopy(M.default_config), config or {})
+    check_type('account_dir', merged.account_dir, 'string')
+    check_type('account_files', merged.account_files, 'table')
+    check_type('docs_url', merged.docs_url, 'string')
+    check_type('float_height', merged.float_height, 'number')
+    check_type('float_width', merged.float_width, 'number')
+    check_type('input_impl', merged.input_impl, 'function', true)
+    check_type('known_upstream_version', merged.known_upstream_version, 'string')
+    check_type('msmtp_bin', merged.msmtp_bin, 'string')
+    check_type('msmtp_config', merged.msmtp_config, 'string')
+    check_type('neomutt_bin', merged.neomutt_bin, 'string')
+    check_type('neomuttrc', merged.neomuttrc, 'string')
+    check_type('notmuch_bin', merged.notmuch_bin, 'string')
+    check_type('search_limit', merged.search_limit, 'number')
+    check_type('select_impl', merged.select_impl, 'function', true)
+    check_type('sidebar_width', merged.sidebar_width, 'number')
+    check_type('timeout_ms', merged.timeout_ms, 'number')
+    check_type('update_repo_msmtp', merged.update_repo_msmtp, 'string')
+    check_type('update_repo_neomutt', merged.update_repo_neomutt, 'string')
+    if vim.trim(merged.neomutt_bin) == '' then
+        error('neomutt: option neomutt_bin must not be blank', 2)
+    end
+    if merged.search_limit < 1 then
+        error('neomutt: option search_limit must be >= 1', 2)
+    end
+    return merged
+end
+
+---Trim command output to the float bound. Pure.
+---@param lines string[]|nil
+---@return string[] kept
+function M.trim_output(lines)
+    if type(lines) ~= 'table' then
+        return {}
+    end
+    local kept = {}
+    for index = 1, math.min(#lines, OUTPUT_LINES_MAX) do
+        kept[#kept + 1] = lines[index]
+    end
+    return kept
 end
 
 return M
