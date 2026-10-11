@@ -25,53 +25,70 @@
 
 local M = {}
 
+---Tags that mark a skill as actively touching the target.
+local ACTIVE_TAGS = {
+    attack = true,
+    bypass = true,
+    exploitation = true,
+    injection = true,
+    privesc = true,
+    takeover = true,
+}
+
+---Categories whose tools always count as consequential.
+local CONSEQUENTIAL_CATEGORIES = {
+    auth = true,
+    chains = true,
+    infra = true,
+    redteam = true,
+}
+
+---Tags that mark a recon skill as purely passive observation.
+local PASSIVE_TAGS = {
+    enumeration = true,
+    fingerprinting = true,
+    osint = true,
+    passive = true,
+}
+
 ---Skill categories that only observe. Everything else is consequential
 ---until proven otherwise: default-deny beats default-allow.
 local READ_ONLY_CATEGORIES = {
     meta = true,
 }
 
----Categories whose tools always count as consequential.
-local CONSEQUENTIAL_CATEGORIES = {
-    redteam = true,
-    infra = true,
-    auth = true,
-    chains = true,
-}
-
----Tags that mark a recon skill as purely passive observation.
-local PASSIVE_TAGS = {
-    passive = true,
-    osint = true,
-    fingerprinting = true,
-    enumeration = true,
-}
-
----Tags that mark a skill as actively touching the target.
-local ACTIVE_TAGS = {
-    exploitation = true,
-    attack = true,
-    bypass = true,
-    injection = true,
-    takeover = true,
-    privesc = true,
-}
-
 ---@class ToolAnnotations
----@field readOnlyHint boolean
----@field untrustedContentHint boolean
 ---@field consequentialHint boolean
 ---@field debugging boolean
+---@field readOnlyHint boolean
+---@field untrustedContentHint boolean
 
 ---Blank annotations: no hints set.
 ---@return ToolAnnotations
 function M.blank()
     return {
-        readOnlyHint = false,
-        untrustedContentHint = false,
         consequentialHint = false,
         debugging = false,
+        readOnlyHint = false,
+        untrustedContentHint = false,
     }
+end
+
+---Annotate a bridge endpoint by its effect kind.
+---@param kind string 'read' | 'write' | 'execute'
+---@return ToolAnnotations
+function M.for_endpoint(kind)
+    assert(kind == 'read' or kind == 'write' or kind == 'execute', 'kind must be read, write, or execute')
+    local ann = M.blank()
+    if kind == 'read' then
+        ann.readOnlyHint = true
+        return ann
+    end
+    ann.consequentialHint = true
+    if kind == 'execute' then
+        ann.untrustedContentHint = true
+    end
+    return ann
 end
 
 ---Classify a recon skill into WebMCP annotations.
@@ -115,23 +132,6 @@ function M.for_skill(skill)
     end
     -- Unknown category: consequential until classified.
     ann.consequentialHint = true
-    return ann
-end
-
----Annotate a bridge endpoint by its effect kind.
----@param kind string 'read' | 'write' | 'execute'
----@return ToolAnnotations
-function M.for_endpoint(kind)
-    assert(kind == 'read' or kind == 'write' or kind == 'execute', 'kind must be read, write, or execute')
-    local ann = M.blank()
-    if kind == 'read' then
-        ann.readOnlyHint = true
-        return ann
-    end
-    ann.consequentialHint = true
-    if kind == 'execute' then
-        ann.untrustedContentHint = true
-    end
     return ann
 end
 

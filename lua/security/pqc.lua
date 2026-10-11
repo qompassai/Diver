@@ -130,7 +130,9 @@ local function openssl(args, input)
         assert(type(a) == 'string', 'openssl arg must be a string')
         cmd[#cmd + 1] = a
     end
-    local res = vim.system(cmd, { stdin = input, timeout = 30000 }):wait()
+    local res_obj = vim.system(cmd, { stdin = input, timeout = 30000 })
+    ---@cast res_obj vim.SystemObj
+    local res = res_obj:wait()
     if res.code ~= 0 then
         return false, 'openssl ' .. args[1] .. ' failed: ' .. (res.stderr or ''):sub(1, 200)
     end
@@ -243,6 +245,7 @@ end
 ---@param priv_pem string
 ---@param msg string
 ---@return string|nil sig raw signature bytes
+---@return string|nil err
 local function rsa_sign(priv_pem, msg)
     if type(priv_pem) ~= 'string' or type(msg) ~= 'string' then
         return nil, 'bad sign args'
@@ -344,7 +347,8 @@ end
 ---@param public_b64 string base64 public key
 ---@param msg string
 ---@param sig string|nil raw signature bytes (nil for sign)
----@return string|boolean out signature bytes when signing, bool when verifying
+---@return string|boolean|nil out signature bytes when signing, bool when verifying
+---@return string|nil err
 local function mldsa(alg, secret_b64, public_b64, msg, sig)
     local lib, err = liboqs()
     if lib == nil then
@@ -394,7 +398,7 @@ local function mldsa(alg, secret_b64, public_b64, msg, sig)
         if lib.OQS_SIG_sign(s, sg, sl, msg, #msg, sk) ~= 0 then
             rerr = 'ML-DSA sign failed'
         else
-            result = ffi.string(sg, tonumber(sl[0]))
+            result = ffi.string(sg, math.floor(tonumber(sl[0]) or 0))
         end
     else
         result = lib.OQS_SIG_verify(s, msg, #msg, sig, #sig, pk) == 0
@@ -439,10 +443,10 @@ function M.sig_keygen(strength)
     local key_err = nil
     if rc == 0 then
         key = {
-            strength = strength,
             kind = alg == 'ML-DSA-87' and 'mldsa87' or 'mldsa65',
-            public = b64e(ffi.string(pk, tonumber(s.length_public_key))),
-            secret = b64e(ffi.string(sk, tonumber(s.length_secret_key))),
+            public = b64e(ffi.string(pk, math.floor(tonumber(s.length_public_key) or 0))),
+            secret = b64e(ffi.string(sk, math.floor(tonumber(s.length_secret_key) or 0))),
+            strength = strength,
         }
         if strength == 'hybrid' then
             local rsa, rerr = rsa4096_keypair()
@@ -474,7 +478,11 @@ function M.sig_sign(key, msg)
         return rsa_sign(key.private_pem, msg)
     end
     if key.strength == 'quantum' then
-        return mldsa('ML-DSA-87', key.secret, key.public, msg, nil)
+        local signed, serr = mldsa('ML-DSA-87', key.secret, key.public, msg, nil)
+        if type(signed) ~= 'string' then
+            return nil, serr or 'ML-DSA sign failed'
+        end
+        return signed, nil
     end
     if key.strength == 'hybrid' then
         local s1, err = mldsa('ML-DSA-65', key.secret, key.public, msg, nil)
@@ -547,15 +555,19 @@ function M.kem_keygen(strength)
     local sk = ffi.new('uint8_t[?]', k.length_secret_key)
     local rc = lib.OQS_KEM_keypair(k, pk, sk)
     local function b64e(ptr, len)
-        return vim.base64.encode(ffi.string(ptr, tonumber(len))):gsub('+', '-'):gsub('/', '_'):gsub('=+$', '')
+        return vim.base64
+            .encode(ffi.string(ptr, math.floor(tonumber(len) or 0)))
+            :gsub('+', '-')
+            :gsub('/', '_')
+            :gsub('=+$', '')
     end
     local key = nil
     if rc == 0 then
         key = {
-            strength = strength,
             kind = alg == 'ML-KEM-1024' and 'mlkem1024' or 'mlkem768',
             public = b64e(pk, k.length_public_key),
             secret = b64e(sk, k.length_secret_key),
+            strength = strength,
         }
     end
     lib.OQS_KEM_free(k)
@@ -678,8 +690,8 @@ local function kem_encaps_pqc(key)
     local out = nil
     if rc == 0 then
         out = {
-            ct = ffi.string(ct, tonumber(k.length_ciphertext)),
-            ss = ffi.string(ssb, tonumber(k.length_shared_secret)),
+            ct = ffi.string(ct, math.floor(tonumber(k.length_ciphertext) or 0)),
+            ss = ffi.string(ssb, math.floor(tonumber(k.length_shared_secret) or 0)),
         }
     end
     lib.OQS_KEM_free(k)
@@ -830,7 +842,7 @@ local function kem_decaps_pqc(key, ct, eph_pub)
     local rc = lib.OQS_KEM_decaps(k, ssb, ctb, sk)
     local ss = nil
     if rc == 0 then
-        ss = ffi.string(ssb, tonumber(k.length_shared_secret))
+        ss = ffi.string(ssb, math.floor(tonumber(k.length_shared_secret) or 0))
     end
     lib.OQS_KEM_free(k)
     if ss == nil then

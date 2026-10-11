@@ -21,13 +21,12 @@ local scope = require('security.bounty.scope')
 local M = {}
 
 ---Boundaries for every scan and buffer in this module.
-local TARGET_COUNT_MAX = 10000
-local TARGET_LEN_MAX = 253 -- Longest legal DNS name; generous for URLs/CIDRs.
-local PROFILE_NAME_MAX = 64
 local CONFIRM_LINE_MAX = 512
-
 ---Path-safe pattern shared with gates.lua/scope.lua.
 local PATH_SAFE = '^[A-Za-z0-9_%.%-]+$'
+local PROFILE_NAME_MAX = 64
+local TARGET_COUNT_MAX = 10000
+local TARGET_LEN_MAX = 253 -- Longest legal DNS name; generous for URLs/CIDRs.
 
 ---@class security.bounty.Profile
 ---@field name string Registry key, e.g. 'dod-vdp'.
@@ -58,42 +57,22 @@ local PATH_SAFE = '^[A-Za-z0-9_%.%-]+$'
 ---address are marked NOT IN POLICY and must not be read as permitted.
 M.registry = {
     ['dod-vdp'] = {
-        name = 'dod-vdp',
+        disclosure_terms = {
+            [[You will not publicly disclose any details of the vulnerability,
+indicator of vulnerability, or the content of information rendered
+available by a vulnerability, except upon receiving express written
+authorization from DoD.]],
+            [[Public disclosure of vulnerabilities will only be authorized by
+the express written consent of DoD.]],
+            [[Public credit is possible but gated: DoD will seek to allow
+researchers desiring public recognition, when practicable and
+authorized.]],
+            [[Submission consent: you consent to having the contents of the
+communication and follow-up communications stored on a U.S. Government
+information system.]],
+        },
         display_name = 'U.S. Dept Of Defense',
-        platform = 'HackerOne',
-        program_type = 'VDP (response policy; no bounties)',
-        policy_url = 'https://hackerone.com/DeptOfDefense',
         fetched_date = '2026-09-28',
-        -- Computed 2026-09-28 from ~/workspace/bug-bounty/dod-vdp-profile.lua.
-        source_hash = '01390aa8762906d29bcc8282d91504295a35124c808ba66d67242885fac30130',
-        -- CLASS-BASED: the policy names no domains. Scope is a set of asset
-        -- classes (DoD-owned/operated/controlled, publicly accessible). No
-        -- enumerated domain list may ever be derived from the policy wording.
-        scope_model = 'class',
-        scope_in = {
-            [[Publicly accessible information systems, web property, or data
-owned, operated, or controlled by DoD.]],
-            [[Footnote: DoD interprets "publicly accessible" as the means of
-accessing "Information systems," as defined by 6 U.S.C. 1501(9) and
-44 U.S.C. 3502, whereby a researcher has complied with all stated
-limitations of activity under the guidelines of the VDP policy.]],
-        },
-        scope_out = {
-            [[To the extent that any security research or vulnerability
-disclosure activity involves the networks, systems, information,
-applications, products, or services of a non-DoD entity (e.g., other
-Federal departments or agencies; State, local, or tribal governments;
-private sector companies or persons; employees or personnel of any such
-entities; or any other such third party), that non-DoD entity may
-independently determine whether to pursue legal action or remedies
-related to such activities.]],
-            [[Vendor systems are NOT authorized for testing under this VDP:
-submitted information may be used to remediate vulnerabilities in DoD
-networks or in vendor applications, but scope covers
-DoD-owned/operated/controlled assets only. Report vendor issues to the
-vendor per their own policy.]],
-            [[Anything not publicly accessible is out of scope by definition.]],
-        },
         methods_allowed = {
             [[(1) Testing, through remote means, to detect a vulnerability or
 identify an indicator related to a vulnerability; and]],
@@ -128,101 +107,7 @@ effectively and permanently erase all identified information in your
 possession as directed by DoD and report to DoD that you have done so.]],
             [[You will not submit a high-volume of low-quality reports.]],
         },
-        rate_limits = 'NOT IN POLICY -- the policy states no numeric rate limits.',
-        testing_windows = 'NOT IN POLICY -- the policy states no testing windows.',
-        disclosure_terms = {
-            [[You will not publicly disclose any details of the vulnerability,
-indicator of vulnerability, or the content of information rendered
-available by a vulnerability, except upon receiving express written
-authorization from DoD.]],
-            [[Public disclosure of vulnerabilities will only be authorized by
-the express written consent of DoD.]],
-            [[Public credit is possible but gated: DoD will seek to allow
-researchers desiring public recognition, when practicable and
-authorized.]],
-            [[Submission consent: you consent to having the contents of the
-communication and follow-up communications stored on a U.S. Government
-information system.]],
-        },
-        safe_harbor = [[This policy does not grant authorization, permission,
-or otherwise allow express or implied access to DoD information systems
-to any individual, group of individuals, consortium, partnership, or any
-other business or legal entity. However, if a security researcher working
-in accordance with the terms and conditions of this VDP program discloses
-a vulnerability, then DoD will, in the exercise of its authorities: (1)
-not initiate or recommend any law enforcement action or civil lawsuits
-related to such activities against that researcher, and (2) inform the
-pertinent law enforcement agencies or civil plaintiffs that the
-researcher's activities were, to the best of our knowledge, conducted
-pursuant to, and in compliance with, the terms and conditions of the
-program.]],
-        slas = {
-            [[Within one business day, DoD will acknowledge receipt of your
-report. DoD's security team will investigate the report and may contact
-you for further information.]],
-            [[When practicable and authorized, DoD will confirm the existence
-of the vulnerability to the researcher and keep the researcher informed,
-as appropriate, while remediation of the vulnerability is under way.]],
-        },
-        participation_requirements = {
-            [[Before participating in the VDP, conducting any testing of DoD
-networks and prior to submitting a report, you must agree to abide by
-these terms and conditions.]],
-            [[Every report must include: type of issue; product, version, and
-configuration of software containing the bug; step-by-step instructions
-to reproduce the issue; proof-of-concept; impact of the issue; and
-suggested mitigation or remediation actions, as appropriate.]],
-            [[If questions arise, take no action until that action is
-discussed with the VDP lead at the Department of Defense Cyber Crime
-Center (DC3).]],
-            [[If at any point you are uncertain whether to continue testing,
-engage with their team.]],
-            [[EXTERNAL (not in policy text; verified separately 2026-09-28):
-a HackerOne account is required to submit. Veriff ID verification is
-required for paid programs only; this VDP is exempt.]],
-        },
-        -- No current recon stage maps to a prohibited method class. If a
-        -- stage is ever added that exfiltrates, DoSes, or phishes, its name
-        -- goes here and check_recon_plan hard-blocks it.
-        recon_blocked_tools = {},
-        recon_cautions = {
-            naabu = 'Port scanning is "testing through remote means", but the VDP demands'
-                .. ' minimal testing and do-no-harm. Keep port sets small.',
-            nuclei = 'Active vulnerability scanning must stay minimal. A high volume of low-quality'
-                .. ' reports is prohibited; tune templates and scope tightly.',
-            katana = 'Crawling accesses content. The policy forbids accessing content not directly'
-                .. ' related to proving a vulnerability; stay on the confirmed target.',
-            ffuf = 'Content discovery is high-risk under the minimal-testing rule. Keep wordlists'
-                .. ' small, targeted, and rate-limited.',
-        },
-        -- Heuristic tripwire, NOT a classifier: domain suffixes that are
-        -- definitionally third-party platforms. A match hard-blocks the
-        -- target; the operator attestation below remains the real control.
-        -- This list is operator-visible data: removing a marker is a
-        -- conscious, diff-visible act, and that is the override path for a
-        -- false positive (e.g. a DoD-owned asset behind a cloud domain).
-        vendor_markers = {
-            'amazonaws.com',
-            'cloudfront.net',
-            'azurewebsites.net',
-            'cloudapp.azure.com',
-            'googleapis.com',
-            'appspot.com',
-            'cloudfunctions.net',
-            'cloudrun.net',
-            'herokupapp.com',
-            'vercel.app',
-            'netlify.app',
-            'github.io',
-            'gitlab.io',
-            'salesforce.com',
-            'force.com',
-            'servicenow.com',
-            'sharepoint.com',
-            'office365.com',
-            'zendesk.com',
-            'hubspot.com',
-        },
+        name = 'dod-vdp',
         notes = {
             [[Defensive use only: information submitted under this program is
 used to mitigate or remediate vulnerabilities in DoD networks or
@@ -246,92 +131,135 @@ systems (combat-zone / life-or-death context).]],
 authorization: the safe harbor is a commitment not to pursue, not a
 grant of access.]],
         },
+        participation_requirements = {
+            [[Before participating in the VDP, conducting any testing of DoD
+networks and prior to submitting a report, you must agree to abide by
+these terms and conditions.]],
+            [[Every report must include: type of issue; product, version, and
+configuration of software containing the bug; step-by-step instructions
+to reproduce the issue; proof-of-concept; impact of the issue; and
+suggested mitigation or remediation actions, as appropriate.]],
+            [[If questions arise, take no action until that action is
+discussed with the VDP lead at the Department of Defense Cyber Crime
+Center (DC3).]],
+            [[If at any point you are uncertain whether to continue testing,
+engage with their team.]],
+            [[EXTERNAL (not in policy text; verified separately 2026-09-28):
+a HackerOne account is required to submit. Veriff ID verification is
+required for paid programs only; this VDP is exempt.]],
+        },
+        platform = 'HackerOne',
+        policy_url = 'https://hackerone.com/DeptOfDefense',
+        program_type = 'VDP (response policy; no bounties)',
+        rate_limits = 'NOT IN POLICY -- the policy states no numeric rate limits.',
+        -- No current recon stage maps to a prohibited method class. If a
+        -- stage is ever added that exfiltrates, DoSes, or phishes, its name
+        -- goes here and check_recon_plan hard-blocks it.
+        recon_blocked_tools = {},
+        recon_cautions = {
+            ffuf = 'Content discovery is high-risk under the minimal-testing rule. Keep wordlists'
+                .. ' small, targeted, and rate-limited.',
+            katana = 'Crawling accesses content. The policy forbids accessing content not directly'
+                .. ' related to proving a vulnerability; stay on the confirmed target.',
+            naabu = 'Port scanning is "testing through remote means", but the VDP demands'
+                .. ' minimal testing and do-no-harm. Keep port sets small.',
+            nuclei = 'Active vulnerability scanning must stay minimal. A high volume of low-quality'
+                .. ' reports is prohibited; tune templates and scope tightly.',
+        },
+        safe_harbor = [[This policy does not grant authorization, permission,
+or otherwise allow express or implied access to DoD information systems
+to any individual, group of individuals, consortium, partnership, or any
+other business or legal entity. However, if a security researcher working
+in accordance with the terms and conditions of this VDP program discloses
+a vulnerability, then DoD will, in the exercise of its authorities: (1)
+not initiate or recommend any law enforcement action or civil lawsuits
+related to such activities against that researcher, and (2) inform the
+pertinent law enforcement agencies or civil plaintiffs that the
+researcher's activities were, to the best of our knowledge, conducted
+pursuant to, and in compliance with, the terms and conditions of the
+program.]],
+        scope_in = {
+            [[Publicly accessible information systems, web property, or data
+owned, operated, or controlled by DoD.]],
+            [[Footnote: DoD interprets "publicly accessible" as the means of
+accessing "Information systems," as defined by 6 U.S.C. 1501(9) and
+44 U.S.C. 3502, whereby a researcher has complied with all stated
+limitations of activity under the guidelines of the VDP policy.]],
+        },
+        -- CLASS-BASED: the policy names no domains. Scope is a set of asset
+        -- classes (DoD-owned/operated/controlled, publicly accessible). No
+        -- enumerated domain list may ever be derived from the policy wording.
+        scope_model = 'class',
+        scope_out = {
+            [[To the extent that any security research or vulnerability
+disclosure activity involves the networks, systems, information,
+applications, products, or services of a non-DoD entity (e.g., other
+Federal departments or agencies; State, local, or tribal governments;
+private sector companies or persons; employees or personnel of any such
+entities; or any other such third party), that non-DoD entity may
+independently determine whether to pursue legal action or remedies
+related to such activities.]],
+            [[Vendor systems are NOT authorized for testing under this VDP:
+submitted information may be used to remediate vulnerabilities in DoD
+networks or in vendor applications, but scope covers
+DoD-owned/operated/controlled assets only. Report vendor issues to the
+vendor per their own policy.]],
+            [[Anything not publicly accessible is out of scope by definition.]],
+        },
+        slas = {
+            [[Within one business day, DoD will acknowledge receipt of your
+report. DoD's security team will investigate the report and may contact
+you for further information.]],
+            [[When practicable and authorized, DoD will confirm the existence
+of the vulnerability to the researcher and keep the researcher informed,
+as appropriate, while remediation of the vulnerability is under way.]],
+        },
+        -- Computed 2026-09-28 from ~/workspace/bug-bounty/dod-vdp-profile.lua.
+        source_hash = '01390aa8762906d29bcc8282d91504295a35124c808ba66d67242885fac30130',
+        testing_windows = 'NOT IN POLICY -- the policy states no testing windows.',
+        -- Heuristic tripwire, NOT a classifier: domain suffixes that are
+        -- definitionally third-party platforms. A match hard-blocks the
+        -- target; the operator attestation below remains the real control.
+        -- This list is operator-visible data: removing a marker is a
+        -- conscious, diff-visible act, and that is the override path for a
+        -- false positive (e.g. a DoD-owned asset behind a cloud domain).
+        vendor_markers = {
+            'amazonaws.com',
+            'appspot.com',
+            'azurewebsites.net',
+            'cloudapp.azure.com',
+            'cloudfront.net',
+            'cloudfunctions.net',
+            'cloudrun.net',
+            'force.com',
+            'github.io',
+            'gitlab.io',
+            'googleapis.com',
+            'herokupapp.com',
+            'hubspot.com',
+            'netlify.app',
+            'office365.com',
+            'salesforce.com',
+            'servicenow.com',
+            'sharepoint.com',
+            'vercel.app',
+            'zendesk.com',
+        },
     },
 }
-
----Directory holding profile state: the active-profile marker and
----per-program target confirmations.
----@return string
-function M.dir()
-    return vim.fn.expand('~/security/bugbounties/profiles')
-end
 
 ---@return string
 local function active_path()
     return M.dir() .. '/active'
 end
 
----@return string
-local function confirmations_path(program)
-    return M.dir() .. '/confirmations/' .. program .. '.txt'
-end
-
----Sorted registry keys. Deterministic order for display and tests.
----@return string[]
-function M.list()
-    local names = {}
-    for name, _ in pairs(M.registry) do
-        names[#names + 1] = name
+---Append wrapped text to a line list, splitting embedded newlines.
+---@param out string[]
+---@param text string
+local function add_text(out, text)
+    for line in (text .. '\n'):gmatch('([^\n]*)\n') do
+        out[#out + 1] = line
     end
-    table.sort(names)
-    return names
-end
-
----Fetch one profile. Returns nil + error for unknown names; loading a
----profile never opens any gate.
----@param name string Registry key.
----@return security.bounty.Profile|nil profile
----@return string|nil err
-function M.get(name)
-    if type(name) ~= 'string' or name == '' then
-        return nil, 'profiles.get: name must be a nonempty string'
-    end
-    local profile = M.registry[name]
-    if profile == nil then
-        return nil, ("profiles.get: unknown profile '%s' (see :BountyProfile list)"):format(name)
-    end
-    return profile, nil
-end
-
----Name of the currently active profile, or nil when none is set.
----The active profile only selects which rulebook later checks enforce;
----it is NOT an approval and opens no gate.
----@return string|nil name
-function M.active()
-    if vim.uv.fs_stat(active_path()) == nil then
-        return nil
-    end
-    local lines = vim.fn.readfile(active_path())
-    local name = lines[1]
-    if name == nil or M.registry[name] == nil then
-        return nil
-    end
-    return name
-end
-
----Set the active profile. Validates the name is registered. This is
----explicitly NOT a gate: no approval is recorded, no scanning is enabled.
----@param name string Registry key.
----@return boolean ok
----@return string|nil err
-function M.set(name)
-    local _, err = M.get(name)
-    if err ~= nil then
-        return false, err
-    end
-    vim.fn.mkdir(M.dir(), 'p')
-    vim.fn.writefile({ name }, active_path())
-    return true, nil
-end
-
----Clear the active profile.
----@return boolean cleared True when a profile had been set.
-function M.clear()
-    if vim.uv.fs_stat(active_path()) == nil then
-        return false
-    end
-    vim.fn.delete(active_path())
-    return true
 end
 
 ---Validate a program slug (path-safe: it becomes a filename).
@@ -362,12 +290,107 @@ local function check_target(target)
         return false, 'target must be a nonempty string'
     end
     if #target > TARGET_LEN_MAX then
-        return false, ("target too long (%d > %d)"):format(#target, TARGET_LEN_MAX)
+        return false, ('target too long (%d > %d)'):format(#target, TARGET_LEN_MAX)
     end
     if target:find('[%s%c]') then
         return false, 'target must not contain whitespace or control characters'
     end
     return true, nil
+end
+
+---@param program string
+---@return string
+local function confirmations_path(program)
+    return M.dir() .. '/confirmations/' .. program .. '.txt'
+end
+
+---Reduce a scope target to a comparable host: strip scheme, path, port,
+---and a leading wildcard; lowercase.
+---@param target string
+---@return string host
+local function target_host(target)
+    local host = target:gsub('^%*%.', '')
+    host = host:gsub('^https?://', ''):gsub('/.*$', ''):gsub(':%d+$', '')
+    return host:lower()
+end
+
+---Does this target hit a vendor/non-DoD marker? Returns the marker or nil.
+---@param profile security.bounty.Profile
+---@param target string
+---@return string|nil marker
+local function vendor_marker_hit(profile, target)
+    local host = target_host(target)
+    for _, marker in ipairs(profile.vendor_markers or {}) do
+        if host == marker or host:sub(-#marker - 1) == '.' .. marker then
+            return marker
+        end
+    end
+    return nil
+end
+
+---Name of the currently active profile, or nil when none is set.
+---The active profile only selects which rulebook later checks enforce;
+---it is NOT an approval and opens no gate.
+---@return string|nil name
+function M.active()
+    if vim.uv.fs_stat(active_path()) == nil then
+        return nil
+    end
+    local lines = vim.fn.readfile(active_path())
+    local name = lines[1]
+    if name == nil or M.registry[name] == nil then
+        return nil
+    end
+    return name
+end
+
+---Review a planned recon run against a profile's prohibitions. Call before
+---any recon stage runs. Hard-blocks stages mapped to prohibited method
+---classes; surfaces cautions (minimal-testing, content-access, automation
+---risk) and the policy re-ingest nudge as warnings.
+---@param name string Registry key of the active profile.
+---@param stage_names string[] Planned recon stage names.
+---@return boolean ok
+---@return string[] problems Empty when ok.
+---@return string[] warnings Non-blocking cautions.
+function M.check_recon_plan(name, stage_names)
+    local problems, warnings = {}, {}
+    local profile, err = M.get(name)
+    if profile == nil then
+        return false, { err }, warnings
+    end
+    assert(type(stage_names) == 'table', 'profiles.check_recon_plan: stage_names must be a table')
+    local blocked = {}
+    for _, tool in ipairs(profile.recon_blocked_tools or {}) do
+        blocked[tool] = true
+    end
+    for _, stage in ipairs(stage_names) do
+        if blocked[stage] then
+            local msg = "HARD BLOCK: recon stage '%s' is blocked under profile '%s'."
+            problems[#problems + 1] = msg:format(stage, name)
+        end
+        local caution = (profile.recon_cautions or {})[stage]
+        if caution ~= nil then
+            warnings[#warnings + 1] = ("stage '%s': %s"):format(stage, caution)
+        end
+    end
+    local reingest = 'policy re-ingest: data ingested %s (sha256 %s); DoD may modify the terms'
+        .. ' at any time -- re-ingest the policy before each cycle'
+    warnings[#warnings + 1] = reingest:format(profile.fetched_date, profile.source_hash:sub(1, 12))
+    if #problems > 0 then
+        return false, problems, warnings
+    end
+    return true, problems, warnings
+end
+
+---Clear the active profile.
+---@return boolean cleared True when a profile had been set.
+function M.clear()
+    if vim.uv.fs_stat(active_path()) == nil then
+        return false
+    end
+    vim.fn.delete(active_path())
+    return true
 end
 
 ---Operator confirmation: record that a human attested this concrete target
@@ -416,28 +439,116 @@ function M.confirmed_targets(program)
     return targets
 end
 
----Reduce a scope target to a comparable host: strip scheme, path, port,
----and a leading wildcard; lowercase.
----@param target string
----@return string host
-local function target_host(target)
-    local host = target:gsub('^%*%.', '')
-    host = host:gsub('^https?://', ''):gsub('/.*$', ''):gsub(':%d+$', '')
-    return host:lower()
+---Directory holding profile state: the active-profile marker and
+---per-program target confirmations.
+---@return string
+function M.dir()
+    return vim.fn.expand('~/security/bugbounties/profiles')
 end
 
----Does this target hit a vendor/non-DoD marker? Returns the marker or nil.
----@param profile security.bounty.Profile
----@param target string
----@return string|nil marker
-local function vendor_marker_hit(profile, target)
-    local host = target_host(target)
-    for _, marker in ipairs(profile.vendor_markers or {}) do
-        if host == marker or host:sub(-#marker - 1) == '.' .. marker then
-            return marker
+---Fetch one profile. Returns nil + error for unknown names; loading a
+---profile never opens any gate.
+---@param name string Registry key.
+---@return security.bounty.Profile|nil profile
+---@return string|nil err
+function M.get(name)
+    if type(name) ~= 'string' or name == '' then
+        return nil, 'profiles.get: name must be a nonempty string'
+    end
+    local profile = M.registry[name]
+    if profile == nil then
+        return nil, ("profiles.get: unknown profile '%s' (see :BountyProfile list)"):format(name)
+    end
+    return profile, nil
+end
+
+---Sorted registry keys. Deterministic order for display and tests.
+---@return string[]
+function M.list()
+    local names = {}
+    for name, _ in pairs(M.registry) do
+        names[#names + 1] = name
+    end
+    table.sort(names)
+    return names
+end
+
+---Render a profile as buffer lines. Pure: no gates, no network, no I/O
+---beyond the registry table. This is the read-only viewing path.
+---@param name string Registry key.
+---@return string[]|nil lines
+---@return string|nil err
+function M.render(name)
+    local profile, err = M.get(name)
+    if profile == nil then
+        return nil, err
+    end
+    local out = {}
+    local function header(title)
+        out[#out + 1] = ''
+        out[#out + 1] = '-- ' .. title .. ' --'
+    end
+    local function bullets(entries)
+        for _, entry in ipairs(entries) do
+            out[#out + 1] = '-'
+            add_text(out, '  ' .. entry)
         end
     end
-    return nil
+    out[#out + 1] = ('PROGRAM PROFILE: %s (%s)'):format(profile.display_name, profile.name)
+    out[#out + 1] = '[READ-ONLY] Viewing this profile opens no gates and starts no scans.'
+    out[#out + 1] = ('Policy: %s'):format(profile.policy_url)
+    out[#out + 1] = ('Type: %s via %s'):format(profile.program_type, profile.platform)
+    out[#out + 1] = ('Policy ingested: %s (source sha256 %s)'):format(
+        profile.fetched_date,
+        profile.source_hash:sub(1, 12)
+    )
+    out[#out + 1] = ('Scope model: %s'):format(profile.scope_model:upper())
+    if profile.scope_model == 'class' then
+        out[#out + 1] = 'The policy names no domains. Never derive an enumerated domain list from the'
+        out[#out + 1] = 'policy wording: every concrete target needs explicit operator confirmation.'
+    end
+    header('SCOPE: IN')
+    bullets(profile.scope_in)
+    header('SCOPE: OUT')
+    bullets(profile.scope_out)
+    header('METHODS ALLOWED')
+    bullets(profile.methods_allowed)
+    header('METHODS PROHIBITED')
+    bullets(profile.methods_prohibited)
+    header('RATE LIMITS / TESTING WINDOWS')
+    out[#out + 1] = '- ' .. profile.rate_limits
+    out[#out + 1] = '- ' .. profile.testing_windows
+    header('SLAS')
+    bullets(profile.slas)
+    header('PARTICIPATION REQUIREMENTS')
+    bullets(profile.participation_requirements)
+    header('DISCLOSURE TERMS')
+    bullets(profile.disclosure_terms)
+    header('SAFE HARBOR (a commitment not to pursue -- NOT a grant of authorization)')
+    out[#out + 1] = '-'
+    add_text(out, '  ' .. profile.safe_harbor)
+    header('VENDOR / NON-DOD MARKERS (heuristic tripwire; hard-blocks on match)')
+    for _, marker in ipairs(profile.vendor_markers or {}) do
+        out[#out + 1] = '- *.' .. marker
+    end
+    header('OPERATIONAL NOTES')
+    bullets(profile.notes)
+    return out, nil
+end
+
+---Set the active profile. Validates the name is registered. This is
+---explicitly NOT a gate: no approval is recorded, no scanning is enabled.
+---@param name string Registry key.
+---@return boolean ok
+---@return string|nil err
+function M.set(name)
+    local _, err = M.get(name)
+    if err ~= nil then
+        return false, err
+    end
+    vim.fn.mkdir(M.dir(), 'p')
+    vim.fn.writefile({ name }, active_path())
+    return true, nil
 end
 
 ---Validate a scope-gate request against a profile's load-bearing rules.
@@ -473,13 +584,14 @@ function M.validate_scope_request(name, program)
         return false, { ("filed scope for '%s' is empty; nothing to approve"):format(program) }
     end
     if #entries > TARGET_COUNT_MAX then
-        return false, {
-            ("filed scope for '%s' has %d targets (max %d); split it first"):format(
-                program,
-                #entries,
-                TARGET_COUNT_MAX
-            ),
-        }
+        return false,
+            {
+                ("filed scope for '%s' has %d targets (max %d); split it first"):format(
+                    program,
+                    #entries,
+                    TARGET_COUNT_MAX
+                ),
+            }
     end
     if profile.scope_model == 'class' then
         local confirmed = {}
@@ -506,119 +618,6 @@ function M.validate_scope_request(name, program)
         return false, problems
     end
     return true, {}
-end
-
----Review a planned recon run against a profile's prohibitions. Call before
----any recon stage runs. Hard-blocks stages mapped to prohibited method
----classes; surfaces cautions (minimal-testing, content-access, automation
----risk) and the policy re-ingest nudge as warnings.
----@param name string Registry key of the active profile.
----@param stage_names string[] Planned recon stage names.
----@return boolean ok
----@return string[] problems Empty when ok.
----@return string[] warnings Non-blocking cautions.
-function M.check_recon_plan(name, stage_names)
-    local problems, warnings = {}, {}
-    local profile, err = M.get(name)
-    if profile == nil then
-        return false, { err }, warnings
-    end
-    assert(type(stage_names) == 'table', 'profiles.check_recon_plan: stage_names must be a table')
-    local blocked = {}
-    for _, tool in ipairs(profile.recon_blocked_tools or {}) do
-        blocked[tool] = true
-    end
-    for _, stage in ipairs(stage_names) do
-        if blocked[stage] then
-            local msg = "HARD BLOCK: recon stage '%s' is blocked under profile '%s'."
-            problems[#problems + 1] = msg:format(stage, name)
-        end
-        local caution = (profile.recon_cautions or {})[stage]
-        if caution ~= nil then
-            warnings[#warnings + 1] = ("stage '%s': %s"):format(stage, caution)
-        end
-    end
-    local reingest = 'policy re-ingest: data ingested %s (sha256 %s); DoD may modify the terms'
-        .. ' at any time -- re-ingest the policy before each cycle'
-    warnings[#warnings + 1] = reingest:format(profile.fetched_date, profile.source_hash:sub(1, 12))
-    if #problems > 0 then
-        return false, problems, warnings
-    end
-    return true, problems, warnings
-end
-
----Append wrapped text to a line list, splitting embedded newlines.
----@param out string[]
----@param text string
-local function add_text(out, text)
-    for line in (text .. '\n'):gmatch('([^\n]*)\n') do
-        out[#out + 1] = line
-    end
-end
-
----Render a profile as buffer lines. Pure: no gates, no network, no I/O
----beyond the registry table. This is the read-only viewing path.
----@param name string Registry key.
----@return string[]|nil lines
----@return string|nil err
-function M.render(name)
-    local profile, err = M.get(name)
-    if profile == nil then
-        return nil, err
-    end
-    local out = {}
-    local function header(title)
-        out[#out + 1] = ''
-        out[#out + 1] = '-- ' .. title .. ' --'
-    end
-    local function bullets(entries)
-        for _, entry in ipairs(entries) do
-            out[#out + 1] = '-'
-            add_text(out, '  ' .. entry)
-        end
-    end
-    out[#out + 1] = ('PROGRAM PROFILE: %s (%s)'):format(profile.display_name, profile.name)
-    out[#out + 1] = '[READ-ONLY] Viewing this profile opens no gates and starts no scans.'
-    out[#out + 1] = ('Policy: %s'):format(profile.policy_url)
-    out[#out + 1] = ('Type: %s via %s'):format(profile.program_type, profile.platform)
-    out[#out + 1] = ('Policy ingested: %s (source sha256 %s)'):format(
-        profile.fetched_date,
-        profile.source_hash:sub(1, 12)
-    )
-    out[#out + 1] = ('Scope model: %s'):format(profile.scope_model:upper())
-    if profile.scope_model == 'class' then
-        out[#out + 1] =
-            'The policy names no domains. Never derive an enumerated domain list from the'
-        out[#out + 1] =
-            'policy wording: every concrete target needs explicit operator confirmation.'
-    end
-    header('SCOPE: IN')
-    bullets(profile.scope_in)
-    header('SCOPE: OUT')
-    bullets(profile.scope_out)
-    header('METHODS ALLOWED')
-    bullets(profile.methods_allowed)
-    header('METHODS PROHIBITED')
-    bullets(profile.methods_prohibited)
-    header('RATE LIMITS / TESTING WINDOWS')
-    out[#out + 1] = '- ' .. profile.rate_limits
-    out[#out + 1] = '- ' .. profile.testing_windows
-    header('SLAS')
-    bullets(profile.slas)
-    header('PARTICIPATION REQUIREMENTS')
-    bullets(profile.participation_requirements)
-    header('DISCLOSURE TERMS')
-    bullets(profile.disclosure_terms)
-    header('SAFE HARBOR (a commitment not to pursue -- NOT a grant of authorization)')
-    out[#out + 1] = '-'
-    add_text(out, '  ' .. profile.safe_harbor)
-    header('VENDOR / NON-DOD MARKERS (heuristic tripwire; hard-blocks on match)')
-    for _, marker in ipairs(profile.vendor_markers or {}) do
-        out[#out + 1] = '- *.' .. marker
-    end
-    header('OPERATIONAL NOTES')
-    bullets(profile.notes)
-    return out, nil
 end
 
 return M

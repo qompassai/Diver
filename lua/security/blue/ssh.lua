@@ -11,9 +11,9 @@
 local M = {} ---@version 5.1, JIT
 local ERROR = vim.log.levels.ERROR
 M.config = {
-    ssh_binary = 'ssh',
-    scp_binary = 'scp',
     notify_prefix = '[SSH] ',
+    scp_binary = 'scp',
+    ssh_binary = 'ssh',
 }
 
 ---Merge user options into the module config.
@@ -58,13 +58,13 @@ local function get_logger()
     }
 end
 
+local function hostname_contains_wildcard(hostname)
+    return hostname:match('[*?]') ~= nil
+end
+
 local function matches_host_name_pattern(hostname, pattern)
     local lua_pattern = pattern:gsub('%.', '%%.'):gsub('%*', '.*'):gsub('%?', '.')
     return hostname:match('^' .. lua_pattern .. '$') ~= nil
-end
-
-local function hostname_contains_wildcard(hostname)
-    return hostname:match('[*?]') ~= nil
 end
 
 local function process_line(line)
@@ -96,6 +96,67 @@ end
 
 local SSHConfigParser = create_class('SSHConfigParser')
 
+--- Expand an SSH `Include` value into concrete paths. Expands `~`,
+--- environment variables, and wildcards with `vim.fn.glob` — never a shell,
+--- so `$(...)`/backticks in the value cannot execute. Relative values resolve
+--- against the including file's directory.
+---@param path string raw Include value
+---@param parent_file? string file the Include directive was read from
+---@return string[] expanded paths
+function SSHConfigParser._expand_path(_, path, parent_file)
+    local parent_dir = parent_file and vim.fs.dirname(parent_file)
+    if parent_dir then
+        parent_dir = vim.fs.normalize(parent_dir)
+    end
+
+    local pattern = path
+    if parent_dir ~= nil and not vim.fs.isabs(path) and path:sub(1, 1) ~= '~' then
+        pattern = vim.fs.joinpath(parent_dir, path)
+    end
+    return vim.fn.glob(pattern, false, true)
+end
+
+function SSHConfigParser:_parse_config_file(file_path)
+    file_path = vim.fn.expand(file_path)
+    if type(file_path) == 'table' then
+        file_path = file_path[1]
+    end
+
+    for line in io.lines(file_path) do
+        self:_process_line(line, file_path)
+    end
+
+    self:_post_process_all_configs()
+    return self
+end
+
+function SSHConfigParser:_post_process_all_configs()
+    for _, host_name in ipairs(self.known_hosts) do
+        local config = self.config[host_name]
+        for _, matched_host in ipairs(config.post_process_from_hosts) do
+            self.config[host_name].parsed_config =
+                vim.tbl_extend('keep', self.config[host_name].parsed_config, self.config[matched_host].parsed_config)
+        end
+    end
+end
+
+function SSHConfigParser:_process_line(line, source)
+    local directive, directive_value = process_line(line)
+    if directive ~= nil and directive_value ~= nil then
+        self:process_directive(directive, directive_value, source)
+    end
+end
+
+function SSHConfigParser:get_config()
+    local config = {}
+    for host_name, ssh_config in pairs(self.config) do
+        if not hostname_contains_wildcard(host_name) then
+            config[host_name] = ssh_config
+        end
+    end
+    return config
+end
+
 function SSHConfigParser:init()
     self.global_options = {}
     self.config = {}
@@ -103,6 +164,23 @@ function SSHConfigParser:init()
     self.known_hosts = {}
     self.in_match_block = false
     self.logger = get_logger()
+end
+
+function SSHConfigParser:parse_config_file(file_path, parent_file)
+    local expanded_paths = self:_expand_path(file_path, parent_file)
+    for _, path in ipairs(expanded_paths) do
+        self:_parse_config_file(path)
+    end
+    return self
+end
+
+function SSHConfigParser:parse_config_string(raw_string)
+    local lines = vim.split(raw_string, '\n', { plain = true })
+    for _, line in ipairs(lines) do
+        self:_process_line(line, 'LITERAL_STRING')
+    end
+    self:_post_process_all_configs()
+    return self
 end
 
 function SSHConfigParser:process_directive(key, value, source_file)
@@ -154,100 +232,7 @@ function SSHConfigParser:process_directive(key, value, source_file)
     self:_post_process_all_configs()
 end
 
-function SSHConfigParser:_process_line(line, source)
-    local directive, directive_value = process_line(line)
-    if directive ~= nil and directive_value ~= nil then
-        self:process_directive(directive, directive_value, source)
-    end
-end
-
-function SSHConfigParser:parse_config_string(raw_string)
-    local lines = vim.split(raw_string, '\n', { plain = true })
-    for _, line in ipairs(lines) do
-        self:_process_line(line, 'LITERAL_STRING')
-    end
-    self:_post_process_all_configs()
-    return self
-end
-
-function SSHConfigParser:_post_process_all_configs()
-    for _, host_name in ipairs(self.known_hosts) do
-        local config = self.config[host_name]
-        for _, matched_host in ipairs(config.post_process_from_hosts) do
-            self.config[host_name].parsed_config =
-                vim.tbl_extend('keep', self.config[host_name].parsed_config, self.config[matched_host].parsed_config)
-        end
-    end
-end
-
---- Expand an SSH `Include` value into concrete paths. Expands `~`,
---- environment variables, and wildcards with `vim.fn.glob` — never a shell,
---- so `$(...)`/backticks in the value cannot execute. Relative values resolve
---- against the including file's directory.
----@param path string raw Include value
----@param parent_file? string file the Include directive was read from
----@return string[] expanded paths
-function SSHConfigParser:_expand_path(path, parent_file)
-    local parent_dir = parent_file and vim.fs.dirname(parent_file)
-    if parent_dir then
-        parent_dir = vim.fs.normalize(parent_dir)
-    end
-
-    local pattern = path
-    if parent_dir ~= nil and not vim.fs.isabs(path) and path:sub(1, 1) ~= '~' then
-        pattern = vim.fs.joinpath(parent_dir, path)
-    end
-    return vim.fn.glob(pattern, false, true)
-end
-
-function SSHConfigParser:parse_config_file(file_path, parent_file)
-    local expanded_paths = self:_expand_path(file_path, parent_file)
-    for _, path in ipairs(expanded_paths) do
-        self:_parse_config_file(path)
-    end
-    return self
-end
-
-function SSHConfigParser:_parse_config_file(file_path)
-    file_path = vim.fn.expand(file_path)
-    if type(file_path) == 'table' then
-        file_path = file_path[1]
-    end
-
-    for line in io.lines(file_path) do
-        self:_process_line(line, file_path)
-    end
-
-    self:_post_process_all_configs()
-    return self
-end
-
-function SSHConfigParser:get_config()
-    local config = {}
-    for host_name, ssh_config in pairs(self.config) do
-        if not hostname_contains_wildcard(host_name) then
-            config[host_name] = ssh_config
-        end
-    end
-    return config
-end
-
 local SSHExecutor = create_class('SSHExecutor')
-
-function SSHExecutor:init(host, conn_opts, config)
-    self.host = host
-    self.conn_opts = conn_opts or ''
-    self.ssh_conn_opts = self.conn_opts
-    self.scp_conn_opts = self.conn_opts == '' and '-r' or self.conn_opts:gsub('%-p', '-P') .. ' -r'
-
-    config = vim.tbl_deep_extend('force', {}, M.config, config or {})
-
-    self.ssh_binary = config.ssh_binary or 'ssh'
-    self.scp_binary = config.scp_binary or 'scp'
-    self._job_id = nil
-    self._job_stdout = {}
-    self._job_exit_code = nil
-end
 
 --- Build the ssh argv for a remote command. List form: `jobstart` runs it
 --- with no shell, so host/opt values can never inject commands. The remote
@@ -265,6 +250,30 @@ function SSHExecutor:_build_run_command(command, additional_opts)
     argv[#argv + 1] = self.host
     argv[#argv + 1] = command
     return argv
+end
+
+function SSHExecutor:download(remote_path, local_path, _opts)
+    local argv = { self.scp_binary }
+    for _, opt in ipairs(split_conn_opts(self.scp_conn_opts)) do
+        argv[#argv + 1] = opt
+    end
+    argv[#argv + 1] = self.host .. ':' .. remote_path
+    argv[#argv + 1] = local_path
+    return vim.fn.system(argv)
+end
+function SSHExecutor:init(host, conn_opts, config)
+    self.host = host
+    self.conn_opts = conn_opts or ''
+    self.ssh_conn_opts = self.conn_opts
+    self.scp_conn_opts = self.conn_opts == '' and '-r' or self.conn_opts:gsub('%-p', '-P') .. ' -r'
+
+    config = vim.tbl_deep_extend('force', {}, M.config, config or {})
+
+    self.ssh_binary = config.ssh_binary or 'ssh'
+    self.scp_binary = config.scp_binary or 'scp'
+    self._job_id = nil
+    self._job_stdout = {}
+    self._job_exit_code = nil
 end
 
 function SSHExecutor:run_command(command, opts)
@@ -296,15 +305,6 @@ function SSHExecutor:upload(local_path, remote_path, _opts)
     argv[#argv + 1] = self.host .. ':' .. remote_path
     -- List form: vim.fn.system spawns with no shell and still returns the
     -- command's stdout string, preserving this function's contract.
-    return vim.fn.system(argv)
-end
-function SSHExecutor:download(remote_path, local_path, _opts)
-    local argv = { self.scp_binary }
-    for _, opt in ipairs(split_conn_opts(self.scp_conn_opts)) do
-        argv[#argv + 1] = opt
-    end
-    argv[#argv + 1] = self.host .. ':' .. remote_path
-    argv[#argv + 1] = local_path
     return vim.fn.system(argv)
 end
 M.SSHConfigParser = SSHConfigParser

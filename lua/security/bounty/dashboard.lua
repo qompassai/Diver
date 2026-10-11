@@ -8,9 +8,9 @@
 -- scans, never touches the network: pure read-only collection.
 ---@module 'security.bounty.dashboard'
 
-local scope = require('security.bounty.scope')
 local gates = require('security.bounty.gates')
 local profiles = require('security.bounty.profiles')
+local scope = require('security.bounty.scope')
 
 local M = {}
 
@@ -18,11 +18,6 @@ local M = {}
 ---@return string
 local function basedir()
     return vim.fn.expand('~/security/bugbounties')
-end
-
----@return string
-function M.png_path()
-    return basedir() .. '/dashboard.png'
 end
 
 ---Program slugs with a filed scope, sorted.
@@ -89,6 +84,17 @@ local function report_count(program)
     return count
 end
 
+---Directory of this file, so the renderer script is found no matter
+---where the repo is checked out.
+---@return string dir
+local function this_dir()
+    local source = debug.getinfo(1, 'S').source
+    if source:sub(1, 1) == '@' then
+        source = source:sub(2)
+    end
+    return vim.fn.fnamemodify(source, ':h')
+end
+
 ---Build the snapshot table. Pure read-only.
 ---@return table snapshot
 function M.collect()
@@ -133,15 +139,9 @@ function M.collect()
     }
 end
 
----Directory of this file, so the renderer script is found no matter
----where the repo is checked out.
----@return string dir
-local function this_dir()
-    local source = debug.getinfo(1, 'S').source
-    if source:sub(1, 1) == '@' then
-        source = source:sub(2)
-    end
-    return vim.fn.fnamemodify(source, ':h')
+---@return string
+function M.png_path()
+    return basedir() .. '/dashboard.png'
 end
 
 ---Render the dashboard PNG and show it through the native image preview.
@@ -161,19 +161,18 @@ function M.show()
     -- Snapshot travels over stdin: never on the command line, never logged.
     local result = vim.system({ 'python3', script, png }, { stdin = json, text = true }):wait(60000)
     if result.code ~= 0 then
-        vim.notify(
-            'BountyDashboard: renderer failed: ' .. vim.trim(result.stderr or ''),
-            vim.log.levels.ERROR
-        )
+        vim.notify('BountyDashboard: renderer failed: ' .. vim.trim(result.stderr or ''), vim.log.levels.ERROR)
         return
     end
     local img = require('config.ui.image')
     img.setup({ enabled = true })
     img.render(png)
-    vim.notify(('BountyDashboard: %d program(s), %d new finding(s)'):format(
-        snapshot.totals.programs,
-        snapshot.totals.new_findings
-    ))
+    vim.notify(
+        ('BountyDashboard: %d program(s), %d new finding(s)'):format(
+            snapshot.totals.programs,
+            snapshot.totals.new_findings
+        )
+    )
 end
 
 return M

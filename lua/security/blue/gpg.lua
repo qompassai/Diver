@@ -4,75 +4,35 @@
 local M = {} ---@version JIT
 local api = vim.api
 local b = vim.b
-local contains = vim.tbl_contains
-local GPGHomedir = vim.b.GPGHomedir
-local GPGRecipients = vim.b.GPGRecipients
 local cmd = vim.cmd
+local contains = vim.tbl_contains
 local echo = vim.api.nvim_echo
 local env = vim.env
 local fmt = string.format
 local fn = vim.fn
 local g = vim.g
+local GPGCipher = ''
+local GPGCommand = ''
+local GPGCompress = ''
 local GPG_MAGIC_STRING = '\t \t'
+local GPGHash = ''
+local GPGHome = ''
+local GPGHomedir = vim.b.GPGHomedir
+local GPGPubkey = ''
+local GPGRecipients = vim.b.GPGRecipients
+local init_run = false
 local insert = table.insert
 local KEY_PATTERN = '%%(%?0x%%)?[[:xdigit:]]{8,16}'
-local GPGCommand = ''
-local GPGPubkey = ''
-local GPGCipher = ''
-local GPGHash = ''
-local GPGCompress = ''
-local GPGHome = ''
-local useCygpath = false
-local stderrredirnull = ''
-local shellredir = ''
+local messages_lang = ''
 local shell = ''
-local shelltemp = true
+local shellredir = ''
 local shellredirsave = ''
 local shellsave = ''
+local shelltemp = true
 local shelltempsave = true
 local split = vim.split
-local messages_lang = ''
-local init_run = false
----@param s string
----@param opts? table
----@return string
-local function shellescape(s, opts)
-    opts = opts or {}
-    local special = opts.special or false
-    local cygpath = opts.cygpath or false
-    local str = s
-    if cygpath and useCygpath then
-        local result = vim.system({
-            'cygpath',
-            '-am',
-            s,
-        }):wait()
-        if result.code == 0 then
-            str = vim.trim(result.stdout or '')
-        end
-    end
-    if vim.fn.exists('+shellslash') == 1 and vim.o.shell == env.COMSPEC then
-        local ssl = vim.o.shellslash
-        vim.o.shellslash = false
-        local escaped = fn.shellescape(str, special)
-        vim.o.shellslash = ssl
-        return escaped
-    else
-        return fn.shellescape(str, special)
-    end
-end
-local function unencrypted() ---@return boolean
-    if vim.b.GPGEncrypted == 0 then
-        echo({
-            {
-                'File is not encrypted, all GPG functions disabled!',
-                'WarningMsg',
-            },
-        }, true, {})
-        return true
-    end
-    return false
-end
+local stderrredirnull = ''
+local useCygpath = false
 ---@param level integer
 ---@param text string
 local function debug(level, text)
@@ -89,13 +49,6 @@ local function debug(level, text)
         end
     end
 end
-local function pre_cmd()
-    vim.o.shellredir = shellredir
-    vim.o.shell = shell
-    vim.o.shelltemp = shelltemp
-    messages_lang = vim.v.lang
-    cmd('language messages C')
-end
 local function post_cmd()
     vim.o.shellredir = shellredirsave
     vim.o.shell = shellsave
@@ -107,26 +60,42 @@ local function post_cmd()
     end
 end
 
----@param dict table
+local function pre_cmd()
+    vim.o.shellredir = shellredir
+    vim.o.shell = shell
+    vim.o.shelltemp = shelltemp
+    messages_lang = vim.v.lang
+    cmd('language messages C')
+end
+---@param s string
+---@param opts? table
 ---@return string
-local function gpg_system(dict)
-    local commandline = GPGCommand
-    if GPGHomedir and GPGHomedir ~= '' then
-        commandline = commandline .. ' --homedir ' .. shellescape(GPGHomedir, {
-            cygpath = true,
+local function shellescape(s, opts)
+    opts = opts or {}
+    local special = opts.special or false
+    local cygpath = opts.cygpath or false
+    local str = s
+    if cygpath and useCygpath then
+        local result_obj = vim.system({
+            'cygpath',
+            '-am',
+            s,
         })
+        ---@cast result_obj vim.SystemObj
+        local result = result_obj:wait()
+        if result.code == 0 then
+            str = vim.trim(result.stdout or '')
+        end
     end
-    commandline = commandline .. ' ' .. dict.args
-    commandline = commandline .. ' ' .. stderrredirnull
-    debug(dict.level or 2, 'command: ' .. commandline)
-    pre_cmd()
-    local result = vim.system(split(commandline, ' '), {
-        text = true,
-    }):wait()
-    post_cmd()
-    debug(dict.level or 2, 'rc: ' .. result.code)
-    debug(dict.level or 2, 'output: ' .. (result.stdout or ''))
-    return result.stdout or ''
+    if vim.fn.exists('+shellslash') == 1 and vim.o.shell == env.COMSPEC then
+        local ssl = vim.o.shellslash
+        vim.o.shellslash = false
+        local escaped = fn.shellescape(str, special)
+        vim.o.shellslash = ssl
+        return escaped
+    else
+        return fn.shellescape(str, special)
+    end
 end
 local function gpg_execute(dict) ---@param dict table
     local commandline = dict.ex .. GPGCommand
@@ -150,6 +119,74 @@ local function gpg_execute(dict) ---@param dict table
     debug(dict.level or 2, 'rc: ' .. vim.v.shell_error)
 end
 
+---@param dict table
+---@return string
+local function gpg_system(dict)
+    local commandline = GPGCommand
+    if GPGHomedir and GPGHomedir ~= '' then
+        commandline = commandline .. ' --homedir ' .. shellescape(GPGHomedir, {
+            cygpath = true,
+        })
+    end
+    commandline = commandline .. ' ' .. dict.args
+    commandline = commandline .. ' ' .. stderrredirnull
+    debug(dict.level or 2, 'command: ' .. commandline)
+    pre_cmd()
+    local result_obj = vim.system(split(commandline, ' '), {
+        text = true,
+    })
+    ---@cast result_obj vim.SystemObj
+    local result = result_obj:wait()
+    post_cmd()
+    debug(dict.level or 2, 'rc: ' .. result.code)
+    debug(dict.level or 2, 'output: ' .. (result.stdout or ''))
+    return result.stdout or ''
+end
+---@return string
+local function gpg_id_to_name(identity) ---@param identity string
+    debug(3, '>>>>>>>> Entering gpg_id_to_name()')
+    local output = gpg_system({
+        level = 2,
+        args = '--quiet --with-colons --fixed-list-mode --list-keys ' .. identity,
+    })
+    if vim.o.encoding ~= 'utf-8' then
+        output = vim.fn.iconv(output, 'utf-8', vim.o.encoding)
+    end
+    local lines = split(output, '\n')
+    local pubseen = false
+    local uid = ''
+    for _, line in ipairs(lines) do
+        local fields = split(line, ':')
+        if not pubseen then
+            if fields[1] == 'pub' then
+                if fields[12] and fields[12]:match('[eE]') then
+                    pubseen = true
+                end
+            end
+        else
+            if fields[1] == 'uid' then
+                if fn.exists('*strftime') == 1 then
+                    local ts = tonumber(fields[6])
+                    if ts then
+                        ---@cast ts integer
+                        uid = fields[10]
+                            .. GPG_MAGIC_STRING
+                            .. '(ID: 0x'
+                            .. identity
+                            .. ' created at '
+                            .. fn.strftime('%c', ts)
+                            .. ')'
+                    end
+                else
+                    uid = fields[10] .. GPG_MAGIC_STRING .. '(ID: 0x' .. identity .. ')'
+                end
+                break
+            end
+        end
+    end
+    debug(3, '<<<<<<<< Leaving gpg_id_to_name()')
+    return uid
+end
 ---@return string
 local function gpg_name_to_id(name) ---@param name string
     debug(3, '>>>>>>>> Entering gpg_name_to_id()')
@@ -238,169 +275,18 @@ local function check_recipients(tocheck)
     debug(3, '<<<<<<<< Leaving check_recipients()')
     return recipients
 end
----@return string
-local function gpg_id_to_name(identity) ---@param identity string
-    debug(3, '>>>>>>>> Entering gpg_id_to_name()')
-    local output = gpg_system({
-        level = 2,
-        args = '--quiet --with-colons --fixed-list-mode --list-keys ' .. identity,
-    })
-    if vim.o.encoding ~= 'utf-8' then
-        output = vim.fn.iconv(output, 'utf-8', vim.o.encoding)
-    end
-    local lines = split(output, '\n')
-    local pubseen = false
-    local uid = ''
-    for _, line in ipairs(lines) do
-        local fields = split(line, ':')
-        if not pubseen then
-            if fields[1] == 'pub' then
-                if fields[12] and fields[12]:match('[eE]') then
-                    pubseen = true
-                end
-            end
-        else
-            if fields[1] == 'uid' then
-                if fn.exists('*strftime') == 1 then
-                    local ts = tonumber(fields[6])
-                    if ts then
-                        ---@cast ts integer
-                        uid = fields[10]
-                            .. GPG_MAGIC_STRING
-                            .. '(ID: 0x'
-                            .. identity
-                            .. ' created at '
-                            .. fn.strftime('%c', ts)
-                            .. ')'
-                    end
-                else
-                    uid = fields[10] .. GPG_MAGIC_STRING .. '(ID: 0x' .. identity .. ')'
-                end
-                break
-            end
-        end
-    end
-    debug(3, '<<<<<<<< Leaving gpg_id_to_name()')
-    return uid
-end
-function M.view_recipients()
-    debug(3, '>>>>>>>> Entering view_recipients()')
-    if unencrypted() then
-        debug(3, '<<<<<<<< Leaving view_recipients()')
-        return
-    end
-    local recipients = check_recipients(GPGRecipients)
-    print('This file has following recipients (Unknown recipients have a prepended "!"):')
-    if #recipients.valid == 0 then
-        api.nvim_echo({
-            { 'There are no known recipients!', 'ErrorMsg' },
-        }, true, {})
-    else
-        for _, id in ipairs(recipients.valid) do
-            print(gpg_id_to_name(id))
-        end
-    end
-    if #recipients.unknown > 0 then
+local function unencrypted() ---@return boolean
+    if vim.b.GPGEncrypted == 0 then
         echo({
             {
-                table.concat(
-                    vim.tbl_map(function(r)
-                        return '!' .. r
-                    end, recipients.unknown),
-                    '\n'
-                ),
+                'File is not encrypted, all GPG functions disabled!',
                 'WarningMsg',
             },
         }, true, {})
+        return true
     end
-    debug(3, '<<<<<<<< Leaving view_recipients()')
+    return false
 end
-
-function M.init(bufread) ---@param bufread boolean
-    debug(3, fmt('>>>>>>>> Entering init(%s)', bufread))
-    if bufread then
-        vim.opt_local.swapfile = false
-        if vim.fn.exists('+undofile') == 1 then
-            vim.opt_local.undofile = false
-        end
-        vim.o.viminfo = ''
-    end
-    if init_run then
-        return
-    end
-    if not vim.g.GPGExecutable then
-        if fn.executable('gpg') == 1 then
-            vim.g.GPGExecutable = 'gpg --trust-model always'
-        else
-            vim.g.GPGExecutable = 'gpg2 --trust-model always'
-        end
-    end
-    vim.g.GPGUseAgent = vim.g.GPGUseAgent or 1
-    vim.g.GPGPreferSymmetric = vim.g.GPGPreferSymmetric or 0
-    vim.g.GPGPreferSign = vim.g.GPGPreferSign or 0
-    vim.g.GPGDefaultRecipients = vim.g.GPGDefaultRecipients or {}
-    vim.g.GPGPossibleRecipients = vim.g.GPGPossibleRecipients or {}
-    vim.g.GPGUsePipes = vim.g.GPGUsePipes or 0
-    GPGHomedir = GPGHomedir or ''
-    GPGCommand = vim.g.GPGExecutable
-    shellredirsave = vim.o.shellredir
-    shellsave = vim.o.shell
-    shelltempsave = vim.o.shelltemp
-    shelltemp = vim.g.GPGUsePipes ~= 1
-    if vim.fn.has('unix') == 1 then
-        shellredir = '>%s 2>&1'
-        shell = '/bin/sh'
-        stderrredirnull = '2>/dev/null'
-    else
-        shellredir = '>%s'
-        shell = vim.o.shell
-        stderrredirnull = '2>nul'
-    end
-    if not vim.fn.has('gui_running') or vim.fn.has('gui_win32') == 1 then
-        GPGCommand = GPGCommand .. ' --no-tty'
-    end
-    local output = gpg_system({ level = 2, args = '--version' })
-    local gpgversion = output:match('^gpg %(GnuPG%) ([0-9]+%.[0-9]+)')
-    GPGPubkey = output:match('Pubkey: ([^\n]+)') or ''
-    GPGCipher = output:match('Cipher: ([^\n]+)') or ''
-    GPGHash = output:match('Hash: ([^\n]+)') or ''
-    GPGCompress = output:match('Compress[^:]*: ([^\n]+)') or ''
-    GPGHome = output:match('Home: ([^\r\n]+)') or ''
-    if vim.fn.has('win32unix') == 1 and GPGHome:match('^%a:[/\\]') then
-        debug(1, 'Enabling use of cygpath')
-        useCygpath = true
-    end
-    local ver = tonumber(gpgversion) or 0
-    if ver >= 2.1 or (env.GPG_AGENT_INFO and vim.g.GPGUseAgent == 1) then
-        if not env.GPG_TTY and vim.fn.has('gui_running') == 0 then
-            if fn.executable('tty') == 1 then
-                local result = vim.system({
-                    'tty',
-                }, {
-                    text = true,
-                }):wait()
-                if result.code == 0 then
-                    env.GPG_TTY = vim.trim(result.stdout or '')
-                else
-                    env.GPG_TTY = ''
-                    echo({
-                        { '$GPG_TTY is not set and the `tty` command failed! gpg-agent might not work.', 'WarningMsg' },
-                    }, true, {})
-                end
-            end
-        end
-        GPGCommand = GPGCommand .. ' --use-agent'
-    else
-        GPGCommand = GPGCommand .. ' --no-use-agent'
-    end
-    debug(2, 'public key algorithms: ' .. GPGPubkey)
-    debug(2, 'cipher algorithms: ' .. GPGCipher)
-    debug(2, 'hashing algorithms: ' .. GPGHash)
-    debug(2, 'compression algorithms: ' .. GPGCompress)
-    debug(3, '<<<<<<<< Leaving init()')
-    init_run = true
-end
-
 function M.decrypt(bufread) ---@param bufread boolean
     debug(3, fmt('>>>>>>>> Entering decrypt(%s)', bufread))
     local filename = fn.resolve(fn.expand('<afile>:p'))
@@ -546,6 +432,25 @@ function M.decrypt(bufread) ---@param bufread boolean
     debug(3, '<<<<<<<< Leaving decrypt()')
 end
 
+function M.edit_recipients()
+    debug(3, '>>>>>>>> Entering edit_recipients()')
+    if unencrypted() then
+        debug(3, '<<<<<<<< Leaving edit_recipients()')
+        return
+    end
+    local recipients = check_recipients(GPGRecipients)
+    local input_list = {}
+    for _, name in ipairs(recipients.valid) do
+        insert(input_list, gpg_id_to_name(name))
+    end
+    for _, name in ipairs(recipients.unknown) do
+        insert(input_list, '!' .. name)
+    end
+    print('Current recipients:')
+    print(table.concat(input_list, '\n'))
+    debug(3, '<<<<<<<< Leaving edit_recipients()')
+end
+
 function M.encrypt()
     debug(3, '>>>>>>>> Entering encrypt()')
     local au_type = 'BufWrite'
@@ -638,23 +543,91 @@ function M.encrypt()
     debug(3, '<<<<<<<< Leaving encrypt()')
 end
 
-function M.edit_recipients()
-    debug(3, '>>>>>>>> Entering edit_recipients()')
-    if unencrypted() then
-        debug(3, '<<<<<<<< Leaving edit_recipients()')
+function M.init(bufread) ---@param bufread boolean
+    debug(3, fmt('>>>>>>>> Entering init(%s)', bufread))
+    if bufread then
+        vim.opt_local.swapfile = false
+        if vim.fn.exists('+undofile') == 1 then
+            vim.opt_local.undofile = false
+        end
+        vim.o.viminfo = ''
+    end
+    if init_run then
         return
     end
-    local recipients = check_recipients(GPGRecipients)
-    local input_list = {}
-    for _, name in ipairs(recipients.valid) do
-        insert(input_list, gpg_id_to_name(name))
+    if not vim.g.GPGExecutable then
+        if fn.executable('gpg') == 1 then
+            vim.g.GPGExecutable = 'gpg --trust-model always'
+        else
+            vim.g.GPGExecutable = 'gpg2 --trust-model always'
+        end
     end
-    for _, name in ipairs(recipients.unknown) do
-        insert(input_list, '!' .. name)
+    vim.g.GPGUseAgent = vim.g.GPGUseAgent or 1
+    vim.g.GPGPreferSymmetric = vim.g.GPGPreferSymmetric or 0
+    vim.g.GPGPreferSign = vim.g.GPGPreferSign or 0
+    vim.g.GPGDefaultRecipients = vim.g.GPGDefaultRecipients or {}
+    vim.g.GPGPossibleRecipients = vim.g.GPGPossibleRecipients or {}
+    vim.g.GPGUsePipes = vim.g.GPGUsePipes or 0
+    GPGHomedir = GPGHomedir or ''
+    GPGCommand = vim.g.GPGExecutable
+    shellredirsave = vim.o.shellredir
+    shellsave = vim.o.shell
+    shelltempsave = vim.o.shelltemp
+    shelltemp = vim.g.GPGUsePipes ~= 1
+    if vim.fn.has('unix') == 1 then
+        shellredir = '>%s 2>&1'
+        shell = '/bin/sh'
+        stderrredirnull = '2>/dev/null'
+    else
+        shellredir = '>%s'
+        shell = vim.o.shell
+        stderrredirnull = '2>nul'
     end
-    print('Current recipients:')
-    print(table.concat(input_list, '\n'))
-    debug(3, '<<<<<<<< Leaving edit_recipients()')
+    if not vim.fn.has('gui_running') or vim.fn.has('gui_win32') == 1 then
+        GPGCommand = GPGCommand .. ' --no-tty'
+    end
+    local output = gpg_system({ level = 2, args = '--version' })
+    local gpgversion = output:match('^gpg %(GnuPG%) ([0-9]+%.[0-9]+)')
+    GPGPubkey = output:match('Pubkey: ([^\n]+)') or ''
+    GPGCipher = output:match('Cipher: ([^\n]+)') or ''
+    GPGHash = output:match('Hash: ([^\n]+)') or ''
+    GPGCompress = output:match('Compress[^:]*: ([^\n]+)') or ''
+    GPGHome = output:match('Home: ([^\r\n]+)') or ''
+    if vim.fn.has('win32unix') == 1 and GPGHome:match('^%a:[/\\]') then
+        debug(1, 'Enabling use of cygpath')
+        useCygpath = true
+    end
+    local ver = tonumber(gpgversion) or 0
+    if ver >= 2.1 or (env.GPG_AGENT_INFO and vim.g.GPGUseAgent == 1) then
+        if not env.GPG_TTY and vim.fn.has('gui_running') == 0 then
+            if fn.executable('tty') == 1 then
+                local result_obj = vim.system({
+                    'tty',
+                }, {
+                    text = true,
+                })
+                ---@cast result_obj vim.SystemObj
+                local result = result_obj:wait()
+                if result.code == 0 then
+                    env.GPG_TTY = vim.trim(result.stdout or '')
+                else
+                    env.GPG_TTY = ''
+                    echo({
+                        { '$GPG_TTY is not set and the `tty` command failed! gpg-agent might not work.', 'WarningMsg' },
+                    }, true, {})
+                end
+            end
+        end
+        GPGCommand = GPGCommand .. ' --use-agent'
+    else
+        GPGCommand = GPGCommand .. ' --no-use-agent'
+    end
+    debug(2, 'public key algorithms: ' .. GPGPubkey)
+    debug(2, 'cipher algorithms: ' .. GPGCipher)
+    debug(2, 'hashing algorithms: ' .. GPGHash)
+    debug(2, 'compression algorithms: ' .. GPGCompress)
+    debug(3, '<<<<<<<< Leaving init()')
+    init_run = true
 end
 
 function M.view_options()
@@ -668,6 +641,39 @@ function M.view_options()
         print(table.concat(vim.b.GPGOptions, '\n'))
     end
     debug(3, '<<<<<<<< Leaving view_options()')
+end
+
+function M.view_recipients()
+    debug(3, '>>>>>>>> Entering view_recipients()')
+    if unencrypted() then
+        debug(3, '<<<<<<<< Leaving view_recipients()')
+        return
+    end
+    local recipients = check_recipients(GPGRecipients)
+    print('This file has following recipients (Unknown recipients have a prepended "!"):')
+    if #recipients.valid == 0 then
+        api.nvim_echo({
+            { 'There are no known recipients!', 'ErrorMsg' },
+        }, true, {})
+    else
+        for _, id in ipairs(recipients.valid) do
+            print(gpg_id_to_name(id))
+        end
+    end
+    if #recipients.unknown > 0 then
+        echo({
+            {
+                table.concat(
+                    vim.tbl_map(function(r)
+                        return '!' .. r
+                    end, recipients.unknown),
+                    '\n'
+                ),
+                'WarningMsg',
+            },
+        }, true, {})
+    end
+    debug(3, '<<<<<<<< Leaving view_recipients()')
 end
 
 return M

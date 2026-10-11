@@ -15,10 +15,10 @@
 
 local M = {}
 
-local SKILL_FILE = 'SKILL.md'
-local FRONTMATTER_MAX = 8192 ---@type integer Max bytes of frontmatter parsed
 local BODY_MAX = 65536 ---@type integer Max bytes of body kept (64 KiB)
+local FRONTMATTER_MAX = 8192 ---@type integer Max bytes of frontmatter parsed
 local SKILL_COUNT_MAX = 512 ---@type integer Sanity bound on skills per scan
+local SKILL_FILE = 'SKILL.md'
 
 local config = {
     skills_dir = vim.fn.stdpath('data') .. '/recon-skills',

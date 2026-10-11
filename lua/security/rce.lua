@@ -17,33 +17,33 @@
 
 local M = {}
 
-local OUTPUT_BYTES_MAX = 1048576 -- 1 MiB cap on captured subprocess output.
-local TIMEOUT_MS_DEFAULT = 30000 -- 30 s default wait bound.
-local TIMEOUT_MS_MAX = 300000 -- 5 min hard ceiling on any single wait.
-local TIMEOUT_EXIT_CODE = 124 -- vim.system's "killed after timeout" code.
 local FINDINGS_MAX = 64 -- cap on scan_string findings returned.
 local OCCURRENCES_MAX = 16 -- cap on matches reported per metacharacter.
+local OUTPUT_BYTES_MAX = 1048576 -- 1 MiB cap on captured subprocess output.
+local TIMEOUT_EXIT_CODE = 124 -- vim.system's "killed after timeout" code.
+local TIMEOUT_MS_DEFAULT = 30000 -- 30 s default wait bound.
+local TIMEOUT_MS_MAX = 300000 -- 5 min hard ceiling on any single wait.
 
 ---@class security.RceExecOptions
----@field timeout_ms? integer Max time to wait for the child (default 30000, hard max 300000).
 ---@field cwd? string Working directory for the child process.
 ---@field env? table<string,string> Extra environment variables for the child.
+---@field timeout_ms? integer Max time to wait for the child (default 30000, hard max 300000).
 
 ---@class security.RceFinding
----@field kind string Human-readable metacharacter name.
 ---@field at integer 1-based byte offset of the match in the scanned string.
+---@field kind string Human-readable metacharacter name.
 
 -- Shell metacharacters that gain a second meaning when a shell re-reads a
 -- string. Matched with plain (non-pattern) search so nothing here is itself
 -- interpreted as a pattern.
 ---@type { kind: string, token: string }[]
 local METACHARACTERS = {
-    { kind = 'command substitution', token = '$(' },
-    { kind = 'command substitution', token = ')' },
+    { kind = 'background operator', token = '&' },
     { kind = 'backtick substitution', token = '`' },
     { kind = 'command separator', token = ';' },
+    { kind = 'command substitution', token = '$(' },
+    { kind = 'command substitution', token = ')' },
     { kind = 'pipe', token = '|' },
-    { kind = 'background operator', token = '&' },
 }
 
 ---Validate that argv is a non-empty list of strings.
@@ -99,13 +99,14 @@ function M.safe_exec(argv, opts)
     -- vim.system throws when the command cannot be started; capture and
     -- propagate instead of letting it escape (no bare pcall swallowing).
     local spawn_ok, system_obj = pcall(vim.system, spawn_argv, {
-        text = true,
         cwd = opts.cwd,
         env = opts.env,
+        text = true,
     })
     if not spawn_ok or system_obj == nil then
         return nil, 'spawn failed: ' .. tostring(system_obj)
     end
+    ---@cast system_obj vim.SystemObj
 
     -- wait() force-kills with SIGKILL on timeout and reports code 124.
     local result = system_obj:wait(timeout_ms)
@@ -148,7 +149,7 @@ function M.scan_string(s)
             end
             finding_count = finding_count + 1
             occurrences = occurrences + 1
-            findings[finding_count] = { kind = meta.kind, at = found_at }
+            findings[finding_count] = { at = found_at, kind = meta.kind }
             start_at = found_at + 1
         end
     end

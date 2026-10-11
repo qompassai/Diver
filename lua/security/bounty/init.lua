@@ -11,30 +11,20 @@
 -- commands.
 ---@module 'security.bounty'
 local gates = require('security.bounty.gates')
-local scope = require('security.bounty.scope')
+local profiles = require('security.bounty.profiles')
 local recon = require('security.bounty.recon')
 local report = require('security.bounty.report')
+local scope = require('security.bounty.scope')
 local submit = require('security.bounty.submit')
-local profiles = require('security.bounty.profiles')
 
 local M = {}
 
 M.gates = gates
-M.scope = scope
+M.profiles = profiles
 M.recon = recon
 M.report = report
+M.scope = scope
 M.submit = submit
-M.profiles = profiles
-
----Base directory for all bug-bounty working files.
----@return string
-function M.basedir()
-    return vim.fn.expand('~/security/bugbounties')
-end
-
-local function slugify(str)
-    return str:lower():gsub('[^a-z0-9]+', '-'):gsub('^-+', ''):gsub('-+$', '')
-end
 
 local function ensure_dir(path)
     vim.fn.mkdir(path, 'p')
@@ -55,6 +45,21 @@ local function show_lines(lines, filetype)
     vim.cmd('vsplit')
     vim.api.nvim_win_set_buf(0, buf)
 end
+
+local function slugify(str)
+    return str:lower():gsub('[^a-z0-9]+', '-'):gsub('^-+', ''):gsub('-+$', '')
+end
+
+local function today()
+    return os.date('%Y-%m-%d')
+end
+
+---Base directory for all bug-bounty working files.
+---@return string
+function M.basedir()
+    return vim.fn.expand('~/security/bugbounties')
+end
+
 function M.new_program()
     local platform = vim.fn.input('Platform (e.g. hackerone, bugcrowd): ')
     if platform == '' then
@@ -96,10 +101,6 @@ function M.new_program()
     ensure_dir(vim.fn.fnamemodify(fname, ':h'))
     vim.fn.writefile(lines, fname)
     vim.cmd('edit ' .. vim.fn.fnameescape(fname))
-end
-
-local function today()
-    return os.date('%Y-%m-%d')
 end
 
 function M.new_report()
@@ -164,17 +165,16 @@ end
 ---Scaffold the working directory tree. Idempotent.
 function M.scaffold()
     for _, sub in ipairs({
+        'findings',
+        'gates',
         'programs',
+        'recon',
         'reports',
         'scope',
-        'recon',
-        'gates',
-        'findings',
     }) do
         ensure_dir(M.basedir() .. '/' .. sub)
     end
 end
-
 local setup_done = false
 
 ---Create the :Bounty* commands. Idempotent: safe to call twice.
@@ -184,82 +184,6 @@ function M.setup()
     end
     M.scaffold()
 
-    vim.api.nvim_create_user_command('BountyScope', function(opts)
-        local platform = opts.args ~= '' and opts.args or vim.fn.input('Platform (h1/bc/it/ywh/immunefi): ')
-        if platform == '' then
-            return
-        end
-        local program = vim.fn.input('Program slug to file scope under (e.g. h1-cloudflare): ')
-        if program == '' then
-            return
-        end
-        local entries = scope.poll(platform, { bbp_only = true })
-        local path = scope.save(program, entries)
-        vim.notify(('BountyScope: %d targets filed to %s'):format(#entries, path))
-    end, {
-        nargs = '?',
-        desc = 'Poll bbscope and file program scope (public, paid programs only)',
-    })
-
-    vim.api.nvim_create_user_command('BountyRecon', function(opts)
-        local program = opts.args ~= '' and opts.args or vim.fn.input('Program slug: ')
-        if program == '' then
-            return
-        end
-        local id = recon.run(program)
-        vim.notify('BountyRecon: run ' .. id .. ' started (see :BountyReconStatus)')
-    end, {
-        nargs = '?',
-        desc = 'Run the recon chain (REQUIRES open scope gate)',
-    })
-    vim.api.nvim_create_user_command('BountyReconStatus', function()
-        local lines = recon.status()
-        if #lines == 0 then
-            vim.notify('BountyRecon: no runs yet')
-            return
-        end
-        vim.notify(table.concat(lines, '\n'), vim.log.levels.INFO)
-    end, { desc = 'Show recon run states' })
-
-    vim.api.nvim_create_user_command('BountyReconCancel', function(opts)
-        recon.cancel(opts.args)
-    end, {
-        nargs = 1,
-        desc = 'Cancel a recon run',
-    })
-    vim.api.nvim_create_user_command('BountyReport', function(opts)
-        local platform = vim.fn.input('Platform (hackerone/bugcrowd/intigriti/yeswehack/immunefi): ')
-        if platform == '' then
-            return
-        end
-        local program = vim.fn.input('Program slug: ')
-        if program == '' then
-            return
-        end
-        local finding = vim.fn.input('Validated finding slug: ')
-        if finding == '' then
-            return
-        end
-        local title = vim.fn.input('Report title: ')
-        if title == '' then
-            return
-        end
-        report.new(platform, program, finding, title)
-    end, {
-        desc = 'Generate a report from a validated finding (REQUIRES open finding gate)',
-    })
-
-    vim.api.nvim_create_user_command('BountySubmit', function(opts)
-        local path = opts.args ~= '' and opts.args or vim.fn.input('Report file: ', M.basedir() .. '/reports/', 'file')
-        if path == '' then
-            return
-        end
-        submit.submit(vim.fn.expand(path))
-    end, {
-        nargs = '?',
-        complete = 'file',
-        desc = 'Preview the exact submission payload (REQUIRES open submission gate; never auto-sends)',
-    })
     vim.api.nvim_create_user_command('BountyApprove', function(opts)
         local kind, target = opts.args:match('^(%S+)%s+(%S+)$')
         if kind == nil then
@@ -296,6 +220,11 @@ function M.setup()
         nargs = 1,
         desc = 'Operator approval: open a gate (scope|finding|submission)',
     })
+
+    vim.api.nvim_create_user_command('BountyDashboard', function()
+        require('security.bounty.dashboard').show()
+    end, { desc = 'Render the bug-bounty dashboard PNG and preview it' })
+
     vim.api.nvim_create_user_command('BountyIndex', function()
         local base = M.basedir()
         local programs = vim.fn.glob(base .. '/programs/*.md', false, true)
@@ -318,18 +247,6 @@ function M.setup()
         vim.cmd('vsplit')
         vim.api.nvim_win_set_buf(0, buf)
     end, { desc = 'List bounty programs and reports' })
-
-    vim.api.nvim_create_user_command('BountyTools', function()
-        local lines = { '# Recon tool availability', '' }
-        for tool, ok in pairs(recon.available()) do
-            lines[#lines + 1] = ('- [%s] %s'):format(ok and 'x' or ' ', tool)
-        end
-        vim.notify(table.concat(lines, '\n'), vim.log.levels.INFO)
-    end, { desc = 'Show which recon tools are on PATH' })
-
-    vim.api.nvim_create_user_command('BountyDashboard', function()
-        require('security.bounty.dashboard').show()
-    end, { desc = 'Render the bug-bounty dashboard PNG and preview it' })
 
     vim.api.nvim_create_user_command('BountyProfile', function(opts)
         -- Read-only viewing path: show/list never open gates, never scan,
@@ -375,10 +292,10 @@ function M.setup()
                 return
             end
             vim.notify(
-                ("BountyProfile: '%s' is now the active profile. This is NOT an approval: no gate was opened and no scanning was started.")
-                :format(
-                    rest
-                )
+                (
+                    "BountyProfile: '%s' is now the active profile. This is NOT an approval: "
+                    .. 'no gate was opened and no scanning was started.'
+                ):format(rest)
             )
         elseif sub == 'clear' then
             if profiles.clear() then
@@ -398,11 +315,10 @@ function M.setup()
                 return
             end
             vim.notify(
-                ("BountyProfile: operator confirmed '%s' for '%s' -- attested publicly accessible and DoD-owned/operated/controlled; not a vendor or non-DoD system.")
-                :format(
-                    target,
-                    program
-                )
+                (
+                    "BountyProfile: operator confirmed '%s' for '%s' -- attested publicly accessible "
+                    .. 'and DoD-owned/operated/controlled; not a vendor or non-DoD system.'
+                ):format(target, program)
             )
         else
             vim.notify(
@@ -414,6 +330,89 @@ function M.setup()
         nargs = '*',
         desc = 'View/select program profiles (read-only; never opens gates)',
     })
+
+    vim.api.nvim_create_user_command('BountyRecon', function(opts)
+        local program = opts.args ~= '' and opts.args or vim.fn.input('Program slug: ')
+        if program == '' then
+            return
+        end
+        local id = recon.run(program)
+        vim.notify('BountyRecon: run ' .. id .. ' started (see :BountyReconStatus)')
+    end, {
+        nargs = '?',
+        desc = 'Run the recon chain (REQUIRES open scope gate)',
+    })
+    vim.api.nvim_create_user_command('BountyReconCancel', function(opts)
+        recon.cancel(opts.args)
+    end, {
+        nargs = 1,
+        desc = 'Cancel a recon run',
+    })
+    vim.api.nvim_create_user_command('BountyReconStatus', function()
+        local lines = recon.status()
+        if #lines == 0 then
+            vim.notify('BountyRecon: no runs yet')
+            return
+        end
+        vim.notify(table.concat(lines, '\n'), vim.log.levels.INFO)
+    end, { desc = 'Show recon run states' })
+
+    vim.api.nvim_create_user_command('BountyReport', function(_opts)
+        local platform = vim.fn.input('Platform (hackerone/bugcrowd/intigriti/yeswehack/immunefi): ')
+        if platform == '' then
+            return
+        end
+        local program = vim.fn.input('Program slug: ')
+        if program == '' then
+            return
+        end
+        local finding = vim.fn.input('Validated finding slug: ')
+        if finding == '' then
+            return
+        end
+        local title = vim.fn.input('Report title: ')
+        if title == '' then
+            return
+        end
+        report.new(platform, program, finding, title)
+    end, {
+        desc = 'Generate a report from a validated finding (REQUIRES open finding gate)',
+    })
+
+    vim.api.nvim_create_user_command('BountyScope', function(opts)
+        local platform = opts.args ~= '' and opts.args or vim.fn.input('Platform (h1/bc/it/ywh/immunefi): ')
+        if platform == '' then
+            return
+        end
+        local program = vim.fn.input('Program slug to file scope under (e.g. h1-cloudflare): ')
+        if program == '' then
+            return
+        end
+        local entries = scope.poll(platform, { bbp_only = true })
+        local path = scope.save(program, entries)
+        vim.notify(('BountyScope: %d targets filed to %s'):format(#entries, path))
+    end, {
+        nargs = '?',
+        desc = 'Poll bbscope and file program scope (public, paid programs only)',
+    })
+    vim.api.nvim_create_user_command('BountySubmit', function(opts)
+        local path = opts.args ~= '' and opts.args or vim.fn.input('Report file: ', M.basedir() .. '/reports/', 'file')
+        if path == '' then
+            return
+        end
+        submit.submit(vim.fn.expand(path))
+    end, {
+        nargs = '?',
+        complete = 'file',
+        desc = 'Preview the exact submission payload (REQUIRES open submission gate; never auto-sends)',
+    })
+    vim.api.nvim_create_user_command('BountyTools', function()
+        local lines = { '# Recon tool availability', '' }
+        for tool, ok in pairs(recon.available()) do
+            lines[#lines + 1] = ('- [%s] %s'):format(ok and 'x' or ' ', tool)
+        end
+        vim.notify(table.concat(lines, '\n'), vim.log.levels.INFO)
+    end, { desc = 'Show which recon tools are on PATH' })
     setup_done = true
     return M
 end

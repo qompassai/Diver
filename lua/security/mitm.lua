@@ -17,18 +17,18 @@
 --- errors").
 ---@module 'security.mitm'
 
-local rce = require('security.rce')
-
 local M = {}
 
-local CURL_MAX_TIME_S = 120         -- hard ceiling on one curl invocation.
-local DOWNLOAD_TIMEOUT_MS = 150000  -- bound on the whole download step.
-local SHA256_HEX_LEN = 64           -- hex digits in a SHA-256 digest.
+local rce = require('security.rce')
+
+local CURL_MAX_TIME_S = 120 -- hard ceiling on one curl invocation.
+local DOWNLOAD_TIMEOUT_MS = 150000 -- bound on the whole download step.
 local HEX_DIGEST_PATTERN = '^(%x+)' -- leading hex run of a checksum line.
+local SHA256_HEX_LEN = 64 -- hex digits in a SHA-256 digest.
 
 ---@class security.MitmDownloadOptions
----@field timeout_ms? integer Max time to wait for curl (default 150000).
 ---@field pinned_pubkey? string Optional curl --pinnedpubkey value (SPKI pin) for certificate pinning.
+---@field timeout_ms? integer Max time to wait for curl (default 150000).
 
 ---True when url uses the https scheme (case-insensitive, matching the
 ---scheme gate in verify_download). Plain http (and unknown schemes)
@@ -37,16 +37,6 @@ local HEX_DIGEST_PATTERN = '^(%x+)' -- leading hex run of a checksum line.
 ---@return boolean
 function M.url_is_secure(url)
     return type(url) == 'string' and url:sub(1, 8):lower() == 'https://'
-end
-
----@param url string
----@return string|nil scheme Lowercase scheme, or nil when url has none.
-local function url_scheme(url)
-    local scheme = url:match('^([%w][%w+.-]*)://')
-    if scheme == nil then
-        return nil
-    end
-    return scheme:lower()
 end
 
 ---Pick a SHA-256 checksum tool available on this machine.
@@ -65,6 +55,12 @@ local function find_hasher()
         }
     end
     return nil
+end
+
+---@param value string
+---@return boolean
+local function is_sha256_hex(value)
+    return type(value) == 'string' and #value == SHA256_HEX_LEN and value:match('^%x+$') ~= nil
 end
 
 ---Compute the SHA-256 hex digest of a file already on disk.
@@ -98,10 +94,14 @@ local function sha256_file(path)
     return digest:lower(), nil
 end
 
----@param value string
----@return boolean
-local function is_sha256_hex(value)
-    return type(value) == 'string' and #value == SHA256_HEX_LEN and value:match('^%x+$') ~= nil
+---@param url string
+---@return string|nil scheme Lowercase scheme, or nil when url has none.
+local function url_scheme(url)
+    local scheme = url:match('^([%w][%w+.-]*)://')
+    if scheme == nil then
+        return nil
+    end
+    return scheme:lower()
 end
 
 ---Download url to dest over a TLS-hardened curl invocation, then verify the

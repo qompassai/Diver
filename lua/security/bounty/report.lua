@@ -17,18 +17,15 @@ local gates = require('security.bounty.gates')
 local M = {}
 
 ---Platforms with report templates.
-M.platforms = { 'hackerone', 'bugcrowd', 'intigriti', 'yeswehack', 'immunefi' }
+M.platforms = { 'bugcrowd', 'hackerone', 'immunefi', 'intigriti', 'yeswehack' }
 
----@param platform string
----@return boolean
-local function valid_platform(platform)
-    for _, p in ipairs(M.platforms) do
-        if p == platform then
-            return true
-        end
-    end
-    return false
-end
+---Required Markdown sections every report must contain.
+M.required_sections = {
+    '## Impact',
+    '## Summary',
+    '### Proof of Concept',
+    '### Steps to Reproduce',
+}
 
 ---Per-platform notes appended to the template. These are the platform
 ---quirks that get reports rejected when ignored.
@@ -40,53 +37,27 @@ local function platform_notes(platform)
             '> HackerOne: fill the Weakness field on the submission form to match',
             '> the vulnerability class below. Keep repro steps numbered and atomic.',
         }
-    elseif platform == 'yeswehack' then
-        return {
-            '> YesWeHack: search existing reports first -- duplicates are rejected',
-            '> fast and hurt your reputation. Human confirmation required.',
-        }
-    elseif platform == 'intigriti' then
-        return {
-            '> Intigriti: GDPR applies -- strip ALL personal data from evidence',
-            '> (emails, IPs of third parties, session tokens of other users).',
-        }
     elseif platform == 'immunefi' then
         return {
             '> Immunefi: quantify impact in $ terms and attach a working PoC',
             '> (Foundry test preferred for smart contracts). Invalid reports',
             '> damage your validity ratio -- submit sparingly.',
         }
+    elseif platform == 'intigriti' then
+        return {
+            '> Intigriti: GDPR applies -- strip ALL personal data from evidence',
+            '> (emails, IPs of third parties, session tokens of other users).',
+        }
+    elseif platform == 'yeswehack' then
+        return {
+            '> YesWeHack: search existing reports first -- duplicates are rejected',
+            '> fast and hurt your reputation. Human confirmation required.',
+        }
     else
         return {
-            '> BugCrowd: match the program brief\'s priority guidance; note any',
+            "> BugCrowd: match the program brief's priority guidance; note any",
             '> researcher-specific submission instructions in the brief.',
         }
-    end
-end
-
----Required Markdown sections every report must contain.
-M.required_sections = {
-    '## Summary',
-    '## Impact',
-    '### Steps to Reproduce',
-    '### Proof of Concept',
-}
-
----Map a CVSS v3 score to a severity label.
----@param cvss number 0.0 - 10.0
----@return string severity One of critical/high/medium/low/none.
-function M.severity(cvss)
-    assert(type(cvss) == 'number' and cvss >= 0 and cvss <= 10, 'report.severity: cvss must be 0-10')
-    if cvss >= 9.0 then
-        return 'critical'
-    elseif cvss >= 7.0 then
-        return 'high'
-    elseif cvss >= 4.0 then
-        return 'medium'
-    elseif cvss > 0 then
-        return 'low'
-    else
-        return 'none'
     end
 end
 
@@ -136,38 +107,15 @@ local function template(platform, program, finding, title)
     return lines
 end
 
----Create a report file from the platform template and open it.
----Requires the finding gate to be open for `finding`.
----@param platform string One of M.platforms.
----@param program string Program slug.
----@param finding string Validated finding slug (path-safe).
----@param title string Report title.
----@return string path The report file written.
-function M.new(platform, program, finding, title)
-    assert(valid_platform(platform), "report.new: unknown platform '" .. tostring(platform) .. "'")
-    assert(type(program) == 'string' and program ~= '', 'report.new: program must be nonempty')
-    assert(
-        program:match('^[A-Za-z0-9_%.%-]+$'),
-        'report.new: program must be path-safe (letters, digits, _, ., -)'
-    )
-    assert(
-        finding:match('^[A-Za-z0-9_%.%-]+$'),
-        'report.new: finding must be path-safe (letters, digits, _, ., -)'
-    )
-    assert(type(title) == 'string' and title ~= '', 'report.new: title must be nonempty')
-    assert(
-        gates.is_open('finding', finding),
-        "report.new: finding gate is CLOSED for '" .. finding .. "' -- validate the finding first (:BountyApprove finding " .. finding .. ')'
-    )
-    local dir = vim.fn.expand('~/security/bugbounties/reports')
-    vim.fn.mkdir(dir, 'p')
-    local slug = title:lower():gsub('[^a-z0-9]+', '-'):gsub('^-+', ''):gsub('-+$', '')
-    local path = ('%s/%s-%s-%s-%s.md'):format(dir, os.date('%Y-%m-%d'), platform, program, slug)
-    if vim.uv.fs_stat(path) == nil then
-        vim.fn.writefile(template(platform, program, finding, title), path)
+---@param platform string
+---@return boolean
+local function valid_platform(platform)
+    for _, p in ipairs(M.platforms) do
+        if p == platform then
+            return true
+        end
     end
-    vim.cmd('edit ' .. vim.fn.fnameescape(path))
-    return path
+    return false
 end
 
 ---The 60-second checklist: mechanical checks that catch the reports
@@ -202,6 +150,56 @@ function M.lint(path)
         end
     end
     return { ok = #issues == 0, issues = issues }
+end
+---Create a report file from the platform template and open it.
+---Requires the finding gate to be open for `finding`.
+---@param platform string One of M.platforms.
+---@param program string Program slug.
+---@param finding string Validated finding slug (path-safe).
+---@param title string Report title.
+---@return string path The report file written.
+function M.new(platform, program, finding, title)
+    assert(valid_platform(platform), "report.new: unknown platform '" .. tostring(platform) .. "'")
+    assert(type(program) == 'string' and program ~= '', 'report.new: program must be nonempty')
+    assert(program:match('^[A-Za-z0-9_%.%-]+$'), 'report.new: program must be path-safe (letters, digits, _, ., -)')
+    assert(finding:match('^[A-Za-z0-9_%.%-]+$'), 'report.new: finding must be path-safe (letters, digits, _, ., -)')
+    assert(type(title) == 'string' and title ~= '', 'report.new: title must be nonempty')
+    assert(
+        gates.is_open('finding', finding),
+        "report.new: finding gate is CLOSED for '"
+            .. finding
+            .. "' -- validate the finding first (:BountyApprove finding "
+            .. finding
+            .. ')'
+    )
+    local dir = vim.fn.expand('~/security/bugbounties/reports')
+    vim.fn.mkdir(dir, 'p')
+    local slug = title:lower():gsub('[^a-z0-9]+', '-')
+    slug = slug:gsub('^-+', ''):gsub('-+$', '')
+    local path = ('%s/%s-%s-%s-%s.md'):format(dir, os.date('%Y-%m-%d'), platform, program, slug)
+    if vim.uv.fs_stat(path) == nil then
+        vim.fn.writefile(template(platform, program, finding, title), path)
+    end
+    vim.cmd('edit ' .. vim.fn.fnameescape(path))
+    return path
+end
+
+---Map a CVSS v3 score to a severity label.
+---@param cvss number 0.0 - 10.0
+---@return string severity One of critical/high/medium/low/none.
+function M.severity(cvss)
+    assert(type(cvss) == 'number' and cvss >= 0 and cvss <= 10, 'report.severity: cvss must be 0-10')
+    if cvss >= 9.0 then
+        return 'critical'
+    elseif cvss >= 7.0 then
+        return 'high'
+    elseif cvss >= 4.0 then
+        return 'medium'
+    elseif cvss > 0 then
+        return 'low'
+    else
+        return 'none'
+    end
 end
 
 return M

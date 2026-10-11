@@ -22,8 +22,8 @@
 ---@module 'security.bounty.recon'
 
 local gates = require('security.bounty.gates')
-local scope = require('security.bounty.scope')
 local profiles = require('security.bounty.profiles')
+local scope = require('security.bounty.scope')
 
 local M = {}
 
@@ -38,13 +38,89 @@ local run_seq = 0
 ---@field dir string
 ---@field stage integer Index into the stage list (0 = not started).
 ---@field state string idle|running|done|cancelled|failed
----@field job? userdata Active vim.system job, if any.
+---@field job? vim.SystemObj Active vim.system job, if any.
 ---@field started_at string
 
----Run directory root.
----@return string
-function M.dir()
-    return vim.fn.expand('~/security/bugbounties/recon')
+---Stage definitions. Each stage: name, tool binary, argv builder, output
+---file. argv builders take (domains, dir, prev_outputs) and return argv.
+---A stage is skipped with a warning when its binary is not on PATH.
+local stages = {
+    {
+        argv = function(domains, dir)
+            local list = dir .. '/domains.txt'
+            vim.fn.writefile(domains, list)
+            -- FLAG-REVIEW: -dL file input, -silent, -o
+            return { 'subfinder', '-dL', list, '-silent', '-o', dir .. '/subfinder.txt' }
+        end,
+        name = 'subfinder',
+        output = 'subfinder.txt',
+        tool = 'subfinder',
+    },
+    {
+        argv = function(_, dir)
+            -- FLAG-REVIEW: stdin input, -silent, -o
+            return { 'dnsx', '-silent', '-o', dir .. '/dnsx.txt' }
+        end,
+        name = 'dnsx',
+        output = 'dnsx.txt',
+        stdin_from = 'subfinder.txt',
+        tool = 'dnsx',
+    },
+    {
+        argv = function(_, dir)
+            -- FLAG-REVIEW: -l list input, -silent, -o
+            return { 'httpx', '-l', dir .. '/dnsx.txt', '-silent', '-o', dir .. '/httpx.txt' }
+        end,
+        name = 'httpx',
+        output = 'httpx.txt',
+        tool = 'httpx',
+    },
+    {
+        argv = function(_, dir)
+            -- FLAG-REVIEW: -l list input, -top-ports, -silent, -o.
+            -- Naabu SYN scan needs privileges; without them it fails fast
+            -- and the stage is recorded as failed, not faked.
+            return {
+                'naabu',
+                '-l',
+                dir .. '/httpx.txt',
+                '-top-ports',
+                '100',
+                '-silent',
+                '-o',
+                dir .. '/naabu.txt',
+            }
+        end,
+        name = 'naabu',
+        output = 'naabu.txt',
+        tool = 'naabu',
+    },
+    {
+        argv = function(_, dir)
+            -- FLAG-REVIEW: -l list input, -silent, -o
+            return { 'nuclei', '-l', dir .. '/httpx.txt', '-silent', '-o', dir .. '/nuclei.txt' }
+        end,
+        name = 'nuclei',
+        output = 'nuclei.txt',
+        tool = 'nuclei',
+    },
+    {
+        argv = function(_, dir)
+            -- FLAG-REVIEW: stdin URL input, -silent, -o
+            return { 'katana', '-silent', '-o', dir .. '/katana.txt' }
+        end,
+        name = 'katana',
+        output = 'katana.txt',
+        stdin_from = 'httpx.txt',
+        tool = 'katana',
+    },
+}
+
+---Is this binary on PATH?
+---@param tool string
+---@return boolean
+local function have(tool)
+    return vim.fn.executable(tool) == 1
 end
 
 ---Append one JSON line to the run log. Logs are the audit trail.
@@ -75,120 +151,6 @@ local function log(run, event, data)
     end
 end
 
----Extract root domains from scope targets. Wildcards are unwrapped
----('*.example.com' -> 'example.com'); URLs are reduced to hosts; CIDRs
----and bare IPs are skipped (subdomain enumeration needs a domain).
----@param targets string[]
----@return string[] domains Sorted, deduplicated.
-function M.domains(targets)
-    local seen, domains = {}, {}
-    for _, t in ipairs(targets) do
-        local d = t:gsub('^%*%.', '')
-        d = d:gsub('^https?://', ''):gsub('/.*$', ''):gsub(':%d+$', '')
-        if d:match('^[A-Za-z0-9][A-Za-z0-9%.%-]*%.[A-Za-z]+$') and not seen[d] then
-            seen[d] = true
-            domains[#domains + 1] = d
-        end
-    end
-    table.sort(domains)
-    return domains
-end
-
----Stage definitions. Each stage: name, tool binary, argv builder, output
----file. argv builders take (domains, dir, prev_outputs) and return argv.
----A stage is skipped with a warning when its binary is not on PATH.
-local stages = {
-    {
-        name = 'subfinder',
-        tool = 'subfinder',
-        output = 'subfinder.txt',
-        argv = function(domains, dir)
-            local list = dir .. '/domains.txt'
-            vim.fn.writefile(domains, list)
-            -- FLAG-REVIEW: -dL file input, -silent, -o
-            return { 'subfinder', '-dL', list, '-silent', '-o', dir .. '/subfinder.txt' }
-        end,
-    },
-    {
-        name = 'dnsx',
-        tool = 'dnsx',
-        output = 'dnsx.txt',
-        argv = function(_, dir)
-            -- FLAG-REVIEW: stdin input, -silent, -o
-            return { 'dnsx', '-silent', '-o', dir .. '/dnsx.txt' }
-        end,
-        stdin_from = 'subfinder.txt',
-    },
-    {
-        name = 'httpx',
-        tool = 'httpx',
-        output = 'httpx.txt',
-        argv = function(_, dir)
-            -- FLAG-REVIEW: -l list input, -silent, -o
-            return { 'httpx', '-l', dir .. '/dnsx.txt', '-silent', '-o', dir .. '/httpx.txt' }
-        end,
-    },
-    {
-        name = 'naabu',
-        tool = 'naabu',
-        output = 'naabu.txt',
-        argv = function(_, dir)
-            -- FLAG-REVIEW: -l list input, -top-ports, -silent, -o.
-            -- Naabu SYN scan needs privileges; without them it fails fast
-            -- and the stage is recorded as failed, not faked.
-            return {
-                'naabu',
-                '-l',
-                dir .. '/httpx.txt',
-                '-top-ports',
-                '100',
-                '-silent',
-                '-o',
-                dir .. '/naabu.txt',
-            }
-        end,
-    },
-    {
-        name = 'nuclei',
-        tool = 'nuclei',
-        output = 'nuclei.txt',
-        argv = function(_, dir)
-            -- FLAG-REVIEW: -l list input, -silent, -o
-            return { 'nuclei', '-l', dir .. '/httpx.txt', '-silent', '-o', dir .. '/nuclei.txt' }
-        end,
-    },
-    {
-        name = 'katana',
-        tool = 'katana',
-        output = 'katana.txt',
-        argv = function(_, dir)
-            -- FLAG-REVIEW: stdin URL input, -silent, -o
-            return { 'katana', '-silent', '-o', dir .. '/katana.txt' }
-        end,
-        stdin_from = 'httpx.txt',
-    },
-}
-
----Is this binary on PATH?
----@param tool string
----@return boolean
-local function have(tool)
-    return vim.fn.executable(tool) == 1
-end
-
----Which recon tools are currently installed.
----@return table<string, boolean>
-function M.available()
-    local out = {}
-    for _, s in ipairs(stages) do
-        out[s.tool] = have(s.tool)
-    end
-    out['ffuf'] = have('ffuf')
-    out['cvemap'] = have('cvemap')
-    out['searchpoc'] = have('searchpoc')
-    return out
-end
-
 ---Advance one run to its next stage. Internal; runs via callbacks.
 ---@param run security.bounty.RunState
 local function advance(run)
@@ -206,10 +168,7 @@ local function advance(run)
     end
     if not have(st.tool) then
         log(run, 'stage_skipped', { stage = st.name, reason = 'tool not installed: ' .. st.tool })
-        vim.notify(
-            ('BountyRecon: skipping %s (%s not on PATH)'):format(st.name, st.tool),
-            vim.log.levels.WARN
-        )
+        vim.notify(('BountyRecon: skipping %s (%s not on PATH)'):format(st.name, st.tool), vim.log.levels.WARN)
         advance(run)
         return
     end
@@ -222,7 +181,7 @@ local function advance(run)
         end
     end
     log(run, 'stage_start', { stage = st.name, argv = table.concat(argv, ' ') })
-    run.job = vim.system(argv, { text = true, stdin = stdin_text }, function(result)
+    local job_obj = vim.system(argv, { text = true, stdin = stdin_text }, function(result)
         run.job = nil
         vim.schedule(function()
             if run.state == 'cancelled' then
@@ -231,11 +190,7 @@ local function advance(run)
             log(run, 'stage_done', { stage = st.name, code = result.code })
             if result.code ~= 0 then
                 vim.notify(
-                    ('BountyRecon: stage %s exited %d (see %s/run.jsonl)'):format(
-                        st.name,
-                        result.code,
-                        run.dir
-                    ),
+                    ('BountyRecon: stage %s exited %d (see %s/run.jsonl)'):format(st.name, result.code, run.dir),
                     vim.log.levels.WARN
                 )
             else
@@ -244,57 +199,21 @@ local function advance(run)
             advance(run)
         end)
     end)
+    ---@cast job_obj vim.SystemObj
+    run.job = job_obj
 end
 
----Start a recon run. Enforces the scope gate and scope-derived targeting.
----@param program string Program slug with a filed scope.
----@return string run_id
-function M.run(program)
-    assert(type(program) == 'string' and program ~= '', 'recon.run: program must be nonempty')
-    assert(
-        gates.is_open('scope', program),
-        "recon.run: scope gate is CLOSED for '"
-            .. program
-            .. "' -- the operator must approve the scope first (:BountyApprove scope "
-            .. program
-            .. '). Active scanning without approval is unauthorized access.'
-    )
-    local domains = M.domains(scope.targets(program))
-    assert(#domains > 0, "recon.run: no scannable domains in scope for '" .. program .. "'")
-    -- A program profile is active: review the planned stages against the
-    -- profile's prohibitions BEFORE anything runs. Hard-blocks abort the
-    -- run; cautions (minimal testing, content access, re-ingest nudge) are
-    -- surfaced as warnings.
-    local profile_name = profiles.active()
-    if profile_name ~= nil then
-        local stage_names = {}
-        for _, st in ipairs(stages) do
-            stage_names[#stage_names + 1] = st.name
-        end
-        stage_names[#stage_names + 1] = 'ffuf' -- opt-in stage, reviewed too
-        local ok, problems, warnings = profiles.check_recon_plan(profile_name, stage_names)
-        assert(
-            ok,
-            ("recon.run: recon plan BLOCKED under profile '%s': %s"):format(
-                profile_name,
-                table.concat(problems, '; ')
-            )
-        )
-        for _, warning in ipairs(warnings) do
-            vim.notify(('BountyRecon [%s]: %s'):format(profile_name, warning), vim.log.levels.WARN)
-        end
+---Which recon tools are currently installed.
+---@return table<string, boolean>
+function M.available()
+    local out = {}
+    for _, s in ipairs(stages) do
+        out[s.tool] = have(s.tool)
     end
-    run_seq = run_seq + 1
-    local id = os.date('%Y%m%d-%H%M%S') .. '-' .. run_seq
-    local dir = M.dir() .. '/' .. program .. '/' .. id
-    vim.fn.mkdir(dir, 'p')
-    ---@type security.bounty.RunState
-    local run = { id = id, program = program, dir = dir, stage = 0, state = 'running', started_at = os.date('!%Y-%m-%dT%H:%M:%SZ') }
-    M.runs[id] = run
-    log(run, 'run_start', { program = program, domains = table.concat(domains, ',') })
-    vim.notify(('BountyRecon %s: starting (%d domains, scope gate open)'):format(program, #domains))
-    advance(run)
-    return id
+    out['cvemap'] = have('cvemap')
+    out['ffuf'] = have('ffuf')
+    out['searchpoc'] = have('searchpoc')
+    return out
 end
 
 ---Cancel a running recon job. The job is killed; the log keeps the record.
@@ -309,24 +228,6 @@ function M.cancel(run_id)
     end
     log(run, 'run_cancelled')
     vim.notify(('BountyRecon %s: cancelled'):format(run_id), vim.log.levels.WARN)
-end
-
----One-line status for every known run.
----@return string[] lines
-function M.status()
-    local lines = {}
-    for id, run in pairs(M.runs) do
-        local stage_name = stages[run.stage] and stages[run.stage].name or '-'
-        lines[#lines + 1] = ('%s  %s  %s  stage=%s  %s'):format(
-            id,
-            run.program,
-            run.state,
-            stage_name,
-            run.dir
-        )
-    end
-    table.sort(lines)
-    return lines
 end
 
 ---Diff this run's nuclei findings against the previous run for the same
@@ -385,6 +286,98 @@ function M.diff_findings(run)
     else
         vim.notify(('BountyRecon %s: no new findings this cycle'):format(run.program))
     end
+end
+
+---Run directory root.
+---@return string
+function M.dir()
+    return vim.fn.expand('~/security/bugbounties/recon')
+end
+
+---Extract root domains from scope targets. Wildcards are unwrapped
+---('*.example.com' -> 'example.com'); URLs are reduced to hosts; CIDRs
+---and bare IPs are skipped (subdomain enumeration needs a domain).
+---@param targets string[]
+---@return string[] domains Sorted, deduplicated.
+function M.domains(targets)
+    local seen, domains = {}, {}
+    for _, t in ipairs(targets) do
+        local d = t:gsub('^%*%.', '')
+        d = d:gsub('^https?://', ''):gsub('/.*$', ''):gsub(':%d+$', '')
+        if d:match('^[A-Za-z0-9][A-Za-z0-9%.%-]*%.[A-Za-z]+$') and not seen[d] then
+            seen[d] = true
+            domains[#domains + 1] = d
+        end
+    end
+    table.sort(domains)
+    return domains
+end
+
+---Start a recon run. Enforces the scope gate and scope-derived targeting.
+---@param program string Program slug with a filed scope.
+---@return string run_id
+function M.run(program)
+    assert(type(program) == 'string' and program ~= '', 'recon.run: program must be nonempty')
+    assert(
+        gates.is_open('scope', program),
+        "recon.run: scope gate is CLOSED for '"
+            .. program
+            .. "' -- the operator must approve the scope first (:BountyApprove scope "
+            .. program
+            .. '). Active scanning without approval is unauthorized access.'
+    )
+    local domains = M.domains(scope.targets(program))
+    assert(#domains > 0, "recon.run: no scannable domains in scope for '" .. program .. "'")
+    -- A program profile is active: review the planned stages against the
+    -- profile's prohibitions BEFORE anything runs. Hard-blocks abort the
+    -- run; cautions (minimal testing, content access, re-ingest nudge) are
+    -- surfaced as warnings.
+    local profile_name = profiles.active()
+    if profile_name ~= nil then
+        local stage_names = {}
+        for _, st in ipairs(stages) do
+            stage_names[#stage_names + 1] = st.name
+        end
+        stage_names[#stage_names + 1] = 'ffuf' -- opt-in stage, reviewed too
+        local ok, problems, warnings = profiles.check_recon_plan(profile_name, stage_names)
+        assert(
+            ok,
+            ("recon.run: recon plan BLOCKED under profile '%s': %s"):format(profile_name, table.concat(problems, '; '))
+        )
+        for _, warning in ipairs(warnings) do
+            vim.notify(('BountyRecon [%s]: %s'):format(profile_name, warning), vim.log.levels.WARN)
+        end
+    end
+    run_seq = run_seq + 1
+    local id = os.date('%Y%m%d-%H%M%S') .. '-' .. run_seq
+    local dir = M.dir() .. '/' .. program .. '/' .. id
+    vim.fn.mkdir(dir, 'p')
+    ---@type security.bounty.RunState
+    local run = {
+        id = id,
+        program = program,
+        dir = dir,
+        stage = 0,
+        state = 'running',
+        started_at = tostring(os.date('!%Y-%m-%dT%H:%M:%SZ')),
+    }
+    M.runs[id] = run
+    log(run, 'run_start', { program = program, domains = table.concat(domains, ',') })
+    vim.notify(('BountyRecon %s: starting (%d domains, scope gate open)'):format(program, #domains))
+    advance(run)
+    return id
+end
+
+---One-line status for every known run.
+---@return string[] lines
+function M.status()
+    local lines = {}
+    for id, run in pairs(M.runs) do
+        local stage_name = stages[run.stage] and stages[run.stage].name or '-'
+        lines[#lines + 1] = ('%s  %s  %s  stage=%s  %s'):format(id, run.program, run.state, stage_name, run.dir)
+    end
+    table.sort(lines)
+    return lines
 end
 
 return M
