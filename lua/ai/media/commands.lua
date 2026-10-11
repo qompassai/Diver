@@ -159,6 +159,14 @@ function M.setup()
     end
     did_setup = true
 
+    vim.api.nvim_create_user_command('AiImage', function(cmd_opts)
+        image_with('image-openai', table.concat(cmd_opts.fargs, ' '))
+    end, { nargs = '+', desc = 'Generate an image from a prompt (OpenAI images API)' })
+
+    vim.api.nvim_create_user_command('AiMedia', function()
+        ui.open(handlers)
+    end, { nargs = 0, desc = 'Pick an AI media backend (audio/image/video)' })
+
     vim.api.nvim_create_user_command('AiTts', function(cmd_opts)
         speak_with('tts-local', gather_text(cmd_opts))
     end, {
@@ -167,22 +175,14 @@ function M.setup()
         desc = 'Speak args, visual selection, or buffer (local TTS)',
     })
 
-    vim.api.nvim_create_user_command('AiImage', function(cmd_opts)
-        image_with('image-openai', table.concat(cmd_opts.fargs, ' '))
-    end, { nargs = '+', desc = 'Generate an image from a prompt (OpenAI images API)' })
-
     vim.api.nvim_create_user_command('AiVideo', function()
         ui.open(handlers, 'video')
     end, { nargs = 0, desc = 'Video generation: shows honest availability' })
 
-    vim.api.nvim_create_user_command('AiMedia', function()
-        ui.open(handlers)
-    end, { nargs = 0, desc = 'Pick an AI media backend (audio/image/video)' })
-
+    vim.keymap.set('n', '<leader>ai', ':AiImage ', { desc = 'AI: generate image from prompt' })
     vim.keymap.set('n', '<leader>am', '<cmd>AiMedia<CR>', { desc = 'AI media backend picker' })
     vim.keymap.set('n', '<leader>at', '<cmd>AiTts<CR>', { desc = 'AI: speak buffer as audio' })
     vim.keymap.set('v', '<leader>at', ':AiTts<CR>', { desc = 'AI: speak selection as audio' })
-    vim.keymap.set('n', '<leader>ai', ':AiImage ', { desc = 'AI: generate image from prompt' })
     vim.keymap.set('n', '<leader>av', '<cmd>AiVideo<CR>', { desc = 'AI: video generation status' })
 end
 

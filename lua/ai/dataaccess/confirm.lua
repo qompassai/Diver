@@ -27,61 +27,61 @@
 
 local M = {}
 
-local TOKEN_TTL_SECONDS = 300
-local TOKEN_COUNT_MAX = 32
 local TOKEN_BYTES = 16
+local TOKEN_COUNT_MAX = 32
+local TOKEN_TTL_SECONDS = 300
 
 -- SQL first keywords that read without changing data. Anything else --
 -- INSERT, UPDATE, DELETE, DDL, PRAGMAs that write, ATTACH, and friends
 -- -- is a write and needs confirmation.
 local SQL_READ_KEYWORDS = {
-    SELECT = true,
-    WITH = true,
+    DESC = true,
+    DESCRIBE = true,
     EXPLAIN = true,
     PRAGMA = true,
+    SELECT = true,
     SHOW = true,
-    DESCRIBE = true,
-    DESC = true,
-    VALUES = true,
     TABLE = true,
+    VALUES = true,
+    WITH = true,
 }
 
 -- Redis commands that read without changing data.
 local REDIS_READ_COMMANDS = {
+    DBSIZE = true,
+    ECHO = true,
+    EXISTS = true,
     GET = true,
+    GETRANGE = true,
+    HEXISTS = true,
     HGET = true,
     HGETALL = true,
-    HMGET = true,
     HKEYS = true,
-    HVALS = true,
     HLEN = true,
-    LRANGE = true,
-    LLEN = true,
+    HMGET = true,
+    HSCAN = true,
+    HVALS = true,
+    INFO = true,
+    KEYS = true,
     LINDEX = true,
-    SMEMBERS = true,
+    LLEN = true,
+    LRANGE = true,
+    MGET = true,
+    PING = true,
+    PTTL = true,
+    SCAN = true,
     SCARD = true,
     SISMEMBER = true,
-    ZRANGE = true,
-    ZCARD = true,
-    ZSCORE = true,
-    ZRANK = true,
-    TYPE = true,
-    TTL = true,
-    PTTL = true,
-    EXISTS = true,
-    HEXISTS = true,
-    STRLEN = true,
-    GETRANGE = true,
-    MGET = true,
-    KEYS = true,
-    SCAN = true,
-    HSCAN = true,
+    SMEMBERS = true,
     SSCAN = true,
+    STRLEN = true,
+    TTL = true,
+    TYPE = true,
+    ZCARD = true,
+    ZRANGE = true,
+    ZRANK = true,
     ZSCAN = true,
-    INFO = true,
-    DBSIZE = true,
-    PING = true,
-    ECHO = true,
+    ZSCORE = true,
 }
 
 ---@class ConfirmToken
@@ -110,19 +110,19 @@ local function first_keyword(text)
 end
 
 -- Data-modifying words that make a WITH...CTE a write.
-local MODIFYING_WORDS = { 'INSERT', 'UPDATE', 'DELETE', 'REPLACE', 'MERGE' }
+local MODIFYING_WORDS = { 'DELETE', 'INSERT', 'MERGE', 'REPLACE', 'UPDATE' }
 
 -- PRAGMA introspection forms that provably only read: a bare setting
 -- name, or a table-valued pragma with a single identifier argument (a
 -- table/index name). Everything else -- notably any '=' assignment --
 -- may change the database and needs confirmation.
 local PRAGMA_READ_ARGS = {
+    foreign_key_list = true,
+    index_info = true,
+    index_list = true,
+    index_xinfo = true,
     table_info = true,
     table_xinfo = true,
-    index_list = true,
-    index_info = true,
-    index_xinfo = true,
-    foreign_key_list = true,
 }
 
 ---Strip SQL comments and quoted regions (replaced by one space so

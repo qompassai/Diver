@@ -12,25 +12,6 @@ local LINE_COUNT_MAX = 20000
 ---@type table<string, integer>
 local buffers = {}
 
----@param session_key string
----@param agent_name string
----@return integer bufnr
-local function ensure_buffer(session_key, agent_name)
-    local existing = buffers[session_key]
-    if existing and api.nvim_buf_is_valid(existing) then
-        return existing
-    end
-
-    local bufnr = api.nvim_create_buf(false, true)
-    api.nvim_buf_set_name(bufnr, 'acp://' .. agent_name .. '/' .. session_key)
-    vim.bo[bufnr].filetype = 'acpchat'
-    vim.bo[bufnr].buftype = 'nofile'
-    vim.bo[bufnr].bufhidden = 'hide'
-    vim.bo[bufnr].swapfile = false
-    buffers[session_key] = bufnr
-    return bufnr
-end
-
 ---@param bufnr integer
 ---@param lines string[]
 local function append_lines(bufnr, lines)
@@ -52,26 +33,21 @@ end
 
 ---@param session_key string
 ---@param agent_name string
----@param how? 'edit'|'split'|'vsplit'|'tabedit'
 ---@return integer bufnr
-function M.open(session_key, agent_name, how)
-    local bufnr = ensure_buffer(session_key, agent_name)
-    if how and how ~= 'edit' then
-        vim.cmd(how)
+local function ensure_buffer(session_key, agent_name)
+    local existing = buffers[session_key]
+    if existing and api.nvim_buf_is_valid(existing) then
+        return existing
     end
-    api.nvim_set_current_buf(bufnr)
-    return bufnr
-end
 
----@param session_key string
----@param agent_name string
----@param text string
-function M.append_user(session_key, agent_name, text)
-    local bufnr = ensure_buffer(session_key, agent_name)
-    local lines = vim.split(text, '\n', { plain = true })
-    lines[1] = '> ' .. (lines[1] or '')
-    append_lines(bufnr, lines)
-    append_lines(bufnr, { '' })
+    local bufnr = api.nvim_create_buf(false, true)
+    api.nvim_buf_set_name(bufnr, 'acp://' .. agent_name .. '/' .. session_key)
+    vim.bo[bufnr].filetype = 'acpchat'
+    vim.bo[bufnr].buftype = 'nofile'
+    vim.bo[bufnr].bufhidden = 'hide'
+    vim.bo[bufnr].swapfile = false
+    buffers[session_key] = bufnr
+    return bufnr
 end
 
 ---@param session_key string
@@ -91,12 +67,36 @@ function M.append_update(session_key, agent_name, update)
 end
 
 ---@param session_key string
+---@param agent_name string
+---@param text string
+function M.append_user(session_key, agent_name, text)
+    local bufnr = ensure_buffer(session_key, agent_name)
+    local lines = vim.split(text, '\n', { plain = true })
+    lines[1] = '> ' .. (lines[1] or '')
+    append_lines(bufnr, lines)
+    append_lines(bufnr, { '' })
+end
+
+---@param session_key string
 function M.close(session_key)
     local bufnr = buffers[session_key]
     buffers[session_key] = nil
     if bufnr and api.nvim_buf_is_valid(bufnr) then
         api.nvim_buf_delete(bufnr, { force = true })
     end
+end
+
+---@param session_key string
+---@param agent_name string
+---@param how? 'edit'|'split'|'vsplit'|'tabedit'
+---@return integer bufnr
+function M.open(session_key, agent_name, how)
+    local bufnr = ensure_buffer(session_key, agent_name)
+    if how and how ~= 'edit' then
+        vim.cmd(how)
+    end
+    api.nvim_set_current_buf(bufnr)
+    return bufnr
 end
 
 return M

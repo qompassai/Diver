@@ -6,8 +6,8 @@
 local M = {}
 local modules = { ---@version JIT
     'red',
-    'tomcat',
     'shark',
+    'tomcat',
 }
 for _, module in ipairs(modules) do
     require('security.red.' .. module)

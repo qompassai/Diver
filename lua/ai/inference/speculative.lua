@@ -26,13 +26,13 @@ local M = {}
 
 local DETECT_TIMEOUT_MS_DEFAULT = 2000
 local LLAMACPP_PORT_DEFAULT = 8080
-local LOOPBACK_HOSTS = { ['127.0.0.1'] = true, ['localhost'] = true, ['::1'] = true }
+local LOOPBACK_HOSTS = { ['127.0.0.1'] = true, ['::1'] = true, ['localhost'] = true }
 
-local DRAFT_TOKENS_MAX = 16
-local DRAFT_CHARS_MAX_DEFAULT = 4000
-local VERIFY_BATCH_MAX = 32
-local PROFILE_ENTRIES_MAX = 64
 local ACCEPT_THRESHOLD_DEFAULT = 0.8
+local DRAFT_CHARS_MAX_DEFAULT = 4000
+local DRAFT_TOKENS_MAX = 16
+local PROFILE_ENTRIES_MAX = 64
+local VERIFY_BATCH_MAX = 32
 
 ---@class AiInferenceEndpoint
 ---@field host string

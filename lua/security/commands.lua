@@ -47,24 +47,6 @@ local function show_report(path, report)
     api.nvim_win_set_buf(0, buf)
 end
 
-api.nvim_create_user_command('AiScan', function(command)
-    local path = resolve_target(command.args)
-    if path == '' then
-        vim.notify('AiScan: no file under cursor or in buffer', vim.log.levels.ERROR)
-        return
-    end
-    local report, err = require('security').scan_file(path)
-    if report == nil then
-        vim.notify('AiScan failed: ' .. tostring(err), vim.log.levels.ERROR)
-        return
-    end
-    show_report(path, report)
-end, {
-    nargs = '?',
-    complete = 'file',
-    desc = 'Scan a file for prompt-injection / malware markers before AI use',
-})
-
 api.nvim_create_user_command('AiQuarantine', function(command)
     local path = resolve_target(command.args)
     if path == '' then
@@ -78,9 +60,27 @@ api.nvim_create_user_command('AiQuarantine', function(command)
     end
     vim.notify('Quarantined to ' .. dest, vim.log.levels.WARN)
 end, {
-    nargs = '?',
     complete = 'file',
     desc = 'Move a suspicious file into the security quarantine directory',
+    nargs = '?',
+})
+
+api.nvim_create_user_command('AiScan', function(command)
+    local path = resolve_target(command.args)
+    if path == '' then
+        vim.notify('AiScan: no file under cursor or in buffer', vim.log.levels.ERROR)
+        return
+    end
+    local report, err = require('security').scan_file(path)
+    if report == nil then
+        vim.notify('AiScan failed: ' .. tostring(err), vim.log.levels.ERROR)
+        return
+    end
+    show_report(path, report)
+end, {
+    complete = 'file',
+    desc = 'Scan a file for prompt-injection / malware markers before AI use',
+    nargs = '?',
 })
 
 return true

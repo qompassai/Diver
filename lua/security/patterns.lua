@@ -17,114 +17,114 @@ local M = {}
 
 ---@class SecurityPattern
 ---@field code string Stable finding code, e.g. 'injection.ignore_previous'
----@field severity 'low'|'medium'|'high' How bad a lone hit is
 ---@field pattern string Lua pattern, matched against lowercased text
+---@field severity 'low'|'medium'|'high' How bad a lone hit is
 ---@field why string What phrasing this catches and why it is suspicious
 
 ---@type SecurityPattern[]
 M.injection_patterns = {
     {
         code = 'injection.ignore_previous',
-        severity = 'medium',
         -- Lua patterns have no group-optional `(all)?`: without "all" is a
         -- separate entry. The two forms are mutually exclusive on one span.
         pattern = 'ignore%s+all%s+previous%s+instructions',
+        severity = 'medium',
         why = 'Classic override: tells the model to drop its real task and obey what follows.',
     },
     {
         code = 'injection.ignore_previous',
-        severity = 'medium',
         pattern = 'ignore%s+previous%s+instructions',
+        severity = 'medium',
         why = 'Classic override without "all": same drop-the-real-task intent.',
     },
     {
         code = 'injection.disregard_prior',
-        severity = 'medium',
         pattern = 'disregard%s+all%s+prior%s+instructions',
+        severity = 'medium',
         why = 'Synonym of the classic override; same drop-the-real-task intent.',
     },
     {
         code = 'injection.disregard_prior',
-        severity = 'medium',
         pattern = 'disregard%s+prior%s+instructions',
+        severity = 'medium',
         why = 'Synonym of the classic override without "all"; same intent.',
     },
     {
         code = 'injection.forget_training',
-        severity = 'medium',
         pattern = 'forget%s+your%s+training',
+        severity = 'medium',
         why = 'Tries to erase the model alignment context before the real payload.',
     },
     {
         code = 'injection.you_are_now',
-        severity = 'high',
         pattern = 'you%s+are%s+now',
+        severity = 'high',
         why = 'Role reassignment ("you are now X"): the standard jailbreak preamble.',
     },
     {
         code = 'injection.roleplay_override',
-        severity = 'low',
         pattern = 'pretend%s+you%s+are',
+        severity = 'low',
         why = 'Roleplay framing used to smuggle a new persona past the instructions.',
     },
     {
         code = 'injection.system_prompt',
-        severity = 'medium',
         pattern = 'system%s+prompt',
+        severity = 'medium',
         why = 'References the hidden system prompt: usually to leak it or claim it.',
     },
     {
         code = 'injection.hidden_instructions',
-        severity = 'medium',
         pattern = 'hidden%s+instructions',
+        severity = 'medium',
         why = 'Payloads labeled "hidden instructions" that the victim never sees.',
     },
     {
         code = 'injection.follow_instructions',
-        severity = 'low',
         pattern = 'read%s+the%s+following%s+instructions',
+        severity = 'low',
         why = 'Carrier phrasing that hands the model a second instruction set.',
     },
     {
         code = 'injection.do_not_follow',
-        severity = 'medium',
         pattern = 'do%s+not%s+follow',
+        severity = 'medium',
         why = '"Do not follow policy" style refusal-suppression attempt.',
     },
     {
         code = 'injection.do_not_reveal',
-        severity = 'medium',
         pattern = 'do%s+not%s+reveal',
+        severity = 'medium',
         why = 'Secrecy clause hiding the injection itself from the user.',
     },
     {
         code = 'injection.developer_mode',
-        severity = 'high',
         pattern = 'developer%s+mode',
+        severity = 'high',
         why = 'Fake privilege escalation pretending restrictions are lifted.',
     },
     {
         code = 'injection.jailbreak',
-        severity = 'high',
         pattern = 'jailbreak',
+        severity = 'high',
         why = 'Explicit jailbreak framing; self-identifies as a breakout attempt.',
     },
     {
         code = 'injection.override_policy',
-        severity = 'high',
         pattern = 'override%s+your%s+policy',
+        severity = 'high',
         why = 'Direct demand to override policy; no legitimate text asks this.',
     },
     {
         code = 'injection.html_comment',
-        severity = 'medium',
         pattern = '<!%-%-',
+        severity = 'medium',
         why = 'HTML comment: invisible when rendered, visible to the model.',
     },
     {
         code = 'injection.markdown_comment',
-        severity = 'low',
         pattern = '%[//%]:',
+        severity = 'low',
         why = 'Markdown reference comment: invisible in rendered output.',
     },
     -- Fake role markers and spoofed metadata smuggled into untrusted
@@ -142,64 +142,64 @@ M.injection_patterns = {
     ---   arXiv:2509.22830, https://arxiv.org/abs/2509.22830
     {
         code = 'injection.role_marker',
-        severity = 'high',
         pattern = '<|[%w_%-]+|>',
+        severity = 'high',
         why = 'Fake chat-template marker (<|im_start|>, <|user|>, ...): role-boundary spoofing in content.',
     },
     {
         code = 'injection.role_marker',
-        severity = 'high',
         -- Lua patterns have no alternation: one entry per role and per
         -- position (string start vs after newline). Six entries below.
         pattern = '^human:',
+        severity = 'high',
         why = '"human:" at text start: forged role marker opening a fake turn.',
     },
     {
         code = 'injection.role_marker',
-        severity = 'high',
         pattern = '\nhuman:',
+        severity = 'high',
         why = '"human:" after a newline: forged role marker opening a fake turn.',
     },
     {
         code = 'injection.role_marker',
-        severity = 'high',
         pattern = '^assistant:',
+        severity = 'high',
         why = '"assistant:" at text start: forged role marker claiming a prior model turn.',
     },
     {
         code = 'injection.role_marker',
-        severity = 'high',
         pattern = '\nassistant:',
+        severity = 'high',
         why = '"assistant:" after a newline: forged role marker claiming a prior model turn.',
     },
     {
         code = 'injection.role_marker',
-        severity = 'high',
         pattern = '^system:',
+        severity = 'high',
         why = '"system:" at text start: forged role marker claiming system authority.',
     },
     {
         code = 'injection.role_marker',
-        severity = 'high',
         pattern = '\nsystem:',
+        severity = 'high',
         why = '"system:" after a newline: forged role marker claiming system authority.',
     },
     {
         code = 'injection.role_marker',
-        severity = 'high',
         pattern = 'sender%s*:%s*[%w_%-]+',
+        severity = 'high',
         why = 'Spoofed "sender:" metadata field naming a fake role or agent.',
     },
     {
         code = 'injection.role_marker',
-        severity = 'high',
         pattern = 'author%s*:%s*[%w_%-]+',
+        severity = 'high',
         why = 'Spoofed "author:" metadata field naming a fake role or agent.',
     },
     {
         code = 'injection.role_marker',
-        severity = 'high',
         pattern = 'role%s*:%s*[%w_%-]+',
+        severity = 'high',
         why = 'Spoofed "role:" metadata field naming a fake role.',
     },
     -- Promptware persistence: phrasings that try to plant long-lived
@@ -212,80 +212,80 @@ M.injection_patterns = {
     ---   https://arxiv.org/abs/2601.09625
     {
         code = 'promptware.persistence',
-        severity = 'high',
         pattern = 'remember%s+this%s+for%s+later',
+        severity = 'high',
         why = 'Asks the model to retain the injected instruction across turns.',
     },
     {
         code = 'promptware.persistence',
-        severity = 'high',
         pattern = 'remember%s+for%s+later',
+        severity = 'high',
         why = 'Short form of the cross-turn retention request.',
     },
     {
         code = 'promptware.persistence',
-        severity = 'high',
         pattern = 'save%s+this%s+rule',
+        severity = 'high',
         why = 'Tries to install the injected instruction as a standing rule.',
     },
     {
         code = 'promptware.persistence',
-        severity = 'high',
         pattern = 'save%s+this%s+as%s+a%s+rule',
+        severity = 'high',
         why = 'Variant phrasing of the rule-install request.',
     },
     {
         code = 'promptware.persistence',
-        severity = 'high',
         pattern = 'add%s+this%s+rule',
+        severity = 'high',
         why = 'Rule-install phrasing for a standing injected instruction.',
     },
     {
         code = 'promptware.persistence',
-        severity = 'high',
         pattern = 'add%s+to%s+your%s+instructions',
+        severity = 'high',
         why = 'Direct attempt to rewrite the model instruction set.',
     },
     {
         code = 'promptware.persistence',
-        severity = 'high',
         pattern = 'update%s+your%s+instructions',
+        severity = 'high',
         why = 'Direct attempt to rewrite the model instruction set.',
     },
     {
         code = 'promptware.persistence',
-        severity = 'high',
         pattern = 'from%s+now%s+on',
+        severity = 'high',
         why = 'Temporal scope widening: the injected rule applies to all future turns.',
     },
     {
         code = 'promptware.persistence',
-        severity = 'high',
         pattern = 'going%s+forward',
+        severity = 'high',
         why = 'Temporal scope widening: the injected rule applies to all future turns.',
     },
     {
         code = 'promptware.persistence',
-        severity = 'high',
         pattern = 'permanent%s+rule',
+        severity = 'high',
         why = 'Explicit permanence claim for the injected instruction.',
     },
     {
         code = 'promptware.persistence',
-        severity = 'high',
         pattern = 'store%s+this%s+in%s+memory',
+        severity = 'high',
         why = 'Asks for a memory write so the injection persists.',
     },
     {
         code = 'promptware.persistence',
-        severity = 'high',
         pattern = 'add%s+to%s+your%s+memory',
+        severity = 'high',
         why = 'Asks for a memory write so the injection persists.',
     },
     {
         code = 'promptware.persistence',
-        severity = 'high',
         pattern = 'remember%s+this%s+rule',
+        severity = 'high',
         why = 'Retention request for an installed rule.',
     },
     -- Promptware reconnaissance: phrasings that probe for secrets,
@@ -297,68 +297,68 @@ M.injection_patterns = {
     ---   https://arxiv.org/abs/2601.09625
     {
         code = 'promptware.recon',
-        severity = 'high',
         pattern = 'os%.getenv',
+        severity = 'high',
         why = 'Lua-side environment read: classic secret-harvesting call.',
     },
     {
         code = 'promptware.recon',
-        severity = 'high',
         pattern = 'process%.env',
+        severity = 'high',
         why = 'Node-side environment read: classic secret-harvesting access.',
     },
     {
         code = 'promptware.recon',
-        severity = 'high',
         pattern = '%.env',
+        severity = 'high',
         why = 'Bare ".env" reference: usually precedes a credential-file grab.',
     },
     {
         code = 'promptware.recon',
-        severity = 'high',
         pattern = 'aws_secret',
+        severity = 'high',
         why = 'Names an AWS secret key: recon for cloud credentials.',
     },
     {
         code = 'promptware.recon',
-        severity = 'high',
         pattern = 'aws_access_key',
+        severity = 'high',
         why = 'Names an AWS access key: recon for cloud credentials.',
     },
     {
         code = 'promptware.recon',
-        severity = 'high',
         pattern = '~/%.ssh/',
+        severity = 'high',
         why = 'References the SSH directory: hunting for private keys.',
     },
     {
         code = 'promptware.recon',
-        severity = 'high',
         pattern = '/etc/passwd',
+        severity = 'high',
         why = 'References the password file: system recon.',
     },
     {
         code = 'promptware.recon',
-        severity = 'high',
         pattern = '/etc/shadow',
+        severity = 'high',
         why = 'References the shadow file: credential recon.',
     },
     {
         code = 'promptware.recon',
-        severity = 'high',
         pattern = 'id_rsa',
+        severity = 'high',
         why = 'Names a private SSH key file.',
     },
     {
         code = 'promptware.recon',
-        severity = 'high',
         pattern = 'api[_%-]key',
+        severity = 'high',
         why = 'Names an API key: recon for service credentials.',
     },
     {
         code = 'promptware.recon',
-        severity = 'high',
         pattern = 'secret[_%-]key',
+        severity = 'high',
         why = 'Names a secret key: recon for service credentials.',
     },
     -- Promptware command-and-control: shell one-liners that fetch and run
@@ -370,32 +370,32 @@ M.injection_patterns = {
     ---   https://arxiv.org/abs/2601.09625
     {
         code = 'promptware.c2',
-        severity = 'high',
         pattern = 'curl.-|%s*sh',
+        severity = 'high',
         why = 'curl-piped-to-shell: fetch-and-execute one-liner.',
     },
     {
         code = 'promptware.c2',
-        severity = 'high',
         pattern = 'wget.-|%s*bash',
+        severity = 'high',
         why = 'wget-piped-to-bash: fetch-and-execute one-liner.',
     },
     {
         code = 'promptware.c2',
-        severity = 'high',
         pattern = '|%s*bash%s',
+        severity = 'high',
         why = 'Pipe into bash: the execution half of a download-and-run chain.',
     },
     {
         code = 'promptware.c2',
-        severity = 'high',
         pattern = 'invoke%-expression',
+        severity = 'high',
         why = 'PowerShell Invoke-Expression: the Windows fetch-and-run primitive.',
     },
     {
         code = 'promptware.c2',
-        severity = 'high',
         pattern = '%f[%w]iex%f[%W]%s*%(',
+        severity = 'high',
         why = 'iex( alias call: obfuscated Invoke-Expression invocation.',
     },
     -- Framing-gap exfil phrasings: authority-flavored "required step"
@@ -408,56 +408,56 @@ M.injection_patterns = {
     ---   https://arxiv.org/abs/2608.27092
     {
         code = 'injection.framing_gap',
-        severity = 'high',
         pattern = 'mandatory%s+integrity%s+signature',
+        severity = 'high',
         why = 'Authority framing: "mandatory signature" language laundering an exfil step.',
     },
     {
         code = 'injection.framing_gap',
-        severity = 'high',
         pattern = 'integrity%s+signature',
+        severity = 'high',
         why = 'Short form of the mandatory-signature authority framing.',
     },
     {
         code = 'injection.framing_gap',
-        severity = 'high',
         pattern = 'required%s+field',
+        severity = 'high',
         why = 'Compliance framing: a data grab presented as a formality.',
     },
     {
         code = 'injection.framing_gap',
-        severity = 'high',
         pattern = 'compliance%s+requires',
+        severity = 'high',
         why = 'Compliance framing: invokes policy to force an action.',
     },
     {
         code = 'injection.framing_gap',
-        severity = 'high',
         pattern = 'required%s+for%s+compliance',
+        severity = 'high',
         why = 'Compliance framing: a step justified by regulation.',
     },
     {
         code = 'injection.framing_gap',
-        severity = 'high',
         pattern = 'security%s+policy%s+requires',
+        severity = 'high',
         why = 'Policy framing: invokes security rules to force an action.',
     },
     {
         code = 'injection.framing_gap',
-        severity = 'high',
         pattern = 'mandatory%s+verification',
+        severity = 'high',
         why = 'Authority framing: "mandatory verification" step laundering exfil.',
     },
     {
         code = 'injection.framing_gap',
-        severity = 'high',
         pattern = 'this%s+is%s+a%s+required%s+step',
+        severity = 'high',
         why = 'Authority framing: declares the malicious step non-optional.',
     },
     {
         code = 'injection.framing_gap',
-        severity = 'high',
         pattern = 'required%s+by%s+policy',
+        severity = 'high',
         why = 'Policy framing: a step justified as mandated.',
     },
     -- Auth lures: phishing-style credential prompts planted in tool
@@ -470,86 +470,86 @@ M.injection_patterns = {
     ---   https://arxiv.org/abs/2608.04741
     {
         code = 'injection.auth_lure',
-        severity = 'medium',
         pattern = 'sign%s+in%s+to%s+continue',
+        severity = 'medium',
         why = 'Phishing-style login gate planted in content.',
     },
     {
         code = 'injection.auth_lure',
-        severity = 'medium',
         pattern = 'log%s+in%s+to%s+continue',
+        severity = 'medium',
         why = 'Phishing-style login gate planted in content.',
     },
     {
         code = 'injection.auth_lure',
-        severity = 'medium',
         pattern = 'login%s+required',
+        severity = 'medium',
         why = 'Login demand appearing inside untrusted content.',
     },
     {
         code = 'injection.auth_lure',
-        severity = 'medium',
         pattern = 'sign%-in%s+required',
+        severity = 'medium',
         why = 'Hyphenated login demand inside untrusted content.',
     },
     {
         code = 'injection.auth_lure',
-        severity = 'medium',
         pattern = 'verify%s+your%s+account',
+        severity = 'medium',
         why = 'Account-verification lure: classic credential-harvest opener.',
     },
     {
         code = 'injection.auth_lure',
-        severity = 'medium',
         pattern = 'verify%s+your%s+identity',
+        severity = 'medium',
         why = 'Identity-verification lure: classic credential-harvest opener.',
     },
     {
         code = 'injection.auth_lure',
-        severity = 'medium',
         pattern = 'session%s+expired',
+        severity = 'medium',
         why = 'Fake session expiry pushing the user to re-authenticate.',
     },
     {
         code = 'injection.auth_lure',
-        severity = 'medium',
         pattern = 'session%s+has%s+expired',
+        severity = 'medium',
         why = 'Long form of the fake session-expiry lure.',
     },
     {
         code = 'injection.auth_lure',
-        severity = 'medium',
         pattern = 're%-authenticate',
+        severity = 'medium',
         why = 'Re-authentication demand inside untrusted content.',
     },
     {
         code = 'injection.auth_lure',
-        severity = 'medium',
         pattern = 'authentication%s+required',
+        severity = 'medium',
         why = 'Authentication demand appearing inside untrusted content.',
     },
     {
         code = 'injection.auth_lure',
-        severity = 'medium',
         pattern = 'enter%s+your%s+password',
+        severity = 'medium',
         why = 'Direct password prompt planted in content.',
     },
     {
         code = 'injection.auth_lure',
-        severity = 'medium',
         pattern = 'confirm%s+your%s+password',
+        severity = 'medium',
         why = 'Password-confirmation prompt planted in content.',
     },
     {
         code = 'injection.auth_lure',
-        severity = 'medium',
         pattern = 'account%s+suspended',
+        severity = 'medium',
         why = 'Fear-based lure: suspension claim pushing a login.',
     },
     {
         code = 'injection.auth_lure',
-        severity = 'medium',
         pattern = 'unusual%s+activity',
+        severity = 'medium',
         why = 'Fear-based lure: "unusual activity" pushing a login.',
     },
     -- Steering-return phrasings: "continue with your original request"
@@ -562,50 +562,50 @@ M.injection_patterns = {
     ---   (2026), arXiv:2608.30362, https://arxiv.org/abs/2608.30362
     {
         code = 'injection.steering_return',
-        severity = 'medium',
         pattern = 'continue%s+with%s+your%s+original%s+request',
+        severity = 'medium',
         why = 'Hand-back phrasing that normalizes a preceding injected detour.',
     },
     {
         code = 'injection.steering_return',
-        severity = 'medium',
         pattern = 'continue%s+with%s+the%s+original',
+        severity = 'medium',
         why = 'Short hand-back phrasing normalizing a detour.',
     },
     {
         code = 'injection.steering_return',
-        severity = 'medium',
         pattern = 'now%s+continue%s+with',
+        severity = 'medium',
         why = 'Resume phrasing that launders an injected step as completed work.',
     },
     {
         code = 'injection.steering_return',
-        severity = 'medium',
         pattern = 'resume%s+your%s+task',
+        severity = 'medium',
         why = 'Resume phrasing after an injected instruction block.',
     },
     {
         code = 'injection.steering_return',
-        severity = 'medium',
         pattern = 'return%s+to%s+the%s+original%s+request',
+        severity = 'medium',
         why = 'Hand-back phrasing that closes an injected detour.',
     },
     {
         code = 'injection.steering_return',
-        severity = 'medium',
         pattern = "proceed%s+with%s+the%s+user's%s+request",
+        severity = 'medium',
         why = 'Hand-back phrasing redirecting to the user task after a detour.',
     },
     {
         code = 'injection.steering_return',
-        severity = 'medium',
         pattern = 'after%s+this,%s+continue',
+        severity = 'medium',
         why = 'Sequencing phrasing: do the injected thing, then look innocent.',
     },
     {
         code = 'injection.steering_return',
-        severity = 'medium',
         pattern = 'then%s+continue%s+with%s+your%s+task',
+        severity = 'medium',
         why = 'Sequencing phrasing: injected step first, original task after.',
     },
     -- Cipher recipes: instructions that tell the model to encode, decode,
@@ -618,62 +618,62 @@ M.injection_patterns = {
     ---   arXiv:2609.09553, https://arxiv.org/abs/2609.09553
     {
         code = 'injection.cipher_recipe',
-        severity = 'medium',
         pattern = 'encode%s+your%s+response%s+in',
+        severity = 'medium',
         why = 'Asks for an encoded response: filter-evasion setup.',
     },
     {
         code = 'injection.cipher_recipe',
-        severity = 'medium',
         pattern = 'encode%s+the%s+response',
+        severity = 'medium',
         why = 'Short form of the encoded-response request.',
     },
     {
         code = 'injection.cipher_recipe',
-        severity = 'medium',
         pattern = 'caesar%s+cipher',
+        severity = 'medium',
         why = 'Names a Caesar cipher: shift-cipher evasion recipe.',
     },
     {
         code = 'injection.cipher_recipe',
-        severity = 'medium',
         pattern = 'vigenere',
+        severity = 'medium',
         why = 'Names a Vigenere cipher: keyed-cipher evasion recipe.',
     },
     {
         code = 'injection.cipher_recipe',
-        severity = 'medium',
         pattern = 'decode%s+the%s+following',
+        severity = 'medium',
         why = 'Hands the model ciphertext to decode: payload delivery.',
     },
     {
         code = 'injection.cipher_recipe',
-        severity = 'medium',
         pattern = 'decoding%s+key',
+        severity = 'medium',
         why = 'Supplies a decoding key: cipher-payload setup.',
     },
     {
         code = 'injection.cipher_recipe',
-        severity = 'medium',
         pattern = 'rot13',
+        severity = 'medium',
         why = 'Names ROT13: the one cipher we decode and rescan.',
     },
     {
         code = 'injection.cipher_recipe',
-        severity = 'medium',
         pattern = 'rot%-13',
+        severity = 'medium',
         why = 'Hyphenated ROT13 naming: same cipher-evasion recipe.',
     },
     {
         code = 'injection.cipher_recipe',
-        severity = 'medium',
         pattern = 'base64%s+encode%s+your',
+        severity = 'medium',
         why = 'Asks for a base64-wrapped response: encoding-evasion setup.',
     },
     {
         code = 'injection.cipher_recipe',
-        severity = 'medium',
         pattern = 'in%s+ciphertext',
+        severity = 'medium',
         why = '"In ciphertext": output-hiding instruction.',
     },
     -- Anchor phrases: instructions that pin the model's first tokens
@@ -686,44 +686,44 @@ M.injection_patterns = {
     ---   https://arxiv.org/abs/2606.10525
     {
         code = 'injection.anchor_phrase',
-        severity = 'medium',
         pattern = 'start%s+your%s+response%s+with',
+        severity = 'medium',
         why = 'Pins the response prefix: benign-looking opener hiding a payload.',
     },
     {
         code = 'injection.anchor_phrase',
-        severity = 'medium',
         pattern = 'begin%s+your%s+response%s+with',
+        severity = 'medium',
         why = 'Variant of the response-prefix pinning.',
     },
     {
         code = 'injection.anchor_phrase',
-        severity = 'medium',
         pattern = 'start%s+your%s+answer%s+with',
+        severity = 'medium',
         why = 'Variant of the response-prefix pinning.',
     },
     {
         code = 'injection.anchor_phrase',
-        severity = 'medium',
         pattern = 'begin%s+your%s+answer%s+with',
+        severity = 'medium',
         why = 'Variant of the response-prefix pinning.',
     },
     {
         code = 'injection.anchor_phrase',
-        severity = 'medium',
         pattern = 'your%s+response%s+must%s+start%s+with',
+        severity = 'medium',
         why = 'Mandatory prefix pinning: filter-evasion setup.',
     },
     {
         code = 'injection.anchor_phrase',
-        severity = 'medium',
         pattern = 'prefix%s+your%s+response%s+with',
+        severity = 'medium',
         why = 'Explicit prefix instruction: filter-evasion setup.',
     },
     {
         code = 'injection.anchor_phrase',
-        severity = 'medium',
         pattern = 'first,%s+output',
+        severity = 'medium',
         why = '"First, output X": forced first tokens before the payload.',
     },
     -- Authority exfil: direct commands to pull environment data and push
@@ -734,38 +734,38 @@ M.injection_patterns = {
     ---   https://arxiv.org/abs/2607.00422
     {
         code = 'injection.authority_exfil',
-        severity = 'medium',
         pattern = 'extract%s+all%s+environment%s+variables',
+        severity = 'medium',
         why = 'Direct order to dump the environment: exfil recon.',
     },
     {
         code = 'injection.authority_exfil',
-        severity = 'medium',
         pattern = 'list%s+all%s+environment%s+variables',
+        severity = 'medium',
         why = 'Variant order to dump the environment.',
     },
     {
         code = 'injection.authority_exfil',
-        severity = 'medium',
         pattern = 'exfiltrat',
+        severity = 'medium',
         why = 'Names exfiltration outright.',
     },
     {
         code = 'injection.authority_exfil',
-        severity = 'medium',
         pattern = 'upload.-https?://',
+        severity = 'medium',
         why = 'Upload-to-URL: the exfil delivery half.',
     },
     {
         code = 'injection.authority_exfil',
-        severity = 'medium',
         pattern = 'post.-to%s+https?://',
+        severity = 'medium',
         why = 'POST-to-URL: the exfil delivery half.',
     },
     {
         code = 'injection.authority_exfil',
-        severity = 'medium',
         pattern = 'send.-to%s+https?://',
+        severity = 'medium',
         why = 'Send-to-URL: the exfil delivery half.',
     },
     -- Roleplay setup: fiction/hypothetical framing used to stage a
@@ -777,78 +777,61 @@ M.injection_patterns = {
     ---   https://arxiv.org/abs/2605.01687
     {
         code = 'jailbreak.roleplay_setup',
-        severity = 'low',
         pattern = 'for%s+a%s+story',
+        severity = 'low',
         why = 'Fiction framing: stages a jailbreak as storytelling.',
     },
     {
         code = 'jailbreak.roleplay_setup',
-        severity = 'low',
         pattern = 'hypothetically',
+        severity = 'low',
         why = 'Hypothetical framing: distances the request from reality.',
     },
     {
         code = 'jailbreak.roleplay_setup',
-        severity = 'low',
         pattern = 'imagine%s+you%s+are',
+        severity = 'low',
         why = 'Persona-install framing for a staged jailbreak.',
     },
     {
         code = 'jailbreak.roleplay_setup',
-        severity = 'low',
         -- Also matched by injection.roleplay_override above; both fire on
         -- purpose: the jailbreak code feeds composite scoring, the
         -- injection code feeds the pattern report.
         pattern = 'pretend%s+you%s+are',
+        severity = 'low',
         why = 'Persona-install framing for a staged jailbreak.',
     },
     {
         code = 'jailbreak.roleplay_setup',
-        severity = 'low',
         pattern = 'pretend%s+to%s+be',
+        severity = 'low',
         why = 'Persona-install framing for a staged jailbreak.',
     },
     {
         code = 'jailbreak.roleplay_setup',
-        severity = 'low',
         pattern = 'roleplay%s+as',
+        severity = 'low',
         why = 'Explicit roleplay framing for a staged jailbreak.',
     },
     {
         code = 'jailbreak.roleplay_setup',
-        severity = 'low',
         pattern = 'role%-play',
+        severity = 'low',
         why = 'Hyphenated roleplay framing.',
     },
     {
         code = 'jailbreak.roleplay_setup',
-        severity = 'low',
         pattern = 'in%s+this%s+fictional%s+scenario',
+        severity = 'low',
         why = 'Fiction-scenario framing: stages the jailbreak turn.',
     },
     {
         code = 'jailbreak.roleplay_setup',
-        severity = 'low',
         pattern = 'for%s+the%s+sake%s+of%s+fiction',
+        severity = 'low',
         why = 'Fiction-justification framing for a staged jailbreak.',
     },
-}
-
----@class ZeroWidthEntry
----@field name string Unicode name, e.g. 'U+200B'
----@field bytes string UTF-8 byte sequence of the character
----@field severity 'low'|'medium' Severity of a lone hit
-
----@type ZeroWidthEntry[]
-M.zero_width = {
-    -- Byte sequences are literal so this works on LuaJIT with no utf8 module.
-    { name = 'U+200B', bytes = '\226\128\139', severity = 'medium' },
-    { name = 'U+200C', bytes = '\226\128\140', severity = 'medium' },
-    { name = 'U+200D', bytes = '\226\128\141', severity = 'low' },
-    { name = 'U+FEFF', bytes = '\239\187\191', severity = 'low' },
-    -- U+200D also joins emoji sequences and U+FEFF is a legal leading BOM,
-    -- so both are low alone; the scanner upgrades any zero-width hit to
-    -- high when it sits next to an injection pattern.
 }
 
 --- Keywords swept heuristically over image metadata regions. A hit means
@@ -856,16 +839,33 @@ M.zero_width = {
 --- metadata was parsed or is malicious on its own.
 ---@type string[]
 M.metadata_keywords = {
-    'instruction',
-    'ignore previous',
-    'system prompt',
-    'password',
-    'secret',
-    '<script',
-    'javascript:',
-    'powershell',
     '/bin/sh',
+    '<script',
     'exfiltrat',
+    'ignore previous',
+    'instruction',
+    'javascript:',
+    'password',
+    'powershell',
+    'secret',
+    'system prompt',
+}
+
+---@class ZeroWidthEntry
+---@field bytes string UTF-8 byte sequence of the character
+---@field name string Unicode name, e.g. 'U+200B'
+---@field severity 'low'|'medium' Severity of a lone hit
+
+---@type ZeroWidthEntry[]
+M.zero_width = {
+    -- Byte sequences are literal so this works on LuaJIT with no utf8 module.
+    { bytes = '\226\128\139', name = 'U+200B', severity = 'medium' },
+    { bytes = '\226\128\140', name = 'U+200C', severity = 'medium' },
+    { bytes = '\226\128\141', name = 'U+200D', severity = 'low' },
+    { bytes = '\239\187\191', name = 'U+FEFF', severity = 'low' },
+    -- U+200D also joins emoji sequences and U+FEFF is a legal leading BOM,
+    -- so both are low alone; the scanner upgrades any zero-width hit to
+    -- high when it sits next to an injection pattern.
 }
 
 return M

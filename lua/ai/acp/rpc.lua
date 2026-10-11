@@ -19,6 +19,67 @@ local MAX_PENDING_REQUESTS = 256
 ---@field next_id integer
 ---@field on_exit? fun(code: integer)
 
+---@param client AcpClient
+---@param method string
+---@param params table
+function M.notify(client, method, params)
+    assert(client.proc, 'ACP client is not running')
+    local payload = vim.json.encode({
+        jsonrpc = '2.0',
+        method = method,
+        params = params,
+    })
+    client.proc:write(payload .. '\n')
+end
+
+---@param client AcpClient
+---@param method string
+---@param handler fun(params: table): any, table?
+function M.on(client, method, handler)
+    client.handlers[method] = handler
+end
+
+---@param client AcpClient
+---@param id integer
+---@param result any
+---@param err table?
+function M.reply(client, id, result, err)
+    assert(client.proc, 'ACP client is not running')
+    local payload = vim.json.encode({
+        jsonrpc = '2.0',
+        id = id,
+        result = err == nil and (result or vim.NIL) or nil,
+        error = err,
+    })
+    client.proc:write(payload .. '\n')
+end
+
+---@param client AcpClient
+---@param method string
+---@param params table
+---@param callback? fun(err: table?, result: any)
+---@return integer? id
+function M.request(client, method, params, callback)
+    assert(client.proc, 'ACP client is not running')
+    assert(vim.tbl_count(client.pending) < MAX_PENDING_REQUESTS, 'Pending ACP request bound exceeded')
+
+    local id = client.next_id
+    client.next_id = client.next_id + 1
+
+    if callback then
+        client.pending[id] = callback
+    end
+
+    local payload = vim.json.encode({
+        jsonrpc = '2.0',
+        id = id,
+        method = method,
+        params = params,
+    })
+    client.proc:write(payload .. '\n')
+    return id
+end
+
 ---@param cmd string[]
 ---@param opts { cwd?: string, env?: table, on_exit?: fun(code: integer) }
 ---@return AcpClient?, string?
@@ -107,67 +168,6 @@ function M.start(cmd, opts)
 
     client.proc = process
     return client, nil
-end
-
----@param client AcpClient
----@param method string
----@param params table
----@param callback? fun(err: table?, result: any)
----@return integer? id
-function M.request(client, method, params, callback)
-    assert(client.proc, 'ACP client is not running')
-    assert(vim.tbl_count(client.pending) < MAX_PENDING_REQUESTS, 'Pending ACP request bound exceeded')
-
-    local id = client.next_id
-    client.next_id = client.next_id + 1
-
-    if callback then
-        client.pending[id] = callback
-    end
-
-    local payload = vim.json.encode({
-        jsonrpc = '2.0',
-        id = id,
-        method = method,
-        params = params,
-    })
-    client.proc:write(payload .. '\n')
-    return id
-end
-
----@param client AcpClient
----@param method string
----@param params table
-function M.notify(client, method, params)
-    assert(client.proc, 'ACP client is not running')
-    local payload = vim.json.encode({
-        jsonrpc = '2.0',
-        method = method,
-        params = params,
-    })
-    client.proc:write(payload .. '\n')
-end
-
----@param client AcpClient
----@param id integer
----@param result any
----@param err table?
-function M.reply(client, id, result, err)
-    assert(client.proc, 'ACP client is not running')
-    local payload = vim.json.encode({
-        jsonrpc = '2.0',
-        id = id,
-        result = err == nil and (result or vim.NIL) or nil,
-        error = err,
-    })
-    client.proc:write(payload .. '\n')
-end
-
----@param client AcpClient
----@param method string
----@param handler fun(params: table): any, table?
-function M.on(client, method, handler)
-    client.handlers[method] = handler
 end
 
 ---@param client AcpClient

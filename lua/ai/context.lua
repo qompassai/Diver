@@ -1,8 +1,8 @@
 -- /qompassai/Diver/lua/acp/context.lua
--- Qompass AI Agent Context Protocol Tooling (Tiger Style)
+-- Qompass AI Agent Context Protocol Tooling
 -- Copyright (C) 2025 Qompass AI, All rights reserved
 -- ----------------------------------------
--- Reference: https://github.com/prmichaelsen/agent-context-protocol
+---@source https://github.com/prmichaelsen/agent-context-protocol
 --
 -- Unrelated to the Agent CLIENT Protocol implemented elsewhere in this
 -- directory (registry.lua, rpc.lua, protocol.lua, session.lua, ui.lua,
@@ -21,16 +21,59 @@ local FILE_COUNT_MAX = 2000
 
 ---@type table<string, string>
 local TEMPLATES = {
-    ['SPEC.md'] = '# Specification\n\n## Problem\n\n## Approach\n\n## Non-Goals\n',
-    ['PLAN.md'] = '# Plan\n\n## Steps\n\n1. \n\n## Open Questions\n',
     ['DECISIONS.md'] = '# Decisions\n\nRecord one entry per accepted decision, oldest first.\n\n'
         .. '## YYYY-MM-DD: <title>\n\n- Context:\n- Decision:\n- Consequences:\n',
+    ['PLAN.md'] = '# Plan\n\n## Steps\n\n1. \n\n## Open Questions\n',
+    ['SPEC.md'] = '# Specification\n\n## Problem\n\n## Approach\n\n## Non-Goals\n',
 }
 
 ---@param root? string
 ---@return string
 local function context_dir(root)
     return fs.joinpath(root or vim.fn.getcwd(), 'agent')
+end
+
+---@param root? string
+---@param how? 'edit'|'split'|'vsplit'|'tabedit'
+function M.browse(root, how)
+    local dir = context_dir(root)
+    local paths = M.list(root)
+    if #paths == 0 then
+        vim.notify('No agent/ context files found; run :AcpContextScaffold first', vim.log.levels.WARN)
+        return
+    end
+
+    local picker_ok, fzf_module = pcall(require, 'config.nav.fzf')
+    local function open(name)
+        local path = fs.joinpath(dir, name)
+        if how and how ~= 'edit' then
+            vim.cmd(how)
+        end
+        vim.cmd.edit(path)
+    end
+
+    if picker_ok and type(fzf_module) == 'table' and type(fzf_module.fzfpick) == 'function' then
+        local items = {}
+        for _, name in ipairs(paths) do
+            items[#items + 1] = { label = name, value = name }
+        end
+        fzf_module.fzfpick(items, function(value)
+            if value then
+                open(value)
+            end
+        end, {
+            prompt = 'Agent context files',
+        })
+        return
+    end
+
+    vim.ui.select(paths, {
+        prompt = 'Agent context files',
+    }, function(choice)
+        if choice then
+            open(choice)
+        end
+    end)
 end
 
 ---@param root? string
@@ -74,45 +117,6 @@ function M.list(root)
     end
     table.sort(paths)
     return paths
-end
-
----@param root? string
----@param how? 'edit'|'split'|'vsplit'|'tabedit'
-function M.browse(root, how)
-    local dir = context_dir(root)
-    local paths = M.list(root)
-    if #paths == 0 then
-        vim.notify('No agent/ context files found; run :AcpContextScaffold first', vim.log.levels.WARN)
-        return
-    end
-
-    local picker_ok, fzf_module = pcall(require, 'config.nav.fzf')
-    local function open(name)
-        local path = fs.joinpath(dir, name)
-        if how and how ~= 'edit' then
-            vim.cmd(how)
-        end
-        vim.cmd.edit(path)
-    end
-
-    if picker_ok and type(fzf_module) == 'table' and type(fzf_module.fzfpick) == 'function' then
-        local items = {}
-        for _, name in ipairs(paths) do
-            items[#items + 1] = { label = name, value = name }
-        end
-        fzf_module.fzfpick(items, function(value)
-            if value then
-                open(value)
-            end
-        end, { prompt = 'Agent context files' })
-        return
-    end
-
-    vim.ui.select(paths, { prompt = 'Agent context files' }, function(choice)
-        if choice then
-            open(choice)
-        end
-    end)
 end
 
 return M

@@ -17,28 +17,28 @@ local OUTPUT_MAX = 102400 ---@type integer Max bytes kept from stdout (100 KiB)
 local TIMEOUT_MS = 120000 ---@type integer Hard kill after 120 seconds
 
 ---@class ReconToolDef
+---@field active boolean True when the tool sends traffic to the target
 ---@field bin string Binary name as found on PATH
 ---@field desc string One-line description
----@field active boolean True when the tool sends traffic to the target
 
 ---Tool phone book. `active` marks tools that touch the target
 ---(port scans, fuzzing, vulnerability probes); the rest only read
 ---public data (DNS, whois) or fetch a single URL.
 M.DEFS = {
-    nmap = { bin = 'nmap', desc = 'Port/service discovery scanner', active = true },
-    masscan = { bin = 'masscan', desc = 'High-speed port scanner', active = true },
-    httpx = { bin = 'httpx', desc = 'HTTP prober (tech detect, status, titles)', active = true },
-    nuclei = { bin = 'nuclei', desc = 'Templated vulnerability scanner', active = true },
-    ffuf = { bin = 'ffuf', desc = 'Fast web fuzzer (paths, vhosts)', active = true },
-    gobuster = { bin = 'gobuster', desc = 'Directory/DNS/vhost enumerator', active = true },
-    subfinder = { bin = 'subfinder', desc = 'Passive subdomain enumeration', active = false },
-    amass = { bin = 'amass', desc = 'Subdomain enumeration and mapping', active = false },
-    dig = { bin = 'dig', desc = 'DNS lookup', active = false },
-    curl = { bin = 'curl', desc = 'HTTP client', active = true },
-    whois = { bin = 'whois', desc = 'Domain registration lookup', active = false },
-    whatweb = { bin = 'whatweb', desc = 'Website technology fingerprinter', active = true },
-    ['testssl.sh'] = { bin = 'testssl.sh', desc = 'TLS/SSL configuration tester', active = true },
-    jwt_tool = { bin = 'jwt_tool', desc = 'JWT token tester', active = false },
+    amass = { active = false, bin = 'amass', desc = 'Subdomain enumeration and mapping' },
+    curl = { active = true, bin = 'curl', desc = 'HTTP client' },
+    dig = { active = false, bin = 'dig', desc = 'DNS lookup' },
+    ffuf = { active = true, bin = 'ffuf', desc = 'Fast web fuzzer (paths, vhosts)' },
+    gobuster = { active = true, bin = 'gobuster', desc = 'Directory/DNS/vhost enumerator' },
+    httpx = { active = true, bin = 'httpx', desc = 'HTTP prober (tech detect, status, titles)' },
+    jwt_tool = { active = false, bin = 'jwt_tool', desc = 'JWT token tester' },
+    masscan = { active = true, bin = 'masscan', desc = 'High-speed port scanner' },
+    nmap = { active = true, bin = 'nmap', desc = 'Port/service discovery scanner' },
+    nuclei = { active = true, bin = 'nuclei', desc = 'Templated vulnerability scanner' },
+    subfinder = { active = false, bin = 'subfinder', desc = 'Passive subdomain enumeration' },
+    ['testssl.sh'] = { active = true, bin = 'testssl.sh', desc = 'TLS/SSL configuration tester' },
+    whatweb = { active = true, bin = 'whatweb', desc = 'Website technology fingerprinter' },
+    whois = { active = false, bin = 'whois', desc = 'Domain registration lookup' },
 }
 
 ---True when the binary is installed and executable.
@@ -58,10 +58,10 @@ function M.list()
     local out = {}
     for name, def in pairs(M.DEFS) do
         out[#out + 1] = {
-            name = name,
-            desc = def.desc,
             active = def.active,
             available = M.available(name),
+            desc = def.desc,
+            name = name,
         }
     end
     table.sort(out, function(a, b)
@@ -109,7 +109,7 @@ function M.run(name, args, callback)
     for _, arg in ipairs(args) do
         argv[#argv + 1] = arg
     end
-    vim.system(argv, { timeout = TIMEOUT_MS, text = true }, function(obj)
+    vim.system(argv, { text = true, timeout = TIMEOUT_MS }, function(obj)
         local stdout = obj.stdout or ''
         local stderr = obj.stderr or ''
         if #stdout > OUTPUT_MAX then
@@ -121,9 +121,9 @@ function M.run(name, args, callback)
         vim.schedule(function()
             callback(obj.code == 0, {
                 code = obj.code,
-                stdout = stdout,
-                stderr = stderr,
                 signal = obj.signal,
+                stderr = stderr,
+                stdout = stdout,
             })
         end)
     end)

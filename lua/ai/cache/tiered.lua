@@ -24,14 +24,14 @@
 
 local M = {}
 
-local GLOBAL_TTL_S_DEFAULT = 259200 -- 72 hours, the paper's horizon
-local LOCAL_TTL_S_DEFAULT = 300 -- 5 minutes: one active turn or so
 local GLOBAL_COUNT_MAX_DEFAULT = 512
-local LOCAL_COUNT_MAX_DEFAULT = 128
-local REPLAY_ITEM_MAX_DEFAULT = 32 -- bounded-replay window cap
+local GLOBAL_TTL_S_DEFAULT = 259200 -- 72 hours, the paper's horizon
 local KEY_LENGTH_MAX = 256
+local LOCAL_COUNT_MAX_DEFAULT = 128
+local LOCAL_TTL_S_DEFAULT = 300 -- 5 minutes: one active turn or so
 local PERSIST_FILENAME = 'tiered_global.json'
 local PERSIST_VERSION = 1
+local REPLAY_ITEM_MAX_DEFAULT = 32 -- bounded-replay window cap
 
 -- Monotonic tmp-file sequence, process-scoped below by pid. A fixed
 -- '.tmp' name would let anyone with directory write access pre-plant
@@ -41,36 +41,36 @@ local persist_tmp_seq = 0
 
 ---@class AiTieredCacheOpts
 ---@field dir? string persist directory; defaults to stdpath('data')/ai/cache
----@field global_ttl_s? integer default time-to-live for global entries
----@field local_ttl_s? integer default time-to-live for local entries
 ---@field global_count_max? integer LRU cap for the global tier
+---@field global_ttl_s? integer default time-to-live for global entries
 ---@field local_count_max? integer LRU cap for the local tier
+---@field local_ttl_s? integer default time-to-live for local entries
 ---@field replay_item_max? integer max keys per replay() call
 
 ---@class AiTieredPutOpts
 ---@field ttl_s? integer per-entry TTL override
 
 ---@class AiTieredStats
----@field global_count integer live global entries
----@field local_count integer live local entries
----@field hits integer get_* hits since new()
----@field misses integer get_* misses since new()
----@field evictions integer LRU evictions since new()
----@field last_persist_error? string last disk-write failure, if any
----@field last_load_error? string disk-load failure at new(), if any
 ---@field dir_error? string persist-dir creation failure, if any
+---@field evictions integer LRU evictions since new()
+---@field global_count integer live global entries
+---@field hits integer get_* hits since new()
+---@field last_load_error? string disk-load failure at new(), if any
+---@field last_persist_error? string last disk-write failure, if any
+---@field local_count integer live local entries
+---@field misses integer get_* misses since new()
 
 ---@alias AiRebuildFn fun(global: table<string, any>, keys: string[]): table?
 ---Rebuilds a bounded local tail from the global snapshot.
 
 ---@class AiTieredCache
----@field put_global fun(key: string, value: any, opts?: AiTieredPutOpts): boolean?, string?
 ---@field get_global fun(key: string): any
----@field put_local fun(key: string, value: any): boolean?, string?
 ---@field get_local fun(key: string): any
+---@field prune fun(): integer
+---@field put_global fun(key: string, value: any, opts?: AiTieredPutOpts): boolean?, string?
+---@field put_local fun(key: string, value: any): boolean?, string?
 ---@field replay fun(keys: string[], rebuild_fn: AiRebuildFn): table?, string?
 ---@field stats fun(): AiTieredStats
----@field prune fun(): integer
 
 ---@param key any
 ---@return boolean ok
@@ -167,9 +167,9 @@ local function persist_global(dir, entries)
     for _, key in ipairs(sorted_keys(entries)) do
         local entry = entries[key]
         plain.entries[key] = {
-            value = entry.value,
             stored_at = entry.stored_at,
             ttl_s = entry.ttl_s,
+            value = entry.value,
         }
     end
     local ok, text = pcall(vim.json.encode, plain)
@@ -235,10 +235,10 @@ local function load_global_entries(dir)
         local key_ok = check_key(key)
         if key_ok and valid_disk_entry(disk_entry) then
             local entry = {
-                value = disk_entry.value,
+                seq = 0,
                 stored_at = math.floor(disk_entry.stored_at),
                 ttl_s = math.floor(disk_entry.ttl_s),
-                seq = 0,
+                value = disk_entry.value,
             }
             -- Drop already-expired disk entries instead of serving them.
             if not entry_expired(entry, now) then
@@ -261,10 +261,10 @@ local function normalize_opts(opts)
     end
     local out = {
         dir = opts.dir,
-        global_ttl_s = opts.global_ttl_s,
-        local_ttl_s = opts.local_ttl_s,
         global_count_max = opts.global_count_max,
+        global_ttl_s = opts.global_ttl_s,
         local_count_max = opts.local_count_max,
+        local_ttl_s = opts.local_ttl_s,
         replay_item_max = opts.replay_item_max,
     }
     if out.dir == nil then
@@ -317,15 +317,15 @@ function M.new(opts)
 
     local state = {
         cfg = cfg,
-        seq = 0,
-        hits = 0,
-        misses = 0,
-        evictions = 0,
-        last_persist_error = nil,
-        last_load_error = nil,
         dir_error = nil,
+        evictions = 0,
         global_entries = {},
+        hits = 0,
+        last_load_error = nil,
+        last_persist_error = nil,
         local_entries = {},
+        misses = 0,
+        seq = 0,
     }
 
     local mkdir_ok, mkdir_err = pcall(vim.fn.mkdir, cfg.dir, 'p')
@@ -387,16 +387,59 @@ function M.new(opts)
     ---@param ttl_s integer
     local function put_entry(entries, count_max, key, value, ttl_s)
         entries[key] = {
-            value = value,
+            seq = next_seq(),
             stored_at = os.time(),
             ttl_s = ttl_s,
-            seq = next_seq(),
+            value = value,
         }
         state.evictions = state.evictions + evict_lru(entries, count_max)
     end
 
     ---@type AiTieredCache
     local cache = {}
+
+    ---Look up a long-lived entry. The returned value is a detached
+    ---copy: mutating it never affects the cached entry (which would
+    ---otherwise also poison the next disk persist).
+    ---@param key string
+    ---@return any value, or nil on miss/expiry/invalid key
+    function cache.get_global(key)
+        local value = get_entry(state.global_entries, key)
+        if value == nil then
+            return nil
+        end
+        -- Cannot fail: put_global only stores values that already
+        -- survived a JSON round-trip. Fail closed anyway.
+        local copy = detached_copy(value)
+        if copy == nil then
+            return nil
+        end
+        return copy
+    end
+
+    ---Look up a short-lived entry. Returns the live stored reference;
+    ---mutating it mutates the cache.
+    ---@param key string
+    ---@return any value, or nil on miss/expiry/invalid key
+    function cache.get_local(key)
+        return get_entry(state.local_entries, key)
+    end
+
+    ---Drop expired entries from both tiers.
+    ---@return integer pruned_count
+    function cache.prune()
+        local now = os.time()
+        local pruned = 0
+        for _, entries in ipairs({ state.global_entries, state.local_entries }) do
+            for key, entry in pairs(entries) do
+                if entry_expired(entry, now) then
+                    entries[key] = nil
+                    pruned = pruned + 1
+                end
+            end
+        end
+        return pruned
+    end
 
     ---Store a long-lived entry, persisted to disk best-effort.
     ---@param key string
@@ -435,25 +478,6 @@ function M.new(opts)
         return true, nil
     end
 
-    ---Look up a long-lived entry. The returned value is a detached
-    ---copy: mutating it never affects the cached entry (which would
-    ---otherwise also poison the next disk persist).
-    ---@param key string
-    ---@return any value, or nil on miss/expiry/invalid key
-    function cache.get_global(key)
-        local value = get_entry(state.global_entries, key)
-        if value == nil then
-            return nil
-        end
-        -- Cannot fail: put_global only stores values that already
-        -- survived a JSON round-trip. Fail closed anyway.
-        local copy = detached_copy(value)
-        if copy == nil then
-            return nil
-        end
-        return copy
-    end
-
     ---Store a short-lived, memory-only entry. The value is kept by
     ---reference (no JSON round-trip, so any Lua value is allowed);
     ---callers must not mutate it after storing.
@@ -468,14 +492,6 @@ function M.new(opts)
         end
         put_entry(state.local_entries, state.cfg.local_count_max, key, value, state.cfg.local_ttl_s)
         return true, nil
-    end
-
-    ---Look up a short-lived entry. Returns the live stored reference;
-    ---mutating it mutates the cache.
-    ---@param key string
-    ---@return any value, or nil on miss/expiry/invalid key
-    function cache.get_local(key)
-        return get_entry(state.local_entries, key)
     end
 
     ---Bounded recompute of a local tail, the SWA Bounded Replay
@@ -551,31 +567,15 @@ function M.new(opts)
             local_count = local_count + 1
         end
         return {
-            global_count = global_count,
-            local_count = local_count,
-            hits = state.hits,
-            misses = state.misses,
-            evictions = state.evictions,
-            last_persist_error = state.last_persist_error,
-            last_load_error = state.last_load_error,
             dir_error = state.dir_error,
+            evictions = state.evictions,
+            global_count = global_count,
+            hits = state.hits,
+            last_load_error = state.last_load_error,
+            last_persist_error = state.last_persist_error,
+            local_count = local_count,
+            misses = state.misses,
         }
-    end
-
-    ---Drop expired entries from both tiers.
-    ---@return integer pruned_count
-    function cache.prune()
-        local now = os.time()
-        local pruned = 0
-        for _, entries in ipairs({ state.global_entries, state.local_entries }) do
-            for key, entry in pairs(entries) do
-                if entry_expired(entry, now) then
-                    entries[key] = nil
-                    pruned = pruned + 1
-                end
-            end
-        end
-        return pruned
     end
 
     return cache, nil

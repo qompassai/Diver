@@ -28,6 +28,27 @@ local function report_slug(path)
     return slug
 end
 
+---Manual submission checklist per platform.
+---@param platform string
+---@return string[]
+function M.checklist(platform)
+    local steps = {
+        '1. Run :BountyApprove submission <finding-slug> (operator approval).',
+        '2. Open the program page and start a new report.',
+        '3. Paste the payload sections below into the matching form fields.',
+        '4. Attach PoC files / screenshots referenced in the report.',
+        '5. Re-read the preview once more, then submit.',
+    }
+    if platform == 'immunefi' then
+        steps[#steps + 1] = '6. Immunefi: confirm $ impact is quantified; validity ratio matters.'
+    elseif platform == 'intigriti' then
+        steps[#steps + 1] = '6. Intigriti: confirm no PII in evidence (GDPR).'
+    elseif platform == 'yeswehack' then
+        steps[#steps + 1] = '6. YesWeHack: final duplicate search before sending.'
+    end
+    return steps
+end
+
 ---Parse a report file into the submission payload: the exact fields the
 ---operator will paste into the platform form.
 ---@param path string Report file.
@@ -50,27 +71,6 @@ function M.payload(path)
         severity = field('Severity'),
         body = text,
     }
-end
-
----Manual submission checklist per platform.
----@param platform string
----@return string[]
-function M.checklist(platform)
-    local steps = {
-        '1. Run :BountyApprove submission <finding-slug> (operator approval).',
-        '2. Open the program page and start a new report.',
-        '3. Paste the payload sections below into the matching form fields.',
-        '4. Attach PoC files / screenshots referenced in the report.',
-        '5. Re-read the preview once more, then submit.',
-    }
-    if platform == 'intigriti' then
-        steps[#steps + 1] = '6. Intigriti: confirm no PII in evidence (GDPR).'
-    elseif platform == 'immunefi' then
-        steps[#steps + 1] = '6. Immunefi: confirm $ impact is quantified; validity ratio matters.'
-    elseif platform == 'yeswehack' then
-        steps[#steps + 1] = '6. YesWeHack: final duplicate search before sending.'
-    end
-    return steps
 end
 
 ---Show the exact submission payload in a scratch buffer. No gate required:

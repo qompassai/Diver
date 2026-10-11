@@ -50,11 +50,6 @@ function M.open()
     vim.api.nvim_win_set_buf(M.window, M.buffer)
     vim.wo[M.window].wrap = true
     vim.api.nvim_set_current_win(source_window)
-    vim.keymap.set('n', 'q', function()
-        if M.window and vim.api.nvim_win_is_valid(M.window) and #vim.api.nvim_list_wins() > 1 then
-            vim.api.nvim_win_close(M.window, true)
-        end
-    end, { buffer = M.buffer, desc = 'Hide Rose chat' })
     vim.keymap.set('n', '<C-c>', function()
         if on_stop then
             on_stop()
@@ -65,6 +60,11 @@ function M.open()
             on_ask()
         end
     end, { buffer = M.buffer, desc = 'Ask Rose' })
+    vim.keymap.set('n', 'q', function()
+        if M.window and vim.api.nvim_win_is_valid(M.window) and #vim.api.nvim_list_wins() > 1 then
+            vim.api.nvim_win_close(M.window, true)
+        end
+    end, { buffer = M.buffer, desc = 'Hide Rose chat' })
     return M.buffer
 end
 

@@ -47,25 +47,26 @@
 --     calls tools without asking, and headless sessions always deny.
 --   * A 'clean' verdict means "no known markers found", not "safe".
 
-local scanner = require('security.scanner')
-
 local M = {}
+
+local scanner = require('security.scanner')
 
 -- Named bounds.
 local ALLOWLIST_MAX = 256
 local ARGS_PREVIEW_MAX = 512
 local AUTH_LURE_SCAN_MAX = 4096
+local SOURCE_DETAIL_MAX = 200 -- cap on the source string echoed into a finding detail
 
 -- Login-lure phrasing: an auth prompt smuggled inside tool arguments is
 -- the phishing-shaped indirect injection. Plain-substring matches over
 -- lowercased text; keep the set small and explicit.
 local AUTH_LURE_PHRASES = {
-    'sign in to continue',
-    'login required',
-    'verify your account',
     'enter your password',
+    'login required',
     're-authenticate',
     'session expired',
+    'sign in to continue',
+    'verify your account',
 }
 
 local AUTH_LURE_WARNING = 'WARNING: this tool call involves an authentication prompt — never enter credentials.'
@@ -104,36 +105,6 @@ local function check_string(value, name)
     return true, nil
 end
 
----@param entries any
----@return boolean ok
-local function valid_allowlist(entries)
-    if type(entries) ~= 'table' then
-        return false
-    end
-    if #entries > ALLOWLIST_MAX then
-        return false
-    end
-    for _, entry in ipairs(entries) do
-        if type(entry) ~= 'table' then
-            return false
-        end
-        if type(entry.server) ~= 'string' or type(entry.tool) ~= 'string' then
-            return false
-        end
-        if entry.identity ~= nil and type(entry.identity) ~= 'string' then
-            return false
-        end
-    end
-    return true
-end
-
----@class ScanProvenance
----@field source string Where the text came from (URL, RAG document id, clipboard, ...)
----@field allowlisted boolean Caller-vouched trust flag; true skips the untrusted-source finding
-
--- Cap on the source string echoed into a finding detail.
-local SOURCE_DETAIL_MAX = 200
-
 --- Tag a report with its provenance when the source is not allowlisted.
 --- This is the only scanner-enforceable mitigation for narrative RAG
 --- poisoning: once poisoned text is retrieved, the scanner cannot tell
@@ -165,9 +136,9 @@ local function apply_provenance(findings, provenance)
     if not provenance.allowlisted then
         local short = provenance.source:sub(1, SOURCE_DETAIL_MAX)
         findings[#findings + 1] = {
-            severity = 'low',
             code = 'provenance.untrusted_source',
             detail = 'untrusted source: ' .. short .. ' (not allowlisted)',
+            severity = 'low',
         }
     end
     return nil
@@ -228,86 +199,44 @@ local function composite_verdict(findings, base)
     return verdict
 end
 
---- Load the tool allowlist. A missing file is not an error: it means
---- nothing has been approved yet.
----@return table? entries Array of { server: string, tool: string }
----@return string? err
-function M.allowlist_load()
-    local handle = io.open(allowlist_path(), 'r')
-    if handle == nil then
-        return {}, nil
-    end
-    local raw = handle:read('*a')
-    handle:close()
-    if raw == nil or raw == '' then
-        return {}, nil
-    end
-    local ok, decoded = pcall(vim.json.decode, raw)
-    if not ok or not valid_allowlist(decoded) then
-        return nil, 'allowlist is corrupt: ' .. allowlist_path()
-    end
-    return decoded, nil
-end
-
---- Persist the tool allowlist. Entries are sorted for deterministic output.
----@param entries table Array of { server: string, tool: string }
----@return boolean ok
----@return string? err
-function M.allowlist_save(entries)
-    if not valid_allowlist(entries) then
-        return false, 'allowlist entries are invalid or exceed the limit'
-    end
-    local sorted = {}
-    for _, entry in ipairs(entries) do
-        sorted[#sorted + 1] = { server = entry.server, tool = entry.tool, identity = entry.identity or '' }
-    end
-    table.sort(sorted, function(a, b)
-        return (a.server .. '\0' .. a.tool .. '\0' .. a.identity) < (b.server .. '\0' .. b.tool .. '\0' .. b.identity)
-    end)
-    local ok, encoded = pcall(vim.json.encode, sorted)
-    if not ok then
-        return false, 'allowlist encode failed'
-    end
-    assert(type(encoded) == 'string')
-    vim.fn.mkdir(data_dir(), 'p')
-    local handle = io.open(allowlist_path(), 'w')
-    if handle == nil then
-        return false, 'cannot write ' .. allowlist_path()
-    end
-    handle:write(encoded)
-    handle:close()
-    return true, nil
-end
-
----@param server string
----@param tool string
----@param identity? string opaque server identity presented by the caller
----@return boolean approved
-function M.allowlist_check(server, tool, identity)
-    if type(server) ~= 'string' or type(tool) ~= 'string' then
-        return false
-    end
-    if identity ~= nil and type(identity) ~= 'string' then
-        return false
-    end
-    local entries = M.allowlist_load()
-    if entries == nil then
-        return false
-    end
-    for _, entry in ipairs(entries) do
-        if entry.server == server and entry.tool == tool then
-            -- An entry bound to an identity approves only that identity: a
-            -- changed server behind a reused name fails closed and
-            -- re-prompts. Entries stored without an identity keep the legacy
-            -- name-only match.
-            local stored = entry.identity or ''
-            if stored == '' or identity == stored then
-                return true
-            end
+---@param args_text string Lowercased concatenated tool argument text
+---@return boolean lure True when login-lure phrasing is present
+local function has_auth_lure(args_text)
+    assert(type(args_text) == 'string')
+    for _, phrase in ipairs(AUTH_LURE_PHRASES) do
+        if args_text:find(phrase, 1, true) then
+            return true
         end
     end
     return false
 end
+
+---@param entries any
+---@return boolean ok
+local function valid_allowlist(entries)
+    if type(entries) ~= 'table' then
+        return false
+    end
+    if #entries > ALLOWLIST_MAX then
+        return false
+    end
+    for _, entry in ipairs(entries) do
+        if type(entry) ~= 'table' then
+            return false
+        end
+        if type(entry.server) ~= 'string' or type(entry.tool) ~= 'string' then
+            return false
+        end
+        if entry.identity ~= nil and type(entry.identity) ~= 'string' then
+            return false
+        end
+    end
+    return true
+end
+
+---@class ScanProvenance
+---@field allowlisted boolean Caller-vouched trust flag; true skips the untrusted-source finding
+---@field source string Where the text came from (URL, RAG document id, clipboard, ...)
 
 ---@param server string
 ---@param tool string
@@ -340,126 +269,113 @@ function M.allowlist_add(server, tool, identity)
             return true, nil
         end
     end
-    entries[#entries + 1] = { server = server, tool = tool, identity = fingerprint }
+    entries[#entries + 1] = { identity = fingerprint, server = server, tool = tool }
     return M.allowlist_save(entries)
 end
 
----@class ScanTextOpts
----@field filename? string Display name used in finding details
----@field provenance? ScanProvenance Provenance of the scanned text
-
---- Scan text already in memory. Pure function: no I/O, no execution.
---- The base verdict then passes through the composite escalation.
----@param text string
----@param opts? ScanTextOpts
----@return SecurityReport? report
----@return string? err
-function M.scan_text(text, opts)
-    local ok, err = check_string(text, 'text')
-    if not ok then
-        return nil, err
+---@param server string
+---@param tool string
+---@param identity? string opaque server identity presented by the caller
+---@return boolean approved
+function M.allowlist_check(server, tool, identity)
+    if type(server) ~= 'string' or type(tool) ~= 'string' then
+        return false
     end
-    assert(opts == nil or type(opts) == 'table', 'scan_text opts must be a table or nil')
-    local report = scanner.scan_text(text)
-    local provenance_err = apply_provenance(report.findings, opts and opts.provenance or nil)
-    if provenance_err ~= nil then
-        return nil, provenance_err
+    if identity ~= nil and type(identity) ~= 'string' then
+        return false
     end
-    report.verdict = composite_verdict(report.findings, report.verdict)
-    return report, nil
-end
-
----@class ScanFileOpts
----@field provenance? ScanProvenance Provenance of the file content
-
---- Scan a file by reading it (bounded). Never executes the content.
---- The base verdict then passes through the composite escalation.
----@param path string
----@param opts? ScanFileOpts
----@return SecurityReport? report
----@return string? err
-function M.scan_file(path, opts)
-    local ok, err = check_string(path, 'path')
-    if not ok then
-        return nil, err
+    local entries = M.allowlist_load()
+    if entries == nil then
+        return false
     end
-    assert(opts == nil or type(opts) == 'table', 'scan_file opts must be a table or nil')
-    local handle = io.open(path, 'rb')
-    if handle == nil then
-        return nil, 'cannot open file: ' .. path
-    end
-    -- Read one byte past the cap so truncation is detectable.
-    local data = handle:read(scanner.FILE_READ_BYTES_MAX + 1)
-    handle:close()
-    if data == nil then
-        return nil, 'cannot read file: ' .. path
-    end
-    local truncated = #data > scanner.FILE_READ_BYTES_MAX
-    if truncated then
-        data = data:sub(1, scanner.FILE_READ_BYTES_MAX)
-    end
-    local ext = path:match('%.([^%.%/\\]+)$') or ''
-    local report = scanner.scan_bytes(data, {
-        extension = ext:lower(),
-        filename = vim.fs.basename(path),
-    })
-    if truncated then
-        local cap = tostring(scanner.FILE_READ_BYTES_MAX)
-        local detail = 'File exceeds the ' .. cap .. '-byte read cap; tail was not scanned'
-        report.findings[#report.findings + 1] = {
-            severity = 'low',
-            code = 'scan.truncated',
-            detail = detail,
-        }
-        if report.verdict == 'clean' then
-            report.verdict = 'suspicious'
-        end
-    end
-    local provenance_err = apply_provenance(report.findings, opts and opts.provenance or nil)
-    if provenance_err ~= nil then
-        return nil, provenance_err
-    end
-    report.verdict = composite_verdict(report.findings, report.verdict)
-    return report, nil
-end
-
---- Move a suspicious file into the quarantine directory. The move is
---- atomic on one filesystem; the original path stops resolving to it.
----@param path string
----@return string? quarantine_path Destination path on success
----@return string? err
-function M.quarantine(path)
-    local ok, err = check_string(path, 'path')
-    if not ok then
-        return nil, err
-    end
-    local uv = vim.uv
-    if uv == nil then
-        return nil, 'vim.uv unavailable'
-    end
-    vim.fn.mkdir(quarantine_dir(), 'p')
-    local base = vim.fs.basename(path)
-    if base == nil or base == '' then
-        return nil, 'cannot derive a file name from ' .. path
-    end
-    local dest = quarantine_dir() .. '/' .. base .. '-' .. tostring(os.time())
-    local rename_ok, rename_err = uv.fs_rename(path, dest)
-    if not rename_ok then
-        return nil, 'quarantine move failed: ' .. tostring(rename_err)
-    end
-    return dest, nil
-end
-
----@param args_text string Lowercased concatenated tool argument text
----@return boolean lure True when login-lure phrasing is present
-local function has_auth_lure(args_text)
-    assert(type(args_text) == 'string')
-    for _, phrase in ipairs(AUTH_LURE_PHRASES) do
-        if args_text:find(phrase, 1, true) then
-            return true
+    for _, entry in ipairs(entries) do
+        if entry.server == server and entry.tool == tool then
+            -- An entry bound to an identity approves only that identity: a
+            -- changed server behind a reused name fails closed and
+            -- re-prompts. Entries stored without an identity keep the legacy
+            -- name-only match.
+            local stored = entry.identity or ''
+            if stored == '' or identity == stored then
+                return true
+            end
         end
     end
     return false
+end
+
+--- Load the tool allowlist. A missing file is not an error: it means
+--- nothing has been approved yet.
+---@return table? entries Array of { server: string, tool: string }
+---@return string? err
+function M.allowlist_load()
+    local handle = io.open(allowlist_path(), 'r')
+    if handle == nil then
+        return {}, nil
+    end
+    local raw = handle:read('*a')
+    handle:close()
+    if raw == nil or raw == '' then
+        return {}, nil
+    end
+    local ok, decoded = pcall(vim.json.decode, raw)
+    if not ok or not valid_allowlist(decoded) then
+        return nil, 'allowlist is corrupt: ' .. allowlist_path()
+    end
+    return decoded, nil
+end
+
+--- Persist the tool allowlist. Entries are sorted for deterministic output.
+---@param entries table Array of { server: string, tool: string }
+---@return boolean ok
+---@return string? err
+function M.allowlist_save(entries)
+    if not valid_allowlist(entries) then
+        return false, 'allowlist entries are invalid or exceed the limit'
+    end
+    local sorted = {}
+    for _, entry in ipairs(entries) do
+        sorted[#sorted + 1] = { identity = entry.identity or '', server = entry.server, tool = entry.tool }
+    end
+    table.sort(sorted, function(a, b)
+        return (a.server .. '\0' .. a.tool .. '\0' .. a.identity) < (b.server .. '\0' .. b.tool .. '\0' .. b.identity)
+    end)
+    local ok, encoded = pcall(vim.json.encode, sorted)
+    if not ok then
+        return false, 'allowlist encode failed'
+    end
+    assert(type(encoded) == 'string')
+    vim.fn.mkdir(data_dir(), 'p')
+    local handle = io.open(allowlist_path(), 'w')
+    if handle == nil then
+        return false, 'cannot write ' .. allowlist_path()
+    end
+    handle:write(encoded)
+    handle:close()
+    return true, nil
+end
+
+--- Refuse server-originated sampling requests. In MCP a sampling
+--- request lets a server ask the client (the model) to generate text;
+--- a malicious server can abuse that channel to steer the model, so
+--- only the user may originate sampling.
+---
+--- "Breaking the Protocol: Security Analysis of the Model Context
+--- Protocol Specification and Prompt Injection Vulnerabilities in
+--- Tool-Integrated LLM Agents" -- Narek Maloyan, Dmitry Namiot (2026),
+--- arXiv:2601.17549, https://arxiv.org/abs/2601.17549
+---@param origin string Who originates the request: 'user' or a server name
+---@param target string What the sampling is for (documented; unused by the policy)
+---@return boolean allowed
+---@return string? reason
+function M.check_sampling_request(origin, target)
+    assert(type(target) == 'string', 'target must be a string')
+    if type(origin) ~= 'string' or origin == '' then
+        return false, 'refused: sampling origin must be a non-empty string'
+    end
+    if origin == 'user' then
+        return true
+    end
+    return false, "refused: sampling requests must originate from the user, not server '" .. origin .. "'"
 end
 
 --- Ask the user to confirm a tool call. Default-deny: a dismissed or
@@ -526,28 +442,110 @@ function M.confirm_tool_call(server, tool, args, callback, identity)
     end
 end
 
---- Refuse server-originated sampling requests. In MCP a sampling
---- request lets a server ask the client (the model) to generate text;
---- a malicious server can abuse that channel to steer the model, so
---- only the user may originate sampling.
----
---- "Breaking the Protocol: Security Analysis of the Model Context
---- Protocol Specification and Prompt Injection Vulnerabilities in
---- Tool-Integrated LLM Agents" -- Narek Maloyan, Dmitry Namiot (2026),
---- arXiv:2601.17549, https://arxiv.org/abs/2601.17549
----@param origin string Who originates the request: 'user' or a server name
----@param target string What the sampling is for (documented; unused by the policy)
----@return boolean allowed
----@return string? reason
-function M.check_sampling_request(origin, target)
-    assert(type(target) == 'string', 'target must be a string')
-    if type(origin) ~= 'string' or origin == '' then
-        return false, 'refused: sampling origin must be a non-empty string'
+--- Move a suspicious file into the quarantine directory. The move is
+--- atomic on one filesystem; the original path stops resolving to it.
+---@param path string
+---@return string? quarantine_path Destination path on success
+---@return string? err
+function M.quarantine(path)
+    local ok, err = check_string(path, 'path')
+    if not ok then
+        return nil, err
     end
-    if origin == 'user' then
-        return true
+    local uv = vim.uv
+    if uv == nil then
+        return nil, 'vim.uv unavailable'
     end
-    return false, "refused: sampling requests must originate from the user, not server '" .. origin .. "'"
+    vim.fn.mkdir(quarantine_dir(), 'p')
+    local base = vim.fs.basename(path)
+    if base == nil or base == '' then
+        return nil, 'cannot derive a file name from ' .. path
+    end
+    local dest = quarantine_dir() .. '/' .. base .. '-' .. tostring(os.time())
+    local rename_ok, rename_err = uv.fs_rename(path, dest)
+    if not rename_ok then
+        return nil, 'quarantine move failed: ' .. tostring(rename_err)
+    end
+    return dest, nil
+end
+
+---@class ScanFileOpts
+---@field provenance? ScanProvenance Provenance of the file content
+
+--- Scan a file by reading it (bounded). Never executes the content.
+--- The base verdict then passes through the composite escalation.
+---@param path string
+---@param opts? ScanFileOpts
+---@return SecurityReport? report
+---@return string? err
+function M.scan_file(path, opts)
+    local ok, err = check_string(path, 'path')
+    if not ok then
+        return nil, err
+    end
+    assert(opts == nil or type(opts) == 'table', 'scan_file opts must be a table or nil')
+    local handle = io.open(path, 'rb')
+    if handle == nil then
+        return nil, 'cannot open file: ' .. path
+    end
+    -- Read one byte past the cap so truncation is detectable.
+    local data = handle:read(scanner.FILE_READ_BYTES_MAX + 1)
+    handle:close()
+    if data == nil then
+        return nil, 'cannot read file: ' .. path
+    end
+    local truncated = #data > scanner.FILE_READ_BYTES_MAX
+    if truncated then
+        data = data:sub(1, scanner.FILE_READ_BYTES_MAX)
+    end
+    local ext = path:match('%.([^%.%/\\]+)$') or ''
+    local report = scanner.scan_bytes(data, {
+        extension = ext:lower(),
+        filename = vim.fs.basename(path),
+    })
+    if truncated then
+        local cap = tostring(scanner.FILE_READ_BYTES_MAX)
+        local detail = 'File exceeds the ' .. cap .. '-byte read cap; tail was not scanned'
+        report.findings[#report.findings + 1] = {
+            code = 'scan.truncated',
+            detail = detail,
+            severity = 'low',
+        }
+        if report.verdict == 'clean' then
+            report.verdict = 'suspicious'
+        end
+    end
+    local provenance_err = apply_provenance(report.findings, opts and opts.provenance or nil)
+    if provenance_err ~= nil then
+        return nil, provenance_err
+    end
+    report.verdict = composite_verdict(report.findings, report.verdict)
+    return report, nil
+end
+
+---@class ScanTextOpts
+---@field filename? string Display name used in finding details
+---@field provenance? ScanProvenance Provenance of the scanned text
+
+--- Scan text already in memory. Pure function: no I/O, no execution.
+--- The base verdict then passes through the composite escalation.
+---@param text string
+---@param opts? ScanTextOpts
+---@return SecurityReport? report
+---@return string? err
+function M.scan_text(text, opts)
+    local ok, err = check_string(text, 'text')
+    if not ok then
+        return nil, err
+    end
+    assert(opts == nil or type(opts) == 'table', 'scan_text opts must be a table or nil')
+    local report = scanner.scan_text(text)
+    local provenance_err = apply_provenance(report.findings, opts and opts.provenance or nil)
+    if provenance_err ~= nil then
+        return nil, provenance_err
+    end
+    report.verdict = composite_verdict(report.findings, report.verdict)
+    return report, nil
 end
 
 ---@param opts? table Reserved for future options; currently unused.

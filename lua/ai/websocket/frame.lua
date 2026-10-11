@@ -13,95 +13,27 @@
 local bit = require('bit')
 
 local band = bit.band
+local bnot = bit.bnot
 local bor = bit.bor
 local bxor = bit.bxor
-local bnot = bit.bnot
 local lshift = bit.lshift
-local rshift = bit.rshift
 local rol = bit.rol
+local rshift = bit.rshift
 
 local M = {}
 
 local MASK32 = 0xFFFFFFFF
 local WS_GUID = '258EAFA5-E914-47DA-95CA-C5AB0DC85B11'
 
-M.OPCODE_TEXT = 0x1
 M.OPCODE_BINARY = 0x2
 M.OPCODE_CLOSE = 0x8
 M.OPCODE_PING = 0x9
 M.OPCODE_PONG = 0xA
+M.OPCODE_TEXT = 0x1
 
 ---Largest inbound buffer the decoder will hold (1 MiB). Bounds memory
 ---against a peer that sends endless partial frames.
 M.MAX_BUFFER = 1024 * 1024
-
----Compute the SHA-1 digest of a string (FIPS 180-4).
----Pure Lua on top of LuaJIT's bit library; exact for inputs under 2^29 bytes.
----@param message string
----@return string digest 20 raw bytes
-function M.sha1(message)
-    local h0, h1, h2, h3, h4 = 0x67452301, 0xEFCDAB89, 0x98BADCFE, 0x10325476, 0xC3D2E1F0
-
-    local ml = #message
-    local total_bits = ml * 8
-    local len_bytes = string.char(
-        0,
-        0,
-        0,
-        0,
-        math.floor(total_bits / 16777216) % 256,
-        math.floor(total_bits / 65536) % 256,
-        math.floor(total_bits / 256) % 256,
-        total_bits % 256
-    )
-    local padded = message .. '\128'
-    padded = padded .. string.rep('\0', (56 - (#padded % 64)) % 64) .. len_bytes
-
-    for chunk_start = 1, #padded, 64 do
-        local w = {}
-        for i = 0, 15 do
-            local p = chunk_start + i * 4
-            local b0, b1, b2, b3 = padded:byte(p, p + 3)
-            w[i] = bor(lshift(b0, 24), lshift(b1, 16), lshift(b2, 8), b3)
-        end
-        for i = 16, 79 do
-            w[i] = rol(bxor(w[i - 3], w[i - 8], w[i - 14], w[i - 16]), 1)
-        end
-        local a, b, c, d, e = h0, h1, h2, h3, h4
-        for i = 0, 79 do
-            local f, k
-            if i < 20 then
-                f = bor(band(b, c), band(bnot(b), d))
-                k = 0x5A827999
-            elseif i < 40 then
-                f = bxor(b, c, d)
-                k = 0x6ED9EBA1
-            elseif i < 60 then
-                f = bor(band(b, c), band(b, d), band(c, d))
-                k = 0x8F1BBCDC
-            else
-                f = bxor(b, c, d)
-                k = 0xCA62C1D6
-            end
-            local temp = band(rol(a, 5) + f + e + k + w[i], MASK32)
-            e = d
-            d = c
-            c = rol(b, 30)
-            b = a
-            a = temp
-        end
-        h0 = band(h0 + a, MASK32)
-        h1 = band(h1 + b, MASK32)
-        h2 = band(h2 + c, MASK32)
-        h3 = band(h3 + d, MASK32)
-        h4 = band(h4 + e, MASK32)
-    end
-
-    local function word(n)
-        return string.char(rshift(n, 24) % 256, rshift(n, 16) % 256, rshift(n, 8) % 256, n % 256)
-    end
-    return word(h0) .. word(h1) .. word(h2) .. word(h3) .. word(h4)
-end
 
 ---Compute the Sec-WebSocket-Accept value for a client's key.
 ---@param key string client Sec-WebSocket-Key (base64)
@@ -181,14 +113,103 @@ function M.parse_headers(header)
     return out
 end
 
+---Compute the SHA-1 digest of a string (FIPS 180-4).
+---Pure Lua on top of LuaJIT's bit library; exact for inputs under 2^29 bytes.
+---@param message string
+---@return string digest 20 raw bytes
+function M.sha1(message)
+    local h0, h1, h2, h3, h4 = 0x67452301, 0xEFCDAB89, 0x98BADCFE, 0x10325476, 0xC3D2E1F0
+
+    local ml = #message
+    local total_bits = ml * 8
+    local len_bytes = string.char(
+        0,
+        0,
+        0,
+        0,
+        math.floor(total_bits / 16777216) % 256,
+        math.floor(total_bits / 65536) % 256,
+        math.floor(total_bits / 256) % 256,
+        total_bits % 256
+    )
+    local padded = message .. '\128'
+    padded = padded .. string.rep('\0', (56 - (#padded % 64)) % 64) .. len_bytes
+
+    for chunk_start = 1, #padded, 64 do
+        local w = {}
+        for i = 0, 15 do
+            local p = chunk_start + i * 4
+            local b0, b1, b2, b3 = padded:byte(p, p + 3)
+            w[i] = bor(lshift(b0, 24), lshift(b1, 16), lshift(b2, 8), b3)
+        end
+        for i = 16, 79 do
+            w[i] = rol(bxor(w[i - 3], w[i - 8], w[i - 14], w[i - 16]), 1)
+        end
+        local a, b, c, d, e = h0, h1, h2, h3, h4
+        for i = 0, 79 do
+            local f, k
+            if i < 20 then
+                f = bor(band(b, c), band(bnot(b), d))
+                k = 0x5A827999
+            elseif i < 40 then
+                f = bxor(b, c, d)
+                k = 0x6ED9EBA1
+            elseif i < 60 then
+                f = bor(band(b, c), band(b, d), band(c, d))
+                k = 0x8F1BBCDC
+            else
+                f = bxor(b, c, d)
+                k = 0xCA62C1D6
+            end
+            local temp = band(rol(a, 5) + f + e + k + w[i], MASK32)
+            e = d
+            d = c
+            c = rol(b, 30)
+            b = a
+            a = temp
+        end
+        h0 = band(h0 + a, MASK32)
+        h1 = band(h1 + b, MASK32)
+        h2 = band(h2 + c, MASK32)
+        h3 = band(h3 + d, MASK32)
+        h4 = band(h4 + e, MASK32)
+    end
+
+    local function word(n)
+        return string.char(rshift(n, 24) % 256, rshift(n, 16) % 256, rshift(n, 8) % 256, n % 256)
+    end
+    return word(h0) .. word(h1) .. word(h2) .. word(h3) .. word(h4)
+end
+
 local Decoder = {}
 Decoder.__index = Decoder
 M.Decoder = Decoder
 
+---Feed received bytes. Returns (events, nil) or (nil, err). Events are
+---{opcode=..., payload=...} tables in arrival order.
+---@param chunk string
+---@return table? events
+---@return string? err
+function Decoder:feed(chunk)
+    self.buf = self.buf .. chunk
+    if #self.buf > M.MAX_BUFFER then
+        return nil, 'inbound buffer exceeded bound'
+    end
+    local events = {}
+    while true do
+        local event = self:try_parse_one()
+        if event == nil then
+            break
+        end
+        events[#events + 1] = event
+    end
+    return events, nil
+end
+
 ---Create an incremental frame decoder.
 ---@return table decoder
 function Decoder.new()
-    return setmetatable({ buf = '', fragments = nil, frag_opcode = nil }, Decoder)
+    return setmetatable({ buf = '', frag_opcode = nil, fragments = nil }, Decoder)
 end
 
 ---Parse one frame header from the buffer.
@@ -234,7 +255,7 @@ local function parse_header(buf)
     if #buf < pos - 1 + length then
         return nil
     end
-    return { fin = fin, opcode = opcode, masked = masked, length = length, header_len = pos - 1, mask = mask }
+    return { fin = fin, header_len = pos - 1, length = length, mask = mask, masked = masked, opcode = opcode }
 end
 
 ---Unmask a payload with a 4-byte mask table.
@@ -281,27 +302,6 @@ function Decoder:try_parse_one()
     self.fragments = nil
     self.frag_opcode = nil
     return { opcode = opcode, payload = message }
-end
-
----Feed received bytes. Returns (events, nil) or (nil, err). Events are
----{opcode=..., payload=...} tables in arrival order.
----@param chunk string
----@return table? events
----@return string? err
-function Decoder:feed(chunk)
-    self.buf = self.buf .. chunk
-    if #self.buf > M.MAX_BUFFER then
-        return nil, 'inbound buffer exceeded bound'
-    end
-    local events = {}
-    while true do
-        local event = self:try_parse_one()
-        if event == nil then
-            break
-        end
-        events[#events + 1] = event
-    end
-    return events, nil
 end
 
 return M

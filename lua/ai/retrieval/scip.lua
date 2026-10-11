@@ -25,11 +25,11 @@ local SYMBOL_COUNT_MAX = 256
 local SYMBOL_NAME_MAX = 256
 
 ---@class AiScipCandidate
----@field name string Symbol name.
+---@field indexer string Owning SCIP indexer.
 ---@field kind string LSP symbol kind name.
 ---@field language string Canonical language.
----@field indexer string Owning SCIP indexer.
 ---@field location table? LSP location, when provided.
+---@field name string Symbol name.
 
 ---@param kind integer LSP SymbolKind number.
 ---@return string name
@@ -115,11 +115,11 @@ function M.symbols(query, opts, callback)
                     if type(symbol) == 'table' and type(symbol.name) == 'string' then
                         count = count + 1
                         candidates[#candidates + 1] = {
-                            name = symbol.name:sub(1, SYMBOL_NAME_MAX),
+                            indexer = match.indexer,
                             kind = kind_name(symbol.kind),
                             language = match.language,
-                            indexer = match.indexer,
                             location = symbol.location,
+                            name = symbol.name:sub(1, SYMBOL_NAME_MAX),
                         }
                     end
                 end

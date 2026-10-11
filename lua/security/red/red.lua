@@ -4,6 +4,29 @@
 -- ----------------------------------------
 local M = {}
 local uv = vim.uv or vim.uv
+local function add_findings_to_qf(findings, title)
+    if #findings == 0 then
+        vim.notify('[redteam] no issues found (' .. title .. ')', vim.log.levels.INFO)
+        return
+    end
+    local items = {}
+    for _, it in ipairs(findings) do
+        table.insert(items, {
+            col = 1,
+            filename = it.file,
+            lnum = it.lnum,
+            text = string.format('[%s][%s] %s', it.severity, it.code, it.message),
+        })
+    end
+    vim.fn.setqflist({}, ' ', {
+        title = 'redteam: ' .. title,
+        items = items,
+    })
+    vim.cmd('copen')
+end
+local function config_roots()
+    return { vim.fn.stdpath('config'), vim.fn.stdpath('data') .. '/site/pack' }
+end
 ---@class red.DirFrame
 ---@field handle userdata scandir handle for this directory
 ---@field root string absolute path of this directory
@@ -64,97 +87,35 @@ local function scan_for_patterns(path, patterns)
         for _, p in ipairs(patterns) do
             if line:match(p.pattern) then
                 table.insert(findings, {
+                    code = p.code,
                     file = path,
                     lnum = i,
-                    severity = p.severity,
-                    code = p.code,
                     message = p.message,
+                    severity = p.severity,
                 })
             end
         end
     end
     return findings
 end
-local function add_findings_to_qf(findings, title)
-    if #findings == 0 then
-        vim.notify('[redteam] no issues found (' .. title .. ')', vim.log.levels.INFO)
-        return
-    end
-    local items = {}
-    for _, it in ipairs(findings) do
-        table.insert(items, {
-            filename = it.file,
-            lnum = it.lnum,
-            col = 1,
-            text = string.format('[%s][%s] %s', it.severity, it.code, it.message),
-        })
-    end
-    vim.fn.setqflist({}, ' ', {
-        title = 'redteam: ' .. title,
-        items = items,
-    })
-    vim.cmd('copen')
-end
-local function config_roots()
-    return { vim.fn.stdpath('config'), vim.fn.stdpath('data') .. '/site/pack' }
-end
-local function check_static_patterns()
-    local patterns = {
-        {
-            code = 'SYSTEM_CALL',
-            message = [[vim.fn.system() call in config (review arguments and inputs)]],
-            pattern = 'vim%.fn%.system%(',
-            severity = 'warn',
-        },
-        {
-            code = 'OS_EXECUTE',
-            message = [[os.execute() call in config (consider safer alternatives)]],
-            pattern = 'os%.execute%(',
-            severity = 'warn',
-        },
-        {
-            pattern = 'vim%.loop%.spawn%(',
-            severity = 'warn',
-            code = 'UV_SPAWN',
-            message = 'vim.uv.spawn() used; ensure inputs are validated',
-        },
-        {
-            pattern = 'loadstring%(',
-            severity = 'warn',
-            code = 'LOADSTRING',
-            message = 'loadstring() used; avoid dynamic code eval where possible',
-        },
-        {
-            pattern = 'vim%.cmd%(%s*["\']source%s+',
-            severity = 'info',
-            code = 'SOURCE_CMD',
-            message = "vim.cmd('source ...') in config; verify target path is trusted",
-        },
-        {
-            code = 'MODELINE',
-            message = 'modeline referenced; ensure modelines/modelineexpr are disabled or secured',
-            pattern = 'modeline',
-            severity = 'info',
-        },
-    }
-    local findings = {}
-    for _, root in ipairs(config_roots()) do
-        for file in iter_files(root, { '.lua', '.vim' }) do
-            vim.list_extend(findings, scan_for_patterns(file, patterns))
-        end
-    end
-    add_findings_to_qf(findings, 'static-patterns')
-end
+local default_ai_patterns = {
+    'ai.nvim',
+    'chatgpt',
+    'claude',
+    'codeium',
+    'copilot',
+    'gpt',
+    'openai',
+}
 local function check_modeline_state()
     local findings = {}
     local function add_if(option, expected, code, message)
         local val = vim.o[option]
         if val ~= expected then
             table.insert(findings, {
+                code = code,
                 file = '$OPTIONS',
                 lnum = 0,
-                severity = 'warn',
-                code = code,
                 message = string.format(
                     '%s is %s, expected %s (%s)',
                     option,
@@ -162,6 +123,7 @@ local function check_modeline_state()
                     tostring(expected),
                     message
                 ),
+                severity = 'warn',
             })
         end
     end
@@ -169,37 +131,6 @@ local function check_modeline_state()
     add_if('modelineexpr', false, 'MODEL_EXPR', 'disable modelineexpr (expressions in modelines)')
     add_findings_to_qf(findings, 'modeline-state')
 end
-local function harden_modelines()
-    vim.o.modeline = false
-    vim.o.modelineexpr = false
-    vim.notify('[redteam] modelines disabled (modeline=false, modelineexpr=false)', vim.log.levels.WARN)
-end
-local function check_unpinned_vim_pack()
-    local findings = {}
-    local patterns = {
-        {
-            pattern = '{%s*src%s*=%s*["\']https://github%.com/[%w-_]+/[%w-_.]+["\']%s*}',
-            severity = 'warn',
-            code = 'UNPINNED_PLUGIN',
-            message = 'vim.pack plugin with GitHub src and no explicit ref/commit; consider pinning',
-        },
-    }
-    for _, root in ipairs(config_roots()) do
-        for file in iter_files(root, { '.lua' }) do
-            vim.list_extend(findings, scan_for_patterns(file, patterns))
-        end
-    end
-    add_findings_to_qf(findings, 'vim-pack-unpinned')
-end
-local default_ai_patterns = {
-    'copilot',
-    'codeium',
-    'claude',
-    'openai',
-    'gpt',
-    'ai.nvim',
-    'chatgpt',
-}
 local function check_remote_plugins(user_patterns)
     local patterns = user_patterns or default_ai_patterns
     local roots = {
@@ -220,13 +151,13 @@ local function check_remote_plugins(user_patterns)
                     for _, pat in ipairs(patterns) do
                         if name:lower():match(pat) then
                             table.insert(findings, {
+                                code = 'REMOTE_PLUGIN',
                                 file = path,
                                 lnum = 0,
-                                severity = 'info',
-                                code = 'REMOTE_PLUGIN',
                                 message = [[plugin matches remote/AI pattern ']]
                                     .. pat
                                     .. [['; review data exfiltration/privacy settings]],
+                                severity = 'info',
                             })
                             break
                         end
@@ -237,6 +168,96 @@ local function check_remote_plugins(user_patterns)
     end
     add_findings_to_qf(findings, 'remote-plugins')
 end
+local function check_static_patterns()
+    local patterns = {
+        {
+            code = 'SYSTEM_CALL',
+            message = [[vim.fn.system() call in config (review arguments and inputs)]],
+            pattern = 'vim%.fn%.system%(',
+            severity = 'warn',
+        },
+        {
+            code = 'OS_EXECUTE',
+            message = [[os.execute() call in config (consider safer alternatives)]],
+            pattern = 'os%.execute%(',
+            severity = 'warn',
+        },
+        {
+            code = 'UV_SPAWN',
+            message = 'vim.uv.spawn() used; ensure inputs are validated',
+            pattern = 'vim%.loop%.spawn%(',
+            severity = 'warn',
+        },
+        {
+            code = 'LOADSTRING',
+            message = 'loadstring() used; avoid dynamic code eval where possible',
+            pattern = 'loadstring%(',
+            severity = 'warn',
+        },
+        {
+            code = 'SOURCE_CMD',
+            message = "vim.cmd('source ...') in config; verify target path is trusted",
+            pattern = 'vim%.cmd%(%s*["\']source%s+',
+            severity = 'info',
+        },
+        {
+            code = 'MODELINE',
+            message = 'modeline referenced; ensure modelines/modelineexpr are disabled or secured',
+            pattern = 'modeline',
+            severity = 'info',
+        },
+    }
+    local findings = {}
+    for _, root in ipairs(config_roots()) do
+        for file in iter_files(root, { '.lua', '.vim' }) do
+            vim.list_extend(findings, scan_for_patterns(file, patterns))
+        end
+    end
+    add_findings_to_qf(findings, 'static-patterns')
+end
+local function check_unpinned_vim_pack()
+    local findings = {}
+    local patterns = {
+        {
+            code = 'UNPINNED_PLUGIN',
+            message = 'vim.pack plugin with GitHub src and no explicit ref/commit; consider pinning',
+            pattern = '{%s*src%s*=%s*["\']https://github%.com/[%w-_]+/[%w-_.]+["\']%s*}',
+            severity = 'warn',
+        },
+    }
+    for _, root in ipairs(config_roots()) do
+        for file in iter_files(root, { '.lua' }) do
+            vim.list_extend(findings, scan_for_patterns(file, patterns))
+        end
+    end
+    add_findings_to_qf(findings, 'vim-pack-unpinned')
+end
+local function harden_modelines()
+    vim.o.modeline = false
+    vim.o.modelineexpr = false
+    vim.notify('[redteam] modelines disabled (modeline=false, modelineexpr=false)', vim.log.levels.WARN)
+end
+function M.audit_modelines()
+    check_modeline_state()
+end
+
+function M.audit_remote(opts)
+    opts = opts or {}
+    check_remote_plugins(opts.remote_patterns)
+end
+
+function M.audit_static()
+    check_static_patterns()
+end
+
+function M.audit_vim_pack()
+    check_unpinned_vim_pack()
+end
+
+function M.harden_modelines()
+    harden_modelines()
+end
+
 function M.run_all(opts)
     opts = opts or {}
     check_static_patterns()
@@ -245,27 +266,6 @@ function M.run_all(opts)
     if opts.detect_remote ~= false then
         check_remote_plugins(opts.remote_patterns)
     end
-end
-
-function M.audit_static()
-    check_static_patterns()
-end
-
-function M.audit_modelines()
-    check_modeline_state()
-end
-
-function M.audit_vim_pack()
-    check_unpinned_vim_pack()
-end
-
-function M.audit_remote(opts)
-    opts = opts or {}
-    check_remote_plugins(opts.remote_patterns)
-end
-
-function M.harden_modelines()
-    harden_modelines()
 end
 
 return M

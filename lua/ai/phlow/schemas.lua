@@ -13,13 +13,13 @@ local M = {}
 
 ---Command name constants (API v1).
 M.CMD = {
-    SESSION_START = 'session.start',
-    SESSION_STOP = 'session.stop',
-    DEBUG_START = 'debug.start',
-    DEBUG_EVENT = 'debug.event',
-    WORKFLOW_SUBMIT = 'workflow.submit',
     APPROVAL_REQUEST = 'approval.request',
     ARTIFACT_GET = 'artifact.get',
+    DEBUG_EVENT = 'debug.event',
+    DEBUG_START = 'debug.start',
+    SESSION_START = 'session.start',
+    SESSION_STOP = 'session.stop',
+    WORKFLOW_SUBMIT = 'workflow.submit',
 }
 
 ---@class PhlowCommandSchema
@@ -28,26 +28,26 @@ M.CMD = {
 ---Validation table: command name -> schema. Mirrors schemas/commands.
 ---@type table<string, PhlowCommandSchema>
 M.COMMANDS = {
-    ['session.start'] = { required = { 'task' } },
-    ['session.stop'] = { required = { 'session_id' } },
-    ['debug.start'] = { required = { 'session_id' } },
-    ['debug.event'] = { required = { 'session_id', 'event' } },
-    ['workflow.submit'] = { required = { 'workflow' } },
     ['approval.request'] = { required = { 'session_id', 'prompt' } },
     ['artifact.get'] = { required = { 'session_id', 'name' } },
+    ['debug.event'] = { required = { 'session_id', 'event' } },
+    ['debug.start'] = { required = { 'session_id' } },
+    ['session.start'] = { required = { 'task' } },
+    ['session.stop'] = { required = { 'session_id' } },
+    ['workflow.submit'] = { required = { 'workflow' } },
 }
 
 ---Event name constants (API v1). Mirrors schemas/events.
 M.EVENT = {
-    SESSION_STARTED = 'session.started',
-    SESSION_STOPPED = 'session.stopped',
-    SESSION_OUTPUT = 'session.output',
-    DEBUG_EVENT = 'debug.event',
     APPROVAL_REQUESTED = 'approval.requested',
     APPROVAL_RESOLVED = 'approval.resolved',
-    WORKFLOW_COMPLETED = 'workflow.completed',
     ARTIFACT_READY = 'artifact.ready',
+    DEBUG_EVENT = 'debug.event',
     ERROR = 'error',
+    SESSION_OUTPUT = 'session.output',
+    SESSION_STARTED = 'session.started',
+    SESSION_STOPPED = 'session.stopped',
+    WORKFLOW_COMPLETED = 'workflow.completed',
 }
 
 ---Check a command's params against its schema, before sending.

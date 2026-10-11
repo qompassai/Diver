@@ -37,15 +37,15 @@ local sdks = require('ai.a2a.sdks')
 
 local M = {}
 
-local ORCHESTRATE_LANGS_MAX = 5
-local TASK_BYTES_MAX = 16384
-local CONTEXT_BYTES_MAX = 32768
 local AGENT_TIMEOUT_MS_DEFAULT = 120000
 local AGENT_TIMEOUT_MS_MAX = 300000
-local OVERALL_HEADROOM_MS = 30000
-local TOTAL_TIMEOUT_MS_MAX = 600000
+local CONTEXT_BYTES_MAX = 32768
+local ORCHESTRATE_LANGS_MAX = 5
 local OUTPUT_BYTES_MAX = 1048576
+local OVERALL_HEADROOM_MS = 30000
 local SCRIPT_BYTES_MAX = 65536
+local TASK_BYTES_MAX = 16384
+local TOTAL_TIMEOUT_MS_MAX = 600000
 
 ---@class A2aOrchestrateOpts
 ---@field task string Prompt text sent to every agent.

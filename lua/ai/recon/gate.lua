@@ -21,17 +21,6 @@ local config = {
     auto_authorize = true,
 }
 
----Configure the gate. Pass { auto_authorize = false } to require
----an explicit confirmation prompt before consequential tools run.
----@param opts? table
-function M.setup(opts)
-    opts = opts or {}
-    if opts.auto_authorize ~= nil then
-        assert(type(opts.auto_authorize) == 'boolean', 'auto_authorize must be a boolean')
-        config.auto_authorize = opts.auto_authorize
-    end
-end
-
 ---Current authorization mode.
 ---@return boolean
 function M.auto_authorize()
@@ -76,6 +65,17 @@ function M.check(tool, target, annotations, via, callback)
         })
         callback(allowed, reason)
     end)
+end
+
+---Configure the gate. Pass { auto_authorize = false } to require
+---an explicit confirmation prompt before consequential tools run.
+---@param opts? table
+function M.setup(opts)
+    opts = opts or {}
+    if opts.auto_authorize ~= nil then
+        assert(type(opts.auto_authorize) == 'boolean', 'auto_authorize must be a boolean')
+        config.auto_authorize = opts.auto_authorize
+    end
 end
 
 return M

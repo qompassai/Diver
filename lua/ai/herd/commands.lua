@@ -330,6 +330,18 @@ function M.setup()
         return true
     end
     setup_done = true
+    api.nvim_create_user_command('HerdKill', kill_interactive, {
+        desc = 'Kill a herd agent (confirmed)',
+    })
+    api.nvim_create_user_command('HerdMachines', machines_menu, {
+        desc = 'Manage remote herd machines',
+    })
+    api.nvim_create_user_command('HerdPrompt', prompt_interactive, {
+        desc = 'Send a prompt to a herd agent',
+    })
+    api.nvim_create_user_command('HerdRestore', restore_interactive, {
+        desc = 'Restore agents from the persisted layout',
+    })
     api.nvim_create_user_command('HerdSpawn', spawn_interactive, {
         desc = 'Spawn a herd agent (interactive)',
     })
@@ -337,18 +349,6 @@ function M.setup()
         require('ai.herd.ui').open()
     end, {
         desc = 'Open the herd status dashboard',
-    })
-    api.nvim_create_user_command('HerdPrompt', prompt_interactive, {
-        desc = 'Send a prompt to a herd agent',
-    })
-    api.nvim_create_user_command('HerdKill', kill_interactive, {
-        desc = 'Kill a herd agent (confirmed)',
-    })
-    api.nvim_create_user_command('HerdRestore', restore_interactive, {
-        desc = 'Restore agents from the persisted layout',
-    })
-    api.nvim_create_user_command('HerdMachines', machines_menu, {
-        desc = 'Manage remote herd machines',
     })
     return true
 end

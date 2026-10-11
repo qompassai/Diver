@@ -10,10 +10,10 @@ local api = vim.api
 
 local agent_card = require('ai.a2a.agent_card')
 local client = require('ai.a2a.client')
-local tasks = require('ai.a2a.tasks')
-local sdks = require('ai.a2a.sdks')
-local ui = require('ai.a2a.ui')
 local orchestrator = require('ai.a2a.orchestrator')
+local sdks = require('ai.a2a.sdks')
+local tasks = require('ai.a2a.tasks')
+local ui = require('ai.a2a.ui')
 
 api.nvim_create_user_command('A2aAgents', function()
     local names = agent_card.list()
@@ -29,10 +29,6 @@ api.nvim_create_user_command('A2aAgents', function()
     end
     api.nvim_echo({ { table.concat(lines, '\n'), 'Normal' } }, false, {})
 end, { desc = 'List registered A2A agents' })
-
-api.nvim_create_user_command('A2aTasks', function()
-    ui.open()
-end, { desc = 'Open the A2A task monitor' })
 
 api.nvim_create_user_command('A2aCancel', function(command)
     if command.args == '' then
@@ -53,25 +49,6 @@ api.nvim_create_user_command('A2aCancel', function(command)
 end, {
     nargs = '?',
     desc = 'Cancel one A2A task by id, or all tasks with no argument',
-})
-
-api.nvim_create_user_command('A2aSdks', function()
-    sdks.install_menu()
-end, { desc = 'Open the A2A SDK install menu' })
-
-api.nvim_create_user_command('A2aSdkInstall', function(command)
-    local spec = sdks.get(command.args)
-    if spec == nil then
-        vim.notify('Unknown A2A SDK: ' .. command.args, vim.log.levels.ERROR)
-        return
-    end
-    sdks.install(spec)
-end, {
-    nargs = 1,
-    desc = 'Install one A2A SDK by language (python, typescript, go, java, dotnet)',
-    complete = function()
-        return { 'python', 'typescript', 'go', 'java', 'dotnet' }
-    end,
 })
 
 -- Cross-language orchestration -------------------------------------------
@@ -170,5 +147,28 @@ api.nvim_create_user_command('A2aOrchestrate', function()
         end)
     end)
 end, { desc = 'Fan a task out across A2A SDK drivers by language' })
+
+api.nvim_create_user_command('A2aSdkInstall', function(command)
+    local spec = sdks.get(command.args)
+    if spec == nil then
+        vim.notify('Unknown A2A SDK: ' .. command.args, vim.log.levels.ERROR)
+        return
+    end
+    sdks.install(spec)
+end, {
+    nargs = 1,
+    desc = 'Install one A2A SDK by language (python, typescript, go, java, dotnet)',
+    complete = function()
+        return { 'python', 'typescript', 'go', 'java', 'dotnet' }
+    end,
+})
+
+api.nvim_create_user_command('A2aSdks', function()
+    sdks.install_menu()
+end, { desc = 'Open the A2A SDK install menu' })
+
+api.nvim_create_user_command('A2aTasks', function()
+    ui.open()
+end, { desc = 'Open the A2A task monitor' })
 
 return true

@@ -27,37 +27,37 @@
 local M = {}
 
 local FIELD_BYTES_MAX = 1024
+local KEY_HASH_HEX_MAX = 16
 local LABEL_BYTES_MAX = 512
 local PASSWORD_BYTES_MAX = 4096
-local KEY_HASH_HEX_MAX = 16
 
 -- Key names that are secret-bearing no matter which adapter is used.
 local SECRET_KEYS = {
-    password = true,
+    api_key = true,
+    apikey = true,
     passwd = true,
+    password = true,
     pwd = true,
     secret = true,
     token = true,
-    apikey = true,
-    api_key = true,
 }
 
 -- Connection fields allowed through to the adapter. Everything else is
 -- dropped, never forwarded.
 local SAFE_FIELDS = {
+    database = true,
+    db = true,
+    dbname = true,
+    defaults_file = true,
     host = true,
+    passfile = true,
     port = true,
+    service = true,
+    socket = true,
+    ssl = true,
+    tls = true,
     user = true,
     username = true,
-    database = true,
-    dbname = true,
-    db = true,
-    socket = true,
-    tls = true,
-    ssl = true,
-    service = true,
-    defaults_file = true,
-    passfile = true,
 }
 
 ---@param word string lowercase literal word
@@ -70,7 +70,7 @@ end
 
 -- Assignment-style key names that are secret-bearing in any adapter's
 -- errors or URIs. Checked case-insensitively.
-local SECRET_WORDS = { 'password', 'passwd', 'pwd', 'secret', 'token', 'apikey', 'api_key' }
+local SECRET_WORDS = { 'api_key', 'apikey', 'passwd', 'password', 'pwd', 'secret', 'token' }
 
 ---@param text string
 ---@return string scrubbed

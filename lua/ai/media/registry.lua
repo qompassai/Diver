@@ -39,39 +39,6 @@ local backends = {}
 ---@type string[]
 local order = {}
 
----@param name string Registry name, e.g. 'tts-local'.
----@param backend AiMediaBackend
-function M.register(name, backend)
-    assert(type(name) == 'string', 'backend name must be a string')
-    assert(name ~= '', 'backend name must not be empty')
-    assert(type(backend) == 'table', 'backend must be a table')
-    assert(
-        backend.kind == 'audio' or backend.kind == 'image' or backend.kind == 'video',
-        'backend.kind must be audio, image or video'
-    )
-    assert(type(backend.detect) == 'function', 'backend.detect must be a function')
-    assert(type(backend.generate) == 'function', 'backend.generate must be a function')
-    assert(backends[name] == nil, 'backend already registered: ' .. name)
-    backends[name] = backend
-    order[#order + 1] = name
-end
-
----@param name string
----@return AiMediaBackend|nil
-function M.get(name)
-    assert(type(name) == 'string', 'backend name must be a string')
-    return backends[name]
-end
-
----@return string[] names in registration order.
-function M.names()
-    local names = {}
-    for index = 1, #order do
-        names[index] = order[index]
-    end
-    return names
-end
-
 -- Runs every backend's detect() and reports truthfully. A raising detect()
 -- becomes `available = false` with the error text as the reason.
 ---@return AiMediaDetection[]
@@ -99,6 +66,39 @@ function M.detect_all()
         }
     end
     return detections
+end
+
+---@param name string
+---@return AiMediaBackend|nil
+function M.get(name)
+    assert(type(name) == 'string', 'backend name must be a string')
+    return backends[name]
+end
+
+---@return string[] names in registration order.
+function M.names()
+    local names = {}
+    for index = 1, #order do
+        names[index] = order[index]
+    end
+    return names
+end
+
+---@param name string Registry name, e.g. 'tts-local'.
+---@param backend AiMediaBackend
+function M.register(name, backend)
+    assert(type(name) == 'string', 'backend name must be a string')
+    assert(name ~= '', 'backend name must not be empty')
+    assert(type(backend) == 'table', 'backend must be a table')
+    assert(
+        backend.kind == 'audio' or backend.kind == 'image' or backend.kind == 'video',
+        'backend.kind must be audio, image or video'
+    )
+    assert(type(backend.detect) == 'function', 'backend.detect must be a function')
+    assert(type(backend.generate) == 'function', 'backend.generate must be a function')
+    assert(backends[name] == nil, 'backend already registered: ' .. name)
+    backends[name] = backend
+    order[#order + 1] = name
 end
 
 return M

@@ -127,19 +127,19 @@ function M.setup()
         return
     end
     setup_done = true
+    vim.api.nvim_create_user_command('DataClose', close_session, {
+        desc = 'Pick a data-access session and release it',
+        nargs = 0,
+    })
     vim.api.nvim_create_user_command('DataQuery', data_query_command, {
-        nargs = '+',
         desc = 'Run one security-scanned query through the managed data-access layer',
+        nargs = '+',
     })
     vim.api.nvim_create_user_command('DataSessions', function()
         require('ai.dataaccess.ui').open()
     end, {
-        nargs = 0,
         desc = 'Open the data-access session dashboard',
-    })
-    vim.api.nvim_create_user_command('DataClose', close_session, {
         nargs = 0,
-        desc = 'Pick a data-access session and release it',
     })
 end
 

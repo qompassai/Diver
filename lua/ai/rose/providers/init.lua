@@ -10,19 +10,19 @@ local C = require('ai.rose.providers.common')
 local T = require('ai.rose.providers.transport')
 local M = {}
 
-local names = { openai = true, anthropic = true, xai = true, nvidia = true, perplexity = true }
+local names = { anthropic = true, nvidia = true, openai = true, perplexity = true, xai = true }
 local header_names = {
-    ['anthropic-version'] = 'anthropic',
     ['anthropic-beta'] = 'anthropic',
+    ['anthropic-version'] = 'anthropic',
     ['anthropic-workspace-id'] = 'anthropic',
     ['openai-organization'] = 'openai',
     ['openai-project'] = 'openai',
     ['x-grok-conv-id'] = 'xai',
 }
 
+local ANTHROPIC_VERSION_DEFAULT = '2023-06-01'
 local API_KEY_BYTES_MAX = 16384
 local HEADER_VALUE_BYTES_MAX = 4096
-local ANTHROPIC_VERSION_DEFAULT = '2023-06-01'
 
 ---@param value any
 ---@param lo integer
@@ -40,6 +40,41 @@ local anthropic_descriptor = {
     host = 'api.anthropic.com',
     key_env = 'ANTHROPIC_API_KEY',
     apis = { messages = { path = '/messages', format = 'anthropic', tools = true } },
+}
+
+-- The other providers' descriptors are data declared here, not modules.
+local provider_descriptors = {
+    nvidia = {
+        host = 'integrate.api.nvidia.com',
+        key_env = 'NVIDIA_API_KEY',
+        apis = { chat = { path = '/chat/completions', format = 'chat', tools = true } },
+    },
+    openai = {
+        host = 'api.openai.com',
+        key_env = 'OPENAI_API_KEY',
+        apis = {
+            responses = { path = '/responses', format = 'responses', tools = true },
+            chat = { path = '/chat/completions', format = 'chat', tools = true },
+        },
+    },
+    -- Sonar's search/chat surface is NOT the Agent API's custom function-calling surface.
+    -- Current official primary routes; configure endpoint=https://api.perplexity.ai/v1.
+    perplexity = {
+        host = 'api.perplexity.ai',
+        key_env = 'PERPLEXITY_API_KEY',
+        apis = {
+            agent = { path = '/agent', format = 'responses', tools = true },
+            sonar = { path = '/sonar', format = 'chat', tools = false },
+        },
+    },
+    xai = {
+        host = 'api.x.ai',
+        key_env = 'XAI_API_KEY',
+        apis = {
+            responses = { path = '/responses', format = 'responses', tools = true },
+            chat = { path = '/chat/completions', format = 'chat', tools = true },
+        },
+    },
 }
 
 local provider_fields = {
@@ -135,7 +170,7 @@ function M.resolve(fullconfig)
     assert(names[name], 'unknown cloud provider')
     local descriptor = anthropic_descriptor
     if name ~= 'anthropic' then
-        descriptor = require('ai.rose.providers.' .. name)
+        descriptor = provider_descriptors[name]
     end
     local config = C.copy(providers[name])
     C.fields(config, provider_fields, 'provider configuration')

@@ -4,34 +4,34 @@
 -- Copyright (C) 2026 Qompass AI, All rights reserved
 -- ----------------------------------------
 local M = {} ---@version JIT
-local autocmd = vim.api.nvim_create_autocmd
 local augroup = vim.api.nvim_create_augroup
+local autocmd = vim.api.nvim_create_autocmd
 local buf = vim.api.nvim_get_current_buf
 local execmd = vim.api.nvim_exec_autocmds
 local fn = vim.fn
 local fs = vim.fs
-local notify = vim.notify
 local get_opts = vim.api.nvim_get_option_value
+local INFO = vim.log.levels.INFO
+local notify = vim.notify
 local set_opts = vim.api.nvim_set_option_value
 local WARN = vim.log.levels.WARN
-local INFO = vim.log.levels.INFO
 local DEFAULT_SUPPORTED_FILE_FORMATS = {
+    '*.dockerconfigjson',
+    '*.json',
     '*.yaml',
     '*.yml',
-    '*.json',
-    '*.dockerconfigjson',
 }
 
 local SOPS_MARKER_BYTES = {
+    ['json'] = '"mac": "ENC[',
     ['yaml'] = 'mac: ENC[',
     ['yaml.helm-values'] = 'mac: ENC[',
-    ['json'] = '"mac": "ENC[',
 }
 
 M.config = {
-    supported_file_formats = vim.deepcopy(DEFAULT_SUPPORTED_FILE_FORMATS),
-    sops_binary = 'sops',
     notify_on_unmodified_write = true,
+    sops_binary = 'sops',
+    supported_file_formats = vim.deepcopy(DEFAULT_SUPPORTED_FILE_FORMATS),
 }
 
 M._augroup = nil

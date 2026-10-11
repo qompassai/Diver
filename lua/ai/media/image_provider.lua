@@ -17,15 +17,15 @@
 
 local M = {}
 
-local PROVIDER_MODULE = 'ai.rose.provider.openai'
-local KEY_ENV = 'OPENAI_API_KEY'
-local HOST = 'api.openai.com'
+local BODY_MAX_BYTES = 64 * 1024
 local ENDPOINT = 'https://api.openai.com/v1/images/generations'
+local HOST = 'api.openai.com'
+local KEY_ENV = 'OPENAI_API_KEY'
 local MODEL = 'dall-e-3'
 local PROMPT_CHARS_MAX = 4000
+local PROVIDER_MODULE = 'ai.rose.provider.openai'
 local REQUEST_TIMEOUT_S = 120
 local RESPONSE_MAX_BYTES = 32 * 1024 * 1024
-local BODY_MAX_BYTES = 64 * 1024
 
 -- Loads the ported provider and validates its descriptor shape. Anything
 -- unexpected is a mismatch, reported as unavailable -- never guessed at.

@@ -15,6 +15,24 @@ local M = {}
 local LINE_MAX = 4096 ---@type integer Longest single line parsed
 local LINES_MAX = 20000 ---@type integer Most lines parsed per call
 
+---@param ports_str string e.g. "80/open/tcp//http///, 443/open/tcp//https///"
+---@return table[] ports Array of { port, state, proto, service }
+local function parse_og_ports(ports_str)
+    local ports = {}
+    for chunk in ports_str:gmatch('[^,]+') do
+        local port, state, proto, service = chunk:match('^%s*(%d+)/(%a+)/(%a+)//([^/]*)')
+        if port ~= nil then
+            ports[#ports + 1] = {
+                port = tonumber(port),
+                proto = proto,
+                service = service ~= '' and service or nil,
+                state = state,
+            }
+        end
+    end
+    return ports
+end
+
 ---@param text string
 ---@return string[] lines
 local function split_lines(text)
@@ -28,6 +46,29 @@ local function split_lines(text)
         lines[#lines + 1] = line:sub(1, LINE_MAX)
     end
     return lines
+end
+
+---Parse httpx JSON output into host records.
+---Each record: { error?, host, port, status, tech, title, url }.
+---@param text string httpx -json output
+---@return table[] hosts
+---@return integer skipped
+function M.httpx(text)
+    assert(type(text) == 'string', 'text must be a string')
+    local records, skipped = M.json_lines(text)
+    local hosts = {}
+    for _, r in ipairs(records) do
+        hosts[#hosts + 1] = {
+            error = r.error,
+            host = r.host,
+            port = r.port,
+            status = r.status_code,
+            tech = r.tech,
+            title = r.title,
+            url = r.url,
+        }
+    end
+    return hosts, skipped
 end
 
 ---Parse generic JSON-lines output (httpx -json, etc.).
@@ -52,47 +93,6 @@ function M.json_lines(text)
     return records, skipped
 end
 
----Parse httpx JSON output into host records.
----Each record: { url, host, port, status, title, tech, error? }.
----@param text string httpx -json output
----@return table[] hosts
----@return integer skipped
-function M.httpx(text)
-    assert(type(text) == 'string', 'text must be a string')
-    local records, skipped = M.json_lines(text)
-    local hosts = {}
-    for _, r in ipairs(records) do
-        hosts[#hosts + 1] = {
-            url = r.url,
-            host = r.host,
-            port = r.port,
-            status = r.status_code,
-            title = r.title,
-            tech = r.tech,
-            error = r.error,
-        }
-    end
-    return hosts, skipped
-end
-
----@param ports_str string e.g. "80/open/tcp//http///, 443/open/tcp//https///"
----@return table[] ports Array of { port, state, proto, service }
-local function parse_og_ports(ports_str)
-    local ports = {}
-    for chunk in ports_str:gmatch('[^,]+') do
-        local port, state, proto, service = chunk:match('^%s*(%d+)/(%a+)/(%a+)//([^/]*)')
-        if port ~= nil then
-            ports[#ports + 1] = {
-                port = tonumber(port),
-                state = state,
-                proto = proto,
-                service = service ~= '' and service or nil,
-            }
-        end
-    end
-    return ports
-end
-
 ---Parse nmap grepable output (-oG) into host records.
 ---Each record: { host, status, ports = { {port, state, proto, service} } }.
 ---@param text string nmap -oG output
@@ -104,7 +104,7 @@ function M.nmap_grepable(text)
     for _, line in ipairs(split_lines(text)) do
         local host, status = line:match('^Host:%s+(%S+)%s+%(([^)]*)%)%s+Status:%s+(%a+)')
         if host ~= nil then
-            local rec = { host = host, status = status, ports = {} }
+            local rec = { host = host, ports = {}, status = status }
             hosts[#hosts + 1] = rec
             by_host[host] = rec
         else

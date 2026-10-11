@@ -22,18 +22,18 @@
 
 local M = {}
 
-local LOG_SUBDIR = 'ai-dataaccess'
-local LOG_FILENAME = 'events.jsonl'
 local BACKUP_SUFFIX = '.1'
-local LOG_DIR_MODE = '0700'
-local LOG_BYTES_MAX = 1048576 -- 1 MiB: rotate past this size.
-local LINE_BYTES_MAX = 8192 -- Hard cap on one encoded line.
-local TAIL_MIN = 1
-local TAIL_MAX = 200
-local TAIL_WINDOW_BYTES = TAIL_MAX * LINE_BYTES_MAX
-local KIND_LENGTH_MAX = 64
 local JSON_DEPTH_MAX = 8
 local JSON_KEYS_MAX = 512
+local KIND_LENGTH_MAX = 64
+local LINE_BYTES_MAX = 8192 -- Hard cap on one encoded line.
+local LOG_BYTES_MAX = 1048576 -- 1 MiB: rotate past this size.
+local LOG_DIR_MODE = '0700'
+local LOG_FILENAME = 'events.jsonl'
+local LOG_SUBDIR = 'ai-dataaccess'
+local TAIL_MAX = 200
+local TAIL_MIN = 1
+local TAIL_WINDOW_BYTES = TAIL_MAX * LINE_BYTES_MAX
 
 local log_path = nil ---@type string?
 local setup_done = false

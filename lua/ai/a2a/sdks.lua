@@ -177,9 +177,9 @@ function M.detect_all(callback)
 end
 
 -- Driver runner ----------------------------------------------------
-local SCRIPT_MAX_BYTES = 65536
-local OUTPUT_MAX_BYTES = 1024 * 1024
 local DRIVER_TIMEOUT_MS = 120000
+local OUTPUT_MAX_BYTES = 1024 * 1024
+local SCRIPT_MAX_BYTES = 65536
 
 local last_base_url = ''
 
@@ -305,6 +305,7 @@ local function run_driver(spec, driver, op, cli_args, opts)
         local ok, handle = pcall(vim.system, argv, sys_opts, function(res)
             cleanup()
             local output = ''
+            local success = res ~= nil and res.code == 0
             if res ~= nil then
                 output = (res.stdout or '') .. (res.stderr or '')
             end
@@ -312,7 +313,7 @@ local function run_driver(spec, driver, op, cli_args, opts)
                 output = output:sub(1, OUTPUT_MAX_BYTES) .. '\n…[truncated]'
             end
             vim.schedule(function()
-                if not ok then
+                if not success then
                     vim.notify('A2A SDK (' .. spec.lang .. ') failed:\n' .. output, vim.log.levels.ERROR)
                 else
                     vim.notify(output ~= '' and output or '(no output)', vim.log.levels.INFO)

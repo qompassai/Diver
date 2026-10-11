@@ -25,8 +25,8 @@
 
 local M = {}
 
-local SESSION_COUNT_MAX = 64
 local KEY_BYTES_MAX = 2048
+local SESSION_COUNT_MAX = 64
 
 ---@class DataSession
 ---@field key string Session key: 'dataaccess:' .. adapter .. '|' .. dsn identity.

@@ -17,16 +17,16 @@ function M.probe()
     local ok_tasks = pcall(require, 'ai.a2a.tasks')
     local ok_client = pcall(require, 'ai.a2a.client')
     return {
-        available = ok_tasks and ok_client,
-        streaming = true,
-        cancellation = true,
-        resume = true,
-        permissions = false,
         artifacts = true,
+        available = ok_tasks and ok_client,
+        cancellation = true,
+        notes = 'permissions unwired: A2A consent stays native in Phase 1',
+        permissions = false,
         remote = true,
+        resume = true,
+        streaming = true,
         tools = false,
         wired_start = true,
-        notes = 'permissions unwired: A2A consent stays native in Phase 1',
     }
 end
 
@@ -50,16 +50,15 @@ function M.start(run, sink)
     generation_counter = generation_counter + 1
     local handle = {
         adapter = 'a2a',
+        closed = false,
         generation = generation_counter,
         run_id = run.id,
         task_id = nil,
-        closed = false,
     }
     local my_generation = handle.generation
     local task_id, err = tasks.submit({
         agent = ext.agent,
         message = run.goal,
-        timeout_ms = ext.timeout_ms,
         on_done = function(result, task_err)
             if my_generation ~= handle.generation or handle.closed then
                 return
@@ -71,6 +70,7 @@ function M.start(run, sink)
                 result = result,
             }, { source = 'a2a' })
         end,
+        timeout_ms = ext.timeout_ms,
     })
     if task_id == nil then
         return nil, 'a2a submit failed: ' .. tostring(err)

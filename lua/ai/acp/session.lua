@@ -6,14 +6,14 @@
 -- session: spawn, initialize handshake, session/new, prompt turns, cancel,
 -- teardown. UI rendering lives in acp/ui.lua; persistence in acp/store.lua.
 
+local protocol = require('ai.acp.protocol')
 local registry = require('ai.acp.registry')
 local rpc = require('ai.acp.rpc')
-local protocol = require('ai.acp.protocol')
 
 local M = {}
 
-local SESSION_COUNT_MAX = 8
 local HANDSHAKE_TIMEOUT_MS = 10000
+local SESSION_COUNT_MAX = 8
 
 ---@class AcpSessionState
 ---@field id string?
@@ -28,6 +28,28 @@ M.sessions = {}
 
 local function generation_id()
     return tostring(vim.uv.hrtime())
+end
+
+---@param session_key string
+function M.cancel(session_key)
+    local state = M.sessions[session_key]
+    if not state or not state.id then
+        return
+    end
+    rpc.notify(state.client, protocol.METHOD.SESSION_CANCEL, protocol.cancel_params(state.id))
+end
+
+---@param session_key string
+---@param text string
+---@param callback? fun(err: string?)
+function M.prompt(session_key, text, callback)
+    local state = M.sessions[session_key]
+    assert(state and state.id, 'Unknown or unready ACP session: ' .. tostring(session_key))
+    rpc.request(state.client, protocol.METHOD.SESSION_PROMPT, protocol.prompt_params(state.id, text), function(err)
+        if callback then
+            callback(err and tostring(err.message or err) or nil)
+        end
+    end)
 end
 
 ---@param agent_name string
@@ -129,28 +151,6 @@ function M.start(agent_name, opts, callback)
             callback(key, nil)
         end)
     end)
-end
-
----@param session_key string
----@param text string
----@param callback? fun(err: string?)
-function M.prompt(session_key, text, callback)
-    local state = M.sessions[session_key]
-    assert(state and state.id, 'Unknown or unready ACP session: ' .. tostring(session_key))
-    rpc.request(state.client, protocol.METHOD.SESSION_PROMPT, protocol.prompt_params(state.id, text), function(err)
-        if callback then
-            callback(err and tostring(err.message or err) or nil)
-        end
-    end)
-end
-
----@param session_key string
-function M.cancel(session_key)
-    local state = M.sessions[session_key]
-    if not state or not state.id then
-        return
-    end
-    rpc.notify(state.client, protocol.METHOD.SESSION_CANCEL, protocol.cancel_params(state.id))
 end
 
 ---@param session_key string

@@ -16,14 +16,14 @@
 
 local M = {}
 
-local LABEL_WIDTH_MAX = 40
 local ADAPTER_WIDTH_MAX = 10
-local ROWS_DISPLAY_MAX = 200
 local EVENTS_DISPLAY_MAX = 30
+local LABEL_WIDTH_MAX = 40
+local ROWS_DISPLAY_MAX = 200
+local WINDOW_HEIGHT_MIN = 8
+local WINDOW_HEIGHT_RATIO = 0.8
 local WINDOW_WIDTH_MAX = 112
 local WINDOW_WIDTH_RATIO = 0.9
-local WINDOW_HEIGHT_RATIO = 0.8
-local WINDOW_HEIGHT_MIN = 8
 
 local win = nil ---@type integer?
 local buf = nil ---@type integer?
@@ -161,26 +161,26 @@ function M.open()
     local width = math.min(WINDOW_WIDTH_MAX, math.floor(columns * WINDOW_WIDTH_RATIO))
     local height = math.max(WINDOW_HEIGHT_MIN, math.floor(lines_count * WINDOW_HEIGHT_RATIO))
     win = vim.api.nvim_open_win(buf, true, {
-        relative = 'editor',
-        width = width,
-        height = height,
+        border = 'rounded',
         col = math.floor((columns - width) / 2),
+        height = height,
+        relative = 'editor',
         row = math.floor((lines_count - height) / 2),
         style = 'minimal',
-        border = 'rounded',
         title = ' data access ',
         title_pos = 'center',
+        width = width,
     })
     local opts = { buffer = buf, silent = true, nowait = true }
     vim.keymap.set('n', 'q', close_window, opts)
     vim.keymap.set('n', 'r', render, opts)
     vim.api.nvim_create_autocmd('WinClosed', {
         buffer = buf,
-        once = true,
         callback = function()
             win = nil
             buf = nil
         end,
+        once = true,
     })
     render()
 end

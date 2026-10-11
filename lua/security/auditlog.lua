@@ -12,8 +12,8 @@
 
 local M = {}
 
-local LOG_NAME = 'tool-calls.jsonl'
 local LINE_MAX = 4096 ---@type integer Max bytes per log line
+local LOG_NAME = 'tool-calls.jsonl'
 
 ---@param path string
 ---@return string? dir
@@ -35,11 +35,11 @@ function M.append(record)
         return false
     end
     local entry = {
-        ts = os.time(),
-        tool = tostring(record.tool or 'unknown'):sub(1, 128),
-        target = tostring(record.target or ''):sub(1, 256),
-        via = tostring(record.via or ''):sub(1, 64),
         decision = tostring(record.decision or ''):sub(1, 64),
+        target = tostring(record.target or ''):sub(1, 256),
+        tool = tostring(record.tool or 'unknown'):sub(1, 128),
+        ts = os.time(),
+        via = tostring(record.via or ''):sub(1, 64),
     }
     local ok, encoded = pcall(vim.json.encode, entry)
     if not ok or type(encoded) ~= 'string' then

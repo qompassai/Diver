@@ -27,45 +27,18 @@
 local M = {}
 
 ---@class AiBulkLane
----@field send_reply fun(client: uv.uv_pipe_t, state: table, reply: table, close: boolean)
----@field send_backend_result fun(client: uv.uv_pipe_t, state: table, pcall_ok: boolean,
----    backend_ok: boolean, result: any)
+---@field client_closed_fn? fun(client: uv.uv_pipe_t): boolean
+---@field inflight integer
 ---@field max_inflight integer
 ---@field max_waiting integer
----@field watchdog_ms integer
----@field inflight integer
+---@field send_backend_result fun(client: uv.uv_pipe_t, state: table, pcall_ok: boolean,
+---    backend_ok: boolean, result: any)
+---@field send_reply fun(client: uv.uv_pipe_t, state: table, reply: table, close: boolean)
 ---@field waiting table<integer, table> FIFO of {client, state, line, params, backend_fn}
+---@field watchdog_ms integer
 
 local AiBulkLane = {}
 AiBulkLane.__index = AiBulkLane
-
----@param opts table
----@field opts.send_reply function
----@field opts.send_backend_result function
----@field opts.max_inflight integer
----@field opts.max_waiting? integer
----@field opts.watchdog_ms integer
----@field opts.client_closed_fn? fun(client: uv.uv_pipe_t): boolean
----@return AiBulkLane
-function M.new(opts)
-    assert(type(opts) == 'table', 'opts must be a table')
-    assert(type(opts.send_reply) == 'function', 'opts.send_reply is required')
-    assert(type(opts.send_backend_result) == 'function', 'opts.send_backend_result is required')
-    assert(type(opts.max_inflight) == 'number' and opts.max_inflight >= 1, 'opts.max_inflight must be >= 1')
-    assert(type(opts.watchdog_ms) == 'number' and opts.watchdog_ms >= 1, 'opts.watchdog_ms must be >= 1')
-    local max_waiting = opts.max_waiting or 64
-    assert(type(max_waiting) == 'number' and max_waiting >= 1, 'opts.max_waiting must be >= 1')
-    return setmetatable({
-        send_reply = opts.send_reply,
-        send_backend_result = opts.send_backend_result,
-        max_inflight = math.floor(opts.max_inflight),
-        max_waiting = math.floor(max_waiting),
-        watchdog_ms = math.floor(opts.watchdog_ms),
-        client_closed_fn = opts.client_closed_fn,
-        inflight = 0,
-        waiting = {},
-    }, AiBulkLane)
-end
 
 ---Fail fast when a bulk backend function does not take (params, cb).
 ---@param fn any
@@ -77,7 +50,41 @@ function M.assert_callback_fn(fn, name)
     assert(takes_callback, 'backend.' .. name .. ' must take (params, cb)')
 end
 
+---@class AiBulkOpts
+---@field client_closed_fn? fun(client: uv.uv_pipe_t): boolean
+---@field max_inflight integer
+---@field max_waiting? integer
+---@field send_backend_result fun(client: uv.uv_pipe_t, state: table, pcall_ok: boolean,
+---    backend_ok: boolean, result: any)
+---@field send_reply fun(client: uv.uv_pipe_t, state: table, reply: table, close: boolean)
+---@field watchdog_ms integer
+
+---@param opts AiBulkOpts
+---@return AiBulkLane
+function M.new(opts)
+    assert(type(opts) == 'table', 'opts must be a table')
+    assert(type(opts.send_reply) == 'function', 'opts.send_reply is required')
+    assert(type(opts.send_backend_result) == 'function', 'opts.send_backend_result is required')
+    assert(type(opts.max_inflight) == 'number' and opts.max_inflight >= 1, 'opts.max_inflight must be >= 1')
+    assert(type(opts.watchdog_ms) == 'number' and opts.watchdog_ms >= 1, 'opts.watchdog_ms must be >= 1')
+    local max_waiting = opts.max_waiting or 64
+    assert(type(max_waiting) == 'number' and max_waiting >= 1, 'opts.max_waiting must be >= 1')
+    local lane = setmetatable({
+        client_closed_fn = opts.client_closed_fn,
+        inflight = 0,
+        max_inflight = math.floor(opts.max_inflight),
+        max_waiting = math.floor(max_waiting),
+        send_backend_result = opts.send_backend_result,
+        send_reply = opts.send_reply,
+        waiting = {},
+        watchdog_ms = math.floor(opts.watchdog_ms),
+    }, AiBulkLane)
+    ---@cast lane AiBulkLane
+    return lane
+end
+
 ---@param client uv.uv_pipe_t
+---@param state table?
 ---@return boolean closed
 local function client_is_closed(self, client, state)
     if state ~= nil and state.closed then

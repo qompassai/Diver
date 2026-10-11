@@ -12,34 +12,34 @@
 -- not a real EXIF/chunk parse -- see the limits in
 -- ai/security/init.lua.
 
-local patterns = require('security.patterns')
-
 local M = {}
 
+local patterns = require('security.patterns')
+
 -- Named bounds (all in bytes unless the name says otherwise).
-local MAGIC_READ_BYTES_MAX = 64
+local B64_RUN_MAX = 32768
+local B64_RUN_MIN = 64
+local DECODE_ATTEMPT_MAX = 8
 local FILE_READ_BYTES_MAX = 2 * 1024 * 1024
+local FINDING_COUNT_MAX = 128
+local MAGIC_READ_BYTES_MAX = 64
 local META_SCAN_BYTES_MAX = 16384
 local TEXT_SCAN_BYTES_MAX = 65536
-local B64_RUN_MIN = 64
-local B64_RUN_MAX = 32768
-local DECODE_ATTEMPT_MAX = 8
-local FINDING_COUNT_MAX = 128
 -- Byte/text layer bounds (all in characters unless the name says otherwise).
-local ROT13_RUN_MIN = 32
-local HEX_RUN_MIN = 64
-local GIBBERISH_TOKEN_MIN = 24
 local GIBBERISH_SYMBOL_RATIO = 0.5
+local GIBBERISH_TOKEN_MIN = 24
+local HEX_RUN_MIN = 64
+local ROT13_RUN_MIN = 32
 
 ---@class SecurityFinding
----@field severity 'low'|'medium'|'high'
 ---@field code string Stable finding code
 ---@field detail string Human-readable explanation
 ---@field offset? integer 1-based byte offset in the scanned input
+---@field severity 'low'|'medium'|'high'
 
 ---@class SecurityReport
----@field verdict 'clean'|'suspicious'|'malicious'
 ---@field findings SecurityFinding[]
+---@field verdict 'clean'|'suspicious'|'malicious'
 
 ---@param findings SecurityFinding[]
 ---@param severity 'low'|'medium'|'high'
@@ -54,19 +54,19 @@ local function add_finding(findings, severity, code, detail, offset)
         return
     end
     findings[#findings + 1] = {
-        severity = severity,
         code = code,
         detail = detail,
         offset = offset,
+        severity = severity,
     }
 end
 
 -- Mach-O magic values (32-bit, 64-bit, fat binary, byte-swapped).
 local MACHO_MAGICS = {
-    '\254\237\250\206',
-    '\254\237\250\207',
     '\202\254\186\190',
     '\206\250\237\254',
+    '\254\237\250\206',
+    '\254\237\250\207',
 }
 
 ---@param head string First bytes of the file (up to MAGIC_READ_BYTES_MAX)
@@ -110,58 +110,58 @@ end
 
 -- Expected sniffed kind per file extension (lowercased, no dot).
 local EXPECTED_KIND = {
-    png = 'png',
-    jpg = 'jpeg',
-    jpeg = 'jpeg',
-    gif = 'gif',
-    webp = 'webp',
     bmp = 'bmp',
+    gif = 'gif',
+    jpeg = 'jpeg',
+    jpg = 'jpeg',
+    png = 'png',
+    webp = 'webp',
     zip = 'zip',
 }
 
 local IMAGE_KINDS = {
-    png = true,
-    jpeg = true,
-    gif = true,
-    webp = true,
     bmp = true,
+    gif = true,
+    jpeg = true,
+    png = true,
+    webp = true,
 }
 
 -- Extensions where a native executable is the honest content.
 local EXECUTABLE_EXTS = {
-    exe = true,
-    so = true,
+    bin = true,
     dll = true,
     dylib = true,
-    bin = true,
     elf = true,
+    exe = true,
     out = true,
+    so = true,
 }
 
 -- Extensions treated as text for the null-byte check.
 local TEXT_EXTS = {
-    txt = true,
+    c = true,
+    cpp = true,
+    css = true,
+    go = true,
+    h = true,
+    html = true,
+    java = true,
+    js = true,
+    json = true,
+    lua = true,
     md = true,
     markdown = true,
-    lua = true,
     py = true,
-    js = true,
+    rs = true,
+    sh = true,
+    toml = true,
     ts = true,
-    json = true,
+    txt = true,
+    vim = true,
+    xml = true,
     yaml = true,
     yml = true,
-    toml = true,
-    sh = true,
-    vim = true,
-    c = true,
-    h = true,
-    cpp = true,
-    rs = true,
-    go = true,
-    java = true,
-    html = true,
-    css = true,
-    xml = true,
 }
 
 ---@param kind string Sniffed kind from detect_kind
@@ -214,10 +214,10 @@ end
 -- Markers that turn an "image" into a polyglot: server code or markup
 -- hiding in the byte stream after (or before) the image data.
 local POLYGLOT_MARKERS = {
-    { bytes = '<?php', code = 'polyglot.server_code', severity = 'high' },
-    { bytes = '<script', code = 'polyglot.script_tag', severity = 'high' },
-    { bytes = '<html', code = 'polyglot.html', severity = 'medium' },
     { bytes = '<%', code = 'polyglot.template_tag', severity = 'medium' },
+    { bytes = '<?php', code = 'polyglot.server_code', severity = 'high' },
+    { bytes = '<html', code = 'polyglot.html', severity = 'medium' },
+    { bytes = '<script', code = 'polyglot.script_tag', severity = 'high' },
 }
 
 ---@param kind string Sniffed kind from detect_kind
@@ -644,6 +644,32 @@ local function scan_gibberish(text, findings)
     end
 end
 
+---@class ScanBytesOpts
+---@field extension? string Lowercased extension without dot, '' if none
+---@field filename? string Display name used in finding details
+
+---@param data string Bounded file content (see FILE_READ_BYTES_MAX)
+---@param opts? ScanBytesOpts
+---@return SecurityReport report
+function M.scan_bytes(data, opts)
+    assert(type(data) == 'string')
+    assert(opts == nil or type(opts) == 'table')
+    local extension = (opts and opts.extension) or ''
+    assert(type(extension) == 'string')
+    local head = data:sub(1, MAGIC_READ_BYTES_MAX)
+    local kind = detect_kind(head)
+    local findings = {}
+    check_magic_mismatch(kind, extension, findings)
+    check_polyglot(kind, data, findings)
+    check_null_bytes(extension, data, findings)
+    check_metadata(kind, data, findings)
+    local text_report = M.scan_text(data:sub(1, TEXT_SCAN_BYTES_MAX))
+    for _, finding in ipairs(text_report.findings) do
+        add_finding(findings, finding.severity, finding.code, finding.detail, finding.offset)
+    end
+    return { findings = findings, verdict = verdict_for(findings) }
+end
+
 ---@param text string Text to scan (bounded by the caller)
 ---@return SecurityReport report
 function M.scan_text(text)
@@ -668,33 +694,7 @@ function M.scan_text(text)
     scan_rot13_layer(text, findings)
     scan_hex_layer(text, findings)
     scan_gibberish(text, findings)
-    return { verdict = verdict_for(findings), findings = findings }
-end
-
----@class ScanBytesOpts
----@field extension? string Lowercased extension without dot, '' if none
----@field filename? string Display name used in finding details
-
----@param data string Bounded file content (see FILE_READ_BYTES_MAX)
----@param opts? ScanBytesOpts
----@return SecurityReport report
-function M.scan_bytes(data, opts)
-    assert(type(data) == 'string')
-    assert(opts == nil or type(opts) == 'table')
-    local extension = (opts and opts.extension) or ''
-    assert(type(extension) == 'string')
-    local head = data:sub(1, MAGIC_READ_BYTES_MAX)
-    local kind = detect_kind(head)
-    local findings = {}
-    check_magic_mismatch(kind, extension, findings)
-    check_polyglot(kind, data, findings)
-    check_null_bytes(extension, data, findings)
-    check_metadata(kind, data, findings)
-    local text_report = M.scan_text(data:sub(1, TEXT_SCAN_BYTES_MAX))
-    for _, finding in ipairs(text_report.findings) do
-        add_finding(findings, finding.severity, finding.code, finding.detail, finding.offset)
-    end
-    return { verdict = verdict_for(findings), findings = findings }
+    return { findings = findings, verdict = verdict_for(findings) }
 end
 
 -- Re-exported so tests and callers can size their own reads.

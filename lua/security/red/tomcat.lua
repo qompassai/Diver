@@ -3,6 +3,22 @@
 -- Copyright (C) 2026 Qompass AI, All rights reserved
 -- ----------------------------------------
 local M = {} ---@version JIT
+local function parse_headers_and_status(raw)
+    local status = raw:match('__STATUS__:(%d+)')
+    status = status and tonumber(status) or nil
+    local headers = {}
+    for line in raw:gmatch('[^\r\n]+') do
+        if line:match('^HTTP/') then
+            headers._status_line = line
+        else
+            local k, v = line:match('^([%w%-]+):%s*(.*)$')
+            if k and v then
+                headers[k:lower()] = v
+            end
+        end
+    end
+    return status, headers
+end
 local function shell_escape(s)
     return s:gsub([=[']=], [['"']])
 end
@@ -42,22 +58,6 @@ local function run_curl(args, opts, cb)
         end
         cb(res.stdout or '', nil)
     end)
-end
-local function parse_headers_and_status(raw)
-    local status = raw:match('__STATUS__:(%d+)')
-    status = status and tonumber(status) or nil
-    local headers = {}
-    for line in raw:gmatch('[^\r\n]+') do
-        if line:match('^HTTP/') then
-            headers._status_line = line
-        else
-            local k, v = line:match('^([%w%-]+):%s*(.*)$')
-            if k and v then
-                headers[k:lower()] = v
-            end
-        end
-    end
-    return status, headers
 end
 local function url_for(host, port, path, scheme)
     scheme = scheme or 'http'

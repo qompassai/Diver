@@ -33,158 +33,88 @@ local M = {}
 ---  manager after init (e.g. go.mod/go.sum); never rewrite them once
 ---  they exist, or the dependency state init created is wiped.
 
--- Python -----------------------------------------------------------------
-local function python_source()
-    return [[
-import asyncio
-import sys
+-- .NET ----------------------------------------------------------------------
+local function dotnet_files()
+    return {
+        ['A2aDriver.csproj'] = [[
+<Project Sdk="Microsoft.NET.Sdk">
+  <PropertyGroup>
+    <OutputType>Exe</OutputType>
+    <TargetFramework>net8.0</TargetFramework>
+    <Nullable>enable</Nullable>
+  </PropertyGroup>
+  <ItemGroup>
+    <PackageReference Include="A2A" Version="*-*" />
+  </ItemGroup>
+</Project>
+]],
+        ['Program.cs'] = [[
+using System;
+using A2A;
 
-OP = sys.argv[1]
-
-
-async def _card(base_url):
-    import httpx
-    from a2a.client import A2ACardResolver
-
-    async with httpx.AsyncClient() as http:
-        resolver = A2ACardResolver(httpx_client=http, base_url=base_url)
-        card = await resolver.get_agent_card()
-    try:
-        from google.protobuf.json_format import MessageToJson
-
-        print(MessageToJson(card))
-    except Exception:
-        print(str(card))
-
-
-async def _client(base_url, streaming):
-    import httpx
-    from a2a.client import A2ACardResolver, ClientConfig, create_client
-
-    async with httpx.AsyncClient() as http:
-        resolver = A2ACardResolver(httpx_client=http, base_url=base_url)
-        card = await resolver.get_agent_card()
-    return await create_client(agent=card, client_config=ClientConfig(streaming=streaming))
-
-
-async def _send(base_url, text, streaming):
-    from a2a.helpers import new_text_message
-    from a2a.types import Role, SendMessageRequest
-
-    client = await _client(base_url, streaming)
-    try:
-        request = SendMessageRequest(message=new_text_message(text, role=Role.ROLE_USER))
-        async for chunk in client.send_message(request):
-            print(chunk)
-    finally:
-        await client.close()
-
-
-async def _get(base_url, task_id):
-    from a2a.types.a2a_pb2 import GetTaskRequest
-
-    client = await _client(base_url, False)
-    try:
-        print(await client.get_task(GetTaskRequest(id=task_id)))
-    finally:
-        await client.close()
-
-
-async def _cancel(base_url, task_id):
-    # NOTE: CancelTaskRequest's field name is not shown in the SDK docs;
-    # mirrors GetTaskRequest(id=...) per the a2aproject issue thread.
-    from a2a.types.a2a_pb2 import CancelTaskRequest
-
-    client = await _client(base_url, False)
-    try:
-        print(await client.cancel_task(CancelTaskRequest(id=task_id)))
-    finally:
-        await client.close()
-
-
-async def _main():
-    if OP == "card":
-        await _card(sys.argv[2])
-    elif OP == "send":
-        await _send(sys.argv[2], sys.argv[3], False)
-    elif OP == "stream":
-        await _send(sys.argv[2], sys.argv[3], True)
-    elif OP == "get":
-        await _get(sys.argv[2], sys.argv[3])
-    elif OP == "cancel":
-        await _cancel(sys.argv[2], sys.argv[3])
-    else:
-        raise SystemExit("unknown op: " + OP)
-
-
-asyncio.run(_main())
-]]
-end
-
-M.python = {
-    kind = 'script',
-    argv = { 'python3' },
-    ext = '.py',
-    args_via = 'argv',
-    build = python_source,
-}
-
--- TypeScript --------------------------------------------------------------
--- Runs under plain node from Neovim's cwd so a project-local
--- `npm install @a2a-js/sdk` resolves.
-local function typescript_source()
-    return [[
 // op: card | send | stream | get | cancel
-import { ClientFactory, ClientFactoryOptions } from '@a2a-js/sdk/client';
-import { Role } from '@a2a-js/sdk';
+var op = args[0];
+var baseUrl = new Uri(args[1]);
+var extra = args.Length > 2 ? args[2] : "";
 
-const [op, baseUrl, extra] = process.argv.slice(2);
-const factory = new ClientFactory(ClientFactoryOptions.default);
+var resolver = new A2ACardResolver(baseUrl);
+AgentCard agentCard = await resolver.GetAgentCardAsync();
 
-function messageParams(text) {
-  return {
-    tenant: '',
-    message: {
-      messageId: crypto.randomUUID(),
-      role: Role.ROLE_USER,
-      parts: [{ content: { $case: 'text', value: text }, mediaType: 'text/plain' }],
-    },
-    configuration: { acceptedOutputModes: ['text/plain'] },
-    metadata: {},
-  };
+if (op == "card")
+{
+    Console.WriteLine(agentCard);
+    return;
 }
 
-if (op === 'card') {
-  // Mirrors what createFromUrl fetches before picking a transport.
-  const res = await fetch(baseUrl.replace(/\/+$/, '') + '/.well-known/agent-card.json');
-  console.log(await res.text());
-} else if (op === 'send') {
-  const client = await factory.createFromUrl(baseUrl);
-  console.dir(await client.sendMessage(messageParams(extra)), { depth: 8 });
-} else if (op === 'stream') {
-  const client = await factory.createFromUrl(baseUrl);
-  for await (const event of client.sendMessageStream(messageParams(extra))) {
-    console.log(event.payload.$case, event.payload.value);
-  }
-} else if (op === 'get') {
-  const client = await factory.createFromUrl(baseUrl);
-  console.dir(await client.getTask({ id: extra, tenant: '' }), { depth: 8 });
-} else if (op === 'cancel') {
-  const client = await factory.createFromUrl(baseUrl);
-  console.dir(await client.cancelTask({ id: extra, tenant: '' }), { depth: 8 });
-} else {
-  throw new Error('unknown op: ' + op);
+var client = new A2AClient(new Uri(agentCard.SupportedInterfaces[0].Url));
+
+if (op is "send" or "stream")
+{
+    var request = new SendMessageRequest
+    {
+        Message = new Message
+        {
+            MessageId = Guid.NewGuid().ToString("N"),
+            Role = Role.User,
+            Parts = [Part.FromText(extra)]
+        }
+    };
+    if (op == "send")
+    {
+        Console.WriteLine(await client.SendMessageAsync(request));
+    }
+    else
+    {
+        // NOTE: the samples README names this SendMessageStreamAsync;
+        // IA2AClient and the sample code use SendStreamingMessageAsync.
+        await foreach (StreamResponse evt in client.SendStreamingMessageAsync(request))
+        {
+            Console.WriteLine(evt);
+        }
+    }
 }
-]]
+else if (op == "get")
+{
+    Console.WriteLine(await client.GetTaskAsync(new GetTaskRequest { Id = extra }));
+}
+else if (op == "cancel")
+{
+    Console.WriteLine(await client.CancelTaskAsync(new CancelTaskRequest { Id = extra }));
+}
+else
+{
+    throw new ArgumentException("unknown op: " + op);
+}
+]],
+    }
 end
 
-M.typescript = {
-    kind = 'script',
-    argv = { 'node' },
-    ext = '.mjs',
+M.dotnet = {
+    kind = 'project',
+    argv = { 'dotnet', 'run', '--' },
+    ext = '.cs',
     args_via = 'argv',
-    build = typescript_source,
-    cwd = 'nvim',
+    build = dotnet_files,
 }
 
 -- Go ----------------------------------------------------------------------
@@ -400,88 +330,158 @@ M.java = {
     build = java_files,
 }
 
--- .NET ----------------------------------------------------------------------
-local function dotnet_files()
-    return {
-        ['A2aDriver.csproj'] = [[
-<Project Sdk="Microsoft.NET.Sdk">
-  <PropertyGroup>
-    <OutputType>Exe</OutputType>
-    <TargetFramework>net8.0</TargetFramework>
-    <Nullable>enable</Nullable>
-  </PropertyGroup>
-  <ItemGroup>
-    <PackageReference Include="A2A" Version="*-*" />
-  </ItemGroup>
-</Project>
-]],
-        ['Program.cs'] = [[
-using System;
-using A2A;
+-- Python -----------------------------------------------------------------
+local function python_source()
+    return [[
+import asyncio
+import sys
 
-// op: card | send | stream | get | cancel
-var op = args[0];
-var baseUrl = new Uri(args[1]);
-var extra = args.Length > 2 ? args[2] : "";
+OP = sys.argv[1]
 
-var resolver = new A2ACardResolver(baseUrl);
-AgentCard agentCard = await resolver.GetAgentCardAsync();
 
-if (op == "card")
-{
-    Console.WriteLine(agentCard);
-    return;
-}
+async def _card(base_url):
+    import httpx
+    from a2a.client import A2ACardResolver
 
-var client = new A2AClient(new Uri(agentCard.SupportedInterfaces[0].Url));
+    async with httpx.AsyncClient() as http:
+        resolver = A2ACardResolver(httpx_client=http, base_url=base_url)
+        card = await resolver.get_agent_card()
+    try:
+        from google.protobuf.json_format import MessageToJson
 
-if (op is "send" or "stream")
-{
-    var request = new SendMessageRequest
-    {
-        Message = new Message
-        {
-            MessageId = Guid.NewGuid().ToString("N"),
-            Role = Role.User,
-            Parts = [Part.FromText(extra)]
-        }
-    };
-    if (op == "send")
-    {
-        Console.WriteLine(await client.SendMessageAsync(request));
-    }
-    else
-    {
-        // NOTE: the samples README names this SendMessageStreamAsync;
-        // IA2AClient and the sample code use SendStreamingMessageAsync.
-        await foreach (StreamResponse evt in client.SendStreamingMessageAsync(request))
-        {
-            Console.WriteLine(evt);
-        }
-    }
-}
-else if (op == "get")
-{
-    Console.WriteLine(await client.GetTaskAsync(new GetTaskRequest { Id = extra }));
-}
-else if (op == "cancel")
-{
-    Console.WriteLine(await client.CancelTaskAsync(new CancelTaskRequest { Id = extra }));
-}
-else
-{
-    throw new ArgumentException("unknown op: " + op);
-}
-]],
-    }
+        print(MessageToJson(card))
+    except Exception:
+        print(str(card))
+
+
+async def _client(base_url, streaming):
+    import httpx
+    from a2a.client import A2ACardResolver, ClientConfig, create_client
+
+    async with httpx.AsyncClient() as http:
+        resolver = A2ACardResolver(httpx_client=http, base_url=base_url)
+        card = await resolver.get_agent_card()
+    return await create_client(agent=card, client_config=ClientConfig(streaming=streaming))
+
+
+async def _send(base_url, text, streaming):
+    from a2a.helpers import new_text_message
+    from a2a.types import Role, SendMessageRequest
+
+    client = await _client(base_url, streaming)
+    try:
+        request = SendMessageRequest(message=new_text_message(text, role=Role.ROLE_USER))
+        async for chunk in client.send_message(request):
+            print(chunk)
+    finally:
+        await client.close()
+
+
+async def _get(base_url, task_id):
+    from a2a.types.a2a_pb2 import GetTaskRequest
+
+    client = await _client(base_url, False)
+    try:
+        print(await client.get_task(GetTaskRequest(id=task_id)))
+    finally:
+        await client.close()
+
+
+async def _cancel(base_url, task_id):
+    # NOTE: CancelTaskRequest's field name is not shown in the SDK docs;
+    # mirrors GetTaskRequest(id=...) per the a2aproject issue thread.
+    from a2a.types.a2a_pb2 import CancelTaskRequest
+
+    client = await _client(base_url, False)
+    try:
+        print(await client.cancel_task(CancelTaskRequest(id=task_id)))
+    finally:
+        await client.close()
+
+
+async def _main():
+    if OP == "card":
+        await _card(sys.argv[2])
+    elif OP == "send":
+        await _send(sys.argv[2], sys.argv[3], False)
+    elif OP == "stream":
+        await _send(sys.argv[2], sys.argv[3], True)
+    elif OP == "get":
+        await _get(sys.argv[2], sys.argv[3])
+    elif OP == "cancel":
+        await _cancel(sys.argv[2], sys.argv[3])
+    else:
+        raise SystemExit("unknown op: " + OP)
+
+
+asyncio.run(_main())
+]]
 end
 
-M.dotnet = {
-    kind = 'project',
-    argv = { 'dotnet', 'run', '--' },
-    ext = '.cs',
+M.python = {
+    kind = 'script',
+    argv = { 'python3' },
+    ext = '.py',
     args_via = 'argv',
-    build = dotnet_files,
+    build = python_source,
+}
+
+-- TypeScript --------------------------------------------------------------
+-- Runs under plain node from Neovim's cwd so a project-local
+-- `npm install @a2a-js/sdk` resolves.
+local function typescript_source()
+    return [[
+// op: card | send | stream | get | cancel
+import { ClientFactory, ClientFactoryOptions } from '@a2a-js/sdk/client';
+import { Role } from '@a2a-js/sdk';
+
+const [op, baseUrl, extra] = process.argv.slice(2);
+const factory = new ClientFactory(ClientFactoryOptions.default);
+
+function messageParams(text) {
+  return {
+    tenant: '',
+    message: {
+      messageId: crypto.randomUUID(),
+      role: Role.ROLE_USER,
+      parts: [{ content: { $case: 'text', value: text }, mediaType: 'text/plain' }],
+    },
+    configuration: { acceptedOutputModes: ['text/plain'] },
+    metadata: {},
+  };
+}
+
+if (op === 'card') {
+  // Mirrors what createFromUrl fetches before picking a transport.
+  const res = await fetch(baseUrl.replace(/\/+$/, '') + '/.well-known/agent-card.json');
+  console.log(await res.text());
+} else if (op === 'send') {
+  const client = await factory.createFromUrl(baseUrl);
+  console.dir(await client.sendMessage(messageParams(extra)), { depth: 8 });
+} else if (op === 'stream') {
+  const client = await factory.createFromUrl(baseUrl);
+  for await (const event of client.sendMessageStream(messageParams(extra))) {
+    console.log(event.payload.$case, event.payload.value);
+  }
+} else if (op === 'get') {
+  const client = await factory.createFromUrl(baseUrl);
+  console.dir(await client.getTask({ id: extra, tenant: '' }), { depth: 8 });
+} else if (op === 'cancel') {
+  const client = await factory.createFromUrl(baseUrl);
+  console.dir(await client.cancelTask({ id: extra, tenant: '' }), { depth: 8 });
+} else {
+  throw new Error('unknown op: ' + op);
+}
+]]
+end
+
+M.typescript = {
+    kind = 'script',
+    argv = { 'node' },
+    ext = '.mjs',
+    args_via = 'argv',
+    build = typescript_source,
+    cwd = 'nvim',
 }
 
 return M

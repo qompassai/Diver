@@ -46,22 +46,22 @@
 local M = {}
 
 -- Named bounds.
-local TOOL_COUNT_MAX = 128
 local DESC_LEN_MAX = 16384
 local TOKEN_LEN_MIN = 6
+local TOOL_COUNT_MAX = 128
 local TRIGGER_TOOL_COUNT = 3
 
 ---@class McpToolMeta
----@field name string Tool name from the server's tools/list response
 ---@field description string Tool description from the server (attacker-controlled)
+---@field name string Tool name from the server's tools/list response
 
 ---@class McpVetFinding
----@field severity 'high'
--- 'mcp.vet_rejected' is emitted by the caller (ai.mcp.tools) when the
--- metadata trips the vet's own bounds and the vet refuses to score it.
 ---@field code 'mcp.tool_description_poison'|'mcp.cross_tool_trigger'|'mcp.vet_rejected'
 ---@field detail string Human-readable explanation naming the tool(s)
 ---@field offset? integer 1-based byte offset of the phrase in the description
+---@field severity 'high'
+-- 'mcp.vet_rejected' is emitted by the caller (ai.mcp.tools) when the
+-- metadata trips the vet's own bounds and the vet refuses to score it.
 
 -- Instructional phrasing addressed at the model. This set lives ONLY in
 -- this module (registry vetting); it must never run over general text,
@@ -103,21 +103,21 @@ local SENTENCE_INITIAL = {
 -- words are already dropped by TOKEN_LEN_MIN; these are the longer
 -- filler words that would otherwise link unrelated tools.
 local STOPLIST = {
-    the = true,
     ['and'] = true,
+    data = true,
     ['for'] = true,
-    with = true,
     from = true,
+    into = true,
     that = true,
+    the = true,
     this = true,
-    your = true,
-    will = true,
     tool = true,
     tools = true,
     used = true,
     using = true,
-    data = true,
-    into = true,
+    will = true,
+    with = true,
+    your = true,
 }
 
 ---@param findings McpVetFinding[]
@@ -132,10 +132,10 @@ local function scan_imperatives(findings, name, description)
         if start then
             local detail = ('Tool %q: description uses instructional phrasing %q'):format(name, phrase)
             findings[#findings + 1] = {
-                severity = 'high',
                 code = 'mcp.tool_description_poison',
                 detail = detail,
                 offset = start,
+                severity = 'high',
             }
         end
     end
@@ -144,10 +144,10 @@ local function scan_imperatives(findings, name, description)
         if start then
             local detail = ('Tool %q: sentence-initial %q issues a standing order'):format(name, entry.word)
             findings[#findings + 1] = {
-                severity = 'high',
                 code = 'mcp.tool_description_poison',
                 detail = detail,
                 offset = start,
+                severity = 'high',
             }
         end
     end
@@ -206,9 +206,9 @@ local function correlate_triggers(tools, findings)
                 table.concat(names, ', ')
             )
             findings[#findings + 1] = {
-                severity = 'high',
                 code = 'mcp.cross_tool_trigger',
                 detail = detail,
+                severity = 'high',
             }
         end
     end

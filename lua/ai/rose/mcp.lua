@@ -259,11 +259,11 @@ function Client:close(reason)
     end
 end
 
-local MCP_TIMEOUT_MS_DEFAULT = 30000
 local MCP_INITIALIZE_TIMEOUT_MS_DEFAULT = 10000
 local MCP_MESSAGE_BYTES_MAX_DEFAULT = 8 * 1024 * 1024
-local MCP_STDERR_BYTES_MAX = 8192
 local MCP_PROTOCOL_VERSION = '2025-11-25'
+local MCP_STDERR_BYTES_MAX = 8192
+local MCP_TIMEOUT_MS_DEFAULT = 30000
 
 -- Operating error for a malformed argv, or nil when it can be spawned.
 ---@param cmd any

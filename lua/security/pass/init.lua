@@ -30,9 +30,9 @@ local SECRET_BYTES_MAX = 65536 -- cap on one retrieved secret.
 ---`pass ls` tree-drawing literals. Byte lengths matter here: the box
 ---glyphs are 3 bytes each in UTF-8, so character counts and byte counts
 ---differ ('├── ' is 4 columns but 10 bytes).
+local TREE_BRANCH = '├── ' -- non-last child (10 bytes).
 local TREE_CONT = '│   ' -- deeper level, more siblings below (6 bytes).
 local TREE_GAP = '    ' -- deeper level, no more siblings (4 bytes).
-local TREE_BRANCH = '├── ' -- non-last child (10 bytes).
 local TREE_LAST = '└── ' -- last child (10 bytes).
 
 ---@class pass.Check
@@ -85,11 +85,11 @@ local MIGRATIONS_NOTE = '[template] no upstream pass config rename known; shape 
 ---@type utils.toolmgr.Migration[]
 local MIGRATIONS_PASS = {
     {
-        version = '1.7.4',
-        description = MIGRATIONS_NOTE,
         apply = function()
             return true, 'template migration: no changes applied'
         end,
+        description = MIGRATIONS_NOTE,
+        version = '1.7.4',
     },
 }
 
@@ -172,16 +172,6 @@ end
 ---@type userdata|nil
 local clear_timer = nil
 
----Stop and close the clear timer. Idempotent: safe to call with no live
----timer, and safe to call twice.
-function M.stop_clear_timer()
-    if clear_timer ~= nil then
-        pcall(vim.uv.timer_stop, clear_timer)
-        pcall(vim.uv.close, clear_timer)
-        clear_timer = nil
-    end
-end
-
 ---Arm the single-owner clear timer, replacing any live one first. On fire:
 ---both the + and * registers are emptied, one notification goes out, and
 ---the handle is torn down exactly once.
@@ -205,6 +195,16 @@ function M.schedule_clear()
             M.stop_clear_timer()
         end)
     )
+end
+
+---Stop and close the clear timer. Idempotent: safe to call with no live
+---timer, and safe to call twice.
+function M.stop_clear_timer()
+    if clear_timer ~= nil then
+        pcall(vim.uv.timer_stop, clear_timer)
+        pcall(vim.uv.close, clear_timer)
+        clear_timer = nil
+    end
 end
 
 -- Entry handling -------------------------------------------------------
@@ -372,54 +372,6 @@ local function yank_registered(secret_line, kind, entry)
     vim.notify(('Pass: %s for %s yanked; clipboard clears in %ds'):format(kind, entry, seconds), vim.log.levels.INFO)
 end
 
----Yank the password (first line of `pass show`) into + and *.
----@param entry string Validated entry name.
-function M.yank_password(entry)
-    local secret, secret_err = M.retrieve(entry, 'show')
-    if secret_err ~= nil then
-        vim.notify('Pass: ' .. secret_err, vim.log.levels.ERROR)
-        return
-    end
-    assert(secret ~= nil, 'retrieve returned no error but no secret')
-    yank_registered(M.password_line(secret), 'password', entry)
-end
-
----Yank a one-time password via `pass otp`. Refuses when oathtool is
----absent (the action is hidden from the menu for the same reason).
----@param entry string Validated entry name.
-function M.yank_otp(entry)
-    local toolmgr = require('utils.toolmgr')
-    if not toolmgr.binary_present(M.config.oathtool_bin) then
-        vim.notify('Pass: oathtool is unavailable; cannot produce an OTP', vim.log.levels.ERROR)
-        return
-    end
-    local otp, otp_err = M.retrieve(entry, 'otp')
-    if otp_err ~= nil then
-        vim.notify('Pass: ' .. otp_err, vim.log.levels.ERROR)
-        return
-    end
-    assert(otp ~= nil, 'retrieve returned no error but no OTP')
-    yank_registered(vim.trim(otp), 'OTP', entry)
-end
-
----Insert the password at the cursor without touching any register and
----without arming the clear timer: there is no clipboard exposure to time
----out, so a timer would be pure noise (and would clear the user's own
----unrelated clipboard content if one were armed).
----@param entry string Validated entry name.
-function M.insert_snippet(entry)
-    local secret, secret_err = M.retrieve(entry, 'show')
-    if secret_err ~= nil then
-        vim.notify('Pass: ' .. secret_err, vim.log.levels.ERROR)
-        return
-    end
-    assert(secret ~= nil, 'retrieve returned no error but no secret')
-    local lines = vim.split(M.password_line(secret), '\n', { plain = true })
-    local cursor = api.nvim_win_get_cursor(0)
-    api.nvim_buf_set_text(0, cursor[1] - 1, cursor[2], cursor[1] - 1, cursor[2], lines)
-    vim.notify('Pass: inserted at cursor (registers and clipboard untouched)', vim.log.levels.INFO)
-end
-
 ---Actions offered for one entry, in menu order. 'Yank OTP' appears only
 ---when oathtool is present; otherwise it is absent from the menu.
 ---@return string[] actions
@@ -454,6 +406,15 @@ function M.choose_action(entry)
     end)
 end
 
+---:PassClear — cancel the clear timer and empty the + and * registers
+---right now. Idempotent.
+function M.cmd_clear()
+    M.stop_clear_timer()
+    pcall(vim.fn.setreg, '+', {})
+    pcall(vim.fn.setreg, '*', {})
+    vim.notify('Pass: clipboard cleared', vim.log.levels.INFO)
+end
+
 ---:Pass — entry picker, then the action menu. `:Pass <name>` skips the
 ---picker and goes straight to the action menu for a validated name.
 ---@param cmd_opts table nvim_create_user_command callback options.
@@ -482,13 +443,52 @@ function M.cmd_pass(cmd_opts)
     end)
 end
 
----:PassClear — cancel the clear timer and empty the + and * registers
----right now. Idempotent.
-function M.cmd_clear()
-    M.stop_clear_timer()
-    pcall(vim.fn.setreg, '+', {})
-    pcall(vim.fn.setreg, '*', {})
-    vim.notify('Pass: clipboard cleared', vim.log.levels.INFO)
+---Insert the password at the cursor without touching any register and
+---without arming the clear timer: there is no clipboard exposure to time
+---out, so a timer would be pure noise (and would clear the user's own
+---unrelated clipboard content if one were armed).
+---@param entry string Validated entry name.
+function M.insert_snippet(entry)
+    local secret, secret_err = M.retrieve(entry, 'show')
+    if secret_err ~= nil then
+        vim.notify('Pass: ' .. secret_err, vim.log.levels.ERROR)
+        return
+    end
+    assert(secret ~= nil, 'retrieve returned no error but no secret')
+    local lines = vim.split(M.password_line(secret), '\n', { plain = true })
+    local cursor = api.nvim_win_get_cursor(0)
+    api.nvim_buf_set_text(0, cursor[1] - 1, cursor[2], cursor[1] - 1, cursor[2], lines)
+    vim.notify('Pass: inserted at cursor (registers and clipboard untouched)', vim.log.levels.INFO)
+end
+
+---Yank a one-time password via `pass otp`. Refuses when oathtool is
+---absent (the action is hidden from the menu for the same reason).
+---@param entry string Validated entry name.
+function M.yank_otp(entry)
+    local toolmgr = require('utils.toolmgr')
+    if not toolmgr.binary_present(M.config.oathtool_bin) then
+        vim.notify('Pass: oathtool is unavailable; cannot produce an OTP', vim.log.levels.ERROR)
+        return
+    end
+    local otp, otp_err = M.retrieve(entry, 'otp')
+    if otp_err ~= nil then
+        vim.notify('Pass: ' .. otp_err, vim.log.levels.ERROR)
+        return
+    end
+    assert(otp ~= nil, 'retrieve returned no error but no OTP')
+    yank_registered(vim.trim(otp), 'OTP', entry)
+end
+
+---Yank the password (first line of `pass show`) into + and *.
+---@param entry string Validated entry name.
+function M.yank_password(entry)
+    local secret, secret_err = M.retrieve(entry, 'show')
+    if secret_err ~= nil then
+        vim.notify('Pass: ' .. secret_err, vim.log.levels.ERROR)
+        return
+    end
+    assert(secret ~= nil, 'retrieve returned no error but no secret')
+    yank_registered(M.password_line(secret), 'password', entry)
 end
 
 -- Validation and update --------------------------------------------------
@@ -569,20 +569,20 @@ local function cmd_docs()
     end
 end
 
+---:PassUpdateCheck -- toolmgr update dialog for pass.
+local function cmd_update_check()
+    local toolmgr = require('utils.toolmgr')
+    for _, spec in ipairs(M.update_specs()) do
+        toolmgr.check_update(spec)
+    end
+end
+
 ---:PassValidate -- one vim.notify per check; missing tools say
 ---"unavailable", never an error. Never prints secret values.
 local function cmd_validate()
     for _, check in ipairs(M.checks()) do
         local level = check.status == 'ok' and vim.log.levels.INFO or vim.log.levels.WARN
         vim.notify(('pass %-18s %-13s %s'):format(check.name, check.status, check.detail), level)
-    end
-end
-
----:PassUpdateCheck -- toolmgr update dialog for pass.
-local function cmd_update_check()
-    local toolmgr = require('utils.toolmgr')
-    for _, spec in ipairs(M.update_specs()) do
-        toolmgr.check_update(spec)
     end
 end
 
@@ -607,8 +607,8 @@ function M.setup(config)
         { desc = 'Cancel the clear timer and empty the clipboard registers now' }
     )
     api.nvim_create_user_command('PassDocs', cmd_docs, { desc = 'Open the upstream pass documentation' })
-    api.nvim_create_user_command('PassValidate', cmd_validate, { desc = 'Per-tool validation report' })
     api.nvim_create_user_command('PassUpdateCheck', cmd_update_check, { desc = 'Update check for pass' })
+    api.nvim_create_user_command('PassValidate', cmd_validate, { desc = 'Per-tool validation report' })
 end
 
 return M

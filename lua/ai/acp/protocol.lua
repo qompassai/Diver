@@ -13,14 +13,23 @@ local M = {}
 
 M.METHOD = {
     INITIALIZE = 'initialize',
+    PERMISSION_REQUEST = 'permission/request', -- agent -> client request
+    SESSION_CANCEL = 'session/cancel',
     SESSION_NEW = 'session/new',
     SESSION_PROMPT = 'session/prompt',
-    SESSION_CANCEL = 'session/cancel',
     SESSION_UPDATE = 'session/update', -- agent -> client notification (streaming)
-    PERMISSION_REQUEST = 'permission/request', -- agent -> client request
 }
 
 M.PROTOCOL_VERSION = 1
+
+---@param session_id string
+---@return table
+function M.cancel_params(session_id)
+    assert(type(session_id) == 'string' and session_id ~= '', 'session_id must be a nonempty string')
+    return {
+        sessionId = session_id,
+    }
+end
 
 ---@param cwd string
 ---@return table
@@ -60,15 +69,6 @@ function M.prompt_params(session_id, text)
                 text = text,
             },
         },
-    }
-end
-
----@param session_id string
----@return table
-function M.cancel_params(session_id)
-    assert(type(session_id) == 'string' and session_id ~= '', 'session_id must be a nonempty string')
-    return {
-        sessionId = session_id,
     }
 end
 

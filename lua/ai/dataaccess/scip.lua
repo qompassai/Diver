@@ -16,10 +16,10 @@
 
 local M = {}
 
----Maximum roots scanned in one inventory call.
-local ROOT_COUNT_MAX = 64
 ---Maximum path segments scanned while rejecting `..`.
 local PATH_SEGMENT_COUNT_MAX = 256
+---Maximum roots scanned in one inventory call.
+local ROOT_COUNT_MAX = 64
 
 ---@class DataAccessScipEntry
 ---@field root string Project root.

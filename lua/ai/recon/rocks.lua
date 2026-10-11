@@ -15,45 +15,45 @@
 local M = {}
 
 ---@class RockRec
+---@field covers string what it adds over Neovim builtins
 ---@field rock string luarocks name
 ---@field why string one-line justification
----@field covers string what it adds over Neovim builtins
 
 M.RECOMMENDED = {
     {
-        rock = 'lpeg',
-        why = 'PEG grammars for ad-hoc scan-output parsing (nmap/gobuster logs)',
-        covers = 'Neovim has no grammar engine; treesitter needs a compiled parser per language',
-    },
-    {
-        rock = 'luasec',
-        why = 'OpenSSL-backed TLS sockets in-process (cert inspection, STARTTLS, raw TLS probes)',
-        covers = 'vim.uv has zero TLS support; today this means shelling out to curl/openssl',
-    },
-    {
-        rock = 'luaexpat',
-        why = 'SAX XML parser: the direct path to reading nmap -oX inside Neovim',
-        covers = 'No XML parser builtin',
-    },
-    {
-        rock = 'penlight',
-        why = 'pl.stringx / pl.pretty: better string and pretty-printing than vim.inspect for nested scan data',
-        covers = 'Import per-module; no bloat',
-    },
-    {
+        covers = 'Real failure diagnostics; runs under plain nvim -l',
         rock = 'busted',
         why = 'Standard Lua test framework (describe/it) as the hand-rolled suite grows',
-        covers = 'Real failure diagnostics; runs under plain nvim -l',
+    },
+    {
+        covers = 'Neovim has no grammar engine; treesitter needs a compiled parser per language',
+        rock = 'lpeg',
+        why = 'PEG grammars for ad-hoc scan-output parsing (nmap/gobuster logs)',
+    },
+    {
+        covers = 'No XML parser builtin',
+        rock = 'luaexpat',
+        why = 'SAX XML parser: the direct path to reading nmap -oX inside Neovim',
+    },
+    {
+        covers = 'vim.uv has zero TLS support; today this means shelling out to curl/openssl',
+        rock = 'luasec',
+        why = 'OpenSSL-backed TLS sockets in-process (cert inspection, STARTTLS, raw TLS probes)',
+    },
+    {
+        covers = 'Import per-module; no bloat',
+        rock = 'penlight',
+        why = 'pl.stringx / pl.pretty: better string and pretty-printing than vim.inspect for nested scan data',
     },
 }
 
 ---Deliberately skipped: Neovim already covers these natively.
 M.SKIPPED = {
-    { rock = 'luasocket', covered_by = 'vim.uv (TCP/UDP) + vim.system curl for HTTP' },
-    { rock = 'luafilesystem', covered_by = 'vim.uv.fs_* / vim.fs' },
-    { rock = 'copas', covered_by = 'vim.uv + native coroutines' },
-    { rock = 'lualogging', covered_by = 'vim.notify + vim.log.levels' },
-    { rock = 'luafun', covered_by = 'vim.iter (map/filter/fold since 0.10)' },
+    { covered_by = 'vim.uv + native coroutines', rock = 'copas' },
+    { covered_by = 'vim.uv.fs_* / vim.fs', rock = 'luafilesystem' },
+    { covered_by = 'vim.iter (map/filter/fold since 0.10)', rock = 'luafun' },
+    { covered_by = 'vim.notify + vim.log.levels', rock = 'lualogging' },
+    { covered_by = 'vim.uv (TCP/UDP) + vim.system curl for HTTP', rock = 'luasocket' },
 }
 
 ---True when the rock's main module loads.
@@ -79,10 +79,10 @@ function M.report()
     local out = {}
     for _, rec in ipairs(M.RECOMMENDED) do
         out[#out + 1] = {
+            install = M.install_cmd(rec.rock),
+            installed = M.available(rec.rock),
             rock = rec.rock,
             why = rec.why,
-            installed = M.available(rec.rock),
-            install = M.install_cmd(rec.rock),
         }
     end
     return out

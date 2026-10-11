@@ -28,9 +28,9 @@ local client = require('ai.mcp.client')
 
 local M = {}
 
-local TOOLS_COUNT_MAX = 128
-local TOOL_CALL_TIMEOUT_MS = 60000
 local ARGS_JSON_BYTES_MAX = 64 * 1024
+local TOOL_CALL_TIMEOUT_MS = 60000
+local TOOLS_COUNT_MAX = 128
 
 ---@class McpTool
 ---@field name string

@@ -17,16 +17,10 @@
 local M = {}
 
 local KINDS = {
-    scope = true,
     finding = true,
+    scope = true,
     submission = true,
 }
-
----Directory that holds all approval marker files.
----@return string
-function M.root()
-    return vim.fn.expand('~/security/bugbounties/gates')
-end
 
 ---Validate a gate kind and target slug. Slugs are path-safe by construction.
 ---@param kind string One of 'scope', 'finding', 'submission'.
@@ -66,6 +60,15 @@ function M.approve(kind, target, note)
     return path
 end
 
+---Is this gate currently open?
+---@param kind string Gate kind.
+---@param target string Program or report slug.
+---@return boolean
+function M.is_open(kind, target)
+    check_args(kind, target)
+    return vim.uv.fs_stat(marker_path(kind, target)) ~= nil
+end
+
 ---Revoke (close) a gate by deleting its marker file.
 ---@param kind string Gate kind.
 ---@param target string Program or report slug.
@@ -80,13 +83,10 @@ function M.revoke(kind, target)
     return true
 end
 
----Is this gate currently open?
----@param kind string Gate kind.
----@param target string Program or report slug.
----@return boolean
-function M.is_open(kind, target)
-    check_args(kind, target)
-    return vim.uv.fs_stat(marker_path(kind, target)) ~= nil
+---Directory that holds all approval marker files.
+---@return string
+function M.root()
+    return vim.fn.expand('~/security/bugbounties/gates')
 end
 
 ---Report the state of all three gates for one target.

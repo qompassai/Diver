@@ -109,17 +109,11 @@ local function base64(val)
     end
     return result
 end
-local function to_16_bits_str(number)
-    return string.char(bit.band(bit.rshift(number, 8), 255)) .. string.char(bit.band(number, 255))
-end
 local function to_16_bits_number(str)
     return bit.lshift(string.byte(str, 1), 8) + string.byte(str, 2)
 end
-local function to_32_bits_str(number)
-    return string.char(bit.band(bit.rshift(number, 24), 255))
-        .. string.char(bit.band(bit.rshift(number, 16), 255))
-        .. string.char(bit.band(bit.rshift(number, 8), 255))
-        .. string.char(bit.band(number, 255))
+local function to_16_bits_str(number)
+    return string.char(bit.band(bit.rshift(number, 8), 255)) .. string.char(bit.band(number, 255))
 end
 local function to_32_bits_number(str)
     return bit.lshift(string.byte(str, 1), 24)
@@ -127,8 +121,11 @@ local function to_32_bits_number(str)
         + bit.lshift(string.byte(str, 3), 8)
         + string.byte(str, 4)
 end
-local function to_64_bits_str(number)
-    return string.char(0) .. string.char(0) .. string.char(0) .. string.char(0) .. to_32_bits_str(number % 0xFFFFFFFF)
+local function to_32_bits_str(number)
+    return string.char(bit.band(bit.rshift(number, 24), 255))
+        .. string.char(bit.band(bit.rshift(number, 16), 255))
+        .. string.char(bit.band(bit.rshift(number, 8), 255))
+        .. string.char(bit.band(number, 255))
 end
 local function to_64_bits_number(str)
     return bit.lshift(string.byte(str, 2), 48)
@@ -138,6 +135,9 @@ local function to_64_bits_number(str)
         + bit.lshift(string.byte(str, 6), 16)
         + bit.lshift(string.byte(str, 7), 8)
         + string.byte(str, 8)
+end
+local function to_64_bits_str(number)
+    return string.char(0) .. string.char(0) .. string.char(0) .. string.char(0) .. to_32_bits_str(number % 0xFFFFFFFF)
 end
 local function sha1(val)
     local padded_message = val
@@ -194,10 +194,10 @@ end
 return {
     base64 = base64,
     sha1 = sha1,
-    to_16_bits_str = to_16_bits_str,
     to_16_bits_number = to_16_bits_number,
-    to_32_bits_str = to_32_bits_str,
+    to_16_bits_str = to_16_bits_str,
     to_32_bits_number = to_32_bits_number,
-    to_64_bits_str = to_64_bits_str,
+    to_32_bits_str = to_32_bits_str,
     to_64_bits_number = to_64_bits_number,
+    to_64_bits_str = to_64_bits_str,
 }

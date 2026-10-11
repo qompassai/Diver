@@ -13,8 +13,8 @@
 
 local M = {}
 
-local CONNECT_TIMEOUT_MS = 10000 ---@type integer
 local CALL_TIMEOUT_MS = 30000 ---@type integer
+local CONNECT_TIMEOUT_MS = 10000 ---@type integer
 local TOOL_COUNT_MAX = 256 ---@type integer
 
 ---@param url string

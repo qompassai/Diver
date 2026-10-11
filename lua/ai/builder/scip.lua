@@ -36,18 +36,6 @@ local CONTEXT_LANGUAGES_MAX = 64
 ---@field fresh boolean Whether the index was fresh (no re-index needed).
 ---@field ensured boolean Whether an index now exists and is fresh.
 
----@param spec table Builder spec carrying `language` and `root`.
----@return string? language Normalized language, or nil when absent.
-local function spec_language(spec)
-    local language = spec.language
-
-    if type(language) ~= 'string' or language == '' then
-        return nil
-    end
-
-    return language
-end
-
 ---Build the context record from a resolved match and index status.
 ---@param match ScipLanguageMatch
 ---@param status ScipIndexStatus
@@ -60,6 +48,52 @@ local function make_context(match, status)
         fresh = status.fresh,
         ensured = status.exists and status.fresh,
     }
+end
+
+---@param spec table Builder spec carrying `language` and `root`.
+---@return string? language Normalized language, or nil when absent.
+local function spec_language(spec)
+    local language = spec.language
+
+    if type(language) ~= 'string' or language == '' then
+        return nil
+    end
+
+    return language
+end
+
+---Attach SCIP context to a spec in place. Returns the context for the
+---caller; a nil context means "no SCIP for this task", which is fine.
+---@param spec table Builder spec (mutated: gains `scip` field).
+---@param callback fun(err: string?, ctx: BuilderScipContext?)
+---@return nil
+function M.attach(spec, callback)
+    M.prepare(spec, function(err, ctx)
+        if err == nil and ctx ~= nil then
+            spec.scip = ctx
+        end
+
+        callback(err, ctx)
+    end)
+end
+
+---List the languages SCIP can currently provide context for.
+---@return { language: string, indexer: string }[]
+function M.coverage()
+    local ok, scip_lang = pcall(require, 'scip.lang')
+
+    if not ok then
+        return {}
+    end
+
+    local languages = scip_lang.languages()
+    local bounded = {}
+
+    for i = 1, math.min(#languages, CONTEXT_LANGUAGES_MAX) do
+        bounded[#bounded + 1] = languages[i]
+    end
+
+    return bounded
 end
 
 ---Prepare SCIP context for a build task, asynchronously.
@@ -165,40 +199,6 @@ function M.prepare_sync(spec, timeout_ms)
     end
 
     return make_context(match, status), nil
-end
-
----Attach SCIP context to a spec in place. Returns the context for the
----caller; a nil context means "no SCIP for this task", which is fine.
----@param spec table Builder spec (mutated: gains `scip` field).
----@param callback fun(err: string?, ctx: BuilderScipContext?)
----@return nil
-function M.attach(spec, callback)
-    M.prepare(spec, function(err, ctx)
-        if err == nil and ctx ~= nil then
-            spec.scip = ctx
-        end
-
-        callback(err, ctx)
-    end)
-end
-
----List the languages SCIP can currently provide context for.
----@return { language: string, indexer: string }[]
-function M.coverage()
-    local ok, scip_lang = pcall(require, 'scip.lang')
-
-    if not ok then
-        return {}
-    end
-
-    local languages = scip_lang.languages()
-    local bounded = {}
-
-    for i = 1, math.min(#languages, CONTEXT_LANGUAGES_MAX) do
-        bounded[#bounded + 1] = languages[i]
-    end
-
-    return bounded
 end
 
 return M

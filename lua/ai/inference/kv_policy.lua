@@ -35,40 +35,40 @@ local POLICY = {
     version = 1,
     source = 'DeepSeek-V4.1-Flash, arXiv:2609.19969, Sec. 2.4.4 (guidelines; not an implementation)',
     components = {
+        engram = {
+            min_bits = 8,
+            recommended = 'fp8',
+            note = 'Engram memory embeddings/projections stay at 8-bit.',
+        },
         global_kv = {
             min_bits = 4,
             recommended = 'fp4',
             note = 'Global KV tolerates 4-bit with quantization-aware training.',
-        },
-        local_kv = {
-            min_bits = 8,
-            recommended = 'fp8',
-            note = 'Local/SWA KV is quantization-sensitive; keep 8-bit or higher.',
-        },
-        indexer_q = {
-            min_bits = 4,
-            recommended = 'fp4',
-            note = 'Indexer queries tolerate 4-bit.',
         },
         indexer_k = {
             min_bits = 4,
             recommended = 'fp4',
             note = 'Indexer keys tolerate 4-bit.',
         },
-        engram = {
+        indexer_q = {
+            min_bits = 4,
+            recommended = 'fp4',
+            note = 'Indexer queries tolerate 4-bit.',
+        },
+        local_kv = {
             min_bits = 8,
             recommended = 'fp8',
-            note = 'Engram memory embeddings/projections stay at 8-bit.',
+            note = 'Local/SWA KV is quantization-sensitive; keep 8-bit or higher.',
         },
     },
 }
 
 -- Aliases accepted by M.recommend; canonical names are the keys above.
 local COMPONENT_ALIASES = {
-    swa_kv = 'local_kv',
-    sliding_window_kv = 'local_kv',
-    index_query = 'indexer_q',
     index_key = 'indexer_k',
+    index_query = 'indexer_q',
+    sliding_window_kv = 'local_kv',
+    swa_kv = 'local_kv',
 }
 
 -- Fixed check order so validate() output is deterministic.
@@ -78,11 +78,11 @@ local COMPONENT_ORDER = { 'global_kv', 'local_kv', 'indexer_q', 'indexer_k', 'en
 -- Which validate() cfg field feeds each component. indexer_q and
 -- indexer_k share the indexer_bits field; both are reported.
 local COMPONENT_FIELDS = {
-    global_kv = 'kv_bits',
-    local_kv = 'swa_bits',
-    indexer_q = 'indexer_bits',
-    indexer_k = 'indexer_bits',
     engram = 'engram_bits',
+    global_kv = 'kv_bits',
+    indexer_k = 'indexer_bits',
+    indexer_q = 'indexer_bits',
+    local_kv = 'swa_bits',
 }
 
 ---Return a deep copy of the policy table. Callers may mutate the

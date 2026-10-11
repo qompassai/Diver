@@ -10,11 +10,11 @@
 
 local api = vim.api
 
-local registry = require('ai.mcp.registry')
 local client = require('ai.mcp.client')
+local discovery = require('ai.mcp.discovery')
+local registry = require('ai.mcp.registry')
 local tools = require('ai.mcp.tools')
 local ui = require('ai.mcp.ui')
-local discovery = require('ai.mcp.discovery')
 
 ---@return string[]
 local function complete_names()
@@ -171,10 +171,6 @@ local function tools_menu(server_name)
     end)
 end
 
-api.nvim_create_user_command('McpServers', function()
-    ui.open()
-end, { desc = 'Browse registered MCP servers' })
-
 api.nvim_create_user_command('McpAdd', function(command)
     local fargs = command.fargs
     if #fargs < 2 then
@@ -191,6 +187,40 @@ api.nvim_create_user_command('McpAdd', function(command)
 end, {
     nargs = '*',
     desc = 'Add an MCP server: :McpAdd <name> <absolute-command> [args...]',
+})
+
+api.nvim_create_user_command('McpDisable', function(command)
+    local ok, err = registry.disable(command.args)
+    if not ok then
+        vim.notify('McpDisable failed: ' .. tostring(err), vim.log.levels.ERROR)
+        return
+    end
+    client.stop(command.args)
+    vim.notify('MCP server disabled and stopped: ' .. command.args, vim.log.levels.INFO)
+end, {
+    nargs = 1,
+    complete = complete_names,
+    desc = 'Disable an MCP server (stops it)',
+})
+
+api.nvim_create_user_command('McpEnable', function(command)
+    local ok, err = registry.enable(command.args)
+    if not ok then
+        vim.notify('McpEnable failed: ' .. tostring(err), vim.log.levels.ERROR)
+        return
+    end
+    vim.notify('MCP server enabled: ' .. command.args, vim.log.levels.INFO)
+end, {
+    nargs = 1,
+    complete = complete_names,
+    desc = 'Enable an MCP server',
+})
+
+api.nvim_create_user_command('McpInstall', function(command)
+    discovery.install_menu(command.args)
+end, {
+    nargs = '+',
+    desc = 'Search for MCP servers and install one (confirmed)',
 })
 
 api.nvim_create_user_command('McpRemove', function(command)
@@ -214,41 +244,6 @@ end, {
     desc = 'Remove an MCP server (stops it first)',
 })
 
-api.nvim_create_user_command('McpEnable', function(command)
-    local ok, err = registry.enable(command.args)
-    if not ok then
-        vim.notify('McpEnable failed: ' .. tostring(err), vim.log.levels.ERROR)
-        return
-    end
-    vim.notify('MCP server enabled: ' .. command.args, vim.log.levels.INFO)
-end, {
-    nargs = 1,
-    complete = complete_names,
-    desc = 'Enable an MCP server',
-})
-
-api.nvim_create_user_command('McpDisable', function(command)
-    local ok, err = registry.disable(command.args)
-    if not ok then
-        vim.notify('McpDisable failed: ' .. tostring(err), vim.log.levels.ERROR)
-        return
-    end
-    client.stop(command.args)
-    vim.notify('MCP server disabled and stopped: ' .. command.args, vim.log.levels.INFO)
-end, {
-    nargs = 1,
-    complete = complete_names,
-    desc = 'Disable an MCP server (stops it)',
-})
-
-api.nvim_create_user_command('McpTools', function(command)
-    tools_menu(command.args ~= '' and command.args or nil)
-end, {
-    nargs = '?',
-    complete = complete_names,
-    desc = 'Inspect and call tools on an MCP server',
-})
-
 api.nvim_create_user_command('McpSearch', function(command)
     discovery.search_menu(command.args)
 end, {
@@ -256,11 +251,16 @@ end, {
     desc = 'Search for MCP servers (SearXNG first, Brave fallback)',
 })
 
-api.nvim_create_user_command('McpInstall', function(command)
-    discovery.install_menu(command.args)
+api.nvim_create_user_command('McpServers', function()
+    ui.open()
+end, { desc = 'Browse registered MCP servers' })
+
+api.nvim_create_user_command('McpTools', function(command)
+    tools_menu(command.args ~= '' and command.args or nil)
 end, {
-    nargs = '+',
-    desc = 'Search for MCP servers and install one (confirmed)',
+    nargs = '?',
+    complete = complete_names,
+    desc = 'Inspect and call tools on an MCP server',
 })
 
 return true

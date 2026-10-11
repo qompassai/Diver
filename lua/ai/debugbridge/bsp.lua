@@ -33,25 +33,25 @@ local bsp = require('dev.bsp')
 
 local M = {}
 
---- Retry budget for waiting on the layer's asynchronous `build/initialize`
---- handshake. Exactly one start attempt is made; these retries only re-check.
-local RETRY_COUNT_MAX = 2
 --- Delay between initialize checks, in milliseconds.
 local INITIALIZE_POLL_MS = 1000
---- Cap on targets copied out of a `workspace/buildTargets` response.
-local TARGET_COUNT_MAX = 4096
---- Cap on caller-supplied target URI lists.
-local TARGET_URI_COUNT_MAX = 256
 --- Cap on language IDs copied per target.
 local LANGUAGE_ID_COUNT_MAX = 64
 --- Cap on path segments scanned while rejecting `..` in roots.
 local PATH_SEGMENT_COUNT_MAX = 256
+--- Retry budget for waiting on the layer's asynchronous `build/initialize`
+--- handshake. Exactly one start attempt is made; these retries only re-check.
+local RETRY_COUNT_MAX = 2
 --- Scratch buffer name used to give the layer's `M.start(bufnr)` a buffer
 --- under the root. The file is never created on disk and the buffer is
 --- deleted right after `M.start` returns; it exists only so the layer's
 --- server detection (which searches upward from the buffer's directory)
 --- resolves to our root without touching the user's buffers.
 local SCRATCH_FILENAME = '.nvim-debugbridge-scratch'
+--- Cap on targets copied out of a `workspace/buildTargets` response.
+local TARGET_COUNT_MAX = 4096
+--- Cap on caller-supplied target URI lists.
+local TARGET_URI_COUNT_MAX = 256
 
 ---@param root string
 ---@return QompassBspServerEntry|nil
@@ -59,7 +59,7 @@ local function detect_server(root)
     assert(type(root) == 'string')
     assert(root ~= '')
 
-    local ok, bsp_servers = pcall(require, 'bsp.servers')
+    local ok, bsp_servers = pcall(require, 'dev.bsp.servers')
     if not ok or type(bsp_servers) ~= 'table' then
         return nil
     end

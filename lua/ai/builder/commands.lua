@@ -29,6 +29,15 @@ local function finish_notification(result)
     end
 end
 
+local function resume()
+    local session, load_err = pipeline.load_session()
+    if session == nil then
+        vim.notify('builder: ' .. tostring(load_err), vim.log.levels.WARN)
+        return
+    end
+    pipeline.resume(session, {}, finish_notification)
+end
+
 local function start()
     menu.interactive(function(spec, err)
         if spec == nil then
@@ -37,15 +46,6 @@ local function start()
         end
         pipeline.run(spec, {}, finish_notification)
     end)
-end
-
-local function resume()
-    local session, load_err = pipeline.load_session()
-    if session == nil then
-        vim.notify('builder: ' .. tostring(load_err), vim.log.levels.WARN)
-        return
-    end
-    pipeline.resume(session, {}, finish_notification)
 end
 
 api.nvim_create_user_command('AiBuild', start, {
@@ -68,7 +68,7 @@ local function add_keymap(lhs, command, desc)
     vim.keymap.set('n', lhs, '<Cmd>' .. command .. '<CR>', { desc = desc, silent = true })
 end
 
-add_keymap('<LocalLeader>ab', 'AiBuild', 'Builder: start interactive session')
 add_keymap('<LocalLeader>aB', 'AiBuildResume', 'Builder: resume last session')
+add_keymap('<LocalLeader>ab', 'AiBuild', 'Builder: start interactive session')
 
 return true
