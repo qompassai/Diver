@@ -40,7 +40,8 @@ tool installation, network access or changes outside the requested task.
 ## Strict Lua contract
 
 - Treat `lsp/lua_ls.lua` as the strict diagnostic/type profile and `lsp/stylua_ls.lua`
-  as the LuaJIT formatter profile. Read both for Lua work; do not replace them with guesses.
+  as the StyLua formatter profile (the single source of truth for StyLua options,
+  syntax `All`). Read both for Lua work; do not replace them with guesses.
 - Preserve `weakNilCheck=false`, `weakUnionCheck=false`, `checkTableShape=true`,
   `castNumberToInteger=false`, `inferParamType=true`, type-check Error and
   `undefined-field` Error. Batch type checks must cover `Any`, not merely `Opened`.

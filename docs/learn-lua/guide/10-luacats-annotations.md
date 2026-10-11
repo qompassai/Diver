@@ -128,8 +128,9 @@ silences a false warning without any runtime cost.
   reads.
 - `.luacheckrc` configures the separate `luacheck` linter, declaring `vim` as a
   global so it does not flag it as undefined.
-- `.stylua.toml` configures the `stylua` formatter (4-space indent, single
-  quotes, 120 columns) so the whole config stays consistent.
+- `lsp/stylua_ls.lua` is the single source of truth for StyLua options and
+  configures the `stylua` formatter (4-space indent, single quotes, 120
+  columns, syntax `All`) so the whole config stays consistent.
 
 ## How this documentation was built
 
