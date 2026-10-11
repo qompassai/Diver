@@ -17,19 +17,6 @@ local MODULES = {
 }
 local loaded = {}
 
-function M.teardown()
-    for index = #loaded, 1, -1 do
-        local entry = loaded[index]
-        if type(entry.module.teardown) == 'function' then
-            local ok, err = pcall(entry.module.teardown)
-            if not ok then
-                core.notify(entry.name .. ': ' .. tostring(err), vim.log.levels.ERROR)
-            end
-        end
-    end
-    loaded = {}
-end
-
 ---@param opts? table Module options keyed by filename without .lua.
 ---@return boolean ok, string[] errors
 function M.setup(opts)
@@ -55,6 +42,19 @@ function M.setup(opts)
         core.notify(table.concat(errors, '\n'), vim.log.levels.ERROR)
     end
     return #errors == 0, errors
+end
+
+function M.teardown()
+    for index = #loaded, 1, -1 do
+        local entry = loaded[index]
+        if type(entry.module.teardown) == 'function' then
+            local ok, err = pcall(entry.module.teardown)
+            if not ok then
+                core.notify(entry.name .. ': ' .. tostring(err), vim.log.levels.ERROR)
+            end
+        end
+    end
+    loaded = {}
 end
 
 return M

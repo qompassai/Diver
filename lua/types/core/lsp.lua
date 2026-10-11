@@ -241,7 +241,7 @@
 ---@field functionReturnTypes boolean
 ---@field genericTypes boolean
 ---@field basedpyright.analysisinlayHints? basedpyright.InlayHints
----@field baesedpyright.analysis.useTypingExtensions?      boolean
+---@field basedpyright.analysis.useTypingExtensions?       boolean
 ---@field basedpyright.analysis.failOnWarnings?            boolean
 ---@field basedpyright.analysis.reportUnreachable?         boolean|string
 ---@field basedpyright.analysis.reportAny?                 boolean|string

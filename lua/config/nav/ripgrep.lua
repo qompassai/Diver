@@ -8,13 +8,6 @@ local M = {}
 local generation, process = 0, nil
 local ITEMS_MAX, RECORDS_MAX = 20000, 100000
 
----@param text string
-local function notify(text)
-    vim.notify(text, vim.log.levels.WARN, {
-        title = 'Ripgrep',
-    })
-end
-
 local function decode_text(value)
     if type(value) ~= 'table' then
         return
@@ -28,6 +21,30 @@ local function decode_text(value)
             return text
         end
     end
+end
+
+---@param text string
+local function notify(text)
+    vim.notify(text, vim.log.levels.WARN, {
+        title = 'Ripgrep',
+    })
+end
+
+function M.cancel()
+    generation = generation + 1
+    if process then
+        local ok, err = pcall(process.kill, process, 9)
+        if not ok then
+            notify('Cancel: ' .. tostring(err))
+        end
+        process = nil
+    end
+end
+
+function M.open(target)
+    api.nvim_win_call(target.win, function()
+        qf.open(target.kind)
+    end)
 end
 
 ---Parse ripgrep `--json` output into quickfix items.
@@ -86,26 +103,15 @@ function M.parse(output, root)
                     return nil, 'More than 20000 matches; narrow the search'
                 end
                 items[#items + 1] = {
+                    col = match.start + 1,
                     filename = path,
                     lnum = data.line_number,
-                    col = match.start + 1,
                     text = text:gsub('[\r\n]+$', ''),
                 }
             end
         end
     end
     return items
-end
-
-function M.cancel()
-    generation = generation + 1
-    if process then
-        local ok, err = pcall(process.kill, process, 9)
-        if not ok then
-            notify('Cancel: ' .. tostring(err))
-        end
-        process = nil
-    end
 end
 
 ---@param query? string
@@ -118,10 +124,10 @@ function M.search(query, opts)
     local root = opts.cwd
         or fs.root(start, {
             '.git',
-            'pyproject.toml',
             'Cargo.toml',
             'go.mod',
             'package.json',
+            'pyproject.toml',
         })
         or vim.fn.getcwd()
     M.cancel()
@@ -175,9 +181,9 @@ function M.search(query, opts)
                 return
             end
             local what = {
+                context = { cwd = root, query = value, source = 'ripgrep' },
                 items = items,
                 title = 'rg: ' .. value,
-                context = { source = 'ripgrep', cwd = root, query = value },
             }
             local status = target.kind == 'loc' and vim.fn.setloclist(target.win, {}, ' ', what)
                 or vim.fn.setqflist({}, ' ', what)
@@ -199,12 +205,6 @@ function M.search(query, opts)
     else
         run(query)
     end
-end
-
-function M.open(target)
-    api.nvim_win_call(target.win, function()
-        qf.open(target.kind)
-    end)
 end
 
 function M.word()

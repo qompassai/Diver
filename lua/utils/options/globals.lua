@@ -33,9 +33,15 @@ function M.setup()
         user = env.USER or (passwd and passwd.username) or fn.system('whoami'):gsub('\n', '')
     end
 
+    if env.SSH_TTY then
+        g.clipboard = 'osc52'
+    end
     g.deprecation_warnings = true
     g.editorconfig = true
     g.git_command_ssh = 1
+    -- Moved up from the late block: guifont is only read by GUI frontends,
+    -- nothing in the terminal/headless setup path consumes it.
+    g.guifont = 'DaddyTimeMono Nerd Font Mono:h13'
     g.guipty = true
     g.loaded_illuminate = true
     --g.loaded_netrw = 1
@@ -45,17 +51,23 @@ function M.setup()
     g.loaded_python_provider = 1
     g.loaded_ruby_provider = 1
     g.lsp_enable_on_demand = true
+    -- Inlay hints on by default wherever a server offers them (LuaLS
+    -- included); per-buffer toggle is <LocalLeader>lh / :LspInlayHintsToggle.
+    g.lsp_inlay_hints = true
     g.mapleader = ' '
     g.maplocalleader = ' '
     g.mkdp_theme = 'dark'
     g.netrw_altfile = 1
     g.netrw_preview = 1
     if not is_windows then
+        g.nix_per_user_profile = '/nix/var/nix/profiles/per-user/' .. user
+    end
+    if not is_windows then
         g.node_host_prog = 'node'
         g.perl_host_prog = 'perl'
-        g.sqlite_clib_path = '/usr/lib/libsqlite3.so'
         g.python3_host_prog = '/usr/bin/python3'
         g.ruby_host_prog = 'neovim-ruby-host'
+        g.sqlite_clib_path = '/usr/lib/libsqlite3.so'
     else
         g.python3_host_prog = 'python'
     end
@@ -79,10 +91,10 @@ function M.setup()
     g.use_blink_cmp = false
     g.vim_markdown_folding_disabled = 1
     g.vim_markdown_follow_anchor = 1
-    g.vim_markdown_math = 1
     g.vim_markdown_frontmatter = 1
-    g.vim_markdown_toml_frontmatter = 1
     g.vim_markdown_json_frontmatter = 1
+    g.vim_markdown_math = 1
+    g.vim_markdown_toml_frontmatter = 1
     g.which_key_disable_health_check = 1
     g.xdg_bin_home = env.XDG_BIN_HOME
         or (is_windows and fn.expand('~/AppData/Local/Programs') or fn.expand('~/.local/bin'))
@@ -103,20 +115,11 @@ function M.setup()
     end
     g.xdg_documents_dir = env.XDG_DOCUMENTS_DIR or fn.expand(is_windows and '~/Documents' or '~/.Documents')
     g.xdg_download_dir = env.XDG_DOWNLOAD_DIR or fn.expand(is_windows and '~/Downloads' or '~/.Downloads')
-    if not is_windows then
-        g.nix_per_user_profile = '/nix/var/nix/profiles/per-user/' .. user
-    end
-    g.xdg_state_home = env.XDG_STATE_HOME
-        or (is_windows and fn.expand('~/AppData/Local') or fn.expand('~/.local/state'))
     g.xdg_runtime_dir = env.XDG_RUNTIME_DIR
         or (is_windows and (env.TEMP or fn.expand('~/AppData/Local/Temp')) or ('/run/user/' .. uid))
+    g.xdg_state_home = env.XDG_STATE_HOME
+        or (is_windows and fn.expand('~/AppData/Local') or fn.expand('~/.local/state'))
     g.xdg_utils_debug_level = env.XDG_UTILS_DEBUG_LEVEL or 3
-    if env.SSH_TTY then
-        g.clipboard = 'osc52'
-    end
-    -- Moved up from the late block: guifont is only read by GUI frontends,
-    -- nothing in the terminal/headless setup path consumes it.
-    g.guifont = 'DaddyTimeMono Nerd Font Mono:h13'
 end
 
 return M

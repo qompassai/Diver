@@ -32,6 +32,20 @@ M.default_config = {
 ---@type table
 M.config = vim.deepcopy(M.default_config)
 
+---Require a backend lazily. Returns nil + err for unknown clients.
+---@param client string 'neomutt' or 'aerc'.
+---@return table|nil backend
+---@return string|nil err
+function M.backend(client)
+    if client == 'neomutt' then
+        return require('comms.clients.neomutt'), nil
+    end
+    if client == 'aerc' then
+        return require('comms.clients.aerc'), nil
+    end
+    return nil, 'unknown client: ' .. tostring(client)
+end
+
 ---Type-check one config option. Programmer errors raise; expected
 ---absences (nil optionals) stay nil.
 ---@param name string Option name for the error message.
@@ -47,131 +61,10 @@ local function check_type(name, value, expected, optional)
     end
 end
 
----Build the live config: factory defaults deep-copied, overrides merged,
----every key type-checked. Never mutates M.default_config.
----@param config table|nil Overrides; nil restores factory defaults.
----@return table merged Live config table.
-function M.setup_config(config)
-    check_type('config', config, 'table', true)
-    local merged = vim.tbl_deep_extend('force', vim.deepcopy(M.default_config), config or {})
-    check_type('choice_file_name', merged.choice_file_name, 'string')
-    check_type('choice_format_version', merged.choice_format_version, 'number')
-    check_type('persist_enabled', merged.persist_enabled, 'boolean')
-    check_type('select_impl', merged.select_impl, 'function', true)
-    if vim.trim(merged.choice_file_name) == '' then
-        error('clients: option choice_file_name must not be blank', 2)
-    end
-    return merged
-end
-
----Whether name is one of the known backends.
----@param name any Candidate.
----@return boolean known
-function M.is_client(name)
-    for _, client in ipairs(CLIENTS) do
-        if name == client then
-            return true
-        end
-    end
-    return false
-end
-
 ---Absolute path of the persisted choice file.
 ---@return string path
 function M.choice_path()
     return vim.fs.joinpath(vim.fn.stdpath('data'), 'email', M.config.choice_file_name)
-end
-
----Read the persisted choice. Returns nil when nothing was saved, the
----file is corrupt, or the format version mismatches: a corrupt file is
----reported and ignored, never raised.
----@return string|nil client 'neomutt' or 'aerc'.
-function M.read_choice()
-    local file = io.open(M.choice_path(), 'r')
-    if file == nil then
-        return nil
-    end
-    local text = file:read('*l') or ''
-    file:close()
-    local version, client = text:match('^(%d+):(%w+)$')
-    if tonumber(version) ~= M.config.choice_format_version or not M.is_client(client) then
-        return nil
-    end
-    return client
-end
-
----Persist the client choice atomically (tmp + os.rename). Refuses
----unknown clients and, when persist_enabled is false, any write.
----@param client string 'neomutt' or 'aerc'.
----@return boolean ok
----@return string|nil err
-function M.save_choice(client)
-    if not M.is_client(client) then
-        return false, 'unknown client: ' .. tostring(client)
-    end
-    if not M.config.persist_enabled then
-        return false, 'persistence disabled (persist_enabled=false)'
-    end
-    local path = M.choice_path()
-    -- vim.fn.mkdir throws E739 when a path component exists as a file,
-    -- so the pcall is load-bearing.
-    local mkdir_ok = pcall(vim.fn.mkdir, vim.fs.dirname(path), 'p')
-    if not mkdir_ok and vim.fn.isdirectory(vim.fs.dirname(path)) ~= 1 then
-        return false, 'cannot create directory ' .. vim.fs.dirname(path)
-    end
-    local tmp = path .. '.tmp'
-    local file, file_err = io.open(tmp, 'w')
-    if file == nil then
-        return false, ('cannot write %s: %s'):format(tmp, tostring(file_err))
-    end
-    file:write(('%d:%s\n'):format(M.config.choice_format_version, client))
-    file:close()
-    local ok, rename_err = os.rename(tmp, path)
-    if not ok then
-        os.remove(tmp)
-        return false, ('cannot rename %s to %s: %s'):format(tmp, path, tostring(rename_err))
-    end
-    return true, nil
-end
-
----Delete the persisted choice. Missing file is fine (idempotent).
----@return boolean ok
----@return string|nil err
-function M.forget_choice()
-    local ok, err = os.remove(M.choice_path())
-    if ok then
-        return true, nil
-    end
-    if err ~= nil and err:find('No such file', 1, true) ~= nil then
-        return true, nil
-    end
-    return false, tostring(err)
-end
-
----Require a backend lazily. Returns nil + err for unknown clients.
----@param client string 'neomutt' or 'aerc'.
----@return table|nil backend
----@return string|nil err
-function M.backend(client)
-    if client == 'neomutt' then
-        return require('comms.clients.neomutt'), nil
-    end
-    if client == 'aerc' then
-        return require('comms.clients.aerc'), nil
-    end
-    return nil, 'unknown client: ' .. tostring(client)
-end
-
----Open a backend's interactive client. Idempotent-safe.
----@param client string 'neomutt' or 'aerc'.
----@return boolean ok
----@return string|nil err
-function M.open_client(client)
-    local backend, err = M.backend(client)
-    if backend == nil then
-        return false, err
-    end
-    return backend.open()
 end
 
 ---Two-step chooser: pick a client, then pick whether to remember it.
@@ -239,6 +132,96 @@ local function cmd_email_client(arg)
     vim.notify('EmailClient: unknown client "' .. arg .. '" (neomutt, aerc, ask, forget)', vim.log.levels.ERROR)
 end
 
+---Delete the persisted choice. Missing file is fine (idempotent).
+---@return boolean ok
+---@return string|nil err
+function M.forget_choice()
+    local ok, err = os.remove(M.choice_path())
+    if ok then
+        return true, nil
+    end
+    if err ~= nil and err:find('No such file', 1, true) ~= nil then
+        return true, nil
+    end
+    return false, tostring(err)
+end
+
+---Whether name is one of the known backends.
+---@param name any Candidate.
+---@return boolean known
+function M.is_client(name)
+    for _, client in ipairs(CLIENTS) do
+        if name == client then
+            return true
+        end
+    end
+    return false
+end
+
+---Open a backend's interactive client. Idempotent-safe.
+---@param client string 'neomutt' or 'aerc'.
+---@return boolean ok
+---@return string|nil err
+function M.open_client(client)
+    local backend, err = M.backend(client)
+    if backend == nil then
+        return false, err
+    end
+    return backend.open()
+end
+
+---Read the persisted choice. Returns nil when nothing was saved, the
+---file is corrupt, or the format version mismatches: a corrupt file is
+---reported and ignored, never raised.
+---@return string|nil client 'neomutt' or 'aerc'.
+function M.read_choice()
+    local file = io.open(M.choice_path(), 'r')
+    if file == nil then
+        return nil
+    end
+    local text = file:read('*l') or ''
+    file:close()
+    local version, client = text:match('^(%d+):(%w+)$')
+    if tonumber(version) ~= M.config.choice_format_version or not M.is_client(client) then
+        return nil
+    end
+    return client
+end
+
+---Persist the client choice atomically (tmp + os.rename). Refuses
+---unknown clients and, when persist_enabled is false, any write.
+---@param client string 'neomutt' or 'aerc'.
+---@return boolean ok
+---@return string|nil err
+function M.save_choice(client)
+    if not M.is_client(client) then
+        return false, 'unknown client: ' .. tostring(client)
+    end
+    if not M.config.persist_enabled then
+        return false, 'persistence disabled (persist_enabled=false)'
+    end
+    local path = M.choice_path()
+    -- vim.fn.mkdir throws E739 when a path component exists as a file,
+    -- so the pcall is load-bearing.
+    local mkdir_ok = pcall(vim.fn.mkdir, vim.fs.dirname(path), 'p')
+    if not mkdir_ok and vim.fn.isdirectory(vim.fs.dirname(path)) ~= 1 then
+        return false, 'cannot create directory ' .. vim.fs.dirname(path)
+    end
+    local tmp = path .. '.tmp'
+    local file, file_err = io.open(tmp, 'w')
+    if file == nil then
+        return false, ('cannot write %s: %s'):format(tmp, tostring(file_err))
+    end
+    file:write(('%d:%s\n'):format(M.config.choice_format_version, client))
+    file:close()
+    local ok, rename_err = os.rename(tmp, path)
+    if not ok then
+        os.remove(tmp)
+        return false, ('cannot rename %s to %s: %s'):format(tmp, path, tostring(rename_err))
+    end
+    return true, nil
+end
+
 ---Register :EmailClient. Idempotent: the command is created once; the
 ---config is rebuilt on every call. Performs no subprocess I/O itself.
 ---@param config? table Overrides merged over M.default_config.
@@ -251,12 +234,29 @@ function M.setup(config)
     api.nvim_create_user_command('EmailClient', function(cmd_opts)
         cmd_email_client(cmd_opts.args ~= '' and cmd_opts.args or nil)
     end, {
-        nargs = '?',
         complete = function()
             return { 'neomutt', 'aerc', 'ask', 'forget' }
         end,
         desc = 'Choose and open the email client (neomutt | aerc); optionally remember it',
+        nargs = '?',
     })
+end
+
+---Build the live config: factory defaults deep-copied, overrides merged,
+---every key type-checked. Never mutates M.default_config.
+---@param config table|nil Overrides; nil restores factory defaults.
+---@return table merged Live config table.
+function M.setup_config(config)
+    check_type('config', config, 'table', true)
+    local merged = vim.tbl_deep_extend('force', vim.deepcopy(M.default_config), config or {})
+    check_type('choice_file_name', merged.choice_file_name, 'string')
+    check_type('choice_format_version', merged.choice_format_version, 'number')
+    check_type('persist_enabled', merged.persist_enabled, 'boolean')
+    check_type('select_impl', merged.select_impl, 'function', true)
+    if vim.trim(merged.choice_file_name) == '' then
+        error('clients: option choice_file_name must not be blank', 2)
+    end
+    return merged
 end
 
 return M

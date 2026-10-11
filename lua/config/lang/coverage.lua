@@ -11,9 +11,9 @@
 --   formatters: require('formatters').formatters_by_ft
 --   linters:    require('linters').linters_by_ft
 --   lsp:        loadable lsp/*_ls.lua files with a filetypes table
---               (354 files, 345 loaded, 9 skipped)
+--               (357 files, 351 loaded, 6 skipped)
 --   dap:        filetype catalog (MODULES) in lua/dap/init.lua
---               (20 entries)
+--               (23 entries)
 --   bsp:        require('dev.bsp.servers').filetypes()
 --   browser:    lua/dev/browser (bidi+cdp) asserted JS/TS set
 -- Union filetypes: 448
@@ -91,14 +91,6 @@ local M = {
         formatters = {},
         linters = {},
         lsp = { 'agda_ls' },
-        dap = {},
-        bsp = false,
-        browser = false,
-    },
-    ['agent'] = {
-        formatters = {},
-        linters = {},
-        lsp = { 'agentscript_ls' },
         dap = {},
         bsp = false,
         browser = false,
@@ -537,14 +529,6 @@ local M = {
         bsp = false,
         browser = false,
     },
-    ['cjs'] = {
-        formatters = {},
-        linters = {},
-        lsp = { 'biome_ls' },
-        dap = {},
-        bsp = false,
-        browser = false,
-    },
     ['clar'] = {
         formatters = {},
         linters = {},
@@ -695,7 +679,7 @@ local M = {
         formatters = { 'csharpier' },
         linters = { 'csharpier' },
         lsp = { 'csharp_ls', 'gitlabduo_ls', 'harper_ls', 'omnisharp_ls', 'roslyn_ls', 'snyk_ls' },
-        dap = { 'csharp' },
+        dap = { 'csharp', 'unity' },
         bsp = false,
         browser = false,
     },
@@ -1254,7 +1238,7 @@ local M = {
         formatters = { 'clang_format' },
         linters = { 'glslc' },
         lsp = { 'glslana_ls' },
-        dap = {},
+        dap = { 'renderdoc' },
         bsp = false,
         browser = false,
     },
@@ -1334,6 +1318,14 @@ local M = {
         formatters = { 'prettier', 'prettierd' },
         linters = {},
         lsp = { 'biome_ls', 'dprint_ls', 'graphql_ls' },
+        dap = {},
+        bsp = false,
+        browser = false,
+    },
+    ['grit'] = {
+        formatters = {},
+        linters = {},
+        lsp = { 'biome_ls' },
         dap = {},
         bsp = false,
         browser = false,
@@ -1454,7 +1446,7 @@ local M = {
         formatters = { 'clang_format' },
         linters = { 'dxc' },
         lsp = { 'shader_ls', 'slangd_ls' },
-        dap = {},
+        dap = { 'renderdoc' },
         bsp = false,
         browser = false,
     },
@@ -1496,6 +1488,7 @@ local M = {
             'superhtml_ls',
             'turbo_ls',
             'vale_ls',
+            'vshtml_ls',
             'wc_ls',
         },
         dap = {},
@@ -1826,7 +1819,7 @@ local M = {
     ['julia'] = {
         formatters = { 'julia_formatter' },
         linters = {},
-        lsp = { 'julia_ls' },
+        lsp = { 'jet_ls', 'julia_ls' },
         dap = {},
         bsp = false,
         browser = false,
@@ -2025,7 +2018,6 @@ local M = {
             'markdown_table_formatter',
             'markdownlint_cli2',
             'panache',
-            'vale',
             'write_good',
         },
         lsp = {
@@ -2086,7 +2078,7 @@ local M = {
     ['mdx'] = {
         formatters = { 'prettier', 'prettierd' },
         linters = {},
-        lsp = { 'biome_ls', 'htmx_ls', 'ltexplus_ls', 'mdxana_ls', 'remark_ls', 'tailwindcss_ls', 'wc_ls' },
+        lsp = { 'htmx_ls', 'ltexplus_ls', 'mdxana_ls', 'remark_ls', 'tailwindcss_ls', 'wc_ls' },
         dap = {},
         bsp = false,
         browser = false,
@@ -2123,14 +2115,6 @@ local M = {
         bsp = false,
         browser = false,
     },
-    ['mjs'] = {
-        formatters = {},
-        linters = {},
-        lsp = { 'biome_ls' },
-        dap = {},
-        bsp = false,
-        browser = false,
-    },
     ['mlir'] = {
         formatters = {},
         linters = {},
@@ -2151,6 +2135,14 @@ local M = {
         formatters = {},
         linters = {},
         lsp = { 'motoko_ls' },
+        dap = {},
+        bsp = false,
+        browser = false,
+    },
+    ['move'] = {
+        formatters = {},
+        linters = {},
+        lsp = { 'moveana_ls' },
         dap = {},
         bsp = false,
         browser = false,
@@ -2857,6 +2849,14 @@ local M = {
         bsp = false,
         browser = false,
     },
+    ['ron'] = {
+        formatters = {},
+        linters = {},
+        lsp = { 'ron_ls' },
+        dap = {},
+        bsp = false,
+        browser = false,
+    },
     ['roslyn'] = {
         formatters = {},
         linters = {},
@@ -2932,7 +2932,6 @@ local M = {
             'dprint_ls',
             'gitlabduo_ls',
             'harper_ls',
-            'ink_ls',
             'rustana_ls',
             'snyk_ls',
             'ttags_ls',
@@ -3125,14 +3124,6 @@ local M = {
         bsp = false,
         browser = false,
     },
-    ['spajson'] = {
-        formatters = {},
-        linters = {},
-        lsp = { 'biome_ls' },
-        dap = {},
-        bsp = false,
-        browser = false,
-    },
     ['sparql'] = {
         formatters = {},
         linters = {},
@@ -3289,7 +3280,7 @@ local M = {
     ['systemverilog'] = {
         formatters = { 'verible_verilog_format' },
         linters = { 'slang', 'svlint' },
-        lsp = { 'hdlchecker_ls', 'sv_ls', 'svlang_ls', 'verible_ls' },
+        lsp = { 'hdlchecker_ls', 'sv_ls', 'svlang_ls', 'verible_ls', 'veridian_ls' },
         dap = {},
         bsp = false,
         browser = false,
@@ -3577,7 +3568,7 @@ local M = {
     ['verilog'] = {
         formatters = { 'verible_verilog_format' },
         linters = {},
-        lsp = { 'hdlchecker_ls', 'sv_ls', 'svlang_ls', 'verible_ls' },
+        lsp = { 'hdlchecker_ls', 'sv_ls', 'svlang_ls', 'verible_ls', 'veridian_ls' },
         dap = {},
         bsp = false,
         browser = false,
@@ -3679,6 +3670,14 @@ local M = {
         bsp = false,
         browser = false,
     },
+    ['wesl'] = {
+        formatters = {},
+        linters = {},
+        lsp = { 'wgslana_ls' },
+        dap = {},
+        bsp = false,
+        browser = false,
+    },
     ['wgsl'] = {
         formatters = { 'wgslfmt' },
         linters = { 'naga' },
@@ -3755,6 +3754,7 @@ local M = {
             'gitlabduo_ls',
             'homeassist_ls',
             'hydra_ls',
+            'nobl9_ls',
             'symfony_ls',
             'yaml_ls',
             'zizmor_ls',
@@ -3863,7 +3863,7 @@ local M = {
         formatters = { 'zig_fmt' },
         linters = { 'zlint' },
         lsp = { 'codebook_ls', 'z_ls' },
-        dap = {},
+        dap = { 'zig' },
         bsp = false,
         browser = false,
     },

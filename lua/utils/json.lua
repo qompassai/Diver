@@ -10,8 +10,8 @@ function M.json_autocmds()
         }),
     }
     vim.api.nvim_create_autocmd({
-        'TextChanged',
         'InsertLeave',
+        'TextChanged',
     }, {
         group = augroups.json,
         pattern = {
@@ -76,17 +76,17 @@ function M.json_filetype_detection()
         },
         pattern = {
             ['%.json5$'] = 'json5',
-            ['%.jsonl$'] = 'jsonl',
             ['%.jsonc$'] = 'jsonc',
-            ['tsconfig.*%.json'] = 'jsonc',
+            ['%.jsonl$'] = 'jsonl',
             ['.*rc%.json'] = 'jsonc',
+            ['tsconfig.*%.json'] = 'jsonc',
         },
         filename = {
-            ['.eslintrc.json'] = 'jsonc',
             ['.babelrc'] = 'jsonc',
+            ['.eslintrc.json'] = 'jsonc',
             ['.prettierrc'] = 'jsonc',
-            ['tsconfig.json'] = 'jsonc',
             ['package.json'] = 'json',
+            ['tsconfig.json'] = 'jsonc',
         },
     })
 end

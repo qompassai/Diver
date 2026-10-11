@@ -4,11 +4,10 @@
 local async = require('config.core.async')
 local M = {}
 local options = {}
-local generation, process, last = 0, nil, nil
+local generation, last, process = 0, nil, nil
 
----@param text string
-local function notify(text)
-    vim.notify(text, vim.log.levels.WARN, { title = 'SearXNG' })
+local function clean(text)
+    return (tostring(text or ''):sub(1, 2048):gsub('[%c]', ' '))
 end
 
 local function http_url(url)
@@ -19,8 +18,32 @@ local function http_url(url)
         and not url:match('^https?://[^/]*@')
 end
 
-local function clean(text)
-    return (tostring(text or ''):sub(1, 2048):gsub('[%c]', ' '))
+---@param text string
+local function notify(text)
+    vim.notify(text, vim.log.levels.WARN, { title = 'SearXNG' })
+end
+
+function M.cancel()
+    generation = generation + 1
+    if process then
+        local ok, err = pcall(process.kill, process, 9)
+        if not ok then
+            notify('Cancel: ' .. tostring(err))
+        end
+        process = nil
+    end
+end
+
+function M.next_page()
+    if not last then
+        notify('Search first')
+        return
+    end
+    if last.page >= 100 then
+        notify('Page limit reached')
+        return
+    end
+    M.search(last.query, last.page + 1)
 end
 
 ---Parse a SearXNG JSON response into picker results.
@@ -42,10 +65,10 @@ function M.parse(body)
         local entry = value.results[index]
         if type(entry) == 'table' and http_url(entry.url) then
             results[#results + 1] = {
-                title = clean(entry.title),
-                url = entry.url,
                 content = clean(entry.content),
                 engine = clean(entry.engine),
+                title = clean(entry.title),
+                url = entry.url,
             }
         end
     end
@@ -59,10 +82,10 @@ function M.results()
     end
     local saved = last
     vim.ui.select(saved.results, {
-        prompt = ('SearXNG: %s (page %d)'):format(clean(saved.query), saved.page),
         format_item = function(item)
             return item.title .. ' — ' .. item.url
         end,
+        prompt = ('SearXNG: %s (page %d)'):format(clean(saved.query), saved.page),
     }, function(item)
         if not item or last ~= saved then
             return
@@ -72,17 +95,6 @@ function M.results()
             notify(tostring(err))
         end
     end)
-end
-
-function M.cancel()
-    generation = generation + 1
-    if process then
-        local ok, err = pcall(process.kill, process, 9)
-        if not ok then
-            notify('Cancel: ' .. tostring(err))
-        end
-        process = nil
-    end
 end
 
 ---@param query? string
@@ -153,7 +165,7 @@ function M.search(query, page)
                 notify(parse_error)
                 return
             end
-            last = { query = value, page = page, results = results }
+            last = { page = page, query = value, results = results }
             M.results()
         end)
         if err then
@@ -165,18 +177,6 @@ function M.search(query, page)
     else
         run(query)
     end
-end
-
-function M.next_page()
-    if not last then
-        notify('Search first')
-        return
-    end
-    if last.page >= 100 then
-        notify('Page limit reached')
-        return
-    end
-    M.search(last.query, last.page + 1)
 end
 
 function M.setup(opts)

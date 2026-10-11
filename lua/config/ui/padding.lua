@@ -3,6 +3,8 @@
 -- Copyright (C) 2026 Qompass AI, All rights reserved
 -- ----------------------------------------
 local M = {}
+local enabled = false
+local mode = 'soft' --- "soft" | "dense"
 local ns = vim.api.nvim_create_namespace('SoftPadding')
 local ns2 = vim.api.nvim_create_namespace('DensePadding')
 local function enable_soft_padding(bufnr)
@@ -43,8 +45,20 @@ local function pad_dense_regions(bufnr)
         end
     end
 end
-local enabled = false
-local mode = 'soft' --- "soft" | "dense"
+function M.refresh(bufnr)
+    if not enabled then
+        return
+    end
+    bufnr = bufnr or vim.api.nvim_get_current_buf()
+    vim.api.nvim_buf_clear_namespace(bufnr, ns, 0, -1)
+    vim.api.nvim_buf_clear_namespace(bufnr, ns2, 0, -1)
+    if mode == 'soft' then
+        enable_soft_padding(bufnr)
+    else
+        pad_dense_regions(bufnr)
+    end
+end
+
 function M.toggle(mode_arg)
     if mode_arg == 'soft' or mode_arg == 'dense' then
         mode = mode_arg
@@ -56,20 +70,6 @@ function M.toggle(mode_arg)
     if not enabled then
         return
     end
-    if mode == 'soft' then
-        enable_soft_padding(bufnr)
-    else
-        pad_dense_regions(bufnr)
-    end
-end
-
-function M.refresh(bufnr)
-    if not enabled then
-        return
-    end
-    bufnr = bufnr or vim.api.nvim_get_current_buf()
-    vim.api.nvim_buf_clear_namespace(bufnr, ns, 0, -1)
-    vim.api.nvim_buf_clear_namespace(bufnr, ns2, 0, -1)
     if mode == 'soft' then
         enable_soft_padding(bufnr)
     else

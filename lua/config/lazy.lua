@@ -38,14 +38,14 @@ local function create_lazy_file_event()
     LazyEvent.mappings['LazyFile'] = {
         id = 'LazyFile',
         event = {
-            'BufReadPost',
             'BufNewFile',
+            'BufReadPost',
             'BufWritePre',
         },
     }
     events.LazyFile = vim.api.nvim_create_autocmd({
-        'BufReadPost',
         'BufNewFile',
+        'BufReadPost',
         'BufWritePre',
     }, {
         callback = function()

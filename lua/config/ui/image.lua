@@ -2,9 +2,12 @@
 -- Qompass AI Diver Native Image Preview
 -- Copyright (C) 2026 Qompass AI, All rights reserved
 -- ----------------------------------------
--- Uses Neovim's experimental vim.ui.img API directly. No image.nvim,
--- ImageMagick, Tree-sitter HTML integration, downloader, or shell command.
--- Neovim currently supports PNG through its Kitty graphics implementation.
+-- Uses Neovim's experimental vim.ui.img API directly for the inline
+-- preview (PNG only, Kitty graphics protocol). No image.nvim,
+-- ImageMagick, or Tree-sitter HTML integration.
+-- For terminals without Kitty graphics (e.g. foot, which speaks Sixel
+-- only), :ImagePreviewSixel renders the image under the cursor with
+-- chafa, handed the real terminal via :!.
 
 local api = vim.api
 local fn = vim.fn
@@ -21,6 +24,8 @@ local defaults = {
 }
 
 local config = vim.deepcopy(defaults)
+local png_magic = '\137PNG\r\n\26\n'
+
 local state = {
     enabled = false,
     generation = 0,
@@ -28,18 +33,15 @@ local state = {
     source = nil,
 }
 
-local png_magic = '\137PNG\r\n\26\n'
-
----@param value any
----@return boolean
-local function positive_integer(value)
-    return type(value) == 'number' and value == math.floor(value) and value > 0
-end
-
----@param message string
-local function notify(message)
-    vim.notify(message, vim.log.levels.WARN, { title = 'Native image preview' })
-end
+-- Image formats chafa can rasterize for the Sixel fallback view.
+local viewable_extensions = {
+    bmp = true,
+    gif = true,
+    jpeg = true,
+    jpg = true,
+    png = true,
+    webp = true,
+}
 
 ---@return boolean
 local function available()
@@ -49,33 +51,27 @@ local function available()
         and type(vim.ui.img.del) == 'function'
 end
 
----@param options table?
-local function validate(options)
-    if options == nil then
-        return
+---@return string?
+local function image_buffer_path()
+    local name = api.nvim_buf_get_name(0)
+    if name:lower():match('%.png$') then
+        return name
     end
-    assert(type(options) == 'table', 'image options must be a table')
-
-    if options.enabled ~= nil then
-        assert(type(options.enabled) == 'boolean', 'image.enabled must be a boolean')
-    end
-    for _, key in ipairs({ 'height', 'margin', 'row', 'width', 'zindex' }) do
-        if options[key] ~= nil then
-            assert(positive_integer(options[key]), 'image.' .. key .. ' must be a positive integer')
-        end
-    end
+    return nil
 end
 
-local function clear_current()
-    state.generation = state.generation + 1
+---@return table
+local function image_options()
+    local columns = vim.o.columns
+    local width = math.min(config.width, math.max(1, columns - (config.margin * 2)))
 
-    local id = state.id
-    state.id = nil
-    state.source = nil
-
-    if id ~= nil and available() then
-        pcall(vim.ui.img.del, id)
-    end
+    return {
+        col = math.max(1, columns - width - config.margin + 1),
+        height = config.height,
+        row = config.row,
+        width = width,
+        zindex = config.zindex,
+    }
 end
 
 ---@param source string
@@ -102,35 +98,15 @@ local function local_path(source)
     return vim.fs.normalize(source)
 end
 
----@return string?
-local function image_buffer_path()
-    local name = api.nvim_buf_get_name(0)
-    if name:lower():match('%.png$') then
-        return name
-    end
-    return nil
+---@param message string
+local function notify(message)
+    vim.notify(message, vim.log.levels.WARN, { title = 'Native image preview' })
 end
 
----@return string?
-local function markdown_image_path()
-    local filetype = vim.bo.filetype
-    if filetype ~= 'markdown' and filetype ~= 'markdown.mdx' then
-        return nil
-    end
-
-    local line = api.nvim_get_current_line()
-    local target = line:match('!%[[^%]]*%]%((.-)%)')
-    if not target then
-        return nil
-    end
-
-    target = vim.trim(target)
-    target = target:match('^<([^>]+)>') or target:match('^([^%s]+)')
-    if not target or not target:lower():match('%.png$') then
-        return nil
-    end
-
-    return local_path(target)
+---@param value any
+---@return boolean
+local function positive_integer(value)
+    return type(value) == 'number' and value == math.floor(value) and value > 0
 end
 
 ---@param path string
@@ -155,18 +131,16 @@ local function read_png(path)
     return blob, nil
 end
 
----@return table
-local function image_options()
-    local columns = vim.o.columns
-    local width = math.min(config.width, math.max(1, columns - (config.margin * 2)))
+local function clear_current()
+    state.generation = state.generation + 1
 
-    return {
-        col = math.max(1, columns - width - config.margin + 1),
-        height = config.height,
-        row = config.row,
-        width = width,
-        zindex = config.zindex,
-    }
+    local id = state.id
+    state.id = nil
+    state.source = nil
+
+    if id ~= nil and available() then
+        pcall(vim.ui.img.del, id)
+    end
 end
 
 ---@param path string
@@ -209,19 +183,102 @@ local function display(path, silent)
     return true
 end
 
----@param path string?
-function M.render(path)
-    if path ~= nil then
-        local resolved = local_path(path)
-        if not resolved then
-            notify('remote image URLs are not supported by the native preview')
-            return
-        end
-        display(resolved)
+---@return string?
+local function markdown_image_path()
+    local filetype = vim.bo.filetype
+    if filetype ~= 'markdown' and filetype ~= 'markdown.mdx' then
+        return nil
+    end
+
+    local line = api.nvim_get_current_line()
+    local target = line:match('!%[[^%]]*%]%((.-)%)')
+    if not target then
+        return nil
+    end
+
+    target = vim.trim(target)
+    target = target:match('^<([^>]+)>') or target:match('^([^%s]+)')
+    if not target or not target:lower():match('%.png$') then
+        return nil
+    end
+
+    return local_path(target)
+end
+
+---@return string? path to an image under the cursor, any chafa-readable format
+local function markdown_viewable_path()
+    local filetype = vim.bo.filetype
+    if filetype ~= 'markdown' and filetype ~= 'markdown.mdx' then
+        return nil
+    end
+
+    local line = api.nvim_get_current_line()
+    local target = line:match('!%[[^%]]*%]%((.-)%)')
+    if not target then
+        return nil
+    end
+
+    target = vim.trim(target)
+    target = target:match('^<([^>]+)>') or target:match('^([^%s]+)')
+    if not target then
+        return nil
+    end
+    local extension = target:lower():match('%.([a-z0-9]+)$')
+    if not extension or not viewable_extensions[extension] then
+        return nil
+    end
+
+    return local_path(target)
+end
+
+---@param path string resolved image path
+local function open_sixel_viewer(path)
+    if fn.executable('chafa') ~= 1 then
+        notify('chafa is not installed; the Sixel fallback view needs it')
+        return
+    end
+    if fn.filereadable(path) ~= 1 then
+        notify('image is not readable: ' .. path)
         return
     end
 
-    M.refresh()
+    -- :! runs chafa on the real terminal, outside Neovim. A :terminal
+    -- split cannot work: Neovim's built-in terminal emulator swallows
+    -- Sixel sequences instead of passing them to the outer terminal.
+    -- shellescape() keeps the path out of shell metacharacter trouble;
+    -- the "--" guards paths that begin with a dash.
+    vim.cmd('!chafa --format sixel -- ' .. fn.shellescape(path))
+end
+
+---@return string? path to the image to show in the Sixel fallback view
+local function target_viewable_path()
+    local name = api.nvim_buf_get_name(0)
+    local extension = name:lower():match('%.([a-z0-9]+)$')
+    if extension and viewable_extensions[extension] and fn.filereadable(name) == 1 then
+        return name
+    end
+    return markdown_viewable_path()
+end
+
+---@param options table?
+local function validate(options)
+    if options == nil then
+        return
+    end
+    assert(type(options) == 'table', 'image options must be a table')
+
+    if options.enabled ~= nil then
+        assert(type(options.enabled) == 'boolean', 'image.enabled must be a boolean')
+    end
+    for _, key in ipairs({ 'height', 'margin', 'row', 'width', 'zindex' }) do
+        if options[key] ~= nil then
+            assert(positive_integer(options[key]), 'image.' .. key .. ' must be a positive integer')
+        end
+    end
+end
+
+function M.clear()
+    clear_current()
 end
 
 function M.refresh()
@@ -237,8 +294,65 @@ function M.refresh()
     end
 end
 
-function M.clear()
-    clear_current()
+---@param path string?
+function M.render(path)
+    if path ~= nil then
+        local resolved = local_path(path)
+        if not resolved then
+            notify('remote image URLs are not supported by the native preview')
+            return
+        end
+        display(resolved)
+        return
+    end
+
+    M.refresh()
+end
+
+function M.setup(options)
+    validate(options)
+    config = vim.tbl_deep_extend('force', vim.deepcopy(defaults), options or {})
+    state.enabled = config.enabled
+
+    api.nvim_create_user_command('ImagePreviewClear', M.clear, {
+        desc = 'Clear native PNG image preview',
+        force = true,
+    })
+    api.nvim_create_user_command('ImagePreviewRefresh', M.refresh, {
+        desc = 'Refresh native PNG image preview',
+        force = true,
+    })
+    api.nvim_create_user_command('ImagePreviewSixel', M.view_sixel, {
+        desc = 'View image under cursor as Sixel via chafa (for terminals without Kitty graphics)',
+        force = true,
+    })
+    api.nvim_create_user_command('ImagePreviewToggle', M.toggle, {
+        desc = 'Toggle native PNG image preview',
+        force = true,
+    })
+
+    if fn.maparg('<leader>iv', 'n') == '' then
+        vim.keymap.set('n', '<leader>iv', M.view_sixel, {
+            desc = 'View image under cursor as Sixel via chafa',
+            silent = true,
+        })
+    end
+
+    local group = api.nvim_create_augroup('NativeImagePreview', { clear = true })
+    api.nvim_create_autocmd({ 'BufEnter', 'CursorMoved', 'VimResized', 'WinEnter' }, {
+        group = group,
+        callback = M.refresh,
+        desc = 'Refresh native PNG image preview',
+    })
+    api.nvim_create_autocmd({ 'BufLeave', 'BufWipeout', 'WinLeave' }, {
+        group = group,
+        callback = M.clear,
+        desc = 'Clear native PNG image preview',
+    })
+
+    if state.enabled then
+        M.refresh()
+    end
 end
 
 function M.toggle()
@@ -250,39 +364,19 @@ function M.toggle()
     end
 end
 
-function M.setup(options)
-    validate(options)
-    config = vim.tbl_deep_extend('force', vim.deepcopy(defaults), options or {})
-    state.enabled = config.enabled
-
-    api.nvim_create_user_command('ImagePreviewToggle', M.toggle, {
-        desc = 'Toggle native PNG image preview',
-        force = true,
-    })
-    api.nvim_create_user_command('ImagePreviewRefresh', M.refresh, {
-        desc = 'Refresh native PNG image preview',
-        force = true,
-    })
-    api.nvim_create_user_command('ImagePreviewClear', M.clear, {
-        desc = 'Clear native PNG image preview',
-        force = true,
-    })
-
-    local group = api.nvim_create_augroup('NativeImagePreview', { clear = true })
-    api.nvim_create_autocmd({ 'BufEnter', 'CursorMoved', 'VimResized', 'WinEnter' }, {
-        group = group,
-        callback = M.refresh,
-        desc = 'Refresh native PNG image preview',
-    })
-    api.nvim_create_autocmd({ 'BufLeave', 'WinLeave', 'BufWipeout' }, {
-        group = group,
-        callback = M.clear,
-        desc = 'Clear native PNG image preview',
-    })
-
-    if state.enabled then
-        M.refresh()
+---Render the image under the cursor (markdown image or image buffer) as
+---Sixel graphics via chafa, handed the real terminal with :!. This is the
+---fallback for terminals without Kitty graphics support (e.g. foot, which
+---speaks Sixel only) where the native vim.ui.img preview cannot run.
+---Animated GIFs render as their first frame. The image stays on screen
+---until you press Enter.
+function M.view_sixel()
+    local path = target_viewable_path()
+    if not path then
+        notify('no viewable image under the cursor')
+        return
     end
+    open_sixel_viewer(path)
 end
 
 return M

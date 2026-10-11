@@ -194,6 +194,54 @@ return ---@type vim.lsp.Config
                             description = 'Put the expression into an `Rc`',
                             scope = 'expr',
                         },
+                        -- Bevy item snippets (validated against the installed
+                        -- rust-analyzer's completion.snippets.custom schema;
+                        -- prefix + scope='item' per upstream docs).
+                        ['Bevy component'] = {
+                            prefix = 'bcomponent',
+                            body = {
+                                '#[derive(Component)]',
+                                'pub struct ${1:Name};',
+                            },
+                            description = 'Create a Bevy component',
+                            requires = 'bevy::prelude::Component',
+                            scope = 'item',
+                        },
+                        ['Bevy resource'] = {
+                            prefix = 'bresource',
+                            body = {
+                                '#[derive(Resource)]',
+                                'pub struct ${1:Name};',
+                            },
+                            description = 'Create a Bevy resource',
+                            requires = 'bevy::prelude::Resource',
+                            scope = 'item',
+                        },
+                        ['Bevy system'] = {
+                            prefix = 'bsystem',
+                            body = {
+                                'fn ${1:name}(${2:params}) {',
+                                '    ${0}',
+                                '}',
+                            },
+                            description = 'Create a Bevy system',
+                            scope = 'item',
+                        },
+                        ['Bevy plugin'] = {
+                            prefix = 'bplugin',
+                            body = {
+                                'pub struct ${1:Name}Plugin;',
+                                '',
+                                'impl Plugin for ${1:Name}Plugin {',
+                                '    fn build(&self, app: &mut App) {',
+                                '        ${0}',
+                                '    }',
+                                '}',
+                            },
+                            description = 'Create a Bevy plugin',
+                            requires = 'bevy::prelude::Plugin',
+                            scope = 'item',
+                        },
                     },
                 },
                 termSearch = {

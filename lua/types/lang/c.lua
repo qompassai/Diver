@@ -12,50 +12,50 @@
 -- ----------------------------------------
 ---@meta
 ---@class                    Clangd.Position
----@field line                                             integer
 ---@field character                                        integer
+---@field line                                             integer
 ---@class Clangd.Range
----@field start                                            Clangd.Position
 ---@field end                                              Clangd.Position
+---@field start                                            Clangd.Position
 ---@class                    Clangd.ASTNode
----@field role                                             string Node role (e.g., "expression", "statement")
----@field kind                                             string Node kind (e.g., "BinaryOperator")
----@field detail?                                          string Optional detail information
----@field range?                                           Clangd.Range Optional source range
 ---@field children?                                        Clangd.ASTNode[] Optional child nodes
+---@field detail?                                          string Optional detail information
+---@field kind                                             string Node kind (e.g., "BinaryOperator")
+---@field range?                                           Clangd.Range Optional source range
+---@field role                                             string Node role (e.g., "expression", "statement")
 
 ---@class Clangd.TextDocumentIdentifier
 ---@field uri                                              string Document URI
 
 ---@class Clangd.ASTParams
----@field textDocument                                     Clangd.TextDocumentIdentifier Document to analyze
 ---@field range                                            Clangd.Range Range to analyze
+---@field textDocument                                     Clangd.TextDocumentIdentifier Document to analyze
 
 ---@class ClangdExt.NodePosition
----@field start                                            integer[] [line, character]
 ---@field end                                              integer[] [line, character]
+---@field start                                            integer[] [line, character]
 
 ---@class ClangdExt.DetailPosition
----@field start                                            integer Start character offset
 ---@field end                                              integer End character offset
+---@field start                                            integer Start character offset
 
 ---@class ClangdExt.ASTConfig
+---@field highlights                                       table<string, string> Highlight groups
 ---@field kind_icons                                       table<string, string> Icons for node kinds
 ---@field role_icons                                       table<string, string> Icons for node roles
----@field highlights                                       table<string, string> Highlight groups
 
 ---@class ClangdExt.AST
----@field node_pos table<integer, table<integer, table<integer, ClangdExt.NodePosition>>> Source->AST->Line mapping
----@field detail_pos                                       table<integer, table<integer, ClangdExt.DetailPosition>>
----@field nsid                                             integer Namespace ID
 ---@field clear_highlight                                  fun(source_buf: integer) Clear highlights
----@field update_highlight                                 fun(source_buf: integer, ast_buf: integer) Update highlights
+---@field detail_pos                                       table<integer, table<integer, ClangdExt.DetailPosition>>
 ---@field display_ast                                      fun(line1: integer, line2: integer) Display AST for range
+---@field node_pos table<integer, table<integer, table<integer, ClangdExt.NodePosition>>> Source->AST->Line mapping
+---@field nsid                                             integer Namespace ID
+---@field update_highlight                                 fun(source_buf: integer, ast_buf: integer) Update highlights
 
 ---@class ClangdExt.Utils
----@field validate                                         fun(args: table) Validate arguments
 ---@field buf_request_method fun(method: string, params: table, handler: function, bufnr: integer) Request LSP method
+---@field validate                                         fun(args: table) Validate arguments
 
 ---@class ClangdExt.Config
----@field options                                          table Plugin options
 ---@field ast                                              ClangdExt.ASTConfig AST configuration
+---@field options                                          table Plugin options

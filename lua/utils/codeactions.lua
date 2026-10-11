@@ -21,20 +21,11 @@ local lsp = vim.lsp
 
 local M = {}
 
-local function report(title, lines)
-    local buffer = api.nvim_create_buf(false, true)
-
-    api.nvim_buf_set_name(buffer, ('%s-%d'):format(title, vim.uv.hrtime()))
-    api.nvim_buf_set_lines(buffer, 0, -1, false, lines)
-
-    vim.bo[buffer].bufhidden = 'wipe'
-    vim.bo[buffer].buftype = 'nofile'
-    vim.bo[buffer].filetype = 'markdown'
-    vim.bo[buffer].modifiable = false
-    vim.bo[buffer].swapfile = false
-
-    vim.cmd('botright new')
-    api.nvim_win_set_buf(0, buffer)
+local function action_clients(buffer)
+    return lsp.get_clients({
+        bufnr = buffer,
+        method = 'textDocument/codeAction',
+    })
 end
 
 local function action_summary(action)
@@ -61,11 +52,65 @@ local function action_summary(action)
     return table.concat(fields, '  |  ')
 end
 
-local function action_clients(buffer)
-    return lsp.get_clients({
-        bufnr = buffer,
-        method = 'textDocument/codeAction',
-    })
+local function byte_index(text, character, encoding)
+    return vim.str_byteindex(text, encoding, character, false)
+end
+
+local function apply_text_edits(buffer, edits, encoding)
+    local ordered = vim.deepcopy(edits)
+
+    table.sort(ordered, function(left, right)
+        local left_start = left.range.start
+        local right_start = right.range.start
+
+        if left_start.line ~= right_start.line then
+            return left_start.line > right_start.line
+        end
+
+        return left_start.character > right_start.character
+    end)
+
+    for _, edit in ipairs(ordered) do
+        local start = edit.range.start
+        local finish = edit.range['end']
+
+        local start_line = api.nvim_buf_get_lines(buffer, start.line, start.line + 1, false)[1] or ''
+
+        local end_line = api.nvim_buf_get_lines(buffer, finish.line, finish.line + 1, false)[1] or ''
+
+        local start_column = byte_index(start_line, start.character, encoding)
+
+        local end_column = byte_index(end_line, finish.character, encoding)
+
+        local replacement
+
+        if edit.newText == '' then
+            replacement = {}
+        else
+            replacement = vim.split(edit.newText, '\n', {
+                plain = true,
+            })
+        end
+
+        api.nvim_buf_set_text(buffer, start.line, start_column, finish.line, end_column, replacement)
+    end
+end
+
+local function changed_files(workspace_edit)
+    local files = {}
+
+    for uri in pairs(workspace_edit and workspace_edit.changes or {}) do
+        files[#files + 1] = vim.uri_to_fname(uri)
+    end
+
+    for _, change in ipairs(workspace_edit and workspace_edit.documentChanges or {}) do
+        if change.textDocument and change.textDocument.uri then
+            files[#files + 1] = vim.uri_to_fname(change.textDocument.uri)
+        end
+    end
+
+    table.sort(files)
+    return files
 end
 
 local function request_params(client)
@@ -147,67 +192,6 @@ local function edits_for_current_buffer(workspace_edit, source_buffer)
     return nil
 end
 
-local function changed_files(workspace_edit)
-    local files = {}
-
-    for uri in pairs(workspace_edit and workspace_edit.changes or {}) do
-        files[#files + 1] = vim.uri_to_fname(uri)
-    end
-
-    for _, change in ipairs(workspace_edit and workspace_edit.documentChanges or {}) do
-        if change.textDocument and change.textDocument.uri then
-            files[#files + 1] = vim.uri_to_fname(change.textDocument.uri)
-        end
-    end
-
-    table.sort(files)
-    return files
-end
-
-local function byte_index(text, character, encoding)
-    return vim.str_byteindex(text, encoding, character, false)
-end
-
-local function apply_text_edits(buffer, edits, encoding)
-    local ordered = vim.deepcopy(edits)
-
-    table.sort(ordered, function(left, right)
-        local left_start = left.range.start
-        local right_start = right.range.start
-
-        if left_start.line ~= right_start.line then
-            return left_start.line > right_start.line
-        end
-
-        return left_start.character > right_start.character
-    end)
-
-    for _, edit in ipairs(ordered) do
-        local start = edit.range.start
-        local finish = edit.range['end']
-
-        local start_line = api.nvim_buf_get_lines(buffer, start.line, start.line + 1, false)[1] or ''
-
-        local end_line = api.nvim_buf_get_lines(buffer, finish.line, finish.line + 1, false)[1] or ''
-
-        local start_column = byte_index(start_line, start.character, encoding)
-
-        local end_column = byte_index(end_line, finish.character, encoding)
-
-        local replacement
-
-        if edit.newText == '' then
-            replacement = {}
-        else
-            replacement = vim.split(edit.newText, '\n', {
-                plain = true,
-            })
-        end
-
-        api.nvim_buf_set_text(buffer, start.line, start_column, finish.line, end_column, replacement)
-    end
-end
-
 local function resolve_action(entry, done)
     if not entry.client:supports_method('codeAction/resolve', { bufnr = entry.buffer }) then
         done(entry.action)
@@ -227,6 +211,22 @@ local function resolve_action(entry, done)
 
         done(resolved or entry.action)
     end, entry.buffer)
+end
+
+local function report(title, lines)
+    local buffer = api.nvim_create_buf(false, true)
+
+    api.nvim_buf_set_name(buffer, ('%s-%d'):format(title, vim.uv.hrtime()))
+    api.nvim_buf_set_lines(buffer, 0, -1, false, lines)
+
+    vim.bo[buffer].bufhidden = 'wipe'
+    vim.bo[buffer].buftype = 'nofile'
+    vim.bo[buffer].filetype = 'markdown'
+    vim.bo[buffer].modifiable = false
+    vim.bo[buffer].swapfile = false
+
+    vim.cmd('botright new')
+    api.nvim_win_set_buf(0, buffer)
 end
 
 local function preview(entry)
@@ -301,6 +301,24 @@ local function preview(entry)
     end)
 end
 
+function M.list_clients()
+    local source_buffer = api.nvim_get_current_buf()
+    local lines = {
+        '# Attached LSP clients',
+        '',
+    }
+
+    for _, client in ipairs(lsp.get_clients({ bufnr = source_buffer })) do
+        local available = client:supports_method('textDocument/codeAction', source_buffer)
+
+        lines[#lines + 1] = ('- `%s`'):format(client.name)
+        lines[#lines + 1] = ('  - ID: `%d`'):format(client.id)
+        lines[#lines + 1] = ('  - Code actions: `%s`'):format(available and 'yes' or 'no')
+    end
+
+    report('Code Action Clients', lines)
+end
+
 function M.list_here()
     collect_actions(function(collected, source_buffer)
         local lines = {
@@ -343,6 +361,35 @@ function M.list_here()
     end)
 end
 
+function M.list_kinds()
+    local source_buffer = api.nvim_get_current_buf()
+    local lines = {
+        '# Advertised code-action kinds',
+        '',
+    }
+
+    for _, client in ipairs(action_clients(source_buffer)) do
+        local provider = client.server_capabilities.codeActionProvider
+        local kinds = type(provider) == 'table' and provider.codeActionKinds or nil
+
+        lines[#lines + 1] = ('## %s'):format(client.name)
+        lines[#lines + 1] = ''
+
+        if not kinds or #kinds == 0 then
+            lines[#lines + 1] = '- No static kind catalog advertised.'
+            lines[#lines + 1] = '- Use `:CodeActionsHere` on a diagnostic or selection.'
+        else
+            for _, kind in ipairs(kinds) do
+                lines[#lines + 1] = ('- `%s`'):format(kind)
+            end
+        end
+
+        lines[#lines + 1] = ''
+    end
+
+    report('Code Action Kinds', lines)
+end
+
 function M.pick_preview()
     collect_actions(function(collected)
         local choices = {}
@@ -375,58 +422,7 @@ function M.pick_preview()
     end)
 end
 
-function M.list_clients()
-    local source_buffer = api.nvim_get_current_buf()
-    local lines = {
-        '# Attached LSP clients',
-        '',
-    }
-
-    for _, client in ipairs(lsp.get_clients({ bufnr = source_buffer })) do
-        local available = client:supports_method('textDocument/codeAction', source_buffer)
-
-        lines[#lines + 1] = ('- `%s`'):format(client.name)
-        lines[#lines + 1] = ('  - ID: `%d`'):format(client.id)
-        lines[#lines + 1] = ('  - Code actions: `%s`'):format(available and 'yes' or 'no')
-    end
-
-    report('Code Action Clients', lines)
-end
-
-function M.list_kinds()
-    local source_buffer = api.nvim_get_current_buf()
-    local lines = {
-        '# Advertised code-action kinds',
-        '',
-    }
-
-    for _, client in ipairs(action_clients(source_buffer)) do
-        local provider = client.server_capabilities.codeActionProvider
-        local kinds = type(provider) == 'table' and provider.codeActionKinds or nil
-
-        lines[#lines + 1] = ('## %s'):format(client.name)
-        lines[#lines + 1] = ''
-
-        if not kinds or #kinds == 0 then
-            lines[#lines + 1] = '- No static kind catalog advertised.'
-            lines[#lines + 1] = '- Use `:CodeActionsHere` on a diagnostic or selection.'
-        else
-            for _, kind in ipairs(kinds) do
-                lines[#lines + 1] = ('- `%s`'):format(kind)
-            end
-        end
-
-        lines[#lines + 1] = ''
-    end
-
-    report('Code Action Kinds', lines)
-end
-
 function M.setup()
-    api.nvim_create_user_command('CodeActionsHere', M.list_here, {
-        desc = 'List code actions at the cursor by LSP provider',
-    })
-
     api.nvim_create_user_command('CodeActionClients', M.list_clients, {
         desc = 'List attached LSP clients and code-action support',
     })
@@ -439,10 +435,8 @@ function M.setup()
         desc = 'Preview a code action without changing the current buffer',
     })
 
-    vim.keymap.set({ 'n', 'x' }, '<leader>ca', function()
-        lsp.buf.code_action()
-    end, {
-        desc = 'Code action',
+    api.nvim_create_user_command('CodeActionsHere', M.list_here, {
+        desc = 'List code actions at the cursor by LSP provider',
     })
 
     vim.keymap.set('n', '<leader>cA', M.list_here, {
@@ -459,6 +453,12 @@ function M.setup()
 
     vim.keymap.set('n', '<leader>cP', M.pick_preview, {
         desc = 'Code action preview',
+    })
+
+    vim.keymap.set({ 'n', 'x' }, '<leader>ca', function()
+        lsp.buf.code_action()
+    end, {
+        desc = 'Code action',
     })
 end
 

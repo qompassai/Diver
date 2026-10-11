@@ -33,32 +33,6 @@ local MAPPING_COUNT_MAX = 256
 ---@type table<string, OwnerState>
 local owners = {}
 
-function M.notify(message, level)
-    vim.notify(tostring(message), level or vim.log.levels.WARN, {
-        title = 'Native mappings',
-    })
-end
-
-function M.usable(bufnr)
-    return api.nvim_buf_is_valid(bufnr) and api.nvim_buf_is_loaded(bufnr)
-end
-
-function M.source(bufnr)
-    return M.usable(bufnr)
-        and vim.bo[bufnr].buftype == ''
-        and vim.bo[bufnr].filetype ~= ''
-        and vim.b[bufnr].nvim_dir == nil
-end
-
-function M.supports(bufnr, method)
-    for _, client in ipairs(vim.lsp.get_clients({ bufnr = bufnr })) do
-        if client:supports_method(method, bufnr) then
-            return true
-        end
-    end
-    return false
-end
-
 -- <Leader> becomes Alt-of-the-next-character rather than a literal
 -- prefix: <Leader>ff -> <M-f>f. This ignores vim.g.mapleader entirely
 -- for entries that use <Leader> -- Alt is a modifier, not a printable
@@ -111,6 +85,29 @@ local function matches(current, owned)
         and current.rhs == owned.rhs
 end
 
+---@param scope integer
+---@param mode string
+---@param key string
+---@return string?
+local function conflict(scope, mode, key)
+    for _, existing in ipairs(mappings(scope, mode)) do
+        local other = keys(existing.lhs)
+        if key:sub(1, #other) == other or other:sub(1, #key) == key then
+            return existing.lhs
+        end
+    end
+    return nil
+end
+
+---@param mode string|string[]|nil
+---@return string[]
+local function resolve_modes(mode)
+    if type(mode) == 'table' then
+        return mode
+    end
+    return { mode or 'n' }
+end
+
 function M.clear(owner, scope)
     local state = owners[owner]
     local previous = state and state.scopes[scope]
@@ -145,27 +142,14 @@ function M.clear(owner, scope)
     end
 end
 
----@param scope integer
----@param mode string
----@param key string
----@return string?
-local function conflict(scope, mode, key)
-    for _, existing in ipairs(mappings(scope, mode)) do
-        local other = keys(existing.lhs)
-        if key:sub(1, #other) == other or other:sub(1, #key) == key then
-            return existing.lhs
+function M.command(name)
+    return function()
+        if vim.fn.exists(':' .. name) ~= 2 then
+            M.notify('Command unavailable: ' .. name)
+            return
         end
+        api.nvim_cmd({ cmd = name }, {})
     end
-    return nil
-end
-
----@param mode string|string[]|nil
----@return string[]
-local function resolve_modes(mode)
-    if type(mode) == 'table' then
-        return mode
-    end
-    return { mode or 'n' }
 end
 
 ---@param owner string
@@ -231,6 +215,90 @@ function M.install(owner, scope, definitions)
     end
 end
 
+function M.notify(message, level)
+    vim.notify(tostring(message), level or vim.log.levels.WARN, {
+        title = 'Native mappings',
+    })
+end
+
+function M.report()
+    local lines = { 'Preserved existing mappings (owner: scope:mode:key -> existing key)' }
+    for _, owner in ipairs(vim.fn.sort(vim.tbl_keys(owners))) do
+        for _, key in ipairs(vim.fn.sort(vim.tbl_keys(owners[owner].skipped))) do
+            lines[#lines + 1] = owner .. ': ' .. key .. ' -> ' .. owners[owner].skipped[key]
+        end
+    end
+    lines[#lines + 1] = 'Overridden existing mappings (owner: scope:mode:key -> replaced key)'
+    for _, owner in ipairs(vim.fn.sort(vim.tbl_keys(owners))) do
+        for _, key in ipairs(vim.fn.sort(vim.tbl_keys(owners[owner].overridden))) do
+            lines[#lines + 1] = owner .. ': ' .. key .. ' -> ' .. owners[owner].overridden[key]
+        end
+    end
+    M.show(lines, 'Mapping report')
+end
+
+function M.select(bufnr, items, title)
+    if #items == 0 then
+        M.notify('No available actions for this buffer')
+        return
+    end
+    table.sort(items, function(a, b)
+        return a.label < b.label
+    end)
+    local filetype = vim.bo[bufnr].filetype
+    local tick = api.nvim_buf_get_changedtick(bufnr)
+    vim.ui.select(items, {
+        prompt = title,
+        format_item = function(item)
+            return item.label
+        end,
+    }, function(item)
+        if not item then
+            return
+        end
+        if
+            not M.usable(bufnr)
+            or api.nvim_get_current_buf() ~= bufnr
+            or vim.bo[bufnr].filetype ~= filetype
+            or api.nvim_buf_get_changedtick(bufnr) ~= tick
+        then
+            M.notify('Buffer changed during selection; invoke the action again')
+            return
+        end
+        local ok, err = pcall(item.run)
+        if not ok then
+            M.notify(err, vim.log.levels.ERROR)
+        end
+    end)
+end
+
+function M.show(lines, title)
+    local bufnr = api.nvim_create_buf(false, true)
+    vim.bo[bufnr].bufhidden = 'wipe'
+    vim.bo[bufnr].swapfile = false
+    api.nvim_buf_set_lines(bufnr, 0, -1, false, lines)
+    vim.bo[bufnr].modifiable = false
+    vim.b[bufnr].native_mapping_title = title
+    vim.cmd('botright split')
+    api.nvim_win_set_buf(0, bufnr)
+end
+
+function M.source(bufnr)
+    return M.usable(bufnr)
+        and vim.bo[bufnr].buftype == ''
+        and vim.bo[bufnr].filetype ~= ''
+        and vim.b[bufnr].nvim_dir == nil
+end
+
+function M.supports(bufnr, method)
+    for _, client in ipairs(vim.lsp.get_clients({ bufnr = bufnr })) do
+        if client:supports_method(method, bufnr) then
+            return true
+        end
+    end
+    return false
+end
+
 function M.teardown(owner)
     local state = owners[owner]
     if not state then
@@ -244,6 +312,10 @@ function M.teardown(owner)
         M.clear(owner, scope)
     end
     owners[owner] = nil
+end
+
+function M.usable(bufnr)
+    return api.nvim_buf_is_valid(bufnr) and api.nvim_buf_is_loaded(bufnr)
 end
 
 function M.watch(owner, attach, events)
@@ -286,78 +358,6 @@ function M.watch(owner, attach, events)
     local buffers = api.nvim_list_bufs()
     for index = 1, math.min(#buffers, BUFFER_COUNT_MAX) do
         refresh(buffers[index])
-    end
-end
-
-function M.report()
-    local lines = { 'Preserved existing mappings (owner: scope:mode:key -> existing key)' }
-    for _, owner in ipairs(vim.fn.sort(vim.tbl_keys(owners))) do
-        for _, key in ipairs(vim.fn.sort(vim.tbl_keys(owners[owner].skipped))) do
-            lines[#lines + 1] = owner .. ': ' .. key .. ' -> ' .. owners[owner].skipped[key]
-        end
-    end
-    lines[#lines + 1] = 'Overridden existing mappings (owner: scope:mode:key -> replaced key)'
-    for _, owner in ipairs(vim.fn.sort(vim.tbl_keys(owners))) do
-        for _, key in ipairs(vim.fn.sort(vim.tbl_keys(owners[owner].overridden))) do
-            lines[#lines + 1] = owner .. ': ' .. key .. ' -> ' .. owners[owner].overridden[key]
-        end
-    end
-    M.show(lines, 'Mapping report')
-end
-
-function M.show(lines, title)
-    local bufnr = api.nvim_create_buf(false, true)
-    vim.bo[bufnr].bufhidden = 'wipe'
-    vim.bo[bufnr].swapfile = false
-    api.nvim_buf_set_lines(bufnr, 0, -1, false, lines)
-    vim.bo[bufnr].modifiable = false
-    vim.b[bufnr].native_mapping_title = title
-    vim.cmd('botright split')
-    api.nvim_win_set_buf(0, bufnr)
-end
-
-function M.select(bufnr, items, title)
-    if #items == 0 then
-        M.notify('No available actions for this buffer')
-        return
-    end
-    table.sort(items, function(a, b)
-        return a.label < b.label
-    end)
-    local filetype = vim.bo[bufnr].filetype
-    local tick = api.nvim_buf_get_changedtick(bufnr)
-    vim.ui.select(items, {
-        prompt = title,
-        format_item = function(item)
-            return item.label
-        end,
-    }, function(item)
-        if not item then
-            return
-        end
-        if
-            not M.usable(bufnr)
-            or api.nvim_get_current_buf() ~= bufnr
-            or vim.bo[bufnr].filetype ~= filetype
-            or api.nvim_buf_get_changedtick(bufnr) ~= tick
-        then
-            M.notify('Buffer changed during selection; invoke the action again')
-            return
-        end
-        local ok, err = pcall(item.run)
-        if not ok then
-            M.notify(err, vim.log.levels.ERROR)
-        end
-    end)
-end
-
-function M.command(name)
-    return function()
-        if vim.fn.exists(':' .. name) ~= 2 then
-            M.notify('Command unavailable: ' .. name)
-            return
-        end
-        api.nvim_cmd({ cmd = name }, {})
     end
 end
 

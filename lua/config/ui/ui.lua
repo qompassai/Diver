@@ -16,18 +16,13 @@
 -- limitations under the License.
 -- #################################################################
 local M = {}
-local virtual_text = require('config.ui.vt')
 local transparency = require('config.ui.transparency')
-M.virtual_text = virtual_text
-M.transparency = transparency
-M.inline_hint = virtual_text.inline_hint
-M.code_lens = virtual_text.code_lens
+local virtual_text = require('config.ui.vt')
 M.clear = virtual_text.clear
-M.setup_len_hints = virtual_text.setup_len_hints
-M.enable_transparency = transparency.enable
+M.code_lens = virtual_text.code_lens
 M.disable_transparency = transparency.disable
-M.toggle_transparency = transparency.toggle
-M.setup_transparency = transparency.setup
+M.enable_transparency = transparency.enable
+M.inline_hint = virtual_text.inline_hint
 function M.setup(opts)
     opts = opts or {}
 
@@ -41,4 +36,9 @@ function M.setup(opts)
         transparency.setup(opts.transparency)
     end
 end
+M.setup_len_hints = virtual_text.setup_len_hints
+M.setup_transparency = transparency.setup
+M.toggle_transparency = transparency.toggle
+M.transparency = transparency
+M.virtual_text = virtual_text
 return M

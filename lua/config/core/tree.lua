@@ -175,8 +175,8 @@ local parsers = {
     'tiger',
     'toml',
     'tsv',
-    'tsx',
     'turtle',
+    'tsx',
     'typescript',
     'typst',
     'udev',
@@ -198,25 +198,6 @@ local parsers = {
     'ziggy_schema',
     'zsh',
 }
-
-local function register_languages()
-    vim.treesitter.language.register('json', 'jsonc')
-    vim.treesitter.language.register('markdown', 'mdx')
-    vim.treesitter.language.register('systemverilog', 'verilog')
-
-    vim.treesitter.language.register('hcl', {
-        'atlas-config',
-        'atlas-schema-mysql',
-        'atlas-schema-postgresql',
-        'atlas-schema-sqlite',
-        'atlas-schema-clickhouse',
-        'atlas-schema-mssql',
-        'atlas-schema-redshift',
-        'atlas-test',
-        'atlas-plan',
-        'atlas-rule',
-    })
-end
 
 local BUFFER_BYTES_MAX = 2 * 1024 * 1024
 local CAPTURES_MAX = 20000
@@ -254,6 +235,24 @@ local function attach(bufnr)
             vim.wo[win].foldexpr = 'v:lua.vim.treesitter.foldexpr()'
         end
     end
+end
+
+local function register_languages()
+    vim.treesitter.language.register('hcl', {
+        'atlas-config',
+        'atlas-plan',
+        'atlas-rule',
+        'atlas-schema-clickhouse',
+        'atlas-schema-mssql',
+        'atlas-schema-mysql',
+        'atlas-schema-postgresql',
+        'atlas-schema-redshift',
+        'atlas-schema-sqlite',
+        'atlas-test',
+    })
+    vim.treesitter.language.register('json', 'jsonc')
+    vim.treesitter.language.register('markdown', 'mdx')
+    vim.treesitter.language.register('systemverilog', 'verilog')
 end
 
 ---Use installed query captures without depending on a textobjects plugin.
@@ -314,19 +313,6 @@ function M.jump(capture, forward, ending, query_name)
     return true
 end
 
-function M.teardown()
-    for win, saved in pairs(configured) do
-        if api.nvim_win_is_valid(win) and vim.wo[win].foldexpr == 'v:lua.vim.treesitter.foldexpr()' then
-            vim.wo[win].foldmethod, vim.wo[win].foldexpr = saved.method, saved.expr
-        end
-    end
-    configured = {}
-    local group = vim.fn.exists('#DiverNativeTree') == 1
-    if group then
-        api.nvim_del_augroup_by_name('DiverNativeTree')
-    end
-end
-
 function M.setup(opts)
     assert(opts == nil or type(opts) == 'table')
     M.teardown()
@@ -344,11 +330,24 @@ function M.setup(opts)
     end
 end
 
+function M.teardown()
+    for win, saved in pairs(configured) do
+        if api.nvim_win_is_valid(win) and vim.wo[win].foldexpr == 'v:lua.vim.treesitter.foldexpr()' then
+            vim.wo[win].foldmethod, vim.wo[win].foldexpr = saved.method, saved.expr
+        end
+    end
+    configured = {}
+    local group = vim.fn.exists('#DiverNativeTree') == 1
+    if group then
+        api.nvim_del_augroup_by_name('DiverNativeTree')
+    end
+end
+
 -- Compatibility entry points. Parsers/queries must be installed on runtimepath.
 -- Native filetype indentation is retained; Neovim has no generic TS indent installer.
 M.parsers = parsers
-M.treesitter = M.setup
 function M.textobjects()
     return M.jump
 end
+M.treesitter = M.setup
 return M

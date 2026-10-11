@@ -23,6 +23,15 @@ local function buffers()
     core.select(api.nvim_get_current_buf(), items, 'Buffers')
 end
 
+local function completion(next_item, fallback)
+    return function()
+        if vim.fn.wildmenumode() == 1 or vim.fn.pumvisible() == 1 then
+            return next_item
+        end
+        return fallback
+    end
+end
+
 local function directory()
     local win = api.nvim_get_current_win()
     vim.ui.input({ prompt = 'Window directory: ', default = vim.fn.getcwd(), completion = 'dir' }, function(path)
@@ -38,15 +47,6 @@ local function directory()
             api.nvim_cmd({ cmd = 'lcd', args = { path }, magic = { file = false, bar = false } }, {})
         end)
     end)
-end
-
-local function completion(next_item, fallback)
-    return function()
-        if vim.fn.wildmenumode() == 1 or vim.fn.pumvisible() == 1 then
-            return next_item
-        end
-        return fallback
-    end
 end
 
 ---Move toward the Neovim window in `direction`, falling through to the

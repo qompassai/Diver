@@ -17,19 +17,13 @@ local function get_index(index, tbl, key)
     end
     return tbl[i], i
 end
-function M.load()
-    return require('schemastore.catalog')
-end
-
-function M.json.load()
-    return M.load().json
-end
-
 function M.json.get(name)
     local catalog = M.json.load()
     return get_index(catalog.index, catalog.schemas, name), nil
 end
-
+function M.json.load()
+    return M.load().json
+end
 function M.json.schemas(opts)
     local catalog = M.json.load()
     if not opts then
@@ -74,8 +68,8 @@ function M.json.schemas(opts)
             end
         end
     end
-    local has_select = type(opts.select) == 'table' and not vim.tbl_isempty(opts.select)
     local has_ignore = type(opts.ignore) == 'table' and not vim.tbl_isempty(opts.ignore)
+    local has_select = type(opts.select) == 'table' and not vim.tbl_isempty(opts.select)
     assert(
         not (has_select and has_ignore),
         "schemastore.json.schemas(): the 'select' and 'ignore' settings are mutually exclusive"
@@ -102,7 +96,9 @@ function M.json.schemas(opts)
     end
     return schemas
 end
-
+function M.load()
+    return require('schemastore.catalog')
+end
 ---@param opts table
 ---@return { [string]: string[] }
 function M.yaml.schemas(opts)
@@ -114,22 +110,6 @@ function M.yaml.schemas(opts)
     return schemas
 end
 
-local function years_from(from, to)
-    local cur_year = tonumber(os.date('%Y'))
-    to = to and to or cur_year
-    return from == to and tostring(from) or ('%d-%d'):format(from, to)
-end
-local function http_get(url)
-    local res = vim.fn.systemlist({
-        'curl',
-        '--location',
-        '--silent',
-        '--fail',
-        url,
-    })
-    assert(vim.v.shell_error == 0, ('GET %s failed'):format(url))
-    return res
-end
 local function endpoint_url(...)
     return table.concat({ M.config.base_url, ... }, '/')
 end
@@ -143,12 +123,6 @@ local function gen_index(tbl)
     end
     return index
 end
-local function get_catalog(kind)
-    local catalog = vim.fn.json_decode(http_get(catalog_url(kind)))
-    local index = gen_index(catalog.schemas)
-    catalog.index = index
-    return catalog
-end
 local function gen_module(decls)
     local res = M.config.copyright_notice
     res = res .. '-- stylua: ignore start\n\n'
@@ -160,9 +134,31 @@ local function gen_module(decls)
     res = res .. '-- stylua: ignore end'
     return res
 end
+local function http_get(url)
+    local res = vim.fn.systemlist({
+        'curl',
+        '--location',
+        '--silent',
+        '--fail',
+        url,
+    })
+    assert(vim.v.shell_error == 0, ('GET %s failed'):format(url))
+    return res
+end
+local function get_catalog(kind)
+    local catalog = vim.fn.json_decode(http_get(catalog_url(kind)))
+    local index = gen_index(catalog.schemas)
+    catalog.index = index
+    return catalog
+end
+local function years_from(from, to)
+    local cur_year = tonumber(os.date('%Y'))
+    to = to and to or cur_year
+    return from == to and tostring(from) or ('%d-%d'):format(from, to)
+end
+
 M.config = {
     base_url = 'https://www.schemastore.org/api',
-    out = '/dev/stdout',
     copyright_notice = ([[
 -- !! AUTO-GENERATED - DO NOT EDIT !!
 --
@@ -194,16 +190,8 @@ M.config = {
 --  limitations under the License.
 
 ]]):format(years_from(2026), years_from(2025)),
+    out = '/dev/stdout',
 }
-function M.setup(config)
-    local c = vim.tbl_deep_extend('force', M.config, config)
-    if not c.out or c.out == '-' or c.out == '' then
-        c.out = '/dev/stdout'
-    end
-    M.config = c
-    return M
-end
-
 function M.run()
     local catalog_module = gen_module({
         json = vim.inspect(get_catalog('json')),
@@ -215,6 +203,14 @@ function M.run()
         M.config.out
     )
     assert(ok == 0, 'Write failed: ' .. vim.v.errmsg)
+end
+function M.setup(config)
+    local c = vim.tbl_deep_extend('force', M.config, config)
+    if not c.out or c.out == '-' or c.out == '' then
+        c.out = '/dev/stdout'
+    end
+    M.config = c
+    return M
 end
 
 return M

@@ -3,8 +3,8 @@
 -- SPDX-License-Identifier: Apache-2.0
 local api = vim.api
 local M = {}
-local OUTPUT_BYTES_MAX = 8 * 1024 * 1024
 local DIAGNOSTICS_MAX = 20000
+local OUTPUT_BYTES_MAX = 8 * 1024 * 1024
 
 local function canonical(path, cwd)
     if not path:match('^/') and not path:match('^%a:[/\\]') then

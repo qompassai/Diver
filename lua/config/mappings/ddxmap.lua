@@ -15,8 +15,8 @@ local NATIVE_FILETYPES = {
     rust = true,
     zig = true,
 }
-local options = {}
 local group
+local options = {}
 
 local function backend(bufnr)
     local wrapper = options.wrapper or package.loaded.dap
@@ -177,14 +177,6 @@ local function attach(bufnr)
     core.install(OWNER, bufnr, maps)
 end
 
-function M.teardown()
-    core.teardown(OWNER)
-    if group then
-        api.nvim_del_augroup_by_id(group)
-        group = nil
-    end
-end
-
 function M.setup(opts)
     M.teardown()
     options = opts or {}
@@ -205,6 +197,14 @@ function M.setup(opts)
             end
         end,
     })
+end
+
+function M.teardown()
+    core.teardown(OWNER)
+    if group then
+        api.nvim_del_augroup_by_id(group)
+        group = nil
+    end
 end
 
 M.setup_ddxmap = M.setup

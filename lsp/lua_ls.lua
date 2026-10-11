@@ -61,10 +61,24 @@ return ---@type vim.lsp.Config
                     globals = {
                         'hl',
                     },
+                    -- Align with ~/.config/hypr/.luarc.jsonc: typo'd option
+                    -- keys and dispatcher names (undefined-field) are the
+                    -- highest-value check for config files, so evaluate
+                    -- them for unopened files too, at Warning severity.
+                    neededFileStatus = {
+                        ['undefined-field'] = 'Any',
+                    },
+                    severity = {
+                        ['undefined-field'] = 'Warning',
+                    },
                 },
                 workspace = {
                     library = {
                         '/usr/share/hypr/stubs',
+                        -- Hand-written overlay narrowing the generated
+                        -- stub's remaining fun(...): any signatures
+                        -- (animation / curve / dsp argument tables).
+                        '/home/phaedrus/.config/hypr/stubs',
                     },
                 },
             },

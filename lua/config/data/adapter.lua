@@ -57,7 +57,6 @@ local KNOWN_KINDS = {
 ---@field module table
 ---@field name string
 ---@field schemes table<string, boolean>
-
 M.state = {
     ---@type table<string, DbAdapter>
     adapters = {},
@@ -91,150 +90,6 @@ local function to_set(list)
     end
 
     return set
-end
-
----Register a backend adapter under `name`, indexing its schemes and (for
----file-kind adapters) its file extensions for later lookup.
----
----Registering the same name twice replaces the previous registration and
----its index entries outright; it does not merge schemes/extensions.
----
----@param name string
----@param opts { module: table, schemes: string[], kind: 'file'|'connection', extensions?: string[] }
-function M.register(name, opts)
-    assert(name_is_valid(name), 'adapter name must be a non-empty string')
-    assert(type(opts) == 'table', 'adapter opts must be a table')
-    assert(type(opts.module) == 'table', 'adapter module must be a table')
-    assert(KNOWN_KINDS[opts.kind] == true, "adapter kind must be 'file' or 'connection'")
-    assert(type(opts.schemes) == 'table' and #opts.schemes > 0, 'adapter needs at least one scheme')
-
-    if opts.kind == 'file' then
-        assert(
-            type(opts.extensions) == 'table' and #opts.extensions > 0,
-            "file-kind adapters need at least one entry in 'extensions'"
-        )
-    end
-
-    -- Remove this name's previous index entries before re-registering,
-    -- so a scheme/extension does not point at a stale adapter name.
-    local previous = M.state.adapters[name]
-
-    if previous ~= nil then
-        for scheme in pairs(previous.schemes) do
-            if M.state.scheme_index[scheme] == name then
-                M.state.scheme_index[scheme] = nil
-            end
-        end
-
-        for extension in pairs(previous.extensions) do
-            if M.state.extension_index[extension] == name then
-                M.state.extension_index[extension] = nil
-            end
-        end
-    end
-
-    ---@type DbAdapter
-    local entry = {
-        extensions = to_set(opts.extensions),
-        kind = opts.kind,
-        module = opts.module,
-        name = name,
-        schemes = to_set(opts.schemes),
-    }
-
-    M.state.adapters[name] = entry
-
-    for scheme in pairs(entry.schemes) do
-        M.state.scheme_index[scheme] = name
-    end
-
-    for extension in pairs(entry.extensions) do
-        M.state.extension_index[extension] = name
-    end
-end
-
----@param name string
-function M.unregister(name)
-    local entry = M.state.adapters[name]
-
-    if entry == nil then
-        return
-    end
-
-    for scheme in pairs(entry.schemes) do
-        if M.state.scheme_index[scheme] == name then
-            M.state.scheme_index[scheme] = nil
-        end
-    end
-
-    for extension in pairs(entry.extensions) do
-        if M.state.extension_index[extension] == name then
-            M.state.extension_index[extension] = nil
-        end
-    end
-
-    M.state.adapters[name] = nil
-end
-
----@param scheme string
----@return string|nil
-function M.resolve_scheme(scheme)
-    if type(scheme) ~= 'string' then
-        return nil
-    end
-
-    return M.state.scheme_index[scheme:lower()]
-end
-
----@param extension string
----@return string|nil
-function M.resolve_extension(extension)
-    if type(extension) ~= 'string' then
-        return nil
-    end
-
-    return M.state.extension_index[extension:lower()]
-end
-
----@param name string
----@return DbAdapter|nil
----@return string|nil
-function M.get(name)
-    local entry = M.state.adapters[name]
-
-    if entry == nil then
-        return nil, 'no adapter registered under: ' .. tostring(name)
-    end
-
-    return entry, nil
-end
-
----@param name string
----@return string|nil
-function M.kind(name)
-    local entry = M.state.adapters[name]
-
-    if entry == nil then
-        return nil
-    end
-
-    return entry.kind
-end
-
----Equivalent of db#adapter#supports: does this adapter's module have a
----callable function under this name.
----
----@param name string
----@param fn_name string
----@return boolean
-function M.supports(name, fn_name)
-    local entry = M.state.adapters[name]
-
-    if entry == nil then
-        return false
-    end
-
-    return type(entry.module[fn_name]) == 'function'
 end
 
 ---Equivalent of db#adapter#call: call module[fn_name](...) if it exists.
@@ -301,6 +156,123 @@ function M.dispatch(url_or_scheme, fn_name, ...)
     return M.call(name, fn_name, ...)
 end
 
+---@param name string
+---@return DbAdapter|nil
+---@return string|nil
+function M.get(name)
+    local entry = M.state.adapters[name]
+
+    if entry == nil then
+        return nil, 'no adapter registered under: ' .. tostring(name)
+    end
+
+    return entry, nil
+end
+
+---@param name string
+---@return string|nil
+function M.kind(name)
+    local entry = M.state.adapters[name]
+
+    if entry == nil then
+        return nil
+    end
+
+    return entry.kind
+end
+
+---@return string[]
+function M.names()
+    local names = {}
+
+    for name in pairs(M.state.adapters) do
+        names[#names + 1] = name
+    end
+
+    table.sort(names)
+    return names
+end
+
+---Register a backend adapter under `name`, indexing its schemes and (for
+---file-kind adapters) its file extensions for later lookup.
+---
+---Registering the same name twice replaces the previous registration and
+---its index entries outright; it does not merge schemes/extensions.
+---
+---@param name string
+---@param opts { module: table, schemes: string[], kind: 'file'|'connection', extensions?: string[] }
+function M.register(name, opts)
+    assert(name_is_valid(name), 'adapter name must be a non-empty string')
+    assert(type(opts) == 'table', 'adapter opts must be a table')
+    assert(type(opts.module) == 'table', 'adapter module must be a table')
+    assert(KNOWN_KINDS[opts.kind] == true, "adapter kind must be 'file' or 'connection'")
+    assert(type(opts.schemes) == 'table' and #opts.schemes > 0, 'adapter needs at least one scheme')
+
+    if opts.kind == 'file' then
+        assert(
+            type(opts.extensions) == 'table' and #opts.extensions > 0,
+            "file-kind adapters need at least one entry in 'extensions'"
+        )
+    end
+
+    -- Remove this name's previous index entries before re-registering,
+    -- so a scheme/extension does not point at a stale adapter name.
+    local previous = M.state.adapters[name]
+
+    if previous ~= nil then
+        for scheme in pairs(previous.schemes) do
+            if M.state.scheme_index[scheme] == name then
+                M.state.scheme_index[scheme] = nil
+            end
+        end
+
+        for extension in pairs(previous.extensions) do
+            if M.state.extension_index[extension] == name then
+                M.state.extension_index[extension] = nil
+            end
+        end
+    end
+
+    ---@type DbAdapter
+    local entry = {
+        extensions = to_set(opts.extensions),
+        kind = opts.kind,
+        module = opts.module,
+        name = name,
+        schemes = to_set(opts.schemes),
+    }
+
+    M.state.adapters[name] = entry
+
+    for scheme in pairs(entry.schemes) do
+        M.state.scheme_index[scheme] = name
+    end
+
+    for extension in pairs(entry.extensions) do
+        M.state.extension_index[extension] = name
+    end
+end
+
+---@param extension string
+---@return string|nil
+function M.resolve_extension(extension)
+    if type(extension) ~= 'string' then
+        return nil
+    end
+
+    return M.state.extension_index[extension:lower()]
+end
+
+---@param scheme string
+---@return string|nil
+function M.resolve_scheme(scheme)
+    if type(scheme) ~= 'string' then
+        return nil
+    end
+
+    return M.state.scheme_index[scheme:lower()]
+end
+
 ---Equivalent of db#adapter#schemes: every scheme known across all
 ---registered adapters, sorted for deterministic listing/completion.
 ---
@@ -316,16 +288,43 @@ function M.schemes()
     return schemes
 end
 
----@return string[]
-function M.names()
-    local names = {}
+---Equivalent of db#adapter#supports: does this adapter's module have a
+---callable function under this name.
+---
+---@param name string
+---@param fn_name string
+---@return boolean
+function M.supports(name, fn_name)
+    local entry = M.state.adapters[name]
 
-    for name in pairs(M.state.adapters) do
-        names[#names + 1] = name
+    if entry == nil then
+        return false
     end
 
-    table.sort(names)
-    return names
+    return type(entry.module[fn_name]) == 'function'
+end
+
+---@param name string
+function M.unregister(name)
+    local entry = M.state.adapters[name]
+
+    if entry == nil then
+        return
+    end
+
+    for scheme in pairs(entry.schemes) do
+        if M.state.scheme_index[scheme] == name then
+            M.state.scheme_index[scheme] = nil
+        end
+    end
+
+    for extension in pairs(entry.extensions) do
+        if M.state.extension_index[extension] == name then
+            M.state.extension_index[extension] = nil
+        end
+    end
+
+    M.state.adapters[name] = nil
 end
 
 return M

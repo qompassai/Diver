@@ -8,10 +8,10 @@
 ---@meta
 ---@alias CppStandard                                      'c++11'|'c++14'|'c++17'|'c++20'|'c++23'
 ---@class CppConfig
----@field standard                                         CppStandard
 ---@field compiler                                         'g++'|'clang++'
 ---@field flags                                            string[]
+---@field standard                                         CppStandard
 ---@class CppModule
 ---@field compile                                          fun(opts?: table): nil
----@field run                                              fun(): nil
 ---@field debug                                            fun(): nil
+---@field run                                              fun(): nil

@@ -4,9 +4,9 @@
 -- Copyright (C) 2026 Qompass AI, All rights reserved
 -- ----------------------------------------
 local M = {} ---@version JIT
+M.clients = require('comms.clients')
 M.mail = require('comms.mail')
 M.mime = require('comms.mime')
-M.clients = require('comms.clients')
 
 ---Initialize the email suite. Safe to call more than once.
 ---@param opts? table mail.setup options; opts.clients feeds clients.setup

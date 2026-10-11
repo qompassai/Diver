@@ -22,9 +22,9 @@
 -- windows inside the current session.
 ---@module 'utils.tmux'
 
-local M = {}
-
 local api = vim.api
+
+local M = {}
 
 ---Canonical tmux docs, verified 2026-09-27 (the tmux authors' wiki).
 M.DOCS_URL = 'https://github.com/tmux/tmux/wiki'
@@ -33,11 +33,22 @@ M.DOCS_URL = 'https://github.com/tmux/tmux/wiki'
 ---(tag 3.7c, released 2026-08-17).
 M.KNOWN_UPSTREAM_VERSION = '3.7c'
 
-local WINDOWS_MAX = 16 -- most windows one layout may build.
-local SPLITS_MAX = 8 -- most splits one layout window may hold.
+local DIR_TO_TMUX = { down = '-D', left = '-L', right = '-R', up = '-U' }
+local DIR_TO_WINCMD = { down = 'j', left = 'h', right = 'l', up = 'k' }
+---@type utils.toolmgr.Migration[]
+local MIGRATIONS_TMUX = {
+    {
+        version = '3.7c',
+        description = '[template] placeholder for tmux config changes; no-op until a real 3.7c+ change is verified',
+        apply = function()
+            return true, 'template migration: no changes applied'
+        end,
+    },
+}
+
 local PROBE_BYTES_MAX = 256 -- most server-probe bytes kept in a report.
-local DIR_TO_WINCMD = { left = 'h', down = 'j', up = 'k', right = 'l' }
-local DIR_TO_TMUX = { left = '-L', down = '-D', up = '-U', right = '-R' }
+local SPLITS_MAX = 8 -- most splits one layout window may hold.
+local WINDOWS_MAX = 16 -- most windows one layout may build.
 
 M.default_config = {
     -- Canonical docs URL (verified 2026-09-27: the tmux authors' wiki).
@@ -106,79 +117,59 @@ local function check_type(name, value, expected, optional)
     end
 end
 
----Build the live config: factory defaults deep-copied, overrides merged,
----every key type-checked. Never mutates M.default_config.
----@param config table|nil Overrides; nil restores factory defaults.
----@return table merged Live config table.
-function M.setup_config(config)
-    check_type('config', config, 'table', true)
-    local merged = vim.tbl_deep_extend('force', vim.deepcopy(M.default_config), config or {})
-    check_type('docs_url', merged.docs_url, 'string')
-    check_type('keymaps_enabled', merged.keymaps_enabled, 'boolean')
-    check_type('known_upstream_version', merged.known_upstream_version, 'string')
-    check_type('layouts', merged.layouts, 'table')
-    check_type('nav_down', merged.nav_down, 'string')
-    check_type('nav_left', merged.nav_left, 'string')
-    check_type('nav_right', merged.nav_right, 'string')
-    check_type('nav_up', merged.nav_up, 'string')
-    check_type('select_impl', merged.select_impl, 'function')
-    check_type('timeout_ms', merged.timeout_ms, 'number')
-    check_type('tmux_bin', merged.tmux_bin, 'string')
-    check_type('tmux_version_min', merged.tmux_version_min, 'string')
-    check_type('update_repo', merged.update_repo, 'string')
-    if merged.timeout_ms < 1 or merged.timeout_ms > 300000 then
-        error('tmux: timeout_ms must be 1..300000', 2)
+---:TmuxDocs -- open the verified upstream tmux documentation.
+local function cmd_docs()
+    local url = M.config.docs_url
+    local opened = vim.ui.open ~= nil and pcall(vim.ui.open, url)
+    if not opened then
+        vim.notify('tmux docs: ' .. url, vim.log.levels.INFO)
     end
-    if merged.tmux_bin == '' then
-        error('tmux: tmux_bin must not be blank', 2)
+end
+
+---:TmuxLayout [name] -- build a named layout; picker when omitted.
+---@param cmd_opts table nvim_create_user_command callback options.
+local function cmd_layout(cmd_opts)
+    local name = vim.trim(cmd_opts.args or '')
+    local function apply(layout_name)
+        local ok, err = M.apply_layout(layout_name)
+        if not ok then
+            vim.notify('TmuxLayout: ' .. tostring(err), vim.log.levels.ERROR)
+            return
+        end
+        vim.notify('tmux: layout ' .. layout_name .. ' applied', vim.log.levels.INFO)
     end
-    return merged
+    if name ~= '' then
+        apply(name)
+        return
+    end
+    local names = M.layout_names()
+    if #names == 0 then
+        vim.notify('TmuxLayout: no layouts configured', vim.log.levels.WARN)
+        return
+    end
+    M.config.select_impl(names, { prompt = 'Tmux layout:' }, function(_, choice_idx)
+        if choice_idx == nil or choice_idx < 1 or choice_idx > #names then
+            return
+        end
+        apply(names[choice_idx])
+    end)
 end
 
----@type utils.toolmgr.Migration[]
-local MIGRATIONS_TMUX = {
-    {
-        version = '3.7c',
-        description = '[template] placeholder for tmux config changes; no-op until a real 3.7c+ change is verified',
-        apply = function()
-            return true, 'template migration: no changes applied'
-        end,
-    },
-}
-
-local setup_done = false
-
----True while Neovim runs inside a tmux client ($TMUX set and non-empty).
----@return boolean
-function M.inside_tmux()
-    local tmux_env = vim.env.TMUX
-    return tmux_env ~= nil and tmux_env ~= ''
-end
-
----True when the configured tmux binary is on PATH.
----@return boolean
-function M.tmux_available()
-    return vim.fn.executable(M.config.tmux_bin) == 1
-end
-
----Installed tmux version via `tmux -V` (dotted, e.g. '3.7').
----@return string|nil version
----@return string|nil err
-function M.tmux_version()
+---:TmuxUpdateCheck -- toolmgr update dialog for tmux.
+local function cmd_update_check()
     local toolmgr = require('utils.toolmgr')
-    return toolmgr.command_version({ M.config.tmux_bin, '-V' })
+    for _, spec in ipairs(M.update_specs()) do
+        toolmgr.check_update(spec)
+    end
 end
 
----Whether a Neovim window exists in direction. Test seam: override in
----tests to steer navigation without moving windows.
----@param direction string 'left'|'right'|'up'|'down'
----@return boolean
-function M.win_in_direction(direction)
-    local flag = DIR_TO_WINCMD[direction]
-    assert(flag ~= nil, 'direction must be one of left/right/up/down')
-    local target = vim.fn.winnr(flag)
-    local current = vim.fn.winnr()
-    return target ~= 0 and target ~= current
+---:TmuxValidate -- one vim.notify per check; missing pieces say
+---"unavailable", never an error.
+local function cmd_validate()
+    for _, check in ipairs(M.checks()) do
+        local level = check.status == 'ok' and vim.log.levels.INFO or vim.log.levels.WARN
+        vim.notify(('tmux %-8s %-13s %s'):format(check.name, check.status, check.detail), level)
+    end
 end
 
 ---True when a floating window is focused; navigation never fires there.
@@ -187,45 +178,6 @@ local function floating_focused()
     local win_config = api.nvim_win_get_config(0)
     local relative = win_config.relative
     return relative ~= nil and relative ~= ''
-end
-
----Move in direction: :wincmd when a Neovim window exists there, else
----`tmux select-pane` when inside tmux. Returns (true, 'nvim'|'tmux')
----when something moved, (false, reason) when nothing did, (nil, err) on
----tmux failure. Never shells out when not inside tmux.
----@param direction string 'left'|'right'|'up'|'down'
----@return boolean|nil moved
----@return string|nil where_or_err
-function M.navigate(direction)
-    if DIR_TO_WINCMD[direction] == nil then
-        return nil, 'unknown direction: ' .. tostring(direction)
-    end
-    if floating_focused() then
-        return false, 'floating window focused; navigation skipped'
-    end
-    if M.win_in_direction(direction) then
-        vim.cmd('wincmd ' .. DIR_TO_WINCMD[direction])
-        return true, 'nvim'
-    end
-    if not M.inside_tmux() then
-        return false, 'not inside tmux; no Neovim window in that direction'
-    end
-    if not M.tmux_available() then
-        return false, 'tmux is unavailable'
-    end
-    local rce = require('security.rce')
-    local result, exec_err = rce.safe_exec(
-        { M.config.tmux_bin, 'select-pane', DIR_TO_TMUX[direction] },
-        { timeout_ms = M.config.timeout_ms }
-    )
-    if exec_err ~= nil then
-        return nil, exec_err
-    end
-    assert(result ~= nil, 'safe_exec returned no error but no result')
-    if result.code ~= 0 then
-        return nil, ('tmux select-pane exited %d'):format(result.code)
-    end
-    return true, 'tmux'
 end
 
 ---Direction list paired with its configured key, in fixed order.
@@ -270,15 +222,23 @@ local function register_keymaps()
     end
 end
 
----Sorted layout names for pickers and completion.
----@return string[]
-function M.layout_names()
-    local names = {}
-    for name, _ in pairs(M.config.layouts) do
-        names[#names + 1] = name
+---Run one tmux argv step; (true) or (nil, err). safe_exec reports
+---spawn and timeout failures; a non-zero exit is checked here.
+---@param argv string[]
+---@param op string Operation label for error messages.
+---@return boolean|nil ok
+---@return string|nil err
+local function run_step(argv, op)
+    local rce = require('security.rce')
+    local result, exec_err = rce.safe_exec(argv, { timeout_ms = M.config.timeout_ms })
+    if exec_err ~= nil then
+        return nil, 'tmux ' .. op .. ' failed: ' .. exec_err
     end
-    table.sort(names)
-    return names
+    assert(result ~= nil, 'safe_exec returned no error but no result')
+    if result.code ~= 0 then
+        return nil, ('tmux %s exited %d'):format(op, result.code)
+    end
+    return true, nil
 end
 
 ---Validate one split entry { direction, percent }.
@@ -331,48 +291,7 @@ local function validate_entry(entry)
     return nil
 end
 
----Validate a named layout from M.config.layouts.
----@param name string
----@return boolean ok
----@return string|nil err
-function M.validate_layout(name)
-    local layout = M.config.layouts[name]
-    if layout == nil then
-        return false, 'unknown layout: ' .. tostring(name)
-    end
-    if type(layout) ~= 'table' or #layout == 0 then
-        return false, 'layout ' .. name .. ' must be a non-empty list of entries'
-    end
-    if #layout > WINDOWS_MAX then
-        return false, ('layout %s holds %d windows; at most %d'):format(name, #layout, WINDOWS_MAX)
-    end
-    for _, entry in ipairs(layout) do
-        local entry_err = validate_entry(entry)
-        if entry_err ~= nil then
-            return false, 'layout ' .. name .. ': ' .. entry_err
-        end
-    end
-    return true, nil
-end
-
----Run one tmux argv step; (true) or (nil, err). safe_exec reports
----spawn and timeout failures; a non-zero exit is checked here.
----@param argv string[]
----@param op string Operation label for error messages.
----@return boolean|nil ok
----@return string|nil err
-local function run_step(argv, op)
-    local rce = require('security.rce')
-    local result, exec_err = rce.safe_exec(argv, { timeout_ms = M.config.timeout_ms })
-    if exec_err ~= nil then
-        return nil, 'tmux ' .. op .. ' failed: ' .. exec_err
-    end
-    assert(result ~= nil, 'safe_exec returned no error but no result')
-    if result.code ~= 0 then
-        return nil, ('tmux %s exited %d'):format(op, result.code)
-    end
-    return true, nil
-end
+local setup_done = false
 
 ---Build a named layout inside the current tmux session: one new-window
 ---per entry, then that entry's splits. Refuses when not inside tmux or
@@ -525,6 +444,134 @@ function M.checks()
     return checks
 end
 
+---True while Neovim runs inside a tmux client ($TMUX set and non-empty).
+---@return boolean
+function M.inside_tmux()
+    local tmux_env = vim.env.TMUX
+    return tmux_env ~= nil and tmux_env ~= ''
+end
+
+---Sorted layout names for pickers and completion.
+---@return string[]
+function M.layout_names()
+    local names = {}
+    for name, _ in pairs(M.config.layouts) do
+        names[#names + 1] = name
+    end
+    table.sort(names)
+    return names
+end
+
+---Move in direction: :wincmd when a Neovim window exists there, else
+---`tmux select-pane` when inside tmux. Returns (true, 'nvim'|'tmux')
+---when something moved, (false, reason) when nothing did, (nil, err) on
+---tmux failure. Never shells out when not inside tmux.
+---@param direction string 'left'|'right'|'up'|'down'
+---@return boolean|nil moved
+---@return string|nil where_or_err
+function M.navigate(direction)
+    if DIR_TO_WINCMD[direction] == nil then
+        return nil, 'unknown direction: ' .. tostring(direction)
+    end
+    if floating_focused() then
+        return false, 'floating window focused; navigation skipped'
+    end
+    if M.win_in_direction(direction) then
+        vim.cmd('wincmd ' .. DIR_TO_WINCMD[direction])
+        return true, 'nvim'
+    end
+    if not M.inside_tmux() then
+        return false, 'not inside tmux; no Neovim window in that direction'
+    end
+    if not M.tmux_available() then
+        return false, 'tmux is unavailable'
+    end
+    local rce = require('security.rce')
+    local result, exec_err = rce.safe_exec(
+        { M.config.tmux_bin, 'select-pane', DIR_TO_TMUX[direction] },
+        { timeout_ms = M.config.timeout_ms }
+    )
+    if exec_err ~= nil then
+        return nil, exec_err
+    end
+    assert(result ~= nil, 'safe_exec returned no error but no result')
+    if result.code ~= 0 then
+        return nil, ('tmux select-pane exited %d'):format(result.code)
+    end
+    return true, 'tmux'
+end
+
+---Register commands and keymaps. Idempotent: commands are created once;
+---the config is rebuilt on every call. Performs no subprocess I/O.
+---@param config? table Overrides merged over M.default_config.
+function M.setup(config)
+    M.config = M.setup_config(config)
+    register_keymaps()
+    if setup_done then
+        return
+    end
+    setup_done = true
+    api.nvim_create_user_command('TmuxDocs', cmd_docs, { desc = 'Open the tmux documentation' })
+    api.nvim_create_user_command('TmuxLayout', cmd_layout, {
+        nargs = '?',
+        complete = function(arg_lead, _, _)
+            local names = {}
+            for _, name in ipairs(M.layout_names()) do
+                if name:sub(1, #arg_lead) == arg_lead then
+                    names[#names + 1] = name
+                end
+            end
+            return names
+        end,
+        desc = 'Build a named tmux layout inside the current session',
+    })
+    api.nvim_create_user_command('TmuxUpdateCheck', cmd_update_check, { desc = 'tmux release check via toolmgr' })
+    api.nvim_create_user_command('TmuxValidate', cmd_validate, { desc = 'Per-check tmux validation report' })
+end
+
+---Build the live config: factory defaults deep-copied, overrides merged,
+---every key type-checked. Never mutates M.default_config.
+---@param config table|nil Overrides; nil restores factory defaults.
+---@return table merged Live config table.
+function M.setup_config(config)
+    check_type('config', config, 'table', true)
+    local merged = vim.tbl_deep_extend('force', vim.deepcopy(M.default_config), config or {})
+    check_type('docs_url', merged.docs_url, 'string')
+    check_type('keymaps_enabled', merged.keymaps_enabled, 'boolean')
+    check_type('known_upstream_version', merged.known_upstream_version, 'string')
+    check_type('layouts', merged.layouts, 'table')
+    check_type('nav_down', merged.nav_down, 'string')
+    check_type('nav_left', merged.nav_left, 'string')
+    check_type('nav_right', merged.nav_right, 'string')
+    check_type('nav_up', merged.nav_up, 'string')
+    check_type('select_impl', merged.select_impl, 'function')
+    check_type('timeout_ms', merged.timeout_ms, 'number')
+    check_type('tmux_bin', merged.tmux_bin, 'string')
+    check_type('tmux_version_min', merged.tmux_version_min, 'string')
+    check_type('update_repo', merged.update_repo, 'string')
+    if merged.timeout_ms < 1 or merged.timeout_ms > 300000 then
+        error('tmux: timeout_ms must be 1..300000', 2)
+    end
+    if merged.tmux_bin == '' then
+        error('tmux: tmux_bin must not be blank', 2)
+    end
+    return merged
+end
+
+---True when the configured tmux binary is on PATH.
+---@return boolean
+function M.tmux_available()
+    return vim.fn.executable(M.config.tmux_bin) == 1
+end
+
+---Installed tmux version via `tmux -V` (dotted, e.g. '3.7').
+---@return string|nil version
+---@return string|nil err
+function M.tmux_version()
+    local toolmgr = require('utils.toolmgr')
+    return toolmgr.command_version({ M.config.tmux_bin, '-V' })
+end
+
 ---The toolmgr update spec for tmux. Pure data; current_version is nil
 ---when the tool is absent, which check_update treats as "not installed".
 ---@return utils.toolmgr.UpdateSpec[]
@@ -545,87 +592,40 @@ function M.update_specs()
     }
 end
 
----:TmuxLayout [name] -- build a named layout; picker when omitted.
----@param cmd_opts table nvim_create_user_command callback options.
-local function cmd_layout(cmd_opts)
-    local name = vim.trim(cmd_opts.args or '')
-    local function apply(layout_name)
-        local ok, err = M.apply_layout(layout_name)
-        if not ok then
-            vim.notify('TmuxLayout: ' .. tostring(err), vim.log.levels.ERROR)
-            return
+---Validate a named layout from M.config.layouts.
+---@param name string
+---@return boolean ok
+---@return string|nil err
+function M.validate_layout(name)
+    local layout = M.config.layouts[name]
+    if layout == nil then
+        return false, 'unknown layout: ' .. tostring(name)
+    end
+    if type(layout) ~= 'table' or #layout == 0 then
+        return false, 'layout ' .. name .. ' must be a non-empty list of entries'
+    end
+    if #layout > WINDOWS_MAX then
+        return false, ('layout %s holds %d windows; at most %d'):format(name, #layout, WINDOWS_MAX)
+    end
+    for _, entry in ipairs(layout) do
+        local entry_err = validate_entry(entry)
+        if entry_err ~= nil then
+            return false, 'layout ' .. name .. ': ' .. entry_err
         end
-        vim.notify('tmux: layout ' .. layout_name .. ' applied', vim.log.levels.INFO)
     end
-    if name ~= '' then
-        apply(name)
-        return
-    end
-    local names = M.layout_names()
-    if #names == 0 then
-        vim.notify('TmuxLayout: no layouts configured', vim.log.levels.WARN)
-        return
-    end
-    M.config.select_impl(names, { prompt = 'Tmux layout:' }, function(_, choice_idx)
-        if choice_idx == nil or choice_idx < 1 or choice_idx > #names then
-            return
-        end
-        apply(names[choice_idx])
-    end)
+    return true, nil
 end
 
----:TmuxDocs -- open the verified upstream tmux documentation.
-local function cmd_docs()
-    local url = M.config.docs_url
-    local opened = vim.ui.open ~= nil and pcall(vim.ui.open, url)
-    if not opened then
-        vim.notify('tmux docs: ' .. url, vim.log.levels.INFO)
-    end
-end
-
----:TmuxValidate -- one vim.notify per check; missing pieces say
----"unavailable", never an error.
-local function cmd_validate()
-    for _, check in ipairs(M.checks()) do
-        local level = check.status == 'ok' and vim.log.levels.INFO or vim.log.levels.WARN
-        vim.notify(('tmux %-8s %-13s %s'):format(check.name, check.status, check.detail), level)
-    end
-end
-
----:TmuxUpdateCheck -- toolmgr update dialog for tmux.
-local function cmd_update_check()
-    local toolmgr = require('utils.toolmgr')
-    for _, spec in ipairs(M.update_specs()) do
-        toolmgr.check_update(spec)
-    end
-end
-
----Register commands and keymaps. Idempotent: commands are created once;
----the config is rebuilt on every call. Performs no subprocess I/O.
----@param config? table Overrides merged over M.default_config.
-function M.setup(config)
-    M.config = M.setup_config(config)
-    register_keymaps()
-    if setup_done then
-        return
-    end
-    setup_done = true
-    api.nvim_create_user_command('TmuxLayout', cmd_layout, {
-        nargs = '?',
-        complete = function(arg_lead, _, _)
-            local names = {}
-            for _, name in ipairs(M.layout_names()) do
-                if name:sub(1, #arg_lead) == arg_lead then
-                    names[#names + 1] = name
-                end
-            end
-            return names
-        end,
-        desc = 'Build a named tmux layout inside the current session',
-    })
-    api.nvim_create_user_command('TmuxDocs', cmd_docs, { desc = 'Open the tmux documentation' })
-    api.nvim_create_user_command('TmuxValidate', cmd_validate, { desc = 'Per-check tmux validation report' })
-    api.nvim_create_user_command('TmuxUpdateCheck', cmd_update_check, { desc = 'tmux release check via toolmgr' })
+---Whether a Neovim window exists in direction. Test seam: override in
+---tests to steer navigation without moving windows.
+---@param direction string 'left'|'right'|'up'|'down'
+---@return boolean
+function M.win_in_direction(direction)
+    local flag = DIR_TO_WINCMD[direction]
+    assert(flag ~= nil, 'direction must be one of left/right/up/down')
+    local target = vim.fn.winnr(flag)
+    local current = vim.fn.winnr()
+    return target ~= 0 and target ~= current
 end
 
 return M

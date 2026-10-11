@@ -12,13 +12,13 @@
 ---@meta
 ---@class Python.Module
 ---@field chan?                                            integer
----@field start                                            fun(): integer|nil
 ---@field setup_commands                                   fun(): nil
+---@field start                                            fun(): integer|nil
 ---@class Python.Globals
+---@field loaded_python3_provider?                         integer
+---@field loaded_python_provider?                          integer
 ---@field python3_host_prog?                               string
 ---@field python_host_prog?                                string
----@field loaded_python_provider?                          integer
----@field loaded_python3_provider?                         integer
 ---@type Python.Module
 ---@alias python.interpreter_version
 ---| '3.8'
@@ -30,9 +30,9 @@
 ---| '3.14'
 ---@alias python.lsp_client
 ---| 'basedpyright'
----| 'pyrefly_ls'
 ---| 'pylsp'
 ---| 'pylyzer'
+---| 'pyrefly_ls'
 ---| 'ruff_ls'
 ---| 'ty_ls'
 ---@alias python.linter
@@ -50,14 +50,14 @@
 ---| 'ruff'
 ---| 'yapf'
 ---@alias python.test_framework
----| 'pytest'
----| 'unittest'
 ---| 'nose'
 ---| 'nose2'
+---| 'pytest'
+---| 'unittest'
 ---@alias python.import_style
+---| 'cryptography'
 ---| 'google'
 ---| 'pep8'
----| 'cryptography'
 ---| 'pycharm'
 ---@alias ruff.line_length
 ---| 79
@@ -91,18 +91,18 @@
 ---| 'UP'   # pyupgrade
 ---| 'W'    # pycodestyle warnings
 ---@class python.config
----@field interpreter?                                     string
----@field version?                                         python.interpreter_version
----@field venv_path?                                       string
----@field venv_name?                                       string Virtual environment name
----@field host_prog?                                       string Path to Python host program
----@field lsp_clients?                                     python.lsp_client[]
----@field linters?                                         python.linter[] Enabled linters
----@field formatters?                                      python.formatter[] Enabled formatters
----@field test_framework?                                  python.test_framework Test framework to use
 ---@field format_on_save?                                  boolean Auto-format on save
+---@field formatters?                                      python.formatter[] Enabled formatters
+---@field host_prog?                                       string Path to Python host program
+---@field interpreter?                                     string
 ---@field lint_on_save?                                    boolean Auto-lint on save
+---@field linters?                                         python.linter[] Enabled linters
+---@field lsp_clients?                                     python.lsp_client[]
 ---@field organize_imports?                                boolean Auto-organize imports
+---@field test_framework?                                  python.test_framework Test framework to use
+---@field venv_name?                                       string Virtual environment name
+---@field venv_path?                                       string
+---@field version?                                         python.interpreter_version
 ---@class ruff.config
 ---@field cache_dir?                                       string Cache directory for ruff
 ---@field exclude?                                         string[] Files/directories to exclude
@@ -293,9 +293,9 @@
 ---@field warn_no_return?                                  boolean Warn on no return
 ---@field warn_redundant_casts?                            boolean Warn on redundant casts
 ---@field warn_return_any?                                 boolean Warn on return any
+---@field warn_unreachable?                                boolean Warn on unreachable code
 ---@field warn_unused_configs?                             boolean Warn on unused configs
 ---@field warn_unused_ignores?                             boolean Warn on unused ignores
----@field warn_unreachable?                                boolean Warn on unreachable code
 ---@class basedpyright.config
 ---@field analysis?                                        basedpyright.analysis Analysis settings
 ---@field python?                                          basedpyright.python Python settings

@@ -25,11 +25,11 @@ M.config = {
     download_ext = {
         'cab',
         'exe',
-        'zip',
+        'gz',
         'lzh',
         'tar',
-        'gz',
         'z',
+        'zip',
     },
     external_browser = 'chrome',
     hit_a_hint_key = 'f',
@@ -94,16 +94,68 @@ local function get_search_engine()
         return string.format('https://www.google.com/search?q=%%s&ie=%s', vim.o.encoding)
     end
 end
----@param opts? table User configuration
----@return boolean ok true when w3m setup completed
-function M.setup(opts)
-    M.config = vim.tbl_deep_extend('force', M.config, opts or {})
-    if fn.executable(M.config.command) == 0 then
-        notify('w3m is not installed or not in PATH!', levels.ERROR)
-        return false
+---Register the :W3m family of user commands.
+---@return nil
+function M.create_commands()
+    ucmd('W3m', function(opts)
+        M.open(M.OPEN_NORMAL, unpack(opts.fargs))
+    end, {
+        nargs = '*',
+        desc = 'Open URL in w3m browser',
+    })
+    ucmd('W3mLocal', function(opts)
+        if #opts.fargs == 0 then
+            notify('No file path provided', levels.WARN)
+            return
+        end
+        M.open_local(opts.fargs[1])
+    end, {
+        nargs = 1,
+        complete = 'file',
+        desc = 'Open local file in w3m browser',
+    })
+    ucmd('W3mSplit', function(opts)
+        M.open(M.OPEN_SPLIT, unpack(opts.fargs))
+    end, {
+        nargs = '*',
+        desc = 'Open URL in w3m browser (split)',
+    })
+    ucmd('W3mTab', function(opts)
+        M.open(M.OPEN_TAB, unpack(opts.fargs))
+    end, {
+        nargs = '*',
+        desc = 'Open URL in w3m browser (new tab)',
+    })
+
+    ucmd('W3mUserAgent', function(opts)
+        if #opts.fargs == 0 then
+            local agents = M.list_user_agents()
+            notify('Available user agents:\n  ' .. table.concat(agents, '\n  '), levels.INFO)
+        else
+            M.set_user_agent(opts.fargs[1])
+        end
+    end, {
+        nargs = '?',
+        complete = function()
+            return M.list_user_agents()
+        end,
+        desc = 'Set or list user agents',
+    })
+    ucmd('W3mVSplit', function(opts)
+        M.open(M.OPEN_VSPLIT, unpack(opts.fargs))
+    end, {
+        nargs = '*',
+        desc = 'Open URL in w3m browser (vertical split)',
+    })
+end
+
+---@return table List
+function M.list_user_agents()
+    local names = {}
+    for _, ua in ipairs(M.user_agents) do
+        table.insert(names, ua.name)
     end
-    M.create_commands()
-    return true
+    return names
 end
 
 ---Open URL in w3m
@@ -141,7 +193,6 @@ function M.open(mode, ...)
             end
         end,
     })
-    bo[buf].buftype = 'nofile'
     bo[buf].bufhidden = 'wipe'
     bo[buf].swapfile = false
     bo[buf].filetype = 'w3m'
@@ -159,15 +210,6 @@ function M.open_local(path)
     M.open(M.OPEN_NORMAL, 'file://' .. full_path)
 end
 
----@return table List
-function M.list_user_agents()
-    local names = {}
-    for _, ua in ipairs(M.user_agents) do
-        table.insert(names, ua.name)
-    end
-    return names
-end
-
 ---@param name string
 ---@return boolean ok true when the user agent was found and applied
 function M.set_user_agent(name)
@@ -182,59 +224,16 @@ function M.set_user_agent(name)
     return false
 end
 
----Register the :W3m family of user commands.
----@return nil
-function M.create_commands()
-    ucmd('W3m', function(opts)
-        M.open(M.OPEN_NORMAL, unpack(opts.fargs))
-    end, {
-        nargs = '*',
-        desc = 'Open URL in w3m browser',
-    })
-    ucmd('W3mTab', function(opts)
-        M.open(M.OPEN_TAB, unpack(opts.fargs))
-    end, {
-        nargs = '*',
-        desc = 'Open URL in w3m browser (new tab)',
-    })
-
-    ucmd('W3mSplit', function(opts)
-        M.open(M.OPEN_SPLIT, unpack(opts.fargs))
-    end, {
-        nargs = '*',
-        desc = 'Open URL in w3m browser (split)',
-    })
-    ucmd('W3mVSplit', function(opts)
-        M.open(M.OPEN_VSPLIT, unpack(opts.fargs))
-    end, {
-        nargs = '*',
-        desc = 'Open URL in w3m browser (vertical split)',
-    })
-    ucmd('W3mLocal', function(opts)
-        if #opts.fargs == 0 then
-            notify('No file path provided', levels.WARN)
-            return
-        end
-        M.open_local(opts.fargs[1])
-    end, {
-        nargs = 1,
-        complete = 'file',
-        desc = 'Open local file in w3m browser',
-    })
-    ucmd('W3mUserAgent', function(opts)
-        if #opts.fargs == 0 then
-            local agents = M.list_user_agents()
-            notify('Available user agents:\n  ' .. table.concat(agents, '\n  '), levels.INFO)
-        else
-            M.set_user_agent(opts.fargs[1])
-        end
-    end, {
-        nargs = '?',
-        complete = function()
-            return M.list_user_agents()
-        end,
-        desc = 'Set or list user agents',
-    })
+---@param opts? table User configuration
+---@return boolean ok true when w3m setup completed
+function M.setup(opts)
+    M.config = vim.tbl_deep_extend('force', M.config, opts or {})
+    if fn.executable(M.config.command) == 0 then
+        notify('w3m is not installed or not in PATH!', levels.ERROR)
+        return false
+    end
+    M.create_commands()
+    return true
 end
 
 return M

@@ -15,21 +15,12 @@
 -- See the License for the specific language governing permissions and
 -- limitations under the License.
 -- #################################################################
--- /qompassai/diver/lua/utils/ux/virtual_text.lua
 local M = {}
 local ns = vim.api.nvim_create_namespace('utils_virtual')
 ---@param bufnr integer|nil
----@param lnum integer
----@param text string
----@param hl string|nil
----@return integer
-function M.inline_hint(bufnr, lnum, text, hl)
+function M.clear(bufnr)
     bufnr = bufnr or 0
-    hl = hl or 'Comment'
-    return vim.api.nvim_buf_set_extmark(bufnr, ns, lnum, -1, {
-        virt_text = { { text, hl } },
-        virt_text_pos = 'eol',
-    })
+    vim.api.nvim_buf_clear_namespace(bufnr, ns, 0, -1)
 end
 
 ---@param bufnr integer|nil
@@ -45,11 +36,33 @@ function M.code_lens(bufnr, lnum, text, hl)
         virt_text_pos = 'overlay',
     })
 end
+
 ---@param bufnr integer|nil
-function M.clear(bufnr)
+---@param lnum integer
+---@param text string
+---@param hl string|nil
+---@return integer
+function M.inline_hint(bufnr, lnum, text, hl)
     bufnr = bufnr or 0
-    vim.api.nvim_buf_clear_namespace(bufnr, ns, 0, -1)
+    hl = hl or 'Comment'
+    return vim.api.nvim_buf_set_extmark(bufnr, ns, lnum, -1, {
+        virt_text = {
+            {
+                text,
+                hl,
+            },
+        },
+        virt_text_pos = 'eol',
+    })
 end
+
+function M.setup(opts)
+    opts = opts or {}
+    if opts.len_hints then
+        M.setup_len_hints(opts.len_hints.maxlen)
+    end
+end
+
 function M.setup_len_hints(maxlen)
     maxlen = maxlen or 80
     vim.api.nvim_create_autocmd({
@@ -77,12 +90,6 @@ function M.setup_len_hints(maxlen)
             end
         end,
     })
-end
-function M.setup(opts)
-    opts = opts or {}
-    if opts.len_hints then
-        M.setup_len_hints(opts.len_hints.maxlen)
-    end
 end
 
 return M

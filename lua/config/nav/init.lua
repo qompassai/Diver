@@ -6,7 +6,6 @@
 ------------------------------------------------------
 local M = {}
 
-local notify = vim.notify
 local fmt = string.format
 local levels = (vim.log and vim.log.levels)
     or {
@@ -17,6 +16,21 @@ local levels = (vim.log and vim.log.levels)
         ERROR = 4,
         OFF = 5,
     }
+local notify = vim.notify
+
+local function call_if_present(mod, method, opts, verbose, label)
+    if type(mod) ~= 'table' then
+        return
+    end
+    local fn = mod[method]
+    if type(fn) ~= 'function' then
+        return
+    end
+    local ok, err = pcall(fn, opts)
+    if not ok and verbose then
+        notify(fmt('[Diver] %s.%s failed: %s', label or 'module', method, err), levels.ERROR)
+    end
+end
 
 local function safe_require(name, verbose)
     local ok, mod = pcall(require, name)
@@ -45,22 +59,10 @@ local function safe_require(name, verbose)
     return mod
 end
 
-local function call_if_present(mod, method, opts, verbose, label)
-    if type(mod) ~= 'table' then
-        return
-    end
-    local fn = mod[method]
-    if type(fn) ~= 'function' then
-        return
-    end
-    local ok, err = pcall(fn, opts)
-    if not ok and verbose then
-        notify(fmt('[Diver] %s.%s failed: %s', label or 'module', method, err), levels.ERROR)
-    end
-end
-
 local SUBMODULES = {
+    'config.nav.dirring',
     'config.nav.fzf',
+    'config.nav.motion',
     'config.nav.nt',
     'config.nav.ripgrep',
     'config.nav.searxng',

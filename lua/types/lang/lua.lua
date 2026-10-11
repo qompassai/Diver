@@ -27,8 +27,8 @@
 ---@alias luarocks.cmake_generator
 ---| 'MinGW Makefiles'
 ---| 'MSYS Makefiles'
----| 'Ninja'
 ---| 'NMake Makefiles'
+---| 'Ninja'
 ---| 'Unix Makefiles'
 ---@alias luarocks.deps_mode
 ---| 'all'

@@ -5,15 +5,6 @@ local core = require('config.mappings._core')
 local M = {}
 local OWNER = 'bountymap'
 
----BountyReconCancel needs a run id: prompt instead of leaving it unmapped.
-local function prompt_cancel()
-    vim.ui.input({ prompt = 'Recon run id to cancel: ' }, function(id)
-        if id ~= nil and id ~= '' then
-            vim.cmd('BountyReconCancel ' .. vim.fn.escape(id, ' \\'))
-        end
-    end)
-end
-
 ---BountyApprove needs kind + target: pick the kind, then prompt the target.
 local function prompt_approve()
     vim.ui.select({ 'scope', 'finding', 'submission' }, { prompt = 'Gate kind:' }, function(kind)
@@ -25,6 +16,15 @@ local function prompt_approve()
                 vim.cmd('BountyApprove ' .. kind .. ' ' .. vim.fn.escape(target, ' \\'))
             end
         end)
+    end)
+end
+
+---BountyReconCancel needs a run id: prompt instead of leaving it unmapped.
+local function prompt_cancel()
+    vim.ui.input({ prompt = 'Recon run id to cancel: ' }, function(id)
+        if id ~= nil and id ~= '' then
+            vim.cmd('BountyReconCancel ' .. vim.fn.escape(id, ' \\'))
+        end
     end)
 end
 

@@ -6,20 +6,20 @@ local M = {}
 function M.sh_filetype_detection()
     vim.filetype.add({
         extension = {
-            sh = 'bash',
             bash = 'bash',
-            zsh = 'zsh',
             fish = 'fish',
             nu = 'nu',
+            sh = 'bash',
+            zsh = 'zsh',
         },
         pattern = {
-            ['.*.sh'] = 'bash',
             ['.*.bash'] = 'bash',
-            ['.bash*'] = 'bash',
-            ['.*.zsh'] = 'zsh',
-            ['.zsh*'] = 'zsh',
             ['.*.fish'] = 'fish',
             ['.*.nu'] = 'nu',
+            ['.*.sh'] = 'bash',
+            ['.*.zsh'] = 'zsh',
+            ['.bash*'] = 'bash',
+            ['.zsh*'] = 'zsh',
         },
         filename = {
             ['.bashrc'] = 'bash',

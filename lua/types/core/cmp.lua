@@ -9,11 +9,20 @@
 -- Copyright (C) 2026 Qompass AI, All rights reserved
 -- ----------------------------------------
 ---@meta
+---@class blink.cmp.CompletionItem
+---@field kind integer|nil
+---@class blink.cmp.Config
+---@field snippets                             blink.cmp.SnippetsConfig|nil
+---@field sources                              blink.cmp.SourcesConfig|nil
+---@field keymap                               blink.cmp.KeymapConfig|nil
 ---@class blink.cmp.Context
 ---@field bufnr                                            integer
 ---@field cursor { line: integer, col: integer }
----@class blink.cmp.CompletionItem
----@field kind integer|nil
+---@class blink.cmp.KeymapConfig
+---@field preset                              string|nil
+---@class blink.cmp.SnippetsConfig
+---@field preset                              string|nil
+---@field expand                              fun(opts: any): any
 ---@class blink.cmp.SourceProviderConfig
 ---@field name string
 ---@field module string
@@ -23,12 +32,3 @@
 ---@field default                             string[]|nil
 ---@field compat                              string[]|nil
 ---@field providers                           table<string, blink.cmp.SourceProviderConfig>|nil
----@class blink.cmp.SnippetsConfig
----@field preset                              string|nil
----@field expand                              fun(opts: any): any
----@class blink.cmp.KeymapConfig
----@field preset                              string|nil
----@class blink.cmp.Config
----@field snippets                             blink.cmp.SnippetsConfig|nil
----@field sources                              blink.cmp.SourcesConfig|nil
----@field keymap                               blink.cmp.KeymapConfig|nil

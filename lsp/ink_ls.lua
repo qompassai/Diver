@@ -8,7 +8,6 @@ return ---@type vim.lsp.Config
         'ink-lsp-server',
     },
     filetypes = {
-        'rust',
         'ink',
     },
     root_markers = {

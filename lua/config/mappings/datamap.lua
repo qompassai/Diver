@@ -4,10 +4,10 @@ local api = vim.api
 local core = require('config.mappings._core')
 local M = {}
 local OWNER = 'datamap'
-local LINE_COUNT_MAX = 10000
-local LINE_BYTES_MAX = 8192
-local namespace = api.nvim_create_namespace('native_mapping_math')
 local FILETYPES = { markdown = true, plaintex = true, rmd = true, tex = true }
+local LINE_BYTES_MAX = 8192
+local LINE_COUNT_MAX = 10000
+local namespace = api.nvim_create_namespace('native_mapping_math')
 
 local function expression(line)
     if #line > LINE_BYTES_MAX then

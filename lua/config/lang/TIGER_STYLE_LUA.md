@@ -1230,7 +1230,7 @@ Recommended:
 - blank lines between conceptual phases;
 - deterministic formatter output.
 
-Example `stylua.toml` (standalone example; diver's canonical settings are in `lsp/stylua_ls.lua`):
+Example `stylua.toml`:
 
 ```toml
 column_width = 100

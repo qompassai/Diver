@@ -5,6 +5,30 @@
 local M = {} ---@version JIT
 local api = vim.api
 local fn = vim.fn
+local function current_cell_range()
+    local bufnr = api.nvim_get_current_buf()
+    local cur = api.nvim_win_get_cursor(0)
+    local lnum = cur[1]
+    local lines = api.nvim_buf_get_lines(bufnr, 0, -1, false)
+    local start_lnum = 1
+    local end_lnum = #lines
+    for i = lnum, 1, -1 do
+        if lines[i]:match('^## %%%%') then
+            start_lnum = i + 1
+            break
+        end
+    end
+    for i = lnum + 1, #lines do
+        if lines[i]:match('^## %%%%') then
+            end_lnum = i - 1
+            break
+        end
+    end
+    if end_lnum < start_lnum then
+        return nil, nil
+    end
+    return start_lnum, end_lnum
+end
 local function default_cmd_for_ft(ft)
     if ft == 'python' then
         return 'python -i'
@@ -50,30 +74,6 @@ local function prep_code_for_ft(ft, lines)
     end
     return lines
 end
-local function current_cell_range()
-    local bufnr = api.nvim_get_current_buf()
-    local cur = api.nvim_win_get_cursor(0)
-    local lnum = cur[1]
-    local lines = api.nvim_buf_get_lines(bufnr, 0, -1, false)
-    local start_lnum = 1
-    local end_lnum = #lines
-    for i = lnum, 1, -1 do
-        if lines[i]:match('^## %%%%') then
-            start_lnum = i + 1
-            break
-        end
-    end
-    for i = lnum + 1, #lines do
-        if lines[i]:match('^## %%%%') then
-            end_lnum = i - 1
-            break
-        end
-    end
-    if end_lnum < start_lnum then
-        return nil, nil
-    end
-    return start_lnum, end_lnum
-end
 local function send_range_to_term(term_buf, bufnr, start_lnum, end_lnum)
     local ft = vim.bo[bufnr].filetype
     local lines = api.nvim_buf_get_lines(bufnr, start_lnum - 1, end_lnum, false)
@@ -93,6 +93,15 @@ local function send_range_to_term(term_buf, bufnr, start_lnum, end_lnum)
     for _, line in ipairs(lines) do
         fn.chansend(job_id, line .. '\n')
     end
+end
+
+function M.restart_kernel()
+    for _, buf in ipairs(api.nvim_list_bufs()) do
+        if api.nvim_buf_is_loaded(buf) and vim.bo[buf].buftype == 'terminal' then
+            vim.cmd('bwipeout ' .. buf)
+        end
+    end
+    vim.notify('[notebook] kernel terminal will restart on next run', vim.log.levels.INFO)
 end
 
 function M.run_cell()
@@ -119,15 +128,6 @@ function M.run_selection()
     end
     local term_buf = ensure_kernel(default_cmd_for_ft(ft))
     send_range_to_term(term_buf, bufnr, start_lnum, end_lnum)
-end
-
-function M.restart_kernel()
-    for _, buf in ipairs(api.nvim_list_bufs()) do
-        if api.nvim_buf_is_loaded(buf) and vim.bo[buf].buftype == 'terminal' then
-            vim.cmd('bwipeout ' .. buf)
-        end
-    end
-    vim.notify('[notebook] kernel terminal will restart on next run', vim.log.levels.INFO)
 end
 
 return M
