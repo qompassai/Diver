@@ -1,0 +1,8 @@
+[book]
+title = "Diver"
+authors = ["Qompass AI"]
+language = "en"
+src = "src"
+
+[build]
+build-dir = "book"
