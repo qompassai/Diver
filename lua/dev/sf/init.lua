@@ -211,31 +211,37 @@ local LEGACY_MODULES = {
     },
 }
 
-local function register_domain_commands()
+---@return SfCommandSpec[] specs merged specs from every domain module
+local function domain_command_specs()
+    local specs = {}
     for _, module in ipairs(DOMAIN_MODULES) do
         assert(type(module.commands) == 'table', 'Salesforce domain module is missing its command registry')
-        M.core.register_commands(module.commands)
+        for _, spec in ipairs(module.commands) do
+            specs[#specs + 1] = spec
+        end
     end
+    return specs
 end
 
-local function register_legacy_commands()
+---@return SfCommandSpec[] specs merged specs from every legacy module that loads
+local function legacy_command_specs()
+    local specs = {}
     for _, descriptor in ipairs(LEGACY_MODULES) do
         local ok, module = pcall(require, descriptor.name)
         if ok and type(module) == 'table' then
-            local commands = {}
             for _, spec in ipairs(descriptor.commands) do
                 local handler = module[spec.key]
                 if type(handler) == 'function' then
-                    commands[#commands + 1] = {
+                    specs[#specs + 1] = {
                         name = spec.name,
                         fn = handler,
                         opts = spec.opts,
                     }
                 end
             end
-            M.core.register_commands(commands)
         end
     end
+    return specs
 end
 
 local function setup_autocmds()
@@ -277,8 +283,24 @@ end
 
 ---@return table
 function M.setup()
-    register_domain_commands()
-    register_legacy_commands()
+    local specs = domain_command_specs()
+    for _, spec in ipairs(legacy_command_specs()) do
+        specs[#specs + 1] = spec
+    end
+    -- Commands are buffer-local: they exist only in Salesforce
+    -- buffers (a Salesforce file extension or filetype, or any file
+    -- inside an SFDX project) instead of occupying every buffer's
+    -- command namespace. The keymaps already attach the same way
+    -- (see setup_autocmds).
+    require('utils.gated_commands').attach({
+        extensions = { 'agent', 'apex', 'cls', 'cmp', 'component', 'page', 'soql', 'trigger' },
+        filetypes = { 'apex', 'soql', 'sosl' },
+        group = 'SalesforceCommands',
+        register = function(bufnr)
+            M.core.register_commands(specs, bufnr)
+        end,
+        root_markers = { 'sfdx-project.json' },
+    })
     setup_autocmds()
     return M
 end

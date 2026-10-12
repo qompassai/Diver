@@ -449,8 +449,9 @@ function M.open_term_cmd(command, height, opts)
 end
 
 ---@param specs SfCommandSpec[]
+---@param bufnr? integer when set, commands are created buffer-locally in this buffer
 ---@return nil
-function M.register_commands(specs)
+function M.register_commands(specs, bufnr)
     for _, spec in ipairs(specs) do
         assert(type(spec.name) == 'string' and spec.name ~= '', 'Salesforce command is missing a name')
         assert(type(spec.fn) == 'function', ('Invalid Salesforce command handler: %s'):format(spec.name))
@@ -458,8 +459,13 @@ function M.register_commands(specs)
             spec.opts == nil or type(spec.opts) == 'table',
             ('Invalid Salesforce command options: %s'):format(spec.name)
         )
-        pcall(api.nvim_del_user_command, spec.name)
-        api.nvim_create_user_command(spec.name, spec.fn, spec.opts or {})
+        if bufnr ~= nil then
+            pcall(api.nvim_buf_del_user_command, bufnr, spec.name)
+            api.nvim_buf_create_user_command(bufnr, spec.name, spec.fn, spec.opts or {})
+        else
+            pcall(api.nvim_del_user_command, spec.name)
+            api.nvim_create_user_command(spec.name, spec.fn, spec.opts or {})
+        end
     end
 end
 
