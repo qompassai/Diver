@@ -61,6 +61,18 @@ return {
         enabled = true,
     },
     {
+        -- Periscope (Matt's own broker, built 2026-10-11): brokers this
+        -- config's LSP, formatter, linter, and DAP surface over MCP.
+        -- Managed mode (no args): the broker spawns its own headless
+        -- Neovim with this config, rooted at the client's working
+        -- directory. Format and lint act on buffers only; nothing is
+        -- written to disk. No credentials required.
+        name = 'periscope',
+        command = '/home/phaedrus/.local/bin/periscope',
+        args = {},
+        enabled = true,
+    },
+    {
         -- REA (Reverse Engineer Anything, morluto/rea; Matt's fork
         -- qompassai/rea) v6.3.0, pinned: installed in user space with
         -- npm --prefix ~/.local, never @latest; `rea mcp` serves stdio.
