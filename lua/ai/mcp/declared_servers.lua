@@ -61,6 +61,18 @@ return {
         enabled = true,
     },
     {
+        -- Phlow (Matt's agent runtime, Rust port): `phlow serve`
+        -- speaks newline-framed MCP over stdio. Hosts the MATE
+        -- joint-attention board (the flow_attention_* tools) that
+        -- ai.attention publishes through; the [attention] dispatch
+        -- gate itself is configured in ~/.config/phlow/config.toml,
+        -- not here. No credentials required.
+        name = 'phlow',
+        command = '/home/phaedrus/.local/bin/phlow',
+        args = { 'serve' },
+        enabled = true,
+    },
+    {
         -- Periscope (Matt's own broker, built 2026-10-11): brokers this
         -- config's LSP, formatter, linter, and DAP surface over MCP.
         -- Managed mode (no args): the broker spawns its own headless
