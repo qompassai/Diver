@@ -31,7 +31,7 @@ end
 ---(allowed, reason). Logging happens for every call, allowed or not.
 ---@param tool string Tool or skill name
 ---@param target string Target host/scope the tool will touch
----@param annotations table WebMCP annotations for the tool
+---@param annotations ToolAnnotations WebMCP annotations for the tool
 ---@param via string Where the call comes from ('bridge', 'command', 'agent')
 ---@param callback fun(allowed: boolean, reason: string)
 function M.check(tool, target, annotations, via, callback)
@@ -46,17 +46,29 @@ function M.check(tool, target, annotations, via, callback)
 
     local needs_confirm = ann.needs_confirmation(annotations)
     if not needs_confirm then
-        auditlog.append({ tool = tool, target = target, via = via, decision = 'allowed: read-only' })
+        auditlog.append({
+            tool = tool,
+            target = target,
+            via = via,
+            decision = 'allowed: read-only',
+        })
         callback(true, 'allowed: read-only tool')
         return
     end
     if config.auto_authorize then
-        auditlog.append({ tool = tool, target = target, via = via, decision = 'allowed: auto-authorized' })
+        auditlog.append({
+            tool = tool,
+            target = target,
+            via = via,
+            decision = 'allowed: auto-authorized',
+        })
         callback(true, 'allowed: auto-authorized for engaged targets')
         return
     end
     local security = require('security')
-    security.confirm_tool_call('recon', tool, { target = target }, function(allowed, reason)
+    security.confirm_tool_call('recon', tool, {
+        target = target,
+    }, function(allowed, reason)
         auditlog.append({
             tool = tool,
             target = target,
