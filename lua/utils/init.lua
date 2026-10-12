@@ -297,6 +297,7 @@ function M.setup()
     require('utils.notify').setup()
     require('utils.snippets').setup()
     require('utils.sync').setup()
+    require('utils.table_toggle').setup({ auto_expand_on_save = true })
     require('utils.tmux').setup({ keymaps_enabled = false })
 end
 
