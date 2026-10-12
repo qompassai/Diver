@@ -19,6 +19,7 @@ local M = {}
 
 ---@type string[]
 local startup_modules = {
+    'chawan',
     'colors',
     'cmdline',
     'decor',
