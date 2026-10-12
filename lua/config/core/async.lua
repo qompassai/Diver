@@ -36,6 +36,18 @@ local unpack_values = unpack
 local COMMAND_ARGUMENTS_MAX = 4096
 local DURATION_MS_MAX = 2 ^ 32 - 1
 local ERROR_MESSAGE_BYTES_MAX = 4096
+local REQUIRED_NATIVE_METHODS = {
+    'await',
+    'checkpoint',
+    'is_closing',
+    'iter',
+    'pawait',
+    'run',
+    'semaphore',
+    'sleep',
+    'timeout',
+    'wrap',
+}
 local SYSTEM_CANCEL_GRACE_MS = 1000
 local TASKS_MAX = 4096
 
@@ -81,21 +93,8 @@ local TASKS_MAX = 4096
 
 local native_state = {
     attempted = false,
-    module = nil,
     error = nil,
-}
-
-local REQUIRED_NATIVE_METHODS = {
-    'await',
-    'checkpoint',
-    'is_closing',
-    'iter',
-    'pawait',
-    'run',
-    'semaphore',
-    'sleep',
-    'timeout',
-    'wrap',
+    module = nil,
 }
 
 ---@param name string
@@ -112,56 +111,6 @@ local function assert_integer(name, value, minimum)
         type(value) == 'number' and value >= minimum and value <= DURATION_MS_MAX and value % 1 == 0,
         ('%s: expected integer in range %d..%d'):format(name, minimum, DURATION_MS_MAX)
     )
-end
-
----@return table?, string?
-local function resolve_native()
-    if native_state.attempted then
-        return native_state.module, native_state.error
-    end
-
-    native_state.attempted = true
-
-    if vim.fn.has('nvim-0.13') ~= 1 then
-        native_state.error = 'vim.async requires Neovim 0.13+'
-        return nil, native_state.error
-    end
-
-    local ok, value = pcall(function()
-        return vim.async
-    end)
-
-    if not ok then
-        native_state.error = ('failed to resolve vim.async: %s'):format(tostring(value))
-        return nil, native_state.error
-    end
-
-    if type(value) ~= 'table' then
-        native_state.error = 'vim.async is unavailable in this Neovim runtime'
-        return nil, native_state.error
-    end
-
-    for _, method in ipairs(REQUIRED_NATIVE_METHODS) do
-        if not vim.is_callable(value[method]) then
-            native_state.error = ('vim.async.%s is unavailable'):format(method)
-            return nil, native_state.error
-        end
-    end
-
-    native_state.module = value
-    return value, nil
-end
-
----@param level? integer
----@return table
-local function native(level)
-    local value, err = resolve_native()
-
-    if value ~= nil then
-        return value
-    end
-
-    error(err or 'vim.async is unavailable', (level or 1) + 1)
 end
 
 ---@param value any
@@ -240,42 +189,6 @@ local function copy_system_options(opts)
     return copied
 end
 
----@param message string
----@return string
-local function truncate_error(message)
-    if #message <= ERROR_MESSAGE_BYTES_MAX then
-        return message
-    end
-
-    return '[output truncated]\n' .. message:sub(-ERROR_MESSAGE_BYTES_MAX)
-end
-
----@param result CoreAsyncSystemCompleted
----@param executable string
----@return string
-local function command_error(result, executable)
-    if result.error then
-        return truncate_error(result.error)
-    end
-    local stderr = type(result.stderr) == 'string' and vim.trim(result.stderr) or ''
-
-    if stderr ~= '' then
-        return truncate_error(stderr)
-    end
-
-    local stdout = type(result.stdout) == 'string' and vim.trim(result.stdout) or ''
-
-    if stdout ~= '' then
-        return truncate_error(stdout)
-    end
-
-    if result.signal ~= 0 then
-        return ('%s exited with code %d after signal %d'):format(executable, result.code, result.signal)
-    end
-
-    return ('%s exited with code %d'):format(executable, result.code)
-end
-
 ---@param process vim.SystemObj
 ---@param signal string
 ---@return boolean
@@ -285,6 +198,56 @@ local function kill_process(process, signal)
     end)
 
     return ok
+end
+
+---@return table?, string?
+local function resolve_native()
+    if native_state.attempted then
+        return native_state.module, native_state.error
+    end
+
+    native_state.attempted = true
+
+    if vim.fn.has('nvim-0.13') ~= 1 then
+        native_state.error = 'vim.async requires Neovim 0.13+'
+        return nil, native_state.error
+    end
+
+    local ok, value = pcall(function()
+        return vim.async
+    end)
+
+    if not ok then
+        native_state.error = ('failed to resolve vim.async: %s'):format(tostring(value))
+        return nil, native_state.error
+    end
+
+    if type(value) ~= 'table' then
+        native_state.error = 'vim.async is unavailable in this Neovim runtime'
+        return nil, native_state.error
+    end
+
+    for _, method in ipairs(REQUIRED_NATIVE_METHODS) do
+        if not vim.is_callable(value[method]) then
+            native_state.error = ('vim.async.%s is unavailable'):format(method)
+            return nil, native_state.error
+        end
+    end
+
+    native_state.module = value
+    return value, nil
+end
+
+---@param level? integer
+---@return table
+local function native(level)
+    local value, err = resolve_native()
+
+    if value ~= nil then
+        return value
+    end
+
+    error(err or 'vim.async is unavailable', (level or 1) + 1)
 end
 
 ---@async
@@ -386,6 +349,42 @@ local function await_system(command, opts)
     return result
 end
 
+---@param message string
+---@return string
+local function truncate_error(message)
+    if #message <= ERROR_MESSAGE_BYTES_MAX then
+        return message
+    end
+
+    return '[output truncated]\n' .. message:sub(-ERROR_MESSAGE_BYTES_MAX)
+end
+
+---@param result CoreAsyncSystemCompleted
+---@param executable string
+---@return string
+local function command_error(result, executable)
+    if result.error then
+        return truncate_error(result.error)
+    end
+    local stderr = type(result.stderr) == 'string' and vim.trim(result.stderr) or ''
+
+    if stderr ~= '' then
+        return truncate_error(stderr)
+    end
+
+    local stdout = type(result.stdout) == 'string' and vim.trim(result.stdout) or ''
+
+    if stdout ~= '' then
+        return truncate_error(stdout)
+    end
+
+    if result.signal ~= 0 then
+        return ('%s exited with code %d after signal %d'):format(executable, result.code, result.signal)
+    end
+
+    return ('%s exited with code %d'):format(executable, result.code)
+end
+
 ---Return whether Neovim's native structured-concurrency API is usable.
 ---
 ---Requiring this module never invokes this probe automatically.
@@ -397,156 +396,6 @@ function M.available()
     return value ~= nil, err
 end
 
----Clear the cached native API probe.
----
----Useful when testing different Neovim 0.13 development builds in one session.
-function M.reset_native()
-    native_state.attempted = false
-    native_state.module = nil
-    native_state.error = nil
-end
-
----@param callback_or_name string|function
----@param ... any
----@return CoreAsyncTask
-function M.run(callback_or_name, ...)
-    local async = native(2)
-
-    if type(callback_or_name) == 'string' then
-        assert(callback_or_name ~= '', 'name: must not be empty')
-
-        assert_callable('callback', select(1, ...))
-    else
-        assert_callable('callback', callback_or_name)
-    end
-
-    local task = async.run(callback_or_name, ...)
-
-    ---@cast task CoreAsyncTask
-    return task
-end
-
----@param duration_ms integer
----@param callback? fun()
----@return CoreAsyncTask
-function M.delay(duration_ms, callback)
-    assert_integer('duration_ms', duration_ms, 0)
-
-    if callback ~= nil then
-        assert_callable('callback', callback)
-    end
-
-    return M.run(('delay:%d'):format(duration_ms), function()
-        native(2).sleep(duration_ms)
-
-        if callback ~= nil then
-            callback()
-        end
-    end)
-end
-
----@async
----@param duration_ms integer
-function M.sleep(duration_ms)
-    assert_integer('duration_ms', duration_ms, 0)
-
-    native(2).sleep(duration_ms)
-end
-
----@param command string[]
----@param opts? CoreAsyncSystemOpts
----@return CoreAsyncTask
-function M.system(command, opts)
-    local copied_command = copy_command(command)
-    local copied_opts = copy_system_options(opts)
-
-    ---@async
-    ---@return CoreAsyncSystemCompleted
-    local function run_system()
-        return await_system(copied_command, copied_opts)
-    end
-
-    return M.run('system:' .. copied_command[1], run_system)
-end
-
----@param command string[]
----@param opts? CoreAsyncSystemOpts
----@return CoreAsyncTask
-function M.system_checked(command, opts)
-    local copied_command = copy_command(command)
-    local copied_opts = copy_system_options(opts)
-
-    ---@async
-    ---@return CoreAsyncSystemCompleted
-    local function run_system_checked()
-        local result = await_system(copied_command, copied_opts)
-
-        if result.code ~= 0 then
-            error(command_error(result, copied_command[1]), 0)
-        end
-
-        return result
-    end
-
-    return M.run('system_checked:' .. copied_command[1], run_system_checked)
-end
-
----@async
----@param items any[]
----@param opts? vim.ui.select.Opts
----@return any
----@return integer?
-function M.select(items, opts)
-    assert(type(items) == 'table', 'items: expected array')
-    assert(#items <= TASKS_MAX, 'selection exceeds item budget')
-
-    if opts ~= nil then
-        assert(type(opts) == 'table', 'opts: expected vim.ui.select.Opts')
-    end
-
-    local async = native(2)
-
-    ---@param done fun(item: any, index: integer?)
-    local function select_item(done)
-        vim.ui.select(items, opts or {}, done)
-    end
-
-    return async.await(select_item)
-end
-
----@async
----@param opts? vim.ui.input.Opts
----@return string?
-function M.input(opts)
-    if opts ~= nil then
-        assert(type(opts) == 'table', 'opts: expected vim.ui.input.Opts')
-    end
-
-    local async = native(2)
-
-    ---@param done fun(value: string?)
-    local function request_input(done)
-        vim.ui.input(opts or {}, done)
-    end
-
-    local value = async.await(request_input)
-
-    ---@cast value string?
-    return value
-end
-
----@async
----@param current CoreAsyncTask
----@param duration_ms integer
----@return ...
-function M.timeout(current, duration_ms)
-    local task = assert_task(current)
-
-    assert_integer('duration_ms', duration_ms, 0)
-
-    return native(2).timeout(duration_ms, task)
-end
-
 ---@async
 ---@param current CoreAsyncTask
 ---@return ...
@@ -554,97 +403,6 @@ function M.await(current)
     local task = assert_task(current)
 
     return native(2).await(task)
-end
-
----@async
----@param current CoreAsyncTask
----@return boolean
----@return ...
-function M.pawait(current)
-    local task = assert_task(current)
-
-    return native(2).pawait(task)
-end
-
----@async
-function M.checkpoint()
-    native(2).checkpoint()
-end
-
----@return boolean
-function M.is_closing()
-    return native(2).is_closing()
-end
-
----@async
----@param tasks CoreAsyncTask[]
----@return fun(): CoreAsyncTask?
-function M.iter(tasks)
-    assert(type(tasks) == 'table', 'tasks: expected array')
-
-    local count = #tasks
-
-    assert(count <= TASKS_MAX, ('tasks: exceeds %d entries'):format(TASKS_MAX))
-
-    for key in pairs(tasks) do
-        assert(type(key) == 'number' and key % 1 == 0 and key >= 1 and key <= count, 'tasks: expected dense array')
-    end
-
-    local copied = {} ---@type CoreAsyncTask[]
-
-    for index = 1, count do
-        copied[index] = assert_task(tasks[index], ('tasks[%d]'):format(index))
-    end
-
-    local iterator = native(2).iter(copied)
-
-    ---@cast iterator fun(): CoreAsyncTask?
-    return iterator
-end
-
----@param permits integer
----@return CoreAsyncSemaphore
-function M.semaphore(permits)
-    assert_integer('permits', permits, 1)
-
-    local semaphore = native(2).semaphore(permits)
-
-    ---@cast semaphore CoreAsyncSemaphore
-    return semaphore
-end
-
----Wrap a callback-style function as a reusable async function.
----
----`argc` is the callback argument position, matching vim.async.wrap().
----@param argc integer
----@param callback function
----@return function
-function M.wrap(argc, callback)
-    assert_integer('argc', argc, 1)
-
-    assert_callable('callback', callback)
-
-    return native(2).wrap(argc, callback)
-end
-
----@param current CoreAsyncTask
----@param callback fun(err?: any, ...: any)
----@return fun()
-function M.observe(current, callback)
-    local task = assert_task(current)
-
-    assert_callable('callback', callback)
-
-    return task:on_complete(function(err, ...)
-        local values = {
-            n = select('#', ...),
-            ...,
-        }
-
-        vim.schedule(function()
-            callback(err, unpack_values(values, 1, values.n))
-        end)
-    end)
 end
 
 ---@param current? CoreAsyncTask
@@ -694,11 +452,188 @@ function M.cancel_all(tasks)
     end
 end
 
+---@async
+function M.checkpoint()
+    native(2).checkpoint()
+end
+
+---@param duration_ms integer
+---@param callback? fun()
+---@return CoreAsyncTask
+function M.delay(duration_ms, callback)
+    assert_integer('duration_ms', duration_ms, 0)
+
+    if callback ~= nil then
+        assert_callable('callback', callback)
+    end
+
+    return M.run(('delay:%d'):format(duration_ms), function()
+        native(2).sleep(duration_ms)
+
+        if callback ~= nil then
+            callback()
+        end
+    end)
+end
+
+---@async
+---@param opts? vim.ui.input.Opts
+---@return string?
+function M.input(opts)
+    if opts ~= nil then
+        assert(type(opts) == 'table', 'opts: expected vim.ui.input.Opts')
+    end
+
+    local async = native(2)
+
+    ---@param done fun(value: string?)
+    local function request_input(done)
+        vim.ui.input(opts or {}, done)
+    end
+
+    local value = async.await(request_input)
+
+    ---@cast value string?
+    return value
+end
+
+---@return boolean
+function M.is_closing()
+    return native(2).is_closing()
+end
+
+---@async
+---@param tasks CoreAsyncTask[]
+---@return fun(): CoreAsyncTask?
+function M.iter(tasks)
+    assert(type(tasks) == 'table', 'tasks: expected array')
+
+    local count = #tasks
+
+    assert(count <= TASKS_MAX, ('tasks: exceeds %d entries'):format(TASKS_MAX))
+
+    for key in pairs(tasks) do
+        assert(type(key) == 'number' and key % 1 == 0 and key >= 1 and key <= count, 'tasks: expected dense array')
+    end
+
+    local copied = {} ---@type CoreAsyncTask[]
+
+    for index = 1, count do
+        copied[index] = assert_task(tasks[index], ('tasks[%d]'):format(index))
+    end
+
+    local iterator = native(2).iter(copied)
+
+    ---@cast iterator fun(): CoreAsyncTask?
+    return iterator
+end
+
+---@param current CoreAsyncTask
+---@param callback fun(err?: any, ...: any)
+---@return fun()
+function M.observe(current, callback)
+    local task = assert_task(current)
+
+    assert_callable('callback', callback)
+
+    return task:on_complete(function(err, ...)
+        local values = {
+            n = select('#', ...),
+            ...,
+        }
+
+        vim.schedule(function()
+            callback(err, unpack_values(values, 1, values.n))
+        end)
+    end)
+end
+
+---@async
+---@param current CoreAsyncTask
+---@return boolean
+---@return ...
+function M.pawait(current)
+    local task = assert_task(current)
+
+    return native(2).pawait(task)
+end
+
+---Clear the cached native API probe.
+---
+---Useful when testing different Neovim 0.13 development builds in one session.
+function M.reset_native()
+    native_state.attempted = false
+    native_state.module = nil
+    native_state.error = nil
+end
+
+---@param callback_or_name string|function
+---@param ... any
+---@return CoreAsyncTask
+function M.run(callback_or_name, ...)
+    local async = native(2)
+
+    if type(callback_or_name) == 'string' then
+        assert(callback_or_name ~= '', 'name: must not be empty')
+
+        assert_callable('callback', select(1, ...))
+    else
+        assert_callable('callback', callback_or_name)
+    end
+
+    local task = async.run(callback_or_name, ...)
+
+    ---@cast task CoreAsyncTask
+    return task
+end
+
+---@async
+---@param items any[]
+---@param opts? vim.ui.select.Opts
+---@return any
+---@return integer?
+function M.select(items, opts)
+    assert(type(items) == 'table', 'items: expected array')
+    assert(#items <= TASKS_MAX, 'selection exceeds item budget')
+
+    if opts ~= nil then
+        assert(type(opts) == 'table', 'opts: expected vim.ui.select.Opts')
+    end
+
+    local async = native(2)
+
+    ---@param done fun(item: any, index: integer?)
+    local function select_item(done)
+        vim.ui.select(items, opts or {}, done)
+    end
+
+    return async.await(select_item)
+end
+
+---@param permits integer
+---@return CoreAsyncSemaphore
+function M.semaphore(permits)
+    assert_integer('permits', permits, 1)
+
+    local semaphore = native(2).semaphore(permits)
+
+    ---@cast semaphore CoreAsyncSemaphore
+    return semaphore
+end
+
+---@async
+---@param duration_ms integer
+function M.sleep(duration_ms)
+    assert_integer('duration_ms', duration_ms, 0)
+
+    native(2).sleep(duration_ms)
+end
+
 -- Callback process entry point also works when the optional vim.async runtime is absent.
 -- Capture has one owner, a fixed byte budget, a deadline, and editor-exit cancellation.
-local processes = {}
 local process_count = 0
 local process_group
+local processes = {}
 
 ---@param command string[]
 ---@param opts? CoreAsyncSystemOpts|table max_output_bytes defaults to 8 MiB, timeout to 30 s.
@@ -796,6 +731,70 @@ function M.spawn(command, opts, callback)
     processes[process] = true
     process_count = process_count + 1
     return process
+end
+
+---@param command string[]
+---@param opts? CoreAsyncSystemOpts
+---@return CoreAsyncTask
+function M.system(command, opts)
+    local copied_command = copy_command(command)
+    local copied_opts = copy_system_options(opts)
+
+    ---@async
+    ---@return CoreAsyncSystemCompleted
+    local function run_system()
+        return await_system(copied_command, copied_opts)
+    end
+
+    return M.run('system:' .. copied_command[1], run_system)
+end
+
+---@param command string[]
+---@param opts? CoreAsyncSystemOpts
+---@return CoreAsyncTask
+function M.system_checked(command, opts)
+    local copied_command = copy_command(command)
+    local copied_opts = copy_system_options(opts)
+
+    ---@async
+    ---@return CoreAsyncSystemCompleted
+    local function run_system_checked()
+        local result = await_system(copied_command, copied_opts)
+
+        if result.code ~= 0 then
+            error(command_error(result, copied_command[1]), 0)
+        end
+
+        return result
+    end
+
+    return M.run('system_checked:' .. copied_command[1], run_system_checked)
+end
+
+---@async
+---@param current CoreAsyncTask
+---@param duration_ms integer
+---@return ...
+function M.timeout(current, duration_ms)
+    local task = assert_task(current)
+
+    assert_integer('duration_ms', duration_ms, 0)
+
+    return native(2).timeout(duration_ms, task)
+end
+
+---Wrap a callback-style function as a reusable async function.
+---
+---`argc` is the callback argument position, matching vim.async.wrap().
+---@param argc integer
+---@param callback function
+---@return function
+function M.wrap(argc, callback)
+    assert_integer('argc', argc, 1)
+
+    assert_callable('callback', callback)
+
+    return native(2).wrap(argc, callback)
 end
 
 return M
