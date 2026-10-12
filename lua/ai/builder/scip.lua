@@ -139,7 +139,7 @@ function M.prepare(spec, callback)
         return
     end
 
-    local ok_query, scip_query = pcall(require, 'scip.query')
+    local ok_query, scip_query = pcall(require, 'dev.scip.query')
 
     if not ok_query then
         vim.schedule(function()
@@ -186,7 +186,7 @@ function M.prepare_sync(spec, timeout_ms)
         return nil, 'no SCIP indexer for language: ' .. (match_error or language)
     end
 
-    local ok_query, scip_query = pcall(require, 'scip.query')
+    local ok_query, scip_query = pcall(require, 'dev.scip.query')
 
     if not ok_query then
         return nil, nil

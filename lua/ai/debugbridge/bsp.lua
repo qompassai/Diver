@@ -604,7 +604,7 @@ function M.scip_status(root, callback)
         end
 
         local ok_lang, scip_lang = pcall(require, 'scip.lang')
-        local ok_query, scip_query = pcall(require, 'scip.query')
+        local ok_query, scip_query = pcall(require, 'dev.scip.query')
 
         if not ok_lang or not ok_query then
             callback('scip modules unavailable', nil)

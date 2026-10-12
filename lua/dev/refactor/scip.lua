@@ -103,7 +103,7 @@ function M.preflight(bufnr)
     result.language = match.language
     result.indexer = match.indexer
 
-    local ok_query, scip_query = pcall(require, 'scip.query')
+    local ok_query, scip_query = pcall(require, 'dev.scip.query')
 
     if not ok_query then
         return result

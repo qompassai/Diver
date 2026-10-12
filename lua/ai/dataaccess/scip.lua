@@ -69,10 +69,10 @@ function M.status_for_root(root, language)
         return nil, 'invalid project root'
     end
 
-    local ok_query, scip_query = pcall(require, 'scip.query')
+    local ok_query, scip_query = pcall(require, 'dev.scip.query')
 
     if not ok_query then
-        return nil, 'scip.query unavailable'
+        return nil, 'dev.scip.query unavailable'
     end
 
     local status, status_error = scip_query.status({ root = normalized, language = language })
