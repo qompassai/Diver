@@ -65,6 +65,42 @@ end, {
     desc = "Games: report every engine's resolved binary/root",
 })
 
+-- ---- tic80 ------------------------------------------------------------
+-- The TIC-80 kit documentation has Matt run :Tic80Run directly, but the
+-- genuine commands only exist after the games suite setup. These stubs
+-- mirror the :Games pattern: each deletes itself, loads the suite (setup
+-- runs once via load_games), then re-dispatches so the genuine command
+-- executes with the original arguments.
+api.nvim_create_user_command('Tic80Run', function(cmd_opts)
+    vim.cmd('delcommand Tic80Run')
+    load_games()
+    if cmd_opts.args ~= '' then
+        vim.cmd('Tic80Run ' .. cmd_opts.args)
+    else
+        vim.cmd('Tic80Run')
+    end
+end, {
+    nargs = '?',
+    complete = 'file',
+    desc = 'TIC-80: run a cart (.tic) or script (.lua); defaults to the current file',
+})
+
+api.nvim_create_user_command('Tic80Stop', function()
+    vim.cmd('delcommand Tic80Stop')
+    load_games()
+    vim.cmd('Tic80Stop')
+end, {
+    desc = 'TIC-80: stop the running cart',
+})
+
+api.nvim_create_user_command('Tic80Watch', function()
+    vim.cmd('delcommand Tic80Watch')
+    load_games()
+    vim.cmd('Tic80Watch')
+end, {
+    desc = 'TIC-80: toggle auto-restart on save',
+})
+
 -- ---- android ----------------------------------------------------------
 -- Suite setup registers :Android, :AndroidAction, per-action commands and the
 -- <leader>a* keymaps. The stubs below load it on first use; opening an
@@ -84,13 +120,13 @@ end, {
 --- Mirrors the keymaps from dev/apps/android/commands.lua setup_keymaps(), which
 --- stays the source of truth for what each key does.
 local android_keymaps = {
-    { key = 'b', action = 'build_release',  desc = 'Android: Build release' },
-    { key = 'c', action = 'clean',          desc = 'Android: Clean project' },
-    { key = 'd', action = 'doctor',         desc = 'Android: Run doctor' },
+    { key = 'b', action = 'build_release', desc = 'Android: Build release' },
+    { key = 'c', action = 'clean', desc = 'Android: Clean project' },
+    { key = 'd', action = 'doctor', desc = 'Android: Run doctor' },
     { key = 'e', action = 'start_emulator', desc = 'Android: Start emulator' },
-    { key = 'r', action = 'run_debug',      desc = 'Android: Run debug' },
+    { key = 'r', action = 'run_debug', desc = 'Android: Run debug' },
     { key = 's', action = 'capture_screen', desc = 'Android: Capture screen' },
-    { key = 'x', action = 'stop_emulator',  desc = 'Android: Stop emulator' },
+    { key = 'x', action = 'stop_emulator', desc = 'Android: Stop emulator' },
 }
 for _, spec in ipairs(android_keymaps) do
     vim.keymap.set('n', '<leader>a' .. spec.key, function()
