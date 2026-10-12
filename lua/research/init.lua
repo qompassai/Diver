@@ -30,6 +30,7 @@ M.watchlist = require('research.watchlist')
 M.wos = require('research.wos')
 M.zenodo = require('research.zenodo')
 M.zotero = require('research.zotero')
+M.zotero_api = require('research.zotero_api')
 
 function M.setup()
     M.ama.setup()
@@ -55,6 +56,7 @@ function M.setup()
     M.watchlist.setup()
     M.wos.setup()
     M.zenodo.setup()
+    M.zotero_api.setup()
 end
 
 M.setup()

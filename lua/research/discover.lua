@@ -9,7 +9,10 @@
 --
 -- Plain-language version: type :ArxivFind followed by words and you get a
 -- list of matching preprints in a scratch buffer. Enter opens the PDF,
--- y copies the link, b grabs the BibTeX. The other commands wrap the
+-- y copies the link, b grabs the BibTeX, and f files the paper into
+-- Zotero (see research.zotero_api); papers already in your Zotero
+-- library are marked [in Zotero] when the library could be checked.
+-- The other commands wrap the
 -- helper programs: doi2bib and arxiv2bib turn identifiers into BibTeX,
 -- arxiv-collector bundles a LaTeX project for arXiv submission, and
 -- arxiv_latex_cleaner tidies the sources first.
@@ -112,12 +115,14 @@ local function parse_entry(chunk)
             break
         end
     end
+    local doi = tag_value(chunk, 'arxiv:doi')
     local title = tag_value(chunk, 'title')
     local published = tag_value(chunk, 'published') or ''
     local summary = tag_value(chunk, 'summary') or ''
     return {
         abs_url = 'https://arxiv.org/abs/' .. id,
         authors = authors,
+        doi = doi and clean_text(doi) or nil,
         id = id,
         pdf_url = 'https://arxiv.org/pdf/' .. id,
         published = clean_text(published):sub(1, 10),
@@ -226,6 +231,70 @@ function M.doi_to_bib(doi)
     end)
 end
 
+---File one search result into the live Zotero library.
+---@param result table
+---@param on_done fun()?
+function M.file_to_zotero(result, on_done)
+    assert(type(result) == 'table', 'file_to_zotero: result must be a table')
+    local ok, zotero_api = pcall(require, 'research.zotero_api')
+    if not ok then
+        vim.notify('Zotero integration unavailable', vim.log.levels.WARN)
+        return
+    end
+    zotero_api.file_candidate(result, function(filed, err)
+        vim.schedule(function()
+            if err then
+                vim.notify('Zotero filing failed: ' .. err, vim.log.levels.ERROR)
+                return
+            end
+            result.in_library = true
+            result.zotero_key = filed.key
+            if filed.note_error then
+                vim.notify(
+                    ('Filed to Zotero (%s); BibTeX note failed: %s'):format(filed.key, filed.note_error),
+                    vim.log.levels.WARN
+                )
+            elseif filed.filed then
+                vim.notify('Filed to Zotero (' .. filed.key .. ')', vim.log.levels.INFO)
+            else
+                vim.notify('Already in Zotero (' .. filed.key .. ')', vim.log.levels.INFO)
+            end
+            if on_done then
+                on_done()
+            end
+        end)
+    end)
+end
+
+---Check search results against the live Zotero library, then show
+---them. When the library cannot be read, results show unmarked with
+---a note saying the ownership check did not run.
+---@param results table[]
+---@param query string
+function M.mark_library(results, query)
+    assert(type(results) == 'table', 'mark_library: results must be a table')
+    local ok, zotero_api = pcall(require, 'research.zotero_api')
+    if not ok then
+        M.show(results, query)
+        return
+    end
+    zotero_api.mark_candidates(results, function(marked, err)
+        vim.schedule(function()
+            if err or not marked then
+                M.show(results, query, 'Zotero library unavailable — ownership not checked')
+                return
+            end
+            local held = 0
+            for _, result in ipairs(results) do
+                if result.in_library then
+                    held = held + 1
+                end
+            end
+            M.show(results, query, ('Zotero: %d of %d already in your library'):format(held, #results))
+        end)
+    end)
+end
+
 ---Parse arXiv Atom XML into a bounded list of results. Malformed entries
 ---are skipped; the whole feed is capped by size and entry count.
 ---@param xml string
@@ -302,8 +371,9 @@ end
 ---@param index integer
 ---@return string[]
 local function result_lines(result, index)
+    local marker = result.in_library and ' [in Zotero]' or ''
     local lines = {
-        ('%d. %s'):format(index, result.title),
+        ('%d. %s%s'):format(index, result.title, marker),
         ('   %s  |  %s  |  %s'):format(table.concat(result.authors, ', '), result.published, result.id),
     }
     if result.summary ~= '' then
@@ -316,8 +386,13 @@ end
 ---Show search results in a scratch buffer with discovery keymaps.
 ---@param results table[]
 ---@param query string
-function M.show(results, query)
-    local lines = { ('arXiv results for: %s (%d)'):format(query, #results), '' }
+---@param library_note string? line about the Zotero check, if it ran
+function M.show(results, query, library_note)
+    local lines = { ('arXiv results for: %s (%d)'):format(query, #results) }
+    if library_note then
+        lines[#lines + 1] = library_note
+    end
+    lines[#lines + 1] = ''
     for i, result in ipairs(results) do
         for _, line in ipairs(result_lines(result, i)) do
             lines[#lines + 1] = line
@@ -348,6 +423,25 @@ function M.show(results, query)
         end, { buffer = bufnr, nowait = true, desc = 'arXiv result action' })
     end
 
+    ---Re-render one result's title line after its library mark changes.
+    ---@param index integer
+    local function refresh_result_line(index)
+        local result = results[index]
+        if not result then
+            return
+        end
+        local title_line = result_lines(result, index)[1]
+        local buffer_lines = vim.api.nvim_buf_get_lines(bufnr, 0, -1, false)
+        for lnum, line in ipairs(buffer_lines) do
+            if line:match('^' .. index .. '%. ') then
+                vim.api.nvim_set_option_value('modifiable', true, { buf = bufnr })
+                vim.api.nvim_buf_set_lines(bufnr, lnum - 1, lnum, false, { title_line })
+                vim.api.nvim_set_option_value('modifiable', false, { buf = bufnr })
+                return
+            end
+        end
+    end
+
     map_result('<CR>', function(result)
         open(result.pdf_url)
     end)
@@ -358,6 +452,19 @@ function M.show(results, query)
     end)
     map_result('b', function(result)
         M.arxiv_to_bib({ result.id })
+    end)
+    map_result('f', function(result)
+        local index = nil
+        for i, candidate in ipairs(results) do
+            if candidate == result then
+                index = i
+            end
+        end
+        M.file_to_zotero(result, function()
+            if index then
+                refresh_result_line(index)
+            end
+        end)
     end)
 end
 
@@ -431,7 +538,7 @@ function M.setup()
                 vim.notify('ArxivFind: no results', vim.log.levels.WARN)
                 return
             end
-            M.show(results, query)
+            M.mark_library(results, query)
         end)
     end, { nargs = '*', desc = 'Search arXiv and browse results in Neovim' })
 
