@@ -58,6 +58,7 @@ require('dap').setup()
 require('formatters').setup()
 require('config.mappings')
 require('plugin') -- self-wires via setup_plugins() at require time
+require('perf').setup() -- event-loop lag sampler, autocmd cost tracker (:PerfLag, :PerfAutocmd)
 require('comms').setup() -- mail, clients
 require('research') -- self-wires at require time
 require('tools').setup() -- also wires tools.video (:VideoTokens)
