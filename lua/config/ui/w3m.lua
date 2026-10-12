@@ -94,6 +94,21 @@ local function get_search_engine()
         return string.format('https://www.google.com/search?q=%%s&ie=%s', vim.o.encoding)
     end
 end
+
+---URL-encode search terms for a query string (space as '+').
+---@param text string
+---@return string
+local function url_encode(text)
+    return (
+        text:gsub('[^%w%-%.%_%~]', function(char)
+            if char == ' ' then
+                return '+'
+            end
+            return string.format('%%%02X', char:byte())
+        end)
+    )
+end
+
 ---Register the :W3m family of user commands.
 ---@return nil
 function M.create_commands()
@@ -170,7 +185,7 @@ function M.open(mode, ...)
     end
     local url = args[1]
     if not url:match('^https?://') and not url:match('^file://') then
-        url = string.format(get_search_engine(), fn.escape(url, ' '))
+        url = string.format(get_search_engine(), url_encode(table.concat(args, ' ')))
     end
     if mode == M.OPEN_SPLIT then
         cmd('split')
