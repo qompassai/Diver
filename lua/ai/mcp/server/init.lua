@@ -11,8 +11,8 @@
 
 local M = {}
 
-local started = false
 local child = nil ---@type { proc: any, pid: integer, roots: string[] }?
+local started = false
 
 ---@return string absolute path of the headless entry script
 local function script_path()
@@ -75,7 +75,9 @@ local function cmd_status()
         vim.notify('McpServer: not running', vim.log.levels.INFO)
         return
     end
-    local msg = 'McpServer: running (pid ' .. tostring(child.pid) .. ', roots: '
+    local msg = 'McpServer: running (pid '
+        .. tostring(child.pid)
+        .. ', roots: '
         .. table.concat(child.roots, ', ')
         .. ')'
     vim.notify(msg, vim.log.levels.INFO)
