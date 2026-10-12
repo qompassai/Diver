@@ -221,6 +221,8 @@ globals:
     args:
       - type: table
     must_use: true
+  jit:
+    property: read-only
   load:
     args:
       - type: function
