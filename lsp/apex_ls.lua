@@ -119,9 +119,30 @@ local function setup_apex_format_on_save()
     })
 end
 setup_apex_format_on_save()
+
+---Installers drop the jar in XDG_DATA_HOME/apex-ls, while the
+---historical default looked under stdpath('data') (one level
+---deeper, where nothing installs it). Resolve the first candidate
+---that actually exists; when neither does, name the stdpath
+---location so the not-found notification keeps pointing at the
+---canonical install spot.
+---@return string path the default Apex language server jar path
+local function default_jar_path()
+    local candidates = {
+        vim.fn.stdpath('data') .. '/apex-ls/apex-jorje-lsp.jar',
+        vim.fn.fnamemodify(vim.fn.stdpath('data'), ':h') .. '/apex-ls/apex-jorje-lsp.jar',
+    }
+    for _, candidate in ipairs(candidates) do
+        if exists(candidate) then
+            return candidate
+        end
+    end
+    return candidates[1]
+end
+
 return ---@type vim.lsp.Config
 {
-    apex_jar_path = vim.fn.stdpath('data') .. '/apex-ls/apex-jorje-lsp.jar',
+    apex_jar_path = default_jar_path(),
     apex_java_home = nil,
     apex_jvm_max_heap = '2048M',
     cmd = apex_cmd,
@@ -136,7 +157,11 @@ return ---@type vim.lsp.Config
     init_options = {
         enableEmbeddedSoqlCompletion = true,
         enableErrorToTelemetry = false,
-        enableSynchronizedInitJobs = true,
+        -- false, not true: with true, the installed jorje build fails
+        -- its initialize handshake outright ('Server shutdown due to
+        -- initialization failure' - bisected 2026-10-11 against the
+        -- bare jar). Async init answers in ~2s and costs nothing.
+        enableSynchronizedInitJobs = false,
         apexActionClassDefModifiers = 'virtual,abstract',
         apexActionClassAccessModifiers = 'public,global',
         apexActionMethodDefModifiers = 'static,webservice',
