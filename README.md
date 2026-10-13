@@ -42,9 +42,7 @@ limitations under the License.
   <a href="https://doi.org/10.5281/zenodo.16171391">
     <img src="https://zenodo.org/badge/DOI/10.5281/zenodo.16171391.svg" alt="DOI">
   </a>
-  <a href="./LICENSE">
-    <img src="https://img.shields.io/badge/license-Apache--2.0-blue.svg" alt="License: Apache 2.0">
-  </a>
+  <a href="./LICENSE"><img src="https://img.shields.io/badge/License-Apache%202.0-blue.svg" alt="License: Apache 2.0"></a>
 </p>
 
 <details>
@@ -1123,3 +1121,7 @@ Where:
 
 </details>
 
+
+## License
+
+This project is licensed under the [Apache License, Version 2.0](./LICENSE).
