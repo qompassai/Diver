@@ -52,12 +52,15 @@ function M.browse(root, how)
         vim.cmd.edit(path)
     end
 
-    if picker_ok and type(fzf_module) == 'table' and type(fzf_module.fzfpick) == 'function' then
+    if picker_ok and type(fzf_module) == 'table' and type(fzf_module.fzf_pick) == 'function' then
         local items = {}
         for _, name in ipairs(paths) do
-            items[#items + 1] = { label = name, value = name }
+            items[#items + 1] = {
+                label = name,
+                value = name,
+            }
         end
-        fzf_module.fzfpick(items, function(value)
+        fzf_module.fzf_pick(items, function(value)
             if value then
                 open(value)
             end
