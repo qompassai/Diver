@@ -275,7 +275,7 @@ do
         'NEJM AI charges no submission or publication fees',
         'validation'
     )
-    check(#journal.names() == 13, 'registry now holds 13 profiles', 'validation')
+    check(#journal.names() == 29, 'registry now holds 29 profiles', 'validation')
 end
 
 do
@@ -535,7 +535,7 @@ do
         'empty directory: manuscript reported missing',
         'adversarial'
     )
-    local thin = submission.check_requirements(empty, 'cureus')
+    local thin = submission.check_requirements(empty, 'corr')
     check(
         result_by_label(thin, 'Statement: funding').status == 'not_recorded',
         'thin profile: statements report not recorded, never a silent pass',
