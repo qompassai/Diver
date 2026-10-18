@@ -1,5 +1,23 @@
 # Changelog — `test`-branch fix program
 
+## AWK formatter: `awkfmt` key bound to gawk pretty-print (2026-10-18)
+
+The `awkfmt` name dangled since the 2026-09-25 formatter expansion: no
+tool by that name exists anywhere. Per Matt's ruling, the new
+`lua/formatters/awkfmt.lua` binds the catalogue key to GNU awk's own
+pretty-printer (`gawk --pretty-print=- --file=-`): the buffer is parsed
+from stdin and the parsed program is printed to stdout without ever
+being executed. Verified against gawk 5.4.1 — comments survive
+verbatim, string/regexp literals are reprinted exactly, invalid input
+exits 1 with the buffer untouched, and the output is a behavioural
+fixpoint (identical stdout/stderr when run). Known layout facts,
+recorded in the adapter header: tab indentation, function definitions
+move after the rules, redirected prints are parenthesised, and
+@include programs are printed with the included text inlined. No
+wiring changed: `module_sources`, `formatters_by_ft['awk']`, and the
+coverage table already named the key, and `M.validate()` now reports
+0 errors.
+
 ## Live-vs-repo reconciliation + init.lua subdir composition (2026-09-29)
 
 Fourteen files differed between the repo (`.GH/Qompass/Diver`) and the live
