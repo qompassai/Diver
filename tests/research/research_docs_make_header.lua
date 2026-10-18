@@ -18,6 +18,12 @@ package.path = root .. '/lua/?.lua;' .. root .. '/lua/?/init.lua;' .. package.pa
 
 -- Minimal vim stub: docs.lua binds vim.* fields at require time; only
 -- fn.fnamemodify is ever *called* by the code under test (fallback path).
+-- Inside Neovim (`nvim -l`) the stub must overlay the real vim, not
+-- replace it: the runtime package loader calls vim.api.nvim__get_runtime
+-- on every require, so below, _G.vim / .api / .fn fall through to the
+-- real tables for anything the stub does not fake. Under plain lua
+-- there is no real vim and the stub stands alone, exactly as before.
+local real_vim = vim
 _G.vim = {
     api = {},
     fn = {
@@ -57,6 +63,11 @@ _G.vim = {
         set = function() end,
     },
 }
+if real_vim ~= nil then
+    setmetatable(_G.vim.api, { __index = real_vim.api })
+    setmetatable(_G.vim.fn, { __index = real_vim.fn })
+    setmetatable(_G.vim, { __index = real_vim })
+end
 
 local docs = require('research.docs')
 assert(type(docs.make_header) == 'function', 'research.docs.make_header must exist')
