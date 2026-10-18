@@ -797,7 +797,7 @@ function M.setup(opts)
             vim.notify('OrcidSearch: query required', vim.log.levels.WARN)
             return
         end
-        local data, err = M.search(opts.args)
+        local data, err = M.search(cmd_opts.args)
         if not data then
             vim.notify('ORCID: ' .. (err or 'unknown error'), vim.log.levels.ERROR)
             return
