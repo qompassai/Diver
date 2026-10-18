@@ -1,7 +1,5 @@
 -- /qompassai/Diver/lsp/fsautocomplete_ls.lua
 -- Qompass AI F# AutoComplete LSP Spec
--- Copyright (C) 2025 Qompass AI, All rights reserved
--- ---------------------------------------------------
 return ---@type vim.lsp.Config
 {
     cmd = {

@@ -1,7 +1,5 @@
 -- /qompassai/Diver/lua/utils/options/window.lua
 -- Qompass AI Diver Window Options
--- Copyright (C) 2026 Qompass AI, All rights reserved
--- ----------------------------------------
 --- Every window-local Neovim option, set explicitly and alphabetically.
 ---
 --- Plain-language version: this file lists every win Neovim option

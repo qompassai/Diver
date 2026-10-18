@@ -1,7 +1,6 @@
 -- /qompassai/Diver/lua/config/core/whichkey.lua
 -- Qompass AI Diver Core WhichKey Config
--- Copyright (C) 2025 Qompass AI, All rights reserved
-------------------------------------------------------
+---@module 'config.core.whichkey'
 local WK = {}
 WK.opts = {
     debug = false,

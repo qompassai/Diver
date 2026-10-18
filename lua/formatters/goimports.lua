@@ -1,8 +1,5 @@
--- #################################################################
 -- ~/.config/nvim/lua/formatters/goimports.lua
 -- Qompass AI Diver Goimports Native Formatter Spec
--- Copyright (C) 2026 Qompass AI, All rights reserved
--- #################################################################
 ---@source https://pkg.go.dev/golang.org/x/tools/cmd/goimports
 
 --- Go import manager — adds missing imports, drops unused ones.

@@ -1,7 +1,5 @@
 -- /qompassai/Diver/lua/email/clients/aerc.lua
 -- Qompass AI Diver Aerc Email Client Backend (Tiger Style)
--- Copyright (C) 2026 Qompass AI, All rights reserved
--- --------------------------------------------------
 -- Aerc backend. Opens aerc in a float terminal, runs notmuch searches,
 -- validates the aerc + neomutt accounts the module reads, and generates
 -- aerc config (aerc.conf, accounts.conf, binds.conf) from his real

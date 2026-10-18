@@ -1,7 +1,5 @@
 -- /qompassai/Diver/lua/ai/huggingface/api.lua
 -- Qompass AI Diver Hugging Face Hub API Client (Tiger Style)
--- Copyright (C) 2026 Qompass AI, All rights reserved
--- --------------------------------------------------
 -- Bounded, dependency-free client for the public Hugging Face Hub REST
 -- API. Endpoints verified live 2026-09-27 against
 -- https://huggingface.co/docs/hub/api and the OpenAPI playground

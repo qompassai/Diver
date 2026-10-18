@@ -1,7 +1,6 @@
 -- /qompassai/Diver/lua/ai/mcp/server/stdio.lua
 -- Qompass AI MCP Server stdio Transport (Tiger Style)
--- Copyright (C) 2026 Qompass AI, All rights reserved
--- ----------------------------------------
+---@module 'ai.mcp.server.stdio'
 -- Newline-delimited JSON-RPC over the process's stdio.
 --
 -- Plain words: bytes arrive on stdin, are split into lines, and each

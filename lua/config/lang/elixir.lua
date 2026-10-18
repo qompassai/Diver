@@ -1,7 +1,6 @@
 -- /qompassai/Diver/lua/config/lang/elixir.lua
 -- Qompass AI Diver Elixir Config
--- Copyright (C) 2026 Qompass AI, All rights reserved
--- ----------------------------------------
+---@module 'config.lang.elixir'
 local M = {} ---@version 5.1, JIT
 local api = vim.api
 local augroup = vim.api.nvim_create_augroup

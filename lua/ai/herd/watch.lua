@@ -1,7 +1,6 @@
 -- /qompassai/Diver/lua/ai/herd/watch.lua
 -- Herdr agent pane watcher (Tiger Style)
--- Copyright (C) 2026 Qompass AI, All rights reserved
--- ----------------------------------------
+---@module 'ai.herd.watch'
 -- Pane-state classifier plus a timer-driven poller that watches tmux
 -- panes running agent CLIs and reports each tracked agent as 'working',
 -- 'blocked', 'idle', or 'dead'. All tmux access goes through the

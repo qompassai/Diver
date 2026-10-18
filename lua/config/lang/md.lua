@@ -1,7 +1,6 @@
 -- /qompassai/Diver/lua/config/lang/md.lua
 -- Qompass AI Diver Markdown Config
--- Copyright (C) 2025 Qompass AI, All rights reserved
------------------------------------------------------
+---@module 'config.lang.md'
 local M = {}
 local api = vim.api
 local modernize = require('config.lang.modernize')

@@ -1,8 +1,6 @@
--- #################################################################
 -- ~/.config/nvim/lua/formatters/phpcbf.lua
 -- Qompass AI Diver Phpcbf Native Formatter Spec
--- Copyright (C) 2026 Qompass AI, All rights reserved
--- #################################################################
+---@module 'formatters.phpcbf'
 ---@source https://github.com/PHPCSStandards/PHP_CodeSniffer/wiki/Fixing-Errors-Automatically
 ---
 --- phpcbf is the auto-fixer shipped with PHP_CodeSniffer. The `-`

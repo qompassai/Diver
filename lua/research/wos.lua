@@ -1,7 +1,6 @@
 -- /qompassai/Diver/lua/research/wos.lua
 -- Qompass AI Diver Web of Science Utils
--- Copyright (C) 2026 Qompass AI, All rights reserved
--- --------------------------------------------------
+---@module 'research.wos'
 --
 -- Web of Science lookups from inside Neovim (Starter API,
 -- https://developer.clarivate.com/apis/wos-starter): resolve a DOI or

@@ -1,7 +1,6 @@
 -- /qompassai/Diver/linters/cookstyle.lua
 -- Qompass AI Diver Cookstyle Linter Spec
--- Copyright (C) 2025 Qompass AI, All rights reserved
--- ----------------------------------------
+---@module 'linters.cookstyle'
 return ---@type vim.lint.Config
 {
     append_fname = true,

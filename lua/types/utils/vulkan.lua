@@ -1,8 +1,6 @@
 #!/usr/bin/env lua
 -- /qompassai/Diver/lua/types/utils/vulkan.lua
 -- Qompass AI Vulkan Util Types
--- Copyright (C) 2026 Qompass AI, All rights reserved
--- ----------------------------------------
 ---@meta
 ---@version                  JIT
 ---@class                    VulkanModule

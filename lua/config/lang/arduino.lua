@@ -1,7 +1,6 @@
 -- /qompassai/Diver/lua/config/lang/arduino.lua
 -- Qompass AI Diver Arduino Lang Config
--- Copyright (C) 2025 Qompass AI, All rights reserved
--- ----------------------------------------
+---@module 'config.lang.arduino'
 vim.api.nvim_create_autocmd('FileType', {
     pattern = 'arduino',
     group = vim.api.nvim_create_augroup('Arduino', {}),

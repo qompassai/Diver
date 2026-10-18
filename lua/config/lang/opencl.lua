@@ -1,7 +1,6 @@
 -- /qompassai/Diver/lua/config/lang/opencl.lua
 -- Qompass AI Diver OpenCL Lang Config
--- Copyright (C) 2026 Qompass AI, All rights reserved
--- ---------------------------------------------------
+---@module 'config.lang.opencl'
 -- Tooling (verified 2026-10-10): the language server is the
 -- Galarius opencl-language-server (lsp/opencl_ls.lua, enabled
 -- centrally); it needs an enumeratable OpenCL device and reports

@@ -1,8 +1,6 @@
 -- /qompassai/Diver/lua/config/core/lint.lua
 -- Qompass AI Diver Core Linter Config
--- Copyright (C) 2025 Qompass AI, All rights reserved
--- SPDX-License-Identifier: Apache-2.0
--- -------------------------------------------------------------------------
+---@module 'config.core.lint'
 local api = vim.api
 local diagnostic = vim.diagnostic
 local fn = vim.fn

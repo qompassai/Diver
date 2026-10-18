@@ -1,7 +1,5 @@
 -- /qompassai/Diver/lsp/svlang_ls.lua
 -- Qompass AI SystemVerilog LSP Spec
--- Copyright (C) 2025 Qompass AI, All rights reserved
--- ---------------------------------------------------
 -- Reference: https://github.com/imc-trading/svlangserver
 --pnpm add -g @imc-trading/svlangserver@latest
 return ---@type vim.lsp.Config

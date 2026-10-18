@@ -1,8 +1,6 @@
--- #################################################################
 -- ~/.config/nvim/lua/formatters/ocamlformat.lua
 -- Qompass AI Diver Ocamlformat Native Formatter Spec
--- Copyright (C) 2026 Qompass AI, All rights reserved
--- #################################################################
+---@module 'formatters.ocamlformat'
 ---@source https://github.com/ocaml-ppx/ocamlformat
 ---
 --- ocamlformat is the OCaml code formatter. When it reads from stdin

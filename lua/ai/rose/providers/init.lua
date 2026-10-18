@@ -1,7 +1,5 @@
 -- /qompassai/Diver/lua/ai/rose/providers/init.lua
 -- Lazy, explicit cloud-provider registry (Tiger Style)
--- Copyright (C) 2025 Qompass AI, All rights reserved
--- ----------------------------------------
 -- Requiring/validating never reads keys. The key is read from the
 -- environment only at request time, and cloud egress needs both
 -- providers.enabled and providers.allow_cloud.

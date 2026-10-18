@@ -1,7 +1,5 @@
 -- /qompassai/Diver/lua/websocket/init.lua
 -- Native WebSocket for Neovim (no FFI, no external plugin).
--- Copyright (C) 2026 Qompass AI, All rights reserved.
--- ----------------------------------------
 --
 -- Plain words: this is the front door of the native WebSocket
 -- modules. Call setup() once, then use websocket.client and

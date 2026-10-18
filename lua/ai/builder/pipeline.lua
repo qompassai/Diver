@@ -1,7 +1,6 @@
 -- /qompassai/Diver/lua/ai/builder/pipeline.lua
 -- Qompass AI Interactive Application Builder: Plan/Generate/Validate/Review (Tiger Style)
--- Copyright (C) 2025 Qompass AI, All rights reserved
--- ----------------------------------------
+---@module 'ai.builder.pipeline'
 -- The interactive build loop. Each stage (plan, generate, validate,
 -- review) produces an artifact and then STOPS: the user must answer
 -- yes/edit/abort before the next stage runs. Nothing is generated or

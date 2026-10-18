@@ -1,7 +1,5 @@
 -- /qompassai/Diver/lua/types/core/schema.lua
 -- Qompass AI Diver Schema Types
--- Copyright (C) 2025 Qompass AI, All rights reserved
--- ----------------------------------------
 ---@meta
 ---@class vim.Schema
 ---@field catalog?                   table

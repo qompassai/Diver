@@ -1,7 +1,5 @@
 -- /qompassai/Diver/lua/tools/notify.lua
 -- Qompass AI Diver Long-Task Notifications (Tiger Style)
--- Copyright (C) 2026 Qompass AI, All rights reserved
--- --------------------------------------------------
 -- Desktop + in-editor toast notifications when long tasks finish. The model
 -- is Matt's fish `done` plugin
 -- (~/workspace/repos/dotfiles/.config/fish/conf.d/done.fish): a duration

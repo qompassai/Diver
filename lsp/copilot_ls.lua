@@ -1,7 +1,5 @@
 -- /qompassai/Diver/lsp/copilot_ls.lua
 -- Qompass AI Diver CoPilot LSP Spec
--- Copyright (C) 2025 Qompass AI, All rights reserved
--- --------------------------------------------------
 ---@alias CopilotCustomMethod '"signIn"'|'"signOut"'
 
 ---@class CopilotSignInCommandCtx

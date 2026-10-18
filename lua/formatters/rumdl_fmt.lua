@@ -1,8 +1,6 @@
--- #################################################################
 -- ~/.config/nvim/lua/formatters/rumdl_fmt.lua
 -- Qompass AI Diver rumdl fmt Native Formatter Spec
--- Copyright (C) 2026 Qompass AI, All rights reserved
--- #################################################################
+---@module 'formatters.rumdl_fmt'
 ---@source https://github.com/rvben/rumdl
 ---
 --- ELI5: rumdl is a Markdown linter and formatter written in Rust.

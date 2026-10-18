@@ -1,8 +1,6 @@
--- #################################################################
 -- ~/.config/nvim/lua/formatters/swiftformat.lua
 -- SwiftFormat formatter
--- SPDX-License-Identifier: Apache-2.0
--- #################################################################
+---@module 'formatters.swiftformat'
 
 ---@source https://github.com/nicklockwood/swiftformat/blob/HEAD/README.md
 

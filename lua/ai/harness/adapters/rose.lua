@@ -1,7 +1,6 @@
 -- /qompassai/diver/lua/ai/harness/adapters/rose.lua
 -- Qompass AI Agent Harness: Rose adapter (Tiger Style)
--- Copyright (C) 2025 Qompass AI, All rights reserved
--- ----------------------------------------
+---@module 'ai.harness.adapters.rose'
 -- Thin translator over ai.rose.agent. Preserves Rose native semantics:
 -- provider-native request/response fields travel through
 -- run.extensions.rose.config untouched. Wraps; does not modify ai/rose.

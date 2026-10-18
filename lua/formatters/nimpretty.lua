@@ -1,8 +1,6 @@
--- #################################################################
 -- ~/.config/nvim/lua/formatters/nimpretty.lua
 -- Native nimpretty Formatter — Neovim 0.13+ / LuaJIT
--- SPDX-License-Identifier: Apache-2.0
--- #################################################################
+---@module 'formatters.nimpretty'
 ---@source https://manpages.debian.org/testing/nim/nimpretty.1.en.html
 ---
 --- Tiger Style profile for Nim (4-space indentation, 100-column review

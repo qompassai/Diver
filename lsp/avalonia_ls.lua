@@ -1,8 +1,6 @@
 #!/usr/bin/env lua5.1
 -- /qompassai/Diver/lsp/avalonia_ls.lua
 -- Qompass AI Diver Avalonia LSP Spec
--- Copyright (C) 2026 Qompass AI, All rights reserved
-------------------------------------------------------
 local ERROR = vim.log.levels.ERROR
 return ---@type vim.lsp.Config
 {

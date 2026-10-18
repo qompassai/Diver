@@ -2,8 +2,6 @@
 ---@version >5.1
 -- /qompassai/Diver/lua/config/nav/init.lua
 -- Qompass AI Diver Nav Config Module
--- Copyright (C) 2025 Qompass AI, All rights reserved
-------------------------------------------------------
 local M = {}
 
 local fmt = string.format

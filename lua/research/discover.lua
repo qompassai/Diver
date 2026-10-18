@@ -1,7 +1,6 @@
 -- /qompassai/Diver/lua/research/discover.lua
 -- Qompass AI Diver Research Discovery Utils
--- Copyright (C) 2026 Qompass AI, All rights reserved
--- --------------------------------------------------
+---@module 'research.discover'
 --
 -- Finds papers without leaving Neovim and shells out to the arXiv CLI
 -- tools installed on this machine — but only the ones that are actually

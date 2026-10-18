@@ -1,8 +1,6 @@
--- #################################################################
 -- ~/.config/nvim/lua/formatters/blackd.lua
 -- Native blackd Formatter — Neovim 0.13+ / LuaJIT
--- SPDX-License-Identifier: Apache-2.0
--- #################################################################
+---@module 'formatters.blackd'
 ---@source https://black.readthedocs.io/en/stable/usage_and_configuration/black_as_a_server.html
 ---
 --- blackd is the Black formatter running as a tiny web server on your own

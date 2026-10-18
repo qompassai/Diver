@@ -1,7 +1,6 @@
 #!/usr/bin/env bash
 # /qompassai/Diver/lsp/js.sh
 # Qompass AI Diver LSP JS Script
-# Copyright (C) 2025 Qompass AI, All rights reserved
 ####################################################
 set -euo pipefail
 pnpm add -g \

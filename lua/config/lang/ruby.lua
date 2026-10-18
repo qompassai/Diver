@@ -1,7 +1,6 @@
 -- /qompassai/Diver/lua/config/lang/ruby.lua
 -- Qompass AI Diver Ruby Lang Config
--- Copyright (C) 2025 Qompass AI, All rights reserved
--- ----------------------------------------
+---@module 'config.lang.ruby'
 local M = {} ---@version 5.1, JIT
 local api = vim.api
 local augroup = vim.api.nvim_create_augroup

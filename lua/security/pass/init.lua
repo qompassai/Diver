@@ -1,7 +1,5 @@
 -- /qompassai/Diver/lua/pass/init.lua
 -- Qompass AI Diver pass(1) Password-Store Picker (Tiger Style)
--- Copyright (C) 2026 Qompass AI, All rights reserved
--- --------------------------------------------------
 -- Fuzzy picker over `pass ls` entries: yank password/OTP into the + and *
 -- registers behind a single-owner auto-clear timer, insert the password at
 -- the cursor without touching the clipboard, plus per-tool validation and

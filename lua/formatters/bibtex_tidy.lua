@@ -1,8 +1,6 @@
--- #################################################################
 -- ~/.config/nvim/lua/formatters/bibtex_tidy.lua
 -- Native bibtex-tidy Formatter — Neovim 0.13+ / LuaJIT
--- SPDX-License-Identifier: Apache-2.0
--- #################################################################
+---@module 'formatters.bibtex_tidy'
 ---@source https://github.com/flamingtempura/bibtex-tidy/blob/HEAD/README.md
 ---
 --- bibtex-tidy tidies BibTeX reference files: it lines up the `=` signs,

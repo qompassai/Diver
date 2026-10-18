@@ -1,7 +1,5 @@
 -- /qompassai/Diver/lua/config/lazy.lua
 -- Qompass AI Diver Lazy Config
--- Copyright (C) 2025 Qompass AI, All rights reserved
--- --------------------------------------------------
 local lazypath = vim.fn.stdpath('data') .. '/lazy/lazy.nvim'
 if not (vim.uv or vim.uv).fs_stat(lazypath) then
     local lazyrepo = 'https://github.com/folke/lazy.nvim.git'

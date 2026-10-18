@@ -1,7 +1,6 @@
 -- /qompassai/Diver/lua/ai/rose/providers/sse.lua
 -- Incremental SSE parser for provider streams (Tiger Style)
--- Copyright (C) 2025 Qompass AI, All rights reserved
--- ----------------------------------------
+---@module 'ai.rose.providers.sse'
 -- A raw event API, never wired directly into the text UI.
 
 local M = {}

@@ -1,7 +1,6 @@
 -- /qompassai/Diver/lua/ai/media/ui.lua
 -- Qompass AI Media Backend Picker (Tiger Style)
--- Copyright (C) 2025 Qompass AI, All rights reserved
--- ----------------------------------------
+---@module 'ai.media.ui'
 -- The `AiMedia` picker: lists every registered backend grouped by kind
 -- with its live availability and reason. Unavailable entries are shown
 -- with WHY they are unavailable and the install hint -- the picker never

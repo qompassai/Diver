@@ -1,7 +1,6 @@
 -- /qompassai/Diver/lua/ai/debugbridge/ui.lua
 -- Qompass AI Debug Bridge Dashboard (Tiger Style)
--- Copyright (C) 2025 Qompass AI, All rights reserved
--- ----------------------------------------
+---@module 'ai.debugbridge.ui'
 -- Floating window over the debug bridge: active debug sessions,
 -- DAP breakpoints (security-flagged first), recent security log lines,
 -- and quarantined items. Sibling modules are required lazily inside

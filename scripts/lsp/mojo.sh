@@ -1,7 +1,6 @@
 #!/usr/bin/env bash
 # /qompassai/diver/scripts/mojo.sh
 # Qompass AI Diver Mojo Setup Script
-# Copyright (C) 2026 Qompass AI, All rights reserved
 ####################################################
 set -euo pipefail
 : "${XDG_CONFIG_HOME:=$HOME/.config}"

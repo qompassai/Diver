@@ -1,7 +1,6 @@
 -- /qompassai/Diver/lua/ai/dataaccess/log.lua
 -- Qompass AI Data Access Audit Log (Tiger Style)
--- Copyright (C) 2026 Qompass AI, All rights reserved
--- ----------------------------------------
+---@module 'ai.dataaccess.log'
 -- Append-only JSONL audit log for the data-access layer: every
 -- refused query, every refused result set, every approved write, and
 -- every session close lands here as one deterministic JSON line

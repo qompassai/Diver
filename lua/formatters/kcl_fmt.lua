@@ -1,8 +1,6 @@
--- #################################################################
 -- ~/.config/nvim/lua/formatters/kcl_fmt.lua
 -- Qompass AI Diver KCL Format Native Formatter Spec
--- Copyright (C) 2026 Qompass AI, All rights reserved
--- #################################################################
+---@module 'formatters.kcl_fmt'
 ---@source https://www.kcl-lang.io/docs/next/tools/cli/kcl/fmt
 ---
 --- A tidy-up robot for KCL (the Kusion Configuration Language).

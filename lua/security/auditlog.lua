@@ -1,7 +1,5 @@
 -- /qompassai/Diver/lua/ai/security/auditlog.lua
 -- Append-only invocation log for agent tool calls.
--- Copyright (C) 2026 Qompass AI, All rights reserved.
--- ----------------------------------------
 --
 -- Plain words: every time an agent (or the dashboard) runs a tool,
 -- one line gets appended to a log file: who called what, against

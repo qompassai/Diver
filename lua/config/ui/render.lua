@@ -1,7 +1,6 @@
 -- /qompassai/diver/lua/config/ui/render.lua
 -- Qompass AI Diver Native Markdown Renderer
--- Copyright (C) 2026 Qompass AI, All rights reserved
--- ----------------------------------------
+---@module 'config.ui.render'
 -- ELI5: Neovim can hide text (conceal) and draw little pictures over it
 -- (extmarks). This module uses only those built-in tricks to make Markdown
 -- files pretty -- bullets become ● ○ ◆ ◇, checkboxes become icons,

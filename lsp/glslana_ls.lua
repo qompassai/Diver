@@ -1,7 +1,5 @@
 -- /qompassai/Diver/lsp/glslana_ls.lua
 -- Qompass AI GLSL Analyzer LSP Spec
--- Copyright (C) 2025 Qompass AI, All rights reserved
-------------------------------------------------------
 ---@source https://github.com/nolanderc/glsl_analyzer
 return ---@type vim.lsp.Config
 {

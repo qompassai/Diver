@@ -1,8 +1,6 @@
--- #################################################################
 -- /qompassai/Diver/lua/linters/yq.lua
 -- Native yq YAML syntax linter — Neovim 0.13+ / LuaJIT
--- SPDX-License-Identifier: Apache-2.0
--- #################################################################
+---@module 'linters.yq'
 ---@source https://github.com/mikefarah/yq/tree/c14f446382944492701b16c1ddb48bb9dbe683e3
 local api = vim.api
 local diagnostic = vim.diagnostic

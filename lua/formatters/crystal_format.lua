@@ -1,8 +1,6 @@
--- #################################################################
 -- ~/.config/nvim/lua/formatters/crystal_format.lua
 -- Native crystal tool format Formatter — Neovim 0.13+ / LuaJIT
--- SPDX-License-Identifier: Apache-2.0
--- #################################################################
+---@module 'formatters.crystal_format'
 ---@source https://crystal-lang.org/reference/1.12/man/crystal/
 
 ---

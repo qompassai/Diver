@@ -1,8 +1,6 @@
--- #################################################################
 -- ~/.config/nvim/lua/formatters/templ_fmt.lua
 -- templ fmt formatter
--- SPDX-License-Identifier: Apache-2.0
--- #################################################################
+---@module 'formatters.templ_fmt'
 
 ---@source https://github.com/a-h/templ/blob/HEAD/docs/docs/09-developer-tools/01-cli.md
 

@@ -1,8 +1,6 @@
--- #################################################################
 -- ~/.config/nvim/lua/formatters/shellharden.lua
 -- Qompass AI Diver shellharden Native Formatter Spec
--- Copyright (C) 2026 Qompass AI, All rights reserved
--- #################################################################
+---@module 'formatters.shellharden'
 ---@source https://github.com/anordal/shellharden
 ---
 --- ELI5: Shellharden rewrites shell scripts so their quoting is

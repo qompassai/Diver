@@ -1,8 +1,6 @@
--- #################################################################
 -- ~/.config/nvim/lua/formatters/yapf.lua
 -- yapf formatter
--- SPDX-License-Identifier: Apache-2.0
--- #################################################################
+---@module 'formatters.yapf'
 
 ---@source https://github.com/google/yapf
 

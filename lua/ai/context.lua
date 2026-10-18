@@ -1,7 +1,6 @@
 -- /qompassai/Diver/lua/acp/context.lua
 -- Qompass AI Agent Context Protocol Tooling
--- Copyright (C) 2025 Qompass AI, All rights reserved
--- ----------------------------------------
+---@module 'ai.context'
 ---@source https://github.com/prmichaelsen/agent-context-protocol
 --
 -- Unrelated to the Agent CLIENT Protocol implemented elsewhere in this

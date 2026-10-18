@@ -1,6 +1,5 @@
 -- ~/.config/nvim/lua/formatters/gersemi.lua
 -- Native Gersemi formatter specification for Neovim 0.13+ / LuaJIT.
--- SPDX-License-Identifier: Apache-2.0
 ---@source https://github.com/BlankSpruce/gersemi
 
 --- CMake formatter — tidies `CMakeLists.txt` files without breaking them.

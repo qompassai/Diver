@@ -1,7 +1,5 @@
 -- /qompassai/Diver/lsp/elixir_ls.lua
 -- Qompass AI Elixir LSP Spec (ElixirLS)
--- Copyright (C) 2025 Qompass AI, All rights reserved
-------------------------------------------------------
 ---@type vim.lsp.Config
 return {
     cmd = {

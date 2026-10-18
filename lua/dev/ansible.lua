@@ -1,7 +1,5 @@
 -- qompassai/Diver/lua/dev/ansible.lua
 -- Qompass AI Diver Ansible Tooling (Tiger Style)
--- Copyright (C) 2026 Qompass AI, All rights reserved
--- --------------------------------------------------
 -- Native Ansible workflow: lint, syntax-check, run playbooks, manage
 -- vault secrets, and inspect inventory — all through argv-form subprocess
 -- calls. DAP debugging lives in dap.ansible; this module is the

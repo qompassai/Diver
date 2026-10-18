@@ -1,8 +1,6 @@
--- #################################################################
 -- ~/.config/nvim/lua/formatters/deno_fmt.lua
 -- Native deno fmt Formatter Spec — Neovim 0.13+ / LuaJIT
--- SPDX-License-Identifier: Apache-2.0
--- #################################################################
+---@module 'formatters.deno_fmt'
 ---@source https://docs.deno.com/runtime/reference/cli/fmt/
 ---
 --- deno is the JavaScript/TypeScript runtime, and `deno fmt` is its

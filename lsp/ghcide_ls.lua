@@ -1,7 +1,5 @@
 -- /qompassai/Diver/lsp/ghcide_ls.lua
 -- Qompass AI Ghcide LSP Spec
--- Copyright (C) 2025 Qompass AI, All rights reserved
--- ----------------------------------------
 -- Deprecated
 -- Reference: https://github.com/digital-asset/ghcide
 ---@type vim.lsp.Config

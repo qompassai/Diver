@@ -1,7 +1,5 @@
 -- /qompassai/Diver/lsp/postgres_ls.lua
 -- Qompass AI Postgres LSP Spec
--- Copyright (C) 2025 Qompass AI, All rights reserved
-------------------------------------------------------
 -- References:  https://pgtools.net
 ---@type vim.lsp.Config
 return {

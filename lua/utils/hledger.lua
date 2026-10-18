@@ -1,7 +1,6 @@
 -- qompassai/lua/utils/hledger.lua
 -- Qompass AI Diver hledger journal policy
--- Copyright (C) 2026 Qompass AI, All rights reserved
--- SPDX-License-Identifier: Apache-2.0
+---@module 'utils.hledger'
 --
 -- ELI5: `hledger check` is a spell-checker for your money journal. It reads
 -- the journal and reports the first problem it finds: a line it cannot

@@ -1,8 +1,6 @@
 #!/usr/bin/env lua
 -- /qompassai/Diver/lua/email/init.lua
 -- Qompass AI Diver Email Utils
--- Copyright (C) 2026 Qompass AI, All rights reserved
--- ----------------------------------------
 local M = {} ---@version JIT
 M.clients = require('comms.clients')
 M.mail = require('comms.mail')

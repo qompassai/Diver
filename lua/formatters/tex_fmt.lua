@@ -1,8 +1,6 @@
--- #################################################################
 -- ~/.config/nvim/lua/formatters/tex_fmt.lua
 -- Native tex-fmt Formatter — Neovim 0.13+ / LuaJIT
--- SPDX-License-Identifier: Apache-2.0
--- #################################################################
+---@module 'formatters.tex_fmt'
 ---@source https://github.com/wgunderwood/tex-fmt/releases/tag/v0.5.7
 ---
 --- Tiger Style for LaTeX formatting profile (tiger style formatting rules:

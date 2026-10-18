@@ -1,7 +1,6 @@
 -- /qompassai/lua/linters/unmake.lua
 -- Qompass AI Diver Native Unmake Linter
--- Copyright (C) 2026 Qompass AI, All rights reserved
--- SPDX-License-Identifier: Apache-2.0
+---@module 'linters.unmake'
 --
 -- Licensed under the Apache License, Version 2.0 (the "License");
 -- you may not use this file except in compliance with the License.

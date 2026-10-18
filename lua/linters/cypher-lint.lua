@@ -1,7 +1,6 @@
 -- /qompassai/Diver/linters/cypher-lint.lua
 -- Qompass AI Diver Cypher-Lint Linter Spec
--- Copyright (C) 2025 Qompass AI, All rights reserved
--- ----------------------------------------
+---@module 'linters.cypher-lint'
 return ---@type vim.lint.Config
 {
     append_fname = true,

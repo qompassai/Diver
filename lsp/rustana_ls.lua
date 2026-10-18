@@ -1,9 +1,5 @@
--- #################################################################
 -- /qompassai/diver/lsp/rustana_ls.lua
 -- Qompass AI Diver Rustana Ls
--- SPDX-License-Identifier: Apache-2.0
--- Copyright (c) 2026 Qompass AI
--- #################################################################
 ---@source https://rust-analyzer.github.io/book/configuration.html
 
 local function run_single(command)

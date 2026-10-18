@@ -1,7 +1,5 @@
-; indents.scm
-; Qompass AI - [ ]
-; Copyright (C) 2025 Qompass AI, All rights reserved
-; ----------------------------------------
+; /qompassai/diver/queries/mojo/indents.scm
+; Qompass AI Diver Mojo Indents Query
 (_ "[" "]" @end) @indent
 (_ "{" "}" @end) @indent
 (_ "(" ")" @end) @indent

@@ -1,8 +1,7 @@
 #!/usr/bin/env lua
 -- /qompassai/Diver/lua/security/blue/sops.lua
 -- Qompass AI Secret Operations (SOPs) Utils
--- Copyright (C) 2026 Qompass AI, All rights reserved
--- ----------------------------------------
+---@module 'security.blue.sops'
 local M = {} ---@version JIT
 local augroup = vim.api.nvim_create_augroup
 local autocmd = vim.api.nvim_create_autocmd

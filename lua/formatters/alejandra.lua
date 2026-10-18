@@ -1,8 +1,6 @@
--- #################################################################
 -- ~/.config/nvim/lua/formatters/alejandra.lua
 -- Native Alejandra Nix Formatter — Neovim 0.13+ / LuaJIT
--- SPDX-License-Identifier: Apache-2.0
--- #################################################################
+---@module 'formatters.alejandra'
 ---@source https://github.com/kamadorueda/alejandra/releases/tag/4.0.0
 
 local fs = vim.fs

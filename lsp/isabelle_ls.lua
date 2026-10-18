@@ -1,7 +1,5 @@
 -- /qompassai/Diver/lsp/isabelle_ls.lua
 -- Qompass AI Isabelle LSP Spec
--- Copyright (C) 2026 Qompass AI, All rights reserved
--- ----------------------------------------
 return ---@type vim.lsp.Config
 {
     cmd = {

@@ -1,8 +1,6 @@
--- #################################################################
 -- ~/.config/nvim/lua/formatters/mh_style.lua
 -- Qompass AI Diver MH Style Native Formatter Spec
--- Copyright (C) 2026 Qompass AI, All rights reserved
--- #################################################################
+---@module 'formatters.mh_style'
 ---@source https://github.com/florianschanda/miss_hit
 ---
 --- A style checker and tidy-up robot for MATLAB and Octave code,

@@ -1,8 +1,6 @@
--- #################################################################
 -- ~/.config/nvim/lua/formatters/nixfmt.lua
 -- Native nixfmt Formatter — Neovim 0.13+ / LuaJIT
--- SPDX-License-Identifier: Apache-2.0
--- #################################################################
+---@module 'formatters.nixfmt'
 ---@source https://github.com/NixOS/nixfmt/releases/tag/v1.5.0
 ---
 --- Tiger Style for Nix formatting profile (docs/TIGER_STYLE_NIX.md §23):

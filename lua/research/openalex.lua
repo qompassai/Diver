@@ -1,7 +1,6 @@
 -- /qompassai/Diver/lua/research/openalex.lua
 -- Qompass AI Diver OpenAlex Utils
--- Copyright (C) 2026 Qompass AI, All rights reserved
--- --------------------------------------------------
+---@module 'research.openalex'
 --
 -- OpenAlex lookups from inside Neovim (https://api.openalex.org,
 -- docs at https://docs.openalex.org): resolve a DOI or an OpenAlex

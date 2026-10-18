@@ -1,7 +1,5 @@
 -- /qompassai/Diver/lsp/vim_ls.lua
 -- Qompass AI Vim LSP Spec
--- Copyright (C) 2025 Qompass AI, All rights reserved
--- ----------------------------------------
 ---@source https://github.com/iamcco/vim-language-server
 ---@type vim.lsp.Config
 return {

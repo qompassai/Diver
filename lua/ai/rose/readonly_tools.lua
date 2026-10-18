@@ -1,7 +1,6 @@
 -- /qompassai/Diver/lua/ai/rose/readonly_tools.lua
 -- Read-only view of the native Rose tool set: every tool except file_write.
--- Copyright (C) 2025 Qompass AI, All rights reserved
--- ----------------------------------------
+---@module 'ai.rose.readonly_tools'
 -- The plan/generate entry points (ai.rose.plan, ai.rose.generate) inject
 -- this module into agent.run so the model can inspect the workspace but
 -- can never write files before the user confirms them in the builder.

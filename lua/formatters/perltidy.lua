@@ -1,8 +1,6 @@
--- #################################################################
 -- ~/.config/nvim/lua/formatters/perltidy.lua
 -- Qompass AI Diver Perltidy Native Formatter Spec
--- Copyright (C) 2026 Qompass AI, All rights reserved
--- #################################################################
+---@module 'formatters.perltidy'
 ---@source https://metacpan.org/dist/Perl-Tidy/view/bin/perltidy
 ---
 --- perltidy is the classic Perl source formatter. With no input

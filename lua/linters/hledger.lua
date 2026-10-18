@@ -1,6 +1,6 @@
 -- ~/.config/nvim/lua/linters/hledger.lua
 -- Native hledger check adapter; uses utils/hledger.lua for explicit policy.
--- SPDX-License-Identifier: Apache-2.0
+---@module 'linters.hledger'
 local ok, journal = pcall(require, 'utils.hledger')
 if not ok then
     ---@type LinterUnavailable

@@ -1,8 +1,6 @@
--- #################################################################
 -- ~/.config/nvim/lua/formatters/bean_format.lua
 -- Native bean-format Formatter — Neovim 0.13+ / LuaJIT
--- SPDX-License-Identifier: Apache-2.0
--- #################################################################
+---@module 'formatters.bean_format'
 ---@source https://github.com/beancount/beancount
 ---
 --- Beancount is a plain-text accounting tool, and `bean-format` (shipped with

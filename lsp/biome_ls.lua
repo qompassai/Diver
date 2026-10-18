@@ -1,7 +1,5 @@
 -- /qompassai/Diver/lsp/biome_ls.lua
 -- Qompass AI Diver Biome LSP Config
--- Copyright (C) 2025 Qompass AI, All rights reserved
--- --------------------------------------------------
 ---@source https://biomejs.dev/editors/introduction/
 ---@source https://biomejs.dev/reference/configuration/
 

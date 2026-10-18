@@ -1,7 +1,5 @@
 -- /qompassai/Diver/lsp/omnisharp_ls.lua
 -- Qompass AI OmniSharp Roslyn LSP Spec
--- Copyright (C) 2025 Qompass AI, All rights reserved
--- ---------------------------------------------------
 return ---@type vim.lsp.Config
 {
     capabilities = {

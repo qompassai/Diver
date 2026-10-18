@@ -1,8 +1,6 @@
--- #################################################################
 -- ~/.config/nvim/lua/formatters/mbake.lua
 -- Qompass AI Diver Mbake Native Formatter Spec
--- Copyright (C) 2026 Qompass AI, All rights reserved
--- #################################################################
+---@module 'formatters.mbake'
 ---@source https://github.com/ebodshojaei/bake/blob/HEAD/README.md
 ---
 --- A tidy-up robot for Makefiles: it fixes tabs in recipes and

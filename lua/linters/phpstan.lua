@@ -1,8 +1,6 @@
--- #################################################################
 -- /qompassai/Diver/lua/linters/phpstan.lua
 -- Qompass AI Diver Native PHPStan Linter
--- SPDX-License-Identifier: Apache-2.0
--- #################################################################
+---@module 'linters.phpstan'
 ---@source https://github.com/phpstan/phpstan/releases/tag/2.2.14
 -- Native Linter / LintContext interface; LuaJIT, Neovim 0.13+.
 -- Requires /usr/bin/php, project vendor/bin/phpstan, and project NEON config.

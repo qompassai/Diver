@@ -1,7 +1,6 @@
 -- /qompassai/Diver/lua/config/lang/php.lua
 -- Qompass AI Diver PHP Lang Config
--- Copyright (C) 2025 Qompass AI, All rights reserved
--- -----------------------------------------
+---@module 'config.lang.php'
 local M = {}
 local api = vim.api
 local ERROR = vim.log.levels.ERROR

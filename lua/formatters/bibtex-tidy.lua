@@ -1,8 +1,5 @@
--- #################################################################
 -- ~/.config/nvim/lua/formatters/bibtex_tidy.lua
 -- Qompass AI Diver Native BibTeX Tidy Formatter
--- Copyright (C) 2026 Qompass AI, All rights reserved
--- #################################################################
 ---@source https://github.com/FlamingTempura/bibtex-tidy
 
 --- BibTeX database tidier — straightens `.bib` files on save.

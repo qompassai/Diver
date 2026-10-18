@@ -1,8 +1,6 @@
--- #################################################################
 -- ~/.config/nvim/lua/formatters/janet_format.lua
 -- Qompass AI Diver Janet Format Native Formatter Spec
--- Copyright (C) 2026 Qompass AI, All rights reserved
--- #################################################################
+---@module 'formatters.janet_format'
 ---@source https://github.com/ilanpillemer/janetfmt
 ---
 --- A tidy-up robot for Janet code (a small, friendly language that

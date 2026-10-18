@@ -1,7 +1,6 @@
 -- /qompassai/Diver/lua/config/lang/yara.lua
 -- Qompass AI Diver YARA Lang Config
--- Copyright (C) 2026 Qompass AI, All rights reserved
--- ---------------------------------------------------
+---@module 'config.lang.yara'
 -- Tooling (verified 2026-10-10): the language server is YARA-X's
 -- official yr-ls (lsp/yara_ls.lua, enabled centrally); it provides
 -- diagnostics and formatting. The linters catalog compile-checks

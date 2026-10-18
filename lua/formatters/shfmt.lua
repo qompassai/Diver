@@ -1,8 +1,5 @@
--- #################################################################
 -- ~/.config/nvim/lua/formatters/shfmt.lua
 -- Qompass AI Diver shfmt Native Formatter Spec
--- Copyright (C) 2026 Qompass AI, All rights reserved
--- #################################################################
 ---@source https://github.com/mvdan/sh
 
 --- Shell formatter — tidies sh/bash scripts piped through stdin.

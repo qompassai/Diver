@@ -1,7 +1,5 @@
 -- lua/config/ui/illuminate.lua
 -- Qompass AI Diver Illuminate Config
--- Copyright (C) 2025 Qompass AI, All rights reserved
--- ----------------------------------------
 ---Cursor-word illumination. Requiring this module has no side effects;
 ---call setup() to configure the plugin. setup() is idempotent.
 ---@module 'config.ui.illuminate'

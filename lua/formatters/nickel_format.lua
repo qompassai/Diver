@@ -1,8 +1,6 @@
--- #################################################################
 -- ~/.config/nvim/lua/formatters/nickel_format.lua
 -- Qompass AI Diver Nickel Format Native Formatter Spec
--- Copyright (C) 2026 Qompass AI, All rights reserved
--- #################################################################
+---@module 'formatters.nickel_format'
 ---@source https://github.com/nickel-lang/nickel
 ---
 --- Nickel is a configuration language; `nickel format` rewrites the

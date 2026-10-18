@@ -1,7 +1,5 @@
 -- /qompassai/Diver/lsp/vectorcode_ls.lua
 -- Qompass AI Diver VectorCode LSP Spec
--- Copyright (C) 2025 Qompass AI, All rights reserved
--- ----------------------------------------
 -- VectorCode: code context provider. Requires the vectorcode Neovim plugin.
 -- If the plugin is not installed, the keymaps are skipped and only the
 -- LSP config is returned.

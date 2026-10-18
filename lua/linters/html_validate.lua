@@ -1,8 +1,6 @@
--- #################################################################
 -- /qompassai/lua/linters/html_validate.lua
 -- Qompass AI HTML Validate
--- SPDX-License-Identifier: Apache-2.0
--- #################################################################
+---@module 'linters.html_validate'
 return {
     append_fname = true,
     args = function()

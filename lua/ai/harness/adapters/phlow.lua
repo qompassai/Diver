@@ -1,7 +1,6 @@
 -- /qompassai/diver/lua/ai/harness/adapters/phlow.lua
 -- Qompass AI Agent Harness: Phlow adapter (Tiger Style)
--- Copyright (C) 2025 Qompass AI, All rights reserved
--- ----------------------------------------
+---@module 'ai.harness.adapters.phlow'
 -- Capability probe over ai.phlow.client. Phlow is the durable external
 -- workflow control plane; wiring its transport into harness runs is
 -- Phase 6 work. Until then the adapter reports honest capabilities and

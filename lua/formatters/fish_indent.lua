@@ -1,8 +1,6 @@
--- #################################################################
 -- ~/.config/nvim/lua/formatters/fish_indent.lua
 -- Native fish_indent Formatter — Neovim 0.13+ / LuaJIT
--- SPDX-License-Identifier: Apache-2.0
--- #################################################################
+---@module 'formatters.fish_indent'
 ---@source https://fishshell.com/docs/current/cmds/fish_indent.html
 
 ---

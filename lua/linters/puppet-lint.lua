@@ -1,8 +1,6 @@
--- #################################################################
 -- /qompassai/lua/linters/puppet.lua
 -- Qompass AI Puppet Lint
--- SPDX-License-Identifier: Apache-2.0
--- #################################################################
+---@module 'linters.puppet-lint'
 return {
     append_fname = true,
     args = function()

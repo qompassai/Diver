@@ -1,8 +1,6 @@
--- #################################################################
 -- ~/.config/nvim/lua/formatters/csharpier.lua
 -- Native CSharpier Formatter — Neovim 0.13+ / LuaJIT
--- SPDX-License-Identifier: Apache-2.0
--- #################################################################
+---@module 'formatters.csharpier'
 ---@source https://csharpier.com/docs/CLI
 ---
 --- CSharpier is the code tidier for C#: it rewrites C# code with clean,

@@ -1,7 +1,5 @@
 -- /qompassai/Diver/lsp/crystalline_ls.lua
 -- Qompass AI Crystalline LSP Spec
--- Copyright (C) 2025 Qompass AI, All rights reserved
--- --------------------------------------------------
 return ---@type vim.lsp.Config
 {
     cmd = {

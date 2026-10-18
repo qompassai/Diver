@@ -1,8 +1,6 @@
--- #################################################################
 -- ~/.config/nvim/lua/formatters/black.lua
 -- Native Black Formatter — Neovim 0.13+ / LuaJIT
--- SPDX-License-Identifier: Apache-2.0
--- #################################################################
+---@module 'formatters.black'
 ---@source https://github.com/psf/black
 ---
 --- Black is the "no arguments" code tidier for Python: it rewrites code in

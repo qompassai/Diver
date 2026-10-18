@@ -1,7 +1,6 @@
 -- /qompassai/diver/lua/ai/harness/approval.lua
 -- Qompass AI Agent Harness: async user approval queue (Tiger Style)
--- Copyright (C) 2025 Qompass AI, All rights reserved
--- ----------------------------------------
+---@module 'ai.harness.approval'
 -- Human approval is adaptive: high-impact or irreversible operations wait
 -- here; deterministic low-risk work never enters. Requests expire to
 -- denied, never to approved. The single approval surface renders from this

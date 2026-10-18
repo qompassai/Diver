@@ -1,8 +1,6 @@
--- #################################################################
 -- /qompassai/lua/linters/scalastyle.lua
 -- Qompass AI Scalastyle
--- SPDX-License-Identifier: Apache-2.0
--- #################################################################
+---@module 'linters.scalastyle'
 return {
     append_fname = false,
     args = function(context)

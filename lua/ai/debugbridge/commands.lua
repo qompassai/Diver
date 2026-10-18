@@ -1,7 +1,6 @@
 -- /qompassai/Diver/lua/ai/debugbridge/commands.lua
 -- Qompass AI Debug Bridge User Commands (Tiger Style)
--- Copyright (C) 2025 Qompass AI, All rights reserved
--- ----------------------------------------
+---@module 'ai.debugbridge.commands'
 -- The user-facing surface of the debug bridge: security-scanned DAP
 -- launches, session listing/killing, breakpoints, quarantine, and BSP
 -- builds. Requiring this module registers the commands; it starts

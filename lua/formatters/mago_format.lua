@@ -1,8 +1,6 @@
--- #################################################################
 -- ~/.config/nvim/lua/formatters/mago_format.lua
 -- Qompass AI Diver Mago Format Native Formatter Spec
--- Copyright (C) 2026 Qompass AI, All rights reserved
--- #################################################################
+---@module 'formatters.mago_format'
 ---@source https://github.com/carthage-software/mago/blob/HEAD/docs/content/en/tools/formatter/command-reference.md
 ---
 --- A tidy-up robot for PHP, from the Mago toolchain.

@@ -1,7 +1,6 @@
 -- /qompassai/Diver/linters/ansible_lint.lua
 -- Qompass AI Diver Ansible Linter Spec
--- Copyright (C) 2025 Qompass AI, All rights reserved
--- ----------------------------------------
+---@module 'linters.ansible_lint'
 return ---@type vim.lint.Config
 {
     append_fname = true,

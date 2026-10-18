@@ -1,8 +1,6 @@
--- #################################################################
 -- ~/.config/nvim/lua/formatters/zig_fmt.lua
 -- Native zig fmt Formatter — Neovim 0.13+ / LuaJIT
--- SPDX-License-Identifier: Apache-2.0
--- #################################################################
+---@module 'formatters.zig_fmt'
 ---@source https://ziglang.org/documentation/master/#zig-fmt
 
 ---

@@ -1,8 +1,5 @@
--- #################################################################
 -- ~/.config/nvim/lua/formatters/clang_format.lua
 -- Qompass AI Diver Native Clang-Format Formatter
--- Copyright (C) 2026 Qompass AI, All rights reserved
--- #################################################################
 ---@source https://clang.llvm.org/docs/ClangFormat.html
 
 --- C-family formatter — applies the project's `.clang-format` on save.

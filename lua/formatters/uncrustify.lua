@@ -1,16 +1,10 @@
--- #################################################################
 -- /qompassai/lua/formatters/uncrustify.lua
 -- Qompass AI Uncrustify Native Formatter Spec
--- SPDX-License-Identifier: Apache-2.0
--- Copyright (c) 2026 Qompass AI
---
 -- All Uncrustify policy is defined in this module. No uncrustify.cfg file is
 -- read and no -c configuration-file argument is passed to Uncrustify.
---
 -- To add settings from a former uncrustify.cfg, paste `name = value` lines
 -- into an add_uncrustify_options(STATIC_OPTIONS, [[ ... ]]) block below.
 -- Each line becomes: --set name=value
--- #################################################################
 ---@source https://github.com/uncrustify/uncrustify/tree/uncrustify-0.83.0
 
 local api = vim.api

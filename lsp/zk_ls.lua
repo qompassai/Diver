@@ -1,7 +1,5 @@
 -- /qompassai/Diver/lsp/zk_ls.lua
 -- Qompass AI Diver ZK LSP Spec
--- Copyright (C) 2025 Qompass AI, All rights reserved
--- ----------------------------------------
 ---@param bufnr integer
 ---@param opts table|nil
 ---@param action fun(path: string, title: string)

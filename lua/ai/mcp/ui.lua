@@ -1,7 +1,6 @@
 -- /qompassai/Diver/lua/ai/mcp/ui.lua
 -- Qompass AI MCP Server Browser (Tiger Style)
--- Copyright (C) 2025 Qompass AI, All rights reserved
--- ----------------------------------------
+---@module 'ai.mcp.ui'
 -- Floating-window browser over registered MCP servers and their tools,
 -- in the style of ai.a2a.ui: one buffer per view, `q` closes, `<CR>`
 -- drills in. Server view: name, enabled flag, running flag, command.

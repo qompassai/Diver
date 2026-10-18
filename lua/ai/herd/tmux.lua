@@ -1,7 +1,6 @@
 -- /qompassai/Diver/lua/ai/herd/tmux.lua
 -- Herdr tmux driver (Tiger Style)
--- Copyright (C) 2026 Qompass AI, All rights reserved
--- ----------------------------------------
+---@module 'ai.herd.tmux'
 -- The ONLY herd module allowed to shell out to tmux. Every subprocess
 -- call goes through vim.system with an argv array: untrusted values are
 -- never interpolated into shell strings, and no other herd module may

@@ -1,8 +1,6 @@
--- #################################################################
 -- ~/.config/nvim/lua/formatters/nomad_fmt.lua
 -- Qompass AI Diver Nomad Fmt Native Formatter Spec
--- Copyright (C) 2026 Qompass AI, All rights reserved
--- #################################################################
+---@module 'formatters.nomad_fmt'
 ---@source https://docs.hashicorp.com/nomad/commands/fmt
 ---
 --- `nomad fmt` canonicalizes Nomad job specifications. The `-`

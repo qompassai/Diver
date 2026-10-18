@@ -1,7 +1,5 @@
 -- /qompassai/Diver/lua/utils/options/globals.lua
 -- Qompass AI Diver Global Variables
--- Copyright (C) 2026 Qompass AI, All rights reserved
--- ----------------------------------------
 --- Every `vim.g` variable init.lua used to set, in one alphabetical place.
 ---
 --- Plain-language version: these are Neovim's global variables -- the

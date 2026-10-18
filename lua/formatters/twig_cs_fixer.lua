@@ -1,8 +1,6 @@
--- #################################################################
 -- ~/.config/nvim/lua/formatters/twig_cs_fixer.lua
 -- twig-cs-fixer formatter
--- SPDX-License-Identifier: Apache-2.0
--- #################################################################
+---@module 'formatters.twig_cs_fixer'
 
 ---@source https://github.com/vincentlanglet/twig-cs-fixer/blob/HEAD/README.md
 

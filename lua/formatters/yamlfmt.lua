@@ -1,8 +1,6 @@
--- #################################################################
 -- ~/.config/nvim/lua/formatters/yamlfmt.lua
 -- yamlfmt formatter
--- SPDX-License-Identifier: Apache-2.0
--- #################################################################
+---@module 'formatters.yamlfmt'
 
 ---@source https://github.com/google/yamlfmt/blob/HEAD/docs/command-usage.md
 

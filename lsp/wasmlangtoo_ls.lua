@@ -1,7 +1,5 @@
 -- /qompassai/Diver/lsp/wasmlangtoo_ls.lua
 -- Qompass AI WASM Language Tools LSP Config
--- Copyright (C) 2025 Qompass AI, All rights reserved
------------------------------------------------------
 --Reference: https://github.com/g-plane/wasm-language-tools
 ---@type vim.lsp.Config
 return {

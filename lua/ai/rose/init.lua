@@ -1,7 +1,5 @@
 -- /qompassai/Diver/lua/ai/rose/init.lua
 -- Native Rose entrypoint: chat, agent, flow, MCP (Tiger Style)
--- Copyright (C) 2025 Qompass AI, All rights reserved
--- ----------------------------------------
 -- Requiring or setting up Rose never loads the legacy provider classes.
 -- setup() is idempotent and spawns nothing; commands are registered once.
 

@@ -1,7 +1,5 @@
 -- /qompassai/Diver/lua/types/lang/ts.lua
 -- Qompass AI Diver Typescript (TS) Types
--- Copyright (C) 2025 Qompass AI, All rights reserved
----------------------------------------------------------
 ---@meta
 ---@class                    typescript.Config
 ---@field ts_cfg?                                          fun(opts?: table): typescript.Config

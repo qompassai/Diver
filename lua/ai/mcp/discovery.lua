@@ -1,7 +1,6 @@
 -- /qompassai/Diver/lua/ai/mcp/discovery.lua
 -- Qompass AI MCP Server Discovery (Tiger Style)
--- Copyright (C) 2025 Qompass AI, All rights reserved
--- ----------------------------------------
+---@module 'ai.mcp.discovery'
 -- Find MCP servers worth installing and register them after explicit
 -- user confirmation. Two search backends:
 --

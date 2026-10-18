@@ -1,7 +1,6 @@
 -- /qompassai/Diver/lua/dev/sf/secreview.lua
 -- Qompass AI Diver Salesforce AgentExchange Security Review Utils
--- Copyright (C) 2026 Qompass AI, All rights reserved
--- --------------------------------------------------
+---@module 'dev.sf.secreview'
 -- Pre-submission tooling for the AgentExchange / AppExchange security review:
 -- an interactive checklist, a security-preset Code Analyzer scan
 -- (critical + high severities, the review's bar), and a pass/fail gate.

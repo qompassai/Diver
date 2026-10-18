@@ -1,7 +1,5 @@
 -- /qompassai/Diver/lsp/mojo_ls.lua
 -- Qompass AI Diver Mojo LSP Spec
--- Copyright (C) 2025 Qompass AI, All rights reserved
--- ----------------------------------------
 ---@source  https://github.com/modularml/mojo
 return ---@type vim.lsp.Config
 {

@@ -1,8 +1,6 @@
--- #################################################################
 -- ~/.config/nvim/lua/formatters/buf_format.lua
 -- Native Buf Formatter — Neovim 0.13+ / LuaJIT
--- SPDX-License-Identifier: Apache-2.0
--- #################################################################
+---@module 'formatters.buf_format'
 ---@source https://buf.build/docs/format/
 ---
 --- Buf is the toolkit for Protocol Buffers; `buf format` is its code tidier

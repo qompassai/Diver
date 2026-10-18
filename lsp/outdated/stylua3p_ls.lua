@@ -1,7 +1,5 @@
 -- /qompassai/Diver/lsp/stylua3p_ls.lua
 -- Qompass AI Stylua 3P LSP Config
--- Copyright (C) 2025 Qompass AI, All rights reserved
--- ----------------------------------------
 vim.lsp.config['stylua3p_ls'] = {
     cmd = {
         'stylua-3p-language-server',

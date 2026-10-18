@@ -1,9 +1,5 @@
--- #################################################################
 -- /qompassai/diver/lsp/ron_ls.lua
 -- Qompass AI Diver Ron Ls
--- SPDX-License-Identifier: Apache-2.0
--- Copyright (c) 2026 Qompass AI
--- #################################################################
 ---@source https://github.com/jasonjmcghee/ron-lsp
 --
 -- Requires the `ron-lsp` binary on PATH (`cargo install ron-lsp`).

@@ -1,8 +1,6 @@
--- #################################################################
 -- ~/.config/nvim/lua/formatters/julia_formatter.lua
 -- Qompass AI Diver Julia Formatter Native Formatter Spec
--- Copyright (C) 2026 Qompass AI, All rights reserved
--- #################################################################
+---@module 'formatters.julia_formatter'
 ---@source https://github.com/juliaeditorsupport/juliaformatter.jl/blob/HEAD/docs/src/cli.md
 ---
 --- The official tidy-up robot for Julia, shipped as the `jlfmt`

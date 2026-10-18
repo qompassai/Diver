@@ -1,8 +1,6 @@
--- #################################################################
 -- /qompassai/lua/linters/cargo_clippy_fix.lua
 -- Qompass AI Cargo Clippy Fix
--- SPDX-License-Identifier: Apache-2.0
--- #################################################################
+---@module 'linters.clippy'
 return {
     append_fname = false,
     args = function()

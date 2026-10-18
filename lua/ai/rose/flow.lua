@@ -1,7 +1,6 @@
 -- /qompassai/Diver/lua/ai/rose/flow.lua
 -- Flow MCP workflow client with writer-ownership fencing (Tiger Style)
--- Copyright (C) 2025 Qompass AI, All rights reserved
--- ----------------------------------------
+---@module 'ai.rose.flow'
 -- Spawns the configured Flow binary over MCP stdio and routes tool calls
 -- to it. Cancellation never silently downgrades protection: the writer
 -- slot is released only after the owned Flow process has exited.

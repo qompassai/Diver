@@ -1,7 +1,6 @@
 -- /qompassai/Diver/lua/research/manuscript.lua
 -- Qompass AI Diver Manuscript Utils
--- Copyright (C) 2026 Qompass AI, All rights reserved
--- --------------------------------------------------
+---@module 'research.manuscript'
 local api = vim.api
 local fn = vim.fn
 local fs = vim.fs

@@ -1,7 +1,5 @@
 -- /qompassai/Diver/lsp/stylua_ls.lua
 -- Qompass AI Diver Stylua LSP Spec
--- Copyright (C) 2025 Qompass AI, All rights reserved
-------------------------------------------------------
 ---@source https://github.com/JohnnyMorganz/StyLua
 return ---@type vim.lsp.Config
 {

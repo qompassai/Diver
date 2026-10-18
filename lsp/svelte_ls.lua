@@ -1,7 +1,5 @@
 -- /qompassai/Diver/lsp/svelte_ls.lua
 -- Qompass AI Svelte LSP Spec
--- Copyright (C) 2025 Qompass AI, All rights reserved
--- --------------------------------------------------
 ---@source https://github.com/sveltejs/language-tools/tree/master/packages/language-server
 -- pnpm add -g svelte-language-server
 ---@type vim.lsp.Config

@@ -1,7 +1,6 @@
 -- /qompassai/Diver/lua/research/review.lua
 -- Qompass AI Diver Journal Review Utils
--- Copyright (C) 2026 Qompass AI, All rights reserved
--- --------------------------------------------------
+---@module 'research.review'
 local api = vim.api
 local fn = vim.fn
 local fs = vim.fs

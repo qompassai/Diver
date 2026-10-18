@@ -1,8 +1,6 @@
--- #################################################################
 -- ~/.config/nvim/lua/formatters/ktlint.lua
 -- Qompass AI Diver Ktlint Native Formatter Spec
--- Copyright (C) 2026 Qompass AI, All rights reserved
--- #################################################################
+---@module 'formatters.ktlint'
 ---@source https://github.com/pinterest/ktlint/discussions/3149
 ---
 --- A tidy-up robot for Kotlin. `-F` means "fix the style problems

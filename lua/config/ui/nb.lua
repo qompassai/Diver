@@ -1,7 +1,6 @@
 -- /qompassai/Diver/lua/utils/nb.lua
 -- Qompass AI Diver Notebook Utils
--- Copyright (C) 2026 Qompass AI, All rights reserved
--- ----------------------------------------
+---@module 'config.ui.nb'
 local M = {} ---@version JIT
 local api = vim.api
 local fn = vim.fn

@@ -1,7 +1,6 @@
 -- /qompassai/Diver/linters/shellcheck.lua
 -- Qompass AI Diver ShellCheck Linter Spec
--- Copyright (C) 2025 Qompass AI, All rights reserved
--- ----------------------------------------
+---@module 'linters.shellcheck'
 return ---@type vim.lint.Config
 {
     append_fname = true,

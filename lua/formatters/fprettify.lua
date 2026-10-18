@@ -1,8 +1,6 @@
--- #################################################################
 -- ~/.config/nvim/lua/formatters/fprettify.lua
 -- Native fprettify Formatter Spec — Neovim 0.13+ / LuaJIT
--- SPDX-License-Identifier: Apache-2.0
--- #################################################################
+---@module 'formatters.fprettify'
 ---@source https://github.com/pseewald/fprettify
 ---
 --- fprettify tidies modern Fortran code (whitespace, indentation,

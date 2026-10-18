@@ -1,7 +1,6 @@
 -- /qompassai/Diver/linters/bashate.lua
 -- Qompass AI Diver Bashate Linter Spec
--- Copyright (C) 2025 Qompass AI, All rights reserved
--- ----------------------------------------
+---@module 'linters.bashate'
 return ---@type vim.lint.Config
 {
     append_fname = true,

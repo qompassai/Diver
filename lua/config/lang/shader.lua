@@ -1,7 +1,6 @@
 -- /qompassai/Diver/lua/config/lang/shader.lua
 -- Qompass AI Diver Shader Lang Config
--- Copyright (C) 2026 Qompass AI, All rights reserved
--- ---------------------------------------------------
+---@module 'config.lang.shader'
 -- Tooling (verified 2026-10-10): this module serves the wgsl and
 -- glsl filetype families. Their language servers are wgsl-analyzer
 -- (lsp/wgslana_ls.lua) and glsl_analyzer (lsp/glslana_ls.lua), both

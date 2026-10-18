@@ -1,7 +1,6 @@
 -- /qompassai/Diver/linters/sphinx-lint.lua
 -- Qompass AI Diver Sphinx-Lint Linter Spec
--- Copyright (C) 2025 Qompass AI, All rights reserved
--- ----------------------------------------
+---@module 'linters.sphinx-lint'
 return ---@type vim.lint.Config
 {
     append_fname = true,

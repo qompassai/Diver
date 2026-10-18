@@ -1,6 +1,6 @@
 -- ~/.config/nvim/lua/mappings/langmap.lua
 -- Native filetype tasks; explicit argv, saved files, bounded jobs/output/deadlines.
--- SPDX-License-Identifier: Apache-2.0
+---@module 'config.mappings.langmap'
 -- <LocalLeader>t: a actions, b build, c check, o output, r run, s status, t test, x cancel.
 -- A profile owns its filetype's tools. No unrelated-language menu entries or plugins.
 -- The existing run-once review remains the default. is_trusted(root) may delegate

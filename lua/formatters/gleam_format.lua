@@ -1,8 +1,6 @@
--- #################################################################
 -- ~/.config/nvim/lua/formatters/gleam_format.lua
 -- Native gleam format Formatter — Neovim 0.13+ / LuaJIT
--- SPDX-License-Identifier: Apache-2.0
--- #################################################################
+---@module 'formatters.gleam_format'
 ---@source https://github.com/gleam-lang/gleam
 
 ---

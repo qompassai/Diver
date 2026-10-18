@@ -1,7 +1,6 @@
 -- /qompassai/Diver/lua/config/lang/odin.lua
 -- Qompass AI Diver Odin Lang Config
--- Copyright (C) 2025 Qompass AI, All rights reserved
--- ----------------------------------------
+---@module 'config.lang.odin'
 local M = {}
 local api = vim.api
 local fn = vim.fn

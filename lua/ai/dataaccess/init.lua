@@ -1,7 +1,5 @@
 -- /qompassai/Diver/lua/ai/dataaccess/init.lua
 -- Qompass AI Managed Data Access (Tiger Style)
--- Copyright (C) 2026 Qompass AI, All rights reserved
--- ----------------------------------------
 -- One managed, session-reused data-access layer over diver's
 -- lua/config/data/ adapters (sqlite, duckdb, mysql, mariadb, psql,
 -- redis), for AI agents (herd agents, debugbridge, MCP servers) that

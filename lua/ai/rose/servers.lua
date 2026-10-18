@@ -1,7 +1,6 @@
 -- /qompassai/Diver/lua/ai/rose/servers.lua
 -- Named MCP server registry with explicit trust gates (Tiger Style)
--- Copyright (C) 2025 Qompass AI, All rights reserved
--- ----------------------------------------
+---@module 'ai.rose.servers'
 -- Third-party executable trust is distinct from workspace edit trust: a
 -- server is callable only when its config carries trusted=true AND
 -- readonly=true, and only for tools named in its allowtools list.

@@ -1,8 +1,6 @@
--- #################################################################
 -- ~/.config/nvim/lua/formatters/v_fmt.lua
 -- Native v fmt Formatter — Neovim 0.13+ / LuaJIT
--- SPDX-License-Identifier: Apache-2.0
--- #################################################################
+---@module 'formatters.v_fmt'
 ---@source https://github.com/vlang/v
 
 ---

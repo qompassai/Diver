@@ -1,7 +1,5 @@
 -- /qompassai/diver/after/syntax/md.lua
 -- Qompass AI Diver After Syntax for Markdown
--- Copyright (C) 2025 Qompass AI, All rights reserved
--- ----------------------------------------
 ---@return string
 local function html_unescape(s) ---@param s string
     s = s:gsub('&amp;', '&')

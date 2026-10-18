@@ -1,8 +1,6 @@
--- #################################################################
 -- ~/.config/nvim/lua/formatters/jq.lua
 -- Qompass AI Diver Jq Native Formatter Spec
--- Copyright (C) 2026 Qompass AI, All rights reserved
--- #################################################################
+---@module 'formatters.jq'
 ---@source https://jqlang.org/manual/
 ---
 --- A tidy-up robot for JSON: `jq '.'` reads JSON from standard

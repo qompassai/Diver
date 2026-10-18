@@ -1,7 +1,5 @@
 -- /qompassai/Diver/lua/types/ui/line.lua
 -- Qompass AI LuaLine Types Config
--- Copyright (C) 2025 Qompass AI, All rights reserved
--- ----------------------------------------
 ---@meta
 ---@class                    lualine.Config
 ---@field options                                          lualine.Options

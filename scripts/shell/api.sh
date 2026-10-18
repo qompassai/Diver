@@ -1,8 +1,6 @@
 #!/usr/bin/env bash
 # /qompassai/Diver/scripts/api.sh
 # Qompass AI Diver API Script
-# Copyright (C) 2026 Qompass AI, All rights reserved
-# ----------------------------------------
 function _get_available_downloader
 {
   if command -v curl &> /dev/null; then

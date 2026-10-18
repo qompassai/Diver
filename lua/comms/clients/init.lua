@@ -1,7 +1,5 @@
 -- /qompassai/Diver/lua/email/clients/init.lua
 -- Qompass AI Diver Email Client Chooser (Tiger Style)
--- Copyright (C) 2026 Qompass AI, All rights reserved
--- --------------------------------------------------
 -- :EmailClient -- a two-step chooser between the neomutt and aerc
 -- backends. The client choice can be remembered in
 -- stdpath('data') .. '/email/client_choice' (atomic tmp+rename write);

@@ -1,8 +1,6 @@
--- #################################################################
 -- ~/.config/nvim/lua/formatters/puppet_lint_fix.lua
 -- Qompass AI Diver Puppet Lint Fix Native Formatter Spec
--- Copyright (C) 2026 Qompass AI, All rights reserved
--- #################################################################
+---@module 'formatters.puppet_lint_fix'
 ---@source https://github.com/puppetlabs/puppet-lint
 ---
 --- puppet-lint checks Puppet manifests; `--fix` rewrites the given

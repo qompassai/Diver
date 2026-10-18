@@ -1,7 +1,6 @@
 -- /qompassai/Diver/lua/ai/herd/catalog.lua
 -- Qompass AI herd Agent CLI Catalog (Tiger Style)
--- Copyright (C) 2026 Qompass AI, All rights reserved
--- ----------------------------------------
+---@module 'ai.herd.catalog'
 -- Curated catalog of interactive coding-agent CLIs the herd spawner may
 -- launch. Pure data plus `vim.fn.executable` probes: no subprocesses are
 -- spawned here and no shell strings are built.

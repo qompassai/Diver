@@ -1,7 +1,6 @@
 -- /qompassai/Diver/linters/clj-kondo.lua
 -- Qompass AI CLJ-Kondo Linter Spec
--- Copyright (C) 2025 Qompass AI, All rights reserved
--- ----------------------------------------
+---@module 'linters.clj-kondo'
 return ---@type vim.lint.Config
 {
     args = function(context)

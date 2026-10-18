@@ -1,7 +1,5 @@
 -- /qompassai/Diver/docs/learn-lua/modules/learn_vim_api.lua
 -- Qompass AI Diver :: Learn Lua — the Neovim API surface
--- Copyright (C) 2026 Qompass AI, All rights reserved
--- ----------------------------------------------------------------------------
 
 --- The Neovim API, taught from the Diver config.
 --

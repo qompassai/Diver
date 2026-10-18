@@ -1,7 +1,6 @@
 -- /qompassai/Diver/lua/research/watchlist.lua
 -- Qompass AI Diver Research Watchlist Utils
--- Copyright (C) 2026 Qompass AI, All rights reserved
--- --------------------------------------------------
+---@module 'research.watchlist'
 -- Grants and competitions watchlist monitor: polls the sources named in
 -- the watched entries, diffs each result against the last-seen snapshot
 -- stored in the state file, and surfaces what is new, what changed (a

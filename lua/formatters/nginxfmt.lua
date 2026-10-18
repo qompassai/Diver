@@ -1,8 +1,6 @@
--- #################################################################
 -- ~/.config/nvim/lua/formatters/nginxfmt.lua
 -- Qompass AI Diver Nginxfmt Native Formatter Spec
--- Copyright (C) 2026 Qompass AI, All rights reserved
--- #################################################################
+---@module 'formatters.nginxfmt'
 ---@source https://github.com/nginxfmt/nginxfmt/blob/HEAD/README.md
 ---
 --- nginxfmt formats nginx configuration files. The `-` argument

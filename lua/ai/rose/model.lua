@@ -1,7 +1,6 @@
 -- /qompassai/Diver/lua/ai/rose/model.lua
 -- Full-config model router: rose default, cloud strictly opt-in (Tiger Style)
--- Copyright (C) 2025 Qompass AI, All rights reserved
--- ----------------------------------------
+---@module 'ai.rose.model'
 
 local M = {}
 

@@ -1,7 +1,6 @@
 -- /qompassai/Diver/lua/config/core/tree.lua
 -- Qompass AI Diver Tree-sitter Config Module
--- Copyright (C) 2025 Qompass AI, All rights reserved
--- ------------------------------------------------------
+---@module 'config.core.tree'
 local M = {}
 local api = vim.api
 ---@type string[]

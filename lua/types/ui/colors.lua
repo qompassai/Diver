@@ -2,8 +2,6 @@
 ---@version >5.1
 -- /qompassai/Diver/lua/types/ui/colors.lua
 -- Qompass AI Diver UI Color Types
--- Copyright (C) 2026 Qompass AI, All rights reserved
--- ----------------------------------------
 ---@class HlOpts
 ---@field bg?                                              string
 ---@field bold?                                            boolean

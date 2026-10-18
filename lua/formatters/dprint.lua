@@ -1,8 +1,6 @@
--- #################################################################
 -- ~/.config/nvim/lua/formatters/dprint.lua
 -- Native dprint Formatter Spec — Neovim 0.13+ / LuaJIT
--- SPDX-License-Identifier: Apache-2.0
--- #################################################################
+---@module 'formatters.dprint'
 ---@source https://github.com/dprint/dprint/blob/HEAD/website/src/cli.md
 ---
 --- dprint is a fast, pluggable code tidier. `fmt` starts a formatting

@@ -1,8 +1,6 @@
--- #################################################################
 -- /qompassai/Diver/lua/linters/psalm.lua
 -- Native Psalm Linter — Neovim 0.13+ / LuaJIT
--- SPDX-License-Identifier: Apache-2.0
--- #################################################################
+---@module 'linters.psalm'
 ---@source https://github.com/vimeo/psalm/releases/tag/6.17.1
 local fs = vim.fs
 local uv = vim.uv

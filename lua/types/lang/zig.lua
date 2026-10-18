@@ -1,7 +1,5 @@
 -- /qompassai/Diver/lua/types/lang/zig.lua
 -- Qompass AI Diver Zig Lang Types
--- Copyright (C) 2025 Qompass AI, All rights reserved
-------------------------------------------------------
 ---@meta
 ---@class                       zig.Cmp.Source
 ---@field name                                             string

@@ -1,8 +1,6 @@
 #!/usr/bin/env lua
 -- /qompassai/Diver/lua/types/utils/red/red.lua
 -- Qompass AI Diver Red Util Types
--- Copyright (C) 2026 Qompass AI, All rights reserved
--- ----------------------------------------
 ---@class redteam.Finding
 ---@field file                                             string
 ---@field lnum                                             integer

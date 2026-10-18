@@ -1,7 +1,5 @@
 -- /qompassai/Diver/lua/config/ui/lsp_health.lua
 -- Qompass AI Diver LSP Health Dashboard
--- Copyright (C) 2026 Qompass AI, All rights reserved
--- ----------------------------------------
 -- Native LSP health dashboard: shows active language servers, their root
 -- directories, attached buffers, uptime, and restart counts. Inspired by
 -- Brendan Gregg's Systems Performance USE method (Utilization, Saturation,

@@ -1,6 +1,5 @@
-## qompassai/Diver/ansi/gopher.sh
-## Qompass AI Diver Ansi Gopher Art
-## Copyright (C) 2025 Qompass AI, All rights reserved
+# qompassai/Diver/ansi/gopher.sh
+# Qompass AI Diver Ansi Gopher Art
 #####################################################
 
 

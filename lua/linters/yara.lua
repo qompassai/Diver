@@ -1,8 +1,6 @@
--- #################################################################
 -- /qompassai/Diver/lua/linters/yara.lua
 -- Native YARA compiler linter
--- SPDX-License-Identifier: Apache-2.0
--- #################################################################
+---@module 'linters.yara'
 ---@source https://github.com/VirusTotal/yara/tree/84b0e3cc0e42f8f8e6b84d19c97ec3ac6ff8aee8
 ---@source https://yara.readthedocs.io/en/stable/commandline.html
 local api = vim.api

@@ -1,7 +1,5 @@
 -- /qompassai/Diver/lsp/tailwindcss_ls.lua
 -- Qompass AI TailwindCSS LSP Spec
--- Copyright (C) 2025 Qompass AI, All rights reserved
--- --------------------------------------------------
 return ---@type vim.lsp.Config
 {
     before_init = function(_, config) ---@class lsp.LSPObject.editor

@@ -1,7 +1,6 @@
 -- /qompassai/Diver/linters/revive.lua
 -- Qompass AI Diver Revive Linter Spec
--- Copyright (C) 2025 Qompass AI, All rights reserved
--- --------------------------------------------------
+---@module 'linters.revive'
 return ---@type vim.lint.Config
 {
     append_fname = true,

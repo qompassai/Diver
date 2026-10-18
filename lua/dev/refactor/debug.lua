@@ -1,8 +1,6 @@
--- #################################################################
 -- /qompassai/Diver/lua/refactor/debug.lua
 -- Native print-debug insertion and cleanup for Neovim 0.13+
--- SPDX-License-Identifier: Apache-2.0
--- #################################################################
+---@module 'dev.refactor.debug'
 
 local api = vim.api
 local ts = vim.treesitter

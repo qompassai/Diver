@@ -1,8 +1,6 @@
--- #################################################################
 -- ~/.config/nvim/lua/formatters/erlfmt.lua
 -- Native erlfmt Formatter Spec — Neovim 0.13+ / LuaJIT
--- SPDX-License-Identifier: Apache-2.0
--- #################################################################
+---@module 'formatters.erlfmt'
 ---@source https://github.com/WhatsApp/erlfmt/releases/tag/v0.3.0
 ---
 --- erlfmt is WhatsApp's tidier for Erlang code. The lone `-` means

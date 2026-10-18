@@ -1,7 +1,6 @@
 -- /qompassai/Diver/lua/research/zotero_api.lua
 -- Qompass AI Diver Research Zotero Live Library API
--- Copyright (C) 2026 Qompass AI, All rights reserved
--- --------------------------------------------------
+---@module 'research.zotero_api'
 --
 -- Talks to the Zotero desktop app's local API so arXiv discovery can
 -- check candidates against the real library and file new papers in.

@@ -1,3 +1,5 @@
+-- /qompassai/diver/tests/security/pqc_token.lua
+-- Qompass AI Diver Lua PQC/Token Test
 --- PQC + capability-token self-test: keygen, signatures, KEM, tokens,
 --- and the bridge auth gate, across classic / hybrid / quantum strengths.
 ---
@@ -7,11 +9,6 @@
 --- Runs headless via `nvim -l`; not loaded at startup.
 ---@module 'tests.pqc_token'
 
--- #################################################################
--- /qompassai/diver/tests/security/pqc_token.lua
--- Qompass AI Diver Lua PQC/Token Test
--- SPDX-License-Identifier: Apache-2.0
--- Copyright (c) 2026 Qompass AI
 
 -- Isolate the keystore before anything touches stdpath('data').
 vim.env.XDG_DATA_HOME = vim.fn.tempname() .. '-xdg'

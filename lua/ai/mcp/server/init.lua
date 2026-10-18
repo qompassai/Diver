@@ -1,7 +1,5 @@
 -- /qompassai/Diver/lua/ai/mcp/server/init.lua
 -- Qompass AI MCP Server Setup (Tiger Style)
--- Copyright (C) 2026 Qompass AI, All rights reserved
--- ----------------------------------------
 -- In-editor wiring for the MCP server. `setup()` is idempotent and
 -- registers the `:McpServer` command; requiring this module has no side
 -- effects. The server itself runs as a separate headless process

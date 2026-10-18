@@ -1,7 +1,5 @@
 -- /qompassai/Diver/lua/salesforce/mcp.lua
 -- Qompass AI Diver Salesforce Hosted MCP Client
--- Copyright (C) 2026 Qompass AI, All rights reserved
--- --------------------------------------------------
 --
 -- Plain words: connects Neovim to Salesforce Hosted MCP Servers over
 -- Streamable HTTP. Salesforce hosts the MCP server; this module is the

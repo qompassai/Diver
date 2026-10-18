@@ -1,7 +1,6 @@
 -- /qompassai/Diver/lua/dev/bootdev.lua
 -- Qompass AI bootdev-local Launcher (Tiger Style)
--- Copyright (C) 2026 Qompass AI, All rights reserved
--- ----------------------------------------
+---@module 'dev.bootdev'
 -- The bootdev-local lesson runner, folded into a single module: entry
 -- point, commands, and health check. Nothing runs at require-time;
 -- :Bootdev opens the CLI lazily in a terminal split.

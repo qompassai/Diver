@@ -1,7 +1,6 @@
 -- /qompassai/Diver/lua/dev/sf/project.lua
 -- Qompass AI Diver Salesforce Project Utils
--- Copyright (C) 2026 Qompass AI, All rights reserved
--- --------------------------------------------------
+---@module 'dev.sf.project'
 local core = require('dev.sf.core')
 local fn = vim.fn
 local M = {}

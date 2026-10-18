@@ -1,7 +1,6 @@
 -- /qompassai/diver/linters/nvcc.lua
 -- Qompass AI Diver NVCC Linter Spec
--- Copyright (C) 2025 Qompass AI, All rights reserved
--- ----------------------------------------
+---@module 'linters.nvcc'
 return {
     args = {
         '-c',

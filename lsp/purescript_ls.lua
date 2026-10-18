@@ -1,7 +1,5 @@
 -- /qompassai/Diver/lsp/purescript_ls.lua
 -- Qompass AI PureScript LSP Spec
--- Copyright (C) 2025 Qompass AI, All rights reserved
--- --------------------------------------------------
 --Reference: https://github.com/nwolverson/purescript-language-server
 --pnpm add -g purescript-language-server@latest
 return {

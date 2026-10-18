@@ -1,8 +1,6 @@
--- #################################################################
 -- ~/.config/nvim/lua/formatters/elm_format.lua
 -- Native elm-format Formatter Spec — Neovim 0.13+ / LuaJIT
--- SPDX-License-Identifier: Apache-2.0
--- #################################################################
+---@module 'formatters.elm_format'
 ---@source https://github.com/avh4/elm-format/issues/560
 ---
 --- elm-format tidies Elm code. The `--stdin` flag tells it to read the

@@ -1,7 +1,6 @@
 -- /qompassai/diver/lua/ai/harness/adapters/mcp.lua
 -- Qompass AI Agent Harness: MCP adapter (Tiger Style)
--- Copyright (C) 2025 Qompass AI, All rights reserved
--- ----------------------------------------
+---@module 'ai.harness.adapters.mcp'
 -- Thin translator over ai.mcp.client. Preserves MCP native semantics: one
 -- client per server boundary, initialization/capabilities, tools/resources/
 -- prompts. A "run" here is a managed server-session lifecycle; tool calls

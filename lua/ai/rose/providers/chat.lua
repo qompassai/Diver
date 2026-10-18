@@ -1,7 +1,6 @@
 -- /qompassai/Diver/lua/ai/rose/providers/chat.lua
 -- OpenAI-compatible chat completions encode/decode (Tiger Style)
--- Copyright (C) 2025 Qompass AI, All rights reserved
--- ----------------------------------------
+---@module 'ai.rose.providers.chat'
 -- OpenAI-compatible chat completions: OpenAI, xAI, NIM, and Sonar's text/search API.
 
 local C = require('ai.rose.providers.common')

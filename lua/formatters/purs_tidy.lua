@@ -1,8 +1,6 @@
--- #################################################################
 -- ~/.config/nvim/lua/formatters/purs_tidy.lua
 -- Qompass AI Diver purs-tidy Native Formatter Spec
--- Copyright (C) 2026 Qompass AI, All rights reserved
--- #################################################################
+---@module 'formatters.purs_tidy'
 ---@source https://github.com/i-am-the-slime/purescript-tidy
 ---
 --- ELI5: purs-tidy is the tidy-up robot for PureScript code.

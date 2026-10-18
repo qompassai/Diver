@@ -1,7 +1,5 @@
 -- /qompassai/Diver/lsp/ts_ls.lua
 -- Qompass AI Typescript LSP Config
--- Copyright (C) 2025 Qompass AI, All rights reserved
------------------------------------------------------
 return ---@type vim.lsp.Config
 {
     cmd = {

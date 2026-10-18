@@ -1,8 +1,6 @@
--- #################################################################
 -- /qompassai/Diver/lua/linters/prisma_lint.lua
 -- Native prisma-lint schema linter -- Neovim 0.13+ / LuaJIT
--- SPDX-License-Identifier: Apache-2.0
--- #################################################################
+---@module 'linters.prisma-lint'
 ---@source https://github.com/loop-payments/prisma-lint/tree/7aa8ad22490e4bf599594e004ccf335a595240f3
 local api = vim.api
 local diagnostic = vim.diagnostic

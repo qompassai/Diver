@@ -1,7 +1,5 @@
 -- /qompassai/Diver/lua/phlow/transports.lua
 -- Pluggable Phlow transports: unix socket, TCP, TLS (stub), WebSocket.
--- Copyright (C) 2026 Qompass AI, All rights reserved.
--- ----------------------------------------
 --
 -- Plain words: these are the different roads a message can travel to
 -- reach Phlow. Every road looks the same to the client: connect to get

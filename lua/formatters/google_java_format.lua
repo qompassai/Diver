@@ -1,8 +1,6 @@
--- #################################################################
 -- ~/.config/nvim/lua/formatters/google_java_format.lua
 -- Qompass AI Diver Native google-java-format Adapter
--- Copyright (C) 2026 Qompass AI, All rights reserved
--- #################################################################
+---@module 'formatters.google_java_format'
 ---@source https://github.com/google/google-java-format/releases/tag/v1.36.1
 
 local fs = vim.fs

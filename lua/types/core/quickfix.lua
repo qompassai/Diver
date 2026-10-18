@@ -1,7 +1,5 @@
 -- /qompassai/diver/lua/types/core/quickfix.lua
 -- Qompass AI Diver Type Core QuickFix Config
--- Copyright (C) 2025 Qompass AI, All rights reserved
--- ----------------------------------------
 ---@meta
 ---@class vim.qf.Config
 ---@field borders?                                         vim.qf.Borders

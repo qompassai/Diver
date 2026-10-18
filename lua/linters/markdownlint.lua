@@ -1,6 +1,6 @@
 -- /qompassai/lua/linters/markdownlint.lua
 -- Qompass AI Markdownlint
--- SPDX-License-Identifier: Apache-2.0
+---@module 'linters.markdownlint'
 return ---@type vim.lint.Config
 {
     append_fname = true,

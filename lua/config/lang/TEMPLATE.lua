@@ -1,7 +1,5 @@
 -- /qompassai/Diver/lua/config/lang/TEMPLATE.lua
 -- Qompass AI Diver Lang Module Template (Tiger Style)
--- Copyright (C) 2026 Qompass AI, All rights reserved
--- ------------------------------------------------------------------
 --
 -- HOW TO USE: copy this file to <lang>.lua, replace LANG/ft/pattern
 -- placeholders, fill in the sections. Delete sections you don't need.

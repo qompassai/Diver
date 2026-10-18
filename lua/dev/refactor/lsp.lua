@@ -1,8 +1,6 @@
--- #################################################################
 -- /qompassai/Diver/lua/refactor/lsp.lua
 -- Native LSP-backed semantic refactors for Neovim 0.13+
--- SPDX-License-Identifier: Apache-2.0
--- #################################################################
+---@module 'dev.refactor.lsp'
 
 local core = require('dev.refactor.core')
 

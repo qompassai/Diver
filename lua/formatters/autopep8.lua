@@ -1,8 +1,6 @@
--- #################################################################
 -- ~/.config/nvim/lua/formatters/autopep8.lua
 -- Native autopep8 Formatter — Neovim 0.13+ / LuaJIT
--- SPDX-License-Identifier: Apache-2.0
--- #################################################################
+---@module 'formatters.autopep8'
 ---@source https://github.com/hhatto/autopep8/blob/main/README.rst
 ---
 --- autopep8 is a code tidier for Python: it fixes the little style mistakes

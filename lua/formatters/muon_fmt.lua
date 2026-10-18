@@ -1,8 +1,6 @@
--- #################################################################
 -- ~/.config/nvim/lua/formatters/muon_fmt.lua
 -- Qompass AI Diver Muon Fmt Native Formatter Spec
--- Copyright (C) 2026 Qompass AI, All rights reserved
--- #################################################################
+---@module 'formatters.muon_fmt'
 ---@source https://manpages.debian.org/unstable/muon-meson/muon-meson.1.en.html
 ---
 --- muon is a from-scratch Meson implementation in C. Its `fmt`

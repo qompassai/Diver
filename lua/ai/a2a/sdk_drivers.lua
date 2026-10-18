@@ -1,7 +1,6 @@
 -- /qompassai/Diver/lua/ai/a2a/sdk_drivers.lua
 -- Qompass AI A2A SDK Drivers (Tiger Style)
--- Copyright (C) 2025 Qompass AI, All rights reserved
--- ----------------------------------------
+---@module 'ai.a2a.sdk_drivers'
 -- One driver per official A2A SDK language. Each driver is a small
 -- program written in the target language that uses the SDK's own
 -- documented client API; the op to run (card, send, stream, get,

@@ -1,8 +1,6 @@
--- #################################################################
 -- ~/.config/nvim/lua/formatters/rescript_format.lua
 -- Native rescript format Formatter — Neovim 0.13+ / LuaJIT
--- SPDX-License-Identifier: Apache-2.0
--- #################################################################
+---@module 'formatters.rescript_format'
 ---@source https://github.com/rescript-lang/rescript/blob/HEAD/CHANGELOG.md
 ---
 --- ReScript 12 (Rust CLI) spelling: `rescript format --stdin <extension>`.

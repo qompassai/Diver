@@ -1,7 +1,6 @@
 -- /qompassai/Diver/lua/ai/dataaccess/scan.lua
 -- Qompass AI Data Access Security Scanning (Tiger Style)
--- Copyright (C) 2026 Qompass AI, All rights reserved
--- ----------------------------------------
+---@module 'ai.dataaccess.scan'
 -- Every query request and every result set passes through ai.security
 -- before reaching an agent. check() returns one of three verdicts:
 --

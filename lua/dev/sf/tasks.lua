@@ -1,7 +1,5 @@
 -- /qompassai/Diver/lua/dev/sf/tasks.lua
 -- Qompass AI Diver Salesforce Async Agent Tasks
--- Copyright (C) 2026 Qompass AI, All rights reserved
--- --------------------------------------------------
 --
 -- Plain words: a Trailhead module is a recipe ("learn Apex, deploy a
 -- class, run a script"). This module turns that recipe into an async

@@ -1,8 +1,6 @@
--- #################################################################
 -- ~/.config/nvim/lua/formatters/bicep_format.lua
 -- Native bicep format Formatter — Neovim 0.13+ / LuaJIT
--- SPDX-License-Identifier: Apache-2.0
--- #################################################################
+---@module 'formatters.bicep_format'
 ---@source https://github.com/Azure/bicep
 
 ---

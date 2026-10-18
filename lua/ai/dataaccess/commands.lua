@@ -1,7 +1,6 @@
 -- /qompassai/Diver/lua/ai/dataaccess/commands.lua
 -- Qompass AI Data Access User Commands (Tiger Style)
--- Copyright (C) 2026 Qompass AI, All rights reserved
--- ----------------------------------------
+---@module 'ai.dataaccess.commands'
 -- The user-facing surface of the data-access layer:
 --
 --   :DataQuery {adapter} {target} [credfile]

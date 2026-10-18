@@ -1,7 +1,6 @@
 -- /qompassai/Diver/lua/config/ui/image.lua
 -- Qompass AI Diver Native Image Preview
--- Copyright (C) 2026 Qompass AI, All rights reserved
--- ----------------------------------------
+---@module 'config.ui.image'
 -- Uses Neovim's experimental vim.ui.img API directly for the inline
 -- preview (PNG only, Kitty graphics protocol). No image.nvim,
 -- ImageMagick, or Tree-sitter HTML integration.

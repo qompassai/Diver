@@ -1,7 +1,5 @@
 -- /qompassai/Diver/lsp/solargraph_ls.lua
 -- Qompass AI Solargraph LSP Spec
--- Copyright (C) 2025 Qompass AI, All rights reserved
--- ---------------------------------------------------
 -- References:  https://solargaraph.org/
 return ---@type vim.lsp.Config
 {

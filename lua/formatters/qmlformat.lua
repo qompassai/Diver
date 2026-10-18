@@ -1,8 +1,6 @@
--- #################################################################
 -- ~/.config/nvim/lua/formatters/qmlformat.lua
 -- Qompass AI Diver qmlformat Native Formatter Spec
--- Copyright (C) 2026 Qompass AI, All rights reserved
--- #################################################################
+---@module 'formatters.qmlformat'
 ---@source https://doc.qt.io/qt-6.8/qtqml-tooling-qmlformat.html
 ---
 --- ELI5: qmlformat is Qt's tidy-up robot for QML files. It cannot read

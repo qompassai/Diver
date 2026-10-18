@@ -1,8 +1,6 @@
--- #################################################################
 -- ~/.config/nvim/lua/formatters/prettierd.lua
 -- Qompass AI Diver Prettierd Native Formatter Spec
--- Copyright (C) 2026 Qompass AI, All rights reserved
--- #################################################################
+---@module 'formatters.prettierd'
 ---@source https://github.com/fsouza/prettierd
 ---
 --- prettierd is a persistent Prettier daemon: it keeps Prettier warm

@@ -1,7 +1,5 @@
 -- /qompassai/Diver/lsp/dolmen_ls.lua
 -- Qompass AI Dolmen LSP Spec
--- Copyright (C) 2025 Qompass AI, All rights reserved
--- --------------------------------------------------
 -- opam pin add https://github.com/Gbury/dolmen.git
 return ---@type vim.lsp.Config
 {

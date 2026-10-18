@@ -1,8 +1,6 @@
--- #################################################################
 -- ~/.config/nvim/lua/formatters/rubyfmt.lua
 -- Qompass AI Diver rubyfmt Native Formatter Spec
--- Copyright (C) 2026 Qompass AI, All rights reserved
--- #################################################################
+---@module 'formatters.rubyfmt'
 ---@source https://github.com/fables-tales/rubyfmt
 ---
 --- ELI5: rubyfmt formats Ruby code the way its authors like it -- no

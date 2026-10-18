@@ -1,8 +1,5 @@
--- #################################################################
 -- /qompassai/lua/refactor/scip.lua
 -- SCIP-aware refactor pre-flight
--- SPDX-License-Identifier: Apache-2.0
--- #################################################################
 ---Cross-file safety checks for LSP-driven refactors, backed by SCIP.
 ---
 ---Plain words: `vim.lsp.buf.rename` only knows about files the language

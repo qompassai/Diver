@@ -1,7 +1,5 @@
 -- /qompassai/Diver/lsp/expert_ls.lua
 -- Qompass AI Expert LSP Spec
--- Copyright (C) 2025 Qompass AI, All rights reserved
--- --------------------------------------------------
 ---@type vim.lsp.Config
 return {
     filetypes = { ---@type string[]

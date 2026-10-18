@@ -1,8 +1,6 @@
--- #################################################################
 -- ~/.config/nvim/lua/formatters/aiken_fmt.lua
 -- Native Aiken Formatter — Neovim 0.13+ / LuaJIT
--- SPDX-License-Identifier: Apache-2.0
--- #################################################################
+---@module 'formatters.aiken_fmt'
 ---@source https://github.com/aniadev/prettier-plugin-aiken/blob/HEAD/README.md
 ---
 --- Aiken is the language people use to write smart contracts on Cardano.

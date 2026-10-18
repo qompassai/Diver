@@ -1,7 +1,6 @@
 -- /qompassai/Diver/lua/ai/dataaccess/api.lua
 -- Qompass AI Data Access Socket API (Tiger Style)
--- Copyright (C) 2026 Qompass AI, All rights reserved
--- ----------------------------------------
+---@module 'ai.dataaccess.api'
 -- Agent-native control surface for the data-access layer: a
 -- unix-domain socket server speaking newline-delimited JSON, so a
 -- coordinator can run security-scanned queries, confirm writes,

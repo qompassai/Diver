@@ -1,8 +1,6 @@
--- #################################################################
 -- ~/.config/nvim/lua/formatters/mix_format.lua
 -- Qompass AI Diver Mix Format Native Formatter Spec
--- Copyright (C) 2026 Qompass AI, All rights reserved
--- #################################################################
+---@module 'formatters.mix_format'
 ---@source https://github.com/elixir-lang/elixir/issues/7411
 ---
 --- Elixir's own tidy-up robot, built into the `mix` build tool.

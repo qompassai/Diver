@@ -1,7 +1,6 @@
 -- /qompassai/Diver/lua/ai/acp/commands.lua
 -- Qompass AI ACP User Commands (Tiger Style)
--- Copyright (C) 2025 Qompass AI, All rights reserved
--- ----------------------------------------
+---@module 'ai.acp.commands'
 
 local api = vim.api
 local context = require('ai.context')

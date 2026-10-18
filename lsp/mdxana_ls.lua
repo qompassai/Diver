@@ -1,7 +1,5 @@
 -- /qompassai/Diver/lsp/mdxana_ls.lua
 -- Qompass AI MDX Analyzer LSP Config
--- Copyright (C) 2025 Qompass AI, All rights reserved
-------------------------------------------------------
 -- Outside the returned config table: bare calls inside it become numeric
 -- keys, which break `:checkhealth vim.lsp` (vim.spairs sorts mixed keys).
 vim.api.nvim_create_autocmd('BufWritePre', {

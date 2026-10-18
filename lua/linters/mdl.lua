@@ -1,8 +1,6 @@
--- #################################################################
 -- /qompassai/lua/linters/mdl.lua
 -- Qompass AI MDL
--- SPDX-License-Identifier: Apache-2.0
--- #################################################################
+---@module 'linters.mdl'
 return {
     append_fname = true,
     args = function()

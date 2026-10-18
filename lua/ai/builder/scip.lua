@@ -1,7 +1,6 @@
 -- /qompassai/Diver/lua/ai/builder/scip.lua
 -- Qompass AI Builder SCIP Context (Tiger Style)
--- Copyright (C) 2026 Qompass AI, All rights reserved
--- ----------------------------------------
+---@module 'ai.builder.scip'
 -- SCIP code-intelligence context for the plan → generate → validate →
 -- review build loop, in both async (editor) and sync (headless) flavors.
 --

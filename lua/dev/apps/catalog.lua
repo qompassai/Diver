@@ -1,7 +1,6 @@
 -- lua/dev/apps/catalog.lua
 -- Qompass AI Diver Dev Apps Catalog
--- Copyright (C) 2026 Qompass AI, All rights reserved.
--- ----------------------------------------------------------------------------
+---@module 'dev.apps.catalog'
 -- Seeded catalog of interactive CLI/TUI applications from Matt's dotfiles
 -- (~/.config). Entries are DATA, not modules: adding an application is a few
 -- lines here, never a new file. Schema is DevAppSpec below; init.lua

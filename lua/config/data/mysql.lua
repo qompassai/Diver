@@ -1,8 +1,5 @@
--- #################################################################
 -- qompassai/Diver/lua/config/data/mysql.lua
 -- Qompass AI Diver Native MySQL Config
--- Copyright (C) 2026 Qompass AI, All rights reserved
--- --------------------------------------------------
 --
 -- Plugin-free MySQL tooling for Neovim 0.13+.
 --

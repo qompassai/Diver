@@ -1,7 +1,6 @@
 -- /qompassai/diver/lua/ai/harness/events.lua
 -- Qompass AI Agent Harness: append-only typed event stream (Tiger Style)
--- Copyright (C) 2025 Qompass AI, All rights reserved
--- ----------------------------------------
+---@module 'ai.harness.events'
 -- All harness behavior becomes typed events in one append-only stream.
 -- The sink is in-memory for Phase 1; persistence lives in store.lua.
 -- Event envelopes carry run_id, sequence, monotonic timestamp, source

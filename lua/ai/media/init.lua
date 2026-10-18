@@ -1,7 +1,5 @@
 -- /qompassai/Diver/lua/ai/media/init.lua
 -- Qompass AI Media Generation Entry Point (Tiger Style)
--- Copyright (C) 2025 Qompass AI, All rights reserved
--- ----------------------------------------
 -- HONESTY CONTRACT. Every backend in this module is probed at runtime,
 -- never assumed. A backend is offered to the user only when its detect()
 -- finds the real tool, model, or credential it needs:

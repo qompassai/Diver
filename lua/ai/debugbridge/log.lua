@@ -1,7 +1,6 @@
 -- /qompassai/Diver/lua/ai/debugbridge/log.lua
 -- Qompass AI Debug Bridge Event Log (Tiger Style)
--- Copyright (C) 2025 Qompass AI, All rights reserved
--- ----------------------------------------
+---@module 'ai.debugbridge.log'
 -- Append-only JSONL audit log for the debug bridge: every
 -- security-relevant command the socket API serves (session kills,
 -- scanned launches, quarantines, breakpoint sets) lands here as one

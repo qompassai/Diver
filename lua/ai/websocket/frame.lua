@@ -1,7 +1,5 @@
 -- /qompassai/Diver/lua/websocket/frame.lua
 -- Shared WebSocket (RFC 6455) framing for the native websocket modules.
--- Copyright (C) 2026 Qompass AI, All rights reserved.
--- ----------------------------------------
 --
 -- Plain words: both the client and the server speak WebSocket by
 -- wrapping messages in small binary envelopes called frames. This

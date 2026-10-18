@@ -1,7 +1,6 @@
 -- /qompassai/Diver/lua/ai/rose/ui.lua
 -- Native Rose chat buffer (Tiger Style)
--- Copyright (C) 2025 Qompass AI, All rights reserved
--- ----------------------------------------
+---@module 'ai.rose.ui'
 -- The rose://chat scratch buffer: open/append/close with bounded memory.
 -- Unlike rose.nvim's version, the buffer keymaps never require a
 -- plugin-style global; setup() injects the on_stop/on_ask callbacks.

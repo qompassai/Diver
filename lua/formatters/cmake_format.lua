@@ -1,8 +1,6 @@
--- #################################################################
 -- ~/.config/nvim/lua/formatters/cmake_format.lua
 -- Native cmake-format Formatter — Neovim 0.13+ / LuaJIT
--- SPDX-License-Identifier: Apache-2.0
--- #################################################################
+---@module 'formatters.cmake_format'
 ---@source https://github.com/cheshirekow/cmake_format
 ---
 --- cmake-format tidies CMake files (CMakeLists.txt and .cmake files): it

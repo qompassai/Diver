@@ -1,8 +1,6 @@
 #!/usr/bin/env lua5.1
 -- /qompassai/Diver/lsp/vshtml_ls.lua
 -- Qompass AI VSCode HTML Service LSP Config
--- Copyright (C) 2026 Qompass AI, All rights reserved
--- ----------------------------------------
 -- npm install -g vscode-langservers-extracted
 --
 -- The VSCode HTML language service over stdio

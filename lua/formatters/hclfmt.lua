@@ -1,8 +1,6 @@
--- #################################################################
 -- ~/.config/nvim/lua/formatters/hclfmt.lua
 -- Qompass AI Diver Hclfmt Native Formatter Spec
--- Copyright (C) 2026 Qompass AI, All rights reserved
--- #################################################################
+---@module 'formatters.hclfmt'
 ---@source https://pkg.go.dev/github.com/haggishunk/hclfmt
 ---
 --- A gofmt-like tidy-up robot for HCL (HashiCorp Configuration

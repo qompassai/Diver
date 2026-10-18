@@ -1,7 +1,6 @@
 -- ~/.config/nvim/lua/dap/zig.lua
 -- Qompass AI Diver Zig DAP Config
--- Copyright (C) 2026 Qompass AI, All rights reserved
--- --------------------------------------------------
+---@module 'dap.zig'
 local api = vim.api
 local debug = vim.debug
 local fn = vim.fn

@@ -1,7 +1,6 @@
 -- /qompassai/Diver/lua/ai/rose/bridge.lua
 -- Private editor bridge for the Flow MCP workflow (Tiger Style)
--- Copyright (C) 2025 Qompass AI, All rights reserved
--- ----------------------------------------
+---@module 'ai.rose.bridge'
 -- Starts a private, same-user msgpack socket (0600 directory, 0600 socket)
 -- so Flow can call back into this Neovim instance. Unix only.
 

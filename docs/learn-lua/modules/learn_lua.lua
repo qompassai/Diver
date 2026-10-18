@@ -1,7 +1,5 @@
 -- /qompassai/Diver/docs/learn-lua/modules/learn_lua.lua
 -- Qompass AI Diver :: Learn Lua — core language reference
--- Copyright (C) 2026 Qompass AI, All rights reserved
--- ----------------------------------------------------------------------------
 
 --- Core Lua language, taught from the Diver config.
 --

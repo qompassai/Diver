@@ -1,7 +1,5 @@
 -- /qompassai/Diver/lua/types/autocmds.lua
 -- Qompass AI Diver Autocommand Types Config
--- Copyright (C) 2025 Qompass AI, All rights reserved
--- --------------------------------------------------
 ---@meta
 ---@class                   Autocmds
 ---@field go_autocmds?                        fun()

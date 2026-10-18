@@ -1,0 +1,14 @@
+version = 1
+
+# Blanket identification for the diver tree: files that carry their own
+# SPDX lines keep them (the closest declaration wins); this covers the rest.
+[[annotations]]
+path = "**"
+SPDX-FileCopyrightText = "2026 Qompass AI"
+SPDX-License-Identifier = "Apache-2.0"
+
+[[annotations]]
+path = "lua/research/license.lua"
+precedence = "override"
+SPDX-FileCopyrightText = "2026 Qompass AI"
+SPDX-License-Identifier = "Apache-2.0"

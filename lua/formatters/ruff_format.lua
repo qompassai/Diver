@@ -1,8 +1,6 @@
--- #################################################################
 -- ~/.config/nvim/lua/formatters/ruff_format.lua
 -- Qompass AI Diver ruff format Native Formatter Spec
--- Copyright (C) 2026 Qompass AI, All rights reserved
--- #################################################################
+---@module 'formatters.ruff_format'
 ---@source https://github.com/astral-sh/ruff
 ---
 --- ELI5: `ruff format` is the very fast Python formatter. The `-` at

@@ -1,8 +1,6 @@
--- #################################################################
 -- ~/.config/nvim/lua/formatters/buildifier.lua
 -- Native Buildifier Formatter — Neovim 0.13+ / LuaJIT
--- SPDX-License-Identifier: Apache-2.0
--- #################################################################
+---@module 'formatters.buildifier'
 ---@source https://github.com/bazelbuild/buildtools/blob/main/buildifier/README.md
 ---
 --- Buildifier is the code tidier for Bazel's build files (BUILD, .bzl): it

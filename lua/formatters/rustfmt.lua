@@ -1,8 +1,6 @@
--- #################################################################
 -- ~/.config/nvim/lua/formatters/rustfmt.lua
 -- Qompass AI Diver rustfmt Native Formatter Spec
--- Copyright (C) 2026 Qompass AI, All rights reserved
--- #################################################################
+---@module 'formatters.rustfmt'
 ---@source https://github.com/rust-lang/rustfmt
 ---
 --- ELI5: rustfmt is Rust's official code formatter. Called with no file

@@ -1,7 +1,6 @@
 -- /qompassai/Diver/lua/ai/acp/permissions.lua
 -- Qompass AI ACP Permission Prompts (Tiger Style)
--- Copyright (C) 2025 Qompass AI, All rights reserved
--- ----------------------------------------
+---@module 'ai.acp.permissions'
 -- ACP agents request permission before running tools (file writes, shell
 -- commands, etc.) via the agent -> client `permission/request` method.
 -- This module is the default on_permission handler passed to

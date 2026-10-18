@@ -1,7 +1,5 @@
 -- /qompassai/Diver/after/plugin/verilog.lua
 -- Qompass AI Diver After Plugin Verilog Config
--- Copyright (C) 2025 Qompass AI, All rights reserved
--- ----------------------------------------
 vim.bo.shiftwidth = 2
 vim.bo.tabstop = 2
 vim.bo.expandtab = false

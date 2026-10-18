@@ -1,7 +1,5 @@
 -- /qompassai/Diver/lsp/clangd_ls.lua
 -- Qompass AI Diver Clangd LSP Config
--- SPDX-License-Identifier: Apache-2.0
--- Copyright (C) 2025 Qompass AI
 
 local SWITCH_SOURCE_HEADER = 'textDocument/switchSourceHeader'
 local SYMBOL_INFO = 'textDocument/symbolInfo'

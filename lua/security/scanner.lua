@@ -1,7 +1,6 @@
 -- /qompassai/Diver/lua/ai/security/scanner.lua
 -- Qompass AI Content Scanner (Tiger Style)
--- Copyright (C) 2025 Qompass AI, All rights reserved
--- ----------------------------------------
+---@module 'security.scanner'
 -- Byte-level checks over file heads and text, run BEFORE content
 -- enters AI context or gets executed. Covers magic-byte sniffing,
 -- extension-vs-magic mismatch, polyglot markers, null bytes in text

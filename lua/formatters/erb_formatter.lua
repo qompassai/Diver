@@ -1,8 +1,6 @@
--- #################################################################
 -- ~/.config/nvim/lua/formatters/erb_formatter.lua
 -- Native erb-format Formatter Spec — Neovim 0.13+ / LuaJIT
--- SPDX-License-Identifier: Apache-2.0
--- #################################################################
+---@module 'formatters.erb_formatter'
 ---@source https://github.com/nebulab/erb-formatter
 ---
 --- erb-format tidies ERB templates (HTML with embedded Ruby). The

@@ -1,7 +1,6 @@
 -- /qompassai/Diver/lua/ai/mcp/server/protocol.lua
 -- Qompass AI MCP Server Protocol Engine (Tiger Style)
--- Copyright (C) 2026 Qompass AI, All rights reserved
--- ----------------------------------------
+---@module 'ai.mcp.server.protocol'
 -- Transport-agnostic JSON-RPC 2.0 engine for the MCP server side.
 --
 -- Plain words: this is the referee for the conversation. It reads one

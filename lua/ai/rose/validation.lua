@@ -1,7 +1,6 @@
 -- /qompassai/Diver/lua/ai/rose/validation.lua
 -- Host-owned verification gate for agent work (Tiger Style)
--- Copyright (C) 2025 Qompass AI, All rights reserved
--- ----------------------------------------
+---@module 'ai.rose.validation'
 -- Verification is host-owned, not a model assertion: named checks, lint,
 -- editor diagnostics and workspace freshness snapshots combine into a
 -- verified/failed/unverified verdict. Cached diagnostics are advisory and

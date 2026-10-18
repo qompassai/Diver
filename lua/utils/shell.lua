@@ -1,7 +1,6 @@
 -- qompassai/Diver/lua/utils/shell.lua
 -- Qompass AI Diver CICD Shell Config
--- Copyright (C) 2025 Qompass AI, All rights reserved
--- --------------------------------------------------
+---@module 'utils.shell'
 local M = {}
 function M.sh_filetype_detection()
     vim.filetype.add({

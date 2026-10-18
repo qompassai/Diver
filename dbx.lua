@@ -1,7 +1,5 @@
 -- /qompassai/Diver/dbx.lua
 -- Qompass AI Diver Database Config
--- Copyright (C) 2025 Qompass AI, All rights reserved
--- ------------------------------------------------------
 return {
     {
         name = {

@@ -1,8 +1,6 @@
--- #################################################################
 -- ~/.config/nvim/lua/formatters/prettier.lua
 -- Qompass AI Diver Prettier Native Formatter Spec
--- Copyright (C) 2026 Qompass AI, All rights reserved
--- #################################################################
+---@module 'formatters.prettier'
 ---@source https://github.com/keyz/prettier/blob/HEAD/docs/cli.md
 ---
 --- Prettier is the opinionated formatter for JavaScript, TypeScript,

@@ -1,7 +1,5 @@
 -- bounty/init.lua
 -- Bug-bounty workflow: docs utils plus the staged pipeline.
--- Copyright (C) 2026 Qompass AI, All rights reserved
--- ----------------------------------------
 --
 -- Plain language: this is the front door of the bug-bounty workflow. The
 -- docs helpers (program notes, report drafts) live here, and the pipeline

@@ -1,7 +1,6 @@
 -- /qompassai/Diver/lua/ai/security/patterns.lua
 -- Qompass AI Prompt-Injection Pattern Catalog (Tiger Style)
--- Copyright (C) 2025 Qompass AI, All rights reserved
--- ----------------------------------------
+---@module 'security.patterns'
 -- The pattern tables consumed by ai.security.scanner. Every entry
 -- carries a stable code, a severity, the Lua pattern itself, and a
 -- comment explaining what attack phrasing it catches and why it is

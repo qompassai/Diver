@@ -1,8 +1,6 @@
--- #################################################################
 -- ~/.config/nvim/lua/formatters/stylua.lua
 -- stylua formatter
--- SPDX-License-Identifier: Apache-2.0
--- #################################################################
+---@module 'formatters.stylua'
 
 ---@source https://github.com/johnnymorganz/stylua
 

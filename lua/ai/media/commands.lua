@@ -1,7 +1,6 @@
 -- /qompassai/Diver/lua/ai/media/commands.lua
 -- Qompass AI Media User Commands (Tiger Style)
--- Copyright (C) 2025 Qompass AI, All rights reserved
--- ----------------------------------------
+---@module 'ai.media.commands'
 -- User commands and keymaps for media generation: AiTts (speak
 -- text/buffer/selection via the local TTS backend), AiImage (generate an
 -- image from a prompt), AiVideo (video availability, always honest),

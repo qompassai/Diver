@@ -1,8 +1,6 @@
 #!/usr/bin/env bash
 # /qompassai/Diver/scripts/lsp/idris2.sh
 # Qompass AI Diver Idris2 LSP Installer
-# Copyright (C) 2026 Qompass AI, All rights reserved
-# ----------------------------------------
 #!/usr/bin/env bash
 # /qompassai/Diver/scripts/lsp/idris2.sh
 

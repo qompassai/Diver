@@ -1,7 +1,6 @@
 -- /qompassai/Diver/lua/ai/media/tts_local.lua
 -- Qompass AI Local Text-to-Speech Backend (Tiger Style)
--- Copyright (C) 2025 Qompass AI, All rights reserved
--- ----------------------------------------
+---@module 'ai.media.tts_local'
 -- REAL implementation: probes for actually-installed local TTS engines
 -- in preference order (espeak-ng, piper, say on macOS) and shells out to
 -- the first one that can write an audio file, argv form only. spd-say is

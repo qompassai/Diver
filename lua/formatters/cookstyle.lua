@@ -1,8 +1,6 @@
--- #################################################################
 -- ~/.config/nvim/lua/formatters/cookstyle.lua
 -- Native Cookstyle Formatter — Neovim 0.13+ / LuaJIT
--- SPDX-License-Identifier: Apache-2.0
--- #################################################################
+---@module 'formatters.cookstyle'
 ---@source https://github.com/chef/cookstyle
 ---
 --- Cookstyle is the code tidier and style police for Chef cookbooks (Ruby

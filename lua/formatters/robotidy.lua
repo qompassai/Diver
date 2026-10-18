@@ -1,8 +1,6 @@
--- #################################################################
 -- ~/.config/nvim/lua/formatters/robotidy.lua
 -- Qompass AI Diver Robotidy Native Formatter Spec
--- Copyright (C) 2026 Qompass AI, All rights reserved
--- #################################################################
+---@module 'formatters.robotidy'
 ---@source https://github.com/marketsquare/robotframework-tidy
 ---
 --- ELI5: Robotidy tidies up Robot Framework test files. Giving it `-`

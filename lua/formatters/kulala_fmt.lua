@@ -1,8 +1,6 @@
--- #################################################################
 -- ~/.config/nvim/lua/formatters/kulala_fmt.lua
 -- Qompass AI Diver Kulala Format Native Formatter Spec
--- Copyright (C) 2026 Qompass AI, All rights reserved
--- #################################################################
+---@module 'formatters.kulala_fmt'
 ---@source https://github.com/mistweaverco/kulala-fmt/blob/HEAD/README.md
 ---
 --- A tidy-up robot for `.http` files (the request files the

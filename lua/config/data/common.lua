@@ -1,7 +1,6 @@
 -- qompassai/Diver/lua/config/data/common.lua
 -- Qompass AI Diver Data Common Config
--- Copyright (C) 2025 Qompass AI, All rights reserved
--- --------------------------------------------------
+---@module 'config.data.common'
 local M = {}
 function M.detect_sql_root_dir(fname)
 	local ok, util = pcall(require, "lspconfig.util")

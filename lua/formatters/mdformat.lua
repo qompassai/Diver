@@ -1,8 +1,6 @@
--- #################################################################
 -- ~/.config/nvim/lua/formatters/mdformat.lua
 -- Qompass AI Diver Mdformat Native Formatter Spec
--- Copyright (C) 2026 Qompass AI, All rights reserved
--- #################################################################
+---@module 'formatters.mdformat'
 ---@source https://pypi.org/project/mdformat/
 ---
 --- A tidy-up robot for Markdown that follows the CommonMark

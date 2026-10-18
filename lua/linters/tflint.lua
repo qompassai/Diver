@@ -1,7 +1,6 @@
 -- /qompassai/Diver/lua/linters/tflint.lua
 -- Qompass AI Diver Native TFLint Spec
--- Copyright (C) 2025 Qompass AI, All rights reserved
--- SPDX-License-Identifier: Apache-2.0
+---@module 'linters.tflint'
 ---@source https://github.com/terraform-linters/tflint
 ---go install github.com/terraform-linters/tflint@latest
 

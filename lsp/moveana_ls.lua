@@ -1,7 +1,5 @@
 -- /qompassai/Diver/lsp/moveana_ls.lua
 -- Qompass AI Move Analyzer LSP Spec
--- Copyright (C) 2026 Qompass AI, All rights reserved
--- ---------------------------------------------------
 -- Move Analyzer: language server for the Move smart contract language
 -- Source: https://github.com/move-language/move/tree/main/language/move-analyzer
 -- Install: cargo install --path language/move-analyzer

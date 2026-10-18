@@ -1,7 +1,6 @@
 -- /qompassai/Diver/lua/ai/herd/remotes.lua
 -- Qompass AI Herd Remote Machines (Tiger Style)
--- Copyright (C) 2026 Qompass AI, All rights reserved
--- ----------------------------------------
+---@module 'ai.herd.remotes'
 -- v1 scope: a registry of SSH machines (target -> diver checkout path)
 -- plus one-shot queries against a remote machine's own herd socket API.
 -- Each query runs the standalone lua/ai/herd/remote_query.lua on the far

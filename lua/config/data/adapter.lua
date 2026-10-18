@@ -1,8 +1,5 @@
--- #################################################################
 -- qompassai/Diver/lua/config/data/adapter.lua
 -- Qompass AI Diver Native DB Adapter Registry
--- Copyright (C) 2026 Qompass AI, All rights reserved
--- --------------------------------------------------
 --
 -- What db/adapter.vim did: given a URL, extract its scheme, turn that into
 -- a function-name prefix (db#adapter#{scheme}#), and lazily `runtime` an

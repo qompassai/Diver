@@ -1,7 +1,5 @@
 -- /qompassai/Diver/lsp/systemd_ls.lua
 -- Qompass AI Systemd Language Server LSP Config
--- Copyright (C) 2025 Qompass AI, All rights reserved
-------------------------------------------------------
 ---@source https://github.com/JFryy/systemd-lsp
 -- Outside the returned config table: a bare call inside it becomes a numeric
 -- key, which breaks `:checkhealth vim.lsp` (vim.spairs sorts mixed keys).

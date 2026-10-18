@@ -1,8 +1,6 @@
 -- /qompassai/Diver/lua/config/core/lsp.lua
 -- Qompass AI Diver Native LSP Core Config
--- Copyright (C) 2025 Qompass AI, All rights reserved
--- SPDX-License-Identifier: Apache-2.0
--- -----------------------------------------------------
+---@module 'config.core.lsp'
 local M = {}
 local api = vim.api
 local diagnostic = vim.diagnostic

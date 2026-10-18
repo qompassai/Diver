@@ -1,8 +1,6 @@
--- #################################################################
 -- ~/.config/nvim/lua/formatters/opa_fmt.lua
 -- Qompass AI Diver Opa Fmt Native Formatter Spec
--- Copyright (C) 2026 Qompass AI, All rights reserved
--- #################################################################
+---@module 'formatters.opa_fmt'
 ---@source https://v0-63-0--opa-docs.netlify.app/cli/
 ---
 --- OPA is the Open Policy Agent; `opa fmt` formats Rego policy

@@ -1,7 +1,6 @@
 -- /qompassai/diver/lua/ai/debugbridge/scanbreak.lua
 -- Qompass AI Debug Bridge: scan-gate + stop-hook (Tiger Style)
--- Copyright (C) 2026 Qompass AI, All rights reserved
--- ---------------------------------------------------------------
+---@module 'ai.debugbridge.scanbreak'
 -- Two halves of one tripwire.
 --
 --   gate(files, opts): BEFORE launch, every artifact is scanned with

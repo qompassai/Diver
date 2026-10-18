@@ -1,7 +1,5 @@
 -- /qompassai/Diver/lua/dev/sf/trailhead.lua
 -- Qompass AI Diver Salesforce Trailhead Async Agent Jobs
--- Copyright (C) 2026 Qompass AI, All rights reserved
--- --------------------------------------------------
 --
 -- Plain words: this module is the diver-side orchestration shell that lets
 -- AI agents work Trailhead modules asynchronously. It is a bounded job

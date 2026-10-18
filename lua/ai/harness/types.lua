@@ -1,7 +1,6 @@
 -- /qompassai/diver/lua/ai/harness/types.lua
 -- Qompass AI Agent Harness: canonical contracts (Tiger Style)
--- Copyright (C) 2025 Qompass AI, All rights reserved
--- ----------------------------------------
+---@module 'ai.harness.types'
 -- Canonical run/event/budget/capability contracts for the protocol-neutral
 -- agent harness. Every protocol adapter (acp, a2a, mcp, phlow, rose, herd)
 -- translates its native messages into these types; no protocol string ever

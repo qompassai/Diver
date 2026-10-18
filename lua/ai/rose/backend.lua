@@ -1,7 +1,6 @@
 -- /qompassai/Diver/lua/ai/rose/backend.lua
 -- Rose chat backend over the bounded native HTTP client (Tiger Style)
--- Copyright (C) 2025 Qompass AI, All rights reserved
--- ----------------------------------------
+---@module 'ai.rose.backend'
 -- Rose speaks the Ollama API dialect; this module is the client for the
 -- local rose server (see the rose section of ai.rose.config).
 

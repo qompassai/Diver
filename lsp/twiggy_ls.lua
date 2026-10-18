@@ -1,7 +1,5 @@
 -- /qompassai/Diver/lsp/twiggy_ls.lua
 -- Qompass AI Twiggy LSP Spec
--- Copyright (C) 2025 Qompass AI, All rights reserved
--- --------------------------------------------------
 --Reference: https://github.com/moetelo/twiggy
 --pnpm add -g twiggy-language-server
 ---@type vim.lsp.Config

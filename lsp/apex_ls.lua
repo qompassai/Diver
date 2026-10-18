@@ -1,7 +1,5 @@
 -- /qompassai/Diver/lsp/apex_ls.lua
 -- Qompass AI Diver Apex LSP Spec
--- Copyright (C) 2026 Qompass AI, All rights reserved
--- ---------------------------------------------------
 ---@source https://developer.salesforce.com/docs/platform/sfvscode-extensions/guide/apex-language-server.html
 local uv = vim.uv
 local function exists(p)

@@ -1,7 +1,6 @@
 -- /qompassai/Diver/lua/linters/actionlint.lua
 -- Qompass AI Actionlint Linter Spec
--- Copyright (C) 2025 Qompass AI, All rights reserved
--- ----------------------------------------
+---@module 'linters.actionlint'
 ---@type vim.lint.Config
 local actionlint = {
     append_fname = false,

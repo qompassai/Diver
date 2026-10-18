@@ -1,7 +1,6 @@
 -- /qompassai/Diver/lua/dev/sf/analyzer.lua
 -- Qompass AI Diver Salesforce Code Analyzer Utils
--- Copyright (C) 2026 Qompass AI, All rights reserved
--- --------------------------------------------------
+---@module 'dev.sf.analyzer'
 local api = vim.api
 local diagnostic = vim.diagnostic
 local fn = vim.fn

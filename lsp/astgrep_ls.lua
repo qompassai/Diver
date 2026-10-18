@@ -1,7 +1,5 @@
 -- /qompassai/Diver/lsp/astgrep_ls.lua
 -- Qompass AI Astgrep LSP Config
--- Copyright (C) 2025 Qompass AI, All rights reserved
--- ----------------------------------------
 -- Reference:  -- https://ast-grep.github.io/reference/languages.html
 -- pnpm add -g @ast-grep/cli
 ---@type vim.lsp.Config

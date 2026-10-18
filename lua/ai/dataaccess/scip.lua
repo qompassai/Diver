@@ -1,7 +1,6 @@
 -- /qompassai/Diver/lua/ai/dataaccess/scip.lua
 -- Qompass AI Data Access: SCIP Index Metadata (Tiger Style)
--- Copyright (C) 2026 Qompass AI, All rights reserved
--- ----------------------------------------
+---@module 'ai.dataaccess.scip'
 -- Managed read-only metadata about SCIP indexes for AI agents.
 --
 -- Plain words: agents ask the data layer "what do you know?". Databases

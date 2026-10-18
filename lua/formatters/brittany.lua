@@ -1,8 +1,6 @@
--- #################################################################
 -- ~/.config/nvim/lua/formatters/brittany.lua
 -- Native Brittany Formatter — Neovim 0.13+ / LuaJIT
--- SPDX-License-Identifier: Apache-2.0
--- #################################################################
+---@module 'formatters.brittany'
 ---@source https://github.com/lspitzner/brittany/blob/HEAD/README.md
 ---
 --- Brittany is a code tidier for Haskell: it rewrites Haskell source code

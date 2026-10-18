@@ -1,8 +1,6 @@
--- #################################################################
 -- /qompassai/lua/linters/remark_lint.lua
 -- Qompass AI Remark Lint
--- SPDX-License-Identifier: Apache-2.0
--- #################################################################
+---@module 'linters.remark-lint'
 return {
     append_fname = true,
     args = function()

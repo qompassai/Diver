@@ -1,7 +1,6 @@
 #!/usr/bin/env bash
 # /qompassai/Diver/scripts/motoko.sh
 # Qompass AI Motoko Helper Script
-# Copyright (C) 2026 Qompass AI, All rights reserved
 ####################################################
 mkdir -p "$XDG_DATA_HOME/motoko-lsp"
 cd ||"$XDG_DATA_HOME/motoko-lsp"

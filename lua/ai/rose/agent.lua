@@ -1,7 +1,6 @@
 -- /qompassai/Diver/lua/ai/rose/agent.lua
 -- Sequential planner/coder/reviewer agent workflow (Tiger Style)
--- Copyright (C) 2025 Qompass AI, All rights reserved
--- ----------------------------------------
+---@module 'ai.rose.agent'
 -- Only the coder may edit; planner and reviewer are read-only. Host
 -- validation is the gate: roles and the reviewer can only withdraw
 -- approval, never grant it. The host tool module is injectable for tests

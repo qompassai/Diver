@@ -1,7 +1,6 @@
 -- /qompassai/Diver/lua/ai/builder/commands.lua
 -- Qompass AI Interactive Application Builder: User Commands (Tiger Style)
--- Copyright (C) 2025 Qompass AI, All rights reserved
--- ----------------------------------------
+---@module 'ai.builder.commands'
 -- The user-facing surface: :AiBuild starts a new interactive session
 -- (menu -> pipeline), :AiBuildResume continues the last session from the
 -- bounded session file in stdpath('data'). Requiring this module

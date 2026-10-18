@@ -1,6 +1,5 @@
-## qompassai/Diver/ansi/apple.sh
-## Qompass AI Diver Ansi Apple Art
-## Copyright (C) 2025 Qompass AI, All rights reserved
+# qompassai/Diver/ansi/apple.sh
+# Qompass AI Diver Ansi Apple Art
 #####################################################
 
 #!/usr/bin/env sh

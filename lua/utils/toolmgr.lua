@@ -1,7 +1,5 @@
 -- /qompassai/Diver/lua/utils/toolmgr.lua
 -- Qompass AI Diver Tool Manager (Tiger Style)
--- Copyright (C) 2026 Qompass AI, All rights reserved
--- --------------------------------------------------
 -- Shared helpers for the tool-integration modules (git, cargo, khal, jj,
 -- syncthing, tailscale, pass, tmux, ...): package-manager detection, tool
 -- version probing, semver comparison, bounded GitHub release lookups, and

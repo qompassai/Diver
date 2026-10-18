@@ -1,7 +1,5 @@
 -- /qompassai/Diver/lsp/jimmerdto_ls.lua
 -- Qompass AI Diver Jimmer-DTO LSP Spec
--- Copyright (C) 2026 Qompass AI, All rights reserved
--- ----------------------------------------
 vim.api.nvim_create_autocmd({
     'BufRead',
     'BufNewFile',

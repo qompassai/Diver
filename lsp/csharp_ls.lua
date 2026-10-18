@@ -1,7 +1,5 @@
 -- /qompassai/Diver/lsp/csharp_ls.lua
 -- Qompass AI Diver Csharp LSP Config
--- Copyright (C) 2025 Qompass AI, All rights reserved
------------------------------------------------------
 ---@source https://github.com/razzmatazz/csharp-language-server/blob/main/docs/features.md
 return ---@type vim.lsp.Config
 {

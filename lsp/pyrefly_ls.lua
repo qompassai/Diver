@@ -1,7 +1,5 @@
 -- /qompassai/Diver/lsp/pyrefly_ls.lua
 -- Qompass AI Pyrefly LSP Spec
--- Copyright (C) 2025 Qompass AI, All rights reserved
--- --------------------------------------
 local api = vim.api
 
 local function default_python_path()

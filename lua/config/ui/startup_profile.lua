@@ -1,7 +1,5 @@
 -- /qompassai/Diver/lua/config/ui/startup_profile.lua
 -- Qompass AI Diver Startup Profiler
--- Copyright (C) 2026 Qompass AI, All rights reserved
--- ----------------------------------------
 -- Parses Neovim --startuptime logs and displays the slowest-loading
 -- scripts/plugins in a floating window. Inspired by Brendan Gregg's
 -- Systems Performance methodology: measure first, optimize second.

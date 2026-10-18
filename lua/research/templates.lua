@@ -1,7 +1,6 @@
 -- /qompassai/Diver/lua/research/templates.lua
 -- Qompass AI Diver Manuscript Template Utils
--- Copyright (C) 2026 Qompass AI, All rights reserved
--- --------------------------------------------------
+---@module 'research.templates'
 --
 -- Per-journal manuscript skeletons in Markdown and LaTeX. A template is
 -- a starting skeleton shaped by the journal profile (see

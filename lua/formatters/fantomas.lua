@@ -1,8 +1,6 @@
--- #################################################################
 -- ~/.config/nvim/lua/formatters/fantomas.lua
 -- Native Fantomas Formatter Spec — Neovim 0.13+ / LuaJIT
--- SPDX-License-Identifier: Apache-2.0
--- #################################################################
+---@module 'formatters.fantomas'
 ---@source https://github.com/fsprojects/fantomas/blob/HEAD/docs/docs/end-users/UpgradeGuide.md
 ---
 --- Fantomas tidies F# code. Current versions no longer accept code

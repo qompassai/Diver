@@ -1,7 +1,6 @@
 -- /qompassai/Diver/lua/ai/rose/http.lua
 -- Bounded asynchronous HTTP for local model endpoints (Tiger Style)
--- Copyright (C) 2025 Qompass AI, All rights reserved
--- ----------------------------------------
+---@module 'ai.rose.http'
 -- Used for rose chat requests. Never invokes a shell and never reads
 -- credentials; the curl argv is fixed and the URL is validated before any
 -- process starts. Remote hosts require explicit allow_remote consent.

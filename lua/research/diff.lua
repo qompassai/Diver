@@ -1,7 +1,6 @@
 -- /qompassai/Diver/lua/research/diff.lua
 -- Qompass AI Diver Manuscript Diff Utils
--- Copyright (C) 2026 Qompass AI, All rights reserved
--- --------------------------------------------------
+---@module 'research.diff'
 local api = vim.api
 local fn = vim.fn
 local fs = vim.fs

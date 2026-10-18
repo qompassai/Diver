@@ -1,7 +1,5 @@
 -- /qompassai/Diver/lsp/customelements_ls.lua
 -- Qompass AI Custom Elements LSP Spec
--- Copyright (C) 2025 Qompass AI, All rights reserved
--- --------------------------------------------------
 return ---@type vim.lsp.Config
 {
     cmd = {

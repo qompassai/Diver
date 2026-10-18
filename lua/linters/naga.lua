@@ -1,7 +1,6 @@
 -- /qompassai/Diver/linters/naga.lua
 -- Qompass AI Diver Naga Linter Spec
--- Copyright (C) 2025 Qompass AI, All rights reserved
--- ----------------------------------------
+---@module 'linters.naga'
 return {
     append_fname = true,
     args = {},

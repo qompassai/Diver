@@ -1,7 +1,6 @@
 -- /qompassai/Diver/lua/config/lang/css.lua
 -- Qompass AI Diver CSS Config
--- Copyright (C) 2026 Qompass AI, All rights reserved
--- ----------------------------------------
+---@module 'config.lang.css'
 local M = {} ---@version 5.1, JIT
 local api = vim.api
 local augroup = vim.api.nvim_create_augroup

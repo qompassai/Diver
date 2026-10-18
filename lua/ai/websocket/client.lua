@@ -1,7 +1,5 @@
 -- /qompassai/Diver/lua/websocket/client.lua
 -- Native WebSocket client over vim.uv TCP (no FFI, no external plugin).
--- Copyright (C) 2026 Qompass AI, All rights reserved.
--- ----------------------------------------
 --
 -- Plain words: this opens a real WebSocket connection to a server
 -- using only Neovim's built-in networking. You give it an address

@@ -1,7 +1,5 @@
 -- /qompassai/Diver/lsp/idris2_ls.lua
 -- Qompass AI Idris2 LSP SPec
--- Copyright (C) 2025 Qompass AI, All rights reserved
--- ----------------------------------------
 return { ---@type vim.lsp.Config
     cmd = {
         'idris2-lsp',

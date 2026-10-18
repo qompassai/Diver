@@ -1,7 +1,6 @@
 -- /qompassai/Diver/lua/security/red/red.lua
 -- Qompass AI Diver Red Utils
--- Copyright (C) 2026 Qompass AI, All rights reserved
--- ----------------------------------------
+---@module 'security.red.red'
 local M = {}
 local uv = vim.uv or vim.uv
 local function add_findings_to_qf(findings, title)

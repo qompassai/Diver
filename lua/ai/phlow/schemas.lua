@@ -1,7 +1,5 @@
 -- /qompassai/Diver/lua/phlow/schemas.lua
 -- Versioned Phlow API schemas: command names, required params, event names.
--- Copyright (C) 2026 Qompass AI, All rights reserved.
--- ----------------------------------------
 --
 -- Plain words: this is the menu of everything Diver is allowed to ask
 -- Phlow to do. Every command lists the details it must have; if a call

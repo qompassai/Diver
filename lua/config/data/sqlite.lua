@@ -1,8 +1,5 @@
--- #################################################################
 -- qompassai/Diver/lua/config/data/sqlite.lua
 -- Qompass AI Diver Native SQLite Config
--- Copyright (C) 2026 Qompass AI, All rights reserved
--- --------------------------------------------------
 --
 -- Plugin-free SQLite tooling for Neovim 0.13+.
 --

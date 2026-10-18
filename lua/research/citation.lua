@@ -1,7 +1,6 @@
 -- /qompassai/Diver/lua/research/citation.lua
 -- Qompass AI Diver Citation Utils
--- Copyright (C) 2026 Qompass AI, All rights reserved
--- --------------------------------------------------
+---@module 'research.citation'
 local api = vim.api
 local fn = vim.fn
 local M = {}

@@ -1,7 +1,5 @@
 -- /qompassai/Diver/lsp/oxlint_ls.lua
 -- Qompass AI Javascript Oxidation Lint (Oxlint) LSP Spec
--- Copyright (C) 2025 Qompass AI, All rights reserved
--- --------------------------------------------------
 return ---@type vim.lsp.Config
 {
     cmd = {

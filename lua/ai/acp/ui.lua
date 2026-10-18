@@ -1,7 +1,6 @@
 -- /qompassai/Diver/lua/ai/acp/ui.lua
 -- Qompass AI ACP Chat Buffer Rendering (Tiger Style)
--- Copyright (C) 2025 Qompass AI, All rights reserved
--- ----------------------------------------
+---@module 'ai.acp.ui'
 
 local api = vim.api
 

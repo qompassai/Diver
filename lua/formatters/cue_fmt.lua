@@ -1,8 +1,6 @@
--- #################################################################
 -- ~/.config/nvim/lua/formatters/cue_fmt.lua
 -- Native cue fmt Formatter Spec — Neovim 0.13+ / LuaJIT
--- SPDX-License-Identifier: Apache-2.0
--- #################################################################
+---@module 'formatters.cue_fmt'
 ---@source https://cuelang.org/docs/reference/command/cue-help-fmt/
 ---
 --- cue is the toolkit for the CUE configuration language, and

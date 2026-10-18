@@ -1,8 +1,6 @@
--- #################################################################
 -- /qompassai/lua/linters/bootlint.lua
 -- Qompass AI Bootlint
--- SPDX-License-Identifier: Apache-2.0
--- #################################################################
+---@module 'linters.bootlint'
 return {
     append_fname = true,
     args = function()

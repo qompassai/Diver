@@ -1,8 +1,6 @@
--- #################################################################
 -- ~/.config/nvim/lua/formatters/dhall_format.lua
 -- Native dhall format Formatter Spec — Neovim 0.13+ / LuaJIT
--- SPDX-License-Identifier: Apache-2.0
--- #################################################################
+---@module 'formatters.dhall_format'
 ---@source https://hackage.haskell.org/package/dhall-1.42.2/docs/Dhall-Tutorial.html
 ---
 --- Dhall is a configuration language, and the `dhall` program's

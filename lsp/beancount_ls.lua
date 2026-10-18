@@ -1,7 +1,5 @@
 -- /qompassai/Diver/lsp/beancount_ls.lua
 -- Qompass AI Beancount LSP Config
--- Copyright (C) 2025 Qompass AI, All rights reserved
--- --------------------------------------------------
 vim.filetype.add({
     extension = {
         beancount = 'beancount',

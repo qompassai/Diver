@@ -1,7 +1,6 @@
 -- /qompassai/Diver/lua/ai/retrieval/scip.lua
 -- Qompass AI Retrieval: SCIP Symbol Candidates (Tiger Style)
--- Copyright (C) 2026 Qompass AI, All rights reserved.
--- ----------------------------------------
+---@module 'ai.retrieval.scip'
 --
 -- Plain words: the two-stage ranker needs candidates to rank. Text
 -- search finds files by words; this module finds *symbols* by language:

@@ -1,8 +1,6 @@
--- #################################################################
 -- ~/.config/nvim/lua/linters/dash.lua
 -- Qompass AI Diver Native dash Linter
--- SPDX-License-Identifier: Apache-2.0
--- #################################################################
+---@module 'linters.dash'
 ---@source http://gondor.apana.org.au/~herbert/dash/
 -- Native Linter/LintContext interface from cfn-lint.lua, Lua 5.1 compatible.
 -- Arch Linux: sudo pacman -S --needed dash coreutils

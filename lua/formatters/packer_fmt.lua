@@ -1,8 +1,6 @@
--- #################################################################
 -- ~/.config/nvim/lua/formatters/packer_fmt.lua
 -- Qompass AI Diver Packer Fmt Native Formatter Spec
--- Copyright (C) 2026 Qompass AI, All rights reserved
--- #################################################################
+---@module 'formatters.packer_fmt'
 ---@source https://developer.hashiCorp.com/packer/docs/commands/fmt
 ---
 --- `packer fmt` rewrites Packer HCL templates in the canonical style.

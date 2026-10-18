@@ -1,8 +1,6 @@
 #!/usr/bin/env lua5.1 JIT
 -- /qompassai/Diver/lua/security/blue/init.lua
 -- Qompass AI Diver BlueTeam Utils
--- Copyright (C) 2026 Qompass AI, All rights reserved
--- --------------------------------------------------
 local M = {}
 require('security.blue.base64')
 require('security.blue.gpg')

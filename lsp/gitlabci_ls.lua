@@ -1,7 +1,5 @@
 -- /qompassai/Diver/lsp/gitlabci_ls.lua
 -- Qompass AI Gitlab Continuous Integration (CI) LSP Spec
--- Copyright (C) 2025 Qompass AI, All rights reserved
--- ----------------------------------------
 --Reference: https://github.com/alesbrelih/gitlab-ci-ls
 -- cargo install gitlab-ci-ls
 ---@type vim.lsp.Config

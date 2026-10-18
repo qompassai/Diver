@@ -1,7 +1,6 @@
 -- /qompassai/Diver/lua/config/nav/fzf.lua
 -- Qompass AI Diver native FZF navigation; mappings belong to mappings.navmap.
--- Copyright (C) 2025-2026 Qompass AI, All rights reserved
--- SPDX-License-Identifier: Apache-2.0
+---@module 'config.nav.fzf'
 
 local api = vim.api
 local fn = vim.fn

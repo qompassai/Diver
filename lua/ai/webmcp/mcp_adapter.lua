@@ -1,7 +1,5 @@
 -- /qompassai/Diver/lua/ai/webmcp/mcp_adapter.lua
 -- MCP (Model Context Protocol) surface for the WebMCP bridge.
--- Copyright (C) 2026 Qompass AI, All rights reserved.
--- ----------------------------------------
 --
 -- Plain words: the bridge speaks its own tiny frame protocol
 -- ({ "id": 1, "method": "bridge.ping", "params": {} }). This adapter

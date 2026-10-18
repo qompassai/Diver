@@ -1,7 +1,6 @@
 -- /qompassai/Diver/lua/ai/mcp/secrets.lua
 -- Qompass AI MCP Secret Resolution (Tiger Style)
--- Copyright (C) 2026 Qompass AI, All rights reserved
--- --------------------------------------------------
+---@module 'ai.mcp.secrets'
 --
 -- Secret *references* for MCP server declarations. A declaration names the
 -- environment variables a server needs and where to find each value -- never

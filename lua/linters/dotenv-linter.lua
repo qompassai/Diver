@@ -1,8 +1,6 @@
--- #################################################################
 -- /qompassai/lua/linters/dotenv-linter.lua
 -- Qompass AI Dotenv Linter
--- SPDX-License-Identifier: Apache-2.0
--- #################################################################
+---@module 'linters.dotenv-linter'
 return {
     append_fname = true,
     args = function()

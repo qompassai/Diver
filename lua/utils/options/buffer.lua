@@ -1,7 +1,5 @@
 -- /qompassai/Diver/lua/utils/options/buffer.lua
 -- Qompass AI Diver Buffer Options
--- Copyright (C) 2026 Qompass AI, All rights reserved
--- ----------------------------------------
 --- Every buffer-local Neovim option, set explicitly and alphabetically.
 ---
 --- Plain-language version: this file lists every buf Neovim option

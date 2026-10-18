@@ -1,7 +1,6 @@
 -- /qompassai/Diver/lua/ai/acp/session.lua
 -- Qompass AI ACP Session Lifecycle (Tiger Style)
--- Copyright (C) 2025 Qompass AI, All rights reserved
--- ----------------------------------------
+---@module 'ai.acp.session'
 -- Owns the mapping from a running agent process to a single active ACP
 -- session: spawn, initialize handshake, session/new, prompt turns, cancel,
 -- teardown. UI rendering lives in acp/ui.lua; persistence in acp/store.lua.

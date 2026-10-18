@@ -1,7 +1,5 @@
 -- /qompassai/Diver/lsp/html_ls.lua
 -- Qompass AI HTML LSP Config
--- Copyright (C) 2025 Qompass AI, All rights reserved
--- ----------------------------------------
 -- pnpm add -g vscode-langservers-extracted
 ---@type vim.lsp.Config
 return {

@@ -1,8 +1,6 @@
--- #################################################################
 -- ~/.config/nvim/lua/formatters/sqruff.lua
 -- Qompass AI Diver sqruff fix Native Formatter Spec
--- Copyright (C) 2026 Qompass AI, All rights reserved
--- #################################################################
+---@module 'formatters.sqruff'
 ---@source https://github.com/quarylabs/sqruff
 ---
 --- ELI5: sqruff is a very fast SQL formatter and linter written in

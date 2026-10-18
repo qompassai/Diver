@@ -1,7 +1,6 @@
 -- /qompassai/Diver/lua/ai/a2a/orchestrator.lua
 -- Qompass AI A2A Cross-Language Orchestrator (Tiger Style)
--- Copyright (C) 2025 Qompass AI, All rights reserved
--- ----------------------------------------
+---@module 'ai.a2a.orchestrator'
 -- Fan-out / fan-in across the official A2A SDK drivers: one task is
 -- dispatched to one agent per language and a single callback
 -- receives every result in language order. Registry lookup and

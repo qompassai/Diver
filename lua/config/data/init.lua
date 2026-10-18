@@ -1,8 +1,5 @@
--- #################################################################
 -- qompassai/Diver/lua/config/data/init.lua
 -- Qompass AI Diver Native Database Orchestrator
--- Copyright (C) 2026 Qompass AI, All rights reserved
--- --------------------------------------------------
 --
 -- What this reproduces from db.vim:
 --   - URL resolution: explicit arg > named connection (dbx.lua) > b:db >

@@ -1,8 +1,6 @@
--- #################################################################
 -- ~/.config/nvim/lua/formatters/latexindent.lua
 -- Qompass AI Diver Latexindent Native Formatter Spec
--- Copyright (C) 2026 Qompass AI, All rights reserved
--- #################################################################
+---@module 'formatters.latexindent'
 ---@source https://www.tug.org/texmf/doc/support/latexindent/latexindent.pdf
 ---
 --- A tidy-up robot for LaTeX documents. Called with no arguments,

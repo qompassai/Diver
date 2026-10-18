@@ -1,7 +1,5 @@
 -- /qompassai/Diver/lua/email/clients/neomutt.lua
 -- Qompass AI Diver Neomutt Email Client Backend (Tiger Style)
--- Copyright (C) 2026 Qompass AI, All rights reserved
--- --------------------------------------------------
 -- Neomutt backend for his five-account setup. Opens neomutt in a float
 -- terminal, parses his real neomuttrc + account files (never hardcodes his
 -- addresses; they are read from the files at runtime with graceful

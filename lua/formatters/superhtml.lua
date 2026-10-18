@@ -1,8 +1,6 @@
--- #################################################################
 -- ~/.config/nvim/lua/formatters/superhtml.lua
 -- superhtml formatter
--- SPDX-License-Identifier: Apache-2.0
--- #################################################################
+---@module 'formatters.superhtml'
 
 ---@source https://github.com/kristoff-it/superhtml/blob/HEAD/README.md
 

@@ -1,8 +1,6 @@
--- #################################################################
 -- ~/.config/nvim/lua/formatters/schemat.lua
 -- Qompass AI Diver schemat Native Formatter Spec
--- Copyright (C) 2026 Qompass AI, All rights reserved
--- #################################################################
+---@module 'formatters.schemat'
 ---@source https://github.com/raviqqe/schemat
 ---
 --- ELI5: schemat tidies up Scheme-flavoured code (any S-expressions,

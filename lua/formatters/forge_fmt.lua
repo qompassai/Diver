@@ -1,8 +1,6 @@
--- #################################################################
 -- ~/.config/nvim/lua/formatters/forge_fmt.lua
 -- Native forge fmt Formatter Spec — Neovim 0.13+ / LuaJIT
--- SPDX-License-Identifier: Apache-2.0
--- #################################################################
+---@module 'formatters.forge_fmt'
 ---@source https://github.com/foundry-rs/book/blob/HEAD/src/pages/forge/formatting.mdx
 ---@source https://github.com/foundry-rs/foundry/pull/1336
 ---

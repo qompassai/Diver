@@ -1,8 +1,6 @@
--- #################################################################
 -- ~/.config/nvim/lua/formatters/grain_format.lua
 -- Qompass AI Diver Grain Format Native Formatter Spec
--- Copyright (C) 2026 Qompass AI, All rights reserved
--- #################################################################
+---@module 'formatters.grain_format'
 ---@source https://github.com/grain-lang/grain-lang.org/blob/HEAD/src_blog/_posts/Grain-Formatter.md
 ---
 --- Grain's own tidy-up robot: `grain format <file>` reads the given

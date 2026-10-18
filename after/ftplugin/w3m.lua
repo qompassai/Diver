@@ -1,8 +1,6 @@
 #!/usr/bin/env lua
 -- /qompassai/Diver/after/ftplugin/w3m.lua
 -- Qompass AI Diver After Filetype W3m Config
--- Copyright (C) 2026 Qompass AI, All rights reserved
--- ----------------------------------------
 if vim.b.did_ftplugin then
     return
 end

@@ -1,8 +1,6 @@
--- #################################################################
 -- ~/.config/nvim/lua/formatters/gofmt.lua
 -- Qompass AI Diver Gofmt Native Formatter Spec
--- Copyright (C) 2026 Qompass AI, All rights reserved
--- #################################################################
+---@module 'formatters.gofmt'
 ---@source https://manpages.debian.org/unstable/gccgo-go/gofmt.1.en.html
 ---
 --- Go's own tidy-up robot: it reads your Go code and prints it back

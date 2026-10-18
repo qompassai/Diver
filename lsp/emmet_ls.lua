@@ -1,7 +1,5 @@
 -- /qompassai/Diver/lsp/emmet_ls.lua
 -- Qompass AI Emmet LSP Spec
--- Copyright (C) 2025 Qompass AI, All rights reserved
--- --------------------------------------------------
 -- Reference: --- https://github.com/olrtg/emmet-language-server
 -- pnpm add -g g @olrtg/emmet-language-server@latest
 ---@type vim.lsp.Config

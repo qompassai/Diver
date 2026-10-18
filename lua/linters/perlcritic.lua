@@ -1,8 +1,6 @@
--- #################################################################
 -- /qompassai/Diver/lua/linters/perlcritic.lua
 -- Native Perl::Critic Linter — Neovim 0.13+ / LuaJIT
--- SPDX-License-Identifier: Apache-2.0
--- #################################################################
+---@module 'linters.perlcritic'
 ---@source https://github.com/Perl-Critic/Perl-Critic
 --   local lint = require('linters')
 --   lint.register('perlcritic', require('linters.perlcritic'))

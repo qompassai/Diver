@@ -1,7 +1,5 @@
 -- /qompassai/Diver/lsp/smarty_ls.lua
 -- Qompass AI Smarty LSP Spec
--- Copyright (C) 2025 Qompass AI, All rights reserved
--- ----------------------------------------
 --pnpm add -g  vscode-smarty-langserver-extracted
 ---@type vim.lsp.Config
 return {

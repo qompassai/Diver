@@ -1,7 +1,6 @@
 -- /qompassai/Diver/lua/security/red/tomcat.lua
 -- Qompass AI Diver RedTeam TomCat Utils
--- Copyright (C) 2026 Qompass AI, All rights reserved
--- ----------------------------------------
+---@module 'security.red.tomcat'
 local M = {} ---@version JIT
 local function parse_headers_and_status(raw)
     local status = raw:match('__STATUS__:(%d+)')

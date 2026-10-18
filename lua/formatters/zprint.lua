@@ -1,8 +1,6 @@
--- #################################################################
 -- ~/.config/nvim/lua/formatters/zprint.lua
 -- zprint formatter
--- SPDX-License-Identifier: Apache-2.0
--- #################################################################
+---@module 'formatters.zprint'
 
 ---@source https://github.com/kkinnear/zprint/blob/HEAD/doc/using/files.md
 

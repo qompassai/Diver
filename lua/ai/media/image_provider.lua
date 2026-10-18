@@ -1,7 +1,6 @@
 -- /qompassai/Diver/lua/ai/media/image_provider.lua
 -- Qompass AI Image Generation Backend (Tiger Style)
--- Copyright (C) 2025 Qompass AI, All rights reserved
--- ----------------------------------------
+---@module 'ai.media.image_provider'
 -- OpenAI images API via the ported provider module `ai.rose.provider.openai`
 -- (Module 1, landing in parallel). The provider module is REQUIRED: it is
 -- loaded with pcall and its descriptor shape is validated, so this backend

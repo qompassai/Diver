@@ -1,8 +1,6 @@
--- #################################################################
 -- /qompassai/Diver/lua/linters/vulture.lua
 -- Native Vulture Python dead-code linter — Neovim 0.13+ / LuaJIT
--- SPDX-License-Identifier: Apache-2.0
--- #################################################################
+---@module 'linters.vulture'
 ---@source https://github.com/jendrikseipp/vulture/tree/b0f67ba0044693aa9ec0d38fe460590facc98004
 local api = vim.api
 local diagnostic = vim.diagnostic

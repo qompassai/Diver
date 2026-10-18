@@ -1,7 +1,6 @@
 -- /qompassai/Diver/lua/utils/clipboard.lua
 -- Qompass AI Diver Clipboard Integration for Wayland/X11
--- Copyright (C) 2025 Qompass AI, All rights reserved
--- --------------------------------------------------
+---@module 'research.clipboard'
 local M = {}
 --- @param debug boolean?
 function M.setup(debug)

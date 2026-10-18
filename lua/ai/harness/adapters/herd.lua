@@ -1,7 +1,6 @@
 -- /qompassai/diver/lua/ai/harness/adapters/herd.lua
 -- Qompass AI Agent Harness: Herd adapter (Tiger Style)
--- Copyright (C) 2025 Qompass AI, All rights reserved
--- ----------------------------------------
+---@module 'ai.harness.adapters.herd'
 -- Thin translator over ai.herd. Preserves Herd native semantics: worker
 -- identity, process ownership, remote topology. A run maps to one herd
 -- worker agent; killing the worker cancels the run. Wraps; does not

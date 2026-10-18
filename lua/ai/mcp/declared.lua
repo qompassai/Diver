@@ -1,7 +1,6 @@
 -- /qompassai/Diver/lua/ai/mcp/declared.lua
 -- Qompass AI Declared MCP Server Loader (Tiger Style)
--- Copyright (C) 2026 Qompass AI, All rights reserved
--- --------------------------------------------------
+---@module 'ai.mcp.declared'
 --
 -- Loads lua/ai/mcp/declared_servers.lua, validates each declaration through
 -- registry.validate() (executable presence is not required at load: a

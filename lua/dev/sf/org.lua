@@ -1,7 +1,6 @@
 -- /qompassai/Diver/lua/dev/sf/org.lua
 -- Qompass AI Diver Salesforce Org Utils
--- Copyright (C) 2026 Qompass AI, All rights reserved
--- --------------------------------------------------
+---@module 'dev.sf.org'
 local core = require('dev.sf.core')
 local fn = vim.fn
 local M = {}

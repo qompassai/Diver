@@ -1,8 +1,5 @@
--- #################################################################
 -- qompassai/Diver/lua/config/data/sql.lua
 -- Qompass AI Diver Native SQL Language Toolkit
--- Copyright (C) 2026 Qompass AI, All rights reserved
--- --------------------------------------------------
 --
 -- Backend-agnostic SQL utilities for Neovim 0.13+.
 --

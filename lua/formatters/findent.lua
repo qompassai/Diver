@@ -1,8 +1,6 @@
--- #################################################################
 -- ~/.config/nvim/lua/formatters/findent.lua
 -- Native findent Formatter Spec — Neovim 0.13+ / LuaJIT
--- SPDX-License-Identifier: Apache-2.0
--- #################################################################
+---@module 'formatters.findent'
 ---@source https://pypi.org/project/findent/4.1.3/
 ---
 --- findent tidies Fortran code. With no file arguments it reads the

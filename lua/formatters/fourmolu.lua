@@ -1,8 +1,6 @@
--- #################################################################
 -- ~/.config/nvim/lua/formatters/fourmolu.lua
 -- Native Fourmolu Formatter Spec — Neovim 0.13+ / LuaJIT
--- SPDX-License-Identifier: Apache-2.0
--- #################################################################
+---@module 'formatters.fourmolu'
 ---@source https://github.com/fourmolu/fourmolu
 ---
 --- Fourmolu tidies Haskell code. `--mode stdout` flips it into pipe

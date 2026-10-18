@@ -1,8 +1,5 @@
--- #################################################################
 -- /qompassai/Diver/lua/refactor/init.lua
 -- Native Neovim 0.13+ refactor facade
--- SPDX-License-Identifier: Apache-2.0
--- #################################################################
 
 local core = require('dev.refactor.core')
 local debug = require('dev.refactor.debug')

@@ -1,9 +1,5 @@
--- #################################################################
 -- /qompassai/diver/tests/lang/buffer_local_commands.lua
 -- Qompass AI Diver buffer-local command tests
--- Copyright (C) 2026 Qompass AI, All rights reserved
--- SPDX-License-Identifier: Apache-2.0
--- #################################################################
 -- Run from the config root with the FULL config (lang modules load at
 -- startup):
 --   nvim --headless -u init.lua -c "luafile tests/lang/buffer_local_commands.lua" -c "qall!"

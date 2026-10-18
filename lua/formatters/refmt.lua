@@ -1,8 +1,6 @@
--- #################################################################
 -- ~/.config/nvim/lua/formatters/refmt.lua
 -- Qompass AI Diver refmt Native Formatter Spec
--- Copyright (C) 2026 Qompass AI, All rights reserved
--- #################################################################
+---@module 'formatters.refmt'
 ---@source https://github.com/reasonml/reasonml.github.io/blob/HEAD/docs/refmt.md
 ---
 --- ELI5: refmt is the Reason language's parser and pretty-printer. With

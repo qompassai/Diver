@@ -1,7 +1,6 @@
 #!/usr/bin/env bash
 # /qompassai/Diver/lsp/cargo.sh
 # Qompass AI Diver Rust/Cargo LSP installer
-# SPDX-License-Identifier: Apache-2.0
 set -Eeuo pipefail
 XDG_DATA_HOME="${XDG_DATA_HOME:-$HOME/.local/share}"
 CARGO_HOME="${CARGO_HOME:-$XDG_DATA_HOME/cargo}"

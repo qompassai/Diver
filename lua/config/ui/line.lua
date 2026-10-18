@@ -1,7 +1,6 @@
 -- /qompassai/Diver/lua/config/ui/line.lua
 -- Qompass AI Diver Statusline Config
--- Copyright (C) 2025 Qompass AI, All rights reserved
--- ----------------------------------------
+---@module 'config.ui.line'
 local M = {}
 
 local api = vim.api

@@ -1,8 +1,6 @@
--- #################################################################
 -- ~/.config/nvim/lua/formatters/hledger_fmt.lua
 -- Qompass AI Diver hledger-fmt Native Formatter Spec
--- Copyright (C) 2026 Qompass AI, All rights reserved
--- #################################################################
+---@module 'formatters.hledger_fmt'
 ---@source https://github.com/mondeja/hledger-fmt/blob/HEAD/README.md
 ---
 --- A tidy-up robot for hledger journal files: it lines up the

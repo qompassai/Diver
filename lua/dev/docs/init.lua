@@ -1,9 +1,5 @@
--- #################################################################
 -- /qompassai/diver/lua/dev/docs.lua
 -- Qompass AI Diver Docs-Meta (Tiger Style)
--- SPDX-License-Identifier: Apache-2.0
--- Copyright (c) 2026 Qompass AI
--- #################################################################
 ---@module 'dev.docs'
 --
 -- In-editor query front for docs-meta: versioned language-reference

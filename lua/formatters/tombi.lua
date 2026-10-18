@@ -1,8 +1,6 @@
--- #################################################################
 -- ~/.config/nvim/lua/formatters/tombi.lua
 -- tombi formatter
--- SPDX-License-Identifier: Apache-2.0
--- #################################################################
+---@module 'formatters.tombi'
 
 ---@source https://github.com/tombi-toml/tombi/pull/451
 

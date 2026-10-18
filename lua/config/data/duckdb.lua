@@ -1,8 +1,5 @@
--- #################################################################
 -- qompassai/Diver/lua/config/data/duckdb.lua
 -- Qompass AI Diver Native DuckDB Config
--- Copyright (C) 2026 Qompass AI, All rights reserved
--- --------------------------------------------------
 --
 -- Plugin-free DuckDB tooling for Neovim 0.13+.
 --

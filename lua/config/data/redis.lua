@@ -1,8 +1,5 @@
--- #################################################################
 -- qompassai/Diver/lua/config/data/redis.lua
 -- Qompass AI Diver Native Redis Config
--- Copyright (C) 2026 Qompass AI, All rights reserved
--- --------------------------------------------------
 --
 -- Plugin-free Redis tooling for Neovim 0.13+.
 --

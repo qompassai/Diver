@@ -1,7 +1,6 @@
 -- /qompassai/Diver/lua/config/ui/icons.lua
 -- Qompass AI Diver Icons Config
--- Copyright (C) 2025 Qompass AI, All rights reserved
-------------------------------------------------------
+---@module 'config.ui.icons'
 local M = {}
 ---@param config table|nil Module config table. See |Icons.config|.
 ---@usage >lua

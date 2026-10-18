@@ -1,7 +1,5 @@
 -- /qompassai/Diver/lua/utils/options/global.lua
 -- Qompass AI Diver Global Options
--- Copyright (C) 2026 Qompass AI, All rights reserved
--- ----------------------------------------
 --- Every global-scoped Neovim option, set explicitly and alphabetically.
 ---
 --- Plain-language version: this file lists every global Neovim option

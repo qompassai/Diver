@@ -1,7 +1,5 @@
 -- /qompassai/Diver/lsp/lwc_ls.lua
 -- Qompass AI Lightning Web Components (LWC) LSP Spec
--- Copyright (C) 2025 Qompass AI, All rights reserved
--- -------------------------------------------------
 ---@source https://github.com/forcedotcom/lightning-language-server/
 local uv = vim.uv
 local function path_join(...)

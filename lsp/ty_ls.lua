@@ -1,7 +1,5 @@
 -- /qompassai/Dive/lsp/ty_ls.lua
 -- Qompass AI Diver Ty LSP Spec
--- Copyright (C) 2025 Qompass AI, All rights reserved
------------------------------------------------------
 local api = vim.api
 
 local function default_python_path()

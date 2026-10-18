@@ -1,8 +1,6 @@
--- #################################################################
 -- ~/.config/nvim/lua/formatters/typstyle.lua
 -- typstyle formatter
--- SPDX-License-Identifier: Apache-2.0
--- #################################################################
+---@module 'formatters.typstyle'
 
 ---@source https://github.com/Enter-tainer/typstyle
 

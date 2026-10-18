@@ -1,8 +1,6 @@
--- #################################################################
 -- ~/.config/nvim/lua/formatters/ormolu.lua
 -- Qompass AI Diver Ormolu Native Formatter Spec
--- Copyright (C) 2026 Qompass AI, All rights reserved
--- #################################################################
+---@module 'formatters.ormolu'
 ---@source https://github.com/tweag/ormolu/blob/HEAD/README.md
 ---
 --- Ormolu is the opinionated Haskell code formatter. With no input

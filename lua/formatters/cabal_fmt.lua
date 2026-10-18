@@ -1,8 +1,6 @@
--- #################################################################
 -- ~/.config/nvim/lua/formatters/cabal_fmt.lua
 -- Native cabal-fmt Formatter — Neovim 0.13+ / LuaJIT
--- SPDX-License-Identifier: Apache-2.0
--- #################################################################
+---@module 'formatters.cabal_fmt'
 ---@source https://github.com/phadej/cabal-fmt/blob/HEAD/README.md
 ---
 --- cabal-fmt tidies Haskell package description files (the `.cabal` files

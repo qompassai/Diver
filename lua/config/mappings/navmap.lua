@@ -1,6 +1,6 @@
 -- /qompassai/Diver/lua/mappings/navmap.lua
 -- Navigation owns leader n*, quickfix q*, location lists l*; LSP actions are buffer-local.
--- SPDX-License-Identifier: Apache-2.0
+---@module 'config.mappings.navmap'
 local api = vim.api
 local core = require('config.mappings._core')
 local qf = require('config.core.qf')

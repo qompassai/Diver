@@ -1,7 +1,6 @@
 -- /qompassai/Diver/lua/ai/builder/menu.lua
 -- Qompass AI Interactive Application Builder: Option Gathering (Tiger Style)
--- Copyright (C) 2025 Qompass AI, All rights reserved
--- ----------------------------------------
+---@module 'ai.builder.menu'
 -- Collects a BuilderSpec through vim.ui.select menus (project type,
 -- language, features multi-pick, model) plus vim.ui.input free write-in
 -- fields. M.validate/1 is pure and unit-testable; M.interactive/1 chains

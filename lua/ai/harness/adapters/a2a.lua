@@ -1,7 +1,6 @@
 -- /qompassai/diver/lua/ai/harness/adapters/a2a.lua
 -- Qompass AI Agent Harness: A2A adapter (Tiger Style)
--- Copyright (C) 2025 Qompass AI, All rights reserved
--- ----------------------------------------
+---@module 'ai.harness.adapters.a2a'
 -- Thin translator over ai.a2a.tasks / ai.a2a.client. Preserves A2A native
 -- semantics: Agent Cards, task ids, artifacts, input-required, task
 -- lifecycle with polling/streaming/push. Wraps; does not modify ai/a2a.

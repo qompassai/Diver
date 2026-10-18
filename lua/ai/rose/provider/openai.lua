@@ -1,7 +1,6 @@
 -- /qompassai/Diver/lua/ai/rose/provider/openai.lua
 -- OpenAI legacy provider class (Tiger Style)
--- Copyright (C) 2025 Qompass AI, All rights reserved
--- ----------------------------------------
+---@module 'ai.rose.provider.openai'
 -- Historical provider-class interface kept for compatibility. The modern
 -- ai.rose.providers registry is the preferred native interface.
 

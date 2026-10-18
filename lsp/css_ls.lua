@@ -1,7 +1,5 @@
 -- /qompassai/Diver/lsp/css_ls.lua
 -- Qompass AI VSCode Css LSP Config
--- Copyright (C) 2025 Qompass AI, All rights reserved
-----------------------------------------------------------------
 ---@type vim.lsp.Config
 return {
     cmd = { ---@type string[]

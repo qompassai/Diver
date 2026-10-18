@@ -1,25 +1,10 @@
+-- /qompassai/diver/tests/proto/websocket.lua
+-- Qompass AI Diver Lua WebSocket Test
 --- WebSocket self-test — proves the websocket helpers work.
 ---
 --- Plain-language version: this is a test script, not a feature. It exercises the websocket helpers and reports
 --- pass or fail. It runs headless via `nvim -l`; it is not loaded at startup.
 ---@module 'tests.websocket'
--- #################################################################
--- /qompassai/diver/tests/proto/websocket.lua
--- Qompass AI Diver Lua WebSocket Test
--- SPDX-License-Identifier: Apache-2.0
--- Copyright (c) 2026 Qompass AI
---
--- Licensed under the Apache License, Version 2.0 (the "License");
--- you may not use this file except in compliance with the License.
--- You may obtain a copy of the License at:
---   http://www.apache.org/licenses/LICENSE-2.0
---
--- Unless required by applicable law or agreed to in writing, software
--- distributed under the License is distributed on an "AS IS" BASIS,
--- WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
--- See the License for the specific language governing permissions and
--- limitations under the License.
--- #################################################################
 local T = {}
 function T.assert(value, message)
     assert(value, message)

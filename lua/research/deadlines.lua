@@ -1,7 +1,6 @@
 -- /qompassai/Diver/lua/research/deadlines.lua
 -- Qompass AI Diver Research Deadlines Utils
--- Copyright (C) 2026 Qompass AI, All rights reserved
--- --------------------------------------------------
+---@module 'research.deadlines'
 --
 -- Research-opportunity deadlines (grants, contests, events, CFPs,
 -- journal deadlines) from a plain JSON data file, rendered in the

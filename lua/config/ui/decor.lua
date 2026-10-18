@@ -1,7 +1,6 @@
 -- /qompassai/Diver/lua/config/ui/decor.lua
 -- Qompass AI Diver UI Decorations Config
--- Copyright (C) 2026 Qompass AI, All rights reserved
--- ----------------------------------------
+---@module 'config.ui.decor'
 local M = {} ---@version JIT
 local ts = vim.treesitter
 local NS_CONTEXT = vim.api.nvim_create_namespace('TSContext')

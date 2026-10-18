@@ -1,6 +1,6 @@
 -- /qompassai/Diver/lua/config/core/parser.lua
 -- Bounded colon diagnostics; compare full paths, never just equal basenames.
--- SPDX-License-Identifier: Apache-2.0
+---@module 'config.core.parser'
 local api = vim.api
 local M = {}
 local DIAGNOSTICS_MAX = 20000

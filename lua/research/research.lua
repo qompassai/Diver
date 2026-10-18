@@ -1,7 +1,6 @@
 -- /qompassai/Diver/lua/research/research.lua
 -- Qompass AI Diver Scholarly Research Utils
--- Copyright (C) 2026 Qompass AI, All rights reserved
--- --------------------------------------------------
+---@module 'research.research'
 local api = vim.api
 local fn = vim.fn
 local M = {}

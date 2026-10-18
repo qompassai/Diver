@@ -1,7 +1,5 @@
 -- /qompassai/Diver/lsp/fsharp_ls.lua
 -- Qompass AI F# LSP Spec
--- Copyright (C) 2025 Qompass AI, All rights reserved
--- ---------------------------------------------------
 vim.api.nvim_create_autocmd({
     'BufNewFile',
     'BufRead',

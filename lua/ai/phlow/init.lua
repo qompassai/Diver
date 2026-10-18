@@ -1,7 +1,5 @@
 -- /qompassai/Diver/lua/phlow/init.lua
 -- Public surface of the versioned Phlow API client (presentation side).
--- Copyright (C) 2026 Qompass AI, All rights reserved.
--- ----------------------------------------
 --
 -- Plain words: this is the front door. You call connect() with where
 -- Phlow lives, and you get back a clerk (client) who can send commands

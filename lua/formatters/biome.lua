@@ -1,8 +1,6 @@
--- #################################################################
 -- ~/.config/nvim/lua/formatters/biome.lua
 -- Native Biome Formatter — Neovim 0.13+ / LuaJIT
--- SPDX-License-Identifier: Apache-2.0
--- #################################################################
+---@module 'formatters.biome'
 ---@source https://next.biomejs.dev/reference/cli/
 ---
 --- Biome is the all-in-one code tidier for JavaScript, TypeScript and JSON:

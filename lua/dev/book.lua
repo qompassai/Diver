@@ -1,7 +1,5 @@
 -- /qompassai/Diver/lua/dev/book.lua
 -- :DiverBook -- build and open the config's mdBook documentation.
--- Copyright (C) 2026 Qompass AI, All rights reserved.
--- ----------------------------------------
 --
 -- Plain words: the book under the diver repo's docs/book/ is
 -- generated from the config's LuaCATS annotations by

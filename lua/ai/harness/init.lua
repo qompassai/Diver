@@ -1,7 +1,5 @@
 -- /qompassai/diver/lua/ai/harness/init.lua
 -- Qompass AI Agent Harness: narrow public API (Tiger Style)
--- Copyright (C) 2025 Qompass AI, All rights reserved
--- ----------------------------------------
 -- Protocol-neutral control plane for agent runs. The harness owns run
 -- lifecycle, cancellation, budgets, policy, context snapshots, structured
 -- events, persistence, and evaluation; protocol adapters only translate.

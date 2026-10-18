@@ -1,7 +1,6 @@
 -- /qompassai/Diver/lua/ai/security/mcp_vet.lua
 -- Qompass AI MCP Tool-Metadata Vetting (Tiger Style)
--- Copyright (C) 2025 Qompass AI, All rights reserved
--- ----------------------------------------
+---@module 'security.mcp_vet'
 -- Client-side vetting of MCP server tool metadata (names + descriptions)
 -- at registration/discovery time, BEFORE the descriptions enter AI
 -- context. Tool descriptions are attacker-controlled text from the

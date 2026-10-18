@@ -1,8 +1,5 @@
--- #################################################################
 -- ~/.config/nvim/lua/formatters/gofumpt.lua
 -- Qompass AI Diver Gofumpt Native Formatter Spec
--- Copyright (C) 2026 Qompass AI, All rights reserved
--- #################################################################
 ---@source https://github.com/mvdan/gofumpt
 
 --- Stricter Go formatter — gofmt plus extra rules, import-safe.

@@ -1,7 +1,6 @@
 -- /qompassai/Diver/lua/ai/rose/commands.lua
 -- Rose* user commands (Tiger Style)
--- Copyright (C) 2025 Qompass AI, All rights reserved
--- ----------------------------------------
+---@module 'ai.rose.commands'
 -- The user-facing command surface for native Rose. Registration is
 -- idempotent (force = true) and collision-free: every name is prefixed
 -- with Rose. The rose module is injected so this file never requires

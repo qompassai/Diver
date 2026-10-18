@@ -1,16 +1,10 @@
--- #################################################################
 -- /qompassai/Diver/lua/linters/luacheck.lua
 -- Qompass AI Diver Native Luacheck Linter
--- SPDX-License-Identifier: Apache-2.0
--- Copyright (c) 2026 Qompass AI
---
 -- Detects a Lua target per buffer. Precedence:
 -- 1. vim.b[bufnr].luacheck_std
 -- 2. A Lua shebang, e.g. #!/usr/bin/env lua5.4 or luajit
 -- 3. A leading ---@version annotation
 -- 4. vim.g.luacheck_std
---
--- #################################################################
 
 local api = vim.api
 local diagnostic = vim.diagnostic

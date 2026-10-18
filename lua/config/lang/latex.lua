@@ -1,7 +1,6 @@
 -- /qompassai/Diver/lua/config/lang/latex.lua
 -- Qompass AI Diver LaTeX Config
--- Copyright (C) 2025 Qompass AI, All rights reserved
--- ---------------------------------------------------
+---@module 'config.lang.latex'
 local autocmd = vim.api.nvim_create_autocmd
 local code_action = vim.lsp.buf.code_action
 local fmt = vim.lsp.buf.format

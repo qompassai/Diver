@@ -1,7 +1,6 @@
 -- /qompassai/Diver/linters/mado.lua
 -- Qompass AI Diver Mado Linter Spec
--- Copyright (C) 2026 Qompass AI, All rights reserved
--- --------------------------------------------------
+---@module 'linters.mado'
 ---@type vim.lint.Config
 return {
     append_fname = true,

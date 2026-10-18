@@ -1,7 +1,5 @@
 -- /qompassai/Diver/lsp/tsquery_ls.lua
 -- Qompass AI TS Query LSP Spec
--- Copyright (C) 2025 Qompass AI, All rights reserved
--- --------------------------------------------------
 local fn = vim.fn
 local fs = vim.fs
 

@@ -1,7 +1,6 @@
 -- /qompassai/Diver/lua/ai/mcp/registry.lua
 -- Qompass AI MCP Server Registry (Tiger Style)
--- Copyright (C) 2025 Qompass AI, All rights reserved
--- ----------------------------------------
+---@module 'ai.mcp.registry'
 -- CRUD over the MCP server registry: name -> {command, args, env, cwd,
 -- enabled}. Persisted as JSON at stdpath('data')/ai/mcp/servers.json with
 -- atomic tmp+rename writes and a bounded file size. Entries are validated

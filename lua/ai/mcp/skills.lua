@@ -1,7 +1,5 @@
 -- /qompassai/Diver/lua/ai/mcp/skills.lua
 -- Loader for SKILL.md skill libraries (uphiago/recon-skills).
--- Copyright (C) 2026 Qompass AI, All rights reserved.
--- ----------------------------------------
 --
 -- Plain words: the recon-skills repo is a library of Markdown
 -- procedure documents. This module reads their frontmatter

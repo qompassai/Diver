@@ -1,7 +1,6 @@
 -- /qompassai/Diver/lua/ai/debugbridge/api.lua
 -- Qompass AI Debug Bridge Socket API (Tiger Style)
--- Copyright (C) 2025 Qompass AI, All rights reserved
--- ----------------------------------------
+---@module 'ai.debugbridge.api'
 -- Agent-native control surface for the debug bridge (one managed
 -- bridge over diver's lua/dap/ DAP client suite and lua/bsp/ build
 -- client): a unix-domain socket server speaking newline-delimited

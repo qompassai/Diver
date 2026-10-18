@@ -1,7 +1,6 @@
 -- /qompassai/Diver/lua/research/picker.lua
 -- Qompass AI Diver Journal Picker Utils
--- Copyright (C) 2026 Qompass AI, All rights reserved
--- --------------------------------------------------
+---@module 'research.picker'
 --
 -- Picker front-end for the journal workflow: choose a journal (then an
 -- article type, then a format) through the native FZF picker

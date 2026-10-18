@@ -1,8 +1,6 @@
--- #################################################################
 -- ~/.config/nvim/lua/formatters/docstrfmt.lua
 -- Native docstrfmt Formatter Spec — Neovim 0.13+ / LuaJIT
--- SPDX-License-Identifier: Apache-2.0
--- #################################################################
+---@module 'formatters.docstrfmt'
 ---@source https://github.com/lilspazjoekp/docstrfmt/blob/HEAD/README.rst
 ---
 --- docstrfmt tidies reStructuredText documents and docstrings. Given

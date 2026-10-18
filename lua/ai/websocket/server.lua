@@ -1,7 +1,5 @@
 -- /qompassai/Diver/lua/websocket/server.lua
 -- Native WebSocket server over vim.uv TCP (no FFI, no external plugin).
--- Copyright (C) 2026 Qompass AI, All rights reserved.
--- ----------------------------------------
 --
 -- Plain words: this listens on a TCP port, shakes hands with each
 -- WebSocket client that connects, and routes their messages to your

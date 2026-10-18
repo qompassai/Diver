@@ -1,8 +1,6 @@
 #!/usr/bin/env bash
 # /qompassai/diver/scripts/clir_ls.sh
 # Qompass AI Clang IR (clir) LSP Build Script
-# Copyright (C) 2025 Qompass AI, All rights reserved
-# ----------------------------------------
 set -euo pipefail
 CLIRLS_DIR="${HOME}/.GH/llvm-project"
 git clone https://github.com/llvm/clangir.git --recursive "${CLIRLS_DIR}"

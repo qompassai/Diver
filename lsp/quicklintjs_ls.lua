@@ -1,7 +1,5 @@
 -- /qompassai/Diver/lsp/quicklintjs_ls.lua
 -- Qompass AI QuickLint-JS LSP Spec
--- Copyright (C) 2026 Qompass AI, All rights reserved
--- ----------------------------------------
 ---@type vim.lsp.Config
 return {
     cmd = {

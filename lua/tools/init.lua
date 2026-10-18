@@ -1,7 +1,5 @@
 -- /qompassai/Diver/lua/tools/init.lua
 -- Qompass AI Diver Tools Init
--- Copyright (C) 2026 Qompass AI, All rights reserved
--- --------------------------------------------------
 local M = {}
 
 M.video = require('tools.video')

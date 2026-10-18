@@ -1,7 +1,5 @@
 -- /qompassai/Diver/lua/ai/security/annotations.lua
 -- WebMCP ToolAnnotations model for Diver's agent tools.
--- Copyright (C) 2026 Qompass AI, All rights reserved.
--- ----------------------------------------
 --
 -- Plain words: every tool an agent can call gets safety labels
 -- borrowed from the WebMCP standard, so both the agent and any

@@ -1,7 +1,6 @@
 -- /qompassai/Diver/lua/ai/mcp/tools.lua
 -- Qompass AI MCP Tool Inspection and Calls (Tiger Style)
--- Copyright (C) 2025 Qompass AI, All rights reserved
--- ----------------------------------------
+---@module 'ai.mcp.tools'
 -- List a server's tools, inspect a tool's input schema, and call a tool.
 -- A tool call NEVER runs without explicit confirmation:
 --

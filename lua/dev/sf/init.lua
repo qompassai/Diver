@@ -1,7 +1,5 @@
 -- /qompassai/Diver/lua/dev/sf/init.lua
 -- Qompass AI Diver Salesforce Utils Init
--- Copyright (C) 2026 Qompass AI, All rights reserved
--- --------------------------------------------------
 local api = vim.api
 
 local M = {}

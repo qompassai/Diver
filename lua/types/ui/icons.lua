@@ -2,8 +2,6 @@
 ---@version >5.1
 -- /qompassai/Diver/lua/types/ui/icons.lua
 -- Qompass AI Diver UI Icon Types
--- Copyright (C) 2026 Qompass AI, All rights reserved
--- --------------------------------------------------
 ---@meta
 local M = {}
 ---@class                    nerdy.config

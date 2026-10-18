@@ -1,8 +1,6 @@
--- #################################################################
 -- ~/.config/nvim/lua/formatters/sqlfluff.lua
 -- Qompass AI Diver sqlfluff fix Native Formatter Spec
--- Copyright (C) 2026 Qompass AI, All rights reserved
--- #################################################################
+---@module 'formatters.sqlfluff'
 ---@source https://github.com/sqlfluff/sqlfluff
 ---
 --- ELI5: sqlfluff is a SQL linter that can also fix what it finds.

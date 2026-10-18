@@ -1,6 +1,5 @@
 -- ~/.config/nvim/lua/formatters/scalafmt.lua
 -- Native Scalafmt formatter specification for Neovim 0.13+ / LuaJIT.
--- SPDX-License-Identifier: Apache-2.0
 ---@source https://github.com/scalameta/scalafmt
 
 --- Scala formatter — formats via the project's `.scalafmt.conf`.

@@ -1,8 +1,6 @@
 #!/usr/bin/env lua
 -- /qompassai/Diver/after/ftplugin/ansible.lua
 -- Qompass AI Diver After Filetype Ansible Config
--- Copyright (C) 2026 Qompass AI, All rights reserved
--- ----------------------------------------
 if vim.b.did_ftplugin == 1 then
     return
 end

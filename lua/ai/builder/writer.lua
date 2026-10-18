@@ -1,7 +1,6 @@
 -- /qompassai/Diver/lua/ai/builder/writer.lua
 -- Qompass AI Interactive Application Builder: Confirmed File Writer (Tiger Style)
--- Copyright (C) 2025 Qompass AI, All rights reserved
--- ----------------------------------------
+---@module 'ai.builder.writer'
 -- Writes generated files to disk only after the review stage is
 -- confirmed. Creates directories with mkdir -p, refuses to overwrite an
 -- existing file without a second explicit per-file confirmation, writes

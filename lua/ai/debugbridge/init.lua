@@ -1,7 +1,5 @@
 -- /qompassai/Diver/lua/ai/debugbridge/init.lua
 -- Qompass AI Debug Bridge Entry Point (Tiger Style)
--- Copyright (C) 2025 Qompass AI, All rights reserved
--- ----------------------------------------
 -- Top-level wiring for ai.debugbridge: one managed bridge over
 -- diver's lua/dap/ full DAP client suite and lua/bsp/ build client so
 -- AI agents can drive debugging and builds with session reuse (no

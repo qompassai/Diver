@@ -1,7 +1,5 @@
 -- /qompassai/Diver/lsp/cobol_ls.lua
 -- Qompass AI Cobol LSP Spec
--- Copyright (C) 2025 Qompass AI, All rights reserved
--- ----------------------------------------
 return ---@type vim.lsp.Config
 {
     cmd = {

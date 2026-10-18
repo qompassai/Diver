@@ -1,7 +1,6 @@
 -- /qompassai/Diver/lua/ai/herd/api.lua
 -- Qompass AI Herd Agent API (Tiger Style)
--- Copyright (C) 2025 Qompass AI, All rights reserved
--- ----------------------------------------
+---@module 'ai.herd.api'
 -- Agent-native control surface for the herd project (a Herdr-like
 -- persistent agent runtime): a unix-domain socket server speaking
 -- newline-delimited JSON, so a coordinator can spawn, prompt, poll,

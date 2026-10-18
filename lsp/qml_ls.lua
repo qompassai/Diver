@@ -1,7 +1,5 @@
 -- /qompassai/Diver/lsp/qml_ls.lua
 -- Qompass AI Diver QML LSP Spec
--- Copyright (C) 2025 Qompass AI, All rights reserved
--- ---------------------------------------------------
 ---@source https://doc.qt.io/qt-6/qtqml-tooling-qmlls.html
 local qs_imports = '/usr/share/quickshell'
 local qt_docs = '/usr/share/doc/qt6'

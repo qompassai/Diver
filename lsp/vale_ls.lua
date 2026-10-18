@@ -1,7 +1,5 @@
 -- /qompassai/Diver/lsp/vale_ls.lua
 -- Qompass AI Vale LSP Spec
--- Copyright (C) 2025 Qompass AI, All rights reserved
--- ----------------------------------------
 ---@source https://vale.sh/docs/guides/lsp
 return ---@type vim.lsp.Config
 {

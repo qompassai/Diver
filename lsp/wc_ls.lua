@@ -1,7 +1,5 @@
 -- /qompassai/Diver/lsp/wc_ls.lua
 -- Qompass AI Web Components (WC) LSP Spec
--- Copyright (C) 2025 Qompass AI, All rights reserved
--- ----------------------------------------
 ---@source  https://github.com/wc-toolkit/wc-language-server/tree/main
 return ---@type vim.lsp.Config
 {

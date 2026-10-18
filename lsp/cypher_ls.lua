@@ -1,7 +1,5 @@
 -- /qompassai/Diver/lsp/cypher_ls.lua
 -- Qompass AI Cypher LSP Spec
--- Copyright (C) 2025 Qompass AI, All rights reserved
--- ----------------------------------------
 -- pnpm add -g -g @neo4j-cypher/language-server@latest
 ---@type vim.lsp.Config
 return {

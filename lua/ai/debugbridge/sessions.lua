@@ -1,7 +1,5 @@
 -- /qompassai/Diver/lua/ai/debugbridge/sessions.lua
 -- Qompass AI Debug Bridge: session registry (Tiger Style)
--- Copyright (C) 2026 Qompass AI, All rights reserved
--- ----------------------------------------
 -- Plain-language version: one debug adapter process per
 -- language+adapter+target. This registry makes sure AI agents reuse an
 -- already-running adapter instead of spawning a second one, counts how

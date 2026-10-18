@@ -1,7 +1,6 @@
--- #################################################################
 -- ~/.config/nvim/lua/formatters/tools.lua
 -- Native formatter status, release checks and installation menus
--- #################################################################
+---@module 'formatters.tools'
 ---@source https://github.com/qompassai/diver
 local api = vim.api
 local uv = vim.uv

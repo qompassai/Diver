@@ -1,7 +1,6 @@
 -- /qompassai/Diver/lua/ai/rose/providers/transport.lua
 -- Authenticated cloud transport over curl with a stdin config (Tiger Style)
--- Copyright (C) 2025 Qompass AI, All rights reserved
--- ----------------------------------------
+---@module 'ai.rose.providers.transport'
 -- Intentionally separate from the native rose HTTP client. Credentials
 -- AND request JSON travel only through an anonymous stdin pipe: no shell,
 -- temporary request files, curlrc, proxy, redirects, or inherited secrets.

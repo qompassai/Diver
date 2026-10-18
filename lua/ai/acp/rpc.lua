@@ -1,7 +1,6 @@
 -- /qompassai/Diver/lua/ai/acp/rpc.lua
 -- Qompass AI ACP JSON-RPC Transport (Tiger Style)
--- Copyright (C) 2025 Qompass AI, All rights reserved
--- ----------------------------------------
+---@module 'ai.acp.rpc'
 -- ACP is JSON-RPC 2.0 framed as one JSON object per newline-delimited
 -- line over the agent process's stdio -- no Content-Length headers, unlike
 -- LSP. This module owns exactly that framing and dispatch, nothing else.

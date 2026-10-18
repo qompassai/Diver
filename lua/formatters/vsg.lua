@@ -1,8 +1,6 @@
--- #################################################################
 -- ~/.config/nvim/lua/formatters/vsg.lua
 -- vsg formatter
--- SPDX-License-Identifier: Apache-2.0
--- #################################################################
+---@module 'formatters.vsg'
 
 ---@source https://github.com/jeremiah-c-leary/vhdl-style-guide/issues/1409
 

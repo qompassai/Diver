@@ -1,7 +1,6 @@
 -- /qompassai/diver/lua/ai/harness/adapters/acp.lua
 -- Qompass AI Agent Harness: ACP adapter (Tiger Style)
--- Copyright (C) 2025 Qompass AI, All rights reserved
--- ----------------------------------------
+---@module 'ai.harness.adapters.acp'
 -- Thin translator over ai.acp.session / ai.acp.permissions. Preserves ACP
 -- native semantics: session/turn separation, permission requests,
 -- streaming session/update notifications, cancellation. This module wraps;

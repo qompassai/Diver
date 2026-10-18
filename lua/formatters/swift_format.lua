@@ -1,8 +1,6 @@
--- #################################################################
 -- ~/.config/nvim/lua/formatters/swift_format.lua
 -- swift-format formatter
--- SPDX-License-Identifier: Apache-2.0
--- #################################################################
+---@module 'formatters.swift_format'
 
 ---@source https://swiftpackageregistry.com/swiftlang/swift-format
 

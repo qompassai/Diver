@@ -1,7 +1,6 @@
 -- /qompassai/Diver/linters/scarb.lua
 -- Qompass AI Diver Scarb Linter Spec
--- Copyright (C) 2025 Qompass AI, All rights reserved
--- ----------------------------------------
+---@module 'linters.scarb'
 return ---@type vim.lint.Config
 {
     append_fname = false,

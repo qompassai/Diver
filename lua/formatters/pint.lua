@@ -1,8 +1,5 @@
--- #################################################################
 -- ~/.config/nvim/lua/formatters/pint.lua
 -- Qompass AI Diver Laravel Pint Native Formatter Spec
--- Copyright (C) 2026 Qompass AI, All rights reserved
--- #################################################################
 ---@source https://github.com/laravel/pint
 
 --- Laravel Pint — opinionated PHP formatting for the buffer.

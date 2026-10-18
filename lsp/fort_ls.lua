@@ -1,7 +1,5 @@
 -- /qompassai/Diver/lsp/fort_ls.lua
 -- Qompass AI Fortran (fortls) LSP Speca
--- Copyright (C) 2025 Qompass AI, All rights reserved
--- ----------------------------------------------------
 -- Reference:  https://fortls.fortran-lang.org/index.html
 -- pip install fortls
 ---@type vim.lsp.Config

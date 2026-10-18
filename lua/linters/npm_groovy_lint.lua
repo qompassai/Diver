@@ -1,6 +1,6 @@
 -- /qompassai/Diver/lua/linters/npm_groovy_lint.lua
 -- Native npm-groovy-lint linter and opt-in formatter — Neovim 0.13+ / LuaJIT
--- SPDX-License-Identifier: Apache-2.0
+---@module 'linters.npm_groovy_lint'
 -- #################################################################
 ---@source https://github.com/nvuillam/npm-groovy-lint/tree/2080dffcddb215d409b149ccc7f595cb242a6209
 local api = vim.api

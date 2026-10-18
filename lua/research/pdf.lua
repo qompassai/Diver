@@ -1,7 +1,6 @@
 -- /qompassai/Diver/lua/research/pdf.lua
 -- Qompass AI Diver PDF Utils
--- Copyright (C) 2026 Qompass AI, All rights reserved
--- --------------------------------------------------
+---@module 'research.pdf'
 local api = vim.api
 local fn = vim.fn
 local fs = vim.fs

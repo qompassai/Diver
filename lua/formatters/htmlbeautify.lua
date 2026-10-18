@@ -1,8 +1,6 @@
--- #################################################################
 -- ~/.config/nvim/lua/formatters/htmlbeautify.lua
 -- Qompass AI Diver Htmlbeautify Native Formatter Spec
--- Copyright (C) 2026 Qompass AI, All rights reserved
--- #################################################################
+---@module 'formatters.htmlbeautify'
 ---@source https://github.com/threedaymonk/htmlbeautifier/blob/HEAD/README.md
 ---
 --- A tidy-up robot for HTML (it also understands Ruby code hiding

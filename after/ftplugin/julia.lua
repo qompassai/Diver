@@ -1,7 +1,5 @@
 -- /qompassai/Diver/after/ftplugin/julia.lua
 -- Qompass AI Diver After Julia Filetype Plugin
--- Copyright (C) 2026 Qompass AI, All rights reserved
--- ----------------------------------------
 local b = vim.b
 local c = vim.fn.col('.')
 local l = vim.fn.line('.')

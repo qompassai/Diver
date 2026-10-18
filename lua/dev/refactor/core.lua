@@ -1,8 +1,6 @@
--- #################################################################
 -- /qompassai/Diver/lua/refactor/core.lua
 -- Native Neovim 0.13+ refactor core
--- SPDX-License-Identifier: Apache-2.0
--- #################################################################
+---@module 'dev.refactor.core'
 
 local api = vim.api
 local ts = vim.treesitter

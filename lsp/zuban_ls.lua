@@ -1,7 +1,5 @@
 -- /qompassai/Diver/lsp/zuban_ls.lua
 -- Qompass AI Diver Zuban LSP Spec
--- Copyright (C) 2025 Qompass AI, All rights reserved
--- ----------------------------------------
 return ---@type vim.lsp.Config
 {
     cmd = {

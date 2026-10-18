@@ -1,7 +1,5 @@
 -- /qompassai/Diver/lua/phlow/client.lua
 -- Phlow API client: requests, notifications, events over a transport.
--- Copyright (C) 2026 Qompass AI, All rights reserved.
--- ----------------------------------------
 --
 -- Plain words: this is the clerk who talks to Phlow. You hand it a
 -- command and the details; it checks the menu (schemas), sends the

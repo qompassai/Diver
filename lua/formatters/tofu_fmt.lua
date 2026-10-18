@@ -1,8 +1,6 @@
--- #################################################################
 -- ~/.config/nvim/lua/formatters/tofu_fmt.lua
 -- tofu fmt formatter
--- SPDX-License-Identifier: Apache-2.0
--- #################################################################
+---@module 'formatters.tofu_fmt'
 
 ---@source https://opentofu.org/docs/cli/commands/fmt/
 

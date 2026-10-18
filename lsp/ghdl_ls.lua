@@ -1,7 +1,5 @@
 -- /qompassai/Diver/lsp/ghdl_ls.lua
 -- Qompass AI GHDL VHDL LSP Config
--- Copyright (C) 2025 Qompass AI, All rights reserved
--- ----------------------------------------
 -- https://github.com/ghdl/ghdl/tree/master/pyGHDL/lsp
 -- pip install --user pyTooling pyVHDLModel pyVHDLParser
 -- git clone https://github.com/ghdl/ghdl.git

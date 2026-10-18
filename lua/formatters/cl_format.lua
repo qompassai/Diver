@@ -1,8 +1,6 @@
--- #################################################################
 -- ~/.config/nvim/lua/formatters/cl_format.lua
 -- Native clfmt Formatter — Neovim 0.13+ / LuaJIT
--- SPDX-License-Identifier: Apache-2.0
--- #################################################################
+---@module 'formatters.cl_format'
 ---@source https://github.com/fosskers/clfmt
 ---
 --- clfmt is a code tidier for Common Lisp: it rewrites Lisp code with clean,

@@ -1,7 +1,5 @@
 -- /qompassai/diver/lsp/jedi_ls.lua
 -- Qompass AI Diver Jedi LSP Spec
--- Copyright (C) 2025 Qompass AI, All rights reserved
--- ----------------------------------------
 
 return ---@type vim.lsp.Config
 {

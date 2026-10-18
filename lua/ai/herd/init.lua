@@ -1,7 +1,5 @@
 -- /qompassai/Diver/lua/ai/herd/init.lua
 -- Qompass AI Herd Agent Runtime (Tiger Style)
--- Copyright (C) 2025 Qompass AI, All rights reserved
--- ----------------------------------------
 -- Top-level wiring for herd: a Herdr-like persistent agent runtime. Each
 -- agent is a tmux session running an agent CLI; a watch timer tracks agent
 -- status and a local socket API exposes spawn/prompt/status/wait_blocked/

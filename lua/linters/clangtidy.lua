@@ -1,9 +1,6 @@
--- #################################################################
 -- /qompassai/Diver/lua/linters/clangtidy.lua
 -- Qompass AI Diver Native Clang-Tidy Linter
--- SPDX-License-Identifier: Apache-2.0
--- Copyright (c) 2026 Qompass AI
--- #################################################################
+---@module 'linters.clangtidy'
 
 local diagnostic = vim.diagnostic
 local fs = vim.fs

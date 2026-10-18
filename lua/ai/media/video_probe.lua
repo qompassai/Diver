@@ -1,7 +1,6 @@
 -- /qompassai/Diver/lua/ai/media/video_probe.lua
 -- Qompass AI Video Generation Probe (Tiger Style)
--- Copyright (C) 2025 Qompass AI, All rights reserved
--- ----------------------------------------
+---@module 'ai.media.video_probe'
 -- HONEST STUB. There is no wired text-to-video path here. detect() probes
 -- for real, verifiable local text-to-video CLIs and reports what it found;
 -- generate() ALWAYS refuses, because no generation argv is implemented for

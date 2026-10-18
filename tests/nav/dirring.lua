@@ -1,9 +1,5 @@
--- #################################################################
 -- /qompassai/diver/tests/nav/dirring.lua
 -- Qompass AI Diver directory-ring tests
--- Copyright (C) 2026 Qompass AI, All rights reserved
--- SPDX-License-Identifier: Apache-2.0
--- #################################################################
 -- Run from the config root:
 --   nvim --headless -u NONE -i NONE -l tests/nav/dirring.lua
 --

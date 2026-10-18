@@ -1,7 +1,6 @@
 -- /qompassai/Diver/lua/security/red/shark.lua
 -- Qompass AI Diver Red WireShark Util
--- Copyright (C) 2026 Qompass AI, All rights reserved
--- --------------------------------------------------
+---@module 'security.red.shark'
 local M = {} ---@version JIT
 local api = vim.api
 local bo = vim.bo

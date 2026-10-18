@@ -1,7 +1,5 @@
 -- /qompassai/Diver/lua/utils/options/init.lua
 -- Qompass AI Diver Options
--- Copyright (C) 2026 Qompass AI, All rights reserved
--- ----------------------------------------
 --- The two option phases init.lua calls. Phase 1 runs before plugins load
 --- (buffer-local options + vim.g); phase 2 runs after (global + window).
 --- Splitting them keeps setup-time reads honest: nothing observes a value

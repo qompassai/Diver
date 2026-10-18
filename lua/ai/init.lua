@@ -1,7 +1,5 @@
 -- /qompassai/Diver/lua/ai/init.lua
 -- Qompass AI Agent Protocols Entry Point (Tiger Style)
--- Copyright (C) 2025 Qompass AI, All rights reserved
--- ----------------------------------------
 -- Top-level entry for Diver's agent-protocol integrations. Wires the
 -- subprotocol modules into one setup() call. Nothing in this file does
 -- I/O at require-time; each submodule spawns its sessions lazily and

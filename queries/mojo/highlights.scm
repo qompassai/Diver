@@ -1,7 +1,5 @@
-; highlights.scm
-; Qompass AI - [ ]
-; Copyright (C) 2025 Qompass AI, All rights reserved
-; ----------------------------------------
+; /qompassai/diver/queries/mojo/highlights.scm
+; Qompass AI Diver Mojo Highlights Query
 (attribute attribute: (identifier) @property)
 (type (identifier) @type)
 (decorator) @function

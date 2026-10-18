@@ -1,7 +1,6 @@
 -- /qompassai/Diver/lua/ai/acp/registry.lua
 -- Qompass AI ACP Agent Registry (Tiger Style)
--- Copyright (C) 2025 Qompass AI, All rights reserved
--- ----------------------------------------
+---@module 'ai.acp.registry'
 -- Two sources of truth, merged:
 --   1. M.manual   -- agents that are NOT in the official registry (bridges,
 --                    forks, unverified entries), maintained by hand here.

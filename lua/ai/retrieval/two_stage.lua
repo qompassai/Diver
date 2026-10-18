@@ -1,7 +1,6 @@
 -- /qompassai/Diver/lua/ai/retrieval/two_stage.lua
 -- Coarse-to-fine candidate ranker for the ai/ stack (Tiger Style)
--- Copyright (C) 2026 Qompass AI, All rights reserved.
--- ----------------------------------------
+---@module 'ai.retrieval.two_stage'
 --
 -- Plain words: when you have far more candidates than you can
 -- afford to score carefully, first do a cheap pass over ALL of

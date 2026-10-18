@@ -1,7 +1,6 @@
 -- /qompassai/Diver/lua/ai/a2a/commands.lua
 -- Qompass AI A2A User Commands (Tiger Style)
--- Copyright (C) 2025 Qompass AI, All rights reserved
--- ----------------------------------------
+---@module 'ai.a2a.commands'
 -- The user-facing surface of the A2A console: list known agents, open
 -- the task monitor, cancel work. Requiring this module registers the
 -- commands; it starts nothing.

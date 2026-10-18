@@ -1,7 +1,5 @@
 -- lua/dev/apps/init.lua
 -- Qompass AI Diver Dev Apps Launcher
--- Copyright (C) 2026 Qompass AI, All rights reserved.
--- ----------------------------------------------------------------------------
 -- Generic launcher for interactive CLI/TUI applications (btop, neomutt, ...).
 -- One module drives every app in catalog.lua: adding an application is data
 -- in the catalog, never a new module. Always uses argv form, never a shell

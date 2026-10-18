@@ -1,7 +1,6 @@
 -- /qompassai/Diver/linters/cmake-lint.lua
 -- Qompass AI Diver CMake-Lint Linter Spec
--- Copyright (C) 2025 Qompass AI, All rights reserved
--- ----------------------------------------
+---@module 'linters.cmake-lint'
 return ---@type vim.lint.Config
 {
     append_fname = true,

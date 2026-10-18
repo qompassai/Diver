@@ -1,6 +1,6 @@
 -- /qompassai/Diver/lua/config/core/refactor.lua
 -- Native Diver refactor facade configuration; no third-party refactor plugin.
--- SPDX-License-Identifier: Apache-2.0
+---@module 'config.core.refactor'
 local M = {}
 local defaults = {
     commands = true,

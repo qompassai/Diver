@@ -1,7 +1,6 @@
 -- /qompassai/Diver/lua/research/ama.lua
 -- Qompass AI Diver AMA Citation Utils
--- Copyright (C) 2026 Qompass AI, All rights reserved
--- --------------------------------------------------
+---@module 'research.ama'
 --
 -- Formats reference lists in AMA Manual of Style, 11th edition.
 --

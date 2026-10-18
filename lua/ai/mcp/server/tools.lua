@@ -1,7 +1,6 @@
 -- /qompassai/Diver/lua/ai/mcp/server/tools.lua
 -- Qompass AI MCP Server Tool Registry (Tiger Style)
--- Copyright (C) 2026 Qompass AI, All rights reserved
--- ----------------------------------------
+---@module 'ai.mcp.server.tools'
 -- The MCP tool surface diver exposes as a server: four read tools and
 -- three write tools, all validated, bounded, and policy-gated.
 --

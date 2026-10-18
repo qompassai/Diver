@@ -1,7 +1,6 @@
 -- /qompassai/Diver/lua/config/ui/colors.lua
 -- Qompass AI Diver UI Colors Config
--- Copyright (C) 2025 Qompass AI, All rights reserved
--- ----------------------------------------
+---@module 'config.ui.colors'
 local M = {} ---@version JIT
 local api = vim.api
 local autocmd = api.nvim_create_autocmd

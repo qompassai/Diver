@@ -1,7 +1,5 @@
 -- /qompassai/Diver/lua/config/lang/init.lua
 -- Qompass AI Diver Language Config Init (lazy)
--- Copyright (C) 2026 Qompass AI, All rights reserved
--- --------------------------------------------------------
 --
 -- Lazy loading: lang modules are required + set up on first FileType
 -- event, not at startup. Nothing lang-specific runs until a buffer

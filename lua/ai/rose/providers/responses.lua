@@ -1,7 +1,6 @@
 -- /qompassai/Diver/lua/ai/rose/providers/responses.lua
 -- Responses-style API encode/decode (Tiger Style)
--- Copyright (C) 2025 Qompass AI, All rights reserved
--- ----------------------------------------
+---@module 'ai.rose.providers.responses'
 -- Responses-style APIs: OpenAI, xAI, and Perplexity Agent.
 
 local C = require('ai.rose.providers.common')

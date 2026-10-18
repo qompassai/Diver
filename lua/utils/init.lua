@@ -1,7 +1,5 @@
 -- /qompassai/Diver/lua/utils/init.lua
 -- Qompass AI Diver Utils
--- Copyright (C) 2025 Qompass AI, All rights reserved
--- --------------------------------------------------
 --
 -- Requiring this module stays cheap: only codeactions (a few user commands)
 -- and ddx (one autocmd) are eager. Everything else below loads its suite on

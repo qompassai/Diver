@@ -1,7 +1,6 @@
 -- /qompassai/Diver/lua/ai/mcp/server/policy.lua
 -- Qompass AI MCP Server Policy (Tiger Style)
--- Copyright (C) 2026 Qompass AI, All rights reserved
--- ----------------------------------------
+---@module 'ai.mcp.server.policy'
 -- Fail-closed policy for the MCP server: path scoping, per-tool approval
 -- classes, run_command argv[0] allowlist, and audit logging.
 --

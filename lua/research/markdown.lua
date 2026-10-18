@@ -1,7 +1,6 @@
 -- /qompassai/Diver/lua/research/markdown.lua
 -- Qompass AI Diver Markdown Authoring Utils
--- Copyright (C) 2026 Qompass AI, All rights reserved
--- --------------------------------------------------
+---@module 'research.markdown'
 local api = vim.api
 local fn = vim.fn
 local fs = vim.fs

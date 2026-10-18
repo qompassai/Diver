@@ -1,8 +1,6 @@
--- #################################################################
 -- ~/.config/nvim/lua/formatters/standardrb.lua
 -- Qompass AI Diver StandardRB Native Formatter Spec
--- Copyright (C) 2026 Qompass AI, All rights reserved
--- #################################################################
+---@module 'formatters.standardrb'
 ---@source https://github.com/standardrb/standard
 ---
 --- ELI5: StandardRB is Ruby's bikeshed-proof formatter -- zero config,

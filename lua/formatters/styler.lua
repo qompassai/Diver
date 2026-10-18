@@ -1,8 +1,6 @@
--- #################################################################
 -- ~/.config/nvim/lua/formatters/styler.lua
 -- Qompass AI Diver styler Native Formatter Spec
--- Copyright (C) 2026 Qompass AI, All rights reserved
--- #################################################################
+---@module 'formatters.styler'
 ---@source https://github.com/r-lib/styler
 ---
 --- ELI5: styler is R's tidyverse-style formatter, but it is an R

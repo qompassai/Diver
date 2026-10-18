@@ -1,7 +1,5 @@
 -- /qompassai/Diver/lua/plugin/init.lua
 -- Qompass AI Diver Plugins Init
--- Copyright (C) 2025 Qompass AI, All rights reserved
-------------------------------------------------------
 local add = vim.pack.add
 local api = vim.api
 local update = vim.pack.update

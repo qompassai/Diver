@@ -1,7 +1,5 @@
 -- /qompassai/Diver/lua/ai/mcp/webmcp.lua
 -- WebMCP tool discovery: enumerate tools from a WebMCP bridge.
--- Copyright (C) 2026 Qompass AI, All rights reserved.
--- ----------------------------------------
 --
 -- Plain words: a WebMCP-enabled page (or another Diver bridge)
 -- publishes tools. This module connects to that bridge over

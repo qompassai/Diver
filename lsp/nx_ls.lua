@@ -1,7 +1,5 @@
 -- /qompassai/Diver/lsp/nx_ls.lua
 -- Qompass AI NX Workspace LSP Spec
--- Copyright (C) 2025 Qompass AI, All rights reserved
--- --------------------------------------------------
 ---@type vim.lsp.Config
 return {
     cmd = { ---@type string[]

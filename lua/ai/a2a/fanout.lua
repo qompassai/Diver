@@ -1,7 +1,6 @@
 -- /qompassai/Diver/lua/ai/a2a/fanout.lua
 -- Qompass AI A2A Scatter-Gather (Tiger Style)
--- Copyright (C) 2025 Qompass AI, All rights reserved
--- ----------------------------------------
+---@module 'ai.a2a.fanout'
 -- The multi-agent primitive: hand the same job (or a per-agent
 -- variant) to N agents at once and get one callback with every
 -- result in spec order. Dispatch still flows through the task

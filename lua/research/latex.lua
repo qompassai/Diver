@@ -1,7 +1,6 @@
 -- /qompassai/Diver/lua/research/latex.lua
 -- Qompass AI Diver LaTeX Authoring Utils
--- Copyright (C) 2026 Qompass AI, All rights reserved
--- --------------------------------------------------
+---@module 'research.latex'
 local api = vim.api
 local fn = vim.fn
 local fs = vim.fs

@@ -1,8 +1,5 @@
 -- /qompassai/Diver/lua/types/core/lint.lua
 -- Qompass AI Diver Native Linter Types
--- Copyright (C) 2025 Qompass AI, All rights reserved
--- SPDX-License-Identifier: Apache-2.0
--- -------------------------------------------------------------------------
 ---@meta
 
 ---@class LintContext

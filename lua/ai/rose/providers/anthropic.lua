@@ -1,7 +1,6 @@
 -- /qompassai/Diver/lua/ai/rose/providers/anthropic.lua
 -- Anthropic Messages API encode/decode (Tiger Style)
--- Copyright (C) 2025 Qompass AI, All rights reserved
--- ----------------------------------------
+---@module 'ai.rose.providers.anthropic'
 -- Normalized chat over the Anthropic Messages API. Reasoning and
 -- thinking-block content is never surfaced as text.
 

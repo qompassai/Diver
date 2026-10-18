@@ -1,8 +1,6 @@
--- #################################################################
 -- ~/.config/nvim/lua/formatters/awkfmt.lua
 -- awkfmt formatter
--- SPDX-License-Identifier: Apache-2.0
--- #################################################################
+---@module 'formatters.awkfmt'
 
 ---@source https://www.gnu.org/software/gawk/manual/html_node/Options.html
 

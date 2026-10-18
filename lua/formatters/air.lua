@@ -1,8 +1,6 @@
--- #################################################################
 -- ~/.config/nvim/lua/formatters/air.lua
 -- Native Air Formatter — Neovim 0.13+ / LuaJIT
--- SPDX-License-Identifier: Apache-2.0
--- #################################################################
+---@module 'formatters.air'
 ---@source https://posit-dev.github.io/air/cli.html
 ---
 --- Air is the code tidier for the R language: it rewrites messy R code with

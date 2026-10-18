@@ -1,8 +1,6 @@
--- #################################################################
 -- ~/.config/nvim/lua/formatters/snakefmt.lua
 -- Qompass AI Diver snakefmt Native Formatter Spec
--- Copyright (C) 2026 Qompass AI, All rights reserved
--- #################################################################
+---@module 'formatters.snakefmt'
 ---@source https://github.com/snakemake/snakefmt
 ---
 --- ELI5: snakefmt is the uncompromising formatter for Snakemake files.

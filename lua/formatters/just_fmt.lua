@@ -1,8 +1,6 @@
--- #################################################################
 -- ~/.config/nvim/lua/formatters/just_fmt.lua
 -- Qompass AI Diver Just Format Native Formatter Spec
--- Copyright (C) 2026 Qompass AI, All rights reserved
--- #################################################################
+---@module 'formatters.just_fmt'
 ---@source https://github.com/casey/just
 ---
 --- The `just` command runner can tidy up its own justfiles:

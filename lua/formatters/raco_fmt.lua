@@ -1,8 +1,6 @@
--- #################################################################
 -- ~/.config/nvim/lua/formatters/raco_fmt.lua
 -- Qompass AI Diver raco fmt Native Formatter Spec
--- Copyright (C) 2026 Qompass AI, All rights reserved
--- #################################################################
+---@module 'formatters.raco_fmt'
 ---@source https://docs.racket-lang.org/fmt/index.html
 ---
 --- ELI5: `raco fmt` is the Racket code formatter. Called with no file

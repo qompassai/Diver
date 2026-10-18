@@ -1,7 +1,6 @@
 -- /qompassai/Diver/lua/ai/inference/speculative.lua
 -- Speculative decoding helpers: llama.cpp integration + agent-level draft-verify (Tiger Style)
--- Copyright (C) 2026 Qompass AI, All rights reserved
--- ----------------------------------------
+---@module 'ai.inference.speculative'
 -- Plain words: token-level speculative decoding needs engine support,
 -- so this module does NOT implement it. It does three honest things
 -- inspired by DSpark in DeepSeek-V4.1-Flash (arXiv:2609.19969):

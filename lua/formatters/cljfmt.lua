@@ -1,8 +1,6 @@
--- #################################################################
 -- ~/.config/nvim/lua/formatters/cljfmt.lua
 -- Native cljfmt Formatter — Neovim 0.13+ / LuaJIT
--- SPDX-License-Identifier: Apache-2.0
--- #################################################################
+---@module 'formatters.cljfmt'
 ---@source https://github.com/weavejester/cljfmt/blob/HEAD/README.md
 ---
 --- cljfmt is a code tidier for Clojure: it rewrites Clojure code with clean,

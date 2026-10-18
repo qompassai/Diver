@@ -1,7 +1,6 @@
 -- /qompassai/Diver/lua/research/journal.lua
 -- Qompass AI Diver Journal Profile Utils
--- Copyright (C) 2026 Qompass AI, All rights reserved
--- --------------------------------------------------
+---@module 'research.journal'
 --
 -- The journals Matt reviews for or submits to. Every entry carries a
 -- `relationship`: 'reviewer' means he reviews there, 'author' means his

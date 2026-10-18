@@ -1,7 +1,6 @@
 -- /qompassai/Diver/lua/ai/rose/tools.lua
 -- Bounded native host tools for the agent (Tiger Style)
--- Copyright (C) 2025 Qompass AI, All rights reserved
--- ----------------------------------------
+---@module 'ai.rose.tools'
 -- Language-agnostic, plugin-free, synchronous tool boundary for the Rose
 -- agent. All file access is confined to the configured workspace root;
 -- writes and check execution additionally require explicit trust. Results

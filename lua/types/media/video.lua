@@ -1,7 +1,5 @@
 -- /home/phaedrus/.config/nvim/lua/types/utils/media/video.lua
 -- Qompass AI Media Video Types Config
--- Copyright (C) 2026 Qompass AI, All rights reserved
--- ----------------------------------------
 ---@version JIT
 ---@meta
 ---@class media.FT_Bitmap

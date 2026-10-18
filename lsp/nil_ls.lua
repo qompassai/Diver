@@ -1,7 +1,5 @@
 -- /qompassai/Diver/lsp/nil_ls.lua
 -- Qompass AI Nix LSP Config
--- Copyright (C) 2025 Qompass AI, All rights reserved
--- --------------------------------------------------
 return ---@type vim.lsp.Config
 {
     cmd = {

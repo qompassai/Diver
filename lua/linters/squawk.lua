@@ -1,8 +1,6 @@
--- #################################################################
 -- /qompassai/Diver/lua/linters/squawk.lua
 -- Native Squawk PostgreSQL migration linter — Neovim 0.13+ / LuaJIT
--- SPDX-License-Identifier: Apache-2.0
--- #################################################################
+---@module 'linters.squawk'
 ---@source https://github.com/sbdchd/squawk/tree/2167b892a6f204c96b08b522df782a88898c1d2d
 local api = vim.api
 local diagnostic = vim.diagnostic

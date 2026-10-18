@@ -1,8 +1,6 @@
--- #################################################################
 -- /qompassai/Diver/lua/linters/bandit.lua
 -- Native Bandit Python security linter — Neovim 0.13+ / LuaJIT
--- SPDX-License-Identifier: Apache-2.0
--- #################################################################
+---@module 'linters.bandit'
 ---@source https://github.com/PyCQA/bandit/tree/92ae8b82fb422a639f0ed8d99e96cea769594e08
 local api = vim.api
 local diagnostic = vim.diagnostic

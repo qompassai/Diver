@@ -1,7 +1,5 @@
 -- /qompassai/Diver/lsp/cssvariable_ls.lua
 -- Qompass AI CSS Variable LSP Spec
--- Copyright (C) 2025 Qompass AI, All rights reserved
--- ----------------------------------------
 return {
     cmd = {
         'css-variables-language-server',

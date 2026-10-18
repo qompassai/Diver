@@ -1,8 +1,6 @@
--- #################################################################
 -- ~/.config/nvim/lua/formatters/rubocop.lua
 -- Qompass AI Diver RuboCop Native Formatter Spec
--- Copyright (C) 2026 Qompass AI, All rights reserved
--- #################################################################
+---@module 'formatters.rubocop'
 ---@source https://github.com/rubocop/rubocop
 ---
 --- ELI5: RuboCop is Ruby's code police and tidy-up robot in one.

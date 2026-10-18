@@ -1,8 +1,6 @@
--- #################################################################
 -- ~/.config/nvim/lua/formatters/dart_format.lua
 -- Native dart format Formatter — Neovim 0.13+ / LuaJIT
--- SPDX-License-Identifier: Apache-2.0
--- #################################################################
+---@module 'formatters.dart_format'
 ---@source https://github.com/dart-lang/site-www/blob/HEAD/src/content/tools/dart-format.md
 ---
 --- Tiger Style profile for Dart (dart format's canonical style already uses

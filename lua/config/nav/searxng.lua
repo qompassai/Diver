@@ -1,6 +1,6 @@
 -- /qompassai/Diver/lua/config/nav/searxng.lua
 -- Explicit queries to a configured SearXNG instance; bounded JSON, native result picker.
--- SPDX-License-Identifier: Apache-2.0
+---@module 'config.nav.searxng'
 local async = require('config.core.async')
 local M = {}
 local options = {}

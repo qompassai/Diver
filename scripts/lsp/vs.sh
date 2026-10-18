@@ -1,8 +1,6 @@
 #!/usr/bin/env bash
 # /qompassai/diver/scripts/vs.sh
 # Qompass AI VS Extension Extracter Script
-# Copyright (C) 2025 Qompass AI, All rights reserved
-# ----------------------------------------
 extensionId="RiversideSoftware.openedge-abl-lsp"
 publisher="RiversideSoftware"
 name="openedge-abl-lsp"

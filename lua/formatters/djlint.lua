@@ -1,8 +1,6 @@
--- #################################################################
 -- ~/.config/nvim/lua/formatters/djlint.lua
 -- Native djlint Formatter Spec — Neovim 0.13+ / LuaJIT
--- SPDX-License-Identifier: Apache-2.0
--- #################################################################
+---@module 'formatters.djlint'
 ---@source https://github.com/djlint/djlint/blob/HEAD/docs/src/docs/getting-started.md
 ---
 --- djlint tidies HTML templates (Django, Jinja, Nunjucks,

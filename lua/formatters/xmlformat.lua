@@ -1,8 +1,6 @@
--- #################################################################
 -- ~/.config/nvim/lua/formatters/xmlformat.lua
 -- xmlformat formatter
--- SPDX-License-Identifier: Apache-2.0
--- #################################################################
+---@module 'formatters.xmlformat'
 
 ---@source https://github.com/pamoller/xmlformatter/blob/HEAD/README.rst
 

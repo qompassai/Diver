@@ -1,8 +1,6 @@
--- #################################################################
 -- ~/.config/nvim/lua/formatters/taplo.lua
 -- taplo formatter
--- SPDX-License-Identifier: Apache-2.0
--- #################################################################
+---@module 'formatters.taplo'
 
 ---@source https://github.com/tamasfe/taplo/issues/704
 

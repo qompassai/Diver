@@ -1,7 +1,5 @@
 -- /qompassai/Diver/lua/ai/mcp/init.lua
 -- Qompass AI MCP Manager Entry Point (Tiger Style)
--- Copyright (C) 2025 Qompass AI, All rights reserved
--- ----------------------------------------
 -- Native MCP (Model Context Protocol) server manager, mcphub.nvim-like,
 -- zero plugins. Requiring this module has no side effects; setup() is
 -- idempotent and spawns nothing -- server processes start lazily on first

@@ -1,7 +1,6 @@
 -- /qompassai/Diver/lua/ai/dataaccess/secrets.lua
 -- Qompass AI Data Access Secret Hygiene (Tiger Style)
--- Copyright (C) 2026 Qompass AI, All rights reserved
--- ----------------------------------------
+---@module 'ai.dataaccess.secrets'
 -- Keeps secrets out of logs, errors, notifications, and socket
 -- replies. Three jobs:
 --

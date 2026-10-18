@@ -1,7 +1,6 @@
 -- /qompassai/Diver/lua/ai/acp/store.lua
 -- Qompass AI ACP Transcript Persistence (Tiger Style)
--- Copyright (C) 2025 Qompass AI, All rights reserved
--- ----------------------------------------
+---@module 'ai.acp.store'
 local fs = vim.fs
 local M = {}
 local DB_PATH = fs.joinpath(vim.fn.stdpath('data'), 'acp', 'transcripts.db')

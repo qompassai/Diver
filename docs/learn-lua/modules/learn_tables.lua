@@ -1,7 +1,5 @@
 -- /qompassai/Diver/docs/learn-lua/modules/learn_tables.lua
 -- Qompass AI Diver :: Learn Lua — tables, the one data structure
--- Copyright (C) 2026 Qompass AI, All rights reserved
--- ----------------------------------------------------------------------------
 
 --- Tables — Lua's only data structure, taught from the Diver config.
 --

@@ -1,8 +1,6 @@
--- #################################################################
 -- ~/.config/nvim/lua/formatters/terraform_fmt.lua
 -- terraform fmt formatter
--- SPDX-License-Identifier: Apache-2.0
--- #################################################################
+---@module 'formatters.terraform_fmt'
 
 ---@source https://developer.hashicorp.com/terraform/cli/v1.10.x/commands/fmt
 

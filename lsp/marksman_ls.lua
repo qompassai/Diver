@@ -1,7 +1,5 @@
 -- /qompassai/Diver/lsp/marksman_ls.lua
 -- Qompass AI Diver Marksman LSP Config
--- Copyright (C) 2025 Qompass AI, All rights reserved
------------------------------------------------------
 return ---@type vim.lsp.Config
 {
     cmd = {

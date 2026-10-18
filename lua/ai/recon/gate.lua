@@ -1,7 +1,5 @@
 -- /qompassai/Diver/lua/ai/recon/gate.lua
 -- Execution gate for recon/pentest tooling.
--- Copyright (C) 2026 Qompass AI, All rights reserved.
--- ----------------------------------------
 --
 -- Plain words: before any recon skill or CLI tool runs, it passes
 -- through this gate. Two things always happen: the call is written

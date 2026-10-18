@@ -1,8 +1,6 @@
--- #################################################################
 -- ~/.config/nvim/lua/formatters/verible_verilog_format.lua
 -- verible-verilog-format formatter
--- SPDX-License-Identifier: Apache-2.0
--- #################################################################
+---@module 'formatters.verible_verilog_format'
 
 ---@source https://github.com/chipsalliance/verible
 

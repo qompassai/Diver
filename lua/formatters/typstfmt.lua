@@ -1,8 +1,6 @@
--- #################################################################
 -- ~/.config/nvim/lua/formatters/typstfmt.lua
 -- typstfmt formatter
--- SPDX-License-Identifier: Apache-2.0
--- #################################################################
+---@module 'formatters.typstfmt'
 
 ---@source https://github.com/astrale-sharp/typstfmt/issues/125
 

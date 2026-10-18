@@ -1,7 +1,6 @@
 -- /qompassai/Diver/lua/config/lang/xml.lua
 -- Qompass AI Diver XML Lang Config
--- Copyright (C) 2026 Qompass AI, All rights reserved
--- ---------------------------------------------------
+---@module 'config.lang.xml'
 -- Tooling (verified 2026-10-10): the language server is LemMinX
 -- (lsp/lemminx_ls.lua, enabled centrally); it provides validation,
 -- completion, and formatting. The formatters catalog pretty-prints

@@ -1,8 +1,6 @@
 #!/usr/bin/env bash
 # /qompassai/Diver/scripts/pascal.sh
 # Qompass AI Diver Pascal Script
-# Copyright (C) 2026 Qompass AI, All rights reserved
-# ----------------------------------------
 set -euo pipefail
 XDG_DATA_HOME="${XDG_DATA_HOME:-$HOME/.local/share}"
 XDG_CONFIG_HOME="${XDG_CONFIG_HOME:-$HOME/.config}"

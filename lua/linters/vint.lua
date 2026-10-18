@@ -1,8 +1,6 @@
--- #################################################################
 -- /qompassai/lua/linters/vint.lua
 -- Qompass AI Vint
--- SPDX-License-Identifier: Apache-2.0
--- #################################################################
+---@module 'linters.vint'
 return {
     append_fname = false,
     args = function(context)

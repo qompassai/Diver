@@ -2,8 +2,6 @@
 ---@version >5.1
 -- /qompassai/Diver/lua/config/init.lua
 -- Qompass AI Diver Config Module
--- Copyright (C) 2025 Qompass AI, All rights reserved
-------------------------------------------------------
 local M = {}
 
 local env = vim.env

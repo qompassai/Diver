@@ -1,7 +1,6 @@
 -- /qompassai/Diver/lua/ai/dataaccess/ui.lua
 -- Qompass AI Data Access Dashboard (Tiger Style)
--- Copyright (C) 2026 Qompass AI, All rights reserved
--- ----------------------------------------
+---@module 'ai.dataaccess.ui'
 -- Floating window listing the sessions managed by ai.dataaccess and
 -- the most recent security-relevant audit events.
 --

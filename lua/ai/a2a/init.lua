@@ -1,7 +1,5 @@
 -- /qompassai/Diver/lua/ai/a2a/init.lua
 -- Qompass AI A2A Entry Point (Tiger Style)
--- Copyright (C) 2025 Qompass AI, All rights reserved
--- ----------------------------------------
 -- Wires the Agent2Agent console modules (agent_card, client, tasks,
 -- fanout, ui, sdks, commands) into one setup() entrypoint. Nothing in this
 -- file does I/O at require-time; commands.lua registers the actual

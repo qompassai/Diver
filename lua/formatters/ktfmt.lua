@@ -1,8 +1,5 @@
--- #################################################################
 -- ~/.config/nvim/lua/formatters/ktfmt.lua
 -- Qompass AI Diver Native Kotlin Formatter
--- Copyright (C) 2026 Qompass AI, All rights reserved
--- #################################################################
 ---@source https://github.com/facebook/ktfmt
 
 --- Kotlin formatter — Meta's ktfmt, run through a small Java adapter.

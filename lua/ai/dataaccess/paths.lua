@@ -1,7 +1,6 @@
 -- /qompassai/Diver/lua/ai/dataaccess/paths.lua
 -- Qompass AI Data Access Path Validation (Tiger Style)
--- Copyright (C) 2026 Qompass AI, All rights reserved
--- ----------------------------------------
+---@module 'ai.dataaccess.paths'
 -- Validates filesystem paths before a file-backed data adapter (sqlite,
 -- duckdb) or a credential-file field (mysql defaults_file, psql
 -- passfile) ever sees them.

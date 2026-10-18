@@ -1,8 +1,6 @@
--- #################################################################
 -- ~/.config/nvim/lua/formatters/dfmt.lua
 -- Native dfmt Formatter Spec — Neovim 0.13+ / LuaJIT
--- SPDX-License-Identifier: Apache-2.0
--- #################################################################
+---@module 'formatters.dfmt'
 ---@source https://github.com/dlang-community/dfmt
 ---
 --- dfmt is the tidier for the D programming language. Run it with no

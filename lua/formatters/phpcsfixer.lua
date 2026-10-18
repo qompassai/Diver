@@ -1,8 +1,5 @@
--- #################################################################
 -- ~/.config/nvim/lua/formatters/phpcsfixer.lua
 -- Qompass AI Diver PHP-CS-Fixer Native Formatter Spec
--- Copyright (C) 2026 Qompass AI, All rights reserved
--- #################################################################
 ---@source https://github.com/PHP-CS-Fixer/PHP-CS-Fixer
 
 --- PHP fixer — applies the project's PHP-CS-Fixer rules to the buffer.

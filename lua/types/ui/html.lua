@@ -1,7 +1,5 @@
 -- /qompassai/Diver/lua/types/ui/html.lua
 -- Qompass AI Diver UI HTML Types Config
--- Copyright (C) 2025 Qompass AI, All rights reserved
-------------------------------------------------------
 ---@meta
 ---@version JIT
 ---@class HtmlPreviewConfig

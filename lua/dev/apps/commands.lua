@@ -1,7 +1,6 @@
 -- lua/dev/apps/commands.lua
 -- Qompass AI Diver Dev Apps Commands
--- Copyright (C) 2026 Qompass AI, All rights reserved.
--- ----------------------------------------------------------------------------
+---@module 'dev.apps.commands'
 -- User commands for dev.apps. Kept separate so init.lua stays about
 -- launching; this file is about discoverability: :Apps with cmdline
 -- completion and a picker, :AppsInfo showing resolved config, :AppsClose.

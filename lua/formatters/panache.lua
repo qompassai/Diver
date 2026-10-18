@@ -1,8 +1,6 @@
--- #################################################################
 -- ~/.config/nvim/lua/formatters/panache.lua
 -- Qompass AI Diver Panache Native Formatter Spec
--- Copyright (C) 2026 Qompass AI, All rights reserved
--- #################################################################
+---@module 'formatters.panache'
 ---@source https://github.com/jolars/panache
 ---
 --- Panache formats Markdown, Quarto (.qmd) and R Markdown (.Rmd)

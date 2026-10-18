@@ -1,7 +1,6 @@
 -- /qompassai/Diver/lua/ai/herd/ui.lua
 -- Qompass AI Herd Dashboard (Tiger Style)
--- Copyright (C) 2025 Qompass AI, All rights reserved
--- ----------------------------------------
+---@module 'ai.herd.ui'
 -- Floating window listing the persistent agents managed by ai.herd:
 -- one row per agent as name | cli | machine | status | task. Rows sort
 -- blocked first, then working, idle, dead, unknown; ties break by

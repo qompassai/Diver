@@ -1,9 +1,5 @@
--- #################################################################
 -- /qompassai/Diver/lsp/basedpy_ls.lua
 -- Qompass AI Diver Native BasedPyright LSP Config
--- SPDX-License-Identifier: Apache-2.0
--- Copyright (c) 2026 Qompass AI
--- #################################################################
 ---@source https://docs.basedpyright.com/latest/configuration/language-server-settings/
 local api = vim.api
 

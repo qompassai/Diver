@@ -1,8 +1,6 @@
--- #################################################################
 -- /qompassai/lua/linters/csslint.lua
 -- Qompass AI CSSLint
--- SPDX-License-Identifier: Apache-2.0
--- #################################################################
+---@module 'linters.csslint'
 return {
     append_fname = false,
     args = function(context)

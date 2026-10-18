@@ -1,8 +1,6 @@
--- #################################################################
 -- ~/.config/nvim/lua/formatters/nufmt.lua
 -- Qompass AI Diver Nufmt Native Formatter Spec
--- Copyright (C) 2026 Qompass AI, All rights reserved
--- #################################################################
+---@module 'formatters.nufmt'
 ---@source https://github.com/nushell/nufmt
 ---
 --- nufmt is the official Nushell code formatter. `--stdin` makes it

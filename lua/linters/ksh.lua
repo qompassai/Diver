@@ -1,9 +1,6 @@
--- #################################################################
 -- /qompassai/Diver/lua/linters/ksh.lua
 -- Qompass AI Diver Native KornShell 93u+m Syntax Linter
--- SPDX-License-Identifier: Apache-2.0
--- Copyright (c) 2026 Qompass AI
--- #################################################################
+---@module 'linters.ksh'
 ---@source https://github.com/ksh93/ksh
 ---@source https://www.kornshell.com/doc/man/man1/ksh.html
 

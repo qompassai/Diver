@@ -1,7 +1,5 @@
 -- /qompassai/Diver/lua/ai/acp/init.lua
 -- Qompass AI ACP Entry Point (Tiger Style)
--- Copyright (C) 2025 Qompass AI, All rights reserved
--- ----------------------------------------
 -- Wires the Agent Client Protocol modules (registry, rpc, protocol,
 -- session, permissions, store, ui, commands, health) into one setup()
 -- entrypoint. The unrelated Agent Context Protocol module now lives at

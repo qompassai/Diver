@@ -1,7 +1,5 @@
 -- /qompassai/Diver/lsp/harper_ls.lua
 -- Qompass AI Harper LSP Spec
--- Copyright (C) 2025 Qompass AI, All rights reserved
--- --------------------------------------------------
 ---@source https://github.com/automattic/harper
 ---@type vim.lsp.Config
 return {

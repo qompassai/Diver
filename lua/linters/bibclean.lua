@@ -1,7 +1,6 @@
 -- /qompassai/Diver/linters/bibclean.lua
 -- Qompass AI Diver Bibclean Linter Spec
--- Copyright (C) 2025 Qompass AI, All rights reserved
--- ----------------------------------------
+---@module 'linters.bibclean'
 return ---@type vim.lint.Config
 {
     append_fname = true,

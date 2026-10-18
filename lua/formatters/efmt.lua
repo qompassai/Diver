@@ -1,8 +1,6 @@
--- #################################################################
 -- ~/.config/nvim/lua/formatters/efmt.lua
 -- Native efmt Formatter Spec — Neovim 0.13+ / LuaJIT
--- SPDX-License-Identifier: Apache-2.0
--- #################################################################
+---@module 'formatters.efmt'
 ---@source https://github.com/sile/efmt/blob/HEAD/README.md
 ---
 --- efmt tidies Erlang code. The lone `-` means "read the code from

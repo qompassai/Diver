@@ -1,7 +1,6 @@
 -- /qompassai/Diver/lua/dev/sf/agent.lua
 -- Qompass AI Diver Salesforce Agentforce Utils
--- Copyright (C) 2026 Qompass AI, All rights reserved
--- --------------------------------------------------
+---@module 'dev.sf.agent'
 local core = require('dev.sf.core')
 local fn = vim.fn
 local M = {}

@@ -1,7 +1,6 @@
 -- /qompassai/Diver/lua/ai/rose/mcp.lua
 -- MCP stdio client: one JSON-RPC 2.0 object per line (Tiger Style)
--- Copyright (C) 2025 Qompass AI, All rights reserved
--- ----------------------------------------
+---@module 'ai.rose.mcp'
 -- Spawns MCP servers over stdio with argv only: no shell, no LSP framing,
 -- no plugins. Server-to-client requests are refused except ping; only the
 -- initialized handshake version is accepted.

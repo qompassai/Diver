@@ -1,7 +1,6 @@
 -- /qompassai/Diver/lua/ai/dataaccess/confirm.lua
 -- Qompass AI Data Access Write Confirmation (Tiger Style)
--- Copyright (C) 2026 Qompass AI, All rights reserved
--- ----------------------------------------
+---@module 'ai.dataaccess.confirm'
 -- Reads run free; writes need the operator's explicit say-so. A write
 -- is any statement whose first keyword is not in the read set below.
 --

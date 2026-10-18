@@ -1,7 +1,5 @@
 -- /qompassai/Diver/lua/ai/builder/init.lua
 -- Qompass AI Interactive Application Builder: Entry Point (Tiger Style)
--- Copyright (C) 2025 Qompass AI, All rights reserved
--- ----------------------------------------
 -- Iterative, interactive full-application builder. The pipeline:
 --
 --   menu.lua      Gathers a BuilderSpec through vim.ui.select menus

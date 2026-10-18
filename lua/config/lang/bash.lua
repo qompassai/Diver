@@ -1,7 +1,6 @@
 -- /qompassai/Diver/lua/config/lang/bash.lua
 -- Qompass AI Diver Bash Lang Config
--- Copyright (C) 2025 Qompass AI, All rights reserved
--- ---------------------------------------------------
+---@module 'config.lang.bash'
 local M = {}
 local api = vim.api
 local fn = vim.fn

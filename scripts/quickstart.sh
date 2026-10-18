@@ -1,7 +1,6 @@
 #!/usr/bin/env bash
 # /qompassai/Diver/scripts/quickstart.sh
 # Qompass AI Diver Quickstart Script
-# Copyright (C) 2025 Qompass AI, All rights reserved
 #####################################################
 #
 # NOTE: quickstart.sh is now a thin wrapper around scripts/install.sh,

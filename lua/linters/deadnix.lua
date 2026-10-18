@@ -1,7 +1,6 @@
 -- /qompassai/Diver/linters/deadnix.lua
 -- Qompass AI Deadnix Linter Spec
--- Copyright (C) 2025 Qompass AI, All rights reserved
--- ----------------------------------------
+---@module 'linters.deadnix'
 --local core_parser = require('config.core.parser')
 return ---@type vim.lint.Config
 {

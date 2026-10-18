@@ -1,7 +1,5 @@
 -- /qompassai/Diver/lsp/codeql_ls.lua
 -- Qompass AI Diver CodeQL LSP Spec
--- Copyright (C) 2025 Qompass AI, All rights reserved
--- ----------------------------------------
 return ---@type vim.lsp.Config
 {
     cmd = {

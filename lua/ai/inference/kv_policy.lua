@@ -1,7 +1,6 @@
 -- /qompassai/Diver/lua/ai/inference/kv_policy.lua
 -- KV-cache quantization precision policy (Tiger Style)
--- Copyright (C) 2026 Qompass AI, All rights reserved
--- ----------------------------------------
+---@module 'ai.inference.kv_policy'
 -- Plain words: this module does NOT quantize anything and cannot make
 -- a model use fewer bits. It encodes the precision rules from
 -- DeepSeek-V4.1-Flash (arXiv:2609.19969, Sec. 2.4.4) as a checkable

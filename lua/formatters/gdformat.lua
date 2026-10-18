@@ -1,8 +1,6 @@
--- #################################################################
 -- ~/.config/nvim/lua/formatters/gdformat.lua
 -- Native gdformat Formatter Spec — Neovim 0.13+ / LuaJIT
--- SPDX-License-Identifier: Apache-2.0
--- #################################################################
+---@module 'formatters.gdformat'
 ---@source https://github.com/Scony/godot-gdscript-toolkit
 ---@source https://github.com/nvimtools/none-ls.nvim/blob/main/doc/BUILTINS.md
 ---

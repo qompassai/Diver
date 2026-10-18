@@ -1,7 +1,6 @@
 -- /qompassai/Diver/lua/ai/media/registry.lua
 -- Qompass AI Media Backend Registry (Tiger Style)
--- Copyright (C) 2025 Qompass AI, All rights reserved
--- ----------------------------------------
+---@module 'ai.media.registry'
 -- Named registry of media-generation backends (audio/image/video).
 -- Detection is runtime probing only: a backend is available when its
 -- detect() says so, never by assumption. A detect() that raises is

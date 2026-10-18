@@ -1,7 +1,5 @@
 -- /qompassai/Diver/lsp/ruff_ls.lua
 -- Qompass AI Diver Ruff LSP Config
--- Copyright (C) 2025 Qompass AI, All rights reserved
--- -------------------------------------------------
 -- Reference: https://docs.astral.sh/ruff/editors/features/#code-actions
 --
 

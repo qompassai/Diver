@@ -1,7 +1,6 @@
 -- /qompassai/Diver/lua/ai/mcp/client.lua
 -- Qompass AI MCP stdio JSON-RPC Client (Tiger Style)
--- Copyright (C) 2025 Qompass AI, All rights reserved
--- ----------------------------------------
+---@module 'ai.mcp.client'
 -- MCP speaks JSON-RPC 2.0 as newline-delimited messages over the server
 -- process's stdio (no Content-Length framing, unlike LSP). This module owns
 -- process lifetime, message framing, request/response matching with

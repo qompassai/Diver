@@ -1,7 +1,6 @@
 -- /qompassai/Diver/lua/ai/rose/providers/common.lua
 -- Shared normalized-chat helpers for cloud provider adapters (Tiger Style)
--- Copyright (C) 2025 Qompass AI, All rights reserved
--- ----------------------------------------
+---@module 'ai.rose.providers.common'
 -- Roles the normalized chat shape accepts; anything else is a caller bug, not provider data.
 local M = {}
 local normalized_roles = {

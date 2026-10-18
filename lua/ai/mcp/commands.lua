@@ -1,7 +1,6 @@
 -- /qompassai/Diver/lua/ai/mcp/commands.lua
 -- Qompass AI MCP User Commands (Tiger Style)
--- Copyright (C) 2025 Qompass AI, All rights reserved
--- ----------------------------------------
+---@module 'ai.mcp.commands'
 -- The user-facing surface of the MCP manager: browse servers, register,
 -- enable/disable and remove them, inspect and call their tools, search
 -- for new servers and install them. Requiring this module registers the

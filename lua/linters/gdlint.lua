@@ -1,9 +1,6 @@
--- #################################################################
 -- /qompassai/lua/linters/gdlint.lua
 -- Qompass AI Diver Native GDScript Linter
--- Copyright (C) 2026 Qompass AI, All rights reserved
--- SPDX-License-Identifier: Apache-2.0
--- #################################################################
+---@module 'linters.gdlint'
 ---@source https://godotengine.org/asset-library/asset/4612
 ---@source https://github.com/graydwarf/godot-gdscript-linter
 ---@source https://docs.godotengine.org/en/latest/tutorials/editor/command_line_tutorial.html

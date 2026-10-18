@@ -1,7 +1,5 @@
 -- /qompassai/Diver/lua/ai/herd/personas.lua
 -- Qompass AI Herd Personas (Tiger Style)
--- Copyright (C) 2026 Qompass AI, All rights reserved
--- --------------------------------------------------
 -- Loader + picker for agent-ctrl specialist personas (Matt's own
 -- ~/.config/agent-ctrl/agents/*.md files). The frontmatter schema is
 -- `name`, `description`, `category`, optional `mcp-servers`, then the

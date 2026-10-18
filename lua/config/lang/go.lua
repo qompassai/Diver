@@ -1,7 +1,6 @@
 -- /qompassai/Diver/lua/config/lang/go.lua
 -- Qompass AI Diver Go Lang Config
--- Copyright (C) 2025 Qompass AI, All rights reserved
--- --------------------------------------------------
+---@module 'config.lang.go'
 local M = {}
 -- A2A SDK: <LocalLeader>aa* maps (card/send/stream/get/cancel/install)
 -- are wired for this filetype by ai.a2a.sdks.setup().

@@ -1,7 +1,6 @@
 -- /qompassai/Diver/lua/ai/cache/tiered.lua
 -- Two-tier context/prefix cache for the ai/ stack (Tiger Style)
--- Copyright (C) 2026 Qompass AI, All rights reserved.
--- ----------------------------------------
+---@module 'ai.cache.tiered'
 --
 -- Plain words: some context is worth keeping for days (system
 -- prompts, project facts) and some is only useful for minutes (the

@@ -1,7 +1,5 @@
 -- /qompassai/Diver/lsp/autohotkey_ls.lua
 -- Qompass AI Autohotkey LSP Spec
--- Copyright (C) 2025 Qompass AI, All rights reserved
--- ----------------------------------------
 ---@type vim.lsp.Config
 return {
     cmd = {

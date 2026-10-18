@@ -1,7 +1,6 @@
 -- /qompassai/Diver/lua/ai/herd/commands.lua
 -- Qompass AI Herd User Commands (Tiger Style)
--- Copyright (C) 2025 Qompass AI, All rights reserved
--- ----------------------------------------
+---@module 'ai.herd.commands'
 -- The user-facing surface of the herd runtime: spawn, prompt, kill and
 -- restore agents, open the status dashboard, and manage remote machines.
 -- Requiring this module registers nothing; M.setup() creates the

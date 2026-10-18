@@ -1,8 +1,6 @@
--- #################################################################
 -- ~/.config/nvim/lua/formatters/pg_format.lua
 -- Native pgFormatter Formatter — Neovim 0.13+ / LuaJIT
--- SPDX-License-Identifier: Apache-2.0
--- #################################################################
+---@module 'formatters.pg_format'
 ---@source https://github.com/darold/pgformatter/releases/tag/v5.11
 ---
 --- Tiger Style for SQL formatting profile (tiger style formatting rules:

@@ -1,7 +1,5 @@
 -- /qompassai/Diver/lsp/kotlin_ls.lua
 -- Qompass AI Diver Kotlin LSP Config
--- Copyright (C) 2025 Qompass AI, All rights reserved
--- ---------------------------------------------------
 return ---@type vim.lsp.Config
 {
     -- stdio is the server's default mode: upstream editor docs invoke

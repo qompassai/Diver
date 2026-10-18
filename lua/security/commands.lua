@@ -1,7 +1,6 @@
 -- /qompassai/Diver/lua/ai/security/commands.lua
 -- Qompass AI Security User Commands (Tiger Style)
--- Copyright (C) 2025 Qompass AI, All rights reserved
--- ----------------------------------------
+---@module 'security.commands'
 -- The user-facing surface of the security scanner: AiScan shows a
 -- scan report for a file in a scratch buffer, AiQuarantine moves a
 -- suspicious file out of the way. Requiring this module registers

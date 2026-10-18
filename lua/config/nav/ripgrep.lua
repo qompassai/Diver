@@ -1,6 +1,6 @@
 -- /qompassai/Diver/lua/config/nav/ripgrep.lua
 -- ripgrep JSON -> native quickfix/location lists; no shell command construction.
--- SPDX-License-Identifier: Apache-2.0
+---@module 'config.nav.ripgrep'
 local api, fs = vim.api, vim.fs
 local async = require('config.core.async')
 local qf = require('config.core.qf')

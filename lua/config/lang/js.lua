@@ -1,7 +1,6 @@
 -- qompassai/Diver/lua/config/lang/js.lua
 -- Qompass AI Diver Javascript Lang Config
--- Copyright (C) 2025 Qompass AI, All rights reserved
------------------------------------------------------
+---@module 'config.lang.js'
 local M = {}
 local modernize = require('config.lang.modernize')
 

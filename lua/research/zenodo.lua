@@ -1,7 +1,6 @@
 -- /qompassai/Diver/lua/research/zenodo.lua
 -- Qompass AI Diver Zenodo Utils
--- Copyright (C) 2026 Qompass AI, All rights reserved
--- --------------------------------------------------
+---@module 'research.zenodo'
 --
 -- Zenodo deposits from inside Neovim (REST API,
 -- https://developers.zenodo.org/#rest-api): list your deposits, inspect

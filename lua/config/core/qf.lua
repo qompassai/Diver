@@ -1,6 +1,6 @@
 -- /qompassai/Diver/lua/config/core/qf.lua
 -- Native quickfix/location lists: stable IDs, bounded edits, public highlighting APIs.
--- SPDX-License-Identifier: Apache-2.0
+---@module 'config.core.qf'
 local api, fn = vim.api, vim.fn
 local M = {}
 local HIGHLIGHTS_MAX = 4096

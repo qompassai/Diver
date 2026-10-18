@@ -1,7 +1,6 @@
 -- /qompassai/diver/lua/ai/harness/telemetry.lua
 -- Qompass AI Agent Harness: redacted telemetry (Tiger Style)
--- Copyright (C) 2025 Qompass AI, All rights reserved
--- ----------------------------------------
+---@module 'ai.harness.telemetry'
 -- Logs, metrics, and traces with redaction. Secret-bearing keys are
 -- scrubbed before storage: credentials stay out of prompts, logs, and
 -- persisted transcripts. Prompt/completion content is never captured

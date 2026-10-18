@@ -1,7 +1,6 @@
 -- /qompassai/Diver/lua/ai/dataaccess/sessions.lua
 -- Qompass AI Data Access Session Registry (Tiger Style)
--- Copyright (C) 2026 Qompass AI, All rights reserved
--- ----------------------------------------
+---@module 'ai.dataaccess.sessions'
 -- Refcounted session manager over the lua/config/data/ adapters. One
 -- session object exists per (adapter, dsn-key); acquiring the same key
 -- twice returns the same object with its refcount raised, never a

@@ -1,7 +1,6 @@
 -- /qompassai/Diver/lua/config/lang/c.lua
 -- Qompass AI Diver C Config
--- Copyright (C) 2026 Qompass AI, All rights reserved
--- ----------------------------------------
+---@module 'config.lang.c'
 local M = {} ---@version 5.1, JIT
 local api = vim.api
 local augroup = vim.api.nvim_create_augroup

@@ -1,7 +1,5 @@
 -- /qompassai/Diver/lsp/stimulus_ls.lua
 -- Qompass AI Stimulus LSP Spec
--- Copyright (C) 2025 Qompass AI, All rights reserved
--- ----------------------------------------
 --Reference: https://www.npmjs.com/package/stimulus-language-server
 ---@type vim.lsp.Config
 return {

@@ -1,7 +1,6 @@
 -- /qompassai/Diver/lua/ai/a2a/ui.lua
 -- Qompass AI A2A Task Monitor (Tiger Style)
--- Copyright (C) 2025 Qompass AI, All rights reserved
--- ----------------------------------------
+---@module 'ai.a2a.ui'
 -- One floating window listing every known A2A task: id, agent, state,
 -- elapsed time. It subscribes to the supervisor once (lazily, on first
 -- open -- requiring this module has no side effects) and refreshes on

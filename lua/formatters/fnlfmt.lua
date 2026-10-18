@@ -1,8 +1,6 @@
--- #################################################################
 -- ~/.config/nvim/lua/formatters/fnlfmt.lua
 -- Native fnlfmt Formatter Spec — Neovim 0.13+ / LuaJIT
--- SPDX-License-Identifier: Apache-2.0
--- #################################################################
+---@module 'formatters.fnlfmt'
 ---@source https://git.sr.ht/~technomancy/fnlfmt
 ---
 --- fnlfmt tidies Fennel code (a small Lisp that compiles to Lua). The

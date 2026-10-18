@@ -1,8 +1,6 @@
--- #################################################################
 -- ~/.config/nvim/lua/formatters/xmllint.lua
 -- xmllint formatter
--- SPDX-License-Identifier: Apache-2.0
--- #################################################################
+---@module 'formatters.xmllint'
 
 ---@source https://manpages.debian.org/unstable/libxml2-utils/xmllint.1.en.html
 

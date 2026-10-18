@@ -1,9 +1,5 @@
--- #################################################################
 -- /qompassai/diver/lua/config/nav/motion.lua
 -- Qompass AI Diver Motion Pack (Tiger Style)
--- SPDX-License-Identifier: Apache-2.0
--- Copyright (c) 2026 Qompass AI
--- #################################################################
 ---@module 'config.nav.motion'
 --
 -- Enhanced cursor motions: diagnostics, quickfix/location lists, and

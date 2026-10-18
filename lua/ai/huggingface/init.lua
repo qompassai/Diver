@@ -1,7 +1,5 @@
 -- /qompassai/Diver/lua/ai/huggingface/init.lua
 -- Qompass AI Diver Hugging Face Hub Integration (Tiger Style)
--- Copyright (C) 2026 Qompass AI, All rights reserved
--- --------------------------------------------------
 -- Search / download / upload against the Hugging Face Hub, plus xet
 -- transfer status and tooling update checks. Requiring this module
 -- registers nothing and performs no I/O; M.setup() creates the user

@@ -1,8 +1,6 @@
 #!/usr/bin/env bash
 # /qompassai/Diver/lsp/jimmer.sh
 # Qompass AI Diver Jimmer Install Script
-# Copyright (C) 2026 Qompass AI, All rights reserved
-# ----------------------------------------
 set -euo pipefail
 REPO_URL="https://github.com/Enaium/jimmer-dto-lsp.git"
 REPO_DIR="${REPO_DIR:-$HOME/.GH/jimmer-dto-lsp}"

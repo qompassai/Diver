@@ -1,7 +1,5 @@
 -- /qompassai/Diver/lsp/hypr_ls.lua
 -- Qompass AI Diver HyprLS LSP Spec
--- Copyright (C) 2025 Qompass AI, All rights reserved
-------------------------------------------------------
 return ---@type vim.lsp.Config
 {
     capabilities = require('config.core.lsp').capabilities,

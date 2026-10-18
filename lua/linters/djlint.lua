@@ -1,8 +1,6 @@
--- #################################################################
 -- /qompassai/lua/linters/djlint.lua
 -- Qompass AI DjLint
--- SPDX-License-Identifier: Apache-2.0
--- #################################################################
+---@module 'linters.djlint'
 return {
     append_fname = false,
     args = function(context)

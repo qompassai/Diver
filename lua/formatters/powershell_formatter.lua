@@ -1,8 +1,6 @@
--- #################################################################
 -- ~/.config/nvim/lua/formatters/powershell_formatter.lua
 -- Qompass AI Diver Powershell Formatter Native Formatter Spec
--- Copyright (C) 2026 Qompass AI, All rights reserved
--- #################################################################
+---@module 'formatters.powershell_formatter'
 ---@source https://github.com/kjanat/powershell-formatter
 ---
 --- This adapter is named powershell_formatter, but the upstream

@@ -1,7 +1,6 @@
 -- /qompassai/Diver/lua/config/core/filetype.lua
 -- Qompass AI Diver Core FileType Config
--- Copyright (C) 2025 Qompass AI, All rights reserved
--- ---------------------------------------------------
+---@module 'config.core.filetype'
 local M = {}
 local definitions = {
     extension = {

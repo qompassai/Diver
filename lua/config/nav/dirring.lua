@@ -1,7 +1,5 @@
 -- /qompassai/Diver/lua/config/nav/dirring.lua
 -- Qompass AI Diver Directory Ring (Tiger Style)
--- Copyright (C) 2026 Qompass AI, All rights reserved
--- --------------------------------------------------
 -- In-editor directory ring mirroring the bash semantics of
 -- ~/workspace/repos/dotfiles/.config/bash.d/cycled.bash:
 -- swd (save/push)  -> :DirPush [dir]
