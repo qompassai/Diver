@@ -19,7 +19,9 @@
 ---@source https://alexjs.com
 
 local diagnostic = vim.diagnostic
+local fn = vim.fn
 local fs = vim.fs
+local uv = vim.uv
 
 local ERROR = diagnostic.severity.ERROR
 local HINT = diagnostic.severity.HINT
@@ -107,6 +109,50 @@ local function args(context)
     argv[#argv + 1] = context.filename
 
     return argv
+end
+
+---Resolve the alexjs executable.
+---
+---`alex` names two unrelated tools that both install an `alex` binary:
+---alexjs (get-alex/alex), the prose linter this adapter targets, and the
+---Haskell lexer generator. On primo /usr/bin/alex is the Haskell tool, so
+---a bare `alex` invocation runs the wrong program entirely.
+---
+---Project-local npm installs are unambiguous — node_modules/.bin never
+---holds the Haskell tool — so prefer them. Otherwise invoke the npm-global
+---package's entry point directly: cli.js is an executable
+---`#!/usr/bin/env node` script that no PATH collision can shadow, located
+---under the lib/node_modules of the prefix that owns the `npm` binary.
+---
+---The bare name remains only as a last resort for machines where PATH
+---`alex` really is alexjs.
+---
+---@param context LintContext
+---@return string
+local function command(context)
+    assert(context.root ~= '')
+
+    local local_command = fs.joinpath(context.root, 'node_modules', '.bin', 'alex')
+
+    if fn.executable(local_command) == 1 then
+        return local_command
+    end
+
+    local npm = fn.exepath('npm')
+
+    if npm ~= '' then
+        local prefix = fs.dirname(fs.dirname(npm))
+
+        if prefix ~= nil then
+            local global_command = fs.joinpath(prefix, 'lib', 'node_modules', 'alex', 'cli.js')
+
+            if uv.fs_stat(global_command) ~= nil then
+                return global_command
+            end
+        end
+    end
+
+    return 'alex'
 end
 
 ---@param context LintContext
@@ -397,7 +443,7 @@ return ---@type Linter
     append_fname = false,
     args = args,
     automatic = false,
-    cmd = 'alex',
+    cmd = command,
     cwd = cwd,
     --
     -- Alex invokes unified-engine with frail=true, so warnings legitimately
