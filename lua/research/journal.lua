@@ -24,6 +24,11 @@
 --                             prepares everything and the final upload
 --                             stays a manual web step by Matt.
 --   requirements      table   structured requirements (see below)
+--   review            table   peer-review scaffold data:
+--                             { fields = string[] }, the rating field
+--                             labels in the journal's order, read by
+--                             research.review. Profiles without it fall
+--                             back to the generic profile's fields.
 --   requirements_source string  provenance: 'verified ...' with a date,
 --                             or 'not recorded' for thin profiles.
 --
@@ -884,10 +889,20 @@ M.profiles = {
     },
 }
 
----@param name string
----@return table
+---Look up a journal profile by key. Unknown keys fail loudly
+---(nil + error) instead of falling back to the generic profile: a
+---silent fallback renders an anonymous scaffold that looks like
+---success for a journal the registry knows nothing about. Callers
+---that want the generic profile ask for the 'generic' key.
+---@param name string profile key
+---@return table|nil profile
+---@return string|nil err
 function M.get(name)
-    return M.profiles[name:lower()] or M.profiles.generic
+    local profile = M.profiles[name:lower()]
+    if not profile then
+        return nil, ('unknown journal key: %s'):format(name)
+    end
+    return profile
 end
 
 ---The structured requirements recorded for a journal, plus provenance.

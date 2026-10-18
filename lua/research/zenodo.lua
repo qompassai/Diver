@@ -414,7 +414,10 @@ function M.create_draft(dir, journal_key)
     end
     if journal_key and journal_key ~= '' then
         local journal = require('research.journal')
-        local profile = journal.get(journal_key)
+        local profile, err = journal.get(journal_key)
+        if not profile then
+            return nil, err
+        end
         payload_metadata.journal_title = profile.name
     end
     return request('POST', config.api_base .. '/api/deposit/depositions', token, {

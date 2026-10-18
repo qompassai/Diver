@@ -41,7 +41,7 @@ end
 ---@param article_type string label or snake_case key
 ---@return string
 local function normalize_type(article_type)
-    return article_type:lower():gsub('[^%w]+', '_'):gsub('^_+', ''):gsub('_+$', '')
+    return (article_type:lower():gsub('[^%w]+', '_'):gsub('^_+', ''):gsub('_+$', ''))
 end
 
 ---@param metadata table
@@ -768,7 +768,7 @@ end
 ---@param journal_key string profile key ('jgme', 'generic', ...)
 ---@param article_type string label ('Original Research') or key
 ---@param format string 'markdown'|'md'|'latex'|'tex'
----@param metadata? table optional { title, short_title }
+---@param metadata? table optional { title, short_title, journal_name }
 ---@return string[]|nil lines
 ---@return string|nil err
 function M.render(journal_key, article_type, format, metadata)
@@ -800,8 +800,18 @@ function M.render(journal_key, article_type, format, metadata)
         return nejm_ai_letter_latex(metadata)
     end
     local journal = require('research.journal')
-    local profile = journal.get(key)
+    local profile, err = journal.get(key)
+    if not profile then
+        return nil, err
+    end
     local journal_name = profile.name or key
+    if key == 'generic' then
+        -- The generic profile's recorded name is the placeholder
+        -- 'Journal'; a caller-supplied journal_name (an unprofiled
+        -- journal's display name) is the only way a generic scaffold
+        -- can carry the journal's real name.
+        journal_name = field(metadata, 'journal_name', journal_name)
+    end
     if normalized_format == 'markdown' then
         return generic_markdown(metadata, journal_name)
     end

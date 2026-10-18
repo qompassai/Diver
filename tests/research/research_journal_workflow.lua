@@ -472,10 +472,10 @@ do
         'unknown journal: requirements not recorded (no silent fallback)',
         'adversarial'
     )
-    local generic = journal.get('no_such_journal')
+    local generic, get_err = journal.get('no_such_journal')
     check(
-        generic.requirements_source == 'not recorded',
-        'unknown journal falls back to generic thin profile',
+        generic == nil and get_err == 'unknown journal key: no_such_journal',
+        'unknown journal: get returns nil plus an error (no silent fallback)',
         'adversarial'
     )
 end

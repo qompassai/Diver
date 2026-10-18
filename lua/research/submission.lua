@@ -211,6 +211,18 @@ local function add_result(results, status, label, detail)
     results[#results + 1] = { detail = detail, label = label, status = status }
 end
 
+---Report an error without throwing. An ERROR-level notification
+---emitted during command execution makes nvim_exec2 fail the command
+---for API/RPC callers (stock vim.notify echoes with err=true), so the
+---notification is scheduled: the command returns cleanly and the
+---message still displays.
+---@param message string
+local function notify_error(message)
+    vim.schedule(function()
+        vim.notify(message, vim.log.levels.ERROR)
+    end)
+end
+
 ---Check a manuscript directory against a journal profile's recorded
 ---requirements. Every check that depends on a requirement the profile
 ---does not record reports 'not_recorded' rather than passing silently;
@@ -222,11 +234,15 @@ end
 ---@param root string manuscript directory
 ---@param journal_key string journal profile key
 ---@param article_type? string override (else read from the manuscript)
----@return table[] results
----@return table profile
+---@return table[]|nil results
+---@return table|nil profile
+---@return string|nil err
 function M.check_requirements(root, journal_key, article_type)
     local journal = require('research.journal')
-    local profile = journal.get(journal_key)
+    local profile, err = journal.get(journal_key)
+    if not profile then
+        return nil, nil, err
+    end
     local requirements = profile.requirements
     local results = {}
     local scan = M.scan(root)
@@ -488,9 +504,13 @@ end
 ---@param root string
 ---@param journal_key string
 ---@param article_type? string
----@return string[]
+---@return string[]|nil lines
+---@return string|nil err
 function M.requirements_report(root, journal_key, article_type)
-    local results, profile = M.check_requirements(root, journal_key, article_type)
+    local results, profile, err = M.check_requirements(root, journal_key, article_type)
+    if not results or not profile then
+        return nil, err
+    end
     local source = profile.requirements_source or 'not recorded'
     local lines = {
         ('# Submission Check — %s'):format(profile.name or journal_key),
@@ -542,8 +562,13 @@ function M.setup()
         end
         local journal_key = args[1]
         local root = args[2] and fs.normalize(args[2]) or (vim.uv.cwd() or fn.getcwd())
+        local lines, err = M.requirements_report(root, journal_key)
+        if not lines then
+            notify_error(('SubmissionCheck: %s'):format(err))
+            return
+        end
         local buf = api.nvim_create_buf(false, true)
-        api.nvim_buf_set_lines(buf, 0, -1, false, M.requirements_report(root, journal_key))
+        api.nvim_buf_set_lines(buf, 0, -1, false, lines)
         vim.bo[buf].filetype = 'markdown'
         vim.bo[buf].buftype = 'nofile'
         vim.bo[buf].bufhidden = 'wipe'

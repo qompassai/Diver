@@ -7,6 +7,50 @@ local fn = vim.fn
 local fs = vim.fs
 local M = {}
 
+---Score-cell hint per review field label, where the journal's form
+---uses a scale; labels not listed get an empty score cell.
+local FIELD_SCORES = {
+    ['Conclusions supported'] = '/5',
+    ['Novelty'] = '/5',
+    ['Overall Manuscript Rating'] = '/100',
+    ['Topic importance'] = '/5',
+}
+
+---Resolve a journal preset — a registry key ('jgme') or a display
+---name ('Journal of Graduate Medical Education', as the picker
+---passes) — to its journal profile; nil when nothing matches.
+---@param preset string
+---@return table|nil
+local function resolve_profile(preset)
+    local journal = require('research.journal')
+    local profile = journal.get(preset)
+    if profile then
+        return profile
+    end
+    local wanted = preset:lower()
+    for _, entry in ipairs(journal.list()) do
+        if entry.name:lower() == wanted then
+            return journal.get(entry.key)
+        end
+    end
+    return nil
+end
+
+---The review rating fields for a profile: its own review.fields
+---when recorded, else the generic profile's fields.
+---@param profile? table
+---@return string[]
+local function review_fields_for(profile)
+    if profile and profile.review and profile.review.fields then
+        return profile.review.fields
+    end
+    local generic = require('research.journal').get('generic')
+    if generic and generic.review and generic.review.fields then
+        return generic.review.fields
+    end
+    return {}
+end
+
 ---@class ReviewAnchor
 ---@field page integer
 ---@field lines string
@@ -46,17 +90,20 @@ function M.insert_comment(page, lines, title)
 end
 
 ---@param path string
-function M.new(path)
-    local journal = fn.input('Journal: ')
-    if journal == '' then
+---@param preset_journal? string journal key or display name; skips the Journal prompt when given
+function M.new(path, preset_journal)
+    local given = preset_journal or fn.input('Journal: ')
+    if given == '' then
         return
     end
+    local profile = resolve_profile(given)
     local manuscript_number = fn.input('Manuscript number: ')
     local title = fn.input('Title: ')
     fn.mkdir(fs.dirname(path), 'p')
     fn.writefile(
         M.template({
-            journal = journal,
+            fields = review_fields_for(profile),
+            journal = profile and profile.name or given,
             manuscript_number = manuscript_number,
             title = title,
         }),
@@ -119,13 +166,14 @@ function M.summary(bufnr)
     return out
 end
 
----@param metadata table
+---@param metadata table { journal, manuscript_number, title, fields? }
 ---@return string[]
 function M.template(metadata)
     local journal = metadata.journal or ''
     local number = metadata.manuscript_number or ''
     local title = metadata.title or ''
-    return {
+    local fields = metadata.fields or review_fields_for(nil)
+    local lines = {
         '# Peer Review',
         '',
         '## ' .. journal,
@@ -140,12 +188,11 @@ function M.template(metadata)
         '',
         '| Category | Score |',
         '|---|---|',
-        '| Reviewer Recommendation |  |',
-        '| Overall Manuscript Rating | /100 |',
-        '| Topic importance | /5 |',
-        '| Conclusions supported | /5 |',
-        '| Novelty | /5 |',
-        '| Additional statistical review |  |',
+    }
+    for _, label in ipairs(fields) do
+        lines[#lines + 1] = ('| %s | %s |'):format(label, FIELD_SCORES[label] or '')
+    end
+    vim.list_extend(lines, {
         '',
         '---',
         '',
@@ -176,7 +223,8 @@ function M.template(metadata)
         '',
         '## Key External Sources Used in This Review',
         '',
-    }
+    })
+    return lines
 end
 
 function M.setup()
@@ -189,7 +237,8 @@ function M.setup()
         -- math.tointeger does not exist on LuaJIT; tonumber plus the integrality
         -- check preserves its nil-on-non-integer contract.
         local raw_num = tonumber(page)
-        local page_num = raw_num and raw_num % 1 == 0 and raw_num --[[@as integer?]] or nil
+        local page_num = raw_num and raw_num % 1 == 0 and raw_num --[[@as integer?]]
+            or nil
         if not page_num then
             vim.notify('Invalid page number.', vim.log.levels.ERROR)
             return
