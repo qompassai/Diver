@@ -331,7 +331,18 @@ local definitions = {
         ['.*%.ms%.hcl'] = 'atlas-schema-mssql',
         ['.*%.my%.hcl'] = 'atlas-schema-mysql',
         ['/nginx/.+%.conf'] = 'nginx',
-        ['.*/pages/.*%.page'] = 'html',
+        ['.*/pages/.*%.page'] = function(path, _bufnr)
+            -- A `pages/` layout alone does not prove Visualforce: other
+            -- stacks keep plain HTML .page files in one. The SFDX project
+            -- marker decides — an ancestor sfdx-project.json means these
+            -- are Visualforce pages (visualforce_ls applies); anywhere
+            -- else they stay html. Outside `pages/`, the extension rule
+            -- above still maps bare .page to visualforce.
+            if #vim.fs.find('sfdx-project.json', { path = vim.fs.dirname(path), upward = true }) > 0 then
+                return 'visualforce'
+            end
+            return 'html'
+        end,
         ['.*%.pg%.hcl'] = 'atlas-schema-postgresql',
         ['%.pg%.sql$'] = 'pgsql',
         ['.*%.plan%.hcl'] = 'atlas-plan',
