@@ -1,6 +1,6 @@
 ## Instructions
 
-You are writing an incident report for Qompass AI infrastructure or tooling. Matt runs
+You are writing an incident report for Qompass AI infrastructure or tooling. Owner runs
 security-sensitive systems (agent fleets, MCP servers, public repos, his workstation).
 Incident reports here are blameless, precise, and evidence-first — written like an
 intel report: what is confirmed, what is suspected, what is unknown.
@@ -16,7 +16,7 @@ gaps. Never let the report outrun the evidence.
   SHAs).
 - **Timeline reconstruction**: calendar events, message timestamps, gate runs —
   anything with a clock on it.
-- **Matt**: he directed the response; confirm the response actions with him.
+- **Owner**: he directed the response; confirm the response actions with him.
 
 ## Formatting
 
@@ -40,11 +40,11 @@ explicitly as HYPOTHESIS and say what would confirm or rule it out. Never presen
 hypothesis as a finding.]
 
 ## Response
-[What was done to contain/mitigate, in order, with who did it (Matt, which agent) and
+[What was done to contain/mitigate, in order, with who did it (Owner, which agent) and
 when.]
 
 ## Follow-ups
-- [ ] [action] — owner: [Matt / agent] — due: [date or "next session"]
+- [ ] [action] — owner: [Owner / agent] — due: [date or "next session"]
 
 ## Lessons
 [1–3 sentences: what changes so this class of incident doesn't recur. Concrete, not

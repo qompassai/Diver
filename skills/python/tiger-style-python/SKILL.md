@@ -1,10 +1,10 @@
 ---
 name: tiger-style-python
 description: >
-  Write or review Python code in Matt's Tiger Style: safety-first Python standard with explicit contracts, assertions, bounded work, and disciplined ownership. Use when writing, regenerating, refactoring, reviewing, or debugging Python - especially scripts, CLIs, and services. Toolchain pairing: ruff for LSP (lint diagnostics, code actions), black and ruff-format for formatting, debugpy for DAP debugging. Covers contract-first design, typed signatures, exception discipline, bounded I/O and retries, and half-adversarial test splits. Trigger keywords: type hints, exception chaining, asyncio, import cycle, packaging, GIL. See references/TIGER_STYLE_PYTHON.md for the full guide.
+  Write or review Python code in Owner's Tiger Style: safety-first Python standard with explicit contracts, assertions, bounded work, and disciplined ownership. Use when writing, regenerating, refactoring, reviewing, or debugging Python - especially scripts, CLIs, and services. Toolchain pairing: ruff for LSP (lint diagnostics, code actions), black and ruff-format for formatting, debugpy for DAP debugging. Covers contract-first design, typed signatures, exception discipline, bounded I/O and retries, and half-adversarial test splits. Trigger keywords: type hints, exception chaining, asyncio, import cycle, packaging, GIL. See references/TIGER_STYLE_PYTHON.md for the full guide.
 license: Apache-2.0
 compatibility: >
-  Requires Python 3 with ruff (LSP), black or ruff-format, and debugpy for full LSP, formatting, and DAP support. Built for Neovim with Matt's diver config (lsp/ruff_ls, formatters/black, lua/dap/python); usable by any coding agent that can read the guide and invoke the toolchain.
+  Requires Python 3 with ruff (LSP), black or ruff-format, and debugpy for full LSP, formatting, and DAP support. Built for Neovim with Owner's diver config (lsp/ruff_ls, formatters/black, lua/dap/python); usable by any coding agent that can read the guide and invoke the toolchain.
 metadata:
     language: python
     lsp: ruff
@@ -18,7 +18,7 @@ allowed-tools: Read Edit Bash
 
 ## Purpose
 
-Apply Matt's Tiger Style standard to Python code. Priority order, always:
+Apply Owner's Tiger Style standard to Python code. Priority order, always:
 **Safety > Performance > Developer Experience.** The full guide lives in
 [references/TIGER_STYLE_PYTHON.md](references/TIGER_STYLE_PYTHON.md); this
 file is the operational core. When the two disagree, the full guide wins.
@@ -101,7 +101,7 @@ file is the operational core. When the two disagree, the full guide wins.
 
 ## Output Contract
 
-Python you produce for Matt must: run under `python` and `python -O`
+Python you produce for Owner must: run under `python` and `python -O`
 identically, carry type hints on public functions, raise precise domain
 exceptions on expected failures, assert only internal invariants, bound
 all input/loops/retries/queues with named constants, close every resource

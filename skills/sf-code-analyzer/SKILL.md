@@ -3,7 +3,7 @@ name: sf-code-analyzer
 description: >
   Scan and fix Salesforce code with Salesforce Code Analyzer (v5) and the
   lightning-flow-scanner through the `sf` CLI: run scans over Apex, flows,
-  and metadata from the terminal or from Matt's Neovim (which wires the
+  and metadata from the terminal or from Owner's Neovim (which wires the
   analyzer as a linter), read the results, triage violations by severity,
   and drive the fix-verify loop until the scan is clean or the remainder is
   consciously accepted. Use when the user asks to "run code analyzer",
@@ -15,7 +15,7 @@ compatibility: >
   Requires the `sf` CLI with the code-analyzer plugin (verified on primo:
   @salesforce/plugin-code-analyzer 5.16.0, `sf code-analyzer run --help`
   responds) and the lightning-flow-scanner plugin (6.19.3, per apex-dev).
-  Neovim side: lua/linters/_salesforce-code-analyzer.lua in Matt's Diver
+  Neovim side: lua/linters/_salesforce-code-analyzer.lua in Owner's Diver
   config. Run inside an SFDX project (sfdx-project.json).
 metadata:
   app: salesforce-code-analyzer
@@ -47,7 +47,7 @@ sf code-analyzer run -w force-app --rule-selector "pmd:Recommended"
 ```
 
 - `-w` = workspace paths (files/dirs to scan), `-t` = specific targets.
-- Formats: `html` for Matt to read, `sarif`/`csv`/`json` for agents to
+- Formats: `html` for Owner to read, `sarif`/`csv`/`json` for agents to
   process. Produce both when the scan is a deliverable.
 - Exit status is non-zero when violations at/above the severity threshold
   are found — a non-zero exit with a written report is a *successful scan
@@ -55,7 +55,7 @@ sf code-analyzer run -w force-app --rule-selector "pmd:Recommended"
 
 ## In Neovim
 
-Matt's Diver config wires the analyzer as a linter
+Owner's Diver config wires the analyzer as a linter
 (`lua/linters/_salesforce-code-analyzer.lua`, see the `apex-dev` skill), so
 findings appear as diagnostics while editing Apex. Use the editor loop for
 fix-as-you-type work; use the CLI for full-project scans, CI-style gates,

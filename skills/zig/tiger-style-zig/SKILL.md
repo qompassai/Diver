@@ -1,10 +1,10 @@
 ---
 name: tiger-style-zig
 description: >
-  Write or review Zig code in Matt's Tiger Style: safety-first Zig standard with explicit contracts, error-union handling, bounded work, and disciplined allocator ownership. Use when writing, regenerating, refactoring, reviewing, or debugging Zig - especially systems code, cross-platform libraries, and comptime-heavy designs. Toolchain pairing: zls for LSP (diagnostics, completions, code actions), zig fmt for formatting, lldb-dap for DAP debugging. Covers contract-first design, explicit allocators, exhaustive error sets, bounded buffers, and half-adversarial test splits. Trigger keywords: allocators, error unions, comptime, undefined behavior, packed structs. See references/TIGER_STYLE_ZIG.md for the full guide.
+  Write or review Zig code in Owner's Tiger Style: safety-first Zig standard with explicit contracts, error-union handling, bounded work, and disciplined allocator ownership. Use when writing, regenerating, refactoring, reviewing, or debugging Zig - especially systems code, cross-platform libraries, and comptime-heavy designs. Toolchain pairing: zls for LSP (diagnostics, completions, code actions), zig fmt for formatting, lldb-dap for DAP debugging. Covers contract-first design, explicit allocators, exhaustive error sets, bounded buffers, and half-adversarial test splits. Trigger keywords: allocators, error unions, comptime, undefined behavior, packed structs. See references/TIGER_STYLE_ZIG.md for the full guide.
 license: Apache-2.0
 compatibility: >
-  Requires the Zig toolchain with zls for LSP, zig fmt for formatting, and lldb-dap for DAP debugging. Built for Neovim with Matt's diver config (lsp/z_ls, formatters/zig_fmt, lua/dap/zig); usable by any coding agent that can read the guide and invoke the toolchain.
+  Requires the Zig toolchain with zls for LSP, zig fmt for formatting, and lldb-dap for DAP debugging. Built for Neovim with Owner's diver config (lsp/z_ls, formatters/zig_fmt, lua/dap/zig); usable by any coding agent that can read the guide and invoke the toolchain.
 metadata:
     language: zig
     lsp: zls
@@ -18,7 +18,7 @@ allowed-tools: Read Edit Bash
 
 ## Purpose
 
-Apply Matt's Tiger Style standard to Zig code. Priority order, always:
+Apply Owner's Tiger Style standard to Zig code. Priority order, always:
 **Safety > Performance > Developer Experience.** The full guide lives in
 [references/TIGER_STYLE_ZIG.md](references/TIGER_STYLE_ZIG.md); this file is
 the operational core. When the two disagree, the full guide wins.
@@ -96,7 +96,7 @@ the operational core. When the two disagree, the full guide wins.
 
 ## Output Contract
 
-Zig you produce for Matt must: compile cleanly under the pinned toolchain,
+Zig you produce for Owner must: compile cleanly under the pinned toolchain,
 pass `zig fmt --check`, document allocator ownership and error sets on
 exported functions, return error unions on fallible paths, assert invariants,
 bound all loops/allocations/retries, stay near 70 lines per function and 100

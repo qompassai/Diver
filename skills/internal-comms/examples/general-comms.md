@@ -3,9 +3,9 @@
 You are writing Qompass AI communication that doesn't fit the standard formats (3P
 update, status report, incident report, program brief, FAQ).
 
-Before drafting, clarify with Matt:
+Before drafting, clarify with Owner:
 
-1. **Audience** — who reads this (just Matt, a collaborator, a reviewer, public)?
+1. **Audience** — who reads this (just Owner, a collaborator, a reviewer, public)?
 2. **Purpose** — what should the reader do or know after reading?
 3. **Tone** — plain/direct is the default; confirm if it needs to be formal, urgent, or
    diplomatic.

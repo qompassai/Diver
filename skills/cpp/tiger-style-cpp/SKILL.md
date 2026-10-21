@@ -1,10 +1,10 @@
 ---
 name: tiger-style-cpp
 description: >
-  Write or review C++ code in Matt's Tiger Style: safety-first C++ standard with explicit contracts, assertions, bounded work, and disciplined RAII ownership. Use when writing, regenerating, refactoring, reviewing, or debugging C++ - especially C++23 with std::expected, services, and performance-sensitive libraries. Toolchain pairing: clangd for LSP (diagnostics, completions, code actions), clang-format for formatting, lldb-dap for DAP debugging. Covers contract-first design, error handling via std::expected, no exceptions across boundaries, bounded containers, and half-adversarial test splits. Trigger keywords: RAII, move semantics, std::expected, exception safety, templates, data race, C++23. See references/TIGER_STYLE_CPP.md for the full guide.
+  Write or review C++ code in Owner's Tiger Style: safety-first C++ standard with explicit contracts, assertions, bounded work, and disciplined RAII ownership. Use when writing, regenerating, refactoring, reviewing, or debugging C++ - especially C++23 with std::expected, services, and performance-sensitive libraries. Toolchain pairing: clangd for LSP (diagnostics, completions, code actions), clang-format for formatting, lldb-dap for DAP debugging. Covers contract-first design, error handling via std::expected, no exceptions across boundaries, bounded containers, and half-adversarial test splits. Trigger keywords: RAII, move semantics, std::expected, exception safety, templates, data race, C++23. See references/TIGER_STYLE_CPP.md for the full guide.
 license: Apache-2.0
 compatibility: >
-  Requires a C++ toolchain (C++23-capable) with clangd and clang-format for full LSP and formatting support, plus lldb-dap for DAP debugging. Built for Neovim with Matt's diver config (lsp/clangd_ls, formatters/clang_format, lua/dap/lldb-dap); usable by any coding agent that can read the guide and invoke the toolchain.
+  Requires a C++ toolchain (C++23-capable) with clangd and clang-format for full LSP and formatting support, plus lldb-dap for DAP debugging. Built for Neovim with Owner's diver config (lsp/clangd_ls, formatters/clang_format, lua/dap/lldb-dap); usable by any coding agent that can read the guide and invoke the toolchain.
 metadata:
     language: cpp
     lsp: clangd
@@ -18,7 +18,7 @@ allowed-tools: Read Edit Bash
 
 ## Purpose
 
-Apply Matt's Tiger Style standard to C++. Priority order, always:
+Apply Owner's Tiger Style standard to C++. Priority order, always:
 **Safety > Performance > Developer Experience.** The full guide lives in
 [references/TIGER_STYLE_CPP.md](references/TIGER_STYLE_CPP.md); this file is
 the operational core. When the two disagree, the full guide wins.
@@ -90,7 +90,7 @@ the operational core. When the two disagree, the full guide wins.
 
 ## Output Contract
 
-C++ you produce for Matt must: compile cleanly under the declared profile,
+C++ you produce for Owner must: compile cleanly under the declared profile,
 carry documented contracts on public operations, assert its invariants,
 return `std::expected` on expected failures, bound all loops/retries/queues,
 give every resource one RAII owner with failure-path teardown, stay within

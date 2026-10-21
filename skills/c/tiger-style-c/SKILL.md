@@ -1,10 +1,10 @@
 ---
 name: tiger-style-c
 description: >
-  Write or review C code in Matt's Tiger Style: safety-first C standard with explicit contracts, assertions, bounded work, and disciplined manual memory ownership. Applies whenever C code is written, regenerated, refactored, reviewed, or debugged - from systems libraries and POSIX/Linux adapters to embedded targets. Toolchain pairing: clangd for LSP (diagnostics, completions, code actions), clang-format for formatting, lldb-dap for DAP debugging. Covers contract-first design, error-code discipline, no hidden allocation, bounded loops and buffers, and half-adversarial test splits. Hardens against buffer overflows, use-after-free, and integer overflow. See references/TIGER_STYLE_C.md for the full guide.
+  Write or review C code in Owner's Tiger Style: safety-first C standard with explicit contracts, assertions, bounded work, and disciplined manual memory ownership. Applies whenever C code is written, regenerated, refactored, reviewed, or debugged - from systems libraries and POSIX/Linux adapters to embedded targets. Toolchain pairing: clangd for LSP (diagnostics, completions, code actions), clang-format for formatting, lldb-dap for DAP debugging. Covers contract-first design, error-code discipline, no hidden allocation, bounded loops and buffers, and half-adversarial test splits. Hardens against buffer overflows, use-after-free, and integer overflow. See references/TIGER_STYLE_C.md for the full guide.
 license: Apache-2.0
 compatibility: >
-  Requires a C toolchain with clangd and clang-format for full LSP and formatting support, plus lldb-dap for DAP debugging. Built for Neovim with Matt's diver config (lsp/clangd_ls, formatters/clang_format, lua/dap/lldb-dap); usable by any coding agent that can read the guide and invoke the toolchain.
+  Requires a C toolchain with clangd and clang-format for full LSP and formatting support, plus lldb-dap for DAP debugging. Built for Neovim with Owner's diver config (lsp/clangd_ls, formatters/clang_format, lua/dap/lldb-dap); usable by any coding agent that can read the guide and invoke the toolchain.
 metadata:
     language: c
     lsp: clangd
@@ -18,7 +18,7 @@ allowed-tools: Read Edit Bash
 
 ## Purpose
 
-Apply Matt's Tiger Style standard to C code. Priority order, always:
+Apply Owner's Tiger Style standard to C code. Priority order, always:
 **Safety > Performance > Developer Experience.** The full guide lives in
 [references/TIGER_STYLE_C.md](references/TIGER_STYLE_C.md); this file is
 the operational core. When the two disagree, the full guide wins.
@@ -114,7 +114,7 @@ the operational core. When the two disagree, the full guide wins.
 
 ## Output Contract
 
-C you produce for Matt must: compile cleanly under strict warnings for the
+C you produce for Owner must: compile cleanly under strict warnings for the
 declared standard, document contracts in public headers, return status enums
 on expected failures with outputs unchanged, assert its invariants, bound all
 loops/retries/sizes, pass clean under ASan/UBSan **and** with `-DNDEBUG`,

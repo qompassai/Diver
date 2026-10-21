@@ -1,7 +1,7 @@
 ---
 name: apex-dev
 description: >
-  Salesforce Apex development in Matt's Neovim using his Diver config's
+  Salesforce Apex development in Owner's Neovim using his Diver config's
   real toolchain: the Apex language server (java + apex-jorje-lsp.jar via
   lsp/apex_ls.lua, with embedded SOQL completion), the Salesforce Code
   Analyzer linter and lightning-flow-scanner via the `sf` CLI plugins, the
@@ -14,7 +14,7 @@ description: >
   SfApex*/SfDeploy*/SfAnalyze* commands.
 license: Apache-2.0
 compatibility: >
-  Neovim with Matt's Diver config (lsp/apex_ls.lua, lsp/soql_ls.lua,
+  Neovim with Owner's Diver config (lsp/apex_ls.lua, lsp/soql_ls.lua,
   lua/dap/apex.lua, lua/linters/_salesforce-code-analyzer.lua,
   lua/dev/sf/*). Salesforce project root marked by sfdx-project.json.
   Requires the `sf` CLI (/usr/bin/sf, pacman package sf 2.150.6-1,
@@ -41,7 +41,7 @@ allowed-tools: Read Edit Bash
 
 # Apex development
 
-The full Apex loop in Matt's Neovim: edit with the Apex language server,
+The full Apex loop in Owner's Neovim: edit with the Apex language server,
 format, lint with Salesforce's analyzers, run anonymous Apex, run tests,
 deploy, and debug with the Apex DAP adapters. Every tool below is either
 verified present on primo or explicitly marked as a setup step.
@@ -178,7 +178,7 @@ manifest:
   runs — full test suites (`RunLocalTests`), whole-project Code Analyzer
   passes, bulk deploys — and have the subagent return the result summary.
   Keep interactive debugging (live DAP sessions, replay stepping) and
-  org-auth decisions in-session: they need Matt's judgment and his
+  org-auth decisions in-session: they need Owner's judgment and his
   authenticated org context.
 
 ## Rejected scope

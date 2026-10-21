@@ -19,7 +19,7 @@ Work through these stages in order. Skip a stage only when it genuinely does not
 
 ### 1. Capture intent
 
-Figure out what the skill must enable and when it should fire. Pull answers from the conversation first — the tools used, the sequence of steps, corrections Matt made, input and output formats observed. Confirm the gaps with him before drafting:
+Figure out what the skill must enable and when it should fire. Pull answers from the conversation first — the tools used, the sequence of steps, corrections Owner made, input and output formats observed. Confirm the gaps with him before drafting:
 
 - What should an agent be able to do with this skill that it cannot do reliably without it?
 - What phrases, file types, or situations should trigger it?
@@ -77,7 +77,7 @@ The description is the trigger — it decides whether the skill fires. After the
 
 ### 8. Install live-first, then mirror
 
-Matt's standing workflow, in this order:
+Owner's standing workflow, in this order:
 
 1. Back up the live tree: `~/.config/nvim` to `~/.config/nvim.bak` (check whether a backup already exists and preserve it sensibly — never blindly destroy the previous backup).
 2. Install the skill in the live tree and validate it there with both gates.
@@ -137,15 +137,15 @@ These are settled and non-negotiable for skills shipping in this setup:
 - **Show input/output examples.** One concrete pair teaches more than a paragraph of abstraction. Keep them short and realistic.
 - **Keep the prompt lean.** After drafting, reread with fresh eyes and cut anything not pulling its weight. Read a trial transcript, not just the final output — if the skill sends the agent down unproductive paths, the skill is the problem.
 - **Watch for repeated work.** If trial runs all independently invent the same helper, that helper belongs in `scripts/` — write it once so future invocations stop reinventing it.
-- **No surprises.** A skill must never contain malware, exfiltration, or anything whose intent would surprise Matt if described plainly. Refuse requests to build deceptive or harmful skills.
+- **No surprises.** A skill must never contain malware, exfiltration, or anything whose intent would surprise Owner if described plainly. Refuse requests to build deceptive or harmful skills.
 
-## Working with Matt
+## Working with Owner
 
 He is a beginner programmer who learns by taking on the hardest problems first, so teach at the mechanism level: open with a plain-English explanation, then go deep — never dilute the substance, only the explanation. Narrate your decisions and tradeoffs as you draft; the reasoning is the lesson. Verify technical claims against primary sources (the spec, the validator output) rather than asserting from memory. Report exactly what ran, what passed, what failed, and what was skipped.
 
 ## What this skill does not do
 
-It does not run benchmark harnesses, A/B comparisons, or statistical eval viewers — Matt's gates are the two validators plus adversarial testing, and that is sufficient. It does not package `.skill` distribution files — skills ship through git, live tree first, then the Diver repo. It assumes no Anthropic-specific tooling: no WebFetch, no slash-command mechanics, no `present_files`. Read, Edit, Bash, and subagents are the working set.
+It does not run benchmark harnesses, A/B comparisons, or statistical eval viewers — Owner's gates are the two validators plus adversarial testing, and that is sufficient. It does not package `.skill` distribution files — skills ship through git, live tree first, then the Diver repo. It assumes no Anthropic-specific tooling: no WebFetch, no slash-command mechanics, no `present_files`. Read, Edit, Bash, and subagents are the working set.
 
 ## Activation
 

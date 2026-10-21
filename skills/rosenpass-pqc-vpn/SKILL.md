@@ -112,7 +112,7 @@ message — the public key is public, the channel just needs integrity).
 
 ## 2. Write the config file
 
-Matt's dotfiles template generator is
+Owner's dotfiles template generator is
 `/home/phaedrus/.GH/Rosenpass/rpconf.sh`. It writes `qompass.yml` — the
 canonical Rosenpass demo config with the endpoint set to this machine's
 hostname on port 9999:
@@ -242,7 +242,7 @@ manifest:
   files: []
   note: SKILL.md only. Key generation and config templating run through
     the installed `rosenpass` binary (`gen-keys`, `gen-config`) and
-    Matt's template script
+    Owner's template script
     (/home/phaedrus/.GH/Rosenpass/rpconf.sh); nothing is bundled in
     the skill.
 </skill_resources>
@@ -253,10 +253,10 @@ manifest:
 - **Subagent delegation verdict**: optional/partial. The one-time
   interactive setup is best done in-session: sudo for `wg set` /
   `exchange-config`, live verification of the WireGuard handshake, and
-  back-and-forth with Matt on peer hostnames, public-key exchange, and
+  back-and-forth with Owner on peer hostnames, public-key exchange, and
   firewall rules are all session-local and interactive. A subagent may
   handle the mechanical pre-work (binary verification, `gen-keys`,
-  template generation, `validate`) and hand back a ready config for Matt
+  template generation, `validate`) and hand back a ready config for Owner
   to review before the daemon starts — but the daemon run and the
   handshake verification stay in the conversation where he can see and
   approve them.

@@ -1,6 +1,6 @@
 ---
 name: diver-linter-adapter
-description: "Wire a new native linter into Matt's diver Neovim config — no nvim-lint. Covers picking the tool's machine-parseable output mode from upstream docs, defensive line parsing with explicit bounds, stamping every diagnostic with its source so virtual text can attribute it, the self-contained-config decision (bundled fallback so users never hand-write config), registration with the orphan check, and the LintValidate gates. Reach for it whenever a language or tool needs diagnostics in diver: a new linter adapter, a parser-strategy change, or a bundled default config for a tool that demands one."
+description: "Wire a new native linter into Owner's diver Neovim config — no nvim-lint. Covers picking the tool's machine-parseable output mode from upstream docs, defensive line parsing with explicit bounds, stamping every diagnostic with its source so virtual text can attribute it, the self-contained-config decision (bundled fallback so users never hand-write config), registration with the orphan check, and the LintValidate gates. Reach for it whenever a language or tool needs diagnostics in diver: a new linter adapter, a parser-strategy change, or a bundled default config for a tool that demands one."
 license: Apache-2.0
 compatibility: Diver live tree (~/.config/nvim) or repo checkout; the linter binary installed, with a machine-parseable output mode (e.g. --format=json, gcc-style); luac, luacheck, stylua available (all on primo).
 metadata:

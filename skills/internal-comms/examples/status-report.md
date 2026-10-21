@@ -1,8 +1,8 @@
 ## Instructions
 
 You are writing a project status report for a Qompass AI repo or program (diver,
-rose.nvim, phlow, a research effort, a publishing effort — whatever Matt names). The
-audience is Matt, reviewing on his phone or workstation: he wants the state of the
+rose.nvim, phlow, a research effort, a publishing effort — whatever Owner names). The
+audience is Owner, reviewing on his phone or workstation: he wants the state of the
 project in one screen, with proof.
 
 ## Sources

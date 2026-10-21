@@ -1,6 +1,6 @@
 ---
 name: arch-provision
-description: "Provisions a fresh Arch Linux machine end-to-end: full system update, bootstraps the AUR helper, configures snapper BTRFS snapshots, enables multilib, installs the display manager and KDE Plasma, installs the NVIDIA driver, applies the curated package list from packages.yml across pacman/yay/flatpak/npm, and finishes with a reboot prompt. Use when Matt asks to set up a new arch machine, provision a workstation, run a fresh install of his packages, or bring a new Arch box up to his dotfiles standard."
+description: "Provisions a fresh Arch Linux machine end-to-end: full system update, bootstraps the AUR helper, configures snapper BTRFS snapshots, enables multilib, installs the display manager and KDE Plasma, installs the NVIDIA driver, applies the curated package list from packages.yml across pacman/yay/flatpak/npm, and finishes with a reboot prompt. Use when Owner asks to set up a new arch machine, provision a workstation, run a fresh install of his packages, or bring a new Arch box up to his dotfiles standard."
 license: Apache-2.0
 compatibility: Arch Linux (x86_64) with sudo access. BTRFS filesystem is required for the snapper phase (verify before running it). NVIDIA driver phase applies only to machines with NVIDIA GPUs; skip it otherwise.
 metadata:
@@ -13,7 +13,7 @@ allowed-tools: Read Edit Bash
 
 # arch-provision
 
-Fresh-machine provisioning for Arch Linux, mirroring Matt's dotfiles
+Fresh-machine provisioning for Arch Linux, mirroring Owner's dotfiles
 `arch/` install program. This skill drives the full sequence on a NEW
 machine; it is **not** for routine system updates (that is a separate
 skill — do not run `update.sh` logic here).
@@ -78,7 +78,7 @@ which phase failed and what it printed.
    shallow into `~/Downloads/yay`, runs `makepkg -si --noconfirm`, then
    removes the build directory. Idempotent: exits early if yay is already
    installed. (Note: yay is the bootstrap AUR helper; paru at
-   `/usr/bin/paru` is Matt's everyday AUR helper and may be used for
+   `/usr/bin/paru` is Owner's everyday AUR helper and may be used for
    later AUR installs once it exists.)
 2. `scripts/snapper.sh` — **BTRFS only** (see prerequisite 2). Installs
    `snapper snap-pac sudo base-devel`, creates the snapper config for the
@@ -132,7 +132,7 @@ anytype-bin: yay
 - Unknown managers print a warning and continue; do not abort the list.
 
 Edit `packages.yml` (add/remove/comment lines) before this phase when
-Matt wants a different set — the file is the source of truth.
+Owner wants a different set — the file is the source of truth.
 
 ## Phase 4 — Cleanup
 

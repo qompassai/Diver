@@ -1,6 +1,6 @@
 ---
 name: diver-scip-indexer
-description: "Register a new SCIP code-intelligence indexer in Matt's diver Neovim config — verifying the install method against primary sources (with the known gotchas: the sourcegraph-to-scip-code org move, npm-not-pip for scip-python, prebuilt binaries vs package managers), writing the ScipIndexer module in lua/dev/scip/indexers/, registering it in config and the README inventory, and proving it with ScipHealth plus a real index.scip on a fixture project. Reach for it when a language needs precise go-to-definition in diver, or when a provisional indexer (latex, lua, nix) gets a real upstream binary."
+description: "Register a new SCIP code-intelligence indexer in Owner's diver Neovim config — verifying the install method against primary sources (with the known gotchas: the sourcegraph-to-scip-code org move, npm-not-pip for scip-python, prebuilt binaries vs package managers), writing the ScipIndexer module in lua/dev/scip/indexers/, registering it in config and the README inventory, and proving it with ScipHealth plus a real index.scip on a fixture project. Reach for it when a language needs precise go-to-definition in diver, or when a provisional indexer (latex, lua, nix) gets a real upstream binary."
 license: Apache-2.0
 compatibility: Diver live tree (~/.config/nvim) or repo checkout; the indexer binary installable by a verified method; headless nvim for :ScipHealth / :ScipIndex; luac, luacheck, stylua (all on primo).
 metadata:

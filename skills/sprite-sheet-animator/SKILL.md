@@ -1,6 +1,6 @@
 ---
 name: sprite-sheet-animator
-description: "Animate 2D character sprite sheets: derive visually consistent animation frames (idle loops, mood variants) with the vs-lightshow VoidSprite plugin or pixel editing, pack cell-grid sheets with aseprite's batch CLI, and keep the game's TextureAtlas mood-row indexing intact. Trigger when Matt asks to animate sprites, add character emotions or idle animations, or build sprite sheets for a game."
+description: "Animate 2D character sprite sheets: derive visually consistent animation frames (idle loops, mood variants) with the vs-lightshow VoidSprite plugin or pixel editing, pack cell-grid sheets with aseprite's batch CLI, and keep the game's TextureAtlas mood-row indexing intact. Trigger when Owner asks to animate sprites, add character emotions or idle animations, or build sprite sheets for a game."
 license: Apache-2.0
 compatibility: Aseprite 1.3+ CLI and VoidSprite (with the vs-lightshow plugin installed) on the build machine — probed at runtime, never assumed. Art and export work runs on primo via ~/workspace/bin/primo-ssh.
 metadata:
@@ -55,7 +55,7 @@ Worked example — light-show, verified 2026-09-30 (atlas code in
   (e.g. `<name>_sheet_fullbody_mature.png` — same outfits/accessories/
   palettes, adult proportions and faces).
 
-If the game has no such code yet, define the layout with Matt first and
+If the game has no such code yet, define the layout with Owner first and
 write it down in the repo's art-style doc — the layout is a contract, not
 an accident.
 
@@ -222,8 +222,8 @@ together, and the art-style doc is updated in the same pass.
 
 - Write **new** files (`<name>_sheet_fullbody_mature.png`, never overwrite
   the shipped `<name>_sheet_fullbody.png`) so the game keeps working while
-  Matt reviews.
-- No commit, no push without Matt's explicit one-time go-ahead naming the
+  Owner reviews.
+- No commit, no push without Owner's explicit one-time go-ahead naming the
   files. Delivery is files for review, not a silent replacement.
 - Report per character: animations built, frame counts and layout, how
   frames were derived, the exact export commands, and what the game needs

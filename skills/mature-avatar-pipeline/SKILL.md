@@ -1,6 +1,6 @@
 ---
 name: mature-avatar-pipeline
-description: "Build mature-appearance full-body sprite variants with Aseprite-native Lua: write and gate the Lua helpers first, trial on one character with pixel-identical round-trip and adversarial cases, compare honestly against the reference implementation with pixel-diff stats, and run the fleet only after explicit user approval. Trigger when Matt asks for mature variants of the Light Show companions or to run/extend the mature pipeline."
+description: "Build mature-appearance full-body sprite variants with Aseprite-native Lua: write and gate the Lua helpers first, trial on one character with pixel-identical round-trip and adversarial cases, compare honestly against the reference implementation with pixel-diff stats, and run the fleet only after explicit user approval. Trigger when Owner asks for mature variants of the Light Show companions or to run/extend the mature pipeline."
 license: Apache-2.0
 compatibility: Aseprite 1.3+ CLI on the build machine (probed at runtime, never assumed); Lua 5.3 for script gating. Art and batch work runs on primo via ~/workspace/bin/primo-ssh.
 metadata:
@@ -24,7 +24,7 @@ proven on one character before the fleet ever runs.
 
 > **Status 2026-09-30:** the helper script and the Séraphine trial are
 > complete and verified. The fleet run on lattice, linka, and ondine is
-> **still pending Matt's explicit go-ahead** — do not start it on your own
+> **still pending Owner's explicit go-ahead** — do not start it on your own
 > authority.
 
 Plain-English version: you write the pixel-morphing scripts first and

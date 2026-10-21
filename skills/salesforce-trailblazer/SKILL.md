@@ -13,7 +13,7 @@ description: >
   mentions SfTrailhead commands, trailhead vouchers, or certification prep.
 license: Apache-2.0
 compatibility: >
-  Neovim with Matt's Diver config providing the dev.sf.trailhead module
+  Neovim with Owner's Diver config providing the dev.sf.trailhead module
   and its :SfTrailhead* user commands. Hands-on steps need the `sf` CLI
   (verified on primo: /usr/bin/sf, pacman package sf 2.150.6-1) and an
   authenticated Salesforce org (scratch, playground, or dev). Browser-based

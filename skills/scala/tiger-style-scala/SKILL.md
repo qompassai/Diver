@@ -1,10 +1,10 @@
 ---
 name: tiger-style-scala
 description: >
-  Write or review Scala code in Matt's Tiger Style: safety-first Scala standard with explicit contracts, assertions, bounded work, and disciplined ownership. Use when writing, regenerating, refactoring, reviewing, or debugging Scala - especially services, data pipelines, and functional-core/imperative-shell designs. Toolchain pairing: Metals for LSP (diagnostics, completions, code actions) and its DAP debug adapter, scalafmt for formatting. Covers contract-first design, effect discipline, total functions, bounded collections and concurrency, and half-adversarial test splits. Trigger keywords: given/using, effect discipline, pattern exhaustivity, Futures, total functions. See references/TIGER_STYLE_SCALA.md for the full guide.
+  Write or review Scala code in Owner's Tiger Style: safety-first Scala standard with explicit contracts, assertions, bounded work, and disciplined ownership. Use when writing, regenerating, refactoring, reviewing, or debugging Scala - especially services, data pipelines, and functional-core/imperative-shell designs. Toolchain pairing: Metals for LSP (diagnostics, completions, code actions) and its DAP debug adapter, scalafmt for formatting. Covers contract-first design, effect discipline, total functions, bounded collections and concurrency, and half-adversarial test splits. Trigger keywords: given/using, effect discipline, pattern exhaustivity, Futures, total functions. See references/TIGER_STYLE_SCALA.md for the full guide.
 license: Apache-2.0
 compatibility: >
-  Requires a Scala toolchain (sbt or scala-cli) with Metals for LSP and DAP debugging, plus scalafmt for formatting. Built for Neovim with Matt's diver config (lsp/metals_ls, formatters/scalafmt, lua/dap/scala); usable by any coding agent that can read the guide and invoke the toolchain.
+  Requires a Scala toolchain (sbt or scala-cli) with Metals for LSP and DAP debugging, plus scalafmt for formatting. Built for Neovim with Owner's diver config (lsp/metals_ls, formatters/scalafmt, lua/dap/scala); usable by any coding agent that can read the guide and invoke the toolchain.
 metadata:
     language: scala
     lsp: metals
@@ -18,7 +18,7 @@ allowed-tools: Read Edit Bash
 
 ## Purpose
 
-Apply Matt's Tiger Style standard to Scala 3 code. Priority order, always:
+Apply Owner's Tiger Style standard to Scala 3 code. Priority order, always:
 **Safety > Performance > Developer Experience.** The full guide lives in
 [references/TIGER_STYLE_SCALA.md](references/TIGER_STYLE_SCALA.md); this file
 is the operational core. When the two disagree, the full guide wins.
@@ -98,7 +98,7 @@ is the operational core. When the two disagree, the full guide wins.
 
 ## Output Contract
 
-Scala you produce for Matt must: compile cleanly, carry Scaladoc on public
+Scala you produce for Owner must: compile cleanly, carry Scaladoc on public
 API, assert its invariants, return `Either`/`Option` on expected failures,
 bound all work with named constants, stay within 100 columns and ~70 lines
 per function, and pass the review checklist.

@@ -1,10 +1,10 @@
 ---
 name: tiger-style-typescript
 description: >
-  Write or review TypeScript code in Matt's Tiger Style: safety-first TypeScript standard with explicit contracts, assertions, bounded work, and disciplined ownership. Applies whenever TypeScript is written, regenerated, refactored, reviewed, or debugged under the strict profile (TS 5.9+ and ES2022), for Node services and Deno projects alike. Toolchain pairing: ts_ls (tsgo_ls, deno_ls for Deno) for LSP, prettier and biome for formatting, the Node DAP adapter for debugging. Covers contract-first design, strict null handling, exhaustive switches, bounded async work, and half-adversarial test splits. Catches any-casts, unhandled promises, and non-exhaustive narrowing. See references/TIGER_STYLE_TYPESCRIPT.md for the full guide.
+  Write or review TypeScript code in Owner's Tiger Style: safety-first TypeScript standard with explicit contracts, assertions, bounded work, and disciplined ownership. Applies whenever TypeScript is written, regenerated, refactored, reviewed, or debugged under the strict profile (TS 5.9+ and ES2022), for Node services and Deno projects alike. Toolchain pairing: ts_ls (tsgo_ls, deno_ls for Deno) for LSP, prettier and biome for formatting, the Node DAP adapter for debugging. Covers contract-first design, strict null handling, exhaustive switches, bounded async work, and half-adversarial test splits. Catches any-casts, unhandled promises, and non-exhaustive narrowing. See references/TIGER_STYLE_TYPESCRIPT.md for the full guide.
 license: Apache-2.0
 compatibility: >
-  Requires Node.js (or Deno) with typescript-language-server (ts_ls, tsgo_ls, or deno_ls), prettier or biome, and a Node DAP adapter for full LSP, formatting, and debugging. Built for Neovim with Matt's diver config (lsp/ts_ls, formatters/prettier, lua/dap/node); usable by any coding agent that can read the guide and invoke the toolchain.
+  Requires Node.js (or Deno) with typescript-language-server (ts_ls, tsgo_ls, or deno_ls), prettier or biome, and a Node DAP adapter for full LSP, formatting, and debugging. Built for Neovim with Owner's diver config (lsp/ts_ls, formatters/prettier, lua/dap/node); usable by any coding agent that can read the guide and invoke the toolchain.
 metadata:
     language: typescript
     lsp: ts_ls
@@ -18,7 +18,7 @@ allowed-tools: Read Edit Bash
 
 ## Purpose
 
-Apply Matt's Tiger Style standard to TypeScript code. Priority order, always:
+Apply Owner's Tiger Style standard to TypeScript code. Priority order, always:
 **Safety > Performance > Developer Experience.** The full guide lives in
 [references/TIGER_STYLE_TYPESCRIPT.md](references/TIGER_STYLE_TYPESCRIPT.md);
 this file is the operational core. When the two disagree, the full guide wins.
@@ -98,7 +98,7 @@ this file is the operational core. When the two disagree, the full guide wins.
 
 ## Output Contract
 
-TypeScript you produce for Matt must: compile under the strict profile with
+TypeScript you produce for Owner must: compile under the strict profile with
 `tsc --noEmit`, carry explicit types on exported functions, assert its
 invariants with real runtime guards, return `Result<T, E>` (or the declared
 contract) on expected failures, bound all loops/retries/queues/promise

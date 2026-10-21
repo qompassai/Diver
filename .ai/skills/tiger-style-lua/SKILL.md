@@ -46,7 +46,7 @@ Report each gate's exact command and result. A skipped or unavailable gate is no
 ## Workflow
 
 - Live-first: changes land in the live tree (`~/.config/nvim`, backed up first) and are
-  mirrored into this repo only after Matt validates them.
-- Agents never commit or push. Matt authorizes each push by naming exact files.
+  mirrored into this repo only after Owner validates them.
+- Agents never commit or push. Owner authorizes each push by naming exact files.
 - Never reconstruct lost WIP files; leave others' dirty files untouched.
 - Durable discoveries go to `.ai/memory/inbox/`, never curated memory.

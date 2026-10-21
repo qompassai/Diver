@@ -1,6 +1,6 @@
 ---
 name: diver-dap-adapter
-description: "Wire a new native DAP debug adapter into Matt's diver Neovim config — vetting the candidate package against its own upstream source under the adapter-verdicts protocol, implementing the DebugModule contract in lua/dap/, registering it in the MODULES catalog, documenting the install, and promoting it through the readiness registry from discovered to validated. Reach for it when a language or runtime needs debug support in diver, when the dap TODO backlog gains a new entry, or when an existing adapter's verdict needs re-checking against upstream."
+description: "Wire a new native DAP debug adapter into Owner's diver Neovim config — vetting the candidate package against its own upstream source under the adapter-verdicts protocol, implementing the DebugModule contract in lua/dap/, registering it in the MODULES catalog, documenting the install, and promoting it through the readiness registry from discovered to validated. Reach for it when a language or runtime needs debug support in diver, when the dap TODO backlog gains a new entry, or when an existing adapter's verdict needs re-checking against upstream."
 license: Apache-2.0
 compatibility: Diver live tree (~/.config/nvim) or repo checkout; the DAP adapter's upstream install verified; luac, luacheck, stylua, LuaLS, busted (all on primo).
 metadata:

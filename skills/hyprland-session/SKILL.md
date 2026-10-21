@@ -1,7 +1,7 @@
 ---
 name: hyprland-session
 description: >
-  Hyprland session operations on Matt's workstation — wake monitors after
+  Hyprland session operations on Owner's workstation — wake monitors after
   sleep, reload Hyprland with the quickshell bar, toggle tile/free layout
   mode, and diagnose the compositor state. Trigger phrases: "monitors won't
   wake", "reload hyprland", "bar disappeared", "hyprland config change",
@@ -18,7 +18,7 @@ allowed-tools: Read Edit Bash
 
 # hyprland-session
 
-Session-level Hyprland operations mined from Matt's dotfiles
+Session-level Hyprland operations mined from Owner's dotfiles
 (`/home/phaedrus/.GH/dotfiles/hyprland/`). All commands assume the session is
 running on the workstation (primo); run them on primo via the usual SSH path.
 
@@ -41,7 +41,7 @@ Skill resources: none — this skill is SKILL.md only, no scripts or references.
 
 ## Monitors won't wake after sleep
 
-Matt's wakeup recipe (from `scripts/monitor_wakeup.sh`):
+Owner's wakeup recipe (from `scripts/monitor_wakeup.sh`):
 
 ```bash
 hyprctl dispatch dpms on
@@ -62,7 +62,7 @@ overrides the config-file values.
 
 ## After editing Hyprland config — reload with the bar
 
-**Kill the bar first.** Matt's bar is noctalia-shell on quickshell, and
+**Kill the bar first.** Owner's bar is noctalia-shell on quickshell, and
 reloading Hyprland without restarting it leaves the bar dead or stale. This is
 also bound to Super+F12 (`scripts/reload_desktop.sh`):
 
@@ -92,7 +92,7 @@ regenerate the file with nwg-displays, or apply the change live with
 
 ## Tile/free layout toggle
 
-Matt toggles between Hyprland's default tiling and an all-floating mode via a
+Owner toggles between Hyprland's default tiling and an all-floating mode via a
 symlink plus a state file. The switch: `windowrules.current_mode.conf` (a
 symlink sourced from the main config) points at either
 `windowrules.tile.conf` (tiling; that file carries only a comment — tiling

@@ -1,7 +1,7 @@
 ---
 name: arch-system-update
 description: >
-  Matt's full Arch Linux system update ritual: snapper pre/post BTRFS
+  Owner's full Arch Linux system update ritual: snapper pre/post BTRFS
   snapshots, pacman repo refresh and system upgrade, AUR updates via paru,
   flatpak updates, conditional bun/dotnet/uv tool upgrades, orphan removal,
   snapshot pruning to the newest 100, and a reboot prompt when the kernel
@@ -29,7 +29,7 @@ allowed-tools: Read Edit Bash
 
 # Arch System Update
 
-Run Matt's full Arch Linux update ritual end to end. The steps below are
+Run Owner's full Arch Linux update ritual end to end. The steps below are
 **ordered and gated** — do not reorder, skip, or run later steps after an
 earlier step failed, except where the step's own fallback says otherwise.
 
@@ -63,7 +63,7 @@ sudo pacman -Syu
 ```
 
 Abort on failure. Read the output, do not force `-Syu --noconfirm`:
-Matt wants to see conflicts and decide.
+Owner wants to see conflicts and decide.
 
 ### 4. Update AUR packages
 
@@ -172,7 +172,7 @@ prompt just because the kernel looks unchanged.
 
 ## Known failure: paru clone collision
 
-**Signature** (Matt hit this 2026-09-29): paru aborts an AUR build with
+**Signature** (Owner hit this 2026-09-29): paru aborts an AUR build with
 
 ```
 error: "<pkg>" already exists and is not an empty directory
@@ -228,7 +228,7 @@ sudo snapper undochange <pre-snapshot>..<post-snapshot-or-0> /
   design.
 - The ritual is interactive: sudo prompts, pacman's removal
   confirmation, and the final reboot question all need the operator.
-- Estimated cadence: Matt runs this as a standing maintenance ritual,
+- Estimated cadence: Owner runs this as a standing maintenance ritual,
   not on a schedule — trigger is the user asking, or a stale-system
   finding from another check.
 - Source of truth for this ritual: `~/.GH/dotfiles/arch/scripts/update.sh`
@@ -241,7 +241,7 @@ sudo snapper undochange <pre-snapshot>..<post-snapshot-or-0> /
 manifest:
   files: []
   note: SKILL.md only. The ritual runs commands directly; no bundled
-    scripts. The canonical script lives in Matt's dotfiles repo
+    scripts. The canonical script lives in Owner's dotfiles repo
     (~/.GH/dotfiles/arch/scripts/update.sh) and is referenced, not copied.
 </skill_resources>
 
@@ -249,7 +249,7 @@ manifest:
   context already contains it. If the skill text is present, act on it —
   do not paste it again or summarize it back.
 - **Subagent delegation verdict**: not needed. The update ritual requires
-  Matt's live sudo authentication, his judgment on pacman conflicts and
+  Owner's live sudo authentication, his judgment on pacman conflicts and
   orphan removal, and his explicit reboot decision — all of which are
   interactive and session-local. A delegated subagent cannot hold that
   interactivity. Keep the whole ritual in-session, in the conversation

@@ -2,7 +2,7 @@
 name: agentscript-dev
 description: >
   Author and test Salesforce Agentforce agents written in AgentScript
-  (.agent files) from the terminal and Matt's Neovim: structure an agent as
+  (.agent files) from the terminal and Owner's Neovim: structure an agent as
   topics, actions, and variables; keep the script in an SFDX project's
   aiAuthoringBundles; preview conversations with `sf agent preview`;
   deploy and iterate against a Trailhead Playground or Agentforce dev org.
@@ -92,7 +92,7 @@ bugs are description bugs, not model bugs.
    reason over what an action declares.
 6. **Record and park** (Trailhead context): update the module status
    file with what was deployed/previewed; agent *activation* and any
-   graded steps remain Matt's, as with every module.
+   graded steps remain Owner's, as with every module.
 
 ## Judgment calls worth teaching
 
@@ -111,7 +111,7 @@ bugs are description bugs, not model bugs.
 - **No agent in the org:** preview/run fail or find nothing. This is an
   org-provisioning state, not a script bug — it blocked the Prompt
   Builder and Models API units in the Agentblazer Legend run. The fix
-  (provision an agent, or spin up an Agentforce Playground) is Matt's
+  (provision an agent, or spin up an Agentforce Playground) is Owner's
   decision; record it in the status file and move on.
 - **Deploy succeeds, behavior stale:** confirm the deployed version is
   the active one in the org; preview targets the org's agent, not the

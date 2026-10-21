@@ -2,7 +2,7 @@
 name: sf-org-workflows
 description: >
   Run Salesforce hands-on work from the terminal with the `sf` CLI against
-  Matt's orgs — inventory and target the right org, deploy/retrieve metadata
+  Owner's orgs — inventory and target the right org, deploy/retrieve metadata
   in an SFDX project, run Apex tests, query with SOQL, and move data — the
   loop used to complete Trailhead hands-on challenges in a Trailhead
   Playground up to (never past) the graded Check Challenge click. Use when
@@ -25,9 +25,9 @@ allowed-tools: Read Edit Bash
 
 # sf org workflows
 
-The terminal half of Matt's Salesforce work: everything a Trailhead hands-on
+The terminal half of Owner's Salesforce work: everything a Trailhead hands-on
 unit asks an org to *do*, done with `sf` instead of clicks — then parked one
-step before the graded action, which is always Matt's click.
+step before the graded action, which is always Owner's click.
 
 ## The boundary (never cross)
 
@@ -35,13 +35,13 @@ step before the graded action, which is always Matt's click.
   runs happen in `trailheadPlayground` or another throwaway org.
 - **map-dev is sealed.** It is a production org. No deploys, no writes, no
   challenge checks against it. Read-only `sf org list` / describe-level
-  recon at most, and only when Matt asks.
-- **Graded actions are Matt's.** Never click Check Challenge / Verify in
+  recon at most, and only when Owner asks.
+- **Graded actions are Owner's.** Never click Check Challenge / Verify in
   Trailhead, never submit quiz answers, never complete superbadge units.
   Your deliverable is: org work done and verified org-side, plus a handoff
   note naming the exact remaining click.
 - **No account actions.** No signups, attestations, profile or privacy
-  changes, no new playground creation unless Matt has approved that
+  changes, no new playground creation unless Owner has approved that
   specific step (org provisioning decisions are his — see the status file).
 
 ## Step 0 — Inventory before touching anything
@@ -54,7 +54,7 @@ sf config get target-org    # what a bare command would hit
 Confirm the target org alias *in the command* (`-o trailheadPlayground`)
 rather than relying on the default whenever more than one org is connected.
 If the org you need is not Connected, stop: re-auth is a browser login,
-which is Matt's step. Report the exact blocker; do not attempt credential
+which is Owner's step. Report the exact blocker; do not attempt credential
 workarounds, and never ask for credentials.
 
 ## The hands-on loop (per module unit)
@@ -80,7 +80,7 @@ workarounds, and never ask for credentials.
 6. **Record and park.** Update the module status file
    (`~/workspace/salesforce-mcp/trailblazer/MODULE-STATUS.md`): what was
    deployed, the verification evidence, and the exact remaining click for
-   Matt ("Trailhead → <module> → <unit> → Check Challenge").
+   Owner ("Trailhead → <module> → <unit> → Check Challenge").
 
 ## SOQL from the terminal
 
@@ -128,10 +128,10 @@ session) so the deploy in step 4 diffs against truth.
 - **Test run red in playground:** read the failure before changing code —
   playgrounds accumulate other modules' data; a validation rule or
   required field from an earlier module is a common false cause.
-- **Session expired mid-module:** stop and park. Re-auth is Matt's
+- **Session expired mid-module:** stop and park. Re-auth is Owner's
   browser step; note it in the status file.
 - **Module wants a special org** (Agentforce playground, DE org features):
-  that is a provisioning decision for Matt, recorded as a blocker — the
+  that is a provisioning decision for Owner, recorded as a blocker — the
   Prompt Builder / agent-auth modules are parked on exactly this.
-- **Superbadge orgs** (`gov-superbadge`): Matt earns superbadges himself
+- **Superbadge orgs** (`gov-superbadge`): Owner earns superbadges himself
   per Salesforce policy. Never run challenge work there.

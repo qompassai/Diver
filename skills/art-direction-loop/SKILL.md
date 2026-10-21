@@ -1,6 +1,6 @@
 ---
 name: art-direction-loop
-description: "Iteratively art-direct AI-generated artwork to a keeper: establish style-authority references, chain focused edits via media.generate_image snapshot resumption, keep a recorded keeper chain (path + snapshot ID + SHA-256), and present every version phone-readable. Trigger when Matt asks to create, refine, or iterate on title art, key art, or any generated image."
+description: "Iteratively art-direct AI-generated artwork to a keeper: establish style-authority references, chain focused edits via media.generate_image snapshot resumption, keep a recorded keeper chain (path + snapshot ID + SHA-256), and present every version phone-readable. Trigger when Owner asks to create, refine, or iterate on title art, key art, or any generated image."
 license: Apache-2.0
 compatibility: The `media.generate_image` tool with snapshot resumption; image review via muse.read. No repo writes — deliverables live in ~/workspace/<topic>/.
 metadata:
@@ -56,7 +56,7 @@ disk but never resumed from.
 
 ## 4. Present phone-readable
 
-Matt reviews on his phone. Every version is shown inline (sandbox link)
+Owner reviews on his phone. Every version is shown inline (sandbox link)
 with a one-line note of what changed — no walls of text between him and
 the image.
 

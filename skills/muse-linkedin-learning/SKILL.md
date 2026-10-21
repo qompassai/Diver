@@ -30,7 +30,7 @@ allowed-tools: Read Edit Bash
 LinkedIn Learning supplies the lectures; Muse supplies everything around
 them that makes lectures stick: selection against a goal, notes that
 teach the mechanism, drills that expose gaps, and a memory of where the
-study left off. This skill is a workflow authored for Matt — it describes
+study left off. This skill is a workflow authored for Owner — it describes
 a way of working, not an integration LinkedIn offers.
 
 ## The four phases

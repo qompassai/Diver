@@ -1,6 +1,6 @@
 # Rust MCP Servers with `rmcp` (Primary Path)
 
-This is the primary server path for Matt's stack: phlow's MCP server is being
+This is the primary server path for Owner's stack: phlow's MCP server is being
 ported from Python to Rust nightly on phlow's `rust` branch. New MCP servers
 start here unless there is a concrete reason to use another language.
 

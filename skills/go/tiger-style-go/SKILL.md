@@ -1,10 +1,10 @@
 ---
 name: tiger-style-go
 description: >
-  Write or review Go code in Matt's Tiger Style: safety-first Go standard with explicit contracts, assertions, bounded work, and disciplined ownership. Use when writing, regenerating, refactoring, reviewing, or debugging Go - especially CLIs, services, and tooling. Toolchain pairing: gopls for LSP (diagnostics, completions, code actions), gofmt and goimports for formatting, delve (dlv) for DAP debugging. Covers contract-first design, errors-as-values with %w wrapping, bounded goroutines and retries, and half-adversarial test splits. Trigger keywords: goroutine leak, data race, error wrapping, nil map, context cancellation, cgo. See references/TIGER_STYLE_GO.md for the full guide.
+  Write or review Go code in Owner's Tiger Style: safety-first Go standard with explicit contracts, assertions, bounded work, and disciplined ownership. Use when writing, regenerating, refactoring, reviewing, or debugging Go - especially CLIs, services, and tooling. Toolchain pairing: gopls for LSP (diagnostics, completions, code actions), gofmt and goimports for formatting, delve (dlv) for DAP debugging. Covers contract-first design, errors-as-values with %w wrapping, bounded goroutines and retries, and half-adversarial test splits. Trigger keywords: goroutine leak, data race, error wrapping, nil map, context cancellation, cgo. See references/TIGER_STYLE_GO.md for the full guide.
 license: Apache-2.0
 compatibility: >
-  Requires the Go toolchain with gopls, gofmt/goimports, and delve (dlv) for full LSP, formatting, and DAP support. Built for Neovim with Matt's diver config (lsp/gop_ls, formatters/gofmt, lua/dap/go); usable by any coding agent that can read the guide and invoke the toolchain.
+  Requires the Go toolchain with gopls, gofmt/goimports, and delve (dlv) for full LSP, formatting, and DAP support. Built for Neovim with Owner's diver config (lsp/gop_ls, formatters/gofmt, lua/dap/go); usable by any coding agent that can read the guide and invoke the toolchain.
 metadata:
     language: go
     lsp: gopls
@@ -18,7 +18,7 @@ allowed-tools: Read Edit Bash
 
 ## Purpose
 
-Apply Matt's Tiger Style standard to Go code. Priority order, always:
+Apply Owner's Tiger Style standard to Go code. Priority order, always:
 **Safety > Performance > Developer Experience.** The full guide lives in
 [references/TIGER_STYLE_GO.md](references/TIGER_STYLE_GO.md); this file is
 the operational core. When the two disagree, the full guide wins.
@@ -87,7 +87,7 @@ the operational core. When the two disagree, the full guide wins.
 
 ## Output Contract
 
-Go you produce for Matt must: build under the recorded toolchain, return
+Go you produce for Owner must: build under the recorded toolchain, return
 `(zero, err)` on expected failures with wrapped sentinel errors, verify
 internal invariants with explicit checks, bound all input/workers/queues/
 retries, pass `go vet` and `go test -race`, stay gofmt-clean with

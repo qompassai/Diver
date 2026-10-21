@@ -1,6 +1,6 @@
 ---
 name: diver-formatter-adapter
-description: "Teach a new external formatter to Matt's diver Neovim config — writing the native adapter in lua/formatters/, verifying its real CLI flags against upstream docs, choosing the stdin-vs-tempfile I/O mode, registering it in the formatter registry and the filetype fallback chain, and running the validation gates. Reach for it whenever a language or tool needs format-on-save support in diver: a brand-new adapter, new flags on an existing tool, or a save-time stage that must go through the centralized pipeline instead of a raw BufWritePre autocmd."
+description: "Teach a new external formatter to Owner's diver Neovim config — writing the native adapter in lua/formatters/, verifying its real CLI flags against upstream docs, choosing the stdin-vs-tempfile I/O mode, registering it in the formatter registry and the filetype fallback chain, and running the validation gates. Reach for it whenever a language or tool needs format-on-save support in diver: a brand-new adapter, new flags on an existing tool, or a save-time stage that must go through the centralized pipeline instead of a raw BufWritePre autocmd."
 license: Apache-2.0
 compatibility: Diver live tree (~/.config/nvim) or repo checkout; the formatter binary installed for smoke testing; luac, luacheck, and stylua available (all on primo).
 metadata:

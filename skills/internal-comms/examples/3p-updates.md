@@ -1,11 +1,11 @@
 ## Instructions
 
 You are writing a 3P update for Qompass AI: Progress, Plans, Problems. The audience is
-Matt himself (his record of the week), and occasionally an advisor or collaborator with
+Owner himself (his record of the week), and occasionally an advisor or collaborator with
 some context but not day-to-day detail. It must read in 30–60 seconds.
 
-Qompass AI is a solo-founder company: Matt plus an agent fleet. "Progress" therefore
-covers what Matt shipped and what his agents completed under his direction — name the
+Qompass AI is a solo-founder company: Owner plus an agent fleet. "Progress" therefore
+covers what Owner shipped and what his agents completed under his direction — name the
 repo and cite the commit SHA or gate result. Scale the granularity to the week, not the
 commit: a 3P is a summary, not a changelog.
 
@@ -20,7 +20,7 @@ The three sections:
 
 ## Sources
 
-Gather from Matt's sources before drafting:
+Gather from Owner's sources before drafting:
 
 - **Repo state**: `git log --since="1 week ago" --oneline` across active repos (diver,
   rose.nvim, phlow, others in play). Shipped = committed/pushed with a verified SHA.
