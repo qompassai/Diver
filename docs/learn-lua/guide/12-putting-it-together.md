@@ -117,7 +117,7 @@ This exercises modules, functions, the Vim API, and annotations all at once.
 
    ```vim
    :DiverHello
-   :DiverHello Matt
+   :DiverHello Owner
    :lua print(require('utils.hello').greet('world'))
    ```
 

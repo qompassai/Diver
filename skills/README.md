@@ -502,7 +502,7 @@ reference resolves · bundled scripts pass syntax checks
 <summary style="font-size: 1.2em; font-weight: bold; padding: 12px; background: #667eea; color: white; border-radius: 8px; cursor: pointer; margin: 8px 0;"><strong>internal-comms</strong> <em>(incoming — draft, not yet validated)</em></summary>
 <blockquote style="font-size: 1em; line-height: 1.7; padding: 20px; background: #f8f9fa; border-left: 6px solid #667eea; border-radius: 8px; margin: 12px 0;">
 <ul><li><code>skills/internal-comms/SKILL.md</code> (draft at <code>~/workspace/skill-drafts/internal-comms/</code>)</li></ul>
-<p>Qompass AI communications in Matt's plain, evidence-based voice: 3P updates, project status reports, incident reports, program briefs, FAQs. Gathers evidence from Gmail, Calendar, repo state, and memory before drafting; every claim attributed, no invented numbers.</p>
+<p>Qompass AI communications in Owner's plain, evidence-based voice: 3P updates, project status reports, incident reports, program briefs, FAQs. Gathers evidence from Gmail, Calendar, repo state, and memory before drafting; every claim attributed, no invented numbers.</p>
 <p><strong>license:</strong> Apache-2.0 ·
 <strong>allowed-tools:</strong> Read Edit Bash ·
 <strong>metadata:</strong> domain=communications, org=Qompass AI, formats=3p-updates/status-report/incident-report/…</p>

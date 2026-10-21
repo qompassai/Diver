@@ -1,6 +1,6 @@
 # Journal registry landing — 2026-10-18
 
-Matt ruled the landing on 2026-10-18; the journal authoring unit landed
+Owner ruled the landing on 2026-10-18; the journal authoring unit landed
 as commit a875e5f3 on main:
 
 - `lua/research/journal.lua`: registry 13 → 29 profiles (16 new +

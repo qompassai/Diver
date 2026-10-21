@@ -1,6 +1,6 @@
 # agents/
 
-Versioned configuration for the external agent CLIs Matt drives from this
+Versioned configuration for the external agent CLIs Owner drives from this
 environment. These are the *safe* subsets — config and standing instructions
 only. Nothing secret, nothing generated, nothing bulky.
 

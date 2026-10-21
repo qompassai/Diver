@@ -5,7 +5,7 @@
 - Live shallow clone: `~/workspace/repos/diver` (refresh via
   `~/workspace/repos/refresh.sh` or `git -C <dir> pull --ff-only`).
 - Primo is source of truth when checkout disagrees.
-- Primo GitHub SSH is BROKEN (Matt must fix keypair); use API/HTTPS pushes.
+- Primo GitHub SSH is BROKEN (Owner must fix keypair); use API/HTTPS pushes.
 - Skill: `diver-lsp-config` for regenerating `lsp/*_ls.lua` with code actions.
   Verify code-action kinds from upstream before hardcoding — never invent.
 

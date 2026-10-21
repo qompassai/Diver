@@ -1,7 +1,7 @@
 # awkfmt adapter landing (2026-10-18)
 
 Landed lua/formatters/awkfmt.lua + its CHANGELOG section from the live
-tree on Matt's ruling, closing the dangling catalogue key left by the
+tree on Owner's ruling, closing the dangling catalogue key left by the
 2026-09-25 formatter expansion (T9 had stopped: no tool named awkfmt
 exists). The adapter binds the key to gawk's own pretty-printer
 (`gawk --pretty-print=- --file=- --`): parse-only, never executes;

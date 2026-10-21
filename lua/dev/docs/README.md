@@ -45,7 +45,7 @@ Docstrings truncated to first line — full text stays in the toolchain.
 
 ## Version updates
 
-When Matt installs a new toolchain (e.g. Python 3.15), run
+When Owner installs a new toolchain (e.g. Python 3.15), run
 `:DiverDocsUpdate`. The introspector writes `python/3.15.x.json`,
 the manifest gains the version, and queries default to it. Old
 versions stay cached for pinning (`diver-docs python 3.14.8 ...`).

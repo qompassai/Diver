@@ -34,7 +34,7 @@ versions.
 
 | Command | Flags | Why excluded |
 |---|---|---|
-| `sf org login web` | `--alias`, `--set-default` | Interactive browser login; documented in `auth.md` for Matt to run himself |
+| `sf org login web` | `--alias`, `--set-default` | Interactive browser login; documented in `auth.md` for Owner to run himself |
 | `sf org open` | `--target-org`, `--path` | Opens a browser; not autonomous |
 | `sf project deploy start` | `--ignore-errors`, `--ignore-conflicts`, `--ignore-warnings` | Override/silence flags; unsafe in an agent |
 | `sf apex run test` | `--class-names`, `--tests`, `--test-level`, `--wait`, `--synchronous`, `--result-format`, `--code-coverage`, `--json` | Verified in the reference; not yet needed by any catalog module. Wire only when a module has real test classes. Note: the reference requires "View All Data" permission for this command. |

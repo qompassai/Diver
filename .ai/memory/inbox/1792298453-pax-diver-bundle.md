@@ -1,4 +1,4 @@
-# 2026-10-17 night — Diver fix bundle (Matt's rulings, T9)
+# 2026-10-17 night — Diver fix bundle (Owner's rulings, T9)
 
 Four ruled items landed on main (commits d111c952, 10c07e35, 33af9808):
 
@@ -22,6 +22,6 @@ Four ruled items landed on main (commits d111c952, 10c07e35, 33af9808):
 - **formatters/awkfmt.lua NOT authored**: no upstream `awkfmt` tool is
   verifiable (GitHub repo search 0, pkg.go.dev 0, no registry hits) —
   the catalog entry is an aspirational name from 2026-09-25. Inventing a
-  CLI was refused; the runner degrades gracefully. Needs Matt's word on
+  CLI was refused; the runner degrades gracefully. Needs Owner's word on
   which tool (if any) the entry should bind — gawk's own pretty-printer
   (`gawk -o-` / `--pretty-print`) is the only real AWK formatter found.

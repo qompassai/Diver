@@ -3,9 +3,9 @@
 ## Live-first workflow (2026-09-29)
 
 **Decision**: Change the LIVE `~/.config/nvim` tree first; mirror to repo
-only after Matt validates.
+only after Owner validates.
 
-**Context**: Matt uses Neovim as his main interface. Breaking his live
+**Context**: Owner uses Neovim as his main interface. Breaking his live
 config breaks his workflow.
 
 **Consequence**: Backup before changes. "Looks good, move it" authorizes
@@ -13,9 +13,9 @@ that change's commit+push. Always show `git diff --cached --stat` first.
 
 ## Per-push confirmation (standing)
 
-**Decision**: Every push to diver requires Matt's explicit confirmation.
+**Decision**: Every push to diver requires Owner's explicit confirmation.
 
-**Context**: Diver is Matt's daily driver. Bad pushes break his editor.
+**Context**: Diver is Owner's daily driver. Bad pushes break his editor.
 
 **Consequence**: No standing push auth (unlike phlow/lumen/light-show).
 Byte-identical verification, never force-push.

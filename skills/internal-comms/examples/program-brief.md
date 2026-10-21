@@ -1,8 +1,8 @@
 ## Instructions
 
 You are writing a Qompass AI program brief: a periodic digest (weekly or per
-milestone) across Matt's programs — diver, rose.nvim, phlow, research, publishing
-efforts. The audience is Matt, plus anyone he forwards it to (collaborators,
+milestone) across Owner's programs — diver, rose.nvim, phlow, research, publishing
+efforts. The audience is Owner, plus anyone he forwards it to (collaborators,
 reviewers). It should read in a few minutes: ~10–15 bullets, grouped by program, each
 bullet 1–2 sentences with links to the evidence.
 
@@ -34,7 +34,7 @@ Group bullets by program. Typical sections — use only the ones with real conte
 - [decision made and why, in one line]
 
 :eyes: In review / next
-- [what's awaiting Matt's review or decision]
+- [what's awaiting Owner's review or decision]
 
 :warning: Risks & blockers
 - [what needs attention]
@@ -43,7 +43,7 @@ Group bullets by program. Typical sections — use only the ones with real conte
 
 - Every bullet links its evidence (SHA, file, thread, event). A bullet without evidence
   is a rumor — cut it or mark it.
-- Write as Matt: first person for his own calls ("I decided…"), plain attribution for
+- Write as Owner: first person for his own calls ("I decided…"), plain attribution for
   agent work ("the worker fleet…", "dispatched run…").
-- Lead with what matters most to Matt right now, not chronological order.
+- Lead with what matters most to Owner right now, not chronological order.
 - No hype. "Shipped" means merged/pushed/validated, not "almost done."
