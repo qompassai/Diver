@@ -1,8 +1,5 @@
 --- Native linter runner — the foreman that runs all your linters.
 ---
---- Plain-language version: the linter adapter files each know how to run one checker; this module is the foreman.
---- It decides which checkers apply to the current file, runs them (without blocking your typing), collects their
---- complaints, and shows them as diagnostics. It runs on lint triggers; each checker tool must be installed to
 --- produce results.
 ---@module 'linters'
 -- /qompassai/Diver/lua/linters/init.lua
@@ -23,8 +20,8 @@ if type(module_options) ~= 'table' then
 end
 M.completion_api_version = 1
 local OUTPUT_BYTES_MAX = 65536
-local TIMEOUT_EXIT_CODE = 124
 local SIGTERM = 15
+local TIMEOUT_EXIT_CODE = 124
 
 ---@class LintOptions
 ---@field debounce_ms integer
@@ -56,8 +53,8 @@ M.module_sources = { ---@type table<string, string>
     actionlint = 'linters.actionlint',
     alex = 'linters.alex',
     ameba = 'linters.ameba',
-    ansible_lint = 'linters.ansible_lint',
     android_lint = 'linters.android_lint',
+    ansible_lint = 'linters.ansible_lint',
     apkbuild_lint = 'linters.apkbuild-lint',
     bandit = 'linters.bandit',
     bash = 'linters.bash',
@@ -499,10 +496,10 @@ M.linters_by_ft = {
     markdown = {
         'alex',
         'cspell',
-        'markdownlint_cli2',
         'markdown_table_formatter',
+        'markdownlint_cli2',
         'panache',
-        'vale',
+        -- 'vale',
         'write_good',
         --	'rumdl',
     },
@@ -515,8 +512,8 @@ M.linters_by_ft = {
         'mh_lint',
     },
     nix = {
-        'statix',
         'deadnix',
+        'statix',
     },
     openapi = {
         'lint_openapi',
@@ -542,11 +539,11 @@ M.linters_by_ft = {
     pony = {
         'pony_lint',
     },
-    prisma = {
-        'prisma_lint',
-    },
     powershell = {
         'psscriptanalyzer',
+    },
+    prisma = {
+        'prisma_lint',
     },
     proto = {
         'buf_lint',
@@ -581,8 +578,8 @@ M.linters_by_ft = {
         'sphinx_lint',
     },
     ruby = {
-        'ruby',
         'rubocop',
+        'ruby',
     },
     rust = {
         'clippy',
@@ -776,104 +773,39 @@ local severity_by_letter = {
     S = diagnostic.severity.HINT,
     W = diagnostic.severity.WARN,
 }
-local namespaces = {} ---@type table<string, integer>
----@type table<string, vim.SystemObj>
-local jobs = {}
 ---@type table<string, integer>
 local generations = {}
----@type table<integer, uv.uv_timer_t>
-local timers = {}
+---@type table<string, vim.SystemObj>
+local jobs = {}
 ---@type table<string, boolean>
 local missing_reported = {}
----@param bufnr? integer
----@return integer
-local function resolve_bufnr(bufnr)
-    if bufnr == nil or bufnr == 0 then
-        return api.nvim_get_current_buf()
-    end
-    return bufnr
-end
-
----@param value string
----@return string
-local function strip_ansi(value)
-    local cleaned = value:gsub('\27%[[%d;?]*[ -/]*[@-~]', '')
-    return cleaned
-end
-
----@param value any
----@return integer?
-local function integer(value)
-    local parsed = tonumber(value)
-    if parsed == nil then
-        return nil
-    end
-    return math.floor(parsed)
-end
-
----@param name string
----@return integer
-local function namespace(name)
-    local existing = namespaces[name]
-    if existing ~= nil then
-        return existing
-    end
-    local created = api.nvim_create_namespace('linter.' .. name)
-    namespaces[name] = created
-    return created
-end
-
----@param errorformat string|string[]
----@return fun(output: string, context: LintContext|integer): vim.Diagnostic.Set[]
-local function errorformat_parser(errorformat)
-    local format = type(errorformat) == 'table' and table.concat(errorformat, ',') or errorformat
-    return function(output, _)
-        local parsed = fn.getqflist({
-            efm = format,
-            lines = vim.split(strip_ansi(output), '\n', {
-                plain = true,
-                trimempty = true,
-            }),
-        })
-        local diagnostics = {}
-        for _, item in ipairs(parsed.items or {}) do
-            if item.valid == 1 then
-                local item_type = type(item.type) == 'string' and item.type:upper() or 'E'
-                local end_line = integer(item.end_lnum)
-                local end_column = integer(item.end_col)
-                local number = integer(item.nr)
-                diagnostics[#diagnostics + 1] = {
-                    lnum = math.max((integer(item.lnum) or 1) - 1, 0),
-                    col = math.max((integer(item.col) or 1) - 1, 0),
-                    end_lnum = end_line and end_line > 0 and end_line - 1 or nil,
-                    end_col = end_column and end_column > 0 and end_column - 1 or nil,
-                    message = item.text ~= '' and item.text or 'Unknown linter diagnostic',
-                    severity = severity_by_letter[item_type:sub(1, 1)] or diagnostic.severity.ERROR,
-                    code = number and number > 0 and number or nil,
-                }
-            end
-        end
-        return diagnostics
-    end
-end
-
----@param parser function
----@param output string
----@param context LintContext
+local namespaces = {} ---@type table<string, integer>
+---@type table<integer, uv.uv_timer_t>
+local timers = {}
+---@param definition Linter
+---@param code integer
 ---@return boolean
----@return vim.Diagnostic.Set[]|string
-local function invoke_parser(parser, output, context)
-    local context_ok, context_result = pcall(parser, output, context)
-    if context_ok and type(context_result) == 'table' then
-        return true, context_result
+local function accepts_exit_code(definition, code)
+    if definition.ignore_exitcode then
+        return true
     end
-    local bufnr_ok, bufnr_result = pcall(parser, output, context.bufnr)
-    if bufnr_ok and type(bufnr_result) == 'table' then
-        return true, bufnr_result
+    local configured = definition.exit_codes or default_exit_codes
+    if configured[code] == true then
+        return true
     end
-    local context_error = context_ok and ('returned ' .. type(context_result)) or tostring(context_result)
-    local bufnr_error = bufnr_ok and ('returned ' .. type(bufnr_result)) or tostring(bufnr_result)
-    return false, ('context parser: %s; buffer parser: %s'):format(context_error, bufnr_error)
+    for _, accepted in ipairs(configured) do
+        if accepted == code then
+            return true
+        end
+    end
+    return false
+end
+
+---@param bufnr integer
+---@return string
+local function buffer_input(bufnr)
+    local input = table.concat(api.nvim_buf_get_lines(bufnr, 0, -1, false), '\n')
+    return vim.bo[bufnr].endofline and (input .. '\n') or input
 end
 
 ---@param bufnr integer
@@ -899,6 +831,29 @@ local function buffer_is_eligible(bufnr)
     return not vim.b[bufnr].lint_disabled
 end
 
+---@param executable_name string
+---@param definition Linter
+---@param context LintContext
+---@return string[]
+local function command_for(executable_name, definition, context)
+    local command = { executable_name }
+    local configured_args = definition.args
+    if type(configured_args) == 'function' then
+        vim.list_extend(command, configured_args(context))
+    elseif type(configured_args) == 'table' then
+        vim.list_extend(command, configured_args)
+    end
+    if definition.append_fname then
+        command[#command + 1] = context.filename
+    end
+    for index, argument in ipairs(command) do
+        if type(argument) ~= 'string' then
+            error(('command argument %d has type %s instead of string'):format(index, type(argument)), 0)
+        end
+    end
+    return command
+end
+
 ---@param bufnr integer
 ---@return string[]
 local function configured_linters(bufnr)
@@ -921,6 +876,47 @@ local function executable(candidates)
         end
     end
     return nil
+end
+
+---@param value any
+---@return integer?
+local function integer(value)
+    local parsed = tonumber(value)
+    if parsed == nil then
+        return nil
+    end
+    return math.floor(parsed)
+end
+
+---@param parser function
+---@param output string
+---@param context LintContext
+---@return boolean
+---@return vim.Diagnostic.Set[]|string
+local function invoke_parser(parser, output, context)
+    local context_ok, context_result = pcall(parser, output, context)
+    if context_ok and type(context_result) == 'table' then
+        return true, context_result
+    end
+    local bufnr_ok, bufnr_result = pcall(parser, output, context.bufnr)
+    if bufnr_ok and type(bufnr_result) == 'table' then
+        return true, bufnr_result
+    end
+    local context_error = context_ok and ('returned ' .. type(context_result)) or tostring(context_result)
+    local bufnr_error = bufnr_ok and ('returned ' .. type(bufnr_result)) or tostring(bufnr_result)
+    return false, ('context parser: %s; buffer parser: %s'):format(context_error, bufnr_error)
+end
+
+---@param name string
+---@return integer
+local function namespace(name)
+    local existing = namespaces[name]
+    if existing ~= nil then
+        return existing
+    end
+    local created = api.nvim_create_namespace('linter.' .. name)
+    namespaces[name] = created
+    return created
 end
 
 ---@param bufnr integer
@@ -952,6 +948,15 @@ local function context_for(bufnr, definition)
     return context
 end
 
+---@param bufnr? integer
+---@return integer
+local function resolve_bufnr(bufnr)
+    if bufnr == nil or bufnr == 0 then
+        return api.nvim_get_current_buf()
+    end
+    return bufnr
+end
+
 ---@param definition Linter
 ---@param context LintContext
 ---@return string
@@ -966,76 +971,20 @@ local function resolve_cwd(definition, context)
     return context.cwd
 end
 
----@param executable_name string
----@param definition Linter
----@param context LintContext
----@return string[]
-local function command_for(executable_name, definition, context)
-    local command = { executable_name }
-    local configured_args = definition.args
-    if type(configured_args) == 'function' then
-        vim.list_extend(command, configured_args(context))
-    elseif type(configured_args) == 'table' then
-        vim.list_extend(command, configured_args)
-    end
-    if definition.append_fname then
-        command[#command + 1] = context.filename
-    end
-    for index, argument in ipairs(command) do
-        if type(argument) ~= 'string' then
-            error(('command argument %d has type %s instead of string'):format(index, type(argument)), 0)
-        end
-    end
-    return command
-end
-
----@param bufnr integer
----@return string
-local function buffer_input(bufnr)
-    local input = table.concat(api.nvim_buf_get_lines(bufnr, 0, -1, false), '\n')
-    return vim.bo[bufnr].endofline and (input .. '\n') or input
-end
-
----@param result vim.SystemCompleted
----@param stream? LintStream
----@return string
-local function result_output(result, stream)
-    if stream == 'stderr' then
-        return result.stderr or ''
-    end
-    if stream == 'both' then
-        local stdout = result.stdout or ''
-        local stderr = result.stderr or ''
-        if stdout == '' then
-            return stderr
-        end
-        if stderr == '' then
-            return stdout
-        end
-        return stdout .. '\n' .. stderr
-    end
-    -- vim.lint.Config-compatible default.
-    return result.stdout or ''
-end
-
----@param definition Linter
----@param code integer
----@return boolean
-local function accepts_exit_code(definition, code)
-    if definition.ignore_exitcode then
-        return true
-    end
-    local configured = definition.exit_codes or default_exit_codes
-    if configured[code] == true then
-        return true
-    end
-    for _, accepted in ipairs(configured) do
-        if accepted == code then
-            return true
-        end
-    end
-    return false
-end
+--- Everything one lint run needs after validation: the resolved definition,
+--- argv, process options, and the generation bookkeeping the completion
+--- handler uses to reject stale results.
+---@class LinterRunState
+---@field bufnr integer Target buffer.
+---@field changedtick integer Buffer changedtick captured at launch.
+---@field command string[] argv for `vim.system`.
+---@field context LintContext Resolved filename/root/cwd for the run.
+---@field definition Linter Loaded linter definition.
+---@field generation integer Run generation; bumps when a run is superseded.
+---@field key string Job registry key (`bufnr:name`).
+---@field name string Linter name.
+---@field opts LintRunOptions Caller options.
+---@field system_options table `vim.system` options.
 
 ---@param name string
 ---@param definition Linter
@@ -1043,43 +992,6 @@ end
 local function runs_automatically(name, definition)
     return definition.automatic ~= false and not M.manual_linters[name]
 end
-
----@param name string
----@param bufnr integer
----@param diagnostics vim.Diagnostic.Set[]
-local function publish(name, bufnr, diagnostics)
-    local line_count = math.max(api.nvim_buf_line_count(bufnr), 1)
-    for _, item in ipairs(diagnostics) do
-        item.lnum = math.min(math.max(integer(item.lnum) or 0, 0), line_count - 1)
-        local start_col = math.max(integer(item.col) or 0, 0)
-        item.col = start_col
-        if item.end_lnum ~= nil then
-            item.end_lnum = math.min(math.max(integer(item.end_lnum) or item.lnum, item.lnum), line_count - 1)
-        end
-        if item.end_col ~= nil then
-            item.end_col = math.max(integer(item.end_col) or start_col, start_col)
-        end
-        item.message = tostring(item.message or 'Unknown linter diagnostic')
-        item.severity = item.severity or diagnostic.severity.ERROR
-        item.source = name
-    end
-    diagnostic.set(namespace(name), bufnr, diagnostics)
-end
-
---- Everything one lint run needs after validation: the resolved definition,
---- argv, process options, and the generation bookkeeping the completion
---- handler uses to reject stale results.
----@class LinterRunState
----@field name string Linter name.
----@field bufnr integer Target buffer.
----@field opts LintRunOptions Caller options.
----@field definition Linter Loaded linter definition.
----@field key string Job registry key (`bufnr:name`).
----@field generation integer Run generation; bumps when a run is superseded.
----@field changedtick integer Buffer changedtick captured at launch.
----@field context LintContext Resolved filename/root/cwd for the run.
----@field command string[] argv for `vim.system`.
----@field system_options table `vim.system` options.
 
 --- Validate a lint request and build its run state. Reports failures through
 --- `reject` (which also resets the namespace diagnostics and notifies) and
@@ -1206,18 +1118,103 @@ local function prepare_linter_run(name, bufnr, opts, reject)
     }
     ---@type LinterRunState
     local state = {
-        name = name,
         bufnr = bufnr,
-        opts = opts,
-        definition = definition,
-        key = key,
-        generation = generation,
         changedtick = changedtick,
-        context = context,
         command = command,
+        context = context,
+        definition = definition,
+        generation = generation,
+        key = key,
+        name = name,
+        opts = opts,
         system_options = system_options,
     }
     return state
+end
+
+---@param result vim.SystemCompleted
+---@param stream? LintStream
+---@return string
+local function result_output(result, stream)
+    if stream == 'stderr' then
+        return result.stderr or ''
+    end
+    if stream == 'both' then
+        local stdout = result.stdout or ''
+        local stderr = result.stderr or ''
+        if stdout == '' then
+            return stderr
+        end
+        if stderr == '' then
+            return stdout
+        end
+        return stdout .. '\n' .. stderr
+    end
+    -- vim.lint.Config-compatible default.
+    return result.stdout or ''
+end
+
+---@param value string
+---@return string
+local function strip_ansi(value)
+    local cleaned = value:gsub('\27%[[%d;?]*[ -/]*[@-~]', '')
+    return cleaned
+end
+
+---@param errorformat string|string[]
+---@return fun(output: string, context: LintContext|integer): vim.Diagnostic.Set[]
+local function errorformat_parser(errorformat)
+    local format = type(errorformat) == 'table' and table.concat(errorformat, ',') or errorformat
+    return function(output, _)
+        local parsed = fn.getqflist({
+            efm = format,
+            lines = vim.split(strip_ansi(output), '\n', {
+                plain = true,
+                trimempty = true,
+            }),
+        })
+        local diagnostics = {}
+        for _, item in ipairs(parsed.items or {}) do
+            if item.valid == 1 then
+                local item_type = type(item.type) == 'string' and item.type:upper() or 'E'
+                local end_line = integer(item.end_lnum)
+                local end_column = integer(item.end_col)
+                local number = integer(item.nr)
+                diagnostics[#diagnostics + 1] = {
+                    code = number and number > 0 and number or nil,
+                    col = math.max((integer(item.col) or 1) - 1, 0),
+                    end_col = end_column and end_column > 0 and end_column - 1 or nil,
+                    end_lnum = end_line and end_line > 0 and end_line - 1 or nil,
+                    lnum = math.max((integer(item.lnum) or 1) - 1, 0),
+                    message = item.text ~= '' and item.text or 'Unknown linter diagnostic',
+                    severity = severity_by_letter[item_type:sub(1, 1)] or diagnostic.severity.ERROR,
+                }
+            end
+        end
+        return diagnostics
+    end
+end
+
+---@param name string
+---@param bufnr integer
+---@param diagnostics vim.Diagnostic.Set[]
+local function publish(name, bufnr, diagnostics)
+    local line_count = math.max(api.nvim_buf_line_count(bufnr), 1)
+    for _, item in ipairs(diagnostics) do
+        item.lnum = math.min(math.max(integer(item.lnum) or 0, 0), line_count - 1)
+        local start_col = math.max(integer(item.col) or 0, 0)
+        item.col = start_col
+        if item.end_lnum ~= nil then
+            item.end_lnum = math.min(math.max(integer(item.end_lnum) or item.lnum, item.lnum), line_count - 1)
+        end
+        if item.end_col ~= nil then
+            item.end_col = math.max(integer(item.end_col) or start_col, start_col)
+        end
+        item.message = tostring(item.message or 'Unknown linter diagnostic')
+        item.severity = item.severity or diagnostic.severity.ERROR
+        item.source = name
+    end
+    diagnostic.set(namespace(name), bufnr, diagnostics)
 end
 
 --- Scheduled completion handler for one lint run. Rejects stale
@@ -1238,42 +1235,42 @@ local function on_linter_result(state, finish, job, result)
     local context = state.context
     local definition = state.definition
     if generations[key] ~= generation then
-        finish('stale', { reason = 'run was cancelled or superseded', changedtick = changedtick })
+        finish('stale', { changedtick = changedtick, reason = 'run was cancelled or superseded' })
         return
     end
     if jobs[key] == job then
         jobs[key] = nil
     end
     if not api.nvim_buf_is_valid(bufnr) then
-        finish('stale', { reason = 'buffer was removed', changedtick = changedtick })
+        finish('stale', { changedtick = changedtick, reason = 'buffer was removed' })
         return
     end
     if api.nvim_buf_get_changedtick(bufnr) ~= changedtick then
         finish('stale', {
-            reason = 'buffer changed while linting',
             changedtick = changedtick,
+            reason = 'buffer changed while linting',
         })
         return
     end
     if api.nvim_buf_get_name(bufnr) ~= context.filename then
         finish('stale', {
-            reason = 'buffer changed while linting',
             changedtick = changedtick,
+            reason = 'buffer changed while linting',
         })
         return
     end
     if result.code == TIMEOUT_EXIT_CODE then
         finish('timeout', {
+            changedtick = changedtick,
             exit_code = result.code,
             signal = result.signal,
-            changedtick = changedtick,
         })
         return
     end
     if (result.signal or 0) ~= 0 then
         finish('failed', {
-            reason = 'linter terminated by signal',
             exit_code = result.code,
+            reason = 'linter terminated by signal',
             signal = result.signal,
         })
         return
@@ -1285,8 +1282,8 @@ local function on_linter_result(state, finish, job, result)
         publish(name, bufnr, {})
         vim.notify(('Linter %q has no parser or errorformat'):format(name), vim.log.levels.ERROR)
         finish('error', {
-            reason = 'linter has no parser or errorformat',
             exit_code = result.code,
+            reason = 'linter has no parser or errorformat',
         })
         return
     end
@@ -1295,8 +1292,8 @@ local function on_linter_result(state, finish, job, result)
         publish(name, bufnr, {})
         vim.notify(('%s parser failed: %s'):format(name, tostring(parsed_or_error)), vim.log.levels.ERROR)
         finish('error', {
-            reason = tostring(parsed_or_error),
             exit_code = result.code,
+            reason = tostring(parsed_or_error),
         })
         return
     end
@@ -1304,30 +1301,30 @@ local function on_linter_result(state, finish, job, result)
     local parsed = parsed_or_error
     if not vim.islist(parsed) then
         finish('error', {
-            reason = 'linter parser must return a diagnostic array',
             exit_code = result.code,
+            reason = 'linter parser must return a diagnostic array',
         })
         return
     end
     local published, publish_error = pcall(publish, name, bufnr, parsed)
     if not published then
         finish('error', {
-            reason = tostring(publish_error),
             exit_code = result.code,
+            reason = tostring(publish_error),
         })
         return
     end
     if not api.nvim_buf_is_valid(bufnr) then
         finish('stale', {
-            reason = 'buffer changed while publishing diagnostics',
             changedtick = changedtick,
+            reason = 'buffer changed while publishing diagnostics',
         })
         return
     end
     if api.nvim_buf_get_changedtick(bufnr) ~= changedtick then
         finish('stale', {
-            reason = 'buffer changed while publishing diagnostics',
             changedtick = changedtick,
+            reason = 'buffer changed while publishing diagnostics',
         })
         return
     end
@@ -1347,9 +1344,7 @@ local function on_linter_result(state, finish, job, result)
     end
     local status
     local reason
-    if #parsed > 0 then
-        status = 'failed'
-    elseif not accepts_exit_code(definition, result.code) then
+    if #parsed > 0 or not accepts_exit_code(definition, result.code) then
         status = 'failed'
     elseif result.code == 0 then
         status = 'ok'
@@ -1358,23 +1353,47 @@ local function on_linter_result(state, finish, job, result)
         reason = 'accepted nonzero exit without parsed diagnostics is not a clean check'
     end
     finish(status, {
-        exit_code = result.code,
-        signal = result.signal,
         changedtick = changedtick,
         diagnostics = parsed,
+        exit_code = result.code,
         namespace = namespace(name),
-        stdout = (result.stdout or ''):sub(1, OUTPUT_BYTES_MAX),
-        stderr = (result.stderr or ''):sub(1, OUTPUT_BYTES_MAX),
         reason = reason,
+        signal = result.signal,
+        stderr = (result.stderr or ''):sub(1, OUTPUT_BYTES_MAX),
+        stdout = (result.stdout or ''):sub(1, OUTPUT_BYTES_MAX),
     })
+end
+
+---@param bufnr? integer
+---@param opts? { automatic?: boolean, notify?: boolean }
+---@param names? string[]
+---@return nil
+function M.run(bufnr, opts, names)
+    bufnr = resolve_bufnr(bufnr)
+    if not M.options.enabled or not buffer_is_eligible(bufnr) then
+        return
+    end
+    local selected = names or configured_linters(bufnr)
+    local active = {}
+    for _, name in ipairs(selected) do
+        active[name] = true
+        M.run_linter(name, bufnr, opts)
+    end
+    if names == nil then
+        for name, ns in pairs(namespaces) do
+            if not active[name] then
+                diagnostic.reset(ns, bufnr)
+            end
+        end
+    end
 end
 
 ---@class LintRunOptions
 ---@field automatic? boolean
 ---@field notify? boolean
----@field timeout? number
----@field root? string
 ---@field on_complete? fun(result: table)
+---@field root? string
+---@field timeout? number
 ---@field validate_context? fun(context: LintContext, command: string[], cwd: string): boolean
 
 ---@param name string
@@ -1389,10 +1408,10 @@ function M.run_linter(name, bufnr, opts)
             name,
             'string',
         },
-        opts = { opts, 'table' },
-        timeout = { opts.timeout, 'number', true },
-        root = { opts.root, 'string', true },
         on_complete = { opts.on_complete, 'function', true },
+        opts = { opts, 'table' },
+        root = { opts.root, 'string', true },
+        timeout = { opts.timeout, 'number', true },
         validate_context = { opts.validate_context, 'function', true },
     })
     if opts.timeout ~= nil then
@@ -1406,8 +1425,8 @@ function M.run_linter(name, bufnr, opts)
         end
         completed = true
         local result = vim.tbl_extend('force', {
-            name = name,
             bufnr = bufnr,
+            name = name,
             status = status,
             verified = status == 'ok',
         }, fields or {})
@@ -1439,6 +1458,7 @@ function M.run_linter(name, bufnr, opts)
         return reject('error', tostring(job_or_error))
     end
     job = job_or_error
+    ---@cast job vim.SystemObj
     jobs[state.key] = job
     local handle = {
         cancel = function(status)
@@ -1447,36 +1467,14 @@ function M.run_linter(name, bufnr, opts)
                 if jobs[state.key] == job then
                     jobs[state.key] = nil
                 end
-                pcall(job.kill, job, SIGTERM)
+                if job ~= nil then
+                    pcall(job.kill, job, SIGTERM)
+                end
             end
             finish(status or 'stale', { reason = 'run cancelled by caller', changedtick = state.changedtick })
         end,
     }
     return true, handle
-end
-
----@param bufnr? integer
----@param opts? { automatic?: boolean, notify?: boolean }
----@param names? string[]
----@return nil
-function M.run(bufnr, opts, names)
-    bufnr = resolve_bufnr(bufnr)
-    if not M.options.enabled or not buffer_is_eligible(bufnr) then
-        return
-    end
-    local selected = names or configured_linters(bufnr)
-    local active = {}
-    for _, name in ipairs(selected) do
-        active[name] = true
-        M.run_linter(name, bufnr, opts)
-    end
-    if names == nil then
-        for name, ns in pairs(namespaces) do
-            if not active[name] then
-                diagnostic.reset(ns, bufnr)
-            end
-        end
-    end
 end
 
 ---@param bufnr integer
@@ -1510,6 +1508,16 @@ end
 
 ---@param bufnr? integer
 ---@return nil
+function M.reset(bufnr)
+    bufnr = resolve_bufnr(bufnr)
+    M.stop(bufnr)
+    for _, ns in pairs(namespaces) do
+        diagnostic.reset(ns, bufnr)
+    end
+end
+
+---@param bufnr? integer
+---@return nil
 function M.stop(bufnr)
     bufnr = resolve_bufnr(bufnr)
     cancel_timer(bufnr)
@@ -1520,16 +1528,6 @@ function M.stop(bufnr)
             pcall(job.kill, job, 15)
             jobs[key] = nil
         end
-    end
-end
-
----@param bufnr? integer
----@return nil
-function M.reset(bufnr)
-    bufnr = resolve_bufnr(bufnr)
-    M.stop(bufnr)
-    for _, ns in pairs(namespaces) do
-        diagnostic.reset(ns, bufnr)
     end
 end
 
@@ -1827,20 +1825,20 @@ function M.setup(opts)
         clear = true,
     })
     api.nvim_create_autocmd(M.options.events, {
-        group = group,
-        desc = 'Run native asynchronous linters',
         callback = function(event)
             if M.options.enabled and buffer_is_eligible(event.buf) then
                 schedule(event.buf, event.event == 'BufWritePost')
             end
         end,
+        desc = 'Run native asynchronous linters',
+        group = group,
     })
     api.nvim_create_autocmd('BufWipeout', {
-        group = group,
-        desc = 'Stop native linters and release buffer state',
         callback = function(event)
             M.stop(event.buf)
         end,
+        desc = 'Stop native linters and release buffer state',
+        group = group,
     })
     api.nvim_create_user_command('Lint', function(command)
         if #command.fargs == 0 then
@@ -1896,4 +1894,5 @@ function M.setup(opts)
         force = true,
     })
 end
+
 return M

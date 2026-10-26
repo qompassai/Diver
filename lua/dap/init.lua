@@ -1,21 +1,5 @@
--- #################################################################
 -- ~/.config/nvim/lua/dap/init.lua
 -- Qompass AI Diver Native Debug Adapter Configuration
--- Copyright (C) 2026 Qompass AI, All rights reserved
--- SPDX-License-Identifier: Apache-2.0
---
--- Licensed under the Apache License, Version 2.0 (the "License");
--- you may not use this file except in compliance with the License.
--- You may obtain a copy of the License at:
---
---     http://www.apache.org/licenses/LICENSE-2.0
---
--- Unless required by applicable law or agreed to in writing, software
--- distributed under the License is distributed on an "AS IS" BASIS,
--- WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
--- See the License for the specific language governing permissions and
--- limitations under the License.
--- #################################################################
 
 local api = vim.api
 local fn = vim.fn
@@ -2122,17 +2106,38 @@ function M.setup(opts)
     if filetype ~= '' then
         M.load_filetype(filetype, bufnr)
     end
-
-    if not M.backend_available() then
-        vim.schedule(function()
-            notify(
-                'vim.debug is unavailable; adapter definitions remain available'
-                    .. ' in the local registry',
-                levels.DEBUG
-            )
-        end)
-    end
 end
+
+-- Non-catalog submodules, loaded on first access so requiring dap stays
+-- cheap: the moonwalk/phlow session integrations, the session lifecycle
+-- state machine, and the ext helpers. Reachable as require('dap').integrations,
+-- require('dap').lifecycle, and require('dap').ext.
+local lazy_submodules = {
+    ext = function()
+        return { autocompl = require('dap.ext.autocompl') }
+    end,
+    integrations = function()
+        return {
+            moonwalk = require('dap.integrations.moonwalk'),
+            phlow = require('dap.integrations.phlow'),
+        }
+    end,
+    lifecycle = function()
+        return require('dap.lifecycle')
+    end,
+}
+
+setmetatable(M, {
+    __index = function(self, key)
+        local loader = lazy_submodules[key]
+        if loader ~= nil then
+            local mod = loader()
+            rawset(self, key, mod)
+            return mod
+        end
+        return nil
+    end,
+})
 
 -- Setup is explicit: call `require('dap').setup()` (typically from your
 -- Neovim config or plugin loader) to install autocmds, commands, and
