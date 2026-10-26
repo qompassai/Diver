@@ -6,6 +6,8 @@
 -- --------------------------------------------------
 ---@source https://microsoft.github.io/language-server-protocol/implementors/servers/
 ---@source https://langserver.org/
+-- The server list is a plain table; the enable call is deferred to the first
+-- FileType event (see bottom of file) instead of running at startup.
 local servers = {
     -- 'abl_ls', ---:TODO validate ---@source https://github.com/vscode-abl/vscode-abl
     --'abaplint_ls',
@@ -257,6 +259,7 @@ local servers = {
     'slangd_ls', ---lsp/linter
     'shopifytheme_ls', ---:TODO validate
     'slint_ls',
+     'served_ls',
     'smithy_ls',
     'solang_ls',
     'solargraph_ls',
@@ -358,19 +361,9 @@ vim.api.nvim_create_autocmd('FileType', {
     desc = 'Enable diver LSP servers on first FileType (deferred from startup)',
     callback = function()
         vim.api.nvim_del_augroup_by_id(enable_group)
-        -- Enable servers individually: one broken config must not block the rest.
-        local failed = {}
-        for _, name in ipairs(servers) do
-            local ok, err = pcall(vim.lsp.enable, name)
-            if not ok then
-                failed[#failed + 1] = string.format('%s: %s', name, tostring(err))
-            end
-        end
-        if #failed > 0 then
-            vim.notify(
-                string.format('[diver] %d LSP server(s) failed to enable:\n%s', #failed, table.concat(failed, '\n')),
-                vim.log.levels.WARN
-            )
+        local ok, err = pcall(vim.lsp.enable, servers)
+        if not ok then
+            vim.notify(string.format('[diver] deferred vim.lsp.enable failed: %s', tostring(err)), vim.log.levels.ERROR)
         end
     end,
 })
