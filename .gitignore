@@ -12,3 +12,6 @@ node_modules/
 docs/book/src/api/
 docs/book/book/
 docs/book/.last-build
+
+# WS3 sidecar build artifacts
+/mcp-server/target/
