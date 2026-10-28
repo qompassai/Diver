@@ -131,7 +131,7 @@ function M.list(server_name, callback)
             callback(start_err, nil)
             return
         end
-        client.request(server_name, 'tools/list', {}, function(err, result)
+        client.request(server_name, 'tools/list', vim.empty_dict(), function(err, result)
             if err ~= nil then
                 callback(err, nil)
                 return
@@ -260,6 +260,12 @@ end
 ---@param args table
 ---@param callback fun(err: string?, result: table?)
 local function execute_call(server_name, tool_name, args, callback)
+    -- Finding F-1 (C2.5): an empty Lua table encodes as JSON `[]`, and
+    -- rmcp servers refuse a non-object arguments value; an empty
+    -- argument set must go on the wire as a JSON object instead.
+    if next(args) == nil then
+        args = vim.empty_dict()
+    end
     client.request(server_name, 'tools/call', {
         name = tool_name,
         arguments = args,
