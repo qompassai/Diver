@@ -4,8 +4,12 @@
 -- MCP speaks JSON-RPC 2.0 as newline-delimited messages over the server
 -- process's stdio (no Content-Length framing, unlike LSP). This module owns
 -- process lifetime, message framing, request/response matching with
--- timeouts, and the initialize handshake. One session (one process handle)
--- per server name; teardown is idempotent.
+-- timeouts, and era negotiation: first contact is the modern
+-- `server/discover` probe, and modern sessions stamp every request with
+-- `_meta` protocol metadata. A server answering the probe with
+-- method-not-found (-32601) is approached through the legacy `initialize`
+-- handshake instead; that is the only fallback trigger. One session (one
+-- process handle) per server name; teardown is idempotent.
 --
 -- Opportunistic reuse: if 'ai.rose.mcp' is requireable and exposes
 -- new_stdio_client(argv) returning a table with function fields
@@ -20,14 +24,19 @@ local secrets = require('ai.mcp.secrets')
 
 local M = {}
 
+local CLIENT_NAME = 'diver-mcp'
+local CLIENT_VERSION = '0.1.0'
 local INITIALIZE_TIMEOUT_MS = 15000
+local LEGACY_PROTOCOL_VERSION = '2024-11-05'
 local LINE_BYTES_MAX = 8 * 1024 * 1024
-local MCP_PROTOCOL_VERSION = '2024-11-05'
+local METHOD_NOT_FOUND_CODE = -32601
+local MODERN_PROTOCOL_VERSION = '2026-07-28'
 local PENDING_REQUESTS_MAX = 64
 local REQUEST_TIMEOUT_MS_DEFAULT = 30000
+local UNSUPPORTED_VERSION_CODE = -32022
 
 ---@class McpPending
----@field callback fun(err: string?, result: table?)
+---@field callback fun(err: string?, result: table?, raw_error: table?)
 ---@field timer uv.uv_timer_t?
 
 ---@class McpBackend
@@ -36,13 +45,16 @@ local REQUEST_TIMEOUT_MS_DEFAULT = 30000
 ---@field close fun()
 
 ---@class McpSession
----@field name string
 ---@field backend McpBackend?
 ---@field buffer string
+---@field capabilities table?
+---@field era string?
+---@field generation integer
+---@field name string
 ---@field next_id integer
 ---@field pending table<integer, McpPending>
+---@field protocol_version string?
 ---@field ready boolean
----@field generation integer
 
 local sessions = {} ---@type table<string, McpSession>
 
@@ -100,7 +112,8 @@ end
 ---@param id integer
 ---@param err string?
 ---@param result table?
-local function resolve_pending(session, id, err, result)
+---@param raw_error table?
+local function resolve_pending(session, id, err, result, raw_error)
     local pending = session.pending[id]
     if pending == nil then
         return
@@ -111,7 +124,45 @@ local function resolve_pending(session, id, err, result)
         pcall(pending.timer.close, pending.timer)
         pending.timer = nil
     end
-    pending.callback(err, result)
+    pending.callback(err, result, raw_error)
+end
+
+---Render the protocol versions a peer declares, from either a discover
+---result or an UnsupportedProtocolVersionError's data (the two shapes use
+---`supportedVersions` and `supported` respectively).
+---@param source any
+---@return string
+local function version_list_text(source)
+    if type(source) ~= 'table' then
+        return 'unknown'
+    end
+    local list = source.supportedVersions or source.supported
+    if type(list) ~= 'table' then
+        return 'unknown'
+    end
+    local names = {}
+    for _, value in ipairs(list) do
+        names[#names + 1] = tostring(value)
+    end
+    if #names == 0 then
+        return 'unknown'
+    end
+    return table.concat(names, ', ')
+end
+
+---@param list any
+---@param wanted string
+---@return boolean
+local function version_list_contains(list, wanted)
+    if type(list) ~= 'table' then
+        return false
+    end
+    for _, value in ipairs(list) do
+        if value == wanted then
+            return true
+        end
+    end
+    return false
 end
 
 ---@param detail any
@@ -119,6 +170,14 @@ end
 local function error_text(detail)
     if type(detail) == 'string' then
         return detail
+    end
+    if type(detail) == 'table' and detail.code == UNSUPPORTED_VERSION_CODE then
+        local message = type(detail.message) == 'string' and detail.message or 'unsupported protocol version'
+        return 'UnsupportedProtocolVersionError: '
+            .. message
+            .. ' (server supports: '
+            .. version_list_text(detail.data)
+            .. ')'
     end
     if type(detail) == 'table' and type(detail.message) == 'string' then
         return detail.message
@@ -138,11 +197,15 @@ local function handle_line(session, line)
     end
     if message.id ~= nil and (message.result ~= nil or message.error ~= nil) then
         local err = nil
+        local raw_error = nil
         if message.error ~= nil then
             err = error_text(message.error)
+            if type(message.error) == 'table' then
+                raw_error = message.error
+            end
         end
         local result = type(message.result) == 'table' and message.result or nil
-        resolve_pending(session, message.id, err, result)
+        resolve_pending(session, message.id, err, result, raw_error)
         return
     end
     -- Server->client requests are not needed by the manager; answer with
@@ -209,7 +272,7 @@ end
 ---@param session McpSession
 ---@param payload table
 ---@param timeout_ms integer
----@param callback fun(err: string?, result: table?)
+---@param callback fun(err: string?, result: table?, raw_error: table?)
 local function send_request(session, payload, timeout_ms, callback)
     assert(session.backend ~= nil, 'session has no backend')
     if vim.tbl_count(session.pending) >= PENDING_REQUESTS_MAX then
@@ -239,10 +302,14 @@ local function send_request(session, payload, timeout_ms, callback)
                 return
             end
             local err = nil
+            local raw_error = nil
             if response.error ~= nil then
                 err = error_text(response.error)
+                if type(response.error) == 'table' then
+                    raw_error = response.error
+                end
             end
-            resolve_pending(session, id, err, response.result)
+            resolve_pending(session, id, err, response.result, raw_error)
         end)
     end)
 end
@@ -264,6 +331,39 @@ local function teardown(session, reason)
         session.backend = nil
     end
     sessions[session.name] = nil
+end
+
+---The per-request metadata the modern era requires: the protocol version
+---in use plus this client's identity and capabilities.
+---@param protocol_version string
+---@return table
+local function request_meta(protocol_version)
+    return {
+        ['io.modelcontextprotocol/clientCapabilities'] = vim.empty_dict(),
+        ['io.modelcontextprotocol/clientInfo'] = { name = CLIENT_NAME, version = CLIENT_VERSION },
+        ['io.modelcontextprotocol/protocolVersion'] = protocol_version,
+    }
+end
+
+---Copy params and stamp `_meta` on the copy when the session negotiated
+---the modern era; legacy sessions pass params through untouched so their
+---wire shape is byte-identical to before. Callers keep ownership of the
+---table they passed.
+---@param session McpSession
+---@param params table?
+---@return table?
+local function stamp_meta(session, params)
+    if session.era ~= 'modern' then
+        return params
+    end
+    local stamped = {}
+    if params ~= nil then
+        for key, value in pairs(params) do
+            stamped[key] = value
+        end
+    end
+    stamped._meta = request_meta(session.protocol_version or MODERN_PROTOCOL_VERSION)
+    return stamped
 end
 
 ---@param session McpSession
@@ -329,16 +429,16 @@ end
 ---@param session McpSession
 ---@param name string
 ---@param on_ready fun(err: string?)
-local function run_handshake(session, name, on_ready)
+local function run_legacy_handshake(session, name, on_ready)
     local params = {
-        protocolVersion = MCP_PROTOCOL_VERSION,
+        protocolVersion = LEGACY_PROTOCOL_VERSION,
         -- vim.empty_dict: an empty Lua table encodes as [], which strict
         -- MCP servers reject for the required capabilities object.
         capabilities = vim.empty_dict(),
-        clientInfo = { name = 'diver-mcp', version = '0.1.0' },
+        clientInfo = { name = CLIENT_NAME, version = CLIENT_VERSION },
     }
     local payload = { jsonrpc = '2.0', method = 'initialize', params = params }
-    send_request(session, payload, INITIALIZE_TIMEOUT_MS, function(err, _result)
+    send_request(session, payload, INITIALIZE_TIMEOUT_MS, function(err, result)
         if sessions[name] ~= session then
             on_ready('session replaced during handshake')
             return
@@ -351,8 +451,60 @@ local function run_handshake(session, name, on_ready)
         local backend = session.backend
         assert(backend ~= nil, 'session lost its backend during handshake')
         backend.notify({ jsonrpc = '2.0', method = 'notifications/initialized', params = vim.empty_dict() })
+        session.era = 'legacy'
+        session.protocol_version = LEGACY_PROTOCOL_VERSION
+        if type(result) == 'table' then
+            session.capabilities = result.capabilities or {}
+            if type(result.protocolVersion) == 'string' then
+                session.protocol_version = result.protocolVersion
+            end
+        end
         session.ready = true
         on_ready(nil)
+    end)
+end
+
+---Discover-first negotiation: `server/discover` is always the first frame.
+---Only a method-not-found answer (-32601) identifies a legacy server and
+---triggers the bounded fallback to `initialize`; every other failure —
+---including a version rejection — ends the handshake, so a modern server
+---in a bad state is never silently re-approached as a legacy one.
+---@param session McpSession
+---@param name string
+---@param on_ready fun(err: string?)
+local function run_handshake(session, name, on_ready)
+    local payload = {
+        jsonrpc = '2.0',
+        method = 'server/discover',
+        params = { _meta = request_meta(MODERN_PROTOCOL_VERSION) },
+    }
+    send_request(session, payload, INITIALIZE_TIMEOUT_MS, function(err, result, raw_error)
+        if sessions[name] ~= session then
+            on_ready('session replaced during handshake')
+            return
+        end
+        if err == nil and type(result) == 'table' then
+            if not version_list_contains(result.supportedVersions, MODERN_PROTOCOL_VERSION) then
+                local reason = 'no mutually supported modern protocol version (server supports: '
+                    .. version_list_text(result)
+                    .. ')'
+                teardown(session, reason)
+                on_ready(reason)
+                return
+            end
+            session.capabilities = result.capabilities or {}
+            session.era = 'modern'
+            session.protocol_version = MODERN_PROTOCOL_VERSION
+            session.ready = true
+            on_ready(nil)
+            return
+        end
+        if type(raw_error) == 'table' and raw_error.code == METHOD_NOT_FOUND_CODE then
+            run_legacy_handshake(session, name, on_ready)
+            return
+        end
+        teardown(session, 'server/discover failed')
+        on_ready('server/discover failed: ' .. (err or 'malformed discover result'))
     end)
 end
 
@@ -413,7 +565,7 @@ function M.notify(name, method, params)
     if session == nil or not session.ready or session.backend == nil then
         return
     end
-    session.backend.notify({ jsonrpc = '2.0', method = method, params = params })
+    session.backend.notify({ jsonrpc = '2.0', method = method, params = stamp_meta(session, params) })
 end
 
 ---@param name string
@@ -438,7 +590,7 @@ function M.request(name, method, params, callback, timeout_ms)
     send_request(session, {
         jsonrpc = '2.0',
         method = method,
-        params = params,
+        params = stamp_meta(session, params),
     }, timeout_ms or REQUEST_TIMEOUT_MS_DEFAULT, callback)
 end
 
